@@ -3321,9 +3321,6 @@ void M_Init(void)
 #ifndef NONET
 	CV_RegisterVar(&cv_serversort);
 #endif
-
-	//todo put this somewhere better...
-	CV_RegisterVar(&cv_allcaps);
 }
 
 void M_InitCharacterTables(void)
