@@ -45,6 +45,7 @@ const char *R_GetPalname(UINT16 num);
 const char *GetPalette(void);
 
 extern RGBA_t *pLocalPalette;
+extern RGBA_t *pMasterPalette;
 
 extern UINT8 hudtrans;
 
