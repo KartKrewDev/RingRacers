@@ -915,6 +915,24 @@ void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum)
 }
 #endif
 
+static void P_SetWaypointsHeight(mapthing_t *mt)
+{
+	mapthing_t *mt2 = mapthings;
+	size_t i;
+	for (i = 0; i < nummapthings; i++, mt2++)
+	{
+		if (!(mt2->type == mobjinfo[MT_WAYPOINT].doomednum && (mt2->options & MTF_OBJECTSPECIAL)))
+			continue;
+
+		if (mt->angle == mt2->angle) // same waypoint id
+		{
+			mt->z = mt2->z;
+			mt->mobj->z = mt2->mobj->z;
+			P_RemoveMobj(mt2->mobj);
+		}
+	}
+}
+
 //
 // P_LoadThings
 //
@@ -1049,6 +1067,12 @@ static void P_LoadThings(void)
 				->sector->floorheight>>FRACBITS);
 
 			P_SpawnHoopsAndRings (mt);
+		}
+
+		if (mt->type == mobjinfo[MT_WAYPOINT].doomednum && !(mt->options & MTF_OBJECTSPECIAL))
+		{
+			// use any "2nd" waypoint mobjs to set the height of original, then remove the 2nds mobjs
+			P_SetWaypointsHeight(mt);
 		}
 	}
 }

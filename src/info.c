@@ -15195,7 +15195,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_WAYPOINT
 		2001,           // doomednum
-		S_NULL,         // spawnstate
+		S_UNKNOWN,         // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -15216,7 +15216,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOCLIP|MF_NOGRAVITY, // flags
+		MF_NOBLOCKMAP/*|MF_NOSECTOR*/|MF_NOCLIP|MF_NOGRAVITY, // flags
 		S_NULL          // raisestate
 	},
 

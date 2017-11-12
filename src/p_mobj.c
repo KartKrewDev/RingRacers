@@ -9641,6 +9641,26 @@ void P_SpawnMapThing(mapthing_t *mthing)
 		else
 			mthing->z = (INT16)(z>>FRACBITS);
 	}
+	else if (i == MT_WAYPOINT && !(mthing->options & MTF_OBJECTSPECIAL))
+	{
+		// just gets set on either the floor or ceiling
+		boolean flip = (!!(mobjinfo[i].flags & MF_SPAWNCEILING) ^ !!(mthing->options & MTF_OBJECTFLIP));
+
+		// applying offsets! (if any)
+		if (flip)
+		{
+			z = ONCEILINGZ;
+		}
+		else
+		{
+			z = ONFLOORZ;
+		}
+
+		if (z == ONFLOORZ)
+			mthing->z = 0;
+		else
+			mthing->z = (INT16)(z>>FRACBITS);
+	}
 	else
 	{
 		fixed_t offset = 0;
@@ -9893,6 +9913,24 @@ ML_NOCLIMB : Direction not controllable
 	case MT_TRAPGOYLELONG:
 		if (mthing->angle >= 360)
 			mobj->tics += 7*(mthing->angle / 360) + 1; // starting delay
+		break;
+	case MT_WAYPOINT:
+		if (!(mthing->options & MTF_OBJECTSPECIAL))
+		{
+			// Z is already altered to account for proper height
+			// Use threshold to store the previous waypoint ID
+			// Angle is being used for the current waypoint ID
+			mobj->threshold = ((mthing->options >> ZSHIFT));
+		}
+		if (mthing->options & MTF_AMBUSH)
+		{
+			mobj->reactiontime = 1;
+		}
+		else
+		{
+			mobj->reactiontime = 0;
+		}
+		break;
 	default:
 		break;
 	}
