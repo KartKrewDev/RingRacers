@@ -257,7 +257,11 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 		INT32 heightsec;
 		boolean underwater;
 
-		if (splitscreen && viewplayer == &players[secondarydisplayplayer] && camera2.chase)
+		if (splitscreen > 2 && viewplayer == &players[fourthdisplayplayer] && camera4.chase)
+			heightsec = R_PointInSubsector(camera4.x, camera4.y)->sector->heightsec;
+		else if (splitscreen > 1 && viewplayer == &players[thirddisplayplayer] && camera3.chase)
+			heightsec = R_PointInSubsector(camera3.x, camera3.y)->sector->heightsec;
+		else if (splitscreen && viewplayer == &players[secondarydisplayplayer] && camera2.chase)
 			heightsec = R_PointInSubsector(camera2.x, camera2.y)->sector->heightsec;
 		else if (camera.chase && viewplayer == &players[displayplayer])
 			heightsec = R_PointInSubsector(camera.x, camera.y)->sector->heightsec;
@@ -851,7 +855,7 @@ static void R_AddPolyObjects(subsector_t *sub)
 
 drawseg_t *firstseg;
 
-static void R_Subsector(size_t num)
+static void R_Subsector(size_t num, UINT8 ssplayer)
 {
 	INT32 count, floorlightlevel, ceilinglightlevel, light;
 	seg_t *line;
@@ -1209,7 +1213,7 @@ static void R_Subsector(size_t num)
    // Either you must pass the fake sector and handle validcount here, on the
    // real sector, or you must account for the lighting in some other way,
    // like passing it as an argument.
-	R_AddSprites(sub->sector, (floorlightlevel+ceilinglightlevel)/2);
+	R_AddSprites(sub->sector, (floorlightlevel+ceilinglightlevel)/2, ssplayer);
 
 	firstseg = NULL;
 
@@ -1415,7 +1419,7 @@ INT32 R_GetPlaneLight(sector_t *sector, fixed_t planeheight, boolean underside)
 //
 // killough 5/2/98: reformatted, removed tail recursion
 
-void R_RenderBSPNode(INT32 bspnum)
+void R_RenderBSPNode(INT32 bspnum, UINT8 ssplayer)
 {
 	node_t *bsp;
 	INT32 side;
@@ -1426,7 +1430,7 @@ void R_RenderBSPNode(INT32 bspnum)
 		// Decide which side the view point is on.
 		side = R_PointOnSide(viewx, viewy, bsp);
 		// Recursively divide front space.
-		R_RenderBSPNode(bsp->children[side]);
+		R_RenderBSPNode(bsp->children[side], ssplayer);
 
 		// Possibly divide back space.
 
@@ -1444,5 +1448,5 @@ void R_RenderBSPNode(INT32 bspnum)
 		portalcullsector = NULL;
 	}
 
-	R_Subsector(bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR);
+	R_Subsector(bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR, ssplayer);
 }

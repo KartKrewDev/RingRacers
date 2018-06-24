@@ -36,6 +36,10 @@
 
 #include "m_cond.h" // condition sets
 
+#include "m_random.h" // P_RandomKey
+#include "g_input.h" // PLAYER1INPUTDOWN
+#include "k_kart.h" // colortranslations
+
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
@@ -164,6 +168,44 @@ static void Y_CalculateMatchWinners(void);
 static void Y_FollowIntermission(void);
 static void Y_UnloadData(void);
 
+// SRB2Kart: voting stuff
+// Level images
+typedef struct
+{
+	char str[40];
+	patch_t *pic;
+} y_votelvlinfo;
+
+// Clientside & splitscreen player info.
+typedef struct
+{
+	SINT8 selection;
+	UINT8 delay;
+} y_voteplayer;
+
+typedef struct
+{
+	y_voteplayer playerinfo[4];
+	UINT8 ranim;
+	UINT8 rtics;
+	UINT8 roffset;
+	UINT8 rsynctime;
+	UINT8 rendoff;
+} y_voteclient;
+
+static y_votelvlinfo levelinfo[4];
+static y_voteclient voteclient;
+static INT32 votetic;
+static INT32 voteendtic = -1;
+static patch_t *cursor = NULL;
+static patch_t *cursor1 = NULL;
+static patch_t *cursor2 = NULL;
+static patch_t *cursor3 = NULL;
+static patch_t *cursor4 = NULL;
+static patch_t *randomlvl = NULL;
+
+static void Y_UnloadVoteData(void);
+
 // Stuff copy+pasted from st_stuff.c
 static INT32 SCX(INT32 x)
 {
@@ -253,7 +295,7 @@ void Y_IntermissionDrawer(void)
 		V_DrawLevelTitle(data.coop.passedx1, 49, 0, data.coop.passed1);
 		V_DrawLevelTitle(data.coop.passedx2, 49+V_LevelNameHeight(data.coop.passed2)+2, 0, data.coop.passed2);
 
-		if (mapheaderinfo[gamemap-1]->actnum)
+		if (strlen(mapheaderinfo[prevmap]->actnum) > 0)
 			V_DrawScaledPatch(244, 57, 0, data.coop.ttlnum);
 
 		//if (gottimebonus && endtic != -1)
@@ -577,15 +619,15 @@ void Y_IntermissionDrawer(void)
 		V_DrawRightAlignedString(x+160, 32, V_YELLOWMAP, "TIME");
 
 		// Rings
-		V_DrawThinString(x+168, 32, V_YELLOWMAP, "RING");
+		V_DrawThinString(x+168, 31, V_YELLOWMAP, "RING");
 
 		// Total rings
-		V_DrawThinString(x+191, 24, V_YELLOWMAP, "TOTAL");
-		V_DrawThinString(x+196, 32, V_YELLOWMAP, "RING");
+		V_DrawThinString(x+191, 22, V_YELLOWMAP, "TOTAL");
+		V_DrawThinString(x+196, 31, V_YELLOWMAP, "RING");
 
 		// Monitors
-		V_DrawThinString(x+223, 24, V_YELLOWMAP, "ITEM");
-		V_DrawThinString(x+229, 32, V_YELLOWMAP, "BOX");
+		V_DrawThinString(x+223, 22, V_YELLOWMAP, "ITEM");
+		V_DrawThinString(x+229, 31, V_YELLOWMAP, "BOX");
 
 		// Score
 		V_DrawRightAlignedString(x+288, 32, V_YELLOWMAP, "SCORE");
@@ -629,15 +671,15 @@ void Y_IntermissionDrawer(void)
 
 				sstrtime[sizeof sstrtime - 1] = '\0';
 				// Time
-				V_DrawRightAlignedThinString(x+160, y, ((data.competition.times[i] & 0x80000000) ? V_YELLOWMAP : 0), sstrtime);
+				V_DrawRightAlignedThinString(x+160, y-1, ((data.competition.times[i] & 0x80000000) ? V_YELLOWMAP : 0), sstrtime);
 				// Rings
-				V_DrawRightAlignedThinString(x+188, y, V_MONOSPACE|((data.competition.rings[i] & 0x80000000) ? V_YELLOWMAP : 0), va("%u", pring));
+				V_DrawRightAlignedThinString(x+188, y-1, V_MONOSPACE|((data.competition.rings[i] & 0x80000000) ? V_YELLOWMAP : 0), va("%u", pring));
 				// Total rings
-				V_DrawRightAlignedThinString(x+216, y, V_MONOSPACE|((data.competition.maxrings[i] & 0x80000000) ? V_YELLOWMAP : 0), va("%u", pmaxring));
+				V_DrawRightAlignedThinString(x+216, y-1, V_MONOSPACE|((data.competition.maxrings[i] & 0x80000000) ? V_YELLOWMAP : 0), va("%u", pmaxring));
 				// Monitors
-				V_DrawRightAlignedThinString(x+244, y, V_MONOSPACE|((data.competition.monitors[i] & 0x80000000) ? V_YELLOWMAP : 0), va("%u", pmonitor));
+				V_DrawRightAlignedThinString(x+244, y-1, V_MONOSPACE|((data.competition.monitors[i] & 0x80000000) ? V_YELLOWMAP : 0), va("%u", pmonitor));
 				// Score
-				V_DrawRightAlignedThinString(x+288, y, V_MONOSPACE|((data.competition.scores[i] & 0x80000000) ? V_YELLOWMAP : 0), va("%u", pscore));
+				V_DrawRightAlignedThinString(x+288, y-1, V_MONOSPACE|((data.competition.scores[i] & 0x80000000) ? V_YELLOWMAP : 0), va("%u", pscore));
 				// Final Points
 				V_DrawRightAlignedString(x+312, y, V_YELLOWMAP, va("%d", data.competition.points[i]));
 			}
@@ -750,10 +792,10 @@ void Y_Ticker(void)
 			// Update when done with tally
 			if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && !demoplayback)
 			{
-				if (M_UpdateUnlockablesAndExtraEmblems())
+				if (M_UpdateUnlockablesAndExtraEmblems(false))
 					S_StartSound(NULL, sfx_ncitem);
 
-				G_SaveGameData();
+				G_SaveGameData(false);
 			}
 		}
 		else if (!(intertic & 1))
@@ -817,10 +859,10 @@ void Y_Ticker(void)
 			// Update when done with tally
 			if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && !demoplayback)
 			{
-				if (M_UpdateUnlockablesAndExtraEmblems())
+				if (M_UpdateUnlockablesAndExtraEmblems(false))
 					S_StartSound(NULL, sfx_ncitem);
 
-				G_SaveGameData();
+				G_SaveGameData(false);
 			}
 		}
 		else if (!(intertic & 1))
@@ -907,10 +949,13 @@ static void Y_UpdateRecordReplays(void)
 	if ((mainrecords[gamemap-1]->time == 0) || (players[consoleplayer].realtime < mainrecords[gamemap-1]->time))
 		mainrecords[gamemap-1]->time = players[consoleplayer].realtime;
 
+	if ((mainrecords[gamemap-1]->lap == 0) || (bestlap < mainrecords[gamemap-1]->lap))
+		mainrecords[gamemap-1]->lap = bestlap;
+
 	// Save demo!
 	bestdemo[255] = '\0';
 	lastdemo[255] = '\0';
-	G_SetDemoTime(players[consoleplayer].realtime, 0);
+	G_SetDemoTime(players[consoleplayer].realtime, bestlap);
 	G_CheckDemoStatus();
 
 	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
@@ -934,6 +979,15 @@ static void Y_UpdateRecordReplays(void)
 				remove(bestdemo);
 			FIL_WriteFile(bestdemo, buf, len);
 			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
+		}
+
+		snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
+		if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
+		{ // Better lap time, save this demo.
+			if (FIL_FileExists(bestdemo))
+				remove(bestdemo);
+			FIL_WriteFile(bestdemo, buf, len);
+			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD LAP!"), M_GetText("Saved replay as"), bestdemo);
 		}
 
 		//CONS_Printf("%s '%s'\n", M_GetText("Saved replay as"), lastdemo);
@@ -1033,7 +1087,7 @@ void Y_StartIntermission(void)
 	{
 		case int_nights:
 			// Can't fail
-			G_SetNightsRecords();
+			//G_SetNightsRecords();
 
 			// Check records
 			{
@@ -1059,10 +1113,10 @@ void Y_StartIntermission(void)
 				mapvisited[gamemap-1] |= MV_BEATEN;
 				if (ALL7EMERALDS(emeralds))
 					mapvisited[gamemap-1] |= MV_ALLEMERALDS;
-				if (ultimatemode)
+				/*if (ultimatemode)
 					mapvisited[gamemap-1] |= MV_ULTIMATE;
 				if (data.coop.gotperfbonus)
-					mapvisited[gamemap-1] |= MV_PERFECT;
+					mapvisited[gamemap-1] |= MV_PERFECT;*/
 
 				if (modeattacking == ATTACKING_RECORD)
 					Y_UpdateRecordReplays();
@@ -1073,10 +1127,10 @@ void Y_StartIntermission(void)
 			data.coop.ptotal = W_CachePatchName("YB_TOTAL", PU_STATIC);
 
 			// get act number
-			if (mapheaderinfo[prevmap]->actnum)
+			/*if (mapheaderinfo[prevmap]->actnum)
 				data.coop.ttlnum = W_CachePatchName(va("TTL%.2d", mapheaderinfo[prevmap]->actnum),
 					PU_STATIC);
-			else
+			else*/
 				data.coop.ttlnum = W_CachePatchName("TTL01", PU_STATIC);
 
 			// get background patches
@@ -1105,24 +1159,24 @@ void Y_StartIntermission(void)
 			if (strlen(skins[players[consoleplayer].skin].realname) > 13)
 			{
 				strcpy(data.coop.passed1, "YOU GOT");
-				strcpy(data.coop.passed2, (mapheaderinfo[gamemap-1]->actnum) ? "THROUGH ACT" : "THROUGH THE ACT");
+				strcpy(data.coop.passed2, (strlen(mapheaderinfo[prevmap]->actnum) > 0) ? "THROUGH ACT" : "THROUGH THE ACT");
 			}
 			// long enough that "X GOT" won't fit so use "X PASSED THE ACT"
 			else if (strlen(skins[players[consoleplayer].skin].realname) > 8)
 			{
 				strcpy(data.coop.passed1, skins[players[consoleplayer].skin].realname);
-				strcpy(data.coop.passed2, (mapheaderinfo[gamemap-1]->actnum) ? "PASSED ACT" : "PASSED THE ACT");
+				strcpy(data.coop.passed2, (strlen(mapheaderinfo[prevmap]->actnum) > 0) ? "PASSED ACT" : "PASSED THE ACT");
 			}
 			// length is okay for normal use
 			else
 			{
 				snprintf(data.coop.passed1, sizeof data.coop.passed1, "%s GOT",
 					skins[players[consoleplayer].skin].realname);
-				strcpy(data.coop.passed2, (mapheaderinfo[gamemap-1]->actnum) ? "THROUGH ACT" : "THROUGH THE ACT");
+				strcpy(data.coop.passed2, (strlen(mapheaderinfo[prevmap]->actnum) > 0) ? "THROUGH ACT" : "THROUGH THE ACT");
 			}
 
 			// set X positions
-			if (mapheaderinfo[gamemap-1]->actnum)
+			if (strlen(mapheaderinfo[prevmap]->actnum) > 0)
 			{
 				data.coop.passedx1 = 62 + (176 - V_LevelNameWidth(data.coop.passed1))/2;
 				data.coop.passedx2 = 62 + (176 - V_LevelNameWidth(data.coop.passed2))/2;
@@ -1263,12 +1317,12 @@ void Y_StartIntermission(void)
 			Y_CalculateMatchWinners();
 
 			// set up the levelstring
-			if (mapheaderinfo[prevmap]->zonttl)
+			if (strlen(mapheaderinfo[prevmap]->zonttl) > 0)
 			{
-				if (mapheaderinfo[prevmap]->actnum)
+				if (strlen(mapheaderinfo[prevmap]->actnum) > 0)
 					snprintf(data.match.levelstring,
 						sizeof data.match.levelstring,
-						"%.32s %.32s * %d *",
+						"%.32s %.32s * %s *",
 						mapheaderinfo[prevmap]->lvlttl, mapheaderinfo[prevmap]->zonttl, mapheaderinfo[prevmap]->actnum);
 				else
 					snprintf(data.match.levelstring,
@@ -1278,10 +1332,10 @@ void Y_StartIntermission(void)
 			}
 			else
 			{
-				if (mapheaderinfo[prevmap]->actnum)
+				if (strlen(mapheaderinfo[prevmap]->actnum) > 0)
 					snprintf(data.match.levelstring,
 						sizeof data.match.levelstring,
-						"%.32s * %d *",
+						"%.32s * %s *",
 						mapheaderinfo[prevmap]->lvlttl, mapheaderinfo[prevmap]->actnum);
 				else
 					snprintf(data.match.levelstring,
@@ -1308,30 +1362,30 @@ void Y_StartIntermission(void)
 			{
 				// setup time data
 				data.coop.tics = players[consoleplayer].realtime;
-				
+
 				// Update visitation flags
 				mapvisited[gamemap-1] |= MV_BEATEN;
 				if (ALL7EMERALDS(emeralds))
 					mapvisited[gamemap-1] |= MV_ALLEMERALDS;
-				if (ultimatemode)
+				/*if (ultimatemode)
 					mapvisited[gamemap-1] |= MV_ULTIMATE;
 				if (data.coop.gotperfbonus)
-					mapvisited[gamemap-1] |= MV_PERFECT;
+					mapvisited[gamemap-1] |= MV_PERFECT;*/
 
 				if (modeattacking == ATTACKING_RECORD)
 					Y_UpdateRecordReplays();
 			}
-			
+
 			// Calculate who won
 			Y_CalculateTournamentPoints();
 
 			// set up the levelstring
-			if (mapheaderinfo[prevmap]->zonttl)
+			if (strlen(mapheaderinfo[prevmap]->zonttl) > 0)
 			{
-				if (mapheaderinfo[prevmap]->actnum)
+				if (strlen(mapheaderinfo[prevmap]->actnum) > 0)
 					snprintf(data.match.levelstring,
 						sizeof data.match.levelstring,
-						"%.32s %.32s * %d *",
+						"%.32s %.32s * %s *",
 						mapheaderinfo[prevmap]->lvlttl, mapheaderinfo[prevmap]->zonttl, mapheaderinfo[prevmap]->actnum);
 				else
 					snprintf(data.match.levelstring,
@@ -1341,10 +1395,10 @@ void Y_StartIntermission(void)
 			}
 			else
 			{
-				if (mapheaderinfo[prevmap]->actnum)
+				if (strlen(mapheaderinfo[prevmap]->actnum) > 0)
 					snprintf(data.match.levelstring,
 						sizeof data.match.levelstring,
-						"%.32s * %d *",
+						"%.32s * %s *",
 						mapheaderinfo[prevmap]->lvlttl, mapheaderinfo[prevmap]->actnum);
 				else
 					snprintf(data.match.levelstring,
@@ -1371,10 +1425,10 @@ void Y_StartIntermission(void)
 			Y_CalculateMatchWinners();
 
 			// set up the levelstring
-			if (mapheaderinfo[prevmap]->actnum)
+			if (strlen(mapheaderinfo[prevmap]->actnum) > 0)
 				snprintf(data.match.levelstring,
 					sizeof data.match.levelstring,
-					"%.32s * %d *",
+					"%.32s * %s *",
 					mapheaderinfo[prevmap]->lvlttl, mapheaderinfo[prevmap]->actnum);
 			else
 				snprintf(data.match.levelstring,
@@ -1407,10 +1461,10 @@ void Y_StartIntermission(void)
 			Y_CalculateCompetitionWinners();
 
 			// set up the levelstring
-			if (mapheaderinfo[prevmap]->actnum)
+			if (strlen(mapheaderinfo[prevmap]->actnum) > 0)
 				snprintf(data.competition.levelstring,
 					sizeof data.competition.levelstring,
-					"%.32s * %d *",
+					"%.32s * %s *",
 					mapheaderinfo[prevmap]->lvlttl, mapheaderinfo[prevmap]->actnum);
 			else
 				snprintf(data.competition.levelstring,
@@ -2075,4 +2129,556 @@ static void Y_UnloadData(void)
 			//are not handled
 			break;
 	}
+}
+
+// SRB2Kart: Voting!
+
+//
+// Y_VoteDrawer
+//
+// Draws the voting screen!
+//
+void Y_VoteDrawer(void)
+{
+	INT32 i, x, y = 0, height = 0;
+	UINT8 selected[4];
+
+	if (rendermode == render_none)
+		return;
+
+	if (votetic >= voteendtic && voteendtic != -1)
+		return;
+
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+
+	if (widebgpatch && rendermode == render_soft && vid.width / vid.dupx > 320)
+		V_DrawScaledPatch(((vid.width/2) / vid.dupx) - (SHORT(widebgpatch->width)/2),
+							(vid.height / vid.dupy) - SHORT(widebgpatch->height),
+							V_SNAPTOTOP|V_SNAPTOLEFT, widebgpatch);
+	else
+		V_DrawScaledPatch(((vid.width/2) / vid.dupx) - (SHORT(bgpatch->width)/2), // Keep the width/height adjustments, for screens that are less wide than 320(?)
+							(vid.height / vid.dupy) - SHORT(bgpatch->height),
+							V_SNAPTOTOP|V_SNAPTOLEFT, bgpatch);
+
+	for (i = 0; i < 4; i++) // First, we need to figure out the height of this thing...
+	{
+		UINT8 j;
+		selected[i] = 0; // Initialize
+
+		for (j = 0; j <= splitscreen; j++)
+		{
+			if (voteclient.playerinfo[j].selection == i)
+				selected[i]++;
+		}
+
+		if (selected[i])
+			height += 50;
+		else
+			height += 25;
+
+		if (i < 3)
+			height += 5-splitscreen;
+	}
+
+	y = (200-height)/2;
+	for (i = 0; i < 4; i++)
+	{
+		char str[40];
+		patch_t *pic;
+		UINT8 sizeadd = selected[i];
+		UINT8 j;
+		UINT8 color;
+
+		if (i == 3)
+		{
+			snprintf(str, sizeof str, "%.32s", "RANDOM");
+			str[sizeof str - 1] = '\0';
+			pic = randomlvl;
+		}
+		else
+		{
+			strcpy(str, levelinfo[i].str);
+			pic = levelinfo[i].pic;
+		}
+
+		if (selected[i])
+		{
+			for (j = 0; j <= splitscreen; j++) // another loop for drawing the selection backgrounds in the right order, grumble grumble..
+			{
+				INT32 handy = y;
+				UINT8 *colormap;
+				patch_t *thiscurs;
+
+				if (voteclient.playerinfo[j].selection != i)
+					continue;
+
+				if (splitscreen == 0)
+				{
+					thiscurs = cursor;
+					color = colortranslations[players[consoleplayer].skincolor][7];
+					colormap = NULL;
+				}
+				else
+				{
+					switch (j)
+					{
+						case 1:
+							thiscurs = cursor2;
+							color = colortranslations[players[secondarydisplayplayer].skincolor][7];
+							colormap = R_GetTranslationColormap(-1, players[secondarydisplayplayer].skincolor, GTC_CACHE);
+							break;
+						case 2:
+							thiscurs = cursor3;
+							color = colortranslations[players[thirddisplayplayer].skincolor][7];
+							colormap = R_GetTranslationColormap(-1, players[thirddisplayplayer].skincolor, GTC_CACHE);
+							break;
+						case 3:
+							thiscurs = cursor4;
+							color = colortranslations[players[fourthdisplayplayer].skincolor][7];
+							colormap = R_GetTranslationColormap(-1, players[fourthdisplayplayer].skincolor, GTC_CACHE);
+							break;
+						default:
+							thiscurs = cursor1;
+							color = colortranslations[players[consoleplayer].skincolor][7];
+							colormap = R_GetTranslationColormap(-1, players[consoleplayer].skincolor, GTC_CACHE);
+							break;
+					}
+				}
+
+				handy += 6*(3-splitscreen) + (13*j);
+				V_DrawMappedPatch(BASEVIDWIDTH-124, handy, V_SNAPTORIGHT, thiscurs, colormap);
+
+				if (votetic % 5 == 0)
+					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), 120|V_SNAPTORIGHT);
+				else
+					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), color|V_SNAPTORIGHT);
+
+				sizeadd--;
+			}
+
+			V_DrawSmallScaledPatch(BASEVIDWIDTH-100, y, V_SNAPTORIGHT, pic);
+			V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 40+y, V_SNAPTORIGHT, str);
+			y += 50;
+		}
+		else
+		{
+			V_DrawTinyScaledPatch(BASEVIDWIDTH-60, y, V_SNAPTORIGHT, pic);
+			y += 25;
+		}
+
+		y += 5-splitscreen;
+	}
+
+	x = 20;
+	y = 10;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (dedicated && i == 0) // While leaving blank spots for non-existent players is largely intentional, the first spot *always* being blank looks a tad silly :V
+			continue;
+
+		if ((playeringame[i] && !players[i].spectator) && votes[i] != -1)
+		{
+			patch_t *pic;
+
+			if (votes[i] == 3 && (i != pickedvote || voteendtic == -1))
+				pic = randomlvl;
+			else
+				pic = levelinfo[votes[i]].pic;
+
+			if (!timer && i == voteclient.ranim)
+			{
+				V_DrawScaledPatch(x-18, y+9, V_SNAPTOLEFT, cursor);
+				if (votetic % 4 > 1)
+					V_DrawFill(x-1, y-1, 42, 27, 120|V_SNAPTOLEFT);
+				else
+					V_DrawFill(x-1, y-1, 42, 27, 103|V_SNAPTOLEFT);
+			}
+
+			V_DrawTinyScaledPatch(x, y, V_SNAPTOLEFT, pic);
+
+			if (players[i].skincolor == 0)
+				V_DrawSmallScaledPatch(x+24, y+9, V_SNAPTOLEFT, faceprefix[players[i].skin]);
+			else
+			{
+				UINT8 *colormap = R_GetTranslationColormap(players[i].skin, players[i].skincolor, GTC_CACHE);
+				V_DrawSmallMappedPatch(x+24, y+9, V_SNAPTOLEFT, faceprefix[players[i].skin], colormap);
+			}
+		}
+
+		y += 30;
+
+		if (y > BASEVIDHEIGHT-40)
+		{
+			x += 60;
+			y = 10;
+		}
+	}
+
+	if (timer)
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP|V_SNAPTOBOTTOM,
+			va("Vote ends in %d seconds", timer/TICRATE));
+}
+
+//
+// Y_VoteTicker
+//
+// Vote screen thinking :eggthinking:
+//
+void Y_VoteTicker(void)
+{
+	INT32 i;
+
+	if (paused || P_AutoPause())
+		return;
+
+	votetic++;
+
+	if (votetic == voteendtic)
+	{
+		Y_UnloadVoteData(); // Y_EndVote resets voteendtic too early apparently, causing the game to try to render patches that we just unloaded...
+		Y_FollowIntermission();
+		return;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++) // Correct votes as early as possible, before they're processed by the game at all
+	{
+		if (!playeringame[i] || players[i].spectator)
+			votes[i] = -1; // Spectators are the lower class, and have effectively no voice in the government. Democracy sucks.
+		else if (pickedvote != -1 && votes[i] == -1)
+			votes[i] = 3; // Slow people get random
+	}
+
+	if (server && pickedvote != -1 && votes[pickedvote] == -1) // Uh oh! The person who got picked left! Recalculate, quick!
+		D_PickVote();
+
+	if (!votetic)
+		S_ChangeMusicInternal("vote", true);
+
+	if (timer)
+		timer--;
+
+	if (pickedvote != -1)
+	{
+		timer = 0;
+		voteclient.rsynctime++;
+
+		if (voteendtic == -1)
+		{
+			UINT8 tempvotes[MAXPLAYERS];
+			UINT8 numvotes = 0;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (votes[i] == -1)
+					continue;
+				tempvotes[numvotes] = i;
+				numvotes++;
+			}
+
+			if (numvotes < 1) // Whoops! Get outta here.
+			{
+				Y_UnloadVoteData();
+				Y_FollowIntermission();
+				return;
+			}
+
+			voteclient.rtics--;
+
+			if (voteclient.rtics <= 0)
+			{
+				voteclient.roffset++;
+				voteclient.rtics = min(20, (3*voteclient.roffset/4)+5);
+				S_StartSound(NULL, sfx_kc39);
+			}
+
+			if (voteclient.rendoff == 0 || voteclient.roffset < voteclient.rendoff)
+				voteclient.ranim = tempvotes[((pickedvote + voteclient.roffset) % numvotes)];
+
+			if (voteclient.roffset >= 20)
+			{
+				if (voteclient.rendoff == 0)
+				{
+					if (tempvotes[((pickedvote + voteclient.roffset + 4) % numvotes)] == pickedvote
+						&& voteclient.rsynctime % 51 == 0) // Song is 1.45 seconds long (sorry @ whoever wants to replace it in a music wad :V)
+					{
+						voteclient.rendoff = voteclient.roffset+4;
+						S_ChangeMusicInternal("voteeb", false);
+					}
+				}
+				else if (voteclient.roffset >= voteclient.rendoff)
+				{
+					voteendtic = votetic + (3*TICRATE);
+					S_StartSound(NULL, sfx_kc48);
+				}
+			}
+		}
+		else
+			voteclient.ranim = pickedvote;
+	}
+	else
+	{
+		if (votetic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
+			return;
+
+		for (i = 0; i <= splitscreen; i++)
+		{
+			UINT8 p;
+			boolean pressed = false;
+
+			switch (i)
+			{
+				case 1:
+					p = secondarydisplayplayer;
+					break;
+				case 2:
+					p = thirddisplayplayer;
+					break;
+				case 3:
+					p = fourthdisplayplayer;
+					break;
+				default:
+					p = consoleplayer;
+					break;
+			}
+
+			if (voteclient.playerinfo[i].delay)
+				voteclient.playerinfo[i].delay--;
+
+			if ((playeringame[p] && !players[p].spectator)
+				&& !voteclient.playerinfo[i].delay
+				&& pickedvote == -1 && votes[p] == -1)
+			{
+				if (InputDown(gc_aimforward, i+1) || JoyAxis(AXISAIM, i+1) < 0)
+				{
+					voteclient.playerinfo[i].selection--;
+					pressed = true;
+				}
+
+				if ((InputDown(gc_aimbackward, i+1) || JoyAxis(AXISAIM, i+1) > 0) && !pressed)
+				{
+					voteclient.playerinfo[i].selection++;
+					pressed = true;
+				}
+
+				if (voteclient.playerinfo[i].selection < 0)
+					voteclient.playerinfo[i].selection = 3;
+				if (voteclient.playerinfo[i].selection > 3)
+					voteclient.playerinfo[i].selection = 0;
+
+				if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
+				{
+					D_ModifyClientVote(voteclient.playerinfo[i].selection, i);
+					pressed = true;
+				}
+			}
+
+			if (pressed)
+			{
+				S_StartSound(NULL, sfx_kc4a);
+				voteclient.playerinfo[i].delay = NEWTICRATE/7;
+			}
+		}
+
+		if (server)
+		{
+			if (timer == 0)
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
+						votes[i] = 3;
+				}
+			}
+			else
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
+						return;
+				}
+			}
+
+			timer = 0;
+			if (voteendtic == -1)
+				D_PickVote();
+		}
+	}
+}
+
+//
+// Y_StartVote
+//
+// MK online style voting screen, appears after intermission
+//
+void Y_StartVote(void)
+{
+	INT32 i = 0;
+
+	votetic = -1;
+
+#ifdef PARANOIA
+	if (voteendtic != -1)
+		I_Error("voteendtic is dirty");
+#endif
+
+	widebgpatch = W_CachePatchName("INTERSCW", PU_STATIC);
+	bgpatch = W_CachePatchName("INTERSCR", PU_STATIC);
+	cursor = W_CachePatchName("M_CURSOR", PU_STATIC);
+	cursor1 = W_CachePatchName("P1CURSOR", PU_STATIC);
+	cursor2 = W_CachePatchName("P2CURSOR", PU_STATIC);
+	cursor3 = W_CachePatchName("P3CURSOR", PU_STATIC);
+	cursor4 = W_CachePatchName("P4CURSOR", PU_STATIC);
+	randomlvl = W_CachePatchName("RANDOMLV", PU_STATIC);
+
+	timer = cv_votetime.value*TICRATE;
+	pickedvote = -1;
+
+	for (i = 0; i < 3; i++)
+	{
+		voteclient.playerinfo[i].selection = 0;
+		voteclient.playerinfo[i].delay = 0;
+	}
+
+	voteclient.ranim = 0;
+	voteclient.rtics = 1;
+	voteclient.roffset = 0;
+	voteclient.rsynctime = 0;
+	voteclient.rendoff = 0;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		votes[i] = -1;
+
+	for (i = 0; i < 4; i++)
+	{
+		lumpnum_t lumpnum;
+
+		// set up the str
+		if (strlen(mapheaderinfo[votelevels[i]]->zonttl) > 0)
+		{
+			if (strlen(mapheaderinfo[votelevels[i]]->actnum) > 0)
+				snprintf(levelinfo[i].str,
+					sizeof levelinfo[i].str,
+					"%.32s %.32s %s",
+					mapheaderinfo[votelevels[i]]->lvlttl, mapheaderinfo[votelevels[i]]->zonttl, mapheaderinfo[votelevels[i]]->actnum);
+			else
+				snprintf(levelinfo[i].str,
+					sizeof levelinfo[i].str,
+					"%.32s %.32s",
+					mapheaderinfo[votelevels[i]]->lvlttl, mapheaderinfo[votelevels[i]]->zonttl);
+		}
+		else
+		{
+			if (strlen(mapheaderinfo[votelevels[i]]->actnum) > 0)
+				snprintf(levelinfo[i].str,
+					sizeof levelinfo[i].str,
+					"%.32s %s",
+					mapheaderinfo[votelevels[i]]->lvlttl, mapheaderinfo[votelevels[i]]->actnum);
+			else
+				snprintf(levelinfo[i].str,
+					sizeof levelinfo[i].str,
+					"%.32s",
+					mapheaderinfo[votelevels[i]]->lvlttl);
+		}
+
+		levelinfo[i].str[sizeof levelinfo[i].str - 1] = '\0';
+
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(votelevels[i]+1)));
+		if (lumpnum != LUMPERROR)
+			levelinfo[i].pic = W_CachePatchName(va("%sP", G_BuildMapName(votelevels[i]+1)), PU_STATIC);
+		else
+			levelinfo[i].pic = W_CachePatchName("BLANKLVL", PU_STATIC);
+	}
+}
+
+//
+// Y_EndVote
+//
+void Y_EndVote(void)
+{
+	Y_UnloadVoteData();
+	voteendtic = -1;
+}
+
+//
+// Y_UnloadVoteData
+//
+static void Y_UnloadVoteData(void)
+{
+	if (rendermode != render_soft)
+		return;
+
+	UNLOAD(widebgpatch);
+	UNLOAD(bgpatch);
+	UNLOAD(cursor);
+	UNLOAD(cursor1);
+	UNLOAD(cursor2);
+	UNLOAD(cursor3);
+	UNLOAD(cursor4);
+	UNLOAD(randomlvl);
+
+	UNLOAD(levelinfo[3].pic);
+	UNLOAD(levelinfo[2].pic);
+	UNLOAD(levelinfo[1].pic);
+	UNLOAD(levelinfo[0].pic);
+}
+
+//
+// Y_SetupVoteFinish
+//
+void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
+{
+	if (pick == -1) // No other votes? We gotta get out of here, then!
+	{
+		timer = 0;
+		Y_UnloadVoteData();
+		Y_FollowIntermission();
+		return;
+	}
+
+	if (pickedvote == -1)
+	{
+		INT32 i;
+		SINT8 votecompare = -1;
+		INT32 endtype = 0;
+
+		voteclient.rsynctime = 0;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
+				votes[i] = 3;
+
+			if (votes[i] == -1 || endtype > 1) // Don't need to go on
+				continue;
+
+			if (votecompare == -1)
+			{
+				votecompare = votes[i];
+				endtype = 1;
+			}
+			else if (votes[i] != votecompare)
+				endtype = 2;
+		}
+
+		if (endtype == 0) // Might as well put this here, too.
+		{
+			timer = 0;
+			Y_UnloadVoteData();
+			Y_FollowIntermission();
+			return;
+		}
+		else if (endtype == 1) // Only one unique vote, so just end it immediately.
+		{
+			voteendtic = votetic + (5*TICRATE);
+			S_StartSound(NULL, sfx_kc48);
+			S_ChangeMusicInternal("voteeb", false);
+		}
+		else
+			S_ChangeMusicInternal("voteea", true);
+	}
+
+	pickedvote = pick;
+	nextmap = votelevels[level];
+	timer = 0;
 }

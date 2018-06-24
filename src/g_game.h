@@ -54,11 +54,26 @@ extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard di
 extern INT16 rw_maximums[NUM_WEAPONS];
 
 // used in game menu
-extern consvar_t cv_crosshair, cv_crosshair2;
+extern consvar_t cv_crosshair, cv_crosshair2, cv_crosshair3, cv_crosshair4;
 extern consvar_t cv_invertmouse, cv_alwaysfreelook, cv_mousemove;
-extern consvar_t cv_sideaxis,cv_turnaxis,cv_moveaxis,cv_lookaxis,cv_fireaxis,cv_firenaxis;
-extern consvar_t cv_sideaxis2,cv_turnaxis2,cv_moveaxis2,cv_lookaxis2,cv_fireaxis2,cv_firenaxis2;
-extern consvar_t cv_ghost_bestscore, cv_ghost_besttime, cv_ghost_last, cv_ghost_guest, cv_ghost_staff; //cv_ghost_bestlap
+extern consvar_t cv_turnaxis,cv_moveaxis,cv_brakeaxis,cv_aimaxis,cv_lookaxis,cv_fireaxis,cv_driftaxis;
+extern consvar_t cv_turnaxis2,cv_moveaxis2,cv_brakeaxis2,cv_aimaxis2,cv_lookaxis2,cv_fireaxis2,cv_driftaxis2;
+extern consvar_t cv_turnaxis3,cv_moveaxis3,cv_brakeaxis3,cv_aimaxis3,cv_lookaxis3,cv_fireaxis3,cv_driftaxis3;
+extern consvar_t cv_turnaxis4,cv_moveaxis4,cv_brakeaxis4,cv_aimaxis4,cv_lookaxis4,cv_fireaxis4,cv_driftaxis4;
+extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
+
+typedef enum
+{
+	AXISNONE = 0,
+	AXISTURN,
+	AXISMOVE,
+	AXISBRAKE,
+	AXISAIM,
+	AXISLOOK,
+	AXISDEAD, //Axises that don't want deadzones
+	AXISFIRE,
+	AXISDRIFT,
+} axis_input_e;
 
 // mouseaiming (looking up/down with the mouse or keyboard)
 #define KB_LOOKSPEED (1<<25)
@@ -67,8 +82,7 @@ extern consvar_t cv_ghost_bestscore, cv_ghost_besttime, cv_ghost_last, cv_ghost_
 
 // build an internal map name MAPxx from map number
 const char *G_BuildMapName(INT32 map);
-void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics);
-void G_BuildTiccmd2(ticcmd_t *cmd, INT32 realtics);
+void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 // copy ticcmd_t to and fro the normal way
 ticcmd_t *G_CopyTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
@@ -79,8 +93,12 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
 INT16 G_ClipAimingPitch(INT32 *aiming);
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming);
 
-extern angle_t localangle, localangle2;
-extern INT32 localaiming, localaiming2; // should be an angle_t but signed
+boolean InputDown(INT32 gc, UINT8 p);
+INT32 JoyAxis(axis_input_e axissel, UINT8 p);
+
+extern angle_t localangle, localangle2, localangle3, localangle4;
+extern INT32 localaiming, localaiming2, localaiming3, localaiming4; // should be an angle_t but signed
+extern boolean camspin, camspin2, camspin3, camspin4; // SRB2Kart
 
 //
 // GAME
@@ -95,13 +113,13 @@ char *G_BuildMapTitle(INT32 mapnum);
 // XMOD spawning
 mapthing_t *G_FindCTFStart(INT32 playernum);
 mapthing_t *G_FindMatchStart(INT32 playernum);
-mapthing_t *G_FindCoopStart(INT32 playernum);
+mapthing_t *G_FindRaceStart(INT32 playernum);
 void G_SpawnPlayer(INT32 playernum, boolean starpost);
 
 // Can be called by the startup code or M_Responder.
 // A normal game starts at map 1, but a warp test can start elsewhere
 void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar,
-	boolean SSSG, boolean FLS);
+	UINT8 ssplayers, boolean FLS);
 void G_DoLoadLevel(boolean resetplayer);
 
 void G_DeferedPlayDemo(const char *demo);
@@ -109,7 +127,7 @@ void G_DeferedPlayDemo(const char *demo);
 // Can be called by the startup code or M_Responder, calls P_SetupLevel.
 void G_LoadGame(UINT32 slot, INT16 mapoverride);
 
-void G_SaveGameData(void);
+void G_SaveGameData(boolean force);
 
 void G_SaveGame(UINT32 slot);
 
@@ -120,7 +138,7 @@ void G_BeginRecording(void);
 void G_BeginMetal(void);
 
 // Only called by shutdown code.
-void G_SetDemoTime(UINT32 ptime, UINT32 pscore);
+void G_SetDemoTime(UINT32 ptime, UINT32 plap);
 UINT8 G_CmpDemoTime(char *oldname, char *newname);
 
 typedef enum
@@ -164,8 +182,8 @@ boolean G_IsSpecialStage(INT32 mapnum);
 boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
-boolean G_RingSlingerGametype(void);
-boolean G_PlatformGametype(void);
+boolean G_BattleGametype(void);
+boolean G_RaceGametype(void);
 boolean G_TagGametype(void);
 void G_ExitLevel(void);
 void G_NextLevel(void);
@@ -195,18 +213,19 @@ void G_SetGamestate(gamestate_t newstate);
 
 // Gamedata record shit
 void G_AllocMainRecordData(INT16 i);
-void G_AllocNightsRecordData(INT16 i);
+//void G_AllocNightsRecordData(INT16 i);
 void G_ClearRecords(void);
 
-UINT32 G_GetBestScore(INT16 map);
+//UINT32 G_GetBestScore(INT16 map);
 tic_t G_GetBestTime(INT16 map);
-UINT16 G_GetBestRings(INT16 map);
-UINT32 G_GetBestNightsScore(INT16 map, UINT8 mare);
-tic_t G_GetBestNightsTime(INT16 map, UINT8 mare);
-UINT8 G_GetBestNightsGrade(INT16 map, UINT8 mare);
+//tic_t G_GetBestLap(INT16 map);
+//UINT16 G_GetBestRings(INT16 map);
+//UINT32 G_GetBestNightsScore(INT16 map, UINT8 mare);
+//tic_t G_GetBestNightsTime(INT16 map, UINT8 mare);
+//UINT8 G_GetBestNightsGrade(INT16 map, UINT8 mare);
 
-void G_AddTempNightsRecords(UINT32 pscore, tic_t ptime, UINT8 mare);
-void G_SetNightsRecords(void);
+//void G_AddTempNightsRecords(UINT32 pscore, tic_t ptime, UINT8 mare);
+//void G_SetNightsRecords(void);
 
 FUNCMATH INT32 G_TicsToHours(tic_t tics);
 FUNCMATH INT32 G_TicsToMinutes(tic_t tics, boolean full);
@@ -216,5 +235,7 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 
 // Don't split up TOL handling
 INT16 G_TOLFlag(INT32 pgametype);
+
+INT16 G_RandMap(INT16 tolflags, INT16 pprevmap, boolean dontadd, boolean ignorebuffer);
 
 #endif

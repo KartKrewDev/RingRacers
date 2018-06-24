@@ -59,7 +59,7 @@ typedef struct GLRGBAFloat GLRGBAFloat;
 #define      N_PI_DEMI               (M_PIl/2.0f) //(1.5707963268f)
 
 #define      ASPECT_RATIO            (1.0f)  //(320.0f/200.0f)
-#define      FAR_CLIPPING_PLANE      150000.0f // Draw further! Tails 01-21-2001
+#define      FAR_CLIPPING_PLANE      32768.0f // Draw further! Tails 01-21-2001
 static float NEAR_CLIPPING_PLANE =   NZCLIP_PLANE;
 
 // **************************************************************************
@@ -107,10 +107,19 @@ static GLint       viewport[4];
 #endif
 
 // Yay for arbitrary  numbers! NextTexAvail is buggy for some reason.
-static GLuint screentexture = 60000;
-static GLuint startScreenWipe = 60001;
-static GLuint endScreenWipe = 60002;
-static GLuint finalScreenTexture = 60003;
+// Sryder:	NextTexAvail is broken for these because palette changes or changes to the texture filter or antialiasing
+//			flush all of the stored textures, leaving them unavailable at times such as between levels
+//			These need to start at 0 and be set to their number, and be reset to 0 when deleted so that intel GPUs
+//			can know when the textures aren't there, as textures are always considered resident in their virtual memory
+// TODO:	Store them in a more normal way
+#define SCRTEX_SCREENTEXTURE 65535
+#define SCRTEX_STARTSCREENWIPE 65534
+#define SCRTEX_ENDSCREENWIPE 65533
+#define SCRTEX_FINALSCREENTEXTURE 65532
+static GLuint screentexture = 0;
+static GLuint startScreenWipe = 0;
+static GLuint endScreenWipe = 0;
+static GLuint finalScreenTexture = 0;
 #if 0
 GLuint screentexture = FIRST_TEX_AVAIL;
 #endif
@@ -263,6 +272,7 @@ FUNCPRINTF void DBG_Printf(const char *lpFmt, ...)
 /* texture mapping */ //GL_EXT_copy_texture
 #ifndef KOS_GL_COMPATIBILITY
 #define pglCopyTexImage2D glCopyTexImage2D
+#define pglCopyTexSubImage2D glCopyTexSubImage2D
 #endif
 
 #else //!STATIC_OPENGL
@@ -387,6 +397,8 @@ static PFNglBindTexture pglBindTexture;
 /* texture mapping */ //GL_EXT_copy_texture
 typedef void (APIENTRY * PFNglCopyTexImage2D) (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
 static PFNglCopyTexImage2D pglCopyTexImage2D;
+typedef void (APIENTRY * PFNglCopyTexSubImage2D) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+static PFNglCopyTexSubImage2D pglCopyTexSubImage2D;
 #endif
 /* GLU functions */
 typedef GLint (APIENTRY * PFNgluBuild2DMipmaps) (GLenum target, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *data);
@@ -503,6 +515,7 @@ boolean SetupGLfunc(void)
 	GETOPENGLFUNC(pglBindTexture , glBindTexture)
 
 	GETOPENGLFUNC(pglCopyTexImage2D , glCopyTexImage2D)
+	GETOPENGLFUNC(pglCopyTexSubImage2D , glCopyTexSubImage2D)
 
 #undef GETOPENGLFUNC
 
@@ -654,6 +667,10 @@ void SetModelView(GLint w, GLint h)
 {
 //	DBG_Printf("SetModelView(): %dx%d\n", (int)w, (int)h);
 
+	// The screen textures need to be flushed if the width or height change so that they be remade for the correct size
+	if (screen_width != w || screen_height != h)
+		FlushScreenTextures();
+
 	screen_width = w;
 	screen_height = h;
 
@@ -801,6 +818,7 @@ void Flush(void)
 		screentexture = FIRST_TEX_AVAIL;
 	}
 #endif
+
 	tex_downloaded = 0;
 }
 
@@ -1056,11 +1074,17 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags)
 			switch (PolyFlags & PF_Blending) {
 				case PF_Translucent & PF_Blending:
 					pglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // alpha = level of transparency
+#ifndef KOS_GL_COMPATIBILITY
+					pglAlphaFunc(GL_NOTEQUAL, 0.0f);
+#endif
 					break;
 				case PF_Masked & PF_Blending:
 					// Hurdler: does that mean lighting is only made by alpha src?
 					// it sounds ok, but not for polygonsmooth
 					pglBlendFunc(GL_SRC_ALPHA, GL_ZERO);                // 0 alpha = holes in texture
+#ifndef KOS_GL_COMPATIBILITY
+					pglAlphaFunc(GL_GREATER, 0.5f);
+#endif
 					break;
 				case PF_Additive & PF_Blending:
 #ifdef ATI_RAGE_PRO_COMPATIBILITY
@@ -1068,18 +1092,38 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags)
 #else
 					pglBlendFunc(GL_SRC_ALPHA, GL_ONE);                 // src * alpha + dest
 #endif
+#ifndef KOS_GL_COMPATIBILITY
+					pglAlphaFunc(GL_NOTEQUAL, 0.0f);
+#endif
 					break;
 				case PF_Environment & PF_Blending:
 					pglBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+#ifndef KOS_GL_COMPATIBILITY
+					pglAlphaFunc(GL_NOTEQUAL, 0.0f);
+#endif
 					break;
 				case PF_Substractive & PF_Blending:
 					// good for shadow
 					// not realy but what else ?
 					pglBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+#ifndef KOS_GL_COMPATIBILITY
+					pglAlphaFunc(GL_NOTEQUAL, 0.0f);
+#endif
+					break;
+				case PF_Fog & PF_Fog:
+					// Sryder: Fog
+					// multiplies input colour by input alpha, and destination colour by input colour, then adds them
+					pglBlendFunc(GL_SRC_ALPHA, GL_SRC_COLOR);
+#ifndef KOS_GL_COMPATIBILITY
+					pglAlphaFunc(GL_NOTEQUAL, 0.0f);
+#endif
 					break;
 				default : // must be 0, otherwise it's an error
 					// No blending
 					pglBlendFunc(GL_ONE, GL_ZERO);   // the same as no blending
+#ifndef KOS_GL_COMPATIBILITY
+					pglAlphaFunc(GL_GREATER, 0.5f);
+#endif
 					break;
 			}
 		}
@@ -1339,6 +1383,7 @@ EXPORT void HWRAPI(SetTexture) (FTextureInfo *pTexInfo)
 						tex[w*j+i].s.green = 0;
 						tex[w*j+i].s.blue  = 0;
 						tex[w*j+i].s.alpha = 0;
+						pTexInfo->flags |= TF_TRANSPARENT; // there is a hole in it
 					}
 					else
 					{
@@ -1409,8 +1454,22 @@ EXPORT void HWRAPI(SetTexture) (FTextureInfo *pTexInfo)
 		tex_downloaded = pTexInfo->downloaded;
 		pglBindTexture(GL_TEXTURE_2D, pTexInfo->downloaded);
 
-		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
-		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+		// disable texture filtering on any texture that has holes so there's no dumb borders or blending issues
+		if (pTexInfo->flags & TF_TRANSPARENT)
+		{
+#ifdef KOS_GL_COMPATIBILITY
+			pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NONE);
+			pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NONE);
+#else
+			pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+#endif
+		}
+		else
+		{
+			pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
+			pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+		}
 
 #ifdef KOS_GL_COMPATIBILITY
 		pglTexImage2D(GL_TEXTURE_2D, 0, GL_ARGB4444, w, h, 0, GL_ARGB4444, GL_UNSIGNED_BYTE, ptex);
@@ -1819,15 +1878,14 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 	}
 }
 
-static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration, UINT32 tics, md2_frame_t *nextframe, FTransform *pos, float scale, UINT8 flipped, UINT8 *color)
+static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, INT32 duration, INT32 tics, md2_frame_t *nextframe, FTransform *pos, float scale, UINT8 flipped, UINT8 *color)
 {
 	INT32     val, count, pindex;
 	GLfloat s, t;
 	GLfloat ambient[4];
 	GLfloat diffuse[4];
 
-	float pol;
-	UINT32 newtime;
+	float pol = 0.0f;
 	float scalex = scale, scaley = scale, scalez = scale;
 
 	// Because Otherwise, scaling the screen negatively vertically breaks the lighting
@@ -1835,18 +1893,18 @@ static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration
 	GLfloat LightPos[] = {0.0f, 1.0f, 0.0f, 0.0f};
 #endif
 
-	if (duration == 0)
-		duration = 1;
+	if (duration != 0 && duration != -1 && tics != -1) // don't interpolate if instantaneous or infinite in length
+	{
+		UINT32 newtime = (duration - tics); // + 1;
 
-	newtime = (duration - tics) + 1;
+		pol = (newtime)/(float)duration;
 
-	pol = (newtime)/(float)duration;
+		if (pol > 1.0f)
+			pol = 1.0f;
 
-	if (pol > 1.0f)
-		pol = 1.0f;
-
-	if (pol < 0.0f)
-		pol = 0.0f;
+		if (pol < 0.0f)
+			pol = 0.0f;
+	}
 
 	if (color)
 	{
@@ -1865,24 +1923,20 @@ static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration
 			ambient[1] = 0.75f;
 		if (ambient[2] > 0.75f)
 			ambient[2] = 0.75f;
-
-		if (color[3] < 255)
-		{
-			pglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			pglDepthMask(GL_FALSE);
-		}
 	}
 
 	pglEnable(GL_CULL_FACE);
 
-	// pos->flip is if the screen is flipped too
-	if (flipped != pos->flip) // If either are active, but not both, invert the model's culling
+	// flipped is if the object is flipped
+	// pos->flip is if the screen is flipped vertically
+	// pos->mirror is if the screen is flipped horizontally
+	// XOR all the flips together to figure out what culling to use!
 	{
-		pglCullFace(GL_FRONT);
-	}
-	else
-	{
-		pglCullFace(GL_BACK);
+		boolean reversecull = (flipped ^ pos->flip ^ pos->mirror);
+		if (reversecull)
+			pglCullFace(GL_FRONT);
+		else
+			pglCullFace(GL_BACK);
 	}
 
 #ifndef KOS_GL_COMPATIBILITY
@@ -1897,9 +1951,11 @@ static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration
 		pglMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
 		pglMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
 #endif
+		if (color[3] < 255)
+			SetBlend(PF_Translucent|PF_Modulated|PF_Clip);
+		else
+			SetBlend(PF_Masked|PF_Modulated|PF_Occlude|PF_Clip);
 	}
-
-	DrawPolygon(NULL, NULL, 0, PF_Masked|PF_Modulated|PF_Occlude|PF_Clip);
 
 	pglPushMatrix(); // should be the same as glLoadIdentity
 	//Hurdler: now it seems to work
@@ -1908,14 +1964,6 @@ static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration
 		scaley = -scaley;
 	pglRotatef(pos->angley, 0.0f, -1.0f, 0.0f);
 	pglRotatef(pos->anglex, -1.0f, 0.0f, 0.0f);
-	//pglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // alpha = level of transparency
-
-	// Remove depth mask when the model is transparent so it doesn't cut thorugh sprites // SRB2CBTODO: For all stuff too?!
-	if (color && color[3] < 255)
-	{
-		pglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // alpha = level of transparency
-		pglDepthMask(GL_FALSE);
-	}
 
 	val = *gl_cmd_buffer++;
 
@@ -1940,7 +1988,7 @@ static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration
 
 			pglTexCoord2f(s, t);
 
-			if (!nextframe)
+			if (!nextframe || pol == 0.0f)
 			{
 				pglNormal3f(frame->vertices[pindex].normal[0],
 				            frame->vertices[pindex].normal[1],
@@ -1983,14 +2031,13 @@ static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration
 	if (color)
 		pglDisable(GL_LIGHTING);
 	pglShadeModel(GL_FLAT);
-	pglDepthMask(GL_TRUE);
 	pglDisable(GL_CULL_FACE);
 }
 
 // -----------------+
 // HWRAPI DrawMD2   : Draw an MD2 model with glcommands
 // -----------------+
-EXPORT void HWRAPI(DrawMD2i) (INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration, UINT32 tics, md2_frame_t *nextframe, FTransform *pos, float scale, UINT8 flipped, UINT8 *color)
+EXPORT void HWRAPI(DrawMD2i) (INT32 *gl_cmd_buffer, md2_frame_t *frame, INT32 duration, INT32 tics, md2_frame_t *nextframe, FTransform *pos, float scale, UINT8 flipped, UINT8 *color)
 {
 	DrawMD2Ex(gl_cmd_buffer, frame, duration, tics,  nextframe, pos, scale, flipped, color);
 }
@@ -2006,14 +2053,16 @@ EXPORT void HWRAPI(DrawMD2) (INT32 *gl_cmd_buffer, md2_frame_t *frame, FTransfor
 // -----------------+
 EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 {
-	static INT32 special_splitscreen;
+	static boolean special_splitscreen;
 	pglLoadIdentity();
 	if (stransform)
 	{
 		// keep a trace of the transformation for md2
 		memcpy(&md2_transform, stransform, sizeof (md2_transform));
 
-		if (stransform->flip)
+		if (stransform->mirror)
+			pglScalef(-stransform->scalex, stransform->scaley, -stransform->scalez);
+		else if (stransform->flip)
 			pglScalef(stransform->scalex, -stransform->scaley, -stransform->scalez);
 		else
 			pglScalef(stransform->scalex, stransform->scaley, -stransform->scalez);
@@ -2024,7 +2073,7 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 
 		pglMatrixMode(GL_PROJECTION);
 		pglLoadIdentity();
-		special_splitscreen = (stransform->splitscreen && stransform->fovxangle == 90.0f);
+		special_splitscreen = (stransform->splitscreen == 1 && stransform->fovxangle == 90.0f);
 		if (special_splitscreen)
 			GLPerspective(53.13l, 2*ASPECT_RATIO);  // 53.13 = 2*atan(0.5)
 		else
@@ -2136,10 +2185,25 @@ EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2])
 }
 #endif //SHUFFLE
 
+// Sryder:	This needs to be called whenever the screen changes resolution in order to reset the screen textures to use
+//			a new size
+EXPORT void HWRAPI(FlushScreenTextures) (void)
+{
+	pglDeleteTextures(1, &screentexture);
+	pglDeleteTextures(1, &startScreenWipe);
+	pglDeleteTextures(1, &endScreenWipe);
+	pglDeleteTextures(1, &finalScreenTexture);
+	screentexture = 0;
+	startScreenWipe = 0;
+	endScreenWipe = 0;
+	finalScreenTexture = 0;
+}
+
 // Create Screen to fade from
 EXPORT void HWRAPI(StartScreenWipe) (void)
 {
 	INT32 texsize = 2048;
+	boolean firstTime = (startScreenWipe == 0);
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
@@ -2148,27 +2212,38 @@ EXPORT void HWRAPI(StartScreenWipe) (void)
 		texsize = 1024;
 
 	// Create screen texture
+	if (firstTime)
+		startScreenWipe = SCRTEX_STARTSCREENWIPE;
 	pglBindTexture(GL_TEXTURE_2D, startScreenWipe);
+
+	if (firstTime)
+	{
 #ifdef KOS_GL_COMPATIBILITY
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
 #else
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 #endif
-	Clamp2D(GL_TEXTURE_WRAP_S);
-	Clamp2D(GL_TEXTURE_WRAP_T);
+		Clamp2D(GL_TEXTURE_WRAP_S);
+		Clamp2D(GL_TEXTURE_WRAP_T);
 #ifndef KOS_GL_COMPATIBILITY
-	pglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+		pglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+#endif
+	}
+	else
+#ifndef KOS_GL_COMPATIBILITY
+		pglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, texsize, texsize);
 #endif
 
-	tex_downloaded = 0; // 0 so it knows it doesn't have any of the cached patches downloaded right now
+	tex_downloaded = startScreenWipe;
 }
 
 // Create Screen to fade to
 EXPORT void HWRAPI(EndScreenWipe)(void)
 {
 	INT32 texsize = 2048;
+	boolean firstTime = (endScreenWipe == 0);
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
@@ -2177,21 +2252,32 @@ EXPORT void HWRAPI(EndScreenWipe)(void)
 		texsize = 1024;
 
 	// Create screen texture
+	if (firstTime)
+		endScreenWipe = SCRTEX_ENDSCREENWIPE;
 	pglBindTexture(GL_TEXTURE_2D, endScreenWipe);
+
+	if (firstTime)
+	{
 #ifdef KOS_GL_COMPATIBILITY
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
 #else
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 #endif
-	Clamp2D(GL_TEXTURE_WRAP_S);
-	Clamp2D(GL_TEXTURE_WRAP_T);
+		Clamp2D(GL_TEXTURE_WRAP_S);
+		Clamp2D(GL_TEXTURE_WRAP_T);
 #ifndef KOS_GL_COMPATIBILITY
-	pglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+		pglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+#endif
+	}
+	else
+#ifndef KOS_GL_COMPATIBILITY
+		pglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, texsize, texsize);
 #endif
 
-	tex_downloaded = 0; // 0 so it knows it doesn't have any of the cached patches downloaded right now
+
+	tex_downloaded = endScreenWipe;
 }
 
 
@@ -2233,7 +2319,7 @@ EXPORT void HWRAPI(DrawIntermissionBG)(void)
 
 	pglEnd();
 
-	tex_downloaded = 0; // 0 so it knows it doesn't have any of the cached patches downloaded right now
+	tex_downloaded = screentexture;
 }
 
 // Do screen fades!
@@ -2324,6 +2410,7 @@ EXPORT void HWRAPI(DoScreenWipe)(float alpha)
 
 		pglDisable(GL_TEXTURE_2D); // disable the texture in the 2nd texture unit
 		pglActiveTexture(GL_TEXTURE0);
+		tex_downloaded = endScreenWipe;
 	}
 	else
 	{
@@ -2349,11 +2436,10 @@ EXPORT void HWRAPI(DoScreenWipe)(float alpha)
 		pglTexCoord2f(xfix, 0.0f);
 		pglVertex3f(1.0f, -1.0f, 1.0f);
 	pglEnd();
+	tex_downloaded = endScreenWipe;
 #ifndef MINI_GL_COMPATIBILITY
 	}
 #endif
-
-	tex_downloaded = 0; // 0 so it knows it doesn't have any of the cached patches downloaded right now
 }
 
 
@@ -2361,6 +2447,7 @@ EXPORT void HWRAPI(DoScreenWipe)(float alpha)
 EXPORT void HWRAPI(MakeScreenTexture) (void)
 {
 	INT32 texsize = 2048;
+	boolean firstTime = (screentexture == 0);
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
@@ -2369,26 +2456,37 @@ EXPORT void HWRAPI(MakeScreenTexture) (void)
 		texsize = 1024;
 
 	// Create screen texture
+	if (firstTime)
+		screentexture = SCRTEX_SCREENTEXTURE;
 	pglBindTexture(GL_TEXTURE_2D, screentexture);
+
+	if (firstTime)
+	{
 #ifdef KOS_GL_COMPATIBILITY
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
 #else
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 #endif
-	Clamp2D(GL_TEXTURE_WRAP_S);
-	Clamp2D(GL_TEXTURE_WRAP_T);
+		Clamp2D(GL_TEXTURE_WRAP_S);
+		Clamp2D(GL_TEXTURE_WRAP_T);
 #ifndef KOS_GL_COMPATIBILITY
-	pglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+		pglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+#endif
+	}
+	else
+#ifndef KOS_GL_COMPATIBILITY
+		pglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, texsize, texsize);
 #endif
 
-	tex_downloaded = 0; // 0 so it knows it doesn't have any of the cached patches downloaded right now
+	tex_downloaded = screentexture;
 }
 
 EXPORT void HWRAPI(MakeScreenFinalTexture) (void)
 {
 	INT32 texsize = 2048;
+	boolean firstTime = (finalScreenTexture == 0);
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
@@ -2397,27 +2495,40 @@ EXPORT void HWRAPI(MakeScreenFinalTexture) (void)
 		texsize = 1024;
 
 	// Create screen texture
+	if (firstTime)
+		finalScreenTexture = SCRTEX_FINALSCREENTEXTURE;
 	pglBindTexture(GL_TEXTURE_2D, finalScreenTexture);
+
+	if (firstTime)
+	{
 #ifdef KOS_GL_COMPATIBILITY
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_FILTER_NONE);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_FILTER_NONE);
 #else
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 #endif
-	Clamp2D(GL_TEXTURE_WRAP_S);
-	Clamp2D(GL_TEXTURE_WRAP_T);
+		Clamp2D(GL_TEXTURE_WRAP_S);
+		Clamp2D(GL_TEXTURE_WRAP_T);
 #ifndef KOS_GL_COMPATIBILITY
-	pglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+		pglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, texsize, texsize, 0);
+#endif
+	}
+	else
+#ifndef KOS_GL_COMPATIBILITY
+		pglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, texsize, texsize);
 #endif
 
-	tex_downloaded = 0; // 0 so it knows it doesn't have any of the cached patches downloaded right now
+	tex_downloaded = finalScreenTexture;
 
 }
 
 EXPORT void HWRAPI(DrawScreenFinalTexture)(int width, int height)
 {
 	float xfix, yfix;
+	float origaspect, newaspect;
+	float xoff = 1, yoff = 1; // xoffset and yoffset for the polygon to have black bars around the screen
+	FRGBAFloat clearColour;
 	INT32 texsize = 2048;
 
 	if(screen_width <= 1024)
@@ -2428,35 +2539,47 @@ EXPORT void HWRAPI(DrawScreenFinalTexture)(int width, int height)
 	xfix = 1/((float)(texsize)/((float)((screen_width))));
 	yfix = 1/((float)(texsize)/((float)((screen_height))));
 
-	//pglClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	origaspect = (float)screen_width / screen_height;
+	newaspect = (float)width / height;
+	if (origaspect < newaspect)
+	{
+		xoff = origaspect / newaspect;
+		yoff = 1;
+	}
+	else if (origaspect > newaspect)
+	{
+		xoff = 1;
+		yoff = newaspect / origaspect;
+	}
+
 	pglViewport(0, 0, width, height);
 
+	clearColour.red = clearColour.green = clearColour.blue = 0;
+	clearColour.alpha = 1;
+	ClearBuffer(true, false, &clearColour);
 	pglBindTexture(GL_TEXTURE_2D, finalScreenTexture);
 	pglBegin(GL_QUADS);
 
 		pglColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		// Bottom left
 		pglTexCoord2f(0.0f, 0.0f);
-		pglVertex3f(-1, -1, 1.0f);
+		pglVertex3f(-xoff, -yoff, 1.0f);
 
 		// Top left
 		pglTexCoord2f(0.0f, yfix);
-		pglVertex3f(-1, 1, 1.0f);
+		pglVertex3f(-xoff, yoff, 1.0f);
 
 		// Top right
 		pglTexCoord2f(xfix, yfix);
-		pglVertex3f(1, 1, 1.0f);
+		pglVertex3f(xoff, yoff, 1.0f);
 
 		// Bottom right
 		pglTexCoord2f(xfix, 0.0f);
-		pglVertex3f(1, -1, 1.0f);
+		pglVertex3f(xoff, -yoff, 1.0f);
 
 	pglEnd();
 
-	SetModelView(screen_width, screen_height);
-	SetStates();
-
-	tex_downloaded = 0; // 0 so it knows it doesn't have any of the cached patches downloaded right now
+	tex_downloaded = finalScreenTexture;
 }
 
 #endif //HWRENDER

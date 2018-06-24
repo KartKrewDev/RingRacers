@@ -66,8 +66,8 @@ CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t karthud_cons_t[] = {
 	{0, "Off"}, {1, "Default"}, {2, "SNES"}, {3, "MK64"},
 	{0, NULL}};
-CV_PossibleValue_t kartcc_cons_t[] = {
-	{50, "50cc"}, {100, "100cc"}, {150, "150cc"},
+CV_PossibleValue_t kartspeed_cons_t[] = {
+	{0, "Easy"}, {1, "Normal"}, {2, "Hard"},
 	{0, NULL}};
 
 #define COM_BUF_SIZE 8192 // command buffer size
@@ -1228,7 +1228,7 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 	char *svalue;
 	UINT8 stealth = false;
 
-	if (playernum != serverplayer && playernum != adminplayer && !serverloading)
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum) && !serverloading)
 	{
 		// not from server or remote admin, must be hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal netvar command received from %s\n"), player_names[playernum]);
@@ -1357,7 +1357,7 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 		// send the value of the variable
 		XBOXSTATIC UINT8 buf[128];
 		UINT8 *p = buf;
-		if (!(server || (adminplayer == consoleplayer)))
+		if (!(server || (IsPlayerAdmin(consoleplayer))))
 		{
 			CONS_Printf(M_GetText("Only the server or admin can change: %s %s\n"), var->name, var->string);
 			return;
@@ -1447,8 +1447,8 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 	INT32 newvalue, max;
 
 	// count pointlimit better
-	if (var == &cv_pointlimit && (gametype == GT_MATCH))
-		increment *= 50;
+	/*if (var == &cv_pointlimit && (gametype == GT_MATCH))
+		increment *= 50;*/
 	newvalue = var->value + increment;
 
 	if (var->PossibleValue)

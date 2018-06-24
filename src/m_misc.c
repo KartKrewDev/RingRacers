@@ -546,7 +546,7 @@ void M_SaveConfig(const char *filename)
 #if NUMSCREENS > 2
 static const char *Newsnapshotfile(const char *pathname, const char *ext)
 {
-	static char freename[13] = "srb2XXXX.ext";
+	static char freename[13] = "kartXXXX.ext";
 	int i = 5000; // start in the middle: num screenshots divided by 2
 	int add = i; // how much to add or subtract if wrong; gets divided by 2 each time
 	int result; // -1 = guess too high, 0 = correct, 1 = guess too low
@@ -644,13 +644,12 @@ static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_
 static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_byte movie)
 {
 #ifdef PNG_TEXT_SUPPORTED
-#define SRB2PNGTXT 11 //PNG_KEYWORD_MAX_LENGTH(79) is the max
+#define SRB2PNGTXT 10 //PNG_KEYWORD_MAX_LENGTH(79) is the max
 	png_text png_infotext[SRB2PNGTXT];
 	char keytxt[SRB2PNGTXT][12] = {
-	"Title", "Author", "Description", "Playername", "Mapnum", "Mapname",
+	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Revision", "Build Date", "Build Time"};
-	char titletxt[] = "Sonic Robo Blast 2 " VERSIONSTRING;
-	png_charp authortxt = I_GetUserName();
+	char titletxt[] = "SRB2Kart " VERSIONSTRING;
 	png_charp playertxt =  cv_playername.zstring;
 	char desctxt[] = "SRB2Kart Screenshot";
 	char Movietxt[] = "SRB2Kart Movie";
@@ -680,9 +679,9 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1]->lvlttl[0] != '\0')
 		snprintf(lvlttltext, 48, "%s%s%s",
 			mapheaderinfo[gamemap-1]->lvlttl,
-			(strlen(mapheaderinfo[gamemap-1]->zonttl) > 0) ? mapheaderinfo[gamemap-1]->zonttl : // SRB2kart
+			(strlen(mapheaderinfo[gamemap-1]->zonttl) > 0) ? va(" %s",mapheaderinfo[gamemap-1]->zonttl) : // SRB2kart
 			((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : " ZONE"),
-			(mapheaderinfo[gamemap-1]->actnum > 0) ? va(" %d",mapheaderinfo[gamemap-1]->actnum) : "");
+			(strlen(mapheaderinfo[gamemap-1]->actnum) > 0) ? va(" %s",mapheaderinfo[gamemap-1]->actnum) : "");
 	else
 		snprintf(lvlttltext, 48, "Unknown");
 
@@ -701,19 +700,18 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 		png_infotext[i].key  = keytxt[i];
 
 	png_infotext[0].text = titletxt;
-	png_infotext[1].text = authortxt;
 	if (movie)
-		png_infotext[2].text = Movietxt;
+		png_infotext[1].text = Movietxt;
 	else
-		png_infotext[2].text = desctxt;
-	png_infotext[3].text = playertxt;
-	png_infotext[4].text = maptext;
-	png_infotext[5].text = lvlttltext;
-	png_infotext[6].text = locationtxt;
-	png_infotext[7].text = interfacetxt;
-	png_infotext[8].text = strncpy(ctrevision, comprevision, sizeof(ctrevision)-1);
-	png_infotext[9].text = strncpy(ctdate, compdate, sizeof(ctdate)-1);
-	png_infotext[10].text = strncpy(cttime, comptime, sizeof(cttime)-1);
+		png_infotext[1].text = desctxt;
+	png_infotext[2].text = playertxt;
+	png_infotext[3].text = maptext;
+	png_infotext[4].text = lvlttltext;
+	png_infotext[5].text = locationtxt;
+	png_infotext[6].text = interfacetxt;
+	png_infotext[7].text = strncpy(ctrevision, comprevision, sizeof(ctrevision)-1);
+	png_infotext[8].text = strncpy(ctdate, compdate, sizeof(ctdate)-1);
+	png_infotext[9].text = strncpy(cttime, comptime, sizeof(cttime)-1);
 
 	png_set_text(png_ptr, png_info_ptr, png_infotext, SRB2PNGTXT);
 #undef SRB2PNGTXT
@@ -1390,7 +1388,7 @@ void M_ScreenShot(void)
 }
 
 /** Takes a screenshot.
-  * The screenshot is saved as "srb2xxxx.pcx" (or "srb2xxxx.tga" in hardware
+  * The screenshot is saved as "kartxxxx.pcx" (or "kartxxxx.tga" in hardware
   * rendermode) where xxxx is the lowest four-digit number for which a file
   * does not already exist.
   *

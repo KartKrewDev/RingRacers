@@ -26,12 +26,16 @@ extern consvar_t cv_seenames, cv_allowseenames;
 extern consvar_t cv_usemouse;
 extern consvar_t cv_usejoystick;
 extern consvar_t cv_usejoystick2;
+extern consvar_t cv_usejoystick3;
+extern consvar_t cv_usejoystick4;
 #ifdef LJOYSTICK
 extern consvar_t cv_joyport;
 extern consvar_t cv_joyport2;
 #endif
 extern consvar_t cv_joyscale;
 extern consvar_t cv_joyscale2;
+extern consvar_t cv_joyscale3;
+extern consvar_t cv_joyscale4;
 extern consvar_t cv_controlperkey;
 
 // splitscreen with second mouse
@@ -59,6 +63,12 @@ extern consvar_t cv_skin;
 extern consvar_t cv_playername2;
 extern consvar_t cv_playercolor2;
 extern consvar_t cv_skin2;
+extern consvar_t cv_playername3;
+extern consvar_t cv_playercolor3;
+extern consvar_t cv_skin3;
+extern consvar_t cv_playername4;
+extern consvar_t cv_playercolor4;
+extern consvar_t cv_skin4;
 
 extern consvar_t cv_touchtag;
 extern consvar_t cv_hidetime;
@@ -77,8 +87,8 @@ extern consvar_t cv_autobalance;
 extern consvar_t cv_teamscramble;
 extern consvar_t cv_scrambleonchange;
 
-extern consvar_t cv_useranalog, cv_useranalog2;
-extern consvar_t cv_analog, cv_analog2;
+extern consvar_t cv_useranalog, cv_useranalog2, cv_useranalog3, cv_useranalog4;
+extern consvar_t cv_analog, cv_analog2, cv_analog3, cv_analog4;
 
 extern consvar_t cv_netstat;
 #ifdef WALLSPLATS
@@ -103,15 +113,20 @@ extern consvar_t cv_magnet, cv_boo, cv_mushroom, cv_triplemushroom, cv_megashroo
 extern consvar_t cv_goldshroom, cv_star, cv_triplebanana, cv_fakeitem, cv_banana;
 extern consvar_t cv_greenshell, cv_redshell, cv_laserwisp, cv_triplegreenshell, cv_bobomb;
 extern consvar_t cv_blueshell, cv_jaws, cv_fireflower, cv_tripleredshell, cv_lightning;
+extern consvar_t cv_feather;
 
 extern consvar_t cv_karthud;
-extern consvar_t cv_kartcc;
+extern consvar_t cv_kartminimap;
+extern consvar_t cv_kartcheck;
+extern consvar_t cv_kartstarsfx;
+extern consvar_t cv_kartspeed;
+extern consvar_t cv_kartballoons;
+extern consvar_t cv_kartfrantic;
+extern consvar_t cv_kartcomeback;
+extern consvar_t cv_kartmirror;
 extern consvar_t cv_speedometer;
 
-extern consvar_t cv_collideminimum;
-extern consvar_t cv_collidesoundnum;
-extern consvar_t cv_collidesounds;
-//
+extern consvar_t cv_votetime;
 
 extern consvar_t cv_itemfinder;
 
@@ -170,9 +185,13 @@ typedef enum
 	XD_DELFILE,     // 18
 	XD_SETMOTD,     // 19
 	XD_SUICIDE,     // 20
+	XD_DEMOTED,     // 21
+	XD_SETUPVOTE,   // 22
+	XD_MODIFYVOTE,  // 23
+	XD_PICKVOTE,    // 24
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 21
-	XD_LUAVAR,      // 22
+	XD_LUACMD,      // 25
+	XD_LUAVAR,      // 26
 #endif
 	MAXNETXCMD
 } netxcmd_t;
@@ -227,7 +246,14 @@ void Command_ExitGame_f(void);
 void Command_Retry_f(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
 void D_MapChange(INT32 pmapnum, INT32 pgametype, boolean pultmode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pfromlevelselect);
+void D_SetupVote(void);
+void D_ModifyClientVote(SINT8 voted, UINT8 splitplayer);
+void D_PickVote(void);
 void ObjectPlace_OnChange(void);
+boolean IsPlayerAdmin(INT32 playernum);
+void SetAdminPlayer(INT32 playernum);
+void ClearAdminPlayers(void);
+void RemoveAdminPlayer(INT32 playernum);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
 

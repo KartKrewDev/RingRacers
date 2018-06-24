@@ -33,6 +33,8 @@
 #include "z_zone.h"
 #include "p_slopes.h"
 
+#include "k_kart.h" // srb2kart
+
 #include "lua_script.h"
 #include "lua_hook.h"
 
@@ -56,7 +58,7 @@ typedef struct
 // ==========================================================================
 
 // Cheat responders
-static UINT8 cheatf_ultimate(void)
+/*static UINT8 cheatf_ultimate(void)
 {
 	if (menuactive && (currentMenu != &MainDef && currentMenu != &SP_LoadDef))
 		return 0; // Only on the main menu, or the save select!
@@ -68,23 +70,36 @@ static UINT8 cheatf_ultimate(void)
 	if (currentMenu == &SP_LoadDef)
 		M_ForceSaveSlotSelected(NOSAVESLOT);
 	return 1;
-}
+}*/
 
 static UINT8 cheatf_warp(void)
 {
-	if (modifiedgame)
-		return 0;
+	UINT8 i;
+	boolean success = false;
+
+	/*if (modifiedgame)
+		return 0;*/
 
 	if (menuactive && currentMenu != &MainDef)
 		return 0; // Only on the main menu!
 
-	S_StartSound(0, sfx_itemup);
+	// Temporarily unlock EVERYTHING.
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (!unlockables[i].unlocked)
+		{
+			unlockables[i].unlocked = true;
+			success = true;
+		}
+	}
 
-	// Temporarily unlock stuff.
-	G_SetGameModified(false);
-	unlockables[2].unlocked = true; // credits
-	unlockables[3].unlocked = true; // sound test
-	unlockables[16].unlocked = true; // level select
+	if (success)
+	{
+		G_SetGameModified(false);
+		S_StartSound(0, sfx_kc42);
+	}
 
 	// Refresh secrets menu existing.
 	M_ClearMenus(true);
@@ -109,7 +124,7 @@ static UINT8 cheatf_devmode(void)
 	G_SetGameModified(false);
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 		unlockables[i].unlocked = true;
-	devparm = TRUE;
+	devparm = true;
 	cv_debug |= 0x8000;
 
 	// Refresh secrets menu existing.
@@ -119,28 +134,33 @@ static UINT8 cheatf_devmode(void)
 }
 #endif
 
-static cheatseq_t cheat_ultimate = {
+/*static cheatseq_t cheat_ultimate = {
 	0, cheatf_ultimate,
 	{ SCRAMBLE('u'), SCRAMBLE('l'), SCRAMBLE('t'), SCRAMBLE('i'), SCRAMBLE('m'), SCRAMBLE('a'), SCRAMBLE('t'), SCRAMBLE('e'), 0xff }
-};
+};*/
 
-static cheatseq_t cheat_ultimate_joy = {
+/*static cheatseq_t cheat_ultimate_joy = {
 	0, cheatf_ultimate,
 	{ SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_DOWNARROW),
 	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW),
 	  SCRAMBLE(KEY_ENTER), 0xff }
-};
+};*/
 
 static cheatseq_t cheat_warp = {
 	0, cheatf_warp,
-	{ SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE('x'), SCRAMBLE('v'), SCRAMBLE('i'), 0xff }
+	//{ SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE('x'), SCRAMBLE('v'), SCRAMBLE('i'), 0xff }
+	{ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
 static cheatseq_t cheat_warp_joy = {
 	0, cheatf_warp,
-	{ SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
+	/*{ SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
 	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW),
 	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
+	  SCRAMBLE(KEY_ENTER), 0xff }*/
+	  { SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_RIGHTARROW),
+	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_LEFTARROW),
+	  SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_RIGHTARROW),
 	  SCRAMBLE(KEY_ENTER), 0xff }
 };
 
@@ -233,8 +253,8 @@ boolean cht_Responder(event_t *ev)
 	else
 		ch = (UINT8)ev->data1;
 
-	ret += cht_CheckCheat(&cheat_ultimate, (char)ch);
-	ret += cht_CheckCheat(&cheat_ultimate_joy, (char)ch);
+	//ret += cht_CheckCheat(&cheat_ultimate, (char)ch);
+	//ret += cht_CheckCheat(&cheat_ultimate_joy, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp_joy, (char)ch);
 #ifdef DEVELOP
@@ -1008,7 +1028,7 @@ void OP_NightsObjectplace(player_t *player)
 	}
 
 	// This places a bumper!
-	if (cmd->buttons & BT_SPECTATE)
+	/*if (cmd->buttons & BT_SPECTATE)
 	{
 		player->pflags |= PF_ATTACKDOWN;
 		if (!OP_HeightOkay(player, false))
@@ -1016,7 +1036,7 @@ void OP_NightsObjectplace(player_t *player)
 
 		mt = OP_CreateNewMapThing(player, (UINT16)mobjinfo[MT_NIGHTSBUMPER].doomednum, false);
 		P_SpawnMapThing(mt);
-	}
+	}*/
 
 	// This places a ring!
 	if (cmd->buttons & BT_BACKWARD)
@@ -1099,7 +1119,7 @@ void OP_ObjectplaceMovement(player_t *player)
 	if (!(cmd->angleturn & TICCMD_RECEIVED))
 		ticmiss++;
 
-	if (cmd->buttons & BT_JUMP)
+	if (cmd->buttons & BT_ACCELERATE)
 		player->mo->z += FRACUNIT*cv_speed.value;
 	else if (cmd->buttons & BT_BRAKE)
 		player->mo->z -= FRACUNIT*cv_speed.value;
@@ -1128,7 +1148,7 @@ void OP_ObjectplaceMovement(player_t *player)
 		player->mo->eflags &= ~MFE_VERTICALFLIP;
 
 	// make sure viewz follows player if in 1st person mode
-	player->deltaviewheight = 0;
+	//player->deltaviewheight = 0;
 	player->viewheight = FixedMul(cv_viewheight.value << FRACBITS, player->mo->scale);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 		player->viewz = player->mo->z + player->mo->height - player->viewheight;
@@ -1165,19 +1185,19 @@ void OP_ObjectplaceMovement(player_t *player)
 	if (player->pflags & PF_ATTACKDOWN)
 	{
 		// Are ANY objectplace buttons pressed?  If no, remove flag.
-		if (!(cmd->buttons & (BT_ATTACK|BT_SPECTATE|BT_BACKWARD|BT_FORWARD)))
+		if (!(cmd->buttons & (BT_ATTACK|BT_DRIFT)))
 			player->pflags &= ~PF_ATTACKDOWN;
 
 		// Do nothing.
 		return;
 	}
 
-	if (cmd->buttons & BT_FORWARD)
+	/*if (cmd->buttons & BT_FORWARD)
 	{
 		OP_CycleThings(-1);
 		player->pflags |= PF_ATTACKDOWN;
 	}
-	else if (cmd->buttons & BT_BACKWARD)
+	else*/ if (cmd->buttons & BT_DRIFT)
 	{
 		OP_CycleThings(1);
 		player->pflags |= PF_ATTACKDOWN;
@@ -1264,10 +1284,10 @@ void Command_ObjectPlace_f(void)
 			HU_DoCEcho(va(M_GetText(
 				"\\\\\\\\\\\\\\\\\\\\\\\\\x82"
 				"   Objectplace Controls:   \x80\\\\"
-				"Camera L/R: Cycle mapthings\\"
-				"      Jump: Float up       \\"
-				"      Spin: Float down     \\"
-				" Fire Ring: Place object   \\")));
+				"     Drift: Cycle mapthings\\"
+				"Accelerate: Float up       \\"
+				"     Brake: Float down     \\"
+				"      Item: Place object   \\")));
 		}
 
 		// Save all the player's data.
@@ -1348,7 +1368,7 @@ void Command_ObjectPlace_f(void)
 		players[0].mo->color = op_oldcolor;
 
 		// This is necessary for recovery of dying players.
-		if (players[0].powers[pw_flashing] >= flashingtics)
-			players[0].powers[pw_flashing] = flashingtics - 1;
+		if (players[0].powers[pw_flashing] >= K_GetKartFlashing())
+			players[0].powers[pw_flashing] = K_GetKartFlashing() - 1;
 	}
 }

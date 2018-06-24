@@ -62,7 +62,7 @@ extern boolean metalrecording;
 
 #define ATTACKING_NONE   0
 #define ATTACKING_RECORD 1
-#define ATTACKING_NIGHTS 2
+//#define ATTACKING_NIGHTS 2
 extern UINT8 modeattacking;
 
 // menu demo things
@@ -77,7 +77,7 @@ extern boolean addedtogame; // true after the server has added you
 extern boolean multiplayer;
 
 extern INT16 gametype;
-extern boolean splitscreen;
+extern UINT8 splitscreen;
 extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
 
@@ -108,6 +108,10 @@ extern postimg_t postimgtype;
 extern INT32 postimgparam;
 extern postimg_t postimgtype2;
 extern INT32 postimgparam2;
+extern postimg_t postimgtype3;
+extern INT32 postimgparam3;
+extern postimg_t postimgtype4;
+extern INT32 postimgparam4;
 
 extern INT32 viewwindowx, viewwindowy;
 extern INT32 viewwidth, scaledviewwidth;
@@ -118,6 +122,8 @@ extern boolean gamedataloaded;
 extern INT32 consoleplayer;
 extern INT32 displayplayer;
 extern INT32 secondarydisplayplayer; // for splitscreen
+extern INT32 thirddisplayplayer;
+extern INT32 fourthdisplayplayer;
 
 // Maps of special importance
 extern INT16 spstage_start;
@@ -214,7 +220,7 @@ typedef struct
 	char lvlttl[22];       ///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
 	char subttl[33];       ///< Subtitle for level
 	char zonttl[22];       ///< "ZONE" replacement name
-	UINT8 actnum;          ///< Act number or 0 for none.
+	char actnum[3];        ///< SRB2Kart: Now a 2 character long string.
 	UINT16 typeoflevel;    ///< Combination of typeoflevel flags.
 	INT16 nextlevel;       ///< Map number of next level, or 1100-1102 to end.
 	char musname[7];       ///< Music track to play. "" for no music.
@@ -246,13 +252,14 @@ typedef struct
 	UINT8 numGradedMares;   ///< Internal. For grade support.
 	nightsgrades_t *grades; ///< NiGHTS grades. Allocated dynamically for space reasons. Be careful.
 
+	// SRB2kart
+	//boolean automap;    ///< Displays a level's white map outline in modified games
+	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
+
 	// Lua stuff.
 	// (This is not ifdeffed so the map header structure can stay identical, just in case.)
 	UINT8 numCustomOptions;     ///< Internal. For Lua custom value support.
 	customoption_t *customopts; ///< Custom options. Allocated dynamically for space reasons. Be careful.
-
-	// SRB2kart
-	boolean automap;      ///< Displays a level's white map outline in modified games
 } mapheader_t;
 
 // level flags
@@ -290,9 +297,9 @@ enum TypeOfLevel
 	TOL_2D     = 0x0100, ///< 2D
 	TOL_MARIO  = 0x0200, ///< Mario
 	TOL_NIGHTS = 0x0400, ///< NiGHTS
-	TOL_ERZ3   = 0x0800, ///< ERZ3
-	TOL_XMAS   = 0x1000, ///< Christmas NiGHTS
-	TOL_KART   = 0x4000  ///< Kart 32768
+	//TOL_ERZ3   = 0x0800, ///< ERZ3
+	TOL_XMAS   = 0x1000 ///< Christmas NiGHTS
+	//TOL_KART   = 0x4000  ///< Kart 32768
 };
 
 // Gametypes
@@ -315,6 +322,7 @@ enum GameType
 // If you alter this list, update gametype_cons_t in m_menu.c
 
 extern tic_t totalplaytime;
+extern UINT32 matchesplayed;
 
 extern UINT8 stagefailed;
 
@@ -329,15 +337,16 @@ extern UINT16 emeralds;
 #define EMERALD7 64
 #define ALL7EMERALDS(v) ((v & (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7)) == (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7))
 
-extern INT32 nummaprings; //keep track of spawned rings/coins
+extern INT32 nummaprings, nummapboxes, numgotboxes; //keep track of spawned rings/coins/battle mode items
 
 /** Time attack information, currently a very small structure.
   */
 typedef struct
 {
-	tic_t time;   ///< Time in which the level was finished.
-	UINT32 score; ///< Score when the level was finished.
-	UINT16 rings; ///< Rings when the level was finished.
+	tic_t time; ///< Time in which the level was finished.
+	tic_t lap;  ///< Best lap time for this level.
+	//UINT32 score; ///< Score when the level was finished.
+	//UINT16 rings; ///< Rings when the level was finished.
 } recorddata_t;
 
 /** Setup for one NiGHTS map.
@@ -351,29 +360,29 @@ typedef struct
 #define GRADE_A 5
 #define GRADE_S 6
 
-typedef struct
+/*typedef struct
 {
 	// 8 mares, 1 overall (0)
 	UINT8	nummares;
 	UINT32	score[9];
 	UINT8	grade[9];
 	tic_t	time[9];
-} nightsdata_t;
+} nightsdata_t;*/
 
-extern nightsdata_t *nightsrecords[NUMMAPS];
+//extern nightsdata_t *nightsrecords[NUMMAPS];
 extern recorddata_t *mainrecords[NUMMAPS];
 
 // mapvisited is now a set of flags that says what we've done in the map.
-#define MV_VISITED      1
-#define MV_BEATEN       2
-#define MV_ALLEMERALDS  4
-#define MV_ULTIMATE     8
-#define MV_PERFECT     16
-#define MV_MAX         31 // used in gamedata check
+#define MV_VISITED     1
+#define MV_BEATEN      2
+#define MV_ALLEMERALDS 4
+//#define MV_ULTIMATE     8
+//#define MV_PERFECT     16
+#define MV_MAX         7 // used in gamedata check
 extern UINT8 mapvisited[NUMMAPS];
 
 // Temporary holding place for nights data for the current map
-nightsdata_t ntemprecords;
+//nightsdata_t ntemprecords;
 
 extern UINT32 token; ///< Number of tokens collected in a level
 extern UINT32 tokenlist; ///< List of tokens collected
@@ -401,8 +410,11 @@ extern UINT16 extralifetics;
 
 // SRB2kart
 extern INT32 bootime;
+extern INT32 boostealtime;
 extern INT32 mushroomtime;
 extern INT32 itemtime;
+extern INT32 comebacktime;
+extern INT32 bumptime;
 
 extern UINT8 introtoplay;
 extern UINT8 creditscutscene;
@@ -413,8 +425,7 @@ extern UINT8 maxXtraLife; // Max extra lives from rings
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
 // For racing
-extern UINT32 countdown;
-extern UINT32 countdown2;
+extern UINT32 countdown, countdown2;
 
 extern fixed_t gravity;
 
@@ -428,11 +439,29 @@ extern INT16 scramblecount; //for CTF team scramble
 
 extern INT32 cheats;
 
+// SRB2kart
+extern UINT8 gamespeed;
+extern boolean franticitems;
+extern boolean mirrormode;
+extern boolean comeback;
+
+extern tic_t lightningcooldown;
+extern tic_t blueshellincoming;
+extern UINT8 blueshellplayer;
+
+extern boolean legitimateexit;
+extern boolean comebackshowninfo;
+extern tic_t curlap, bestlap;
+
+extern INT16 votelevels[4];
+extern SINT8 votes[MAXPLAYERS];
+extern SINT8 pickedvote;
+
 extern tic_t hidetime;
 
 extern UINT32 timesBeaten; // # of times the game has been beaten.
 extern UINT32 timesBeatenWithEmeralds;
-extern UINT32 timesBeatenUltimate;
+//extern UINT32 timesBeatenUltimate;
 
 // ===========================
 // Internal parameters, fixed.
@@ -491,7 +520,8 @@ extern consvar_t cv_timetic; // display high resolution timer
 extern consvar_t cv_forceskin; // force clients to use the server's skin
 extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
-extern INT32 adminplayer, serverplayer;
+extern INT32 serverplayer;
+extern INT32 adminplayers[MAXPLAYERS];
 
 /// \note put these in d_clisrv outright?
 

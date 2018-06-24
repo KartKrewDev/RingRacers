@@ -244,9 +244,10 @@ typedef enum
 	k_lakitu,			// Timer for Lakitu to carry and drop the player
 
 	k_throwdir, 		// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
-	k_camspin,			// Used to 180 the camera while a button is held
 	k_lapanimation,		// Used to make a swoopy lap lakitu, maybe other effects in the future
-	k_sounds,			// Used this to stop and then force music restores as it hits zero
+	k_cardanimation,	// Used to determine the position of some full-screen Battle Mode graphics
+	k_voices,			// Used to stop the player saying more voices than it should
+	k_tauntvoices,		// Used to specifically stop taunt voice spam
 
 	k_boosting,			// Determines if you're currently shroom-boosting
 	k_floorboost,		// Prevents Mushroom sounds for a breif duration when triggered by a floor panel
@@ -260,12 +261,15 @@ typedef enum
 	k_boostcharge,		// Charge-up for boosting at the start of the race, or when Lakitu drops you
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
+	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
 
 	k_itemroulette,		// Used for the roulette when deciding what item to give you (was "pw_kartitem")
+	k_roulettetype,		// Used for the roulette, for deciding type (currently only used for Battle, to give you better items from Karma items)
 	k_itemclose,		// Used to animate the item window closing (was "pw_psychic")
 
 	// Some items use timers for their duration or effects
 	k_magnettimer,		// Duration of Magnet's item-break and item box pull
+	k_bootimer,			// Duration of the boo offroad effect itself
 	k_bootaketimer,		// You are stealing an item, this is your timer
 	k_boostolentimer,	// You are being stolen from, this is your timer
 	k_mushroomtimer,	// Duration of the Mushroom Boost itself
@@ -273,10 +277,15 @@ typedef enum
 	k_squishedtimer,	// Squished frame timer
 	k_goldshroomtimer,	// Gold Mushroom duration timer
 	k_startimer,		// Invincibility timer
-	k_spinouttimer,		// Wipe-out from a banana peel or oil slick (was "pw_bananacam")
+	k_spinouttimer,		// Spin-out from a banana peel or oil slick (was "pw_bananacam")
 	k_laserwisptimer,	// The duration and relative angle of the laser
+	k_justbumped,		// Prevent players from endlessly bumping into each other
+	k_deathsentence,	// 30 seconds to live... (Blue Shell murder timer (not actually 30 sec, I just couldn't help the FF reference :p))
+	k_poweritemtimer,	// Battle mode, how long before you're allowed another power item (Star, Megashroom)
+	k_comebacktimer,	// Battle mode, how long before you become a bomb after death
 
 	// Each item needs its own power slot, for the HUD and held use
+	// *** ADDING A NEW ITEM? ADD IT TO K_DoBooSteal PLEASE!! -Salt ***
 	k_magnet,			// 0x1 = Magnet in inventory
 	k_boo,				// 0x1 = Boo in inventory
 	k_mushroom,			// 0x1 = 1 Mushroom in inventory, 0x2 = 2 Mushrooms in inventory
@@ -301,7 +310,13 @@ typedef enum
 	k_tripleredshell,	// 0x1 = 1 Red Shell orbiting, 0x2 = 2 Red Shells orbiting
 						// 0x4 = 3 Red Shells orbiting, 0x8 = Triple Red Shell in inventory
 	k_lightning,		// 0x1 = Lightning in inventory
+	k_feather,			// 0x1 = Feather in inventory, 0x2 = Player is feather jumping
 	k_kitchensink,		// 0x1 = Sink in inventory
+
+	// Battle Mode vars
+	k_balloon,			// Number of balloons left
+	k_comebackpoints,	// Number of times you've bombed or gave an item to someone; once it's 3 it gets set back to 0 and you're given a balloon
+	k_comebackmode, 	// 0 = bomb, 1 = item
 
 	NUMKARTSTUFF
 } kartstufftype_t;
@@ -343,9 +358,9 @@ typedef struct player_s
 	// Base height above floor for viewz.
 	fixed_t viewheight;
 	// Bob/squat speed.
-	fixed_t deltaviewheight;
+	//fixed_t deltaviewheight;
 	// bounded/scaled total momentum.
-	fixed_t bob;
+	//fixed_t bob;
 
 	// Mouse aiming, where the guy is looking at!
 	// It is updated with cmd->aiming.
@@ -365,7 +380,6 @@ typedef struct player_s
 
 	// SRB2kart stuff
 	INT32 kartstuff[NUMKARTSTUFF];
-	boolean collide[MAXPLAYERS];
 	angle_t frameangle; // for the player add the ability to have the sprite only face other angles
 
 	// Bit flags.
@@ -467,6 +481,7 @@ typedef struct player_s
 	INT16 starposty;
 	INT16 starpostz;
 	INT32 starpostnum; // The number of the last starpost you hit
+	INT32 starpostcount; // SRB2kart: how many did you hit?
 	tic_t starposttime; // Your time when you hit the starpost
 	angle_t starpostangle; // Angle that the starpost is facing - you respawn facing this way
 

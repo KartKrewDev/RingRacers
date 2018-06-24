@@ -1787,8 +1787,8 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 			break;
 		}
 		// Ignore popped monitors, too.
-		if (node->m_thing->flags & MF_MONITOR
-		&& node->m_thing->threshold == 68)
+		if ((node->m_thing->flags & MF_MONITOR || node->m_thing->type == MT_RANDOMITEM)
+			&& node->m_thing->threshold == 68)
 			continue;
 		// Okay, we found something valid.
 		if (!thing // take either the first thing
@@ -2038,33 +2038,6 @@ foundenemy:
 }
 
 //
-// P_IsObjectOnRealGround
-//
-// Helper function for T_EachTimeThinker
-// Like P_IsObjectOnGroundIn, except ONLY THE REAL GROUND IS CONSIDERED, NOT FOFS
-// I'll consider whether to make this a more globally accessible function or whatever in future
-// -- Monster Iestyn
-//
-static boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec)
-{
-	// Is the object in reverse gravity?
-	if (mo->eflags & MFE_VERTICALFLIP)
-	{
-		// Detect if the player is on the ceiling.
-		if (mo->z+mo->height >= P_GetSpecialTopZ(mo, sec, sec))
-			return true;
-	}
-	// Nope!
-	else
-	{
-		// Detect if the player is on the floor.
-		if (mo->z <= P_GetSpecialBottomZ(mo, sec, sec))
-			return true;
-	}
-	return false;
-}
-
-//
 // P_HavePlayersEnteredArea
 //
 // Helper function for T_EachTimeThinker
@@ -2117,6 +2090,7 @@ void T_EachTimeThinker(levelspecthink_t *eachtime)
 	boolean floortouch = false;
 	fixed_t bottomheight, topheight;
 	msecnode_t *node;
+	ffloor_t *rover;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -2163,6 +2137,19 @@ void T_EachTimeThinker(levelspecthink_t *eachtime)
 			while ((targetsecnum = P_FindSectorFromLineTag(sec->lines[i], targetsecnum)) >= 0)
 			{
 				targetsec = &sectors[targetsecnum];
+
+				// Find the FOF corresponding to the control linedef
+				for (rover = targetsec->ffloors; rover; rover = rover->next)
+				{
+					if (rover->master == sec->lines[i])
+						break;
+				}
+
+				if (!rover) // This should be impossible, but don't complain if it is the case somehow
+					continue;
+
+				if (!(rover->flags & FF_EXISTS)) // If the FOF does not "exist", we pretend that nobody's there
+					continue;
 
 				for (j = 0; j < MAXPLAYERS; j++)
 				{
@@ -2517,11 +2504,11 @@ void T_CameraScanner(elevator_t *elevator)
 {
 	// leveltime is compared to make multiple scanners in one map function correctly.
 	static tic_t lastleveltime = 32000; // any number other than 0 should do here
-	static boolean camerascanned, camerascanned2;
+	static boolean camerascanned, camerascanned2, camerascanned3, camerascanned4;
 
 	if (leveltime != lastleveltime) // Back on the first camera scanner
 	{
-		camerascanned = camerascanned2 = false;
+		camerascanned = camerascanned2 = camerascanned3 = camerascanned4 = false;
 		lastleveltime = leveltime;
 	}
 
@@ -2578,6 +2565,62 @@ void T_CameraScanner(elevator_t *elevator)
 				CV_Set(&cv_cam2_rotate, va("%f", (double)t_cam2_rotate));
 
 			t_cam2_dist = t_cam2_height = t_cam2_rotate = -42;
+		}
+	}
+
+	if (splitscreen > 1 && players[thirddisplayplayer].mo)
+	{
+		if (players[thirddisplayplayer].mo->subsector->sector == elevator->actionsector)
+		{
+			if (t_cam3_rotate == -42)
+				t_cam3_dist = cv_cam3_dist.value;
+			if (t_cam3_rotate == -42)
+				t_cam3_height = cv_cam3_height.value;
+			if (t_cam3_rotate == -42)
+				t_cam3_rotate = cv_cam3_rotate.value;
+			CV_SetValue(&cv_cam3_height, FixedInt(elevator->sector->floorheight));
+			CV_SetValue(&cv_cam3_dist, FixedInt(elevator->sector->ceilingheight));
+			CV_SetValue(&cv_cam3_rotate, elevator->distance);
+			camerascanned3 = true;
+		}
+		else if (!camerascanned3)
+		{
+			if (t_cam3_height != -42 && cv_cam3_height.value != t_cam3_height)
+				CV_Set(&cv_cam3_height, va("%f", (double)FIXED_TO_FLOAT(t_cam3_height)));
+			if (t_cam3_dist != -42 && cv_cam3_dist.value != t_cam3_dist)
+				CV_Set(&cv_cam3_dist, va("%f", (double)FIXED_TO_FLOAT(t_cam3_dist)));
+			if (t_cam3_rotate != -42 && cv_cam3_rotate.value != t_cam3_rotate)
+				CV_Set(&cv_cam3_rotate, va("%f", (double)t_cam3_rotate));
+
+			t_cam3_dist = t_cam3_height = t_cam3_rotate = -42;
+		}
+	}
+
+	if (splitscreen > 2 && players[fourthdisplayplayer].mo)
+	{
+		if (players[fourthdisplayplayer].mo->subsector->sector == elevator->actionsector)
+		{
+			if (t_cam4_rotate == -42)
+				t_cam4_dist = cv_cam4_dist.value;
+			if (t_cam4_rotate == -42)
+				t_cam4_height = cv_cam4_height.value;
+			if (t_cam4_rotate == -42)
+				t_cam4_rotate = cv_cam4_rotate.value;
+			CV_SetValue(&cv_cam4_height, FixedInt(elevator->sector->floorheight));
+			CV_SetValue(&cv_cam4_dist, FixedInt(elevator->sector->ceilingheight));
+			CV_SetValue(&cv_cam4_rotate, elevator->distance);
+			camerascanned4 = true;
+		}
+		else if (!camerascanned4)
+		{
+			if (t_cam4_height != -42 && cv_cam4_height.value != t_cam4_height)
+				CV_Set(&cv_cam4_height, va("%f", (double)FIXED_TO_FLOAT(t_cam4_height)));
+			if (t_cam4_dist != -42 && cv_cam4_dist.value != t_cam4_dist)
+				CV_Set(&cv_cam4_dist, va("%f", (double)FIXED_TO_FLOAT(t_cam4_dist)));
+			if (t_cam4_rotate != -42 && cv_cam4_rotate.value != t_cam4_rotate)
+				CV_Set(&cv_cam4_rotate, va("%f", (double)t_cam4_rotate));
+
+			t_cam4_dist = t_cam4_height = t_cam4_rotate = -42;
 		}
 	}
 }

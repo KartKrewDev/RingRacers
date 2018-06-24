@@ -194,7 +194,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen)
 			}
 			// Reposition window only in windowed mode
 			SDL_SetWindowSize(window, width, height);
-			SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED_DISPLAY(1), SDL_WINDOWPOS_CENTERED_DISPLAY(1));
+			SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 		}
 	}
 	else
@@ -528,6 +528,48 @@ static INT32 SDLJoyAxis(const Sint16 axis, evtype_t which)
 #endif
 		}
 	}
+	else if (which == ev_joystick3)
+	{
+		if (Joystick3.bGamepadStyle)
+		{
+			// gamepad control type, on or off, live or die
+			if (raxis < -(JOYAXISRANGE/2))
+				raxis = -1;
+			else if (raxis > (JOYAXISRANGE/2))
+				raxis = 1;
+			else raxis = 0;
+		}
+		else
+		{
+			raxis = JoyInfo3.scale!=1?((raxis/JoyInfo3.scale)*JoyInfo3.scale):raxis;
+
+#ifdef SDL_JDEADZONE
+			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
+				raxis = 0;
+#endif
+		}
+	}
+	else if (which == ev_joystick4)
+	{
+		if (Joystick4.bGamepadStyle)
+		{
+			// gamepad control type, on or off, live or die
+			if (raxis < -(JOYAXISRANGE/2))
+				raxis = -1;
+			else if (raxis > (JOYAXISRANGE/2))
+				raxis = 1;
+			else raxis = 0;
+		}
+		else
+		{
+			raxis = JoyInfo4.scale!=1?((raxis/JoyInfo4.scale)*JoyInfo4.scale):raxis;
+
+#ifdef SDL_JDEADZONE
+			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
+				raxis = 0;
+#endif
+		}
+	}
 	return raxis;
 }
 
@@ -658,6 +700,14 @@ static void Impl_HandleMouseButtonEvent(SDL_MouseButtonEvent evt, Uint32 type)
 
 	SDL_memset(&event, 0, sizeof(event_t));
 
+	// Ignore the event if the mouse is not actually focused on the window.
+	// This can happen if you used the mouse to restore keyboard focus;
+	// this apparently makes a mouse button down event but not a mouse button up event,
+	// resulting in whatever key was pressed down getting "stuck" if we don't ignore it.
+	// -- Monster Iestyn (28/05/18)
+	if (SDL_GetMouseFocus() != window)
+		return;
+
 	/// \todo inputEvent.button.which
 	if (USE_MOUSEINPUT)
 	{
@@ -717,11 +767,13 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 {
 	event_t event;
-	SDL_JoystickID joyid[2];
+	SDL_JoystickID joyid[4];
 
 	// Determine the Joystick IDs for each current open joystick
 	joyid[0] = SDL_JoystickInstanceID(JoyInfo.dev);
 	joyid[1] = SDL_JoystickInstanceID(JoyInfo2.dev);
+	joyid[2] = SDL_JoystickInstanceID(JoyInfo3.dev);
+	joyid[3] = SDL_JoystickInstanceID(JoyInfo4.dev);
 
 	evt.axis++;
 	event.data1 = event.data2 = event.data3 = INT32_MAX;
@@ -733,6 +785,14 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 	else if (evt.which == joyid[1])
 	{
 		event.type = ev_joystick2;
+	}
+	else if (evt.which == joyid[2])
+	{
+		event.type = ev_joystick3;
+	}
+	else if (evt.which == joyid[3])
+	{
+		event.type = ev_joystick4;
 	}
 	else return;
 	//axis
@@ -756,11 +816,13 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 {
 	event_t event;
-	SDL_JoystickID joyid[2];
+	SDL_JoystickID joyid[4];
 
 	// Determine the Joystick IDs for each current open joystick
 	joyid[0] = SDL_JoystickInstanceID(JoyInfo.dev);
 	joyid[1] = SDL_JoystickInstanceID(JoyInfo2.dev);
+	joyid[2] = SDL_JoystickInstanceID(JoyInfo3.dev);
+	joyid[3] = SDL_JoystickInstanceID(JoyInfo4.dev);
 
 	if (evt.which == joyid[0])
 	{
@@ -769,6 +831,14 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 	else if (evt.which == joyid[1])
 	{
 		event.data1 = KEY_2JOY1;
+	}
+	else if (evt.which == joyid[2])
+	{
+		event.data1 = KEY_3JOY1;
+	}
+	else if (evt.which == joyid[3])
+	{
+		event.data1 = KEY_4JOY1;
 	}
 	else return;
 	if (type == SDL_JOYBUTTONUP)
@@ -891,6 +961,8 @@ void I_OsPolling(void)
 		SDL_JoystickUpdate();
 		I_GetJoystickEvents();
 		I_GetJoystick2Events();
+		I_GetJoystick3Events();
+		I_GetJoystick4Events();
 	}
 
 	I_GetMouseEvents();
@@ -1442,6 +1514,7 @@ void I_StartupGraphics(void)
 #ifdef SHUFFLE
 		HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
 #endif
+		HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
 		HWD.pfnStartScreenWipe  = hwSym("StartScreenWipe",NULL);
 		HWD.pfnEndScreenWipe    = hwSym("EndScreenWipe",NULL);
 		HWD.pfnDoScreenWipe     = hwSym("DoScreenWipe",NULL);

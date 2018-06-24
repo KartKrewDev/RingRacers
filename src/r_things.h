@@ -55,7 +55,7 @@ void R_DelSpriteDefs(UINT16 wadnum);
 #endif
 
 //SoM: 6/5/2000: Light sprites correctly!
-void R_AddSprites(sector_t *sec, INT32 lightlevel);
+void R_AddSprites(sector_t *sec, INT32 lightlevel, UINT8 ssplayer);
 void R_InitSprites(void);
 void R_ClearSprites(void);
 void R_ClipSprites(void);
@@ -68,6 +68,8 @@ void R_DrawMasked(void);
 // should be all lowercase!! S_SKIN processing does a strlwr
 #define DEFAULTSKIN "sonic"
 #define DEFAULTSKIN2 "tails" // secondary player
+#define DEFAULTSKIN3 "knuckles" // third player
+#define DEFAULTSKIN4 "eggman" // fourth player
 
 typedef struct
 {
@@ -91,8 +93,8 @@ typedef struct
 	fixed_t maxdash;
 
 	// SRB2kart
-	UINT8 kartspeed; // Normal ground
-	UINT8 kartweight; // Normal ground
+	UINT8 kartspeed;
+	UINT8 kartweight;
 	//
 
 	fixed_t normalspeed; // Normal ground
@@ -111,6 +113,9 @@ typedef struct
 
 	// specific sounds per skin
 	sfxenum_t soundsid[NUMSKINSOUNDS]; // sound # in S_sfx table
+
+	// minimap icons
+	char iconprefix[9];
 } skin_t;
 
 // -----------

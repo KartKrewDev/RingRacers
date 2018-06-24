@@ -216,6 +216,10 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 					localangle = spring->angle;
 				else if (object->player == &players[secondarydisplayplayer])
 					localangle2 = spring->angle;
+				else if (object->player == &players[thirddisplayplayer])
+					localangle3 = spring->angle;
+				else if (object->player == &players[fourthdisplayplayer])
+					localangle4 = spring->angle;
 			}
 		}
 
@@ -320,6 +324,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 	}
 }
 
+#if 0
 static void P_DoTailsCarry(player_t *sonic, player_t *tails)
 {
 	INT32 p;
@@ -378,12 +383,12 @@ static void P_DoTailsCarry(player_t *sonic, player_t *tails)
 			|| (gametype == GT_MATCH)
 			|| (G_GametypeHasTeams() && tails->ctfteam != sonic->ctfteam))
 			sonic->pflags &= ~PF_CARRIED; */
-		if (tails->spectator || sonic->spectator || gametype == GT_RACE) // SRB2kart
+		if (tails->spectator || sonic->spectator || G_RaceGametype()) // SRB2kart
 			sonic->pflags &= ~PF_CARRIED;
 		else
 		{
 			if (sonic-players == consoleplayer && botingame)
-				CV_SetValue(&cv_analog2, false);
+				//CV_SetValue(&cv_analog2, false);
 			P_ResetPlayer(sonic);
 			P_SetTarget(&sonic->mo->tracer, tails->mo);
 			sonic->pflags |= PF_CARRIED;
@@ -396,10 +401,11 @@ static void P_DoTailsCarry(player_t *sonic, player_t *tails)
 	}
 	else {
 		if (sonic-players == consoleplayer && botingame)
-			CV_SetValue(&cv_analog2, true);
+			//CV_SetValue(&cv_analog2, true);
 		sonic->pflags &= ~PF_CARRIED;
 	}
 }
+#endif
 
 //
 // PIT_CheckThing
@@ -673,6 +679,10 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			&& (tmthing->target == thing->target)) // Don't hit each other if you have the same target
 			return true;
 
+		if (thing->player && thing->player->powers[pw_flashing]
+			&& !(tmthing->type == MT_GREENITEM || tmthing->type == MT_REDITEM || tmthing->type == MT_REDITEMDUD))
+			return true;
+
 		if (thing->type == MT_PLAYER)
 		{
 			// Player Damage
@@ -808,6 +818,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (((tmthing->target == thing) || (tmthing->target == thing->target)) && (tmthing->threshold > 0 || (thing->type != MT_PLAYER && thing->threshold > 0)))
 			return true;
 
+		if (thing->player && thing->player->powers[pw_flashing])
+			return true;
+
 		if (thing->type == MT_PLAYER)
 		{
 			S_StartSound(NULL, sfx_cgot); //let all players hear it.
@@ -832,9 +845,15 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (!(thing->type == MT_PLAYER))
 			return true;
 
-		if (thing->type == MT_PLAYER)
+		if (thing->player && thing->player->powers[pw_flashing])
+			return true;
+
+		if (thing->type == MT_PLAYER && thing->player)
 		{
-			K_SpinPlayer(thing->player, tmthing->target);
+			if (tmthing->state == &states[S_BOMBEXPLOSION1])
+				K_ExplodePlayer(thing->player, tmthing->target);
+			else
+				K_SpinPlayer(thing->player, tmthing->target);
 		}
 
 		return true; // This doesn't collide with anything, but we want it to effect the player anyway.
@@ -862,6 +881,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (tmthing->type == MT_FIREBALL && thing->type == MT_FIREBALL)
 			return true; // Fireballs don't collide with eachother
+
+		if (thing->player && thing->player->powers[pw_flashing])
+			return true;
 
 		if (thing->type == MT_PLAYER)
 		{
@@ -960,6 +982,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->health <= 0 || thing->health <= 0)
 			return true;
 
+		if (thing->player && thing->player->powers[pw_flashing])
+			return true;
+
 		if (thing->type == MT_GREENITEM // When these items collide with the fake item, just the fake item is destroyed
 			|| thing->type == MT_REDITEM || thing->type == MT_REDITEMDUD
 			|| thing->type == MT_BOMBITEM
@@ -1043,6 +1068,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->health <= 0 || thing->health <= 0)
 			return true;
 
+		if (thing->player && thing->player->powers[pw_flashing])
+			return true;
+
 		if (thing->type == MT_PLAYER)
 		{
 			P_KillMobj(tmthing, thing, thing);
@@ -1086,6 +1114,10 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return true; // overhead
 		if (tmthing->z + tmthing->height < thing->z)
 			return true; // underneath
+
+		if (tmthing->player && tmthing->player->powers[pw_flashing]
+			&& !(thing->type == MT_GREENITEM || thing->type == MT_REDITEM || thing->type == MT_REDITEMDUD))
+			return true;
 
 		if (thing->type == MT_GREENSHIELD || thing->type == MT_TRIPLEGREENSHIELD1 || thing->type == MT_TRIPLEGREENSHIELD2 || thing->type == MT_TRIPLEGREENSHIELD3
 			|| thing->type == MT_REDSHIELD || thing->type == MT_TRIPLEREDSHIELD1 || thing->type == MT_TRIPLEREDSHIELD2 || thing->type == MT_TRIPLEREDSHIELD3
@@ -1151,10 +1183,13 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			P_KillMobj(thing, tmthing, tmthing);
 		}
-		else if (thing->type == MT_BOMBEXPLOSION)
+		else if (thing->type == MT_BOMBEXPLOSION && tmthing->player)
 		{
 			// Player Damage
-			K_SpinPlayer(tmthing->player, thing->target);
+			if (thing->state == &states[S_BOMBEXPLOSION1])
+				K_ExplodePlayer(tmthing->player, thing->target);
+			else
+				K_SpinPlayer(tmthing->player, thing->target);
 
 			return true;
 		}
@@ -1174,7 +1209,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		return true;
 	}
-
 
 	if (thing->type == MT_POKEY)
 	{
@@ -1196,6 +1230,16 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	}
 
 	//}
+
+	if (thing->type == MT_FALLINGROCK || tmthing->type == MT_FALLINGROCK)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+		K_KartBouncing(thing, tmthing, false, false);
+	}
 
 	if ((thing->type == MT_SPRINGSHELL || thing->type == MT_YELLOWSHELL) && thing->health > 0
 	 && (tmthing->player || (tmthing->flags & MF_PUSHABLE)) && tmthing->health > 0)
@@ -1322,6 +1366,10 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					localangle = thing->angle;
 				else if (thing->player == &players[secondarydisplayplayer])
 					localangle2 = thing->angle;
+				else if (thing->player == &players[thirddisplayplayer])
+					localangle3 = thing->angle;
+				else if (thing->player == &players[fourthdisplayplayer])
+					localangle4 = thing->angle;
 			}
 
 			return true;
@@ -1512,7 +1560,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		else if (thing->player->kartstuff[k_startimer] && !tmthing->player->kartstuff[k_startimer])
 			P_DamageMobj(tmthing, thing, thing, 1);
 
-		if (G_RingSlingerGametype() && (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam))
+		if (G_BattleGametype() && (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam))
 		{
 			if ((tmthing->player->powers[pw_invulnerability] || tmthing->player->powers[pw_super])
 				&& !thing->player->powers[pw_super])
@@ -1534,7 +1582,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	}
 
 	// Force solid players in hide and seek to avoid corner stacking.
-	if (cv_tailspickup.value && gametype != GT_HIDEANDSEEK)
+	// Kart: No Tailspickup ever, players are always solid
+	/*if (cv_tailspickup.value && gametype != GT_HIDEANDSEEK)
 	{
 		if (tmthing->player && thing->player)
 		{
@@ -1544,9 +1593,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	}
 	else if (thing->player) {
 		if (thing->player-players == consoleplayer && botingame)
-			CV_SetValue(&cv_analog2, true);
+			//CV_SetValue(&cv_analog2, true);
 		thing->player->pflags &= ~PF_CARRIED;
-	}
+	}*/
 
 	if (thing->player)
 	{
@@ -1591,6 +1640,151 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if ( thing->z <= tmthing->z + tmthing->height
 			&& tmthing->z <= thing->z + thing->height)
 				iwassprung = P_DoSpring(thing, tmthing);
+		}
+		else if (thing->player) // bounce when players collide
+		{
+			// see if it went over / under
+			if (tmthing->z > thing->z + thing->height)
+				return true; // overhead
+			if (tmthing->z + tmthing->height < thing->z)
+				return true; // underneath
+
+			if (thing->player->kartstuff[k_growshrinktimer] || thing->player->kartstuff[k_squishedtimer]
+				|| thing->player->kartstuff[k_bootimer] || thing->player->kartstuff[k_spinouttimer]
+				|| thing->player->kartstuff[k_startimer] || thing->player->kartstuff[k_justbumped]
+				|| (G_BattleGametype() && (thing->player->kartstuff[k_balloon] <= 0
+				&& (thing->player->kartstuff[k_comebacktimer])))
+				|| tmthing->player->kartstuff[k_growshrinktimer] || tmthing->player->kartstuff[k_squishedtimer]
+				|| tmthing->player->kartstuff[k_bootimer] || tmthing->player->kartstuff[k_spinouttimer]
+				|| tmthing->player->kartstuff[k_startimer] || tmthing->player->kartstuff[k_justbumped]
+				|| (G_BattleGametype() && (tmthing->player->kartstuff[k_balloon] <= 0
+				&& (tmthing->player->kartstuff[k_comebacktimer]))))
+			{
+				return true;
+			}
+
+			if (G_BattleGametype())
+			{
+				if (thing->player->kartstuff[k_balloon] <= 0 || tmthing->player->kartstuff[k_balloon] <= 0)
+				{
+					if (thing->player->kartstuff[k_comebackmode] == 0
+						&& (tmthing->player->kartstuff[k_balloon] > 0
+						&& !tmthing->player->powers[pw_flashing]))
+					{
+						mobj_t *boom = P_SpawnMobj(thing->x, thing->y, thing->z, MT_BOOMPARTICLE);
+						boom->scale = thing->scale;
+						boom->destscale = thing->scale;
+						boom->momz = 5*FRACUNIT;
+						if (thing->player->skincolor)
+							boom->color = thing->player->skincolor;
+						else
+							boom->color = SKINCOLOR_RED;
+						S_StartSound(boom, sfx_s3k4e);
+						K_ExplodePlayer(tmthing->player, thing);
+						thing->player->kartstuff[k_comebacktimer] = comebacktime;
+						return true;
+					}
+					else if (tmthing->player->kartstuff[k_comebackmode] == 0
+						&& (thing->player->kartstuff[k_balloon] > 0
+						&& !thing->player->powers[pw_flashing]))
+					{
+						mobj_t *boom = P_SpawnMobj(tmthing->x, tmthing->y, tmthing->z, MT_BOOMPARTICLE);
+						boom->scale = tmthing->scale;
+						boom->destscale = tmthing->scale;
+						boom->momz = 5*FRACUNIT;
+						if (tmthing->player->skincolor)
+							boom->color = tmthing->player->skincolor;
+						else
+							boom->color = SKINCOLOR_RED;
+						S_StartSound(boom, sfx_s3k4e);
+						K_ExplodePlayer(thing->player, tmthing);
+						tmthing->player->kartstuff[k_comebacktimer] = comebacktime;
+						return true;
+					}
+					else if (thing->player->kartstuff[k_comebackmode] == 1
+						&& (tmthing->player->kartstuff[k_balloon] > 0
+						&& P_CanPickupItem(tmthing->player, true)))
+					{
+						thing->player->kartstuff[k_comebackmode] = 0;
+						thing->player->kartstuff[k_comebackpoints]++;
+						if (netgame && cv_hazardlog.value)
+							CONS_Printf(M_GetText("%s gave an item to %s.\n"), player_names[thing->player-players], player_names[tmthing->player-players]);
+						tmthing->player->kartstuff[k_itemroulette] = 1;
+						tmthing->player->kartstuff[k_roulettetype] = 1;
+						if (thing->player->kartstuff[k_comebackpoints] >= 3)
+							K_StealBalloon(thing->player, tmthing->player, true);
+						thing->player->kartstuff[k_comebacktimer] = comebacktime;
+						return true;
+					}
+					else if (tmthing->player->kartstuff[k_comebackmode] == 1
+						&& (thing->player->kartstuff[k_balloon] > 0
+						&& P_CanPickupItem(thing->player, true)))
+					{
+						tmthing->player->kartstuff[k_comebackmode] = 0;
+						tmthing->player->kartstuff[k_comebackpoints]++;
+						if (netgame && cv_hazardlog.value)
+							CONS_Printf(M_GetText("%s gave an item to %s.\n"), player_names[tmthing->player-players], player_names[thing->player-players]);
+						thing->player->kartstuff[k_itemroulette] = 1;
+						thing->player->kartstuff[k_roulettetype] = 1;
+						if (tmthing->player->kartstuff[k_comebackpoints] >= 3)
+							K_StealBalloon(tmthing->player, thing->player, true);
+						tmthing->player->kartstuff[k_comebacktimer] = comebacktime;
+						return true;
+					}
+				}
+			}
+
+			if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
+			{
+				K_KartBouncing(tmthing, thing, true, false);
+				if (G_BattleGametype() && tmthing->player->kartstuff[k_feather] & 2)
+				{
+					K_StealBalloon(tmthing->player, thing->player, false);
+					K_SpinPlayer(thing->player, tmthing);
+				}
+			}
+			else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
+			{
+				K_KartBouncing(thing, tmthing, true, false);
+				if (G_BattleGametype() && thing->player->kartstuff[k_feather] & 2)
+				{
+					K_StealBalloon(thing->player, tmthing->player, false);
+					K_SpinPlayer(tmthing->player, thing);
+				}
+			}
+			else
+				K_KartBouncing(tmthing, thing, false, false);
+
+			if (G_BattleGametype())
+			{
+				if (thing->player->kartstuff[k_mushroomtimer] && !(tmthing->player->kartstuff[k_mushroomtimer]))
+				{
+					K_StealBalloon(thing->player, tmthing->player, false);
+					K_SpinPlayer(tmthing->player, thing);
+				}
+				else if (tmthing->player->kartstuff[k_mushroomtimer] && !(thing->player->kartstuff[k_mushroomtimer]))
+				{
+					K_StealBalloon(tmthing->player, thing->player, false);
+					K_SpinPlayer(thing->player, tmthing);
+				}
+			}
+
+			return true;
+		}
+		else if (thing->flags & MF_SOLID)
+		{
+			// see if it went over / under
+			if (tmthing->z > thing->z + thing->height)
+				return true; // overhead
+			if (tmthing->z + tmthing->height < thing->z)
+				return true; // underneath
+
+			if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
+				K_KartBouncing(tmthing, thing, true, true);
+			else
+				K_KartBouncing(tmthing, thing, false, true);
+
+			return true;
 		}
 		// Are you touching the side of the object you're interacting with?
 		else if (thing->z - FixedMul(FRACUNIT, thing->scale) <= tmthing->z + tmthing->height
@@ -2404,7 +2598,9 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 
 	if (twodlevel
 		|| (thiscam == &camera && players[displayplayer].mo && (players[displayplayer].mo->flags2 & MF2_TWOD))
-		|| (thiscam == &camera2 && players[secondarydisplayplayer].mo && (players[secondarydisplayplayer].mo->flags2 & MF2_TWOD)))
+		|| (thiscam == &camera2 && players[secondarydisplayplayer].mo && (players[secondarydisplayplayer].mo->flags2 & MF2_TWOD))
+		|| (thiscam == &camera3 && players[thirddisplayplayer].mo && (players[thirddisplayplayer].mo->flags2 & MF2_TWOD))
+		|| (thiscam == &camera4 && players[fourthdisplayplayer].mo && (players[fourthdisplayplayer].mo->flags2 & MF2_TWOD)))
 		itsatwodlevel = true;
 
 	if (!itsatwodlevel && players[displayplayer].mo)
@@ -2413,7 +2609,9 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 		fixed_t tryy = thiscam->y;
 
 		if ((thiscam == &camera && (players[displayplayer].pflags & PF_NOCLIP))
-		|| (thiscam == &camera2 && (players[secondarydisplayplayer].pflags & PF_NOCLIP)))
+		|| (thiscam == &camera2 && (players[secondarydisplayplayer].pflags & PF_NOCLIP))
+		|| (thiscam == &camera3 && (players[thirddisplayplayer].pflags & PF_NOCLIP))
+		|| (thiscam == &camera4 && (players[fourthdisplayplayer].pflags & PF_NOCLIP)))
 		{ // Noclipping player camera noclips too!!
 			floatok = true;
 			thiscam->floorz = thiscam->z;
@@ -2613,7 +2811,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		if (!(thing->flags & MF_NOCLIP))
 		{
 			//All things are affected by their scale.
-			fixed_t maxstep = FixedMul(MAXSTEPMOVE, thing->scale);
+			fixed_t maxstep = FixedMul(MAXSTEPMOVE, mapheaderinfo[gamemap-1]->mobj_scale);
 
 			if (thing->player)
 			{
@@ -3037,38 +3235,25 @@ static void P_HitSlideLine(line_t *ld)
 //
 static void P_HitBounceLine(line_t *ld)
 {
-	angle_t lineangle, moveangle, deltaangle;
+	INT32 side;
+	angle_t lineangle;
 	fixed_t movelen;
 
-	if (ld->slopetype == ST_HORIZONTAL)
-	{
-		tmymove = -tmymove;
-		return;
-	}
+	side = P_PointOnLineSide(slidemo->x, slidemo->y, ld);
+	lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy)-ANGLE_90;
 
-	if (ld->slopetype == ST_VERTICAL)
-	{
-		tmxmove = -tmxmove;
-		return;
-	}
-
-	lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy);
-
-	if (lineangle >= ANGLE_180)
-		lineangle -= ANGLE_180;
-
-	moveangle = R_PointToAngle2(0, 0, tmxmove, tmymove);
-	deltaangle = moveangle + 2*(lineangle - moveangle);
+	if (side == 1)
+		lineangle += ANGLE_180;
 
 	lineangle >>= ANGLETOFINESHIFT;
-	deltaangle >>= ANGLETOFINESHIFT;
 
 	movelen = P_AproxDistance(tmxmove, tmymove);
 
-	tmxmove = FixedMul(movelen, FINECOSINE(deltaangle));
-	tmymove = FixedMul(movelen, FINESINE(deltaangle));
+	if (slidemo->player && movelen < (15*mapheaderinfo[gamemap-1]->mobj_scale))
+		movelen = (15*mapheaderinfo[gamemap-1]->mobj_scale);
 
-	deltaangle = R_PointToAngle2(0, 0, tmxmove, tmymove);
+	tmxmove += FixedMul(movelen, FINECOSINE(lineangle));
+	tmymove += FixedMul(movelen, FINESINE(lineangle));
 }
 
 //
@@ -3374,6 +3559,10 @@ isblocking:
 						localangle = slidemo->angle;
 					else if (slidemo->player == &players[secondarydisplayplayer])
 						localangle2 = slidemo->angle;
+					else if (slidemo->player == &players[thirddisplayplayer])
+						localangle3 = slidemo->angle;
+					else if (slidemo->player == &players[fourthdisplayplayer])
+						localangle4 = slidemo->angle;
 				}
 
 				if (!slidemo->player->climbing)
@@ -3522,7 +3711,7 @@ stairstep:
 //
 // This is a kludgy mess.
 //
-void P_SlideMove(mobj_t *mo)
+void P_SlideMove(mobj_t *mo, boolean forceslide)
 {
 	fixed_t leadx, leady, trailx, traily, newx, newy;
 	INT16 hitcount = 0;
@@ -3600,7 +3789,7 @@ retry:
 		PT_ADDLINES, PTR_SlideTraverse);
 
 	// Some walls are bouncy even if you're not
-	if (bestslideline && !(bestslideline->flags & ML_BOUNCY)) // SRB2kart - All walls are bouncy unless specified otherwise
+	if (!forceslide && bestslideline && !(bestslideline->flags & ML_BOUNCY)) // SRB2kart - All walls are bouncy unless specified otherwise
 	{
 		P_BounceMove(mo);
 		return;
@@ -3693,16 +3882,22 @@ void P_BounceMove(mobj_t *mo)
 {
 	fixed_t leadx, leady;
 	fixed_t trailx, traily;
-	fixed_t newx, newy;
-	INT32 hitcount;
+	//fixed_t newx, newy;
+	//INT32 hitcount;
 	fixed_t mmomx = 0, mmomy = 0;
 
-	slidemo = mo;
-	hitcount = 0;
+	if (mo->eflags & MFE_JUSTBOUNCEDWALL)
+	{
+		P_SlideMove(mo, true);
+		return;
+	}
 
-retry:
+	slidemo = mo;
+	//hitcount = 0;
+
+/*retry:
 	if (++hitcount == 3)
-		goto bounceback; // don't loop forever
+		goto bounceback; // don't loop forever*/
 
 	if (mo->player)
 	{
@@ -3751,7 +3946,7 @@ retry:
 	P_PathTraverse(leadx, traily, leadx + mmomx, traily + mmomy, PT_ADDLINES, PTR_SlideTraverse);
 
 	// move up to the wall
-	if (bestslidefrac == FRACUNIT + 1)
+	/*if (bestslidefrac == FRACUNIT + 1)
 	{
 		// the move must have hit the middle, so bounce straight back
 bounceback:
@@ -3773,10 +3968,10 @@ bounceback:
 			}
 		}
 		return;
-	}
+	}*/
 
 	// fudge a bit to make sure it doesn't hit
-	bestslidefrac -= 0x800;
+	/*bestslidefrac -= 0x800;
 	if (bestslidefrac > 0)
 	{
 		newx = FixedMul(mmomx, bestslidefrac);
@@ -3784,7 +3979,7 @@ bounceback:
 
 		if (!P_TryMove(mo, mo->x + newx, mo->y + newy, true))
 			goto bounceback;
-	}
+	}*/
 
 	// Now continue along the wall.
 	// First calculate remainder.
@@ -3816,9 +4011,21 @@ bounceback:
 	{
 		tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
 		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
+		if (mo->player)
+		{
+			mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
+			if (mo->eflags & MFE_VERTICALFLIP)
+				fx->eflags |= MFE_VERTICALFLIP;
+			else
+				fx->eflags &= ~MFE_VERTICALFLIP;
+			fx->scale = mo->scale;
+
+			S_StartSound(mo, sfx_s3k49);
+		}
 	}
 
-	P_HitBounceLine(bestslideline); // clip the moves
+	P_HitBounceLine(bestslideline);
+	mo->eflags |= MFE_JUSTBOUNCEDWALL;
 
 	mo->momx = tmxmove;
 	mo->momy = tmymove;
@@ -3829,8 +4036,9 @@ bounceback:
 		mo->player->cmomy = tmymove;
 	}
 
-	if (!P_TryMove(mo, mo->x + tmxmove, mo->y + tmymove, true))
-		goto retry;
+	/*if (!P_TryMove(mo, mo->x + tmxmove, mo->y + tmymove, true))
+		goto retry;*/
+	P_TryMove(mo, mo->x + tmxmove, mo->y + tmymove, true);
 }
 
 //

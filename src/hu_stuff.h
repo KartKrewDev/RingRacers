@@ -21,7 +21,7 @@
 //------------------------------------
 //           heads up font
 //------------------------------------
-#define HU_FONTSTART '\x1F' // the first font character
+#define HU_FONTSTART '\x1E' // the first font character
 #define HU_FONTEND '~'
 
 #define HU_FONTSIZE (HU_FONTEND - HU_FONTSTART + 1)
@@ -78,6 +78,7 @@ extern patch_t *rmatcico;
 extern patch_t *bmatcico;
 extern patch_t *tagico;
 extern patch_t *tallminus;
+extern patch_t *iconprefix[MAXSKINS];
 
 // set true when entering a chat message
 extern boolean chat_on;
@@ -117,7 +118,6 @@ void HU_SetCEchoFlags(INT32 flags);
 void HU_DoCEcho(const char *msg);
 
 // Demo playback info
-extern UINT32 hu_demoscore;
 extern UINT32 hu_demotime;
-extern UINT16 hu_demorings;
+extern UINT32 hu_demolap;
 #endif

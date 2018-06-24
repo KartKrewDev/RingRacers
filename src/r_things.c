@@ -29,6 +29,7 @@
 #include "d_netfil.h" // blargh. for nameonly().
 #include "m_cheat.h" // objectplace
 #include "k_kart.h" // SRB2kart
+#include "p_local.h" // stplyr
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
 #endif
@@ -827,7 +828,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		dc_transmap = vis->transmap;
 		if (vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // MT_GHOST LOOKS LIKE A PLAYER SO USE THE PLAYER TRANSLATION TABLES. >_>
 		{
-			if (vis->mobj->player && vis->mobj->player->kartstuff[k_startimer])
+			if (vis->mobj->colorized)
 				dc_translation = R_GetTranslationColormap(TC_STARMAN, vis->mobj->color, GTC_CACHE);
 			else
 			{
@@ -851,7 +852,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		// New colormap stuff for skins Tails 06-07-2002
 		if (vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // This thing is a player!
 		{
-			if (vis->mobj->player && vis->mobj->player->kartstuff[k_startimer])
+			if (vis->mobj->colorized)
 				dc_translation = R_GetTranslationColormap(TC_STARMAN, vis->mobj->color, GTC_CACHE);
 			else
 			{
@@ -1262,7 +1263,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	offset2 = FixedMul(spritecachedinfo[lump].width, this_scale);
 	tx += FixedMul(offset2, ang_scale);
-	x2 = ((centerxfrac + FixedMul (tx,xscale)) >>FRACBITS) - 1;
+	x2 = ((centerxfrac + FixedMul (tx,xscale)) >> FRACBITS) - (papersprite ? 2 : 1);
 
 	// off the left side
 	if (x2 < 0)
@@ -1675,7 +1676,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 // R_AddSprites
 // During BSP traversal, this adds sprites by sector.
 //
-void R_AddSprites(sector_t *sec, INT32 lightlevel)
+void R_AddSprites(sector_t *sec, INT32 lightlevel, UINT8 ssplayer)
 {
 	mobj_t *thing;
 	precipmobj_t *precipthing; // Tails 08-25-2002
@@ -1718,6 +1719,25 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
+			if (splitscreen)
+			{
+				if (thing->eflags & MFE_DRAWONLYFORP1)
+					if (ssplayer != 1)
+						continue;
+
+				if (thing->eflags & MFE_DRAWONLYFORP2)
+					if (ssplayer != 2)
+						continue;
+
+				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+					if (ssplayer != 3)
+						continue;
+
+				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+					if (ssplayer != 4)
+						continue;
+			}
+
 			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
 
 			if (approx_dist <= limit_dist)
@@ -1728,8 +1748,31 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	{
 		// Draw everything in sector, no checks
 		for (thing = sec->thinglist; thing; thing = thing->snext)
-			if (!(thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW))
-				R_ProjectSprite(thing);
+		{
+			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+				continue;
+
+			if (splitscreen)
+			{
+				if (thing->eflags & MFE_DRAWONLYFORP1)
+					if (ssplayer != 1)
+						continue;
+
+				if (thing->eflags & MFE_DRAWONLYFORP2)
+					if (ssplayer != 2)
+						continue;
+
+				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+					if (ssplayer != 3)
+						continue;
+
+				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+					if (ssplayer != 4)
+						continue;
+			}
+
+			R_ProjectSprite(thing);
+		}
 	}
 
 	// Someone seriously wants infinite draw distance for precipitation?
@@ -2467,8 +2510,8 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	skin->prefcolor = SKINCOLOR_GREEN;
 
 	// SRB2kart
-	skin->kartspeed = 6;
-	skin->kartweight = 4;
+	skin->kartspeed = 5;
+	skin->kartweight = 5;
 	//
 
 	skin->normalspeed = 36<<FRACBITS;
@@ -2493,6 +2536,7 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	for (i = 0; i < sfx_skinsoundslot0; i++)
 		if (S_sfx[i].skinsound != -1)
 			skin->soundsid[S_sfx[i].skinsound] = i;
+	strncpy(skin->iconprefix, "SONICICN", 8);
 }
 
 //
@@ -2533,6 +2577,11 @@ void R_InitSkins(void)
 	skin->ability =   CA_THOK;
 	skin->actionspd = 60<<FRACBITS;
 
+	// SRB2kart
+	skin->kartspeed = 7;
+	skin->kartweight = 3;
+	//
+
 	skin->normalspeed =  36<<FRACBITS;
 	skin->runspeed =     28<<FRACBITS;
 	skin->thrustfactor =  5;
@@ -2542,6 +2591,8 @@ void R_InitSkins(void)
 	skin->spritedef.numframes = sprites[SPR_PLAY].numframes;
 	skin->spritedef.spriteframes = sprites[SPR_PLAY].spriteframes;
 	ST_LoadFaceGraphics(skin->face, skin->superface, 0);
+	strncpy(skin->iconprefix, "SONICICN", 8);
+	K_LoadIconGraphics(skin->iconprefix, 0);
 
 	//MD2 for sonic doesn't want to load in Linux.
 #ifdef HWRENDER
@@ -2582,7 +2633,7 @@ void SetPlayerSkin(INT32 playernum, const char *skinname)
 
 	if (P_IsLocalPlayer(player))
 		CONS_Alert(CONS_WARNING, M_GetText("Skin '%s' not found.\n"), skinname);
-	else if(server || adminplayer == consoleplayer)
+	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) skin '%s' not found\n"), playernum, player_names[playernum], skinname);
 
 	SetPlayerSkinByNum(playernum, 0);
@@ -2639,6 +2690,10 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 				CV_StealthSetValue(&cv_playercolor, skin->prefcolor);
 			else if (playernum == secondarydisplayplayer)
 				CV_StealthSetValue(&cv_playercolor2, skin->prefcolor);
+			else if (playernum == thirddisplayplayer)
+				CV_StealthSetValue(&cv_playercolor3, skin->prefcolor);
+			else if (playernum == fourthdisplayplayer)
+				CV_StealthSetValue(&cv_playercolor4, skin->prefcolor);
 			player->skincolor = skin->prefcolor;
 			if (player->mo)
 				player->mo->color = player->skincolor;
@@ -2651,7 +2706,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 
 	if (P_IsLocalPlayer(player))
 		CONS_Alert(CONS_WARNING, M_GetText("Skin %d not found\n"), skinnum);
-	else if(server || adminplayer == consoleplayer)
+	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);
 	SetPlayerSkinByNum(playernum, 0); // not found put the sonic skin
 }
@@ -2866,6 +2921,11 @@ void R_AddSkins(UINT16 wadnum)
 				skin->jumpfactor = FLOAT_TO_FIXED(atof(value));
 			else if (!stricmp(stoken, "highresscale"))
 				skin->highresscale = FLOAT_TO_FIXED(atof(value));
+			else if (!stricmp(stoken, "faceicon"))
+			{
+				strupr(value);
+				strncpy(skin->iconprefix, value, sizeof skin->iconprefix);
+			}
 			else
 			{
 				INT32 found = false;
@@ -2967,6 +3027,9 @@ next_token:
 
 		// add face graphics
 		ST_LoadFaceGraphics(skin->face, skin->superface, numskins);
+		
+		// load minimap icons
+		K_LoadIconGraphics(skin->iconprefix, numskins);
 
 #ifdef HWRENDER
 		if (rendermode == render_opengl)

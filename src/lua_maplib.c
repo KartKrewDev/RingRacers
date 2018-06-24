@@ -1185,7 +1185,7 @@ static int mapheaderinfo_get(lua_State *L)
 	else if (fastcmp(field,"zonttl"))
 		lua_pushstring(L, header->zonttl);
 	else if (fastcmp(field,"actnum"))
-		lua_pushinteger(L, header->actnum);
+		lua_pushstring(L, header->actnum);
 	else if (fastcmp(field,"typeoflevel"))
 		lua_pushinteger(L, header->typeoflevel);
 	else if (fastcmp(field,"nextlevel"))
@@ -1235,6 +1235,10 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->levelflags);
 	else if (fastcmp(field,"menuflags"))
 		lua_pushinteger(L, header->menuflags);
+	/*else if (fastcmp(field,"automap"))
+		lua_pushboolean(L, header->automap);*/
+	else if (fastcmp(field,"mobj_scale"))
+		lua_pushfixed(L, header->mobj_scale);
 	// TODO add support for reading numGradedMares and grades
 	else {
 		// Read custom vars now

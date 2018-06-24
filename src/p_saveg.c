@@ -138,8 +138,6 @@ static void P_NetArchivePlayers(void)
 			WRITEUINT16(save_p, players[i].powers[j]);
 		for (j = 0; j < NUMKARTSTUFF; j++)
 			WRITEINT32(save_p, players[i].kartstuff[j]);
-		for (j = 0; j < MAXPLAYERS; j++)
-			WRITEUINT8(save_p, players[i].collide[j]);
 
 		WRITEANGLE(save_p, players[i].frameangle);
 
@@ -200,6 +198,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].starposty);
 		WRITEINT16(save_p, players[i].starpostz);
 		WRITEINT32(save_p, players[i].starpostnum);
+		WRITEINT32(save_p, players[i].starpostcount);
 		WRITEANGLE(save_p, players[i].starpostangle);
 
 		WRITEANGLE(save_p, players[i].angle_pos);
@@ -323,8 +322,6 @@ static void P_NetUnArchivePlayers(void)
 			players[i].powers[j] = READUINT16(save_p);
 		for (j = 0; j < NUMKARTSTUFF; j++)
 			players[i].kartstuff[j] = READINT32(save_p);
-		for (j = 0; j < MAXPLAYERS; j++)
-			players[i].collide[j] = (boolean)READUINT8(save_p);
 
 		players[i].frameangle = READANGLE(save_p);
 
@@ -385,6 +382,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].starposty = READINT16(save_p);
 		players[i].starpostz = READINT16(save_p);
 		players[i].starpostnum = READINT32(save_p);
+		players[i].starpostcount = READINT32(save_p);
 		players[i].starpostangle = READANGLE(save_p);
 
 		players[i].angle_pos = READANGLE(save_p);
@@ -948,9 +946,11 @@ typedef enum
 	MD2_HNEXT       = 1<<7,
 #ifdef ESLOPE
 	MD2_HPREV       = 1<<8,
-	MD2_SLOPE       = 1<<9
+	MD2_SLOPE       = 1<<9,
+	MD2_COLORIZED	= 1<<10
 #else
-	MD2_HPREV       = 1<<8
+	MD2_HPREV       = 1<<8,
+	MD2_COLORIZED	= 1<<9
 #endif
 } mobj_diff2_t;
 
@@ -1145,6 +1145,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (mobj->standingslope)
 		diff2 |= MD2_SLOPE;
 #endif
+	if (mobj->colorized)
+		diff2 |= MD2_COLORIZED;
 	if (diff2 != 0)
 		diff |= MD_MORE;
 
@@ -1264,6 +1266,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_SLOPE)
 		WRITEUINT16(save_p, mobj->standingslope->id);
 #endif
+	if (diff2 & MD2_COLORIZED)
+		WRITEUINT8(save_p, mobj->colorized);
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2068,6 +2072,10 @@ static void LoadMobjThinker(actionf_p1 thinker)
 			localangle = mobj->angle;
 		if (secondarydisplayplayer == i)
 			localangle2 = mobj->angle;
+		if (thirddisplayplayer == i)
+			localangle3 = mobj->angle;
+		if (fourthdisplayplayer == i)
+			localangle4 = mobj->angle;
 	}
 	if (diff & MD_MOVEDIR)
 		mobj->movedir = READANGLE(save_p);
@@ -2129,7 +2137,8 @@ static void LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_SLOPE)
 		mobj->standingslope = P_SlopeById(READUINT16(save_p));
 #endif
-
+	if (diff2 & MD2_COLORIZED)
+		mobj->colorized = READUINT8(save_p);
 
 	if (diff & MD_REDFLAG)
 	{
@@ -3200,6 +3209,14 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT32(save_p, totalrings);
 	WRITEINT16(save_p, lastmap);
 
+	for (i = 0; i < 4; i++)
+		WRITEINT16(save_p, votelevels[i]);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		WRITESINT8(save_p, votes[i]);
+
+	WRITESINT8(save_p, pickedvote);
+
 	WRITEUINT16(save_p, emeralds);
 	WRITEUINT8(save_p, stagefailed);
 
@@ -3229,6 +3246,18 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT8(save_p, countdowntimeup);
 
 	WRITEUINT32(save_p, hidetime);
+
+	// SRB2kart
+	WRITEINT32(save_p, numgotboxes);
+
+	WRITEUINT8(save_p, gamespeed);
+	WRITEUINT8(save_p, mirrormode);
+	WRITEUINT8(save_p, franticitems);
+	WRITEUINT8(save_p, comeback);
+
+	WRITEUINT32(save_p, lightningcooldown);
+	WRITEUINT32(save_p, blueshellincoming);
+	WRITEUINT8(save_p, blueshellplayer);
 
 	// Is it paused?
 	if (paused)
@@ -3277,6 +3306,14 @@ static inline boolean P_NetUnArchiveMisc(void)
 	totalrings = READUINT32(save_p);
 	lastmap = READINT16(save_p);
 
+	for (i = 0; i < 4; i++)
+		votelevels[i] = READINT16(save_p);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		votes[i] = READSINT8(save_p);
+
+	pickedvote = READSINT8(save_p);
+
 	emeralds = READUINT16(save_p);
 	stagefailed = READUINT8(save_p);
 
@@ -3306,6 +3343,18 @@ static inline boolean P_NetUnArchiveMisc(void)
 	countdowntimeup = (boolean)READUINT8(save_p);
 
 	hidetime = READUINT32(save_p);
+
+	// SRB2kart
+	numgotboxes = READINT32(save_p);
+
+	gamespeed = READUINT8(save_p);
+	mirrormode = (boolean)READUINT8(save_p);
+	franticitems = (boolean)READUINT8(save_p);
+	comeback = (boolean)READUINT8(save_p);
+
+	lightningcooldown = READUINT32(save_p);
+	blueshellincoming = READUINT32(save_p);
+	blueshellplayer = READUINT8(save_p);
 
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)
@@ -3364,6 +3413,8 @@ boolean P_LoadGame(INT16 mapoverride)
 {
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
+	if (gamestate == GS_VOTING)
+		Y_EndVote();
 	G_SetGamestate(GS_NULL); // should be changed in P_UnArchiveMisc
 
 	P_UnArchiveSPGame(mapoverride);
@@ -3374,7 +3425,7 @@ boolean P_LoadGame(INT16 mapoverride)
 		return false;
 
 	// Only do this after confirming savegame is ok
-	G_DeferedInitNew(false, G_BuildMapName(gamemap), savedata.skin, false, true);
+	G_DeferedInitNew(false, G_BuildMapName(gamemap), savedata.skin, 0, true);
 	COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
 
 	return true;

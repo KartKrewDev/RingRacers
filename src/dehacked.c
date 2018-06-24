@@ -981,6 +981,7 @@ static const struct {
 	{"RACE",TOL_RACE},
 
 	{"MATCH",TOL_MATCH},
+	{"BATTLE",TOL_MATCH}, // SRB2kart
 	{"TAG",TOL_TAG},
 	{"CTF",TOL_CTF},
 
@@ -989,13 +990,13 @@ static const struct {
 	{"2D",TOL_2D},
 	{"MARIO",TOL_MARIO},
 	{"NIGHTS",TOL_NIGHTS},
-	{"OLDBRAK",TOL_ERZ3},
+	//{"OLDBRAK",TOL_ERZ3},
 
 	{"XMAS",TOL_XMAS},
 	{"CHRISTMAS",TOL_XMAS},
 	{"WINTER",TOL_XMAS},
 
-	{"KART",TOL_KART}, // SRB2kart
+	//{"KART",TOL_KART}, // SRB2kart
 
 	{NULL, 0}
 };
@@ -1135,10 +1136,12 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "ACT"))
 			{
-				if (i >= 0 && i < 20) // 0 for no act number, TTL1 through TTL19
+				/*if (i >= 0 && i < 20) // 0 for no act number, TTL1 through TTL19
 					mapheaderinfo[num-1]->actnum = (UINT8)i;
 				else
-					deh_warning("Level header %d: invalid act number %d", num, i);
+					deh_warning("Level header %d: invalid act number %d", num, i);*/
+				deh_strlcpy(mapheaderinfo[num-1]->actnum, word2,
+					sizeof(mapheaderinfo[num-1]->actnum), va("Level header %d: actnum", num));
 			}
 			else if (fastcmp(word, "NEXTLEVEL"))
 			{
@@ -1252,9 +1255,20 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}
 
 			else if (fastcmp(word, "LEVELFLAGS"))
-				mapheaderinfo[num-1]->levelflags = (UINT8)i;
+				mapheaderinfo[num-1]->levelflags = get_number(word2);
 			else if (fastcmp(word, "MENUFLAGS"))
-				mapheaderinfo[num-1]->menuflags = (UINT8)i;
+				mapheaderinfo[num-1]->menuflags = get_number(word2);
+
+			// SRB2Kart
+			/*else if (fastcmp(word, "AUTOMAP"))
+			{
+				if (i || word2[0] == 'T' || word2[0] == 'Y')
+					mapheaderinfo[num-1]->automap = true;
+				else
+					mapheaderinfo[num-1]->automap = false;
+			}*/
+			else if (fastcmp(word, "MOBJSCALE"))
+				mapheaderinfo[num-1]->mobj_scale = get_number(word2);
 
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))
@@ -1871,7 +1885,6 @@ static void readframe(MYFILE *f, INT32 num)
 	char *word1;
 	char *word2 = NULL;
 	char *tmp;
-	INT32 j;
 
 	do
 	{
@@ -1885,16 +1898,6 @@ static void readframe(MYFILE *f, INT32 num)
 				*tmp = '\0';
 			if (s == tmp)
 				continue; // Skip comment lines, but don't break.
-
-			for (j = 0; s[j] != '\n'; j++)
-			{
-				if (s[j] == '=')
-				{
-					j += 2;
-					j = atoi(&s[j]);
-					break;
-				}
-			}
 
 			word1 = strtok(s, " ");
 			if (word1)
@@ -2163,16 +2166,16 @@ static void reademblemdata(MYFILE *f, INT32 num)
 					emblemlocations[num-1].type = ET_GLOBAL;
 				else if (fastcmp(word2, "SKIN"))
 					emblemlocations[num-1].type = ET_SKIN;
-				else if (fastcmp(word2, "SCORE"))
-					emblemlocations[num-1].type = ET_SCORE;
+				/*else if (fastcmp(word2, "SCORE"))
+					emblemlocations[num-1].type = ET_SCORE;*/
 				else if (fastcmp(word2, "TIME"))
 					emblemlocations[num-1].type = ET_TIME;
-				else if (fastcmp(word2, "RINGS"))
+				/*else if (fastcmp(word2, "RINGS"))
 					emblemlocations[num-1].type = ET_RINGS;
 				else if (fastcmp(word2, "NGRADE"))
 					emblemlocations[num-1].type = ET_NGRADE;
 				else if (fastcmp(word2, "NTIME"))
-					emblemlocations[num-1].type = ET_NTIME;
+					emblemlocations[num-1].type = ET_NTIME;*/
 				else
 					emblemlocations[num-1].type = (UINT8)value;
 			}
@@ -2217,24 +2220,24 @@ static void reademblemdata(MYFILE *f, INT32 num)
 	// Default sprite and color definitions for lazy people like me
 	if (!emblemlocations[num-1].sprite) switch (emblemlocations[num-1].type)
 	{
-		case ET_RINGS:
+		/*case ET_RINGS:
 			emblemlocations[num-1].sprite = 'R'; break;
 		case ET_SCORE: case ET_NGRADE:
-			emblemlocations[num-1].sprite = 'S'; break;
-		case ET_TIME: case ET_NTIME:
+			emblemlocations[num-1].sprite = 'S'; break;*/
+		case ET_TIME: //case ET_NTIME:
 			emblemlocations[num-1].sprite = 'T'; break;
 		default:
 			emblemlocations[num-1].sprite = 'A'; break;
 	}
 	if (!emblemlocations[num-1].color) switch (emblemlocations[num-1].type)
 	{
-		case ET_RINGS:
+		/*case ET_RINGS:
 			emblemlocations[num-1].color = SKINCOLOR_GOLD; break;
 		case ET_SCORE:
 			emblemlocations[num-1].color = SKINCOLOR_BROWN; break;
 		case ET_NGRADE:
-			emblemlocations[num-1].color = SKINCOLOR_TEAL; break;
-		case ET_TIME: case ET_NTIME:
+			emblemlocations[num-1].color = SKINCOLOR_TEAL; break;*/
+		case ET_TIME: //case ET_NTIME:
 			emblemlocations[num-1].color = SKINCOLOR_GREY; break;
 		default:
 			emblemlocations[num-1].color = SKINCOLOR_BLUE; break;
@@ -2465,32 +2468,33 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		return;
 	}
 
-	if (fastcmp(params[0], "PLAYTIME"))
+	if				(fastcmp(params[0], "PLAYTIME")
+	|| (++offset && fastcmp(params[0], "MATCHESPLAYED")))
 	{
 		PARAMCHECK(1);
-		ty = UC_PLAYTIME;
+		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
 	}
-	else if        (fastcmp(params[0], "GAMECLEAR")
-	|| (++offset && fastcmp(params[0], "ALLEMERALDS"))
-	|| (++offset && fastcmp(params[0], "ULTIMATECLEAR")))
+	else if ((offset=0) || fastcmp(params[0], "GAMECLEAR")
+	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
+	//||        (++offset && fastcmp(params[0], "ULTIMATECLEAR")))
 	{
 		ty = UC_GAMECLEAR + offset;
 		re = (params[1]) ? atoi(params[1]) : 1;
 	}
-	else if ((offset=0) || fastcmp(params[0], "OVERALLSCORE")
-	||        (++offset && fastcmp(params[0], "OVERALLTIME"))
-	||        (++offset && fastcmp(params[0], "OVERALLRINGS")))
+	else if ((offset=0) || fastcmp(params[0], "OVERALLTIME"))
+	//||        (++offset && fastcmp(params[0], "OVERALLSCORE"))
+	//||        (++offset && fastcmp(params[0], "OVERALLRINGS")))
 	{
 		PARAMCHECK(1);
-		ty = UC_OVERALLSCORE + offset;
+		ty = UC_OVERALLTIME + offset;
 		re = atoi(params[1]);
 	}
 	else if ((offset=0) || fastcmp(params[0], "MAPVISITED")
 	||        (++offset && fastcmp(params[0], "MAPBEATEN"))
-	||        (++offset && fastcmp(params[0], "MAPALLEMERALDS"))
-	||        (++offset && fastcmp(params[0], "MAPULTIMATE"))
-	||        (++offset && fastcmp(params[0], "MAPPERFECT")))
+	||        (++offset && fastcmp(params[0], "MAPALLEMERALDS")))
+	//||        (++offset && fastcmp(params[0], "MAPULTIMATE"))
+	//||        (++offset && fastcmp(params[0], "MAPPERFECT")))
 	{
 		PARAMCHECK(1);
 		ty = UC_MAPVISITED + offset;
@@ -2507,12 +2511,12 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if ((offset=0) || fastcmp(params[0], "MAPSCORE")
-	||        (++offset && fastcmp(params[0], "MAPTIME"))
-	||        (++offset && fastcmp(params[0], "MAPRINGS")))
+	else if ((offset=0) || fastcmp(params[0], "MAPTIME"))
+	//||        (++offset && fastcmp(params[0], "MAPSCORE"))
+	//||        (++offset && fastcmp(params[0], "MAPRINGS")))
 	{
 		PARAMCHECK(2);
-		ty = UC_MAPSCORE + offset;
+		ty = UC_MAPTIME + offset;
 		re = atoi(params[2]);
 
 		// Convert to map number if it appears to be one
@@ -2527,7 +2531,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if ((offset=0) || fastcmp(params[0], "NIGHTSSCORE")
+	/*else if ((offset=0) || fastcmp(params[0], "NIGHTSSCORE")
 	||        (++offset && fastcmp(params[0], "NIGHTSTIME"))
 	||        (++offset && fastcmp(params[0], "NIGHTSGRADE")))
 	{
@@ -2554,7 +2558,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		else
 			x2 = 0;
 
-	}
+	}*/
 	else if (fastcmp(params[0], "TRIGGER"))
 	{
 		PARAMCHECK(1);
@@ -3069,7 +3073,7 @@ static void readmaincfg(MYFILE *f)
 				if (!GoodDataFileName(word2))
 					I_Error("Maincfg: bad data file name '%s'\n", word2);
 
-				G_SaveGameData();
+				G_SaveGameData(false);
 				DEH_WriteUndoline(word, gamedatafilename, UNDO_NONE);
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
@@ -5802,9 +5806,15 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FIREBALL2",
 	"S_FIREBALL3",
 	"S_FIREBALL4",
+	"S_FIREBALL5",
+	"S_FIREBALL6",
+	"S_FIREBALL7",
 	"S_FIREBALLEXP1",
 	"S_FIREBALLEXP2",
 	"S_FIREBALLEXP3",
+	"S_FIREBALLEXP4",
+	"S_FIREBALLEXP5",
+	"S_FIREBALLEXP6",
 	"S_SHELL",
 	"S_SHELL1",
 	"S_SHELL2",
@@ -6227,11 +6237,10 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTSPARK6",
 
 	// Drift Smoke
-	"S_DRIFTSMOKE1",
-	"S_DRIFTSMOKE2",
-	"S_DRIFTSMOKE3",
-	"S_DRIFTSMOKE4",
-	"S_DRIFTSMOKE5",
+	"S_DRIFTDUST1",
+	"S_DRIFTDUST2",
+	"S_DRIFTDUST3",
+	"S_DRIFTDUST4",
 
 	// Magnet Burst
 
@@ -6347,6 +6356,31 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BOMBITEM",
 	"S_BOMBAIR",
 	"S_BOMBEXPLODE",
+	"S_BOMBEXPLOSION1",
+	"S_BOMBEXPLOSION2",
+
+	// New explosion
+	"S_QUICKBOOM1",
+	"S_QUICKBOOM2",
+	"S_QUICKBOOM3",
+	"S_QUICKBOOM4",
+	"S_QUICKBOOM5",
+	"S_QUICKBOOM6",
+	"S_QUICKBOOM7",
+	"S_QUICKBOOM8",
+	"S_QUICKBOOM9",
+	"S_QUICKBOOM10",
+
+	"S_SLOWBOOM1",
+	"S_SLOWBOOM2",
+	"S_SLOWBOOM3",
+	"S_SLOWBOOM4",
+	"S_SLOWBOOM5",
+	"S_SLOWBOOM6",
+	"S_SLOWBOOM7",
+	"S_SLOWBOOM8",
+	"S_SLOWBOOM9",
+	"S_SLOWBOOM10",
 
 	// Blue Shell - Blue Lightning for now...
 	"S_BLUELIGHTNING1",
@@ -6367,6 +6401,15 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SINKTRAIL2",
 	"S_SINKTRAIL3",
 
+	// Battle Mode balloon
+	"S_BATTLEBALLOON1",
+	"S_BATTLEBALLOON2",
+	"S_BATTLEBALLOON3",
+
+	// Lakitu
+	"S_LAKITU1",
+	"S_LAKITU2",
+
 	// Pokey
 	"S_POKEY1",
 	"S_POKEY2",
@@ -6377,6 +6420,130 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_POKEY7",
 	"S_POKEY8",
 	"S_POKEYIDLE",
+
+	// Audience Members
+	"S_RANDOMAUDIENCE",
+	"S_AUDIENCE_TOAD1",
+	"S_AUDIENCE_TOAD2",
+	"S_AUDIENCE_BOO1",
+	"S_AUDIENCE_BOO2",
+	"S_AUDIENCE_GMBA1",
+	"S_AUDIENCE_GMBA2",
+	"S_AUDIENCE_SHYG1",
+	"S_AUDIENCE_SHYG2",
+	"S_AUDIENCE_SNIF1",
+	"S_AUDIENCE_SNIF2",
+
+	"S_FANCHAR_KOTE",
+	"S_FANCHAR_RYAN",
+	"S_FANCHAR_WENDY",
+	"S_FANCHAR_FREEZOR",
+	"S_FANCHAR_METALKO",
+	"S_FANCHAR_BLACKOUT",
+	"S_FANCHAR_BLADE",
+	"S_FANCHAR_HINOTE",
+
+	// 1.0 Kart Decoratives
+	"S_FLAYM1",
+	"S_FLAYM2",
+	"S_FLAYM3",
+	"S_FLAYM4",
+	"S_DEVIL",
+	"S_ANGEL",
+	"S_PALMTREE",
+	"S_FLAG",
+	"S_HEDGEHOG", // (Rimshot)
+	"S_BUSH1",
+	"S_TWEE",
+	"S_HYDRANT",
+
+	// New Misc Decorations
+	"S_BIGPUMA1",
+	"S_BIGPUMA2",
+	"S_BIGPUMA3",
+	"S_BIGPUMA4",
+	"S_BIGPUMA5",
+	"S_BIGPUMA6",
+	"S_APPLE1",
+	"S_APPLE2",
+	"S_APPLE3",
+	"S_APPLE4",
+	"S_APPLE5",
+	"S_APPLE6",
+	"S_APPLE7",
+	"S_APPLE8",
+
+	// D00Dkart - Fall Flowers
+	"S_DOOD_FLOWER1",
+	"S_DOOD_FLOWER2",
+	"S_DOOD_FLOWER3",
+	"S_DOOD_FLOWER4",
+	"S_DOOD_FLOWER5",
+	"S_DOOD_FLOWER6",
+
+	// D00Dkart - Super Circuit Box
+	"S_DOOD_BOX1",
+	"S_DOOD_BOX2",
+	"S_DOOD_BOX3",
+	"S_DOOD_BOX4",
+	"S_DOOD_BOX5",
+
+	// D00Dkart - Diddy Kong Racing Balloon
+	"S_DOOD_BALLOON",
+
+	// D00Dkart - Big Ring
+	"S_DOOD_RING1",
+	"S_DOOD_RING2",
+	"S_DOOD_RING3",
+	"S_DOOD_RING4",
+	"S_DOOD_RING5",
+
+	// SNES Objects
+	"S_SNES_DONUTBUSH1",
+	"S_SNES_DONUTBUSH2",
+	"S_SNES_DONUTBUSH3",
+
+	// GBA Objects
+	"S_GBA_BOO1",
+	"S_GBA_BOO2",
+	"S_GBA_BOO3",
+	"S_GBA_BOO4",
+
+	// Sapphire Coast Mobs
+	"S_BUZZBOMBER_LOOK1",
+	"S_BUZZBOMBER_LOOK2",
+	"S_BUZZBOMBER_FLY1",
+	"S_BUZZBOMBER_FLY2",
+	"S_BUZZBOMBER_FLY3",
+	"S_BUZZBOMBER_FLY4",
+
+	"S_CHOMPER_SPAWN",
+	"S_CHOMPER_HOP1",
+	"S_CHOMPER_HOP2",
+	"S_CHOMPER_TURNAROUND",
+
+	"S_PALMTREE2",
+	"S_PURPLEFLOWER1",
+	"S_PURPLEFLOWER2",
+	"S_YELLOWFLOWER1",
+	"S_YELLOWFLOWER2",
+	"S_PLANT2",
+	"S_PLANT3",
+	"S_PLANT4",
+
+	// Crystal Abyss Mobs
+	"S_SKULL",
+	"S_PHANTREE",
+	"S_FLYINGGARG1",
+	"S_FLYINGGARG2",
+	"S_FLYINGGARG3",
+	"S_FLYINGGARG4",
+	"S_FLYINGGARG5",
+	"S_FLYINGGARG6",
+	"S_FLYINGGARG7",
+	"S_FLYINGGARG8",
+	"S_LAMPPOST",
+	"S_MOSSYTREE",
 
 	"S_SHADOW",
 	"S_WHITESHADOW",
@@ -6400,6 +6567,29 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FIREDITEM2",
 	"S_FIREDITEM3",
 	"S_FIREDITEM4",
+
+	"S_PLAYERARROW", // Above player arrow
+	"S_PLAYERARROW_MUSHROOM",
+	"S_PLAYERARROW_GREENSHELL",
+	"S_PLAYERARROW_BANANA",
+	"S_PLAYERARROW_FAKEITEM",
+	"S_PLAYERARROW_BOO",
+	"S_PLAYERARROW_FEATHER",
+	"S_PLAYERARROW_REDSHELL",
+	"S_PLAYERARROW_BOBOMB",
+	"S_PLAYERARROW_FIREFLOWER",
+	"S_PLAYERARROW_TRIPLEGREENSHELL",
+	"S_PLAYERARROW_TRIPLEBANANA",
+	"S_PLAYERARROW_TRIPLEREDSHELL",
+	"S_PLAYERARROW_STAR",
+	"S_PLAYERARROW_MEGASHROOM",
+	"S_PLAYERARROW_KITCHENSINK",
+	"S_PLAYERARROW_EMPTY",
+	"S_PLAYERARROW_ROULETTE",
+
+	"S_PLAYERBOMB", // Player bomb overlay
+	"S_PLAYERITEM", // Player item overlay
+	"S_PLAYERBOMB_WHEEL",
 
 #ifdef SEENAMES
 	"S_NAMECHECK",
@@ -6916,12 +7106,11 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_INVISSPRING",
 	"MT_BLUEDIAG",
 	"MT_RANDOMITEM",
-	"MT_FLINGRANDOMITEM",
 	"MT_RANDOMITEMPOP",
 
 	"MT_MUSHROOMTRAIL",
 	"MT_DRIFT",
-	"MT_DRIFTSMOKE",
+	"MT_DRIFTDUST",
 
 	"MT_FAKESHIELD",
 	"MT_FAKEITEM",
@@ -6951,6 +7140,10 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_BOMBEXPLOSION",
 	"MT_BOMBEXPLOSIONSOUND",
 
+	"MT_SMOLDERING", // New explosion
+	"MT_BOOMEXPLODE",
+	"MT_BOOMPARTICLE",
+
 	"MT_BLUELIGHTNING", // Lightning stuff
 	"MT_BLUEEXPLOSION",
 	"MT_LIGHTNING",
@@ -6958,16 +7151,80 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_SINK", // Kitchen Sink Stuff
 	"MT_SINKTRAIL",
 
+	"MT_BATTLEBALLOON", // Battle Mode balloon
+
+	"MT_LAKITU",
+
 	"MT_POKEY", // Huh, thought this was a default asset for some reason, guess not.
+
 	"MT_ENEMYFLIP",
 	"MT_WAYPOINT",
+
+	"MT_RANDOMAUDIENCE",
+	"MT_FANCHAR_KOTE",
+	"MT_FANCHAR_RYAN",
+	"MT_FANCHAR_WENDY",
+	"MT_FANCHAR_FREEZOR",
+	"MT_FANCHAR_METALKO",
+	"MT_FANCHAR_BLACKOUT",
+	"MT_FANCHAR_BLADE",
+	"MT_FANCHAR_HINOTE",
+
+	"MT_FLAYM",
+	"MT_DEVIL",
+	"MT_ANGEL",
+	"MT_PALMTREE",
+	"MT_FLAG",
+	"MT_HEDGEHOG",
+	"MT_BUSH1",
+	"MT_TWEE",
+	"MT_HYDRANT",
+
+	"MT_BIGPUMA",
+	"MT_APPLE",
+
+	"MT_DOOD_FLOWER1",
+	"MT_DOOD_FLOWER2",
+	"MT_DOOD_FLOWER3",
+	"MT_DOOD_FLOWER4",
+	"MT_DOOD_BOX",
+	"MT_DOOD_BALLOON",
+	"MT_DOOD_RING",
+
+	"MT_SNES_DONUTBUSH1",
+	"MT_SNES_DONUTBUSH2",
+	"MT_SNES_DONUTBUSH3",
+
+	"MT_GBA_BOO",
+
+	"MT_BUZZBOMBER",
+	"MT_CHOMPER",
+	"MT_PALMTREE2",
+	"MT_PURPLEFLOWER1",
+	"MT_PURPLEFLOWER2",
+	"MT_YELLOWFLOWER1",
+	"MT_YELLOWFLOWER2",
+	"MT_PLANT2",
+	"MT_PLANT3",
+	"MT_PLANT4",
+
+	"MT_SKULL",
+	"MT_PHANTREE",
+	"MT_FLYINGGARG",
+	"MT_LAMPPOST",
+	"MT_MOSSYTREE",
+
 	"MT_SHADOW",
 
 	"MT_BUMP",
 
+	"MT_FLINGENERGY",
+
 	"MT_ITEMCLASH",
-	
+
 	"MT_FIREDITEM",
+
+	"MT_PLAYERARROW",
 
 #ifdef SEENAMES
 	"MT_NAMECHECK",
@@ -7050,9 +7307,13 @@ static const char *const MOBJEFLAG_LIST[] = {
 	"JUSTSTEPPEDDOWN", // used for ramp sectors
 	"VERTICALFLIP", // Vertically flip sprite/allow upside-down physics
 	"GOOWATER", // Goo water
-	"\x01", // free: 1<<7 (name un-matchable)
+	"JUSTBOUNCEDWALL", // SRB2Kart: Mobj already bounced off a wall this tic
 	"SPRUNG", // Mobj was already sprung this tic
 	"APPLYPMOMZ", // Platform movement
+	"DRAWONLYFORP1", // SRB2Kart: Splitscreen sprite draw flags
+	"DRAWONLYFORP2",
+	"DRAWONLYFORP3",
+	"DRAWONLYFORP4",
 	NULL
 };
 
@@ -7281,6 +7542,83 @@ static const char *const POWERS_LIST[] = {
 	"INGOOP" // In goop
 };
 
+static const char *const KARTSTUFF_LIST[] = {
+	"POSITION",
+	"OLDPOSITION",
+	"POSITIONDELAY",
+	"PREVCHECK",
+	"NEXTCHECK",
+	"WAYPOINT",
+	"STARPOSTWP",
+	"LAKITU",
+
+	"THROWDIR",
+	"LAPANIMATION",
+	"CARDANIMATION",
+	"VOICES",
+	"TAUNTVOICES",
+
+	"BOOSTING",
+	"FLOORBOOST",
+	"SPINOUT",
+	"SPINOUTTYPE",
+
+	"DRIFT",
+	"DRIFTEND",
+	"DRIFTCHARGE",
+	"DRIFTBOOST",
+	"BOOSTCHARGE",
+	"JMP",
+	"OFFROAD",
+	"BRAKESTOP",
+
+	"ITEMROULETTE",
+	"ROULETTETYPE",
+	"ITEMCLOSE",
+
+	"MAGNETTIMER",
+	"BOOTIMER",
+	"BOOTAKETIMER",
+	"BOOSTOLENTIMER",
+	"MUSHROOMTIMER",
+	"GROWSHRINKTIMER",
+	"SQUISHEDTIMER",
+	"GOLDSHROOMTIMER",
+	"STARTIMER",
+	"SPINOUTTIMER",
+	"LASERWISPTIMER",
+	"JUSTBUMPED",
+	"DEATHSENTENCE",
+	"POWERITEMTIMER",
+	"COMEBACKTIMER",
+
+	"MAGNET",
+	"BOO",
+	"MUSHROOM",
+	"MEGASHROOM",
+	"GOLDSHROOM",
+	"STAR",
+	"TRIPLEBANANA",
+	"FAKEITEM",
+	"BANANA",
+	"GREENSHELL",
+	"REDSHELL",
+	"LASERWISP",
+	"TRIPLEGREENSHELL",
+	"BOBOMB",
+	"BLUESHELL",
+	"JAWS",
+	"FIREFLOWER",
+	"TRIPLEREDSHELL",
+	"LIGHTNING",
+	"FEATHER",
+	"KITCHENSINK",
+
+	"BALLOON",
+	"COMEBACKPOINTS",
+	"COMEBACKMODE"
+};
+
 static const char *const HUDITEMS_LIST[] = {
 	"LIVESNAME",
 	"LIVESPIC",
@@ -7420,8 +7758,9 @@ struct {
 	{"TOL_2D",TOL_2D},
 	{"TOL_MARIO",TOL_MARIO},
 	{"TOL_NIGHTS",TOL_NIGHTS},
-	{"TOL_ERZ3",TOL_ERZ3},
+	//{"TOL_ERZ3",TOL_ERZ3},
 	{"TOL_XMAS",TOL_XMAS},
+	//{"TOL_KART",TOL_KART},
 
 	// Level flags
 	{"LF_SCRIPTISFILE",LF_SCRIPTISFILE},
@@ -7693,16 +8032,12 @@ struct {
 	{"NUMDIRS",NUMDIRS},
 
 	// Buttons (ticcmd_t)	// SRB2kart
-	{"BT_WEAPONMASK",BT_WEAPONMASK}, //our first four bits.
-	{"BT_DRIFTLEFT",BT_DRIFTLEFT},
-	{"BT_DRIFTRIGHT",BT_DRIFTRIGHT},
-	{"BT_ATTACK",BT_ATTACK}, // shoot rings
-	{"BT_BRAKE",BT_BRAKE}, // brake
-	{"BT_FORWARD",BT_FORWARD}, // turn camera left
-	{"BT_BACKWARD",BT_BACKWARD}, // turn camera right
-	{"BT_SPECTATE",BT_SPECTATE},
-	{"BT_JUMP",BT_JUMP},
-	{"BT_ACCELERATE",BT_ACCELERATE}, // Fire a normal ring no matter what
+	{"BT_ACCELERATE",BT_ACCELERATE},
+	{"BT_DRIFT",BT_DRIFT},
+	{"BT_BRAKE",BT_BRAKE},
+	{"BT_ATTACK",BT_ATTACK},
+	{"BT_FORWARD",BT_FORWARD},
+	{"BT_BACKWARD",BT_BACKWARD},
 	{"BT_CUSTOM1",BT_CUSTOM1}, // Lua customizable
 	{"BT_CUSTOM2",BT_CUSTOM2}, // Lua customizable
 	{"BT_CUSTOM3",BT_CUSTOM3}, // Lua customizable
@@ -7748,7 +8083,6 @@ struct {
 	{"V_90TRANS",V_90TRANS},
 	{"V_HUDTRANSHALF",V_HUDTRANSHALF},
 	{"V_HUDTRANS",V_HUDTRANS},
-	{"V_HUDTRANSDOUBLE",V_HUDTRANSDOUBLE},
 	{"V_AUTOFADEOUT",V_AUTOFADEOUT},
 	{"V_RETURN8",V_RETURN8},
 	{"V_OFFSET",V_OFFSET},
@@ -7762,6 +8096,7 @@ struct {
 	{"V_WRAPY",V_WRAPY},
 	{"V_NOSCALESTART",V_NOSCALESTART},
 	{"V_SPLITSCREEN",V_SPLITSCREEN},
+	{"V_HORZSCREEN",V_HORZSCREEN},
 
 	{"V_PARAMMASK",V_PARAMMASK},
 	{"V_SCALEPATCHMASK",V_SCALEPATCHMASK},
@@ -7913,6 +8248,20 @@ static powertype_t get_power(const char *word)
 			return i;
 	deh_warning("Couldn't find power named 'pw_%s'",word);
 	return pw_invulnerability;
+}
+
+static kartstufftype_t get_kartstuff(const char *word)
+{ // Returns the vlaue of k_ enumerations
+	kartstufftype_t i;
+	if (*word >= '0' && *word <= '9')
+		return atoi(word);
+	if (fastncmp("K_",word,2))
+		word += 2; // take off the k_
+	for (i = 0; i < NUMKARTSTUFF; i++)
+		if (fastcmp(word, KARTSTUFF_LIST[i]))
+			return i;
+	deh_warning("Couldn't find power named 'k_%s'",word);
+	return k_position;
 }
 
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.
@@ -8151,6 +8500,7 @@ void FUNCMATH DEH_Check(void)
 	const size_t dehstates = sizeof(STATE_LIST)/sizeof(const char*);
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
 	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
+	const size_t dehkartstuff = sizeof(KARTSTUFF_LIST)/sizeof(const char*);
 	const size_t dehcolors = sizeof(COLOR_ENUMS)/sizeof(const char*);
 
 	if (dehstates != S_FIRSTFREESLOT)
@@ -8161,6 +8511,9 @@ void FUNCMATH DEH_Check(void)
 
 	if (dehpowers != NUMPOWERS)
 		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d powers defined, versus %s in the Dehacked list)\n", NUMPOWERS, sizeu1(dehpowers));
+
+	if (dehkartstuff != NUMKARTSTUFF)
+		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d kartstuff defined, versus %s in the Dehacked list)\n", NUMKARTSTUFF, sizeu1(dehkartstuff));
 
 	if (dehcolors != MAXTRANSLATIONS)
 		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", MAXTRANSLATIONS, sizeu1(dehcolors));
@@ -8501,6 +8854,24 @@ static inline int lib_getenum(lua_State *L)
 			}
 		return luaL_error(L, "power '%s' could not be found.\n", word);
 	}
+	else if (!mathlib && fastncmp("k_",word,2)) {
+		p = word+2;
+		for (i = 0; i < NUMKARTSTUFF; i++)
+			if (fasticmp(p, KARTSTUFF_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return 0;
+	}
+	else if (mathlib && fastncmp("K_",word,2)) { // SOCs are ALL CAPS!
+		p = word+2;
+		for (i = 0; i < NUMKARTSTUFF; i++)
+			if (fastcmp(p, KARTSTUFF_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return luaL_error(L, "kartstuff '%s' could not be found.\n", word);
+	}
 	else if (fastncmp("HUD_",word,4)) {
 		p = word+4;
 		for (i = 0; i < NUMHUDITEMS; i++)
@@ -8599,7 +8970,7 @@ static inline int lib_getenum(lua_State *L)
 		lua_pushboolean(L, modeattacking);
 		return 1;
 	} else if (fastcmp(word,"splitscreen")) {
-		lua_pushboolean(L, splitscreen);
+		lua_pushinteger(L, splitscreen);
 		return 1;
 	} else if (fastcmp(word,"gamecomplete")) {
 		lua_pushboolean(L, gamecomplete);
@@ -8646,9 +9017,9 @@ static inline int lib_getenum(lua_State *L)
 		LUA_PushUserdata(L, &players[serverplayer], META_PLAYER);
 		return 1;
 	} else if (fastcmp(word,"admin")) {
-		if (!playeringame[adminplayer] || adminplayer == serverplayer)
-			return 0;
-		LUA_PushUserdata(L, &players[adminplayer], META_PLAYER);
+		//if (!playeringame[adminplayer] || IsPlayerAdmin(serverplayer))
+			//return 0;
+		//LUA_PushUserdata(L, &players[adminplayer], META_PLAYER);
 		return 1;
 	} else if (fastcmp(word,"emeralds")) {
 		lua_pushinteger(L, emeralds);

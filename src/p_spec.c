@@ -1701,28 +1701,38 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (!(ALL7EMERALDS(emeralds)))
 				return false;
 		}
-		else if (GETSECSPECIAL(caller->special, 2) == 7)
+		else if (GETSECSPECIAL(caller->special, 2) == 7) // SRB2Kart: reusing for Race Lap executor
 		{
-			UINT8 mare;
+			UINT8 lap;
 
-			if (!(maptol & TOL_NIGHTS))
-				return false;
-
-			mare = P_FindLowestMare();
-
-			if (triggerline->flags & ML_NOCLIMB)
+			if (actor && actor->player && triggerline->flags & ML_EFFECT4)
 			{
-				if (!(mare <= dist))
-					return false;
-			}
-			else if (triggerline->flags & ML_BLOCKMONSTERS)
-			{
-				if (!(mare >= dist))
-					return false;
+				if (maptol & TOL_NIGHTS)
+					lap = actor->player->mare;
+				else 
+					lap = actor->player->laps;
 			}
 			else
 			{
-				if (!(mare == dist))
+				if (maptol & TOL_NIGHTS)
+					lap = P_FindLowestMare();
+				else 
+					lap = P_FindLowestLap();
+			}
+
+			if (triggerline->flags & ML_NOCLIMB) // Need higher than or equal to
+			{
+				if (lap < (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
+					return false;
+			}
+			else if (triggerline->flags & ML_BLOCKMONSTERS) // Need lower than or equal to
+			{
+				if (lap > (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
+					return false;
+			}
+			else // Need equal to
+			{
+				if (lap != (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
 					return false;
 			}
 		}
@@ -2381,7 +2391,21 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					{
 						if (bot) // This might put poor Tails in a wall if he's too far behind! D: But okay, whatever! >:3
 							P_TeleportMove(bot, bot->x + x, bot->y + y, bot->z + z);
-						if (splitscreen && mo->player == &players[secondarydisplayplayer] && camera2.chase)
+						if (splitscreen > 2 && mo->player == &players[fourthdisplayplayer] && camera4.chase)
+						{
+							camera4.x += x;
+							camera4.y += y;
+							camera4.z += z;
+							camera4.subsector = R_PointInSubsector(camera4.x, camera4.y);
+						}
+						else if (splitscreen > 1 && mo->player == &players[thirddisplayplayer] && camera3.chase)
+						{
+							camera3.x += x;
+							camera3.y += y;
+							camera3.z += z;
+							camera3.subsector = R_PointInSubsector(camera3.x, camera3.y);
+						}
+						else if (splitscreen && mo->player == &players[secondarydisplayplayer] && camera2.chase)
 						{
 							camera2.x += x;
 							camera2.y += y;
@@ -2497,7 +2521,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				if (line->flags & ML_NOCLIMB)
 				{
 					// play the sound from nowhere, but only if display player triggered it
-					if (mo && mo->player && (mo->player == &players[displayplayer] || mo->player == &players[secondarydisplayplayer]))
+					if (mo && mo->player && (mo->player == &players[displayplayer] || mo->player == &players[secondarydisplayplayer]
+						|| mo->player == &players[thirddisplayplayer] || mo->player == &players[fourthdisplayplayer]))
 						S_StartSound(NULL, sfxnum);
 				}
 				else if (line->flags & ML_EFFECT4)
@@ -3000,10 +3025,10 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					unlocktriggers |= 1 << trigid;
 
 					// Unlocked something?
-					if (M_UpdateUnlockablesAndExtraEmblems())
+					if (M_UpdateUnlockablesAndExtraEmblems(false))
 					{
 						S_StartSound(NULL, sfx_ncitem);
-						G_SaveGameData(); // only save if unlocked something
+						G_SaveGameData(false); // only save if unlocked something
 					}
 				}
 			}
@@ -3728,7 +3753,20 @@ DoneSection2:
 	// Process Section 3
 	switch (special)
 	{
-		case 1: // Unused   (was "Ice/Sludge")
+		case 1: // SRB2kart: bounce pad
+			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
+			{
+				if (player->mo->eflags & MFE_SPRUNG)
+					break;
+
+				if (player->speed < K_GetKartSpeed(player, true)/4) // Push forward to prevent getting stuck
+					P_InstaThrust(player->mo, player->mo->angle, FixedMul(K_GetKartSpeed(player, true)/4, player->mo->scale));
+
+				player->kartstuff[k_feather] |= 2;
+				K_DoBouncePad(player->mo, 0);
+			}
+			break;
+
 		case 2: // Wind/Current
 		case 3: // Unused   (was "Ice/Sludge and Wind/Current")
 		case 4: // Conveyor Belt
@@ -3757,6 +3795,10 @@ DoneSection2:
 						localangle = player->mo->angle;
 					else if (player == &players[secondarydisplayplayer])
 						localangle2 = player->mo->angle;
+					else if (player == &players[thirddisplayplayer])
+						localangle3 = player->mo->angle;
+					else if (player == &players[fourthdisplayplayer])
+						localangle4 = player->mo->angle;
 				}
 
 				if (!(lines[i].flags & ML_EFFECT4))
@@ -3878,7 +3920,7 @@ DoneSection2:
 					mo->spawnpoint = bflagpoint;
 					mo->flags2 |= MF2_JUSTATTACKED;
 					redscore += 1;
-					P_AddPlayerScore(player, 250);
+					P_AddPlayerScore(player, 5);
 				}
 			}
 			break;
@@ -3911,7 +3953,7 @@ DoneSection2:
 					mo->spawnpoint = rflagpoint;
 					mo->flags2 |= MF2_JUSTATTACKED;
 					bluescore += 1;
-					P_AddPlayerScore(player, 250);
+					P_AddPlayerScore(player, 5);
 				}
 			}
 			break;
@@ -3928,20 +3970,22 @@ DoneSection2:
 			break;
 
 		case 6: // SRB2kart 190117 - Mushroom Boost Panel
-			if (!P_IsObjectOnGround(player->mo))
-				break;
-			if (!player->kartstuff[k_floorboost])
-				player->kartstuff[k_floorboost] = 3;
-			else
-				player->kartstuff[k_floorboost] = 2;
-			K_DoMushroom(player, false, false);
+			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
+			{
+				if (!player->kartstuff[k_floorboost])
+					player->kartstuff[k_floorboost] = 3;
+				else
+					player->kartstuff[k_floorboost] = 2;
+				K_DoMushroom(player, false);
+			}
 			break;
 
 		case 7: // SRB2kart 190117 - Oil Slick
-			if (!P_IsObjectOnGround(player->mo))
-				break;
-			player->kartstuff[k_spinouttype] = -1;
-			K_SpinPlayer(player, NULL);
+			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
+			{
+				player->kartstuff[k_spinouttype] = -1;
+				K_SpinPlayer(player, NULL);
+			}
 			break;
 
 		case 8: // Zoom Tube Start
@@ -4099,12 +4143,12 @@ DoneSection2:
 
 		case 10: // Finish Line
 			// SRB2kart - 150117
-			if (gametype == GT_RACE && (player->starpostnum == numstarposts || player->exiting))
+			if (G_RaceGametype() && (player->starpostcount >= numstarposts/2 || player->exiting))
 				player->kartstuff[k_starpostwp] = player->kartstuff[k_waypoint] = 0;
 			//
-			if (gametype == GT_RACE && !player->exiting)
+			if (G_RaceGametype() && !player->exiting)
 			{
-				if (player->starpostnum == numstarposts) // Must have touched all the starposts
+				if (player->starpostcount >= numstarposts/2) // srb2kart: must have touched *enough* starposts (was originally "(player->starpostnum == numstarposts)")
 				{
 					player->laps++;
 					player->kartstuff[k_lapanimation] = 80;
@@ -4112,17 +4156,29 @@ DoneSection2:
 					if (player->pflags & PF_NIGHTSMODE)
 						player->drillmeter += 48*20;
 
-					if (player->laps >= (UINT8)cv_numlaps.value)
-						CONS_Printf(M_GetText("%s has finished the race.\n"), player_names[player-players]);
-					else if (player->laps == (UINT8)(cv_numlaps.value - 1))
-						CONS_Printf("%s started the final lap\n", player_names[player-players]);
-					else
-						CONS_Printf(M_GetText("%s started lap %u\n"), player_names[player-players], (UINT32)player->laps+1);
+					if (netgame)
+					{
+						if (player->laps >= (UINT8)cv_numlaps.value)
+							CONS_Printf(M_GetText("%s has finished the race.\n"), player_names[player-players]);
+						else if (player->laps == (UINT8)(cv_numlaps.value - 1))
+							CONS_Printf("%s started the final lap\n", player_names[player-players]);
+						else
+							CONS_Printf(M_GetText("%s started lap %u\n"), player_names[player-players], (UINT32)player->laps+1);
+					}
+
+					// SRB2Kart: save best lap for record attack
+					if (player == &players[consoleplayer])
+					{
+						if (curlap < bestlap || bestlap == 0)
+							bestlap = curlap;
+						curlap = 0;
+					}
 
 					// Reset starposts (checkpoints) info
 					// SRB2kart 200117
 					player->starpostangle = player->starpostnum = 0;
 					player->starpostx = player->starposty = player->starpostz = 0;
+					player->starpostcount = 0;
 					//except the time!
 					player->starposttime = player->realtime;
 
@@ -4145,7 +4201,7 @@ DoneSection2:
 				{
 					// blatant reuse of a variable that's normally unused in circuit
 					if (!player->tossdelay)
-						S_StartSound(player->mo, sfx_lose);
+						S_StartSound(player->mo, sfx_s26d);
 					player->tossdelay = 3;
 				}
 
@@ -4154,22 +4210,23 @@ DoneSection2:
 					if (P_IsLocalPlayer(player))
 					{
 						// SRB2kart 200117
-						if (!splitscreen)
+						if (splitscreen)
+							S_ChangeMusicInternal("karwin", true);
+						else
 						{
 							if (player->kartstuff[k_position] == 1)
 								S_ChangeMusicInternal("karwin", true);
-							else if (player->kartstuff[k_position] == 2 || player->kartstuff[k_position] == 3)
-								S_ChangeMusicInternal("karok", true);
-							else if (player->kartstuff[k_position] >= 4)
+							else if (K_IsPlayerLosing(player))
 								S_ChangeMusicInternal("karlos", true);
+							else
+								S_ChangeMusicInternal("karok", true);
 						}
-						else
-							S_ChangeMusicInternal("karwin", true);
-						//
-						//HU_SetCEchoFlags(0);
-						//HU_SetCEchoDuration(5);
-						//HU_DoCEcho("FINISHED!");
 					}
+
+					if (player->kartstuff[k_position] == 1)
+						S_StartSound(NULL, sfx_s253);
+					else if (P_IsLocalPlayer(player))
+						S_StartSound(NULL, sfx_s24f);
 
 					P_DoPlayerExit(player);
 				}
@@ -5254,13 +5311,11 @@ static void P_AddOldAirbob(sector_t *sec, line_t *sourceline, boolean noadjust)
 	airbob->vars[2] = FRACUNIT;
 
 	if (noadjust)
-	{
 		airbob->vars[7] = airbob->sector->ceilingheight-16*FRACUNIT;
-		airbob->vars[6] = airbob->vars[7]
-			- (sec->ceilingheight - sec->floorheight);
-	}
 	else
 		airbob->vars[7] = airbob->sector->ceilingheight - P_AproxDistance(sourceline->dx, sourceline->dy);
+	airbob->vars[6] = airbob->vars[7]
+		- (sec->ceilingheight - sec->floorheight);
 
 	airbob->vars[3] = airbob->vars[2];
 
@@ -5573,7 +5628,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		switch(GETSECSPECIAL(sector->special, 4))
 		{
 			case 10: // Circuit finish line
-				if (gametype == GT_RACE)
+				if (G_RaceGametype())
 					circuitmap = true;
 				break;
 		}
@@ -6334,7 +6389,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 
 			case 308: // Race-only linedef executor. Triggers once.
-				if (gametype != GT_RACE && gametype != GT_COMPETITION)
+				if (!G_RaceGametype())
 					lines[i].special = 0;
 				break;
 
@@ -6667,6 +6722,7 @@ void T_Scroll(scroll_t *s)
 		line_t *line;
 		size_t i;
 		INT32 sect;
+		ffloor_t *rover;
 
 		case sc_side: // scroll wall texture
 			side = sides + s->affectee;
@@ -6707,6 +6763,19 @@ void T_Scroll(scroll_t *s)
 				{
 					sector_t *psec;
 					psec = sectors + sect;
+
+					// Find the FOF corresponding to the control linedef
+					for (rover = psec->ffloors; rover; rover = rover->next)
+					{
+						if (rover->master == sec->lines[i])
+							break;
+					}
+
+					if (!rover) // This should be impossible, but don't complain if it is the case somehow
+						continue;
+
+					if (!(rover->flags & FF_EXISTS)) // If the FOF does not "exist", we pretend that nobody's there
+						continue;
 
 					for (node = psec->touching_thinglist; node; node = node->m_thinglist_next)
 					{
@@ -6770,6 +6839,19 @@ void T_Scroll(scroll_t *s)
 				{
 					sector_t *psec;
 					psec = sectors + sect;
+
+					// Find the FOF corresponding to the control linedef
+					for (rover = psec->ffloors; rover; rover = rover->next)
+					{
+						if (rover->master == sec->lines[i])
+							break;
+					}
+
+					if (!rover) // This should be impossible, but don't complain if it is the case somehow
+						continue;
+
+					if (!(rover->flags & FF_EXISTS)) // If the FOF does not "exist", we pretend that nobody's there
+						continue;
 
 					for (node = psec->touching_thinglist; node; node = node->m_thinglist_next)
 					{
@@ -7140,7 +7222,7 @@ void T_Friction(friction_t *f)
 		// friction works for all mobj's
 		// (or at least MF_PUSHABLEs, which is all I care about anyway)
 		if ((!(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)) && thing->z == thing->floorz) && (thing->player
-			&& (thing->player->kartstuff[k_startimer] == 0 && thing->player->kartstuff[k_bootaketimer] == 0
+			&& (thing->player->kartstuff[k_startimer] == 0 && thing->player->kartstuff[k_bootimer] == 0
 			&& thing->player->kartstuff[k_mushroomtimer] == 0 && thing->player->kartstuff[k_growshrinktimer] <= 0)))
 		{
 			if (f->roverfriction)
@@ -7537,7 +7619,7 @@ void T_Pusher(pusher_t *p)
 		if (thing->player && thing->player->pflags & PF_ROPEHANG)
 			continue;
 
-		if (thing->player && (thing->state == &states[thing->info->painstate]) && (thing->player->powers[pw_flashing] > (flashingtics/4)*3 && thing->player->powers[pw_flashing] <= flashingtics))
+		if (thing->player && (thing->state == &states[thing->info->painstate]) && (thing->player->powers[pw_flashing] > (K_GetKartFlashing()/4)*3 && thing->player->powers[pw_flashing] <= K_GetKartFlashing()))
 			continue;
 
 		inFOF = touching = moved = false;
@@ -7693,10 +7775,28 @@ void T_Pusher(pusher_t *p)
 						else
 							localangle2 += (thing->angle - localangle2) / 8;
 					}
+					else if (thing->player == &players[thirddisplayplayer])
+					{
+						if (thing->angle - localangle3 > ANGLE_180)
+							localangle3 -= (localangle3 - thing->angle) / 8;
+						else
+							localangle3 += (thing->angle - localangle3) / 8;
+					}
+					else if (thing->player == &players[fourthdisplayplayer])
+					{
+						if (thing->angle - localangle4 > ANGLE_180)
+							localangle4 -= (localangle4 - thing->angle) / 8;
+						else
+							localangle4 += (thing->angle - localangle4) / 8;
+					}
 					/*if (thing->player == &players[consoleplayer])
 						localangle = thing->angle;
 					else if (thing->player == &players[secondarydisplayplayer])
-						localangle2 = thing->angle;*/
+						localangle2 = thing->angle;
+					else if (thing->player == &players[thirddisplayplayer])
+						localangle3 = thing->angle;
+					else if (thing->player == &players[fourthdisplayplayer])
+						localangle4 = thing->angle;*/
 				}
 			}
 

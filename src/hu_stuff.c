@@ -39,7 +39,7 @@
 #include "am_map.h"
 #include "d_main.h"
 
-#include "p_local.h" // camera, camera2
+#include "p_local.h" // camera, camera2, camera3, camera4
 #include "p_tick.h"
 
 #ifdef HWRENDER
@@ -50,6 +50,8 @@
 #include "lua_hud.h"
 #include "lua_hook.h"
 #endif
+
+#include "k_kart.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -84,6 +86,7 @@ patch_t *rmatcico;
 patch_t *bmatcico;
 patch_t *tagico;
 patch_t *tallminus;
+patch_t *iconprefix[MAXSKINS]; // minimap icons
 
 //-------------------------------------------
 //              coop hud
@@ -361,14 +364,14 @@ static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 	numwords = COM_Argc() - usedargs;
 	I_Assert(numwords > 0);
 
-	if (cv_mute.value && !(server || adminplayer == consoleplayer))
+	if (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("The chat is muted. You can't say anything at the moment.\n"));
 		return;
 	}
 
 	// Only servers/admins can CSAY.
-	if(!server && adminplayer != consoleplayer)
+	if(!server && IsPlayerAdmin(consoleplayer))
 		flags &= ~HU_CSAY;
 
 	// We handle HU_SERVER_SAY, not the caller.
@@ -462,7 +465,7 @@ static void Command_CSay_f(void)
 		return;
 	}
 
-	if(!server && adminplayer != consoleplayer)
+	if(!server && !IsPlayerAdmin(consoleplayer))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Only servers and admins can use csay.\n"));
 		return;
@@ -491,7 +494,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	msg = (char *)*p;
 	SKIPSTRING(*p);
 
-	if ((cv_mute.value || flags & (HU_CSAY|HU_SERVER_SAY)) && playernum != serverplayer && playernum != adminplayer)
+	if ((cv_mute.value || flags & (HU_CSAY|HU_SERVER_SAY)) && playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
 		CONS_Alert(CONS_WARNING, cv_mute.value ?
 			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
@@ -589,7 +592,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		// Give admins and remote admins their symbols.
 		if (playernum == serverplayer)
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(adminchar) + 1, PU_STATIC, NULL);
-		else if (playernum == adminplayer)
+		else if (IsPlayerAdmin(playernum))
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(remotechar) + 1, PU_STATIC, NULL);
 		if (tempchar)
 		{
@@ -724,7 +727,7 @@ static void HU_queueChatChar(char c)
 		} while (c);
 
 		// last minute mute check
-		if (cv_mute.value && !(server || adminplayer == consoleplayer))
+		if (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))
 		{
 			CONS_Alert(CONS_NOTICE, M_GetText("The chat is muted. You can't say anything at the moment.\n"));
 			return;
@@ -782,9 +785,9 @@ boolean HU_Responder(event_t *ev)
 	{
 		// enter chat mode
 		if ((ev->data1 == gamecontrol[gc_talkkey][0] || ev->data1 == gamecontrol[gc_talkkey][1])
-			&& netgame && (!cv_mute.value || server || (adminplayer == consoleplayer)))
+			&& netgame && (!cv_mute.value || server || IsPlayerAdmin(consoleplayer)))
 		{
-			if (cv_mute.value && !(server || adminplayer == consoleplayer))
+			if (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))
 				return false;
 			chat_on = true;
 			w_chat[0] = 0;
@@ -792,9 +795,9 @@ boolean HU_Responder(event_t *ev)
 			return true;
 		}
 		if ((ev->data1 == gamecontrol[gc_teamkey][0] || ev->data1 == gamecontrol[gc_teamkey][1])
-			&& netgame && (!cv_mute.value || server || (adminplayer == consoleplayer)))
+			&& netgame && (!cv_mute.value || server || (IsPlayerAdmin(consoleplayer))))
 		{
-			if (cv_mute.value && !(server || adminplayer == consoleplayer))
+			if (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))
 				return false;
 			chat_on = true;
 			w_chat[0] = 0;
@@ -908,7 +911,7 @@ static void HU_DrawChat(void)
 
 static inline void HU_DrawCrosshair(void)
 {
-	INT32 i, y;
+	INT32 i, x, y;
 
 	i = cv_crosshair.value & 3;
 	if (!i)
@@ -919,17 +922,23 @@ static inline void HU_DrawCrosshair(void)
 
 #ifdef HWRENDER
 	if (rendermode != render_soft)
+	{
+		x = (INT32)gr_basewindowcenterx;
 		y = (INT32)gr_basewindowcentery;
+	}
 	else
 #endif
+	{
+		x = viewwindowx + (viewwidth>>1);
 		y = viewwindowy + (viewheight>>1);
+	}
 
-	V_DrawScaledPatch(vid.width>>1, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
+	V_DrawScaledPatch(x, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
 }
 
 static inline void HU_DrawCrosshair2(void)
 {
-	INT32 i, y;
+	INT32 i, x, y;
 
 	i = cv_crosshair2.value & 3;
 	if (!i)
@@ -940,12 +949,65 @@ static inline void HU_DrawCrosshair2(void)
 
 #ifdef HWRENDER
 	if (rendermode != render_soft)
+	{
+		x = (INT32)gr_basewindowcenterx;
 		y = (INT32)gr_basewindowcentery;
+	}
 	else
 #endif
+	{
+		x = viewwindowx + (viewwidth>>1);
 		y = viewwindowy + (viewheight>>1);
+	}
 
 	if (splitscreen)
+	{
+		if (splitscreen > 1)
+#ifdef HWRENDER
+			if (rendermode != render_soft)
+				x += (INT32)gr_viewwidth;
+			else
+#endif
+				x += viewwidth;
+		else
+		{
+#ifdef HWRENDER
+			if (rendermode != render_soft)
+				y += (INT32)gr_viewheight;
+			else
+#endif
+				y += viewheight;
+		}
+
+		V_DrawScaledPatch(x, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
+	}
+}
+
+static inline void HU_DrawCrosshair3(void)
+{
+	INT32 i, x, y;
+
+	i = cv_crosshair3.value & 3;
+	if (!i)
+		return;
+
+	if ((netgame || multiplayer) && players[thirddisplayplayer].spectator)
+		return;
+
+#ifdef HWRENDER
+	if (rendermode != render_soft)
+	{
+		x = (INT32)gr_basewindowcenterx;
+		y = (INT32)gr_basewindowcentery;
+	}
+	else
+#endif
+	{
+		x = viewwindowx + (viewwidth>>1);
+		y = viewwindowy + (viewheight>>1);
+	}
+
+	if (splitscreen > 1)
 	{
 #ifdef HWRENDER
 		if (rendermode != render_soft)
@@ -954,7 +1016,50 @@ static inline void HU_DrawCrosshair2(void)
 #endif
 			y += viewheight;
 
-		V_DrawScaledPatch(vid.width>>1, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
+		V_DrawScaledPatch(x, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
+	}
+}
+
+static inline void HU_DrawCrosshair4(void)
+{
+	INT32 i, x, y;
+
+	i = cv_crosshair4.value & 3;
+	if (!i)
+		return;
+
+	if ((netgame || multiplayer) && players[fourthdisplayplayer].spectator)
+		return;
+
+#ifdef HWRENDER
+	if (rendermode != render_soft)
+	{
+		x = (INT32)gr_basewindowcenterx;
+		y = (INT32)gr_basewindowcentery;
+	}
+	else
+#endif
+	{
+		x = viewwindowx + (viewwidth>>1);
+		y = viewwindowy + (viewheight>>1);
+	}
+
+	if (splitscreen > 2)
+	{
+#ifdef HWRENDER
+		if (rendermode != render_soft)
+		{
+			x += (INT32)gr_viewwidth;
+			y += (INT32)gr_viewheight;
+		}
+		else
+#endif
+		{
+			x += viewwidth;
+			y += viewheight;
+		}
+
+		V_DrawScaledPatch(x, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
 	}
 }
 
@@ -1036,30 +1141,31 @@ static void HU_drawGametype(void)
 //
 // demo info stuff
 //
-UINT32 hu_demoscore;
 UINT32 hu_demotime;
+UINT32 hu_demolap;
 
 static void HU_DrawDemoInfo(void)
 {
-	UINT8 timeoffset = 8;
 	V_DrawString(4, 188-16, V_YELLOWMAP, va(M_GetText("%s's replay"), player_names[0]));
 	if (modeattacking)
 	{
-		if (modeattacking == ATTACKING_NIGHTS)
-		{
-			V_DrawString(4, 188-8, V_YELLOWMAP|V_MONOSPACE, "SCORE:");
-			V_DrawRightAlignedString(120, 188-8, V_MONOSPACE, va("%d", hu_demoscore));
-			timeoffset = 0;
-		}
-
-		V_DrawString(4, 188- timeoffset, V_YELLOWMAP|V_MONOSPACE, "TIME:");
+		V_DrawString(4, 188-8, V_YELLOWMAP|V_MONOSPACE, "BEST TIME:");
 		if (hu_demotime != UINT32_MAX)
-			V_DrawRightAlignedString(120, 188- timeoffset, V_MONOSPACE, va("%i:%02i.%02i",
+			V_DrawRightAlignedString(120, 188-8, V_MONOSPACE, va("%i:%02i.%02i",
 				G_TicsToMinutes(hu_demotime,true),
 				G_TicsToSeconds(hu_demotime),
 				G_TicsToCentiseconds(hu_demotime)));
 		else
-			V_DrawRightAlignedString(120, 188- timeoffset, V_MONOSPACE, "--:--.--");
+			V_DrawRightAlignedString(120, 188-8, V_MONOSPACE, "--:--.--");
+
+		V_DrawString(4, 188, V_YELLOWMAP|V_MONOSPACE, "BEST LAP:");
+		if (hu_demolap != UINT32_MAX)
+			V_DrawRightAlignedString(120, 188, V_MONOSPACE, va("%i:%02i.%02i",
+				G_TicsToMinutes(hu_demolap,true),
+				G_TicsToSeconds(hu_demolap),
+				G_TicsToCentiseconds(hu_demolap)));
+		else
+			V_DrawRightAlignedString(120, 188, V_MONOSPACE, "--:--.--");
 	}
 }
 
@@ -1067,79 +1173,6 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_Drawer(void)
 {
-	// SRB2kart 010217 - Automap Hud (temporarily commented out)
-	/*
-	INT32 amnumxpos;
-	INT32 amnumypos;
-	INT32 amxpos;
-	INT32 amypos;
-	INT32 lumpnum;
-	patch_t *AutomapPic;
-	INT32 i = 0;
-
-	// Draw the HUD only when playing in a level.
-	// hu_stuff needs this, unlike st_stuff.
-	if (Playing() && gamestate == GS_LEVEL)
-	{
-		INT32 x, y;
-
-		lumpnum = W_CheckNumForName(va("%sR", G_BuildAutoMapName(gamemap)));
-
-		if (lumpnum != -1 && (!modifiedgame || (modifiedgame && mapheaderinfo[gamemap-1].automap)))
-			AutomapPic = W_CachePatchName(va("%sR", G_BuildAutoMapName(gamemap)), PU_CACHE);
-		else
-			AutomapPic = W_CachePatchName(va("NOMAPR"), PU_CACHE);
-
-		if (splitscreen)
-		{
-			x = 160 - (AutomapPic->width/4);
-			y = 100 - (AutomapPic->height/4);
-		}
-		else
-		{
-			x = 312 - (AutomapPic->width/2);
-			y = 60;
-		}
-
-		V_DrawSmallScaledPatch(x, y, 0, AutomapPic);
-
-		// Player's tiny icons on the Automap.
-		if (lumpnum != -1 && (!modifiedgame || (modifiedgame && mapheaderinfo[gamemap-1].automap)))
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (players[i].mo && !players[i].spectator)
-				{
-					// amnum xpos & ypos are the icon's speed around the HUD.
-					// The number being divided by is for how fast it moves.
-					// The higher the number, the slower it moves.
-
-					// am xpos & ypos are the icon's starting position. Withouht
-					// it, they wouldn't 'spawn' on the top-right side of the HUD.
-					amnumxpos = (players[i].mo->x / 320) >> FRACBITS;
-					amnumypos = (-players[i].mo->y / 340) >> FRACBITS;
-
-					amxpos = (x + amnumxpos) - (iconprefix[players[i].skin]->width/4);
-					amypos = (y + amnumypos) - (iconprefix[players[i].skin]->height/4);
-
-					if (!players[i].skincolor) // 'default' color
-					{
-						V_DrawSmallScaledPatch(amxpos, amypos, 0, iconprefix[players[i].skin]);
-					}
-					else
-					{
-						UINT8 *colormap = translationtables[players[i].skin] - 256 + (players[i].skincolor<<8);
-						V_DrawSmallMappedPatch(amxpos, amypos, 0,iconprefix[players[i].skin], colormap);
-					}
-				}
-			}
-		}
-		if (!splitscreen && maptol & TOL_KART && !hu_showscores)
-			HU_DrawRaceRankings();
-	}
-	*/
-	//
-
 	// draw chat string plus cursor
 	if (chat_on)
 		HU_DrawChat();
@@ -1153,7 +1186,8 @@ void HU_Drawer(void)
 	if (!Playing()
 	 || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE
 	 || gamestate == GS_CREDITS      || gamestate == GS_EVALUATION
-	 || gamestate == GS_GAMEEND)
+	 || gamestate == GS_GAMEEND
+	 || gamestate == GS_VOTING) // SRB2kart
 		return;
 
 	// draw multiplayer rankings
@@ -1179,11 +1213,20 @@ void HU_Drawer(void)
 		return;
 
 	// draw the crosshair, not when viewing demos nor with chasecam
-	if (!automapactive && cv_crosshair.value && !demoplayback && !camera.chase && !players[displayplayer].spectator)
-		HU_DrawCrosshair();
+	if (!automapactive && !demoplayback)
+	{
+		if (cv_crosshair.value && !camera.chase && !players[displayplayer].spectator)
+			HU_DrawCrosshair();
 
-	if (!automapactive && cv_crosshair2.value && !demoplayback && !camera2.chase && !players[secondarydisplayplayer].spectator)
-		HU_DrawCrosshair2();
+		if (cv_crosshair2.value && !camera2.chase && !players[secondarydisplayplayer].spectator)
+			HU_DrawCrosshair2();
+	
+		if (cv_crosshair3.value && !camera3.chase && !players[thirddisplayplayer].spectator)
+			HU_DrawCrosshair3();
+
+		if (cv_crosshair4.value && !camera4.chase && !players[fourthdisplayplayer].spectator)
+			HU_DrawCrosshair4();
+	}
 
 	// draw desynch text
 	if (hu_resynching)
@@ -1351,7 +1394,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 				V_DrawSmallScaledPatch(x-32, y-4, 0, tagico);
 		}
 
-		if (gametype == GT_RACE)
+		if (G_RaceGametype())
 		{
 			if (circuitmap)
 			{
@@ -1449,7 +1492,7 @@ void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer)
 			else
 				V_DrawSmallMappedPatch (x, y-4, 0, faceprefix[players[tab[i].num].skin], colormap);
 		}
-		V_DrawRightAlignedThinString(x+120, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
+		V_DrawRightAlignedThinString(x+120, y-1, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
 	}
 }
 
@@ -1521,20 +1564,20 @@ void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scoreline
 		}
 
 		// All data drawn with thin string for space.
-		if (gametype == GT_RACE)
+		if (G_RaceGametype())
 		{
 			if (circuitmap)
 			{
 				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedThinString(x+156, y, 0, va("%i:%02i.%02i", G_TicsToMinutes(players[tab[i].num].realtime,true), G_TicsToSeconds(players[tab[i].num].realtime), G_TicsToCentiseconds(players[tab[i].num].realtime)));
+					V_DrawRightAlignedThinString(x+156, y-1, 0, va("%i:%02i.%02i", G_TicsToMinutes(players[tab[i].num].realtime,true), G_TicsToSeconds(players[tab[i].num].realtime), G_TicsToCentiseconds(players[tab[i].num].realtime)));
 				else
-					V_DrawRightAlignedThinString(x+156, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
+					V_DrawRightAlignedThinString(x+156, y-1, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
 			}
 			else
-				V_DrawRightAlignedThinString(x+156, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%i:%02i.%02i", G_TicsToMinutes(tab[i].count,true), G_TicsToSeconds(tab[i].count), G_TicsToCentiseconds(tab[i].count)));
+				V_DrawRightAlignedThinString(x+156, y-1, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%i:%02i.%02i", G_TicsToMinutes(tab[i].count,true), G_TicsToSeconds(tab[i].count), G_TicsToCentiseconds(tab[i].count)));
 		}
 		else
-			V_DrawRightAlignedThinString(x+120, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
+			V_DrawRightAlignedThinString(x+120, y-1, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
 
 		y += 16;
 		if (y > 160)
@@ -1665,7 +1708,7 @@ static void HU_DrawRankings(void)
 		V_DrawCenteredString(192, 16, 0, va("%u", redscore));
 	}
 
-	if (gametype != GT_RACE && gametype != GT_COMPETITION && gametype != GT_COOP)
+	if (!G_RaceGametype())
 	{
 		if (cv_timelimit.value && timelimitintics > 0)
 		{
@@ -1725,7 +1768,7 @@ static void HU_DrawRankings(void)
 		tab[i].num = -1;
 		tab[i].name = 0;
 
-		if (gametype == GT_RACE && !circuitmap)
+		if (G_RaceGametype() && !circuitmap)
 			tab[i].count = INT32_MAX;
 	}
 
@@ -1738,7 +1781,7 @@ static void HU_DrawRankings(void)
 		{
 			if (playeringame[i] && !players[i].spectator)
 			{
-				if (gametype == GT_RACE)
+				if (G_RaceGametype())
 				{
 					if (circuitmap)
 					{

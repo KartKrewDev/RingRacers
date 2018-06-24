@@ -20,8 +20,8 @@
 #define _HWR_DEFS_
 #include "../doomtype.h"
 
-#define ZCLIP_PLANE 4.0f
-#define NZCLIP_PLANE 0.9f
+#define ZCLIP_PLANE 4.0f // Used for the actual game drawing
+#define NZCLIP_PLANE 0.9f // Seems to be only used for the HUD and screen textures
 
 // ==========================================================================
 //                                                               SIMPLE TYPES
@@ -107,8 +107,9 @@ typedef struct
 	FLOAT       anglex,angley;   // aimingangle / viewangle
 	FLOAT       scalex,scaley,scalez;
 	FLOAT       fovxangle, fovyangle;
-	INT32       splitscreen;
+	UINT8       splitscreen;
 	boolean     flip;            // screenflip
+	boolean     mirror;          // SRB2Kart: Mirror Mode
 } FTransform;
 
 // Transformed vector, as passed to HWR API
@@ -133,12 +134,13 @@ enum EPolyFlags
 
 	PF_Masked           = 0x00000001,   // Poly is alpha scaled and 0 alpha pels are discarded (holes in texture)
 	PF_Translucent      = 0x00000002,   // Poly is transparent, alpha = level of transparency
-	PF_Additive         = 0x00000024,   // Poly is added to the frame buffer
+	PF_Additive         = 0x00000004,   // Poly is added to the frame buffer
 	PF_Environment      = 0x00000008,   // Poly should be drawn environment mapped.
 	                                    // Hurdler: used for text drawing
 	PF_Substractive     = 0x00000010,   // for splat
 	PF_NoAlphaTest      = 0x00000020,   // hiden param
-	PF_Blending         = (PF_Environment|PF_Additive|PF_Translucent|PF_Masked|PF_Substractive)&~PF_NoAlphaTest,
+	PF_Fog              = 0x00000040,   // Fog blocks
+	PF_Blending         = (PF_Environment|PF_Additive|PF_Translucent|PF_Masked|PF_Substractive|PF_Fog)&~PF_NoAlphaTest,
 
 		// other flag bits
 

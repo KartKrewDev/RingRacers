@@ -37,7 +37,8 @@ INT32 mlooky; // like mousey but with a custom sensitivity for mlook
 INT32 mouse2x, mouse2y, mlook2y;
 
 // joystick values are repeated
-INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymove[JOYAXISSET];
+INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymove[JOYAXISSET], 
+joy3xmove[JOYAXISSET], joy3ymove[JOYAXISSET], joy4xmove[JOYAXISSET], joy4ymove[JOYAXISSET];
 
 // current state of the keys: true if pushed
 UINT8 gamekeydown[NUMINPUTS];
@@ -45,6 +46,8 @@ UINT8 gamekeydown[NUMINPUTS];
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[num_gamecontrols][2];
 INT32 gamecontrolbis[num_gamecontrols][2]; // secondary splitscreen player
+INT32 gamecontrol3[num_gamecontrols][2]; // tertiary splitscreen player
+INT32 gamecontrol4[num_gamecontrols][2]; // quarternary splitscreen player
 
 typedef struct
 {
@@ -56,6 +59,8 @@ static dclick_t mousedclicks[MOUSEBUTTONS];
 static dclick_t joydclicks[JOYBUTTONS + JOYHATS*4];
 static dclick_t mouse2dclicks[MOUSEBUTTONS];
 static dclick_t joy2dclicks[JOYBUTTONS + JOYHATS*4];
+static dclick_t joy3dclicks[JOYBUTTONS + JOYHATS*4];
+static dclick_t joy4dclicks[JOYBUTTONS + JOYHATS*4];
 
 // protos
 static UINT8 G_CheckDoubleClick(UINT8 state, dclick_t *dt);
@@ -119,6 +124,22 @@ void G_MapEventsToControls(event_t *ev)
 			if (ev->data3 != INT32_MAX) joy2ymove[i] = ev->data3;
 			break;
 
+		case ev_joystick3:
+			i = ev->data1;
+			if (i >= JOYAXISSET)
+				break;
+			if (ev->data2 != INT32_MAX) joy3xmove[i] = ev->data2;
+			if (ev->data3 != INT32_MAX) joy3ymove[i] = ev->data3;
+			break;
+
+		case ev_joystick4:
+			i = ev->data1;
+			if (i >= JOYAXISSET)
+				break;
+			if (ev->data2 != INT32_MAX) joy4xmove[i] = ev->data2;
+			if (ev->data3 != INT32_MAX) joy4ymove[i] = ev->data3;
+			break;
+
 		case ev_mouse2: // buttons are virtual keys
 			mouse2x = (INT32)(ev->data2*((cv_mousesens2.value*cv_mousesens2.value)/110.0f + 0.1f));
 			mouse2y = (INT32)(ev->data3*((cv_mousesens2.value*cv_mousesens2.value)/110.0f + 0.1f));
@@ -152,6 +173,18 @@ void G_MapEventsToControls(event_t *ev)
 	{
 		flag = G_CheckDoubleClick(gamekeydown[KEY_2JOY1+i], &joy2dclicks[i]);
 		gamekeydown[KEY_DBL2JOY1+i] = flag;
+	}
+
+	for (i = 0; i < JOYBUTTONS + JOYHATS*4; i++)
+	{
+		flag = G_CheckDoubleClick(gamekeydown[KEY_3JOY1+i], &joy3dclicks[i]);
+		gamekeydown[KEY_DBL3JOY1+i] = flag;
+	}
+
+	for (i = 0; i < JOYBUTTONS + JOYHATS*4; i++)
+	{
+		flag = G_CheckDoubleClick(gamekeydown[KEY_4JOY1+i], &joy4dclicks[i]);
+		gamekeydown[KEY_DBL4JOY1+i] = flag;
 	}
 }
 
@@ -949,45 +982,230 @@ static keyname_t keynames[] =
 #endif
 #endif
 
+
+	{KEY_3JOY1+0, "TRD_JOY1"},
+	{KEY_3JOY1+1, "TRD_JOY2"},
+	{KEY_3JOY1+2, "TRD_JOY3"},
+	{KEY_3JOY1+3, "TRD_JOY4"},
+	{KEY_3JOY1+4, "TRD_JOY5"},
+	{KEY_3JOY1+5, "TRD_JOY6"},
+	{KEY_3JOY1+6, "TRD_JOY7"},
+	{KEY_3JOY1+7, "TRD_JOY8"},
+	{KEY_3JOY1+8, "TRD_JOY9"},
+	{KEY_3JOY1+9, "TRD_JOY10"},
+	{KEY_3JOY1+10, "TRD_JOY11"},
+	{KEY_3JOY1+11, "TRD_JOY12"},
+	{KEY_3JOY1+12, "TRD_JOY13"},
+	{KEY_3JOY1+13, "TRD_JOY14"},
+	{KEY_3JOY1+14, "TRD_JOY15"},
+	{KEY_3JOY1+15, "TRD_JOY16"},
+	{KEY_3JOY1+16, "TRD_JOY17"},
+	{KEY_3JOY1+17, "TRD_JOY18"},
+	{KEY_3JOY1+18, "TRD_JOY19"},
+	{KEY_3JOY1+19, "TRD_JOY20"},
+	{KEY_3JOY1+20, "TRD_JOY21"},
+	{KEY_3JOY1+21, "TRD_JOY22"},
+	{KEY_3JOY1+22, "TRD_JOY23"},
+	{KEY_3JOY1+23, "TRD_JOY24"},
+	{KEY_3JOY1+24, "TRD_JOY25"},
+	{KEY_3JOY1+25, "TRD_JOY26"},
+	{KEY_3JOY1+26, "TRD_JOY27"},
+	{KEY_3JOY1+27, "TRD_JOY28"},
+	{KEY_3JOY1+28, "TRD_JOY29"},
+	{KEY_3JOY1+29, "TRD_JOY30"},
+	{KEY_3JOY1+30, "TRD_JOY31"},
+	{KEY_3JOY1+31, "TRD_JOY32"},
+
+	{KEY_DBL3JOY1+0, "DBLTRD_JOY1"},
+	{KEY_DBL3JOY1+1, "DBLTRD_JOY2"},
+	{KEY_DBL3JOY1+2, "DBLTRD_JOY3"},
+	{KEY_DBL3JOY1+3, "DBLTRD_JOY4"},
+	{KEY_DBL3JOY1+4, "DBLTRD_JOY5"},
+	{KEY_DBL3JOY1+5, "DBLTRD_JOY6"},
+	{KEY_DBL3JOY1+6, "DBLTRD_JOY7"},
+	{KEY_DBL3JOY1+7, "DBLTRD_JOY8"},
+	{KEY_DBL3JOY1+8, "DBLTRD_JOY9"},
+	{KEY_DBL3JOY1+9, "DBLTRD_JOY10"},
+	{KEY_DBL3JOY1+10, "DBLTRD_JOY11"},
+	{KEY_DBL3JOY1+11, "DBLTRD_JOY12"},
+	{KEY_DBL3JOY1+12, "DBLTRD_JOY13"},
+	{KEY_DBL3JOY1+13, "DBLTRD_JOY14"},
+	{KEY_DBL3JOY1+14, "DBLTRD_JOY15"},
+	{KEY_DBL3JOY1+15, "DBLTRD_JOY16"},
+	{KEY_DBL3JOY1+16, "DBLTRD_JOY17"},
+	{KEY_DBL3JOY1+17, "DBLTRD_JOY18"},
+	{KEY_DBL3JOY1+18, "DBLTRD_JOY19"},
+	{KEY_DBL3JOY1+19, "DBLTRD_JOY20"},
+	{KEY_DBL3JOY1+20, "DBLTRD_JOY21"},
+	{KEY_DBL3JOY1+21, "DBLTRD_JOY22"},
+	{KEY_DBL3JOY1+22, "DBLTRD_JOY23"},
+	{KEY_DBL3JOY1+23, "DBLTRD_JOY24"},
+	{KEY_DBL3JOY1+24, "DBLTRD_JOY25"},
+	{KEY_DBL3JOY1+25, "DBLTRD_JOY26"},
+	{KEY_DBL3JOY1+26, "DBLTRD_JOY27"},
+	{KEY_DBL3JOY1+27, "DBLTRD_JOY28"},
+	{KEY_DBL3JOY1+28, "DBLTRD_JOY29"},
+	{KEY_DBL3JOY1+29, "DBLTRD_JOY30"},
+	{KEY_DBL3JOY1+30, "DBLTRD_JOY31"},
+	{KEY_DBL3JOY1+31, "DBLTRD_JOY32"},
+
+	{KEY_3HAT1+0,  "TRD_HATUP"},
+	{KEY_3HAT1+1,  "TRD_HATDOWN"},
+	{KEY_3HAT1+2,  "TRD_HATLEFT"},
+	{KEY_3HAT1+3,  "TRD_HATRIGHT"},
+	{KEY_3HAT1+4, "TRD_HATUP2"},
+	{KEY_3HAT1+5, "TRD_HATDOWN2"},
+	{KEY_3HAT1+6, "TRD_HATLEFT2"},
+	{KEY_3HAT1+7, "TRD_HATRIGHT2"},
+	{KEY_3HAT1+8, "TRD_HATUP3"},
+	{KEY_3HAT1+9, "TRD_HATDOWN3"},
+	{KEY_3HAT1+10, "TRD_HATLEFT3"},
+	{KEY_3HAT1+11, "TRD_HATRIGHT3"},
+	{KEY_3HAT1+12, "TRD_HATUP4"},
+	{KEY_3HAT1+13, "TRD_HATDOWN4"},
+	{KEY_3HAT1+14, "TRD_HATLEFT4"},
+	{KEY_3HAT1+15, "TRD_HATRIGHT4"},
+
+	{KEY_DBL3HAT1+0, "DBLTRD_HATUP"},
+	{KEY_DBL3HAT1+1, "DBLTRD_HATDOWN"},
+	{KEY_DBL3HAT1+2, "DBLTRD_HATLEFT"},
+	{KEY_DBL3HAT1+3, "DBLTRD_HATRIGHT"},
+	{KEY_DBL3HAT1+4, "DBLTRD_HATUP2"},
+	{KEY_DBL3HAT1+5, "DBLTRD_HATDOWN2"},
+	{KEY_DBL3HAT1+6, "DBLTRD_HATLEFT2"},
+	{KEY_DBL3HAT1+7, "DBLTRD_HATRIGHT2"},
+	{KEY_DBL3HAT1+8, "DBLTRD_HATUP3"},
+	{KEY_DBL3HAT1+9, "DBLTRD_HATDOWN3"},
+	{KEY_DBL3HAT1+10, "DBLTRD_HATLEFT3"},
+	{KEY_DBL3HAT1+11, "DBLTRD_HATRIGHT3"},
+	{KEY_DBL3HAT1+12, "DBLTRD_HATUP4"},
+	{KEY_DBL3HAT1+13, "DBLTRD_HATDOWN4"},
+	{KEY_DBL3HAT1+14, "DBLTRD_HATLEFT4"},
+	{KEY_DBL3HAT1+15, "DBLTRD_HATRIGHT4"},
+
+	{KEY_4JOY1+0, "FOR_JOY1"},
+	{KEY_4JOY1+1, "FOR_JOY2"},
+	{KEY_4JOY1+2, "FOR_JOY3"},
+	{KEY_4JOY1+3, "FOR_JOY4"},
+	{KEY_4JOY1+4, "FOR_JOY5"},
+	{KEY_4JOY1+5, "FOR_JOY6"},
+	{KEY_4JOY1+6, "FOR_JOY7"},
+	{KEY_4JOY1+7, "FOR_JOY8"},
+	{KEY_4JOY1+8, "FOR_JOY9"},
+	{KEY_4JOY1+9, "FOR_JOY10"},
+	{KEY_4JOY1+10, "FOR_JOY11"},
+	{KEY_4JOY1+11, "FOR_JOY12"},
+	{KEY_4JOY1+12, "FOR_JOY13"},
+	{KEY_4JOY1+13, "FOR_JOY14"},
+	{KEY_4JOY1+14, "FOR_JOY15"},
+	{KEY_4JOY1+15, "FOR_JOY16"},
+	{KEY_4JOY1+16, "FOR_JOY17"},
+	{KEY_4JOY1+17, "FOR_JOY18"},
+	{KEY_4JOY1+18, "FOR_JOY19"},
+	{KEY_4JOY1+19, "FOR_JOY20"},
+	{KEY_4JOY1+20, "FOR_JOY21"},
+	{KEY_4JOY1+21, "FOR_JOY22"},
+	{KEY_4JOY1+22, "FOR_JOY23"},
+	{KEY_4JOY1+23, "FOR_JOY24"},
+	{KEY_4JOY1+24, "FOR_JOY25"},
+	{KEY_4JOY1+25, "FOR_JOY26"},
+	{KEY_4JOY1+26, "FOR_JOY27"},
+	{KEY_4JOY1+27, "FOR_JOY28"},
+	{KEY_4JOY1+28, "FOR_JOY29"},
+	{KEY_4JOY1+29, "FOR_JOY30"},
+	{KEY_4JOY1+30, "FOR_JOY31"},
+	{KEY_4JOY1+31, "FOR_JOY32"},
+
+	{KEY_DBL4JOY1+0, "DBLFOR_JOY1"},
+	{KEY_DBL4JOY1+1, "DBLFOR_JOY2"},
+	{KEY_DBL4JOY1+2, "DBLFOR_JOY3"},
+	{KEY_DBL4JOY1+3, "DBLFOR_JOY4"},
+	{KEY_DBL4JOY1+4, "DBLFOR_JOY5"},
+	{KEY_DBL4JOY1+5, "DBLFOR_JOY6"},
+	{KEY_DBL4JOY1+6, "DBLFOR_JOY7"},
+	{KEY_DBL4JOY1+7, "DBLFOR_JOY8"},
+	{KEY_DBL4JOY1+8, "DBLFOR_JOY9"},
+	{KEY_DBL4JOY1+9, "DBLFOR_JOY10"},
+	{KEY_DBL4JOY1+10, "DBLFOR_JOY11"},
+	{KEY_DBL4JOY1+11, "DBLFOR_JOY12"},
+	{KEY_DBL4JOY1+12, "DBLFOR_JOY13"},
+	{KEY_DBL4JOY1+13, "DBLFOR_JOY14"},
+	{KEY_DBL4JOY1+14, "DBLFOR_JOY15"},
+	{KEY_DBL4JOY1+15, "DBLFOR_JOY16"},
+	{KEY_DBL4JOY1+16, "DBLFOR_JOY17"},
+	{KEY_DBL4JOY1+17, "DBLFOR_JOY18"},
+	{KEY_DBL4JOY1+18, "DBLFOR_JOY19"},
+	{KEY_DBL4JOY1+19, "DBLFOR_JOY20"},
+	{KEY_DBL4JOY1+20, "DBLFOR_JOY21"},
+	{KEY_DBL4JOY1+21, "DBLFOR_JOY22"},
+	{KEY_DBL4JOY1+22, "DBLFOR_JOY23"},
+	{KEY_DBL4JOY1+23, "DBLFOR_JOY24"},
+	{KEY_DBL4JOY1+24, "DBLFOR_JOY25"},
+	{KEY_DBL4JOY1+25, "DBLFOR_JOY26"},
+	{KEY_DBL4JOY1+26, "DBLFOR_JOY27"},
+	{KEY_DBL4JOY1+27, "DBLFOR_JOY28"},
+	{KEY_DBL4JOY1+28, "DBLFOR_JOY29"},
+	{KEY_DBL4JOY1+29, "DBLFOR_JOY30"},
+	{KEY_DBL4JOY1+30, "DBLFOR_JOY31"},
+	{KEY_DBL4JOY1+31, "DBLFOR_JOY32"},
+
+	{KEY_4HAT1+0,  "FOR_HATUP"},
+	{KEY_4HAT1+1,  "FOR_HATDOWN"},
+	{KEY_4HAT1+2,  "FOR_HATLEFT"},
+	{KEY_4HAT1+3,  "FOR_HATRIGHT"},
+	{KEY_4HAT1+4, "FOR_HATUP2"},
+	{KEY_4HAT1+5, "FOR_HATDOWN2"},
+	{KEY_4HAT1+6, "FOR_HATLEFT2"},
+	{KEY_4HAT1+7, "FOR_HATRIGHT2"},
+	{KEY_4HAT1+8, "FOR_HATUP3"},
+	{KEY_4HAT1+9, "FOR_HATDOWN3"},
+	{KEY_4HAT1+10, "FOR_HATLEFT3"},
+	{KEY_4HAT1+11, "FOR_HATRIGHT3"},
+	{KEY_4HAT1+12, "FOR_HATUP4"},
+	{KEY_4HAT1+13, "FOR_HATDOWN4"},
+	{KEY_4HAT1+14, "FOR_HATLEFT4"},
+	{KEY_4HAT1+15, "FOR_HATRIGHT4"},
+
+	{KEY_DBL4HAT1+0, "DBLFOR_HATUP"},
+	{KEY_DBL4HAT1+1, "DBLFOR_HATDOWN"},
+	{KEY_DBL4HAT1+2, "DBLFOR_HATLEFT"},
+	{KEY_DBL4HAT1+3, "DBLFOR_HATRIGHT"},
+	{KEY_DBL4HAT1+4, "DBLFOR_HATUP2"},
+	{KEY_DBL4HAT1+5, "DBLFOR_HATDOWN2"},
+	{KEY_DBL4HAT1+6, "DBLFOR_HATLEFT2"},
+	{KEY_DBL4HAT1+7, "DBLFOR_HATRIGHT2"},
+	{KEY_DBL4HAT1+8, "DBLFOR_HATUP3"},
+	{KEY_DBL4HAT1+9, "DBLFOR_HATDOWN3"},
+	{KEY_DBL4HAT1+10, "DBLFOR_HATLEFT3"},
+	{KEY_DBL4HAT1+11, "DBLFOR_HATRIGHT3"},
+	{KEY_DBL4HAT1+12, "DBLFOR_HATUP4"},
+	{KEY_DBL4HAT1+13, "DBLFOR_HATDOWN4"},
+	{KEY_DBL4HAT1+14, "DBLFOR_HATLEFT4"},
+	{KEY_DBL4HAT1+15, "DBLFOR_HATRIGHT4"},
+
 };
 
 static const char *gamecontrolname[num_gamecontrols] =
 {
 	"nothing", // a key/button mapped to gc_null has no effect
-	"forward",
-	"backward",
-	"strafeleft",
-	"straferight",
+	"aimforward",
+	"aimbackward",
 	"turnleft",
 	"turnright",
-	"weaponnext",
-	"weaponprev",
-	"weapon1",
-	"weapon2",
-	"weapon3",
-	"weapon4",
-	"weapon5",
-	"weapon6",
-	"weapon7",
-	"weapon8",
-	"weapon9",
-	"weapon10",
+	"accelerate",
+	"drift",
+	"brake",
 	"fire",
-	"firenormal",
-	"tossflag",
-	"use",
-	"camtoggle",
-	"camleft",
-	"camright",
+	"lookback",
 	"camreset",
+	"camtoggle",
+	"spectate",
 	"lookup",
 	"lookdown",
 	"centerview",
-	"mouseaiming",
 	"talkkey",
 	"teamtalkkey",
 	"scores",
-	"jump",
 	"console",
 	"pause",
 	"custom1",
@@ -1051,222 +1269,84 @@ INT32 G_KeyStringtoNum(const char *keystr)
 	return 0;
 }
 
-#ifdef DC
+// SRB2Kart
 void G_Controldefault(void)
 {
-	gamecontrol[gc_forward    ][0] = KEY_HAT1+0; //Up
-	gamecontrol[gc_forward    ][1] = KEY_UPARROW;
-	gamecontrol[gc_backward   ][0] = KEY_HAT1+1; //Down
-	gamecontrol[gc_backward   ][1] = KEY_DOWNARROW;
-	//gamecontrol[gc_straferight][0] = '[';
-	//gamecontrol[gc_strafeleft ][0] = ']';
-	gamecontrol[gc_turnleft   ][0] = KEY_HAT1+2; //Left
-	gamecontrol[gc_turnleft   ][1] = KEY_LEFTARROW;
-	gamecontrol[gc_turnright  ][0] = KEY_HAT1+3; //Right
-	gamecontrol[gc_turnright  ][1] = KEY_RIGHTARROW;
-	gamecontrol[gc_driftleft  ][0] = ']';
-	gamecontrol[gc_driftright ][0] = '[';
-	gamecontrol[gc_fire       ][0] = KEY_JOY1+6; //X
-	gamecontrol[gc_fire       ][1] = KEY_RCTRL;
-	gamecontrol[gc_accelerate ][0] = KEY_JOY1+5; //Y
-	gamecontrol[gc_accelerate ][1] = ';';
-	gamecontrol[gc_spectate   ][0] = '\'';
-	gamecontrol[gc_brake      ][0] = KEY_JOY1+1; //B
-	gamecontrol[gc_brake      ][1] = '.';
-	gamecontrol[gc_camtoggle  ][1] = ',';
-	gamecontrol[gc_aimforward ][0] = 'o';
-	gamecontrol[gc_aimbackward][0] = 'p';
-	gamecontrol[gc_lookback   ][0] = 'c';
-	gamecontrol[gc_lookup     ][0] = KEY_PGUP;
-	gamecontrol[gc_lookdown   ][0] = KEY_PGDN;
-	gamecontrol[gc_centerview ][0] = KEY_END;
-	gamecontrol[gc_mouseaiming][0] = 's';
-	gamecontrol[gc_talkkey    ][0] = 't';
-	gamecontrol[gc_teamkey    ][0] = 'y';
-	gamecontrol[gc_scores     ][0] = KEY_TAB;
-	gamecontrol[gc_jump       ][0] = KEY_JOY1+2; //A
-	gamecontrol[gc_jump       ][1] = '/';
-	gamecontrol[gc_console    ][0] = KEY_CONSOLE;
-	gamecontrol[gc_console    ][1] = KEY_F5;
-	//gamecontrolbis
-	gamecontrolbis[gc_forward   ][0] = KEY_2HAT1+0;
-	gamecontrolbis[gc_forward   ][1] = 'w';
-	gamecontrolbis[gc_backward  ][0] = KEY_2HAT1+1;
-	gamecontrolbis[gc_backward  ][1] = 's';
-	gamecontrolbis[gc_turnleft  ][0] = KEY_2HAT1+2;
-	gamecontrolbis[gc_turnleft  ][1] = 'a';
-	gamecontrolbis[gc_turnright ][0] = KEY_2HAT1+3;
-	gamecontrolbis[gc_turnright ][1] = 'd';
-	gamecontrolbis[gc_driftleft ][0] = 't';
-	gamecontrolbis[gc_driftright][0] = 'r';
-	gamecontrolbis[gc_fire      ][0] = KEY_2JOY1+6; //X
-	gamecontrolbis[gc_accelerate][0] = KEY_2JOY1+5; //Y
-	gamecontrolbis[gc_brake       ][0] = KEY_2JOY1+1; //B
-	gamecontrolbis[gc_jump      ][0] = KEY_2JOY1+2; //A
-	//gamecontrolbis[gc_straferight][0] = 'x';
-	//gamecontrolbis[gc_strafeleft ][0] = 'z';
-}
-#elif defined (_PSP)
-void G_Controldefault(void)
-{
-	gamecontrol[gc_forward    ][0] = KEY_HAT1+0; // Up
-	gamecontrol[gc_backward   ][0] = KEY_HAT1+1; // Down
-	gamecontrol[gc_turnleft   ][0] = KEY_HAT1+2; // Left
-	gamecontrol[gc_turnright  ][0] = KEY_HAT1+3; // Right
-	gamecontrol[gc_strafeleft ][0] = KEY_JOY1+4; // L
-	gamecontrol[gc_straferight][0] = KEY_JOY1+5; // R
-	gamecontrol[gc_spectate   ][0] = KEY_JOY1+0; // Triangle
-	gamecontrol[gc_brake      ][0] = KEY_JOY1+1; // Circle
-	gamecontrol[gc_camtoggle  ][0] = KEY_JOY1+6; // Select
-	gamecontrol[gc_lookback   ][0] = KEY_JOY1+3; // Square
-	gamecontrol[gc_centerview ][0] = KEY_JOY1+9; // Hold
-	gamecontrol[gc_pause      ][0] = KEY_JOY1+8; // Start
-	gamecontrol[gc_jump       ][0] = KEY_JOY1+2; // Cross
-}
-#elif defined (GP2X)
-void G_Controldefault(void)
-{
-	gamecontrol[gc_fire       ][0] = KEY_JOY1+0; //A
-	gamecontrol[gc_forward    ][0] = KEY_JOY1+1; //Y
-	gamecontrol[gc_jump       ][0] = KEY_JOY1+2; //B
-	gamecontrol[gc_brake      ][0] = KEY_JOY1+3; //X
-	gamecontrol[gc_strafeleft ][0] = KEY_JOY1+4; //L
-	gamecontrol[gc_straferight][0] = KEY_JOY1+5; //R
-	gamecontrol[gc_lookup     ][0] = KEY_JOY1+6; //U
-	gamecontrol[gc_lookdown   ][0] = KEY_JOY1+7; //D
-	gamecontrol[gc_pause      ][0] = KEY_JOY1+8; //S
-}
-#elif defined (_NDS)
-void G_Controldefault(void)
-{
-	gamecontrol[gc_fire       ][0] = KEY_JOY1+2; //X
-	gamecontrol[gc_forward    ][0] = KEY_UPARROW;
-	gamecontrol[gc_backward   ][0] = KEY_DOWNARROW;
-	gamecontrol[gc_jump       ][0] = KEY_JOY1+0; //A
-	gamecontrol[gc_brake        ][0] = KEY_JOY1+3; //Y
-	gamecontrol[gc_strafeleft ][0] = KEY_JOY1+4; //L
-	gamecontrol[gc_straferight][0] = KEY_JOY1+5; //R
+	// Main controls
+	gamecontrol[gc_aimforward ][0] = KEY_UPARROW;
+	gamecontrol[gc_aimbackward][0] = KEY_DOWNARROW;
 	gamecontrol[gc_turnleft   ][0] = KEY_LEFTARROW;
 	gamecontrol[gc_turnright  ][0] = KEY_RIGHTARROW;
-	gamecontrol[gc_pause      ][0] = KEY_JOY1+6; //Start
-	gamecontrol[gc_driftleft  ][0] = KEY_JOY1+7; //Select
-}
-#else
-void G_Controldefault(void)
-{
-	gamecontrol[gc_forward    ][0] = KEY_UPARROW;
-	gamecontrol[gc_forward    ][1] = 'w';
-	gamecontrol[gc_backward   ][0] = KEY_DOWNARROW;
-	gamecontrol[gc_backward   ][1] = 's';
-	gamecontrol[gc_strafeleft ][0] = 'a';
-	gamecontrol[gc_straferight][0] = 'd';
-	gamecontrol[gc_turnleft   ][0] = KEY_LEFTARROW;
-	gamecontrol[gc_turnright  ][0] = KEY_RIGHTARROW;
-	gamecontrol[gc_driftleft  ][0] = 'e';
-	gamecontrol[gc_driftright ][0] = 'q';
-	gamecontrol[gc_wepslot1   ][0] = '1';
-	gamecontrol[gc_wepslot2   ][0] = '2';
-	gamecontrol[gc_wepslot3   ][0] = '3';
-	gamecontrol[gc_wepslot4   ][0] = '4';
-	gamecontrol[gc_wepslot5   ][0] = '5';
-	gamecontrol[gc_wepslot6   ][0] = '6';
-	gamecontrol[gc_wepslot7   ][0] = '7';
-	gamecontrol[gc_wepslot8   ][0] = '8';
-	gamecontrol[gc_wepslot9   ][0] = '9';
-	gamecontrol[gc_wepslot10  ][0] = '0';
-	gamecontrol[gc_fire       ][0] = KEY_RCTRL;
-	gamecontrol[gc_fire       ][1] = KEY_MOUSE1+0;
-	gamecontrol[gc_accelerate ][0] = 'c';
-	gamecontrol[gc_spectate   ][0] = '\'';
-	gamecontrol[gc_brake      ][0] = 'x';
-	gamecontrol[gc_camtoggle  ][0] = 'v';
-	gamecontrol[gc_aimforward ][0] = '[';
-	gamecontrol[gc_aimbackward][0] = ']';
-	gamecontrol[gc_lookback   ][0] = 'r';
-	gamecontrol[gc_lookup     ][0] = KEY_PGUP;
-	gamecontrol[gc_lookdown   ][0] = KEY_PGDN;
-	gamecontrol[gc_centerview ][0] = KEY_END;
-	gamecontrol[gc_talkkey    ][0] = 't';
-	gamecontrol[gc_teamkey    ][0] = 'y';
-	gamecontrol[gc_scores     ][0] = KEY_TAB;
-	gamecontrol[gc_jump       ][0] = 'z';
-	gamecontrol[gc_jump       ][1] = KEY_MOUSE1+1;
-	gamecontrol[gc_console    ][0] = KEY_CONSOLE;
+	gamecontrol[gc_accelerate ][0] = 'a';
+	gamecontrol[gc_drift      ][0] = 's';
+	gamecontrol[gc_brake      ][0] = 'd';
+	gamecontrol[gc_fire       ][0] = KEY_SPACE;
+	gamecontrol[gc_lookback   ][0] = KEY_LSHIFT;
+
+	gamecontrol[gc_aimforward ][1] = KEY_HAT1+0;
+	gamecontrol[gc_aimbackward][1] = KEY_HAT1+1;
+	gamecontrol[gc_turnleft   ][1] = KEY_HAT1+2;
+	gamecontrol[gc_turnright  ][1] = KEY_HAT1+3;
+	gamecontrol[gc_accelerate ][1] = KEY_JOY1+0; // A
+	gamecontrol[gc_drift      ][1] = KEY_JOY1+1; // X
+	gamecontrol[gc_brake      ][1] = KEY_JOY1+2; // B
+	gamecontrol[gc_fire       ][1] = KEY_JOY1+4; // LB 
+	gamecontrol[gc_lookback   ][1] = KEY_JOY1+5; // RB
+	
+	// Extra controls
 	gamecontrol[gc_pause      ][0] = KEY_PAUSE;
-#ifdef WMINPUT
-	gamecontrol[gc_forward    ][0] = KEY_JOY1+02; //UP
-	gamecontrol[gc_backward   ][0] = KEY_JOY1+03; //DOWN
-	gamecontrol[gc_turnleft   ][0] = KEY_JOY1+04; //LEFT
-	gamecontrol[gc_turnright  ][0] = KEY_JOY1+05; //RIGHT
-	gamecontrol[gc_driftleft  ][0] = KEY_JOY1+10; //y
-	gamecontrol[gc_driftright ][0] = KEY_JOY1+9;  //x
-	gamecontrol[gc_fire       ][0] = KEY_JOY1+12; //L
-	gamecontrol[gc_accelerate ][0] = KEY_JOY1+13; //R
-	gamecontrol[gc_brake      ][0] = KEY_JOY1+00; //B
-	gamecontrol[gc_brake      ][1] = KEY_JOY1+07; //b
-	gamecontrol[gc_jump       ][0] = KEY_JOY1+01; //A
-	gamecontrol[gc_jump       ][1] = KEY_JOY1+06; //a
-	gamecontrol[gc_pause      ][0] = KEY_JOY1+18; //Home
-	gamecontrolbis[gc_forward    ][0] = KEY_2JOY1+02; //UP
-	gamecontrolbis[gc_backward   ][0] = KEY_2JOY1+03; //DOWN
-	gamecontrolbis[gc_turnleft   ][0] = KEY_2JOY1+04; //LEFT
-	gamecontrolbis[gc_turnright  ][0] = KEY_2JOY1+05; //RIGHT
-	gamecontrolbis[gc_driftleft  ][0] = KEY_2JOY1+10; //y
-	gamecontrolbis[gc_driftright ][0] = KEY_2JOY1+9;  //x
-	gamecontrolbis[gc_fire       ][0] = KEY_2JOY1+12; //L
-	gamecontrolbis[gc_accelerate ][0] = KEY_2JOY1+13; //R
-	gamecontrolbis[gc_brake      ][0] = KEY_2JOY1+00; //B
-	gamecontrolbis[gc_brake      ][1] = KEY_2JOY1+07; //b
-	gamecontrolbis[gc_jump       ][0] = KEY_2JOY1+01; //A
-	gamecontrolbis[gc_jump       ][1] = KEY_2JOY1+06; //a
-	gamecontrolbis[gc_pause      ][0] = KEY_2JOY1+18; //Home
-#endif
-#ifdef _WII
-	gamecontrol[gc_forward    ][1] = KEY_HAT1+00; //UP
-	gamecontrol[gc_backward   ][1] = KEY_HAT1+01; //DOWN
-	gamecontrol[gc_straferight][1] = KEY_JOY1+16; //ZR
-	gamecontrol[gc_strafeleft ][1] = KEY_JOY1+15; //ZL
-	gamecontrol[gc_turnleft   ][1] = KEY_HAT1+02; //LEFT
-	gamecontrol[gc_turnright  ][1] = KEY_HAT1+03; //RIGHT
-	gamecontrol[gc_driftleft  ][1] = KEY_JOY1+11; //x
-	gamecontrol[gc_fire       ][0] = KEY_JOY1+12; //y
-	gamecontrol[gc_fire       ][1] = KEY_JOY1+01; //B
-	gamecontrol[gc_accelerate ][0] = KEY_JOY1+13; //L
-	gamecontrol[gc_accelerate ][1] = KEY_JOY1+00; //A
-	gamecontrol[gc_spectate   ][1] = KEY_JOY1+17; //Plus CC
-	gamecontrol[gc_brake      ][0] = KEY_JOY1+9;  //a
-	gamecontrol[gc_brake      ][1] = KEY_JOY1+02; //1
-	gamecontrol[gc_centerview ][1] = KEY_JOY1+14; //R
-	gamecontrol[gc_scores     ][0] = KEY_JOY1+04; //Minus
-	gamecontrol[gc_scores     ][1] = KEY_JOY1+18; //Minus
-	gamecontrol[gc_jump       ][0] = KEY_JOY1+10; //b
-	gamecontrol[gc_jump       ][1] = KEY_JOY1+3;  //2
-	gamecontrol[gc_pause      ][0] = KEY_JOY1+06; //Home
-	gamecontrol[gc_pause      ][1] = KEY_JOY1+19; //Home
-	gamecontrolbis[gc_forward    ][1] = KEY_2HAT1+00; //UP
-	gamecontrolbis[gc_backward   ][1] = KEY_2HAT1+01; //DOWN
-	gamecontrolbis[gc_straferight][1] = KEY_2JOY1+16; //ZR
-	gamecontrolbis[gc_strafeleft ][1] = KEY_2JOY1+15; //ZL
-	gamecontrolbis[gc_turnleft   ][1] = KEY_2HAT1+02; //LEFT
-	gamecontrolbis[gc_turnright  ][1] = KEY_2HAT1+03; //RIGHT
-	gamecontrolbis[gc_driftleft  ][1] = KEY_2JOY1+11; //x
-	gamecontrolbis[gc_fire       ][0] = KEY_2JOY1+12; //y
-	gamecontrolbis[gc_fire       ][1] = KEY_2JOY1+01; //B
-	gamecontrolbis[gc_accelerate ][0] = KEY_2JOY1+13; //L
-	gamecontrolbis[gc_accelerate ][1] = KEY_2JOY1+00; //A
-	gamecontrolbis[gc_spectate   ][1] = KEY_2JOY1+17; //Plus CC
-	gamecontrolbis[gc_brake      ][0] = KEY_2JOY1+9;  //a
-	gamecontrolbis[gc_brake      ][1] = KEY_2JOY1+02; //1
-	gamecontrolbis[gc_centerview ][1] = KEY_2JOY1+14; //R
-	gamecontrolbis[gc_scores     ][0] = KEY_2JOY1+04; //Minus
-	gamecontrolbis[gc_scores     ][1] = KEY_2JOY1+18; //Minus
-	gamecontrolbis[gc_jump       ][0] = KEY_2JOY1+10; //b
-	gamecontrolbis[gc_jump       ][1] = KEY_2JOY1+3;  //2
-	gamecontrolbis[gc_pause      ][0] = KEY_2JOY1+06; //Home
-	gamecontrolbis[gc_pause      ][1] = KEY_2JOY1+19; //Home
-#endif
+	gamecontrol[gc_console    ][0] = KEY_CONSOLE;
+	gamecontrol[gc_talkkey    ][0] = 't';
+	gamecontrol[gc_teamkey    ][0] = 'y';
+	gamecontrol[gc_scores     ][0] = KEY_TAB;
+	gamecontrol[gc_spectate   ][0] = '\'';
+
+	gamecontrol[gc_scores     ][1] = KEY_JOY1+6; // Back
+	gamecontrol[gc_spectate   ][1] = KEY_JOY1+7; // Start (This is sort of like MP's pause...?)
+
+	gamecontrol[gc_lookup     ][0] = KEY_PGUP;
+	gamecontrol[gc_lookdown   ][0] = KEY_PGDN;
+	gamecontrol[gc_centerview ][0] = KEY_END;
+	gamecontrol[gc_camreset   ][0] = KEY_HOME;
+	gamecontrol[gc_camtoggle  ][0] = KEY_BACKSPACE;
+
+	// Player 2 controls
+	gamecontrolbis[gc_aimforward ][0] = KEY_2HAT1+0;
+	gamecontrolbis[gc_aimbackward][0] = KEY_2HAT1+1;
+	gamecontrolbis[gc_turnleft   ][0] = KEY_2HAT1+2;
+	gamecontrolbis[gc_turnright  ][0] = KEY_2HAT1+3;
+	gamecontrolbis[gc_accelerate ][0] = KEY_2JOY1+0; // A
+	gamecontrolbis[gc_drift      ][0] = KEY_2JOY1+1; // X
+	gamecontrolbis[gc_brake      ][0] = KEY_2JOY1+2; // B
+	gamecontrolbis[gc_fire       ][0] = KEY_2JOY1+4; // LB 
+	gamecontrolbis[gc_lookback   ][0] = KEY_2JOY1+5; // RB
+	gamecontrolbis[gc_spectate   ][0] = KEY_2JOY1+7; // Start
+
+	// Player 3 controls
+	gamecontrol3[gc_aimforward ][0] = KEY_3HAT1+0;
+	gamecontrol3[gc_aimbackward][0] = KEY_3HAT1+1;
+	gamecontrol3[gc_turnleft   ][0] = KEY_3HAT1+2;
+	gamecontrol3[gc_turnright  ][0] = KEY_3HAT1+3;
+	gamecontrol3[gc_accelerate ][0] = KEY_3JOY1+0; // A
+	gamecontrol3[gc_drift      ][0] = KEY_3JOY1+1; // X
+	gamecontrol3[gc_brake      ][0] = KEY_3JOY1+2; // B
+	gamecontrol3[gc_fire       ][0] = KEY_3JOY1+4; // LB 
+	gamecontrol3[gc_lookback   ][0] = KEY_3JOY1+5; // RB
+	gamecontrol3[gc_spectate   ][0] = KEY_3JOY1+7; // Start
+
+	// Player 4 controls
+	gamecontrol4[gc_aimforward ][0] = KEY_4HAT1+0;
+	gamecontrol4[gc_aimbackward][0] = KEY_4HAT1+1;
+	gamecontrol4[gc_turnleft   ][0] = KEY_4HAT1+2;
+	gamecontrol4[gc_turnright  ][0] = KEY_4HAT1+3;
+	gamecontrol4[gc_accelerate ][0] = KEY_4JOY1+0; // A
+	gamecontrol4[gc_drift      ][0] = KEY_4JOY1+1; // X
+	gamecontrol4[gc_brake      ][0] = KEY_4JOY1+2; // B
+	gamecontrol4[gc_fire       ][0] = KEY_4JOY1+4; // LB 
+	gamecontrol4[gc_lookback   ][0] = KEY_4JOY1+5; // RB
+	gamecontrol4[gc_spectate   ][0] = KEY_4JOY1+7; // Start
 }
-#endif
+//#endif
 
 void G_SaveKeySetting(FILE *f)
 {
@@ -1293,6 +1373,28 @@ void G_SaveKeySetting(FILE *f)
 		else
 			fprintf(f, "\n");
 	}
+
+	for (i = 1; i < num_gamecontrols; i++)
+	{
+		fprintf(f, "setcontrol3 \"%s\" \"%s\"", gamecontrolname[i],
+			G_KeynumToString(gamecontrol3[i][0]));
+
+		if (gamecontrol3[i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(gamecontrol3[i][1]));
+		else
+			fprintf(f, "\n");
+	}
+
+	for (i = 1; i < num_gamecontrols; i++)
+	{
+		fprintf(f, "setcontrol4 \"%s\" \"%s\"", gamecontrolname[i],
+			G_KeynumToString(gamecontrol4[i][0]));
+
+		if (gamecontrol4[i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(gamecontrol4[i][1]));
+		else
+			fprintf(f, "\n");
+	}
 }
 
 void G_CheckDoubleUsage(INT32 keynum)
@@ -1310,6 +1412,14 @@ void G_CheckDoubleUsage(INT32 keynum)
 				gamecontrolbis[i][0] = KEY_NULL;
 			if (gamecontrolbis[i][1] == keynum)
 				gamecontrolbis[i][1] = KEY_NULL;
+			if (gamecontrol3[i][0] == keynum)
+				gamecontrol3[i][0] = KEY_NULL;
+			if (gamecontrol3[i][1] == keynum)
+				gamecontrol3[i][1] = KEY_NULL;
+			if (gamecontrol4[i][0] == keynum)
+				gamecontrol4[i][0] = KEY_NULL;
+			if (gamecontrol4[i][1] == keynum)
+				gamecontrol4[i][1] = KEY_NULL;
 		}
 	}
 }
@@ -1367,4 +1477,34 @@ void Command_Setcontrol2_f(void)
 	}
 
 	setcontrol(gamecontrolbis, na);
+}
+
+void Command_Setcontrol3_f(void)
+{
+	INT32 na;
+
+	na = (INT32)COM_Argc();
+
+	if (na != 3 && na != 4)
+	{
+		CONS_Printf(M_GetText("setcontrol3 <controlname> <keyname> [<2nd keyname>]: set controls for player 3\n"));
+		return;
+	}
+
+	setcontrol(gamecontrol3, na);
+}
+
+void Command_Setcontrol4_f(void)
+{
+	INT32 na;
+
+	na = (INT32)COM_Argc();
+
+	if (na != 3 && na != 4)
+	{
+		CONS_Printf(M_GetText("setcontrol4 <controlname> <keyname> [<2nd keyname>]: set controls for player 4\n"));
+		return;
+	}
+
+	setcontrol(gamecontrol4, na);
 }

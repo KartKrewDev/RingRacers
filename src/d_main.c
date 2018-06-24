@@ -120,7 +120,10 @@ postimg_t postimgtype = postimg_none;
 INT32 postimgparam;
 postimg_t postimgtype2 = postimg_none;
 INT32 postimgparam2;
-
+postimg_t postimgtype3 = postimg_none;
+INT32 postimgparam3;
+postimg_t postimgtype4 = postimg_none;
+INT32 postimgparam4;
 #ifdef _XBOX
 boolean nomidimusic = true, nosound = true;
 boolean nodigimusic = true;
@@ -298,6 +301,8 @@ static void D_Display(void)
 			else //if (intertype != int_coop) // Multiplayer
 				wipedefindex = wipe_multinter_toblack;
 		}
+		else if (gamestate == GS_VOTING)
+			wipedefindex = wipe_multinter_toblack;
 
 		if (rendermode != render_none)
 		{
@@ -332,13 +337,22 @@ static void D_Display(void)
 			HU_Drawer();
 			break;
 
+		case GS_VOTING:
+			Y_VoteDrawer();
+			HU_Erase();
+			HU_Drawer();
+			break;
+
 		case GS_TIMEATTACK:
 			break;
 
 		case GS_INTRO:
 			F_IntroDrawer();
 			if (wipegamestate == (gamestate_t)-1)
+			{
 				wipe = true;
+				wipedefindex = gamestate; // wipe_xxx_toblack
+			}
 			break;
 
 		case GS_CUTSCENE:
@@ -386,6 +400,9 @@ static void D_Display(void)
 		{
 			if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 			{
+				viewwindowy = 0;
+				viewwindowx = 0;
+
 				topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
 				objectsdrawn = 0;
 #ifdef HWRENDER
@@ -407,7 +424,17 @@ static void D_Display(void)
 #endif
 				if (rendermode != render_none)
 				{
-					viewwindowy = vid.height / 2;
+					if (splitscreen > 1)
+					{
+						viewwindowx = viewwidth;
+						viewwindowy = 0;
+					}
+					else
+					{
+						viewwindowx = 0;
+						viewwindowy = viewheight;
+					}
+
 					M_Memcpy(ylookup, ylookup2, viewheight*sizeof (ylookup[0]));
 
 					topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
@@ -419,11 +446,60 @@ static void D_Display(void)
 				}
 			}
 
+			// render the third screen
+			if (splitscreen > 1 && players[thirddisplayplayer].mo)
+			{
+#ifdef HWRENDER
+				if (rendermode != render_soft)
+					HWR_RenderPlayerView(2, &players[thirddisplayplayer]);
+				else
+#endif
+				if (rendermode != render_none)
+				{
+					viewwindowx = 0;
+					viewwindowy = viewheight;
+					M_Memcpy(ylookup, ylookup3, viewheight*sizeof (ylookup[0]));
+
+					topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+
+					R_RenderPlayerView(&players[thirddisplayplayer]);
+
+					viewwindowy = 0;
+					M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
+				}
+			}
+
+			if (splitscreen > 2 && players[fourthdisplayplayer].mo) // render the fourth screen
+			{
+#ifdef HWRENDER
+				if (rendermode != render_soft)
+					HWR_RenderPlayerView(3, &players[fourthdisplayplayer]);
+				else
+#endif
+				if (rendermode != render_none)
+				{
+					viewwindowx = viewwidth;
+					viewwindowy = viewheight;
+					M_Memcpy(ylookup, ylookup4, viewheight*sizeof (ylookup[0]));
+
+					topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+
+					R_RenderPlayerView(&players[fourthdisplayplayer]);
+
+					viewwindowy = 0;
+					M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
+				}
+			}
+
 			// Image postprocessing effect
 			if (postimgtype)
 				V_DoPostProcessor(0, postimgtype, postimgparam);
 			if (postimgtype2)
 				V_DoPostProcessor(1, postimgtype2, postimgparam2);
+			if (postimgtype3)
+				V_DoPostProcessor(2, postimgtype3, postimgparam3);
+			if (postimgtype4)
+				V_DoPostProcessor(3, postimgtype4, postimgparam4);
 		}
 
 		if (lastdraw)
@@ -570,7 +646,7 @@ void D_SRB2Loop(void)
 	COM_ImmedExecute("cls;version");
 
 	if (rendermode == render_soft)
-		V_DrawScaledPatch(0, 0, 0, (patch_t *)W_CacheLumpNum(W_GetNumForName("CONSBACK"), PU_CACHE));
+		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, (patch_t *)W_CacheLumpNum(W_GetNumForName("KARTKREW"), PU_CACHE), NULL);
 	I_FinishUpdate(); // page flip or blit buffer
 
 	for (;;)
@@ -626,13 +702,19 @@ void D_SRB2Loop(void)
 		else if (rendertimeout < entertic) // in case the server hang or netsplit
 		{
 			// Lagless camera! Yay!
+			/* Not yay, it ruins Kart's drift :y
 			if (gamestate == GS_LEVEL && netgame)
 			{
-				if (splitscreen && camera2.chase)
-					P_MoveChaseCamera(&players[secondarydisplayplayer], &camera2, false);
 				if (camera.chase)
 					P_MoveChaseCamera(&players[displayplayer], &camera, false);
+				if (splitscreen && camera2.chase)
+					P_MoveChaseCamera(&players[secondarydisplayplayer], &camera2, false);
+				if (splitscreen > 1 && camera3.chase)
+					P_MoveChaseCamera(&players[thirddisplayplayer], &camera3, false);
+				if (splitscreen > 2 && camera4.chase)
+					P_MoveChaseCamera(&players[fourthdisplayplayer], &camera4, false);
 			}
+			*/
 			D_Display();
 
 			if (moviemode)
@@ -705,7 +787,7 @@ void D_StartTitle(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
 
-	splitscreen = false;
+	splitscreen = 0;
 	SplitScreen_OnChange();
 	botingame = false;
 	botskin = 0;
@@ -730,11 +812,6 @@ void D_StartTitle(void)
 	CON_ToggleOff();
 
 	// Reset the palette
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-		HWR_SetPaletteColor(0);
-	else
-#endif
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 }
@@ -871,19 +948,23 @@ static void IdentifyVersion(void)
 #else
 		const char *musicfile = "music.dta";
 #endif
+		const char *kmusicfile;
 		const char *musicpath = va(pandf,srb2waddir,musicfile);
+		const char *kmusicpath;
 		int ms = W_VerifyNMUSlumps(musicpath); // Don't forget the music!
+		int kms;
 		if (ms == 1)
 			D_AddFile(musicpath);
 		else if (ms == 0)
 			I_Error("File %s has been modified with non-music lumps",musicfile);
 
-		const char* kmusicfile = "music.kart";
-		const char* kmusicpath = va(pandf,srb2waddir,kmusicfile);
-		ms = W_VerifyNMUSlumps(kmusicpath);
-		if (ms == 1)
+		kmusicfile = "music.kart";
+		kmusicpath = va(pandf,srb2waddir,kmusicfile);
+		kms = W_VerifyNMUSlumps(kmusicpath); // kill me now
+
+		if (kms == 1)
 			D_AddFile(kmusicpath);
-		else if (ms == 0)
+		else if (kms == 0)
 			I_Error("File %s has been modified with non-music lumps",kmusicfile);
 	}
 #endif
@@ -1082,7 +1163,7 @@ void D_SRB2Main(void)
 
 	// add any files specified on the command line with -file wadfile
 	// to the wad list
-	if (!(M_CheckParm("-connect")))
+	if (!(M_CheckParm("-connect") && !M_CheckParm("-server")))
 	{
 		if (M_CheckParm("-file"))
 		{
@@ -1240,7 +1321,15 @@ void D_SRB2Main(void)
 	R_Init();
 
 	// setting up sound
-	CONS_Printf("S_Init(): Setting up sound.\n");
+	if (dedicated)
+	{
+		nosound = true;
+		nomidimusic = nodigimusic = true;
+	}
+	else
+	{
+		CONS_Printf("S_Init(): Setting up sound.\n");
+	}
 	if (M_CheckParm("-nosound"))
 		nosound = true;
 	if (M_CheckParm("-nomusic")) // combines -nomidimusic and -nodigmusic
@@ -1333,13 +1422,13 @@ void D_SRB2Main(void)
 		return;
 	}
 
-	if (M_CheckParm("-ultimatemode"))
+	/*if (M_CheckParm("-ultimatemode"))
 	{
 		autostart = true;
 		ultimatemode = true;
-	}
+	}*/
 
-	if (autostart || netgame || M_CheckParm("+connect") || M_CheckParm("-connect"))
+	if (autostart || netgame)
 	{
 		gameaction = ga_nothing;
 
@@ -1377,8 +1466,7 @@ void D_SRB2Main(void)
 			}
 		}
 
-		if (server && !M_CheckParm("+map") && !M_CheckParm("+connect")
-			&& !M_CheckParm("-connect"))
+		if (server && !M_CheckParm("+map"))
 		{
 			// Prevent warping to nonexistent levels
 			if (W_CheckNumForName(G_BuildMapName(pstartmap)) == LUMPERROR)

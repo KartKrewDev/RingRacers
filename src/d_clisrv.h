@@ -40,6 +40,10 @@ typedef enum
 	PT_CLIENTMIS,     // Same as above with but saying resend from.
 	PT_CLIENT2CMD,    // 2 cmds in the packet for splitscreen.
 	PT_CLIENT2MIS,    // Same as above with but saying resend from
+	PT_CLIENT3CMD,    // 3P
+	PT_CLIENT3MIS,
+	PT_CLIENT4CMD,    // 4P
+	PT_CLIENT4MIS, 
 	PT_NODEKEEPALIVE, // Same but without ticcmd and consistancy
 	PT_NODEKEEPALIVEMIS,
 	PT_SERVERTICS,    // All cmds for the tic.
@@ -66,6 +70,8 @@ typedef enum
 
 	PT_TEXTCMD,       // Extra text commands from the client.
 	PT_TEXTCMD2,      // Splitscreen text commands.
+	PT_TEXTCMD3,      // 3P
+	PT_TEXTCMD4,      // 4P
 	PT_CLIENTJOIN,    // Client wants to join; used in start game.
 	PT_NODETIMEOUT,   // Packet sent to self if the connection times out.
 	PT_RESYNCHING,    // Packet sent to resync players.
@@ -106,6 +112,26 @@ typedef struct
 	INT16 consistancy;
 	ticcmd_t cmd, cmd2;
 } ATTRPACK client2cmd_pak;
+
+// 3P Splitscreen packet
+// WARNING: must have the same format of clientcmd_pak, for more easy use
+typedef struct
+{
+	UINT8 client_tic;
+	UINT8 resendfrom;
+	INT16 consistancy;
+	ticcmd_t cmd, cmd2, cmd3;
+} ATTRPACK client3cmd_pak;
+
+// 4P Splitscreen packet
+// WARNING: must have the same format of clientcmd_pak, for more easy use
+typedef struct
+{
+	UINT8 client_tic;
+	UINT8 resendfrom;
+	INT16 consistancy;
+	ticcmd_t cmd, cmd2, cmd3, cmd4;
+} ATTRPACK client4cmd_pak;
 
 #ifdef _MSC_VER
 #pragma warning(disable :  4200)
@@ -163,7 +189,7 @@ typedef struct
 	UINT16 powers[NUMPOWERS];
 
 	INT32 kartstuff[NUMKARTSTUFF]; // SRB2kart
-	UINT8 collide[MAXPLAYERS]; // SRB2kart
+	angle_t frameangle; // SRB2kart
 
 	// Score is resynched in the confirm resync packet
 	INT32 health;
@@ -219,6 +245,7 @@ typedef struct
 	INT16 starposty;
 	INT16 starpostz;
 	INT32 starpostnum;
+	INT32 starpostcount;
 	tic_t starposttime;
 	angle_t starpostangle;
 
@@ -289,7 +316,7 @@ typedef struct
 
 	UINT8 gametype;
 	UINT8 modifiedgame;
-	SINT8 adminplayer; // Needs to be signed
+	SINT8 adminplayers[MAXPLAYERS]; // Needs to be signed
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
@@ -328,7 +355,7 @@ typedef struct
 	UINT8 cheatsenabled;
 	UINT8 isdedicated;
 	UINT8 fileneedednum;
-	SINT8 adminplayer;
+	SINT8 adminplayers[MAXPLAYERS];
 	tic_t time;
 	tic_t leveltime;
 	char servername[MAXSERVERNAME];
@@ -396,6 +423,8 @@ typedef struct
 	{
 		clientcmd_pak clientpak;            //         144 bytes
 		client2cmd_pak client2pak;          //         200 bytes
+		client3cmd_pak client3pak;          //         256 bytes(?)
+		client4cmd_pak client4pak;          //         312 bytes(?)
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
 		serverconfig_pak servercfg;         //         773 bytes
 		resynchend_pak resynchend;          //
@@ -477,6 +506,8 @@ void D_ClientServerInit(void);
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));
 void SendNetXCmd(netxcmd_t id, const void *param, size_t nparam);
 void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam); // splitsreen player
+void SendNetXCmd3(netxcmd_t id, const void *param, size_t nparam); // splitsreen3 player
+void SendNetXCmd4(netxcmd_t id, const void *param, size_t nparam); // splitsreen4 player
 
 // Create any new ticcmds and broadcast to other players.
 void NetUpdate(void);
@@ -487,7 +518,7 @@ void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle);
 void SV_StopServer(void);
 void SV_ResetServer(void);
 void CL_AddSplitscreenPlayer(void);
-void CL_RemoveSplitscreenPlayer(void);
+void CL_RemoveSplitscreenPlayer(UINT8 p);
 void CL_Reset(void);
 void CL_ClearPlayer(INT32 playernum);
 void CL_UpdateServerList(boolean internetsearch, INT32 room);
@@ -522,4 +553,5 @@ tic_t GetLag(INT32 node);
 UINT8 GetFreeXCmdSize(void);
 
 extern UINT8 hu_resynching;
+extern UINT8 hu_stopped; // kart, true when the game is stopped for players due to a disconnecting or connecting player
 #endif

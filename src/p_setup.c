@@ -76,6 +76,9 @@
 #include "p_slopes.h"
 #endif
 
+// SRB2Kart
+#include "k_kart.h"
+
 //
 // Map MD5, calculated on level load.
 // Sent to clients in PT_SERVERINFO.
@@ -160,7 +163,7 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 	I_Error("Invalid or corrupt map.\nLook in log file or text console for technical details.");
 }
 
-#define NUMLAPS_DEFAULT 4
+#define NUMLAPS_DEFAULT 3
 
 /** Clears the data from a single map header.
   *
@@ -176,8 +179,8 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->subttl[0] = '\0';
 	DEH_WriteUndoline("ZONETITLE", mapheaderinfo[num]->zonttl, UNDO_NONE); // SRB2kart
 	mapheaderinfo[num]->zonttl[0] = '\0';
-	DEH_WriteUndoline("ACT", va("%d", mapheaderinfo[num]->actnum), UNDO_NONE);
-	mapheaderinfo[num]->actnum = 0;
+	DEH_WriteUndoline("ACT", mapheaderinfo[num]->actnum, UNDO_NONE); // SRB2kart
+	mapheaderinfo[num]->actnum[0] = '\0';
 	DEH_WriteUndoline("TYPEOFLEVEL", va("%d", mapheaderinfo[num]->typeoflevel), UNDO_NONE);
 	mapheaderinfo[num]->typeoflevel = 0;
 	DEH_WriteUndoline("NEXTLEVEL", va("%d", mapheaderinfo[num]->nextlevel), UNDO_NONE);
@@ -224,9 +227,14 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	DEH_WriteUndoline("LEVELFLAGS", va("%d", mapheaderinfo[num]->levelflags), UNDO_NONE);
 	mapheaderinfo[num]->levelflags = 0;
 	DEH_WriteUndoline("MENUFLAGS", va("%d", mapheaderinfo[num]->menuflags), UNDO_NONE);
-	mapheaderinfo[num]->menuflags = LF2_RECORDATTACK|LF2_NOVISITNEEDED; // 0
+	mapheaderinfo[num]->menuflags = 0;
 	// TODO grades support for delfile (pfft yeah right)
 	P_DeleteGrades(num);
+	// SRB2Kart
+	//DEH_WriteUndoline("AUTOMAP", va("%d", mapheaderinfo[num]->automap), UNDO_NONE);
+	//mapheaderinfo[num]->automap = false;
+	DEH_WriteUndoline("MOBJSCALE", va("%d", mapheaderinfo[num]->mobj_scale), UNDO_NONE);
+	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	// an even further impossibility, delfile custom opts support
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
@@ -819,7 +827,7 @@ void P_ReloadRings(void)
 			continue;
 		}
 		if (!(mo->type == MT_RING || mo->type == MT_NIGHTSWING || mo->type == MT_COIN
-			|| mo->type == MT_BLUEBALL || mo->type == MT_RANDOMITEM))
+			|| mo->type == MT_BLUEBALL))
 			continue;
 
 		// Don't auto-disintegrate things being pulled to us
@@ -1000,6 +1008,9 @@ static void P_LoadThings(void)
 			|| mt->type == 1701 // MT_AXISTRANSFER
 			|| mt->type == 1702) // MT_AXISTRANSFERLINE
 			continue; // These were already spawned
+
+		if (mt->type == mobjinfo[MT_RANDOMITEM].doomednum)
+			nummapboxes++;
 
 		mt->mobj = NULL;
 		P_SpawnMapThing(mt);
@@ -2178,6 +2189,8 @@ static void P_LevelInitStuff(void)
 	tokenbits = 0;
 	runemeraldmanager = false;
 	nummaprings = 0;
+	nummapboxes = 0;
+	numgotboxes = 0;
 
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;
@@ -2201,7 +2214,7 @@ static void P_LevelInitStuff(void)
 	// special stage
 	stagefailed = false;
 	// Reset temporary record data
-	memset(&ntemprecords, 0, sizeof(nightsdata_t));
+	//memset(&ntemprecords, 0, sizeof(nightsdata_t));
 
 	// earthquake camera
 	memset(&quake,0,sizeof(struct quake));
@@ -2215,6 +2228,7 @@ static void P_LevelInitStuff(void)
 		}
 
 		players[i].realtime = countdown = countdown2 = 0;
+		curlap = bestlap = 0; // SRB2Kart
 
 		players[i].gotcontinue = false;
 
@@ -2377,6 +2391,16 @@ static void P_ForceCharacter(const char *forcecharskin)
 		{
 			sprintf(skincmd, "skin2 %s\n", forcecharskin);
 			CV_Set(&cv_skin2, forcecharskin);
+			if (splitscreen > 1)
+			{
+				sprintf(skincmd, "skin3 %s\n", forcecharskin);
+				CV_Set(&cv_skin3, forcecharskin);
+				if (splitscreen > 2)
+				{
+					sprintf(skincmd, "skin4 %s\n", forcecharskin);
+					CV_Set(&cv_skin4, forcecharskin);
+				}
+			}
 		}
 
 		sprintf(skincmd, "skin %s\n", forcecharskin);
@@ -2391,6 +2415,26 @@ static void P_ForceCharacter(const char *forcecharskin)
 			{
 				CV_StealthSetValue(&cv_playercolor2, skins[players[secondarydisplayplayer].skin].prefcolor);
 				players[secondarydisplayplayer].skincolor = skins[players[secondarydisplayplayer].skin].prefcolor;
+			}
+
+			if (splitscreen > 1)
+			{
+				SetPlayerSkin(thirddisplayplayer, forcecharskin);
+				if ((unsigned)cv_playercolor3.value != skins[players[thirddisplayplayer].skin].prefcolor && !modeattacking)
+				{
+					CV_StealthSetValue(&cv_playercolor3, skins[players[thirddisplayplayer].skin].prefcolor);
+					players[thirddisplayplayer].skincolor = skins[players[thirddisplayplayer].skin].prefcolor;
+				}
+
+				if (splitscreen > 2)
+				{
+					SetPlayerSkin(fourthdisplayplayer, forcecharskin);
+					if ((unsigned)cv_playercolor4.value != skins[players[fourthdisplayplayer].skin].prefcolor && !modeattacking)
+					{
+						CV_StealthSetValue(&cv_playercolor4, skins[players[fourthdisplayplayer].skin].prefcolor);
+						players[fourthdisplayplayer].skincolor = skins[players[fourthdisplayplayer].skin].prefcolor;
+					}
+				}
 			}
 		}
 
@@ -2415,19 +2459,6 @@ static void P_LoadRecordGhosts(void)
 
 	sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
 
-	// Best Score ghost
-	/*if (cv_ghost_bestscore.value)
-	{
-		for (i = 0; i < numskins; ++i)
-		{
-			if (cv_ghost_bestscore.value == 1 && players[consoleplayer].skin != i)
-				continue;
-
-			if (FIL_FileExists(va("%s-%s-score-best.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-score-best.lmp", gpath, skins[i].name));
-		}
-	}*/
-
 	// Best Time ghost
 	if (cv_ghost_besttime.value)
 	{
@@ -2441,8 +2472,8 @@ static void P_LoadRecordGhosts(void)
 		}
 	}
 
-	// Best lap ghost
-	/*if (cv_ghost_bestlap.value)
+	// Best Lap ghost
+	if (cv_ghost_bestlap.value)
 	{
 		for (i = 0; i < numskins; ++i)
 		{
@@ -2452,7 +2483,7 @@ static void P_LoadRecordGhosts(void)
 			if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, skins[i].name)))
 				G_AddGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
 		}
-	}*/
+	}
 
 	// Last ghost
 	if (cv_ghost_last.value)
@@ -2470,23 +2501,23 @@ static void P_LoadRecordGhosts(void)
 	// Guest ghost
 	if (cv_ghost_guest.value && FIL_FileExists(va("%s-guest.lmp", gpath)))
 		G_AddGhost(va("%s-guest.lmp", gpath));
-	
+
 	// Staff Attack ghosts
 	if (cv_ghost_staff.value)
 	{
 		lumpnum_t l;
-		UINT8 i = 1;
-		while (i <= 99 && (l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(gamemap),i))) != LUMPERROR)
+		UINT8 j = 1;
+		while (j <= 99 && (l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(gamemap),j))) != LUMPERROR)
 		{
-			G_AddGhost(va("%sS%02u",G_BuildMapName(gamemap),i));
-			i++;
+			G_AddGhost(va("%sS%02u",G_BuildMapName(gamemap),j));
+			j++;
 		}
 	}
 
 	free(gpath);
 }
 
-static void P_LoadNightsGhosts(void)
+/*static void P_LoadNightsGhosts(void)
 {
 	const size_t glen = strlen(srb2home)+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath = malloc(glen);
@@ -2525,7 +2556,7 @@ static void P_LoadNightsGhosts(void)
 	}
 
 	free(gpath);
-}
+}*/
 
 /** Loads a level from a lump or external wad.
   *
@@ -2554,11 +2585,6 @@ boolean P_SetupLevel(boolean skipprecip)
 
 
 	// Reset the palette
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-		HWR_SetPaletteColor(0);
-	else
-#endif
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
@@ -2582,7 +2608,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	P_LevelInitStuff();
 
-	postimgtype = postimgtype2 = postimg_none;
+	postimgtype = postimgtype2 = postimgtype3 = postimgtype4 = postimg_none;
 
 	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0'
 	&& atoi(mapheaderinfo[gamemap-1]->forcecharacter) != 255)
@@ -2590,8 +2616,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// chasecam on in chaos, race, coop
 	// chasecam off in match, tag, capture the flag
-	chase = (gametype == GT_RACE || gametype == GT_COMPETITION || gametype == GT_COOP)
-		|| (maptol & TOL_2D);
+	chase = true; // srb2kart: always on
 
 	if (!dedicated)
 	{
@@ -2605,6 +2630,12 @@ boolean P_SetupLevel(boolean skipprecip)
 		// same for second player
 		if (!cv_chasecam2.changed)
 			CV_SetValue(&cv_chasecam2, chase);
+
+		if (!cv_chasecam3.changed)
+			CV_SetValue(&cv_chasecam3, chase);
+
+		if (!cv_chasecam4.changed)
+			CV_SetValue(&cv_chasecam4, chase);
 	}
 
 	// Initial height of PointOfView
@@ -2617,6 +2648,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	{
 		tic_t starttime = I_GetTime();
 		tic_t endtime = starttime + (3*TICRATE)/2;
+		tic_t nowtime;
 
 		S_StartSound(NULL, sfx_s3kaf);
 
@@ -2626,9 +2658,17 @@ boolean P_SetupLevel(boolean skipprecip)
 		F_WipeEndScreen();
 		F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
 
+		nowtime = lastwipetic;
 		// Hold on white for extra effect.
-		while (I_GetTime() < endtime)
-			I_Sleep();
+		while (nowtime < endtime)
+		{
+			// wait loop
+			while (!((nowtime = I_GetTime()) - lastwipetic))
+				I_Sleep();
+			lastwipetic = nowtime;
+			if (moviemode) // make sure we save frames for the white hold too
+				M_SaveFrame();
+		}
 
 		ranspecialwipe = 1;
 	}
@@ -2658,19 +2698,19 @@ boolean P_SetupLevel(boolean skipprecip)
 	}
 
 	// Print "SPEEDING OFF TO [ZONE] [ACT 1]..."
-	if (rendermode != render_none)
+	/*if (rendermode != render_none)
 	{
 		// Don't include these in the fade!
 		char tx[64];
 		V_DrawSmallString(1, 191, V_ALLOWLOWERCASE, M_GetText("Speeding off to..."));
 		snprintf(tx, 63, "%s%s%s",
 			mapheaderinfo[gamemap-1]->lvlttl,
-			(strlen(mapheaderinfo[gamemap-1]->zonttl) > 0) ? mapheaderinfo[gamemap-1]->zonttl : // SRB2kart
+			(strlen(mapheaderinfo[gamemap-1]->zonttl) > 0) ? va(" %s",mapheaderinfo[gamemap-1]->zonttl) : // SRB2kart
 			((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : " ZONE"),
-			(mapheaderinfo[gamemap-1]->actnum > 0) ? va(", Act %d",mapheaderinfo[gamemap-1]->actnum) : "");
+			(strlen(mapheaderinfo[gamemap-1]->actnum) > 0) ? va(", Act %s",mapheaderinfo[gamemap-1]->actnum) : "");
 		V_DrawSmallString(1, 195, V_ALLOWLOWERCASE, tx);
 		I_UpdateNoVsync();
-	}
+	}*/
 
 #ifdef HAVE_BLUA
 	LUA_InvalidateLevel();
@@ -2798,7 +2838,7 @@ boolean P_SetupLevel(boolean skipprecip)
 			// Start players with pity shields if possible
 			players[i].pity = -1;
 
-			if (!G_PlatformGametype())
+			if (!G_RaceGametype())
 			{
 				players[i].mo = NULL;
 				G_DoReborn(i);
@@ -2819,8 +2859,8 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (modeattacking == ATTACKING_RECORD && !demoplayback)
 		P_LoadRecordGhosts();
-	else if (modeattacking == ATTACKING_NIGHTS && !demoplayback)
-		P_LoadNightsGhosts();
+	/*else if (modeattacking == ATTACKING_NIGHTS && !demoplayback)
+		P_LoadNightsGhosts();*/
 
 	if (G_TagGametype())
 	{
@@ -2859,7 +2899,7 @@ boolean P_SetupLevel(boolean skipprecip)
 			CONS_Printf(M_GetText("No player currently available to become IT. Awaiting available players.\n"));
 
 	}
-	else if (gametype == GT_RACE && server && cv_usemapnumlaps.value)
+	else if (G_RaceGametype() && server && cv_usemapnumlaps.value)
 		CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
 
 	// ===========
@@ -2906,7 +2946,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 		if (!cv_cam2_height.changed)
 			CV_Set(&cv_cam2_height, cv_cam2_height.defaultvalue);
-		
+
 		if (!cv_cam_dist.changed)
 			CV_Set(&cv_cam_dist, cv_cam_dist.defaultvalue);
 
@@ -2920,10 +2960,20 @@ boolean P_SetupLevel(boolean skipprecip)
 		if (!cv_cam2_rotate.changed)
 			CV_Set(&cv_cam2_rotate, cv_cam2_rotate.defaultvalue);
 
-		if (!cv_analog.changed)
+		if (!cv_cam3_rotate.changed)
+			CV_Set(&cv_cam3_rotate, cv_cam3_rotate.defaultvalue);
+
+		if (!cv_cam4_rotate.changed)
+			CV_Set(&cv_cam4_rotate, cv_cam4_rotate.defaultvalue);
+
+		/*if (!cv_analog.changed)
 			CV_SetValue(&cv_analog, 0);
 		if (!cv_analog2.changed)
 			CV_SetValue(&cv_analog2, 0);
+		if (!cv_analog3.changed)
+			CV_SetValue(&cv_analog3, 0);
+		if (!cv_analog4.changed)
+			CV_SetValue(&cv_analog4, 0);*/
 
 #ifdef HWRENDER
 		if (rendermode != render_soft && rendermode != render_none)
@@ -2933,19 +2983,53 @@ boolean P_SetupLevel(boolean skipprecip)
 		displayplayer = consoleplayer; // Start with your OWN view, please!
 	}
 
-	if (cv_useranalog.value)
+	/*if (cv_useranalog.value)
 		CV_SetValue(&cv_analog, true);
 
-	if (splitscreen && cv_useranalog2.value)
+	if ((splitscreen && cv_useranalog2.value) || botingame)
 		CV_SetValue(&cv_analog2, true);
-	else if (botingame)
-		CV_SetValue(&cv_analog2, true);
+
+	if (splitscreen > 1 && cv_useranalog3.value)
+		CV_SetValue(&cv_analog3, true);
+
+	if (splitscreen > 2 && cv_useranalog4.value)
+		CV_SetValue(&cv_analog4, true);
 
 	if (twodlevel)
 	{
+		CV_SetValue(&cv_analog4, false);
+		CV_SetValue(&cv_analog3, false);
 		CV_SetValue(&cv_analog2, false);
 		CV_SetValue(&cv_analog, false);
+	}*/
+
+	// SRB2Kart: map load variables
+	if (modeattacking) // Just play it safe and set everything
+	{
+		gamespeed = 2;
+		mirrormode = false;
+		franticitems = false;
+		comeback = true;
 	}
+	else
+	{
+		if (G_BattleGametype())
+			gamespeed = 0;
+		else
+			gamespeed = cv_kartspeed.value;
+
+		if (G_BattleGametype())
+			mirrormode = false;
+		else
+			mirrormode = cv_kartmirror.value;
+
+		franticitems = cv_kartfrantic.value;
+		comeback = cv_kartcomeback.value;
+	}
+
+	lightningcooldown = 0;
+	blueshellincoming = 0;
+	blueshellplayer = 0;
 
 	// clear special respawning que
 	iquehead = iquetail = 0;
@@ -2983,7 +3067,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	if (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking || players[consoleplayer].lives <= 0)
 		&& (!modifiedgame || savemoddata) && cursaveslot >= 0 && !ultimatemode
 		&& !(mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
-		&& (!G_IsSpecialStage(gamemap)) && gamemap != lastmapsaved && (mapheaderinfo[gamemap-1]->actnum < 2 || gamecomplete))
+		&& (!G_IsSpecialStage(gamemap)) && gamemap != lastmapsaved && (/*mapheaderinfo[gamemap-1]->actnum < 2 ||*/ gamecomplete))
 		G_SaveGame((UINT32)cursaveslot);
 
 	if (savedata.lives > 0)
@@ -2998,7 +3082,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		savedata.lives = 0;
 	}
 
-	skyVisible = skyVisible1 = skyVisible2 = true; // assume the skybox is visible on level load.
+	skyVisible = skyVisible1 = skyVisible2 = skyVisible3 = skyVisible4 = true; // assume the skybox is visible on level load.
 	if (loadprecip) // uglier hack
 	{ // to make a newly loaded level start on the second frame.
 		INT32 buf = gametic % BACKUPTICS;
@@ -3054,7 +3138,7 @@ boolean P_AddWadFile(const char *wadfilename, char **firstmapname)
 
 	if ((numlumps = W_LoadWadFile(wadfilename)) == INT16_MAX)
 	{
-		CONS_Printf(M_GetText("Errors occured while loading %s; not added.\n"), wadfilename);
+		CONS_Printf(M_GetText("Errors occurred while loading %s; not added.\n"), wadfilename);
 		return false;
 	}
 	else wadnum = (UINT16)(numwadfiles-1);
@@ -3129,6 +3213,7 @@ boolean P_AddWadFile(const char *wadfilename, char **firstmapname)
 	HU_LoadGraphics();
 	ST_LoadGraphics();
 	ST_ReloadSkinFaceGraphics();
+	K_ReloadSkinIconGraphics();
 
 	//
 	// look for skins

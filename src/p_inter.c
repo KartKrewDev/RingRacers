@@ -64,6 +64,10 @@ void P_ForceConstant(const BasicFF_t *FFInfo)
 		I_Tactile(ConstantForce, &ConstantQuake);
 	else if (splitscreen && FFInfo->player == &players[secondarydisplayplayer])
 		I_Tactile2(ConstantForce, &ConstantQuake);
+	else if (splitscreen > 1 && FFInfo->player == &players[thirddisplayplayer])
+		I_Tactile3(ConstantForce, &ConstantQuake);
+	else if (splitscreen > 2 && FFInfo->player == &players[fourthdisplayplayer])
+		I_Tactile4(ConstantForce, &ConstantQuake);
 }
 void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 {
@@ -81,6 +85,10 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 		I_Tactile(ConstantForce, &RampQuake);
 	else if (splitscreen && FFInfo->player == &players[secondarydisplayplayer])
 		I_Tactile2(ConstantForce, &RampQuake);
+	else if (splitscreen > 1 && FFInfo->player == &players[thirddisplayplayer])
+		I_Tactile3(ConstantForce, &RampQuake);
+	else if (splitscreen > 2 && FFInfo->player == &players[fourthdisplayplayer])
+		I_Tactile4(ConstantForce, &RampQuake);
 }
 
 
@@ -144,11 +152,27 @@ void P_ResetStarposts(void)
 //
 boolean P_CanPickupItem(player_t *player, boolean weapon)
 {
-	if (player->bot && weapon)
-		return false;
+	/*if (G_BattleGametype() && player->kartstuff[k_balloon] <= 0) // No balloons in Match
+		return false;*/
 
-	//if (player->powers[pw_flashing] > (flashingtics/4)*3 && player->powers[pw_flashing] <= flashingtics)
-	//	return false;
+	if (weapon)
+	{
+		if (player->kartstuff[k_bootaketimer]				|| player->kartstuff[k_boostolentimer]
+			|| player->kartstuff[k_growshrinktimer] > 1	|| player->kartstuff[k_goldshroomtimer]) // Item-specific timer going off
+			return false;
+
+		if (player->kartstuff[k_itemroulette]
+			|| player->kartstuff[k_greenshell]				|| player->kartstuff[k_triplegreenshell]
+			|| player->kartstuff[k_redshell]				|| player->kartstuff[k_tripleredshell]
+			|| player->kartstuff[k_banana]					|| player->kartstuff[k_triplebanana]
+			|| player->kartstuff[k_fakeitem] & 2			|| player->kartstuff[k_magnet]
+			|| player->kartstuff[k_bobomb]					|| player->kartstuff[k_blueshell]
+			|| player->kartstuff[k_mushroom]				|| player->kartstuff[k_fireflower]
+			|| player->kartstuff[k_star]					|| player->kartstuff[k_goldshroom]
+			|| player->kartstuff[k_lightning]				|| player->kartstuff[k_megashroom]
+			|| player->kartstuff[k_boo]						|| player->kartstuff[k_feather] & 1) // Item slot already taken up
+			return false;
+	}
 
 	return true;
 }
@@ -387,12 +411,20 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 	switch (special->type)
 	{
 		case MT_RANDOMITEM:			// SRB2kart
-		case MT_FLINGRANDOMITEM:
-			if (!(P_CanPickupItem(player, false)))
+			if (!P_CanPickupItem(player, true))
 				return;
+
+			if (G_BattleGametype() && player->kartstuff[k_balloon] <= 0)
+			{
+				if (player->kartstuff[k_comebackmode] == 1 || player->kartstuff[k_comebacktimer])
+					return;
+				if (player->kartstuff[k_comebackmode] == 0)
+					player->kartstuff[k_comebackmode] = 1;
+			}
+
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
-			P_SetMobjState(special, special->info->deathstate);
+			P_KillMobj(special, toucher, toucher);
 			break;
 // ***************************************** //
 // Rings, coins, spheres, weapon panels, etc //
@@ -575,9 +607,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				emblemlocations[special->health-1].collected = true;
 
-				M_UpdateUnlockablesAndExtraEmblems();
+				M_UpdateUnlockablesAndExtraEmblems(false);
 
-				G_SaveGameData();
+				G_SaveGameData(false);
 				break;
 			}
 
@@ -903,6 +935,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						localangle = toucher->angle;
 					else if (player == &players[secondarydisplayplayer])
 						localangle2 = toucher->angle;
+					else if (player == &players[thirddisplayplayer])
+						localangle3 = toucher->angle;
+					else if (player == &players[fourthdisplayplayer])
+						localangle4 = toucher->angle;
 
 					P_ResetPlayer(player);
 
@@ -1165,13 +1201,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 			//
-			// In circuit, player must have touched all previous starposts
+			// SRB2kart: make sure the player will have enough checkpoints to touch
 			if (circuitmap
-				&& special->health - player->starpostnum > 1)
+				&& special->health >= (numstarposts/2 + player->starpostnum))
 			{
 				// blatant reuse of a variable that's normally unused in circuit
 				if (!player->tossdelay)
-					S_StartSound(toucher, sfx_lose);
+					S_StartSound(toucher, sfx_s26d);
 				player->tossdelay = 3;
 				return;
 			}
@@ -1194,6 +1230,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			player->starpostz = special->z>>FRACBITS;
 			player->starpostangle = special->angle;
 			player->starpostnum = special->health;
+			player->starpostcount++;
 			P_ClearStarPost(special->health);
 
 			// Find all starposts in the level with this value.
@@ -1490,8 +1527,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		}
 	}
 
-	S_StartSound(toucher, special->info->deathsound); // was NULL, but changed to player so you could hear others pick up rings
-	P_KillMobj(special, NULL, toucher);
+	if (!P_MobjWasRemoved(special))
+	{
+		S_StartSound(toucher, special->info->deathsound); // was NULL, but changed to player so you could hear others pick up rings
+		P_KillMobj(special, NULL, toucher);
+	}
 }
 
 //
@@ -1511,7 +1551,7 @@ static void P_HitDeathMessages(player_t *player, mobj_t *inflictor, mobj_t *sour
 	char targetname[MAXPLAYERNAME+4];
 	char sourcename[MAXPLAYERNAME+4];
 
-	if (G_PlatformGametype())
+	if (G_RaceGametype())
 		return; // Not in coop, etc.
 
 	if (!player)
@@ -1706,7 +1746,7 @@ void P_CheckTimeLimit(void)
 	if (!(multiplayer || netgame))
 		return;
 
-	if (G_PlatformGametype())
+	if (G_RaceGametype())
 		return;
 
 	if (leveltime < timelimitintics)
@@ -1819,7 +1859,7 @@ void P_CheckPointLimit(void)
 	if (!(multiplayer || netgame))
 		return;
 
-	if (G_PlatformGametype())
+	if (G_RaceGametype())
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player
@@ -1942,14 +1982,13 @@ boolean P_CheckRacers(void)
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i] && !players[i].exiting && players[i].lives > 0)
+		if (playeringame[i] && !players[i].spectator && !players[i].exiting && players[i].lives > 0)
 			break;
 	}
 
 	if (i == MAXPLAYERS) // finished
 	{
-		countdown = 0;
-		countdown2 = 0;
+		countdown = countdown2 = 0;
 		return true;
 	}
 
@@ -2004,6 +2043,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			target->target->player->kartstuff[k_triplebanana] &= ~2;
 		else if (target->type == MT_TRIPLEBANANASHIELD3 && target->target->player->kartstuff[k_triplebanana] & 4)
 			target->target->player->kartstuff[k_triplebanana] &= ~4;
+		/*else if (target->type == MT_BATTLEBALLOON && target->target->player->kartstuff[k_balloon] > target->threshold-1)
+			target->target->player->kartstuff[k_balloon] = target->threshold-1;*/
 	}
 	//
 
@@ -2046,14 +2087,14 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	{
 		if (metalrecording) // Ack! Metal Sonic shouldn't die! Cut the tape, end recording!
 			G_StopMetalRecording();
-		if (gametype == GT_MATCH && cv_match_scoring.value == 0 // note, no team match suicide penalty
+		/*if (gametype == GT_MATCH && cv_match_scoring.value == 0 // note, no team match suicide penalty
 			&& ((target == source) || (source == NULL && inflictor == NULL) || (source && !source->player)))
 		{ // Suicide penalty - Not in Kart
-			//if (target->player->score >= 50)
-			//	target->player->score -= 50;
-			//else
-			//	target->player->score = 0;
-		}
+			if (target->player->score >= 50)
+				target->player->score -= 50;
+			else
+				target->player->score = 0;
+		}*/
 
 		target->flags2 &= ~MF2_DONTDRAW;
 	}
@@ -2061,16 +2102,18 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	// if killed by a player
 	if (source && source->player)
 	{
-		if (target->flags & MF_MONITOR)
+		if (target->flags & MF_MONITOR || target->type == MT_RANDOMITEM)
 		{
 			P_SetTarget(&target->target, source);
 			source->player->numboxes++;
-			if ((cv_itemrespawn.value && gametype != GT_COOP && (modifiedgame || netgame || multiplayer)))
+			if (cv_itemrespawn.value && (netgame || multiplayer))
+			{
 				target->fuse = cv_itemrespawntime.value*TICRATE + 2; // Random box generation
+			}
 		}
 
 		// Award Score Tails
-		{
+		/*{ // Enemies shouldn't award points in Kart
 			INT32 score = 0;
 
 			if (maptol & TOL_NIGHTS) // Enemies always worth 200, bosses don't do anything.
@@ -2146,7 +2189,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			}
 
 			P_AddPlayerScore(source->player, score);
-		}
+		}*/
 	}
 
 	// if a player avatar dies...
@@ -2188,6 +2231,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			// added : 22-02-98: recenter view for next life...
 			localaiming2 = 0;
 		}
+		if (target->player == &players[thirddisplayplayer])
+			localaiming3 = 0;
+		if (target->player == &players[fourthdisplayplayer])
+			localaiming4 = 0;
 
 		//tag deaths handled differently in suicide cases. Don't count spectators!
 		if (G_TagGametype()
@@ -2214,7 +2261,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 						for (w=0; w < MAXPLAYERS; w++)
 						{
 							if (players[w].pflags & PF_TAGIT)
-								P_AddPlayerScore(&players[w], 100);
+								P_AddPlayerScore(&players[w], 1);
 						}
 
 						target->player->pflags |= PF_TAGGED;
@@ -2223,6 +2270,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 					}
 				}
 			}
+		}
+		else if (G_BattleGametype())
+		{
+			K_CheckBalloons();
 		}
 	}
 
@@ -2502,7 +2553,7 @@ static inline void P_NiGHTSDamage(mobj_t *target, mobj_t *source)
 		player->flyangle += 180; // Shuffle's BETTERNIGHTSMOVEMENT?
 		player->flyangle %= 360;
 
-		if (gametype == GT_RACE || gametype == GT_COMPETITION)
+		if (G_RaceGametype())
 			player->drillmeter -= 5*20;
 		else
 		{
@@ -2535,7 +2586,7 @@ static inline void P_NiGHTSDamage(mobj_t *target, mobj_t *source)
 			target->momy = FixedMul(FINESINE(fa),target->target->radius);
 		}
 
-		player->powers[pw_flashing] = flashingtics;
+		player->powers[pw_flashing] = K_GetKartFlashing();
 		P_SetMobjState(target->tracer, S_NIGHTSHURT1);
 		S_StartSound(target, sfx_nghurt);
 
@@ -2580,7 +2631,7 @@ static inline boolean P_TagDamage(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 	// The tag occurs so long as you aren't shooting another tagger with friendlyfire on.
 	if (source->player->pflags & PF_TAGIT && !(player->pflags & PF_TAGIT))
 	{
-		P_AddPlayerScore(source->player, 100); //award points to tagger.
+		P_AddPlayerScore(source->player, 1); //award points to tagger.
 		P_HitDeathMessages(player, inflictor, source);
 
 		if (gametype == GT_TAG) //survivor
@@ -2642,7 +2693,7 @@ static inline boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj
 
 	// In COOP/RACE/CHAOS, you can't hurt other players unless cv_friendlyfire is on
 	// ...But in SRB2kart, you can!
-	//if (!cv_friendlyfire.value && (G_PlatformGametype()))
+	//if (!cv_friendlyfire.value && (G_RaceGametype()))
 	//	return false;
 
 	// Tag handling
@@ -2676,7 +2727,7 @@ static void P_KillPlayer(player_t *player, mobj_t *source, INT32 damage)
 	player->pflags &= ~(PF_CARRIED|PF_SLIDING|PF_ITEMHANG|PF_MACESPIN|PF_ROPEHANG|PF_NIGHTSMODE);
 
 	// Burst weapons and emeralds in Match/CTF only
-	if (source && (gametype == GT_MATCH || gametype == GT_TEAMMATCH || gametype == GT_CTF))
+	if (source && (G_BattleGametype()))
 	{
 		P_PlayerRingBurst(player, player->health - 1);
 		P_PlayerEmeraldBurst(player, false);
@@ -2694,21 +2745,21 @@ static void P_KillPlayer(player_t *player, mobj_t *source, INT32 damage)
 	P_ResetPlayer(player);
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
-	if (gametype == GT_CTF && (player->gotflag & (GF_REDFLAG|GF_BLUEFLAG)))
+	/*if (gametype == GT_CTF && (player->gotflag & (GF_REDFLAG|GF_BLUEFLAG)))
 	{
 		P_PlayerFlagBurst(player, false);
 		if (source && source->player)
 		{
 			// Award no points when players shoot each other when cv_friendlyfire is on.
 			if (!G_GametypeHasTeams() || !(source->player->ctfteam == player->ctfteam && source != player->mo))
-				P_AddPlayerScore(source->player, 25);
+				P_AddPlayerScore(source->player, 1);
 		}
 	}
 	if (source && source->player && !player->powers[pw_super]) //don't score points against super players
 	{
 		// Award no points when players shoot each other when cv_friendlyfire is on.
 		if (!G_GametypeHasTeams() || !(source->player->ctfteam == player->ctfteam && source != player->mo))
-			P_AddPlayerScore(source->player, 100);
+			P_AddPlayerScore(source->player, 1);
 	}
 
 	// If the player was super, tell them he/she ain't so super nomore.
@@ -2718,6 +2769,18 @@ static void P_KillPlayer(player_t *player, mobj_t *source, INT32 damage)
 		HU_SetCEchoFlags(0);
 		HU_SetCEchoDuration(5);
 		HU_DoCEcho(va("%s\\is no longer super.\\\\\\\\", player_names[player-players]));
+	}*/
+
+	if (G_BattleGametype())
+	{
+		if (player->kartstuff[k_balloon] > 0)
+		{
+			if (player->kartstuff[k_balloon] == 1)
+				CONS_Printf(M_GetText("%s lost all of their balloons!\n"), player_names[player-players]);
+			player->kartstuff[k_balloon]--;
+		}
+
+		K_CheckBalloons();
 	}
 }
 
@@ -2858,7 +2921,7 @@ static void P_RingDamage(player_t *player, mobj_t *inflictor, mobj_t *source, IN
 	{
 		// Award no points when players shoot each other when cv_friendlyfire is on.
 		if (!G_GametypeHasTeams() || !(source->player->ctfteam == player->ctfteam && source != player->mo))
-			P_AddPlayerScore(source->player, 50);
+			P_AddPlayerScore(source->player, 1);
 	}
 
 	if (gametype == GT_CTF && (player->gotflag & (GF_REDFLAG|GF_BLUEFLAG)))
@@ -2868,7 +2931,7 @@ static void P_RingDamage(player_t *player, mobj_t *inflictor, mobj_t *source, IN
 		{
 			// Award no points when players shoot each other when cv_friendlyfire is on.
 			if (!G_GametypeHasTeams() || !(source->player->ctfteam == player->ctfteam && source != player->mo))
-				P_AddPlayerScore(source->player, 25);
+				P_AddPlayerScore(source->player, 1);
 		}
 	}
 
@@ -2901,6 +2964,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 #else
 	static const boolean force = false;
 #endif
+	mobj_t *blueexplode;
 
 	if (objectplacing)
 		return false;
@@ -3054,7 +3118,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ELEMENTAL)
 				return false; // Invincible to fire objects
 
-			if (G_PlatformGametype() && source && source->player)
+			if (G_RaceGametype() && source && source->player)
 				return false; // Don't get hurt by fire generated from friends.
 		}
 
@@ -3063,8 +3127,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		player->kartstuff[k_mushroomtimer] = 0;
 
 		// Thunder
-		if (damage == 64 && player != source->player)
+		if (damage == 64)
 		{
+			if (player == source->player)
+				return false;
 			// Don't flip out while super!
 			if (!player->kartstuff[k_startimer] && player->kartstuff[k_growshrinktimer] <= 0)
 			{
@@ -3072,7 +3138,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_SpinPlayer(player, source);
 
 				// Start shrinking!
-				player->mo->destscale = 6*FRACUNIT/8;
+				player->mo->destscale = 6*(mapheaderinfo[gamemap-1]->mobj_scale)/8;
 				player->kartstuff[k_growshrinktimer] -= (100+20*(16-(player->kartstuff[k_position])));
 			}
 			// Mega Mushroom? Let's take that away.
@@ -3084,25 +3150,24 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_LIGHTNING);
 			return true;
 		}
-		else if (damage == 64 && player == source->player)
-			return false;
 
 		// Blue Thunder
-		if (damage == 65 && player->kartstuff[k_position] == 1)
+		if (damage == 65)
 		{
+			if (player == source->player)
+				return false;
 			// Just need to do this now! Being thrown upwards is done by the explosion.
 			P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BLUELIGHTNING);
-			P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BLUEEXPLOSION);
+			blueexplode = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BLUEEXPLOSION);
+			P_SetTarget(&blueexplode->target, source);
 			return true;
 		}
-		else if (damage == 65 && player->kartstuff[k_position] > 1)
-			return false;
 		//}
 
 		// Sudden-Death mode
 		if (source && source->type == MT_PLAYER)
 		{
-			if ((gametype == GT_MATCH || gametype == GT_TEAMMATCH || gametype == GT_CTF) && cv_suddendeath.value
+			if ((G_BattleGametype()) && cv_suddendeath.value
 				&& !player->powers[pw_flashing] && !player->powers[pw_invulnerability])
 				damage = 10000;
 		}
@@ -3124,17 +3189,29 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			return false;
 		else
 		{
-			player->kartstuff[k_spinouttype] = 1;
-			K_SpinPlayer(player, source);
-			damage = player->mo->health - 1;
-			P_RingDamage(player, inflictor, source, damage);
-			if (inflictor && (inflictor->type == MT_GREENITEM || inflictor->type == MT_REDITEM || inflictor->type == MT_REDITEMDUD))
-				P_PlayerRingBurst(player, 5);
-			player->mo->momx = player->mo->momy = 0;
-			if (P_IsLocalPlayer(player))
+			if (inflictor && (inflictor->type == MT_GREENITEM || inflictor->type == MT_GREENSHIELD
+				|| inflictor->type == MT_REDITEM || inflictor->type == MT_REDSHIELD || inflictor->type == MT_REDITEMDUD
+				|| inflictor->type == MT_FAKEITEM || inflictor->type == MT_FAKESHIELD
+				|| inflictor->type == MT_TRIPLEGREENSHIELD1 || inflictor->type == MT_TRIPLEGREENSHIELD2 || inflictor->type == MT_TRIPLEGREENSHIELD3
+				|| inflictor->type == MT_TRIPLEREDSHIELD1 || inflictor->type == MT_TRIPLEREDSHIELD2 || inflictor->type == MT_TRIPLEREDSHIELD3
+				|| inflictor->player))
 			{
-				quake.intensity = 32*FRACUNIT;
-				quake.time = 5;
+				player->kartstuff[k_spinouttype] = 1;
+				K_SpinPlayer(player, source);
+				damage = player->mo->health - 1;
+				P_RingDamage(player, inflictor, source, damage);
+				P_PlayerRingBurst(player, 5);
+				player->mo->momx = player->mo->momy = 0;
+				if (P_IsLocalPlayer(player))
+				{
+					quake.intensity = 32*FRACUNIT;
+					quake.time = 5;
+				}
+			}
+			else
+			{
+				player->kartstuff[k_spinouttype] = -1;
+				K_SpinPlayer(player, source);
 			}
 			return true;
 		}
@@ -3227,7 +3304,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->health -= damage; // mirror mobj health here
 			if (damage < 10000)
 			{
-				target->player->powers[pw_flashing] = flashingtics;
+				target->player->powers[pw_flashing] = K_GetKartFlashing();
 				if (damage > 0) // don't spill emeralds/ammo/panels for shield damage
 					P_PlayerRingBurst(player, damage);
 			}

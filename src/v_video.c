@@ -303,7 +303,7 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 #endif
 }
 
-static UINT8 hudplusalpha[11]  = { 10,  8,  6,  4,  2,  0,  0,  0,  0,  0,  0};
+//static UINT8 hudplusalpha[11]  = { 10,  8,  6,  4,  2,  0,  0,  0,  0,  0,  0};
 static UINT8 hudminusalpha[11] = { 10,  9,  9,  8,  8,  7,  7,  6,  6,  5,  5};
 
 static const UINT8 *v_colormap = NULL;
@@ -362,8 +362,8 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 			alphalevel = hudminusalpha[cv_translucenthud.value];
 		else if (alphalevel == 14)
 			alphalevel = 10 - cv_translucenthud.value;
-		else if (alphalevel == 15)
-			alphalevel = hudplusalpha[cv_translucenthud.value];
+		/*else if (alphalevel == 15)
+			alphalevel = hudplusalpha[cv_translucenthud.value];*/
 
 		if (alphalevel >= 10)
 			return; // invis
@@ -425,7 +425,10 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 	}
 
 	if (scrn & V_SPLITSCREEN)
-		y>>=1;
+		y += (BASEVIDHEIGHT/2)<<FRACBITS;
+
+	if (scrn & V_HORZSCREEN)
+		x += (BASEVIDWIDTH/2)<<FRACBITS;
 
 	desttop = screens[scrn&V_PARAMMASK];
 
@@ -455,7 +458,9 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 			{
 				// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
 				// so center this imaginary screen
-				if (scrn & V_SNAPTORIGHT)
+				if ((scrn & (V_HORZSCREEN|V_SNAPTOLEFT)) == (V_HORZSCREEN|V_SNAPTOLEFT))
+					desttop += (vid.width/2 - (BASEVIDWIDTH/2 * dupx));
+				else if (scrn & V_SNAPTORIGHT)
 					desttop += (vid.width - (BASEVIDWIDTH * dupx));
 				else if (!(scrn & V_SNAPTOLEFT))
 					desttop += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
@@ -463,7 +468,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 			if (vid.height != BASEVIDHEIGHT * dupy)
 			{
 				// same thing here
-				if ((scrn & (V_SPLITSCREEN|V_SNAPTOBOTTOM)) == (V_SPLITSCREEN|V_SNAPTOBOTTOM))
+				if ((scrn & (V_SPLITSCREEN|V_SNAPTOTOP)) == (V_SPLITSCREEN|V_SNAPTOTOP))
 					desttop += (vid.height/2 - (BASEVIDHEIGHT/2 * dupy)) * vid.width;
 				else if (scrn & V_SNAPTOBOTTOM)
 					desttop += (vid.height - (BASEVIDHEIGHT * dupy)) * vid.width;
@@ -471,7 +476,8 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 					desttop += (vid.height - (BASEVIDHEIGHT * dupy)) * vid.width / 2;
 			}
 			// if it's meant to cover the whole screen, black out the rest
-			if (x == 0 && SHORT(patch->width) == BASEVIDWIDTH && y == 0 && SHORT(patch->height) == BASEVIDHEIGHT)
+			if (x == 0 && FixedMul(SHORT(patch->width)<<FRACBITS, pscale)>>FRACBITS == BASEVIDWIDTH
+				&& y == 0 && FixedMul(SHORT(patch->height)<<FRACBITS, pscale)>>FRACBITS == BASEVIDHEIGHT)
 			{
 				column = (const column_t *)((const UINT8 *)(patch) + LONG(patch->columnofs[0]));
 				source = (const UINT8 *)(column) + 3;
@@ -937,14 +943,6 @@ void V_DrawPatchFill(patch_t *pat)
 	INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 	INT32 x, y, pw = SHORT(pat->width) * dupz, ph = SHORT(pat->height) * dupz;
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		pw = FixedMul(SHORT(pat->width)*FRACUNIT, vid.fdupx)>>FRACBITS;
-		ph = FixedMul(SHORT(pat->height)*FRACUNIT, vid.fdupy)>>FRACBITS;
-	}
-#endif
-
 	for (x = 0; x < vid.width; x += pw)
 	{
 		for (y = 0; y < vid.height; y += ph)
@@ -1256,6 +1254,7 @@ void V_DrawKartString(INT32 x, INT32 y, INT32 option, const char *string)
 	{
 		case V_MONOSPACE:
 			spacewidth = 12;
+			/* FALLTHRU */
 		case V_OLDSPACING:
 			charwidth = 12;
 			break;
@@ -1775,7 +1774,7 @@ void V_DrawLevelTitle(INT32 x, INT32 y, INT32 option, const char *string)
 		c = toupper(c) - LT_FONTSTART;
 		if (c < 0 || c >= LT_FONTSIZE || !lt_font[c])
 		{
-			cx += 16*dupx;
+			cx += 12*dupx;
 			continue;
 		}
 
@@ -1806,7 +1805,7 @@ INT32 V_LevelNameWidth(const char *string)
 	{
 		c = toupper(string[i]) - LT_FONTSTART;
 		if (c < 0 || c >= LT_FONTSIZE || !lt_font[c])
-			w += 16;
+			w += 12;
 		else
 			w += SHORT(lt_font[c]->width);
 	}
@@ -1969,7 +1968,7 @@ void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param)
 	(void)type;
 	(void)param;
 #else
-	INT32 height, yoffset;
+	INT32 yoffset, xoffset;
 
 #ifdef HWRENDER
 	// draw a hardware converted patch
@@ -1977,18 +1976,18 @@ void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param)
 		return;
 #endif
 
-	if (view < 0 || view >= 2 || (view == 1 && !splitscreen))
+	if (view < 0 || view > 3 || view > splitscreen)
 		return;
 
-	if (splitscreen)
-		height = vid.height/2;
-	else
-		height = vid.height;
-
-	if (view == 1)
-		yoffset = vid.height/2;
+	if ((view == 1 && splitscreen == 1) || view >= 2)
+		yoffset = viewheight;
 	else
 		yoffset = 0;
+
+	if ((view == 1 || view == 3) && splitscreen > 1)
+		xoffset = viewwidth;
+	else
+		xoffset = 0;
 
 	if (type == postimg_water)
 	{
@@ -2000,30 +1999,30 @@ void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param)
 		INT32 sine;
 		//UINT8 *transme = transtables + ((tr_trans50-1)<<FF_TRANSSHIFT);
 
-		for (y = yoffset; y < yoffset+height; y++)
+		for (y = yoffset; y < yoffset+viewheight; y++)
 		{
 			sine = (FINESINE(disStart)*5)>>FRACBITS;
 			newpix = abs(sine);
 
 			if (sine < 0)
 			{
-				M_Memcpy(&tmpscr[y*vid.width+newpix], &srcscr[y*vid.width], vid.width-newpix);
+				M_Memcpy(&tmpscr[(y*vid.width)+xoffset+newpix], &srcscr[(y*vid.width)+xoffset], viewwidth-newpix);
 
 				// Cleanup edge
 				while (newpix)
 				{
-					tmpscr[y*vid.width+newpix] = srcscr[y*vid.width];
+					tmpscr[(y*vid.width)+xoffset+newpix] = srcscr[(y*vid.width)+xoffset];
 					newpix--;
 				}
 			}
 			else
 			{
-				M_Memcpy(&tmpscr[y*vid.width+0], &srcscr[y*vid.width+sine], vid.width-newpix);
+				M_Memcpy(&tmpscr[(y*vid.width)+xoffset+0], &srcscr[(y*vid.width)+xoffset+sine], viewwidth-newpix);
 
 				// Cleanup edge
 				while (newpix)
 				{
-					tmpscr[y*vid.width+vid.width-newpix] = srcscr[y*vid.width+(vid.width-1)];
+					tmpscr[(y*vid.width)+xoffset+viewwidth-newpix] = srcscr[(y*vid.width)+xoffset+(viewwidth-1)];
 					newpix--;
 				}
 			}
@@ -2045,8 +2044,8 @@ Unoptimized version
 			disStart &= FINEMASK; //clip it to FINEMASK
 		}
 
-		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset, screens[0]+vid.width*vid.bpp*yoffset,
-				vid.width*vid.bpp, height, vid.width*vid.bpp, vid.width);
+		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset+xoffset, screens[0]+vid.width*vid.bpp*yoffset+xoffset,
+				viewwidth*vid.bpp, viewheight, vid.width*vid.bpp, vid.width);
 	}
 	else if (type == postimg_motion) // Motion Blur!
 	{
@@ -2057,16 +2056,16 @@ Unoptimized version
 		// TODO: Add a postimg_param so that we can pick the translucency level...
 		UINT8 *transme = transtables + ((param-1)<<FF_TRANSSHIFT);
 
-		for (y = yoffset; y < yoffset+height; y++)
+		for (y = yoffset; y < yoffset+viewheight; y++)
 		{
-			for (x = 0; x < vid.width; x++)
+			for (x = xoffset; x < xoffset+viewwidth; x++)
 			{
 				tmpscr[y*vid.width + x]
-					=     colormaps[*(transme     + (srcscr   [y*vid.width+x ] <<8) + (tmpscr[y*vid.width+x]))];
+					=     colormaps[*(transme     + (srcscr   [(y*vid.width)+x ] <<8) + (tmpscr[(y*vid.width)+x]))];
 			}
 		}
-		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset, screens[0]+vid.width*vid.bpp*yoffset,
-				vid.width*vid.bpp, height, vid.width*vid.bpp, vid.width);
+		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset+xoffset, screens[0]+vid.width*vid.bpp*yoffset+xoffset,
+				viewwidth*vid.bpp, viewheight, vid.width*vid.bpp, vid.width);
 	}
 	else if (type == postimg_flip) // Flip the screen upside-down
 	{
@@ -2074,11 +2073,11 @@ Unoptimized version
 		UINT8 *srcscr = screens[0];
 		INT32 y, y2;
 
-		for (y = yoffset, y2 = yoffset+height - 1; y < yoffset+height; y++, y2--)
-			M_Memcpy(&tmpscr[y2*vid.width], &srcscr[y*vid.width], vid.width);
+		for (y = yoffset, y2 = yoffset+viewheight - 1; y < yoffset+viewheight; y++, y2--)
+			M_Memcpy(&tmpscr[(y2*vid.width)+xoffset], &srcscr[(y*vid.width)+xoffset], viewwidth);
 
-		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset, screens[0]+vid.width*vid.bpp*yoffset,
-				vid.width*vid.bpp, height, vid.width*vid.bpp, vid.width);
+		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset+xoffset, screens[0]+vid.width*vid.bpp*yoffset+xoffset,
+				viewwidth*vid.bpp, viewheight, vid.width*vid.bpp, vid.width);
 	}
 	else if (type == postimg_heat) // Heat wave
 	{
@@ -2086,43 +2085,61 @@ Unoptimized version
 		UINT8 *srcscr = screens[0];
 		INT32 y;
 
+		if (splitscreen > 1) // 3P/4P has trouble supporting this, anyone want to fix it? :p
+			return;
+
 		// Make sure table is built
-		if (heatshifter == NULL || lastheight != height)
+		if (heatshifter == NULL || lastheight != viewheight)
 		{
 			if (heatshifter)
 				Z_Free(heatshifter);
 
-			heatshifter = Z_Calloc(height * sizeof(boolean), PU_STATIC, NULL);
+			heatshifter = Z_Calloc(viewheight * sizeof(boolean), PU_STATIC, NULL);
 
-			for (y = 0; y < height; y++)
+			for (y = 0; y < viewheight; y++)
 			{
 				if (M_RandomChance(FRACUNIT/8)) // 12.5%
 					heatshifter[y] = true;
 			}
 
 			heatindex[0] = heatindex[1] = 0;
-			lastheight = height;
+			lastheight = viewheight;
 		}
 
-		for (y = yoffset; y < yoffset+height; y++)
+		for (y = yoffset; y < yoffset+viewheight; y++)
 		{
 			if (heatshifter[heatindex[view]++])
 			{
 				// Shift this row of pixels to the right by 2
-				tmpscr[y*vid.width] = srcscr[y*vid.width];
-				M_Memcpy(&tmpscr[y*vid.width+vid.dupx], &srcscr[y*vid.width], vid.width-vid.dupx);
+				tmpscr[(y*vid.width)+xoffset] = srcscr[(y*vid.width)+xoffset];
+				M_Memcpy(&tmpscr[(y*vid.width)+xoffset], &srcscr[(y*vid.width)+xoffset+vid.dupx], viewwidth-vid.dupx);
 			}
 			else
-				M_Memcpy(&tmpscr[y*vid.width], &srcscr[y*vid.width], vid.width);
+				M_Memcpy(&tmpscr[(y*vid.width)+xoffset], &srcscr[(y*vid.width)+xoffset], viewwidth);
 
-			heatindex[view] %= height;
+			heatindex[view] %= viewheight;
 		}
 
 		heatindex[view]++;
 		heatindex[view] %= vid.height;
 
-		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset, screens[0]+vid.width*vid.bpp*yoffset,
-				vid.width*vid.bpp, height, vid.width*vid.bpp, vid.width);
+		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset+xoffset, screens[0]+vid.width*vid.bpp*yoffset+xoffset,
+				viewwidth*vid.bpp, viewheight, vid.width*vid.bpp, vid.width);
+	}
+	else if (type == postimg_mirror) // Flip the screen on the x axis
+	{
+		UINT8 *tmpscr = screens[4];
+		UINT8 *srcscr = screens[0];
+		INT32 y, x, x2;
+
+		for (y = yoffset; y < yoffset+viewheight; y++)
+		{
+			for (x = xoffset, x2 = xoffset+((viewwidth*vid.bpp)-1); x < xoffset+(viewwidth*vid.bpp); x++, x2--)
+				tmpscr[y*vid.width + x2] = srcscr[y*vid.width + x];
+		}
+
+		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset+xoffset, screens[0]+vid.width*vid.bpp*yoffset+xoffset,
+				viewwidth*vid.bpp, viewheight, vid.width*vid.bpp, vid.width);
 	}
 #endif
 }

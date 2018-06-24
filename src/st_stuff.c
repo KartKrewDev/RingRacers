@@ -77,7 +77,7 @@ static patch_t *race1;
 static patch_t *race2;
 static patch_t *race3;
 static patch_t *racego;
-static patch_t *ttlnum;
+//static patch_t *ttlnum;
 static patch_t *nightslink;
 static patch_t *count5;
 static patch_t *count4;
@@ -129,6 +129,7 @@ static patch_t *gotbflag;
 //
 
 static boolean facefreed[MAXPLAYERS];
+boolean iconfreed[MAXPLAYERS];
 
 hudinfo_t hudinfo[NUMHUDITEMS] =
 {
@@ -176,7 +177,7 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 boolean ST_SameTeam(player_t *a, player_t *b)
 {
 	// Just pipe team messages to everyone in co-op or race.
-	if (!G_RingSlingerGametype())
+	if (!G_BattleGametype())
 		return true;
 
 	// Spectator chat.
@@ -215,17 +216,17 @@ void ST_doPaletteStuff(void)
 	else
 		palette = 0;
 
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		palette = 0; // No flashpals here in OpenGL
+#endif
+
 	palette = min(max(palette, 0), 13);
 
 	if (palette != st_palette)
 	{
 		st_palette = palette;
 
-#ifdef HWRENDER
-		if (rendermode == render_opengl)
-			HWR_SetPaletteColor(0);
-		else
-#endif
 		if (rendermode != render_none)
 		{
 			V_SetPaletteLump(GetPalette()); // Reset the palette
@@ -412,7 +413,10 @@ void ST_Init(void)
 	INT32 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		facefreed[i] = true;
+		iconfreed[i] = true;
+	}
 
 	if (dedicated)
 		return;
@@ -749,7 +753,7 @@ static void ST_drawLevelTitle(void)
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *subttl = mapheaderinfo[gamemap-1]->subttl;
 	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
-	INT32 actnum = mapheaderinfo[gamemap-1]->actnum;
+	char *actnum = mapheaderinfo[gamemap-1]->actnum;
 	INT32 lvlttlxpos;
 	INT32 subttlxpos = BASEVIDWIDTH/2;
 	INT32 ttlnumxpos;
@@ -761,11 +765,8 @@ static void ST_drawLevelTitle(void)
 	if (!(timeinmap > 2 && timeinmap-3 < 110))
 		return;
 
-	if (actnum > 0)
-	{
-		ttlnum = W_CachePatchName(va("TTL%.2d", actnum), PU_CACHE);
-		lvlttlxpos = ((BASEVIDWIDTH/2) - (V_LevelNameWidth(lvlttl)/2)) - SHORT(ttlnum->width);
-	}
+	if (strlen(actnum) > 0)
+		lvlttlxpos = ((BASEVIDWIDTH/2) - (V_LevelNameWidth(lvlttl)/2)) - V_LevelNameWidth(actnum);
 	else
 		lvlttlxpos = ((BASEVIDWIDTH/2) - (V_LevelNameWidth(lvlttl)/2));
 
@@ -797,8 +798,8 @@ static void ST_drawLevelTitle(void)
 		default:  zoney = 104; lvlttly =  80; break;
 	}
 
-	if (actnum)
-		V_DrawScaledPatch(ttlnumxpos, zoney, 0, ttlnum);
+	if (strlen(actnum) > 0)
+		V_DrawLevelTitle(ttlnumxpos+12, zoney, 0, actnum);
 
 	V_DrawLevelTitle(lvlttlxpos, lvlttly, 0, lvlttl);
 
@@ -994,7 +995,7 @@ static void ST_drawNiGHTSHUD(void) // SRB2kart - unused.
 	INT32 origamount;
 	INT32 minlink = 1;
 	INT32 total_ringcount;
-	boolean nosshack = false;
+	UINT8 nosshack = 0;
 
 	// When debugging, show "0 Link".
 	if (cv_debug & DBG_NIGHTSBASIC)
@@ -1010,7 +1011,7 @@ static void ST_drawNiGHTSHUD(void) // SRB2kart - unused.
 		if (stplyr != &players[displayplayer])
 			return;
 		nosshack = splitscreen;
-		splitscreen = false;
+		splitscreen = 0;
 	}
 
 	// Link drawing
@@ -1108,7 +1109,7 @@ static void ST_drawNiGHTSHUD(void) // SRB2kart - unused.
 		}
 		else if (nosshack)
 		{ // Even dirtier hack-of-a-hack to draw seperate drill meters in splitscreen special stages but nothing else.
-			splitscreen = true;
+			splitscreen = nosshack;
 			V_DrawScaledPatch(locx, STRINGY(locy)-3, V_HUDTRANS, drillbar);
 			for (dfill = 0; dfill < stplyr->drillmeter/20 && dfill < 96; ++dfill)
 				V_DrawScaledPatch(locx + 2 + dfill, STRINGY(locy + 3), V_HUDTRANS, drillfill[fillpatch]);
@@ -1121,7 +1122,7 @@ static void ST_drawNiGHTSHUD(void) // SRB2kart - unused.
 			for (dfill = 0; dfill < stplyr->drillmeter/20 && dfill < 96; ++dfill)
 				V_DrawScaledPatch(locx + 2 + dfill, STRINGY(locy + 3), V_SNAPTOBOTTOM|V_HUDTRANS, drillfill[fillpatch]);
 			stplyr = &players[displayplayer];
-			splitscreen = false;
+			splitscreen = 0;
 		}
 		else
 		{ // Draw normally. <:3
@@ -1365,8 +1366,7 @@ static void ST_drawNiGHTSHUD(void) // SRB2kart - unused.
 #endif
 	ST_drawNightsRecords();
 
-	if (nosshack)
-		splitscreen = true;
+	splitscreen = nosshack;
 }
 */
 
@@ -1409,7 +1409,7 @@ static void ST_drawMatchHUD(void) // SRB2kart - unused.
 {
 	INT32 offset = (BASEVIDWIDTH / 2) - (NUM_WEAPONS * 10);
 
-	if (!G_RingSlingerGametype())
+	if (!G_BattleGametype())
 		return;
 
 	if (G_TagGametype() && !(stplyr->pflags & PF_TAGIT))
@@ -1620,11 +1620,11 @@ static void ST_drawCTFHUD(void) // SRB2kart - unused.
 static inline void ST_drawTeamName(void)
 {
 	if (stplyr->ctfteam == 1)
-		V_DrawString(256, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "RED TEAM");
+		V_DrawString(256, splitscreen ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "RED TEAM");
 	else if (stplyr->ctfteam == 2)
-		V_DrawString(248, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "BLUE TEAM");
+		V_DrawString(248, splitscreen ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "BLUE TEAM");
 	else
-		V_DrawString(244, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "SPECTATOR");
+		V_DrawString(244, splitscreen ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "SPECTATOR");
 }
 
 /*
@@ -1831,13 +1831,23 @@ static void ST_overlayDrawer(void)
 	{
 		// Countdown timer for Race Mode
 		if (countdown)
-			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(176), 0, va("%d", countdown/TICRATE));
+		{
+			INT32 x = BASEVIDWIDTH/2;
+			INT32 y = BASEVIDHEIGHT-24;
+			if (splitscreen)
+			{
+				y = (BASEVIDHEIGHT/2)-12;
+				if (splitscreen > 1)
+					x = BASEVIDWIDTH/4;		
+			}
+			V_DrawCenteredString(x, y, K_calcSplitFlags(0), va("%d", countdown/TICRATE));
+		}
 
 		K_drawKartHUD();
 
 		/* SRB2kart doesn't need this stuff, I think
 		// If you are in overtime, put a big honkin' flashin' message on the screen.
-		if (G_RingSlingerGametype() && cv_overtime.value
+		if (G_BattleGametype() && cv_overtime.value
 			&& (leveltime > (timelimitintics + TICRATE/2)) && cv_timelimit.value && (leveltime/TICRATE % 2 == 0))
 		{
 			if (splitscreen)
@@ -1893,7 +1903,9 @@ static void ST_overlayDrawer(void)
 
 		// This is where we draw all the fun cheese if you have the chasecam off!
 		if ((stplyr == &players[displayplayer] && !camera.chase)
-			|| ((splitscreen && stplyr == &players[secondarydisplayplayer]) && !camera2.chase))
+			|| ((splitscreen && stplyr == &players[secondarydisplayplayer]) && !camera2.chase)
+			|| ((splitscreen > 1 && stplyr == &players[thirddisplayplayer]) && !camera3.chase)
+			|| ((splitscreen > 2 && stplyr == &players[fourthdisplayplayer]) && !camera4.chase))
 		{
 			ST_drawFirstPersonHUD();
 		}
@@ -1922,29 +1934,31 @@ static void ST_overlayDrawer(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(116), 0, M_GetText("You cannot move while hiding."));
 			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), 0, M_GetText("Press F12 to watch another player."));
 		}
-		else if (!G_PlatformGametype() && stplyr->playerstate == PST_DEAD && stplyr->lives) //Death overrides spectator text.
+		/*else if (!G_RaceGametype() && stplyr->playerstate == PST_DEAD && stplyr->lives) //Death overrides spectator text.
 		{
 			INT32 respawntime = cv_respawntime.value - stplyr->deadtimer/TICRATE;
 			if (respawntime > 0 && !stplyr->spectator)
 				V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), V_HUDTRANSHALF, va(M_GetText("Respawn in: %d second%s."), respawntime, respawntime == 1 ? "" : "s"));
 			else
 				V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), V_HUDTRANSHALF, M_GetText("Press Jump to respawn."));
-		}
+		}*/
 		else if (stplyr->spectator
 #ifdef HAVE_BLUA
 		&& LUA_HudEnabled(hud_textspectator)
 #endif
 		)
 		{
-			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(60), V_HUDTRANSHALF, M_GetText("You are a spectator."));
-			if (G_GametypeHasTeams())
-				V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), V_HUDTRANSHALF, M_GetText("Press Fire to be assigned to a team."));
+			// SRB2kart: changed positions & text
+			V_DrawString(2, BASEVIDHEIGHT-50, V_HUDTRANSHALF|V_YELLOWMAP, M_GetText("- SPECTATING -"));
+			/*if (G_GametypeHasTeams())
+				V_DrawString(2, BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("Item - Join Team"));
 			else if (G_IsSpecialStage(gamemap) && useNightsSS)
-				V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), V_HUDTRANSHALF, M_GetText("You cannot join the game until the stage has ended."));
-			else
-				V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), V_HUDTRANSHALF, M_GetText("Press Fire to enter the game."));
-			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(148), V_HUDTRANSHALF, M_GetText("Press F12 to watch another player."));
-			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(164), V_HUDTRANSHALF, M_GetText("Press Jump to float and Spin to sink."));
+				V_DrawString(2, BASEVIDHEIGHT-40, V_HUDTRANSHALF|V_REDMAP, M_GetText("- CANNOT JOIN -"));
+			else*/
+			V_DrawString(2, BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("Item - Enter Game"));
+			V_DrawString(2, BASEVIDHEIGHT-30, V_HUDTRANSHALF, M_GetText("F12 - Change View"));
+			V_DrawString(2, BASEVIDHEIGHT-20, V_HUDTRANSHALF, M_GetText("Accelerate - Float"));
+			V_DrawString(2, BASEVIDHEIGHT-10, V_HUDTRANSHALF, M_GetText("Brake - Sink"));
 		}
 	}
 
@@ -1963,7 +1977,7 @@ void ST_Drawer(void)
 			va("%s%s", G_GametypeHasTeams() ? ((seenplayer->ctfteam == 1) ? "\x85" : "\x84") : "", player_names[seenplayer-players]));
 		else //if (cv_seenames.value == 3)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 + 15, V_HUDTRANSHALF,
-			va("%s%s", !G_RingSlingerGametype() || (G_GametypeHasTeams() && players[consoleplayer].ctfteam == seenplayer->ctfteam)
+			va("%s%s", !G_BattleGametype() || (G_GametypeHasTeams() && players[consoleplayer].ctfteam == seenplayer->ctfteam)
 			 ? "\x83" : "\x85", player_names[seenplayer-players]));
 	}
 #endif
@@ -1995,6 +2009,18 @@ void ST_Drawer(void)
 		{
 			stplyr = &players[secondarydisplayplayer];
 			ST_overlayDrawer();
+
+			if (splitscreen > 1)
+			{
+				stplyr = &players[thirddisplayplayer];
+				ST_overlayDrawer();
+
+				if (splitscreen > 2)
+				{
+					stplyr = &players[fourthdisplayplayer];
+					ST_overlayDrawer();
+				}
+			}
 		}
 	}
 }

@@ -591,7 +591,7 @@ void P_Ticker(boolean run)
 	if (paused || P_AutoPause())
 		return;
 
-	postimgtype = postimgtype2 = postimg_none;
+	postimgtype = postimgtype2 = postimgtype3 = postimgtype4 = postimg_none;
 
 	P_MapStart();
 
@@ -608,7 +608,8 @@ void P_Ticker(boolean run)
 	}
 
 	// Keep track of how long they've been playing!
-	totalplaytime++;
+	if (!demoplayback) // Don't increment if a demo is playing.
+		totalplaytime++;
 
 	if (!useNightsSS && G_IsSpecialStage(gamemap))
 		P_DoSpecialStageStuff();
@@ -624,9 +625,6 @@ void P_Ticker(boolean run)
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
-
-		// SRB2kart - runs bounce collision for players
-		K_KartBouncer();
 
 #ifdef HAVE_BLUA
 		LUAh_ThinkFrame();
@@ -679,6 +677,38 @@ void P_Ticker(boolean run)
 		if (countdown2)
 			countdown2--;
 
+		if (blueshellincoming && --blueshellincoming <= 0)
+		{
+			UINT8 best = 0;
+			SINT8 hurtthisguy = -1;
+
+			blueshellincoming = 0;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator)
+					continue;
+
+				if (!players[i].mo)
+					continue;
+
+				if (players[i].exiting)
+					continue;
+
+				if (best <= 0 || players[i].kartstuff[k_position] < best)
+				{
+					best = players[i].kartstuff[k_position];
+					hurtthisguy = i;
+				}
+			}
+
+			if (hurtthisguy != -1)
+				players[hurtthisguy].kartstuff[k_deathsentence] = TICRATE+1;
+		}
+
+		if (lightningcooldown)
+			lightningcooldown--;
+
 		if (quake.time)
 		{
 			fixed_t ir = quake.intensity>>1;
@@ -714,7 +744,7 @@ void P_PreTicker(INT32 frames)
 	INT32 i,framecnt;
 	ticcmd_t temptic;
 
-	postimgtype = postimgtype2 = postimg_none;
+	postimgtype = postimgtype2 = postimgtype3 = postimgtype4 = postimg_none;
 
 	for (framecnt = 0; framecnt < frames; ++framecnt)
 	{
@@ -742,9 +772,6 @@ void P_PreTicker(INT32 frames)
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
-
-		// SRB2kart - runs bounce collision for players
-		K_KartBouncer();
 
 #ifdef HAVE_BLUA
 		LUAh_ThinkFrame();

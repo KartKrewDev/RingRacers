@@ -109,15 +109,23 @@ typedef struct camera_s
 	fixed_t momx, momy, momz;
 } camera_t;
 
-extern camera_t camera, camera2;
+extern camera_t camera, camera2, camera3, camera4;
 extern consvar_t cv_cam_dist, cv_cam_still, cv_cam_height;
 extern consvar_t cv_cam_speed, cv_cam_rotate, cv_cam_rotspeed;
 
 extern consvar_t cv_cam2_dist, cv_cam2_still, cv_cam2_height;
 extern consvar_t cv_cam2_speed, cv_cam2_rotate, cv_cam2_rotspeed;
 
+extern consvar_t cv_cam3_dist, cv_cam3_still, cv_cam3_height;
+extern consvar_t cv_cam3_speed, cv_cam3_rotate, cv_cam3_rotspeed;
+
+extern consvar_t cv_cam4_dist, cv_cam4_still, cv_cam4_height;
+extern consvar_t cv_cam4_speed, cv_cam4_rotate, cv_cam4_rotspeed;
+
 extern fixed_t t_cam_dist, t_cam_height, t_cam_rotate;
 extern fixed_t t_cam2_dist, t_cam2_height, t_cam2_rotate;
+extern fixed_t t_cam3_dist, t_cam3_height, t_cam3_rotate;
+extern fixed_t t_cam4_dist, t_cam4_height, t_cam4_rotate;
 
 fixed_t P_GetPlayerHeight(player_t *player);
 fixed_t P_GetPlayerSpinHeight(player_t *player);
@@ -131,10 +139,12 @@ boolean P_PlayerInPain(player_t *player);
 void P_DoPlayerPain(player_t *player, mobj_t *source, mobj_t *inflictor);
 void P_ResetPlayer(player_t *player);
 boolean P_IsLocalPlayer(player_t *player);
+boolean P_SpectatorJoinGame(player_t *player);
 
 boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
 boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
+boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
 boolean P_InSpaceSector(mobj_t *mo);
 boolean P_InQuicksand(mobj_t *mo);
 
@@ -153,7 +163,7 @@ void P_DoJumpShield(player_t *player);
 void P_BlackOw(player_t *player);
 void P_ElementalFireTrail(player_t *player);
 
-void P_DoPityCheck(player_t *player);
+//void P_DoPityCheck(player_t *player);
 void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);
 void P_DoPlayerExit(player_t *player);
@@ -172,6 +182,7 @@ void P_DoJump(player_t *player, boolean soundandstate);
 boolean P_AnalogMove(player_t *player);
 boolean P_TransferToNextMare(player_t *player);
 UINT8 P_FindLowestMare(void);
+UINT8 P_FindLowestLap(void);
 void P_FindEmerald(void);
 void P_TransferToAxis(player_t *player, INT32 axisnum);
 boolean P_PlayerMoving(INT32 pnum);
@@ -326,7 +337,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
-void P_SlideMove(mobj_t *mo);
+void P_SlideMove(mobj_t *mo, boolean forceslide);
 void P_BounceMove(mobj_t *mo);
 boolean P_CheckSight(mobj_t *t1, mobj_t *t2);
 void P_CheckHoopPosition(mobj_t *hoopthing, fixed_t x, fixed_t y, fixed_t z, fixed_t radius);

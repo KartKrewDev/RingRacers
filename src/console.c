@@ -303,20 +303,14 @@ static void CON_SetupColormaps(void)
 		orangemap[i] = (UINT8)i;
 	}
 
-	yellowmap[3] = (UINT8)103;
-	yellowmap[9] = (UINT8)115;
-	purplemap[3] = (UINT8)195;
-	purplemap[9] = (UINT8)198;
-	lgreenmap[3] = (UINT8)162;
-	lgreenmap[9] = (UINT8)170;
-	bluemap[3]   = (UINT8)228;
-	bluemap[9]   = (UINT8)238;
-	graymap[3]   = (UINT8)10;
-	graymap[9]   = (UINT8)15;
-	redmap[3]    = (UINT8)124;
-	redmap[9]    = (UINT8)127;
-	orangemap[3] = (UINT8)85;
-	orangemap[9] = (UINT8)90;
+	// SRB2Kart: Different console font, new colors
+	yellowmap[120] = (UINT8)103;
+	purplemap[120] = (UINT8)194;
+	lgreenmap[120] = (UINT8)162;
+	bluemap[120]   = (UINT8)228;
+	graymap[120]   = (UINT8)10;
+	redmap[120]    = (UINT8)126;
+	orangemap[120] = (UINT8)85;
 
 	// Init back colormap
 	CON_SetupBackColormap();
@@ -842,8 +836,9 @@ boolean CON_Responder(event_t *ev)
 			return true;
 		}
 
-		// don't eat the key
-		return false;
+		// ...why shouldn't it eat the key? if it doesn't, it just means you
+		// can control Sonic from the console, which is silly
+		return true; //return false;
 	}
 
 	// command completion forward (tab) and backward (shift-tab)
@@ -1042,7 +1037,7 @@ boolean CON_Responder(event_t *ev)
 
 	// enter a char into the command prompt
 	if (key < 32 || key > 127)
-		return false;
+		return true; // even if key can't be printed, eat it anyway
 
 	// add key to cmd line here
 	if (key >= 'A' && key <= 'Z' && !shiftdown) //this is only really necessary for dedicated servers
@@ -1236,7 +1231,7 @@ void CONS_Printf(const char *fmt, ...)
 		patch_t *con_backpic;
 
 		if (con_backpic_lumpnum == UINT32_MAX)
-			con_backpic_lumpnum = W_GetNumForName("CONSBACK");
+			con_backpic_lumpnum = W_GetNumForName("KARTKREW");
 
 		// We load the raw lump, even in hardware mode
 		con_backpic = (patch_t*)W_CacheLumpNum(con_backpic_lumpnum, PU_CACHE);
@@ -1481,7 +1476,7 @@ static void CON_DrawBackpic(patch_t *pic, INT32 startx, INT32 destwidth)
 {
 	(void)startx;
 	(void)destwidth;
-	V_DrawScaledPatch(0, 0, 0, pic);
+	V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, pic, NULL);
 }
 
 #if 0
@@ -1557,12 +1552,12 @@ static void CON_DrawConsole(void)
 		patch_t *con_backpic;
 
 		if (con_backpic_lumpnum == UINT32_MAX)
-			con_backpic_lumpnum = W_GetNumForName("CONSBACK");
+			con_backpic_lumpnum = W_GetNumForName("KARTKREW");
 
 		con_backpic = (patch_t*)W_CachePatchNum(con_backpic_lumpnum, PU_CACHE);
 
 		if (rendermode != render_soft)
-			V_DrawScaledPatch(0, 0, 0, con_backpic);
+			V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, con_backpic, NULL);
 		else if (rendermode != render_none)
 			CON_DrawBackpic(con_backpic, 0, vid.width); // picture as background
 
@@ -1624,6 +1619,7 @@ void CON_Drawer(void)
 
 	if (con_curlines > 0)
 		CON_DrawConsole();
-	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS)
+	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS
+		|| gamestate == GS_VOTING)
 		CON_DrawHudlines();
 }
