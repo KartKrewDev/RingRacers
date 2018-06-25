@@ -10222,7 +10222,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 		else
 			mthing->z = (INT16)(z>>FRACBITS);
 	}
-	else if (i == MT_WAYPOINT && !(mthing->options & MTF_OBJECTSPECIAL))
+	else if (i == MT_WAYPOINT)
 	{
 		// just gets set on either the floor or ceiling
 		boolean flip = (!!(mobjinfo[i].flags & MF_SPAWNCEILING) ^ !!(mthing->options & MTF_OBJECTFLIP));
@@ -10496,13 +10496,31 @@ ML_NOCLIMB : Direction not controllable
 			mobj->tics += 7*(mthing->angle / 360) + 1; // starting delay
 		break;
 	case MT_WAYPOINT:
-		if (!(mthing->options & MTF_OBJECTSPECIAL))
+	{
+		size_t line;
+		mobj->radius = 256*FRACUNIT;
+		// Same reason as for MT_SPINMACEPOINT we can't use the function to find the linedef
+		for (line = 0; line < numlines; line++)
 		{
-			// Z is already altered to account for proper height
-			// Use threshold to store the previous waypoint ID
-			// Angle is being used for the current waypoint ID
-			mobj->threshold = ((mthing->options >> ZSHIFT));
+			if (lines[line].special == 2000 && lines[line].tag == mthing->angle)
+				break;
 		}
+		// Set the radius, mobj z, and mthing z to match what the parameters want
+		if (line < numlines)
+		{
+			fixed_t lineradius = sides[lines[line].sidenum[0]].textureoffset;
+			fixed_t linez = sides[lines[line].sidenum[0]].rowoffset;
+
+			if (lineradius > 0)
+				mobj->radius = lineradius;
+			mobj->z += linez;
+			mthing->z += linez >> FRACBITS;
+		}
+		// Use threshold to store the next waypoint ID
+		// movecount is being used for the current waypoint ID
+		// reactiontime lets us know if we can respawn at it
+		mobj->threshold = ((mthing->options >> ZSHIFT));
+		mobj->movecount = mthing->angle;
 		if (mthing->options & MTF_AMBUSH)
 		{
 			mobj->reactiontime = 1;
@@ -10512,6 +10530,7 @@ ML_NOCLIMB : Direction not controllable
 			mobj->reactiontime = 0;
 		}
 		break;
+	}
 	default:
 		break;
 	}

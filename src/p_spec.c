@@ -1709,14 +1709,14 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			{
 				if (maptol & TOL_NIGHTS)
 					lap = actor->player->mare;
-				else 
+				else
 					lap = actor->player->laps;
 			}
 			else
 			{
 				if (maptol & TOL_NIGHTS)
 					lap = P_FindLowestMare();
-				else 
+				else
 					lap = P_FindLowestLap();
 			}
 
@@ -6566,6 +6566,8 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 #endif
 
+			case 2000: // Waypoint Parameters
+				break;
 			default:
 				break;
 		}
