@@ -6319,8 +6319,15 @@ static void M_DrawLevelStats(void)
 	                         G_TicsToHours(totalplaytime),
 	                         G_TicsToMinutes(totalplaytime, false),
 	                         G_TicsToSeconds(totalplaytime)));
+
 	V_DrawString(20, 42, highlightflags, "Total Matches:");
 	V_DrawRightAlignedString(BASEVIDWIDTH-16, 42, 0, va("%i played", matchesplayed));
+
+	V_DrawString(20, 50, highlightflags, "Race Versus Record:");
+	V_DrawRightAlignedString(BASEVIDWIDTH-16, 50, 0, va("%i", versusrecord[0]));
+
+	V_DrawString(20, 58, highlightflags, "Battle Versus Record:");
+	V_DrawRightAlignedString(BASEVIDWIDTH-16, 58, 0, va("%i", versusrecord[1]));
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
@@ -8452,6 +8459,8 @@ static UINT8 erasecontext = 0;
 
 static void M_EraseDataResponse(INT32 ch)
 {
+	UINT8 i;
+
 	if (ch != 'y' && ch != KEY_ENTER)
 		return;
 
@@ -8463,6 +8472,8 @@ static void M_EraseDataResponse(INT32 ch)
 		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
 		totalplaytime = 0;
 		matchesplayed = 0;
+		for (i = 0; i < 2; i++)
+			versusrecord[i] = 5000;
 		F_StartIntro();
 	}
 	if (erasecontext != 1)

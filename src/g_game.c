@@ -169,6 +169,7 @@ INT32 sstimer; // Time allotted in the special stage
 
 tic_t totalplaytime;
 UINT32 matchesplayed; // SRB2Kart
+UINT16 versusrecord[2]; // SRB2Kart: Online rankings
 boolean gamedataloaded = false;
 
 // Time attack data for levels
@@ -3744,8 +3745,12 @@ void G_LoadGameData(void)
 	// to new gamedata
 	G_ClearRecords(); // main and nights records
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
+
 	totalplaytime = 0; // total play time (separate from all)
 	matchesplayed = 0; // SRB2Kart: matches played & finished
+
+	for (i = 0; i < 2; i++) // SRB2Kart: online VR system
+		versusrecord[i] = 5000;
 
 	if (M_CheckParm("-nodata"))
 		return; // Don't load.
@@ -3776,6 +3781,9 @@ void G_LoadGameData(void)
 
 	totalplaytime = READUINT32(save_p);
 	matchesplayed = READUINT32(save_p);
+
+	for (i = 0; i < 2; i++)
+		versusrecord[i] = READUINT16(save_p);
 
 	modded = READUINT8(save_p);
 
@@ -3924,6 +3932,9 @@ void G_SaveGameData(boolean force)
 
 	WRITEUINT32(save_p, totalplaytime);
 	WRITEUINT32(save_p, matchesplayed);
+
+	for (i = 0; i < 2; i++)
+		WRITEUINT16(save_p, versusrecord[i]);
 
 	btemp = (UINT8)(savemoddata || modifiedgame);
 	WRITEUINT8(save_p, btemp);

@@ -326,6 +326,7 @@ enum GameType // SRB2Kart
 
 extern tic_t totalplaytime;
 extern UINT32 matchesplayed;
+extern UINT16 versusrecord[2];
 
 extern UINT8 stagefailed;
 
