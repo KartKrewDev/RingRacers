@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -24,6 +24,14 @@
 //  one that defines the actual packets to
 //  be transmitted.
 
+// SOME numpty changed all the gametype constants and it fell out of sync with vanilla and now we have to pretend to be vanilla when talking to the master server...
+#define VANILLA_GT_RACE 2
+#if VERSION < 210
+#define VANILLA_GT_MATCH 1
+#else
+#define VANILLA_GT_MATCH 3
+#endif
+
 // Networking and tick handling related.
 #define BACKUPTICS 32
 #define MAXTEXTCMD 256
@@ -40,10 +48,6 @@ typedef enum
 	PT_CLIENTMIS,     // Same as above with but saying resend from.
 	PT_CLIENT2CMD,    // 2 cmds in the packet for splitscreen.
 	PT_CLIENT2MIS,    // Same as above with but saying resend from
-	PT_CLIENT3CMD,    // 3P
-	PT_CLIENT3MIS,
-	PT_CLIENT4CMD,    // 4P
-	PT_CLIENT4MIS, 
 	PT_NODEKEEPALIVE, // Same but without ticcmd and consistancy
 	PT_NODEKEEPALIVEMIS,
 	PT_SERVERTICS,    // All cmds for the tic.
@@ -61,6 +65,12 @@ typedef enum
 	PT_RESYNCHGET,    // Player got resynch packet
 
 	// Add non-PT_CANFAIL packet types here to avoid breaking MS compatibility.
+
+	// Kart-specific packets
+	PT_CLIENT3CMD,    // 3P
+	PT_CLIENT3MIS,
+	PT_CLIENT4CMD,    // 4P
+	PT_CLIENT4MIS,
 
 	PT_CANFAIL,       // This is kind of a priority. Anything bigger than CANFAIL
 	                  // allows HSendPacket(*, true, *, *) to return false.
@@ -166,8 +176,7 @@ typedef struct
 
 	// Resynch game scores and the like all at once
 	UINT32 score[MAXPLAYERS]; // Everyone's score
-	INT16 numboxes[MAXPLAYERS];
-	INT16 totalring[MAXPLAYERS];
+	UINT32 marescore[MAXPLAYERS]; // SRB2kart: Battle score
 	tic_t realtime[MAXPLAYERS];
 	UINT8 laps[MAXPLAYERS];
 } ATTRPACK resynchend_pak;
@@ -186,6 +195,7 @@ typedef struct
 	angle_t aiming;
 	INT32 currentweapon;
 	INT32 ringweapons;
+
 	UINT16 powers[NUMPOWERS];
 
 	INT32 kartstuff[NUMKARTSTUFF]; // SRB2kart
@@ -245,7 +255,6 @@ typedef struct
 	INT16 starposty;
 	INT16 starpostz;
 	INT32 starpostnum;
-	INT32 starpostcount;
 	tic_t starposttime;
 	angle_t starpostangle;
 
@@ -270,6 +279,8 @@ typedef struct
 	tic_t losstime;
 	UINT8 timeshit;
 	INT32 onconveyor;
+
+	tic_t jointime;
 
 	//player->mo stuff
 	UINT8 hasmo; // Boolean
@@ -343,6 +354,7 @@ typedef struct
 } ATTRPACK clientconfig_pak;
 
 #define MAXSERVERNAME 32
+#define MAXFILENEEDED 915
 // This packet is too large
 typedef struct
 {
@@ -355,7 +367,7 @@ typedef struct
 	UINT8 cheatsenabled;
 	UINT8 isdedicated;
 	UINT8 fileneedednum;
-	SINT8 adminplayers[MAXPLAYERS];
+	SINT8 adminplayer;
 	tic_t time;
 	tic_t leveltime;
 	char servername[MAXSERVERNAME];
@@ -364,7 +376,7 @@ typedef struct
 	unsigned char mapmd5[16];
 	UINT8 actnum;
 	UINT8 iszone;
-	UINT8 fileneeded[915]; // is filled with writexxx (byteptr.h)
+	UINT8 fileneeded[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
 } ATTRPACK serverinfo_pak;
 
 typedef struct
@@ -463,6 +475,7 @@ extern INT32 mapchangepending;
 // Points inside doomcom
 extern doomdata_t *netbuffer;
 
+extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
 
 #define BASEPACKETSIZE ((size_t)&(((doomdata_t *)0)->u))
@@ -480,6 +493,17 @@ extern consvar_t cv_playbackspeed;
 #define KICK_MSG_CUSTOM_KICK 7
 #define KICK_MSG_CUSTOM_BAN  8
 
+typedef enum
+{
+	KR_KICK          = 1, //Kicked by server
+	KR_PINGLIMIT     = 2, //Broke Ping Limit
+	KR_SYNCH         = 3, //Synch Failure
+	KR_TIMEOUT       = 4, //Connection Timeout
+	KR_BAN           = 5, //Banned by server
+	KR_LEAVE         = 6, //Quit the game
+
+} kickreason_t;
+
 extern boolean server;
 #define client (!server)
 extern boolean dedicated; // For dedicated server
@@ -496,7 +520,11 @@ extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 #endif
 
-extern consvar_t cv_joinnextround, cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail, cv_maxsend, cv_noticedownload, cv_downloadspeed;
+extern consvar_t
+#ifdef VANILLAJOINNEXTROUND
+	cv_joinnextround,
+#endif
+	cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail, cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low);

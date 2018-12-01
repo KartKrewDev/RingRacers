@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -207,8 +207,8 @@ typedef struct
 
 #define ZSHIFT 4
 
-extern const char *Color_Names[MAXSKINCOLORS];
-extern const UINT8 Color_Opposite[MAXSKINCOLORS*2];
+//extern const char *Color_Names[MAXSKINCOLORS];
+//extern const UINT8 Color_Opposite[MAXSKINCOLORS*2];
 
 #define NUMMAPS 1035
 

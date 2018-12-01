@@ -29,6 +29,7 @@
 #include "../m_argv.h"
 #include "../i_video.h"
 #include "../w_wad.h"
+#include "../p_setup.h" // levelfadecol
 
 // --------------------------------------------------------------------------
 // This is global data for planes rendering
@@ -564,8 +565,6 @@ static inline void HWR_SubsecPoly(INT32 num, poly_t *poly)
 	subsector_t *sub;
 	seg_t *lseg;
 
-	sscount++;
-
 	sub = &subsectors[num];
 	count = sub->numlines;
 	lseg = &segs[sub->firstline];
@@ -635,6 +634,7 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 			HWR_SubsecPoly(bspnum&(~NF_SUBSECTOR), poly);
 			//Hurdler: implement a loading status
 
+#ifdef HWR_LOADING_SCREEN
 			if (ls_count-- <= 0)
 			{
 				char s[16];
@@ -646,7 +646,7 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 				sprintf(s, "%d%%", (++ls_percent)<<1);
 				x = BASEVIDWIDTH/2;
 				y = BASEVIDHEIGHT/2;
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol); // White background to match fade in effect
 				//V_DrawPatchFill(W_CachePatchName("SRB2BACK",PU_CACHE)); // SRB2 background, ehhh too bright.
 				M_DrawTextBox(x-58, y-8, 13, 1);
 				V_DrawString(x-50, y, V_YELLOWMAP, "Loading...");
@@ -659,6 +659,7 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 
 				I_UpdateNoVsync();
 			}
+#endif
 		}
 		M_ClearBox(bbox);
 		poly = extrasubsectors[bspnum&~NF_SUBSECTOR].planepoly;
@@ -880,8 +881,8 @@ static void AdjustSegs(void)
 		count = subsectors[i].numlines;
 		lseg = &segs[subsectors[i].firstline];
 		p = extrasubsectors[i].planepoly;
-		if (!p)
-			continue;
+		//if (!p)
+			//continue;
 		for (; count--; lseg++)
 		{
 			float distv1,distv2,tmp;
@@ -894,29 +895,31 @@ static void AdjustSegs(void)
 				continue;
 #endif
 
-			for (j = 0; j < p->numpts; j++)
-			{
-				distv1 = p->pts[j].x - FIXED_TO_FLOAT(lseg->v1->x);
-				tmp    = p->pts[j].y - FIXED_TO_FLOAT(lseg->v1->y);
-				distv1 = distv1*distv1+tmp*tmp;
-				if (distv1 <= nearv1)
+			if (p) {
+				for (j = 0; j < p->numpts; j++)
 				{
-					v1found = j;
-					nearv1 = distv1;
-				}
-				// the same with v2
-				distv2 = p->pts[j].x - FIXED_TO_FLOAT(lseg->v2->x);
-				tmp    = p->pts[j].y - FIXED_TO_FLOAT(lseg->v2->y);
-				distv2 = distv2*distv2+tmp*tmp;
-				if (distv2 <= nearv2)
-				{
-					v2found = j;
-					nearv2 = distv2;
+					distv1 = p->pts[j].x - FIXED_TO_FLOAT(lseg->v1->x);
+					tmp    = p->pts[j].y - FIXED_TO_FLOAT(lseg->v1->y);
+					distv1 = distv1*distv1+tmp*tmp;
+					if (distv1 <= nearv1)
+					{
+						v1found = j;
+						nearv1 = distv1;
+					}
+					// the same with v2
+					distv2 = p->pts[j].x - FIXED_TO_FLOAT(lseg->v2->x);
+					tmp    = p->pts[j].y - FIXED_TO_FLOAT(lseg->v2->y);
+					distv2 = distv2*distv2+tmp*tmp;
+					if (distv2 <= nearv2)
+					{
+						v2found = j;
+						nearv2 = distv2;
+					}
 				}
 			}
-			if (nearv1 <= NEARDIST*NEARDIST)
+			if (p && nearv1 <= NEARDIST*NEARDIST)
 				// share vertice with segs
-				lseg->v1 = (vertex_t *)&(p->pts[v1found]);
+				lseg->pv1 = &(p->pts[v1found]);
 			else
 			{
 				// BP: here we can do better, using PointInSeg and compute
@@ -927,24 +930,24 @@ static void AdjustSegs(void)
 				polyvertex_t *pv = HWR_AllocVertex();
 				pv->x = FIXED_TO_FLOAT(lseg->v1->x);
 				pv->y = FIXED_TO_FLOAT(lseg->v1->y);
-				lseg->v1 = (vertex_t *)pv;
+				lseg->pv1 = pv;
 			}
-			if (nearv2 <= NEARDIST*NEARDIST)
-				lseg->v2 = (vertex_t *)&(p->pts[v2found]);
+			if (p && nearv2 <= NEARDIST*NEARDIST)
+				lseg->pv2 = &(p->pts[v2found]);
 			else
 			{
 				polyvertex_t *pv = HWR_AllocVertex();
 				pv->x = FIXED_TO_FLOAT(lseg->v2->x);
 				pv->y = FIXED_TO_FLOAT(lseg->v2->y);
-				lseg->v2 = (vertex_t *)pv;
+				lseg->pv2 = pv;
 			}
 
 			// recompute length
 			{
 				float x,y;
-				x = ((polyvertex_t *)lseg->v2)->x - ((polyvertex_t *)lseg->v1)->x
+				x = ((polyvertex_t *)lseg->pv2)->x - ((polyvertex_t *)lseg->pv1)->x
 					+ FIXED_TO_FLOAT(FRACUNIT/2);
-				y = ((polyvertex_t *)lseg->v2)->y - ((polyvertex_t *)lseg->v1)->y
+				y = ((polyvertex_t *)lseg->pv2)->y - ((polyvertex_t *)lseg->pv1)->y
 					+ FIXED_TO_FLOAT(FRACUNIT/2);
 				lseg->flength = (float)hypot(x, y);
 				// BP: debug see this kind of segs

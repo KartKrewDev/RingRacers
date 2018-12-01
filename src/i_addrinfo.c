@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2011-2016 by Sonic Team Junior.
+// Copyright (C) 2011-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -86,10 +86,10 @@ static HMODULE WS_getfunctions(HMODULE tmp)
 {
 	if (tmp != NULL)
 	{
-		WS_getaddrinfo = (p_getaddrinfo)GetProcAddress(tmp, "getaddrinfo");
+		WS_getaddrinfo = (p_getaddrinfo)((void *)GetProcAddress(tmp, "getaddrinfo"));
 		if (WS_getaddrinfo == NULL)
 			return NULL;
-		WS_freeaddrinfo = (p_freeaddrinfo)GetProcAddress(tmp, "freeaddrinfo");
+		WS_freeaddrinfo = (p_freeaddrinfo)((void *)GetProcAddress(tmp, "freeaddrinfo"));
 		if (WS_freeaddrinfo == NULL)
 		{
 			WS_getaddrinfo = NULL;

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -48,18 +48,18 @@ void Command_CheatNoClip_f(void);
 void Command_CheatGod_f(void);
 void Command_CheatNoTarget_f(void);
 void Command_Savecheckpoint_f(void);
-void Command_Getallemeralds_f(void);
+/*void Command_Getallemeralds_f(void);
 void Command_Resetemeralds_f(void);
 void Command_Setrings_f(void);
 void Command_Setlives_f(void);
-void Command_Setcontinues_f(void);
+void Command_Setcontinues_f(void);*/
 void Command_Devmode_f(void);
 void Command_Scale_f(void);
 void Command_Gravflip_f(void);
 void Command_Hurtme_f(void);
-void Command_JumpToAxis_f(void);
+/*void Command_JumpToAxis_f(void);
 void Command_Charability_f(void);
-void Command_Charspeed_f(void);
+void Command_Charspeed_f(void);*/
 void Command_Teleport_f(void);
 void Command_RTeleport_f(void);
 void Command_Skynum_f(void);

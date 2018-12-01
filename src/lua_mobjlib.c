@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2012-2016 by John "JTE" Muniz.
-// Copyright (C) 2012-2016 by Sonic Team Junior.
+// Copyright (C) 2012-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -81,6 +81,9 @@ enum mobj_e {
 	mobj_extravalue2,
 	mobj_cusval,
 	mobj_cvmem,
+#ifdef ESLOPE
+	mobj_standingslope,
+#endif
 	mobj_colorized
 };
 
@@ -141,6 +144,9 @@ static const char *const mobj_opt[] = {
 	"extravalue2",
 	"cusval",
 	"cvmem",
+#ifdef ESLOPE
+	"standingslope",
+#endif
 	"colorized",
 	NULL};
 
@@ -345,6 +351,11 @@ static int mobj_get(lua_State *L)
 	case mobj_cvmem:
 		lua_pushinteger(L, mo->cvmem);
 		break;
+#ifdef ESLOPE
+	case mobj_standingslope:
+		LUA_PushUserdata(L, mo->standingslope, META_SLOPE);
+		break;
+#endif
 	case mobj_colorized:
 		lua_pushboolean(L, mo->colorized);
 		break;
@@ -530,10 +541,22 @@ static int mobj_set(lua_State *L)
 	case mobj_bprev:
 		return UNIMPLEMENTED;
 	case mobj_hnext:
-		mo->hnext = luaL_checkudata(L, 3, META_MOBJ);
+		if (lua_isnil(L, 3))
+			P_SetTarget(&mo->hnext, NULL);
+		else
+		{
+			mobj_t *hnext = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+			P_SetTarget(&mo->hnext, hnext);
+		}
 		break;
 	case mobj_hprev:
-		mo->hprev = luaL_checkudata(L, 3, META_MOBJ);
+		if (lua_isnil(L, 3))
+			P_SetTarget(&mo->hprev, NULL);
+		else
+		{
+			mobj_t *hprev = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+			P_SetTarget(&mo->hprev, hprev);
+		}
 		break;
 	case mobj_type: // yeah sure, we'll let you change the mobj's type.
 	{
@@ -643,6 +666,10 @@ static int mobj_set(lua_State *L)
 	case mobj_cvmem:
 		mo->cvmem = luaL_checkinteger(L, 3);
 		break;
+#ifdef ESLOPE
+	case mobj_standingslope:
+		return NOSET;
+#endif
 	case mobj_colorized:
 		mo->colorized = luaL_checkboolean(L, 3);
 		break;

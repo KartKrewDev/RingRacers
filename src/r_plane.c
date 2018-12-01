@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -36,6 +36,9 @@
 
 // Quincunx antialiasing of flats!
 //#define QUINCUNX
+
+// good night sweet prince
+//#define SHITPLANESPARENCY
 
 //SoM: 3/23/2000: Use Boom visplane hashing.
 #define MAXVISPLANES 512
@@ -86,7 +89,7 @@ static fixed_t planeheight;
 //                (this is to calculate yslopes only when really needed)
 //                (when mouselookin', yslope is moving into yslopetab)
 //                Check R_SetupFrame, R_SetViewSize for more...
-fixed_t yslopetab[MAXVIDHEIGHT*4];
+fixed_t yslopetab[MAXVIDHEIGHT*8];
 fixed_t *yslope;
 
 fixed_t distscale[MAXVIDWIDTH];
@@ -335,6 +338,8 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 	else
 #endif
 	ds_colormap = planezlight[pindex];
+	if (encoremap && !currentplane->noencore)
+		ds_colormap += (256*32);
 
 	if (currentplane->extra_colormap)
 		ds_colormap = currentplane->extra_colormap->colormap + (ds_colormap - colormaps);
@@ -437,7 +442,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 #ifdef ESLOPE
 			, pslope_t *slope
 #endif
-			)
+			, boolean noencore)
 {
 	visplane_t *check;
 	unsigned hash;
@@ -445,18 +450,36 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 #ifdef ESLOPE
 	if (slope); else // Don't mess with this right now if a slope is involved
 #endif
-	if (plangle != 0)
-	{
-		// Add the view offset, rotated by the plane angle.
-		angle_t angle = plangle>>ANGLETOFINESHIFT;
-		xoff += FixedMul(viewx,FINECOSINE(angle))-FixedMul(viewy,FINESINE(angle));
-		yoff += -FixedMul(viewx,FINESINE(angle))-FixedMul(viewy,FINECOSINE(angle));
-	}
-	else
 	{
 		xoff += viewx;
 		yoff -= viewy;
+		if (plangle != 0)
+		{
+			// Add the view offset, rotated by the plane angle.
+			fixed_t cosinecomponent = FINECOSINE(plangle>>ANGLETOFINESHIFT);
+			fixed_t sinecomponent = FINESINE(plangle>>ANGLETOFINESHIFT);
+			fixed_t oldxoff = xoff;
+			xoff = FixedMul(xoff,cosinecomponent)+FixedMul(yoff,sinecomponent);
+			yoff = -FixedMul(oldxoff,sinecomponent)+FixedMul(yoff,cosinecomponent);
+		}
 	}
+
+#ifdef POLYOBJECTS_PLANES
+	if (polyobj)
+	{
+		if (polyobj->angle != 0)
+		{
+			angle_t fineshift = polyobj->angle >> ANGLETOFINESHIFT;
+			xoff -= FixedMul(FINECOSINE(fineshift), polyobj->centerPt.x)+FixedMul(FINESINE(fineshift), polyobj->centerPt.y);
+			yoff -= FixedMul(FINESINE(fineshift), polyobj->centerPt.x)-FixedMul(FINECOSINE(fineshift), polyobj->centerPt.y);
+		}
+		else
+		{
+			xoff -= polyobj->centerPt.x;
+			yoff += polyobj->centerPt.y;
+		}
+	}
+#endif
 
 	// This appears to fix the Nimbus Ruins sky bug.
 	if (picnum == skyflatnum && pfloor)
@@ -483,10 +506,11 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 			&& !pfloor && !check->ffloor
 			&& check->viewx == viewx && check->viewy == viewy && check->viewz == viewz
 			&& check->viewangle == viewangle
+			&& check->plangle == plangle
 #ifdef ESLOPE
 			&& check->slope == slope
 #endif
-			)
+			&& check->noencore == noencore)
 		{
 			return check;
 		}
@@ -514,6 +538,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 #ifdef ESLOPE
 	check->slope = slope;
 #endif
+	check->noencore = noencore;
 
 	memset(check->top, 0xff, sizeof (check->top));
 	memset(check->bottom, 0x00, sizeof (check->bottom));
@@ -586,6 +611,7 @@ visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop)
 #ifdef ESLOPE
 		new_pl->slope = pl->slope;
 #endif
+		new_pl->noencore = pl->noencore;
 		pl = new_pl;
 		pl->minx = start;
 		pl->maxx = stop;
@@ -703,6 +729,8 @@ void R_DrawPlanes(void)
 				// Because of this hack, sky is not affected
 				//  by INVUL inverse mapping.
 				dc_colormap = colormaps;
+				if (encoremap)
+					dc_colormap += (256*32);
 				dc_texturemid = skytexturemid;
 				dc_texheight = textureheight[skytexture]
 					>>FRACBITS;
@@ -714,9 +742,10 @@ void R_DrawPlanes(void)
 					if (dc_yl <= dc_yh)
 					{
 						angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
+						dc_iscale = FixedMul(skyscale, FINECOSINE(xtoviewangle[x]>>ANGLETOFINESHIFT));
 						dc_x = x;
 						dc_source =
-							R_GetColumn(skytexture,
+							R_GetColumn(texturetranslation[skytexture],
 								angle);
 						wallcolfunc();
 					}
@@ -768,7 +797,11 @@ void R_DrawSinglePlane(visplane_t *pl)
 		else // Opaque, but allow transparent flat pixels
 			spanfunc = splatfunc;
 
-		if (pl->extra_colormap && pl->extra_colormap->fog)
+#ifdef SHITPLANESPARENCY
+		if (spanfunc == splatfunc || (pl->extra_colormap && pl->extra_colormap->fog))
+#else
+		if (!pl->extra_colormap || !(pl->extra_colormap->fog & 2))
+#endif
 			light = (pl->lightlevel >> LIGHTSEGSHIFT);
 		else
 			light = LIGHTLEVELS-1;
@@ -822,7 +855,11 @@ void R_DrawSinglePlane(visplane_t *pl)
 			else // Opaque, but allow transparent flat pixels
 				spanfunc = splatfunc;
 
-			if (pl->extra_colormap && pl->extra_colormap->fog)
+#ifdef SHITPLANESPARENCY
+			if (spanfunc == splatfunc || (pl->extra_colormap && pl->extra_colormap->fog))
+#else
+			if (!pl->extra_colormap || !(pl->extra_colormap->fog & 2))
+#endif
 				light = (pl->lightlevel >> LIGHTSEGSHIFT);
 			else
 				light = LIGHTLEVELS-1;
@@ -956,23 +993,65 @@ void R_DrawSinglePlane(visplane_t *pl)
 #ifdef ESLOPE
 	if (pl->slope) {
 		// Potentially override other stuff for now cus we're mean. :< But draw a slope plane!
-		// I copied ZDoom's code and adapted it to SRB2... -Red
+		// I copied ZDoom's code and adapted it to SRB2... -fickle
 		floatv3_t p, m, n;
 		float ang;
 		float vx, vy, vz;
-		float fudge;
 		// compiler complains when P_GetZAt is used in FLOAT_TO_FIXED directly
 		// use this as a temp var to store P_GetZAt's return value each time
 		fixed_t temp;
+		// Okay, look, don't ask me why this works, but without this setup there's a disgusting-looking misalignment with the textures. -fickle
+		const float fudge = ((1<<nflatshiftup)+1.0f)/(1<<nflatshiftup);
 
-		xoffs &= ((1 << (32-nflatshiftup))-1);
-		yoffs &= ((1 << (32-nflatshiftup))-1);
+		angle_t hack = (pl->plangle & (ANGLE_90-1));
 
-		xoffs -= (pl->slope->o.x + (1 << (31-nflatshiftup))) & ~((1 << (32-nflatshiftup))-1);
-		yoffs += (pl->slope->o.y + (1 << (31-nflatshiftup))) & ~((1 << (32-nflatshiftup))-1);
+		if (hack)
+		{
+			/*
+			Essentially: We can't & the components along the regular axes when the plane is rotated.
+			This is because the distance on each regular axis in order to loop is different.
+			We rotate them, & the components, add them together, & them again, and then rotate them back.
+			These three seperate & operations are done per axis in order to prevent overflows.
+			toast 10/04/17
+			---
+			...of coooourse, this still isn't perfect. but it looks... merely kind of grody, rather than
+			completely wrong? idk. i'm just backporting this to kart right now. if anyone else wants to
+			ever try dig around: it's drifting towards 0,0, and no, multiplying by fudge doesn't fix it.
+			toast 27/09/18
+			*/
 
-		// Okay, look, don't ask me why this works, but without this setup there's a disgusting-looking misalignment with the textures. -Red
-		fudge = ((1<<nflatshiftup)+1.0f)/(1<<nflatshiftup);
+			const fixed_t cosinecomponent = FINECOSINE(hack>>ANGLETOFINESHIFT);
+			const fixed_t sinecomponent = FINESINE(hack>>ANGLETOFINESHIFT);
+
+			const fixed_t modmask = ((1 << (32-nflatshiftup)) - 1);
+
+			fixed_t ox = (FixedMul(pl->slope->o.x,cosinecomponent) & modmask) - (FixedMul(pl->slope->o.y,sinecomponent) & modmask);
+			fixed_t oy = (-FixedMul(pl->slope->o.x,sinecomponent) & modmask) - (FixedMul(pl->slope->o.y,cosinecomponent) & modmask);
+
+			temp = ox & modmask;
+			oy &= modmask;
+			ox = FixedMul(temp,cosinecomponent)+FixedMul(oy,-sinecomponent); // negative sine for opposite direction
+			oy = -FixedMul(temp,-sinecomponent)+FixedMul(oy,cosinecomponent);
+
+			temp = xoffs;
+			xoffs = (FixedMul(temp,cosinecomponent) & modmask) + (FixedMul(yoffs,sinecomponent) & modmask);
+			yoffs = (-FixedMul(temp,sinecomponent) & modmask) + (FixedMul(yoffs,cosinecomponent) & modmask);
+
+			temp = xoffs & modmask;
+			yoffs &= modmask;
+			xoffs = FixedMul(temp,cosinecomponent)+FixedMul(yoffs,-sinecomponent); // ditto
+			yoffs = -FixedMul(temp,-sinecomponent)+FixedMul(yoffs,cosinecomponent);
+
+			xoffs -= (pl->slope->o.x - ox);
+			yoffs += (pl->slope->o.y + oy);
+		}
+		else
+		{
+			xoffs &= ((1 << (32-nflatshiftup))-1);
+			yoffs &= ((1 << (32-nflatshiftup))-1);
+			xoffs -= (pl->slope->o.x + (1 << (31-nflatshiftup))) & ~((1 << (32-nflatshiftup))-1);
+			yoffs += (pl->slope->o.y + (1 << (31-nflatshiftup))) & ~((1 << (32-nflatshiftup))-1);
+		}
 
 		xoffs = (fixed_t)(xoffs*fudge);
 		yoffs = (fixed_t)(yoffs/fudge);

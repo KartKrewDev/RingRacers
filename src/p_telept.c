@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -95,10 +95,6 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		thing->player->starposttime = starposttime;
 		thing->player->starpostangle = starpostangle;
 		thing->player->starpostnum = starpostnum;
-
-		// Reset map starposts for the player's new info.
-		P_ResetStarposts();
-		P_ClearStarPost(starpostnum);
 
 		P_ResetPlayer(thing->player);
 		P_SetPlayerMobjState(thing, S_KART_STND1); // SRB2kart - was S_PLAY_STND

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -36,7 +36,7 @@ extern boolean playeringame[MAXPLAYERS];
 // ======================================
 
 // demoplaying back and demo recording
-extern boolean demoplayback, titledemo, demorecording, timingdemo;
+extern boolean demoplayback, titledemo, fromtitledemo, demorecording, timingdemo;
 
 // Quit after playing a demo from cmdline.
 extern boolean singledemo;
@@ -54,13 +54,18 @@ extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard di
 extern INT16 rw_maximums[NUM_WEAPONS];
 
 // used in game menu
-extern consvar_t cv_crosshair, cv_crosshair2, cv_crosshair3, cv_crosshair4;
-extern consvar_t cv_invertmouse, cv_alwaysfreelook, cv_mousemove;
+extern consvar_t cv_chatwidth, cv_chatnotifications, cv_chatheight, cv_chattime, cv_consolechat, cv_chatspamprotection, cv_chatbacktint;
+//extern consvar_t cv_crosshair, cv_crosshair2, cv_crosshair3, cv_crosshair4;
+extern consvar_t cv_invertmouse/*, cv_alwaysfreelook, cv_chasefreelook, cv_mousemove*/;
+extern consvar_t cv_invertmouse2/*, cv_alwaysfreelook2, cv_chasefreelook2, cv_mousemove2*/;
+extern consvar_t cv_useranalog, cv_useranalog2, cv_useranalog3, cv_useranalog4;
+extern consvar_t cv_analog, cv_analog2, cv_analog3, cv_analog4;
 extern consvar_t cv_turnaxis,cv_moveaxis,cv_brakeaxis,cv_aimaxis,cv_lookaxis,cv_fireaxis,cv_driftaxis;
 extern consvar_t cv_turnaxis2,cv_moveaxis2,cv_brakeaxis2,cv_aimaxis2,cv_lookaxis2,cv_fireaxis2,cv_driftaxis2;
 extern consvar_t cv_turnaxis3,cv_moveaxis3,cv_brakeaxis3,cv_aimaxis3,cv_lookaxis3,cv_fireaxis3,cv_driftaxis3;
 extern consvar_t cv_turnaxis4,cv_moveaxis4,cv_brakeaxis4,cv_aimaxis4,cv_lookaxis4,cv_fireaxis4,cv_driftaxis4;
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
+extern consvar_t cv_splitplayers;
 
 typedef enum
 {
@@ -106,7 +111,7 @@ extern boolean camspin, camspin2, camspin3, camspin4; // SRB2Kart
 void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo);
 void G_DoReborn(INT32 playernum);
 void G_PlayerReborn(INT32 player);
-void G_InitNew(UINT8 pultmode, const char *mapname, boolean resetplayer,
+void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer,
 	boolean skipprecutscene);
 char *G_BuildMapTitle(INT32 mapnum);
 
@@ -118,7 +123,7 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost);
 
 // Can be called by the startup code or M_Responder.
 // A normal game starts at map 1, but a warp test can start elsewhere
-void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar,
+void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar,
 	UINT8 ssplayers, boolean FLS);
 void G_DoLoadLevel(boolean resetplayer);
 
@@ -167,22 +172,35 @@ void G_WriteMetalTic(mobj_t *metal);
 void G_SaveMetal(UINT8 **buffer);
 void G_LoadMetal(UINT8 **buffer);
 
+// Your naming conventions are stupid and useless.
+// There is no conflict here.
+typedef struct demoghost {
+	UINT8 checksum[16];
+	UINT8 *buffer, *p, color;
+	UINT16 version;
+	mobj_t oldmo, *mo;
+	struct demoghost *next;
+} demoghost;
+extern demoghost *ghosts;
+
 void G_DoPlayDemo(char *defdemoname);
 void G_TimeDemo(const char *name);
 void G_AddGhost(char *defdemoname);
+void G_UpdateStaffGhostName(lumpnum_t l);
 void G_DoPlayMetal(void);
 void G_DoneLevelLoad(void);
 void G_StopMetalDemo(void);
 ATTRNORETURN void FUNCNORETURN G_StopMetalRecording(void);
 void G_StopDemo(void);
 boolean G_CheckDemoStatus(void);
-char *G_DemoPlayerName(char *defdemoname);
 
 boolean G_IsSpecialStage(INT32 mapnum);
 boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
 boolean G_BattleGametype(void);
+INT16 G_SometimesGetDifferentGametype(void);
+UINT8 G_GetGametypeColor(INT16 gt);
 boolean G_RaceGametype(void);
 boolean G_TagGametype(void);
 void G_ExitLevel(void);
@@ -190,6 +208,7 @@ void G_NextLevel(void);
 void G_Continue(void);
 void G_UseContinue(void);
 void G_AfterIntermission(void);
+void G_EndGame(void); // moved from y_inter.c/h and renamed
 
 void G_Ticker(boolean run);
 boolean G_Responder(event_t *ev);
@@ -236,6 +255,7 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 // Don't split up TOL handling
 INT16 G_TOLFlag(INT32 pgametype);
 
-INT16 G_RandMap(INT16 tolflags, INT16 pprevmap, boolean dontadd, boolean ignorebuffer);
+INT16 G_RandMap(INT16 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
+void G_AddMapToBuffer(INT16 map);
 
 #endif

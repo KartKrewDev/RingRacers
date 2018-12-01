@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -38,6 +38,10 @@ typedef struct
 extern sprcache_t *spritecachedinfo;
 
 extern lighttable_t *colormaps;
+extern UINT8 *encoremap;
+#ifdef HASINVERT
+extern UINT8 invertmap[256];
+#endif
 
 // Boom colormaps.
 // Had to put a limit on colormaps :(
@@ -107,8 +111,5 @@ extern angle_t rw_normalangle;
 
 // angle to line origin
 extern angle_t rw_angle1;
-
-// Segs count?
-extern size_t sscount;
 
 #endif

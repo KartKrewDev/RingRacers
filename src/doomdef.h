@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -140,19 +140,19 @@
 extern FILE *logstream;
 #endif
 
-#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
+//#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSION    104 // Game version
-#define SUBVERSION 8 // more precise version number
+#define VERSION    0 // Game version
+#define SUBVERSION 0 // more precise version number
 #define VERSIONSTRING "Development EXE"
-#define VERSIONSTRINGW "v1.4.8"
+#define VERSIONSTRINGW L"Development EXE"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-#define VERSION    104 // Game version
-#define SUBVERSION 8 // more precise version number
-#define VERSIONSTRING "DevEXE v1.4.8"
-#define VERSIONSTRINGW L"v1.4.8"
+#define VERSION    100 // Game version
+#define SUBVERSION 2 // more precise version number
+#define VERSIONSTRING "v1.0.2"
+#define VERSIONSTRINGW L"v1.0.2"
 // Hey! If you change this, add 1 to the MODVERSION below!
 // Otherwise we can't force updates!
 #endif
@@ -160,6 +160,9 @@ extern FILE *logstream;
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
 //#define USE_PATCH_DTA
+
+// Kart has it's own, as well.
+#define USE_PATCH_KART
 
 // Modification options
 // If you want to take advantage of the Master Server's ability to force clients to update
@@ -173,7 +176,7 @@ extern FILE *logstream;
 // Please change to apply to your modification (we don't want everyone asking where your mod is on SRB2.org!).
 #define UPDATE_ALERT_STRING \
 "A new update is available for SRB2Kart.\n"\
-"Please visit the forums on SRB2.org to download it.\n"\
+"Please visit mb.srb2.org to download it.\n"\
 "\n"\
 "You are using version: %s\n"\
 "The newest version is: %s\n"\
@@ -190,7 +193,7 @@ extern FILE *logstream;
 // Generally less filled with newlines, since Windows gives you lots more room to work with.
 #define UPDATE_ALERT_STRING_CONSOLE \
 "A new update is available for SRB2Kart.\n"\
-"Please visit the forums on SRB2.org to download it.\n"\
+"Please visit mb.srb2.org to download it.\n"\
 "\n"\
 "You are using version: %s\n"\
 "The newest version is: %s\n"\
@@ -208,13 +211,14 @@ extern FILE *logstream;
 // The Modification ID; must be obtained from Rob ( https://mb.srb2.org/private.php?do=newpm&u=546 ).
 // DO NOT try to set this otherwise, or your modification will be unplayable through the Master Server.
 // "12" is the default mod ID for version 2.1
-#define MODID 12
+// "17" is the 2.1 Kart's mod ID
+#define MODID 17
 
 // The Modification Version, starting from 1. Do not follow your version string for this,
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
 // Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
-#define MODVERSION 1
+#define MODVERSION 2
 
 // =========================================================================
 
@@ -229,69 +233,69 @@ extern FILE *logstream;
 typedef enum
 {
 	SKINCOLOR_NONE = 0,
-	SKINCOLOR_IVORY,
 	SKINCOLOR_WHITE,
 	SKINCOLOR_SILVER,
-	SKINCOLOR_CLOUDY,
 	SKINCOLOR_GREY,
-	SKINCOLOR_DARKGREY,
+	SKINCOLOR_NICKEL,
 	SKINCOLOR_BLACK,
-	SKINCOLOR_SALMON,
-	SKINCOLOR_PINK,
-	SKINCOLOR_LIGHTRED,
-	SKINCOLOR_SHINYRED,
-	SKINCOLOR_RED,
-	SKINCOLOR_DARKPINK,
-	SKINCOLOR_DARKRED,
-	SKINCOLOR_DAWN,
-	SKINCOLOR_ORANGE,
-	SKINCOLOR_SHINYORANGE,
-	SKINCOLOR_DARKORANGE,
-	SKINCOLOR_GOLDENBROWN,
-	SKINCOLOR_ROSEWOOD,
-	SKINCOLOR_DARKROSEWOOD,
 	SKINCOLOR_SEPIA,
 	SKINCOLOR_BEIGE,
 	SKINCOLOR_BROWN,
 	SKINCOLOR_LEATHER,
-	SKINCOLOR_YELLOW,
+	SKINCOLOR_SALMON,
+	SKINCOLOR_PINK,
+	SKINCOLOR_ROSE,
+	SKINCOLOR_RUBY,
+	SKINCOLOR_RASPBERRY,
+	SKINCOLOR_RED,
+	SKINCOLOR_CRIMSON,
+	SKINCOLOR_KETCHUP,
+	SKINCOLOR_DAWN,
+	SKINCOLOR_CREAMSICLE,
+	SKINCOLOR_ORANGE,
+	SKINCOLOR_PUMPKIN,
+	SKINCOLOR_ROSEWOOD,
+	SKINCOLOR_BURGUNDY,
+	SKINCOLOR_TANGERINE,
 	SKINCOLOR_PEACH,
-	SKINCOLOR_LIGHTORANGE,
 	SKINCOLOR_CARAMEL,
 	SKINCOLOR_GOLD,
-	SKINCOLOR_SHINYCARAMEL,
+	SKINCOLOR_BRONZE,
+	SKINCOLOR_YELLOW,
+	SKINCOLOR_MUSTARD,
+	SKINCOLOR_OLIVE,
 	SKINCOLOR_VOMIT,
 	SKINCOLOR_GARDEN,
-	SKINCOLOR_LIGHTARMY,
-	SKINCOLOR_ARMY,
+	SKINCOLOR_LIME,
+	SKINCOLOR_TEA,
 	SKINCOLOR_PISTACHIO,
 	SKINCOLOR_ROBOHOOD,
-	SKINCOLOR_OLIVE,
-	SKINCOLOR_DARKARMY,
-	SKINCOLOR_LIGHTGREEN,
-	SKINCOLOR_UGLYGREEN,
-	SKINCOLOR_NEONGREEN,
+	SKINCOLOR_MOSS,
+	SKINCOLOR_MINT,
 	SKINCOLOR_GREEN,
-	SKINCOLOR_DARKGREEN,
+	SKINCOLOR_PINETREE,
+	SKINCOLOR_EMERALD,
 	SKINCOLOR_SWAMP,
-	SKINCOLOR_FROST,
-	SKINCOLOR_SLATE,
-	SKINCOLOR_LIGHTBLUE,
-	SKINCOLOR_CYAN,
-	SKINCOLOR_CERULEAN,
-	SKINCOLOR_TURQUOISE,
+	SKINCOLOR_DREAM,
+	SKINCOLOR_AQUA,
 	SKINCOLOR_TEAL,
-	SKINCOLOR_STEELBLUE,
-	SKINCOLOR_BLUE,
-	SKINCOLOR_SHINYBLUE,
+	SKINCOLOR_CYAN,
+	SKINCOLOR_JAWZ, // Oni's torment
+	SKINCOLOR_CERULEAN,
 	SKINCOLOR_NAVY,
-	SKINCOLOR_DARKBLUE,
-	SKINCOLOR_JETBLACK,
-	SKINCOLOR_LILAC,
+	SKINCOLOR_SLATE,
+	SKINCOLOR_STEEL,
+	SKINCOLOR_JET,
+	SKINCOLOR_SAPPHIRE, // sweet mother, i cannot weave – slender aphrodite has overcome me with longing for a girl
+	SKINCOLOR_PERIWINKLE,
+	SKINCOLOR_BLUE,
+	SKINCOLOR_BLUEBERRY,
+	SKINCOLOR_DUSK,
 	SKINCOLOR_PURPLE,
 	SKINCOLOR_LAVENDER,
 	SKINCOLOR_BYZANTIUM,
-	SKINCOLOR_INDIGO,
+	SKINCOLOR_POMEGRANATE,
+	SKINCOLOR_LILAC,
 
 	// Careful! MAXSKINCOLORS cannot be greater than 0x40 -- Which it is now.
 	MAXSKINCOLORS,
@@ -434,6 +438,7 @@ extern INT32 cv_debug;
 
 // Modifier key variables, accessible anywhere
 extern UINT8 shiftdown, ctrldown, altdown;
+extern boolean capslock;
 
 // if we ever make our alloc stuff...
 #define ZZ_Alloc(x) Z_Malloc(x, PU_STATIC, NULL)
@@ -539,5 +544,18 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Handle touching sector specials in P_PlayerAfterThink instead of P_PlayerThink.
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
 #define SECTORSPECIALSAFTERTHINK
+
+/// SRB2Kart: Camera always has noclip.
+#define NOCLIPCAM
+
+/// SRB2Kart: MIDI support is shitty and busted and we don't want it, lets throw it behind a define
+#define NO_MIDI
+
+/// FINALLY some real clipping that doesn't make walls dissappear AND speeds the game up
+/// (that was the original comment from SRB2CB, sadly it is a lie and actually slows game down)
+/// on the bright side it fixes some weird issues with translucent walls
+/// \note	SRB2CB port.
+///      	SRB2CB itself ported this from PrBoom+
+#define NEWCLIP
 
 #endif // __DOOMDEF__

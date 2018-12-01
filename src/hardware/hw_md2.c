@@ -33,6 +33,7 @@
 #include "hw_drv.h"
 #include "hw_light.h"
 #include "hw_md2.h"
+#include "../d_main.h"
 #include "../r_bsp.h"
 #include "../r_main.h"
 #include "../m_misc.h"
@@ -41,6 +42,7 @@
 #include "../r_things.h"
 #include "../r_draw.h"
 #include "../p_tick.h"
+#include "../k_kart.h" // colortranslations
 
 #include "hw_main.h"
 #include "../v_video.h"
@@ -67,6 +69,10 @@
  #if PNG_LIBPNG_VER < 100207
  //#undef HAVE_PNG
  #endif
+#endif
+
+#ifndef errno
+#include "errno.h"
 #endif
 
 #define NUMVERTEXNORMALS 162
@@ -290,7 +296,8 @@ static md2_model_t *md2_readModel(const char *filename)
 	if (model == NULL)
 		return 0;
 
-	file = fopen(filename, "rb");
+	//Filename checking fixed ~Monster Iestyn and Golden
+	file = fopen(va("%s"PATHSEP"%s", srb2home, filename), "rb");
 	if (!file)
 	{
 		free(model);
@@ -300,8 +307,8 @@ static md2_model_t *md2_readModel(const char *filename)
 	// initialize model and read header
 
 	if (fread(&model->header, sizeof (model->header), 1, file) != 1
-		|| model->header.magic !=
-		(INT32)(('2' << 24) + ('P' << 16) + ('D' << 8) + 'I'))
+		|| model->header.magic != MD2_IDENT
+		|| model->header.version != MD2_VERSION)
 	{
 		fclose(file);
 		free(model);
@@ -315,6 +322,7 @@ static md2_model_t *md2_readModel(const char *filename)
 	{ \
 		CONS_Alert(CONS_ERROR, "md2_readModel: %s has too many " msgname " (# found: %d, maximum: %d)\n", filename, field, max); \
 		md2_freeModel (model); \
+		fclose(file); \
 		return 0; \
 	}
 
@@ -336,6 +344,7 @@ static md2_model_t *md2_readModel(const char *filename)
 			fread(model->skins, sizeof (md2_skin_t), model->header.numSkins, file))
 		{
 			md2_freeModel (model);
+			fclose(file);
 			return 0;
 		}
 	}
@@ -349,6 +358,7 @@ static md2_model_t *md2_readModel(const char *filename)
 			fread(model->texCoords, sizeof (md2_textureCoordinate_t), model->header.numTexCoords, file))
 		{
 			md2_freeModel (model);
+			fclose(file);
 			return 0;
 		}
 	}
@@ -362,6 +372,7 @@ static md2_model_t *md2_readModel(const char *filename)
 			fread(model->triangles, sizeof (md2_triangle_t), model->header.numTriangles, file))
 		{
 			md2_freeModel (model);
+			fclose(file);
 			return 0;
 		}
 	}
@@ -374,6 +385,7 @@ static md2_model_t *md2_readModel(const char *filename)
 		if (!model->frames)
 		{
 			md2_freeModel (model);
+			fclose(file);
 			return 0;
 		}
 
@@ -387,6 +399,7 @@ static md2_model_t *md2_readModel(const char *filename)
 				fread(frame, 1, model->header.frameSize, file))
 			{
 				md2_freeModel (model);
+				fclose(file);
 				return 0;
 			}
 
@@ -412,6 +425,7 @@ static md2_model_t *md2_readModel(const char *filename)
 			fread(model->glCommandBuffer, sizeof (INT32), model->header.numGlCommands, file))
 		{
 			md2_freeModel (model);
+			fclose(file);
 			return 0;
 		}
 	}
@@ -479,7 +493,8 @@ static GrTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 #endif
 #endif
 	png_FILE_p png_FILE;
-	char *pngfilename = va("md2/%s", filename);
+	//Filename checking fixed ~Monster Iestyn and Golden
+	char *pngfilename = va("%s"PATHSEP"md2"PATHSEP"%s", srb2home, filename);
 
 	FIL_ForceExtension(pngfilename, ".png");
 	png_FILE = fopen(pngfilename, "rb");
@@ -607,7 +622,8 @@ static GrTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
 	size_t pw, ph, size, ptr = 0;
 	INT32 ch, rep;
 	FILE *file;
-	char *pcxfilename = va("md2/%s", filename);
+	//Filename checking fixed ~Monster Iestyn and Golden
+	char *pcxfilename = va("%s"PATHSEP"md2"PATHSEP"%s", srb2home, filename);
 
 	FIL_ForceExtension(pcxfilename, ".pcx");
 	file = fopen(pcxfilename, "rb");
@@ -796,12 +812,13 @@ void HWR_InitMD2(void)
 		md2_models[i].error = false;
 	}
 
-	// read the kmd2.dat file
-	f = fopen("kmd2.dat", "rt");
+	// read the md2.dat file
+	//Filename checking fixed ~Monster Iestyn and Golden
+	f = fopen(va("%s"PATHSEP"%s", srb2home, "kmd2.dat"), "rt");
 
 	if (!f)
 	{
-		CONS_Printf("%s", M_GetText("Error while loading kmd2.dat\n"));
+		CONS_Printf("%s %s\n", M_GetText("Error while loading kmd2.dat:"), strerror(errno));
 		nomd2s = true;
 		return;
 	}
@@ -862,8 +879,9 @@ void HWR_AddPlayerMD2(int skin) // For MD2's that were added after startup
 
 	CONS_Printf("AddPlayerMD2()...\n");
 
-	// read the kmd2.dat file
-	f = fopen("kmd2.dat", "rt");
+	// read the md2.dat file
+	//Filename checking fixed ~Monster Iestyn and Golden
+	f = fopen(va("%s"PATHSEP"%s", srb2home, "kmd2.dat"), "rt");
 
 	if (!f)
 	{
@@ -907,8 +925,9 @@ void HWR_AddSpriteMD2(size_t spritenum) // For MD2s that were added after startu
 	if (spritenum == SPR_PLAY) // Handled already NEWMD2: Per sprite, per-skin check
 		return;
 
-	// Read the kmd2.dat file
-	f = fopen("kmd2.dat", "rt");
+	// Read the md2.dat file
+	//Filename checking fixed ~Monster Iestyn and Golden
+	f = fopen(va("%s"PATHSEP"%s", srb2home, "kmd2.dat"), "rt");
 
 	if (!f)
 	{
@@ -936,8 +955,18 @@ spritemd2found:
 	fclose(f);
 }
 
+// Define for getting accurate color brightness readings according to how the human eye sees them.
+// https://en.wikipedia.org/wiki/Relative_luminance
+// 0.2126 to red
+// 0.7152 to green
+// 0.0722 to blue
+// (See this same define in k_kart.c!)
+#define SETBRIGHTNESS(brightness,r,g,b) \
+	brightness = (UINT8)(((1063*((UINT16)r)/5000) + (3576*((UINT16)g)/5000) + (361*((UINT16)b)/5000)) / 3)
+
 static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, INT32 skinnum, skincolors_t color)
 {
+	UINT8 i;
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
@@ -963,252 +992,32 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	image = gpatch->mipmap.grInfo.data;
 	blendimage = blendgpatch->mipmap.grInfo.data;
 
-	switch (color)
+	// Average all of the translation's colors
 	{
-		case SKINCOLOR_IVORY:
-			blendcolor = V_GetColor(0);
-			break;
-		case SKINCOLOR_WHITE:
-			blendcolor = V_GetColor(3);
-			break;
-		case SKINCOLOR_SILVER:
-			blendcolor = V_GetColor(7);
-			break;
-		case SKINCOLOR_CLOUDY:
-			blendcolor = V_GetColor(13);
-			break;
-		case SKINCOLOR_GREY:
-			blendcolor = V_GetColor(15);
-			break;
-		case SKINCOLOR_DARKGREY:
-			blendcolor = V_GetColor(23);
-			break;
-		case SKINCOLOR_BLACK:
-			blendcolor = V_GetColor(27);
-			break;
-		case SKINCOLOR_SALMON:
-			blendcolor = V_GetColor(123);
-			break;
-		case SKINCOLOR_PINK:
-			blendcolor = V_GetColor(147);
-			break;
-		case SKINCOLOR_LIGHTRED:
-			blendcolor = V_GetColor(127);
-			break;
-		case SKINCOLOR_SHINYRED:
-			blendcolor = V_GetColor(130);
-			break;
-		case SKINCOLOR_RED:
-			blendcolor = V_GetColor(132);
-			break;
-		case SKINCOLOR_DARKPINK:
-			blendcolor = V_GetColor(151);
-			break;
-		case SKINCOLOR_DARKRED:
-			blendcolor = V_GetColor(139);
-			break;
-		case SKINCOLOR_DAWN:
-			blendcolor = V_GetColor(89);
-			break;
-		case SKINCOLOR_ORANGE:
-			blendcolor = V_GetColor(87);
-			break;
-		case SKINCOLOR_SHINYORANGE:
-			blendcolor = V_GetColor(91);
-			break;
-		case SKINCOLOR_DARKORANGE:
-			blendcolor = V_GetColor(95);
-			break;
-		case SKINCOLOR_GOLDENBROWN:
-			blendcolor = V_GetColor(119);
-			break;
-		case SKINCOLOR_ROSEWOOD:
-			blendcolor = V_GetColor(155);
-			break;
-		case SKINCOLOR_DARKROSEWOOD:
-			blendcolor = V_GetColor(159);
-			break;
-		case SKINCOLOR_SEPIA:
-			blendcolor = V_GetColor(37);
-			break;
-		case SKINCOLOR_BEIGE:
-			blendcolor = V_GetColor(39);
-			break;
-		case SKINCOLOR_BROWN:
-			blendcolor = V_GetColor(55);
-			break;
-		case SKINCOLOR_LEATHER:
-			blendcolor = V_GetColor(61);
-			break;
-		case SKINCOLOR_YELLOW:
-			blendcolor = V_GetColor(104);
-			break;
-		case SKINCOLOR_PEACH:
-			blendcolor = V_GetColor(71);
-			break;
-		case SKINCOLOR_LIGHTORANGE:
-			blendcolor = V_GetColor(83);
-			break;
-		case SKINCOLOR_CARAMEL:
-			blendcolor = V_GetColor(79);
-			break;
-		case SKINCOLOR_GOLD:
-			blendcolor = V_GetColor(115);
-			break;
-		case SKINCOLOR_SHINYCARAMEL:
-			blendcolor = V_GetColor(78);
-			break;
-		case SKINCOLOR_VOMIT:
-			blendcolor = V_GetColor(114);
-			break;
-		case SKINCOLOR_GARDEN:
-			blendcolor = V_GetColor(179);
-			break;
-		case SKINCOLOR_LIGHTARMY:
-			blendcolor = V_GetColor(177);
-			break;
-		case SKINCOLOR_ARMY:
-			blendcolor = V_GetColor(179);
-			break;
-		case SKINCOLOR_PISTACHIO:
-			blendcolor = V_GetColor(166);
-			break;
-		case SKINCOLOR_ROBOHOOD:
-			blendcolor = V_GetColor(182);
-			break;
-		case SKINCOLOR_OLIVE:
-			blendcolor = V_GetColor(108);
-			break;
-		case SKINCOLOR_DARKARMY:
-			blendcolor = V_GetColor(183);
-			break;
-		case SKINCOLOR_LIGHTGREEN:
-			blendcolor = V_GetColor(163);
-			break;
-		case SKINCOLOR_UGLYGREEN:
-			blendcolor = V_GetColor(185);
-			break;
-		case SKINCOLOR_NEONGREEN:
-			blendcolor = V_GetColor(187);
-			break;
-		case SKINCOLOR_GREEN:
-			blendcolor = V_GetColor(167);
-			break;
-		case SKINCOLOR_DARKGREEN:
-			blendcolor = V_GetColor(171);
-			break;
-		case SKINCOLOR_SWAMP:
-			blendcolor = V_GetColor(190);
-			break;
-		case SKINCOLOR_FROST:
-			blendcolor = V_GetColor(215);
-			break;
-		case SKINCOLOR_SLATE:
-			blendcolor = V_GetColor(201);
-			break;
-		case SKINCOLOR_LIGHTBLUE:
-			blendcolor = V_GetColor(227);
-			break;
-		case SKINCOLOR_CYAN:
-			blendcolor = V_GetColor(213);
-			break;
-		case SKINCOLOR_CERULEAN:
-			blendcolor = V_GetColor(217);
-			break;
-		case SKINCOLOR_TURQUOISE:
-			blendcolor = V_GetColor(220);
-			break;
-		case SKINCOLOR_TEAL:
-			blendcolor = V_GetColor(221);
-			break;
-		case SKINCOLOR_STEELBLUE:
-			blendcolor = V_GetColor(203);
-			break;
-		case SKINCOLOR_BLUE:
-			blendcolor = V_GetColor(231);
-			break;
-		case SKINCOLOR_SHINYBLUE:
-			blendcolor = V_GetColor(234);
-			break;
-		case SKINCOLOR_NAVY:
-			blendcolor = V_GetColor(206);
-			break;
-		case SKINCOLOR_DARKBLUE:
-			blendcolor = V_GetColor(238);
-			break;
-		case SKINCOLOR_JETBLACK:
-			blendcolor = V_GetColor(207);
-			break;
-		case SKINCOLOR_LILAC:
-			blendcolor = V_GetColor(123);
-			break;
-		case SKINCOLOR_PURPLE:
-			blendcolor = V_GetColor(195);
-			break;
-		case SKINCOLOR_LAVENDER:
-			blendcolor = V_GetColor(251);
-			break;
-		case SKINCOLOR_BYZANTIUM:
-			blendcolor = V_GetColor(254);
-			break;
-		case SKINCOLOR_INDIGO:
-			blendcolor = V_GetColor(199);
-			break;
+		const UINT8 div = 6;
+		const UINT8 start = 4;
+		UINT32 r, g, b;
 
-		case SKINCOLOR_SUPER1:
-			blendcolor = V_GetColor(97);
-			break;
-		case SKINCOLOR_SUPER2:
-			blendcolor = V_GetColor(100);
-			break;
-		case SKINCOLOR_SUPER3:
-			blendcolor = V_GetColor(103);
-			break;
-		case SKINCOLOR_SUPER4:
-			blendcolor = V_GetColor(113);
-			break;
-		case SKINCOLOR_SUPER5:
-			blendcolor = V_GetColor(116);
-			break;
+		blendcolor = V_GetColor(colortranslations[color][start]);
+		r = (UINT32)(blendcolor.s.red*blendcolor.s.red);
+		g = (UINT32)(blendcolor.s.green*blendcolor.s.green);
+		b = (UINT32)(blendcolor.s.blue*blendcolor.s.blue);
 
-		case SKINCOLOR_TSUPER1:
-			blendcolor = V_GetColor(81);
-			break;
-		case SKINCOLOR_TSUPER2:
-			blendcolor = V_GetColor(82);
-			break;
-		case SKINCOLOR_TSUPER3:
-			blendcolor = V_GetColor(84);
-			break;
-		case SKINCOLOR_TSUPER4:
-			blendcolor = V_GetColor(85);
-			break;
-		case SKINCOLOR_TSUPER5:
-			blendcolor = V_GetColor(87);
-			break;
+		for (i = 1; i < div; i++)
+		{
+			RGBA_t nextcolor = V_GetColor(colortranslations[color][start+i]);
+			r += (UINT32)(nextcolor.s.red*nextcolor.s.red);
+			g += (UINT32)(nextcolor.s.green*nextcolor.s.green);
+			b += (UINT32)(nextcolor.s.blue*nextcolor.s.blue);
+		}
 
-		case SKINCOLOR_KSUPER1:
-			blendcolor = V_GetColor(122);
-			break;
-		case SKINCOLOR_KSUPER2:
-			blendcolor = V_GetColor(123);
-			break;
-		case SKINCOLOR_KSUPER3:
-			blendcolor = V_GetColor(124);
-			break;
-		case SKINCOLOR_KSUPER4:
-			blendcolor = V_GetColor(125);
-			break;
-		case SKINCOLOR_KSUPER5:
-			blendcolor = V_GetColor(126);
-			break;
-		default:
-			blendcolor = V_GetColor(247);
-			break;
+		blendcolor.s.red = (UINT8)(FixedSqrt((r/div)<<FRACBITS)>>FRACBITS);
+		blendcolor.s.green = (UINT8)(FixedSqrt((g/div)<<FRACBITS)>>FRACBITS);
+		blendcolor.s.blue = (UINT8)(FixedSqrt((b/div)<<FRACBITS)>>FRACBITS);
 	}
 
-	// starman support, could theoretically support boss ones too
-	if (skinnum == TC_STARMAN)
+	// rainbow support, could theoretically support boss ones too
+	if (skinnum == TC_RAINBOW)
 	{
 		while (size--)
 		{
@@ -1221,20 +1030,20 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			{
 				UINT32 tempcolor;
 				UINT16 imagebright, blendbright, finalbright, colorbright;
-				imagebright = (image->s.red+image->s.green+image->s.blue)/3;
-				blendbright = (blendimage->s.red+blendimage->s.green+blendimage->s.blue)/3;
+				SETBRIGHTNESS(imagebright,image->s.red,image->s.green,image->s.blue);
+				SETBRIGHTNESS(blendbright,blendimage->s.red,blendimage->s.green,blendimage->s.blue);
 				// slightly dumb average between the blend image color and base image colour, usually one or the other will be fully opaque anyway
 				finalbright = (imagebright*(255-blendimage->s.alpha))/255 + (blendbright*blendimage->s.alpha)/255;
-				colorbright = (blendcolor.s.red+blendcolor.s.green+blendcolor.s.blue)/3;
+				SETBRIGHTNESS(colorbright,blendcolor.s.red,blendcolor.s.green,blendcolor.s.blue);
 
 				tempcolor = (finalbright*blendcolor.s.red)/colorbright;
-				tempcolor = min(255, max(0, tempcolor));
+				tempcolor = min(255, tempcolor);
 				cur->s.red = (UINT8)tempcolor;
 				tempcolor = (finalbright*blendcolor.s.green)/colorbright;
-				tempcolor = min(255, max(0, tempcolor));
+				tempcolor = min(255, tempcolor);
 				cur->s.green = (UINT8)tempcolor;
 				tempcolor = (finalbright*blendcolor.s.blue)/colorbright;
-				tempcolor = min(255, max(0, tempcolor));
+				tempcolor = min(255, tempcolor);
 				cur->s.blue = (UINT8)tempcolor;
 				cur->s.alpha = image->s.alpha;
 			}
@@ -1282,6 +1091,8 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 	return;
 }
+
+#undef SETBRIGHTNESS
 
 static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT32 skinnum, const UINT8 *colormap, skincolors_t color)
 {
@@ -1490,7 +1301,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 					if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 					{
 						if (spr->mobj->colorized)
-							skinnum = TC_STARMAN;
+							skinnum = TC_RAINBOW;
 						else
 						{
 							skinnum = (INT32)((skin_t*)spr->mobj->skin-skins);
@@ -1524,7 +1335,8 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		frame = (spr->mobj->frame & FF_FRAMEMASK) % md2->model->header.numFrames;
 		buff = md2->model->glCommandBuffer;
 		curr = &md2->model->frames[frame];
-		if (cv_grmd2.value == 1)
+#if 0
+		if (cv_grmd2.value == 1 && tics <= durs)
 		{
 			// frames are handled differently for states with FF_ANIMATE, so get the next frame differently for the interpolation
 			if (spr->mobj->frame & FF_ANIMATE)
@@ -1544,6 +1356,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 				}
 			}
 		}
+#endif
 
 		//Hurdler: it seems there is still a small problem with mobj angle
 		p.x = FIXED_TO_FLOAT(spr->mobj->x);
@@ -1576,6 +1389,18 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 		p.anglex = 0.0f;
+		p.anglez = 0.0f;
+		if (spr->mobj->standingslope)
+		{
+			fixed_t tempz = spr->mobj->standingslope->normal.z;
+			fixed_t tempy = spr->mobj->standingslope->normal.y;
+			fixed_t tempx = spr->mobj->standingslope->normal.x;
+			fixed_t tempangle = AngleFixed(R_PointToAngle2(0, 0, FixedSqrt(FixedMul(tempy, tempy) + FixedMul(tempz, tempz)), tempx));
+			p.anglez = FIXED_TO_FLOAT(tempangle);
+			tempangle = -AngleFixed(R_PointToAngle2(0, 0, tempz, tempy));
+			p.anglex = FIXED_TO_FLOAT(tempangle);
+		}
+
 
 		color[0] = Surf.FlatColor.s.red;
 		color[1] = Surf.FlatColor.s.green;

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -80,15 +80,17 @@ extern INT16 gametype;
 extern UINT8 splitscreen;
 extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
+extern boolean forceresetplayers, deferencoremode;
 
 // ========================================
 // Internal parameters for sound rendering.
 // ========================================
 
-extern boolean nomidimusic; // defined in d_main.c
-extern boolean nosound;
-extern boolean nodigimusic;
-extern boolean music_disabled;
+#ifdef NO_MIDI
+#define midi_disabled true
+#else
+extern boolean midi_disabled;
+#endif
 extern boolean sound_disabled;
 extern boolean digital_disabled;
 
@@ -240,6 +242,7 @@ typedef struct
 	UINT8 cutscenenum;    ///< Cutscene number to use, 0 for none.
 	INT16 countdown;      ///< Countdown until level end?
 	UINT16 palette;       ///< PAL lump to use on this map
+	UINT16 encorepal;     ///< PAL for encore mode
 	UINT8 numlaps;        ///< Number of laps in circuit mode, unless overridden.
 	SINT8 unlockrequired; ///< Is an unlockable required to play this level? -1 if no.
 	UINT8 levelselect;    ///< Is this map available in the level select? If so, which map list is it available in?
@@ -268,6 +271,7 @@ typedef struct
 #define LF_NOSSMUSIC      4 ///< Disable Super Sonic music
 #define LF_NORELOAD       8 ///< Don't reload level on death
 #define LF_NOZONE        16 ///< Don't include "ZONE" on level title
+#define LF_SECTIONRACE   32 ///< Section race level
 
 #define LF2_HIDEINMENU     1 ///< Hide in the multiplayer menu
 #define LF2_HIDEINSTATS    2 ///< Hide in the statistics screen
@@ -297,27 +301,26 @@ enum TypeOfLevel
 	TOL_2D     = 0x0100, ///< 2D
 	TOL_MARIO  = 0x0200, ///< Mario
 	TOL_NIGHTS = 0x0400, ///< NiGHTS
-	//TOL_ERZ3   = 0x0800, ///< ERZ3
+	TOL_TV     = 0x0800, ///< Midnight Channel specific: draw TV like overlay on HUD
 	TOL_XMAS   = 0x1000 ///< Christmas NiGHTS
 	//TOL_KART   = 0x4000  ///< Kart 32768
 };
 
 // Gametypes
-enum GameType
+enum GameType // SRB2Kart
 {
-	GT_COOP = 0, // also used in single player
-	GT_COMPETITION, // Classic "Race"
-	GT_RACE,
+	GT_RACE = 0, // also used in record attack
+	GT_MATCH, // battle, but renaming would be silly
+	NUMGAMETYPES,
 
-	GT_MATCH,
+	// TODO: This is *horrid*. Remove this hack ASAP.
+	// the following have been left in on account of just not wanting to deal with removing all the checks for them
+	GT_COOP,
+	GT_COMPETITION,
 	GT_TEAMMATCH,
-
 	GT_TAG,
 	GT_HIDEANDSEEK,
-
-	GT_CTF, // capture the flag
-
-	NUMGAMETYPES
+	GT_CTF
 };
 // If you alter this list, update gametype_cons_t in m_menu.c
 
@@ -409,12 +412,19 @@ extern UINT16 spacetimetics;
 extern UINT16 extralifetics;
 
 // SRB2kart
-extern INT32 bootime;
-extern INT32 boostealtime;
-extern INT32 mushroomtime;
+extern tic_t introtime;
+extern tic_t starttime;
+extern tic_t raceexittime;
+extern tic_t battleexittime;
+extern INT32 hyudorotime;
+extern INT32 stealtime;
+extern INT32 sneakertime;
 extern INT32 itemtime;
 extern INT32 comebacktime;
 extern INT32 bumptime;
+extern INT32 wipeoutslowtime;
+extern INT32 wantedreduce;
+extern INT32 wantedfrequency;
 
 extern UINT8 introtoplay;
 extern UINT8 creditscutscene;
@@ -442,18 +452,22 @@ extern INT32 cheats;
 // SRB2kart
 extern UINT8 gamespeed;
 extern boolean franticitems;
-extern boolean mirrormode;
+extern boolean encoremode, prevencoremode;
 extern boolean comeback;
 
-extern tic_t lightningcooldown;
-extern tic_t blueshellincoming;
-extern UINT8 blueshellplayer;
+extern SINT8 battlewanted[4];
+extern tic_t wantedcalcdelay;
+extern tic_t indirectitemcooldown;
+extern tic_t mapreset;
+extern UINT8 nospectategrief;
+extern boolean thwompsactive;
+extern SINT8 spbplace;
 
 extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;
 
-extern INT16 votelevels[4];
+extern INT16 votelevels[5][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
 
@@ -484,19 +498,17 @@ extern mapthing_t *redctfstarts[MAXPLAYERS]; // CTF
 
 #if defined (macintosh)
 #define DEBFILE(msg) I_OutputMsg(msg)
-extern FILE *debugfile;
 #else
 #define DEBUGFILE
 #ifdef DEBUGFILE
 #define DEBFILE(msg) { if (debugfile) { fputs(msg, debugfile); fflush(debugfile); } }
-extern FILE *debugfile;
 #else
 #define DEBFILE(msg) {}
-extern FILE *debugfile;
 #endif
 #endif
 
 #ifdef DEBUGFILE
+extern FILE *debugfile;
 extern INT32 debugload;
 #endif
 
@@ -519,6 +531,11 @@ extern boolean singletics;
 extern consvar_t cv_timetic; // display high resolution timer
 extern consvar_t cv_forceskin; // force clients to use the server's skin
 extern consvar_t cv_downloading; // allow clients to downloading WADs.
+extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
+extern consvar_t cv_jointimeout;
+#ifdef NEWPING
+extern consvar_t cv_maxping;
+#endif
 extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];

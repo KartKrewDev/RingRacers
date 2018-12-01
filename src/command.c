@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -28,6 +28,7 @@
 #include "byteptr.h"
 #include "p_saveg.h"
 #include "g_game.h" // for player_names
+#include "m_cond.h" // for encore mode
 #include "d_netcmd.h"
 #include "hu_stuff.h"
 #include "p_setup.h"
@@ -63,14 +64,12 @@ CV_PossibleValue_t CV_Unsigned[] = {{0, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 
 //SRB2kart
-CV_PossibleValue_t karthud_cons_t[] = {
-	{0, "Off"}, {1, "Default"}, {2, "SNES"}, {3, "MK64"},
-	{0, NULL}};
 CV_PossibleValue_t kartspeed_cons_t[] = {
 	{0, "Easy"}, {1, "Normal"}, {2, "Hard"},
 	{0, NULL}};
 
 #define COM_BUF_SIZE 8192 // command buffer size
+#define MAX_ALIAS_RECURSION 100 // max recursion allowed for aliases
 
 static INT32 com_wait; // one command per frame (for cmd sequences)
 
@@ -493,6 +492,7 @@ static void COM_ExecuteString(char *ptext)
 {
 	xcommand_t *cmd;
 	cmdalias_t *a;
+	static INT32 recursion = 0; // detects recursion and stops it if it goes too far
 
 	COM_TokenizeString(ptext);
 
@@ -505,6 +505,7 @@ static void COM_ExecuteString(char *ptext)
 	{
 		if (!stricmp(com_argv[0], cmd->name)) //case insensitive now that we have lower and uppercase!
 		{
+			recursion = 0;
 			cmd->function();
 			return;
 		}
@@ -515,10 +516,19 @@ static void COM_ExecuteString(char *ptext)
 	{
 		if (!stricmp(com_argv[0], a->name))
 		{
+			if (recursion > MAX_ALIAS_RECURSION)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Alias recursion cycle detected!\n"));
+				recursion = 0;
+				return;
+			}
+			recursion++;
 			COM_BufInsertText(a->value);
 			return;
 		}
 	}
+
+	recursion = 0;
 
 	// check cvars
 	// Hurdler: added at Ebola's request ;)
@@ -674,10 +684,11 @@ static void COM_Help_f(void)
 
 	if (COM_Argc() > 1)
 	{
-		cvar = CV_FindVar(COM_Argv(1));
+		const char *help = COM_Argv(1);
+		cvar = CV_FindVar(help);
 		if (cvar)
 		{
-			CONS_Printf(M_GetText("Variable %s:\n"), cvar->name);
+			CONS_Printf("\x82""Variable %s:\n", cvar->name);
 			CONS_Printf(M_GetText("  flags :"));
 			if (cvar->flags & CV_SAVE)
 				CONS_Printf("AUTOSAVE ");
@@ -692,43 +703,77 @@ static void COM_Help_f(void)
 			CONS_Printf("\n");
 			if (cvar->PossibleValue)
 			{
-				if (stricmp(cvar->PossibleValue[0].strvalue, "MIN") == 0)
+				if (!stricmp(cvar->PossibleValue[0].strvalue, "MIN") && !stricmp(cvar->PossibleValue[1].strvalue, "MAX"))
 				{
-					for (i = 1; cvar->PossibleValue[i].strvalue != NULL; i++)
-						if (!stricmp(cvar->PossibleValue[i].strvalue, "MAX"))
-							break;
-					CONS_Printf(M_GetText("  range from %d to %d\n"), cvar->PossibleValue[0].value,
-						cvar->PossibleValue[i].value);
-					CONS_Printf(M_GetText(" Current value: %d\n"), cvar->value);
+					CONS_Printf("  range from %d to %d\n", cvar->PossibleValue[0].value,
+						cvar->PossibleValue[1].value);
+					i = 2;
 				}
-				else
+
 				{
 					const char *cvalue = NULL;
-					CONS_Printf(M_GetText("  possible value : %s\n"), cvar->name);
+					//CONS_Printf(M_GetText("  possible value : %s\n"), cvar->name);
 					while (cvar->PossibleValue[i].strvalue)
 					{
-						CONS_Printf("    %-2d : %s\n", cvar->PossibleValue[i].value,
+						CONS_Printf("  %-2d : %s\n", cvar->PossibleValue[i].value,
 							cvar->PossibleValue[i].strvalue);
 						if (cvar->PossibleValue[i].value == cvar->value)
 							cvalue = cvar->PossibleValue[i].strvalue;
 						i++;
 					}
 					if (cvalue)
-						CONS_Printf(M_GetText(" Current value: %s\n"), cvalue);
+						CONS_Printf(" Current value: %s\n", cvalue);
 					else
-						CONS_Printf(M_GetText(" Current value: %d\n"), cvar->value);
+						CONS_Printf(" Current value: %d\n", cvar->value);
 				}
 			}
 			else
-				CONS_Printf(M_GetText(" Current value: %d\n"), cvar->value);
+				CONS_Printf(" Current value: %d\n", cvar->value);
 		}
 		else
-			CONS_Printf(M_GetText("No help for this command/variable\n"));
+		{
+			for (cmd = com_commands; cmd; cmd = cmd->next)
+			{
+				if (strcmp(cmd->name, help))
+					continue;
+
+				CONS_Printf("\x82""Command %s:\n", cmd->name);
+				CONS_Printf("  help is not available for commands");
+				CONS_Printf("\x82""\nCheck wiki.srb2.org for more or try typing <name> without arguments\n");
+				return;
+			}
+
+			CONS_Printf("No exact match, searching...\n");
+			// commands
+			CONS_Printf("\x82""Commands:\n");
+			for (cmd = com_commands; cmd; cmd = cmd->next)
+			{
+				if (!strstr(cmd->name, help))
+					continue;
+				CONS_Printf("%s ",cmd->name);
+				i++;
+			}
+
+			// variables
+			CONS_Printf("\x82""\nVariables:\n");
+			for (cvar = consvar_vars; cvar; cvar = cvar->next)
+			{
+				if ((cvar->flags & CV_NOSHOWHELP) || (!strstr(cvar->name, help)))
+					continue;
+				CONS_Printf("%s ", cvar->name);
+				i++;
+			}
+
+			CONS_Printf("\x82""\nCheck wiki.srb2.org for more or type help <command or variable>\n");
+
+			CONS_Debug(DBG_GAMELOGIC, "\x87Total : %d\n", i);
+		}
+		return;
 	}
-	else
+
 	{
 		// commands
-		CONS_Printf("\x82%s", M_GetText("Commands\n"));
+		CONS_Printf("\x82""Commands:\n");
 		for (cmd = com_commands; cmd; cmd = cmd->next)
 		{
 			CONS_Printf("%s ",cmd->name);
@@ -736,15 +781,16 @@ static void COM_Help_f(void)
 		}
 
 		// variables
-		CONS_Printf("\n\x82%s", M_GetText("Variables\n"));
+		CONS_Printf("\x82""\nVariables:\n");
 		for (cvar = consvar_vars; cvar; cvar = cvar->next)
 		{
-			if (!(cvar->flags & CV_NOSHOWHELP))
-				CONS_Printf("%s ", cvar->name);
+			if (cvar->flags & CV_NOSHOWHELP)
+				continue;
+			CONS_Printf("%s ", cvar->name);
 			i++;
 		}
 
-		CONS_Printf("\n\x82%s", M_GetText("Read help file for more or type help <command or variable>\n"));
+		CONS_Printf("\x82""\nCheck wiki.srb2.org for more or type help <command or variable>\n");
 
 		CONS_Debug(DBG_GAMELOGIC, "\x82Total : %d\n", i);
 	}
@@ -946,6 +992,9 @@ static consvar_t *CV_FindNetVar(UINT16 netid)
 		if (cvar->netid == netid)
 			return cvar;
 
+	if (netid == 44542) // ouch this hack
+		return &cv_karteliminatelast;
+
 	return NULL;
 }
 
@@ -1043,9 +1092,15 @@ const char *CV_CompleteVar(char *partial, INT32 skips)
 
 	// check variables
 	for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		if (!strncmp(partial, cvar->name, len))
-			if (!skips--)
-				return cvar->name;
+	{
+		if (cvar->flags & CV_NOSHOWHELP)
+			continue;
+		if (strncmp(partial, cvar->name, len))
+			continue;
+		if (skips--)
+			continue;
+		return cvar->name;
+	}
 
 	return NULL;
 }
@@ -1088,32 +1143,42 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 
 		if (var->PossibleValue[0].strvalue && !stricmp(var->PossibleValue[0].strvalue, "MIN")) // bounded cvar
 		{
+#define MINVAL 0
+#define MAXVAL 1
 			INT32 i;
-			// search for maximum
-			for (i = 1; var->PossibleValue[i].strvalue; i++)
-				if (!stricmp(var->PossibleValue[i].strvalue, "MAX"))
-					break;
+
 #ifdef PARANOIA
-			if (!var->PossibleValue[i].strvalue)
+			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
 #endif
 
-			if ((v != INT32_MIN && v < var->PossibleValue[0].value) || !stricmp(valstr, "MIN"))
+			// search for other
+			for (i = MAXVAL+1; var->PossibleValue[i].strvalue; i++)
+				if (!stricmp(var->PossibleValue[i].strvalue, valstr))
+				{
+					var->value = var->PossibleValue[i].value;
+					var->string = var->PossibleValue[i].strvalue;
+					goto finish;
+				}
+
+			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
-				v = var->PossibleValue[0].value;
-				valstr = var->PossibleValue[0].strvalue;
+				v = var->PossibleValue[MINVAL].value;
+				valstr = var->PossibleValue[MINVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
-			else if ((v != INT32_MIN && v > var->PossibleValue[i].value) || !stricmp(valstr, "MAX"))
+			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || !stricmp(valstr, "MAX"))
 			{
-				v = var->PossibleValue[i].value;
-				valstr = var->PossibleValue[i].strvalue;
+				v = var->PossibleValue[MAXVAL].value;
+				valstr = var->PossibleValue[MAXVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
 			if (v == INT32_MIN)
 				goto badinput;
+#undef MINVAL
+#undef MAXVAL
 		}
 		else
 		{
@@ -1363,6 +1428,12 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 			return;
 		}
 
+		if (var == &cv_kartencore && !M_SecretUnlocked(SECRET_ENCORE))
+		{
+			CONS_Printf(M_GetText("You haven't unlocked Encore Mode yet!\n"));
+			return;
+		}
+
 		// Only add to netcmd buffer if in a netgame, otherwise, just change it.
 		if (netgame || multiplayer)
 		{
@@ -1453,7 +1524,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 	if (var->PossibleValue)
 	{
-#define MINVAL 0
 		if (var == &cv_nextmap)
 		{
 			// Special case for the nextmap variable, used only directly from the menu
@@ -1466,45 +1536,62 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				{
 					if(increment > 0) // Going up!
 					{
-						newvalue++;
-						if (newvalue == NUMMAPS)
-							newvalue = 0;
+						if (++newvalue == NUMMAPS)
+							newvalue = -1;
 					}
 					else // Going down!
 					{
-						newvalue--;
-						if (newvalue == -1)
+						if (--newvalue == -2)
 							newvalue = NUMMAPS-1;
 					}
 
 					if (newvalue == oldvalue)
-						gt = -1; // don't loop forever if there's none of a certain gametype
+						break; // don't loop forever if there's none of a certain gametype
 
 					if(!mapheaderinfo[newvalue])
 						continue; // Don't allocate the header.  That just makes memory usage skyrocket.
 
-				} while (newvalue != oldvalue && !M_CanShowLevelInList(newvalue, gt));
+				} while (!M_CanShowLevelInList(newvalue, gt));
 
 				var->value = newvalue + 1;
 				var->func();
 				return;
 			}
 		}
+#define MINVAL 0
+#define MAXVAL 1
 		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
-		{
-			// search the next to last
-			for (max = 0; var->PossibleValue[max+1].strvalue; max++)
-				;
+		{ // SRB2Kart
+#ifdef PARANOIA
+			if (!var->PossibleValue[MAXVAL].strvalue)
+				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
+#endif
 
-			if (newvalue < var->PossibleValue[MINVAL].value) // add the max+1
-				newvalue += var->PossibleValue[max].value - var->PossibleValue[MINVAL].value + 1;
+			if (newvalue < var->PossibleValue[MINVAL].value || newvalue > var->PossibleValue[MAXVAL].value)
+			{
+				INT32 currentindice = -1, newindice;
+				for (max = MAXVAL+1; var->PossibleValue[max].strvalue; max++)
+					if (var->PossibleValue[max].value == var->value)
+						currentindice = max;
 
-			newvalue = var->PossibleValue[MINVAL].value + (newvalue - var->PossibleValue[MINVAL].value)
-				% (var->PossibleValue[max].value - var->PossibleValue[MINVAL].value + 1);
+				if (currentindice == -1 && max != MAXVAL+1)
+					newindice = ((increment > 0) ? MAXVAL : max) + increment;
+				else
+					newindice = currentindice + increment;
 
-			CV_SetValue(var, newvalue);
-#undef MINVAL
+				if (newindice >= max || newindice <= MAXVAL)
+				{
+					newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
+					CV_SetValue(var, newvalue);
+				}
+				else
+					CV_Set(var, var->PossibleValue[newindice].strvalue);
+			}
+			else
+				CV_SetValue(var, newvalue);
 		}
+#undef MINVAL
+#undef MAXVAL
 		else
 		{
 			INT32 currentindice = -1, newindice;
@@ -1513,8 +1600,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			for (max = 0; var->PossibleValue[max].strvalue; max++)
 				if (var->PossibleValue[max].value == var->value)
 					currentindice = max;
-
-			max--;
 
 			if (var == &cv_chooseskin)
 			{
@@ -1572,13 +1657,38 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 					return;
 				}
 			}
+			else if (var == &cv_kartspeed)
+			{
+				INT32 maxspeed = (M_SecretUnlocked(SECRET_HARDSPEED) ? 2 : 1);
+				// Special case for the kartspeed variable, used only directly from the menu to prevent selecting hard mode
+				if (increment > 0) // Going up!
+				{
+					newvalue = var->value + 1;
+					if (newvalue > maxspeed)
+						newvalue = 0;
+					var->value = newvalue;
+					var->string = var->PossibleValue[var->value].strvalue;
+					var->func();
+					return;
+				}
+				else if (increment < 0) // Going down!
+				{
+					newvalue = var->value - 1;
+					if (newvalue < 0)
+						newvalue = maxspeed;
+					var->value = newvalue;
+					var->string = var->PossibleValue[var->value].strvalue;
+					var->func();
+					return;
+				}
+			}
 #ifdef PARANOIA
 			if (currentindice == -1)
 				I_Error("CV_AddValue: current value %d not found in possible value\n",
 					var->value);
 #endif
 
-			newindice = (currentindice + increment + max + 1) % (max+1);
+			newindice = (currentindice + increment + max) % max;
 			CV_Set(var, var->PossibleValue[newindice].strvalue);
 		}
 	}

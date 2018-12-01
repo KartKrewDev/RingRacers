@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2012-2016 by John "JTE" Muniz.
-// Copyright (C) 2012-2016 by Sonic Team Junior.
+// Copyright (C) 2012-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -16,6 +16,7 @@
 #include "tables.h"
 #include "p_local.h"
 #include "doomstat.h" // for ALL7EMERALDS
+#include "k_kart.h" // KartColor_Opposite
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -191,8 +192,8 @@ static int lib_coloropposite(lua_State *L)
 	UINT8 colornum = (UINT8)luaL_checkinteger(L, 1);
 	if (colornum >= MAXSKINCOLORS)
 		return luaL_error(L, "skincolor %d out of range (0 - %d).", colornum, MAXSKINCOLORS-1);
-	lua_pushinteger(L, Color_Opposite[colornum*2]); // push color
-	lua_pushinteger(L, Color_Opposite[colornum*2+1]); // push frame
+	lua_pushinteger(L, KartColor_Opposite[colornum*2]); // push color
+	lua_pushinteger(L, KartColor_Opposite[colornum*2+1]); // push frame
 	return 2;
 }
 

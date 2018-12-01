@@ -3,7 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 2011-2016 by Matthew "Inuyasha" Walsh.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -124,6 +124,8 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
 #define IT_HEADER      (IT_SPACE  +IT_HEADERTEXT)
 #define IT_SECRET      (IT_SPACE  +IT_QUESTIONMARKS)
 
+#define MAXSTRINGLENGTH 32
+
 typedef union
 {
 	struct menu_s *submenu;      // IT_SUBMENU
@@ -209,6 +211,8 @@ extern description_t description[32];
 extern consvar_t cv_newgametype, cv_nextmap, cv_chooseskin, cv_serversort;
 extern CV_PossibleValue_t gametype_cons_t[];
 
+extern char dummystaffname[22];
+
 extern INT16 startmap;
 extern INT32 ultimate_selectable;
 
@@ -222,6 +226,11 @@ void M_CheatActivationResponder(INT32 ch);
 // Screenshot menu updating
 void Moviemode_mode_Onchange(void);
 void Screenshot_option_Onchange(void);
+
+// Addons menu updating
+void Addons_option_Onchange(void);
+
+INT32 HU_GetHighlightColor(void);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(header, source, prev, x, y)\
@@ -267,7 +276,7 @@ void Screenshot_option_Onchange(void);
 	prev,\
 	source,\
 	M_DrawServerMenu,\
-	27,40,\
+	24,40,\
 	0,\
 	NULL\
 }
@@ -279,7 +288,7 @@ void Screenshot_option_Onchange(void);
 	prev,\
 	source,\
 	M_DrawControl,\
-	24, 40,\
+	26, 40,\
 	0,\
 	NULL\
 }

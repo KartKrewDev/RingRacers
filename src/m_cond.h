@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2012-2016 by Matthew "Inuyasha" Walsh.
-// Copyright (C) 2012-2016 by Sonic Team Junior.
+// Copyright (C) 2012-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -103,7 +103,7 @@ typedef struct
 {
 	char name[64];
 	char objective[64];
-	UINT16 height; // menu height
+	UINT8 showconditionset;
 	UINT8 conditionset;
 	INT16 type;
 	INT16 variable;
@@ -112,7 +112,8 @@ typedef struct
 	UINT8 unlocked;
 } unlockable_t;
 
-#define SECRET_NONE         -6 // Does nil.  Use with levels locked by UnlockRequired
+// I have NO idea why these are going negative, but whatever.
+#define SECRET_NONE			-6 // Does nil.  Use with levels locked by UnlockRequired
 #define SECRET_ITEMFINDER	-5 // Enables Item Finder/Emblem Radar
 #define SECRET_EMBLEMHINTS	-4 // Enables Emblem Hints
 #define SECRET_PANDORA		-3 // Enables Pandora's Box
@@ -123,6 +124,9 @@ typedef struct
 #define SECRET_WARP			 2 // Selectable warp
 #define SECRET_SOUNDTEST	 3 // Sound Test
 #define SECRET_CREDITS		 4 // Enables Credits
+#define SECRET_ENCORE		 5 // Enables Encore mode cvar
+#define SECRET_HELLATTACK	 6 // Map Hell in record attack
+#define SECRET_HARDSPEED	 7 // Enables Hard gamespeed
 
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.

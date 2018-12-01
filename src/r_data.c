@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -112,6 +112,10 @@ INT32 *texturetranslation;
 sprcache_t *spritecachedinfo;
 
 lighttable_t *colormaps;
+UINT8 *encoremap;
+#ifdef HASINVERT
+UINT8 invertmap[256];
+#endif
 
 // for debugging/info purposes
 static size_t flatmemory, spritememory, texturememory;
@@ -365,8 +369,8 @@ void R_FlushTextureCache(void)
 }
 
 // Need these prototypes for later; defining them here instead of r_data.h so they're "private"
-int R_CountTexturesInTEXTURESLump(UINT16 wadNum);
-void R_ParseTEXTURESLump(UINT16 wadNum, INT32 *index);
+int R_CountTexturesInTEXTURESLump(UINT16 wadNum, UINT16 lumpNum);
+void R_ParseTEXTURESLump(UINT16 wadNum, UINT16 lumpNum, INT32 *index);
 
 //
 // R_LoadTextures
@@ -404,13 +408,22 @@ void R_LoadTextures(void)
 	// but the alternative is to spend a ton of time checking and re-checking all previous entries just to skip any potentially patched textures.
 	for (w = 0, numtextures = 0; w < numwadfiles; w++)
 	{
-		texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0) + 1;
-		texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
-		texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
-
-		if (texturesLumpPos != INT16_MAX)
+		if (wadfiles[w]->type == RET_PK3)
 		{
-			numtextures += R_CountTexturesInTEXTURESLump((UINT16)w);
+			texstart = W_CheckNumForFolderStartPK3("textures/", (UINT16)w, 0);
+			texend = W_CheckNumForFolderEndPK3("textures/", (UINT16)w, texstart);
+		}
+		else
+		{
+			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0) + 1;
+			texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
+		}
+
+		texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
+		while (texturesLumpPos != INT16_MAX)
+		{
+			numtextures += R_CountTexturesInTEXTURESLump((UINT16)w, (UINT16)texturesLumpPos);
+			texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, texturesLumpPos + 1);
 		}
 
 		// Add all the textures between TX_START and TX_END
@@ -447,12 +460,25 @@ void R_LoadTextures(void)
 	for (i = 0, w = 0; w < numwadfiles; w++)
 	{
 		// Get the lump numbers for the markers in the WAD, if they exist.
-		texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0) + 1;
-		texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
-		texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
-
-		if (texturesLumpPos != INT16_MAX)
-			R_ParseTEXTURESLump(w,&i);
+		if (wadfiles[w]->type == RET_PK3)
+		{
+			texstart = W_CheckNumForFolderStartPK3("textures/", (UINT16)w, 0);
+			texend = W_CheckNumForFolderEndPK3("textures/", (UINT16)w, texstart);
+			texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
+			while (texturesLumpPos != INT16_MAX)
+			{
+				R_ParseTEXTURESLump(w, texturesLumpPos, &i);
+				texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, texturesLumpPos + 1);
+			}
+		}
+		else
+		{
+			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0) + 1;
+			texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
+			texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
+			if (texturesLumpPos != INT16_MAX)
+				R_ParseTEXTURESLump(w, texturesLumpPos, &i);
+		}
 
 		if (texstart == INT16_MAX || texend == INT16_MAX)
 			continue;
@@ -472,40 +498,22 @@ void R_LoadTextures(void)
 			}
 			else
 			{
-				UINT16 patchcount = 1;
 				//CONS_Printf("\n\"%s\" is a single patch, dimensions %d x %d",W_CheckNameForNumPwad((UINT16)w,texstart+j),patchlump->width, patchlump->height);
-				if (SHORT(patchlump->width) == 64
-				&& SHORT(patchlump->height) == 64)
-				{ // 64x64 patch
-					const column_t *column;
-					for (k = 0; k < SHORT(patchlump->width); k++)
-					{ // Find use of transparency.
-						column = (const column_t *)((const UINT8 *)patchlump + LONG(patchlump->columnofs[k]));
-						if (column->length != SHORT(patchlump->height))
-							break;
-					}
-					if (k == SHORT(patchlump->width))
-						patchcount = 2; // No transparency? 64x128 texture.
-				}
-				texture = textures[i] = Z_Calloc(sizeof(texture_t) + (sizeof(texpatch_t) * patchcount), PU_STATIC, NULL);
+				texture = textures[i] = Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
 
 				// Set texture properties.
 				M_Memcpy(texture->name, W_CheckNameForNumPwad((UINT16)w, texstart + j), sizeof(texture->name));
 				texture->width = SHORT(patchlump->width);
-				texture->height = SHORT(patchlump->height)*patchcount;
-				texture->patchcount = patchcount;
+				texture->height = SHORT(patchlump->height);
+				texture->patchcount = 1;
 				texture->holes = false;
 
 				// Allocate information for the texture's patches.
-				for (k = 0; k < patchcount; k++)
-				{
-					patch = &texture->patches[k];
+				patch = &texture->patches[0];
 
-					patch->originx = 0;
-					patch->originy = (INT16)(k*patchlump->height);
-					patch->wad = (UINT16)w;
-					patch->lump = texstart + j;
-				}
+				patch->originx = patch->originy = 0;
+				patch->wad = (UINT16)w;
+				patch->lump = texstart + j;
 
 				Z_Unlock(patchlump);
 
@@ -817,7 +825,7 @@ static texture_t *R_ParseTexture(boolean actuallyLoadTexture)
 }
 
 // Parses the TEXTURES lump... but just to count the number of textures.
-int R_CountTexturesInTEXTURESLump(UINT16 wadNum)
+int R_CountTexturesInTEXTURESLump(UINT16 wadNum, UINT16 lumpNum)
 {
 	char *texturesLump;
 	size_t texturesLumpLength;
@@ -828,11 +836,11 @@ int R_CountTexturesInTEXTURESLump(UINT16 wadNum)
 	// Since lumps AREN'T \0-terminated like I'd assumed they should be, I'll
 	// need to make a space of memory where I can ensure that it will terminate
 	// correctly. Start by loading the relevant data from the WAD.
-	texturesLump = (char *)W_CacheLumpNumPwad(wadNum,W_CheckNumForNamePwad("TEXTURES", wadNum, 0),PU_STATIC);
+	texturesLump = (char *)W_CacheLumpNumPwad(wadNum, lumpNum, PU_STATIC);
 	// If that didn't exist, we have nothing to do here.
 	if (texturesLump == NULL) return 0;
 	// If we're still here, then it DOES exist; figure out how long it is, and allot memory accordingly.
-	texturesLumpLength = W_LumpLengthPwad(wadNum,W_CheckNumForNamePwad("TEXTURES",wadNum,0));
+	texturesLumpLength = W_LumpLengthPwad(wadNum, lumpNum);
 	texturesText = (char *)Z_Malloc((texturesLumpLength+1)*sizeof(char),PU_STATIC,NULL);
 	// Now move the contents of the lump into this new location.
 	memmove(texturesText,texturesLump,texturesLumpLength);
@@ -864,7 +872,7 @@ int R_CountTexturesInTEXTURESLump(UINT16 wadNum)
 }
 
 // Parses the TEXTURES lump... for real, this time.
-void R_ParseTEXTURESLump(UINT16 wadNum, INT32 *texindex)
+void R_ParseTEXTURESLump(UINT16 wadNum, UINT16 lumpNum, INT32 *texindex)
 {
 	char *texturesLump;
 	size_t texturesLumpLength;
@@ -877,11 +885,11 @@ void R_ParseTEXTURESLump(UINT16 wadNum, INT32 *texindex)
 	// Since lumps AREN'T \0-terminated like I'd assumed they should be, I'll
 	// need to make a space of memory where I can ensure that it will terminate
 	// correctly. Start by loading the relevant data from the WAD.
-	texturesLump = (char *)W_CacheLumpNumPwad(wadNum,W_CheckNumForNamePwad("TEXTURES", wadNum, 0),PU_STATIC);
+	texturesLump = (char *)W_CacheLumpNumPwad(wadNum, lumpNum, PU_STATIC);
 	// If that didn't exist, we have nothing to do here.
 	if (texturesLump == NULL) return;
 	// If we're still here, then it DOES exist; figure out how long it is, and allot memory accordingly.
-	texturesLumpLength = W_LumpLengthPwad(wadNum,W_CheckNumForNamePwad("TEXTURES",wadNum,0));
+	texturesLumpLength = W_LumpLengthPwad(wadNum, lumpNum);
 	texturesText = (char *)Z_Malloc((texturesLumpLength+1)*sizeof(char),PU_STATIC,NULL);
 	// Now move the contents of the lump into this new location.
 	memmove(texturesText,texturesLump,texturesLumpLength);
@@ -932,7 +940,7 @@ static inline lumpnum_t R_CheckNumForNameList(const char *name, lumplist_t *list
 	return LUMPERROR;
 }
 
-static lumplist_t *colormaplumps = NULL; ///\todo free leak
+/*static lumplist_t *colormaplumps = NULL; ///\todo free leak
 static size_t numcolormaplumps = 0;
 
 static void R_InitExtraColormaps(void)
@@ -966,14 +974,53 @@ static void R_InitExtraColormaps(void)
 		numcolormaplumps++;
 	}
 	CONS_Printf(M_GetText("Number of Extra Colormaps: %s\n"), sizeu1(numcolormaplumps));
-}
+}*/
 
-// 12/14/14 -- only take flats in F_START/F_END
+// Search for flat name.
 lumpnum_t R_GetFlatNumForName(const char *name)
 {
-	lumpnum_t lump = W_CheckNumForNameInBlock(name, "F_START", "F_END");
-	if (lump == LUMPERROR)
-		lump = W_CheckNumForNameInBlock(name, "FF_START", "FF_END"); // deutex, some other old things
+	INT32 i;
+	lumpnum_t lump;
+	lumpnum_t start;
+	lumpnum_t end;
+
+	// Scan wad files backwards so patched flats take preference.
+	for (i = numwadfiles - 1; i >= 0; i--)
+	{
+		switch (wadfiles[i]->type)
+		{
+		case RET_WAD:
+			if ((start = W_CheckNumForNamePwad("F_START", (UINT16)i, 0)) == INT16_MAX)
+			{
+				if ((start = W_CheckNumForNamePwad("FF_START", (UINT16)i, 0)) == INT16_MAX)
+					continue;
+				else if ((end = W_CheckNumForNamePwad("FF_END", (UINT16)i, start)) == INT16_MAX)
+					continue;
+			}
+			else
+				if ((end = W_CheckNumForNamePwad("F_END", (UINT16)i, start)) == INT16_MAX)
+					continue;
+			break;
+		case RET_PK3:
+			if ((start = W_CheckNumForFolderStartPK3("Flats/", i, 0)) == INT16_MAX)
+				continue;
+			if ((end = W_CheckNumForFolderEndPK3("Flats/", i, start)) == INT16_MAX)
+				continue;
+			break;
+		default:
+			continue;
+		}
+
+		// Now find lump with specified name in that range.
+		lump = W_CheckNumForNamePwad(name, (UINT16)i, start);
+		if (lump < end)
+		{
+			lump += (i<<16); // found it, in our constraints
+			break;
+		}
+		lump = LUMPERROR;
+	}
+
 	if (lump == LUMPERROR)
 	{
 		if (strcmp(name, SKYFLATNAME))
@@ -1010,15 +1057,20 @@ static void R_InitColormaps(void)
 
 	// Load in the light tables
 	lump = W_GetNumForName("COLORMAP");
-	colormaps = Z_MallocAlign(W_LumpLength (lump), PU_STATIC, NULL, 8);
+	//Z_MallocAlign(W_LumpLength (lump), PU_STATIC, NULL, 8);
+	colormaps = Z_MallocAlign((256 * 64), PU_STATIC, NULL, 8);
 	W_ReadLump(lump, colormaps);
+	// no need to init encoremap at this stage
 
 	// Init Boom colormaps.
 	R_ClearColormaps();
-	R_InitExtraColormaps();
+	//R_InitExtraColormaps();
+#ifdef HASINVERT
+	R_MakeInvertmap(); // this isn't the BEST place to do it the first time, but whatever
+#endif
 }
 
-void R_ReInitColormaps(UINT16 num)
+void R_ReInitColormaps(UINT16 num, lumpnum_t newencoremap)
 {
 	char colormap[9] = "COLORMAP";
 	lumpnum_t lump;
@@ -1032,14 +1084,35 @@ void R_ReInitColormaps(UINT16 num)
 		lump = W_GetNumForName("COLORMAP");
 	W_ReadLump(lump, colormaps);
 
+	// Encore mode.
+	if (newencoremap != LUMPERROR)
+	{
+		lighttable_t *colormap_p, *colormap_p2;
+		size_t p, i;
+
+		encoremap = Z_MallocAlign(256 + 10, PU_LEVEL, NULL, 8);
+		W_ReadLump(newencoremap, encoremap);
+		colormap_p = colormap_p2 = colormaps;
+		colormap_p += (256 * 32);
+
+		for (p = 0; p < 32; p++)
+		{
+			for (i = 0; i < 256; i++)
+			{
+				*colormap_p = colormap_p2[encoremap[i]];
+				colormap_p++;
+			}
+			colormap_p2 += 256;
+		}
+	}
+	else
+		encoremap = NULL;
+
 	// Init Boom colormaps.
 	R_ClearColormaps();
 }
 
 static lumpnum_t foundcolormaps[MAXCOLORMAPS];
-
-static char colormapFixingArray[MAXCOLORMAPS][3][9];
-static size_t carrayindex;
 
 //
 // R_ClearColormaps
@@ -1052,15 +1125,13 @@ void R_ClearColormaps(void)
 
 	num_extra_colormaps = 0;
 
-	carrayindex = 0;
-
 	for (i = 0; i < MAXCOLORMAPS; i++)
 		foundcolormaps[i] = LUMPERROR;
 
 	memset(extra_colormaps, 0, sizeof (extra_colormaps));
 }
 
-INT32 R_ColormapNumForName(char *name)
+/*INT32 R_ColormapNumForName(char *name)
 {
 	lumpnum_t lump, i;
 
@@ -1087,12 +1158,12 @@ INT32 R_ColormapNumForName(char *name)
 	extra_colormaps[num_extra_colormaps].fadecolor = 0x0;
 	extra_colormaps[num_extra_colormaps].maskamt = 0x0;
 	extra_colormaps[num_extra_colormaps].fadestart = 0;
-	extra_colormaps[num_extra_colormaps].fadeend = 33;
+	extra_colormaps[num_extra_colormaps].fadeend = 31;
 	extra_colormaps[num_extra_colormaps].fog = 0;
 
 	num_extra_colormaps++;
 	return (INT32)num_extra_colormaps - 1;
-}
+}*/
 
 //
 // R_CreateColormap
@@ -1107,24 +1178,44 @@ static double deltas[256][3], map[256][3];
 static UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b);
 static int RoundUp(double number);
 
+#ifdef HASINVERT
+void R_MakeInvertmap(void)
+{
+	size_t i;
+
+	for (i = 0; i < 256; i++)
+		invertmap[i] = NearestColor(256 - pLocalPalette[i].s.red, 256 - pLocalPalette[i].s.green, 256 - pLocalPalette[i].s.blue);
+}
+#endif
+
 INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 {
 	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb;
-	double r, g, b, cbrightness, maskamt = 0, othermask = 0;
+	double maskamt = 0, othermask = 0;
 	int mask, fog = 0;
 	size_t mapnum = num_extra_colormaps;
 	size_t i;
 	UINT32 cr, cg, cb, maskcolor, fadecolor;
-	UINT32 fadestart = 0, fadeend = 33, fadedist = 33;
+	UINT32 fadestart = 0, fadeend = 31, fadedist = 31;
 
 #define HEX2INT(x) (UINT32)(x >= '0' && x <= '9' ? x - '0' : x >= 'a' && x <= 'f' ? x - 'a' + 10 : x >= 'A' && x <= 'F' ? x - 'A' + 10 : 0)
 	if (p1[0] == '#')
 	{
 		cr = ((HEX2INT(p1[1]) * 16) + HEX2INT(p1[2]));
-		cmaskr = cr;
 		cg = ((HEX2INT(p1[3]) * 16) + HEX2INT(p1[4]));
-		cmaskg = cg;
 		cb = ((HEX2INT(p1[5]) * 16) + HEX2INT(p1[6]));
+
+		if (encoremap)
+		{
+			i = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
+			//CONS_Printf("R_CreateColormap: encoremap[%d] = %d\n", i, encoremap[i]); -- moved encoremap upwards for optimisation
+			cr = pLocalPalette[i].s.red;
+			cg = pLocalPalette[i].s.green;
+			cb = pLocalPalette[i].s.blue;
+		}
+
+		cmaskr = cr;
+		cmaskg = cg;
 		cmaskb = cb;
 		// Create a rough approximation of the color (a 16 bit color)
 		maskcolor = ((cb) >> 3) + (((cg) >> 2) << 5) + (((cr) >> 3) << 11);
@@ -1156,20 +1247,32 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 		// Get parameters like fadestart, fadeend, and the fogflag
 		fadestart = NUMFROMCHAR(p2[3]) + (NUMFROMCHAR(p2[2]) * 10);
 		fadeend = NUMFROMCHAR(p2[5]) + (NUMFROMCHAR(p2[4]) * 10);
-		if (fadestart > 32)
+		if (fadestart > 30)
 			fadestart = 0;
-		if (fadeend > 33 || fadeend < 1)
-			fadeend = 33;
+		if (fadeend > 31 || fadeend < 1)
+			fadeend = 31;
 		fadedist = fadeend - fadestart;
-		fog = NUMFROMCHAR(p2[1]) ? 1 : 0;
+		fog = NUMFROMCHAR(p2[1]);
 	}
-#undef getnum
+#undef NUMFROMCHAR
 
 	if (p3[0] == '#')
 	{
-		cdestr = cr = ((HEX2INT(p3[1]) * 16) + HEX2INT(p3[2]));
-		cdestg = cg = ((HEX2INT(p3[3]) * 16) + HEX2INT(p3[4]));
-		cdestb = cb = ((HEX2INT(p3[5]) * 16) + HEX2INT(p3[6]));
+		cr = ((HEX2INT(p3[1]) * 16) + HEX2INT(p3[2]));
+		cg = ((HEX2INT(p3[3]) * 16) + HEX2INT(p3[4]));
+		cb = ((HEX2INT(p3[5]) * 16) + HEX2INT(p3[6]));
+
+		if (encoremap)
+		{
+			i = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
+			cr = pLocalPalette[i].s.red;
+			cg = pLocalPalette[i].s.green;
+			cb = pLocalPalette[i].s.blue;
+		}
+
+		cdestr = cr;
+		cdestg = cg;
+		cdestb = cb;
 		fadecolor = (((cb) >> 3) + (((cg) >> 2) << 5) + (((cr) >> 3) << 11));
 	}
 	else
@@ -1194,14 +1297,30 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 	if (num_extra_colormaps == MAXCOLORMAPS)
 		I_Error("R_CreateColormap: Too many colormaps! the limit is %d\n", MAXCOLORMAPS);
 
-	strncpy(colormapFixingArray[num_extra_colormaps][0], p1, 8);
-	strncpy(colormapFixingArray[num_extra_colormaps][1], p2, 8);
-	strncpy(colormapFixingArray[num_extra_colormaps][2], p3, 8);
-
 	num_extra_colormaps++;
+
+	foundcolormaps[mapnum] = LUMPERROR;
+
+	// aligned on 8 bit for asm code
+	extra_colormaps[mapnum].colormap = NULL;
+	extra_colormaps[mapnum].maskcolor = (UINT16)maskcolor;
+	extra_colormaps[mapnum].fadecolor = (UINT16)fadecolor;
+	extra_colormaps[mapnum].maskamt = maskamt;
+	extra_colormaps[mapnum].fadestart = (UINT16)fadestart;
+	extra_colormaps[mapnum].fadeend = (UINT16)fadeend;
+	extra_colormaps[mapnum].fog = fog;
 
 	if (rendermode == render_soft)
 	{
+		double r, g, b, cbrightness;
+		int p;
+		lighttable_t *colormap_p;
+
+		// Initialise the map and delta arrays
+		// map[i] stores an RGB color (as double) for index i,
+		//  which is then converted to SRB2's palette later
+		// deltas[i] stores a corresponding fade delta between the RGB color and the final fade color;
+		//  map[i]'s values are decremented by after each use
 		for (i = 0; i < 256; i++)
 		{
 			r = pLocalPalette[i].s.red;
@@ -1224,169 +1343,14 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 				map[i][2] = 255.0l;
 			deltas[i][2] = (map[i][2] - cdestb) / (double)fadedist;
 		}
-	}
 
-	foundcolormaps[mapnum] = LUMPERROR;
-
-	// aligned on 8 bit for asm code
-	extra_colormaps[mapnum].colormap = NULL;
-	extra_colormaps[mapnum].maskcolor = (UINT16)maskcolor;
-	extra_colormaps[mapnum].fadecolor = (UINT16)fadecolor;
-	extra_colormaps[mapnum].maskamt = maskamt;
-	extra_colormaps[mapnum].fadestart = (UINT16)fadestart;
-	extra_colormaps[mapnum].fadeend = (UINT16)fadeend;
-	extra_colormaps[mapnum].fog = fog;
-
-	return (INT32)mapnum;
-}
-
-void R_MakeColormaps(void)
-{
-	size_t i;
-
-	carrayindex = num_extra_colormaps;
-	num_extra_colormaps = 0;
-
-	for (i = 0; i < carrayindex; i++)
-		R_CreateColormap2(colormapFixingArray[i][0], colormapFixingArray[i][1],
-			colormapFixingArray[i][2]);
-}
-
-void R_CreateColormap2(char *p1, char *p2, char *p3)
-{
-	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb;
-	double r, g, b, cbrightness;
-	double maskamt = 0, othermask = 0;
-	int mask, p, fog = 0;
-	size_t mapnum = num_extra_colormaps;
-	size_t i;
-	char *colormap_p;
-	UINT32 cr, cg, cb, maskcolor, fadecolor;
-	UINT32 fadestart = 0, fadeend = 33, fadedist = 33;
-
-#define HEX2INT(x) (UINT32)(x >= '0' && x <= '9' ? x - '0' : x >= 'a' && x <= 'f' ? x - 'a' + 10 : x >= 'A' && x <= 'F' ? x - 'A' + 10 : 0)
-	if (p1[0] == '#')
-	{
-		cr = ((HEX2INT(p1[1]) * 16) + HEX2INT(p1[2]));
-		cmaskr = cr;
-		cg = ((HEX2INT(p1[3]) * 16) + HEX2INT(p1[4]));
-		cmaskg = cg;
-		cb = ((HEX2INT(p1[5]) * 16) + HEX2INT(p1[6]));
-		cmaskb = cb;
-		// Create a rough approximation of the color (a 16 bit color)
-		maskcolor = ((cb) >> 3) + (((cg) >> 2) << 5) + (((cr) >> 3) << 11);
-		if (p1[7] >= 'a' && p1[7] <= 'z')
-			mask = (p1[7] - 'a');
-		else if (p1[7] >= 'A' && p1[7] <= 'Z')
-			mask = (p1[7] - 'A');
-		else
-			mask = 24;
-
-		maskamt = (double)(mask/24.0l);
-
-		othermask = 1 - maskamt;
-		maskamt /= 0xff;
-		cmaskr *= maskamt;
-		cmaskg *= maskamt;
-		cmaskb *= maskamt;
-	}
-	else
-	{
-		cmaskr = cmaskg = cmaskb = 0xff;
-		maskamt = 0;
-		maskcolor = ((0xff) >> 3) + (((0xff) >> 2) << 5) + (((0xff) >> 3) << 11);
-	}
-
-#define NUMFROMCHAR(c) (c >= '0' && c <= '9' ? c - '0' : 0)
-	if (p2[0] == '#')
-	{
-		// Get parameters like fadestart, fadeend, and the fogflag
-		fadestart = NUMFROMCHAR(p2[3]) + (NUMFROMCHAR(p2[2]) * 10);
-		fadeend = NUMFROMCHAR(p2[5]) + (NUMFROMCHAR(p2[4]) * 10);
-		if (fadestart > 32)
-			fadestart = 0;
-		if (fadeend > 33 || fadeend < 1)
-			fadeend = 33;
-		fadedist = fadeend - fadestart;
-		fog = NUMFROMCHAR(p2[1]) ? 1 : 0;
-	}
-#undef getnum
-
-	if (p3[0] == '#')
-	{
-		cdestr = cr = ((HEX2INT(p3[1]) * 16) + HEX2INT(p3[2]));
-		cdestg = cg = ((HEX2INT(p3[3]) * 16) + HEX2INT(p3[4]));
-		cdestb = cb = ((HEX2INT(p3[5]) * 16) + HEX2INT(p3[6]));
-		fadecolor = (((cb) >> 3) + (((cg) >> 2) << 5) + (((cr) >> 3) << 11));
-	}
-	else
-		cdestr = cdestg = cdestb = fadecolor = 0;
-#undef HEX2INT
-
-	for (i = 0; i < num_extra_colormaps; i++)
-	{
-		if (foundcolormaps[i] != LUMPERROR)
-			continue;
-		if (maskcolor == extra_colormaps[i].maskcolor
-			&& fadecolor == extra_colormaps[i].fadecolor
-			&& (float)maskamt == (float)extra_colormaps[i].maskamt
-			&& fadestart == extra_colormaps[i].fadestart
-			&& fadeend == extra_colormaps[i].fadeend
-			&& fog == extra_colormaps[i].fog)
-		{
-			return;
-		}
-	}
-
-	if (num_extra_colormaps == MAXCOLORMAPS)
-		I_Error("R_CreateColormap: Too many colormaps! the limit is %d\n", MAXCOLORMAPS);
-
-	num_extra_colormaps++;
-
-	if (rendermode == render_soft)
-	{
-		for (i = 0; i < 256; i++)
-		{
-			r = pLocalPalette[i].s.red;
-			g = pLocalPalette[i].s.green;
-			b = pLocalPalette[i].s.blue;
-			cbrightness = sqrt((r*r) + (g*g) + (b*b));
-
-			map[i][0] = (cbrightness * cmaskr) + (r * othermask);
-			if (map[i][0] > 255.0l)
-				map[i][0] = 255.0l;
-			deltas[i][0] = (map[i][0] - cdestr) / (double)fadedist;
-
-			map[i][1] = (cbrightness * cmaskg) + (g * othermask);
-			if (map[i][1] > 255.0l)
-				map[i][1] = 255.0l;
-			deltas[i][1] = (map[i][1] - cdestg) / (double)fadedist;
-
-			map[i][2] = (cbrightness * cmaskb) + (b * othermask);
-			if (map[i][2] > 255.0l)
-				map[i][2] = 255.0l;
-			deltas[i][2] = (map[i][2] - cdestb) / (double)fadedist;
-		}
-	}
-
-	foundcolormaps[mapnum] = LUMPERROR;
-
-	// aligned on 8 bit for asm code
-	extra_colormaps[mapnum].colormap = NULL;
-	extra_colormaps[mapnum].maskcolor = (UINT16)maskcolor;
-	extra_colormaps[mapnum].fadecolor = (UINT16)fadecolor;
-	extra_colormaps[mapnum].maskamt = maskamt;
-	extra_colormaps[mapnum].fadestart = (UINT16)fadestart;
-	extra_colormaps[mapnum].fadeend = (UINT16)fadeend;
-	extra_colormaps[mapnum].fog = fog;
-
-#define ABS2(x) ((x) < 0 ? -(x) : (x))
-	if (rendermode == render_soft)
-	{
-		colormap_p = Z_MallocAlign((256 * 34) + 10, PU_LEVEL, NULL, 8);
+		// Now allocate memory for the actual colormap array itself!
+		colormap_p = Z_MallocAlign((256 * (encoremap ? 64 : 32)) + 10, PU_LEVEL, NULL, 8);
 		extra_colormaps[mapnum].colormap = (UINT8 *)colormap_p;
 
-		for (p = 0; p < 34; p++)
+		// Calculate the palette index for each palette index, for each light level
+		// (as well as the two unused colormap lines we inherited from Doom)
+		for (p = 0; p < 32; p++)
 		{
 			for (i = 0; i < 256; i++)
 			{
@@ -1397,7 +1361,7 @@ void R_CreateColormap2(char *p1, char *p2, char *p3)
 
 				if ((UINT32)p < fadestart)
 					continue;
-
+#define ABS2(x) ((x) < 0 ? -(x) : (x))
 				if (ABS2(map[i][0] - cdestr) > ABS2(deltas[i][0]))
 					map[i][0] -= deltas[i][0];
 				else
@@ -1412,12 +1376,27 @@ void R_CreateColormap2(char *p1, char *p2, char *p3)
 					map[i][2] -= deltas[i][2];
 				else
 					map[i][2] = cdestb;
+#undef ABS2
+			}
+		}
+
+		if (encoremap)
+		{
+			lighttable_t *colormap_p2 = extra_colormaps[mapnum].colormap;
+
+			for (p = 0; p < 32; p++)
+			{
+				for (i = 0; i < 256; i++)
+				{
+					*colormap_p = colormap_p2[encoremap[i]];
+					colormap_p++;
+				}
+				colormap_p2 += 256;
 			}
 		}
 	}
-#undef ABS2
 
-	return;
+	return (INT32)mapnum;
 }
 
 // Thanks to quake2 source!

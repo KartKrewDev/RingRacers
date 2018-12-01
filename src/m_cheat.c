@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -97,7 +97,7 @@ static UINT8 cheatf_warp(void)
 
 	if (success)
 	{
-		G_SetGameModified(false);
+		G_SaveGameData(true); //G_SetGameModified(false);
 		S_StartSound(0, sfx_kc42);
 	}
 
@@ -377,7 +377,7 @@ void Command_Hurtme_f(void)
 }
 
 // Moves the NiGHTS player to another axis within the current mare
-void Command_JumpToAxis_f(void)
+/*void Command_JumpToAxis_f(void)
 {
 	REQUIRE_DEVMODE;
 	REQUIRE_INLEVEL;
@@ -438,7 +438,7 @@ void Command_Charspeed_f(void)
 		players[consoleplayer].actionspd = atoi(COM_Argv(2))<<FRACBITS;
 	else
 		CONS_Printf(M_GetText("charspeed <normalspeed/runspeed/thrustfactor/accelstart/acceleration/actionspd> <value>: set character speed\n"));
-}
+}*/
 
 void Command_RTeleport_f(void)
 {
@@ -683,7 +683,7 @@ void Command_Savecheckpoint_f(void)
 }
 
 // Like M_GetAllEmeralds() but for console devmode junkies.
-void Command_Getallemeralds_f(void)
+/*void Command_Getallemeralds_f(void)
 {
 	REQUIRE_SINGLEPLAYER;
 	REQUIRE_NOULTIMATE;
@@ -702,7 +702,7 @@ void Command_Resetemeralds_f(void)
 	emeralds = 0;
 
 	CONS_Printf(M_GetText("Emeralds reset to zero.\n"));
-}
+}*/
 
 void Command_Devmode_f(void)
 {
@@ -730,7 +730,7 @@ void Command_Devmode_f(void)
 	G_SetGameModified(multiplayer);
 }
 
-void Command_Setrings_f(void)
+/*void Command_Setrings_f(void)
 {
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
@@ -785,7 +785,7 @@ void Command_Setcontinues_f(void)
 
 		G_SetGameModified(multiplayer);
 	}
-}
+}*/
 
 //
 // OBJECTPLACE (and related variables)
@@ -1149,7 +1149,7 @@ void OP_ObjectplaceMovement(player_t *player)
 
 	// make sure viewz follows player if in 1st person mode
 	//player->deltaviewheight = 0;
-	player->viewheight = FixedMul(cv_viewheight.value << FRACBITS, player->mo->scale);
+	player->viewheight = FixedMul(32 << FRACBITS, player->mo->scale);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 		player->viewz = player->mo->z + player->mo->height - player->viewheight;
 	else
@@ -1368,7 +1368,7 @@ void Command_ObjectPlace_f(void)
 		players[0].mo->color = op_oldcolor;
 
 		// This is necessary for recovery of dying players.
-		if (players[0].powers[pw_flashing] >= K_GetKartFlashing())
-			players[0].powers[pw_flashing] = K_GetKartFlashing() - 1;
+		if (players[0].powers[pw_flashing] >= K_GetKartFlashing(&players[0]))
+			players[0].powers[pw_flashing] = K_GetKartFlashing(&players[0]) - 1;
 	}
 }

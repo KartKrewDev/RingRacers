@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -198,7 +198,6 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].starposty);
 		WRITEINT16(save_p, players[i].starpostz);
 		WRITEINT32(save_p, players[i].starpostnum);
-		WRITEINT32(save_p, players[i].starpostcount);
 		WRITEANGLE(save_p, players[i].starpostangle);
 
 		WRITEANGLE(save_p, players[i].angle_pos);
@@ -382,7 +381,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].starposty = READINT16(save_p);
 		players[i].starpostz = READINT16(save_p);
 		players[i].starpostnum = READINT32(save_p);
-		players[i].starpostcount = READINT32(save_p);
 		players[i].starpostangle = READANGLE(save_p);
 
 		players[i].angle_pos = READANGLE(save_p);
@@ -436,7 +434,7 @@ static void P_NetUnArchivePlayers(void)
 		if (flags & AWAYVIEW)
 			players[i].awayviewmobj = (mobj_t *)(size_t)READUINT32(save_p);
 
-		players[i].viewheight = cv_viewheight.value<<FRACBITS;
+		players[i].viewheight = 32<<FRACBITS;
 
 		//SetPlayerSkinByNum(i, players[i].skin);
 		players[i].charability = READUINT8(save_p);
@@ -507,16 +505,34 @@ static void P_NetArchiveWorld(void)
 	UINT8 *put;
 
 	// reload the map just to see difference
-	const mapsector_t *ms;
-	const mapsidedef_t *msd;
-	const maplinedef_t *mld;
+	mapsector_t *ms;
+	mapsidedef_t *msd;
+	maplinedef_t *mld;
 	const sector_t *ss = sectors;
 	UINT8 diff, diff2;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_WORLD);
 	put = save_p;
 
-	ms = W_CacheLumpNum(lastloadedmaplumpnum+ML_SECTORS, PU_CACHE);
+	if (W_IsLumpWad(lastloadedmaplumpnum)) // welp it's a map wad in a pk3
+	{ // HACK: Open wad file rather quickly so we can get the data from the relevant lumps
+		UINT8 *wadData = W_CacheLumpNum(lastloadedmaplumpnum, PU_STATIC);
+		filelump_t *fileinfo = (filelump_t *)(wadData + ((wadinfo_t *)wadData)->infotableofs);
+#define retrieve_mapdata(d, f)\
+		d = Z_Malloc((f)->size, PU_CACHE, NULL); \
+		M_Memcpy(d, wadData + (f)->filepos, (f)->size)
+		retrieve_mapdata(ms, fileinfo + ML_SECTORS);
+		retrieve_mapdata(mld, fileinfo + ML_LINEDEFS);
+		retrieve_mapdata(msd, fileinfo + ML_SIDEDEFS);
+#undef retrieve_mapdata
+		Z_Free(wadData); // we're done with this now
+	}
+	else // phew it's just a WAD
+	{
+			ms = W_CacheLumpNum(lastloadedmaplumpnum+ML_SECTORS, PU_CACHE);
+			mld = W_CacheLumpNum(lastloadedmaplumpnum+ML_LINEDEFS, PU_CACHE);
+			msd = W_CacheLumpNum(lastloadedmaplumpnum+ML_SIDEDEFS, PU_CACHE);
+	}
 
 	for (i = 0; i < numsectors; i++, ss++, ms++)
 	{
@@ -944,13 +960,11 @@ typedef enum
 	MD2_EXTVAL1     = 1<<5,
 	MD2_EXTVAL2     = 1<<6,
 	MD2_HNEXT       = 1<<7,
+	MD2_HPREV       = 1<<8,
+	MD2_COLORIZED	= 1<<9,
+	MD2_WAYPOINTCAP	= 1<<10
 #ifdef ESLOPE
-	MD2_HPREV       = 1<<8,
-	MD2_SLOPE       = 1<<9,
-	MD2_COLORIZED	= 1<<10
-#else
-	MD2_HPREV       = 1<<8,
-	MD2_COLORIZED	= 1<<9
+	, MD2_SLOPE       = 1<<11
 #endif
 } mobj_diff2_t;
 
@@ -970,6 +984,7 @@ typedef enum
 	tc_bouncecheese,
 	tc_startcrumble,
 	tc_marioblock,
+	tc_marioblockchecker,
 	tc_spikesector,
 	tc_floatsector,
 	tc_bridgethinker,
@@ -1117,7 +1132,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff |= MD_SCALE;
 	if (mobj->destscale != mobj->scale)
 		diff |= MD_DSCALE;
-	if (mobj->scalespeed != FRACUNIT/12)
+	if (mobj->scalespeed != mapheaderinfo[gamemap-1]->mobj_scale/12)
 		diff2 |= MD2_SCALESPEED;
 
 	if (mobj == redflag)
@@ -1147,6 +1162,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 #endif
 	if (mobj->colorized)
 		diff2 |= MD2_COLORIZED;
+	if (mobj == waypointcap)
+		diff2 |= MD2_WAYPOINTCAP;
 	if (diff2 != 0)
 		diff |= MD_MORE;
 
@@ -1283,7 +1300,10 @@ static void SaveSpecialLevelThinker(const thinker_t *th, const UINT8 type)
 	size_t i;
 	WRITEUINT8(save_p, type);
 	for (i = 0; i < 16; i++)
+	{
 		WRITEFIXED(save_p, ht->vars[i]); //var[16]
+		WRITEFIXED(save_p, ht->var2s[i]); //var[16]
+	}
 	WRITEUINT32(save_p, SaveLine(ht->sourceline));
 	WRITEUINT32(save_p, SaveSector(ht->sector));
 }
@@ -1685,8 +1705,7 @@ static void P_NetArchiveThinkers(void)
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
 	{
 		if (!(th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed
-		 || th->function.acp1 == (actionf_p1)P_RainThinker
-		 || th->function.acp1 == (actionf_p1)P_SnowThinker))
+		 || th->function.acp1 == (actionf_p1)P_NullPrecipThinker))
 			numsaved++;
 
 		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
@@ -1695,8 +1714,7 @@ static void P_NetArchiveThinkers(void)
 			continue;
 		}
 #ifdef PARANOIA
-		else if (th->function.acp1 == (actionf_p1)P_RainThinker
-			|| th->function.acp1 == (actionf_p1)P_SnowThinker);
+		else if (th->function.acp1 == (actionf_p1)P_NullPrecipThinker);
 #endif
 		else if (th->function.acp1 == (actionf_p1)T_MoveCeiling)
 		{
@@ -1796,6 +1814,11 @@ static void P_NetArchiveThinkers(void)
 		else if (th->function.acp1 == (actionf_p1)T_MarioBlock)
 		{
 			SaveSpecialLevelThinker(th, tc_marioblock);
+			continue;
+		}
+		else if (th->function.acp1 == (actionf_p1)T_MarioBlockChecker)
+		{
+			SaveSpecialLevelThinker(th, tc_marioblockchecker);
 			continue;
 		}
 		else if (th->function.acp1 == (actionf_p1)T_SpikeSector)
@@ -2116,7 +2139,7 @@ static void LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_SCALESPEED)
 		mobj->scalespeed = READFIXED(save_p);
 	else
-		mobj->scalespeed = FRACUNIT/12;
+		mobj->scalespeed = mapheaderinfo[gamemap-1]->mobj_scale/12;
 	if (diff2 & MD2_CUSVAL)
 		mobj->cusval = READINT32(save_p);
 	if (diff2 & MD2_CVMEM)
@@ -2166,6 +2189,9 @@ static void LoadMobjThinker(actionf_p1 thinker)
 
 	P_AddThinker(&mobj->thinker);
 
+	if (diff2 & MD2_WAYPOINTCAP)
+		P_SetTarget(&waypointcap, mobj);
+
 	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
 }
 
@@ -2186,7 +2212,10 @@ static void LoadSpecialLevelThinker(actionf_p1 thinker, UINT8 floorOrCeiling)
 	size_t i;
 	ht->thinker.function.acp1 = thinker;
 	for (i = 0; i < 16; i++)
+	{
 		ht->vars[i] = READFIXED(save_p); //var[16]
+		ht->var2s[i] = READFIXED(save_p); //var[16]
+	}
 	ht->sourceline = LoadLine(READUINT32(save_p));
 	ht->sector = LoadSector(READUINT32(save_p));
 
@@ -2759,6 +2788,10 @@ static void P_NetUnArchiveThinkers(void)
 				LoadSpecialLevelThinker((actionf_p1)T_MarioBlock, 3);
 				break;
 
+			case tc_marioblockchecker:
+				LoadSpecialLevelThinker((actionf_p1)T_MarioBlockChecker, 0);
+				break;
+
 			case tc_spikesector:
 				LoadSpecialLevelThinker((actionf_p1)T_SpikeSector, 0);
 				break;
@@ -3195,7 +3228,10 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
 	WRITEINT16(save_p, gamemap);
-	WRITEINT16(save_p, gamestate);
+	if (gamestate != GS_LEVEL)
+		WRITEINT16(save_p, GS_WAITINGPLAYERS); // nice hack to put people back into waitingplayers
+	else
+		WRITEINT16(save_p, gamestate);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		pig |= (playeringame[i] != 0)<<i;
@@ -3205,12 +3241,17 @@ static void P_NetArchiveMisc(void)
 
 	WRITEUINT32(save_p, tokenlist);
 
+	WRITEUINT8(save_p, encoremode);
+
 	WRITEUINT32(save_p, leveltime);
 	WRITEUINT32(save_p, totalrings);
 	WRITEINT16(save_p, lastmap);
 
 	for (i = 0; i < 4; i++)
-		WRITEINT16(save_p, votelevels[i]);
+	{
+		WRITEINT16(save_p, votelevels[i][0]);
+		WRITEINT16(save_p, votelevels[i][1]);
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		WRITESINT8(save_p, votes[i]);
@@ -3251,13 +3292,18 @@ static void P_NetArchiveMisc(void)
 	WRITEINT32(save_p, numgotboxes);
 
 	WRITEUINT8(save_p, gamespeed);
-	WRITEUINT8(save_p, mirrormode);
 	WRITEUINT8(save_p, franticitems);
 	WRITEUINT8(save_p, comeback);
 
-	WRITEUINT32(save_p, lightningcooldown);
-	WRITEUINT32(save_p, blueshellincoming);
-	WRITEUINT8(save_p, blueshellplayer);
+	for (i = 0; i < 4; i++)
+		WRITESINT8(save_p, battlewanted[i]);
+
+	WRITEUINT32(save_p, wantedcalcdelay);
+	WRITEUINT32(save_p, indirectitemcooldown);
+	WRITEUINT32(save_p, mapreset);
+	WRITEUINT8(save_p, nospectategrief);
+	WRITEUINT8(save_p, thwompsactive);
+	WRITESINT8(save_p, spbplace);
 
 	// Is it paused?
 	if (paused)
@@ -3298,6 +3344,8 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	tokenlist = READUINT32(save_p);
 
+	encoremode = (boolean)READUINT8(save_p);
+
 	if (!P_SetupLevel(true))
 		return false;
 
@@ -3307,7 +3355,10 @@ static inline boolean P_NetUnArchiveMisc(void)
 	lastmap = READINT16(save_p);
 
 	for (i = 0; i < 4; i++)
-		votelevels[i] = READINT16(save_p);
+	{
+		votelevels[i][0] = READINT16(save_p);
+		votelevels[i][1] = READINT16(save_p);
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		votes[i] = READSINT8(save_p);
@@ -3348,13 +3399,18 @@ static inline boolean P_NetUnArchiveMisc(void)
 	numgotboxes = READINT32(save_p);
 
 	gamespeed = READUINT8(save_p);
-	mirrormode = (boolean)READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);
 	comeback = (boolean)READUINT8(save_p);
 
-	lightningcooldown = READUINT32(save_p);
-	blueshellincoming = READUINT32(save_p);
-	blueshellplayer = READUINT8(save_p);
+	for (i = 0; i < 4; i++)
+		battlewanted[i] = READSINT8(save_p);
+
+	wantedcalcdelay = READUINT32(save_p);
+	indirectitemcooldown = READUINT32(save_p);
+	mapreset = READUINT32(save_p);
+	nospectategrief = READUINT8(save_p);
+	thwompsactive = (boolean)READUINT8(save_p);
+	spbplace = READSINT8(save_p);
 
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)
@@ -3381,14 +3437,17 @@ void P_SaveNetGame(void)
 	P_NetArchiveMisc();
 
 	// Assign the mobjnumber for pointer tracking
-	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+	if (gamestate == GS_LEVEL)
 	{
-		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+		for (th = thinkercap.next; th != &thinkercap; th = th->next)
 		{
-			mobj = (mobj_t *)th;
-			if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
-				continue;
-			mobj->mobjnum = i++;
+			if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+			{
+				mobj = (mobj_t *)th;
+				if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
+					continue;
+				mobj->mobjnum = i++;
+			}
 		}
 	}
 

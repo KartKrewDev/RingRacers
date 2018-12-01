@@ -3,7 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 2013-2016 by Matthew "Inuyasha" Walsh.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -46,8 +46,9 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	99, // wipe_credits_intermediate (0)
 
 	0,  // wipe_level_toblack
-	UINT8_MAX,  // wipe_intermission_toblack
-	UINT8_MAX,  // wipe_continuing_toblack
+	UINT8_MAX, // wipe_intermission_toblack
+	0,  // wipe_voting_toblack,
+	UINT8_MAX, // wipe_continuing_toblack
 	3,  // wipe_titlescreen_toblack
 	0,  // wipe_timeattack_toblack
 	99, // wipe_credits_toblack
@@ -56,12 +57,13 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	UINT8_MAX, // wipe_intro_toblack (hardcoded)
 	UINT8_MAX, // wipe_cutscene_toblack (hardcoded)
 
-	0,  // wipe_specinter_toblack
-	0,  // wipe_multinter_toblack
-	0,  // wipe_speclevel_towhite
+	UINT8_MAX, // wipe_specinter_toblack
+	UINT8_MAX, // wipe_multinter_toblack
+	99, // wipe_speclevel_towhite
 
-	0,  // wipe_level_final
+	3,  // wipe_level_final
 	0,  // wipe_intermission_final
+	0,  // wipe_voting_final
 	0,  // wipe_continuing_final
 	3,  // wipe_titlescreen_final
 	0,  // wipe_timeattack_final

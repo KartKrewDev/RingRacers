@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -33,6 +33,7 @@
 #include "i_system.h"
 #include "d_main.h"
 #include "m_menu.h"
+#include "filesrch.h"
 
 #ifdef _WINDOWS
 #include "win32/win_main.h"
@@ -101,8 +102,6 @@ static void CON_RecalcSize(void);
 
 static void CONS_hudlines_Change(void);
 static void CONS_backcolor_Change(void);
-static void CON_DrawBackpic(patch_t *pic, INT32 startx, INT32 destwidth);
-//static void CON_DrawBackpic2(pic_t *pic, INT32 startx, INT32 destwidth);
 
 //======================================================================
 //                   CONSOLE VARS AND COMMANDS
@@ -133,11 +132,37 @@ static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}
 // whether to use console background picture, or translucent mode
 static consvar_t cons_backpic = {"con_backpic", "translucent", CV_SAVE, backpic_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 	{1, "Gray"},	{2, "Brown"},
-												{3, "Red"},		{4, "Orange"},	{5, "Yellow"},
-												{6, "Green"},	{7, "Blue"},	{8,	"Cyan"},
+static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{2, "Sepia"},
+												{3, "Brown"},		{4, "Pink"},		{5, "Raspberry"},
+												{6, "Red"},			{7, "Creamsicle"},	{8, "Orange"},
+												{9, "Gold"},		{10,"Yellow"},		{11,"Emerald"},
+												{12,"Green"},		{13,"Cyan"},		{14,"Steel"},
+												{15,"Periwinkle"},	{16,"Blue"},		{17,"Purple"},
+												{18,"Lavender"},
 												{0, NULL}};
-consvar_t cons_backcolor = {"con_backcolor", "Green", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cons_backcolor = {"con_backcolor", "Black", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
+
+static CV_PossibleValue_t menuhighlight_cons_t[] =
+{
+	{0, "Game type"},
+	{V_YELLOWMAP, "Always yellow"},
+	{V_PURPLEMAP, "Always purple"},
+	{V_GREENMAP, "Always green"},
+	{V_BLUEMAP, "Always blue"},
+	{V_REDMAP, "Always red"},
+	{V_GRAYMAP, "Always gray"},
+	{V_ORANGEMAP, "Always orange"},
+	{V_SKYMAP, "Always sky-blue"},
+	{V_GOLDMAP, "Always gold"},
+	{V_LAVENDERMAP, "Always lavender"},
+	{V_TEAMAP, "Always tea-green"},
+	{V_STEELMAP, "Always steel-blue"},
+	{V_PINKMAP, "Always pink"},
+	{V_BROWNMAP, "Always brown"},
+	{V_PEACHMAP, "Always peach"},
+	{0, NULL}
+};
+consvar_t cons_menuhighlight = {"menuhighlight", "Game type", CV_SAVE, menuhighlight_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static void CON_Print(char *msg);
 
@@ -175,11 +200,11 @@ static void CONS_Clear_f(void)
 
 // Choose english keymap
 //
-static void CONS_English_f(void)
+/*static void CONS_English_f(void)
 {
 	shiftxform = english_shiftxform;
 	CONS_Printf(M_GetText("%s keymap.\n"), M_GetText("English"));
-}
+}*/
 
 static char *bindtable[NUMINPUTS];
 
@@ -224,17 +249,6 @@ static void CONS_Bind_f(void)
 //                          CONSOLE SETUP
 //======================================================================
 
-// Font colormap colors
-// TODO: This could probably be improved somehow...
-// These colormaps are 99% identical, with just a few changed bytes
-UINT8 *yellowmap;
-UINT8 *purplemap;
-UINT8 *lgreenmap;
-UINT8 *bluemap;
-UINT8 *graymap;
-UINT8 *redmap;
-UINT8 *orangemap;
-
 // Console BG color
 UINT8 *consolebgmap = NULL;
 
@@ -243,21 +257,32 @@ void CON_SetupBackColormap(void)
 	UINT16 i, palsum;
 	UINT8 j, palindex;
 	UINT8 *pal = W_CacheLumpName(GetPalette(), PU_CACHE);
+	INT32 shift = 6;
 
 	if (!consolebgmap)
 		consolebgmap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
 
 	switch (cons_backcolor.value)
 	{
-		case 0:		palindex = 15; 	break; // White
-		case 1:		palindex = 31;	break; // Gray
-		case 2:		palindex = 63;	break; // Brown
-		case 3:		palindex = 143;	break; // Red
-		case 4:		palindex = 95;	break; // Orange
-		case 5:		palindex = 111;	break; // Yellow
-		case 6:		palindex = 175;	break; // Green
-		case 7:		palindex = 239;	break; // Blue
-		case 8:		palindex = 219;	break; // Cyan
+		case 0:		palindex = 15; 	break; 	// White
+		case 1:		palindex = 31;	break; 	// Gray
+		case 2:		palindex = 47;	break;	// Sepia
+		case 3:		palindex = 63;	break; 	// Brown
+		case 4:		palindex = 150; shift = 7; 	break; 	// Pink
+		case 5:		palindex = 127; shift = 7;	break; 	// Raspberry
+		case 6:		palindex = 143;	break; 	// Red
+		case 7:		palindex = 86;	shift = 7;	break;	// Creamsicle
+		case 8:		palindex = 95;	break; 	// Orange
+		case 9:		palindex = 119; shift = 7;	break; 	// Gold
+		case 10:	palindex = 111;	break; 	// Yellow
+		case 11:	palindex = 191; shift = 7; 	break; 	// Emerald
+		case 12:	palindex = 175;	break; 	// Green
+		case 13:	palindex = 219;	break; 	// Cyan
+		case 14:	palindex = 207; shift = 7;	break; 	// Steel
+		case 15:	palindex = 230;	shift = 7; 	break; 	// Periwinkle
+		case 16:	palindex = 239;	break; 	// Blue
+		case 17:	palindex = 199; shift = 7; 	break; 	// Purple
+		case 18:	palindex = 255; shift = 7; 	break; 	// Lavender
 		// Default green
 		default:	palindex = 175; break;
 }
@@ -265,7 +290,7 @@ void CON_SetupBackColormap(void)
 	// setup background colormap
 	for (i = 0, j = 0; i < 768; i += 3, j++)
 	{
-		palsum = (pal[i] + pal[i+1] + pal[i+2]) >> 6;
+		palsum = (pal[i] + pal[i+1] + pal[i+2]) >> shift;
 		consolebgmap[j] = (UINT8)(palindex - palsum);
 	}
 }
@@ -275,42 +300,57 @@ static void CONS_backcolor_Change(void)
 	CON_SetupBackColormap();
 }
 
+// Font colormap colors
+// TODO: This could probably be improved somehow...
+// These colormaps are 99% identical, with just a few changed bytes
+UINT8 *yellowmap, *purplemap, *greenmap, *bluemap, *graymap, *redmap, *orangemap,\
+ *skymap, *goldmap, *lavendermap, *teamap, *steelmap, *pinkmap, *brownmap, *peachmap;
+
 static void CON_SetupColormaps(void)
 {
 	INT32 i;
+	UINT8 *memorysrc = (UINT8 *)Z_Malloc((256*15), PU_STATIC, NULL);
 
-	yellowmap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
-	graymap   = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
-	purplemap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
-	lgreenmap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
-	bluemap   = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
-	redmap    = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
-	orangemap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
+	purplemap   = memorysrc;
+	yellowmap   = (purplemap+256);
+	greenmap    = (yellowmap+256);
+	bluemap     = (greenmap+256);
+	redmap      = (bluemap+256);
+	graymap     = (redmap+256);
+	orangemap   = (graymap+256);
+	skymap      = (orangemap+256);
+	lavendermap = (skymap+256);
+	goldmap     = (lavendermap+256);
+	teamap      = (goldmap+256);
+	steelmap    = (teamap+256);
+	pinkmap     = (steelmap+256);
+	brownmap    = (pinkmap+256);
+	peachmap    = (brownmap+256);
 
 	// setup the other colormaps, for console text
 
 	// these don't need to be aligned, unless you convert the
 	// V_DrawMappedPatch() into optimised asm.
 
-	for (i = 0; i < 256; i++)
-	{
-		yellowmap[i] = (UINT8)i; // remap each color to itself...
-		graymap[i] = (UINT8)i;
-		purplemap[i] = (UINT8)i;
-		lgreenmap[i] = (UINT8)i;
-		bluemap[i] = (UINT8)i;
-		redmap[i] = (UINT8)i;
-		orangemap[i] = (UINT8)i;
-	}
+	for (i = 0; i < (256*15); i++, ++memorysrc)
+		*memorysrc = (UINT8)(i & 0xFF); // remap each color to itself...
 
 	// SRB2Kart: Different console font, new colors
-	yellowmap[120] = (UINT8)103;
-	purplemap[120] = (UINT8)194;
-	lgreenmap[120] = (UINT8)162;
-	bluemap[120]   = (UINT8)228;
-	graymap[120]   = (UINT8)10;
-	redmap[120]    = (UINT8)126;
-	orangemap[120] = (UINT8)85;
+	purplemap[120]   = (UINT8)194;
+	yellowmap[120]   = (UINT8)103;
+	greenmap[120]    = (UINT8)162;
+	bluemap[120]     = (UINT8)228;
+	redmap[120]      = (UINT8)126; // battle
+	graymap[120]     =  (UINT8)10;
+	orangemap[120]   =  (UINT8)85; // record attack
+	skymap[120]      = (UINT8)214; // race
+	lavendermap[120] = (UINT8)248;
+	goldmap[120]     = (UINT8)114;
+	teamap[120]      = (UINT8)177;
+	steelmap[120]    = (UINT8)201;
+	pinkmap[120]     = (UINT8)145;
+	brownmap[120]    =  (UINT8)48;
+	peachmap[120]    =  (UINT8)69; // nice
 
 	// Init back colormap
 	CON_SetupBackColormap();
@@ -350,7 +390,7 @@ void CON_Init(void)
 	// register our commands
 	//
 	COM_AddCommand("cls", CONS_Clear_f);
-	COM_AddCommand("english", CONS_English_f);
+	//COM_AddCommand("english", CONS_English_f);
 	// set console full screen for game startup MAKE SURE VID_Init() done !!!
 	con_destlines = vid.height;
 	con_curlines = vid.height;
@@ -367,6 +407,7 @@ void CON_Init(void)
 		CV_RegisterVar(&cons_height);
 		CV_RegisterVar(&cons_backpic);
 		CV_RegisterVar(&cons_backcolor);
+		CV_RegisterVar(&cons_menuhighlight);
 		COM_AddCommand("bind", CONS_Bind_f);
 	}
 	else
@@ -720,6 +761,19 @@ boolean CON_Responder(event_t *ev)
 		if (modeattacking || metalrecording)
 			return false;
 
+		if (ev->data1 >= KEY_MOUSE1) // See also: HUD_Responder
+		{
+			INT32 i;
+			for (i = 0; i < num_gamecontrols; i++)
+			{
+				if (gamecontrol[i][0] == ev->data1 || gamecontrol[i][1] == ev->data1)
+					break;
+			}
+
+			if (i == num_gamecontrols)
+				return false;
+		}
+
 		if (key == gamecontrol[gc_console][0] || key == gamecontrol[gc_console][1])
 		{
 			if (consdown) // ignore repeat
@@ -1032,15 +1086,34 @@ boolean CON_Responder(event_t *ev)
 	else if (key == KEY_KPADSLASH)
 		key = '/';
 
-	if (shiftdown)
-		key = shiftxform[key];
+	// capslock
+	if (key == KEY_CAPSLOCK)	// it's a toggle.
+	{
+		if (capslock)
+			capslock = false;
+		else
+			capslock = true;
+		return true;
+	}
+
+	// same capslock code as hu_stuff.c's HU_responder. Check there for details.
+	if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z'))
+	{
+		if (shiftdown ^ capslock)
+			key = shiftxform[key];
+	}
+	else
+	{
+		if (shiftdown)
+			key = shiftxform[key];
+	}
 
 	// enter a char into the command prompt
 	if (key < 32 || key > 127)
 		return true; // even if key can't be printed, eat it anyway
 
 	// add key to cmd line here
-	if (key >= 'A' && key <= 'Z' && !shiftdown) //this is only really necessary for dedicated servers
+	if (key >= 'A' && key <= 'Z' && !(shiftdown ^ capslock)) //this is only really necessary for dedicated servers
 		key = key + 'a' - 'A';
 
 	if (input_sel != input_cur)
@@ -1227,24 +1300,15 @@ void CONS_Printf(const char *fmt, ...)
 	if (con_startup)
 	{
 #if (defined (_WINDOWS)) || (defined (__OS2__) && !defined (HAVE_SDL))
-		static lumpnum_t con_backpic_lumpnum = UINT32_MAX;
-		patch_t *con_backpic;
+		patch_t *con_backpic = W_CachePatchName("KARTKREW", PU_CACHE);
 
-		if (con_backpic_lumpnum == UINT32_MAX)
-			con_backpic_lumpnum = W_GetNumForName("KARTKREW");
+		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
+		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, con_backpic, NULL);
 
-		// We load the raw lump, even in hardware mode
-		con_backpic = (patch_t*)W_CacheLumpNum(con_backpic_lumpnum, PU_CACHE);
-
-		// show startup screen and message using only 'software' graphics
-		// (rendermode may be hardware accelerated, but the video mode is not set yet)
-		CON_DrawBackpic(con_backpic, 0, vid.width); // put console background
-		I_LoadingScreen(txt);
-
-		Z_Unlock(con_backpic);
+		W_UnlockCachedPatch(con_backpic);
+		I_LoadingScreen(txt);				// Win32/OS2 only
 #else
-		// here we display the console background and console text
-		// (no hardware accelerated support for these versions)
+		// here we display the console text
 		CON_Drawer();
 		I_FinishUpdate(); // page flip or blit buffer
 #endif
@@ -1266,12 +1330,15 @@ void CONS_Alert(alerttype_t level, const char *fmt, ...)
 	switch (level)
 	{
 		case CONS_NOTICE:
+			// no notice for notices, hehe
 			CONS_Printf("\x83" "%s" "\x80 ", M_GetText("NOTICE:"));
 			break;
 		case CONS_WARNING:
+			refreshdirmenu |= REFRESHDIR_WARNING;
 			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("WARNING:"));
 			break;
 		case CONS_ERROR:
+			refreshdirmenu |= REFRESHDIR_ERROR;
 			CONS_Printf("\x85" "%s" "\x80 ", M_GetText("ERROR:"));
 			break;
 	}
@@ -1427,7 +1494,7 @@ static void CON_DrawHudlines(void)
 	if (con_hudlines <= 0)
 		return;
 
-	if (chat_on)
+	if (chat_on && OLDCHAT)
 		y = charheight; // leave place for chat input in the first row of text
 	else
 		y = 0;
@@ -1468,64 +1535,6 @@ static void CON_DrawHudlines(void)
 	con_clearlines = y; // this is handled by HU_Erase();
 }
 
-// Scale a pic_t at 'startx' pos, to 'destwidth' columns.
-//   startx, destwidth is resolution dependent
-// Used to draw console borders, console background.
-// The pic must be sized BASEVIDHEIGHT height.
-static void CON_DrawBackpic(patch_t *pic, INT32 startx, INT32 destwidth)
-{
-	(void)startx;
-	(void)destwidth;
-	V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, pic, NULL);
-}
-
-#if 0
-static inline void CON_DrawBackpic2(pic_t *pic, INT32 startx, INT32 destwidth)
-{
-	INT32 x, y;
-	INT32 v;
-	UINT8 *src, *dest;
-	const UINT8 *deststop;
-	INT32 frac, fracstep;
-
-	dest = screens[0]+startx;
-	deststop = screens[0] + vid.rowbytes * vid.height;
-
-	for (y = 0; y < con_curlines; y++, dest += vid.width)
-	{
-		// scale the picture to the resolution
-		v = SHORT(pic->height) - ((con_curlines - y) * (BASEVIDHEIGHT-1) / vid.height) - 1;
-
-		src = pic->data + v*SHORT(pic->width);
-
-		// in case of the console backpic, simplify
-		if (SHORT(pic->width) == destwidth)
-			M_Memcpy(dest, src, destwidth);
-		else
-		{
-			// scale pic to screen width
-			frac = 0;
-			fracstep = (SHORT(pic->width)<<16)/destwidth;
-			for (x = 0; x < destwidth; x += 4)
-			{
-				if (dest+x > deststop) break;
-				dest[x] = src[frac>>FRACBITS];
-				frac += fracstep;
-				if (dest+x+1 > deststop) break;
-				dest[x+1] = src[frac>>FRACBITS];
-				frac += fracstep;
-				if (dest+x+2 > deststop) break;
-				dest[x+2] = src[frac>>FRACBITS];
-				frac += fracstep;
-				if (dest+x+3 > deststop) break;
-				dest[x+3] = src[frac>>FRACBITS];
-				frac += fracstep;
-			}
-		}
-	}
-}
-#endif
-
 // draw the console background, text, and prompt if enough place
 //
 static void CON_DrawConsole(void)
@@ -1548,18 +1557,10 @@ static void CON_DrawConsole(void)
 	// draw console background
 	if (cons_backpic.value || con_forcepic)
 	{
-		static lumpnum_t con_backpic_lumpnum = UINT32_MAX;
-		patch_t *con_backpic;
+		patch_t *con_backpic = W_CachePatchName("KARTKREW", PU_CACHE);
 
-		if (con_backpic_lumpnum == UINT32_MAX)
-			con_backpic_lumpnum = W_GetNumForName("KARTKREW");
-
-		con_backpic = (patch_t*)W_CachePatchNum(con_backpic_lumpnum, PU_CACHE);
-
-		if (rendermode != render_soft)
-			V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, con_backpic, NULL);
-		else if (rendermode != render_none)
-			CON_DrawBackpic(con_backpic, 0, vid.width); // picture as background
+		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
+		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, con_backpic, NULL);
 
 		W_UnlockCachedPatch(con_backpic);
 	}
@@ -1620,6 +1621,6 @@ void CON_Drawer(void)
 	if (con_curlines > 0)
 		CON_DrawConsole();
 	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS
-		|| gamestate == GS_VOTING)
+		|| gamestate == GS_VOTING || gamestate == GS_EVALUATION || gamestate == GS_WAITINGPLAYERS)
 		CON_DrawHudlines();
 }

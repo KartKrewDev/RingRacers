@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2016 by Sonic Team Junior.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -36,6 +36,7 @@
 #include "lua_hook.h" // LUAh_LinedefExecute
 
 #include "k_kart.h" // SRB2kart
+#include "console.h" // CON_LogMessage
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -284,10 +285,13 @@ void P_InitPicAnims(void)
 				Z_Free(animatedLump);
 			}
 
-			// Now find ANIMDEFS
+			// Find ANIMDEFS lump in the WAD
 			animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", w, 0);
-			if (animdefsLumpNum != INT16_MAX)
+			while (animdefsLumpNum != INT16_MAX)
+			{
 				P_ParseANIMDEFSLump(w, animdefsLumpNum);
+				animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", (UINT16)w, animdefsLumpNum + 1);
+			}
 		}
 		// Define the last one
 		animdefs[maxanims].istexture = -1;
@@ -1707,16 +1711,16 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 
 			if (actor && actor->player && triggerline->flags & ML_EFFECT4)
 			{
-				if (maptol & TOL_NIGHTS)
+				/*if (maptol & TOL_NIGHTS)
 					lap = actor->player->mare;
-				else
+				else*/
 					lap = actor->player->laps;
 			}
 			else
 			{
-				if (maptol & TOL_NIGHTS)
+				/*if (maptol & TOL_NIGHTS)
 					lap = P_FindLowestMare();
-				else
+				else*/
 					lap = P_FindLowestLap();
 			}
 
@@ -1940,6 +1944,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	 || specialtype == 318  // Unlockable trigger - Once
 	 || specialtype == 320  // Unlockable - Once
 	 || specialtype == 321 || specialtype == 322 // Trigger on X calls - Continuous + Each Time
+	 || specialtype == 328 // Encore Load
 	 || specialtype == 399) // Level Load
 		triggerline->special = 0; // Clear it out
 
@@ -1975,6 +1980,7 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 		// "No More Enemies" and "Level Load" take care of themselves.
 		if (lines[masterline].special == 313
 		 || lines[masterline].special == 399
+		 || lines[masterline].special == 328
 		 // Each-time executors handle themselves, too
 		 || lines[masterline].special == 301 // Each time
 		 || lines[masterline].special == 306 // Character ability - Each time
@@ -2054,8 +2060,7 @@ void P_SwitchWeather(INT32 weathernum)
 
 		for (think = thinkercap.next; think != &thinkercap; think = think->next)
 		{
-			if ((think->function.acp1 != (actionf_p1)P_SnowThinker)
-				&& (think->function.acp1 != (actionf_p1)P_RainThinker))
+			if (think->function.acp1 != (actionf_p1)P_NullPrecipThinker)
 				continue; // not a precipmobj thinker
 
 			precipmobj = (precipmobj_t *)think;
@@ -2071,14 +2076,12 @@ void P_SwitchWeather(INT32 weathernum)
 
 		for (think = thinkercap.next; think != &thinkercap; think = think->next)
 		{
+			if (think->function.acp1 != (actionf_p1)P_NullPrecipThinker)
+				continue; // not a precipmobj thinker
+			precipmobj = (precipmobj_t *)think;
+
 			if (swap == PRECIP_RAIN) // Snow To Rain
 			{
-				if (!(think->function.acp1 == (actionf_p1)P_SnowThinker
-					|| think->function.acp1 == (actionf_p1)P_NullPrecipThinker))
-					continue; // not a precipmobj thinker
-
-				precipmobj = (precipmobj_t *)think;
-
 				precipmobj->flags = mobjinfo[MT_RAIN].flags;
 				st = &states[mobjinfo[MT_RAIN].spawnstate];
 				precipmobj->state = st;
@@ -2089,17 +2092,12 @@ void P_SwitchWeather(INT32 weathernum)
 
 				precipmobj->precipflags &= ~PCF_INVISIBLE;
 
-				think->function.acp1 = (actionf_p1)P_RainThinker;
+				precipmobj->precipflags |= PCF_RAIN;
+				//think->function.acp1 = (actionf_p1)P_RainThinker;
 			}
 			else if (swap == PRECIP_SNOW) // Rain To Snow
 			{
 				INT32 z;
-
-				if (!(think->function.acp1 == (actionf_p1)P_RainThinker
-					|| think->function.acp1 == (actionf_p1)P_NullPrecipThinker))
-					continue; // not a precipmobj thinker
-
-				precipmobj = (precipmobj_t *)think;
 
 				precipmobj->flags = mobjinfo[MT_SNOWFLAKE].flags;
 				z = M_RandomByte();
@@ -2118,19 +2116,13 @@ void P_SwitchWeather(INT32 weathernum)
 				precipmobj->frame = st->frame;
 				precipmobj->momz = mobjinfo[MT_SNOWFLAKE].speed;
 
-				precipmobj->precipflags &= ~PCF_INVISIBLE;
+				precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_RAIN);
 
-				think->function.acp1 = (actionf_p1)P_SnowThinker;
+				//think->function.acp1 = (actionf_p1)P_SnowThinker;
 			}
 			else if (swap == PRECIP_BLANK || swap == PRECIP_STORM_NORAIN) // Remove precip, but keep it around for reuse.
 			{
-				if (!(think->function.acp1 == (actionf_p1)P_RainThinker
-					|| think->function.acp1 == (actionf_p1)P_SnowThinker))
-					continue;
-
-				precipmobj = (precipmobj_t *)think;
-
-				think->function.acp1 = (actionf_p1)P_NullPrecipThinker;
+				//think->function.acp1 = (actionf_p1)P_NullPrecipThinker;
 
 				precipmobj->precipflags |= PCF_INVISIBLE;
 			}
@@ -3213,6 +3205,9 @@ void P_SetupSignExit(player_t *player)
 	thinker_t *think;
 	INT32 numfound = 0;
 
+	if (player->kartstuff[k_position] != 1)
+		return;
+
 	for (; node; node = node->m_thinglist_next)
 	{
 		thing = node->m_thing;
@@ -3224,8 +3219,11 @@ void P_SetupSignExit(player_t *player)
 
 		P_SetTarget(&thing->target, player->mo);
 		P_SetMobjState(thing, S_SIGN1);
-		if (thing->info->seesound)
-			S_StartSound(thing, thing->info->seesound);
+
+		// SRB2Kart: Set sign spinning variables
+		thing->movefactor = thing->z;
+		thing->z += (768*thing->scale) * P_MobjFlip(thing);
+		thing->movecount = 1;
 
 		++numfound;
 	}
@@ -3249,10 +3247,27 @@ void P_SetupSignExit(player_t *player)
 
 		P_SetTarget(&thing->target, player->mo);
 		P_SetMobjState(thing, S_SIGN1);
-		if (thing->info->seesound)
-			S_StartSound(thing, thing->info->seesound);
+
+		// SRB2Kart: Set sign spinning variables
+		thing->movefactor = thing->z;
+		thing->z += (768*thing->scale) * P_MobjFlip(thing);
+		thing->movecount = 1;
 
 		++numfound;
+	}
+
+	if (numfound)
+		return;
+
+	// SRB2Kart: FINALLY, add in an alternative if no place is found
+	if (player->mo)
+	{
+		mobj_t *sign = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + (768*mapheaderinfo[gamemap-1]->mobj_scale), MT_SIGN);
+
+		P_SetTarget(&sign->target, player->mo);
+		P_SetMobjState(sign, S_SIGN1);
+		sign->movefactor = player->mo->floorz;
+		sign->movecount = 1;
 	}
 }
 
@@ -3616,10 +3631,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			if (gametype == GT_CTF && player->gotflag & (GF_REDFLAG|GF_BLUEFLAG))
 				P_PlayerFlagBurst(player, false);
 			break;
-		case 12: // Space Countdown
-			if ((player->powers[pw_shield] & SH_NOSTACK) != SH_ELEMENTAL && !player->powers[pw_spacetime])
-				player->powers[pw_spacetime] = spacetimetics + 1;
-			break;
+		case 12: // Wall Sector (Don't step-up/down)
 		case 13: // Ramp Sector (Increase step-up/down)
 		case 14: // Non-Ramp Sector (Don't step-down)
 		case 15: // Bouncy Sector (FOF Control Only)
@@ -3745,6 +3757,8 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			break;
 		case 12: // Lua sector special
 			break;
+		case 15: // Invert Encore Remap
+			break;
 	}
 DoneSection2:
 
@@ -3753,28 +3767,52 @@ DoneSection2:
 	// Process Section 3
 	switch (special)
 	{
-		case 1: // SRB2kart: bounce pad
+		case 1: // SRB2kart: Spring Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
+				const fixed_t hscale = mapheaderinfo[gamemap-1]->mobj_scale + (mapheaderinfo[gamemap-1]->mobj_scale - player->mo->scale);
+				const fixed_t minspeed = 24*hscale;
+
 				if (player->mo->eflags & MFE_SPRUNG)
 					break;
 
-				if (player->speed < K_GetKartSpeed(player, true)/4) // Push forward to prevent getting stuck
-					P_InstaThrust(player->mo, player->mo->angle, FixedMul(K_GetKartSpeed(player, true)/4, player->mo->scale));
+				if (player->speed < minspeed) // Push forward to prevent getting stuck
+					P_InstaThrust(player->mo, player->mo->angle, minspeed);
 
-				player->kartstuff[k_feather] |= 2;
-				K_DoBouncePad(player->mo, 0);
+				player->kartstuff[k_pogospring] = 1;
+				K_DoPogoSpring(player->mo, 0, 1);
 			}
 			break;
 
 		case 2: // Wind/Current
-		case 3: // Unused   (was "Ice/Sludge and Wind/Current")
+			break;
+
+		case 3: // SRB2kart: Spring Panel (capped speed)
+			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
+			{
+				const fixed_t hscale = mapheaderinfo[gamemap-1]->mobj_scale + (mapheaderinfo[gamemap-1]->mobj_scale - player->mo->scale);
+				const fixed_t minspeed = 24*hscale;
+				const fixed_t maxspeed = 28*hscale;
+
+				if (player->mo->eflags & MFE_SPRUNG)
+					break;
+
+				if (player->speed > maxspeed) // Prevent overshooting jumps
+					P_InstaThrust(player->mo, R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy), maxspeed);
+				else if (player->speed < minspeed) // Push forward to prevent getting stuck
+					P_InstaThrust(player->mo, player->mo->angle, minspeed);
+
+				player->kartstuff[k_pogospring] = 2;
+				K_DoPogoSpring(player->mo, 0, 1);
+			}
+			break;
+
 		case 4: // Conveyor Belt
 			break;
 
 		case 5: // Speed pad w/o spin
 		case 6: // Speed pad w/ spin
-			if (player->powers[pw_flashing] != 0 && player->powers[pw_flashing] < TICRATE/2)
+			if (player->kartstuff[k_dashpadcooldown] != 0)
 				break;
 
 			i = P_FindSpecialLineFromTag(4, sector->tag, -1);
@@ -3788,6 +3826,11 @@ DoneSection2:
 				linespeed = P_AproxDistance(lines[i].v2->x-lines[i].v1->x, lines[i].v2->y-lines[i].v1->y);
 
 				player->mo->angle = lineangle;
+
+				// SRB2Kart: Scale the speed you get from them!
+				// This is scaled differently from other horizontal speed boosts from stuff like springs, because of how this is used for some ramp jumps.
+				if (player->mo->scale > mapheaderinfo[gamemap-1]->mobj_scale)
+					linespeed = FixedMul(linespeed, mapheaderinfo[gamemap-1]->mobj_scale + (player->mo->scale - mapheaderinfo[gamemap-1]->mobj_scale));
 
 				if (!demoplayback || P_AnalogMove(player))
 				{
@@ -3819,16 +3862,26 @@ DoneSection2:
 
 				P_InstaThrust(player->mo, player->mo->angle, linespeed);
 
-				if (GETSECSPECIAL(sector->special, 3) == 6 && (player->charability2 == CA2_SPINDASH))
+				/*if (GETSECSPECIAL(sector->special, 3) == 6 && (player->charability2 == CA2_SPINDASH)) // SRB2kart
 				{
 					if (!(player->pflags & PF_SPINNING))
 						player->pflags |= PF_SPINNING;
 
-					//P_SetPlayerMobjState(player->mo, S_PLAY_ATK1); // SRB2kart
-				}
+					//P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
+				}*/
 
-				player->powers[pw_flashing] = TICRATE/3;
+				player->kartstuff[k_dashpadcooldown] = TICRATE/3;
+				player->kartstuff[k_drift] = 0;
+				player->kartstuff[k_driftcharge] = 0;
+				player->kartstuff[k_pogospring] = 0;
 				S_StartSound(player->mo, sfx_spdpad);
+
+				{
+					sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
+					if (cv_kartvoices.value)
+						S_StartSound(player->mo, sfx_kbost1+pick);
+					//K_TauntVoiceTimers(player);
+				}
 			}
 			break;
 
@@ -3969,22 +4022,21 @@ DoneSection2:
 			//	P_SetPlayerMobjState(player->mo, S_PLAY_FALL1);
 			break;
 
-		case 6: // SRB2kart 190117 - Mushroom Boost Panel
+		case 6: // SRB2kart 190117 - Sneaker Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
 				if (!player->kartstuff[k_floorboost])
 					player->kartstuff[k_floorboost] = 3;
 				else
 					player->kartstuff[k_floorboost] = 2;
-				K_DoMushroom(player, false);
+				K_DoSneaker(player, 0);
 			}
 			break;
 
-		case 7: // SRB2kart 190117 - Oil Slick
+		case 7: // SRB2kart 190117 - Oil Slick (deprecated)
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
-				player->kartstuff[k_spinouttype] = -1;
-				K_SpinPlayer(player, NULL);
+				K_SpinPlayer(player, NULL, 0, NULL, false);
 			}
 			break;
 
@@ -4049,7 +4101,6 @@ DoneSection2:
 				P_SetTarget(&player->mo->tracer, waypoint);
 				player->speed = speed;
 				player->pflags &= ~PF_SPINNING; // SRB2kart 200117
-				player->pflags |= PF_SPINNING;
 				player->pflags &= ~PF_JUMPED;
 				player->pflags &= ~PF_GLIDING;
 				player->climbing = 0;
@@ -4127,7 +4178,6 @@ DoneSection2:
 				P_SetTarget(&player->mo->tracer, waypoint);
 				player->speed = speed;
 				player->pflags &= ~PF_SPINNING; // SRB2kart 200117
-				player->pflags |= PF_SPINNING;
 				player->pflags &= ~PF_JUMPED;
 
 				if (!(player->mo->state >= &states[S_KART_RUN1] && player->mo->state <= &states[S_KART_RUN2]))
@@ -4143,28 +4193,47 @@ DoneSection2:
 
 		case 10: // Finish Line
 			// SRB2kart - 150117
-			if (G_RaceGametype() && (player->starpostcount >= numstarposts/2 || player->exiting))
+			if (G_RaceGametype() && (player->starpostnum >= (numstarposts - (2*numstarposts)/5) || player->exiting))
 				player->kartstuff[k_starpostwp] = player->kartstuff[k_waypoint] = 0;
 			//
 			if (G_RaceGametype() && !player->exiting)
 			{
-				if (player->starpostcount >= numstarposts/2) // srb2kart: must have touched *enough* starposts (was originally "(player->starpostnum == numstarposts)")
+				if (player->starpostnum >= (numstarposts - (2*numstarposts)/5)) // srb2kart: must have touched *enough* starposts (was originally "(player->starpostnum == numstarposts)")
 				{
+					UINT8 nump = 0;
+
+					for (i = 0; i < MAXPLAYERS; i++)
+					{
+						if (!playeringame[i] || players[i].spectator)
+							continue;
+						nump++;
+					}
+
 					player->laps++;
+
+					// Set up lap animation vars
+					if (nump > 1)
+					{
+						if (K_IsPlayerLosing(player))
+							player->kartstuff[k_laphand] = 3;
+						else
+						{
+							if (nump > 2 && player->kartstuff[k_position] == 1) // 1st place in 1v1 uses thumbs up
+								player->kartstuff[k_laphand] = 1;
+							else
+								player->kartstuff[k_laphand] = 2;
+						}
+					}
+					else
+						player->kartstuff[k_laphand] = 0; // No hands in FREE PLAY
+
 					player->kartstuff[k_lapanimation] = 80;
 
 					if (player->pflags & PF_NIGHTSMODE)
 						player->drillmeter += 48*20;
 
-					if (netgame)
-					{
-						if (player->laps >= (UINT8)cv_numlaps.value)
-							CONS_Printf(M_GetText("%s has finished the race.\n"), player_names[player-players]);
-						else if (player->laps == (UINT8)(cv_numlaps.value - 1))
-							CONS_Printf("%s started the final lap\n", player_names[player-players]);
-						else
-							CONS_Printf(M_GetText("%s started lap %u\n"), player_names[player-players], (UINT32)player->laps+1);
-					}
+					if (netgame && player->laps >= (UINT8)cv_numlaps.value)
+						CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 
 					// SRB2Kart: save best lap for record attack
 					if (player == &players[consoleplayer])
@@ -4174,28 +4243,44 @@ DoneSection2:
 						curlap = 0;
 					}
 
-					// Reset starposts (checkpoints) info
-					// SRB2kart 200117
-					player->starpostangle = player->starpostnum = 0;
-					player->starpostx = player->starposty = player->starpostz = 0;
-					player->starpostcount = 0;
-					//except the time!
 					player->starposttime = player->realtime;
+					player->starpostnum = 0;
+
+					if (mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
+					{
+						// SRB2Kart 281118
+						// Save the player's time and position.
+						player->starpostx = player->mo->x>>FRACBITS;
+						player->starposty = player->mo->y>>FRACBITS;
+						player->starpostz = player->mo->floorz>>FRACBITS;
+						player->starpostangle = player->mo->angle; //R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy); torn; a momentum-based guess is less likely to be wrong in general, but when it IS wrong, it fucks you over entirely...
+					}
+					else
+					{
+						// SRB2kart 200117
+						// Reset starposts (checkpoints) info
+						player->starpostangle = player->starpostx = player->starposty = player->starpostz = 0;
+					}
 
 					if (P_IsLocalPlayer(player))
 					{
-						if (player->laps < (UINT8)(cv_numlaps.value - 1))
-							S_StartSound(NULL, sfx_mlap);
-						else if (player->laps == (UINT8)(cv_numlaps.value - 1))
-							S_StartSound(NULL, sfx_mlap);
+						if (player->laps == (UINT8)(cv_numlaps.value - 1))
+							S_StartSound(NULL, sfx_s3k68);
+						else if (player->laps < (UINT8)(cv_numlaps.value - 1))
+							S_StartSound(NULL, sfx_s221);
 					}
-					//
+
 					//player->starpostangle = player->starposttime = player->starpostnum = 0;
 					//player->starpostx = player->starposty = player->starpostz = 0;
-					P_ResetStarposts();
 
 					// Play the starpost sound for 'consistency'
 					// S_StartSound(player->mo, sfx_strpst);
+
+					// Figure out how many are playing on the last lap, to prevent spectate griefing
+					if (!nospectategrief && player->laps >= (UINT8)(cv_numlaps.value - 1))
+						nospectategrief = nump;
+
+					thwompsactive = true; // Lap 2 effects
 				}
 				else if (player->starpostnum)
 				{
@@ -4208,27 +4293,12 @@ DoneSection2:
 				if (player->laps >= (unsigned)cv_numlaps.value)
 				{
 					if (P_IsLocalPlayer(player))
-					{
-						// SRB2kart 200117
-						if (splitscreen)
-							S_ChangeMusicInternal("karwin", true);
-						else
-						{
-							if (player->kartstuff[k_position] == 1)
-								S_ChangeMusicInternal("karwin", true);
-							else if (K_IsPlayerLosing(player))
-								S_ChangeMusicInternal("karlos", true);
-							else
-								S_ChangeMusicInternal("karok", true);
-						}
-					}
-
-					if (player->kartstuff[k_position] == 1)
+						S_StartSound(NULL, sfx_s3k6a);
+					else if (player->kartstuff[k_position] == 1)
 						S_StartSound(NULL, sfx_s253);
-					else if (P_IsLocalPlayer(player))
-						S_StartSound(NULL, sfx_s24f);
 
 					P_DoPlayerExit(player);
+					P_SetupSignExit(player);
 				}
 			}
 			break;
@@ -5551,7 +5621,7 @@ static void P_RunLevelLoadExecutors(void)
 
 	for (i = 0; i < numlines; i++)
 	{
-		if (lines[i].special == 399)
+		if (lines[i].special == 399 || lines[i].special == 328)
 			P_RunTriggerLinedef(&lines[i], NULL, NULL);
 	}
 }
@@ -5776,10 +5846,8 @@ void P_SpawnSpecials(INT32 fromnetsave)
 					}
 					else // Otherwise, set calculated offsets such that line's v1 is the apparent origin
 					{
-						fixed_t cosinecomponent = FINECOSINE(flatangle>>ANGLETOFINESHIFT);
-						fixed_t sinecomponent = FINESINE(flatangle>>ANGLETOFINESHIFT);
-						xoffs = (-FixedMul(lines[i].v1->x, cosinecomponent) % MAXFLATSIZE) + (FixedMul(lines[i].v1->y, sinecomponent) % MAXFLATSIZE); // No danger of overflow thanks to the strategically placed modulo operations.
-						yoffs = (FixedMul(lines[i].v1->x, sinecomponent) % MAXFLATSIZE) + (FixedMul(lines[i].v1->y, cosinecomponent) % MAXFLATSIZE); // Ditto.
+						xoffs = -lines[i].v1->x;
+						yoffs = lines[i].v1->y;
 					}
 
 					for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
@@ -6351,8 +6419,20 @@ void P_SpawnSpecials(INT32 fromnetsave)
 			case 259: // Make-Your-Own FOF!
 				if (lines[i].sidenum[1] != 0xffff)
 				{
-					UINT8 *data = W_CacheLumpNum(lastloadedmaplumpnum + ML_SIDEDEFS,PU_STATIC);
+					UINT8 *data;
 					UINT16 b;
+
+					if (W_IsLumpWad(lastloadedmaplumpnum)) // welp it's a map wad in a pk3
+					{ // HACK: Open wad file rather quickly so we can get the data from the sidedefs lump
+						UINT8 *wadData = W_CacheLumpNum(lastloadedmaplumpnum, PU_STATIC);
+						filelump_t *fileinfo = (filelump_t *)(wadData + ((wadinfo_t *)wadData)->infotableofs);
+						fileinfo += ML_SIDEDEFS; // we only need the SIDEDEFS lump
+						data = Z_Malloc(fileinfo->size, PU_STATIC, NULL);
+						M_Memcpy(data, wadData + fileinfo->filepos, fileinfo->size); // copy data
+						Z_Free(wadData); // we're done with this now
+					}
+					else // phew it's just a WAD
+						data = W_CacheLumpNum(lastloadedmaplumpnum + ML_SIDEDEFS,PU_STATIC);
 
 					for (b = 0; b < (INT16)numsides; b++)
 					{
@@ -6440,6 +6520,12 @@ void P_SpawnSpecials(INT32 fromnetsave)
 					sec = sides[*lines[i].sidenum].sector - sectors;
 					P_AddEachTimeThinker(&sectors[sec], &lines[i]);
 				}
+				break;
+
+			case 328: // Encore-only linedef execute on map load
+				if (!encoremode)
+					lines[i].special = 0;
+				// This is handled in P_RunLevelLoadExecutors.
 				break;
 
 			case 399: // Linedef execute on map load
@@ -7224,8 +7310,8 @@ void T_Friction(friction_t *f)
 		// friction works for all mobj's
 		// (or at least MF_PUSHABLEs, which is all I care about anyway)
 		if ((!(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)) && thing->z == thing->floorz) && (thing->player
-			&& (thing->player->kartstuff[k_startimer] == 0 && thing->player->kartstuff[k_bootimer] == 0
-			&& thing->player->kartstuff[k_mushroomtimer] == 0 && thing->player->kartstuff[k_growshrinktimer] <= 0)))
+			&& (thing->player->kartstuff[k_invincibilitytimer] == 0 && thing->player->kartstuff[k_hyudorotimer] == 0
+			&& thing->player->kartstuff[k_sneakertimer] == 0 && thing->player->kartstuff[k_growshrinktimer] <= 0)))
 		{
 			if (f->roverfriction)
 			{
@@ -7621,7 +7707,9 @@ void T_Pusher(pusher_t *p)
 		if (thing->player && thing->player->pflags & PF_ROPEHANG)
 			continue;
 
-		if (thing->player && (thing->state == &states[thing->info->painstate]) && (thing->player->powers[pw_flashing] > (K_GetKartFlashing()/4)*3 && thing->player->powers[pw_flashing] <= K_GetKartFlashing()))
+		if (thing->player && (thing->state == &states[thing->info->painstate])
+			&& (thing->player->powers[pw_flashing] > (K_GetKartFlashing(thing->player)/4)*3
+			&& thing->player->powers[pw_flashing] <= K_GetKartFlashing(thing->player)))
 			continue;
 
 		inFOF = touching = moved = false;
@@ -7758,7 +7846,6 @@ void T_Pusher(pusher_t *p)
 					thing->player->pflags |= PF_JUMPED;
 
 				thing->player->pflags |= PF_SLIDING;
-				P_SetPlayerMobjState (thing, thing->info->painstate); // Whee!
 				thing->angle = R_PointToAngle2 (0, 0, xspeed<<(FRACBITS-PUSH_FACTOR), yspeed<<(FRACBITS-PUSH_FACTOR));
 
 				if (!demoplayback || P_AnalogMove(thing->player))
