@@ -1383,8 +1383,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
 	{
+		axis = JoyAxis(AXISMOVE, ssplayer);
 		if (InputDown(gc_accelerate, ssplayer) || (usejoystick && axis > 0))
 			cmd->buttons |= BT_ACCELERATE;
+		axis = JoyAxis(AXISBRAKE, ssplayer);
 		if (InputDown(gc_brake, ssplayer) || (usejoystick && axis > 0))
 			cmd->buttons |= BT_BRAKE;
 		axis = JoyAxis(AXISAIM, ssplayer);
@@ -2986,14 +2988,12 @@ void G_DoReborn(INT32 playernum)
 			}
 		}
 		else
-#ifdef HAVE_BLUA
 		{
-			LUAh_MapChange();
+#ifdef HAVE_BLUA
+			LUAh_MapChange(gamemap);
 #endif
 			G_DoLoadLevel(true);
-#ifdef HAVE_BLUA
 		}
-#endif
 	}*/
 	else
 	{
@@ -4398,7 +4398,12 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	if (!skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
+	{
+#ifdef HAVE_BLUA
+		LUAh_MapChange(gamemap);
+#endif
 		G_DoLoadLevel(resetplayer);
+	}
 
 	if (netgame)
 	{
@@ -5912,9 +5917,9 @@ void G_DoPlayDemo(char *defdemoname)
 	// didn't start recording right away.
 	demo_start = false;
 
-#ifdef HAVE_BLUA
-	LUAh_MapChange();
-#endif
+/*#ifdef HAVE_BLUA
+	LUAh_MapChange(gamemap);
+#endif*/
 	displayplayer = consoleplayer = 0;
 	memset(playeringame,0,sizeof(playeringame));
 	playeringame[0] = true;
