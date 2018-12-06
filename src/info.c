@@ -3394,7 +3394,7 @@ state_t states[NUMSTATES] =
 	{SPR_FWRK, 3|FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_KARMAFIREWORK1}, // S_KARMAFIREWORK4
 	{SPR_FWRK, 4|FF_FULLBRIGHT, TICRATE, {NULL}, 0, 0, S_NULL}, // S_KARMAFIREWORKTRAIL
 
-	{SPR_OTFG,   FF_FULLBRIGHT|FF_TRANS50, 8, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEFOG
+	{SPR_OTFG,   FF_FULLBRIGHT|FF_TRANS50, TICRATE, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEFOG
 	{SPR_OTFG, 1|FF_FULLBRIGHT, 8, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEORB
 
 #ifdef SEENAMES
@@ -20072,8 +20072,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL,         // xdeathstate
 	    sfx_None,       // deathsound
 	    0,              // speed
-	    8<<FRACBITS,    // radius
-	    16<<FRACBITS,   // height
+	    16<<FRACBITS,    // radius
+	    32<<FRACBITS,   // height
 	    -1,             // display offset
 	    100,            // mass
 	    0,              // damage
@@ -20099,8 +20099,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL,         // xdeathstate
 	    sfx_None,       // deathsound
 	    0,              // speed
-	    8<<FRACBITS,    // radius
-	    16<<FRACBITS,   // height
+	    16<<FRACBITS,    // radius
+	    32<<FRACBITS,   // height
 	    -1,             // display offset
 	    100,            // mass
 	    0,              // damage

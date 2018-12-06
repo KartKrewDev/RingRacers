@@ -6490,7 +6490,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 		switch(type)
 		{
 			case MT_OVERTIMEFOG:
-				P_SetScale(mo, 2*mo->scale);
+				P_SetScale(mo, 4*mo->scale);
 				mo->destscale = 8*mo->scale;
 				mo->momz = P_RandomRange(1,8)*mo->scale;
 				break;
@@ -6499,6 +6499,8 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 				mo->destscale = mo->scale/4;
 				if ((leveltime/2) & 1)
 					mo->frame++;
+				/*if (i == 0 && !((leveltime/2) % 3 == 0))
+					S_StartSoundAtVolume(mo, sfx_s1b1, 64);*/
 				break;
 			default:
 				break;
@@ -6511,6 +6513,9 @@ void P_RunBattleOvertime(void)
 {
 	UINT8 i, j;
 
+	/*if (!S_IdPlaying(sfx_s3kd4l)) // global ambience
+		S_StartSound(NULL, sfx_s3kd4l);*/
+
 	if (battleovertime->radius > 512)
 		battleovertime->radius--;
 	else
@@ -6521,8 +6526,9 @@ void P_RunBattleOvertime(void)
 		for (i = 0; i < 16; i++) // 16 base orbs
 		{
 			angle_t ang = FixedAngle(((45*i) * (FRACUNIT>>1)) + ((leveltime % 360)<<FRACBITS));
-			fixed_t x = battleovertime->x + P_ReturnThrustX(NULL, ang, battleovertime->radius<<FRACBITS);
-			fixed_t y = battleovertime->y + P_ReturnThrustY(NULL, ang, battleovertime->radius<<FRACBITS);
+			fixed_t dist = (battleovertime->radius - (2*mobjinfo[MT_OVERTIMEORB].radius))<<FRACBITS;
+			fixed_t x = battleovertime->x + P_ReturnThrustX(NULL, ang, dist);
+			fixed_t y = battleovertime->y + P_ReturnThrustY(NULL, ang, dist);
 			P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
 		}
 	}
@@ -6534,8 +6540,9 @@ void P_RunBattleOvertime(void)
 		{
 			fixed_t x = battleovertime->x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
 			fixed_t y = battleovertime->y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t closestdist = (battleovertime->radius + (4*mobjinfo[MT_OVERTIMEFOG].radius))<<FRACBITS;
 			j++;
-			if (P_AproxDistance(x-battleovertime->x, y-battleovertime->y) <= (battleovertime->radius<<FRACBITS))
+			if (P_AproxDistance(x-battleovertime->x, y-battleovertime->y) < closestdist)
 				continue;
 			P_SpawnOvertimeParticles(x, y, MT_OVERTIMEFOG, false);
 			break;
@@ -9246,6 +9253,18 @@ void P_MobjThinker(mobj_t *mobj)
 				trail->color = mobj->color;
 			}
 			break;
+		case MT_RANDOMITEM:
+			if (G_BattleGametype() && mobj->threshold == 70)
+			{
+				mobj->color = (1 + (leveltime % (MAXSKINCOLORS-1)));
+				mobj->colorized = true;
+			}
+			else
+			{
+				mobj->color = SKINCOLOR_NONE;
+				mobj->colorized = false;
+			}
+			break;
 		//}
 		case MT_TURRET:
 			P_MobjCheckWater(mobj);
@@ -9525,6 +9544,7 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 						else
 							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
 
+						P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
 						// Transfer flags2 (strongbox, objectflip)
 						newmobj->flags2 = mobj->flags2 & ~MF2_DONTDRAW;
 						if (mobj->threshold == 70)

@@ -5886,6 +5886,7 @@ static patch_t *kp_lapanim_emblem[2];
 static patch_t *kp_lapanim_hand[3];
 
 static patch_t *kp_yougotem;
+static patch_t *kp_itemminimap;
 
 void K_LoadKartHUDGraphics(void)
 {
@@ -6131,6 +6132,7 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	kp_yougotem = (patch_t *) W_CachePatchName("YOUGOTEM", PU_HUDGFX);
+	kp_itemminimap = (patch_t *) W_CachePatchName("MMAPITEM", PU_HUDGFX);
 }
 
 // For the item toggle menu
@@ -7295,7 +7297,7 @@ static void K_drawKartPlayerCheck(void)
 	}
 }
 
-static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, patch_t *AutomapPic)
+static void K_drawKartMinimapHead(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags, patch_t *icon, UINT8 *colormap, patch_t *AutomapPic)
 {
 	// amnum xpos & ypos are the icon's speed around the HUD.
 	// The number being divided by is for how fast it moves.
@@ -7303,8 +7305,6 @@ static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, pat
 
 	// am xpos & ypos are the icon's starting position. Withouht
 	// it, they wouldn't 'spawn' on the top-right side of the HUD.
-
-	UINT8 skin = 0;
 
 	fixed_t amnumxpos, amnumypos;
 	INT32 amxpos, amypos;
@@ -7315,9 +7315,6 @@ static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, pat
 	fixed_t mapwidth, mapheight;
 	fixed_t xoffset, yoffset;
 	fixed_t xscale, yscale, zoom;
-
-	if (mo->skin)
-		skin = ((skin_t*)mo->skin)-skins;
 
 	maxx = maxy = INT32_MAX;
 	minx = miny = INT32_MIN;
@@ -7355,33 +7352,23 @@ static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, pat
 	yscale = FixedDiv(AutomapPic->height, mapheight);
 	zoom = FixedMul(min(xscale, yscale), FRACUNIT-FRACUNIT/20);
 
-	amnumxpos = (FixedMul(mo->x, zoom) - FixedMul(xoffset, zoom));
-	amnumypos = -(FixedMul(mo->y, zoom) - FixedMul(yoffset, zoom));
+	amnumxpos = (FixedMul(objx, zoom) - FixedMul(xoffset, zoom));
+	amnumypos = -(FixedMul(objy, zoom) - FixedMul(yoffset, zoom));
 
 	if (encoremode)
 		amnumxpos = -amnumxpos;
 
-	amxpos = amnumxpos + ((x + AutomapPic->width/2 - (facemmapprefix[skin]->width/2))<<FRACBITS);
-	amypos = amnumypos + ((y + AutomapPic->height/2 - (facemmapprefix[skin]->height/2))<<FRACBITS);
+	amxpos = amnumxpos + ((hudx + AutomapPic->width/2 - (icon->width/2))<<FRACBITS);
+	amypos = amnumypos + ((hudy + AutomapPic->height/2 - (icon->height/2))<<FRACBITS);
 
 	// do we want this? it feels unnecessary. easier to just modify the amnumxpos?
 	/*if (encoremode)
 	{
 		flags |= V_FLIP;
-		amxpos = -amnumxpos + ((x + AutomapPic->width/2 + (facemmapprefix[skin]->width/2))<<FRACBITS);
+		amxpos = -amnumxpos + ((hudx + AutomapPic->width/2 + (icon->width/2))<<FRACBITS);
 	}*/
 
-	if (!mo->color) // 'default' color
-		V_DrawSciencePatch(amxpos, amypos, flags, facemmapprefix[skin], FRACUNIT);
-	else
-	{
-		UINT8 *colormap;
-		if (mo->colorized)
-			colormap = R_GetTranslationColormap(TC_RAINBOW, mo->color, GTC_CACHE);
-		else
-			colormap = R_GetTranslationColormap(skin, mo->color, GTC_CACHE);
-		V_DrawFixedPatch(amxpos, amypos, FRACUNIT, flags, facemmapprefix[skin], colormap);
-	}
+	V_DrawFixedPatch(amxpos, amypos, FRACUNIT, flags, icon, colormap);
 }
 
 static void K_drawKartMinimap(void)
@@ -7392,6 +7379,8 @@ static void K_drawKartMinimap(void)
 	INT32 x, y;
 	INT32 minimaptrans, splitflags = (splitscreen ? 0 : V_SNAPTORIGHT);
 	boolean dop1later = false;
+	UINT8 skin = 0;
+	UINT8 *colormap = NULL;
 
 	// Draw the HUD only when playing in a level.
 	// hu_stuff needs this, unlike st_stuff.
@@ -7443,13 +7432,37 @@ static void K_drawKartMinimap(void)
 		x -= SHORT(AutomapPic->leftoffset);
 	y -= SHORT(AutomapPic->topoffset);
 
+	// Draw the super item in Battle
+	if (G_BattleGametype() && battleovertime->enabled)
+	{
+		const INT32 prevsplitflags = splitflags;
+		splitflags &= ~V_HUDTRANSHALF;
+		splitflags |= V_HUDTRANS;
+		colormap = R_GetTranslationColormap(TC_RAINBOW, (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1))), GTC_CACHE);
+		K_drawKartMinimapHead(battleovertime->x, battleovertime->y, x, y, splitflags, kp_itemminimap, colormap, AutomapPic);
+		splitflags = prevsplitflags;
+	}
+
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)
 	if (ghosts)
 	{
 		demoghost *g = ghosts;
 		while (g)
 		{
-			K_drawKartMinimapHead(g->mo, x, y, splitflags, AutomapPic);
+			if (g->mo->skin)
+				skin = ((skin_t*)g->mo->skin)-skins;
+			else
+				skin = 0;
+			if (g->mo->color)
+			{
+				if (g->mo->colorized)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, g->mo->color, GTC_CACHE);
+				else
+					colormap = R_GetTranslationColormap(skin, g->mo->color, GTC_CACHE);
+			}
+			else
+				colormap = NULL;
+			K_drawKartMinimapHead(g->mo->x, g->mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
 			g = g->next;
 		}
 		if (!stplyr->mo || stplyr->spectator) // do we need the latter..?
@@ -7481,7 +7494,20 @@ static void K_drawKartMinimap(void)
 					continue;
 			}
 
-			K_drawKartMinimapHead(players[i].mo, x, y, splitflags, AutomapPic);
+			if (players[i].mo->skin)
+				skin = ((skin_t*)players[i].mo->skin)-skins;
+			else
+				skin = 0;
+			if (players[i].mo->color)
+			{
+				if (players[i].mo->colorized)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, players[i].mo->color, GTC_CACHE);
+				else
+					colormap = R_GetTranslationColormap(skin, players[i].mo->color, GTC_CACHE);
+			}
+			else
+				colormap = NULL;
+			K_drawKartMinimapHead(players[i].mo->x, players[i].mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
 		}
 	}
 
@@ -7490,7 +7516,20 @@ static void K_drawKartMinimap(void)
 
 	splitflags &= ~V_HUDTRANSHALF;
 	splitflags |= V_HUDTRANS;
-	K_drawKartMinimapHead(stplyr->mo, x, y, splitflags, AutomapPic);
+	if (stplyr->mo->skin)
+		skin = ((skin_t*)stplyr->mo->skin)-skins;
+	else
+		skin = 0;
+	if (stplyr->mo->color)
+	{
+		if (stplyr->mo->colorized)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, stplyr->mo->color, GTC_CACHE);
+		else
+			colormap = R_GetTranslationColormap(skin, stplyr->mo->color, GTC_CACHE);
+	}
+	else
+		colormap = NULL;
+	K_drawKartMinimapHead(stplyr->mo->x, stplyr->mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
 }
 
 static void K_drawKartStartCountdown(void)
