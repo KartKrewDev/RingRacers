@@ -8284,11 +8284,11 @@ static const char *const KARTSTUFF_LIST[] = {
 	"COMEBACKPOINTS",
 	"COMEBACKMODE",
 	"WANTED",
-	"KILLFIELD",
 	"YOUGOTEM",
 
 	"ITEMBLINK",
-	"ITEMBLINKMODE"
+	"ITEMBLINKMODE",
+	"KILLFIELD"
 };
 
 static const char *const HUDITEMS_LIST[] = {
