@@ -3301,6 +3301,7 @@ static void P_NetArchiveMisc(void)
 	// battleovertime_t
 	WRITEUINT8(save_p, battleovertime->enabled);
 	WRITEUINT16(save_p, battleovertime->radius);
+	WRITEUINT16(save_p, battleovertime->minradius);
 	WRITEFIXED(save_p, battleovertime->x);
 	WRITEFIXED(save_p, battleovertime->y);
 	WRITEFIXED(save_p, battleovertime->z);
@@ -3413,8 +3414,9 @@ static inline boolean P_NetUnArchiveMisc(void)
 		battlewanted[i] = READSINT8(save_p);
 
 	// battleovertime_t
-	battleovertime->enabled = (boolean)READUINT8(save_p);
+	battleovertime->enabled = READUINT8(save_p);
 	battleovertime->radius = READUINT16(save_p);
+	battleovertime->minradius = READUINT16(save_p);
 	battleovertime->x = READFIXED(save_p);
 	battleovertime->y = READFIXED(save_p);
 	battleovertime->z = READFIXED(save_p);

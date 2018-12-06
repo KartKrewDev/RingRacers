@@ -1838,7 +1838,9 @@ void P_CheckTimeLimit(void)
 					battleovertime->y = item->y;
 					battleovertime->z = item->z;
 					battleovertime->radius = 4096;
-					battleovertime->enabled = true;
+					battleovertime->minradius = (cv_overtime.value == 2 ? 40 : 512);
+					battleovertime->enabled++;
+					S_StartSound(NULL, sfx_kc47);
 				}
 				return;
 #ifndef TESTOVERTIMEINFREEPLAY

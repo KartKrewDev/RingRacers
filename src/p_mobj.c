@@ -6499,6 +6499,8 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 				mo->destscale = mo->scale/4;
 				if ((leveltime/2) & 1)
 					mo->frame++;
+				if (battleovertime->enabled < 5*TICRATE)
+					mo->frame |= FF_TRANS50;
 				/*if (i == 0 && !((leveltime/2) % 3 == 0))
 					S_StartSoundAtVolume(mo, sfx_s1b1, 64);*/
 				break;
@@ -6513,13 +6515,21 @@ void P_RunBattleOvertime(void)
 {
 	UINT8 i, j;
 
-	/*if (!S_IdPlaying(sfx_s3kd4l)) // global ambience
-		S_StartSound(NULL, sfx_s3kd4l);*/
-
-	if (battleovertime->radius > 512)
-		battleovertime->radius--;
+	if (battleovertime->enabled < 5*TICRATE)
+	{
+		battleovertime->enabled++;
+		if (battleovertime->enabled == TICRATE)
+			S_StartSound(NULL, sfx_bhurry);
+		if (battleovertime->enabled == 5*TICRATE)
+			S_StartSound(NULL, sfx_kc40);
+	}
 	else
-		battleovertime->radius = 512;
+	{
+		if (battleovertime->radius > battleovertime->minradius)
+			battleovertime->radius--;
+		else
+			battleovertime->radius = battleovertime->minradius;
+	}
 
 	if (leveltime & 1)
 	{
@@ -6532,6 +6542,12 @@ void P_RunBattleOvertime(void)
 			P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
 		}
 	}
+
+	if (battleovertime->enabled < 5*TICRATE)
+		return;
+
+	if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
+		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, (4096-battleovertime->radius)/2));
 
 	for (i = 0; i < 16; i++)
 	{

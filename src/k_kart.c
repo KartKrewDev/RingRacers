@@ -4394,7 +4394,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		&& !player->kartstuff[k_respawn] && !player->powers[pw_flashing])
 	{
 		player->kartstuff[k_wanted]++;
-		if (battleovertime->enabled)
+		if (battleovertime->enabled >= 5*TICRATE)
 		{
 			if (P_AproxDistance(player->mo->x - battleovertime->x, player->mo->y - battleovertime->y) > (battleovertime->radius<<FRACBITS))
 			{
@@ -7435,12 +7435,15 @@ static void K_drawKartMinimap(void)
 	// Draw the super item in Battle
 	if (G_BattleGametype() && battleovertime->enabled)
 	{
-		const INT32 prevsplitflags = splitflags;
-		splitflags &= ~V_HUDTRANSHALF;
-		splitflags |= V_HUDTRANS;
-		colormap = R_GetTranslationColormap(TC_RAINBOW, (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1))), GTC_CACHE);
-		K_drawKartMinimapHead(battleovertime->x, battleovertime->y, x, y, splitflags, kp_itemminimap, colormap, AutomapPic);
-		splitflags = prevsplitflags;
+		if (battleovertime->enabled >= 5*TICRATE || (battleovertime->enabled & 1))
+		{
+			const INT32 prevsplitflags = splitflags;
+			splitflags &= ~V_HUDTRANSHALF;
+			splitflags |= V_HUDTRANS;
+			colormap = R_GetTranslationColormap(TC_RAINBOW, (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1))), GTC_CACHE);
+			K_drawKartMinimapHead(battleovertime->x, battleovertime->y, x, y, splitflags, kp_itemminimap, colormap, AutomapPic);
+			splitflags = prevsplitflags;
+		}
 	}
 
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)

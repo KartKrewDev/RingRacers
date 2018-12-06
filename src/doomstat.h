@@ -475,8 +475,8 @@ extern SINT8 pickedvote;
   */
 typedef struct
 {
-	boolean enabled; ///< Has this been initalized yet?
-	UINT16 radius; ///< Radius of kill field
+	UINT8 enabled; ///< Has this been initalized yet?
+	UINT16 radius, minradius; ///< Radius of kill field
 	fixed_t x, y, z; ///< Position to center on (z is only used for visuals)
 } battleovertime_t;
 

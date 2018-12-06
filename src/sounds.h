@@ -890,6 +890,7 @@ typedef enum
 	sfx_chain,
 	sfx_mkuma,
 	sfx_toada,
+	sfx_bhurry,
 	sfx_itfree,
 	sfx_dbgsal,
 
