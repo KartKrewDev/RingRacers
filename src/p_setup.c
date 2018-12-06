@@ -2373,6 +2373,10 @@ static void P_LevelInitStuff(void)
 
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = -1;
+
+	if (!battleovertime)
+		battleovertime = Z_Malloc(sizeof(battleovertime_t), PU_STATIC, NULL);
+	memset(battleovertime, 0, sizeof(battleovertime_t));
 }
 
 //

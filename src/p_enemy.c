@@ -8234,7 +8234,7 @@ void A_ItemPop(mobj_t *actor)
 	remains->flags = actor->flags; // Transfer flags
 	remains->flags2 = actor->flags2; // Transfer flags2
 	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->threshold = (actor->threshold == 69 ? 69 : 68);
+	remains->threshold = (actor->threshold == 70 ? 70 : (actor->threshold == 69 ? 69 : 68));
 	remains->skin = NULL;
 	remains->spawnpoint = actor->spawnpoint;
 
@@ -8248,7 +8248,7 @@ void A_ItemPop(mobj_t *actor)
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
-	if (G_BattleGametype() && actor->threshold != 69)
+	if (G_BattleGametype() && (actor->threshold != 69 && actor->threshold != 70))
 		numgotboxes++;
 
 	P_RemoveMobj(actor);

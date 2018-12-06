@@ -776,6 +776,8 @@ typedef enum sprite
 
 	SPR_FWRK,
 
+	SPR_OTFG,
+
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
 	SPR_XMS5,
@@ -4052,6 +4054,9 @@ typedef enum state
 	S_KARMAFIREWORK4,
 	S_KARMAFIREWORKTRAIL,
 
+	S_OVERTIMEFOG,
+	S_OVERTIMEORB,
+
 #ifdef SEENAMES
 	S_NAMECHECK,
 #endif
@@ -4855,6 +4860,9 @@ typedef enum mobj_type
 	MT_LIONMAN,
 
 	MT_KARMAFIREWORK,
+
+	MT_OVERTIMEFOG,
+	MT_OVERTIMEORB,
 
 #ifdef SEENAMES
 	MT_NAMECHECK,

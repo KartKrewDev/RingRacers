@@ -7099,6 +7099,9 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_KARMAFIREWORK4",
 	"S_KARMAFIREWORKTRAIL",
 
+	"S_OVERTIMEFOG",
+	"S_OVERTIMEORB",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -7886,6 +7889,9 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_KARMAFIREWORK",
 
+	"MT_OVERTIMEFOG",
+	"MT_OVERTIMEORB",
+
 #ifdef SEENAMES
 	"MT_NAMECHECK",
 #endif
@@ -8278,6 +8284,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"COMEBACKPOINTS",
 	"COMEBACKMODE",
 	"WANTED",
+	"KILLFIELD",
 	"YOUGOTEM",
 
 	"ITEMBLINK",

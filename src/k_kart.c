@@ -4223,6 +4223,25 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->mo->color = player->skincolor;
 		}
 	}
+	else if (player->kartstuff[k_killfield]) // You're gonna REALLY diiiiie
+	{
+		const INT32 flashtime = 4<<(4-(player->kartstuff[k_killfield]/TICRATE));
+		if (player->kartstuff[k_killfield] == 1 || (player->kartstuff[k_killfield] % (flashtime/2) != 0))
+		{
+			player->mo->colorized = false;
+			player->mo->color = player->skincolor;
+		}
+		else if (player->kartstuff[k_killfield] % flashtime == 0)
+		{
+			player->mo->colorized = true;
+			player->mo->color = SKINCOLOR_BYZANTIUM;
+		}
+		else
+		{
+			player->mo->colorized = true;
+			player->mo->color = SKINCOLOR_RUBY;
+		}
+	}
 	else
 	{
 		player->mo->colorized = false;
@@ -4370,8 +4389,28 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_tauntvoices])
 		player->kartstuff[k_tauntvoices]--;
 
-	if (G_BattleGametype() && player->kartstuff[k_bumper] > 0)
+	if (G_BattleGametype() && player->kartstuff[k_bumper] > 0
+		&& !player->kartstuff[k_spinouttimer] && !player->kartstuff[k_squishedtimer]
+		&& !player->kartstuff[k_respawn] && !player->powers[pw_flashing])
+	{
 		player->kartstuff[k_wanted]++;
+		if (battleovertime->enabled)
+		{
+			if (P_AproxDistance(player->mo->x - battleovertime->x, player->mo->y - battleovertime->y) > (battleovertime->radius<<FRACBITS))
+			{
+				player->kartstuff[k_killfield]++;
+				if (player->kartstuff[k_killfield] > 4*TICRATE)
+				{
+					K_SpinPlayer(player, NULL, 0, NULL, false);
+					//player->kartstuff[k_killfield] = 1;
+				}
+			}
+			else if (player->kartstuff[k_killfield] > 0)
+				player->kartstuff[k_killfield]--;
+		}
+	}
+	else if (player->kartstuff[k_killfield] > 0)
+		player->kartstuff[k_killfield]--;
 
 	if (P_IsObjectOnGround(player->mo))
 		player->kartstuff[k_waterskip] = 0;

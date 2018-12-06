@@ -1755,7 +1755,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
   */
 void P_CheckTimeLimit(void)
 {
-	INT32 i, k;
+	INT32 i;
 
 	if (!cv_timelimit.value)
 		return;
@@ -1791,66 +1791,62 @@ void P_CheckTimeLimit(void)
 	}
 
 	//Optional tie-breaker for Match/CTF
-	else*/ if (cv_overtime.value)
+	else*/
+#define TESTOVERTIMEINFREEPLAY
+	if (cv_overtime.value)
 	{
-		INT32 playerarray[MAXPLAYERS];
-		INT32 tempplayer = 0;
-		INT32 spectators = 0;
-		INT32 playercount = 0;
-
-		//Figure out if we have enough participating players to care.
+#ifndef TESTOVERTIMEINFREEPLAY
+		boolean foundone = false; // Overtime is used for closing off down to a specific item.
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (players[i].exiting)
-				return;
-			if (playeringame[i] && players[i].spectator)
-				spectators++;
-		}
-
-		if ((D_NumPlayers() - spectators) > 1)
-		{
-			// Play the starpost sfx after the first second of overtime.
-			if (gamestate == GS_LEVEL && (leveltime == (timelimitintics + TICRATE)))
-				S_StartSound(NULL, sfx_strpst);
-
-			// Normal Match
-			if (!G_GametypeHasTeams())
+			if (!playeringame[i] || players[i].spectator)
+				continue;
+			if (foundone)
 			{
-				//Store the nodes of participating players in an array.
-				for (i = 0; i < MAXPLAYERS; i++)
+#endif
+				// Initiate the kill zone
+				if (!battleovertime->enabled)
 				{
-					if (playeringame[i] && !players[i].spectator)
-					{
-						playerarray[playercount] = i;
-						playercount++;
-					}
-				}
+					UINT8 b = 0;
+					thinker_t *th;
+					mobj_t *item = NULL;
 
-				//Sort 'em.
-				for (i = 1; i < playercount; i++)
-				{
-					for (k = i; k < playercount; k++)
+					// Find us an item box to center on.
+					for (th = thinkercap.next; th != &thinkercap; th = th->next)
 					{
-						if (players[playerarray[i-1]].marescore < players[playerarray[k]].marescore)
-						{
-							tempplayer = playerarray[i-1];
-							playerarray[i-1] = playerarray[k];
-							playerarray[k] = tempplayer;
-						}
-					}
-				}
+						mobj_t *thismo;
+						if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+							continue;
+						thismo = (mobj_t *)th;
 
-				//End the round if the top players aren't tied.
-				if (players[playerarray[0]].marescore == players[playerarray[1]].marescore)
-					return;
+						if (thismo->type != MT_RANDOMITEM)
+							continue;
+						if (thismo->threshold == 69) // Disappears
+							continue;
+						b++;
+						if (item == NULL || (b < nummapboxes && P_RandomChance(((nummapboxes-b)*FRACUNIT)/nummapboxes))) // This is to throw off the RNG some
+							item = thismo;
+						if (b >= nummapboxes) // end early if we've found them all already
+							break;
+					}
+
+					if (item == NULL) // no item found?!
+						return;
+
+					item->threshold = 70; // Set constant respawn
+					battleovertime->x = item->x;
+					battleovertime->y = item->y;
+					battleovertime->z = item->z;
+					battleovertime->radius = 4096;
+					battleovertime->enabled = true;
+				}
+				return;
+#ifndef TESTOVERTIMEINFREEPLAY
 			}
 			else
-			{
-				//In team match and CTF, determining a tie is much simpler. =P
-				if (redscore == bluescore)
-					return;
-			}
+				foundone = true;
 		}
+#endif
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1861,9 +1857,6 @@ void P_CheckTimeLimit(void)
 			return;
 		P_DoPlayerExit(&players[i]);
 	}
-
-	/*if (server)
-		SendNetXCmd(XD_EXITLEVEL, NULL, 0);*/
 }
 
 /** Checks if a player's score is over the pointlimit and the round should end.

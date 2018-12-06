@@ -69,7 +69,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS","ZTCH",
 	"MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH","BFRT",
 	"OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN","FWRK",
-	"XMS4","XMS5","VIEW"
+	"OTFG","XMS4","XMS5","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -3393,6 +3393,9 @@ state_t states[NUMSTATES] =
 	{SPR_FWRK, 2|FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_KARMAFIREWORK4}, // S_KARMAFIREWORK3
 	{SPR_FWRK, 3|FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_KARMAFIREWORK1}, // S_KARMAFIREWORK4
 	{SPR_FWRK, 4|FF_FULLBRIGHT, TICRATE, {NULL}, 0, 0, S_NULL}, // S_KARMAFIREWORKTRAIL
+
+	{SPR_OTFG,   FF_FULLBRIGHT|FF_TRANS50, 8, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEFOG
+	{SPR_OTFG, 1|FF_FULLBRIGHT, 8, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEORB
 
 #ifdef SEENAMES
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
@@ -20049,6 +20052,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    0,              // damage
 	    sfx_None,       // activesound
 	    MF_NOCLIPTHING|MF_BOUNCE|MF_GRENADEBOUNCE, // flags
+	    S_NULL          // raisestate
+	},
+
+	{           // MT_OVERTIMEFOG
+	    -1,             // doomednum
+	    S_OVERTIMEFOG,  // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    -1,             // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY, // flags
+	    S_NULL          // raisestate
+	},
+
+	{           // MT_OVERTIMEORB
+	    -1,             // doomednum
+	    S_OVERTIMEORB,  // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    -1,             // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY, // flags
 	    S_NULL          // raisestate
 	},
 

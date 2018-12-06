@@ -6409,6 +6409,140 @@ static void P_RemoveShadow(mobj_t *thing)
 		}
 }
 
+// SAL'S KART BATTLE MODE OVERTIME HANDLER
+#define MAXPLANESPERSECTOR (MAXFFLOORS+1)*2
+static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, boolean ceiling)
+{
+	UINT8 i;
+	fixed_t flatz[MAXPLANESPERSECTOR];
+	UINT8 numflats = 0;
+	mobj_t *mo;
+	subsector_t *ss = R_IsPointInSubsector(x, y);
+	sector_t *sec;
+
+	if (!ss)
+		return;
+	sec = ss->sector;
+
+	// convoluted stuff JUST to get all of the planes we need to draw orbs on :V
+
+	if (sec->floorpic != skyflatnum)
+	{
+#ifdef ESLOPE
+		flatz[numflats] = (sec->f_slope ? P_GetZAt(sec->f_slope, x, y) : sec->floorheight);
+#else
+		flatz[numflats] = (sec->floorheight);
+#endif
+		numflats++;
+	}
+	if (sec->ceilingpic != skyflatnum && ceiling)
+	{
+#ifdef ESLOPE
+		flatz[numflats] = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight) - mobjinfo[MT_THOK].height;
+#else
+		flatz[numflats] = (sec->ceilingheight) - mobjinfo[MT_THOK].height;
+#endif
+		numflats++;
+	}
+
+	if (sec->ffloors)
+	{
+		ffloor_t *rover;
+		for (rover = sec->ffloors; rover; rover = rover->next)
+		{
+			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER))
+				continue;
+			if (*rover->toppic != skyflatnum)
+			{
+#ifdef ESLOPE
+				flatz[numflats] = (*rover->t_slope ? P_GetZAt(*rover->t_slope, x, y) : *rover->topheight);
+#else
+				flatz[numflats] = (*rover->topheight);
+#endif
+				numflats++;
+			}
+			if (*rover->bottompic != skyflatnum && ceiling)
+			{
+#ifdef ESLOPE
+				flatz[numflats] = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight) - mobjinfo[MT_THOK].height;
+#else
+				flatz[numflats] = (*rover->bottomheight) - mobjinfo[MT_THOK].height;
+#endif
+				numflats++;
+			}
+		}
+	}
+
+	if (numflats <= 0) // no flats
+		return;
+
+	for (i = 0; i < numflats; i++)
+	{
+		mo = P_SpawnMobj(x, y, flatz[i], type);
+
+		// Lastly, if this can see the skybox mobj, then... we just wasted our time :V
+		if (skyboxmo[0] && !P_MobjWasRemoved(skyboxmo[0]) && P_CheckSight(skyboxmo[0], mo))
+		{
+			P_RemoveMobj(mo);
+			continue;
+		}
+
+		switch(type)
+		{
+			case MT_OVERTIMEFOG:
+				P_SetScale(mo, 2*mo->scale);
+				mo->destscale = 8*mo->scale;
+				mo->momz = P_RandomRange(1,8)*mo->scale;
+				break;
+			case MT_OVERTIMEORB:
+				P_SetScale(mo, 2*mo->scale);
+				mo->destscale = mo->scale/4;
+				if ((leveltime/2) & 1)
+					mo->frame++;
+				break;
+			default:
+				break;
+		}
+	}
+}
+#undef MAXPLANESPERSECTOR
+
+void P_RunBattleOvertime(void)
+{
+	UINT8 i, j;
+
+	if (battleovertime->radius > 512)
+		battleovertime->radius--;
+	else
+		battleovertime->radius = 512;
+
+	if (leveltime & 1)
+	{
+		for (i = 0; i < 16; i++) // 16 base orbs
+		{
+			angle_t ang = FixedAngle(((45*i) * (FRACUNIT>>1)) + ((leveltime % 360)<<FRACBITS));
+			fixed_t x = battleovertime->x + P_ReturnThrustX(NULL, ang, battleovertime->radius<<FRACBITS);
+			fixed_t y = battleovertime->y + P_ReturnThrustY(NULL, ang, battleovertime->radius<<FRACBITS);
+			P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
+		}
+	}
+
+	for (i = 0; i < 16; i++)
+	{
+		j = 0;
+		while (j < 32) // max attempts
+		{
+			fixed_t x = battleovertime->x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t y = battleovertime->y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			j++;
+			if (P_AproxDistance(x-battleovertime->x, y-battleovertime->y) <= (battleovertime->radius<<FRACBITS))
+				continue;
+			P_SpawnOvertimeParticles(x, y, MT_OVERTIMEFOG, false);
+			break;
+		}
+	}
+}
+
 void A_BossDeath(mobj_t *mo);
 // AI for the Koopa boss.
 static void P_KoopaThinker(mobj_t *koopa)
@@ -9372,10 +9506,13 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 					P_RemoveMobj(mobj); // make sure they disappear
 					return;
 				case MT_RANDOMITEM:
-					if (G_BattleGametype())
+					if (G_BattleGametype() && (mobj->threshold != 70))
 					{
 						if (mobj->threshold != 69)
+						{
+							mobj->fuse = cv_itemrespawntime.value*TICRATE + 2;
 							break;
+						}
 					}
 					else
 					{
@@ -9390,6 +9527,8 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 
 						// Transfer flags2 (strongbox, objectflip)
 						newmobj->flags2 = mobj->flags2 & ~MF2_DONTDRAW;
+						if (mobj->threshold == 70)
+							newmobj->threshold = 70;
 					}
 					P_RemoveMobj(mobj); // make sure they disappear
 					return;

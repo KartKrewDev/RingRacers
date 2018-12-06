@@ -961,8 +961,8 @@ typedef enum
 	MD2_EXTVAL2     = 1<<6,
 	MD2_HNEXT       = 1<<7,
 	MD2_HPREV       = 1<<8,
-	MD2_COLORIZED	= 1<<9,
-	MD2_WAYPOINTCAP	= 1<<10
+	MD2_COLORIZED   = 1<<9,
+	MD2_WAYPOINTCAP = 1<<10
 #ifdef ESLOPE
 	, MD2_SLOPE       = 1<<11
 #endif
@@ -3298,6 +3298,13 @@ static void P_NetArchiveMisc(void)
 	for (i = 0; i < 4; i++)
 		WRITESINT8(save_p, battlewanted[i]);
 
+	// battleovertime_t
+	WRITEUINT8(save_p, battleovertime->enabled);
+	WRITEUINT16(save_p, battleovertime->radius);
+	WRITEFIXED(save_p, battleovertime->x);
+	WRITEFIXED(save_p, battleovertime->y);
+	WRITEFIXED(save_p, battleovertime->z);
+
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
 	WRITEUINT32(save_p, mapreset);
@@ -3404,6 +3411,13 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = READSINT8(save_p);
+
+	// battleovertime_t
+	battleovertime->enabled = (boolean)READUINT8(save_p);
+	battleovertime->radius = READUINT16(save_p);
+	battleovertime->x = READFIXED(save_p);
+	battleovertime->y = READFIXED(save_p);
+	battleovertime->z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);
