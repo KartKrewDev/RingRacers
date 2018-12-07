@@ -1792,7 +1792,7 @@ void P_CheckTimeLimit(void)
 
 	//Optional tie-breaker for Match/CTF
 	else*/
-#define TESTOVERTIMEINFREEPLAY
+//#define TESTOVERTIMEINFREEPLAY
 	if (cv_overtime.value)
 	{
 #ifndef TESTOVERTIMEINFREEPLAY
@@ -1810,6 +1810,8 @@ void P_CheckTimeLimit(void)
 					UINT8 b = 0;
 					thinker_t *th;
 					mobj_t *item = NULL;
+
+					P_RespawnBattleBoxes(); // FORCE THESE TO BE RESPAWNED FOR THIS!!!!!!!
 
 					// Find us an item box to center on.
 					for (th = thinkercap.next; th != &thinkercap; th = th->next)
