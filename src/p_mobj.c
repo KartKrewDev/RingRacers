@@ -11826,6 +11826,10 @@ ML_NOCLIMB : Direction not controllable
 		{
 			mobj->reactiontime = 0;
 		}
+
+		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead
+		P_SetTarget(&mobj->tracer, waypointcap);
+		P_SetTarget(&waypointcap, mobj);
 		break;
 	}
 	// SRB2Kart
@@ -11962,12 +11966,6 @@ ML_NOCLIMB : Direction not controllable
 
 		if (!foundanother)
 			numstarposts++;
-	}
-	else if (i == MT_BOSS3WAYPOINT) // SRB2kart 120217 - Used to store checkpoint num
-	{
-		mobj->health = mthing->angle;
-		P_SetTarget(&mobj->tracer, waypointcap);
-		P_SetTarget(&waypointcap, mobj);
 	}
 	else if (i == MT_SPIKE)
 	{
