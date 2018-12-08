@@ -73,7 +73,7 @@ searchwaypointstart:
 		}
 	}
 
-	// Matching waypoint was found down this path
+	// Matching waypoint was not found down this path
 	return NULL;
 }
 
@@ -126,7 +126,7 @@ static void K_AddPrevToWaypoint(waypoint_t *waypoint, waypoint_t *prevwaypoint)
 
 	if (!waypoint->prevwaypoints)
 	{
-		I_Error("K_AddPrevToWaypoint: Out of Memory");
+		I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoints.");
 	}
 
 	waypoint->prevwaypoints[waypoint->numprevwaypoints - 1] = prevwaypoint;
@@ -251,7 +251,7 @@ static waypoint_t *K_SetupWaypoint(mobj_t *mobj)
 --------------------------------------------------*/
 void K_SetupWaypointList()
 {
-	if (waypointcap == NULL)
+	if (!waypointcap)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "WARNING: K_SetupWaypointList called with no waypointcap.");
 	}
