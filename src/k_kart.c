@@ -1033,6 +1033,10 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 {
 	fixed_t weight = 5<<FRACBITS;
 
+	// HACK for battle overtime camping on top of items
+	/*if (against->type == MT_RANDOMITEM)
+		return 10<<FRACBITS;*/
+
 	switch (mobj->type)
 	{
 		case MT_PLAYER:
@@ -4396,7 +4400,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_wanted]++;
 		if (battleovertime->enabled >= 5*TICRATE)
 		{
-			if (P_AproxDistance(player->mo->x - battleovertime->x, player->mo->y - battleovertime->y) > (battleovertime->radius<<FRACBITS))
+			if (P_AproxDistance(player->mo->x - battleovertime->x, player->mo->y - battleovertime->y) > battleovertime->radius)
 			{
 				player->kartstuff[k_killfield]++;
 				if (player->kartstuff[k_killfield] > 4*TICRATE)

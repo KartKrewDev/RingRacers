@@ -3395,7 +3395,8 @@ state_t states[NUMSTATES] =
 	{SPR_FWRK, 4|FF_FULLBRIGHT, TICRATE, {NULL}, 0, 0, S_NULL}, // S_KARMAFIREWORKTRAIL
 
 	{SPR_OTFG,   FF_FULLBRIGHT|FF_TRANS50, TICRATE, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEFOG
-	{SPR_OTFG, 1|FF_FULLBRIGHT, 8, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEORB
+	{SPR_OTFG, 1|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEORB
+	{SPR_OTFG, 3|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEBEAM
 
 #ifdef SEENAMES
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
@@ -20072,7 +20073,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL,         // xdeathstate
 	    sfx_None,       // deathsound
 	    0,              // speed
-	    16<<FRACBITS,    // radius
+	    16<<FRACBITS,   // radius
 	    32<<FRACBITS,   // height
 	    -1,             // display offset
 	    100,            // mass
@@ -20099,8 +20100,35 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL,         // xdeathstate
 	    sfx_None,       // deathsound
 	    0,              // speed
-	    16<<FRACBITS,    // radius
+	    16<<FRACBITS,   // radius
 	    32<<FRACBITS,   // height
+	    -1,             // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY, // flags
+	    S_NULL          // raisestate
+	},
+
+	{           // MT_OVERTIMEBEAM
+	    -1,             // doomednum
+	    S_OVERTIMEBEAM, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    48<<FRACBITS,   // radius
+	    48<<FRACBITS,   // height
 	    -1,             // display offset
 	    100,            // mass
 	    0,              // damage

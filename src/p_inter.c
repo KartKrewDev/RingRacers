@@ -373,7 +373,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		case MT_RANDOMITEM:			// SRB2kart
 			if (!P_CanPickupItem(player, 1))
+			{
+				if (G_BattleGametype() && special->threshold == 70 && special->health)
+				{
+					K_KartBouncing(toucher, special, false, false);
+					special->extravalue1 = 6;
+				}
 				return;
+			}
 
 			if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
 			{
@@ -1792,7 +1799,7 @@ void P_CheckTimeLimit(void)
 
 	//Optional tie-breaker for Match/CTF
 	else*/
-//#define TESTOVERTIMEINFREEPLAY
+#define TESTOVERTIMEINFREEPLAY
 	if (cv_overtime.value)
 	{
 #ifndef TESTOVERTIMEINFREEPLAY
@@ -1839,8 +1846,8 @@ void P_CheckTimeLimit(void)
 					battleovertime->x = item->x;
 					battleovertime->y = item->y;
 					battleovertime->z = item->z;
-					battleovertime->radius = 4096;
-					battleovertime->minradius = (cv_overtime.value == 2 ? 40 : 512);
+					battleovertime->radius = 4096*mapheaderinfo[gamemap-1]->mobj_scale;
+					battleovertime->minradius = (cv_overtime.value == 2 ? 40 : 512)*mapheaderinfo[gamemap-1]->mobj_scale;
 					battleovertime->enabled++;
 					S_StartSound(NULL, sfx_kc47);
 				}

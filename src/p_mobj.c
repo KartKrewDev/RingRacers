@@ -6417,12 +6417,25 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 	fixed_t flatz[MAXPLANESPERSECTOR];
 	UINT8 numflats = 0;
 	mobj_t *mo;
+	fixed_t scale = mapheaderinfo[gamemap-1]->mobj_scale;
 	subsector_t *ss = R_IsPointInSubsector(x, y);
 	sector_t *sec;
 
 	if (!ss)
 		return;
 	sec = ss->sector;
+
+	switch(type)
+	{
+		case MT_OVERTIMEFOG:
+			scale *= 4;
+			break;
+		case MT_OVERTIMEORB:
+			scale += battleovertime->radius/1024;
+			break;
+		default:
+			break;
+	}
 
 	// convoluted stuff JUST to get all of the planes we need to draw orbs on :V
 
@@ -6438,9 +6451,9 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 	if (sec->ceilingpic != skyflatnum && ceiling)
 	{
 #ifdef ESLOPE
-		flatz[numflats] = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight) - mobjinfo[MT_THOK].height;
+		flatz[numflats] = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
 #else
-		flatz[numflats] = (sec->ceilingheight) - mobjinfo[MT_THOK].height;
+		flatz[numflats] = (sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
 #endif
 		numflats++;
 	}
@@ -6464,9 +6477,9 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 			if (*rover->bottompic != skyflatnum && ceiling)
 			{
 #ifdef ESLOPE
-				flatz[numflats] = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight) - mobjinfo[MT_THOK].height;
+				flatz[numflats] = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
 #else
-				flatz[numflats] = (*rover->bottomheight) - mobjinfo[MT_THOK].height;
+				flatz[numflats] = (*rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
 #endif
 				numflats++;
 			}
@@ -6487,20 +6500,20 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 			continue;
 		}
 
+		P_SetScale(mo, scale);
+
 		switch(type)
 		{
 			case MT_OVERTIMEFOG:
-				P_SetScale(mo, 4*mo->scale);
 				mo->destscale = 8*mo->scale;
 				mo->momz = P_RandomRange(1,8)*mo->scale;
 				break;
 			case MT_OVERTIMEORB:
-				P_SetScale(mo, 2*mo->scale);
 				mo->destscale = mo->scale/4;
 				if ((leveltime/2) & 1)
 					mo->frame++;
 				if (battleovertime->enabled < 5*TICRATE)
-					mo->frame |= FF_TRANS50;
+					mo->flags2 |= MF2_SHADOW;
 				/*if (i == 0 && !((leveltime/2) % 3 == 0))
 					S_StartSoundAtVolume(mo, sfx_s1b1, 64);*/
 				break;
@@ -6514,6 +6527,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 void P_RunBattleOvertime(void)
 {
 	UINT8 i, j;
+	UINT16 orbs = 16;
 
 	if (battleovertime->enabled < 5*TICRATE)
 	{
@@ -6526,28 +6540,45 @@ void P_RunBattleOvertime(void)
 	else
 	{
 		if (battleovertime->radius > battleovertime->minradius)
-			battleovertime->radius--;
+			battleovertime->radius -= mapheaderinfo[gamemap-1]->mobj_scale;
 		else
 			battleovertime->radius = battleovertime->minradius;
 	}
 
 	if (leveltime & 1)
 	{
-		for (i = 0; i < 16; i++) // 16 base orbs
+		UINT8 transparency = tr_trans50;
+
+		if (!splitscreen && players[displayplayer].mo)
 		{
-			angle_t ang = FixedAngle(((45*i) * (FRACUNIT>>1)) + ((leveltime % 360)<<FRACBITS));
-			fixed_t dist = (battleovertime->radius - (2*mobjinfo[MT_OVERTIMEORB].radius))<<FRACBITS;
-			fixed_t x = battleovertime->x + P_ReturnThrustX(NULL, ang, dist);
-			fixed_t y = battleovertime->y + P_ReturnThrustY(NULL, ang, dist);
-			P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
+			INT32 dist = P_AproxDistance(battleovertime->x-players[displayplayer].mo->x, battleovertime->y-players[displayplayer].mo->y);
+			transparency = max(0, NUMTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
 		}
+
+		if (transparency < NUMTRANSMAPS)
+		{
+			mobj_t *beam = P_SpawnMobj(battleovertime->x, battleovertime->y, battleovertime->z + (mobjinfo[MT_RANDOMITEM].height/2), MT_OVERTIMEBEAM);
+			P_SetScale(beam, beam->scale*2);
+			if (transparency > 0)
+				beam->frame |= transparency<<FF_TRANSSHIFT;
+		}
+	}
+
+	// 16 orbs at the normal minimum size of 512
+	orbs = max(4, FixedDiv(battleovertime->radius, 16*mapheaderinfo[gamemap-1]->mobj_scale)>>FRACBITS);
+	for (i = 0; i < orbs; i++)
+	{
+		angle_t ang = FixedAngle(((360/orbs) * i * (FRACUNIT>>1)) + (((leveltime*2) % 360)<<FRACBITS));
+		fixed_t x = battleovertime->x + P_ReturnThrustX(NULL, ang, battleovertime->radius);
+		fixed_t y = battleovertime->y + P_ReturnThrustY(NULL, ang, battleovertime->radius);
+		P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
 	}
 
 	if (battleovertime->enabled < 5*TICRATE)
 		return;
 
 	if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
-		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, (4096-battleovertime->radius)/2));
+		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapheaderinfo[gamemap-1]->mobj_scale) - battleovertime->radius)>>FRACBITS / 2));
 
 	for (i = 0; i < 16; i++)
 	{
@@ -6556,7 +6587,7 @@ void P_RunBattleOvertime(void)
 		{
 			fixed_t x = battleovertime->x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
 			fixed_t y = battleovertime->y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
-			fixed_t closestdist = (battleovertime->radius + (4*mobjinfo[MT_OVERTIMEFOG].radius))<<FRACBITS;
+			fixed_t closestdist = battleovertime->radius + (8*mobjinfo[MT_OVERTIMEFOG].radius);
 			j++;
 			if (P_AproxDistance(x-battleovertime->x, y-battleovertime->y) < closestdist)
 				continue;
@@ -7172,7 +7203,7 @@ void P_MobjThinker(mobj_t *mobj)
 					mobj->x = mobj->target->x;
 					mobj->y = mobj->target->y;
 
-					if (!splitscreen)
+					if (!splitscreen && players[displayplayer].mo)
 					{
 						scale = mobj->target->scale + FixedMul(FixedDiv(abs(P_AproxDistance(players[displayplayer].mo->x-mobj->target->x,
 							players[displayplayer].mo->y-mobj->target->y)), RING_DIST), mobj->target->scale);
@@ -9274,6 +9305,25 @@ void P_MobjThinker(mobj_t *mobj)
 			{
 				mobj->color = (1 + (leveltime % (MAXSKINCOLORS-1)));
 				mobj->colorized = true;
+				if (mobj->extravalue1)
+					mobj->extravalue1--;
+				else if (battleovertime->enabled)
+				{
+					fixed_t dist = P_AproxDistance(P_AproxDistance(battleovertime->x-mobj->x, battleovertime->y-mobj->y), battleovertime->z-mobj->z);
+					if (dist > mobj->scale)
+					{
+						angle_t hang = R_PointToAngle2(mobj->x, mobj->y, battleovertime->x, battleovertime->y);
+						angle_t vang = R_PointToAngle2(mobj->z, 0, battleovertime->z, dist);
+						mobj->momx += FixedMul(FixedMul(mobj->scale, FINECOSINE(hang>>ANGLETOFINESHIFT)), FINECOSINE(vang>>ANGLETOFINESHIFT));
+						mobj->momy += FixedMul(FixedMul(mobj->scale, FINESINE(hang>>ANGLETOFINESHIFT)), FINECOSINE(vang>>ANGLETOFINESHIFT));
+						mobj->momz += FixedMul(mobj->scale, FINESINE(vang>>ANGLETOFINESHIFT));
+					}
+					else
+					{
+						mobj->momx = mobj->momy = mobj->momz = 0;
+						P_TeleportMove(mobj, battleovertime->x, battleovertime->y, battleovertime->z);
+					}
+				}
 			}
 			else
 			{
