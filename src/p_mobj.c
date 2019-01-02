@@ -6431,7 +6431,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 			scale *= 4;
 			break;
 		case MT_OVERTIMEORB:
-			scale += battleovertime->radius/1024;
+			scale += battleovertime.radius/1024;
 			break;
 		default:
 			break;
@@ -6509,13 +6509,12 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 				mo->momz = P_RandomRange(1,8)*mo->scale;
 				break;
 			case MT_OVERTIMEORB:
-				mo->destscale = mo->scale/4;
+				//mo->destscale = mo->scale/4;
 				if ((leveltime/2) & 1)
 					mo->frame++;
-				if (battleovertime->enabled < 5*TICRATE)
+				if (battleovertime.enabled < 5*TICRATE)
 					mo->flags2 |= MF2_SHADOW;
-				/*if (i == 0 && !((leveltime/2) % 3 == 0))
-					S_StartSoundAtVolume(mo, sfx_s1b1, 64);*/
+				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
 				break;
 			default:
 				break;
@@ -6527,22 +6526,22 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 void P_RunBattleOvertime(void)
 {
 	UINT8 i, j;
-	UINT16 orbs = 16;
+	UINT16 orbs = 32;
 
-	if (battleovertime->enabled < 5*TICRATE)
+	if (battleovertime.enabled < 5*TICRATE)
 	{
-		battleovertime->enabled++;
-		if (battleovertime->enabled == TICRATE)
+		battleovertime.enabled++;
+		if (battleovertime.enabled == TICRATE)
 			S_StartSound(NULL, sfx_bhurry);
-		if (battleovertime->enabled == 5*TICRATE)
+		if (battleovertime.enabled == 5*TICRATE)
 			S_StartSound(NULL, sfx_kc40);
 	}
 	else
 	{
-		if (battleovertime->radius > battleovertime->minradius)
-			battleovertime->radius -= mapheaderinfo[gamemap-1]->mobj_scale;
+		if (battleovertime.radius > battleovertime.minradius)
+			battleovertime.radius -= mapheaderinfo[gamemap-1]->mobj_scale;
 		else
-			battleovertime->radius = battleovertime->minradius;
+			battleovertime.radius = battleovertime.minradius;
 	}
 
 	if (leveltime & 1)
@@ -6551,45 +6550,45 @@ void P_RunBattleOvertime(void)
 
 		if (!splitscreen && players[displayplayer].mo)
 		{
-			INT32 dist = P_AproxDistance(battleovertime->x-players[displayplayer].mo->x, battleovertime->y-players[displayplayer].mo->y);
+			INT32 dist = P_AproxDistance(battleovertime.x-players[displayplayer].mo->x, battleovertime.y-players[displayplayer].mo->y);
 			transparency = max(0, NUMTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
 		}
 
 		if (transparency < NUMTRANSMAPS)
 		{
-			mobj_t *beam = P_SpawnMobj(battleovertime->x, battleovertime->y, battleovertime->z + (mobjinfo[MT_RANDOMITEM].height/2), MT_OVERTIMEBEAM);
+			mobj_t *beam = P_SpawnMobj(battleovertime.x, battleovertime.y, battleovertime.z + (mobjinfo[MT_RANDOMITEM].height/2), MT_OVERTIMEBEAM);
 			P_SetScale(beam, beam->scale*2);
 			if (transparency > 0)
 				beam->frame |= transparency<<FF_TRANSSHIFT;
 		}
 	}
 
-	// 16 orbs at the normal minimum size of 512
-	orbs = max(4, FixedDiv(battleovertime->radius, 16*mapheaderinfo[gamemap-1]->mobj_scale)>>FRACBITS);
+	// 32 orbs at the normal minimum size of 512
+	orbs = max(4, FixedDiv(battleovertime.radius, 16*mapheaderinfo[gamemap-1]->mobj_scale)>>FRACBITS);
 	for (i = 0; i < orbs; i++)
 	{
 		angle_t ang = FixedAngle(((360/orbs) * i * (FRACUNIT>>1)) + (((leveltime*2) % 360)<<FRACBITS));
-		fixed_t x = battleovertime->x + P_ReturnThrustX(NULL, ang, battleovertime->radius);
-		fixed_t y = battleovertime->y + P_ReturnThrustY(NULL, ang, battleovertime->radius);
+		fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius);
+		fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius);
 		P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
 	}
 
-	if (battleovertime->enabled < 5*TICRATE)
+	if (battleovertime.enabled < 5*TICRATE)
 		return;
 
-	if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
-		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapheaderinfo[gamemap-1]->mobj_scale) - battleovertime->radius)>>FRACBITS / 2));
+	/*if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
+		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapheaderinfo[gamemap-1]->mobj_scale) - battleovertime.radius)>>FRACBITS / 2));*/
 
 	for (i = 0; i < 16; i++)
 	{
 		j = 0;
 		while (j < 32) // max attempts
 		{
-			fixed_t x = battleovertime->x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
-			fixed_t y = battleovertime->y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
-			fixed_t closestdist = battleovertime->radius + (8*mobjinfo[MT_OVERTIMEFOG].radius);
+			fixed_t x = battleovertime.x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t y = battleovertime.y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t closestdist = battleovertime.radius + (8*mobjinfo[MT_OVERTIMEFOG].radius);
 			j++;
-			if (P_AproxDistance(x-battleovertime->x, y-battleovertime->y) < closestdist)
+			if (P_AproxDistance(x-battleovertime.x, y-battleovertime.y) < closestdist)
 				continue;
 			P_SpawnOvertimeParticles(x, y, MT_OVERTIMEFOG, false);
 			break;
@@ -9303,26 +9302,15 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_RANDOMITEM:
 			if (G_BattleGametype() && mobj->threshold == 70)
 			{
-				mobj->color = (1 + (leveltime % (MAXSKINCOLORS-1)));
+				mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
 				mobj->colorized = true;
-				if (mobj->extravalue1)
-					mobj->extravalue1--;
-				else if (battleovertime->enabled)
+
+				if (battleovertime.enabled)
 				{
-					fixed_t dist = P_AproxDistance(P_AproxDistance(battleovertime->x-mobj->x, battleovertime->y-mobj->y), battleovertime->z-mobj->z);
-					if (dist > mobj->scale)
-					{
-						angle_t hang = R_PointToAngle2(mobj->x, mobj->y, battleovertime->x, battleovertime->y);
-						angle_t vang = R_PointToAngle2(mobj->z, 0, battleovertime->z, dist);
-						mobj->momx += FixedMul(FixedMul(mobj->scale, FINECOSINE(hang>>ANGLETOFINESHIFT)), FINECOSINE(vang>>ANGLETOFINESHIFT));
-						mobj->momy += FixedMul(FixedMul(mobj->scale, FINESINE(hang>>ANGLETOFINESHIFT)), FINECOSINE(vang>>ANGLETOFINESHIFT));
-						mobj->momz += FixedMul(mobj->scale, FINESINE(vang>>ANGLETOFINESHIFT));
-					}
-					else
-					{
-						mobj->momx = mobj->momy = mobj->momz = 0;
-						P_TeleportMove(mobj, battleovertime->x, battleovertime->y, battleovertime->z);
-					}
+					fixed_t dist = min((4096*mapheaderinfo[gamemap-1]->mobj_scale - battleovertime.radius) / 2, 512*mapheaderinfo[gamemap-1]->mobj_scale);
+					angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
+					P_TeleportMove(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
+						battleovertime.y + P_ReturnThrustY(NULL, ang, dist), battleovertime.z);
 				}
 			}
 			else

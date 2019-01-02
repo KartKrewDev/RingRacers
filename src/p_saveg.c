@@ -3299,12 +3299,12 @@ static void P_NetArchiveMisc(void)
 		WRITESINT8(save_p, battlewanted[i]);
 
 	// battleovertime_t
-	WRITEUINT8(save_p, battleovertime->enabled);
-	WRITEFIXED(save_p, battleovertime->radius);
-	WRITEFIXED(save_p, battleovertime->minradius);
-	WRITEFIXED(save_p, battleovertime->x);
-	WRITEFIXED(save_p, battleovertime->y);
-	WRITEFIXED(save_p, battleovertime->z);
+	WRITEUINT16(save_p, battleovertime.enabled);
+	WRITEFIXED(save_p, battleovertime.radius);
+	WRITEFIXED(save_p, battleovertime.minradius);
+	WRITEFIXED(save_p, battleovertime.x);
+	WRITEFIXED(save_p, battleovertime.y);
+	WRITEFIXED(save_p, battleovertime.z);
 
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
@@ -3414,12 +3414,12 @@ static inline boolean P_NetUnArchiveMisc(void)
 		battlewanted[i] = READSINT8(save_p);
 
 	// battleovertime_t
-	battleovertime->enabled = READUINT8(save_p);
-	battleovertime->radius = READFIXED(save_p);
-	battleovertime->minradius = READFIXED(save_p);
-	battleovertime->x = READFIXED(save_p);
-	battleovertime->y = READFIXED(save_p);
-	battleovertime->z = READFIXED(save_p);
+	battleovertime.enabled = READUINT16(save_p);
+	battleovertime.radius = READFIXED(save_p);
+	battleovertime.minradius = READFIXED(save_p);
+	battleovertime.x = READFIXED(save_p);
+	battleovertime.y = READFIXED(save_p);
+	battleovertime.z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);

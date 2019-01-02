@@ -1033,10 +1033,6 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 {
 	fixed_t weight = 5<<FRACBITS;
 
-	// HACK for battle overtime camping on top of items
-	/*if (against->type == MT_RANDOMITEM)
-		return 10<<FRACBITS;*/
-
 	switch (mobj->type)
 	{
 		case MT_PLAYER:
@@ -4398,9 +4394,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		&& !player->kartstuff[k_respawn] && !player->powers[pw_flashing])
 	{
 		player->kartstuff[k_wanted]++;
-		if (battleovertime->enabled >= 5*TICRATE)
+		if (battleovertime.enabled >= 5*TICRATE)
 		{
-			if (P_AproxDistance(player->mo->x - battleovertime->x, player->mo->y - battleovertime->y) > battleovertime->radius)
+			if (P_AproxDistance(player->mo->x - battleovertime.x, player->mo->y - battleovertime.y) > battleovertime.radius)
 			{
 				player->kartstuff[k_killfield]++;
 				if (player->kartstuff[k_killfield] > 4*TICRATE)
@@ -7437,15 +7433,15 @@ static void K_drawKartMinimap(void)
 	y -= SHORT(AutomapPic->topoffset);
 
 	// Draw the super item in Battle
-	if (G_BattleGametype() && battleovertime->enabled)
+	if (G_BattleGametype() && battleovertime.enabled)
 	{
-		if (battleovertime->enabled >= 5*TICRATE || (battleovertime->enabled & 1))
+		if (battleovertime.enabled >= 5*TICRATE || (battleovertime.enabled & 1))
 		{
 			const INT32 prevsplitflags = splitflags;
 			splitflags &= ~V_HUDTRANSHALF;
 			splitflags |= V_HUDTRANS;
 			colormap = R_GetTranslationColormap(TC_RAINBOW, (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1))), GTC_CACHE);
-			K_drawKartMinimapHead(battleovertime->x, battleovertime->y, x, y, splitflags, kp_itemminimap, colormap, AutomapPic);
+			K_drawKartMinimapHead(battleovertime.x, battleovertime.y, x, y, splitflags, kp_itemminimap, colormap, AutomapPic);
 			splitflags = prevsplitflags;
 		}
 	}

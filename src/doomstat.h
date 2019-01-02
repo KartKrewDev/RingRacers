@@ -473,14 +473,12 @@ extern SINT8 pickedvote;
 
 /** Battle overtime information
   */
-typedef struct
+extern struct battleovertime
 {
-	UINT8 enabled; ///< Has this been initalized yet?
+	UINT16 enabled; ///< Has this been initalized yet?
 	fixed_t radius, minradius; ///< Radius of kill field
 	fixed_t x, y, z; ///< Position to center on
-} battleovertime_t;
-
-extern battleovertime_t *battleovertime;
+} battleovertime;
 
 extern tic_t hidetime;
 

@@ -261,7 +261,7 @@ SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
 
 // Battle overtime system
-battleovertime_t *battleovertime = {NULL};
+struct battleovertime battleovertime;
 
 // Server-sided, synched variables
 SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
