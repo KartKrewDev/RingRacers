@@ -1262,8 +1262,9 @@ void M_StopMovie(void)
   * \param height   Height of the picture.
   * \param palette  Palette of image data.
   *  \note if palette is NULL, BGR888 format
+  * \param error    Error string to return, if screenshot failed.
   */
-boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette)
+boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette, char **error)
 {
 	png_structp png_ptr;
 	png_infop png_info_ptr;
@@ -1277,14 +1278,14 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, const
 	png_FILE = fopen(filename,"wb");
 	if (!png_FILE)
 	{
-		CONS_Debug(DBG_RENDER, "M_SavePNG: Error on opening %s for write\n", filename);
+		*error = "Failed to open file for write";
 		return false;
 	}
 
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, PNG_error, PNG_warn);
 	if (!png_ptr)
 	{
-		CONS_Debug(DBG_RENDER, "M_SavePNG: Error on initialize libpng\n");
+		*error = "Failed to initialize libpng";
 		fclose(png_FILE);
 		remove(filename);
 		return false;
@@ -1293,7 +1294,7 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, const
 	png_info_ptr = png_create_info_struct(png_ptr);
 	if (!png_info_ptr)
 	{
-		CONS_Debug(DBG_RENDER, "M_SavePNG: Error on allocate for libpng\n");
+		*error = "Failed to allocate memory for libpng";
 		png_destroy_write_struct(&png_ptr,  NULL);
 		fclose(png_FILE);
 		remove(filename);
@@ -1306,7 +1307,7 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, const
 	if (setjmp(png_jmpbuf(png_ptr)))
 #endif
 	{
-		//CONS_Debug(DBG_RENDER, "libpng write error on %s\n", filename);
+		*error = "libpng write error";
 		png_destroy_write_struct(&png_ptr, &png_info_ptr);
 		fclose(png_FILE);
 		remove(filename);
@@ -1457,6 +1458,7 @@ void M_DoScreenShot(void)
 #if NUMSCREENS > 2
 	const char *freename = NULL, *pathname = ".";
 	boolean ret = false;
+	char *error = "Unknown error";
 	UINT8 *linear = NULL;
 
 	// Don't take multiple screenshots, obviously
@@ -1497,13 +1499,13 @@ void M_DoScreenShot(void)
 	// save the pcx file
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
-		ret = HWR_Screenshot(va(pandf,pathname,freename));
+		ret = HWR_Screenshot(va(pandf,pathname,freename), &error);
 	else
 #endif
 	{
 		M_CreateScreenShotPalette();
 #ifdef USE_PNG
-		ret = M_SavePNG(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
+		ret = M_SavePNG(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette, &error);
 #else
 		ret = WritePCXfile(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
 #endif
@@ -1518,7 +1520,7 @@ failure:
 	else
 	{
 		if (freename)
-			CONS_Alert(CONS_ERROR, M_GetText("Couldn't create screen shot %s in %s\n"), freename, pathname);
+			CONS_Alert(CONS_ERROR, M_GetText("Couldn't create screen shot %s in %s (%s)\n"), freename, pathname, error);
 		else
 			CONS_Alert(CONS_ERROR, M_GetText("Couldn't create screen shot in %s (all 10000 slots used!)\n"), pathname);
 
