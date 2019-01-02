@@ -6525,7 +6525,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 
 void P_RunBattleOvertime(void)
 {
-	UINT8 i, j;
+	UINT16 i, j;
 	UINT16 orbs = 32;
 
 	if (battleovertime.enabled < 5*TICRATE)
@@ -6567,7 +6567,7 @@ void P_RunBattleOvertime(void)
 	orbs = max(4, FixedDiv(battleovertime.radius, 16*mapheaderinfo[gamemap-1]->mobj_scale)>>FRACBITS);
 	for (i = 0; i < orbs; i++)
 	{
-		angle_t ang = FixedAngle(((360/orbs) * i * (FRACUNIT>>1)) + (((leveltime*2) % 360)<<FRACBITS));
+		angle_t ang = FixedAngle(((((i+1) * 360) / orbs) + ((leveltime % 360) * 2))<<FRACBITS);
 		fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius);
 		fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius);
 		P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
