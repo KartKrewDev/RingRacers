@@ -1746,7 +1746,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 }
 
 // Easily make it so that overtime works offline
-#define TESTOVERTIMEINFREEPLAY
+//#define TESTOVERTIMEINFREEPLAY
 
 /** Checks if the level timer is over the timelimit and the round should end,
   * unless you are in overtime. In which case leveltime may stretch out beyond
