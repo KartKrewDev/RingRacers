@@ -6510,8 +6510,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 				break;
 			case MT_OVERTIMEORB:
 				//mo->destscale = mo->scale/4;
-				if ((leveltime/2) & 1)
-					mo->frame++;
+				mo->frame += ((leveltime/4) % 8);
 				if (battleovertime.enabled < 5*TICRATE)
 					mo->flags2 |= MF2_SHADOW;
 				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
@@ -6526,7 +6525,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 void P_RunBattleOvertime(void)
 {
 	UINT16 i, j;
-	UINT16 orbs = 32;
+	UINT16 orbs = 16;
 
 	if (battleovertime.enabled < 5*TICRATE)
 	{
@@ -6563,13 +6562,14 @@ void P_RunBattleOvertime(void)
 		}
 	}
 
-	// 32 orbs at the normal minimum size of 512
-	orbs = max(4, FixedDiv(battleovertime.radius, 16*mapheaderinfo[gamemap-1]->mobj_scale)>>FRACBITS);
+	// 16 orbs at the normal minimum size of 512
+	orbs = max(4, FixedDiv(battleovertime.radius, 32*mapheaderinfo[gamemap-1]->mobj_scale)>>FRACBITS);
 	for (i = 0; i < orbs; i++)
 	{
-		angle_t ang = FixedAngle(((((i+1) * 360) / orbs) + ((leveltime % 360) * 2))<<FRACBITS);
-		fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius);
-		fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius);
+		angle_t ang = FixedAngle(((((i+1) * 360) / orbs) - ((leveltime/2) % 360))<<FRACBITS);
+		fixed_t scale = mapheaderinfo[gamemap-1]->mobj_scale + battleovertime.radius/1024;
+		fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+		fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
 		P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
 	}
 
@@ -9293,10 +9293,14 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (battleovertime.enabled)
 				{
+					mobj_t *ghost;
 					fixed_t dist = min((4096*mapheaderinfo[gamemap-1]->mobj_scale - battleovertime.radius) / 2, 512*mapheaderinfo[gamemap-1]->mobj_scale);
 					angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
 					P_TeleportMove(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
 						battleovertime.y + P_ReturnThrustY(NULL, ang, dist), battleovertime.z);
+					ghost = P_SpawnGhostMobj(mobj);
+					ghost->fuse = 4;
+					ghost->frame |= FF_FULLBRIGHT;
 				}
 			}
 			else
