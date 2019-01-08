@@ -6417,7 +6417,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 	fixed_t flatz[MAXPLANESPERSECTOR];
 	UINT8 numflats = 0;
 	mobj_t *mo;
-	fixed_t scale = mapheaderinfo[gamemap-1]->mobj_scale;
+	fixed_t scale = mapobjectscale;
 	subsector_t *ss = R_IsPointInSubsector(x, y);
 	sector_t *sec;
 
@@ -6538,7 +6538,7 @@ void P_RunBattleOvertime(void)
 	else
 	{
 		if (battleovertime.radius > battleovertime.minradius)
-			battleovertime.radius -= mapheaderinfo[gamemap-1]->mobj_scale;
+			battleovertime.radius -= mapobjectscale;
 		else
 			battleovertime.radius = battleovertime.minradius;
 	}
@@ -6563,11 +6563,11 @@ void P_RunBattleOvertime(void)
 	}
 
 	// 16 orbs at the normal minimum size of 512
-	orbs = max(4, FixedDiv(battleovertime.radius, 32*mapheaderinfo[gamemap-1]->mobj_scale)>>FRACBITS);
+	orbs = max(4, FixedDiv(battleovertime.radius, 32*mapobjectscale)>>FRACBITS);
 	for (i = 0; i < orbs; i++)
 	{
 		angle_t ang = FixedAngle(((((i+1) * 360) / orbs) - ((leveltime/2) % 360))<<FRACBITS);
-		fixed_t scale = mapheaderinfo[gamemap-1]->mobj_scale + battleovertime.radius/1024;
+		fixed_t scale = mapobjectscale + battleovertime.radius/1024;
 		fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
 		fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
 		P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
@@ -6577,7 +6577,7 @@ void P_RunBattleOvertime(void)
 		return;
 
 	/*if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
-		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapheaderinfo[gamemap-1]->mobj_scale) - battleovertime.radius)>>FRACBITS / 2));*/
+		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapobjectscale) - battleovertime.radius)>>FRACBITS / 2));*/
 
 	for (i = 0; i < 16; i++)
 	{
@@ -9294,7 +9294,7 @@ void P_MobjThinker(mobj_t *mobj)
 				if (battleovertime.enabled)
 				{
 					mobj_t *ghost;
-					fixed_t dist = min((4096*mapheaderinfo[gamemap-1]->mobj_scale - battleovertime.radius) / 2, 512*mapheaderinfo[gamemap-1]->mobj_scale);
+					fixed_t dist = min((4096*mapobjectscale - battleovertime.radius) / 2, 512*mapobjectscale);
 					angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
 					P_TeleportMove(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
 						battleovertime.y + P_ReturnThrustY(NULL, ang, dist), battleovertime.z);

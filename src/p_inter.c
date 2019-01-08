@@ -1841,8 +1841,8 @@ void P_CheckTimeLimit(void)
 					battleovertime.x = item->x;
 					battleovertime.y = item->y;
 					battleovertime.z = item->z;
-					battleovertime.radius = 4096*mapheaderinfo[gamemap-1]->mobj_scale;
-					battleovertime.minradius = (cv_overtime.value == 2 ? 40 : 512)*mapheaderinfo[gamemap-1]->mobj_scale;
+					battleovertime.radius = 4096*mapobjectscale;
+					battleovertime.minradius = (cv_overtime.value == 2 ? 40 : 512) * mapobjectscale;
 					battleovertime.enabled = 1;
 					S_StartSound(NULL, sfx_kc47);
 				}
