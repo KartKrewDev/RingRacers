@@ -4403,7 +4403,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		&& !player->kartstuff[k_respawn] && !player->powers[pw_flashing])
 	{
 		player->kartstuff[k_wanted]++;
-		if (battleovertime.enabled >= 5*TICRATE)
+		if (battleovertime.enabled >= 10*TICRATE)
 		{
 			if (P_AproxDistance(player->mo->x - battleovertime.x, player->mo->y - battleovertime.y) > battleovertime.radius)
 			{
@@ -7444,7 +7444,7 @@ static void K_drawKartMinimap(void)
 	// Draw the super item in Battle
 	if (G_BattleGametype() && battleovertime.enabled)
 	{
-		if (battleovertime.enabled >= 5*TICRATE || (battleovertime.enabled & 1))
+		if (battleovertime.enabled >= 10*TICRATE || (battleovertime.enabled & 1))
 		{
 			const INT32 prevsplitflags = splitflags;
 			splitflags &= ~V_HUDTRANSHALF;

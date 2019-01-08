@@ -6511,8 +6511,8 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 			case MT_OVERTIMEORB:
 				//mo->destscale = mo->scale/4;
 				mo->frame += ((leveltime/4) % 8);
-				if (battleovertime.enabled < 5*TICRATE)
-					mo->flags2 |= MF2_SHADOW;
+				/*if (battleovertime.enabled < 10*TICRATE)
+					mo->flags2 |= MF2_SHADOW;*/
 				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
 				break;
 			default:
@@ -6527,12 +6527,12 @@ void P_RunBattleOvertime(void)
 	UINT16 i, j;
 	UINT16 orbs = 16;
 
-	if (battleovertime.enabled < 5*TICRATE)
+	if (battleovertime.enabled < 10*TICRATE)
 	{
 		battleovertime.enabled++;
 		if (battleovertime.enabled == TICRATE)
 			S_StartSound(NULL, sfx_bhurry);
-		if (battleovertime.enabled == 5*TICRATE)
+		if (battleovertime.enabled == 10*TICRATE)
 			S_StartSound(NULL, sfx_kc40);
 	}
 	else
@@ -6573,7 +6573,7 @@ void P_RunBattleOvertime(void)
 		P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
 	}
 
-	if (battleovertime.enabled < 5*TICRATE)
+	if (battleovertime.enabled < 10*TICRATE)
 		return;
 
 	/*if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
