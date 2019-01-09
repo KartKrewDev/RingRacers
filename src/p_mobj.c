@@ -6411,13 +6411,13 @@ static void P_RemoveShadow(mobj_t *thing)
 
 // SAL'S KART BATTLE MODE OVERTIME HANDLER
 #define MAXPLANESPERSECTOR (MAXFFLOORS+1)*2
-static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, boolean ceiling)
+static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjtype_t type, boolean ceiling)
 {
 	UINT8 i;
 	fixed_t flatz[MAXPLANESPERSECTOR];
+	boolean flip[MAXPLANESPERSECTOR];
 	UINT8 numflats = 0;
 	mobj_t *mo;
-	fixed_t scale = mapobjectscale;
 	subsector_t *ss = R_IsPointInSubsector(x, y);
 	sector_t *sec;
 
@@ -6425,19 +6425,10 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 		return;
 	sec = ss->sector;
 
-	switch(type)
-	{
-		case MT_OVERTIMEFOG:
-			scale *= 4;
-			break;
-		case MT_OVERTIMEORB:
-			scale += battleovertime.radius/1024;
-			break;
-		default:
-			break;
-	}
-
 	// convoluted stuff JUST to get all of the planes we need to draw orbs on :V
+
+	for (i = 0; i < MAXPLANESPERSECTOR; i++)
+		flip[i] = false;
 
 	if (sec->floorpic != skyflatnum)
 	{
@@ -6455,6 +6446,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 #else
 		flatz[numflats] = (sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
 #endif
+		flip[numflats] = true;
 		numflats++;
 	}
 
@@ -6481,6 +6473,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 #else
 				flatz[numflats] = (*rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
 #endif
+				flip[numflats] = true;
 				numflats++;
 			}
 		}
@@ -6494,13 +6487,36 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 		mo = P_SpawnMobj(x, y, flatz[i], type);
 
 		// Lastly, if this can see the skybox mobj, then... we just wasted our time :V
-		if (skyboxmo[0] && !P_MobjWasRemoved(skyboxmo[0]) && P_CheckSight(skyboxmo[0], mo))
+		if (skyboxmo[0] && !P_MobjWasRemoved(skyboxmo[0]))
 		{
-			P_RemoveMobj(mo);
-			continue;
+			const fixed_t sbz = skyboxmo[0]->z;
+			fixed_t checkz = sec->floorheight;
+
+			while (checkz < sec->ceilingheight)
+			{
+				P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, checkz);
+				if (P_CheckSight(skyboxmo[0], mo))
+				{
+					P_RemoveMobj(mo);
+					break;
+				}
+				else
+					checkz += 32*mapobjectscale;
+			}
+
+			P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, sbz);
+
+			if (P_MobjWasRemoved(mo))
+				continue;
 		}
 
 		P_SetScale(mo, scale);
+
+		if (flip[i])
+		{
+			mo->flags2 |= MF2_OBJECTFLIP;
+			mo->eflags |= MFE_VERTICALFLIP;
+		}
 
 		switch(type)
 		{
@@ -6525,7 +6541,6 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, mobjtype_t type, bool
 void P_RunBattleOvertime(void)
 {
 	UINT16 i, j;
-	UINT16 orbs = 16;
 
 	if (battleovertime.enabled < 10*TICRATE)
 	{
@@ -6563,14 +6578,21 @@ void P_RunBattleOvertime(void)
 	}
 
 	// 16 orbs at the normal minimum size of 512
-	orbs = max(4, FixedDiv(battleovertime.radius, 32*mapobjectscale)>>FRACBITS);
-	for (i = 0; i < orbs; i++)
 	{
-		angle_t ang = FixedAngle(((((i+1) * 360) / orbs) - ((leveltime/2) % 360))<<FRACBITS);
-		fixed_t scale = mapobjectscale + battleovertime.radius/1024;
-		fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
-		fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
-		P_SpawnOvertimeParticles(x, y, MT_OVERTIMEORB, true);
+		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
+		fixed_t scale = (mapobjectscale + battleovertime.radius/2048);
+		fixed_t sprwidth = 32*scale;
+		fixed_t circumference = FixedMul(pi, battleovertime.radius<<1);
+		UINT16 orbs = circumference / sprwidth;
+		angle_t angoff = ANGLE_MAX / orbs;
+
+		for (i = 0; i < orbs; i++)
+		{
+			angle_t ang = (i * angoff) + FixedAngle((leveltime/2)<<FRACBITS);
+			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+			P_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEORB, true);
+		}
 	}
 
 	if (battleovertime.enabled < 10*TICRATE)
@@ -6590,7 +6612,7 @@ void P_RunBattleOvertime(void)
 			j++;
 			if (P_AproxDistance(x-battleovertime.x, y-battleovertime.y) < closestdist)
 				continue;
-			P_SpawnOvertimeParticles(x, y, MT_OVERTIMEFOG, false);
+			P_SpawnOvertimeParticles(x, y, 4*mapobjectscale, MT_OVERTIMEFOG, false);
 			break;
 		}
 	}
@@ -9293,11 +9315,21 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (battleovertime.enabled)
 				{
-					mobj_t *ghost;
-					fixed_t dist = min((4096*mapobjectscale - battleovertime.radius) / 2, 512*mapobjectscale);
 					angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
+					fixed_t z = battleovertime.z;
+					fixed_t dist;
+					mobj_t *ghost;
+
+					/*if (z < mobj->subsector->sector->floorheight)
+						z = mobj->subsector->sector->floorheight;*/
+
+					if (mobj->extravalue1 < 512)
+						mobj->extravalue1++;
+					dist = mobj->extravalue1 * mapobjectscale;
+
 					P_TeleportMove(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
-						battleovertime.y + P_ReturnThrustY(NULL, ang, dist), battleovertime.z);
+						battleovertime.y + P_ReturnThrustY(NULL, ang, dist), z);
+
 					ghost = P_SpawnGhostMobj(mobj);
 					ghost->fuse = 4;
 					ghost->frame |= FF_FULLBRIGHT;
