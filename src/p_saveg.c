@@ -3314,7 +3314,10 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
 	WRITEUINT32(save_p, mapreset);
-	WRITEUINT8(save_p, nospectategrief);
+
+	for (i = 0; i < MAXPLAYERS; i++) 
+		WRITEINT16(save_p, nospectategrief[i]);
+
 	WRITEUINT8(save_p, thwompsactive);
 	WRITESINT8(save_p, spbplace);
 
@@ -3422,7 +3425,10 @@ static inline boolean P_NetUnArchiveMisc(void)
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
-	nospectategrief = READUINT8(save_p);
+
+	for (i = 0; i < MAXPLAYERS; i++) 
+		nospectategrief[i] = READINT16(save_p);
+
 	thwompsactive = (boolean)READUINT8(save_p);
 	spbplace = READSINT8(save_p);
 

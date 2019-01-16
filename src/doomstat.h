@@ -332,7 +332,7 @@ enum GameType // SRB2Kart
 
 extern tic_t totalplaytime;
 extern UINT32 matchesplayed;
-extern UINT16 versusrecord[2];
+extern UINT16 vspowerlevel[2];
 
 extern UINT8 stagefailed;
 
@@ -467,7 +467,7 @@ extern SINT8 battlewanted[4];
 extern tic_t wantedcalcdelay;
 extern tic_t indirectitemcooldown;
 extern tic_t mapreset;
-extern UINT8 nospectategrief;
+extern INT16 nospectategrief[MAXPLAYERS];
 extern boolean thwompsactive;
 extern SINT8 spbplace;
 
@@ -547,6 +547,7 @@ extern consvar_t cv_maxping;
 extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];
+extern UINT16 clientpowerlevels[MAXPLAYERS][2];
 
 /// \note put these in d_clisrv outright?
 

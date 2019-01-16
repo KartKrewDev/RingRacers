@@ -61,6 +61,7 @@
 
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
 static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
+static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum);
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum);
@@ -455,6 +456,7 @@ boolean deferencoremode = false;
 UINT8 splitscreen = 0;
 boolean circuitmap = true; // SRB2kart
 INT32 adminplayers[MAXPLAYERS];
+UINT16 clientpowerlevels[MAXPLAYERS][2];
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =
@@ -483,6 +485,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"SETUPVOTE",
 	"MODIFYVOTE",
 	"PICKVOTE",
+	"REMOVEPLAYER",
+	"POWERLEVEL",
 #ifdef HAVE_BLUA
 	"LUACMD",
 	"LUAVAR"
@@ -502,6 +506,7 @@ void D_RegisterServerCommands(void)
 {
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
+	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
 	RegisterNetXCmd(XD_MAP, Got_Mapcmd);
 	RegisterNetXCmd(XD_EXITLEVEL, Got_ExitLevelcmd);
 	RegisterNetXCmd(XD_ADDFILE, Got_Addfilecmd);
@@ -1864,6 +1869,16 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 		players[playernum].pflags |= PF_ANALOGMODE;
 }
 
+static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
+{
+	UINT16 race = (UINT16)READUINT16(*cp);
+	UINT16 battle = (UINT16)READUINT16(*cp);
+
+	clientpowerlevels[playernum][0] = min(9999, race);
+	clientpowerlevels[playernum][1] = min(9999, battle);
+	CONS_Printf("set player %d to power %d\n", playernum, race);
+}
+
 void D_SendPlayerConfig(void)
 {
 	SendNameAndColor();
@@ -1880,6 +1895,31 @@ void D_SendPlayerConfig(void)
 		SendWeaponPref3();
 	if (splitscreen > 2)
 		SendWeaponPref4();
+
+	{
+		UINT8 buf[4];
+		UINT8 *buf_p = buf;
+
+		WRITEUINT16(buf_p, vspowerlevel[0]);
+		WRITEUINT16(buf_p, vspowerlevel[1]);
+
+		SendNetXCmd(XD_POWERLEVEL, buf, 4);
+	}
+
+	if (splitscreen)
+	{
+		UINT8 buf[4];
+		UINT8 *buf_p = buf;
+
+		WRITEUINT16(buf_p, 0);
+		WRITEUINT16(buf_p, 0);
+
+		SendNetXCmd2(XD_POWERLEVEL, buf, 4);
+		if (splitscreen > 1)
+			SendNetXCmd3(XD_POWERLEVEL, buf, 4);
+		if (splitscreen > 2)
+			SendNetXCmd4(XD_POWERLEVEL, buf, 4);
+	}
 }
 
 // Only works for displayplayer, sorry!
@@ -3373,6 +3413,8 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 			if (K_IsPlayerWanted(&players[playernum]))
 				K_CalculateBattleWanted();
 		}
+		K_PlayerForfeit(playernum, true);
+
 		players[playernum].health = 1;
 		if (players[playernum].mo)
 			players[playernum].mo->health = 1;
@@ -3519,6 +3561,14 @@ static void Got_Login(UINT8 **cp, INT32 playernum)
 	else
 		CONS_Printf(M_GetText("Password from %s failed.\n"), player_names[playernum]);
 #endif
+}
+
+void ClearClientPowerLevels(void)
+{
+	INT32 i, j;
+	for (i = 0; i < MAXPLAYERS; i++)
+		for (j = 0; j < 2; j++)
+			clientpowerlevels[i][j] = 0;
 }
 
 boolean IsPlayerAdmin(INT32 playernum)

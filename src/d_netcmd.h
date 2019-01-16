@@ -176,9 +176,10 @@ typedef enum
 	XD_MODIFYVOTE,  // 23
 	XD_PICKVOTE,    // 24
 	XD_REMOVEPLAYER,// 25
+	XD_POWERLEVEL,  // 26
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 26
-	XD_LUAVAR,      // 27
+	XD_LUACMD,      // 27
+	XD_LUAVAR,      // 28
 #endif
 	MAXNETXCMD
 } netxcmd_t;
@@ -237,6 +238,7 @@ void D_SetupVote(void);
 void D_ModifyClientVote(SINT8 voted, UINT8 splitplayer);
 void D_PickVote(void);
 void ObjectPlace_OnChange(void);
+void ClearClientPowerLevels(void);
 boolean IsPlayerAdmin(INT32 playernum);
 void SetAdminPlayer(INT32 playernum);
 void ClearAdminPlayers(void);

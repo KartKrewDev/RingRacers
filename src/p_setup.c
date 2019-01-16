@@ -3242,7 +3242,10 @@ boolean P_SetupLevel(boolean skipprecip)
 	wantedcalcdelay = wantedfrequency*2;
 	indirectitemcooldown = 0;
 	mapreset = 0;
-	nospectategrief = 0;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		nospectategrief[i] = -1;
+
 	thwompsactive = false;
 	spbplace = -1;
 

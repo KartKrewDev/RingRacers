@@ -2010,7 +2010,8 @@ void P_CheckPointLimit(void)
 // Checks whether or not to end a race netgame.
 boolean P_CheckRacers(void)
 {
-	INT32 i, j, numplayersingame = 0;
+	INT32 i, j, numplayersingame = 0, numexiting = 0;
+	boolean griefed = false;
 
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2027,55 +2028,51 @@ boolean P_CheckRacers(void)
 		return true;
 	}
 
-	if (cv_karteliminatelast.value)
+	for (j = 0; j < MAXPLAYERS; j++)
 	{
-		for (j = 0; j < MAXPLAYERS; j++)
+		if (nospectategrief[j] != -1) // prevent spectate griefing
+			griefed = true;
+		if (!playeringame[j] || players[j].spectator)
+			continue;
+		numplayersingame++;
+		if (players[j].exiting)
+			numexiting++;
+	}
+
+	if (cv_karteliminatelast.value && numplayersingame > 1 && !griefed)
+	{
+		// check if we just got unlucky and there was only one guy who was a problem
+		for (j = i+1; j < MAXPLAYERS; j++)
 		{
-			if (!playeringame[j] || players[j].spectator)
+			if (!playeringame[j] || players[j].spectator || players[j].exiting || !players[j].lives)
 				continue;
-			numplayersingame++;
+			break;
 		}
 
-		if (numplayersingame > 1 && nospectategrief > 0 && numplayersingame >= nospectategrief) // prevent spectate griefing
+		if (j == MAXPLAYERS) // finish anyways, force a time over
 		{
-			// check if we just got unlucky and there was only one guy who was a problem
-			for (j = i+1; j < MAXPLAYERS; j++)
-			{
-				if (!playeringame[j] || players[j].spectator || players[j].exiting || !players[j].lives)
-					continue;
-
-				break;
-			}
-
-			if (j == MAXPLAYERS) // finish anyways, force a time over
-			{
-				P_DoTimeOver(&players[i]);
-				countdown = countdown2 = 0;
-				return true;
-			}
+			P_DoTimeOver(&players[i]);
+			countdown = countdown2 = 0;
+			return true;
 		}
 	}
 
 	if (!countdown) // Check to see if the winners have finished, to set countdown.
 	{
-		UINT8 numingame = 0, numexiting = 0;
 		UINT8 winningpos = 1;
 
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-			numingame++;
-			if (players[i].exiting)
-				numexiting++;
-		}
-
-		winningpos = max(1, numingame/2);
-		if (numingame % 2) // any remainder?
+		winningpos = max(1, numplayersingame/2);
+		if (numplayersingame % 2) // any remainder?
 			winningpos++;
 
 		if (numexiting >= winningpos)
 			countdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
+	}
+
+	if (numplayersingame < 2) // reset nospectategrief in free play
+	{
+		for (j = 0; j < MAXPLAYERS; j++)
+			nospectategrief[j] = -1;
 	}
 
 	return false;

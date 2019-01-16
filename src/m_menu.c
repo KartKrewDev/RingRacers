@@ -6252,7 +6252,7 @@ static void M_Statistics(INT32 choice)
 
 static void M_DrawStatsMaps(int location)
 {
-	INT32 y = 80, i = -1;
+	INT32 y = 88, i = -1;
 	INT16 mnum;
 	extraemblem_t *exemblem;
 	boolean dotopname = true, dobottomarrow = (location < statsMax);
@@ -6365,11 +6365,9 @@ static void M_DrawLevelStats(void)
 	V_DrawString(20, 42, highlightflags, "Total Matches:");
 	V_DrawRightAlignedString(BASEVIDWIDTH-16, 42, 0, va("%i played", matchesplayed));
 
-	V_DrawString(20, 50, highlightflags, "Race Versus Record:");
-	V_DrawRightAlignedString(BASEVIDWIDTH-16, 50, 0, va("%i", versusrecord[0]));
-
-	V_DrawString(20, 58, highlightflags, "Battle Versus Record:");
-	V_DrawRightAlignedString(BASEVIDWIDTH-16, 58, 0, va("%i", versusrecord[1]));
+	V_DrawString(20, 52, highlightflags, "Online Power Level:");
+	V_DrawRightAlignedString(BASEVIDWIDTH-16, 52, 0, va("Race: %i", vspowerlevel[0]));
+	V_DrawRightAlignedString(BASEVIDWIDTH-16, 60, 0, va("Battle: %i", vspowerlevel[1]));
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
@@ -6385,18 +6383,18 @@ static void M_DrawLevelStats(void)
 		besttime += mainrecords[i]->time;
 	}
 
-	V_DrawString(20, 62, highlightflags, "Combined time records:");
+	V_DrawString(20, 70, highlightflags, "Combined time records:");
 
 	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
-	V_DrawRightAlignedString(BASEVIDWIDTH-16, 62, (mapsunfinished ? warningflags : 0), beststr);
+	V_DrawRightAlignedString(BASEVIDWIDTH-16, 70, (mapsunfinished ? warningflags : 0), beststr);
 
 	if (mapsunfinished)
-		V_DrawRightAlignedString(BASEVIDWIDTH-16, 70, warningflags, va("(%d unfinished)", mapsunfinished));
+		V_DrawRightAlignedString(BASEVIDWIDTH-16, 78, warningflags, va("(%d unfinished)", mapsunfinished));
 	else
-		V_DrawRightAlignedString(BASEVIDWIDTH-16, 70, recommendedflags, "(complete)");
+		V_DrawRightAlignedString(BASEVIDWIDTH-16, 78, recommendedflags, "(complete)");
 
-	V_DrawString(32, 70, 0, va("x %d/%d", M_CountEmblems(), numemblems+numextraemblems));
-	V_DrawSmallScaledPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_STATIC));
+	V_DrawString(32, 78, V_ALLOWLOWERCASE, va("x %d/%d", M_CountEmblems(), numemblems+numextraemblems));
+	V_DrawSmallScaledPatch(20, 78, 0, W_CachePatchName("GOTITA", PU_STATIC));
 
 	M_DrawStatsMaps(statsLocation);
 }
@@ -8515,7 +8513,7 @@ static void M_EraseDataResponse(INT32 ch)
 		totalplaytime = 0;
 		matchesplayed = 0;
 		for (i = 0; i < 2; i++)
-			versusrecord[i] = 5000;
+			vspowerlevel[i] = 5000;
 		F_StartIntro();
 	}
 	if (erasecontext != 1)

@@ -328,6 +328,7 @@ typedef struct
 	UINT8 gametype;
 	UINT8 modifiedgame;
 	SINT8 adminplayers[MAXPLAYERS]; // Needs to be signed
+	UINT16 powerlevels[MAXPLAYERS][2]; // SRB2kart: player power levels
 
 	char server_context[8]; // Unique context id, generated at server startup.
 

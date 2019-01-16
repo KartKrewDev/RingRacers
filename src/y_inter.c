@@ -89,7 +89,7 @@ typedef union
 		INT32 numplayers; // Number of players being displayed
 		char levelstring[64]; // holds levelnames up to 64 characters
 		// SRB2kart
-		UINT8 increase[MAXPLAYERS]; // how much did the score increase by?
+		INT16 increase[MAXPLAYERS]; // how much did the score increase by?
 		UINT8 jitter[MAXPLAYERS]; // wiggle
 		UINT32 val[MAXPLAYERS]; // Gametype-specific value
 		UINT8 pos[MAXPLAYERS]; // player positions. used for ties
@@ -109,6 +109,7 @@ static boolean usetile;
 boolean usebuffer = false;
 static boolean useinterpic;
 static INT32 timer;
+static INT32 powertype = 0;
 
 static INT32 intertic;
 static INT32 endtic = -1;
@@ -192,11 +193,16 @@ static void Y_CompareBattle(INT32 i)
 
 static void Y_CompareRank(INT32 i)
 {
-	UINT8 increase = ((data.match.increase[i] == UINT8_MAX) ? 0 : data.match.increase[i]);
-	if (!(data.match.val[data.match.numplayers] == UINT32_MAX || (players[i].score - increase) > data.match.val[data.match.numplayers]))
+	INT16 increase = ((data.match.increase[i] == INT16_MIN) ? 0 : data.match.increase[i]);
+	UINT32 score = (powertype != -1 ? clientpowerlevels[i][powertype] : players[i].score);
+
+	if (!(data.match.val[data.match.numplayers] == UINT32_MAX))
 		return;
 
-	data.match.val[data.match.numplayers] = (players[i].score - increase);
+	if (powertype == -1 && (players[i].score - increase) > data.match.val[data.match.numplayers])
+		return;
+
+	data.match.val[data.match.numplayers] = (score - increase);
 	data.match.num[data.match.numplayers] = i;
 }
 
@@ -204,7 +210,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 {
 	INT32 i, j;
 	boolean completed[MAXPLAYERS];
-	INT32 numplayersingame = 0;
+	INT32 numplayersingame = 0, numgriefers = 0;
 
 	// Initialize variables
 	if (rankingsmode > 1)
@@ -256,14 +262,17 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	{
 		data.match.val[i] = UINT32_MAX;
 
+		if (nospectategrief[i] != -1)
+			numgriefers++;
+
 		if (!playeringame[i] || players[i].spectator)
 		{
-			data.match.increase[i] = UINT8_MAX;
+			data.match.increase[i] = INT16_MIN;
 			continue;
 		}
 
 		if (!rankingsmode)
-			data.match.increase[i] = UINT8_MAX;
+			data.match.increase[i] = INT16_MIN;
 
 		numplayersingame++;
 	}
@@ -275,8 +284,6 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 	for (j = 0; j < numplayersingame; j++)
 	{
-		INT32 nump = ((G_RaceGametype() && nospectategrief > 0) ? nospectategrief : numplayersingame);
-
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (!playeringame[i] || players[i].spectator || completed[i])
@@ -298,13 +305,97 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		else
 			data.match.pos[data.match.numplayers] = data.match.numplayers+1;
 
-		if (!rankingsmode && !(players[i].pflags & PF_TIMEOVER) && (data.match.pos[data.match.numplayers] < nump))
+		if ((!rankingsmode && powertype == -1) // Single player rankings (grand prix). Online rank is handled below.
+			&& !(players[i].pflags & PF_TIMEOVER) && (data.match.pos[data.match.numplayers] < (numplayersingame + numgriefers)))
 		{
-			data.match.increase[i] = nump - data.match.pos[data.match.numplayers];
+			data.match.increase[i] = (numplayersingame + numgriefers) - data.match.pos[data.match.numplayers];
 			players[i].score += data.match.increase[i];
 		}
 
 		data.match.numplayers++;
+	}
+
+	// Compare every single player against each other for power level increases.
+	// Every player you won against gives you more points, and vice versa.
+	// The amount of points won per match-up depends on the difference between the loser's power and the winner's power.
+	// See K_CalculatePowerLevelInc for more info.
+	// (I'm bad at understanding this code, so I had no idea how to incorporate it with the above loop properly.)
+
+	if (!rankingsmode && powertype != -1)
+	{
+		for (i = 0; i < data.match.numplayers; i++)
+		{
+			UINT16 yourpower = 5000;
+			UINT16 theirpower = 5000;
+			INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
+			INT16 inc = 0; // Total pt increment
+
+			if (clientpowerlevels[i][powertype] == 0) // splitscreen guests don't record power level changes
+				continue;
+			yourpower = clientpowerlevels[i][powertype];
+
+			for (j = 0; j < data.match.numplayers; j++)
+			{
+				if (i == j || data.match.pos[i] == data.match.pos[j]) // Tie -- neither get any points for this match up.
+					continue;
+
+				theirpower = 5000;
+				if (clientpowerlevels[j][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
+					theirpower = clientpowerlevels[j][powertype];
+
+				if (data.match.pos[i] > data.match.pos[j]) // This player won!
+				{
+					diff = theirpower - yourpower;
+					inc += K_CalculatePowerLevelInc(diff);
+				}
+				else if (data.match.pos[i] < data.match.pos[j]) // This player lost...
+				{
+					diff = yourpower - theirpower;
+					inc -= K_CalculatePowerLevelInc(diff);
+				}
+			}
+
+			if (numgriefers != 0) // Automatic win against quitters.
+			{
+				for (j = 0; j < MAXPLAYERS; j++)
+				{
+					if (nospectategrief[j] == -1) // Empty slot
+						continue;
+
+					if (i == j) // Yourself??
+						continue;
+
+					theirpower = 5000;
+					if (nospectategrief[j] != 0) // No power level acts as 5000 (used for splitscreen guests)
+						theirpower = nospectategrief[j];
+
+					diff = theirpower - yourpower;
+					inc += K_CalculatePowerLevelInc(diff);
+				}
+			}
+
+			if (inc == 0)
+			{
+				data.match.increase[i] = INT16_MIN;
+				continue;
+			}
+
+			if (yourpower + inc > 9999)
+				inc -= ((yourpower + inc) - 9999);
+			if (yourpower + inc < 1)
+				inc -= ((yourpower + inc) - 1);
+
+			data.match.increase[i] = inc;
+			clientpowerlevels[i][powertype] += data.match.increase[i];
+
+			if (i == consoleplayer)
+			{
+				vspowerlevel[powertype] = clientpowerlevels[i][powertype];
+				if (M_UpdateUnlockablesAndExtraEmblems(true))
+					S_StartSound(NULL, sfx_ncitem);
+				G_SaveGameData(true);
+			}
+		}
 	}
 }
 
@@ -421,7 +512,7 @@ void Y_IntermissionDrawer(void)
 		const char *timeheader;
 
 		if (data.match.rankingsmode)
-			timeheader = "RANK";
+			timeheader = "PWR.LV";
 		else
 			timeheader = (intertype == int_race ? "TIME" : "SCORE");
 
@@ -487,17 +578,22 @@ void Y_IntermissionDrawer(void)
 
 				if (data.match.rankingsmode)
 				{
-					if (data.match.increase[data.match.num[i]] != UINT8_MAX)
+					if (!clientpowerlevels[i][powertype]) // No power level (splitscreen guests)
+						STRBUFCPY(strtime, "----");
+					else
 					{
-						if (data.match.increase[data.match.num[i]] > 9)
-							snprintf(strtime, sizeof strtime, "(+%02d)", data.match.increase[data.match.num[i]]);
-						else
-							snprintf(strtime, sizeof strtime, "(+  %d)", data.match.increase[data.match.num[i]]);
+						if (data.match.increase[data.match.num[i]] != INT16_MIN)
+						{
+							if (data.match.increase[data.match.num[i]] > 9)
+								snprintf(strtime, sizeof strtime, "(+%02d)", data.match.increase[data.match.num[i]]);
+							else
+								snprintf(strtime, sizeof strtime, "(+  %d)", data.match.increase[data.match.num[i]]);
 
-						V_DrawRightAlignedString(x+120+gutter, y, 0, strtime);
+							V_DrawRightAlignedString(x+118+gutter, y, 0, strtime);
+						}
+
+						snprintf(strtime, sizeof strtime, "%d", data.match.val[i]);
 					}
-
-					snprintf(strtime, sizeof strtime, "%d", data.match.val[i]);
 
 					V_DrawRightAlignedString(x+152+gutter, y, 0, strtime);
 				}
@@ -617,7 +713,7 @@ void Y_Ticker(void)
 					{
 						if (data.match.num[q] == MAXPLAYERS
 						|| !data.match.increase[data.match.num[q]]
-						|| data.match.increase[data.match.num[q]] == UINT8_MAX)
+						|| data.match.increase[data.match.num[q]] == INT16_MIN)
 							continue;
 
 						r++;
@@ -736,6 +832,17 @@ void Y_StartIntermission(void)
 	if (endtic != -1)
 		I_Error("endtic is dirty");
 #endif
+
+	// set player Power Level type
+	powertype = -1;
+
+	if (netgame)
+	{
+		if (G_RaceGametype())
+			powertype = 0;
+		else if (G_BattleGametype())
+			powertype = 1;
+	}
 
 	if (!multiplayer)
 	{
