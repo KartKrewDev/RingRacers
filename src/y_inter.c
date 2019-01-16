@@ -718,8 +718,16 @@ void Y_Ticker(void)
 
 						r++;
 						data.match.jitter[data.match.num[q]] = 1;
-						if (--data.match.increase[data.match.num[q]])
-							kaching = false;
+						if (data.match.increase[data.match.num[q]] > 0)
+						{
+							if (--data.match.increase[data.match.num[q]])
+								kaching = false;
+						}
+						else if (data.match.increase[data.match.num[q]] < 0)
+						{
+							if (++data.match.increase[data.match.num[q]])
+								kaching = false;
+						}
 					}
 
 					if (r)

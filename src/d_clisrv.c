@@ -3389,8 +3389,6 @@ static boolean SV_AddWaitingPlayers(void)
 {
 	INT32 node, n, newplayer = false;
 	UINT8 newplayernum = 0;
-	static UINT8 buf[3];
-	static UINT8 *buf_p = buf;
 
 	// What is the reason for this? Why can't newplayernum always be 0?
 	// Sal: Because the dedicated player is stupidly forced into players[0].....
@@ -3402,6 +3400,9 @@ static boolean SV_AddWaitingPlayers(void)
 		// splitscreen can allow 2+ players in one node
 		for (; nodewaiting[node] > 0; nodewaiting[node]--)
 		{
+			UINT8 buf[3];
+			UINT8 *buf_p = buf;
+
 			newplayer = true;
 
 			// search for a free playernum
