@@ -323,7 +323,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 	if (!rankingsmode && powertype != -1)
 	{
-		for (i = 0; i < data.match.numplayers; i++)
+		for (i = 0; i < numplayersingame; i++)
 		{
 			UINT16 yourpower = 5000;
 			UINT16 theirpower = 5000;
@@ -334,21 +334,24 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				continue;
 			yourpower = clientpowerlevels[i][powertype];
 
-			for (j = 0; j < data.match.numplayers; j++)
+			for (j = 0; j < numplayersingame; j++)
 			{
-				if (i == j || data.match.pos[i] == data.match.pos[j]) // Tie -- neither get any points for this match up.
+				if (i == j) // Same person
+					continue;
+
+				if (data.match.pos[i] == data.match.pos[j]) // Tie -- neither get any points for this match up.
 					continue;
 
 				theirpower = 5000;
 				if (clientpowerlevels[j][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
 					theirpower = clientpowerlevels[j][powertype];
 
-				if (data.match.pos[i] > data.match.pos[j]) // This player won!
+				if (data.match.pos[i] < data.match.pos[j]) // This player won!
 				{
 					diff = theirpower - yourpower;
 					inc += K_CalculatePowerLevelInc(diff);
 				}
-				else if (data.match.pos[i] < data.match.pos[j]) // This player lost...
+				else if (data.match.pos[i] > data.match.pos[j]) // This player lost...
 				{
 					diff = yourpower - theirpower;
 					inc -= K_CalculatePowerLevelInc(diff);
@@ -584,10 +587,7 @@ void Y_IntermissionDrawer(void)
 					{
 						if (data.match.increase[data.match.num[i]] != INT16_MIN)
 						{
-							if (data.match.increase[data.match.num[i]] > 9)
-								snprintf(strtime, sizeof strtime, "(+%02d)", data.match.increase[data.match.num[i]]);
-							else
-								snprintf(strtime, sizeof strtime, "(+  %d)", data.match.increase[data.match.num[i]]);
+							snprintf(strtime, sizeof strtime, "(%d)", data.match.increase[data.match.num[i]]);
 
 							V_DrawRightAlignedString(x+118+gutter, y, 0, strtime);
 						}

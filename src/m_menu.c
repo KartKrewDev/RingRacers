@@ -8513,7 +8513,7 @@ static void M_EraseDataResponse(INT32 ch)
 		totalplaytime = 0;
 		matchesplayed = 0;
 		for (i = 0; i < 2; i++)
-			vspowerlevel[i] = 5000;
+			vspowerlevel[i] = 1000;
 		F_StartIntro();
 	}
 	if (erasecontext != 1)
