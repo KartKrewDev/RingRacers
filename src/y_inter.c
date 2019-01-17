@@ -336,22 +336,35 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 			for (j = 0; j < numplayersingame; j++)
 			{
+				boolean won = false;
+
 				if (i == j) // Same person
 					continue;
 
-				if (data.match.pos[i] == data.match.pos[j]) // Tie -- neither get any points for this match up.
+				if (data.match.val[i] == data.match.val[j]) // Tie -- neither get any points for this match up.
 					continue;
 
 				theirpower = 5000;
 				if (clientpowerlevels[j][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
 					theirpower = clientpowerlevels[j][powertype];
 
-				if (data.match.pos[i] < data.match.pos[j]) // This player won!
+				if (G_RaceGametype())
+				{
+					if (data.match.val[i] < data.match.val[j])
+						won = true;
+				}
+				else
+				{
+					if (data.match.val[i] > data.match.val[j])
+						won = true;
+				}
+
+				if (won) // This player won!
 				{
 					diff = theirpower - yourpower;
 					inc += K_CalculatePowerLevelInc(diff);
 				}
-				else if (data.match.pos[i] > data.match.pos[j]) // This player lost...
+				else // This player lost...
 				{
 					diff = yourpower - theirpower;
 					inc -= K_CalculatePowerLevelInc(diff);

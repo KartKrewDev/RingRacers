@@ -64,7 +64,7 @@ JoyType_t Joystick4;
 #define SAVEGAMESIZE (1024)
 
 // SRB2kart
-char gamedatafilename[64] = "kartdata.dat";
+char gamedatafilename[64] = "vr.dat";
 char timeattackfolder[64] = "kart";
 char customversionstring[32] = "\0";
 
