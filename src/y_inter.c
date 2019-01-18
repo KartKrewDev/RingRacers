@@ -196,10 +196,7 @@ static void Y_CompareRank(INT32 i)
 	INT16 increase = ((data.match.increase[i] == INT16_MIN) ? 0 : data.match.increase[i]);
 	UINT32 score = (powertype != -1 ? clientpowerlevels[i][powertype] : players[i].score);
 
-	if (!(data.match.val[data.match.numplayers] == UINT32_MAX))
-		return;
-
-	if (powertype == -1 && (players[i].score - increase) > data.match.val[data.match.numplayers])
+	if (!(data.match.val[data.match.numplayers] == UINT32_MAX || (score - increase) > data.match.val[data.match.numplayers]))
 		return;
 
 	data.match.val[data.match.numplayers] = (score - increase);
@@ -314,103 +311,151 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		data.match.numplayers++;
 	}
+}
+
+static void Y_UpdatePowerLevels(void)
+{
+	INT32 i, j;
+	INT32 numplayersingame = 0, numgriefers = 0;
+	INT16 increment[MAXPLAYERS];
 
 	// Compare every single player against each other for power level increases.
 	// Every player you won against gives you more points, and vice versa.
 	// The amount of points won per match-up depends on the difference between the loser's power and the winner's power.
 	// See K_CalculatePowerLevelInc for more info.
-	// (I'm bad at understanding this code, so I had no idea how to incorporate it with the above loop properly.)
 
-	if (!rankingsmode && powertype != -1)
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		for (i = 0; i < numplayersingame; i++)
+		increment[i] = 0;
+
+		if (nospectategrief[i] != -1)
+			numgriefers++;
+
+		if (!playeringame[i] || players[i].spectator)
+			continue;
+
+		numplayersingame++;
+	}
+
+	for (i = 0; i < numplayersingame; i++)
+	{
+		UINT16 yourpower = 5000;
+		UINT16 theirpower = 5000;
+		INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
+		INT16 inc = 0; // Total pt increment
+		UINT8 ipnum = data.match.num[i];
+		UINT8 jpnum;
+
+		CONS_Printf("Power Level Gain for player %d:\n", ipnum);
+
+		if (clientpowerlevels[ipnum][powertype] == 0) // splitscreen guests don't record power level changes
+			continue;
+		yourpower = clientpowerlevels[ipnum][powertype];
+
+		CONS_Printf("Player %d's PWR.LV: %d\n", ipnum, yourpower);
+
+		for (j = 0; j < numplayersingame; j++)
 		{
-			UINT16 yourpower = 5000;
-			UINT16 theirpower = 5000;
-			INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
-			INT16 inc = 0; // Total pt increment
+			boolean won = false;
 
-			if (clientpowerlevels[i][powertype] == 0) // splitscreen guests don't record power level changes
+			jpnum = data.match.num[j];
+
+			if (i == j || ipnum == jpnum) // Same person
 				continue;
-			yourpower = clientpowerlevels[i][powertype];
 
-			for (j = 0; j < numplayersingame; j++)
+			CONS_Printf("Player %d VS Player %d:\n", ipnum, jpnum);
+
+			if (data.match.val[i] == data.match.val[j]) // Tie -- neither get any points for this match up.
 			{
-				boolean won = false;
+				CONS_Printf("TIE, no change.\n");
+				continue;
+			}
 
-				if (i == j) // Same person
+			theirpower = 5000;
+			if (clientpowerlevels[jpnum][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
+				theirpower = clientpowerlevels[jpnum][powertype];
+			CONS_Printf("Player %d's PWR.LV: %d\n", jpnum, theirpower);
+
+			if (G_RaceGametype())
+			{
+				if (data.match.val[i] < data.match.val[j])
+					won = true;
+			}
+			else
+			{
+				if (data.match.val[i] > data.match.val[j])
+					won = true;
+			}
+
+			if (won) // This player won!
+			{
+				diff = theirpower - yourpower;
+				inc += K_CalculatePowerLevelInc(diff);
+				CONS_Printf("WON! Diff is %d, total increment is %d\n", diff, inc);
+			}
+			else // This player lost...
+			{
+				diff = yourpower - theirpower;
+				inc -= K_CalculatePowerLevelInc(diff);
+				CONS_Printf("LOST... Diff is %d, total increment is %d\n", diff, inc);
+			}
+		}
+
+		if (numgriefers != 0) // Automatic win against quitters.
+		{
+			for (jpnum = 0; jpnum < MAXPLAYERS; jpnum++)
+			{
+				if (nospectategrief[jpnum] == -1) // Empty slot
 					continue;
 
-				if (data.match.val[i] == data.match.val[j]) // Tie -- neither get any points for this match up.
+				if (ipnum == jpnum) // Same person
 					continue;
+
+				CONS_Printf("Player %d VS Player %d (griefer):\n", ipnum, jpnum);
 
 				theirpower = 5000;
-				if (clientpowerlevels[j][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
-					theirpower = clientpowerlevels[j][powertype];
+				if (nospectategrief[jpnum] != 0) // No power level acts as 5000 (used for splitscreen guests)
+					theirpower = nospectategrief[jpnum];
+				CONS_Printf("Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
-				if (G_RaceGametype())
-				{
-					if (data.match.val[i] < data.match.val[j])
-						won = true;
-				}
-				else
-				{
-					if (data.match.val[i] > data.match.val[j])
-						won = true;
-				}
-
-				if (won) // This player won!
-				{
-					diff = theirpower - yourpower;
-					inc += K_CalculatePowerLevelInc(diff);
-				}
-				else // This player lost...
-				{
-					diff = yourpower - theirpower;
-					inc -= K_CalculatePowerLevelInc(diff);
-				}
+				diff = theirpower - yourpower;
+				inc += K_CalculatePowerLevelInc(diff);
+				CONS_Printf("AUTO-WON! Diff is %d, total increment is %d\n", diff, inc);
 			}
+		}
 
-			if (numgriefers != 0) // Automatic win against quitters.
-			{
-				for (j = 0; j < MAXPLAYERS; j++)
-				{
-					if (nospectategrief[j] == -1) // Empty slot
-						continue;
+		if (inc == 0)
+		{
+			data.match.increase[ipnum] = INT16_MIN;
+			CONS_Printf("Total Result: No increment, no change.\n");
+			continue;
+		}
 
-					if (i == j) // Yourself??
-						continue;
+		if (yourpower + inc > 9999)
+			inc -= ((yourpower + inc) - 9999);
+		if (yourpower + inc < 1)
+			inc -= ((yourpower + inc) - 1);
 
-					theirpower = 5000;
-					if (nospectategrief[j] != 0) // No power level acts as 5000 (used for splitscreen guests)
-						theirpower = nospectategrief[j];
+		CONS_Printf("Total Result: Increment of %d.\n", inc);
+		increment[ipnum] = inc;
+	}
 
-					diff = theirpower - yourpower;
-					inc += K_CalculatePowerLevelInc(diff);
-				}
-			}
+	CONS_Printf("Setting final power levels...\n", inc);
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (increment[i] == 0)
+			continue;
 
-			if (inc == 0)
-			{
-				data.match.increase[i] = INT16_MIN;
-				continue;
-			}
+		data.match.increase[i] = increment[i];
+		clientpowerlevels[i][powertype] += data.match.increase[i];
 
-			if (yourpower + inc > 9999)
-				inc -= ((yourpower + inc) - 9999);
-			if (yourpower + inc < 1)
-				inc -= ((yourpower + inc) - 1);
-
-			data.match.increase[i] = inc;
-			clientpowerlevels[i][powertype] += data.match.increase[i];
-
-			if (i == consoleplayer)
-			{
-				vspowerlevel[powertype] = clientpowerlevels[i][powertype];
-				if (M_UpdateUnlockablesAndExtraEmblems(true))
-					S_StartSound(NULL, sfx_ncitem);
-				G_SaveGameData(true);
-			}
+		if (i == consoleplayer)
+		{
+			CONS_Printf("Player %d is you! Saving...\n", i);
+			vspowerlevel[powertype] = clientpowerlevels[i][powertype];
+			if (M_UpdateUnlockablesAndExtraEmblems(true))
+				S_StartSound(NULL, sfx_ncitem);
+			G_SaveGameData(true);
 		}
 	}
 }
@@ -938,6 +983,9 @@ void Y_StartIntermission(void)
 		default:
 			break;
 	}
+
+	if (powertype != -1)
+		Y_UpdatePowerLevels();
 
 	//if (intertype == int_race || intertype == int_match)
 	{

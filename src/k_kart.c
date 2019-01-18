@@ -5783,8 +5783,9 @@ INT16 K_CalculatePowerLevelInc(INT16 diff)
 	return (INT16)(increment >> FRACBITS);
 }
 
-void K_PlayerForfeit(UINT8 playernum, boolean nopointloss)
+void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 {
+	UINT8 p = 0;
 	INT32 powertype = -1;
 	UINT16 yourpower = 5000;
 	UINT16 theirpower = 5000;
@@ -5798,6 +5799,15 @@ void K_PlayerForfeit(UINT8 playernum, boolean nopointloss)
 
 	// 20 sec into the match counts as a forfeit -- automatic loss against every other player in the match.
 	if (gamestate != GS_LEVEL || leveltime <= starttime+(20*TICRATE))
+		return;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator)
+			p++;
+	}
+
+	if (p < 2) // no players
 		return;
 
 	if (G_RaceGametype())
@@ -5815,7 +5825,7 @@ void K_PlayerForfeit(UINT8 playernum, boolean nopointloss)
 	// Set up the point compensation.
 	nospectategrief[playernum] = yourpower;
 
-	if (nopointloss) // This is set for stuff like sync-outs, which shouldn't be so harsh on the victim!
+	if (!pointloss) // This is set for stuff like sync-outs, which shouldn't be so harsh on the victim!
 		return;
 
 	for (i = 0; i < MAXPLAYERS; i++)
