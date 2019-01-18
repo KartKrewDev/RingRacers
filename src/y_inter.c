@@ -440,7 +440,7 @@ static void Y_UpdatePowerLevels(void)
 		increment[ipnum] = inc;
 	}
 
-	CONS_Printf("Setting final power levels...\n", inc);
+	CONS_Printf("Setting final power levels...\n");
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (increment[i] == 0)
