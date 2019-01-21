@@ -289,6 +289,8 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return (totalplaytime >= (unsigned)cn->requirement);
 		case UC_MATCHESPLAYED: // Requires any level completed >= x times
 			return (matchesplayed >= (unsigned)cn->requirement);
+		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
+			return (vspowerlevel[cn->extrainfo1] >= (unsigned)cn->requirement);
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			return (timesBeaten >= (unsigned)cn->requirement);
 		case UC_ALLEMERALDS: // Requires game beaten with all 7 emeralds >= x times

@@ -3413,6 +3413,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 			if (K_IsPlayerWanted(&players[playernum]))
 				K_CalculateBattleWanted();
 		}
+
 		K_PlayerForfeit(playernum, true);
 
 		players[playernum].health = 1;

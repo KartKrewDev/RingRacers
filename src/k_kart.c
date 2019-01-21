@@ -5793,8 +5793,12 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	INT16 inc = 0;
 	UINT8 i;
 
-	// power level is netgames only
+	// power level & spectating is netgames only
 	if (!netgame)
+		return;
+
+	// Hey, I just got here!
+	if (players[playernum].jointime <= 1)
 		return;
 
 	// 20 sec into the match counts as a forfeit -- automatic loss against every other player in the match.
@@ -5815,7 +5819,7 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	else if (G_BattleGametype())
 		powertype = 1;
 
-	if (powertype == -1) // Not using power levels
+	if (powertype == -1) // Not using power levels?
 		return;
 
 	if (clientpowerlevels[playernum][powertype] == 0) // splitscreen guests don't record power level changes
