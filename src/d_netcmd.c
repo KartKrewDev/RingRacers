@@ -272,6 +272,7 @@ INT32 cv_debug;
 consvar_t cv_usemouse = {"use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_usemouse2 = {"use_mouse2", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse2, 0, NULL, NULL, 0, 0, NULL};
 
+#if defined (DC) || defined (_XBOX) || defined (WMINPUT) || defined (_WII) || defined(HAVE_SDL) || defined(_WINDOWS) //joystick 1 and 2
 consvar_t cv_usejoystick = {"use_joystick", "1", CV_SAVE|CV_CALL, usejoystick_cons_t,
 	I_InitJoystick, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_usejoystick2 = {"use_joystick2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t,
@@ -280,6 +281,7 @@ consvar_t cv_usejoystick3 = {"use_joystick3", "3", CV_SAVE|CV_CALL, usejoystick_
 	I_InitJoystick3, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_usejoystick4 = {"use_joystick4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t,
 	I_InitJoystick4, 0, NULL, NULL, 0, 0, NULL};
+#endif
 
 #if (defined (LJOYSTICK) || defined (HAVE_SDL))
 #ifdef LJOYSTICK
@@ -355,7 +357,7 @@ consvar_t cv_kartfrantic = {"kartfrantic", "Off", CV_NETVAR|CV_CHEAT|CV_CALL|CV_
 consvar_t cv_kartcomeback = {"kartcomeback", "On", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOINIT, CV_OnOff, KartComeback_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartencore = {"kartencore", "Off", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartEncore_OnChange, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartvoterulechanges_cons_t[] = {{0, "Never"}, {1, "Sometimes"}, {2, "Frequent"}, {3, "Always"}, {0, NULL}};
-consvar_t cv_kartvoterulechanges = {"kartvoterulechanges", "Sometimes", CV_NETVAR, kartvoterulechanges_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_kartvoterulechanges = {"kartvoterulechanges", "Frequent", CV_NETVAR, kartvoterulechanges_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartspeedometer_cons_t[] = {{0, "Off"}, {1, "Kilometers"}, {2, "Miles"}, {3, "Fracunits"}, {0, NULL}};
 consvar_t cv_kartspeedometer = {"kartdisplayspeed", "Off", CV_SAVE, kartspeedometer_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL}; // use tics in display
 static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
@@ -481,6 +483,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"SETUPVOTE",
 	"MODIFYVOTE",
 	"PICKVOTE",
+	"REMOVEPLAYER",
 #ifdef HAVE_BLUA
 	"LUACMD",
 	"LUAVAR"
@@ -644,6 +647,7 @@ void D_RegisterServerCommands(void)
 
 	// d_clisrv
 	CV_RegisterVar(&cv_maxplayers);
+	CV_RegisterVar(&cv_resynchattempts);
 	CV_RegisterVar(&cv_maxsend);
 	CV_RegisterVar(&cv_noticedownload);
 	CV_RegisterVar(&cv_downloadspeed);
@@ -759,6 +763,7 @@ void D_RegisterClientCommands(void)
 #endif
 	CV_RegisterVar(&cv_rollingdemos);
 	CV_RegisterVar(&cv_netstat);
+	CV_RegisterVar(&cv_netticbuffer);
 
 #ifdef NETGAME_DEVMODE
 	CV_RegisterVar(&cv_fishcake);
@@ -781,6 +786,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_usegamma);
 
 	// m_menu.c
+	//CV_RegisterVar(&cv_compactscoreboard);
 	CV_RegisterVar(&cv_chatheight);
 	CV_RegisterVar(&cv_chatwidth);
 	CV_RegisterVar(&cv_chattime);
@@ -788,6 +794,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_consolechat);
 	CV_RegisterVar(&cv_chatnotifications);
 	CV_RegisterVar(&cv_chatbacktint);
+	CV_RegisterVar(&cv_songcredits);
 	//CV_RegisterVar(&cv_crosshair);
 	//CV_RegisterVar(&cv_crosshair2);
 	//CV_RegisterVar(&cv_crosshair3);
@@ -2098,7 +2105,7 @@ void D_SetupVote(void)
 		else
 			m = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, true, votebuffer);
 		if (i < 3)
-			votebuffer[i] = m;
+			votebuffer[min(i, 2)] = m; // min() is a dumb workaround for gcc 4.4 array-bounds error
 		WRITEUINT16(p, m);
 	}
 
@@ -2489,6 +2496,12 @@ static void Command_Respawn(void)
 		return;
 	}
 
+	if (players[consoleplayer].mo && !P_IsObjectOnGround(players[consoleplayer].mo))	// KART: Nice try, but no, you won't be cheesing spb anymore.
+	{
+		CONS_Printf(M_GetText("You must be on the floor to use this.\n"));
+		return;
+	}
+
 	/*if (!G_RaceGametype()) // srb2kart: not necessary, respawning makes you lose a bumper in battle, so it's not desirable to use as a way to escape a hit
 	{
 		CONS_Printf(M_GetText("You may only use this in co-op, race, and competition!\n"));
@@ -2510,7 +2523,7 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 {
 	INT32 respawnplayer = READINT32(*cp);
 
-	// You can't respawn someone else.  Nice try, there.
+	// You can't respawn someone else. Nice try, there.
 	if (respawnplayer != playernum) // srb2kart: "|| (!G_RaceGametype())"
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal respawn command received from %s\n"), player_names[playernum]);
@@ -2524,6 +2537,10 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 		}
 		return;
 	}
+
+	// incase the above checks were modified to allow sending a respawn on these occasions:
+	if (players[respawnplayer].mo && !P_IsObjectOnGround(players[respawnplayer].mo))
+		return;
 
 	if (players[respawnplayer].mo)
 		P_DamageMobj(players[respawnplayer].mo, NULL, NULL, 10000);
@@ -3532,12 +3549,6 @@ void SetAdminPlayer(INT32 playernum)
 			adminplayers[i] = playernum; // Set the player to a free spot
 			break; // End the loop now. If it keeps going, the same player might get assigned to two slots.
 		}
-
-		/*if (i == 3 && adminplayers[i] != -1) // End of the loop and all slots are full
-		{
-			adminplayers[0] = playernum; // Overwrite the first slot
-			break;
-		}*/
 	}
 }
 
@@ -3709,7 +3720,7 @@ static void Command_MotD_f(void)
 		}
 
 	if ((netgame || multiplayer) && client)
-		SendNetXCmd(XD_SETMOTD, mymotd, sizeof(motd));
+		SendNetXCmd(XD_SETMOTD, mymotd, i); // send the actual size of the motd string, not the full buffer's size
 	else
 	{
 		strcpy(motd, mymotd);
@@ -3978,6 +3989,10 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 	boolean kick = false;
 	boolean toomany = false;
 	INT32 i,j;
+	serverinfo_pak *dummycheck = NULL;
+
+	// Shut the compiler up.
+	(void)dummycheck;
 
 	READSTRINGN(*cp, filename, 240);
 	READMEM(*cp, md5sum, 16);
@@ -4146,6 +4161,52 @@ static void Command_Version_f(void)
 #else
 	CONS_Printf("SRB2Kart %s (%s %s %s)\n", VERSIONSTRING, compdate, comptime, comprevision);
 #endif
+
+	// Base library
+#if defined( HAVE_SDL)
+	CONS_Printf("SDL ");
+#elif defined(_WINDOWS)
+	CONS_Printf("DD ");
+#endif
+
+	// OS
+	// Would be nice to use SDL_GetPlatform for this
+#if defined (_WIN32) || defined (_WIN64)
+	CONS_Printf("Windows ");
+#elif defined(__linux__)
+	CONS_Printf("Linux ");
+#elif defined(MACOSX)
+	CONS_Printf("macOS ");
+#elif defined(UNIXCOMMON)
+	CONS_Printf("Unix (Common) ");
+#else
+	CONS_Printf("Other OS ");
+#endif
+
+	// Bitness
+	if (sizeof(void*) == 4)
+		CONS_Printf("32-bit ");
+	else if (sizeof(void*) == 8)
+		CONS_Printf("64-bit ");
+	else // 16-bit? 128-bit?
+		CONS_Printf("Bits Unknown ");
+
+	// No ASM?
+#ifdef NOASM
+	CONS_Printf("\x85" "NOASM " "\x80");
+#endif
+
+	// Debug build
+#ifdef _DEBUG
+	CONS_Printf("\x85" "DEBUG " "\x80");
+#endif
+
+	// DEVELOP build
+#ifdef DEVELOP
+	CONS_Printf("\x87" "DEVELOP " "\x80");
+#endif
+
+	CONS_Printf("\n");
 }
 
 #ifdef UPDATE_ALERT

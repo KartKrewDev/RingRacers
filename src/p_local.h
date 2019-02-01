@@ -41,9 +41,6 @@
 // Convenience macro to fix issue with collision along bottom/left edges of blockmap -Red
 #define BMBOUNDFIX(xl, xh, yl, yh) {if (xl > xh) xl = 0; if (yl > yh) yl = 0;}
 
-// player radius used only in am_map.c
-#define PLAYERRADIUS (16*FRACUNIT)
-
 // MAXRADIUS is for precalculated sector block boxes
 // the spider demon is larger,
 // but we do not have any moving sectors nearby
@@ -131,7 +128,6 @@ extern fixed_t t_cam4_dist, t_cam4_height, t_cam4_rotate;
 
 fixed_t P_GetPlayerHeight(player_t *player);
 fixed_t P_GetPlayerSpinHeight(player_t *player);
-INT32 P_GetPlayerControlDirection(player_t *player);
 void P_AddPlayerScore(player_t *player, UINT32 amount);
 void P_ResetCamera(player_t *player, camera_t *thiscam);
 boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);

@@ -24,6 +24,7 @@
 #include "lua_script.h"
 #include "lua_libs.h"
 #include "lua_hud.h" // hud_running errors
+#include "lua_hook.h"	// cmd errors
 
 #include "dehacked.h"
 #include "fastcmp.h"
@@ -484,6 +485,8 @@ static int sector_set(lua_State *L)
 
 	if (hud_running)
 		return luaL_error(L, "Do not alter sector_t in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter sector_t in BuildCMD code!");
 
 	switch(field)
 	{
@@ -1090,6 +1093,7 @@ static int ffloor_get(lua_State *L)
 {
 	ffloor_t *ffloor = *((ffloor_t **)luaL_checkudata(L, 1, META_FFLOOR));
 	enum ffloor_e field = luaL_checkoption(L, 2, ffloor_opt[0], ffloor_opt);
+	INT16 i;
 
 	if (!ffloor)
 	{
@@ -1109,11 +1113,11 @@ static int ffloor_get(lua_State *L)
 		lua_pushfixed(L, *ffloor->topheight);
 		return 1;
 	case ffloor_toppic: { // toppic
-		levelflat_t *levelflat;
-		INT16 i;
-		for (i = 0, levelflat = levelflats; i != *ffloor->toppic; i++, levelflat++)
-			;
-		lua_pushlstring(L, levelflat->name, 8);
+		levelflat_t *levelflat = &levelflats[*ffloor->toppic];
+		for (i = 0; i < 8; i++)
+			if (!levelflat->name[i])
+				break;
+		lua_pushlstring(L, levelflat->name, i);
 		return 1;
 	}
 	case ffloor_toplightlevel:
@@ -1123,11 +1127,11 @@ static int ffloor_get(lua_State *L)
 		lua_pushfixed(L, *ffloor->bottomheight);
 		return 1;
 	case ffloor_bottompic: { // bottompic
-		levelflat_t *levelflat;
-		INT16 i;
-		for (i = 0, levelflat = levelflats; i != *ffloor->bottompic; i++, levelflat++)
-			;
-		lua_pushlstring(L, levelflat->name, 8);
+		levelflat_t *levelflat = &levelflats[*ffloor->bottompic];
+		for (i = 0; i < 8; i++)
+			if (!levelflat->name[i])
+				break;
+		lua_pushlstring(L, levelflat->name, i);
 		return 1;
 	}
 #ifdef ESLOPE
@@ -1173,6 +1177,8 @@ static int ffloor_set(lua_State *L)
 
 	if (hud_running)
 		return luaL_error(L, "Do not alter ffloor_t in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter ffloor_t in BuildCMD code!");
 
 	switch(field)
 	{
@@ -1302,6 +1308,8 @@ static int slope_set(lua_State *L)
 
 	if (hud_running)
 		return luaL_error(L, "Do not alter pslope_t in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter pslope_t in BuildCMD code!");
 
 	switch(field) // todo: reorganize this shit
 	{
@@ -1506,6 +1514,8 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->levelselect);
 	else if (fastcmp(field,"bonustype"))
 		lua_pushinteger(L, header->bonustype);
+	else if (fastcmp(field,"saveoverride"))
+		lua_pushinteger(L, header->saveoverride);
 	else if (fastcmp(field,"levelflags"))
 		lua_pushinteger(L, header->levelflags);
 	else if (fastcmp(field,"menuflags"))

@@ -23,7 +23,7 @@
 #include "m_random.h"
 #include "s_sound.h"
 #include "g_game.h"
-#include "hu_stuff.h"
+#include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
 #include "k_kart.h" // SRB2Kart
 #include "d_netcmd.h" // IsPlayerAdmin
@@ -31,9 +31,10 @@
 #include "lua_script.h"
 #include "lua_libs.h"
 #include "lua_hud.h" // hud_running errors
+#include "lua_hook.h" // hook_cmd_running
 
-#define NOHUD if (hud_running) return luaL_error(L, "HUD rendering code should not call this function!");
-
+#define NOHUD if (hud_running) return luaL_error(L, "HUD rendering code should not call this function!"); else if (hook_cmd_running) return luaL_error(L, "CMD Building code should not call this function!");
+// Yes technically cmd hook isn't a hud but whatever, this avoids having 2 defines for virtually the same thing.
 
 boolean luaL_checkboolean(lua_State *L, int narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);
@@ -96,16 +97,16 @@ static int lib_print(lua_State *L)
 static int lib_chatprint(lua_State *L)
 {
 	const char *str = luaL_checkstring(L, 1);	// retrieve string
-	boolean sound = luaL_checkboolean(L, 2);	// retrieve sound boolean
-	int len;
+	boolean sound = lua_optboolean(L, 2);	// retrieve sound boolean
+	int len = strlen(str);
+
 	if (str == NULL)	// error if we don't have a string!
 		return luaL_error(L, LUA_QL("tostring") " must return a string to " LUA_QL("chatprint"));
-	len = strlen(str);
+
 	if (len > 255)	// string is too long!!!
 		return luaL_error(L, "String exceeds the 255 characters limit of the chat buffer.");
 
 	HU_AddChatText(str, sound);
-
 	return 0;
 }
 
@@ -113,10 +114,11 @@ static int lib_chatprint(lua_State *L)
 static int lib_chatprintf(lua_State *L)
 {
 	int n = lua_gettop(L);  /* number of arguments */
+	const char *str = luaL_checkstring(L, 2);	// retrieve string
+	boolean sound = lua_optboolean(L, 3);	// sound?
+	int len = strlen(str);
 	player_t *plr;
-	const char *str;
-	boolean sound = luaL_checkboolean(L, 3);
-	int len;
+
 	if (n < 2)
 		return luaL_error(L, "chatprintf requires at least two arguments: player and text.");
 
@@ -126,15 +128,13 @@ static int lib_chatprintf(lua_State *L)
 	if (plr != &players[consoleplayer])
 		return 0;
 
-	str = luaL_checkstring(L, 2);	// retrieve string
 	if (str == NULL)	// error if we don't have a string!
 		return luaL_error(L, LUA_QL("tostring") " must return a string to " LUA_QL("chatprintf"));
-	len = strlen(str);
+
 	if (len > 255)	// string is too long!!!
 		return luaL_error(L, "String exceeds the 255 characters limit of the chat buffer.");
 
 	HU_AddChatText(str, sound);
-
 	return 0;
 }
 
@@ -675,16 +675,6 @@ static int lib_pGetPlayerSpinHeight(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	lua_pushfixed(L, P_GetPlayerSpinHeight(player));
-	return 1;
-}
-
-static int lib_pGetPlayerControlDirection(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	//HUDSAFE
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	lua_pushinteger(L, P_GetPlayerControlDirection(player));
 	return 1;
 }
 
@@ -1767,7 +1757,7 @@ static int lib_sStartSound(lua_State *L)
 	const void *origin = NULL;
 	sfxenum_t sound_id = luaL_checkinteger(L, 2);
 	player_t *player = NULL;
-	NOHUD
+	//NOHUD // kys @whoever did this.
 	if (sound_id >= NUMSFX)
 		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
 	if (!lua_isnil(L, 1))
@@ -1783,7 +1773,12 @@ static int lib_sStartSound(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 	if (!player || P_IsLocalPlayer(player))
+	{
+		if (hud_running)
+			origin = NULL;	// HUD rendering startsound shouldn't have an origin, just remove it instead of having a retarded error.
+
 		S_StartSound(origin, sound_id);
+	}
 	return 0;
 }
 
@@ -1832,6 +1827,21 @@ static int lib_sStopSoundByID(lua_State *L)
 	if (!origin)
 		return LUA_ErrInvalid(L, "mobj_t");
 	S_StopSoundByID(origin, sound_id);
+	return 0;
+}
+
+static int lib_sShowMusicCredit(lua_State *L)
+{
+	player_t *player = NULL;
+	//HUDSAFE
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		S_ShowMusicCredit();
 	return 0;
 }
 
@@ -1985,28 +1995,45 @@ static int lib_gDoReborn(lua_State *L)
 	return 0;
 }
 
-static int lib_gExitLevel(lua_State *L)
+// Another Lua function that doesn't actually exist!
+// Sets nextmapoverride & skipstats without instantly ending the level, for instances where other sources should be exiting the level, like normal signposts.
+static int lib_gSetCustomExitVars(lua_State *L)
 {
 	int n = lua_gettop(L); // Num arguments
 	NOHUD
 
 	// LUA EXTENSION: Custom exit like support
 	// Supported:
-	//	G_ExitLevel();			[no modifications]
-	//	G_ExitLevel(int)		[nextmap override only]
-	//	G_ExitLevel(bool)		[skipstats only]
-	//	G_ExitLevel(int, bool)	[both of the above]
+	//	G_SetCustomExitVars();			[reset to defaults]
+	//	G_SetCustomExitVars(int)		[nextmap override only]
+	//	G_SetCustomExitVars(bool)		[skipstats only]
+	//	G_SetCustomExitVars(int, bool)	[both of the above]
 	if (n >= 1)
 	{
 		if (lua_isnumber(L, 1) || n >= 2)
 		{
 			nextmapoverride = (INT16)luaL_checknumber(L, 1);
-			lua_pop(L, 1); // pop nextmapoverride; skipstats now 1 if available
+			lua_remove(L, 1); // remove nextmapoverride; skipstats now 1 if available
 		}
 		skipstats = lua_optboolean(L, 1);
 	}
+	else
+	{
+		nextmapoverride = 0;
+		skipstats = false;
+	}
 	// ---
 
+	return 0;
+}
+
+static int lib_gExitLevel(lua_State *L)
+{
+	int n = lua_gettop(L); // Num arguments
+	NOHUD
+	// Moved this bit to G_SetCustomExitVars
+	if (n >= 1) // Don't run the reset to defaults option
+		lib_gSetCustomExitVars(L);
 	G_ExitLevel();
 	return 0;
 }
@@ -2104,6 +2131,72 @@ static int lib_gTicsToMilliseconds(lua_State *L)
 
 // K_KART
 ////////////
+
+// Seriously, why weren't those exposed before?
+static int lib_kAttackSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayAttackTaunt: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayAttackTaunt(mobj);
+	return 0;
+}
+
+static int lib_kBoostSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayBoostTaunt: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayBoostTaunt(mobj);
+	return 0;
+}
+
+static int lib_kOvertakeSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayOvertakeSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayOvertakeSound(mobj);
+	return 0;
+}
+
+static int lib_kHitEmSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayHitEmSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayHitEmSound(mobj);
+	return 0;
+}
+
+static int lib_kGloatSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayPowerGloatSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayPowerGloatSound(mobj);
+	return 0;
+}
+
+static int lib_kLossSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));	// let's require a mobj for consistency with the other functions
+	sfxenum_t sfx_id;
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayLossSound: mobj_t isn't a player object.");
+
+	sfx_id = ((skin_t *)mobj->skin)->soundsid[S_sfx[sfx_klose].skinsound];
+	S_StartSound(mobj, sfx_id);
+	return 0;
+}
+
+// Note: Pain, Death and Victory are already exposed.
 
 static int lib_kGetKartColorByName(lua_State *L)
 {
@@ -2540,7 +2633,6 @@ static luaL_Reg lib[] = {
 	// p_user
 	{"P_GetPlayerHeight",lib_pGetPlayerHeight},
 	{"P_GetPlayerSpinHeight",lib_pGetPlayerSpinHeight},
-	{"P_GetPlayerControlDirection",lib_pGetPlayerControlDirection},
 	{"P_AddPlayerScore",lib_pAddPlayerScore},
 	{"P_PlayerInPain",lib_pPlayerInPain},
 	{"P_DoPlayerPain",lib_pDoPlayerPain},
@@ -2645,6 +2737,7 @@ static luaL_Reg lib[] = {
 	{"S_StartSoundAtVolume",lib_sStartSoundAtVolume},
 	{"S_StopSound",lib_sStopSound},
 	{"S_StopSoundByID",lib_sStopSoundByID},
+	{"S_ShowMusicCredit",lib_sShowMusicCredit},
 	{"S_ChangeMusic",lib_sChangeMusic},
 	{"S_SpeedMusic",lib_sSpeedMusic},
 	{"S_StopMusic",lib_sStopMusic},
@@ -2655,6 +2748,7 @@ static luaL_Reg lib[] = {
 	// g_game
 	{"G_BuildMapName",lib_gBuildMapName},
 	{"G_DoReborn",lib_gDoReborn},
+	{"G_SetCustomExitVars",lib_gSetCustomExitVars},
 	{"G_ExitLevel",lib_gExitLevel},
 	{"G_IsSpecialStage",lib_gIsSpecialStage},
 	{"G_GametypeUsesLives",lib_gGametypeUsesLives},
@@ -2670,6 +2764,12 @@ static luaL_Reg lib[] = {
 	{"G_TicsToMilliseconds",lib_gTicsToMilliseconds},
 
 	// k_kart
+	{"K_PlayAttackTaunt", lib_kAttackSound},
+	{"K_PlayBoostTaunt", lib_kBoostSound},
+	{"K_PlayPowerGloatSund", lib_kGloatSound},
+	{"K_PlayOvertakeSound", lib_kOvertakeSound},
+	{"K_PlayLossSound", lib_kLossSound},
+	{"K_PlayHitEmSound", lib_kHitEmSound},
 	{"K_GetKartColorByName",lib_kGetKartColorByName},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},

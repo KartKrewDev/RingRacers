@@ -15476,7 +15476,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_JAWZ_DEAD1,   // deathstate
 		S_JAWZ_DEAD2,   // xdeathstate
 		sfx_s3k5d,      // deathsound
-		7*FRACUNIT,     // speed
+		64*FRACUNIT,    // speed
 		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
@@ -15503,7 +15503,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_JAWZ_DEAD1,   // deathstate
 		S_JAWZ_DEAD2,   // xdeathstate
 		sfx_s3k5d,      // deathsound
-		56*FRACUNIT,    // speed
+		64*FRACUNIT,    // speed
 		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
@@ -15773,7 +15773,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_BALLHOG_DEAD, // deathstate
 		S_NULL,         // xdeathstate
 		sfx_hogbom,     // deathsound
-		0,              // speed
+		64*FRACUNIT,    // speed
 		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
@@ -15861,7 +15861,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_BOUNCE|MF_FLOAT|MF_NOCLIPTHING|MF_MISSILE|MF_SHOOTABLE|MF_DONTENCOREMAP, // flags
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

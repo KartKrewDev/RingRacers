@@ -237,6 +237,7 @@ mobj_t *hunt3;
 UINT32 countdown, countdown2; // for racing
 
 fixed_t gravity;
+fixed_t mapobjectscale;
 
 INT16 autobalance; //for CTF team balance
 INT16 teamscramble; //for CTF team scramble
@@ -405,6 +406,10 @@ static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
+// it automatically becomes compact with 20+ players, but if you like it, I guess you can turn that on!
+// SRB2Kart: irrelevant for us.
+//consvar_t cv_compactscoreboard= {"compactscoreboard", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 // chat timer thingy
 static CV_PossibleValue_t chattime_cons_t[] = {{5, "MIN"}, {999, "MAX"}, {0, NULL}};
 consvar_t cv_chattime = {"chattime", "8", CV_SAVE, chattime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -429,6 +434,9 @@ consvar_t cv_chatbacktint = {"chatbacktint", "On", CV_SAVE, CV_OnOff, NULL, 0, N
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
 consvar_t cv_consolechat = {"chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+// Display song credits
+consvar_t cv_songcredits = {"songcredits", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 /*consvar_t cv_crosshair = {"crosshair", "Off", CV_SAVE, crosshair_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_crosshair2 = {"crosshair2", "Off", CV_SAVE, crosshair_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -462,7 +470,7 @@ consvar_t cv_brakeaxis = {"joyaxis_brake", "None", CV_SAVE, joyaxis_cons_t, NULL
 consvar_t cv_aimaxis = {"joyaxis_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_lookaxis = {"joyaxis_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_fireaxis = {"joyaxis_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_driftaxis = {"joyaxis_drift", "Z-Axis-", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_driftaxis = {"joyaxis_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_turnaxis2 = {"joyaxis2_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_moveaxis2 = {"joyaxis2_move", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -470,7 +478,7 @@ consvar_t cv_brakeaxis2 = {"joyaxis2_brake", "None", CV_SAVE, joyaxis_cons_t, NU
 consvar_t cv_aimaxis2 = {"joyaxis2_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_lookaxis2 = {"joyaxis2_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_fireaxis2 = {"joyaxis2_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_driftaxis2 = {"joyaxis2_drift", "Z-Axis-", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_driftaxis2 = {"joyaxis2_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_turnaxis3 = {"joyaxis3_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_moveaxis3 = {"joyaxis3_move", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -478,7 +486,7 @@ consvar_t cv_brakeaxis3 = {"joyaxis3_brake", "None", CV_SAVE, joyaxis_cons_t, NU
 consvar_t cv_aimaxis3 = {"joyaxis3_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_lookaxis3 = {"joyaxis3_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_fireaxis3 = {"joyaxis3_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_driftaxis3 = {"joyaxis3_drift", "Z-Axis-", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_driftaxis3 = {"joyaxis3_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_turnaxis4 = {"joyaxis4_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_moveaxis4 = {"joyaxis4_move", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -486,7 +494,7 @@ consvar_t cv_brakeaxis4 = {"joyaxis4_brake", "None", CV_SAVE, joyaxis_cons_t, NU
 consvar_t cv_aimaxis4 = {"joyaxis4_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_lookaxis4 = {"joyaxis4_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_fireaxis4 = {"joyaxis4_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_driftaxis4 = {"joyaxis4_drift", "Z-Axis-", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_driftaxis4 = {"joyaxis4_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 
 #if MAXPLAYERS > 16
@@ -1111,7 +1119,6 @@ static INT32 Joy4Axis(axis_input_e axissel)
 			return 0;
 	}
 
-
 	if (axisval < 0) //odd -axises
 	{
 		axisval = -axisval;
@@ -1202,7 +1209,7 @@ boolean camspin, camspin2, camspin3, camspin4;
 
 static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
 static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
-static fixed_t angleturn[3] = {400, 800, 200}; // + slow turn
+static fixed_t angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
@@ -1345,41 +1352,30 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// let movement keys cancel each other out
 	if (turnright && !(turnleft))
 	{
-		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed] * realtics));
-		cmd->driftturn = (INT16)(cmd->driftturn - (angleturn[tspeed] * realtics));
+		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed]));
+		cmd->driftturn = (INT16)(cmd->driftturn - (angleturn[tspeed]));
+		side += sidemove[1];
 	}
 	else if (turnleft && !(turnright))
 	{
-		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed] * realtics));
-		cmd->driftturn = (INT16)(cmd->driftturn + (angleturn[tspeed] * realtics));
+		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed]));
+		cmd->driftturn = (INT16)(cmd->driftturn + (angleturn[tspeed]));
+		side -= sidemove[1];
 	}
 
 	if (analogjoystickmove && axis != 0)
 	{
 		// JOYAXISRANGE should be 1023 (divide by 1024)
-		cmd->angleturn = (INT16)(cmd->angleturn - (((axis * angleturn[1]) >> 10) * realtics)); // ANALOG!
-		cmd->driftturn = (INT16)(cmd->driftturn - (((axis * angleturn[1]) >> 10) * realtics));
+		cmd->angleturn = (INT16)(cmd->angleturn - (((axis * angleturn[1]) >> 10))); // ANALOG!
+		cmd->driftturn = (INT16)(cmd->driftturn - (((axis * angleturn[1]) >> 10)));
+		side += ((axis * sidemove[0]) >> 10);
 	}
 
 	// Specator mouse turning
 	if (player->spectator)
 	{
-		cmd->angleturn = (INT16)(cmd->angleturn - ((mousex*(encoremode ? -1 : 1)*8) * realtics));
-		cmd->driftturn = (INT16)(cmd->driftturn - ((mousex*(encoremode ? -1 : 1)*8) * realtics));
-	}
-
-	// Speed bump strafing
-	if (!demoplayback && ((player->pflags & PF_FORCESTRAFE) || (player->kartstuff[k_pogospring])))
-	{
-		if (turnright)
-			side += sidemove[1];
-		if (turnleft)
-			side -= sidemove[1];
-		if (analogjoystickmove && axis != 0)
-		{
-			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			side += ((axis * sidemove[0]) >> 10);
-		}
+		cmd->angleturn = (INT16)(cmd->angleturn - ((mousex*(encoremode ? -1 : 1)*8)));
+		cmd->driftturn = (INT16)(cmd->driftturn - ((mousex*(encoremode ? -1 : 1)*8)));
 	}
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
@@ -1524,15 +1520,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else if (side < -MAXPLMOVE)
 		side = -MAXPLMOVE;
 
-	// No additional acceleration when moving forward/backward and strafing simultaneously.
-	// do this AFTER we cap to MAXPLMOVE so people can't find ways to cheese around this.
-	// SRB2Kart: We don't need this; we WANT bounce strafing to plain stack on top of normal movement.
-	/*if (!bouncestrafe && forward && side)
-	{
-		forward = FixedMul(forward, 3*FRACUNIT/4);
-		side = FixedMul(side, 3*FRACUNIT/4);
-	}*/
-
 	if (forward || side)
 	{
 		cmd->forwardmove = (SINT8)(cmd->forwardmove + forward);
@@ -1542,18 +1529,20 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	//{ SRB2kart - Drift support
 	// Not grouped with the rest of turn stuff because it needs to know what buttons you're pressing for rubber-burn turn
 	// limit turning to angleturn[1] to stop mouselook letting you look too fast
-	if (cmd->angleturn > (angleturn[1] * realtics))
-		cmd->angleturn = (angleturn[1] * realtics);
-	else if (cmd->angleturn < (-angleturn[1] * realtics))
-		cmd->angleturn = (-angleturn[1] * realtics);
+	if (cmd->angleturn > (angleturn[1]))
+		cmd->angleturn = (angleturn[1]);
+	else if (cmd->angleturn < (-angleturn[1]))
+		cmd->angleturn = (-angleturn[1]);
 
-	if (cmd->driftturn > (angleturn[1] * realtics))
-		cmd->driftturn = (angleturn[1] * realtics);
-	else if (cmd->driftturn < (-angleturn[1] * realtics))
-		cmd->driftturn = (-angleturn[1] * realtics);
+	if (cmd->driftturn > (angleturn[1]))
+		cmd->driftturn = (angleturn[1]);
+	else if (cmd->driftturn < (-angleturn[1]))
+		cmd->driftturn = (-angleturn[1]);
 
 	if (player->mo)
 		cmd->angleturn = K_GetKartTurnValue(player, cmd->angleturn);
+
+	cmd->angleturn *= realtics;
 
 	// SRB2kart - no additional angle if not moving
 	if (((player->mo && player->speed > 0) // Moving
@@ -1564,6 +1553,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		lang += (cmd->angleturn<<16);
 
 	cmd->angleturn = (INT16)(lang >> 16);
+	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
 
 	if (!hu_stopped)
 	{
@@ -1605,10 +1595,26 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		}
 	}
 
+	/* 	Lua: Allow this hook to overwrite ticcmd.
+		We check if we're actually in a level because for some reason this Hook would run in menus and on the titlescreen otherwise.
+		Be aware that within this hook, nothing but this player's cmd can be edited (otherwise we'd run in some pretty bad synching problems since this is clientsided, or something)
+
+		Possible usages for this are:
+			-Forcing the player to perform an action, which could otherwise require terrible, terrible hacking to replicate.
+			-Preventing the player to perform an action, which would ALSO require some weirdo hacks.
+			-Making some galaxy brain autopilot Lua if you're a masochist
+			-Making a Mario Kart 8 Deluxe tier baby mode that steers you away from walls and whatnot. You know what, do what you want!
+	*/
+#ifdef HAVE_BLUA
+	if (gamestate == GS_LEVEL)
+		LUAh_PlayerCmd(player, cmd);
+#endif
+
 	//Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
 		&& displayplayer != consoleplayer && ssplayer == 1)
 		displayplayer = consoleplayer;
+
 }
 
 // User has designated that they want
@@ -1659,10 +1665,12 @@ static void Analog_OnChange(void)
 
 	// cameras are not initialized at this point
 
-	/*if (!cv_chasecam.value && cv_analog.value) {
+	/*
+	if (!cv_chasecam.value && cv_analog.value) {
 		CV_SetValue(&cv_analog, 0);
 		return;
-	}*/
+	}
+	*/
 
 	SendWeaponPref();
 }
@@ -1674,10 +1682,12 @@ static void Analog2_OnChange(void)
 
 	// cameras are not initialized at this point
 
-	/*if (!cv_chasecam2.value && cv_analog2.value) {
+	/*
+	if (!cv_chasecam2.value && cv_analog2.value) {
 		CV_SetValue(&cv_analog2, 0);
 		return;
-	}*/
+	}
+	*/
 
 	SendWeaponPref2();
 }
@@ -1689,10 +1699,12 @@ static void Analog3_OnChange(void)
 
 	// cameras are not initialized at this point
 
-	/*if (!cv_chasecam3.value && cv_analog3.value) {
+	/*
+	if (!cv_chasecam3.value && cv_analog3.value) {
 		CV_SetValue(&cv_analog3, 0);
 		return;
-	}*/
+	}
+	*/
 
 	SendWeaponPref3();
 }
@@ -1704,10 +1716,12 @@ static void Analog4_OnChange(void)
 
 	// cameras are not initialized at this point
 
-	/*if (!cv_chasecam4.value && cv_analog4.value) {
+	/*
+	if (!cv_chasecam4.value && cv_analog4.value) {
 		CV_SetValue(&cv_analog4, 0);
 		return;
-	}*/
+	}
+	*/
 
 	SendWeaponPref4();
 }
@@ -2139,6 +2153,9 @@ void G_Ticker(boolean run)
 					players[i].kartstuff[k_throwdir] = 0;
 
 			G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
+
+			// Use the leveltime sent in the player's ticcmd to determine control lag
+			cmd->latency = modeattacking ? 0 : min((leveltime & 0xFF) - cmd->latency, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
 		}
 	}
 
@@ -2347,6 +2364,7 @@ void G_PlayerReborn(INT32 player)
 	INT32 bumper;
 	INT32 comebackpoints;
 	INT32 wanted;
+	boolean songcredit = false;
 
 	score = players[player].score;
 	marescore = players[player].marescore;
@@ -2525,10 +2543,13 @@ void G_PlayerReborn(INT32 player)
 			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
 			mapmusname[6] = 0;
 			mapmusflags = mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK;
+			songcredit = true;
 		}
 	}
 
 	P_RestoreMusic(p);
+	if (songcredit)
+		S_ShowMusicCredit();
 
 	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
 		p->kartstuff[k_respawn] = 48; // Respawn effect
@@ -3154,7 +3175,7 @@ INT16 G_SometimesGetDifferentGametype(void)
 					break;
 				case 1: // sometimes
 				default:
-					encorepossible = M_RandomChance(FRACUNIT>>3);
+					encorepossible = M_RandomChance(FRACUNIT>>2);
 					break;
 			}
 			if (encorepossible != (boolean)cv_kartencore.value)
@@ -3169,12 +3190,12 @@ INT16 G_SometimesGetDifferentGametype(void)
 			randmapbuffer[NUMMAPS] = 1; // every other vote (or always if !encorepossible)
 			break;
 		case 1: // sometimes
-			randmapbuffer[NUMMAPS] = 10; // ...every two cups?
+			randmapbuffer[NUMMAPS] = 5; // per "cup"
 			break;
 		default:
 			// fallthrough - happens when clearing buffer, but needs a reasonable countdown if cvar is modified
 		case 2: // frequent
-			randmapbuffer[NUMMAPS] = 5; // per "cup"
+			randmapbuffer[NUMMAPS] = 2; // ...every 1/2th-ish cup?
 			break;
 	}
 
@@ -4369,7 +4390,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		unlocktriggers = 0;
 
 		// clear itemfinder, just in case
-		if (!dedicated) // except in dedicated servers, where it is not registered and can actually I_Error debug builds
+		if (!dedicated)	// except in dedicated servers, where it is not registered and can actually I_Error debug builds
 			CV_StealthSetValue(&cv_itemfinder, 0);
 	}
 
@@ -4542,6 +4563,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
 		dest[i].driftturn = (INT16)SHORT(src[i].driftturn);
+		dest[i].latency = (INT16)SHORT(src[i].latency);
 	}
 	return dest;
 }

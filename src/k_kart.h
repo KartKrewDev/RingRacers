@@ -9,6 +9,8 @@
 #include "doomdef.h"
 #include "d_player.h" // Need for player_t
 
+#define KART_FULLTURN 800
+
 UINT8 colortranslations[MAXSKINCOLORS][16];
 extern const char *KartColor_Names[MAXSKINCOLORS];
 extern const UINT8 KartColor_Opposite[MAXSKINCOLORS*2];
@@ -62,6 +64,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground);
 void K_CalculateBattleWanted(void);
 void K_CheckBumpers(void);
 void K_CheckSpectateStatus(void);
+
+// sound stuff for lua
+void K_PlayAttackTaunt(mobj_t *source);
+void K_PlayBoostTaunt(mobj_t *source);
+void K_PlayOvertakeSound(mobj_t *source);
+void K_PlayHitEmSound(mobj_t *source);
+void K_PlayPowerGloatSound(mobj_t *source);
 
 const char *K_GetItemPatch(UINT8 item, boolean tiny);
 INT32 K_calcSplitFlags(INT32 snapflags);
