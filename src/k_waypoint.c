@@ -1,6 +1,7 @@
 #include "k_waypoint.h"
 
 #include "doomdef.h"
+#include "d_netcmd.h"
 #include "p_local.h"
 #include "p_mobj.h"
 #include "p_tick.h"
@@ -10,6 +11,146 @@ static waypoint_t **waypointheap = NULL;
 static waypoint_t *firstwaypoint = NULL;
 static size_t numwaypoints = 0;
 static size_t numwaypointmobjs = 0;
+
+#define SPARKLES_PER_CONNECTION 16
+
+/*--------------------------------------------------
+	void K_DebugWaypointsSpawnLine(waypoint_t * const waypoint1, waypoint_t * const waypoint2)
+
+		Draw a debugging line between 2 waypoints
+
+	Input Arguments:-
+		waypoint1 - A waypoint to draw the line between
+		waypoint2 - The other waypoint to draw the line between
+--------------------------------------------------*/
+static void K_DebugWaypointsSpawnLine(waypoint_t * const waypoint1, waypoint_t * const waypoint2)
+{
+	mobj_t *waypointmobj1, *waypointmobj2;
+	mobj_t *spawnedmobj;
+	fixed_t stepx, stepy, stepz;
+	fixed_t x, y, z;
+	INT32 n;
+
+	// Error conditions
+	if (waypoint1 == NULL || waypoint2 == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_DebugWaypointsSpawnLine.\n");
+		return;
+	}
+	if (waypoint1->mobj == NULL || waypoint2->mobj == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL mobj on waypoint in K_DebugWaypointsSpawnLine.\n");
+		return;
+	}
+	if (cv_kartdebugwaypoints.value == 0)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "In K_DebugWaypointsSpawnLine when kartdebugwaypoints is off.\n");
+		return;
+	}
+
+	waypointmobj1 = waypoint1->mobj;
+	waypointmobj2 = waypoint2->mobj;
+
+	n = SPARKLES_PER_CONNECTION;
+
+	// Draw the sparkles
+	stepx = (waypointmobj2->x - waypointmobj1->x) / n;
+	stepy = (waypointmobj2->y - waypointmobj1->y) / n;
+	stepz = (waypointmobj2->z - waypointmobj1->z) / n;
+	x = waypointmobj1->x;
+	y = waypointmobj1->y;
+	z = waypointmobj1->z;
+	do
+	{
+		spawnedmobj = P_SpawnMobj(x, y, z, MT_SPARK);
+		P_SetMobjState(spawnedmobj, S_SPRK1 + ((leveltime + n) % 16));
+		spawnedmobj->state->nextstate = S_NULL;
+		spawnedmobj->state->tics = 1;
+		x += stepx;
+		y += stepy;
+		z += stepz;
+	} while (n--);
+}
+
+#undef DEBUG_SPARKLE_DISTANCE
+
+/*--------------------------------------------------
+	void K_DebugWaypointsVisualise()
+
+		See header file for description.
+--------------------------------------------------*/
+void K_DebugWaypointsVisualise(void)
+{
+	mobj_t *waypointmobj;
+	mobj_t *debugmobj;
+	waypoint_t *waypoint;
+	waypoint_t *otherwaypoint;
+	UINT32 i;
+
+	if (waypointcap == NULL)
+	{
+		// No point putting a debug message here when it could easily happen when turning on the cvar in battle
+		return;
+	}
+	if (cv_kartdebugwaypoints.value == 0)
+	{
+		// Going to nip this in the bud and say no drawing all this without the cvar, it's not particularly optimised
+		return;
+	}
+
+	// Hunt through the waypointcap so we can show all waypoint mobjs and not just ones that were able to be graphed
+	for (waypointmobj = waypointcap; waypointmobj != NULL; waypointmobj = waypointmobj->tracer)
+	{
+		waypoint = K_SearchWaypointHeapForMobj(waypointmobj);
+
+		debugmobj = P_SpawnMobj(waypointmobj->x, waypointmobj->y, waypointmobj->z, MT_SPARK);
+		P_SetMobjState(debugmobj, S_THOK);
+
+		// There's a waypoint setup for this mobj! So draw that it's a valid waypoint and draw lines to its connections
+		if (waypoint != NULL)
+		{
+			if (waypoint->numnextwaypoints == 0 || waypoint->numprevwaypoints == 0)
+			{
+				debugmobj->color = SKINCOLOR_ORANGE;
+			}
+			else
+			{
+				debugmobj->color = SKINCOLOR_BLUE;
+			}
+
+			// Valid waypoint, so draw lines of SPARKLES to its next or previous waypoints
+			if (cv_kartdebugwaypoints.value == 1)
+			{
+				for (i = 0; i < waypoint->numnextwaypoints; i++)
+				{
+					if (waypoint->nextwaypoints[i] != NULL)
+					{
+						otherwaypoint = waypoint->nextwaypoints[i];
+						K_DebugWaypointsSpawnLine(waypoint, otherwaypoint);
+					}
+				}
+			}
+			else if (cv_kartdebugwaypoints.value == 2)
+			{
+				for (i = 0; i < waypoint->numprevwaypoints; i++)
+				{
+					if (waypoint->prevwaypoints[i] != NULL)
+					{
+						otherwaypoint = waypoint->prevwaypoints[i];
+						K_DebugWaypointsSpawnLine(waypoint, otherwaypoint);
+					}
+				}
+			}
+		}
+		else
+		{
+			debugmobj->color = SKINCOLOR_RED;
+		}
+		debugmobj->state->tics = 1;
+		debugmobj->state->nextstate = S_NULL;
+	}
+}
+
 
 /*--------------------------------------------------
 	waypoint_t *K_SearchWaypoints(waypoint_t *waypoint, mobj_t * const mobj, boolean * const visitedarray)
@@ -282,7 +423,7 @@ static waypoint_t *K_MakeWaypoint(mobj_t *mobj)
 	}
 	if (waypointcap == NULL)
 	{
-		CONS_Debug(DBG_SETUP, "K_MakeWaypoint called with NULL waypointcap.");
+		CONS_Debug(DBG_SETUP, "K_MakeWaypoint called with NULL waypointcap.\n");
 		return false;
 	}
 
@@ -341,7 +482,7 @@ static waypoint_t *K_SetupWaypoint(mobj_t *mobj)
 	}
 	if (waypointcap == NULL)
 	{
-		CONS_Debug(DBG_SETUP, "K_SetupWaypoint called with NULL waypointcap.");
+		CONS_Debug(DBG_SETUP, "K_SetupWaypoint called with NULL waypointcap.\n");
 		return false;
 	}
 
@@ -391,14 +532,14 @@ static waypoint_t *K_SetupWaypoint(mobj_t *mobj)
 }
 
 /*--------------------------------------------------
-	static boolean K_AllocateWaypointHeap()
+	static boolean K_AllocateWaypointHeap(void)
 
 		Allocates the waypoint heap enough space for the number of waypoint mobjs on the map
 
 	Return:-
 		True if the allocation was successful, false if it wasn't. Will I_Error if out of memory still.
 --------------------------------------------------*/
-boolean K_AllocateWaypointHeap()
+static boolean K_AllocateWaypointHeap(void)
 {
 	mobj_t *waypointmobj = NULL;
 	boolean allocationsuccessful = false;
@@ -406,12 +547,12 @@ boolean K_AllocateWaypointHeap()
 	// Error conditions
 	if (waypointheap != NULL)
 	{
-		CONS_Debug(DBG_SETUP, "K_AllocateWaypointHeap called when waypointheap is already allocated.");
+		CONS_Debug(DBG_SETUP, "K_AllocateWaypointHeap called when waypointheap is already allocated.\n");
 		return false;
 	}
 	if (waypointcap == NULL)
 	{
-		CONS_Debug(DBG_SETUP, "K_AllocateWaypointHeap called with NULL waypointcap.");
+		CONS_Debug(DBG_SETUP, "K_AllocateWaypointHeap called with NULL waypointcap.\n");
 		return false;
 	}
 
@@ -448,25 +589,25 @@ boolean K_AllocateWaypointHeap()
 	}
 	else
 	{
-		CONS_Debug(DBG_SETUP, "No waypoint mobjs in waypointcap.");
+		CONS_Debug(DBG_SETUP, "No waypoint mobjs in waypointcap.\n");
 	}
 
 	return allocationsuccessful;
 }
 
 /*--------------------------------------------------
-	void K_FreeWaypoints()
+	void K_FreeWaypoints(void)
 
 		For safety, this will free the waypointheap and all the waypoints allocated if they aren't already before they
 		are setup. If the PU_LEVEL tag is cleared, make sure to call K_ClearWaypoints or this will try to free already
 		freed memory!
 --------------------------------------------------*/
-void K_FreeWaypoints()
+static void K_FreeWaypoints(void)
 {
 	if (waypointheap != NULL)
 	{
 		// Free each waypoint if it's not already
-		INT32 i;
+		UINT32 i;
 		for (i = 0; i < numwaypoints; i++)
 		{
 			if (waypointheap[i] != NULL)
@@ -475,7 +616,7 @@ void K_FreeWaypoints()
 			}
 			else
 			{
-				CONS_Debug(DBG_SETUP, "NULL waypoint %d attempted to be freed.", i);
+				CONS_Debug(DBG_SETUP, "NULL waypoint %d attempted to be freed.\n", i);
 			}
 		}
 
@@ -487,11 +628,11 @@ void K_FreeWaypoints()
 }
 
 /*--------------------------------------------------
-	boolean K_SetupWaypointList()
+	boolean K_SetupWaypointList(void)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_SetupWaypointList()
+boolean K_SetupWaypointList(void)
 {
 	boolean setupsuccessful = false;
 
@@ -517,7 +658,7 @@ boolean K_SetupWaypointList()
 				CONS_Debug(DBG_SETUP, "Successfully setup %zu waypoints.\n", numwaypoints);
 				if (numwaypoints < numwaypointmobjs)
 				{
-					CONS_Printf("Not all waypoints in the map are connected! %zu waypoints setup but %zu mobjs.",
+					CONS_Printf("Not all waypoints in the map are connected! %zu waypoints setup but %zu mobjs.\n",
 						numwaypoints, numwaypointmobjs);
 				}
 				setupsuccessful = true;
@@ -529,11 +670,11 @@ boolean K_SetupWaypointList()
 }
 
 /*--------------------------------------------------
-	void K_ClearWaypoints()
+	void K_ClearWaypoints(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_ClearWaypoints()
+void K_ClearWaypoints(void)
 {
 	waypointheap = NULL;
 	numwaypoints = 0;

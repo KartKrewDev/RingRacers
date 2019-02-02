@@ -7,13 +7,13 @@
 typedef struct waypoint_s
 {
 	mobj_t             *mobj;
-	UINT32              id;
+	size_t              id;
 	struct waypoint_s **nextwaypoints;
 	struct waypoint_s **prevwaypoints;
 	fixed_t            *nextwaypointdistances;
 	fixed_t            *prevwaypointdistances;
-	UINT32              numnextwaypoints;
-	UINT32              numprevwaypoints;
+	size_t              numnextwaypoints;
+	size_t              numprevwaypoints;
 } waypoint_t;
 
 
@@ -54,7 +54,16 @@ waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj);
 
 
 /*--------------------------------------------------
-	boolean K_SetupWaypointList()
+	void K_DebugWaypointsVisualise()
+
+		Creates mobjs in order to visualise waypoints for debugging.
+--------------------------------------------------*/
+
+void K_DebugWaypointsVisualise(void);
+
+
+/*--------------------------------------------------
+	boolean K_SetupWaypointList(void)
 
 		Sets up the waypoint list for Kart race maps, prints out warnings if something is wrong.
 
@@ -67,7 +76,7 @@ boolean K_SetupWaypointList(void);
 
 
 /*--------------------------------------------------
-	void K_ClearWaypoints()
+	void K_ClearWaypoints(void)
 
 		Clears waypointheap, firstwaypoint, numwaypoints, and numwaypointmobjs
 		WARNING: This does *not* Free waypointheap or any waypoints! They are stored in PU_LEVEL so they are freed once
