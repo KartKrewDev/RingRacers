@@ -11816,11 +11816,11 @@ ML_NOCLIMB : Direction not controllable
 		mobj->movecount = mthing->angle;
 		if (mthing->options & MTF_AMBUSH)
 		{
-			mobj->reactiontime = 1;
+			mobj->reactiontime = 0; // Can't respawn at if Ambush is off
 		}
 		else
 		{
-			mobj->reactiontime = 0;
+			mobj->reactiontime = 1;
 		}
 
 		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead

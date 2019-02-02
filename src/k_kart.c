@@ -4767,6 +4767,8 @@ void K_KartUpdatePosition(player_t *player)
 	fixed_t pmo, imo;
 	mobj_t *mo;
 
+	return;
+
 	if (player->spectator || !player->mo)
 		return;
 

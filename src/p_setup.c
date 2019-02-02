@@ -80,6 +80,7 @@
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_waypoint.h"
 
 //
 // Map MD5, calculated on level load.
@@ -3058,6 +3059,17 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	globalweather = mapheaderinfo[gamemap-1]->weather;
 
+	// The waypoint data that's in PU_LEVEL needs to be reset back to 0/NULL now since PU_LEVEL was cleared
+	K_ClearWaypoints();
+	// Load the waypoints please!
+	if (G_RaceGametype())
+	{
+		if (K_SetupWaypointList() == false)
+		{
+			CONS_Printf("Waypoints were not able to be setup! Player positions will not work correctly.");
+		}
+	}
+
 #ifdef HWRENDER // not win32 only 19990829 by Kin
 	if (rendermode != render_soft && rendermode != render_none)
 	{
@@ -3435,7 +3447,7 @@ boolean P_AddWadFile(const char *wadfilename)
 	//
 	R_AddSkins(wadnum); // faB: wadfile index in wadfiles[]
 
-	// 
+	//
 	// edit music defs
 	//
 	S_LoadMusicDefs(wadnum);
