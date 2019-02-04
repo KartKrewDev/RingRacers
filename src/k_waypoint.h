@@ -21,7 +21,7 @@ typedef struct waypoint_s
 
 
 /*--------------------------------------------------
-	waypoint_t *K_SearchWaypointGraphForMobj(mobj_t * const mobj)
+	waypoint_t *K_SearchWaypointGraphForMobj(mobj_t *const mobj)
 
 		Searches through the waypoint graph for a waypoint that has an mobj, if a waypoint can be found through here it
 		does mean that the waypoint graph can be traversed to find it
@@ -36,7 +36,7 @@ typedef struct waypoint_s
 waypoint_t *K_SearchWaypointGraphForMobj(mobj_t * const mobj);
 
 /*--------------------------------------------------
-	waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj)
+	waypoint_t *K_SearchWaypointHeapForMobj(mobj_t *const mobj)
 
 		Searches through the waypoint heap for a waypoint that has an mobj, this does not necessarily mean the waypoint
 		can be reached from another waypoint

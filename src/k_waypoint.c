@@ -15,7 +15,7 @@ static size_t numwaypointmobjs = 0;
 #define SPARKLES_PER_CONNECTION 16
 
 /*--------------------------------------------------
-	void K_DebugWaypointsSpawnLine(waypoint_t * const waypoint1, waypoint_t * const waypoint2)
+	void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
 
 		Draw a debugging line between 2 waypoints
 
@@ -23,13 +23,14 @@ static size_t numwaypointmobjs = 0;
 		waypoint1 - A waypoint to draw the line between
 		waypoint2 - The other waypoint to draw the line between
 --------------------------------------------------*/
-static void K_DebugWaypointsSpawnLine(waypoint_t * const waypoint1, waypoint_t * const waypoint2)
+static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
 {
 	mobj_t *waypointmobj1, *waypointmobj2;
 	mobj_t *spawnedmobj;
 	fixed_t stepx, stepy, stepz;
 	fixed_t x, y, z;
 	INT32 n;
+	UINT32 numofframes = 1; // If this was 0 it could divide by 0
 
 	// Error conditions
 	if (waypoint1 == NULL || waypoint2 == NULL)
@@ -52,6 +53,7 @@ static void K_DebugWaypointsSpawnLine(waypoint_t * const waypoint1, waypoint_t *
 	waypointmobj2 = waypoint2->mobj;
 
 	n = SPARKLES_PER_CONNECTION;
+	numofframes = S_SPRK16 - S_SPRK1;
 
 	// Draw the sparkles
 	stepx = (waypointmobj2->x - waypointmobj1->x) / n;
@@ -63,7 +65,7 @@ static void K_DebugWaypointsSpawnLine(waypoint_t * const waypoint1, waypoint_t *
 	do
 	{
 		spawnedmobj = P_SpawnMobj(x, y, z, MT_SPARK);
-		P_SetMobjState(spawnedmobj, S_SPRK1 + ((leveltime + n) % 16));
+		P_SetMobjState(spawnedmobj, S_SPRK1 + ((leveltime + n) % (numofframes + 1)));
 		spawnedmobj->state->nextstate = S_NULL;
 		spawnedmobj->state->tics = 1;
 		x += stepx;
@@ -72,7 +74,7 @@ static void K_DebugWaypointsSpawnLine(waypoint_t * const waypoint1, waypoint_t *
 	} while (n--);
 }
 
-#undef DEBUG_SPARKLE_DISTANCE
+#undef SPARKLES_PER_CONNECTION
 
 /*--------------------------------------------------
 	void K_DebugWaypointsVisualise()
@@ -109,7 +111,11 @@ void K_DebugWaypointsVisualise(void)
 		// There's a waypoint setup for this mobj! So draw that it's a valid waypoint and draw lines to its connections
 		if (waypoint != NULL)
 		{
-			if (waypoint->numnextwaypoints == 0 || waypoint->numprevwaypoints == 0)
+			if (waypoint->numnextwaypoints == 0 && waypoint->numprevwaypoints == 0)
+			{
+				debugmobj->color = SKINCOLOR_RED;
+			}
+			else if (waypoint->numnextwaypoints == 0 || waypoint->numprevwaypoints == 0)
 			{
 				debugmobj->color = SKINCOLOR_ORANGE;
 			}
@@ -151,47 +157,112 @@ void K_DebugWaypointsVisualise(void)
 	}
 }
 
+/*--------------------------------------------------
+	boolean K_CheckWaypointForMobj(waypoint_t *const waypoint, void *const mobjpointer)
+
+		Compares a waypoint's mobj and a void pointer that *should* point to an mobj. Intended for use with the
+		K_SearchWaypoint functions ONLY. No, it is not my responsibility to make sure the pointer you sent in is
+		actually an mobj.
+
+	Input Arguments:-
+		waypoint - The waypoint that is currently being compared against
+		mobjpointer - A pointer that should be to an mobj to check with the waypoint for matching
+
+  Return:-
+		The waypoint that uses that mobj, NULL if it wasn't found, NULL if it isn't an MT_WAYPOINT
+--------------------------------------------------*/
+static boolean K_CheckWaypointForMobj(waypoint_t *const waypoint, void *const mobjpointer)
+{
+	mobj_t *mobj;
+	boolean mobjsmatch = false;
+
+	// Error Conditions
+	if (waypoint == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_CheckWaypointForMobj.\n");
+		return false;
+	}
+	if (waypoint->mobj == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "Waypoint has NULL mobj in K_CheckWaypointForMobj.\n");
+		return false;
+	}
+	if (mobjpointer == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL mobjpointer in K_CheckWaypointForMobj.\n");
+		return false;
+	}
+
+	mobj = (mobj_t *)mobjpointer;
+
+	if (P_MobjWasRemoved(mobj))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "Mobj Was Removed in K_CheckWaypointForMobj");
+		return false;
+	}
+	if (mobj->type != MT_WAYPOINT)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "Non MT_WAYPOINT mobj in K_CheckWaypointForMobj. Type=%d.\n", mobj->type);
+		return false;
+	}
+
+	// All that error checking for 3 lines :^)
+	if (waypoint->mobj == mobj)
+	{
+		mobjsmatch = true;
+	}
+
+	return mobjsmatch;
+}
 
 /*--------------------------------------------------
-	waypoint_t *K_SearchWaypoints(waypoint_t *waypoint, mobj_t * const mobj, boolean * const visitedarray)
+	waypoint_t *K_TraverseWaypoints(
+		waypoint_t *waypoint,
+		boolean    (*conditionalfunc)(waypoint_t *const, void *const),
+		void       *const condition,
+		boolean    *const visitedarray)
 
-		Searches through the waypoint list for a waypoint that has an mobj, just does a simple flood search for the
-		waypoint that uses this mobj, no pathfinding
+		Searches through the waypoint list for a waypoint that matches a condition, just does a simple flood search
+		of the graph with no pathfinding
 
 	Input Arguments:-
 		waypoint - The waypoint that is currently being checked, goes through nextwaypoints after this one
-		mobj - the mobj that we are searching for, cannot be changed to a different pointer
+		conditionalfunc - The function that will be used to check a waypoint against condition
+		condition - the condition being checked by conditionalfunc
 		visitedarray - An array of booleans that let us know if a waypoint has already been checked, marked to true when
 			one is, so we don't repeat going down a path. Cannot be changed to a different pointer
 
   Return:-
 		The waypoint that uses that mobj, NULL if it wasn't found, NULL if it isn't an MT_WAYPOINT
 --------------------------------------------------*/
-static waypoint_t *K_SearchWaypoints(waypoint_t *waypoint, mobj_t * const mobj, boolean * const visitedarray)
+static waypoint_t *K_TraverseWaypoints(
+	waypoint_t *waypoint,
+	boolean    (*conditionalfunc)(waypoint_t *const, void *const),
+	void       *const condition,
+	boolean    *const visitedarray)
 {
 	waypoint_t *foundwaypoint = NULL;
 
 	// Error conditions
-	if (mobj == NULL || P_MobjWasRemoved(mobj))
+	if (condition == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_SearchWaypoints.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL condition in K_TraverseWaypoints.\n");
 		return NULL;
 	}
-	if (mobj->type != MT_WAYPOINT)
+	if (conditionalfunc == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "Non MT_WAYPOINT mobj in K_SearchWaypoints. Type=%d.\n", mobj->type);
-		return NULL;
+		CONS_Debug(DBG_GAMELOGIC, "NULL conditionalfunc in K_TraverseWaypoints.\n");
 	}
 	if (visitedarray == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL visitedarray in K_SearchWaypoints.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL visitedarray in K_TraverseWaypoints.\n");
 		return NULL;
 	}
 
 searchwaypointstart:
 	if (waypoint == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_SearchWaypoints.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_TraverseWaypoints.\n");
 		return NULL;
 	}
 
@@ -201,7 +272,7 @@ searchwaypointstart:
 		// Mark this waypoint as being visited
 		visitedarray[waypoint->id] = true;
 
-		if (waypoint->mobj == mobj)
+		if (conditionalfunc(waypoint, condition) == true)
 		{
 			foundwaypoint = waypoint;
 		}
@@ -219,6 +290,8 @@ searchwaypointstart:
 			}
 			else if (waypoint->numnextwaypoints != 0)
 			{
+				// The nesting here is a bit nasty, but it's better than potentially a lot of function calls on the
+				// stack, and another function would be very small in this case
 				UINT32 i;
 				// For each next waypoint, Search through it's path continuation until we hopefully find the one we're
 				// looking for
@@ -226,7 +299,8 @@ searchwaypointstart:
 				{
 					if (waypoint->nextwaypoints[i] != NULL)
 					{
-						foundwaypoint = K_SearchWaypoints(waypoint->nextwaypoints[i], mobj, visitedarray);
+						foundwaypoint = K_TraverseWaypoints(waypoint->nextwaypoints[i], conditionalfunc, condition,
+							visitedarray);
 
 						if (foundwaypoint != NULL)
 						{
@@ -242,25 +316,35 @@ searchwaypointstart:
 }
 
 /*--------------------------------------------------
-	waypoint_t *K_SearchWaypointGraphForMobj(mobj_t * const mobj)
+	waypoint_t *K_SearchWaypointGraph(
+		boolean (*conditionalfunc)(waypoint_t *const, void *const),
+		void    *const condition)
 
-		See header file for description.
+		Searches through the waypoint graph for a waypoint that matches the conditional
+
+	Input Arguments:-
+		conditionalfunc - The function that will be used to check a waypoint against condition
+		condition - the condition being checked by conditionalfunc
+
+  Return:-
+		The waypoint that uses that mobj, NULL if it wasn't found, NULL if it isn't an MT_WAYPOINT
 --------------------------------------------------*/
-waypoint_t *K_SearchWaypointGraphForMobj(mobj_t * const mobj)
+static waypoint_t *K_SearchWaypointGraph(
+	boolean (*conditionalfunc)(waypoint_t *const, void *const),
+	void    *const condition)
 {
 	boolean *visitedarray = NULL;
 	waypoint_t *foundwaypoint = NULL;
 
 	// Error conditions
-	if (mobj == NULL || P_MobjWasRemoved(mobj))
+	if (condition == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_SearchWaypointsForMobj.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL condition in K_SearchWaypointGraph.\n");
 		return NULL;
 	}
-	if (mobj->type != MT_WAYPOINT)
+	if (conditionalfunc == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "Non MT_WAYPOINT mobj in K_SearchWaypointsForMobj. Type=%d.\n", mobj->type);
-		return NULL;
+		CONS_Debug(DBG_GAMELOGIC, "NULL conditionalfunc in K_SearchWaypointGraph.\n");
 	}
 	if (firstwaypoint == NULL)
 	{
@@ -269,44 +353,75 @@ waypoint_t *K_SearchWaypointGraphForMobj(mobj_t * const mobj)
 	}
 
 	visitedarray = Z_Calloc(numwaypoints * sizeof(boolean), PU_STATIC, NULL);
-	foundwaypoint = K_SearchWaypoints(firstwaypoint, mobj, visitedarray);
+	foundwaypoint = K_TraverseWaypoints(firstwaypoint, conditionalfunc, condition, visitedarray);
 	Z_Free(visitedarray);
 	return foundwaypoint;
 }
 
 /*--------------------------------------------------
-	waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj)
+	waypoint_t *K_SearchWaypointGraphForMobj(mobj_t * const mobj)
 
 		See header file for description.
 --------------------------------------------------*/
-waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj)
+waypoint_t *K_SearchWaypointGraphForMobj(mobj_t *const mobj)
+{
+	if (mobj == NULL || P_MobjWasRemoved(mobj))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_SearchWaypointGraphForMobj.\n");
+		return NULL;
+	}
+	if (mobj->type != MT_WAYPOINT)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "Non MT_WAYPOINT mobj in K_SearchWaypointGraphForMobj. Type=%d.\n", mobj->type);
+		return NULL;
+	}
+
+	return K_SearchWaypointGraph(K_CheckWaypointForMobj, (void *)mobj);
+}
+
+/*--------------------------------------------------
+	waypoint_t *K_SearchWaypointHeap(
+		boolean (*conditionalfunc)(waypoint_t *const, void *const),
+		void    *const condition)
+
+		Searches through the waypoint heap for a waypoint that matches the conditional
+
+	Input Arguments:-
+		conditionalfunc - The function that will be used to check a waypoint against condition
+		condition - the condition being checked by conditionalfunc
+
+  Return:-
+		The waypoint that uses that mobj, NULL if it wasn't found, NULL if it isn't an MT_WAYPOINT
+--------------------------------------------------*/
+static waypoint_t *K_SearchWaypointHeap(
+	boolean (*conditionalfunc)(waypoint_t *const, void *const),
+	void    *const condition)
 {
 	UINT32 i = 0;
 	waypoint_t *foundwaypoint = NULL;
 
 	// Error conditions
-	if (mobj == NULL || P_MobjWasRemoved(mobj))
+	if (condition == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_SearchWaypointsForMobj.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL condition in K_SearchWaypointHeap.\n");
 		return NULL;
 	}
-	if (mobj->type != MT_WAYPOINT)
+	if (conditionalfunc == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "Non MT_WAYPOINT mobj in K_SearchWaypointsForMobj. Type=%d.\n", mobj->type);
-		return NULL;
+		CONS_Debug(DBG_GAMELOGIC, "NULL conditionalfunc in K_SearchWaypointHeap.\n");
 	}
 	if (waypointheap == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "K_SearchWaypointsForMobj called when no waypointheap.\n");
+		CONS_Debug(DBG_GAMELOGIC, "K_SearchWaypointHeap called when no waypointheap.\n");
 		return NULL;
 	}
 
-	// Simply search through the waypointheap for the waypoint with the mobj! Much simpler when no pathfinding needed.
-	// search up to numwaypoints and NOT numwaypointmobjs as numwaypoints is the real number of waypoints setup in
-	// the heap while numwaypointmobjs ends up being the capacity
+	// Simply search through the waypointheap for the waypoint which matches the condition Much simpler when no
+	// pathfinding is needed. Search up to numwaypoints and NOT numwaypointmobjs as numwaypoints is the real number of
+	// waypoints setup in the heap while numwaypointmobjs ends up being the capacity
 	for (i = 0; i < numwaypoints; i++)
 	{
-		if (waypointheap[i]->mobj == mobj)
+		if (conditionalfunc(waypointheap[i], condition) == true)
 		{
 			foundwaypoint = waypointheap[i];
 			break;
@@ -317,7 +432,28 @@ waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj)
 }
 
 /*--------------------------------------------------
-	static void K_AddPrevToWaypoint(waypoint_t *waypoint, waypoint_t *prevwaypoint)
+	waypoint_t *K_SearchWaypointHeapForMobj(mobj_t *const mobj)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_SearchWaypointHeapForMobj(mobj_t *const mobj)
+{
+	if (mobj == NULL || P_MobjWasRemoved(mobj))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_SearchWaypointHeapForMobj.\n");
+		return NULL;
+	}
+	if (mobj->type != MT_WAYPOINT)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "Non MT_WAYPOINT mobj in K_SearchWaypointHeapForMobj. Type=%d.\n", mobj->type);
+		return NULL;
+	}
+
+	return K_SearchWaypointHeap(K_CheckWaypointForMobj, (void *)mobj);
+}
+
+/*--------------------------------------------------
+	static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const prevwaypoint)
 
 		Adds another waypoint to a waypoint's previous waypoint list, this needs to be done like this because there is no
 		way to identify previous waypoints from just IDs, so we need to reallocate the memory for every previous waypoint
@@ -329,7 +465,7 @@ waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj)
 	Return:-
 		Pointer to waypoint_t for the rest of the waypoint data to be placed into
 --------------------------------------------------*/
-static void K_AddPrevToWaypoint(waypoint_t *waypoint, waypoint_t *prevwaypoint)
+static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const prevwaypoint)
 {
 	// Error conditions
 	if (waypoint == NULL)
@@ -366,7 +502,7 @@ static void K_AddPrevToWaypoint(waypoint_t *waypoint, waypoint_t *prevwaypoint)
 	Return:-
 		Pointer to waypoint_t for the rest of the waypoint data to be placed into
 --------------------------------------------------*/
-static waypoint_t *K_NewWaypoint(mobj_t *mobj)
+static waypoint_t *K_NewWaypoint(mobj_t *const mobj)
 {
 	waypoint_t *waypoint;
 
@@ -399,7 +535,7 @@ static waypoint_t *K_NewWaypoint(mobj_t *mobj)
 }
 
 /*--------------------------------------------------
-	static waypoint_t *K_MakeWaypoint(mobj_t *mobj)
+	static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 
 		Make a new waypoint from a map object. Setups up most of the data for it, and allocates most memory
 		Remaining creation is handled in K_SetupWaypoint
@@ -410,7 +546,7 @@ static waypoint_t *K_NewWaypoint(mobj_t *mobj)
 	Return:-
 		Pointer to the setup waypoint, NULL if one was not setup
 --------------------------------------------------*/
-static waypoint_t *K_MakeWaypoint(mobj_t *mobj)
+static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 {
 	waypoint_t *madewaypoint = NULL;
 	mobj_t *otherwaypointmobj = NULL;
@@ -454,7 +590,7 @@ static waypoint_t *K_MakeWaypoint(mobj_t *mobj)
 }
 
 /*--------------------------------------------------
-	static waypoint_t *K_SetupWaypoint(mobj_t *mobj)
+	static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 
 		Either gets an already made waypoint, or sets up a new waypoint for an mobj,
 		including next and previous waypoints
@@ -465,7 +601,7 @@ static waypoint_t *K_MakeWaypoint(mobj_t *mobj)
 	Return:-
 		Pointer to the setup waypoint, NULL if one was not setup
 --------------------------------------------------*/
-static waypoint_t *K_SetupWaypoint(mobj_t *mobj)
+static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 {
 	waypoint_t *thiswaypoint = NULL;
 
