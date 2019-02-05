@@ -80,10 +80,6 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 //int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
 #endif
 
-#if defined (__GNUC__) && (__GNUC__ >= 4)
-#define FIXUPO0
-#endif
-
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
 #define STRINGHEIGHT 8
@@ -915,41 +911,7 @@ static menuitem_t SP_LevelStatsMenu[] =
 // External files modify this menu, so we can't call it static.
 // And I'm too lazy to go through and rename it everywhere. ARRGH!
 #define M_ChoosePlayer NULL
-menuitem_t PlayerMenu[32] =
-{
-	{IT_CALL, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0},
-	{IT_DISABLED, NULL, NULL, M_ChoosePlayer, 0}
-};
+menuitem_t PlayerMenu[MAXSKINS];
 
 // -----------------------------------
 // Multiplayer and all of its submenus
@@ -2588,7 +2550,7 @@ boolean M_Responder(event_t *ev)
 		return false;
 	else if (ch == gamecontrol[gc_systemmenu][0] || ch == gamecontrol[gc_systemmenu][1]) // allow remappable ESC key
 		ch = KEY_ESCAPE;
-	else if (ch == gamecontrol[gc_accelerate][0] || ch == gamecontrol[gc_accelerate][1])
+	else if ((ch == gamecontrol[gc_accelerate][0] || ch == gamecontrol[gc_accelerate][1])  && ch >= KEY_MOUSE1)
 		ch = KEY_ENTER;
 
 	// F-Keys
@@ -2666,7 +2628,7 @@ boolean M_Responder(event_t *ev)
 		return false;
 	}
 
-	if (ch == gamecontrol[gc_brake][0] || ch == gamecontrol[gc_brake][1]) // do this here, otherwise brake opens the menu mid-game
+	if ((ch == gamecontrol[gc_brake][0] || ch == gamecontrol[gc_brake][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
 		ch = KEY_ESCAPE;
 
 	routine = currentMenu->menuitems[itemOn].itemaction;
@@ -3192,6 +3154,8 @@ void M_Ticker(void)
 //
 void M_Init(void)
 {
+	UINT8 i;
+
 	COM_AddCommand("manual", Command_Manual_f);
 
 	CV_RegisterVar(&cv_nextmap);
@@ -3203,7 +3167,6 @@ void M_Init(void)
 		return;
 
 	// Menu hacks
-	CV_RegisterVar(&cv_splitplayers);
 	CV_RegisterVar(&cv_dummymenuplayer);
 	CV_RegisterVar(&cv_dummyteam);
 	CV_RegisterVar(&cv_dummyspectate);
@@ -3238,6 +3201,15 @@ void M_Init(void)
 	quitmsg[QUIT3MSG4] = M_GetText("Every time you press 'Y', an\nSRB2Kart Developer cries...\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG5] = M_GetText("You'll be back to play soon, though...\n...right?\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG6] = M_GetText("Aww, is Eggman's Nightclub too\ndifficult for you?\n\n(Press 'Y' to quit)");
+
+	// Setup PlayerMenu table
+	for (i = 0; i < MAXSKINS; i++)
+	{
+		PlayerMenu[i].status = (i == 0 ? IT_CALL : IT_DISABLED);
+		PlayerMenu[i].patch = PlayerMenu[i].text = NULL;
+		PlayerMenu[i].itemaction = M_ChoosePlayer;
+		PlayerMenu[i].alphaKey = 0;
+	}
 
 #ifdef HWRENDER
 	// Permanently hide some options based on render mode
@@ -7736,7 +7708,7 @@ static void M_StartServerMenu(INT32 choice)
 // CONNECT VIA IP
 // ==============
 
-static char setupm_ip[16];
+static char setupm_ip[28];
 #endif
 static UINT8 setupm_pselect = 1;
 
@@ -7769,12 +7741,12 @@ Update the maxplayers label...
 	V_DrawFill(x+5, y+4+5, /*16*8 + 6,*/ BASEVIDWIDTH - 2*(x+5), 8+6, 239);
 
 	// draw name string
-	V_DrawString(x+8,y+12, V_MONOSPACE, setupm_ip);
+	V_DrawString(x+8,y+12, V_ALLOWLOWERCASE, setupm_ip);
 
 	// draw text cursor for name
 	if (itemOn == 8
 	    && skullAnimCounter < 4)   //blink cursor
-		V_DrawCharacter(x+8+V_StringWidth(setupm_ip, V_MONOSPACE),y+12,'_',false);
+		V_DrawCharacter(x+8+V_StringWidth(setupm_ip, V_ALLOWLOWERCASE),y+12,'_',false);
 #endif
 
 	// character bar, ripped off the color bar :V
@@ -7988,10 +7960,11 @@ static void M_HandleConnectIP(INT32 choice)
 
 		default:
 			l = strlen(setupm_ip);
-			if (l >= 16-1)
+			if (l >= 28-1)
 				break;
 
-			if (choice == 46 || (choice >= 48 && choice <= 57)) // Rudimentary number and period enforcing
+			// Rudimentary number and period enforcing - also allows letters so hostnames can be used instead
+			if ((choice >= '-' && choice <= ':') || (choice >= 'A' && choice <= 'Z') || (choice >= 'a' && choice <= 'z'))
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[l] = (char)choice;
@@ -8005,7 +7978,6 @@ static void M_HandleConnectIP(INT32 choice)
 				setupm_ip[l] = (char)choice;
 				setupm_ip[l+1] = 0;
 			}
-
 			break;
 	}
 

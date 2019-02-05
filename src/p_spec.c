@@ -2450,6 +2450,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					mapmusflags |= MUSIC_RELOADRESET;
 
 				S_ChangeMusic(mapmusname, mapmusflags, !(line->flags & ML_EFFECT4));
+				if (!(line->flags & ML_EFFECT3))
+					S_ShowMusicCredit();
 
 				// Except, you can use the ML_BLOCKMONSTERS flag to change this behavior.
 				// if (mapmusflags & MUSIC_RELOADRESET) then it will reset the music in G_PlayerReborn.
@@ -5716,8 +5718,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		curWeather = PRECIP_STORM_NOSTRIKES;
 	else
 		curWeather = PRECIP_NONE;
-
-	mapobjectscale = mapheaderinfo[gamemap-1]->mobj_scale;
 
 	P_InitTagLists();   // Create xref tables for tags
 	P_SearchForDisableLinedefs(); // Disable linedefs are now allowed to disable *any* line

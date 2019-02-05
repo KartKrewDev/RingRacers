@@ -31,9 +31,10 @@
 #include "lua_script.h"
 #include "lua_libs.h"
 #include "lua_hud.h" // hud_running errors
+#include "lua_hook.h" // hook_cmd_running
 
-#define NOHUD if (hud_running) return luaL_error(L, "HUD rendering code should not call this function!");
-
+#define NOHUD if (hud_running) return luaL_error(L, "HUD rendering code should not call this function!"); else if (hook_cmd_running) return luaL_error(L, "CMD Building code should not call this function!");
+// Yes technically cmd hook isn't a hud but whatever, this avoids having 2 defines for virtually the same thing.
 
 boolean luaL_checkboolean(lua_State *L, int narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);
@@ -674,16 +675,6 @@ static int lib_pGetPlayerSpinHeight(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	lua_pushfixed(L, P_GetPlayerSpinHeight(player));
-	return 1;
-}
-
-static int lib_pGetPlayerControlDirection(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	//HUDSAFE
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	lua_pushinteger(L, P_GetPlayerControlDirection(player));
 	return 1;
 }
 
@@ -1839,6 +1830,21 @@ static int lib_sStopSoundByID(lua_State *L)
 	return 0;
 }
 
+static int lib_sShowMusicCredit(lua_State *L)
+{
+	player_t *player = NULL;
+	//HUDSAFE
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		S_ShowMusicCredit();
+	return 0;
+}
+
 static int lib_sChangeMusic(lua_State *L)
 {
 #ifdef MUSICSLOT_COMPATIBILITY
@@ -2125,6 +2131,72 @@ static int lib_gTicsToMilliseconds(lua_State *L)
 
 // K_KART
 ////////////
+
+// Seriously, why weren't those exposed before?
+static int lib_kAttackSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayAttackTaunt: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayAttackTaunt(mobj);
+	return 0;
+}
+
+static int lib_kBoostSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayBoostTaunt: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayBoostTaunt(mobj);
+	return 0;
+}
+
+static int lib_kOvertakeSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayOvertakeSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayOvertakeSound(mobj);
+	return 0;
+}
+
+static int lib_kHitEmSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayHitEmSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayHitEmSound(mobj);
+	return 0;
+}
+
+static int lib_kGloatSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayPowerGloatSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayPowerGloatSound(mobj);
+	return 0;
+}
+
+static int lib_kLossSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));	// let's require a mobj for consistency with the other functions
+	sfxenum_t sfx_id;
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayLossSound: mobj_t isn't a player object.");
+
+	sfx_id = ((skin_t *)mobj->skin)->soundsid[S_sfx[sfx_klose].skinsound];
+	S_StartSound(mobj, sfx_id);
+	return 0;
+}
+
+// Note: Pain, Death and Victory are already exposed.
 
 static int lib_kGetKartColorByName(lua_State *L)
 {
@@ -2561,7 +2633,6 @@ static luaL_Reg lib[] = {
 	// p_user
 	{"P_GetPlayerHeight",lib_pGetPlayerHeight},
 	{"P_GetPlayerSpinHeight",lib_pGetPlayerSpinHeight},
-	{"P_GetPlayerControlDirection",lib_pGetPlayerControlDirection},
 	{"P_AddPlayerScore",lib_pAddPlayerScore},
 	{"P_PlayerInPain",lib_pPlayerInPain},
 	{"P_DoPlayerPain",lib_pDoPlayerPain},
@@ -2666,6 +2737,7 @@ static luaL_Reg lib[] = {
 	{"S_StartSoundAtVolume",lib_sStartSoundAtVolume},
 	{"S_StopSound",lib_sStopSound},
 	{"S_StopSoundByID",lib_sStopSoundByID},
+	{"S_ShowMusicCredit",lib_sShowMusicCredit},
 	{"S_ChangeMusic",lib_sChangeMusic},
 	{"S_SpeedMusic",lib_sSpeedMusic},
 	{"S_StopMusic",lib_sStopMusic},
@@ -2692,6 +2764,12 @@ static luaL_Reg lib[] = {
 	{"G_TicsToMilliseconds",lib_gTicsToMilliseconds},
 
 	// k_kart
+	{"K_PlayAttackTaunt", lib_kAttackSound},
+	{"K_PlayBoostTaunt", lib_kBoostSound},
+	{"K_PlayPowerGloatSund", lib_kGloatSound},
+	{"K_PlayOvertakeSound", lib_kOvertakeSound},
+	{"K_PlayLossSound", lib_kLossSound},
+	{"K_PlayHitEmSound", lib_kHitEmSound},
 	{"K_GetKartColorByName",lib_kGetKartColorByName},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
