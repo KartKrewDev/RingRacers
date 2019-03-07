@@ -397,6 +397,7 @@ UINT8 K_GetKartColorByName(const char *name)
 
 void K_RegisterKartStuff(void)
 {
+	CV_RegisterVar(&cv_superring);
 	CV_RegisterVar(&cv_sneaker);
 	CV_RegisterVar(&cv_rocketsneaker);
 	CV_RegisterVar(&cv_invincibility);
@@ -496,12 +497,13 @@ boolean K_IsPlayerWanted(player_t *player)
 static INT32 K_KartItemOddsRace[NUMKARTRESULTS][10] =
 {
 				//P-Odds	 0  1  2  3  4  5  6  7  8  9
-			   /*Sneaker*/ {20, 0, 0, 4, 6, 6, 0, 0, 0, 0 }, // Sneaker
+			/*Super Ring*/ {10, 2, 1, 1, 0, 0, 0, 0, 0, 0 }, // Super Ring
+			   /*Sneaker*/ {10, 0, 0, 4, 6, 6, 0, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 1, 3, 5, 3, 0 }, // Rocket Sneaker
 		 /*Invincibility*/ { 0, 0, 0, 0, 0, 1, 4, 6,14, 0 }, // Invincibility
 				/*Banana*/ { 0,10, 4, 2, 1, 0, 0, 0, 0, 0 }, // Banana
 		/*Eggman Monitor*/ { 0, 3, 2, 1, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
-			  /*Orbinaut*/ { 0, 8, 6, 4, 2, 0, 0, 0, 0, 0 }, // Orbinaut
+			  /*Orbinaut*/ { 0, 6, 5, 3, 2, 0, 0, 0, 0, 0 }, // Orbinaut
 				  /*Jawz*/ { 0, 0, 3, 2, 1, 1, 0, 0, 0, 0 }, // Jawz
 				  /*Mine*/ { 0, 0, 2, 2, 1, 0, 0, 0, 0, 0 }, // Mine
 			   /*Ballhog*/ { 0, 0, 0, 2, 1, 0, 0, 0, 0, 0 }, // Ballhog
@@ -523,6 +525,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS][10] =
 static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][6] =
 {
 				//P-Odds	 0  1  2  3  4  5
+			/*Super Ring*/ { 0, 0, 0, 0, 0, 0 }, // Super Ring
 			   /*Sneaker*/ { 3, 2, 2, 2, 0, 2 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 0 }, // Rocket Sneaker
 		 /*Invincibility*/ { 0, 1, 2, 3, 4, 2 }, // Invincibility
@@ -617,6 +620,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed)
 	SINT8 first = -1, second = -1;
 	INT32 secondist = 0;
 	boolean itemenabled[NUMKARTRESULTS-1] = {
+		cv_superring.value,
 		cv_sneaker.value,
 		cv_rocketsneaker.value,
 		cv_invincibility.value,
@@ -1051,6 +1055,33 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 	return weight;
 }
 
+// This kind of wipeout happens with no rings -- doesn't remove a bumper, has no invulnerability, and is much shorter.
+static void K_BumpWipeoutPlayer(player_t *player, INT32 length)
+{
+	if (player->health <= 0)
+		return;
+
+	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0
+		|| player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
+		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
+		return;
+
+	player->kartstuff[k_driftboost] = 0;
+	player->kartstuff[k_drift] = 0;
+	player->kartstuff[k_driftcharge] = 0;
+	player->kartstuff[k_pogospring] = 0;
+
+	player->kartstuff[k_spinouttype] = 2;
+	player->kartstuff[k_spinouttimer] = length;
+	player->kartstuff[k_wipeoutslow] = min(length-1, wipeoutslowtime+1);
+
+	if (player->mo->state != &states[S_KART_SPIN])
+		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
+
+	K_DropHnextList(player);
+	return;
+}
+
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 {
 	mobj_t *fx;
@@ -1199,10 +1230,20 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		mobj1->player->rmomx = mobj1->momx - mobj1->player->cmomx;
 		mobj1->player->rmomy = mobj1->momy - mobj1->player->cmomy;
 		mobj1->player->kartstuff[k_justbumped] = bumptime;
+
 		if (mobj1->player->kartstuff[k_spinouttimer])
 		{
 			mobj1->player->kartstuff[k_wipeoutslow] = wipeoutslowtime+1;
 			mobj1->player->kartstuff[k_spinouttimer] = max(wipeoutslowtime+1, mobj1->player->kartstuff[k_spinouttimer]);
+		}
+		else if (mobj2->player) // Player VS player bumping only
+		{
+			if (mobj1->player->kartstuff[k_rings] <= 0)
+			{
+				K_BumpWipeoutPlayer(mobj1->player, TICRATE + (4 * (mobj2->player->kartweight - mobj1->player->kartweight)));
+				P_PlayRinglossSound(mobj1);
+			}
+			P_PlayerRingBurst(mobj1->player, 1);
 		}
 	}
 
@@ -1211,10 +1252,20 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		mobj2->player->rmomx = mobj2->momx - mobj2->player->cmomx;
 		mobj2->player->rmomy = mobj2->momy - mobj2->player->cmomy;
 		mobj2->player->kartstuff[k_justbumped] = bumptime;
+
 		if (mobj2->player->kartstuff[k_spinouttimer])
 		{
 			mobj2->player->kartstuff[k_wipeoutslow] = wipeoutslowtime+1;
 			mobj2->player->kartstuff[k_spinouttimer] = max(wipeoutslowtime+1, mobj2->player->kartstuff[k_spinouttimer]);
+		}
+		else if (mobj1->player) // Player VS player bumping only
+		{
+			if (mobj2->player->kartstuff[k_rings] <= 0)
+			{
+				K_BumpWipeoutPlayer(mobj2->player, TICRATE + (4 * (mobj1->player->kartweight - mobj2->player->kartweight)));
+				P_PlayRinglossSound(mobj2);
+			}
+			P_PlayerRingBurst(mobj2->player, 1);
 		}
 	}
 }
@@ -1279,6 +1330,67 @@ static void K_UpdateOffroad(player_t *player)
 	}
 	else
 		player->kartstuff[k_offroad] = 0;
+}
+
+void K_KartPainEnergyFling(player_t *player)
+{
+	static const UINT8 numfling = 5;
+	INT32 i;
+	mobj_t *mo;
+	angle_t fa;
+	fixed_t ns;
+	fixed_t z;
+
+	// Better safe than sorry.
+	if (!player)
+		return;
+
+	// P_PlayerRingBurst: "There's no ring spilling in kart, so I'm hijacking this for the same thing as TD"
+	// :oh:
+
+	for (i = 0; i < numfling; i++)
+	{
+		INT32 objType = mobjinfo[MT_FLINGENERGY].reactiontime;
+		fixed_t momxy, momz; // base horizonal/vertical thrusts
+
+		z = player->mo->z;
+		if (player->mo->eflags & MFE_VERTICALFLIP)
+			z += player->mo->height - mobjinfo[objType].height;
+
+		mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
+
+		mo->fuse = 8*TICRATE;
+		P_SetTarget(&mo->target, player->mo);
+
+		mo->destscale = player->mo->scale;
+		P_SetScale(mo, player->mo->scale);
+
+		// Angle offset by player angle, then slightly offset by amount of fling
+		fa = ((i*FINEANGLES/16) + (player->mo->angle>>ANGLETOFINESHIFT) - ((numfling-1)*FINEANGLES/32)) & FINEMASK;
+
+		if (i > 15)
+		{
+			momxy = 3*FRACUNIT;
+			momz = 4*FRACUNIT;
+		}
+		else
+		{
+			momxy = 28*FRACUNIT;
+			momz = 3*FRACUNIT;
+		}
+
+		ns = FixedMul(momxy, mo->scale);
+		mo->momx = FixedMul(FINECOSINE(fa),ns);
+
+		ns = momz;
+		P_SetObjectMomZ(mo, ns, false);
+
+		if (i & 1)
+			P_SetObjectMomZ(mo, ns, true);
+
+		if (player->mo->eflags & MFE_VERTICALFLIP)
+			mo->momz *= -1;
+	}
 }
 
 // These have to go earlier than its sisters because of K_RespawnChecker...
@@ -1447,6 +1559,7 @@ void K_RespawnChecker(player_t *player)
 			player->mo->colorized = false;
 			player->kartstuff[k_dropdash] = 0;
 			player->kartstuff[k_respawn] = 0;
+			P_PlayerRingBurst(player, 3);
 		}
 	}
 }
@@ -1572,6 +1685,16 @@ void K_PlayOvertakeSound(mobj_t *source)
 	K_RegularVoiceTimers(source->player);
 }
 
+void K_PlayPainSound(mobj_t *source)
+{
+	sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
+
+	if (cv_kartvoices.value)
+		S_StartSound(source, sfx_khurt1 + pick);
+
+	K_RegularVoiceTimers(source->player);
+}
+
 void K_PlayHitEmSound(mobj_t *source)
 {
 	if (cv_kartvoices.value)
@@ -1665,6 +1788,12 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
 	{
 		speedboost = max(speedboost, FRACUNIT/5); // + 20%
+	}
+
+	if (player->kartstuff[k_ringboost]) // Ring Boost
+	{
+		speedboost = max(speedboost, FRACUNIT/8); // + 12.5%
+		accelboost = max(accelboost, 2*FRACUNIT); // + 200%
 	}
 
 	if (player->kartstuff[k_driftboost]) // Drift Boost
@@ -1867,7 +1996,6 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 	(void)inflictor;	// in case some weirdo doesn't want Lua.
 #endif
 
-
 	if (!trapitem && G_BattleGametype())
 	{
 		if (K_IsPlayerWanted(player))
@@ -1879,7 +2007,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 	if (player->health <= 0)
 		return;
 
-	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0
+	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)
 		|| player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
 		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 	{
@@ -1949,7 +2077,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 
 	player->kartstuff[k_spinouttype] = type;
 
-	if (player->kartstuff[k_spinouttype] <= 0) // type 0 is spinout, type 1 is wipeout
+	if (player->kartstuff[k_spinouttype] <= 0) // type 0 is spinout, type 1 is wipeout, type 2 is no-invuln wipeout
 	{
 		// At spinout, player speed is increased to 1/4 their regular speed, moving them forward
 		if (player->speed < K_GetKartSpeed(player, true)/4)
@@ -1959,6 +2087,10 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 
 	player->kartstuff[k_spinouttimer] = (3*TICRATE/2)+2;
 	player->powers[pw_flashing] = K_GetKartFlashing(player);
+
+	P_PlayRinglossSound(player->mo);
+	P_PlayerRingBurst(player, 5);
+	K_PlayPainSound(player->mo);
 
 	if (player->mo->state != &states[S_KART_SPIN])
 		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
@@ -2096,6 +2228,8 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 		P_SetPlayerMobjState(player->mo, S_KART_SQUISH);
 
 	P_PlayRinglossSound(player->mo);
+	P_PlayerRingBurst(player, 5);
+	K_PlayPainSound(player->mo);
 
 	player->kartstuff[k_instashield] = 15;
 	if (cv_kartdebughuddrop.value && !modeattacking)
@@ -2132,8 +2266,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	if (player->health <= 0)
 		return;
 
-	if (/*player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0 // Explosions should combo, because of SPB and Eggman
-		||*/player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
+	if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0 // Do not check spinout, because SPB and Eggman should combo
 		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 	{
 		if (!force)	// ShouldDamage can bypass that, again.
@@ -2162,7 +2295,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	player->kartstuff[k_pogospring] = 0;
 
 	// This is the only part that SHOULDN'T combo :VVVVV
-	if (G_BattleGametype() && !(player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0))
+	if (G_BattleGametype() && !(player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)))
 	{
 		if (source && source->player && player != source->player)
 		{
@@ -2216,6 +2349,8 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
 
 	P_PlayRinglossSound(player->mo);
+	P_PlayerRingBurst(player, 5);
+	K_PlayPainSound(player->mo);
 
 	if (P_IsLocalPlayer(player))
 	{
@@ -2250,7 +2385,7 @@ void K_StealBumper(player_t *player, player_t *victim, boolean force)
 		if (player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0)
 			return;
 
-		if (victim->powers[pw_flashing] > 0 || victim->kartstuff[k_squishedtimer] > 0 || victim->kartstuff[k_spinouttimer] > 0
+		if (victim->powers[pw_flashing] > 0 || victim->kartstuff[k_squishedtimer] > 0 || (victim->kartstuff[k_spinouttimer] > 0 && victim->kartstuff[k_spinouttype] != 2)
 			|| victim->kartstuff[k_invincibilitytimer] > 0 || victim->kartstuff[k_growshrinktimer] > 0 || victim->kartstuff[k_hyudorotimer] > 0)
 		{
 			K_DoInstashield(victim);
@@ -4185,7 +4320,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_GetKartBoostPower(player);
 
 	// Speed lines
-	if ((player->kartstuff[k_sneakertimer] || player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]) && player->speed > 0)
+	if ((player->kartstuff[k_sneakertimer] || player->kartstuff[k_ringboost] || player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]) && player->speed > 0)
 	{
 		mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
 			player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
@@ -4243,6 +4378,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->mo->color = player->skincolor;
 		}
 	}
+	else if (player->kartstuff[k_ringboost] && (leveltime & 1)) // ring boosting
+	{
+		player->mo->colorized = true;
+	}
 	else
 	{
 		player->mo->colorized = false;
@@ -4280,8 +4419,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	player->kartstuff[k_timeovercam] = 0;
 
+	// Specific hack because it insists on setting flashing tics during this anyway...
+	if (player->kartstuff[k_spinouttype] == 2)
+	{
+		player->powers[pw_flashing] = 0;
+	}
 	// Make ABSOLUTELY SURE that your flashing tics don't get set WHILE you're still in hit animations.
-	if (player->kartstuff[k_spinouttimer] != 0
+	else if (player->kartstuff[k_spinouttimer] != 0
 		|| player->kartstuff[k_wipeoutslow] != 0
 		|| player->kartstuff[k_squishedtimer] != 0)
 	{
@@ -4294,19 +4438,21 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->kartstuff[k_spinouttimer])
 	{
-		if ((P_IsObjectOnGround(player->mo) || player->kartstuff[k_spinouttype] == 1)
+		if ((P_IsObjectOnGround(player->mo)
+			|| (player->kartstuff[k_spinouttype] != 0))
 			&& (player->kartstuff[k_sneakertimer] == 0))
 		{
 			player->kartstuff[k_spinouttimer]--;
 			if (player->kartstuff[k_wipeoutslow] > 1)
 				player->kartstuff[k_wipeoutslow]--;
-			if (player->kartstuff[k_spinouttimer] == 0)
-				player->kartstuff[k_spinouttype] = 0; // Reset type
+			// Actually, this caused more problems than it solved. Just make sure you set type before you spinout. Which K_SpinPlayer always does.
+			/*if (player->kartstuff[k_spinouttimer] == 0)
+				player->kartstuff[k_spinouttype] = 0;*/ // Reset type
 		}
 	}
 	else
 	{
-		if (player->kartstuff[k_wipeoutslow] == 1)
+		if (player->kartstuff[k_wipeoutslow] >= 1)
 			player->mo->friction = ORIG_FRICTION;
 		player->kartstuff[k_wipeoutslow] = 0;
 		if (!comeback)
@@ -4321,6 +4467,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	/*if (player->kartstuff[k_thunderanim])
 		player->kartstuff[k_thunderanim]--;*/
+
+	if (player->kartstuff[k_rings] > 20)
+		player->kartstuff[k_rings] = 20;
+	else if (player->kartstuff[k_rings] < -20)
+		player->kartstuff[k_rings] = -20;
+
+	if (player->kartstuff[k_ringdelay])
+		player->kartstuff[k_ringdelay]--;
+
+	if (player->kartstuff[k_ringboost])
+		player->kartstuff[k_ringboost]--;
 
 	if (player->kartstuff[k_sneakertimer])
 	{
@@ -4351,6 +4508,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// Back to normal
 		if (player->kartstuff[k_growshrinktimer] == 0)
 			K_RemoveGrowShrink(player);
+	}
+
+	if (player->kartstuff[k_superring])
+	{
+		if (player->kartstuff[k_superring] % 3 == 0)
+		{
+			mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
+			ring->extravalue1 = 1; // Ring collect animation timer
+			ring->angle = player->mo->angle; // animation angle
+			P_SetTarget(&ring->target, player->mo); // toucher for thinker
+			if (player->kartstuff[k_superring] <= 3)
+				ring->cvmem = 1; // play caching when collected
+		}
+		player->kartstuff[k_superring]--;
 	}
 
 	if (player->kartstuff[k_stealingtimer] == 0 && player->kartstuff[k_stolentimer] == 0
@@ -5027,6 +5198,21 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			if (player->kartstuff[k_rocketsneakertimer] < 1)
 				player->kartstuff[k_rocketsneakertimer] = 1;
 		}
+		// Ring boosts with no item
+		else if (player->kartstuff[k_itemtype] == KITEM_NONE)
+		{
+			if ((player->pflags & PF_ATTACKDOWN) && !HOLDING_ITEM && NO_HYUDORO
+				&& !player->kartstuff[k_itemroulette] && !player->kartstuff[k_ringdelay]
+				&& player->kartstuff[k_rings] > 0)
+			{
+				mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
+				ring->extravalue1 = 1; // Ring use animation timer
+				ring->extravalue2 = 1; // Ring use animation flag
+				P_SetTarget(&ring->target, player->mo); // user
+				player->kartstuff[k_rings]--;
+				player->kartstuff[k_ringdelay] = 3;
+			}
+		}
 		else if (player->kartstuff[k_itemamount] <= 0)
 		{
 			player->kartstuff[k_itemamount] = player->kartstuff[k_itemheld] = 0;
@@ -5035,6 +5221,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			switch (player->kartstuff[k_itemtype])
 			{
+				case KITEM_SUPERRING:
+					if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+					{
+						player->kartstuff[k_superring] += (10*3);
+						player->kartstuff[k_itemamount]--;
+					}
+					break;
 				case KITEM_SNEAKER:
 					if (ATTACK_IS_DOWN && !HOLDING_ITEM && onground && NO_HYUDORO)
 					{
@@ -5372,6 +5565,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					break;
 			}
 		}
+
+		// Prevent ring misfire
+		if (player->kartstuff[k_itemtype] != KITEM_NONE)
+			player->kartstuff[k_ringdelay] = 15;
 
 		// No more!
 		if (!player->kartstuff[k_itemamount])
@@ -5899,6 +6096,10 @@ static patch_t *kp_winnernum[NUMPOSFRAMES];
 static patch_t *kp_facenum[MAXPLAYERS+1];
 static patch_t *kp_facehighlight[8];
 
+static patch_t *kp_ringsticker[2];
+static patch_t *kp_ring[6];
+static patch_t *kp_ringdebtminus;
+
 static patch_t *kp_rankbumper;
 static patch_t *kp_tinybumper[2];
 static patch_t *kp_ranknobumpers;
@@ -5917,6 +6118,7 @@ static patch_t *kp_itemtimer[2];
 static patch_t *kp_itemmulsticker[2];
 static patch_t *kp_itemx;
 
+static patch_t *kp_superring[2];
 static patch_t *kp_sneaker[2];
 static patch_t *kp_rocketsneaker[2];
 static patch_t *kp_invincibility[13];
@@ -6037,6 +6239,19 @@ void K_LoadKartHUDGraphics(void)
 		kp_facehighlight[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
+	// Rings & Lives
+	kp_ringsticker[0] =			W_CachePatchName("RNGBACKA", PU_HUDGFX);
+	kp_ringsticker[1] =			W_CachePatchName("RNGBACKB", PU_HUDGFX);
+
+	sprintf(buffer, "K_RINGx");
+	for (i = 0; i < 6; i++)
+	{
+		buffer[6] = '0'+(i+1);
+		kp_ring[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
+	kp_ringdebtminus =			W_CachePatchName("RDEBTMIN", PU_HUDGFX);
+
 	// Extra ranking icons
 	kp_rankbumper =				W_CachePatchName("K_BLNICO", PU_HUDGFX);
 	kp_tinybumper[0] =			W_CachePatchName("K_BLNA", PU_HUDGFX);
@@ -6060,6 +6275,7 @@ void K_LoadKartHUDGraphics(void)
 	kp_itemmulsticker[0] = 		W_CachePatchName("K_ITMUL", PU_HUDGFX);
 	kp_itemx = 					W_CachePatchName("K_ITX", PU_HUDGFX);
 
+	kp_superring[0] =			W_CachePatchName("K_ITRING", PU_HUDGFX);
 	kp_sneaker[0] =				W_CachePatchName("K_ITSHOE", PU_HUDGFX);
 	kp_rocketsneaker[0] =		W_CachePatchName("K_ITRSHE", PU_HUDGFX);
 
@@ -6095,6 +6311,7 @@ void K_LoadKartHUDGraphics(void)
 	kp_itemtimer[1] = 			W_CachePatchName("K_ISIMER", PU_HUDGFX);
 	kp_itemmulsticker[1] = 		W_CachePatchName("K_ISMUL", PU_HUDGFX);
 
+	kp_superring[1] =			W_CachePatchName("K_ISRING", PU_HUDGFX);
 	kp_sneaker[1] =				W_CachePatchName("K_ISSHOE", PU_HUDGFX);
 	kp_rocketsneaker[1] =		W_CachePatchName("K_ISRSHE", PU_HUDGFX);
 	sprintf(buffer, "K_ISINVx");
@@ -6205,6 +6422,8 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 {
 	switch (item)
 	{
+		case KITEM_SUPERRING:
+			return (tiny ? "K_ISRING" : "K_ITRING");
 		case KITEM_SNEAKER:
 		case KRITEM_TRIPLESNEAKER:
 			return (tiny ? "K_ISSHOE" : "K_ITSHOE");
@@ -6457,7 +6676,7 @@ static void K_drawKartItem(void)
 		if (stplyr->skincolor)
 			localcolor = stplyr->skincolor;
 
-		switch((stplyr->kartstuff[k_itemroulette] % (14*3)) / 3)
+		switch((stplyr->kartstuff[k_itemroulette] % (15*3)) / 3)
 		{
 			// Each case is handled in threes, to give three frames of in-game time to see the item on the roulette
 			case 0: // Sneaker
@@ -6516,11 +6735,15 @@ static void K_drawKartItem(void)
 				localpatch = kp_thundershield[offset];
 				//localcolor = SKINCOLOR_CYAN;
 				break;
-			/*case 14: // Pogo Spring
+			case 14: // Super Ring
+				localpatch = kp_superring[offset];
+				//localcolor = SKINCOLOR_GOLD;
+				break;
+			/*case 15: // Pogo Spring
 				localpatch = kp_pogospring[offset];
 				localcolor = SKINCOLOR_TANGERINE;
 				break;
-			case 15: // Kitchen Sink
+			case 16: // Kitchen Sink
 				localpatch = kp_kitchensink[offset];
 				localcolor = SKINCOLOR_STEEL;
 				break;*/
@@ -6581,6 +6804,9 @@ static void K_drawKartItem(void)
 
 			switch(stplyr->kartstuff[k_itemtype])
 			{
+				case KITEM_SUPERRING:
+					localpatch = kp_superring[offset];
+					break;
 				case KITEM_SNEAKER:
 					localpatch = kp_sneaker[offset];
 					break;
@@ -6736,7 +6962,6 @@ static void K_drawKartItem(void)
 	// Quick Eggman numbers
 	if (stplyr->kartstuff[k_eggmanexplode] > 1 /*&& stplyr->kartstuff[k_eggmanexplode] <= 3*TICRATE*/)
 		V_DrawScaledPatch(fx+17, fy+13-offset, V_HUDTRANS|fflags, kp_eggnum[min(3, G_TicsToSeconds(stplyr->kartstuff[k_eggmanexplode]))]);
-
 }
 
 void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UINT8 mode)
@@ -7324,6 +7549,47 @@ static void K_drawKartLaps(void)
 			V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|splitflags, "FIN");
 		else
 			V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|splitflags, va("%d/%d", stplyr->laps+1, cv_numlaps.value));
+	}
+}
+
+static void K_drawKartRingsAndLives(void)
+{
+	INT32 splitflags = K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT);
+	UINT8 firstnum = ((abs(stplyr->kartstuff[k_rings]) / 10) % 10);
+	UINT8 secondnum = (abs(stplyr->kartstuff[k_rings]) % 10);
+	UINT8 *debtmap = NULL;
+
+	if (stplyr->kartstuff[k_rings] <= 0 && (leveltime/5 & 1))
+		debtmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
+
+	if (netgame)
+		V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|splitflags, kp_ringsticker[1]);
+	else
+		V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|splitflags, kp_ringsticker[0]);
+
+	V_DrawMappedPatch(LAPS_X+7, LAPS_Y-17, V_HUDTRANS|splitflags, kp_ring[0], debtmap);
+
+	if (stplyr->kartstuff[k_rings] < 0)
+	{
+		V_DrawMappedPatch(LAPS_X+23, LAPS_Y-11, V_HUDTRANS|splitflags, kp_ringdebtminus, debtmap);
+		V_DrawMappedPatch(LAPS_X+29, LAPS_Y-11, V_HUDTRANS|splitflags, kp_facenum[firstnum], debtmap);
+		V_DrawMappedPatch(LAPS_X+35, LAPS_Y-11, V_HUDTRANS|splitflags, kp_facenum[secondnum], debtmap);
+	}
+	else
+	{
+		V_DrawMappedPatch(LAPS_X+23, LAPS_Y-11, V_HUDTRANS|splitflags, kp_facenum[firstnum], debtmap);
+		V_DrawMappedPatch(LAPS_X+29, LAPS_Y-11, V_HUDTRANS|splitflags, kp_facenum[secondnum], debtmap);
+	}
+
+	if (!netgame)
+	{
+		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->mo->color, GTC_CACHE);
+
+		if (stplyr->mo->colorized)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, stplyr->mo->color, GTC_CACHE);
+
+		V_DrawMappedPatch(LAPS_X+46, LAPS_Y-16, V_HUDTRANS|splitflags, facerankprefix[stplyr->skin], colormap);
+		V_DrawScaledPatch(LAPS_X+63, LAPS_Y-11, V_HUDTRANS|splitflags, kp_facenum[(stplyr->lives % 10)]);
 	}
 }
 
@@ -8287,6 +8553,7 @@ static void K_drawLapStartAnim(void)
 void K_drawKartFreePlay(UINT32 flashtime)
 {
 	// no splitscreen support because it's not FREE PLAY if you have more than one player in-game
+	// (you fool, you can take splitscreen online. :V)
 
 	if ((flashtime % TICRATE) < TICRATE/2)
 		return;
@@ -8299,6 +8566,7 @@ static void K_drawDistributionDebugger(void)
 {
 	patch_t *items[NUMKARTRESULTS] = {
 		kp_sadface[1],
+		kp_superring[1],
 		kp_sneaker[1],
 		kp_rocketsneaker[1],
 		kp_invincibility[7],
@@ -8496,6 +8764,8 @@ void K_drawKartHUD(void)
 				if (LUA_HudEnabled(hud_gametypeinfo))
 #endif
 					K_drawKartLaps();
+
+				K_drawKartRingsAndLives();
 
 				if (!splitscreen)
 				{

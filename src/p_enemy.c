@@ -3615,57 +3615,137 @@ void A_AttractChase(mobj_t *actor)
 	if (LUA_CallAction("A_AttractChase", actor))
 		return;
 #endif
+
 	if (actor->flags2 & MF2_NIGHTSPULL || !actor->health)
 		return;
 
-	// spilled rings flicker before disappearing
-	if (leveltime & 1 && actor->type == (mobjtype_t)actor->info->reactiontime && actor->fuse && actor->fuse < 2*TICRATE)
-		actor->flags2 |= MF2_DONTDRAW;
+	if (actor->extravalue1) // SRB2Kart
+	{
+		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
+		{
+			P_RemoveMobj(actor);
+			return;
+		}
+
+		if (actor->extravalue2) // Using for ring boost
+		{
+			if (actor->extravalue1 >= 21)
+			{
+#define RINGBOOSTPWR (((9 - actor->target->player->kartspeed) + (9 - actor->target->player->kartweight)) / 2)
+				// Base add is 3 tics for 9,9, adds 1.5 tics for each point closer to the 1,1 end
+				actor->target->player->kartstuff[k_ringboost] += ((3*RINGBOOSTPWR)/2) + 3;
+				S_StartSound(actor->target, sfx_s1b5);
+				actor->momx = (3*actor->target->momx)/4;
+				actor->momy = (3*actor->target->momy)/4;
+				actor->momz = (3*actor->target->momz)/4;
+				P_KillMobj(actor, actor->target, actor->target);
+				return;
+			}
+			else
+			{
+				fixed_t offz = FixedMul(80*actor->target->scale, FINESINE(FixedAngle((90 - (9 * abs(10 - actor->extravalue1))) << FRACBITS) >> ANGLETOFINESHIFT));
+				//P_SetScale(actor, (actor->destscale = actor->target->scale));
+				P_TeleportMove(actor, actor->target->x, actor->target->y, actor->target->z + actor->target->height + offz);
+				actor->extravalue1++;
+			}
+		}
+		else // Collecting
+		{
+			if (actor->extravalue1 >= 16)
+			{
+				P_GivePlayerRings(actor->target->player, 1);
+				if (actor->cvmem) // caching
+					S_StartSound(actor->target, sfx_s1c5);
+				else
+					S_StartSound(actor->target, sfx_s227);
+				P_RemoveMobj(actor);
+				return;
+			}
+			else
+			{
+				fixed_t dist = (actor->target->radius/4) * (16 - actor->extravalue1);
+
+				P_SetScale(actor, (actor->destscale = actor->target->scale - ((actor->target->scale/14) * actor->extravalue1)));
+				P_TeleportMove(actor,
+					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
+					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),
+					actor->target->z + (24 * actor->target->scale));
+
+				actor->angle += ANG30;
+				actor->extravalue1++;
+			}
+		}
+	}
 	else
-		actor->flags2 &= ~MF2_DONTDRAW;
-
-	// Turn flingrings back into regular rings if attracted.
-	if (actor->tracer && actor->tracer->player
-		&& (actor->tracer->player->powers[pw_shield] & SH_NOSTACK) != SH_ATTRACT
-		&& actor->info->reactiontime && actor->type != (mobjtype_t)actor->info->reactiontime)
 	{
-		mobj_t *newring;
-		newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
-		newring->momx = actor->momx;
-		newring->momy = actor->momy;
-		newring->momz = actor->momz;
-		P_RemoveMobj(actor);
-		return;
+		// Don't immediately pick up spilled rings
+		if (actor->threshold > 0)
+			actor->threshold--;
+
+		// spilled rings flicker before disappearing
+		if (leveltime & 1 && actor->type == (mobjtype_t)actor->info->reactiontime && actor->fuse && actor->fuse < 2*TICRATE)
+			actor->flags2 |= MF2_DONTDRAW;
+		else
+			actor->flags2 &= ~MF2_DONTDRAW;
+
+		// Flung rings lose speed over time
+		if (actor->type == (mobjtype_t)actor->info->reactiontime)
+		{
+			const fixed_t destspeed = FRACUNIT;
+			fixed_t oldspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
+
+			if (oldspeed > destspeed)
+			{
+				fixed_t newspeed = max(destspeed, oldspeed - (FRACUNIT / TICRATE));
+
+				actor->momx = FixedMul(FixedDiv(actor->momx, oldspeed), newspeed);
+				actor->momy = FixedMul(FixedDiv(actor->momy, oldspeed), newspeed);
+			}
+		}
+
+		// Turn flingrings back into regular rings if attracted.
+		if (actor->tracer && actor->tracer->player
+			&& (actor->tracer->player->powers[pw_shield] & SH_NOSTACK) != SH_ATTRACT
+			&& actor->info->reactiontime && actor->type != (mobjtype_t)actor->info->reactiontime)
+		{
+			mobj_t *newring;
+			newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
+			newring->momx = actor->momx;
+			newring->momy = actor->momy;
+			newring->momz = actor->momz;
+			P_RemoveMobj(actor);
+			return;
+		}
+
+		P_LookForShield(actor); // Go find 'em, boy!
+
+		if (!actor->tracer
+			|| !actor->tracer->player
+			|| !actor->tracer->health
+			|| !P_CheckSight(actor, actor->tracer)) // You have to be able to SEE it...sorta
+		{
+			// Lost attracted rings don't through walls anymore.
+			actor->flags &= ~MF_NOCLIP;
+			P_SetTarget(&actor->tracer, NULL);
+			return;
+		}
+
+		// If a FlingRing gets attracted by a shield, change it into a normal ring.
+		if (actor->type == (mobjtype_t)actor->info->reactiontime)
+		{
+			P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->painchance);
+			P_RemoveMobj(actor);
+			return;
+		}
+
+		// Keep stuff from going down inside floors and junk
+		actor->flags &= ~MF_NOCLIPHEIGHT;
+
+		// Let attracted rings move through walls and such.
+		actor->flags |= MF_NOCLIP;
+
+		P_Attract(actor, actor->tracer, false);
 	}
-
-	P_LookForShield(actor); // Go find 'em, boy!
-
-	if (!actor->tracer
-		|| !actor->tracer->player
-		|| !actor->tracer->health
-		|| !P_CheckSight(actor, actor->tracer)) // You have to be able to SEE it...sorta
-	{
-		// Lost attracted rings don't through walls anymore.
-		actor->flags &= ~MF_NOCLIP;
-		P_SetTarget(&actor->tracer, NULL);
-		return;
-	}
-
-	// If a FlingRing gets attracted by a shield, change it into a normal ring.
-	if (actor->type == (mobjtype_t)actor->info->reactiontime)
-	{
-		P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->painchance);
-		P_RemoveMobj(actor);
-		return;
-	}
-
-	// Keep stuff from going down inside floors and junk
-	actor->flags &= ~MF_NOCLIPHEIGHT;
-
-	// Let attracted rings move through walls and such.
-	actor->flags |= MF_NOCLIP;
-
-	P_Attract(actor, actor->tracer, false);
 }
 
 // Function: A_DropMine

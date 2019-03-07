@@ -946,50 +946,19 @@ void P_ResetPlayer(player_t *player)
 //
 void P_GivePlayerRings(player_t *player, INT32 num_rings)
 {
-	if (player->bot)
-		player = &players[consoleplayer];
-
 	if (!player->mo)
 		return;
 
-	player->mo->health += num_rings;
-	player->health += num_rings;
+	if (G_BattleGametype()) // No rings in Battle Mode
+		return;
 
-	if (!G_IsSpecialStage(gamemap) || !useNightsSS)
-		player->totalring += num_rings;
+	player->kartstuff[k_rings] += num_rings;
+	//player->totalring += num_rings; // Used for GP lives later
 
-	//{ SRB2kart - rings don't really do anything, but we don't want the player spilling them later.
-	/*
-	// Can only get up to 9999 rings, sorry!
-	if (player->mo->health > 10000)
-	{
-		player->mo->health = 10000;
-		player->health = 10000;
-	}
-	else if (player->mo->health < 1)*/
-	{
-		player->mo->health = 1;
-		player->health = 1;
-	}
-	//}
-
-	// Now extra life bonuses are handled here instead of in P_MovePlayer, since why not?
-	if (!ultimatemode && !modeattacking && !G_IsSpecialStage(gamemap) && G_GametypeUsesLives())
-	{
-		INT32 gainlives = 0;
-
-		while (player->xtralife < maxXtraLife && player->health > 100 * (player->xtralife+1))
-		{
-			++gainlives;
-			++player->xtralife;
-		}
-
-		if (gainlives)
-		{
-			P_GivePlayerLives(player, gainlives);
-			P_PlayLivesJingle(player);
-		}
-	}
+	if (player->kartstuff[k_rings] > 20)
+		player->kartstuff[k_rings] = 20; // Caps at 20 rings, sorry!
+	else if (player->kartstuff[k_rings] < -20)
+		player->kartstuff[k_rings] = -20; // Chaotix ring debt!
 }
 
 //
@@ -1114,11 +1083,10 @@ void P_PlayLivesJingle(player_t *player)
 
 void P_PlayRinglossSound(mobj_t *source)
 {
-	sfxenum_t key = P_RandomKey(2);
-	if (cv_kartvoices.value)
-		S_StartSound(source, (mariomode) ? sfx_mario8 : sfx_khurt1 + key);
+	if (source->player && source->player->kartstuff[k_rings] <= 0)
+		S_StartSound(source, sfx_s1a6);
 	else
-		S_StartSound(source, sfx_slip);
+		S_StartSound(source, sfx_s1c6);
 }
 
 void P_PlayDeathSound(mobj_t *source)
@@ -9294,7 +9262,8 @@ void P_PlayerThink(player_t *player)
 #if 1
 	// "Blur" a bit when you have speed shoes and are going fast enough
 	if ((player->powers[pw_super] || player->powers[pw_sneakers]
-		|| player->kartstuff[k_driftboost] || player->kartstuff[k_sneakertimer] || player->kartstuff[k_startboost]) && !player->kartstuff[k_invincibilitytimer] // SRB2kart
+		|| player->kartstuff[k_driftboost] || player->kartstuff[k_ringboost] || player->kartstuff[k_sneakertimer] || player->kartstuff[k_startboost])
+		&& !player->kartstuff[k_invincibilitytimer] // SRB2kart
 		&& (player->speed + abs(player->mo->momz)) > FixedMul(20*FRACUNIT,player->mo->scale))
 	{
 		mobj_t *gmobj = P_SpawnGhostMobj(player->mo);

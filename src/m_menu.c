@@ -1513,7 +1513,7 @@ static menuitem_t OP_AdvServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Karma Comeback",        &cv_kartcomeback,     66},
 };*/
 
-#define ITEMTOGGLEBOTTOMRIGHT
+//#define ITEMTOGGLEBOTTOMRIGHT
 
 static menuitem_t OP_MonitorToggleMenu[] =
 {
@@ -1541,6 +1541,7 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Thunder Shields",		M_HandleMonitorToggles, KITEM_THUNDERSHIELD},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoros",				M_HandleMonitorToggles, KITEM_HYUDORO},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Springs",		 	M_HandleMonitorToggles, KITEM_POGOSPRING},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Rings",			M_HandleMonitorToggles, KITEM_SUPERRING},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sinks",			M_HandleMonitorToggles, KITEM_KITCHENSINK},
 #ifdef ITEMTOGGLEBOTTOMRIGHT
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "---",					M_HandleMonitorToggles, 255},
@@ -9563,6 +9564,7 @@ static void M_HandleVideoMode(INT32 ch)
 // Monitor Toggles
 // ===============
 static consvar_t *kartitemcvs[NUMKARTRESULTS-1] = {
+	&cv_superring,
 	&cv_sneaker,
 	&cv_rocketsneaker,
 	&cv_invincibility,

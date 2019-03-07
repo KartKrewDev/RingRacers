@@ -2021,7 +2021,7 @@ void P_XYMovement(mobj_t *mo)
 #endif
 
 	//{ SRB2kart stuff
-	if (mo->type == MT_ORBINAUT || mo->type == MT_JAWZ_DUD || mo->type == MT_JAWZ || mo->type == MT_BALLHOG) //(mo->type == MT_JAWZ && !mo->tracer))
+	if (mo->type == MT_ORBINAUT || mo->type == MT_JAWZ_DUD || mo->type == MT_JAWZ || mo->type == MT_BALLHOG || mo->type == MT_FLINGRING) //(mo->type == MT_JAWZ && !mo->tracer))
 		return;
 
 	if (mo->player && (mo->player->kartstuff[k_spinouttimer] && !mo->player->kartstuff[k_wipeoutslow]) && mo->player->speed <= mo->player->normalspeed/2)
@@ -2572,11 +2572,11 @@ static boolean P_ZMovement(mobj_t *mo)
 				mom.z = -mom.z;
 			else
 			// Flingrings bounce
-			if (mo->type == MT_FLINGRING
+			if (/*mo->type == MT_FLINGRING
 				|| mo->type == MT_FLINGCOIN
 				|| P_WeaponOrPanel(mo->type)
 				|| mo->type == MT_FLINGEMERALD
-				|| mo->type == MT_BIGTUMBLEWEED
+				||*/ mo->type == MT_BIGTUMBLEWEED
 				|| mo->type == MT_LITTLETUMBLEWEED
 				|| mo->type == MT_CANNONBALLDECOR
 				|| mo->type == MT_FALLINGROCK)
@@ -10371,8 +10371,8 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	// Rings only, please!
 	if (mobj->spawnpoint &&
-		(mobj->type == MT_RING
-		|| mobj->type == MT_COIN
+		(/*mobj->type == MT_RING
+		||*/ mobj->type == MT_COIN
 		|| mobj->type == MT_BLUEBALL
 		|| mobj->type == MT_REDTEAMRING
 		|| mobj->type == MT_BLUETEAMRING
@@ -12073,7 +12073,7 @@ ML_NOCLIMB : Direction not controllable
 void P_SpawnHoopsAndRings(mapthing_t *mthing)
 {
 	mobj_t *mobj = NULL;
-	INT32 /*r,*/ i;
+	INT32 r, i;
 	fixed_t x, y, z, finalx, finaly, finalz;
 	sector_t *sec;
 	TVector v, *res;
@@ -12360,8 +12360,6 @@ void P_SpawnHoopsAndRings(mapthing_t *mthing)
 
 		return;
 	}
-	else return; // srb2kart - no rings or ring-like objects in R1
-	/*
 	// Wing logo item.
 	else if (mthing->type == mobjinfo[MT_NIGHTSWING].doomednum)
 	{
@@ -12655,7 +12653,8 @@ void P_SpawnHoopsAndRings(mapthing_t *mthing)
 			}
 		}
 		return;
-	}*/
+	}
+	else return;
 }
 
 //

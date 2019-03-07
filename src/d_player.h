@@ -234,6 +234,7 @@ typedef enum
 {
 	KITEM_SAD = -1,
 	KITEM_NONE = 0,
+	KITEM_SUPERRING,
 	KITEM_SNEAKER,
 	KITEM_ROCKETSNEAKER,
 	KITEM_INVINCIBILITY,
@@ -288,7 +289,7 @@ typedef enum
 	k_enginesnd,		// Engine sound number you're on.
 
 	k_floorboost,		// Prevents Sneaker sounds for a breif duration when triggered by a floor panel
-	k_spinouttype,		// Determines whether to thrust forward or not while spinning out; 0 = move forwards, 1 = stay still
+	k_spinouttype,		// Determines whether to thrust forward or not while spinning out; 0 = move forwards, 1 = stay still, 2 = stay still & no flashing tics
 
 	k_drift,			// Drifting Left or Right, plus a bigger counter = sharper turn
 	k_driftend,			// Drift has ended, used to adjust character angle after drift
@@ -296,6 +297,9 @@ typedef enum
 	k_driftboost,		// Boost you get from drifting
 	k_boostcharge,		// Charge-up for boosting at the start of the race
 	k_startboost,		// Boost you get from start of race or respawn drop dash
+	k_rings,			// Number of held rings
+	k_ringdelay,		// 3 tic delay between every ring usage
+	k_ringboost,		// Ring boost timer
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	k_pogospring,		// Pogo spring bounce effect
@@ -325,6 +329,7 @@ typedef enum
 	k_hyudorotimer,			// Duration of the Hyudoro offroad effect itself
 	k_stealingtimer,		// You are stealing an item, this is your timer
 	k_stolentimer,			// You are being stolen from, this is your timer
+	k_superring,			// Spawn rings on top of you every tic!
 	k_sneakertimer,			// Duration of the Sneaker Boost itself
 	k_growshrinktimer,		// > 0 = Big, < 0 = small
 	k_squishedtimer,		// Squished frame timer
