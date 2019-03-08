@@ -729,7 +729,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 {
 	INT32 newodds;
 	INT32 i;
-	UINT8 pingame = 0, pexiting = 0, pinvin = 0;
+	UINT8 pingame = 0, pexiting = 0;
 	boolean thunderisout = false;
 	SINT8 first = -1, second = -1;
 	INT32 secondist = 0;
@@ -785,12 +785,6 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 
 		if (players[i].mo)
 		{
-			if (players[i].kartstuff[k_itemtype] == KITEM_INVINCIBILITY
-				|| players[i].kartstuff[k_itemtype] == KITEM_GROW
-				|| players[i].kartstuff[k_invincibilitytimer]
-				|| players[i].kartstuff[k_growshrinktimer] > 0)
-				pinvin++;
-
 			if (players[i].kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
 				thunderisout = true;
 
@@ -887,13 +881,15 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 
 //{ SRB2kart Roulette Code - Distance Based, no waypoints
 
-static INT32 K_FindUseodds(player_t *player, fixed_t mashed, INT32 pdis, INT32 bestbumper)
+static INT32 K_FindUseodds(player_t *player, fixed_t mashed, INT32 pdis, INT32 bestbumper, boolean spbrush)
 {
 	INT32 i;
+	INT32 n = 0;
 	INT32 useodds = 0;
 	UINT8 disttable[14];
+	UINT8 totallen = 0;
 	UINT8 distlen = 0;
-	boolean oddsvalid[10];
+	boolean oddsvalid[8];
 
 	for (i = 0; i < 8; i++)
 	{
@@ -919,15 +915,18 @@ static INT32 K_FindUseodds(player_t *player, fixed_t mashed, INT32 pdis, INT32 b
 	}
 
 #define SETUPDISTTABLE(odds, num) \
-	for (i = num; i; --i) disttable[distlen++] = odds
+	if (oddsvalid[odds]) \
+		for (i = num; i; --i) \
+			disttable[distlen++] = odds; \
+	totallen += num;
 
 	if (G_BattleGametype()) // Battle Mode
 	{
-		if (oddsvalid[0]) SETUPDISTTABLE(0,1);
-		if (oddsvalid[1]) SETUPDISTTABLE(1,1);
-		if (oddsvalid[2]) SETUPDISTTABLE(2,1);
-		if (oddsvalid[3]) SETUPDISTTABLE(3,1);
-		if (oddsvalid[4]) SETUPDISTTABLE(4,1);
+		SETUPDISTTABLE(0,1);
+		SETUPDISTTABLE(1,1);
+		SETUPDISTTABLE(2,1);
+		SETUPDISTTABLE(3,1);
+		SETUPDISTTABLE(4,1);
 
 		if (player->kartstuff[k_roulettetype] == 1 && oddsvalid[5]) // 5 is the extreme odds of player-controlled "Karma" items
 			useodds = 5;
@@ -940,19 +939,20 @@ static INT32 K_FindUseodds(player_t *player, fixed_t mashed, INT32 pdis, INT32 b
 				wantedpos = 4;
 			if (wantedpos < 0) // Don't go below somehow
 				wantedpos = 0;
-			useodds = disttable[(wantedpos * distlen) / 5];
+			n = (wantedpos * distlen) / totallen;
+			useodds = disttable[n];
 		}
 	}
 	else
 	{
-		if (oddsvalid[0]) SETUPDISTTABLE(0,1);
-		if (oddsvalid[1]) SETUPDISTTABLE(1,1);
-		if (oddsvalid[2]) SETUPDISTTABLE(2,1);
-		if (oddsvalid[3]) SETUPDISTTABLE(3,2);
-		if (oddsvalid[4]) SETUPDISTTABLE(4,2);
-		if (oddsvalid[5]) SETUPDISTTABLE(5,3);
-		if (oddsvalid[6]) SETUPDISTTABLE(6,3);
-		if (oddsvalid[7]) SETUPDISTTABLE(7,1);
+		SETUPDISTTABLE(0,1);
+		SETUPDISTTABLE(1,1);
+		SETUPDISTTABLE(2,1);
+		SETUPDISTTABLE(3,2);
+		SETUPDISTTABLE(4,2);
+		SETUPDISTTABLE(5,3);
+		SETUPDISTTABLE(6,3);
+		SETUPDISTTABLE(7,1);
 
 		if (pdis <= 0)									// (64*14) *  0 =     0
 			useodds = disttable[0];
@@ -972,8 +972,6 @@ static INT32 K_FindUseodds(player_t *player, fixed_t mashed, INT32 pdis, INT32 b
 	}
 
 #undef SETUPDISTTABLE
-
-	//CONS_Printf("Got useodds %d. (position: %d, distance: %d)\n", useodds, player->kartstuff[k_position], pdis);
 
 	return useodds;
 }
@@ -1004,17 +1002,10 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		if (!playeringame[i] || players[i].spectator)
 			continue;
 		pingame++;
-		if (players[i].mo && players[i].kartstuff[k_position] < player->kartstuff[k_position])
-			pdis += P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x,
-													players[i].mo->y - player->mo->y),
-													players[i].mo->z - player->mo->z) / mapobjectscale
-													* (pingame - players[i].kartstuff[k_position])
-													/ max(1, ((pingame - 1) * (pingame + 1) / 3));
 		if (players[i].exiting)
 			dontforcespb = true;
 		if (players[i].kartstuff[k_bumper] > bestbumper)
 			bestbumper = players[i].kartstuff[k_bumper];
-		
 	}
 
 	// This makes the roulette produce the random noises.
@@ -1065,11 +1056,25 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	if (cmd->buttons & BT_ATTACK)
 		player->pflags |= PF_ATTACKDOWN;
 
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator && players[i].mo
+			&& players[i].kartstuff[k_position] < player->kartstuff[k_position])
+			pdis += P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x,
+													players[i].mo->y - player->mo->y),
+													players[i].mo->z - player->mo->z) / mapobjectscale
+													* (pingame - players[i].kartstuff[k_position])
+													/ max(1, ((pingame - 1) * (pingame + 1) / 3));
+	}
+
 	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
 		pdis = (15 * pdis) / 14;
 
 	if (spbplace != -1 && player->kartstuff[k_position] == spbplace+1) // SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
+	{
 		pdis = (3 * pdis) / 2;
+		spbrush = true;
+	}
 
 	pdis = ((28 + (8-pingame)) * pdis) / 28; // scale with player count
 
@@ -1151,7 +1156,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		spawnchance[i] = 0;
 
 	// Split into another function for a debug function below
-	useodds = K_FindUseodds(player, mashed, pdis, bestbumper);
+	useodds = K_FindUseodds(player, mashed, pdis, bestbumper, spbrush);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, mashed, spbrush));
@@ -8913,6 +8918,7 @@ static void K_drawDistributionDebugger(void)
 	INT32 pdis = 0;
 	INT32 i;
 	INT32 x = -9, y = -9;
+	boolean spbrush = false;
 
 	if (stplyr != &players[displayplayer]) // only for p1
 		return;
@@ -8923,17 +8929,34 @@ static void K_drawDistributionDebugger(void)
 		if (!playeringame[i] || players[i].spectator)
 			continue;
 		pingame++;
-		if (players[i].mo && players[i].kartstuff[k_position] < stplyr->kartstuff[k_position])
+		if (players[i].kartstuff[k_bumper] > bestbumper)
+			bestbumper = players[i].kartstuff[k_bumper];
+	}
+
+	// lovely double loop......
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator && players[i].mo
+			&& players[i].kartstuff[k_position] < stplyr->kartstuff[k_position])
 			pdis += P_AproxDistance(P_AproxDistance(players[i].mo->x - stplyr->mo->x,
 													players[i].mo->y - stplyr->mo->y),
 													players[i].mo->z - stplyr->mo->z) / mapobjectscale
 													* (pingame - players[i].kartstuff[k_position])
 													/ max(1, ((pingame - 1) * (pingame + 1) / 3));
-		if (players[i].kartstuff[k_bumper] > bestbumper)
-			bestbumper = players[i].kartstuff[k_bumper];
 	}
 
-	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper);
+	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
+		pdis = (15 * pdis) / 14;
+
+	if (spbplace != -1 && stplyr->kartstuff[k_position] == spbplace+1) // SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
+	{
+		pdis = (3 * pdis) / 2;
+		spbrush = true;
+	}
+
+	pdis = ((28 + (8-pingame)) * pdis) / 28; // scale with player count
+
+	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper, spbrush);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
