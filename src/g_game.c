@@ -2371,6 +2371,7 @@ void G_PlayerReborn(INT32 player)
 	INT32 bumper;
 	INT32 comebackpoints;
 	INT32 wanted;
+	INT32 rings;
 	boolean songcredit = false;
 
 	score = players[player].score;
@@ -2433,6 +2434,7 @@ void G_PlayerReborn(INT32 player)
 		itemamount = 0;
 		growshrinktimer = 0;
 		bumper = (G_BattleGametype() ? cv_kartbumpers.value : 0);
+		rings = (G_BattleGametype() ? 0 : 5);
 		comebackpoints = 0;
 		wanted = 0;
 		starpostwp = 0;
@@ -2462,6 +2464,7 @@ void G_PlayerReborn(INT32 player)
 			growshrinktimer = 0;
 
 		bumper = players[player].kartstuff[k_bumper];
+		rings = players[player].kartstuff[k_rings];
 		comebackpoints = players[player].kartstuff[k_comebackpoints];
 		wanted = players[player].kartstuff[k_wanted];
 	}
@@ -2519,13 +2522,14 @@ void G_PlayerReborn(INT32 player)
 	p->pity = pity;
 
 	// SRB2kart
-	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync
+	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync (Does it...?)
 	p->kartstuff[k_itemroulette] = itemroulette;
 	p->kartstuff[k_roulettetype] = roulettetype;
 	p->kartstuff[k_itemtype] = itemtype;
 	p->kartstuff[k_itemamount] = itemamount;
 	p->kartstuff[k_growshrinktimer] = growshrinktimer;
 	p->kartstuff[k_bumper] = bumper;
+	p->kartstuff[k_rings] = rings;
 	p->kartstuff[k_comebackpoints] = comebackpoints;
 	p->kartstuff[k_comebacktimer] = comebacktime;
 	p->kartstuff[k_wanted] = wanted;
