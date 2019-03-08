@@ -682,7 +682,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// Don't immediately pick up spilled rings
-			if (special->threshold > 0)
+			if (special->threshold > 0
+			|| player->kartstuff[k_squishedtimer]
+			|| player->kartstuff[k_spinouttimer])
 				return;
 
 			if (!(P_CanPickupItem(player, 0)))
@@ -3323,11 +3325,11 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 		}
 
 		ns = FixedMul(momxy, mo->scale);
-		mo->momx = FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
-		mo->momy = FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
+		mo->momx = (mo->target->momx/2) + FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
+		mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
 
 		ns = FixedMul(momz, mo->scale);
-		P_SetObjectMomZ(mo, ns, false);
+		P_SetObjectMomZ(mo, (mo->target->momz/2) + ns, false);
 
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 			mo->momz *= -1;

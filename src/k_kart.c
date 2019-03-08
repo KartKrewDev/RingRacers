@@ -727,8 +727,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed)
 			break;
 		case KITEM_SPB:
 			//POWERITEMODDS(newodds);
-			if (((indirectitemcooldown > 0) || (pexiting > 0) || (secondist/DISTVAR < 3))
-				&& (pos != 9)) // Force SPB
+			if ((indirectitemcooldown > 0) || (pexiting > 0) || (secondist/DISTVAR < 3))
 				newodds = 0;
 			else
 				newodds *= min((secondist/DISTVAR)-4, 3);
@@ -925,6 +924,14 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	if (cmd->buttons & BT_ATTACK)
 		player->pflags |= PF_ATTACKDOWN;
+
+	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
+		pdis = (15 * pdis) / 14;
+
+	if (spbplace != -1 && player->kartstuff[k_position] == spbplace+1) // SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
+		pdis = (3 * pdis) / 2;
+
+	pdis = ((28 + (8-pingame)) * pdis) / 28; // scale with player count
 
 	// SPECIAL CASE No. 1:
 	// Fake Eggman items
@@ -5177,33 +5184,36 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
 		// Karma item dropping
-		if (ATTACK_IS_DOWN && player->kartstuff[k_comebackmode] && !player->kartstuff[k_comebacktimer])
+		if (player->kartstuff[k_comebackmode] && !player->kartstuff[k_comebacktimer])
 		{
-			mobj_t *newitem;
-
-			if (player->kartstuff[k_comebackmode] == 1)
+			if (ATTACK_IS_DOWN)
 			{
-				newitem = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RANDOMITEM);
-				newitem->threshold = 69; // selected "randomly".
-			}
-			else
-			{
-				newitem = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EGGMANITEM);
-				if (player->kartstuff[k_eggmanblame] >= 0
-				&& player->kartstuff[k_eggmanblame] < MAXPLAYERS
-				&& playeringame[player->kartstuff[k_eggmanblame]]
-				&& !players[player->kartstuff[k_eggmanblame]].spectator
-				&& players[player->kartstuff[k_eggmanblame]].mo)
-					P_SetTarget(&newitem->target, players[player->kartstuff[k_eggmanblame]].mo);
-				player->kartstuff[k_eggmanblame] = -1;
-			}
+				mobj_t *newitem;
 
-			newitem->flags2 = (player->mo->flags2 & MF2_OBJECTFLIP);
-			newitem->fuse = 15*TICRATE; // selected randomly.
+				if (player->kartstuff[k_comebackmode] == 1)
+				{
+					newitem = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RANDOMITEM);
+					newitem->threshold = 69; // selected "randomly".
+				}
+				else
+				{
+					newitem = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EGGMANITEM);
+					if (player->kartstuff[k_eggmanblame] >= 0
+					&& player->kartstuff[k_eggmanblame] < MAXPLAYERS
+					&& playeringame[player->kartstuff[k_eggmanblame]]
+					&& !players[player->kartstuff[k_eggmanblame]].spectator
+					&& players[player->kartstuff[k_eggmanblame]].mo)
+						P_SetTarget(&newitem->target, players[player->kartstuff[k_eggmanblame]].mo);
+					player->kartstuff[k_eggmanblame] = -1;
+				}
 
-			player->kartstuff[k_comebackmode] = 0;
-			player->kartstuff[k_comebacktimer] = comebacktime;
-			S_StartSound(player->mo, sfx_s254);
+				newitem->flags2 = (player->mo->flags2 & MF2_OBJECTFLIP);
+				newitem->fuse = 15*TICRATE; // selected randomly.
+
+				player->kartstuff[k_comebackmode] = 0;
+				player->kartstuff[k_comebacktimer] = comebacktime;
+				S_StartSound(player->mo, sfx_s254);
+			}
 		}
 		// Eggman Monitor exploding
 		else if (player->kartstuff[k_eggmanexplode])
@@ -5212,24 +5222,28 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->kartstuff[k_eggmanexplode] = 1;
 		}
 		// Eggman Monitor throwing
-		else if (ATTACK_IS_DOWN && player->kartstuff[k_eggmanheld])
+		else if (player->kartstuff[k_eggmanheld])
 		{
-			K_ThrowKartItem(player, false, MT_EGGMANITEM, -1, 0);
-			K_PlayAttackTaunt(player->mo);
-			player->kartstuff[k_eggmanheld] = 0;
-			K_UpdateHnextList(player, true);
+			if (ATTACK_IS_DOWN)
+			{
+				K_ThrowKartItem(player, false, MT_EGGMANITEM, -1, 0);
+				K_PlayAttackTaunt(player->mo);
+				player->kartstuff[k_eggmanheld] = 0;
+				K_UpdateHnextList(player, true);
+			}
 		}
-		// Rocket Sneaker
-		else if (ATTACK_IS_DOWN && !HOLDING_ITEM && onground && NO_HYUDORO
-			&& player->kartstuff[k_rocketsneakertimer] > 1)
+		// Rocket Sneaker usage
+		else if (player->kartstuff[k_rocketsneakertimer] > 1)
 		{
-			K_DoSneaker(player, 2);
-			K_PlayBoostTaunt(player->mo);
-			player->kartstuff[k_rocketsneakertimer] -= 2*TICRATE;
-			if (player->kartstuff[k_rocketsneakertimer] < 1)
-				player->kartstuff[k_rocketsneakertimer] = 1;
+			if (ATTACK_IS_DOWN && !HOLDING_ITEM && onground && NO_HYUDORO)
+			{
+				K_DoSneaker(player, 2);
+				K_PlayBoostTaunt(player->mo);
+				player->kartstuff[k_rocketsneakertimer] -= 2*TICRATE;
+				if (player->kartstuff[k_rocketsneakertimer] < 1)
+					player->kartstuff[k_rocketsneakertimer] = 1;
+			}
 		}
-		// Ring boosts with no item
 		else if (player->kartstuff[k_itemtype] == KITEM_NONE)
 		{
 			if ((player->pflags & PF_ATTACKDOWN) && !HOLDING_ITEM && NO_HYUDORO
