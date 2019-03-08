@@ -5500,6 +5500,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 				player->kartstuff[k_growcancel] = 0;
 		}
+		// Ring boosting
 		else if (player->kartstuff[k_itemtype] == KITEM_NONE)
 		{
 			if ((player->pflags & PF_ATTACKDOWN) && !HOLDING_ITEM && NO_HYUDORO
