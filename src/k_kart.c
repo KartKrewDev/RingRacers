@@ -5488,6 +5488,18 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					player->kartstuff[k_rocketsneakertimer] = 1;
 			}
 		}
+		// Grow Canceling
+		else if (player->kartstuff[k_growshrinktimer] > 0)
+		{
+			if (cmd->buttons & BT_ATTACK)
+			{
+				player->kartstuff[k_growcancel]++;
+				if (player->kartstuff[k_growcancel] > 26)
+					K_RemoveGrowShrink(player);
+			}
+			else
+				player->kartstuff[k_growcancel] = 0;
+		}
 		else if (player->kartstuff[k_itemtype] == KITEM_NONE)
 		{
 			if ((player->pflags & PF_ATTACKDOWN) && !HOLDING_ITEM && NO_HYUDORO
@@ -5501,18 +5513,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->kartstuff[k_rings]--;
 				player->kartstuff[k_ringdelay] = 3;
 			}
-		}
-		// Grow Canceling
-		else if (player->kartstuff[k_growshrinktimer] > 0)
-		{
-			if (cmd->buttons & BT_ATTACK)
-			{
-				player->kartstuff[k_growcancel]++;
-				if (player->kartstuff[k_growcancel] > 26)
-					K_RemoveGrowShrink(player);
-			}
-			else
-				player->kartstuff[k_growcancel] = 0;
 		}
 		else if (player->kartstuff[k_itemamount] <= 0)
 		{
