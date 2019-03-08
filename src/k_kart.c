@@ -7598,7 +7598,7 @@ static void K_drawKartRingsAndLives(void)
 	else
 		V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|splitflags, kp_ringsticker[0]);
 
-	V_DrawMappedPatch(LAPS_X+7, LAPS_Y-17, V_HUDTRANS|splitflags, kp_ring[0], debtmap);
+	V_DrawMappedPatch(LAPS_X+7, LAPS_Y-16, V_HUDTRANS|splitflags, kp_ring[0], debtmap);
 
 	if (stplyr->kartstuff[k_rings] < 0)
 	{
