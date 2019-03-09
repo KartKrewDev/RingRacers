@@ -10729,6 +10729,8 @@ void P_PrecipitationEffects(void)
 //
 void P_RespawnSpecials(void)
 {
+	UINT8 p, pcount = 0;
+	tic_t time = 168*TICRATE;
 	fixed_t x, y, z;
 	subsector_t *ss;
 	mobj_t *mo = NULL;
@@ -10787,9 +10789,22 @@ void P_RespawnSpecials(void)
 	if (iquehead == iquetail)
 		return;
 
+	// wait time depends on player count
+	for (p = 0; p < MAXPLAYERS; p++)
+	{
+		if (!playeringame[p] || players[p].spectator)
+			pcount++;
+	}
+
+	if (pcount > 1)
+		time -= pcount * (8*TICRATE);
+	else if (pcount == 1) // No respawn when alone
+		return;
+	else
+		time = 30*TICRATE; // Respawn things in empty dedicated servers
+
 	// the first item in the queue is the first to respawn
-	// wait at least 30 seconds
-	if (leveltime - itemrespawntime[iquetail] < (tic_t)cv_itemrespawntime.value*TICRATE)
+	if (leveltime - itemrespawntime[iquetail] < time)
 		return;
 
 	mthing = itemrespawnque[iquetail];

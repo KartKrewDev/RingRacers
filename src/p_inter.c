@@ -697,14 +697,16 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// Reached the cap, don't waste 'em!
-			if (player->kartstuff[k_rings] >= 20)
+			if ((player->kartstuff[k_rings] + player->kartstuff[k_pickuprings]) >= 20)
 				return;
 
 			special->momx = special->momy = special->momz = 0;
-			// SRB2Kart
+
 			special->extravalue1 = 1; // Ring collect animation timer
 			special->angle = R_PointToAngle2(toucher->x, toucher->y, special->x, special->y); // animation angle
 			P_SetTarget(&special->target, toucher); // toucher for thinker
+			player->kartstuff[k_pickuprings]++;
+
 			return;
 
 		case MT_COIN:
@@ -3294,7 +3296,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 		return;
 
 	// Cap the maximum loss automatically to 2 in ring debt
-	if (player->kartstuff[k_rings] < 0 && num_rings > 2) 
+	if (player->kartstuff[k_rings] <= 0 && num_rings > 2) 
 		num_rings = 2;
 
 	P_GivePlayerRings(player, -num_rings);
@@ -3313,7 +3315,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 		mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
 
 		mo->threshold = 10;
-		mo->fuse = 15*TICRATE;
+		mo->fuse = 120*TICRATE;
 		P_SetTarget(&mo->target, player->mo);
 
 		mo->destscale = player->mo->scale;

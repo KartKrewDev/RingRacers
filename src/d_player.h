@@ -234,7 +234,6 @@ typedef enum
 {
 	KITEM_SAD = -1,
 	KITEM_NONE = 0,
-	KITEM_SUPERRING,
 	KITEM_SNEAKER,
 	KITEM_ROCKETSNEAKER,
 	KITEM_INVINCIBILITY,
@@ -250,6 +249,7 @@ typedef enum
 	KITEM_THUNDERSHIELD,
 	KITEM_HYUDORO,
 	KITEM_POGOSPRING,
+	KITEM_SUPERRING,
 	KITEM_KITCHENSINK,
 
 	NUMKARTITEMS,
@@ -298,6 +298,8 @@ typedef enum
 	k_boostcharge,		// Charge-up for boosting at the start of the race
 	k_startboost,		// Boost you get from start of race or respawn drop dash
 	k_rings,			// Number of held rings
+	k_pickuprings,		// Number of rings being picked up before added to the counter (prevents rings from being deleted forever over 20)
+	k_userings,			// Have to be not holding the item button to change from using rings to using items (or vice versa), to prevent some weirdness with the button
 	k_ringdelay,		// 3 tic delay between every ring usage
 	k_ringboost,		// Ring boost timer
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift

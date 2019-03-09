@@ -747,20 +747,24 @@ static boolean P_LookForShield(mobj_t *actor)
 		if (player->health <= 0 || !player->mo)
 			continue; // dead
 
+		if (!P_CheckSight(actor, player->mo))
+			continue; // can't see
+
 		//When in CTF, don't pull rings that you cannot pick up.
 		if ((actor->type == MT_REDTEAMRING && player->ctfteam != 1) ||
 			(actor->type == MT_BLUETEAMRING && player->ctfteam != 2))
 			continue;
 
-		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT
-			&& (P_AproxDistance(P_AproxDistance(actor->x-player->mo->x, actor->y-player->mo->y), actor->z-player->mo->z) < FixedMul(RING_DIST/4, player->mo->scale)))
+		if ((player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD) && ((player->kartstuff[k_rings]+player->kartstuff[k_pickuprings]) < 20)
+			&& P_AproxDistance(actor->x-player->mo->x, actor->y-player->mo->y) < FixedMul(RING_DIST/4, player->mo->scale)
+			&& P_AproxDistance(0, actor->z-player->mo->z) < FixedMul(RING_DIST/8, player->mo->scale))
 		{
 			P_SetTarget(&actor->tracer, player->mo);
 			return true;
 		}
 	}
 
-	//return false;
+	return false;
 }
 
 #ifdef WEIGHTEDRECYCLER
@@ -3654,6 +3658,7 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 16)
 			{
 				P_GivePlayerRings(actor->target->player, 1);
+				actor->target->player->kartstuff[k_pickuprings]--;
 				if (actor->cvmem) // caching
 					S_StartSound(actor->target, sfx_s1c5);
 				else
@@ -3682,69 +3687,76 @@ void A_AttractChase(mobj_t *actor)
 		if (actor->threshold > 0)
 			actor->threshold--;
 
-		// spilled rings flicker before disappearing
-		if (leveltime & 1 && actor->type == (mobjtype_t)actor->info->reactiontime && actor->fuse && actor->fuse < 2*TICRATE)
-			actor->flags2 |= MF2_DONTDRAW;
-		else
-			actor->flags2 &= ~MF2_DONTDRAW;
-
-		// Flung rings lose speed over time
+		// spilled rings flicker before disappearing, and get capped to a certain speed
 		if (actor->type == (mobjtype_t)actor->info->reactiontime)
 		{
-			const fixed_t destspeed = FRACUNIT;
+			const fixed_t maxspeed = 4<<FRACBITS;
 			fixed_t oldspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
 
-			if (oldspeed > destspeed)
+			if (oldspeed > maxspeed)
 			{
-				fixed_t newspeed = max(destspeed, oldspeed - (FRACUNIT / TICRATE));
-
+				fixed_t newspeed = max(maxspeed, oldspeed-FRACUNIT);
 				actor->momx = FixedMul(FixedDiv(actor->momx, oldspeed), newspeed);
 				actor->momy = FixedMul(FixedDiv(actor->momy, oldspeed), newspeed);
 			}
+
+			if (actor->fuse && actor->fuse < 3*TICRATE && leveltime & 1)
+				actor->flags2 |= MF2_DONTDRAW;
+			else
+				actor->flags2 &= ~MF2_DONTDRAW;
 		}
 
-		// Turn flingrings back into regular rings if attracted.
-		if (actor->tracer && actor->tracer->player
-			&& (actor->tracer->player->powers[pw_shield] & SH_NOSTACK) != SH_ATTRACT
-			&& actor->info->reactiontime && actor->type != (mobjtype_t)actor->info->reactiontime)
+		if (actor->tracer && actor->tracer->player && actor->tracer->health
+			&& P_CheckSight(actor, actor->tracer)
+			&& actor->tracer->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
+			&& (actor->tracer->player->kartstuff[k_rings]+actor->tracer->player->kartstuff[k_pickuprings]) < 20)
 		{
-			mobj_t *newring;
-			newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
-			newring->momx = actor->momx;
-			newring->momy = actor->momy;
-			newring->momz = actor->momz;
-			P_RemoveMobj(actor);
-			return;
+			fixed_t dist;
+			angle_t hang, vang;
+
+			// If a flung ring gets attracted by a shield, change it into a normal ring.
+			if (actor->type == (mobjtype_t)actor->info->reactiontime)
+			{
+				P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->painchance);
+				P_RemoveMobj(actor);
+				return;
+			}
+
+			// Keep stuff from going down inside floors and junk
+			actor->flags &= ~MF_NOCLIPHEIGHT;
+
+			// Let attracted rings move through walls and such.
+			actor->flags |= MF_NOCLIP;
+
+			// flag to show it's been attracted once before
+			actor->cusval = 1;
+
+			// P_Attract is too "smart" for Kart; keep it simple, stupid!
+			dist = P_AproxDistance(P_AproxDistance(actor->x - actor->tracer->x, actor->y - actor->tracer->y), actor->z - actor->tracer->z);
+			hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
+			vang = R_PointToAngle2(actor->z , 0, actor->tracer->z, dist);
+
+			actor->momx -= actor->momx>>4, actor->momy -= actor->momy>>4, actor->momz -= actor->momz>>4;
+			actor->momx += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINECOSINE(hang>>ANGLETOFINESHIFT), 2*actor->scale));
+			actor->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), 2*actor->scale));
+			actor->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), 2*actor->scale);
 		}
-
-		P_LookForShield(actor); // Go find 'em, boy!
-
-		if (!actor->tracer
-			|| !actor->tracer->player
-			|| !actor->tracer->health
-			|| !P_CheckSight(actor, actor->tracer)) // You have to be able to SEE it...sorta
+		else
 		{
-			// Lost attracted rings don't through walls anymore.
-			actor->flags &= ~MF_NOCLIP;
-			P_SetTarget(&actor->tracer, NULL);
-			return;
+			// Turn rings back into flung rings if lost
+			if (actor->cusval && actor->info->reactiontime && actor->type != (mobjtype_t)actor->info->reactiontime)
+			{
+				mobj_t *newring;
+				newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
+				P_InstaThrust(newring, P_RandomRange(0,7) * ANGLE_45, 2<<FRACBITS);
+				newring->momz = 5<<FRACBITS;
+				newring->fuse = 120*TICRATE;
+				P_RemoveMobj(actor);
+				return;
+			}
+			else
+				P_LookForShield(actor); // Go find 'em, boy!
 		}
-
-		// If a FlingRing gets attracted by a shield, change it into a normal ring.
-		if (actor->type == (mobjtype_t)actor->info->reactiontime)
-		{
-			P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->painchance);
-			P_RemoveMobj(actor);
-			return;
-		}
-
-		// Keep stuff from going down inside floors and junk
-		actor->flags &= ~MF_NOCLIPHEIGHT;
-
-		// Let attracted rings move through walls and such.
-		actor->flags |= MF_NOCLIP;
-
-		P_Attract(actor, actor->tracer, false);
 	}
 }
 
