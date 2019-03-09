@@ -507,7 +507,6 @@ UINT8 K_GetKartColorByName(const char *name)
 
 void K_RegisterKartStuff(void)
 {
-	CV_RegisterVar(&cv_superring);
 	CV_RegisterVar(&cv_sneaker);
 	CV_RegisterVar(&cv_rocketsneaker);
 	CV_RegisterVar(&cv_invincibility);
@@ -523,6 +522,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_thundershield);
 	CV_RegisterVar(&cv_hyudoro);
 	CV_RegisterVar(&cv_pogospring);
+	CV_RegisterVar(&cv_superring);
 	CV_RegisterVar(&cv_kitchensink);
 
 	CV_RegisterVar(&cv_triplesneaker);
@@ -607,7 +607,7 @@ boolean K_IsPlayerWanted(player_t *player)
 // Less ugly 2D arrays
 static INT32 K_KartItemOddsRace[NUMKARTRESULTS][8] =
 {
-				//P-Odds	 0  1  2  3  4  5  6  7 
+				//P-Odds	 0  1  2  3  4  5  6  7
 			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 			   /*Sneaker*/ { 0, 0, 4, 6, 7, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 1, 4, 5, 3 }, // Rocket Sneaker
@@ -734,7 +734,6 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 	SINT8 first = -1, second = -1;
 	INT32 secondist = 0;
 	boolean itemenabled[NUMKARTRESULTS-1] = {
-		cv_superring.value,
 		cv_sneaker.value,
 		cv_rocketsneaker.value,
 		cv_invincibility.value,
@@ -750,6 +749,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 		cv_thundershield.value,
 		cv_hyudoro.value,
 		cv_pogospring.value,
+		cv_superring.value,
 		cv_kitchensink.value,
 		cv_triplesneaker.value,
 		cv_triplebanana.value,
@@ -8930,7 +8930,6 @@ static void K_drawDistributionDebugger(void)
 {
 	patch_t *items[NUMKARTRESULTS] = {
 		kp_sadface[1],
-		kp_superring[1],
 		kp_sneaker[1],
 		kp_rocketsneaker[1],
 		kp_invincibility[7],
@@ -8946,6 +8945,7 @@ static void K_drawDistributionDebugger(void)
 		kp_thundershield[1],
 		kp_hyudoro[1],
 		kp_pogospring[1],
+		kp_superring[1],
 		kp_kitchensink[1],
 
 		kp_sneaker[1],
