@@ -3289,6 +3289,10 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	if (!player)
 		return;
 
+	// Has a shield? Don't lose your rings!
+	if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+		return;
+
 	// 20 is the ring cap in kart
 	if (num_rings > 20)
 		num_rings = 20; 
