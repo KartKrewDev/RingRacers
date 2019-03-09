@@ -1964,7 +1964,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
 	{
-		speedboost = max(speedboost, 3*FRACUNIT/8); // + 37.5%
+		speedboost = max(speedboost, (3*FRACUNIT)/8); // + 37.5%
 		accelboost = max(accelboost, 3*FRACUNIT); // + 300%
 	}
 
@@ -1975,7 +1975,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_ringboost]) // Ring Boost
 	{
-		speedboost = max(speedboost, FRACUNIT/8); // + 12.5%
+		speedboost = max(speedboost, FRACUNIT/5); // + 20%
 		accelboost = max(accelboost, 2*FRACUNIT); // + 200%
 	}
 
