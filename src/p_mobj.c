@@ -10374,8 +10374,8 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	// Rings only, please!
 	if (mobj->spawnpoint &&
-		(/*mobj->type == MT_RING
-		||*/ mobj->type == MT_COIN
+		(mobj->type == MT_RING
+		|| mobj->type == MT_COIN
 		|| mobj->type == MT_BLUEBALL
 		|| mobj->type == MT_REDTEAMRING
 		|| mobj->type == MT_BLUETEAMRING

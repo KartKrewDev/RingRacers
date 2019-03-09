@@ -1045,7 +1045,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	// If the roulette finishes or the player presses BT_ATTACK, stop the roulette and calculate the item.
 	// I'm returning via the exact opposite, however, to forgo having another bracket embed. Same result either way, I think.
 	// Finally, if you get past this check, now you can actually start calculating what item you get.
-	if ((cmd->buttons & BT_ATTACK) && !(player->kartstuff[k_eggmanheld] || player->kartstuff[k_itemheld]) && player->kartstuff[k_itemroulette] >= roulettestop && !modeattacking)
+	if ((cmd->buttons & BT_ATTACK) && (player->kartstuff[k_itemroulette] >= roulettestop)
+		&& !(player->kartstuff[k_eggmanheld] || player->kartstuff[k_itemheld] || player->kartstuff[k_userings]))
 	{
 		// Mashing reduces your chances for the good items
 		mashed = FixedDiv((player->kartstuff[k_itemroulette])*FRACUNIT, ((TICRATE*3)+roulettestop)*FRACUNIT) - FRACUNIT;
@@ -5446,6 +5447,22 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	if (player->kartstuff[k_positiondelay])
 		player->kartstuff[k_positiondelay]--;
 
+	// Prevent ring misfire
+	if (!(cmd->buttons & BT_ATTACK))
+	{
+		if (player->kartstuff[k_itemtype] == KITEM_NONE
+			&& !(player->kartstuff[k_itemamount]
+			|| player->kartstuff[k_itemheld]
+			|| player->kartstuff[k_itemroulette]
+			|| player->kartstuff[k_growshrinktimer]
+			|| player->kartstuff[k_rocketsneakertimer]
+			|| player->kartstuff[k_eggmanheld]
+			|| player->kartstuff[k_eggmanexplode]))
+			player->kartstuff[k_userings] = 1;
+		else
+			player->kartstuff[k_userings] = 0;
+	}
+
 	if ((player->pflags & PF_ATTACKDOWN) && !(cmd->buttons & BT_ATTACK))
 		player->pflags &= ~PF_ATTACKDOWN;
 	else if (cmd->buttons & BT_ATTACK)
@@ -5493,8 +5510,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			if (player->kartstuff[k_userings])
 			{
 				if ((player->pflags & PF_ATTACKDOWN) && !HOLDING_ITEM && NO_HYUDORO
-					&& !player->kartstuff[k_itemroulette] && !player->kartstuff[k_ringdelay]
-					&& player->kartstuff[k_rings] > 0)
+					&& !player->kartstuff[k_ringdelay] && player->kartstuff[k_rings] > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					ring->extravalue1 = 1; // Ring use animation timer
@@ -5901,21 +5917,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					}
 				}
 			}
-		}
-
-		// Prevent ring misfire
-		if (!ATTACK_IS_DOWN)
-		{
-			if (player->kartstuff[k_itemtype] == KITEM_NONE
-				&& !(player->kartstuff[k_growshrinktimer]
-				|| player->kartstuff[k_rocketsneakertimer]
-				|| player->kartstuff[k_eggmanheld]
-				|| player->kartstuff[k_eggmanexplode]
-				|| player->kartstuff[k_rocketsneakertimer]
-				|| player->kartstuff[k_growshrinktimer]))
-				player->kartstuff[k_userings] = 1;
-			else
-				player->kartstuff[k_userings] = 0;
 		}
 
 		// No more!
