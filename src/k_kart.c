@@ -608,7 +608,6 @@ boolean K_IsPlayerWanted(player_t *player)
 static INT32 K_KartItemOddsRace[NUMKARTRESULTS][8] =
 {
 				//P-Odds	 0  1  2  3  4  5  6  7
-			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 			   /*Sneaker*/ { 0, 0, 4, 6, 7, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 1, 4, 5, 3 }, // Rocket Sneaker
 		 /*Invincibility*/ { 0, 0, 0, 0, 1, 4, 6,10 }, // Invincibility
@@ -624,6 +623,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS][8] =
 		/*Thunder Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Thunder Shield
 			   /*Hyudoro*/ { 0, 0, 0, 1, 2, 1, 0, 0 }, // Hyudoro
 		   /*Pogo Spring*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
+			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
 			/*Sneaker x3*/ { 0, 0, 0, 3, 7, 9, 2, 0 }, // Sneaker x3
 			 /*Banana x3*/ { 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
@@ -636,7 +636,6 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS][8] =
 static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][6] =
 {
 				//P-Odds	 0  1  2  3  4  5
-			/*Super Ring*/ { 0, 0, 0, 0, 0, 0 }, // Super Ring
 			   /*Sneaker*/ { 3, 2, 2, 2, 0, 2 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 0 }, // Rocket Sneaker
 		 /*Invincibility*/ { 0, 1, 2, 3, 4, 2 }, // Invincibility
@@ -652,6 +651,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][6] =
 		/*Thunder Shield*/ { 0, 0, 0, 0, 0, 0 }, // Thunder Shield
 			   /*Hyudoro*/ { 1, 1, 0, 0, 0, 0 }, // Hyudoro
 		   /*Pogo Spring*/ { 1, 1, 0, 0, 0, 0 }, // Pogo Spring
+			/*Super Ring*/ { 0, 0, 0, 0, 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
 			/*Sneaker x3*/ { 0, 0, 0, 2, 4, 2 }, // Sneaker x3
 			 /*Banana x3*/ { 1, 2, 1, 0, 0, 0 }, // Banana x3
