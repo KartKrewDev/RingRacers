@@ -5451,12 +5451,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	if (!(cmd->buttons & BT_ATTACK))
 	{
 		if (player->kartstuff[k_itemtype] == KITEM_NONE
-			&& !(player->kartstuff[k_itemamount]
-			|| player->kartstuff[k_itemheld]
+			&& NO_HYUDORO && !(HOLDING_ITEM
+			|| player->kartstuff[k_itemamount]
 			|| player->kartstuff[k_itemroulette]
 			|| player->kartstuff[k_growshrinktimer]
 			|| player->kartstuff[k_rocketsneakertimer]
-			|| player->kartstuff[k_eggmanheld]
 			|| player->kartstuff[k_eggmanexplode]))
 			player->kartstuff[k_userings] = 1;
 		else
@@ -5509,8 +5508,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->kartstuff[k_userings])
 			{
-				if ((player->pflags & PF_ATTACKDOWN) && !HOLDING_ITEM && NO_HYUDORO
-					&& !player->kartstuff[k_ringdelay] && player->kartstuff[k_rings] > 0)
+				if ((player->pflags & PF_ATTACKDOWN) && !player->kartstuff[k_ringdelay] && player->kartstuff[k_rings] > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					ring->extravalue1 = 1; // Ring use animation timer
@@ -7914,10 +7912,21 @@ static void K_drawKartLaps(void)
 
 static void K_drawKartRingsAndLives(void)
 {
+#define RINGANIM_NUMFRAMES 10
+#define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
+#define RINGANIM_DELAYMAX 3
+
+	static UINT8 ringanim_frame = 0;
+	static UINT8 ringanim_tics = 1;
+	static UINT8 ringanim_delay = RINGANIM_DELAYMAX+1;
+
+	SINT8 ringanim_realframe = ringanim_frame;
 	INT32 splitflags = K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT);
 	UINT8 firstnum = ((abs(stplyr->kartstuff[k_rings]) / 10) % 10);
 	UINT8 secondnum = (abs(stplyr->kartstuff[k_rings]) % 10);
+	INT32 ringflip = 0;
 	UINT8 *ringmap = NULL;
+	INT32 ringx = LAPS_X+7;
 
 	// Rings
 	if (stplyr->kartstuff[k_rings] <= 0 && (leveltime/5 & 1)) // In debt
@@ -7930,7 +7939,14 @@ static void K_drawKartRingsAndLives(void)
 	else
 		V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|splitflags, kp_ringsticker[0]);
 
-	V_DrawMappedPatch(LAPS_X+7, LAPS_Y-16, V_HUDTRANS|splitflags, kp_ring[0], (stplyr->kartstuff[k_rings] <= 0 ? ringmap : NULL)); // Don't do maxed out gold mapping
+	if (ringanim_frame > RINGANIM_FLIPFRAME)
+	{
+		ringflip = V_FLIP;
+		ringanim_realframe = RINGANIM_NUMFRAMES-ringanim_frame;
+		ringx += SHORT(kp_ring[ringanim_realframe]->width);
+	}
+
+	V_DrawMappedPatch(ringx, LAPS_Y-16, V_HUDTRANS|splitflags|ringflip, kp_ring[ringanim_realframe], (stplyr->kartstuff[k_rings] <= 0 ? ringmap : NULL)); // Don't do maxed out gold mapping
 
 	if (stplyr->kartstuff[k_rings] < 0) // Draw the minus for ring debt
 	{
@@ -7943,6 +7959,32 @@ static void K_drawKartRingsAndLives(void)
 		V_DrawMappedPatch(LAPS_X+23, LAPS_Y-11, V_HUDTRANS|splitflags, kp_facenum[firstnum], ringmap);
 		V_DrawMappedPatch(LAPS_X+29, LAPS_Y-11, V_HUDTRANS|splitflags, kp_facenum[secondnum], ringmap);
 	}
+
+	if (ringanim_frame == 0) // Update delay on resting frame
+	{
+		if (stplyr->kartstuff[k_ringboost])
+			ringanim_delay = 0; // set the fast spin animation!
+		else if (ringanim_delay <= RINGANIM_DELAYMAX)
+			ringanim_delay++; // slow down spin
+	}
+
+	if (ringanim_delay > RINGANIM_DELAYMAX)
+	{
+		ringanim_frame = 0;
+		ringanim_tics = 1;
+	}
+	else if ((ringanim_tics--) <= 0)
+	{
+		if (ringanim_delay == 0) // fast spin animation
+			ringanim_frame = ((ringanim_frame+2) % RINGANIM_NUMFRAMES);
+		else
+			ringanim_frame = ((ringanim_frame+1) % RINGANIM_NUMFRAMES);
+		ringanim_tics = max(1, ringanim_delay);
+	}
+
+#undef RINGANIM_NUMFRAMES
+#undef RINGANIM_FLIPFRAME
+#undef RINGANIM_DELAYMAX
 
 	// Lives
 	if (!netgame)
