@@ -21,6 +21,7 @@
 #include "w_wad.h"
 #include "m_menu.h"
 #include "m_misc.h"
+#include "filesrch.h" // for refreshdirmenu
 #include "f_finale.h"
 #include "dehacked.h"
 #include "st_stuff.h"
@@ -78,8 +79,6 @@ static powertype_t get_power(const char *word);
 
 boolean deh_loaded = false;
 static int dbg_line;
-
-static boolean gamedataadded = false;
 
 #ifdef DELFILE
 typedef struct undehacked_s
@@ -602,6 +601,14 @@ done:
 	Z_Free(s);
 }
 
+static int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
+
+void DEH_UpdateMaxFreeslots(void)
+{
+	freeslotusage[0][1] = freeslotusage[0][0];
+	freeslotusage[1][1] = freeslotusage[1][0];
+}
+
 // TODO: Figure out how to do undolines for this....
 // TODO: Warnings for running out of freeslots
 static void readfreeslots(MYFILE *f)
@@ -664,6 +671,7 @@ static void readfreeslots(MYFILE *f)
 					if (!FREE_STATES[i]) {
 						FREE_STATES[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 						strcpy(FREE_STATES[i],word);
+						freeslotusage[0][0]++;
 						break;
 					}
 			}
@@ -673,6 +681,7 @@ static void readfreeslots(MYFILE *f)
 					if (!FREE_MOBJS[i]) {
 						FREE_MOBJS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 						strcpy(FREE_MOBJS[i],word);
+						freeslotusage[1][0]++;
 						break;
 					}
 			}
@@ -3139,6 +3148,7 @@ static void readmaincfg(MYFILE *f)
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
 				savemoddata = true;
+				majormods = false;
 
 				// Also save a time attack folder
 				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension
@@ -3151,7 +3161,7 @@ static void readmaincfg(MYFILE *f)
 				// can't use sprintf since there is %u in savegamename
 				strcatbf(savegamename, srb2home, PATHSEP);
 
-				gamedataadded = true;
+				refreshdirmenu |= REFRESHDIR_GAMEDATA;
 			}
 			else if (fastcmp(word, "RESETDATA"))
 			{
@@ -3382,8 +3392,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 	for (i = 0; i < NUMSFX; i++)
 		savesfxnames[i] = S_sfx[i].name;
 
-	gamedataadded = false;
-
 	// it doesn't test the version of SRB2 and version of dehacked file
 	dbg_line = -1; // start at -1 so the first line is 0.
 	while (!myfeof(f))
@@ -3417,10 +3425,12 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 			if (fastcmp(word, "FREESLOT"))
 			{
 				readfreeslots(f);
+				// This is not a major mod.
 				continue;
 			}
 			else if (fastcmp(word, "MAINCFG"))
 			{
+				G_SetGameModified(multiplayer, true);
 				readmaincfg(f);
 				DEH_WriteUndoline(word, "", UNDO_HEADER);
 				continue;
@@ -3429,6 +3439,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 			{
 				readwipes(f);
 				DEH_WriteUndoline(word, "", UNDO_HEADER);
+				// This is not a major mod.
 				continue;
 			}
 			word2 = strtok(NULL, " ");
@@ -3449,6 +3460,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 					ignorelines(f);
 				}
 				DEH_WriteUndoline(word, word2, UNDO_HEADER);
+				// This is not a major mod.
 				continue;
 			}
 			if (word2)
@@ -3462,19 +3474,25 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 					// Read texture from spec file.
 					readtexture(f, word2);
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+					// This is not a major mod.
 				}
 				else if (fastcmp(word, "PATCH"))
 				{
 					// Read patch from spec file.
 					readpatch(f, word2, wad);
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+					// This is not a major mod.
 				}
 				else if (fastcmp(word, "THING") || fastcmp(word, "MOBJ") || fastcmp(word, "OBJECT"))
 				{
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
 						i = get_mobjtype(word2); // find a thing by name
 					if (i < NUMMOBJTYPES && i >= 0)
+					{
+						if (i < (MT_FIRSTFREESLOT+freeslotusage[1][1]))
+							G_SetGameModified(multiplayer, true); // affecting something earlier than the first freeslot allocated in this .wad? DENIED
 						readthing(f, i);
+					}
 					else
 					{
 						deh_warning("Thing %d out of range (0 - %d)", i, NUMMOBJTYPES-1);
@@ -3485,6 +3503,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 /*				else if (fastcmp(word, "ANIMTEX"))
 				{
 					readAnimTex(f, i);
+					// This is not a major mod.
 				}*/
 				else if (fastcmp(word, "LIGHT"))
 				{
@@ -3498,6 +3517,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 						ignorelines(f);
 					}
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+					// This is not a major mod.
 #endif
 				}
 				else if (fastcmp(word, "SPRITE"))
@@ -3513,6 +3533,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 						ignorelines(f);
 					}
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+					// This is not a major mod.
 #endif
 				}
 				else if (fastcmp(word, "LEVEL"))
@@ -3525,7 +3546,11 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 						i = M_MapNumber(word2[0], word2[1]);
 
 					if (i > 0 && i <= NUMMAPS)
+					{
+						if (mapheaderinfo[i])
+							G_SetGameModified(multiplayer, true); // only mark as a major mod if it replaces an already-existing mapheaderinfo
 						readlevelheader(f, i);
+					}
 					else
 					{
 						deh_warning("Level number %d out of range (1 - %d)", i, NUMMAPS);
@@ -3543,13 +3568,18 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 						ignorelines(f);
 					}
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+					//G_SetGameModified(multiplayer, true); -- might have to reconsider in a future update
 				}
 				else if (fastcmp(word, "FRAME") || fastcmp(word, "STATE"))
 				{
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
 						i = get_state(word2); // find a state by name
 					if (i < NUMSTATES && i >= 0)
+					{
+						if (i < (S_FIRSTFREESLOT+freeslotusage[0][1]))
+							G_SetGameModified(multiplayer, true); // affecting something earlier than the first freeslot allocated in this .wad? DENIED
 						readframe(f, i);
+					}
 					else
 					{
 						deh_warning("Frame %d out of range (0 - %d)", i, NUMSTATES-1);
@@ -3578,6 +3608,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 					}
 					else
 						deh_warning("pointer (Frame %d) : missing ')'", i);
+					G_SetGameModified(multiplayer, true);
 				}*/
 				else if (fastcmp(word, "SOUND"))
 				{
@@ -3591,6 +3622,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 						ignorelines(f);
 					}
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+					// This is not a major mod.
 				}
 /*				else if (fastcmp(word, "SPRITE"))
 				{
@@ -3611,6 +3643,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 					}
 					else
 						deh_warning("Sprite %d doesn't exist",i);
+					// This is not a major mod.
 				}*/
 				else if (fastcmp(word, "HUDITEM"))
 				{
@@ -3624,10 +3657,11 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 						ignorelines(f);
 					}
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+					// This is not a major mod.
 				}
 				else if (fastcmp(word, "EMBLEM"))
 				{
-					if (!gamedataadded)
+					if (!(refreshdirmenu & REFRESHDIR_GAMEDATA))
 					{
 						deh_warning("You must define a custom gamedata to use \"%s\"", word);
 						ignorelines(f);
@@ -3647,7 +3681,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				}
 				else if (fastcmp(word, "EXTRAEMBLEM"))
 				{
-					if (!gamedataadded)
+					if (!(refreshdirmenu & REFRESHDIR_GAMEDATA))
 					{
 						deh_warning("You must define a custom gamedata to use \"%s\"", word);
 						ignorelines(f);
@@ -3667,7 +3701,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				}
 				else if (fastcmp(word, "UNLOCKABLE"))
 				{
-					if (!gamedataadded)
+					if (!(refreshdirmenu & REFRESHDIR_GAMEDATA))
 					{
 						deh_warning("You must define a custom gamedata to use \"%s\"", word);
 						ignorelines(f);
@@ -3683,7 +3717,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				}
 				else if (fastcmp(word, "CONDITIONSET"))
 				{
-					if (!gamedataadded)
+					if (!(refreshdirmenu & REFRESHDIR_GAMEDATA))
 					{
 						deh_warning("You must define a custom gamedata to use \"%s\"", word);
 						ignorelines(f);
@@ -3718,7 +3752,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				{
 					boolean clearall = (fastcmp(word2, "ALL"));
 
-					if (!gamedataadded)
+					if (!(refreshdirmenu & REFRESHDIR_GAMEDATA))
 					{
 						deh_warning("You must define a custom gamedata to use \"%s\"", word);
 						continue;
@@ -3755,8 +3789,8 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 			deh_warning("No word in this line: %s", s);
 	} // end while
 
-	if (gamedataadded)
-		G_LoadGameData();
+	/*if (gamedataadded) -- REFRESHDIR_GAMEDATA murdered this
+		G_LoadGameData();*/
 
 	dbg_line = -1;
 	if (deh_num_warning)
@@ -7116,6 +7150,13 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_KARMAFIREWORK4",
 	"S_KARMAFIREWORKTRAIL",
 
+	// Opaque smoke version, to prevent lag
+	"S_OPAQUESMOKE1",
+	"S_OPAQUESMOKE2",
+	"S_OPAQUESMOKE3",
+	"S_OPAQUESMOKE4",
+	"S_OPAQUESMOKE5",
+
 	"S_OVERTIMEFOG",
 	"S_OVERTIMEORB",
 	"S_OVERTIMEBEAM",
@@ -8108,89 +8149,152 @@ static const char *const ML_LIST[16] = {
 // This DOES differ from r_draw's Color_Names, unfortunately.
 // Also includes Super colors
 static const char *COLOR_ENUMS[] = {					// Rejigged for Kart.
-	"NONE",           // 00 // SKINCOLOR_NONE
-	"WHITE",          // 01 // SKINCOLOR_WHITE
-	"SILVER",         // 02 // SKINCOLOR_SILVER
-	"GREY",           // 03 // SKINCOLOR_GREY
-	"NICKEL",         // 04 // SKINCOLOR_NICKEL
-	"BLACK",          // 05 // SKINCOLOR_BLACK
-	"SEPIA",          // 06 // SKINCOLOR_SEPIA
-	"BEIGE",          // 07 // SKINCOLOR_BEIGE
-	"BROWN",          // 08 // SKINCOLOR_BROWN
-	"LEATHER",        // 09 // SKINCOLOR_LEATHER
-	"SALMON",         // 10 // SKINCOLOR_SALMON
-	"PINK",           // 11 // SKINCOLOR_PINK
-	"ROSE",           // 12 // SKINCOLOR_ROSE
-	"RUBY",           // 13 // SKINCOLOR_RUBY
-	"RASPBERRY",      // 14 // SKINCOLOR_RASPBERRY
-	"RED",            // 15 // SKINCOLOR_RED
-	"CRIMSON",        // 16 // SKINCOLOR_CRIMSON
-	"KETCHUP",        // 17 // SKINCOLOR_KETCHUP
-	"DAWN",           // 18 // SKINCOLOR_DAWN
-	"CREAMSICLE",     // 19 // SKINCOLOR_CREAMSICLE
-	"ORANGE",         // 20 // SKINCOLOR_ORANGE
-	"PUMPKIN",        // 21 // SKINCOLOR_PUMPKIN
-	"ROSEWOOD",       // 22 // SKINCOLOR_ROSEWOOD
-	"BURGUNDY",       // 23 // SKINCOLOR_BURGUNDY
-	"TANGERINE",      // 24 // SKINCOLOR_TANGERINE
-	"PEACH",          // 25 // SKINCOLOR_PEACH
-	"CARAMEL",        // 26 // SKINCOLOR_CARAMEL
-	"GOLD",           // 27 // SKINCOLOR_GOLD
-	"BRONZE",         // 28 // SKINCOLOR_BRONZE
-	"YELLOW",         // 29 // SKINCOLOR_YELLOW
-	"MUSTARD",        // 30 // SKINCOLOR_MUSTARD
-	"OLIVE",          // 31 // SKINCOLOR_OLIVE
-	"VOMIT",          // 32 // SKINCOLOR_VOMIT
-	"GARDEN",         // 33 // SKINCOLOR_GARDEN
-	"LIME",           // 34 // SKINCOLOR_LIME
-	"TEA",            // 35 // SKINCOLOR_TEA
-	"PISTACHIO",      // 36 // SKINCOLOR_PISTACHIO
-	"ROBOHOOD",       // 37 // SKINCOLOR_ROBOHOOD
-	"MOSS",           // 38 // SKINCOLOR_MOSS
-	"MINT",           // 39 // SKINCOLOR_MINT
-	"GREEN",          // 40 // SKINCOLOR_GREEN
-	"PINETREE",       // 41 // SKINCOLOR_PINETREE
-	"EMERALD",        // 42 // SKINCOLOR_EMERALD
-	"SWAMP",          // 43 // SKINCOLOR_SWAMP
-	"DREAM",          // 44 // SKINCOLOR_DREAM
-	"AQUA",           // 45 // SKINCOLOR_AQUA
-	"TEAL",           // 46 // SKINCOLOR_TEAL
-	"CYAN",           // 47 // SKINCOLOR_CYAN
-	"JAWZ",           // 48 // SKINCOLOR_JAWZ
-	"CERULEAN",       // 49 // SKINCOLOR_CERULEAN
-	"NAVY",           // 50 // SKINCOLOR_NAVY
-	"SLATE",          // 51 // SKINCOLOR_SLATE
-	"STEEL",          // 52 // SKINCOLOR_STEEL
-	"JET",            // 53 // SKINCOLOR_JET
-	"SAPPHIRE",       // 54 // SKINCOLOR_SAPPHIRE
-	"PERIWINKLE",     // 55 // SKINCOLOR_PERIWINKLE
-	"BLUE",           // 56 // SKINCOLOR_BLUE
-	"BLUEBERRY",      // 57 // SKINCOLOR_BLUEBERRY
-	"DUSK",           // 58 // SKINCOLOR_DUSK
-	"PURPLE",         // 59 // SKINCOLOR_PURPLE
-	"LAVENDER",       // 60 // SKINCOLOR_LAVENDER
-	"BYZANTIUM",      // 61 // SKINCOLOR_BYZANTIUM
-	"POMEGRANATE",    // 62 // SKINCOLOR_POMEGRANATE
-	"LILAC",          // 63 // SKINCOLOR_LILAC
+	"NONE",			// SKINCOLOR_NONE
+	"WHITE",		// SKINCOLOR_WHITE
+	"SILVER",		// SKINCOLOR_SILVER
+	"GREY",			// SKINCOLOR_GREY
+	"NICKEL",		// SKINCOLOR_NICKEL
+	"BLACK",		// SKINCOLOR_BLACK
+	"FAIRY",		// SKINCOLOR_FAIRY
+	"POPCORN",		// SKINCOLOR_POPCORN
+	"SEPIA",		// SKINCOLOR_SEPIA
+	"BEIGE",		// SKINCOLOR_BEIGE
+	"BROWN",		// SKINCOLOR_BROWN
+	"LEATHER",		// SKINCOLOR_LEATHER
+	"SALMON",		// SKINCOLOR_SALMON
+	"PINK",			// SKINCOLOR_PINK
+	"ROSE",			// SKINCOLOR_ROSE
+	"BRICK",		// SKINCOLOR_BRICK
+	"RUBY",			// SKINCOLOR_RUBY
+	"RASPBERRY",	// SKINCOLOR_RASPBERRY
+	"CHERRY",		// SKINCOLOR_CHERRY
+	"RED",			// SKINCOLOR_RED
+	"CRIMSON",		// SKINCOLOR_CRIMSON
+	"MAROON",		// SKINCOLOR_MAROON
+	"FLAME",		// SKINCOLOR_FLAME
+	"SCARLET",		// SKINCOLOR_SCARLET
+	"KETCHUP",		// SKINCOLOR_KETCHUP
+	"DAWN",			// SKINCOLOR_DAWN
+	"SUNSET",		// SKINCOLOR_SUNSET
+	"CREAMSICLE",	// SKINCOLOR_CREAMSICLE
+	"ORANGE",		// SKINCOLOR_ORANGE
+	"PUMPKIN",		// SKINCOLOR_PUMPKIN
+	"ROSEWOOD",		// SKINCOLOR_ROSEWOOD
+	"BURGUNDY",		// SKINCOLOR_BURGUNDY
+	"TANGERINE",	// SKINCOLOR_TANGERINE
+	"PEACH",		// SKINCOLOR_PEACH
+	"CARAMEL",		// SKINCOLOR_CARAMEL
+	"CREAM",		// SKINCOLOR_CREAM
+	"GOLD",			// SKINCOLOR_GOLD
+	"ROYAL",		// SKINCOLOR_ROYAL
+	"BRONZE",		// SKINCOLOR_BRONZE
+	"COPPER",		// SKINCOLOR_COPPER
+	"YELLOW",		// SKINCOLOR_YELLOW
+	"MUSTARD",		// SKINCOLOR_MUSTARD
+	"OLIVE",		// SKINCOLOR_OLIVE
+	"VOMIT",		// SKINCOLOR_VOMIT
+	"GARDEN",		// SKINCOLOR_GARDEN
+	"LIME",			// SKINCOLOR_LIME
+	"HANDHELD",		// SKINCOLOR_HANDHELD
+	"TEA",			// SKINCOLOR_TEA
+	"PISTACHIO",	// SKINCOLOR_PISTACHIO
+	"MOSS",			// SKINCOLOR_MOSS
+	"CAMOUFLAGE",	// SKINCOLOR_CAMOUFLAGE
+	"ROBOHOOD",		// SKINCOLOR_ROBOHOOD
+	"MINT",			// SKINCOLOR_MINT
+	"GREEN",		// SKINCOLOR_GREEN
+	"PINETREE",		// SKINCOLOR_PINETREE
+	"EMERALD",		// SKINCOLOR_EMERALD
+	"SWAMP",		// SKINCOLOR_SWAMP
+	"DREAM",		// SKINCOLOR_DREAM
+	"PLAGUE",		// SKINCOLOR_PLAGUE
+	"ALGAE",		// SKINCOLOR_ALGAE
+	"CARIBBEAN",	// SKINCOLOR_CARIBBEAN
+	"AQUA",			// SKINCOLOR_AQUA
+	"TEAL",			// SKINCOLOR_TEAL
+	"CYAN",			// SKINCOLOR_CYAN
+	"JAWZ",			// SKINCOLOR_JAWZ
+	"CERULEAN",		// SKINCOLOR_CERULEAN
+	"NAVY",			// SKINCOLOR_NAVY
+	"PLATINUM",		// SKINCOLOR_PLATINUM
+	"SLATE",		// SKINCOLOR_SLATE
+	"STEEL",		// SKINCOLOR_STEEL
+	"RUST",			// SKINCOLOR_RUST
+	"JET",			// SKINCOLOR_JET
+	"SAPPHIRE",		// SKINCOLOR_SAPPHIRE
+	"PERIWINKLE",	// SKINCOLOR_PERIWINKLE
+	"BLUE",			// SKINCOLOR_BLUE
+	"BLUEBERRY",	// SKINCOLOR_BLUEBERRY
+	"NOVA",			// SKINCOLOR_NOVA
+	"PASTEL",		// SKINCOLOR_PASTEL
+	"MOONSLAM",		// SKINCOLOR_MOONSLAM
+	"ULTRAVIOLET",	// SKINCOLOR_ULTRAVIOLET
+	"DUSK",			// SKINCOLOR_DUSK
+	"BUBBLEGUM",	// SKINCOLOR_BUBBLEGUM
+	"PURPLE",		// SKINCOLOR_PURPLE
+	"FUCHSIA",		// SKINCOLOR_FUCHSIA
+	"TOXIC",		// SKINCOLOR_TOXIC
+	"LAVENDER",		// SKINCOLOR_LAVENDER
+	"BYZANTIUM",	// SKINCOLOR_BYZANTIUM
+	"MAUVE",		// SKINCOLOR_MAUVE
+	"POMEGRANATE",	// SKINCOLOR_POMEGRANATE
+	"LILAC",		// SKINCOLOR_LILAC
 
-	// Super special awesome Super flashing colors!
-	"SUPER1",   	// SKINCOLOR_SUPER1
-	"SUPER2",   	// SKINCOLOR_SUPER2,
-	"SUPER3",   	// SKINCOLOR_SUPER3,
-	"SUPER4",   	// SKINCOLOR_SUPER4,
-	"SUPER5",   	// SKINCOLOR_SUPER5,
-	// Super Tails
-	"TSUPER1",  	// SKINCOLOR_TSUPER1,
-	"TSUPER2",  	// SKINCOLOR_TSUPER2,
-	"TSUPER3",  	// SKINCOLOR_TSUPER3,
-	"TSUPER4",  	// SKINCOLOR_TSUPER4,
-	"TSUPER5",  	// SKINCOLOR_TSUPER5,
-	// Super Knuckles
-	"KSUPER1",  	// SKINCOLOR_KSUPER1,
-	"KSUPER2",  	// SKINCOLOR_KSUPER2,
-	"KSUPER3",  	// SKINCOLOR_KSUPER3,
-	"KSUPER4",  	// SKINCOLOR_KSUPER4,
-	"KSUPER5"   	// SKINCOLOR_KSUPER5,
+	// Special super colors
+	// Super Sonic Yellow
+	"SUPER1",		// SKINCOLOR_SUPER1
+	"SUPER2",		// SKINCOLOR_SUPER2,
+	"SUPER3",		// SKINCOLOR_SUPER3,
+	"SUPER4",		// SKINCOLOR_SUPER4,
+	"SUPER5",		// SKINCOLOR_SUPER5,
+	// Super Tails Orange
+	"TSUPER1",		// SKINCOLOR_TSUPER1,
+	"TSUPER2",		// SKINCOLOR_TSUPER2,
+	"TSUPER3",		// SKINCOLOR_TSUPER3,
+	"TSUPER4",		// SKINCOLOR_TSUPER4,
+	"TSUPER5",		// SKINCOLOR_TSUPER5,
+	// Super Knuckles Red
+	"KSUPER1",		// SKINCOLOR_KSUPER1,
+	"KSUPER2",		// SKINCOLOR_KSUPER2,
+	"KSUPER3",		// SKINCOLOR_KSUPER3,
+	"KSUPER4",		// SKINCOLOR_KSUPER4,
+	"KSUPER5",		// SKINCOLOR_KSUPER5,
+	// Hyper Sonic Pink
+	"PSUPER1",		// SKINCOLOR_PSUPER1,
+	"PSUPER2",		// SKINCOLOR_PSUPER2,
+	"PSUPER3",		// SKINCOLOR_PSUPER3,
+	"PSUPER4",		// SKINCOLOR_PSUPER4,
+	"PSUPER5",		// SKINCOLOR_PSUPER5,
+	// Hyper Sonic Blue
+	"BSUPER1",		// SKINCOLOR_BSUPER1,
+	"BSUPER2",		// SKINCOLOR_BSUPER2,
+	"BSUPER3",		// SKINCOLOR_BSUPER3,
+	"BSUPER4",		// SKINCOLOR_BSUPER4,
+	"BSUPER5"		// SKINCOLOR_BSUPER5,
+	// Aqua Super
+	"ASUPER1",		// SKINCOLOR_ASUPER1,
+	"ASUPER2",		// SKINCOLOR_ASUPER2,
+	"ASUPER3",		// SKINCOLOR_ASUPER3,
+	"ASUPER4",		// SKINCOLOR_ASUPER4,
+	"ASUPER5",		// SKINCOLOR_ASUPER5,
+	// Hyper Sonic Green
+	"GSUPER1",		// SKINCOLOR_GSUPER1,
+	"GSUPER2",		// SKINCOLOR_GSUPER2,
+	"GSUPER3",		// SKINCOLOR_GSUPER3,
+	"GSUPER4",		// SKINCOLOR_GSUPER4,
+	"GSUPER5",		// SKINCOLOR_GSUPER5,
+	// Hyper Sonic White
+	"WSUPER1",		// SKINCOLOR_WSUPER1,
+	"WSUPER2",		// SKINCOLOR_WSUPER2,
+	"WSUPER3",		// SKINCOLOR_WSUPER3,
+	"WSUPER4",		// SKINCOLOR_WSUPER4,
+	"WSUPER5",		// SKINCOLOR_WSUPER5,
+	// Creamy Super (Shadow?)
+	"CSUPER1",		// SKINCOLOR_CSUPER1,
+	"CSUPER2",		// SKINCOLOR_CSUPER2,
+	"CSUPER3",		// SKINCOLOR_CSUPER3,
+	"CSUPER4",		// SKINCOLOR_CSUPER4,
+	"CSUPER5"		// SKINCOLOR_CSUPER5,
 };
 
 static const char *const POWERS_LIST[] = {
@@ -8228,6 +8332,7 @@ static const char *const POWERS_LIST[] = {
 	"INGOOP" // In goop
 };
 
+#ifdef HAVE_BLUA
 static const char *const KARTSTUFF_LIST[] = {
 	"POSITION",
 	"OLDPOSITION",
@@ -8308,8 +8413,12 @@ static const char *const KARTSTUFF_LIST[] = {
 	"ITEMBLINK",
 	"ITEMBLINKMODE",
 	"GETSPARKS",
+	"JAWZTARGETDELAY",
+	"SPECTATEWAIT",
+	"GROWCANCEL",
 	"KILLFIELD"
 };
+#endif
 
 static const char *const HUDITEMS_LIST[] = {
 	"LIVESNAME",
@@ -9015,20 +9124,6 @@ static powertype_t get_power(const char *word)
 	return pw_invulnerability;
 }
 
-static kartstufftype_t get_kartstuff(const char *word)
-{ // Returns the vlaue of k_ enumerations
-	kartstufftype_t i;
-	if (*word >= '0' && *word <= '9')
-		return atoi(word);
-	if (fastncmp("K_",word,2))
-		word += 2; // take off the k_
-	for (i = 0; i < NUMKARTSTUFF; i++)
-		if (fastcmp(word, KARTSTUFF_LIST[i]))
-			return i;
-	deh_warning("Couldn't find power named 'k_%s'",word);
-	return k_position;
-}
-
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.
 static fixed_t op_mul(fixed_t a, fixed_t b) { return a*b; }
 static fixed_t op_div(fixed_t a, fixed_t b) { return a/b; }
@@ -9365,6 +9460,7 @@ static inline int lib_freeslot(lua_State *L)
 					CONS_Printf("State S_%s allocated.\n",word);
 					FREE_STATES[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 					strcpy(FREE_STATES[i],word);
+					freeslotusage[0][0]++;
 					lua_pushinteger(L, i);
 					r++;
 					break;
@@ -9380,6 +9476,7 @@ static inline int lib_freeslot(lua_State *L)
 					CONS_Printf("MobjType MT_%s allocated.\n",word);
 					FREE_MOBJS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 					strcpy(FREE_MOBJS[i],word);
+					freeslotusage[1][0]++;
 					lua_pushinteger(L, i);
 					r++;
 					break;
@@ -9749,6 +9846,9 @@ static inline int lib_getenum(lua_State *L)
 	} else if (fastcmp(word,"modifiedgame")) {
 		lua_pushboolean(L, modifiedgame && !savemoddata);
 		return 1;
+	} else if (fastcmp(word,"majormods")) {
+		lua_pushboolean(L, majormods);
+		return 1;
 	} else if (fastcmp(word,"menuactive")) {
 		lua_pushboolean(L, menuactive);
 		return 1;
@@ -9819,6 +9919,9 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	} else if (fastcmp(word,"indirectitemcooldown")) {
 		lua_pushinteger(L, indirectitemcooldown);
+		return 1;
+	} else if (fastcmp(word,"hyubgone")) {
+		lua_pushinteger(L, hyubgone);
 		return 1;
 	} else if (fastcmp(word,"thwompsactive")) {
 		lua_pushboolean(L, thwompsactive);

@@ -1354,7 +1354,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		if (wasflip == !(mo->eflags & MFE_VERTICALFLIP)) // note!! == ! is not equivalent to != here - turns numeric into bool this way
 			P_PlayerFlip(mo);
 		if (mo->player->kartstuff[k_pogospring])
-			gravityadd = FixedMul(gravityadd, 5*FRACUNIT/2);
+			gravityadd = (5*gravityadd)/2;
 	}
 	else
 	{
@@ -1405,10 +1405,14 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				case MT_BANANA:
 				case MT_EGGMANITEM:
 				case MT_SSMINE:
-					gravityadd = FixedMul(gravityadd, 5*FRACUNIT/2);
-					break;
 				case MT_SINK:
-					gravityadd = FixedMul(gravityadd, 5*FRACUNIT); // Double gravity
+					if (mo->extravalue2 > 0)
+						gravityadd *= mo->extravalue2;
+					/* FALLTHRU */
+				case MT_ORBINAUT:
+				case MT_JAWZ:
+				case MT_JAWZ_DUD:
+					gravityadd = (5*gravityadd)/2;
 					break;
 				case MT_SIGN:
 					gravityadd /= 8;
@@ -3233,8 +3237,7 @@ boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
 #endif
 		*rover->topheight;
 
-	if (!(player->pflags & PF_NIGHTSMODE) && !player->homing
-		&& (((player->charability == CA_SWIM) || player->powers[pw_super] || player->charflags & SF_RUNONWATER) && player->mo->ceilingz-topheight >= player->mo->height)
+	if (((player->charflags & SF_RUNONWATER) && player->mo->ceilingz-topheight >= player->mo->height)
 		&& (rover->flags & FF_SWIMMABLE) && !(player->pflags & PF_SPINNING) && player->speed > FixedMul(player->runspeed, player->mo->scale)
 		&& !(player->pflags & PF_SLIDING)
 		&& abs(player->mo->z - topheight) < FixedMul(30*FRACUNIT, player->mo->scale))
@@ -3399,8 +3402,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 
 			// skipping stone!
 			if (p && p->kartstuff[k_waterskip] < 2
-				&& ((p->speed/2 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
-				|| (p->speed > K_GetKartSpeed(p,false)/4 && p->kartstuff[k_waterskip])) // Already skipped once, so you can skip once more!
+				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
+				|| (p->speed > K_GetKartSpeed(p,false)/3 && p->kartstuff[k_waterskip])) // Already skipped once, so you can skip once more!
 				&& ((!(mobj->eflags & MFE_VERTICALFLIP) && thingtop - mobj->momz > mobj->watertop)
 				|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->z - mobj->momz < mobj->waterbottom)))
 			{
@@ -6860,6 +6863,7 @@ void P_MobjThinker(mobj_t *mobj)
 					fixed_t y = P_RandomRange(-35, 35)*mobj->scale;
 					fixed_t z = P_RandomRange(0, 70)*mobj->scale;
 					mobj_t *smoke = P_SpawnMobj(mobj->x + x, mobj->y + y, mobj->z + z, MT_SMOKE);
+					P_SetMobjState(smoke, S_OPAQUESMOKE1);
 					smoke->scale = mobj->scale * 2;
 					smoke->destscale = mobj->scale * 6;
 					smoke->momz = P_RandomRange(4, 9)*FRACUNIT;
@@ -6881,6 +6885,7 @@ void P_MobjThinker(mobj_t *mobj)
 					else
 					{
 						mobj_t *smoke = P_SpawnMobj(mobj->x + x, mobj->y + y, mobj->z + z, MT_SMOKE);
+						P_SetMobjState(smoke, S_OPAQUESMOKE1);
 						smoke->scale = mobj->scale;
 						smoke->destscale = mobj->scale*2;
 					}
@@ -8399,28 +8404,26 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->color = mobj->target->player->skincolor;
 			else
 				mobj->color = SKINCOLOR_KETCHUP;
+
 			if (mobj->momx || mobj->momy)
 				P_SpawnGhostMobj(mobj);
-			if (P_IsObjectOnGround(mobj))
+
+			if (P_IsObjectOnGround(mobj) && (mobj->state == &states[S_SSMINE_AIR1] || mobj->state == &states[S_SSMINE_AIR2]))
 			{
-				if (mobj->state == &states[S_SSMINE_AIR1] || mobj->state == &states[S_SSMINE_AIR2])
-					P_SetMobjState(mobj, S_SSMINE_DEPLOY1);
-				if (mobj->reactiontime >= mobj->info->reactiontime)
+				if (mobj->extravalue1 > 0)
+					mobj->extravalue1--;
+				else
 				{
 					mobj->momx = mobj->momy = 0;
 					S_StartSound(mobj, mobj->info->activesound);
-					mobj->reactiontime--;
+					P_SetMobjState(mobj, S_SSMINE_DEPLOY1);
 				}
 			}
-			if (mobj->reactiontime && mobj->reactiontime < mobj->info->reactiontime)
-			{
-				mobj->reactiontime--;
-				if (!mobj->reactiontime)
-					P_KillMobj(mobj, NULL, NULL);
-			}
+
 			if ((mobj->state >= &states[S_SSMINE1] && mobj->state <= &states[S_SSMINE4])
 				|| (mobj->state >= &states[S_SSMINE_DEPLOY8] && mobj->state <= &states[S_SSMINE_DEPLOY13]))
 				A_GrenadeRing(mobj);
+
 			if (mobj->threshold > 0)
 				mobj->threshold--;
 			break;

@@ -34,6 +34,7 @@
 #include "z_zone.h"
 #include "fastcmp.h"
 
+#include "g_game.h" // G_LoadGameData
 #include "filesrch.h"
 
 #include "i_video.h" // rendermode
@@ -185,6 +186,7 @@ FILE *W_OpenWadFile(const char **filename, boolean useerrors)
 static inline void W_LoadDehackedLumpsPK3(UINT16 wadnum)
 {
 	UINT16 posStart, posEnd;
+#ifdef HAVE_BLUA
 	posStart = W_CheckNumForFolderStartPK3("Lua/", wadnum, 0);
 	if (posStart != INT16_MAX)
 	{
@@ -193,6 +195,7 @@ static inline void W_LoadDehackedLumpsPK3(UINT16 wadnum)
 		for (; posStart < posEnd; posStart++)
 			LUA_LoadLump(wadnum, posStart);
 	}
+#endif
 	posStart = W_CheckNumForFolderStartPK3("SOC/", wadnum, 0);
 	if (posStart != INT16_MAX)
 	{
@@ -792,12 +795,18 @@ UINT16 W_InitFile(const char *filename)
 		CONS_Printf(M_GetText("Loading SOC from %s\n"), wadfile->filename);
 		DEH_LoadDehackedLumpPwad(numwadfiles - 1, 0);
 		break;
+#ifdef HAVE_BLUA
 	case RET_LUA:
 		LUA_LoadLump(numwadfiles - 1, 0);
 		break;
+#endif
 	default:
 		break;
 	}
+
+	if (refreshdirmenu & REFRESHDIR_GAMEDATA)
+		G_LoadGameData();
+	DEH_UpdateMaxFreeslots();
 
 	W_InvalidateLumpnumCache();
 	return wadfile->numlumps;

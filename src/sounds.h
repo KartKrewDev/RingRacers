@@ -891,6 +891,7 @@ typedef enum
 	sfx_mkuma,
 	sfx_toada,
 	sfx_bhurry,
+	sfx_bsnipe,
 	sfx_itfree,
 	sfx_dbgsal,
 

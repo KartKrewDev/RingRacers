@@ -71,6 +71,7 @@ typedef enum
 	PT_CLIENT3MIS,
 	PT_CLIENT4CMD,    // 4P
 	PT_CLIENT4MIS,
+	PT_BASICKEEPALIVE,// Keep the network alive during wipes, as tics aren't advanced and NetUpdate isn't called
 
 	PT_CANFAIL,       // This is kind of a priority. Anything bigger than CANFAIL
 	                  // allows HSendPacket(*, true, *, *) to return false.
@@ -282,6 +283,8 @@ typedef struct
 
 	tic_t jointime;
 
+	UINT8 splitscreenindex;
+
 	//player->mo stuff
 	UINT8 hasmo; // Boolean
 
@@ -449,10 +452,10 @@ typedef struct
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
 		askinfo_pak askinfo;                //          61 bytes
 		msaskinfo_pak msaskinfo;            //          22 bytes
-		plrinfo playerinfo[MAXPLAYERS];     //        1152 bytes (I'd say 36~38)
-		plrconfig playerconfig[MAXPLAYERS]; // (up to) 896 bytes (welp they ARE)
+		plrinfo playerinfo[MAXPLAYERS];     //         576 bytes(?)
+		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
 #ifdef NEWPING
-		UINT32 pingtable[MAXPLAYERS];       //         128 bytes
+		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
 #endif
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
@@ -518,6 +521,7 @@ extern tic_t jointimeout;
 extern UINT16 pingmeasurecount;
 extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
+extern tic_t servermaxping;
 #endif
 
 extern consvar_t
@@ -538,6 +542,7 @@ void SendNetXCmd3(netxcmd_t id, const void *param, size_t nparam); // splitsreen
 void SendNetXCmd4(netxcmd_t id, const void *param, size_t nparam); // splitsreen4 player
 
 // Create any new ticcmds and broadcast to other players.
+void NetKeepAlive(void);
 void NetUpdate(void);
 
 void SV_StartSinglePlayerServer(void);

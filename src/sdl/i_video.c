@@ -64,7 +64,7 @@
 #include "../m_menu.h"
 #include "../d_main.h"
 #include "../s_sound.h"
-#include "../i_sound.h"  // midi pause/unpause
+#include "../i_sound.h"  	// midi pause/unpause
 #include "../i_joy.h"
 #include "../st_stuff.h"
 #include "../g_game.h"
@@ -1229,7 +1229,7 @@ void I_GetEvent(void)
 				// update the menu
 				if (currentMenu == &OP_JoystickSetDef)
 					M_SetupJoystickMenu(0);
-			 	break;
+				break;
 			case SDL_QUIT:
 				I_Quit();
 				M_QuitResponse('y');
@@ -1360,6 +1360,9 @@ void I_FinishUpdate(void)
 
 	if (cv_ticrate.value)
 		SCR_DisplayTicRate();
+
+	if (cv_showping.value && netgame && consoleplayer != serverplayer)
+		SCR_DisplayLocalPing();
 
 	if (rendermode == render_soft && screens[0])
 	{

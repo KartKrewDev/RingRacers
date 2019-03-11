@@ -6662,7 +6662,7 @@ static void P_MovePlayer(player_t *player)
 				//CONS_Printf("leftover turn (%s): %5d or %4d%%\n",
 				//				player_names[player-players],
 				//				(INT16) (cmd->angleturn - (player->mo->angle>>16)),
-				//				(INT16) (cmd->angleturn - (player->mo->angle>>16)) * 100 / (angle_diff ?: 1));
+				//				(INT16) (cmd->angleturn - (player->mo->angle>>16)) * 100 / (angle_diff ? angle_diff : 1));
 			}
 		}
 
@@ -7322,74 +7322,6 @@ static void P_MovePlayer(player_t *player)
 	// not just when spinning or playing as Knuckles
 	if (CheckForBustableBlocks)
 		P_CheckBustableBlocks(player);
-
-	// Special handling for
-	// gliding in 2D mode
-	if ((twodlevel || player->mo->flags2 & MF2_TWOD) && player->pflags & PF_GLIDING && player->charability == CA_GLIDEANDCLIMB
-		&& !(player->mo->flags & MF_NOCLIP))
-	{
-		msecnode_t *node; // only place it's being used in P_MovePlayer now
-		fixed_t oldx;
-		fixed_t oldy;
-		fixed_t floorz, ceilingz;
-
-		oldx = player->mo->x;
-		oldy = player->mo->y;
-
-		P_UnsetThingPosition(player->mo);
-		player->mo->x += player->mo->momx;
-		player->mo->y += player->mo->momy;
-		P_SetThingPosition(player->mo);
-
-		for (node = player->mo->touching_sectorlist; node; node = node->m_sectorlist_next)
-		{
-			if (!node->m_sector)
-				break;
-
-			if (node->m_sector->ffloors)
-			{
-				ffloor_t *rover;
-				fixed_t topheight, bottomheight;
-
-				for (rover = node->m_sector->ffloors; rover; rover = rover->next)
-				{
-					if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER))
-						continue;
-
-					topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-					bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-					if (topheight > player->mo->z && bottomheight < player->mo->z)
-					{
-						P_ResetPlayer(player);
-						S_StartSound(player->mo, sfx_s3k4a);
-						player->climbing = 5;
-						player->mo->momx = player->mo->momy = player->mo->momz = 0;
-						break;
-					}
-				}
-			}
-
-			floorz = P_GetFloorZ(player->mo, node->m_sector, player->mo->x, player->mo->y, NULL);
-			ceilingz = P_GetCeilingZ(player->mo, node->m_sector, player->mo->x, player->mo->y, NULL);
-
-			if (player->mo->z+player->mo->height > ceilingz
-				&& node->m_sector->ceilingpic == skyflatnum)
-				continue;
-
-			if (floorz > player->mo->z || ceilingz < player->mo->z)
-			{
-				P_ResetPlayer(player);
-				S_StartSound(player->mo, sfx_s3k4a);
-				player->climbing = 5;
-				player->mo->momx = player->mo->momy = player->mo->momz = 0;
-				break;
-			}
-		}
-		P_UnsetThingPosition(player->mo);
-		player->mo->x = oldx;
-		player->mo->y = oldy;
-		P_SetThingPosition(player->mo);
-	}
 
 	// Check for a BOUNCY sector!
 	if (CheckForBouncySector)
@@ -8165,6 +8097,8 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled)
 {
+	static UINT8 lookbackdelay[4] = {0,0,0,0};
+	UINT8 num;
 	angle_t angle = 0, focusangle = 0, focusaiming = 0;
 	fixed_t x, y, z, dist, height, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
 	fixed_t pan, xpan, ypan;
@@ -8293,6 +8227,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (thiscam == &camera)
 	{
+		num = 0;
 		camspeed = cv_cam_speed.value;
 		camstill = cv_cam_still.value;
 		camrotate = cv_cam_rotate.value;
@@ -8302,6 +8237,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	else if (thiscam == &camera2) // Camera 2
 	{
+		num = 1;
 		camspeed = cv_cam2_speed.value;
 		camstill = cv_cam2_still.value;
 		camrotate = cv_cam2_rotate.value;
@@ -8311,6 +8247,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	else if (thiscam == &camera3) // Camera 3
 	{
+		num = 2;
 		camspeed = cv_cam3_speed.value;
 		camstill = cv_cam3_still.value;
 		camrotate = cv_cam3_rotate.value;
@@ -8320,6 +8257,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	else // Camera 4
 	{
+		num = 3;
 		camspeed = cv_cam4_speed.value;
 		camstill = cv_cam4_still.value;
 		camrotate = cv_cam4_rotate.value;
@@ -8342,19 +8280,23 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	else if (player->exiting) // SRB2Kart: Leave the camera behind while exiting, for dramatic effect!
 		camstill = true;
-	else if (lookback) // SRB2kart - Camera flipper
+	else if (lookback || lookbackdelay[num]) // SRB2kart - Camera flipper
 	{
-		camrotate += 180;
-		camspeed *= 2;
-		if (camspeed > FRACUNIT)
-			camspeed = FRACUNIT;
+		camspeed = FRACUNIT;
+		if (lookback)
+		{
+			camrotate += 180;
+			lookbackdelay[num] = 2;
+		}
+		else
+			lookbackdelay[num]--;
 	}
 
 	if (mo->eflags & MFE_VERTICALFLIP)
 		camheight += thiscam->height;
 
-	if (splitscreen == 1)
-		camspeed = (3*camspeed)/4;
+	if (camspeed > FRACUNIT)
+		camspeed = FRACUNIT;
 
 	if (timeover)
 		angle = mo->angle + FixedAngle(camrotate*FRACUNIT);
@@ -8364,16 +8306,21 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		angle = thiscam->angle;
 	else
 	{
-		angle_t input = focusangle + FixedAngle(camrotate<<FRACBITS) - thiscam->angle;
-		boolean invert = (input > ANGLE_180);
-		if (invert)
-			input = InvAngle(input);
+		if (camspeed == FRACUNIT)
+			angle = focusangle + FixedAngle(camrotate<<FRACBITS);
+		else
+		{
+			angle_t input = focusangle + FixedAngle(camrotate<<FRACBITS) - thiscam->angle;
+			boolean invert = (input > ANGLE_180);
+			if (invert)
+				input = InvAngle(input);
 
-		input = FixedAngle(FixedMul(AngleFixed(input), camspeed));
-		if (invert)
-			input = InvAngle(input);
+			input = FixedAngle(FixedMul(AngleFixed(input), camspeed));
+			if (invert)
+				input = InvAngle(input);
 
-		angle = thiscam->angle + input;
+			angle = thiscam->angle + input;
+		}
 	}
 
 	if (!resetcalled && (leveltime > starttime && timeover != 2)
@@ -8399,13 +8346,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		dist -= FixedMul(11*dist/16, player->kartstuff[k_boostcam]);
 		height -= FixedMul(height, player->kartstuff[k_boostcam]);
-	}
-
-	// in splitscreen modes, mess with the camera distances to make it feel proportional to how it feels normally
-	if (splitscreen == 1) // widescreen splits should get x1.5 distance
-	{
-		dist = FixedMul(dist, 3*FRACUNIT/2);
-		height = FixedMul(height, 3*FRACUNIT/2);
 	}
 
 	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
@@ -8673,10 +8613,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		thiscam->momx = x - thiscam->x;
 		thiscam->momy = y - thiscam->y;
-		if (splitscreen == 1) // Wide-screen needs to follow faster, due to a smaller vertical:horizontal ratio of screen space
-			thiscam->momz = FixedMul(z - thiscam->z, (3*camspeed)/4);
-		else
-			thiscam->momz = FixedMul(z - thiscam->z, camspeed/2);
+		thiscam->momz = FixedMul(z - thiscam->z, camspeed/2);
 	}
 
 	thiscam->pan = pan;
@@ -8697,8 +8634,25 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (twodlevel || (mo->flags2 & MF2_TWOD) || (!camstill && !timeover)) // Keep the view still...
 	{
 		G_ClipAimingPitch((INT32 *)&angle);
-		dist = thiscam->aiming - angle;
-		thiscam->aiming -= (dist>>3);
+
+		if (camspeed == FRACUNIT)
+			thiscam->aiming = angle;
+		else
+		{
+			angle_t input;
+			boolean invert;
+
+			input = thiscam->aiming - angle;
+			invert = (input > ANGLE_180);
+			if (invert)
+				input = InvAngle(input);
+
+			input = FixedAngle(FixedMul(AngleFixed(input), (5*camspeed)/16));
+			if (invert)
+				input = InvAngle(input);
+
+			thiscam->aiming -= input;
+		}
 	}
 
 	if (!resetcalled && (player->playerstate == PST_DEAD || player->playerstate == PST_REBORN))
@@ -8763,6 +8717,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		}
 		player->spectator = false;
 		player->pflags &= ~PF_WANTSTOJOIN;
+		player->kartstuff[k_spectatewait] = 0;
 		player->ctfteam = changeto;
 		player->playerstate = PST_REBORN;
 
@@ -8787,6 +8742,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		}
 		player->spectator = false;
 		player->pflags &= ~PF_WANTSTOJOIN;
+		player->kartstuff[k_spectatewait] = 0;
 		player->playerstate = PST_REBORN;
 
 		//Reset away view
@@ -9876,4 +9832,3 @@ void P_PlayerAfterThink(player_t *player)
 
 	K_KartPlayerAfterThink(player);
 }
-

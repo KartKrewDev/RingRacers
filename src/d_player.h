@@ -348,10 +348,13 @@ typedef enum
 	k_wanted, 			// Timer for determining WANTED status, lowers when hitting people, prevents the game turning into Camp Lazlo
 	k_yougotem, 		// "You Got Em" gfx when hitting someone as a karma player via a method that gets you back in the game instantly
 
-	// v1.0.2 vars
+	// v1.0.2+ vars
 	k_itemblink,		// Item flashing after roulette, prevents Hyudoro stealing AND serves as a mashing indicator
 	k_itemblinkmode,	// Type of flashing: 0 = white (normal), 1 = red (mashing), 2 = rainbow (enhanced items)
 	k_getsparks,		// Disable drift sparks at low speed, JUST enough to give acceleration the actual headstart above speed
+	k_jawztargetdelay,	// Delay for Jawz target switching, to make it less twitchy
+	k_spectatewait,		// How long have you been waiting as a spectator
+	k_growcancel,		// Hold the item button down to cancel Grow
 	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
 
 	NUMKARTSTUFF
@@ -570,6 +573,8 @@ typedef struct player_s
 	UINT8 bot;
 
 	tic_t jointime; // Timer when player joins game to change skin/color
+
+	UINT8 splitscreenindex;
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif

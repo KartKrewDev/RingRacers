@@ -34,6 +34,8 @@ static UINT8 hud_enabled[(hud_MAX/8)+1];
 
 static UINT8 hudAvailable; // hud hooks field
 
+static UINT8 camnum = 1;
+
 // must match enum hud in lua_hud.h
 static const char *const hud_disable_options[] = {
 	"stagetitle",
@@ -134,7 +136,8 @@ enum cameraf {
 	camera_height,
 	camera_momx,
 	camera_momy,
-	camera_momz
+	camera_momz,
+	camera_pnum
 };
 
 
@@ -153,6 +156,7 @@ static const char *const camera_opt[] = {
 	"momx",
 	"momy",
 	"momz",
+	"pnum",
 	NULL};
 
 static int lib_getHudInfo(lua_State *L)
@@ -308,6 +312,9 @@ static int camera_get(lua_State *L)
 	case camera_momz:
 		lua_pushinteger(L, cam->momz);
 		break;
+	case camera_pnum:
+		lua_pushinteger(L, camnum);
+		break;
 	}
 	return 1;
 }
@@ -400,6 +407,24 @@ static int libd_drawPaddedNum(lua_State *L)
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
 	V_DrawPaddedTallNum(x, y, flags, num, digits);
+	return 0;
+}
+
+
+static int libd_drawPingNum(lua_State *L)
+{
+	INT32 x, y, flags, num;
+	const UINT8 *colormap = NULL;
+	HUDONLY
+	x = luaL_checkinteger(L, 1);
+	y = luaL_checkinteger(L, 2);
+	num = luaL_checkinteger(L, 3);
+	flags = luaL_optinteger(L, 4, 0);
+	flags &= ~V_PARAMMASK; // Don't let crashes happen.
+	if (!lua_isnoneornil(L, 5))
+		colormap = *((UINT8 **)luaL_checkudata(L, 5, META_COLORMAP));
+
+	V_DrawPingNum(x, y, flags, num, colormap);
 	return 0;
 }
 
@@ -606,6 +631,7 @@ static luaL_Reg lib_draw[] = {
 	{"drawScaled", libd_drawScaled},
 	{"drawNum", libd_drawNum},
 	{"drawPaddedNum", libd_drawPaddedNum},
+	{"drawPingNum", libd_drawPingNum},
 	{"drawFill", libd_drawFill},
 	{"fadeScreen", libd_fadeScreen},
 	{"drawString", libd_drawString},
@@ -772,13 +798,25 @@ void LUAh_GameHUD(player_t *stplayr)
 	LUA_PushUserdata(gL, stplayr, META_PLAYER);
 
 	if (splitscreen > 2 && stplayr == &players[fourthdisplayplayer])
+	{
 		LUA_PushUserdata(gL, &camera4, META_CAMERA);
+		camnum = 4;
+	}
 	else if (splitscreen > 1 && stplayr == &players[thirddisplayplayer])
+	{
 		LUA_PushUserdata(gL, &camera3, META_CAMERA);
+		camnum = 3;
+	}
 	else if (splitscreen && stplayr == &players[secondarydisplayplayer])
+	{
 		LUA_PushUserdata(gL, &camera2, META_CAMERA);
+		camnum = 2;
+	}
 	else
+	{
 		LUA_PushUserdata(gL, &camera, META_CAMERA);
+		camnum = 1;
+	}
 
 	lua_pushnil(gL);
 	while (lua_next(gL, -5) != 0) {
