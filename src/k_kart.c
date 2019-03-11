@@ -2316,7 +2316,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 static void K_RemoveGrowShrink(player_t *player)
 {
 	player->kartstuff[k_growshrinktimer] = 0;
-	player->kartstuff[k_growcancel] = 0;
+	player->kartstuff[k_growcancel] = -1;
 
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
@@ -5554,14 +5554,24 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				// Grow Canceling
 				else if (player->kartstuff[k_growshrinktimer] > 0)
 				{
-					if (cmd->buttons & BT_ATTACK)
+					if (player->kartstuff[k_growcancel] >= 0)
 					{
-						player->kartstuff[k_growcancel]++;
-						if (player->kartstuff[k_growcancel] > 26)
-							K_RemoveGrowShrink(player);
+						if (cmd->buttons & BT_ATTACK)
+						{
+							player->kartstuff[k_growcancel]++;
+							if (player->kartstuff[k_growcancel] > 26)
+								K_RemoveGrowShrink(player);
+						}
+						else
+							player->kartstuff[k_growcancel] = 0;
 					}
 					else
-						player->kartstuff[k_growcancel] = 0;
+					{
+						if ((cmd->buttons & BT_ATTACK) || (player->pflags & PF_ATTACKDOWN))
+							player->kartstuff[k_growcancel] = -1;
+						else
+							player->kartstuff[k_growcancel] = 0;
+					}
 				}
 				else if (player->kartstuff[k_itemamount] <= 0)
 				{
@@ -5929,7 +5939,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->kartstuff[k_curshield] = 0;
 
 		if (player->kartstuff[k_growshrinktimer] <= 0)
-			player->kartstuff[k_growcancel] = 0;
+			player->kartstuff[k_growcancel] = -1;
 
 		if (player->kartstuff[k_itemtype] == KITEM_SPB
 			|| player->kartstuff[k_itemtype] == KITEM_SHRINK
@@ -7140,7 +7150,7 @@ static void K_drawKartItem(void)
 		}
 		else if (stplyr->kartstuff[k_growshrinktimer] > 0)
 		{
-			if (stplyr->kartstuff[k_growcancel])
+			if (stplyr->kartstuff[k_growcancel] > 0)
 			{
 				itembar = stplyr->kartstuff[k_growcancel];
 				maxl = 26;
