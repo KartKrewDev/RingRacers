@@ -7914,10 +7914,10 @@ static void K_drawKartRingsAndLives(void)
 {
 #define RINGANIM_NUMFRAMES 10
 #define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
-#define RINGANIM_DELAYMAX 3
+#define RINGANIM_DELAYMAX 5
 
 	static UINT8 ringanim_frame = 0;
-	static UINT8 ringanim_tics = 1;
+	static UINT8 ringanim_tics = 0;
 	static UINT8 ringanim_delay = RINGANIM_DELAYMAX+1;
 
 	SINT8 ringanim_realframe = ringanim_frame;
@@ -7960,26 +7960,29 @@ static void K_drawKartRingsAndLives(void)
 		V_DrawMappedPatch(LAPS_X+29, LAPS_Y-11, V_HUDTRANS|splitflags, kp_facenum[secondnum], ringmap);
 	}
 
-	if (ringanim_frame == 0) // Update delay on resting frame
-	{
-		if (stplyr->kartstuff[k_ringboost])
-			ringanim_delay = 0; // set the fast spin animation!
-		else if (ringanim_delay <= RINGANIM_DELAYMAX)
-			ringanim_delay++; // slow down spin
-	}
+	// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
+	if (stplyr->kartstuff[k_ringboost] >= 30)
+		ringanim_delay = 0;
+	else
+		ringanim_delay = ((RINGANIM_DELAYMAX+1) * (30 - stplyr->kartstuff[k_ringboost])) / 30;
 
-	if (ringanim_delay > RINGANIM_DELAYMAX)
+	if (ringanim_frame == 0 && ringanim_delay > RINGANIM_DELAYMAX)
 	{
 		ringanim_frame = 0;
-		ringanim_tics = 1;
+		ringanim_tics = 0;
 	}
 	else if ((ringanim_tics--) <= 0)
 	{
 		if (ringanim_delay == 0) // fast spin animation
+		{
 			ringanim_frame = ((ringanim_frame+2) % RINGANIM_NUMFRAMES);
+			ringanim_tics = 0;
+		}
 		else
+		{
 			ringanim_frame = ((ringanim_frame+1) % RINGANIM_NUMFRAMES);
-		ringanim_tics = max(1, ringanim_delay);
+			ringanim_tics = min(RINGANIM_DELAYMAX, ringanim_delay)-1;
+		}
 	}
 
 #undef RINGANIM_NUMFRAMES
