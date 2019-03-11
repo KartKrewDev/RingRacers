@@ -5463,8 +5463,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			|| player->kartstuff[k_itemamount]
 			|| player->kartstuff[k_itemroulette]
 			|| player->kartstuff[k_growshrinktimer]
-			|| player->kartstuff[k_rocketsneakertimer]
-			|| player->kartstuff[k_eggmanexplode]))
+			|| player->kartstuff[k_rocketsneakertimer]))
 			player->kartstuff[k_userings] = 1;
 		else
 			player->kartstuff[k_userings] = 0;
@@ -5529,14 +5528,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Other items
 			else
 			{
-				// Eggman Monitor exploding
-				if (player->kartstuff[k_eggmanexplode])
-				{
-					if (ATTACK_IS_DOWN && player->kartstuff[k_eggmanexplode] <= 3*TICRATE && player->kartstuff[k_eggmanexplode] > 1)
-						player->kartstuff[k_eggmanexplode] = 1;
-				}
 				// Eggman Monitor throwing
-				else if (player->kartstuff[k_eggmanheld])
+				if (player->kartstuff[k_eggmanheld])
 				{
 					if (ATTACK_IS_DOWN)
 					{
