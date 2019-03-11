@@ -3625,6 +3625,7 @@ void A_AttractChase(mobj_t *actor)
 
 	if (actor->extravalue1) // SRB2Kart
 	{
+#define RINGBOOSTPWR (((9 - actor->target->player->kartspeed) + (9 - actor->target->player->kartweight)) / 2)
 		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
 		{
 			P_RemoveMobj(actor);
@@ -3635,7 +3636,6 @@ void A_AttractChase(mobj_t *actor)
 		{
 			if (actor->extravalue1 >= 21)
 			{
-#define RINGBOOSTPWR (((9 - actor->target->player->kartspeed) + (9 - actor->target->player->kartweight)) / 2)
 				// Base add is 3 tics for 9,9, adds 1.5 tics for each point closer to the 1,1 end
 				actor->target->player->kartstuff[k_ringboost] += ((3*RINGBOOSTPWR)/2) + 3;
 				S_StartSound(actor->target, sfx_s1b5);
@@ -3657,12 +3657,17 @@ void A_AttractChase(mobj_t *actor)
 		{
 			if (actor->extravalue1 >= 16)
 			{
-				P_GivePlayerRings(actor->target->player, 1);
-				actor->target->player->kartstuff[k_pickuprings]--;
+				if (actor->target->player[k_rings] >= 20)
+					actor->target->player->kartstuff[k_ringboost] += ((3*RINGBOOSTPWR)/2) + 3;
+				else
+					P_GivePlayerRings(actor->target->player, 1);
+
 				if (actor->cvmem) // caching
 					S_StartSound(actor->target, sfx_s1c5);
 				else
 					S_StartSound(actor->target, sfx_s227);
+
+				actor->target->player->kartstuff[k_pickuprings]--;
 				P_RemoveMobj(actor);
 				return;
 			}
@@ -3680,6 +3685,7 @@ void A_AttractChase(mobj_t *actor)
 				actor->extravalue1++;
 			}
 		}
+#undef RINGBOOSTPWR
 	}
 	else
 	{
