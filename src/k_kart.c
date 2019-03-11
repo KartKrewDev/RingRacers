@@ -1268,6 +1268,7 @@ static void K_BumpWipeoutPlayer(player_t *player, INT32 length)
 		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 		return;
 
+	player->kartstuff[k_ringboost] = 0;
 	player->kartstuff[k_driftboost] = 0;
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
@@ -2236,6 +2237,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 
 	//player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_driftboost] = 0;
+	player->kartstuff[k_ringboost] = 0;
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
@@ -2377,6 +2379,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 
 	player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_driftboost] = 0;
+	player->kartstuff[k_ringboost] = 0;
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
@@ -2502,6 +2505,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 
 	player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_driftboost] = 0;
+	player->kartstuff[k_ringboost] = 0;
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
@@ -4787,7 +4791,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_ringdelay])
 		player->kartstuff[k_ringdelay]--;
 
-	if (player->kartstuff[k_ringboost])
+	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer])
+		player->kartstuff[k_ringboost] = 0;
+	else if (player->kartstuff[k_ringboost])
 		player->kartstuff[k_ringboost]--;
 
 	if (player->kartstuff[k_sneakertimer])
