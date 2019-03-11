@@ -3687,7 +3687,13 @@ void A_AttractChase(mobj_t *actor)
 		if (actor->threshold > 0)
 			actor->threshold--;
 
-		// spilled rings flicker before disappearing, and get capped to a certain speed
+		// Rings flicker before disappearing
+		if (actor->fuse && actor->fuse < 5*TICRATE && (leveltime & 1))
+			actor->flags2 |= MF2_DONTDRAW;
+		else
+			actor->flags2 &= ~MF2_DONTDRAW;
+
+		// spilled rings have ghost trails and get capped to a certain speed
 		if (actor->type == (mobjtype_t)actor->info->reactiontime)
 		{
 			const fixed_t maxspeed = 4<<FRACBITS;
@@ -3700,10 +3706,7 @@ void A_AttractChase(mobj_t *actor)
 				actor->momy = FixedMul(FixedDiv(actor->momy, oldspeed), newspeed);
 			}
 
-			if (actor->fuse && actor->fuse < 3*TICRATE && leveltime & 1)
-				actor->flags2 |= MF2_DONTDRAW;
-			else
-				actor->flags2 &= ~MF2_DONTDRAW;
+			P_SpawnGhostMobj(actor)->tics = 3;
 		}
 
 		if (actor->tracer && actor->tracer->player && actor->tracer->health
@@ -8571,6 +8574,15 @@ void A_SPBChase(mobj_t *actor)
 			actor->momx = cx + FixedMul(FixedMul(xyspeed, FINECOSINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 			actor->momy = cy + FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 			actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
+
+			// Spawn a trail of rings behind the SPB!
+			if (leveltime % 9 == 0)
+			{
+				mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
+					actor->z - actor->momz + (24*mapobjectscale), MT_RING);
+				ring->threshold = 10;
+				ring->fuse = 120*TICRATE;
+			}
 
 			// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
 			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
