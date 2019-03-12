@@ -2758,12 +2758,11 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 {
 	INT32 i, radius, height;
 	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
-	K_MatchGenericExtraFlags(smoldering, source);
-
 	mobj_t *dust;
 	mobj_t *truc;
 	INT32 speed, speed2;
 
+	K_MatchGenericExtraFlags(smoldering, source);
 	smoldering->tics = TICRATE*3;
 	radius = source->radius>>FRACBITS;
 	height = source->height>>FRACBITS;

@@ -3657,7 +3657,7 @@ void A_AttractChase(mobj_t *actor)
 		{
 			if (actor->extravalue1 >= 16)
 			{
-				if (actor->target->player[k_rings] >= 20)
+				if (actor->target->player->kartstuff[k_rings] >= 20)
 					actor->target->player->kartstuff[k_ringboost] += ((3*RINGBOOSTPWR)/2) + 3;
 				else
 					P_GivePlayerRings(actor->target->player, 1);
