@@ -6533,6 +6533,7 @@ static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjty
 				/*if (battleovertime.enabled < 10*TICRATE)
 					mo->flags2 |= MF2_SHADOW;*/
 				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
+				mo->z += P_RandomRange(0,48) * mo->scale;
 				break;
 			default:
 				break;
@@ -6583,7 +6584,7 @@ void P_RunBattleOvertime(void)
 	// 16 orbs at the normal minimum size of 512
 	{
 		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
-		fixed_t scale = (mapobjectscale + battleovertime.radius/2048);
+		fixed_t scale = mapobjectscale + (battleovertime.radius/2048);
 		fixed_t sprwidth = 32*scale;
 		fixed_t circumference = FixedMul(pi, battleovertime.radius<<1);
 		UINT16 orbs = circumference / sprwidth;
@@ -6594,7 +6595,7 @@ void P_RunBattleOvertime(void)
 			angle_t ang = (i * angoff) + FixedAngle((leveltime/2)<<FRACBITS);
 			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
 			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
-			P_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEORB, true);
+			P_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEORB, false);
 		}
 	}
 
