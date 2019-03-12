@@ -92,7 +92,6 @@ boolean majormods = false; // Set if Lua/Gameplay SOC/replacement map has been a
 boolean savemoddata = false;
 UINT8 paused;
 UINT8 modeattacking = ATTACKING_NONE;
-boolean disableSpeedAdjust = true;
 boolean imcontinuing = false;
 boolean runemeraldmanager = false;
 
@@ -437,6 +436,9 @@ consvar_t cv_chatbacktint = {"chatbacktint", "On", CV_SAVE, CV_OnOff, NULL, 0, N
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
 consvar_t cv_consolechat = {"chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+// Pause game upon window losing focus
+consvar_t cv_pauseifunfocused = {"pauseifunfocused", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // Display song credits
 consvar_t cv_songcredits = {"songcredits", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -2374,6 +2376,7 @@ void G_PlayerReborn(INT32 player)
 	INT32 comebackpoints;
 	INT32 wanted;
 	INT32 rings;
+	INT32 respawnflip;
 	boolean songcredit = false;
 
 	score = players[player].score;
@@ -2415,6 +2418,7 @@ void G_PlayerReborn(INT32 player)
 	starposty = players[player].starposty;
 	starpostz = players[player].starpostz;
 	starpostnum = players[player].starpostnum;
+	respawnflip = players[player].kartstuff[k_starpostflip];	//SRB2KART
 	starpostangle = players[player].starpostangle;
 	jumpfactor = players[player].jumpfactor;
 	thokitem = players[player].thokitem;
@@ -2538,6 +2542,7 @@ void G_PlayerReborn(INT32 player)
 	p->kartstuff[k_comebacktimer] = comebacktime;
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
+	p->kartstuff[k_starpostflip] = respawnflip;
 
 	// Don't do anything immediately
 	p->pflags |= PF_USEDOWN;
@@ -5118,17 +5123,16 @@ void G_GhostTicker(void)
 				INT32 type = -1;
 				if (g->mo->skin)
 				{
-					skin_t *skin = (skin_t *)g->mo->skin;
 					switch (ziptic & EZT_THOKMASK)
 					{
 					case EZT_THOK:
-						type = skin->thokitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].painchance : (UINT32)skin->thokitem;
+						type = (UINT32)mobjinfo[MT_PLAYER].painchance;
 						break;
 					case EZT_SPIN:
-						type = skin->spinitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].damage : (UINT32)skin->spinitem;
+						type = (UINT32)mobjinfo[MT_PLAYER].damage;
 						break;
 					case EZT_REV:
-						type = skin->revitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].raisestate : (UINT32)skin->revitem;
+						type = (UINT32)mobjinfo[MT_PLAYER].raisestate;
 						break;
 					}
 				}

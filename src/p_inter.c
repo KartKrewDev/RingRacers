@@ -141,6 +141,9 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				|| (weapon != 3 && player->kartstuff[k_itemamount])
 				|| player->kartstuff[k_itemheld])
 				return false;
+
+			if (weapon == 3 && player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+				return false; // No stacking thunder shields!
 		}
 	}
 
@@ -1489,6 +1492,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			player->starpostz = special->z>>FRACBITS;
 			player->starpostangle = special->angle;
 			player->starpostnum = special->health;
+			player->kartstuff[k_starpostflip] = special->spawnpoint->options & MTF_OBJECTFLIP;	// store flipping
 
 			//S_StartSound(toucher, special->info->painsound);
 			return;
