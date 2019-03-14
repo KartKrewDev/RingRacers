@@ -9624,7 +9624,6 @@ static void M_HandleVideoMode(INT32 ch)
 // Monitor Toggles
 // ===============
 static consvar_t *kartitemcvs[NUMKARTRESULTS-1] = {
-	&cv_superring,
 	&cv_sneaker,
 	&cv_rocketsneaker,
 	&cv_invincibility,
@@ -9640,6 +9639,7 @@ static consvar_t *kartitemcvs[NUMKARTRESULTS-1] = {
 	&cv_thundershield,
 	&cv_hyudoro,
 	&cv_pogospring,
+	&cv_superring,
 	&cv_kitchensink,
 	&cv_triplesneaker,
 	&cv_triplebanana,
