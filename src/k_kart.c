@@ -1541,6 +1541,117 @@ static void K_UpdateOffroad(player_t *player)
 		player->kartstuff[k_offroad] = 0;
 }
 
+/**	\brief	Updates the player's drafting values once per frame
+
+	\param	player	player object passed from K_KartPlayerThink
+
+	\return	void
+*/
+static void K_UpdateDraft(player_t *player)
+{
+	fixed_t topspd = K_GetKartSpeed(player, false);
+	fixed_t draftdistance;
+	UINT8 i;
+
+	// Not enough speed to draft.
+	if (player->speed < 20*mapobjectscale)
+		return;
+
+	// Distance you have to be to draft. If you're still accelerating, then this distance is lessened.
+	// This distance biases toward low weight! (min weight is 2368 units, max weight is 832 units) 
+	draftdistance = (832 + ((9 - player->kartweight) * 192)) * mapobjectscale;
+	if (player->speed < topspd)
+		draftdistance = FixedDiv(FixedMul(player->speed, draftdistance), topspd);
+
+	// Let's hunt for players to draft off of!
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		fixed_t dist;
+		angle_t yourangle, theirangle, diff;
+
+		if (!playeringame[i] || players[i].spectator || !players[i].mo)
+			continue;
+
+		// Don't draft on yourself :V
+		if (&players[i] == player)
+			continue;
+
+		// Not enough speed to draft off of.
+		if (players[i].speed < 20*mapobjectscale)
+			continue;
+
+		dist = P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x, players[i].mo->y - player->mo->y), players[i].mo->z - player->mo->z);
+
+		// Not close enough to draft.
+		if (dist > draftdistance)
+			continue;
+
+		yourangle = R_PointToAngle2(0,0,player->mo->momx,player->mo->momy);
+		theirangle = R_PointToAngle2(0,0,players[i].mo->momx,players[i].mo->momy);
+
+		diff = yourangle - theirangle;
+		if (diff > ANGLE_180)
+			diff = InvAngle(diff);
+
+		// Not moving in the same direction.
+		if (diff > ANGLE_90)
+			continue;
+
+		player->kartstuff[k_draftleeway] = TICRATE/2;
+
+		// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
+		// How much this increments every tic biases toward acceleration! (min speed is 6.25% per tic, max speed is 0.25% per tic)
+		if (player->kartstuff[k_draftpower] < FRACUNIT)
+			player->kartstuff[k_draftpower] += (FRACUNIT/400) + ((9 - player->kartspeed) * ((3*FRACUNIT) / 400));
+
+		if (player->kartstuff[k_draftpower] > FRACUNIT)
+			player->kartstuff[k_draftpower] = FRACUNIT;
+
+		// Spawn in the visual!
+		if (leveltime & 1)
+		{
+			const fixed_t spacing = 256;
+			UINT8 amt = (dist / mapobjectscale) / spacing;
+			UINT8 offset = ((leveltime / 3) % 3);
+			fixed_t stepx, stepy, stepz;
+			fixed_t curx, cury, curz;
+
+			stepx = (players[i].mo->x - player->mo->x) / amt;
+			stepy = (players[i].mo->y - player->mo->y) / amt;
+			stepz = ((players[i].mo->z + (players[i].mo->height / 2)) - (player->mo->z + (player->mo->height / 2))) / amt;
+
+			curx = player->mo->x + stepx;
+			cury = player->mo->y + stepy;
+			curz = player->mo->z + stepz;
+
+			while (amt > 0)
+			{
+				if (offset == 0)
+				{
+					mobj_t *band = P_SpawnMobj(curx, cury, curz + (24*mapobjectscale), MT_THOK);
+					P_SetMobjState(band, S_DRAFTBAND);
+					band->color = player->skincolor;
+				}
+
+				curx += stepx;
+				cury += stepy;
+				curz += stepz;
+	
+				offset = (offset+1) % 3;
+				amt--;
+			}
+		}
+
+		return; // Finished doing our draft.
+	}
+
+	// No one to draft off of? Then you can knock that off.
+	if (player->kartstuff[k_draftleeway]) // Prevent small disruptions from stopping your draft.
+		player->kartstuff[k_draftleeway]--;
+	else if (player->kartstuff[k_draftpower]) // Remove draft speed boost.
+		player->kartstuff[k_draftpower] = 0;
+}
+
 void K_KartPainEnergyFling(player_t *player)
 {
 	static const UINT8 numfling = 5;
@@ -2032,6 +2143,13 @@ static void K_GetKartBoostPower(player_t *player)
 
 	// don't average them anymore, this would make a small boost and a high boost less useful
 	// just take the highest we want instead
+
+	// Drafting bonuses
+	if (player->kartstuff[k_draftpower] > 0)
+	{
+		speedboost += player->kartstuff[k_draftpower];
+		accelboost += player->kartstuff[k_draftpower];
+	}
 
 	player->kartstuff[k_boostpower] = boostpower;
 
@@ -4662,6 +4780,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 {
 	K_UpdateOffroad(player);
+	K_UpdateDraft(player);
 	K_UpdateEngineSounds(player, cmd); // Thanks, VAda!
 	K_GetKartBoostPower(player);
 

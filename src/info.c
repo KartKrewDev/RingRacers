@@ -3401,6 +3401,9 @@ state_t states[NUMSTATES] =
 	{SPR_SMOK, 3, 7, {NULL}, 0, 0, S_OPAQUESMOKE5}, // S_OPAQUESMOKE4
 	{SPR_SMOK, 4, 8, {NULL}, 0, 0, S_NULL},         // S_OPAQUESMOKE5
 
+	// Chaotix draft band
+	{SPR_FWRK, FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_NULL}, // S_DRAFTBAND
+
 #ifdef SEENAMES
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
 #endif

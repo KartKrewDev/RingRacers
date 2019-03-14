@@ -4058,6 +4058,8 @@ typedef enum state
 	S_OPAQUESMOKE4,
 	S_OPAQUESMOKE5,
 
+	S_DRAFTBAND,
+
 #ifdef SEENAMES
 	S_NAMECHECK,
 #endif

@@ -7152,6 +7152,9 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_OPAQUESMOKE4",
 	"S_OPAQUESMOKE5",
 
+	// Chaotix draft band
+	"S_DRAFTBAND",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -8375,6 +8378,8 @@ static const char *const KARTSTUFF_LIST[] = {
 	"BOOSTPOWER",
 	"SPEEDBOOST",
 	"ACCELBOOST",
+	"DRAFTPOWER",
+	"DRAFTLEEWAY",
 	"BOOSTCAM",
 	"DESTBOOSTCAM",
 	"TIMEOVERCAM",
