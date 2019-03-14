@@ -2067,8 +2067,10 @@ void K_MomentumToFacing(player_t *player)
 // sets k_boostpower, k_speedboost, and k_accelboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
+	fixed_t sneaker = 0;
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0;
+	UINT8 boostfactor = 1;
 
 	if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow] == 1) // Slow down after you've been bumped
 	{
@@ -2076,79 +2078,63 @@ static void K_GetKartBoostPower(player_t *player)
 		return;
 	}
 
+	// LOVELY magic numbers...
+	switch (gamespeed)
+	{
+		case 0:
+			sneaker = 53740+768;
+			break;
+		case 2:
+			sneaker = 17294+768;
+			break;
+		default:
+			sneaker = 32768;
+			break;
+	}
+
 	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
-	if (!(player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || player->kartstuff[k_sneakertimer])
+	if (!(player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || EITHERSNEAKER(player))
 		&& player->kartstuff[k_offroad] >= 0)
 		boostpower = FixedDiv(boostpower, player->kartstuff[k_offroad] + FRACUNIT);
 
 	if (player->kartstuff[k_bananadrag] > TICRATE)
 		boostpower = (4*boostpower)/5;
 
-	// Banana drag/offroad dust
-	if (boostpower < FRACUNIT
-		&& player->mo && P_IsObjectOnGround(player->mo)
-		&& player->speed > 0
-		&& !player->spectator)
-	{
-		K_SpawnWipeoutTrail(player->mo, true);
-		if (leveltime % 6 == 0)
-			S_StartSound(player->mo, sfx_cdfm70);
-	}
+#define ADDBOOST(s,a) { \
+	speedboost += (s) / boostfactor; \
+	accelboost += (a) / boostfactor; \
+	boostfactor++; \
+}
+
+	if (player->kartstuff[k_levelbooster]) // Level boosters
+		ADDBOOST(sneaker, 8*FRACUNIT); // + 800% acceleration, varying top speed
 
 	if (player->kartstuff[k_sneakertimer]) // Sneaker
-	{
-		switch (gamespeed)
-		{
-			case 0:
-				speedboost = max(speedboost, 53740+768);
-				break;
-			case 2:
-				speedboost = max(speedboost, 17294+768);
-				break;
-			default:
-				speedboost = max(speedboost, 32768);
-				break;
-		}
-		accelboost = max(accelboost, 8*FRACUNIT); // + 800%
-	}
+		ADDBOOST(sneaker, 8*FRACUNIT); // + 800% acceleration, varying top speed
 
 	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
-	{
-		speedboost = max(speedboost, (3*FRACUNIT)/8); // + 37.5%
-		accelboost = max(accelboost, 3*FRACUNIT); // + 300%
-	}
+		ADDBOOST((3*FRACUNIT)/8, 3*FRACUNIT); // + 37.5% top speed, + 300% acceleration
+
+	if (player->kartstuff[k_startboost]) // Startup Boost
+		ADDBOOST(FRACUNIT/4, 6*FRACUNIT); // + 25% top speed, + 600% acceleration
+
+	if (player->kartstuff[k_driftboost]) // Drift Boost
+		ADDBOOST(FRACUNIT/4, 4*FRACUNIT); // + 25% top speed, + 400% acceleration
+
+	if (player->kartstuff[k_ringboost]) // Ring Boost
+		ADDBOOST(FRACUNIT/4, 4*FRACUNIT); // + 20% top speed, + 200% acceleration
 
 	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
 	{
-		speedboost = max(speedboost, FRACUNIT/5); // + 20%
+		// Grow's design is weird with booster stacking.
+		// We'll see how to replace its design BEFORE v2 gets released.
+		speedboost += (FRACUNIT/5); // + 20%
 	}
 
-	if (player->kartstuff[k_ringboost]) // Ring Boost
+	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
-		speedboost = max(speedboost, FRACUNIT/5); // + 20%
-		accelboost = max(accelboost, 2*FRACUNIT); // + 200%
-	}
-
-	if (player->kartstuff[k_driftboost]) // Drift Boost
-	{
-		speedboost = max(speedboost, FRACUNIT/4); // + 25%
-		accelboost = max(accelboost, 4*FRACUNIT); // + 400%
-	}
-
-	if (player->kartstuff[k_startboost]) // Startup Boost
-	{
-		speedboost = max(speedboost, FRACUNIT/4); // + 25%
-		accelboost = max(accelboost, 6*FRACUNIT); // + 300%
-	}
-
-	// don't average them anymore, this would make a small boost and a high boost less useful
-	// just take the highest we want instead
-
-	// Drafting bonuses
-	if (player->kartstuff[k_draftpower] > 0)
-	{
-		speedboost += player->kartstuff[k_draftpower];
-		accelboost += player->kartstuff[k_draftpower];
+		speedboost += player->kartstuff[k_draftpower]; // + 0-100%
+		accelboost += player->kartstuff[k_draftpower]; // + 0-100%
 	}
 
 	player->kartstuff[k_boostpower] = boostpower;
@@ -2157,7 +2143,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (speedboost > player->kartstuff[k_speedboost])
 		player->kartstuff[k_speedboost] = speedboost;
 	else
-		player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost])/(TICRATE/2);
+		player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost]) / (TICRATE/2);
 
 	player->kartstuff[k_accelboost] = accelboost;
 }
@@ -2366,7 +2352,8 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 	if (source && source != player->mo && source->player)
 		K_PlayHitEmSound(source);
 
-	//player->kartstuff[k_sneakertimer] = 0;
+	player->kartstuff[k_sneakertimer] = 0;
+	//player->kartstuff[k_levelbooster] = 0;
 	player->kartstuff[k_driftboost] = 0;
 	player->kartstuff[k_ringboost] = 0;
 
@@ -2509,6 +2496,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 #endif
 
 	player->kartstuff[k_sneakertimer] = 0;
+	player->kartstuff[k_levelbooster] = 0;
 	player->kartstuff[k_driftboost] = 0;
 	player->kartstuff[k_ringboost] = 0;
 
@@ -2635,6 +2623,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	player->mo->momx = player->mo->momy = 0;
 
 	player->kartstuff[k_sneakertimer] = 0;
+	player->kartstuff[k_levelbooster] = 0;
 	player->kartstuff[k_driftboost] = 0;
 	player->kartstuff[k_ringboost] = 0;
 
@@ -3816,7 +3805,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 			player->kartstuff[k_destboostcam] = FixedMul(FRACUNIT, FixedDiv((intendedboost - player->kartstuff[k_speedboost]), intendedboost));
 	}
 
-	if (!player->kartstuff[k_sneakertimer])
+	if (!EITHERSNEAKER(player))
 	{
 		if (type == 2)
 		{
@@ -3846,14 +3835,15 @@ void K_DoSneaker(player_t *player, INT32 type)
 		}
 	}
 
-	player->kartstuff[k_sneakertimer] = sneakertime;
-
 	if (type != 0)
 	{
 		player->pflags |= PF_ATTACKDOWN;
 		K_PlayBoostTaunt(player->mo);
 		player->powers[pw_flashing] = 0; // Stop flashing after boosting
+		player->kartstuff[k_sneakertimer] = sneakertime;
 	}
+	else
+		player->kartstuff[k_levelbooster] = sneakertime;
 }
 
 static void K_DoShrink(player_t *user)
@@ -3932,10 +3922,10 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 				thrust = 72<<FRACBITS;
 			if (mo->player->kartstuff[k_pogospring] != 2)
 			{
-				if (mo->player->kartstuff[k_sneakertimer])
-					thrust = FixedMul(thrust, 5*FRACUNIT/4);
+				if (EITHERSNEAKER(mo->player))
+					thrust = FixedMul(thrust, (5*FRACUNIT)/4);
 				else if (mo->player->kartstuff[k_invincibilitytimer])
-					thrust = FixedMul(thrust, 9*FRACUNIT/8);
+					thrust = FixedMul(thrust, (9*FRACUNIT)/8);
 			}
 		}
 		else
@@ -4784,8 +4774,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_UpdateEngineSounds(player, cmd); // Thanks, VAda!
 	K_GetKartBoostPower(player);
 
+	// Banana drag/offroad dust
+	if (player->mo && !player->spectator
+		&& P_IsObjectOnGround(player->mo) && player->speed > 0
+		&& player->kartstuff[k_boostpower] < FRACUNIT)
+	{
+		K_SpawnWipeoutTrail(player->mo, true);
+		if (leveltime % 6 == 0)
+			S_StartSound(player->mo, sfx_cdfm70);
+	}
+
 	// Speed lines
-	if ((player->kartstuff[k_sneakertimer] || player->kartstuff[k_ringboost] || player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]) && player->speed > 0)
+	if ((EITHERSNEAKER(player) || player->kartstuff[k_ringboost]
+		|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost])
+		&& player->speed > 0)
 	{
 		mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
 			player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
@@ -4905,7 +4907,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		if ((P_IsObjectOnGround(player->mo)
 			|| (player->kartstuff[k_spinouttype] != 0))
-			&& (player->kartstuff[k_sneakertimer] == 0))
+			&& (!EITHERSNEAKER(player)))
 		{
 			player->kartstuff[k_spinouttimer]--;
 			if (player->kartstuff[k_wipeoutslow] > 1)
@@ -4947,11 +4949,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_ringboost]--;
 
 	if (player->kartstuff[k_sneakertimer])
-	{
 		player->kartstuff[k_sneakertimer]--;
-		if (player->kartstuff[k_wipeoutslow] > 0 && player->kartstuff[k_wipeoutslow] < wipeoutslowtime+1)
-			player->kartstuff[k_wipeoutslow] = wipeoutslowtime+1;
-	}
+
+	if (player->kartstuff[k_levelbooster])
+		player->kartstuff[k_levelbooster]--;
+
+	if (EITHERSNEAKER(player) && player->kartstuff[k_wipeoutslow] > 0 && player->kartstuff[k_wipeoutslow] < wipeoutslowtime+1)
+		player->kartstuff[k_wipeoutslow] = wipeoutslowtime+1;
 
 	if (player->kartstuff[k_floorboost])
 		player->kartstuff[k_floorboost]--;
@@ -5237,7 +5241,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 	turnvalue = FixedMul(turnvalue, adjustangle); // Weight has a small effect on turning
 
-	if (player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_sneakertimer] || player->kartstuff[k_growshrinktimer] > 0)
+	if (EITHERSNEAKER(player) || player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_growshrinktimer] > 0)
 		turnvalue = FixedMul(turnvalue, FixedDiv(5*FRACUNIT, 4*FRACUNIT));
 
 	return turnvalue;
@@ -5365,7 +5369,11 @@ static void K_KartDrift(player_t *player, boolean onground)
 		}
 
 		// Disable drift-sparks until you're going fast enough
-		if (player->kartstuff[k_getsparks] == 0 || (player->kartstuff[k_offroad] && !player->kartstuff[k_invincibilitytimer] && !player->kartstuff[k_hyudorotimer] && !player->kartstuff[k_sneakertimer]))
+		if (player->kartstuff[k_getsparks] == 0
+			|| (player->kartstuff[k_offroad]
+			&& !player->kartstuff[k_invincibilitytimer]
+			&& !player->kartstuff[k_hyudorotimer]
+			&& !EITHERSNEAKER(player)))
 			driftadditive = 0;
 		if (player->speed > minspeed*2)
 			player->kartstuff[k_getsparks] = 1;
@@ -5396,7 +5404,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->kartstuff[k_getsparks] = 0;
 	}
 
-	if ((!player->kartstuff[k_sneakertimer])
+	if ((!EITHERSNEAKER(player))
 	|| (!player->cmd.driftturn)
 	|| (player->cmd.driftturn > 0) != (player->kartstuff[k_aizdriftstrat] > 0))
 	{

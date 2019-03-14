@@ -8160,9 +8160,10 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (p)
 				{
-					if (p->kartstuff[k_sneakertimer] > mobj->movecount)
+					if (p->kartstuff[k_sneakertimer] > mobj->movecount
+						|| p->kartstuff[k_levelbooster] > mobj->movecount)
 						P_SetMobjState(mobj, S_BOOSTFLAME);
-					mobj->movecount = p->kartstuff[k_sneakertimer];
+					mobj->movecount = max(p->kartstuff[k_sneakertimer], p->kartstuff[k_levelbooster]);
 				}
 			}
 
