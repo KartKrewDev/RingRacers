@@ -1559,9 +1559,9 @@ static void K_UpdateDraft(player_t *player)
 
 	// Distance you have to be to draft. If you're still accelerating, then this distance is lessened.
 	// This distance biases toward low weight! (min weight is 2368 units, max weight is 832 units) 
-	draftdistance = (832 + ((9 - player->kartweight) * 192)) * mapobjectscale;
+	draftdistance = (2048 + (512 * (9 - player->kartweight))) * mapobjectscale;
 	if (player->speed < topspd)
-		draftdistance = FixedDiv(FixedMul(player->speed, draftdistance), topspd);
+		draftdistance = FixedMul(draftdistance, FixedDiv(player->speed, topspd));
 
 	// Let's hunt for players to draft off of!
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1580,66 +1580,98 @@ static void K_UpdateDraft(player_t *player)
 		if (players[i].speed < 20*mapobjectscale)
 			continue;
 
-		dist = P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x, players[i].mo->y - player->mo->y), players[i].mo->z - player->mo->z);
+		yourangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+		theirangle = R_PointToAngle2(0, 0, players[i].mo->momx, players[i].mo->momy);
 
-		// Not close enough to draft.
-		if (dist > draftdistance)
+		diff = R_PointToAngle2(player->mo->x, player->mo->y, players[i].mo->x, players[i].mo->y) - yourangle;
+		if (diff > ANGLE_180)
+			diff = InvAngle(diff);
+
+		// Not in front of this player.
+		if (diff > ANGLE_90)
 			continue;
-
-		yourangle = R_PointToAngle2(0,0,player->mo->momx,player->mo->momy);
-		theirangle = R_PointToAngle2(0,0,players[i].mo->momx,players[i].mo->momy);
 
 		diff = yourangle - theirangle;
 		if (diff > ANGLE_180)
 			diff = InvAngle(diff);
 
 		// Not moving in the same direction.
-		if (diff > ANGLE_90)
+		if (diff > ANG10)
 			continue;
 
-		player->kartstuff[k_draftleeway] = TICRATE/2;
+		dist = P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x, players[i].mo->y - player->mo->y), players[i].mo->z - player->mo->z);
+
+		// TOO close to draft.
+		if (dist < RING_DIST/2)
+			continue;
+
+		// Not close enough to draft.
+		if (dist > draftdistance)
+			continue;
+
+		player->kartstuff[k_draftleeway] = 10;
 
 		// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
 		// How much this increments every tic biases toward acceleration! (min speed is 6.25% per tic, max speed is 0.25% per tic)
 		if (player->kartstuff[k_draftpower] < FRACUNIT)
-			player->kartstuff[k_draftpower] += (FRACUNIT/400) + ((9 - player->kartspeed) * ((3*FRACUNIT) / 400));
+			player->kartstuff[k_draftpower] += (FRACUNIT/400) + ((9 - player->kartspeed) * (FRACUNIT/400));
 
 		if (player->kartstuff[k_draftpower] > FRACUNIT)
 			player->kartstuff[k_draftpower] = FRACUNIT;
 
 		// Spawn in the visual!
-		if (leveltime & 1)
+		//if (leveltime & 1)
 		{
-			const fixed_t spacing = 256;
-			UINT8 amt = (dist / mapobjectscale) / spacing;
+#define CHAOTIXBANDLEN 15
+#define CHAOTIXBANDCOLORS 9
+			static const UINT8 colors[CHAOTIXBANDCOLORS] = {
+				SKINCOLOR_SAPPHIRE,
+				SKINCOLOR_PLATINUM,
+				SKINCOLOR_TEA,
+				SKINCOLOR_GARDEN,
+				SKINCOLOR_MUSTARD,
+				SKINCOLOR_YELLOW,
+				SKINCOLOR_ORANGE,
+				SKINCOLOR_SCARLET,
+				SKINCOLOR_CHERRY
+			};
+			UINT8 c = FixedMul(CHAOTIXBANDCOLORS<<FRACBITS, FixedDiv(dist-(RING_DIST/2), draftdistance-(RING_DIST/2))) >> FRACBITS;
+			UINT8 n = CHAOTIXBANDLEN;
 			UINT8 offset = ((leveltime / 3) % 3);
 			fixed_t stepx, stepy, stepz;
 			fixed_t curx, cury, curz;
 
-			stepx = (players[i].mo->x - player->mo->x) / amt;
-			stepy = (players[i].mo->y - player->mo->y) / amt;
-			stepz = ((players[i].mo->z + (players[i].mo->height / 2)) - (player->mo->z + (player->mo->height / 2))) / amt;
+			stepx = (players[i].mo->x - player->mo->x) / CHAOTIXBANDLEN;
+			stepy = (players[i].mo->y - player->mo->y) / CHAOTIXBANDLEN;
+			stepz = ((players[i].mo->z + (players[i].mo->height / 2)) - (player->mo->z + (player->mo->height / 2))) / CHAOTIXBANDLEN;
 
 			curx = player->mo->x + stepx;
 			cury = player->mo->y + stepy;
 			curz = player->mo->z + stepz;
 
-			while (amt > 0)
+			while (n)
 			{
 				if (offset == 0)
 				{
-					mobj_t *band = P_SpawnMobj(curx, cury, curz + (24*mapobjectscale), MT_THOK);
-					P_SetMobjState(band, S_DRAFTBAND);
-					band->color = player->skincolor;
+					mobj_t *band = P_SpawnMobj(curx + (P_RandomRange(-12,12)*mapobjectscale),
+						cury + (P_RandomRange(-12,12)*mapobjectscale),
+						curz + (P_RandomRange(24,48)*mapobjectscale),
+						MT_SIGNSPARKLE);
+					P_SetMobjState(band, S_SIGNSPARK1 + (abs(leveltime+offset) % 11));
+					P_SetScale(band, (band->destscale = (3*band->scale)/2));
+					band->color = colors[c];
+					band->colorized = true;
+					band->fuse = 2;
 				}
 
 				curx += stepx;
 				cury += stepy;
 				curz += stepz;
 	
-				offset = (offset+1) % 3;
-				amt--;
+				offset = abs(offset-1) % 3;
+				n--;
 			}
+#undef CHAOTIXBANDLEN
 		}
 
 		return; // Finished doing our draft.
@@ -2122,7 +2154,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(FRACUNIT/4, 4*FRACUNIT); // + 25% top speed, + 400% acceleration
 
 	if (player->kartstuff[k_ringboost]) // Ring Boost
-		ADDBOOST(FRACUNIT/4, 4*FRACUNIT); // + 20% top speed, + 200% acceleration
+		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 200% acceleration
 
 	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
 	{
@@ -2132,10 +2164,7 @@ static void K_GetKartBoostPower(player_t *player)
 	}
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
-	{
-		speedboost += player->kartstuff[k_draftpower]; // + 0-100%
-		accelboost += player->kartstuff[k_draftpower]; // + 0-100%
-	}
+		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0-33.3%
 
 	player->kartstuff[k_boostpower] = boostpower;
 
@@ -4786,7 +4815,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// Speed lines
 	if ((EITHERSNEAKER(player) || player->kartstuff[k_ringboost]
-		|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost])
+		|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]
+		|| player->kartstuff[k_draftpower])
 		&& player->speed > 0)
 	{
 		mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
