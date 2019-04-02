@@ -5016,6 +5016,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->kartstuff[k_superring] % 3 == 0)
 		{
 			mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
+			ring->frame = (leveltime % 23);
 			ring->extravalue1 = 1; // Ring collect animation timer
 			ring->angle = player->mo->angle; // animation angle
 			P_SetTarget(&ring->target, player->mo); // toucher for thinker
@@ -5709,6 +5710,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				if ((player->pflags & PF_ATTACKDOWN) && !player->kartstuff[k_ringdelay] && player->kartstuff[k_rings] > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
+					ring->frame = (leveltime % 23);
 					ring->extravalue1 = 1; // Ring use animation timer
 					ring->extravalue2 = 1; // Ring use animation flag
 					P_SetTarget(&ring->target, player->mo); // user
