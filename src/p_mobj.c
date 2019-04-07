@@ -3983,7 +3983,10 @@ static void P_RingThinker(mobj_t *mobj)
 			return;
 	}
 
-	P_CycleMobjState(mobj);
+	if (mobj->state == &states[S_RING]) // sync map rings to a global timer
+		mobj->frame = (leveltime % ((UINT32)mobj->state->var1)) | (mobj->state->frame & ~FF_FRAMEMASK);
+	else
+		P_CycleMobjState(mobj);
 }
 
 //
@@ -10272,8 +10275,8 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	// Rings only, please!
 	if (mobj->spawnpoint &&
-		(/*mobj->type == MT_RING
-		||*/ mobj->type == MT_COIN
+		(mobj->type == MT_RING
+		|| mobj->type == MT_COIN
 		|| mobj->type == MT_BLUEBALL
 		|| mobj->type == MT_REDTEAMRING
 		|| mobj->type == MT_BLUETEAMRING
@@ -10628,7 +10631,7 @@ void P_PrecipitationEffects(void)
 void P_RespawnSpecials(void)
 {
 	UINT8 p, pcount = 0;
-	tic_t time = 168*TICRATE;
+	tic_t time = 30*TICRATE; // Respawn things in empty dedicated servers
 	fixed_t x, y, z;
 	subsector_t *ss;
 	mobj_t *mo = NULL;
@@ -10675,31 +10678,25 @@ void P_RespawnSpecials(void)
 			numgotboxes = 0;
 	}
 
-	// only respawn items when cv_itemrespawn is on
-	if (!cv_itemrespawn.value)
-		return;
+	// wait time depends on player count
+	for (p = 0; p < MAXPLAYERS; p++)
+	{
+		if (playeringame[p] && !players[p].spectator)
+			pcount++;
+	}
 
-	// Don't respawn in special stages!
-	if (G_IsSpecialStage(gamemap))
+	if (pcount == 1) // No respawn when alone
 		return;
+	else if (pcount > 1)
+		time = (180 - (pcount * 10))*TICRATE;
+
+	// only respawn items when cv_itemrespawn is on
+	//if (!cv_itemrespawn.value) // TODO: remove this cvar
+		//return;
 
 	// nothing left to respawn?
 	if (iquehead == iquetail)
 		return;
-
-	// wait time depends on player count
-	for (p = 0; p < MAXPLAYERS; p++)
-	{
-		if (!playeringame[p] || players[p].spectator)
-			pcount++;
-	}
-
-	if (pcount > 1)
-		time -= pcount * (8*TICRATE);
-	else if (pcount == 1) // No respawn when alone
-		return;
-	else
-		time = 30*TICRATE; // Respawn things in empty dedicated servers
 
 	// the first item in the queue is the first to respawn
 	if (leveltime - itemrespawntime[iquetail] < time)

@@ -757,7 +757,7 @@ static boolean P_LookForShield(mobj_t *actor)
 
 		if ((player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD) && ((player->kartstuff[k_rings]+player->kartstuff[k_pickuprings]) < 20)
 			&& P_AproxDistance(actor->x-player->mo->x, actor->y-player->mo->y) < FixedMul(RING_DIST/4, player->mo->scale)
-			&& P_AproxDistance(0, actor->z-player->mo->z) < FixedMul(RING_DIST/8, player->mo->scale))
+			&& P_AproxDistance(0, actor->z-player->mo->z) < FixedMul(RING_DIST/16, player->mo->scale))
 		{
 			P_SetTarget(&actor->tracer, player->mo);
 			return true;
@@ -3634,6 +3634,9 @@ void A_AttractChase(mobj_t *actor)
 
 		if (actor->extravalue2) // Using for ring boost
 		{
+			// Always fullbright
+			actor->frame |= FF_FULLBRIGHT;
+
 			if (actor->extravalue1 >= 21)
 			{
 				// Base add is 3 tics for 9,9, adds 1.5 tics for each point closer to the 1,1 end
@@ -3655,6 +3658,12 @@ void A_AttractChase(mobj_t *actor)
 		}
 		else // Collecting
 		{
+			// Flicker fullbright
+			if (leveltime & 1)
+				actor->frame |= FF_FULLBRIGHT;
+			else
+				actor->frame &= ~FF_FULLBRIGHT;
+
 			if (actor->extravalue1 >= 16)
 			{
 				if (actor->target->player->kartstuff[k_rings] >= 20)
@@ -3689,6 +3698,12 @@ void A_AttractChase(mobj_t *actor)
 	}
 	else
 	{
+		// Flicker fullbright
+		if (leveltime & 1)
+			actor->frame |= FF_FULLBRIGHT;
+		else
+			actor->frame &= ~FF_FULLBRIGHT;
+
 		// Don't immediately pick up spilled rings
 		if (actor->threshold > 0)
 			actor->threshold--;
@@ -3716,7 +3731,7 @@ void A_AttractChase(mobj_t *actor)
 		}
 
 		if (actor->tracer && actor->tracer->player && actor->tracer->health
-			&& P_CheckSight(actor, actor->tracer)
+			//&& P_CheckSight(actor, actor->tracer)
 			&& actor->tracer->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
 			&& (actor->tracer->player->kartstuff[k_rings]+actor->tracer->player->kartstuff[k_pickuprings]) < 20)
 		{
@@ -3746,9 +3761,9 @@ void A_AttractChase(mobj_t *actor)
 			vang = R_PointToAngle2(actor->z , 0, actor->tracer->z, dist);
 
 			actor->momx -= actor->momx>>4, actor->momy -= actor->momy>>4, actor->momz -= actor->momz>>4;
-			actor->momx += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINECOSINE(hang>>ANGLETOFINESHIFT), 2*actor->scale));
-			actor->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), 2*actor->scale));
-			actor->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), 2*actor->scale);
+			actor->momx += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINECOSINE(hang>>ANGLETOFINESHIFT), 4*actor->scale));
+			actor->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), 4*actor->scale));
+			actor->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), 4*actor->scale);
 		}
 		else
 		{
@@ -3758,7 +3773,7 @@ void A_AttractChase(mobj_t *actor)
 				mobj_t *newring;
 				newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
 				P_InstaThrust(newring, P_RandomRange(0,7) * ANGLE_45, 2<<FRACBITS);
-				newring->momz = 5<<FRACBITS;
+				newring->momz = 8<<FRACBITS;
 				newring->fuse = 120*TICRATE;
 				P_RemoveMobj(actor);
 				return;

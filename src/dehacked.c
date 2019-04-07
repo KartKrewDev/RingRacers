@@ -4784,6 +4784,18 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	// Ring
 	"S_RING",
+	"S_FASTRING1",
+	"S_FASTRING2",
+	"S_FASTRING3",
+	"S_FASTRING4",
+	"S_FASTRING5",
+	"S_FASTRING6",
+	"S_FASTRING7",
+	"S_FASTRING8",
+	"S_FASTRING9",
+	"S_FASTRING10",
+	"S_FASTRING11",
+	"S_FASTRING12",
 
 	// Blue Sphere for special stages
 	"S_BLUEBALL",
