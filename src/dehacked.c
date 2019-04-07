@@ -8352,6 +8352,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"NEXTCHECK",
 	"WAYPOINT",
 	"STARPOSTWP",
+	"STARPOSTFLIP",
 	"RESPAWN",
 	"DROPDASH",
 
