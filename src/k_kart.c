@@ -6741,6 +6741,9 @@ static patch_t *kp_ringsticker[2];
 static patch_t *kp_ring[6];
 static patch_t *kp_ringdebtminus;
 
+static patch_t *kp_speedometersticker;
+static patch_t *kp_speedometerlabel[4];
+
 static patch_t *kp_rankbumper;
 static patch_t *kp_tinybumper[2];
 static patch_t *kp_ranknobumpers;
@@ -6892,6 +6895,16 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	kp_ringdebtminus =			W_CachePatchName("RDEBTMIN", PU_HUDGFX);
+
+	// Speedometer
+	kp_speedometersticker =		W_CachePatchName("K_SPDMBG", PU_HUDGFX);
+
+	sprintf(buffer, "K_SPDMLx");
+	for (i = 0; i < 4; i++)
+	{
+		buffer[7] = '0'+(i+1);
+		kp_speedometerlabel[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
 
 	// Extra ranking icons
 	kp_rankbumper =				W_CachePatchName("K_BLNICO", PU_HUDGFX);
@@ -7115,7 +7128,6 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 INT32 ITEM_X, ITEM_Y;	// Item Window
 INT32 TIME_X, TIME_Y;	// Time Sticker
 INT32 LAPS_X, LAPS_Y;	// Lap Sticker
-INT32 SPDM_X, SPDM_Y;	// Speedometer
 INT32 POSI_X, POSI_Y;	// Position Number
 INT32 FACE_X, FACE_Y;	// Top-four Faces
 INT32 STCD_X, STCD_Y;	// Starting countdown
@@ -7175,9 +7187,6 @@ static void K_initKartHUD(void)
 	// Level Laps
 	LAPS_X = 9;						//   9
 	LAPS_Y = BASEVIDHEIGHT - 29;	// 171
-	// Speedometer
-	SPDM_X = 9;						//   9
-	SPDM_Y = BASEVIDHEIGHT - 45;	// 155
 	// Position Number
 	POSI_X = BASEVIDWIDTH  - 9;		// 268
 	POSI_Y = BASEVIDHEIGHT - 9;		// 138
@@ -8291,24 +8300,52 @@ static void K_drawKartRingsAndLives(void)
 
 static void K_drawKartSpeedometer(void)
 {
-	fixed_t convSpeed;
+	static fixed_t convSpeed;
+	UINT8 labeln = 0;
+	UINT8 numbers[3];
 	INT32 splitflags = K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT);
+	UINT8 battleoffset = 0;
 
-	if (cv_kartspeedometer.value == 1) // Kilometers
+	if (!stplyr->exiting) // Keep the same speed value as when you crossed the finish line!
 	{
-		convSpeed = FixedDiv(FixedMul(stplyr->speed, 142371), mapobjectscale)/FRACUNIT; // 2.172409058
-		V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%3d km/h", convSpeed));
+		switch (cv_kartspeedometer.value)
+		{
+			case 1: // Sonic Drift 2 style percentage
+			default:
+				convSpeed = (((25*stplyr->speed)/24) * 100) / K_GetKartSpeed(stplyr, false); // Based on top speed! (cheats with the numbers due to some weird discrepancy)
+				labeln = 0;
+				break;
+			case 2: // Kilometers
+				convSpeed = FixedDiv(FixedMul(stplyr->speed, 142371), mapobjectscale)/FRACUNIT; // 2.172409058
+				labeln = 1;
+				break;
+			case 3: // Miles
+				convSpeed = FixedDiv(FixedMul(stplyr->speed, 88465), mapobjectscale)/FRACUNIT; // 1.349868774
+				labeln = 2;
+				break;
+			case 4: // Fracunits
+				convSpeed = FixedDiv(stplyr->speed, mapobjectscale)/FRACUNIT; // 1.0. duh.
+				labeln = 3;
+				break;
+		}
 	}
-	else if (cv_kartspeedometer.value == 2) // Miles
-	{
-		convSpeed = FixedDiv(FixedMul(stplyr->speed, 88465), mapobjectscale)/FRACUNIT; // 1.349868774
-		V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%3d mph", convSpeed));
-	}
-	else if (cv_kartspeedometer.value == 3) // Fracunits
-	{
-		convSpeed = FixedDiv(stplyr->speed, mapobjectscale)/FRACUNIT;
-		V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%3d fu/t", convSpeed));
-	}
+
+	// Don't overflow
+	if (convSpeed > 999)
+		convSpeed = 999;
+
+	numbers[0] = ((convSpeed / 100) % 10);
+	numbers[1] = ((convSpeed / 10) % 10);
+	numbers[2] = (convSpeed % 10);
+
+	if (G_BattleGametype())
+		battleoffset = 8;
+
+	V_DrawScaledPatch(LAPS_X, LAPS_Y-25 + battleoffset, V_HUDTRANS|splitflags, kp_speedometersticker);
+	V_DrawScaledPatch(LAPS_X+7, LAPS_Y-25 + battleoffset, V_HUDTRANS|splitflags, kp_facenum[numbers[0]]);
+	V_DrawScaledPatch(LAPS_X+13, LAPS_Y-25 + battleoffset, V_HUDTRANS|splitflags, kp_facenum[numbers[1]]);
+	V_DrawScaledPatch(LAPS_X+19, LAPS_Y-25 + battleoffset, V_HUDTRANS|splitflags, kp_facenum[numbers[2]]);
+	V_DrawScaledPatch(LAPS_X+29, LAPS_Y-25 + battleoffset, V_HUDTRANS|splitflags, kp_speedometerlabel[labeln]);
 }
 
 static void K_drawKartBumpersOrKarma(void)
@@ -9477,6 +9514,15 @@ void K_drawKartHUD(void)
 
 	if (!stplyr->spectator) // Bottom of the screen elements, don't need in spectate mode
 	{
+		// Draw the speedometer
+		if (cv_kartspeedometer.value && !splitscreen)
+		{
+#ifdef HAVE_BLUA
+			if (LUA_HudEnabled(hud_speedometer))
+#endif
+				K_drawKartSpeedometer();
+		}
+
 		if (G_RaceGametype()) // Race-only elements
 		{
 			if (!titledemo)
@@ -9488,16 +9534,6 @@ void K_drawKartHUD(void)
 					K_drawKartLaps();
 
 				K_drawKartRingsAndLives();
-
-				if (!splitscreen)
-				{
-					// Draw the speedometer
-					// TODO: Make a better speedometer.
-#ifdef HAVE_BLUA
-				if (LUA_HudEnabled(hud_speedometer))
-#endif
-					K_drawKartSpeedometer();
-				}
 			}
 
 			if (isfreeplay)
