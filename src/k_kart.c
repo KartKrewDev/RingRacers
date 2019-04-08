@@ -2170,13 +2170,13 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
 		ADDBOOST((3*FRACUNIT)/8, 3*FRACUNIT); // + 37.5% top speed, + 300% acceleration
 
-	if (player->kartstuff[k_startboost]) // Startup Boost
+	if (player->kartstuff[k_startboost] && !player->kartstuff[k_offroad]) // Startup Boost
 		ADDBOOST(FRACUNIT/4, 6*FRACUNIT); // + 25% top speed, + 600% acceleration
 
-	if (player->kartstuff[k_driftboost]) // Drift Boost
+	if (player->kartstuff[k_driftboost] && !player->kartstuff[k_offroad]) // Drift Boost
 		ADDBOOST(FRACUNIT/4, 4*FRACUNIT); // + 25% top speed, + 400% acceleration
 
-	if (player->kartstuff[k_ringboost]) // Ring Boost
+	if (player->kartstuff[k_ringboost] && !player->kartstuff[k_offroad]) // Ring Boost
 		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 200% acceleration
 
 	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
