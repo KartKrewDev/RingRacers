@@ -2542,6 +2542,7 @@ void G_PlayerReborn(INT32 player)
 	p->kartstuff[k_comebacktimer] = comebacktime;
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
+	p->kartstuff[k_lastdraft] = -1;
 	p->kartstuff[k_starpostflip] = respawnflip;
 
 	// Don't do anything immediately

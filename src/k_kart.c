@@ -1541,6 +1541,65 @@ static void K_UpdateOffroad(player_t *player)
 		player->kartstuff[k_offroad] = 0;
 }
 
+static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t curdist, fixed_t maxdist, boolean transparent)
+{
+#define CHAOTIXBANDLEN 15
+#define CHAOTIXBANDCOLORS 9
+	static const UINT8 colors[CHAOTIXBANDCOLORS] = {
+		SKINCOLOR_SAPPHIRE,
+		SKINCOLOR_PLATINUM,
+		SKINCOLOR_TEA,
+		SKINCOLOR_GARDEN,
+		SKINCOLOR_MUSTARD,
+		SKINCOLOR_YELLOW,
+		SKINCOLOR_ORANGE,
+		SKINCOLOR_SCARLET,
+		SKINCOLOR_CHERRY
+	};
+	fixed_t minimumdist = FixedMul(RING_DIST>>1, player->mo->scale);
+	UINT8 c = FixedMul(CHAOTIXBANDCOLORS<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
+	UINT8 n = CHAOTIXBANDLEN;
+	UINT8 offset = ((leveltime / 3) % 3);
+	fixed_t stepx, stepy, stepz;
+	fixed_t curx, cury, curz;
+
+	stepx = (victim->mo->x - player->mo->x) / CHAOTIXBANDLEN;
+	stepy = (victim->mo->y - player->mo->y) / CHAOTIXBANDLEN;
+	stepz = ((victim->mo->z + (victim->mo->height / 2)) - (player->mo->z + (player->mo->height / 2))) / CHAOTIXBANDLEN;
+
+	curx = player->mo->x + stepx;
+	cury = player->mo->y + stepy;
+	curz = player->mo->z + stepz;
+
+	while (n)
+	{
+		if (offset == 0)
+		{
+			mobj_t *band = P_SpawnMobj(curx + (P_RandomRange(-12,12)*mapobjectscale),
+				cury + (P_RandomRange(-12,12)*mapobjectscale),
+				curz + (P_RandomRange(24,48)*mapobjectscale),
+				MT_SIGNSPARKLE);
+			P_SetMobjState(band, S_SIGNSPARK1 + (abs(leveltime+offset) % 11));
+			P_SetScale(band, (band->destscale = (3*player->mo->scale)/2));
+			band->color = colors[c];
+			band->colorized = true;
+			band->fuse = 2;
+			if (transparent)
+				band->flags2 |= MF2_SHADOW;
+			if (!P_IsLocalPlayer(player) && !P_IsLocalPlayer(victim))
+				band->flags2 |= MF2_DONTDRAW;
+		}
+
+		curx += stepx;
+		cury += stepy;
+		curz += stepz;
+	
+		offset = abs(offset-1) % 3;
+		n--;
+	}
+#undef CHAOTIXBANDLEN
+}
+
 /**	\brief	Updates the player's drafting values once per frame
 
 	\param	player	player object passed from K_KartPlayerThink
@@ -1554,12 +1613,12 @@ static void K_UpdateDraft(player_t *player)
 	UINT8 i;
 
 	// Not enough speed to draft.
-	if (player->speed < 20*mapobjectscale)
+	if (player->speed < 20*player->mo->scale)
 		return;
 
 	// Distance you have to be to draft. If you're still accelerating, then this distance is lessened.
-	// This distance biases toward low weight! (min weight is 2368 units, max weight is 832 units) 
-	draftdistance = (2048 + (512 * (9 - player->kartweight))) * mapobjectscale;
+	// This distance biases toward low weight! (min weight gets 2368 units, max weight gets 832 units) 
+	draftdistance = (2048 + (512 * (9 - player->kartweight))) * player->mo->scale;
 	if (player->speed < topspd)
 		draftdistance = FixedMul(draftdistance, FixedDiv(player->speed, topspd));
 
@@ -1577,7 +1636,7 @@ static void K_UpdateDraft(player_t *player)
 			continue;
 
 		// Not enough speed to draft off of.
-		if (players[i].speed < 20*mapobjectscale)
+		if (players[i].speed < 20*players[i].mo->scale)
 			continue;
 
 		yourangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
@@ -1602,17 +1661,18 @@ static void K_UpdateDraft(player_t *player)
 		dist = P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x, players[i].mo->y - player->mo->y), players[i].mo->z - player->mo->z);
 
 		// TOO close to draft.
-		if (dist < RING_DIST/2)
+		if (dist < FixedMul(RING_DIST>>1, player->mo->scale))
 			continue;
 
 		// Not close enough to draft.
 		if (dist > draftdistance)
 			continue;
 
-		player->kartstuff[k_draftleeway] = 10;
+		player->kartstuff[k_draftleeway] = TICRATE;
+		player->kartstuff[k_lastdraft] = i;
 
 		// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
-		// How much this increments every tic biases toward acceleration! (min speed is 6.25% per tic, max speed is 0.25% per tic)
+		// How much this increments every tic biases toward acceleration! (min speed gets 6.25% per tic, max speed gets 0.25% per tic)
 		if (player->kartstuff[k_draftpower] < FRACUNIT)
 			player->kartstuff[k_draftpower] += (FRACUNIT/400) + ((9 - player->kartspeed) * (FRACUNIT/400));
 
@@ -1620,70 +1680,31 @@ static void K_UpdateDraft(player_t *player)
 			player->kartstuff[k_draftpower] = FRACUNIT;
 
 		// Spawn in the visual!
-		//if (leveltime & 1)
-		{
-#define CHAOTIXBANDLEN 15
-#define CHAOTIXBANDCOLORS 9
-			static const UINT8 colors[CHAOTIXBANDCOLORS] = {
-				SKINCOLOR_SAPPHIRE,
-				SKINCOLOR_PLATINUM,
-				SKINCOLOR_TEA,
-				SKINCOLOR_GARDEN,
-				SKINCOLOR_MUSTARD,
-				SKINCOLOR_YELLOW,
-				SKINCOLOR_ORANGE,
-				SKINCOLOR_SCARLET,
-				SKINCOLOR_CHERRY
-			};
-			UINT8 c = FixedMul(CHAOTIXBANDCOLORS<<FRACBITS, FixedDiv(dist-(RING_DIST/2), draftdistance-(RING_DIST/2))) >> FRACBITS;
-			UINT8 n = CHAOTIXBANDLEN;
-			UINT8 offset = ((leveltime / 3) % 3);
-			fixed_t stepx, stepy, stepz;
-			fixed_t curx, cury, curz;
-
-			stepx = (players[i].mo->x - player->mo->x) / CHAOTIXBANDLEN;
-			stepy = (players[i].mo->y - player->mo->y) / CHAOTIXBANDLEN;
-			stepz = ((players[i].mo->z + (players[i].mo->height / 2)) - (player->mo->z + (player->mo->height / 2))) / CHAOTIXBANDLEN;
-
-			curx = player->mo->x + stepx;
-			cury = player->mo->y + stepy;
-			curz = player->mo->z + stepz;
-
-			while (n)
-			{
-				if (offset == 0)
-				{
-					mobj_t *band = P_SpawnMobj(curx + (P_RandomRange(-12,12)*mapobjectscale),
-						cury + (P_RandomRange(-12,12)*mapobjectscale),
-						curz + (P_RandomRange(24,48)*mapobjectscale),
-						MT_SIGNSPARKLE);
-					P_SetMobjState(band, S_SIGNSPARK1 + (abs(leveltime+offset) % 11));
-					P_SetScale(band, (band->destscale = (3*band->scale)/2));
-					band->color = colors[c];
-					band->colorized = true;
-					band->fuse = 2;
-					if (!P_IsLocalPlayer(player) && !P_IsLocalPlayer(&players[i]))
-						band->flags2 |= MF2_DONTDRAW;
-				}
-
-				curx += stepx;
-				cury += stepy;
-				curz += stepz;
-	
-				offset = abs(offset-1) % 3;
-				n--;
-			}
-#undef CHAOTIXBANDLEN
-		}
+		K_DrawDraftCombiring(player, &players[i], dist, draftdistance, false);
 
 		return; // Finished doing our draft.
 	}
 
 	// No one to draft off of? Then you can knock that off.
 	if (player->kartstuff[k_draftleeway]) // Prevent small disruptions from stopping your draft.
+	{
 		player->kartstuff[k_draftleeway]--;
-	else if (player->kartstuff[k_draftpower]) // Remove draft speed boost.
+		if (player->kartstuff[k_lastdraft] >= 0
+			&& player->kartstuff[k_lastdraft] < MAXPLAYERS
+			&& playeringame[player->kartstuff[k_lastdraft]]
+			&& !players[player->kartstuff[k_lastdraft]].spectator
+			&& players[player->kartstuff[k_lastdraft]].mo)
+		{
+			player_t *victim = &players[player->kartstuff[k_lastdraft]];
+			fixed_t dist = P_AproxDistance(P_AproxDistance(victim->mo->x - player->mo->x, victim->mo->y - player->mo->y), victim->mo->z - player->mo->z);
+			K_DrawDraftCombiring(player, victim, dist, draftdistance, true);
+		}
+	}
+	else // Remove draft speed boost.
+	{
 		player->kartstuff[k_draftpower] = 0;
+		player->kartstuff[k_lastdraft] = -1;
+	}
 }
 
 void K_KartPainEnergyFling(player_t *player)
@@ -4964,9 +4985,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	/*if (player->kartstuff[k_thunderanim])
-		player->kartstuff[k_thunderanim]--;*/
-
 	if (player->kartstuff[k_rings] > 20)
 		player->kartstuff[k_rings] = 20;
 	else if (player->kartstuff[k_rings] < -20)
@@ -5619,6 +5637,68 @@ void K_StripOther(player_t *player)
 	}
 }
 
+// SRB2Kart: blockmap iterate for attraction shield users
+static mobj_t *attractmo;
+static fixed_t attractdist;
+static inline boolean PIT_AttractingRings(mobj_t *thing)
+{
+	if (!attractmo || P_MobjWasRemoved(attractmo))
+		return false;
+
+	if (!attractmo->player)
+		return false; // not a player
+
+	if (thing->health <= 0 || !thing)
+		return true; // dead
+
+	if (thing->type != MT_RING && thing->type != MT_FLINGRING)
+		return true; // not a ring
+
+	if (thing->extravalue1)
+		return true; // in special ring animation
+
+	if (thing->cusval)
+		return true; // already attracted
+
+	// see if it went over / under
+	if (attractmo->z - (attractdist>>2) > thing->z + thing->height)
+		return true; // overhead
+	if (attractmo->z + attractmo->height + (attractdist>>2) < thing->z)
+		return true; // underneath
+
+	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) < attractdist)
+		return true; // Too far away
+
+	// set target
+	P_SetTarget(&thing->tracer, attractmo);
+	// flag to show it's been attracted once before
+	thing->cusval = 1;
+	return true; // find other rings
+}
+
+/** Looks for rings near a player in the blockmap.
+  *
+  * \param pmo Player object looking for rings to attract
+  * \sa A_AttractChase
+  */
+static void K_LookForRings(mobj_t *pmo)
+{
+	INT32 bx, by, xl, xh, yl, yh;
+	attractdist = FixedMul(RING_DIST, pmo->scale)>>2;
+
+	// Use blockmap to check for nearby rings
+	yh = (unsigned)(pmo->y + attractdist - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(pmo->y - attractdist - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(pmo->x + attractdist - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(pmo->x - attractdist - bmaporgx)>>MAPBLOCKSHIFT;
+
+	attractmo = pmo;
+
+	for (by = yl; by <= yh; by++)
+		for (bx = xl; bx <= xh; bx++)
+			P_BlockThingsIterator(bx, by, PIT_AttractingRings);
+}
+
 //
 // K_MoveKartPlayer
 //
@@ -6130,7 +6210,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->kartstuff[k_itemtype] = KITEM_NONE;
 		}
 
-		if (player->kartstuff[k_itemtype] != KITEM_THUNDERSHIELD)
+		if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+		{
+			if ((player->kartstuff[k_rings]+player->kartstuff[k_pickuprings]) < 20)
+				K_LookForRings(player->mo);
+		}
+		else
 			player->kartstuff[k_curshield] = 0;
 
 		if (player->kartstuff[k_growshrinktimer] <= 0)

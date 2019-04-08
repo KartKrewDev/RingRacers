@@ -710,63 +710,6 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed
 	//return false;
 }
 
-/** Looks for a player with a ring shield.
-  * Used by rings.
-  *
-  * \param actor Ring looking for a shield to be attracted to.
-  * \return True if a player with ring shield is found, otherwise false.
-  * \sa A_AttractChase
-  */
-static boolean P_LookForShield(mobj_t *actor)
-{
-	INT32 c = 0, stop;
-	player_t *player;
-
-	// BP: first time init, this allow minimum lastlook changes
-	if (actor->lastlook < 0)
-		actor->lastlook = P_RandomByte();
-
-	actor->lastlook %= MAXPLAYERS;
-
-	stop = (actor->lastlook - 1) & PLAYERSMASK;
-
-	for (; ; actor->lastlook = ((actor->lastlook + 1) & PLAYERSMASK))
-	{
-		// done looking
-		if (actor->lastlook == stop)
-			return false;
-
-		if (!playeringame[actor->lastlook])
-			continue;
-
-		if (c++ == 2)
-			return false;
-
-		player = &players[actor->lastlook];
-
-		if (player->health <= 0 || !player->mo)
-			continue; // dead
-
-		if (!P_CheckSight(actor, player->mo))
-			continue; // can't see
-
-		//When in CTF, don't pull rings that you cannot pick up.
-		if ((actor->type == MT_REDTEAMRING && player->ctfteam != 1) ||
-			(actor->type == MT_BLUETEAMRING && player->ctfteam != 2))
-			continue;
-
-		if ((player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD) && ((player->kartstuff[k_rings]+player->kartstuff[k_pickuprings]) < 20)
-			&& P_AproxDistance(actor->x-player->mo->x, actor->y-player->mo->y) < FixedMul(RING_DIST/4, player->mo->scale)
-			&& P_AproxDistance(0, actor->z-player->mo->z) < FixedMul(RING_DIST/16, player->mo->scale))
-		{
-			P_SetTarget(&actor->tracer, player->mo);
-			return true;
-		}
-	}
-
-	return false;
-}
-
 #ifdef WEIGHTEDRECYCLER
 // Compares players to see who currently has the "best" items, etc.
 static int P_RecycleCompare(const void *p1, const void *p2)
@@ -3752,9 +3695,6 @@ void A_AttractChase(mobj_t *actor)
 			// Let attracted rings move through walls and such.
 			actor->flags |= MF_NOCLIP;
 
-			// flag to show it's been attracted once before
-			actor->cusval = 1;
-
 			// P_Attract is too "smart" for Kart; keep it simple, stupid!
 			dist = P_AproxDistance(P_AproxDistance(actor->x - actor->tracer->x, actor->y - actor->tracer->y), actor->z - actor->tracer->z);
 			hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
@@ -3778,8 +3718,9 @@ void A_AttractChase(mobj_t *actor)
 				P_RemoveMobj(actor);
 				return;
 			}
-			else
-				P_LookForShield(actor); // Go find 'em, boy!
+			/*else
+				P_LookForShield(actor);*/
+			// SRB2Kart: now it's the PLAYER'S job to use the blockmap to find rings, not the ring's.
 		}
 	}
 }

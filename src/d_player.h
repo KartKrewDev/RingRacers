@@ -308,6 +308,7 @@ typedef enum
 	k_accelboost,		// Boost value smoothing for acceleration
 	k_draftpower,		// Drafting power (from 0 to FRACUNIT), doubles your top speed & acceleration at max
 	k_draftleeway,		// Leniency timer before removing draft power
+	k_lastdraft,		// Last player being drafted
 	k_boostcam,			// Camera push forward on boost
 	k_destboostcam,		// Ditto
 	k_timeovercam,		// Camera timer for leaving behind or not
