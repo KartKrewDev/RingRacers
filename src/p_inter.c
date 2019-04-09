@@ -690,6 +690,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->extravalue1)
 				return;
 
+			// No picking up rings while SPB is targetting you
+			if (player->kartstuff[k_position] == spbplace)
+				return;
+
 			// Don't immediately pick up spilled rings
 			if (special->threshold > 0
 			|| player->kartstuff[k_squishedtimer]

@@ -3670,7 +3670,8 @@ void A_AttractChase(mobj_t *actor)
 				actor->momy = FixedMul(FixedDiv(actor->momy, oldspeed), newspeed);
 			}
 
-			P_SpawnGhostMobj(actor)->tics = 3;
+			if (!P_IsObjectOnGround(actor))
+				P_SpawnGhostMobj(actor)->tics = 3;
 		}
 
 		if (actor->tracer && actor->tracer->player && actor->tracer->health

@@ -863,7 +863,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 				POWERITEMODDS(newodds);
 			break;
 		case KITEM_THUNDERSHIELD:
-			if (thunderisout)
+			if (thunderisout || spbplace != -1)
 				newodds = 0;
 			else
 				POWERITEMODDS(newodds);
