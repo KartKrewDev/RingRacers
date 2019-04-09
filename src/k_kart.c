@@ -8281,10 +8281,14 @@ static void K_drawKartRingsAndLives(void)
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		colorring = true;
 	}
-	else if (stplyr->kartstuff[k_ringlock]) // SPB ring lock
+	else if (stplyr->kartstuff[k_ringlock] && !(leveltime/5 & 1)) // SPB ring lock
+	{
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_JET, GTC_CACHE);
+		colorring = true;
+	}
 	else if (stplyr->kartstuff[k_rings] >= 20) // Maxed out
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
+	
 
 	if (netgame)
 		V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|splitflags, kp_ringsticker[1]);
