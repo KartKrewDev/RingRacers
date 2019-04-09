@@ -1113,22 +1113,45 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	// Record Attack / alone mashing behavior
 	if (modeattacking || pingame == 1)
 	{
-		if (mashed && (modeattacking || cv_superring.value)) // ANY mashed value? You get rings.
+		if (G_RaceGametype())
 		{
-			K_KartGetItemResult(player, KITEM_SUPERRING);
-			player->kartstuff[k_itemblinkmode] = 1;
-			if (P_IsLocalPlayer(player))
-				S_StartSound(NULL, sfx_itrolm);
+			if (mashed && (modeattacking || cv_superring.value)) // ANY mashed value? You get rings.
+			{
+				K_KartGetItemResult(player, KITEM_SUPERRING);
+				player->kartstuff[k_itemblinkmode] = 1;
+				if (P_IsLocalPlayer(player))
+					S_StartSound(NULL, sfx_itrolm);
+			}
+			else
+			{
+				if (modeattacking || cv_sneaker.value) // Waited patiently? You get a sneaker!
+					K_KartGetItemResult(player, KITEM_SNEAKER);
+				else  // Default to sad if nothing's enabled...
+					K_KartGetItemResult(player, KITEM_SAD);
+				player->kartstuff[k_itemblinkmode] = 0;
+				if (P_IsLocalPlayer(player))
+					S_StartSound(NULL, sfx_itrolf);
+			}
 		}
-		else
+		else if (G_BattleGametype())
 		{
-			if (modeattacking || cv_sneaker.value) // Waited patiently? You get a sneaker!
-				K_KartGetItemResult(player, KITEM_SNEAKER);
-			else  // Default to sad if nothing's enabled...
-				K_KartGetItemResult(player, KITEM_SAD);
-			player->kartstuff[k_itemblinkmode] = 0;
-			if (P_IsLocalPlayer(player))
-				S_StartSound(NULL, sfx_itrolf);
+			if (mashed && (modeattacking || cv_banana.value)) // ANY mashed value? You get a banana.
+			{
+				K_KartGetItemResult(player, KITEM_BANANA);
+				player->kartstuff[k_itemblinkmode] = 1;
+				if (P_IsLocalPlayer(player))
+					S_StartSound(NULL, sfx_itrolm);
+			}
+			else
+			{
+				if (modeattacking || cv_orbinaut.value) // Waited patiently? You get an orbinaut!
+					K_KartGetItemResult(player, KITEM_ORBINAUT);
+				else  // Default to sad if nothing's enabled...
+					K_KartGetItemResult(player, KITEM_SAD);
+				player->kartstuff[k_itemblinkmode] = 0;
+				if (P_IsLocalPlayer(player))
+					S_StartSound(NULL, sfx_itrolf);
+			}
 		}
 
 		player->kartstuff[k_itemblink] = TICRATE;
@@ -1138,15 +1161,15 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	}
 
 	// SPECIAL CASE No. 4:
-	// Being in ring debt occasionally forces Super Ring on you
-	if (player->kartstuff[k_rings] <= 0 && cv_superring.value)
+	// Being in ring debt occasionally forces Super Ring on you if you mashed
+	if (mashed && player->kartstuff[k_rings] < 0 && cv_superring.value)
 	{
-		INT32 debtamount = min(20, abs(player->kartstuff[k_rings])+1);
+		INT32 debtamount = min(20, abs(player->kartstuff[k_rings]));
 		if (P_RandomChance((debtamount*FRACUNIT)/20))
 		{
 			K_KartGetItemResult(player, KITEM_SUPERRING);
 			player->kartstuff[k_itemblink] = TICRATE;
-			player->kartstuff[k_itemblinkmode] = (mashed ? 1 : 0);
+			player->kartstuff[k_itemblinkmode] = 1;
 			player->kartstuff[k_itemroulette] = 0;
 			player->kartstuff[k_roulettetype] = 0;
 			if (P_IsLocalPlayer(player))
@@ -6210,9 +6233,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->kartstuff[k_itemtype] = KITEM_NONE;
 		}
 
+		if (spbplace == -1 || player->kartstuff[k_position] != spbplace)
+			player->kartstuff[k_ringlock] = 0; // reset ring lock
+
 		if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
 		{
-			if ((player->kartstuff[k_rings]+player->kartstuff[k_pickuprings]) < 20)
+			if ((player->kartstuff[k_rings]+player->kartstuff[k_pickuprings]) < 20 && !player->kartstuff[k_ringlock])
 				K_LookForRings(player->mo);
 		}
 		else
@@ -8226,11 +8252,17 @@ static void K_drawKartRingsAndLives(void)
 	UINT8 secondnum = (abs(stplyr->kartstuff[k_rings]) % 10);
 	INT32 ringflip = 0;
 	UINT8 *ringmap = NULL;
+	boolean colorring = false;
 	INT32 ringx = LAPS_X+7;
 
 	// Rings
 	if (stplyr->kartstuff[k_rings] <= 0 && (leveltime/5 & 1)) // In debt
+	{
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
+		colorring = true;
+	}
+	else if (stplyr->kartstuff[k_ringlock]) // SPB ring lock
+		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_JET, GTC_CACHE);
 	else if (stplyr->kartstuff[k_rings] >= 20) // Maxed out
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
 
@@ -8246,7 +8278,7 @@ static void K_drawKartRingsAndLives(void)
 		ringx += SHORT(kp_ring[ringanim_realframe]->width);
 	}
 
-	V_DrawMappedPatch(ringx, LAPS_Y-16, V_HUDTRANS|splitflags|ringflip, kp_ring[ringanim_realframe], (stplyr->kartstuff[k_rings] <= 0 ? ringmap : NULL)); // Don't do maxed out gold mapping
+	V_DrawMappedPatch(ringx, LAPS_Y-16, V_HUDTRANS|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL)); // Don't do maxed out gold mapping
 
 	if (stplyr->kartstuff[k_rings] < 0) // Draw the minus for ring debt
 	{

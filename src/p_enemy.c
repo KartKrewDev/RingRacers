@@ -3677,7 +3677,8 @@ void A_AttractChase(mobj_t *actor)
 		if (actor->tracer && actor->tracer->player && actor->tracer->health
 			//&& P_CheckSight(actor, actor->tracer)
 			&& actor->tracer->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
-			&& (actor->tracer->player->kartstuff[k_rings]+actor->tracer->player->kartstuff[k_pickuprings]) < 20)
+			&& (actor->tracer->player->kartstuff[k_rings]+actor->tracer->player->kartstuff[k_pickuprings]) < 20
+			&& !actor->tracer->player->kartstuff[k_ringlock])
 		{
 			fixed_t dist;
 			angle_t hang, vang;
@@ -8458,6 +8459,7 @@ void A_SPBChase(mobj_t *actor)
 				fixed_t easiness = ((actor->tracer->player->kartspeed + (10-spark)) << FRACBITS) / 2;
 
 				actor->lastlook = actor->tracer->player-players; // Save the player num for death scumming...
+				actor->tracer->player->kartstuff[k_ringlock] = 1; // set ring lock
 
 				if (!P_IsObjectOnGround(actor->tracer) /*&& !actor->tracer->player->kartstuff[k_pogospring]*/)
 				{
@@ -8539,7 +8541,7 @@ void A_SPBChase(mobj_t *actor)
 			actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
 			// Spawn a trail of rings behind the SPB!
-			if (leveltime % 9 == 0)
+			if (leveltime % 6 == 0)
 			{
 				mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
 					actor->z - actor->momz + (24*mapobjectscale), MT_RING);
@@ -8585,6 +8587,7 @@ void A_SPBChase(mobj_t *actor)
 			&& !players[actor->lastlook].exiting)
 		{
 			spbplace = players[actor->lastlook].kartstuff[k_position];
+			players[actor->lastlook].kartstuff[k_ringlock] = 1;
 			if (actor->extravalue2-- <= 0 && players[actor->lastlook].mo)
 			{
 				P_SetTarget(&actor->tracer, players[actor->lastlook].mo);
