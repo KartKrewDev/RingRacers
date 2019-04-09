@@ -4930,6 +4930,19 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->mo->colorized = false;
 	}
 
+	if (G_RaceGametype() && player->kartstuff[k_rings] <= 0) // spawn ring debt indicator
+	{
+		mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
+			player->mo->z + player->mo->momz + player->mo->height + (24*player->mo->scale), MT_THOK);
+		P_SetMobjState(debtflag, ((leveltime/5 & 1) ? S_RINGDEBT2 : S_RINGDEBT1));
+		P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
+		K_MatchGenericExtraFlags(debtflag, player->mo);
+		debtflag->color = player->skincolor;
+		debtflag->fuse = 2;
+		if (P_IsLocalPlayer(player))
+			debtflag->flags2 |= MF2_DONTDRAW;
+	}
+
 	if (player->kartstuff[k_dashpadcooldown]) // Twinkle Circuit inspired afterimages
 	{
 		mobj_t *ghost;

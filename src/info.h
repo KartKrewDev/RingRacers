@@ -775,6 +775,7 @@ typedef enum sprite
 	SPR_WBLN,
 
 	SPR_FWRK,
+	SPR_MXCL,
 
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
@@ -4069,6 +4070,9 @@ typedef enum state
 	S_OPAQUESMOKE3,
 	S_OPAQUESMOKE4,
 	S_OPAQUESMOKE5,
+
+	S_RINGDEBT1,
+	S_RINGDEBT2,
 
 #ifdef SEENAMES
 	S_NAMECHECK,
