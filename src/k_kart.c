@@ -3920,7 +3920,7 @@ static void K_DoShrink(player_t *user)
 			{
 				// Start shrinking!
 				K_DropItems(&players[i]);
-				players[i].kartstuff[k_growshrinktimer] = -(20*TICRATE);
+				players[i].kartstuff[k_growshrinktimer] = -(15*TICRATE);
 
 				if (players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				{
@@ -5735,7 +5735,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			&& NO_HYUDORO && !(HOLDING_ITEM
 			|| player->kartstuff[k_itemamount]
 			|| player->kartstuff[k_itemroulette]
-			|| player->kartstuff[k_growshrinktimer]
+			|| player->kartstuff[k_growshrinktimer] // Being disabled during Shrink was unintended but people seemed to be okay with it sooo...
 			|| player->kartstuff[k_rocketsneakertimer]))
 			player->kartstuff[k_userings] = 1;
 		else
