@@ -1670,7 +1670,7 @@ static void K_UpdateDraft(player_t *player)
 			diff = InvAngle(diff);
 
 		// Not in front of this player.
-		if (diff > ANGLE_90)
+		if (diff > ANG10)
 			continue;
 
 		diff = yourangle - theirangle;
@@ -1678,7 +1678,7 @@ static void K_UpdateDraft(player_t *player)
 			diff = InvAngle(diff);
 
 		// Not moving in the same direction.
-		if (diff > ANG10)
+		if (diff > ANGLE_90)
 			continue;
 
 		dist = P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x, players[i].mo->y - player->mo->y), players[i].mo->z - player->mo->z);
