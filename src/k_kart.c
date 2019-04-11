@@ -4934,9 +4934,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 			player->mo->z + player->mo->momz + player->mo->height + (24*player->mo->scale), MT_THOK);
-		P_SetMobjState(debtflag, ((leveltime/5 & 1) ? S_RINGDEBT2 : S_RINGDEBT1));
+		P_SetMobjState(debtflag, S_RINGDEBT);
 		P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
 		K_MatchGenericExtraFlags(debtflag, player->mo);
+		debtflag->frame += (leveltime % 4);
+		if ((leveltime/12) & 1)
+			debtflag->frame += 4;
 		debtflag->color = player->skincolor;
 		debtflag->fuse = 2;
 		if (P_IsLocalPlayer(player))
@@ -6786,6 +6789,7 @@ static patch_t *kp_facehighlight[8];
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ring[6];
 static patch_t *kp_ringdebtminus;
+static patch_t *kp_ringspblock[16];
 
 static patch_t *kp_speedometersticker;
 static patch_t *kp_speedometerlabel[4];
@@ -6941,6 +6945,14 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	kp_ringdebtminus =			W_CachePatchName("RDEBTMIN", PU_HUDGFX);
+
+	sprintf(buffer, "SPBRNGxx");
+	for (i = 0; i < 16; i++)
+	{
+		buffer[6] = '0'+((i+1) / 10);
+		buffer[7] = '0'+((i+1) % 10);
+		kp_ringspblock[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
 
 	// Speedometer
 	kp_speedometersticker =		W_CachePatchName("K_SPDMBG", PU_HUDGFX);
@@ -8265,6 +8277,7 @@ static void K_drawKartRingsAndLives(void)
 	static UINT8 ringanim_frame = 0;
 	static UINT8 ringanim_tics = 0;
 	static UINT8 ringanim_delay = RINGANIM_DELAYMAX+1;
+	static UINT8 ringlockanim = 0;
 
 	SINT8 ringanim_realframe = ringanim_frame;
 	INT32 splitflags = K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT);
@@ -8279,11 +8292,6 @@ static void K_drawKartRingsAndLives(void)
 	if (stplyr->kartstuff[k_rings] <= 0 && (leveltime/5 & 1)) // In debt
 	{
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
-		colorring = true;
-	}
-	else if (stplyr->kartstuff[k_ringlock] && !(leveltime/5 & 1)) // SPB ring lock
-	{
-		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_JET, GTC_CACHE);
 		colorring = true;
 	}
 	else if (stplyr->kartstuff[k_rings] >= 20) // Maxed out
@@ -8344,6 +8352,34 @@ static void K_drawKartRingsAndLives(void)
 #undef RINGANIM_NUMFRAMES
 #undef RINGANIM_FLIPFRAME
 #undef RINGANIM_DELAYMAX
+
+	// SPB ring lock
+	if (stplyr->kartstuff[k_ringlock])
+	{
+		UINT8 normalanim = (leveltime % 14);
+		UINT8 debtanim = 14 + (leveltime % 2);
+
+		if (ringlockanim >= 14) // debt animation
+		{
+			if ((stplyr->kartstuff[k_rings] > 0) // Get out of 0 ring animation
+				&& (normalanim == 3 || normalanim == 10)) // on these transition frames.
+				ringlockanim = normalanim;
+			else
+				ringlockanim = debtanim;
+		}
+		else // normal animation
+		{
+			if ((stplyr->kartstuff[k_rings] <= 0) // Go into 0 ring animation
+				&& (ringlockanim == 1 || ringlockanim == 8)) // on these transition frames.
+				ringlockanim = debtanim;
+			else
+				ringlockanim = normalanim;
+		}
+
+		V_DrawScaledPatch(LAPS_X-5, LAPS_Y-28, V_HUDTRANS|splitflags, kp_ringspblock[ringlockanim]);
+	}
+	else
+		ringlockanim = (leveltime % 14); // reset to normal anim next time
 
 	// Lives
 	if (!netgame)
