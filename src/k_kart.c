@@ -2145,7 +2145,6 @@ void K_MomentumToFacing(player_t *player)
 // sets k_boostpower, k_speedboost, and k_accelboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
-	fixed_t sneaker = 0;
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0;
 	UINT8 boostfactor = 1;
@@ -2154,20 +2153,6 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		player->kartstuff[k_boostpower] = player->kartstuff[k_speedboost] = player->kartstuff[k_accelboost] = 0;
 		return;
-	}
-
-	// LOVELY magic numbers...
-	switch (gamespeed)
-	{
-		case 0:
-			sneaker = 53740+768;
-			break;
-		case 2:
-			sneaker = 17294+768;
-			break;
-		default:
-			sneaker = 32768;
-			break;
 	}
 
 	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
@@ -2185,10 +2170,10 @@ static void K_GetKartBoostPower(player_t *player)
 }
 
 	if (player->kartstuff[k_levelbooster]) // Level boosters
-		ADDBOOST(sneaker, 8*FRACUNIT); // + 800% acceleration, varying top speed
+		ADDBOOST(FRACUNIT/2, 8*FRACUNIT); // + 50% top speed, + 800% acceleration
 
 	if (player->kartstuff[k_sneakertimer]) // Sneaker
-		ADDBOOST(sneaker, 8*FRACUNIT); // + 800% acceleration, varying top speed
+		ADDBOOST(FRACUNIT/2, 8*FRACUNIT); // + 50% top speed, + 800% acceleration
 
 	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
 		ADDBOOST((3*FRACUNIT)/8, 3*FRACUNIT); // + 37.5% top speed, + 300% acceleration
@@ -3857,20 +3842,7 @@ static void K_DoHyudoroSteal(player_t *player)
 
 void K_DoSneaker(player_t *player, INT32 type)
 {
-	fixed_t intendedboost;
-
-	switch (gamespeed)
-	{
-		case 0:
-			intendedboost = 53740+768;
-			break;
-		case 2:
-			intendedboost = 17294+768;
-			break;
-		default:
-			intendedboost = 32768;
-			break;
-	}
+	const fixed_t intendedboost = FRACUNIT/2;
 
 	if (!player->kartstuff[k_floorboost] || player->kartstuff[k_floorboost] == 3)
 	{
