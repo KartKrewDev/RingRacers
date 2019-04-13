@@ -69,7 +69,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS","ZTCH",
 	"MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH","BFRT",
 	"OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN","FWRK",
-	"MXCL","XMS4","XMS5","VIEW"
+	"MXCL","RGSP","XMS4","XMS5","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -3415,6 +3415,22 @@ state_t states[NUMSTATES] =
 
 	{SPR_MXCL, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_RINGDEBT
 
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_RINGSPARKS2}, // S_RINGSPARKS1
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_RINGSPARKS3}, // S_RINGSPARKS2
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_RINGSPARKS4}, // S_RINGSPARKS3
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_RINGSPARKS5}, // S_RINGSPARKS4
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_RINGSPARKS6}, // S_RINGSPARKS5
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|5, 1, {NULL}, 0, 0, S_RINGSPARKS7}, // S_RINGSPARKS6
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|6, 1, {NULL}, 0, 0, S_RINGSPARKS8}, // S_RINGSPARKS7
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|7, 1, {NULL}, 0, 0, S_RINGSPARKS9}, // S_RINGSPARKS8
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|8, 1, {NULL}, 0, 0, S_RINGSPARKS10}, // S_RINGSPARKS9
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|9, 1, {NULL}, 0, 0, S_RINGSPARKS11}, // S_RINGSPARKS10
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|10, 1, {NULL}, 0, 0, S_RINGSPARKS12}, // S_RINGSPARKS11
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|11, 1, {NULL}, 0, 0, S_RINGSPARKS13}, // S_RINGSPARKS12
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|12, 1, {NULL}, 0, 0, S_RINGSPARKS14}, // S_RINGSPARKS13
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|13, 1, {NULL}, 0, 0, S_RINGSPARKS15}, // S_RINGSPARKS14
+	{SPR_RGSP, FF_PAPERSPRITE|FF_FULLBRIGHT|14, 1, {NULL}, 0, 0, S_NULL}, // S_RINGSPARKS15
+
 #ifdef SEENAMES
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
 #endif
@@ -5461,7 +5477,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
+		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
 		sfx_itemup,     // deathsound
 		38*FRACUNIT,    // speed
@@ -20070,6 +20086,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    0,              // damage
 	    sfx_None,       // activesound
 	    MF_NOCLIPTHING|MF_BOUNCE|MF_GRENADEBOUNCE, // flags
+	    S_NULL          // raisestate
+	},
+
+		{           // MT_RINGSPARKS
+	    -1,             // doomednum
+	    S_RINGSPARKS1,  // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    1,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_NOBLOCKMAP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 	    S_NULL          // raisestate
 	},
 

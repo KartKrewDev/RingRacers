@@ -3582,12 +3582,18 @@ void A_AttractChase(mobj_t *actor)
 
 			if (actor->extravalue1 >= 21)
 			{
+				UINT8 i;
 				// Base add is 3 tics for 9,9, adds 1.5 tics for each point closer to the 1,1 end
 				actor->target->player->kartstuff[k_ringboost] += ((3*RINGBOOSTPWR)/2) + 3;
 				S_StartSound(actor->target, sfx_s1b5);
-				actor->momx = (3*actor->target->momx)/4;
-				actor->momy = (3*actor->target->momy)/4;
-				actor->momz = (3*actor->target->momz)/4;
+				// ring sparkle effect
+				for (i = 0; i < 4; i++)
+				{
+					mobj_t *sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
+					P_SetTarget(&sparkle->target, actor->target);
+					sparkle->extravalue1 = i;
+				}
+				
 				P_KillMobj(actor, actor->target, actor->target);
 				return;
 			}
