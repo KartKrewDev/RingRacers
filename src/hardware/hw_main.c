@@ -4233,6 +4233,9 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 				colormap = sector->extra_colormap;
 		}
 
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
+
 		if (colormap)
 			sSurf.FlatColor.rgba = HWR_Lighting(lightlevel/2, colormap->rgba, colormap->fadergba, false, true);
 		else
@@ -4502,6 +4505,9 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		wallVerts[0].y = wallVerts[1].y = bot;
 #endif
 
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
+
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
 		else
@@ -4680,7 +4686,11 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 		extracolormap_t *colormap = sector->extra_colormap;
 
 		if (!(spr->mobj->frame & FF_FULLBRIGHT))
+		{
 			lightlevel = sector->lightlevel;
+			if (spr->mobj->frame & FF_SEMIBRIGHT)
+				lightlevel = 128 + (lightlevel>>1);
+		}
 
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
@@ -4787,6 +4797,9 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
+
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
 
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
@@ -5417,6 +5430,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	size_t lumpoff;
 	unsigned rot;
 	UINT8 flip;
+	boolean vflip = (!(thing->eflags & MFE_VERTICALFLIP) != !(thing->frame & FF_VERTICALFLIP));
 	angle_t ang;
 	INT32 heightsec, phs;
 	const boolean papersprite = (thing->frame & FF_PAPERSPRITE);
@@ -5548,7 +5562,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	x1 = tr_x + x1 * rightcos;
 	x2 = tr_x - x2 * rightcos;
 
-	if (thing->eflags & MFE_VERTICALFLIP)
+	if (vflip)
 	{
 		gz = FIXED_TO_FLOAT(thing->z+thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gzt = gz + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
@@ -5635,10 +5649,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	//CONS_Debug(DBG_RENDER, "------------------\nH: sprite  : %d\nH: frame   : %x\nH: type    : %d\nH: sname   : %s\n\n",
 	//            thing->sprite, thing->frame, thing->type, sprnames[thing->sprite]);
 
-	if (thing->eflags & MFE_VERTICALFLIP)
-		vis->vflip = true;
-	else
-		vis->vflip = false;
+	vis->vflip = vflip;
 
 	vis->precip = false;
 }

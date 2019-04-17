@@ -4832,7 +4832,7 @@ void G_WriteGhostTic(mobj_t *ghost)
 	}
 
 	// Store the sprite frame.
-	frame = ghost->frame & 0xFF;
+	frame = ghost->frame & FF_FRAMEMASK;
 	if (frame != oldghost.frame)
 	{
 		oldghost.frame = frame;
