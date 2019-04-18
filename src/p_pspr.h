@@ -65,10 +65,10 @@
 
 /// \brief Frame flags - Animate: Simple stateless animation
 #define FF_ANIMATE 0x01000000
-/// \brief Frame flags - Animate: Start at a random place in the animation (mutually exclusive with below)
-#define FF_RANDOMANIM 0x02000000
-/// \brief Frame flags - Animate: Sync animation to global timer (mutually exclusive with above)
-#define FF_GLOBALANIM 0x04000000
+/// \brief Frame flags - Animate: Sync animation to global timer (mutually exclusive with below, currently takes priority)
+#define FF_GLOBALANIM 0x02000000
+/// \brief Frame flags - Animate: Start at a random place in the animation (mutually exclusive with above)
+#define FF_RANDOMANIM 0x04000000
 
 /**	\brief translucency tables
 
