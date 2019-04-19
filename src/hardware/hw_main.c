@@ -4220,7 +4220,11 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 			INT32 light = R_GetPlaneLight(sector, spr->mobj->floorz, false);
 
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			{
 				lightlevel = *sector->lightlist[light].lightlevel;
+				if (spr->mobj->frame & FF_SEMIBRIGHT)
+					lightlevel = 128 + (lightlevel>>1);
+			}
 
 			if (sector->lightlist[light].extra_colormap)
 				colormap = sector->lightlist[light].extra_colormap;
@@ -4232,9 +4236,6 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
-
-		if (spr->mobj->frame & FF_SEMIBRIGHT)
-			lightlevel = 128 + (lightlevel>>1);
 
 		if (colormap)
 			sSurf.FlatColor.rgba = HWR_Lighting(lightlevel/2, colormap->rgba, colormap->fadergba, false, true);
@@ -4436,7 +4437,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			{
 				lightlevel = *list[i].lightlevel;
+				if (spr->mobj->frame & FF_SEMIBRIGHT)
+					lightlevel = 128 + (lightlevel>>1);
+			}
 			colormap = list[i].extra_colormap;
 		}
 
@@ -4504,9 +4509,6 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		wallVerts[2].y = wallVerts[3].y = top;
 		wallVerts[0].y = wallVerts[1].y = bot;
 #endif
-
-		if (spr->mobj->frame & FF_SEMIBRIGHT)
-			lightlevel = 128 + (lightlevel>>1);
 
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
