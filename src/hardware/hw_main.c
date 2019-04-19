@@ -4396,16 +4396,20 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 
 	alpha = Surf.FlatColor.s.alpha;
 
-	// Start with the lightlevel and colormap from the top of the sprite
-	lightlevel = *list[sector->numlights - 1].lightlevel;
-	colormap = list[sector->numlights - 1].extra_colormap;
-	i = 0;
 	temp = FLOAT_TO_FIXED(realtop);
 
-	if (spr->mobj->frame & FF_FULLBRIGHT)
-		lightlevel = 255;
-
 #ifdef ESLOPE
+	// Start with the lightlevel and colormap from the top of the sprite
+	lightlevel = 255;
+	colormap = list[sector->numlights - 1].extra_colormap;
+
+	if (!(spr->mobj->frame & FF_FULLBRIGHT))
+	{
+		lightlevel = *list[sector->numlights - 1].lightlevel;
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
+	}
+
 	for (i = 1; i < sector->numlights; i++)
 	{
 		fixed_t h = sector->lightlist[i].slope ? P_GetZAt(sector->lightlist[i].slope, spr->mobj->x, spr->mobj->y)
@@ -4413,7 +4417,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		if (h <= temp)
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			{
 				lightlevel = *list[i-1].lightlevel;
+				if (spr->mobj->frame & FF_SEMIBRIGHT)
+					lightlevel = 128 + (lightlevel>>1);
+			}
 			colormap = list[i-1].extra_colormap;
 			break;
 		}
@@ -4421,7 +4429,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 #else
 	i = R_GetPlaneLight(sector, temp, false);
 	if (!(spr->mobj->frame & FF_FULLBRIGHT))
+	{
 		lightlevel = *list[i].lightlevel;
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
+	}
 	colormap = list[i].extra_colormap;
 #endif
 
