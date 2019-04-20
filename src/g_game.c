@@ -2839,10 +2839,15 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 	{
 		UINT8 i;
 		UINT8 pos = 0;
+		boolean usepowerlvl = false;
 
 		// SRB2Kart: figure out player spawn pos from points
 		if (!playeringame[playernum] || players[playernum].spectator)
 			return playerstarts[0]; // go to first spot if you're a spectator
+
+		// Setup power level type
+		if (netgame)
+			usepowerlvl = true;
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -2864,8 +2869,17 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 						continue;
 					if (j == i)
 						continue;
-					if (players[j].score == players[i].score)
-						num++;
+
+					if (usepowerlvl)
+					{
+						if (clientpowerlevels[j][0] == clientpowerlevels[i][0])
+							num++;
+					}
+					else
+					{
+						if (players[j].score == players[i].score)
+							num++;
+					}
 				}
 
 				if (num > 1) // found dupes
@@ -2873,8 +2887,21 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 			}
 			else
 			{
-				if (players[i].score > players[playernum].score || i < playernum)
+				if (i < playernum)
 					pos++;
+				else
+				{
+					if (usepowerlvl)
+					{
+						if (clientpowerlevels[i][0] > clientpowerlevels[playernum][0])
+							pos++;
+					}
+					else
+					{
+						if (players[i].score > players[playernum].score)
+							pos++;
+					}
+				}
 			}
 		}
 
