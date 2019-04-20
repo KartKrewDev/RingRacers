@@ -496,7 +496,7 @@ static GrTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 	jmp_buf jmpbuf;
 #endif
 #endif
-	png_FILE_p png_FILE;
+	volatile png_FILE_p png_FILE;
 	//Filename checking fixed ~Monster Iestyn and Golden
 	char *pngfilename = va("%s"PATHSEP"md2"PATHSEP"%s", srb2home, filename);
 
@@ -1208,6 +1208,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 
 	// MD2 colormap fix
 	// colormap test
+	if (spr->mobj->subsector)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
 		UINT8 lightlevel = 255;
@@ -1238,6 +1239,10 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
 		else
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, NORMALFOG, FADEFOG, false, false);
+	}
+	else
+	{
+		Surf.FlatColor.rgba = 0xFFFFFFFF;
 	}
 
 	// Look at HWR_ProjectSprite for more
