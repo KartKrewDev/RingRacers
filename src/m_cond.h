@@ -28,7 +28,7 @@ typedef enum
 	//UC_ULTIMATECLEAR,	// ULTIMATECLEAR <x times>
 	//UC_OVERALLSCORE,	// OVERALLSCORE [score to beat]
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
-	UC_OVERALLRINGS,	// OVERALLRINGS [rings to beat]
+	//UC_OVERALLRINGS,	// OVERALLRINGS [rings to beat]
 	UC_MAPVISITED,		// MAPVISITED [map number]
 	UC_MAPBEATEN,		// MAPBEATEN [map number]
 	UC_MAPALLEMERALDS,	// MAPALLEMERALDS [map number]
