@@ -786,15 +786,40 @@ void Y_Ticker(void)
 
 						r++;
 						data.match.jitter[data.match.num[q]] = 1;
-						if (data.match.increase[data.match.num[q]] > 0)
+
+						if (powertype != -1)
 						{
-							if (--data.match.increase[data.match.num[q]])
-								kaching = false;
+							// Power Levels
+							if (abs(data.match.increase[data.match.num[q]]) < 10)
+							{
+								// Not a lot of point increase left, just set to 0 instantly
+								data.match.increase[data.match.num[q]] = 0;
+							}
+							else
+							{
+								SINT8 remove = 0; // default (should not happen)
+
+								if (data.match.increase[data.match.num[q]] < 0)
+									remove = -10;
+								else if (data.match.increase[data.match.num[q]] > 0)
+									remove = 10;
+
+								// Remove 10 points at a time
+								data.match.increase[data.match.num[q]] -= remove; 
+
+								// Still not zero, no kaching yet
+								if (data.match.increase[data.match.num[q]] != 0)
+									kaching = false;
+							}
 						}
-						else if (data.match.increase[data.match.num[q]] < 0)
+						else
 						{
-							if (++data.match.increase[data.match.num[q]])
-								kaching = false;
+							// Basic bitch points
+							if (data.match.increase[data.match.num[q]])
+							{
+								if (--data.match.increase[data.match.num[q]])
+									kaching = false;
+							}
 						}
 					}
 
