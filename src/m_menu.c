@@ -1445,8 +1445,7 @@ static menuitem_t OP_GameOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Starting Bumpers",				&cv_kartbumpers,		110},
 	{IT_STRING | IT_CVAR, NULL, "Karma Comeback",				&cv_kartcomeback,		120},
 
-	{IT_STRING | IT_CVAR, NULL, "Force Character",				&cv_forceskin,          140},
-	{IT_STRING | IT_CVAR, NULL, "Restrict Character Changes",	&cv_restrictskinchange, 150},
+	{IT_STRING | IT_CVAR, NULL, "Track Power Levels",			&cv_kartusepwrlv,		140},
 };
 
 static menuitem_t OP_ServerOptionsMenu[] =

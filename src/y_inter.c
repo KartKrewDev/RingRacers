@@ -937,7 +937,7 @@ void Y_StartIntermission(void)
 	// set player Power Level type
 	powertype = -1;
 
-	if (netgame)
+	if (netgame && cv_kartusepwrlv.value)
 	{
 		if (G_RaceGametype())
 			powertype = 0;

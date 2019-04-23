@@ -544,6 +544,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartspeedometer);
 	CV_RegisterVar(&cv_kartvoices);
 	CV_RegisterVar(&cv_karteliminatelast);
+	CV_RegisterVar(&cv_kartusepwrlv);
 	CV_RegisterVar(&cv_votetime);
 
 	CV_RegisterVar(&cv_kartdebugitem);
@@ -6122,6 +6123,10 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	if (!netgame)
 		return;
 
+	// This server isn't using power levels anyway!
+	if (!cv_kartusepwrlv.value)
+		return;
+
 	// Hey, I just got here!
 	if (players[playernum].jointime <= 1)
 		return;
@@ -6144,7 +6149,7 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	else if (G_BattleGametype())
 		powertype = 1;
 
-	if (powertype == -1) // Not using power levels?
+	if (powertype == -1) // No power type?!
 		return;
 
 	if (clientpowerlevels[playernum][powertype] == 0) // splitscreen guests don't record power level changes
