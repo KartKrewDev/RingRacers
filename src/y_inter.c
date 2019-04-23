@@ -635,7 +635,7 @@ void Y_IntermissionDrawer(void)
 
 				if (data.match.rankingsmode)
 				{
-					if (!clientpowerlevels[i][powertype]) // No power level (splitscreen guests)
+					if (!clientpowerlevels[data.match.num[i]][powertype]) // No power level (splitscreen guests)
 						STRBUFCPY(strtime, "----");
 					else
 					{
