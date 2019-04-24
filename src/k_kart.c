@@ -6109,6 +6109,39 @@ INT16 K_CalculatePowerLevelInc(INT16 diff)
 	return (INT16)(increment >> FRACBITS);
 }
 
+INT16 K_CalculatePowerLevelAvg(void)
+{
+	fixed_t avg = 0;
+	UINT8 div = 0;
+	SINT8 t = -1;
+	UINT8 i;
+
+	if (!netgame || !cv_kartusepwrlv.value)
+		return 0; // No average.
+
+	if (G_RaceGametype())
+		t = 0;
+	else if (G_BattleGametype())
+		t = 1;
+
+	if (t == -1)
+		return 0; // Hmm?!
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator
+			|| clientpowerlevels[i][t] == 0)
+			continue;
+
+		avg += clientpowerlevels[i][t];
+		div++;
+	}
+
+	avg /= div;
+
+	return (INT16)(avg >> FRACBITS);
+}
+
 void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 {
 	UINT8 p = 0;

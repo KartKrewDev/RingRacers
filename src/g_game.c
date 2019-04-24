@@ -273,6 +273,10 @@ INT16 nospectategrief[MAXPLAYERS]; // Which players spec-scummed, and their powe
 boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
 
+// Scrambles
+SINT8 speedscramble;
+SINT8 encorescramble;
+
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 boolean legitimateexit; // Did this client actually finish the match?
 boolean comebackshowninfo; // Have you already seen the "ATTACK OR PROTECT" message?
@@ -3194,9 +3198,10 @@ boolean G_BattleGametype(void)
 //
 INT16 G_SometimesGetDifferentGametype(void)
 {
-	boolean encorepossible = (M_SecretUnlocked(SECRET_ENCORE) && G_RaceGametype());
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1) && G_RaceGametype());
 
-	if (!cv_kartvoterulechanges.value) // never
+	if (!cv_kartvoterulechanges.value // never
+		&& encorescramble != 1) // destroying the code for this one instance
 		return gametype;
 
 	if (randmapbuffer[NUMMAPS] > 0 && (encorepossible || cv_kartvoterulechanges.value != 3))
@@ -3204,24 +3209,32 @@ INT16 G_SometimesGetDifferentGametype(void)
 		randmapbuffer[NUMMAPS]--;
 		if (encorepossible)
 		{
-			switch (cv_kartvoterulechanges.value)
+			if (encorescramble >= 0)
+				encorepossible = (boolean)encorescramble;
+			else
 			{
-				case 3: // always
-					randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
-					break;
-				case 2: // frequent
-					encorepossible = M_RandomChance(FRACUNIT>>1);
-					break;
-				case 1: // sometimes
-				default:
-					encorepossible = M_RandomChance(FRACUNIT>>2);
-					break;
+				switch (cv_kartvoterulechanges.value)
+				{
+					case 3: // always
+						randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
+						break;
+					case 2: // frequent
+						encorepossible = M_RandomChance(FRACUNIT>>1);
+						break;
+					case 1: // sometimes
+					default:
+						encorepossible = M_RandomChance(FRACUNIT>>2);
+						break;
+				}
 			}
 			if (encorepossible != (boolean)cv_kartencore.value)
 				return (gametype|0x80);
 		}
 		return gametype;
 	}
+
+	if (!cv_kartvoterulechanges.value) // never (again)
+		return gametype;
 
 	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
 	{
