@@ -1435,6 +1435,11 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	p = PutFileNeeded();
 
+	if (cv_kartusepwrlv.value)
+		netbuffer->u.serverinfo.avgpwrlv = K_CalculatePowerLevelAvg();
+	else
+		netbuffer->u.serverinfo.avgpwrlv = -1;
+
 	HSendPacket(node, false, 0, p - ((UINT8 *)&netbuffer->u));
 }
 

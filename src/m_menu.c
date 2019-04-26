@@ -7288,6 +7288,7 @@ static void M_DrawConnectMenu(void)
 	UINT16 i, j;
 	const char *gt = "Unknown";
 	const char *spd = "";
+	const char *pwr = "----";
 	INT32 numPages = (serverlistcount+(SERVERS_PER_PAGE-1))/SERVERS_PER_PAGE;
 
 	for (i = FIRSTSERVERLINE; i < min(localservercount, SERVERS_PER_PAGE)+FIRSTSERVERLINE; i++)
@@ -7322,14 +7323,14 @@ static void M_DrawConnectMenu(void)
 
 		V_DrawString(currentMenu->x, S_LINEY(i), globalflags, serverlist[slindex].info.servername);
 
-		// Don't use color flags intentionally, the global yellow color will auto override the text color code
-		if (serverlist[slindex].info.modifiedgame)
-			V_DrawSmallString(currentMenu->x+202, S_LINEY(i)+8, globalflags, "\x85" "Mod");
-		if (serverlist[slindex].info.cheatsenabled)
-			V_DrawSmallString(currentMenu->x+222, S_LINEY(i)+8, globalflags, "\x83" "Cheats");
+		if (serverlist[slindex].info.kartvars & SV_PASSWORD)
+			V_DrawFixedPatch((currentMenu->x - 9) << FRACBITS, (S_LINEY(i)) << FRACBITS, FRACUNIT, globalflags & (~V_ALLOWLOWERCASE), W_CachePatchName("SERVLOCK", PU_CACHE), NULL);
 
 		V_DrawSmallString(currentMenu->x, S_LINEY(i)+8, globalflags,
 		                     va("Ping: %u", (UINT32)LONG(serverlist[slindex].info.time)));
+
+		V_DrawSmallString(currentMenu->x+44,S_LINEY(i)+8, globalflags,
+		                         va("Players: %02d/%02d", serverlist[slindex].info.numberofplayer, serverlist[slindex].info.maxplayer));
 
 		gt = "Unknown";
 		for (j = 0; gametype_cons_t[j].strvalue; j++)
@@ -7337,21 +7338,26 @@ static void M_DrawConnectMenu(void)
 			if (gametype_cons_t[j].value == serverlist[slindex].info.gametype)
 				gt = gametype_cons_t[j].strvalue;
 		}
-
-		V_DrawSmallString(currentMenu->x+46,S_LINEY(i)+8, globalflags,
-		                         va("Players: %02d/%02d", serverlist[slindex].info.numberofplayer, serverlist[slindex].info.maxplayer));
-
-		V_DrawSmallString(currentMenu->x+112, S_LINEY(i)+8, globalflags, gt);
+		V_DrawSmallString(currentMenu->x+108, S_LINEY(i)+8, globalflags, gt);
 
 		if (serverlist[slindex].info.gametype == GT_RACE)
 		{
 			spd = kartspeed_cons_t[serverlist[slindex].info.kartvars & SV_SPEEDMASK].strvalue;
-
-			V_DrawSmallString(currentMenu->x+132, S_LINEY(i)+8, globalflags, va("(%s Speed)", spd));
+			V_DrawSmallString(currentMenu->x+128, S_LINEY(i)+8, globalflags, va("(%s)", spd));
 		}
 
-		if (serverlist[slindex].info.kartvars & SV_PASSWORD)
-			V_DrawFixedPatch((currentMenu->x - 9) << FRACBITS, (S_LINEY(i)) << FRACBITS, FRACUNIT, globalflags & (~V_ALLOWLOWERCASE), W_CachePatchName("SERVLOCK", PU_CACHE), NULL);
+		pwr = "----";
+		if (serverlist[slindex].info.avgpwrlv == -1)
+			pwr = "Off";
+		else if (serverlist[slindex].info.avgpwrlv > 0)
+			pwr = va("%04d", serverlist[slindex].info.avgpwrlv);
+		V_DrawSmallString(currentMenu->x+171, S_LINEY(i)+8, globalflags, va("Power Level: %s", pwr));
+
+		// Don't use color flags intentionally, the global yellow color will auto override the text color code
+		if (serverlist[slindex].info.modifiedgame)
+			V_DrawSmallString(currentMenu->x+245, S_LINEY(i)+8, globalflags, "\x85" "Mod");
+		if (serverlist[slindex].info.cheatsenabled)
+			V_DrawSmallString(currentMenu->x+265, S_LINEY(i)+8, globalflags, "\x83" "Cheats");
 
 		MP_ConnectMenu[i+FIRSTSERVERLINE].status = IT_STRING | IT_CALL;
 	}

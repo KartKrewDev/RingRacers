@@ -6132,7 +6132,7 @@ INT16 K_CalculatePowerLevelAvg(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator
-			|| clientpowerlevels[i][t] == 0)
+			|| clientpowerlevels[i][t] == 0) // splitscreen player
 			continue;
 
 		avg += clientpowerlevels[i][t];

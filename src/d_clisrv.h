@@ -399,6 +399,7 @@ typedef struct
 	UINT8 actnum;
 	UINT8 iszone;
 	UINT8 fileneeded[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
+	INT16 avgpwrlv; // Kart avg power level
 } ATTRPACK serverinfo_pak;
 
 typedef struct
