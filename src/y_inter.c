@@ -709,15 +709,15 @@ dotimer:
 			va("%s starts in %d", cv_advancemap.string, tickdown));
 	}
 
-	// Make it obvious that scrambling is happening next round.
-	if ((intertic/TICRATE) & 1)
-	{
+	// Make it obvious that scrambling is happening next round. (OR NOT I GUESS.)
+	//if ((intertic/TICRATE) & 1)
+	//{
 		/*if (cv_scrambleonchange.value && cv_teamscramble.value)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, hilicol, M_GetText("Teams will be scrambled next round!"));*/
 		if (speedscramble != -1 && speedscramble != gamespeed)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
 				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[speedscramble].strvalue));
-	}
+	//}
 }
 
 //
