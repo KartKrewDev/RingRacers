@@ -705,7 +705,7 @@ dotimer:
 	if (timer)
 	{
 		INT32 tickdown = (timer+1)/TICRATE;
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol,
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol|V_SNAPTOBOTTOM,
 			va("%s starts in %d", cv_advancemap.string, tickdown));
 	}
 
@@ -714,9 +714,9 @@ dotimer:
 	{
 		/*if (cv_scrambleonchange.value && cv_teamscramble.value)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, hilicol, M_GetText("Teams will be scrambled next round!"));*/
-		if (speedscramble != -1)
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-12, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
-				M_GetText("The next race will be %s Speed!", (speedscramble == 2 ? "Hard" : "Normal")));
+		if (speedscramble != -1 && speedscramble != gamespeed)
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
+				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[speedscramble].strvalue));
 	}
 }
 
@@ -949,78 +949,87 @@ void Y_StartIntermission(void)
 			powertype = 0;
 		else if (G_BattleGametype())
 			powertype = 1;
+	}
 
-		// Race scrambles
-		if ((intertype == int_race) && (cv_speedscramble.value || cv_encorescramble.value))
+	// Race scrambles
+	if (powertype == 0 && (cv_speedscramble.value || cv_encorescramble.value))
+	{
+		boolean hardmode = false;
+		boolean encore = false;
+		INT16 avg = 0, min = 0;
+		UINT8 i, t = 0;
+
+		avg = K_CalculatePowerLevelAvg();
+
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			boolean hardmode = false;
-			boolean encore = false;
-			INT16 avg = 0, min = 0;
-			UINT8 i, t = 0;
+			if (min == 0 || clientpowerlevels[i][0] < min)
+				min = clientpowerlevels[i][0];
+		}
 
-			avg = K_CalculatePowerLevelAvg();
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (min == 0 || clientpowerlevels[i][0] < min)
-					min = clientpowerlevels[i][0];
-			}
-
-			if (min >= 4000)
-			{
-				if (avg >= 5000)
-					t = 3;
-				else
-					t = 2;
-			}
-			else if (min >= 2500)
-			{
-				if (avg >= 3000)
-					t = 2;
-				else
-					t = 1;
-			}
-			else if (min >= 500)
-			{
-				if (avg >= 2000)
-					t = 1;
-				else
-					t = 0;
-			}
+		if (min >= 6000)
+		{
+			if (avg >= 8000)
+				t = 4;
+			else
+				t = 3;
+		}
+		else if (min >= 4000)
+		{
+			if (avg >= 5000)
+				t = 3;
+			else
+				t = 2;
+		}
+		else if (min >= 2500)
+		{
+			if (avg >= 3000)
+				t = 2;
+			else
+				t = 1;
+		}
+		else if (min >= 500)
+		{
+			if (avg >= 2000)
+				t = 1;
 			else
 				t = 0;
-
-			switch (t)
-			{
-				case 3:
-					hardmode = true;
-					encore = M_RandomChance(FRACUNIT>>1);
-					break;
-				case 2:
-					hardmode = M_RandomChance((7<<FRACBITS)/10);
-					encore = M_RandomChance(FRACUNIT>>2);
-					break;
-				case 1:
-					hardmode = M_RandomChance((3<<FRACBITS)/10);
-					encore = false;
-					break;
-				case 0:
-				default:
-					hardmode = false;
-					encore = false;
-					break;
-			}
-
-			if (cv_speedscramble.value)
-				speedscramble = (hardmode ? 2 : 1);
-			else
-				speedscramble = -1;
-
-			if (cv_encorescramble.value)
-				encorescramble = (encore ? 1 : 0);
-			else
-				encorescramble = -1;
 		}
+		else
+			t = 0;
+
+		switch (t)
+		{
+			case 4:
+				hardmode = encore = true;
+				break;
+			case 3:
+				hardmode = true;
+				encore = M_RandomChance(FRACUNIT>>1);
+				break;
+			case 2:
+				hardmode = M_RandomChance((7<<FRACBITS)/10);
+				encore = M_RandomChance(FRACUNIT>>2);
+				break;
+			case 1:
+				hardmode = M_RandomChance((3<<FRACBITS)/10);
+				encore = false;
+				break;
+			case 0:
+			default:
+				hardmode = encore = false;
+				break;
+		}
+
+		if (cv_speedscramble.value)
+			speedscramble = (hardmode ? 2 : 1);
+		else
+			speedscramble = -1;
+
+		if (cv_encorescramble.value)
+			encorescramble = (encore ? 1 : 0);
+		else
+			encorescramble = -1;
 	}
 
 	if (!multiplayer)

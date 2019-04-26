@@ -474,6 +474,9 @@ extern INT16 nospectategrief[MAXPLAYERS];
 extern boolean thwompsactive;
 extern SINT8 spbplace;
 
+extern SINT8 speedscramble;
+extern SINT8 encorescramble;
+
 extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;

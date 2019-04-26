@@ -545,6 +545,8 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartvoices);
 	CV_RegisterVar(&cv_karteliminatelast);
 	CV_RegisterVar(&cv_kartusepwrlv);
+	CV_RegisterVar(&cv_speedscramble);
+	CV_RegisterVar(&cv_encorescramble);
 	CV_RegisterVar(&cv_votetime);
 
 	CV_RegisterVar(&cv_kartdebugitem);
@@ -6136,6 +6138,9 @@ INT16 K_CalculatePowerLevelAvg(void)
 		avg += clientpowerlevels[i][t];
 		div++;
 	}
+
+	if (!div)
+		return 0; // No average.
 
 	avg /= div;
 

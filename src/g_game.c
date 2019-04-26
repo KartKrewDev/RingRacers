@@ -274,8 +274,8 @@ boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
 
 // Scrambles
-SINT8 speedscramble;
-SINT8 encorescramble;
+SINT8 speedscramble = -1;
+SINT8 encorescramble = -1;
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 boolean legitimateexit; // Did this client actually finish the match?
@@ -3210,7 +3210,7 @@ INT16 G_SometimesGetDifferentGametype(void)
 		if (encorepossible)
 		{
 			if (encorescramble >= 0)
-				encorepossible = (boolean)encorescramble;
+				encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
 			else
 			{
 				switch (cv_kartvoterulechanges.value)

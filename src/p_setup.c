@@ -2370,13 +2370,20 @@ static void P_LevelInitStuff(void)
 		if (G_BattleGametype())
 			gamespeed = 0;
 		else
-			gamespeed = (UINT8)cv_kartspeed.value;
+		{
+			if (cv_speedscramble.value && speedscramble != -1)
+				gamespeed = (UINT8)speedscramble;
+			else
+				gamespeed = (UINT8)cv_kartspeed.value;
+		}
 		franticitems = (boolean)cv_kartfrantic.value;
 		comeback = (boolean)cv_kartcomeback.value;
 	}
 
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = -1;
+
+	speedscramble = encorescramble = -1;
 }
 
 //
