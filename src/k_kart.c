@@ -2165,7 +2165,7 @@ static void K_GetKartBoostPower(player_t *player)
 	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
 	if (!(player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || EITHERSNEAKER(player))
 		&& player->kartstuff[k_offroad] >= 0)
-		boostpower = FixedDiv(boostpower, FixedMul(player->kartstuff[k_offroad] + FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)));
+		boostpower = FixedDiv(boostpower, FixedMul(player->kartstuff[k_offroad], K_GetKartGameSpeedScalar(gamespeed)) + FRACUNIT);
 
 	if (player->kartstuff[k_bananadrag] > TICRATE)
 		boostpower = (4*boostpower)/5;
