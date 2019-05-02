@@ -1649,8 +1649,9 @@ static void K_UpdateDraft(player_t *player)
 		return;
 
 	// Distance you have to be to draft. If you're still accelerating, then this distance is lessened.
-	// This distance biases toward low weight! (min weight gets 2368 units, max weight gets 832 units) 
-	draftdistance = (2048 + (512 * (9 - player->kartweight))) * player->mo->scale;
+	// This distance biases toward low weight! (min weight gets 3584 units, max weight gets 2560 units)
+	// This distance is also scaled based on game speed.
+	draftdistance = (2560 + (128 * (9 - player->kartweight))) * player->mo->scale;
 	if (player->speed < topspd)
 		draftdistance = FixedMul(draftdistance, FixedDiv(player->speed, topspd));
 	draftdistance = FixedMul(draftdistance, K_GetKartGameSpeedScalar(gamespeed));
