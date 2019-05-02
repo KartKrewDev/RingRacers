@@ -3583,8 +3583,8 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 21)
 			{
 				UINT8 i;
-				// Base add is 3 tics for 9,9, adds 1.5 tics for each point closer to the 1,1 end
-				actor->target->player->kartstuff[k_ringboost] += ((3*RINGBOOSTPWR)/2) + 3;
+				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
+				actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
 				S_StartSound(actor->target, sfx_s1b5);
 
 #if 0
@@ -3613,7 +3613,7 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 16)
 			{
 				if (actor->target->player->kartstuff[k_rings] >= 20)
-					actor->target->player->kartstuff[k_ringboost] += ((3*RINGBOOSTPWR)/2) + 3;
+					actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
 				else
 					P_GivePlayerRings(actor->target->player, 1);
 
