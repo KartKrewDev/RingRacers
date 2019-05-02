@@ -1554,15 +1554,11 @@ static void K_UpdateOffroad(player_t *player)
 	if (offroadstrength)
 	{
 		if (K_CheckOffroadCollide(player->mo, player->mo->subsector->sector) && player->kartstuff[k_offroad] == 0)
-			player->kartstuff[k_offroad] = (TICRATE/2);
+			player->kartstuff[k_offroad] = TICRATE;
 
 		if (player->kartstuff[k_offroad] > 0)
 		{
-			offroad = (offroadstrength << FRACBITS) / (TICRATE/2);
-
-			//if (player->kartstuff[k_growshrinktimer] > 1) // grow slows down half as fast
-			//	offroad /= 2;
-
+			offroad = (offroadstrength << FRACBITS) / TICRATE;
 			player->kartstuff[k_offroad] += offroad;
 		}
 
@@ -2169,7 +2165,7 @@ static void K_GetKartBoostPower(player_t *player)
 	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
 	if (!(player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || EITHERSNEAKER(player))
 		&& player->kartstuff[k_offroad] >= 0)
-		boostpower = FixedDiv(boostpower, player->kartstuff[k_offroad] + FRACUNIT);
+		boostpower = FixedDiv(boostpower, FixedMul(player->kartstuff[k_offroad] + FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)));
 
 	if (player->kartstuff[k_bananadrag] > TICRATE)
 		boostpower = (4*boostpower)/5;
@@ -2189,13 +2185,13 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
 		ADDBOOST((3*FRACUNIT)/8, 3*FRACUNIT); // + 37.5% top speed, + 300% acceleration
 
-	if (player->kartstuff[k_startboost] && !player->kartstuff[k_offroad]) // Startup Boost
+	if (player->kartstuff[k_startboost]) // Startup Boost
 		ADDBOOST(FRACUNIT/4, 6*FRACUNIT); // + 25% top speed, + 600% acceleration
 
-	if (player->kartstuff[k_driftboost] && !player->kartstuff[k_offroad]) // Drift Boost
+	if (player->kartstuff[k_driftboost]) // Drift Boost
 		ADDBOOST(FRACUNIT/4, 4*FRACUNIT); // + 25% top speed, + 400% acceleration
 
-	if (player->kartstuff[k_ringboost] && !player->kartstuff[k_offroad]) // Ring Boost
+	if (player->kartstuff[k_ringboost]) // Ring Boost
 		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 200% acceleration
 
 	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
