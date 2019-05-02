@@ -4691,13 +4691,6 @@ static void P_3dMovement(player_t *player)
 		//movepushforward = cmd->forwardmove * (thrustfactor * acceleration);
 		movepushforward = K_3dKartMovement(player, onground, cmd->forwardmove);
 
-		// allow very small movement while in air for gameplay
-		if (!onground)
-			movepushforward >>= 2; // proper air movement
-
-		// don't need to account for scale here with kart accel code
-		//movepushforward = FixedMul(movepushforward, player->mo->scale);
-
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
 			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
 
@@ -4761,6 +4754,18 @@ static void P_3dMovement(player_t *player)
 
 	player->mo->momx += totalthrust.x;
 	player->mo->momy += totalthrust.y;
+
+	if (!onground)
+	{
+		fixed_t airspeedcap = (50*mapobjectscale);
+		fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+		if (speed > airspeedcap)
+		{
+			fixed_t newspeed = speed - ((speed - airspeedcap) / 32);
+			player->mo->momx = FixedMul(FixedDiv(player->mo->momx, speed), newspeed);
+			player->mo->momy = FixedMul(FixedDiv(player->mo->momy, speed), newspeed);
+		}
+	}
 #endif
 
 	// Time to ask three questions:
@@ -4777,7 +4782,7 @@ static void P_3dMovement(player_t *player)
 	if (newMagnitude > K_GetKartSpeed(player, true)) //topspeed)
 	{
 		fixed_t tempmomx, tempmomy;
-		if (oldMagnitude > K_GetKartSpeed(player, true) && onground) // SRB2Kart: onground check for air speed cap
+		if (oldMagnitude > K_GetKartSpeed(player, true))
 		{
 			if (newMagnitude > oldMagnitude)
 			{

@@ -2289,9 +2289,6 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 			newspeed = minspeed;
 	}
 
-	if (!P_IsObjectOnGround(player->mo) && newspeed > 75*mapobjectscale)
-		newspeed = 75*mapobjectscale;
-
 	finalspeed = newspeed - oldspeed;
 
 	// forwardmove is:
