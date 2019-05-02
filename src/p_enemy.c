@@ -3586,6 +3586,8 @@ void A_AttractChase(mobj_t *actor)
 				// Base add is 3 tics for 9,9, adds 1.5 tics for each point closer to the 1,1 end
 				actor->target->player->kartstuff[k_ringboost] += ((3*RINGBOOSTPWR)/2) + 3;
 				S_StartSound(actor->target, sfx_s1b5);
+
+#if 0
 				// ring sparkle effect
 				for (i = 0; i < 4; i++)
 				{
@@ -3593,7 +3595,8 @@ void A_AttractChase(mobj_t *actor)
 					P_SetTarget(&sparkle->target, actor->target);
 					sparkle->extravalue1 = i;
 				}
-				
+#endif
+
 				P_KillMobj(actor, actor->target, actor->target);
 				return;
 			}
