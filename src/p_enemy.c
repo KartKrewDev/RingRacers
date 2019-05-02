@@ -3607,12 +3607,6 @@ void A_AttractChase(mobj_t *actor)
 		}
 		else // Collecting
 		{
-			// Flicker fullbright
-			if (leveltime & 1)
-				actor->frame |= FF_FULLBRIGHT;
-			else
-				actor->frame &= ~FF_FULLBRIGHT;
-
 			if (actor->extravalue1 >= 16)
 			{
 				if (actor->target->player->kartstuff[k_rings] >= 20)
@@ -3647,12 +3641,6 @@ void A_AttractChase(mobj_t *actor)
 	}
 	else
 	{
-		// Flicker fullbright
-		if (leveltime & 1)
-			actor->frame |= FF_FULLBRIGHT;
-		else
-			actor->frame &= ~FF_FULLBRIGHT;
-
 		// Don't immediately pick up spilled rings
 		if (actor->threshold > 0)
 			actor->threshold--;

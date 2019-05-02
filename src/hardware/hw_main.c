@@ -4220,7 +4220,11 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 			INT32 light = R_GetPlaneLight(sector, spr->mobj->floorz, false);
 
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			{
 				lightlevel = *sector->lightlist[light].lightlevel;
+				if (spr->mobj->frame & FF_SEMIBRIGHT)
+					lightlevel = 128 + (lightlevel>>1);
+			}
 
 			if (sector->lightlist[light].extra_colormap)
 				colormap = sector->lightlist[light].extra_colormap;
@@ -4392,16 +4396,20 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 
 	alpha = Surf.FlatColor.s.alpha;
 
-	// Start with the lightlevel and colormap from the top of the sprite
-	lightlevel = *list[sector->numlights - 1].lightlevel;
-	colormap = list[sector->numlights - 1].extra_colormap;
-	i = 0;
 	temp = FLOAT_TO_FIXED(realtop);
 
-	if (spr->mobj->frame & FF_FULLBRIGHT)
-		lightlevel = 255;
-
 #ifdef ESLOPE
+	// Start with the lightlevel and colormap from the top of the sprite
+	lightlevel = 255;
+	colormap = list[sector->numlights - 1].extra_colormap;
+
+	if (!(spr->mobj->frame & FF_FULLBRIGHT))
+	{
+		lightlevel = *list[sector->numlights - 1].lightlevel;
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
+	}
+
 	for (i = 1; i < sector->numlights; i++)
 	{
 		fixed_t h = sector->lightlist[i].slope ? P_GetZAt(sector->lightlist[i].slope, spr->mobj->x, spr->mobj->y)
@@ -4409,7 +4417,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		if (h <= temp)
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			{
 				lightlevel = *list[i-1].lightlevel;
+				if (spr->mobj->frame & FF_SEMIBRIGHT)
+					lightlevel = 128 + (lightlevel>>1);
+			}
 			colormap = list[i-1].extra_colormap;
 			break;
 		}
@@ -4417,7 +4429,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 #else
 	i = R_GetPlaneLight(sector, temp, false);
 	if (!(spr->mobj->frame & FF_FULLBRIGHT))
+	{
 		lightlevel = *list[i].lightlevel;
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
+	}
 	colormap = list[i].extra_colormap;
 #endif
 
@@ -4433,7 +4449,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			{
 				lightlevel = *list[i].lightlevel;
+				if (spr->mobj->frame & FF_SEMIBRIGHT)
+					lightlevel = 128 + (lightlevel>>1);
+			}
 			colormap = list[i].extra_colormap;
 		}
 
@@ -4680,7 +4700,11 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 		extracolormap_t *colormap = sector->extra_colormap;
 
 		if (!(spr->mobj->frame & FF_FULLBRIGHT))
+		{
 			lightlevel = sector->lightlevel;
+			if (spr->mobj->frame & FF_SEMIBRIGHT)
+				lightlevel = 128 + (lightlevel>>1);
+		}
 
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
@@ -4787,6 +4811,9 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
+
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
 
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
@@ -5417,6 +5444,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	size_t lumpoff;
 	unsigned rot;
 	UINT8 flip;
+	boolean vflip = (!(thing->eflags & MFE_VERTICALFLIP) != !(thing->frame & FF_VERTICALFLIP));
 	angle_t ang;
 	INT32 heightsec, phs;
 	const boolean papersprite = (thing->frame & FF_PAPERSPRITE);
@@ -5548,7 +5576,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	x1 = tr_x + x1 * rightcos;
 	x2 = tr_x - x2 * rightcos;
 
-	if (thing->eflags & MFE_VERTICALFLIP)
+	if (vflip)
 	{
 		gz = FIXED_TO_FLOAT(thing->z+thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gzt = gz + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
@@ -5635,10 +5663,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	//CONS_Debug(DBG_RENDER, "------------------\nH: sprite  : %d\nH: frame   : %x\nH: type    : %d\nH: sname   : %s\n\n",
 	//            thing->sprite, thing->frame, thing->type, sprnames[thing->sprite]);
 
-	if (thing->eflags & MFE_VERTICALFLIP)
-		vis->vflip = true;
-	else
-		vis->vflip = false;
+	vis->vflip = vflip;
 
 	vis->precip = false;
 }
