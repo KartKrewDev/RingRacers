@@ -1568,7 +1568,7 @@ void K_RespawnChecker(player_t *player)
 
 		if (!P_IsObjectOnGround(player->mo) && !mapreset)
 		{
-			player->powers[pw_flashing] = 2;
+			player->powers[pw_flashing] = K_GetKartFlashing(player);
 
 			// Sal: The old behavior was stupid and prone to accidental usage.
 			// Let's rip off Mania instead, and turn this into a Drop Dash!
@@ -5031,6 +5031,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	if ((!player->kartstuff[k_sneakertimer])
 	|| (!player->cmd.driftturn)
+	|| (!player->kartstuff[k_aizdriftstrat])
 	|| (player->cmd.driftturn > 0) != (player->kartstuff[k_aizdriftstrat] > 0))
 	{
 		if (!player->kartstuff[k_drift])
