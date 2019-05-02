@@ -7997,10 +7997,7 @@ void P_MobjThinker(mobj_t *mobj)
 			if (leveltime % TICRATE == 0)
 				S_StartSound(mobj, mobj->info->activesound);
 
-			if (gamespeed == 0)
-				distbarrier = FixedMul(distbarrier, FRACUNIT-FRACUNIT/4);
-			else if (gamespeed == 2)
-				distbarrier = FixedMul(distbarrier, FRACUNIT+FRACUNIT/4);
+			distbarrier = FixedMul(distbarrier, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
 
 			if (G_RaceGametype() && mobj->tracer)
 			{

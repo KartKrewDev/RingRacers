@@ -600,6 +600,15 @@ boolean K_IsPlayerWanted(player_t *player)
 	return false;
 }
 
+fixed_t K_GetKartGameSpeedScalar(SINT8 value)
+{
+	// Easy = 81.25%
+	// Normal = 100%
+	// Hard = 118.75%
+	// Nightmare = 137.5% ?!?!
+	return ((13 + (3*value)) << FRACBITS) / 16;
+}
+
 //{ SRB2kart Roulette Code - Position Based
 
 #define NUMKARTODDS 	80
@@ -1644,6 +1653,7 @@ static void K_UpdateDraft(player_t *player)
 	draftdistance = (2048 + (512 * (9 - player->kartweight))) * player->mo->scale;
 	if (player->speed < topspd)
 		draftdistance = FixedMul(draftdistance, FixedDiv(player->speed, topspd));
+	draftdistance = FixedMul(draftdistance, K_GetKartGameSpeedScalar(gamespeed));
 
 	// Let's hunt for players to draft off of!
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2210,27 +2220,11 @@ static void K_GetKartBoostPower(player_t *player)
 
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 {
+	const fixed_t xspd = (3*FRACUNIT)/64;
+	fixed_t g_cc = K_GetKartGameSpeedScalar(gamespeed) + xspd;
 	fixed_t k_speed = 150;
-	fixed_t g_cc = FRACUNIT;
-	fixed_t xspd = 3072;		// 4.6875 aka 3/64
 	UINT8 kartspeed = player->kartspeed;
 	fixed_t finalspeed;
-
-	if (doboostpower && !player->kartstuff[k_pogospring] && !P_IsObjectOnGround(player->mo))
-		return (75*mapobjectscale); // air speed cap
-
-	switch (gamespeed)
-	{
-		case 0:
-			g_cc = 53248 + xspd; //  50cc =  81.25 + 4.69 =  85.94%
-			break;
-		case 2:
-			g_cc = 77824 + xspd; // 150cc = 118.75 + 4.69 = 123.44%
-			break;
-		default:
-			g_cc = 65536 + xspd; // 100cc = 100.00 + 4.69 = 104.69%
-			break;
-	}
 
 	if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
 		kartspeed = 1;
@@ -2298,6 +2292,9 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 			newspeed = minspeed;
 	}
 
+	if (!P_IsObjectOnGround(player->mo) && newspeed > 75*mapobjectscale)
+		newspeed = 75*mapobjectscale;
+
 	finalspeed = newspeed - oldspeed;
 
 	// forwardmove is:
@@ -2309,10 +2306,10 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 	finalspeed *= forwardmove/25;
 	finalspeed /= 2;
 
-	if (forwardmove < 0 && finalspeed > FRACUNIT*2)
+	if (forwardmove < 0 && finalspeed > mapobjectscale*2)
 		return finalspeed/2;
 	else if (forwardmove < 0)
-		return -FRACUNIT/2;
+		return -mapobjectscale/2;
 
 	if (finalspeed < 0)
 		finalspeed = 0;
@@ -3448,29 +3445,10 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 
 	// Figure out projectile speed by game speed
 	if (missile && mapthing != MT_BALLHOG) // Trying to keep compatability...
-	{
-		PROJSPEED = mobjinfo[mapthing].speed;
-		if (gamespeed == 0)
-			PROJSPEED = FixedMul(PROJSPEED, FRACUNIT-FRACUNIT/4);
-		else if (gamespeed == 2)
-			PROJSPEED = FixedMul(PROJSPEED, FRACUNIT+FRACUNIT/4);
-		PROJSPEED = FixedMul(PROJSPEED, mapobjectscale);
-	}
+		PROJSPEED = FixedMul(mobjinfo[mapthing].speed, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
 	else
-	{
-		switch (gamespeed)
-		{
-			case 0:
-				PROJSPEED = 68*mapobjectscale; // Avg Speed is 34
-				break;
-			case 2:
-				PROJSPEED = 96*mapobjectscale; // Avg Speed is 48
-				break;
-			default:
-				PROJSPEED = 82*mapobjectscale; // Avg Speed is 41
-				break;
-		}
-	}
+		PROJSPEED = (82 + ((gamespeed-1) * 14)) * FRACUNIT; // Avg Speed is 41 in Normal
+	PROJSPEED = FixedMul(PROJSPEED, mapobjectscale);
 
 	if (altthrow)
 	{
@@ -3684,18 +3662,7 @@ void K_PuntMine(mobj_t *thismine, mobj_t *punter)
 	if (!mine || P_MobjWasRemoved(mine))
 		return;
 
-	switch (gamespeed)
-	{
-		case 0:
-			spd = 68*mapobjectscale; // Avg Speed is 34
-			break;
-		case 2:
-			spd = 96*mapobjectscale; // Avg Speed is 48
-			break;
-		default:
-			spd = 82*mapobjectscale; // Avg Speed is 41
-			break;
-	}
+	spd = (82 + ((gamespeed-1) * 14))*mapobjectscale; // Avg Speed is 41 in Normal
 
 	mine->flags |= MF_NOCLIPTHING;
 
