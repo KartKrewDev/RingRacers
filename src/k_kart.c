@@ -2263,7 +2263,10 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 
 	k_speed += kartspeed*3; // 153 - 177
 
-	finalspeed = FixedMul(FixedMul(k_speed<<14, g_cc), player->mo->scale);
+	finalspeed = FixedMul(k_speed<<14, g_cc);
+
+	if (player->mo && !P_MobjWasRemoved(player->mo)
+		finalspeed = FixedMul(finalspeed, player->mo->scale);
 
 	if (doboostpower)
 		return FixedMul(finalspeed, player->kartstuff[k_boostpower]+player->kartstuff[k_speedboost]);
