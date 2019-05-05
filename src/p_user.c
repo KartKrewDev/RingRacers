@@ -9005,9 +9005,7 @@ void P_PlayerThink(player_t *player)
 
 #if 1
 	// "Blur" a bit when you have speed shoes and are going fast enough
-	if ((player->powers[pw_super] || player->powers[pw_sneakers]
-		|| EITHERSNEAKER(player) || player->kartstuff[k_driftboost] || player->kartstuff[k_ringboost] || player->kartstuff[k_startboost])
-		&& !player->kartstuff[k_invincibilitytimer] // SRB2kart
+	if ((player->powers[pw_super] || player->powers[pw_sneakers])
 		&& (player->speed + abs(player->mo->momz)) > FixedMul(20*FRACUNIT,player->mo->scale))
 	{
 		mobj_t *gmobj = P_SpawnGhostMobj(player->mo);

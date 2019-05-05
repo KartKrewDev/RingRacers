@@ -2189,7 +2189,7 @@ static void K_GetKartBoostPower(player_t *player)
 {
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0;
-	UINT8 boostfactor = 1;
+	UINT8 numboosts = 0;
 
 	if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow] == 1) // Slow down after you've been bumped
 	{
@@ -2206,9 +2206,9 @@ static void K_GetKartBoostPower(player_t *player)
 		boostpower = (4*boostpower)/5;
 
 #define ADDBOOST(s,a) { \
-	speedboost += (s) / boostfactor; \
-	accelboost += (a) / boostfactor; \
-	boostfactor++; \
+	numboosts++; \
+	speedboost += (s) / numboosts; \
+	accelboost += (a) / numboosts; \
 }
 
 	if (player->kartstuff[k_levelbooster]) // Level boosters
@@ -2234,10 +2234,14 @@ static void K_GetKartBoostPower(player_t *player)
 		// Grow's design is weird with booster stacking.
 		// We'll see how to replace its design BEFORE v2 gets released.
 		speedboost += (FRACUNIT/5); // + 20%
+		//numboosts++; // Don't add any boost afterimages to Grow
 	}
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
+	{
 		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0-33.3%
+		numboosts++; // (Drafting suffers no boost stack penalty!) 
+	}
 
 	player->kartstuff[k_boostpower] = boostpower;
 
@@ -2248,6 +2252,7 @@ static void K_GetKartBoostPower(player_t *player)
 		player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost]) / (TICRATE/2);
 
 	player->kartstuff[k_accelboost] = accelboost;
+	player->kartstuff[k_numboosts] = numboosts;
 }
 
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
@@ -2265,7 +2270,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 
 	finalspeed = FixedMul(k_speed<<14, g_cc);
 
-	if (player->mo && !P_MobjWasRemoved(player->mo)
+	if (player->mo && !P_MobjWasRemoved(player->mo))
 		finalspeed = FixedMul(finalspeed, player->mo->scale);
 
 	if (doboostpower)
@@ -4872,11 +4877,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->kartstuff[k_invincibilitytimer]) // setting players to use the star colormap and spawning afterimages
 	{
-		mobj_t *ghost;
 		player->mo->colorized = true;
-		ghost = P_SpawnGhostMobj(player->mo);
-		ghost->fuse = 4;
-		ghost->frame |= FF_FULLBRIGHT;
 	}
 	else if (player->kartstuff[k_growshrinktimer]) // Ditto, for grow/shrink
 	{
@@ -4925,6 +4926,23 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		ghost->momy = player->mo->momy / (player->kartstuff[k_dashpadcooldown]+1);
 		ghost->momz = player->mo->momz / (player->kartstuff[k_dashpadcooldown]+1);
 		player->kartstuff[k_dashpadcooldown]--;
+	}
+
+	if (player->kartstuff[k_numboosts] > 0) // Booating after images
+	{
+		mobj_t *ghost;
+		ghost = P_SpawnGhostMobj(player->mo);
+		ghost->extravalue1 = player->kartstuff[k_numboosts]+1;
+		ghost->extravalue2 = (leveltime % ghost->extravalue1);
+		ghost->fuse = ghost->extravalue1;
+		ghost->frame |= FF_FULLBRIGHT;
+		ghost->colorized = true;
+		//ghost->color = player->skincolor;
+		//ghost->momx = (3*player->mo->momx)/4;
+		//ghost->momy = (3*player->mo->momy)/4;
+		//ghost->momz = (3*player->mo->momz)/4;
+		if (leveltime & 1)
+			ghost->flags2 |= MF2_DONTDRAW;
 	}
 
 	// DKR style camera for boosting

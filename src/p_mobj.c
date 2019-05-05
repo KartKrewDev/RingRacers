@@ -7953,8 +7953,8 @@ void P_MobjThinker(mobj_t *mobj)
 			else
 			{
 				fixed_t finalspeed = mobj->movefactor;
-
-				P_SpawnGhostMobj(mobj);
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+				ghost->colorized = true; // already has color!
 
 				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
 				if (mobj->health <= 5)
@@ -7989,8 +7989,13 @@ void P_MobjThinker(mobj_t *mobj)
 			fixed_t topspeed = mobj->movefactor;
 			fixed_t distbarrier = 512*mapobjectscale;
 			fixed_t distaway;
+			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 
-			P_SpawnGhostMobj(mobj);
+			if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+			{
+				ghost->color = mobj->target->player->skincolor;
+				ghost->colorized = true;
+			}
 
 			if (mobj->threshold > 0)
 				mobj->threshold--;
@@ -8054,7 +8059,14 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
-				P_SpawnGhostMobj(mobj);
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+
 				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
 				P_InstaThrust(mobj, mobj->angle, mobj->movefactor);
 
@@ -8079,14 +8091,25 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_BANANA:
 		case MT_EGGMANITEM:
 			mobj->friction = ORIG_FRICTION/4;
+
 			if (mobj->momx || mobj->momy)
-				P_SpawnGhostMobj(mobj);
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+			}
+
 			if (P_IsObjectOnGround(mobj) && mobj->health > 1)
 			{
 				S_StartSound(mobj, mobj->info->activesound);
 				mobj->momx = mobj->momy = 0;
 				mobj->health = 1;
 			}
+
 			if (mobj->threshold > 0)
 				mobj->threshold--;
 			break;
@@ -8094,18 +8117,38 @@ void P_MobjThinker(mobj_t *mobj)
 			indirectitemcooldown = 20*TICRATE;
 			/* FALLTHRU */
 		case MT_BALLHOG:
-			P_SpawnGhostMobj(mobj)->fuse = 3;
-			if (mobj->threshold > 0)
-				mobj->threshold--;
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+				ghost->fuse = 3;
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+
+				if (mobj->threshold > 0)
+					mobj->threshold--;
+			}
 			break;
 		case MT_SINK:
 			if (mobj->momx || mobj->momy)
-				P_SpawnGhostMobj(mobj);
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+			}
+
 			if (P_IsObjectOnGround(mobj))
 			{
 				S_StartSound(mobj, mobj->info->deathsound);
 				P_SetMobjState(mobj, S_NULL);
 			}
+
 			if (mobj->threshold > 0)
 				mobj->threshold--;
 			break;
@@ -8116,7 +8159,10 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->color = SKINCOLOR_KETCHUP;
 
 			if (mobj->momx || mobj->momy)
-				P_SpawnGhostMobj(mobj);
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+				ghost->colorized = true; // already has color!
+			}
 
 			if (P_IsObjectOnGround(mobj) && (mobj->state == &states[S_SSMINE_AIR1] || mobj->state == &states[S_SSMINE_AIR2]))
 			{
@@ -9604,6 +9650,21 @@ void P_SceneryThinker(mobj_t *mobj)
 				mobj->momz = -FixedMul(mobj->info->speed, mobj->scale);
 			else
 				mobj->momz = 0;
+		}
+	}
+
+	// Sonic Advance 2 flashing afterimages
+	if (mobj->type == MT_GHOST && mobj->fuse > 0
+		&& mobj->extravalue1 > 0 && mobj->extravalue2 >= 2)
+	{
+		if (mobj->extravalue2 == 2) // I don't know why the normal logic doesn't work for this.
+			mobj->flags2 ^= MF2_DONTDRAW;
+		else
+		{
+			if (mobj->fuse == mobj->extravalue2)
+				mobj->flags2 &= ~MF2_DONTDRAW;
+			else
+				mobj->flags2 |= MF2_DONTDRAW;
 		}
 	}
 
