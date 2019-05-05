@@ -7181,6 +7181,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_RINGSPARKS14",
 	"S_RINGSPARKS15",
 
+	"S_DRAFTDUST1",
+	"S_DRAFTDUST2",
+	"S_DRAFTDUST3",
+	"S_DRAFTDUST4",
+	"S_DRAFTDUST5",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif

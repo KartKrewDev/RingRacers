@@ -2227,7 +2227,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(FRACUNIT/4, 4*FRACUNIT); // + 25% top speed, + 400% acceleration
 
 	if (player->kartstuff[k_ringboost]) // Ring Boost
-		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 200% acceleration
+		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 400% acceleration
 
 	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
 	{
@@ -2239,7 +2239,8 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
-		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0-33.3%
+		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0-33.3% top speed
+		accelboost += (FRACUNIT/3); // + 33.3% acceleration
 		numboosts++; // (Drafting suffers no boost stack penalty!) 
 	}
 
@@ -3384,6 +3385,81 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
 
 	if (translucent)
 		dust->flags2 |= MF2_SHADOW;
+}
+
+void K_SpawnDraftDust(mobj_t *mo)
+{
+	UINT8 i;
+
+	I_Assert(mo != NULL);
+	I_Assert(!P_MobjWasRemoved(mo));
+
+	for (i = 0; i < 2; i++)
+	{
+		angle_t ang, aoff;
+		SINT8 sign = 1;
+		UINT8 foff = 0;
+		mobj_t *dust;
+		boolean drifting = false;
+
+		if (mo->player)
+		{
+			ang = mo->player->frameangle;
+
+			if (mo->player->kartstuff[k_drift] != 0) 
+			{
+#if 1
+				break; // broken.
+#endif
+				drifting = true;
+				ang += (mo->player->kartstuff[k_drift] * (ANGLE_270 / 5)); // -112 doesn't work. I fucking HATE SRB2 angles
+				if (mo->player->kartstuff[k_drift] < 0)
+					sign = 1;
+				else
+					sign = -1;
+			}
+
+			//foff = (TICRATE - mo->player->kartstuff[k_draftleeway]) / 8;
+			if (foff > 4)
+				foff = 4; // this shouldn't happen
+		}
+		else
+			ang = mo->angle;
+
+		if (!drifting)
+		{
+			if (i & 1)
+				sign = -1;
+			else
+				sign = 1;
+		}
+
+		aoff = (ang + ANGLE_180) + (ANGLE_45 * sign);
+
+		dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)),
+			mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)),
+			mo->z, MT_THOK);
+
+		P_SetMobjState(dust, S_DRAFTDUST1 + foff);
+
+		if (leveltime & 1)
+			dust->tics++; // "randomize" animation
+
+		P_SetTarget(&dust->target, mo);
+		dust->angle = ang - (ANGLE_90 * sign); // point completely perpendicular from the player
+		dust->destscale = mo->scale;
+		P_SetScale(dust, mo->scale);
+		K_FlipFromObject(dust, mo);
+
+		dust->momx = (4*mo->momx)/5;
+		dust->momy = (4*mo->momy)/5;
+		//dust->momz = (4*mo->momz)/5;
+
+		P_Thrust(dust, dust->angle, 4*mo->scale);
+
+		if (drifting) // only 1 trail while drifting
+			break;
+	}
 }
 
 //	K_DriftDustHandling
@@ -4824,31 +4900,89 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_UpdateEngineSounds(player, cmd); // Thanks, VAda!
 	K_GetKartBoostPower(player);
 
-	// Banana drag/offroad dust
-	if (player->mo && !player->spectator
-		&& P_IsObjectOnGround(player->mo) && player->speed > 0
-		&& player->kartstuff[k_boostpower] < FRACUNIT)
+	// Special effect objects!
+	if (player->mo && !player->spectator)
 	{
-		K_SpawnWipeoutTrail(player->mo, true);
-		if (leveltime % 6 == 0)
-			S_StartSound(player->mo, sfx_cdfm70);
-	}
+		if (player->kartstuff[k_dashpadcooldown]) // Twinkle Circuit afterimages
+		{
+			mobj_t *ghost;
+			ghost = P_SpawnGhostMobj(player->mo);
+			ghost->fuse = player->kartstuff[k_dashpadcooldown]+1;
+			ghost->momx = player->mo->momx / (player->kartstuff[k_dashpadcooldown]+1);
+			ghost->momy = player->mo->momy / (player->kartstuff[k_dashpadcooldown]+1);
+			ghost->momz = player->mo->momz / (player->kartstuff[k_dashpadcooldown]+1);
+			player->kartstuff[k_dashpadcooldown]--;
+		}
 
-	// Speed lines
-	if ((EITHERSNEAKER(player) || player->kartstuff[k_ringboost]
-		|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]
-		|| player->kartstuff[k_draftpower])
-		&& player->speed > 0)
-	{
-		mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
-			player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
-			player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
-			MT_FASTLINE);
-		fast->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-		fast->momx = 3*player->mo->momx/4;
-		fast->momy = 3*player->mo->momy/4;
-		fast->momz = 3*player->mo->momz/4;
-		K_MatchGenericExtraFlags(fast, player->mo);
+		if (player->speed > 0)
+		{
+			// Speed lines
+			if (EITHERSNEAKER(player) || player->kartstuff[k_ringboost]
+				|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost])
+			{
+				mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
+					player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
+					player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
+					MT_FASTLINE);
+				fast->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+				fast->momx = 3*player->mo->momx/4;
+				fast->momy = 3*player->mo->momy/4;
+				fast->momz = 3*player->mo->momz/4;
+				K_MatchGenericExtraFlags(fast, player->mo);
+			}
+
+			if (player->kartstuff[k_numboosts] > 0) // Boosting after images
+			{
+				mobj_t *ghost;
+				ghost = P_SpawnGhostMobj(player->mo);
+				ghost->extravalue1 = player->kartstuff[k_numboosts]+1;
+				ghost->extravalue2 = (leveltime % ghost->extravalue1);
+				ghost->fuse = ghost->extravalue1;
+				ghost->frame |= FF_FULLBRIGHT;
+				ghost->colorized = true;
+				//ghost->color = player->skincolor;
+				//ghost->momx = (3*player->mo->momx)/4;
+				//ghost->momy = (3*player->mo->momy)/4;
+				//ghost->momz = (3*player->mo->momz)/4;
+				if (leveltime & 1)
+					ghost->flags2 |= MF2_DONTDRAW;
+			}
+
+			if (P_IsObjectOnGround(player->mo))
+			{
+				// Offroad dust
+				if (player->kartstuff[k_boostpower] < FRACUNIT)
+				{
+					K_SpawnWipeoutTrail(player->mo, true);
+					if (leveltime % 6 == 0)
+						S_StartSound(player->mo, sfx_cdfm70);
+				}
+
+				// Draft dust
+				//if (player->kartstuff[k_draftpower] > 0)
+				{
+					K_SpawnDraftDust(player->mo);
+					if (leveltime % 23 == 0 || !S_SoundPlaying(player->mo, sfx_s265))
+						S_StartSound(player->mo, sfx_s265);
+				}
+			}
+		}
+
+		if (G_RaceGametype() && player->kartstuff[k_rings] <= 0) // spawn ring debt indicator
+		{
+			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
+				player->mo->z + player->mo->momz + player->mo->height + (24*player->mo->scale), MT_THOK);
+			P_SetMobjState(debtflag, S_RINGDEBT);
+			P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
+			K_MatchGenericExtraFlags(debtflag, player->mo);
+			debtflag->frame += (leveltime % 4);
+			if ((leveltime/12) & 1)
+				debtflag->frame += 4;
+			debtflag->color = player->skincolor;
+			debtflag->fuse = 2;
+			if (P_IsLocalPlayer(player))
+				debtflag->flags2 |= MF2_DONTDRAW;
+		}
 	}
 
 	if (player->playerstate == PST_DEAD || player->kartstuff[k_respawn] > 1) // Ensure these are set correctly here
@@ -4899,50 +5033,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else
 	{
 		player->mo->colorized = false;
-	}
-
-	if (G_RaceGametype() && player->kartstuff[k_rings] <= 0) // spawn ring debt indicator
-	{
-		mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
-			player->mo->z + player->mo->momz + player->mo->height + (24*player->mo->scale), MT_THOK);
-		P_SetMobjState(debtflag, S_RINGDEBT);
-		P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
-		K_MatchGenericExtraFlags(debtflag, player->mo);
-		debtflag->frame += (leveltime % 4);
-		if ((leveltime/12) & 1)
-			debtflag->frame += 4;
-		debtflag->color = player->skincolor;
-		debtflag->fuse = 2;
-		if (P_IsLocalPlayer(player))
-			debtflag->flags2 |= MF2_DONTDRAW;
-	}
-
-	if (player->kartstuff[k_dashpadcooldown]) // Twinkle Circuit inspired afterimages
-	{
-		mobj_t *ghost;
-		ghost = P_SpawnGhostMobj(player->mo);
-		ghost->fuse = player->kartstuff[k_dashpadcooldown]+1;
-		ghost->momx = player->mo->momx / (player->kartstuff[k_dashpadcooldown]+1);
-		ghost->momy = player->mo->momy / (player->kartstuff[k_dashpadcooldown]+1);
-		ghost->momz = player->mo->momz / (player->kartstuff[k_dashpadcooldown]+1);
-		player->kartstuff[k_dashpadcooldown]--;
-	}
-
-	if (player->kartstuff[k_numboosts] > 0) // Booating after images
-	{
-		mobj_t *ghost;
-		ghost = P_SpawnGhostMobj(player->mo);
-		ghost->extravalue1 = player->kartstuff[k_numboosts]+1;
-		ghost->extravalue2 = (leveltime % ghost->extravalue1);
-		ghost->fuse = ghost->extravalue1;
-		ghost->frame |= FF_FULLBRIGHT;
-		ghost->colorized = true;
-		//ghost->color = player->skincolor;
-		//ghost->momx = (3*player->mo->momx)/4;
-		//ghost->momy = (3*player->mo->momy)/4;
-		//ghost->momz = (3*player->mo->momz)/4;
-		if (leveltime & 1)
-			ghost->flags2 |= MF2_DONTDRAW;
 	}
 
 	// DKR style camera for boosting
