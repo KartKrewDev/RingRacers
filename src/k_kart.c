@@ -3419,7 +3419,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 					sign = -1;
 			}
 
-			//foff = (TICRATE - mo->player->kartstuff[k_draftleeway]) / 8;
+			foff = (TICRATE - mo->player->kartstuff[k_draftleeway]) / 8;
 			if (foff > 4)
 				foff = 4; // this shouldn't happen
 		}
@@ -4959,7 +4959,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				}
 
 				// Draft dust
-				//if (player->kartstuff[k_draftpower] > 0)
+				if (player->kartstuff[k_draftpower] > 0)
 				{
 					K_SpawnDraftDust(player->mo);
 					if (leveltime % 23 == 0 || !S_SoundPlaying(player->mo, sfx_s265))
