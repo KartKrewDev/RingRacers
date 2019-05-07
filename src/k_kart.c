@@ -1673,11 +1673,8 @@ static void K_UpdateDraft(player_t *player)
 {
 	fixed_t topspd = K_GetKartSpeed(player, false);
 	fixed_t draftdistance;
+	UINT8 leniency = (TICRATE/4);
 	UINT8 i;
-
-	// Not enough speed to draft.
-	if (player->speed < 20*player->mo->scale)
-		return;
 
 	// Distance you have to be to draft. If you're still accelerating, then this distance is lessened.
 	// This distance biases toward low weight! (min weight gets 3584 units, max weight gets 2560 units)
@@ -1687,67 +1684,89 @@ static void K_UpdateDraft(player_t *player)
 		draftdistance = FixedMul(draftdistance, FixedDiv(player->speed, topspd));
 	draftdistance = FixedMul(draftdistance, K_GetKartGameSpeedScalar(gamespeed));
 
-	// Let's hunt for players to draft off of!
-	for (i = 0; i < MAXPLAYERS; i++)
+	// On the contrary, the leniency period biases toward high weight.
+	leniency += (player->kartweight-1) * (TICRATE/5);
+
+	// Not enough speed to draft.
+	if (player->speed >= 20*player->mo->scale)
 	{
-		fixed_t dist;
-		angle_t yourangle, theirangle, diff;
+//#define EASYDRAFTTEST
+		// Let's hunt for players to draft off of!
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			fixed_t dist, olddraft;
+#ifndef EASYDRAFTTEST
+			angle_t yourangle, theirangle, diff;
+#endif
 
-		if (!playeringame[i] || players[i].spectator || !players[i].mo)
-			continue;
+			if (!playeringame[i] || players[i].spectator || !players[i].mo)
+				continue;
 
-		// Don't draft on yourself :V
-		if (&players[i] == player)
-			continue;
+#ifndef EASYDRAFTTEST
+			// Don't draft on yourself :V
+			if (&players[i] == player)
+				continue;
+#endif
 
-		// Not enough speed to draft off of.
-		if (players[i].speed < 20*players[i].mo->scale)
-			continue;
+			// Not enough speed to draft off of.
+			if (players[i].speed < 20*players[i].mo->scale)
+				continue;
 
-		yourangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-		theirangle = R_PointToAngle2(0, 0, players[i].mo->momx, players[i].mo->momy);
+#ifndef EASYDRAFTTEST
+			yourangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+			theirangle = R_PointToAngle2(0, 0, players[i].mo->momx, players[i].mo->momy);
 
-		diff = R_PointToAngle2(player->mo->x, player->mo->y, players[i].mo->x, players[i].mo->y) - yourangle;
-		if (diff > ANGLE_180)
-			diff = InvAngle(diff);
+			diff = R_PointToAngle2(player->mo->x, player->mo->y, players[i].mo->x, players[i].mo->y) - yourangle;
+			if (diff > ANGLE_180)
+				diff = InvAngle(diff);
 
-		// Not in front of this player.
-		if (diff > ANG10)
-			continue;
+			// Not in front of this player.
+			if (diff > ANG10)
+				continue;
 
-		diff = yourangle - theirangle;
-		if (diff > ANGLE_180)
-			diff = InvAngle(diff);
+			diff = yourangle - theirangle;
+			if (diff > ANGLE_180)
+				diff = InvAngle(diff);
 
-		// Not moving in the same direction.
-		if (diff > ANGLE_90)
-			continue;
+			// Not moving in the same direction.
+			if (diff > ANGLE_90)
+				continue;
+#endif
 
-		dist = P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x, players[i].mo->y - player->mo->y), players[i].mo->z - player->mo->z);
+			dist = P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x, players[i].mo->y - player->mo->y), players[i].mo->z - player->mo->z);
 
-		// TOO close to draft.
-		if (dist < FixedMul(RING_DIST>>1, player->mo->scale))
-			continue;
+#ifndef EASYDRAFTTEST
+			// TOO close to draft.
+			if (dist < FixedMul(RING_DIST>>1, player->mo->scale))
+				continue;
 
-		// Not close enough to draft.
-		if (dist > draftdistance)
-			continue;
+			// Not close enough to draft.
+			if (dist > draftdistance)
+				continue;
+#endif
 
-		player->kartstuff[k_draftleeway] = TICRATE;
-		player->kartstuff[k_lastdraft] = i;
+			olddraft = player->kartstuff[k_draftpower];
 
-		// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
-		// How much this increments every tic biases toward acceleration! (min speed gets 6.25% per tic, max speed gets 0.25% per tic)
-		if (player->kartstuff[k_draftpower] < FRACUNIT)
-			player->kartstuff[k_draftpower] += (FRACUNIT/400) + ((9 - player->kartspeed) * (FRACUNIT/400));
+			player->kartstuff[k_draftleeway] = (player->kartstuff[k_draftpower] * (2*TICRATE)) / FRACUNIT;
+			player->kartstuff[k_lastdraft] = i;
 
-		if (player->kartstuff[k_draftpower] > FRACUNIT)
-			player->kartstuff[k_draftpower] = FRACUNIT;
+			// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
+			// How much this increments every tic biases toward acceleration! (min speed gets 1.5% per tic, max speed gets 0.5% per tic)
+			if (player->kartstuff[k_draftpower] < FRACUNIT)
+				player->kartstuff[k_draftpower] += (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));
 
-		// Spawn in the visual!
-		K_DrawDraftCombiring(player, &players[i], dist, draftdistance, false);
+			if (player->kartstuff[k_draftpower] > FRACUNIT)
+				player->kartstuff[k_draftpower] = FRACUNIT;
 
-		return; // Finished doing our draft.
+			// Play draft finish noise
+			if (olddraft < FRACUNIT && player->kartstuff[k_draftpower] >= FRACUNIT)
+				S_StartSound(player->mo, sfx_cdfm62);
+
+			// Spawn in the visual!
+			K_DrawDraftCombiring(player, &players[i], dist, draftdistance, false);
+
+			return; // Finished doing our draft.
+		}
 	}
 
 	// No one to draft off of? Then you can knock that off.
@@ -2239,8 +2258,8 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
-		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0-33.3% top speed
-		accelboost += (FRACUNIT/3); // + 33.3% acceleration
+		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0 to 33.3% top speed
+		//accelboost += (FRACUNIT / 3); // + 33.3% acceleration
 		numboosts++; // (Drafting suffers no boost stack penalty!) 
 	}
 
@@ -3408,20 +3427,19 @@ void K_SpawnDraftDust(mobj_t *mo)
 
 			if (mo->player->kartstuff[k_drift] != 0) 
 			{
-#if 1
-				break; // broken.
-#endif
 				drifting = true;
-				ang += (mo->player->kartstuff[k_drift] * (ANGLE_270 / 5)); // -112 doesn't work. I fucking HATE SRB2 angles
+				ang += (mo->player->kartstuff[k_drift] * ((ANGLE_270 + ANGLE_22h) / 5)); // -112.5 doesn't work. I fucking HATE SRB2 angles
 				if (mo->player->kartstuff[k_drift] < 0)
 					sign = 1;
 				else
 					sign = -1;
 			}
 
-			foff = (TICRATE - mo->player->kartstuff[k_draftleeway]) / 8;
+			foff = ((2*TICRATE) - mo->player->kartstuff[k_draftleeway]) / 8;
+
+			// this shouldn't happen
 			if (foff > 4)
-				foff = 4; // this shouldn't happen
+				foff = 4;
 		}
 		else
 			ang = mo->angle;
@@ -3438,18 +3456,18 @@ void K_SpawnDraftDust(mobj_t *mo)
 
 		dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)),
 			mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)),
-			mo->z, MT_THOK);
+			mo->z, MT_DRAFTDUST);
 
 		P_SetMobjState(dust, S_DRAFTDUST1 + foff);
-
-		if (leveltime & 1)
-			dust->tics++; // "randomize" animation
 
 		P_SetTarget(&dust->target, mo);
 		dust->angle = ang - (ANGLE_90 * sign); // point completely perpendicular from the player
 		dust->destscale = mo->scale;
 		P_SetScale(dust, mo->scale);
 		K_FlipFromObject(dust, mo);
+
+		if (leveltime & 1)
+			dust->tics++; // "randomize" animation
 
 		dust->momx = (4*mo->momx)/5;
 		dust->momy = (4*mo->momy)/5;
@@ -4959,11 +4977,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				}
 
 				// Draft dust
-				if (player->kartstuff[k_draftpower] > 0)
+				if (player->kartstuff[k_draftpower] >= FRACUNIT)
 				{
 					K_SpawnDraftDust(player->mo);
-					if (leveltime % 23 == 0 || !S_SoundPlaying(player->mo, sfx_s265))
-						S_StartSound(player->mo, sfx_s265);
+					/*if (leveltime % 23 == 0 || !S_SoundPlaying(player->mo, sfx_s265))
+						S_StartSound(player->mo, sfx_s265);*/
 				}
 			}
 		}

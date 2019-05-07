@@ -20095,7 +20095,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL          // raisestate
 	},
 
-		{           // MT_RINGSPARKS
+	{           // MT_RINGSPARKS
 	    -1,             // doomednum
 	    S_RINGSPARKS1,  // spawnstate
 	    1000,           // spawnhealth
@@ -20119,6 +20119,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    0,              // damage
 	    sfx_None,       // activesound
 	    MF_NOBLOCKMAP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+	    S_NULL          // raisestate
+	},
+
+	{           // MT_DRAFTDUST
+	    -1,             // doomednum
+	    S_DRAFTDUST1,   // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    1,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_NOBLOCKMAP|MF_DONTENCOREMAP, // flags
 	    S_NULL          // raisestate
 	},
 
