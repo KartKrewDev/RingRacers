@@ -2142,11 +2142,12 @@ static boolean GoodDataFileName(const char *s)
 	p = s + strlen(s) - strlen(tail);
 	if (p <= s) return false; // too short
 	if (!fasticmp(p, tail)) return false; // doesn't end in .dat
-#ifdef DELFILE
-	if (fasticmp(s, "gamedata.dat") && !disableundo) return false;
-#else
-	if (fasticmp(s, "gamedata.dat")) return false;
-#endif
+
+	if (fasticmp(s, "gamedata.dat")) return false; // Vanilla SRB2 gamedata
+	if (fasticmp(s, "main.dat")) return false; // Vanilla SRB2 time attack replay folder
+	if (fasticmp(s, "kartdata.dat")) return false; // SRB2Kart gamedata
+	if (fasticmp(s, "kart.dat")) return false; // SRB2Kart time attack replay folder
+	if (fasticmp(s, "online.dat")) return false; // SRB2Kart online replay folder
 
 	return true;
 }
@@ -8702,27 +8703,6 @@ struct {
 	// Character flags (skinflags_t)
 	{"SF_HIRES",SF_HIRES},
 
-	// Character abilities!
-	// Primary
-	{"CA_NONE",CA_NONE}, // now slot 0!
-	{"CA_THOK",CA_THOK},
-	{"CA_FLY",CA_FLY},
-	{"CA_GLIDEANDCLIMB",CA_GLIDEANDCLIMB},
-	{"CA_HOMINGTHOK",CA_HOMINGTHOK},
-	{"CA_DOUBLEJUMP",CA_DOUBLEJUMP},
-	{"CA_FLOAT",CA_FLOAT},
-	{"CA_SLOWFALL",CA_SLOWFALL},
-	{"CA_SWIM",CA_SWIM},
-	{"CA_TELEKINESIS",CA_TELEKINESIS},
-	{"CA_FALLSWITCH",CA_FALLSWITCH},
-	{"CA_JUMPBOOST",CA_JUMPBOOST},
-	{"CA_AIRDRILL",CA_AIRDRILL},
-	{"CA_JUMPTHOK",CA_JUMPTHOK},
-	// Secondary
-	{"CA2_NONE",CA2_NONE}, // now slot 0!
-	{"CA2_SPINDASH",CA2_SPINDASH},
-	{"CA2_MULTIABILITY",CA2_MULTIABILITY},
-
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},
 	{"SF_NOMULTIPLESOUND",SF_NOMULTIPLESOUND},
@@ -9860,7 +9840,7 @@ static inline int lib_getenum(lua_State *L)
 
 	// DYNAMIC variables too!!
 	// Try not to add anything that would break netgames or timeattack replays here.
-	// You know, like consoleplayer, displayplayer, secondarydisplayplayer, or gametime.
+	// You know, like consoleplayer, displayplayers, or gametime.
 	if (fastcmp(word,"gamemap")) {
 		lua_pushinteger(L, gamemap);
 		return 1;
@@ -9934,7 +9914,7 @@ static inline int lib_getenum(lua_State *L)
 		lua_pushinteger(L, mapmusflags);
 		return 1;
 	} else if (fastcmp(word,"server")) {
-		if ((!multiplayer || !netgame) && !playeringame[serverplayer])
+		if ((!multiplayer || !(netgame || demo.playback)) && !playeringame[serverplayer])
 			return 0;
 		LUA_PushUserdata(L, &players[serverplayer], META_PLAYER);
 		return 1;
@@ -9985,6 +9965,9 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	} else if (fastcmp(word,"mapobjectscale")) {
 		lua_pushinteger(L, mapobjectscale);
+		return 1;
+	} else if (fastcmp(word,"numlaps")) {
+		lua_pushinteger(L, cv_numlaps.value);
 		return 1;
 	}
 	return 0;
