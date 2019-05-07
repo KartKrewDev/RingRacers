@@ -158,6 +158,9 @@ extern FILE *logstream;
 // AND appveyor.yml, for the build bots!
 #endif
 
+// Maintain compatibility with 1.0.x record attack replays?
+#define DEMO_COMPAT_100
+
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
 //#define USE_PATCH_DTA
@@ -612,9 +615,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 ///	Polyobject fake flat code
 #define POLYOBJECTS_PLANES
-
-///	Improved way of dealing with ping values and a ping limit.
-#define NEWPING
 
 ///	See name of player in your crosshair
 #define SEENAMES

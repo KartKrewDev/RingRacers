@@ -539,10 +539,41 @@ static void COM_ExecuteString(char *ptext)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Alias recursion cycle detected!\n"));
 				recursion = 0;
-				return;
 			}
-			recursion++;
-			COM_BufInsertText(a->value);
+			else
+			{
+				char buf[1024];
+				char *write = buf, *read = a->value, *seek = read;
+
+				while ((seek = strchr(seek, '$')) != NULL)
+				{
+					memcpy(write, read, seek-read);
+					write += seek-read;
+
+					seek++;
+
+					if (*seek >= '1' && *seek <= '9')
+					{
+						if (com_argc > (size_t)(*seek - '0'))
+						{
+							memcpy(write, com_argv[*seek - '0'], strlen(com_argv[*seek - '0']));
+							write += strlen(com_argv[*seek - '0']);
+						}
+						seek++;
+					}
+					else
+					{
+						*write = '$';
+						write++;
+					}
+
+					read = seek;
+				}
+				WRITESTRING(write, read);
+
+				recursion++;
+				COM_BufInsertText(buf);
+			}
 			return;
 		}
 	}
@@ -565,8 +596,6 @@ static void COM_ExecuteString(char *ptext)
 static void COM_Alias_f(void)
 {
 	cmdalias_t *a;
-	char cmd[1024];
-	size_t i, c;
 
 	if (COM_Argc() < 3)
 	{
@@ -579,19 +608,9 @@ static void COM_Alias_f(void)
 	com_alias = a;
 
 	a->name = Z_StrDup(COM_Argv(1));
-
-	// copy the rest of the command line
-	cmd[0] = 0; // start out with a null string
-	c = COM_Argc();
-	for (i = 2; i < c; i++)
-	{
-		strcat(cmd, COM_Argv(i));
-		if (i != c)
-			strcat(cmd, " ");
-	}
-	strcat(cmd, "\n");
-
-	a->value = Z_StrDup(cmd);
+	// Just use arg 2 if it's the only other argument, in case the alias is wrapped in quotes (backward compat, or multiple commands in one string).
+	// Otherwise pull the whole string and seek to the end of the alias name. The strctr is in case the alias is quoted.
+	a->value = Z_StrDup(COM_Argc() == 3 ? COM_Argv(2) : (strchr(COM_Args() + strlen(a->name), ' ') + 1));
 }
 
 /** Prints a line of text to the console.
@@ -1379,7 +1398,7 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 	Setvalue(cvar, svalue, stealth);
 }
 
-void CV_SaveNetVars(UINT8 **p)
+void CV_SaveNetVars(UINT8 **p, boolean isdemorecording)
 {
 	consvar_t *cvar;
 	UINT8 *count_p = *p;
@@ -1389,10 +1408,32 @@ void CV_SaveNetVars(UINT8 **p)
 	// the client will reset all netvars to default before loading
 	WRITEUINT16(*p, 0x0000);
 	for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		if ((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar))
+		if (((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar)) || (isdemorecording && cvar->netid == cv_numlaps.netid))
 		{
 			WRITEUINT16(*p, cvar->netid);
-			WRITESTRING(*p, cvar->string);
+
+			// UGLY HACK: Save proper lap count in net replays
+			if (isdemorecording && cvar->netid == cv_numlaps.netid)
+			{
+				if (cv_basenumlaps.value &&
+					(!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
+					|| (mapheaderinfo[gamemap - 1]->numlaps > cv_basenumlaps.value))
+				)
+				{
+					WRITESTRING(*p, cv_basenumlaps.string);
+				}
+				else
+				{
+					char buf[9];
+					sprintf(buf, "%d", mapheaderinfo[gamemap - 1]->numlaps);
+					WRITESTRING(*p, buf);
+				}
+			}
+			else
+			{
+				WRITESTRING(*p, cvar->string);
+			}
+
 			WRITEUINT8(*p, false);
 			++count;
 		}
