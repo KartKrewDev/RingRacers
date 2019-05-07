@@ -1653,7 +1653,7 @@ static void K_UpdateDraft(player_t *player)
 {
 	fixed_t topspd = K_GetKartSpeed(player, false);
 	fixed_t draftdistance;
-	UINT8 leniency = (TICRATE/4);
+	UINT8 leniency = (3*TICRATE)/4;
 	UINT8 i;
 
 	// Distance you have to be to draft. If you're still accelerating, then this distance is lessened.
@@ -1665,7 +1665,7 @@ static void K_UpdateDraft(player_t *player)
 	draftdistance = FixedMul(draftdistance, K_GetKartGameSpeedScalar(gamespeed));
 
 	// On the contrary, the leniency period biases toward high weight.
-	leniency += (player->kartweight-1) * (TICRATE/5);
+	leniency += (player->kartweight-1) * (TICRATE/4);
 
 	// Not enough speed to draft.
 	if (player->speed >= 20*player->mo->scale)
@@ -1727,7 +1727,7 @@ static void K_UpdateDraft(player_t *player)
 
 			olddraft = player->kartstuff[k_draftpower];
 
-			player->kartstuff[k_draftleeway] = max(leniency/2, (player->kartstuff[k_draftpower] * leniency) / FRACUNIT);
+			player->kartstuff[k_draftleeway] = max(TICRATE/4, (player->kartstuff[k_draftpower] * leniency) / FRACUNIT);
 			player->kartstuff[k_lastdraft] = i;
 
 			// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
