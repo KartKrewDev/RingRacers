@@ -869,25 +869,21 @@ void P_ButteredSlope(mobj_t *mo)
 			return; // Allow the player to stand still on slopes below a certain steepness
 	}
 
-	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 15 / 16 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
+	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 4 / 5 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
 
-	if (mo->player && (mo->player->pflags & PF_SPINNING)) {
-		fixed_t mult = 0;
+	if (mo->player) {
+		fixed_t mult = FRACUNIT;
 		if (mo->momx || mo->momy) {
 			angle_t angle = R_PointToAngle2(0, 0, mo->momx, mo->momy) - mo->standingslope->xydirection;
 
 			if (P_MobjFlip(mo) * mo->standingslope->zdelta < 0)
 				angle ^= ANGLE_180;
 
-			mult = FINECOSINE(angle >> ANGLETOFINESHIFT);
+			mult = FRACUNIT + (FRACUNIT + FINECOSINE(angle>>ANGLETOFINESHIFT))*3/2;
 		}
 
-		thrust = FixedMul(thrust, FRACUNIT*2/3 + mult/8);
+		thrust = FixedMul(thrust, mult);
 	}
-
-	if (mo->momx || mo->momy) // Slightly increase thrust based on the object's speed
-		thrust = FixedMul(thrust, FRACUNIT+P_AproxDistance(mo->momx, mo->momy)/16);
-	// This makes it harder to zigzag up steep slopes, as well as allows greater top speed when rolling down
 
 	// Let's get the gravity strength for the object...
 	thrust = FixedMul(thrust, abs(P_GetMobjGravity(mo)));
