@@ -1143,7 +1143,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			{
 				K_KartGetItemResult(player, KITEM_SUPERRING);
 				player->kartstuff[k_itemblinkmode] = 1;
-				if (P_IsLocalPlayer(player))
+				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolm);
 			}
 			else
@@ -1153,7 +1153,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 				else  // Default to sad if nothing's enabled...
 					K_KartGetItemResult(player, KITEM_SAD);
 				player->kartstuff[k_itemblinkmode] = 0;
-				if (P_IsLocalPlayer(player))
+				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolf);
 			}
 		}
@@ -1163,7 +1163,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			{
 				K_KartGetItemResult(player, KITEM_BANANA);
 				player->kartstuff[k_itemblinkmode] = 1;
-				if (P_IsLocalPlayer(player))
+				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolm);
 			}
 			else
@@ -1173,7 +1173,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 				else  // Default to sad if nothing's enabled...
 					K_KartGetItemResult(player, KITEM_SAD);
 				player->kartstuff[k_itemblinkmode] = 0;
-				if (P_IsLocalPlayer(player))
+				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolf);
 			}
 		}
@@ -1196,7 +1196,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			player->kartstuff[k_itemblinkmode] = 1;
 			player->kartstuff[k_itemroulette] = 0;
 			player->kartstuff[k_roulettetype] = 0;
-			if (P_IsLocalPlayer(player))
+			if (P_IsDisplayPlayer(player))
 				S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
 			return;
 		}
@@ -1213,7 +1213,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_itemblinkmode] = (mashed ? 1 : 0);
 		player->kartstuff[k_itemroulette] = 0;
 		player->kartstuff[k_roulettetype] = 0;
-		if (P_IsLocalPlayer(player))
+		if (P_IsDisplayPlayer(player))
 			S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
 		return;
 	}
@@ -1629,7 +1629,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 			band->fuse = 2;
 			if (transparent)
 				band->flags2 |= MF2_SHADOW;
-			if (!P_IsLocalPlayer(player) && !P_IsLocalPlayer(victim))
+			if (!P_IsDisplayPlayer(player) && !P_IsDisplayPlayer(victim))
 				band->flags2 |= MF2_DONTDRAW;
 		}
 
@@ -2792,7 +2792,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	P_PlayerRingBurst(player, 5);
 	K_PlayPainSound(player->mo);
 
-	if (P_IsLocalPlayer(player))
+	if (P_IsDisplayPlayer(player))
 	{
 		quake.intensity = 64*FRACUNIT;
 		quake.time = 5;
@@ -3921,7 +3921,7 @@ static void K_DoHyudoroSteal(player_t *player)
 		players[stealplayer].kartstuff[k_itemamount] = 0;
 		players[stealplayer].kartstuff[k_itemheld] = 0;
 
-		if (P_IsLocalPlayer(&players[stealplayer]) && !splitscreen)
+		if (P_IsDisplayPlayer(&players[stealplayer]) && !splitscreen)
 			S_StartSound(NULL, sfx_s3k92);
 	}
 }
@@ -4816,7 +4816,7 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 {
 	INT32 sfxnum = sfx_None;
 
-	if (player->mo->health > 0 && !P_IsLocalPlayer(player))
+	if (player->mo->health > 0 && !P_IsDisplayPlayer(player))
 	{
 		if (cv_kartinvinsfx.value)
 		{
@@ -4982,7 +4982,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				debtflag->frame += 4;
 			debtflag->color = player->skincolor;
 			debtflag->fuse = 2;
-			if (P_IsLocalPlayer(player))
+			if (P_IsDisplayPlayer(player))
 				debtflag->flags2 |= MF2_DONTDRAW;
 		}
 	}
@@ -5099,7 +5099,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		else if (player->kartstuff[k_comebacktimer])
 		{
 			player->kartstuff[k_comebacktimer]--;
-			if (P_IsLocalPlayer(player) && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer] <= 0)
+			if (P_IsDisplayPlayer(player) && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer] <= 0)
 				comebackshowninfo = true; // client has already seen the message
 		}
 	}
@@ -5323,7 +5323,7 @@ void K_KartPlayerAfterThink(player_t *player)
 
 		if (targ-players != lasttarg)
 		{
-			if (P_IsLocalPlayer(player) || P_IsLocalPlayer(targ))
+			if (P_IsDisplayPlayer(player) || P_IsDisplayPlayer(targ))
 				S_StartSound(NULL, sfx_s3k89);
 			else
 				S_StartSound(targ->mo, sfx_s3k89);
@@ -5552,7 +5552,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			K_SpawnDriftSparks(player);
 
 		// Sound whenever you get a different tier of sparks
-		if (P_IsLocalPlayer(player) // UGHGHGH...
+		if (P_IsDisplayPlayer(player) // UGHGHGH...
 			&& ((player->kartstuff[k_driftcharge] < dsone && player->kartstuff[k_driftcharge]+driftadditive >= dsone)
 			|| (player->kartstuff[k_driftcharge] < dstwo && player->kartstuff[k_driftcharge]+driftadditive >= dstwo)
 			|| (player->kartstuff[k_driftcharge] < dsthree && player->kartstuff[k_driftcharge]+driftadditive >= dsthree)))
@@ -6036,7 +6036,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								}
 								player->kartstuff[k_invincibilitytimer] = itemtime+(2*TICRATE); // 10 seconds
 								P_RestoreMusic(player);
-								if (!P_IsLocalPlayer(player))
+								if (!P_IsDisplayPlayer(player))
 									S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmi : sfx_kinvnc));
 								K_PlayPowerGloatSound(player->mo);
 								player->kartstuff[k_itemamount]--;
@@ -6239,7 +6239,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										player->mo->destscale = (6*player->mo->destscale)/8;
 									player->kartstuff[k_growshrinktimer] = itemtime+(4*TICRATE); // 12 seconds
 									P_RestoreMusic(player);
-									if (!P_IsLocalPlayer(player))
+									if (!P_IsDisplayPlayer(player))
 										S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
 									S_StartSound(player->mo, sfx_kc5a);
 								}
@@ -6549,7 +6549,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				K_SpawnDashDustRelease(player); // already handled for perfect boosts by K_DoSneaker
-				if ((!player->kartstuff[k_floorboost] || player->kartstuff[k_floorboost] == 3) && P_IsLocalPlayer(player))
+				if ((!player->kartstuff[k_floorboost] || player->kartstuff[k_floorboost] == 3) && P_IsDisplayPlayer(player))
 				{
 					if (player->kartstuff[k_boostcharge] <= 40)
 						S_StartSound(player->mo, sfx_cdfm01); // You were almost there!

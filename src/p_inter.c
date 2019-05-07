@@ -3191,7 +3191,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_SpinPlayer(player, source, 1, inflictor, false);
 				K_KartPainEnergyFling(player);
 
-				if (P_IsLocalPlayer(player))
+				if (P_IsDisplayPlayer(player))
 				{
 					quake.intensity = 32*FRACUNIT;
 					quake.time = 5;
