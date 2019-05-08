@@ -4184,6 +4184,7 @@ static void P_3dMovement(player_t *player)
 	// If "no" to 2, normalize to topspeed, so we can't suddenly run faster than it of our own accord.
 	// If "no" to 1, we're not reaching any limits yet, so ignore this entirely!
 	// -Shadow Hog
+	/*
 	newMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
 	if (newMagnitude > K_GetKartSpeed(player, true)) //topspeed)
 	{
@@ -4207,6 +4208,7 @@ static void P_3dMovement(player_t *player)
 			player->mo->momy = tempmomy + player->cmomy;
 		}
 	}
+	*/
 }
 
 //
@@ -7352,7 +7354,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (P_CameraThinker(player, thiscam, resetcalled))
 		return true;
 
-	
+
 	if (thiscam == &camera[1]) // Camera 2
 	{
 		num = 1;

@@ -1636,7 +1636,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 		curx += stepx;
 		cury += stepy;
 		curz += stepz;
-	
+
 		offset = abs(offset-1) % 3;
 		n--;
 	}
@@ -2241,7 +2241,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0 to 33.3% top speed
 		//accelboost += (FRACUNIT / 3); // + 33.3% acceleration
-		numboosts++; // (Drafting suffers no boost stack penalty!) 
+		numboosts++; // (Drafting suffers no boost stack penalty!)
 	}
 
 	player->kartstuff[k_boostpower] = boostpower;
@@ -2319,6 +2319,9 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 
 	// ACCELCODE!!!1!11!
 	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy); // FixedMul(P_AproxDistance(player->rmomx, player->rmomy), player->mo->scale);
+	// Don't calculate the acceleration as ever being above top speed
+	if (oldspeed > p_speed)
+		oldspeed = p_speed;
 	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), ORIG_FRICTION);
 
 	if (player->kartstuff[k_pogospring]) // Pogo Spring minimum/maximum thrust
@@ -3413,7 +3416,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 
 			ang = mo->player->frameangle;
 
-			if (mo->player->kartstuff[k_drift] != 0) 
+			if (mo->player->kartstuff[k_drift] != 0)
 			{
 				drifting = true;
 				ang += (mo->player->kartstuff[k_drift] * ((ANGLE_270 + ANGLE_22h) / 5)); // -112.5 doesn't work. I fucking HATE SRB2 angles
@@ -8382,7 +8385,7 @@ static void K_drawKartRingsAndLives(void)
 	}
 	else if (stplyr->kartstuff[k_rings] >= 20) // Maxed out
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
-	
+
 
 	if (netgame)
 		V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|splitflags, kp_ringsticker[1]);
