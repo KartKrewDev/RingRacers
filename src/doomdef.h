@@ -149,13 +149,17 @@ extern FILE *logstream;
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-#define VERSION    100 // Game version
-#define SUBVERSION 4 // more precise version number
-#define VERSIONSTRING "v1.0.4"
-#define VERSIONSTRINGW L"v1.0.4"
-// Hey! If you change this, add 1 to the MODVERSION below!
-// Otherwise we can't force updates!
+#define VERSION    110 // Game version
+#define SUBVERSION 0 // more precise version number
+#define VERSIONSTRING "v1.1"
+#define VERSIONSTRINGW L"v1.1"
+// Hey! If you change this, add 1 to the MODVERSION below! Otherwise we can't force updates!
+// And change CMakeLists.txt, for CMake users!
+// AND appveyor.yml, for the build bots!
 #endif
+
+// Maintain compatibility with 1.0.x record attack replays?
+#define DEMO_COMPAT_100
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
@@ -221,7 +225,7 @@ extern FILE *logstream;
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
 // Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
-#define MODVERSION 4
+#define MODVERSION 5
 
 // Filter consvars by version
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
@@ -611,9 +615,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 ///	Polyobject fake flat code
 #define POLYOBJECTS_PLANES
-
-///	Improved way of dealing with ping values and a ping limit.
-#define NEWPING
 
 ///	See name of player in your crosshair
 #define SEENAMES

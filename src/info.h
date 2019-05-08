@@ -4900,6 +4900,7 @@ typedef enum mobj_type
 
 	MT_KARMAFIREWORK,
 	MT_RINGSPARKS,
+	MT_DRAFTDUST,
 
 #ifdef SEENAMES
 	MT_NAMECHECK,
