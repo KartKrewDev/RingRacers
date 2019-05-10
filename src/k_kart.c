@@ -1259,7 +1259,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 {
-	fixed_t weight = 5<<FRACBITS;
+	fixed_t weight = 5*mobj->scale;
 
 	switch (mobj->type)
 	{
@@ -1270,7 +1270,7 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 				weight = 0; // Do not bump
 			else
 			{
-				weight = (mobj->player->kartweight)<<FRACBITS;
+				weight = (mobj->player->kartweight) * mobj->scale;
 				if (mobj->player->speed > K_GetKartSpeed(mobj->player, false))
 					weight += (mobj->player->speed - K_GetKartSpeed(mobj->player, false))/8;
 			}
@@ -1282,21 +1282,21 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 					|| against->player->kartstuff[k_growshrinktimer] > 0)
 					weight = 0;
 				else
-					weight = (against->player->kartweight)<<FRACBITS;
+					weight = (against->player->kartweight) * against->scale;
 			}
 			break;
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
 			if (against->player)
-				weight = (against->player->kartweight)<<FRACBITS;
+				weight = (against->player->kartweight) * against->scale;
 			break;
 		case MT_JAWZ:
 		case MT_JAWZ_DUD:
 		case MT_JAWZ_SHIELD:
 			if (against->player)
-				weight = (against->player->kartweight+3)<<FRACBITS;
+				weight = (against->player->kartweight+3) * against->scale;
 			else
-				weight = 8<<FRACBITS;
+				weight = 8*mobj->scale;
 			break;
 		default:
 			break;
@@ -2229,14 +2229,6 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_ringboost]) // Ring Boost
 		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 400% acceleration
 
-	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
-	{
-		// Grow's design is weird with booster stacking.
-		// We'll see how to replace its design BEFORE v2 gets released.
-		speedboost += (FRACUNIT/5); // + 20%
-		//numboosts++; // Don't add any boost afterimages to Grow
-	}
-
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
 		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0 to 33.3% top speed
@@ -2545,7 +2537,6 @@ static void K_RemoveGrowShrink(player_t *player)
 	}
 
 	player->kartstuff[k_growshrinktimer] = 0;
-	player->kartstuff[k_growcancel] = -1;
 
 	P_RestoreMusic(player);
 }
@@ -4820,17 +4811,17 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 	{
 		if (cv_kartinvinsfx.value)
 		{
-			if (player->kartstuff[k_growshrinktimer] > 0) // Prioritize Grow
-				sfxnum = sfx_alarmg;
-			else if (player->kartstuff[k_invincibilitytimer] > 0)
+			if (player->kartstuff[k_invincibilitytimer] > 0) // Prioritize invincibility
 				sfxnum = sfx_alarmi;
+			else if (player->kartstuff[k_growshrinktimer] > 0) 
+				sfxnum = sfx_alarmg;
 		}
 		else
 		{
-			if (player->kartstuff[k_growshrinktimer] > 0)
-				sfxnum = sfx_kgrow;
-			else if (player->kartstuff[k_invincibilitytimer] > 0)
+			if (player->kartstuff[k_invincibilitytimer] > 0)
 				sfxnum = sfx_kinvnc;
+			else if (player->kartstuff[k_growshrinktimer] > 0)
+				sfxnum = sfx_kgrow;
 		}
 	}
 
@@ -5855,7 +5846,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			&& NO_HYUDORO && !(HOLDING_ITEM
 			|| player->kartstuff[k_itemamount]
 			|| player->kartstuff[k_itemroulette]
-			|| player->kartstuff[k_growshrinktimer] // Being disabled during Shrink was unintended but people seemed to be okay with it sooo...
+			|| player->kartstuff[k_growshrinktimer] < 0 // Being disabled during Shrink was unintended but people seemed to be okay with it sooo...
 			|| player->kartstuff[k_rocketsneakertimer]
 			|| player->kartstuff[k_eggmanexplode]))
 			player->kartstuff[k_userings] = 1;
@@ -5950,28 +5941,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->kartstuff[k_rocketsneakertimer] -= 2*TICRATE;
 						if (player->kartstuff[k_rocketsneakertimer] < 1)
 							player->kartstuff[k_rocketsneakertimer] = 1;
-					}
-				}
-				// Grow Canceling
-				else if (player->kartstuff[k_growshrinktimer] > 0)
-				{
-					if (player->kartstuff[k_growcancel] >= 0)
-					{
-						if (cmd->buttons & BT_ATTACK)
-						{
-							player->kartstuff[k_growcancel]++;
-							if (player->kartstuff[k_growcancel] > 26)
-								K_RemoveGrowShrink(player);
-						}
-						else
-							player->kartstuff[k_growcancel] = 0;
-					}
-					else
-					{
-						if ((cmd->buttons & BT_ATTACK) || (player->pflags & PF_ATTACKDOWN))
-							player->kartstuff[k_growcancel] = -1;
-						else
-							player->kartstuff[k_growcancel] = 0;
 					}
 				}
 				else if (player->kartstuff[k_itemamount] <= 0)
@@ -6225,8 +6194,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_GROW:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO
-								&& player->kartstuff[k_growshrinktimer] <= 0) // Grow holds the item box hostage
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								if (player->kartstuff[k_growshrinktimer] < 0) // If you're shrunk, then "grow" will just make you normal again.
 									K_RemoveGrowShrink(player);
@@ -6352,9 +6320,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 		else
 			player->kartstuff[k_curshield] = 0;
-
-		if (player->kartstuff[k_growshrinktimer] <= 0)
-			player->kartstuff[k_growcancel] = -1;
 
 		if (player->kartstuff[k_itemtype] == KITEM_SPB
 			|| player->kartstuff[k_itemtype] == KITEM_SHRINK
@@ -7578,19 +7543,6 @@ static void K_drawKartItem(void)
 
 			if (leveltime & 1)
 				localpatch = kp_rocketsneaker[offset];
-			else
-				localpatch = kp_nodraw;
-		}
-		else if (stplyr->kartstuff[k_growshrinktimer] > 0)
-		{
-			if (stplyr->kartstuff[k_growcancel] > 0)
-			{
-				itembar = stplyr->kartstuff[k_growcancel];
-				maxl = 26;
-			}
-
-			if (leveltime & 1)
-				localpatch = kp_grow[offset];
 			else
 				localpatch = kp_nodraw;
 		}

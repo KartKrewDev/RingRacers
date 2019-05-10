@@ -6805,17 +6805,6 @@ void P_MobjThinker(mobj_t *mobj)
 							else
 								mobj->tracer->flags2 |= MF2_DONTDRAW;
 						}
-						else if (mobj->target->player->kartstuff[k_growshrinktimer] > 0)
-						{
-							P_SetMobjState(mobj, S_PLAYERARROW_BOX);
-							mobj->tracer->sprite = SPR_ITEM;
-							mobj->tracer->frame = FF_FULLBRIGHT|KITEM_GROW;
-
-							if (leveltime & 1)
-								mobj->tracer->flags2 &= ~MF2_DONTDRAW;
-							else
-								mobj->tracer->flags2 |= MF2_DONTDRAW;
-						}
 						else if (mobj->target->player->kartstuff[k_itemtype] && mobj->target->player->kartstuff[k_itemamount] > 0)
 						{
 							P_SetMobjState(mobj, S_PLAYERARROW_BOX);
