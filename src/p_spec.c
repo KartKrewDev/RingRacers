@@ -4242,7 +4242,7 @@ DoneSection2:
 						player->starpostangle = player->starpostx = player->starposty = player->starpostz = player->kartstuff[k_starpostflip] = 0;
 					}
 
-					if (P_IsLocalPlayer(player))
+					if (P_IsDisplayPlayer(player))
 					{
 						if (player->laps == (UINT8)(cv_numlaps.value - 1))
 							S_StartSound(NULL, sfx_s3k68);
@@ -4272,7 +4272,7 @@ DoneSection2:
 
 				if (player->laps >= (unsigned)cv_numlaps.value)
 				{
-					if (P_IsLocalPlayer(player))
+					if (P_IsDisplayPlayer(player))
 						S_StartSound(NULL, sfx_s3k6a);
 					else if (player->kartstuff[k_position] == 1)
 						S_StartSound(NULL, sfx_s253);

@@ -1674,7 +1674,7 @@ void P_DoPlayerExit(player_t *player)
 
 		if (cv_kartvoices.value)
 		{
-			if (P_IsLocalPlayer(player))
+			if (P_IsDisplayPlayer(player))
 			{
 				sfxenum_t sfx_id;
 				if (K_IsPlayerLosing(player))
