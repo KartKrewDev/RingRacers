@@ -1306,7 +1306,7 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 }
 
 // This kind of wipeout happens with no rings -- doesn't remove a bumper, has no invulnerability, and is much shorter.
-static void K_BumpWipeoutPlayer(player_t *player, INT32 length)
+static void K_DebtStingPlayer(player_t *player, INT32 length)
 {
 	if (player->health <= 0)
 		return;
@@ -1493,7 +1493,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		{
 			if (mobj1->player->kartstuff[k_rings] <= 0)
 			{
-				K_BumpWipeoutPlayer(mobj1->player, TICRATE + (4 * (mobj2->player->kartweight - mobj1->player->kartweight)));
+				K_DebtStingPlayer(mobj1->player, TICRATE + (4 * (mobj2->player->kartweight - mobj1->player->kartweight)));
 				K_KartPainEnergyFling(mobj1->player);
 				P_PlayRinglossSound(mobj1);
 			}
@@ -1517,7 +1517,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		{
 			if (mobj2->player->kartstuff[k_rings] <= 0)
 			{
-				K_BumpWipeoutPlayer(mobj2->player, TICRATE + (4 * (mobj1->player->kartweight - mobj2->player->kartweight)));
+				K_DebtStingPlayer(mobj2->player, TICRATE + (4 * (mobj1->player->kartweight - mobj2->player->kartweight)));
 				K_KartPainEnergyFling(mobj2->player);
 				P_PlayRinglossSound(mobj2);
 			}
