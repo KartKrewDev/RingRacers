@@ -6702,7 +6702,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 					if ((G_RaceGametype() || mobj->target->player->kartstuff[k_bumper] <= 0)
 #if 1 // Set to 0 to test without needing to host
-						|| ((mobj->target->player == &players[displayplayers[0]]) || P_IsLocalPlayer(mobj->target->player))
+						|| (P_IsDisplayPlayer(mobj->target->player))
 #endif
 						)
 						mobj->flags2 |= MF2_DONTDRAW;
