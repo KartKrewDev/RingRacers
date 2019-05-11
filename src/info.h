@@ -617,6 +617,8 @@ typedef enum sprite
 	SPR_BHBM, // Ballhog BOOM
 	SPR_SPBM, // Self-Propelled Bomb
 	SPR_THNS, // Thunder Shield
+	SPR_BUBS, // Bubble Shield (not Bubs)
+	SPR_FLMS, // Flame Shield
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
 	SPR_KBLN, // Battle Mode Bumper
@@ -3516,6 +3518,27 @@ typedef enum state
 	S_THUNDERSHIELD23,
 	S_THUNDERSHIELD24,
 
+	// Flame Shield
+	S_FLAMESHIELD1,
+	S_FLAMESHIELD2,
+	S_FLAMESHIELD3,
+	S_FLAMESHIELD4,
+	S_FLAMESHIELD5,
+	S_FLAMESHIELD6,
+	S_FLAMESHIELD7,
+	S_FLAMESHIELD8,
+	S_FLAMESHIELD9,
+	S_FLAMESHIELD10,
+	S_FLAMESHIELD11,
+	S_FLAMESHIELD12,
+	S_FLAMESHIELD13,
+	S_FLAMESHIELD14,
+	S_FLAMESHIELD15,
+	S_FLAMESHIELD16,
+	S_FLAMESHIELD17,
+	S_FLAMESHIELD18,
+	S_FLAMESHIELDDASH,
+
 	// The legend
 	S_SINK,
 	S_SINK_SHIELD,
@@ -4682,7 +4705,9 @@ typedef enum mobj_type
 	MT_SPB, // SPB stuff
 	MT_SPBEXPLOSION,
 
-	MT_THUNDERSHIELD, // Thunder Shield stuff
+	MT_THUNDERSHIELD, // Shields
+	MT_BUBBLESHIELD,
+	MT_FLAMESHIELD,
 
 	MT_SINK, // Kitchen Sink Stuff
 	MT_SINK_SHIELD,

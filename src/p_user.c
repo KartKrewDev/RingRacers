@@ -1083,7 +1083,7 @@ void P_PlayLivesJingle(player_t *player)
 
 void P_PlayRinglossSound(mobj_t *source)
 {
-	if (source->player && source->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+	if (source->player && K_GetShieldFromItem(source->player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		S_StartSound(source, sfx_s1a3); // Shield hit (no ring loss)
 	else if (source->player && source->player->kartstuff[k_rings] <= 0)
 		S_StartSound(source, sfx_s1a6); // Ring debt (lessened ring loss)

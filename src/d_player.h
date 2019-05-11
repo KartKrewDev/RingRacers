@@ -214,6 +214,8 @@ typedef enum
 	KITEM_GROW,
 	KITEM_SHRINK,
 	KITEM_THUNDERSHIELD,
+	KITEM_BUBBLESHIELD,
+	KITEM_FLAMESHIELD,
 	KITEM_HYUDORO,
 	KITEM_POGOSPRING,
 	KITEM_SUPERRING,
@@ -231,6 +233,15 @@ typedef enum
 
 	NUMKARTRESULTS
 } kartitems_t;
+
+typedef enum
+{
+	KSHIELD_NONE = 0,
+	KSHIELD_THUNDER = 1,
+	KSHIELD_BUBBLE = 2,
+	KSHIELD_FLAME = 3,
+	NUMKARTSHIELDS
+} kartshields_t;
 
 //{ SRB2kart - kartstuff
 typedef enum
@@ -311,6 +322,8 @@ typedef enum
 	k_squishedtimer,		// Squished frame timer
 	k_rocketsneakertimer,	// Rocket Sneaker duration timer
 	k_invincibilitytimer,	// Invincibility timer
+	k_flameready,			// Flame Shield dash ready to activate
+	k_flamedash,			// Flame Shield dash power
 	k_eggmanheld,			// Eggman monitor held, separate from k_itemheld so it doesn't stop you from getting items
 	k_eggmanexplode,		// Fake item recieved, explode in a few seconds
 	k_eggmanblame,			// Fake item recieved, who set this fake
@@ -341,6 +354,9 @@ typedef enum
 
 // QUICKLY GET EITHER SNEAKER OR LEVEL BOOSTER SINCE THEY ARE FUNCTIONALLY IDENTICAL
 #define EITHERSNEAKER(p) (p->kartstuff[k_sneakertimer] || p->kartstuff[k_levelbooster])
+
+// QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
+#define RINGTOTAL(p) (p->kartstuff[k_rings] + p->kartstuff[k_pickuprings])
 
 //}
 

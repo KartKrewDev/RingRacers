@@ -1452,6 +1452,10 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			P_DamageMobj(thing, tmthing, tmthing, 1);
 		else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
 			P_DamageMobj(tmthing, thing, thing, 1);
+		else if (tmthing->player->kartstuff[k_flamedash] && !thing->player->kartstuff[k_flamedash]) // SRB2kart - Then flame shield!
+			P_DamageMobj(thing, tmthing, tmthing, 1);
+		else if (thing->player->kartstuff[k_flamedash] && !tmthing->player->kartstuff[k_flamedash])
+			P_DamageMobj(tmthing, thing, thing, 1);
 
 		/*if (G_BattleGametype() && (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam))
 		{

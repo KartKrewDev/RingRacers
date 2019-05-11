@@ -3676,7 +3676,7 @@ void A_AttractChase(mobj_t *actor)
 		if (actor->tracer && actor->tracer->player && actor->tracer->health
 			//&& P_CheckSight(actor, actor->tracer)
 			&& actor->tracer->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
-			&& (actor->tracer->player->kartstuff[k_rings]+actor->tracer->player->kartstuff[k_pickuprings]) < 20
+			&& RINGTOTAL(actor->tracer->player) < 20
 			&& !actor->tracer->player->kartstuff[k_ringlock])
 		{
 			fixed_t dist;

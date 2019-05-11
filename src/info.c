@@ -57,19 +57,19 @@ char sprnames[NUMSPRITES + 1][5] =
 	//SRB2kart Sprites
 	"SPRG","BSPR","RNDM","RPOP","SGNS","FAST","DSHR","BOST","BOSM","KFRE",
 	"KINV","KINF","WIPD","DRIF","BDRF","DUST","RSHE","FITM","BANA","ORBN",
-	"JAWZ","SSMN","KRBM","BHOG","BHBM","SPBM","THNS","SINK","SITR","KBLN",
-	"DEZL","POKE","AUDI","DECO","DOOD","SNES","GBAS","SPRS","BUZB","CHOM",
-	"SACO","CRAB","SHAD","BRNG","BUMP","FLEN","CLAS","PSHW","ISTA","ISTB",
-	"ARRO","ITEM","ITMO","ITMI","ITMN","WANT","PBOM","HIT1","HIT2","HIT3",
-	"RETI","AIDU","KSPK","LZI1","LZI2","KLIT","FZSM","FZBM","FPRT","SBUS",
-	"MARB","FUFO","RUST","BLON","VAPE","HTZA","HTZB","SGVA","SGVB","SGVC",
-	"PGTR","PGF1","PGF2","PGF3","PGBH","DPLR","SPTL","ENM1","GARU","MARR",
-	"REAP","JITB","CDMO","CDBU","PINE","PPLR","DPPT","AATR","COCO","BDST",
-	"FROG","CBRA","HOLE","BBRA","EGFG","SMKP","MTYM","THWP","SNOB","ICEB",
-	"CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS","ZTCH",
-	"MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH","BFRT",
-	"OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN","FWRK",
-	"MXCL","RGSP","DRAF","XMS4","XMS5","VIEW"
+	"JAWZ","SSMN","KRBM","BHOG","BHBM","SPBM","THNS","BUBS","FLMS","SINK",
+	"SITR","KBLN","DEZL","POKE","AUDI","DECO","DOOD","SNES","GBAS","SPRS",
+	"BUZB","CHOM","SACO","CRAB","SHAD","BRNG","BUMP","FLEN","CLAS","PSHW",
+	"ISTA","ISTB","ARRO","ITEM","ITMO","ITMI","ITMN","WANT","PBOM","HIT1",
+	"HIT2","HIT3","RETI","AIDU","KSPK","LZI1","LZI2","KLIT","FZSM","FZBM",
+	"FPRT","SBUS","MARB","FUFO","RUST","BLON","VAPE","HTZA","HTZB","SGVA",
+	"SGVB","SGVC","PGTR","PGF1","PGF2","PGF3","PGBH","DPLR","SPTL","ENM1",
+	"GARU","MARR","REAP","JITB","CDMO","CDBU","PINE","PPLR","DPPT","AATR",
+	"COCO","BDST","FROG","CBRA","HOLE","BBRA","EGFG","SMKP","MTYM","THWP",
+	"SNOB","ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN",
+	"PGSS","ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE",
+	"TOAH","BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ",
+	"WBLN","FWRK","MXCL","RGSP","DRAF","XMS4","XMS5","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -2849,6 +2849,26 @@ state_t states[NUMSTATES] =
 	{SPR_THNS, FF_FULLBRIGHT|2,  2, {NULL}, 0, 0, S_THUNDERSHIELD23},		// S_THUNDERSHIELD22
 	{SPR_THNS, FF_FULLBRIGHT|1,  2, {NULL}, 0, 0, S_THUNDERSHIELD24},		// S_THUNDERSHIELD23
 	{SPR_THNS, FF_FULLBRIGHT|0,  2, {NULL}, 0, 0, S_THUNDERSHIELD1},		// S_THUNDERSHIELD24
+
+	{SPR_FLMS, FF_FULLBRIGHT,     2, {NULL}, 0, 0, S_FLAMESHIELD2},			// S_FLAMESHIELD1
+	{SPR_FLMS, FF_FULLBRIGHT|9,   2, {NULL}, 0, 0, S_FLAMESHIELD3},			// S_FLAMESHIELD2
+	{SPR_FLMS, FF_FULLBRIGHT|1,   2, {NULL}, 0, 0, S_FLAMESHIELD4},			// S_FLAMESHIELD3
+	{SPR_FLMS, FF_FULLBRIGHT|10,  2, {NULL}, 0, 0, S_FLAMESHIELD5},			// S_FLAMESHIELD4
+	{SPR_FLMS, FF_FULLBRIGHT|2,   2, {NULL}, 0, 0, S_FLAMESHIELD6},			// S_FLAMESHIELD5
+	{SPR_FLMS, FF_FULLBRIGHT|11,  2, {NULL}, 0, 0, S_FLAMESHIELD7},			// S_FLAMESHIELD6
+	{SPR_FLMS, FF_FULLBRIGHT|3,   2, {NULL}, 0, 0, S_FLAMESHIELD8},			// S_FLAMESHIELD7
+	{SPR_FLMS, FF_FULLBRIGHT|12,  2, {NULL}, 0, 0, S_FLAMESHIELD9},			// S_FLAMESHIELD8
+	{SPR_FLMS, FF_FULLBRIGHT|4,   2, {NULL}, 0, 0, S_FLAMESHIELD10},		// S_FLAMESHIELD9
+	{SPR_FLMS, FF_FULLBRIGHT|13,  2, {NULL}, 0, 0, S_FLAMESHIELD11},		// S_FLAMESHIELD10
+	{SPR_FLMS, FF_FULLBRIGHT|5,   2, {NULL}, 0, 0, S_FLAMESHIELD12},		// S_FLAMESHIELD11
+	{SPR_FLMS, FF_FULLBRIGHT|14,  2, {NULL}, 0, 0, S_FLAMESHIELD13},		// S_FLAMESHIELD12
+	{SPR_FLMS, FF_FULLBRIGHT|6,   2, {NULL}, 0, 0, S_FLAMESHIELD14},		// S_FLAMESHIELD13
+	{SPR_FLMS, FF_FULLBRIGHT|15,  2, {NULL}, 0, 0, S_FLAMESHIELD15},		// S_FLAMESHIELD14
+	{SPR_FLMS, FF_FULLBRIGHT|7,   2, {NULL}, 0, 0, S_FLAMESHIELD16},		// S_FLAMESHIELD15
+	{SPR_FLMS, FF_FULLBRIGHT|16,  2, {NULL}, 0, 0, S_FLAMESHIELD17},		// S_FLAMESHIELD16
+	{SPR_FLMS, FF_FULLBRIGHT|8,   2, {NULL}, 0, 0, S_FLAMESHIELD18},		// S_FLAMESHIELD17
+	{SPR_FLMS, FF_FULLBRIGHT|17,  2, {NULL}, 0, 0, S_FLAMESHIELD1},			// S_FLAMESHIELD18
+	{SPR_FLMS, FF_FULLBRIGHT|18, -1, {NULL}, 0, 0, S_FLAMESHIELDDASH},		// S_FLAMESHIELDDASH
 
 	{SPR_SINK, 0,  1, {A_SmokeTrailer}, MT_SINKTRAIL, 0, S_SINK},	// S_SINK
 	{SPR_SINK, 0|FF_TRANS80|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_SINK_SHIELD}, // S_SINK_SHIELD
@@ -15934,6 +15954,61 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
+
+	{           // MT_BUBBLESHIELD
+		-1,             // doomednum
+		S_THUNDERSHIELD1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		20*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		1,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_FLAMESHIELD
+		-1,             // doomednum
+		S_FLAMESHIELD1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		20*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		1,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
 
 	{           // MT_SINK
 		-1,             // doomednum

@@ -142,8 +142,8 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				|| player->kartstuff[k_itemheld])
 				return false;
 
-			if (weapon == 3 && player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
-				return false; // No stacking thunder shields!
+			if (weapon == 3 && K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
+				return false; // No stacking shields!
 		}
 	}
 
@@ -629,7 +629,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// kill
-			if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0)
+			if (player->kartstuff[k_invincibilitytimer] > 0
+				|| player->kartstuff[k_growshrinktimer] > 0
+				|| player->kartstuff[k_flamedash] > 0)
 			{
 				P_KillMobj(special, toucher, toucher);
 				return;
@@ -704,7 +706,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// Reached the cap, don't waste 'em!
-			if ((player->kartstuff[k_rings] + player->kartstuff[k_pickuprings]) >= 20)
+			if (RINGTOTAL(player) >= 20)
 				return;
 
 			special->momx = special->momy = special->momz = 0;
@@ -3297,8 +3299,8 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	if (!player)
 		return;
 
-	// Has a shield? Don't lose your rings!
-	if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+	// Have a shield? You get hit, but don't lose your rings!
+	if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		return;
 
 	// 20 is the ring cap in kart

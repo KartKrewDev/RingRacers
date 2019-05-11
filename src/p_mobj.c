@@ -6232,7 +6232,9 @@ void P_RunShadows(void)
 
 		dest = mobj->target;
 
-		if (dest->type == MT_THUNDERSHIELD)
+		if (dest->type == MT_THUNDERSHIELD
+			|| dest->type == MT_BUBBLESHIELD
+			|| dest->type == MT_FLAMESHIELD)
 			dest = dest->target;
 
 		P_TeleportMove(mobj, dest->x, dest->y, mobj->target->z);
@@ -8362,7 +8364,8 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_THUNDERSHIELD:
 		{
 			fixed_t destx, desty;
-			if (!mobj->target || !mobj->target->health || (mobj->target->player && mobj->target->player->kartstuff[k_curshield] != 1))
+			if (!mobj->target || !mobj->target->health || !mobj->target->player
+				|| mobj->target->player->kartstuff[k_curshield] != KSHIELD_THUNDER)
 			{
 				P_RemoveMobj(mobj);
 				return;
@@ -8381,8 +8384,9 @@ void P_MobjThinker(mobj_t *mobj)
 				else
 					viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
 
-				if (curstate > S_THUNDERSHIELD15)
+				if (curstate > S_THUNDERSHIELD15 && curstate <= S_THUNDERSHIELD24)
 					viewingangle += ANGLE_180;
+
 				destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
 				desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
 			}
@@ -8393,6 +8397,64 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 
 			P_TeleportMove(mobj, destx, desty, mobj->target->z);
+			break;
+		}
+		case MT_FLAMESHIELD:
+		{
+			fixed_t destx, desty;
+			statenum_t curstate;
+
+			if (!mobj->target || !mobj->target->health || !mobj->target->player
+				|| mobj->target->player->kartstuff[k_curshield] != KSHIELD_FLAME)
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+			P_SetScale(mobj, (mobj->destscale = (5*mobj->target->destscale)>>2));
+
+			curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
+
+			if (mobj->target->player->kartstuff[k_flamedash])
+			{
+				if (curstate != S_FLAMESHIELDDASH)
+					P_SetMobjState(mobj, S_FLAMESHIELDDASH);
+				mobj->flags2 ^= MF2_DONTDRAW;
+			}
+			else
+			{
+				if (curstate == S_FLAMESHIELDDASH)
+					P_SetMobjState(mobj, S_FLAMESHIELD1);
+				mobj->flags2 &= ~MF2_DONTDRAW;
+			}
+
+			if (!splitscreen /*&& rendermode != render_soft*/)
+			{
+				angle_t viewingangle;
+
+				if (players[displayplayers[0]].awayviewtics)
+					viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+				else if (!camera[0].chase && players[displayplayers[0]].mo)
+					viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
+				else
+					viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
+
+				if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH && ((curstate-S_FLAMESHIELD1) & 1))
+					viewingangle += ANGLE_180;
+	
+				destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
+				desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
+			}
+			else
+			{
+				destx = mobj->target->x;
+				desty = mobj->target->y;
+			}
+
+			P_TeleportMove(mobj, destx, desty, mobj->target->z);
+			if (mobj->target->momx || mobj->target->momy)
+				mobj->angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+			else
+				mobj->angle = mobj->target->angle;
 			break;
 		}
 		case MT_ROCKETSNEAKER:
@@ -10116,7 +10178,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_JAWZ:			case MT_JAWZ_DUD:		case MT_JAWZ_SHIELD:
 		case MT_SSMINE:			case MT_SSMINE_SHIELD:
 		case MT_BALLHOG:		case MT_SINK:
-		case MT_THUNDERSHIELD:	case MT_ROCKETSNEAKER:
+		case MT_THUNDERSHIELD:	case MT_BUBBLESHIELD:	case MT_FLAMESHIELD:
+		case MT_ROCKETSNEAKER:
 		case MT_SPB:
 			P_SpawnShadowMobj(mobj);
 		default:
