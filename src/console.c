@@ -131,12 +131,12 @@ static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}
 static consvar_t cons_backpic = {"con_backpic", "translucent", CV_SAVE, backpic_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{2, "Sepia"},
-												{3, "Brown"},		{4, "Pink"},		{5, "Raspberry"},
-												{6, "Red"},			{7, "Creamsicle"},	{8, "Orange"},
-												{9, "Gold"},		{10,"Yellow"},		{11,"Emerald"},
-												{12,"Green"},		{13,"Cyan"},		{14,"Steel"},
-												{15,"Periwinkle"},	{16,"Blue"},		{17,"Purple"},
-												{18,"Lavender"},
+												{3, "Brown"},		{4, "Pink"},		{5, "Red"},
+												{6, "Orange"},		{7, "Gold"},		{8, "Yellow"},
+												{9, "Peridot"},		{10,"Green"},		{11,"Aquamarine"},
+												{12,"Cyan"},		{13,"Steel"},		{14,"Blue"},
+												{15,"Purple"},		{16,"Magenta"},		{17,"Lavender"},
+												{18,"Rose"},
 												{0, NULL}};
 consvar_t cons_backcolor = {"con_backcolor", "Black", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
 
@@ -262,27 +262,27 @@ void CON_SetupBackColormap(void)
 
 	switch (cons_backcolor.value)
 	{
-		case 0:		palindex = 15; 	break; 	// White
-		case 1:		palindex = 31;	break; 	// Gray
-		case 2:		palindex = 47;	break;	// Sepia
-		case 3:		palindex = 63;	break; 	// Brown
-		case 4:		palindex = 150; shift = 7; 	break; 	// Pink
-		case 5:		palindex = 127; shift = 7;	break; 	// Raspberry
-		case 6:		palindex = 143;	break; 	// Red
-		case 7:		palindex = 86;	shift = 7;	break;	// Creamsicle
-		case 8:		palindex = 95;	break; 	// Orange
-		case 9:		palindex = 119; shift = 7;	break; 	// Gold
-		case 10:	palindex = 111;	break; 	// Yellow
-		case 11:	palindex = 191; shift = 7; 	break; 	// Emerald
-		case 12:	palindex = 175;	break; 	// Green
-		case 13:	palindex = 219;	break; 	// Cyan
-		case 14:	palindex = 207; shift = 7;	break; 	// Steel
-		case 15:	palindex = 230;	shift = 7; 	break; 	// Periwinkle
-		case 16:	palindex = 239;	break; 	// Blue
-		case 17:	palindex = 199; shift = 7; 	break; 	// Purple
-		case 18:	palindex = 255; shift = 7; 	break; 	// Lavender
-		// Default green
-		default:	palindex = 175; break;
+		case  0:	palindex =  15;				break; // White
+		case  1:	palindex =  31;				break; // Black
+		case  2:	palindex = 251;				break; // Sepia
+		case  3:	palindex = 239;				break; // Brown
+		case  4:	palindex = 214; shift = 7;	break; // Pink
+		case  5:	palindex =  47;				break; // Red
+		case  6:	palindex =  63;				break; // Orange
+		case  7:	palindex =  71; shift = 7;	break; // Gold
+		case  8:	palindex =  79; shift = 7;	break; // Yellow
+		case  9:	palindex = 191; shift = 8;	break; // Peridot
+		case 10:	palindex = 111;				break; // Green
+		case 11:	palindex = 127;	shift = 7;	break; // Aquamarine
+		case 12:	palindex = 139;				break; // Cyan
+		case 13:	palindex = 175; shift = 7;	break; // Steel
+		case 14:	palindex = 159;				break; // Blue
+		case 15:	palindex = 169;				break; // Purple
+		case 16:	palindex = 187;				break; // Magenta
+		case 17:	palindex = 199; shift = 7;	break; // Lavender
+		case 18:	palindex = 207; shift = 7;	break; // Rose
+		// Default black
+		default: palindex = 31; break;
 
 }
 
@@ -335,21 +335,21 @@ static void CON_SetupColormaps(void)
 		*memorysrc = (UINT8)(i & 0xFF); // remap each color to itself...
 
 	// SRB2Kart: Different console font, new colors
-	purplemap[120]   = (UINT8)194;
-	yellowmap[120]   = (UINT8)103;
-	greenmap[120]    = (UINT8)162;
-	bluemap[120]     = (UINT8)228;
-	redmap[120]      = (UINT8)126; // battle
-	graymap[120]     =  (UINT8)10;
-	orangemap[120]   =  (UINT8)85; // record attack
-	skymap[120]      = (UINT8)214; // race
-	lavendermap[120] = (UINT8)248;
-	goldmap[120]     = (UINT8)114;
-	teamap[120]      = (UINT8)177;
-	steelmap[120]    = (UINT8)201;
-	pinkmap[120]     = (UINT8)145;
-	brownmap[120]    =  (UINT8)48;
-	peachmap[120]    =  (UINT8)69; // nice
+	purplemap[0]   = (UINT8)182;
+	yellowmap[0]   = (UINT8)73;
+	greenmap[0]    = (UINT8)98;
+	bluemap[0]     = (UINT8)148;
+	redmap[0]      = (UINT8)34; // battle
+	graymap[0]     = (UINT8)10;
+	orangemap[0]   = (UINT8)52; // record attack
+	skymap[0]      = (UINT8)132; // race
+	lavendermap[0] = (UINT8)192;
+	goldmap[0]     = (UINT8)65;
+	teamap[0]      = (UINT8)89;
+	steelmap[0]    = (UINT8)145;
+	pinkmap[0]     = (UINT8)210;
+	brownmap[0]    = (UINT8)224;
+	peachmap[0]    = (UINT8)217; // no longer nice :(
 
 	// Init back colormap
 	CON_SetupBackColormap();
@@ -1472,7 +1472,7 @@ static void CON_DrawInput(void)
 	{
 		x -= charwidth*3;
 		if (input_sel < c)
-			V_DrawFill(x, y, charwidth*3, (10 * con_scalefactor), 107 | V_NOSCALESTART);
+			V_DrawFill(x, y, charwidth*3, (10 * con_scalefactor), 77 | V_NOSCALESTART);
 		for (i = 0; i < 3; ++i, x += charwidth)
 			V_DrawCharacter(x, y, '.' | cv_constextsize.value | V_GRAYMAP | V_NOSCALESTART, !cv_allcaps.value);
 	}
@@ -1483,7 +1483,7 @@ static void CON_DrawInput(void)
 	{
 		if ((input_sel > c && input_cur <= c) || (input_sel <= c && input_cur > c))
 		{
-			V_DrawFill(x, y, charwidth, (10 * con_scalefactor), 107 | V_NOSCALESTART);
+			V_DrawFill(x, y, charwidth, (10 * con_scalefactor), 77 | V_NOSCALESTART);
 			V_DrawCharacter(x, y, p[c] | cv_constextsize.value | V_YELLOWMAP | V_NOSCALESTART, !cv_allcaps.value);
 		}
 		else
@@ -1497,7 +1497,7 @@ static void CON_DrawInput(void)
 	if (rellip)
 	{
 		if (input_sel > cend)
-			V_DrawFill(x, y, charwidth*3, (10 * con_scalefactor), 107 | V_NOSCALESTART);
+			V_DrawFill(x, y, charwidth*3, (10 * con_scalefactor), 77 | V_NOSCALESTART);
 		for (i = 0; i < 3; ++i, x += charwidth)
 			V_DrawCharacter(x, y, '.' | cv_constextsize.value | V_GRAYMAP | V_NOSCALESTART, !cv_allcaps.value);
 	}

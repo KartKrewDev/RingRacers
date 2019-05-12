@@ -37,7 +37,7 @@
 //{ SRB2kart Color Code
 
 #define SKIN_RAMP_LENGTH 16
-#define DEFAULT_STARTTRANSCOLOR 160
+#define DEFAULT_STARTTRANSCOLOR 96
 #define NUM_PALETTE_ENTRIES 256
 
 // These should be within 14 characters to fit on the character select screen
@@ -492,7 +492,7 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 		if (skinnum == TC_BOSS)
 			dest_colormap[31] = 0;
 		else if (skinnum == TC_METALSONIC)
-			dest_colormap[239] = 0;
+			dest_colormap[143] = 0;
 
 		return;
 	}
@@ -7060,7 +7060,7 @@ static void K_drawKartItem(void)
 			V_DrawFill(fx+x+length, fy+y+1, 1, height, 12|fflags); // the right one
 			if (height == 2)
 				V_DrawFill(fx+x+2, fy+y+2, length-2, 1, 8|fflags); // the dulled underside
-			V_DrawFill(fx+x+2, fy+y+1, length-2, 1, 120|fflags); // the shine
+			V_DrawFill(fx+x+2, fy+y+1, length-2, 1, 0|fflags); // the shine
 		}
 	}
 

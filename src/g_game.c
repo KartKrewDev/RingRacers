@@ -3436,12 +3436,12 @@ UINT8 G_GetGametypeColor(INT16 gt)
 {
 	if (modeattacking // == ATTACKING_RECORD
 	|| gamestate == GS_TIMEATTACK)
-		return orangemap[120];
+		return orangemap[0];
 	if (gt == GT_MATCH)
-		return redmap[120];
+		return redmap[0];
 	if (gt == GT_RACE)
-		return skymap[120];
-	return 247; // FALLBACK
+		return skymap[0];
+	return 255; // FALLBACK
 }
 
 //

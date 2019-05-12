@@ -139,7 +139,7 @@ UINT32 nflatxshift, nflatyshift, nflatshiftup, nflatmask;
 #define BLINK_TT_CACHE_INDEX (MAXSKINS + 5)
 #define TT_CACHE_SIZE (MAXSKINS + 6)
 #define SKIN_RAMP_LENGTH 16
-#define DEFAULT_STARTTRANSCOLOR 160
+#define DEFAULT_STARTTRANSCOLOR 96
 #define NUM_PALETTE_ENTRIES 256
 
 static UINT8** translationtablecache[TT_CACHE_SIZE] = {NULL};
@@ -295,7 +295,7 @@ static void R_GenerateTranslationColormap(UINT8 *dest_colormap, INT32 skinnum, U
 		if (skinnum == TC_BOSS)
 			dest_colormap[31] = 0;
 		else if (skinnum == TC_METALSONIC)
-			dest_colormap[239] = 0;
+			dest_colormap[159] = 0;
 
 		return;
 	}

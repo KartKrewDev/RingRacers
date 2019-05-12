@@ -2531,7 +2531,7 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	strncpy(skin->facewant, "PLAYWANT", 9);
 	strncpy(skin->facemmap, "PLAYMMAP", 9);
 
-	skin->starttranscolor = 160;
+	skin->starttranscolor = 96;
 	skin->prefcolor = SKINCOLOR_GREEN;
 
 	// SRB2kart

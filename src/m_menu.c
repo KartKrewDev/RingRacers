@@ -3512,7 +3512,7 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 {
 	// Solid color textbox.
-	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 239);
+	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 159);
 	//V_DrawFill(x+8, y+8, width*8, boxlines*8, 31);
 /*
 	patch_t *p;
@@ -4671,10 +4671,10 @@ static void M_DrawTemperature(INT32 x, fixed_t t)
 		t = (FixedMul(h<<FRACBITS, t)>>FRACBITS);
 
 	// border
-	V_DrawFill(x - 1, vpadding, 1, h, 120);
-	V_DrawFill(x + width, vpadding, 1, h, 120);
-	V_DrawFill(x - 1, vpadding-1, width+2, 1, 120);
-	V_DrawFill(x - 1, vpadding+h, width+2, 1, 120);
+	V_DrawFill(x - 1, vpadding, 1, h, 0);
+	V_DrawFill(x + width, vpadding, 1, h, 0);
+	V_DrawFill(x - 1, vpadding-1, width+2, 1, 0);
+	V_DrawFill(x - 1, vpadding+h, width+2, 1, 0);
 
 	// bar itself
 	y = h;
@@ -4832,7 +4832,7 @@ static void M_DrawAddons(void)
 	V_DrawFill(x-21, (y - 16) + (lsheadingheight - 2), MAXSTRINGLENGTH*8+6, 1, 30);
 
 	m = (BASEVIDHEIGHT - currentMenu->y + 2) - (y - 1);
-	V_DrawFill(x - 21, y - 1, MAXSTRINGLENGTH*8+6, m, 239);
+	V_DrawFill(x - 21, y - 1, MAXSTRINGLENGTH*8+6, m, 159);
 
 	// scrollbar!
 	if (sizedirmenu <= (2*numaddonsshown + 1))
@@ -5558,8 +5558,8 @@ static void M_DrawReplayHut(void)
 	y = sizedirmenu*10 + currentMenu->menuitems[replaylistitem].alphaKey + 30;
 	if (y > SCALEDVIEWHEIGHT-80)
 	{
-		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, V_SNAPTOTOP|V_SNAPTORIGHT|239);
-		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, V_SNAPTOTOP|V_SNAPTORIGHT|229);
+		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, V_SNAPTOTOP|V_SNAPTORIGHT|159);
+		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, V_SNAPTOTOP|V_SNAPTORIGHT|149);
 	}
 
 	// Draw the cursor
@@ -5568,7 +5568,7 @@ static void M_DrawReplayHut(void)
 	V_DrawString(currentMenu->x, cursory, V_SNAPTOTOP|V_SNAPTOLEFT|highlightflags, currentMenu->menuitems[itemOn].text);
 
 	// Now draw some replay info!
-	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|239);
+	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
 
 	if (itemOn == replaylistitem)
 	{
@@ -5650,7 +5650,7 @@ static void M_DrawReplayStartMenu(void)
 		}
 	}
 
-	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|239);
+	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
 	DrawReplayHutReplayInfo();
 
 	V_DrawString(10, 72, V_SNAPTOTOP|highlightflags|V_ALLOWLOWERCASE, demolist[dir_on[menudepthleft]].title);
@@ -7579,7 +7579,7 @@ void M_DrawTimeAttackMenu(void)
 			time = mainrecords[cv_nextmap.value-1]->time;
 		}
 
-		V_DrawFill((BASEVIDWIDTH - dupadjust)>>1, 78, dupadjust, 36, 239);
+		V_DrawFill((BASEVIDWIDTH - dupadjust)>>1, 78, dupadjust, 36, 159);
 
 		V_DrawRightAlignedString(149, 80, highlightflags, "BEST LAP:");
 		K_drawKartTimestamp(lap, 19, 86, 0, 2);
@@ -8818,7 +8818,7 @@ Update the maxplayers label...
 #ifndef NONET
 	y += MP_MainMenu[8].alphaKey;
 
-	V_DrawFill(x+5, y+4+5, /*16*8 + 6,*/ BASEVIDWIDTH - 2*(x+5), 8+6, 239);
+	V_DrawFill(x+5, y+4+5, /*16*8 + 6,*/ BASEVIDWIDTH - 2*(x+5), 8+6, 159);
 
 	// draw name string
 	V_DrawString(x+8,y+12, V_ALLOWLOWERCASE, setupm_ip);
@@ -9292,7 +9292,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		flags |= V_FLIP; // This sprite is left/right flipped!
 
 	// draw box around guy
-	V_DrawFill(mx + 43 - (charw/2), my+65, charw, 84, 239);
+	V_DrawFill(mx + 43 - (charw/2), my+65, charw, 84, 159);
 
 	// draw player sprite
 	if (setupm_fakecolor) // inverse should never happen

@@ -1331,7 +1331,7 @@ void R_RenderPlayerView(player_t *player)
 		if (cv_homremoval.value == 1)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // No HOM effect!
 		else //'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 128+(timeinmap&15));
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 32+(timeinmap&15));
 	}
 	// Draw over the fourth screen so you don't have to stare at a HOM :V
 	else if (splitscreen == 2 && player == &players[displayplayers[2]])
