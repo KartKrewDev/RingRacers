@@ -1721,7 +1721,7 @@ void P_DoPlayerExit(player_t *player)
 	*/
 	player->powers[pw_underwater] = 0;
 	player->powers[pw_spacetime] = 0;
-	player->kartstuff[k_cardanimation] = 0; // srb2kart: reset battle animation
+	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
 
 	if (player == &players[consoleplayer])
 		demo.savebutton = leveltime;
@@ -7037,7 +7037,7 @@ static void P_DeathThink(player_t *player)
 
 	if (player->pflags & PF_TIMEOVER)
 	{
-		player->kartstuff[k_timeovercam]++;
+		player->karthud[khud_timeovercam]++;
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
@@ -7045,7 +7045,7 @@ static void P_DeathThink(player_t *player)
 		}
 	}
 	else
-		player->kartstuff[k_timeovercam] = 0;
+		player->karthud[khud_timeovercam] = 0;
 
 	K_KartPlayerHUDUpdate(player);
 
@@ -7253,7 +7253,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 #endif
 
 	if (player->pflags & PF_TIMEOVER) // 1 for momentum keep, 2 for turnaround
-		timeover = (player->kartstuff[k_timeovercam] > 2*TICRATE ? 2 : 1);
+		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
 	else
 		timeover = 0;
 
@@ -7396,7 +7396,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (timeover)
 	{
-		const INT32 timeovercam = max(0, min(180, (player->kartstuff[k_timeovercam] - 2*TICRATE)*15));
+		const INT32 timeovercam = max(0, min(180, (player->karthud[khud_timeovercam] - 2*TICRATE)*15));
 		camrotate += timeovercam;
 	}
 	else if (leveltime < introtime) // Whoooshy camera!
@@ -7470,10 +7470,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		dist += 4*(player->speed - K_GetKartSpeed(player, false));
 	dist += abs(thiscam->momz)/4;
 
-	if (player->kartstuff[k_boostcam])
+	if (player->karthud[khud_boostcam])
 	{
-		dist -= FixedMul(11*dist/16, player->kartstuff[k_boostcam]);
-		height -= FixedMul(height, player->kartstuff[k_boostcam]);
+		dist -= FixedMul(11*dist/16, player->karthud[khud_boostcam]);
+		height -= FixedMul(height, player->karthud[khud_boostcam]);
 	}
 
 	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);

@@ -4194,19 +4194,19 @@ DoneSection2:
 					if (nump > 1)
 					{
 						if (K_IsPlayerLosing(player))
-							player->kartstuff[k_laphand] = 3;
+							player->karthud[khud_laphand] = 3;
 						else
 						{
 							if (nump > 2 && player->kartstuff[k_position] == 1) // 1st place in 1v1 uses thumbs up
-								player->kartstuff[k_laphand] = 1;
+								player->karthud[khud_laphand] = 1;
 							else
-								player->kartstuff[k_laphand] = 2;
+								player->karthud[khud_laphand] = 2;
 						}
 					}
 					else
-						player->kartstuff[k_laphand] = 0; // No hands in FREE PLAY
+						player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
-					player->kartstuff[k_lapanimation] = 80;
+					player->karthud[khud_lapanimation] = 80;
 
 					if (player->pflags & PF_NIGHTSMODE)
 						player->drillmeter += 48*20;

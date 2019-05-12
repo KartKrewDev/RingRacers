@@ -1109,8 +1109,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_roulettetype] == 2)
 	{
 		player->kartstuff[k_eggmanexplode] = 4*TICRATE;
-		//player->kartstuff[k_itemblink] = TICRATE;
-		//player->kartstuff[k_itemblinkmode] = 1;
+		//player->karthud[khud_itemblink] = TICRATE;
+		//player->karthud[khud_itemblinkmode] = 1;
 		player->kartstuff[k_itemroulette] = 0;
 		player->kartstuff[k_roulettetype] = 0;
 		if (P_IsDisplayPlayer(player))
@@ -1124,8 +1124,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	{
 		K_KartGetItemResult(player, cv_kartdebugitem.value);
 		player->kartstuff[k_itemamount] = cv_kartdebugamount.value;
-		player->kartstuff[k_itemblink] = TICRATE;
-		player->kartstuff[k_itemblinkmode] = 2;
+		player->karthud[khud_itemblink] = TICRATE;
+		player->karthud[khud_itemblinkmode] = 2;
 		player->kartstuff[k_itemroulette] = 0;
 		player->kartstuff[k_roulettetype] = 0;
 		if (P_IsDisplayPlayer(player))
@@ -1142,7 +1142,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			if (mashed && (modeattacking || cv_superring.value)) // ANY mashed value? You get rings.
 			{
 				K_KartGetItemResult(player, KITEM_SUPERRING);
-				player->kartstuff[k_itemblinkmode] = 1;
+				player->karthud[khud_itemblinkmode] = 1;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolm);
 			}
@@ -1152,7 +1152,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 					K_KartGetItemResult(player, KITEM_SNEAKER);
 				else  // Default to sad if nothing's enabled...
 					K_KartGetItemResult(player, KITEM_SAD);
-				player->kartstuff[k_itemblinkmode] = 0;
+				player->karthud[khud_itemblinkmode] = 0;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolf);
 			}
@@ -1162,7 +1162,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			if (mashed && (modeattacking || cv_banana.value)) // ANY mashed value? You get a banana.
 			{
 				K_KartGetItemResult(player, KITEM_BANANA);
-				player->kartstuff[k_itemblinkmode] = 1;
+				player->karthud[khud_itemblinkmode] = 1;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolm);
 			}
@@ -1172,13 +1172,13 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 					K_KartGetItemResult(player, KITEM_ORBINAUT);
 				else  // Default to sad if nothing's enabled...
 					K_KartGetItemResult(player, KITEM_SAD);
-				player->kartstuff[k_itemblinkmode] = 0;
+				player->karthud[khud_itemblinkmode] = 0;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolf);
 			}
 		}
 
-		player->kartstuff[k_itemblink] = TICRATE;
+		player->karthud[khud_itemblink] = TICRATE;
 		player->kartstuff[k_itemroulette] = 0;
 		player->kartstuff[k_roulettetype] = 0;
 		return;
@@ -1192,8 +1192,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		if (P_RandomChance((debtamount*FRACUNIT)/20))
 		{
 			K_KartGetItemResult(player, KITEM_SUPERRING);
-			player->kartstuff[k_itemblink] = TICRATE;
-			player->kartstuff[k_itemblinkmode] = 1;
+			player->karthud[khud_itemblink] = TICRATE;
+			player->karthud[khud_itemblinkmode] = 1;
 			player->kartstuff[k_itemroulette] = 0;
 			player->kartstuff[k_roulettetype] = 0;
 			if (P_IsDisplayPlayer(player))
@@ -1209,8 +1209,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		&& cv_selfpropelledbomb.value)
 	{
 		K_KartGetItemResult(player, KITEM_SPB);
-		player->kartstuff[k_itemblink] = TICRATE;
-		player->kartstuff[k_itemblinkmode] = (mashed ? 1 : 0);
+		player->karthud[khud_itemblink] = TICRATE;
+		player->karthud[khud_itemblinkmode] = (mashed ? 1 : 0);
 		player->kartstuff[k_itemroulette] = 0;
 		player->kartstuff[k_roulettetype] = 0;
 		if (P_IsDisplayPlayer(player))
@@ -1246,8 +1246,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	if (P_IsDisplayPlayer(player))
 		S_StartSound(NULL, ((player->kartstuff[k_roulettetype] == 1) ? sfx_itrolk : (mashed ? sfx_itrolm : sfx_itrolf)));
 
-	player->kartstuff[k_itemblink] = TICRATE;
-	player->kartstuff[k_itemblinkmode] = ((player->kartstuff[k_roulettetype] == 1) ? 2 : (mashed ? 1 : 0));
+	player->karthud[khud_itemblink] = TICRATE;
+	player->karthud[khud_itemblinkmode] = ((player->kartstuff[k_roulettetype] == 1) ? 2 : (mashed ? 1 : 0));
 
 	player->kartstuff[k_itemroulette] = 0; // Since we're done, clear the roulette number
 	player->kartstuff[k_roulettetype] = 0; // This too
@@ -2075,8 +2075,8 @@ static void K_TauntVoiceTimers(player_t *player)
 	if (!player)
 		return;
 
-	player->kartstuff[k_tauntvoices] = 6*TICRATE;
-	player->kartstuff[k_voices] = 4*TICRATE;
+	player->karthud[khud_tauntvoices] = 6*TICRATE;
+	player->karthud[khud_voices] = 4*TICRATE;
 }
 
 static void K_RegularVoiceTimers(player_t *player)
@@ -2084,16 +2084,16 @@ static void K_RegularVoiceTimers(player_t *player)
 	if (!player)
 		return;
 
-	player->kartstuff[k_voices] = 4*TICRATE;
+	player->karthud[khud_voices] = 4*TICRATE;
 
-	if (player->kartstuff[k_tauntvoices] < 4*TICRATE)
-		player->kartstuff[k_tauntvoices] = 4*TICRATE;
+	if (player->karthud[khud_tauntvoices] < 4*TICRATE)
+		player->karthud[khud_tauntvoices] = 4*TICRATE;
 }
 
 void K_PlayAttackTaunt(mobj_t *source)
 {
 	sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
-	boolean tasteful = (!source->player || !source->player->kartstuff[k_tauntvoices]);
+	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
 
 	if (cv_kartvoices.value && (tasteful || cv_kartvoices.value == 2))
 		S_StartSound(source, sfx_kattk1+pick);
@@ -2107,7 +2107,7 @@ void K_PlayAttackTaunt(mobj_t *source)
 void K_PlayBoostTaunt(mobj_t *source)
 {
 	sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
-	boolean tasteful = (!source->player || !source->player->kartstuff[k_tauntvoices]);
+	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
 
 	if (cv_kartvoices.value && (tasteful || cv_kartvoices.value == 2))
 		S_StartSound(source, sfx_kbost1+pick);
@@ -2120,7 +2120,7 @@ void K_PlayBoostTaunt(mobj_t *source)
 
 void K_PlayOvertakeSound(mobj_t *source)
 {
-	boolean tasteful = (!source->player || !source->player->kartstuff[k_voices]);
+	boolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
 
 	if (!G_RaceGametype()) // Only in race
 		return;
@@ -3872,7 +3872,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			&& (players[i].kartstuff[k_itemtype]
 			&& players[i].kartstuff[k_itemamount]
 			&& !players[i].kartstuff[k_itemheld]
-			&& !players[i].kartstuff[k_itemblink]))
+			&& !players[i].karthud[khud_itemblink]))
 		{
 			playerswappable[numplayers] = i;
 			numplayers++;
@@ -3935,7 +3935,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 		S_StartSound(player->mo, sfx_cdfm01);
 		K_SpawnDashDustRelease(player);
 		if (intendedboost > player->kartstuff[k_speedboost])
-			player->kartstuff[k_destboostcam] = FixedMul(FRACUNIT, FixedDiv((intendedboost - player->kartstuff[k_speedboost]), intendedboost));
+			player->karthud[khud_destboostcam] = FixedMul(FRACUNIT, FixedDiv((intendedboost - player->kartstuff[k_speedboost]), intendedboost));
 	}
 
 	if (!EITHERSNEAKER(player))
@@ -4740,7 +4740,7 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	// Silence the engines
 	if (leveltime < 8 || player->spectator || player->exiting)
 	{
-		player->kartstuff[k_enginesnd] = 0; // Reset sound number
+		player->karthud[khud_enginesnd] = 0; // Reset sound number
 		return;
 	}
 
@@ -4761,15 +4761,15 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	if (targetsnd > 12)
 		targetsnd = 12;
 
-	if (player->kartstuff[k_enginesnd] < targetsnd)
-		player->kartstuff[k_enginesnd]++;
-	if (player->kartstuff[k_enginesnd] > targetsnd)
-		player->kartstuff[k_enginesnd]--;
+	if (player->karthud[khud_enginesnd] < targetsnd)
+		player->karthud[khud_enginesnd]++;
+	if (player->karthud[khud_enginesnd] > targetsnd)
+		player->karthud[khud_enginesnd]--;
 
-	if (player->kartstuff[k_enginesnd] < 0)
-		player->kartstuff[k_enginesnd] = 0;
-	if (player->kartstuff[k_enginesnd] > 12)
-		player->kartstuff[k_enginesnd] = 12;
+	if (player->karthud[khud_enginesnd] < 0)
+		player->karthud[khud_enginesnd] = 0;
+	if (player->karthud[khud_enginesnd] > 12)
+		player->karthud[khud_enginesnd] = 12;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4809,7 +4809,7 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	if (volume <= 0) // Might as well
 		return;
 
-	S_StartSoundAtVolume(player->mo, (sfx_krta00 + player->kartstuff[k_enginesnd]) + (class*numsnds), volume);
+	S_StartSoundAtVolume(player->mo, (sfx_krta00 + player->karthud[khud_enginesnd]) + (class*numsnds), volume);
 }
 
 static void K_UpdateInvincibilitySounds(player_t *player)
@@ -4847,46 +4847,110 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 #undef STOPTHIS
 }
 
+#define RINGANIM_NUMFRAMES 10
+#define RINGANIM_DELAYMAX 5
+
 void K_KartPlayerHUDUpdate(player_t *player)
 {
-	if (player->kartstuff[k_lapanimation])
-		player->kartstuff[k_lapanimation]--;
+	if (player->karthud[khud_lapanimation])
+		player->karthud[khud_lapanimation]--;
 
-	if (player->kartstuff[k_yougotem])
-		player->kartstuff[k_yougotem]--;
+	if (player->karthud[khud_yougotem])
+		player->karthud[khud_yougotem]--;
+
+	if (player->karthud[khud_voices])
+		player->karthud[khud_voices]--;
+
+	if (player->karthud[khud_tauntvoices])
+		player->karthud[khud_tauntvoices]--;
+
+	if (G_RaceGametype())
+	{
+		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
+		if (player->kartstuff[k_ringboost] >= 30)
+			player->karthud[khud_ringdelay] = 0;
+		else
+			player->karthud[khud_ringdelay] = ((RINGANIM_DELAYMAX+1) * (30 - player->kartstuff[k_ringboost])) / 30;
+
+		if (player->karthud[khud_ringframe] == 0 && player->karthud[khud_ringdelay] > RINGANIM_DELAYMAX)
+		{
+			player->karthud[khud_ringframe] = 0;
+			player->karthud[khud_ringtics] = 0;
+		}
+		else if ((player->karthud[khud_ringtics]--) <= 0)
+		{
+			if (player->karthud[khud_ringdelay] == 0) // fast spin animation
+			{
+				player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+2) % RINGANIM_NUMFRAMES);
+				player->karthud[khud_ringtics] = 0;
+			}
+			else
+			{
+				player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+1) % RINGANIM_NUMFRAMES);
+				player->karthud[khud_ringtics] = min(RINGANIM_DELAYMAX, player->karthud[khud_ringdelay])-1;
+			}
+		}
+
+		if (player->kartstuff[k_ringlock])
+		{
+			UINT8 normalanim = (leveltime % 14);
+			UINT8 debtanim = 14 + (leveltime % 2);
+
+			if (player->karthud[khud_ringspblock] >= 14) // debt animation
+			{
+				if ((stplyr->kartstuff[k_rings] > 0) // Get out of 0 ring animation
+					&& (normalanim == 3 || normalanim == 10)) // on these transition frames.
+					player->karthud[khud_ringspblock] = normalanim;
+				else
+					player->karthud[khud_ringspblock] = debtanim;
+			}
+			else // normal animation
+			{
+				if ((stplyr->kartstuff[k_rings] <= 0) // Go into 0 ring animation
+					&& (player->karthud[khud_ringspblock] == 1 || player->karthud[khud_ringspblock] == 8)) // on these transition frames.
+					player->karthud[khud_ringspblock] = debtanim;
+				else
+					player->karthud[khud_ringspblock] = normalanim;
+			}
+		}
+		else
+			player->karthud[khud_ringspblock] = (leveltime % 14); // reset to normal anim next time
+	}
 
 	if (G_BattleGametype() && (player->exiting || player->kartstuff[k_comebacktimer]))
 	{
 		if (player->exiting)
 		{
 			if (player->exiting < 6*TICRATE)
-				player->kartstuff[k_cardanimation] += ((164-player->kartstuff[k_cardanimation])/8)+1;
+				player->karthud[khud_cardanimation] += ((164-player->karthud[khud_cardanimation])/8)+1;
 			else if (player->exiting == 6*TICRATE)
-				player->kartstuff[k_cardanimation] = 0;
-			else if (player->kartstuff[k_cardanimation] < 2*TICRATE)
-				player->kartstuff[k_cardanimation]++;
+				player->karthud[khud_cardanimation] = 0;
+			else if (player->karthud[khud_cardanimation] < 2*TICRATE)
+				player->karthud[khud_cardanimation]++;
 		}
 		else
 		{
 			if (player->kartstuff[k_comebacktimer] < 6*TICRATE)
-				player->kartstuff[k_cardanimation] -= ((164-player->kartstuff[k_cardanimation])/8)+1;
+				player->karthud[khud_cardanimation] -= ((164-player->karthud[khud_cardanimation])/8)+1;
 			else if (player->kartstuff[k_comebacktimer] < 9*TICRATE)
-				player->kartstuff[k_cardanimation] += ((164-player->kartstuff[k_cardanimation])/8)+1;
+				player->karthud[khud_cardanimation] += ((164-player->karthud[khud_cardanimation])/8)+1;
 		}
 
-		if (player->kartstuff[k_cardanimation] > 164)
-			player->kartstuff[k_cardanimation] = 164;
-		if (player->kartstuff[k_cardanimation] < 0)
-			player->kartstuff[k_cardanimation] = 0;
+		if (player->karthud[khud_cardanimation] > 164)
+			player->karthud[khud_cardanimation] = 164;
+		if (player->karthud[khud_cardanimation] < 0)
+			player->karthud[khud_cardanimation] = 0;
 	}
 	else if (G_RaceGametype() && player->exiting)
 	{
-		if (player->kartstuff[k_cardanimation] < 2*TICRATE)
-			player->kartstuff[k_cardanimation]++;
+		if (player->karthud[khud_cardanimation] < 2*TICRATE)
+			player->karthud[khud_cardanimation]++;
 	}
 	else
-		player->kartstuff[k_cardanimation] = 0;
+		player->karthud[khud_cardanimation] = 0;
 }
+
+#undef RINGANIM_DELAYMAX
 
 /**	\brief	Decreases various kart timers and powers per frame. Called in P_PlayerThink in p_user.c
 
@@ -5038,25 +5102,25 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	// DKR style camera for boosting
-	if (player->kartstuff[k_boostcam] != 0 || player->kartstuff[k_destboostcam] != 0)
+	if (player->karthud[khud_boostcam] != 0 || player->karthud[khud_destboostcam] != 0)
 	{
-		if (player->kartstuff[k_boostcam] < player->kartstuff[k_destboostcam]
-			&& player->kartstuff[k_destboostcam] != 0)
+		if (player->karthud[khud_boostcam] < player->karthud[khud_destboostcam]
+			&& player->karthud[khud_destboostcam] != 0)
 		{
-			player->kartstuff[k_boostcam] += FRACUNIT/(TICRATE/4);
-			if (player->kartstuff[k_boostcam] >= player->kartstuff[k_destboostcam])
-				player->kartstuff[k_destboostcam] = 0;
+			player->karthud[khud_boostcam] += FRACUNIT/(TICRATE/4);
+			if (player->karthud[khud_boostcam] >= player->karthud[khud_destboostcam])
+				player->karthud[khud_destboostcam] = 0;
 		}
 		else
 		{
-			player->kartstuff[k_boostcam] -= FRACUNIT/TICRATE;
-			if (player->kartstuff[k_boostcam] < player->kartstuff[k_destboostcam])
-				player->kartstuff[k_boostcam] = player->kartstuff[k_destboostcam] = 0;
+			player->karthud[khud_boostcam] -= FRACUNIT/TICRATE;
+			if (player->karthud[khud_boostcam] < player->karthud[khud_destboostcam])
+				player->karthud[khud_boostcam] = player->karthud[khud_destboostcam] = 0;
 		}
-		//CONS_Printf("cam: %d, dest: %d\n", player->kartstuff[k_boostcam], player->kartstuff[k_destboostcam]);
+		//CONS_Printf("cam: %d, dest: %d\n", player->karthud[khud_boostcam], player->karthud[khud_destboostcam]);
 	}
 
-	player->kartstuff[k_timeovercam] = 0;
+	player->karthud[khud_timeovercam] = 0;
 
 	// Specific hack because it insists on setting flashing tics during this anyway...
 	if (player->kartstuff[k_spinouttype] == 2)
@@ -5188,19 +5252,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_justbumped]--;
 
 	// This doesn't go in HUD update because it has potential gameplay ramifications
-	if (player->kartstuff[k_itemblink] && player->kartstuff[k_itemblink]-- <= 0)
+	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
 	{
-		player->kartstuff[k_itemblinkmode] = 0;
-		player->kartstuff[k_itemblink] = 0;
+		player->karthud[khud_itemblinkmode] = 0;
+		player->karthud[khud_itemblink] = 0;
 	}
 
 	K_KartPlayerHUDUpdate(player);
-
-	if (player->kartstuff[k_voices])
-		player->kartstuff[k_voices]--;
-
-	if (player->kartstuff[k_tauntvoices])
-		player->kartstuff[k_tauntvoices]--;
 
 	if (G_BattleGametype() && player->kartstuff[k_bumper] > 0)
 		player->kartstuff[k_wanted]++;
@@ -7687,11 +7745,11 @@ static void K_drawKartItem(void)
 				localpatch = kp_nodraw;
 		}
 
-		if (stplyr->kartstuff[k_itemblink] && (leveltime & 1))
+		if (stplyr->karthud[khud_itemblink] && (leveltime & 1))
 		{
 			colormode = TC_BLINK;
 
-			switch (stplyr->kartstuff[k_itemblinkmode])
+			switch (stplyr->karthud[khud_itemblinkmode])
 			{
 				case 2:
 					localcolor = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
@@ -8302,19 +8360,11 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 	}
 }
 
-#define RINGANIM_NUMFRAMES 10
 #define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
-#define RINGANIM_DELAYMAX 5
 
 static void K_drawKartLapsAndRings(void)
 {
-	// TODO: turn these into player variables
-	static UINT8 ringanim_frame = 0;
-	static UINT8 ringanim_tics = 0;
-	static UINT8 ringanim_delay = RINGANIM_DELAYMAX+1;
-	static UINT8 ringlockanim = 0;
-
-	SINT8 ringanim_realframe = ringanim_frame;
+	SINT8 ringanim_realframe = stplyr->karthud[khud_ringframe];
 	INT32 splitflags = K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT);
 	UINT8 rn[2];
 	INT32 ringflip = 0;
@@ -8333,62 +8383,12 @@ static void K_drawKartLapsAndRings(void)
 	else if (stplyr->kartstuff[k_rings] >= 20) // Maxed out
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
 
-	if (ringanim_frame > RINGANIM_FLIPFRAME)
+	if (stplyr->karthud[khud_ringframe] > RINGANIM_FLIPFRAME)
 	{
 		ringflip = V_FLIP;
-		ringanim_realframe = RINGANIM_NUMFRAMES-ringanim_frame;
+		ringanim_realframe = RINGANIM_NUMFRAMES-stplyr->karthud[khud_ringframe];
 		ringx += SHORT((splitscreen > 1) ? kp_smallring[ringanim_realframe]->width : kp_ring[ringanim_realframe]->width);
 	}
-
-	// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
-	if (stplyr->kartstuff[k_ringboost] >= 30)
-		ringanim_delay = 0;
-	else
-		ringanim_delay = ((RINGANIM_DELAYMAX+1) * (30 - stplyr->kartstuff[k_ringboost])) / 30;
-
-	if (ringanim_frame == 0 && ringanim_delay > RINGANIM_DELAYMAX)
-	{
-		ringanim_frame = 0;
-		ringanim_tics = 0;
-	}
-	else if ((ringanim_tics--) <= 0)
-	{
-		if (ringanim_delay == 0) // fast spin animation
-		{
-			ringanim_frame = ((ringanim_frame+2) % RINGANIM_NUMFRAMES);
-			ringanim_tics = 0;
-		}
-		else
-		{
-			ringanim_frame = ((ringanim_frame+1) % RINGANIM_NUMFRAMES);
-			ringanim_tics = min(RINGANIM_DELAYMAX, ringanim_delay)-1;
-		}
-	}
-
-	if (stplyr->kartstuff[k_ringlock])
-	{
-		UINT8 normalanim = (leveltime % 14);
-		UINT8 debtanim = 14 + (leveltime % 2);
-
-		if (ringlockanim >= 14) // debt animation
-		{
-			if ((stplyr->kartstuff[k_rings] > 0) // Get out of 0 ring animation
-				&& (normalanim == 3 || normalanim == 10)) // on these transition frames.
-				ringlockanim = normalanim;
-			else
-				ringlockanim = debtanim;
-		}
-		else // normal animation
-		{
-			if ((stplyr->kartstuff[k_rings] <= 0) // Go into 0 ring animation
-				&& (ringlockanim == 1 || ringlockanim == 8)) // on these transition frames.
-				ringlockanim = debtanim;
-			else
-				ringlockanim = normalanim;
-		}
-	}
-	else
-		ringlockanim = (leveltime % 14); // reset to normal anim next time
 
 	if (splitscreen > 1)
 	{
@@ -8508,7 +8508,7 @@ static void K_drawKartLapsAndRings(void)
 
 		// SPB ring lock
 		if (stplyr->kartstuff[k_ringlock])
-			V_DrawScaledPatch(LAPS_X-5, LAPS_Y-28, V_HUDTRANS|splitflags, kp_ringspblock[ringlockanim]);
+			V_DrawScaledPatch(LAPS_X-5, LAPS_Y-28, V_HUDTRANS|splitflags, kp_ringspblock[stplyr->karthud[khud_ringspblock]]);
 
 		// Lives
 		if (!netgame)
@@ -8522,7 +8522,6 @@ static void K_drawKartLapsAndRings(void)
 
 #undef RINGANIM_NUMFRAMES
 #undef RINGANIM_FLIPFRAME
-#undef RINGANIM_DELAYMAX
 
 static void K_drawKartSpeedometer(void)
 {
@@ -9054,10 +9053,10 @@ static void K_drawKartFinish(void)
 {
 	INT32 pnum = 0, splitflags = K_calcSplitFlags(0);
 
-	if (!stplyr->kartstuff[k_cardanimation] || stplyr->kartstuff[k_cardanimation] >= 2*TICRATE)
+	if (!stplyr->karthud[khud_cardanimation] || stplyr->karthud[khud_cardanimation] >= 2*TICRATE)
 		return;
 
-	if ((stplyr->kartstuff[k_cardanimation] % (2*5)) / 5) // blink
+	if ((stplyr->karthud[khud_cardanimation] % (2*5)) / 5) // blink
 		pnum = 1;
 
 	if (splitscreen > 1) // 3/4p, stationary FIN
@@ -9076,7 +9075,7 @@ static void K_drawKartFinish(void)
 
 		x = ((vid.width<<FRACBITS)/vid.dupx);
 		xval = (SHORT(kp_racefinish[pnum]->width)<<FRACBITS);
-		x = ((TICRATE - stplyr->kartstuff[k_cardanimation])*(xval > x ? xval : x))/TICRATE;
+		x = ((TICRATE - stplyr->karthud[khud_cardanimation])*(xval > x ? xval : x))/TICRATE;
 
 		if (splitscreen && stplyr == &players[displayplayers[1]])
 			x = -x;
@@ -9091,7 +9090,7 @@ static void K_drawKartFinish(void)
 static void K_drawBattleFullscreen(void)
 {
 	INT32 x = BASEVIDWIDTH/2;
-	INT32 y = -64+(stplyr->kartstuff[k_cardanimation]); // card animation goes from 0 to 164, 164 is the middle of the screen
+	INT32 y = -64+(stplyr->karthud[khud_cardanimation]); // card animation goes from 0 to 164, 164 is the middle of the screen
 	INT32 splitflags = V_SNAPTOTOP; // I don't feel like properly supporting non-green resolutions, so you can have a misuse of SNAPTO instead
 	fixed_t scale = FRACUNIT;
 
@@ -9101,11 +9100,11 @@ static void K_drawBattleFullscreen(void)
 			|| (splitscreen > 1 && (stplyr == &players[displayplayers[2]]
 			|| (stplyr == &players[displayplayers[3]] && splitscreen > 2))))
 		{
-			y = 232-(stplyr->kartstuff[k_cardanimation]/2);
+			y = 232-(stplyr->karthud[khud_cardanimation]/2);
 			splitflags = V_SNAPTOBOTTOM;
 		}
 		else
-			y = -32+(stplyr->kartstuff[k_cardanimation]/2);
+			y = -32+(stplyr->karthud[khud_cardanimation]/2);
 
 		if (splitscreen > 1)
 		{
@@ -9469,21 +9468,21 @@ static void K_drawChallengerScreen(void)
 static void K_drawLapStartAnim(void)
 {
 	// This is an EVEN MORE insanely complicated animation.
-	const UINT8 progress = 80-stplyr->kartstuff[k_lapanimation];
+	const UINT8 progress = 80-stplyr->karthud[khud_lapanimation];
 	UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, stplyr->skincolor, GTC_CACHE);
 
-	V_DrawFixedPatch((BASEVIDWIDTH/2 + (32*max(0, stplyr->kartstuff[k_lapanimation]-76)))*FRACUNIT,
+	V_DrawFixedPatch((BASEVIDWIDTH/2 + (32*max(0, stplyr->karthud[khud_lapanimation]-76)))*FRACUNIT,
 		(48 - (32*max(0, progress-76)))*FRACUNIT,
 		FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 		(modeattacking ? kp_lapanim_emblem[1] : kp_lapanim_emblem[0]), colormap);
 
-	if (stplyr->kartstuff[k_laphand] >= 1 && stplyr->kartstuff[k_laphand] <= 3)
+	if (stplyr->karthud[khud_laphand] >= 1 && stplyr->karthud[khud_laphand] <= 3)
 	{
-		V_DrawFixedPatch((BASEVIDWIDTH/2 + (32*max(0, stplyr->kartstuff[k_lapanimation]-76)))*FRACUNIT,
+		V_DrawFixedPatch((BASEVIDWIDTH/2 + (32*max(0, stplyr->karthud[khud_lapanimation]-76)))*FRACUNIT,
 			(48 - (32*max(0, progress-76))
 				+ 4 - abs((signed)((leveltime % 8) - 4)))*FRACUNIT,
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
-			kp_lapanim_hand[stplyr->kartstuff[k_laphand]-1], NULL);
+			kp_lapanim_hand[stplyr->karthud[khud_laphand]-1], NULL);
 	}
 
 	if (stplyr->laps == (UINT8)(cv_numlaps.value - 1))
@@ -9844,14 +9843,14 @@ void K_drawKartHUD(void)
 	{
 		if (stplyr->exiting)
 			K_drawKartFinish();
-		else if (stplyr->kartstuff[k_lapanimation] && !splitscreen)
+		else if (stplyr->karthud[khud_lapanimation] && !splitscreen)
 			K_drawLapStartAnim();
 	}
 
 	if (modeattacking) // everything after here is MP and debug only
 		return;
 
-	if (G_BattleGametype() && !splitscreen && (stplyr->kartstuff[k_yougotem] % 2)) // * YOU GOT EM *
+	if (G_BattleGametype() && !splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
