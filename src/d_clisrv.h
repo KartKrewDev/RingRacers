@@ -93,6 +93,10 @@ typedef enum
 	PT_NODETIMEOUT,   // Packet sent to self if the connection times out.
 	PT_RESYNCHING,    // Packet sent to resync players.
 	                  // Blocks game advance until synched.
+
+	PT_TELLFILESNEEDED, // Client, to server: "what other files do I need starting from this number?"
+	PT_MOREFILESNEEDED, // Server, to client: "you need these (+ more on top of those)"
+
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
 	NUMPACKETTYPE
 } packettype_t;
@@ -222,21 +226,7 @@ typedef struct
 	UINT8 kartspeed;
 	UINT8 kartweight;
 	//
-	fixed_t normalspeed;
-	fixed_t runspeed;
-	UINT8 thrustfactor;
-	UINT8 accelstart;
-	UINT8 acceleration;
-	UINT8 charability;
-	UINT8 charability2;
 	UINT32 charflags;
-	UINT32 thokitem; // mobjtype_t
-	UINT32 spinitem; // mobjtype_t
-	UINT32 revitem; // mobjtype_t
-	fixed_t actionspd;
-	fixed_t mindash;
-	fixed_t maxdash;
-	fixed_t jumpfactor;
 
 	fixed_t speed;
 	UINT8 jumping;
@@ -369,6 +359,7 @@ typedef struct
 } ATTRPACK joinchallenge_pak;
 
 #define SV_SPEEDMASK 0x03
+#define SV_LOTSOFADDONS 0x20
 #define SV_DEDICATED 0x40
 #define SV_PASSWORD 0x80
 
@@ -439,6 +430,14 @@ typedef struct
 	UINT8 ctfteam;
 } ATTRPACK plrconfig;
 
+typedef struct
+{
+	INT32 first;
+	UINT8 num;
+	UINT8 more;
+	UINT8 files[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
+} ATTRPACK filesneededconfig_pak;
+
 //
 // Network packet data
 //
@@ -471,6 +470,8 @@ typedef struct
 		msaskinfo_pak msaskinfo;            //          22 bytes
 		plrinfo playerinfo[MAXPLAYERS];     //         576 bytes(?)
 		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
+		INT32 filesneedednum;               //           4 bytes
+		filesneededconfig_pak filesneededcfg; //       ??? bytes
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
@@ -526,6 +527,7 @@ extern boolean dedicated; // For dedicated server
 extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;
+extern char connectedservername[MAXSERVERNAME];
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
@@ -565,6 +567,7 @@ void CL_AddSplitscreenPlayer(void);
 void CL_RemoveSplitscreenPlayer(UINT8 p);
 void CL_Reset(void);
 void CL_ClearPlayer(INT32 playernum);
+void CL_RemovePlayer(INT32 playernum, INT32 reason);
 void CL_UpdateServerList(boolean internetsearch, INT32 room);
 boolean CL_Responder(event_t *ev);
 // Is there a game running

@@ -161,36 +161,8 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"follower"))
 		LUA_PushUserdata(L, plr->follower, META_MOBJ);
 	//
-	else if (fastcmp(field,"normalspeed"))
-		lua_pushfixed(L, plr->normalspeed);
-	else if (fastcmp(field,"runspeed"))
-		lua_pushfixed(L, plr->runspeed);
-	else if (fastcmp(field,"thrustfactor"))
-		lua_pushinteger(L, plr->thrustfactor);
-	else if (fastcmp(field,"accelstart"))
-		lua_pushinteger(L, plr->accelstart);
-	else if (fastcmp(field,"acceleration"))
-		lua_pushinteger(L, plr->acceleration);
-	else if (fastcmp(field,"charability"))
-		lua_pushinteger(L, plr->charability);
-	else if (fastcmp(field,"charability2"))
-		lua_pushinteger(L, plr->charability2);
 	else if (fastcmp(field,"charflags"))
 		lua_pushinteger(L, plr->charflags);
-	else if (fastcmp(field,"thokitem"))
-		lua_pushinteger(L, plr->thokitem);
-	else if (fastcmp(field,"spinitem"))
-		lua_pushinteger(L, plr->spinitem);
-	else if (fastcmp(field,"revitem"))
-		lua_pushinteger(L, plr->revitem);
-	else if (fastcmp(field,"actionspd"))
-		lua_pushfixed(L, plr->actionspd);
-	else if (fastcmp(field,"mindash"))
-		lua_pushfixed(L, plr->mindash);
-	else if (fastcmp(field,"maxdash"))
-		lua_pushfixed(L, plr->maxdash);
-	else if (fastcmp(field,"jumpfactor"))
-		lua_pushfixed(L, plr->jumpfactor);
 	else if (fastcmp(field,"lives"))
 		lua_pushinteger(L, plr->lives);
 	else if (fastcmp(field,"continues"))
@@ -389,13 +361,13 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"aiming")) {
 		plr->aiming = luaL_checkangle(L, 3);
 		if (plr == &players[consoleplayer])
-			localaiming = plr->aiming;
-		else if (plr == &players[secondarydisplayplayer])
-			localaiming2 = plr->aiming;
-		else if (plr == &players[thirddisplayplayer])
-			localaiming3 = plr->aiming;
-		else if (plr == &players[fourthdisplayplayer])
-			localaiming4 = plr->aiming;
+			localaiming[0] = plr->aiming;
+		else if (plr == &players[displayplayers[1]])
+			localaiming[1] = plr->aiming;
+		else if (plr == &players[displayplayers[2]])
+			localaiming[2] = plr->aiming;
+		else if (plr == &players[displayplayers[3]])
+			localaiming[3] = plr->aiming;
 	}
 	else if (fastcmp(field,"health"))
 		plr->health = (INT32)luaL_checkinteger(L, 3);
@@ -444,36 +416,8 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"follower"))	// it's probably best we don't allow the follower mobj to change.
 		return NOSET;
 	//
-	else if (fastcmp(field,"normalspeed"))
-		plr->normalspeed = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"runspeed"))
-		plr->runspeed = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"thrustfactor"))
-		plr->thrustfactor = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"accelstart"))
-		plr->accelstart = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"acceleration"))
-		plr->acceleration = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"charability"))
-		plr->charability = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"charability2"))
-		plr->charability2 = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"charflags"))
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"thokitem"))
-		plr->thokitem = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"spinitem"))
-		plr->spinitem = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"revitem"))
-		plr->revitem = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"actionspd"))
-		plr->actionspd = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"mindash"))
-		plr->mindash = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"maxdash"))
-		plr->maxdash = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"jumpfactor"))
-		plr->jumpfactor = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lives"))
 		plr->lives = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"continues"))
