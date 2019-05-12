@@ -2719,6 +2719,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		if (player->mo)
 			P_SetScale(player->mo, player->mo->scale);
 
+		// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
 		demo_extradata[playernum] |= DXD_SKIN;
 
 		return;
@@ -2750,6 +2751,9 @@ void SetFollower(INT32 playernum, INT32 skinnum)
 			P_RemoveMobj(player->follower);
 			player->follower = NULL;
 		}
+
+		// for replays: We have changed our follower mid-game; let the game know so it can do the same in the replay!
+		demo_extradata[playernum] |= DXD_FOLLOWER;
 
 		return;
 	}

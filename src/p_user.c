@@ -7377,7 +7377,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (P_CameraThinker(player, thiscam, resetcalled))
 		return true;
 
-	
+
 	if (thiscam == &camera[1]) // Camera 2
 	{
 		num = 1;

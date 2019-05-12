@@ -5577,6 +5577,15 @@ static void Follower2_OnChange(void)
 	strlwr(str);
 	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
 	{
+
+		if (stricmp(cpy, "None") == 0)
+		{
+			CV_StealthSet(&cv_follower2, "-1");
+			SendNameAndColor2();
+			return;
+		}
+
+
 		INT32 num = R_FollowerAvailable(str);
 		char set[10];
 		if (num == -1) // that's an error.
@@ -5599,6 +5608,14 @@ static void Follower3_OnChange(void)
 	strlwr(str);
 	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
 	{
+
+		if (stricmp(cpy, "None") == 0)
+		{
+			CV_StealthSet(&cv_follower3, "-1");
+			SendNameAndColor3();
+			return;
+		}
+
 		INT32 num = R_FollowerAvailable(str);
 		char set[10];
 		if (num == -1) // that's an error.
@@ -5621,6 +5638,14 @@ static void Follower4_OnChange(void)
 	strlwr(str);
 	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
 	{
+
+		if (stricmp(cpy, "None") == 0)
+		{
+			CV_StealthSet(&cv_follower4, "-1");
+			SendNameAndColor4();
+			return;
+		}
+
 		INT32 num = R_FollowerAvailable(str);
 		char set[10];
 		if (num == -1) // that's an error.

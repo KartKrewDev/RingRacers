@@ -3251,7 +3251,7 @@ void G_AddPlayer(INT32 playernum)
 	p->jointime = 0;
 	p->playerstate = PST_REBORN;
 
-	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN; // Set everything
+	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
 }
 
 void G_ExitLevel(void)
@@ -3284,7 +3284,7 @@ const char *Gametype_Names[NUMGAMETYPES] =
 {
 	"Race", // GT_RACE
 	"Battle" // GT_MATCH
-	
+
 	/*"Co-op", // GT_COOP
 	"Competition", // GT_COMPETITION
 	"Team Match", // GT_TEAMMATCH
@@ -4926,6 +4926,13 @@ void G_ReadDemoExtraData(void)
 			M_Memcpy(player_names[p],demo_p,16);
 			demo_p += 16;
 		}
+		if (extradata & DXD_FOLLOWER)
+		{
+			// Set our follower
+			M_Memcpy(name, demo_p, 16);
+			demo_p += 16;
+			SetPlayerFollower(p, name);
+		}
 		if (extradata & DXD_PLAYSTATE)
 		{
 			extradata = READUINT8(demo_p);
@@ -5028,6 +5035,7 @@ void G_WriteDemoExtraData(void)
 
 				WRITEUINT8(demo_p, skins[players[i].skin].kartspeed);
 				WRITEUINT8(demo_p, skins[players[i].skin].kartweight);
+
 			}
 			if (demo_extradata[i] & DXD_COLOR)
 			{
@@ -5043,6 +5051,15 @@ void G_WriteDemoExtraData(void)
 				memset(name, 0, 16);
 				strncpy(name, player_names[i], 16);
 				M_Memcpy(demo_p,name,16);
+				demo_p += 16;
+			}
+			if (demo_extradata[i] & DXD_FOLLOWER)
+			{
+				// write follower
+				memset(name, 0, 16);
+				strncpy(name, followers[players[i].followerskin].skinname, 16);
+				CONS_Printf("%s\n", name);
+				M_Memcpy(demo_p, name, 16);
 				demo_p += 16;
 			}
 			if (demo_extradata[i] & DXD_PLAYSTATE)
@@ -5668,6 +5685,8 @@ void G_GhostTicker(void)
 					g->p += 16; // Same tbh
 				if (ziptic & DXD_NAME)
 					g->p += 16; // yea
+				if (ziptic & DXD_FOLLOWER)
+					g->p += 16; // ok
 				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
 					I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
 			}
@@ -6396,6 +6415,12 @@ void G_BeginRecording(void)
 	CV_SaveNetVars(&demo_p, true);
 
 	// Now store some info for each in-game player
+
+	// Lat' 12/05/19: Do note that for the first game you load, everything that gets saved here is total garbage;
+	// The name will always be Player <n>, the skin sonic, the color None and the follower 0. This is only correct on subsequent games.
+	// In the case of said first game, the skin and the likes are updated with Got_NameAndColor, which are then saved in extradata for the demo with DXD_SKIN in r_things.c for instance.
+
+
 	for (p = 0; p < MAXPLAYERS; p++) {
 		if (playeringame[p]) {
 			player = &players[p];
@@ -6417,6 +6442,12 @@ void G_BeginRecording(void)
 			// Color
 			memset(name, 0, 16);
 			strncpy(name, KartColor_Names[player->skincolor], 16);
+			M_Memcpy(demo_p,name,16);
+			demo_p += 16;
+
+			// Save follower's skin name
+			memset(name, 0, 16);
+			strncpy(name, followers[player->followerskin].skinname, 16);
 			M_Memcpy(demo_p,name,16);
 			demo_p += 16;
 
@@ -7031,7 +7062,7 @@ void G_DoPlayDemo(char *defdemoname)
 {
 	UINT8 i, p;
 	lumpnum_t l;
-	char skin[17],color[17],*n,*pdemoname;
+	char skin[17],color[17],follower[17],*n,*pdemoname;
 	UINT8 version,subversion;
 	UINT32 randseed;
 	char msg[1024];
@@ -7045,6 +7076,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 	skin[16] = '\0';
 	color[16] = '\0';
+	follower[16] = '\0';
 
 	// No demo name means we're restarting the current demo
 	if (defdemoname == NULL)
@@ -7280,6 +7312,10 @@ void G_DoPlayDemo(char *defdemoname)
 		M_Memcpy(color,demo_p,16);
 		demo_p += 16;
 
+		// Follower
+		M_Memcpy(follower,demo_p,16);
+		demo_p += 16;
+
 		demo_p += 5; // Backwards compat - some stats
 		// SRB2kart
 		kartspeed[0] = READUINT8(demo_p);
@@ -7320,6 +7356,19 @@ void G_DoPlayDemo(char *defdemoname)
 				players[0].skincolor = i;
 				break;
 			}
+
+		// Follower
+		if (!SetPlayerFollower(0, follower))
+		{
+			snprintf(msg, 1024, M_GetText("%s features a follower that is not currently loaded.\n"), pdemoname);
+			CONS_Alert(CONS_ERROR, "%s", msg);
+			M_StartMessage(msg, NULL, MM_NOTHING);
+			Z_Free(pdemoname);
+			Z_Free(demobuffer);
+			demo.playback = false;
+			demo.title = false;
+			return;
+		}
 
 		// net var data
 		CV_LoadNetVars(&demo_p);
@@ -7473,6 +7522,11 @@ void G_DoPlayDemo(char *defdemoname)
 				players[p].skincolor = i;
 				break;
 			}
+
+		// Follower
+		M_Memcpy(follower, demo_p, 16);
+		demo_p += 16;
+		SetPlayerFollower(p, follower);
 
 		// Score, since Kart uses this to determine where you start on the map
 		players[p].score = READUINT32(demo_p);
@@ -7679,6 +7733,9 @@ void G_AddGhost(char *defdemoname)
 		M_Memcpy(color, p,16);
 		p += 16;
 
+		// Follower data was here, doesn't matter for ghosts
+		p += 16;
+
 		// Ghosts do not have a player structure to put this in.
 		p++; // charability
 		p++; // charability2
@@ -7739,6 +7796,9 @@ void G_AddGhost(char *defdemoname)
 
 	// Color
 	M_Memcpy(color, p, 16);
+	p += 16;
+
+	// Follower data was here, skip it, we don't care about it for ghosts.
 	p += 16;
 
 	p += 4; // score
