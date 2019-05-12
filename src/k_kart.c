@@ -4898,7 +4898,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 			if (player->karthud[khud_ringspblock] >= 14) // debt animation
 			{
-				if ((stplyr->kartstuff[k_rings] > 0) // Get out of 0 ring animation
+				if ((player->kartstuff[k_rings] > 0) // Get out of 0 ring animation
 					&& (normalanim == 3 || normalanim == 10)) // on these transition frames.
 					player->karthud[khud_ringspblock] = normalanim;
 				else
@@ -4906,7 +4906,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			}
 			else // normal animation
 			{
-				if ((stplyr->kartstuff[k_rings] <= 0) // Go into 0 ring animation
+				if ((player->kartstuff[k_rings] <= 0) // Go into 0 ring animation
 					&& (player->karthud[khud_ringspblock] == 1 || player->karthud[khud_ringspblock] == 8)) // on these transition frames.
 					player->karthud[khud_ringspblock] = debtanim;
 				else
@@ -6937,6 +6937,7 @@ static patch_t *kp_smallring[6];
 static patch_t *kp_ringdebtminus;
 static patch_t *kp_ringdebtminussmall;
 static patch_t *kp_ringspblock[16];
+static patch_t *kp_ringspblocksmall[16];
 
 static patch_t *kp_speedometersticker;
 static patch_t *kp_speedometerlabel[4];
@@ -7084,15 +7085,25 @@ void K_LoadKartHUDGraphics(void)
 	kp_ringsticker[0] =			W_CachePatchName("RNGBACKA", PU_HUDGFX);
 	kp_ringsticker[1] =			W_CachePatchName("RNGBACKB", PU_HUDGFX);
 
-	kp_ringstickersplit[0] =	W_CachePatchName("SMRNGBGA", PU_HUDGFX);
-	kp_ringstickersplit[1] =	W_CachePatchName("SMRNGBGB", PU_HUDGFX);
-
 	sprintf(buffer, "K_RINGx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[6] = '0'+(i+1);
 		kp_ring[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
 	}
+
+	kp_ringdebtminus =			W_CachePatchName("RDEBTMIN", PU_HUDGFX);
+
+	sprintf(buffer, "SPBRNGxx");
+	for (i = 0; i < 16; i++)
+	{
+		buffer[6] = '0'+((i+1) / 10);
+		buffer[7] = '0'+((i+1) % 10);
+		kp_ringspblock[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
+	kp_ringstickersplit[0] =	W_CachePatchName("SMRNGBGA", PU_HUDGFX);
+	kp_ringstickersplit[1] =	W_CachePatchName("SMRNGBGB", PU_HUDGFX);
 
 	sprintf(buffer, "K_SRINGx");
 	for (i = 0; i < 6; i++)
@@ -7101,15 +7112,14 @@ void K_LoadKartHUDGraphics(void)
 		kp_smallring[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
-	kp_ringdebtminus =			W_CachePatchName("RDEBTMIN", PU_HUDGFX);
 	kp_ringdebtminussmall =		W_CachePatchName("SRDEBTMN", PU_HUDGFX);
 
-	sprintf(buffer, "SPBRNGxx");
+	sprintf(buffer, "SPBRGSxx");
 	for (i = 0; i < 16; i++)
 	{
 		buffer[6] = '0'+((i+1) / 10);
 		buffer[7] = '0'+((i+1) % 10);
-		kp_ringspblock[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		kp_ringspblocksmall[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
 	// Speedometer
@@ -8466,7 +8476,8 @@ static void K_drawKartLapsAndRings(void)
 		V_DrawMappedPatch(fr+15, fy-10, V_HUDTRANS|splitflags, pingnum[rn[1]], ringmap);
 
 		// SPB ring lock
-		// NONE YET
+		if (stplyr->kartstuff[k_ringlock])
+			V_DrawScaledPatch(fr-12, fy-23, V_HUDTRANS|splitflags, kp_ringspblocksmall[stplyr->karthud[khud_ringspblock]]);
 
 		// Lives
 		if (!netgame)
