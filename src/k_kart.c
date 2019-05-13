@@ -436,7 +436,7 @@ void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 	// next, for every colour in the palette, choose the transcolor that has the closest brightness
 	for (i = 0; i < NUM_PALETTE_ENTRIES; i++)
 	{
-		if (i == 0 || i == 31 || i == 120) // pure black and pure white don't change
+		if (i == 0 || i == 31) // pure black and pure white don't change
 		{
 			dest_colormap[i] = (UINT8)i;
 			continue;
