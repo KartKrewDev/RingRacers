@@ -4825,7 +4825,7 @@ static void M_DrawAddons(void)
 	x = currentMenu->x;
 	y = currentMenu->y + 1;
 
-	hilicol = V_GetStringColormap(highlightflags)[120];
+	hilicol = V_GetStringColormap(highlightflags)[0];
 
 	V_DrawString(x-21, (y - 16) + (lsheadingheight - 12), highlightflags|V_ALLOWLOWERCASE, M_AddonsHeaderPath());
 	V_DrawFill(x-21, (y - 16) + (lsheadingheight - 3), MAXSTRINGLENGTH*8+6, 1, hilicol);
@@ -8626,7 +8626,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 	y = currentMenu->y + 130 + 8 - i;
 
 	if (currentMenu->menuitems[itemOn].itemaction == &cv_nextmap && skullAnimCounter < 4)
-		trans = 120;
+		trans = 0;
 	else
 		trans = G_GetGametypeColor(cv_newgametype.value);
 

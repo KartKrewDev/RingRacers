@@ -2897,7 +2897,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// We should be fine starting it here.
 	S_Start();
 
-	levelfadecol = (encoremode && !ranspecialwipe ? 122 : 120);
+	levelfadecol = (encoremode && !ranspecialwipe ? 209 : 0);
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
