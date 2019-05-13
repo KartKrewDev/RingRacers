@@ -358,7 +358,6 @@ INT32 CL_CheckFiles(void)
 //		return 1;
 
 	// the first is the iwad (the main wad file)
-	// we don't care if it's called srb2.srb or srb2.wad.
 	// Never download the IWAD, just assume it's there and identical
 	// ...No! Why were we sending the base wads to begin with??
 	//fileneeded[0].status = FS_OPEN;
@@ -774,17 +773,14 @@ void Got_Filetxpak(void)
 	char *filename = file->filename;
 	static INT32 filetime = 0;
 
-	if (!(strcmp(filename, "srb2.srb")
-		&& strcmp(filename, "srb2.wad")
-		&& strcmp(filename, "patch.dta")
-		//&& strcmp(filename, "music.dta")
-		&& strcmp(filename, "gfx.kart")
-		&& strcmp(filename, "textures.kart")
-		&& strcmp(filename, "chars.kart")
-		&& strcmp(filename, "maps.kart")
-		&& strcmp(filename, "sounds.kart")
-		&& strcmp(filename, "music.kart")
-		&& strcmp(filename, "patch.kart")
+	if (!(strcmp(filename, "main.kart")
+		&& strcmp(filename, "gfx.pk3")
+		&& strcmp(filename, "textures.pk3")
+		&& strcmp(filename, "chars.pk3")
+		&& strcmp(filename, "maps.wad")
+		&& strcmp(filename, "patch.pk3")
+		&& strcmp(filename, "sounds.wad")
+		&& strcmp(filename, "music.wad")
 		))
 		I_Error("Tried to download \"%s\"", filename);
 

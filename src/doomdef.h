@@ -163,10 +163,7 @@ extern FILE *logstream;
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
-//#define USE_PATCH_DTA
-
-// Kart has it's own, as well.
-#define USE_PATCH_KART
+//#define USE_PATCH_FILE
 
 // Use .kart extension addons
 #define USE_KART

@@ -3749,8 +3749,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				}
 				else if (fastcmp(word, "SRB2"))
 				{
-					if (mainwads) // srb2.srb triggers this warning otherwise
-						deh_warning("Patch is only compatible with base SRB2.");
+					deh_warning("Patch is only compatible with base SRB2.");
 				}
 				// Clear all data in certain locations (mostly for unlocks)
 				// Unless you REALLY want to piss people off,
