@@ -153,11 +153,11 @@ static CV_PossibleValue_t menuhighlight_cons_t[] =
 	{V_SKYMAP, "Always sky-blue"},
 	{V_GOLDMAP, "Always gold"},
 	{V_LAVENDERMAP, "Always lavender"},
-	{V_TEAMAP, "Always tea-green"},
-	{V_STEELMAP, "Always steel-blue"},
+	{V_AQUAMAP, "Always aqua-green"},
+	{V_MAGENTAMAP, "Always magenta"},
 	{V_PINKMAP, "Always pink"},
 	{V_BROWNMAP, "Always brown"},
-	{V_PEACHMAP, "Always peach"},
+	{V_TANMAP, "Always tan"},
 	{0, NULL}
 };
 consvar_t cons_menuhighlight = {"menuhighlight", "Game type", CV_SAVE, menuhighlight_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -303,7 +303,7 @@ static void CONS_backcolor_Change(void)
 // TODO: This could probably be improved somehow...
 // These colormaps are 99% identical, with just a few changed bytes
 UINT8 *yellowmap, *purplemap, *greenmap, *bluemap, *graymap, *redmap, *orangemap,\
- *skymap, *goldmap, *lavendermap, *teamap, *steelmap, *pinkmap, *brownmap, *peachmap;
+ *skymap, *goldmap, *lavendermap, *aquamap, *magentamap, *pinkmap, *brownmap, *tanmap;
 
 static void CON_SetupColormaps(void)
 {
@@ -320,11 +320,11 @@ static void CON_SetupColormaps(void)
 	skymap      = (orangemap+256);
 	lavendermap = (skymap+256);
 	goldmap     = (lavendermap+256);
-	teamap      = (goldmap+256);
-	steelmap    = (teamap+256);
-	pinkmap     = (steelmap+256);
+	aquamap     = (goldmap+256);
+	magentamap  = (aquamap+256);
+	pinkmap     = (magentamap+256);
 	brownmap    = (pinkmap+256);
-	peachmap    = (brownmap+256);
+	tanmap      = (brownmap+256);
 
 	// setup the other colormaps, for console text
 
@@ -335,7 +335,7 @@ static void CON_SetupColormaps(void)
 		*memorysrc = (UINT8)(i & 0xFF); // remap each color to itself...
 
 	// SRB2Kart: Different console font, new colors
-	purplemap[0]   = (UINT8)182;
+	purplemap[0]   = (UINT8)163;
 	yellowmap[0]   = (UINT8)73;
 	greenmap[0]    = (UINT8)98;
 	bluemap[0]     = (UINT8)148;
@@ -345,11 +345,11 @@ static void CON_SetupColormaps(void)
 	skymap[0]      = (UINT8)132; // race
 	lavendermap[0] = (UINT8)192;
 	goldmap[0]     = (UINT8)65;
-	teamap[0]      = (UINT8)89;
-	steelmap[0]    = (UINT8)145;
+	aquamap[0]     = (UINT8)121;
+	magentamap[0]  = (UINT8)182;
 	pinkmap[0]     = (UINT8)210;
 	brownmap[0]    = (UINT8)224;
-	peachmap[0]    = (UINT8)217; // no longer nice :(
+	tanmap[0]      = (UINT8)217; // no longer nice :(
 
 	// Init back colormap
 	CON_SetupBackColormap();
