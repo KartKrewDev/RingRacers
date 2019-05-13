@@ -22,6 +22,7 @@ extern consvar_t cv_playername;
 extern consvar_t cv_playercolor;
 extern consvar_t cv_skin;
 extern consvar_t cv_follower;
+extern consvar_t cv_showfollowers;
 // secondary splitscreen player
 extern consvar_t cv_playername2;
 extern consvar_t cv_playercolor2;

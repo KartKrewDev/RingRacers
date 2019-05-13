@@ -8171,9 +8171,9 @@ static void P_HandleFollower(player_t *player)
 		player->follower->flags2 = (player->follower->flags2 & ~MF2_SHADOW)|(player->mo->flags2 & MF2_SHADOW);
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
-
-		if (player->pflags & PF_TIMEOVER)	// there is more to it than that to check for a full no contest but this isn't used for anything else.
-			player->follower->flags2 &= MF2_DONTDRAW;
+		// Also make the follower invisible if we choose not to have it displayed because it isn't ours. (also quick hacky check for f12)
+		if (player->pflags & PF_TIMEOVER || (!cv_showfollowers.value && (!P_IsDisplayPlayer(player) || displayplayers[0] != consoleplayer) ))
+			player->follower->flags2 |= MF2_DONTDRAW;
 
 		if (player->speed)
 			player->follower->angle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);

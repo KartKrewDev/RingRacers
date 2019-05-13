@@ -5058,7 +5058,6 @@ void G_WriteDemoExtraData(void)
 				// write follower
 				memset(name, 0, 16);
 				strncpy(name, followers[players[i].followerskin].skinname, 16);
-				CONS_Printf("%s\n", name);
 				M_Memcpy(demo_p, name, 16);
 				demo_p += 16;
 			}

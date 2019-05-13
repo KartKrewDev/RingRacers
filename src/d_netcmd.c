@@ -282,6 +282,10 @@ consvar_t cv_follower2 = {"follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Fo
 consvar_t cv_follower3 = {"follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_follower4 = {"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
+// Follower toggle
+static CV_PossibleValue_t followers_cons_t[] = {{0, "Yours only"}, {1, "Everyone's"}, {0, NULL}};
+consvar_t cv_showfollowers = {"showfollowers", "Everyone's", CV_SAVE, followers_cons_t, 0, 0, NULL, NULL, 0, 0, NULL};
+
 consvar_t cv_skipmapcheck = {"skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 INT32 cv_debug;
@@ -804,6 +808,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_playercolor);
 	CV_RegisterVar(&cv_skin); // r_things.c (skin NAME)
 	CV_RegisterVar(&cv_follower);
+	CV_RegisterVar(&cv_showfollowers);
 	// secondary player (splitscreen)
 	CV_RegisterVar(&cv_playername2);
 	CV_RegisterVar(&cv_playercolor2);
