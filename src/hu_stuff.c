@@ -793,13 +793,14 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_GREY:
 				case SKINCOLOR_NICKEL:
 				case SKINCOLOR_BLACK:
-				case SKINCOLOR_SKUNK:
+				case SKINCOLOR_PLATINUM:
 				case SKINCOLOR_JET:
 					cstart = "\x86"; // V_GRAYMAP
 					break;
 				case SKINCOLOR_SEPIA:
 				case SKINCOLOR_BEIGE:
-				case SKINCOLOR_WALNUT:
+				case SKINCOLOR_CARAMEL:
+				case SKINCOLOR_PEACH:
 				case SKINCOLOR_BROWN:
 				case SKINCOLOR_LEATHER:
 				case SKINCOLOR_RUST:
@@ -809,21 +810,19 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_FAIRY:
 				case SKINCOLOR_SALMON:
 				case SKINCOLOR_PINK:
-				case SKINCOLOR_ROSE:
-				case SKINCOLOR_BRICK:
+				case SKINCOLOR_ORCHID:
 				case SKINCOLOR_LEMONADE:
 				case SKINCOLOR_BUBBLEGUM:
 				case SKINCOLOR_LILAC:
+				case SKINCOLOR_ROSE:
 					cstart = "\x8d"; // V_PINKMAP
 					break;
 				case SKINCOLOR_CINNAMON:
 				case SKINCOLOR_RUBY:
 				case SKINCOLOR_RASPBERRY:
-				case SKINCOLOR_CHERRY:
 				case SKINCOLOR_RED:
 				case SKINCOLOR_CRIMSON:
 				case SKINCOLOR_MAROON:
-				case SKINCOLOR_FLAME:
 				case SKINCOLOR_SCARLET:
 				case SKINCOLOR_KETCHUP:
 					cstart = "\x85"; // V_REDMAP
@@ -832,16 +831,13 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_SUNSET:
 				case SKINCOLOR_CREAMSICLE:
 				case SKINCOLOR_ORANGE:
-				case SKINCOLOR_PUMPKIN:
 				case SKINCOLOR_ROSEWOOD:
-				case SKINCOLOR_BURGUNDY:
 				case SKINCOLOR_TANGERINE:
 					cstart = "\x87"; // V_ORANGEMAP
 					break;
-				case SKINCOLOR_PEACH:
-				case SKINCOLOR_CARAMEL:
+				case SKINCOLOR_TAN:
 				case SKINCOLOR_CREAM:
-					cstart = "\x8f"; // V_PEACHMAP
+					cstart = "\x8f"; // V_TANMAP
 					break;
 				case SKINCOLOR_GOLD:
 				case SKINCOLOR_ROYAL:
@@ -851,39 +847,43 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 					cstart = "\x8A"; // V_GOLDMAP
 					break;
 				case SKINCOLOR_POPCORN:
-				case SKINCOLOR_QUARRY:
 				case SKINCOLOR_YELLOW:
 				case SKINCOLOR_MUSTARD:
-				case SKINCOLOR_CROCODILE:
+				case SKINCOLOR_BANANA:
 				case SKINCOLOR_OLIVE:
+				case SKINCOLOR_CROCODILE:
 					cstart = "\x82"; // V_YELLOWMAP
 					break;
 				case SKINCOLOR_ARTICHOKE:
+				case SKINCOLOR_PERIDOT:
 				case SKINCOLOR_VOMIT:
 				case SKINCOLOR_GARDEN:
-				case SKINCOLOR_TEA:
-				case SKINCOLOR_PISTACHIO:
-					cstart = "\x8b"; // V_TEAMAP
-					break;
 				case SKINCOLOR_LIME:
 				case SKINCOLOR_HANDHELD:
+				case SKINCOLOR_TEA:
+				case SKINCOLOR_PISTACHIO:
 				case SKINCOLOR_MOSS:
 				case SKINCOLOR_CAMOUFLAGE:
 				case SKINCOLOR_ROBOHOOD:
 				case SKINCOLOR_MINT:
 				case SKINCOLOR_GREEN:
 				case SKINCOLOR_PINETREE:
-				case SKINCOLOR_EMERALD:
+				case SKINCOLOR_TURTLE:
 				case SKINCOLOR_SWAMP:
 				case SKINCOLOR_DREAM:
 				case SKINCOLOR_PLAGUE:
+				case SKINCOLOR_EMERALD:
 				case SKINCOLOR_ALGAE:
 					cstart = "\x83"; // V_GREENMAP
 					break;
 				case SKINCOLOR_CARIBBEAN:
 				case SKINCOLOR_AZURE:
-				case SKINCOLOR_AQUA:
+				case SKINCOLOR_AQUAMARINE:
+				case SKINCOLOR_TURQUOISE:
 				case SKINCOLOR_TEAL:
+					cstart = "\x8b"; // V_AQUAMAP
+					break;
+				case SKINCOLOR_PIGEON:
 				case SKINCOLOR_CYAN:
 				case SKINCOLOR_JAWZ:
 				case SKINCOLOR_CERULEAN:
@@ -891,24 +891,24 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_SAPPHIRE:
 					cstart = "\x88"; // V_SKYMAP
 					break;
-				case SKINCOLOR_PIGEON:
-				case SKINCOLOR_PLATINUM:
 				case SKINCOLOR_STEEL:
-					cstart = "\x8c"; // V_STEELMAP
-					break;
+				case SKINCOLOR_ULTRAMARINE:
 				case SKINCOLOR_PERIWINKLE:
 				case SKINCOLOR_BLUE:
 				case SKINCOLOR_BLUEBERRY:
 				case SKINCOLOR_NOVA:
 					cstart = "\x84"; // V_BLUEMAP
 					break;
-				case SKINCOLOR_ULTRAVIOLET:
+				case SKINCOLOR_THISTLE:
 				case SKINCOLOR_PURPLE:
-				case SKINCOLOR_FUCHSIA:
+				case SKINCOLOR_PASTEL:
 					cstart = "\x81"; // V_PURPLEMAP
 					break;
-				case SKINCOLOR_PASTEL:
+				case SKINCOLOR_MAGENTA:
+				case SKINCOLOR_FUCHSIA:
 				case SKINCOLOR_MOONSLAM:
+					cstart = "\x8c"; // V_MAGENTAMAP
+					break;
 				case SKINCOLOR_DUSK:
 				case SKINCOLOR_TOXIC:
 				case SKINCOLOR_MAUVE:

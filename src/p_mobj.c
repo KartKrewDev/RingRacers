@@ -9879,7 +9879,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				break;
 			}
 
-			mobj->color = SKINCOLOR_AQUA;
+			mobj->color = SKINCOLOR_CYAN;
 			break;
 		}
 		case MT_MARBLETORCH:
