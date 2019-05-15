@@ -83,16 +83,14 @@
 
 # SRB2 data files
 D_DIR?=../bin/Resources
-D_FILES=$(D_DIR)/srb2.srb \
-	$(D_DIR)/patch.dta \
-	#$(D_DIR)/music.dta \
-	$(D_DIR)/gfx.kart \
-	$(D_DIR)/textures.kart \
-	$(D_DIR)/chars.kart \
-	$(D_DIR)/maps.kart \
-	$(D_DIR)/sounds.kart \
-	$(D_DIR)/patch.kart \
-	$(D_DIR)/music.kart \
+D_FILES=$(D_DIR)/main.kart \
+	$(D_DIR)/gfx.pk3 \
+	$(D_DIR)/textures.pk3 \
+	$(D_DIR)/chars.pk3 \
+	$(D_DIR)/maps.wad \
+	$(D_DIR)/patch.pk3 \
+	$(D_DIR)/sounds.wad \
+	$(D_DIR)/music.wad \
 
 PKG_CONFIG?=pkg-config
 

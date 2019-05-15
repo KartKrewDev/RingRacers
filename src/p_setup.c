@@ -2858,13 +2858,13 @@ boolean P_SetupLevel(boolean skipprecip)
 		S_StartSound(NULL, sfx_ruby1);
 
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 122);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 209);
 
 		F_WipeEndScreen();
 		F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
 
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 		F_WipeEndScreen();
 		F_RunWipe(wipedefs[wipe_level_final], false);
@@ -2897,7 +2897,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// We should be fine starting it here.
 	S_Start();
 
-	levelfadecol = (encoremode && !ranspecialwipe ? 122 : 120);
+	levelfadecol = (encoremode && !ranspecialwipe ? 209 : 0);
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe

@@ -131,7 +131,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <errno.h>
 #endif
 
-// Locations for searching the srb2.srb
+// Locations for searching for main.kart
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2Kart"
 #define DEFAULTWADLOCATION2 "/usr/local/games/SRB2Kart"
@@ -149,8 +149,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 /**	\brief WAD file to look for
 */
-#define WADKEYWORD1 "srb2.srb"
-#define WADKEYWORD2 "srb2.wad"
+#define WADKEYWORD "main.kart"
 /**	\brief holds wad path
 */
 static char returnWadPath[256];
@@ -3454,15 +3453,7 @@ static boolean isWadPathOk(const char *path)
 	if (!wad3path)
 		return false;
 
-	sprintf(wad3path, pandf, path, WADKEYWORD1);
-
-	if (FIL_ReadFileOK(wad3path))
-	{
-		free(wad3path);
-		return true;
-	}
-
-	sprintf(wad3path, pandf, path, WADKEYWORD2);
+	sprintf(wad3path, pandf, path, WADKEYWORD);
 
 	if (FIL_ReadFileOK(wad3path))
 	{
@@ -3487,7 +3478,7 @@ static void pathonly(char *s)
 		}
 }
 
-/**	\brief	search for srb2.srb in the given path
+/**	\brief	search for main.kart in the given path
 
 	\param	searchDir	starting path
 
@@ -3500,7 +3491,7 @@ static const char *searchWad(const char *searchDir)
 	static char tempsw[256] = "";
 	filestatus_t fstemp;
 
-	strcpy(tempsw, WADKEYWORD1);
+	strcpy(tempsw, WADKEYWORD);
 	fstemp = filesearch(tempsw,searchDir,NULL,true,20);
 	if (fstemp == FS_FOUND)
 	{
@@ -3508,19 +3499,12 @@ static const char *searchWad(const char *searchDir)
 		return tempsw;
 	}
 
-	strcpy(tempsw, WADKEYWORD2);
-	fstemp = filesearch(tempsw, searchDir, NULL, true, 20);
-	if (fstemp == FS_FOUND)
-	{
-		pathonly(tempsw);
-		return tempsw;
-	}
 	return NULL;
 }
 
-/**	\brief go through all possible paths and look for srb2.srb
+/**	\brief go through all possible paths and look for main.kart
 
-  \return path to srb2.srb if any
+  \return path to main.kart if any
 */
 static const char *locateWad(void)
 {
@@ -3649,7 +3633,7 @@ const char *I_LocateWad(void)
 
 	if (waddir)
 	{
-		// change to the directory where we found srb2.srb
+		// change to the directory where we found main.kart
 #if defined (_WIN32)
 		SetCurrentDirectoryA(waddir);
 #else

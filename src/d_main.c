@@ -836,11 +836,11 @@ static inline void D_CleanFile(char **filearray)
 
 static void IdentifyVersion(void)
 {
-	char *srb2wad1, *srb2wad2;
+	char *mainresource;
 	const char *srb2waddir = NULL;
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	// change to the directory where 'srb2.srb' is found
+	// change to the directory where 'main.kart' is found
 	srb2waddir = I_LocateWad();
 #endif
 
@@ -871,46 +871,34 @@ static void IdentifyVersion(void)
 		srb2waddir = I_GetWadDir();
 #endif
 	// Commercial.
-	srb2wad1 = malloc(strlen(srb2waddir)+1+8+1);
-	srb2wad2 = malloc(strlen(srb2waddir)+1+8+1);
-	if (srb2wad1 == NULL && srb2wad2 == NULL)
+	mainresource = malloc(strlen(srb2waddir)+1+9+1);
+	if (mainresource == NULL)
 		I_Error("No more free memory to look in %s", srb2waddir);
-	if (srb2wad1 != NULL)
-		sprintf(srb2wad1, pandf, srb2waddir, "srb2.srb");
-	if (srb2wad2 != NULL)
-		sprintf(srb2wad2, pandf, srb2waddir, "srb2.wad");
+	if (mainresource != NULL)
+		sprintf(mainresource, pandf, srb2waddir, "main.kart");
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
 	configfile[sizeof configfile - 1] = '\0';
 
 	// Load the IWAD
-	if (srb2wad2 != NULL && FIL_ReadFileOK(srb2wad2))
-		D_AddFile(srb2wad2, startupwadfiles);
-	else if (srb2wad1 != NULL && FIL_ReadFileOK(srb2wad1))
-		D_AddFile(srb2wad1, startupwadfiles);
+	if (mainresource != NULL && FIL_ReadFileOK(mainresource))
+		D_AddFile(mainresource, startupwadfiles);
 	else
-		I_Error("SRB2.SRB/SRB2.WAD not found! Expected in %s, ss files: %s or %s\n", srb2waddir, srb2wad1, srb2wad2);
+		I_Error("MAIN.KART not found! Expected in %s, ss file: %s \n", srb2waddir, mainresource);
 
-	if (srb2wad1)
-		free(srb2wad1);
-	if (srb2wad2)
-		free(srb2wad2);
+	if (mainresource)
+		free(mainresource);
 
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-#ifdef USE_PATCH_DTA
-	// Add our crappy patches to fix our bugs
-	D_AddFile(va(pandf,srb2waddir,"patch.dta"));
-#endif
-
-	D_AddFile(va(pandf,srb2waddir,"gfx.kart"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"textures.kart"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"chars.kart"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"maps.kart"), startupwadfiles);
-#ifdef USE_PATCH_KART
-	D_AddFile(va(pandf,srb2waddir,"patch.kart"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"textures.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"chars.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"maps.wad"), startupwadfiles); // TODO: make this a pk3 too!
+#ifdef USE_PATCH_FILE
+	D_AddFile(va(pandf,srb2waddir,"patch.pk3"), startupwadfiles);
 #endif
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
@@ -923,8 +911,8 @@ static void IdentifyVersion(void)
 		else if (ms == 0) \
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
 	}
-	MUSICTEST("sounds.kart")
-	MUSICTEST("music.kart")
+	MUSICTEST("sounds.wad")
+	MUSICTEST("music.wad")
 #undef MUSICTEST
 #endif
 }
@@ -1208,27 +1196,21 @@ void D_SRB2Main(void)
 #ifndef DEVELOP
 	// Check MD5s of autoloaded files
 	// Note: Do not add any files that ignore MD5!
-	W_VerifyFileMD5(mainwads, ASSET_HASH_SRB2_SRB);						// srb2.srb/srb2.wad
-#ifdef USE_PATCH_DTA
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_DTA);		// patch.dta
-#endif
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_KART);			// gfx.kart
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_KART);	// textures.kart
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_KART);		// chars.kart
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_KART);		// maps.kart -- 4 - If you touch this, make sure to touch up the majormods stuff below.
-#ifdef USE_PATCH_KART
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_KART);		// patch.kart
+	W_VerifyFileMD5(mainwads, ASSET_HASH_MAIN_KART);					// main.kart
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);			// gfx.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_PK3);		// textures.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);		// chars.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_WAD);			// maps.wad -- 4 - If you touch this, make sure to touch up the majormods stuff below.
+#ifdef USE_PATCH_FILE
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
 #else
-#ifdef USE_PATCH_DTA
-	mainwads++;	// patch.dta
-#endif
-	mainwads++;	// gfx.kart
-	mainwads++;	// textures.kart
-	mainwads++;	// chars.kart
-	mainwads++;	// maps.kart
-#ifdef USE_PATCH_KART
-	mainwads++;	// patch.kart
+	mainwads++;	// gfx.pk3
+	mainwads++;	// textures.pk3
+	mainwads++;	// chars.pk3
+	mainwads++;	// maps.wad
+#ifdef USE_PATCH_FILE
+	mainwads++;	// patch.pk3
 #endif
 
 #endif //ifndef DEVELOP
