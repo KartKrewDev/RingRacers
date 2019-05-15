@@ -3624,7 +3624,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 			dummy.z = thiscam->z;
 			dummy.height = thiscam->height;
 			if (player->pflags & PF_TIMEOVER)
-				player->kartstuff[k_timeovercam] = (2*TICRATE)+1;
+				player->karthud[khud_timeovercam] = (2*TICRATE)+1;
 			if (!resetcalled && !(player->pflags & PF_NOCLIP || leveltime < introtime) && !P_CheckSight(&dummy, player->mo)) // TODO: "P_CheckCameraSight" instead.
 				P_ResetCamera(player, thiscam);
 			else
@@ -10052,7 +10052,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				break;
 			}
 
-			mobj->color = SKINCOLOR_AQUA;
+			mobj->color = SKINCOLOR_CYAN;
 			break;
 		}
 		case MT_MARBLETORCH:
@@ -11692,20 +11692,16 @@ void P_SpawnMapThing(mapthing_t *mthing)
 		mobjtype_t macetype = MT_SMALLMACE;
 		boolean firsttime;
 		mobj_t *spawnee;
-		size_t line;
+		INT32 line;
 		const size_t mthingi = (size_t)(mthing - mapthings);
 
-		// Why does P_FindSpecialLineFromTag not work here?!?
-		// Monster Iestyn: tag lists haven't been initialised yet for the map, that's why
-		for (line = 0; line < numlines; line++)
-		{
-			if (lines[line].special == 9 && lines[line].tag == mthing->angle)
-				break;
-		}
+		// Find the corresponding linedef special, using angle as tag
+		// P_FindSpecialLineFromTag works here now =D
+		line = P_FindSpecialLineFromTag(9, mthing->angle, -1);
 
-		if (line == numlines)
+		if (line == -1)
 		{
-			CONS_Debug(DBG_GAMELOGIC, "Mace chain (mapthing #%s) needs tagged to a #9 parameter line (trying to find tag %d).\n", sizeu1(mthingi), mthing->angle);
+			CONS_Debug(DBG_GAMELOGIC, "Mace chain (mapthing #%s) needs to be tagged to a #9 parameter line (trying to find tag %d).\n", sizeu1(mthingi), mthing->angle);
 			return;
 		}
 /*

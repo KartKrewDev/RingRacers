@@ -173,7 +173,7 @@ static void F_SkyScroll(INT32 scrollspeed)
 	// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
 	if (rendermode != render_none)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 		x = -((INT32)animtimer);
 		y = 0;
@@ -238,7 +238,6 @@ void F_StartIntro(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 	F_NewCutscene(introtext[0]);
 
 	intro_scenenum = 0;
@@ -275,7 +274,7 @@ static void F_IntroDrawScene(void)
 		highres = true;
 	}
 
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 	if (background)
 	{
@@ -460,9 +459,13 @@ static const char *credits[] = {
 	"\"ZarroTsu\"",
 	"",
 	"\1External Artists",
+	"\"1-Up Mason\"",
+	"\"Chengi\"",
 	"\"Chrispy\"",
 	"\"DirkTheHusky\"",
+	"\"LJSTAR\"",
 	"\"MotorRoach\"",
+	"\"Mr. McScrewup\"",
 	"\"Nev3r\"",
 	"\"Ritz\"",
 	"\"Rob\"",
@@ -471,6 +474,7 @@ static const char *credits[] = {
 	"\"Spherallic\"",
 	"\"VAdaPEGA\"",
 	"\"Virt\"",
+	"\"Voltrix\"",
 	"\"zxyspku\"",
 	"",
 	"\1Sound Design",
@@ -580,7 +584,6 @@ void F_StartCredits(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 	S_StopMusic();
 
 	S_ChangeMusicInternal("credit", false);
@@ -774,7 +777,6 @@ void F_StartGameEvaluation(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 
 	finalecount = 0;
 }
@@ -884,7 +886,6 @@ void F_StartGameEnd(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 	S_StopMusic();
 
 	// In case menus are still up?!!
@@ -969,7 +970,7 @@ void F_TitleScreenDrawer(void)
 	}
 	else if (finalecount < 52)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 		V_DrawSmallScaledPatch(84, 36, 0, ttkflash);
 	}
 	else
@@ -985,7 +986,7 @@ void F_TitleScreenDrawer(void)
 		V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + FixedMul(40<<FRACBITS, FixedDiv(finalecount%70, 70)), V_SNAPTOTOP|V_SNAPTORIGHT, ttcheckers, FRACUNIT);
 
 		if (transval)
-			V_DrawFadeScreen(120, 10 - transval);
+			V_DrawFadeScreen(0, 10 - transval);
 
 		V_DrawSmallScaledPatch(84, 36, 0, ttbanner);
 
@@ -1199,7 +1200,6 @@ void F_StartContinue(void)
 	keypressed = false;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 
 	// In case menus are still up?!!
 	M_ClearMenus(true);
@@ -1319,9 +1319,10 @@ static void F_AdvanceToNextScene(void)
 	picypos = cutscenes[cutnum]->scene[scenenum].ycoord[picnum];
 
 	if (cutscenes[cutnum]->scene[scenenum].musswitch[0])
-		S_ChangeMusic(cutscenes[cutnum]->scene[scenenum].musswitch,
+		S_ChangeMusicEx(cutscenes[cutnum]->scene[scenenum].musswitch,
 			cutscenes[cutnum]->scene[scenenum].musswitchflags,
-			cutscenes[cutnum]->scene[scenenum].musicloop);
+			cutscenes[cutnum]->scene[scenenum].musicloop,
+			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
 	dofadenow = true;
@@ -1370,8 +1371,6 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 	F_NewCutscene(cutscenes[cutscenenum]->scene[0].text);
 
-	CON_ClearHUD();
-
 	cutsceneover = false;
 	runningprecutscene = precutscene;
 	precutresetplayer = resetplayer;
@@ -1392,9 +1391,10 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 	stoptimer = 0;
 
 	if (cutscenes[cutnum]->scene[0].musswitch[0])
-		S_ChangeMusic(cutscenes[cutnum]->scene[0].musswitch,
+		S_ChangeMusicEx(cutscenes[cutnum]->scene[0].musswitch,
 			cutscenes[cutnum]->scene[0].musswitchflags,
-			cutscenes[cutnum]->scene[0].musicloop);
+			cutscenes[cutnum]->scene[0].musicloop,
+			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 	else
 		S_StopMusic();
 }

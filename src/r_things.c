@@ -42,8 +42,6 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 CV_PossibleValue_t Forceskin_cons_t[MAXSKINS+2];
 
-static void R_InitSkins(void);
-
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
 
@@ -585,7 +583,17 @@ void R_InitSprites(void)
 	//
 
 	// it can be is do before loading config for skin cvar possible value
-	R_InitSkins();
+	// (... what the fuck did you just say to me? "it can be is do"?)
+#ifdef SKINVALUES
+	for (i = 0; i <= MAXSKINS; i++)
+	{
+		skin_cons_t[i].value = 0;
+		skin_cons_t[i].strvalue = NULL;
+	}
+#endif
+
+	numskins = 0;
+
 	for (i = 0; i < numwadfiles; i++)
 		R_AddSkins((UINT16)i);
 
@@ -2537,7 +2545,7 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	strncpy(skin->facewant, "PLAYWANT", 9);
 	strncpy(skin->facemmap, "PLAYMMAP", 9);
 
-	skin->starttranscolor = 160;
+	skin->starttranscolor = 96;
 	skin->prefcolor = SKINCOLOR_GREEN;
 
 	// SRB2kart
@@ -2550,61 +2558,6 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	for (i = 0; i < sfx_skinsoundslot0; i++)
 		if (S_sfx[i].skinsound != -1)
 			skin->soundsid[S_sfx[i].skinsound] = i;
-}
-
-//
-// Initialize the basic skins
-//
-void R_InitSkins(void)
-{
-	skin_t *skin;
-#ifdef SKINVALUES
-	INT32 i;
-
-	for (i = 0; i <= MAXSKINS; i++)
-	{
-		skin_cons_t[i].value = 0;
-		skin_cons_t[i].strvalue = NULL;
-	}
-#endif
-
-	// skin[0] = Sonic skin
-	skin = &skins[0];
-	numskins = 1;
-	Sk_SetDefaultValue(skin);
-
-	// Hardcoded S_SKIN customizations for Sonic.
-	strcpy(skin->name,       DEFAULTSKIN);
-#ifdef SKINVALUES
-	skin_cons_t[0].strvalue = skins[0].name;
-#endif
-	skin->flags = 0;
-	strcpy(skin->realname,   "Sonic");
-	strcpy(skin->hudname,    "SONIC");
-
-	strncpy(skin->facerank, "PLAYRANK", 9);
-	strncpy(skin->facewant, "PLAYWANT", 9);
-	strncpy(skin->facemmap, "PLAYMMAP", 9);
-	skin->prefcolor = SKINCOLOR_BLUE;
-
-	// SRB2kart
-	skin->kartspeed = 8;
-	skin->kartweight = 2;
-	//
-
-	skin->spritedef.numframes = sprites[SPR_PLAY].numframes;
-	skin->spritedef.spriteframes = sprites[SPR_PLAY].spriteframes;
-	ST_LoadFaceGraphics(skin->facerank, skin->facewant, skin->facemmap, 0);
-
-	// Set values for Sonic skin
-	Forceskin_cons_t[1].value = 0;
-	Forceskin_cons_t[1].strvalue = skin->name;
-
-	//MD2 for sonic doesn't want to load in Linux.
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-		HWR_AddPlayerMD2(0);
-#endif
 }
 
 // returns true if the skin name is found (loaded from pwad)

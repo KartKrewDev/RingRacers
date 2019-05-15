@@ -197,6 +197,12 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->musname[6] = 0;
 	DEH_WriteUndoline("MUSICTRACK", va("%d", mapheaderinfo[num]->mustrack), UNDO_NONE);
 	mapheaderinfo[num]->mustrack = 0;
+	DEH_WriteUndoline("MUSICPOS", va("%d", mapheaderinfo[num]->muspos), UNDO_NONE);
+	mapheaderinfo[num]->muspos = 0;
+	DEH_WriteUndoline("MUSICINTERFADEOUT", va("%d", mapheaderinfo[num]->musinterfadeout), UNDO_NONE);
+	mapheaderinfo[num]->musinterfadeout = 0;
+	DEH_WriteUndoline("MUSICINTER", mapheaderinfo[num]->musintername, UNDO_NONE);
+	mapheaderinfo[num]->musintername[0] = '\0';
 	DEH_WriteUndoline("FORCECHARACTER", va("%d", mapheaderinfo[num]->forcecharacter), UNDO_NONE);
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
 	DEH_WriteUndoline("WEATHER", va("%d", mapheaderinfo[num]->weather), UNDO_NONE);
@@ -1548,19 +1554,33 @@ static void P_LoadRawSideDefs2(void *data)
 				{
 					M_Memcpy(process,msd->bottomtexture,8);
 					process[8] = '\0';
-					sd->bottomtexture = get_number(process)-1;
+					sd->bottomtexture = get_number(process);
 				}
-				M_Memcpy(process,msd->toptexture,8);
-				process[8] = '\0';
-				sd->text = Z_Malloc(7, PU_LEVEL, NULL);
 
-				// If they type in O_ or D_ and their music name, just shrug,
-				// then copy the rest instead.
-				if ((process[0] == 'O' || process[0] == 'D') && process[7])
-					M_Memcpy(sd->text, process+2, 6);
-				else // Assume it's a proper music name.
-					M_Memcpy(sd->text, process, 6);
-				sd->text[6] = 0;
+				if (!(msd->midtexture[0] == '-' && msd->midtexture[1] == '\0') || msd->midtexture[1] != '\0')
+				{
+					M_Memcpy(process,msd->midtexture,8);
+					process[8] = '\0';
+					sd->midtexture = get_number(process);
+				}
+
+				// always process if back sidedef, because we need that - symbol
+ 				sd->text = Z_Malloc(7, PU_LEVEL, NULL);
+				if (i == 1 || msd->toptexture[0] != '-' || msd->toptexture[1] != '\0')
+				{
+					M_Memcpy(process,msd->toptexture,8);
+					process[8] = '\0';
+
+					// If they type in O_ or D_ and their music name, just shrug,
+					// then copy the rest instead.
+					if ((process[0] == 'O' || process[0] == 'D') && process[7])
+						M_Memcpy(sd->text, process+2, 6);
+					else // Assume it's a proper music name.
+						M_Memcpy(sd->text, process, 6);
+					sd->text[6] = 0;
+				}
+				else
+					sd->text[0] = 0;
 				break;
 			}
 
@@ -2796,8 +2816,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	for (i = 0; i <= splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
-	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0'
-	&& atoi(mapheaderinfo[gamemap-1]->forcecharacter) != 255)
+	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0')
 		P_ForceCharacter(mapheaderinfo[gamemap-1]->forcecharacter);
 
 	// chasecam on in chaos, race, coop
@@ -2839,13 +2858,13 @@ boolean P_SetupLevel(boolean skipprecip)
 		S_StartSound(NULL, sfx_ruby1);
 
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 122);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 209);
 
 		F_WipeEndScreen();
 		F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
 
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 		F_WipeEndScreen();
 		F_RunWipe(wipedefs[wipe_level_final], false);
@@ -2878,7 +2897,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// We should be fine starting it here.
 	S_Start();
 
-	levelfadecol = (encoremode && !ranspecialwipe ? 122 : 120);
+	levelfadecol = (encoremode && !ranspecialwipe ? 209 : 0);
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
@@ -3046,6 +3065,10 @@ boolean P_SetupLevel(boolean skipprecip)
 		P_PrepareThings(lastloadedmaplumpnum + ML_THINGS);
 	}
 
+	// init gravity, tag lists,
+	// anything that P_ResetDynamicSlopes/P_LoadThings needs to know
+	P_InitSpecials();
+
 #ifdef ESLOPE
 	P_ResetDynamicSlopes();
 #endif
@@ -3063,8 +3086,6 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
-
-	globalweather = mapheaderinfo[gamemap-1]->weather;
 
 #ifdef HWRENDER // not win32 only 19990829 by Kin
 	if (rendermode != render_soft && rendermode != render_none)
