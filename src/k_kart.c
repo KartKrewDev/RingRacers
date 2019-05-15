@@ -1594,11 +1594,11 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 		SKINCOLOR_PLATINUM,
 		SKINCOLOR_TEA,
 		SKINCOLOR_GARDEN,
-		SKINCOLOR_MUSTARD,
-		SKINCOLOR_YELLOW,
+		SKINCOLOR_BANANA,
+		SKINCOLOR_GOLD,
 		SKINCOLOR_ORANGE,
 		SKINCOLOR_SCARLET,
-		SKINCOLOR_CHERRY
+		SKINCOLOR_TAFFY
 	};
 	fixed_t minimumdist = FixedMul(RING_DIST>>1, player->mo->scale);
 	UINT8 c = FixedMul(CHAOTIXBANDCOLORS<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
