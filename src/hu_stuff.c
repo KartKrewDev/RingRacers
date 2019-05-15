@@ -810,11 +810,11 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_FAIRY:
 				case SKINCOLOR_SALMON:
 				case SKINCOLOR_PINK:
-				case SKINCOLOR_ORCHID:
+				case SKINCOLOR_ROSE:
 				case SKINCOLOR_LEMONADE:
 				case SKINCOLOR_BUBBLEGUM:
 				case SKINCOLOR_LILAC:
-				case SKINCOLOR_ROSE:
+				case SKINCOLOR_TAFFY:
 					cstart = "\x8d"; // V_PINKMAP
 					break;
 				case SKINCOLOR_CINNAMON:

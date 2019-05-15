@@ -61,7 +61,7 @@ const char *KartColor_Names[MAXSKINCOLORS] =
 	"Leather",        // SKINCOLOR_LEATHER
 	"Salmon",         // SKINCOLOR_SALMON
 	"Pink",           // SKINCOLOR_PINK
-	"Orchid",         // SKINCOLOR_ORCHID
+	"Rose",           // SKINCOLOR_ROSE
 	"Cinnamon",       // SKINCOLOR_CINNAMON
 	"Ruby",           // SKINCOLOR_RUBY
 	"Raspberry",      // SKINCOLOR_RASPBERRY
@@ -143,7 +143,7 @@ const char *KartColor_Names[MAXSKINCOLORS] =
 	"Byzantium",      // SKINCOLOR_BYZANTIUM
 	"Pomegranate",    // SKINCOLOR_POMEGRANATE
 	"Lilac",          // SKINCOLOR_LILAC
-	"Rose"            // SKINCOLOR_ROSE
+	"Taffy"           // SKINCOLOR_TAFFY
 };
 
 // Color_Opposite replacement; frame setting has not been changed from 8 for most, should be done later
@@ -167,7 +167,7 @@ const UINT8 KartColor_Opposite[MAXSKINCOLORS*2] =
 	SKINCOLOR_SEPIA,8,        // SKINCOLOR_LEATHER
 	SKINCOLOR_TEA,8,          // SKINCOLOR_SALMON
 	SKINCOLOR_PISTACHIO,8,    // SKINCOLOR_PINK
-	SKINCOLOR_MOSS,8,         // SKINCOLOR_ORCHID
+	SKINCOLOR_MOSS,8,         // SKINCOLOR_ROSE
 	SKINCOLOR_WRISTWATCH,6,   // SKINCOLOR_CINNAMON
 	SKINCOLOR_SAPPHIRE,8,     // SKINCOLOR_RUBY
 	SKINCOLOR_MINT,8,         // SKINCOLOR_RASPBERRY
@@ -201,7 +201,7 @@ const UINT8 KartColor_Opposite[MAXSKINCOLORS*2] =
 	SKINCOLOR_ULTRAMARINE,8,  // SKINCOLOR_HANDHELD
 	SKINCOLOR_SALMON,8,       // SKINCOLOR_TEA
 	SKINCOLOR_PINK,6,         // SKINCOLOR_PISTACHIO
-	SKINCOLOR_ORCHID,8,       // SKINCOLOR_MOSS
+	SKINCOLOR_ROSE,8,         // SKINCOLOR_MOSS
 	SKINCOLOR_CAMOUFLAGE,8,   // SKINCOLOR_CAMOUFLAGE
 	SKINCOLOR_VOMIT,8,        // SKINCOLOR_ROBOHOOD
 	SKINCOLOR_RASPBERRY,8,    // SKINCOLOR_MINT
@@ -229,7 +229,7 @@ const UINT8 KartColor_Opposite[MAXSKINCOLORS*2] =
 	SKINCOLOR_PLAGUE,10,      // SKINCOLOR_NOVA
 	SKINCOLOR_TAN,8,          // SKINCOLOR_RUST
 	SKINCOLOR_CINNAMON,8,     // SKINCOLOR_WRISTWATCH
-	SKINCOLOR_ROSE,8,         // SKINCOLOR_JET
+	SKINCOLOR_TAFFY,8,        // SKINCOLOR_JET
 	SKINCOLOR_RUBY,6,         // SKINCOLOR_SAPPHIRE
 	SKINCOLOR_HANDHELD,10,    // SKINCOLOR_ULTRAMARINE
 	SKINCOLOR_CREAMSICLE,8,   // SKINCOLOR_PERIWINKLE
@@ -249,7 +249,7 @@ const UINT8 KartColor_Opposite[MAXSKINCOLORS*2] =
 	SKINCOLOR_SWAMP,8,        // SKINCOLOR_BYZANTIUM
 	SKINCOLOR_DREAM,8,        // SKINCOLOR_POMEGRANATE
 	SKINCOLOR_JAWZ,6,         // SKINCOLOR_LILAC
-	SKINCOLOR_JET,8           // SKINCOLOR_ROSE
+	SKINCOLOR_JET,8           // SKINCOLOR_TAFFY
 };
 
 UINT8 colortranslations[MAXTRANSLATIONS][16] = {
@@ -271,7 +271,7 @@ UINT8 colortranslations[MAXTRANSLATIONS][16] = {
 	{218, 221, 224, 227, 229, 231, 233, 235, 237, 239,  28,  28,  29,  29,  30,  31}, // SKINCOLOR_LEATHER
 	{  0,   0,   0, 208, 208, 209, 210,  32,  34,  35,  36,  38,  40,  42,  44,  46}, // SKINCOLOR_SALMON
 	{  0, 208, 208, 209, 209, 210, 211, 211, 212, 213, 214, 215,  41,  43,  45,  46}, // SKINCOLOR_PINK
-	{209, 210, 211, 211, 212, 213, 214, 215,  41,  42,  43,  44,  45,  71,  46,  47}, // SKINCOLOR_ORCHID
+	{209, 210, 211, 211, 212, 213, 214, 215,  41,  42,  43,  44,  45,  71,  46,  47}, // SKINCOLOR_ROSE
 	{216, 221, 224, 226, 228,  60,  61,  43,  44,  45,  71,  46,  47,  29,  30,  31}, // SKINCOLOR_CINNAMON
 	{  0, 208, 209, 210, 211, 213,  39,  40,  41,  43, 186, 186, 169, 169, 253, 254}, // SKINCOLOR_RUBY
 	{  0, 208, 209, 210,  32,  33,  34,  35,  37,  39,  41,  43,  44,  45,  46,  47}, // SKINCOLOR_RASPBERRY
@@ -353,7 +353,7 @@ UINT8 colortranslations[MAXTRANSLATIONS][16] = {
 	{145, 192, 193, 194, 195, 196, 197, 198, 199, 199,  29,  29,  30,  30,  31,  31}, // SKINCOLOR_BYZANTIUM
 	{208, 209, 210, 211, 212, 213, 214, 195, 195, 196, 196, 197, 198, 199,  29,  30}, // SKINCOLOR_POMEGRANATE
 	{  0,   0,   0, 252, 252, 176, 200, 201, 179, 192, 193, 194, 195, 196, 197, 198}, // SKINCOLOR_LILAC
-	{  0, 252, 252, 200, 200, 201, 202, 203, 204, 204, 205, 206, 207,  43,  45,  47}, // SKINCOLOR_ROSE
+	{  0, 252, 252, 200, 200, 201, 202, 203, 204, 204, 205, 206, 207,  43,  45,  47}, // SKINCOLOR_TAFFY
 
 	// THESE STILL NEED CONVERTED!!!
 	{  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  96, 100, 104, 113, 116, 119}, // SKINCOLOR_SUPER1
@@ -6832,7 +6832,7 @@ static void K_drawKartItem(void)
 				break;
 			case 11: // Eggman Monitor
 				localpatch = kp_eggman[offset];
-				//localcolor = SKINCOLOR_ORCHID;
+				//localcolor = SKINCOLOR_ROSE;
 				break;
 			case 12: // Ballhog
 				localpatch = kp_ballhog[offset];

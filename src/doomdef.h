@@ -269,7 +269,7 @@ typedef enum
 	SKINCOLOR_LEATHER,
 	SKINCOLOR_SALMON,
 	SKINCOLOR_PINK,
-	SKINCOLOR_ORCHID,
+	SKINCOLOR_ROSE,
 	SKINCOLOR_CINNAMON,
 	SKINCOLOR_RUBY,
 	SKINCOLOR_RASPBERRY,
@@ -351,7 +351,7 @@ typedef enum
 	SKINCOLOR_BYZANTIUM,
 	SKINCOLOR_POMEGRANATE,
 	SKINCOLOR_LILAC,
-	SKINCOLOR_ROSE,
+	SKINCOLOR_TAFFY,
 
 	// "Careful! MAXSKINCOLORS cannot be greater than 0x40 -- Which it is now."
 	// (This comment is a dirty liar! This is only limited by the integer type, so 255 for UINT8.)
