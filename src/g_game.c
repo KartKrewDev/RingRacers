@@ -1249,7 +1249,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (demo.playback) return;
 
-	player = &players[displayplayers[ssplayer-1]];
+	if (ssplayer == 1)
+		player = &players[consoleplayer];
+	else
+		player = &players[displayplayers[ssplayer-1]];
+		
 	if (ssplayer == 2)
 		thiscam = (player->bot == 2 ? &camera[0] : &camera[ssplayer-1]);
 	else
@@ -3436,12 +3440,12 @@ UINT8 G_GetGametypeColor(INT16 gt)
 {
 	if (modeattacking // == ATTACKING_RECORD
 	|| gamestate == GS_TIMEATTACK)
-		return orangemap[120];
+		return orangemap[0];
 	if (gt == GT_MATCH)
-		return redmap[120];
+		return redmap[0];
 	if (gt == GT_RACE)
-		return skymap[120];
-	return 247; // FALLBACK
+		return skymap[0];
+	return 255; // FALLBACK
 }
 
 //
@@ -5941,7 +5945,8 @@ void G_StoreRewindInfo(void)
 
 void G_PreviewRewind(tic_t previewtime)
 {
-	size_t i, j;
+	SINT8 i;
+	size_t j;
 	fixed_t tweenvalue = 0;
 	rewindinfo_t *info = rewindhead, *next_info = rewindhead;
 
@@ -6001,13 +6006,14 @@ void G_PreviewRewind(tic_t previewtime)
 			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];
 	}
 
-	for (i = splitscreen+1; i > 0; i--)
+	for (i = splitscreen; i >= 0; i--)
 		P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 }
 
 void G_ConfirmRewind(tic_t rewindtime)
 {
-	tic_t i;
+	SINT8 i;
+	tic_t j;
 	boolean oldmenuactive = menuactive, oldsounddisabled = sound_disabled;
 
 	INT32 olddp1 = displayplayers[0], olddp2 = displayplayers[1], olddp3 = displayplayers[2], olddp4 = displayplayers[3];
@@ -6027,10 +6033,10 @@ void G_ConfirmRewind(tic_t rewindtime)
 
 	G_DoPlayDemo(NULL); // Restart the current demo
 
-	for (i = 0; i < rewindtime && leveltime < rewindtime; i++)
+	for (j = 0; j < rewindtime && leveltime < rewindtime; i++)
 	{
 		//TryRunTics(1);
-		G_Ticker((i % NEWTICRATERATIO) == 0);
+		G_Ticker((j % NEWTICRATERATIO) == 0);
 	}
 
 	demo.rewinding = false;
@@ -6049,7 +6055,7 @@ void G_ConfirmRewind(tic_t rewindtime)
 	R_ExecuteSetViewSize();
 	G_ResetViews();
 
-	for (i = splitscreen+1; i > 0; i--)
+	for (i = splitscreen; i >= 0; i--)
 		P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 }
 

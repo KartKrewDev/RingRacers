@@ -173,7 +173,7 @@ static void F_SkyScroll(INT32 scrollspeed)
 	// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
 	if (rendermode != render_none)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 		x = -((INT32)animtimer);
 		y = 0;
@@ -274,7 +274,7 @@ static void F_IntroDrawScene(void)
 		highres = true;
 	}
 
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 	if (background)
 	{
@@ -459,9 +459,13 @@ static const char *credits[] = {
 	"\"ZarroTsu\"",
 	"",
 	"\1External Artists",
+	"\"1-Up Mason\"",
+	"\"Chengi\"",
 	"\"Chrispy\"",
 	"\"DirkTheHusky\"",
+	"\"LJSTAR\"",
 	"\"MotorRoach\"",
+	"\"Mr. McScrewup\"",
 	"\"Nev3r\"",
 	"\"Ritz\"",
 	"\"Rob\"",
@@ -470,6 +474,7 @@ static const char *credits[] = {
 	"\"Spherallic\"",
 	"\"VAdaPEGA\"",
 	"\"Virt\"",
+	"\"Voltrix\"",
 	"\"zxyspku\"",
 	"",
 	"\1Sound Design",
@@ -965,7 +970,7 @@ void F_TitleScreenDrawer(void)
 	}
 	else if (finalecount < 52)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 		V_DrawSmallScaledPatch(84, 36, 0, ttkflash);
 	}
 	else
@@ -981,7 +986,7 @@ void F_TitleScreenDrawer(void)
 		V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + FixedMul(40<<FRACBITS, FixedDiv(finalecount%70, 70)), V_SNAPTOTOP|V_SNAPTORIGHT, ttcheckers, FRACUNIT);
 
 		if (transval)
-			V_DrawFadeScreen(120, 10 - transval);
+			V_DrawFadeScreen(0, 10 - transval);
 
 		V_DrawSmallScaledPatch(84, 36, 0, ttbanner);
 

@@ -1175,7 +1175,7 @@ static inline void CL_DrawConnectionStatus(void)
 	if (cl_mode != CL_DOWNLOADFILES)
 	{
 		INT32 i, animtime = ((ccstime / 4) & 15) + 16;
-		UINT8 palstart = (cl_mode == CL_SEARCHING) ? 128 : 160;
+		UINT8 palstart = (cl_mode == CL_SEARCHING) ? 32 : 96;
 		// 15 pal entries total.
 		const char *cltext;
 
@@ -1259,8 +1259,8 @@ static inline void CL_DrawConnectionStatus(void)
 			dldlength = (INT32)((file->currentsize/(double)file->totalsize) * 256);
 			if (dldlength > 256)
 				dldlength = 256;
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, dldlength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, dldlength, 8, 96);
 
 			memset(tempname, 0, sizeof(tempname));
 			// offset filename to just the name only part
