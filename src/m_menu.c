@@ -121,41 +121,8 @@ typedef enum
 const char *quitmsg[NUM_QUITMESSAGES];
 
 // Stuff for customizing the player select screen Tails 09-22-2003
-description_t description[32] =
-{
-	{"\x82Sonic\x80\n\x82Speed:\x80 7\n\x82Weight:\x80 3", "", "sonic"},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""},
-	{"???", "", ""}
-};
+description_t description[MAXSKINS];
+
 //static char *char_notes = NULL;
 //static fixed_t char_scroll = 0;
 
@@ -435,27 +402,9 @@ static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
 consvar_t cv_chooseskin = {"chooseskin", DEFAULTSKIN, CV_HIDEN|CV_CALL, skins_cons_t, Nextmap_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 // This gametype list is integral for many different reasons.
-// When you add gametypes here, don't forget to update them in CV_AddValue!
-CV_PossibleValue_t gametype_cons_t[] =
-{
-	{GT_RACE, "Race"}, {GT_MATCH, "Battle"},
+// When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
+CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
 
-	/*						// SRB2kart
-	{GT_COOP, "Co-op"},
-
-	{GT_COMPETITION, "Competition"},
-	{GT_RACE, "Race"},
-
-	{GT_MATCH, "Match"},
-	{GT_TEAMMATCH, "Team Match"},
-
-	{GT_TAG, "Tag"},
-	{GT_HIDEANDSEEK, "Hide and Seek"},
-
-	{GT_CTF, "CTF"},
-	*/
-	{0, NULL}
-};
 consvar_t cv_newgametype = {"newgametype", "Race", CV_HIDEN|CV_CALL, gametype_cons_t, Newgametype_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t serversort_cons_t[] = {
@@ -3397,6 +3346,55 @@ void M_Init(void)
 	CV_RegisterVar(&cv_allcaps);
 }
 
+void M_InitCharacterTables(void)
+{
+	UINT8 i;
+
+	// Setup PlayerMenu table
+	for (i = 0; i < MAXSKINS; i++)
+	{
+		PlayerMenu[i].status = (i < 4 ? IT_CALL : IT_DISABLED);
+		PlayerMenu[i].patch = PlayerMenu[i].text = NULL;
+		PlayerMenu[i].itemaction = M_ChoosePlayer;
+		PlayerMenu[i].alphaKey = 0;
+	}
+
+	// Setup description table
+	for (i = 0; i < MAXSKINS; i++)
+	{
+		if (i == 0)
+		{
+			strcpy(description[i].notes, "\x82Sonic\x80 is the fastest of the three, but also the hardest to control. Beginners beware, but experts will find Sonic very powerful.\n\n\x82""Ability:\x80 Speed Thok\nDouble jump to zoom forward with a huge burst of speed.\n\n\x82Tip:\x80 Simply letting go of forward does not slow down in SRB2. To slow down, hold the opposite direction.");
+			strcpy(description[i].picname, "");
+			strcpy(description[i].skinname, "sonic");
+		}
+		else if (i == 1)
+		{
+			strcpy(description[i].notes, "\x82Tails\x80 is the most mobile of the three, but has the slowest speed. Because of his mobility, he's well-\nsuited to beginners.\n\n\x82""Ability:\x80 Fly\nDouble jump to start flying for a limited time. Repetitively hit the jump button to ascend.\n\n\x82Tip:\x80 To quickly descend while flying, hit the spin button.");
+			strcpy(description[i].picname, "");
+			strcpy(description[i].skinname, "tails");
+		}
+		else if (i == 2)
+		{
+			strcpy(description[i].notes, "\x82Knuckles\x80 is well-\nrounded and can destroy breakable walls simply by touching them, but he can't jump as high as the other two.\n\n\x82""Ability:\x80 Glide & Climb\nDouble jump to glide in the air as long as jump is held. Glide into a wall to climb it.\n\n\x82Tip:\x80 Press spin while climbing to jump off the wall; press jump instead to jump off\nand face away from\nthe wall.");
+			strcpy(description[i].picname, "");
+			strcpy(description[i].skinname, "knuckles");
+		}
+		else if (i == 3)
+		{
+			strcpy(description[i].notes, "\x82Sonic & Tails\x80 team up to take on Dr. Eggman!\nControl Sonic while Tails desperately struggles to keep up.\n\nPlayer 2 can control Tails directly by setting the controls in the options menu.\nTails's directional controls are relative to Player 1's camera.\n\nTails can pick up Sonic while flying and carry him around.");
+			strcpy(description[i].picname, "CHRS&T");
+			strcpy(description[i].skinname, "sonic&tails");
+		}
+		else
+		{
+			strcpy(description[i].notes, "???");
+			strcpy(description[i].picname, "");
+			strcpy(description[i].skinname, "");
+		}
+	}
+}
+
 // ==========================================================================
 // SPECIAL MENU OPTION DRAW ROUTINES GO HERE
 // ==========================================================================
@@ -3515,7 +3513,7 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 {
 	// Solid color textbox.
-	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 239);
+	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 159);
 	//V_DrawFill(x+8, y+8, width*8, boxlines*8, 31);
 /*
 	patch_t *p;
@@ -4674,10 +4672,10 @@ static void M_DrawTemperature(INT32 x, fixed_t t)
 		t = (FixedMul(h<<FRACBITS, t)>>FRACBITS);
 
 	// border
-	V_DrawFill(x - 1, vpadding, 1, h, 120);
-	V_DrawFill(x + width, vpadding, 1, h, 120);
-	V_DrawFill(x - 1, vpadding-1, width+2, 1, 120);
-	V_DrawFill(x - 1, vpadding+h, width+2, 1, 120);
+	V_DrawFill(x - 1, vpadding, 1, h, 0);
+	V_DrawFill(x + width, vpadding, 1, h, 0);
+	V_DrawFill(x - 1, vpadding-1, width+2, 1, 0);
+	V_DrawFill(x - 1, vpadding+h, width+2, 1, 0);
 
 	// bar itself
 	y = h;
@@ -4828,14 +4826,14 @@ static void M_DrawAddons(void)
 	x = currentMenu->x;
 	y = currentMenu->y + 1;
 
-	hilicol = V_GetStringColormap(highlightflags)[120];
+	hilicol = V_GetStringColormap(highlightflags)[0];
 
 	V_DrawString(x-21, (y - 16) + (lsheadingheight - 12), highlightflags|V_ALLOWLOWERCASE, M_AddonsHeaderPath());
 	V_DrawFill(x-21, (y - 16) + (lsheadingheight - 3), MAXSTRINGLENGTH*8+6, 1, hilicol);
 	V_DrawFill(x-21, (y - 16) + (lsheadingheight - 2), MAXSTRINGLENGTH*8+6, 1, 30);
 
 	m = (BASEVIDHEIGHT - currentMenu->y + 2) - (y - 1);
-	V_DrawFill(x - 21, y - 1, MAXSTRINGLENGTH*8+6, m, 239);
+	V_DrawFill(x - 21, y - 1, MAXSTRINGLENGTH*8+6, m, 159);
 
 	// scrollbar!
 	if (sizedirmenu <= (2*numaddonsshown + 1))
@@ -5561,8 +5559,8 @@ static void M_DrawReplayHut(void)
 	y = sizedirmenu*10 + currentMenu->menuitems[replaylistitem].alphaKey + 30;
 	if (y > SCALEDVIEWHEIGHT-80)
 	{
-		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, V_SNAPTOTOP|V_SNAPTORIGHT|239);
-		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, V_SNAPTOTOP|V_SNAPTORIGHT|229);
+		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, V_SNAPTOTOP|V_SNAPTORIGHT|159);
+		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, V_SNAPTOTOP|V_SNAPTORIGHT|149);
 	}
 
 	// Draw the cursor
@@ -5571,7 +5569,7 @@ static void M_DrawReplayHut(void)
 	V_DrawString(currentMenu->x, cursory, V_SNAPTOTOP|V_SNAPTOLEFT|highlightflags, currentMenu->menuitems[itemOn].text);
 
 	// Now draw some replay info!
-	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|239);
+	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
 
 	if (itemOn == replaylistitem)
 	{
@@ -5653,7 +5651,7 @@ static void M_DrawReplayStartMenu(void)
 		}
 	}
 
-	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|239);
+	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
 	DrawReplayHutReplayInfo();
 
 	V_DrawString(10, 72, V_SNAPTOTOP|highlightflags|V_ALLOWLOWERCASE, demolist[dir_on[menudepthleft]].title);
@@ -7582,7 +7580,7 @@ void M_DrawTimeAttackMenu(void)
 			time = mainrecords[cv_nextmap.value-1]->time;
 		}
 
-		V_DrawFill((BASEVIDWIDTH - dupadjust)>>1, 78, dupadjust, 36, 239);
+		V_DrawFill((BASEVIDWIDTH - dupadjust)>>1, 78, dupadjust, 36, 159);
 
 		V_DrawRightAlignedString(149, 80, highlightflags, "BEST LAP:");
 		K_drawKartTimestamp(lap, 19, 86, 0, 2);
@@ -8256,7 +8254,7 @@ static void M_DrawRoomMenu(void)
 
 static void M_DrawConnectMenu(void)
 {
-	UINT16 i, j;
+	UINT16 i;
 	const char *gt = "Unknown";
 	const char *spd = "";
 	INT32 numPages = (serverlistcount+(SERVERS_PER_PAGE-1))/SERVERS_PER_PAGE;
@@ -8303,11 +8301,8 @@ static void M_DrawConnectMenu(void)
 		                     va("Ping: %u", (UINT32)LONG(serverlist[slindex].info.time)));
 
 		gt = "Unknown";
-		for (j = 0; gametype_cons_t[j].strvalue; j++)
-		{
-			if (gametype_cons_t[j].value == serverlist[slindex].info.gametype)
-				gt = gametype_cons_t[j].strvalue;
-		}
+		if (serverlist[slindex].info.gametype < NUMGAMETYPES)
+			gt = Gametype_Names[serverlist[slindex].info.gametype];
 
 		V_DrawSmallString(currentMenu->x+46,S_LINEY(i)+8, globalflags,
 		                         va("Players: %02d/%02d", serverlist[slindex].info.numberofplayer, serverlist[slindex].info.maxplayer));
@@ -8632,7 +8627,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 	y = currentMenu->y + 130 + 8 - i;
 
 	if (currentMenu->menuitems[itemOn].itemaction == &cv_nextmap && skullAnimCounter < 4)
-		trans = 120;
+		trans = 0;
 	else
 		trans = G_GetGametypeColor(cv_newgametype.value);
 
@@ -8824,7 +8819,7 @@ Update the maxplayers label...
 #ifndef NONET
 	y += MP_MainMenu[8].alphaKey;
 
-	V_DrawFill(x+5, y+4+5, /*16*8 + 6,*/ BASEVIDWIDTH - 2*(x+5), 8+6, 239);
+	V_DrawFill(x+5, y+4+5, /*16*8 + 6,*/ BASEVIDWIDTH - 2*(x+5), 8+6, 159);
 
 	// draw name string
 	V_DrawString(x+8,y+12, V_ALLOWLOWERCASE, setupm_ip);
@@ -9298,7 +9293,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		flags |= V_FLIP; // This sprite is left/right flipped!
 
 	// draw box around guy
-	V_DrawFill(mx + 43 - (charw/2), my+65, charw, 84, 239);
+	V_DrawFill(mx + 43 - (charw/2), my+65, charw, 84, 159);
 
 	// draw player sprite
 	if (setupm_fakecolor) // inverse should never happen
@@ -9323,6 +9318,9 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 {
 	size_t   l;
 	boolean  exitmenu = false;  // exit to previous menu and send name change
+
+	if ((choice == gamecontrol[gc_fire][0] || choice == gamecontrol[gc_fire][1]) && itemOn == 2)
+		choice = KEY_BACKSPACE; // Hack to allow resetting prefcolor on controllers
 
 	switch (choice)
 	{

@@ -2138,8 +2138,8 @@ void ST_Drawer(void)
 	if (timeinmap < 15)
 	{
 		if (timeinmap <= 5)
-			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,120); // Pure white on first few frames, to hide SRB2's awful level load artifacts
+			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,0); // Pure white on first few frames, to hide SRB2's awful level load artifacts
 		else
-			V_DrawFadeScreen(120, 15-timeinmap); // Then gradually fade out from there
+			V_DrawFadeScreen(0, 15-timeinmap); // Then gradually fade out from there
 	}
 }

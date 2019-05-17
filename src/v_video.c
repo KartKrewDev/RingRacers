@@ -81,6 +81,7 @@ consvar_t cv_grcoronasize = {"gr_coronasize", "1", CV_SAVE| CV_FLOAT, 0, NULL, 0
 // console variables in development
 consvar_t cv_grmdls = {"gr_mdls", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grfallbackplayermodel = {"gr_fallbackplayermodel", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 #endif
 
 const UINT8 gammatable[5][256] =
@@ -1358,16 +1359,16 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 		return lavendermap;
 	case 10: // 0x8A, gold
 		return goldmap;
-	case 11: // 0x8B, tea-green
-		return teamap;
-	case 12: // 0x8C, steel
-		return steelmap;
+	case 11: // 0x8B, aqua-green
+		return aquamap;
+	case 12: // 0x8C, magenta
+		return magentamap;
 	case 13: // 0x8D, pink
 		return pinkmap;
 	case 14: // 0x8E, brown
 		return brownmap;
-	case 15: // 0x8F, peach
-		return peachmap;
+	case 15: // 0x8F, tan
+		return tanmap;
 	default: // reset
 		return NULL;
 	}
