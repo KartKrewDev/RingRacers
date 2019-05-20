@@ -649,10 +649,39 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 
 //{ SRB2kart Roulette Code - Position Based
 
+consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
+{
+	&cv_sneaker,
+	&cv_rocketsneaker,
+	&cv_invincibility,
+	&cv_banana,
+	&cv_eggmanmonitor,
+	&cv_orbinaut,
+	&cv_jawz,
+	&cv_mine,
+	&cv_ballhog,
+	&cv_selfpropelledbomb,
+	&cv_grow,
+	&cv_shrink,
+	&cv_thundershield,
+	&cv_bubbleshield,
+	&cv_flameshield,
+	&cv_hyudoro,
+	&cv_pogospring,
+	&cv_superring,
+	&cv_kitchensink,
+	&cv_triplesneaker,
+	&cv_triplebanana,
+	&cv_decabanana,
+	&cv_tripleorbinaut,
+	&cv_quadorbinaut,
+	&cv_dualjawz
+};
+
 #define NUMKARTODDS 	80
 
 // Less ugly 2D arrays
-static INT32 K_KartItemOddsRace[NUMKARTRESULTS][8] =
+static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 {
 				//P-Odds	 0  1  2  3  4  5  6  7
 			   /*Sneaker*/ { 0, 0, 3, 5, 6, 0, 0, 0 }, // Sneaker
@@ -682,7 +711,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS][8] =
 			   /*Jawz x2*/ { 0, 0, 1, 2, 0, 0, 0, 0 }  // Jawz x2
 };
 
-static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][6] =
+static INT32 K_KartItemOddsBattle[NUMKARTRESULTS-1][6] =
 {
 				//P-Odds	 0  1  2  3  4  5
 			   /*Sneaker*/ { 3, 2, 2, 2, 0, 2 }, // Sneaker
@@ -796,43 +825,23 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 	SINT8 first = -1, second = -1;
 	INT32 secondist = 0;
 	INT32 shieldtype = KSHIELD_NONE;
-	boolean itemenabled[NUMKARTRESULTS-1] = {
-		cv_sneaker.value,
-		cv_rocketsneaker.value,
-		cv_invincibility.value,
-		cv_banana.value,
-		cv_eggmanmonitor.value,
-		cv_orbinaut.value,
-		cv_jawz.value,
-		cv_mine.value,
-		cv_ballhog.value,
-		cv_selfpropelledbomb.value,
-		cv_grow.value,
-		cv_shrink.value,
-		cv_thundershield.value,
-		cv_bubbleshield.value,
-		cv_flameshield.value,
-		cv_hyudoro.value,
-		cv_pogospring.value,
-		cv_superring.value,
-		cv_kitchensink.value,
-		cv_triplesneaker.value,
-		cv_triplebanana.value,
-		cv_decabanana.value,
-		cv_tripleorbinaut.value,
-		cv_quadorbinaut.value,
-		cv_dualjawz.value
-	};
 
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
+	I_Assert(KartItemCVars[NUMKARTRESULTS-2] != NULL); // Make sure this exists
 
-	if (!itemenabled[item-1] && !modeattacking)
+	if (!KartItemCVars[item-1]->value && !modeattacking)
 		return 0;
 
 	if (G_BattleGametype())
+	{
+		I_Assert(pos < 6); // DO NOT allow positions past the bounds of the table
 		newodds = K_KartItemOddsBattle[item-1][pos];
+	}
 	else
+	{
+		I_Assert(pos < 8); // Ditto
 		newodds = K_KartItemOddsRace[item-1][pos];
+	}
 
 	// Base multiplication to ALL item odds to simulate fractional precision
 	newodds *= 4;
@@ -875,7 +884,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 
 	// Don't allow more than one of each shield type at a time
 	shieldtype = K_GetShieldFromItem(item);
-	if (shieldout[shieldtype-1])
+	if (shieldtype != KSHIELD_NONE && shieldout[shieldtype-1])
 		return 0;
 
 	// POWERITEMODDS handles all of the "frantic item" related functionality, for all of our powerful items.

@@ -23,6 +23,9 @@ void K_RegisterKartStuff(void);
 boolean K_IsPlayerLosing(player_t *player);
 boolean K_IsPlayerWanted(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
+
+consvar_t *KartItemCVars[NUMKARTRESULTS-1];
+
 INT32 K_GetShieldFromItem(INT32 item);
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
 void K_KartPainEnergyFling(player_t *player);

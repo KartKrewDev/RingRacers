@@ -10608,33 +10608,6 @@ static void M_HandleVideoMode(INT32 ch)
 // ===============
 // Monitor Toggles
 // ===============
-static consvar_t *kartitemcvs[NUMKARTRESULTS-1] = {
-	&cv_sneaker,
-	&cv_rocketsneaker,
-	&cv_invincibility,
-	&cv_banana,
-	&cv_eggmanmonitor,
-	&cv_orbinaut,
-	&cv_jawz,
-	&cv_mine,
-	&cv_ballhog,
-	&cv_selfpropelledbomb,
-	&cv_grow,
-	&cv_shrink,
-	&cv_thundershield,
-	&cv_bubbleshield,
-	&cv_flameshield,
-	&cv_hyudoro,
-	&cv_pogospring,
-	&cv_superring,
-	&cv_kitchensink,
-	&cv_triplesneaker,
-	&cv_triplebanana,
-	&cv_decabanana,
-	&cv_tripleorbinaut,
-	&cv_quadorbinaut,
-	&cv_dualjawz
-};
 
 static tic_t shitsfree = 0;
 
@@ -10703,7 +10676,7 @@ static void M_DrawMonitorToggles(void)
 				continue;
 			}
 
-			cv = kartitemcvs[currentMenu->menuitems[thisitem].alphaKey-1];
+			cv = KartItemCVars[currentMenu->menuitems[thisitem].alphaKey-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			switch (currentMenu->menuitems[thisitem].alphaKey)
@@ -10772,7 +10745,7 @@ static void M_DrawMonitorToggles(void)
 		}
 		else
 		{
-			cv = kartitemcvs[currentMenu->menuitems[itemOn].alphaKey-1];
+			cv = KartItemCVars[currentMenu->menuitems[itemOn].alphaKey-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			switch (currentMenu->menuitems[itemOn].alphaKey)
@@ -10888,14 +10861,14 @@ static void M_HandleMonitorToggles(INT32 choice)
 				S_StartSound(NULL, sfx_s1b4);
 				for (i = 0; i < NUMKARTRESULTS-1; i++)
 				{
-					if (kartitemcvs[i]->value == v)
-						CV_AddValue(kartitemcvs[i], 1);
+					if (KartItemCVars[i]->value == v)
+						CV_AddValue(KartItemCVars[i], 1);
 				}
 			}
 			else
 			{
 				S_StartSound(NULL, sfx_s1ba);
-				CV_AddValue(kartitemcvs[currentMenu->menuitems[itemOn].alphaKey-1], 1);
+				CV_AddValue(KartItemCVars[currentMenu->menuitems[itemOn].alphaKey-1], 1);
 			}
 			break;
 
