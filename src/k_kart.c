@@ -2274,7 +2274,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
 	{
 		fixed_t dashval = ((player->kartstuff[k_flamedash]<<FRACBITS) / TICRATE) / 20; // 1 second = +5% top speed
-		ADDBOOST(FRACUNIT/3 + dashval, FRACUNIT); // + infinite top speed, + 100% acceleration
+		ADDBOOST(FRACUNIT/2 + dashval, 2*FRACUNIT); // + infinite top speed, + 100% acceleration
 	}
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
@@ -5544,7 +5544,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 	if (player->kartstuff[k_flamedash]) // Reduce turning
 	{
-		fixed_t dashval = ((player->kartstuff[k_flamedash]<<FRACBITS) / TICRATE) / 20; // 1 second = -5% handling
+		fixed_t dashval = ((player->kartstuff[k_flamedash]<<FRACBITS) / TICRATE) / 40; // 1 second = -2.5% handling
 		if (dashval > FRACUNIT)
 			return 0; // NO MORE TURNING!
 		turnvalue = FixedMul(turnvalue, FRACUNIT-dashval);
@@ -6414,6 +6414,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								S_StartSound(player->mo, sfx_s3k3f);
 								player->kartstuff[k_curshield] = KSHIELD_BUBBLE;
 							}
+							break;
 						case KITEM_FLAMESHIELD:
 							if (player->kartstuff[k_curshield] != KSHIELD_FLAME)
 							{
@@ -6433,11 +6434,18 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										if (player->kartstuff[k_flamedash] == 0)
 											K_PlayBoostTaunt(player->mo);
 										player->kartstuff[k_flamedash]++;
+										if (player->kartstuff[k_flamedash] > 10*TICRATE)
+										{
+											K_FlameShieldPop(player->mo);
+											player->kartstuff[k_flamedash] = 0;
+											player->kartstuff[k_flameready] = 0;
+											player->kartstuff[k_itemamount]--;
+										}
 									}
 								}
 								else
 								{
-									if (player->kartstuff[k_flamedash] > TICRATE)
+									if (player->kartstuff[k_flamedash] > (TICRATE*2))
 									{
 										K_FlameShieldPop(player->mo);
 										player->kartstuff[k_flamedash] = 0;
@@ -7861,11 +7869,15 @@ static void K_drawKartItem(void)
 					localbg = kp_itembg[offset+1];
 					break;
 				case KITEM_BUBBLESHIELD:
+					
 					localpatch = kp_bubbleshield[offset];
 					localbg = kp_itembg[offset+1];
 					break;
 				case KITEM_FLAMESHIELD:
-					localpatch = kp_flameshield[offset];
+					if (stplyr->kartstuff[k_flamedash] > (TICRATE*2) && (leveltime & 1))
+						localpatch = kp_nodraw;
+					else
+						localpatch = kp_flameshield[offset];
 					localbg = kp_itembg[offset+1];
 					break;
 				case KITEM_HYUDORO:
