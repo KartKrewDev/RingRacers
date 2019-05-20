@@ -556,6 +556,8 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_grow);
 	CV_RegisterVar(&cv_shrink);
 	CV_RegisterVar(&cv_thundershield);
+	CV_RegisterVar(&cv_bubbleshield);
+	CV_RegisterVar(&cv_flameshield);
 	CV_RegisterVar(&cv_hyudoro);
 	CV_RegisterVar(&cv_pogospring);
 	CV_RegisterVar(&cv_superring);
@@ -808,6 +810,8 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 		cv_grow.value,
 		cv_shrink.value,
 		cv_thundershield.value,
+		cv_bubbleshield.value,
+		cv_flameshield.value,
 		cv_hyudoro.value,
 		cv_pogospring.value,
 		cv_superring.value,
