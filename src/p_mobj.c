@@ -8399,6 +8399,100 @@ void P_MobjThinker(mobj_t *mobj)
 			P_TeleportMove(mobj, destx, desty, mobj->target->z);
 			break;
 		}
+		case MT_BUBBLESHIELD:
+		{
+			fixed_t destx, desty;
+			fixed_t scale;
+			statenum_t curstate;
+
+			if (!mobj->target || !mobj->target->health || !mobj->target->player
+				|| mobj->target->player->kartstuff[k_curshield] != KSHIELD_BUBBLE)
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
+			scale = (5*mobj->target->destscale)>>2;
+			curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
+
+			if (mobj->target->player->kartstuff[k_bubbleblowup])
+			{
+				INT32 blow = mobj->target->player->kartstuff[k_bubbleblowup];
+
+				if (curstate != S_BUBBLESHIELDBLOWUP)
+					P_SetMobjState(mobj, S_BUBBLESHIELDBLOWUP);
+
+				mobj->flags2 &= ~MF2_SHADOW;
+				scale += (blow * (scale<<1)) / bubbletime;
+
+				mobj->frame = (states[S_BUBBLESHIELDBLOWUP].frame + mobj->extravalue1);
+
+				if (mobj->extravalue1 < 4 && mobj->extravalue2 < blow && !mobj->cvmem && (leveltime & 1)) // Growing
+				{
+					mobj->extravalue1++;
+					if (mobj->extravalue1 >= 4)
+						mobj->cvmem = 1; // shrink back down
+				}
+				else if ((mobj->extravalue1 > -4 && mobj->extravalue2 > blow)
+					|| (mobj->cvmem && mobj->extravalue1 > 0)) // Shrinking
+					mobj->extravalue1--;
+			}
+			else
+			{
+				mobj->cvmem = 0;
+
+				if (curstate == S_BUBBLESHIELDBLOWUP)
+				{
+					if (mobj->extravalue1 != 0)
+					{
+						mobj->frame = (states[S_BUBBLESHIELDBLOWUP].frame + mobj->extravalue1);
+
+						if (mobj->extravalue1 < 0 && (leveltime & 1))
+							mobj->extravalue1++;
+						else if (mobj->extravalue1 > 0)
+							mobj->extravalue1--;
+					}
+					else
+					{
+						P_SetMobjState(mobj, S_BUBBLESHIELD1);
+						mobj->extravalue1 = 0;
+					}
+				}
+				else
+				{
+					if (mobj->target->player->kartstuff[k_bubblecool] && ((curstate-S_BUBBLESHIELD1) & 1))
+						mobj->flags2 |= MF2_SHADOW;
+					else
+						mobj->flags2 &= ~MF2_SHADOW;
+				}
+			}
+
+			mobj->extravalue2 = mobj->target->player->kartstuff[k_bubbleblowup];
+			P_SetScale(mobj, (mobj->destscale = scale));
+
+			if (!splitscreen /*&& rendermode != render_soft*/)
+			{
+				angle_t viewingangle;
+
+				if (players[displayplayers[0]].awayviewtics)
+					viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+				else if (!camera[0].chase && players[displayplayers[0]].mo)
+					viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
+				else
+					viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
+
+				destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
+				desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
+			}
+			else
+			{
+				destx = mobj->target->x;
+				desty = mobj->target->y;
+			}
+
+			P_TeleportMove(mobj, destx, desty, mobj->target->z);
+			break;
+		}
 		case MT_FLAMESHIELD:
 		{
 			fixed_t destx, desty;
@@ -9120,6 +9214,69 @@ void P_MobjThinker(mobj_t *mobj)
 					else
 						mobj->momz = (mobj->info->speed/16) * P_MobjFlip(mobj);
 				}
+			}
+			break;
+		case MT_BUBBLESHIELDTRAP:
+			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->player)
+			{
+				player_t *player = mobj->tracer->player;
+
+				mobj->extravalue1 = 1;
+
+				P_TeleportMove(mobj,
+					mobj->tracer->x + P_ReturnThrustX(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
+					mobj->tracer->y + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
+					mobj->tracer->z + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
+
+				mobj->cvmem /= 2;
+				mobj->momz = 0;
+				mobj->destscale = (5*mobj->tracer->scale)>>2;
+
+				mobj->tracer->momx = (31*mobj->tracer->momx)/32;
+				mobj->tracer->momy = (31*mobj->tracer->momy)/32;
+				mobj->tracer->momz = (8*mobj->tracer->scale) * P_MobjFlip(mobj->tracer);
+
+				if (mobj->movecount > 8*TICRATE)
+				{
+					S_StartSound(mobj->tracer, sfx_s3k77);
+					mobj->tracer->flags &= ~MF_NOGRAVITY;
+					P_KillMobj(mobj, mobj->tracer, mobj->tracer);
+					break;
+				}
+
+				if (abs(player->cmd.driftturn) > 100)
+				{
+					INT32 lastsign = 0;
+					if (mobj->lastlook > 0)
+						lastsign = 1;
+					else if (mobj->lastlook < 0)
+						lastsign = -1;
+
+					if ((player->cmd.driftturn > 0 && lastsign < 0)
+						|| (player->cmd.driftturn < 0 && lastsign > 0))
+					{
+						mobj->movecount += (TICRATE/2);
+						mobj->cvmem = 8*lastsign;
+						S_StartSound(mobj, sfx_s3k7a);
+					}
+
+					mobj->lastlook = player->cmd.driftturn;
+				}
+
+				mobj->movecount++;
+			}
+			else if (mobj->extravalue1) // lost your player somehow, DIE
+			{
+				mobj->tracer->flags &= ~MF_NOGRAVITY;
+				P_KillMobj(mobj, NULL, NULL);
+				break;
+			}
+			else
+			{
+				mobj->momz = 0;
+				mobj->destscale = (5*mapobjectscale)>>2;
+				if (mobj->threshold > 0)
+					mobj->threshold--;
 			}
 			break;
 		case MT_KARMAFIREWORK:
@@ -10179,7 +10336,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_SSMINE:			case MT_SSMINE_SHIELD:
 		case MT_BALLHOG:		case MT_SINK:
 		case MT_THUNDERSHIELD:	case MT_BUBBLESHIELD:	case MT_FLAMESHIELD:
-		case MT_ROCKETSNEAKER:
+		case MT_ROCKETSNEAKER:	case MT_BUBBLESHIELDTRAP:
 		case MT_SPB:
 			P_SpawnShadowMobj(mobj);
 		default:

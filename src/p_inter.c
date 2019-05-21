@@ -595,11 +595,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				mobj_t *spbexplode;
 
-				if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
+				if (player->kartstuff[k_bubbleblowup] > 0)
 				{
-					//player->powers[pw_flashing] = 0;
 					K_DropHnextList(player);
-					K_StripItems(player);
+					special->extravalue1 = 2; // WAIT...
+					special->extravalue2 = 52; // Slightly over the respawn timer length
+					return;
 				}
 
 				S_StopSound(special); // Don't continue playing the gurgle or the siren
@@ -675,6 +676,59 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_BALLOON: // SRB2kart
 			P_SetObjectMomZ(toucher, 20<<FRACBITS, false);
 			break;
+		case MT_BUBBLESHIELD:
+			if (special->target == toucher)
+				return;
+
+			if (special->health <= 0 || toucher->health <= 0)
+				return;
+
+			if (player->spectator)
+				return;
+
+			if (special->target->player && special->target->player->kartstuff[k_bubbleblowup]
+				&& !player->kartstuff[k_spinouttimer])
+			{
+				K_SpinPlayer(player, special->target, 0, special, false);
+				if (player->kartstuff[k_spinouttimer]) // Successfully spun out
+					K_KartBouncing(toucher, special, false, true);
+			}
+			return;
+		case MT_BUBBLESHIELDTRAP:
+			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
+				return;
+
+			if (special->tracer && !P_MobjWasRemoved(special->tracer))
+				return;
+
+			if (special->health <= 0 || toucher->health <= 0)
+				return;
+
+			if (!player->mo || player->spectator)
+				return;
+
+			// kill
+			/*if (player->kartstuff[k_invincibilitytimer] > 0
+				|| player->kartstuff[k_growshrinktimer] > 0
+				|| player->kartstuff[k_flamedash] > 0)
+			{
+				P_KillMobj(special, toucher, toucher);
+				return;
+			}*/
+
+			// no interaction
+			if (player->powers[pw_flashing] > 0 || player->kartstuff[k_hyudorotimer] > 0
+				|| player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0)
+				return;
+
+			// attach to player!
+			P_SetTarget(&special->tracer, toucher);
+			toucher->flags |= MF_NOGRAVITY;
+			toucher->momx = (4*toucher->momx)/5; // Huge initial speed cut
+			toucher->momy = (4*toucher->momy)/5;
+			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
+			//S_StartSound(special, sfx_s1a2);
+			return;
 
 // ***************************************** //
 // Rings, coins, spheres, weapon panels, etc //

@@ -300,21 +300,22 @@ typedef enum
 	k_itemtype,		// KITEM_ constant for item number
 	k_itemamount,	// Amount of said item
 	k_itemheld,		// Are you holding an item?
+	k_holdready,	// Hold button-style item is ready to activate
 
 	// Some items use timers for their duration or effects
-	//k_thunderanim,			// Duration of Thunder Shield's use animation
 	k_curshield,			// 0 = no shield, 1 = thunder shield
 	k_hyudorotimer,			// Duration of the Hyudoro offroad effect itself
 	k_stealingtimer,		// You are stealing an item, this is your timer
 	k_stolentimer,			// You are being stolen from, this is your timer
 	k_superring,			// Spawn rings on top of you every tic!
 	k_sneakertimer,			// Duration of the Sneaker Boost itself
-	k_levelbooster,			// Duration of a level booster's boost (same as sneaker, but separated for )
+	k_levelbooster,			// Duration of a level booster's boost (same as sneaker, but separated for boost stacking)
 	k_growshrinktimer,		// > 0 = Big, < 0 = small
 	k_squishedtimer,		// Squished frame timer
 	k_rocketsneakertimer,	// Rocket Sneaker duration timer
 	k_invincibilitytimer,	// Invincibility timer
-	k_flameready,			// Flame Shield dash ready to activate
+	k_bubblecool,			// Bubble Shield use cooldown
+	k_bubbleblowup,			// Bubble Shield usage blowup
 	k_flamedash,			// Flame Shield dash power
 	k_eggmanheld,			// Eggman monitor held, separate from k_itemheld so it doesn't stop you from getting items
 	k_eggmanexplode,		// Fake item recieved, explode in a few seconds

@@ -697,7 +697,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 				  /*Grow*/ { 0, 0, 0, 1, 1, 2, 0, 0 }, // Grow
 				/*Shrink*/ { 0, 0, 0, 0, 0, 0, 2, 0 }, // Shrink
 		/*Thunder Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Thunder Shield
-		 /*Bubble Shield*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Bubble Shield
+		 /*Bubble Shield*/ { 0, 0, 0, 1, 2, 0, 0, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0, 0, 0, 0, 0, 1, 2 }, // Flame Shield
 			   /*Hyudoro*/ { 0, 0, 0, 1, 2, 1, 0, 0 }, // Hyudoro
 		   /*Pogo Spring*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
@@ -1304,8 +1304,11 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 		case MT_PLAYER:
 			if (!mobj->player)
 				break;
-			if (against->player && !against->player->kartstuff[k_spinouttimer] && mobj->player->kartstuff[k_spinouttimer])
-				weight = 0; // Do not bump
+			if (against->player
+				&& ((!against->player->kartstuff[k_spinouttimer] && mobj->player->kartstuff[k_spinouttimer])
+				|| (against->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD && mobj->player->kartstuff[k_itemtype] != KITEM_BUBBLESHIELD)
+				|| (against->type == MT_BUBBLESHIELD)))
+				weight = 0; // This player does not cause any bump action
 			else
 			{
 				weight = (mobj->player->kartweight) * mobj->scale;
@@ -3856,7 +3859,6 @@ static void K_DoThunderShield(player_t *player)
 	angle_t an;
 
 	S_StartSound(player->mo, sfx_zio3);
-	//player->kartstuff[k_thunderanim] = 35;
 	P_NukeEnemies(player->mo, player->mo, RING_DIST/4);
 
 	// spawn vertical bolt
@@ -4221,14 +4223,20 @@ void K_DropHnextList(player_t *player)
 		K_DoThunderShield(player);
 		player->kartstuff[k_itemtype] = KITEM_NONE;
 		player->kartstuff[k_itemamount] = 0;
-		player->kartstuff[k_curshield] = 0;
+		player->kartstuff[k_curshield] = KSHIELD_NONE;
+	}
+	else if (player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD)
+	{
+		player->kartstuff[k_itemtype] = KITEM_NONE;
+		player->kartstuff[k_itemamount] = 0;
+		player->kartstuff[k_curshield] = KSHIELD_NONE;
 	}
 	else if (player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 	{
-		//K_PopFlameShield(player);
+		K_FlameShieldPop(player->mo);
 		player->kartstuff[k_itemtype] = KITEM_NONE;
 		player->kartstuff[k_itemamount] = 0;
-		player->kartstuff[k_curshield] = 0;
+		player->kartstuff[k_curshield] = KSHIELD_NONE;
 	}
 
 	nextwork = work->hnext;
@@ -5043,6 +5051,68 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 #undef RINGANIM_DELAYMAX
 
+// SRB2Kart: blockmap iterate for attraction shield users
+static mobj_t *attractmo;
+static fixed_t attractdist;
+static inline boolean PIT_AttractingRings(mobj_t *thing)
+{
+	if (!attractmo || P_MobjWasRemoved(attractmo))
+		return false;
+
+	if (!attractmo->player)
+		return false; // not a player
+
+	if (thing->health <= 0 || !thing)
+		return true; // dead
+
+	if (thing->type != MT_RING && thing->type != MT_FLINGRING)
+		return true; // not a ring
+
+	if (thing->extravalue1)
+		return true; // in special ring animation
+
+	if (thing->cusval)
+		return true; // already attracted
+
+	// see if it went over / under
+	if (attractmo->z - (attractdist>>2) > thing->z + thing->height)
+		return true; // overhead
+	if (attractmo->z + attractmo->height + (attractdist>>2) < thing->z)
+		return true; // underneath
+
+	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) < attractdist)
+		return true; // Too far away
+
+	// set target
+	P_SetTarget(&thing->tracer, attractmo);
+	// flag to show it's been attracted once before
+	thing->cusval = 1;
+	return true; // find other rings
+}
+
+/** Looks for rings near a player in the blockmap.
+  *
+  * \param pmo Player object looking for rings to attract
+  * \sa A_AttractChase
+  */
+static void K_LookForRings(mobj_t *pmo)
+{
+	INT32 bx, by, xl, xh, yl, yh;
+	attractdist = FixedMul(RING_DIST, pmo->scale)>>2;
+
+	// Use blockmap to check for nearby rings
+	yh = (unsigned)(pmo->y + attractdist - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(pmo->y - attractdist - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(pmo->x + attractdist - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(pmo->x - attractdist - bmaporgx)>>MAPBLOCKSHIFT;
+
+	attractmo = pmo;
+
+	for (by = yl; by <= yh; by++)
+		for (bx = xl; bx <= xh; bx++)
+			P_BlockThingsIterator(bx, by, PIT_AttractingRings);
+}
+
 /**	\brief	Decreases various kart timers and powers per frame. Called in P_PlayerThink in p_user.c
 
 	\param	player	player object passed from P_PlayerThink
@@ -5191,6 +5261,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->mo->colorized = false;
 	}
+
+	if (player->kartstuff[k_itemtype] == KITEM_NONE)
+		player->kartstuff[k_holdready] = 0;
 
 	// DKR style camera for boosting
 	if (player->karthud[khud_boostcam] != 0 || player->karthud[khud_destboostcam] != 0)
@@ -5380,6 +5453,31 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					P_SetTarget(&eggsexplode->target, players[player->kartstuff[k_eggmanblame]].mo);
 			}
 		}
+	}
+
+	if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+	{
+		if (RINGTOTAL(player) < 20 && !player->kartstuff[k_ringlock])
+			K_LookForRings(player->mo);
+	}
+
+	if (player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD)
+	{
+		if (player->kartstuff[k_bubblecool])
+			player->kartstuff[k_bubblecool]--;
+	}
+	else
+	{
+		player->kartstuff[k_bubbleblowup] = 0;
+		player->kartstuff[k_bubblecool] = 0;
+	}
+
+	if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD
+		|| player->exiting || player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer])
+	{
+		if (player->kartstuff[k_flamedash])
+			K_FlameShieldPop(player->mo);
+		player->kartstuff[k_flamedash] = 0;
 	}
 
 	// ???
@@ -5890,8 +5988,7 @@ void K_StripItems(player_t *player)
 	player->kartstuff[k_stealingtimer] = 0;
 	player->kartstuff[k_stolentimer] = 0;
 
-	player->kartstuff[k_curshield] = 0;
-	//player->kartstuff[k_thunderanim] = 0;
+	player->kartstuff[k_curshield] = KSHIELD_NONE;
 	player->kartstuff[k_bananadrag] = 0;
 
 	player->kartstuff[k_sadtimer] = 0;
@@ -5912,68 +6009,6 @@ void K_StripOther(player_t *player)
 		player->kartstuff[k_eggmanexplode] = 0;
 		player->kartstuff[k_eggmanblame] = -1;
 	}
-}
-
-// SRB2Kart: blockmap iterate for attraction shield users
-static mobj_t *attractmo;
-static fixed_t attractdist;
-static inline boolean PIT_AttractingRings(mobj_t *thing)
-{
-	if (!attractmo || P_MobjWasRemoved(attractmo))
-		return false;
-
-	if (!attractmo->player)
-		return false; // not a player
-
-	if (thing->health <= 0 || !thing)
-		return true; // dead
-
-	if (thing->type != MT_RING && thing->type != MT_FLINGRING)
-		return true; // not a ring
-
-	if (thing->extravalue1)
-		return true; // in special ring animation
-
-	if (thing->cusval)
-		return true; // already attracted
-
-	// see if it went over / under
-	if (attractmo->z - (attractdist>>2) > thing->z + thing->height)
-		return true; // overhead
-	if (attractmo->z + attractmo->height + (attractdist>>2) < thing->z)
-		return true; // underneath
-
-	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) < attractdist)
-		return true; // Too far away
-
-	// set target
-	P_SetTarget(&thing->tracer, attractmo);
-	// flag to show it's been attracted once before
-	thing->cusval = 1;
-	return true; // find other rings
-}
-
-/** Looks for rings near a player in the blockmap.
-  *
-  * \param pmo Player object looking for rings to attract
-  * \sa A_AttractChase
-  */
-static void K_LookForRings(mobj_t *pmo)
-{
-	INT32 bx, by, xl, xh, yl, yh;
-	attractdist = FixedMul(RING_DIST, pmo->scale)>>2;
-
-	// Use blockmap to check for nearby rings
-	yh = (unsigned)(pmo->y + attractdist - bmaporgy)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(pmo->y - attractdist - bmaporgy)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(pmo->x + attractdist - bmaporgx)>>MAPBLOCKSHIFT;
-	xl = (unsigned)(pmo->x - attractdist - bmaporgx)>>MAPBLOCKSHIFT;
-
-	attractmo = pmo;
-
-	for (by = yl; by <= yh; by++)
-		for (bx = xl; bx <= xh; bx++)
-			P_BlockThingsIterator(bx, by, PIT_AttractingRings);
 }
 
 //
@@ -6408,11 +6443,43 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_BUBBLESHIELD:
 							if (player->kartstuff[k_curshield] != KSHIELD_BUBBLE)
 							{
-								//mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BUBBLESHIELD);
-								//P_SetScale(shield, (shield->destscale = (5*shield->destscale)>>2));
-								//P_SetTarget(&shield->target, player->mo);
+								mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BUBBLESHIELD);
+								P_SetScale(shield, (shield->destscale = (5*shield->destscale)>>2));
+								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k3f);
 								player->kartstuff[k_curshield] = KSHIELD_BUBBLE;
+							}
+
+							if (!HOLDING_ITEM && NO_HYUDORO)
+							{
+								if (cmd->buttons & BT_ATTACK)
+								{
+									if (player->kartstuff[k_holdready])
+									{
+										if (player->kartstuff[k_bubbleblowup] == 0)
+											K_PlayAttackTaunt(player->mo);
+										player->kartstuff[k_bubbleblowup]++;
+										player->kartstuff[k_bubblecool] = TICRATE+bubbletime;
+										if (player->kartstuff[k_bubbleblowup] > bubbletime)
+										{
+											mobj_t *trap = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BUBBLESHIELDTRAP);
+											P_SetScale(trap, (5*trap->destscale)>>1);
+											trap->destscale = (5*trap->destscale)>>2;
+											P_SetTarget(&trap->target, player->mo);
+											trap->threshold = 10;
+											S_StartSound(player->mo, sfx_s3k44);
+
+											player->kartstuff[k_bubbleblowup] = 0;
+											player->kartstuff[k_itemamount]--;
+										}
+									}
+								}
+								else
+								{
+									if (player->kartstuff[k_bubbleblowup])
+										player->kartstuff[k_bubbleblowup]--;
+									player->kartstuff[k_holdready] = (player->kartstuff[k_bubblecool] ? 0 : 1);
+								}
 							}
 							break;
 						case KITEM_FLAMESHIELD:
@@ -6429,7 +6496,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								if (cmd->buttons & BT_ATTACK)
 								{
-									if (player->kartstuff[k_flameready])
+									if (player->kartstuff[k_holdready])
 									{
 										if (player->kartstuff[k_flamedash] == 0)
 											K_PlayBoostTaunt(player->mo);
@@ -6438,7 +6505,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										{
 											K_FlameShieldPop(player->mo);
 											player->kartstuff[k_flamedash] = 0;
-											player->kartstuff[k_flameready] = 0;
+											player->kartstuff[k_holdready] = 0;
 											player->kartstuff[k_itemamount]--;
 										}
 									}
@@ -6449,13 +6516,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										K_FlameShieldPop(player->mo);
 										player->kartstuff[k_flamedash] = 0;
-										player->kartstuff[k_flameready] = 0;
+										player->kartstuff[k_holdready] = 0;
 										player->kartstuff[k_itemamount]--;
 									}
 									else
 									{
 										player->kartstuff[k_flamedash] = 0;
-										player->kartstuff[k_flameready] = 1;
+										player->kartstuff[k_holdready] = 1;
 									}
 								}
 							}
@@ -6534,21 +6601,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		if (spbplace == -1 || player->kartstuff[k_position] != spbplace)
 			player->kartstuff[k_ringlock] = 0; // reset ring lock
-
-		if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
-		{
-			if (RINGTOTAL(player) < 20 && !player->kartstuff[k_ringlock])
-				K_LookForRings(player->mo);
-		}
-
-		if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD
-			|| player->exiting || player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer])
-		{
-			if (player->kartstuff[k_flamedash])
-				K_FlameShieldPop(player->mo);
-			player->kartstuff[k_flamedash] = 0;
-			player->kartstuff[k_flameready] = 0;
-		}
 
 		if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) == KSHIELD_NONE)
 			player->kartstuff[k_curshield] = KSHIELD_NONE; // RESET shield type
