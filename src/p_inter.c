@@ -676,19 +676,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_BALLOON: // SRB2kart
 			P_SetObjectMomZ(toucher, 20<<FRACBITS, false);
 			break;
-		case MT_BUBBLESHIELD:
-			if (special->target == toucher)
-				return;
-
-			if (special->health <= 0 || toucher->health <= 0)
-				return;
-
-			if (player->spectator)
-				return;
-
-			if (special->target->player && special->target->player->kartstuff[k_bubbleblowup])
-				K_SpinPlayer(player, special->target, 0, special, false);
-			return;
 		case MT_BUBBLESHIELDTRAP:
 			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
 				return;
@@ -719,10 +706,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			// attach to player!
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
-			toucher->momx = (4*toucher->momx)/5; // Huge initial speed cut
-			toucher->momy = (4*toucher->momy)/5;
+			toucher->momx = (15*toucher->momx)/16; // Huge initial speed cut
+			toucher->momy = (15*toucher->momy)/16;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
-			//S_StartSound(special, sfx_s1a2);
+			S_StartSound(toucher, sfx_s1b2); 
 			return;
 
 // ***************************************** //

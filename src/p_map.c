@@ -723,6 +723,110 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	if (tmthing->type == MT_RANDOMITEM)
 		return true;
 
+	// Bubble Shield reflect
+	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->kartstuff[k_bubbleblowup])
+		|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
+		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
+		|| tmthing->type == MT_SSMINE || tmthing->type == MT_SINK
+		|| (tmthing->type == MT_PLAYER && thing->target != tmthing)))
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		if (tmthing->type == MT_PLAYER)
+		{
+			if (tmthing->player->kartstuff[k_spinouttimer] || tmthing->player->kartstuff[k_squishedtimer]
+				|| tmthing->player->powers[pw_flashing] || tmthing->player->kartstuff[k_hyudorotimer]
+				|| tmthing->player->kartstuff[k_justbumped] || tmthing->scale > thing->scale + (mapobjectscale/8))
+				return true;
+
+			// Player Damage
+			P_DamageMobj(tmthing, thing, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), 1);
+			K_KartBouncing(tmthing, thing, false, true);
+			S_StartSound(thing, sfx_s3k44);
+		}
+		else
+		{
+			if (!tmthing->threshold)
+			{
+				if (!tmthing->momx && !tmthing->momy)
+				{
+					tmthing->momz += (24*tmthing->scale) * P_MobjFlip(tmthing);
+				}
+				else
+				{
+					tmthing->momx = -tmthing->momx;
+					tmthing->momy = -tmthing->momy;
+					tmthing->momz = -tmthing->momz;
+				}
+				if (tmthing->type == MT_JAWZ)
+					P_SetTarget(&tmthing->tracer, tmthing->target); // Back to the source!
+				tmthing->threshold = 10;
+				S_StartSound(thing, sfx_s3k44);
+			}
+		}
+
+		// no interaction
+		return true;
+	}
+	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->kartstuff[k_bubbleblowup])
+		|| (tmthing->player && tmthing->player->kartstuff[k_bubbleblowup]))
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
+		|| thing->type == MT_SSMINE || thing->type == MT_SINK
+		|| (thing->type == MT_PLAYER && tmthing->target != thing)))
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		if (thing->type == MT_PLAYER)
+		{
+			if (thing->player->kartstuff[k_spinouttimer] || thing->player->kartstuff[k_squishedtimer]
+				|| thing->player->powers[pw_flashing] || thing->player->kartstuff[k_hyudorotimer]
+				|| thing->player->kartstuff[k_justbumped] || thing->scale > tmthing->scale + (mapobjectscale/8))
+				return true;
+
+			// Player Damage
+			P_DamageMobj(thing, tmthing, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), 1);
+			K_KartBouncing(thing, tmthing, false, true);
+			S_StartSound(tmthing, sfx_s3k44);
+		}
+		else
+		{
+			if (!thing->threshold)
+			{
+				if (!thing->momx && !thing->momy)
+				{
+					thing->momz += (24*thing->scale) * P_MobjFlip(thing);
+				}
+				else
+				{
+					thing->momx = -thing->momx;
+					thing->momy = -thing->momy;
+					thing->momz = -thing->momz;
+				}
+				if (thing->type == MT_JAWZ)
+					P_SetTarget(&thing->tracer, thing->target); // Back to the source!
+				thing->threshold = 10;
+				S_StartSound(tmthing, sfx_s3k44);
+			}
+		}
+
+		// no interaction
+		return true;
+	}
+
+	// double make sure bubbles won't collide with anything else
+	if (thing->type == MT_BUBBLESHIELD || tmthing->type == MT_BUBBLESHIELD)
+		return true;
+
 	if (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
 		|| tmthing->type == MT_ORBINAUT_SHIELD || tmthing->type == MT_JAWZ_SHIELD)
 	{
@@ -749,29 +853,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (thing->player && thing->player->kartstuff[k_hyudorotimer])
 			return true; // no interaction
-
-		if ((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->kartstuff[k_bubbleblowup])
-			|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
-		{
-			if (!tmthing->threshold)
-			{
-				if (!tmthing->momx && !tmthing->momy)
-				{
-					tmthing->momz = (32*tmthing->scale) * P_MobjFlip(tmthing);
-				}
-				else
-				{
-					tmthing->momx = -tmthing->momx;
-					tmthing->momy = -tmthing->momy;
-					tmthing->momz = -tmthing->momz;
-				}
-				if (tmthing->type == MT_JAWZ)
-					P_SetTarget(&tmthing->tracer, tmthing->target); // Back to the source!
-				tmthing->threshold = 10;
-				S_StartSound(tmthing, sfx_s3k44);
-			}
-			return true;
-		}
 
 		if (thing->type == MT_PLAYER)
 		{
@@ -874,27 +955,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (thing->player && thing->player->powers[pw_flashing])
 			return true;
 
-		if ((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->kartstuff[k_bubbleblowup])
-			|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
-		{
-			if (!tmthing->threshold)
-			{
-				if (!tmthing->momx && !tmthing->momy)
-				{
-					tmthing->momz = (32*tmthing->scale) * P_MobjFlip(tmthing);
-				}
-				else
-				{
-					tmthing->momx = -tmthing->momx;
-					tmthing->momy = -tmthing->momy;
-					tmthing->momz = -tmthing->momz;
-				}
-				tmthing->threshold = 10;
-				S_StartSound(tmthing, sfx_s3k44);
-			}
-			return true;
-		}
-
 		if (thing->type == MT_PLAYER)
 		{
 			S_StartSound(NULL, sfx_bsnipe); //let all players hear it.
@@ -956,27 +1016,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (thing->player && thing->player->powers[pw_flashing])
 			return true;
-
-		if ((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->kartstuff[k_bubbleblowup])
-			|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
-		{
-			if (!tmthing->threshold)
-			{
-				if (!tmthing->momx && !tmthing->momy)
-				{
-					tmthing->momz = (32*tmthing->scale) * P_MobjFlip(tmthing);
-				}
-				else
-				{
-					tmthing->momx = -tmthing->momx;
-					tmthing->momy = -tmthing->momy;
-					tmthing->momz = -tmthing->momz;
-				}
-				tmthing->threshold = 10;
-				S_StartSound(tmthing, sfx_s3k44);
-			}
-			return true;
-		}
 
 		if (thing->type == MT_PLAYER)
 		{
@@ -1050,28 +1089,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (thing->player && thing->player->powers[pw_flashing])
 			return true;
 
-		// Bubble Shield reflect
-		if ((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->kartstuff[k_bubbleblowup])
-			|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
-		{
-			if (!tmthing->threshold)
-			{
-				if (!tmthing->momx && !tmthing->momy)
-				{
-					tmthing->momz = (32*tmthing->scale) * P_MobjFlip(tmthing);
-				}
-				else
-				{
-					tmthing->momx = -tmthing->momx;
-					tmthing->momy = -tmthing->momy;
-					tmthing->momz = -tmthing->momz;
-				}
-				tmthing->threshold = 10;
-				S_StartSound(tmthing, sfx_s3k44);
-			}
-			return true;
-		}
-
 		if (thing->type == MT_PLAYER)
 		{
 			// Bomb punting
@@ -1122,31 +1139,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (tmthing->player && tmthing->player->kartstuff[k_hyudorotimer]) // I thought about doing this for just the objects below but figured it should apply to everything.
 			return true; // no interaction
-
-		// Bubble Shield reflect
-		if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->kartstuff[k_bubbleblowup])
-			|| (tmthing->player && tmthing->player->kartstuff[k_bubbleblowup]))
-			&& (thing->type != MT_MINEEXPLOSION))
-		{
-			if (!thing->threshold)
-			{
-				if (!thing->momx && !thing->momy)
-				{
-					thing->momz = (32*thing->scale) * P_MobjFlip(thing);
-				}
-				else
-				{
-					thing->momx = -thing->momx;
-					thing->momy = -thing->momy;
-					thing->momz = -thing->momz;
-				}
-				if (thing->type == MT_JAWZ)
-					P_SetTarget(&thing->tracer, thing->target); // Back to the source!
-				thing->threshold = 10;
-				S_StartSound(thing, sfx_s3k44);
-			}
-			return true;
-		}
 
 		if (thing->type == MT_ORBINAUT_SHIELD || thing->type == MT_JAWZ_SHIELD
 			|| thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD)

@@ -6227,24 +6227,25 @@ void P_RunShadows(void)
 			|| (!(mobj->target->eflags & MFE_VERTICALFLIP) && mobj->target->z < floorz))
 			mobj->flags2 |= MF2_DONTDRAW;
 
-		rad = mobj->info->radius;
+		rad = mobj->target->radius;
 
-		switch (mobj->type)
+		switch (mobj->target->type)
 		{
 			case MT_FLOATINGITEM:
 				rad /= 3;
 				break;
 			case MT_THUNDERSHIELD:
 			case MT_BUBBLESHIELD:
+			case MT_BUBBLESHIELDTRAP:
 			case MT_FLAMESHIELD:
-				rad = 10<<FRACBITS;
+				rad = 20*mobj->target->scale;
 				break;
 			default:
 				break;
 		}
 
 		// First scale to the same radius
-		P_SetScale(mobj, FixedDiv(mobj->target->radius, rad));
+		P_SetScale(mobj, FixedDiv(rad, mobj->info->radius));
 
 		dest = mobj->target;
 
@@ -8383,7 +8384,7 @@ void P_MobjThinker(mobj_t *mobj)
 				P_RemoveMobj(mobj);
 				return;
 			}
-			P_SetScale(mobj, (mobj->destscale = (5*mobj->target->destscale)>>2));
+			P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
 			if (!splitscreen /*&& rendermode != render_soft*/)
 			{
@@ -8425,7 +8426,7 @@ void P_MobjThinker(mobj_t *mobj)
 				return;
 			}
 
-			scale = (5*mobj->target->destscale)>>2;
+			scale = (5*mobj->target->scale)>>2;
 			curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
 
 			if (mobj->target->player->kartstuff[k_bubbleblowup])
@@ -8437,7 +8438,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 				mobj->angle += ANGLE_22h;
 				mobj->flags2 &= ~MF2_SHADOW;
-				scale += (blow * (scale<<1)) / bubbletime;
+				scale += (blow * (3*scale)) / bubbletime;
 
 				mobj->frame = (states[S_BUBBLESHIELDBLOWUP].frame + mobj->extravalue1);
 
@@ -8453,28 +8454,30 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (P_IsObjectOnGround(mobj->target))
 				{
-					mobj_t *wave;
+					UINT8 i;
 
-					wave = P_SpawnMobj(
-						mobj->target->x + P_ReturnThrustX(NULL, mobj->angle, mobj->radius),
-						mobj->target->y + P_ReturnThrustY(NULL, mobj->angle, mobj->radius),
-						mobj->target->z, MT_THOK);
-					wave->flags &= ~(MF_NOCLIPHEIGHT|MF_NOGRAVITY);
-					wave->momx = mobj->target->momx;
-					wave->momy = mobj->target->momy;
-					wave->momz = mobj->target->momz;
-					P_SetMobjState(wave, S_BUBBLESHIELDWAVE1);
+					for (i = 0; i < 2; i++)
+					{
+						angle_t a = mobj->angle + ((i & 1) ? ANGLE_180 : 0);
+						fixed_t ws = (mobj->target->scale>>1);
+						mobj_t *wave;
 
-					// same thing, but + ANGLE_180
-					wave = P_SpawnMobj(
-						mobj->target->x + P_ReturnThrustX(NULL, mobj->angle + ANGLE_180, mobj->radius),
-						mobj->target->y + P_ReturnThrustY(NULL, mobj->angle + ANGLE_180, mobj->radius),
-						mobj->target->z, MT_THOK);
-					wave->flags &= ~(MF_NOCLIPHEIGHT|MF_NOGRAVITY);
-					wave->momx = mobj->target->momx;
-					wave->momy = mobj->target->momy;
-					wave->momz = mobj->target->momz;
-					P_SetMobjState(wave, S_BUBBLESHIELDWAVE1);
+						ws += (blow * ws) / bubbletime;
+
+						wave = P_SpawnMobj(
+							(mobj->target->x - mobj->target->momx) + P_ReturnThrustX(NULL, a, mobj->radius - (21*ws)),
+							(mobj->target->y - mobj->target->momy) + P_ReturnThrustY(NULL, a, mobj->radius - (21*ws)),
+							(mobj->target->z - mobj->target->momz), MT_THOK);
+
+						wave->flags &= ~(MF_NOCLIPHEIGHT|MF_NOGRAVITY);
+						P_SetScale(wave, (wave->destscale = ws));
+
+						wave->momx = mobj->target->momx;
+						wave->momy = mobj->target->momy;
+						wave->momz = mobj->target->momz;
+
+						P_SetMobjState(wave, S_BUBBLESHIELDWAVE1);
+					}
 				}
 			}
 			else
@@ -8545,7 +8548,7 @@ void P_MobjThinker(mobj_t *mobj)
 				P_RemoveMobj(mobj);
 				return;
 			}
-			P_SetScale(mobj, (mobj->destscale = (5*mobj->target->destscale)>>2));
+			P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
 			curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
 
@@ -9258,6 +9261,9 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			break;
 		case MT_BUBBLESHIELDTRAP:
+			if (leveltime % 180 == 0)
+				S_StartSound(mobj, sfx_s3kbfl);
+
 			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->player)
 			{
 				player_t *player = mobj->tracer->player;
@@ -9267,14 +9273,14 @@ void P_MobjThinker(mobj_t *mobj)
 				P_TeleportMove(mobj,
 					mobj->tracer->x + P_ReturnThrustX(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
 					mobj->tracer->y + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
-					mobj->tracer->z + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
+					mobj->tracer->z - (4*mobj->tracer->scale) + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
 
 				mobj->cvmem /= 2;
 				mobj->momz = 0;
-				mobj->destscale = (5*mobj->tracer->scale)>>2;
+				mobj->destscale = ((5*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
 
-				mobj->tracer->momx = (31*mobj->tracer->momx)/32;
-				mobj->tracer->momy = (31*mobj->tracer->momy)/32;
+				mobj->tracer->momx = (127*mobj->tracer->momx)/128;
+				mobj->tracer->momy = (127*mobj->tracer->momy)/128;
 				mobj->tracer->momz = (8*mobj->tracer->scale) * P_MobjFlip(mobj->tracer);
 
 				if (mobj->movecount > 8*TICRATE)

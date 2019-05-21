@@ -1298,6 +1298,31 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 //{ SRB2kart p_user.c Stuff
 
+static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
+{
+	fixed_t weight = 5*mobj->scale;
+
+	if (!mobj->player)
+		return weight;
+
+	if (against && !P_MobjWasRemoved(against) && against->player
+		&& ((!against->player->kartstuff[k_spinouttimer] && mobj->player->kartstuff[k_spinouttimer]) // You're in spinout
+		|| (against->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD && mobj->player->kartstuff[k_itemtype] != KITEM_BUBBLESHIELD))) // They have a Bubble Shield
+	{
+		weight = 0; // This player does not cause any bump action
+	}
+	else
+	{
+		weight = (mobj->player->kartweight) * mobj->scale;
+		if (mobj->player->speed > K_GetKartSpeed(mobj->player, false))
+			weight += (mobj->player->speed - K_GetKartSpeed(mobj->player, false))/8;
+		if (mobj->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD)
+			weight += 9*mobj->scale;
+	}
+
+	return weight;
+}
+
 static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 {
 	fixed_t weight = 5*mobj->scale;
@@ -1307,40 +1332,32 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 		case MT_PLAYER:
 			if (!mobj->player)
 				break;
-			if (against->player
-				&& ((!against->player->kartstuff[k_spinouttimer] && mobj->player->kartstuff[k_spinouttimer])
-				|| (against->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD && mobj->player->kartstuff[k_itemtype] != KITEM_BUBBLESHIELD)
-				|| (against->type == MT_BUBBLESHIELD)))
-				weight = 0; // This player does not cause any bump action
-			else
-			{
-				weight = (mobj->player->kartweight) * mobj->scale;
-				if (mobj->player->speed > K_GetKartSpeed(mobj->player, false))
-					weight += (mobj->player->speed - K_GetKartSpeed(mobj->player, false))/8;
-			}
+			weight = K_PlayerWeight(mobj, against);
+			break;
+		case MT_BUBBLESHIELD:
+			weight = K_PlayerWeight(mobj->target, against);
 			break;
 		case MT_FALLINGROCK:
 			if (against->player)
 			{
-				if (against->player->kartstuff[k_invincibilitytimer]
-					|| against->player->kartstuff[k_growshrinktimer] > 0)
+				if (against->player->kartstuff[k_invincibilitytimer] || against->player->kartstuff[k_growshrinktimer] > 0)
 					weight = 0;
 				else
-					weight = (against->player->kartweight) * against->scale;
+					weight = K_PlayerWeight(against, NULL);
 			}
 			break;
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
 			if (against->player)
-				weight = (against->player->kartweight) * against->scale;
+				weight = K_PlayerWeight(against, NULL);
 			break;
 		case MT_JAWZ:
 		case MT_JAWZ_DUD:
 		case MT_JAWZ_SHIELD:
 			if (against->player)
-				weight = (against->player->kartweight+3) * against->scale;
+				weight = K_PlayerWeight(against, NULL) + (3*against->scale);
 			else
-				weight = 8*mobj->scale;
+				weight += 3*mobj->scale;
 			break;
 		default:
 			break;
@@ -6460,18 +6477,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (player->kartstuff[k_holdready])
 									{
 										if (player->kartstuff[k_bubbleblowup] == 0)
-											K_PlayAttackTaunt(player->mo);
+											S_StartSound(player->mo, sfx_s3k75);
 										player->kartstuff[k_bubbleblowup]++;
 										player->kartstuff[k_bubblecool] = TICRATE+bubbletime;
 										if (player->kartstuff[k_bubbleblowup] > bubbletime)
 										{
 											mobj_t *trap = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy, player->mo->z + player->mo->momz, MT_BUBBLESHIELDTRAP);
-											P_SetScale(trap, (5*trap->destscale)>>1);
+											P_SetScale(trap, ((5*trap->destscale)>>2)*4);
 											trap->destscale = (5*trap->destscale)>>2;
 											P_SetTarget(&trap->target, player->mo);
-											trap->threshold = 10;
-											S_StartSound(player->mo, sfx_s3k44);
+											trap->threshold = TICRATE;
+											S_StartSound(trap, sfx_s3kbfl);
 
+											K_PlayAttackTaunt(player->mo);
 											player->kartstuff[k_bubbleblowup] = 0;
 											player->kartstuff[k_itemamount]--;
 										}
