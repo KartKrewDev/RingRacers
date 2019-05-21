@@ -9320,7 +9320,7 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
-				mobj->momz = 0;
+				mobj->momz = -(FRACUNIT * P_MobjFlip(mobj));
 				mobj->destscale = (5*mapobjectscale)>>2;
 				if (mobj->threshold > 0)
 					mobj->threshold--;
