@@ -6205,7 +6205,7 @@ void P_RunShadows(void)
 
 	for (mobj = shadowcap; mobj; mobj = next)
 	{
-		fixed_t floorz;
+		fixed_t floorz, rad;
 
 		next = mobj->hnext;
 		P_SetTarget(&mobj->hnext, NULL);
@@ -6227,8 +6227,24 @@ void P_RunShadows(void)
 			|| (!(mobj->target->eflags & MFE_VERTICALFLIP) && mobj->target->z < floorz))
 			mobj->flags2 |= MF2_DONTDRAW;
 
+		rad = mobj->info->radius;
+
+		switch (mobj->type)
+		{
+			case MT_FLOATINGITEM:
+				rad /= 3;
+				break;
+			case MT_THUNDERSHIELD:
+			case MT_BUBBLESHIELD:
+			case MT_FLAMESHIELD:
+				rad = 10<<FRACBITS;
+				break;
+			default:
+				break;
+		}
+
 		// First scale to the same radius
-		P_SetScale(mobj, FixedDiv(mobj->target->radius, mobj->info->radius));
+		P_SetScale(mobj, FixedDiv(mobj->target->radius, rad));
 
 		dest = mobj->target;
 
@@ -6263,9 +6279,6 @@ void P_RunShadows(void)
 					break;
 			}
 		}
-
-		if (mobj->target->type == MT_FLOATINGITEM)
-			P_SetScale(mobj, mobj->scale/3);
 	}
 	P_SetTarget(&shadowcap, NULL);
 }
@@ -8422,6 +8435,7 @@ void P_MobjThinker(mobj_t *mobj)
 				if (curstate != S_BUBBLESHIELDBLOWUP)
 					P_SetMobjState(mobj, S_BUBBLESHIELDBLOWUP);
 
+				mobj->angle += ANGLE_22h;
 				mobj->flags2 &= ~MF2_SHADOW;
 				scale += (blow * (scale<<1)) / bubbletime;
 
@@ -8436,10 +8450,37 @@ void P_MobjThinker(mobj_t *mobj)
 				else if ((mobj->extravalue1 > -4 && mobj->extravalue2 > blow)
 					|| (mobj->cvmem && mobj->extravalue1 > 0)) // Shrinking
 					mobj->extravalue1--;
+
+				if (P_IsObjectOnGround(mobj->target))
+				{
+					mobj_t *wave;
+
+					wave = P_SpawnMobj(
+						mobj->target->x + P_ReturnThrustX(NULL, mobj->angle, mobj->radius),
+						mobj->target->y + P_ReturnThrustY(NULL, mobj->angle, mobj->radius),
+						mobj->target->z, MT_THOK);
+					wave->flags &= ~(MF_NOCLIPHEIGHT|MF_NOGRAVITY);
+					wave->momx = mobj->target->momx;
+					wave->momy = mobj->target->momy;
+					wave->momz = mobj->target->momz;
+					P_SetMobjState(wave, S_BUBBLESHIELDWAVE1);
+
+					// same thing, but + ANGLE_180
+					wave = P_SpawnMobj(
+						mobj->target->x + P_ReturnThrustX(NULL, mobj->angle + ANGLE_180, mobj->radius),
+						mobj->target->y + P_ReturnThrustY(NULL, mobj->angle + ANGLE_180, mobj->radius),
+						mobj->target->z, MT_THOK);
+					wave->flags &= ~(MF_NOCLIPHEIGHT|MF_NOGRAVITY);
+					wave->momx = mobj->target->momx;
+					wave->momy = mobj->target->momy;
+					wave->momz = mobj->target->momz;
+					P_SetMobjState(wave, S_BUBBLESHIELDWAVE1);
+				}
 			}
 			else
 			{
 				mobj->cvmem = 0;
+				mobj->angle = mobj->target->angle;
 
 				if (curstate == S_BUBBLESHIELDBLOWUP)
 				{

@@ -6465,7 +6465,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										player->kartstuff[k_bubblecool] = TICRATE+bubbletime;
 										if (player->kartstuff[k_bubbleblowup] > bubbletime)
 										{
-											mobj_t *trap = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BUBBLESHIELDTRAP);
+											mobj_t *trap = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy, player->mo->z + player->mo->momz, MT_BUBBLESHIELDTRAP);
 											P_SetScale(trap, (5*trap->destscale)>>1);
 											trap->destscale = (5*trap->destscale)>>2;
 											P_SetTarget(&trap->target, player->mo);

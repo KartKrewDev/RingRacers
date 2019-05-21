@@ -686,13 +686,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (player->spectator)
 				return;
 
-			if (special->target->player && special->target->player->kartstuff[k_bubbleblowup]
-				&& !player->kartstuff[k_spinouttimer])
-			{
+			if (special->target->player && special->target->player->kartstuff[k_bubbleblowup])
 				K_SpinPlayer(player, special->target, 0, special, false);
-				if (player->kartstuff[k_spinouttimer]) // Successfully spun out
-					K_KartBouncing(toucher, special, false, true);
-			}
 			return;
 		case MT_BUBBLESHIELDTRAP:
 			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))

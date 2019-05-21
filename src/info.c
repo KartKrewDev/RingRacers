@@ -57,19 +57,19 @@ char sprnames[NUMSPRITES + 1][5] =
 	//SRB2kart Sprites
 	"SPRG","BSPR","RNDM","RPOP","SGNS","FAST","DSHR","BOST","BOSM","KFRE",
 	"KINV","KINF","WIPD","DRIF","BDRF","DUST","RSHE","FITM","BANA","ORBN",
-	"JAWZ","SSMN","KRBM","BHOG","BHBM","SPBM","THNS","BUBS","FLMS","SINK",
-	"SITR","KBLN","DEZL","POKE","AUDI","DECO","DOOD","SNES","GBAS","SPRS",
-	"BUZB","CHOM","SACO","CRAB","SHAD","BRNG","BUMP","FLEN","CLAS","PSHW",
-	"ISTA","ISTB","ARRO","ITEM","ITMO","ITMI","ITMN","WANT","PBOM","HIT1",
-	"HIT2","HIT3","RETI","AIDU","KSPK","LZI1","LZI2","KLIT","FZSM","FZBM",
-	"FPRT","SBUS","MARB","FUFO","RUST","BLON","VAPE","HTZA","HTZB","SGVA",
-	"SGVB","SGVC","PGTR","PGF1","PGF2","PGF3","PGBH","DPLR","SPTL","ENM1",
-	"GARU","MARR","REAP","JITB","CDMO","CDBU","PINE","PPLR","DPPT","AATR",
-	"COCO","BDST","FROG","CBRA","HOLE","BBRA","EGFG","SMKP","MTYM","THWP",
-	"SNOB","ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN",
-	"PGSS","ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE",
-	"TOAH","BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ",
-	"WBLN","FWRK","MXCL","RGSP","DRAF","XMS4","XMS5","VIEW"
+	"JAWZ","SSMN","KRBM","BHOG","BHBM","SPBM","THNS","BUBS","BWVE","FLMS",
+	"SINK","SITR","KBLN","DEZL","POKE","AUDI","DECO","DOOD","SNES","GBAS",
+	"SPRS","BUZB","CHOM","SACO","CRAB","SHAD","BRNG","BUMP","FLEN","CLAS",
+	"PSHW","ISTA","ISTB","ARRO","ITEM","ITMO","ITMI","ITMN","WANT","PBOM",
+	"HIT1","HIT2","HIT3","RETI","AIDU","KSPK","LZI1","LZI2","KLIT","FZSM",
+	"FZBM","FPRT","SBUS","MARB","FUFO","RUST","BLON","VAPE","HTZA","HTZB",
+	"SGVA","SGVB","SGVC","PGTR","PGF1","PGF2","PGF3","PGBH","DPLR","SPTL",
+	"ENM1","GARU","MARR","REAP","JITB","CDMO","CDBU","PINE","PPLR","DPPT",
+	"AATR","COCO","BDST","FROG","CBRA","HOLE","BBRA","EGFG","SMKP","MTYM",
+	"THWP","SNOB","ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN",
+	"LZMN","PGSS","ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR",
+	"HRSE","TOAH","BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF",
+	"WBLZ","WBLN","FWRK","MXCL","RGSP","DRAF","XMS4","XMS5","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -2877,6 +2877,12 @@ state_t states[NUMSTATES] =
 	{SPR_BUBS, FF_FULLBRIGHT|12,  2, {NULL}, 0, 0, S_BUBBLESHIELDTRAP7},	// S_BUBBLESHIELDTRAP6
 	{SPR_BUBS, FF_FULLBRIGHT|11,  2, {NULL}, 0, 0, S_BUBBLESHIELDTRAP8},	// S_BUBBLESHIELDTRAP7
 	{SPR_BUBS, FF_FULLBRIGHT|12,  2, {NULL}, 0, 0, S_BUBBLESHIELDTRAP1},	// S_BUBBLESHIELDTRAP8
+	{SPR_BWVE, FF_FULLBRIGHT,     1, {NULL}, 0, 0, S_BUBBLESHIELDWAVE2},	// S_BUBBLESHIELDWAVE1
+	{SPR_BWVE, FF_FULLBRIGHT|1,   1, {NULL}, 0, 0, S_BUBBLESHIELDWAVE3},	// S_BUBBLESHIELDWAVE2
+	{SPR_BWVE, FF_FULLBRIGHT|2,   1, {NULL}, 0, 0, S_BUBBLESHIELDWAVE4},	// S_BUBBLESHIELDWAVE3
+	{SPR_BWVE, FF_FULLBRIGHT|3,   1, {NULL}, 0, 0, S_BUBBLESHIELDWAVE5},	// S_BUBBLESHIELDWAVE4
+	{SPR_BWVE, FF_FULLBRIGHT|4,   1, {NULL}, 0, 0, S_BUBBLESHIELDWAVE6},	// S_BUBBLESHIELDWAVE5
+	{SPR_BWVE, FF_FULLBRIGHT|5,   1, {NULL}, 0, 0, S_NULL},					// S_BUBBLESHIELDWAVE6
 
 	{SPR_FLMS, FF_FULLBRIGHT,     2, {NULL}, 0, 0, S_FLAMESHIELD2},			// S_FLAMESHIELD1
 	{SPR_FLMS, FF_FULLBRIGHT|9,   2, {NULL}, 0, 0, S_FLAMESHIELD3},			// S_FLAMESHIELD2
@@ -15973,7 +15979,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		8,              // speed
-		20*FRACUNIT,    // radius
+		28*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		1,              // display offset
 		16,             // mass
@@ -16000,7 +16006,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		8,              // speed
-		20*FRACUNIT,    // radius
+		28*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		1,              // display offset
 		16,             // mass
@@ -16027,7 +16033,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		8,              // speed
-		20*FRACUNIT,    // radius
+		28*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		1,              // display offset
 		16,             // mass

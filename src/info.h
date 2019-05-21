@@ -618,6 +618,7 @@ typedef enum sprite
 	SPR_SPBM, // Self-Propelled Bomb
 	SPR_THNS, // Thunder Shield
 	SPR_BUBS, // Bubble Shield (not Bubs)
+	SPR_BWVE, // Bubble Shield waves
 	SPR_FLMS, // Flame Shield
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
@@ -3546,6 +3547,12 @@ typedef enum state
 	S_BUBBLESHIELDTRAP6,
 	S_BUBBLESHIELDTRAP7,
 	S_BUBBLESHIELDTRAP8,
+	S_BUBBLESHIELDWAVE1,
+	S_BUBBLESHIELDWAVE2,
+	S_BUBBLESHIELDWAVE3,
+	S_BUBBLESHIELDWAVE4,
+	S_BUBBLESHIELDWAVE5,
+	S_BUBBLESHIELDWAVE6,
 
 	// Flame Shield
 	S_FLAMESHIELD1,
