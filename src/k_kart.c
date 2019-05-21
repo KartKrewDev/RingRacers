@@ -1244,7 +1244,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 		// SPECIAL CASE No. 5:
 		// Force SPB onto 2nd if they get too far behind
-		if (player->kartstuff[k_position] == 2 && pdis > (DISTVAR*9)
+		if (player->kartstuff[k_position] == 2 && pdis > (DISTVAR*8)
 			&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
 			&& cv_selfpropelledbomb.value)
 		{
