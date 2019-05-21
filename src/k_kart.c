@@ -1222,38 +1222,41 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	// SPECIAL CASE No. 4:
-	// Being in ring debt occasionally forces Super Ring on you if you mashed
-	if (mashed && player->kartstuff[k_rings] < 0 && cv_superring.value)
+	if (G_RaceGametype())
 	{
-		INT32 debtamount = min(20, abs(player->kartstuff[k_rings]));
-		if (P_RandomChance((debtamount*FRACUNIT)/20))
+		// SPECIAL CASE No. 4:
+		// Being in ring debt occasionally forces Super Ring on you if you mashed
+		if (mashed && player->kartstuff[k_rings] < 0 && cv_superring.value)
 		{
-			K_KartGetItemResult(player, KITEM_SUPERRING);
+			INT32 debtamount = min(20, abs(player->kartstuff[k_rings]));
+			if (P_RandomChance((debtamount*FRACUNIT)/20))
+			{
+				K_KartGetItemResult(player, KITEM_SUPERRING);
+				player->karthud[khud_itemblink] = TICRATE;
+				player->karthud[khud_itemblinkmode] = 1;
+				player->kartstuff[k_itemroulette] = 0;
+				player->kartstuff[k_roulettetype] = 0;
+				if (P_IsDisplayPlayer(player))
+					S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
+				return;
+			}
+		}
+
+		// SPECIAL CASE No. 5:
+		// Force SPB onto 2nd if they get too far behind
+		if (player->kartstuff[k_position] == 2 && pdis > (DISTVAR*6)
+			&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
+			&& cv_selfpropelledbomb.value)
+		{
+			K_KartGetItemResult(player, KITEM_SPB);
 			player->karthud[khud_itemblink] = TICRATE;
-			player->karthud[khud_itemblinkmode] = 1;
+			player->karthud[khud_itemblinkmode] = (mashed ? 1 : 0);
 			player->kartstuff[k_itemroulette] = 0;
 			player->kartstuff[k_roulettetype] = 0;
 			if (P_IsDisplayPlayer(player))
 				S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
 			return;
 		}
-	}
-
-	// SPECIAL CASE No. 5:
-	// Force SPB onto 2nd if they get too far behind
-	if (player->kartstuff[k_position] == 2 && pdis > (DISTVAR*6)
-		&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
-		&& cv_selfpropelledbomb.value)
-	{
-		K_KartGetItemResult(player, KITEM_SPB);
-		player->karthud[khud_itemblink] = TICRATE;
-		player->karthud[khud_itemblinkmode] = (mashed ? 1 : 0);
-		player->kartstuff[k_itemroulette] = 0;
-		player->kartstuff[k_roulettetype] = 0;
-		if (P_IsDisplayPlayer(player))
-			S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
-		return;
 	}
 
 	// NOW that we're done with all of those specialized cases, we can move onto the REAL item roulette tables.
