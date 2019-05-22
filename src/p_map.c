@@ -746,7 +746,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			// Player Damage
 			P_DamageMobj(tmthing, thing, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), 1);
-			K_KartBouncing(tmthing, thing, false, true);
+			//K_KartBouncing(tmthing, thing, false, true); // Causes desync
 			S_StartSound(thing, sfx_s3k44);
 		}
 		else
@@ -795,7 +795,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			// Player Damage
 			P_DamageMobj(thing, tmthing, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), 1);
-			K_KartBouncing(thing, tmthing, false, true);
+			//K_KartBouncing(thing, tmthing, false, true);
 			S_StartSound(tmthing, sfx_s3k44);
 		}
 		else
