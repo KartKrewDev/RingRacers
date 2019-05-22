@@ -739,6 +739,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (tmthing->type == MT_PLAYER)
 		{
+			// K_KartBouncing causes desync, so we'll have to use a janky thrust instead
+			P_Thrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y), 4*thing->scale);
+
 			if (tmthing->player->kartstuff[k_spinouttimer] || tmthing->player->kartstuff[k_squishedtimer]
 				|| tmthing->player->powers[pw_flashing] || tmthing->player->kartstuff[k_hyudorotimer]
 				|| tmthing->player->kartstuff[k_justbumped] || tmthing->scale > thing->scale + (mapobjectscale/8))
@@ -746,7 +749,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			// Player Damage
 			P_DamageMobj(tmthing, thing, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), 1);
-			//K_KartBouncing(tmthing, thing, false, true); // Causes desync
+			//K_KartBouncing(tmthing, thing, false, true);
 			S_StartSound(thing, sfx_s3k44);
 		}
 		else
@@ -789,6 +792,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (thing->type == MT_PLAYER)
 		{
+			// K_KartBouncing causes desync, so we'll have to use a janky thrust instead
+			P_Thrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y), 4*tmthing->scale);
+
 			if (thing->player->kartstuff[k_spinouttimer] || thing->player->kartstuff[k_squishedtimer]
 				|| thing->player->powers[pw_flashing] || thing->player->kartstuff[k_hyudorotimer]
 				|| thing->player->kartstuff[k_justbumped] || thing->scale > tmthing->scale + (mapobjectscale/8))
