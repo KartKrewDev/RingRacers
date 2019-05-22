@@ -762,6 +762,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					tmthing->momx = -tmthing->momx;
 					tmthing->momy = -tmthing->momy;
 					tmthing->momz = -tmthing->momz;
+					tmthing->angle += ANGLE_180;
 				}
 				if (tmthing->type == MT_JAWZ)
 					P_SetTarget(&tmthing->tracer, tmthing->target); // Back to the source!
@@ -811,6 +812,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					thing->momx = -thing->momx;
 					thing->momy = -thing->momy;
 					thing->momz = -thing->momz;
+					thing->angle += ANGLE_180;
 				}
 				if (thing->type == MT_JAWZ)
 					P_SetTarget(&thing->tracer, thing->target); // Back to the source!
