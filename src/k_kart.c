@@ -1526,7 +1526,10 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 	}
 
 	// Do the bump fx when we've CONFIRMED we can bump.
-	S_StartSound(mobj1, sfx_s3k49);
+	if ((mobj1->player && mobj1->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD) || (mobj2->player && mobj2->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD))
+		S_StartSound(mobj1, sfx_s3k44);
+	else
+		S_StartSound(mobj1, sfx_s3k49);
 
 	fx = P_SpawnMobj(mobj1->x/2 + mobj2->x/2, mobj1->y/2 + mobj2->y/2, mobj1->z/2 + mobj2->z/2, MT_BUMP);
 	if (mobj1->eflags & MFE_VERTICALFLIP)
@@ -3201,16 +3204,25 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		case MT_SPB:
 			th->movefactor = finalspeed;
 			break;
+		case MT_BUBBLESHIELDTRAP:
+			P_SetScale(th, ((5*th->destscale)>>2)*4);
+			th->destscale = (5*th->destscale)>>2;
+			S_StartSound(th, sfx_s3kbfl);
+			S_StartSound(th, sfx_cdfm35);
+			break;
 		default:
 			break;
 	}
 
-	x = x + P_ReturnThrustX(source, an, source->radius + th->radius);
-	y = y + P_ReturnThrustY(source, an, source->radius + th->radius);
-	throwmo = P_SpawnMobj(x, y, z, MT_FIREDITEM);
-	throwmo->movecount = 1;
-	throwmo->movedir = source->angle - an;
-	P_SetTarget(&throwmo->target, source);
+	if (type != MT_BUBBLESHIELDTRAP)
+	{
+		x = x + P_ReturnThrustX(source, an, source->radius + th->radius);
+		y = y + P_ReturnThrustY(source, an, source->radius + th->radius);
+		throwmo = P_SpawnMobj(x, y, z, MT_FIREDITEM);
+		throwmo->movecount = 1;
+		throwmo->movedir = source->angle - an;
+		P_SetTarget(&throwmo->target, source);
+	}
 
 	return NULL;
 }
@@ -3769,8 +3781,16 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 		{
 			mobj_t *lasttrail = K_FindLastTrailMobj(player);
 
-			if (lasttrail)
+			if (mapthing == MT_BUBBLESHIELDTRAP) // Drop directly on top of you.
 			{
+				newangle = player->mo->angle;
+				newx = player->mo->x + player->mo->momx;
+				newy = player->mo->y + player->mo->momy;
+				newz = player->mo->z;
+			}
+			else if (lasttrail)
+			{
+				newangle = lasttrail->angle;
 				newx = lasttrail->x;
 				newy = lasttrail->y;
 				newz = lasttrail->z;
@@ -3822,6 +3842,12 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 
 			if (mapthing == MT_SSMINE)
 				mo->extravalue1 = 49; // Pads the start-up length from 21 frames to a full 2 seconds
+			else if (mapthing == MT_BUBBLESHIELDTRAP)
+			{
+				P_SetScale(mo, ((5*mo->destscale)>>2)*4);
+				mo->destscale = (5*mo->destscale)>>2;
+				S_StartSound(mo, sfx_s3kbfl);
+			}
 		}
 	}
 
@@ -6481,16 +6507,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										if (player->kartstuff[k_bubbleblowup] == 0)
 											S_StartSound(player->mo, sfx_s3k75);
 										player->kartstuff[k_bubbleblowup]++;
-										player->kartstuff[k_bubblecool] = TICRATE+bubbletime;
+										player->kartstuff[k_bubblecool] = player->kartstuff[k_bubbleblowup]*3;
 										if (player->kartstuff[k_bubbleblowup] > bubbletime)
 										{
-											mobj_t *trap = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy, player->mo->z + player->mo->momz, MT_BUBBLESHIELDTRAP);
-											P_SetScale(trap, ((5*trap->destscale)>>2)*4);
-											trap->destscale = (5*trap->destscale)>>2;
-											P_SetTarget(&trap->target, player->mo);
-											trap->threshold = TICRATE;
-											S_StartSound(trap, sfx_s3kbfl);
-
+											K_ThrowKartItem(player, (player->kartstuff[k_throwdir] > 0), MT_BUBBLESHIELDTRAP, -1, 0);
 											K_PlayAttackTaunt(player->mo);
 											player->kartstuff[k_bubbleblowup] = 0;
 											player->kartstuff[k_itemamount]--;

@@ -1729,6 +1729,10 @@ void P_XYMovement(mobj_t *mo)
 					P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
 				}
 			}
+
+			// Bubble bounce
+			if (mo->type == MT_BUBBLESHIELDTRAP)
+				S_StartSound(mo, sfx_s3k44);
 			//}
 
 			// Bounce ring algorithm
@@ -1937,7 +1941,9 @@ void P_XYMovement(mobj_t *mo)
 #endif
 
 	//{ SRB2kart stuff
-	if (mo->type == MT_ORBINAUT || mo->type == MT_JAWZ_DUD || mo->type == MT_JAWZ || mo->type == MT_BALLHOG || mo->type == MT_FLINGRING) //(mo->type == MT_JAWZ && !mo->tracer))
+	if (mo->type == MT_FLINGRING
+		|| mo->type == MT_ORBINAUT || mo->type == MT_JAWZ || mo->type == MT_JAWZ_DUD
+		|| mo->type == MT_BALLHOG || mo->type == MT_BUBBLESHIELDTRAP)
 		return;
 
 	if (mo->player && (mo->player->kartstuff[k_spinouttimer] && !mo->player->kartstuff[k_wipeoutslow]) && mo->player->speed <= K_GetKartSpeed(mo->player, false)/2)
@@ -2274,6 +2280,7 @@ static boolean P_ZMovement(mobj_t *mo)
 		case MT_JAWZ_DUD:
 		case MT_BALLHOG:
 		case MT_SSMINE:
+		case MT_BUBBLESHIELDTRAP:
 			// Remove stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
 			{
@@ -8472,11 +8479,11 @@ void P_MobjThinker(mobj_t *mobj)
 						wave->flags &= ~(MF_NOCLIPHEIGHT|MF_NOGRAVITY);
 						P_SetScale(wave, (wave->destscale = ws));
 
+						P_SetMobjState(wave, S_BUBBLESHIELDWAVE1);
+
 						wave->momx = mobj->target->momx;
 						wave->momy = mobj->target->momy;
 						wave->momz = mobj->target->momz;
-
-						P_SetMobjState(wave, S_BUBBLESHIELDWAVE1);
 					}
 				}
 			}
@@ -9279,8 +9286,8 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->momz = 0;
 				mobj->destscale = ((5*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
 
-				mobj->tracer->momx = (127*mobj->tracer->momx)/128;
-				mobj->tracer->momy = (127*mobj->tracer->momy)/128;
+				mobj->tracer->momx = (63*mobj->tracer->momx)/64;
+				mobj->tracer->momy = (63*mobj->tracer->momy)/64;
 				mobj->tracer->momz = (8*mobj->tracer->scale) * P_MobjFlip(mobj->tracer);
 
 				if (mobj->movecount > 8*TICRATE)
@@ -9314,16 +9321,73 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else if (mobj->extravalue1) // lost your player somehow, DIE
 			{
-				mobj->tracer->flags &= ~MF_NOGRAVITY;
 				P_KillMobj(mobj, NULL, NULL);
 				break;
 			}
 			else
 			{
-				mobj->momz = -(FRACUNIT * P_MobjFlip(mobj));
 				mobj->destscale = (5*mapobjectscale)>>2;
+
 				if (mobj->threshold > 0)
 					mobj->threshold--;
+
+				if (abs(mobj->momx) < 8*mobj->destscale && abs(mobj->momy) < 8*mobj->destscale)
+				{
+					// Stop, give light gravity
+					mobj->momx = mobj->momy = 0;
+					mobj->momz = -(mobj->scale * P_MobjFlip(mobj));
+				}
+				else
+				{
+					UINT8 i;
+					mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+					if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+					{
+						ghost->color = mobj->target->player->skincolor;
+						ghost->colorized = true;
+					}
+
+					mobj->momx = (23*mobj->momx)/24;
+					mobj->momy = (23*mobj->momy)/24;
+
+					mobj->angle = R_PointToAngle2(0,0,mobj->momx,mobj->momy);
+
+					if ((mobj->z - mobj->floorz) < (24*mobj->scale) && (leveltime % 3 != 0))
+					{
+						// Cool wave effects!
+						for (i = 0; i < 2; i++)
+						{
+							angle_t aoff;
+							SINT8 sign = 1;
+							mobj_t *wave;
+
+							if (i & 1)
+								sign = -1;
+							else
+								sign = 1;
+
+							aoff = (mobj->angle + ANGLE_180) + (ANGLE_45 * sign);
+
+							wave = P_SpawnMobj(mobj->x + FixedMul(mobj->radius, FINECOSINE(aoff>>ANGLETOFINESHIFT)),
+								mobj->y + FixedMul(mobj->radius, FINESINE(aoff>>ANGLETOFINESHIFT)),
+								mobj->z, MT_THOK);
+
+							wave->flags &= ~(MF_NOCLIPHEIGHT|MF_NOGRAVITY);
+							P_SetScale(wave, (wave->destscale = mobj->scale/2));
+
+							P_SetMobjState(wave, S_BUBBLESHIELDWAVE1);
+							if (leveltime & 1)
+								wave->tics++;
+
+							P_SetTarget(&wave->target, mobj);
+							wave->angle = mobj->angle - (ANGLE_90 * sign); // point completely perpendicular from the bubble
+							K_FlipFromObject(wave, mobj);
+
+							P_Thrust(wave, wave->angle, 4*mobj->scale);
+						}
+					}
+				}
 			}
 			break;
 		case MT_KARMAFIREWORK:

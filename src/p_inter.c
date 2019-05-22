@@ -689,20 +689,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!player->mo || player->spectator)
 				return;
 
-			// kill
-			/*if (player->kartstuff[k_invincibilitytimer] > 0
-				|| player->kartstuff[k_growshrinktimer] > 0
-				|| player->kartstuff[k_flamedash] > 0)
-			{
-				P_KillMobj(special, toucher, toucher);
-				return;
-			}*/
-
-			// no interaction
-			if (player->powers[pw_flashing] > 0 || player->kartstuff[k_hyudorotimer] > 0
-				|| player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0)
-				return;
-
 			// attach to player!
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
