@@ -739,8 +739,14 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (tmthing->type == MT_PLAYER)
 		{
-			// K_KartBouncing causes desync, so we'll have to use a janky thrust instead
+			// Counter desyncs
+			/*mobj_t *oldthing = thing;
+			mobj_t *oldtmthing = tmthing;
+
 			P_Thrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y), 4*thing->scale);
+
+			thing = oldthing;
+			P_SetTarget(&tmthing, oldtmthing);*/
 
 			if (tmthing->player->kartstuff[k_spinouttimer] || tmthing->player->kartstuff[k_squishedtimer]
 				|| tmthing->player->powers[pw_flashing] || tmthing->player->kartstuff[k_hyudorotimer]
@@ -748,8 +754,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 
 			// Player Damage
-			P_DamageMobj(tmthing, thing, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), 1);
-			//K_KartBouncing(tmthing, thing, false, true);
+			K_SpinPlayer(tmthing->player, thing, 0, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), false);
 			S_StartSound(thing, sfx_s3k44);
 		}
 		else
@@ -792,8 +797,14 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (thing->type == MT_PLAYER)
 		{
-			// K_KartBouncing causes desync, so we'll have to use a janky thrust instead
+			// Counter desyncs
+			/*mobj_t *oldthing = thing;
+			mobj_t *oldtmthing = tmthing;
+
 			P_Thrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y), 4*tmthing->scale);
+
+			thing = oldthing;
+			P_SetTarget(&tmthing, oldtmthing);*/
 
 			if (thing->player->kartstuff[k_spinouttimer] || thing->player->kartstuff[k_squishedtimer]
 				|| thing->player->powers[pw_flashing] || thing->player->kartstuff[k_hyudorotimer]
@@ -801,8 +812,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 
 			// Player Damage
-			P_DamageMobj(thing, tmthing, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), 1);
-			//K_KartBouncing(thing, tmthing, false, true);
+			K_SpinPlayer(thing->player, tmthing, 0, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), false);
 			S_StartSound(tmthing, sfx_s3k44);
 		}
 		else
