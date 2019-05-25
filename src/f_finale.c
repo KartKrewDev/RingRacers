@@ -173,7 +173,7 @@ static void F_SkyScroll(INT32 scrollspeed)
 	// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
 	if (rendermode != render_none)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 		x = -((INT32)animtimer);
 		y = 0;
@@ -238,7 +238,6 @@ void F_StartIntro(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 	F_NewCutscene(introtext[0]);
 
 	intro_scenenum = 0;
@@ -275,7 +274,7 @@ static void F_IntroDrawScene(void)
 		highres = true;
 	}
 
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 	if (background)
 	{
@@ -460,9 +459,13 @@ static const char *credits[] = {
 	"\"ZarroTsu\"",
 	"",
 	"\1External Artists",
+	"\"1-Up Mason\"",
+	"\"Chengi\"",
 	"\"Chrispy\"",
 	"\"DirkTheHusky\"",
+	"\"LJSTAR\"",
 	"\"MotorRoach\"",
+	"\"Mr. McScrewup\"",
 	"\"Nev3r\"",
 	"\"Ritz\"",
 	"\"Rob\"",
@@ -471,6 +474,7 @@ static const char *credits[] = {
 	"\"Spherallic\"",
 	"\"VAdaPEGA\"",
 	"\"Virt\"",
+	"\"Voltrix\"",
 	"\"zxyspku\"",
 	"",
 	"\1Sound Design",
@@ -580,10 +584,10 @@ void F_StartCredits(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 	S_StopMusic();
 
 	S_ChangeMusicInternal("credit", false);
+	S_ShowMusicCredit();
 
 	finalecount = 0;
 	animtimer = 0;
@@ -611,7 +615,7 @@ void F_CreditDrawer(void)
 
 		if (credits_pics[i].colorize != SKINCOLOR_NONE)
 		{
-			colormap = R_GetTranslationColormap(TC_RAINBOW, credits_pics[i].colorize, 0);
+			colormap = R_GetTranslationColormap(TC_RAINBOW, credits_pics[i].colorize, GTC_MENUCACHE);
 			sc = FRACUNIT; // quick hack so I don't have to add another field to credits_pics
 		}
 
@@ -643,16 +647,34 @@ void F_CreditDrawer(void)
 		if (((y>>FRACBITS) * vid.dupy) > vid.height)
 			break;
 	}
+}
 
+void F_CreditTicker(void)
+{
+	// "Simulate" the drawing of the credits so that dedicated mode doesn't get stuck
+	UINT16 i;
+	fixed_t y = (80<<FRACBITS) - 5*(animtimer<<FRACBITS)/8;
+
+	// Draw credits text on top
+	for (i = 0; credits[i]; i++)
+	{
+		switch(credits[i][0])
+		{
+			case 0: y += 80<<FRACBITS; break;
+			case 1: y += 30<<FRACBITS; break;
+			default: y += 12<<FRACBITS; break;
+		}
+		if (FixedMul(y,vid.dupy) > vid.height)
+			break;
+	}
+
+	// Do this here rather than in the drawer you doofus! (this is why dedicated mode broke at credits)
 	if (!credits[i] && y <= 120<<FRACBITS && !finalecount)
 	{
 		timetonext = 5*TICRATE+1;
 		finalecount = 5*TICRATE;
 	}
-}
 
-void F_CreditTicker(void)
-{
 	if (timetonext)
 		timetonext--;
 	else
@@ -755,7 +777,6 @@ void F_StartGameEvaluation(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 
 	finalecount = 0;
 }
@@ -865,7 +886,6 @@ void F_StartGameEnd(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 	S_StopMusic();
 
 	// In case menus are still up?!!
@@ -909,9 +929,9 @@ void F_StartTitleScreen(void)
 	// IWAD dependent stuff.
 
 	// music is started in the ticker
-	if (!fromtitledemo) // SRB2Kart: Don't reset music if the right track is already playing
+	if (!demo.fromtitle) // SRB2Kart: Don't reset music if the right track is already playing
 		S_StopMusic();
-	fromtitledemo = false;
+	demo.fromtitle = false;
 
 	animtimer = 0;
 
@@ -950,7 +970,7 @@ void F_TitleScreenDrawer(void)
 	}
 	else if (finalecount < 52)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 		V_DrawSmallScaledPatch(84, 36, 0, ttkflash);
 	}
 	else
@@ -966,7 +986,7 @@ void F_TitleScreenDrawer(void)
 		V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + FixedMul(40<<FRACBITS, FixedDiv(finalecount%70, 70)), V_SNAPTOTOP|V_SNAPTORIGHT, ttcheckers, FRACUNIT);
 
 		if (transval)
-			V_DrawFadeScreen(120, 10 - transval);
+			V_DrawFadeScreen(0, 10 - transval);
 
 		V_DrawSmallScaledPatch(84, 36, 0, ttbanner);
 
@@ -1024,10 +1044,28 @@ void F_TitleScreenTicker(boolean run)
 	// is it time?
 	if (!(--demoIdleLeft))
 	{
+		//static boolean use_netreplay = false;
+
 		char dname[9];
 		lumpnum_t l;
 		const char *mapname;
 		UINT8 numstaff;
+
+		//@TODO uncomment this when this goes into vanilla
+		/*if ((use_netreplay = !use_netreplay))*/
+		{
+			numstaff = 1;
+			while ((l = W_CheckNumForName(va("TDEMO%03u", numstaff))) != LUMPERROR)
+				numstaff++;
+			numstaff--;
+
+			if (numstaff)
+			{
+				numstaff = M_RandomKey(numstaff)+1;
+				snprintf(dname, 9, "TDEMO%03u", numstaff);
+				goto loadreplay;
+			}
+		}
 
 		// prevent console spam if failed
 		demoIdleLeft = demoIdleTime;
@@ -1079,7 +1117,10 @@ void F_TitleScreenTicker(boolean run)
 			return;
 		}*/
 
-		titledemo = fromtitledemo = true;
+loadreplay:
+		demo.title = demo.fromtitle = true;
+		demo.ignorefiles = true;
+		demo.loadfiles = false;
 		G_DoPlayDemo(dname);
 	}
 }
@@ -1103,6 +1144,10 @@ void F_StartWaitingPlayers(void)
 	finalecount = 0;
 
 	randskin = M_RandomKey(numskins);
+
+	if (waitcolormap)
+		Z_Free(waitcolormap);
+
 	waitcolormap = R_GetTranslationColormap(randskin, skins[randskin].prefcolor, 0);
 
 	for (i = 0; i < 2; i++)
@@ -1155,7 +1200,6 @@ void F_StartContinue(void)
 	keypressed = false;
 	paused = false;
 	CON_ToggleOff();
-	CON_ClearHUD();
 
 	// In case menus are still up?!!
 	M_ClearMenus(true);
@@ -1275,9 +1319,10 @@ static void F_AdvanceToNextScene(void)
 	picypos = cutscenes[cutnum]->scene[scenenum].ycoord[picnum];
 
 	if (cutscenes[cutnum]->scene[scenenum].musswitch[0])
-		S_ChangeMusic(cutscenes[cutnum]->scene[scenenum].musswitch,
+		S_ChangeMusicEx(cutscenes[cutnum]->scene[scenenum].musswitch,
 			cutscenes[cutnum]->scene[scenenum].musswitchflags,
-			cutscenes[cutnum]->scene[scenenum].musicloop);
+			cutscenes[cutnum]->scene[scenenum].musicloop,
+			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
 	dofadenow = true;
@@ -1326,8 +1371,6 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 	F_NewCutscene(cutscenes[cutscenenum]->scene[0].text);
 
-	CON_ClearHUD();
-
 	cutsceneover = false;
 	runningprecutscene = precutscene;
 	precutresetplayer = resetplayer;
@@ -1348,9 +1391,10 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 	stoptimer = 0;
 
 	if (cutscenes[cutnum]->scene[0].musswitch[0])
-		S_ChangeMusic(cutscenes[cutnum]->scene[0].musswitch,
+		S_ChangeMusicEx(cutscenes[cutnum]->scene[0].musswitch,
 			cutscenes[cutnum]->scene[0].musswitchflags,
-			cutscenes[cutnum]->scene[0].musicloop);
+			cutscenes[cutnum]->scene[0].musicloop,
+			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 	else
 		S_StopMusic();
 }

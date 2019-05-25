@@ -883,12 +883,12 @@ void R_DrawSinglePlane(visplane_t *pl)
 				if (bottom > vid.height)
 					bottom = vid.height;
 
-				if (splitscreen > 2 && viewplayer == &players[fourthdisplayplayer]) // Only copy the part of the screen we need
+				if (splitscreen > 2 && viewplayer == &players[displayplayers[3]]) // Only copy the part of the screen we need
 					scr = (screens[0] + (top+(viewheight))*vid.width + viewwidth);
-				else if ((splitscreen == 1 && viewplayer == &players[secondarydisplayplayer])
-					|| (splitscreen > 1 && viewplayer == &players[thirddisplayplayer]))
+				else if ((splitscreen == 1 && viewplayer == &players[displayplayers[1]])
+					|| (splitscreen > 1 && viewplayer == &players[displayplayers[2]]))
 					scr = (screens[0] + (top+(viewheight))*vid.width);
-				else if (splitscreen > 1 && viewplayer == &players[secondarydisplayplayer])
+				else if (splitscreen > 1 && viewplayer == &players[displayplayers[1]])
 					scr = (screens[0] + ((top)*vid.width) + viewwidth);
 				else
 					scr = (screens[0] + ((top)*vid.width));
@@ -1051,7 +1051,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 		temp = P_GetZAt(pl->slope, pl->viewx, pl->viewy);
 		zeroheight = FIXED_TO_FLOAT(temp);
 
-#define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
+#define ANG2RAD(angle) ((float)((angle)*M_PIl)/ANGLE_180)
 
 		// p is the texture origin in view space
 		// Don't add in the offsets at this stage, because doing so can result in

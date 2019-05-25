@@ -149,20 +149,21 @@ extern FILE *logstream;
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-#define VERSION    100 // Game version
-#define SUBVERSION 3 // more precise version number
-#define VERSIONSTRING "v1.0.3"
-#define VERSIONSTRINGW L"v1.0.3"
-// Hey! If you change this, add 1 to the MODVERSION below!
-// Otherwise we can't force updates!
+#define VERSION    110 // Game version
+#define SUBVERSION 0 // more precise version number
+#define VERSIONSTRING "v1.1"
+#define VERSIONSTRINGW L"v1.1"
+// Hey! If you change this, add 1 to the MODVERSION below! Otherwise we can't force updates!
+// And change CMakeLists.txt, for CMake users!
+// AND appveyor.yml, for the build bots!
 #endif
+
+// Maintain compatibility with 1.0.x record attack replays?
+#define DEMO_COMPAT_100
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
-//#define USE_PATCH_DTA
-
-// Kart has it's own, as well.
-#define USE_PATCH_KART
+//#define USE_PATCH_FILE
 
 // Use .kart extension addons
 #define USE_KART
@@ -221,7 +222,7 @@ extern FILE *logstream;
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
 // Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
-#define MODVERSION 3
+#define MODVERSION 5
 
 // Filter consvars by version
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
@@ -244,7 +245,7 @@ extern FILE *logstream;
 // NOTE: it needs more than this to increase the number of players...
 
 #define MAXPLAYERS 16
-#define MAXSKINS 64
+#define MAXSKINS 128
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 
@@ -256,88 +257,169 @@ typedef enum
 	SKINCOLOR_GREY,
 	SKINCOLOR_NICKEL,
 	SKINCOLOR_BLACK,
+	SKINCOLOR_FAIRY,
+	SKINCOLOR_POPCORN,
+	SKINCOLOR_ARTICHOKE,
+	SKINCOLOR_PIGEON,
 	SKINCOLOR_SEPIA,
 	SKINCOLOR_BEIGE,
+	SKINCOLOR_CARAMEL,
+	SKINCOLOR_PEACH,
 	SKINCOLOR_BROWN,
 	SKINCOLOR_LEATHER,
 	SKINCOLOR_SALMON,
 	SKINCOLOR_PINK,
 	SKINCOLOR_ROSE,
+	SKINCOLOR_CINNAMON,
 	SKINCOLOR_RUBY,
 	SKINCOLOR_RASPBERRY,
 	SKINCOLOR_RED,
 	SKINCOLOR_CRIMSON,
+	SKINCOLOR_MAROON,
+	SKINCOLOR_LEMONADE,
+	SKINCOLOR_SCARLET,
 	SKINCOLOR_KETCHUP,
 	SKINCOLOR_DAWN,
+	SKINCOLOR_SUNSET,
 	SKINCOLOR_CREAMSICLE,
 	SKINCOLOR_ORANGE,
-	SKINCOLOR_PUMPKIN,
 	SKINCOLOR_ROSEWOOD,
-	SKINCOLOR_BURGUNDY,
 	SKINCOLOR_TANGERINE,
-	SKINCOLOR_PEACH,
-	SKINCOLOR_CARAMEL,
+	SKINCOLOR_TAN,
+	SKINCOLOR_CREAM,
 	SKINCOLOR_GOLD,
+	SKINCOLOR_ROYAL,
 	SKINCOLOR_BRONZE,
+	SKINCOLOR_COPPER,
 	SKINCOLOR_YELLOW,
 	SKINCOLOR_MUSTARD,
+	SKINCOLOR_BANANA,
 	SKINCOLOR_OLIVE,
+	SKINCOLOR_CROCODILE,
+	SKINCOLOR_PERIDOT,
 	SKINCOLOR_VOMIT,
 	SKINCOLOR_GARDEN,
 	SKINCOLOR_LIME,
+	SKINCOLOR_HANDHELD,
 	SKINCOLOR_TEA,
 	SKINCOLOR_PISTACHIO,
-	SKINCOLOR_ROBOHOOD,
 	SKINCOLOR_MOSS,
+	SKINCOLOR_CAMOUFLAGE,
+	SKINCOLOR_ROBOHOOD,
 	SKINCOLOR_MINT,
 	SKINCOLOR_GREEN,
 	SKINCOLOR_PINETREE,
-	SKINCOLOR_EMERALD,
+	SKINCOLOR_TURTLE,
 	SKINCOLOR_SWAMP,
 	SKINCOLOR_DREAM,
-	SKINCOLOR_AQUA,
+	SKINCOLOR_PLAGUE,
+	SKINCOLOR_EMERALD,
+	SKINCOLOR_ALGAE,
+	SKINCOLOR_CARIBBEAN,
+	SKINCOLOR_AZURE,
+	SKINCOLOR_AQUAMARINE,
+	SKINCOLOR_TURQUOISE,
 	SKINCOLOR_TEAL,
 	SKINCOLOR_CYAN,
 	SKINCOLOR_JAWZ, // Oni's torment
 	SKINCOLOR_CERULEAN,
 	SKINCOLOR_NAVY,
+	SKINCOLOR_PLATINUM,
 	SKINCOLOR_SLATE,
 	SKINCOLOR_STEEL,
+	SKINCOLOR_THUNDER,
+	SKINCOLOR_NOVA,
+	SKINCOLOR_RUST,
+	SKINCOLOR_WRISTWATCH,
 	SKINCOLOR_JET,
 	SKINCOLOR_SAPPHIRE, // sweet mother, i cannot weave - slender aphrodite has overcome me with longing for a girl
+	SKINCOLOR_ULTRAMARINE,
 	SKINCOLOR_PERIWINKLE,
 	SKINCOLOR_BLUE,
 	SKINCOLOR_BLUEBERRY,
-	SKINCOLOR_DUSK,
+	SKINCOLOR_THISTLE,
 	SKINCOLOR_PURPLE,
+	SKINCOLOR_PASTEL,
+	SKINCOLOR_MOONSLAM,
+	SKINCOLOR_DUSK,
+	SKINCOLOR_BUBBLEGUM,
+	SKINCOLOR_MAGENTA,
+	SKINCOLOR_FUCHSIA,
+	SKINCOLOR_TOXIC,
+	SKINCOLOR_MAUVE,
 	SKINCOLOR_LAVENDER,
 	SKINCOLOR_BYZANTIUM,
 	SKINCOLOR_POMEGRANATE,
 	SKINCOLOR_LILAC,
+	SKINCOLOR_TAFFY,
 
-	// Careful! MAXSKINCOLORS cannot be greater than 0x40 -- Which it is now.
+	// "Careful! MAXSKINCOLORS cannot be greater than 0x40 -- Which it is now."
+	// (This comment is a dirty liar! This is only limited by the integer type, so 255 for UINT8.)
 	MAXSKINCOLORS,
 
 	// Super special awesome Super flashing colors!
+	// Super Sonic Yellow
 	SKINCOLOR_SUPER1 = MAXSKINCOLORS,
 	SKINCOLOR_SUPER2,
 	SKINCOLOR_SUPER3,
 	SKINCOLOR_SUPER4,
 	SKINCOLOR_SUPER5,
 
-	// Super Tails
+	// Super Tails Orange
 	SKINCOLOR_TSUPER1,
 	SKINCOLOR_TSUPER2,
 	SKINCOLOR_TSUPER3,
 	SKINCOLOR_TSUPER4,
 	SKINCOLOR_TSUPER5,
 
-	// Super Knuckles
+	// Super Knuckles Red
 	SKINCOLOR_KSUPER1,
 	SKINCOLOR_KSUPER2,
 	SKINCOLOR_KSUPER3,
 	SKINCOLOR_KSUPER4,
 	SKINCOLOR_KSUPER5,
+
+	// Hyper Sonic Pink
+	SKINCOLOR_PSUPER1,
+	SKINCOLOR_PSUPER2,
+	SKINCOLOR_PSUPER3,
+	SKINCOLOR_PSUPER4,
+	SKINCOLOR_PSUPER5,
+
+	// Hyper Sonic Blue
+	SKINCOLOR_BSUPER1,
+	SKINCOLOR_BSUPER2,
+	SKINCOLOR_BSUPER3,
+	SKINCOLOR_BSUPER4,
+	SKINCOLOR_BSUPER5,
+
+	// Aqua Super
+	SKINCOLOR_ASUPER1,
+	SKINCOLOR_ASUPER2,
+	SKINCOLOR_ASUPER3,
+	SKINCOLOR_ASUPER4,
+	SKINCOLOR_ASUPER5,
+
+	// Hyper Sonic Green
+	SKINCOLOR_GSUPER1,
+	SKINCOLOR_GSUPER2,
+	SKINCOLOR_GSUPER3,
+	SKINCOLOR_GSUPER4,
+	SKINCOLOR_GSUPER5,
+
+	// Hyper Sonic White
+	SKINCOLOR_WSUPER1,
+	SKINCOLOR_WSUPER2,
+	SKINCOLOR_WSUPER3,
+	SKINCOLOR_WSUPER4,
+	SKINCOLOR_WSUPER5,
+
+	// Creamy Super (Shadow?)
+	SKINCOLOR_CSUPER1,
+	SKINCOLOR_CSUPER2,
+	SKINCOLOR_CSUPER3,
+	SKINCOLOR_CSUPER4,
+	SKINCOLOR_CSUPER5,
 
 	MAXTRANSLATIONS
 } skincolors_t;
@@ -347,6 +429,8 @@ typedef enum
 #define TICRATE 35
 #define NEWTICRATERATIO 1 // try 4 for 140 fps :)
 #define NEWTICRATE (TICRATE*NEWTICRATERATIO)
+
+#define MUSICRATE 1000 // sound timing is calculated by milliseconds
 
 #define RING_DIST 1280*FRACUNIT // how close you need to be to a ring to attract it
 
@@ -471,13 +555,17 @@ INT32 I_GetKey(void);
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
+#ifndef M_PIl
+#define M_PIl 3.1415926535897932384626433832795029L
+#endif
+
 // Floating point comparison epsilons from float.h
 #ifndef FLT_EPSILON
 #define FLT_EPSILON 1.1920928955078125e-7f
 #endif
 
 #ifndef DBL_EPSILON
-#define DBL_EPSILON 2.2204460492503131e-16
+#define DBL_EPSILON 2.2204460492503131e-16l
 #endif
 
 // An assert-type mechanism.
@@ -526,9 +614,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 ///	Polyobject fake flat code
 #define POLYOBJECTS_PLANES
-
-///	Improved way of dealing with ping values and a ping limit.
-#define NEWPING
 
 ///	See name of player in your crosshair
 #define SEENAMES

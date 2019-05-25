@@ -158,7 +158,7 @@ extern INT32 setmodeneeded; // mode number to set if needed, or 0
 extern INT32 scr_bpp;
 extern UINT8 *scr_borderpatch; // patch used to fill the view borders
 
-extern consvar_t cv_scr_width, cv_scr_height, cv_scr_depth, cv_renderview, cv_fullscreen;
+extern consvar_t cv_scr_width, cv_scr_height, cv_scr_depth, cv_renderview, cv_fullscreen, cv_vhseffect, cv_shittyscreen;
 // wait for page flipping to end or not
 extern consvar_t cv_vidwait;
 
@@ -180,5 +180,6 @@ FUNCMATH boolean SCR_IsAspectCorrect(INT32 width, INT32 height);
 
 // move out to main code for consistency
 void SCR_DisplayTicRate(void);
+void SCR_DisplayLocalPing(void);
 #undef DNWH
 #endif //__SCREEN_H__

@@ -64,7 +64,7 @@
 #include "../m_menu.h"
 #include "../d_main.h"
 #include "../s_sound.h"
-#include "../i_sound.h"  // midi pause/unpause
+#include "../i_sound.h"  	// midi pause/unpause
 #include "../i_joy.h"
 #include "../st_stuff.h"
 #include "../g_game.h"
@@ -359,6 +359,14 @@ static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 	return 0;
 }
 
+static void SDLdoGrabMouse(void)
+{
+	SDL_ShowCursor(SDL_DISABLE);
+	SDL_SetWindowGrab(window, SDL_TRUE);
+	if (SDL_SetRelativeMouseMode(SDL_TRUE) == 0) // already warps mouse if successful
+		wrapmouseok = SDL_TRUE; // TODO: is wrapmouseok or HalfWarpMouse needed anymore?
+}
+
 static void SDLdoUngrabMouse(void)
 {
 	SDL_ShowCursor(SDL_ENABLE);
@@ -615,8 +623,12 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 	{
 		// Tell game we got focus back, resume music if necessary
 		window_notinfocus = false;
+
 		if (!paused)
 			I_ResumeSong(); //resume it
+
+		if (cv_gamesounds.value)
+			S_EnableSound();
 
 		if (!firsttimeonmouse)
 		{
@@ -625,12 +637,18 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		//else firsttimeonmouse = SDL_FALSE;
 
 		capslock = !!( SDL_GetModState() & KMOD_CAPS );// in case CL changes
+
+		if (USE_MOUSEINPUT)
+			SDLdoGrabMouse();
 	}
 	else if (!mousefocus && !kbfocus)
 	{
 		// Tell game we lost focus, pause music
 		window_notinfocus = true;
-		I_PauseSong();
+		if (!cv_playmusicifunfocused.value)
+			I_PauseSong();
+		if (!cv_playsoundifunfocused.value)
+			S_DisableSound();
 
 		if (!disable_mouse)
 		{
@@ -701,9 +719,7 @@ static void Impl_HandleMouseMotionEvent(SDL_MouseMotionEvent evt)
 		// -- Monster Iestyn
 		if (SDL_GetMouseFocus() == window && SDL_GetKeyboardFocus() == window)
 		{
-			SDL_SetWindowGrab(window, SDL_TRUE);
-			if (SDL_SetRelativeMouseMode(SDL_TRUE) == 0) // already warps mouse if successful
-				wrapmouseok = SDL_TRUE; // TODO: is wrapmouseok or HalfWarpMouse needed anymore?
+			SDLdoGrabMouse();
 		}
 	}
 }
@@ -1270,7 +1286,7 @@ void I_StartupMouse(void)
 	else
 		firsttimeonmouse = SDL_FALSE;
 	if (cv_usemouse.value)
-		return;
+		SDLdoGrabMouse();
 	else
 		SDLdoUngrabMouse();
 }
@@ -1327,6 +1343,7 @@ void I_UpdateNoBlit(void)
 // from PrBoom's src/SDL/i_video.c
 static inline boolean I_SkipFrame(void)
 {
+#if 0
 	static boolean skip = false;
 
 	if (rendermode != render_soft)
@@ -1345,6 +1362,8 @@ static inline boolean I_SkipFrame(void)
 		default:
 			return false;
 	}
+#endif
+	return false;
 }
 
 //
@@ -1360,6 +1379,9 @@ void I_FinishUpdate(void)
 
 	if (cv_ticrate.value)
 		SCR_DisplayTicRate();
+
+	if (cv_showping.value && netgame && consoleplayer != serverplayer)
+		SCR_DisplayLocalPing();
 
 	if (rendermode == render_soft && screens[0])
 	{
@@ -1832,13 +1854,11 @@ void I_StartupGraphics(void)
 		HWD.pfnSetSpecialState  = hwSym("SetSpecialState",NULL);
 		HWD.pfnSetPalette       = hwSym("SetPalette",NULL);
 		HWD.pfnGetTextureUsed   = hwSym("GetTextureUsed",NULL);
-		HWD.pfnDrawMD2          = hwSym("DrawMD2",NULL);
-		HWD.pfnDrawMD2i         = hwSym("DrawMD2i",NULL);
+		HWD.pfnDrawModel        = hwSym("DrawModel",NULL);
+		HWD.pfnCreateModelVBOs  = hwSym("CreateModelVBOs",NULL);
 		HWD.pfnSetTransform     = hwSym("SetTransform",NULL);
 		HWD.pfnGetRenderVersion = hwSym("GetRenderVersion",NULL);
-#ifdef SHUFFLE
 		HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
-#endif
 		HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
 		HWD.pfnStartScreenWipe  = hwSym("StartScreenWipe",NULL);
 		HWD.pfnEndScreenWipe    = hwSym("EndScreenWipe",NULL);

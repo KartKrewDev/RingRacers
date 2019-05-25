@@ -639,15 +639,12 @@ void I_Error(const char *error, ...)
 	if (!errorcount)
 	{
 		M_SaveConfig(NULL); // save game config, cvars..
-#ifndef NONET
-		D_SaveBan(); // save the ban list
-#endif
 		G_SaveGameData();
 	}
 
 	// save demo, could be useful for debug
 	// NOTE: demos are normally not saved here.
-	if (demorecording)
+	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording();
@@ -733,7 +730,7 @@ void I_Quit(void)
 	DWORD mode;
 	// when recording a demo, should exit using 'q',
 	// but sometimes we forget and use Alt+F4, so save here too.
-	if (demorecording)
+	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording();

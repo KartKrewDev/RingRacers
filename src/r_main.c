@@ -30,6 +30,7 @@
 #include "p_spec.h" // skyboxmo
 #include "z_zone.h"
 #include "m_random.h" // quake camera shake
+#include "doomstat.h" // MAXSPLITSCREENPLAYERS
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -56,6 +57,7 @@ INT32 centerx, centery;
 fixed_t centerxfrac, centeryfrac;
 fixed_t projection;
 fixed_t projectiony; // aspect ratio
+fixed_t fovtan; // field of view
 
 // just for profiling purposes
 size_t framecount;
@@ -64,9 +66,10 @@ size_t loopcount;
 
 fixed_t viewx, viewy, viewz;
 angle_t viewangle, aimingangle;
+UINT8 viewssnum;
 fixed_t viewcos, viewsin;
 boolean viewsky, skyVisible;
-boolean skyVisible1, skyVisible2, skyVisible3, skyVisible4; // saved values of skyVisible for P1/P2/P3/P4, for splitscreen
+boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible for each splitscreen player
 sector_t *viewsector;
 player_t *viewplayer;
 
@@ -134,11 +137,14 @@ static CV_PossibleValue_t drawdist_precip_cons_t[] = {
 	{1024, "1024"},	{1536, "1536"},	{2048, "2048"},
 	{0, "None"},	{0, NULL}};
 
+static CV_PossibleValue_t fov_cons_t[] = {{0, "MIN"}, {179*FRACUNIT, "MAX"}, {0, NULL}};
+
 //static CV_PossibleValue_t precipdensity_cons_t[] = {{0, "None"}, {1, "Light"}, {2, "Moderate"}, {4, "Heavy"}, {6, "Thick"}, {8, "V.Thick"}, {0, NULL}};
 static CV_PossibleValue_t translucenthud_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t maxportals_cons_t[] = {{0, "MIN"}, {12, "MAX"}, {0, NULL}}; // lmao rendering 32 portals, you're a card
 static CV_PossibleValue_t homremoval_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Flash"}, {0, NULL}};
 
+static void Fov_OnChange(void);
 static void ChaseCam_OnChange(void);
 static void ChaseCam2_OnChange(void);
 static void ChaseCam3_OnChange(void);
@@ -175,6 +181,7 @@ consvar_t cv_drawdist = {"drawdist", "Infinite", CV_SAVE, drawdist_cons_t, NULL,
 //consvar_t cv_drawdist_nights = {"drawdist_nights", "2048", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_drawdist_precip = {"drawdist_precip", "1024", CV_SAVE, drawdist_precip_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 //consvar_t cv_precipdensity = {"precipdensity", "Moderate", CV_SAVE, precipdensity_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 // Okay, whoever said homremoval causes a performance hit should be shot.
 consvar_t cv_homremoval = {"homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -188,19 +195,12 @@ void SplitScreen_OnChange(void)
 	// recompute screen size
 	R_ExecuteSetViewSize();
 
-	if (!demoplayback && !botingame)
+	if (!demo.playback && !botingame)
 	{
-		for (i = 1; i < 3; i++)
+		for (i = 1; i < MAXSPLITSCREENPLAYERS; i++)
 		{
 			if (i > splitscreen)
-			{
-				if (i == 1)
-					CL_RemoveSplitscreenPlayer(secondarydisplayplayer);
-				else if (i == 2)
-					CL_RemoveSplitscreenPlayer(thirddisplayplayer);
-				else if (i == 3)
-					CL_RemoveSplitscreenPlayer(fourthdisplayplayer);
-			}
+				CL_RemoveSplitscreenPlayer(displayplayers[i]);
 			else
 				CL_AddSplitscreenPlayer();
 		}
@@ -210,22 +210,36 @@ void SplitScreen_OnChange(void)
 	}
 	else
 	{
-		secondarydisplayplayer = consoleplayer;
-		thirddisplayplayer = consoleplayer;
-		fourthdisplayplayer = consoleplayer;
+		for (i = 1; i < MAXSPLITSCREENPLAYERS; i++)
+			displayplayers[i] = consoleplayer;
+
 		for (i = 0; i < MAXPLAYERS; i++)
+		{
 			if (playeringame[i] && i != consoleplayer)
 			{
-				if (secondarydisplayplayer == consoleplayer)
-					secondarydisplayplayer = i;
-				else if (thirddisplayplayer == consoleplayer)
-					thirddisplayplayer = i;
-				else if (fourthdisplayplayer == consoleplayer)
-					fourthdisplayplayer = i;
-				else
+				UINT8 j;
+				for (j = 1; j < MAXSPLITSCREENPLAYERS; j++)
+				{
+					if (displayplayers[j] == consoleplayer)
+					{
+						displayplayers[j] = i;
+						break;
+					}
+				}
+
+				if (j == MAXSPLITSCREENPLAYERS)
 					break;
 			}
+		}
 	}
+}
+static void Fov_OnChange(void)
+{
+	// Shouldn't be needed with render parity?
+	//if ((netgame || multiplayer) && !cv_debug && cv_fov.value != 90*FRACUNIT)
+	//	CV_Set(&cv_fov, cv_fov.defaultvalue);
+
+	R_SetViewSize();
 }
 
 static void ChaseCam_OnChange(void)
@@ -517,7 +531,7 @@ static void R_InitTextureMapping(void)
 	//
 	// Calc focallength
 	//  so FIELDOFVIEW angles covers SCREENWIDTH.
-	focallength = FixedDiv(centerxfrac,
+	focallength = FixedDiv(projection,
 		FINETANGENT(FINEANGLES/4+/*cv_fov.value*/ FIELDOFVIEW/2));
 
 #ifdef ESLOPE
@@ -632,6 +646,7 @@ void R_ExecuteSetViewSize(void)
 	INT32 j;
 	INT32 level;
 	INT32 startmapl;
+	angle_t fov;
 
 	setsizeneeded = false;
 
@@ -660,9 +675,12 @@ void R_ExecuteSetViewSize(void)
 	centerxfrac = centerx<<FRACBITS;
 	centeryfrac = centery<<FRACBITS;
 
-	projection = centerxfrac;
-	//projectiony = (((vid.height*centerx*BASEVIDWIDTH)/BASEVIDHEIGHT)/vid.width)<<FRACBITS;
-	projectiony = centerxfrac;
+	fov = FixedAngle(cv_fov.value/2) + ANGLE_90;
+	fovtan = FINETANGENT(fov >> ANGLETOFINESHIFT);
+	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
+		fovtan = 17*fovtan/10;
+
+	projection = projectiony = FixedDiv(centerxfrac, fovtan);
 
 	R_InitViewBuffer(scaledviewwidth, viewheight);
 
@@ -688,7 +706,7 @@ void R_ExecuteSetViewSize(void)
 		for (i = 0; i < j; i++)
 		{
 			dy = ((i - viewheight*8)<<FRACBITS) + FRACUNIT/2;
-			dy = abs(dy);
+			dy = FixedMul(abs(dy), fovtan);
 			yslopetab[i] = FixedDiv(centerx*FRACUNIT, dy);
 		}
 	}
@@ -803,7 +821,7 @@ subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
 static mobj_t *viewmobj;
 
 // WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) ((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)>>FRACBITS)
+#define AIMINGTODY(a) FixedDiv((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)>>FRACBITS, fovtan)
 
 // recalc necessary stuff for mouseaiming
 // slopes are already calculated for the full possible view (which is 4*viewheight).
@@ -827,16 +845,20 @@ static void R_SetupFreelook(void)
 
 void R_SkyboxFrame(player_t *player)
 {
-	camera_t *thiscam;
+	camera_t *thiscam = &camera[0];
+	UINT8 i;
 
-	if (splitscreen > 2 && player == &players[fourthdisplayplayer])
-		thiscam = &camera4;
-	else if (splitscreen > 1 && player == &players[thirddisplayplayer])
-		thiscam = &camera3;
-	else if (splitscreen && player == &players[secondarydisplayplayer])
-		thiscam = &camera2;
-	else
-		thiscam = &camera;
+	if (splitscreen)
+	{
+		for (i = 1; i <= splitscreen; i++)
+		{
+			if (player == &players[displayplayers[i]])
+			{
+				thiscam = &camera[i];
+				break;
+			}
+		}
+	}
 
 	// cut-away view stuff
 	viewsky = true;
@@ -862,27 +884,24 @@ void R_SkyboxFrame(player_t *player)
 	{
 		aimingangle = player->aiming;
 		viewangle = player->mo->angle;
-		if (/*!demoplayback && */player->playerstate != PST_DEAD)
+		if (/*!demo.playback && */player->playerstate != PST_DEAD)
 		{
 			if (player == &players[consoleplayer])
 			{
-				viewangle = localangle; // WARNING: camera uses this
-				aimingangle = localaiming;
+				viewangle = localangle[0]; // WARNING: camera uses this
+				aimingangle = localaiming[0];
 			}
-			else if (player == &players[secondarydisplayplayer])
+			else if (splitscreen)
 			{
-				viewangle = localangle2;
-				aimingangle = localaiming2;
-			}
-			else if (player == &players[thirddisplayplayer])
-			{
-				viewangle = localangle3;
-				aimingangle = localaiming3;
-			}
-			else if (player == &players[fourthdisplayplayer])
-			{
-				viewangle = localangle4;
-				aimingangle = localaiming4;
+				for (i = 1; i <= splitscreen; i++)
+				{
+					if (player == &players[displayplayers[i]])
+					{
+						viewangle = localangle[i];
+						aimingangle = localaiming[i];
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -1061,24 +1080,24 @@ void R_SetupFrame(player_t *player, boolean skybox)
 	camera_t *thiscam;
 	boolean chasecam = false;
 
-	if (splitscreen > 2 && player == &players[fourthdisplayplayer])
+	if (splitscreen > 2 && player == &players[displayplayers[3]])
 	{
-		thiscam = &camera4;
+		thiscam = &camera[3];
 		chasecam = (cv_chasecam4.value != 0);
 	}
-	else if (splitscreen > 1 && player == &players[thirddisplayplayer])
+	else if (splitscreen > 1 && player == &players[displayplayers[2]])
 	{
-		thiscam = &camera3;
+		thiscam = &camera[2];
 		chasecam = (cv_chasecam3.value != 0);
 	}
-	else if (splitscreen && player == &players[secondarydisplayplayer])
+	else if (splitscreen && player == &players[displayplayers[1]])
 	{
-		thiscam = &camera2;
+		thiscam = &camera[1];
 		chasecam = (cv_chasecam2.value != 0);
 	}
 	else
 	{
-		thiscam = &camera;
+		thiscam = &camera[0];
 		chasecam = (cv_chasecam.value != 0);
 	}
 
@@ -1124,27 +1143,25 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		aimingangle = player->aiming;
 		viewangle = viewmobj->angle;
 
-		if (/*!demoplayback && */player->playerstate != PST_DEAD)
+		if (/*!demo.playback && */player->playerstate != PST_DEAD)
 		{
 			if (player == &players[consoleplayer])
 			{
-				viewangle = localangle; // WARNING: camera uses this
-				aimingangle = localaiming;
+				viewangle = localangle[0]; // WARNING: camera uses this
+				aimingangle = localaiming[0];
 			}
-			else if (player == &players[secondarydisplayplayer])
+			else if (splitscreen)
 			{
-				viewangle = localangle2;
-				aimingangle = localaiming2;
-			}
-			else if (player == &players[thirddisplayplayer])
-			{
-				viewangle = localangle3;
-				aimingangle = localaiming3;
-			}
-			else if (player == &players[fourthdisplayplayer])
-			{
-				viewangle = localangle4;
-				aimingangle = localaiming4;
+				UINT8 i;
+				for (i = 1; i <= splitscreen; i++)
+				{
+					if (player == &players[displayplayers[i]])
+					{
+						viewangle = localangle[i];
+						aimingangle = localaiming[i];
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -1306,27 +1323,18 @@ void R_RenderPlayerView(player_t *player)
 {
 	portal_pair *portal;
 	const boolean skybox = (skyboxmo[0] && cv_skybox.value);
-	UINT8 viewnumber;
-
-	if (player == &players[secondarydisplayplayer] && splitscreen)
-		viewnumber = 1;
-	else if (player == &players[thirddisplayplayer] && splitscreen > 1)
-		viewnumber = 2;
-	else if (player == &players[fourthdisplayplayer] && splitscreen > 2)
-		viewnumber = 3;
-	else
-		viewnumber = 0;
+	UINT8 i;
 
 	// if this is display player 1
-	if (cv_homremoval.value && player == &players[displayplayer])
+	if (cv_homremoval.value && player == &players[displayplayers[0]])
 	{
 		if (cv_homremoval.value == 1)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // No HOM effect!
 		else //'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 128+(timeinmap&15));
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 32+(timeinmap&15));
 	}
 	// Draw over the fourth screen so you don't have to stare at a HOM :V
-	else if (splitscreen == 2 && player == &players[thirddisplayplayer])
+	else if (splitscreen == 2 && player == &players[displayplayers[2]])
 #if 1
 	{
 		// V_DrawPatchFill, but for the fourth screen only
@@ -1345,14 +1353,14 @@ void R_RenderPlayerView(player_t *player)
 #endif
 
 	// load previous saved value of skyVisible for the player
-	if (splitscreen > 2 && player == &players[fourthdisplayplayer])
-		skyVisible = skyVisible4;
-	else if (splitscreen > 1 && player == &players[thirddisplayplayer])
-		skyVisible = skyVisible3;
-	else if (splitscreen && player == &players[secondarydisplayplayer])
-		skyVisible = skyVisible2;
-	else
-		skyVisible = skyVisible1;
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (player == &players[displayplayers[i]])
+		{
+			skyVisible = skyVisiblePerPlayer[i];
+			break;
+		}
+	}
 
 	portalrender = 0;
 	portal_base = portal_cap = NULL;
@@ -1369,7 +1377,7 @@ void R_RenderPlayerView(player_t *player)
 		R_ClearVisibleFloorSplats();
 #endif
 
-		R_RenderBSPNode((INT32)numnodes - 1, viewnumber);
+		R_RenderBSPNode((INT32)numnodes - 1);
 		R_ClipSprites();
 		R_DrawPlanes();
 #ifdef FLOORSPLATS
@@ -1402,7 +1410,7 @@ void R_RenderPlayerView(player_t *player)
 	mytotal = 0;
 	ProfZeroTimer();
 #endif
-	R_RenderBSPNode((INT32)numnodes - 1, viewnumber);
+	R_RenderBSPNode((INT32)numnodes - 1);
 	R_ClipSprites();
 #ifdef TIMING
 	RDMSR(0x10, &mycount);
@@ -1427,7 +1435,7 @@ void R_RenderPlayerView(player_t *player)
 
 		validcount++;
 
-		R_RenderBSPNode((INT32)numnodes - 1, viewnumber);
+		R_RenderBSPNode((INT32)numnodes - 1);
 		R_ClipSprites();
 		//R_DrawPlanes();
 		//R_DrawMasked();
@@ -1453,16 +1461,16 @@ void R_RenderPlayerView(player_t *player)
 	// Check for new console commands.
 	NetUpdate();
 
-	// save value to skyVisible1 or skyVisible2
+	// save value to skyVisiblePerPlayer
 	// this is so that P1 can't affect whether P2 can see a skybox or not, or vice versa
-	if (splitscreen > 2 && player == &players[fourthdisplayplayer])
-		skyVisible4 = skyVisible;
-	else if (splitscreen > 1 && player == &players[thirddisplayplayer])
-		skyVisible3 = skyVisible;
-	else if (splitscreen && player == &players[secondarydisplayplayer])
-		skyVisible2 = skyVisible;
-	else
-		skyVisible1 = skyVisible;
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (player == &players[displayplayers[i]])
+		{
+			skyVisiblePerPlayer[i] = skyVisible;
+			break;
+		}
+	}
 }
 
 // =========================================================================
@@ -1490,6 +1498,7 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_drawdist);
 	//CV_RegisterVar(&cv_drawdist_nights);
 	CV_RegisterVar(&cv_drawdist_precip);
+	CV_RegisterVar(&cv_fov);
 
 	CV_RegisterVar(&cv_chasecam);
 	CV_RegisterVar(&cv_chasecam2);
@@ -1543,7 +1552,6 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_grgammared);
 	CV_RegisterVar(&cv_grfovchange);
 	CV_RegisterVar(&cv_grfog);
-	CV_RegisterVar(&cv_voodoocompatibility);
 	CV_RegisterVar(&cv_grfogcolor);
 	CV_RegisterVar(&cv_grsoftwarefog);
 #ifdef ALAM_LIGHTING
@@ -1552,7 +1560,9 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_grcoronas);
 	CV_RegisterVar(&cv_grcoronasize);
 #endif
-	CV_RegisterVar(&cv_grmd2);
+	CV_RegisterVar(&cv_grmdls);
+	CV_RegisterVar(&cv_grfallbackplayermodel);
+	CV_RegisterVar(&cv_grspritebillboarding);
 #endif
 
 #ifdef HWRENDER

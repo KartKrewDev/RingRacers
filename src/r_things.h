@@ -55,7 +55,7 @@ void R_DelSpriteDefs(UINT16 wadnum);
 #endif
 
 //SoM: 6/5/2000: Light sprites correctly!
-void R_AddSprites(sector_t *sec, INT32 lightlevel, UINT8 viewnumber);
+void R_AddSprites(sector_t *sec, INT32 lightlevel);
 void R_InitSprites(void);
 void R_ClearSprites(void);
 void R_ClipSprites(void);
@@ -83,28 +83,10 @@ typedef struct
 	char hudname[SKINNAMESIZE+1]; // HUD name to display (officially exactly 5 characters long)
 	char facerank[9], facewant[9], facemmap[9]; // Arbitrarily named patch lumps
 
-	UINT8 ability; // ability definition
-	UINT8 ability2; // secondary ability definition
-	INT32 thokitem;
-	INT32 spinitem;
-	INT32 revitem;
-	fixed_t actionspd;
-	fixed_t mindash;
-	fixed_t maxdash;
-
 	// SRB2kart
 	UINT8 kartspeed;
 	UINT8 kartweight;
 	//
-
-	fixed_t normalspeed; // Normal ground
-	fixed_t runspeed; // Speed that you break into your run animation
-
-	UINT8 thrustfactor; // Thrust = thrustfactor * acceleration
-	UINT8 accelstart; // Acceleration if speed = 0
-	UINT8 acceleration; // Acceleration
-
-	fixed_t jumpfactor; // multiple of standard jump height
 
 	// Definable color translation table
 	UINT8 starttranscolor;
@@ -114,6 +96,8 @@ typedef struct
 	// specific sounds per skin
 	sfxenum_t soundsid[NUMSKINSOUNDS]; // sound # in S_sfx table
 } skin_t;
+
+extern CV_PossibleValue_t Forceskin_cons_t[];
 
 // -----------
 // NOT SKINS STUFF !

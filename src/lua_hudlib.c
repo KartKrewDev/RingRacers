@@ -410,6 +410,24 @@ static int libd_drawPaddedNum(lua_State *L)
 	return 0;
 }
 
+
+static int libd_drawPingNum(lua_State *L)
+{
+	INT32 x, y, flags, num;
+	const UINT8 *colormap = NULL;
+	HUDONLY
+	x = luaL_checkinteger(L, 1);
+	y = luaL_checkinteger(L, 2);
+	num = luaL_checkinteger(L, 3);
+	flags = luaL_optinteger(L, 4, 0);
+	flags &= ~V_PARAMMASK; // Don't let crashes happen.
+	if (!lua_isnoneornil(L, 5))
+		colormap = *((UINT8 **)luaL_checkudata(L, 5, META_COLORMAP));
+
+	V_DrawPingNum(x, y, flags, num, colormap);
+	return 0;
+}
+
 static int libd_drawFill(lua_State *L)
 {
 	INT32 x = luaL_optinteger(L, 1, 0);
@@ -425,26 +443,26 @@ static int libd_drawFill(lua_State *L)
 
 static int libd_fadeScreen(lua_State *L)
 {
-    UINT16 color = luaL_checkinteger(L, 1);
-    UINT8 strength = luaL_checkinteger(L, 2);
-    const UINT8 maxstrength = ((color & 0xFF00) ? 32 : 10);
+	UINT16 color = luaL_checkinteger(L, 1);
+	UINT8 strength = luaL_checkinteger(L, 2);
+	const UINT8 maxstrength = ((color & 0xFF00) ? 32 : 10);
 
-    HUDONLY
+	HUDONLY
 
-    if (!strength)
-        return 0;
+	if (!strength)
+		return 0;
 
-    if (strength > maxstrength)
-        return luaL_error(L, "%s fade strength %d out of range (0 - %d)", ((color & 0xFF00) ? "COLORMAP" : "TRANSMAP"), strength, maxstrength);
+	if (strength > maxstrength)
+		return luaL_error(L, "%s fade strength %d out of range (0 - %d)", ((color & 0xFF00) ? "COLORMAP" : "TRANSMAP"), strength, maxstrength);
 
-    if (strength == maxstrength) // Allow as a shortcut for drawfill...
-    {
-        V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, ((color & 0xFF00) ? 31 : color));
-        return 0;
-    }
+	if (strength == maxstrength) // Allow as a shortcut for drawfill...
+	{
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, ((color & 0xFF00) ? 31 : color));
+		return 0;
+	}
 
-    V_DrawFadeScreen(color, strength);
-    return 0;
+	V_DrawFadeScreen(color, strength);
+	return 0;
 }
 
 static int libd_drawString(lua_State *L)
@@ -613,6 +631,7 @@ static luaL_Reg lib_draw[] = {
 	{"drawScaled", libd_drawScaled},
 	{"drawNum", libd_drawNum},
 	{"drawPaddedNum", libd_drawPaddedNum},
+	{"drawPingNum", libd_drawPingNum},
 	{"drawFill", libd_drawFill},
 	{"fadeScreen", libd_fadeScreen},
 	{"drawString", libd_drawString},
@@ -778,24 +797,24 @@ void LUAh_GameHUD(player_t *stplayr)
 	lua_remove(gL, -3); // pop HUD
 	LUA_PushUserdata(gL, stplayr, META_PLAYER);
 
-	if (splitscreen > 2 && stplayr == &players[fourthdisplayplayer])
+	if (splitscreen > 2 && stplayr == &players[displayplayers[3]])
 	{
-		LUA_PushUserdata(gL, &camera4, META_CAMERA);
+		LUA_PushUserdata(gL, &camera[3], META_CAMERA);
 		camnum = 4;
 	}
-	else if (splitscreen > 1 && stplayr == &players[thirddisplayplayer])
+	else if (splitscreen > 1 && stplayr == &players[displayplayers[2]])
 	{
-		LUA_PushUserdata(gL, &camera3, META_CAMERA);
+		LUA_PushUserdata(gL, &camera[2], META_CAMERA);
 		camnum = 3;
 	}
-	else if (splitscreen && stplayr == &players[secondarydisplayplayer])
+	else if (splitscreen && stplayr == &players[displayplayers[1]])
 	{
-		LUA_PushUserdata(gL, &camera2, META_CAMERA);
+		LUA_PushUserdata(gL, &camera[1], META_CAMERA);
 		camnum = 2;
 	}
 	else
 	{
-		LUA_PushUserdata(gL, &camera, META_CAMERA);
+		LUA_PushUserdata(gL, &camera[0], META_CAMERA);
 		camnum = 1;
 	}
 

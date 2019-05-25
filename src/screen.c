@@ -59,6 +59,8 @@ INT32 setmodeneeded; //video mode change needed if > 0 (the mode number to set +
 
 static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
 
+static CV_PossibleValue_t shittyscreen_cons_t[] = {{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}, {0, NULL}};
+
 //added : 03-02-98: default screen mode, as loaded/saved in config
 #ifdef WII
 consvar_t cv_scr_width = {"scr_width", "640", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -70,6 +72,8 @@ consvar_t cv_scr_height = {"scr_height", "800", CV_SAVE, CV_Unsigned, NULL, 0, N
 consvar_t cv_scr_depth = {"scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 #endif
 consvar_t cv_renderview = {"renderview", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_vhseffect = {"vhspause", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_shittyscreen = {"televisionsignal", "Okay", CV_NOSHOWHELP, shittyscreen_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static void SCR_ChangeFullscreen (void);
 
@@ -403,7 +407,7 @@ void SCR_DisplayTicRate(void)
 	tic_t i;
 	tic_t ontic = I_GetTime();
 	tic_t totaltics = 0;
-	INT32 ticcntcolor = 0;
+	const UINT8 *ticcntcolor = NULL;
 
 	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
 		fpsgraph[i % TICRATE] = false;
@@ -414,13 +418,36 @@ void SCR_DisplayTicRate(void)
 		if (fpsgraph[i])
 			++totaltics;
 
-	if (totaltics <= TICRATE/2) ticcntcolor = V_REDMAP;
-	else if (totaltics == TICRATE) ticcntcolor = V_GREENMAP;
+	if (totaltics <= TICRATE/2) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SALMON, GTC_CACHE);
+	else if (totaltics == TICRATE) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
 
-	V_DrawString(vid.width-(24*vid.dupx), vid.height-(16*vid.dupy),
+	/*V_DrawString(vid.width-(24*vid.dupx), vid.height-(16*vid.dupy),
 		V_YELLOWMAP|V_NOSCALESTART, "FPS");
 	V_DrawString(vid.width-(40*vid.dupx), vid.height-( 8*vid.dupy),
-		ticcntcolor|V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));
+		ticcntcolor|V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));*/
+
+	// draw "FPS"
+	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
+	// draw total frame:
+	V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT, TICRATE, ticcntcolor);
+	// draw "/"
+	V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT, frameslash, ticcntcolor);
+	// draw our actual framerate
+	V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT, totaltics, ticcntcolor);
+
 
 	lasttic = ontic;
+}
+
+// SCR_DisplayLocalPing
+// Used to draw the user's local ping next to the framerate for a quick check without having to hold TAB for instance. By default, it only shows up if your ping is too high and risks getting you kicked.
+
+void SCR_DisplayLocalPing(void)
+{
+	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
+	if (cv_showping.value == 1 || (cv_showping.value == 2 && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
+	{
+		INT32 dispy = cv_ticrate.value ? 160 : 181;
+		HU_drawPing(307, dispy, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
+	}
 }

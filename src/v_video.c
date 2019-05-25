@@ -60,7 +60,6 @@ static void CV_Gammaxxx_ONChange(void);
 static CV_PossibleValue_t grgamma_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t grsoftwarefog_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "LightPlanes"}, {0, NULL}};
 
-consvar_t cv_voodoocompatibility = {"gr_voodoocompatibility", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grfovchange = {"gr_fovchange", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grfog = {"gr_fog", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grfogcolor = {"gr_fogcolor", "AAAAAA", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -80,7 +79,9 @@ consvar_t cv_grcoronasize = {"gr_coronasize", "1", CV_SAVE| CV_FLOAT, 0, NULL, 0
 
 //static CV_PossibleValue_t CV_MD2[] = {{0, "Off"}, {1, "On"}, {2, "Old"}, {0, NULL}};
 // console variables in development
-consvar_t cv_grmd2 = {"gr_md2", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grmdls = {"gr_mdls", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grfallbackplayermodel = {"gr_fallbackplayermodel", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 #endif
 
 const UINT8 gammatable[5][256] =
@@ -1214,6 +1215,66 @@ void V_DrawPatchFill(patch_t *pat)
 	}
 }
 
+void V_DrawVhsEffect(boolean rewind)
+{
+	static fixed_t upbary = 100, downbary = 150;
+
+	UINT8 *buf = screens[0], *tmp = screens[4];
+	UINT16 y;
+	UINT32 x, pos = 0;
+
+	UINT8 *normalmapstart = ((UINT8 *)transtables + (8<<FF_TRANSSHIFT|(19<<8)));
+#ifdef HQ_VHS
+	UINT8 *tmapstart = ((UINT8 *)transtables + (6<<FF_TRANSSHIFT));
+#endif
+	UINT8 *thismapstart;
+	SINT8 offs;
+
+	UINT8 barsize = vid.dupy<<5;
+	UINT8 updistort = vid.dupx<<(rewind ? 5 : 3);
+	UINT8 downdistort = updistort>>1;
+
+	if (rewind)
+		V_DrawVhsEffect(false); // experimentation
+
+	upbary -= vid.dupy * (rewind ? 3 : 1.8f);
+	downbary += vid.dupy * (rewind ? 2 : 1);
+	if (upbary < -barsize) upbary = vid.height;
+	if (downbary > vid.height) downbary = -barsize;
+
+	for (y = 0; y < vid.height; y+=2)
+	{
+		thismapstart = normalmapstart;
+		offs = 0;
+
+		if (y >= upbary && y < upbary+barsize)
+		{
+			thismapstart -= (2<<FF_TRANSSHIFT) - (5<<8);
+			offs += updistort * 2.0f * min(y-upbary, upbary+barsize-y) / barsize;
+		}
+		if (y >= downbary && y < downbary+barsize)
+		{
+			thismapstart -= (2<<FF_TRANSSHIFT) - (5<<8);
+			offs -= downdistort * 2.0f * min(y-downbary, downbary+barsize-y) / barsize;
+		}
+		offs += M_RandomKey(vid.dupx<<1);
+
+		// lazy way to avoid crashes
+		if (y == 0 && offs < 0) offs = 0;
+		else if (y >= vid.height-2 && offs > 0) offs = 0;
+
+		for (x = pos+vid.rowbytes*2; pos < x; pos++)
+		{
+			tmp[pos] = thismapstart[buf[pos+offs]];
+#ifdef HQ_VHS
+			tmp[pos] = tmapstart[buf[pos]<<8 | tmp[pos]];
+#endif
+		}
+	}
+
+	memcpy(buf, tmp, vid.rowbytes*vid.height);
+}
+
 //
 // Fade all the screen buffer, so that the menu is more readable,
 // especially now that we use the small hufont in the menus...
@@ -1234,9 +1295,12 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 #endif
 
     {
-        const UINT8 *fadetable = ((color & 0xFF00) // Color is not palette index?
-        ? ((UINT8 *)colormaps + strength*256) // Do COLORMAP fade.
-        : ((UINT8 *)transtables + ((9-strength)<<FF_TRANSSHIFT) + color*256)); // Else, do TRANSMAP** fade.
+        const UINT8 *fadetable =
+			(color > 0xFFF0) // Grab a specific colormap palette?
+			? R_GetTranslationColormap(color | 0xFFFF0000, strength, GTC_CACHE)
+			: ((color & 0xFF00) // Color is not palette index?
+			? ((UINT8 *)colormaps + strength*256) // Do COLORMAP fade.
+			: ((UINT8 *)transtables + ((9-strength)<<FF_TRANSSHIFT) + color*256)); // Else, do TRANSMAP** fade.
         const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
         UINT8 *buf = screens[0];
 
@@ -1295,16 +1359,16 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 		return lavendermap;
 	case 10: // 0x8A, gold
 		return goldmap;
-	case 11: // 0x8B, tea-green
-		return teamap;
-	case 12: // 0x8C, steel
-		return steelmap;
+	case 11: // 0x8B, aqua-green
+		return aquamap;
+	case 12: // 0x8C, magenta
+		return magentamap;
 	case 13: // 0x8D, pink
 		return pinkmap;
 	case 14: // 0x8E, brown
 		return brownmap;
-	case 15: // 0x8F, peach
-		return peachmap;
+	case 15: // 0x8F, tan
+		return tanmap;
 	default: // reset
 		return NULL;
 	}
@@ -1342,8 +1406,8 @@ void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed)
 		V_DrawScaledPatch(x, y, flags, hu_font[c]);
 }
 
-// Writes a single character for the chat. (draw WHITE if bit 7 set)
-// Essentially the same as the above but it's small or big depending on what resolution you've chosen to huge..
+// Writes a single character for the chat (half scaled). (draw WHITE if bit 7 set)
+// 16/02/19: Scratch the scaling thing, chat doesn't work anymore under 2x res -Lat'
 //
 void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UINT8 *colormap)
 {
@@ -1359,13 +1423,11 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UI
 	if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
 		return;
 
-	w = (vid.width < 640 ) ? (SHORT(hu_font[c]->width)/2) : (SHORT(hu_font[c]->width));	// use normal sized characters if we're using a terribly low resolution.
+	w = SHORT(hu_font[c]->width)/2;
 	if (x + w > vid.width)
 		return;
 
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, (vid.width < 640) ? (FRACUNIT) : (FRACUNIT/2), flags, hu_font[c], colormap);
-
-
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/2, flags, hu_font[c], colormap);
 }
 
 // Precompile a wordwrapped string to any given width.
@@ -1462,8 +1524,11 @@ void V_DrawString(INT32 x, INT32 y, INT32 option, const char *string)
 	{
 		dupx = dupy = 1;
 		scrwidth = vid.width/vid.dupx;
-		left = (scrwidth - BASEVIDWIDTH)/2;
-		scrwidth -= left;
+		if (!(option & V_SNAPTOLEFT))
+		{
+			left = (scrwidth - BASEVIDWIDTH)/2;
+			scrwidth -= left;
+		}
 	}
 
 	charflags = (option & V_CHARCOLORMASK);
@@ -1872,6 +1937,12 @@ void V_DrawThinString(INT32 x, INT32 y, INT32 option, const char *string)
 	}
 }
 
+void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_ThinStringWidth(string, option)/2;
+	V_DrawThinString(x, y, option, string);
+}
+
 void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *string)
 {
 	x -= V_ThinStringWidth(string, option);
@@ -2013,6 +2084,28 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 		V_DrawScaledPatch(x, y, flags, tallnum[num % 10]);
 		num /= 10;
 	} while (--digits);
+}
+
+// Draws a number using the PING font thingy.
+// TODO: Merge number drawing functions into one with "font name" selection.
+
+void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
+{
+	INT32 w = SHORT(pingnum[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
+
+	if (flags & V_NOSCALESTART)
+		w *= vid.dupx;
+
+	if (num < 0)
+		num = -num;
+
+	// draw the number
+	do
+	{
+		x -= (w-1);	// Oni wanted their outline to intersect.
+		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, pingnum[num%10], colormap);
+		num /= 10;
+	} while (num);
 }
 
 // Write a string using the credit font
