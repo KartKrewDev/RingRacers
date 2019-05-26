@@ -728,15 +728,78 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			UINT8 firsti, secondi, mul;
 			UINT32 r, g, b;
 
-			firsti = ((UINT8)(255-brightness) / 16);
-			mul = ((UINT8)(255-brightness) % 16);
+			// Rainbow needs to find the closest match to the textures themselves, instead of matching brightnesses to other colors.
+			// Ensue horrible mess.
+			if (skinnum == TC_RAINBOW)
+			{
+				UINT16 brightdif = 256;
+				UINT8 colorbrightnesses[16];
+				INT32 compare, m, d;
+				UINT8 i;
+
+				// Ignore pure white & pitch black
+				if (brightness > 246 || brightness < 7)
+				{
+					cur->rgba = image->rgba;
+					cur++; image++; blendimage++;
+					continue;
+				}
+
+				firsti = 0;
+				mul = 0;
+
+				for (i = 0; i < 16; i++)
+				{
+					RGBA_t tempc = V_GetColor(colortranslations[color][i]);
+					SETBRIGHTNESS(colorbrightnesses[i], tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
+				}
+
+				for (i = 0; i < 16; i++)
+				{
+					if (brightness > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
+						continue;
+					compare = abs((INT16)(colorbrightnesses[i]) - (INT16)(brightness));
+					if (compare < brightdif)
+					{
+						brightdif = (UINT16)compare;
+						firsti = i; // best matching color that's equal brightness or darker
+					}
+				}
+
+				secondi = firsti+1; // next color in line
+				if (secondi == 16)
+				{
+					m = (INT16)brightness; // - 0;
+					d = (INT16)colorbrightnesses[firsti]; // - 0;
+				}
+				else
+				{
+					m = (INT16)brightness - (INT16)colorbrightnesses[secondi];
+					d = (INT16)colorbrightnesses[firsti] - (INT16)colorbrightnesses[secondi];
+				}
+
+				if (m >= d)
+					m = d-1;
+
+				// calculate the "gradient" multiplier based on how close this color is to the one next in line
+				if (m <= 0 || d <= 0)
+					mul = 0;
+				else
+					mul = 15 - ((m * 16) / d);
+			}
+			else
+			{
+				// Thankfully, it's normally way more simple.
+				// Just convert brightness to a skincolor value, use remainder to find the gradient multipler
+				firsti = ((UINT8)(255-brightness) / 16);
+				secondi = firsti+1;
+				mul = ((UINT8)(255-brightness) % 16);
+			}
 
 			blendcolor = V_GetColor(colortranslations[color][firsti]);
 
 			if (mul > 0) // If it's 0, then we only need the first color.
 			{
-				secondi = firsti+1;
-
 				if (secondi == 16) // blend to black
 					nextcolor = V_GetColor(31);
 				else
@@ -761,10 +824,20 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 		if (skinnum == TC_RAINBOW)
 		{
-			// Directly set blendcolor
-			cur->s.red = blendcolor.s.red;
-			cur->s.green = blendcolor.s.green;
-			cur->s.blue = blendcolor.s.blue;
+			UINT32 tempcolor;
+			UINT16 colorbright = 127; // an arbitrary value now, since blendcolor is always changing
+
+			tempcolor = (brightness * blendcolor.s.red) / colorbright;
+			tempcolor = min(255, tempcolor);
+			cur->s.red = (UINT8)tempcolor;
+
+			tempcolor = (brightness * blendcolor.s.green) / colorbright;
+			tempcolor = min(255, tempcolor);
+			cur->s.green = (UINT8)tempcolor;
+
+			tempcolor = (brightness * blendcolor.s.blue) / colorbright;
+			tempcolor = min(255, tempcolor);
+			cur->s.blue = (UINT8)tempcolor;
 			cur->s.alpha = image->s.alpha;
 		}
 		else
