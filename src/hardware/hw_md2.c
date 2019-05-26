@@ -738,7 +738,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 				UINT8 i;
 
 				// Ignore pure white & pitch black
-				if (brightness > 246 || brightness < 7)
+				if (brightness > 253 || brightness < 2)
 				{
 					cur->rgba = image->rgba;
 					cur++; image++; blendimage++;
@@ -825,7 +825,11 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 		if (skinnum == TC_RAINBOW)
 		{
 			UINT32 tempcolor;
-			UINT16 colorbright = 127; // an arbitrary value now, since blendcolor is always changing
+			UINT16 colorbright;
+
+			SETBRIGHTNESS(colorbright,blendcolor.s.red,blendcolor.s.green,blendcolor.s.blue);
+			if (colorbright == 0)
+				colorbright = 1; // no dividing by 0 please
 
 			tempcolor = (brightness * blendcolor.s.red) / colorbright;
 			tempcolor = min(255, tempcolor);
