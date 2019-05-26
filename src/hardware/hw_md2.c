@@ -798,7 +798,8 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 			blendcolor = V_GetColor(colortranslations[color][firsti]);
 
-			if (mul > 0) // If it's 0, then we only need the first color.
+			if (mul > 0 // If it's 0, then we only need the first color.
+				&& colortranslations[color][firsti] != colortranslations[color][secondi]) // Some colors have duplicate colors in a row, so let's just save the process
 			{
 				if (secondi == 16) // blend to black
 					nextcolor = V_GetColor(31);
