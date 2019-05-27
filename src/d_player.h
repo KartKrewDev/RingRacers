@@ -266,6 +266,7 @@ typedef enum
 	k_ringdelay,		// 3 tic delay between every ring usage
 	k_ringboost,		// Ring boost timer
 	k_ringlock,			// Prevent picking up rings while SPB is locked on
+	k_sparkleanim,		// Angle offset for ring sparkle animation
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	k_pogospring,		// Pogo spring bounce effect

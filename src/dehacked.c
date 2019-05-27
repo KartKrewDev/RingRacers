@@ -8418,6 +8418,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"RINGDELAY",
 	"RINGBOOST",
 	"RINGLOCK",
+	"SPARKLEANIM",
 	"JMP",
 	"OFFROAD",
 	"POGOSPRING",
