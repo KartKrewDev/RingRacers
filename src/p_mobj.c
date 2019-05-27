@@ -8439,6 +8439,8 @@ void P_MobjThinker(mobj_t *mobj)
 			if (mobj->target->player->kartstuff[k_bubbleblowup])
 			{
 				INT32 blow = mobj->target->player->kartstuff[k_bubbleblowup];
+				if (blow > bubbletime)
+					blow = bubbletime;
 
 				if (curstate != S_BUBBLESHIELDBLOWUP)
 					P_SetMobjState(mobj, S_BUBBLESHIELDBLOWUP);
@@ -8448,6 +8450,8 @@ void P_MobjThinker(mobj_t *mobj)
 				scale += (blow * (3*scale)) / bubbletime;
 
 				mobj->frame = (states[S_BUBBLESHIELDBLOWUP].frame + mobj->extravalue1);
+				if ((mobj->target->player->kartstuff[k_bubbleblowup] > bubbletime) && (leveltime & 1))
+					mobj->frame = (states[S_BUBBLESHIELDBLOWUP].frame + 5);
 
 				if (mobj->extravalue1 < 4 && mobj->extravalue2 < blow && !mobj->cvmem && (leveltime & 1)) // Growing
 				{

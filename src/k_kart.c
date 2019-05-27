@@ -6508,7 +6508,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											S_StartSound(player->mo, sfx_s3k75);
 										player->kartstuff[k_bubbleblowup]++;
 										player->kartstuff[k_bubblecool] = player->kartstuff[k_bubbleblowup]*3;
-										if (player->kartstuff[k_bubbleblowup] > bubbletime)
+										if (player->kartstuff[k_bubbleblowup] > bubbletime+10)
 										{
 											K_ThrowKartItem(player, (player->kartstuff[k_throwdir] > 0), MT_BUBBLESHIELDTRAP, -1, 0);
 											K_PlayAttackTaunt(player->mo);
