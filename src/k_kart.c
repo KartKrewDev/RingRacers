@@ -2240,9 +2240,9 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
-		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0 to 33.3% top speed
-		//accelboost += (FRACUNIT / 3); // + 33.3% acceleration
-		numboosts++; // (Drafting suffers no boost stack penalty!) 
+		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((3*FRACUNIT)/100); // min is 30%, max is 54%
+		speedboost += FixedMul(draftspeed, player->kartstuff[k_draftpower]); // (Drafting suffers no boost stack penalty.)
+		numboosts++;
 	}
 
 	player->kartstuff[k_boostpower] = boostpower;
