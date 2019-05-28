@@ -1816,6 +1816,9 @@ void P_XYMovement(mobj_t *mo)
 			// Now compare the Zs of the different quantizations
 			if (oldangle-newangle > ANG30 && oldangle-newangle < ANGLE_180) { // Allow for a bit of sticking - this value can be adjusted later
 				mo->standingslope = oldslope;
+#ifdef HWRENDER
+				mo->modeltilt = mo->standingslope;
+#endif
 				P_SlopeLaunch(mo);
 
 				//CONS_Printf("launched off of slope - ");
@@ -2389,6 +2392,9 @@ static boolean P_ZMovement(mobj_t *mo)
 		if (((mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope) && (mo->type != MT_STEAM))
 		{
 			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope;
+#ifdef HWRENDER
+			mo->modeltilt = mo->standingslope;
+#endif
 			P_ReverseQuantizeMomentumToSlope(&mom, mo->standingslope);
 		}
 #endif
@@ -6173,7 +6179,12 @@ void P_RunShadows(void)
 
 	for (mobj = shadowcap; mobj; mobj = next)
 	{
-		fixed_t floorz;
+		boolean flip;
+		fixed_t newz;
+		sector_t *sec;
+#ifdef ESLOPE
+		pslope_t *slope = NULL;
+#endif
 
 		next = mobj->hnext;
 		P_SetTarget(&mobj->hnext, NULL);
@@ -6184,16 +6195,106 @@ void P_RunShadows(void)
 			continue; // shouldn't you already be dead?
 		}
 
-		if (mobj->target->player)
-			floorz = mobj->target->floorz;
-		else // FOR SOME REASON, plain floorz is not reliable for normal objects, only players?!
-			floorz = P_FloorzAtPos(mobj->target->x, mobj->target->y, mobj->target->z, mobj->target->height);
-
 		K_MatchGenericExtraFlags(mobj, mobj->target);
+		flip = (mobj->eflags & MFE_VERTICALFLIP);
 
-		if (((mobj->target->eflags & MFE_VERTICALFLIP) && mobj->target->z+mobj->target->height > mobj->target->ceilingz)
-			|| (!(mobj->target->eflags & MFE_VERTICALFLIP) && mobj->target->z < floorz))
-			mobj->flags2 |= MF2_DONTDRAW;
+		sec = R_PointInSubsector(mobj->target->x, mobj->target->y)->sector;
+
+		if (flip)
+		{
+#ifdef ESLOPE
+			if (sec->c_slope)
+			{
+				slope = sec->c_slope;
+				newz = P_GetZAt(sec->c_slope, mobj->target->x, mobj->target->y);
+			}
+			else
+#endif
+				newz = sec->ceilingheight;
+		}
+		else
+		{
+#ifdef ESLOPE
+			if (sec->f_slope)
+			{
+				slope = sec->f_slope;
+				newz = P_GetZAt(sec->f_slope, mobj->target->x, mobj->target->y);
+			}
+			else
+#endif
+				newz = sec->floorheight;
+		}
+
+		// Check FOFs for a better suited slope
+		if (sec->ffloors)
+		{
+			ffloor_t *rover;
+
+			for (rover = sec->ffloors; rover; rover = rover->next)
+			{
+				fixed_t surface;
+
+				if (!(rover->flags & FF_EXISTS))
+					continue;
+
+				if ((!(((rover->flags & FF_BLOCKPLAYER && mobj->target->player)
+					|| (rover->flags & FF_BLOCKOTHERS && !mobj->target->player))
+					|| (rover->flags & FF_QUICKSAND))
+					|| (rover->flags & FF_SWIMMABLE)))
+					continue;
+
+				if (flip)
+				{
+					surface = *rover->bottomheight;
+#ifdef ESLOPE
+					if (*rover->b_slope)
+						surface = P_GetZAt(*rover->b_slope, mobj->target->x, mobj->target->y);
+#endif
+
+					if (surface < newz && surface > (mobj->target->z + mobj->target->height))
+					{
+						newz = surface;
+#ifdef ESLOPE
+						if (*rover->b_slope)
+							slope = *rover->b_slope;
+#endif
+					}
+				}
+				else
+				{
+					surface = *rover->topheight;
+#ifdef ESLOPE
+					if (*rover->t_slope)
+						surface = P_GetZAt(*rover->t_slope, mobj->target->x, mobj->target->y);
+#endif
+
+					if (surface > newz && surface < mobj->target->z)
+					{
+						newz = surface;
+#ifdef ESLOPE
+						if (*rover->t_slope)
+							slope = *rover->t_slope;
+#endif
+					}
+				}
+			}
+		}
+
+		mobj->standingslope = slope;
+#ifdef HWRENDER
+		mobj->modeltilt = mobj->standingslope;
+#endif
+
+		if (flip)
+		{
+			if ((mobj->target->z + mobj->target->height) > newz)
+				mobj->flags2 |= MF2_DONTDRAW;
+		}
+		else
+		{
+			if (mobj->target->z < newz)
+				mobj->flags2 |= MF2_DONTDRAW;
+		}
 
 		// First scale to the same radius
 		P_SetScale(mobj, FixedDiv(mobj->target->radius, mobj->info->radius));
@@ -6205,13 +6306,12 @@ void P_RunShadows(void)
 
 		P_TeleportMove(mobj, dest->x, dest->y, mobj->target->z);
 
-		if (((mobj->eflags & MFE_VERTICALFLIP) && (mobj->ceilingz > mobj->z+mobj->height))
-			|| (!(mobj->eflags & MFE_VERTICALFLIP) && (floorz < mobj->z)))
+		if ((flip && newz > (mobj->z + mobj->height)) || (!flip && newz < mobj->z))
 		{
 			INT32 i;
 			fixed_t prevz;
 
-			mobj->z = (mobj->eflags & MFE_VERTICALFLIP ? mobj->ceilingz : floorz);
+			mobj->z = newz;
 
 			for (i = 0; i < MAXFFLOORS; i++)
 			{
@@ -6223,7 +6323,7 @@ void P_RunShadows(void)
 				// Check new position to see if you should still be on that ledge
 				P_TeleportMove(mobj, dest->x, dest->y, mobj->z);
 
-				mobj->z = (mobj->eflags & MFE_VERTICALFLIP ? mobj->ceilingz : floorz);
+				mobj->z = newz;
 
 				if (mobj->z == prevz)
 					break;
@@ -8132,6 +8232,9 @@ void P_MobjThinker(mobj_t *mobj)
 			P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
 				mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
 			P_SetScale(mobj, mobj->target->scale);
+#ifdef HWRENDER
+			mobj->modeltilt = mobj->target->modeltilt;
+#endif
 
 			{
 				player_t *p = NULL;

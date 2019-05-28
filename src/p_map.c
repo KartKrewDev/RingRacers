@@ -2881,14 +2881,24 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				P_HandleSlopeLanding(thing, tmfloorslope);
 
 			if (thing->momz <= 0)
+			{
 				thing->standingslope = tmfloorslope;
+#ifdef HWRENDER
+				thing->modeltilt = thing->standingslope;
+#endif
+			}
 		}
 		else if (thing->z+thing->height >= tmceilingz && (thing->eflags & MFE_VERTICALFLIP)) {
 			if (!startingonground && tmceilingslope)
 				P_HandleSlopeLanding(thing, tmceilingslope);
 
 			if (thing->momz >= 0)
+			{
 				thing->standingslope = tmceilingslope;
+#ifdef HWRENDER
+				thing->modeltilt = thing->standingslope;
+#endif
+			}
 		}
 	}
 	else // don't set standingslope if you're not going to clip against it
@@ -4691,7 +4701,7 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 			if (!(rover->flags & FF_EXISTS))
 				continue;
 
-			if ((!(rover->flags & FF_SOLID || rover->flags & FF_QUICKSAND) || (rover->flags & FF_SWIMMABLE)))
+			if (!((rover->flags & FF_SOLID) || (rover->flags & FF_QUICKSAND)) || (rover->flags & FF_SWIMMABLE))
 				continue;
 
 			topheight = *rover->topheight;

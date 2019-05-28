@@ -4093,6 +4093,86 @@ static void K_MoveHeldObjects(player_t *player)
 					if (R_PointToDist2(cur->x, cur->y, targx, targy) > 768*FRACUNIT)
 						P_TeleportMove(cur, targx, targy, cur->z);
 
+#ifdef ESLOPE
+					// We gotta do ALL of this... just so that bananas can tilt in OGL :V
+					if (P_IsObjectOnGround(cur))
+					{
+						pslope_t *slope = NULL;
+						sector_t *sec = R_PointInSubsector(cur->x, cur->y)->sector;
+						boolean flip = (cur->eflags & MFE_VERTICALFLIP);
+
+						if (flip)
+						{
+							if (sec->c_slope)
+							{
+								slope = sec->c_slope;
+								targz = P_GetZAt(sec->c_slope, cur->x, cur->y);
+							}
+							else
+								targz = sec->ceilingheight;
+						}
+						else
+						{
+							if (sec->f_slope)
+							{
+								slope = sec->f_slope;
+								targz = P_GetZAt(sec->f_slope, cur->x, cur->y);
+							}
+							else
+								targz = sec->floorheight;
+						}
+
+						// Check FOFs for a better suited slope
+						if (sec->ffloors)
+						{
+							ffloor_t *rover;
+
+							for (rover = sec->ffloors; rover; rover = rover->next)
+							{
+								fixed_t surface;
+
+								if (!(rover->flags & FF_EXISTS))
+									continue;
+
+								if (!((rover->flags & FF_BLOCKOTHERS) || (rover->flags & FF_QUICKSAND)) || (rover->flags & FF_SWIMMABLE))
+									continue;
+
+								if (flip)
+								{
+									surface = *rover->bottomheight;
+									if (*rover->b_slope)
+										surface = P_GetZAt(*rover->b_slope, cur->x, cur->y);
+
+									if (surface < targz && surface > (cur->z + cur->height))
+									{
+										targz = surface;
+										if (*rover->b_slope)
+											slope = *rover->b_slope;
+									}
+								}
+								else
+								{
+									surface = *rover->topheight;
+									if (*rover->t_slope)
+										surface = P_GetZAt(*rover->t_slope, cur->x, cur->y);
+
+									if (surface > targz && surface < cur->z)
+									{
+										targz = surface;
+										if (*rover->t_slope)
+											slope = *rover->t_slope;
+									}
+								}
+							}
+						}
+
+						cur->standingslope = slope;
+#ifdef HWRENDER
+						cur->modeltilt = cur->standingslope;
+#endif
+					}
+#endif
+
 					cur = cur->hnext;
 				}
 			}
@@ -4182,6 +4262,9 @@ static void K_MoveHeldObjects(player_t *player)
 
 					P_TeleportMove(cur, targx, targy, targz);
 					K_FlipFromObject(cur, player->mo);	// Update graviflip in real time thanks.
+#ifdef HWRENDER
+					cur->modeltilt = player->mo->modeltilt;
+#endif
 					num = (num+1) % 2;
 					cur = cur->hnext;
 				}

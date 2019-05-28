@@ -1675,12 +1675,16 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->frame |= tr_trans50<<FF_TRANSSHIFT;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
+	ghost->standingslope = mobj->standingslope;
+#ifdef HWRENDER
+	ghost->modeltilt = mobj->modeltilt;
+#endif
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
 
 	if (!(mobj->flags & MF_DONTENCOREMAP))
-		mobj->flags &= ~MF_DONTENCOREMAP;
+		ghost->flags &= ~MF_DONTENCOREMAP;
 
 	return ghost;
 }

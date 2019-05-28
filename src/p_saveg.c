@@ -2144,7 +2144,12 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->hprev = (mobj_t *)(size_t)READUINT32(save_p);
 #ifdef ESLOPE
 	if (diff2 & MD2_SLOPE)
+	{
 		mobj->standingslope = P_SlopeById(READUINT16(save_p));
+#ifdef HWRENDER
+		mobj->modeltilt = mobj->standingslope;
+#endif
+	}
 #endif
 	if (diff2 & MD2_COLORIZED)
 		mobj->colorized = READUINT8(save_p);
