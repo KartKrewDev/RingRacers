@@ -4796,6 +4796,18 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	// Ring
 	"S_RING",
+	"S_FASTRING1",
+	"S_FASTRING2",
+	"S_FASTRING3",
+	"S_FASTRING4",
+	"S_FASTRING5",
+	"S_FASTRING6",
+	"S_FASTRING7",
+	"S_FASTRING8",
+	"S_FASTRING9",
+	"S_FASTRING10",
+	"S_FASTRING11",
+	"S_FASTRING12",
 
 	// Blue Sphere for special stages
 	"S_BLUEBALL",
@@ -7164,6 +7176,29 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_OPAQUESMOKE4",
 	"S_OPAQUESMOKE5",
 
+	"S_RINGDEBT",
+	"S_RINGSPARKS1",
+	"S_RINGSPARKS2",
+	"S_RINGSPARKS3",
+	"S_RINGSPARKS4",
+	"S_RINGSPARKS5",
+	"S_RINGSPARKS6",
+	"S_RINGSPARKS7",
+	"S_RINGSPARKS8",
+	"S_RINGSPARKS9",
+	"S_RINGSPARKS10",
+	"S_RINGSPARKS11",
+	"S_RINGSPARKS12",
+	"S_RINGSPARKS13",
+	"S_RINGSPARKS14",
+	"S_RINGSPARKS15",
+
+	"S_DRAFTDUST1",
+	"S_DRAFTDUST2",
+	"S_DRAFTDUST3",
+	"S_DRAFTDUST4",
+	"S_DRAFTDUST5",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -7950,6 +7985,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_LIONMAN",
 
 	"MT_KARMAFIREWORK",
+	"MT_RINGSPARKS",
+	"MT_DRAFTDUST",
 
 #ifdef SEENAMES
 	"MT_NAMECHECK",
@@ -8364,13 +8401,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"DROPDASH",
 
 	"THROWDIR",
-	"LAPANIMATION",
-	"LAPHAND",
-	"CARDANIMATION",
-	"VOICES",
-	"TAUNTVOICES",
 	"INSTASHIELD",
-	"ENGINESND",
 
 	"FLOORBOOST",
 	"SPINOUTTYPE",
@@ -8381,19 +8412,27 @@ static const char *const KARTSTUFF_LIST[] = {
 	"DRIFTBOOST",
 	"BOOSTCHARGE",
 	"STARTBOOST",
+	"RINGS",
+	"PICKUPRINGS",
+	"USERINGS",
+	"RINGDELAY",
+	"RINGBOOST",
+	"RINGLOCK",
+	"SPARKLEANIM",
 	"JMP",
 	"OFFROAD",
 	"POGOSPRING",
 	"BRAKESTOP",
 	"WATERSKIP",
 	"DASHPADCOOLDOWN",
+	"NUMBOOSTS",
 	"BOOSTPOWER",
 	"SPEEDBOOST",
 	"ACCELBOOST",
+	"DRAFTPOWER",
+	"DRAFTLEEWAY",
+	"LASTDRAFT",
 	"BOOSTANGLE",
-	"BOOSTCAM",
-	"DESTBOOSTCAM",
-	"TIMEOVERCAM",
 	"AIZDRIFTSTRAT",
 	"BRAKEDRIFT",
 
@@ -8408,7 +8447,9 @@ static const char *const KARTSTUFF_LIST[] = {
 	"HYUDOROTIMER",
 	"STEALINGTIMER",
 	"STOLENTIMER",
+	"SUPERRING",
 	"SNEAKERTIMER",
+	"LEVELBOOSTER",
 	"GROWSHRINKTIMER",
 	"SQUISHEDTIMER",
 	"ROCKETSNEAKERTIMER",
@@ -8428,10 +8469,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"COMEBACKPOINTS",
 	"COMEBACKMODE",
 	"WANTED",
-	"YOUGOTEM",
 
-	"ITEMBLINK",
-	"ITEMBLINKMODE",
 	"GETSPARKS",
 	"JAWZTARGETDELAY",
 	"SPECTATEWAIT",
@@ -8529,9 +8567,13 @@ struct {
 
 	// Frame settings
 	{"FF_FRAMEMASK",FF_FRAMEMASK},
-	{"FF_PAPERSPRITE",FF_PAPERSPRITE},
 	{"FF_ANIMATE",FF_ANIMATE},
+	{"FF_RANDOMANIM",FF_RANDOMANIM},
+	{"FF_GLOBALANIM",FF_GLOBALANIM},
 	{"FF_FULLBRIGHT",FF_FULLBRIGHT},
+	{"FF_SEMIBRIGHT",FF_SEMIBRIGHT},
+	{"FF_PAPERSPRITE",FF_PAPERSPRITE},
+	{"FF_VERTICALFLIP",FF_VERTICALFLIP},
 	{"FF_TRANSMASK",FF_TRANSMASK},
 	{"FF_TRANSSHIFT",FF_TRANSSHIFT},
 	// new preshifted translucency (used in source)
@@ -8956,6 +8998,7 @@ struct {
 	{"KITEM_THUNDERSHIELD",KITEM_THUNDERSHIELD},
 	{"KITEM_HYUDORO",KITEM_HYUDORO},
 	{"KITEM_POGOSPRING",KITEM_POGOSPRING},
+	{"KITEM_SUPERRING",KITEM_SUPERRING},
 	{"KITEM_KITCHENSINK",KITEM_KITCHENSINK},
 	{"NUMKARTITEMS",NUMKARTITEMS},
 	{"KRITEM_TRIPLESNEAKER",KRITEM_TRIPLESNEAKER}, // Additional roulette IDs (not usable for much in Lua besides K_GetItemPatch)
@@ -9349,7 +9392,7 @@ fixed_t get_number(const char *word)
 
 void DEH_Check(void)
 {
-#if defined(_DEBUG) || defined(PARANOIA)
+//#if defined(_DEBUG) || defined(PARANOIA)
 	const size_t dehstates = sizeof(STATE_LIST)/sizeof(const char*);
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
 	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
@@ -9370,7 +9413,7 @@ void DEH_Check(void)
 
 	if (dehcolors != MAXTRANSLATIONS)
 		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", MAXTRANSLATIONS, sizeu1(dehcolors));
-#endif
+//#endif
 }
 
 #ifdef HAVE_BLUA

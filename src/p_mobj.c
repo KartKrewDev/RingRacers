@@ -86,6 +86,37 @@ void P_AddCachedAction(mobj_t *mobj, INT32 statenum)
 }
 
 //
+// P_SetupStateAnimation
+//
+FUNCINLINE static ATTRINLINE void P_SetupStateAnimation(mobj_t *mobj, state_t *st)
+{
+	if (!(st->frame & FF_ANIMATE))
+		return;
+
+	if (st->var1 <= 0 || st->var2 == 0)
+	{
+		mobj->frame &= ~FF_ANIMATE;
+		return; // Crash/stupidity prevention
+	}
+
+	mobj->anim_duration = (UINT16)st->var2;
+
+	if (st->frame & FF_GLOBALANIM)
+	{
+		// Attempt to account for the pre-ticker for objects spawned on load
+		if (!leveltime) return;
+
+		mobj->anim_duration -= (leveltime + 2) % st->var2;            // Duration synced to timer
+		mobj->frame += ((leveltime + 2) / st->var2) % (st->var1 + 1); // Frame synced to timer (duration taken into account)
+	}
+	else if (st->frame & FF_RANDOMANIM)
+	{
+		mobj->frame += P_RandomKey(st->var1 + 1);     // Random starting frame
+		mobj->anim_duration -= P_RandomKey(st->var2); // Random duration for first frame
+	}
+}
+
+//
 // P_CycleStateAnimation
 //
 FUNCINLINE static ATTRINLINE void P_CycleStateAnimation(mobj_t *mobj)
@@ -93,6 +124,7 @@ FUNCINLINE static ATTRINLINE void P_CycleStateAnimation(mobj_t *mobj)
 	// var2 determines delay between animation frames
 	if (!(mobj->frame & FF_ANIMATE) || --mobj->anim_duration != 0)
 		return;
+
 	mobj->anim_duration = (UINT16)mobj->state->var2;
 
 	// compare the current sprite frame to the one we started from
@@ -212,7 +244,7 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		mobj->tics = st->tics;
 		mobj->sprite = st->sprite;
 		mobj->frame = st->frame;
-		mobj->anim_duration = (UINT16)st->var2; // only used if FF_ANIMATE is set
+		P_SetupStateAnimation(mobj, st);
 
 		// Modified handling.
 		// Call action functions when the state is set
@@ -280,7 +312,7 @@ boolean P_SetMobjState(mobj_t *mobj, statenum_t state)
 		mobj->tics = st->tics;
 		mobj->sprite = st->sprite;
 		mobj->frame = st->frame;
-		mobj->anim_duration = (UINT16)st->var2; // only used if FF_ANIMATE is set
+		P_SetupStateAnimation(mobj, st);
 
 		// Modified handling.
 		// Call action functions when the state is set
@@ -334,7 +366,7 @@ boolean P_SetMobjStateNF(mobj_t *mobj, statenum_t state)
 	mobj->tics = st->tics;
 	mobj->sprite = st->sprite;
 	mobj->frame = st->frame;
-	mobj->anim_duration = (UINT16)st->var2; // only used if FF_ANIMATE is set
+	P_SetupStateAnimation(mobj, st);
 
 	return true;
 }
@@ -353,7 +385,7 @@ static boolean P_SetPrecipMobjState(precipmobj_t *mobj, statenum_t state)
 	mobj->tics = st->tics;
 	mobj->sprite = st->sprite;
 	mobj->frame = st->frame;
-	mobj->anim_duration = (UINT16)st->var2; // only used if FF_ANIMATE is set
+	P_SetupStateAnimation((mobj_t*)mobj, st);
 
 	return true;
 }
@@ -1908,7 +1940,7 @@ void P_XYMovement(mobj_t *mo)
 #endif
 
 	//{ SRB2kart stuff
-	if (mo->type == MT_ORBINAUT || mo->type == MT_JAWZ_DUD || mo->type == MT_JAWZ || mo->type == MT_BALLHOG) //(mo->type == MT_JAWZ && !mo->tracer))
+	if (mo->type == MT_ORBINAUT || mo->type == MT_JAWZ_DUD || mo->type == MT_JAWZ || mo->type == MT_BALLHOG || mo->type == MT_FLINGRING) //(mo->type == MT_JAWZ && !mo->tracer))
 		return;
 
 	if (mo->player && (mo->player->kartstuff[k_spinouttimer] && !mo->player->kartstuff[k_wipeoutslow]) && mo->player->speed <= K_GetKartSpeed(mo->player, false)/2)
@@ -2462,11 +2494,11 @@ static boolean P_ZMovement(mobj_t *mo)
 				mom.z = -mom.z;
 			else
 			// Flingrings bounce
-			if (mo->type == MT_FLINGRING
+			if (/*mo->type == MT_FLINGRING
 				|| mo->type == MT_FLINGCOIN
 				|| P_WeaponOrPanel(mo->type)
 				|| mo->type == MT_FLINGEMERALD
-				|| mo->type == MT_BIGTUMBLEWEED
+				||*/ mo->type == MT_BIGTUMBLEWEED
 				|| mo->type == MT_LITTLETUMBLEWEED
 				|| mo->type == MT_CANNONBALLDECOR
 				|| mo->type == MT_FALLINGROCK)
@@ -3598,7 +3630,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 			dummy.z = thiscam->z;
 			dummy.height = thiscam->height;
 			if (player->pflags & PF_TIMEOVER)
-				player->kartstuff[k_timeovercam] = (2*TICRATE)+1;
+				player->karthud[khud_timeovercam] = (2*TICRATE)+1;
 			if (!resetcalled && !(player->pflags & PF_NOCLIP || leveltime < introtime) && !P_CheckSight(&dummy, player->mo)) // TODO: "P_CheckCameraSight" instead.
 				P_ResetCamera(player, thiscam);
 			else
@@ -6770,7 +6802,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 					if ((G_RaceGametype() || mobj->target->player->kartstuff[k_bumper] <= 0)
 #if 1 // Set to 0 to test without needing to host
-						|| ((mobj->target->player == &players[displayplayers[0]]) || P_IsLocalPlayer(mobj->target->player))
+						|| (P_IsDisplayPlayer(mobj->target->player))
 #endif
 						)
 						mobj->flags2 |= MF2_DONTDRAW;
@@ -8003,8 +8035,8 @@ void P_MobjThinker(mobj_t *mobj)
 			else
 			{
 				fixed_t finalspeed = mobj->movefactor;
-
-				P_SpawnGhostMobj(mobj);
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+				ghost->colorized = true; // already has color!
 
 				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
 				if (mobj->health <= 5)
@@ -8039,18 +8071,20 @@ void P_MobjThinker(mobj_t *mobj)
 			fixed_t topspeed = mobj->movefactor;
 			fixed_t distbarrier = 512*mapobjectscale;
 			fixed_t distaway;
+			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 
-			P_SpawnGhostMobj(mobj);
+			if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+			{
+				ghost->color = mobj->target->player->skincolor;
+				ghost->colorized = true;
+			}
 
 			if (mobj->threshold > 0)
 				mobj->threshold--;
 			if (leveltime % TICRATE == 0)
 				S_StartSound(mobj, mobj->info->activesound);
 
-			if (gamespeed == 0)
-				distbarrier = FixedMul(distbarrier, FRACUNIT-FRACUNIT/4);
-			else if (gamespeed == 2)
-				distbarrier = FixedMul(distbarrier, FRACUNIT+FRACUNIT/4);
+			distbarrier = FixedMul(distbarrier, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
 
 			if (G_RaceGametype() && mobj->tracer)
 			{
@@ -8107,7 +8141,14 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
-				P_SpawnGhostMobj(mobj);
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+
 				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
 				P_InstaThrust(mobj, mobj->angle, mobj->movefactor);
 
@@ -8132,14 +8173,25 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_BANANA:
 		case MT_EGGMANITEM:
 			mobj->friction = ORIG_FRICTION/4;
+
 			if (mobj->momx || mobj->momy)
-				P_SpawnGhostMobj(mobj);
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+			}
+
 			if (P_IsObjectOnGround(mobj) && mobj->health > 1)
 			{
 				S_StartSound(mobj, mobj->info->activesound);
 				mobj->momx = mobj->momy = 0;
 				mobj->health = 1;
 			}
+
 			if (mobj->threshold > 0)
 				mobj->threshold--;
 			break;
@@ -8147,18 +8199,38 @@ void P_MobjThinker(mobj_t *mobj)
 			indirectitemcooldown = 20*TICRATE;
 			/* FALLTHRU */
 		case MT_BALLHOG:
-			P_SpawnGhostMobj(mobj)->fuse = 3;
-			if (mobj->threshold > 0)
-				mobj->threshold--;
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+				ghost->fuse = 3;
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+
+				if (mobj->threshold > 0)
+					mobj->threshold--;
+			}
 			break;
 		case MT_SINK:
 			if (mobj->momx || mobj->momy)
-				P_SpawnGhostMobj(mobj);
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+			}
+
 			if (P_IsObjectOnGround(mobj))
 			{
 				S_StartSound(mobj, mobj->info->deathsound);
 				P_SetMobjState(mobj, S_NULL);
 			}
+
 			if (mobj->threshold > 0)
 				mobj->threshold--;
 			break;
@@ -8169,7 +8241,10 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->color = SKINCOLOR_KETCHUP;
 
 			if (mobj->momx || mobj->momy)
-				P_SpawnGhostMobj(mobj);
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+				ghost->colorized = true; // already has color!
+			}
 
 			if (P_IsObjectOnGround(mobj) && (mobj->state == &states[S_SSMINE_AIR1] || mobj->state == &states[S_SSMINE_AIR2]))
 			{
@@ -8245,9 +8320,10 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (p)
 				{
-					if (p->kartstuff[k_sneakertimer] > mobj->movecount)
+					if (p->kartstuff[k_sneakertimer] > mobj->movecount
+						|| p->kartstuff[k_levelbooster] > mobj->movecount)
 						P_SetMobjState(mobj, S_BOOSTFLAME);
-					mobj->movecount = p->kartstuff[k_sneakertimer];
+					mobj->movecount = max(p->kartstuff[k_sneakertimer], p->kartstuff[k_levelbooster]);
 				}
 			}
 
@@ -8365,6 +8441,18 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			K_MatchGenericExtraFlags(mobj, mobj->target);
 			P_TeleportMove(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height/2) + mobj->movefactor);
+			break;
+		case MT_RINGSPARKS:
+			if (!mobj->target || P_MobjWasRemoved(mobj->target))
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
+			K_MatchGenericExtraFlags(mobj, mobj->target);
+			P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
+				mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
+				mobj->target->z + mobj->target->height);
 			break;
 		case MT_THUNDERSHIELD:
 		{
@@ -9631,6 +9719,21 @@ void P_SceneryThinker(mobj_t *mobj)
 		}
 	}
 
+	// Sonic Advance 2 flashing afterimages
+	if (mobj->type == MT_GHOST && mobj->fuse > 0
+		&& mobj->extravalue1 > 0 && mobj->extravalue2 >= 2)
+	{
+		if (mobj->extravalue2 == 2) // I don't know why the normal logic doesn't work for this.
+			mobj->flags2 ^= MF2_DONTDRAW;
+		else
+		{
+			if (mobj->fuse == mobj->extravalue2)
+				mobj->flags2 &= ~MF2_DONTDRAW;
+			else
+				mobj->flags2 |= MF2_DONTDRAW;
+		}
+	}
+
 	// momentum movement
 	if (mobj->momx || mobj->momy)
 	{
@@ -9738,7 +9841,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->tics = st->tics;
 	mobj->sprite = st->sprite;
 	mobj->frame = st->frame; // FF_FRAMEMASK for frame, and other bits..
-	mobj->anim_duration = (UINT16)st->var2; // only used if FF_ANIMATE is set
+	P_SetupStateAnimation(mobj, st);
 
 	mobj->friction = ORIG_FRICTION;
 
@@ -10189,6 +10292,7 @@ mobj_t *P_SpawnShadowMobj(mobj_t * caster)
 	mobj->tics = st->tics;
 	mobj->sprite = st->sprite;
 	mobj->frame = st->frame; // FF_FRAMEMASK for frame, and other bits..
+	P_SetupStateAnimation(mobj, st);
 
 	mobj->friction = ORIG_FRICTION;
 
@@ -10281,7 +10385,7 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 	mobj->tics = st->tics;
 	mobj->sprite = st->sprite;
 	mobj->frame = st->frame; // FF_FRAMEMASK for frame, and other bits..
-	mobj->anim_duration = (UINT16)st->var2; // only used if FF_ANIMATE is set
+	P_SetupStateAnimation((mobj_t*)mobj, st);
 
 	// set subsector and/or block links
 	P_SetPrecipitationThingPosition(mobj);
@@ -10711,6 +10815,8 @@ void P_PrecipitationEffects(void)
 //
 void P_RespawnSpecials(void)
 {
+	UINT8 p, pcount = 0;
+	tic_t time = 30*TICRATE; // Respawn things in empty dedicated servers
 	fixed_t x, y, z;
 	subsector_t *ss;
 	mobj_t *mo = NULL;
@@ -10757,21 +10863,28 @@ void P_RespawnSpecials(void)
 			numgotboxes = 0;
 	}
 
-	// only respawn items when cv_itemrespawn is on
-	if (!cv_itemrespawn.value)
-		return;
+	// wait time depends on player count
+	for (p = 0; p < MAXPLAYERS; p++)
+	{
+		if (playeringame[p] && !players[p].spectator)
+			pcount++;
+	}
 
-	// Don't respawn in special stages!
-	if (G_IsSpecialStage(gamemap))
+	if (pcount == 1) // No respawn when alone
 		return;
+	else if (pcount > 1)
+		time = (180 - (pcount * 10))*TICRATE;
+
+	// only respawn items when cv_itemrespawn is on
+	//if (!cv_itemrespawn.value) // TODO: remove this cvar
+		//return;
 
 	// nothing left to respawn?
 	if (iquehead == iquetail)
 		return;
 
 	// the first item in the queue is the first to respawn
-	// wait at least 30 seconds
-	if (leveltime - itemrespawntime[iquetail] < (tic_t)cv_itemrespawntime.value*TICRATE)
+	if (leveltime - itemrespawntime[iquetail] < time)
 		return;
 
 	mthing = itemrespawnque[iquetail];
@@ -12056,7 +12169,7 @@ ML_NOCLIMB : Direction not controllable
 void P_SpawnHoopsAndRings(mapthing_t *mthing)
 {
 	mobj_t *mobj = NULL;
-	INT32 /*r,*/ i;
+	INT32 r, i;
 	fixed_t x, y, z, finalx, finaly, finalz;
 	sector_t *sec;
 	TVector v, *res;
@@ -12343,8 +12456,6 @@ void P_SpawnHoopsAndRings(mapthing_t *mthing)
 
 		return;
 	}
-	else return; // srb2kart - no rings or ring-like objects in R1
-	/*
 	// Wing logo item.
 	else if (mthing->type == mobjinfo[MT_NIGHTSWING].doomednum)
 	{
@@ -12638,7 +12749,8 @@ void P_SpawnHoopsAndRings(mapthing_t *mthing)
 			}
 		}
 		return;
-	}*/
+	}
+	else return;
 }
 
 //

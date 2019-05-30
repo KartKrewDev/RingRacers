@@ -946,50 +946,19 @@ void P_ResetPlayer(player_t *player)
 //
 void P_GivePlayerRings(player_t *player, INT32 num_rings)
 {
-	if (player->bot)
-		player = &players[consoleplayer];
-
 	if (!player->mo)
 		return;
 
-	player->mo->health += num_rings;
-	player->health += num_rings;
+	if (G_BattleGametype()) // No rings in Battle Mode
+		return;
 
-	if (!G_IsSpecialStage(gamemap) || !useNightsSS)
-		player->totalring += num_rings;
+	player->kartstuff[k_rings] += num_rings;
+	//player->totalring += num_rings; // Used for GP lives later
 
-	//{ SRB2kart - rings don't really do anything, but we don't want the player spilling them later.
-	/*
-	// Can only get up to 9999 rings, sorry!
-	if (player->mo->health > 10000)
-	{
-		player->mo->health = 10000;
-		player->health = 10000;
-	}
-	else if (player->mo->health < 1)*/
-	{
-		player->mo->health = 1;
-		player->health = 1;
-	}
-	//}
-
-	// Now extra life bonuses are handled here instead of in P_MovePlayer, since why not?
-	if (!ultimatemode && !modeattacking && !G_IsSpecialStage(gamemap) && G_GametypeUsesLives())
-	{
-		INT32 gainlives = 0;
-
-		while (player->xtralife < maxXtraLife && player->health > 100 * (player->xtralife+1))
-		{
-			++gainlives;
-			++player->xtralife;
-		}
-
-		if (gainlives)
-		{
-			P_GivePlayerLives(player, gainlives);
-			P_PlayLivesJingle(player);
-		}
-	}
+	if (player->kartstuff[k_rings] > 20)
+		player->kartstuff[k_rings] = 20; // Caps at 20 rings, sorry!
+	else if (player->kartstuff[k_rings] < -20)
+		player->kartstuff[k_rings] = -20; // Chaotix ring debt!
 }
 
 //
@@ -1114,11 +1083,12 @@ void P_PlayLivesJingle(player_t *player)
 
 void P_PlayRinglossSound(mobj_t *source)
 {
-	sfxenum_t key = P_RandomKey(2);
-	if (cv_kartvoices.value)
-		S_StartSound(source, (mariomode) ? sfx_mario8 : sfx_khurt1 + key);
+	if (source->player && source->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+		S_StartSound(source, sfx_s1a3); // Shield hit (no ring loss)
+	else if (source->player && source->player->kartstuff[k_rings] <= 0)
+		S_StartSound(source, sfx_s1a6); // Ring debt (lessened ring loss)
 	else
-		S_StartSound(source, sfx_slip);
+		S_StartSound(source, sfx_s1c6); // Normal ring loss sound
 }
 
 void P_PlayDeathSound(mobj_t *source)
@@ -1708,7 +1678,7 @@ void P_DoPlayerExit(player_t *player)
 
 		if (cv_kartvoices.value)
 		{
-			if (P_IsLocalPlayer(player))
+			if (P_IsDisplayPlayer(player))
 			{
 				sfxenum_t sfx_id;
 				if (K_IsPlayerLosing(player))
@@ -1755,7 +1725,7 @@ void P_DoPlayerExit(player_t *player)
 	*/
 	player->powers[pw_underwater] = 0;
 	player->powers[pw_spacetime] = 0;
-	player->kartstuff[k_cardanimation] = 0; // srb2kart: reset battle animation
+	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
 
 	if (player == &players[consoleplayer])
 		demo.savebutton = leveltime;
@@ -4043,7 +4013,7 @@ static void P_3dMovement(player_t *player)
 	if ((player->exiting || mapreset) || player->pflags & PF_STASIS || player->kartstuff[k_spinouttimer]) // pw_introcam?
 	{
 		cmd->forwardmove = cmd->sidemove = 0;
-		if (player->kartstuff[k_sneakertimer])
+		if (EITHERSNEAKER(player))
 			cmd->forwardmove = 50;
 	}
 
@@ -4133,13 +4103,6 @@ static void P_3dMovement(player_t *player)
 		//movepushforward = cmd->forwardmove * (thrustfactor * acceleration);
 		movepushforward = K_3dKartMovement(player, onground, cmd->forwardmove);
 
-		// allow very small movement while in air for gameplay
-		if (!onground)
-			movepushforward >>= 2; // proper air movement
-
-		// don't need to account for scale here with kart accel code
-		//movepushforward = FixedMul(movepushforward, player->mo->scale);
-
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
 			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
 
@@ -4203,6 +4166,18 @@ static void P_3dMovement(player_t *player)
 
 	player->mo->momx += totalthrust.x;
 	player->mo->momy += totalthrust.y;
+
+	if (!onground)
+	{
+		fixed_t airspeedcap = (50*mapobjectscale);
+		fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+		if (speed > airspeedcap)
+		{
+			fixed_t newspeed = speed - ((speed - airspeedcap) / 32);
+			player->mo->momx = FixedMul(FixedDiv(player->mo->momx, speed), newspeed);
+			player->mo->momy = FixedMul(FixedDiv(player->mo->momy, speed), newspeed);
+		}
+	}
 #endif
 
 	// Time to ask three questions:
@@ -4219,7 +4194,7 @@ static void P_3dMovement(player_t *player)
 	if (newMagnitude > K_GetKartSpeed(player, true)) //topspeed)
 	{
 		fixed_t tempmomx, tempmomy;
-		if (oldMagnitude > K_GetKartSpeed(player, true) && onground) // SRB2Kart: onground check for air speed cap
+		if (oldMagnitude > K_GetKartSpeed(player, true))
 		{
 			if (newMagnitude > oldMagnitude)
 			{
@@ -5782,11 +5757,10 @@ static void P_MovePlayer(player_t *player)
 		boolean add_delta = true;
 
 		// Kart: store the current turn range for later use
-		if (((player->mo && player->speed > 0) // Moving
+		if ((player->mo && player->speed > 0) // Moving
 			|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 			|| (player->kartstuff[k_respawn]) // Respawning
 			|| (player->spectator || objectplacing)) // Not a physical player
-			) // ~~Spinning and boosting cancels out turning~~ Not anymore given spinout is more slippery and more prone to get you killed because of boosters.
 		{
 			player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
 			player->rturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, -KART_FULLTURN)-1;
@@ -6176,7 +6150,7 @@ static void P_MovePlayer(player_t *player)
 	////////////////////////////
 
 	// SRB2kart - Drifting smoke and fire
-	if (player->kartstuff[k_sneakertimer] > 0 && onground && (leveltime & 1))
+	if (EITHERSNEAKER(player) && onground && (leveltime & 1))
 		K_SpawnBoostTrail(player);
 
 	if (player->kartstuff[k_invincibilitytimer] > 0)
@@ -7068,7 +7042,7 @@ static void P_DeathThink(player_t *player)
 
 	if (player->pflags & PF_TIMEOVER)
 	{
-		player->kartstuff[k_timeovercam]++;
+		player->karthud[khud_timeovercam]++;
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
@@ -7076,7 +7050,7 @@ static void P_DeathThink(player_t *player)
 		}
 	}
 	else
-		player->kartstuff[k_timeovercam] = 0;
+		player->karthud[khud_timeovercam] = 0;
 
 	K_KartPlayerHUDUpdate(player);
 
@@ -7284,7 +7258,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 #endif
 
 	if (player->pflags & PF_TIMEOVER) // 1 for momentum keep, 2 for turnaround
-		timeover = (player->kartstuff[k_timeovercam] > 2*TICRATE ? 2 : 1);
+		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
 	else
 		timeover = 0;
 
@@ -7427,7 +7401,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (timeover)
 	{
-		const INT32 timeovercam = max(0, min(180, (player->kartstuff[k_timeovercam] - 2*TICRATE)*15));
+		const INT32 timeovercam = max(0, min(180, (player->karthud[khud_timeovercam] - 2*TICRATE)*15));
 		camrotate += timeovercam;
 	}
 	else if (leveltime < introtime) // Whoooshy camera!
@@ -7501,10 +7475,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		dist += 4*(player->speed - K_GetKartSpeed(player, false));
 	dist += abs(thiscam->momz)/4;
 
-	if (player->kartstuff[k_boostcam])
+	if (player->karthud[khud_boostcam])
 	{
-		dist -= FixedMul(11*dist/16, player->kartstuff[k_boostcam]);
-		height -= FixedMul(height, player->kartstuff[k_boostcam]);
+		dist -= FixedMul(11*dist/16, player->karthud[khud_boostcam]);
+		height -= FixedMul(height, player->karthud[khud_boostcam]);
 	}
 
 	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
@@ -8441,8 +8415,7 @@ void P_PlayerThink(player_t *player)
 
 #if 1
 	// "Blur" a bit when you have speed shoes and are going fast enough
-	if ((player->powers[pw_super] || player->powers[pw_sneakers]
-		|| player->kartstuff[k_driftboost] || player->kartstuff[k_sneakertimer] || player->kartstuff[k_startboost]) && !player->kartstuff[k_invincibilitytimer] // SRB2kart
+	if ((player->powers[pw_super] || player->powers[pw_sneakers])
 		&& (player->speed + abs(player->mo->momz)) > FixedMul(20*FRACUNIT,player->mo->scale))
 	{
 		UINT8 i;
