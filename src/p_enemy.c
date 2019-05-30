@@ -3590,7 +3590,7 @@ void A_AttractChase(mobj_t *actor)
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
 				P_SetTarget(&sparkle->target, actor->target);
-				sparkle->angle = FixedAngle(18<<FRACBITS) * actor->target->player->kartstuff[k_sparkleanim];
+				sparkle->angle = (actor->target->angle + ANGLE_22h) + (FixedAngle(36<<FRACBITS) * actor->target->player->kartstuff[k_sparkleanim]);
 				actor->target->player->kartstuff[k_sparkleanim] = (actor->target->player->kartstuff[k_sparkleanim]+1) % 20;
 
 				P_KillMobj(actor, actor->target, actor->target);
