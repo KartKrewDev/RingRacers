@@ -3582,7 +3582,6 @@ void A_AttractChase(mobj_t *actor)
 
 			if (actor->extravalue1 >= 21)
 			{
-				UINT8 i;
 				mobj_t *sparkle;
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
