@@ -300,7 +300,7 @@ UINT8 colortranslations[MAXTRANSLATIONS][16] = {
 	{  0,  80,  81,  88,  88, 188, 189,  76,  76,  77,  78,  79, 236, 237, 238, 239}, // SKINCOLOR_CROCODILE
 	{  0,  80,  81,  88, 188, 189, 190, 191,  94,  94,  95,  95, 109, 110, 111,  31}, // SKINCOLOR_PERIDOT
 	{  0, 208, 216, 209, 218,  51,  65,  76, 191, 191, 126, 143, 138, 175, 169, 254}, // SKINCOLOR_VOMIT
-	{ 81,  82,  83,  73,  64,  65,  66,  92,  92,  93,  93,  94,  95, 173, 174, 175}, // SKINCOLOR_GARDEN
+	{ 81,  82,  83,  73,  64,  65,  66,  92,  92,  93,  93,  94,  95, 109, 110, 111}, // SKINCOLOR_GARDEN
 	{  0,  80,  81,  82,  83,  88,  89,  99, 100, 102, 104, 126, 143, 138, 139,  31}, // SKINCOLOR_LIME
 	{ 83,  72,  73,  74,  75,  76, 102, 104, 105, 106, 107, 108, 109, 110, 111,  31}, // SKINCOLOR_HANDHELD
 	{  0,  80,  80,  81,  88,  89,  90,  91,  92,  93,  94,  95, 109, 110, 111,  31}, // SKINCOLOR_TEA
@@ -2316,9 +2316,9 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
-		speedboost += (player->kartstuff[k_draftpower]) / 3; // + 0 to 33.3% top speed
-		//accelboost += (FRACUNIT / 3); // + 33.3% acceleration
-		numboosts++; // (Drafting suffers no boost stack penalty!) 
+		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((3*FRACUNIT)/100); // min is 30%, max is 54%
+		speedboost += FixedMul(draftspeed, player->kartstuff[k_draftpower]); // (Drafting suffers no boost stack penalty.)
+		numboosts++;
 	}
 
 	player->kartstuff[k_boostpower] = boostpower;
@@ -4101,6 +4101,9 @@ void K_DoSneaker(player_t *player, INT32 type)
 	}
 	else
 		player->kartstuff[k_levelbooster] = sneakertime;
+
+	// set angle for spun out players:
+	player->kartstuff[k_boostangle] = (INT32)player->mo->angle;
 }
 
 static void K_DoShrink(player_t *user)
@@ -5173,6 +5176,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_UpdateOffroad(player);
 	K_UpdateDraft(player);
 	K_UpdateEngineSounds(player, cmd); // Thanks, VAda!
+
+	// update boost angle if not spun out
+	if (!player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow])
+		player->kartstuff[k_boostangle] = (INT32)player->mo->angle;
+
 	K_GetKartBoostPower(player);
 
 	// Special effect objects!
@@ -5346,7 +5354,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->powers[pw_flashing] = K_GetKartFlashing(player);
 	}
-	else if (player->powers[pw_flashing] == K_GetKartFlashing(player))
+	else if (player->powers[pw_flashing] >= K_GetKartFlashing(player))
 	{
 		player->powers[pw_flashing]--;
 	}
@@ -6722,9 +6730,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			if (player->speed > 0 && cmd->forwardmove == 0 && player->mo->friction == 59392)
 				player->mo->friction += 4608;
-			if (player->speed > 0 && cmd->forwardmove < 0 && player->mo->friction == 59392)
-				player->mo->friction += 1608;
 		}
+
+		if (player->speed > 0 && cmd->forwardmove < 0)	// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
+			player->mo->friction -= 2048;
 
 		// Karma ice physics
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
@@ -9349,6 +9358,11 @@ static void K_drawBattleFullscreen(void)
 	INT32 y = -64+(stplyr->karthud[khud_cardanimation]); // card animation goes from 0 to 164, 164 is the middle of the screen
 	INT32 splitflags = V_SNAPTOTOP; // I don't feel like properly supporting non-green resolutions, so you can have a misuse of SNAPTO instead
 	fixed_t scale = FRACUNIT;
+	boolean drawcomebacktimer = true;	// lazy hack because it's cleaner in the long run.
+#ifdef HAVE_BLUA
+	if (!LUA_HudEnabled(hud_battlecomebacktimer))
+		drawcomebacktimer = false;
+#endif
 
 	if (splitscreen)
 	{
@@ -9400,7 +9414,7 @@ static void K_drawBattleFullscreen(void)
 		else
 			K_drawKartFinish();
 	}
-	else if (stplyr->kartstuff[k_bumper] <= 0 && stplyr->kartstuff[k_comebacktimer] && comeback && !stplyr->spectator)
+	else if (stplyr->kartstuff[k_bumper] <= 0 && stplyr->kartstuff[k_comebacktimer] && comeback && !stplyr->spectator && drawcomebacktimer)
 	{
 		UINT16 t = stplyr->kartstuff[k_comebacktimer]/(10*TICRATE);
 		INT32 txoff, adjust = (splitscreen > 1) ? 4 : 6; // normal string is 8, kart string is 12, half of that for ease
@@ -9980,7 +9994,10 @@ void K_drawKartHUD(void)
 
 	if (battlefullscreen)
 	{
-		K_drawBattleFullscreen();
+#ifdef HAVE_BLUA
+		if (LUA_HudEnabled(hud_battlefullscreen))
+#endif
+			K_drawBattleFullscreen();
 		return;
 	}
 
