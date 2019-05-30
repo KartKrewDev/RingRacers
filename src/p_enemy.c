@@ -3583,7 +3583,7 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 21)
 			{
 				mobj_t *sparkle;
-				angle_t offset = FixedAngle(36<<FRACBITS);
+				angle_t offset = FixedAngle(18<<FRACBITS);
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
 				actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
