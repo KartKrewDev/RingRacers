@@ -149,20 +149,21 @@ extern FILE *logstream;
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-#define VERSION    100 // Game version
-#define SUBVERSION 4 // more precise version number
-#define VERSIONSTRING "v1.0.4"
-#define VERSIONSTRINGW L"v1.0.4"
-// Hey! If you change this, add 1 to the MODVERSION below!
-// Otherwise we can't force updates!
+#define VERSION    110 // Game version
+#define SUBVERSION 0 // more precise version number
+#define VERSIONSTRING "v1.1"
+#define VERSIONSTRINGW L"v1.1"
+// Hey! If you change this, add 1 to the MODVERSION below! Otherwise we can't force updates!
+// And change CMakeLists.txt, for CMake users!
+// AND appveyor.yml, for the build bots!
 #endif
+
+// Maintain compatibility with 1.0.x record attack replays?
+#define DEMO_COMPAT_100
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
-//#define USE_PATCH_DTA
-
-// Kart has it's own, as well.
-#define USE_PATCH_KART
+//#define USE_PATCH_FILE
 
 // Use .kart extension addons
 #define USE_KART
@@ -221,7 +222,7 @@ extern FILE *logstream;
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
 // Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
-#define MODVERSION 4
+#define MODVERSION 5
 
 // Filter consvars by version
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
@@ -258,33 +259,33 @@ typedef enum
 	SKINCOLOR_BLACK,
 	SKINCOLOR_FAIRY,
 	SKINCOLOR_POPCORN,
+	SKINCOLOR_ARTICHOKE,
+	SKINCOLOR_PIGEON,
 	SKINCOLOR_SEPIA,
 	SKINCOLOR_BEIGE,
+	SKINCOLOR_CARAMEL,
+	SKINCOLOR_PEACH,
 	SKINCOLOR_BROWN,
 	SKINCOLOR_LEATHER,
 	SKINCOLOR_SALMON,
 	SKINCOLOR_PINK,
 	SKINCOLOR_ROSE,
-	SKINCOLOR_BRICK,
+	SKINCOLOR_CINNAMON,
 	SKINCOLOR_RUBY,
 	SKINCOLOR_RASPBERRY,
-	SKINCOLOR_CHERRY,
 	SKINCOLOR_RED,
 	SKINCOLOR_CRIMSON,
 	SKINCOLOR_MAROON,
-	SKINCOLOR_FLAME,
+	SKINCOLOR_LEMONADE,
 	SKINCOLOR_SCARLET,
 	SKINCOLOR_KETCHUP,
 	SKINCOLOR_DAWN,
 	SKINCOLOR_SUNSET,
 	SKINCOLOR_CREAMSICLE,
 	SKINCOLOR_ORANGE,
-	SKINCOLOR_PUMPKIN,
 	SKINCOLOR_ROSEWOOD,
-	SKINCOLOR_BURGUNDY,
 	SKINCOLOR_TANGERINE,
-	SKINCOLOR_PEACH,
-	SKINCOLOR_CARAMEL,
+	SKINCOLOR_TAN,
 	SKINCOLOR_CREAM,
 	SKINCOLOR_GOLD,
 	SKINCOLOR_ROYAL,
@@ -292,7 +293,10 @@ typedef enum
 	SKINCOLOR_COPPER,
 	SKINCOLOR_YELLOW,
 	SKINCOLOR_MUSTARD,
+	SKINCOLOR_BANANA,
 	SKINCOLOR_OLIVE,
+	SKINCOLOR_CROCODILE,
+	SKINCOLOR_PERIDOT,
 	SKINCOLOR_VOMIT,
 	SKINCOLOR_GARDEN,
 	SKINCOLOR_LIME,
@@ -305,13 +309,16 @@ typedef enum
 	SKINCOLOR_MINT,
 	SKINCOLOR_GREEN,
 	SKINCOLOR_PINETREE,
-	SKINCOLOR_EMERALD,
+	SKINCOLOR_TURTLE,
 	SKINCOLOR_SWAMP,
 	SKINCOLOR_DREAM,
 	SKINCOLOR_PLAGUE,
+	SKINCOLOR_EMERALD,
 	SKINCOLOR_ALGAE,
 	SKINCOLOR_CARIBBEAN,
-	SKINCOLOR_AQUA,
+	SKINCOLOR_AZURE,
+	SKINCOLOR_AQUAMARINE,
+	SKINCOLOR_TURQUOISE,
 	SKINCOLOR_TEAL,
 	SKINCOLOR_CYAN,
 	SKINCOLOR_JAWZ, // Oni's torment
@@ -320,19 +327,23 @@ typedef enum
 	SKINCOLOR_PLATINUM,
 	SKINCOLOR_SLATE,
 	SKINCOLOR_STEEL,
+	SKINCOLOR_THUNDER,
+	SKINCOLOR_NOVA,
 	SKINCOLOR_RUST,
+	SKINCOLOR_WRISTWATCH,
 	SKINCOLOR_JET,
 	SKINCOLOR_SAPPHIRE, // sweet mother, i cannot weave - slender aphrodite has overcome me with longing for a girl
+	SKINCOLOR_ULTRAMARINE,
 	SKINCOLOR_PERIWINKLE,
 	SKINCOLOR_BLUE,
 	SKINCOLOR_BLUEBERRY,
-	SKINCOLOR_NOVA,
+	SKINCOLOR_THISTLE,
+	SKINCOLOR_PURPLE,
 	SKINCOLOR_PASTEL,
 	SKINCOLOR_MOONSLAM,
-	SKINCOLOR_ULTRAVIOLET,
 	SKINCOLOR_DUSK,
 	SKINCOLOR_BUBBLEGUM,
-	SKINCOLOR_PURPLE,
+	SKINCOLOR_MAGENTA,
 	SKINCOLOR_FUCHSIA,
 	SKINCOLOR_TOXIC,
 	SKINCOLOR_MAUVE,
@@ -340,6 +351,7 @@ typedef enum
 	SKINCOLOR_BYZANTIUM,
 	SKINCOLOR_POMEGRANATE,
 	SKINCOLOR_LILAC,
+	SKINCOLOR_TAFFY,
 
 	// "Careful! MAXSKINCOLORS cannot be greater than 0x40 -- Which it is now."
 	// (This comment is a dirty liar! This is only limited by the integer type, so 255 for UINT8.)
@@ -417,6 +429,8 @@ typedef enum
 #define TICRATE 35
 #define NEWTICRATERATIO 1 // try 4 for 140 fps :)
 #define NEWTICRATE (TICRATE*NEWTICRATERATIO)
+
+#define MUSICRATE 1000 // sound timing is calculated by milliseconds
 
 #define RING_DIST 1280*FRACUNIT // how close you need to be to a ring to attract it
 
@@ -600,9 +614,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 ///	Polyobject fake flat code
 #define POLYOBJECTS_PLANES
-
-///	Improved way of dealing with ping values and a ping limit.
-#define NEWPING
 
 ///	See name of player in your crosshair
 #define SEENAMES

@@ -1216,6 +1216,13 @@ static void readlevelheader(MYFILE *f, INT32 num)
 #endif
 			else if (fastcmp(word, "MUSICTRACK"))
 				mapheaderinfo[num-1]->mustrack = ((UINT16)i - 1);
+			else if (fastcmp(word, "MUSICPOS"))
+				mapheaderinfo[num-1]->muspos = (UINT32)get_number(word2);
+			else if (fastcmp(word, "MUSICINTERFADEOUT"))
+				mapheaderinfo[num-1]->musinterfadeout = (UINT32)get_number(word2);
+			else if (fastcmp(word, "MUSICINTER"))
+				deh_strlcpy(mapheaderinfo[num-1]->musintername, word2,
+					sizeof(mapheaderinfo[num-1]->musintername), va("Level header %d: intermission music", num));
 			else if (fastcmp(word, "FORCECHARACTER"))
 			{
 				strlcpy(mapheaderinfo[num-1]->forcecharacter, word2, SKINNAMESIZE+1);
@@ -1538,6 +1545,11 @@ static void readcutscenescene(MYFILE *f, INT32 num, INT32 scenenum)
 			{
 				DEH_WriteUndoline(word, va("%u", cutscenes[num]->scene[scenenum].musswitchflags), UNDO_NONE);
 				cutscenes[num]->scene[scenenum].musswitchflags = ((UINT16)i) & MUSIC_TRACKMASK;
+			}
+			else if (fastcmp(word, "MUSICPOS"))
+			{
+				DEH_WriteUndoline(word, va("%u", cutscenes[num]->scene[scenenum].musswitchposition), UNDO_NONE);
+				cutscenes[num]->scene[scenenum].musswitchposition = (UINT32)get_number(word2);
 			}
 			else if (fastcmp(word, "MUSICLOOP"))
 			{
@@ -2142,11 +2154,12 @@ static boolean GoodDataFileName(const char *s)
 	p = s + strlen(s) - strlen(tail);
 	if (p <= s) return false; // too short
 	if (!fasticmp(p, tail)) return false; // doesn't end in .dat
-#ifdef DELFILE
-	if (fasticmp(s, "gamedata.dat") && !disableundo) return false;
-#else
-	if (fasticmp(s, "gamedata.dat")) return false;
-#endif
+
+	if (fasticmp(s, "gamedata.dat")) return false; // Vanilla SRB2 gamedata
+	if (fasticmp(s, "main.dat")) return false; // Vanilla SRB2 time attack replay folder
+	if (fasticmp(s, "kartdata.dat")) return false; // SRB2Kart gamedata
+	if (fasticmp(s, "kart.dat")) return false; // SRB2Kart time attack replay folder
+	if (fasticmp(s, "online.dat")) return false; // SRB2Kart online replay folder
 
 	return true;
 }
@@ -3749,8 +3762,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				}
 				else if (fastcmp(word, "SRB2"))
 				{
-					if (mainwads) // srb2.srb triggers this warning otherwise
-						deh_warning("Patch is only compatible with base SRB2.");
+					deh_warning("Patch is only compatible with base SRB2.");
 				}
 				// Clear all data in certain locations (mostly for unlocks)
 				// Unless you REALLY want to piss people off,
@@ -8148,7 +8160,7 @@ static const char *const ML_LIST[16] = {
 
 // This DOES differ from r_draw's Color_Names, unfortunately.
 // Also includes Super colors
-static const char *COLOR_ENUMS[] = {					// Rejigged for Kart.
+static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"NONE",			// SKINCOLOR_NONE
 	"WHITE",		// SKINCOLOR_WHITE
 	"SILVER",		// SKINCOLOR_SILVER
@@ -8157,33 +8169,33 @@ static const char *COLOR_ENUMS[] = {					// Rejigged for Kart.
 	"BLACK",		// SKINCOLOR_BLACK
 	"FAIRY",		// SKINCOLOR_FAIRY
 	"POPCORN",		// SKINCOLOR_POPCORN
+	"ARTICHOKE",	// SKINCOLOR_ARTICHOKE
+	"PIGEON",		// SKINCOLOR_PIGEON
 	"SEPIA",		// SKINCOLOR_SEPIA
 	"BEIGE",		// SKINCOLOR_BEIGE
+	"CARAMEL",		// SKINCOLOR_CARAMEL
+	"PEACH",		// SKINCOLOR_PEACH
 	"BROWN",		// SKINCOLOR_BROWN
 	"LEATHER",		// SKINCOLOR_LEATHER
 	"SALMON",		// SKINCOLOR_SALMON
 	"PINK",			// SKINCOLOR_PINK
 	"ROSE",			// SKINCOLOR_ROSE
-	"BRICK",		// SKINCOLOR_BRICK
+	"CINNAMON",		// SKINCOLOR_CINNAMON
 	"RUBY",			// SKINCOLOR_RUBY
 	"RASPBERRY",	// SKINCOLOR_RASPBERRY
-	"CHERRY",		// SKINCOLOR_CHERRY
 	"RED",			// SKINCOLOR_RED
 	"CRIMSON",		// SKINCOLOR_CRIMSON
 	"MAROON",		// SKINCOLOR_MAROON
-	"FLAME",		// SKINCOLOR_FLAME
+	"LEMONADE",		// SKINCOLOR_LEMONADE
 	"SCARLET",		// SKINCOLOR_SCARLET
 	"KETCHUP",		// SKINCOLOR_KETCHUP
 	"DAWN",			// SKINCOLOR_DAWN
 	"SUNSET",		// SKINCOLOR_SUNSET
 	"CREAMSICLE",	// SKINCOLOR_CREAMSICLE
 	"ORANGE",		// SKINCOLOR_ORANGE
-	"PUMPKIN",		// SKINCOLOR_PUMPKIN
 	"ROSEWOOD",		// SKINCOLOR_ROSEWOOD
-	"BURGUNDY",		// SKINCOLOR_BURGUNDY
 	"TANGERINE",	// SKINCOLOR_TANGERINE
-	"PEACH",		// SKINCOLOR_PEACH
-	"CARAMEL",		// SKINCOLOR_CARAMEL
+	"TAN",			// SKINCOLOR_TAN
 	"CREAM",		// SKINCOLOR_CREAM
 	"GOLD",			// SKINCOLOR_GOLD
 	"ROYAL",		// SKINCOLOR_ROYAL
@@ -8191,7 +8203,10 @@ static const char *COLOR_ENUMS[] = {					// Rejigged for Kart.
 	"COPPER",		// SKINCOLOR_COPPER
 	"YELLOW",		// SKINCOLOR_YELLOW
 	"MUSTARD",		// SKINCOLOR_MUSTARD
+	"BANANA",		// SKINCOLOR_BANANA
 	"OLIVE",		// SKINCOLOR_OLIVE
+	"CROCODILE",	// SKINCOLOR_CROCODILE
+	"PERIDOT",		// SKINCOLOR_PERIDOT
 	"VOMIT",		// SKINCOLOR_VOMIT
 	"GARDEN",		// SKINCOLOR_GARDEN
 	"LIME",			// SKINCOLOR_LIME
@@ -8204,13 +8219,16 @@ static const char *COLOR_ENUMS[] = {					// Rejigged for Kart.
 	"MINT",			// SKINCOLOR_MINT
 	"GREEN",		// SKINCOLOR_GREEN
 	"PINETREE",		// SKINCOLOR_PINETREE
-	"EMERALD",		// SKINCOLOR_EMERALD
+	"TURTLE",		// SKINCOLOR_TURTLE
 	"SWAMP",		// SKINCOLOR_SWAMP
 	"DREAM",		// SKINCOLOR_DREAM
 	"PLAGUE",		// SKINCOLOR_PLAGUE
+	"EMERALD",		// SKINCOLOR_EMERALD
 	"ALGAE",		// SKINCOLOR_ALGAE
 	"CARIBBEAN",	// SKINCOLOR_CARIBBEAN
-	"AQUA",			// SKINCOLOR_AQUA
+	"AZURE",		// SKINCOLOR_AZURE
+	"AQUAMARINE",	// SKINCOLOR_AQUAMARINE
+	"TURQUOISE",	// SKINCOLOR_TURQUOISE
 	"TEAL",			// SKINCOLOR_TEAL
 	"CYAN",			// SKINCOLOR_CYAN
 	"JAWZ",			// SKINCOLOR_JAWZ
@@ -8219,19 +8237,23 @@ static const char *COLOR_ENUMS[] = {					// Rejigged for Kart.
 	"PLATINUM",		// SKINCOLOR_PLATINUM
 	"SLATE",		// SKINCOLOR_SLATE
 	"STEEL",		// SKINCOLOR_STEEL
+	"THUNDER",		// SKINCOLOR_THUNDER
+	"NOVA",			// SKINCOLOR_NOVA
 	"RUST",			// SKINCOLOR_RUST
+	"WRISTWATCH",	// SKINCOLOR_WRISTWATCH
 	"JET",			// SKINCOLOR_JET
 	"SAPPHIRE",		// SKINCOLOR_SAPPHIRE
+	"ULTRAMARINE",	// SKINCOLOR_ULTRAMARINE
 	"PERIWINKLE",	// SKINCOLOR_PERIWINKLE
 	"BLUE",			// SKINCOLOR_BLUE
 	"BLUEBERRY",	// SKINCOLOR_BLUEBERRY
-	"NOVA",			// SKINCOLOR_NOVA
+	"THISTLE",		// SKINCOLOR_THISTLE
+	"PURPLE",		// SKINCOLOR_PURPLE
 	"PASTEL",		// SKINCOLOR_PASTEL
 	"MOONSLAM",		// SKINCOLOR_MOONSLAM
-	"ULTRAVIOLET",	// SKINCOLOR_ULTRAVIOLET
 	"DUSK",			// SKINCOLOR_DUSK
 	"BUBBLEGUM",	// SKINCOLOR_BUBBLEGUM
-	"PURPLE",		// SKINCOLOR_PURPLE
+	"MAGENTA",		// SKINCOLOR_MAGENTA
 	"FUCHSIA",		// SKINCOLOR_FUCHSIA
 	"TOXIC",		// SKINCOLOR_TOXIC
 	"MAUVE",		// SKINCOLOR_MAUVE
@@ -8239,10 +8261,7 @@ static const char *COLOR_ENUMS[] = {					// Rejigged for Kart.
 	"BYZANTIUM",	// SKINCOLOR_BYZANTIUM
 	"POMEGRANATE",	// SKINCOLOR_POMEGRANATE
 	"LILAC",		// SKINCOLOR_LILAC
-
-
-
-
+	"TAFFY",		// SKINCOLOR_TAFFY
 
 	// Special super colors
 	// Super Sonic Yellow
@@ -8384,6 +8403,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"BOOSTPOWER",
 	"SPEEDBOOST",
 	"ACCELBOOST",
+	"BOOSTANGLE",
 	"BOOSTCAM",
 	"DESTBOOSTCAM",
 	"TIMEOVERCAM",
@@ -8503,6 +8523,7 @@ struct {
 
 	// doomdef.h constants
 	{"TICRATE",TICRATE},
+	{"MUSICRATE",MUSICRATE},
 	{"RING_DIST",RING_DIST},
 	{"PUSHACCEL",PUSHACCEL},
 	{"MODID",MODID}, // I don't know, I just thought it would be cool for a wad to potentially know what mod it was loaded into.
@@ -8654,27 +8675,6 @@ struct {
 
 	// Character flags (skinflags_t)
 	{"SF_HIRES",SF_HIRES},
-
-	// Character abilities!
-	// Primary
-	{"CA_NONE",CA_NONE}, // now slot 0!
-	{"CA_THOK",CA_THOK},
-	{"CA_FLY",CA_FLY},
-	{"CA_GLIDEANDCLIMB",CA_GLIDEANDCLIMB},
-	{"CA_HOMINGTHOK",CA_HOMINGTHOK},
-	{"CA_DOUBLEJUMP",CA_DOUBLEJUMP},
-	{"CA_FLOAT",CA_FLOAT},
-	{"CA_SLOWFALL",CA_SLOWFALL},
-	{"CA_SWIM",CA_SWIM},
-	{"CA_TELEKINESIS",CA_TELEKINESIS},
-	{"CA_FALLSWITCH",CA_FALLSWITCH},
-	{"CA_JUMPBOOST",CA_JUMPBOOST},
-	{"CA_AIRDRILL",CA_AIRDRILL},
-	{"CA_JUMPTHOK",CA_JUMPTHOK},
-	// Secondary
-	{"CA2_NONE",CA2_NONE}, // now slot 0!
-	{"CA2_SPINDASH",CA2_SPINDASH},
-	{"CA2_MULTIABILITY",CA2_MULTIABILITY},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},
@@ -8901,11 +8901,11 @@ struct {
 	{"V_SKYMAP",V_SKYMAP},
 	{"V_LAVENDERMAP",V_LAVENDERMAP},
 	{"V_GOLDMAP",V_GOLDMAP},
-	{"V_TEAMAP",V_TEAMAP},
-	{"V_STEELMAP",V_STEELMAP},
+	{"V_AQUAMAP",V_AQUAMAP},
+	{"V_MAGENTAMAP",V_MAGENTAMAP},
 	{"V_PINKMAP",V_PINKMAP},
 	{"V_BROWNMAP",V_BROWNMAP},
-	{"V_PEACHMAP",V_PEACHMAP},
+	{"V_TANMAP",V_TANMAP},
 	{"V_TRANSLUCENT",V_TRANSLUCENT},
 	{"V_10TRANS",V_10TRANS},
 	{"V_20TRANS",V_20TRANS},
@@ -9812,7 +9812,7 @@ static inline int lib_getenum(lua_State *L)
 
 	// DYNAMIC variables too!!
 	// Try not to add anything that would break netgames or timeattack replays here.
-	// You know, like consoleplayer, displayplayer, secondarydisplayplayer, or gametime.
+	// You know, like consoleplayer, displayplayers, or gametime.
 	if (fastcmp(word,"gamemap")) {
 		lua_pushinteger(L, gamemap);
 		return 1;
@@ -9885,8 +9885,11 @@ static inline int lib_getenum(lua_State *L)
 	} else if (fastcmp(word,"mapmusflags")) {
 		lua_pushinteger(L, mapmusflags);
 		return 1;
+	} else if (fastcmp(word,"mapmusposition")) {
+		lua_pushinteger(L, mapmusposition);
+		return 1;
 	} else if (fastcmp(word,"server")) {
-		if ((!multiplayer || !netgame) && !playeringame[serverplayer])
+		if ((!multiplayer || !(netgame || demo.playback)) && !playeringame[serverplayer])
 			return 0;
 		LUA_PushUserdata(L, &players[serverplayer], META_PLAYER);
 		return 1;
@@ -9937,6 +9940,9 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	} else if (fastcmp(word,"mapobjectscale")) {
 		lua_pushinteger(L, mapobjectscale);
+		return 1;
+	} else if (fastcmp(word,"numlaps")) {
+		lua_pushinteger(L, cv_numlaps.value);
 		return 1;
 	}
 	return 0;

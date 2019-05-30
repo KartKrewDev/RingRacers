@@ -40,7 +40,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 //int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
 #endif
 
-static void R_InitSkins(void);
+CV_PossibleValue_t Forceskin_cons_t[MAXSKINS+2];
 
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
@@ -583,7 +583,17 @@ void R_InitSprites(void)
 	//
 
 	// it can be is do before loading config for skin cvar possible value
-	R_InitSkins();
+	// (... what the fuck did you just say to me? "it can be is do"?)
+#ifdef SKINVALUES
+	for (i = 0; i <= MAXSKINS; i++)
+	{
+		skin_cons_t[i].value = 0;
+		skin_cons_t[i].strvalue = NULL;
+	}
+#endif
+
+	numskins = 0;
+
 	for (i = 0; i < numwadfiles; i++)
 		R_AddSkins((UINT16)i);
 
@@ -924,6 +934,13 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 	if (vis->x2 >= vid.width)
 		vis->x2 = vid.width-1;
+
+#if 1
+	// Something is occasionally setting 1px-wide sprites whose frac is exactly the width of the sprite, causing crashes due to
+	// accessing invalid column info. Until the cause is found, let's try to correct those manually...
+	while (frac + vis->xiscale*(vis->x2-vis->x1) > SHORT(patch->width)<<FRACBITS && vis->x2 >= vis->x1)
+		vis->x2--;
+#endif
 
 	for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale)
 	{
@@ -1695,7 +1712,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 // R_AddSprites
 // During BSP traversal, this adds sprites by sector.
 //
-void R_AddSprites(sector_t *sec, INT32 lightlevel, UINT8 viewnumber)
+void R_AddSprites(sector_t *sec, INT32 lightlevel)
 {
 	mobj_t *thing;
 	precipmobj_t *precipthing; // Tails 08-25-2002
@@ -1741,19 +1758,19 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel, UINT8 viewnumber)
 			if (splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewnumber != 0)
+					if (viewssnum != 0)
 						continue;
 
 				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewnumber != 1)
+					if (viewssnum != 1)
 						continue;
 
 				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewnumber != 2)
+					if (viewssnum != 2)
 						continue;
 
 				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewnumber != 3)
+					if (viewssnum != 3)
 						continue;
 			}
 
@@ -1776,19 +1793,19 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel, UINT8 viewnumber)
 			if (splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewnumber != 0)
+					if (viewssnum != 0)
 						continue;
 
 				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewnumber != 1)
+					if (viewssnum != 1)
 						continue;
 
 				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewnumber != 2)
+					if (viewssnum != 2)
 						continue;
 
 				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewnumber != 3)
+					if (viewssnum != 3)
 						continue;
 			}
 
@@ -1796,7 +1813,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel, UINT8 viewnumber)
 		}
 	}
 
-	// Someone seriously wants infinite draw distance for precipitation?
+	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
 	if ((limit_dist = (fixed_t)cv_drawdist_precip.value << FRACBITS))
 	{
 		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
@@ -1811,13 +1828,6 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel, UINT8 viewnumber)
 
 			R_ProjectPrecipitationSprite(precipthing);
 		}
-	}
-	else
-	{
-		// Draw everything in sector, no checks
-		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
-			if (!(precipthing->precipflags & PCF_INVISIBLE))
-				R_ProjectPrecipitationSprite(precipthing);
 	}
 }
 
@@ -2529,7 +2539,7 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	strncpy(skin->facewant, "PLAYWANT", 9);
 	strncpy(skin->facemmap, "PLAYMMAP", 9);
 
-	skin->starttranscolor = 160;
+	skin->starttranscolor = 96;
 	skin->prefcolor = SKINCOLOR_GREEN;
 
 	// SRB2kart
@@ -2542,57 +2552,6 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	for (i = 0; i < sfx_skinsoundslot0; i++)
 		if (S_sfx[i].skinsound != -1)
 			skin->soundsid[S_sfx[i].skinsound] = i;
-}
-
-//
-// Initialize the basic skins
-//
-void R_InitSkins(void)
-{
-	skin_t *skin;
-#ifdef SKINVALUES
-	INT32 i;
-
-	for (i = 0; i <= MAXSKINS; i++)
-	{
-		skin_cons_t[i].value = 0;
-		skin_cons_t[i].strvalue = NULL;
-	}
-#endif
-
-	// skin[0] = Sonic skin
-	skin = &skins[0];
-	numskins = 1;
-	Sk_SetDefaultValue(skin);
-
-	// Hardcoded S_SKIN customizations for Sonic.
-	strcpy(skin->name,       DEFAULTSKIN);
-#ifdef SKINVALUES
-	skin_cons_t[0].strvalue = skins[0].name;
-#endif
-	skin->flags = 0;
-	strcpy(skin->realname,   "Sonic");
-	strcpy(skin->hudname,    "SONIC");
-
-	strncpy(skin->facerank, "PLAYRANK", 9);
-	strncpy(skin->facewant, "PLAYWANT", 9);
-	strncpy(skin->facemmap, "PLAYMMAP", 9);
-	skin->prefcolor = SKINCOLOR_BLUE;
-
-	// SRB2kart
-	skin->kartspeed = 8;
-	skin->kartweight = 2;
-	//
-
-	skin->spritedef.numframes = sprites[SPR_PLAY].numframes;
-	skin->spritedef.spriteframes = sprites[SPR_PLAY].spriteframes;
-	ST_LoadFaceGraphics(skin->facerank, skin->facewant, skin->facemmap, 0);
-
-	//MD2 for sonic doesn't want to load in Linux.
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-		HWR_AddPlayerMD2(0);
-#endif
 }
 
 // returns true if the skin name is found (loaded from pwad)
@@ -2653,15 +2612,15 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		player->kartspeed = skin->kartspeed;
 		player->kartweight = skin->kartweight;
 
-		/*if (!(cv_debug || devparm) && !(netgame || multiplayer || demoplayback || modeattacking))
+		/*if (!(cv_debug || devparm) && !(netgame || multiplayer || demo.playback || modeattacking))
 		{
 			if (playernum == consoleplayer)
 				CV_StealthSetValue(&cv_playercolor, skin->prefcolor);
-			else if (playernum == secondarydisplayplayer)
+			else if (playernum == displayplayers[1])
 				CV_StealthSetValue(&cv_playercolor2, skin->prefcolor);
-			else if (playernum == thirddisplayplayer)
+			else if (playernum == displayplayers[2])
 				CV_StealthSetValue(&cv_playercolor3, skin->prefcolor);
-			else if (playernum == fourthdisplayplayer)
+			else if (playernum == displayplayers[3])
 				CV_StealthSetValue(&cv_playercolor4, skin->prefcolor);
 			player->skincolor = skin->prefcolor;
 			if (player->mo)
@@ -2670,6 +2629,9 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 
 		if (player->mo)
 			P_SetScale(player->mo, player->mo->scale);
+
+		demo_extradata[playernum] |= DXD_SKIN;
+
 		return;
 	}
 
@@ -2970,6 +2932,10 @@ next_token:
 		skin_cons_t[numskins].value = numskins;
 		skin_cons_t[numskins].strvalue = skin->name;
 #endif
+
+		// Update the forceskin possiblevalues
+		Forceskin_cons_t[numskins+1].value = numskins;
+		Forceskin_cons_t[numskins+1].strvalue = skins[numskins].name;
 
 		// add face graphics
 		ST_LoadFaceGraphics(skin->facerank, skin->facewant, skin->facemmap, numskins);

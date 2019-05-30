@@ -79,11 +79,11 @@ extern UINT8 hudtrans;
 #define V_SKYMAP             0x00008000
 #define V_LAVENDERMAP        0x00009000
 #define V_GOLDMAP            0x0000A000
-#define V_TEAMAP             0x0000B000
-#define V_STEELMAP           0x0000C000
+#define V_AQUAMAP            0x0000B000
+#define V_MAGENTAMAP         0x0000C000
 #define V_PINKMAP            0x0000D000
 #define V_BROWNMAP           0x0000E000
-#define V_PEACHMAP           0x0000F000
+#define V_TANMAP             0x0000F000
 
 // use bits 17-20 for alpha transparency
 #define V_ALPHASHIFT         16
@@ -153,6 +153,9 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c);
 // fill a box with a flat as a pattern
 void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum);
 
+// draw wobbly VHS pause stuff
+void V_DrawVhsEffect(boolean rewind);
+
 // fade down the screen buffer before drawing the menu over
 void V_DrawFadeScreen(UINT16 color, UINT8 strength);
 
@@ -182,6 +185,7 @@ void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *s
 
 // draw a string using the tny_font
 void V_DrawThinString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *string);
 
 void V_DrawStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);

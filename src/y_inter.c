@@ -40,6 +40,7 @@
 #include "g_input.h" // PLAYER1INPUTDOWN
 #include "k_kart.h" // colortranslations
 #include "console.h" // cons_menuhighlight
+#include "lua_hook.h" // IntermissionThinker hook
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -309,6 +310,15 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			players[i].score += data.match.increase[i];
 		}
 
+		if (demo.recording && !rankingsmode)
+			G_WriteStanding(
+				data.match.pos[data.match.numplayers],
+				data.match.name[data.match.numplayers],
+				*data.match.character[data.match.numplayers],
+				*data.match.color[data.match.numplayers],
+				data.match.val[data.match.numplayers]
+			);
+
 		data.match.numplayers++;
 	}
 }
@@ -503,7 +513,7 @@ void Y_IntermissionDrawer(void)
 		V_DrawFadeScreen(0xFF00, 22);
 
 	if (!splitscreen)
-		whiteplayer = demoplayback ? displayplayer : consoleplayer;
+		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	if (cons_menuhighlight.value)
 		hilicol = cons_menuhighlight.value;
@@ -512,7 +522,7 @@ void Y_IntermissionDrawer(void)
 	else
 		hilicol = ((intertype == int_race) ? V_SKYMAP : V_REDMAP);
 
-	if (sorttic != -1 && intertic > sorttic)
+	if (sorttic != -1 && intertic > sorttic && !demo.playback)
 	{
 		INT32 count = (intertic - sorttic);
 
@@ -704,13 +714,38 @@ void Y_IntermissionDrawer(void)
 dotimer:
 	if (timer)
 	{
+		char *string;
 		INT32 tickdown = (timer+1)/TICRATE;
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol|V_SNAPTOBOTTOM,
-			va("%s starts in %d", cv_advancemap.string, tickdown));
+
+		if (multiplayer && demo.playback)
+			string = va("Replay ends in %d", tickdown);
+		else
+			string = va("%s starts in %d", cv_advancemap.string, tickdown);
+
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol,
+			string);
 	}
 
-	// Make it obvious that scrambling is happening next round. (OR NOT I GUESS.)
-	//if ((intertic/TICRATE) & 1)
+	if ((demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
+		switch (demo.savemode)
+		{
+		case DSM_NOTSAVING:
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "Look Backward: Save replay");
+			break;
+
+		case DSM_SAVED:
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "Replay saved!");
+			break;
+
+		case DSM_TITLEENTRY:
+			ST_DrawDemoTitleEntry();
+			break;
+
+		default: // Don't render any text here
+			break;
+		}
+
+	//if ((intertic/TICRATE) & 1) // Make it obvious that scrambling is happening next round. (OR NOT, I GUESS)
 	//{
 		/*if (cv_scrambleonchange.value && cv_teamscramble.value)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, hilicol, M_GetText("Teams will be scrambled next round!"));*/
@@ -730,9 +765,22 @@ void Y_Ticker(void)
 	if (intertype == int_none)
 		return;
 
+	if (demo.recording)
+	{
+		if (demo.savemode == DSM_NOTSAVING && InputDown(gc_lookback, 1))
+			demo.savemode = DSM_TITLEENTRY;
+
+		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
+			G_SaveDemo();
+	}
+
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())
 		return;
+
+#ifdef HAVE_BLUA
+	LUAh_IntermissionThinker();
+#endif
 
 	intertic++;
 
@@ -773,7 +821,7 @@ void Y_Ticker(void)
 		{
 			if (sorttic == -1)
 				sorttic = intertic + max((cv_inttime.value/2)-2, 2)*TICRATE; // 8 second pause after match results
-			else
+			else if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
 			{
 				if (!data.match.rankingsmode && (intertic >= sorttic + 8))
 					Y_CalculateMatchData(1, Y_CompareRank);
@@ -1047,6 +1095,8 @@ void Y_StartIntermission(void)
 	{
 		if (cv_inttime.value == 0 && gametype == GT_COOP)
 			timer = 0;
+		else if (demo.playback) // Override inttime (which is pulled from the replay anyway
+			timer = 10*TICRATE;
 		else
 		{
 			timer = cv_inttime.value*TICRATE;
@@ -1081,7 +1131,7 @@ void Y_StartIntermission(void)
 		}
 		case int_race: // (time-only race)
 		{
-			if (!majormods && !multiplayer && !demoplayback) // remove this once we have a proper time attack screen
+			if (!majormods && !multiplayer && !demo.playback) // remove this once we have a proper time attack screen
 			{
 				// Update visitation flags
 				mapvisited[gamemap-1] |= MV_BEATEN;
@@ -1293,19 +1343,19 @@ void Y_VoteDrawer(void)
 					{
 						case 1:
 							thiscurs = cursor2;
-							p = secondarydisplayplayer;
+							p = displayplayers[1];
 							break;
 						case 2:
 							thiscurs = cursor3;
-							p = thirddisplayplayer;
+							p = displayplayers[2];
 							break;
 						case 3:
 							thiscurs = cursor4;
-							p = fourthdisplayplayer;
+							p = displayplayers[3];
 							break;
 						default:
 							thiscurs = cursor1;
-							p = displayplayer;
+							p = displayplayers[0];
 							break;
 					}
 
@@ -1320,7 +1370,7 @@ void Y_VoteDrawer(void)
 				V_DrawMappedPatch(BASEVIDWIDTH-124, handy, V_SNAPTORIGHT, thiscurs, colormap);
 
 				if (votetic % 10 < 4)
-					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), 120|V_SNAPTORIGHT);
+					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), 0|V_SNAPTORIGHT);
 				else
 					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), color|V_SNAPTORIGHT);
 
@@ -1391,7 +1441,7 @@ void Y_VoteDrawer(void)
 			{
 				V_DrawScaledPatch(x-18, y+9, V_SNAPTOLEFT, cursor);
 				if (voteendtic != -1 && !(votetic % 4))
-					V_DrawFill(x-1, y-1, 42, 27, 120|V_SNAPTOLEFT);
+					V_DrawFill(x-1, y-1, 42, 27, 0|V_SNAPTOLEFT);
 				else
 					V_DrawFill(x-1, y-1, 42, 27, levelinfo[votes[i]].gtc|V_SNAPTOLEFT);
 			}
@@ -1460,10 +1510,7 @@ static void Y_VoteStops(SINT8 pick, SINT8 level)
 		S_StartSound(NULL, sfx_noooo2); // gasp
 	else if (mapheaderinfo[nextmap] && (mapheaderinfo[nextmap]->menuflags & LF2_HIDEINMENU))
 		S_StartSound(NULL, sfx_noooo1); // this is bad
-	else if (netgame && (pick == consoleplayer
-		|| pick == secondarydisplayplayer
-		|| pick == thirddisplayplayer
-		|| pick == fourthdisplayplayer))
+	else if (netgame && P_IsLocalPlayer(&players[pick]))
 		S_StartSound(NULL, sfx_yeeeah); // yeeeah!
 	else
 		S_StartSound(NULL, sfx_kc48); // just a cool sound
@@ -1596,13 +1643,13 @@ void Y_VoteTicker(void)
 			switch (i)
 			{
 				case 1:
-					p = secondarydisplayplayer;
+					p = displayplayers[1];
 					break;
 				case 2:
-					p = thirddisplayplayer;
+					p = displayplayers[2];
 					break;
 				case 3:
-					p = fourthdisplayplayer;
+					p = displayplayers[3];
 					break;
 				default:
 					p = consoleplayer;
@@ -1793,10 +1840,10 @@ void Y_EndVote(void)
 //
 static void Y_UnloadVoteData(void)
 {
+	voteclient.loaded = false;
+
 	if (rendermode != render_soft)
 		return;
-
-	voteclient.loaded = false;
 
 	UNLOAD(widebgpatch);
 	UNLOAD(bgpatch);

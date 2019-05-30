@@ -11,19 +11,13 @@
 
 #ifdef CMAKECONFIG
 
-// Base SRB2 hashes
-#define ASSET_HASH_SRB2_SRB      "${SRB2_ASSET_srb2.srb_HASH}"
-#ifdef USE_PATCH_DTA
-#define ASSET_HASH_PATCH_DTA     "${SRB2_ASSET_patch.dta_HASH}"
-#endif
-
-// SRB2Kart-specific hashes
-#define ASSET_HASH_GFX_KART      "${SRB2_ASSET_gfx.kart_HASH}"
-#define ASSET_HASH_TEXTURES_KART "${SRB2_ASSET_textures.kart_HASH}"
-#define ASSET_HASH_CHARS_KART    "${SRB2_ASSET_chars.kart_HASH}"
-#define ASSET_HASH_MAPS_KART     "${SRB2_ASSET_maps.kart_HASH}"
-#ifdef USE_PATCH_KART
-#define ASSET_HASH_PATCH_KART    "${SRB2_ASSET_patch.kart_HASH}"
+#define ASSET_HASH_MAIN_KART     "${SRB2_ASSET_main.kart_HASH}"
+#define ASSET_HASH_GFX_PK3       "${SRB2_ASSET_gfx.pk3_HASH}"
+#define ASSET_HASH_TEXTURES_PK3  "${SRB2_ASSET_textures.pk3_HASH}"
+#define ASSET_HASH_CHARS_PK3     "${SRB2_ASSET_chars.pk3_HASH}"
+#define ASSET_HASH_MAPS_WAD      "${SRB2_ASSET_maps.wad_HASH}"
+#ifdef USE_PATCH_FILE
+#define ASSET_HASH_PATCH_PK3     "${SRB2_ASSET_patch.pk3_HASH}"
 #endif
 
 #define SRB2_COMP_REVISION       "${SRB2_COMP_REVISION}"
@@ -34,25 +28,17 @@
 #else
 
 /* Manually defined asset hashes for non-CMake builds
- * Last updated 2015 / 05 / 03 - SRB2 v2.1.15 - srb2.srb
- * Last updated 2018 / 12 / 23 - SRB2 v2.1.22 - patch.dta
  * Last updated 2019 / 01 / 18 - Kart v1.0.2 - Main assets
- * Last updated 2019 / 03 / 11 - Kart v1.0.4 - patch.kart
+ * Last updated 2019 / 05 / 06 - Kart v1.1.0 - patch.kart
  */
 
-// Base SRB2 hashes
-#define ASSET_HASH_SRB2_SRB      "c1b9577687f8a795104aef4600720ea7"
-#ifdef USE_PATCH_DTA
-#define ASSET_HASH_PATCH_DTA     "b04fd9624bfd94dc96dcf4f400f7deb4"
-#endif
-
-// SRB2Kart-specific hashes
-#define ASSET_HASH_GFX_KART      "99c39f223d84ebc78e67ab68f3bead95"
-#define ASSET_HASH_TEXTURES_KART "ec8e9b7535cf585afe72ef277b08f490"
-#define ASSET_HASH_CHARS_KART    "e2c428347dde52858a3dacd29fc5b964"
-#define ASSET_HASH_MAPS_KART     "1335cd064656aedca359cfbb5233ac4a"
-#ifdef USE_PATCH_KART
-#define ASSET_HASH_PATCH_KART    "b5f48e1abccfa47a5745199182e2fef4"
+#define ASSET_HASH_MAIN_KART     "00000000000000000000000000000000"
+#define ASSET_HASH_GFX_PK3       "00000000000000000000000000000000"
+#define ASSET_HASH_TEXTURES_PK3  "00000000000000000000000000000000"
+#define ASSET_HASH_CHARS_PK3     "00000000000000000000000000000000"
+#define ASSET_HASH_MAPS_WAD      "00000000000000000000000000000000"
+#ifdef USE_PATCH_FILE
+#define ASSET_HASH_PATCH_PK3     "00000000000000000000000000000000"
 #endif
 
 #endif
