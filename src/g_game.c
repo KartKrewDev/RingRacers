@@ -1406,7 +1406,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
 		axis = JoyAxis(AXISMOVE, ssplayer);
-		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
+		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || EITHERSNEAKER(player))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = forwardmove[1];	// 50
@@ -1555,10 +1555,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	cmd->angleturn *= realtics;
 
 	// SRB2kart - no additional angle if not moving
-	if (((player->mo && player->speed > 0) // Moving
+	if ((player->mo && player->speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 		|| (player->kartstuff[k_respawn]) // Respawning
-		|| (player->spectator || objectplacing))) // Not a physical player
+		|| (player->spectator || objectplacing)) // Not a physical player
 		lang += (cmd->angleturn<<16);
 
 	cmd->angleturn = (INT16)(lang >> 16);
@@ -2580,6 +2580,7 @@ void G_PlayerReborn(INT32 player)
 	INT32 bumper;
 	INT32 comebackpoints;
 	INT32 wanted;
+	INT32 rings;
 	INT32 respawnflip;
 	boolean songcredit = false;
 
@@ -2631,6 +2632,7 @@ void G_PlayerReborn(INT32 player)
 		itemamount = 0;
 		growshrinktimer = 0;
 		bumper = (G_BattleGametype() ? cv_kartbumpers.value : 0);
+		rings = (G_BattleGametype() ? 0 : 5);
 		comebackpoints = 0;
 		wanted = 0;
 		starpostwp = 0;
@@ -2660,6 +2662,7 @@ void G_PlayerReborn(INT32 player)
 			growshrinktimer = 0;
 
 		bumper = players[player].kartstuff[k_bumper];
+		rings = players[player].kartstuff[k_rings];
 		comebackpoints = players[player].kartstuff[k_comebackpoints];
 		wanted = players[player].kartstuff[k_wanted];
 	}
@@ -2704,17 +2707,19 @@ void G_PlayerReborn(INT32 player)
 	p->pity = pity;
 
 	// SRB2kart
-	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync
+	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync (Does it...?)
 	p->kartstuff[k_itemroulette] = itemroulette;
 	p->kartstuff[k_roulettetype] = roulettetype;
 	p->kartstuff[k_itemtype] = itemtype;
 	p->kartstuff[k_itemamount] = itemamount;
 	p->kartstuff[k_growshrinktimer] = growshrinktimer;
 	p->kartstuff[k_bumper] = bumper;
+	p->kartstuff[k_rings] = rings;
 	p->kartstuff[k_comebackpoints] = comebackpoints;
 	p->kartstuff[k_comebacktimer] = comebacktime;
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
+	p->kartstuff[k_lastdraft] = -1;
 	p->kartstuff[k_starpostflip] = respawnflip;
 
 	// Don't do anything immediately
@@ -5103,7 +5108,8 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 		|| (players[displayplayers[0]].kartstuff[k_respawn]) // Respawning
 		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
-		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer] && players[displayplayers[0]].kartstuff[k_sneakertimer])) // Spinning and boosting cancels out spinout
+		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
+		&& (players[displayplayers[0]].kartstuff[k_sneakertimer] || players[displayplayers[0]].kartstuff[k_levelbooster]))) // Spinning and boosting cancels out spinout
 		localangle[0] += (cmd->angleturn<<16);
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
@@ -5351,7 +5357,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	// Store the sprite frame.
-	frame = ghost->frame & 0xFF;
+	frame = ghost->frame & FF_FRAMEMASK;
 	if (frame != oldghost[playernum].frame)
 	{
 		oldghost[playernum].frame = frame;
