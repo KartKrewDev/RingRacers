@@ -6264,7 +6264,8 @@ void P_RunShadows(void)
 
 			for (rover = sec->ffloors; rover; rover = rover->next)
 			{
-				fixed_t surface;
+				fixed_t top, bottom;
+				fixed_t d1, d2;
 
 				if (!(rover->flags & FF_EXISTS))
 					continue;
@@ -6275,17 +6276,41 @@ void P_RunShadows(void)
 					|| (rover->flags & FF_SWIMMABLE)))
 					continue;
 
+#ifdef ESLOPE
+				if (*rover->t_slope)
+					top = P_GetZAt(*rover->t_slope, mobj->target->x, mobj->target->y);
+				else
+#endif
+					top = *rover->topheight;
+
+#ifdef ESLOPE
+				if (*rover->b_slope)
+					bottom = P_GetZAt(*rover->b_slope, mobj->target->x, mobj->target->y);
+				else
+#endif
+					bottom = *rover->bottomheight;
+
 				if (flip)
 				{
-					surface = *rover->bottomheight;
-#ifdef ESLOPE
-					if (*rover->b_slope)
-						surface = P_GetZAt(*rover->b_slope, mobj->target->x, mobj->target->y);
-#endif
-
-					if (surface < newz && surface > (mobj->target->z + mobj->target->height))
+					if (rover->flags & FF_QUICKSAND)
 					{
-						newz = surface;
+						if (mobj->target->z < top && (mobj->target->z + mobj->target->height) > bottom)
+						{
+							if (newz > (mobj->target->z + mobj->target->height))
+							{
+								newz = (mobj->target->z + mobj->target->height);
+								slope = NULL;
+							}
+						}
+						continue;
+					}
+
+					d1 = (mobj->target->z + mobj->target->height) - (top + ((bottom - top)/2));
+					d2 = mobj->target->z - (top + ((bottom - top)/2));
+
+					if (bottom < newz && abs(d1) < abs(d2))
+					{
+						newz = bottom;
 #ifdef ESLOPE
 						if (*rover->b_slope)
 							slope = *rover->b_slope;
@@ -6294,15 +6319,25 @@ void P_RunShadows(void)
 				}
 				else
 				{
-					surface = *rover->topheight;
-#ifdef ESLOPE
-					if (*rover->t_slope)
-						surface = P_GetZAt(*rover->t_slope, mobj->target->x, mobj->target->y);
-#endif
-
-					if (surface > newz && surface < mobj->target->z)
+					if (rover->flags & FF_QUICKSAND)
 					{
-						newz = surface;
+						if (mobj->target->z < top && (mobj->target->z + mobj->target->height) > bottom)
+						{
+							if (newz < mobj->target->z)
+							{
+								newz = mobj->target->z;
+								slope = NULL;
+							}
+						}
+						continue;
+					}
+
+					d1 = mobj->target->z - (bottom + ((top - bottom)/2));
+					d2 = (mobj->target->z + mobj->target->height) - (bottom + ((top - bottom)/2));
+
+					if (top > newz && abs(d1) < abs(d2))
+					{
+						newz = top;
 #ifdef ESLOPE
 						if (*rover->t_slope)
 							slope = *rover->t_slope;
