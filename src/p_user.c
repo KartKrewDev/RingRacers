@@ -4024,6 +4024,8 @@ static void P_3dMovement(player_t *player)
 	{
 		if (player->kartstuff[k_drift] != 0)
 			movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
+		else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
+			movepushangle = (angle_t)player->kartstuff[k_boostangle];
 		else
 			movepushangle = player->mo->angle;
 	}
@@ -5757,11 +5759,10 @@ static void P_MovePlayer(player_t *player)
 		boolean add_delta = true;
 
 		// Kart: store the current turn range for later use
-		if (((player->mo && player->speed > 0) // Moving
+		if ((player->mo && player->speed > 0) // Moving
 			|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 			|| (player->kartstuff[k_respawn]) // Respawning
 			|| (player->spectator || objectplacing)) // Not a physical player
-			&& !(player->kartstuff[k_spinouttimer] && EITHERSNEAKER(player))) // Spinning and boosting cancels out turning
 		{
 			player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
 			player->rturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, -KART_FULLTURN)-1;
@@ -8475,8 +8476,8 @@ void P_PlayerThink(player_t *player)
 	if (player->powers[pw_invulnerability] && player->powers[pw_invulnerability] < UINT16_MAX)
 		player->powers[pw_invulnerability]--;
 
-	if (player->powers[pw_flashing] && player->powers[pw_flashing] < UINT16_MAX && ((player->pflags & PF_NIGHTSMODE)
-		|| (player->spectator || player->powers[pw_flashing] < K_GetKartFlashing(player))))
+	if (player->powers[pw_flashing] && player->powers[pw_flashing] < UINT16_MAX &&
+		(player->spectator || player->powers[pw_flashing] < K_GetKartFlashing(player)))
 		player->powers[pw_flashing]--;
 
 	if (player->powers[pw_tailsfly] && player->powers[pw_tailsfly] < UINT16_MAX /*&& player->charability != CA_SWIM*/ && !(player->powers[pw_super] && ALL7EMERALDS(player->powers[pw_emeralds]))) // tails fly counter

@@ -8347,25 +8347,6 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 
 			K_MatchGenericExtraFlags(mobj, mobj->target);
-			mobj->angle = mobj->target->angle;
-
-			switch (mobj->extravalue1)
-			{
-				case 0:
-				default:
-					mobj->angle += ANGLE_90;
-					break;
-				case 1:
-					mobj->angle -= ANGLE_90;
-					break;
-				case 2:
-					mobj->angle += ANGLE_45;
-					break;
-				case 3:
-					mobj->angle -= ANGLE_45;
-					break;
-			}
-
 			P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
 				mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
 				mobj->target->z + mobj->target->height);

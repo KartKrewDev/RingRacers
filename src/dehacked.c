@@ -8418,6 +8418,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"RINGDELAY",
 	"RINGBOOST",
 	"RINGLOCK",
+	"SPARKLEANIM",
 	"JMP",
 	"OFFROAD",
 	"POGOSPRING",
@@ -8431,6 +8432,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"DRAFTPOWER",
 	"DRAFTLEEWAY",
 	"LASTDRAFT",
+	"BOOSTANGLE",
 	"AIZDRIFTSTRAT",
 	"BRAKEDRIFT",
 

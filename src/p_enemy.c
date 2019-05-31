@@ -3582,22 +3582,17 @@ void A_AttractChase(mobj_t *actor)
 
 			if (actor->extravalue1 >= 21)
 			{
-#if 0
-				UINT8 i;
-#endif
+				mobj_t *sparkle;
+				angle_t offset = FixedAngle(18<<FRACBITS);
+
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
 				actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
 				S_StartSound(actor->target, sfx_s1b5);
 
-#if 0
-				// ring sparkle effect
-				for (i = 0; i < 4; i++)
-				{
-					mobj_t *sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
-					P_SetTarget(&sparkle->target, actor->target);
-					sparkle->extravalue1 = i;
-				}
-#endif
+				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
+				P_SetTarget(&sparkle->target, actor->target);
+				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->kartstuff[k_sparkleanim]);
+				actor->target->player->kartstuff[k_sparkleanim] = (actor->target->player->kartstuff[k_sparkleanim]+1) % 20;
 
 				P_KillMobj(actor, actor->target, actor->target);
 				return;
@@ -8413,6 +8408,7 @@ void A_SPBChase(mobj_t *actor)
 		actor->lastlook = -1;
 		spbplace = -1;
 		P_InstaThrust(actor, actor->angle, wspeed);
+		actor->flags &=  ~MF_NOCLIPTHING;	// just in case.
 		return;
 	}
 
@@ -8442,9 +8438,13 @@ void A_SPBChase(mobj_t *actor)
 	{
 		if (actor->tracer && actor->tracer->health)
 		{
+
 			fixed_t defspeed = wspeed;
 			fixed_t range = (160*actor->tracer->scale);
 			fixed_t cx = 0, cy =0;
+
+			// we're tailing a player, now's a good time to regain our damage properties
+			actor->flags &=  ~MF_NOCLIPTHING;
 
 			// Play the intimidating gurgle
 			if (!S_SoundPlaying(actor, actor->info->activesound))
@@ -8583,6 +8583,9 @@ void A_SPBChase(mobj_t *actor)
 	{
 		actor->momx = actor->momy = actor->momz = 0; // Stoooop
 
+		// don't hurt players that have nothing to do with this:
+		actor->flags |= MF_NOCLIPTHING;
+
 		if (actor->lastlook != -1
 			&& playeringame[actor->lastlook]
 			&& !players[actor->lastlook].spectator
@@ -8619,6 +8622,10 @@ void A_SPBChase(mobj_t *actor)
 		}
 
 		// Found someone, now get close enough to initiate the slaughter...
+
+		// don't hurt players that have nothing to do with this:
+		actor->flags |= MF_NOCLIPTHING;
+
 		P_SetTarget(&actor->tracer, player->mo);
 		spbplace = bestrank;
 
