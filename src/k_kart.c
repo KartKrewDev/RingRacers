@@ -4527,82 +4527,11 @@ static void K_MoveHeldObjects(player_t *player)
 						P_TeleportMove(cur, targx, targy, cur->z);
 
 #ifdef ESLOPE
-					// We gotta do ALL of this... just so that bananas can tilt in OGL :V
 					if (P_IsObjectOnGround(cur))
 					{
-						pslope_t *slope = NULL;
-						sector_t *sec = R_PointInSubsector(cur->x, cur->y)->sector;
-						boolean flip = (cur->eflags & MFE_VERTICALFLIP);
-
-						if (flip)
-						{
-							if (sec->c_slope)
-							{
-								slope = sec->c_slope;
-								targz = P_GetZAt(sec->c_slope, cur->x, cur->y);
-							}
-							else
-								targz = sec->ceilingheight;
-						}
-						else
-						{
-							if (sec->f_slope)
-							{
-								slope = sec->f_slope;
-								targz = P_GetZAt(sec->f_slope, cur->x, cur->y);
-							}
-							else
-								targz = sec->floorheight;
-						}
-
-						// Check FOFs for a better suited slope
-						if (sec->ffloors)
-						{
-							ffloor_t *rover;
-
-							for (rover = sec->ffloors; rover; rover = rover->next)
-							{
-								fixed_t surface;
-
-								if (!(rover->flags & FF_EXISTS))
-									continue;
-
-								if (!((rover->flags & FF_BLOCKOTHERS) || (rover->flags & FF_QUICKSAND)) || (rover->flags & FF_SWIMMABLE))
-									continue;
-
-								if (flip)
-								{
-									surface = *rover->bottomheight;
-									if (*rover->b_slope)
-										surface = P_GetZAt(*rover->b_slope, cur->x, cur->y);
-
-									if (surface < targz && surface > (cur->z + cur->height))
-									{
-										targz = surface;
-										if (*rover->b_slope)
-											slope = *rover->b_slope;
-									}
-								}
-								else
-								{
-									surface = *rover->topheight;
-									if (*rover->t_slope)
-										surface = P_GetZAt(*rover->t_slope, cur->x, cur->y);
-
-									if (surface > targz && surface < cur->z)
-									{
-										targz = surface;
-										if (*rover->t_slope)
-											slope = *rover->t_slope;
-									}
-								}
-							}
-						}
-
-						cur->standingslope = slope;
-#ifdef HWRENDER
-						cur->modeltilt = cur->standingslope;
-#endif
+						// Slope values are set in the function, but we DON'T want to use its return value.
+						P_CalculateShadowFloor(cur, cur->x, cur->y, cur->z,
+							cur->radius, cur->height, (cur->eflags & MFE_VERTICALFLIP), false);
 					}
 #endif
 
