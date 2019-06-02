@@ -22,7 +22,9 @@ void K_RegisterKartStuff(void);
 
 boolean K_IsPlayerLosing(player_t *player);
 boolean K_IsPlayerWanted(player_t *player);
+fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
+void K_KartPainEnergyFling(player_t *player);
 void K_FlipFromObject(mobj_t *mo, mobj_t *master);
 void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master);
 void K_RespawnChecker(player_t *player);
@@ -41,6 +43,7 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color);
 void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
 void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent);
+void K_SpawnDraftDust(mobj_t *mo);
 void K_DriftDustHandling(mobj_t *spawner);
 void K_PuntMine(mobj_t *mine, mobj_t *punter);
 void K_DoSneaker(player_t *player, INT32 type);
@@ -71,6 +74,7 @@ void K_CheckSpectateStatus(void);
 void K_PlayAttackTaunt(mobj_t *source);
 void K_PlayBoostTaunt(mobj_t *source);
 void K_PlayOvertakeSound(mobj_t *source);
+void K_PlayPainSound(mobj_t *source);
 void K_PlayHitEmSound(mobj_t *source);
 void K_PlayPowerGloatSound(mobj_t *source);
 

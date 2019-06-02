@@ -4247,19 +4247,19 @@ DoneSection2:
 					if (nump > 1)
 					{
 						if (K_IsPlayerLosing(player))
-							player->kartstuff[k_laphand] = 3;
+							player->karthud[khud_laphand] = 3;
 						else
 						{
 							if (nump > 2 && player->kartstuff[k_position] == 1) // 1st place in 1v1 uses thumbs up
-								player->kartstuff[k_laphand] = 1;
+								player->karthud[khud_laphand] = 1;
 							else
-								player->kartstuff[k_laphand] = 2;
+								player->karthud[khud_laphand] = 2;
 						}
 					}
 					else
-						player->kartstuff[k_laphand] = 0; // No hands in FREE PLAY
+						player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
-					player->kartstuff[k_lapanimation] = 80;
+					player->karthud[khud_lapanimation] = 80;
 
 					if (player->pflags & PF_NIGHTSMODE)
 						player->drillmeter += 48*20;
@@ -4295,7 +4295,7 @@ DoneSection2:
 						player->starpostangle = player->starpostx = player->starposty = player->starpostz = player->kartstuff[k_starpostflip] = 0;
 					}
 
-					if (P_IsLocalPlayer(player))
+					if (P_IsDisplayPlayer(player))
 					{
 						if (player->laps == (UINT8)(cv_numlaps.value - 1))
 							S_StartSound(NULL, sfx_s3k68);
@@ -4325,7 +4325,7 @@ DoneSection2:
 
 				if (player->laps >= (unsigned)cv_numlaps.value)
 				{
-					if (P_IsLocalPlayer(player))
+					if (P_IsDisplayPlayer(player))
 						S_StartSound(NULL, sfx_s3k6a);
 					else if (player->kartstuff[k_position] == 1)
 						S_StartSound(NULL, sfx_s253);
@@ -7358,9 +7358,7 @@ void T_Friction(friction_t *f)
 		// apparently, all I had to do was comment out part of the next line and
 		// friction works for all mobj's
 		// (or at least MF_PUSHABLEs, which is all I care about anyway)
-		if ((!(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)) && thing->z == thing->floorz) && (thing->player
-			&& (thing->player->kartstuff[k_invincibilitytimer] == 0 && thing->player->kartstuff[k_hyudorotimer] == 0
-			&& thing->player->kartstuff[k_sneakertimer] == 0 && thing->player->kartstuff[k_growshrinktimer] <= 0)))
+		if (!(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)) && thing->z == thing->floorz)
 		{
 			if (f->roverfriction)
 			{

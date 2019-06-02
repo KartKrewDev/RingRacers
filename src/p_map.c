@@ -1076,7 +1076,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				S_StartSound(tmthing, sfx_bsnipe);
 
 			// Player Damage
-			K_SpinPlayer(tmthing->player, thing->target, 0, tmthing, (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD));
+			K_SpinPlayer(tmthing->player, thing->target, 0, thing, (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD));
 
 			// Other Item Damage
 			if (thing->eflags & MFE_VERTICALFLIP)
@@ -1111,7 +1111,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (thing->state == &states[S_MINEEXPLOSION1])
 				K_ExplodePlayer(tmthing->player, thing->target, thing);
 			else
-				K_SpinPlayer(tmthing->player, thing->target, 0, tmthing, false);
+				K_SpinPlayer(tmthing->player, thing->target, 0, thing, false);
 
 			return true;
 		}
@@ -1557,39 +1557,50 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 			}
 
-			if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
 			{
-				K_KartBouncing(tmthing, thing, true, false);
-				if (G_BattleGametype() && tmthing->player->kartstuff[k_pogospring])
-				{
-					K_StealBumper(tmthing->player, thing->player, false);
-					K_SpinPlayer(thing->player, tmthing, 0, tmthing, false);
-				}
-			}
-			else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
-			{
-				K_KartBouncing(thing, tmthing, true, false);
-				if (G_BattleGametype() && thing->player->kartstuff[k_pogospring])
-				{
-					K_StealBumper(thing->player, tmthing->player, false);
-					K_SpinPlayer(tmthing->player, thing, 0, thing, false);
-				}
-			}
-			else
-				K_KartBouncing(tmthing, thing, false, false);
+				// The bump has to happen last
+				mobj_t *mo1 = tmthing;
+				mobj_t *mo2 = thing;
+				boolean zbounce = false;
 
-			if (G_BattleGametype())
-			{
-				if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
+				if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
 				{
-					K_StealBumper(thing->player, tmthing->player, false);
-					K_SpinPlayer(tmthing->player, thing, 0, tmthing, false);
+					zbounce = true;
+					mo1 = thing;
+					mo2 = tmthing;
+
+					if (G_BattleGametype() && tmthing->player->kartstuff[k_pogospring])
+					{
+						K_StealBumper(tmthing->player, thing->player, false);
+						K_SpinPlayer(thing->player, tmthing, 0, tmthing, false);
+					}
 				}
-				else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
+				else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
 				{
-					K_StealBumper(tmthing->player, thing->player, false);
-					K_SpinPlayer(thing->player, tmthing, 0, thing, false);
+					zbounce = true;
+
+					if (G_BattleGametype() && thing->player->kartstuff[k_pogospring])
+					{
+						K_StealBumper(thing->player, tmthing->player, false);
+						K_SpinPlayer(tmthing->player, thing, 0, thing, false);
+					}
 				}
+
+				if (G_BattleGametype())
+				{
+					if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
+					{
+						K_StealBumper(thing->player, tmthing->player, false);
+						K_SpinPlayer(tmthing->player, thing, 0, tmthing, false);
+					}
+					else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
+					{
+						K_StealBumper(tmthing->player, thing->player, false);
+						K_SpinPlayer(thing->player, tmthing, 0, thing, false);
+					}
+				}
+
+				K_KartBouncing(mo1, mo2, zbounce, false);
 			}
 
 			return true;
