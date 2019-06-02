@@ -416,7 +416,7 @@ static waypoint_t *K_SearchWaypointHeap(
 		return NULL;
 	}
 
-	// Simply search through the waypointheap for the waypoint which matches the condition Much simpler when no
+	// Simply search through the waypointheap for the waypoint which matches the condition. Much simpler when no
 	// pathfinding is needed. Search up to numwaypoints and NOT numwaypointmobjs as numwaypoints is the real number of
 	// waypoints setup in the heap while numwaypointmobjs ends up being the capacity
 	for (i = 0; i < numwaypoints; i++)
@@ -453,6 +453,24 @@ waypoint_t *K_SearchWaypointHeapForMobj(mobj_t *const mobj)
 }
 
 /*--------------------------------------------------
+	static fixed_t K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
+
+		Gets the Euclidean distance between 2 waypoints by using their mobjs. Used for the heuristic.
+
+	Input Arguments:-
+		waypoint1 - The first waypoint
+		waypoint2 - The second waypoint
+
+	Return:-
+		Euclidean distance between the 2 waypoints
+--------------------------------------------------*/
+static fixed_t K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
+{
+	fixed_t xydist = P_AproxDistance(waypoint1->mobj->x - waypoint2->mobj->x, waypoint1->mobj->y - waypoint2->mobj->y);
+	return P_AproxDistance(xydist, waypoint1->mobj->z - waypoint2->mobj->z);
+}
+
+/*--------------------------------------------------
 	static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const prevwaypoint)
 
 		Adds another waypoint to a waypoint's previous waypoint list, this needs to be done like this because there is no
@@ -486,6 +504,14 @@ static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const pr
 	if (!waypoint->prevwaypoints)
 	{
 		I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoints.");
+	}
+
+	waypoint->prevwaypointdistances =
+		Z_Realloc(waypoint->prevwaypointdistances, waypoint->numprevwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
+
+	if (!waypoint->prevwaypointdistances)
+	{
+		I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoint distances.");
 	}
 
 	waypoint->prevwaypoints[waypoint->numprevwaypoints - 1] = prevwaypoint;
@@ -582,7 +608,12 @@ static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 		madewaypoint->nextwaypoints = Z_Calloc(madewaypoint->numnextwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
 		if (madewaypoint->nextwaypoints == NULL)
 		{
-			I_Error("K_MakeWaypoint: Out of Memory");
+			I_Error("K_MakeWaypoint: Out of Memory allocating next waypoints.");
+		}
+		madewaypoint->nextwaypointdistances = Z_Calloc(madewaypoint->numnextwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
+		if (madewaypoint->nextwaypointdistances == NULL)
+		{
+			I_Error("K_MakeWaypoint: Out of Memory allocating next waypoint distances.");
 		}
 	}
 
@@ -645,6 +676,8 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 
 		if (thiswaypoint->numnextwaypoints > 0)
 		{
+			waypoint_t *nextwaypoint = NULL;
+			fixed_t nextwaypointdistance = 0;
 			// Go through the waypoint mobjs to setup the next waypoints and make this waypoint know they're its next
 			// I kept this out of K_MakeWaypoint so the stack isn't gone down as deep
 			for (otherwaypointmobj = waypointcap; otherwaypointmobj != NULL; otherwaypointmobj = otherwaypointmobj->tracer)
@@ -652,8 +685,12 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 				// threshold = next waypoint id, movecount = my id
 				if (mobj->threshold == otherwaypointmobj->movecount)
 				{
-					thiswaypoint->nextwaypoints[nextwaypointindex] = K_SetupWaypoint(otherwaypointmobj);
-					K_AddPrevToWaypoint(thiswaypoint->nextwaypoints[nextwaypointindex], thiswaypoint);
+					nextwaypoint = K_SetupWaypoint(otherwaypointmobj);
+					nextwaypointdistance = K_DistanceBetweenWaypoints(thiswaypoint, nextwaypoint);
+					thiswaypoint->nextwaypoints[nextwaypointindex] = nextwaypoint;
+					thiswaypoint->nextwaypointdistances[nextwaypointindex] = nextwaypointdistance;
+					K_AddPrevToWaypoint(nextwaypoint, thiswaypoint);
+					nextwaypoint->prevwaypointdistances[nextwaypoint->numprevwaypoints - 1] = nextwaypointdistance;
 					nextwaypointindex++;
 				}
 				if (nextwaypointindex >= thiswaypoint->numnextwaypoints)
@@ -776,7 +813,7 @@ boolean K_SetupWaypointList(void)
 
 	if (!waypointcap)
 	{
-		CONS_Debug(DBG_SETUP, "K_SetupWaypointList called with no waypointcap.\n");
+		CONS_Alert(CONS_ERROR, "No waypoints in map.\n");
 	}
 	else
 	{
@@ -787,14 +824,15 @@ boolean K_SetupWaypointList(void)
 
 			if (!firstwaypoint)
 			{
-				CONS_Debug(DBG_SETUP, "K_SetupWaypointList made no waypoints.\n");
+				CONS_Alert(CONS_ERROR, "No waypoints in map.\n");
 			}
 			else
 			{
 				CONS_Debug(DBG_SETUP, "Successfully setup %zu waypoints.\n", numwaypoints);
 				if (numwaypoints < numwaypointmobjs)
 				{
-					CONS_Printf("Not all waypoints in the map are connected! %zu waypoints setup but %zu mobjs.\n",
+					CONS_Alert(CONS_WARNING,
+						"Not all waypoints in the map are connected! %zu waypoints setup but %zu waypoint mobjs.\n",
 						numwaypoints, numwaypointmobjs);
 				}
 				setupsuccessful = true;
