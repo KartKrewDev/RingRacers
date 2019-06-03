@@ -3582,8 +3582,8 @@ void A_AttractChase(mobj_t *actor)
 
 			if (actor->extravalue1 >= 21)
 			{
-				UINT8 i;
 				mobj_t *sparkle;
+				angle_t offset = FixedAngle(18<<FRACBITS);
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
 				actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
@@ -3591,7 +3591,7 @@ void A_AttractChase(mobj_t *actor)
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
 				P_SetTarget(&sparkle->target, actor->target);
-				sparkle->angle = FixedAngle(18<<FRACBITS) * actor->target->player->kartstuff[k_sparkleanim];
+				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->kartstuff[k_sparkleanim]);
 				actor->target->player->kartstuff[k_sparkleanim] = (actor->target->player->kartstuff[k_sparkleanim]+1) % 20;
 
 				P_KillMobj(actor, actor->target, actor->target);
