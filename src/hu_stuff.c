@@ -14,6 +14,7 @@
 #include "doomdef.h"
 #include "byteptr.h"
 #include "hu_stuff.h"
+#include "font.h"
 
 #include "m_menu.h" // gametype_cons_t
 #include "m_cond.h" // emblems
@@ -64,19 +65,9 @@
 //-------------------------------------------
 //              heads up font
 //-------------------------------------------
-patch_t *hu_font[HU_FONTSIZE];
-patch_t *kart_font[KART_FONTSIZE];	// SRB2kart
-patch_t *tny_font[HU_FONTSIZE];
-patch_t *tallnum[10]; // 0-9
-patch_t *nightsnum[10]; // 0-9
-
-// Level title and credits fonts
-patch_t *lt_font[LT_FONTSIZE];
-patch_t *cred_font[CRED_FONTSIZE];
 
 // ping font
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
-patch_t *pingnum[10];
 patch_t *pinggfx[5];	// small ping graphic
 
 patch_t *framecounter;
@@ -187,135 +178,52 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
-	char buffer[9];
-	INT32 i, j;
+	INT32 i;
 
 	if (dedicated)
 		return;
 
-	j = HU_FONTSTART;
-	for (i = 0; i < HU_FONTSIZE; i++, j++)
-	{
-		// cache the heads-up font for entire game execution
-		sprintf(buffer, "STCFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			hu_font[i] = NULL;
-		else
-			hu_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-
-		// tiny version of the heads-up font
-		sprintf(buffer, "TNYFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			tny_font[i] = NULL;
-		else
-			tny_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the level title font for entire game execution
-	lt_font[0] = (patch_t *)W_CachePatchName("LTFNT039", PU_HUDGFX); /// \note fake start hack
-
-	// Number support
-	lt_font[9] = (patch_t *)W_CachePatchName("LTFNT048", PU_HUDGFX);
-	lt_font[10] = (patch_t *)W_CachePatchName("LTFNT049", PU_HUDGFX);
-	lt_font[11] = (patch_t *)W_CachePatchName("LTFNT050", PU_HUDGFX);
-	lt_font[12] = (patch_t *)W_CachePatchName("LTFNT051", PU_HUDGFX);
-	lt_font[13] = (patch_t *)W_CachePatchName("LTFNT052", PU_HUDGFX);
-	lt_font[14] = (patch_t *)W_CachePatchName("LTFNT053", PU_HUDGFX);
-	lt_font[15] = (patch_t *)W_CachePatchName("LTFNT054", PU_HUDGFX);
-	lt_font[16] = (patch_t *)W_CachePatchName("LTFNT055", PU_HUDGFX);
-	lt_font[17] = (patch_t *)W_CachePatchName("LTFNT056", PU_HUDGFX);
-	lt_font[18] = (patch_t *)W_CachePatchName("LTFNT057", PU_HUDGFX);
-
-	// SRB2kart
-	j = KART_FONTSTART;
-	for (i = 0; i < KART_FONTSIZE; i++, j++)
-	{
-		// cache the heads-up font for entire game execution
-		sprintf(buffer, "MKFNT%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			kart_font[i] = NULL;
-		else
-			kart_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-	//
-
-	j = LT_FONTSTART;
-	for (i = 0; i < LT_FONTSIZE; i++)
-	{
-		sprintf(buffer, "LTFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			lt_font[i] = NULL;
-		else
-			lt_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the credits font for entire game execution (why not?)
-	j = CRED_FONTSTART;
-	for (i = 0; i < CRED_FONTSIZE; i++)
-	{
-		sprintf(buffer, "CRFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			cred_font[i] = NULL;
-		else
-			cred_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	//cache numbers too!
-	for (i = 0; i < 10; i++)
-	{
-		sprintf(buffer, "STTNUM%d", i);
-		tallnum[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "NGTNUM%d", i);
-		nightsnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "PINGN%d", i);
-		pingnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-	}
+	Font_Load();
 
 	// minus for negative tallnums
-	tallminus = (patch_t *)W_CachePatchName("STTMINUS", PU_HUDGFX);
+	tallminus          = HU_CachePatch("STTMINUS");
 
 	// cache the crosshairs, don't bother to know which one is being used,
 	// just cache all 3, they're so small anyway.
 	for (i = 0; i < HU_CROSSHAIRS; i++)
 	{
-		sprintf(buffer, "CROSHAI%c", '1'+i);
-		crosshair[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		crosshair[i]    = HU_CachePatch("CROSHAI%c", '1'+i);
 	}
 
-	emblemicon = W_CachePatchName("EMBLICON", PU_HUDGFX);
-	tokenicon = W_CachePatchName("TOKNICON", PU_HUDGFX);
+	emblemicon         = HU_CachePatch("EMBLICON");
+	tokenicon          = HU_CachePatch("TOKNICON");
 
-	emeraldpics[0] = W_CachePatchName("CHAOS1", PU_HUDGFX);
-	emeraldpics[1] = W_CachePatchName("CHAOS2", PU_HUDGFX);
-	emeraldpics[2] = W_CachePatchName("CHAOS3", PU_HUDGFX);
-	emeraldpics[3] = W_CachePatchName("CHAOS4", PU_HUDGFX);
-	emeraldpics[4] = W_CachePatchName("CHAOS5", PU_HUDGFX);
-	emeraldpics[5] = W_CachePatchName("CHAOS6", PU_HUDGFX);
-	emeraldpics[6] = W_CachePatchName("CHAOS7", PU_HUDGFX);
-	tinyemeraldpics[0] = W_CachePatchName("TEMER1", PU_HUDGFX);
-	tinyemeraldpics[1] = W_CachePatchName("TEMER2", PU_HUDGFX);
-	tinyemeraldpics[2] = W_CachePatchName("TEMER3", PU_HUDGFX);
-	tinyemeraldpics[3] = W_CachePatchName("TEMER4", PU_HUDGFX);
-	tinyemeraldpics[4] = W_CachePatchName("TEMER5", PU_HUDGFX);
-	tinyemeraldpics[5] = W_CachePatchName("TEMER6", PU_HUDGFX);
-	tinyemeraldpics[6] = W_CachePatchName("TEMER7", PU_HUDGFX);
+	emeraldpics[0]     = HU_CachePatch("CHAOS1");
+	emeraldpics[1]     = HU_CachePatch("CHAOS2");
+	emeraldpics[2]     = HU_CachePatch("CHAOS3");
+	emeraldpics[3]     = HU_CachePatch("CHAOS4");
+	emeraldpics[4]     = HU_CachePatch("CHAOS5");
+	emeraldpics[5]     = HU_CachePatch("CHAOS6");
+	emeraldpics[6]     = HU_CachePatch("CHAOS7");
+	tinyemeraldpics[0] = HU_CachePatch("TEMER1");
+	tinyemeraldpics[1] = HU_CachePatch("TEMER2");
+	tinyemeraldpics[2] = HU_CachePatch("TEMER3");
+	tinyemeraldpics[3] = HU_CachePatch("TEMER4");
+	tinyemeraldpics[4] = HU_CachePatch("TEMER5");
+	tinyemeraldpics[5] = HU_CachePatch("TEMER6");
+	tinyemeraldpics[6] = HU_CachePatch("TEMER7");
 
-	songcreditbg = W_CachePatchName("K_SONGCR", PU_HUDGFX);
+	songcreditbg       = HU_CachePatch("K_SONGCR");
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
 	{
-		sprintf(buffer, "PINGGFX%d", i+1);
-		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		pinggfx[i]      = HU_CachePatch("PINGGFX%d", i+1);
 	}
 
 	// fps stuff
-	framecounter = W_CachePatchName("FRAMER", PU_HUDGFX);
-	frameslash  = W_CachePatchName("FRAMESL", PU_HUDGFX);;
+	framecounter       = HU_CachePatch("FRAMER");
+	frameslash         = HU_CachePatch("FRAMESL");;
 }
 
 // Initialise Heads up
@@ -323,6 +231,8 @@ void HU_LoadGraphics(void)
 //
 void HU_Init(void)
 {
+	font_t font;
+
 #ifndef NONET
 	COM_AddCommand("say", Command_Say_f);
 	COM_AddCommand("sayto", Command_Sayto_f);
@@ -334,7 +244,76 @@ void HU_Init(void)
 	// set shift translation table
 	shiftxform = english_shiftxform;
 
+	/*
+	Setup fonts
+	*/
+
+	if (!dedicated)
+	{
+#define  DIM( start, size ) ( font.start = start, font.size = size )
+#define ADIM( name )        DIM (name ## _FONTSTART, name ## _FONTSIZE)
+#define   PR( s )           strcpy(font.prefix, s)
+#define  DIG( n )           ( font.digits = n )
+#define  REG                Font_DumbRegister(&font)
+
+		DIG  (3);
+
+		ADIM (HU);
+
+		PR   ("STCFN");
+		REG;
+
+		PR   ("TNYFN");
+		REG;
+
+		ADIM (KART);
+		PR   ("MKFNT");
+		REG;
+
+		ADIM (LT);
+		PR   ("LTFNT");
+		REG;
+
+		ADIM (CRED);
+		PR   ("CRFNT");
+		REG;
+
+		DIG  (1);
+
+		DIM  (0, 10);
+
+		PR   ("STTNUM");
+		REG;
+
+		PR   ("NGTNUM");
+		REG;
+
+		PR   ("PINGN");
+		REG;
+
+#undef  REG
+#undef  DIG
+#undef  PR
+#undef  ADMIN
+#undef  DIM
+	}
+
 	HU_LoadGraphics();
+}
+
+patch_t *HU_CachePatch(const char *format, ...)
+{
+	va_list ap;
+	char buffer[9];
+
+	va_start (ap, format);
+	vsprintf(buffer, format, ap);
+	va_end   (ap);
+
+	if (W_CheckNumForName(buffer) == LUMPERROR)
+		return NULL;
+	else
+		return (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 }
 
 static inline void HU_Stop(void)
