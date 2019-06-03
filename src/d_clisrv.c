@@ -2212,7 +2212,7 @@ boolean CL_Responder(event_t *ev)
 	if (cl_mode != CL_CHALLENGE)
 		return false;
 
-	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && hu_font[ch-HU_FONTSTART])
+	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && fontv[HU_FONT].font[ch-HU_FONTSTART])
 	  || ch == ' ') // Allow spaces, of course
 	{
 		len = strlen(cl_challengepassword);

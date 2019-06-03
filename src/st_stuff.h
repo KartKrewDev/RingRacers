@@ -64,7 +64,6 @@ extern boolean st_overlay; // sb overlay on or off when fullscreen
 
 extern lumpnum_t st_borderpatchnum;
 // patches, also used in intermission
-extern patch_t *tallnum[10];
 extern patch_t *sboscore;
 extern patch_t *sbotime;
 extern patch_t *sbocolon;
