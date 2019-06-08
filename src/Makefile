@@ -490,6 +490,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/st_stuff.o \
 		$(OBJDIR)/k_kart.o   \
 		$(OBJDIR)/k_waypoint.o\
+		$(OBJDIR)/k_bheap.o  \
 		$(OBJDIR)/m_aatree.o \
 		$(OBJDIR)/m_anigif.o \
 		$(OBJDIR)/m_argv.o   \
