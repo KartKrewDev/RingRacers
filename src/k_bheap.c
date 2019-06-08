@@ -143,6 +143,15 @@ static void K_BHeapSwapItems(bheap_t *heap, bheapitem_t *item1, bheapitem_t *ite
 		// Swap the heap index on each item to be correct
 		item2->heapindex = item1->heapindex;
 		item1->heapindex = tempitemindex;
+
+		if (item1->indexchanged != NULL)
+		{
+			item1->indexchanged(item1->data, item1->heapindex);
+		}
+		if (item2->indexchanged != NULL)
+		{
+			item2->indexchanged(item2->data, item2->heapindex);
+		}
 	}
 }
 
@@ -430,11 +439,11 @@ boolean K_BHeapValid(bheap_t *const heap)
 }
 
 /*--------------------------------------------------
-	boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value)
+	boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value)
+boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback)
 {
 	boolean pushsuccess = false;
 	if (heap == NULL)
@@ -455,6 +464,7 @@ boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value)
 	}
 	else
 	{
+		bheapitem_t *newitem = NULL;
 		// If the capacity of the heap has been reached, a realloc is needed
 		// I'm just doing a basic double of capacity for simplicity
 		if (heap->count >= heap->capacity)
@@ -470,10 +480,18 @@ boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value)
 			heap->capacity = newarraycapacity;
 		}
 
-		heap->array[heap->count].heapindex = heap->count;
-		heap->array[heap->count].owner     = heap;
-		heap->array[heap->count].data      = item;
-		heap->array[heap->count].value     = value;
+		newitem = &heap->array[heap->count];
+
+		newitem->heapindex    = heap->count;
+		newitem->owner        = heap;
+		newitem->data         = item;
+		newitem->value        = value;
+		newitem->indexchanged = changeindexcallback;
+
+		if (newitem->indexchanged != NULL)
+		{
+			newitem->indexchanged(newitem->data, newitem->heapindex);
+		}
 
 		heap->count++;
 
@@ -517,6 +535,11 @@ boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 		returnitemstorage->owner = NULL;
 		returnitemstorage->heapindex = SIZE_MAX;
 
+		if (returnitemstorage->indexchanged != NULL)
+		{
+			returnitemstorage->indexchanged(returnitemstorage->data, returnitemstorage->heapindex);
+		}
+
 		heap->count--;
 
 		heap->array[0] = heap->array[heap->count];
@@ -531,11 +554,11 @@ boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 }
 
 /*--------------------------------------------------
-	boolean K_UpdateHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+	boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_UpdateHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
 {
 	boolean updatevaluesuccess = false;
 	if (item == NULL)
@@ -574,4 +597,51 @@ boolean K_UpdateHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
 	}
 
 	return updatevaluesuccess;
+}
+
+/*--------------------------------------------------
+	UINT32 K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT32 K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
+{
+	UINT32 heapindexwithdata = SIZE_MAX;
+
+	if (heap == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapContains.\n");
+	}
+	else if (!K_BHeapValid(heap))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "Uninitialised heap in K_BHeapContains.\n");
+	}
+	else if (data == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL data in K_BHeapContains.\n");
+	}
+	else
+	{
+		if ((heap->count != 0U) && (index < heap->count))
+		{
+			if (heap->array[index].data == data)
+			{
+				heapindexwithdata = index;
+			}
+		}
+		else if (index == SIZE_MAX)
+		{
+			size_t i;
+			for (i = 0; i < heap->count; i++)
+			{
+				if (heap->array[i].data == data)
+				{
+					heapindexwithdata = i;
+					break;
+				}
+			}
+		}
+	}
+
+	return heapindexwithdata;
 }

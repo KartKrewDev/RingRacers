@@ -3,12 +3,15 @@
 
 #include "doomdef.h"
 
+typedef void(*updateindexfunc)(void *const, const UINT32);
+
 typedef struct bheapitem_s
 {
-	size_t  heapindex; // The index in the heap this item is
-	bheap_t *owner;    // The heap that owns this item
-	void    *data;     // data for this heap item
-	UINT32  value;     // The value of this item, the lowest value item is first in the array
+	size_t          heapindex;    // The index in the heap this item is
+	updateindexfunc indexchanged; // A callback function that is called when this item changes index to alert data
+	bheap_t         *owner;       // The heap that owns this item
+	void            *data;        // data for this heap item
+	UINT32          value;        // The value of this item, the lowest value item is first in the array
 } bheapitem_t;
 
 typedef struct bheap_s
@@ -51,20 +54,21 @@ boolean K_BHeapValid(bheap_t *const heap);
 
 
 /*--------------------------------------------------
-	boolean K_BHeapPush(bheap_t *const heap, void *const item, const UINT32 value)
+	boolean K_BHeapPush(bheap_t *const heap, void *const item, const UINT32 value, updateindexfunc changeindexcallback)
 
 		Adds a new item to a binary heap.
 
 	Input Arguments:-
-		heap  - The heap to add to.
-		item  - The item to add to the heap.
-		value - The value of this item for the heap, lowest is first in the heap
+		heap                - The heap to add to.
+		item                - The item to add to the heap.
+		value               - The value of this item for the heap, lowest is first in the heap
+		changeindexcallback - A callback function that is called when the item's index changes, can be NULL
 
 	Return:-
 		True if the push to the heap was successful, false if it wasn't due to invalid parameters
 --------------------------------------------------*/
 
-boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value);
+boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback);
 
 
 /*--------------------------------------------------
@@ -84,7 +88,7 @@ boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage);
 
 
 /*--------------------------------------------------
-	boolean K_UpdateHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+	boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
 
 		Updates the heap item's value, and reorders it in the array appropriately. Only works if the item is in a heap
 		validly. If it's a heapitem that is not currently in a heap (ie it's been popped off) just change the value
@@ -98,6 +102,24 @@ boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage);
 		true if the update was successful, false if it wasn't
 --------------------------------------------------*/
 
-boolean K_UpdateHeapItemValue(bheapitem_t *const item, const UINT32 newvalue);
+boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue);
+
+
+/*--------------------------------------------------
+	boolean K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
+
+		Checks to see if data is contained in the heap. If index is not SIZE_MAX, then only the index sent in is
+		checked. Otherwise every index is checked linearly.
+
+	Input Arguments:-
+		heap     - The heap to check the contents of
+		data - The data that is being checked for
+		index - The index of the heap to check, if SIZE_MAX, check every index
+
+	Return:-
+		The heap index that contains data, SIZE_MAX if it is not in the heap
+--------------------------------------------------*/
+
+UINT32 K_BHeapContains(bheap_t *const heap, void *const data, size_t index);
 
 #endif
