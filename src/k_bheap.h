@@ -3,13 +3,13 @@
 
 #include "doomdef.h"
 
-typedef void(*updateindexfunc)(void *const, const UINT32);
+typedef void(*updateindexfunc)(void *const, const size_t);
 
 typedef struct bheapitem_s
 {
 	size_t          heapindex;    // The index in the heap this item is
 	updateindexfunc indexchanged; // A callback function that is called when this item changes index to alert data
-	bheap_t         *owner;       // The heap that owns this item
+	struct bheap_s  *owner;       // The heap that owns this item
 	void            *data;        // data for this heap item
 	UINT32          value;        // The value of this item, the lowest value item is first in the array
 } bheapitem_t;
@@ -106,7 +106,7 @@ boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue);
 
 
 /*--------------------------------------------------
-	boolean K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
+	size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
 
 		Checks to see if data is contained in the heap. If index is not SIZE_MAX, then only the index sent in is
 		checked. Otherwise every index is checked linearly.
@@ -120,6 +120,6 @@ boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue);
 		The heap index that contains data, SIZE_MAX if it is not in the heap
 --------------------------------------------------*/
 
-UINT32 K_BHeapContains(bheap_t *const heap, void *const data, size_t index);
+size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index);
 
 #endif

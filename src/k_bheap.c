@@ -519,7 +519,7 @@ boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "Uninitialised heap in K_BHeapPop.\n");
 	}
-	else if (heap->count = 0U)
+	else if (heap->count == 0U)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "Tried to Pop from empty heap in K_BHeapPop.\n");
 	}
@@ -600,13 +600,13 @@ boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
 }
 
 /*--------------------------------------------------
-	UINT32 K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
+	size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT32 K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
+size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
 {
-	UINT32 heapindexwithdata = SIZE_MAX;
+	size_t heapindexwithdata = SIZE_MAX;
 
 	if (heap == NULL)
 	{
