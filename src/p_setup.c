@@ -3096,7 +3096,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	{
 		if (K_SetupWaypointList() == false)
 		{
-			CONS_Printf("Waypoints were not able to be setup! Player positions will not work correctly.");
+			CONS_Alert(CONS_ERROR, "Waypoints were not able to be setup! Player positions will not work correctly.\n");
 		}
 	}
 #ifdef HWRENDER // not win32 only 19990829 by Kin
