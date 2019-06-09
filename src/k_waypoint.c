@@ -1611,7 +1611,7 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 				else
 				{
 					CONS_Alert(
-						CONS_WARNING, "Waypoint with ID %d has no next waypoint.\n", K_GetWaypointNextID(thiswaypoint));
+						CONS_WARNING, "Waypoint with ID %d has no next waypoint.\n", K_GetWaypointID(thiswaypoint));
 				}
 			}
 			else
