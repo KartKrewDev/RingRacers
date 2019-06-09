@@ -122,4 +122,20 @@ boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue);
 
 size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index);
 
+
+/*--------------------------------------------------
+	boolean K_BHeapFree(bheap_t *const heap)
+
+		Free the binary heap.
+		This does NOT free the data held within the binary heap items. Make sure those can still be freed manually.
+
+	Input Arguments:-
+		heap - The heap to free
+
+	Return:-
+		True if the heap was freed successfully, false if the heap wasn't valid to free
+--------------------------------------------------*/
+
+boolean K_BHeapFree(bheap_t *const heap);
+
 #endif

@@ -645,3 +645,27 @@ size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
 
 	return heapindexwithdata;
 }
+
+boolean K_BHeapFree(bheap_t *const heap)
+{
+	boolean freesuccess = false;
+
+	if (heap == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapFree.\n");
+	}
+	else if (!K_BHeapValid(heap))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "Uninitialised heap in K_BHeapFree.\n");
+	}
+	else
+	{
+		Z_Free(heap->array);
+		heap->array    = NULL;
+		heap->capacity = 0U;
+		heap->count    = 0U;
+		freesuccess    = true;
+	}
+
+	return freesuccess;
+}
