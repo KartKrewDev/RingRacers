@@ -10,14 +10,147 @@ typedef struct waypoint_s
 	size_t              id;
 	struct waypoint_s **nextwaypoints;
 	struct waypoint_s **prevwaypoints;
-	fixed_t            *nextwaypointdistances;
-	fixed_t            *prevwaypointdistances;
+	UINT32             *nextwaypointdistances;
+	UINT32             *prevwaypointdistances;
 	size_t              numnextwaypoints;
 	size_t              numprevwaypoints;
 } waypoint_t;
 
+typedef struct pathfindnode_s {
+	size_t heapindex;     // The index in the openset binary heap. Only valid while the node is in the openset.
+	waypoint_t *waypoint;
+	struct pathfindnode_s *camefrom; // should eventually be the most efficient predecessor node
+	UINT32     gscore;    // The accumulated distance from the start to this node
+	UINT32     hscore;    // The heuristic from this node to the goal, saved to avoid expensive recalculation
+} pathfindnode_t;
+
+typedef struct path_s {
+	size_t numnodes;
+	struct pathfindnode_s *array;
+	UINT32 totaldist;
+} path_t;
+
 
 // AVAILABLE FOR LUA
+
+
+/*--------------------------------------------------
+	boolean K_GetWaypointIsShortcut(waypoint_t *waypoint)
+
+		Returns whether the waypoint is part of a shortcut.
+
+	Input Arguments:-
+		waypoint - The waypoint to return shortcut status of.
+
+	Return:-
+		true if the waypoint is a shortcut, false if it isn't.
+--------------------------------------------------*/
+
+boolean K_GetWaypointIsShortcut(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
+	boolean K_GetWaypointIsEnabled(waypoint_t *waypoint)
+
+		Returns whether the waypoint is enabled.
+
+	Input Arguments:-
+		waypoint - The waypoint to return enabled status of.
+
+	Return:-
+		true if the waypoint is enabled, false if it isn't.
+--------------------------------------------------*/
+
+boolean K_GetWaypointIsEnabled(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
+	INT32 K_GetWaypointNextID(waypoint_t *waypoint)
+
+		Returns the waypoint's next waypoint ID.
+
+	Input Arguments:-
+		waypoint - The waypoint to return the next waypoint ID of.
+
+	Return:-
+		The next waypoint ID, -1 if there is no waypoint or mobj.
+--------------------------------------------------*/
+
+INT32 K_GetWaypointNextID(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
+	INT32 K_GetWaypointID(waypoint_t *waypoint)
+
+		Returns the waypoint's ID.
+
+	Input Arguments:-
+		waypoint - The waypoint to return the ID of.
+
+	Return:-
+		The waypoint ID, -1 if there is no waypoint or mobj.
+--------------------------------------------------*/
+INT32 K_GetWaypointID(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
+	boolean K_PathfindToWaypoint(
+		waypoint_t *const sourcewaypoint,
+		waypoint_t *const destinationwaypoint,
+		path_t *const     returnpath,
+		const boolean     useshortcuts,
+		const boolean     huntbackwards)
+
+		Use pathfinding to try and find the best route to the destination. Data is allocated into the returnpath,
+		and should be freed when done with. A call to this with a path already in the returnpath will free the data
+		already in there if one is found.
+
+	Input Arguments:-
+		sourcewaypoint      - The waypoint to start searching from
+		destinationwaypoint - The waypoint to try and get to.
+		returnpath          - The path_t that will contain the final found path
+		useshortcuts        - Whether to use waypoints that are marked as being shortcuts in the search
+		huntbackwards       - Goes through the waypoints backwards if true
+
+	Return:-
+		True if a path was found to the waypoint, false if there wasn't.
+--------------------------------------------------*/
+
+boolean K_PathfindToWaypoint(
+	waypoint_t *const sourcewaypoint,
+	waypoint_t *const destinationwaypoint,
+	path_t *const     returnpath,
+	const boolean     useshortcuts,
+	const boolean     huntbackwards);
+
+
+/*--------------------------------------------------
+	waypoint_t *K_GetNextWaypointToDestination(
+		waypoint_t *const sourcewaypoint,
+		waypoint_t *const destinationwaypoint,
+		const boolean     useshortcuts,
+		const boolean     huntbackwards)
+
+		Uses pathfinding to find the next waypoint to go to in order to get to the destination waypoint, from the source
+		waypoint. If the source waypoint only has one next waypoint it will always pick that one and not do any
+		pathfinding.
+
+	Input Arguments:-
+		sourcewaypoint      - The waypoint to start searching from
+		destinationwaypoint - The waypoint to try and get to.
+		useshortcuts        - Whether to use waypoints that are marked as being shortcuts in the search
+		huntbackwards       - Goes through the waypoints backwards if true
+
+	Return:-
+		The next waypoint on the way to the destination waypoint. Returns the source waypoint if the source and
+		destination are the same.
+--------------------------------------------------*/
+
+waypoint_t *K_GetNextWaypointToDestination(
+	waypoint_t *const sourcewaypoint,
+	waypoint_t *const destinationwaypoint,
+	const boolean     useshortcuts,
+	const boolean     huntbackwards);
 
 
 /*--------------------------------------------------
