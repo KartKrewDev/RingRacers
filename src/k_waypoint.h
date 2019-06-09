@@ -35,6 +35,36 @@ typedef struct path_s {
 
 
 /*--------------------------------------------------
+	waypoint_t *K_GetFinishLineWaypoint(void);
+
+		Returns the waypoint actually being used as the finish line.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		The waypoint that is being used as the finishline.
+--------------------------------------------------*/
+
+waypoint_t *K_GetFinishLineWaypoint(void);
+
+
+/*--------------------------------------------------
+	boolean K_GetWaypointIsFinishline(waypoint_t *waypoint)
+
+		Returns whether the waypoint is marked as the finishline. This may not actually be the finishline.
+
+	Input Arguments:-
+		waypoint - The waypoint to return finishline status of.
+
+	Return:-
+		true if the waypoint is marked as being the finishline, false if it isn't.
+--------------------------------------------------*/
+
+boolean K_GetWaypointIsFinishline(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
 	boolean K_GetWaypointIsShortcut(waypoint_t *waypoint)
 
 		Returns whether the waypoint is part of a shortcut.

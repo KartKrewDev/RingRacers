@@ -20,11 +20,48 @@ static const size_t NODESARRAY_BASE_SIZE = 256U;
 
 static waypoint_t **waypointheap = NULL;
 static waypoint_t *firstwaypoint = NULL;
+static waypoint_t *finishline    = NULL;
 static size_t numwaypoints       = 0U;
 static size_t numwaypointmobjs   = 0U;
 static size_t baseopensetsize    = OPENSET_BASE_SIZE;
 static size_t baseclosedsetsize  = CLOSEDSET_BASE_SIZE;
 static size_t basenodesarraysize = NODESARRAY_BASE_SIZE;
+
+
+/*--------------------------------------------------
+	waypoint_t *K_GetFinishLineWaypoint(void)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_GetFinishLineWaypoint(void)
+{
+	return finishline;
+}
+
+/*--------------------------------------------------
+	boolean K_GetWaypointIsFinishline(waypoint_t *waypoint)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_GetWaypointIsFinishline(waypoint_t *waypoint)
+{
+	boolean waypointisfinishline = false;
+
+	if (waypoint == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointIsShortcut.\n");
+	}
+	else if (waypoint->mobj == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointIsShortcut.\n");
+	}
+	else
+	{
+		waypointisfinishline = (waypoint->mobj->extravalue2 == 1);
+	}
+
+	return waypointisfinishline;
+}
 
 /*--------------------------------------------------
 	boolean K_GetWaypointIsShortcut(waypoint_t *waypoint)
@@ -45,7 +82,7 @@ boolean K_GetWaypointIsShortcut(waypoint_t *waypoint)
 	}
 	else
 	{
-		// TODO
+		waypointisshortcut = (waypoint->mobj->lastlook == 1);
 	}
 
 	return waypointisshortcut;
@@ -58,7 +95,7 @@ boolean K_GetWaypointIsShortcut(waypoint_t *waypoint)
 --------------------------------------------------*/
 boolean K_GetWaypointIsEnabled(waypoint_t *waypoint)
 {
-	boolean waypointisshortcut = true;
+	boolean waypointisenabled = true;
 
 	if (waypoint == NULL)
 	{
@@ -70,10 +107,10 @@ boolean K_GetWaypointIsEnabled(waypoint_t *waypoint)
 	}
 	else
 	{
-		// TODO
+		waypointisenabled = (waypoint->mobj->extravalue1 == 1);
 	}
 
-	return waypointisshortcut;
+	return waypointisenabled;
 }
 
 /*--------------------------------------------------
@@ -1581,6 +1618,19 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 					firstwaypoint = thiswaypoint;
 				}
 
+				if (K_GetWaypointIsFinishline(thiswaypoint))
+				{
+					if (finishline != NULL)
+					{
+						const INT32 oldfinishlineid = K_GetWaypointID(finishline);
+						const INT32 thiswaypointid  = K_GetWaypointID(thiswaypoint);
+						CONS_Alert(
+							CONS_WARNING, "Multiple finish line waypoints with IDs %d and %d! Using %d.",
+							oldfinishlineid, thiswaypointid, thiswaypointid);
+					}
+					finishline = thiswaypoint;
+				}
+
 				if (thiswaypoint->numnextwaypoints > 0)
 				{
 					waypoint_t *nextwaypoint = NULL;
@@ -1747,18 +1797,19 @@ boolean K_SetupWaypointList(void)
 				K_SetupWaypoint(waypointmobj);
 			}
 
-			if (!firstwaypoint)
+			if (firstwaypoint == NULL)
 			{
 				CONS_Alert(CONS_ERROR, "No waypoints in map.\n");
 			}
 			else
 			{
 				CONS_Debug(DBG_SETUP, "Successfully setup %zu waypoints.\n", numwaypoints);
-				if (numwaypoints < numwaypointmobjs)
+				if (finishline == NULL)
 				{
-					CONS_Alert(CONS_WARNING,
-						"Not all waypoints in the map are connected! %zu waypoints setup but %zu waypoint mobjs.\n",
-						numwaypoints, numwaypointmobjs);
+					CONS_Alert(
+						CONS_WARNING, "No finish line waypoint in the map! Using first setup waypoint with ID %d.\n",
+						K_GetWaypointID(firstwaypoint));
+					finishline = firstwaypoint;
 				}
 				setupsuccessful = true;
 			}
@@ -1775,8 +1826,9 @@ boolean K_SetupWaypointList(void)
 --------------------------------------------------*/
 void K_ClearWaypoints(void)
 {
-	waypointheap = NULL;
-	firstwaypoint = NULL;
-	numwaypoints = 0;
+	waypointheap     = NULL;
+	firstwaypoint    = NULL;
+	finishline       = NULL;
+	numwaypoints     = 0;
 	numwaypointmobjs = 0;
 }

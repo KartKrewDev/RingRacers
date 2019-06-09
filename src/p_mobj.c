@@ -11805,16 +11805,44 @@ ML_NOCLIMB : Direction not controllable
 		// Use threshold to store the next waypoint ID
 		// movecount is being used for the current waypoint ID
 		// reactiontime lets us know if we can respawn at it
+		// lastlook is used for indicating the waypoint is a shortcut
+		// extravalue1 is used for indicating the waypoint is disabled
+		// extravalue2 is used for indicating the waypoint is the finishline
 		mobj->threshold = ((mthing->options >> ZSHIFT));
 		mobj->movecount = mthing->angle;
+		if (mthing->options & MTF_EXTRA)
+		{
+			mobj->extravalue1 = 0; // The waypoint is disabled if extra is on
+		}
+		else
+		{
+			mobj->extravalue1 = 1;
+		}
+		if (mthing->options & MTF_OBJECTSPECIAL)
+		{
+			mobj->lastlook = 1; // the waypoint is a shortcut if objectspecial is on
+		}
+		else
+		{
+			mobj->lastlook = 0;
+		}
 		if (mthing->options & MTF_AMBUSH)
 		{
-			mobj->reactiontime = 0; // Can't respawn at if Ambush is off
+			mobj->reactiontime = 0; // Can't respawn at if Ambush is on
 		}
 		else
 		{
 			mobj->reactiontime = 1;
 		}
+		if (mthing->extrainfo == 1)
+		{
+			mobj->extravalue2 = 1; // extrainfo of 1 means the waypoint is at the finish line
+		}
+		else
+		{
+			mobj->extravalue2 = 0;
+		}
+
 
 		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead
 		P_SetTarget(&mobj->tracer, waypointcap);
