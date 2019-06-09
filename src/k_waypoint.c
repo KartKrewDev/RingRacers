@@ -1739,8 +1739,13 @@ boolean K_SetupWaypointList(void)
 	{
 		if (K_AllocateWaypointHeap() == true)
 		{
-			// The waypoint in the waypointcap is going to be considered our first waypoint
-			K_SetupWaypoint(waypointcap);
+			mobj_t *waypointmobj = NULL;
+
+			// Loop through the waypointcap here so that all waypoints are added to the heap, and allow easier debugging
+			for (waypointmobj = waypointcap; waypointmobj; waypointmobj = waypointmobj->tracer)
+			{
+				K_SetupWaypoint(waypointmobj);
+			}
 
 			if (!firstwaypoint)
 			{
