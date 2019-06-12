@@ -1,8 +1,9 @@
 #ifndef __K_WAYPOINT__
 #define __K_WAYPOINT__
 
-#include "doomdef.h"
+#include "doomtype.h"
 #include "p_mobj.h"
+#include "k_pathfind.h"
 
 typedef struct waypoint_s
 {
@@ -15,20 +16,6 @@ typedef struct waypoint_s
 	size_t              numnextwaypoints;
 	size_t              numprevwaypoints;
 } waypoint_t;
-
-typedef struct pathfindnode_s {
-	size_t heapindex;     // The index in the openset binary heap. Only valid while the node is in the openset.
-	waypoint_t *waypoint;
-	struct pathfindnode_s *camefrom; // should eventually be the most efficient predecessor node
-	UINT32     gscore;    // The accumulated distance from the start to this node
-	UINT32     hscore;    // The heuristic from this node to the goal, saved to avoid expensive recalculation
-} pathfindnode_t;
-
-typedef struct path_s {
-	size_t numnodes;
-	struct pathfindnode_s *array;
-	UINT32 totaldist;
-} path_t;
 
 
 // AVAILABLE FOR LUA

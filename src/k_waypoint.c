@@ -4,16 +4,12 @@
 #include "p_local.h"
 #include "p_tick.h"
 #include "z_zone.h"
-#include "k_bheap.h"
 
 // The number of sparkles per waypoint connection in the waypoint visualisation
 static const UINT32 SPARKLES_PER_CONNECTION = 16U;
 
-// Some defaults for the size of the dynamically allocated sets for pathfinding. When the sets reach their max capacity
-// they are reallocated to contain their old capacity plus these defines. Openset is smaller because most of the time
-// the nodes will quickly be moved to closedset, closedset could contain an entire maps worth of waypoints.
-// Additonally, in order to keep later calls to pathfinding quick and avoid reallocation, the highest size of the
-// allocation is saved into a variable.
+// Some defaults for the size of the dynamically allocated sets for pathfinding. These are kept for the purpose of
+// allocating a size that is less likely to need reallocating again during the pathfinding.
 static const size_t OPENSET_BASE_SIZE    = 16U;
 static const size_t CLOSEDSET_BASE_SIZE  = 256U;
 static const size_t NODESARRAY_BASE_SIZE = 256U;
@@ -21,6 +17,7 @@ static const size_t NODESARRAY_BASE_SIZE = 256U;
 static waypoint_t **waypointheap = NULL;
 static waypoint_t *firstwaypoint = NULL;
 static waypoint_t *finishline    = NULL;
+
 static size_t numwaypoints       = 0U;
 static size_t numwaypointmobjs   = 0U;
 static size_t baseopensetsize    = OPENSET_BASE_SIZE;
@@ -455,468 +452,139 @@ static UINT32 K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t
 	return finaldist;
 }
 
-/*--------------------------------------------------
-	static UINT32 K_GetNodeFScore(pathfindnode_t *node)
-
-		Gets the FScore of a node. The FScore is the GScore plus the HScore.
-
-	Input Arguments:-
-		node - The node to get the FScore of
-
-	Return:-
-		The FScore of the node.
---------------------------------------------------*/
-static UINT32 K_GetNodeFScore(pathfindnode_t *node)
+static void **K_WaypointPathfindGetNext(void *data, size_t *numconnections)
 {
-	UINT32 nodefscore = UINT32_MAX;
+	waypoint_t **connectingwaypoints = NULL;
 
-	if (node == NULL)
+	if (data == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL node in K_GetNodeFScore.\n");
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindGetNext received NULL data.\n");
+	}
+	else if (numconnections == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindGetNext received NULL numconnections.\n");
 	}
 	else
 	{
-		nodefscore = node->gscore + node->hscore;
+		waypoint_t *waypoint = (waypoint_t *)data;
+		connectingwaypoints = waypoint->nextwaypoints;
+		*numconnections = waypoint->numnextwaypoints;
 	}
 
-	return nodefscore;
+	return (void**)connectingwaypoints;
 }
 
-/*--------------------------------------------------
-	static boolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_t *node, size_t closedsetcount)
-
-		Checks whether the Closedset contains a node. Searches from the end to the start for speed reasons.
-
-	Input Arguments:-
-		closedset      - The closed set within the A* algorithm
-		node           - The node to check is within the closed set
-		closedsetcount - The current size of the closedset
-
-	Return:-
-		True if the node is in the closed set, false if it isn't
---------------------------------------------------*/
-static boolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_t *node, size_t closedsetcount)
+static void **K_WaypointPathfindGetPrev(void *data, size_t *numconnections)
 {
-	boolean nodeisinclosedset = false;
+	waypoint_t **connectingwaypoints = NULL;
 
-	if (closedset == NULL)
+	if (data == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL closedset in K_SetContainsWaypoint.\n");
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindGetPrev received NULL data.\n");
 	}
-	else if (node == NULL)
+	else if (numconnections == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL node in K_SetContainsWaypoint.\n");
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindGetPrev received NULL numconnections.\n");
 	}
 	else
 	{
-		size_t i;
-		// It is more likely that we'll find the node we are looking for from the end of the array
-		// Yes, the for loop looks weird, remember that size_t is unsigned and we want to check 0, after it hits 0 it
-		// will loop back up to SIZE_MAX
-		for (i = closedsetcount - 1U; i < closedsetcount; i--)
-		{
-			if (closedset[i] == node)
-			{
-				nodeisinclosedset = true;
-				break;
-			}
-		}
+		waypoint_t *waypoint = (waypoint_t *)data;
+		connectingwaypoints = waypoint->prevwaypoints;
+		*numconnections = waypoint->numprevwaypoints;
 	}
-	return nodeisinclosedset;
+
+	return (void**)connectingwaypoints;
 }
 
-/*--------------------------------------------------
-	static pathfindnode_t *K_NodesArrayContainsWaypoint(
-		pathfindnode_t *nodesarray,
-		waypoint_t* waypoint,
-		size_t nodesarraycount)
-
-		Checks whether the Nodes Array contains a node with a waypoint. Searches from the end to the start for speed
-			reasons.
-
-	Input Arguments:-
-		nodesarray      - The nodes array within the A* algorithm
-		waypoint        - The waypoint to check is within the nodes array
-		nodesarraycount - The current size of the nodes array
-
-	Return:-
-		The pathfind node that has the waypoint if there is one. NULL if the waypoint is not in the nodes array.
---------------------------------------------------*/
-static pathfindnode_t *K_NodesArrayContainsWaypoint(
-	pathfindnode_t *nodesarray,
-	waypoint_t* waypoint,
-	size_t nodesarraycount)
+static UINT32 *K_WaypointPathfindGetNextCosts(void* data)
 {
-	pathfindnode_t *foundnode = NULL;
+	UINT32 *connectingnodecosts = NULL;
 
-	if (nodesarray == NULL)
+	if (data == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL nodesarray in K_NodesArrayContainsWaypoint.\n");
-	}
-	else if (waypoint == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_NodesArrayContainsWaypoint.\n");
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindGetNextCosts received NULL data.\n");
 	}
 	else
 	{
-		size_t i;
-		// It is more likely that we'll find the node we are looking for from the end of the array
-		// Yes, the for loop looks weird, remember that size_t is unsigned and we want to check 0, after it hits 0 it
-		// will loop back up to SIZE_MAX
-		for (i = nodesarraycount - 1U; i < nodesarraycount; i--)
-		{
-			if (nodesarray[i].waypoint == waypoint)
-			{
-				foundnode = &nodesarray[i];
-				break;
-			}
-		}
+		waypoint_t *waypoint = (waypoint_t *)data;
+		connectingnodecosts = waypoint->nextwaypointdistances;
 	}
-	return foundnode;
+
+	return connectingnodecosts;
 }
 
-/*--------------------------------------------------
-	static void K_NodeUpdateHeapIndex(void *const node, const size_t newheapindex)
-
-		A callback for the Openset Binary Heap to be able to update the heapindex of the pathfindnodes when they are
-			moved.
-
-	Input Arguments:-
-		node         - The node that has been updated, should be a pointer to a pathfindnode_t
-		newheapindex - The new heapindex of the node.
-
-	Return:-
-		None
---------------------------------------------------*/
-static void K_NodeUpdateHeapIndex(void *const node, const size_t newheapindex)
+static UINT32 *K_WaypointPathfindGetPrevCosts(void* data)
 {
-	if (node == NULL)
+	UINT32 *connectingnodecosts = NULL;
+
+	if (data == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL node in K_NodeUpdateHeapIndex.\n");
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindGetPrevCosts received NULL data.\n");
 	}
 	else
 	{
-		pathfindnode_t *truenode = (pathfindnode_t*)node;
-		truenode->heapindex = newheapindex;
+		waypoint_t *waypoint = (waypoint_t *)data;
+		connectingnodecosts = waypoint->prevwaypointdistances;
 	}
+
+	return connectingnodecosts;
 }
 
-/*--------------------------------------------------
-	static boolean K_ReconstructPath(path_t *const returnpath, pathfindnode_t *const destinationnode)
-
-		From a pathfindnode that should be the destination, reconstruct a path from start to finish.
-
-	Input Arguments:-
-		returnpath      - The location of the path that is being created
-		destinationnode - The node that is the destination from the pathfinding
-
-	Return:-
-		True if the path reconstruction was successful, false if it wasn't.
---------------------------------------------------*/
-static boolean K_ReconstructPath(path_t *const returnpath, pathfindnode_t *const destinationnode)
+static UINT32 K_WaypointPathfindGetHeuristic(void *data1, void *data2)
 {
-	boolean reconstructsuccess = false;
+	UINT32 nodeheuristic = UINT32_MAX;
 
-	if (returnpath == NULL)
+	if (data1 == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL returnpath in K_ReconstructPath.\n");
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindGetHeuristic received NULL data1.\n");
 	}
-	else if (destinationnode == NULL)
+	else if (data2 == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL destinationnode in K_ReconstructPath.\n");
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindGetHeuristic received NULL data2.\n");
 	}
 	else
 	{
-		size_t numnodes = 0U;
-		pathfindnode_t *thisnode = destinationnode;
+		waypoint_t *waypoint1 = (waypoint_t *)data1;
+		waypoint_t *waypoint2 = (waypoint_t *)data2;
 
-		// If the path we're placing our new path into already has data, free it
-		if (returnpath->array != NULL)
-		{
-			Z_Free(returnpath->array);
-			returnpath->numnodes = 0U;
-			returnpath->totaldist = 0U;
-		}
-
-		// Do a fast check of how many nodes there are so we know how much space to allocate
-		for (thisnode = destinationnode; thisnode; thisnode = thisnode->camefrom)
-		{
-			numnodes++;
-		}
-
-		if (numnodes > 0U)
-		{
-			// Allocate memory for the path
-			returnpath->numnodes  = numnodes;
-			returnpath->array     = Z_Calloc(numnodes * sizeof(pathfindnode_t), PU_STATIC, NULL);
-			returnpath->totaldist = destinationnode->gscore;
-			if (returnpath->array == NULL)
-			{
-				I_Error("K_ReconstructPath: Out of memory.");
-			}
-
-			// Put the nodes into the return array
-			for (thisnode = destinationnode; thisnode; thisnode = thisnode->camefrom)
-			{
-				returnpath->array[numnodes - 1U] = *thisnode;
-				// Correct the camefrom element to point to the previous element in the array instead
-				if ((returnpath->array[numnodes - 1U].camefrom != NULL) && (numnodes > 1U))
-				{
-					returnpath->array[numnodes - 1U].camefrom = &returnpath->array[numnodes - 2U];
-				}
-				else
-				{
-					returnpath->array[numnodes - 1U].camefrom = NULL;
-				}
-
-				numnodes--;
-			}
-
-			reconstructsuccess = true;
-		}
+		nodeheuristic = K_DistanceBetweenWaypoints(waypoint1, waypoint2);
 	}
 
-	return reconstructsuccess;
+	return nodeheuristic;
 }
 
-/*--------------------------------------------------
-	static boolean K_WaypointAStar(
-		waypoint_t *const sourcewaypoint,
-		waypoint_t *const destinationwaypoint,
-		path_t *const     returnpath,
-		const boolean     useshortcuts,
-		const boolean     huntbackwards)
-
-		From a source waypoint and destination waypoint, find the best path between them using the A* algorithm.
-
-	Input Arguments:-
-		sourcewaypoint      - The source waypoint to pathfind from
-		destinationwaypoint - The destination waypoint to pathfind to
-		returnpath          - The path to return to if the pathfinding was successful.
-		useshortcuts        - Whether the pathfinding can use shortcut waypoints.
-		huntbackwards       - Whether the pathfinding should hunt through previous or next waypoints
-
-	Return:-
-		True if a path was found between source and destination, false otherwise.
---------------------------------------------------*/
-static boolean K_WaypointAStar(
-	waypoint_t *const sourcewaypoint,
-	waypoint_t *const destinationwaypoint,
-	path_t *const     returnpath,
-	const boolean     useshortcuts,
-	const boolean     huntbackwards)
+static boolean K_WaypointPathfindTraversableAllEnabled(void *data)
 {
-	boolean pathfindsuccess = false;
+	boolean traversable = false;
 
-	if (sourcewaypoint == NULL)
+	if (data == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL sourcewaypoint in K_WaypointAStar.\n");
-	}
-	else if (destinationwaypoint == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL destinationwaypoint in K_WaypointAStar.\n");
-	}
-	else if (returnpath == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL returnpath in K_WaypointAStar.\n");
-	}
-	else if (sourcewaypoint == destinationwaypoint)
-	{
-		// Source and destination waypoint are the same, we're already there
-		// Just for simplicity's sake, create a single node on the destination and reconstruct path
-		pathfindnode_t singlenode;
-		singlenode.camefrom  = NULL;
-		singlenode.waypoint  = destinationwaypoint;
-		singlenode.heapindex = SIZE_MAX;
-		singlenode.hscore    = 0U;
-		singlenode.gscore    = 0U;
-
-		pathfindsuccess = K_ReconstructPath(returnpath, &singlenode);
-	}
-	else if (((huntbackwards == false) && (sourcewaypoint->numnextwaypoints == 0))
-		|| ((huntbackwards == true) && (sourcewaypoint->numprevwaypoints == 0)))
-	{
-		CONS_Debug(DBG_GAMELOGIC,
-			"K_WaypointAStar: sourcewaypoint with ID %d has no next waypoint\n",
-			K_GetWaypointID(sourcewaypoint));
-	}
-	else if (((huntbackwards == false) && (destinationwaypoint->numprevwaypoints == 0))
-		|| ((huntbackwards == true) && (destinationwaypoint->numnextwaypoints == 0)))
-	{
-		CONS_Debug(DBG_GAMELOGIC,
-			"K_WaypointAStar: destinationwaypoint with ID %d has no previous waypoint\n",
-			K_GetWaypointID(destinationwaypoint));
-	}
-	else if ((K_GetWaypointIsEnabled(destinationwaypoint) == false) ||
-			 (!useshortcuts &&(K_GetWaypointIsShortcut(destinationwaypoint) == true)))
-	{
-		// No path to the destination is possible
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindTraversableAllEnabled received NULL data.\n");
 	}
 	else
 	{
-		size_t         opensetcapacity      = K_GetOpensetBaseSize();
-		size_t         nodesarraycapacity   = K_GetNodesArrayBaseSize();
-		size_t         closedsetcapacity    = K_GetClosedsetBaseSize();
-		bheapitem_t    poppeditem           = {};
-		pathfindnode_t *currentnode         = NULL;
-		pathfindnode_t *neighbournode       = NULL;
-		bheap_t        openset              = {};
-		pathfindnode_t **closedset          = Z_Calloc(closedsetcapacity * sizeof(pathfindnode_t*), PU_STATIC, NULL);
-		pathfindnode_t *nodesarray          = Z_Calloc(nodesarraycapacity * sizeof(pathfindnode_t), PU_STATIC, NULL);
-		pathfindnode_t *newnode             = NULL;
-		size_t         closedsetcount       = 0U;
-		size_t         nodesarraycount      = 0U;
-		size_t         numcheckwaypoints    = 0U;
-		waypoint_t     **checkwaypoints     = NULL;
-		UINT32         *checkwaypointsdists = NULL;
-		UINT32         tentativegscore      = UINT32_MAX;
-		size_t         i                    = 0U;
-		size_t         findopensetindex     = 0U;
-
-		if (closedset == NULL || nodesarray == NULL)
-		{
-			I_Error("K_WaypointAStar: Out of memory.");
-		}
-
-		K_BHeapInit(&openset, opensetcapacity);
-
-		newnode           = &nodesarray[0];
-		newnode->waypoint = sourcewaypoint;
-		newnode->hscore   = K_DistanceBetweenWaypoints(sourcewaypoint, destinationwaypoint);
-		newnode->gscore   = 0U;
-		newnode->camefrom = NULL;
-		nodesarraycount++;
-
-		K_BHeapPush(&openset, &nodesarray[0], K_GetNodeFScore(&nodesarray[0]), K_NodeUpdateHeapIndex);
-
-		if (opensetcapacity != openset.capacity)
-		{
-			opensetcapacity = openset.capacity;
-			K_UpdateOpensetBaseSize(opensetcapacity);
-		}
-
-		while (openset.count > 0)
-		{
-			K_BHeapPop(&openset, &poppeditem);
-			currentnode = ((pathfindnode_t*)poppeditem.data);
-
-			if (currentnode->waypoint == destinationwaypoint)
-			{
-				pathfindsuccess = K_ReconstructPath(returnpath, currentnode);
-				break;
-			}
-
-			// The node is now placed into the closed set because it is evaluated
-			if (closedsetcount >= closedsetcapacity)
-			{
-				K_UpdateClosedsetBaseSize(closedsetcapacity * 2);
-
-				closedsetcapacity = K_GetClosedsetBaseSize();
-				closedset         = Z_Realloc(closedset, closedsetcapacity * sizeof (pathfindnode_t*), PU_STATIC, NULL);
-
-				if (closedset == NULL)
-				{
-					I_Error("K_WaypointAStar: Out of memory");
-				}
-			}
-			closedset[closedsetcount] = currentnode;
-			closedsetcount++;
-
-			if (huntbackwards)
-			{
-				numcheckwaypoints   = currentnode->waypoint->numprevwaypoints;
-				checkwaypoints      = currentnode->waypoint->prevwaypoints;
-				checkwaypointsdists = currentnode->waypoint->prevwaypointdistances;
-			}
-			else
-			{
-				numcheckwaypoints   = currentnode->waypoint->numnextwaypoints;
-				checkwaypoints      = currentnode->waypoint->nextwaypoints;
-				checkwaypointsdists = currentnode->waypoint->nextwaypointdistances;
-			}
-
-			for (i = 0; i < numcheckwaypoints; i++)
-			{
-				tentativegscore = currentnode->gscore + checkwaypointsdists[i];
-
-				// Can this double search be sped up at all? I feel like allocating and deallocating memory for nodes
-				// constantly would be slower
-				// Find if the neighbournode is already created first, if it is then check if it's in the closedset
-				// If it's in the closedset, then skip as we don't need to check it again, if it isn't then see if the
-				// new route from currentnode is faster to it and update accordingly
-				neighbournode = K_NodesArrayContainsWaypoint(nodesarray, checkwaypoints[i], nodesarraycount);
-
-				if (neighbournode != NULL)
-				{
-					// If the closedset contains the node, then it is already evaluated and doesn't need to be checked
-					if (K_ClosedsetContainsNode(closedset, neighbournode, closedsetcount) != false)
-					{
-						continue;
-					}
-
-					if (tentativegscore < neighbournode->gscore)
-					{
-						neighbournode->camefrom = currentnode;
-						neighbournode->gscore = tentativegscore;
-
-						findopensetindex = K_BHeapContains(&openset, neighbournode, neighbournode->heapindex);
-						if (findopensetindex != SIZE_MAX)
-						{
-							K_UpdateBHeapItemValue(&openset.array[findopensetindex], K_GetNodeFScore(neighbournode));
-						}
-						else
-						{
-							// What??? How is this node NOT in the openset???
-							// A node should always be in either the openset or closedset
-							CONS_Debug(DBG_GAMELOGIC, "Node unexpectedly not in openset in K_WaypointAStar.\n");
-							K_BHeapPush(&openset, neighbournode, K_GetNodeFScore(neighbournode), K_NodeUpdateHeapIndex);
-						}
-					}
-				}
-				else
-				{
-					// Don't process this waypoint if it's not traversable
-					if ((K_GetWaypointIsEnabled(checkwaypoints[i]) == false)
-						|| (!useshortcuts && K_GetWaypointIsShortcut(checkwaypoints[i]) == true))
-					{
-						continue;
-					}
-
-					// reallocate the nodesarray if needed
-					if (nodesarraycount >= nodesarraycapacity)
-					{
-						K_UpdateNodesArrayBaseSize(nodesarraycapacity * 2);
-						nodesarraycapacity = K_GetNodesArrayBaseSize();
-						nodesarray = Z_Realloc(nodesarray, nodesarraycapacity * sizeof(pathfindnode_t), PU_STATIC, NULL);
-
-						if (nodesarray == NULL)
-						{
-							I_Error("K_WaypointAStar: Out of memory");
-						}
-					}
-
-					// There is currently no node created for this waypoint, so make one
-					newnode            = &nodesarray[nodesarraycount];
-					newnode->camefrom  = currentnode;
-					newnode->heapindex = SIZE_MAX;
-					newnode->gscore    = tentativegscore;
-					newnode->hscore    = K_DistanceBetweenWaypoints(checkwaypoints[i], destinationwaypoint);
-					newnode->waypoint  = checkwaypoints[i];
-					nodesarraycount++;
-
-					// because there was no node for the waypoint, it's also not in the openset, add it
-					K_BHeapPush(&openset, newnode, K_GetNodeFScore(newnode), K_NodeUpdateHeapIndex);
-				}
-			}
-		}
-
-		// Clean up the memory
-		K_BHeapFree(&openset);
-		Z_Free(closedset);
-		Z_Free(nodesarray);
+		waypoint_t *waypoint = (waypoint_t *)data;
+		traversable = (K_GetWaypointIsEnabled(waypoint) == true);
 	}
 
-	return pathfindsuccess;
+	return traversable;
+}
+
+static boolean K_WaypointPathfindTraversableNoShortcuts(void *data)
+{
+	boolean traversable = false;
+
+	if (data == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindTraversableNoShortcuts received NULL data.\n");
+	}
+	else
+	{
+		waypoint_t *waypoint = (waypoint_t *)data;
+		traversable = ((K_GetWaypointIsShortcut(waypoint) == false) && (K_GetWaypointIsEnabled(waypoint) == true));
+	}
+
+	return traversable;
 }
 
 /*--------------------------------------------------
@@ -962,7 +630,38 @@ boolean K_PathfindToWaypoint(
 	}
 	else
 	{
-		pathfound = K_WaypointAStar(sourcewaypoint, destinationwaypoint, returnpath, useshortcuts, huntbackwards);
+		pathfindsetup_t            pathfindsetup   = {};
+		getconnectednodesfunc      nextnodesfunc   = K_WaypointPathfindGetNext;
+		getnodeconnectioncostsfunc nodecostsfunc   = K_WaypointPathfindGetNextCosts;
+		getnodeheuristicfunc       heuristicfunc   = K_WaypointPathfindGetHeuristic;
+		getnodetraversablefunc     traversablefunc = K_WaypointPathfindTraversableNoShortcuts;
+
+		if (huntbackwards)
+		{
+			nextnodesfunc = K_WaypointPathfindGetPrev;
+			nodecostsfunc = K_WaypointPathfindGetPrevCosts;
+		}
+		if (useshortcuts)
+		{
+			traversablefunc = K_WaypointPathfindTraversableAllEnabled;
+		}
+
+
+		pathfindsetup.opensetcapacity    = K_GetOpensetBaseSize();
+		pathfindsetup.closedsetcapacity  = K_GetClosedsetBaseSize();
+		pathfindsetup.nodesarraycapacity = K_GetNodesArrayBaseSize();
+		pathfindsetup.startnodedata      = sourcewaypoint;
+		pathfindsetup.endnodedata        = destinationwaypoint;
+		pathfindsetup.getconnectednodes  = nextnodesfunc;
+		pathfindsetup.getconnectioncosts = nodecostsfunc;
+		pathfindsetup.getheuristic       = heuristicfunc;
+		pathfindsetup.gettraversable     = traversablefunc;
+
+		pathfound = K_PathfindAStar(returnpath, &pathfindsetup);
+
+		K_UpdateOpensetBaseSize(pathfindsetup.opensetcapacity);
+		K_UpdateClosedsetBaseSize(pathfindsetup.closedsetcapacity);
+		K_UpdateNodesArrayBaseSize(pathfindsetup.nodesarraycapacity);
 	}
 
 	return pathfound;
@@ -1025,22 +724,53 @@ waypoint_t *K_GetNextWaypointToDestination(
 		}
 		else
 		{
-			path_t pathtowaypoint;
-			boolean pathfindsuccess =
-				K_WaypointAStar(sourcewaypoint, destinationwaypoint, &pathtowaypoint, useshortcuts, huntbackwards);
+			path_t                     pathtowaypoint  = {};
+			pathfindsetup_t            pathfindsetup   = {};
+			boolean                    pathfindsuccess = false;
+			getconnectednodesfunc      nextnodesfunc   = K_WaypointPathfindGetNext;
+			getnodeconnectioncostsfunc nodecostsfunc   = K_WaypointPathfindGetNextCosts;
+			getnodeheuristicfunc       heuristicfunc   = K_WaypointPathfindGetHeuristic;
+			getnodetraversablefunc     traversablefunc = K_WaypointPathfindTraversableNoShortcuts;
+
+			if (huntbackwards)
+			{
+				nextnodesfunc = K_WaypointPathfindGetPrev;
+				nodecostsfunc = K_WaypointPathfindGetPrevCosts;
+			}
+			if (useshortcuts)
+			{
+				traversablefunc = K_WaypointPathfindTraversableAllEnabled;
+			}
+
+
+			pathfindsetup.opensetcapacity    = K_GetOpensetBaseSize();
+			pathfindsetup.closedsetcapacity  = K_GetClosedsetBaseSize();
+			pathfindsetup.nodesarraycapacity = K_GetNodesArrayBaseSize();
+			pathfindsetup.startnodedata      = sourcewaypoint;
+			pathfindsetup.endnodedata        = destinationwaypoint;
+			pathfindsetup.getconnectednodes  = nextnodesfunc;
+			pathfindsetup.getconnectioncosts = nodecostsfunc;
+			pathfindsetup.getheuristic       = heuristicfunc;
+			pathfindsetup.gettraversable     = traversablefunc;
+
+			pathfindsuccess = K_PathfindAStar(&pathtowaypoint, &pathfindsetup);
+
+			K_UpdateOpensetBaseSize(pathfindsetup.opensetcapacity);
+			K_UpdateClosedsetBaseSize(pathfindsetup.closedsetcapacity);
+			K_UpdateNodesArrayBaseSize(pathfindsetup.nodesarraycapacity);
 
 			if (pathfindsuccess)
 			{
 				// A direct path to the destination has been found.
 				if (pathtowaypoint.numnodes > 1)
 				{
-					nextwaypoint = pathtowaypoint.array[1].waypoint;
+					nextwaypoint = (waypoint_t*)pathtowaypoint.array[1].nodedata;
 				}
 				else
 				{
 					// Shouldn't happen, as this is the source waypoint.
 					CONS_Debug(DBG_GAMELOGIC, "Only one waypoint pathfound in K_GetNextWaypointToDestination.\n");
-					nextwaypoint = pathtowaypoint.array[0].waypoint;
+					nextwaypoint = (waypoint_t*)pathtowaypoint.array[0].nodedata;
 				}
 
 				Z_Free(pathtowaypoint.array);
@@ -1257,7 +987,6 @@ searchwaypointstart:
 					{
 						// No next waypoints, this function will be returned from
 					}
-
 				}
 			}
 		}
