@@ -276,6 +276,8 @@ static void P_NetArchivePlayers(void)
 			WRITEINT16(save_p, players[i].lturn_max[j]);
 			WRITEINT16(save_p, players[i].rturn_max[j]);
 		}
+
+		WRITEUINT32(save_p, players[i].distancetofinish);
 	}
 }
 
@@ -444,6 +446,8 @@ static void P_NetUnArchivePlayers(void)
 			players[i].lturn_max[j] = READINT16(save_p);
 			players[i].rturn_max[j] = READINT16(save_p);
 		}
+
+		players[i].distancetofinish = READUINT32(save_p);
 	}
 }
 

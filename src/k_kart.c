@@ -23,6 +23,8 @@
 #include "lua_hud.h"	// For Lua hud checks
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
 
+#include "k_waypoint.h"
+
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
 // franticitems is Frantic Mode items, bool
@@ -1638,7 +1640,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 		curx += stepx;
 		cury += stepy;
 		curz += stepz;
-	
+
 		offset = abs(offset-1) % 3;
 		n--;
 	}
@@ -3415,7 +3417,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 
 			ang = mo->player->frameangle;
 
-			if (mo->player->kartstuff[k_drift] != 0) 
+			if (mo->player->kartstuff[k_drift] != 0)
 			{
 				drifting = true;
 				ang += (mo->player->kartstuff[k_drift] * ((ANGLE_270 + ANGLE_22h) / 5)); // -112.5 doesn't work. I fucking HATE SRB2 angles
@@ -5346,6 +5348,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 void K_KartPlayerAfterThink(player_t *player)
 {
+	// Moved to afterthink, as at this point the players have had their distances to the finish line updated
+	// and this will correctly account for all players
+	K_KartUpdatePosition(player);
+
 	if (player->kartstuff[k_curshield]
 		|| player->kartstuff[k_invincibilitytimer]
 		|| (player->kartstuff[k_growshrinktimer] != 0 && player->kartstuff[k_growshrinktimer] % 5 == 4)) // 4 instead of 0 because this is afterthink!
@@ -5666,6 +5672,130 @@ static void K_KartDrift(player_t *player, boolean onground)
 	else
 		player->kartstuff[k_brakedrift] = 0;
 }
+
+static void K_UpdateDistanceFromFinishLine(player_t *player)
+{
+	if ((player != NULL) && (player->mo != NULL))
+	{
+		mobj_t *wpmobj;
+		mobj_t *closestwpmobj = NULL;
+		fixed_t wpdist = INT32_MAX;
+		fixed_t closestdist = INT32_MAX;
+		waypoint_t *waypoint = NULL;
+		waypoint_t *bestwaypoint = NULL;
+		waypoint_t *finishline = K_GetFinishLineWaypoint();
+
+		// Find the closest waypoint mobj to the player
+		for (wpmobj = waypointcap; wpmobj; wpmobj = wpmobj->tracer)
+		{
+			wpdist = P_AproxDistance(wpmobj->x - player->mo->x, wpmobj->y - player->mo->y);
+			wpdist = P_AproxDistance(wpdist, wpmobj->z - player->mo->z);
+
+			if (wpdist < closestdist)
+			{
+				closestdist = wpdist;
+				closestwpmobj = wpmobj;
+			}
+		}
+
+		waypoint = K_SearchWaypointGraphForMobj(closestwpmobj);
+		bestwaypoint = waypoint;
+
+		// check the waypoint's location in relation to the player
+		// If it's generally in front, it's fine, otherwise, use the best next waypoint.
+		if (waypoint != NULL)
+		{
+			angle_t playerangle = player->mo->angle;
+			angle_t angletowaypoint =
+				R_PointToAngle2(player->mo->x, player->mo->y, waypoint->mobj->x, waypoint->mobj->y);
+			angle_t angledelta = playerangle - angletowaypoint;
+
+			if (angledelta > ANGLE_180)
+			{
+				angledelta = InvAngle(angletowaypoint);
+			}
+
+			if (angledelta > ANGLE_90)
+			{
+				angle_t nextbestdelta = angledelta;
+				size_t i = 0U;
+
+				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
+				{
+					for (i = 0U; i < waypoint->numnextwaypoints; i++)
+					{
+						angletowaypoint = R_PointToAngle2(
+							player->mo->x, player->mo->y,
+							waypoint->nextwaypoints[i]->mobj->x, waypoint->nextwaypoints[i]->mobj->y);
+						angledelta = playerangle - angletowaypoint;
+
+						if (angledelta > ANGLE_180)
+						{
+							angledelta = InvAngle(angledelta);
+						}
+
+						if (angledelta < nextbestdelta)
+						{
+							bestwaypoint = waypoint->nextwaypoints[i];
+							nextbestdelta = angledelta;
+						}
+					}
+				}
+
+				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U))
+				{
+					for (i = 0U; i < waypoint->numprevwaypoints; i++)
+					{
+						angletowaypoint = R_PointToAngle2(
+							player->mo->x, player->mo->y,
+							waypoint->prevwaypoints[i]->mobj->x, waypoint->prevwaypoints[i]->mobj->y);
+						angledelta = playerangle - angletowaypoint;
+
+						if (angledelta > ANGLE_180)
+						{
+							angledelta = InvAngle(angledelta);
+						}
+
+						if (angledelta < nextbestdelta)
+						{
+							bestwaypoint = waypoint->prevwaypoints[i];
+							nextbestdelta = angledelta;
+						}
+					}
+				}
+			}
+		}
+
+		// bestwaypoint is now the waypoint that is in front of us
+		if ((bestwaypoint != NULL) && (finishline != NULL))
+		{
+			const boolean useshortcuts = false;
+			const boolean huntbackwards = false;
+			boolean pathfindsuccess = false;
+			path_t pathtofinish = {};
+
+			pathfindsuccess =
+				K_PathfindToWaypoint(bestwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+
+			// Update the player's distance to the finish line if a path was found.
+			// Using shortcuts won't find a path, so the distance won't be updated until the player gets back on track
+			if (pathfindsuccess == true)
+			{
+				// Add euclidean distance to the next waypoint to the distancetofinish
+				UINT32 adddist;
+				fixed_t disttowaypoint =
+					P_AproxDistance(player->mo->x - bestwaypoint->mobj->x, player->mo->y - bestwaypoint->mobj->y);
+				disttowaypoint = P_AproxDistance(disttowaypoint, player->mo->z - bestwaypoint->mobj->z);
+
+				adddist = ((UINT32)disttowaypoint) >> FRACBITS;
+
+				player->distancetofinish = pathtofinish.totaldist + adddist;
+				Z_Free(pathtofinish.array);
+			}
+		}
+	}
+}
+
 //
 // K_KartUpdatePosition
 //
@@ -5673,11 +5803,7 @@ void K_KartUpdatePosition(player_t *player)
 {
 	fixed_t position = 1;
 	fixed_t oldposition = player->kartstuff[k_position];
-	fixed_t i, ppcd, pncd, ipcd, incd;
-	fixed_t pmo, imo;
-	mobj_t *mo;
-
-	return;
+	fixed_t i;
 
 	if (player->spectator || !player->mo)
 		return;
@@ -5689,70 +5815,12 @@ void K_KartUpdatePosition(player_t *player)
 
 		if (G_RaceGametype())
 		{
-			if ((((players[i].starpostnum) + (numstarposts + 1) * players[i].laps) >
-				((player->starpostnum) + (numstarposts + 1) * player->laps)))
-				position++;
-			else if (((players[i].starpostnum) + (numstarposts+1)*players[i].laps) ==
-				((player->starpostnum) + (numstarposts+1)*player->laps))
+			// I'm a lap behind this player OR
+			// My distance to the finish line is higher, so I'm behind
+			if ((players[i].laps > player->laps)
+			|| (players[i].distancetofinish < player->distancetofinish))
 			{
-				ppcd = pncd = ipcd = incd = 0;
-
-				player->kartstuff[k_prevcheck] = players[i].kartstuff[k_prevcheck] = 0;
-				player->kartstuff[k_nextcheck] = players[i].kartstuff[k_nextcheck] = 0;
-
-				// This checks every thing on the map, and looks for MT_BOSS3WAYPOINT (the thing we're using for checkpoint wp's, for now)
-				for (mo = waypointcap; mo != NULL; mo = mo->tracer)
-				{
-					pmo = P_AproxDistance(P_AproxDistance(	mo->x - player->mo->x,
-															mo->y - player->mo->y),
-															mo->z - player->mo->z) / FRACUNIT;
-					imo = P_AproxDistance(P_AproxDistance(	mo->x - players[i].mo->x,
-															mo->y - players[i].mo->y),
-															mo->z - players[i].mo->z) / FRACUNIT;
-
-					if (mo->health == player->starpostnum && (!mo->movecount || mo->movecount == player->laps+1))
-					{
-						player->kartstuff[k_prevcheck] += pmo;
-						ppcd++;
-					}
-					if (mo->health == (player->starpostnum + 1) && (!mo->movecount || mo->movecount == player->laps+1))
-					{
-						player->kartstuff[k_nextcheck] += pmo;
-						pncd++;
-					}
-					if (mo->health == players[i].starpostnum && (!mo->movecount || mo->movecount == players[i].laps+1))
-					{
-						players[i].kartstuff[k_prevcheck] += imo;
-						ipcd++;
-					}
-					if (mo->health == (players[i].starpostnum + 1) && (!mo->movecount || mo->movecount == players[i].laps+1))
-					{
-						players[i].kartstuff[k_nextcheck] += imo;
-						incd++;
-					}
-				}
-
-				if (ppcd > 1) player->kartstuff[k_prevcheck] /= ppcd;
-				if (pncd > 1) player->kartstuff[k_nextcheck] /= pncd;
-				if (ipcd > 1) players[i].kartstuff[k_prevcheck] /= ipcd;
-				if (incd > 1) players[i].kartstuff[k_nextcheck] /= incd;
-
-				if ((players[i].kartstuff[k_nextcheck] > 0 || player->kartstuff[k_nextcheck] > 0) && !player->exiting)
-				{
-					if ((players[i].kartstuff[k_nextcheck] - players[i].kartstuff[k_prevcheck]) <
-						(player->kartstuff[k_nextcheck] - player->kartstuff[k_prevcheck]))
-						position++;
-				}
-				else if (!player->exiting)
-				{
-					if (players[i].kartstuff[k_prevcheck] > player->kartstuff[k_prevcheck])
-						position++;
-				}
-				else
-				{
-					if (players[i].starposttime < player->starposttime)
-						position++;
-				}
+				position++;
 			}
 		}
 		else if (G_BattleGametype())
@@ -5899,7 +5967,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	boolean HOLDING_ITEM = (player->kartstuff[k_itemheld] || player->kartstuff[k_eggmanheld]);
 	boolean NO_HYUDORO = (player->kartstuff[k_stolentimer] == 0 && player->kartstuff[k_stealingtimer] == 0);
 
-	K_KartUpdatePosition(player);
+	K_UpdateDistanceFromFinishLine(player);
 
 	if (!player->exiting)
 	{
@@ -9694,6 +9762,14 @@ static void K_drawCheckpointDebugger(void)
 	V_DrawString(8, 192, 0, va("Waypoint dist: Prev %d, Next %d", stplyr->kartstuff[k_prevcheck], stplyr->kartstuff[k_nextcheck]));
 }
 
+static void K_DrawWaypointDebugger(void)
+{
+	if ((cv_kartdebugwaypoints.value != 0) && (stplyr == &players[displayplayers[0]]))
+	{
+		V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
+	}
+}
+
 void K_drawKartHUD(void)
 {
 	boolean isfreeplay = false;
@@ -9925,6 +10001,8 @@ void K_drawKartHUD(void)
 			}
 		}
 	}
+
+	K_DrawWaypointDebugger();
 }
 
 //}
