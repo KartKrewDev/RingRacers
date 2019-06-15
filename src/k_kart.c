@@ -5673,8 +5673,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->kartstuff[k_brakedrift] = 0;
 }
 
-static void K_UpdateDistanceFromFinishLine(player_t *player)
+static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 {
+	waypoint_t *bestwaypoint = NULL;
 	if ((player != NULL) && (player->mo != NULL))
 	{
 		mobj_t *wpmobj;
@@ -5682,8 +5683,6 @@ static void K_UpdateDistanceFromFinishLine(player_t *player)
 		fixed_t wpdist = INT32_MAX;
 		fixed_t closestdist = INT32_MAX;
 		waypoint_t *waypoint = NULL;
-		waypoint_t *bestwaypoint = NULL;
-		waypoint_t *finishline = K_GetFinishLineWaypoint();
 
 		// Find the closest waypoint mobj to the player
 		for (wpmobj = waypointcap; wpmobj; wpmobj = wpmobj->tracer)
@@ -5702,7 +5701,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *player)
 		bestwaypoint = waypoint;
 
 		// check the waypoint's location in relation to the player
-		// If it's generally in front, it's fine, otherwise, use the best next waypoint.
+		// If it's generally in front, it's fine, otherwise, use the best next/previous waypoint.
 		if (waypoint != NULL)
 		{
 			angle_t playerangle = player->mo->angle;
@@ -5765,6 +5764,17 @@ static void K_UpdateDistanceFromFinishLine(player_t *player)
 				}
 			}
 		}
+	}
+
+	return bestwaypoint;
+}
+
+static void K_UpdateDistanceFromFinishLine(player_t *player)
+{
+	if ((player != NULL) && (player->mo != NULL))
+	{
+		waypoint_t *bestwaypoint = K_GetPlayerNextWaypoint(player);
+		waypoint_t *finishline = K_GetFinishLineWaypoint();
 
 		// bestwaypoint is now the waypoint that is in front of us
 		if ((bestwaypoint != NULL) && (finishline != NULL))
