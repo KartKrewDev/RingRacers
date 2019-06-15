@@ -5673,6 +5673,18 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->kartstuff[k_brakedrift] = 0;
 }
 
+/*--------------------------------------------------
+	static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
+
+		Gets the next waypoint of a player, by finding their closest waypoint, then checking which of itself and next or
+		previous waypoints are infront of the player.
+
+	Input Arguments:-
+		player - The player the next waypoint is being found for
+
+	Return:-
+		The waypoint that is the player's next waypoint
+--------------------------------------------------*/
 static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 {
 	waypoint_t *bestwaypoint = NULL;
@@ -5769,6 +5781,17 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 	return bestwaypoint;
 }
 
+/*--------------------------------------------------
+	static void K_UpdateDistanceFromFinishLine(player_t *player)
+
+		Updates the distance a player has to the finish line.
+
+	Input Arguments:-
+		player - The player the distance is being updated for
+
+	Return:-
+		None
+--------------------------------------------------*/
 static void K_UpdateDistanceFromFinishLine(player_t *player)
 {
 	if ((player != NULL) && (player->mo != NULL))
