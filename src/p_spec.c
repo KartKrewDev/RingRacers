@@ -4225,8 +4225,6 @@ DoneSection2:
 
 		case 10: // Finish Line
 			// SRB2kart - 150117
-			if (G_RaceGametype() && ((player->starpostnum == numstarposts) || player->exiting))
-				player->kartstuff[k_starpostwp] = player->kartstuff[k_waypoint] = 0;
 			//
 			if (G_RaceGametype() && !player->exiting)
 			{

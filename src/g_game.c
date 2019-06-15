@@ -2571,7 +2571,6 @@ void G_PlayerReborn(INT32 player)
 	SINT8 pity;
 
 	// SRB2kart
-	INT32 starpostwp;
 	INT32 itemtype;
 	INT32 itemamount;
 	INT32 itemroulette;
@@ -2635,12 +2634,9 @@ void G_PlayerReborn(INT32 player)
 		rings = (G_BattleGametype() ? 0 : 5);
 		comebackpoints = 0;
 		wanted = 0;
-		starpostwp = 0;
 	}
 	else
 	{
-		starpostwp = players[player].kartstuff[k_starpostwp];
-
 		itemroulette = (players[player].kartstuff[k_itemroulette] > 0 ? 1 : 0);
 		roulettetype = players[player].kartstuff[k_roulettetype];
 
@@ -2707,7 +2703,6 @@ void G_PlayerReborn(INT32 player)
 	p->pity = pity;
 
 	// SRB2kart
-	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync (Does it...?)
 	p->kartstuff[k_itemroulette] = itemroulette;
 	p->kartstuff[k_roulettetype] = roulettetype;
 	p->kartstuff[k_itemtype] = itemtype;

@@ -1461,12 +1461,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_STARPOST:
 			if (player->bot)
 				return;
-			// SRB2kart - 150117
-			if (player->exiting) //STOP MESSING UP MY STATS FASDFASDF
-			{
-				player->kartstuff[k_starpostwp] = player->kartstuff[k_waypoint];
-				return;
-			}
 			//
 			// SRB2kart: make sure the player will have enough checkpoints to touch
 			if (circuitmap && special->health >= ((numstarposts/2) + player->starpostnum))
@@ -3306,12 +3300,12 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 
 	// 20 is the ring cap in kart
 	if (num_rings > 20)
-		num_rings = 20; 
+		num_rings = 20;
 	else if (num_rings <= 0)
 		return;
 
 	// Cap the maximum loss automatically to 2 in ring debt
-	if (player->kartstuff[k_rings] <= 0 && num_rings > 2) 
+	if (player->kartstuff[k_rings] <= 0 && num_rings > 2)
 		num_rings = 2;
 
 	P_GivePlayerRings(player, -num_rings);

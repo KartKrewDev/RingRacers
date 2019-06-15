@@ -11205,8 +11205,6 @@ void P_MovePlayerToStarpost(INT32 playernum)
 
 	mobj->angle = p->starpostangle;
 
-	p->kartstuff[k_waypoint] = p->kartstuff[k_starpostwp]; // SRB2kart
-
 	P_AfterPlayerSpawn(playernum);
 
 	//if (!(netgame || multiplayer))
