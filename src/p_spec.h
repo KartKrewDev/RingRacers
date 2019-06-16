@@ -56,6 +56,8 @@ INT32 P_FindSpecialLineFromTag(INT16 special, INT16 tag, INT32 start);
 
 INT32 P_FindMinSurroundingLight(sector_t *sector, INT32 max);
 
+void P_CrossSpecialLine(line_t *ld, INT32 side, mobj_t *thing);
+
 void P_SetupSignExit(player_t *player);
 boolean P_IsFlagAtBase(mobjtype_t flag);
 

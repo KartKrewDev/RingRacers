@@ -1253,7 +1253,7 @@ void P_RestoreMusic(player_t *player)
 #if 0
 			// Event - Final Lap
 			// Still works for GME, but disabled for consistency
-			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value - 1))
+			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value))
 				S_SpeedMusic(1.2f);
 #endif
 			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);

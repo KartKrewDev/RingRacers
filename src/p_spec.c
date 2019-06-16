@@ -2200,6 +2200,178 @@ void P_SwitchWeather(INT32 weathernum)
 	}
 }
 
+// Passed over the finish line forwards
+static void K_HandleLapIncrement(player_t *player)
+{
+	if (player)
+	{
+		if ((player->starpostnum == numstarposts) || (player->laps == 0))
+		{
+			UINT8 i = 0;
+			UINT8 nump = 0;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator)
+					continue;
+				nump++;
+			}
+
+			player->laps++;
+
+			// Set up lap animation vars
+			if (player->laps > 1)
+			{
+				if (nump > 1)
+				{
+					if (K_IsPlayerLosing(player))
+						player->karthud[khud_laphand] = 3;
+					else
+					{
+						if (nump > 2 && player->kartstuff[k_position] == 1) // 1st place in 1v1 uses thumbs up
+							player->karthud[khud_laphand] = 1;
+						else
+							player->karthud[khud_laphand] = 2;
+					}
+				}
+				else
+					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
+
+				player->karthud[khud_lapanimation] = 80;
+			}
+
+			if (netgame && player->laps >= (UINT8)cv_numlaps.value)
+				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
+
+			// SRB2Kart: save best lap for record attack
+			if (player == &players[consoleplayer])
+			{
+				if (curlap < bestlap || bestlap == 0)
+					bestlap = curlap;
+				curlap = 0;
+			}
+
+			player->starposttime = player->realtime;
+			player->starpostnum = 0;
+
+			if (mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
+			{
+				// SRB2Kart 281118
+				// Save the player's time and position.
+				player->starpostx = player->mo->x>>FRACBITS;
+				player->starposty = player->mo->y>>FRACBITS;
+				player->starpostz = player->mo->floorz>>FRACBITS;
+				player->kartstuff[k_starpostflip] = player->mo->flags2 & MF2_OBJECTFLIP;	// store flipping
+				player->starpostangle = player->mo->angle; //R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy); torn; a momentum-based guess is less likely to be wrong in general, but when it IS wrong, it fucks you over entirely...
+			}
+			else
+			{
+				// SRB2kart 200117
+				// Reset starposts (checkpoints) info
+				player->starpostangle = player->starpostx = player->starposty = player->starpostz = player->kartstuff[k_starpostflip] = 0;
+			}
+
+			if (P_IsDisplayPlayer(player))
+			{
+				if (player->laps == (UINT8)(cv_numlaps.value)) // final lap
+					S_StartSound(NULL, sfx_s3k68);
+				else if ((player->laps > 1) && (player->laps < (UINT8)(cv_numlaps.value))) // non-final lap
+					S_StartSound(NULL, sfx_s221);
+				else if (player->laps > (UINT8)(cv_numlaps.value))
+				{
+					// finished
+					S_StartSound(NULL, sfx_s3k6a);
+				}
+
+			}
+			else
+			{
+				if ((player->laps > (UINT8)(cv_numlaps.value)) && (player->kartstuff[k_position] == 1))
+				{
+					// opponent finished
+					S_StartSound(NULL, sfx_s253);
+				}
+			}
+
+			// finished race exit setup
+			if (player->laps > (unsigned)cv_numlaps.value)
+			{
+				P_DoPlayerExit(player);
+				P_SetupSignExit(player);
+			}
+
+			//player->starpostangle = player->starposttime = player->starpostnum = 0;
+			//player->starpostx = player->starposty = player->starpostz = 0;
+
+			// Play the starpost sound for 'consistency'
+			// S_StartSound(player->mo, sfx_strpst);
+
+			// Figure out how many are playing on the last lap, to prevent spectate griefing
+			if (!nospectategrief && player->laps > (UINT8)(cv_numlaps.value))
+				nospectategrief = nump;
+
+			thwompsactive = true; // Lap 2 effects
+		}
+		else if (player->starpostnum)
+		{
+			S_StartSound(player->mo, sfx_s26d);
+		}
+	}
+}
+
+// player went backwards over the line
+static void K_HandleLapDecrement(player_t *player)
+{
+	if (player)
+	{
+		if (player->laps > 0)
+		{
+			player->starpostnum = numstarposts;
+			player->laps--;
+		}
+	}
+}
+
+//
+// P_CrossSpecialLine - TRIGGER
+// Called every time a thing origin is about
+//  to cross a line with specific specials
+// Kart - Only used for the finish line currently
+//
+void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
+{
+	// only used for the players currently
+	if (thing && thing->player)
+	{
+		player_t *player = thing->player;
+		switch (line->special)
+		{
+			case 2001: // Finish Line
+			{
+				if (G_RaceGametype() && !(player->exiting))
+				{
+					if (((line->flags & (ML_NOCLIMB)) && (side == 1))
+						|| (!(line->flags & (ML_NOCLIMB)) && (side == 0))) // crossed from behind to infront
+					{
+						K_HandleLapIncrement(player);
+					}
+					else
+					{
+						K_HandleLapDecrement(player);
+					}
+				}
+			}
+			break;
+
+			default:
+			{
+				// Do nothing
+			}
+			break;
+		}
+	}
+}
+
 /** Gets an object.
   *
   * \param type Object type to look for.
@@ -4223,115 +4395,8 @@ DoneSection2:
 			}
 			break;
 
-		case 10: // Finish Line
-			// SRB2kart - 150117
-			//
-			if (G_RaceGametype() && !player->exiting)
-			{
-				if (player->starpostnum == numstarposts)
-				{
-					UINT8 nump = 0;
-
-					for (i = 0; i < MAXPLAYERS; i++)
-					{
-						if (!playeringame[i] || players[i].spectator)
-							continue;
-						nump++;
-					}
-
-					player->laps++;
-
-					// Set up lap animation vars
-					if (nump > 1)
-					{
-						if (K_IsPlayerLosing(player))
-							player->karthud[khud_laphand] = 3;
-						else
-						{
-							if (nump > 2 && player->kartstuff[k_position] == 1) // 1st place in 1v1 uses thumbs up
-								player->karthud[khud_laphand] = 1;
-							else
-								player->karthud[khud_laphand] = 2;
-						}
-					}
-					else
-						player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
-
-					player->karthud[khud_lapanimation] = 80;
-
-					if (player->pflags & PF_NIGHTSMODE)
-						player->drillmeter += 48*20;
-
-					if (netgame && player->laps >= (UINT8)cv_numlaps.value)
-						CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
-
-					// SRB2Kart: save best lap for record attack
-					if (player == &players[consoleplayer])
-					{
-						if (curlap < bestlap || bestlap == 0)
-							bestlap = curlap;
-						curlap = 0;
-					}
-
-					player->starposttime = player->realtime;
-					player->starpostnum = 0;
-
-					if (mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-					{
-						// SRB2Kart 281118
-						// Save the player's time and position.
-						player->starpostx = player->mo->x>>FRACBITS;
-						player->starposty = player->mo->y>>FRACBITS;
-						player->starpostz = player->mo->floorz>>FRACBITS;
-						player->kartstuff[k_starpostflip] = player->mo->flags2 & MF2_OBJECTFLIP;	// store flipping
-						player->starpostangle = player->mo->angle; //R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy); torn; a momentum-based guess is less likely to be wrong in general, but when it IS wrong, it fucks you over entirely...
-					}
-					else
-					{
-						// SRB2kart 200117
-						// Reset starposts (checkpoints) info
-						player->starpostangle = player->starpostx = player->starposty = player->starpostz = player->kartstuff[k_starpostflip] = 0;
-					}
-
-					if (P_IsDisplayPlayer(player))
-					{
-						if (player->laps == (UINT8)(cv_numlaps.value - 1))
-							S_StartSound(NULL, sfx_s3k68);
-						else if (player->laps < (UINT8)(cv_numlaps.value - 1))
-							S_StartSound(NULL, sfx_s221);
-					}
-
-					//player->starpostangle = player->starposttime = player->starpostnum = 0;
-					//player->starpostx = player->starposty = player->starpostz = 0;
-
-					// Play the starpost sound for 'consistency'
-					// S_StartSound(player->mo, sfx_strpst);
-
-					// Figure out how many are playing on the last lap, to prevent spectate griefing
-					if (!nospectategrief && player->laps >= (UINT8)(cv_numlaps.value - 1))
-						nospectategrief = nump;
-
-					thwompsactive = true; // Lap 2 effects
-				}
-				else if (player->starpostnum)
-				{
-					// blatant reuse of a variable that's normally unused in circuit
-					if (!player->tossdelay)
-						S_StartSound(player->mo, sfx_s26d);
-					player->tossdelay = 3;
-				}
-
-				if (player->laps >= (unsigned)cv_numlaps.value)
-				{
-					if (P_IsDisplayPlayer(player))
-						S_StartSound(NULL, sfx_s3k6a);
-					else if (player->kartstuff[k_position] == 1)
-						S_StartSound(NULL, sfx_s253);
-
-					P_DoPlayerExit(player);
-					P_SetupSignExit(player);
-				}
-			}
+		case 10: // Finish Line (Unused)
+			// SRB2Kart 20190616 - Is now a linedef type that activates by crossing over it
 			break;
 
 		case 11: // Rope hang
@@ -4884,7 +4949,7 @@ static void P_RunSpecialSectorCheck(player_t *player, sector_t *sector)
 		case 6: // Super Sonic Transform
 		case 8: // Zoom Tube Start
 		case 9: // Zoom Tube End
-		case 10: // Finish line
+		case 10: // Finish line (Unused)
 			nofloorneeded = true;
 			break;
 	}
@@ -5758,9 +5823,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		// Process Section 4
 		switch(GETSECSPECIAL(sector->special, 4))
 		{
-			case 10: // Circuit finish line
-				if (G_RaceGametype())
-					circuitmap = true;
+			case 10: // Circuit finish line (Unused)
 				break;
 		}
 	}
@@ -6700,6 +6763,10 @@ void P_SpawnSpecials(INT32 fromnetsave)
 #endif
 
 			case 2000: // Waypoint Parameters
+				break;
+			case 2001: // Finish Line
+				if (G_RaceGametype())
+					circuitmap = true;
 				break;
 			default:
 				break;
