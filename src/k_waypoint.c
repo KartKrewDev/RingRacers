@@ -1526,7 +1526,7 @@ boolean K_SetupWaypointList(void)
 			}
 			else
 			{
-				CONS_Debug(DBG_SETUP, "Successfully setup %zu waypoints.\n", numwaypoints);
+				CONS_Debug(DBG_SETUP, "Successfully setup %s waypoints.\n", sizeu1(numwaypoints));
 				if (finishline == NULL)
 				{
 					CONS_Alert(
