@@ -1088,13 +1088,12 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i] && !players[i].spectator && players[i].mo
-			&& players[i].kartstuff[k_position] < player->kartstuff[k_position])
-			pdis += P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x,
-													players[i].mo->y - player->mo->y),
-													players[i].mo->z - player->mo->z) / mapobjectscale
-													* (pingame - players[i].kartstuff[k_position])
-													/ max(1, ((pingame - 1) * (pingame + 1) / 3));
+		if (players[i].kartstuff[k_position] == 1)
+		{
+			// This player is first! Yay!
+			pdis = player->distancetofinish - players[i].distancetofinish;
+			break;
+		}
 	}
 
 	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
