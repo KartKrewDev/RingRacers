@@ -2350,8 +2350,8 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 			{
 				if (G_RaceGametype() && !(player->exiting))
 				{
-					if (((line->flags & (ML_NOCLIMB)) && (side == 1))
-						|| (!(line->flags & (ML_NOCLIMB)) && (side == 0))) // crossed from behind to infront
+					if (((line->flags & (ML_NOCLIMB)) && (side == 0))
+						|| (!(line->flags & (ML_NOCLIMB)) && (side == 1))) // crossed from behind to infront
 					{
 						K_HandleLapIncrement(player);
 					}
