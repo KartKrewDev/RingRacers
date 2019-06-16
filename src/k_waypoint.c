@@ -14,7 +14,7 @@ static const size_t OPENSET_BASE_SIZE    = 16U;
 static const size_t CLOSEDSET_BASE_SIZE  = 256U;
 static const size_t NODESARRAY_BASE_SIZE = 256U;
 
-static waypoint_t **waypointheap = NULL;
+static waypoint_t *waypointheap = NULL;
 static waypoint_t *firstwaypoint = NULL;
 static waypoint_t *finishline    = NULL;
 
@@ -158,6 +158,49 @@ INT32 K_GetWaypointID(waypoint_t *waypoint)
 	}
 
 	return waypointid;
+}
+
+
+/*--------------------------------------------------
+	size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
+{
+	size_t waypointindex = SIZE_MAX;
+
+	if (waypoint == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointID.\n");
+	}
+	else
+	{
+		waypointindex = waypoint - waypointheap;
+	}
+
+	return waypointindex;
+}
+
+/*--------------------------------------------------
+	waypoint_t *K_GetWaypointFromIndex(size_t waypointindex)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_GetWaypointFromIndex(size_t waypointindex)
+{
+	waypoint_t *waypoint = NULL;
+
+	if (waypointindex >= numwaypoints)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "waypointindex higher than number of waypoints in K_GetWaypointFromIndex");
+	}
+	else
+	{
+		waypoint = &waypointheap[waypointindex];
+	}
+
+	return waypoint;
 }
 
 /*--------------------------------------------------
@@ -940,11 +983,12 @@ searchwaypointstart:
 		}
 		else
 		{
+			size_t waypointindex = K_GetWaypointHeapIndex(waypoint);
 			// If we've already visited this waypoint, we've already checked the next waypoints, no point continuing
-			if (visitedarray[waypoint->id] != true)
+			if ((waypointindex != SIZE_MAX) && (visitedarray[waypointindex] != true))
 			{
 				// Mark this waypoint as being visited
-				visitedarray[waypoint->id] = true;
+				visitedarray[waypointindex] = true;
 
 				if (conditionalfunc(waypoint, condition) == true)
 				{
@@ -1105,9 +1149,9 @@ static waypoint_t *K_SearchWaypointHeap(
 		// waypoints setup in the heap while numwaypointmobjs ends up being the capacity
 		for (i = 0; i < numwaypoints; i++)
 		{
-			if (conditionalfunc(waypointheap[i], condition) == true)
+			if (conditionalfunc(&waypointheap[i], condition) == true)
 			{
-				foundwaypoint = waypointheap[i];
+				foundwaypoint = &waypointheap[i];
 				break;
 			}
 		}
@@ -1189,49 +1233,6 @@ static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const pr
 }
 
 /*--------------------------------------------------
-	static waypoint_t *K_NewWaypoint(mobj_t *mobj)
-
-		Creates memory for a new waypoint
-
-	Input Arguments:-
-		mobj - The map object that this waypoint is represented by
-
-	Return:-
-		Pointer to waypoint_t for the rest of the waypoint data to be placed into
---------------------------------------------------*/
-static waypoint_t *K_NewWaypoint(mobj_t *const mobj)
-{
-	waypoint_t *waypoint = NULL;
-
-	// Error conditions
-	if (mobj == NULL || P_MobjWasRemoved(mobj))
-	{
-		CONS_Debug(DBG_SETUP, "NULL mobj in K_NewWaypoint.\n");
-	}
-	else if (waypointheap == NULL)
-	{
-		CONS_Debug(DBG_SETUP, "NULL waypointheap in K_NewWaypoint.\n");
-	}
-	else
-	{
-		// Each made waypoint is placed directly into the waypoint heap to be able to search it during creation
-		waypointheap[numwaypoints] = Z_Calloc(sizeof(waypoint_t), PU_LEVEL, NULL);
-		waypoint = waypointheap[numwaypoints];
-		// numwaypoints is incremented later when waypoint->id is set
-
-		if (waypoint == NULL)
-		{
-			I_Error("K_NewWaypoint: Failed to allocate memory for waypoint.");
-		}
-
-		P_SetTarget(&waypoint->mobj, mobj);
-		waypoint->id = numwaypoints++;
-	}
-
-	return waypoint;
-}
-
-/*--------------------------------------------------
 	static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 
 		Make a new waypoint from a map object. Setups up most of the data for it, and allocates most memory
@@ -1257,9 +1258,17 @@ static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 	{
 		CONS_Debug(DBG_SETUP, "K_MakeWaypoint called with NULL waypointcap.\n");
 	}
+	else if (numwaypoints >= numwaypointmobjs)
+	{
+		CONS_Debug(DBG_SETUP, "K_MakeWaypoint called with max waypoint capacity reached.\n");
+	}
 	else
 	{
-		madewaypoint = K_NewWaypoint(mobj);
+		// numwaypoints is incremented later in K_SetupWaypoint
+		madewaypoint = &waypointheap[numwaypoints];
+		numwaypoints++;
+
+		P_SetTarget(&madewaypoint->mobj, mobj);
 
 		// Go through the other waypoint mobjs in the map to find out how many waypoints are after this one
 		for (otherwaypointmobj = waypointcap; otherwaypointmobj != NULL; otherwaypointmobj = otherwaypointmobj->tracer)
@@ -1340,8 +1349,7 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 
 			if (thiswaypoint != NULL)
 			{
-				// Temporarily set the first waypoint to be the first waypoint we setup, this is so that we can search
-				// through them as they're made and added to the linked list
+				// Set the first waypoint if it isn't already
 				if (firstwaypoint == NULL)
 				{
 					firstwaypoint = thiswaypoint;
@@ -1447,7 +1455,7 @@ static boolean K_AllocateWaypointHeap(void)
 		{
 			// Allocate space in the heap for every mobj, it's possible some mobjs aren't linked up and not all of the
 			// heap allocated will be used, but it's a fairly reasonable assumption that this isn't going to be awful
-			waypointheap = Z_Calloc(numwaypointmobjs * sizeof(waypoint_t **), PU_LEVEL, NULL);
+			waypointheap = Z_Calloc(numwaypointmobjs * sizeof(waypoint_t), PU_LEVEL, NULL);
 
 			if (waypointheap == NULL)
 			{
@@ -1478,20 +1486,6 @@ static void K_FreeWaypoints(void)
 {
 	if (waypointheap != NULL)
 	{
-		// Free each waypoint if it's not already
-		UINT32 i;
-		for (i = 0; i < numwaypoints; i++)
-		{
-			if (waypointheap[i] != NULL)
-			{
-				Z_Free(waypointheap[i]);
-			}
-			else
-			{
-				CONS_Debug(DBG_SETUP, "NULL waypoint %d attempted to be freed.\n", i);
-			}
-		}
-
 		// Free the waypointheap
 		Z_Free(waypointheap);
 	}

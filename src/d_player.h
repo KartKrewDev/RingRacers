@@ -29,6 +29,9 @@
 // as commands per game tick.
 #include "d_ticcmd.h"
 
+// the player struct stores a waypoint for racing
+#include "k_waypoint.h"
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
@@ -429,6 +432,7 @@ typedef struct player_s
 	INT16 lturn_max[MAXPREDICTTICS]; // What's the expected turn value for full-left for a number of frames back (to account for netgame latency)?
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
 	UINT32 distancetofinish;
+	waypoint_t *nextwaypoint;
 
 	// Bit flags.
 	// See pflags_t, above.

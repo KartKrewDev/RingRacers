@@ -5796,11 +5796,11 @@ static void K_UpdateDistanceFromFinishLine(player_t *player)
 {
 	if ((player != NULL) && (player->mo != NULL))
 	{
-		waypoint_t *bestwaypoint = K_GetPlayerNextWaypoint(player);
 		waypoint_t *finishline = K_GetFinishLineWaypoint();
+		player->nextwaypoint = K_GetPlayerNextWaypoint(player);
 
 		// bestwaypoint is now the waypoint that is in front of us
-		if ((bestwaypoint != NULL) && (finishline != NULL))
+		if ((player->nextwaypoint != NULL) && (finishline != NULL))
 		{
 			const boolean useshortcuts = false;
 			const boolean huntbackwards = false;
@@ -5808,7 +5808,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *player)
 			path_t pathtofinish = {};
 
 			pathfindsuccess =
-				K_PathfindToWaypoint(bestwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+				K_PathfindToWaypoint(player->nextwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
 
 			// Update the player's distance to the finish line if a path was found.
 			// Using shortcuts won't find a path, so the distance won't be updated until the player gets back on track
@@ -5817,8 +5817,10 @@ static void K_UpdateDistanceFromFinishLine(player_t *player)
 				// Add euclidean distance to the next waypoint to the distancetofinish
 				UINT32 adddist;
 				fixed_t disttowaypoint =
-					P_AproxDistance(player->mo->x - bestwaypoint->mobj->x, player->mo->y - bestwaypoint->mobj->y);
-				disttowaypoint = P_AproxDistance(disttowaypoint, player->mo->z - bestwaypoint->mobj->z);
+					P_AproxDistance(
+						player->mo->x - player->nextwaypoint->mobj->x,
+						player->mo->y - player->nextwaypoint->mobj->y);
+				disttowaypoint = P_AproxDistance(disttowaypoint, player->mo->z - player->nextwaypoint->mobj->z);
 
 				adddist = ((UINT32)disttowaypoint) >> FRACBITS;
 

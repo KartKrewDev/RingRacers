@@ -8,7 +8,6 @@
 typedef struct waypoint_s
 {
 	mobj_t             *mobj;
-	size_t              id;
 	struct waypoint_s **nextwaypoints;
 	struct waypoint_s **prevwaypoints;
 	UINT32             *nextwaypointdistances;
@@ -200,7 +199,36 @@ waypoint_t *K_SearchWaypointGraphForMobj(mobj_t * const mobj);
 
 waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj);
 
+
 // NOT AVAILABLE FOR LUA
+
+
+/*--------------------------------------------------
+	size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
+
+		Returns the waypoint's index in the waypoint heap.
+
+	Input Arguments:-
+		waypoint - The waypoint to return the index of.
+
+	Return:-
+		The waypoint heap index, SIZE_MAX if there's an issue with the waypoint.
+--------------------------------------------------*/
+size_t K_GetWaypointHeapIndex(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
+	waypoint_t *K_GetWaypointFromIndex(size_t waypointindex)
+
+		Returns the waypoint from an index to the heap.
+
+	Input Arguments:-
+		waypointindex - The index of the waypoint to get
+
+	Return:-
+		The waypoint from the heap index, NULL if the index if too high
+--------------------------------------------------*/
+waypoint_t *K_GetWaypointFromIndex(size_t waypointindex);
 
 
 /*--------------------------------------------------

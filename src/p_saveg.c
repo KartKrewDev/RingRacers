@@ -278,6 +278,7 @@ static void P_NetArchivePlayers(void)
 		}
 
 		WRITEUINT32(save_p, players[i].distancetofinish);
+		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 	}
 }
 
@@ -448,6 +449,7 @@ static void P_NetUnArchivePlayers(void)
 		}
 
 		players[i].distancetofinish = READUINT32(save_p);
+		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 	}
 }
 
@@ -3061,6 +3063,15 @@ static void P_RelinkPointers(void)
 				mobj->player->awayviewmobj = NULL;
 				if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
+			}
+			if (mobj->player && mobj->player->nextwaypoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
+				mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
+				if (mobj->player->nextwaypoint == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
+				}
 			}
 		}
 	}
