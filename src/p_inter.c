@@ -1463,7 +1463,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			//
 			// SRB2kart: make sure the player will have enough checkpoints to touch
-			if (circuitmap && special->health >= player->starpostnum)
+			if (circuitmap && special->health - player->starpostnum > 1)
 			{
 				// blatant reuse of a variable that's normally unused in circuit
 				if (!player->tossdelay)
