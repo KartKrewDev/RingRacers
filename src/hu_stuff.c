@@ -2364,6 +2364,7 @@ void HU_Drawer(void)
 		{
 			HU_DrawDemoInfo();
 		}
+		return;
 	}
 
 	if (gamestate != GS_LEVEL)
