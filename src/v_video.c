@@ -1359,16 +1359,16 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 		return lavendermap;
 	case 10: // 0x8A, gold
 		return goldmap;
-	case 11: // 0x8B, tea-green
-		return teamap;
-	case 12: // 0x8C, steel
-		return steelmap;
+	case 11: // 0x8B, aqua-green
+		return aquamap;
+	case 12: // 0x8C, magenta
+		return magentamap;
 	case 13: // 0x8D, pink
 		return pinkmap;
 	case 14: // 0x8E, brown
 		return brownmap;
-	case 15: // 0x8F, peach
-		return peachmap;
+	case 15: // 0x8F, tan
+		return tanmap;
 	default: // reset
 		return NULL;
 	}

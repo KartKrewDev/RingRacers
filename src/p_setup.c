@@ -2816,8 +2816,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	for (i = 0; i <= splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
-	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0'
-	&& atoi(mapheaderinfo[gamemap-1]->forcecharacter) != 255)
+	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0')
 		P_ForceCharacter(mapheaderinfo[gamemap-1]->forcecharacter);
 
 	// chasecam on in chaos, race, coop
@@ -2859,13 +2858,13 @@ boolean P_SetupLevel(boolean skipprecip)
 		S_StartSound(NULL, sfx_ruby1);
 
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 122);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 209);
 
 		F_WipeEndScreen();
 		F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
 
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 		F_WipeEndScreen();
 		F_RunWipe(wipedefs[wipe_level_final], false);
@@ -2898,7 +2897,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// We should be fine starting it here.
 	S_Start();
 
-	levelfadecol = (encoremode && !ranspecialwipe ? 122 : 120);
+	levelfadecol = (encoremode && !ranspecialwipe ? 209 : 0);
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
@@ -3066,6 +3065,10 @@ boolean P_SetupLevel(boolean skipprecip)
 		P_PrepareThings(lastloadedmaplumpnum + ML_THINGS);
 	}
 
+	// init gravity, tag lists,
+	// anything that P_ResetDynamicSlopes/P_LoadThings needs to know
+	P_InitSpecials();
+
 #ifdef ESLOPE
 	P_ResetDynamicSlopes();
 #endif
@@ -3083,8 +3086,6 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
-
-	globalweather = mapheaderinfo[gamemap-1]->weather;
 
 #ifdef HWRENDER // not win32 only 19990829 by Kin
 	if (rendermode != render_soft && rendermode != render_none)

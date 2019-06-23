@@ -1083,7 +1083,7 @@ void Y_VoteDrawer(void)
 				V_DrawMappedPatch(BASEVIDWIDTH-124, handy, V_SNAPTORIGHT, thiscurs, colormap);
 
 				if (votetic % 10 < 4)
-					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), 120|V_SNAPTORIGHT);
+					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), 0|V_SNAPTORIGHT);
 				else
 					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), color|V_SNAPTORIGHT);
 
@@ -1154,7 +1154,7 @@ void Y_VoteDrawer(void)
 			{
 				V_DrawScaledPatch(x-18, y+9, V_SNAPTOLEFT, cursor);
 				if (voteendtic != -1 && !(votetic % 4))
-					V_DrawFill(x-1, y-1, 42, 27, 120|V_SNAPTOLEFT);
+					V_DrawFill(x-1, y-1, 42, 27, 0|V_SNAPTOLEFT);
 				else
 					V_DrawFill(x-1, y-1, 42, 27, levelinfo[votes[i]].gtc|V_SNAPTOLEFT);
 			}

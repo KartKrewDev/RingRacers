@@ -4247,19 +4247,19 @@ DoneSection2:
 					if (nump > 1)
 					{
 						if (K_IsPlayerLosing(player))
-							player->kartstuff[k_laphand] = 3;
+							player->karthud[khud_laphand] = 3;
 						else
 						{
 							if (nump > 2 && player->kartstuff[k_position] == 1) // 1st place in 1v1 uses thumbs up
-								player->kartstuff[k_laphand] = 1;
+								player->karthud[khud_laphand] = 1;
 							else
-								player->kartstuff[k_laphand] = 2;
+								player->karthud[khud_laphand] = 2;
 						}
 					}
 					else
-						player->kartstuff[k_laphand] = 0; // No hands in FREE PLAY
+						player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
-					player->kartstuff[k_lapanimation] = 80;
+					player->karthud[khud_lapanimation] = 80;
 
 					if (player->pflags & PF_NIGHTSMODE)
 						player->drillmeter += 48*20;
@@ -4295,7 +4295,7 @@ DoneSection2:
 						player->starpostangle = player->starpostx = player->starposty = player->starpostz = player->kartstuff[k_starpostflip] = 0;
 					}
 
-					if (P_IsLocalPlayer(player))
+					if (P_IsDisplayPlayer(player))
 					{
 						if (player->laps == (UINT8)(cv_numlaps.value - 1))
 							S_StartSound(NULL, sfx_s3k68);
@@ -4325,7 +4325,7 @@ DoneSection2:
 
 				if (player->laps >= (unsigned)cv_numlaps.value)
 				{
-					if (P_IsLocalPlayer(player))
+					if (P_IsDisplayPlayer(player))
 						S_StartSound(NULL, sfx_s3k6a);
 					else if (player->kartstuff[k_position] == 1)
 						S_StartSound(NULL, sfx_s253);
@@ -5659,6 +5659,45 @@ static void P_RunLevelLoadExecutors(void)
 	}
 }
 
+/** Before things are loaded, initialises certain stuff in case they're needed
+  * by P_ResetDynamicSlopes or P_LoadThings. This was split off from
+  * P_SpawnSpecials, in case you couldn't tell.
+  *
+  * \sa P_SpawnSpecials, P_InitTagLists
+  * \author Monster Iestyn
+  */
+void P_InitSpecials(void)
+{
+	// Set the default gravity. Custom gravity overrides this setting.
+	gravity = (FRACUNIT*8)/10;
+
+	// Defaults in case levels don't have them set.
+	sstimer = 90*TICRATE + 6;
+	totalrings = 1;
+
+	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
+
+	// Set curWeather
+	switch (mapheaderinfo[gamemap-1]->weather)
+	{
+		case PRECIP_SNOW: // snow
+		case PRECIP_RAIN: // rain
+		case PRECIP_STORM: // storm
+		case PRECIP_STORM_NORAIN: // storm w/o rain
+		case PRECIP_STORM_NOSTRIKES: // storm w/o lightning
+			curWeather = mapheaderinfo[gamemap-1]->weather;
+			break;
+		default: // blank/none
+			curWeather = PRECIP_NONE;
+			break;
+	}
+
+	// Set globalweather
+	globalweather = mapheaderinfo[gamemap-1]->weather;
+
+	P_InitTagLists();   // Create xref tables for tags
+}
+
 /** After the map has loaded, scans for specials that spawn 3Dfloors and
   * thinkers.
   *
@@ -5679,15 +5718,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 	// This used to be used, and *should* be used in the future,
 	// but currently isn't.
 	(void)fromnetsave;
-
-	// Set the default gravity. Custom gravity overrides this setting.
-	gravity = (FRACUNIT*8)/10;
-
-	// Defaults in case levels don't have them set.
-	sstimer = 90*TICRATE + 6;
-	totalrings = 1;
-
-	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
 	// Init special SECTORs.
 	sector = sectors;
@@ -5737,20 +5767,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		}
 	}
 
-	if (mapheaderinfo[gamemap-1]->weather == 2) // snow
-		curWeather = PRECIP_SNOW;
-	else if (mapheaderinfo[gamemap-1]->weather == 3) // rain
-		curWeather = PRECIP_RAIN;
-	else if (mapheaderinfo[gamemap-1]->weather == 1) // storm
-		curWeather = PRECIP_STORM;
-	else if (mapheaderinfo[gamemap-1]->weather == 5) // storm w/o rain
-		curWeather = PRECIP_STORM_NORAIN;
-	else if (mapheaderinfo[gamemap-1]->weather == 6) // storm w/o lightning
-		curWeather = PRECIP_STORM_NOSTRIKES;
-	else
-		curWeather = PRECIP_NONE;
-
-	P_InitTagLists();   // Create xref tables for tags
 	P_SearchForDisableLinedefs(); // Disable linedefs are now allowed to disable *any* line
 
 	P_SpawnScrollers(); // Add generalized scrollers
@@ -7340,9 +7356,7 @@ void T_Friction(friction_t *f)
 		// apparently, all I had to do was comment out part of the next line and
 		// friction works for all mobj's
 		// (or at least MF_PUSHABLEs, which is all I care about anyway)
-		if ((!(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)) && thing->z == thing->floorz) && (thing->player
-			&& (thing->player->kartstuff[k_invincibilitytimer] == 0 && thing->player->kartstuff[k_hyudorotimer] == 0
-			&& thing->player->kartstuff[k_sneakertimer] == 0 && thing->player->kartstuff[k_growshrinktimer] <= 0)))
+		if (!(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)) && thing->z == thing->floorz)
 		{
 			if (f->roverfriction)
 			{

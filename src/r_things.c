@@ -42,8 +42,6 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 CV_PossibleValue_t Forceskin_cons_t[MAXSKINS+2];
 
-static void R_InitSkins(void);
-
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
 
@@ -585,7 +583,17 @@ void R_InitSprites(void)
 	//
 
 	// it can be is do before loading config for skin cvar possible value
-	R_InitSkins();
+	// (... what the fuck did you just say to me? "it can be is do"?)
+#ifdef SKINVALUES
+	for (i = 0; i <= MAXSKINS; i++)
+	{
+		skin_cons_t[i].value = 0;
+		skin_cons_t[i].strvalue = NULL;
+	}
+#endif
+
+	numskins = 0;
+
 	for (i = 0; i < numwadfiles; i++)
 		R_AddSkins((UINT16)i);
 
@@ -820,7 +828,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 	colfunc = basecolfunc; // hack: this isn't resetting properly somewhere.
 	dc_colormap = vis->colormap;
-	if ((vis->mobj->flags & MF_BOSS) && (vis->mobj->flags2 & MF2_FRET) && (leveltime & 1)) // Bosses "flash"
+	if (!(vis->cut & SC_PRECIP) && (vis->mobj->flags & MF_BOSS) && (vis->mobj->flags2 & MF2_FRET) && (leveltime & 1)) // Bosses "flash"
 	{
 		// translate certain pixels to white
 		colfunc = transcolfunc;
@@ -891,18 +899,18 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	frac = vis->startfrac;
 	windowtop = windowbottom = sprbotscreen = INT32_MAX;
 
-	if (vis->mobj->skin && ((skin_t *)vis->mobj->skin)->flags & SF_HIRES)
+	if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && ((skin_t *)vis->mobj->skin)->flags & SF_HIRES)
 		this_scale = FixedMul(this_scale, ((skin_t *)vis->mobj->skin)->highresscale);
 	if (this_scale <= 0)
 		this_scale = 1;
 	if (this_scale != FRACUNIT)
 	{
-		if (!vis->isScaled)
+		if (!(vis->cut & SC_ISSCALED))
 		{
 			vis->scale = FixedMul(vis->scale, this_scale);
 			vis->scalestep = FixedMul(vis->scalestep, this_scale);
 			vis->xiscale = FixedDiv(vis->xiscale,this_scale);
-			vis->isScaled = true;
+			vis->cut |= SC_ISSCALED;
 		}
 		dc_texturemid = FixedDiv(dc_texturemid,this_scale);
 	}
@@ -955,7 +963,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 #else
 		column = (column_t *)((UINT8 *)patch + LONG(patch->columnofs[frac>>FRACBITS]));
 #endif
-		if (vis->vflip)
+		if (vis->cut & SC_VFLIP)
 			R_DrawFlippedMaskedColumn(column, patch->height);
 		else
 			R_DrawMaskedColumn(column);
@@ -1035,7 +1043,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 //
 // R_SplitSprite
 // runs through a sector's lightlist and
-static void R_SplitSprite(vissprite_t *sprite, mobj_t *thing)
+static void R_SplitSprite(vissprite_t *sprite)
 {
 	INT32 i, lightnum, lindex;
 	INT16 cutfrac;
@@ -1070,6 +1078,8 @@ static void R_SplitSprite(vissprite_t *sprite, mobj_t *thing)
 		// Found a split! Make a new sprite, copy the old sprite to it, and
 		// adjust the heights.
 		newsprite = M_Memcpy(R_NewVisSprite(), sprite, sizeof (vissprite_t));
+
+		newsprite->cut |= (sprite->cut & SC_FLAGMASK);
 
 		sprite->cut |= SC_BOTTOM;
 		sprite->gz = testheight;
@@ -1110,13 +1120,17 @@ static void R_SplitSprite(vissprite_t *sprite, mobj_t *thing)
 				;
 			else
 */
-			if (!((thing->frame & (FF_FULLBRIGHT|FF_TRANSMASK) || thing->flags2 & MF2_SHADOW)
+			if (!((newsprite->cut & SC_FULLBRIGHT)
 				&& (!newsprite->extra_colormap || !(newsprite->extra_colormap->fog & 1))))
 			{
 				lindex = FixedMul(sprite->xscale, FixedDiv(640, vid.width))>>(LIGHTSCALESHIFT);
 
 				if (lindex >= MAXLIGHTSCALE)
 					lindex = MAXLIGHTSCALE-1;
+
+				if (newsprite->cut & SC_SEMIBRIGHT)
+					lindex = (MAXLIGHTSCALE/2) + (lindex >> 1);
+
 				newsprite->colormap = spritelights[lindex];
 			}
 		}
@@ -1144,6 +1158,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	size_t rot;
 	UINT8 flip;
+	boolean vflip = (!(thing->eflags & MFE_VERTICALFLIP) != !(thing->frame & FF_VERTICALFLIP));
 
 	INT32 lindex;
 
@@ -1349,7 +1364,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 
 	//SoM: 3/17/2000: Disregard sprites that are out of view..
-	if (thing->eflags & MFE_VERTICALFLIP)
+	if (vflip)
 	{
 		// When vertical flipped, draw sprites from the top down, at least as far as offsets are concerned.
 		// sprite height - sprite topoffset is the proper inverse of the vertical offset, of course.
@@ -1491,7 +1506,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	else if (thing->frame & FF_TRANSMASK)
 		vis->transmap = transtables + (thing->frame & FF_TRANSMASK) - 0x10000;
 
-	if (((thing->frame & FF_FULLBRIGHT) || (thing->flags2 & MF2_SHADOW))
+	if (thing->frame & FF_FULLBRIGHT || thing->flags2 & MF2_SHADOW)
+		vis->cut |= SC_FULLBRIGHT;
+	else if (thing->frame & FF_SEMIBRIGHT)
+		vis->cut |= SC_SEMIBRIGHT;
+
+	if (vis->cut & SC_FULLBRIGHT
 		&& (!vis->extra_colormap || !(vis->extra_colormap->fog & 1)))
 	{
 		// full bright: goggles
@@ -1505,20 +1525,17 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (lindex >= MAXLIGHTSCALE)
 			lindex = MAXLIGHTSCALE-1;
 
+		if (vis->cut & SC_SEMIBRIGHT)
+			lindex = (MAXLIGHTSCALE/2) + (lindex >> 1);
+
 		vis->colormap = spritelights[lindex];
 	}
 
-	vis->precip = false;
-
-	if (thing->eflags & MFE_VERTICALFLIP)
-		vis->vflip = true;
-	else
-		vis->vflip = false;
-
-	vis->isScaled = false;
+	if (vflip)
+		vis->cut |= SC_VFLIP;
 
 	if (thing->subsector->sector->numlights)
-		R_SplitSprite(vis, thing);
+		R_SplitSprite(vis);
 
 	// Debug
 	++objectsdrawn;
@@ -1690,15 +1707,12 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 		vis->transmap = NULL;
 
 	vis->mobjflags = 0;
-	vis->cut = SC_NONE;
+	vis->cut = SC_PRECIP;
 	vis->extra_colormap = thing->subsector->sector->extra_colormap;
 	vis->heightsec = thing->subsector->sector->heightsec;
 
 	// Fullbright
 	vis->colormap = colormaps;
-	vis->precip = true;
-	vis->vflip = false;
-	vis->isScaled = false;
 }
 
 // R_AddSprites
@@ -2484,7 +2498,7 @@ void R_DrawMasked(void)
 			next = r2->prev;
 
 			// Tails 08-18-2002
-			if (r2->sprite->precip == true)
+			if (r2->sprite->cut & SC_PRECIP)
 				R_DrawPrecipitationSprite(r2->sprite);
 			else
 				R_DrawSprite(r2->sprite);
@@ -2531,7 +2545,7 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	strncpy(skin->facewant, "PLAYWANT", 9);
 	strncpy(skin->facemmap, "PLAYMMAP", 9);
 
-	skin->starttranscolor = 160;
+	skin->starttranscolor = 96;
 	skin->prefcolor = SKINCOLOR_GREEN;
 
 	// SRB2kart
@@ -2544,61 +2558,6 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	for (i = 0; i < sfx_skinsoundslot0; i++)
 		if (S_sfx[i].skinsound != -1)
 			skin->soundsid[S_sfx[i].skinsound] = i;
-}
-
-//
-// Initialize the basic skins
-//
-void R_InitSkins(void)
-{
-	skin_t *skin;
-#ifdef SKINVALUES
-	INT32 i;
-
-	for (i = 0; i <= MAXSKINS; i++)
-	{
-		skin_cons_t[i].value = 0;
-		skin_cons_t[i].strvalue = NULL;
-	}
-#endif
-
-	// skin[0] = Sonic skin
-	skin = &skins[0];
-	numskins = 1;
-	Sk_SetDefaultValue(skin);
-
-	// Hardcoded S_SKIN customizations for Sonic.
-	strcpy(skin->name,       DEFAULTSKIN);
-#ifdef SKINVALUES
-	skin_cons_t[0].strvalue = skins[0].name;
-#endif
-	skin->flags = 0;
-	strcpy(skin->realname,   "Sonic");
-	strcpy(skin->hudname,    "SONIC");
-
-	strncpy(skin->facerank, "PLAYRANK", 9);
-	strncpy(skin->facewant, "PLAYWANT", 9);
-	strncpy(skin->facemmap, "PLAYMMAP", 9);
-	skin->prefcolor = SKINCOLOR_BLUE;
-
-	// SRB2kart
-	skin->kartspeed = 8;
-	skin->kartweight = 2;
-	//
-
-	skin->spritedef.numframes = sprites[SPR_PLAY].numframes;
-	skin->spritedef.spriteframes = sprites[SPR_PLAY].spriteframes;
-	ST_LoadFaceGraphics(skin->facerank, skin->facewant, skin->facemmap, 0);
-
-	// Set values for Sonic skin
-	Forceskin_cons_t[1].value = 0;
-	Forceskin_cons_t[1].strvalue = skin->name;
-
-	//MD2 for sonic doesn't want to load in Linux.
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-		HWR_AddPlayerMD2(0);
-#endif
 }
 
 // returns true if the skin name is found (loaded from pwad)
