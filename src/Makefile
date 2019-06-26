@@ -487,6 +487,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/am_map.o   \
 		$(OBJDIR)/command.o  \
 		$(OBJDIR)/console.o  \
+		$(OBJDIR)/font.o     \
 		$(OBJDIR)/hu_stuff.o \
 		$(OBJDIR)/y_inter.o  \
 		$(OBJDIR)/st_stuff.o \
@@ -788,7 +789,7 @@ $(OBJDIR)/v_video.o: v_video.c doomdef.h doomtype.h g_state.h m_swap.h r_local.h
   tables.h m_fixed.h screen.h command.h m_bbox.h r_main.h d_player.h \
   p_pspr.h info.h d_think.h sounds.h p_mobj.h doomdata.h d_ticcmd.h \
   r_data.h r_defs.h r_state.h r_bsp.h r_segs.h r_plane.h r_sky.h \
-  r_things.h r_draw.h v_video.h hu_stuff.h d_event.h w_wad.h console.h \
+  r_things.h r_draw.h v_video.h font.h hu_stuff.h d_event.h w_wad.h console.h \
   i_video.h z_zone.h doomstat.h d_clisrv.h d_netcmd.h
 	$(CC) $(CFLAGS) -fno-omit-frame-pointer $(WFLAGS) -c $< -o $@
 endif

@@ -18,6 +18,7 @@ set(SRB2_CORE_SOURCES
 	filesrch.c
 	g_game.c
 	g_input.c
+	font.c
 	hu_stuff.c
 	i_tcp.c
 	info.c
@@ -74,6 +75,7 @@ set(SRB2_CORE_HEADERS
 	g_game.h
 	g_input.h
 	g_state.h
+	font.h
 	hu_stuff.h
 	i_joy.h
 	i_net.h
