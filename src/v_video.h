@@ -173,6 +173,17 @@ void V_DrawLevelTitle(INT32 x, INT32 y, INT32 option, const char *string);
 // wordwrap a string using the hu_font
 char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string);
 
+// draw a string using a font
+void V_DrawStringScaled(
+		fixed_t     x,
+		fixed_t     y,
+		fixed_t           scale,
+		fixed_t     space_scale,
+		fixed_t  linefeed_scale,
+		INT32       flags,
+		int         font,
+		const char *text);
+
 // draw a string using the hu_font
 void V_DrawString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawKartString(INT32 x, INT32 y, INT32 option, const char *string);	// SRB2kart
