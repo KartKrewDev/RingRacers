@@ -161,6 +161,12 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength);
 
 void V_DrawFadeConsBack(INT32 plines);
 
+/* Convenience macros for leagacy string function macros. */
+#define V__DrawOneScaleString( x,y,scale,option,font,string ) \
+	V_DrawStringScaled(x,y,scale,FRACUNIT,FRACUNIT,option,font,string)
+#define V__DrawDupxString( x,y,scale,option,font,string )\
+	V__DrawOneScaleString ((x)<<FRACBITS,(y)<<FRACBITS,scale,option,font,string)
+
 // draw a single character
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);
 // draw a single character, but for the chat
@@ -168,7 +174,8 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UI
 
 UINT8 *V_GetStringColormap(INT32 colorflags);
 
-void V_DrawLevelTitle(INT32 x, INT32 y, INT32 option, const char *string);
+#define V_DrawLevelTitle( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,LT_FONT,string)
 
 // wordwrap a string using the hu_font
 char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string);
@@ -185,21 +192,26 @@ void V_DrawStringScaled(
 		const char *text);
 
 // draw a string using the hu_font
-void V_DrawString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawKartString(INT32 x, INT32 y, INT32 option, const char *string);	// SRB2kart
+#define V_DrawString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,HU_FONT,string)
+#define V_DrawKartString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,KART_FONT,string)
 void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the hu_font, 0.5x scale
-void V_DrawSmallString(INT32 x, INT32 y, INT32 option, const char *string);
+#define V_DrawSmallString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT>>1,option,HU_FONT,string)
 void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the tny_font
-void V_DrawThinString(INT32 x, INT32 y, INT32 option, const char *string);
+#define V_DrawThinString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,TINY_FONT,string)
 void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *string);
 
-void V_DrawStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+#define V_DrawStringAtFixed( x,y,option,string ) \
+	V__DrawOneScaleString (x,y,FRACUNIT,option,HU_FONT,string)
 
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
@@ -213,7 +225,8 @@ void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colorm
 INT32 V_LevelNameWidth(const char *string);
 INT32 V_LevelNameHeight(const char *string);
 
-void V_DrawCreditString(fixed_t x, fixed_t y, INT32 option, const char *string);
+#define V_DrawCreditString( x,y,option,string ) \
+	V__DrawOneScaleString (x,y,FRACUNIT,option,CRED_FONT,string)
 INT32 V_CreditStringWidth(const char *string);
 
 // Find string width from hu_font chars
