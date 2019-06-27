@@ -1661,6 +1661,12 @@ void V_DrawStringScaled(
 					spacew = 6;
 			}
 			break;
+		case LT_FONT:
+			spacew = 12;
+			break;
+		case CRED_FONT:
+			spacew = 16;
+			break;
 	}
 	switch (fontno)
 	{
