@@ -5673,20 +5673,19 @@ static void K_KartDrift(player_t *player, boolean onground)
 }
 
 /*--------------------------------------------------
-	static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
+	static waypoint_t *K_GetPlayerClosestWaypoint(player_t *player)
 
-		Gets the next waypoint of a player, by finding their closest waypoint, then checking which of itself and next or
-		previous waypoints are infront of the player.
+		Gets the closest waypoint of a player.
 
 	Input Arguments:-
-		player - The player the next waypoint is being found for
+		player - The player the closest waypoint is being found for
 
 	Return:-
-		The waypoint that is the player's next waypoint
+		The waypoint that is the player's closest waypoint
 --------------------------------------------------*/
-static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
+static waypoint_t *K_GetPlayerClosestWaypoint(player_t *player)
 {
-	waypoint_t *bestwaypoint = NULL;
+	waypoint_t *closestwaypoint = NULL;
 	if ((player != NULL) && (player->mo != NULL))
 	{
 		mobj_t *wpmobj;
@@ -5709,23 +5708,62 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		}
 
 		waypoint = K_SearchWaypointGraphForMobj(closestwpmobj);
+		closestwaypoint = waypoint;
+	}
+
+	return closestwaypoint;
+}
+
+/*--------------------------------------------------
+	static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
+
+		Gets the next waypoint of a player, by finding their closest waypoint, then checking which of itself and next or
+		previous waypoints are infront of the player.
+
+	Input Arguments:-
+		player - The player the next waypoint is being found for
+
+	Return:-
+		The waypoint that is the player's next waypoint
+--------------------------------------------------*/
+static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
+{
+	waypoint_t *bestwaypoint = NULL;
+	if ((player != NULL) && (player->mo != NULL))
+	{
+		waypoint_t *waypoint = NULL;
+
+		waypoint = K_GetPlayerClosestWaypoint(player);
 		bestwaypoint = waypoint;
 
 		// check the waypoint's location in relation to the player
 		// If it's generally in front, it's fine, otherwise, use the best next/previous waypoint.
+		// EXCEPTION: If our closest waypoint is the finishline AND we're facing towards it, don't do this.
+		// Otherwise it breaks the distance calculations.
 		if (waypoint != NULL)
 		{
-			angle_t playerangle = player->mo->angle;
+			boolean finishlinehack  = false;
+			angle_t playerangle     = player->mo->angle;
 			angle_t angletowaypoint =
 				R_PointToAngle2(player->mo->x, player->mo->y, waypoint->mobj->x, waypoint->mobj->y);
-			angle_t angledelta = playerangle - angletowaypoint;
+			angle_t angledelta      = playerangle - angletowaypoint;
+
 
 			if (angledelta > ANGLE_180)
 			{
-				angledelta = InvAngle(angletowaypoint);
+				angledelta = InvAngle(angledelta);
 			}
 
-			if (angledelta > ANGLE_90)
+			if (bestwaypoint == K_GetFinishLineWaypoint())
+			{
+				// facing towards the finishline
+				if (angledelta <= ANGLE_90)
+				{
+					finishlinehack = true;
+				}
+			}
+
+			if ((angledelta > ANGLE_45) && (finishlinehack == false))
 			{
 				angle_t nextbestdelta = angledelta;
 				size_t i = 0U;
@@ -5780,8 +5818,69 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 	return bestwaypoint;
 }
 
+static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_t *const player)
+{
+	boolean nextiscloser = true;
+
+	if ((waypoint != NULL) && (player != NULL) && (player->mo != NULL))
+	{
+		size_t     i                   = 0U;
+		waypoint_t *currentwpcheck     = NULL;
+		angle_t    angletoplayer       = ANGLE_MAX;
+		angle_t    currentanglecheck   = ANGLE_MAX;
+		angle_t    bestangle           = ANGLE_MAX;
+
+		angletoplayer = R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y,
+			player->mo->x, player->mo->y);
+
+		for (i = 0U; i < waypoint->numnextwaypoints; i++)
+		{
+			currentwpcheck = waypoint->nextwaypoints[i];
+			currentanglecheck = R_PointToAngle2(
+				waypoint->mobj->x, waypoint->mobj->y, currentwpcheck->mobj->x, currentwpcheck->mobj->y);
+
+			// Get delta angle
+			currentanglecheck = currentanglecheck - angletoplayer;
+
+			if (currentanglecheck > ANGLE_180)
+			{
+				currentanglecheck = InvAngle(currentanglecheck);
+			}
+
+			if (currentanglecheck < bestangle)
+			{
+				bestangle = currentanglecheck;
+			}
+		}
+
+		for (i = 0U; i < waypoint->numprevwaypoints; i++)
+		{
+			currentwpcheck = waypoint->prevwaypoints[i];
+			currentanglecheck = R_PointToAngle2(
+				waypoint->mobj->x, waypoint->mobj->y, currentwpcheck->mobj->x, currentwpcheck->mobj->y);
+
+			// Get delta angle
+			currentanglecheck = currentanglecheck - angletoplayer;
+
+			if (currentanglecheck > ANGLE_180)
+			{
+				currentanglecheck = InvAngle(currentanglecheck);
+			}
+
+			if (currentanglecheck < bestangle)
+			{
+				bestangle = currentanglecheck;
+				nextiscloser = false;
+				break;
+			}
+		}
+	}
+
+	return nextiscloser;
+}
+
 /*--------------------------------------------------
-	static void K_UpdateDistanceFromFinishLine(player_t *player)
+	static void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 		Updates the distance a player has to the finish line.
 
@@ -5791,40 +5890,70 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_UpdateDistanceFromFinishLine(player_t *player)
+static void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
 	if ((player != NULL) && (player->mo != NULL))
 	{
-		waypoint_t *finishline = K_GetFinishLineWaypoint();
-		player->nextwaypoint = K_GetPlayerNextWaypoint(player);
-
-		// bestwaypoint is now the waypoint that is in front of us
-		if ((player->nextwaypoint != NULL) && (finishline != NULL))
+		if (player->exiting)
 		{
-			const boolean useshortcuts = false;
-			const boolean huntbackwards = false;
-			boolean pathfindsuccess = false;
-			path_t pathtofinish = {};
+			player->nextwaypoint     = K_GetFinishLineWaypoint();
+			player->distancetofinish = 0U;
+		}
+		else
+		{
+			waypoint_t *finishline = K_GetFinishLineWaypoint();
+			player->nextwaypoint   = K_GetPlayerNextWaypoint(player);
 
-			pathfindsuccess =
-				K_PathfindToWaypoint(player->nextwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
-
-			// Update the player's distance to the finish line if a path was found.
-			// Using shortcuts won't find a path, so the distance won't be updated until the player gets back on track
-			if (pathfindsuccess == true)
+			// nextwaypoint is now the waypoint that is in front of us
+			if ((player->nextwaypoint != NULL) && (finishline != NULL))
 			{
-				// Add euclidean distance to the next waypoint to the distancetofinish
-				UINT32 adddist;
-				fixed_t disttowaypoint =
-					P_AproxDistance(
-						player->mo->x - player->nextwaypoint->mobj->x,
-						player->mo->y - player->nextwaypoint->mobj->y);
-				disttowaypoint = P_AproxDistance(disttowaypoint, player->mo->z - player->nextwaypoint->mobj->z);
+				const boolean useshortcuts = false;
+				const boolean huntbackwards = false;
+				boolean pathfindsuccess = false;
+				path_t pathtofinish = {};
 
-				adddist = ((UINT32)disttowaypoint) >> FRACBITS;
+				pathfindsuccess =
+					K_PathfindToWaypoint(player->nextwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
 
-				player->distancetofinish = pathtofinish.totaldist + adddist;
-				Z_Free(pathtofinish.array);
+				// Update the player's distance to the finish line if a path was found.
+				// Using shortcuts won't find a path, so distance won't be updated until the player gets back on track
+				if (pathfindsuccess == true)
+				{
+					// Add euclidean distance to the next waypoint to the distancetofinish
+					UINT32 adddist;
+					fixed_t disttowaypoint =
+						P_AproxDistance(
+							player->mo->x - player->nextwaypoint->mobj->x,
+							player->mo->y - player->nextwaypoint->mobj->y);
+					disttowaypoint = P_AproxDistance(disttowaypoint, player->mo->z - player->nextwaypoint->mobj->z);
+
+					adddist = ((UINT32)disttowaypoint) >> FRACBITS;
+
+					player->distancetofinish = pathtofinish.totaldist + adddist;
+					Z_Free(pathtofinish.array);
+
+					// distancetofinish is currently a flat distance to the finish line, but in order to be fully
+					// correct we need to add to it the length of the entire circuit multiplied by the number of laps
+					// left after this one. This will give us the total distance to the finish line, and allow item
+					// distance calculation to work easily
+					if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
+					{
+						const UINT8 numfulllapsleft = ((UINT8)cv_numlaps.value - player->laps);
+
+						player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
+
+						// An additional HACK, to fix looking backwards towards the finish line
+						// If the player's next waypoint is the finishline and the angle distance from player to
+						// connectin waypoints implies they're closer to a next waypoint, add a full track distance
+						if (player->nextwaypoint == finishline)
+						{
+							if (K_PlayerCloserToNextWaypoints(player->nextwaypoint, player) == true)
+							{
+								player->distancetofinish += K_GetCircuitLength();
+							}
+						}
+					}
+				}
 			}
 		}
 	}

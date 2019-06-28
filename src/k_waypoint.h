@@ -110,6 +110,19 @@ INT32 K_GetWaypointID(waypoint_t *waypoint);
 
 
 /*--------------------------------------------------
+	UINT32 K_GetCircuitLength(void)
+
+		Returns the circuit length, 0 on sprint maps.
+
+	Input Arguments:-
+
+	Return:-
+		The circuit length.
+--------------------------------------------------*/
+UINT32 K_GetCircuitLength(void);
+
+
+/*--------------------------------------------------
 	boolean K_PathfindToWaypoint(
 		waypoint_t *const sourcewaypoint,
 		waypoint_t *const destinationwaypoint,

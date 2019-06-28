@@ -4,6 +4,7 @@
 #include "p_local.h"
 #include "p_tick.h"
 #include "z_zone.h"
+#include "g_game.h"
 
 // The number of sparkles per waypoint connection in the waypoint visualisation
 static const UINT32 SPARKLES_PER_CONNECTION = 16U;
@@ -17,6 +18,8 @@ static const size_t NODESARRAY_BASE_SIZE = 256U;
 static waypoint_t *waypointheap = NULL;
 static waypoint_t *firstwaypoint = NULL;
 static waypoint_t *finishline    = NULL;
+
+static UINT32 circuitlength = 0U;
 
 static size_t numwaypoints       = 0U;
 static size_t numwaypointmobjs   = 0U;
@@ -160,6 +163,15 @@ INT32 K_GetWaypointID(waypoint_t *waypoint)
 	return waypointid;
 }
 
+/*--------------------------------------------------
+	UINT32 K_GetCircuitLength(void)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT32 K_GetCircuitLength(void)
+{
+	return circuitlength;
+}
 
 /*--------------------------------------------------
 	size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
@@ -305,6 +317,10 @@ void K_DebugWaypointsVisualise(void)
 			else if (waypoint->numnextwaypoints == 0 || waypoint->numprevwaypoints == 0)
 			{
 				debugmobj->color = SKINCOLOR_ORANGE;
+			}
+			else if (waypoint == players[displayplayers[0]].nextwaypoint)
+			{
+				debugmobj->color = SKINCOLOR_YELLOW;
 			}
 			else
 			{
@@ -1268,6 +1284,56 @@ waypoint_t *K_SearchWaypointHeapForMobj(mobj_t *const mobj)
 }
 
 /*--------------------------------------------------
+	static UINT32 K_SetupCircuitLength(void)
+
+		Sets up the Circuit Length by getting the best path from the finishwaypoint back to itself.
+		On sprint maps, circuitlength is 0.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		Length of the circuit
+--------------------------------------------------*/
+static UINT32 K_SetupCircuitLength(void)
+{
+	if ((firstwaypoint == NULL) || (numwaypoints == 0U))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "K_SetupCircuitLength called with no waypoints.\n");
+	}
+	else if (finishline == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "K_SetupCircuitLength called with no finishline waypoint.\n");
+	}
+	else
+	{
+		// The circuit length only makes sense in circuit maps, sprint maps do not need to use it
+		// The main usage of the circuit length is to add onto a player's distance to finish line so crossing the finish
+		// line places people correctly relative to each other
+		if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE)
+		{
+			circuitlength = 0U;
+		}
+		else
+		{
+			// Create a fake finishline waypoint, then try and pathfind to the finishline from it
+			waypoint_t    fakefinishline  = *finishline;
+			path_t        bestcircuitpath = {};
+			const boolean useshortcuts    = false;
+			const boolean huntbackwards   = false;
+
+			K_PathfindToWaypoint(&fakefinishline, finishline, &bestcircuitpath, useshortcuts, huntbackwards);
+
+			circuitlength = bestcircuitpath.totaldist;
+
+			Z_Free(bestcircuitpath.array);
+		}
+	}
+
+	return circuitlength;
+}
+
+/*--------------------------------------------------
 	static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const prevwaypoint)
 
 		Adds another waypoint to a waypoint's previous waypoint list, this needs to be done like this because there is no
@@ -1616,6 +1682,9 @@ boolean K_SetupWaypointList(void)
 						K_GetWaypointID(firstwaypoint));
 					finishline = firstwaypoint;
 				}
+
+				(void)K_SetupCircuitLength();
+
 				setupsuccessful = true;
 			}
 		}
@@ -1634,6 +1703,7 @@ void K_ClearWaypoints(void)
 	waypointheap     = NULL;
 	firstwaypoint    = NULL;
 	finishline       = NULL;
-	numwaypoints     = 0;
-	numwaypointmobjs = 0;
+	numwaypoints     = 0U;
+	numwaypointmobjs = 0U;
+	circuitlength    = 0U;
 }
