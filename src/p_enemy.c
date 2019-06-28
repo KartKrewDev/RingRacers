@@ -24,6 +24,7 @@
 #include "i_video.h"
 #include "lua_hook.h"
 #include "k_kart.h" // SRB2kart
+#include "k_waypoint.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -8387,6 +8388,20 @@ void A_JawzExplode(mobj_t *actor)
 	return;
 }
 
+static void SpawnSPBTrailRings(mobj_t *actor)
+{
+	if (actor != NULL)
+	{
+		if (leveltime % 6 == 0)
+		{
+			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
+				actor->z - actor->momz + (24*mapobjectscale), MT_RING);
+			ring->threshold = 10;
+			ring->fuse = 120*TICRATE;
+		}
+	}
+}
+
 void A_SPBChase(mobj_t *actor)
 {
 	player_t *player = NULL;
@@ -8543,13 +8558,7 @@ void A_SPBChase(mobj_t *actor)
 			actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
 			// Spawn a trail of rings behind the SPB!
-			if (leveltime % 6 == 0)
-			{
-				mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
-					actor->z - actor->momz + (24*mapobjectscale), MT_RING);
-				ring->threshold = 10;
-				ring->fuse = 120*TICRATE;
-			}
+			SpawnSPBTrailRings(actor);
 
 			// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
 			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
@@ -8610,6 +8619,8 @@ void A_SPBChase(mobj_t *actor)
 	}
 	else // MODE: SEEKING
 	{
+		waypoint_t *closestwaypoint = NULL;
+		waypoint_t *nextwaypoint    = NULL;
 		actor->lastlook = -1; // Just make sure this is reset
 
 		if (!player || !player->mo || player->mo->health <= 0 || player->kartstuff[k_respawn])
@@ -8623,16 +8634,43 @@ void A_SPBChase(mobj_t *actor)
 
 		// Found someone, now get close enough to initiate the slaughter...
 
-		// don't hurt players that have nothing to do with this:
-		actor->flags |= MF_NOCLIPTHING;
+		// Seeking SPB can now hurt people
+		actor->flags &=  ~MF_NOCLIPTHING;
 
 		P_SetTarget(&actor->tracer, player->mo);
 		spbplace = bestrank;
 
 		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
 
-		hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
-		vang = R_PointToAngle2(0, actor->z, dist, actor->tracer->z);
+		closestwaypoint = K_GetClosestWaypointToMobj(actor);
+		if (closestwaypoint != NULL)
+		{
+			const boolean huntbackwards = false;
+			boolean       useshortcuts  = false;
+
+			// If the player is on a shortcut, use shortcuts. No escape.
+			if (K_GetWaypointIsShortcut(player->nextwaypoint))
+			{
+				useshortcuts = true;
+			}
+
+			nextwaypoint = K_GetNextWaypointToDestination(
+				closestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
+		}
+
+		if (nextwaypoint != NULL)
+		{
+			const fixed_t xywaypointdist = P_AproxDistance(
+				actor->x - nextwaypoint->mobj->x, actor->y - nextwaypoint->mobj->y);
+			hang = R_PointToAngle2(actor->x, actor->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
+			vang = R_PointToAngle2(0, actor->z, xywaypointdist, nextwaypoint->mobj->z);
+		}
+		else
+		{
+			// continue straight ahead... Shouldn't happen.
+			hang = actor->angle;
+			vang = 0U;
+		}
 
 		{
 			// Smoothly rotate horz angle
@@ -8669,6 +8707,9 @@ void A_SPBChase(mobj_t *actor)
 		actor->momx = FixedMul(FixedMul(xyspeed, FINECOSINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
+
+		// Spawn a trail of rings behind the SPB!
+		SpawnSPBTrailRings(actor);
 
 		if (dist <= (3072*actor->tracer->scale)) // Close enough to target?
 		{

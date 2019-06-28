@@ -174,6 +174,43 @@ UINT32 K_GetCircuitLength(void)
 }
 
 /*--------------------------------------------------
+	waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
+{
+	waypoint_t *closestwaypoint = NULL;
+
+	if ((mobj == NULL) || P_MobjWasRemoved(mobj))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_GetClosestWaypointToMobj.\n");
+	}
+	else
+	{
+		size_t     i              = 0U;
+		waypoint_t *checkwaypoint = NULL;
+		fixed_t    closestdist    = INT32_MAX;
+		fixed_t    checkdist      = INT32_MAX;
+
+		for (i = 0; i < numwaypoints; i++)
+		{
+			checkwaypoint = &waypointheap[i];
+			checkdist = P_AproxDistance(mobj->x - checkwaypoint->mobj->x, mobj->y - checkwaypoint->mobj->y);
+			checkdist = P_AproxDistance(checkdist, mobj->z - checkwaypoint->mobj->z);
+
+			if (checkdist < closestdist)
+			{
+				closestwaypoint = checkwaypoint;
+				closestdist = checkdist;
+			}
+		}
+	}
+
+	return closestwaypoint;
+}
+
+/*--------------------------------------------------
 	size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
 
 		See header file for description.

@@ -123,6 +123,20 @@ UINT32 K_GetCircuitLength(void);
 
 
 /*--------------------------------------------------
+	waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
+
+		Returns the closest waypoint to an mobj
+
+	Input Arguments:-
+		mobj - mobj to get the closest waypoint of.
+
+	Return:-
+		The closest waypoint to the mobj
+--------------------------------------------------*/
+waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj);
+
+
+/*--------------------------------------------------
 	boolean K_PathfindToWaypoint(
 		waypoint_t *const sourcewaypoint,
 		waypoint_t *const destinationwaypoint,

@@ -5673,48 +5673,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 }
 
 /*--------------------------------------------------
-	static waypoint_t *K_GetPlayerClosestWaypoint(player_t *player)
-
-		Gets the closest waypoint of a player.
-
-	Input Arguments:-
-		player - The player the closest waypoint is being found for
-
-	Return:-
-		The waypoint that is the player's closest waypoint
---------------------------------------------------*/
-static waypoint_t *K_GetPlayerClosestWaypoint(player_t *player)
-{
-	waypoint_t *closestwaypoint = NULL;
-	if ((player != NULL) && (player->mo != NULL))
-	{
-		mobj_t *wpmobj;
-		mobj_t *closestwpmobj = NULL;
-		fixed_t wpdist = INT32_MAX;
-		fixed_t closestdist = INT32_MAX;
-		waypoint_t *waypoint = NULL;
-
-		// Find the closest waypoint mobj to the player
-		for (wpmobj = waypointcap; wpmobj; wpmobj = wpmobj->tracer)
-		{
-			wpdist = P_AproxDistance(wpmobj->x - player->mo->x, wpmobj->y - player->mo->y);
-			wpdist = P_AproxDistance(wpdist, wpmobj->z - player->mo->z);
-
-			if (wpdist < closestdist)
-			{
-				closestdist = wpdist;
-				closestwpmobj = wpmobj;
-			}
-		}
-
-		waypoint = K_SearchWaypointGraphForMobj(closestwpmobj);
-		closestwaypoint = waypoint;
-	}
-
-	return closestwaypoint;
-}
-
-/*--------------------------------------------------
 	static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 		Gets the next waypoint of a player, by finding their closest waypoint, then checking which of itself and next or
@@ -5729,11 +5687,11 @@ static waypoint_t *K_GetPlayerClosestWaypoint(player_t *player)
 static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 {
 	waypoint_t *bestwaypoint = NULL;
-	if ((player != NULL) && (player->mo != NULL))
+	if ((player != NULL) && (player->mo != NULL) && (P_MobjWasRemoved(player->mo) == false))
 	{
 		waypoint_t *waypoint = NULL;
 
-		waypoint = K_GetPlayerClosestWaypoint(player);
+		waypoint = K_GetClosestWaypointToMobj(player->mo);
 		bestwaypoint = waypoint;
 
 		// check the waypoint's location in relation to the player
