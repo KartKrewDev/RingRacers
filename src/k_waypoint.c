@@ -495,6 +495,18 @@ static UINT32 K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t
 	return finaldist;
 }
 
+/*--------------------------------------------------
+	static void **K_WaypointPathfindGetNext(void *data, size_t *numconnections)
+
+		Gets the list of next waypoints as the connecting waypoints. For pathfinding only.
+
+	Input Arguments:-
+		data           - Should point to a waypoint_t to get nextwaypoints from
+		numconnections - Should point to a size_t to return the number of next waypoints
+
+	Return:-
+		None
+--------------------------------------------------*/
 static void **K_WaypointPathfindGetNext(void *data, size_t *numconnections)
 {
 	waypoint_t **connectingwaypoints = NULL;
@@ -517,6 +529,18 @@ static void **K_WaypointPathfindGetNext(void *data, size_t *numconnections)
 	return (void**)connectingwaypoints;
 }
 
+/*--------------------------------------------------
+	static void **K_WaypointPathfindGetPrev(void *data, size_t *numconnections)
+
+		Gets the list of previous waypoints as the connecting waypoints. For pathfinding only.
+
+	Input Arguments:-
+		data           - Should point to a waypoint_t to get prevwaypoints from
+		numconnections - Should point to a size_t to return the number of previous waypoints
+
+	Return:-
+		None
+--------------------------------------------------*/
 static void **K_WaypointPathfindGetPrev(void *data, size_t *numconnections)
 {
 	waypoint_t **connectingwaypoints = NULL;
@@ -539,6 +563,17 @@ static void **K_WaypointPathfindGetPrev(void *data, size_t *numconnections)
 	return (void**)connectingwaypoints;
 }
 
+/*--------------------------------------------------
+	static UINT32 *K_WaypointPathfindGetNextCosts(void* data)
+
+		Gets the list of costs the next waypoints have. For pathfinding only.
+
+	Input Arguments:-
+		data - Should point to a waypoint_t to get nextwaypointdistances from
+
+	Return:-
+		A pointer to an array of UINT32's describing the cost of going from a waypoint to a next waypoint
+--------------------------------------------------*/
 static UINT32 *K_WaypointPathfindGetNextCosts(void* data)
 {
 	UINT32 *connectingnodecosts = NULL;
@@ -556,6 +591,17 @@ static UINT32 *K_WaypointPathfindGetNextCosts(void* data)
 	return connectingnodecosts;
 }
 
+/*--------------------------------------------------
+	static UINT32 *K_WaypointPathfindGetPrevCosts(void* data)
+
+		Gets the list of costs the previous waypoints have. For pathfinding only.
+
+	Input Arguments:-
+		data - Should point to a waypoint_t to get prevwaypointdistances from
+
+	Return:-
+		A pointer to an array of UINT32's describing the cost of going from a waypoint to a previous waypoint
+--------------------------------------------------*/
 static UINT32 *K_WaypointPathfindGetPrevCosts(void* data)
 {
 	UINT32 *connectingnodecosts = NULL;
@@ -573,6 +619,18 @@ static UINT32 *K_WaypointPathfindGetPrevCosts(void* data)
 	return connectingnodecosts;
 }
 
+/*--------------------------------------------------
+	static UINT32 K_WaypointPathfindGetHeuristic(void *data1, void *data2)
+
+		Gets the heuristic (euclidean distance) between 2 waypoints. For pathfinding only.
+
+	Input Arguments:-
+		data1 - Should point to a waypoint_t for the first waypoint
+		data2 - Should point to a waypoint_t for the second waypoint
+
+	Return:-
+		A UINT32 for the heuristic of the 2 waypoints.
+--------------------------------------------------*/
 static UINT32 K_WaypointPathfindGetHeuristic(void *data1, void *data2)
 {
 	UINT32 nodeheuristic = UINT32_MAX;
@@ -596,6 +654,18 @@ static UINT32 K_WaypointPathfindGetHeuristic(void *data1, void *data2)
 	return nodeheuristic;
 }
 
+/*--------------------------------------------------
+	static boolean K_WaypointPathfindTraversableAllEnabled(void *data)
+
+		Checks if a waypoint used as a pathfindnode is traversable. For pathfinding only.
+		Variant that accepts shortcut waypoints as traversable.
+
+	Input Arguments:-
+		data - Should point to a waypoint_t to check traversability of
+
+	Return:-
+		True if the waypoint is traversable, false otherwise.
+--------------------------------------------------*/
 static boolean K_WaypointPathfindTraversableAllEnabled(void *data)
 {
 	boolean traversable = false;
@@ -613,6 +683,18 @@ static boolean K_WaypointPathfindTraversableAllEnabled(void *data)
 	return traversable;
 }
 
+/*--------------------------------------------------
+	static boolean K_WaypointPathfindTraversableNoShortcuts(void *data)
+
+		Checks if a waypoint used as a pathfindnode is traversable. For pathfinding only.
+		Variant that does not accept shortcut waypoints as traversable.
+
+	Input Arguments:-
+		data - Should point to a waypoint_t to check traversability of
+
+	Return:-
+		True if the waypoint is traversable, false otherwise.
+--------------------------------------------------*/
 static boolean K_WaypointPathfindTraversableNoShortcuts(void *data)
 {
 	boolean traversable = false;
