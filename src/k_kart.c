@@ -5859,8 +5859,40 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 		}
 		else
 		{
-			waypoint_t *finishline = K_GetFinishLineWaypoint();
-			player->nextwaypoint   = K_GetPlayerNextWaypoint(player);
+			waypoint_t *finishline   = K_GetFinishLineWaypoint();
+			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player);
+
+			if ((nextwaypoint != player->nextwaypoint) &&
+			(K_GetWaypointIsShortcut(nextwaypoint) == false) && (K_GetWaypointIsEnabled(nextwaypoint) == true))
+			{
+				size_t     i            = 0U;
+				waypoint_t *aimwaypoint = NULL;
+				player->starpostx = nextwaypoint->mobj->x >> FRACBITS;
+				player->starposty = nextwaypoint->mobj->y >> FRACBITS;
+				player->starpostz = nextwaypoint->mobj->z >> FRACBITS;
+
+				// player gravflip determines which way to respawn
+				player->kartstuff[k_starpostflip] = player->mo->flags2 & MF2_OBJECTFLIP;
+
+				// starpostangle is to the first valid nextwaypoint for simplicity
+				// if we reach the last waypoint and it's still not valid, just use it anyway. Someone needs to fix
+				// their map!
+				for (i = 0U; i < nextwaypoint->numnextwaypoints; i++)
+				{
+					aimwaypoint = nextwaypoint->nextwaypoints[i];
+
+					if ((i == nextwaypoint->numnextwaypoints - 1U)
+					|| ((K_GetWaypointIsShortcut(aimwaypoint) == false)
+					&& (K_GetWaypointIsEnabled(aimwaypoint) == true)))
+					{
+						player->starpostangle = R_PointToAngle2(
+							nextwaypoint->mobj->x, nextwaypoint->mobj->y, aimwaypoint->mobj->x, aimwaypoint->mobj->y);
+						break;
+					}
+				}
+			}
+
+			player->nextwaypoint = nextwaypoint;
 
 			// nextwaypoint is now the waypoint that is in front of us
 			if ((player->nextwaypoint != NULL) && (finishline != NULL))

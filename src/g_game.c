@@ -3216,7 +3216,8 @@ void G_DoReborn(INT32 playernum)
 		// respawn at the start
 		mobj_t *oldmo = NULL;
 
-		if (player->starpostnum || ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) && player->laps)) // SRB2kart
+		// Now only respawn at the start if you haven't crossed it at all
+		if (player->laps) // SRB2kart
 			starpost = true;
 
 		// first dissasociate the corpse

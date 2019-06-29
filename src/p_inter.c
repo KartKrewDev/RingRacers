@@ -1484,13 +1484,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			// Save the player's time and position.
 			player->starposttime = player->realtime; //this makes race mode's timers work correctly whilst not affecting sp -x
-			//player->starposttime = leveltime;
-			player->starpostx = toucher->x>>FRACBITS;
-			player->starposty = toucher->y>>FRACBITS;
-			player->starpostz = special->z>>FRACBITS;
-			player->starpostangle = special->angle;
 			player->starpostnum = special->health;
-			player->kartstuff[k_starpostflip] = special->spawnpoint->options & MTF_OBJECTFLIP;	// store flipping
 
 			//S_StartSound(toucher, special->info->painsound);
 			return;

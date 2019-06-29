@@ -2254,23 +2254,6 @@ static void K_HandleLapIncrement(player_t *player)
 			player->starposttime = player->realtime;
 			player->starpostnum = 0;
 
-			if (mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-			{
-				// SRB2Kart 281118
-				// Save the player's time and position.
-				player->starpostx = player->mo->x>>FRACBITS;
-				player->starposty = player->mo->y>>FRACBITS;
-				player->starpostz = player->mo->floorz>>FRACBITS;
-				player->kartstuff[k_starpostflip] = player->mo->flags2 & MF2_OBJECTFLIP;	// store flipping
-				player->starpostangle = player->mo->angle; //R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy); torn; a momentum-based guess is less likely to be wrong in general, but when it IS wrong, it fucks you over entirely...
-			}
-			else
-			{
-				// SRB2kart 200117
-				// Reset starposts (checkpoints) info
-				player->starpostangle = player->starpostx = player->starposty = player->starpostz = player->kartstuff[k_starpostflip] = 0;
-			}
-
 			if (P_IsDisplayPlayer(player))
 			{
 				if (player->laps == (UINT8)(cv_numlaps.value)) // final lap
