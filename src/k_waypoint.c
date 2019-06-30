@@ -51,7 +51,7 @@ boolean K_GetWaypointIsFinishline(waypoint_t *waypoint)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointIsShortcut.\n");
 	}
-	else if (waypoint->mobj == NULL)
+	else if ((waypoint->mobj == NULL) || (P_MobjWasRemoved(waypoint->mobj) == false))
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointIsShortcut.\n");
 	}
@@ -76,7 +76,7 @@ boolean K_GetWaypointIsShortcut(waypoint_t *waypoint)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointIsShortcut.\n");
 	}
-	else if (waypoint->mobj == NULL)
+	else if ((waypoint->mobj == NULL) || (P_MobjWasRemoved(waypoint->mobj) == false))
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointIsShortcut.\n");
 	}
@@ -101,7 +101,7 @@ boolean K_GetWaypointIsEnabled(waypoint_t *waypoint)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointIsEnabled.\n");
 	}
-	else if (waypoint->mobj == NULL)
+	else if ((waypoint->mobj == NULL) || (P_MobjWasRemoved(waypoint->mobj) == false))
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointIsEnabled.\n");
 	}
@@ -111,6 +111,31 @@ boolean K_GetWaypointIsEnabled(waypoint_t *waypoint)
 	}
 
 	return waypointisenabled;
+}
+
+/*--------------------------------------------------
+	boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
+{
+	boolean waypointisspawnpoint = true;
+
+	if (waypoint == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointIsEnabled.\n");
+	}
+	else if ((waypoint->mobj == NULL) || (P_MobjWasRemoved(waypoint->mobj) == false))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointIsEnabled.\n");
+	}
+	else
+	{
+		waypointisspawnpoint = (waypoint->mobj->reactiontime == 1);
+	}
+
+	return waypointisspawnpoint;
 }
 
 /*--------------------------------------------------
@@ -126,7 +151,7 @@ INT32 K_GetWaypointNextID(waypoint_t *waypoint)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointNextID.\n");
 	}
-	else if (waypoint->mobj == NULL)
+	else if ((waypoint->mobj == NULL) || (P_MobjWasRemoved(waypoint->mobj) == false))
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointNextID.\n");
 	}
@@ -151,7 +176,7 @@ INT32 K_GetWaypointID(waypoint_t *waypoint)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointID.\n");
 	}
-	else if (waypoint->mobj == NULL)
+	else if ((waypoint->mobj == NULL) || (P_MobjWasRemoved(waypoint->mobj) == false))
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointID.\n");
 	}

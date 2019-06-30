@@ -81,6 +81,21 @@ boolean K_GetWaypointIsEnabled(waypoint_t *waypoint);
 
 
 /*--------------------------------------------------
+	boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
+
+		Returns whether the waypoint is a spawnpoint.
+
+	Input Arguments:-
+		waypoint - The waypoint to return spawnpoint status of.
+
+	Return:-
+		true if the waypoint is a spawnpoint, false if it isn't.
+--------------------------------------------------*/
+
+boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
 	INT32 K_GetWaypointNextID(waypoint_t *waypoint)
 
 		Returns the waypoint's next waypoint ID.

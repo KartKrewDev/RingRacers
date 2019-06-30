@@ -5882,8 +5882,8 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 					aimwaypoint = nextwaypoint->nextwaypoints[i];
 
 					if ((i == nextwaypoint->numnextwaypoints - 1U)
-					|| ((K_GetWaypointIsShortcut(aimwaypoint) == false)
-					&& (K_GetWaypointIsEnabled(aimwaypoint) == true)))
+					|| ((K_GetWaypointIsEnabled(aimwaypoint) == true)
+					&& (K_GetWaypointIsSpawnpoint(aimwaypoint) == true)))
 					{
 						player->starpostangle = R_PointToAngle2(
 							nextwaypoint->mobj->x, nextwaypoint->mobj->y, aimwaypoint->mobj->x, aimwaypoint->mobj->y);
