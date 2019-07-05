@@ -1937,7 +1937,7 @@ void P_XYMovement(mobj_t *mo)
 #endif
 
 	//{ SRB2kart stuff
-	if (mo->type == MT_JAWZ_DUD || mo->type == MT_JAWZ || mo->type == MT_BALLHOG || mo->type == MT_FLINGRING) //(mo->type == MT_JAWZ && !mo->tracer))
+	if (mo->type == MT_JAWZ || mo->type == MT_BALLHOG || mo->type == MT_FLINGRING) //(mo->type == MT_JAWZ && !mo->tracer))
 		return;
 
 	if (mo->player && (mo->player->kartstuff[k_spinouttimer] && !mo->player->kartstuff[k_wipeoutslow]) && mo->player->speed <= K_GetKartSpeed(mo->player, false)/2)
@@ -7937,8 +7937,15 @@ void P_MobjThinker(mobj_t *mobj)
 				fixed_t finalspeed = mobj->movefactor;
 				const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
 				fixed_t thrustamount = 0;
+				fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
 				mobj_t *ghost = P_SpawnGhostMobj(mobj);
 				ghost->colorized = true; // already has color!
+
+				if (!grounded)
+				{
+					// No friction in the air
+					frictionsafety = FRACUNIT;
+				}
 
 				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
 				if (mobj->health <= 5)
@@ -7950,22 +7957,18 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (currentspeed >= finalspeed)
 				{
-					const fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
+
 					// Thrust as if you were at top speed, slow down naturally
 					thrustamount = FixedDiv(finalspeed, frictionsafety) - finalspeed;
 				}
 				else
 				{
-					const fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
 					const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
 					// Thrust to immediately get to top speed
 					thrustamount = beatfriction + FixedDiv(finalspeed - currentspeed, frictionsafety);
 				}
 
-
 				P_Thrust(mobj, mobj->angle, thrustamount);
-
-
 
 				if (grounded)
 				{
@@ -8061,6 +8064,9 @@ void P_MobjThinker(mobj_t *mobj)
 			else
 			{
 				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+				const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
+				fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
+				fixed_t thrustamount = 0;
 
 				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
 				{
@@ -8068,8 +8074,26 @@ void P_MobjThinker(mobj_t *mobj)
 					ghost->colorized = true;
 				}
 
+				if (!grounded)
+				{
+					// No friction in the air
+					frictionsafety = FRACUNIT;
+				}
+
+				if (currentspeed >= mobj->movefactor)
+				{
+					// Thrust as if you were at top speed, slow down naturally
+					thrustamount = FixedDiv(mobj->movefactor, frictionsafety) - mobj->movefactor;
+				}
+				else
+				{
+					const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
+					// Thrust to immediately get to top speed
+					thrustamount = beatfriction + FixedDiv(mobj->movefactor - currentspeed, frictionsafety);
+				}
+
 				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
-				P_InstaThrust(mobj, mobj->angle, mobj->movefactor);
+				P_Thrust(mobj, mobj->angle, thrustamount);
 
 				if (grounded)
 				{
@@ -9459,7 +9483,8 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 		|| mobj->type == MT_LITTLETUMBLEWEED
 		|| mobj->type == MT_CANNONBALLDECOR
 		|| mobj->type == MT_FALLINGROCK
-		|| mobj->type == MT_ORBINAUT) {
+		|| mobj->type == MT_ORBINAUT
+		|| mobj->type == MT_JAWZ_DUD) {
 		P_TryMove(mobj, mobj->x, mobj->y, true); // Sets mo->standingslope correctly
 		//if (mobj->standingslope) CONS_Printf("slope physics on mobj\n");
 		P_ButteredSlope(mobj);
