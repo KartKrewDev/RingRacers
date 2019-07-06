@@ -8349,7 +8349,7 @@ void P_MobjThinker(mobj_t *mobj)
 			K_MatchGenericExtraFlags(mobj, mobj->target);
 			P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
 				mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
-				mobj->target->z + mobj->target->height);
+				mobj->target->z + mobj->target->height * P_MobjFlip(mobj));
 			break;
 		case MT_THUNDERSHIELD:
 		{

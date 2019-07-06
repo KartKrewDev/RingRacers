@@ -3601,7 +3601,7 @@ void A_AttractChase(mobj_t *actor)
 			{
 				fixed_t offz = FixedMul(80*actor->target->scale, FINESINE(FixedAngle((90 - (9 * abs(10 - actor->extravalue1))) << FRACBITS) >> ANGLETOFINESHIFT));
 				//P_SetScale(actor, (actor->destscale = actor->target->scale));
-				P_TeleportMove(actor, actor->target->x, actor->target->y, actor->target->z + actor->target->height + offz);
+				P_TeleportMove(actor, actor->target->x, actor->target->y, actor->target->z + ( actor->target->height + offz )* P_MobjFlip(actor));
 				actor->extravalue1++;
 			}
 		}
@@ -3631,7 +3631,7 @@ void A_AttractChase(mobj_t *actor)
 				P_TeleportMove(actor,
 					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
 					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),
-					actor->target->z + (24 * actor->target->scale));
+					actor->target->z + (24 * actor->target->scale) * P_MobjFlip(actor));
 
 				actor->angle += ANG30;
 				actor->extravalue1++;
