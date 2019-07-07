@@ -7989,12 +7989,6 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_JAWZ:
 		{
 			sector_t *sec2;
-			fixed_t topspeed = mobj->movefactor;
-			fixed_t distbarrier = 512*mapobjectscale;
-			fixed_t distaway;
-			const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
-			fixed_t thrustamount = 0;
-			fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 
 			if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
@@ -8008,47 +8002,7 @@ void P_MobjThinker(mobj_t *mobj)
 			if (leveltime % TICRATE == 0)
 				S_StartSound(mobj, mobj->info->activesound);
 
-			distbarrier = FixedMul(distbarrier, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
-
-			if (!P_IsObjectOnGround(mobj))
-			{
-				// No friction in the air
-				frictionsafety = FRACUNIT;
-			}
-
-			if (G_RaceGametype() && mobj->tracer)
-			{
-				distaway = P_AproxDistance(mobj->tracer->x - mobj->x, mobj->tracer->y - mobj->y);
-				if (distaway < distbarrier)
-				{
-					if (mobj->tracer->player)
-					{
-						fixed_t speeddifference = abs(topspeed - min(mobj->tracer->player->speed, K_GetKartSpeed(mobj->tracer->player, false)));
-						topspeed = topspeed - FixedMul(speeddifference, FRACUNIT-FixedDiv(distaway, distbarrier));
-					}
-				}
-			}
-
-			// Don't thrust at ALL if we're in the barrier range and above top speed, harsher slowdown
-			if ((currentspeed >= topspeed) && (topspeed == mobj->movefactor))
-			{
-				// Thrust as if you were at top speed, slow down naturally
-				thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
-			}
-			else
-			{
-				const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-				// Thrust to immediately get to top speed
-				thrustamount = beatfriction + FixedDiv(topspeed - currentspeed, frictionsafety);
-			}
-
-			mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
-			P_Thrust(mobj, mobj->angle, thrustamount);
-
-			if (mobj->tracer)
-				mobj->angle = R_PointToAngle2(mobj->x, mobj->y, mobj->tracer->x, mobj->tracer->y);
-			else
-				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
+			// Movement handling has ALL been moved to A_JawzChase
 
 			K_DriftDustHandling(mobj);
 
