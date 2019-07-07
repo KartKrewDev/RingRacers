@@ -8030,7 +8030,7 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 
 			// Don't thrust at ALL if we're in the barrier range and above top speed, harsher slowdown
-			if ((currentspeed >= topspeed) && topspeed == mobj->movefactor)
+			if ((currentspeed >= topspeed) && (topspeed == mobj->movefactor))
 			{
 				// Thrust as if you were at top speed, slow down naturally
 				thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
