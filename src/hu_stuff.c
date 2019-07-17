@@ -2364,7 +2364,6 @@ void HU_Drawer(void)
 		{
 			HU_DrawDemoInfo();
 		}
-		return;
 	}
 
 	if (gamestate != GS_LEVEL)
@@ -2387,7 +2386,7 @@ void HU_Drawer(void)
 	}*/
 
 	// draw song credits
-	if (cv_songcredits.value)
+	if (cv_songcredits.value && !hu_showscores)
 		HU_DrawSongCredits();
 
 	// draw desynch text
