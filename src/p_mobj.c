@@ -6372,8 +6372,6 @@ static void P_KoopaThinker(mobj_t *koopa)
 //
 void P_MobjThinker(mobj_t *mobj)
 {
-	fixed_t z;
-
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
@@ -8349,14 +8347,17 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 
 			K_MatchGenericExtraFlags(mobj, mobj->target);
-			z = mobj->target->z;
-			if (( mobj->eflags & MFE_VERTICALFLIP ))
-				z -= mobj->height;
-			else
-				z += mobj->target->height;
-			P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
-				mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
-				z);
+			{
+				fixed_t z;
+				z = mobj->target->z;
+				if (( mobj->eflags & MFE_VERTICALFLIP ))
+					z -= mobj->height;
+				else
+					z += mobj->target->height;
+				P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
+						mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
+						z);
+			}
 			break;
 		case MT_THUNDERSHIELD:
 		{
