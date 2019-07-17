@@ -3558,6 +3558,8 @@ void A_BubbleCheck(mobj_t *actor)
 //
 void A_AttractChase(mobj_t *actor)
 {
+	fixed_t z;
+
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_AttractChase", actor))
 		return;
@@ -3601,7 +3603,12 @@ void A_AttractChase(mobj_t *actor)
 			{
 				fixed_t offz = FixedMul(80*actor->target->scale, FINESINE(FixedAngle((90 - (9 * abs(10 - actor->extravalue1))) << FRACBITS) >> ANGLETOFINESHIFT));
 				//P_SetScale(actor, (actor->destscale = actor->target->scale));
-				P_TeleportMove(actor, actor->target->x, actor->target->y, actor->target->z + actor->target->height + offz);
+				z = actor->target->z;
+				if (( actor->eflags & MFE_VERTICALFLIP ))
+					z -= actor->height + offz;
+				else
+					z += actor->target->height + offz;
+				P_TeleportMove(actor, actor->target->x, actor->target->y, z);
 				actor->extravalue1++;
 			}
 		}
@@ -3628,10 +3635,15 @@ void A_AttractChase(mobj_t *actor)
 				fixed_t dist = (actor->target->radius/4) * (16 - actor->extravalue1);
 
 				P_SetScale(actor, (actor->destscale = actor->target->scale - ((actor->target->scale/14) * actor->extravalue1)));
+				z = actor->target->z;
+				if (( actor->eflags & MFE_VERTICALFLIP ))
+					z += actor->target->height - actor->height - 24 * actor->target->scale;
+				else
+					z += 24 * actor->target->scale;
 				P_TeleportMove(actor,
 					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
 					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),
-					actor->target->z + (24 * actor->target->scale));
+					z);
 
 				actor->angle += ANG30;
 				actor->extravalue1++;
