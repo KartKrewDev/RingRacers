@@ -2218,7 +2218,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				target->player->score = 0;
 		}*/
 
-		target->flags2 &= ~MF2_DONTDRAW;
+		target->drawflags &= ~MFD_DONTDRAW;
 	}
 
 	// if killed by a player
@@ -2917,7 +2917,7 @@ static void P_KillPlayer(player_t *player, mobj_t *source, INT32 damage)
 	{
 		mobj_t *boom;
 		player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-		player->mo->flags2 |= MF2_DONTDRAW;
+		player->mo->drawflags |= MFD_DONTDRAW;
 		boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
 		boom->scale = player->mo->scale;
 		boom->angle = player->mo->angle;

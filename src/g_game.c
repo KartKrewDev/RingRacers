@@ -2510,7 +2510,7 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	memset(p->kartstuff, 0, sizeof (p->kartstuff)); // SRB2kart
 	p->ringweapons = 0;
 
-	p->mo->flags2 &= ~MF2_SHADOW; // cancel invisibility
+	p->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK); // cancel invisibility
 	P_FlashPal(p, 0, 0); // Resets
 	p->starpostangle = 0;
 	p->starposttime = 0;
@@ -5982,7 +5982,7 @@ void G_PreviewRewind(tic_t previewtime)
 		if (!info->playerinfo[i].ingame || !info->playerinfo[i].player.mo)
 		{
 			if (players[i].mo)
-				players[i].mo->flags2 |= MF2_DONTDRAW;
+				players[i].mo->drawflags |= MFD_DONTDRAW;
 
 			continue;
 		}
@@ -5990,7 +5990,7 @@ void G_PreviewRewind(tic_t previewtime)
 		if (!players[i].mo)
 			continue; //@TODO spawn temp object to act as a player display
 
-		players[i].mo->flags2 &= ~MF2_DONTDRAW;
+		players[i].mo->drawflags &= ~MFD_DONTDRAW;
 
 		P_UnsetThingPosition(players[i].mo);
 #define TWEEN(pr) info->playerinfo[i].mobj.pr + FixedMul((INT32) (next_info->playerinfo[i].mobj.pr - info->playerinfo[i].mobj.pr), tweenvalue)

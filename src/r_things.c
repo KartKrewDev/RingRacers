@@ -1113,13 +1113,6 @@ static void R_SplitSprite(vissprite_t *sprite)
 
 			newsprite->extra_colormap = sector->lightlist[i].extra_colormap;
 
-/*
-			if (thing->frame & FF_TRANSMASK)
-				;
-			else if (thing->flags2 & MF2_SHADOW)
-				;
-			else
-*/
 			if (!((newsprite->cut & SC_FULLBRIGHT)
 				&& (!newsprite->extra_colormap || !(newsprite->extra_colormap->fog & 1))))
 			{
@@ -1499,19 +1492,27 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->transmap = NULL;
 
 	// specific translucency
-	if (!cv_translucency.value)
-		; // no translucency
-	else if (thing->flags2 & MF2_SHADOW) // actually only the player should use this (temporary invisibility)
-		vis->transmap = transtables + ((tr_trans80-1)<<FF_TRANSSHIFT); // because now the translucency is set through FF_TRANSMASK
+	if (thing->drawflags & MFD_TRANSMASK) // Object is forcing transparency to a specific value
+		vis->transmap = transtables + ((thing->drawflags & MFD_TRANSMASK) - MFD_TRANS10);
 	else if (thing->frame & FF_TRANSMASK)
-		vis->transmap = transtables + (thing->frame & FF_TRANSMASK) - 0x10000;
+		vis->transmap = transtables + ((thing->frame & FF_TRANSMASK) - FF_TRANS10);
 
-	if (thing->frame & FF_FULLBRIGHT || thing->flags2 & MF2_SHADOW)
-		vis->cut |= SC_FULLBRIGHT;
-	else if (thing->frame & FF_SEMIBRIGHT)
-		vis->cut |= SC_SEMIBRIGHT;
+	if (thing->drawflags & MFD_BRIGHTMASK)
+	{
+		if (thing->drawflags & MFD_FULLBRIGHT)
+			vis->cut |= SC_FULLBRIGHT;
+		else if (thing->drawflags & MFD_SEMIBRIGHT)
+			vis->cut |= SC_SEMIBRIGHT;
+	}
+	else
+	{
+		if (thing->frame & FF_FULLBRIGHT)
+			vis->cut |= SC_FULLBRIGHT;
+		else if (thing->frame & FF_SEMIBRIGHT)
+			vis->cut |= SC_SEMIBRIGHT;
+	}
 
-	if (vis->cut & SC_FULLBRIGHT
+	if ((vis->cut & SC_FULLBRIGHT)
 		&& (!vis->extra_colormap || !(vis->extra_colormap->fog & 1)))
 	{
 		// full bright: goggles
@@ -1702,7 +1703,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	// specific translucency
 	if (thing->frame & FF_TRANSMASK)
-		vis->transmap = (thing->frame & FF_TRANSMASK) - 0x10000 + transtables;
+		vis->transmap = ((thing->frame & FF_TRANSMASK) - FF_TRANS10) + transtables;
 	else
 		vis->transmap = NULL;
 
@@ -1758,27 +1759,14 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+			if (thing->sprite == SPR_NULL)
 				continue;
 
-			if (splitscreen)
-			{
-				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum != 0)
-						continue;
-
-				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum != 1)
-						continue;
-
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewssnum != 2)
-						continue;
-
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewssnum != 3)
-						continue;
-			}
+			if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+			|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+			|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+			|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
+				continue;
 
 			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
 
@@ -1793,27 +1781,14 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 		// Draw everything in sector, no checks
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+			if (thing->sprite == SPR_NULL)
 				continue;
 
-			if (splitscreen)
-			{
-				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum != 0)
-						continue;
-
-				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum != 1)
-						continue;
-
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewssnum != 2)
-						continue;
-
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewssnum != 3)
-						continue;
-			}
+			if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+			|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+			|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+			|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
+				continue;
 
 			R_ProjectSprite(thing);
 		}

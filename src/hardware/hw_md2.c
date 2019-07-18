@@ -879,7 +879,23 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
 		UINT8 lightlevel = 255;
+		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
+
+		if (spr->mobj->drawflags & MFD_BRIGHTMASK)
+		{
+			if (spr->mobj->drawflags & MFD_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
+				brightmode = 2;
+		}
+		else
+		{
+			if (spr->mobj->frame & FF_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->frame & FF_SEMIBRIGHT)
+				brightmode = 2;
+		}
 
 		if (sector->numlights)
 		{
@@ -887,7 +903,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			if (brightmode != 1)
 				lightlevel = *sector->lightlist[light].lightlevel;
 
 			if (sector->lightlist[light].extra_colormap)
@@ -895,12 +911,15 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		}
 		else
 		{
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			if (brightmode != 1)
 				lightlevel = sector->lightlevel;
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
+
+		if (brightmode == 2)
+			lightlevel = 128 + (lightlevel>>1);
 
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
@@ -927,8 +946,8 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		//if (tics > durs)
 			//durs = tics;
 
-		if (spr->mobj->flags2 & MF2_SHADOW)
-			Surf.FlatColor.s.alpha = 0x40;
+		if (spr->mobj->drawflags & MFD_TRANSMASK)
+			HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK) - MFD_TRANS10, &Surf);
 		else if (spr->mobj->frame & FF_TRANSMASK)
 			HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 		else

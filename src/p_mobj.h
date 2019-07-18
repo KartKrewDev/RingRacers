@@ -108,7 +108,7 @@ typedef enum
 	// Don't use the blocklinks (inert but displayable)
 	MF_NOBLOCKMAP       = 1<<4,
 	// Thin, paper-like collision bound (for visual equivalent, see FF_PAPERSPRITE)
-	MF_PAPERCOLLISION            = 1<<5,
+	MF_PAPERCOLLISION   = 1<<5,
 	// You can push this object. It can activate switches and things by pushing it on top.
 	MF_PUSHABLE         = 1<<6,
 	// Object is a boss.
@@ -160,7 +160,7 @@ typedef enum
 	MF_GRENADEBOUNCE    = 1<<28,
 	// Run the action thinker on spawn.
 	MF_RUNSPAWNFUNC     = 1<<29,
-	// Don't remap in Encore mode.
+	// Don't remap in Encore mode. (Not a drawflag so that it's settable by mobjinfo.)
 	MF_DONTENCOREMAP    = 1<<30,
 	// free: 1<<31
 } mobjflag_t;
@@ -170,7 +170,7 @@ typedef enum
 	MF2_AXIS           = 1,     // It's a NiGHTS axis! (For faster checking)
 	MF2_TWOD           = 1<<1,  // Moves like it's in a 2D level
 	MF2_DONTRESPAWN    = 1<<2,  // Don't respawn this object!
-	MF2_DONTDRAW       = 1<<3,  // Don't generate a vissprite
+	// free: 1<<3
 	MF2_AUTOMATIC      = 1<<4,  // Thrown ring has automatic properties
 	MF2_RAILRING       = 1<<5,  // Thrown ring has rail properties
 	MF2_BOUNCERING     = 1<<6,  // Thrown ring has bounce properties
@@ -187,7 +187,7 @@ typedef enum
 	MF2_JUSTATTACKED   = 1<<17, // can be pushed by other moving mobjs
 	MF2_FIRING         = 1<<18, // turret fire
 	MF2_SUPERFIRE      = 1<<19, // Firing something with Super Sonic-stopping properties. Or, if mobj has MF_MISSILE, this is the actual fire from it.
-	MF2_SHADOW         = 1<<20, // Fuzzy draw, makes targeting harder.
+	// free: 1<<20
 	MF2_STRONGBOX      = 1<<21, // Flag used for "strong" random monitors.
 	MF2_OBJECTFLIP     = 1<<22, // Flag for objects that always have flipped gravity.
 	MF2_SKULLFLY       = 1<<23, // Special handling: skull in flight.
@@ -241,13 +241,41 @@ typedef enum
 	MFE_SPRUNG            = 1<<8,
 	// Platform movement
 	MFE_APPLYPMOMZ        = 1<<9,
-	// SRB2Kart: Splitscreen sprite display; very wasteful but I couldn't think of another way to do it...
-	MFE_DRAWONLYFORP1     = 1<<10,
-	MFE_DRAWONLYFORP2     = 1<<11,
-	MFE_DRAWONLYFORP3     = 1<<12,
-	MFE_DRAWONLYFORP4     = 1<<13,
 	// free: to and including 1<<15
 } mobjeflag_t;
+
+//
+// Mobj drawing flags
+// Set by hex, to make masking shenanigans easier to keep track of.
+//
+typedef enum
+{
+	// Don't generate a vissprite for individual screens
+	MFD_DONTDRAWP1        = 0x0001,
+	MFD_DONTDRAWP2        = 0x0002,
+	MFD_DONTDRAWP3        = 0x0004,
+	MFD_DONTDRAWP4        = 0x0008,
+	// Transparency override flags
+	MFD_TRANS10           = 0x0010,
+	MFD_TRANS20           = 0x0020,
+	MFD_TRANS30           = 0x0030,
+	MFD_TRANS40           = 0x0040,
+	MFD_TRANS50           = 0x0050,
+	MFD_TRANS60           = 0x0060,
+	MFD_TRANS70           = 0x0070,
+	MFD_TRANS80           = 0x0080,
+	MFD_TRANS90           = 0x0090,
+	MFD_TRANSMASK         = 0x00F0,
+	// Brightness override flags
+	MFD_FULLBRIGHT        = 0x0100,
+	MFD_SEMIBRIGHT        = 0x0200,
+	MFD_NOBRIGHT          = 0x0300,
+	MFD_BRIGHTMASK        = 0x0F00,
+	// Shortcuts
+	MFD_DONTDRAW          = MFD_DONTDRAWP1|MFD_DONTDRAWP2|MFD_DONTDRAWP3|MFD_DONTDRAWP4,
+	MFD_SHADOW            = MFD_TRANS80|MFD_FULLBRIGHT,
+	// free: to and including 0x8000
+} mobjdflag_t;
 
 //
 // PRECIPITATION flags ?! ?! ?!
@@ -266,6 +294,7 @@ typedef enum {
 	// Ran the thinker this tic.
 	PCF_THUNK = 32,
 } precipflag_t;
+
 // Map Object definition.
 typedef struct mobj_s
 {
@@ -306,6 +335,7 @@ typedef struct mobj_s
 	UINT32 flags; // flags from mobjinfo tables
 	UINT32 flags2; // MF2_ flags
 	UINT16 eflags; // extra flags
+	UINT16 drawflags; // Rendering-related flags. These are not synched.
 
 	void *skin; // overrides 'sprite' when non-NULL (for player bodies to 'remember' the skin)
 	// Player and mobj sprites in multiplayer modes are modified

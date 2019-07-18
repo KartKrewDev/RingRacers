@@ -20,6 +20,7 @@ UINT8 K_GetKartColorByName(const char *name);
 
 void K_RegisterKartStuff(void);
 
+UINT16 K_GetPlayerDontDrawFlag(player_t *player);
 boolean K_IsPlayerLosing(player_t *player);
 boolean K_IsPlayerWanted(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);

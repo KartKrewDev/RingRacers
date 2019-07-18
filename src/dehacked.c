@@ -8033,7 +8033,7 @@ static const char *const MOBJFLAG2_LIST[] = {
 	"AXIS",			// It's a NiGHTS axis! (For faster checking)
 	"TWOD",			// Moves like it's in a 2D level
 	"DONTRESPAWN",	// Don't respawn this object!
-	"DONTDRAW",		// Don't generate a vissprite
+	"\x01",			// free: 1<<3 (name un-matchable)
 	"AUTOMATIC",	// Thrown ring has automatic properties
 	"RAILRING",		// Thrown ring has rail properties
 	"BOUNCERING",	// Thrown ring has bounce properties
@@ -8050,7 +8050,7 @@ static const char *const MOBJFLAG2_LIST[] = {
 	"JUSTATTACKED",	// can be pushed by other moving mobjs
 	"FIRING",		// turret fire
 	"SUPERFIRE",	// Firing something with Super Sonic-stopping properties. Or, if mobj has MF_MISSILE, this is the actual fire from it.
-	"SHADOW",		// Fuzzy draw, makes targeting harder.
+	"\x01",			// free: 1<<20 (name un-matchable)
 	"STRONGBOX",	// Flag used for "strong" random monitors.
 	"OBJECTFLIP",	// Flag for objects that always have flipped gravity.
 	"SKULLFLY",		// Special handling: skull in flight.
@@ -8073,10 +8073,6 @@ static const char *const MOBJEFLAG_LIST[] = {
 	"JUSTBOUNCEDWALL", // SRB2Kart: Mobj already bounced off a wall this tic
 	"SPRUNG", // Mobj was already sprung this tic
 	"APPLYPMOMZ", // Platform movement
-	"DRAWONLYFORP1", // SRB2Kart: Splitscreen sprite draw flags
-	"DRAWONLYFORP2",
-	"DRAWONLYFORP3",
-	"DRAWONLYFORP4",
 	NULL
 };
 

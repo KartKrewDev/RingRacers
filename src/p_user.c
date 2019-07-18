@@ -650,7 +650,7 @@ static void P_DeNightserizePlayer(player_t *player)
 
 	player->mo->flags &= ~MF_NOGRAVITY;
 
-	player->mo->flags2 &= ~MF2_DONTDRAW;
+	player->mo->drawflags &= ~MFD_DONTDRAW;
 
 	// Restore aiming angle
 	if (player == &players[consoleplayer])
@@ -729,7 +729,7 @@ void P_NightserizePlayer(player_t *player, INT32 nighttime)
 
 	player->mo->flags |= MF_NOGRAVITY;
 
-	player->mo->flags2 |= MF2_DONTDRAW;
+	player->mo->drawflags |= MFD_DONTDRAW;
 
 	player->nightstime = player->startedtime = nighttime*TICRATE;
 	player->bonustime = false;
@@ -1605,7 +1605,7 @@ void P_SpawnShieldOrb(player_t *player)
 			if (shieldobj->info->painstate)
 				P_SetMobjState(shieldobj,shieldobj->info->painstate);
 			else
-				shieldobj->flags2 |= MF2_SHADOW;
+				shieldobj->drawflags |= MFD_SHADOW;
 		}
 	}
 }
@@ -3361,7 +3361,7 @@ static void P_DoFiring(player_t *player, ticcmd_t *cmd) // SRB2kart - unused.
 					return;
 				P_SetWeaponDelay(player, (3*TICRATE)/2);
 
-				mo = P_SpawnPlayerMissile(player->mo, MT_REDRING, MF2_RAILRING|MF2_DONTDRAW);
+				mo = P_SpawnPlayerMissile(player->mo, MT_REDRING, MF2_RAILRING);
 
 				// Rail has no unique thrown object, therefore its sound plays here.
 				S_StartSound(player->mo, sfx_rail1);
@@ -4282,7 +4282,7 @@ static void P_SpectatorMovement(player_t *player)
 	if (mo)
 	{
 		mo->flags2 |= MF2_RAILRING;
-		mo->flags2 |= MF2_DONTDRAW;
+		mo->drawflags |= MFD_DONTDRAW;
 		mo->flags |= MF_NOCLIPHEIGHT;
 		mo->flags |= MF_NOCLIP;
 		mo->flags &= ~MF_MISSILE;
@@ -5025,7 +5025,7 @@ static void P_NiGHTSMovement(player_t *player)
 	radius = player->mo->target->radius;
 
 	player->mo->flags |= MF_NOGRAVITY;
-	player->mo->flags2 |= MF2_DONTDRAW;
+	player->mo->drawflags |= MFD_DONTDRAW;
 	P_SetScale(player->mo->tracer, player->mo->scale);
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -7042,7 +7042,7 @@ static void P_DeathThink(player_t *player)
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->flags2 |= MF2_DONTDRAW;
+			player->mo->drawflags |= MFD_DONTDRAW;
 		}
 	}
 	else
@@ -8250,9 +8250,9 @@ void P_PlayerThink(player_t *player)
 	if (player->playerstate == PST_DEAD)
 	{
 		if (player->spectator)
-			player->mo->flags2 |= MF2_SHADOW;
+			player->mo->drawflags |= MFD_SHADOW;
 		else
-			player->mo->flags2 &= ~MF2_SHADOW;
+			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
 		P_DeathThink(player);
 
 		return;
@@ -8431,7 +8431,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (player == &players[displayplayers[i]] && !camera[i].chase)
 			{
-				gmobj->flags2 |= MF2_DONTDRAW;
+				gmobj->drawflags |= MFD_DONTDRAW;
 				break;
 			}
 		}
@@ -8571,16 +8571,16 @@ void P_PlayerThink(player_t *player)
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)
 			&& (leveltime & 1))
-			player->mo->flags2 |= MF2_DONTDRAW;
+			player->mo->drawflags |= MFD_DONTDRAW;
 		else
-			player->mo->flags2 &= ~MF2_DONTDRAW;
+			player->mo->drawflags &= ~MFD_DONTDRAW;
 	}
 	/*else if (player->mo->tracer)
 	{
 		if (player->powers[pw_flashing] & 1)
-			player->mo->tracer->flags2 |= MF2_DONTDRAW;
+			player->mo->tracer->drawflags |= MFD_DONTDRAW;
 		else
-			player->mo->tracer->flags2 &= ~MF2_DONTDRAW;
+			player->mo->tracer->drawflags &= ~MFD_DONTDRAW;
 	}*/
 
 	player->pflags &= ~PF_SLIDING;
@@ -8958,7 +8958,7 @@ void P_PlayerAfterThink(player_t *player)
 	// spectator invisibility and nogravity.
 	if ((netgame || multiplayer) && player->spectator)
 	{
-		player->mo->flags2 |= MF2_DONTDRAW;
+		player->mo->drawflags |= MFD_DONTDRAW;
 		player->mo->flags |= MF_NOGRAVITY;
 	}
 
