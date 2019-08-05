@@ -12,12 +12,19 @@
 /// \file  f_wipe.c
 /// \brief SRB2 2.1 custom fade mask "wipe" behavior.
 
+#define GENESIS_WIPE // Sal: experimental Genesis-style colorful wipes
+
 #include "f_finale.h"
 #include "i_video.h"
 #include "v_video.h"
 
+#ifdef GENESIS_WIPE
+#include "r_data.h" // NearestColor
+#else
 #include "r_draw.h" // transtable
 #include "p_pspr.h" // tr_transxxx
+#endif
+
 #include "w_wad.h"
 #include "z_zone.h"
 
@@ -89,6 +96,7 @@ INT32 lastwipetic = 0;
 static UINT8 *wipe_scr_start; //screen 3
 static UINT8 *wipe_scr_end; //screen 4
 static UINT8 *wipe_scr; //screen 0 (main drawing)
+static UINT8 pallen;
 static fixed_t paldiv;
 
 /** Create fademask_t from lump
@@ -211,7 +219,12 @@ static void F_DoWipe(fademask_t *fademask)
 		const UINT8 *e_base = e;
 
 		// mask data, end
-		UINT8       *transtbl;
+#ifdef GENESIS_WIPE
+		UINT8 i;
+		RGBA_t wcolor, *ecolor;
+#else
+		UINT8 *transtbl;
+#endif
 		const UINT8 *mask    = fademask->mask;
 		const UINT8 *maskend = mask + fademask->size;
 
@@ -259,7 +272,7 @@ static void F_DoWipe(fademask_t *fademask)
 					relativepos += vid.width;
 				}
 			}
-			else if (*mask == 10)
+			else if (*mask == pallen)
 			{
 				// shortcut - memcpy target to work
 				while (draw_linestogo--)
@@ -270,6 +283,70 @@ static void F_DoWipe(fademask_t *fademask)
 			}
 			else
 			{
+#ifdef GENESIS_WIPE
+				// DRAWING LOOP
+				while (draw_linestogo--)
+				{
+					w = w_base + relativepos;
+					s = s_base + relativepos;
+					e = e_base + relativepos;
+					draw_rowstogo = draw_rowend - draw_rowstart;
+
+					ecolor = &pLocalPalette[*e];
+
+					while (draw_rowstogo--)
+					{
+						memcpy(&wcolor, &pLocalPalette[*s++], sizeof(RGBA_t));
+
+						// GENESIS WIPE:
+						// Change red until it reaches the intended value
+						// Then green, then blue.
+
+						for (i = 0; i < *mask; i++)
+						{
+							if (abs(wcolor.s.red - ecolor->s.red) > 34)
+							{
+								if (wcolor.s.red < ecolor->s.red)
+									wcolor.s.red += 34;
+								else
+									wcolor.s.red -= 34;
+							}
+							else
+							{
+								wcolor.s.red = ecolor->s.red;
+
+								if (abs(wcolor.s.green - ecolor->s.green) > 34)
+								{
+									if (wcolor.s.green < ecolor->s.green)
+										wcolor.s.green += 34;
+									else
+										wcolor.s.green -= 34;
+								}
+								else
+								{
+									wcolor.s.green = ecolor->s.green;
+									
+									if (abs(wcolor.s.blue - ecolor->s.blue) > 34)
+									{
+										if (wcolor.s.blue < ecolor->s.blue)
+											wcolor.s.blue += 34;
+										else
+											wcolor.s.blue -= 34;
+										
+									}
+									else
+										wcolor.s.blue = ecolor->s.blue;
+								}
+							}
+						}
+
+						*w++ = NearestColor(wcolor.s.red, wcolor.s.green, wcolor.s.blue);
+					}
+
+					relativepos += vid.width;
+				}
+				// END DRAWING LOOP
+#else
 				// pointer to transtable that this mask would use
 				transtbl = transtables + ((9 - *mask)<<FF_TRANSSHIFT);
 
@@ -287,6 +364,7 @@ static void F_DoWipe(fademask_t *fademask)
 					relativepos += vid.width;
 				}
 				// END DRAWING LOOP
+#endif
 			}
 
 			if (++maskx >= fademask->width)
@@ -347,7 +425,13 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 	UINT8 wipeframe = 0;
 	fademask_t *fmask;
 
-	paldiv = FixedDiv(257<<FRACBITS, 11<<FRACBITS);
+#ifndef GENESIS_WIPE
+	pallen = 21; // 21 steps
+#else
+	pallen = 10; // 10 steps
+#endif
+
+	paldiv = FixedDiv(257<<FRACBITS, (pallen+1)<<FRACBITS); 
 
 	// Init the wipe
 	WipeInAction = true;
