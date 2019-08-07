@@ -2861,13 +2861,13 @@ boolean P_SetupLevel(boolean skipprecip)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 209);
 
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
+		F_RunWipe(wipedefs[wipe_speclevel_towhite], false, NULL, false);
 
 		F_WipeStartScreen();
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_level_final], false);
+		F_RunWipe(wipedefs[wipe_level_final], false, "FADEMAP1", false);
 
 		locstarttime = nowtime = lastwipetic;
 		endtime = locstarttime + (3*TICRATE)/2;
@@ -2907,7 +2907,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[(encoremode ? wipe_level_final : wipe_level_toblack)], false);
+		F_RunWipe(wipedefs[(encoremode ? wipe_level_final : wipe_level_toblack)], false, "FADEMAP1", false); // Fading to white
 	}
 
 	// Reset the palette now all fades have been done

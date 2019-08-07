@@ -18,12 +18,9 @@
 #include "i_video.h"
 #include "v_video.h"
 
-#ifdef GENESIS_WIPE
 #include "r_data.h" // NearestColor
-#else
 #include "r_draw.h" // transtable
 #include "p_pspr.h" // tr_transxxx
-#endif
 
 #include "w_wad.h"
 #include "z_zone.h"
@@ -93,6 +90,9 @@ boolean WipeInAction = false;
 INT32 lastwipetic = 0;
 
 #ifndef NOWIPE
+
+#define GENLEN 31
+
 static UINT8 *wipe_scr_start; //screen 3
 static UINT8 *wipe_scr_end; //screen 4
 static UINT8 *wipe_scr; //screen 0 (main drawing)
@@ -189,7 +189,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
   *
   * \param	fademask	pixels to change
   */
-static void F_DoWipe(fademask_t *fademask)
+static void F_DoWipe(fademask_t *fademask, lighttable_t *fadecolormap, boolean reverse)
 {
 	// Software mask wipe -- optimized; though it might not look like it!
 	// Okay, to save you wondering *how* this is more optimized than the simpler
@@ -207,6 +207,10 @@ static void F_DoWipe(fademask_t *fademask)
 	// look a little messy; sorry!) but it simultaneously runs at twice the speed.
 	// In addition, we precalculate all the X and Y positions that we need to draw
 	// from and to, so it uses a little extra memory, but again, helps it run faster.
+	// ---
+	// Sal: I kinda destroyed some of this code by introducing Genesis-style fades.
+	// A colormap can be provided in F_RunWipe, which the white/black values will be
+	// remapped to the appropriate entry in the fade colormap. 
 	{
 		// wipe screen, start, end
 		UINT8       *w = wipe_scr;
@@ -219,12 +223,7 @@ static void F_DoWipe(fademask_t *fademask)
 		const UINT8 *e_base = e;
 
 		// mask data, end
-#ifdef GENESIS_WIPE
-		UINT8 i;
-		RGBA_t wcolor, *ecolor;
-#else
-		UINT8 *transtbl;
-#endif
+		UINT8       *transtbl;
 		const UINT8 *mask    = fademask->mask;
 		const UINT8 *maskend = mask + fademask->size;
 
@@ -255,6 +254,8 @@ static void F_DoWipe(fademask_t *fademask)
 		maskx = masky = 0;
 		do
 		{
+			UINT8 m = *mask;
+
 			draw_rowstart = scrxpos[maskx];
 			draw_rowend   = scrxpos[maskx + 1];
 			draw_linestart = scrypos[masky];
@@ -263,27 +264,32 @@ static void F_DoWipe(fademask_t *fademask)
 			relativepos = (draw_linestart * vid.width) + draw_rowstart;
 			draw_linestogo = draw_lineend - draw_linestart;
 
-			if (*mask == 0)
+			if (reverse)
+				m = ((pallen-1) - m);
+
+			if (m == 0)
 			{
 				// shortcut - memcpy source to work
 				while (draw_linestogo--)
 				{
-					M_Memcpy(w_base+relativepos, s_base+relativepos, draw_rowend-draw_rowstart);
+					M_Memcpy(w_base+relativepos, (reverse ? e_base : s_base)+relativepos, draw_rowend-draw_rowstart);
 					relativepos += vid.width;
 				}
 			}
-			else if (*mask == pallen)
+			else if (m >= (pallen-1))
 			{
 				// shortcut - memcpy target to work
 				while (draw_linestogo--)
 				{
-					M_Memcpy(w_base+relativepos, e_base+relativepos, draw_rowend-draw_rowstart);
+					M_Memcpy(w_base+relativepos, (reverse ? s_base : e_base)+relativepos, draw_rowend-draw_rowstart);
 					relativepos += vid.width;
 				}
 			}
 			else
 			{
-#ifdef GENESIS_WIPE
+				// pointer to transtable that this mask would use
+				transtbl = transtables + ((9 - m)<<FF_TRANSSHIFT);
+
 				// DRAWING LOOP
 				while (draw_linestogo--)
 				{
@@ -292,79 +298,22 @@ static void F_DoWipe(fademask_t *fademask)
 					e = e_base + relativepos;
 					draw_rowstogo = draw_rowend - draw_rowstart;
 
-					ecolor = &pLocalPalette[*e];
-
 					while (draw_rowstogo--)
 					{
-						memcpy(&wcolor, &pLocalPalette[*s++], sizeof(RGBA_t));
-
-						// GENESIS WIPE:
-						// Change red until it reaches the intended value
-						// Then green, then blue.
-
-						for (i = 0; i < *mask; i++)
+						if (fadecolormap != NULL)
 						{
-							if (abs(wcolor.s.red - ecolor->s.red) > 34)
-							{
-								if (wcolor.s.red < ecolor->s.red)
-									wcolor.s.red += 34;
-								else
-									wcolor.s.red -= 34;
-							}
+							if (reverse)
+								*w++ = fadecolormap[ ( m << 8 ) + *e++ ];
 							else
-							{
-								wcolor.s.red = ecolor->s.red;
-
-								if (abs(wcolor.s.green - ecolor->s.green) > 34)
-								{
-									if (wcolor.s.green < ecolor->s.green)
-										wcolor.s.green += 34;
-									else
-										wcolor.s.green -= 34;
-								}
-								else
-								{
-									wcolor.s.green = ecolor->s.green;
-									
-									if (abs(wcolor.s.blue - ecolor->s.blue) > 34)
-									{
-										if (wcolor.s.blue < ecolor->s.blue)
-											wcolor.s.blue += 34;
-										else
-											wcolor.s.blue -= 34;
-										
-									}
-									else
-										wcolor.s.blue = ecolor->s.blue;
-								}
-							}
+								*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
 						}
-
-						*w++ = NearestColor(wcolor.s.red, wcolor.s.green, wcolor.s.blue);
+						else
+							*w++ = transtbl[ ( *e++ << 8 ) + *s++ ];
 					}
 
 					relativepos += vid.width;
 				}
 				// END DRAWING LOOP
-#else
-				// pointer to transtable that this mask would use
-				transtbl = transtables + ((9 - *mask)<<FF_TRANSSHIFT);
-
-				// DRAWING LOOP
-				while (draw_linestogo--)
-				{
-					w = w_base + relativepos;
-					s = s_base + relativepos;
-					e = e_base + relativepos;
-					draw_rowstogo = draw_rowend - draw_rowstart;
-
-					while (draw_rowstogo--)
-						*w++ = transtbl[ ( *e++ << 8 ) + *s++ ];
-
-					relativepos += vid.width;
-				}
-				// END DRAWING LOOP
-#endif
 			}
 
 			if (++maskx >= fademask->width)
@@ -415,23 +364,36 @@ void F_WipeEndScreen(void)
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipetype, boolean drawMenu)
+void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse)
 {
 #ifdef NOWIPE
 	(void)wipetype;
 	(void)drawMenu;
+	(void)colormap;
+	(void)reverse;
 #else
 	tic_t nowtime;
 	UINT8 wipeframe = 0;
 	fademask_t *fmask;
 
-#ifndef GENESIS_WIPE
-	pallen = 21; // 21 steps
-#else
-	pallen = 10; // 10 steps
-#endif
+	lumpnum_t clump;
+	lighttable_t *fcolor = NULL;
 
-	paldiv = FixedDiv(257<<FRACBITS, (pallen+1)<<FRACBITS); 
+	clump = W_GetNumForName(colormap);
+
+	if (clump != LUMPERROR && wipetype != UINT8_MAX)
+	{
+		pallen = 32;
+		fcolor = Z_MallocAlign((256 * pallen), PU_STATIC, NULL, 8);
+		W_ReadLump(clump, fcolor);
+	}
+	else
+	{
+		pallen = 11;
+		reverse = false;
+	}
+
+	paldiv = FixedDiv(257<<FRACBITS, pallen<<FRACBITS); 
 
 	// Init the wipe
 	WipeInAction = true;
@@ -456,7 +418,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 			HWR_DoWipe(wipetype, wipeframe-1); // send in the wipe type and wipeframe because we need to cache the graphic
 		else
 #endif
-		F_DoWipe(fmask);
+		F_DoWipe(fmask, fcolor, reverse);
 		I_OsPolling();
 		I_UpdateNoBlit();
 
@@ -470,6 +432,13 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 
 		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}
+
 	WipeInAction = false;
+
+	if (fcolor)
+	{
+		Z_Free(fcolor);
+		fcolor = NULL;
+	}
 #endif
 }
