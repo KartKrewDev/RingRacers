@@ -250,7 +250,6 @@ INT32 HU_GetHighlightColor(void);
 	sizeof(source)/sizeof(menuitem_t),\
 	prev,\
 	source,\
-	M_DrawGenericMenu,\
 	M_DrawKartGamemodeMenu,\
 	0, 0,\
 	0,\
