@@ -55,7 +55,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_voting_toblack,
 	0,  // wipe_continuing_toblack
 	0,  // wipe_titlescreen_toblack
-	0,  // wipe_timeattack_toblack
+	1,  // wipe_menu_toblack
 	99, // wipe_credits_toblack
 	0,  // wipe_evaluation_toblack
 	0,  // wipe_gameend_toblack
@@ -71,7 +71,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_voting_final
 	0,  // wipe_continuing_final
 	0,  // wipe_titlescreen_final
-	0,  // wipe_timeattack_final
+	1,  // wipe_menu_final
 	99, // wipe_credits_final
 	0,  // wipe_evaluation_final
 	0,  // wipe_gameend_final

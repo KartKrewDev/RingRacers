@@ -66,6 +66,7 @@
 //-------------------------------------------
 patch_t *hu_font[HU_FONTSIZE];
 patch_t *kart_font[KART_FONTSIZE];	// SRB2kart
+patch_t *gamemode_font[AZ_FONTSIZE];
 patch_t *tny_font[HU_FONTSIZE];
 patch_t *tallnum[10]; // 0-9
 patch_t *nightsnum[10]; // 0-9
@@ -236,6 +237,17 @@ void HU_LoadGraphics(void)
 			kart_font[i] = NULL;
 		else
 			kart_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
+	j = AZ_FONTSTART; // All A to Z font sets
+	for (i = 0; i < AZ_FONTSIZE; i++, j++)
+	{
+		// Gamemode font
+		sprintf(buffer, "GAMEM%.3d", j);
+		if (W_CheckNumForName(buffer) == LUMPERROR)
+			gamemode_font[i] = NULL;
+		else
+			gamemode_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 	}
 	//
 

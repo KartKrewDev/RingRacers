@@ -307,7 +307,7 @@ static void D_Display(void)
 		// set for all later
 		wipedefindex = gamestate; // wipe_xxx_toblack
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
-			wipedefindex = wipe_timeattack_toblack;
+			wipedefindex = wipe_titlescreen_toblack;
 		else if (gamestate == GS_INTERMISSION)
 		{
 			if (intertype == int_spec) // Special Stage
@@ -325,7 +325,7 @@ static void D_Display(void)
 				F_WipeStartScreen();
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false);
+				F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
@@ -360,7 +360,7 @@ static void D_Display(void)
 			HU_Drawer();
 			break;
 
-		case GS_TIMEATTACK:
+		case GS_MENU:
 			break;
 
 		case GS_INTRO:
@@ -538,7 +538,7 @@ static void D_Display(void)
 	vid.recalc = 0;
 
 	// FIXME: draw either console or menu, not the two
-	if (gamestate != GS_TIMEATTACK)
+	if (gamestate != GS_MENU)
 		CON_Drawer();
 
 	M_Drawer(); // menu is drawn even on top of everything
@@ -556,7 +556,7 @@ static void D_Display(void)
 		if (rendermode != render_none)
 		{
 			F_WipeEndScreen();
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", true);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", true);
 		}
 	}
 

@@ -1608,6 +1608,18 @@ void V_DrawString(INT32 x, INT32 y, INT32 option, const char *string)
 	}
 }
 
+void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_StringWidth(string, option)/2;
+	V_DrawString(x, y, option, string);
+}
+
+void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_StringWidth(string, option);
+	V_DrawString(x, y, option, string);
+}
+
 // SRB2kart
 void V_DrawKartString(INT32 x, INT32 y, INT32 option, const char *string)
 {
@@ -1709,19 +1721,78 @@ void V_DrawKartString(INT32 x, INT32 y, INT32 option, const char *string)
 		cx += w;
 	}
 }
+
+void V_DrawGamemodeString(INT32 x, INT32 y, INT32 option, const char *string, UINT8 color)
+{
+	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, left = 0;
+	const char *ch = string;
+	const UINT8 *colormap = NULL;
+
+	option &= ~V_FLIP;
+
+	if (option & V_NOSCALESTART)
+	{
+		dupx = vid.dupx;
+		dupy = vid.dupy;
+		scrwidth = vid.width;
+	}
+	else
+	{
+		dupx = dupy = 1;
+		scrwidth = vid.width/vid.dupx;
+		left = (scrwidth - BASEVIDWIDTH)/2;
+	}
+
+	colormap = R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE);
+
+	for (;;ch++)
+	{
+		if (!*ch)
+			break;
+
+		if (*ch == '\n')
+		{
+			cx = x;
+			cy += 34*dupy;
+
+			continue;
+		}
+
+		c = toupper(*ch) - AZ_FONTSTART;
+
+		// character does not exist or is a space
+		if (c < 0 || c >= AZ_FONTSIZE || !gamemode_font[c])
+			continue;
+
+		w = (SHORT(gamemode_font[c]->width) - 2) * dupx;
+
+		if (cx > scrwidth)
+			break;
+
+		if (cx+left + w < 0) //left boundary check
+		{
+			cx += w;
+			continue;
+		}
+
+		V_DrawFixedPatch(cx<<FRACBITS, cy<<FRACBITS, FRACUNIT, option, gamemode_font[c], colormap);
+
+		cx += w;
+	}
+}
+
+void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const char *string, UINT8 color)
+{
+	x -= V_GamemodeStringWidth(string, option)/2;
+	V_DrawGamemodeString(x, y, option, string, color);
+}
+
+void V_DrawRightAlignedGamemodeString(INT32 x, INT32 y, INT32 option, const char *string, UINT8 color)
+{
+	x -= V_GamemodeStringWidth(string, option);
+	V_DrawGamemodeString(x, y, option, string, color);
+}
 //
-
-void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string)
-{
-	x -= V_StringWidth(string, option)/2;
-	V_DrawString(x, y, option, string);
-}
-
-void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string)
-{
-	x -= V_StringWidth(string, option);
-	V_DrawString(x, y, option, string);
-}
 
 //
 // Write a string using the hu_font, 0.5x scale
@@ -2398,6 +2469,30 @@ INT32 V_ThinStringWidth(const char *string, INT32 option)
 		}
 	}
 
+
+	return w;
+}
+
+//
+// Find string width from gamemode_font chars
+//
+INT32 V_GamemodeStringWidth(const char *string, INT32 option)
+{
+	INT32 c, w = 0;
+	size_t i;
+
+	(void)option;
+
+	for (i = 0; i < strlen(string); i++)
+	{
+		c = string[i];
+		c = toupper(c) - AZ_FONTSTART;
+
+		if (c < 0 || c >= AZ_FONTSIZE || !gamemode_font[c])
+			continue;
+		else
+			w += SHORT(gamemode_font[c]->width) - 2;
+	}
 
 	return w;
 }

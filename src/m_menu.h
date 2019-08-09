@@ -150,8 +150,8 @@ typedef struct menuitem_s
 // FIXME: should be itemaction_t
 	void *itemaction;
 
-	// hotkey in menu or y of the item
-	UINT8 alphaKey;
+	// extra variables
+	UINT8 mvar1;
 } menuitem_t;
 
 extern menuitem_t PlayerMenu[MAXSKINS];
@@ -244,6 +244,19 @@ void M_SetPlaybackMenuPointer(void);
 INT32 HU_GetHighlightColor(void);
 
 // These defines make it a little easier to make menus
+#define KARTGAMEMODEMENU(header, source, prev)\
+{\
+	header,\
+	sizeof(source)/sizeof(menuitem_t),\
+	prev,\
+	source,\
+	M_DrawGenericMenu,\
+	M_DrawKartGamemodeMenu,\
+	0, 0,\
+	0,\
+	NULL\
+}
+
 #define DEFAULTMENUSTYLE(header, source, prev, x, y)\
 {\
 	header,\
@@ -264,18 +277,6 @@ INT32 HU_GetHighlightColor(void);
 	source,\
 	M_DrawPauseMenu,\
 	x, y,\
-	0,\
-	NULL\
-}
-
-#define CENTERMENUSTYLE(header, source, prev, y)\
-{\
-	header,\
-	sizeof(source)/sizeof(menuitem_t),\
-	prev,\
-	source,\
-	M_DrawCenteredMenu,\
-	BASEVIDWIDTH/2, y,\
 	0,\
 	NULL\
 }

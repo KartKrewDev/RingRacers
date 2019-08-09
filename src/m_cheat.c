@@ -58,20 +58,6 @@ typedef struct
 // ==========================================================================
 
 // Cheat responders
-/*static UINT8 cheatf_ultimate(void)
-{
-	if (menuactive && (currentMenu != &MainDef && currentMenu != &SP_LoadDef))
-		return 0; // Only on the main menu, or the save select!
-
-	S_StartSound(0, sfx_itemup);
-	ultimate_selectable = (!ultimate_selectable);
-
-	// If on the save select, move to what is now Ultimate Mode!
-	if (currentMenu == &SP_LoadDef)
-		M_ForceSaveSlotSelected(NOSAVESLOT);
-	return 1;
-}*/
-
 static UINT8 cheatf_warp(void)
 {
 	UINT8 i;

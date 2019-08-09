@@ -31,6 +31,11 @@
 #define KART_FONTEND 'Z'
 
 #define KART_FONTSIZE (KART_FONTEND - KART_FONTSTART + 1)
+
+#define AZ_FONTSTART 'A' // the first font character
+#define AZ_FONTEND 'Z'
+
+#define AZ_FONTSIZE (AZ_FONTEND - AZ_FONTSTART + 1)
 //
 
 // Level title font
@@ -78,7 +83,8 @@ void HU_AddChatText(const char *text, boolean playsound);
 // set true when entering a chat message
 extern boolean chat_on;
 
-extern patch_t *hu_font[HU_FONTSIZE], *kart_font[KART_FONTSIZE], *tny_font[HU_FONTSIZE];	// SRB2kart
+extern patch_t *hu_font[HU_FONTSIZE], *tny_font[HU_FONTSIZE];
+extern patch_t *kart_font[KART_FONTSIZE], *gamemode_font[AZ_FONTSIZE]; // SRB2kart
 extern patch_t *tallnum[10];
 extern patch_t *pingnum[10];
 extern patch_t *pinggfx[5];

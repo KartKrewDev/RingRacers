@@ -3296,13 +3296,13 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_titlescreen_final;
 			}
-			else if (fastncmp(word, "TIMEATTACK_", 11))
+			else if (fastncmp(word, "MENU_", 11))
 			{
 				pword = word + 11;
 				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_timeattack_toblack;
+					wipeoffset = wipe_menu_toblack;
 				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_timeattack_final;
+					wipeoffset = wipe_menu_final;
 			}
 			else if (fastncmp(word, "CREDITS_", 8))
 			{
