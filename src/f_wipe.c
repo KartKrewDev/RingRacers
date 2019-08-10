@@ -62,9 +62,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	UINT8_MAX, // wipe_intro_toblack (hardcoded)
 	99, // wipe_cutscene_toblack (hardcoded)
 
-	0,  // wipe_specinter_toblack
-	0,  // wipe_multinter_toblack
-	0,  // wipe_speclevel_towhite
+	72, // wipe_encore_toinvert
 
 	UINT8_MAX, // wipe_level_final
 	0,  // wipe_intermission_final
@@ -76,10 +74,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_evaluation_final
 	0,  // wipe_gameend_final
 	99, // wipe_intro_final (hardcoded)
-	99, // wipe_cutscene_final (hardcoded)
-
-	0,  // wipe_specinter_final
-	0   // wipe_multinter_final
+	99  // wipe_cutscene_final (hardcoded)
 };
 
 //--------------------------------------------------------------------------

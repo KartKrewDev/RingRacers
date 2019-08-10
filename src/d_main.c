@@ -308,13 +308,6 @@ static void D_Display(void)
 		wipedefindex = gamestate; // wipe_xxx_toblack
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
 			wipedefindex = wipe_timeattack_toblack;
-		else if (gamestate == GS_INTERMISSION)
-		{
-			if (intertype == int_spec) // Special Stage
-				wipedefindex = wipe_specinter_toblack;
-			else //if (intertype != int_coop) // Multiplayer
-				wipedefindex = wipe_multinter_toblack;
-		}
 
 		if (rendermode != render_none)
 		{

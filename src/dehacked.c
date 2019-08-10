@@ -3256,29 +3256,13 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_intermission_final;
 			}
-			else if (fastncmp(word, "SPECINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
 			else if (fastncmp(word, "VOTING_", 7))
 			{
 				pword = word + 7;
 				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
+					wipeoffset = wipe_voting_toblack;
 				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
-			else if (fastncmp(word, "MULTINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_multinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_multinter_final;
+					wipeoffset = wipe_voting_final;
 			}
 			else if (fastncmp(word, "CONTINUING_", 11))
 			{
@@ -3330,11 +3314,11 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_gameend_final;
 			}
-			else if (fastncmp(word, "SPECLEVEL_", 10))
+			else if (fastncmp(word, "ENCORE_", 7))
 			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOWHITE"))
-					wipeoffset = wipe_speclevel_towhite;
+				pword = word + 7;
+				if (fastcmp(pword, "TOINVERT"))
+					wipeoffset = wipe_encore_toinvert;
 			}
 
 			if (wipeoffset < 0)
@@ -3344,10 +3328,10 @@ static void readwipes(MYFILE *f)
 			}
 
 			if (value == UINT8_MAX
-			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_speclevel_towhite))
+			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_encore_toinvert))
 			{
 				 // Cannot disable non-toblack wipes
-				 // (or the level toblack wipe, or the special towhite wipe)
+				 // (or the level toblack wipe, or the special encore wipe)
 				deh_warning("Wipes: can't disable wipe of type '%s'", word);
 				continue;
 			}
