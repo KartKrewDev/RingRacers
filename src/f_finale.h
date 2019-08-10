@@ -95,6 +95,7 @@ enum
 
 	// Specialized wipes
 	wipe_encore_toinvert,
+	wipe_encore_towhite,
 
 	// "From black" wipes
 	wipe_level_final,

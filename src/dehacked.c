@@ -3319,6 +3319,8 @@ static void readwipes(MYFILE *f)
 				pword = word + 7;
 				if (fastcmp(pword, "TOINVERT"))
 					wipeoffset = wipe_encore_toinvert;
+				else if (fastcmp(pword, "TOWHITE"))
+					wipeoffset = wipe_encore_towhite;
 			}
 
 			if (wipeoffset < 0)

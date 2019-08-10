@@ -63,6 +63,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	99, // wipe_cutscene_toblack (hardcoded)
 
 	72, // wipe_encore_toinvert
+	99, // wipe_encore_towhite
 
 	UINT8_MAX, // wipe_level_final
 	0,  // wipe_intermission_final

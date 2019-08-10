@@ -2889,7 +2889,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 		F_WipeEndScreen();
 
-		F_RunWipe(99, false, "FADEMAP1", false, true); // wiggle the screen during this!
+		F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
 
 		// THEN fade to a black screen.
 		F_WipeStartScreen();
