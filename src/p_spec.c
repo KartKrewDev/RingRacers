@@ -6737,14 +6737,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 					sectors[s].midmap = lines[i].frontsector->midmap;
 				break;
 
-#ifdef ESLOPE // Slope copy specials. Handled here for sanity.
-			case 720:
-			case 721:
-			case 722:
-				P_CopySectorSlope(&lines[i]);
-				break;
-#endif
-
 			case 2000: // Waypoint Parameters
 				break;
 			case 2001: // Finish Line
