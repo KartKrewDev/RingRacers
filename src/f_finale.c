@@ -220,7 +220,7 @@ void F_StartIntro(void)
 		F_WipeStartScreen();
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_level_final], false, "FADEMAP0", false, false);
+		F_RunWipe(wipedefs[wipe_intro_toblack], false, "FADEMAP0", false, false);
 	}
 
 	if (introtoplay)
