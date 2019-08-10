@@ -2863,7 +2863,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		V_EncoreInvertScreen();
 		F_WipeEndScreen();
 
-		F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false);
+		F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
 
 		// Hold on invert for extra effect.
 		// (This define might be useful for other areas of code? Not sure)
@@ -2889,7 +2889,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 		F_WipeEndScreen();
 
-		F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP1", false);
+		F_RunWipe(99, false, "FADEMAP1", false, true); // wiggle the screen during this!
 
 		// THEN fade to a black screen.
 		F_WipeStartScreen();
@@ -2897,7 +2897,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 		F_WipeEndScreen();
 
-		F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false);
+		F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
 		// Wait a bit longer.
 		WAIT((3*TICRATE)/4);
@@ -2922,7 +2922,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 		F_WipeEndScreen();
 
-		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false);
+		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
 
 	// Reset the palette now all fades have been done

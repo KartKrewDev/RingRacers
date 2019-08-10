@@ -74,7 +74,7 @@ extern INT32 lastwipetic;
 
 void F_WipeStartScreen(void);
 void F_WipeEndScreen(void);
-void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse);
+void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle);
 
 enum
 {

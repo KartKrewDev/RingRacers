@@ -356,10 +356,55 @@ void F_WipeEndScreen(void)
 #endif
 }
 
+/**	Wiggle post processor for encore wipes
+  */
+static void F_DoEncoreWiggle(UINT8 time)
+{
+	UINT8 *tmpscr = wipe_scr_start;
+	UINT8 *srcscr = wipe_scr;
+	angle_t disStart = (time * 128) & FINEMASK;
+	INT32 y, sine, newpix, scanline;
+
+	for (y = 0; y < vid.height; y++)
+	{
+		sine = (FINESINE(disStart) * (time*12))>>FRACBITS;
+		scanline = y / vid.dupy;
+		if (scanline & 1)
+			sine = -sine;
+		newpix = abs(sine);
+
+		if (sine < 0)
+		{
+			M_Memcpy(&tmpscr[(y*vid.width)+newpix], &srcscr[(y*vid.width)], vid.width-newpix);
+
+			// Cleanup edge
+			while (newpix)
+			{
+				tmpscr[(y*vid.width)+newpix] = srcscr[(y*vid.width)];
+				newpix--;
+			}
+		}
+		else
+		{
+			M_Memcpy(&tmpscr[(y*vid.width)], &srcscr[(y*vid.width) + sine], vid.width-newpix);
+
+			// Cleanup edge
+			while (newpix)
+			{
+				tmpscr[(y*vid.width) + vid.width - newpix] = srcscr[(y*vid.width) + (vid.width-1)];
+				newpix--;
+			}
+		}
+
+		disStart += (time*8); //the offset into the displacement map, increment each game loop
+		disStart &= FINEMASK; //clip it to FINEMASK
+	}
+}
+
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse)
+void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle)
 {
 #ifdef NOWIPE
 	(void)wipetype;
@@ -415,6 +460,9 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		else
 #endif
 		F_DoWipe(fmask, fcolor, reverse);
+		if (encorewiggle)
+			F_DoEncoreWiggle(wipeframe);
+
 		I_OsPolling();
 		I_UpdateNoBlit();
 
