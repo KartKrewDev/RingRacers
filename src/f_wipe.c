@@ -462,8 +462,12 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		else
 #endif
 		F_DoWipe(fmask, fcolor, reverse);
+
+#ifndef HWRENDER
 		if (encorewiggle)
 			F_DoEncoreWiggle(wipeframe); // Can't think of a better way to run this on fades, unfortunately.
+#endif
+
 
 		I_OsPolling();
 		I_UpdateNoBlit();
