@@ -8395,8 +8395,6 @@ void A_JawzChase(mobj_t *actor)
 				}
 			}
 
-			CONS_Printf("ad: %d\n", angledelta);
-
 			ret = P_SpawnMobj(actor->tracer->x, actor->tracer->y, actor->tracer->z, MT_PLAYERRETICULE);
 			P_SetTarget(&ret->target, actor->tracer);
 			ret->frame |= ((leveltime % 10) / 2) + 5;
