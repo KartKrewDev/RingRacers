@@ -107,7 +107,7 @@ consvar_t cv_screenshot_folder = {"screenshot_folder", "", CV_SAVE, NULL, NULL, 
 static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
 consvar_t cv_moviemode = {"moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_movie_option = {"movie_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Moviemode_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_movie_option = {"movie_option", "Default", CV_SAVE, screenshot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_movie_folder = {"movie_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t zlib_mem_level_t[] = {
@@ -1095,7 +1095,7 @@ void M_StartMovie(void)
 	else if (cv_movie_option.value == 2)
 		strcpy(pathname, srb2path);
 	else if (cv_movie_option.value == 3 && *cv_movie_folder.string != '\0')
-		strcpy(pathname, cv_screenshot_folder.string);
+		strcpy(pathname, cv_movie_folder.string);
 
 	if (cv_movie_option.value != 3)
 	{
