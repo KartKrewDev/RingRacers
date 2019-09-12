@@ -6245,7 +6245,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		36*FRACUNIT,    // damage
+		18*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_YHORIZ2       // raisestate
@@ -6272,7 +6272,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		72*FRACUNIT,    // damage
+		36*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_RHORIZ2       // raisestate
@@ -6299,7 +6299,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		18*FRACUNIT,    // damage
+		9*FRACUNIT,     // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_BHORIZ2       // raisestate

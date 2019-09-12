@@ -158,60 +158,50 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		object->z = spring->z + spring->height + 1;
 	else if (vertispeed < 0)
 		object->z = spring->z - object->height - 1;
-//#ifdef TELEPORTJANK
 	else
 	{
 		fixed_t offx, offy;
 
-		// Horizontal springs teleport you in FRONT of them.
-		object->momx = object->momy = 0;
-
 		// Overestimate the distance to position you at
-		offx = P_ReturnThrustX(spring, spring->angle, (spring->radius + object->radius + 1) * 2);
-		offy = P_ReturnThrustY(spring, spring->angle, (spring->radius + object->radius + 1) * 2);
-
-		// Make it square by clipping
-		if (offx > (spring->radius + object->radius + 1))
-			offx = spring->radius + object->radius + 1;
-		else if (offx < -(spring->radius + object->radius + 1))
-			offx = -(spring->radius + object->radius + 1);
-
-		if (offy > (spring->radius + object->radius + 1))
-			offy = spring->radius + object->radius + 1;
-		else if (offy < -(spring->radius + object->radius + 1))
-			offy = -(spring->radius + object->radius + 1);
+		offx = P_ReturnThrustX(spring, spring->angle, spring->radius + object->radius + 1);
+		offy = P_ReturnThrustY(spring, spring->angle, spring->radius + object->radius + 1);
 
 		// Set position!
 		P_TryMove(object, spring->x + offx, spring->y + offy, true);
 	}
-//#endif
 
 	if (vertispeed)
 	{
 		// Vertical springs
-		object->momz = FixedMul(vertispeed,FixedSqrt(FixedMul(vscale, spring->scale)));
+		object->momz = FixedMul(vertispeed, FixedSqrt(FixedMul(vscale, spring->scale)));
 
 		// Diagonal springs
 		if (horizspeed)
 		{
-			if (!object->player)
-				P_InstaThrustEvenIn2D(object, spring->angle, FixedMul(horizspeed,FixedSqrt(FixedMul(hscale, spring->scale))));
-			else
+			fixed_t finalSpeed = horizspeed;
+
+			if (object->player)
 			{
-				fixed_t finalSpeed = FixedDiv(horizspeed, hscale);
-				fixed_t pSpeed = object->player->speed;
-
-				if (pSpeed > finalSpeed)
-					finalSpeed = pSpeed;
-
-				P_InstaThrustEvenIn2D(object, spring->angle, FixedMul(finalSpeed,FixedSqrt(FixedMul(hscale, spring->scale))));
+				if (object->player->speed > finalSpeed)
+					finalSpeed = object->player->speed;
 			}
+
+			P_InstaThrustEvenIn2D(object, spring->angle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
 		}
 	}
 	else if (horizspeed)
 	{
-		// Horizontal springs
-		P_Thrust(object, spring->angle, FixedMul(FixedDiv(horizspeed, hscale), FixedSqrt(FixedMul(hscale, spring->scale))));
+		fixed_t finalSpeed = horizspeed;
+
+		if (object->player)
+		{
+			finalSpeed += object->player->speed;
+			// Less friction when hitting horizontal springs
+			object->player->kartstuff[k_tiregrease] = greasetics;
+		}
+
+		// Add speed
+		P_Thrust(object, spring->angle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
 	}
 
 	// Re-solidify
@@ -247,9 +237,6 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 						localangle[3] = spring->angle;
 				}
 			}
-
-			if (!vertispeed) // Less friction when hitting horizontal springs
-				object->player->kartstuff[k_tiregrease] = greasetics;
 		}
 
 		P_ResetPlayer(object->player);
