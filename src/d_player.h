@@ -327,6 +327,7 @@ typedef enum
 	k_jawztargetdelay,	// Delay for Jawz target switching, to make it less twitchy
 	k_spectatewait,		// How long have you been waiting as a spectator
 	k_growcancel,		// Hold the item button down to cancel Grow
+	k_tiregrease,		// Reduced friction timer after hitting a horizontal spring
 
 	NUMKARTSTUFF
 } kartstufftype_t;

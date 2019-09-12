@@ -5260,6 +5260,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_justbumped])
 		player->kartstuff[k_justbumped]--;
 
+	if (player->kartstuff[k_tiregrease])
+		player->kartstuff[k_tiregrease]--;
+
 	// This doesn't go in HUD update because it has potential gameplay ramifications
 	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
 	{
@@ -6479,6 +6482,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	if (onground)
 	{
+		fixed_t prevfriction = player->mo->friction;
+
+		// Reduce friction after hitting a horizontal spring
+		if (player->kartstuff[k_tiregrease])
+			player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->kartstuff[k_tiregrease];
+
 		// Friction
 		if (!player->kartstuff[k_offroad])
 		{
@@ -6491,9 +6500,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		// Karma ice physics
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
-		{
 			player->mo->friction += 1228;
 
+		// Wipeout slowdown
+		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
+		{
+			if (player->kartstuff[k_offroad])
+				player->mo->friction -= 4912;
+			if (player->kartstuff[k_wipeoutslow] == 1)
+				player->mo->friction -= 9824;
+		}
+
+		// Friction was changed, so we must recalculate a bunch of stuff
+		if (player->mo->friction != prevfriction) 
+		{
 			if (player->mo->friction > FRACUNIT)
 				player->mo->friction = FRACUNIT;
 			if (player->mo->friction < 0)
@@ -6504,19 +6524,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			if (player->mo->movefactor < FRACUNIT)
 				player->mo->movefactor = 19*player->mo->movefactor - 18*FRACUNIT;
 			else
-				player->mo->movefactor = FRACUNIT; //player->mo->movefactor = ((player->mo->friction - 0xDB34)*(0xA))/0x80;
+				player->mo->movefactor = FRACUNIT;
 
 			if (player->mo->movefactor < 32)
 				player->mo->movefactor = 32;
-		}
-
-		// Wipeout slowdown
-		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
-		{
-			if (player->kartstuff[k_offroad])
-				player->mo->friction -= 4912;
-			if (player->kartstuff[k_wipeoutslow] == 1)
-				player->mo->friction -= 9824;
 		}
 	}
 

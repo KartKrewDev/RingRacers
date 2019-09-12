@@ -8481,7 +8481,8 @@ static const char *const KARTSTUFF_LIST[] = {
 	"GETSPARKS",
 	"JAWZTARGETDELAY",
 	"SPECTATEWAIT",
-	"GROWCANCEL"
+	"GROWCANCEL",
+	"TIREGREASE"
 };
 #endif
 
