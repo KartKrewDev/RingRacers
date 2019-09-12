@@ -240,28 +240,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			}
 		}
 
-		//pflags = object->player->pflags & (PF_JUMPED|PF_SPINNING|PF_THOKKED); // I still need these.
 		P_ResetPlayer(object->player);
-
-		/* // SRB2kart - Springs don't need to change player state in kart.
-		if (P_MobjFlip(object)*vertispeed > 0)
-			P_SetPlayerMobjState(object, S_PLAY_SPRING);
-		else if (P_MobjFlip(object)*vertispeed < 0)
-			P_SetPlayerMobjState(object, S_PLAY_FALL1);
-		else // horizontal spring
-		{
-			if (pflags & (PF_JUMPED|PF_SPINNING) && object->player->panim == PA_ROLL)
-				object->player->pflags = pflags;
-			else
-				P_SetPlayerMobjState(object, S_PLAY_RUN1);
-		}
-
-		if (spring->info->painchance)
-		{
-			object->player->pflags |= PF_JUMPED;
-			P_SetPlayerMobjState(object, S_PLAY_ATK1);
-		}
-		*/
 	}
 	return true;
 }
