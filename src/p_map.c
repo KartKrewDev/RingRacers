@@ -122,6 +122,8 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
+	fixed_t savemomx = 0;
+	fixed_t savemomy = 0;
 
 	if (object->eflags & MFE_SPRUNG) // Object was already sprung this tic
 		return false;
@@ -154,6 +156,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
 
+	// Vertical springs teleport you on TOP of them.
 	if (vertispeed > 0)
 		object->z = spring->z + spring->height + 1;
 	else if (vertispeed < 0)
@@ -162,11 +165,26 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	{
 		fixed_t offx, offy;
 
-		// Overestimate the distance to position you at
-		offx = P_ReturnThrustX(spring, spring->angle, spring->radius + object->radius + 1);
-		offy = P_ReturnThrustY(spring, spring->angle, spring->radius + object->radius + 1);
+		// Horizontal springs teleport you in FRONT of them.
+		savemomx = object->momx;
+		savemomy = object->momy;
+		object->momx = object->momy = 0;
 
-		// Set position!
+		// Overestimate the distance to position you at
+		offx = P_ReturnThrustX(spring, spring->angle, (spring->radius + object->radius + 1) * 2);
+		offy = P_ReturnThrustY(spring, spring->angle, (spring->radius + object->radius + 1) * 2);
+
+		// Then clip it down to a square, so it matches the hitbox size.
+		if (offx > (spring->radius + object->radius + 1))
+			offx = spring->radius + object->radius + 1;
+		else if (offx < -(spring->radius + object->radius + 1))
+			offx = -(spring->radius + object->radius + 1);
+
+		if (offy > (spring->radius + object->radius + 1))
+			offy = spring->radius + object->radius + 1;
+		else if (offy < -(spring->radius + object->radius + 1))
+			offy = -(spring->radius + object->radius + 1);
+
 		P_TryMove(object, spring->x + offx, spring->y + offy, true);
 	}
 
@@ -181,27 +199,44 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			fixed_t finalSpeed = horizspeed;
 
 			if (object->player)
-			{
-				if (object->player->speed > finalSpeed)
-					finalSpeed = object->player->speed;
-			}
+				finalSpeed = max(object->player->speed, finalSpeed); // Horizontal speed is a minimum
 
 			P_InstaThrustEvenIn2D(object, spring->angle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
 		}
 	}
 	else if (horizspeed)
 	{
+		angle_t reflect = spring->angle;
 		fixed_t finalSpeed = horizspeed;
+
+		if (savemomx || savemomy)
+		{
+			angle_t momang, diff;
+
+			momang = R_PointToAngle2(0, 0, savemomx, savemomy);
+			diff = (signed)(momang - spring->angle);
+
+			reflect = (signed)(spring->angle - (diff*2));
+
+			if ((signed)reflect > (signed)(spring->angle + ANGLE_45))
+				reflect = (spring->angle + ANGLE_45);
+
+			if ((signed)reflect < (signed)(spring->angle - ANGLE_45))
+				reflect = (spring->angle - ANGLE_45);
+		}
+
+		// Scale to gamespeed
+		finalSpeed = FixedMul(finalSpeed, K_GetKartGameSpeedScalar(gamespeed));
 
 		if (object->player)
 		{
-			finalSpeed += object->player->speed;
+			// Horizontal speed is a minimum
+			finalSpeed = max(object->player->speed, finalSpeed);
 			// Less friction when hitting horizontal springs
-			object->player->kartstuff[k_tiregrease] = greasetics;
+			object->player->kartstuff[k_tiregrease] = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
 		}
 
-		// Add speed
-		P_Thrust(object, spring->angle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
+		P_InstaThrustEvenIn2D(object, reflect, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
 	}
 
 	// Re-solidify
@@ -213,31 +248,6 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	{
 		if (spring->flags & MF_ENEMY) // Spring shells
 			P_SetTarget(&spring->target, object);
-
-		if (horizspeed)
-		{
-			const angle_t turnabout = ANGLE_90+ANGLE_45;
-			angle_t dangle = object->angle - spring->angle;
-			if (dangle > ANGLE_180)
-				dangle = InvAngle(dangle);
-
-			if (dangle > turnabout || (object->player->cmd.forwardmove == 0 && object->player->cmd.sidemove == 0))
-			{
-				object->angle = spring->angle;
-
-				if (!demo.playback || P_AnalogMove(object->player))
-				{
-					if (object->player == &players[consoleplayer])
-						localangle[0] = spring->angle;
-					else if (object->player == &players[displayplayers[1]])
-						localangle[1] = spring->angle;
-					else if (object->player == &players[displayplayers[2]])
-						localangle[2] = spring->angle;
-					else if (object->player == &players[displayplayers[3]])
-						localangle[3] = spring->angle;
-				}
-			}
-		}
 
 		P_ResetPlayer(object->player);
 	}
