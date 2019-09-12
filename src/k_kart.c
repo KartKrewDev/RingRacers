@@ -5300,17 +5300,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	// ???
-	/*
-	if (player->kartstuff[k_jmp] > 1 && onground)
-	{
-		S_StartSound(player->mo, sfx_spring);
-		P_DoJump(player, false);
-		player->mo->momz *= player->kartstuff[k_jmp];
-		player->kartstuff[k_jmp] = 0;
-	}
-	*/
-
 	if (player->kartstuff[k_comebacktimer])
 		player->kartstuff[k_comebackmode] = 0;
 

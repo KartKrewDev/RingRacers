@@ -459,11 +459,15 @@ typedef enum sprite
 	SPR_RBRD, // Red Birdie in Bubble
 
 	// Springs
-	SPR_SPRY, // yellow spring
-	SPR_SPRR, // red spring
-	SPR_SPRB, // Blue springs
-	SPR_YSPR, // Yellow Diagonal Spring
-	SPR_RSPR, // Red Diagonal Spring
+	SPR_SPVY, // Yellow Vertical Spring
+	SPR_SPVR, // Red Vertical Spring
+	SPR_SPVB, // Blue Vertical Spring
+	SPR_SPDY, // Yellow Diagonal Spring
+	SPR_SPDR, // Red Diagonal Spring
+	SPR_SPDB, // Blue Diagonal Spring
+	SPR_SPHY, // Yellow Horizontal Spring
+	SPR_SPHR, // Red Horizontal Spring
+	SPR_SPHB, // Blue Horizontal Spring
 
 	// Environmental Effects
 	SPR_RAIN, // Rain
@@ -588,7 +592,6 @@ typedef enum sprite
 
 	// Springs
 	SPR_SPRG, // Gray Spring
-	SPR_BSPR, // Blue Diagonal Spring
 
 	SPR_RNDM, // Random Item Box
 	SPR_RPOP, // Random Item Box Pop
@@ -2491,44 +2494,59 @@ typedef enum state
 	S_RBIRD2,
 	S_RBIRD3,
 
-	S_YELLOWSPRING,
+	// Yellow Spring
+	S_YELLOWSPRING1,
 	S_YELLOWSPRING2,
 	S_YELLOWSPRING3,
 	S_YELLOWSPRING4,
-	S_YELLOWSPRING5,
 
-	S_REDSPRING,
+	// Red Spring
+	S_REDSPRING1,
 	S_REDSPRING2,
 	S_REDSPRING3,
 	S_REDSPRING4,
-	S_REDSPRING5,
 
-	// Blue Springs
-	S_BLUESPRING,
+	// Blue Spring
+	S_BLUESPRING1,
 	S_BLUESPRING2,
 	S_BLUESPRING3,
 	S_BLUESPRING4,
-	S_BLUESPRING5,
 
 	// Yellow Diagonal Spring
 	S_YDIAG1,
 	S_YDIAG2,
 	S_YDIAG3,
 	S_YDIAG4,
-	S_YDIAG5,
-	S_YDIAG6,
-	S_YDIAG7,
-	S_YDIAG8,
 
 	// Red Diagonal Spring
 	S_RDIAG1,
 	S_RDIAG2,
 	S_RDIAG3,
 	S_RDIAG4,
-	S_RDIAG5,
-	S_RDIAG6,
-	S_RDIAG7,
-	S_RDIAG8,
+
+	// Blue Diagonal Spring
+	S_BDIAG1,
+	S_BDIAG2,
+	S_BDIAG3,
+	S_BDIAG4,
+
+	// Yellow Horizontal Spring
+	S_YHORIZ1,
+	S_YHORIZ2,
+	S_YHORIZ3,
+	S_YHORIZ4,
+
+	// Red Horizontal Spring
+	S_RHORIZ1,
+	S_RHORIZ2,
+	S_RHORIZ3,
+	S_RHORIZ4,
+
+	// Blue Horizontal Spring
+	S_BHORIZ1,
+	S_BHORIZ2,
+	S_BHORIZ3,
+	S_BHORIZ4,
 
 	// Rain
 	S_RAIN1,
@@ -3162,16 +3180,6 @@ typedef enum state
 
 	// Invis-spring - this is used just for the sproing sound.
 	S_INVISSPRING,
-
-	// Blue Diagonal Spring
-	S_BDIAG1,
-	S_BDIAG2,
-	S_BDIAG3,
-	S_BDIAG4,
-	S_BDIAG5,
-	S_BDIAG6,
-	S_BDIAG7,
-	S_BDIAG8,
 
 	//{ Random Item Box
 	S_RANDOMITEM1,
@@ -4242,11 +4250,15 @@ typedef enum mobj_type
 	// Springs and others
 	MT_FAN,
 	MT_STEAM, // Steam riser
-	MT_BLUESPRING,
 	MT_YELLOWSPRING,
 	MT_REDSPRING,
+	MT_BLUESPRING,
 	MT_YELLOWDIAG, // Yellow Diagonal Spring
 	MT_REDDIAG, // Red Diagonal Spring
+	MT_BLUEDIAG, // Blue Diagonal Spring
+	MT_YELLOWHORIZ, // Yellow Horizontal Spring
+	MT_REDHORIZ, // Red Horizontal Spring
+	MT_BLUEHORIZ, // Blue Horizontal Spring
 
 	// Interactive Objects
 	MT_BUBBLES, // Bubble source
@@ -4630,7 +4642,6 @@ typedef enum mobj_type
 	// SRB2kart
 	MT_GRAYSPRING,
 	MT_INVISSPRING,
-	MT_BLUEDIAG,
 	MT_RANDOMITEM,
 	MT_RANDOMITEMPOP,
 	MT_FLOATINGITEM,
