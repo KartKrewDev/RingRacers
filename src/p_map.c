@@ -113,12 +113,13 @@ boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 //                       MOVEMENT ITERATOR FUNCTIONS
 // =========================================================================
 
+//#define TELEPORTJANK
+
 boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
 	//INT32 pflags;
 	const fixed_t hscale = mapobjectscale + (mapobjectscale - object->scale);
 	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
-	fixed_t offx, offy;
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
 
@@ -142,11 +143,13 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	object->eflags |= MFE_SPRUNG; // apply this flag asap!
 	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
 
+#ifdef TELEPORTJANK
 	if (horizspeed && vertispeed) // Mimic SA
 	{
 		object->momx = object->momy = 0;
 		P_TryMove(object, spring->x, spring->y, true);
 	}
+#endif
 
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
@@ -155,8 +158,11 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		object->z = spring->z + spring->height + 1;
 	else if (vertispeed < 0)
 		object->z = spring->z - object->height - 1;
+#ifdef TELEPORTJANK
 	else
 	{
+		fixed_t offx, offy;
+
 		// Horizontal springs teleport you in FRONT of them.
 		object->momx = object->momy = 0;
 
@@ -178,6 +184,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		// Set position!
 		P_TryMove(object, spring->x + offx, spring->y + offy, true);
 	}
+#endif
 
 	if (vertispeed)
 		object->momz = FixedMul(vertispeed,FixedSqrt(FixedMul(vscale, spring->scale)));
@@ -208,20 +215,28 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		if (spring->flags & MF_ENEMY) // Spring shells
 			P_SetTarget(&spring->target, object);
 
-		if (horizspeed && object->player->cmd.forwardmove == 0 && object->player->cmd.sidemove == 0)
+		if (horizspeed)
 		{
-			object->angle = spring->angle;
+			const angle_t turnabout = ANGLE_90+ANGLE_45;
+			angle_t dangle = object->angle - spring->angle;
+			if (dangle > ANGLE_180)
+				dangle = InvAngle(dangle);
 
-			if (!demo.playback || P_AnalogMove(object->player))
+			if (dangle > turnabout || (object->player->cmd.forwardmove == 0 && object->player->cmd.sidemove == 0))
 			{
-				if (object->player == &players[consoleplayer])
-					localangle[0] = spring->angle;
-				else if (object->player == &players[displayplayers[1]])
-					localangle[1] = spring->angle;
-				else if (object->player == &players[displayplayers[2]])
-					localangle[2] = spring->angle;
-				else if (object->player == &players[displayplayers[3]])
-					localangle[3] = spring->angle;
+				object->angle = spring->angle;
+
+				if (!demo.playback || P_AnalogMove(object->player))
+				{
+					if (object->player == &players[consoleplayer])
+						localangle[0] = spring->angle;
+					else if (object->player == &players[displayplayers[1]])
+						localangle[1] = spring->angle;
+					else if (object->player == &players[displayplayers[2]])
+						localangle[2] = spring->angle;
+					else if (object->player == &players[displayplayers[3]])
+						localangle[3] = spring->angle;
+				}
 			}
 		}
 
