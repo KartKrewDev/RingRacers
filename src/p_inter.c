@@ -2535,7 +2535,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				while (cur && !P_MobjWasRemoved(cur))
 				{
 					// Shoot every piece outward
-					if (cur->x != target->x && cur->y != target->y)
+					if (!(cur->x == target->x && cur->y == target->y))
 					{
 						P_InstaThrust(cur,
 							R_PointToAngle2(target->x, target->y, cur->x, cur->y),
