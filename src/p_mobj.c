@@ -6965,7 +6965,7 @@ void P_MobjThinker(mobj_t *mobj)
 				if (mobj->flags2 & MF2_OBJECTFLIP)
 					mobj->eflags |= MFE_VERTICALFLIP;
 
-				if (mobj->fuse)
+				if (mobj->tics > 0)
 					mobj->flags2 ^= MF2_DONTDRAW;
 				break;
 			//}

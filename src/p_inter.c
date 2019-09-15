@@ -2546,7 +2546,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 					cur->momz = 8 * target->scale * P_MobjFlip(target);
 
 					cur->flags &= ~MF_NOGRAVITY;
-					cur->fuse = 24;
+					cur->tics = TICRATE;
+					cur->frame &= ~FF_ANIMATE; // Stop animating the propellers
 
 					cur = cur->hnext;
 				}

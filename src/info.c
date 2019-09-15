@@ -20159,7 +20159,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_BATTLECAPSULE
 	    2333,           // doomednum
 	    S_INVISIBLE,    // spawnstate
-	    1000,           // spawnhealth
+	    1,              // spawnhealth
 	    S_NULL,         // seestate
 	    sfx_None,       // seesound
 	    8,              // reactiontime
