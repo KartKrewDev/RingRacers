@@ -2524,6 +2524,34 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				S_StartSound(target, sfx_s3k80);
 			}
 			break;
+		case MT_BATTLECAPSULE:
+			{
+				mobj_t *cur;
+
+				target->fuse = 16;
+
+				cur = target->hnext;
+
+				while (cur && !P_MobjWasRemoved(cur))
+				{
+					// Shoot every piece outward
+					if (cur->x != target->x && cur->y != target->y)
+					{
+						P_InstaThrust(cur,
+							R_PointToAngle2(target->x, target->y, cur->x, cur->y),
+							R_PointToDist2(target->x, target->y, cur->x, cur->y) / 12
+						);
+					}
+
+					cur->momz = 8 * target->scale * P_MobjFlip(target);
+
+					cur->flags &= ~MF_NOGRAVITY;
+					cur->fuse = 24;
+
+					cur = cur->hnext;
+				}
+			}
+			break;
 
 		default:
 			break;

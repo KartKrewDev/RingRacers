@@ -6956,6 +6956,18 @@ void P_MobjThinker(mobj_t *mobj)
 						P_SetMobjStateNF(smok, smok->info->painstate); // same function, diff sprite
 				}
 				break;
+			case MT_BATTLECAPSULE_PIECE:
+				if (mobj->extravalue2)
+					mobj->frame |= FF_VERTICALFLIP;
+				else
+					mobj->frame &= ~FF_VERTICALFLIP;
+
+				if (mobj->flags2 & MF2_OBJECTFLIP)
+					mobj->eflags |= MFE_VERTICALFLIP;
+
+				if (mobj->fuse)
+					mobj->flags2 ^= MF2_DONTDRAW;
+				break;
 			//}
 			case MT_WATERDROP:
 				P_SceneryCheckWater(mobj);
@@ -7401,6 +7413,27 @@ void P_MobjThinker(mobj_t *mobj)
 			{
 				P_RemoveMobj(mobj);
 				return;
+			}
+			break;
+		case MT_BATTLECAPSULE:
+			if (!(mobj->fuse & 1))
+			{
+				const SINT8 amt = 96;
+				mobj_t *dust;
+				UINT8 i;
+
+				for (i = 0; i < 2; i++)
+				{
+					fixed_t xoffset = P_RandomRange(-amt, amt) * mobj->scale;
+					fixed_t yoffset = P_RandomRange(-amt, amt) * mobj->scale;
+					fixed_t zoffset = P_RandomRange(-(amt >> 1), (amt >> 1)) * mobj->scale;
+
+					dust = P_SpawnMobj(mobj->x + xoffset, mobj->y + yoffset,
+						mobj->z + (mobj->height >> 1) + zoffset, MT_EXPLODE);
+				}
+
+				if (dust && !P_MobjWasRemoved(dust)) // Only do for 1 explosion
+					S_StartSound(dust, sfx_s3k3d);
 			}
 			break;
 		//}
@@ -9076,6 +9109,87 @@ void P_MobjThinker(mobj_t *mobj)
 				trail->color = mobj->color;
 			}
 			break;
+		case MT_BATTLECAPSULE:
+			{
+				SINT8 realflip = P_MobjFlip(mobj);
+				SINT8 flip = realflip; // Flying capsules needs flipped sprites, but not flipped gravity
+				fixed_t bottom;
+				mobj_t *cur;
+
+				if (mobj->extravalue1)
+				{
+					const INT32 speed = 6*TICRATE; // longer is slower
+					const fixed_t pi = 22*FRACUNIT/7; // Inaccurate, but is close enough for our usage
+					fixed_t sine = FINESINE((((2*pi*speed) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK) * flip;
+
+					// Flying capsules are flipped upside-down, like S3K
+					flip = -flip;
+
+					// ALL CAPSULE MOVEMENT NEEDS TO HAPPEN AFTER THIS & ADD TO MOMENTUM FOR BOBBING TO BE ACCURATE
+					mobj->momz = sine/2;
+				}
+
+				// TODO: insert moving capsule code here
+
+				if (flip == -1)
+					bottom = mobj->z + mobj->height;
+				else
+					bottom = mobj->z;
+
+				cur = mobj->hnext;
+
+				// Move each piece to the proper position
+				while (cur && !P_MobjWasRemoved(cur))
+				{
+					fixed_t newx = mobj->x;
+					fixed_t newy = mobj->y;
+					fixed_t newz = bottom;
+					statenum_t state = (statenum_t)(cur->state-states);
+
+					cur->scale = mobj->scale;
+					cur->destscale = mobj->destscale;
+					cur->scalespeed = mobj->scalespeed;
+
+					cur->extravalue2 = mobj->extravalue1;
+
+					cur->flags2 = (cur->flags2 & ~MF2_OBJECTFLIP)|(mobj->flags2 & MF2_OBJECTFLIP);
+
+					if (state == S_BATTLECAPSULE_TOP)
+						newz += (80 * mobj->scale * flip);
+					else if (state == S_BATTLECAPSULE_BUTTON)
+						newz += (108 * mobj->scale * flip);
+					else if (state == S_BATTLECAPSULE_SUPPORT || state == S_BATTLECAPSULE_SUPPORTFLY)
+					{
+						fixed_t offx = mobj->radius;
+						fixed_t offy = mobj->radius;
+
+						if (cur->extravalue1 & 1)
+							offx = -offx;
+
+						if (cur->extravalue1 > 1)
+							offy = -offy;
+
+						newx += offx;
+						newy += offy;
+					}
+					else if (state == S_BATTLECAPSULE_SIDE1 || state == S_BATTLECAPSULE_SIDE2)
+					{
+						fixed_t offset = 48 * mobj->scale;
+						angle_t angle = (ANGLE_45 * cur->extravalue1);
+
+						newx += FixedMul(offset, FINECOSINE(angle >> ANGLETOFINESHIFT));
+						newy += FixedMul(offset, FINESINE(angle >> ANGLETOFINESHIFT));
+						newz += (12 * mobj->scale * flip);
+
+						cur->angle = angle + ANGLE_90;
+					}
+
+					P_TeleportMove(cur, newx, newy, newz);
+
+					cur = cur->hnext;
+				}
+			}
+			break;
 		//}
 		case MT_TURRET:
 			P_MobjCheckWater(mobj);
@@ -10092,6 +10206,73 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 					P_SetTarget(&cur->hprev, prev);
 					P_SetTarget(&prev->hnext, cur);
 
+					prev = cur;
+				}
+			}
+			break;
+		case MT_BATTLECAPSULE:
+			{
+				mobj_t *cur, *prev = mobj;
+				UINT8 i;
+
+				// Flying capsules
+				if (!(mobj->eflags & MFE_ONGROUND))
+				{
+					mobj->flags |= MF_NOGRAVITY;
+					mobj->extravalue1 = 1; // Set extravalue1 for later reference
+				}
+
+				// Init hnext list
+				// Spherical top
+				cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
+				P_SetMobjState(cur, S_BATTLECAPSULE_TOP);
+
+				P_SetTarget(&cur->target, mobj);
+				P_SetTarget(&cur->hprev, prev);
+				P_SetTarget(&prev->hnext, cur);
+				prev = cur;
+
+				// Tippity-top decorational button
+				cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
+				P_SetMobjState(cur, S_BATTLECAPSULE_BUTTON);
+
+				P_SetTarget(&cur->target, mobj);
+				P_SetTarget(&cur->hprev, prev);
+				P_SetTarget(&prev->hnext, cur);
+				prev = cur;
+
+				// Supports on the bottom
+				for (i = 0; i < 4; i++)
+				{
+					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
+					cur->extravalue1 = i;
+
+					// TODO: use karma bomb wheels on grounded, moving capsules
+					if (mobj->extravalue1)
+						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORTFLY);
+					else
+						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORT);
+
+					P_SetTarget(&cur->target, mobj);
+					P_SetTarget(&cur->hprev, prev);
+					P_SetTarget(&prev->hnext, cur);
+					prev = cur;
+				}
+
+				// Side paneling
+				for (i = 0; i < 8; i++)
+				{
+					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
+					cur->extravalue1 = i;
+
+					if (i & 1)
+						P_SetMobjState(cur, S_BATTLECAPSULE_SIDE2);
+					else
+						P_SetMobjState(cur, S_BATTLECAPSULE_SIDE1);
+
+					P_SetTarget(&cur->target, mobj);
+					P_SetTarget(&cur->hprev, prev);
+					P_SetTarget(&prev->hnext, cur);
 					prev = cur;
 				}
 			}
