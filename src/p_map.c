@@ -189,40 +189,45 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	}
 
 	if (vertispeed)
-	{
-		// Vertical springs
 		object->momz = FixedMul(vertispeed, FixedSqrt(FixedMul(vscale, spring->scale)));
 
-		// Diagonal springs
-		if (horizspeed)
-		{
-			fixed_t finalSpeed = horizspeed;
-
-			if (object->player)
-				finalSpeed = max(object->player->speed, finalSpeed); // Horizontal speed is a minimum
-
-			P_InstaThrustEvenIn2D(object, spring->angle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
-		}
-	}
-	else if (horizspeed)
+	if (horizspeed)
 	{
-		angle_t reflect = spring->angle;
+		angle_t finalAngle = spring->angle;
 		fixed_t finalSpeed = horizspeed;
 
-		if (savemomx || savemomy)
+		// Reflect your momentum angle against the surface of horizontal springs.
+		// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
+		if ((!vertispeed) && (savemomx || savemomy))
 		{
-			angle_t momang, diff;
+			angle_t momang;
+			INT32 angoffset;
+			boolean subtract = false;
 
 			momang = R_PointToAngle2(0, 0, savemomx, savemomy);
-			diff = (signed)(momang - spring->angle);
 
-			reflect = (signed)(spring->angle - (diff*2));
+			angoffset = momang;
+			angoffset -= spring->angle; // Subtract 
 
-			if ((signed)reflect > (signed)(spring->angle + ANGLE_45))
-				reflect = (spring->angle + ANGLE_45);
+			// Flip on wrong side
+			if ((angle_t)angoffset > ANGLE_180)
+			{
+				angoffset = InvAngle((angle_t)angoffset);
+				subtract = !subtract;
+			}
 
-			if ((signed)reflect < (signed)(spring->angle - ANGLE_45))
-				reflect = (spring->angle - ANGLE_45);
+			// Fix going directly against the spring's angle sending you the wrong way
+			if ((spring->angle - momang) > ANGLE_90)
+				angoffset = ANGLE_180 - angoffset;
+
+			angoffset /= 4; // Reduce amount so it feels more natural
+
+			if (subtract)
+				angoffset = (signed)(spring->angle) - angoffset;
+			else
+				angoffset = (signed)(spring->angle) + angoffset;
+
+			finalAngle = angoffset;
 		}
 
 		// Scale to gamespeed
@@ -232,11 +237,13 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		{
 			// Horizontal speed is a minimum
 			finalSpeed = max(object->player->speed, finalSpeed);
+
 			// Less friction when hitting horizontal springs
-			object->player->kartstuff[k_tiregrease] = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
+			if (!vertispeed)
+				object->player->kartstuff[k_tiregrease] = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
 		}
 
-		P_InstaThrustEvenIn2D(object, reflect, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
+		P_InstaThrustEvenIn2D(object, finalAngle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
 	}
 
 	// Re-solidify
@@ -251,6 +258,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 		P_ResetPlayer(object->player);
 	}
+
 	return true;
 }
 
