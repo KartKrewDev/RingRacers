@@ -195,6 +195,12 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	{
 		angle_t finalAngle = spring->angle;
 		fixed_t finalSpeed = horizspeed;
+		fixed_t objectSpeed;
+
+		if (object->player)
+			objectSpeed = object->player->speed;
+		else
+			objectSpeed = R_PointToDist2(0, 0, savemomx, savemomy);
 
 		// Reflect your momentum angle against the surface of horizontal springs.
 		// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
@@ -220,7 +226,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			if ((spring->angle - momang) > ANGLE_90)
 				angoffset = ANGLE_180 - angoffset;
 
-			angoffset /= 4; // Reduce amount so it feels more natural
+			angoffset /= 6; // Reduce amount so it feels more natural
 
 			if (subtract)
 				angoffset = (signed)(spring->angle) - angoffset;
@@ -232,12 +238,11 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 		// Scale to gamespeed
 		finalSpeed = FixedMul(finalSpeed, K_GetKartGameSpeedScalar(gamespeed));
+		// Horizontal speed is used as a minimum thrust, not a direct replacement
+		finalSpeed = max(objectSpeed, finalSpeed);
 
 		if (object->player)
 		{
-			// Horizontal speed is a minimum
-			finalSpeed = max(object->player->speed, finalSpeed);
-
 			// Less friction when hitting horizontal springs
 			if (!vertispeed)
 				object->player->kartstuff[k_tiregrease] = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
