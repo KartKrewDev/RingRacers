@@ -5435,14 +5435,15 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 		return 0;
 
 	if (player->kartstuff[k_driftend] != 0)
-	{
 		return -266*player->kartstuff[k_drift]; // Drift has ended and we are tweaking their angle back a bit
-	}
 
 	//basedrift = 90*player->kartstuff[k_drift]; // 450
 	//basedrift = 93*player->kartstuff[k_drift] - driftweight*3*player->kartstuff[k_drift]/10; // 447 - 303
 	basedrift = 83*player->kartstuff[k_drift] - (driftweight - 14)*player->kartstuff[k_drift]/5; // 415 - 303
 	driftangle = abs((252 - driftweight)*player->kartstuff[k_drift]/5);
+
+	if (player->kartstuff[k_tiregrease] > 0) // Buff drift-steering while in greasemode
+		turnvalue += (turnvalue / greasetics) * player->kartstuff[k_tiregrease];
 
 	return basedrift + FixedMul(driftangle, countersteer);
 }
