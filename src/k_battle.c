@@ -233,6 +233,67 @@ void K_CheckBumpers(void)
 		P_DoPlayerExit(&players[i]);
 }
 
+static void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
+{
+	UINT8 sequence = mt->extrainfo-1;
+	fixed_t speed = (FRACUNIT >> 3) * mt->angle;
+	boolean backandforth = (mt->options & MTF_AMBUSH);
+	boolean reverse = (mt->options & MTF_OBJECTSPECIAL);
+	mobj_t *mo2;
+	mobj_t *target = NULL;
+	thinker_t *th;
+
+	// Find the inital target
+	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+	{
+		if (th->function.acp1 != (actionf_p1)P_MobjThinker) // Not a mobj thinker
+			continue;
+
+		mo2 = (mobj_t *)th;
+
+		if (mo2->type != MT_TUBEWAYPOINT)
+			continue;
+
+		if (mo2->threshold == sequence)
+		{
+			if (reverse) // Use the highest waypoint number as first
+			{
+				if (mo2->health != 0)
+				{
+					if (target == NULL)
+						target = mo2;
+					else if (mo2->health > target->health)
+						target = mo2;
+				}
+			}
+			else // Use the lowest waypoint number as first
+			{
+				if (mo2->health == 0)
+					target = mo2;
+			}
+		}
+	}
+
+	if (!target)
+	{
+		CONS_Alert(CONS_WARNING, "No target waypoint found for moving capsule (seq: #%d)\n", sequence);
+		return;
+	}
+
+	P_SetTarget(&mobj->target, target);
+	mobj->lastlook = sequence;
+	mobj->movecount = target->health;
+	mobj->movefactor = speed;
+
+	if (backandforth)
+		mobj->cusval = 1;
+
+	if (reverse)
+		mobj->cvmem = -1;
+	else
+		mobj->cvmem = 1;
+}
+
 void K_SpawnBattleCapsules(void)
 {
 	mapthing_t *mt;
@@ -269,6 +330,7 @@ void K_SpawnBattleCapsules(void)
 			UINT8 numfloors = 1;
 			mobj_t *mobj = NULL;
 			boolean fly = true;
+			UINT8 j;
 
 			mt->mobj = NULL;
 
@@ -352,9 +414,9 @@ void K_SpawnBattleCapsules(void)
 				mobj->flags2 |= MF2_OBJECTFLIP;
 			}
 
-			for (i = 0; i < numfloors; i++)
+			for (j = 0; j < numfloors; j++)
 			{
-				if (z == floorheights[i])
+				if (z == floorheights[j])
 				{
 					fly = false;
 					break;
@@ -367,6 +429,10 @@ void K_SpawnBattleCapsules(void)
 				mobj->flags |= MF_NOGRAVITY;
 				mobj->extravalue1 = 1; // Set extravalue1 for later reference
 			}
+
+			// Moving capsules!
+			if (mt->extrainfo && mt->angle)
+				K_SetupMovingCapsule(mt, mobj);
 
 			// Moved from P_SpawnMobj due to order of operations mumbo jumbo
 			{
@@ -392,16 +458,17 @@ void K_SpawnBattleCapsules(void)
 				prev = cur;
 
 				// Supports on the bottom
-				for (i = 0; i < 4; i++)
+				for (j = 0; j < 4; j++)
 				{
 					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-					cur->extravalue1 = i;
+					cur->extravalue1 = j;
 
-					// TODO: use karma bomb wheels on grounded, moving capsules
-					if (mobj->extravalue1)
+					if (mobj->extravalue1) // Flying capsule, moving or not
 						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORTFLY);
+					else if (mobj->target && !P_MobjWasRemoved(mobj->target)) // Grounded, moving capsule
+						P_SetMobjState(cur, S_KARMAWHEEL);
 					else
-						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORT);
+						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORT); // Grounded, stationary capsule
 
 					P_SetTarget(&cur->target, mobj);
 					P_SetTarget(&cur->hprev, prev);
@@ -410,12 +477,12 @@ void K_SpawnBattleCapsules(void)
 				}
 
 				// Side paneling
-				for (i = 0; i < 8; i++)
+				for (j = 0; j < 8; j++)
 				{
 					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-					cur->extravalue1 = i;
+					cur->extravalue1 = j;
 
-					if (i & 1)
+					if (j & 1)
 						P_SetMobjState(cur, S_BATTLECAPSULE_SIDE2);
 					else
 						P_SetMobjState(cur, S_BATTLECAPSULE_SIDE1);
@@ -427,7 +494,6 @@ void K_SpawnBattleCapsules(void)
 				}
 			}
 
-			mobj->angle = FixedAngle(mt->angle * FRACUNIT);
 			mt->mobj = mobj;
 		}
 	}

@@ -9130,7 +9130,147 @@ void P_MobjThinker(mobj_t *mobj)
 					mobj->momz = sine/2;
 				}
 
-				// TODO: insert moving capsule code here
+				// Moving capsules
+				if (mobj->target && !P_MobjWasRemoved(mobj->target))
+				{
+					fixed_t speed = mobj->movefactor;
+					UINT8 sequence = mobj->lastlook;
+					UINT8 num = mobj->movecount;
+					boolean backandforth = mobj->cusval;
+					SINT8 direction = mobj->cvmem;
+					mobj_t *next = NULL;
+					thinker_t *th;
+					fixed_t dist, momx, momy, momz;
+
+					dist = P_AproxDistance(mobj->target->x - mobj->x, mobj->target->y - mobj->y);
+					if (mobj->extravalue1)
+						dist = P_AproxDistance(dist, mobj->target->z - mobj->z);
+					if (dist < 1)
+						dist = 1;
+
+					if (speed <= dist)
+					{
+						momx = FixedMul(FixedDiv(mobj->target->x - mobj->x, dist), speed);
+						momy = FixedMul(FixedDiv(mobj->target->y - mobj->y, dist), speed);
+						if (mobj->extravalue1)
+							momz = mobj->momz + FixedMul(FixedDiv(mobj->target->z - mobj->z, dist), speed);
+
+						mobj->momx = momx;
+						mobj->momy = momy;
+						if (mobj->extravalue1)
+							mobj->momz = momz;
+					}
+					else
+					{
+						mobj_t *mo2;
+
+						speed -= dist;
+
+						P_UnsetThingPosition(mobj);
+						mobj->x = mobj->target->x;
+						mobj->y = mobj->target->y;
+						mobj->z = mobj->target->z;
+						P_SetThingPosition(mobj);
+
+						mobj->floorz = mobj->subsector->sector->floorheight;
+						mobj->ceilingz = mobj->subsector->sector->ceilingheight;
+
+						// Onto the next waypoint!
+						for (th = thinkercap.next; th != &thinkercap; th = th->next)
+						{
+							if (th->function.acp1 != (actionf_p1)P_MobjThinker) // Not a mobj thinker
+								continue;
+
+							mo2 = (mobj_t *)th;
+
+							if (mo2->type != MT_TUBEWAYPOINT)
+								continue;
+
+							if (mo2->threshold == sequence)
+							{
+								if (mo2->health == num + direction)
+								{
+									next = mo2;
+									break;
+								}
+							}
+						}
+
+						// Are we at the end of the waypoint chain?
+						// If so, search again for the first/previous waypoint (depending on settings)
+						if (next == NULL)
+						{
+							if (backandforth)
+							{
+								mobj->cvmem = -mobj->cvmem;
+								direction = mobj->cvmem;
+							}
+
+							for (th = thinkercap.next; th != &thinkercap; th = th->next)
+							{
+								if (th->function.acp1 != (actionf_p1)P_MobjThinker) // Not a mobj thinker
+									continue;
+
+								mo2 = (mobj_t *)th;
+
+								if (mo2->type != MT_TUBEWAYPOINT)
+									continue;
+
+								if (mo2->threshold == sequence)
+								{
+									if (backandforth)
+									{
+										if (mo2->health == num + direction)
+										{
+											next = mo2;
+											break;
+										}
+									}
+									else
+									{
+										if (direction < 0)
+										{
+											if (next == NULL || mo2->health > next->health)
+												next = mo2;
+										}
+										else
+										{
+											if (next == NULL || mo2->health < next->health)
+												next = mo2;
+										}
+									}
+								}
+							}
+						}
+
+						if (next && !P_MobjWasRemoved(next))
+						{
+							P_SetTarget(&mobj->target, next);
+							mobj->movecount = next->health;
+
+							dist = P_AproxDistance(mobj->target->x - mobj->x, mobj->target->y - mobj->y);
+							if (mobj->extravalue1)
+								dist = P_AproxDistance(dist, mobj->target->z - mobj->z);
+							if (dist < 1)
+								dist = 1;
+
+							momx = FixedMul(FixedDiv(mobj->target->x - mobj->x, dist), speed);
+							momy = FixedMul(FixedDiv(mobj->target->y - mobj->y, dist), speed);
+							if (mobj->extravalue1)
+								momz = mobj->momz + FixedMul(FixedDiv(mobj->target->z - mobj->z, dist), speed);
+
+							mobj->momx = momx;
+							mobj->momy = momy;
+							if (mobj->extravalue1)
+								mobj->momz = momz;
+						}
+						else
+						{
+							CONS_Alert(CONS_WARNING, "Moving capsule could not find next waypoint! (seq: %d)\n", sequence);
+							P_SetTarget(&mobj->target, NULL);
+						}
+					}
+				}
 
 				if (flip == -1)
 					bottom = mobj->z + mobj->height;
@@ -9159,7 +9299,9 @@ void P_MobjThinker(mobj_t *mobj)
 						newz += (80 * mobj->scale * flip);
 					else if (state == S_BATTLECAPSULE_BUTTON)
 						newz += (108 * mobj->scale * flip);
-					else if (state == S_BATTLECAPSULE_SUPPORT || state == S_BATTLECAPSULE_SUPPORTFLY)
+					else if (state == S_BATTLECAPSULE_SUPPORT
+						|| state == S_BATTLECAPSULE_SUPPORTFLY
+						|| state == S_KARMAWHEEL)
 					{
 						fixed_t offx = mobj->radius;
 						fixed_t offy = mobj->radius;
@@ -9173,7 +9315,8 @@ void P_MobjThinker(mobj_t *mobj)
 						newx += offx;
 						newy += offy;
 					}
-					else if (state == S_BATTLECAPSULE_SIDE1 || state == S_BATTLECAPSULE_SIDE2)
+					else if (state == S_BATTLECAPSULE_SIDE1
+						|| state == S_BATTLECAPSULE_SIDE2)
 					{
 						fixed_t offset = 48 * mobj->scale;
 						angle_t angle = (ANGLE_45 * cur->extravalue1);
