@@ -23,6 +23,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_battle.h"
 
 // Object place
 #include "m_cheat.h"

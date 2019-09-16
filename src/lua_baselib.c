@@ -26,6 +26,7 @@
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
 #include "k_kart.h" // SRB2Kart
+#include "k_battle.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 
 #include "lua_script.h"

@@ -27,6 +27,7 @@
 #include "m_misc.h"
 #include "v_video.h" // video flags for CEchos
 #include "k_kart.h" // SRB2kart
+#include "k_battle.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -2528,7 +2529,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			{
 				mobj_t *cur;
 
+				numtargets++;
 				target->fuse = 16;
+				target->flags |= MF_NOCLIP|MF_NOCLIPTHING;
 
 				cur = target->hnext;
 
@@ -2550,6 +2553,14 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 					cur->frame &= ~FF_ANIMATE; // Stop animating the propellers
 
 					cur = cur->hnext;
+				}
+
+				// All targets busted!
+				if (numtargets >= maptargets)
+				{
+					UINT8 i;
+					for (i = 0; i < MAXPLAYERS; i++)
+						P_DoPlayerExit(&players[i]);
 				}
 			}
 			break;

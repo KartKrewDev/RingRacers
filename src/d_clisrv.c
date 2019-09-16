@@ -47,6 +47,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_battle.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen

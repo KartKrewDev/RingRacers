@@ -36,6 +36,7 @@
 #endif
 
 #include "k_kart.h"
+#include "k_battle.h"
 
 // protos.
 //static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
@@ -10206,73 +10207,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 					P_SetTarget(&cur->hprev, prev);
 					P_SetTarget(&prev->hnext, cur);
 
-					prev = cur;
-				}
-			}
-			break;
-		case MT_BATTLECAPSULE:
-			{
-				mobj_t *cur, *prev = mobj;
-				UINT8 i;
-
-				// Flying capsules
-				if (!(mobj->eflags & MFE_ONGROUND))
-				{
-					mobj->flags |= MF_NOGRAVITY;
-					mobj->extravalue1 = 1; // Set extravalue1 for later reference
-				}
-
-				// Init hnext list
-				// Spherical top
-				cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-				P_SetMobjState(cur, S_BATTLECAPSULE_TOP);
-
-				P_SetTarget(&cur->target, mobj);
-				P_SetTarget(&cur->hprev, prev);
-				P_SetTarget(&prev->hnext, cur);
-				prev = cur;
-
-				// Tippity-top decorational button
-				cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-				P_SetMobjState(cur, S_BATTLECAPSULE_BUTTON);
-
-				P_SetTarget(&cur->target, mobj);
-				P_SetTarget(&cur->hprev, prev);
-				P_SetTarget(&prev->hnext, cur);
-				prev = cur;
-
-				// Supports on the bottom
-				for (i = 0; i < 4; i++)
-				{
-					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-					cur->extravalue1 = i;
-
-					// TODO: use karma bomb wheels on grounded, moving capsules
-					if (mobj->extravalue1)
-						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORTFLY);
-					else
-						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORT);
-
-					P_SetTarget(&cur->target, mobj);
-					P_SetTarget(&cur->hprev, prev);
-					P_SetTarget(&prev->hnext, cur);
-					prev = cur;
-				}
-
-				// Side paneling
-				for (i = 0; i < 8; i++)
-				{
-					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-					cur->extravalue1 = i;
-
-					if (i & 1)
-						P_SetMobjState(cur, S_BATTLECAPSULE_SIDE2);
-					else
-						P_SetMobjState(cur, S_BATTLECAPSULE_SIDE1);
-
-					P_SetTarget(&cur->target, mobj);
-					P_SetTarget(&cur->hprev, prev);
-					P_SetTarget(&prev->hnext, cur);
 					prev = cur;
 				}
 			}

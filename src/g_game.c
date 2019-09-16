@@ -48,6 +48,7 @@
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "k_kart.h" // SRB2kart
+#include "k_battle.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -187,6 +188,11 @@ INT32 nummaprings = 0;
 // box respawning in battle mode
 INT32 nummapboxes = 0;
 INT32 numgotboxes = 0;
+
+// Break the Capsules counters for Battle Mode!
+UINT8 maptargets = 0; // targets in map
+UINT8 numtargets = 0; // targets busted
+boolean targetsspawned = false; // have targets been spawned already?
 
 // Elminates unnecessary searching.
 boolean CheckForBustableBlocks;

@@ -84,6 +84,7 @@
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_battle.h" // K_SpawnBattleCapsules
 
 //
 // Map MD5, calculated on level load.
@@ -1021,6 +1022,12 @@ static void P_LoadThings(void)
 		if (mt->type == mobjinfo[MT_RANDOMITEM].doomednum)
 			nummapboxes++;
 
+		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
+		{
+			maptargets++;
+			continue; // These should not be spawned *yet*
+		}
+
 		mt->mobj = NULL;
 		P_SpawnMapThing(mt);
 	}
@@ -1077,14 +1084,19 @@ static void P_LoadThings(void)
 	for (i = 0; i < nummapthings; i++, mt++)
 	{
 		if (mt->type == 300 || mt->type == 308 || mt->type == 309
-		 || mt->type == 1706 || (mt->type >= 600 && mt->type <= 609)
-		 || mt->type == 1705 || mt->type == 1713 || mt->type == 1800)
+			|| mt->type == 1706 || (mt->type >= 600 && mt->type <= 609)
+			|| mt->type == 1705 || mt->type == 1713 || mt->type == 1800)
 		{
+			sector_t *mtsector = R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
+	
 			mt->mobj = NULL;
 
-			// Z for objects Tails 05-26-2002
-			mt->z = (INT16)(R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)
-				->sector->floorheight>>FRACBITS);
+			// Z for objects
+			mt->z = (INT16)(
+#ifdef ESLOPE
+				mtsector->f_slope ? P_GetZAt(mtsector->f_slope, mt->x << FRACBITS, mt->y << FRACBITS) :
+#endif
+				mtsector->floorheight)>>FRACBITS;
 
 			P_SpawnHoopsAndRings (mt);
 		}
@@ -2291,15 +2303,13 @@ static void P_LevelInitStuff(void)
 
 	memset(localaiming, 0, sizeof(localaiming));
 
-	// map object scale
-	mapobjectscale = mapheaderinfo[gamemap-1]->mobj_scale;
-
 	// special stage tokens, emeralds, and ring total
 	tokenbits = 0;
 	runemeraldmanager = false;
 	nummaprings = 0;
-	nummapboxes = 0;
-	numgotboxes = 0;
+	nummapboxes = numgotboxes = 0;
+	maptargets = numtargets = 0;
+	targetsspawned = false;
 
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;
@@ -3140,44 +3150,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	/*else if (modeattacking == ATTACKING_NIGHTS && !demo.playback)
 		P_LoadNightsGhosts();*/
 
-	if (G_TagGametype())
-	{
-		INT32 realnumplayers = 0;
-		INT32 playersactive[MAXPLAYERS];
-
-		//I just realized how problematic this code can be.
-		//D_NumPlayers() will not always cover the scope of the netgame.
-		//What if one player is node 0 and the other node 31?
-		//The solution? Make a temp array of all players that are currently playing and pick from them.
-		//Future todo? When a player leaves, shift all nodes down so D_NumPlayers() can be used as intended?
-		//Also, you'd never have to loop through all 32 players slots to find anything ever again.
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && !players[i].spectator)
-			{
-				playersactive[realnumplayers] = i; //stores the player's node in the array.
-				realnumplayers++;
-			}
-		}
-
-		if (realnumplayers) //this should also fix the dedicated crash bug. You only pick a player if one exists to be picked.
-		{
-			i = P_RandomKey(realnumplayers);
-			players[playersactive[i]].pflags |= PF_TAGIT; //choose our initial tagger before map starts.
-
-			// Taken and modified from G_DoReborn()
-			// Remove the player so he can respawn elsewhere.
-			// first dissasociate the corpse
-			if (players[playersactive[i]].mo)
-				P_RemoveMobj(players[playersactive[i]].mo);
-
-			G_SpawnPlayer(playersactive[i], false); //respawn the lucky player in his dedicated spawn location.
-		}
-		else
-			CONS_Printf(M_GetText("No player currently available to become IT. Awaiting available players.\n"));
-
-	}
-	else if (G_RaceGametype() && server)
+	if (G_RaceGametype() && server)
 		CV_StealthSetValue(&cv_numlaps,
 			((netgame || multiplayer) && cv_basenumlaps.value
 				&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
@@ -3304,6 +3277,8 @@ boolean P_SetupLevel(boolean skipprecip)
 	if (!(netgame || multiplayer) && !majormods)
 		mapvisited[gamemap-1] |= MV_VISITED;
 
+	G_AddMapToBuffer(gamemap-1);
+
 	levelloading = false;
 
 	P_RunCachedActions();
@@ -3341,7 +3316,8 @@ boolean P_SetupLevel(boolean skipprecip)
 #endif
 	}
 
-	G_AddMapToBuffer(gamemap-1);
+	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
+	K_SpawnBattleCapsules();
 
 	return true;
 }
