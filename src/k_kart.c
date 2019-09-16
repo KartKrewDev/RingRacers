@@ -1155,8 +1155,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			}
 			else
 			{
-				if (modeattacking || cv_orbinaut.value) // Waited patiently? You get an orbinaut!
-					K_KartGetItemResult(player, KITEM_ORBINAUT);
+				if (modeattacking || cv_tripleorbinaut.value) // Waited patiently? You get Orbinaut x3!
+					K_KartGetItemResult(player, KRITEM_TRIPLEORBINAUT);
 				else  // Default to sad if nothing's enabled...
 					K_KartGetItemResult(player, KITEM_SAD);
 				player->karthud[khud_itemblinkmode] = 0;
