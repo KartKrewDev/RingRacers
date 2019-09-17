@@ -202,44 +202,50 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		else
 			objectSpeed = R_PointToDist2(0, 0, savemomx, savemomy);
 
-		// Reflect your momentum angle against the surface of horizontal springs.
-		// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
-		if ((!vertispeed) && (savemomx || savemomy))
+		if (!vertispeed)
 		{
-			angle_t momang;
-			INT32 angoffset;
-			boolean subtract = false;
+			// Scale to gamespeed
+			finalSpeed = FixedMul(finalSpeed, K_GetKartGameSpeedScalar(gamespeed));
 
-			momang = R_PointToAngle2(0, 0, savemomx, savemomy);
-
-			angoffset = momang;
-			angoffset -= spring->angle; // Subtract 
-
-			// Flip on wrong side
-			if ((angle_t)angoffset > ANGLE_180)
+			// Reflect your momentum angle against the surface of horizontal springs.
+			// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
+			if (savemomx || savemomy)
 			{
-				angoffset = InvAngle((angle_t)angoffset);
-				subtract = !subtract;
+				angle_t momang;
+				INT32 angoffset;
+				boolean subtract = false;
+
+				momang = R_PointToAngle2(0, 0, savemomx, savemomy);
+
+				angoffset = momang;
+				angoffset -= spring->angle; // Subtract 
+
+				// Flip on wrong side
+				if ((angle_t)angoffset > ANGLE_180)
+				{
+					angoffset = InvAngle((angle_t)angoffset);
+					subtract = !subtract;
+				}
+
+				// Fix going directly against the spring's angle sending you the wrong way
+				if ((spring->angle - momang) > ANGLE_90)
+					angoffset = ANGLE_180 - angoffset;
+
+				// Offset is reduced to cap it (90 / 2 = max of 45 degrees)
+				angoffset /= 2;
+
+				// Reduce further based on how slow your speed is compared to the spring's speed
+				if (finalSpeed > objectSpeed)
+					angoffset = FixedDiv(angoffset, FixedDiv(finalSpeed, objectSpeed));
+
+				if (subtract)
+					angoffset = (signed)(spring->angle) - angoffset;
+				else
+					angoffset = (signed)(spring->angle) + angoffset;
+
+				finalAngle = angoffset;
 			}
-
-			// Fix going directly against the spring's angle sending you the wrong way
-			if ((spring->angle - momang) > ANGLE_90)
-				angoffset = ANGLE_180 - angoffset;
-
-			angoffset /= 6; // Reduce amount so it feels more natural
-
-			if (subtract)
-				angoffset = (signed)(spring->angle) - angoffset;
-			else
-				angoffset = (signed)(spring->angle) + angoffset;
-
-			finalAngle = angoffset;
 		}
-
-		// Scale to gamespeed
-		finalSpeed = FixedMul(finalSpeed, K_GetKartGameSpeedScalar(gamespeed));
-		// Horizontal speed is used as a minimum thrust, not a direct replacement
-		finalSpeed = max(objectSpeed, finalSpeed);
 
 		if (object->player)
 		{
@@ -247,6 +253,9 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			if (!vertispeed)
 				object->player->kartstuff[k_tiregrease] = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
 		}
+
+		// Horizontal speed is used as a minimum thrust, not a direct replacement
+		finalSpeed = max(objectSpeed, finalSpeed);
 
 		P_InstaThrustEvenIn2D(object, finalAngle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
 	}
