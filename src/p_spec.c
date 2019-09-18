@@ -2802,7 +2802,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 423: // Change Sky
 			if ((mo && mo->player && P_IsLocalPlayer(mo->player)) || (line->flags & ML_NOCLIMB))
-				P_SetupLevelSky(sides[line->sidenum[0]].textureoffset>>FRACBITS, (line->flags & ML_NOCLIMB));
+				P_SetupLevelSky(sides[line->sidenum[0]].text, (line->flags & ML_NOCLIMB));
 			break;
 
 		case 424: // Change Weather
