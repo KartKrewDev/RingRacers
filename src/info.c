@@ -43,33 +43,34 @@ char sprnames[NUMSPRITES + 1][5] =
 	"DFLM","XMS1","XMS2","XMS3","BSZ1","BSZ2","BSZ3","BSZ4","BSZ5","BSZ6",
 	"BSZ7","BSZ8","STLG","DBAL","RCRY","ARMA","ARMF","ARMB","WIND","MAGN",
 	"ELEM","FORC","PITY","IVSP","SSPK","GOAL","BIRD","BUNY","MOUS","CHIC",
-	"COWZ","RBRD","SPVY","SPVR","SPVB","SPDY","SPDR","SPDB","SPHY","SPHR",
-	"SPHB","RAIN","SNO1","SPLH","SPLA","SMOK","BUBP","BUBO","BUBN","BUBM",
-	"POPP","TFOG","SEED","PRTL","SCOR","DRWN","TTAG","GFLG","RRNG","RNGB",
-	"RNGR","RNGI","RNGA","RNGE","RNGS","RNGG","PIKB","PIKR","PIKA","PIKE",
-	"PIKS","PIKG","TAUT","TGRE","TSCR","COIN","CPRK","GOOM","BGOM","FFWR",
-	"FBLL","SHLL","PUMA","HAMM","KOOP","BFLM","MAXE","MUS1","MUS2","TOAD",
-	"NDRN","SUPE","SUPZ","NDRL","NSPK","NBMP","HOOP","NSCR","NPRU","CAPS",
-	"SUPT","SPRK","BOM1","BOM2","BOM3","BOM4","ROIA","ROIB","ROIC","ROID",
-	"ROIE","ROIF","ROIG","ROIH","ROII","ROIJ","ROIK","ROIL","ROIM","ROIN",
-	"ROIO","ROIP","BBAL","GWLG","GWLR","SRBA","SRBB","SRBC","SRBD","SRBE",
-	"SRBF","SRBG","SRBH","SRBI","SRBJ","SRBK","SRBL","SRBM","SRBN","SRBO",
+	"COWZ","RBRD","SPVY","SPVR","SPVB","SPVG","SPDY","SPDR","SPDB","SPDG",
+	"SPHY","SPHR","SPHB","SPHG","RAIN","SNO1","SPLH","SPLA","SMOK","BUBP",
+	"BUBO","BUBN","BUBM","POPP","TFOG","SEED","PRTL","SCOR","DRWN","TTAG",
+	"GFLG","RRNG","RNGB","RNGR","RNGI","RNGA","RNGE","RNGS","RNGG","PIKB",
+	"PIKR","PIKA","PIKE","PIKS","PIKG","TAUT","TGRE","TSCR","COIN","CPRK",
+	"GOOM","BGOM","FFWR","FBLL","SHLL","PUMA","HAMM","KOOP","BFLM","MAXE",
+	"MUS1","MUS2","TOAD","NDRN","SUPE","SUPZ","NDRL","NSPK","NBMP","HOOP",
+	"NSCR","NPRU","CAPS","SUPT","SPRK","BOM1","BOM2","BOM3","BOM4","ROIA",
+	"ROIB","ROIC","ROID","ROIE","ROIF","ROIG","ROIH","ROII","ROIJ","ROIK",
+	"ROIL","ROIM","ROIN","ROIO","ROIP","BBAL","GWLG","GWLR","SRBA","SRBB",
+	"SRBC","SRBD","SRBE","SRBF","SRBG","SRBH","SRBI","SRBJ","SRBK","SRBL",
+	"SRBM","SRBN","SRBO",
 	//SRB2kart Sprites
-	"SPRG","RNDM","RPOP","SGNS","FAST","DSHR","BOST","BOSM","KFRE","KINV",
-	"KINF","WIPD","DRIF","BDRF","DUST","RSHE","FITM","BANA","ORBN","JAWZ",
-	"SSMN","KRBM","BHOG","BHBM","SPBM","THNS","SINK","SITR","KBLN","DEZL",
-	"POKE","AUDI","DECO","DOOD","SNES","GBAS","SPRS","BUZB","CHOM","SACO",
-	"CRAB","SHAD","BRNG","BUMP","FLEN","CLAS","PSHW","ISTA","ISTB","ARRO",
-	"ITEM","ITMO","ITMI","ITMN","WANT","PBOM","HIT1","HIT2","HIT3","RETI",
-	"AIDU","KSPK","LZI1","LZI2","KLIT","FZSM","FZBM","FPRT","SBUS","MARB",
-	"FUFO","RUST","BLON","VAPE","HTZA","HTZB","SGVA","SGVB","SGVC","PGTR",
-	"PGF1","PGF2","PGF3","PGBH","DPLR","SPTL","ENM1","GARU","MARR","REAP",
-	"JITB","CDMO","CDBU","PINE","PPLR","DPPT","AATR","COCO","BDST","FROG",
-	"CBRA","HOLE","BBRA","EGFG","SMKP","MTYM","THWP","SNOB","ICEB","CNDL",
-	"DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS","ZTCH","MKMA",
-	"MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH","BFRT","OFRT",
-	"RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN","FWRK","MXCL",
-	"RGSP","DRAF","XMS4","XMS5","VIEW"
+	"RNDM","RPOP","SGNS","FAST","DSHR","BOST","BOSM","KFRE","KINV","KINF",
+	"WIPD","DRIF","BDRF","DUST","RSHE","FITM","BANA","ORBN","JAWZ","SSMN",
+	"KRBM","BHOG","BHBM","SPBM","THNS","SINK","SITR","KBLN","DEZL","POKE",
+	"AUDI","DECO","DOOD","SNES","GBAS","SPRS","BUZB","CHOM","SACO","CRAB",
+	"SHAD","BRNG","BUMP","FLEN","CLAS","PSHW","ISTA","ISTB","ARRO","ITEM",
+	"ITMO","ITMI","ITMN","WANT","PBOM","HIT1","HIT2","HIT3","RETI","AIDU",
+	"KSPK","LZI1","LZI2","KLIT","FZSM","FZBM","FPRT","SBUS","MARB","FUFO",
+	"RUST","BLON","VAPE","HTZA","HTZB","SGVA","SGVB","SGVC","PGTR","PGF1",
+	"PGF2","PGF3","PGBH","DPLR","SPTL","ENM1","GARU","MARR","REAP","JITB",
+	"CDMO","CDBU","PINE","PPLR","DPPT","AATR","COCO","BDST","FROG","CBRA",
+	"HOLE","BBRA","EGFG","SMKP","MTYM","THWP","SNOB","ICEB","CNDL","DOCH",
+	"DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS","ZTCH","MKMA","MKMP",
+	"RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH","BFRT","OFRT","RFRT",
+	"PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN","FWRK","MXCL","RGSP",
+	"DRAF","XMS4","XMS5","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -1812,6 +1813,12 @@ state_t states[NUMSTATES] =
 	{SPR_SPVB, 0, 1, {NULL}, 0, 0, S_BLUESPRING4},   // S_BLUESPRING3
 	{SPR_SPVB, 2, 4, {NULL}, 0, 0, S_BLUESPRING1},   // S_BLUESPRING4
 
+	// Grey Spring
+	{SPR_SPVG, 0, -1, {NULL}, 0, 0, S_NULL},         // S_GREYSPRING1
+	{SPR_SPVG, 1, 1, {A_Pain}, 0, 0, S_GREYSPRING3}, // S_GREYSPRING2
+	{SPR_SPVG, 0, 1, {NULL}, 0, 0, S_GREYSPRING4},   // S_GREYSPRING3
+	{SPR_SPVG, 2, 4, {NULL}, 0, 0, S_GREYSPRING1},   // S_GREYSPRING4
+
 	// Yellow Diagonal Spring
 	{SPR_SPDY, 0, -1, {NULL}, 0, 0, S_NULL},    // S_YDIAG1
 	{SPR_SPDY, 1, 1, {A_Pain}, 0, 0, S_YDIAG3}, // S_YDIAG2
@@ -1830,6 +1837,12 @@ state_t states[NUMSTATES] =
 	{SPR_SPDB, 0, 1, {NULL}, 0, 0, S_BDIAG4},   // S_BDIAG3
 	{SPR_SPDB, 2, 4, {NULL}, 0, 0, S_BDIAG1},   // S_BDIAG4
 
+	// Grey Diagonal Spring
+	{SPR_SPDG, 0, -1, {NULL}, 0, 0, S_NULL},    // S_GDIAG1
+	{SPR_SPDG, 1, 1, {A_Pain}, 0, 0, S_GDIAG3}, // S_GDIAG2
+	{SPR_SPDG, 0, 1, {NULL}, 0, 0, S_GDIAG4},   // S_GDIAG3
+	{SPR_SPDG, 2, 4, {NULL}, 0, 0, S_GDIAG1},   // S_GDIAG4
+
 	// Yellow Horizontal Spring
 	{SPR_SPHY, 0, -1, {NULL}, 0, 0, S_NULL},     // S_YHORIZ1
 	{SPR_SPHY, 1, 1, {A_Pain}, 0, 0, S_YHORIZ3}, // S_YHORIZ2
@@ -1847,6 +1860,12 @@ state_t states[NUMSTATES] =
 	{SPR_SPHB, 1, 1, {A_Pain}, 0, 0, S_BHORIZ3}, // S_BHORIZ2
 	{SPR_SPHB, 0, 1, {NULL}, 0, 0, S_BHORIZ4},   // S_BHORIZ3
 	{SPR_SPHB, 2, 4, {NULL}, 0, 0, S_BHORIZ1},   // S_BHORIZ4
+
+	// Grey Horizontal Spring
+	{SPR_SPHG, 0, -1, {NULL}, 0, 0, S_NULL},     // S_GHORIZ1
+	{SPR_SPHG, 1, 1, {A_Pain}, 0, 0, S_GHORIZ3}, // S_GHORIZ2
+	{SPR_SPHG, 0, 1, {NULL}, 0, 0, S_GHORIZ4},   // S_GHORIZ3
+	{SPR_SPHG, 2, 4, {NULL}, 0, 0, S_GHORIZ1},   // S_GHORIZ4
 
 	// Rain
 	{SPR_RAIN, FF_TRANS50, -1, {NULL}, 0, 0, S_NULL}, // S_RAIN1
@@ -2525,14 +2544,6 @@ state_t states[NUMSTATES] =
 	{SPR_SRBO, 0, 2, {A_BuzzFly}, 0, 0, S_SRB1_GENREX2}, // S_SRB1_GENREX2
 
 	// SRB2kart
-	{SPR_SPRG, 0, -1, {NULL}, 0, 0, S_NULL},         // S_GRAYSPRING
-	{SPR_SPRG, 4, 4, {A_Pain}, 0, 0, S_GRAYSPRING3}, // S_GRAYSPRING2
-	{SPR_SPRG, 3, 1, {NULL}, 0, 0, S_GRAYSPRING4},   // S_GRAYSPRING3
-	{SPR_SPRG, 2, 1, {NULL}, 0, 0, S_GRAYSPRING5},   // S_GRAYSPRING4
-	{SPR_SPRG, 1, 1, {NULL}, 0, 0, S_GRAYSPRING},    // S_GRAYSPRING5
-
-	{SPR_NULL, 0, 1, {A_Pain}, 0, 0, S_INVISIBLE}, // S_INVISSPRING
-
 	{SPR_RNDM,  0|FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_RANDOMITEM2},  // S_RANDOMITEM1
 	{SPR_RNDM,  1|FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_RANDOMITEM3},  // S_RANDOMITEM2
 	{SPR_RNDM,  2|FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_RANDOMITEM4},  // S_RANDOMITEM3
@@ -6082,7 +6093,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		26*FRACUNIT,    // mass
+		25*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
@@ -6136,15 +6147,42 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		14*FRACUNIT,    // mass
+		64*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
 		S_BLUESPRING2   // raisestate
 	},
 
+	{           // MT_GREYSPRING
+		553,            // doomednum
+		S_GREYSPRING1,  // spawnstate
+		1000,           // spawnhealth
+		S_GREYSPRING2,  // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_s3kb1,      // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		15*FRACUNIT,    // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		S_GREYSPRING2   // raisestate
+	},
+
 	{           // MT_YELLOWDIAG
-		555,            // doomednum
+		554,            // doomednum
 		S_YDIAG1,       // spawnstate
 		1,              // spawnhealth
 		S_YDIAG2,       // seestate
@@ -6163,15 +6201,15 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		26*FRACUNIT,    // mass
-		26*FRACUNIT,    // damage
+		25*FRACUNIT,    // mass
+		25*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
 		S_YDIAG2        // raisestate
 	},
 
 	{           // MT_REDDIAG
-		556,            // doomednum
+		555,            // doomednum
 		S_RDIAG1,       // spawnstate
 		1,              // spawnhealth
 		S_RDIAG2,       // seestate
@@ -6198,7 +6236,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_BLUEDIAG
-		557,            // doomednum
+		556,            // doomednum
 		S_BDIAG1,       // spawnstate
 		1,              // spawnhealth
 		S_BDIAG2,       // seestate
@@ -6217,11 +6255,38 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		14*FRACUNIT,    // mass
-		14*FRACUNIT,    // damage
+		64*FRACUNIT,    // mass
+		64*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
 		S_BDIAG2        // raisestate
+	},
+
+	{           // MT_GREYDIAG
+		557,            // doomednum
+		S_GDIAG1,       // spawnstate
+		1,              // spawnhealth
+		S_GDIAG2,       // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_s3kb1,      // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		0,              // display offset
+		15*FRACUNIT,    // mass
+		15*FRACUNIT,    // damage
+		sfx_None,       // activesound
+		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		S_GDIAG2        // raisestate
 	},
 
 	{           // MT_YELLOWHORIZ
@@ -6245,7 +6310,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		48*FRACUNIT,    // damage
+		45*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_YHORIZ2       // raisestate
@@ -6299,10 +6364,37 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		24*FRACUNIT,    // damage
+		115*FRACUNIT,   // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_BHORIZ2       // raisestate
+	},
+
+	{           // MT_GREYHORIZ
+		561,            // doomednum
+		S_GHORIZ1,      // spawnstate
+		1,              // spawnhealth
+		S_GHORIZ2,      // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_s3kb1,      // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		27*FRACUNIT,    // damage
+		sfx_None,       // activesound
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_GHORIZ2       // raisestate
 	},
 
 	{           // MT_BUBBLES
@@ -14912,61 +15004,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	// SRB2kart MT's
-
-	{           // MT_GRAYSPRING
-		553,            // doomednum
-		S_GRAYSPRING,   // spawnstate
-		100,            // spawnhealth
-		S_GRAYSPRING2,  // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_s3kb1,      // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		20*FRACUNIT,    // radius
-		16*FRACUNIT,    // height
-		0,              // display offset
-		6*FRACUNIT,     // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
-		S_GRAYSPRING2   // raisestate
-	},
-
-	{           // MT_INVISSPRING
-		554,            // doomednum
-		S_INVISIBLE,    // spawnstate
-		100,            // spawnhealth
-		S_INVISSPRING,  // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_s3kb1,      // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		20*FRACUNIT,    // radius
-		16*FRACUNIT,    // height
-		0,              // display offset
-		6*FRACUNIT,     // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING, // flags
-		S_INVISSPRING   // raisestate
-	},
-
 	{           // MT_RANDOMITEM
 		2000,             // doomednum
 		S_RANDOMITEM1,    // spawnstate

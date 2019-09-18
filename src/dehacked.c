@@ -5627,6 +5627,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BLUESPRING3",
 	"S_BLUESPRING4",
 
+	// Grey Spring
+	"S_GREYSPRING1",
+	"S_GREYSPRING2",
+	"S_GREYSPRING3",
+	"S_GREYSPRING4",
+
 	// Yellow Diagonal Spring
 	"S_YDIAG1",
 	"S_YDIAG2",
@@ -5645,6 +5651,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BDIAG3",
 	"S_BDIAG4",
 
+	// Grey Diagonal Spring
+	"S_GDIAG1",
+	"S_GDIAG2",
+	"S_GDIAG3",
+	"S_GDIAG4",
+
 	// Yellow Horizontal Spring
 	"S_YHORIZ1",
 	"S_YHORIZ2",
@@ -5662,6 +5674,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BHORIZ2",
 	"S_BHORIZ3",
 	"S_BHORIZ4",
+
+	// Grey Horizontal Spring
+	"S_GHORIZ1",
+	"S_GHORIZ2",
+	"S_GHORIZ3",
+	"S_GHORIZ4",
 
 	// Rain
 	"S_RAIN1",
@@ -6285,16 +6303,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	"S_SRB1_GENREX1",
 	"S_SRB1_GENREX2",
-
-	// Gray Springs
-	"S_GRAYSPRING",
-	"S_GRAYSPRING2",
-	"S_GRAYSPRING3",
-	"S_GRAYSPRING4",
-	"S_GRAYSPRING5",
-
-	// Invis-spring - this is used just for the sproing sound.
-	"S_INVISSPRING",
 
 	//{ Random Item Box
 	"S_RANDOMITEM1",
@@ -7336,12 +7344,15 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_YELLOWSPRING",
 	"MT_REDSPRING",
 	"MT_BLUESPRING",
+	"MT_GREYSPRING",
 	"MT_YELLOWDIAG", // Yellow Diagonal Spring
 	"MT_REDDIAG", // Red Diagonal Spring
 	"MT_BLUEDIAG", // Blue Diagonal Spring
+	"MT_GREYDIAG", // Grey Diagonal Spring
 	"MT_YELLOWHORIZ", // Yellow Horizontal Spring
 	"MT_REDHORIZ", // Red Horizontal Spring
 	"MT_BLUEHORIZ", // Blue Horizontal Spring
+	"MT_GREYHORIZ", // Grey Horizontal Spring
 
 	// Interactive Objects
 	"MT_BUBBLES", // Bubble source
@@ -7723,8 +7734,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_SRB1_GENREX",
 
 	// SRB2kart
-	"MT_GRAYSPRING",
-	"MT_INVISSPRING",
 	"MT_RANDOMITEM",
 	"MT_RANDOMITEMPOP",
 	"MT_FLOATINGITEM",
