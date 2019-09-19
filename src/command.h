@@ -45,6 +45,9 @@ void COM_ImmedExecute(const char *ptext);
 // Execute commands in buffer, flush them
 void COM_BufExecute(void);
 
+// As above; and progress the wait timer.
+void COM_BufTicker(void);
+
 // setup command buffer, at game tartup
 void COM_Init(void);
 
@@ -95,7 +98,8 @@ typedef enum
 	CV_HIDEN = 1024, // variable is not part of the cvar list so cannot be accessed by the console
 	                 // can only be set when we have the pointer to it
                    // used on menus
-	CV_CHEAT = 2048 // Don't let this be used in multiplayer unless cheats are on.
+	CV_CHEAT = 2048, // Don't let this be used in multiplayer unless cheats are on.
+	CV_PASSWORD = 4096 // Password field
 } cvflags_t;
 
 typedef struct CV_PossibleValue_s
@@ -160,7 +164,7 @@ void CV_AddValue(consvar_t *var, INT32 increment);
 void CV_SaveVariables(FILE *f);
 
 // load/save gamesate (load and save option and for network join in game)
-void CV_SaveNetVars(UINT8 **p);
+void CV_SaveNetVars(UINT8 **p, boolean isdemorecording);
 void CV_LoadNetVars(UINT8 **p);
 
 // reset cheat netvars after cheats is deactivated

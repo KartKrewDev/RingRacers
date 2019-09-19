@@ -212,16 +212,16 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		{
 			object->angle = spring->angle;
 
-			if (!demoplayback || P_AnalogMove(object->player))
+			if (!demo.playback || P_AnalogMove(object->player))
 			{
 				if (object->player == &players[consoleplayer])
-					localangle = spring->angle;
-				else if (object->player == &players[secondarydisplayplayer])
-					localangle2 = spring->angle;
-				else if (object->player == &players[thirddisplayplayer])
-					localangle3 = spring->angle;
-				else if (object->player == &players[fourthdisplayplayer])
-					localangle4 = spring->angle;
+					localangle[0] = spring->angle;
+				else if (object->player == &players[displayplayers[1]])
+					localangle[1] = spring->angle;
+				else if (object->player == &players[displayplayers[2]])
+					localangle[2] = spring->angle;
+				else if (object->player == &players[displayplayers[3]])
+					localangle[3] = spring->angle;
 			}
 		}
 
@@ -1076,7 +1076,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				S_StartSound(tmthing, sfx_bsnipe);
 
 			// Player Damage
-			K_SpinPlayer(tmthing->player, thing->target, 0, tmthing, (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD));
+			K_SpinPlayer(tmthing->player, thing->target, 0, thing, (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD));
 
 			// Other Item Damage
 			if (thing->eflags & MFE_VERTICALFLIP)
@@ -1111,7 +1111,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (thing->state == &states[S_MINEEXPLOSION1])
 				K_ExplodePlayer(tmthing->player, thing->target, thing);
 			else
-				K_SpinPlayer(tmthing->player, thing->target, 0, tmthing, false);
+				K_SpinPlayer(tmthing->player, thing->target, 0, thing, false);
 
 			return true;
 		}
@@ -1264,16 +1264,16 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			thing->angle = tmthing->angle;
 
-			if (!demoplayback || P_AnalogMove(thing->player))
+			if (!demo.playback || P_AnalogMove(thing->player))
 			{
 				if (thing->player == &players[consoleplayer])
-					localangle = thing->angle;
-				else if (thing->player == &players[secondarydisplayplayer])
-					localangle2 = thing->angle;
-				else if (thing->player == &players[thirddisplayplayer])
-					localangle3 = thing->angle;
-				else if (thing->player == &players[fourthdisplayplayer])
-					localangle4 = thing->angle;
+					localangle[0] = thing->angle;
+				else if (thing->player == &players[displayplayers[1]])
+					localangle[1] = thing->angle;
+				else if (thing->player == &players[displayplayers[2]])
+					localangle[2] = thing->angle;
+				else if (thing->player == &players[displayplayers[3]])
+					localangle[3] = thing->angle;
 			}
 
 			return true;
@@ -1557,39 +1557,50 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 			}
 
-			if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
 			{
-				K_KartBouncing(tmthing, thing, true, false);
-				if (G_BattleGametype() && tmthing->player->kartstuff[k_pogospring])
-				{
-					K_StealBumper(tmthing->player, thing->player, false);
-					K_SpinPlayer(thing->player, tmthing, 0, tmthing, false);
-				}
-			}
-			else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
-			{
-				K_KartBouncing(thing, tmthing, true, false);
-				if (G_BattleGametype() && thing->player->kartstuff[k_pogospring])
-				{
-					K_StealBumper(thing->player, tmthing->player, false);
-					K_SpinPlayer(tmthing->player, thing, 0, thing, false);
-				}
-			}
-			else
-				K_KartBouncing(tmthing, thing, false, false);
+				// The bump has to happen last
+				mobj_t *mo1 = tmthing;
+				mobj_t *mo2 = thing;
+				boolean zbounce = false;
 
-			if (G_BattleGametype())
-			{
-				if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]))
+				if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
 				{
-					K_StealBumper(thing->player, tmthing->player, false);
-					K_SpinPlayer(tmthing->player, thing, 0, tmthing, false);
+					zbounce = true;
+					mo1 = thing;
+					mo2 = tmthing;
+
+					if (G_BattleGametype() && tmthing->player->kartstuff[k_pogospring])
+					{
+						K_StealBumper(tmthing->player, thing->player, false);
+						K_SpinPlayer(thing->player, tmthing, 0, tmthing, false);
+					}
 				}
-				else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]))
+				else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
 				{
-					K_StealBumper(tmthing->player, thing->player, false);
-					K_SpinPlayer(thing->player, tmthing, 0, thing, false);
+					zbounce = true;
+
+					if (G_BattleGametype() && thing->player->kartstuff[k_pogospring])
+					{
+						K_StealBumper(thing->player, tmthing->player, false);
+						K_SpinPlayer(tmthing->player, thing, 0, thing, false);
+					}
 				}
+
+				if (G_BattleGametype())
+				{
+					if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
+					{
+						K_StealBumper(thing->player, tmthing->player, false);
+						K_SpinPlayer(tmthing->player, thing, 0, tmthing, false);
+					}
+					else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
+					{
+						K_StealBumper(tmthing->player, thing->player, false);
+						K_SpinPlayer(thing->player, tmthing, 0, thing, false);
+					}
+				}
+
+				K_KartBouncing(mo1, mo2, zbounce, false);
 			}
 
 			return true;
@@ -2114,7 +2125,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				continue;
 			}
 
-			if (thing->player && (P_CheckSolidLava(thing, rover) || P_CanRunOnWater(thing->player, rover)))
+			if (thing->player && P_CheckSolidLava(thing, rover))
 				;
 			else if (thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE))
 				;
@@ -2504,41 +2515,46 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 	subsector_t *s = R_PointInSubsector(x, y);
 	boolean retval = true;
 	boolean itsatwodlevel = false;
+	UINT8 i;
 
 	floatok = false;
 
-	if (twodlevel
-		|| (thiscam == &camera && players[displayplayer].mo && (players[displayplayer].mo->flags2 & MF2_TWOD))
-		|| (thiscam == &camera2 && players[secondarydisplayplayer].mo && (players[secondarydisplayplayer].mo->flags2 & MF2_TWOD))
-		|| (thiscam == &camera3 && players[thirddisplayplayer].mo && (players[thirddisplayplayer].mo->flags2 & MF2_TWOD))
-		|| (thiscam == &camera4 && players[fourthdisplayplayer].mo && (players[fourthdisplayplayer].mo->flags2 & MF2_TWOD)))
+	if (twodlevel)
 		itsatwodlevel = true;
+	else
+	{
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (thiscam == &camera[i] && players[displayplayers[i]].mo
+				&& (players[displayplayers[i]].mo->flags2 & MF2_TWOD))
+			{
+				itsatwodlevel = true;
+				break;
+			}
+		}
+	}
 
-	if (!itsatwodlevel && players[displayplayer].mo)
+	if (!itsatwodlevel && players[displayplayers[0]].mo)
 	{
 		fixed_t tryx = thiscam->x;
 		fixed_t tryy = thiscam->y;
 
+		for (i = 0; i <= splitscreen; i++)
+		{
 #ifndef NOCLIPCAM
-		if ((thiscam == &camera && (players[displayplayer].pflags & PF_NOCLIP))
-		|| (thiscam == &camera2 && (players[secondarydisplayplayer].pflags & PF_NOCLIP))
-		|| (thiscam == &camera3 && (players[thirddisplayplayer].pflags & PF_NOCLIP))
-		|| (thiscam == &camera4 && (players[fourthdisplayplayer].pflags & PF_NOCLIP))
-		|| (leveltime < introtime))
+			if ((thiscam == &camera[i] && (players[displayplayers[i]].pflags & PF_NOCLIP)) || (leveltime < introtime)) // Noclipping player camera noclips too!!
 #else
-		if ((thiscam == &camera && !(players[displayplayer].pflags & PF_TIMEOVER))
-		|| (thiscam == &camera2 && !(players[secondarydisplayplayer].pflags & PF_TIMEOVER))
-		|| (thiscam == &camera3 && !(players[thirddisplayplayer].pflags & PF_TIMEOVER))
-		|| (thiscam == &camera4 && !(players[fourthdisplayplayer].pflags & PF_TIMEOVER)))
+			if (thiscam == &camera[i] && !(players[displayplayers[i]].pflags & PF_TIMEOVER)) // Time Over should not clip through walls
 #endif
-		{ // Noclipping player camera noclips too!!
-			floatok = true;
-			thiscam->floorz = thiscam->z;
-			thiscam->ceilingz = thiscam->z + thiscam->height;
-			thiscam->x = x;
-			thiscam->y = y;
-			thiscam->subsector = s;
-			return true;
+			{
+				floatok = true;
+				thiscam->floorz = thiscam->z;
+				thiscam->ceilingz = thiscam->z + thiscam->height;
+				thiscam->x = x;
+				thiscam->y = y;
+				thiscam->subsector = s;
+				return true;
+			}
 		}
 
 		do {
@@ -2787,8 +2803,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 					}
 #ifdef ESLOPE
-					// HACK TO FIX DSZ2: apply only if slopes are involved
-					else if (tmceilingslope && tmceilingz < thingtop && thingtop - tmceilingz <= maxstep)
+					else if (tmceilingz < thingtop && thingtop - tmceilingz <= maxstep)
 					{
 						thing->z = (thing->ceilingz = thingtop = tmceilingz) - thing->height;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2801,8 +2816,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 					thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 				}
 #ifdef ESLOPE
-				// HACK TO FIX DSZ2: apply only if slopes are involved
-				else if (tmfloorslope && tmfloorz > thing->z && tmfloorz - thing->z <= maxstep)
+				else if (tmfloorz > thing->z && tmfloorz - thing->z <= maxstep)
 				{
 					thing->z = thing->floorz = tmfloorz;
 					thing->eflags |= MFE_JUSTSTEPPEDDOWN;

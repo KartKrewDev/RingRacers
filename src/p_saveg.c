@@ -265,25 +265,11 @@ static void P_NetArchivePlayers(void)
 		if (flags & AWAYVIEW)
 			WRITEUINT32(save_p, players[i].awayviewmobj->mobjnum);
 
-		WRITEUINT8(save_p, players[i].charability);
-		WRITEUINT8(save_p, players[i].charability2);
 		WRITEUINT32(save_p, players[i].charflags);
-		WRITEUINT32(save_p, (UINT32)players[i].thokitem);
-		WRITEUINT32(save_p, (UINT32)players[i].spinitem);
-		WRITEUINT32(save_p, (UINT32)players[i].revitem);
-		WRITEFIXED(save_p, players[i].actionspd);
-		WRITEFIXED(save_p, players[i].mindash);
-		WRITEFIXED(save_p, players[i].maxdash);
 		// SRB2kart
 		WRITEUINT8(save_p, players[i].kartspeed);
 		WRITEUINT8(save_p, players[i].kartweight);
 		//
-		WRITEFIXED(save_p, players[i].normalspeed);
-		WRITEFIXED(save_p, players[i].runspeed);
-		WRITEUINT8(save_p, players[i].thrustfactor);
-		WRITEUINT8(save_p, players[i].accelstart);
-		WRITEUINT8(save_p, players[i].acceleration);
-		WRITEFIXED(save_p, players[i].jumpfactor);
 
 		for (j = 0; j < MAXPREDICTTICS; j++)
 		{
@@ -447,25 +433,11 @@ static void P_NetUnArchivePlayers(void)
 		players[i].viewheight = 32<<FRACBITS;
 
 		//SetPlayerSkinByNum(i, players[i].skin);
-		players[i].charability = READUINT8(save_p);
-		players[i].charability2 = READUINT8(save_p);
 		players[i].charflags = READUINT32(save_p);
-		players[i].thokitem = (mobjtype_t)READUINT32(save_p);
-		players[i].spinitem = (mobjtype_t)READUINT32(save_p);
-		players[i].revitem = (mobjtype_t)READUINT32(save_p);
-		players[i].actionspd = READFIXED(save_p);
-		players[i].mindash = READFIXED(save_p);
-		players[i].maxdash = READFIXED(save_p);
 		// SRB2kart
 		players[i].kartspeed = READUINT8(save_p);
 		players[i].kartweight = READUINT8(save_p);
 		//
-		players[i].normalspeed = READFIXED(save_p);
-		players[i].runspeed = READFIXED(save_p);
-		players[i].thrustfactor = READUINT8(save_p);
-		players[i].accelstart = READUINT8(save_p);
-		players[i].acceleration = READUINT8(save_p);
-		players[i].jumpfactor = READFIXED(save_p);
 
 		for (j = 0; j < MAXPREDICTTICS; j++)
 		{
@@ -679,89 +651,84 @@ static void P_NetArchiveWorld(void)
 
 	WRITEUINT16(put, 0xffff);
 
-	mld = W_CacheLumpNum(lastloadedmaplumpnum+ML_LINEDEFS, PU_CACHE);
-	msd = W_CacheLumpNum(lastloadedmaplumpnum+ML_SIDEDEFS, PU_CACHE);
-	if (mld && msd)
+	// do lines
+	for (i = 0; i < numlines; i++, mld++, li++)
 	{
-		// do lines
-		for (i = 0; i < numlines; i++, mld++, li++)
+		diff = diff2 = 0;
+
+		if (li->special != SHORT(mld->special))
+			diff |= LD_SPECIAL;
+
+		if (SHORT(mld->special) == 321 || SHORT(mld->special) == 322) // only reason li->callcount would be non-zero is if either of these are involved
+			diff |= LD_CLLCOUNT;
+
+		if (li->sidenum[0] != 0xffff)
 		{
-			diff = diff2 = 0;
+			si = &sides[li->sidenum[0]];
+			if (si->textureoffset != SHORT(msd[li->sidenum[0]].textureoffset)<<FRACBITS)
+				diff |= LD_S1TEXOFF;
+			//SoM: 4/1/2000: Some textures are colormaps. Don't worry about invalid textures.
+			if (R_CheckTextureNumForName(msd[li->sidenum[0]].toptexture) != -1
+					&& si->toptexture != R_TextureNumForName(msd[li->sidenum[0]].toptexture))
+				diff |= LD_S1TOPTEX;
+			if (R_CheckTextureNumForName(msd[li->sidenum[0]].bottomtexture) != -1
+					&& si->bottomtexture != R_TextureNumForName(msd[li->sidenum[0]].bottomtexture))
+				diff |= LD_S1BOTTEX;
+			if (R_CheckTextureNumForName(msd[li->sidenum[0]].midtexture) != -1
+					&& si->midtexture != R_TextureNumForName(msd[li->sidenum[0]].midtexture))
+				diff |= LD_S1MIDTEX;
+		}
+		if (li->sidenum[1] != 0xffff)
+		{
+			si = &sides[li->sidenum[1]];
+			if (si->textureoffset != SHORT(msd[li->sidenum[1]].textureoffset)<<FRACBITS)
+				diff2 |= LD_S2TEXOFF;
+			if (R_CheckTextureNumForName(msd[li->sidenum[1]].toptexture) != -1
+					&& si->toptexture != R_TextureNumForName(msd[li->sidenum[1]].toptexture))
+				diff2 |= LD_S2TOPTEX;
+			if (R_CheckTextureNumForName(msd[li->sidenum[1]].bottomtexture) != -1
+					&& si->bottomtexture != R_TextureNumForName(msd[li->sidenum[1]].bottomtexture))
+				diff2 |= LD_S2BOTTEX;
+			if (R_CheckTextureNumForName(msd[li->sidenum[1]].midtexture) != -1
+					&& si->midtexture != R_TextureNumForName(msd[li->sidenum[1]].midtexture))
+				diff2 |= LD_S2MIDTEX;
+			if (diff2)
+				diff |= LD_DIFF2;
+		}
 
-			if (li->special != SHORT(mld->special))
-				diff |= LD_SPECIAL;
+		if (diff)
+		{
+			statline++;
+			WRITEINT16(put, i);
+			WRITEUINT8(put, diff);
+			if (diff & LD_DIFF2)
+				WRITEUINT8(put, diff2);
+			if (diff & LD_FLAG)
+				WRITEINT16(put, li->flags);
+			if (diff & LD_SPECIAL)
+				WRITEINT16(put, li->special);
+			if (diff & LD_CLLCOUNT)
+				WRITEINT16(put, li->callcount);
 
-			if (SHORT(mld->special) == 321 || SHORT(mld->special) == 322) // only reason li->callcount would be non-zero is if either of these are involved
-				diff |= LD_CLLCOUNT;
+			si = &sides[li->sidenum[0]];
+			if (diff & LD_S1TEXOFF)
+				WRITEFIXED(put, si->textureoffset);
+			if (diff & LD_S1TOPTEX)
+				WRITEINT32(put, si->toptexture);
+			if (diff & LD_S1BOTTEX)
+				WRITEINT32(put, si->bottomtexture);
+			if (diff & LD_S1MIDTEX)
+				WRITEINT32(put, si->midtexture);
 
-			if (li->sidenum[0] != 0xffff)
-			{
-				si = &sides[li->sidenum[0]];
-				if (si->textureoffset != SHORT(msd[li->sidenum[0]].textureoffset)<<FRACBITS)
-					diff |= LD_S1TEXOFF;
-				//SoM: 4/1/2000: Some textures are colormaps. Don't worry about invalid textures.
-				if (R_CheckTextureNumForName(msd[li->sidenum[0]].toptexture) != -1
-						&& si->toptexture != R_TextureNumForName(msd[li->sidenum[0]].toptexture))
-					diff |= LD_S1TOPTEX;
-				if (R_CheckTextureNumForName(msd[li->sidenum[0]].bottomtexture) != -1
-						&& si->bottomtexture != R_TextureNumForName(msd[li->sidenum[0]].bottomtexture))
-					diff |= LD_S1BOTTEX;
-				if (R_CheckTextureNumForName(msd[li->sidenum[0]].midtexture) != -1
-						&& si->midtexture != R_TextureNumForName(msd[li->sidenum[0]].midtexture))
-					diff |= LD_S1MIDTEX;
-			}
-			if (li->sidenum[1] != 0xffff)
-			{
-				si = &sides[li->sidenum[1]];
-				if (si->textureoffset != SHORT(msd[li->sidenum[1]].textureoffset)<<FRACBITS)
-					diff2 |= LD_S2TEXOFF;
-				if (R_CheckTextureNumForName(msd[li->sidenum[1]].toptexture) != -1
-						&& si->toptexture != R_TextureNumForName(msd[li->sidenum[1]].toptexture))
-					diff2 |= LD_S2TOPTEX;
-				if (R_CheckTextureNumForName(msd[li->sidenum[1]].bottomtexture) != -1
-						&& si->bottomtexture != R_TextureNumForName(msd[li->sidenum[1]].bottomtexture))
-					diff2 |= LD_S2BOTTEX;
-				if (R_CheckTextureNumForName(msd[li->sidenum[1]].midtexture) != -1
-						&& si->midtexture != R_TextureNumForName(msd[li->sidenum[1]].midtexture))
-					diff2 |= LD_S2MIDTEX;
-				if (diff2)
-					diff |= LD_DIFF2;
-			}
-
-			if (diff)
-			{
-				statline++;
-				WRITEINT16(put, i);
-				WRITEUINT8(put, diff);
-				if (diff & LD_DIFF2)
-					WRITEUINT8(put, diff2);
-				if (diff & LD_FLAG)
-					WRITEINT16(put, li->flags);
-				if (diff & LD_SPECIAL)
-					WRITEINT16(put, li->special);
-				if (diff & LD_CLLCOUNT)
-					WRITEINT16(put, li->callcount);
-
-				si = &sides[li->sidenum[0]];
-				if (diff & LD_S1TEXOFF)
-					WRITEFIXED(put, si->textureoffset);
-				if (diff & LD_S1TOPTEX)
-					WRITEINT32(put, si->toptexture);
-				if (diff & LD_S1BOTTEX)
-					WRITEINT32(put, si->bottomtexture);
-				if (diff & LD_S1MIDTEX)
-					WRITEINT32(put, si->midtexture);
-
-				si = &sides[li->sidenum[1]];
-				if (diff2 & LD_S2TEXOFF)
-					WRITEFIXED(put, si->textureoffset);
-				if (diff2 & LD_S2TOPTEX)
-					WRITEINT32(put, si->toptexture);
-				if (diff2 & LD_S2BOTTEX)
-					WRITEINT32(put, si->bottomtexture);
-				if (diff2 & LD_S2MIDTEX)
-					WRITEINT32(put, si->midtexture);
-			}
+			si = &sides[li->sidenum[1]];
+			if (diff2 & LD_S2TEXOFF)
+				WRITEFIXED(put, si->textureoffset);
+			if (diff2 & LD_S2TOPTEX)
+				WRITEINT32(put, si->toptexture);
+			if (diff2 & LD_S2BOTTEX)
+				WRITEINT32(put, si->bottomtexture);
+			if (diff2 & LD_S2MIDTEX)
+				WRITEINT32(put, si->midtexture);
 		}
 	}
 	WRITEUINT16(put, 0xffff);
@@ -2111,13 +2078,13 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->player->mo = mobj;
 		// added for angle prediction
 		if (consoleplayer == i)
-			localangle = mobj->angle;
-		if (secondarydisplayplayer == i)
-			localangle2 = mobj->angle;
-		if (thirddisplayplayer == i)
-			localangle3 = mobj->angle;
-		if (fourthdisplayplayer == i)
-			localangle4 = mobj->angle;
+			localangle[0] = mobj->angle;
+		if (displayplayers[1] == i)
+			localangle[1] = mobj->angle;
+		if (displayplayers[2] == i)
+			localangle[2] = mobj->angle;
+		if (displayplayers[3] == i)
+			localangle[3] = mobj->angle;
 	}
 	if (diff & MD_MOVEDIR)
 		mobj->movedir = READANGLE(save_p);
@@ -3472,7 +3439,7 @@ void P_SaveNetGame(void)
 	mobj_t *mobj;
 	INT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
 
-	CV_SaveNetVars(&save_p);
+	CV_SaveNetVars(&save_p, false);
 	P_NetArchiveMisc();
 
 	// Assign the mobjnumber for pointer tracking

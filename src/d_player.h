@@ -32,41 +32,8 @@
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
-	SF_SUPER            = 1, // Can turn super in singleplayer/co-op mode.
-	SF_SUPERANIMS       = 1<<1, // If super, use the super sonic animations
-	SF_SUPERSPIN        = 1<<2, // Should spin frames be played while super?
-	SF_HIRES            = 1<<3, // Draw the sprite 2x as small?
-	SF_NOSKID           = 1<<4, // No skid particles etc
-	SF_NOSPEEDADJUST    = 1<<5, // Skin-specific version of disablespeedadjust
-	SF_RUNONWATER       = 1<<6, // Run on top of water FOFs?
+	SF_HIRES = 1, // Draw the sprite 2x as small?
 } skinflags_t;
-
-//Primary and secondary skin abilities
-typedef enum
-{
-	CA_NONE=0,
-	CA_THOK,
-	CA_FLY,
-	CA_GLIDEANDCLIMB,
-	CA_HOMINGTHOK,
-	CA_SWIM,
-	CA_DOUBLEJUMP,
-	CA_FLOAT,
-	CA_SLOWFALL,
-	CA_TELEKINESIS,
-	CA_FALLSWITCH,
-	CA_JUMPBOOST,
-	CA_AIRDRILL,
-	CA_JUMPTHOK
-} charability_t;
-
-//Secondary skin abilities
-typedef enum
-{
-	CA2_NONE=0,
-	CA2_SPINDASH,
-	CA2_MULTIABILITY
-} charability2_t;
 
 //
 // Player states.
@@ -249,6 +216,7 @@ typedef enum
 	KITEM_THUNDERSHIELD,
 	KITEM_HYUDORO,
 	KITEM_POGOSPRING,
+	KITEM_SUPERRING,
 	KITEM_KITCHENSINK,
 
 	NUMKARTITEMS,
@@ -267,6 +235,7 @@ typedef enum
 //{ SRB2kart - kartstuff
 typedef enum
 {
+	// TODO: Kill this giant array. Add them as actual player_t variables, or condense related timers into their own, smaller arrays.
 	// Basic gameplay things
 	k_position,			// Used for Kart positions, mostly for deterministic stuff
 	k_oldposition,		// Used for taunting when you pass someone
@@ -275,20 +244,15 @@ typedef enum
 	k_nextcheck,		// Next checkpoint distance; for p_user.c (was "pw_ncd")
 	k_waypoint,			// Waypoints.
 	k_starpostwp,		// Temporarily stores player waypoint for... some reason. Used when respawning and finishing.
+	k_starpostflip,		// the last starpost we hit requires flipping?
 	k_respawn,			// Timer for the DEZ laser respawn effect
 	k_dropdash,			// Charge up for respawn Drop Dash
 
 	k_throwdir, 		// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
-	k_lapanimation,		// Used to show the lap start wing logo animation
-	k_laphand,			// Lap hand gfx to use; 0 = none, 1 = :ok_hand:, 2 = :thumbs_up:, 3 = :thumps_down:
-	k_cardanimation,	// Used to determine the position of some full-screen Battle Mode graphics
-	k_voices,			// Used to stop the player saying more voices than it should
-	k_tauntvoices,		// Used to specifically stop taunt voice spam
 	k_instashield,		// Instashield no-damage animation timer
-	k_enginesnd,		// Engine sound number you're on.
 
 	k_floorboost,		// Prevents Sneaker sounds for a breif duration when triggered by a floor panel
-	k_spinouttype,		// Determines whether to thrust forward or not while spinning out; 0 = move forwards, 1 = stay still
+	k_spinouttype,		// Determines whether to thrust forward or not while spinning out; 0 = move forwards, 1 = stay still, 2 = stay still & no flashing tics
 
 	k_drift,			// Drifting Left or Right, plus a bigger counter = sharper turn
 	k_driftend,			// Drift has ended, used to adjust character angle after drift
@@ -296,18 +260,27 @@ typedef enum
 	k_driftboost,		// Boost you get from drifting
 	k_boostcharge,		// Charge-up for boosting at the start of the race
 	k_startboost,		// Boost you get from start of race or respawn drop dash
+	k_rings,			// Number of held rings
+	k_pickuprings,		// Number of rings being picked up before added to the counter (prevents rings from being deleted forever over 20)
+	k_userings,			// Have to be not holding the item button to change from using rings to using items (or vice versa), to prevent some weirdness with the button
+	k_ringdelay,		// 3 tic delay between every ring usage
+	k_ringboost,		// Ring boost timer
+	k_ringlock,			// Prevent picking up rings while SPB is locked on
+	k_sparkleanim,		// Angle offset for ring sparkle animation
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	k_pogospring,		// Pogo spring bounce effect
 	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
 	k_waterskip,		// Water skipping counter
 	k_dashpadcooldown,	// Separate the vanilla SA-style dash pads from using pw_flashing
+	k_numboosts,		// Count of how many boosts are being stacked, for after image spawning
 	k_boostpower,		// Base boost value, for offroad
 	k_speedboost,		// Boost value smoothing for max speed
 	k_accelboost,		// Boost value smoothing for acceleration
-	k_boostcam,			// Camera push forward on boost
-	k_destboostcam,		// Ditto
-	k_timeovercam,		// Camera timer for leaving behind or not
+	k_draftpower,		// Drafting power (from 0 to FRACUNIT), doubles your top speed & acceleration at max
+	k_draftleeway,		// Leniency timer before removing draft power
+	k_lastdraft,		// Last player being drafted
+	k_boostangle,		// angle set when not spun out OR boosted to determine what direction you should keep going at if you're spun out and boosted.
 	k_aizdriftstrat,	// Let go of your drift while boosting? Helper for the SICK STRATZ you have just unlocked
 	k_brakedrift,		// Helper for brake-drift spark spawning
 
@@ -325,7 +298,9 @@ typedef enum
 	k_hyudorotimer,			// Duration of the Hyudoro offroad effect itself
 	k_stealingtimer,		// You are stealing an item, this is your timer
 	k_stolentimer,			// You are being stolen from, this is your timer
+	k_superring,			// Spawn rings on top of you every tic!
 	k_sneakertimer,			// Duration of the Sneaker Boost itself
+	k_levelbooster,			// Duration of a level booster's boost (same as sneaker, but separated for )
 	k_growshrinktimer,		// > 0 = Big, < 0 = small
 	k_squishedtimer,		// Squished frame timer
 	k_rocketsneakertimer,	// Rocket Sneaker duration timer
@@ -346,11 +321,8 @@ typedef enum
 	k_comebackpoints,	// Number of times you've bombed or gave an item to someone; once it's 3 it gets set back to 0 and you're given a bumper
 	k_comebackmode, 	// 0 = bomb, 1 = item
 	k_wanted, 			// Timer for determining WANTED status, lowers when hitting people, prevents the game turning into Camp Lazlo
-	k_yougotem, 		// "You Got Em" gfx when hitting someone as a karma player via a method that gets you back in the game instantly
 
 	// v1.0.2+ vars
-	k_itemblink,		// Item flashing after roulette, prevents Hyudoro stealing AND serves as a mashing indicator
-	k_itemblinkmode,	// Type of flashing: 0 = white (normal), 1 = red (mashing), 2 = rainbow (enhanced items)
 	k_getsparks,		// Disable drift sparks at low speed, JUST enough to give acceleration the actual headstart above speed
 	k_jawztargetdelay,	// Delay for Jawz target switching, to make it less twitchy
 	k_spectatewait,		// How long have you been waiting as a spectator
@@ -359,6 +331,44 @@ typedef enum
 
 	NUMKARTSTUFF
 } kartstufftype_t;
+
+typedef enum
+{
+	// Unsynced, HUD or clientsided effects
+	// Item box
+	khud_itemblink,		// Item flashing after roulette, prevents Hyudoro stealing AND serves as a mashing indicator
+	khud_itemblinkmode,	// Type of flashing: 0 = white (normal), 1 = red (mashing), 2 = rainbow (enhanced items)
+
+	// Rings
+	khud_ringframe,		// Ring spin frame
+	khud_ringtics,		// Tics left until next ring frame
+	khud_ringdelay,		// Next frame's tics
+	khud_ringspblock,	// Which frame of the SPB ring lock animation to use
+
+	// Lap finish
+	khud_lapanimation,	// Used to show the lap start wing logo animation
+	khud_laphand,		// Lap hand gfx to use; 0 = none, 1 = :ok_hand:, 2 = :thumbs_up:, 3 = :thumps_down:
+
+	// Camera
+	khud_boostcam,		// Camera push forward on boost
+	khud_destboostcam,	// Ditto
+	khud_timeovercam,	// Camera timer for leaving behind or not
+
+	// Sounds
+	khud_enginesnd,		// Engine sound offset this player is using.
+	khud_voices,		// Used to stop the player saying more voices than it should
+	khud_tauntvoices,	// Used to specifically stop taunt voice spam
+
+	// Battle
+	khud_cardanimation,	// Used to determine the position of some full-screen Battle Mode graphics
+	khud_yougotem, 		// "You Got Em" gfx when hitting someone as a karma player via a method that gets you back in the game instantly
+
+	NUMKARTHUD
+} karthudtype_t;
+
+// QUICKLY GET EITHER SNEAKER OR LEVEL BOOSTER SINCE THEY ARE FUNCTIONALLY IDENTICAL
+#define EITHERSNEAKER(p) (p->kartstuff[k_sneakertimer] || p->kartstuff[k_levelbooster])
+
 //}
 
 #define WEP_AUTO    1
@@ -419,6 +429,7 @@ typedef struct player_s
 
 	// SRB2kart stuff
 	INT32 kartstuff[NUMKARTSTUFF];
+	INT32 karthud[NUMKARTHUD];
 	angle_t frameangle; // for the player add the ability to have the sprite only face other angles
 	INT16 lturn_max[MAXPREDICTTICS]; // What's the expected turn value for full-left for a number of frames back (to account for netgame latency)?
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
@@ -448,29 +459,8 @@ typedef struct player_s
 	UINT8 kartweight; // Kart weight stat between 1 and 9
 	//
 
-	fixed_t normalspeed; // Normal ground
-	fixed_t runspeed; // Speed you break into the run animation
-	UINT8 thrustfactor; // Thrust = thrustfactor * acceleration
-	UINT8 accelstart; // Starting acceleration if speed = 0.
-	UINT8 acceleration; // Acceleration
-
-	// See charability_t and charability2_t for more information.
-	UINT8 charability; // Ability definition
-	UINT8 charability2; // Secondary ability definition
-
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
 	                 // See SF_ flags
-
-	mobjtype_t thokitem; // Object # to spawn for the thok
-	mobjtype_t spinitem; // Object # to spawn for spindash/spinning
-	mobjtype_t revitem; // Object # to spawn for spindash/spinning
-
-	fixed_t actionspd; // Speed of thok/glide/fly
-	fixed_t mindash; // Minimum spindash speed
-	fixed_t maxdash; // Maximum spindash speed
-
-	fixed_t jumpfactor; // How high can the player jump?
-
 	SINT8 lives;
 	SINT8 continues; // continues that player has acquired
 

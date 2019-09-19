@@ -38,6 +38,9 @@ void M_Drawer(void);
 // Called by D_SRB2Main, loads the config file.
 void M_Init(void);
 
+// Called by D_SRB2Main also, sets up the playermenu and description tables.
+void M_InitCharacterTables(void);
+
 // Called by intro code to force menu up upon a keypress,
 // does nothing if menu is already up.
 void M_StartControlPanel(void);
@@ -104,6 +107,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
 #define IT_CV_NOPRINT     1536
 #define IT_CV_NOMOD       2048
 #define IT_CV_INVISSLIDER 2560
+#define IT_CV_PASSWORD    3072
 
 //call/submenu specific
 // There used to be a lot more here but ...
@@ -209,8 +213,9 @@ typedef struct
 	UINT8 netgame;
 } saveinfo_t;
 
-extern description_t description[32];
+extern description_t description[MAXSKINS];
 
+extern consvar_t cv_showfocuslost;
 extern consvar_t cv_newgametype, cv_nextmap, cv_chooseskin, cv_serversort;
 extern CV_PossibleValue_t gametype_cons_t[];
 
@@ -232,6 +237,9 @@ void Screenshot_option_Onchange(void);
 
 // Addons menu updating
 void Addons_option_Onchange(void);
+
+void M_ReplayHut(INT32 choice);
+void M_SetPlaybackMenuPointer(void);
 
 INT32 HU_GetHighlightColor(void);
 
