@@ -522,7 +522,7 @@ static menuitem_t PlaybackMenu[] =
 
 	{IT_CALL   | IT_STRING, "M_PREW",   "Rewind",        M_PlaybackRewind,      20},
 	{IT_CALL   | IT_STRING, "M_PPAUSE", "Pause",         M_PlaybackPause,       36},
-	{IT_CALL   | IT_STRING, "M_PFFWD",  "Fast-Foward",   M_PlaybackFastForward, 52},
+	{IT_CALL   | IT_STRING, "M_PFFWD",  "Fast-Forward",  M_PlaybackFastForward, 52},
 	{IT_CALL   | IT_STRING, "M_PSTEPB", "Backup Frame",  M_PlaybackRewind,      20},
 	{IT_CALL   | IT_STRING, "M_PRESUM", "Resume",        M_PlaybackPause,       36},
 	{IT_CALL   | IT_STRING, "M_PFADV",  "Advance Frame", M_PlaybackAdvance,     52},
@@ -1561,7 +1561,7 @@ static menuitem_t OP_AdvServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Karma Comeback",        &cv_kartcomeback,     66},
 };*/
 
-#define ITEMTOGGLEBOTTOMRIGHT
+//#define ITEMTOGGLEBOTTOMRIGHT
 
 static menuitem_t OP_MonitorToggleMenu[] =
 {
@@ -1589,6 +1589,7 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Thunder Shields",		M_HandleMonitorToggles, KITEM_THUNDERSHIELD},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoros",				M_HandleMonitorToggles, KITEM_HYUDORO},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Springs",		 	M_HandleMonitorToggles, KITEM_POGOSPRING},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Rings",			M_HandleMonitorToggles, KITEM_SUPERRING},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sinks",			M_HandleMonitorToggles, KITEM_KITCHENSINK},
 #ifdef ITEMTOGGLEBOTTOMRIGHT
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "---",					M_HandleMonitorToggles, 255},
@@ -8444,7 +8445,11 @@ static void M_ConnectMenu(INT32 choice)
 	// first page of servers
 	serverlistpage = 0;
 	if (ms_RoomId < 0)
+	{
 		M_RoomMenu(0); // Select a room instead of staring at an empty list
+		// This prevents us from returning to the modified game alert.
+		currentMenu->prevMenu = &MP_MainDef;
+	}
 	else
 		M_SetupNextMenu(&MP_ConnectDef);
 	itemOn = 0;
@@ -10643,6 +10648,7 @@ static consvar_t *kartitemcvs[NUMKARTRESULTS-1] = {
 	&cv_thundershield,
 	&cv_hyudoro,
 	&cv_pogospring,
+	&cv_superring,
 	&cv_kitchensink,
 	&cv_triplesneaker,
 	&cv_triplebanana,

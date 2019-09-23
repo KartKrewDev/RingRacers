@@ -1166,37 +1166,6 @@ static int lib_pPlayerRingBurst(lua_State *L)
 	return 0;
 }
 
-static int lib_pPlayerWeaponPanelBurst(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_PlayerWeaponPanelBurst(player);
-	return 0;
-}
-
-static int lib_pPlayerWeaponAmmoBurst(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_PlayerWeaponAmmoBurst(player);
-	return 0;
-}
-
-static int lib_pPlayerEmeraldBurst(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean toss = lua_optboolean(L, 2);
-	NOHUD
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_PlayerEmeraldBurst(player, toss);
-	return 0;
-}
-
 static int lib_pPlayerFlagBurst(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -2229,6 +2198,16 @@ static int lib_kOvertakeSound(lua_State *L)
 	return 0;
 }
 
+static int lib_kPainSound(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	if (!mobj->player)
+		return luaL_error(L, "K_PlayPainSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_PlayPainSound(mobj);
+	return 0;
+}
+
 static int lib_kHitEmSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -2744,9 +2723,6 @@ static luaL_Reg lib[] = {
 	{"P_DamageMobj",lib_pDamageMobj},
 	{"P_KillMobj",lib_pKillMobj},
 	{"P_PlayerRingBurst",lib_pPlayerRingBurst},
-	{"P_PlayerWeaponPanelBurst",lib_pPlayerWeaponPanelBurst},
-	{"P_PlayerWeaponAmmoBurst",lib_pPlayerWeaponAmmoBurst},
-	{"P_PlayerEmeraldBurst",lib_pPlayerEmeraldBurst},
 	{"P_PlayerFlagBurst",lib_pPlayerFlagBurst},
 	{"P_PlayRinglossSound",lib_pPlayRinglossSound},
 	{"P_PlayDeathSound",lib_pPlayDeathSound},
@@ -2835,6 +2811,7 @@ static luaL_Reg lib[] = {
 	{"K_PlayPowerGloatSound", lib_kGloatSound},
 	{"K_PlayOvertakeSound", lib_kOvertakeSound},
 	{"K_PlayLossSound", lib_kLossSound},
+	{"K_PlayPainSound", lib_kPainSound},
 	{"K_PlayHitEmSound", lib_kHitEmSound},
 	{"K_GetKartColorByName",lib_kGetKartColorByName},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},

@@ -1411,7 +1411,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
 		axis = JoyAxis(AXISMOVE, ssplayer);
-		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
+		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || EITHERSNEAKER(player))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = forwardmove[1];	// 50
@@ -1560,10 +1560,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	cmd->angleturn *= realtics;
 
 	// SRB2kart - no additional angle if not moving
-	if (((player->mo && player->speed > 0) // Moving
+	if ((player->mo && player->speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 		|| (player->kartstuff[k_respawn]) // Respawning
-		|| (player->spectator || objectplacing))) // Not a physical player
+		|| (player->spectator || objectplacing)) // Not a physical player
 		lang += (cmd->angleturn<<16);
 
 	cmd->angleturn = (INT16)(lang >> 16);
@@ -2585,6 +2585,7 @@ void G_PlayerReborn(INT32 player)
 	INT32 bumper;
 	INT32 comebackpoints;
 	INT32 wanted;
+	INT32 rings;
 	INT32 respawnflip;
 	boolean songcredit = false;
 
@@ -2636,6 +2637,7 @@ void G_PlayerReborn(INT32 player)
 		itemamount = 0;
 		growshrinktimer = 0;
 		bumper = (G_BattleGametype() ? cv_kartbumpers.value : 0);
+		rings = (G_BattleGametype() ? 0 : 5);
 		comebackpoints = 0;
 		wanted = 0;
 		starpostwp = 0;
@@ -2665,6 +2667,7 @@ void G_PlayerReborn(INT32 player)
 			growshrinktimer = 0;
 
 		bumper = players[player].kartstuff[k_bumper];
+		rings = players[player].kartstuff[k_rings];
 		comebackpoints = players[player].kartstuff[k_comebackpoints];
 		wanted = players[player].kartstuff[k_wanted];
 	}
@@ -2709,17 +2712,19 @@ void G_PlayerReborn(INT32 player)
 	p->pity = pity;
 
 	// SRB2kart
-	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync
+	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync (Does it...?)
 	p->kartstuff[k_itemroulette] = itemroulette;
 	p->kartstuff[k_roulettetype] = roulettetype;
 	p->kartstuff[k_itemtype] = itemtype;
 	p->kartstuff[k_itemamount] = itemamount;
 	p->kartstuff[k_growshrinktimer] = growshrinktimer;
 	p->kartstuff[k_bumper] = bumper;
+	p->kartstuff[k_rings] = rings;
 	p->kartstuff[k_comebackpoints] = comebackpoints;
 	p->kartstuff[k_comebacktimer] = comebacktime;
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
+	p->kartstuff[k_lastdraft] = -1;
 	p->kartstuff[k_starpostflip] = respawnflip;
 
 	// Don't do anything immediately
@@ -5143,7 +5148,8 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 		|| (players[displayplayers[0]].kartstuff[k_respawn]) // Respawning
 		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
-		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer] && players[displayplayers[0]].kartstuff[k_sneakertimer])) // Spinning and boosting cancels out spinout
+		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
+		&& (players[displayplayers[0]].kartstuff[k_sneakertimer] || players[displayplayers[0]].kartstuff[k_levelbooster]))) // Spinning and boosting cancels out spinout
 		localangle[0] += (cmd->angleturn<<16);
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
@@ -5391,7 +5397,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	// Store the sprite frame.
-	frame = ghost->frame & 0xFF;
+	frame = ghost->frame & FF_FRAMEMASK;
 	if (frame != oldghost[playernum].frame)
 	{
 		oldghost[playernum].frame = frame;
@@ -6045,7 +6051,7 @@ void G_ConfirmRewind(tic_t rewindtime)
 
 	G_DoPlayDemo(NULL); // Restart the current demo
 
-	for (j = 0; j < rewindtime && leveltime < rewindtime; i++)
+	for (j = 0; j < rewindtime && leveltime < rewindtime; j++)
 	{
 		//TryRunTics(1);
 		G_Ticker((j % NEWTICRATERATIO) == 0);
@@ -6488,10 +6494,10 @@ void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT8 color, UINT
 {
 	char temp[16];
 
-	if (demoinfo_p && (UINT32)(*demoinfo_p) == 0)
+	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
 	{
 		WRITEUINT8(demo_p, DEMOMARKER); // add the demo end marker
-		WRITEUINT32(demoinfo_p, demo_p - demobuffer);
+		*(UINT32 *)demoinfo_p = demo_p - demobuffer;
 	}
 
 	WRITEUINT8(demo_p, DW_STANDING);
@@ -7946,16 +7952,17 @@ boolean G_CheckDemoStatus(void)
 
 void G_SaveDemo(void)
 {
-	UINT8 *p = demobuffer+16; // checksum position
+	UINT8 *p = demobuffer+16; // after version
+	UINT32 length;
 #ifdef NOMD5
 	UINT8 i;
 #endif
 
 	// Ensure extrainfo pointer is always available, even if no info is present.
-	if (demoinfo_p && (UINT32)(*demoinfo_p) == 0)
+	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
 	{
 		WRITEUINT8(demo_p, DEMOMARKER); // add the demo end marker
-		WRITEUINT32(demoinfo_p, (UINT32)(demo_p - demobuffer));
+		*(UINT32 *)demoinfo_p = demo_p - demobuffer;
 	}
 	WRITEUINT8(demo_p, DW_END); // Mark end of demo extra data.
 
@@ -8001,12 +8008,14 @@ void G_SaveDemo(void)
 		sprintf(writepoint, "%s.lmp", demo_slug);
 	}
 
+	length = *(UINT32 *)demoinfo_p;
+	WRITEUINT32(demoinfo_p, length);
 #ifdef NOMD5
 	for (i = 0; i < 16; i++, p++)
 		*p = M_RandomByte(); // This MD5 was chosen by fair dice roll and most likely < 50% correct.
 #else
 	// Make a checksum of everything after the checksum in the file up to the end of the standard data. Extrainfo is freely modifiable.
-	md5_buffer((char *)p+16, (demobuffer + (UINT32)*demoinfo_p) - (p+16), p);
+	md5_buffer((char *)p+16, (demobuffer + length) - (p+16), p);
 #endif
 
 
