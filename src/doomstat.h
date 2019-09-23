@@ -339,7 +339,6 @@ extern const char *Gametype_Names[NUMGAMETYPES];
 
 extern tic_t totalplaytime;
 extern UINT32 matchesplayed;
-extern UINT16 vspowerlevel[2];
 
 extern UINT8 stagefailed;
 
@@ -475,12 +474,8 @@ extern tic_t wantedcalcdelay;
 extern tic_t indirectitemcooldown;
 extern tic_t hyubgone;
 extern tic_t mapreset;
-extern INT16 nospectategrief[MAXPLAYERS];
 extern boolean thwompsactive;
 extern SINT8 spbplace;
-
-extern SINT8 speedscramble;
-extern SINT8 encorescramble;
 
 extern boolean legitimateexit;
 extern boolean comebackshowninfo;
@@ -556,7 +551,6 @@ extern consvar_t cv_maxping;
 extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];
-extern UINT16 clientpowerlevels[MAXPLAYERS][2];
 
 /// \note put these in d_clisrv outright?
 

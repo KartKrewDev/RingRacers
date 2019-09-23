@@ -68,9 +68,6 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 void K_MoveKartPlayer(player_t *player, boolean onground);
 void K_CalculateBattleWanted(void);
 void K_CheckBumpers(void);
-INT16 K_CalculatePowerLevelInc(INT16 diff);
-INT16 K_CalculatePowerLevelAvg(void);
-void K_PlayerForfeit(UINT8 playernum, boolean nopointloss);
 void K_CheckSpectateStatus(void);
 
 // sound stuff for lua

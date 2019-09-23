@@ -27,6 +27,7 @@
 #include "m_misc.h"
 #include "v_video.h" // video flags for CEchos
 #include "k_kart.h" // SRB2kart
+#include "k_pwrlv.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""

@@ -47,6 +47,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_pwrlv.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -2317,7 +2318,7 @@ static void CL_ConnectToServer(boolean viams)
 	wipegamestate = GS_WAITINGPLAYERS;
 
 	ClearAdminPlayers();
-	ClearClientPowerLevels();
+	K_ClearClientPowerLevels();
 	pnumnodes = 1;
 	oldtic = I_GetTime() - 1;
 #ifndef NONET
@@ -3351,7 +3352,7 @@ void SV_ResetServer(void)
 		playernode[i] = UINT8_MAX;
 		sprintf(player_names[i], "Player %d", i + 1);
 		adminplayers[i] = -1; // Populate the entire adminplayers array with -1.
-		ClearClientPowerLevels();
+		K_ClearClientPowerLevels();
 	}
 
 	mynode = 0;
@@ -3427,7 +3428,7 @@ void D_QuitNetGame(void)
 
 	D_CloseConnection();
 	ClearAdminPlayers();
-	ClearClientPowerLevels();
+	K_ClearClientPowerLevels();
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"

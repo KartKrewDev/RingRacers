@@ -57,6 +57,7 @@
 #include "st_stuff.h"
 #include "i_sound.h"
 #include "k_kart.h" // SRB2kart
+#include "k_pwrlv.h"
 #include "d_player.h" // KITEM_ constants
 
 #include "i_joy.h" // for joystick menu controls
@@ -9608,8 +9609,8 @@ static void M_EraseDataResponse(INT32 ch)
 		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
 		totalplaytime = 0;
 		matchesplayed = 0;
-		for (i = 0; i < 2; i++)
-			vspowerlevel[i] = 1000;
+		for (i = 0; i < PWRLV_NUMTYPES; i++)
+			vspowerlevel[i] = PWRLVRECORD_START;
 		F_StartIntro();
 	}
 	if (erasecontext != 1)

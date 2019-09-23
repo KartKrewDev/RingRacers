@@ -34,6 +34,9 @@
 #include "p_slopes.h"
 #endif
 
+// SRB2Kart
+#include "k_pwrlv.h"
+
 savedata_t savedata;
 UINT8 *save_p;
 

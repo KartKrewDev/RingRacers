@@ -47,6 +47,7 @@
 #include "m_cond.h"
 #include "m_anigif.h"
 #include "k_kart.h" // SRB2kart
+#include "k_pwrlv.h"
 #include "y_inter.h"
 
 #ifdef NETGAME_DEVMODE
@@ -475,7 +476,6 @@ boolean deferencoremode = false;
 UINT8 splitscreen = 0;
 boolean circuitmap = true; // SRB2kart
 INT32 adminplayers[MAXPLAYERS];
-UINT16 clientpowerlevels[MAXPLAYERS][2];
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =
@@ -1936,8 +1936,8 @@ static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
 	UINT16 race = (UINT16)READUINT16(*cp);
 	UINT16 battle = (UINT16)READUINT16(*cp);
 
-	clientpowerlevels[playernum][0] = min(9999, race);
-	clientpowerlevels[playernum][1] = min(9999, battle);
+	clientpowerlevels[playernum][PWRLV_RACE] = min(PWRLVRECORD_MAX, race);
+	clientpowerlevels[playernum][PWRLV_BATTLE] = min(PWRLVRECORD_MAX, battle);
 
 	CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", playernum, race);
 }
@@ -3843,14 +3843,6 @@ static void Got_Login(UINT8 **cp, INT32 playernum)
 	else
 		CONS_Printf(M_GetText("Password from %s failed.\n"), player_names[playernum]);
 #endif
-}
-
-void ClearClientPowerLevels(void)
-{
-	INT32 i, j;
-	for (i = 0; i < MAXPLAYERS; i++)
-		for (j = 0; j < 2; j++)
-			clientpowerlevels[i][j] = 0;
 }
 
 boolean IsPlayerAdmin(INT32 playernum)

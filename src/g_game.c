@@ -48,6 +48,7 @@
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "k_kart.h" // SRB2kart
+#include "k_pwrlv.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -168,7 +169,6 @@ INT32 sstimer; // Time allotted in the special stage
 
 tic_t totalplaytime;
 UINT32 matchesplayed; // SRB2Kart
-UINT16 vspowerlevel[2]; // SRB2Kart: Online rankings for each gametype
 boolean gamedataloaded = false;
 
 // Time attack data for levels
@@ -267,13 +267,8 @@ tic_t wantedcalcdelay; // Time before it recalculates WANTED
 tic_t indirectitemcooldown; // Cooldown before any more Shrink, SPB, or any other item that works indirectly is awarded
 tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
-INT16 nospectategrief[MAXPLAYERS]; // Which players spec-scummed, and their power level before scumming.
 boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
-
-// Scrambles
-SINT8 speedscramble = -1;
-SINT8 encorescramble = -1;
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 boolean legitimateexit; // Did this client actually finish the match?
@@ -4085,8 +4080,8 @@ void G_LoadGameData(void)
 	totalplaytime = 0; // total play time (separate from all)
 	matchesplayed = 0; // SRB2Kart: matches played & finished
 
-	for (i = 0; i < 2; i++) // SRB2Kart: online rank system
-		vspowerlevel[i] = 1000;
+	for (i = 0; i < PWRLV_NUMTYPES; i++) // SRB2Kart: online rank system
+		vspowerlevel[i] = PWRLVRECORD_START;
 
 	if (M_CheckParm("-nodata"))
 		return; // Don't load.
@@ -6429,7 +6424,7 @@ void G_BeginRecording(void)
 			WRITEUINT32(demo_p, player->score);
 
 			// Power Levels
-			WRITEUINT16(demo_p, clientpowerlevels[p][G_BattleGametype() ? 1 : 0]);
+			WRITEUINT16(demo_p, clientpowerlevels[p][G_BattleGametype() ? PWRLV_BATTLE : PWRLV_RACE]);
 
 			// Kart speed and weight
 			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
@@ -7331,7 +7326,7 @@ void G_DoPlayDemo(char *defdemoname)
 		players[p].score = READUINT32(demo_p);
 
 		// Power Levels
-		clientpowerlevels[p][G_BattleGametype() ? 1 : 0] = READUINT16(demo_p);
+		clientpowerlevels[p][G_BattleGametype() ? PWRLV_BATTLE : PWRLV_RACE] = READUINT16(demo_p);
 
 		// Kart stats, temporarily
 		kartspeed[p] = READUINT8(demo_p);

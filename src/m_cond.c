@@ -21,6 +21,7 @@
 #include "r_things.h" // numskins
 //#include "r_draw.h" // R_GetColorByName
 #include "k_kart.h" // K_GetKartColorByName
+#include "k_pwrlv.h"
 
 // Map triggers for linedef executors
 // 32 triggers, one bit each

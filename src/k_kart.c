@@ -4,6 +4,8 @@
 /// \brief SRB2kart general.
 ///        All of the SRB2kart-unique stuff.
 
+#include "k_kart.h"
+#include "k_pwrlv.h"
 #include "doomdef.h"
 #include "hu_stuff.h"
 #include "g_game.h"
@@ -18,7 +20,6 @@
 #include "z_zone.h"
 #include "m_misc.h"
 #include "m_cond.h"
-#include "k_kart.h"
 #include "f_finale.h"
 #include "lua_hud.h"	// For Lua hud checks
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
@@ -31,8 +32,6 @@
 // battlewanted is an array of the WANTED player nums, -1 for no player in that slot
 // indirectitemcooldown is timer before anyone's allowed another Shrink/SPB
 // mapreset is set when enough players fill an empty server
-// nospectategrief is the players in-game needed to eliminate the person in last
-
 
 //{ SRB2kart Color Code
 
@@ -6819,170 +6818,6 @@ void K_CheckBumpers(void)
 	for (i = 0; i < MAXPLAYERS; i++) // and it can't be merged with this loop because it needs to be all updated before exiting... multi-loops suck...
 		P_DoPlayerExit(&players[i]);
 }
-
-// Adapted from this: http://wiki.tockdom.com/wiki/Player_Rating
-INT16 K_CalculatePowerLevelInc(INT16 diff)
-{
-	INT16 control[10] = {0,0,0,1,8,50,125,125,125,125};
-	fixed_t increment = 0;
-	fixed_t x;
-	UINT8 j;
-
-#define MAXDIFF 9998
-	if (diff > MAXDIFF)
-		diff = MAXDIFF;
-	if (diff < -MAXDIFF)
-		diff = -MAXDIFF;
-#undef MAXDIFF
-
-	x = ((diff-2)<<FRACBITS) / 5000;
-
-	for (j = 3; j < 10; j++) // Just skipping to 3 since 0 thru 2 will always just add 0...
-	{
-		fixed_t f = abs(x - ((j-4)<<FRACBITS));
-		fixed_t add;
-
-		if (f >= (2<<FRACBITS))
-		{
-			continue; //add = 0;
-		}
-		else if (f >= (1<<FRACBITS))
-		{
-			fixed_t f2 = (2<<FRACBITS) - f;
-			add = FixedMul(FixedMul(f2, f2), f2) / 6;
-		}
-		else
-		{
-			add = ((3*FixedMul(FixedMul(f, f), f)) - (6*FixedMul(f, f)) + (4<<FRACBITS)) / 6;
-		}
-
-		increment += (add * control[j]);
-	}
-
-	return (INT16)(increment >> FRACBITS);
-}
-
-INT16 K_CalculatePowerLevelAvg(void)
-{
-	fixed_t avg = 0;
-	UINT8 div = 0;
-	SINT8 t = -1;
-	UINT8 i;
-
-	if (!netgame || !cv_kartusepwrlv.value)
-		return 0; // No average.
-
-	if (G_RaceGametype())
-		t = 0;
-	else if (G_BattleGametype())
-		t = 1;
-
-	if (t == -1)
-		return 0; // Hmm?!
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator
-			|| clientpowerlevels[i][t] == 0) // splitscreen player
-			continue;
-
-		avg += clientpowerlevels[i][t];
-		div++;
-	}
-
-	if (!div)
-		return 0; // No average.
-
-	avg /= div;
-
-	return (INT16)(avg >> FRACBITS);
-}
-
-void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
-{
-	UINT8 p = 0;
-	INT32 powertype = -1;
-	UINT16 yourpower = 5000;
-	UINT16 theirpower = 5000;
-	INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
-	INT16 inc = 0;
-	UINT8 i;
-
-	// power level & spectating is netgames only
-	if (!netgame)
-		return;
-
-	// This server isn't using power levels anyway!
-	if (!cv_kartusepwrlv.value)
-		return;
-
-	// Hey, I just got here!
-	if (players[playernum].jointime <= 1)
-		return;
-
-	// 20 sec into the match counts as a forfeit -- automatic loss against every other player in the match.
-	if (gamestate != GS_LEVEL || leveltime <= starttime+(20*TICRATE))
-		return;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !players[i].spectator)
-			p++;
-	}
-
-	if (p < 2) // no players
-		return;
-
-	if (G_RaceGametype())
-		powertype = 0;
-	else if (G_BattleGametype())
-		powertype = 1;
-
-	if (powertype == -1) // No power type?!
-		return;
-
-	if (clientpowerlevels[playernum][powertype] == 0) // splitscreen guests don't record power level changes
-		return;
-	yourpower = clientpowerlevels[playernum][powertype];
-
-	// Set up the point compensation.
-	nospectategrief[playernum] = yourpower;
-
-	if (!pointloss) // This is set for stuff like sync-outs, which shouldn't be so harsh on the victim!
-		return;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (i == playernum)
-			continue;
-
-		theirpower = 5000;
-		if (clientpowerlevels[i][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
-			theirpower = clientpowerlevels[i][powertype];
-
-		diff = yourpower - theirpower;
-		inc -= K_CalculatePowerLevelInc(diff);
-	}
-
-	if (inc == 0) // No change.
-		return;
-
-	if (yourpower + inc > 9999) // I mean... we're subtracting... but y'know how it is :V
-		inc -= ((yourpower + inc) - 9999);
-	if (yourpower + inc < 1)
-		inc -= ((yourpower + inc) - 1);
-
-	clientpowerlevels[playernum][powertype] += inc;
-
-	if (playernum == consoleplayer)
-	{
-		vspowerlevel[powertype] = clientpowerlevels[playernum][powertype];
-		if (M_UpdateUnlockablesAndExtraEmblems(true))
-			S_StartSound(NULL, sfx_ncitem);
-		G_SaveGameData(true); // save your punishment!
-	}
-}
-
 
 void K_CheckSpectateStatus(void)
 {
