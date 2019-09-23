@@ -6464,9 +6464,9 @@ void P_RunBattleOvertime(void)
 	{
 		UINT8 transparency = tr_trans50;
 
-		if (!splitscreen && players[displayplayer].mo)
+		if (!splitscreen && players[displayplayers[0]].mo)
 		{
-			INT32 dist = P_AproxDistance(battleovertime.x-players[displayplayer].mo->x, battleovertime.y-players[displayplayer].mo->y);
+			INT32 dist = P_AproxDistance(battleovertime.x-players[displayplayers[0]].mo->x, battleovertime.y-players[displayplayers[0]].mo->y);
 			transparency = max(0, NUMTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
 		}
 
@@ -7131,7 +7131,7 @@ void P_MobjThinker(mobj_t *mobj)
 					mobj->x = mobj->target->x;
 					mobj->y = mobj->target->y;
 
-					if (!splitscreen && players[displayplayer].mo)
+					if (!splitscreen && players[displayplayers[0]].mo)
 					{
 						scale = mobj->target->scale + FixedMul(FixedDiv(abs(P_AproxDistance(players[displayplayers[0]].mo->x-mobj->target->x,
 							players[displayplayers[0]].mo->y-mobj->target->y)), RING_DIST), mobj->target->scale);

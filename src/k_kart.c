@@ -8965,7 +8965,9 @@ static void K_drawKartMinimap(void)
 	if (gamestate != GS_LEVEL)
 		return;
 
-	if (stplyr != &players[displayplayer])
+	// Only draw for the first player
+	// Maybe move this somewhere else where this won't be a concern?
+	if (stplyr != &players[displayplayers[0]])
 		return;
 
 	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(gamemap)));
@@ -9066,7 +9068,7 @@ static void K_drawKartMinimap(void)
 			if (!players[i].mo || players[i].spectator)
 				continue;
 
-			if (i != displayplayer || splitscreen)
+			if (i != displayplayers[0] || splitscreen)
 			{
 				if (G_BattleGametype() && players[i].kartstuff[k_bumper] <= 0)
 					continue;
@@ -9080,7 +9082,7 @@ static void K_drawKartMinimap(void)
 				}
 			}
 
-			if (i == displayplayer || i == secondarydisplayplayer || i == thirddisplayplayer || i == fourthdisplayplayer)
+			if (i == displayplayers[0] || i == displayplayers[1] || i == displayplayers[2] || i == displayplayers[3])
 			{
 				// Draw display players on top of everything else
 				localplayers[numlocalplayers] = i;
