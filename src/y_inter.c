@@ -356,13 +356,13 @@ static void Y_UpdatePowerLevels(void)
 		UINT8 ipnum = data.match.num[i];
 		UINT8 jpnum;
 
-		CONS_Printf("Power Level Gain for player %d:\n", ipnum);
+		CONS_Debug(DBG_GAMELOGIC, "Power Level Gain for player %d:\n", ipnum);
 
 		if (clientpowerlevels[ipnum][powertype] == 0) // splitscreen guests don't record power level changes
 			continue;
 		yourpower = clientpowerlevels[ipnum][powertype];
 
-		CONS_Printf("Player %d's PWR.LV: %d\n", ipnum, yourpower);
+		CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", ipnum, yourpower);
 
 		for (j = 0; j < numplayersingame; j++)
 		{
@@ -373,18 +373,18 @@ static void Y_UpdatePowerLevels(void)
 			if (i == j || ipnum == jpnum) // Same person
 				continue;
 
-			CONS_Printf("Player %d VS Player %d:\n", ipnum, jpnum);
+			CONS_Debug(DBG_GAMELOGIC, "Player %d VS Player %d:\n", ipnum, jpnum);
 
 			if (data.match.val[i] == data.match.val[j]) // Tie -- neither get any points for this match up.
 			{
-				CONS_Printf("TIE, no change.\n");
+				CONS_Debug(DBG_GAMELOGIC, "TIE, no change.\n");
 				continue;
 			}
 
 			theirpower = 5000;
 			if (clientpowerlevels[jpnum][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
 				theirpower = clientpowerlevels[jpnum][powertype];
-			CONS_Printf("Player %d's PWR.LV: %d\n", jpnum, theirpower);
+			CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
 			if (G_RaceGametype())
 			{
@@ -401,13 +401,13 @@ static void Y_UpdatePowerLevels(void)
 			{
 				diff = theirpower - yourpower;
 				inc += K_CalculatePowerLevelInc(diff);
-				CONS_Printf("WON! Diff is %d, total increment is %d\n", diff, inc);
+				CONS_Debug(DBG_GAMELOGIC, "WON! Diff is %d, total increment is %d\n", diff, inc);
 			}
 			else // This player lost...
 			{
 				diff = yourpower - theirpower;
 				inc -= K_CalculatePowerLevelInc(diff);
-				CONS_Printf("LOST... Diff is %d, total increment is %d\n", diff, inc);
+				CONS_Debug(DBG_GAMELOGIC, "LOST... Diff is %d, total increment is %d\n", diff, inc);
 			}
 		}
 
@@ -421,23 +421,23 @@ static void Y_UpdatePowerLevels(void)
 				if (ipnum == jpnum) // Same person
 					continue;
 
-				CONS_Printf("Player %d VS Player %d (griefer):\n", ipnum, jpnum);
+				CONS_Debug(DBG_GAMELOGIC, "Player %d VS Player %d (griefer):\n", ipnum, jpnum);
 
 				theirpower = 5000;
 				if (nospectategrief[jpnum] != 0) // No power level acts as 5000 (used for splitscreen guests)
 					theirpower = nospectategrief[jpnum];
-				CONS_Printf("Player %d's PWR.LV: %d\n", jpnum, theirpower);
+				CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
 				diff = theirpower - yourpower;
 				inc += K_CalculatePowerLevelInc(diff);
-				CONS_Printf("AUTO-WON! Diff is %d, total increment is %d\n", diff, inc);
+				CONS_Debug(DBG_GAMELOGIC, "AUTO-WON! Diff is %d, total increment is %d\n", diff, inc);
 			}
 		}
 
 		if (inc == 0)
 		{
 			data.match.increase[ipnum] = INT16_MIN;
-			CONS_Printf("Total Result: No increment, no change.\n");
+			CONS_Debug(DBG_GAMELOGIC, "Total Result: No increment, no change.\n");
 			continue;
 		}
 
@@ -446,11 +446,11 @@ static void Y_UpdatePowerLevels(void)
 		if (yourpower + inc < 1)
 			inc -= ((yourpower + inc) - 1);
 
-		CONS_Printf("Total Result: Increment of %d.\n", inc);
+		CONS_Debug(DBG_GAMELOGIC, "Total Result: Increment of %d.\n", inc);
 		increment[ipnum] = inc;
 	}
 
-	CONS_Printf("Setting final power levels...\n");
+	CONS_Debug(DBG_GAMELOGIC, "Setting final power levels...\n");
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (increment[i] == 0)
@@ -461,7 +461,7 @@ static void Y_UpdatePowerLevels(void)
 
 		if (i == consoleplayer)
 		{
-			CONS_Printf("Player %d is you! Saving...\n", i);
+			CONS_Debug(DBG_GAMELOGIC, "Player %d is you! Saving...\n", i);
 			vspowerlevel[powertype] = clientpowerlevels[i][powertype];
 			if (M_UpdateUnlockablesAndExtraEmblems(true))
 				S_StartSound(NULL, sfx_ncitem);

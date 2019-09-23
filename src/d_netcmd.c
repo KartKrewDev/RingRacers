@@ -1938,7 +1938,8 @@ static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
 
 	clientpowerlevels[playernum][0] = min(9999, race);
 	clientpowerlevels[playernum][1] = min(9999, battle);
-	CONS_Printf("set player %d to power %d\n", playernum, race);
+
+	CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", playernum, race);
 }
 
 void D_SendPlayerConfig(void)

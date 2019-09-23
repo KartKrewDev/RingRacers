@@ -3478,7 +3478,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	newplayernum = (UINT8)READUINT8(*p);
 	splitscreenplayer = (UINT8)READUINT8(*p);
 
-	CONS_Printf("addplayer: %d %d %d\n", node, newplayernum, splitscreenplayer);
+	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d %d\n", node, newplayernum, splitscreenplayer);
 	
 	// Clear player before joining, lest some things get set incorrectly
 	CL_ClearPlayer(newplayernum);
