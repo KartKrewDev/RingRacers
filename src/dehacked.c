@@ -2559,9 +2559,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = atoi(params[1]);
 		x1 = atoi(params[2]);
 
-		if (x1 < 0 || x1 > 1)
+		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
 		{
-			deh_warning("Power level type %d out of range (0 - 1)", x1);
+			deh_warning("Power level type %d out of range (0 - %d)", x1, PWRLV_NUMTYPES-1);
 			return;
 		}
 	}

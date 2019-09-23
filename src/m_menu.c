@@ -6211,7 +6211,7 @@ static char *M_GetConditionString(condition_t cond)
 		case UC_MATCHESPLAYED:
 			return va("Play %d matches", cond.requirement);
 		case UC_POWERLEVEL:
-			return va("Reach power level %d in %s", cond.requirement, (cond.extrainfo1 == 1 ? "Battle" : "Race"));
+			return va("Reach power level %d in %s", cond.requirement, (cond.extrainfo1 == PWRLV_BATTLE ? "Battle" : "Race"));
 		case UC_GAMECLEAR:
 			if (cond.requirement > 1)
 				return va("Beat game %d times", cond.requirement);
