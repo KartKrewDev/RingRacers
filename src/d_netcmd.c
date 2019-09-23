@@ -1963,8 +1963,8 @@ void D_SendPlayerConfig(void)
 		UINT8 buf[4];
 		UINT8 *buf_p = buf;
 
-		WRITEUINT16(buf_p, vspowerlevel[0]);
-		WRITEUINT16(buf_p, vspowerlevel[1]);
+		WRITEUINT16(buf_p, vspowerlevel[PWRLV_RACE]);
+		WRITEUINT16(buf_p, vspowerlevel[PWRLV_BATTLE]);
 
 		SendNetXCmd(XD_POWERLEVEL, buf, 4);
 	}

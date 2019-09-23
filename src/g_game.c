@@ -3049,7 +3049,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 
 					if (netgame && cv_kartusepwrlv.value)
 					{
-						if (clientpowerlevels[j][0] == clientpowerlevels[i][0])
+						if (clientpowerlevels[j][PWRLV_RACE] == clientpowerlevels[i][PWRLV_RACE])
 							num++;
 					}
 					else
@@ -3070,7 +3070,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 				{
 					if (netgame && cv_kartusepwrlv.value)
 					{
-						if (clientpowerlevels[i][0] > clientpowerlevels[playernum][0])
+						if (clientpowerlevels[i][PWRLV_RACE] > clientpowerlevels[playernum][PWRLV_RACE])
 							pos++;
 					}
 					else
@@ -4113,7 +4113,7 @@ void G_LoadGameData(void)
 	totalplaytime = READUINT32(save_p);
 	matchesplayed = READUINT32(save_p);
 
-	for (i = 0; i < 2; i++)
+	for (i = 0; i < PWRLV_NUMTYPES; i++)
 		vspowerlevel[i] = READUINT16(save_p);
 
 	modded = READUINT8(save_p);
@@ -4261,7 +4261,7 @@ void G_SaveGameData(boolean force)
 	WRITEUINT32(save_p, totalplaytime);
 	WRITEUINT32(save_p, matchesplayed);
 
-	for (i = 0; i < 2; i++)
+	for (i = 0; i < PWRLV_NUMTYPES; i++)
 		WRITEUINT16(save_p, vspowerlevel[i]);
 
 	btemp = (UINT8)(savemoddata); // what used to be here was profoundly dunderheaded

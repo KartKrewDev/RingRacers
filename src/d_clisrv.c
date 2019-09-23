@@ -1525,13 +1525,13 @@ static boolean SV_SendServerConfig(INT32 node)
 	memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
 
 	for (i = 0; i < MAXPLAYERS; i++)
-		for (j = 0; j < 2; j++)
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
 			netbuffer->u.servercfg.powerlevels[i][j] = 0; // Not sure if memset works on something like this
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		netbuffer->u.servercfg.adminplayers[i] = (SINT8)adminplayers[i];
-		for (j = 0; j < 2; j++)
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
 			netbuffer->u.servercfg.powerlevels[i][j] = clientpowerlevels[i][j];
 
 		if (!playeringame[i])
@@ -4131,7 +4131,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				for (j = 0; j < MAXPLAYERS; j++)
 				{
 					adminplayers[j] = netbuffer->u.servercfg.adminplayers[j];
-					for (k = 0; k < 2; k++)
+					for (k = 0; k < PWRLV_NUMTYPES; k++)
 						clientpowerlevels[j][k] = netbuffer->u.servercfg.powerlevels[j][k];
 				}
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
