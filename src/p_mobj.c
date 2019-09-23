@@ -12064,7 +12064,7 @@ ML_NOCLIMB : Direction not controllable
 	{
 		if (mthing->options & MTF_AMBUSH)
 		{
-			if (mobj->flags & MF_SPRING)
+			if (mobj->flags & MF_SPRING && mobj->info->damage)
 				mobj->angle += ANGLE_22h;
 
 			if (mobj->flags & MF_NIGHTSITEM)

@@ -122,7 +122,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
-	UINT8 starcolor = spring->info->painchance;
+	UINT8 starcolor = (spring->info->painchance % MAXTRANSLATIONS);
 	fixed_t savemomx = 0;
 	fixed_t savemomy = 0;
 
@@ -1207,6 +1207,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		//else if (tmz > thzh - sprarea && tmz < thzh) // Don't damage people springing up / down
 			return true;
 	}
+
 	// missiles can hit other things
 	if (tmthing->flags & MF_MISSILE || tmthing->type == MT_SHELL)
 	{

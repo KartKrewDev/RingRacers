@@ -4253,7 +4253,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		32,             // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		0,              // painchance
+		SKINCOLOR_TEA,  // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -4264,7 +4264,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		24*FRACUNIT,    // radius
 		40*FRACUNIT,    // height
 		0,              // display offset
-		13*FRACUNIT,    // mass
+		15*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_ENEMY|MF_SPECIAL|MF_SHOOTABLE, // flags
@@ -4280,7 +4280,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		32,             // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		0,              // painchance
+		SKINCOLOR_YELLOW, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -4291,7 +4291,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		24*FRACUNIT,    // radius
 		40*FRACUNIT,    // height
 		0,              // display offset
-		26*FRACUNIT,    // mass
+		25*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_ENEMY|MF_SPECIAL|MF_SHOOTABLE, // flags
