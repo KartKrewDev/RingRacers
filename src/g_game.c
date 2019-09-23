@@ -2368,21 +2368,7 @@ void G_Ticker(boolean run)
 
 		if (playeringame[i])
 		{
-			//@TODO all this throwdir stuff shouldn't be here! But it stays for now to maintain 1.0.4 compat...
-			// Remove for 1.1!
-
-			// SRB2kart
-			// Save the dir the player is holding
-			//  to allow items to be thrown forward or backward.
-			if (cmd->buttons & BT_FORWARD)
-				players[i].kartstuff[k_throwdir] = 1;
-			else if (cmd->buttons & BT_BACKWARD)
-				players[i].kartstuff[k_throwdir] = -1;
-			else
-				players[i].kartstuff[k_throwdir] = 0;
-
 			G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
-
 			// Use the leveltime sent in the player's ticcmd to determine control lag
 			cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
 		}
