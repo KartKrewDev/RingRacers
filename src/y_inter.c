@@ -111,7 +111,7 @@ static boolean usetile;
 boolean usebuffer = false;
 static boolean useinterpic;
 static INT32 timer;
-static INT32 powertype = 0;
+static INT32 powertype = PWRLV_DISABLED;
 
 static INT32 intertic;
 static INT32 endtic = -1;
@@ -990,14 +990,14 @@ void Y_StartIntermission(void)
 #endif
 
 	// set player Power Level type
-	powertype = -1;
+	powertype = PWRLV_DISABLED;
 
 	if (netgame && cv_kartusepwrlv.value)
 	{
 		if (G_RaceGametype())
-			powertype = 0;
+			powertype = PWRLV_RACE;
 		else if (G_BattleGametype())
-			powertype = 1;
+			powertype = PWRLV_BATTLE;
 	}
 
 	K_SetPowerLevelScrambles(powertype);
