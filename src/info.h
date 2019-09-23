@@ -782,6 +782,7 @@ typedef enum sprite
 	SPR_MXCL,
 	SPR_RGSP,
 	SPR_DRAF,
+	SPR_GRES,
 
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
@@ -4113,6 +4114,8 @@ typedef enum state
 	S_DRAFTDUST4,
 	S_DRAFTDUST5,
 
+	S_TIREGREASE,
+
 #ifdef SEENAMES
 	S_NAMECHECK,
 #endif
@@ -4922,6 +4925,7 @@ typedef enum mobj_type
 	MT_KARMAFIREWORK,
 	MT_RINGSPARKS,
 	MT_DRAFTDUST,
+	MT_TIREGREASE,
 
 #ifdef SEENAMES
 	MT_NAMECHECK,

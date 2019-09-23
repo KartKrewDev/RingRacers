@@ -328,6 +328,8 @@ typedef enum
 	k_spectatewait,		// How long have you been waiting as a spectator
 	k_growcancel,		// Hold the item button down to cancel Grow
 	k_tiregrease,		// Reduced friction timer after hitting a horizontal spring
+	k_springstars,		// Spawn stars around a player when they hit a spring
+	k_springcolor,		// Color of spring stars
 
 	NUMKARTSTUFF
 } kartstufftype_t;

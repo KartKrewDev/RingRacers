@@ -122,6 +122,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
+	UINT8 starcolor = spring->info->painchance;
 	fixed_t savemomx = 0;
 	fixed_t savemomy = 0;
 
@@ -251,7 +252,22 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		{
 			// Less friction when hitting horizontal springs
 			if (!vertispeed)
+			{
+				if (!object->player->kartstuff[k_tiregrease])
+				{
+					UINT8 i;
+					for (i = 0; i < 2; i++)
+					{
+						mobj_t *grease;
+						grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
+						P_SetTarget(&grease->target, object);
+						grease->angle = R_PointToAngle2(0, 0, object->momx, object->momy);
+						grease->extravalue1 = i;
+					}
+				}
+
 				object->player->kartstuff[k_tiregrease] = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
+			}
 		}
 
 		// Horizontal speed is used as a minimum thrust, not a direct replacement
@@ -271,6 +287,9 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			P_SetTarget(&spring->target, object);
 
 		P_ResetPlayer(object->player);
+
+		object->player->kartstuff[k_springstars] = max(vertispeed, horizspeed) / FRACUNIT / 2;
+		object->player->kartstuff[k_springcolor] = starcolor;
 	}
 
 	return true;

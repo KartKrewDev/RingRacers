@@ -7212,6 +7212,8 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRAFTDUST4",
 	"S_DRAFTDUST5",
 
+	"S_TIREGREASE",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -8004,6 +8006,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_KARMAFIREWORK",
 	"MT_RINGSPARKS",
 	"MT_DRAFTDUST",
+	"MT_TIREGREASE",
 
 #ifdef SEENAMES
 	"MT_NAMECHECK",
@@ -8491,7 +8494,9 @@ static const char *const KARTSTUFF_LIST[] = {
 	"JAWZTARGETDELAY",
 	"SPECTATEWAIT",
 	"GROWCANCEL",
-	"TIREGREASE"
+	"TIREGREASE",
+	"SPRINGSTARS",
+	"SPRINGCOLOR"
 };
 #endif
 

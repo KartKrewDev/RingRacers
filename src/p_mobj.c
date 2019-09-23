@@ -8368,6 +8368,56 @@ void P_MobjThinker(mobj_t *mobj)
 						z);
 			}
 			break;
+		case MT_TIREGREASE:
+			if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->player
+				|| !mobj->target->player->kartstuff[k_tiregrease])
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
+			K_MatchGenericExtraFlags(mobj, mobj->target);
+
+			{
+				const angle_t off = FixedAngle(40*FRACUNIT);
+				angle_t ang = mobj->target->angle;
+				fixed_t z;
+				UINT8 trans = (mobj->target->player->kartstuff[k_tiregrease] * (NUMTRANSMAPS+1)) / greasetics;
+
+				if (trans > NUMTRANSMAPS)
+					trans = NUMTRANSMAPS;
+
+				trans = NUMTRANSMAPS - trans;
+
+				z = mobj->target->z;
+				if (mobj->eflags & MFE_VERTICALFLIP)
+					z += mobj->target->height;
+
+				if (mobj->target->momx || mobj->target->momy)
+					ang = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+
+				if (mobj->extravalue1)
+					ang = (signed)(ang - off);
+				else
+					ang = (signed)(ang + off);
+
+				P_TeleportMove(mobj,
+					mobj->target->x - FixedMul(mobj->target->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
+					mobj->target->y - FixedMul(mobj->target->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
+					z);
+				mobj->angle = ang;
+
+				if (leveltime & 1)
+					mobj->flags2 |= MF2_DONTDRAW;
+
+				if (trans >= NUMTRANSMAPS)
+					mobj->flags2 |= MF2_DONTDRAW;
+				else if (trans == 0)
+					mobj->frame = (mobj->frame & ~FF_TRANSMASK);
+				else
+					mobj->frame = (mobj->frame & ~FF_TRANSMASK)|(trans << FF_TRANSSHIFT);
+			}
+			break;
 		case MT_THUNDERSHIELD:
 		{
 			fixed_t destx, desty;
@@ -9070,6 +9120,9 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			break;
 		case MT_KARMAFIREWORK:
+			if (mobj->flags & MF_NOGRAVITY)
+				break;
+
 			if (mobj->momz == 0)
 			{
 				P_RemoveMobj(mobj);

@@ -5061,6 +5061,29 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (P_IsDisplayPlayer(player))
 				debtflag->flags2 |= MF2_DONTDRAW;
 		}
+
+		if (player->kartstuff[k_springstars] && (leveltime & 1))
+		{
+			fixed_t randx = P_RandomRange(-40, 40) * player->mo->scale;
+			fixed_t randy = P_RandomRange(-40, 40) * player->mo->scale;
+			fixed_t randz = P_RandomRange(0, player->mo->height >> FRACBITS) << FRACBITS;
+			mobj_t *star = P_SpawnMobj(
+				player->mo->x + randx,
+				player->mo->y + randy,
+				player->mo->z + randz,
+				MT_KARMAFIREWORK);
+
+			star->color = player->kartstuff[k_springcolor];
+			star->flags |= MF_NOGRAVITY;
+			star->momx = player->mo->momx / 2;
+			star->momy = player->mo->momy / 2;
+			star->momz = player->mo->momz / 2;
+			star->fuse = 12;
+			star->scale = player->mo->scale;
+			star->destscale = star->scale / 2;
+
+			player->kartstuff[k_springstars]--;
+		}
 	}
 
 	if (player->playerstate == PST_DEAD || player->kartstuff[k_respawn] > 1) // Ensure these are set correctly here
