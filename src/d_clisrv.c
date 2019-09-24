@@ -1523,10 +1523,7 @@ static boolean SV_SendServerConfig(INT32 node)
 	memset(netbuffer->u.servercfg.playercolor, 0xFF, sizeof(netbuffer->u.servercfg.playercolor));
 
 	memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
-			netbuffer->u.servercfg.powerlevels[i][j] = 0; // Not sure if memset works on something like this
+	memset(netbuffer->u.servercfg.powerlevels, 0, sizeof(netbuffer->u.servercfg.powerlevels));
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
