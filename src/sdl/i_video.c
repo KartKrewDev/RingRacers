@@ -1377,11 +1377,14 @@ void I_FinishUpdate(void)
 	if (I_SkipFrame())
 		return;
 
-	if (cv_ticrate.value)
-		SCR_DisplayTicRate();
+	if (st_overlay)
+	{
+		if (cv_ticrate.value)
+			SCR_DisplayTicRate();
 
-	if (cv_showping.value && netgame && consoleplayer != serverplayer)
-		SCR_DisplayLocalPing();
+		if (cv_showping.value && netgame && consoleplayer != serverplayer)
+			SCR_DisplayLocalPing();
+	}
 
 	if (rendermode == render_soft && screens[0])
 	{
