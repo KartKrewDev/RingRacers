@@ -1623,7 +1623,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 		curx += stepx;
 		cury += stepy;
 		curz += stepz;
-	
+
 		offset = abs(offset-1) % 3;
 		n--;
 	}
@@ -2306,6 +2306,9 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 
 	// ACCELCODE!!!1!11!
 	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy); // FixedMul(P_AproxDistance(player->rmomx, player->rmomy), player->mo->scale);
+	// Don't calculate the acceleration as ever being above top speed
+	if (oldspeed > p_speed)
+		oldspeed = p_speed;
 	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), ORIG_FRICTION);
 
 	if (player->kartstuff[k_pogospring]) // Pogo Spring minimum/maximum thrust
@@ -3374,7 +3377,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 
 			ang = mo->player->frameangle;
 
-			if (mo->player->kartstuff[k_drift] != 0) 
+			if (mo->player->kartstuff[k_drift] != 0)
 			{
 				drifting = true;
 				ang += (mo->player->kartstuff[k_drift] * ((ANGLE_270 + ANGLE_22h) / 5)); // -112.5 doesn't work. I fucking HATE SRB2 angles
@@ -9345,7 +9348,7 @@ void K_drawKartFreePlay(UINT32 flashtime)
 		return;
 
 	V_DrawKartString((BASEVIDWIDTH - (LAPS_X+1)) - (12*9), // mirror the laps thingy
-		LAPS_Y+3, V_SNAPTOBOTTOM|V_SNAPTORIGHT, "FREE PLAY");
+		LAPS_Y+3, V_HUDTRANS|V_SNAPTOBOTTOM|V_SNAPTORIGHT, "FREE PLAY");
 }
 
 static void K_drawDistributionDebugger(void)
