@@ -1857,15 +1857,24 @@ void P_CheckTimeLimit(void)
 							continue;
 						if (thismo->threshold == 69) // Disappears
 							continue;
+
 						b++;
+
+						// Only select items that are on the ground, ignore ones in the air. Ambush flag inverts this rule.
+						if ((!P_IsObjectOnGround(thismo)) != (thismo->flags2 & MF2_AMBUSH))
+							continue;
+
 						if (item == NULL || (b < nummapboxes && P_RandomChance(((nummapboxes-b)*FRACUNIT)/nummapboxes))) // This is to throw off the RNG some
 							item = thismo;
 						if (b >= nummapboxes) // end early if we've found them all already
 							break;
 					}
 
-					if (item == NULL) // no item found?!
+					if (item == NULL) // no item found, could happen if every item is in the air or has ambush flag, or the map has none
+					{
+						CONS_Alert(CONS_WARNING, "No usuable items for Battle overtime!\n");
 						return;
+					}
 
 					item->threshold = 70; // Set constant respawn
 					battleovertime.x = item->x;
