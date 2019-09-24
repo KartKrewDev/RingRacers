@@ -189,11 +189,6 @@ INT32 nummaprings = 0;
 INT32 nummapboxes = 0;
 INT32 numgotboxes = 0;
 
-// Break the Capsules counters for Battle Mode!
-UINT8 maptargets = 0; // targets in map
-UINT8 numtargets = 0; // targets busted
-boolean targetsspawned = false; // have targets been spawned already?
-
 // Elminates unnecessary searching.
 boolean CheckForBustableBlocks;
 boolean CheckForBouncySector;
@@ -2867,7 +2862,7 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost)
 	}
 
 	// -- Record Attack --
-	if (modeattacking)
+	if (modeattacking || battlecapsules)
 		spawnpoint = playerstarts[0];
 
 	// -- CTF --

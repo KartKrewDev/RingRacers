@@ -14,6 +14,13 @@
 #include "r_defs.h" // MAXFFLOORS
 #include "info.h"
 
+// Capsules mode enabled for this map?
+boolean battlecapsules = false;
+
+// Capsule counters
+UINT8 maptargets = 0; // Capsules in map
+UINT8 numtargets = 0; // Capsules busted
+
 boolean K_IsPlayerWanted(player_t *player)
 {
 	UINT8 i;
@@ -216,7 +223,8 @@ void K_CheckBumpers(void)
 
 	if (numingame <= 1)
 	{
-		K_SpawnBattleCapsules();
+		if (!battlecapsules)
+			D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
 		return;
 	}
 
@@ -300,7 +308,7 @@ void K_SpawnBattleCapsules(void)
 	UINT8 n = 0;
 	size_t i;
 
-	if (targetsspawned)
+	if (battlecapsules)
 		return;
 
 	if (!G_BattleGametype())
@@ -498,5 +506,5 @@ void K_SpawnBattleCapsules(void)
 		}
 	}
 
-	targetsspawned = true;
+	battlecapsules = true;
 }

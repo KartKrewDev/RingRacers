@@ -34,6 +34,8 @@
 #include "p_slopes.h"
 #endif
 
+#include "k_battle.h"
+
 savedata_t savedata;
 UINT8 *save_p;
 
@@ -3278,7 +3280,7 @@ static void P_NetArchiveMisc(void)
 	// SRB2kart
 	WRITEINT32(save_p, numgotboxes);
 	WRITEUINT8(save_p, numtargets);
-	WRITEUINT8(save_p, targetsspawned);
+	WRITEUINT8(save_p, battlecapsules);
 
 	WRITEUINT8(save_p, gamespeed);
 	WRITEUINT8(save_p, franticitems);
@@ -3389,7 +3391,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 	// SRB2kart
 	numgotboxes = READINT32(save_p);
 	numtargets = READUINT8(save_p);
-	targetsspawned = (boolean)READUINT8(save_p);
+	battlecapsules = (boolean)READUINT8(save_p);
 
 	gamespeed = READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);

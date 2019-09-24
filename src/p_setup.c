@@ -2309,7 +2309,7 @@ static void P_LevelInitStuff(void)
 	nummaprings = 0;
 	nummapboxes = numgotboxes = 0;
 	maptargets = numtargets = 0;
-	targetsspawned = false;
+	battlecapsules = false;
 
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;

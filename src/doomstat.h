@@ -355,8 +355,6 @@ extern UINT16 emeralds;
 
 extern INT32 nummaprings; // keep track of spawned rings/coins
 extern INT32 nummapboxes, numgotboxes; // keep track of spawned battle mode items
-extern UINT8 maptargets, numtargets; // Keep track of spawend Battle Mode targets
-extern boolean targetsspawned; // have targets been spawned already?
 
 /** Time attack information, currently a very small structure.
   */

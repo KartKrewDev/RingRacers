@@ -39,6 +39,7 @@
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PLAYER1INPUTDOWN
 #include "k_kart.h" // colortranslations
+#include "k_battle.h"
 #include "console.h" // cons_menuhighlight
 #include "lua_hook.h" // IntermissionThinker hook
 
@@ -433,7 +434,7 @@ void Y_IntermissionDrawer(void)
 		if (data.match.rankingsmode)
 			timeheader = "RANK";
 		else
-			timeheader = ((intertype == int_race || (intertype == int_match && targetsspawned)) ? "TIME" : "SCORE");
+			timeheader = ((intertype == int_race || (intertype == int_match && battlecapsules)) ? "TIME" : "SCORE");
 
 		// draw the level name
 		V_DrawCenteredString(-4 + x + BASEVIDWIDTH/2, 12, 0, data.match.levelstring);
@@ -519,7 +520,7 @@ void Y_IntermissionDrawer(void)
 						V_DrawRightAlignedThinString(x+152+gutter, y-1, (data.match.numplayers > NUMFORNEWCOLUMN ? V_6WIDTHSPACE : 0), "NO CONTEST.");
 					else
 					{
-						if (intertype == int_race || (intertype == int_match && targetsspawned))
+						if (intertype == int_race || (intertype == int_match && battlecapsules))
 						{
 							snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.match.val[i], true),
 							G_TicsToSeconds(data.match.val[i]), G_TicsToCentiseconds(data.match.val[i]));
@@ -856,7 +857,7 @@ void Y_StartIntermission(void)
 		case int_match:
 		{
 			// Calculate who won
-			Y_CalculateMatchData(0, targetsspawned ? Y_CompareRace : Y_CompareBattle);
+			Y_CalculateMatchData(0, battlecapsules ? Y_CompareRace : Y_CompareBattle);
 			if (cv_inttime.value > 0)
 				S_ChangeMusicInternal("racent", true); // loop it
 			break;
