@@ -18,6 +18,7 @@
 #include "d_netcmd.h"
 #include "tables.h"
 #include "d_player.h"
+#include "k_pwrlv.h" // PWRLV_NUMTYPES
 
 #include "md5.h"
 
