@@ -2630,15 +2630,18 @@ static void P_LoadRecordGhosts(void)
 	}
 
 	// Best Lap ghost
-	if (cv_ghost_bestlap.value)
+	if (modeattacking != ATTACKING_CAPSULES)
 	{
-		for (i = 0; i < numskins; ++i)
+		if (cv_ghost_bestlap.value)
 		{
-			if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
-				continue;
+			for (i = 0; i < numskins; ++i)
+			{
+				if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
+					continue;
 
-			if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
+				if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, skins[i].name)))
+					G_AddGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
+			}
 		}
 	}
 
@@ -3145,10 +3148,8 @@ boolean P_SetupLevel(boolean skipprecip)
 			}
 		}
 
-	if (modeattacking == ATTACKING_RECORD && !demo.playback)
+	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
-	/*else if (modeattacking == ATTACKING_NIGHTS && !demo.playback)
-		P_LoadNightsGhosts();*/
 
 	if (G_RaceGametype() && server)
 		CV_StealthSetValue(&cv_numlaps,

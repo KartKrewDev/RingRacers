@@ -117,8 +117,8 @@ typedef struct
 #define SECRET_ITEMFINDER	-5 // Enables Item Finder/Emblem Radar
 #define SECRET_EMBLEMHINTS	-4 // Enables Emblem Hints
 #define SECRET_PANDORA		-3 // Enables Pandora's Box
-#define SECRET_RECORDATTACK	-2 // Enables Record Attack on the main menu
-#define SECRET_NIGHTSMODE	-1 // Enables NiGHTS Mode on the main menu
+#define SECRET_TIMEATTACK	-2 // Enables Time Attack on the main menu
+#define SECRET_BREAKTHECAPSULES	-1 // Enables Break the Capsules on the main menu
 #define SECRET_HEADER		 0 // Does nothing on its own, just serves as a header for the menu
 #define SECRET_LEVELSELECT	 1 // Selectable level select
 #define SECRET_WARP			 2 // Selectable warp

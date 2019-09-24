@@ -2473,10 +2473,10 @@ static void readunlockable(MYFILE *f, INT32 num)
 					unlockables[num].type = SECRET_PANDORA;
 				else if (fastcmp(word2, "CREDITS"))
 					unlockables[num].type = SECRET_CREDITS;
-				else if (fastcmp(word2, "RECORDATTACK"))
-					unlockables[num].type = SECRET_RECORDATTACK;
-				else if (fastcmp(word2, "NIGHTSMODE"))
-					unlockables[num].type = SECRET_NIGHTSMODE;
+				else if (fastcmp(word2, "TIMEATTACK"))
+					unlockables[num].type = SECRET_TIMEATTACK;
+				else if (fastcmp(word2, "BREAKTHECAPSULES"))
+					unlockables[num].type = SECRET_BREAKTHECAPSULES;
 				else if (fastcmp(word2, "HEADER"))
 					unlockables[num].type = SECRET_HEADER;
 				else if (fastcmp(word2, "LEVELSELECT"))

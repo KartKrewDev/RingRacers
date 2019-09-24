@@ -64,7 +64,7 @@ extern boolean metalrecording;
 
 #define ATTACKING_NONE   0
 #define ATTACKING_RECORD 1
-//#define ATTACKING_NIGHTS 2
+#define ATTACKING_CAPSULES 2
 extern UINT8 modeattacking;
 
 // menu demo things

@@ -2866,9 +2866,13 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost)
 		return;
 	}
 
+	// -- Record Attack --
+	if (modeattacking)
+		spawnpoint = playerstarts[0];
+
 	// -- CTF --
 	// Order: CTF->DM->Coop
-	if (gametype == GT_CTF && players[playernum].ctfteam)
+	else if (gametype == GT_CTF && players[playernum].ctfteam)
 	{
 		if (!(spawnpoint = G_FindCTFStart(playernum)) // find a CTF start
 		&& !(spawnpoint = G_FindMatchStart(playernum))) // find a DM start
@@ -4745,8 +4749,8 @@ char *G_BuildMapTitle(INT32 mapnum)
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_GHOST        0x01 // This demo contains ghost data too!
-#define DF_RECORDATTACK 0x02 // This demo is from record attack and contains its final completion time!
-#define DF_NIGHTSATTACK 0x04 // This demo is from NiGHTS attack and contains its time left, score, and mares!
+#define DF_TIMEATTACK   0x02 // This demo is from Time Attack and contains its final completion time & best lap!
+#define DF_BREAKTHECAPSULES 0x04 // This demo is from Break the Capsules and contains its final completion time!
 #define DF_ATTACKMASK   0x06 // This demo is from ??? attack and contains ???
 #define DF_ATTACKSHIFT  1
 #define DF_ENCORE       0x40
@@ -4790,7 +4794,6 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 // Not used for Metal Sonic
 #define GZT_SPRITE 0x10 // Animation frame
 #define GZT_EXTRA  0x20
-#define GZT_NIGHTS 0x40 // NiGHTS Mode stuff!
 
 // GZT_EXTRA flags
 #define EZT_THOK   0x01 // Spawned a thok object
@@ -5294,13 +5297,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	if (!(demoflags & DF_GHOST))
 		return; // No ghost data to write.
 
-	if (ghost->player && ghost->player->pflags & PF_NIGHTSMODE && ghost->tracer)
-	{
-		// We're talking about the NiGHTS thing, not the normal platforming thing!
-		ziptic |= GZT_NIGHTS;
-		ghost = ghost->tracer;
-	}
-
 	ziptic_p = demo_p++; // the ziptic, written at the end of this function
 
 	#define MAXMOM (0x7FFF<<8)
@@ -5517,12 +5513,6 @@ void G_ConsGhostTic(INT32 playernum)
 		demo_p++;
 	if (ziptic & GZT_SPRITE)
 		demo_p++;
-	if(ziptic & GZT_NIGHTS) {
-		if (!testmo || !testmo->player || !(testmo->player->pflags & PF_NIGHTSMODE) || !testmo->tracer)
-			nightsfail = true;
-		else
-			testmo = testmo->tracer;
-	}
 
 	if (ziptic & GZT_EXTRA)
 	{ // But wait, there's more!
@@ -6373,20 +6363,19 @@ void G_BeginRecording(void)
 
 	switch ((demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		demotime_p = demo_p;
-		WRITEUINT32(demo_p,UINT32_MAX); // time
-		WRITEUINT32(demo_p,UINT32_MAX); // lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		demotime_p = demo_p;
-		WRITEUINT32(demo_p,UINT32_MAX); // time
-		WRITEUINT32(demo_p,0); // score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			demotime_p = demo_p;
+			WRITEUINT32(demo_p,UINT32_MAX); // time
+			WRITEUINT32(demo_p,UINT32_MAX); // lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			demotime_p = demo_p;
+			WRITEUINT32(demo_p,UINT32_MAX); // time
+			break;
+		default: // 3
+			break;
 	}
 
 	WRITEUINT32(demo_p,P_GetInitSeed());
@@ -6524,18 +6513,18 @@ void G_SetDemoTime(UINT32 ptime, UINT32 plap)
 {
 	if (!demo.recording || !demotime_p)
 		return;
-	if (demoflags & DF_RECORDATTACK)
+	if (demoflags & DF_TIMEATTACK)
 	{
 		WRITEUINT32(demotime_p, ptime);
 		WRITEUINT32(demotime_p, plap);
 		demotime_p = NULL;
 	}
-	/*else if (demoflags & DF_NIGHTSATTACK)
+	else if (demoflags & DF_BREAKTHECAPSULES)
 	{
 		WRITEUINT32(demotime_p, ptime);
-		WRITEUINT32(demotime_p, pscore);
+		(void)plap;
 		demotime_p = NULL;
-	}*/
+	}
 }
 
 static void G_LoadDemoExtraFiles(UINT8 **pp)
@@ -6711,6 +6700,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	UINT8 c;
 	UINT16 s ATTRUNUSED;
 	UINT8 aflags = 0;
+	boolean uselaps = false;
 
 	// load the new file
 	FIL_DefaultExtension(newname, ".lmp");
@@ -6737,20 +6727,17 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p++; // gametype
 	G_SkipDemoExtraFiles(&p);
 
-	aflags = flags & (DF_RECORDATTACK|DF_NIGHTSATTACK);
+	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
 	I_Assert(aflags);
-	if (flags & DF_RECORDATTACK)
-	{
-		newtime = READUINT32(p);
+
+	if (flags & DF_TIMEATTACK)
+		uselaps = true; // get around uninitalized error
+
+	newtime = READUINT32(p);
+	if (uselaps)
 		newlap = READUINT32(p);
-	}
-	/*else if (flags & DF_NIGHTSATTACK)
-	{
-		newtime = READUINT32(p);
-		newscore = READUINT32(p);
-	}*/
-	else // appease compiler
-		return 0;
+	else
+		newlap = UINT32_MAX;
 
 	Z_Free(buffer);
 
@@ -6809,28 +6796,32 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 		Z_Free(buffer);
 		return UINT8_MAX;
 	}
-	if (flags & DF_RECORDATTACK)
-	{
-		oldtime = READUINT32(p);
+
+	oldtime = READUINT32(p);
+	if (uselaps)
 		oldlap = READUINT32(p);
-	}
-	/*else if (flags & DF_NIGHTSATTACK)
-	{
-		oldtime = READUINT32(p);
-		oldscore = READUINT32(p);
-	}*/
-	else // appease compiler
-		return UINT8_MAX;
+	else
+		oldlap = 0;
 
 	Z_Free(buffer);
 
 	c = 0;
-	if (newtime < oldtime
-	|| (newtime == oldtime && (newlap < oldlap)))
-		c |= 1; // Better time
-	if (newlap < oldlap
-	|| (newlap == oldlap && newtime < oldtime))
-		c |= 1<<1; // Better lap time
+
+	if (uselaps)
+	{
+		if (newtime < oldtime
+		|| (newtime == oldtime && (newlap < oldlap)))
+			c |= 1; // Better time
+		if (newlap < oldlap
+		|| (newlap == oldlap && newtime < oldtime))
+			c |= 1<<1; // Better lap time
+	}
+	else
+	{
+		if (newtime < oldtime)
+			c |= 1; // Better time
+	}
+
 	return c;
 }
 
@@ -7246,19 +7237,18 @@ void G_DoPlayDemo(char *defdemoname)
 
 	switch (modeattacking)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		hu_demotime  = READUINT32(demo_p);
-		hu_demolap  = READUINT32(demo_p);
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		hu_demotime  = READUINT32(demo_p);
-		hu_demoscore = READUINT32(demo_p);
-		break;*/
-	default: // 3
-		modeattacking = ATTACKING_NONE;
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			hu_demotime = READUINT32(demo_p);
+			hu_demolap = READUINT32(demo_p);
+			break;
+		case ATTACKING_CAPSULES: // 2
+			hu_demotime = READUINT32(demo_p);
+			break;
+		default: // 3
+			modeattacking = ATTACKING_NONE;
+			break;
 	}
 
 	// Random seed
@@ -7651,18 +7641,19 @@ void G_AddGhost(char *defdemoname)
 	if (ghostversion != 0x0001)
 #endif
 		G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
+
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		p += 8; // demo time, lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		p += 8; // demo time left, score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			p += 8; // demo time, lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			p += 4; // demo time
+			break;
+		default: // 3
+			break;
 	}
 
 	p += 4; // random seed
@@ -7901,16 +7892,16 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		p += 8; // demo time, lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		p += 8; // demo time left, score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			p += 8; // demo time, lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			p += 4; // demo time
+			break;
+		default: // 3
+			break;
 	}
 
 	p += 4; // random seed
@@ -8256,7 +8247,7 @@ void G_SaveDemo(void)
 	free(demobuffer);
 	demo.recording = false;
 
-	if (modeattacking != ATTACKING_RECORD)
+	if (!modeattacking)
 	{
 		if (demo.savemode == DSM_SAVED)
 			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);

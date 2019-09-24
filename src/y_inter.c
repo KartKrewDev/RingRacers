@@ -720,8 +720,13 @@ static void Y_UpdateRecordReplays(void)
 	if ((mainrecords[gamemap-1]->time == 0) || (players[consoleplayer].realtime < mainrecords[gamemap-1]->time))
 		mainrecords[gamemap-1]->time = players[consoleplayer].realtime;
 
-	if ((mainrecords[gamemap-1]->lap == 0) || (bestlap < mainrecords[gamemap-1]->lap))
-		mainrecords[gamemap-1]->lap = bestlap;
+	if (modeattacking != ATTACKING_CAPSULES)
+	{
+		if ((mainrecords[gamemap-1]->lap == 0) || (bestlap < mainrecords[gamemap-1]->lap))
+			mainrecords[gamemap-1]->lap = bestlap;
+	}
+	else
+		mainrecords[gamemap-1]->lap = 0;
 
 	// Save demo!
 	bestdemo[255] = '\0';
@@ -752,13 +757,16 @@ static void Y_UpdateRecordReplays(void)
 			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
 		}
 
-		snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
-		if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
-		{ // Better lap time, save this demo.
-			if (FIL_FileExists(bestdemo))
-				remove(bestdemo);
-			FIL_WriteFile(bestdemo, buf, len);
-			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD LAP!"), M_GetText("Saved replay as"), bestdemo);
+		if (modeattacking != ATTACKING_CAPSULES)
+		{
+			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
+			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
+			{ // Better lap time, save this demo.
+				if (FIL_FileExists(bestdemo))
+					remove(bestdemo);
+				FIL_WriteFile(bestdemo, buf, len);
+				CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD LAP!"), M_GetText("Saved replay as"), bestdemo);
+			}
 		}
 
 		//CONS_Printf("%s '%s'\n", M_GetText("Saved replay as"), lastdemo);
@@ -800,12 +808,20 @@ void Y_StartIntermission(void)
 	{
 		timer = 0;
 
-		/* // srb2kart: time attack tally is UGLY rn
-		if (modeattacking)
-			intertype = int_timeattack;
-		else
-		*/
-			intertype = int_race;
+		if (!majormods && !multiplayer && !demo.playback) // move this once we have a proper time attack screen
+		{
+			// Update visitation flags
+			mapvisited[gamemap-1] |= MV_BEATEN;
+			if (ALL7EMERALDS(emeralds))
+				mapvisited[gamemap-1] |= MV_ALLEMERALDS;
+			/*if (ultimatemode)
+				mapvisited[gamemap-1] |= MV_ULTIMATE;
+			if (data.coop.gotperfbonus)
+				mapvisited[gamemap-1] |= MV_PERFECT;*/
+
+			if (modeattacking)
+				Y_UpdateRecordReplays();
+		}
 	}
 	else
 	{
@@ -820,12 +836,12 @@ void Y_StartIntermission(void)
 			if (!timer)
 				timer = 1;
 		}
-
-		if (gametype == GT_MATCH)
-			intertype = int_match;
-		else //if (gametype == GT_RACE)
-			intertype = int_race;
 	}
+
+	if (gametype == GT_MATCH)
+		intertype = int_match;
+	else //if (gametype == GT_RACE)
+		intertype = int_race;
 
 	// We couldn't display the intermission even if we wanted to.
 	// But we still need to give the players their score bonuses, dummy.
@@ -847,21 +863,6 @@ void Y_StartIntermission(void)
 		}
 		case int_race: // (time-only race)
 		{
-			if (!majormods && !multiplayer && !demo.playback) // remove this once we have a proper time attack screen
-			{
-				// Update visitation flags
-				mapvisited[gamemap-1] |= MV_BEATEN;
-				if (ALL7EMERALDS(emeralds))
-					mapvisited[gamemap-1] |= MV_ALLEMERALDS;
-				/*if (ultimatemode)
-					mapvisited[gamemap-1] |= MV_ULTIMATE;
-				if (data.coop.gotperfbonus)
-					mapvisited[gamemap-1] |= MV_PERFECT;*/
-
-				if (modeattacking == ATTACKING_RECORD)
-					Y_UpdateRecordReplays();
-			}
-
 			// Calculate who won
 			Y_CalculateMatchData(0, Y_CompareRace);
 			break;

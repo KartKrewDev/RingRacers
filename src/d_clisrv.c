@@ -3683,7 +3683,11 @@ void SV_StartSinglePlayerServer(void)
 	server = true;
 	netgame = false;
 	multiplayer = false;
-	gametype = GT_RACE; //srb2kart
+
+	if (modeattacking == ATTACKING_CAPSULES)
+		gametype = GT_MATCH; //srb2kart
+	else
+		gametype = GT_RACE; //srb2kart
 
 	// no more tic the game with this settings!
 	SV_StopServer();
