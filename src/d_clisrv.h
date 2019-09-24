@@ -388,6 +388,9 @@ typedef struct
 	UINT8 actnum;
 	UINT8 iszone;
 	UINT8 fileneeded[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
+	// Anything beyond this point won't be read by the normal SRB2 Master Server display.
+	// The MS uses a simple unpack, so the size of the packet above shouldn't be changed, either.
+	// As long as those two conditions are met, we can add as much information as we want to the end.
 	INT16 avgpwrlv; // Kart avg power level
 } ATTRPACK serverinfo_pak;
 
