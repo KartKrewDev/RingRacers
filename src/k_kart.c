@@ -410,7 +410,7 @@ UINT8 colortranslations[MAXTRANSLATIONS][16] = {
 // 0.0722 to blue
 // (See this same define in hw_md2.c!)
 #define SETBRIGHTNESS(brightness,r,g,b) \
-	brightness = (UINT8)(((1063*((UINT16)r)/5000) + (3576*((UINT16)g)/5000) + (361*((UINT16)b)/5000)) / 3)
+	brightness = (UINT8)(((1063*(UINT16)(r))/5000) + ((3576*(UINT16)(g))/5000) + ((361*(UINT16)(b))/5000))
 
 /** \brief	Generates the rainbow colourmaps that are used when a player has the invincibility power
 
@@ -4529,6 +4529,15 @@ static void K_MoveHeldObjects(player_t *player)
 					if (R_PointToDist2(cur->x, cur->y, targx, targy) > 768*FRACUNIT)
 						P_TeleportMove(cur, targx, targy, cur->z);
 
+#ifdef ESLOPE
+					if (P_IsObjectOnGround(cur))
+					{
+						// Slope values are set in the function, but we DON'T want to use its return value.
+						P_CalculateShadowFloor(cur, cur->x, cur->y, cur->z,
+							cur->radius, cur->height, (cur->eflags & MFE_VERTICALFLIP), false);
+					}
+#endif
+
 					cur = cur->hnext;
 				}
 			}
@@ -4618,6 +4627,9 @@ static void K_MoveHeldObjects(player_t *player)
 
 					P_TeleportMove(cur, targx, targy, targz);
 					K_FlipFromObject(cur, player->mo);	// Update graviflip in real time thanks.
+#ifdef HWRENDER
+					cur->modeltilt = player->mo->modeltilt;
+#endif
 					num = (num+1) % 2;
 					cur = cur->hnext;
 				}
