@@ -219,7 +219,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 				momang = R_PointToAngle2(0, 0, savemomx, savemomy);
 
 				angoffset = momang;
-				angoffset -= spring->angle; // Subtract 
+				angoffset -= spring->angle; // Subtract
 
 				// Flip on wrong side
 				if ((angle_t)angoffset > ANGLE_180)

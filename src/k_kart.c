@@ -6539,7 +6539,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 
 		// Friction was changed, so we must recalculate a bunch of stuff
-		if (player->mo->friction != prevfriction) 
+		if (player->mo->friction != prevfriction)
 		{
 			if (player->mo->friction > FRACUNIT)
 				player->mo->friction = FRACUNIT;
