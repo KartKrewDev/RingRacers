@@ -1623,7 +1623,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 				cury + (P_RandomRange(-12,12)*mapobjectscale),
 				curz + (P_RandomRange(24,48)*mapobjectscale),
 				MT_SIGNSPARKLE);
-			P_SetMobjState(band, S_SIGNSPARK1 + ((leveltime+offset) % 11));
+			P_SetMobjState(band, S_SIGNSPARK1 + (leveltime % 11));
 			P_SetScale(band, (band->destscale = (3*player->mo->scale)/2));
 			band->color = colors[c];
 			band->colorized = true;
