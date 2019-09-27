@@ -896,11 +896,18 @@ static void IdentifyVersion(void)
 	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"), startupwadfiles);
 	D_AddFile(va(pandf,srb2waddir,"textures.pk3"), startupwadfiles);
 	D_AddFile(va(pandf,srb2waddir,"chars.pk3"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"maps.wad"), startupwadfiles); // TODO: make this a pk3 too!
+	D_AddFile(va(pandf,srb2waddir,"maps.pk3"), startupwadfiles);
 #ifdef USE_PATCH_FILE
 	D_AddFile(va(pandf,srb2waddir,"patch.pk3"), startupwadfiles);
 #endif
 
+#if 0
+	// TODO: pk3 doesn't support music replacement IIRC
+	// music barely benefits from the compression anyway
+	// would be nice for the folders, though
+	D_AddFile(va(pandf,srb2waddir,"sounds.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"music.pk3"), startupwadfiles);
+#else
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 #define MUSICTEST(str) \
 	{\
@@ -914,6 +921,7 @@ static void IdentifyVersion(void)
 	MUSICTEST("sounds.wad")
 	MUSICTEST("music.wad")
 #undef MUSICTEST
+#endif
 #endif
 }
 
@@ -1200,7 +1208,7 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);			// gfx.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_PK3);		// textures.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);		// chars.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_WAD);			// maps.wad -- 4 - If you touch this, make sure to touch up the majormods stuff below.
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);			// maps.pk3 -- 4 - If you touch this, make sure to touch up the majormods stuff below.
 #ifdef USE_PATCH_FILE
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
@@ -1208,7 +1216,7 @@ void D_SRB2Main(void)
 	mainwads++;	// gfx.pk3
 	mainwads++;	// textures.pk3
 	mainwads++;	// chars.pk3
-	mainwads++;	// maps.wad
+	mainwads++;	// maps.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
 #endif
