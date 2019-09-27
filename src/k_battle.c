@@ -293,13 +293,17 @@ static void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 	mobj->movecount = target->health;
 	mobj->movefactor = speed;
 
-	if (backandforth)
-		mobj->cusval = 1;
+	if (backandforth) {
+		mobj->flags2 |= MF2_AMBUSH;
+	} else {
+		mobj->flags2 &= ~MF2_AMBUSH;
+	}
 
-	if (reverse)
+	if (reverse) {
 		mobj->cvmem = -1;
-	else
+	} else {
 		mobj->cvmem = 1;
+	}
 }
 
 void K_SpawnBattleCapsules(void)

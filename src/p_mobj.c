@@ -9377,7 +9377,7 @@ void P_MobjThinker(mobj_t *mobj)
 					fixed_t speed = mobj->movefactor;
 					UINT8 sequence = mobj->lastlook;
 					UINT8 num = mobj->movecount;
-					boolean backandforth = mobj->cusval;
+					boolean backandforth = (mobj->flags2 & MF2_AMBUSH);
 					SINT8 direction = mobj->cvmem;
 					mobj_t *next = NULL;
 					thinker_t *th;
