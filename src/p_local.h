@@ -227,6 +227,7 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
 //void P_RunShields(void);
 void P_RunOverlays(void);
+fixed_t P_CalculateShadowFloor(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player);
 void P_RunShadows(void);
 void P_MobjThinker(mobj_t *mobj);
 boolean P_RailThinker(mobj_t *mobj);

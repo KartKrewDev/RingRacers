@@ -2146,7 +2146,12 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->hprev = (mobj_t *)(size_t)READUINT32(save_p);
 #ifdef ESLOPE
 	if (diff2 & MD2_SLOPE)
+	{
 		mobj->standingslope = P_SlopeById(READUINT16(save_p));
+#ifdef HWRENDER
+		mobj->modeltilt = mobj->standingslope;
+#endif
+	}
 #endif
 	if (diff2 & MD2_COLORIZED)
 		mobj->colorized = READUINT8(save_p);
@@ -3093,7 +3098,7 @@ static inline void P_NetArchiveSpecials(void)
 	WRITEUINT32(save_p, 0xffffffff);
 
 	// Sky number
-	WRITEINT32(save_p, globallevelskynum);
+	WRITESTRINGN(save_p, globallevelskytexture, 9);
 
 	// Current global weather type
 	WRITEUINT8(save_p, globalweather);
@@ -3112,8 +3117,8 @@ static inline void P_NetArchiveSpecials(void)
 //
 static void P_NetUnArchiveSpecials(void)
 {
+	char skytex[9];
 	size_t i;
-	INT32 j;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_SPECIALS)
 		I_Error("Bad $$$.sav at archive block Specials");
@@ -3126,9 +3131,9 @@ static void P_NetUnArchiveSpecials(void)
 		itemrespawntime[iquehead++] = READINT32(save_p);
 	}
 
-	j = READINT32(save_p);
-	if (j != globallevelskynum)
-		P_SetupLevelSky(j, true);
+	READSTRINGN(save_p, skytex, sizeof(skytex));
+	if (strcmp(skytex, globallevelskytexture))
+		P_SetupLevelSky(skytex, true);
 
 	globalweather = READUINT8(save_p);
 

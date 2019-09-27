@@ -1406,15 +1406,15 @@ static int lib_pIsFlagAtBase(lua_State *L)
 
 static int lib_pSetupLevelSky(lua_State *L)
 {
-	INT32 skynum = (INT32)luaL_checkinteger(L, 1);
+	const char *skytexname = luaL_checkstring(L, 1);
 	player_t *user = NULL;
 	NOHUD
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2)) // if a player, setup sky for only the player, otherwise setup sky for all players
 		user = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
 	if (!user) // global
-		P_SetupLevelSky(skynum, true);
+		P_SetupLevelSky(skytexname, true);
 	else if (P_IsLocalPlayer(user))
-		P_SetupLevelSky(skynum, false);
+		P_SetupLevelSky(skytexname, false);
 	return 0;
 }
 
