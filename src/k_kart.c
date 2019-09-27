@@ -9142,7 +9142,9 @@ static void K_drawKartMinimap(void)
 				colormap = NULL;
 
 			K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
-			if (K_IsPlayerWanted(&players[i]))
+			// Target reticule
+			if ((G_RaceGametype() && players[i].kartstuff[k_position] == spbplace)
+			|| (G_BattleGametype() && K_IsPlayerWanted(&players[i])))
 				K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 		}
 	}
@@ -9172,7 +9174,10 @@ static void K_drawKartMinimap(void)
 			colormap = NULL;
 
 		K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
-		if (K_IsPlayerWanted(&players[localplayers[i]]))
+
+		// Target reticule
+		if ((G_RaceGametype() && players[localplayers[i]].kartstuff[k_position] == spbplace)
+		|| (G_BattleGametype() && K_IsPlayerWanted(&players[localplayers[i]])))
 			K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 	}
 }
