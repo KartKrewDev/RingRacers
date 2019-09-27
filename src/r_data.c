@@ -1631,7 +1631,7 @@ void R_PrecacheLevel(void)
 
 	// Sky texture is always present.
 	// Note that F_SKY1 is the name used to indicate a sky floor/ceiling as a flat,
-	// while the sky texture is stored like a wall texture, with a skynum dependent name.
+	// while the sky texture is stored like a wall texture, with a texture name set by the map.
 	texturepresent[skytexture] = 1;
 
 	texturememory = 0;

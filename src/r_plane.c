@@ -734,7 +734,7 @@ void R_DrawPlanes(void)
 						dc_x = x;
 						dc_source =
 							R_GetColumn(texturetranslation[skytexture],
-								angle);
+								-angle); // Negative because skies were being drawn horizontally flipped
 						wallcolfunc();
 					}
 				}

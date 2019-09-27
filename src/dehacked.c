@@ -1230,8 +1230,9 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "WEATHER"))
 				mapheaderinfo[num-1]->weather = (UINT8)get_number(word2);
-			else if (fastcmp(word, "SKYNUM"))
-				mapheaderinfo[num-1]->skynum = (INT16)i;
+			else if (fastcmp(word, "SKYTEXTURE"))
+				deh_strlcpy(mapheaderinfo[num-1]->skytexture, word2,
+					sizeof(mapheaderinfo[num-1]->skytexture), va("Level header %d: sky texture", num));
 			else if (fastcmp(word, "INTERSCREEN"))
 				strncpy(mapheaderinfo[num-1]->interscreen, word2, 8);
 			else if (fastcmp(word, "PRECUTSCENENUM"))
@@ -9926,11 +9927,11 @@ static inline int lib_getenum(lua_State *L)
 	} else if (fastcmp(word,"globalweather")) {
 		lua_pushinteger(L, globalweather);
 		return 1;
-	} else if (fastcmp(word,"levelskynum")) {
-		lua_pushinteger(L, levelskynum);
+	} else if (fastcmp(word,"levelskytexture")) {
+		lua_pushstring(L, levelskytexture);
 		return 1;
-	} else if (fastcmp(word,"globallevelskynum")) {
-		lua_pushinteger(L, globallevelskynum);
+	} else if (fastcmp(word,"globallevelskytexture")) {
+		lua_pushstring(L, globallevelskytexture);
 		return 1;
 	} else if (fastcmp(word,"mapmusname")) {
 		lua_pushstring(L, mapmusname);
