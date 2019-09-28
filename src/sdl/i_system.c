@@ -3177,11 +3177,14 @@ void I_Error(const char *error, ...)
 #endif
 	G_SaveGameData(false); // Tails 12-08-2002
 
+	/* Prevent segmentation fault if testers go to Record Attack... */
+#ifndef TESTERS
 	// Shutdown. Here might be other errors.
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording();
+#endif
 
 	D_QuitNetGame();
 	I_ShutdownMusic();
