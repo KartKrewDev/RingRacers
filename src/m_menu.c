@@ -732,7 +732,9 @@ static menuitem_t SR_PandorasBox[] =
 // Sky Room Custom Unlocks
 static menuitem_t SR_MainMenu[] =
 {
+#ifndef TESTERS
 	{IT_STRING|IT_SUBMENU,                  NULL, "Unlockables", &SR_UnlockChecklistDef, 100},
+#endif
 	{IT_CALL|IT_STRING|IT_CALL_NOTMODIFIED, NULL, "Statistics",  M_Statistics,           108},
 	{IT_CALL|IT_STRING,                     NULL, "Replay Hut",  M_ReplayHut,            116},
 	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom1
