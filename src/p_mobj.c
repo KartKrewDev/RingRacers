@@ -11028,7 +11028,7 @@ void P_RespawnSpecials(void)
 		// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
 		if ((mapheaderinfo[gamemap-1]->numlaps != 3)
 		&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
-			time = (time * 3) / mapheaderinfo[gamemap-1]->numlaps;
+			time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
 	}
 
 	// only respawn items when cv_itemrespawn is on
