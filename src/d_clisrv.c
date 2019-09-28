@@ -3623,6 +3623,11 @@ boolean Playing(void)
 
 boolean SV_SpawnServer(void)
 {
+#ifdef TESTERS
+	/* Just don't let the testers play. Easy. */
+	I_Error("What do you think you're doing?");
+	return 0;
+#else
 	if (demo.playback)
 		G_StopDemo(); // reset engine parameter
 	if (metalplayback)
@@ -3649,6 +3654,7 @@ boolean SV_SpawnServer(void)
 	}
 
 	return SV_AddWaitingPlayers();
+#endif
 }
 
 void SV_StopServer(void)
