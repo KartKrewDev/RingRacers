@@ -11021,7 +11021,15 @@ void P_RespawnSpecials(void)
 	if (pcount == 1) // No respawn when alone
 		return;
 	else if (pcount > 1)
+	{
 		time = (180 - (pcount * 10))*TICRATE;
+
+		// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
+		// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
+		if ((mapheaderinfo[gamemap-1]->numlaps != 3)
+		&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
+			time = (time * 3) / mapheaderinfo[gamemap-1]->numlaps;
+	}
 
 	// only respawn items when cv_itemrespawn is on
 	//if (!cv_itemrespawn.value) // TODO: remove this cvar
