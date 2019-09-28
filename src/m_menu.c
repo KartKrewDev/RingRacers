@@ -245,14 +245,18 @@ static menu_t SP_TimeAttackDef, SP_ReplayDef, SP_GuestReplayDef, SP_GhostDef;
 
 // Multiplayer
 #ifndef NONET
+#ifndef TESTERS
 static void M_StartServerMenu(INT32 choice);
+#endif
 static void M_ConnectMenu(INT32 choice);
 static void M_ConnectMenuModChecks(INT32 choice);
 static void M_Refresh(INT32 choice);
 static void M_Connect(INT32 choice);
 static void M_ChooseRoom(INT32 choice);
 #endif
+#ifndef TESTERS
 static void M_StartOfflineServerMenu(INT32 choice);
+#endif
 static void M_StartServer(INT32 choice);
 static void M_SetupMultiPlayer(INT32 choice);
 static void M_SetupMultiPlayer2(INT32 choice);
@@ -8801,6 +8805,7 @@ static void M_MapChange(INT32 choice)
 	M_SetupNextMenu(&MISC_ChangeLevelDef);
 }
 
+#ifndef TESTERS
 static void M_StartOfflineServerMenu(INT32 choice)
 {
 	(void)choice;
@@ -8808,8 +8813,10 @@ static void M_StartOfflineServerMenu(INT32 choice)
 	M_PrepareLevelSelect();
 	M_SetupNextMenu(&MP_OfflineServerDef);
 }
+#endif
 
 #ifndef NONET
+#ifndef TESTERS
 static void M_StartServerMenu(INT32 choice)
 {
 	(void)choice;
@@ -8819,6 +8826,7 @@ static void M_StartServerMenu(INT32 choice)
 	M_SetupNextMenu(&MP_ServerDef);
 
 }
+#endif
 
 // ==============
 // CONNECT VIA IP
