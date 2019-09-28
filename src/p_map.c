@@ -254,7 +254,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	object->eflags |= MFE_SPRUNG; // apply this flag asap!
 	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
 
-#ifdef 0
+#if 0
 	if (horizspeed && vertispeed) // Mimic SA
 	{
 		object->momx = object->momy = 0;
