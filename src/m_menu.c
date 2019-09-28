@@ -89,6 +89,10 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #define SLIDER_WIDTH (8*SLIDER_RANGE+6)
 #define SERVERS_PER_PAGE 11
 
+#if defined (NONET) || defined (TESTERS)
+#define NOMENUHOST
+#endif
+
 typedef enum
 {
 	QUITMSG = 0,
@@ -968,12 +972,16 @@ static menuitem_t MP_MainMenu[] =
 	{IT_STRING|IT_KEYHANDLER,NULL, "Player setup...",     M_SetupMultiHandler,18},
 
 	{IT_HEADER, NULL, "Host a game", NULL, 100-24},
-#ifndef NONET
+#ifndef NOMENUHOST
 	{IT_STRING|IT_CALL,       NULL, "Internet/LAN...",           M_StartServerMenu,        110-24},
 #else
 	{IT_GRAYEDOUT,            NULL, "Internet/LAN...",           NULL,                     110-24},
 #endif
+#ifdef TESTERS
+	{IT_GRAYEDOUT,            NULL, "Offline...",                NULL,                     118-24},
+#else
 	{IT_STRING|IT_CALL,       NULL, "Offline...",                M_StartOfflineServerMenu, 118-24},
+#endif
 
 	{IT_HEADER, NULL, "Join a game", NULL, 132-24},
 #ifndef NONET
@@ -8830,7 +8838,7 @@ static void M_DrawMPMainMenu(void)
 	// use generic drawer for cursor, items and title
 	M_DrawGenericMenu();
 
-#ifndef NONET
+#ifndef NOMENUHOST
 #if MAXPLAYERS != 16
 Update the maxplayers label...
 #endif
@@ -8838,10 +8846,12 @@ Update the maxplayers label...
 		((itemOn == 4) ? highlightflags : 0), "(2-16 players)");
 #endif
 
+#ifndef TESTERS
 	V_DrawRightAlignedString(BASEVIDWIDTH-x, y+MP_MainMenu[5].alphaKey,
 		((itemOn == 5) ? highlightflags : 0),
 		"(2-4 players)"
 		);
+#endif
 
 #ifndef NONET
 	y += MP_MainMenu[8].alphaKey;
