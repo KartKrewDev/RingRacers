@@ -5953,7 +5953,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			&& NO_HYUDORO && !(HOLDING_ITEM
 			|| player->kartstuff[k_itemamount]
 			|| player->kartstuff[k_itemroulette]
-			|| player->kartstuff[k_growshrinktimer] // Being disabled during Shrink was unintended but people seemed to be okay with it sooo...
+			|| player->kartstuff[k_growshrinktimer] > 0
 			|| player->kartstuff[k_rocketsneakertimer]
 			|| player->kartstuff[k_eggmanexplode]))
 			player->kartstuff[k_userings] = 1;
