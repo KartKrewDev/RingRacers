@@ -474,9 +474,14 @@ static menuitem_t MainMenu[] =
 {
 	{IT_SUBMENU|IT_STRING, NULL, "Extras",      &SR_MainDef,        76},
 	//{IT_CALL   |IT_STRING, NULL, "1 Player",    M_SinglePlayerMenu, 84},
+#ifdef TESTERS
+	{IT_GRAYEDOUT,         NULL, "Time Attack", NULL,               84},
+#else
 	{IT_CALL   |IT_STRING, NULL, "Time Attack", M_TimeAttack,       84},
+#endif
 	{IT_SUBMENU|IT_STRING, NULL, "Multiplayer", &MP_MainDef,        92},
 	{IT_CALL   |IT_STRING, NULL, "Options",     M_Options,          100},
+	/* I don't think is useful at all... */
 	{IT_CALL   |IT_STRING, NULL, "Addons",      M_Addons,           108},
 	{IT_CALL   |IT_STRING, NULL, "Quit  Game",  M_QuitSRB2,         116},
 };
@@ -3029,7 +3034,11 @@ void M_StartControlPanel(void)
 		//MainMenu[secrets].status = (M_AnySecretUnlocked()) ? (IT_STRING | IT_CALL) : (IT_DISABLED);
 
 		currentMenu = &MainDef;
+#ifdef TESTERS
+		itemOn = multiplr;
+#else
 		itemOn = singleplr;
+#endif
 	}
 	else if (modeattacking)
 	{
@@ -4091,6 +4100,14 @@ static void M_DrawCenteredMenu(void)
 					V_DrawMappedPatch(x, y, 0,
 						W_CachePatchName(currentMenu->menuitems[i].patch,PU_CACHE), graymap);
 				y += LINEHEIGHT;
+				break;
+			case IT_TRANSTEXT:
+				if (currentMenu->menuitems[i].alphaKey)
+					y = currentMenu->y+currentMenu->menuitems[i].alphaKey;
+				/* FALLTHRU */
+			case IT_TRANSTEXT2:
+				V_DrawCenteredString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
+				y += SMALLLINEHEIGHT;
 				break;
 		}
 	}
