@@ -447,7 +447,7 @@ static void D_Display(void)
 					{
 						if (i > 0) // Splitscreen-specific
 						{
-							switch (i) 
+							switch (i)
 							{
 								case 1:
 									if (splitscreen > 1)
@@ -1190,12 +1190,12 @@ void D_SRB2Main(void)
 	M_InitCharacterTables();
 
 	// load wad, including the main wad file
-	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
+	CONS_Printf("W_InitMultipleFiles(): Adding main IWAD and PWADs.\n");
 	if (!W_InitMultipleFiles(startupwadfiles, false))
 #ifdef _DEBUG
-		CONS_Error("A WAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		CONS_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #else
-		I_Error("A WAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		I_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #endif
 	D_CleanFile(startupwadfiles);
 
@@ -1249,8 +1249,9 @@ void D_SRB2Main(void)
 		}
 	}
 
+	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
 	if (!W_InitMultipleFiles(startuppwads, true))
-		CONS_Error("A PWAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		M_StartMessage(M_GetText("A PWAD file was not found or not valid.\nCheck log.txt to see which ones.\n\nPress ESC\n"), NULL, MM_NOTHING);
 	D_CleanFile(startuppwads);
 
 	//

@@ -412,7 +412,7 @@ UINT8 colortranslations[MAXTRANSLATIONS][16] = {
 // 0.0722 to blue
 // (See this same define in hw_md2.c!)
 #define SETBRIGHTNESS(brightness,r,g,b) \
-	brightness = (UINT8)(((1063*((UINT16)r)/5000) + (3576*((UINT16)g)/5000) + (361*((UINT16)b)/5000)) / 3)
+	brightness = (UINT8)(((1063*(UINT16)(r))/5000) + ((3576*(UINT16)(g))/5000) + ((361*(UINT16)(b))/5000))
 
 /** \brief	Generates the rainbow colourmaps that are used when a player has the invincibility power
 
@@ -1625,7 +1625,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 				cury + (P_RandomRange(-12,12)*mapobjectscale),
 				curz + (P_RandomRange(24,48)*mapobjectscale),
 				MT_SIGNSPARKLE);
-			P_SetMobjState(band, S_SIGNSPARK1 + (abs(leveltime+offset) % 11));
+			P_SetMobjState(band, S_SIGNSPARK1 + (leveltime % 11));
 			P_SetScale(band, (band->destscale = (3*player->mo->scale)/2));
 			band->color = colors[c];
 			band->colorized = true;
@@ -4531,6 +4531,15 @@ static void K_MoveHeldObjects(player_t *player)
 					if (R_PointToDist2(cur->x, cur->y, targx, targy) > 768*FRACUNIT)
 						P_TeleportMove(cur, targx, targy, cur->z);
 
+#ifdef ESLOPE
+					if (P_IsObjectOnGround(cur))
+					{
+						// Slope values are set in the function, but we DON'T want to use its return value.
+						P_CalculateShadowFloor(cur, cur->x, cur->y, cur->z,
+							cur->radius, cur->height, (cur->eflags & MFE_VERTICALFLIP), false);
+					}
+#endif
+
 					cur = cur->hnext;
 				}
 			}
@@ -4620,6 +4629,9 @@ static void K_MoveHeldObjects(player_t *player)
 
 					P_TeleportMove(cur, targx, targy, targz);
 					K_FlipFromObject(cur, player->mo);	// Update graviflip in real time thanks.
+#ifdef HWRENDER
+					cur->modeltilt = player->mo->modeltilt;
+#endif
 					num = (num+1) % 2;
 					cur = cur->hnext;
 				}
@@ -5063,6 +5075,29 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (P_IsDisplayPlayer(player))
 				debtflag->flags2 |= MF2_DONTDRAW;
 		}
+
+		if (player->kartstuff[k_springstars] && (leveltime & 1))
+		{
+			fixed_t randx = P_RandomRange(-40, 40) * player->mo->scale;
+			fixed_t randy = P_RandomRange(-40, 40) * player->mo->scale;
+			fixed_t randz = P_RandomRange(0, player->mo->height >> FRACBITS) << FRACBITS;
+			mobj_t *star = P_SpawnMobj(
+				player->mo->x + randx,
+				player->mo->y + randy,
+				player->mo->z + randz,
+				MT_KARMAFIREWORK);
+
+			star->color = player->kartstuff[k_springcolor];
+			star->flags |= MF_NOGRAVITY;
+			star->momx = player->mo->momx / 2;
+			star->momy = player->mo->momy / 2;
+			star->momz = player->mo->momz / 2;
+			star->fuse = 12;
+			star->scale = player->mo->scale;
+			star->destscale = star->scale / 2;
+
+			player->kartstuff[k_springstars]--;
+		}
 	}
 
 	if (player->playerstate == PST_DEAD || player->kartstuff[k_respawn] > 1) // Ensure these are set correctly here
@@ -5265,6 +5300,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_justbumped])
 		player->kartstuff[k_justbumped]--;
 
+	if (player->kartstuff[k_tiregrease])
+		player->kartstuff[k_tiregrease]--;
+
 	// This doesn't go in HUD update because it has potential gameplay ramifications
 	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
 	{
@@ -5304,17 +5342,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			}
 		}
 	}
-
-	// ???
-	/*
-	if (player->kartstuff[k_jmp] > 1 && onground)
-	{
-		S_StartSound(player->mo, sfx_spring);
-		P_DoJump(player, false);
-		player->mo->momz *= player->kartstuff[k_jmp];
-		player->kartstuff[k_jmp] = 0;
-	}
-	*/
 
 	if (player->kartstuff[k_comebacktimer])
 		player->kartstuff[k_comebackmode] = 0;
@@ -5725,14 +5752,15 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 		return 0;
 
 	if (player->kartstuff[k_driftend] != 0)
-	{
 		return -266*player->kartstuff[k_drift]; // Drift has ended and we are tweaking their angle back a bit
-	}
 
 	//basedrift = 90*player->kartstuff[k_drift]; // 450
 	//basedrift = 93*player->kartstuff[k_drift] - driftweight*3*player->kartstuff[k_drift]/10; // 447 - 303
 	basedrift = 83*player->kartstuff[k_drift] - (driftweight - 14)*player->kartstuff[k_drift]/5; // 415 - 303
 	driftangle = abs((252 - driftweight)*player->kartstuff[k_drift]/5);
+
+	if (player->kartstuff[k_tiregrease] > 0) // Buff drift-steering while in greasemode
+		basedrift += (basedrift / greasetics) * player->kartstuff[k_tiregrease];
 
 	return basedrift + FixedMul(driftangle, countersteer);
 }
@@ -6715,6 +6743,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	if (onground)
 	{
+		fixed_t prevfriction = player->mo->friction;
+
+		// Reduce friction after hitting a horizontal spring
+		if (player->kartstuff[k_tiregrease])
+			player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->kartstuff[k_tiregrease];
+
 		// Friction
 		if (!player->kartstuff[k_offroad])
 		{
@@ -6727,9 +6761,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		// Karma ice physics
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
-		{
 			player->mo->friction += 1228;
 
+		// Wipeout slowdown
+		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
+		{
+			if (player->kartstuff[k_offroad])
+				player->mo->friction -= 4912;
+			if (player->kartstuff[k_wipeoutslow] == 1)
+				player->mo->friction -= 9824;
+		}
+
+		// Friction was changed, so we must recalculate a bunch of stuff
+		if (player->mo->friction != prevfriction)
+		{
 			if (player->mo->friction > FRACUNIT)
 				player->mo->friction = FRACUNIT;
 			if (player->mo->friction < 0)
@@ -6740,19 +6785,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			if (player->mo->movefactor < FRACUNIT)
 				player->mo->movefactor = 19*player->mo->movefactor - 18*FRACUNIT;
 			else
-				player->mo->movefactor = FRACUNIT; //player->mo->movefactor = ((player->mo->friction - 0xDB34)*(0xA))/0x80;
+				player->mo->movefactor = FRACUNIT;
 
 			if (player->mo->movefactor < 32)
 				player->mo->movefactor = 32;
-		}
-
-		// Wipeout slowdown
-		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
-		{
-			if (player->kartstuff[k_offroad])
-				player->mo->friction -= 4912;
-			if (player->kartstuff[k_wipeoutslow] == 1)
-				player->mo->friction -= 9824;
 		}
 	}
 

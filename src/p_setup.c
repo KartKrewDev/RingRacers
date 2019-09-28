@@ -208,8 +208,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
 	DEH_WriteUndoline("WEATHER", va("%d", mapheaderinfo[num]->weather), UNDO_NONE);
 	mapheaderinfo[num]->weather = 0;
-	DEH_WriteUndoline("SKYNUM", va("%d", mapheaderinfo[num]->skynum), UNDO_NONE);
-	mapheaderinfo[num]->skynum = 1;
+	DEH_WriteUndoline("SKYTEXTURE", va("%d", mapheaderinfo[num]->skytexture), UNDO_NONE);
+	snprintf(mapheaderinfo[num]->skytexture, 9, "SKY1");
+	mapheaderinfo[num]->skytexture[8] = 0;
 	DEH_WriteUndoline("SKYBOXSCALEX", va("%d", mapheaderinfo[num]->skybox_scalex), UNDO_NONE);
 	mapheaderinfo[num]->skybox_scalex = 16;
 	DEH_WriteUndoline("SKYBOXSCALEY", va("%d", mapheaderinfo[num]->skybox_scaley), UNDO_NONE);
@@ -2256,17 +2257,18 @@ static inline boolean P_CheckLevel(lumpnum_t lumpnum)
 /** Sets up a sky texture to use for the level.
   * The sky texture is used instead of F_SKY1.
   */
-void P_SetupLevelSky(INT32 skynum, boolean global)
+void P_SetupLevelSky(const char *skytexname, boolean global)
 {
-	char skytexname[12];
+	char tex[9];
+	strncpy(tex, skytexname, 9);
+	tex[8] = 0;
 
-	sprintf(skytexname, "SKY%d", skynum);
-	skytexture = R_TextureNumForName(skytexname);
-	levelskynum = skynum;
+	skytexture = R_TextureNumForName(tex);
+	strncpy(levelskytexture, tex, 9);
 
 	// Global change
 	if (global)
-		globallevelskynum = levelskynum;
+		strncpy(globallevelskytexture, tex, 9);
 
 	// Don't go beyond for dedicated servers
 	if (dedicated)
@@ -2974,7 +2976,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	CON_SetupBackColormap();
 
 	// SRB2 determines the sky texture to be used depending on the map header.
-	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skynum, true);
+	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skytexture, true);
 
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
 
