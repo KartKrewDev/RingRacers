@@ -30,8 +30,8 @@ extern INT32 skytexture, skytexturemid;
 extern fixed_t skyscale;
 
 extern INT32 skyflatnum;
-extern INT32 levelskynum;
-extern INT32 globallevelskynum;
+extern char levelskytexture[9];
+extern char globallevelskytexture[9];
 
 // call after skytexture is set to adapt for old/new skies
 void R_SetupSkyDraw(void);

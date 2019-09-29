@@ -267,7 +267,7 @@ static UINT8 *R_GenerateTexture(size_t texnum)
 	texturememory += blocksize;
 	block = Z_Malloc(blocksize+1, PU_STATIC, &texturecache[texnum]);
 
-	memset(block, 0xF7, blocksize+1); // Transparency hack
+	memset(block, 0xFF, blocksize+1); // TRANSPARENTPIXEL
 
 	// columns lookup table
 	colofs = (UINT32 *)(void *)block;
@@ -1630,7 +1630,7 @@ void R_PrecacheLevel(void)
 
 	// Sky texture is always present.
 	// Note that F_SKY1 is the name used to indicate a sky floor/ceiling as a flat,
-	// while the sky texture is stored like a wall texture, with a skynum dependent name.
+	// while the sky texture is stored like a wall texture, with a texture name set by the map.
 	texturepresent[skytexture] = 1;
 
 	texturememory = 0;

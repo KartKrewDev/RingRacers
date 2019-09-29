@@ -5922,13 +5922,15 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 static void HWR_DrawSkyBackground(void)
 {
 	FOutVector v[4];
+	texture_t *tex;
 	angle_t angle;
 	float dimensionmultiply;
 	float aspectratio;
 	float angleturn;
 
+	tex = textures[texturetranslation[skytexture]];
 	HWR_GetTexture(texturetranslation[skytexture]);
-	aspectratio = (float)vid.width/(float)vid.height;
+	aspectratio = (float)vid.width / (float)vid.height;
 
 	//Hurdler: the sky is the only texture who need 4.0f instead of 1.0
 	//         because it's called just after clearing the screen
@@ -5952,22 +5954,22 @@ static void HWR_DrawSkyBackground(void)
 	// software doesn't draw any further than 1024 for skies anyway, but this doesn't overlap properly
 	// The only time this will probably be an issue is when a sky wider than 1024 is used as a sky AND a regular wall texture
 
-	angle = (dup_viewangle + gr_xtoviewangle[0]);
-	dimensionmultiply = ((float)textures[texturetranslation[skytexture]]->width/256.0f);
+	angle = -(dup_viewangle + gr_xtoviewangle[0]);
+	dimensionmultiply = ((float)tex->width/256.0f);
 
 	if (atransform.mirror)
 	{
 		angle = InvAngle(angle);
-		dimensionmultiply *= -1;
+		dimensionmultiply = -dimensionmultiply;
 	}
 
 	v[0].sow = v[3].sow = ((float) angle / ((ANGLE_90-1)*dimensionmultiply));
-	v[2].sow = v[1].sow = (-1.0f/dimensionmultiply)+((float) angle / ((ANGLE_90-1)*dimensionmultiply));
+	v[2].sow = v[1].sow = (1.0f/dimensionmultiply)+((float) angle / ((ANGLE_90-1)*dimensionmultiply));
 
 	// Y
 	angle = aimingangle;
 
-	dimensionmultiply = ((float)textures[texturetranslation[skytexture]]->height/(128.0f*aspectratio));
+	dimensionmultiply = ((float)tex->height/(128.0f*aspectratio));
 
 	if (splitscreen == 1)
 	{
