@@ -1792,6 +1792,74 @@ void V_DrawRightAlignedGamemodeString(INT32 x, INT32 y, INT32 option, const char
 	x -= V_GamemodeStringWidth(string, option);
 	V_DrawGamemodeString(x, y, option, string, color);
 }
+
+void V_DrawFileString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, left = 0;
+	const char *ch = string;
+
+	option &= ~V_FLIP;
+
+	if (option & V_NOSCALESTART)
+	{
+		dupx = vid.dupx;
+		dupy = vid.dupy;
+		scrwidth = vid.width;
+	}
+	else
+	{
+		dupx = dupy = 1;
+		scrwidth = vid.width/vid.dupx;
+		left = (scrwidth - BASEVIDWIDTH)/2;
+	}
+
+	for (;;ch++)
+	{
+		if (!*ch)
+			break;
+
+		if (*ch == '\n')
+		{
+			cx = x;
+			cy += 14*dupy;
+
+			continue;
+		}
+
+		c = toupper(*ch) - AZ_FONTSTART;
+
+		// character does not exist or is a space
+		if (c < 0 || c >= AZ_FONTSIZE || !file_font[c])
+			continue;
+
+		w = (SHORT(file_font[c]->width) - 3) * dupx;
+
+		if (cx > scrwidth)
+			break;
+
+		if (cx+left + w < 0) //left boundary check
+		{
+			cx += w;
+			continue;
+		}
+
+		V_DrawFixedPatch(cx<<FRACBITS, cy<<FRACBITS, FRACUNIT, option, file_font[c], NULL);
+
+		cx += w;
+	}
+}
+
+void V_DrawCenteredFileString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_FileStringWidth(string, option)/2;
+	V_DrawFileString(x, y, option, string);
+}
+
+void V_DrawRightAlignedFileString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_FileStringWidth(string, option);
+	V_DrawFileString(x, y, option, string);
+}
 //
 
 //
@@ -2492,6 +2560,30 @@ INT32 V_GamemodeStringWidth(const char *string, INT32 option)
 			continue;
 		else
 			w += SHORT(gamemode_font[c]->width) - 2;
+	}
+
+	return w;
+}
+
+//
+// Find string width from file_font chars
+//
+INT32 V_FileStringWidth(const char *string, INT32 option)
+{
+	INT32 c, w = 0;
+	size_t i;
+
+	(void)option;
+
+	for (i = 0; i < strlen(string); i++)
+	{
+		c = string[i];
+		c = toupper(c) - AZ_FONTSTART;
+
+		if (c < 0 || c >= AZ_FONTSIZE || !file_font[c])
+			continue;
+		else
+			w += SHORT(file_font[c]->width) - 3;
 	}
 
 	return w;

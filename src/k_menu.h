@@ -111,6 +111,7 @@ typedef struct menu_s
 	INT16          transitionInTics;   // tics for transitions in
 	INT16          transitionOutTics;  // tics for transitions out
 	void         (*drawroutine)(void); // draw routine
+	void         (*tickroutine)(void); // ticker routine
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
 } menu_t;
 
@@ -227,11 +228,19 @@ extern struct setup_chargrid_s {
 	UINT8 numskins;
 } setup_chargrid[9][9];
 
+#define CSSTEP_NONE 0
+#define CSSTEP_CHARS 1
+#define CSSTEP_ALTS 2
+#define CSSTEP_COLORS 3
+#define CSSTEP_READY 4
+
 typedef struct setup_player_s
 {
 	SINT8 gridx, gridy;
 	SINT8 skin;
 	SINT8 clonenum;
+	SINT8 rotate;
+	UINT8 delay;
 	UINT8 color;
 	UINT8 mdepth;
 } setup_player_t;
@@ -239,6 +248,18 @@ typedef struct setup_player_s
 extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 
 extern UINT8 setup_numplayers;
+extern UINT16 setup_animcounter;
+
+// The selection spawns 3 explosions in 4 directions, and there's 4 players -- 3 * 4 * 4 = 48
+#define CSEXPLOSIONS 48
+
+#define CSROTATETICS 6
+
+extern struct setup_explosions_s {
+	UINT8 x, y;
+	UINT8 tics;
+	UINT8 color;
+} setup_explosions[CSEXPLOSIONS];
 
 typedef enum
 {
@@ -251,6 +272,7 @@ consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
 void M_CharacterSelectInit(INT32 choice);
 void M_CharacterSelectHandler(INT32 choice);
+void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
 
 void M_EndModeAttackRun(void);
@@ -288,6 +310,7 @@ void M_DrawPlaybackMenu(void);
 	x, y,\
 	0, 0,\
 	M_DrawGenericMenu,\
+	NULL,\
 	NULL\
 }
 
@@ -301,6 +324,7 @@ void M_DrawPlaybackMenu(void);
 	0, 0,\
 	10, 10,\
 	M_DrawKartGamemodeMenu,\
+	NULL,\
 	NULL\
 }
 

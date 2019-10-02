@@ -518,54 +518,91 @@ void M_DrawImageDef(void)
 
 static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 {
-	const fixed_t rad = 32<<FRACBITS;
-	fixed_t angamt = 360;
-	patch_t *patch = NULL;
+	angle_t angamt = ANGLE_MAX;
 	UINT8 numoptions;
 	UINT8 i;
 
-	if (p->mdepth == 2)
+	if (p->mdepth == CSSTEP_ALTS)
 		numoptions = setup_chargrid[p->gridx][p->gridy].numskins;
 	else
-	{
-		numoptions = 16;
-		patch = W_CachePatchName("COLORSPH", PU_CACHE);
-	}
+		numoptions = MAXSKINCOLORS-1;
 
-	angamt /= numoptions*2;
+	angamt /= numoptions;
 
 	for (i = 0; i < numoptions; i++)
 	{
 		fixed_t cx = x << FRACBITS, cy = y << FRACBITS;
-		fixed_t ang = -(angamt * i);
+		boolean subtract = (i & 1);
+		angle_t ang = ((i+1)/2) * angamt;
+		patch_t *patch = NULL;
 		UINT8 *colormap;
+		fixed_t radius = 24<<FRACBITS;
 		INT16 n;
 
-		ang += 90;
-
-		cx += FixedMul(rad, FINECOSINE(FixedAngle(ang << FRACBITS) >> ANGLETOFINESHIFT));
-		cy += FixedMul(rad, FINESINE(FixedAngle(ang << FRACBITS) >> ANGLETOFINESHIFT)) >> 2;
-
-		if (p->mdepth == 2)
+		if (p->mdepth == CSSTEP_ALTS)
 		{
 			SINT8 skin;
 
-			cx -= 8<<FRACBITS;
-			n = (p->clonenum + i) % setup_chargrid[p->gridx][p->gridy].numskins;
+			n = (p->clonenum) + numoptions/2;
+			if (subtract)
+				n -= ((i+1)/2);
+			else
+				n += ((i+1)/2);
+			n %= numoptions;
 
 			skin = setup_chargrid[p->gridx][p->gridy].skinlist[n];
-
-			colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 			patch = facerankprefix[skin];
+			colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 		}
 		else
 		{
-			cx -= 4<<FRACBITS;
-			n = ((p->color + i) % (MAXSKINCOLORS-1));
+			INT16 diff;
+
+			n = (p->color-1) + numoptions/2;
+			if (subtract)
+				n -= ((i+1)/2);
+			else
+				n += ((i+1)/2);
+			n %= numoptions;
+			n++;
+
 			colormap = R_GetTranslationColormap(TC_DEFAULT, n, GTC_MENUCACHE);
+
+			if (n > p->color)
+				diff = n - p->color;
+			else
+				diff = p->color - n;
+
+			if (diff == 0)
+				patch = W_CachePatchName("COLORSP2", PU_CACHE);
+			else if (abs(diff) < 25)
+				patch = W_CachePatchName("COLORSP1", PU_CACHE);
+			else
+				patch = W_CachePatchName("COLORSP0", PU_CACHE);
+
+			radius -= SHORT(patch->width) << FRACBITS;
 		}
 
+		cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+		cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+
+		if (subtract)
+			ang = (signed)(ANGLE_90 - ang);
+		else
+			ang = ANGLE_90 + ang;
+
+		if (numoptions % 2)
+			ang = (signed)(ang - (angamt/2));
+
+		if (p->rotate)
+			ang = (signed)(ang + ((angamt / CSROTATETICS) * p->rotate));
+
+		cx += FixedMul(radius, FINECOSINE(ang >> ANGLETOFINESHIFT));
+		cy -= FixedMul(radius, FINESINE(ang >> ANGLETOFINESHIFT)) / 3;
+
 		V_DrawFixedPatch(cx, cy, FRACUNIT, 0, patch, colormap);
+		if (p->mdepth == CSSTEP_ALTS && n != p->clonenum)
+			V_DrawFixedPatch(cx, cy, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("ICONDARK", PU_CACHE), NULL);
 	}
 }
 
@@ -589,7 +626,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	V_DrawScaledPatch(x, y+6, V_TRANSLUCENT, W_CachePatchName("PREVBACK", PU_CACHE));
 
-	if (p->mdepth > 0)
+	if (p->mdepth >= CSSTEP_CHARS)
 	{
 		skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
 
@@ -634,21 +671,117 @@ static void M_DrawCharSelectPreview(UINT8 num)
 			}
 		}
 
-		if (p->mdepth == 2 || p->mdepth == 3)
-			M_DrawCharSelectCircle(p, x+32, y+48);
+		if (p->mdepth == CSSTEP_ALTS || p->mdepth == CSSTEP_COLORS)
+			M_DrawCharSelectCircle(p, x+32, y+64);
+	}
+
+	if ((setup_animcounter/10) & 1)
+	{
+		if (p->mdepth == CSSTEP_NONE)
+			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PSTART", PU_CACHE));
+		//else if (p->mdepth >= CSSTEP_READY)
+		//	V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PREADY", PU_CACHE));
 	}
 
 	V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
-	V_DrawScaledPatch(x, y, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
-
-	if (p->mdepth == 0 && (skullAnimCounter/5))
-		V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PSTART", PU_CACHE));
+	V_DrawScaledPatch(x, y+2, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
+	V_DrawFileString(x+16, y+2, 0, "PLAYER");
 }
+
+static void M_DrawCharSelectExplosions(void)
+{
+	UINT8 i;
+
+	for (i = 0; i < CSEXPLOSIONS; i++)
+	{
+		INT16 quadx, quady;
+		UINT8 *colormap;
+		UINT8 frame;
+
+		if (setup_explosions[i].tics == 0 || setup_explosions[i].tics > 5)
+			continue;
+
+		frame = 6 - setup_explosions[i].tics;
+
+		quadx = 4 * (setup_explosions[i].x / 3);
+		quady = 4 * (setup_explosions[i].y / 3);
+
+		colormap = R_GetTranslationColormap(TC_DEFAULT, setup_explosions[i].color, GTC_MENUCACHE);
+
+		V_DrawMappedPatch(
+			82 + (setup_explosions[i].x*16) + quadx - 6,
+			22 + (setup_explosions[i].y*16) + quady - 6,
+			0, W_CachePatchName(va("CHCNFRM%d", frame), PU_CACHE),
+			colormap
+		);
+	}
+}
+
+#define IDLELEN 8
+#define SELECTLEN (8 + IDLELEN + 7 + IDLELEN)
+
+static void M_DrawCharSelectCursors(void)
+{
+	UINT8 i;
+	static const char *idleframes[IDLELEN] = {
+		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2"
+	};
+	static const char *selectframesa[SELECTLEN] = {
+		"CHHOV1", "CHPIKA1", "CHHOV2", "CHPIKA2", "CHHOV3", "CHPIKA3", "CHHOV2", "CHPIKA4",
+		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2",
+		"CHPIKA5", "CHHOV2", "CHPIKA6", "CHHOV3", "CHPIKA7", "CHHOV2", "CHPIKA8",
+		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2"
+	};
+	static const char *selectframesb[SELECTLEN] = {
+		"CHHOV1", "CHPIKB1", "CHHOV2", "CHPIKB2", "CHHOV3", "CHPIKB3", "CHHOV2", "CHPIKB4",
+		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2",
+		"CHPIKB5", "CHHOV2", "CHPIKB6", "CHHOV3", "CHPIKB7", "CHHOV2", "CHPIKB8",
+		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2"
+	};
+
+	for (i = 0; i < setup_numplayers; i++)
+	{
+		setup_player_t *p = &setup_player[i];
+		char letter = 'A' + i;
+		UINT8 *colormap;
+		INT16 x, y;
+		INT16 quadx, quady;
+
+		quadx = 4 * (p->gridx / 3);
+		quady = 4 * (p->gridy / 3);
+
+		x = 82 + (p->gridx*16) + quadx - 13,
+		y = 22 + (p->gridy*16) + quady - 12,
+
+		colormap = R_GetTranslationColormap(TC_DEFAULT, (p->color != SKINCOLOR_NONE ? p->color : SKINCOLOR_GREY), GTC_MENUCACHE);
+
+		if (p->mdepth >= CSSTEP_READY)
+		{
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName("CHCNFRM0", PU_CACHE), colormap);
+		}
+		else if (p->mdepth > CSSTEP_CHARS)
+		{
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName(selectframesa[setup_animcounter % SELECTLEN], PU_CACHE), colormap);
+			V_DrawMappedPatch(x, y, V_TRANSLUCENT, W_CachePatchName(selectframesb[(setup_animcounter-1) % SELECTLEN], PU_CACHE), colormap);
+		}
+		else
+		{
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName(idleframes[setup_animcounter % IDLELEN], PU_CACHE), colormap);
+		}
+
+		if (p->mdepth < CSSTEP_READY)
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName(va("CSELH%c", letter), PU_CACHE), colormap);
+	}
+}
+
+#undef IDLE
+#undef IDLELEN
+#undef SELECTLEN
 
 void M_DrawCharacterSelect(void)
 {
 	UINT8 i, j, k;
-	UINT16 quadx, quady;
+	INT16 quadx, quady;
 	SINT8 skin;
 
 	// We have to loop twice -- first time to draw the drop shadows, a second time to draw the icons.
@@ -703,9 +836,18 @@ void M_DrawCharacterSelect(void)
 					colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 
 				V_DrawMappedPatch(82 + (i*16) + quadx, 22 + (j*16) + quady, 0, facerankprefix[skin], colormap);
+
+				if (setup_chargrid[i][j].numskins > 1)
+					V_DrawScaledPatch(82 + (i*16) + quadx, 22 + (j*16) + quady + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
 			}
 		}
 	}
+
+	// Explosions when you've made your final selection
+	M_DrawCharSelectExplosions();
+
+	// Draw the cursors
+	M_DrawCharSelectCursors();
 
 	// Draw a preview for each player
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)

@@ -84,7 +84,8 @@ void HU_AddChatText(const char *text, boolean playsound);
 extern boolean chat_on;
 
 extern patch_t *hu_font[HU_FONTSIZE], *tny_font[HU_FONTSIZE];
-extern patch_t *kart_font[KART_FONTSIZE], *gamemode_font[AZ_FONTSIZE]; // SRB2kart
+extern patch_t *kart_font[KART_FONTSIZE]; // SRB2kart
+extern patch_t *gamemode_font[AZ_FONTSIZE], *file_font[AZ_FONTSIZE];
 extern patch_t *tallnum[10];
 extern patch_t *pingnum[10];
 extern patch_t *pinggfx[5];

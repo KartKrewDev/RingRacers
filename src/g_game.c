@@ -524,22 +524,22 @@ player_t *seenplayer; // player we're aiming at right now
 
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1] =
 {
-	"Player 1",
-	"Player 2",
-	"Player 3",
-	"Player 4",
-	"Player 5",
-	"Player 6",
-	"Player 7",
-	"Player 8",
-	"Player 9",
-	"Player 10",
-	"Player 11",
-	"Player 12",
-	"Player 13",
-	"Player 14",
-	"Player 15",
-	"Player 16"
+	"A Player",
+	"B Player",
+	"C Player",
+	"D Player",
+	"E Player",
+	"F Player",
+	"G Player",
+	"H Player",
+	"I Player",
+	"J Player",
+	"K Player",
+	"L Player",
+	"M Player",
+	"N Player",
+	"O Player",
+	"P Player"
 }; // SRB2kart - removed Players 17 through 32
 
 INT16 rw_maximums[NUM_WEAPONS] =

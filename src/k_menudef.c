@@ -18,7 +18,7 @@
 // ---------
 menuitem_t MainMenu[] =
 {
-	{IT_STRING | IT_CALL, "Play", "Cut to the chase and start playing!",
+	{IT_STRING | IT_CALL, "Play", "Cut to the chase and start the race!",
 		NULL, M_CharacterSelectInit, 48, 0},
 
 	{IT_STRING, "Extra", "Check out some bonus features.",
@@ -50,6 +50,7 @@ menu_t PLAY_CharSelectDef = {
 	0, 0,
 	0, 0,
 	M_DrawCharacterSelect,
+	M_CharacterSelectTick,
 	M_CharacterSelectQuit
 };
 
@@ -128,5 +129,6 @@ menu_t PAUSE_PlaybackMenuDef = {
 	BASEVIDWIDTH/2 - 88, 2,
 	0, 0,
 	M_DrawPlaybackMenu,
+	NULL,
 	NULL
 };

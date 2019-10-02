@@ -183,6 +183,9 @@ void V_DrawKartString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawGamemodeString(INT32 x, INT32 y, INT32 option, const char *string, UINT8 color);
 void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const char *string, UINT8 color);
 void V_DrawRightAlignedGamemodeString(INT32 x, INT32 y, INT32 option, const char *string, UINT8 color);
+void V_DrawFileString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredFileString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedFileString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the hu_font, 0.5x scale
 void V_DrawSmallString(INT32 x, INT32 y, INT32 option, const char *string);
@@ -219,6 +222,7 @@ INT32 V_ThinStringWidth(const char *string, INT32 option);
 
 // SRB2Kart
 INT32 V_GamemodeStringWidth(const char *string, INT32 option);
+INT32 V_FileStringWidth(const char *string, INT32 option);
 
 void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param);
 

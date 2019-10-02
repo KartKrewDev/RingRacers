@@ -65,11 +65,13 @@
 //              heads up font
 //-------------------------------------------
 patch_t *hu_font[HU_FONTSIZE];
-patch_t *kart_font[KART_FONTSIZE];	// SRB2kart
-patch_t *gamemode_font[AZ_FONTSIZE];
 patch_t *tny_font[HU_FONTSIZE];
 patch_t *tallnum[10]; // 0-9
 patch_t *nightsnum[10]; // 0-9
+
+patch_t *kart_font[KART_FONTSIZE];	// SRB2kart
+patch_t *gamemode_font[AZ_FONTSIZE];
+patch_t *file_font[AZ_FONTSIZE];
 
 // Level title and credits fonts
 patch_t *lt_font[LT_FONTSIZE];
@@ -248,6 +250,13 @@ void HU_LoadGraphics(void)
 			gamemode_font[i] = NULL;
 		else
 			gamemode_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+
+		// File select font
+		sprintf(buffer, "FILEF%.3d", j);
+		if (W_CheckNumForName(buffer) == LUMPERROR)
+			file_font[i] = NULL;
+		else
+			file_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 	}
 	//
 

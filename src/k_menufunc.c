@@ -1290,6 +1290,9 @@ void M_Ticker(void)
 		noFurtherInput = false;
 	}
 
+	if (currentMenu->tickroutine)
+		currentMenu->tickroutine();
+
 	if (dedicated)
 		return;
 
@@ -1374,7 +1377,8 @@ menu_t MessageDef =
 	0, 0,               // x, y                (TO HACK)
 	0, 0,               // transition tics
 	M_DrawMessageMenu,  // drawing routine ->
-	NULL
+	NULL,               // ticker routine
+	NULL                // quit routine
 };
 
 //
@@ -1622,7 +1626,11 @@ void M_QuitSRB2(INT32 choice)
 // Character Select!
 struct setup_chargrid_s setup_chargrid[9][9];
 setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
+struct setup_explosions_s setup_explosions[48];
+
 UINT8 setup_numplayers = 0;
+UINT16 setup_animcounter = 0;
+
 consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
 void M_CharacterSelectInit(INT32 choice)
@@ -1632,13 +1640,18 @@ void M_CharacterSelectInit(INT32 choice)
 	(void)choice;
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
-	memset(setup_player, 0, sizeof(setup_player));
-
 	for (i = 0; i < 9; i++)
 	{
 		for (j = 0; j < 9; j++)
 			setup_chargrid[i][j].numskins = 0;
 	}
+
+	memset(setup_player, 0, sizeof(setup_player));
+	setup_player[0].mdepth = CSSTEP_CHARS;
+	setup_numplayers = 1;
+
+	memset(setup_explosions, 0, sizeof(setup_explosions));
+	setup_animcounter = 0;
 
 	// Keep these in a table for the sake of my sanity later
 	setup_playercvars[0][SPLITCV_SKIN] = &cv_skin;
@@ -1680,10 +1693,54 @@ void M_CharacterSelectInit(INT32 choice)
 		}
 	}
 
-	setup_player[0].mdepth = 1;
-	setup_numplayers = 1;
-
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
+}
+
+static void M_SetupReadyExplosions(setup_player_t *p)
+{
+	UINT8 i, j;
+	UINT8 e = 0;
+
+	while (setup_explosions[e].tics)
+	{
+		e++;
+		if (e == CSEXPLOSIONS)
+			return;
+	}
+
+	for (i = 0; i < 3; i++)
+	{
+		UINT8 t = 5 + (i*2);
+		UINT8 offset = (i+1);
+
+		for (j = 0; j < 4; j++)
+		{
+			SINT8 x = p->gridx, y = p->gridy;
+
+			switch (j)
+			{
+				case 0: x += offset; break;
+				case 1: x -= offset; break;
+				case 2: y += offset; break;
+				case 3: y -= offset; break;
+			}
+
+			if ((x < 0 || x > 8) || (y < 0 || y > 8))
+				continue;
+
+			setup_explosions[e].tics = t;
+			setup_explosions[e].color = p->color;
+			setup_explosions[e].x = x;
+			setup_explosions[e].y = y;
+
+			while (setup_explosions[e].tics)
+			{
+				e++;
+				if (e == CSEXPLOSIONS)
+					return;
+			}
+		}
+	}
 }
 
 static void M_HandleCharacterGrid(INT32 choice, setup_player_t *p)
@@ -1716,17 +1773,19 @@ static void M_HandleCharacterGrid(INT32 choice, setup_player_t *p)
 			break;
 		case KEY_ENTER:
 			if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
-				S_StartSound(NULL, sfx_s3k5b);
+				S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 			else
 			{
-				p->mdepth++;
 				if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
-					p->mdepth++; // Skip clones menu
+					p->mdepth = CSSTEP_COLORS; // Skip clones menu
+				else
+					p->mdepth = CSSTEP_ALTS;
+
 				S_StartSound(NULL, sfx_s3k5b);
 			}
 			break;
 		case KEY_ESCAPE:
-			p->mdepth--;
+			p->mdepth = CSSTEP_NONE;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		default:
@@ -1744,24 +1803,24 @@ static void M_HandleCharRotate(INT32 choice, setup_player_t *p)
 			p->clonenum++;
 			if (p->clonenum >= numclones)
 				p->clonenum = 0;
-
-			//p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
-			S_StartSound(NULL, sfx_s3k5b);
+			p->rotate = CSROTATETICS;
+			p->delay = CSROTATETICS;
+			S_StartSound(NULL, sfx_s3kc3s);
 			break;
 		case KEY_LEFTARROW:
 			p->clonenum--;
 			if (p->clonenum < 0)
 				p->clonenum = numclones-1;
-
-			//p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
-			S_StartSound(NULL, sfx_s3k5b);
+			p->rotate = -CSROTATETICS;
+			p->delay = CSROTATETICS;
+			S_StartSound(NULL, sfx_s3kc3s);
 			break;
 		case KEY_ENTER:
-			p->mdepth++;
+			p->mdepth = CSSTEP_COLORS;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_ESCAPE:
-			p->mdepth--;
+			p->mdepth = CSSTEP_CHARS;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		default:
@@ -1777,22 +1836,29 @@ static void M_HandleColorRotate(INT32 choice, setup_player_t *p)
 			p->color++;
 			if (p->color >= MAXSKINCOLORS)
 				p->color = 1;
-			S_StartSound(NULL, sfx_s3k5b);
+			p->rotate = CSROTATETICS;
+			//p->delay = CSROTATETICS;
+			S_StartSound(NULL, sfx_s3kc3s);
 			break;
 		case KEY_LEFTARROW:
 			p->color--;
 			if (p->color < 1)
 				p->color = MAXSKINCOLORS-1;
-			S_StartSound(NULL, sfx_s3k5b);
+			p->rotate = -CSROTATETICS;
+			//p->delay = CSROTATETICS;
+			S_StartSound(NULL, sfx_s3kc3s);
 			break;
 		case KEY_ENTER:
-			p->mdepth++;
-			S_StartSound(NULL, sfx_s3k5b);
+			p->mdepth = CSSTEP_READY;
+			p->delay = TICRATE;
+			M_SetupReadyExplosions(p);
+			S_StartSound(NULL, sfx_s3k4e);
 			break;
 		case KEY_ESCAPE:
-			p->mdepth--;
-			if (setup_chargrid[p->gridx][p->gridy].numskins <= 1)
-				p->mdepth--; // Skip clones menu
+			if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
+				p->mdepth = CSSTEP_CHARS; // Skip clones menu
+			else
+				p->mdepth = CSSTEP_ALTS;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		default:
@@ -1811,76 +1877,98 @@ void M_CharacterSelectHandler(INT32 choice)
 		if (i > 0)
 			break; // temp
 
-		switch (p->mdepth)
+		if (p->delay == 0)
 		{
-			case 0: // Enter Game
-				if (choice == KEY_ENTER)
-					setup_player[i].mdepth++;
-				break;
-			case 1: // Character Select grid
-				M_HandleCharacterGrid(choice, p);
-				break;
-			case 2: // Select clone
-				M_HandleCharRotate(choice, p);
-				break;
-			case 3: // Select color
-				M_HandleColorRotate(choice, p);
-				break;
-			default: // Unready
-				if (choice == KEY_ESCAPE)
-					setup_player[i].mdepth--;
-				break;
+			switch (p->mdepth)
+			{
+				case CSSTEP_NONE: // Enter Game
+					if (choice == KEY_ENTER)
+						p->mdepth = CSSTEP_CHARS;
+					break;
+				case CSSTEP_CHARS: // Character Select grid
+					M_HandleCharacterGrid(choice, p);
+					break;
+				case CSSTEP_ALTS: // Select clone
+					M_HandleCharRotate(choice, p);
+					break;
+				case CSSTEP_COLORS: // Select color
+					M_HandleColorRotate(choice, p);
+					break;
+				case CSSTEP_READY:
+				default: // Unready
+					if (choice == KEY_ESCAPE)
+						p->mdepth = CSSTEP_COLORS;
+					break;
+			}
 		}
 
-		if (p->mdepth < 2)
+		if (p->mdepth < CSSTEP_ALTS)
 			p->clonenum = 0;
 
 		// Just makes it easier to access later
 		p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
 
-		if (p->mdepth < 3)
+		if (p->mdepth < CSSTEP_COLORS)
 			p->color = skins[p->skin].prefcolor;
 
-		if (p->mdepth == 0)
+		if (p->mdepth == CSSTEP_NONE)
 			break;
 		else
 			setup_numplayers = i+1;
 	}
 
 	// If the first player unjoins, then we get outta here
-	if (setup_player[0].mdepth == 0)
+	if (setup_player[0].mdepth == CSSTEP_NONE)
 	{
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu, false);
 		else
 			M_ClearMenus(true);
 	}
-	else
-	{
-		boolean setupnext = false;
+}
 
+void M_CharacterSelectTick(void)
+{
+	UINT8 i;
+	boolean setupnext = true;
+
+	setup_animcounter++;
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (setup_player[i].delay)
+			setup_player[i].delay--;
+
+		if (setup_player[i].rotate > 0)
+			setup_player[i].rotate--;
+		else if (setup_player[i].rotate < 0)
+			setup_player[i].rotate++;
+
+		if (i >= setup_numplayers)
+			continue;
+
+		if (setup_player[i].mdepth < CSSTEP_READY || setup_player[i].delay > 0)
+		{
+			// Someone's not ready yet.
+			setupnext = false;
+		}
+	}
+
+	for (i = 0; i < CSEXPLOSIONS; i++)
+	{
+		if (setup_explosions[i].tics > 0)
+			setup_explosions[i].tics--;
+	}
+
+	if (setupnext)
+	{
 		for (i = 0; i < setup_numplayers; i++)
 		{
-			if (setup_player[i].mdepth >= 4)
-				setupnext = true;
-			else
-			{
-				// Someone's not ready yet.
-				setupnext = false;
-				break;
-			}
+			CV_StealthSetValue(setup_playercvars[i][SPLITCV_SKIN], setup_player[i].skin);
+			CV_StealthSetValue(setup_playercvars[i][SPLITCV_COLOR], setup_player[i].color);
 		}
 
-		if (setupnext)
-		{
-			for (i = 0; i < setup_numplayers; i++)
-			{
-				CV_StealthSetValue(setup_playercvars[i][SPLITCV_SKIN], setup_player[i].skin);
-				CV_StealthSetValue(setup_playercvars[i][SPLITCV_COLOR], setup_player[i].color);
-			}
-
-			M_SetupNextMenu(&PLAY_MainDef, false);
-		}
+		M_SetupNextMenu(&PLAY_MainDef, false);
 	}
 }
 
