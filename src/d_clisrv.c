@@ -3626,7 +3626,7 @@ boolean SV_SpawnServer(void)
 #ifdef TESTERS
 	/* Just don't let the testers play. Easy. */
 	I_Error("What do you think you're doing?");
-	return 0;
+	return false;
 #else
 	if (demo.playback)
 		G_StopDemo(); // reset engine parameter
