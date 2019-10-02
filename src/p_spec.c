@@ -2802,7 +2802,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 423: // Change Sky
 			if ((mo && mo->player && P_IsLocalPlayer(mo->player)) || (line->flags & ML_NOCLIMB))
-				P_SetupLevelSky(sides[line->sidenum[0]].textureoffset>>FRACBITS, (line->flags & ML_NOCLIMB));
+				P_SetupLevelSky(sides[line->sidenum[0]].text, (line->flags & ML_NOCLIMB));
 			break;
 
 		case 424: // Change Weather
@@ -6692,14 +6692,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
 					sectors[s].midmap = lines[i].frontsector->midmap;
 				break;
-
-#ifdef ESLOPE // Slope copy specials. Handled here for sanity.
-			case 720:
-			case 721:
-			case 722:
-				P_CopySectorSlope(&lines[i]);
-				break;
-#endif
 
 			default:
 				break;

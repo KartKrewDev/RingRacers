@@ -1645,12 +1645,16 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->frame |= tr_trans50<<FF_TRANSSHIFT;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
+	ghost->standingslope = mobj->standingslope;
+#ifdef HWRENDER
+	ghost->modeltilt = mobj->modeltilt;
+#endif
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
 
 	if (!(mobj->flags & MF_DONTENCOREMAP))
-		mobj->flags &= ~MF_DONTENCOREMAP;
+		ghost->flags &= ~MF_DONTENCOREMAP;
 
 	return ghost;
 }
@@ -4186,27 +4190,33 @@ static void P_3dMovement(player_t *player)
 	// If "no" to 2, normalize to topspeed, so we can't suddenly run faster than it of our own accord.
 	// If "no" to 1, we're not reaching any limits yet, so ignore this entirely!
 	// -Shadow Hog
-	newMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
-	if (newMagnitude > K_GetKartSpeed(player, true)) //topspeed)
+	// Only do this forced cap of speed when in midair, the kart acceleration code takes into account friction, and
+	// doesn't let you accelerate past top speed, so this is unnecessary on the ground, but in the air is needed to
+	// allow for being able to change direction on spring jumps without being accelerated into the void - Sryder
+	if (!P_IsObjectOnGround(player->mo))
 	{
-		fixed_t tempmomx, tempmomy;
-		if (oldMagnitude > K_GetKartSpeed(player, true))
+		newMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
+		if (newMagnitude > K_GetKartSpeed(player, true)) //topspeed)
 		{
-			if (newMagnitude > oldMagnitude)
+			fixed_t tempmomx, tempmomy;
+			if (oldMagnitude > K_GetKartSpeed(player, true))
 			{
-				tempmomx = FixedMul(FixedDiv(player->mo->momx - player->cmomx, newMagnitude), oldMagnitude);
-				tempmomy = FixedMul(FixedDiv(player->mo->momy - player->cmomy, newMagnitude), oldMagnitude);
+				if (newMagnitude > oldMagnitude)
+				{
+					tempmomx = FixedMul(FixedDiv(player->mo->momx - player->cmomx, newMagnitude), oldMagnitude);
+					tempmomy = FixedMul(FixedDiv(player->mo->momy - player->cmomy, newMagnitude), oldMagnitude);
+					player->mo->momx = tempmomx + player->cmomx;
+					player->mo->momy = tempmomy + player->cmomy;
+				}
+				// else do nothing
+			}
+			else
+			{
+				tempmomx = FixedMul(FixedDiv(player->mo->momx - player->cmomx, newMagnitude), K_GetKartSpeed(player, true)); //topspeed)
+				tempmomy = FixedMul(FixedDiv(player->mo->momy - player->cmomy, newMagnitude), K_GetKartSpeed(player, true)); //topspeed)
 				player->mo->momx = tempmomx + player->cmomx;
 				player->mo->momy = tempmomy + player->cmomy;
 			}
-			// else do nothing
-		}
-		else
-		{
-			tempmomx = FixedMul(FixedDiv(player->mo->momx - player->cmomx, newMagnitude), K_GetKartSpeed(player, true)); //topspeed)
-			tempmomy = FixedMul(FixedDiv(player->mo->momy - player->cmomy, newMagnitude), K_GetKartSpeed(player, true)); //topspeed)
-			player->mo->momx = tempmomx + player->cmomx;
-			player->mo->momy = tempmomy + player->cmomy;
 		}
 	}
 }

@@ -447,7 +447,7 @@ static void D_Display(void)
 					{
 						if (i > 0) // Splitscreen-specific
 						{
-							switch (i) 
+							switch (i)
 							{
 								case 1:
 									if (splitscreen > 1)
@@ -896,11 +896,18 @@ static void IdentifyVersion(void)
 	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"), startupwadfiles);
 	D_AddFile(va(pandf,srb2waddir,"textures.pk3"), startupwadfiles);
 	D_AddFile(va(pandf,srb2waddir,"chars.pk3"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"maps.wad"), startupwadfiles); // TODO: make this a pk3 too!
+	D_AddFile(va(pandf,srb2waddir,"maps.pk3"), startupwadfiles);
 #ifdef USE_PATCH_FILE
 	D_AddFile(va(pandf,srb2waddir,"patch.pk3"), startupwadfiles);
 #endif
 
+#if 0
+	// TODO: pk3 doesn't support music replacement IIRC
+	// music barely benefits from the compression anyway
+	// would be nice for the folders, though
+	D_AddFile(va(pandf,srb2waddir,"sounds.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"music.pk3"), startupwadfiles);
+#else
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 #define MUSICTEST(str) \
 	{\
@@ -914,6 +921,7 @@ static void IdentifyVersion(void)
 	MUSICTEST("sounds.wad")
 	MUSICTEST("music.wad")
 #undef MUSICTEST
+#endif
 #endif
 }
 
@@ -1182,12 +1190,12 @@ void D_SRB2Main(void)
 	M_InitCharacterTables();
 
 	// load wad, including the main wad file
-	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
+	CONS_Printf("W_InitMultipleFiles(): Adding main IWAD and PWADs.\n");
 	if (!W_InitMultipleFiles(startupwadfiles, false))
 #ifdef _DEBUG
-		CONS_Error("A WAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		CONS_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #else
-		I_Error("A WAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		I_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #endif
 	D_CleanFile(startupwadfiles);
 
@@ -1200,7 +1208,7 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);			// gfx.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_PK3);		// textures.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);		// chars.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_WAD);			// maps.wad -- 4 - If you touch this, make sure to touch up the majormods stuff below.
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);			// maps.pk3 -- 4 - If you touch this, make sure to touch up the majormods stuff below.
 #ifdef USE_PATCH_FILE
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
@@ -1208,7 +1216,7 @@ void D_SRB2Main(void)
 	mainwads++;	// gfx.pk3
 	mainwads++;	// textures.pk3
 	mainwads++;	// chars.pk3
-	mainwads++;	// maps.wad
+	mainwads++;	// maps.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
 #endif
@@ -1241,8 +1249,9 @@ void D_SRB2Main(void)
 		}
 	}
 
+	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
 	if (!W_InitMultipleFiles(startuppwads, true))
-		CONS_Error("A PWAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		M_StartMessage(M_GetText("A PWAD file was not found or not valid.\nCheck log.txt to see which ones.\n\nPress ESC\n"), NULL, MM_NOTHING);
 	D_CleanFile(startuppwads);
 
 	//

@@ -2386,7 +2386,7 @@ void HU_Drawer(void)
 	}*/
 
 	// draw song credits
-	if (cv_songcredits.value)
+	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
 		HU_DrawSongCredits();
 
 	// draw desynch text
