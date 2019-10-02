@@ -61,7 +61,7 @@
 #include "../i_system.h"
 #include "../v_video.h"
 #include "../m_argv.h"
-#include "../m_menu.h"
+#include "../k_menu.h"
 #include "../d_main.h"
 #include "../s_sound.h"
 #include "../i_sound.h"  	// midi pause/unpause
@@ -1081,9 +1081,11 @@ void I_GetEvent(void)
 					CONS_Debug(DBG_GAMELOGIC, "Joystick3 device index: %d\n", JoyInfo3.oldjoy);
 					CONS_Debug(DBG_GAMELOGIC, "Joystick4 device index: %d\n", JoyInfo4.oldjoy);
 
+#if 0
 					// update the menu
 					if (currentMenu == &OP_JoystickSetDef)
 						M_SetupJoystickMenu(0);
+#endif
 
 					if (JoyInfo.dev != newjoy && JoyInfo2.dev != newjoy && JoyInfo3.dev != newjoy && JoyInfo4.dev != newjoy)
 						SDL_JoystickClose(newjoy);
@@ -1242,9 +1244,11 @@ void I_GetEvent(void)
 				CONS_Debug(DBG_GAMELOGIC, "Joystick3 device index: %d\n", JoyInfo3.oldjoy);
 				CONS_Debug(DBG_GAMELOGIC, "Joystick4 device index: %d\n", JoyInfo4.oldjoy);
 
+#if 0
 				// update the menu
 				if (currentMenu == &OP_JoystickSetDef)
 					M_SetupJoystickMenu(0);
+#endif
 				break;
 			case SDL_QUIT:
 				I_Quit();

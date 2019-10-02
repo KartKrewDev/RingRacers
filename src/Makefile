@@ -467,7 +467,6 @@ DBGNAME?=$(EXENAME).debug
 # $(OBJDIR)/dstrings.o \
 
 # not too sophisticated dependency
-# SRB2kart kart.o on line 433 below
 OBJS:=$(i_main_o) \
 		$(OBJDIR)/comptime.o \
 		$(OBJDIR)/string.o   \
@@ -496,7 +495,9 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/m_cheat.o  \
 		$(OBJDIR)/m_cond.o   \
 		$(OBJDIR)/m_fixed.o  \
-		$(OBJDIR)/m_menu.o   \
+		$(OBJDIR)/k_menudef.o \
+		$(OBJDIR)/k_menufunc.o \
+		$(OBJDIR)/k_menudraw.o \
 		$(OBJDIR)/m_misc.o   \
 		$(OBJDIR)/m_random.o \
 		$(OBJDIR)/m_queue.o  \

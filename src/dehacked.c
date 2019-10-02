@@ -19,7 +19,7 @@
 #include "m_argv.h"
 #include "z_zone.h"
 #include "w_wad.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "filesrch.h" // for refreshdirmenu
 #include "f_finale.h"
@@ -34,6 +34,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "d_clisrv.h"
+#include "r_things.h"
 
 #include "m_cond.h"
 
@@ -432,7 +433,8 @@ static void readAnimTex(MYFILE *f, INT32 num)
 }
 */
 
-static boolean findFreeSlot(INT32 *num)
+#ifdef USEPLAYERMENU
+static boolean findPlayerFreeSlot(INT32 *num)
 {
 	// Send the character select entry to a free slot.
 	while (*num < MAXSKINS && PlayerMenu[*num].status != IT_DISABLED)
@@ -475,7 +477,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 			{
 				char *playertext = NULL;
 
-				if (!slotfound && (slotfound = findFreeSlot(&num)) == false)
+				if (!slotfound && (slotfound = findPlayerFreeSlot(&num)) == false)
 					goto done;
 				PlayerMenu[num].status = IT_CALL;
 
@@ -525,7 +527,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 
 			/*if (fastcmp(word, "PLAYERNAME"))
 			{
-				if (!slotfound && (slotfound = findFreeSlot(&num)) == false)
+				if (!slotfound && (slotfound = findPlayerFreeSlot(&num)) == false)
 					goto done;
 				DEH_WriteUndoline(word, description[num].text, UNDO_NONE);
 				strlcpy(description[num].text, word2, sizeof (description[num].text));
@@ -547,7 +549,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 			} */
 			/*else*/ if (fastcmp(word, "PICNAME"))
 			{
-				if (!slotfound && (slotfound = findFreeSlot(&num)) == false)
+				if (!slotfound && (slotfound = findPlayerFreeSlot(&num)) == false)
 					goto done;
 				DEH_WriteUndoline(word, &description[num].picname[0], UNDO_NONE);
 				PlayerMenu[num].status = IT_CALL;
@@ -571,7 +573,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 					... Or use MENUPOSITION first, that works too. Hell, you could edit multiple character
 					slots in a single section that way, due to how SOC editing works.
 				*/
-				if (i != IT_DISABLED && !slotfound && (slotfound = findFreeSlot(&num)) == false)
+				if (i != IT_DISABLED && !slotfound && (slotfound = findPlayerFreeSlot(&num)) == false)
 					goto done;
 				DEH_WriteUndoline(word, va("%d", PlayerMenu[num].status), UNDO_NONE);
 				PlayerMenu[num].status = (INT16)i;
@@ -579,7 +581,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "SKINNAME"))
 			{
 				// Send to free slot.
-				if (!slotfound && (slotfound = findFreeSlot(&num)) == false)
+				if (!slotfound && (slotfound = findPlayerFreeSlot(&num)) == false)
 					goto done;
 				DEH_WriteUndoline(word, description[num].skinname, UNDO_NONE);
 				PlayerMenu[num].status = IT_CALL;
@@ -600,6 +602,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 done:
 	Z_Free(s);
 }
+#endif
 
 static int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
 
@@ -3452,6 +3455,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				continue;
 			}
 			word2 = strtok(NULL, " ");
+#ifdef USEPLAYERMENU
 			if (fastcmp(word, "CHARACTER"))
 			{
 				if (word2) {
@@ -3472,6 +3476,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				// This is not a major mod.
 				continue;
 			}
+#endif
 			if (word2)
 			{
 				strupr(word2);
@@ -8933,8 +8938,7 @@ struct {
 	{"CV_SHOWMODIF",CV_SHOWMODIF},
 	{"CV_SHOWMODIFONETIME",CV_SHOWMODIFONETIME},
 	{"CV_NOSHOWHELP",CV_NOSHOWHELP},
-	{"CV_HIDEN",CV_HIDEN},
-	{"CV_HIDDEN",CV_HIDEN},
+	{"CV_HIDDEN",CV_HIDDEN},
 	{"CV_CHEAT",CV_CHEAT},
 
 	// v_video flags

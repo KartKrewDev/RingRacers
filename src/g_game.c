@@ -30,7 +30,7 @@
 #include "g_game.h"
 #include "m_cheat.h"
 #include "m_misc.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_argv.h"
 #include "hu_stuff.h"
 #include "st_stuff.h"
@@ -3831,9 +3831,11 @@ void G_AfterIntermission(void)
 	{
 		G_StopDemo();
 
+#if 0
 		if (demo.inreplayhut)
 			M_ReplayHut(0);
 		else
+#endif
 			D_StartTitle();
 
 		return;
@@ -4327,7 +4329,7 @@ static void M_ForceLoadGameResponse(INT32 ch)
 		Z_Free(savebuffer);
 		save_p = savebuffer = NULL;
 		startonmapnum = 0;
-		M_SetupNextMenu(&SP_LoadDef);
+		M_SetupNextMenu(&SP_LoadDef, false);
 		return;
 	}
 

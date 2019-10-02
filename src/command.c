@@ -21,7 +21,7 @@
 #include "command.h"
 #include "console.h"
 #include "z_zone.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "m_fixed.h"
 #include "m_argv.h"
@@ -75,7 +75,7 @@ CV_PossibleValue_t kartspeed_cons_t[] = {
 
 // Filter consvars by EXECVERSION
 // First implementation is 2 (1.0.2), so earlier configs default at 1 (1.0.0)
-// Also set CV_HIDEN during runtime, after config is loaded
+// Also set CV_HIDDEN during runtime, after config is loaded
 
 static boolean execversion_enabled = false;
 consvar_t cv_execversion = {"execversion","1",CV_CALL,CV_Unsigned, CV_EnforceExecVersion, 0, NULL, NULL, 0, 0, NULL};
@@ -1112,7 +1112,7 @@ void CV_RegisterVar(consvar_t *variable)
 	}
 
 	// link the variable in
-	if (!(variable->flags & CV_HIDEN))
+	if (!(variable->flags & CV_HIDDEN))
 	{
 		variable->next = consvar_vars;
 		consvar_vars = variable;
@@ -1628,6 +1628,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 	if (var->PossibleValue)
 	{
+#if 0
 		if (var == &cv_nextmap)
 		{
 			// Special case for the nextmap variable, used only directly from the menu
@@ -1662,9 +1663,12 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				return;
 			}
 		}
+		else
+#endif
+
 #define MINVAL 0
 #define MAXVAL 1
-		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
+		if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
 		{ // SRB2Kart
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)

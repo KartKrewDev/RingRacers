@@ -24,7 +24,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "i_system.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "dehacked.h"
 #include "g_input.h"
 #include "console.h"

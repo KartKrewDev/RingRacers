@@ -32,7 +32,7 @@
 #include "d_netfil.h"
 #include "m_misc.h"
 #include "z_zone.h"
-#include "m_menu.h" // Addons_option_Onchange
+#include "k_menu.h" // Addons_option_Onchange
 
 #if (defined (_WIN32) && !defined (_WIN32_WCE)) && defined (_MSC_VER) && !defined (_XBOX)
 

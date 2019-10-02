@@ -26,7 +26,7 @@
 #include "z_zone.h"
 
 #include "i_system.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "console.h"
 #include "d_main.h"
 #include "m_misc.h" // movie mode

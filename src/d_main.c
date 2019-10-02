@@ -52,7 +52,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "i_system.h"
 #include "i_video.h"
 #include "m_argv.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "p_setup.h"
 #include "p_saveg.h"
@@ -1187,7 +1187,9 @@ void D_SRB2Main(void)
 
 	// Setup character tables
 	// Have to be done here before files are loaded
+#ifdef USEPLAYERMENU
 	M_InitCharacterTables();
+#endif
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding main IWAD and PWADs.\n");

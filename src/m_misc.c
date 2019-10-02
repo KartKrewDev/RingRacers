@@ -42,7 +42,7 @@
 #include "m_anigif.h"
 
 // So that the screenshot menu auto-updates...
-#include "m_menu.h"
+#include "k_menu.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"

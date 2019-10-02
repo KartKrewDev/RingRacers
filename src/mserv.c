@@ -87,7 +87,7 @@
 #include "i_tcp.h"
 #include "i_system.h"
 #include "byteptr.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_argv.h" // Alam is going to kill me <3
 #include "m_misc.h" //  GetRevisionString()
 

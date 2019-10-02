@@ -15,7 +15,7 @@
 #include "byteptr.h"
 #include "hu_stuff.h"
 
-#include "m_menu.h" // gametype_cons_t
+#include "k_menu.h" // gametype_cons_t
 #include "m_cond.h" // emblems
 
 #include "d_clisrv.h"
@@ -111,7 +111,7 @@ static patch_t *tokenicon;
 //              misc vars
 //-------------------------------------------
 
-// crosshair 0 = off, 1 = cross, 2 = angle, 3 = point, see m_menu.c
+// crosshair 0 = off, 1 = cross, 2 = angle, 3 = point, see k_menu.c
 static patch_t *crosshair[HU_CROSSHAIRS]; // 3 precached crosshair graphics
 // song credits
 static patch_t *songcreditbg;
@@ -1624,7 +1624,7 @@ static void HU_drawChatLog(INT32 offset)
 	INT32 x = chatx+2, y, dx = 0, dy = 0;
 	UINT32 i = 0;
 	INT32 chat_topy, chat_bottomy;
-	INT32 highlight = HU_GetHighlightColor();
+	INT32 highlight = V_YELLOWMAP;
 	boolean atbottom = false;
 
 	// make sure that our scroll position isn't "illegal";
@@ -2947,9 +2947,7 @@ static void HU_DrawRankings(void)
 
 	V_DrawFadeScreen(0xFF00, 16); // A little more readable, and prevents cheating the fades under other circumstances.
 
-	if (cons_menuhighlight.value)
-		hilicol = cons_menuhighlight.value;
-	else if (modeattacking)
+	if (modeattacking)
 		hilicol = V_ORANGEMAP;
 	else
 		hilicol = ((gametype == GT_RACE) ? V_SKYMAP : V_REDMAP);

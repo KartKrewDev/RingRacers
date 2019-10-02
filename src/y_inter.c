@@ -26,7 +26,7 @@
 #include "w_wad.h"
 #include "y_inter.h"
 #include "z_zone.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "i_system.h"
 #include "p_setup.h"
@@ -39,7 +39,6 @@
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PLAYER1INPUTDOWN
 #include "k_kart.h" // colortranslations
-#include "console.h" // cons_menuhighlight
 #include "lua_hook.h" // IntermissionThinker hook
 
 #ifdef HWRENDER
@@ -363,9 +362,7 @@ void Y_IntermissionDrawer(void)
 	if (!splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
-	if (cons_menuhighlight.value)
-		hilicol = cons_menuhighlight.value;
-	else if (modeattacking)
+	if (modeattacking)
 		hilicol = V_ORANGEMAP;
 	else
 		hilicol = ((intertype == int_race) ? V_SKYMAP : V_REDMAP);
@@ -1198,9 +1195,7 @@ void Y_VoteDrawer(void)
 	if (timer)
 	{
 		INT32 hilicol, tickdown = (timer+1)/TICRATE;
-		if (cons_menuhighlight.value)
-			hilicol = cons_menuhighlight.value;
-		else if (gametype == GT_RACE)
+		if (gametype == GT_RACE)
 			hilicol = V_SKYMAP;
 		else //if (gametype == GT_MATCH)
 			hilicol = V_REDMAP;

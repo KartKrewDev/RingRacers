@@ -28,7 +28,7 @@
 #include "hu_stuff.h"
 #include "keys.h"
 #include "g_input.h" // JOY1
-#include "m_menu.h"
+#include "k_menu.h"
 #include "console.h"
 #include "d_netfil.h"
 #include "byteptr.h"
