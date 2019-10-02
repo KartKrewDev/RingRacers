@@ -4914,7 +4914,6 @@ void G_ReadDemoExtraData(void)
 			kartspeed = READUINT8(demo_p);
 			kartweight = READUINT8(demo_p);
 
-
 			if (stricmp(skins[players[p].skin].name, name) != 0)
 				FindClosestSkinForStats(p, kartspeed, kartweight);
 
@@ -7197,6 +7196,19 @@ void G_DoPlayDemo(char *defdemoname)
 	// Random seed
 	randseed = READUINT32(demo_p);
 	demo_p += 4; // Extrainfo location
+
+	// ...*map* not loaded?
+	if (!gamemap || (gamemap > NUMMAPS) || !mapheaderinfo[gamemap-1] || !(mapheaderinfo[gamemap-1]->menuflags & LF2_EXISTSHACK))
+	{
+		snprintf(msg, 1024, M_GetText("%s features a course that is not currently loaded.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage(msg, NULL, MM_NOTHING);
+		Z_Free(pdemoname);
+		Z_Free(demobuffer);
+		demo.playback = false;
+		demo.title = false;
+		return;
+	}
 
 	// net var data
 	CV_LoadNetVars(&demo_p);
