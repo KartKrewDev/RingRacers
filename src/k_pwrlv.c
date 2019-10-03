@@ -120,7 +120,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 		case PWRLV_RACE:
 			if (cv_kartspeed.value == -1 || cv_kartencore.value == -1)
 			{
-				boolean hardmode = false;
+				UINT8 speed = cv_kartspeed.defaultvalue;
 				boolean encore = false;
 				INT16 avg = 0, min = 0;
 				UINT8 i, t = 0;
@@ -167,28 +167,29 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 				switch (t)
 				{
 					case 4:
-						hardmode = encore = true;
+						speed = 2;
+						encore = true;
 						break;
 					case 3:
-						hardmode = true;
+						speed = M_RandomChance((7<<FRACBITS)/10) ? 2 : 1;
 						encore = M_RandomChance(FRACUNIT>>1);
 						break;
 					case 2:
-						hardmode = M_RandomChance((7<<FRACBITS)/10);
+						speed = M_RandomChance((3<<FRACBITS)/10) ? 2 : 1;
 						encore = M_RandomChance(FRACUNIT>>2);
 						break;
-					case 1:
-						hardmode = M_RandomChance((3<<FRACBITS)/10);
+					case 1: default:
+						speed = 1;
 						encore = false;
 						break;
 					case 0:
-					default:
-						hardmode = encore = false;
+						speed = M_RandomChance((3<<FRACBITS)/10) ? 0 : 1;
+						encore = false;
 						break;
 				}
 
 				if (cv_kartspeed.value == -1)
-					speedscramble = (hardmode ? 2 : 1);
+					speedscramble = speed;
 				else
 					speedscramble = -1;
 
