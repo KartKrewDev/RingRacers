@@ -59,6 +59,8 @@
 #include "../z_zone.h"
 #include "../g_input.h"
 
+#include "../k_pwrlv.h"
+
 #include "../console.h"
 
 #ifdef __GNUG__
@@ -618,6 +620,11 @@ void I_Quit (void)
 #ifndef NONET
 	D_SaveBan(); // save the ban list
 #endif
+
+	// Make sure you lose points for ALT-F4
+	if (Playing())
+		K_PlayerForfeit(consoleplayer, true);
+
 	G_SaveGameData(); // Tails 12-08-2002
 	if (demorecording)
 		G_CheckDemoStatus();

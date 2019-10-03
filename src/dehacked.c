@@ -2553,6 +2553,19 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
 	}
+	else if ((offset=0) || fastcmp(params[0], "POWERLEVEL"))
+	{
+		PARAMCHECK(2);
+		ty = UC_POWERLEVEL;
+		re = atoi(params[1]);
+		x1 = atoi(params[2]);
+
+		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
+		{
+			deh_warning("Power level type %d out of range (0 - %d)", x1, PWRLV_NUMTYPES-1);
+			return;
+		}
+	}
 	else if ((offset=0) || fastcmp(params[0], "GAMECLEAR")
 	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
 	//||        (++offset && fastcmp(params[0], "ULTIMATECLEAR")))
@@ -2605,7 +2618,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (x1 < 0 || x1 >= NUMMAPS)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
+			deh_warning("Level number %d out of range (1 - %d)", x1, NUMMAPS);
 			return;
 		}
 	}

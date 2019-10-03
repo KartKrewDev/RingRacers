@@ -47,6 +47,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_pwrlv.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -1350,7 +1351,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.cheatsenabled = CV_CheatsEnabled();
 
 	netbuffer->u.serverinfo.kartvars = (UINT8) (
-		(cv_kartspeed.value & SV_SPEEDMASK) |
+		(gamespeed & SV_SPEEDMASK) |
 		(dedicated ? SV_DEDICATED : 0) |
 		(D_IsJoinPasswordOn() ? SV_PASSWORD : 0)
 	);
@@ -1419,6 +1420,11 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.actnum = 0; //mapheaderinfo[gamemap-1]->actnum
 
 	p = PutFileNeeded(0);
+
+	if (cv_kartusepwrlv.value)
+		netbuffer->u.serverinfo.avgpwrlv = K_CalculatePowerLevelAvg();
+	else
+		netbuffer->u.serverinfo.avgpwrlv = -1;
 
 	HSendPacket(node, false, 0, p - ((UINT8 *)&netbuffer->u));
 }
@@ -1494,7 +1500,7 @@ static void SV_SendPlayerInfo(INT32 node)
   */
 static boolean SV_SendServerConfig(INT32 node)
 {
-	INT32 i;
+	INT32 i, j;
 	UINT8 *p, *op;
 	boolean waspacketsent;
 
@@ -1517,10 +1523,13 @@ static boolean SV_SendServerConfig(INT32 node)
 	memset(netbuffer->u.servercfg.playercolor, 0xFF, sizeof(netbuffer->u.servercfg.playercolor));
 
 	memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
+	memset(netbuffer->u.servercfg.powerlevels, 0, sizeof(netbuffer->u.servercfg.powerlevels));
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		netbuffer->u.servercfg.adminplayers[i] = (SINT8)adminplayers[i];
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
+			netbuffer->u.servercfg.powerlevels[i][j] = clientpowerlevels[i][j];
 
 		if (!playeringame[i])
 			continue;
@@ -2306,6 +2315,7 @@ static void CL_ConnectToServer(boolean viams)
 	wipegamestate = GS_WAITINGPLAYERS;
 
 	ClearAdminPlayers();
+	K_ClearClientPowerLevels();
 	pnumnodes = 1;
 	oldtic = I_GetTime() - 1;
 #ifndef NONET
@@ -3156,6 +3166,21 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			break;
 	}
 
+	// SRB2Kart: kicks count as forfeit
+	switch (kickreason)
+	{
+		case KR_KICK:
+		case KR_BAN:
+		case KR_LEAVE:
+			// Intentional removals should be hit with a true forfeit.
+			K_PlayerForfeit(pnum, true);
+			break;
+		default:
+			// Otherwise, give remaining players the point compensation, but doesn't penalize who left.
+			K_PlayerForfeit(pnum, false);
+			break;
+	}
+
 	if (playernode[pnum] == playernode[consoleplayer])
 	{
 #ifdef DUMPCONSISTENCY
@@ -3324,6 +3349,7 @@ void SV_ResetServer(void)
 		playernode[i] = UINT8_MAX;
 		sprintf(player_names[i], "Player %d", i + 1);
 		adminplayers[i] = -1; // Populate the entire adminplayers array with -1.
+		K_ClearClientPowerLevels();
 	}
 
 	mynode = 0;
@@ -3399,6 +3425,7 @@ void D_QuitNetGame(void)
 
 	D_CloseConnection();
 	ClearAdminPlayers();
+	K_ClearClientPowerLevels();
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"
@@ -3445,11 +3472,12 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		return;
 	}
 
-	node = READUINT8(*p);
-	newplayernum = READUINT8(*p);
-	splitscreenplayer = newplayernum/MAXPLAYERS;
-	newplayernum %= MAXPLAYERS;
+	node = (UINT8)READUINT8(*p);
+	newplayernum = (UINT8)READUINT8(*p);
+	splitscreenplayer = (UINT8)READUINT8(*p);
 
+	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d %d\n", node, newplayernum, splitscreenplayer);
+	
 	// Clear player before joining, lest some things get set incorrectly
 	CL_ClearPlayer(newplayernum);
 
@@ -3466,7 +3494,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		if (splitscreenplayer)
 		{
 			displayplayers[splitscreenplayer] = newplayernum;
-			DEBFILE(va("spawning one of my sister number %d\n", splitscreenplayer));
+			DEBFILE(va("spawning sister # %d\n", splitscreenplayer));
 			if (splitscreenplayer == 1 && botingame)
 				players[newplayernum].bot = 1;
 		}
@@ -3477,6 +3505,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 				displayplayers[i] = newplayernum;
 			DEBFILE("spawning me\n");
 		}
+
 		D_SendPlayerConfig();
 		addedtogame = true;
 	}
@@ -3532,7 +3561,6 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 static boolean SV_AddWaitingPlayers(void)
 {
 	INT32 node, n, newplayer = false;
-	XBOXSTATIC UINT8 buf[2];
 	UINT8 newplayernum = 0;
 
 	// What is the reason for this? Why can't newplayernum always be 0?
@@ -3545,6 +3573,9 @@ static boolean SV_AddWaitingPlayers(void)
 		// splitscreen can allow 2+ players in one node
 		for (; nodewaiting[node] > 0; nodewaiting[node]--)
 		{
+			UINT8 buf[3];
+			UINT8 *buf_p = buf;
+
 			newplayer = true;
 
 			// search for a free playernum
@@ -3552,8 +3583,10 @@ static boolean SV_AddWaitingPlayers(void)
 			for (; newplayernum < MAXPLAYERS; newplayernum++)
 			{
 				for (n = 0; n < MAXNETNODES; n++)
-					if (nodetoplayer[n] == newplayernum || nodetoplayer2[n] == newplayernum
-						|| nodetoplayer3[n] == newplayernum || nodetoplayer4[n] == newplayernum)
+					if (nodetoplayer[n] == newplayernum
+					|| nodetoplayer2[n] == newplayernum
+					|| nodetoplayer3[n] == newplayernum
+					|| nodetoplayer4[n] == newplayernum)
 						break;
 				if (n == MAXNETNODES)
 					break;
@@ -3565,28 +3598,23 @@ static boolean SV_AddWaitingPlayers(void)
 
 			playernode[newplayernum] = (UINT8)node;
 
-			buf[0] = (UINT8)node;
-			buf[1] = newplayernum;
+			WRITEUINT8(buf_p, (UINT8)node);
+			WRITEUINT8(buf_p, newplayernum);
+
 			if (playerpernode[node] < 1)
 				nodetoplayer[node] = newplayernum;
 			else if (playerpernode[node] < 2)
-			{
 				nodetoplayer2[node] = newplayernum;
-				buf[1] += MAXPLAYERS;
-			}
 			else if (playerpernode[node] < 3)
-			{
 				nodetoplayer3[node] = newplayernum;
-				buf[1] += MAXPLAYERS*2;
-			}
-			else
-			{
+			else if (playerpernode[node] < 4)
 				nodetoplayer4[node] = newplayernum;
-				buf[1] += MAXPLAYERS*3;
-			}
+
+			WRITEUINT8(buf_p, playerpernode[node]); // splitscreen num
+
 			playerpernode[node]++;
 
-			SendNetXCmd(XD_ADDPLAYER, &buf, 2);
+			SendNetXCmd(XD_ADDPLAYER, buf, buf_p - buf);
 
 			DEBFILE(va("Server added player %d node %d\n", newplayernum, node));
 			// use the next free slot (we can't put playeringame[newplayernum] = true here)
@@ -4081,7 +4109,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 		case PT_SERVERCFG: // Positive response of client join request
 		{
-			INT32 j;
+			INT32 j, k;
 			UINT8 *scp;
 
 			if (server && serverrunning && node != servernode)
@@ -4104,7 +4132,11 @@ static void HandlePacketFromAwayNode(SINT8 node)
 					I_Error("Bad gametype in cliserv!");
 				modifiedgame = netbuffer->u.servercfg.modifiedgame;
 				for (j = 0; j < MAXPLAYERS; j++)
+				{
 					adminplayers[j] = netbuffer->u.servercfg.adminplayers[j];
+					for (k = 0; k < PWRLV_NUMTYPES; k++)
+						clientpowerlevels[j][k] = netbuffer->u.servercfg.powerlevels[j][k];
+				}
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
 

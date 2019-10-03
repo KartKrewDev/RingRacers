@@ -4,6 +4,8 @@
 /// \brief SRB2kart general.
 ///        All of the SRB2kart-unique stuff.
 
+#include "k_kart.h"
+#include "k_pwrlv.h"
 #include "doomdef.h"
 #include "hu_stuff.h"
 #include "g_game.h"
@@ -18,7 +20,6 @@
 #include "z_zone.h"
 #include "m_misc.h"
 #include "m_cond.h"
-#include "k_kart.h"
 #include "f_finale.h"
 #include "lua_hud.h"	// For Lua hud checks
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
@@ -31,8 +32,6 @@
 // battlewanted is an array of the WANTED player nums, -1 for no player in that slot
 // indirectitemcooldown is timer before anyone's allowed another Shrink/SPB
 // mapreset is set when enough players fill an empty server
-// nospectategrief is the players in-game needed to eliminate the person in last
-
 
 //{ SRB2kart Color Code
 
@@ -580,6 +579,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartspeedometer);
 	CV_RegisterVar(&cv_kartvoices);
 	CV_RegisterVar(&cv_karteliminatelast);
+	CV_RegisterVar(&cv_kartusepwrlv);
 	CV_RegisterVar(&cv_votetime);
 
 	CV_RegisterVar(&cv_kartdebugitem);
