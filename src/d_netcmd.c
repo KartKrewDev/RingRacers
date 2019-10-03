@@ -2395,7 +2395,7 @@ void D_SetupVote(void)
 	UINT8 secondgt = G_SometimesGetDifferentGametype();
 	INT16 votebuffer[3] = {-1,-1,-1};
 
-	if (cv_kartencore.value && G_RaceGametype())
+	if ((cv_kartencore.value == 1) && G_RaceGametype())
 		WRITEUINT8(p, (gametype|0x80));
 	else
 		WRITEUINT8(p, gametype);
@@ -2566,7 +2566,7 @@ static void Command_Map_f(void)
 	// new encoremode value
 	// use cvar by default
 
-	newencoremode = (boolean)cv_kartencore.value;
+	newencoremode = (cv_kartencore.value == 1);
 
 	if (COM_CheckParm("-encore"))
 	{
@@ -5802,10 +5802,10 @@ static void KartEncore_OnChange(void)
 {
 	if (G_RaceGametype())
 	{
-		if ((boolean)cv_kartencore.value != encoremode && gamestate == GS_LEVEL /*&& leveltime > starttime*/)
-			CONS_Printf(M_GetText("Encore Mode will be turned %s next round.\n"), cv_kartencore.value ? M_GetText("on") : M_GetText("off"));
+		if ((cv_kartencore.value == 1) != encoremode && gamestate == GS_LEVEL /*&& leveltime > starttime*/)
+			CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
 		else
-			CONS_Printf(M_GetText("Encore Mode has been turned %s.\n"), cv_kartencore.value ? M_GetText("on") : M_GetText("off"));
+			CONS_Printf(M_GetText("Encore Mode has been set to %s.\n"), cv_kartencore.string);
 	}
 }
 

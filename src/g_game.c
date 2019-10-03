@@ -2340,7 +2340,7 @@ void G_Ticker(boolean run)
 
 			G_DoReborn(consoleplayer);*/
 
-			D_MapChange(gamemap, gametype, cv_kartencore.value, true, 1, false, false);
+			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), true, 1, false, false);
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -3426,7 +3426,7 @@ INT16 G_SometimesGetDifferentGametype(void)
 						break;
 				}
 			}
-			if (encorepossible != (boolean)cv_kartencore.value)
+			if (encorepossible != (cv_kartencore.value == 1))
 				return (gametype|0x80);
 		}
 		return gametype;
@@ -3903,7 +3903,7 @@ void G_NextLevel(void)
 		}
 
 		forceresetplayers = false;
-		deferencoremode = (boolean)cv_kartencore.value;
+		deferencoremode = (cv_kartencore.value == 1);
 	}
 
 	gameaction = ga_worlddone;

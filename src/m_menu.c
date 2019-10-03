@@ -8644,11 +8644,11 @@ static void M_StartServer(INT32 choice)
 		paused = false;
 		SV_StartSinglePlayerServer();
 		multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-		D_MapChange(cv_nextmap.value, cv_newgametype.value, (boolean)cv_kartencore.value, 1, 1, false, false);
+		D_MapChange(cv_nextmap.value, cv_newgametype.value, (cv_kartencore.value == 1), 1, 1, false, false);
 	}
 	else
 	{
-		D_MapChange(cv_nextmap.value, cv_newgametype.value, (boolean)cv_kartencore.value, 1, 1, false, false);
+		D_MapChange(cv_nextmap.value, cv_newgametype.value, (cv_kartencore.value == 1), 1, 1, false, false);
 		COM_BufAddText("dummyconsvar 1\n");
 	}
 
@@ -8685,7 +8685,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 
 	V_DrawFill(x-1, y-1, w+2, i+2, trans); // variable reuse...
 
-	if (!cv_kartencore.value || gamestate == GS_TIMEATTACK || cv_newgametype.value != GT_RACE)
+	if ((cv_kartencore.value != 1) || gamestate == GS_TIMEATTACK || cv_newgametype.value != GT_RACE)
 		V_DrawSmallScaledPatch(x, y, 0, PictureOfLevel);
 	else
 	{
