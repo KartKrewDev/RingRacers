@@ -2403,6 +2403,8 @@ static void P_LevelInitStuff(void)
 
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = -1;
+
+	memset(&battleovertime, 0, sizeof(struct battleovertime));
 }
 
 //

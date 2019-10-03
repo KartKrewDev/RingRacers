@@ -664,6 +664,8 @@ void P_Ticker(boolean run)
 	if (run)
 	{
 		P_RunThinkers();
+		if (G_BattleGametype() && battleovertime.enabled)
+			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -821,6 +823,8 @@ void P_PreTicker(INT32 frames)
 			}
 
 		P_RunThinkers();
+		if (G_BattleGametype() && battleovertime.enabled)
+			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
