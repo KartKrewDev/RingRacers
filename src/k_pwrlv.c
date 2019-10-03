@@ -133,30 +133,37 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 						min = clientpowerlevels[i][0];
 				}
 
-				if (min >= 6000)
+				if (min >= 7800)
 				{
-					if (avg >= 8000)
+					if (avg >= 8200)
+						t = 5;
+					else
+						t = 4;
+				}
+				else if (min >= 6800)
+				{
+					if (avg >= 7200)
 						t = 4;
 					else
 						t = 3;
 				}
-				else if (min >= 4000)
+				else if (min >= 5800)
 				{
-					if (avg >= 5000)
+					if (avg >= 6200)
 						t = 3;
 					else
 						t = 2;
 				}
-				else if (min >= 2500)
+				else if (min >= 3800)
 				{
-					if (avg >= 3000)
+					if (avg >= 4200)
 						t = 2;
 					else
 						t = 1;
 				}
-				else if (min >= 500)
+				else if (min >= 1800)
 				{
-					if (avg >= 2000)
+					if (avg >= 2200)
 						t = 1;
 					else
 						t = 0;
@@ -166,17 +173,21 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 
 				switch (t)
 				{
-					case 4:
+					case 5:
 						speed = 2;
 						encore = true;
 						break;
-					case 3:
+					case 4:
 						speed = M_RandomChance((7<<FRACBITS)/10) ? 2 : 1;
 						encore = M_RandomChance(FRACUNIT>>1);
 						break;
-					case 2:
+					case 3:
 						speed = M_RandomChance((3<<FRACBITS)/10) ? 2 : 1;
 						encore = M_RandomChance(FRACUNIT>>2);
+						break;
+					case 2:
+						speed = 1;
+						encore = M_RandomChance(FRACUNIT>>3);
 						break;
 					case 1: default:
 						speed = 1;
