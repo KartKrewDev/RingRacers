@@ -118,7 +118,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 	switch (powertype)
 	{
 		case PWRLV_RACE:
-			if (cv_speedscramble.value || cv_encorescramble.value)
+			if (cv_kartspeed.value == -1 || cv_kartencore.value == -1)
 			{
 				boolean hardmode = false;
 				boolean encore = false;
@@ -187,12 +187,12 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 						break;
 				}
 
-				if (cv_speedscramble.value)
+				if (cv_kartspeed.value == -1)
 					speedscramble = (hardmode ? 2 : 1);
 				else
 					speedscramble = -1;
 
-				if (cv_encorescramble.value)
+				if (cv_kartencore.value == -1)
 					encorescramble = (encore ? 1 : 0);
 				else
 					encorescramble = -1;

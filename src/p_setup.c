@@ -2398,8 +2398,8 @@ static void P_LevelInitStuff(void)
 			gamespeed = 0;
 		else
 		{
-			if (cv_speedscramble.value && speedscramble != -1)
-				gamespeed = (UINT8)speedscramble;
+			if (cv_kartspeed.value == -1)
+				gamespeed = ((speedscramble == -1) ? cv_kartspeed.defaultvalue : (UINT8)speedscramble);
 			else
 				gamespeed = (UINT8)cv_kartspeed.value;
 		}

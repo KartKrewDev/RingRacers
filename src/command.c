@@ -70,8 +70,12 @@ CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 
 //SRB2kart
 CV_PossibleValue_t kartspeed_cons_t[] = {
-	{0, "Easy"}, {1, "Normal"}, {2, "Hard"},
-	{0, NULL}};
+	{-1, "Auto"},
+	{0, "Easy"},
+	{1, "Normal"},
+	{2, "Hard"},
+	{0, NULL}
+};
 
 // Filter consvars by EXECVERSION
 // First implementation is 2 (1.0.2), so earlier configs default at 1 (1.0.0)
@@ -1769,7 +1773,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				{
 					newvalue = var->value + 1;
 					if (newvalue > maxspeed)
-						newvalue = 0;
+						newvalue = -1;
 					var->value = newvalue;
 					var->string = var->PossibleValue[var->value].strvalue;
 					var->func();
@@ -1778,7 +1782,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				else if (increment < 0) // Going down!
 				{
 					newvalue = var->value - 1;
-					if (newvalue < 0)
+					if (newvalue < -1)
 						newvalue = maxspeed;
 					var->value = newvalue;
 					var->string = var->PossibleValue[var->value].strvalue;

@@ -3408,7 +3408,7 @@ INT16 G_SometimesGetDifferentGametype(void)
 		randmapbuffer[NUMMAPS]--;
 		if (encorepossible)
 		{
-			if (encorescramble >= 0)
+			if (encorescramble != -1)
 				encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
 			else
 			{
