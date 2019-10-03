@@ -536,7 +536,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 		angle_t ang = ((i+1)/2) * angamt;
 		patch_t *patch = NULL;
 		UINT8 *colormap;
-		fixed_t radius = 24<<FRACBITS;
+		fixed_t radius;
 		INT16 n;
 
 		if (p->mdepth == CSSTEP_ALTS)
@@ -553,6 +553,10 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 			skin = setup_chargrid[p->gridx][p->gridy].skinlist[n];
 			patch = facerankprefix[skin];
 			colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+			radius = 24<<FRACBITS;
+
+			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+			cy -= (SHORT(patch->height) << FRACBITS) >> 1;
 		}
 		else
 		{
@@ -580,11 +584,11 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 			else
 				patch = W_CachePatchName("COLORSP0", PU_CACHE);
 
-			radius -= SHORT(patch->width) << FRACBITS;
-		}
+			radius = 28<<FRACBITS;
+			//radius -= SHORT(patch->width) << FRACBITS;
 
-		cx -= (SHORT(patch->width) << FRACBITS) >> 1;
-		cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+		}
 
 		if (subtract)
 			ang = (signed)(ANGLE_90 - ang);
@@ -677,7 +681,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	if ((setup_animcounter/10) & 1)
 	{
-		if (p->mdepth == CSSTEP_NONE)
+		if (p->mdepth == CSSTEP_NONE && num == setup_numplayers)
 			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PSTART", PU_CACHE));
 		//else if (p->mdepth >= CSSTEP_READY)
 		//	V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PREADY", PU_CACHE));
@@ -733,10 +737,10 @@ static void M_DrawCharSelectCursors(void)
 		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2"
 	};
 	static const char *selectframesb[SELECTLEN] = {
-		"CHHOV1", "CHPIKB1", "CHHOV2", "CHPIKB2", "CHHOV3", "CHPIKB3", "CHHOV2", "CHPIKB4",
-		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2",
-		"CHPIKB5", "CHHOV2", "CHPIKB6", "CHHOV3", "CHPIKB7", "CHHOV2", "CHPIKB8",
-		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2"
+		NULL, "CHPIKB1", NULL, "CHPIKB2", NULL, "CHPIKB3", NULL, "CHPIKB4",
+		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+		"CHPIKB5", NULL, "CHPIKB6", NULL, "CHPIKB7", NULL, "CHPIKB8",
+		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	};
 
 	for (i = 0; i < setup_numplayers; i++)
@@ -762,7 +766,8 @@ static void M_DrawCharSelectCursors(void)
 		else if (p->mdepth > CSSTEP_CHARS)
 		{
 			V_DrawMappedPatch(x, y, 0, W_CachePatchName(selectframesa[setup_animcounter % SELECTLEN], PU_CACHE), colormap);
-			V_DrawMappedPatch(x, y, V_TRANSLUCENT, W_CachePatchName(selectframesb[(setup_animcounter-1) % SELECTLEN], PU_CACHE), colormap);
+			if (selectframesb[(setup_animcounter-1) % SELECTLEN] != NULL)
+				V_DrawMappedPatch(x, y, V_TRANSLUCENT, W_CachePatchName(selectframesb[(setup_animcounter-1) % SELECTLEN], PU_CACHE), colormap);
 		}
 		else
 		{

@@ -1684,7 +1684,7 @@ void M_CharacterSelectInit(INT32 choice)
 
 		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
 		{
-			if (setup_playercvars[j][SPLITCV_SKIN]->value == i)
+			if (!strcmp(setup_playercvars[j][SPLITCV_SKIN]->string, skins[i].name))
 			{
 				setup_player[j].gridx = x;
 				setup_player[j].gridy = y;
@@ -1743,7 +1743,7 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 	}
 }
 
-static void M_HandleCharacterGrid(INT32 choice, setup_player_t *p)
+static void M_HandleCharacterGrid(INT32 choice, setup_player_t *p, UINT8 num)
 {
 	switch (choice)
 	{
@@ -1785,8 +1785,15 @@ static void M_HandleCharacterGrid(INT32 choice, setup_player_t *p)
 			}
 			break;
 		case KEY_ESCAPE:
-			p->mdepth = CSSTEP_NONE;
-			S_StartSound(NULL, sfx_s3k5b);
+			if (num == setup_numplayers-1)
+			{
+				p->mdepth = CSSTEP_NONE;
+				S_StartSound(NULL, sfx_s3k5b);
+			}
+			else
+			{
+				S_StartSound(NULL, sfx_s3kb2);
+			}
 			break;
 		default:
 			break;
@@ -1838,7 +1845,7 @@ static void M_HandleColorRotate(INT32 choice, setup_player_t *p)
 				p->color = 1;
 			p->rotate = CSROTATETICS;
 			//p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3kc3s);
+			S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 			break;
 		case KEY_LEFTARROW:
 			p->color--;
@@ -1846,7 +1853,7 @@ static void M_HandleColorRotate(INT32 choice, setup_player_t *p)
 				p->color = MAXSKINCOLORS-1;
 			p->rotate = -CSROTATETICS;
 			//p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3kc3s);
+			S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 			break;
 		case KEY_ENTER:
 			p->mdepth = CSSTEP_READY;
@@ -1882,11 +1889,14 @@ void M_CharacterSelectHandler(INT32 choice)
 			switch (p->mdepth)
 			{
 				case CSSTEP_NONE: // Enter Game
-					if (choice == KEY_ENTER)
+					if (choice == KEY_ENTER && i == setup_numplayers)
+					{
 						p->mdepth = CSSTEP_CHARS;
+						S_StartSound(NULL, sfx_s3k65);
+					}
 					break;
 				case CSSTEP_CHARS: // Character Select grid
-					M_HandleCharacterGrid(choice, p);
+					M_HandleCharacterGrid(choice, p, i);
 					break;
 				case CSSTEP_ALTS: // Select clone
 					M_HandleCharRotate(choice, p);
@@ -1897,7 +1907,10 @@ void M_CharacterSelectHandler(INT32 choice)
 				case CSSTEP_READY:
 				default: // Unready
 					if (choice == KEY_ESCAPE)
+					{
 						p->mdepth = CSSTEP_COLORS;
+						S_StartSound(NULL, sfx_s3k5b);
+					}
 					break;
 			}
 		}
@@ -1910,8 +1923,12 @@ void M_CharacterSelectHandler(INT32 choice)
 
 		if (p->mdepth < CSSTEP_COLORS)
 			p->color = skins[p->skin].prefcolor;
+	}
 
-		if (p->mdepth == CSSTEP_NONE)
+	// Setup new numplayers
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (setup_player[i].mdepth == CSSTEP_NONE)
 			break;
 		else
 			setup_numplayers = i+1;
@@ -1964,10 +1981,11 @@ void M_CharacterSelectTick(void)
 	{
 		for (i = 0; i < setup_numplayers; i++)
 		{
-			CV_StealthSetValue(setup_playercvars[i][SPLITCV_SKIN], setup_player[i].skin);
+			CV_StealthSet(setup_playercvars[i][SPLITCV_SKIN], skins[setup_player[i].skin].name);
 			CV_StealthSetValue(setup_playercvars[i][SPLITCV_COLOR], setup_player[i].color);
 		}
 
+		CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
 		M_SetupNextMenu(&PLAY_MainDef, false);
 	}
 }
