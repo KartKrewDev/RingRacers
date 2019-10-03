@@ -2780,7 +2780,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
-	INT32 i, loadprecip = 1, ranspecialwipe = 0;
+	INT32 i, loadprecip = 1;
 	INT32 loademblems = 1;
 	INT32 fromnetsave = 0;
 	boolean loadedbm = false;
@@ -2859,36 +2859,50 @@ boolean P_SetupLevel(boolean skipprecip)
 
 		S_StartSound(NULL, sfx_ruby1);
 
+		// Fade to an inverted screen, with a circle fade...
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 209);
 
+		V_EncoreInvertScreen();
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
 
+		F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
+
+		// Hold on invert for extra effect.
+		// (This define might be useful for other areas of code? Not sure)
+#define WAIT(timetowait) \
+	locstarttime = nowtime = lastwipetic; \
+	endtime = locstarttime + timetowait; \
+	while (nowtime < endtime) \
+	{ \
+		while (!((nowtime = I_GetTime()) - lastwipetic)) \
+			I_Sleep(); \
+		lastwipetic = nowtime; \
+		if (moviemode) \
+			M_SaveFrame(); \
+		NetKeepAlive(); \
+	} \
+
+		WAIT((3*TICRATE)/2);
+		S_StartSound(NULL, sfx_ruby2);
+
+		// Then fade to a white screen
 		F_WipeStartScreen();
+
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
-
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_level_final], false);
 
-		locstarttime = nowtime = lastwipetic;
-		endtime = locstarttime + (3*TICRATE)/2;
+		F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
 
-		// Hold on white for extra effect.
-		while (nowtime < endtime)
-		{
-			// wait loop
-			while (!((nowtime = I_GetTime()) - lastwipetic))
-				I_Sleep();
-			lastwipetic = nowtime;
-			if (moviemode) // make sure we save frames for the white hold too
-				M_SaveFrame();
+		// THEN fade to a black screen.
+		F_WipeStartScreen();
 
-			// Keep the network alive
-			NetKeepAlive();
-		}
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+		F_WipeEndScreen();
 
-		ranspecialwipe = 1;
+		F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+		// Wait a bit longer.
+		WAIT((3*TICRATE)/4);
 	}
 
 	// Make sure all sounds are stopped before Z_FreeTags.
@@ -2899,17 +2913,18 @@ boolean P_SetupLevel(boolean skipprecip)
 	// We should be fine starting it here.
 	S_Start();
 
-	levelfadecol = (encoremode && !ranspecialwipe ? 209 : 0);
+	levelfadecol = (encoremode ? 0 : 31);
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
-	if (rendermode != render_none && !ranspecialwipe && !demo.rewinding)
+	if (rendermode != render_none && !demo.rewinding)
 	{
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[(encoremode ? wipe_level_final : wipe_level_toblack)], false);
+
+		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
 
 	// Reset the palette now all fades have been done
