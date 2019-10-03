@@ -5139,6 +5139,25 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->mo->color = player->skincolor;
 		}
 	}
+	else if (player->kartstuff[k_killfield]) // You're gonna REALLY diiiiie
+	{
+		const INT32 flashtime = 4<<(4-(player->kartstuff[k_killfield]/TICRATE));
+		if (player->kartstuff[k_killfield] == 1 || (player->kartstuff[k_killfield] % (flashtime/2) != 0))
+		{
+			player->mo->colorized = false;
+			player->mo->color = player->skincolor;
+		}
+		else if (player->kartstuff[k_killfield] % flashtime == 0)
+		{
+			player->mo->colorized = true;
+			player->mo->color = SKINCOLOR_BYZANTIUM;
+		}
+		else
+		{
+			player->mo->colorized = true;
+			player->mo->color = SKINCOLOR_RUBY;
+		}
+	}
 	else if (player->kartstuff[k_ringboost] && (leveltime & 1)) // ring boosting
 	{
 		player->mo->colorized = true;
@@ -5310,8 +5329,28 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_KartPlayerHUDUpdate(player);
 
-	if (G_BattleGametype() && player->kartstuff[k_bumper] > 0)
+	if (G_BattleGametype() && player->kartstuff[k_bumper] > 0
+		&& !player->kartstuff[k_spinouttimer] && !player->kartstuff[k_squishedtimer]
+		&& !player->kartstuff[k_respawn] && !player->powers[pw_flashing])
+	{
 		player->kartstuff[k_wanted]++;
+		if (battleovertime.enabled >= 10*TICRATE)
+		{
+			if (P_AproxDistance(player->mo->x - battleovertime.x, player->mo->y - battleovertime.y) > battleovertime.radius)
+			{
+				player->kartstuff[k_killfield]++;
+				if (player->kartstuff[k_killfield] > 4*TICRATE)
+				{
+					K_SpinPlayer(player, NULL, 0, NULL, false);
+					//player->kartstuff[k_killfield] = 1;
+				}
+			}
+			else if (player->kartstuff[k_killfield] > 0)
+				player->kartstuff[k_killfield]--;
+		}
+	}
+	else if (player->kartstuff[k_killfield] > 0)
+		player->kartstuff[k_killfield]--;
 
 	if (P_IsObjectOnGround(player->mo))
 		player->kartstuff[k_waterskip] = 0;
@@ -5953,7 +5992,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			&& NO_HYUDORO && !(HOLDING_ITEM
 			|| player->kartstuff[k_itemamount]
 			|| player->kartstuff[k_itemroulette]
-			|| player->kartstuff[k_growshrinktimer] // Being disabled during Shrink was unintended but people seemed to be okay with it sooo...
+			|| player->kartstuff[k_growshrinktimer] > 0
 			|| player->kartstuff[k_rocketsneakertimer]
 			|| player->kartstuff[k_eggmanexplode]))
 			player->kartstuff[k_userings] = 1;
@@ -7044,6 +7083,7 @@ static patch_t *kp_lapanim_emblem[2];
 static patch_t *kp_lapanim_hand[3];
 
 static patch_t *kp_yougotem;
+static patch_t *kp_itemminimap;
 
 void K_LoadKartHUDGraphics(void)
 {
@@ -7344,6 +7384,7 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	kp_yougotem = (patch_t *) W_CachePatchName("YOUGOTEM", PU_HUDGFX);
+	kp_itemminimap = (patch_t *) W_CachePatchName("MMAPITEM", PU_HUDGFX);
 }
 
 // For the item toggle menu
@@ -8869,7 +8910,7 @@ static void K_drawKartPlayerCheck(void)
 	}
 }
 
-static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, patch_t *AutomapPic)
+static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags, patch_t *icon, UINT8 *colormap, patch_t *AutomapPic)
 {
 	// amnum xpos & ypos are the icon's speed around the HUD.
 	// The number being divided by is for how fast it moves.
@@ -8877,8 +8918,6 @@ static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, pat
 
 	// am xpos & ypos are the icon's starting position. Withouht
 	// it, they wouldn't 'spawn' on the top-right side of the HUD.
-
-	UINT8 skin = 0;
 
 	fixed_t amnumxpos, amnumypos;
 	INT32 amxpos, amypos;
@@ -8889,9 +8928,6 @@ static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, pat
 	fixed_t mapwidth, mapheight;
 	fixed_t xoffset, yoffset;
 	fixed_t xscale, yscale, zoom;
-
-	if (mo->skin)
-		skin = ((skin_t*)mo->skin)-skins;
 
 	maxx = maxy = INT32_MAX;
 	minx = miny = INT32_MIN;
@@ -8929,39 +8965,23 @@ static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, pat
 	yscale = FixedDiv(AutomapPic->height, mapheight);
 	zoom = FixedMul(min(xscale, yscale), FRACUNIT-FRACUNIT/20);
 
-	amnumxpos = (FixedMul(mo->x, zoom) - FixedMul(xoffset, zoom));
-	amnumypos = -(FixedMul(mo->y, zoom) - FixedMul(yoffset, zoom));
+	amnumxpos = (FixedMul(objx, zoom) - FixedMul(xoffset, zoom));
+	amnumypos = -(FixedMul(objy, zoom) - FixedMul(yoffset, zoom));
 
 	if (encoremode)
 		amnumxpos = -amnumxpos;
 
-	amxpos = amnumxpos + ((x + AutomapPic->width/2 - (facemmapprefix[skin]->width/2))<<FRACBITS);
-	amypos = amnumypos + ((y + AutomapPic->height/2 - (facemmapprefix[skin]->height/2))<<FRACBITS);
+	amxpos = amnumxpos + ((hudx + AutomapPic->width/2 - (icon->width/2))<<FRACBITS);
+	amypos = amnumypos + ((hudy + AutomapPic->height/2 - (icon->height/2))<<FRACBITS);
 
 	// do we want this? it feels unnecessary. easier to just modify the amnumxpos?
 	/*if (encoremode)
 	{
 		flags |= V_FLIP;
-		amxpos = -amnumxpos + ((x + AutomapPic->width/2 + (facemmapprefix[skin]->width/2))<<FRACBITS);
+		amxpos = -amnumxpos + ((hudx + AutomapPic->width/2 + (icon->width/2))<<FRACBITS);
 	}*/
 
-	if (!mo->color) // 'default' color
-		V_DrawSciencePatch(amxpos, amypos, flags, facemmapprefix[skin], FRACUNIT);
-	else
-	{
-		UINT8 *colormap;
-		if (mo->colorized)
-			colormap = R_GetTranslationColormap(TC_RAINBOW, mo->color, GTC_CACHE);
-		else
-			colormap = R_GetTranslationColormap(skin, mo->color, GTC_CACHE);
-		V_DrawFixedPatch(amxpos, amypos, FRACUNIT, flags, facemmapprefix[skin], colormap);
-		if (mo->player
-			&& ((G_RaceGametype() && mo->player->kartstuff[k_position] == spbplace)
-			|| (G_BattleGametype() && K_IsPlayerWanted(mo->player))))
-		{
-			V_DrawFixedPatch(amxpos - (4<<FRACBITS), amypos - (4<<FRACBITS), FRACUNIT, flags, kp_wantedreticle, NULL);
-		}
-	}
+	V_DrawFixedPatch(amxpos, amypos, FRACUNIT, flags, icon, colormap);
 }
 
 static void K_drawKartMinimap(void)
@@ -8970,7 +8990,9 @@ static void K_drawKartMinimap(void)
 	patch_t *AutomapPic;
 	INT32 i = 0;
 	INT32 x, y;
-	INT32 minimaptrans, splitflags = (splitscreen == 3 ? 0 : V_SNAPTORIGHT);	// flags should only be 0 when it's centered (4p split)
+	INT32 minimaptrans, splitflags = (splitscreen == 3 ? 0 : V_SNAPTORIGHT); // flags should only be 0 when it's centered (4p split)
+	UINT8 skin = 0;
+	UINT8 *colormap = NULL;
 	SINT8 localplayers[4];
 	SINT8 numlocalplayers = 0;
 
@@ -8979,6 +9001,8 @@ static void K_drawKartMinimap(void)
 	if (gamestate != GS_LEVEL)
 		return;
 
+	// Only draw for the first player
+	// Maybe move this somewhere else where this won't be a concern?
 	if (stplyr != &players[displayplayers[0]])
 		return;
 
@@ -9024,6 +9048,20 @@ static void K_drawKartMinimap(void)
 		x -= SHORT(AutomapPic->leftoffset);
 	y -= SHORT(AutomapPic->topoffset);
 
+	// Draw the super item in Battle
+	if (G_BattleGametype() && battleovertime.enabled)
+	{
+		if (battleovertime.enabled >= 10*TICRATE || (battleovertime.enabled & 1))
+		{
+			const INT32 prevsplitflags = splitflags;
+			splitflags &= ~V_HUDTRANSHALF;
+			splitflags |= V_HUDTRANS;
+			colormap = R_GetTranslationColormap(TC_RAINBOW, (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1))), GTC_CACHE);
+			K_drawKartMinimapIcon(battleovertime.x, battleovertime.y, x, y, splitflags, kp_itemminimap, colormap, AutomapPic);
+			splitflags = prevsplitflags;
+		}
+	}
+
 	// initialize
 	for (i = 0; i < 4; i++)
 		localplayers[i] = -1;
@@ -9034,7 +9072,20 @@ static void K_drawKartMinimap(void)
 		demoghost *g = ghosts;
 		while (g)
 		{
-			K_drawKartMinimapHead(g->mo, x, y, splitflags, AutomapPic);
+			if (g->mo->skin)
+				skin = ((skin_t*)g->mo->skin)-skins;
+			else
+				skin = 0;
+			if (g->mo->color)
+			{
+				if (g->mo->colorized)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, g->mo->color, GTC_CACHE);
+				else
+					colormap = R_GetTranslationColormap(skin, g->mo->color, GTC_CACHE);
+			}
+			else
+				colormap = NULL;
+			K_drawKartMinimapIcon(g->mo->x, g->mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
 			g = g->next;
 		}
 
@@ -9067,7 +9118,7 @@ static void K_drawKartMinimap(void)
 				}
 			}
 
-			if (P_IsDisplayPlayer(&players[i]))
+			if (i == displayplayers[0] || i == displayplayers[1] || i == displayplayers[2] || i == displayplayers[3])
 			{
 				// Draw display players on top of everything else
 				localplayers[numlocalplayers] = i;
@@ -9075,7 +9126,26 @@ static void K_drawKartMinimap(void)
 				continue;
 			}
 
-			K_drawKartMinimapHead(players[i].mo, x, y, splitflags, AutomapPic);
+			if (players[i].mo->skin)
+				skin = ((skin_t*)players[i].mo->skin)-skins;
+			else
+				skin = 0;
+
+			if (players[i].mo->color)
+			{
+				if (players[i].mo->colorized)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, players[i].mo->color, GTC_CACHE);
+				else
+					colormap = R_GetTranslationColormap(skin, players[i].mo->color, GTC_CACHE);
+			}
+			else
+				colormap = NULL;
+
+			K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
+			// Target reticule
+			if ((G_RaceGametype() && players[i].kartstuff[k_position] == spbplace)
+			|| (G_BattleGametype() && K_IsPlayerWanted(&players[i])))
+				K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 		}
 	}
 
@@ -9087,7 +9157,28 @@ static void K_drawKartMinimap(void)
 	{
 		if (i == -1)
 			continue; // this doesn't interest us
-		K_drawKartMinimapHead(players[localplayers[i]].mo, x, y, splitflags, AutomapPic);
+
+		if (players[localplayers[i]].mo->skin)
+			skin = ((skin_t*)players[localplayers[i]].mo->skin)-skins;
+		else
+			skin = 0;
+
+		if (players[localplayers[i]].mo->color)
+		{
+			if (players[localplayers[i]].mo->colorized)
+				colormap = R_GetTranslationColormap(TC_RAINBOW, players[localplayers[i]].mo->color, GTC_CACHE);
+			else
+				colormap = R_GetTranslationColormap(skin, players[localplayers[i]].mo->color, GTC_CACHE);
+		}
+		else
+			colormap = NULL;
+
+		K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
+
+		// Target reticule
+		if ((G_RaceGametype() && players[localplayers[i]].kartstuff[k_position] == spbplace)
+		|| (G_BattleGametype() && K_IsPlayerWanted(&players[localplayers[i]])))
+			K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 	}
 }
 

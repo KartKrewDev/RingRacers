@@ -12,8 +12,6 @@
 /// \file  f_wipe.c
 /// \brief SRB2 2.1 custom fade mask "wipe" behavior.
 
-#define GENESIS_WIPE // Sal: experimental Genesis-style colorful wipes
-
 #include "f_finale.h"
 #include "i_video.h"
 #include "v_video.h"
@@ -62,9 +60,8 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	UINT8_MAX, // wipe_intro_toblack (hardcoded)
 	99, // wipe_cutscene_toblack (hardcoded)
 
-	0,  // wipe_specinter_toblack
-	0,  // wipe_multinter_toblack
-	0,  // wipe_speclevel_towhite
+	72, // wipe_encore_toinvert
+	99, // wipe_encore_towhite
 
 	UINT8_MAX, // wipe_level_final
 	0,  // wipe_intermission_final
@@ -76,10 +73,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_evaluation_final
 	0,  // wipe_gameend_final
 	99, // wipe_intro_final (hardcoded)
-	99, // wipe_cutscene_final (hardcoded)
-
-	0,  // wipe_specinter_final
-	0   // wipe_multinter_final
+	99  // wipe_cutscene_final (hardcoded)
 };
 
 //--------------------------------------------------------------------------
@@ -361,16 +355,62 @@ void F_WipeEndScreen(void)
 #endif
 }
 
+/**	Wiggle post processor for encore wipes
+  */
+static void F_DoEncoreWiggle(UINT8 time)
+{
+	UINT8 *tmpscr = wipe_scr_start;
+	UINT8 *srcscr = wipe_scr;
+	angle_t disStart = (time * 128) & FINEMASK;
+	INT32 y, sine, newpix, scanline;
+
+	for (y = 0; y < vid.height; y++)
+	{
+		sine = (FINESINE(disStart) * (time*12))>>FRACBITS;
+		scanline = y / vid.dupy;
+		if (scanline & 1)
+			sine = -sine;
+		newpix = abs(sine);
+
+		if (sine < 0)
+		{
+			M_Memcpy(&tmpscr[(y*vid.width)+newpix], &srcscr[(y*vid.width)], vid.width-newpix);
+
+			// Cleanup edge
+			while (newpix)
+			{
+				tmpscr[(y*vid.width)+newpix] = srcscr[(y*vid.width)];
+				newpix--;
+			}
+		}
+		else
+		{
+			M_Memcpy(&tmpscr[(y*vid.width)], &srcscr[(y*vid.width) + sine], vid.width-newpix);
+
+			// Cleanup edge
+			while (newpix)
+			{
+				tmpscr[(y*vid.width) + vid.width - newpix] = srcscr[(y*vid.width) + (vid.width-1)];
+				newpix--;
+			}
+		}
+
+		disStart += (time*8); //the offset into the displacement map, increment each game loop
+		disStart &= FINEMASK; //clip it to FINEMASK
+	}
+}
+
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse)
+void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle)
 {
 #ifdef NOWIPE
 	(void)wipetype;
 	(void)drawMenu;
 	(void)colormap;
 	(void)reverse;
+	(void)encorewiggle;
 #else
 	tic_t nowtime;
 	UINT8 wipeframe = 0;
@@ -420,6 +460,15 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		else
 #endif
 		F_DoWipe(fmask, fcolor, reverse);
+
+		if (encorewiggle)
+		{
+#ifdef HWRENDER
+			if (rendermode != render_opengl)
+#endif
+				F_DoEncoreWiggle(wipeframe);
+		}
+
 		I_OsPolling();
 		I_UpdateNoBlit();
 

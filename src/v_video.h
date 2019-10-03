@@ -158,8 +158,9 @@ void V_DrawVhsEffect(boolean rewind);
 
 // fade down the screen buffer before drawing the menu over
 void V_DrawFadeScreen(UINT16 color, UINT8 strength);
-
+void V_DrawCustomFadeScreen(const char *lump, UINT8 strength);
 void V_DrawFadeConsBack(INT32 plines);
+void V_EncoreInvertScreen(void);
 
 // draw a single character
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);

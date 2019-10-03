@@ -74,12 +74,13 @@ extern INT32 lastwipetic;
 
 void F_WipeStartScreen(void);
 void F_WipeEndScreen(void);
-void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse);
+void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle);
 
 enum
 {
 	wipe_credits_intermediate, // makes a good 0 I guess.
 
+	// Gamestate wipes
 	wipe_level_toblack,
 	wipe_intermission_toblack,
 	wipe_voting_toblack,
@@ -92,11 +93,11 @@ enum
 	wipe_intro_toblack,
 	wipe_cutscene_toblack,
 
-	// custom intermissions
-	wipe_specinter_toblack,
-	wipe_multinter_toblack,
-	wipe_speclevel_towhite,
+	// Specialized wipes
+	wipe_encore_toinvert,
+	wipe_encore_towhite,
 
+	// "From black" wipes
 	wipe_level_final,
 	wipe_intermission_final,
 	wipe_voting_final,
@@ -108,10 +109,6 @@ enum
 	wipe_gameend_final,
 	wipe_intro_final,
 	wipe_cutscene_final,
-
-	// custom intermissions
-	wipe_specinter_final,
-	wipe_multinter_final,
 
 	NUMWIPEDEFS,
 	WIPEFINALSHIFT = wipe_level_final - wipe_level_toblack

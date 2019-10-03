@@ -330,6 +330,7 @@ typedef enum
 	k_tiregrease,		// Reduced friction timer after hitting a horizontal spring
 	k_springstars,		// Spawn stars around a player when they hit a spring
 	k_springcolor,		// Color of spring stars
+	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
 
 	NUMKARTSTUFF
 } kartstufftype_t;
