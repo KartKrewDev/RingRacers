@@ -5782,7 +5782,7 @@ static void KartSpeed_OnChange(void)
 	if (!M_SecretUnlocked(SECRET_HARDSPEED) && cv_kartspeed.value == 2)
 	{
 		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSetValue(&cv_kartspeed, cv_kartspeed.defaultvalue);
+		CV_StealthSet(&cv_kartspeed, cv_kartspeed.defaultvalue);
 		return;
 	}
 

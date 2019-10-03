@@ -120,7 +120,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 		case PWRLV_RACE:
 			if (cv_kartspeed.value == -1 || cv_kartencore.value == -1)
 			{
-				UINT8 speed = cv_kartspeed.defaultvalue;
+				UINT8 speed = atoi(cv_kartspeed.defaultvalue);
 				boolean encore = false;
 				INT16 avg = 0, min = 0;
 				UINT8 i, t = 0;
