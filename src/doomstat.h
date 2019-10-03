@@ -227,7 +227,7 @@ typedef struct
 	UINT32 muspos;    ///< Music position to jump to.
 	char forcecharacter[17];  ///< (SKINNAMESIZE+1) Skin to switch to or "" to disable.
 	UINT8 weather;         ///< 0 = sunny day, 1 = storm, 2 = snow, 3 = rain, 4 = blank, 5 = thunder w/o rain, 6 = rain w/o lightning, 7 = heat wave.
-	INT16 skynum;          ///< Sky number to use.
+	char skytexture[9];    ///< Sky texture to use.
 	INT16 skybox_scalex;   ///< Skybox X axis scale. (0 = no movement, 1 = 1:1 movement, 16 = 16:1 slow movement, -4 = 1:4 fast movement, etc.)
 	INT16 skybox_scaley;   ///< Skybox Y axis scale.
 	INT16 skybox_scalez;   ///< Skybox Z axis scale.
@@ -435,6 +435,7 @@ extern INT32 sneakertime;
 extern INT32 itemtime;
 extern INT32 comebacktime;
 extern INT32 bumptime;
+extern INT32 greasetics;
 extern INT32 wipeoutslowtime;
 extern INT32 wantedreduce;
 extern INT32 wantedfrequency;
@@ -484,6 +485,15 @@ extern tic_t curlap, bestlap;
 extern INT16 votelevels[5][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
+
+/** Battle overtime information
+  */
+extern struct battleovertime
+{
+	UINT16 enabled; ///< Has this been initalized yet?
+	fixed_t radius, minradius; ///< Radius of kill field
+	fixed_t x, y, z; ///< Position to center on
+} battleovertime;
 
 extern tic_t hidetime;
 

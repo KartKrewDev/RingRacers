@@ -1230,8 +1230,9 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "WEATHER"))
 				mapheaderinfo[num-1]->weather = (UINT8)get_number(word2);
-			else if (fastcmp(word, "SKYNUM"))
-				mapheaderinfo[num-1]->skynum = (INT16)i;
+			else if (fastcmp(word, "SKYTEXTURE"))
+				deh_strlcpy(mapheaderinfo[num-1]->skytexture, word2,
+					sizeof(mapheaderinfo[num-1]->skytexture), va("Level header %d: sky texture", num));
 			else if (fastcmp(word, "INTERSCREEN"))
 				strncpy(mapheaderinfo[num-1]->interscreen, word2, 8);
 			else if (fastcmp(word, "PRECUTSCENENUM"))
@@ -3269,29 +3270,13 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_intermission_final;
 			}
-			else if (fastncmp(word, "SPECINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
 			else if (fastncmp(word, "VOTING_", 7))
 			{
 				pword = word + 7;
 				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
+					wipeoffset = wipe_voting_toblack;
 				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
-			else if (fastncmp(word, "MULTINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_multinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_multinter_final;
+					wipeoffset = wipe_voting_final;
 			}
 			else if (fastncmp(word, "CONTINUING_", 11))
 			{
@@ -3343,11 +3328,13 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_gameend_final;
 			}
-			else if (fastncmp(word, "SPECLEVEL_", 10))
+			else if (fastncmp(word, "ENCORE_", 7))
 			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOWHITE"))
-					wipeoffset = wipe_speclevel_towhite;
+				pword = word + 7;
+				if (fastcmp(pword, "TOINVERT"))
+					wipeoffset = wipe_encore_toinvert;
+				else if (fastcmp(pword, "TOWHITE"))
+					wipeoffset = wipe_encore_towhite;
 			}
 
 			if (wipeoffset < 0)
@@ -3357,10 +3344,10 @@ static void readwipes(MYFILE *f)
 			}
 
 			if (value == UINT8_MAX
-			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_speclevel_towhite))
+			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_encore_toinvert))
 			{
 				 // Cannot disable non-toblack wipes
-				 // (or the level toblack wipe, or the special towhite wipe)
+				 // (or the level toblack wipe, or the special encore wipe)
 				deh_warning("Wipes: can't disable wipe of type '%s'", word);
 				continue;
 			}
@@ -5622,44 +5609,77 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_RBIRD2",
 	"S_RBIRD3",
 
-	"S_YELLOWSPRING",
+	// Yellow Spring
+	"S_YELLOWSPRING1",
 	"S_YELLOWSPRING2",
 	"S_YELLOWSPRING3",
 	"S_YELLOWSPRING4",
-	"S_YELLOWSPRING5",
 
-	"S_REDSPRING",
+	// Red Spring
+	"S_REDSPRING1",
 	"S_REDSPRING2",
 	"S_REDSPRING3",
 	"S_REDSPRING4",
-	"S_REDSPRING5",
 
-	// Blue Springs
-	"S_BLUESPRING",
+	// Blue Spring
+	"S_BLUESPRING1",
 	"S_BLUESPRING2",
 	"S_BLUESPRING3",
 	"S_BLUESPRING4",
-	"S_BLUESPRING5",
+
+	// Grey Spring
+	"S_GREYSPRING1",
+	"S_GREYSPRING2",
+	"S_GREYSPRING3",
+	"S_GREYSPRING4",
 
 	// Yellow Diagonal Spring
 	"S_YDIAG1",
 	"S_YDIAG2",
 	"S_YDIAG3",
 	"S_YDIAG4",
-	"S_YDIAG5",
-	"S_YDIAG6",
-	"S_YDIAG7",
-	"S_YDIAG8",
 
 	// Red Diagonal Spring
 	"S_RDIAG1",
 	"S_RDIAG2",
 	"S_RDIAG3",
 	"S_RDIAG4",
-	"S_RDIAG5",
-	"S_RDIAG6",
-	"S_RDIAG7",
-	"S_RDIAG8",
+
+	// Blue Diagonal Spring
+	"S_BDIAG1",
+	"S_BDIAG2",
+	"S_BDIAG3",
+	"S_BDIAG4",
+
+	// Grey Diagonal Spring
+	"S_GDIAG1",
+	"S_GDIAG2",
+	"S_GDIAG3",
+	"S_GDIAG4",
+
+	// Yellow Horizontal Spring
+	"S_YHORIZ1",
+	"S_YHORIZ2",
+	"S_YHORIZ3",
+	"S_YHORIZ4",
+
+	// Red Horizontal Spring
+	"S_RHORIZ1",
+	"S_RHORIZ2",
+	"S_RHORIZ3",
+	"S_RHORIZ4",
+
+	// Blue Horizontal Spring
+	"S_BHORIZ1",
+	"S_BHORIZ2",
+	"S_BHORIZ3",
+	"S_BHORIZ4",
+
+	// Grey Horizontal Spring
+	"S_GHORIZ1",
+	"S_GHORIZ2",
+	"S_GHORIZ3",
+	"S_GHORIZ4",
 
 	// Rain
 	"S_RAIN1",
@@ -6283,26 +6303,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	"S_SRB1_GENREX1",
 	"S_SRB1_GENREX2",
-
-	// Gray Springs
-	"S_GRAYSPRING",
-	"S_GRAYSPRING2",
-	"S_GRAYSPRING3",
-	"S_GRAYSPRING4",
-	"S_GRAYSPRING5",
-
-	// Invis-spring - this is used just for the sproing sound.
-	"S_INVISSPRING",
-
-	// Blue Diagonal Spring
-	"S_BDIAG1",
-	"S_BDIAG2",
-	"S_BDIAG3",
-	"S_BDIAG4",
-	"S_BDIAG5",
-	"S_BDIAG6",
-	"S_BDIAG7",
-	"S_BDIAG8",
 
 	//{ Random Item Box
 	"S_RANDOMITEM1",
@@ -7212,6 +7212,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRAFTDUST4",
 	"S_DRAFTDUST5",
 
+	"S_TIREGREASE",
+
+	"S_OVERTIMEFOG",
+	"S_OVERTIMEORB",
+	"S_OVERTIMEBEAM",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -7341,11 +7347,18 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Springs and others
 	"MT_FAN",
 	"MT_STEAM", // Steam riser
-	"MT_BLUESPRING",
 	"MT_YELLOWSPRING",
 	"MT_REDSPRING",
+	"MT_BLUESPRING",
+	"MT_GREYSPRING",
 	"MT_YELLOWDIAG", // Yellow Diagonal Spring
 	"MT_REDDIAG", // Red Diagonal Spring
+	"MT_BLUEDIAG", // Blue Diagonal Spring
+	"MT_GREYDIAG", // Grey Diagonal Spring
+	"MT_YELLOWHORIZ", // Yellow Horizontal Spring
+	"MT_REDHORIZ", // Red Horizontal Spring
+	"MT_BLUEHORIZ", // Blue Horizontal Spring
+	"MT_GREYHORIZ", // Grey Horizontal Spring
 
 	// Interactive Objects
 	"MT_BUBBLES", // Bubble source
@@ -7727,9 +7740,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_SRB1_GENREX",
 
 	// SRB2kart
-	"MT_GRAYSPRING",
-	"MT_INVISSPRING",
-	"MT_BLUEDIAG",
 	"MT_RANDOMITEM",
 	"MT_RANDOMITEMPOP",
 	"MT_FLOATINGITEM",
@@ -8000,6 +8010,11 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_KARMAFIREWORK",
 	"MT_RINGSPARKS",
 	"MT_DRAFTDUST",
+	"MT_TIREGREASE",
+
+	"MT_OVERTIMEFOG",
+	"MT_OVERTIMEORB",
+	"MT_OVERTIMEBEAM",
 
 #ifdef SEENAMES
 	"MT_NAMECHECK",
@@ -8486,7 +8501,11 @@ static const char *const KARTSTUFF_LIST[] = {
 	"GETSPARKS",
 	"JAWZTARGETDELAY",
 	"SPECTATEWAIT",
-	"GROWCANCEL"
+	"GROWCANCEL",
+	"TIREGREASE",
+	"SPRINGSTARS",
+	"SPRINGCOLOR",
+	"KILLFIELD"
 };
 #endif
 
@@ -9916,11 +9935,11 @@ static inline int lib_getenum(lua_State *L)
 	} else if (fastcmp(word,"globalweather")) {
 		lua_pushinteger(L, globalweather);
 		return 1;
-	} else if (fastcmp(word,"levelskynum")) {
-		lua_pushinteger(L, levelskynum);
+	} else if (fastcmp(word,"levelskytexture")) {
+		lua_pushstring(L, levelskytexture);
 		return 1;
-	} else if (fastcmp(word,"globallevelskynum")) {
-		lua_pushinteger(L, globallevelskynum);
+	} else if (fastcmp(word,"globallevelskytexture")) {
+		lua_pushstring(L, globallevelskytexture);
 		return 1;
 	} else if (fastcmp(word,"mapmusname")) {
 		lua_pushstring(L, mapmusname);

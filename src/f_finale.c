@@ -220,7 +220,7 @@ void F_StartIntro(void)
 		F_WipeStartScreen();
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_level_final], false);
+		F_RunWipe(wipedefs[wipe_intro_toblack], false, "FADEMAP0", false, false);
 	}
 
 	if (introtoplay)
@@ -306,7 +306,7 @@ void F_IntroDrawer(void)
 				F_WipeStartScreen();
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 				F_WipeEndScreen();
-				F_RunWipe(99,true);
+				F_RunWipe(99, true, "FADEMAP0", false, false);
 			}
 
 			// Stay on black for a bit. =)
@@ -1420,7 +1420,7 @@ void F_CutsceneDrawer(void)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, cutscenes[cutnum]->scene[scenenum].fadecolor);
 
 			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
+			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true, NULL, false, false);
 
 			F_WipeStartScreen();
 		}
@@ -1440,7 +1440,7 @@ void F_CutsceneDrawer(void)
 	if (dofadenow && rendermode != render_none)
 	{
 		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
+		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true, NULL, false, false);
 	}
 
 	V_DrawString(textxpos, textypos, 0, cutscene_disptext);

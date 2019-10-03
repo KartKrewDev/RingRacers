@@ -1776,6 +1776,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 	}
 }
 
+// Easily make it so that overtime works offline
+//#define TESTOVERTIMEINFREEPLAY
+
 /** Checks if the level timer is over the timelimit and the round should end,
   * unless you are in overtime. In which case leveltime may stretch out beyond
   * timelimitintics and overtime's status will be checked here each tick.
@@ -1786,7 +1789,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
   */
 void P_CheckTimeLimit(void)
 {
-	INT32 i, k;
+	INT32 i;
 
 	if (!cv_timelimit.value)
 		return;
@@ -1820,71 +1823,76 @@ void P_CheckTimeLimit(void)
 			}
 		}
 	}
+	else*/
 
 	//Optional tie-breaker for Match/CTF
-	else*/ if (cv_overtime.value)
+	if (cv_overtime.value)
 	{
-		INT32 playerarray[MAXPLAYERS];
-		INT32 tempplayer = 0;
-		INT32 spectators = 0;
-		INT32 playercount = 0;
-
-		//Figure out if we have enough participating players to care.
+#ifndef TESTOVERTIMEINFREEPLAY
+		boolean foundone = false; // Overtime is used for closing off down to a specific item.
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (players[i].exiting)
-				return;
-			if (playeringame[i] && players[i].spectator)
-				spectators++;
-		}
-
-		if ((D_NumPlayers() - spectators) > 1)
-		{
-			// Play the starpost sfx after the first second of overtime.
-			if (gamestate == GS_LEVEL && (leveltime == (timelimitintics + TICRATE)))
-				S_StartSound(NULL, sfx_strpst);
-
-			// Normal Match
-			if (!G_GametypeHasTeams())
+			if (!playeringame[i] || players[i].spectator)
+				continue;
+			if (foundone)
 			{
-				//Store the nodes of participating players in an array.
-				for (i = 0; i < MAXPLAYERS; i++)
+#endif
+				// Initiate the kill zone
+				if (!battleovertime.enabled)
 				{
-					if (playeringame[i] && !players[i].spectator)
+					INT32 b = 0;
+					thinker_t *th;
+					mobj_t *item = NULL;
+
+					P_RespawnBattleBoxes(); // FORCE THESE TO BE RESPAWNED FOR THIS!!!!!!!
+
+					// Find us an item box to center on.
+					for (th = thinkercap.next; th != &thinkercap; th = th->next)
 					{
-						playerarray[playercount] = i;
-						playercount++;
+						mobj_t *thismo;
+						if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+							continue;
+						thismo = (mobj_t *)th;
+
+						if (thismo->type != MT_RANDOMITEM)
+							continue;
+						if (thismo->threshold == 69) // Disappears
+							continue;
+
+						b++;
+
+						// Only select items that are on the ground, ignore ones in the air. Ambush flag inverts this rule.
+						if ((!P_IsObjectOnGround(thismo)) != (thismo->flags2 & MF2_AMBUSH))
+							continue;
+
+						if (item == NULL || (b < nummapboxes && P_RandomChance(((nummapboxes-b)*FRACUNIT)/nummapboxes))) // This is to throw off the RNG some
+							item = thismo;
+						if (b >= nummapboxes) // end early if we've found them all already
+							break;
 					}
-				}
 
-				if (playercount > MAXPLAYERS)
-					playercount = MAXPLAYERS;
-
-				//Sort 'em.
-				for (i = 1; i < playercount; i++)
-				{
-					for (k = i; k < playercount; k++)
+					if (item == NULL) // no item found, could happen if every item is in the air or has ambush flag, or the map has none
 					{
-						if (players[playerarray[i-1]].marescore < players[playerarray[k]].marescore)
-						{
-							tempplayer = playerarray[i-1];
-							playerarray[i-1] = playerarray[k];
-							playerarray[k] = tempplayer;
-						}
+						CONS_Alert(CONS_WARNING, "No usuable items for Battle overtime!\n");
+						return;
 					}
-				}
 
-				//End the round if the top players aren't tied.
-				if (players[playerarray[0]].marescore == players[playerarray[1]].marescore)
-					return;
+					item->threshold = 70; // Set constant respawn
+					battleovertime.x = item->x;
+					battleovertime.y = item->y;
+					battleovertime.z = item->z;
+					battleovertime.radius = 4096*mapobjectscale;
+					battleovertime.minradius = (cv_overtime.value == 2 ? 40 : 512) * mapobjectscale;
+					battleovertime.enabled = 1;
+					S_StartSound(NULL, sfx_kc47);
+				}
+				return;
+#ifndef TESTOVERTIMEINFREEPLAY
 			}
 			else
-			{
-				//In team match and CTF, determining a tie is much simpler. =P
-				if (redscore == bluescore)
-					return;
-			}
+				foundone = true;
 		}
+#endif
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1895,9 +1903,6 @@ void P_CheckTimeLimit(void)
 			return;
 		P_DoPlayerExit(&players[i]);
 	}
-
-	/*if (server)
-		SendNetXCmd(XD_EXITLEVEL, NULL, 0);*/
 }
 
 /** Checks if a player's score is over the pointlimit and the round should end.
@@ -3304,12 +3309,12 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 
 	// 20 is the ring cap in kart
 	if (num_rings > 20)
-		num_rings = 20; 
+		num_rings = 20;
 	else if (num_rings <= 0)
 		return;
 
 	// Cap the maximum loss automatically to 2 in ring debt
-	if (player->kartstuff[k_rings] <= 0 && num_rings > 2) 
+	if (player->kartstuff[k_rings] <= 0 && num_rings > 2)
 		num_rings = 2;
 
 	P_GivePlayerRings(player, -num_rings);

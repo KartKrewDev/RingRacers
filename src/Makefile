@@ -60,6 +60,7 @@
 #     Compile with GCC 4.6x version, add 'GCC46=1'
 #     Compile a profile version, add 'PROFILEMODE=1'
 #     Compile a debug version, add 'DEBUGMODE=1'
+#     Compile for the testers group (they don't get to play unless we're watching *wink*), add 'TESTERS=1'
 #     Compile with extra warnings, add 'WARNINGMODE=1'
 #     Compile without NASM's tmap.nas, add 'NOASM=1'
 #     Compile without 3D hardware support, add 'NOHW=1'
@@ -433,6 +434,10 @@ else
 	CFLAGS+=-O3
 endif
 	CFLAGS+=-g $(OPTS) $(ARCHOPTS) $(WINDRESFLAGS)
+
+ifdef TESTERS
+	OPTS+=-DTESTERS
+endif
 
 ifdef YASM
 ifdef STABS

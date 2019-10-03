@@ -217,6 +217,7 @@ INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;
 INT32 comebacktime = 10*TICRATE;
 INT32 bumptime = 6;
+INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
 INT32 wantedreduce = 5*TICRATE;
 INT32 wantedfrequency = 10*TICRATE;
@@ -260,6 +261,9 @@ boolean comeback; // Battle Mode's karma comeback is on/off
 INT16 votelevels[5][2]; // Levels that were rolled by the host
 SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
+
+// Battle overtime system
+struct battleovertime battleovertime;
 
 // Server-sided, synched variables
 SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
@@ -3659,7 +3663,7 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = (TOLMaps(G_TOLFlag(gametype)) / 2) + 1;
+	INT16 bufx, refreshnum = max(0, TOLMaps(G_TOLFlag(gametype))-3);
 
 	// Add the map to the buffer.
 	for (bufx = NUMMAPS-1; bufx > 0; bufx--)

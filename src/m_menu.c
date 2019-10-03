@@ -90,6 +90,10 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #define SLIDER_WIDTH (8*SLIDER_RANGE+6)
 #define SERVERS_PER_PAGE 11
 
+#if defined (NONET) || defined (TESTERS)
+#define NOMENUHOST
+#endif
+
 typedef enum
 {
 	QUITMSG = 0,
@@ -242,14 +246,18 @@ static menu_t SP_TimeAttackDef, SP_ReplayDef, SP_GuestReplayDef, SP_GhostDef;
 
 // Multiplayer
 #ifndef NONET
+#ifndef TESTERS
 static void M_StartServerMenu(INT32 choice);
+#endif
 static void M_ConnectMenu(INT32 choice);
 static void M_ConnectMenuModChecks(INT32 choice);
 static void M_Refresh(INT32 choice);
 static void M_Connect(INT32 choice);
 static void M_ChooseRoom(INT32 choice);
 #endif
+#ifndef TESTERS
 static void M_StartOfflineServerMenu(INT32 choice);
+#endif
 static void M_StartServer(INT32 choice);
 static void M_SetupMultiPlayer(INT32 choice);
 static void M_SetupMultiPlayer2(INT32 choice);
@@ -475,9 +483,14 @@ static menuitem_t MainMenu[] =
 {
 	{IT_SUBMENU|IT_STRING, NULL, "Extras",      &SR_MainDef,        76},
 	//{IT_CALL   |IT_STRING, NULL, "1 Player",    M_SinglePlayerMenu, 84},
+#ifdef TESTERS
+	{IT_GRAYEDOUT,         NULL, "Time Attack", NULL,               84},
+#else
 	{IT_CALL   |IT_STRING, NULL, "Time Attack", M_TimeAttack,       84},
+#endif
 	{IT_SUBMENU|IT_STRING, NULL, "Multiplayer", &MP_MainDef,        92},
 	{IT_CALL   |IT_STRING, NULL, "Options",     M_Options,          100},
+	/* I don't think is useful at all... */
 	{IT_CALL   |IT_STRING, NULL, "Addons",      M_Addons,           108},
 	{IT_CALL   |IT_STRING, NULL, "Quit  Game",  M_QuitSRB2,         116},
 };
@@ -728,7 +741,9 @@ static menuitem_t SR_PandorasBox[] =
 // Sky Room Custom Unlocks
 static menuitem_t SR_MainMenu[] =
 {
+#ifndef TESTERS
 	{IT_STRING|IT_SUBMENU,                  NULL, "Unlockables", &SR_UnlockChecklistDef, 100},
+#endif
 	{IT_CALL|IT_STRING|IT_CALL_NOTMODIFIED, NULL, "Statistics",  M_Statistics,           108},
 	{IT_CALL|IT_STRING,                     NULL, "Replay Hut",  M_ReplayHut,            116},
 	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom1
@@ -962,12 +977,16 @@ static menuitem_t MP_MainMenu[] =
 	{IT_STRING|IT_KEYHANDLER,NULL, "Player setup...",     M_SetupMultiHandler,18},
 
 	{IT_HEADER, NULL, "Host a game", NULL, 100-24},
-#ifndef NONET
+#ifndef NOMENUHOST
 	{IT_STRING|IT_CALL,       NULL, "Internet/LAN...",           M_StartServerMenu,        110-24},
 #else
 	{IT_GRAYEDOUT,            NULL, "Internet/LAN...",           NULL,                     110-24},
 #endif
+#ifdef TESTERS
+	{IT_GRAYEDOUT,            NULL, "Offline...",                NULL,                     118-24},
+#else
 	{IT_STRING|IT_CALL,       NULL, "Offline...",                M_StartOfflineServerMenu, 118-24},
+#endif
 
 	{IT_HEADER, NULL, "Join a game", NULL, 132-24},
 #ifndef NONET
@@ -3029,7 +3048,11 @@ void M_StartControlPanel(void)
 		//MainMenu[secrets].status = (M_AnySecretUnlocked()) ? (IT_STRING | IT_CALL) : (IT_DISABLED);
 
 		currentMenu = &MainDef;
+#ifdef TESTERS
+		itemOn = multiplr;
+#else
 		itemOn = singleplr;
+#endif
 	}
 	else if (modeattacking)
 	{
@@ -4091,6 +4114,14 @@ static void M_DrawCenteredMenu(void)
 					V_DrawMappedPatch(x, y, 0,
 						W_CachePatchName(currentMenu->menuitems[i].patch,PU_CACHE), graymap);
 				y += LINEHEIGHT;
+				break;
+			case IT_TRANSTEXT:
+				if (currentMenu->menuitems[i].alphaKey)
+					y = currentMenu->y+currentMenu->menuitems[i].alphaKey;
+				/* FALLTHRU */
+			case IT_TRANSTEXT2:
+				V_DrawCenteredString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
+				y += SMALLLINEHEIGHT;
 				break;
 		}
 	}
@@ -8787,6 +8818,7 @@ static void M_MapChange(INT32 choice)
 	M_SetupNextMenu(&MISC_ChangeLevelDef);
 }
 
+#ifndef TESTERS
 static void M_StartOfflineServerMenu(INT32 choice)
 {
 	(void)choice;
@@ -8794,8 +8826,10 @@ static void M_StartOfflineServerMenu(INT32 choice)
 	M_PrepareLevelSelect();
 	M_SetupNextMenu(&MP_OfflineServerDef);
 }
+#endif
 
 #ifndef NONET
+#ifndef TESTERS
 static void M_StartServerMenu(INT32 choice)
 {
 	(void)choice;
@@ -8805,6 +8839,7 @@ static void M_StartServerMenu(INT32 choice)
 	M_SetupNextMenu(&MP_ServerDef);
 
 }
+#endif
 
 // ==============
 // CONNECT VIA IP
@@ -8824,7 +8859,7 @@ static void M_DrawMPMainMenu(void)
 	// use generic drawer for cursor, items and title
 	M_DrawGenericMenu();
 
-#ifndef NONET
+#ifndef NOMENUHOST
 #if MAXPLAYERS != 16
 Update the maxplayers label...
 #endif
@@ -8832,10 +8867,12 @@ Update the maxplayers label...
 		((itemOn == 4) ? highlightflags : 0), "(2-16 players)");
 #endif
 
+#ifndef TESTERS
 	V_DrawRightAlignedString(BASEVIDWIDTH-x, y+MP_MainMenu[5].alphaKey,
 		((itemOn == 5) ? highlightflags : 0),
 		"(2-4 players)"
 		);
+#endif
 
 #ifndef NONET
 	y += MP_MainMenu[8].alphaKey;

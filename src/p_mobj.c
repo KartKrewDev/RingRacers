@@ -1848,6 +1848,9 @@ void P_XYMovement(mobj_t *mo)
 			// Now compare the Zs of the different quantizations
 			if (oldangle-newangle > ANG30 && oldangle-newangle < ANGLE_180) { // Allow for a bit of sticking - this value can be adjusted later
 				mo->standingslope = oldslope;
+#ifdef HWRENDER
+				mo->modeltilt = mo->standingslope;
+#endif
 				P_SlopeLaunch(mo);
 
 				//CONS_Printf("launched off of slope - ");
@@ -2421,6 +2424,9 @@ static boolean P_ZMovement(mobj_t *mo)
 		if (((mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope) && (mo->type != MT_STEAM))
 		{
 			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope;
+#ifdef HWRENDER
+			mo->modeltilt = mo->standingslope;
+#endif
 			P_ReverseQuantizeMomentumToSlope(&mom, mo->standingslope);
 		}
 #endif
@@ -6199,13 +6205,178 @@ static void P_RemoveOverlay(mobj_t *thing)
 		}
 }
 
+// Simplified version of a code bit in P_MobjFloorZ
+static fixed_t P_ShadowSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t radius, boolean ceiling)
+{
+	fixed_t testx, testy;
+
+	if (slope->d.x < 0)
+		testx = radius;
+	else
+		testx = -radius;
+
+	if (slope->d.y < 0)
+		testy = radius;
+	else
+		testy = -radius;
+
+	if ((slope->zdelta > 0) ^ !!(ceiling))
+	{
+		testx = -testx;
+		testy = -testy;
+	}
+
+	testx += x;
+	testy += y;
+
+	return P_GetZAt(slope, testx, testy);
+}
+
+// Sets standingslope/modeltilt, returns z position for shadows; used also for stuff like bananas
+// (I would've preferred to be able to return both the slope & z, but I'll take what I can get...)
+fixed_t P_CalculateShadowFloor(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player)
+{
+	fixed_t newz;
+	sector_t *sec;
+#ifdef ESLOPE
+	pslope_t *slope = NULL;
+#endif
+
+	sec = R_PointInSubsector(x, y)->sector;
+
+	if (flip)
+	{
+#ifdef ESLOPE
+		if (sec->c_slope)
+		{
+			slope = sec->c_slope;
+			newz = P_ShadowSlopeZ(slope, x, y, radius, true);
+		}
+		else
+#endif
+			newz = sec->ceilingheight;
+	}
+	else
+	{
+#ifdef ESLOPE
+		if (sec->f_slope)
+		{
+			slope = sec->f_slope;
+			newz = P_ShadowSlopeZ(slope, x, y, radius, false);
+		}
+		else
+#endif
+			newz = sec->floorheight;
+	}
+
+	// Check FOFs for a better suited slope
+	if (sec->ffloors)
+	{
+		ffloor_t *rover;
+
+		for (rover = sec->ffloors; rover; rover = rover->next)
+		{
+			fixed_t top, bottom;
+			fixed_t d1, d2;
+
+			if (!(rover->flags & FF_EXISTS))
+				continue;
+
+			if ((!(((rover->flags & FF_BLOCKPLAYER && player)
+				|| (rover->flags & FF_BLOCKOTHERS && !player))
+				|| (rover->flags & FF_QUICKSAND))
+				|| (rover->flags & FF_SWIMMABLE)))
+				continue;
+
+#ifdef ESLOPE
+			if (*rover->t_slope)
+				top = P_ShadowSlopeZ(*rover->t_slope, x, y, radius, false);
+			else
+#endif
+				top = *rover->topheight;
+
+#ifdef ESLOPE
+			if (*rover->b_slope)
+				bottom = P_ShadowSlopeZ(*rover->b_slope, x, y, radius, true);
+			else
+#endif
+				bottom = *rover->bottomheight;
+
+			if (flip)
+			{
+				if (rover->flags & FF_QUICKSAND)
+				{
+					if (z < top && (z + height) > bottom)
+					{
+						if (newz > (z + height))
+						{
+							newz = (z + height);
+							slope = NULL;
+						}
+					}
+					continue;
+				}
+
+				d1 = (z + height) - (top + ((bottom - top)/2));
+				d2 = z - (top + ((bottom - top)/2));
+
+				if (bottom < newz && abs(d1) < abs(d2))
+				{
+					newz = bottom;
+#ifdef ESLOPE
+					if (*rover->b_slope)
+						slope = *rover->b_slope;
+#endif
+				}
+			}
+			else
+			{
+				if (rover->flags & FF_QUICKSAND)
+				{
+					if (z < top && (z + height) > bottom)
+					{
+						if (newz < z)
+						{
+							newz = z;
+							slope = NULL;
+						}
+					}
+					continue;
+				}
+
+				d1 = z - (bottom + ((top - bottom)/2));
+				d2 = (z + height) - (bottom + ((top - bottom)/2));
+
+				if (top > newz && abs(d1) < abs(d2))
+				{
+					newz = top;
+#ifdef ESLOPE
+					if (*rover->t_slope)
+						slope = *rover->t_slope;
+#endif
+				}
+			}
+		}
+	}
+
+#if 0
+	mobj->standingslope = slope;
+#endif
+#ifdef HWRENDER
+	mobj->modeltilt = slope;
+#endif
+
+	return newz;
+}
+
 void P_RunShadows(void)
 {
 	mobj_t *mobj, *next, *dest;
 
 	for (mobj = shadowcap; mobj; mobj = next)
 	{
-		fixed_t floorz;
+		boolean flip;
+		fixed_t newz;
 
 		next = mobj->hnext;
 		P_SetTarget(&mobj->hnext, NULL);
@@ -6216,16 +6387,22 @@ void P_RunShadows(void)
 			continue; // shouldn't you already be dead?
 		}
 
-		if (mobj->target->player)
-			floorz = mobj->target->floorz;
-		else // FOR SOME REASON, plain floorz is not reliable for normal objects, only players?!
-			floorz = P_FloorzAtPos(mobj->target->x, mobj->target->y, mobj->target->z, mobj->target->height);
-
 		K_MatchGenericExtraFlags(mobj, mobj->target);
+		flip = (mobj->eflags & MFE_VERTICALFLIP);
 
-		if (((mobj->target->eflags & MFE_VERTICALFLIP) && mobj->target->z+mobj->target->height > mobj->target->ceilingz)
-			|| (!(mobj->target->eflags & MFE_VERTICALFLIP) && mobj->target->z < floorz))
-			mobj->flags2 |= MF2_DONTDRAW;
+		newz = P_CalculateShadowFloor(mobj, mobj->target->x, mobj->target->y, mobj->target->z,
+			mobj->target->radius, mobj->target->height, flip, (mobj->target->player != NULL));
+
+		if (flip)
+		{
+			if ((mobj->target->z + mobj->target->height) > newz)
+				mobj->flags2 |= MF2_DONTDRAW;
+		}
+		else
+		{
+			if (mobj->target->z < newz)
+				mobj->flags2 |= MF2_DONTDRAW;
+		}
 
 		// First scale to the same radius
 		P_SetScale(mobj, FixedDiv(mobj->target->radius, mobj->info->radius));
@@ -6237,13 +6414,12 @@ void P_RunShadows(void)
 
 		P_TeleportMove(mobj, dest->x, dest->y, mobj->target->z);
 
-		if (((mobj->eflags & MFE_VERTICALFLIP) && (mobj->ceilingz > mobj->z+mobj->height))
-			|| (!(mobj->eflags & MFE_VERTICALFLIP) && (floorz < mobj->z)))
+		if ((flip && newz > (mobj->z + mobj->height)) || (!flip && newz < mobj->z))
 		{
 			INT32 i;
 			fixed_t prevz;
 
-			mobj->z = (mobj->eflags & MFE_VERTICALFLIP ? mobj->ceilingz : floorz);
+			mobj->z = newz;
 
 			for (i = 0; i < MAXFFLOORS; i++)
 			{
@@ -6255,7 +6431,7 @@ void P_RunShadows(void)
 				// Check new position to see if you should still be on that ledge
 				P_TeleportMove(mobj, dest->x, dest->y, mobj->z);
 
-				mobj->z = (mobj->eflags & MFE_VERTICALFLIP ? mobj->ceilingz : floorz);
+				mobj->z = newz;
 
 				if (mobj->z == prevz)
 					break;
@@ -6308,6 +6484,216 @@ static void P_RemoveShadow(mobj_t *thing)
 			P_SetTarget(&thing->hnext, NULL);
 			return;
 		}
+}
+
+// SAL'S KART BATTLE MODE OVERTIME HANDLER
+#define MAXPLANESPERSECTOR (MAXFFLOORS+1)*2
+static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjtype_t type, boolean ceiling)
+{
+	UINT8 i;
+	fixed_t flatz[MAXPLANESPERSECTOR];
+	boolean flip[MAXPLANESPERSECTOR];
+	UINT8 numflats = 0;
+	mobj_t *mo;
+	subsector_t *ss = R_IsPointInSubsector(x, y);
+	sector_t *sec;
+
+	if (!ss)
+		return;
+	sec = ss->sector;
+
+	// convoluted stuff JUST to get all of the planes we need to draw orbs on :V
+
+	for (i = 0; i < MAXPLANESPERSECTOR; i++)
+		flip[i] = false;
+
+	if (sec->floorpic != skyflatnum)
+	{
+#ifdef ESLOPE
+		flatz[numflats] = (sec->f_slope ? P_GetZAt(sec->f_slope, x, y) : sec->floorheight);
+#else
+		flatz[numflats] = (sec->floorheight);
+#endif
+		numflats++;
+	}
+	if (sec->ceilingpic != skyflatnum && ceiling)
+	{
+#ifdef ESLOPE
+		flatz[numflats] = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
+#else
+		flatz[numflats] = (sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
+#endif
+		flip[numflats] = true;
+		numflats++;
+	}
+
+	if (sec->ffloors)
+	{
+		ffloor_t *rover;
+		for (rover = sec->ffloors; rover; rover = rover->next)
+		{
+			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER))
+				continue;
+			if (*rover->toppic != skyflatnum)
+			{
+#ifdef ESLOPE
+				flatz[numflats] = (*rover->t_slope ? P_GetZAt(*rover->t_slope, x, y) : *rover->topheight);
+#else
+				flatz[numflats] = (*rover->topheight);
+#endif
+				numflats++;
+			}
+			if (*rover->bottompic != skyflatnum && ceiling)
+			{
+#ifdef ESLOPE
+				flatz[numflats] = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
+#else
+				flatz[numflats] = (*rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
+#endif
+				flip[numflats] = true;
+				numflats++;
+			}
+		}
+	}
+
+	if (numflats <= 0) // no flats
+		return;
+
+	for (i = 0; i < numflats; i++)
+	{
+		mo = P_SpawnMobj(x, y, flatz[i], type);
+
+		// Lastly, if this can see the skybox mobj, then... we just wasted our time :V
+		if (skyboxmo[0] && !P_MobjWasRemoved(skyboxmo[0]))
+		{
+			const fixed_t sbz = skyboxmo[0]->z;
+			fixed_t checkz = sec->floorheight;
+
+			while (checkz < sec->ceilingheight)
+			{
+				P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, checkz);
+				if (P_CheckSight(skyboxmo[0], mo))
+				{
+					P_RemoveMobj(mo);
+					break;
+				}
+				else
+					checkz += 32*mapobjectscale;
+			}
+
+			P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, sbz);
+
+			if (P_MobjWasRemoved(mo))
+				continue;
+		}
+
+		P_SetScale(mo, scale);
+
+		if (flip[i])
+		{
+			mo->flags2 |= MF2_OBJECTFLIP;
+			mo->eflags |= MFE_VERTICALFLIP;
+		}
+
+		switch(type)
+		{
+			case MT_OVERTIMEFOG:
+				mo->destscale = 8*mo->scale;
+				mo->momz = P_RandomRange(1,8)*mo->scale;
+				break;
+			case MT_OVERTIMEORB:
+				//mo->destscale = mo->scale/4;
+				mo->frame += ((leveltime/4) % 8);
+				/*if (battleovertime.enabled < 10*TICRATE)
+					mo->flags2 |= MF2_SHADOW;*/
+				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
+				mo->z += P_RandomRange(0,48) * mo->scale;
+				break;
+			default:
+				break;
+		}
+	}
+}
+#undef MAXPLANESPERSECTOR
+
+void P_RunBattleOvertime(void)
+{
+	UINT16 i, j;
+
+	if (battleovertime.enabled < 10*TICRATE)
+	{
+		battleovertime.enabled++;
+		if (battleovertime.enabled == TICRATE)
+			S_StartSound(NULL, sfx_bhurry);
+		if (battleovertime.enabled == 10*TICRATE)
+			S_StartSound(NULL, sfx_kc40);
+	}
+	else
+	{
+		if (battleovertime.radius > battleovertime.minradius)
+			battleovertime.radius -= mapobjectscale;
+		else
+			battleovertime.radius = battleovertime.minradius;
+	}
+
+	if (leveltime & 1)
+	{
+		UINT8 transparency = tr_trans50;
+
+		if (!splitscreen && players[displayplayers[0]].mo)
+		{
+			INT32 dist = P_AproxDistance(battleovertime.x-players[displayplayers[0]].mo->x, battleovertime.y-players[displayplayers[0]].mo->y);
+			transparency = max(0, NUMTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
+		}
+
+		if (transparency < NUMTRANSMAPS)
+		{
+			mobj_t *beam = P_SpawnMobj(battleovertime.x, battleovertime.y, battleovertime.z + (mobjinfo[MT_RANDOMITEM].height/2), MT_OVERTIMEBEAM);
+			P_SetScale(beam, beam->scale*2);
+			if (transparency > 0)
+				beam->frame |= transparency<<FF_TRANSSHIFT;
+		}
+	}
+
+	// 16 orbs at the normal minimum size of 512
+	{
+		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
+		fixed_t scale = mapobjectscale + (battleovertime.radius/2048);
+		fixed_t sprwidth = 32*scale;
+		fixed_t circumference = FixedMul(pi, battleovertime.radius<<1);
+		UINT16 orbs = circumference / sprwidth;
+		angle_t angoff = ANGLE_MAX / orbs;
+
+		for (i = 0; i < orbs; i++)
+		{
+			angle_t ang = (i * angoff) + FixedAngle((leveltime/2)<<FRACBITS);
+			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+			P_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEORB, false);
+		}
+	}
+
+	if (battleovertime.enabled < 10*TICRATE)
+		return;
+
+	/*if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
+		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapobjectscale) - battleovertime.radius)>>FRACBITS / 2));*/
+
+	for (i = 0; i < 16; i++)
+	{
+		j = 0;
+		while (j < 32) // max attempts
+		{
+			fixed_t x = battleovertime.x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t y = battleovertime.y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t closestdist = battleovertime.radius + (8*mobjinfo[MT_OVERTIMEFOG].radius);
+			j++;
+			if (P_AproxDistance(x-battleovertime.x, y-battleovertime.y) < closestdist)
+				continue;
+			P_SpawnOvertimeParticles(x, y, 4*mapobjectscale, MT_OVERTIMEFOG, false);
+			break;
+		}
+	}
 }
 
 void A_BossDeath(mobj_t *mo);
@@ -6921,7 +7307,7 @@ void P_MobjThinker(mobj_t *mobj)
 					mobj->x = mobj->target->x;
 					mobj->y = mobj->target->y;
 
-					if (!splitscreen)
+					if (!splitscreen && players[displayplayers[0]].mo)
 					{
 						scale = mobj->target->scale + FixedMul(FixedDiv(abs(P_AproxDistance(players[displayplayers[0]].mo->x-mobj->target->x,
 							players[displayplayers[0]].mo->y-mobj->target->y)), RING_DIST), mobj->target->scale);
@@ -8216,6 +8602,9 @@ void P_MobjThinker(mobj_t *mobj)
 			P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
 				mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
 			P_SetScale(mobj, mobj->target->scale);
+#ifdef HWRENDER
+			mobj->modeltilt = mobj->target->modeltilt;
+#endif
 
 			{
 				player_t *p = NULL;
@@ -8366,6 +8755,56 @@ void P_MobjThinker(mobj_t *mobj)
 				P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
 						mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
 						z);
+			}
+			break;
+		case MT_TIREGREASE:
+			if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->player
+				|| !mobj->target->player->kartstuff[k_tiregrease])
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
+			K_MatchGenericExtraFlags(mobj, mobj->target);
+
+			{
+				const angle_t off = FixedAngle(40*FRACUNIT);
+				angle_t ang = mobj->target->angle;
+				fixed_t z;
+				UINT8 trans = (mobj->target->player->kartstuff[k_tiregrease] * (NUMTRANSMAPS+1)) / greasetics;
+
+				if (trans > NUMTRANSMAPS)
+					trans = NUMTRANSMAPS;
+
+				trans = NUMTRANSMAPS - trans;
+
+				z = mobj->target->z;
+				if (mobj->eflags & MFE_VERTICALFLIP)
+					z += mobj->target->height;
+
+				if (mobj->target->momx || mobj->target->momy)
+					ang = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+
+				if (mobj->extravalue1)
+					ang = (signed)(ang - off);
+				else
+					ang = (signed)(ang + off);
+
+				P_TeleportMove(mobj,
+					mobj->target->x - FixedMul(mobj->target->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
+					mobj->target->y - FixedMul(mobj->target->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
+					z);
+				mobj->angle = ang;
+
+				if (leveltime & 1)
+					mobj->flags2 |= MF2_DONTDRAW;
+
+				if (trans >= NUMTRANSMAPS)
+					mobj->flags2 |= MF2_DONTDRAW;
+				else if (trans == 0)
+					mobj->frame = (mobj->frame & ~FF_TRANSMASK);
+				else
+					mobj->frame = (mobj->frame & ~FF_TRANSMASK)|(trans << FF_TRANSSHIFT);
 			}
 			break;
 		case MT_THUNDERSHIELD:
@@ -9070,6 +9509,9 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			break;
 		case MT_KARMAFIREWORK:
+			if (mobj->flags & MF_NOGRAVITY)
+				break;
+
 			if (mobj->momz == 0)
 			{
 				P_RemoveMobj(mobj);
@@ -9083,6 +9525,40 @@ void P_MobjThinker(mobj_t *mobj)
 				trail->destscale = 1;
 				trail->scalespeed = mobj->scale/12;
 				trail->color = mobj->color;
+			}
+			break;
+		case MT_RANDOMITEM:
+			if (G_BattleGametype() && mobj->threshold == 70)
+			{
+				mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+				mobj->colorized = true;
+
+				if (battleovertime.enabled)
+				{
+					angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
+					fixed_t z = battleovertime.z;
+					fixed_t dist;
+					mobj_t *ghost;
+
+					/*if (z < mobj->subsector->sector->floorheight)
+						z = mobj->subsector->sector->floorheight;*/
+
+					if (mobj->extravalue1 < 512)
+						mobj->extravalue1++;
+					dist = mobj->extravalue1 * mapobjectscale;
+
+					P_TeleportMove(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
+						battleovertime.y + P_ReturnThrustY(NULL, ang, dist), z);
+
+					ghost = P_SpawnGhostMobj(mobj);
+					ghost->fuse = 4;
+					ghost->frame |= FF_FULLBRIGHT;
+				}
+			}
+			else
+			{
+				mobj->color = SKINCOLOR_NONE;
+				mobj->colorized = false;
 			}
 			break;
 		//}
@@ -9349,7 +9825,7 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 					P_RemoveMobj(mobj); // make sure they disappear
 					return;
 				case MT_RANDOMITEM:
-					if (G_BattleGametype())
+					if (G_BattleGametype() && (mobj->threshold != 70))
 					{
 						if (mobj->threshold != 69)
 							break;
@@ -9365,8 +9841,11 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 						else
 							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
 
+						P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
 						// Transfer flags2 (strongbox, objectflip)
 						newmobj->flags2 = mobj->flags2 & ~MF2_DONTDRAW;
+						if (mobj->threshold == 70)
+							newmobj->threshold = 70;
 					}
 					P_RemoveMobj(mobj); // make sure they disappear
 					return;
@@ -10726,6 +11205,50 @@ void P_PrecipitationEffects(void)
 	}
 }
 
+void P_RespawnBattleBoxes(void)
+{
+	thinker_t *th;
+
+	if (!G_BattleGametype())
+		return;
+
+	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+	{
+		mobj_t *box;
+		mobj_t *newmobj;
+
+		if (th->function.acp1 != (actionf_p1)P_MobjThinker)	// not a mobj
+			continue;
+
+		box = (mobj_t *)th;
+
+		if (box->type != MT_RANDOMITEM || box->threshold != 68 || box->fuse) // only popped items
+			continue;
+
+		// Respawn from mapthing if you have one!
+		if (box->spawnpoint)
+		{
+			P_SpawnMapThing(box->spawnpoint);
+			newmobj = box->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
+			P_SpawnMobj(box->spawnpoint->mobj->x, box->spawnpoint->mobj->y, box->spawnpoint->mobj->z, MT_EXPLODE); // poof into existance
+		}
+		else
+		{
+			newmobj = P_SpawnMobj(box->x, box->y, box->z, box->type);
+			P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
+		}
+
+			// Transfer flags2 (strongbox, objectflip)
+			newmobj->flags2 = box->flags2;
+			P_RemoveMobj(box); // make sure they disappear
+			numgotboxes--; // you've restored a box, remove it from the count
+			//continue; -- irrelevant?
+		}
+
+		if (numgotboxes < 0)
+			numgotboxes = 0;
+}
+
 //
 // P_RespawnSpecials
 //
@@ -10739,45 +11262,7 @@ void P_RespawnSpecials(void)
 	mapthing_t *mthing = NULL;
 
 	if (G_BattleGametype() && numgotboxes >= (4*nummapboxes/5)) // Battle Mode respawns all boxes in a different way
-	{
-		thinker_t *th;
-
-		for (th = thinkercap.next; th != &thinkercap; th = th->next)
-		{
-			mobj_t *box;
-			mobj_t *newmobj;
-
-			if (th->function.acp1 != (actionf_p1)P_MobjThinker)	// not a mobj
-				continue;
-
-			box = (mobj_t *)th;
-
-			if (box->type != MT_RANDOMITEM || box->threshold != 68 || box->fuse) // only popped items
-				continue;
-
-			// Respawn from mapthing if you have one!
-			if (box->spawnpoint)
-			{
-				P_SpawnMapThing(box->spawnpoint);
-				newmobj = box->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
-				P_SpawnMobj(box->spawnpoint->mobj->x, box->spawnpoint->mobj->y, box->spawnpoint->mobj->z, MT_EXPLODE); // poof into existance
-			}
-			else
-			{
-				newmobj = P_SpawnMobj(box->x, box->y, box->z, box->type);
-				P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
-			}
-
-			// Transfer flags2 (strongbox, objectflip)
-			newmobj->flags2 = box->flags2;
-			P_RemoveMobj(box); // make sure they disappear
-			numgotboxes--; // you've restored a box, remove it from the count
-			//continue; -- irrelevant?
-		}
-
-		if (numgotboxes < 0)
-			numgotboxes = 0;
-	}
+		P_RespawnBattleBoxes();
 
 	// wait time depends on player count
 	for (p = 0; p < MAXPLAYERS; p++)
@@ -10789,7 +11274,15 @@ void P_RespawnSpecials(void)
 	if (pcount == 1) // No respawn when alone
 		return;
 	else if (pcount > 1)
+	{
 		time = (180 - (pcount * 10))*TICRATE;
+
+		// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
+		// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
+		if ((mapheaderinfo[gamemap-1]->numlaps != 3)
+		&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
+			time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
+	}
 
 	// only respawn items when cv_itemrespawn is on
 	//if (!cv_itemrespawn.value) // TODO: remove this cvar
@@ -12011,7 +12504,7 @@ ML_NOCLIMB : Direction not controllable
 	{
 		if (mthing->options & MTF_AMBUSH)
 		{
-			if (i == MT_YELLOWDIAG || i == MT_REDDIAG)
+			if (mobj->flags & MF_SPRING && mobj->info->damage)
 				mobj->angle += ANGLE_22h;
 
 			if (mobj->flags & MF_NIGHTSITEM)

@@ -950,8 +950,8 @@ typedef enum
 	MD2_EXTVAL2     = 1<<6,
 	MD2_HNEXT       = 1<<7,
 	MD2_HPREV       = 1<<8,
-	MD2_COLORIZED	= 1<<9,
-	MD2_WAYPOINTCAP	= 1<<10
+	MD2_COLORIZED   = 1<<9,
+	MD2_WAYPOINTCAP = 1<<10
 #ifdef ESLOPE
 	, MD2_SLOPE       = 1<<11
 #endif
@@ -2147,7 +2147,12 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->hprev = (mobj_t *)(size_t)READUINT32(save_p);
 #ifdef ESLOPE
 	if (diff2 & MD2_SLOPE)
+	{
 		mobj->standingslope = P_SlopeById(READUINT16(save_p));
+#ifdef HWRENDER
+		mobj->modeltilt = mobj->standingslope;
+#endif
+	}
 #endif
 	if (diff2 & MD2_COLORIZED)
 		mobj->colorized = READUINT8(save_p);
@@ -3094,7 +3099,7 @@ static inline void P_NetArchiveSpecials(void)
 	WRITEUINT32(save_p, 0xffffffff);
 
 	// Sky number
-	WRITEINT32(save_p, globallevelskynum);
+	WRITESTRINGN(save_p, globallevelskytexture, 9);
 
 	// Current global weather type
 	WRITEUINT8(save_p, globalweather);
@@ -3113,8 +3118,8 @@ static inline void P_NetArchiveSpecials(void)
 //
 static void P_NetUnArchiveSpecials(void)
 {
+	char skytex[9];
 	size_t i;
-	INT32 j;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_SPECIALS)
 		I_Error("Bad $$$.sav at archive block Specials");
@@ -3127,9 +3132,9 @@ static void P_NetUnArchiveSpecials(void)
 		itemrespawntime[iquehead++] = READINT32(save_p);
 	}
 
-	j = READINT32(save_p);
-	if (j != globallevelskynum)
-		P_SetupLevelSky(j, true);
+	READSTRINGN(save_p, skytex, sizeof(skytex));
+	if (strcmp(skytex, globallevelskytexture))
+		P_SetupLevelSky(skytex, true);
 
 	globalweather = READUINT8(save_p);
 
@@ -3288,6 +3293,14 @@ static void P_NetArchiveMisc(void)
 	for (i = 0; i < 4; i++)
 		WRITESINT8(save_p, battlewanted[i]);
 
+	// battleovertime_t
+	WRITEUINT16(save_p, battleovertime.enabled);
+	WRITEFIXED(save_p, battleovertime.radius);
+	WRITEFIXED(save_p, battleovertime.minradius);
+	WRITEFIXED(save_p, battleovertime.x);
+	WRITEFIXED(save_p, battleovertime.y);
+	WRITEFIXED(save_p, battleovertime.z);
+
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
 	WRITEUINT32(save_p, hyubgone);
@@ -3399,6 +3412,14 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = READSINT8(save_p);
+
+	// battleovertime_t
+	battleovertime.enabled = READUINT16(save_p);
+	battleovertime.radius = READFIXED(save_p);
+	battleovertime.minradius = READFIXED(save_p);
+	battleovertime.x = READFIXED(save_p);
+	battleovertime.y = READFIXED(save_p);
+	battleovertime.z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);

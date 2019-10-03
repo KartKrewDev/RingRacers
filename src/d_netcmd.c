@@ -415,7 +415,8 @@ consvar_t cv_itemfinder = {"itemfinder", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff,
 
 // Scoring type options
 consvar_t cv_match_scoring = {"matchscoring", "Normal", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, match_scoring_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_overtime = {"overtime", "Yes", CV_NETVAR, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t overtime_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Super"}, {0, NULL}};
+consvar_t cv_overtime = {"overtime", "Yes", CV_NETVAR|CV_CHEAT, overtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_rollingdemos = {"rollingdemos", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -4790,8 +4791,8 @@ static void TimeLimit_OnChange(void)
 
 	if (cv_timelimit.value != 0)
 	{
-		CONS_Printf(M_GetText("Levels will end after %d minute%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
-		timelimitintics = cv_timelimit.value * 60 * TICRATE;
+		CONS_Printf(M_GetText("Levels will end after %d second%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
+		timelimitintics = cv_timelimit.value * TICRATE;
 
 		//add hidetime for tag too!
 		if (G_TagGametype())
@@ -4841,9 +4842,9 @@ void D_GameTypeChanged(INT32 lastgametype)
 			case GT_TEAMMATCH:
 				if (!cv_timelimit.changed && !cv_pointlimit.changed) // user hasn't changed limits
 				{
-					// default settings for match: no timelimit, no pointlimit
-					CV_SetValue(&cv_pointlimit, 0);
-					CV_SetValue(&cv_timelimit,  0);
+					// default settings for match: 2 mins, no pointlimit
+					CV_SetValue(&cv_pointlimit,  0);
+					CV_SetValue(&cv_timelimit, 120);
 				}
 				if (!cv_itemrespawntime.changed)
 					CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue); // respawn normally
@@ -5149,7 +5150,7 @@ static void Hidetime_OnChange(void)
 
 	//uh oh, gotta change timelimitintics now too
 	if (G_TagGametype())
-		timelimitintics = (cv_timelimit.value * 60 * TICRATE) + (hidetime * TICRATE);
+		timelimitintics = (cv_timelimit.value * TICRATE) + (hidetime * TICRATE);
 }
 
 static void Command_Showmap_f(void)
