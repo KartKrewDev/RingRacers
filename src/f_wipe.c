@@ -12,8 +12,6 @@
 /// \file  f_wipe.c
 /// \brief SRB2 2.1 custom fade mask "wipe" behavior.
 
-#define GENESIS_WIPE // Sal: experimental Genesis-style colorful wipes
-
 #include "f_finale.h"
 #include "i_video.h"
 #include "v_video.h"
