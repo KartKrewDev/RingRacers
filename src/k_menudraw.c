@@ -135,7 +135,7 @@ void M_Drawer(void)
 	if (menuwipe)
 	{
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_menu_final], false, "FADEMAP0", true);
+		F_RunWipe(wipedefs[wipe_menu_final], false, "FADEMAP0", true, false);
 		menuwipe = false;
 	}
 
@@ -380,6 +380,7 @@ void M_DrawGenericMenu(void)
 void M_DrawKartGamemodeMenu(void)
 {
 	INT16 i, x = 170;
+	UINT8 n = currentMenu->numitems-1;
 
 	M_DrawMenuTooltips();
 	M_DrawMenuPreviews();
@@ -389,10 +390,17 @@ void M_DrawKartGamemodeMenu(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
+		INT16 y;
+
+		if (i == n)
+			y = 160;
+		else
+			y = 80 - (16 * (n-1)) + (32 * i);
+
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_STRING:
-				V_DrawRightAlignedGamemodeString(x, currentMenu->menuitems[i].mvar1, 0, currentMenu->menuitems[i].text,
+				V_DrawRightAlignedGamemodeString(x, y, 0, currentMenu->menuitems[i].text,
 					(i == itemOn) ? SKINCOLOR_PLAGUE : SKINCOLOR_PIGEON);
 				break;
 		}
@@ -724,9 +732,8 @@ static void M_DrawCharSelectExplosions(void)
 #define IDLELEN 8
 #define SELECTLEN (8 + IDLELEN + 7 + IDLELEN)
 
-static void M_DrawCharSelectCursors(void)
+static void M_DrawCharSelectCursor(UINT8 num)
 {
-	UINT8 i;
 	static const char *idleframes[IDLELEN] = {
 		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2"
 	};
@@ -743,40 +750,37 @@ static void M_DrawCharSelectCursors(void)
 		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	};
 
-	for (i = 0; i < setup_numplayers; i++)
+	setup_player_t *p = &setup_player[num];
+	char letter = 'A' + num;
+	UINT8 *colormap;
+	INT16 x, y;
+	INT16 quadx, quady;
+
+	quadx = 4 * (p->gridx / 3);
+	quady = 4 * (p->gridy / 3);
+
+	x = 82 + (p->gridx*16) + quadx - 13,
+	y = 22 + (p->gridy*16) + quady - 12,
+
+	colormap = R_GetTranslationColormap(TC_DEFAULT, (p->color != SKINCOLOR_NONE ? p->color : SKINCOLOR_GREY), GTC_MENUCACHE);
+
+	if (p->mdepth >= CSSTEP_READY)
 	{
-		setup_player_t *p = &setup_player[i];
-		char letter = 'A' + i;
-		UINT8 *colormap;
-		INT16 x, y;
-		INT16 quadx, quady;
-
-		quadx = 4 * (p->gridx / 3);
-		quady = 4 * (p->gridy / 3);
-
-		x = 82 + (p->gridx*16) + quadx - 13,
-		y = 22 + (p->gridy*16) + quady - 12,
-
-		colormap = R_GetTranslationColormap(TC_DEFAULT, (p->color != SKINCOLOR_NONE ? p->color : SKINCOLOR_GREY), GTC_MENUCACHE);
-
-		if (p->mdepth >= CSSTEP_READY)
-		{
-			V_DrawMappedPatch(x, y, 0, W_CachePatchName("CHCNFRM0", PU_CACHE), colormap);
-		}
-		else if (p->mdepth > CSSTEP_CHARS)
-		{
-			V_DrawMappedPatch(x, y, 0, W_CachePatchName(selectframesa[setup_animcounter % SELECTLEN], PU_CACHE), colormap);
-			if (selectframesb[(setup_animcounter-1) % SELECTLEN] != NULL)
-				V_DrawMappedPatch(x, y, V_TRANSLUCENT, W_CachePatchName(selectframesb[(setup_animcounter-1) % SELECTLEN], PU_CACHE), colormap);
-		}
-		else
-		{
-			V_DrawMappedPatch(x, y, 0, W_CachePatchName(idleframes[setup_animcounter % IDLELEN], PU_CACHE), colormap);
-		}
-
-		if (p->mdepth < CSSTEP_READY)
-			V_DrawMappedPatch(x, y, 0, W_CachePatchName(va("CSELH%c", letter), PU_CACHE), colormap);
+		V_DrawMappedPatch(x, y, 0, W_CachePatchName("CHCNFRM0", PU_CACHE), colormap);
 	}
+	else if (p->mdepth > CSSTEP_CHARS)
+	{
+		V_DrawMappedPatch(x, y, 0, W_CachePatchName(selectframesa[setup_animcounter % SELECTLEN], PU_CACHE), colormap);
+		if (selectframesb[(setup_animcounter-1) % SELECTLEN] != NULL)
+			V_DrawMappedPatch(x, y, V_TRANSLUCENT, W_CachePatchName(selectframesb[(setup_animcounter-1) % SELECTLEN], PU_CACHE), colormap);
+	}
+	else
+	{
+		V_DrawMappedPatch(x, y, 0, W_CachePatchName(idleframes[setup_animcounter % IDLELEN], PU_CACHE), colormap);
+	}
+
+	if (p->mdepth < CSSTEP_READY)
+		V_DrawMappedPatch(x, y, 0, W_CachePatchName(va("CSELH%c", letter), PU_CACHE), colormap);
 }
 
 #undef IDLE
@@ -786,6 +790,7 @@ static void M_DrawCharSelectCursors(void)
 void M_DrawCharacterSelect(void)
 {
 	UINT8 i, j, k;
+	UINT8 priority = setup_animcounter % setup_numplayers;
 	INT16 quadx, quady;
 	SINT8 skin;
 
@@ -851,12 +856,177 @@ void M_DrawCharacterSelect(void)
 	// Explosions when you've made your final selection
 	M_DrawCharSelectExplosions();
 
-	// Draw the cursors
-	M_DrawCharSelectCursors();
-
-	// Draw a preview for each player
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		// Draw a preview for each player
 		M_DrawCharSelectPreview(i);
+
+		if (i >= setup_numplayers)
+			continue;
+
+		// Draw the cursors
+		if (i != priority)
+			M_DrawCharSelectCursor(i);
+	}
+
+	// Draw the priority player over the other ones
+	M_DrawCharSelectCursor(priority);
+}
+
+// LEVEL SELECT
+
+static void M_DrawCupPreview(INT16 y, UINT8 cupnum)
+{
+	UINT8 i;
+	INT16 x = -(levellist_cupgrid.previewanim % 82);
+
+	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
+
+	for (i = 0; i < 5; i++)
+	{
+		lumpnum_t lumpnum;
+		patch_t *PictureOfLevel;
+		UINT8 lvloff = (i + (levellist_cupgrid.previewanim / 82)) % 5;
+
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(1 + (cupnum * 5) + lvloff)));
+		if (lumpnum != LUMPERROR)
+			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+		else
+			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+
+		V_DrawSmallScaledPatch(x + 1 + (i*82), y+2, 0, PictureOfLevel);
+	}
+}
+
+void M_DrawCupSelect(void)
+{
+	UINT8 i, j;
+
+	for (i = 0; i < CUPS_COLUMNS; i++)
+	{
+		for (j = 0; j < CUPS_ROWS; j++)
+		{
+			V_DrawFill(14 + (i*42), 22 + (j*40) - (15*menutransition.tics), 39, 38, 31);
+		}
+	}
+
+	V_DrawScaledPatch(14 + (levellist_cupgrid.x*42) - 4,
+		22 + (levellist_cupgrid.y*40) - 4 - (12*menutransition.tics),
+		0, W_CachePatchName("CUPCURS", PU_CACHE)
+	);
+
+	V_DrawScaledPatch(0, 120 - (12*menutransition.tics), 0, W_CachePatchName("MENUHINT", PU_CACHE));
+	M_DrawCupPreview(146 + (12*menutransition.tics), levellist_cupgrid.x + (levellist_cupgrid.y * CUPS_COLUMNS));
+
+	V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 126 - (12*menutransition.tics), 0, "SNEAKER CUP");
+}
+
+static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
+{
+	static char word1[21];
+	static char word2[21];
+	UINT8 word1len = 0;
+	UINT8 word2len = 0;
+	INT16 x2 = x;
+	UINT8 i;
+
+	if (!mapheaderinfo[map]->lvlttl[0])
+		return;
+
+	if (mapheaderinfo[map]->zonttl[0])
+	{
+		strcpy(word1, mapheaderinfo[map]->lvlttl);
+		strcpy(word2, mapheaderinfo[map]->zonttl);
+	}
+	else
+	{
+		boolean donewithone = false;
+
+		for (i = 0; i < 21; i++)
+		{
+			if (!mapheaderinfo[map]->lvlttl[i])
+			{
+				if (donewithone)
+					word2[word2len] = '\0';
+				else
+					word1[word1len] = '\0';
+				break;
+			}
+
+			if (mapheaderinfo[map]->lvlttl[i] == ' ')
+			{
+				if (!donewithone)
+				{
+					word1[word1len] = '\0';
+					donewithone = true;
+					continue;
+				}
+			}
+
+			if (donewithone)
+			{
+				word2[word2len] = mapheaderinfo[map]->lvlttl[i];
+				word2len++;
+			}
+			else
+			{
+				word1[word1len] = mapheaderinfo[map]->lvlttl[i];
+				word1len++;
+			}
+		}
+	}
+
+	for (i = 0; i < 2; i++)
+	{
+		INT32 c;
+		if (i >= word1len)
+			break;
+		c = toupper(word1[i]) - LT_FONTSTART;
+		x2 += SHORT(title_font_high[c]->width) - 4;
+	}
+
+	if (word1len)
+		V_DrawLSTitleHighString(x, y, 0, word1);
+	if (word2len)
+		V_DrawLSTitleLowString(x2, y+28, 0, word2);
+}
+
+void M_DrawLevelSelect(void)
+{
+	UINT8 i;
+	INT16 t = (32*menutransition.tics);
+	INT16 y = 80 - (12 * levellist_scroll.y);
+
+	for (i = 0; i < 5; i++)
+	{
+		lumpnum_t lumpnum;
+		patch_t *PictureOfLevel;
+		UINT8 *colormap = NULL;
+		INT16 map = 1 + (levellist_scroll.cupid * 5) + i;
+
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(map)));
+		if (lumpnum != LUMPERROR)
+			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+		else
+			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+
+		if (i == levellist_scroll.cursor && ((skullAnimCounter / 4) & 1))
+			V_DrawScaledPatch(3+t, y, 0, W_CachePatchName("LVLSEL2", PU_CACHE));
+		else
+			V_DrawScaledPatch(3+t, y, 0, W_CachePatchName("LVLSEL", PU_CACHE));
+
+		if (i != levellist_scroll.cursor)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
+
+		V_DrawSmallMappedPatch(9+t, y+6, 0, PictureOfLevel, colormap);
+
+		M_DrawHighLowLevelTitle(98+t, y+8, map-1);
+
+		y += 72;
+	}
+
+	V_DrawScaledPatch(0, 0, 0, W_CachePatchName("MENUHINT", PU_CACHE));
+	V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 6, 0, "SNEAKER CUP");
 }
 
 //

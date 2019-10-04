@@ -1935,6 +1935,150 @@ void V_DrawRightAlignedFileString(INT32 x, INT32 y, INT32 option, const char *st
 	x -= V_FileStringWidth(string, option);
 	V_DrawFileString(x, y, option, string);
 }
+
+void V_DrawLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, left = 0;
+	INT32 spacewidth = 16;
+	const char *ch = string;
+
+	option &= ~V_FLIP;
+
+	if (option & V_NOSCALESTART)
+	{
+		dupx = vid.dupx;
+		dupy = vid.dupy;
+		scrwidth = vid.width;
+	}
+	else
+	{
+		dupx = dupy = 1;
+		scrwidth = vid.width/vid.dupx;
+		left = (scrwidth - BASEVIDWIDTH)/2;
+	}
+
+	for (;;ch++)
+	{
+		if (!*ch)
+			break;
+
+		if (*ch == '\n')
+		{
+			cx = x;
+			cy += 14*dupy;
+
+			continue;
+		}
+
+		c = toupper(*ch) - LT_FONTSTART;
+
+		// character does not exist or is a space
+		if (c < 0 || c >= LT_FONTSIZE || !title_font_high[c])
+		{
+			cx += spacewidth * dupx;
+			continue;
+		}
+
+		w = (SHORT(title_font_high[c]->width) - 4) * dupx;
+
+		if (cx > scrwidth)
+			break;
+
+		if (cx+left + w < 0) //left boundary check
+		{
+			cx += w;
+			continue;
+		}
+
+		V_DrawFixedPatch(cx<<FRACBITS, cy<<FRACBITS, FRACUNIT, option, title_font_high[c], NULL);
+
+		cx += w;
+	}
+}
+
+void V_DrawCenteredLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_LSTitleHighStringWidth(string, option)/2;
+	V_DrawLSTitleHighString(x, y, option, string);
+}
+
+void V_DrawRightAlignedLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_LSTitleHighStringWidth(string, option);
+	V_DrawLSTitleHighString(x, y, option, string);
+}
+
+void V_DrawLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, left = 0;
+	INT32 spacewidth = 16;
+	const char *ch = string;
+
+	option &= ~V_FLIP;
+
+	if (option & V_NOSCALESTART)
+	{
+		dupx = vid.dupx;
+		dupy = vid.dupy;
+		scrwidth = vid.width;
+	}
+	else
+	{
+		dupx = dupy = 1;
+		scrwidth = vid.width/vid.dupx;
+		left = (scrwidth - BASEVIDWIDTH)/2;
+	}
+
+	for (;;ch++)
+	{
+		if (!*ch)
+			break;
+
+		if (*ch == '\n')
+		{
+			cx = x;
+			cy += 14*dupy;
+
+			continue;
+		}
+
+		c = toupper(*ch) - LT_FONTSTART;
+
+		// character does not exist or is a space
+		if (c < 0 || c >= LT_FONTSIZE || !title_font_low[c])
+		{
+			cx += spacewidth * dupx;
+			continue;
+		}
+
+		w = (SHORT(title_font_low[c]->width) - 4) * dupx;
+
+		if (cx > scrwidth)
+			break;
+
+		if (cx+left + w < 0) //left boundary check
+		{
+			cx += w;
+			continue;
+		}
+
+		V_DrawFixedPatch(cx<<FRACBITS, cy<<FRACBITS, FRACUNIT, option, title_font_low[c], NULL);
+
+		cx += w;
+	}
+}
+
+void V_DrawCenteredLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_LSTitleLowStringWidth(string, option)/2;
+	V_DrawLSTitleLowString(x, y, option, string);
+}
+
+void V_DrawRightAlignedLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_LSTitleLowStringWidth(string, option);
+	V_DrawLSTitleLowString(x, y, option, string);
+}
 //
 
 //
@@ -2659,6 +2803,50 @@ INT32 V_FileStringWidth(const char *string, INT32 option)
 			continue;
 		else
 			w += SHORT(file_font[c]->width) - 3;
+	}
+
+	return w;
+}
+
+INT32 V_LSTitleHighStringWidth(const char *string, INT32 option)
+{
+	INT32 c, w = 0;
+	INT32 spacewidth = 16;
+	size_t i;
+
+	(void)option;
+
+	for (i = 0; i < strlen(string); i++)
+	{
+		c = string[i];
+		c = toupper(c) - LT_FONTSTART;
+
+		if (c < 0 || c >= LT_FONTSIZE || !title_font_high[c])
+			w += spacewidth;
+		else
+			w += SHORT(title_font_high[c]->width) - 4;
+	}
+
+	return w;
+}
+
+INT32 V_LSTitleLowStringWidth(const char *string, INT32 option)
+{
+	INT32 c, w = 0;
+	INT32 spacewidth = 16;
+	size_t i;
+
+	(void)option;
+
+	for (i = 0; i < strlen(string); i++)
+	{
+		c = string[i];
+		c = toupper(c) - LT_FONTSTART;
+
+		if (c < 0 || c >= LT_FONTSIZE || !title_font_low[c])
+			w += spacewidth;
+		else
+			w += SHORT(title_font_low[c]->width) - 4;
 	}
 
 	return w;

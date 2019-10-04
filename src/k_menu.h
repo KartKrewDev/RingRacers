@@ -108,8 +108,8 @@ typedef struct menu_s
 	INT16          lastOn;             // last item user was on in menu
 	menuitem_t    *menuitems;          // menu items
 	INT16          x, y;               // x, y of menu
-	INT16          transitionInTics;   // tics for transitions in
-	INT16          transitionOutTics;  // tics for transitions out
+	INT16          transitionID;       // only transition if IDs match
+	INT16          transitionTics;     // tics for transitions out
 	void         (*drawroutine)(void); // draw routine
 	void         (*tickroutine)(void); // ticker routine
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
@@ -139,17 +139,26 @@ typedef enum
 	quitkart
 } main_e;
 
-extern menuitem_t PLAY_MainMenu[];
-extern menu_t PLAY_MainDef;
-
 extern menuitem_t PLAY_CharSelect[];
 extern menu_t PLAY_CharSelectDef;
+
+extern menuitem_t PLAY_MainMenu[];
+extern menu_t PLAY_MainDef;
 
 extern menuitem_t PLAY_Gamemodes[];
 extern menu_t PLAY_GamemodesDef;
 
 extern menuitem_t PLAY_RaceGamemodesMenu[];
 extern menu_t PLAY_RaceGamemodesDef;
+
+extern menuitem_t PLAY_CupSelect[];
+extern menu_t PLAY_CupSelectDef;
+
+extern menuitem_t PLAY_LevelSelect[];
+extern menu_t PLAY_LevelSelectDef;
+
+extern menuitem_t PLAY_BattleGamemodesMenu[];
+extern menu_t PLAY_BattleGamemodesDef;
 
 extern menuitem_t PAUSE_PlaybackMenu[];
 extern menu_t PAUSE_PlaybackMenuDef;
@@ -171,11 +180,9 @@ typedef enum
 	playback_quit
 } playback_e;
 
-
 // K_MENUFUNC.C
 
 extern menu_t *currentMenu;
-
 extern char dummystaffname[22];
 
 extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
@@ -248,12 +255,12 @@ typedef struct setup_player_s
 extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 
 extern UINT8 setup_numplayers;
-extern UINT16 setup_animcounter;
+extern tic_t setup_animcounter;
+
+#define CSROTATETICS 6
 
 // The selection spawns 3 explosions in 4 directions, and there's 4 players -- 3 * 4 * 4 = 48
 #define CSEXPLOSIONS 48
-
-#define CSROTATETICS 6
 
 extern struct setup_explosions_s {
 	UINT8 x, y;
@@ -274,6 +281,35 @@ void M_CharacterSelectInit(INT32 choice);
 void M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
+
+#define CUPS_COLUMNS 7
+#define CUPS_ROWS 2
+#define CUPS_MAPSPERCUP 5
+#define CUPS_MAX (NUMMAPS / CUPS_MAPSPERCUP)
+#define CUPS_PAGES (CUPS_MAX / (CUPS_COLUMNS * CUPS_ROWS))
+
+extern struct levellist_cupgrid_s {
+	UINT8 numcups;
+	SINT8 x, y;
+	SINT8 pageno;
+	tic_t previewanim;
+} levellist_cupgrid;
+
+extern struct levellist_scroll_s {
+	SINT8 cupid;
+	SINT8 cursor;
+	UINT16 y;
+	UINT16 dest;
+} levellist_scroll;
+
+boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
+void M_LevelSelectInit(INT32 choice);
+
+void M_CupSelectHandler(INT32 choice);
+void M_CupSelectTick(void);
+
+void M_LevelSelectHandler(INT32 choice);
+void M_LevelSelectTick(void);
 
 void M_EndModeAttackRun(void);
 void M_SetPlaybackMenuPointer(void);
@@ -297,6 +333,9 @@ void M_DrawMessageMenu(void);
 void M_DrawImageDef(void);
 
 void M_DrawCharacterSelect(void);
+
+void M_DrawCupSelect(void);
+void M_DrawLevelSelect(void);
 
 void M_DrawPlaybackMenu(void);
 
@@ -322,7 +361,7 @@ void M_DrawPlaybackMenu(void);
 	0,\
 	source,\
 	0, 0,\
-	10, 10,\
+	1, 10,\
 	M_DrawKartGamemodeMenu,\
 	NULL,\
 	NULL\

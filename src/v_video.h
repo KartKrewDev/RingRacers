@@ -187,6 +187,12 @@ void V_DrawRightAlignedGamemodeString(INT32 x, INT32 y, INT32 option, const char
 void V_DrawFileString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawCenteredFileString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedFileString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the hu_font, 0.5x scale
 void V_DrawSmallString(INT32 x, INT32 y, INT32 option, const char *string);
@@ -224,6 +230,8 @@ INT32 V_ThinStringWidth(const char *string, INT32 option);
 // SRB2Kart
 INT32 V_GamemodeStringWidth(const char *string, INT32 option);
 INT32 V_FileStringWidth(const char *string, INT32 option);
+INT32 V_LSTitleHighStringWidth(const char *string, INT32 option);
+INT32 V_LSTitleLowStringWidth(const char *string, INT32 option);
 
 void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param);
 

@@ -72,6 +72,8 @@ patch_t *nightsnum[10]; // 0-9
 patch_t *kart_font[KART_FONTSIZE];	// SRB2kart
 patch_t *gamemode_font[AZ_FONTSIZE];
 patch_t *file_font[AZ_FONTSIZE];
+patch_t *title_font_high[LT_FONTSIZE];
+patch_t *title_font_low[LT_FONTSIZE];
 
 // Level title and credits fonts
 patch_t *lt_font[LT_FONTSIZE];
@@ -261,15 +263,26 @@ void HU_LoadGraphics(void)
 	//
 
 	j = LT_FONTSTART;
-	for (i = 0; i < LT_FONTSIZE; i++)
+	for (i = 0; i < LT_FONTSIZE; i++, j++)
 	{
 		sprintf(buffer, "LTFNT%.3d", j);
-		j++;
-
 		if (W_CheckNumForName(buffer) == LUMPERROR)
 			lt_font[i] = NULL;
 		else
 			lt_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+
+		// Level select title fonts
+		sprintf(buffer, "THIFN%.3d", j);
+		if (W_CheckNumForName(buffer) == LUMPERROR)
+			title_font_high[i] = NULL;
+		else
+			title_font_high[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+
+		sprintf(buffer, "TLWFN%.3d", j);
+		if (W_CheckNumForName(buffer) == LUMPERROR)
+			title_font_low[i] = NULL;
+		else
+			title_font_low[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
 	// cache the credits font for entire game execution (why not?)

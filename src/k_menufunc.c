@@ -171,8 +171,8 @@ static consvar_t cv_dummystaff = {"dummystaff", "0", CV_HIDDEN|CV_CALL, dummysta
 // ==========================================================================
 // (there's only a couple anyway)
 
-// Prototypes
 #if 0
+// Prototypes
 static INT32 M_FindFirstMap(INT32 gtype);
 static INT32 M_GetFirstLevelInList(void);
 #endif
@@ -180,6 +180,7 @@ static INT32 M_GetFirstLevelInList(void);
 // Nextmap.  Used for Time Attack.
 static void Nextmap_OnChange(void)
 {
+#if 0
 	char *leveltitle;
 
 	// Update the string in the consvar.
@@ -187,7 +188,7 @@ static void Nextmap_OnChange(void)
 	leveltitle = G_BuildMapTitle(cv_nextmap.value);
 	cv_nextmap.string = cv_nextmap.zstring = leveltitle ? leveltitle : Z_StrDup(G_BuildMapName(cv_nextmap.value));
 
-#if 0
+
 	if (currentMenu == &SP_TimeAttackDef)
 	{
 		// see also p_setup.c's P_LoadRecordGhosts
@@ -272,6 +273,7 @@ static void Nextmap_OnChange(void)
 #endif
 }
 
+
 static void Dummymenuplayer_OnChange(void)
 {
 	if (cv_dummymenuplayer.value < 1)
@@ -345,6 +347,7 @@ static void Newgametype_OnChange(void)
 	}
 #endif
 }
+
 
 void Screenshot_option_Onchange(void)
 {
@@ -1174,10 +1177,11 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 
 	if (!notransition)
 	{
-		if (currentMenu->transitionOutTics)
+		if (currentMenu->transitionID == menudef->transitionID
+			&& currentMenu->transitionTics)
 		{
 			menutransition.tics = 0;
-			menutransition.dest = currentMenu->transitionOutTics;
+			menutransition.dest = currentMenu->transitionTics;
 			menutransition.in = false;
 			menutransition.newmenu = menudef;
 			return; // Don't change menu yet, the transition will call this again
@@ -1188,7 +1192,7 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 			F_WipeEndScreen();
-			F_RunWipe(wipedefs[wipe_menu_toblack], false, "FADEMAP0", false);
+			F_RunWipe(wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
 		}
 	}
 
@@ -1243,6 +1247,8 @@ void M_GoBack(INT32 choice)
 	}
 	else
 		M_ClearMenus(true);
+
+	S_StartSound(NULL, sfx_s3k5b);
 }
 
 //
@@ -1263,14 +1269,12 @@ void M_Ticker(void)
 		// If dest is zero, we're mid-transition and want to end it
 		if (menutransition.tics == menutransition.dest && menutransition.newmenu != NULL)
 		{
-			M_SetupNextMenu(menutransition.newmenu, true);
-
-			if (menutransition.newmenu->transitionInTics)
+			if (currentMenu->transitionID == menutransition.newmenu->transitionID
+				&& menutransition.newmenu->transitionTics)
 			{
-				menutransition.tics = currentMenu->transitionOutTics;
+				menutransition.tics = menutransition.newmenu->transitionTics;
 				menutransition.dest = 0;
 				menutransition.in = true;
-				menutransition.newmenu = NULL;
 			}
 			else if (gamestate == GS_MENU)
 			{
@@ -1280,8 +1284,11 @@ void M_Ticker(void)
 				F_WipeStartScreen();
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipe_menu_toblack], false, "FADEMAP0", false);
+				F_RunWipe(wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
 			}
+
+			M_SetupNextMenu(menutransition.newmenu, true);
+			menutransition.newmenu = NULL;
 		}
 	}
 	else
@@ -1629,7 +1636,7 @@ setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 struct setup_explosions_s setup_explosions[48];
 
 UINT8 setup_numplayers = 0;
-UINT16 setup_animcounter = 0;
+tic_t setup_animcounter = 0;
 
 consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
@@ -1781,7 +1788,7 @@ static void M_HandleCharacterGrid(INT32 choice, setup_player_t *p, UINT8 num)
 				else
 					p->mdepth = CSSTEP_ALTS;
 
-				S_StartSound(NULL, sfx_s3k5b);
+				S_StartSound(NULL, sfx_s3k63);
 			}
 			break;
 		case KEY_ESCAPE:
@@ -1824,7 +1831,7 @@ static void M_HandleCharRotate(INT32 choice, setup_player_t *p)
 			break;
 		case KEY_ENTER:
 			p->mdepth = CSSTEP_COLORS;
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSound(NULL, sfx_s3k63);
 			break;
 		case KEY_ESCAPE:
 			p->mdepth = CSSTEP_CHARS;
@@ -1994,6 +2001,241 @@ boolean M_CharacterSelectQuit(void)
 {
 	M_CharacterSelectInit(0);
 	return true;
+}
+
+// LEVEL SELECT
+
+#if 0
+// Call before showing any level-select menus
+static void M_PrepareLevelSelect(void)
+{
+	if (levellistmode != LLM_CREATESERVER)
+		CV_SetValue(&cv_nextmap, M_GetFirstLevelInList());
+	else
+		Newgametype_OnChange(); // Make sure to start on an appropriate map if wads have been added
+}
+
+//
+// M_CanShowLevelInList
+//
+// Determines whether to show a given map in the various level-select lists.
+// Set gt = -1 to ignore gametype.
+//
+boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
+{
+	// Does the map exist?
+	if (!mapheaderinfo[mapnum])
+		return false;
+
+	// Does the map have a name?
+	if (!mapheaderinfo[mapnum]->lvlttl[0])
+		return false;
+
+	if (M_MapLocked(mapnum+1))
+		return false; // not unlocked
+
+	// Should the map be hidden?
+	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU && mapnum+1 != gamemap)
+		return false;
+
+	if (gt == GT_MATCH && (mapheaderinfo[mapnum]->typeoflevel & TOL_MATCH))
+		return true;
+
+	if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
+	{
+		if (levellist_cup != -1)
+		{
+			if (mapnum < (1 + ((levellist_cup-1) * 5))
+				|| mapnum > (6 + ((levellist_cup-1) * 5))
+				return false;
+		}
+
+		return true;
+	}
+
+	// Hmm? Couldn't decide?
+	return false;
+}
+
+static INT32 M_CountLevelsToShowInList(void)
+{
+	INT32 mapnum, count = 0;
+
+	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+		if (M_CanShowLevelInList(mapnum, -1))
+			count++;
+
+	return count;
+}
+
+static INT32 M_GetFirstLevelInList(void)
+{
+	INT32 mapnum;
+
+	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+		if (M_CanShowLevelInList(mapnum, -1))
+			return mapnum + 1;
+
+	return 1;
+}
+#endif
+
+struct levellist_cupgrid_s levellist_cupgrid;
+struct levellist_scroll_s levellist_scroll;
+
+static void M_LevelSelectScrollDest(void)
+{
+	levellist_scroll.dest = (6*levellist_scroll.cursor);
+
+	if (levellist_scroll.dest < 3)
+		levellist_scroll.dest = 3;
+
+	if (levellist_scroll.dest > (6*4)-3)
+		levellist_scroll.dest = (6*4)-3;
+}
+
+void M_LevelSelectInit(INT32 choice)
+{
+	UINT8 selecttype = currentMenu->menuitems[itemOn].mvar1;
+
+	(void)choice;
+
+	switch (selecttype)
+	{
+		case 2:
+			CV_StealthSetValue(&cv_newgametype, GT_RACE);
+			break;
+		default:
+			break;
+	}
+
+	PLAY_CupSelectDef.prevMenu = currentMenu;
+
+	if (cv_newgametype.value != GT_RACE)
+	{
+		PLAY_LevelSelectDef.prevMenu = currentMenu;
+		M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+	}
+	else
+	{
+		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
+		M_SetupNextMenu(&PLAY_CupSelectDef, false);
+	}
+}
+
+void M_CupSelectHandler(INT32 choice)
+{
+	UINT8 selcup = levellist_cupgrid.x + (levellist_cupgrid.y * CUPS_COLUMNS);
+
+	switch (choice)
+	{
+		case KEY_RIGHTARROW:
+			levellist_cupgrid.x++;
+			if (levellist_cupgrid.x >= CUPS_COLUMNS)
+			{
+				levellist_cupgrid.x = 0;
+				//levellist_cupgrid.pageno++;
+			}
+			S_StartSound(NULL, sfx_s3k5b);
+			break;
+		case KEY_LEFTARROW:
+			levellist_cupgrid.x--;
+			if (levellist_cupgrid.x < 0)
+			{
+				levellist_cupgrid.x = CUPS_COLUMNS-1;
+				//levellist_cupgrid.pageno--;
+			}
+			S_StartSound(NULL, sfx_s3k5b);
+			break;
+		case KEY_UPARROW:
+			levellist_cupgrid.y++;
+			if (levellist_cupgrid.y >= CUPS_ROWS)
+			{
+				levellist_cupgrid.y = 0;
+				//levellist_cupgrid.pageno++;
+			}
+			S_StartSound(NULL, sfx_s3k5b);
+			break;
+		case KEY_DOWNARROW:
+			levellist_cupgrid.y--;
+			if (levellist_cupgrid.y < 0)
+			{
+				levellist_cupgrid.y = CUPS_ROWS-1;
+				//levellist_cupgrid.pageno--;
+			}
+			S_StartSound(NULL, sfx_s3k5b);
+			break;
+		case KEY_ENTER:
+			if (levellist_scroll.cupid != selcup) // Keep cursor position if you select the same cup again
+			{
+				levellist_scroll.cursor = 0;
+				levellist_scroll.cupid = selcup;
+			}
+
+			M_LevelSelectScrollDest();
+			levellist_scroll.y = levellist_scroll.dest;
+
+			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+			S_StartSound(NULL, sfx_s3k63);
+			break;
+		case KEY_ESCAPE:
+			if (currentMenu->prevMenu)
+				M_SetupNextMenu(currentMenu->prevMenu, false);
+			else
+				M_ClearMenus(true);
+			break;
+		default:
+			break;
+	}
+}
+
+void M_CupSelectTick(void)
+{
+	levellist_cupgrid.previewanim++;
+}
+
+void M_LevelSelectHandler(INT32 choice)
+{
+	if (levellist_scroll.y != levellist_scroll.dest)
+		return;
+
+	switch (choice)
+	{
+		case KEY_UPARROW:
+			levellist_scroll.cursor--;
+			if (levellist_scroll.cursor < 0)
+				levellist_scroll.cursor = 4;
+			S_StartSound(NULL, sfx_s3k5b);
+			break;
+		case KEY_DOWNARROW:
+			levellist_scroll.cursor++;
+			if (levellist_scroll.cursor > 4)
+				levellist_scroll.cursor = 0;
+			S_StartSound(NULL, sfx_s3k5b);
+			break;
+		case KEY_ENTER:
+			//M_SetupNextMenu(&PLAY_TimeAttack, false);
+			S_StartSound(NULL, sfx_s3k63);
+			break;
+		case KEY_ESCAPE:
+			if (currentMenu->prevMenu)
+				M_SetupNextMenu(currentMenu->prevMenu, false);
+			else
+				M_ClearMenus(true);
+			break;
+		default:
+			break;
+	}
+
+	M_LevelSelectScrollDest();
+}
+
+void M_LevelSelectTick(void)
+{
+	if (levellist_scroll.y > levellist_scroll.dest)
+		levellist_scroll.y--;
+	else if (levellist_scroll.y < levellist_scroll.dest)
+		levellist_scroll.y++;
 }
 
 // =====================

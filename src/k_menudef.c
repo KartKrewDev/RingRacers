@@ -19,16 +19,16 @@
 menuitem_t MainMenu[] =
 {
 	{IT_STRING | IT_CALL, "Play", "Cut to the chase and start the race!",
-		NULL, M_CharacterSelectInit, 48, 0},
+		NULL, M_CharacterSelectInit, 0, 0},
 
 	{IT_STRING, "Extra", "Check out some bonus features.",
-		NULL, NULL, 80, 0},
+		NULL, NULL, 0, 0},
 
 	{IT_STRING, "Option", "Configure your controls, settings, and preferences.",
-		NULL, NULL, 112, 0},
+		NULL, NULL, 0, 0},
 
 	{IT_STRING | IT_CALL, "Quit", "Exit SRB2Kart.",
-		NULL, M_QuitSRB2, 160, 0},
+		NULL, M_QuitSRB2, 0, 0},
 };
 
 menu_t MainDef = KARTGAMEMODEMENU(MainMenu, NULL);
@@ -57,44 +57,95 @@ menu_t PLAY_CharSelectDef = {
 menuitem_t PLAY_MainMenu[] =
 {
 	{IT_STRING | IT_SUBMENU, "Local Play", "Play only on this computer.",
-		NULL, &PLAY_GamemodesDef, 64, 0},
+		NULL, &PLAY_GamemodesDef, 0, 0},
 
 	{IT_STRING, "Online", "Connect to other computers.",
-		NULL, NULL, 96, 0},
+		NULL, NULL, 0, 0},
 
-	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 160, 0},
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
 };
 
 menu_t PLAY_MainDef = KARTGAMEMODEMENU(PLAY_MainMenu, &PLAY_CharSelectDef);
 
 menuitem_t PLAY_GamemodesMenu[] =
 {
-	{IT_STRING | IT_SUBMENU, "Race", "A competition for the best time!",
-		NULL, &PLAY_RaceGamemodesDef, 64, 0},
+	{IT_STRING | IT_SUBMENU, "Race", "A contest to see who's the fastest of them all!",
+		NULL, &PLAY_RaceGamemodesDef, 0, 0},
 
-	{IT_STRING, "Battle", "Clash against other players in a survival match!",
-		NULL, NULL, 96, 0},
+	{IT_STRING | IT_SUBMENU, "Battle", "Sharpen your item usage in these special Battle zones!",
+		NULL, &PLAY_BattleGamemodesDef, 0, 0},
 
-	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 160, 0},
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
 };
 
 menu_t PLAY_GamemodesDef = KARTGAMEMODEMENU(PLAY_GamemodesMenu, &PLAY_MainDef);
 
+// RACE
+
 menuitem_t PLAY_RaceGamemodesMenu[] =
 {
-	{IT_STRING, "Grand Prix", "Compete for the best rank over five races!",
-		NULL, NULL, 48, 0},
+	{IT_STRING | IT_CALL, "Grand Prix", "Compete for the best rank over five races!",
+		NULL, M_LevelSelectInit, 0, 0},
 
-	{IT_STRING, "Match Race", "Pick your own settings in a specialized single race.",
-		NULL, NULL, 80, 0},
+	{IT_STRING | IT_CALL, "Match Race", "Play by your own rules in a specialized, single race!",
+		NULL, M_LevelSelectInit, 1, 0},
 
-	{IT_STRING, "Time Attack", "Race against ghosts for the best time, no fluff.",
-		NULL, NULL, 112, 0},
+	{IT_STRING | IT_CALL, "Time Attack", "Record your best time on any track!",
+		NULL, M_LevelSelectInit, 2, 0},
 
-	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 160, 0},
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
 };
 
 menu_t PLAY_RaceGamemodesDef = KARTGAMEMODEMENU(PLAY_RaceGamemodesMenu, &PLAY_GamemodesDef);
+
+menuitem_t PLAY_CupSelect[] =
+{
+	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_CupSelectHandler, 0, 0},
+};
+
+menu_t PLAY_CupSelectDef = {
+	sizeof(PLAY_CupSelect) / sizeof(menuitem_t),
+	&PLAY_RaceGamemodesDef,
+	0,
+	PLAY_CupSelect,
+	0, 0,
+	2, 10,
+	M_DrawCupSelect,
+	M_CupSelectTick,
+	NULL
+};
+
+menuitem_t PLAY_LevelSelect[] =
+{
+	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_LevelSelectHandler, 0, 0},
+};
+
+menu_t PLAY_LevelSelectDef = {
+	sizeof(PLAY_LevelSelect) / sizeof(menuitem_t),
+	&PLAY_CupSelectDef,
+	0,
+	PLAY_LevelSelect,
+	0, 0,
+	2, 10,
+	M_DrawLevelSelect,
+	M_LevelSelectTick,
+	NULL
+};
+
+// BATTLE
+
+menuitem_t PLAY_BattleGamemodesMenu[] =
+{
+	{IT_STRING | IT_CALL, "Survival", "It's last hedgehog standing in this free-for-all!",
+		NULL, M_LevelSelectInit, 3, 0},
+
+	{IT_STRING | IT_CALL, "Time Attack", "Bust up all of the capsules in record time!",
+		NULL, M_LevelSelectInit, 4, 0},
+
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
+};
+
+menu_t PLAY_BattleGamemodesDef = KARTGAMEMODEMENU(PLAY_BattleGamemodesMenu, &PLAY_GamemodesDef);
 
 // -------------------
 // In-game/pause menus
