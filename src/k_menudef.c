@@ -132,6 +132,26 @@ menu_t PLAY_LevelSelectDef = {
 	NULL
 };
 
+menuitem_t PLAY_TimeAttack[] =
+{
+	{IT_STRING, "Replay...", NULL, NULL, NULL, 0, 0},
+	{IT_STRING, "Ghosts...", NULL, NULL, NULL, 0, 0},
+	{IT_SPACE, NULL, NULL, NULL, NULL, 0, 0},
+	{IT_STRING, "Start", NULL, NULL, NULL, 0, 0},
+};
+
+menu_t PLAY_TimeAttackDef = {
+	sizeof(PLAY_TimeAttack) / sizeof(menuitem_t),
+	&PLAY_LevelSelectDef,
+	0,
+	PLAY_TimeAttack,
+	0, 0,
+	2, 10,
+	M_DrawTimeAttack,
+	NULL,
+	NULL
+};
+
 // BATTLE
 
 menuitem_t PLAY_BattleGamemodesMenu[] =

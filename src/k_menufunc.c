@@ -1180,10 +1180,12 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 		if (currentMenu->transitionID == menudef->transitionID
 			&& currentMenu->transitionTics)
 		{
+			menutransition.startmenu = currentMenu;
+			menutransition.endmenu = menudef;
+
 			menutransition.tics = 0;
 			menutransition.dest = currentMenu->transitionTics;
 			menutransition.in = false;
-			menutransition.newmenu = menudef;
 			return; // Don't change menu yet, the transition will call this again
 		}
 		else if (gamestate == GS_MENU)
@@ -1267,12 +1269,15 @@ void M_Ticker(void)
 
 		// If dest is non-zero, we've started transition and want to switch menus
 		// If dest is zero, we're mid-transition and want to end it
-		if (menutransition.tics == menutransition.dest && menutransition.newmenu != NULL)
+		if (menutransition.tics == menutransition.dest
+			&& menutransition.endmenu != NULL
+			&& currentMenu != menutransition.endmenu
+		)
 		{
-			if (currentMenu->transitionID == menutransition.newmenu->transitionID
-				&& menutransition.newmenu->transitionTics)
+			if (menutransition.startmenu->transitionID == menutransition.endmenu->transitionID
+				&& menutransition.endmenu->transitionTics)
 			{
-				menutransition.tics = menutransition.newmenu->transitionTics;
+				menutransition.tics = menutransition.endmenu->transitionTics;
 				menutransition.dest = 0;
 				menutransition.in = true;
 			}
@@ -1287,14 +1292,21 @@ void M_Ticker(void)
 				F_RunWipe(wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
 			}
 
-			M_SetupNextMenu(menutransition.newmenu, true);
-			menutransition.newmenu = NULL;
+			M_SetupNextMenu(menutransition.endmenu, true);
 		}
 	}
 	else
 	{
-		// reset input trigger
-		noFurtherInput = false;
+		if (menuwipe)
+		{
+			// try not to let people input during the fadeout
+			noFurtherInput = true;
+		}
+		else
+		{
+			// reset input trigger
+			noFurtherInput = false;
+		}
 	}
 
 	if (currentMenu->tickroutine)
@@ -2214,7 +2226,8 @@ void M_LevelSelectHandler(INT32 choice)
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_ENTER:
-			//M_SetupNextMenu(&PLAY_TimeAttack, false);
+			CV_SetValue(&cv_nextmap, 1 + (levellist_scroll.cupid * 5) + levellist_scroll.cursor);
+			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
 			S_StartSound(NULL, sfx_s3k63);
 			break;
 		case KEY_ESCAPE:

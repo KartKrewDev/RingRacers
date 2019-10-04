@@ -157,6 +157,9 @@ extern menu_t PLAY_CupSelectDef;
 extern menuitem_t PLAY_LevelSelect[];
 extern menu_t PLAY_LevelSelectDef;
 
+extern menuitem_t PLAY_TimeAttack[];
+extern menu_t PLAY_TimeAttackDef;
+
 extern menuitem_t PLAY_BattleGamemodesMenu[];
 extern menu_t PLAY_BattleGamemodesDef;
 
@@ -191,7 +194,8 @@ extern INT16 skullAnimCounter; // skull animation counter
 extern struct menutransition_s {
 	INT16 tics;
 	INT16 dest;
-	struct menu_s *newmenu;
+	struct menu_s *startmenu;
+	struct menu_s *endmenu;
 	boolean in;
 } menutransition;
 
@@ -336,6 +340,7 @@ void M_DrawCharacterSelect(void);
 
 void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);
+void M_DrawTimeAttack(void);
 
 void M_DrawPlaybackMenu(void);
 

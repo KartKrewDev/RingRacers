@@ -923,8 +923,8 @@ void M_DrawCupSelect(void)
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 {
-	static char word1[21];
-	static char word2[21];
+	char word1[22];
+	char word2[22];
 	UINT8 word1len = 0;
 	UINT8 word2len = 0;
 	INT16 x2 = x;
@@ -935,29 +935,44 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 
 	if (mapheaderinfo[map]->zonttl[0])
 	{
-		strcpy(word1, mapheaderinfo[map]->lvlttl);
-		strcpy(word2, mapheaderinfo[map]->zonttl);
+		boolean one = true;
+		boolean two = true;
+
+		for (i = 0; i < 22; i++)
+		{
+			if (!one && !two)
+				break;
+
+			if (mapheaderinfo[map]->lvlttl[i] && one)
+			{
+				word1[word1len] = mapheaderinfo[map]->lvlttl[i];
+				word1len++;
+			}
+			else
+				one = false;
+
+			if (mapheaderinfo[map]->zonttl[i] && two)
+			{
+				word2[word2len] = mapheaderinfo[map]->zonttl[i];
+				word2len++;
+			}
+			else
+				two = false;
+		}
 	}
 	else
 	{
 		boolean donewithone = false;
 
-		for (i = 0; i < 21; i++)
+		for (i = 0; i < 22; i++)
 		{
 			if (!mapheaderinfo[map]->lvlttl[i])
-			{
-				if (donewithone)
-					word2[word2len] = '\0';
-				else
-					word1[word1len] = '\0';
 				break;
-			}
 
 			if (mapheaderinfo[map]->lvlttl[i] == ' ')
 			{
 				if (!donewithone)
 				{
-					word1[word1len] = '\0';
 					donewithone = true;
 					continue;
 				}
@@ -976,6 +991,9 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		}
 	}
 
+	word1[word1len] = '\0';
+	word2[word2len] = '\0';
+
 	for (i = 0; i < 2; i++)
 	{
 		INT32 c;
@@ -991,42 +1009,110 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		V_DrawLSTitleLowString(x2, y+28, 0, word2);
 }
 
+static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink, boolean greyscale)
+{
+	lumpnum_t lumpnum;
+	patch_t *PictureOfLevel;
+	UINT8 *colormap = NULL;
+
+	if (greyscale)
+		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
+
+	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(map)));
+	if (lumpnum != LUMPERROR)
+		PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+	else
+		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+
+	if (redblink)
+		V_DrawScaledPatch(3+x, y, 0, W_CachePatchName("LVLSEL2", PU_CACHE));
+	else
+		V_DrawScaledPatch(3+x, y, 0, W_CachePatchName("LVLSEL", PU_CACHE));
+
+	V_DrawSmallMappedPatch(9+x, y+6, 0, PictureOfLevel, colormap);
+	M_DrawHighLowLevelTitle(98+x, y+8, map-1);
+}
+
 void M_DrawLevelSelect(void)
 {
 	UINT8 i;
-	INT16 t = (32*menutransition.tics);
+	INT16 t = (32*menutransition.tics), tay = 0;
 	INT16 y = 80 - (12 * levellist_scroll.y);
+	boolean tatransition = (menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef);
+
+	if (tatransition)
+	{
+		t = -t;
+		tay = t/2;
+	}
 
 	for (i = 0; i < 5; i++)
 	{
-		lumpnum_t lumpnum;
-		patch_t *PictureOfLevel;
-		UINT8 *colormap = NULL;
 		INT16 map = 1 + (levellist_scroll.cupid * 5) + i;
+		INT16 lvlx = t, lvly = y;
 
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(map)));
-		if (lumpnum != LUMPERROR)
-			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-		else
-			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+		if (i == levellist_scroll.cursor && tatransition)
+		{
+			lvlx = 0;
+			lvly = max(2, y+tay);
+		}
 
-		if (i == levellist_scroll.cursor && ((skullAnimCounter / 4) & 1))
-			V_DrawScaledPatch(3+t, y, 0, W_CachePatchName("LVLSEL2", PU_CACHE));
-		else
-			V_DrawScaledPatch(3+t, y, 0, W_CachePatchName("LVLSEL", PU_CACHE));
-
-		if (i != levellist_scroll.cursor)
-			colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
-
-		V_DrawSmallMappedPatch(9+t, y+6, 0, PictureOfLevel, colormap);
-
-		M_DrawHighLowLevelTitle(98+t, y+8, map-1);
+		M_DrawLevelSelectBlock(lvlx, lvly, map,
+			(i == levellist_scroll.cursor && ((skullAnimCounter / 4) & 1)),
+			(i != levellist_scroll.cursor)
+		);
 
 		y += 72;
 	}
 
-	V_DrawScaledPatch(0, 0, 0, W_CachePatchName("MENUHINT", PU_CACHE));
-	V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 6, 0, "SNEAKER CUP");
+	V_DrawScaledPatch(0, tay, 0, W_CachePatchName("MENUHINT", PU_CACHE));
+	V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 6+tay, 0, "SNEAKER CUP");
+}
+
+void M_DrawTimeAttack(void)
+{
+	INT16 map = cv_nextmap.value;
+	INT16 t = (24*menutransition.tics);
+	INT16 leftedge = 149+t+16;
+	INT16 rightedge = 149+t+155;
+	INT16 opty = 152;
+	lumpnum_t lumpnum;
+	UINT8 i;
+
+	M_DrawLevelSelectBlock(0, 2, map, false, false);
+
+	//V_DrawFill(24-t, 82, 100, 100, 36); // size test
+
+	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(map)));
+	if (lumpnum != LUMPERROR)
+		V_DrawScaledPatch(24-t, 82, 0, W_CachePatchNum(lumpnum, PU_CACHE));
+
+	V_DrawScaledPatch(149+t, 70, 0, W_CachePatchName("BESTTIME", PU_CACHE));
+
+	V_DrawRightAlignedString(rightedge-12, 82, highlightflags, "BEST LAP:");
+	K_drawKartTimestamp(0, 162+t, 88, 0, 2);
+
+	V_DrawRightAlignedString(rightedge-12, 112, highlightflags, "BEST TIME:");
+	K_drawKartTimestamp(0, 162+t, 118, map, 1);
+
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		UINT32 f = (i == itemOn) ? recommendedflags : highlightflags;
+
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_STRING:
+				if (i >= currentMenu->numitems-1)
+					V_DrawRightAlignedString(rightedge, opty, f, currentMenu->menuitems[i].text);
+				else
+					V_DrawString(leftedge, opty, f, currentMenu->menuitems[i].text);
+				opty += 10;
+				break;
+			case IT_SPACE:
+				opty += 4;
+				break;
+		}
+	}
 }
 
 //
