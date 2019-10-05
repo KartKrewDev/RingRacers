@@ -3637,7 +3637,7 @@ void A_AttractChase(mobj_t *actor)
 				P_TeleportMove(actor,
 					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
 					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),
-					actor->z + FixedMul(actor->target->scale, 24<<FRACBITS) * P_MobjFlip(actor));
+					actor->z + actor->target->scale * 24 * P_MobjFlip(actor));
 
 				actor->angle += ANG30;
 				actor->extravalue1++;
