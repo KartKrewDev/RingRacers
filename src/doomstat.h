@@ -291,6 +291,24 @@ typedef struct
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 
+#define MAXLEVELLIST 5
+
+typedef struct cupheader_s
+{
+	UINT16 id;                     ///< Cup ID
+	char name[15];                 ///< Cup title (14 chars)
+	char icon[9];                  ///< Name of the icon patch
+	INT16 levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
+	UINT8 numlevels;               ///< Number of levels defined in levellist
+	INT16 bonusgame;               ///< Map number to use for bonus game
+	INT16 specialstage;            ///< Map number to use for special stage
+	UINT8 emeraldnum;              ///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+	struct cupheader_s *next;      ///< Next cup in linked list
+} cupheader_t;
+
+extern cupheader_t *kartcupheaders; // Start of cup linked list
+extern UINT16 numkartcupheaders;
+
 enum TypeOfLevel
 {
 	TOL_SP          = 0x01, ///< Single Player

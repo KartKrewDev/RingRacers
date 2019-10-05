@@ -2017,16 +2017,6 @@ boolean M_CharacterSelectQuit(void)
 
 // LEVEL SELECT
 
-#if 0
-// Call before showing any level-select menus
-static void M_PrepareLevelSelect(void)
-{
-	if (levellistmode != LLM_CREATESERVER)
-		CV_SetValue(&cv_nextmap, M_GetFirstLevelInList());
-	else
-		Newgametype_OnChange(); // Make sure to start on an appropriate map if wads have been added
-}
-
 //
 // M_CanShowLevelInList
 //
@@ -2055,10 +2045,17 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 
 	if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
 	{
-		if (levellist_cup != -1)
+		if (selectedcup && selectedcup->numlevels)
 		{
-			if (mapnum < (1 + ((levellist_cup-1) * 5))
-				|| mapnum > (6 + ((levellist_cup-1) * 5))
+			UINT8 i;
+
+			for (i = 0; i < selectedcup->numlevels; i++)
+			{
+				if (mapnum == selectedcup->levellist[i])
+					break;
+			}
+
+			if (i == selectedcup->numlevels)
 				return false;
 		}
 
@@ -2069,75 +2066,95 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 	return false;
 }
 
-static INT32 M_CountLevelsToShowInList(void)
+INT32 M_CountLevelsToShowInList(INT32 gt)
 {
 	INT32 mapnum, count = 0;
 
 	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
-		if (M_CanShowLevelInList(mapnum, -1))
+		if (M_CanShowLevelInList(mapnum, gt))
 			count++;
 
 	return count;
 }
 
-static INT32 M_GetFirstLevelInList(void)
+INT32 M_GetFirstLevelInList(INT32 gt)
 {
 	INT32 mapnum;
 
 	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
-		if (M_CanShowLevelInList(mapnum, -1))
+		if (M_CanShowLevelInList(mapnum, gt))
 			return mapnum + 1;
 
 	return 1;
 }
-#endif
 
+cupheader_t *selectedcup = NULL;
 struct levellist_cupgrid_s levellist_cupgrid;
 struct levellist_scroll_s levellist_scroll;
 
 static void M_LevelSelectScrollDest(void)
 {
+	UINT16 m = M_CountLevelsToShowInList(cv_newgametype.value)-1;
+
 	levellist_scroll.dest = (6*levellist_scroll.cursor);
 
 	if (levellist_scroll.dest < 3)
 		levellist_scroll.dest = 3;
 
-	if (levellist_scroll.dest > (6*4)-3)
-		levellist_scroll.dest = (6*4)-3;
+	if (levellist_scroll.dest > (6*m)-3)
+		levellist_scroll.dest = (6*m)-3;
 }
 
 void M_LevelSelectInit(INT32 choice)
 {
-	UINT8 selecttype = currentMenu->menuitems[itemOn].mvar1;
-
 	(void)choice;
 
-	switch (selecttype)
+	switch (currentMenu->menuitems[itemOn].mvar1)
 	{
+		case 0:
+			levellist_cupgrid.grandprix = false;
+			levellist_scroll.timeattack = false;
+			break;
+		case 1:
+			levellist_cupgrid.grandprix = false;
+			levellist_scroll.timeattack = true;
+			break;
 		case 2:
-			CV_StealthSetValue(&cv_newgametype, GT_RACE);
+			levellist_cupgrid.grandprix = true;
+			levellist_scroll.timeattack = false;
 			break;
 		default:
-			break;
+			CONS_Alert(CONS_WARNING, "Bad level select init\n");
+			return;
 	}
 
+	CV_StealthSetValue(&cv_newgametype, currentMenu->menuitems[itemOn].mvar2);
 	PLAY_CupSelectDef.prevMenu = currentMenu;
 
-	if (cv_newgametype.value != GT_RACE)
-	{
-		PLAY_LevelSelectDef.prevMenu = currentMenu;
-		M_SetupNextMenu(&PLAY_LevelSelectDef, false);
-	}
-	else
+	if (cv_newgametype.value == GT_RACE)
 	{
 		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
 		M_SetupNextMenu(&PLAY_CupSelectDef, false);
+	}
+	else
+	{
+		selectedcup = NULL;
+		PLAY_LevelSelectDef.prevMenu = currentMenu;
+		M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 	}
 }
 
 void M_CupSelectHandler(INT32 choice)
 {
-	UINT8 selcup = levellist_cupgrid.x + (levellist_cupgrid.y * CUPS_COLUMNS);
+	cupheader_t *newcup = kartcupheaders;
+
+	while (newcup)
+	{
+		CONS_Printf("%d == %d?\n", newcup->id, CUPID);
+		if (newcup->id == CUPID)
+			break;
+		newcup = newcup->next;
+	}
 
 	switch (choice)
 	{
@@ -2178,10 +2195,13 @@ void M_CupSelectHandler(INT32 choice)
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_ENTER:
-			if (levellist_scroll.cupid != selcup) // Keep cursor position if you select the same cup again
+			if (!newcup)
+				break;
+
+			if (!selectedcup || newcup->id != selectedcup->id) // Keep cursor position if you select the same cup again
 			{
 				levellist_scroll.cursor = 0;
-				levellist_scroll.cupid = selcup;
+				selectedcup = newcup;
 			}
 
 			M_LevelSelectScrollDest();
@@ -2208,6 +2228,10 @@ void M_CupSelectTick(void)
 
 void M_LevelSelectHandler(INT32 choice)
 {
+	INT16 start = M_GetFirstLevelInList(cv_newgametype.value)-1;
+	INT16 maxlevels = M_CountLevelsToShowInList(cv_newgametype.value);
+	INT16 map = start;
+
 	if (levellist_scroll.y != levellist_scroll.dest)
 		return;
 
@@ -2216,18 +2240,69 @@ void M_LevelSelectHandler(INT32 choice)
 		case KEY_UPARROW:
 			levellist_scroll.cursor--;
 			if (levellist_scroll.cursor < 0)
-				levellist_scroll.cursor = 4;
+				levellist_scroll.cursor = maxlevels-1;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_DOWNARROW:
 			levellist_scroll.cursor++;
-			if (levellist_scroll.cursor > 4)
+			if (levellist_scroll.cursor >= maxlevels)
 				levellist_scroll.cursor = 0;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_ENTER:
-			CV_SetValue(&cv_nextmap, 1 + (levellist_scroll.cupid * 5) + levellist_scroll.cursor);
-			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+			map = start + levellist_scroll.cursor;
+
+			while (!M_CanShowLevelInList(map, cv_newgametype.value) && map < NUMMAPS)
+				map++;
+
+			if (map >= NUMMAPS)
+				break;
+
+			CV_SetValue(&cv_nextmap, map);
+
+			if (levellist_scroll.timeattack)
+				M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+			else
+			{
+				UINT8 ssplayers = cv_splitplayers.value-1;
+
+				netgame = false;
+				multiplayer = true;
+
+				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+
+				// Still need to reset devmode
+				cv_debug = 0;
+
+				if (strlen(cv_dummyjoinpassword.string) > 0)
+					D_SetJoinPassword(cv_dummyjoinpassword.string);
+				else
+					joinpasswordset = false;
+
+				if (demo.playback)
+					G_StopDemo();
+				if (metalrecording)
+					G_StopMetalDemo();
+
+				if (!cv_nextmap.value)
+					CV_SetValue(&cv_nextmap, G_RandMap(G_TOLFlag(cv_newgametype.value), -1, false, 0, false, NULL)+1);
+
+				if (cv_maxplayers.value < ssplayers+1)
+					CV_SetValue(&cv_maxplayers, ssplayers+1);
+
+				if (splitscreen != ssplayers)
+				{
+					splitscreen = ssplayers;
+					SplitScreen_OnChange();
+				}
+
+				paused = false;
+				SV_StartSinglePlayerServer();
+				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+				D_MapChange(cv_nextmap.value, cv_newgametype.value, (cv_kartencore.value == 1), 1, 1, false, false);
+
+				M_ClearMenus(true);
+			}
 			S_StartSound(NULL, sfx_s3k63);
 			break;
 		case KEY_ESCAPE:

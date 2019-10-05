@@ -292,26 +292,33 @@ boolean M_CharacterSelectQuit(void);
 #define CUPS_MAX (NUMMAPS / CUPS_MAPSPERCUP)
 #define CUPS_PAGES (CUPS_MAX / (CUPS_COLUMNS * CUPS_ROWS))
 
+#define CUPID (levellist_cupgrid.x + (levellist_cupgrid.y * CUPS_COLUMNS))
+
+extern cupheader_t *selectedcup;
+extern INT16 selectedcupnum;
+
 extern struct levellist_cupgrid_s {
 	UINT8 numcups;
 	SINT8 x, y;
 	SINT8 pageno;
 	tic_t previewanim;
+	boolean grandprix; // Setup grand prix server after picking
 } levellist_cupgrid;
 
 extern struct levellist_scroll_s {
-	SINT8 cupid;
 	SINT8 cursor;
 	UINT16 y;
 	UINT16 dest;
+	boolean timeattack; // Setup time attack menu after picking
 } levellist_scroll;
 
 boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
-void M_LevelSelectInit(INT32 choice);
+INT32 M_CountLevelsToShowInList(INT32 gt);
+INT32 M_GetFirstLevelInList(INT32 gt);
 
+void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);
 void M_CupSelectTick(void);
-
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 

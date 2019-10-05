@@ -85,13 +85,13 @@ menu_t PLAY_GamemodesDef = KARTGAMEMODEMENU(PLAY_GamemodesMenu, &PLAY_MainDef);
 menuitem_t PLAY_RaceGamemodesMenu[] =
 {
 	{IT_STRING | IT_CALL, "Grand Prix", "Compete for the best rank over five races!",
-		NULL, M_LevelSelectInit, 0, 0},
+		NULL, M_LevelSelectInit, 2, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Match Race", "Play by your own rules in a specialized, single race!",
-		NULL, M_LevelSelectInit, 1, 0},
+		NULL, M_LevelSelectInit, 0, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Time Attack", "Record your best time on any track!",
-		NULL, M_LevelSelectInit, 2, 0},
+		NULL, M_LevelSelectInit, 1, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
 };
@@ -157,10 +157,10 @@ menu_t PLAY_TimeAttackDef = {
 menuitem_t PLAY_BattleGamemodesMenu[] =
 {
 	{IT_STRING | IT_CALL, "Survival", "It's last hedgehog standing in this free-for-all!",
-		NULL, M_LevelSelectInit, 3, 0},
+		NULL, M_LevelSelectInit, 0, GT_MATCH},
 
 	{IT_STRING | IT_CALL, "Time Attack", "Bust up all of the capsules in record time!",
-		NULL, M_LevelSelectInit, 4, 0},
+		NULL, M_LevelSelectInit, 1, GT_MATCH},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
 };

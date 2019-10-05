@@ -875,20 +875,18 @@ void M_DrawCharacterSelect(void)
 
 // LEVEL SELECT
 
-static void M_DrawCupPreview(INT16 y, UINT8 cupnum)
+static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 {
 	UINT8 i;
 	INT16 x = -(levellist_cupgrid.previewanim % 82);
 
-	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
-
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < cup->numlevels; i++)
 	{
 		lumpnum_t lumpnum;
 		patch_t *PictureOfLevel;
-		UINT8 lvloff = (i + (levellist_cupgrid.previewanim / 82)) % 5;
+		UINT8 lvloff = (i + (levellist_cupgrid.previewanim / 82)) % cup->numlevels;
 
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(1 + (cupnum * 5) + lvloff)));
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cup->levellist[lvloff] )));
 		if (lumpnum != LUMPERROR)
 			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 		else
@@ -901,6 +899,14 @@ static void M_DrawCupPreview(INT16 y, UINT8 cupnum)
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j;
+	cupheader_t *cup = kartcupheaders;
+
+	while (cup)
+	{
+		if (cup->id == CUPID)
+			break;
+		cup = cup->next;
+	}
 
 	for (i = 0; i < CUPS_COLUMNS; i++)
 	{
@@ -915,10 +921,14 @@ void M_DrawCupSelect(void)
 		0, W_CachePatchName("CUPCURS", PU_CACHE)
 	);
 
+	V_DrawFill(0, 146 + (12*menutransition.tics), BASEVIDWIDTH, 54, 31);
 	V_DrawScaledPatch(0, 120 - (12*menutransition.tics), 0, W_CachePatchName("MENUHINT", PU_CACHE));
-	M_DrawCupPreview(146 + (12*menutransition.tics), levellist_cupgrid.x + (levellist_cupgrid.y * CUPS_COLUMNS));
 
-	V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 126 - (12*menutransition.tics), 0, "SNEAKER CUP");
+	if (cup)
+	{
+		M_DrawCupPreview(146 + (12*menutransition.tics), cup);
+		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 126 - (12*menutransition.tics), 0, va("%s Cup", cup->name));
+	}
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
@@ -930,7 +940,7 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 	INT16 x2 = x;
 	UINT8 i;
 
-	if (!mapheaderinfo[map]->lvlttl[0])
+	if (!mapheaderinfo[map] || !mapheaderinfo[map]->lvlttl[0])
 		return;
 
 	if (mapheaderinfo[map]->zonttl[0])
@@ -1035,7 +1045,8 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink
 
 void M_DrawLevelSelect(void)
 {
-	UINT8 i;
+	INT16 i;
+	INT16 start = M_GetFirstLevelInList(cv_newgametype.value)-1;
 	INT16 t = (32*menutransition.tics), tay = 0;
 	INT16 y = 80 - (12 * levellist_scroll.y);
 	boolean tatransition = (menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef);
@@ -1046,10 +1057,16 @@ void M_DrawLevelSelect(void)
 		tay = t/2;
 	}
 
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < M_CountLevelsToShowInList(cv_newgametype.value); i++)
 	{
-		INT16 map = 1 + (levellist_scroll.cupid * 5) + i;
 		INT16 lvlx = t, lvly = y;
+		INT16 map = start + i;
+
+		while (!M_CanShowLevelInList(map, cv_newgametype.value) && map < NUMMAPS)
+			map++;
+
+		if (map >= NUMMAPS)
+			break;
 
 		if (i == levellist_scroll.cursor && tatransition)
 		{
@@ -1066,7 +1083,10 @@ void M_DrawLevelSelect(void)
 	}
 
 	V_DrawScaledPatch(0, tay, 0, W_CachePatchName("MENUHINT", PU_CACHE));
-	V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 6+tay, 0, "SNEAKER CUP");
+	if (selectedcup)
+		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 6+tay, 0, va("%s Cup", selectedcup->name));
+	else
+		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 6+tay, 0, va("%s Mode", Gametype_Names[cv_newgametype.value]));
 }
 
 void M_DrawTimeAttack(void)
