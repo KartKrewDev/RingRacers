@@ -8744,18 +8744,13 @@ void P_MobjThinker(mobj_t *mobj)
 				return;
 			}
 
+			mobj->z = mobj->target->z;
+
 			K_MatchGenericExtraFlags(mobj, mobj->target);
-			{
-				fixed_t z;
-				z = mobj->target->z;
-				if (( mobj->eflags & MFE_VERTICALFLIP ))
-					z -= mobj->height;
-				else
-					z += mobj->target->height;
-				P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
-						mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
-						z);
-			}
+
+			P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
+					mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
+					mobj->z + mobj->target->height * P_MobjFlip(mobj));
 			break;
 		case MT_TIREGREASE:
 			if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->player
