@@ -2150,7 +2150,6 @@ void M_CupSelectHandler(INT32 choice)
 
 	while (newcup)
 	{
-		CONS_Printf("%d == %d?\n", newcup->id, CUPID);
 		if (newcup->id == CUPID)
 			break;
 		newcup = newcup->next;

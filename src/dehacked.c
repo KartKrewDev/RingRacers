@@ -1481,7 +1481,10 @@ static void readcupheader(MYFILE *f, cupheader_t *cup)
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{
-				cup->emeraldnum = (INT16)i;
+				if (i >= 0 && i <= 14)
+					cup->emeraldnum = (UINT8)i;
+				else
+					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
 			}
 			else
 				deh_warning("%s Cup: unknown word '%s'", cup->name, word);

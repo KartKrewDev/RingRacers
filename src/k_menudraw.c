@@ -912,12 +912,44 @@ void M_DrawCupSelect(void)
 	{
 		for (j = 0; j < CUPS_ROWS; j++)
 		{
-			V_DrawFill(14 + (i*42), 22 + (j*40) - (15*menutransition.tics), 39, 38, 31);
+			UINT8 id = (i + (j * CUPS_COLUMNS));
+			cupheader_t *iconcup = kartcupheaders;
+			patch_t *patch = NULL;
+			INT16 x, y;
+			INT16 icony = 7;
+
+			while (iconcup)
+			{
+				if (iconcup->id == id)
+					break;
+				iconcup = iconcup->next;
+			}
+
+			if (!iconcup)
+				break;
+
+			/*if (iconcup->emeraldnum == 0)
+				patch = W_CachePatchName("CUPMON3A", PU_CACHE);
+			else*/ if (iconcup->emeraldnum > 7)
+			{
+				patch = W_CachePatchName("CUPMON2A", PU_CACHE);
+				icony = 5;
+			}
+			else
+				patch = W_CachePatchName("CUPMON1A", PU_CACHE);
+
+			x = 14 + (i*42);
+			y = 20 + (j*44) - (15*menutransition.tics);
+
+			V_DrawScaledPatch(x, y, 0, patch);
+
+			V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(iconcup->icon, PU_CACHE));
+			V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
 		}
 	}
 
 	V_DrawScaledPatch(14 + (levellist_cupgrid.x*42) - 4,
-		22 + (levellist_cupgrid.y*40) - 4 - (12*menutransition.tics),
+		20 + (levellist_cupgrid.y*44) - 1 - (12*menutransition.tics),
 		0, W_CachePatchName("CUPCURS", PU_CACHE)
 	);
 
