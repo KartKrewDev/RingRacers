@@ -45,8 +45,8 @@
 #include "y_inter.h"
 #include "v_video.h"
 #include "lua_hook.h"
-#include "k_bot.h"
 #include "m_cond.h" // condition sets
+#include "r_fps.h" // frame interpolation/uncapped
 #include "lua_hud.h"
 
 // SRB2kart
@@ -56,6 +56,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "k_bot.h"
 #include "doomstat.h"
 
 #ifdef HAVE_DISCORDRPC
@@ -1920,6 +1921,8 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
+			R_UpdateViewInterpolation();
+
 			break;
 
 		case GS_INTERMISSION:
@@ -1976,7 +1979,12 @@ void G_Ticker(boolean run)
 			break;
 
 		case GS_TITLESCREEN:
-			if (titlemapinaction) P_Ticker(run);
+			if (titlemapinaction)
+			{
+				P_Ticker(run);
+				R_UpdateViewInterpolation();
+			}
+
 			F_TitleScreenTicker(run);
 			break;
 

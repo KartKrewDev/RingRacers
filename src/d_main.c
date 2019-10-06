@@ -63,6 +63,7 @@
 #include "deh_tables.h" // Dehacked list test
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
+#include "r_fps.h" // Frame interpolation/uncapped
 #include "keys.h"
 #include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
@@ -154,6 +155,7 @@ event_t events[MAXEVENTS];
 INT32 eventhead, eventtail;
 
 boolean dedicated = false;
+boolean tic_happened = false; // Frame interpolation/uncapped
 
 //
 // D_PostEvent
@@ -755,7 +757,7 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
-		if (!realtics && !singletics)
+		if (!realtics && !singletics && cv_frameinterpolation.value != 1)
 		{
 			I_Sleep();
 			continue;
@@ -771,7 +773,18 @@ void D_SRB2Loop(void)
 			realtics = 1;
 
 		// process tics (but maybe not if realtic == 0)
+		tic_happened = realtics ? true : false;
 		TryRunTics(realtics);
+
+		if (cv_frameinterpolation.value == 1)
+			rendertimefrac = I_GetTimeFrac();
+		else
+			rendertimefrac = FRACUNIT;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			D_Display();
+		}
 
 		if (lastdraw || singletics || gametic > rendergametic)
 		{
@@ -779,7 +792,8 @@ void D_SRB2Loop(void)
 			rendertimeout = entertic+TICRATE/17;
 
 			// Update display, next frame, with current state.
-			D_Display();
+			// (Only display if not already done for frame interp)
+			cv_frameinterpolation.value == 0 ? D_Display() : 0;
 
 			if (moviemode)
 				M_SaveFrame();
@@ -788,7 +802,22 @@ void D_SRB2Loop(void)
 		}
 		else if (rendertimeout < entertic) // in case the server hang or netsplit
 		{
-			D_Display();
+#if 0
+			// Lagless camera! Yay!
+			if (gamestate == GS_LEVEL && netgame)
+			{
+				INT32 i;
+
+				for (i = 0; i <= r_splitscreen; i++)
+				{
+					if (camera[i].chase)
+						P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
+				}
+			}
+#endif
+
+			// (Only display if not already done for frame interp)
+			cv_frameinterpolation.value == 0 ? D_Display() : 0;
 
 			if (moviemode)
 				M_SaveFrame();

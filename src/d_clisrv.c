@@ -5288,6 +5288,7 @@ void TryRunTics(tic_t realtics)
 			while (neededtic > gametic)
 			{
 				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
+				prev_tics = I_GetTime();
 
 				ps_tictime = I_GetPreciseTime();
 

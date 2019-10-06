@@ -1361,15 +1361,11 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 //
 static void R_ProjectSprite(mobj_t *thing)
 {
-	fixed_t thingxpos = thing->x + thing->sprxoff;
-	fixed_t thingypos = thing->y + thing->spryoff;
-	fixed_t thingzpos = thing->z + thing->sprzoff;
-
 	mobj_t *oldthing = thing;
 
 	//const fixed_t oldthingxpos = oldthing->x + oldthing->sprxoff;
 	//const fixed_t oldthingypos = oldthing->y + oldthing->spryoff;
-	const fixed_t oldthingzpos = oldthing->z + oldthing->sprzoff;
+	//const fixed_t oldthingzpos = oldthing->z + oldthing->sprzoff;
 
 	fixed_t tr_x, tr_y;
 	fixed_t tx, tz;
@@ -1435,7 +1431,32 @@ static void R_ProjectSprite(mobj_t *thing)
 	angle_t spriterotangle = 0;
 #endif
 
-	// hitlag vibrating
+	// uncapped/interpolation
+	fixed_t interpx = thing->x + thing->sprxoff;
+	fixed_t interpy = thing->y + thing->spryoff;
+	fixed_t interpz = thing->z + thing->sprzoff;
+	angle_t interpangle = thing->angle;
+
+	// use player drawangle if player
+	if (thing->player) interpangle = thing->player->drawangle;
+
+	// do interpolation
+	if (cv_frameinterpolation.value == 1 && !paused)
+	{
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+		if (thing->player)
+		{
+			interpangle = thing->player->drawangle;
+		}
+		else
+		{
+			interpangle = thing->angle;
+		}
+	}
+
+	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
 		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
@@ -1445,14 +1466,14 @@ static void R_ProjectSprite(mobj_t *thing)
 			mul = -mul;
 		}
 
-		thingxpos += FixedMul(thing->momx, mul);
-		thingypos += FixedMul(thing->momy, mul);
-		thingzpos += FixedMul(thing->momz, mul);
+		interpx += FixedMul(thing->momx, mul);
+		interpy += FixedMul(thing->momy, mul);
+		interpz += FixedMul(thing->momz, mul);
 	}
 
 	// transform the origin point
-	tr_x = thingxpos - viewx;
-	tr_y = thingypos - viewy;
+	tr_x = interpx - viewx;
+	tr_y = interpy - viewy;
 
 	basetz = tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin); // near/far distance
 
@@ -1529,7 +1550,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	if (sprframe->rotate != SRF_SINGLE || papersprite)
 	{
-		ang = R_PointToAngle (thingxpos, thingypos) - (thing->player ? thing->player->drawangle : thing->angle);
+		ang = R_PointToAngle (interpx, interpy) - interpangle;
 		if (mirrored)
 			ang = InvAngle(ang);
 	}
@@ -1544,7 +1565,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	else
 	{
 		// choose a different rotation based on player view
-		//ang = R_PointToAngle (thingxpos, thingypos) - thing->angle;
+		//ang = R_PointToAngle (interpx, interpy) - interpangle;
 
 		if ((sprframe->rotate & SRF_RIGHT) && (ang < ANGLE_180)) // See from right
 			rot = 6; // F7 slot
@@ -1755,12 +1776,17 @@ static void R_ProjectSprite(mobj_t *thing)
 		fixed_t linkscale;
 
 		thing = thing->tracer;
+		if (cv_frameinterpolation.value == 1 && !paused)
+		{
+			interpx = thing->old_x + FixedMul(thing->x - thing->old_x, rendertimefrac);
+			interpy = thing->old_y + FixedMul(thing->y - thing->old_y, rendertimefrac);
+		}
 
 		if (! R_ThingVisible(thing))
 			return;
 
-		tr_x = (thingxpos + sort_x) - viewx;
-		tr_y = (thingypos + sort_y) - viewy;
+		tr_x = (interpx + sort_x) - viewx;
+		tr_y = (interpy + sort_y) - viewy;
 		tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin);
 		linkscale = FixedDiv(projectiony[viewssnum], tz);
 
@@ -1775,8 +1801,8 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 	else if (splat)
 	{
-		tr_x = (thingxpos + sort_x) - viewx;
-		tr_y = (thingypos + sort_y) - viewy;
+		tr_x = (interpx + sort_x) - viewx;
+		tr_y = (interpy + sort_y) - viewy;
 		sort_z = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin);
 		sortscale = FixedDiv(projectiony[viewssnum], sort_z);
 	}
@@ -1796,7 +1822,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (x2 < portalclipstart || x1 >= portalclipend)
 			return;
 
-		if (P_PointOnLineSide(thingxpos, thingypos, portalclipline) != 0)
+		if (P_PointOnLineSide(interpx, interpy, portalclipline) != 0)
 			return;
 	}
 
@@ -1865,12 +1891,12 @@ static void R_ProjectSprite(mobj_t *thing)
 			// When vertical flipped, draw sprites from the top down, at least as far as offsets are concerned.
 			// sprite height - sprite topoffset is the proper inverse of the vertical offset, of course.
 			// remember gz and gzt should be seperated by sprite height, not thing height - thing height can be shorter than the sprite itself sometimes!
-			gz = oldthingzpos + oldthing->height - FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
+			gz = interpz + oldthing->height - FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
 			gzt = gz + FixedMul(spr_height, FixedMul(spriteyscale, this_scale));
 		}
 		else
 		{
-			gzt = oldthingzpos + FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
+			gzt = interpz + FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
 			gz = gzt - FixedMul(spr_height, FixedMul(spriteyscale, this_scale));
 		}
 	}
@@ -1889,7 +1915,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 		// R_GetPlaneLight won't work on sloped lights!
 		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
-			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], thingxpos, thingypos);
+			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interpx, interpy);
 			if (h <= top) {
 				light = lightnum - 1;
 				break;
@@ -1915,12 +1941,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (heightsec != -1 && phs != -1) // only clip things which are in special sectors
 	{
 		if (viewz < sectors[phs].floorheight ?
-		thingzpos >= sectors[heightsec].floorheight :
+		interpz >= sectors[heightsec].floorheight :
 		gzt < sectors[heightsec].floorheight)
 			return;
 		if (viewz > sectors[phs].ceilingheight ?
 		gzt < sectors[heightsec].ceilingheight && viewz >= sectors[heightsec].ceilingheight :
-		thingzpos >= sectors[heightsec].ceilingheight)
+		interpz >= sectors[heightsec].ceilingheight)
 			return;
 	}
 
@@ -1933,12 +1959,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->sortscale = sortscale;
 	vis->sortsplat = sortsplat;
 	vis->dispoffset = dispoffset; // Monster Iestyn: 23/11/15
-	vis->gx = thingxpos;
-	vis->gy = thingypos;
+	vis->gx = interpx;
+	vis->gy = interpy;
 	vis->gz = gz;
 	vis->gzt = gzt;
 	vis->thingheight = thing->height;
-	vis->pz = thingzpos;
+	vis->pz = interpz;
 	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = FixedDiv(gzt - viewz, spriteyscale);
 	vis->scalestep = scalestep;
@@ -2073,9 +2099,22 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	//SoM: 3/17/2000
 	fixed_t gz, gzt;
 
+	// uncapped/interpolation
+	fixed_t interpx = thing->x;
+	fixed_t interpy = thing->y;
+	fixed_t interpz = thing->z;
+
+	// do interpolation
+	if (cv_frameinterpolation.value == 1 && !paused)
+	{
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+	}
+
 	// transform the origin point
-	tr_x = thing->x - viewx;
-	tr_y = thing->y - viewy;
+	tr_x = interpx - viewx;
+	tr_y = interpy - viewy;
 
 	tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin); // near/far distance
 
@@ -2139,12 +2178,12 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 		if (x2 < portalclipstart || x1 >= portalclipend)
 			return;
 
-		if (P_PointOnLineSide(thing->x, thing->y, portalclipline) != 0)
+		if (P_PointOnLineSide(interpx, interpy, portalclipline) != 0)
 			return;
 	}
 
 	//SoM: 3/17/2000: Disregard sprites that are out of view..
-	gzt = thing->z + spritecachedinfo[lump].topoffset;
+	gzt = interpz + spritecachedinfo[lump].topoffset;
 	gz = gzt - spritecachedinfo[lump].height;
 
 	if (thing->subsector->sector->cullheight)
@@ -2157,10 +2196,13 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis = R_NewVisSprite();
 	vis->scale = vis->sortscale = yscale; //<<detailshift;
 	vis->dispoffset = 0; // Monster Iestyn: 23/11/15
-	vis->gx = thing->x;
-	vis->gy = thing->y;
+	vis->gx = interpx;
+	vis->gy = interpy;
 	vis->gz = gz;
 	vis->gzt = gzt;
+	vis->thingheight = 4*FRACUNIT;
+	vis->pz = interpz;
+	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = vis->gzt - viewz;
 	vis->scalestep = 0;
 	vis->paperdistance = 0;

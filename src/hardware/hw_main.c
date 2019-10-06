@@ -38,6 +38,7 @@
 #include "../m_cheat.h"
 #include "../f_finale.h"
 #include "../r_things.h" // R_GetShadowZ
+#include "../d_main.h"
 #include "../p_slopes.h"
 #include "hw_md2.h"
 
@@ -5013,10 +5014,6 @@ static void HWR_AddSprites(sector_t *sec)
 // BP why not use xtoviexangle/viewangletox like in bsp ?....
 static void HWR_ProjectSprite(mobj_t *thing)
 {
-	fixed_t thingxpos = thing->x + thing->sprxoff;
-	fixed_t thingypos = thing->y + thing->spryoff;
-	fixed_t thingzpos = thing->z + thing->sprzoff;
-
 	gl_vissprite_t *vis;
 	float tr_x, tr_y;
 	float tz;
@@ -5056,13 +5053,34 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	angle_t spriterotangle = 0;
 #endif
 
+	// uncapped/interpolation
+	fixed_t interpx;
+	fixed_t interpy;
+	fixed_t interpz;
+	angle_t interpangle;
+
 	if (!thing)
 		return;
 
 	if (thing->spritexscale < 1 || thing->spriteyscale < 1)
 		return;
 
-	// hitlag vibrating
+	dispoffset = thing->info->dispoffset;
+
+	interpx = thing->x + thing->sprxoff;
+	interpy = thing->y + thing->spryoff;
+	interpz = thing->z + thing->sprzoff;
+	interpangle = mobjangle;
+
+	if (cv_frameinterpolation.value == 1 && !paused)
+	{
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+		interpangle = mobjangle;
+	}
+
+	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
 		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
@@ -5072,20 +5090,18 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			mul = -mul;
 		}
 
-		thingxpos += FixedMul(thing->momx, mul);
-		thingypos += FixedMul(thing->momy, mul);
-		thingzpos += FixedMul(thing->momz, mul);
+		interpx += FixedMul(thing->momx, mul);
+		interpy += FixedMul(thing->momy, mul);
+		interpz += FixedMul(thing->momz, mul);
 	}
-
-	dispoffset = thing->info->dispoffset;
 
 	this_scale = FIXED_TO_FLOAT(thing->scale);
 	spritexscale = FIXED_TO_FLOAT(thing->spritexscale);
 	spriteyscale = FIXED_TO_FLOAT(thing->spriteyscale);
 
 	// transform the origin point
-	tr_x = FIXED_TO_FLOAT(thingxpos) - gl_viewx;
-	tr_y = FIXED_TO_FLOAT(thingypos) - gl_viewy;
+	tr_x = FIXED_TO_FLOAT(interpx) - gl_viewx;
+	tr_y = FIXED_TO_FLOAT(interpy) - gl_viewy;
 
 	// rotation around vertical axis
 	tz = (tr_x * gl_viewcos) + (tr_y * gl_viewsin);
@@ -5108,8 +5124,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	}
 
 	// The above can stay as it works for cutting sprites that are too close
-	tr_x = FIXED_TO_FLOAT(thingxpos);
-	tr_y = FIXED_TO_FLOAT(thingypos);
+	tr_x = FIXED_TO_FLOAT(interpx);
+	tr_y = FIXED_TO_FLOAT(interpy);
 
 	// decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
@@ -5157,7 +5173,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		I_Error("sprframes NULL for sprite %d\n", thing->sprite);
 #endif
 
-	ang = R_PointToAngle (thingxpos, thingypos) - mobjangle;
+	ang = R_PointToAngle (interpx, interpy) - interpangle;
 	if (mirrored)
 		ang = InvAngle(ang);
 
@@ -5304,12 +5320,12 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if (vflip)
 	{
-		gz = FIXED_TO_FLOAT(thingzpos + thing->height) - (FIXED_TO_FLOAT(spr_topoffset) * this_yscale);
+		gz = FIXED_TO_FLOAT(interpz + thing->height) - (FIXED_TO_FLOAT(spr_topoffset) * this_yscale);
 		gzt = gz + (FIXED_TO_FLOAT(spr_height) * this_yscale);
 	}
 	else
 	{
-		gzt = FIXED_TO_FLOAT(thingzpos) + (FIXED_TO_FLOAT(spr_topoffset) * this_yscale);
+		gzt = FIXED_TO_FLOAT(interpz) + (FIXED_TO_FLOAT(spr_topoffset) * this_yscale);
 		gz = gzt - (FIXED_TO_FLOAT(spr_height) * this_yscale);
 	}
 
@@ -5328,12 +5344,12 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	if (heightsec != -1 && phs != -1) // only clip things which are in special sectors
 	{
 		if (gl_viewz < FIXED_TO_FLOAT(sectors[phs].floorheight) ?
-		FIXED_TO_FLOAT(thingzpos) >= FIXED_TO_FLOAT(sectors[heightsec].floorheight) :
+		FIXED_TO_FLOAT(interpz) >= FIXED_TO_FLOAT(sectors[heightsec].floorheight) :
 		gzt < FIXED_TO_FLOAT(sectors[heightsec].floorheight))
 			return;
 		if (gl_viewz > FIXED_TO_FLOAT(sectors[phs].ceilingheight) ?
 		gzt < FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) && gl_viewz >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) :
-		FIXED_TO_FLOAT(thingzpos) >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight))
+		FIXED_TO_FLOAT(interpz) >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight))
 			return;
 	}
 
@@ -5468,9 +5484,29 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	unsigned rot = 0;
 	UINT8 flip;
 
+	// uncapped/interpolation
+	fixed_t interpx;
+	fixed_t interpy;
+	fixed_t interpz;
+
+	if (!thing)
+		return;
+
+	interpx = thing->x;
+	interpy = thing->y;
+	interpz = thing->z;
+
+	// do interpolation
+	if (cv_frameinterpolation.value == 1 && !paused)
+	{
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+	}
+
 	// transform the origin point
-	tr_x = FIXED_TO_FLOAT(thing->x) - gl_viewx;
-	tr_y = FIXED_TO_FLOAT(thing->y) - gl_viewy;
+	tr_x = FIXED_TO_FLOAT(interpx) - gl_viewx;
+	tr_y = FIXED_TO_FLOAT(interpy) - gl_viewy;
 
 	// rotation around vertical axis
 	tz = (tr_x * gl_viewcos) + (tr_y * gl_viewsin);
@@ -5479,8 +5515,8 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	if (tz < ZCLIP_PLANE)
 		return;
 
-	tr_x = FIXED_TO_FLOAT(thing->x);
-	tr_y = FIXED_TO_FLOAT(thing->y);
+	tr_x = FIXED_TO_FLOAT(interpx);
+	tr_y = FIXED_TO_FLOAT(interpy);
 
 	// decide which patch to use for sprite relative to player
 	if ((unsigned)thing->sprite >= numsprites)
@@ -5547,7 +5583,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 #endif
 
 	// set top/bottom coords
-	vis->gzt = FIXED_TO_FLOAT(thing->z + spritecachedinfo[lumpoff].topoffset);
+	vis->gzt = FIXED_TO_FLOAT(interpz + spritecachedinfo[lumpoff].topoffset);
 	vis->gz = vis->gzt - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height);
 
 	vis->precip = true;
@@ -6651,6 +6687,7 @@ INT32 HWR_GetTextureUsed(void)
 void HWR_DoPostProcessor(player_t *player)
 {
 	postimg_t *type = &postimgtype[0];
+	fixed_t fractime;
 	SINT8 i;
 
 	HWD.pfnUnSetShader();
@@ -6702,6 +6739,8 @@ void HWR_DoPostProcessor(player_t *player)
 		// 10 by 10 grid. 2 coordinates (xy)
 		float v[SCREENVERTS][SCREENVERTS][2];
 		static double disStart = 0;
+		static float last_fractime = 0;
+
 		UINT8 x, y;
 		INT32 WAVELENGTH;
 		INT32 AMPLITUDE;
@@ -6733,6 +6772,16 @@ void HWR_DoPostProcessor(player_t *player)
 		HWD.pfnPostImgRedraw(v);
 		if (!(paused || P_AutoPause()))
 			disStart += 1;
+		fractime = I_GetTimeFrac();
+		if (tic_happened)
+		{
+			disStart = disStart - last_fractime + 1 + FIXED_TO_FLOAT(fractime);
+		}
+		else
+		{
+			disStart = disStart - last_fractime + FIXED_TO_FLOAT(fractime);
+		}
+		last_fractime = fractime;
 
 		// Capture the screen again for screen waving on the intermission
 		if(gamestate != GS_INTERMISSION)
