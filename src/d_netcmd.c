@@ -391,8 +391,8 @@ static CV_PossibleValue_t kartdebugitem_cons_t[] =
 consvar_t cv_kartdebugitem = {"kartdebugitem", "0", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugitem_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartdebugamount_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
 consvar_t cv_kartdebugamount = {"kartdebugamount", "1", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugamount_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_kartdebug_giveitem = {
-	"kartdebug_giveitem",
+consvar_t cv_kartallowgiveitem = {
+	"kartallowgiveitem",
 	/* :mhm: */
 #ifdef DEVELOP
 	"Yes",
@@ -5328,7 +5328,7 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 	amt  = READUINT8 (*cp);
 
 	if (
-			( netgame && ! cv_kartdebug_giveitem.value ) ||
+			( netgame && ! cv_kartallowgiveitem.value ) ||
 			( item < KITEM_SAD || item >= NUMKARTITEMS )
 	)
 	{
@@ -5517,7 +5517,7 @@ static void Command_Archivetest_f(void)
 
 /** Give yourself an, optional quantity or one of, an item.
   *
-  * \sa cv_kartdebug_giveitem
+  * \sa cv_kartallowgiveitem
 */
 static void Command_KartGiveItem_f(void)
 {
@@ -5532,7 +5532,7 @@ static void Command_KartGiveItem_f(void)
 	int i;
 
 	/* Allow always in local games. */
-	if (! netgame || cv_kartdebug_giveitem.value)
+	if (! netgame || cv_kartallowgiveitem.value)
 	{
 		ac = COM_Argc();
 		if (ac < 2)
