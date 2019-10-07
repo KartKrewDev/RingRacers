@@ -582,7 +582,6 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartusepwrlv);
 	CV_RegisterVar(&cv_votetime);
 
-	CV_RegisterVar(&cv_kartdebugitem);
 	CV_RegisterVar(&cv_kartdebugamount);
 	CV_RegisterVar(&cv_kartdebugshrink);
 	CV_RegisterVar(&cv_kartallowgiveitem);
@@ -1121,21 +1120,6 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	}
 
 	// SPECIAL CASE No. 2:
-	// Give a debug item instead if specified
-	if (cv_kartdebugitem.value != 0 && !modeattacking)
-	{
-		K_KartGetItemResult(player, cv_kartdebugitem.value);
-		player->kartstuff[k_itemamount] = cv_kartdebugamount.value;
-		player->karthud[khud_itemblink] = TICRATE;
-		player->karthud[khud_itemblinkmode] = 2;
-		player->kartstuff[k_itemroulette] = 0;
-		player->kartstuff[k_roulettetype] = 0;
-		if (P_IsDisplayPlayer(player))
-			S_StartSound(NULL, sfx_dbgsal);
-		return;
-	}
-
-	// SPECIAL CASE No. 3:
 	// Record Attack / alone mashing behavior
 	if (modeattacking || pingame == 1)
 	{
@@ -1186,7 +1170,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	// SPECIAL CASE No. 4:
+	// SPECIAL CASE No. 3:
 	// Being in ring debt occasionally forces Super Ring on you if you mashed
 	if (mashed && player->kartstuff[k_rings] < 0 && cv_superring.value)
 	{
@@ -1204,7 +1188,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	// SPECIAL CASE No. 5:
+	// SPECIAL CASE No. 4:
 	// Force SPB onto 2nd if they get too far behind
 	if (player->kartstuff[k_position] == 2 && pdis > (DISTVAR*6)
 		&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
