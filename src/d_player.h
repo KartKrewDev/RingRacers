@@ -197,6 +197,11 @@ typedef enum
 	NUMPOWERS
 } powertype_t;
 
+/*
+To use: #define X( name, number )
+Do with it whatever you want.
+Run this macro, then #undef X afterward
+*/
 #define KART_ITEM_ITERATOR \
 	X (SAD,           -1),\
 	X (NONE,           0),\
