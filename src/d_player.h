@@ -205,27 +205,27 @@ Run this macro, then #undef X afterward
 #define KART_ITEM_ITERATOR \
 	X (SAD,           -1),\
 	X (NONE,           0),\
-	X (SNEAKER,        2),\
-	X (ROCKETSNEAKER,  3),\
-	X (INVINCIBILITY,  4),\
-	X (BANANA,         5),\
-	X (EGGMAN,         6),\
-	X (ORBINAUT,       7),\
-	X (JAWZ,           8),\
-	X (MINE,           9),\
-	X (BALLHOG,       10),\
-	X (SPB,           11),\
-	X (GROW,          12),\
-	X (SHRINK,        13),\
-	X (THUNDERSHIELD, 14),\
-	X (HYUDORO,       15),\
-	X (POGOSPRING,    16),\
-	X (SUPERRING,     17),\
-	X (KITCHENSINK,   18)
+	X (SNEAKER,        1),\
+	X (ROCKETSNEAKER,  2),\
+	X (INVINCIBILITY,  3),\
+	X (BANANA,         4),\
+	X (EGGMAN,         5),\
+	X (ORBINAUT,       6),\
+	X (JAWZ,           7),\
+	X (MINE,           8),\
+	X (BALLHOG,        9),\
+	X (SPB,           10),\
+	X (GROW,          11),\
+	X (SHRINK,        12),\
+	X (THUNDERSHIELD, 13),\
+	X (HYUDORO,       14),\
+	X (POGOSPRING,    15),\
+	X (SUPERRING,     16),\
+	X (KITCHENSINK,   17)
 
 typedef enum
 {
-#define X( name, n ) KITEM_ ## name
+#define X( name, n ) KITEM_ ## name = n
 	KART_ITEM_ITERATOR,
 #undef  X
 
