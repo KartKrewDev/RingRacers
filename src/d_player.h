@@ -197,27 +197,32 @@ typedef enum
 	NUMPOWERS
 } powertype_t;
 
+#define KART_ITEM_ITERATOR \
+	X (SAD,           -1),\
+	X (NONE,           0),\
+	X (SNEAKER,        2),\
+	X (ROCKETSNEAKER,  3),\
+	X (INVINCIBILITY,  4),\
+	X (BANANA,         5),\
+	X (EGGMAN,         6),\
+	X (ORBINAUT,       7),\
+	X (JAWZ,           8),\
+	X (MINE,           9),\
+	X (BALLHOG,       10),\
+	X (SPB,           11),\
+	X (GROW,          12),\
+	X (SHRINK,        13),\
+	X (THUNDERSHIELD, 14),\
+	X (HYUDORO,       15),\
+	X (POGOSPRING,    16),\
+	X (SUPERRING,     17),\
+	X (KITCHENSINK,   18)
+
 typedef enum
 {
-	KITEM_SAD = -1,
-	KITEM_NONE = 0,
-	KITEM_SNEAKER,
-	KITEM_ROCKETSNEAKER,
-	KITEM_INVINCIBILITY,
-	KITEM_BANANA,
-	KITEM_EGGMAN,
-	KITEM_ORBINAUT,
-	KITEM_JAWZ,
-	KITEM_MINE,
-	KITEM_BALLHOG,
-	KITEM_SPB,
-	KITEM_GROW,
-	KITEM_SHRINK,
-	KITEM_THUNDERSHIELD,
-	KITEM_HYUDORO,
-	KITEM_POGOSPRING,
-	KITEM_SUPERRING,
-	KITEM_KITCHENSINK,
+#define X( name, n ) KITEM_ ## name
+	KART_ITEM_ITERATOR,
+#undef  X
 
 	NUMKARTITEMS,
 
