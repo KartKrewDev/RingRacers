@@ -6189,6 +6189,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	boolean NO_HYUDORO = (player->kartstuff[k_stolentimer] == 0 && player->kartstuff[k_stealingtimer] == 0);
 
 	K_UpdateDistanceFromFinishLine(player);
+	player->pflags &= ~PF_HITFINISHLINE;
 
 	if (!player->exiting)
 	{
