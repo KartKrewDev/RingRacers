@@ -60,6 +60,7 @@
 #     Compile with GCC 4.6x version, add 'GCC46=1'
 #     Compile a profile version, add 'PROFILEMODE=1'
 #     Compile a debug version, add 'DEBUGMODE=1'
+#     Compile for the testers group (they don't get to play unless we're watching *wink*), add 'TESTERS=1'
 #     Compile with extra warnings, add 'WARNINGMODE=1'
 #     Compile without NASM's tmap.nas, add 'NOASM=1'
 #     Compile without 3D hardware support, add 'NOHW=1'
@@ -434,6 +435,10 @@ else
 endif
 	CFLAGS+=-g $(OPTS) $(ARCHOPTS) $(WINDRESFLAGS)
 
+ifdef TESTERS
+	OPTS+=-DTESTERS
+endif
+
 ifdef YASM
 ifdef STABS
 	NASMOPTS?= -g stabs
@@ -492,6 +497,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/k_waypoint.o\
 		$(OBJDIR)/k_pathfind.o\
 		$(OBJDIR)/k_bheap.o  \
+		$(OBJDIR)/k_pwrlv.o  \
 		$(OBJDIR)/m_aatree.o \
 		$(OBJDIR)/m_anigif.o \
 		$(OBJDIR)/m_argv.o   \

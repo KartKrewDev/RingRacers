@@ -6486,6 +6486,216 @@ static void P_RemoveShadow(mobj_t *thing)
 		}
 }
 
+// SAL'S KART BATTLE MODE OVERTIME HANDLER
+#define MAXPLANESPERSECTOR (MAXFFLOORS+1)*2
+static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjtype_t type, boolean ceiling)
+{
+	UINT8 i;
+	fixed_t flatz[MAXPLANESPERSECTOR];
+	boolean flip[MAXPLANESPERSECTOR];
+	UINT8 numflats = 0;
+	mobj_t *mo;
+	subsector_t *ss = R_IsPointInSubsector(x, y);
+	sector_t *sec;
+
+	if (!ss)
+		return;
+	sec = ss->sector;
+
+	// convoluted stuff JUST to get all of the planes we need to draw orbs on :V
+
+	for (i = 0; i < MAXPLANESPERSECTOR; i++)
+		flip[i] = false;
+
+	if (sec->floorpic != skyflatnum)
+	{
+#ifdef ESLOPE
+		flatz[numflats] = (sec->f_slope ? P_GetZAt(sec->f_slope, x, y) : sec->floorheight);
+#else
+		flatz[numflats] = (sec->floorheight);
+#endif
+		numflats++;
+	}
+	if (sec->ceilingpic != skyflatnum && ceiling)
+	{
+#ifdef ESLOPE
+		flatz[numflats] = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
+#else
+		flatz[numflats] = (sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
+#endif
+		flip[numflats] = true;
+		numflats++;
+	}
+
+	if (sec->ffloors)
+	{
+		ffloor_t *rover;
+		for (rover = sec->ffloors; rover; rover = rover->next)
+		{
+			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER))
+				continue;
+			if (*rover->toppic != skyflatnum)
+			{
+#ifdef ESLOPE
+				flatz[numflats] = (*rover->t_slope ? P_GetZAt(*rover->t_slope, x, y) : *rover->topheight);
+#else
+				flatz[numflats] = (*rover->topheight);
+#endif
+				numflats++;
+			}
+			if (*rover->bottompic != skyflatnum && ceiling)
+			{
+#ifdef ESLOPE
+				flatz[numflats] = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
+#else
+				flatz[numflats] = (*rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
+#endif
+				flip[numflats] = true;
+				numflats++;
+			}
+		}
+	}
+
+	if (numflats <= 0) // no flats
+		return;
+
+	for (i = 0; i < numflats; i++)
+	{
+		mo = P_SpawnMobj(x, y, flatz[i], type);
+
+		// Lastly, if this can see the skybox mobj, then... we just wasted our time :V
+		if (skyboxmo[0] && !P_MobjWasRemoved(skyboxmo[0]))
+		{
+			const fixed_t sbz = skyboxmo[0]->z;
+			fixed_t checkz = sec->floorheight;
+
+			while (checkz < sec->ceilingheight)
+			{
+				P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, checkz);
+				if (P_CheckSight(skyboxmo[0], mo))
+				{
+					P_RemoveMobj(mo);
+					break;
+				}
+				else
+					checkz += 32*mapobjectscale;
+			}
+
+			P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, sbz);
+
+			if (P_MobjWasRemoved(mo))
+				continue;
+		}
+
+		P_SetScale(mo, scale);
+
+		if (flip[i])
+		{
+			mo->flags2 |= MF2_OBJECTFLIP;
+			mo->eflags |= MFE_VERTICALFLIP;
+		}
+
+		switch(type)
+		{
+			case MT_OVERTIMEFOG:
+				mo->destscale = 8*mo->scale;
+				mo->momz = P_RandomRange(1,8)*mo->scale;
+				break;
+			case MT_OVERTIMEORB:
+				//mo->destscale = mo->scale/4;
+				mo->frame += ((leveltime/4) % 8);
+				/*if (battleovertime.enabled < 10*TICRATE)
+					mo->flags2 |= MF2_SHADOW;*/
+				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
+				mo->z += P_RandomRange(0,48) * mo->scale;
+				break;
+			default:
+				break;
+		}
+	}
+}
+#undef MAXPLANESPERSECTOR
+
+void P_RunBattleOvertime(void)
+{
+	UINT16 i, j;
+
+	if (battleovertime.enabled < 10*TICRATE)
+	{
+		battleovertime.enabled++;
+		if (battleovertime.enabled == TICRATE)
+			S_StartSound(NULL, sfx_bhurry);
+		if (battleovertime.enabled == 10*TICRATE)
+			S_StartSound(NULL, sfx_kc40);
+	}
+	else
+	{
+		if (battleovertime.radius > battleovertime.minradius)
+			battleovertime.radius -= mapobjectscale;
+		else
+			battleovertime.radius = battleovertime.minradius;
+	}
+
+	if (leveltime & 1)
+	{
+		UINT8 transparency = tr_trans50;
+
+		if (!splitscreen && players[displayplayers[0]].mo)
+		{
+			INT32 dist = P_AproxDistance(battleovertime.x-players[displayplayers[0]].mo->x, battleovertime.y-players[displayplayers[0]].mo->y);
+			transparency = max(0, NUMTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
+		}
+
+		if (transparency < NUMTRANSMAPS)
+		{
+			mobj_t *beam = P_SpawnMobj(battleovertime.x, battleovertime.y, battleovertime.z + (mobjinfo[MT_RANDOMITEM].height/2), MT_OVERTIMEBEAM);
+			P_SetScale(beam, beam->scale*2);
+			if (transparency > 0)
+				beam->frame |= transparency<<FF_TRANSSHIFT;
+		}
+	}
+
+	// 16 orbs at the normal minimum size of 512
+	{
+		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
+		fixed_t scale = mapobjectscale + (battleovertime.radius/2048);
+		fixed_t sprwidth = 32*scale;
+		fixed_t circumference = FixedMul(pi, battleovertime.radius<<1);
+		UINT16 orbs = circumference / sprwidth;
+		angle_t angoff = ANGLE_MAX / orbs;
+
+		for (i = 0; i < orbs; i++)
+		{
+			angle_t ang = (i * angoff) + FixedAngle((leveltime/2)<<FRACBITS);
+			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+			P_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEORB, false);
+		}
+	}
+
+	if (battleovertime.enabled < 10*TICRATE)
+		return;
+
+	/*if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
+		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapobjectscale) - battleovertime.radius)>>FRACBITS / 2));*/
+
+	for (i = 0; i < 16; i++)
+	{
+		j = 0;
+		while (j < 32) // max attempts
+		{
+			fixed_t x = battleovertime.x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t y = battleovertime.y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t closestdist = battleovertime.radius + (8*mobjinfo[MT_OVERTIMEFOG].radius);
+			j++;
+			if (P_AproxDistance(x-battleovertime.x, y-battleovertime.y) < closestdist)
+				continue;
+			P_SpawnOvertimeParticles(x, y, 4*mapobjectscale, MT_OVERTIMEFOG, false);
+			break;
+		}
+	}
+}
+
 void A_BossDeath(mobj_t *mo);
 // AI for the Koopa boss.
 static void P_KoopaThinker(mobj_t *koopa)
@@ -7097,7 +7307,7 @@ void P_MobjThinker(mobj_t *mobj)
 					mobj->x = mobj->target->x;
 					mobj->y = mobj->target->y;
 
-					if (!splitscreen)
+					if (!splitscreen && players[displayplayers[0]].mo)
 					{
 						scale = mobj->target->scale + FixedMul(FixedDiv(abs(P_AproxDistance(players[displayplayers[0]].mo->x-mobj->target->x,
 							players[displayplayers[0]].mo->y-mobj->target->y)), RING_DIST), mobj->target->scale);
@@ -8534,18 +8744,13 @@ void P_MobjThinker(mobj_t *mobj)
 				return;
 			}
 
+			mobj->z = mobj->target->z;
+
 			K_MatchGenericExtraFlags(mobj, mobj->target);
-			{
-				fixed_t z;
-				z = mobj->target->z;
-				if (( mobj->eflags & MFE_VERTICALFLIP ))
-					z -= mobj->height;
-				else
-					z += mobj->target->height;
-				P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
-						mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
-						z);
-			}
+
+			P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
+					mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
+					mobj->z + mobj->target->height * P_MobjFlip(mobj));
 			break;
 		case MT_TIREGREASE:
 			if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->player
@@ -9317,6 +9522,40 @@ void P_MobjThinker(mobj_t *mobj)
 				trail->color = mobj->color;
 			}
 			break;
+		case MT_RANDOMITEM:
+			if (G_BattleGametype() && mobj->threshold == 70)
+			{
+				mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+				mobj->colorized = true;
+
+				if (battleovertime.enabled)
+				{
+					angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
+					fixed_t z = battleovertime.z;
+					fixed_t dist;
+					mobj_t *ghost;
+
+					/*if (z < mobj->subsector->sector->floorheight)
+						z = mobj->subsector->sector->floorheight;*/
+
+					if (mobj->extravalue1 < 512)
+						mobj->extravalue1++;
+					dist = mobj->extravalue1 * mapobjectscale;
+
+					P_TeleportMove(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
+						battleovertime.y + P_ReturnThrustY(NULL, ang, dist), z);
+
+					ghost = P_SpawnGhostMobj(mobj);
+					ghost->fuse = 4;
+					ghost->frame |= FF_FULLBRIGHT;
+				}
+			}
+			else
+			{
+				mobj->color = SKINCOLOR_NONE;
+				mobj->colorized = false;
+			}
+			break;
 		//}
 		case MT_TURRET:
 			P_MobjCheckWater(mobj);
@@ -9581,7 +9820,7 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 					P_RemoveMobj(mobj); // make sure they disappear
 					return;
 				case MT_RANDOMITEM:
-					if (G_BattleGametype())
+					if (G_BattleGametype() && (mobj->threshold != 70))
 					{
 						if (mobj->threshold != 69)
 							break;
@@ -9597,8 +9836,11 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 						else
 							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
 
+						P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
 						// Transfer flags2 (strongbox, objectflip)
 						newmobj->flags2 = mobj->flags2 & ~MF2_DONTDRAW;
+						if (mobj->threshold == 70)
+							newmobj->threshold = 70;
 					}
 					P_RemoveMobj(mobj); // make sure they disappear
 					return;
@@ -10958,6 +11200,50 @@ void P_PrecipitationEffects(void)
 	}
 }
 
+void P_RespawnBattleBoxes(void)
+{
+	thinker_t *th;
+
+	if (!G_BattleGametype())
+		return;
+
+	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+	{
+		mobj_t *box;
+		mobj_t *newmobj;
+
+		if (th->function.acp1 != (actionf_p1)P_MobjThinker)	// not a mobj
+			continue;
+
+		box = (mobj_t *)th;
+
+		if (box->type != MT_RANDOMITEM || box->threshold != 68 || box->fuse) // only popped items
+			continue;
+
+		// Respawn from mapthing if you have one!
+		if (box->spawnpoint)
+		{
+			P_SpawnMapThing(box->spawnpoint);
+			newmobj = box->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
+			P_SpawnMobj(box->spawnpoint->mobj->x, box->spawnpoint->mobj->y, box->spawnpoint->mobj->z, MT_EXPLODE); // poof into existance
+		}
+		else
+		{
+			newmobj = P_SpawnMobj(box->x, box->y, box->z, box->type);
+			P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
+		}
+
+			// Transfer flags2 (strongbox, objectflip)
+			newmobj->flags2 = box->flags2;
+			P_RemoveMobj(box); // make sure they disappear
+			numgotboxes--; // you've restored a box, remove it from the count
+			//continue; -- irrelevant?
+		}
+
+		if (numgotboxes < 0)
+			numgotboxes = 0;
+}
+
 //
 // P_RespawnSpecials
 //
@@ -10971,45 +11257,7 @@ void P_RespawnSpecials(void)
 	mapthing_t *mthing = NULL;
 
 	if (G_BattleGametype() && numgotboxes >= (4*nummapboxes/5)) // Battle Mode respawns all boxes in a different way
-	{
-		thinker_t *th;
-
-		for (th = thinkercap.next; th != &thinkercap; th = th->next)
-		{
-			mobj_t *box;
-			mobj_t *newmobj;
-
-			if (th->function.acp1 != (actionf_p1)P_MobjThinker)	// not a mobj
-				continue;
-
-			box = (mobj_t *)th;
-
-			if (box->type != MT_RANDOMITEM || box->threshold != 68 || box->fuse) // only popped items
-				continue;
-
-			// Respawn from mapthing if you have one!
-			if (box->spawnpoint)
-			{
-				P_SpawnMapThing(box->spawnpoint);
-				newmobj = box->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
-				P_SpawnMobj(box->spawnpoint->mobj->x, box->spawnpoint->mobj->y, box->spawnpoint->mobj->z, MT_EXPLODE); // poof into existance
-			}
-			else
-			{
-				newmobj = P_SpawnMobj(box->x, box->y, box->z, box->type);
-				P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
-			}
-
-			// Transfer flags2 (strongbox, objectflip)
-			newmobj->flags2 = box->flags2;
-			P_RemoveMobj(box); // make sure they disappear
-			numgotboxes--; // you've restored a box, remove it from the count
-			//continue; -- irrelevant?
-		}
-
-		if (numgotboxes < 0)
-			numgotboxes = 0;
-	}
+		P_RespawnBattleBoxes();
 
 	// wait time depends on player count
 	for (p = 0; p < MAXPLAYERS; p++)
@@ -11021,7 +11269,15 @@ void P_RespawnSpecials(void)
 	if (pcount == 1) // No respawn when alone
 		return;
 	else if (pcount > 1)
+	{
 		time = (180 - (pcount * 10))*TICRATE;
+
+		// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
+		// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
+		if ((mapheaderinfo[gamemap-1]->numlaps != 3)
+		&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
+			time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
+	}
 
 	// only respawn items when cv_itemrespawn is on
 	//if (!cv_itemrespawn.value) // TODO: remove this cvar

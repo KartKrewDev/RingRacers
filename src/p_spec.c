@@ -3788,10 +3788,9 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			break;
 		case 9: // Ring Drainer (Floor Touch)
 		case 10: // Ring Drainer (No Floor Touch)
-			if (leveltime % (TICRATE/2) == 0 && player->mo->health > 1)
+			if (leveltime % (TICRATE/2) == 0 && player->kartstuff[k_rings] > 0)
 			{
-				player->mo->health--;
-				player->health--;
+				player->kartstuff[k_rings]--;
 				S_StartSound(player->mo, sfx_itemup);
 			}
 			break;

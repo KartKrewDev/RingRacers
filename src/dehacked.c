@@ -2553,6 +2553,19 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
 	}
+	else if ((offset=0) || fastcmp(params[0], "POWERLEVEL"))
+	{
+		PARAMCHECK(2);
+		ty = UC_POWERLEVEL;
+		re = atoi(params[1]);
+		x1 = atoi(params[2]);
+
+		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
+		{
+			deh_warning("Power level type %d out of range (0 - %d)", x1, PWRLV_NUMTYPES-1);
+			return;
+		}
+	}
 	else if ((offset=0) || fastcmp(params[0], "GAMECLEAR")
 	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
 	//||        (++offset && fastcmp(params[0], "ULTIMATECLEAR")))
@@ -2605,7 +2618,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (x1 < 0 || x1 >= NUMMAPS)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
+			deh_warning("Level number %d out of range (1 - %d)", x1, NUMMAPS);
 			return;
 		}
 	}
@@ -3257,29 +3270,13 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_intermission_final;
 			}
-			else if (fastncmp(word, "SPECINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
 			else if (fastncmp(word, "VOTING_", 7))
 			{
 				pword = word + 7;
 				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
+					wipeoffset = wipe_voting_toblack;
 				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
-			else if (fastncmp(word, "MULTINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_multinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_multinter_final;
+					wipeoffset = wipe_voting_final;
 			}
 			else if (fastncmp(word, "CONTINUING_", 11))
 			{
@@ -3331,11 +3328,13 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_gameend_final;
 			}
-			else if (fastncmp(word, "SPECLEVEL_", 10))
+			else if (fastncmp(word, "ENCORE_", 7))
 			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOWHITE"))
-					wipeoffset = wipe_speclevel_towhite;
+				pword = word + 7;
+				if (fastcmp(pword, "TOINVERT"))
+					wipeoffset = wipe_encore_toinvert;
+				else if (fastcmp(pword, "TOWHITE"))
+					wipeoffset = wipe_encore_towhite;
 			}
 
 			if (wipeoffset < 0)
@@ -3345,10 +3344,10 @@ static void readwipes(MYFILE *f)
 			}
 
 			if (value == UINT8_MAX
-			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_speclevel_towhite))
+			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_encore_toinvert))
 			{
 				 // Cannot disable non-toblack wipes
-				 // (or the level toblack wipe, or the special towhite wipe)
+				 // (or the level toblack wipe, or the special encore wipe)
 				deh_warning("Wipes: can't disable wipe of type '%s'", word);
 				continue;
 			}
@@ -7215,6 +7214,10 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	"S_TIREGREASE",
 
+	"S_OVERTIMEFOG",
+	"S_OVERTIMEORB",
+	"S_OVERTIMEBEAM",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -8009,6 +8012,10 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_DRAFTDUST",
 	"MT_TIREGREASE",
 
+	"MT_OVERTIMEFOG",
+	"MT_OVERTIMEORB",
+	"MT_OVERTIMEBEAM",
+
 #ifdef SEENAMES
 	"MT_NAMECHECK",
 #endif
@@ -8493,7 +8500,8 @@ static const char *const KARTSTUFF_LIST[] = {
 	"GROWCANCEL",
 	"TIREGREASE",
 	"SPRINGSTARS",
-	"SPRINGCOLOR"
+	"SPRINGCOLOR",
+	"KILLFIELD"
 };
 #endif
 

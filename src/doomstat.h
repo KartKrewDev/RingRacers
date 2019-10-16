@@ -475,7 +475,6 @@ extern tic_t wantedcalcdelay;
 extern tic_t indirectitemcooldown;
 extern tic_t hyubgone;
 extern tic_t mapreset;
-extern UINT8 nospectategrief;
 extern boolean thwompsactive;
 extern SINT8 spbplace;
 
@@ -486,6 +485,15 @@ extern tic_t curlap, bestlap;
 extern INT16 votelevels[5][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
+
+/** Battle overtime information
+  */
+extern struct battleovertime
+{
+	UINT16 enabled; ///< Has this been initalized yet?
+	fixed_t radius, minradius; ///< Radius of kill field
+	fixed_t x, y, z; ///< Position to center on
+} battleovertime;
 
 extern tic_t hidetime;
 

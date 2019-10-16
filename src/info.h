@@ -784,6 +784,8 @@ typedef enum sprite
 	SPR_DRAF,
 	SPR_GRES,
 
+	SPR_OTFG,
+
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
 	SPR_XMS5,
@@ -4116,6 +4118,10 @@ typedef enum state
 
 	S_TIREGREASE,
 
+	S_OVERTIMEFOG,
+	S_OVERTIMEORB,
+	S_OVERTIMEBEAM,
+
 #ifdef SEENAMES
 	S_NAMECHECK,
 #endif
@@ -4926,6 +4932,10 @@ typedef enum mobj_type
 	MT_RINGSPARKS,
 	MT_DRAFTDUST,
 	MT_TIREGREASE,
+
+	MT_OVERTIMEFOG,
+	MT_OVERTIMEORB,
+	MT_OVERTIMEBEAM,
 
 #ifdef SEENAMES
 	MT_NAMECHECK,

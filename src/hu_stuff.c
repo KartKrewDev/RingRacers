@@ -3017,7 +3017,7 @@ static void HU_DrawRankings(void)
 		}
 
 		V_DrawCenteredString(256, 8, 0, "GAME SPEED");
-		V_DrawCenteredString(256, 16, hilicol, cv_kartspeed.string);
+		V_DrawCenteredString(256, 16, hilicol, kartspeed_cons_t[gamespeed].strvalue);
 	}
 
 	// When you play, you quickly see your score because your name is displayed in white.

@@ -210,6 +210,7 @@ extern tic_t itemrespawntime[ITEMQUESIZE];
 extern size_t iquehead, iquetail;
 extern consvar_t cv_gravity/*, cv_viewheight*/;
 
+void P_RespawnBattleBoxes(void);
 void P_RespawnSpecials(void);
 
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
@@ -228,6 +229,7 @@ boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
 void P_RunOverlays(void);
 fixed_t P_CalculateShadowFloor(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player);
 void P_RunShadows(void);
+void P_RunBattleOvertime(void);
 void P_MobjThinker(mobj_t *mobj);
 boolean P_RailThinker(mobj_t *mobj);
 void P_PushableThinker(mobj_t *mobj);
