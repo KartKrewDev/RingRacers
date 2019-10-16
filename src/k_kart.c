@@ -6036,26 +6036,37 @@ void K_KartUpdatePosition(player_t *player)
 
 		if (G_RaceGametype())
 		{
-			// I'm a lap behind this player OR
-			// My distance to the finish line is higher, so I'm behind
-			if ((players[i].laps > player->laps)
-				|| (players[i].distancetofinish < player->distancetofinish))
+			if (player->exiting) // End of match standings
 			{
-				position++;
+				// Only time matters
+				if (players[i].realtime < player->realtime)
+					position++;
+			}
+			else
+			{
+				// I'm a lap behind this player OR
+				// My distance to the finish line is higher, so I'm behind
+				if ((players[i].laps > player->laps)
+					|| (players[i].distancetofinish < player->distancetofinish))
+				{
+					position++;
+				}
 			}
 		}
 		else if (G_BattleGametype())
 		{
 			if (player->exiting) // End of match standings
 			{
-				if (players[i].marescore > player->marescore) // Only score matters
+				// Only score matters
+				if (players[i].marescore > player->marescore)
 					position++;
 			}
 			else
 			{
-				if (players[i].kartstuff[k_bumper] == player->kartstuff[k_bumper] && players[i].marescore > player->marescore)
-					position++;
-				else if (players[i].kartstuff[k_bumper] > player->kartstuff[k_bumper])
+				// I have less points than but the same bumpers as this player OR
+				// I have less bumpers than this player
+				if ((players[i].kartstuff[k_bumper] == player->kartstuff[k_bumper] && players[i].marescore > player->marescore)
+					|| (players[i].kartstuff[k_bumper] > player->kartstuff[k_bumper]))
 					position++;
 			}
 		}
