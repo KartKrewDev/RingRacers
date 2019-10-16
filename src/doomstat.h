@@ -291,6 +291,8 @@ typedef struct
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 
+// This could support more, but is that a good idea?
+// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory. 
 #define MAXLEVELLIST 5
 
 typedef struct cupheader_s
@@ -303,6 +305,7 @@ typedef struct cupheader_s
 	INT16 bonusgame;               ///< Map number to use for bonus game
 	INT16 specialstage;            ///< Map number to use for special stage
 	UINT8 emeraldnum;              ///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+	SINT8 unlockrequired;          ///< An unlockable is required to select this cup. -1 for no unlocking required.
 	struct cupheader_s *next;      ///< Next cup in linked list
 } cupheader_t;
 

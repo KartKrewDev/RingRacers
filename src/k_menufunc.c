@@ -83,7 +83,7 @@ menu_t *currentMenu = &MainDef;
 char dummystaffname[22];
 
 INT16 itemOn = 0; // menu item skull is on, Hack by Tails 09-18-2002
-INT16 skullAnimCounter = 10; // skull animation counter
+INT16 skullAnimCounter = 8; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
 
 // finish wipes between screens
@@ -98,10 +98,7 @@ static boolean noFurtherInput = false;
 // ==========================================================================
 
 // Consvar onchange functions
-static void Nextmap_OnChange(void);
-static void Newgametype_OnChange(void);
 static void Dummymenuplayer_OnChange(void);
-//static void Dummymares_OnChange(void);
 static void Dummystaff_OnChange(void);
 
 consvar_t cv_showfocuslost = {"showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
@@ -136,20 +133,8 @@ consvar_t cv_splitplayers = {"splitplayers", "One", CV_CALL, splitplayers_cons_t
 //Console variables used solely in the menu system.
 //todo: add a way to use non-console variables in the menu
 //      or make these consvars legitimate like color or skin.
-static CV_PossibleValue_t map_cons_t[] = {
-	{0,"MIN"},
-	{NUMMAPS, "MAX"},
-	{0, NULL}
-};
-consvar_t cv_nextmap = {"nextmap", "1", CV_HIDDEN|CV_CALL, map_cons_t, Nextmap_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
 static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
-consvar_t cv_chooseskin = {"chooseskin", DEFAULTSKIN, CV_HIDDEN|CV_CALL, skins_cons_t, Nextmap_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
-// This gametype list is integral for many different reasons.
-// When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
-CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
-consvar_t cv_newgametype = {"newgametype", "Race", CV_HIDDEN|CV_CALL, gametype_cons_t, Newgametype_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chooseskin = {"chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t dummymenuplayer_cons_t[] = {{0, "NOPE"}, {1, "P1"}, {2, "P2"}, {3, "P3"}, {4, "P4"}, {0, NULL}};
 static consvar_t cv_dummymenuplayer = {"dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -172,22 +157,15 @@ static consvar_t cv_dummystaff = {"dummystaff", "0", CV_HIDDEN|CV_CALL, dummysta
 // (there's only a couple anyway)
 
 #if 0
-// Prototypes
-static INT32 M_FindFirstMap(INT32 gtype);
-static INT32 M_GetFirstLevelInList(void);
-#endif
-
 // Nextmap.  Used for Time Attack.
 static void Nextmap_OnChange(void)
 {
-#if 0
 	char *leveltitle;
 
 	// Update the string in the consvar.
 	Z_Free(cv_nextmap.zstring);
 	leveltitle = G_BuildMapTitle(cv_nextmap.value);
 	cv_nextmap.string = cv_nextmap.zstring = leveltitle ? leveltitle : Z_StrDup(G_BuildMapName(cv_nextmap.value));
-
 
 	if (currentMenu == &SP_TimeAttackDef)
 	{
@@ -270,9 +248,8 @@ static void Nextmap_OnChange(void)
 
 		free(gpath);
 	}
-#endif
 }
-
+#endif
 
 static void Dummymenuplayer_OnChange(void)
 {
@@ -284,6 +261,7 @@ static void Dummymenuplayer_OnChange(void)
 
 static void Dummystaff_OnChange(void)
 {
+#if 0
 	lumpnum_t l;
 
 	dummystaffname[0] = '\0';
@@ -315,39 +293,8 @@ static void Dummystaff_OnChange(void)
 
 		sprintf(temp, " - %d", cv_dummystaff.value);
 	}
-}
-
-// Newgametype.  Used for gametype changes.
-static void Newgametype_OnChange(void)
-{
-#if 0
-	if (cv_nextmap.value && menuactive)
-	{
-		if (!mapheaderinfo[cv_nextmap.value-1])
-			P_AllocMapHeader((INT16)(cv_nextmap.value-1));
-
-		if ((cv_newgametype.value == GT_RACE && !(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & TOL_RACE))
-			|| (cv_newgametype.value == GT_MATCH && !(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & TOL_MATCH)))
-		{
-			INT32 value = 0;
-
-			switch (cv_newgametype.value)
-			{
-				default:
-				case GT_RACE:
-					value = TOL_RACE;
-					break;
-				case GT_MATCH:
-					value = TOL_MATCH;
-					break;
-			}
-
-			CV_SetValue(&cv_nextmap, M_FindFirstMap(value));
-		}
-	}
 #endif
 }
-
 
 void Screenshot_option_Onchange(void)
 {
@@ -427,32 +374,37 @@ static void M_ChangeCvar(INT32 choice)
 {
 	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
 
+	// Backspace sets values to default value
 	if (choice == -1)
 	{
+		// There's a default color technically, but it's not ideal. Use your skin's prefcolor instead!
 		if (cv == &cv_playercolor)
 		{
 			SINT8 skinno = R_SkinAvailable(cv_chooseskin.string);
+
 			if (skinno != -1)
-				CV_SetValue(cv,skins[skinno].prefcolor);
+				CV_SetValue(cv, skins[skinno].prefcolor);
+
 			return;
 		}
-		CV_Set(cv,cv->defaultvalue);
+
+		CV_Set(cv, cv->defaultvalue);
 		return;
 	}
 
 	choice = (choice<<1) - 1;
 
 	if (((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_SLIDER)
-	    ||((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_INVISSLIDER)
-	    ||((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_NOMOD))
+		|| ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_INVISSLIDER)
+		|| ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_NOMOD))
 	{
-		CV_SetValue(cv,cv->value+choice);
+		CV_SetValue(cv, cv->value+choice);
 	}
 	else if (cv->flags & CV_FLOAT)
 	{
 		char s[20];
-		sprintf(s,"%f",FIXED_TO_FLOAT(cv->value)+(choice)*(1.0f/16.0f));
-		CV_Set(cv,s);
+		sprintf(s, "%f", FIXED_TO_FLOAT(cv->value) + (choice) * (1.0f / 16.0f));
+		CV_Set(cv, s);
 	}
 	else
 	{
@@ -464,7 +416,8 @@ static void M_ChangeCvar(INT32 choice)
 		else if (cv == &cv_maxping)
 			choice *= 50;
 #endif
-		CV_AddValue(cv,choice);
+
+		CV_AddValue(cv, choice);
 	}
 }
 
@@ -579,15 +532,15 @@ boolean M_Responder(event_t *ev)
 		switch (ch)
 		{
 			case KEY_MOUSE1:
-				//case KEY_JOY1:
-				//case KEY_JOY1 + 2:
+			//case KEY_JOY1:
+			//case KEY_JOY1 + 2:
 				ch = KEY_ENTER;
 				break;
-				/*case KEY_JOY1 + 3: // Brake can function as 'n' for message boxes now.
-					ch = 'n';
-					break;*/
+			/*case KEY_JOY1 + 3: // Brake can function as 'n' for message boxes now.
+				ch = 'n';
+				break;*/
 			case KEY_MOUSE1 + 1:
-				//case KEY_JOY1 + 1:
+			//case KEY_JOY1 + 1:
 				ch = KEY_BACKSPACE;
 				break;
 			case KEY_HAT1:
@@ -744,8 +697,8 @@ boolean M_Responder(event_t *ev)
 				M_QuitSRB2(0);
 				return true;
 
-			case KEY_F11: // Gamma Level
-				CV_AddValue(&cv_usegamma, 1);
+			case KEY_F11: // Empty (used to be Gamma)
+				//CV_AddValue(&cv_usegamma, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
@@ -948,8 +901,8 @@ boolean M_Responder(event_t *ev)
 
 				if (cv == &cv_chooseskin
 					|| cv == &cv_dummystaff
-					|| cv == &cv_nextmap
-					|| cv == &cv_newgametype)
+					/*|| cv == &cv_nextmap
+					|| cv == &cv_newgametype*/)
 					return true;
 
 #if 0
@@ -1344,8 +1297,6 @@ void M_Init(void)
 {
 	//COM_AddCommand("manual", Command_Manual_f);
 
-	CV_RegisterVar(&cv_nextmap);
-	CV_RegisterVar(&cv_newgametype);
 	CV_RegisterVar(&cv_chooseskin);
 	CV_RegisterVar(&cv_autorecord);
 
@@ -2023,7 +1974,7 @@ boolean M_CharacterSelectQuit(void)
 // Determines whether to show a given map in the various level-select lists.
 // Set gt = -1 to ignore gametype.
 //
-boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
+boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 {
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
@@ -2037,7 +1988,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 		return false; // not unlocked
 
 	// Should the map be hidden?
-	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU && mapnum+1 != gamemap)
+	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU /*&& mapnum+1 != gamemap*/)
 		return false;
 
 	if (gt == GT_MATCH && (mapheaderinfo[mapnum]->typeoflevel & TOL_MATCH))
@@ -2045,17 +1996,17 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 
 	if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
 	{
-		if (selectedcup && selectedcup->numlevels)
+		if (levellist.selectedcup && levellist.selectedcup->numlevels)
 		{
 			UINT8 i;
 
-			for (i = 0; i < selectedcup->numlevels; i++)
+			for (i = 0; i < levellist.selectedcup->numlevels; i++)
 			{
-				if (mapnum == selectedcup->levellist[i])
+				if (mapnum == levellist.selectedcup->levellist[i])
 					break;
 			}
 
-			if (i == selectedcup->numlevels)
+			if (i == levellist.selectedcup->numlevels)
 				return false;
 		}
 
@@ -2066,9 +2017,9 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 	return false;
 }
 
-INT32 M_CountLevelsToShowInList(INT32 gt)
+INT16 M_CountLevelsToShowInList(UINT8 gt)
 {
-	INT32 mapnum, count = 0;
+	INT16 mapnum, count = 0;
 
 	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
@@ -2077,32 +2028,31 @@ INT32 M_CountLevelsToShowInList(INT32 gt)
 	return count;
 }
 
-INT32 M_GetFirstLevelInList(INT32 gt)
+INT16 M_GetFirstLevelInList(UINT8 gt)
 {
-	INT32 mapnum;
+	INT16 mapnum;
 
 	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
-			return mapnum + 1;
+			return mapnum;
 
-	return 1;
+	return 0;
 }
 
-cupheader_t *selectedcup = NULL;
-struct levellist_cupgrid_s levellist_cupgrid;
-struct levellist_scroll_s levellist_scroll;
+struct cupgrid_s cupgrid;
+struct levellist_s levellist;
 
 static void M_LevelSelectScrollDest(void)
 {
-	UINT16 m = M_CountLevelsToShowInList(cv_newgametype.value)-1;
+	UINT16 m = M_CountLevelsToShowInList(levellist.newgametype)-1;
 
-	levellist_scroll.dest = (6*levellist_scroll.cursor);
+	levellist.dest = (6*levellist.cursor);
 
-	if (levellist_scroll.dest < 3)
-		levellist_scroll.dest = 3;
+	if (levellist.dest < 3)
+		levellist.dest = 3;
 
-	if (levellist_scroll.dest > (6*m)-3)
-		levellist_scroll.dest = (6*m)-3;
+	if (levellist.dest > (6*m)-3)
+		levellist.dest = (6*m)-3;
 }
 
 void M_LevelSelectInit(INT32 choice)
@@ -2112,36 +2062,64 @@ void M_LevelSelectInit(INT32 choice)
 	switch (currentMenu->menuitems[itemOn].mvar1)
 	{
 		case 0:
-			levellist_cupgrid.grandprix = false;
-			levellist_scroll.timeattack = false;
+			cupgrid.grandprix = false;
+			levellist.timeattack = false;
 			break;
 		case 1:
-			levellist_cupgrid.grandprix = false;
-			levellist_scroll.timeattack = true;
+			cupgrid.grandprix = false;
+			levellist.timeattack = true;
 			break;
-		case 2:
-			levellist_cupgrid.grandprix = true;
-			levellist_scroll.timeattack = false;
-			break;
+		/*case 2:
+			cupgrid.grandprix = true;
+			levellist.timeattack = false;
+			break;*/
 		default:
 			CONS_Alert(CONS_WARNING, "Bad level select init\n");
 			return;
 	}
 
-	CV_StealthSetValue(&cv_newgametype, currentMenu->menuitems[itemOn].mvar2);
+	levellist.newgametype = currentMenu->menuitems[itemOn].mvar2;
 	PLAY_CupSelectDef.prevMenu = currentMenu;
 
-	if (cv_newgametype.value == GT_RACE)
+	// Obviously go to Cup Select in gametypes that have cups.
+	// Use a really long level select in gametypes that don't use cups.
+
+	if (levellist.newgametype == GT_RACE)
 	{
+		cupheader_t *cup = kartcupheaders;
+		UINT8 highestid = 0;
+
+		// Make sure there's valid cups before going to this menu.
+		if (cup == NULL)
+			I_Error("Can you really call this a racing game, I didn't recieve any Cups on my pillow or anything");
+
+		while (cup)
+		{
+			if (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked)
+				highestid = cup->id;
+			cup = cup->next;
+		}
+
+		cupgrid.numpages = (highestid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
+
 		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
 		M_SetupNextMenu(&PLAY_CupSelectDef, false);
+
+		return;
 	}
-	else
+
+	// Reset position properly if you go back & forth between gametypes
+	if (levellist.selectedcup)
 	{
-		selectedcup = NULL;
-		PLAY_LevelSelectDef.prevMenu = currentMenu;
-		M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+		levellist.cursor = 0;
+		levellist.selectedcup = NULL;
 	}
+
+	M_LevelSelectScrollDest();
+	levellist.y = levellist.dest;
+
+	PLAY_LevelSelectDef.prevMenu = currentMenu;
+	M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 }
 
 void M_CupSelectHandler(INT32 choice)
@@ -2150,7 +2128,7 @@ void M_CupSelectHandler(INT32 choice)
 
 	while (newcup)
 	{
-		if (newcup->id == CUPID)
+		if (newcup->id == CUPMENU_CURSORID)
 			break;
 		newcup = newcup->next;
 	}
@@ -2158,53 +2136,55 @@ void M_CupSelectHandler(INT32 choice)
 	switch (choice)
 	{
 		case KEY_RIGHTARROW:
-			levellist_cupgrid.x++;
-			if (levellist_cupgrid.x >= CUPS_COLUMNS)
+			cupgrid.x++;
+			if (cupgrid.x >= CUPMENU_COLUMNS)
 			{
-				levellist_cupgrid.x = 0;
-				//levellist_cupgrid.pageno++;
+				cupgrid.x = 0;
+				cupgrid.pageno++;
+				if (cupgrid.pageno >= cupgrid.numpages)
+					cupgrid.pageno = 0;
 			}
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_LEFTARROW:
-			levellist_cupgrid.x--;
-			if (levellist_cupgrid.x < 0)
+			cupgrid.x--;
+			if (cupgrid.x < 0)
 			{
-				levellist_cupgrid.x = CUPS_COLUMNS-1;
-				//levellist_cupgrid.pageno--;
+				cupgrid.x = CUPMENU_COLUMNS-1;
+				cupgrid.pageno--;
+				if (cupgrid.pageno < 0)
+					cupgrid.pageno = cupgrid.numpages-1;
 			}
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_UPARROW:
-			levellist_cupgrid.y++;
-			if (levellist_cupgrid.y >= CUPS_ROWS)
-			{
-				levellist_cupgrid.y = 0;
-				//levellist_cupgrid.pageno++;
-			}
+			cupgrid.y++;
+			if (cupgrid.y >= CUPMENU_ROWS)
+				cupgrid.y = 0;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_DOWNARROW:
-			levellist_cupgrid.y--;
-			if (levellist_cupgrid.y < 0)
-			{
-				levellist_cupgrid.y = CUPS_ROWS-1;
-				//levellist_cupgrid.pageno--;
-			}
+			cupgrid.y--;
+			if (cupgrid.y < 0)
+				cupgrid.y = CUPMENU_ROWS-1;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_ENTER:
-			if (!newcup)
-				break;
-
-			if (!selectedcup || newcup->id != selectedcup->id) // Keep cursor position if you select the same cup again
+			if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
 			{
-				levellist_scroll.cursor = 0;
-				selectedcup = newcup;
+				S_StartSound(NULL, sfx_s3kb2);
+				break;
+			}
+
+			// Keep cursor position if you select the same cup again, reset if it's a different cup
+			if (!levellist.selectedcup || newcup->id != levellist.selectedcup->id)
+			{
+				levellist.cursor = 0;
+				levellist.selectedcup = newcup;
 			}
 
 			M_LevelSelectScrollDest();
-			levellist_scroll.y = levellist_scroll.dest;
+			levellist.y = levellist.dest;
 
 			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 			S_StartSound(NULL, sfx_s3k63);
@@ -2222,87 +2202,109 @@ void M_CupSelectHandler(INT32 choice)
 
 void M_CupSelectTick(void)
 {
-	levellist_cupgrid.previewanim++;
+	cupgrid.previewanim++;
 }
 
 void M_LevelSelectHandler(INT32 choice)
 {
-	INT16 start = M_GetFirstLevelInList(cv_newgametype.value)-1;
-	INT16 maxlevels = M_CountLevelsToShowInList(cv_newgametype.value);
-	INT16 map = start;
+	INT16 start = M_GetFirstLevelInList(levellist.newgametype);
+	INT16 maxlevels = M_CountLevelsToShowInList(levellist.newgametype);
 
-	if (levellist_scroll.y != levellist_scroll.dest)
+	if (levellist.y != levellist.dest)
 		return;
 
 	switch (choice)
 	{
 		case KEY_UPARROW:
-			levellist_scroll.cursor--;
-			if (levellist_scroll.cursor < 0)
-				levellist_scroll.cursor = maxlevels-1;
+			levellist.cursor--;
+			if (levellist.cursor < 0)
+				levellist.cursor = maxlevels-1;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_DOWNARROW:
-			levellist_scroll.cursor++;
-			if (levellist_scroll.cursor >= maxlevels)
-				levellist_scroll.cursor = 0;
+			levellist.cursor++;
+			if (levellist.cursor >= maxlevels)
+				levellist.cursor = 0;
 			S_StartSound(NULL, sfx_s3k5b);
 			break;
 		case KEY_ENTER:
-			map = start + levellist_scroll.cursor;
-
-			while (!M_CanShowLevelInList(map, cv_newgametype.value) && map < NUMMAPS)
-				map++;
-
-			if (map >= NUMMAPS)
-				break;
-
-			CV_SetValue(&cv_nextmap, map);
-
-			if (levellist_scroll.timeattack)
-				M_SetupNextMenu(&PLAY_TimeAttackDef, false);
-			else
 			{
-				UINT8 ssplayers = cv_splitplayers.value-1;
+				INT16 map = start;
+				INT16 add = levellist.cursor;
 
-				netgame = false;
-				multiplayer = true;
-
-				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-
-				// Still need to reset devmode
-				cv_debug = 0;
-
-				if (strlen(cv_dummyjoinpassword.string) > 0)
-					D_SetJoinPassword(cv_dummyjoinpassword.string);
-				else
-					joinpasswordset = false;
-
-				if (demo.playback)
-					G_StopDemo();
-				if (metalrecording)
-					G_StopMetalDemo();
-
-				if (!cv_nextmap.value)
-					CV_SetValue(&cv_nextmap, G_RandMap(G_TOLFlag(cv_newgametype.value), -1, false, 0, false, NULL)+1);
-
-				if (cv_maxplayers.value < ssplayers+1)
-					CV_SetValue(&cv_maxplayers, ssplayers+1);
-
-				if (splitscreen != ssplayers)
+				while (add > 0)
 				{
-					splitscreen = ssplayers;
-					SplitScreen_OnChange();
+					map++;
+
+					while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+						map++;
+
+					if (map >= NUMMAPS)
+						break;
+
+					add--;
 				}
 
-				paused = false;
-				SV_StartSinglePlayerServer();
-				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-				D_MapChange(cv_nextmap.value, cv_newgametype.value, (cv_kartencore.value == 1), 1, 1, false, false);
+				if (map >= NUMMAPS)
+					break;
 
-				M_ClearMenus(true);
+				levellist.choosemap = map;
+
+				if (levellist.timeattack)
+				{
+					M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+					S_StartSound(NULL, sfx_s3k63);
+				}
+				else
+				{
+					UINT8 ssplayers = cv_splitplayers.value-1;
+
+					netgame = false;
+					multiplayer = true;
+
+					strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+
+					// Still need to reset devmode
+					cv_debug = 0;
+
+					if (strlen(cv_dummyjoinpassword.string) > 0)
+						D_SetJoinPassword(cv_dummyjoinpassword.string);
+					else
+						joinpasswordset = false;
+
+					if (demo.playback)
+						G_StopDemo();
+					if (metalrecording)
+						G_StopMetalDemo();
+
+					/*if (levellist.choosemap == 0)
+						levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, false, 0, false, NULL);*/
+
+					if (cv_maxplayers.value < ssplayers+1)
+						CV_SetValue(&cv_maxplayers, ssplayers+1);
+
+					if (splitscreen != ssplayers)
+					{
+						splitscreen = ssplayers;
+						SplitScreen_OnChange();
+					}
+
+					S_StartSound(NULL, sfx_s3k63);
+
+					// Early fadeout to let the sound finish playing
+					F_WipeStartScreen();
+					V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+					F_WipeEndScreen();
+					F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+					paused = false;
+					SV_StartSinglePlayerServer();
+					multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+					D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+
+					M_ClearMenus(true);
+				}
 			}
-			S_StartSound(NULL, sfx_s3k63);
 			break;
 		case KEY_ESCAPE:
 			if (currentMenu->prevMenu)
@@ -2319,10 +2321,20 @@ void M_LevelSelectHandler(INT32 choice)
 
 void M_LevelSelectTick(void)
 {
-	if (levellist_scroll.y > levellist_scroll.dest)
-		levellist_scroll.y--;
-	else if (levellist_scroll.y < levellist_scroll.dest)
-		levellist_scroll.y++;
+	UINT8 times = 1 + (abs(levellist.dest - levellist.y) / 21);
+
+	while (times) // increase speed as you're farther away
+	{
+		if (levellist.y > levellist.dest)
+			levellist.y--;
+		else if (levellist.y < levellist.dest)
+			levellist.y++;
+
+		if (levellist.y == levellist.dest)
+			break;
+
+		times--;
+	}
 }
 
 // =====================

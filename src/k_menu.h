@@ -202,8 +202,7 @@ extern struct menutransition_s {
 extern boolean menuwipe;
 
 extern consvar_t cv_showfocuslost;
-extern consvar_t cv_newgametype, cv_nextmap, cv_chooseskin, cv_serversort;
-extern CV_PossibleValue_t gametype_cons_t[];
+extern consvar_t cv_chooseskin, cv_serversort;
 
 void Moviemode_mode_Onchange(void);
 void Screenshot_option_Onchange(void);
@@ -286,35 +285,31 @@ void M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
 
-#define CUPS_COLUMNS 7
-#define CUPS_ROWS 2
-#define CUPS_MAPSPERCUP 5
-#define CUPS_MAX (NUMMAPS / CUPS_MAPSPERCUP)
-#define CUPS_PAGES (CUPS_MAX / (CUPS_COLUMNS * CUPS_ROWS))
+#define CUPMENU_COLUMNS 7
+#define CUPMENU_ROWS 2
+#define CUPMENU_CURSORID (cupgrid.x + (cupgrid.y * CUPMENU_COLUMNS) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS)))
 
-#define CUPID (levellist_cupgrid.x + (levellist_cupgrid.y * CUPS_COLUMNS))
-
-extern cupheader_t *selectedcup;
-extern INT16 selectedcupnum;
-
-extern struct levellist_cupgrid_s {
-	UINT8 numcups;
+extern struct cupgrid_s {
 	SINT8 x, y;
 	SINT8 pageno;
+	UINT8 numpages;
 	tic_t previewanim;
 	boolean grandprix; // Setup grand prix server after picking
-} levellist_cupgrid;
+} cupgrid;
 
-extern struct levellist_scroll_s {
+extern struct levellist_s {
 	SINT8 cursor;
 	UINT16 y;
 	UINT16 dest;
+	cupheader_t *selectedcup;
+	INT16 choosemap;
+	UINT8 newgametype;
 	boolean timeattack; // Setup time attack menu after picking
-} levellist_scroll;
+} levellist;
 
-boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
-INT32 M_CountLevelsToShowInList(INT32 gt);
-INT32 M_GetFirstLevelInList(INT32 gt);
+boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt);
+INT16 M_CountLevelsToShowInList(UINT8 gt);
+INT16 M_GetFirstLevelInList(UINT8 gt);
 
 void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);

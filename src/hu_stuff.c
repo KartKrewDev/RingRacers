@@ -2978,7 +2978,7 @@ static void HU_DrawRankings(void)
 	if (modeattacking)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Record Attack");
 	else
-		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametype_cons_t[gametype].strvalue);
+		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, Gametype_Names[gametype]);
 
 	if (G_GametypeHasTeams())
 	{

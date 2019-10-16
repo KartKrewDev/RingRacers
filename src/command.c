@@ -1352,8 +1352,7 @@ finish:
 // landing point for possiblevalue failures
 badinput:
 
-	if (var != &cv_nextmap) // Suppress errors for cv_nextmap
-		CONS_Printf(M_GetText("\"%s\" is not a possible value for \"%s\"\n"), valstr, var->name);
+	CONS_Printf(M_GetText("\"%s\" is not a possible value for \"%s\"\n"), valstr, var->name);
 
 	// default value not valid... ?!
 	if (var->defaultvalue == valstr)
@@ -1628,44 +1627,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 	if (var->PossibleValue)
 	{
-#if 0
-		if (var == &cv_nextmap)
-		{
-			// Special case for the nextmap variable, used only directly from the menu
-			INT32 oldvalue = var->value - 1, gt;
-			gt = cv_newgametype.value;
-			if (increment != 0) // Going up!
-			{
-				newvalue = var->value - 1;
-				do
-				{
-					if(increment > 0) // Going up!
-					{
-						if (++newvalue == NUMMAPS)
-							newvalue = -1;
-					}
-					else // Going down!
-					{
-						if (--newvalue == -2)
-							newvalue = NUMMAPS-1;
-					}
-
-					if (newvalue == oldvalue)
-						break; // don't loop forever if there's none of a certain gametype
-
-					if(!mapheaderinfo[newvalue])
-						continue; // Don't allocate the header.  That just makes memory usage skyrocket.
-
-				} while (!M_CanShowLevelInList(newvalue, gt));
-
-				var->value = newvalue + 1;
-				var->func();
-				return;
-			}
-		}
-		else
-#endif
-
 #define MINVAL 0
 #define MAXVAL 1
 		if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))

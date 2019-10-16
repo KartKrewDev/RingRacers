@@ -102,13 +102,13 @@ void M_Drawer(void)
 		if (gamestate == GS_MENU) // draw BG
 			V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG", PU_CACHE), NULL);
 		else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
-			V_DrawFadeScreen(0xFF00, 16); // now that's more readable with a faded background (yeah like Quake...)
+			V_DrawCustomFadeScreen("FADEMAP0", 4); // now that's more readable with a faded background (yeah like Quake...)
 
 		if (currentMenu->drawroutine)
 			currentMenu->drawroutine(); // call current menu Draw routine
 
 		// draw non-green resolution border
-		if ((gamestate == GS_MENU) && ((vid.width % BASEVIDWIDTH != 0) || (vid.height % BASEVIDHEIGHT != 0)))
+		if ((vid.width % BASEVIDWIDTH != 0) || (vid.height % BASEVIDHEIGHT != 0))
 			V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("WEIRDRES", PU_CACHE), NULL);
 
 		// Draw version down in corner
@@ -878,21 +878,62 @@ void M_DrawCharacterSelect(void)
 static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 {
 	UINT8 i;
-	INT16 x = -(levellist_cupgrid.previewanim % 82);
+	INT16 x = -(cupgrid.previewanim % 82);
 
-	for (i = 0; i < cup->numlevels; i++)
+	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
+
+	if (cup && (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked))
 	{
-		lumpnum_t lumpnum;
-		patch_t *PictureOfLevel;
-		UINT8 lvloff = (i + (levellist_cupgrid.previewanim / 82)) % cup->numlevels;
+		for (i = 0; i < cup->numlevels; i++)
+		{
+			lumpnum_t lumpnum;
+			patch_t *PictureOfLevel;
+			UINT8 lvloff = (i + (cupgrid.previewanim / 82)) % cup->numlevels;
 
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cup->levellist[lvloff] )));
-		if (lumpnum != LUMPERROR)
-			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-		else
-			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+			lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cup->levellist[lvloff]+1)));
+			if (lumpnum != LUMPERROR)
+				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+			else
+				PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
 
-		V_DrawSmallScaledPatch(x + 1 + (i*82), y+2, 0, PictureOfLevel);
+			V_DrawSmallScaledPatch(x + 1 + (i*82), y+2, 0, PictureOfLevel);
+		}
+	}
+	else
+	{
+		patch_t *st = W_CachePatchName(va("PREVST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
+		while (x < BASEVIDWIDTH)
+		{
+			V_DrawScaledPatch(x+1, y+2, 0, st);
+			x += 82;
+		}
+	}
+}
+
+static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
+{
+	V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
+
+	if (cup)
+	{
+		boolean unlocked = (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked);
+		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
+		patch_t *icon = W_CachePatchName(cup->icon, PU_CACHE);
+		const char *str = (unlocked ? va("%s Cup", cup->name) : "???");
+		INT16 offset = V_LSTitleLowStringWidth(str, 0) / 2;
+
+		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+
+		if (unlocked)
+		{
+			V_DrawMappedPatch(BASEVIDWIDTH/2 - offset - 24, y+5, 0, icon, colormap);
+			V_DrawMappedPatch(BASEVIDWIDTH/2 + offset + 3, y+5, 0, icon, colormap);
+		}
+	}
+	else
+	{
+		if (currentMenu == &PLAY_LevelSelectDef)
+			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", Gametype_Names[levellist.newgametype]));
 	}
 }
 
@@ -903,16 +944,16 @@ void M_DrawCupSelect(void)
 
 	while (cup)
 	{
-		if (cup->id == CUPID)
+		if (cup->id == CUPMENU_CURSORID)
 			break;
 		cup = cup->next;
 	}
 
-	for (i = 0; i < CUPS_COLUMNS; i++)
+	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
-		for (j = 0; j < CUPS_ROWS; j++)
+		for (j = 0; j < CUPMENU_ROWS; j++)
 		{
-			UINT8 id = (i + (j * CUPS_COLUMNS));
+			UINT8 id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
 			cupheader_t *iconcup = kartcupheaders;
 			patch_t *patch = NULL;
 			INT16 x, y;
@@ -943,24 +984,26 @@ void M_DrawCupSelect(void)
 
 			V_DrawScaledPatch(x, y, 0, patch);
 
-			V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(iconcup->icon, PU_CACHE));
-			V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
+			if (iconcup->unlockrequired != -1 && !unlockables[iconcup->unlockrequired].unlocked)
+			{
+				patch_t *st = W_CachePatchName(va("ICONST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
+				V_DrawScaledPatch(x + 8, y + icony, 0, st);
+			}
+			else
+			{
+				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(iconcup->icon, PU_CACHE));
+				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
+			}
 		}
 	}
 
-	V_DrawScaledPatch(14 + (levellist_cupgrid.x*42) - 4,
-		20 + (levellist_cupgrid.y*44) - 1 - (12*menutransition.tics),
+	V_DrawScaledPatch(14 + (cupgrid.x*42) - 4,
+		20 + (cupgrid.y*44) - 1 - (12*menutransition.tics),
 		0, W_CachePatchName("CUPCURS", PU_CACHE)
 	);
 
-	V_DrawFill(0, 146 + (12*menutransition.tics), BASEVIDWIDTH, 54, 31);
-	V_DrawScaledPatch(0, 120 - (12*menutransition.tics), 0, W_CachePatchName("MENUHINT", PU_CACHE));
-
-	if (cup)
-	{
-		M_DrawCupPreview(146 + (12*menutransition.tics), cup);
-		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 126 - (12*menutransition.tics), 0, va("%s Cup", cup->name));
-	}
+	M_DrawCupPreview(146 + (12*menutransition.tics), cup);
+	M_DrawCupTitle(120 - (12*menutransition.tics), cup);
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
@@ -1033,16 +1076,37 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		}
 	}
 
+	if (mapheaderinfo[map]->actnum[0])
+	{
+		word2[word2len] = ' ';
+		word2len++;
+
+		for (i = 0; i < 3; i++)
+		{
+			if (!mapheaderinfo[map]->actnum[i])
+				break;
+
+			word2[word2len] = mapheaderinfo[map]->actnum[i];
+			word2len++;
+		}
+	}
+
 	word1[word1len] = '\0';
 	word2[word2len] = '\0';
 
 	for (i = 0; i < 2; i++)
 	{
 		INT32 c;
+
 		if (i >= word1len)
 			break;
+
 		c = toupper(word1[i]) - LT_FONTSTART;
-		x2 += SHORT(title_font_high[c]->width) - 4;
+
+		if (!title_font_high[c])
+			x2 += 16;
+		else
+			x2 += SHORT(title_font_high[c]->width) - 4;
 	}
 
 	if (word1len)
@@ -1060,7 +1124,7 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink
 	if (greyscale)
 		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 
-	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(map)));
+	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(map+1)));
 	if (lumpnum != LUMPERROR)
 		PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 	else
@@ -1072,16 +1136,17 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink
 		V_DrawScaledPatch(3+x, y, 0, W_CachePatchName("LVLSEL", PU_CACHE));
 
 	V_DrawSmallMappedPatch(9+x, y+6, 0, PictureOfLevel, colormap);
-	M_DrawHighLowLevelTitle(98+x, y+8, map-1);
+	M_DrawHighLowLevelTitle(98+x, y+8, map);
 }
 
 void M_DrawLevelSelect(void)
 {
 	INT16 i;
-	INT16 start = M_GetFirstLevelInList(cv_newgametype.value)-1;
+	INT16 start = M_GetFirstLevelInList(levellist.newgametype);
+	INT16 map = start;
 	INT16 t = (32*menutransition.tics), tay = 0;
-	INT16 y = 80 - (12 * levellist_scroll.y);
-	boolean tatransition = (menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef);
+	INT16 y = 80 - (12 * levellist.y);
+	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
 
 	if (tatransition)
 	{
@@ -1089,41 +1154,37 @@ void M_DrawLevelSelect(void)
 		tay = t/2;
 	}
 
-	for (i = 0; i < M_CountLevelsToShowInList(cv_newgametype.value); i++)
+	for (i = 0; i < M_CountLevelsToShowInList(levellist.newgametype); i++)
 	{
 		INT16 lvlx = t, lvly = y;
-		INT16 map = start + i;
 
-		while (!M_CanShowLevelInList(map, cv_newgametype.value) && map < NUMMAPS)
+		while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
 			map++;
 
 		if (map >= NUMMAPS)
 			break;
 
-		if (i == levellist_scroll.cursor && tatransition)
+		if (i == levellist.cursor && tatransition)
 		{
 			lvlx = 0;
 			lvly = max(2, y+tay);
 		}
 
 		M_DrawLevelSelectBlock(lvlx, lvly, map,
-			(i == levellist_scroll.cursor && ((skullAnimCounter / 4) & 1)),
-			(i != levellist_scroll.cursor)
+			(i == levellist.cursor && (((skullAnimCounter / 4) & 1) || tatransition)),
+			(i != levellist.cursor)
 		);
 
 		y += 72;
+		map++;
 	}
 
-	V_DrawScaledPatch(0, tay, 0, W_CachePatchName("MENUHINT", PU_CACHE));
-	if (selectedcup)
-		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 6+tay, 0, va("%s Cup", selectedcup->name));
-	else
-		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, 6+tay, 0, va("%s Mode", Gametype_Names[cv_newgametype.value]));
+	M_DrawCupTitle(tay, levellist.selectedcup);
 }
 
 void M_DrawTimeAttack(void)
 {
-	INT16 map = cv_nextmap.value;
+	INT16 map = levellist.choosemap;
 	INT16 t = (24*menutransition.tics);
 	INT16 leftedge = 149+t+16;
 	INT16 rightedge = 149+t+155;
@@ -1131,11 +1192,11 @@ void M_DrawTimeAttack(void)
 	lumpnum_t lumpnum;
 	UINT8 i;
 
-	M_DrawLevelSelectBlock(0, 2, map, false, false);
+	M_DrawLevelSelectBlock(0, 2, map, true, false);
 
 	//V_DrawFill(24-t, 82, 100, 100, 36); // size test
 
-	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(map)));
+	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(map+1)));
 	if (lumpnum != LUMPERROR)
 		V_DrawScaledPatch(24-t, 82, 0, W_CachePatchNum(lumpnum, PU_CACHE));
 

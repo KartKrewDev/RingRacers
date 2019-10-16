@@ -493,10 +493,7 @@ static void D_Display(void)
 		if (lastdraw)
 		{
 			if (rendermode == render_soft)
-			{
 				VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-				usebuffer = true;
-			}
 			lastdraw = false;
 		}
 
@@ -1335,7 +1332,7 @@ void D_SRB2Main(void)
 	if (M_CheckParm("-noupload"))
 		COM_BufAddText("downloading 0\n");
 
-	CONS_Printf("M_Init(): Init miscellaneous info.\n");
+	CONS_Printf("M_Init(): Init menus.\n");
 	M_Init();
 
 	CONS_Printf("R_Init(): Init SRB2 refresh daemon.\n");

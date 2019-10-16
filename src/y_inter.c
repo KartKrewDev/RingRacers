@@ -347,10 +347,11 @@ void Y_IntermissionDrawer(void)
 #endif
 		else
 		{
-			if (widebgpatch && rendermode == render_soft && vid.width / vid.dupx == 400)
-				V_DrawScaledPatch(0, 0, V_SNAPTOLEFT, widebgpatch);
-			else
-				V_DrawScaledPatch(0, 0, 0, bgpatch);
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, bgpatch, NULL);
+
+			// draw non-green resolution border
+			if (widebgpatch && ((vid.width % BASEVIDWIDTH != 0) || (vid.height % BASEVIDHEIGHT != 0)))
+				V_DrawFixedPatch(0, 0, FRACUNIT, 0, widebgpatch, NULL);
 		}
 	}
 	else
@@ -775,8 +776,8 @@ static void Y_UpdateRecordReplays(void)
 	G_SaveGameData(false);
 
 	// Update timeattack menu's replay availability.
-	CV_AddValue(&cv_nextmap, 1);
-	CV_AddValue(&cv_nextmap, -1);
+	//CV_AddValue(&cv_nextmap, 1);
+	//CV_AddValue(&cv_nextmap, -1);
 }
 
 //
@@ -869,12 +870,11 @@ void Y_StartIntermission(void)
 			break;
 	}
 
-	//if (intertype == int_race || intertype == int_match)
-	{
-		//bgtile = W_CachePatchName("SRB2BACK", PU_STATIC);
-		usetile = useinterpic = false;
-		usebuffer = true;
-	}
+
+	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
+	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);
+
+	useinterpic = usetile = usebuffer = false;
 }
 
 // ======
@@ -1519,7 +1519,7 @@ void Y_StartVote(void)
 		// set up the gtc and gts
 		levelinfo[i].gtc = G_GetGametypeColor(votelevels[i][1]);
 		if (i == 2 && votelevels[i][1] != votelevels[0][1])
-			levelinfo[i].gts = gametype_cons_t[votelevels[i][1]].strvalue;
+			levelinfo[i].gts = Gametype_Names[votelevels[i][1]];
 		else
 			levelinfo[i].gts = NULL;
 

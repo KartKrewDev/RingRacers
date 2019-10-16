@@ -69,7 +69,7 @@ static UINT8 cheatf_warp(void)
 	if (menuactive && currentMenu != &MainDef)
 		return 0; // Only on the main menu!
 
-	// Temporarily unlock EVERYTHING.
+	// Unlock EVERYTHING.
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
 		if (!unlockables[i].conditionset)
@@ -120,30 +120,13 @@ static UINT8 cheatf_devmode(void)
 }
 #endif
 
-/*static cheatseq_t cheat_ultimate = {
-	0, cheatf_ultimate,
-	{ SCRAMBLE('u'), SCRAMBLE('l'), SCRAMBLE('t'), SCRAMBLE('i'), SCRAMBLE('m'), SCRAMBLE('a'), SCRAMBLE('t'), SCRAMBLE('e'), 0xff }
-};*/
-
-/*static cheatseq_t cheat_ultimate_joy = {
-	0, cheatf_ultimate,
-	{ SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_DOWNARROW),
-	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW),
-	  SCRAMBLE(KEY_ENTER), 0xff }
-};*/
-
 static cheatseq_t cheat_warp = {
 	0, cheatf_warp,
-	//{ SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE('x'), SCRAMBLE('v'), SCRAMBLE('i'), 0xff }
 	{ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
 static cheatseq_t cheat_warp_joy = {
 	0, cheatf_warp,
-	/*{ SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
-	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW),
-	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
-	  SCRAMBLE(KEY_ENTER), 0xff }*/
 	  { SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_RIGHTARROW),
 	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_LEFTARROW),
 	  SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_RIGHTARROW),
@@ -239,8 +222,6 @@ boolean cht_Responder(event_t *ev)
 	else
 		ch = (UINT8)ev->data1;
 
-	//ret += cht_CheckCheat(&cheat_ultimate, (char)ch);
-	//ret += cht_CheckCheat(&cheat_ultimate_joy, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp_joy, (char)ch);
 #ifdef DEVELOP

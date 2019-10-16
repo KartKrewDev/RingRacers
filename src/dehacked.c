@@ -1459,9 +1459,12 @@ static void readcupheader(MYFILE *f, cupheader_t *cup)
 						break;
 
 					if (cup->numlevels >= MAXLEVELLIST)
+					{
 						deh_warning("%s Cup: reached max levellist (%d)\n", cup->name, MAXLEVELLIST);
+						break;
+					}
 
-					cup->levellist[cup->numlevels] = map;
+					cup->levellist[cup->numlevels] = map - 1;
 					cup->numlevels++;
 				} while((tmp = strtok(NULL,",")) != NULL);
 			}
@@ -1470,14 +1473,14 @@ static void readcupheader(MYFILE *f, cupheader_t *cup)
 				// Convert to map number
 				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
 					i = M_MapNumber(word2[0], word2[1]);
-				cup->bonusgame = (INT16)i;
+				cup->bonusgame = (INT16)i - 1;
 			}
 			else if (fastcmp(word, "SPECIALSTAGE"))
 			{
 				// Convert to map number
 				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
 					i = M_MapNumber(word2[0], word2[1]);
-				cup->specialstage = (INT16)i;
+				cup->specialstage = (INT16)i - 1;
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{
@@ -1485,6 +1488,13 @@ static void readcupheader(MYFILE *f, cupheader_t *cup)
 					cup->emeraldnum = (UINT8)i;
 				else
 					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
+			}
+			else if (fastcmp(word, "UNLOCKABLE"))
+			{
+				if (i >= 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
+					cup->unlockrequired = (SINT8)i - 1;
+				else
+					deh_warning("%s Cup: invalid unlockable number %d", cup->name, i);
 			}
 			else
 				deh_warning("%s Cup: unknown word '%s'", cup->name, word);

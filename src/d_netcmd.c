@@ -518,16 +518,9 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 void D_RegisterServerCommands(void)
 {
 	INT32 i;
+
 	Forceskin_cons_t[0].value = -1;
 	Forceskin_cons_t[0].strvalue = "Off";
-
-	for (i = 0; i < NUMGAMETYPES; i++)
-	{
-		gametype_cons_t[i].value = i;
-		gametype_cons_t[i].strvalue = Gametype_Names[i];
-	}
-	gametype_cons_t[NUMGAMETYPES].value = 0;
-	gametype_cons_t[NUMGAMETYPES].strvalue = NULL;
 
 	// Set the values to 0/NULL, it will be overwritten later when a skin is assigned to the slot.
 	for (i = 1; i < MAXSKINS; i++)
@@ -535,6 +528,7 @@ void D_RegisterServerCommands(void)
 		Forceskin_cons_t[i].value = 0;
 		Forceskin_cons_t[i].strvalue = NULL;
 	}
+
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
 	RegisterNetXCmd(XD_MAP, Got_Mapcmd);
@@ -4786,6 +4780,7 @@ void D_GameTypeChanged(INT32 lastgametype)
 		if (oldgt && newgt)
 			CONS_Printf(M_GetText("Gametype was changed from %s to %s\n"), oldgt, newgt);
 	}
+
 	// Only do the following as the server, not as remote admin.
 	// There will always be a server, and this only needs to be done once.
 	if (server && (multiplayer || netgame))
@@ -4859,9 +4854,10 @@ void D_GameTypeChanged(INT32 lastgametype)
 		}
 	}
 
+#if 0
 	// When swapping to a gametype that supports spectators,
 	// make everyone a spectator initially.
-	/*if (G_GametypeHasSpectators())
+	if (G_GametypeHasSpectators())
 	{
 		INT32 i;
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -4870,7 +4866,8 @@ void D_GameTypeChanged(INT32 lastgametype)
 				players[i].ctfteam = 0;
 				players[i].spectator = true;
 			}
-	}*/
+	}
+#endif
 
 	// don't retain teams in other modes or between changes from ctf to team match.
 	// also, stop any and all forms of team scrambling that might otherwise take place.

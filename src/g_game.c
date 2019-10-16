@@ -808,9 +808,10 @@ const char *G_BuildMapName(INT32 map)
 {
 	static char mapname[10] = "MAPXX"; // internal map name (wad resource name)
 
-	I_Assert(map >= 0);
+	I_Assert(map > 0);
 	I_Assert(map <= NUMMAPS);
 
+#if 0
 	if (map == 0) // hack???
 	{
 		if (gamestate == GS_TITLESCREEN)
@@ -821,6 +822,7 @@ const char *G_BuildMapName(INT32 map)
 			map = prevmap;
 		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, false, 0, false, NULL)+1;
 	}
+#endif
 
 	if (map < 100)
 		sprintf(&mapname[3], "%.2d", map);
