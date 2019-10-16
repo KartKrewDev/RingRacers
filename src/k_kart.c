@@ -848,9 +848,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 
 	if (first != -1 && second != -1) // calculate 2nd's distance from 1st, for SPB
 	{
-		secondist = P_AproxDistance(P_AproxDistance(players[first].mo->x - players[second].mo->x,
-													players[first].mo->y - players[second].mo->y),
-													players[first].mo->z - players[second].mo->z) / mapobjectscale;
+		secondist = players[second]->distancetofinish - players[first].distancetofinish;
 		if (franticitems)
 			secondist = (15 * secondist) / 14;
 		secondist = ((28 + (8-pingame)) * secondist) / 28;
@@ -1088,7 +1086,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (players[i].kartstuff[k_position] == 1)
+		if (playeringame[i] && !players[i].spectator
+			&& players[i].kartstuff[k_position] == 1)
 		{
 			// This player is first! Yay!
 			pdis = player->distancetofinish - players[i].distancetofinish;
@@ -9979,13 +9978,13 @@ static void K_drawDistributionDebugger(void)
 	// lovely double loop......
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i] && !players[i].spectator && players[i].mo
-			&& players[i].kartstuff[k_position] < stplyr->kartstuff[k_position])
-			pdis += P_AproxDistance(P_AproxDistance(players[i].mo->x - stplyr->mo->x,
-													players[i].mo->y - stplyr->mo->y),
-													players[i].mo->z - stplyr->mo->z) / mapobjectscale
-													* (pingame - players[i].kartstuff[k_position])
-													/ max(1, ((pingame - 1) * (pingame + 1) / 3));
+		if (playeringame[i] && !players[i].spectator
+			&& players[i].kartstuff[k_position] == 1)
+		{
+			// This player is first! Yay!
+			pdis = stplyr->distancetofinish - players[i].distancetofinish;
+			break;
+		}
 	}
 
 	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
