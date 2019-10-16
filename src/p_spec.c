@@ -2283,12 +2283,6 @@ static void K_HandleLapIncrement(player_t *player)
 				P_SetupSignExit(player);
 			}
 
-			//player->starpostangle = player->starposttime = player->starpostnum = 0;
-			//player->starpostx = player->starposty = player->starpostz = 0;
-
-			// Play the starpost sound for 'consistency'
-			// S_StartSound(player->mo, sfx_strpst);
-
 			// Figure out how many are playing on the last lap, to prevent spectate griefing
 			if (!nospectategrief && player->laps > (UINT8)(cv_numlaps.value))
 				nospectategrief = nump;
@@ -2307,7 +2301,7 @@ static void K_HandleLapDecrement(player_t *player)
 {
 	if (player)
 	{
-		if (player->laps > 0)
+		if ((player->starpostnum == 0) && (player->laps > 0))
 		{
 			player->starpostnum = numstarposts;
 			player->laps--;
@@ -2331,7 +2325,7 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 		{
 			case 2001: // Finish Line
 			{
-				if (G_RaceGametype() && !(player->exiting))
+				if (G_RaceGametype() && !(player->exiting) && !(player->pflags & PF_HITFINISHLINE))
 				{
 					if (((line->flags & (ML_NOCLIMB)) && (side == 0))
 						|| (!(line->flags & (ML_NOCLIMB)) && (side == 1))) // crossed from behind to infront
@@ -2342,6 +2336,8 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 					{
 						K_HandleLapDecrement(player);
 					}
+
+					player->pflags |= PF_HITFINISHLINE;
 				}
 			}
 			break;
@@ -4027,7 +4023,7 @@ DoneSection2:
 				if (player->mo->scale > mapobjectscale)
 					linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
 
-				if (!demo.playback || P_AnalogMove(player))
+				if (!demo.playback)
 				{
 					if (player == &players[consoleplayer])
 						localangle[0] = player->mo->angle;
@@ -7935,7 +7931,7 @@ void T_Pusher(pusher_t *p)
 				thing->player->pflags |= PF_SLIDING;
 				thing->angle = R_PointToAngle2 (0, 0, xspeed<<(FRACBITS-PUSH_FACTOR), yspeed<<(FRACBITS-PUSH_FACTOR));
 
-				if (!demo.playback || P_AnalogMove(thing->player))
+				if (!demo.playback)
 				{
 					if (thing->player == &players[consoleplayer])
 					{

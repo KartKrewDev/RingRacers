@@ -1417,7 +1417,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			thing->angle = tmthing->angle;
 
-			if (!demo.playback || P_AnalogMove(thing->player))
+			if (!demo.playback)
 			{
 				if (thing->player == &players[consoleplayer])
 					localangle[0] = thing->angle;

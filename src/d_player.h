@@ -121,7 +121,7 @@ typedef enum
 
 	/*** misc ***/
 	PF_FORCESTRAFE       = 1<<29, // Turning inputs are translated into strafing inputs
-	PF_ANALOGMODE        = 1<<30, // Analog mode?
+	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
 
 	// free: 1<<30 and 1<<31
 } pflags_t;

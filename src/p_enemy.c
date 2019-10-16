@@ -8554,9 +8554,6 @@ void A_SPBChase(mobj_t *actor)
 			fixed_t range = (160*actor->tracer->scale);
 			fixed_t cx = 0, cy =0;
 
-			// we're tailing a player, now's a good time to regain our damage properties
-			actor->flags &=  ~MF_NOCLIPTHING;
-
 			// Play the intimidating gurgle
 			if (!S_SoundPlaying(actor, actor->info->activesound))
 				S_StartSound(actor, actor->info->activesound);
@@ -8688,9 +8685,6 @@ void A_SPBChase(mobj_t *actor)
 	{
 		actor->momx = actor->momy = actor->momz = 0; // Stoooop
 
-		// don't hurt players that have nothing to do with this:
-		actor->flags |= MF_NOCLIPTHING;
-
 		if (actor->lastlook != -1
 			&& playeringame[actor->lastlook]
 			&& !players[actor->lastlook].spectator
@@ -8729,10 +8723,6 @@ void A_SPBChase(mobj_t *actor)
 		}
 
 		// Found someone, now get close enough to initiate the slaughter...
-
-		// Seeking SPB can now hurt people
-		actor->flags &=  ~MF_NOCLIPTHING;
-
 		P_SetTarget(&actor->tracer, player->mo);
 		spbplace = bestrank;
 
