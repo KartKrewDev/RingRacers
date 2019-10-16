@@ -848,7 +848,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 
 	if (first != -1 && second != -1) // calculate 2nd's distance from 1st, for SPB
 	{
-		secondist = players[second]->distancetofinish - players[first].distancetofinish;
+		secondist = players[second].distancetofinish - players[first].distancetofinish;
 		if (franticitems)
 			secondist = (15 * secondist) / 14;
 		secondist = ((28 + (8-pingame)) * secondist) / 28;
