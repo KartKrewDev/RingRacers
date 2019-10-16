@@ -2283,10 +2283,6 @@ static void K_HandleLapIncrement(player_t *player)
 				P_SetupSignExit(player);
 			}
 
-			// Figure out how many are playing on the last lap, to prevent spectate griefing
-			if (!nospectategrief && player->laps > (UINT8)(cv_numlaps.value))
-				nospectategrief = nump;
-
 			thwompsactive = true; // Lap 2 effects
 		}
 		else if (player->starpostnum)
