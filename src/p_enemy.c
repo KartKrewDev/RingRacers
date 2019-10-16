@@ -8791,9 +8791,9 @@ void A_SPBChase(mobj_t *actor)
 		// Spawn a trail of rings behind the SPB!
 		SpawnSPBTrailRings(actor);
 
-		if (dist <= (3072*actor->tracer->scale)) // Close enough to target?
+		if (dist <= (1024*actor->tracer->scale)) // Close enough to target?
 		{
-			S_StartSound(actor, actor->info->attacksound); // Siren sound; might not need this anymore, but I'm keeping it for now just for debugging.
+			S_StartSound(actor, actor->info->attacksound);
 			actor->extravalue1 = 1; // TARGET ACQUIRED
 			actor->extravalue2 = 7*TICRATE;
 			actor->cvmem = wspeed;
