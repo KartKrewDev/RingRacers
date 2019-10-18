@@ -84,7 +84,7 @@ INT16 K_CalculatePowerLevelAvg(void)
 
 	if (!netgame || !cv_kartusepwrlv.value)
 	{
-		CONS_Printf("Not in a netgame, or not using power levels -- no average.\n");
+		CONS_Debug(DBG_GAMELOGIC, "Not in a netgame, or not using power levels -- no average.\n");
 		return 0; // No average.
 	}
 
@@ -95,7 +95,7 @@ INT16 K_CalculatePowerLevelAvg(void)
 
 	if (t == PWRLV_DISABLED)
 	{
-		CONS_Printf("Could not set a power level type -- no average.\n");
+		CONS_Debug(DBG_GAMELOGIC, "Could not set a power level type -- no average.\n");
 		return 0; // Hmm?!
 	}
 
@@ -111,7 +111,7 @@ INT16 K_CalculatePowerLevelAvg(void)
 
 	if (!div)
 	{
-		CONS_Printf("Found no players -- no average.\n");
+		CONS_Debug(DBG_GAMELOGIC, "Found no players -- no average.\n");
 		return 0; // No average.
 	}
 
@@ -146,11 +146,11 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 						min = clientpowerlevels[i][0];
 				}
 
-				CONS_Printf("Min: %d, Avg: %d\n", min, avg);
+				CONS_Debug(DBG_GAMELOGIC, "Min: %d, Avg: %d\n", min, avg);
 
 				if (avg == 0 || min == 0)
 				{
-					CONS_Printf("No average/minimum, no scramblin'.\n");
+					CONS_Debug(DBG_GAMELOGIC, "No average/minimum, no scramblin'.\n");
 					speedscramble = encorescramble = -1;
 					return;
 				}
@@ -198,7 +198,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 					t = 0;
 #endif
 
-				CONS_Printf("Table position: %d\n", t);
+				CONS_Debug(DBG_GAMELOGIC, "Table position: %d\n", t);
 
 				switch (t)
 				{
@@ -228,8 +228,8 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 						break;
 				}
 
-				CONS_Printf("Rolled speed: %d\n", speed);
-				CONS_Printf("Rolled encore: %s\n", (encore ? "true" : "false"));
+				CONS_Debug(DBG_GAMELOGIC, "Rolled speed: %d\n", speed);
+				CONS_Debug(DBG_GAMELOGIC, "Rolled encore: %s\n", (encore ? "true" : "false"));
 
 				if (cv_kartspeed.value == -1)
 					speedscramble = speed;
