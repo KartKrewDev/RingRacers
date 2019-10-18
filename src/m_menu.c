@@ -5412,7 +5412,7 @@ static void DrawReplayHutReplayInfo(void)
 			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", demolist[dir_on[menudepthleft]].numlaps));
 
 		V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, demolist[dir_on[menudepthleft]].gametype == GT_RACE ?
-			va("Race (%s speed)", kartspeed_cons_t[demolist[dir_on[menudepthleft]].kartspeed & ~DF_ENCORE].strvalue) :
+			va("Race (%s speed)", kartspeed_cons_t[demolist[(dir_on[menudepthleft]].kartspeed & ~DF_ENCORE) + 1].strvalue) :
 			"Battle Mode");
 
 		if (!demolist[dir_on[menudepthleft]].standings[0].ranking)
@@ -8350,7 +8350,7 @@ static void M_DrawConnectMenu(void)
 
 		if (serverlist[slindex].info.gametype == GT_RACE)
 		{
-			spd = kartspeed_cons_t[serverlist[slindex].info.kartvars & SV_SPEEDMASK].strvalue;
+			spd = kartspeed_cons_t[(serverlist[slindex].info.kartvars & SV_SPEEDMASK)+1].strvalue;
 			V_DrawSmallString(currentMenu->x+128, S_LINEY(i)+8, globalflags, va("(%s)", spd));
 		}
 

@@ -83,7 +83,10 @@ INT16 K_CalculatePowerLevelAvg(void)
 	UINT8 i;
 
 	if (!netgame || !cv_kartusepwrlv.value)
+	{
+		CONS_Printf("Not in a netgame, or not using power levels -- no average.\n");
 		return 0; // No average.
+	}
 
 	if (G_RaceGametype())
 		t = PWRLV_RACE;
@@ -91,7 +94,10 @@ INT16 K_CalculatePowerLevelAvg(void)
 		t = PWRLV_BATTLE;
 
 	if (t == PWRLV_DISABLED)
+	{
+		CONS_Printf("Could not set a power level type -- no average.\n");
 		return 0; // Hmm?!
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -99,12 +105,15 @@ INT16 K_CalculatePowerLevelAvg(void)
 			|| clientpowerlevels[i][t] == 0) // splitscreen player
 			continue;
 
-		avg += clientpowerlevels[i][t];
+		avg += (clientpowerlevels[i][t] << FRACBITS);
 		div++;
 	}
 
 	if (!div)
+	{
+		CONS_Printf("Found no players -- no average.\n");
 		return 0; // No average.
+	}
 
 	avg /= div;
 
@@ -120,17 +129,30 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 		case PWRLV_RACE:
 			if (cv_kartspeed.value == -1 || cv_kartencore.value == -1)
 			{
-				UINT8 speed = atoi(cv_kartspeed.defaultvalue);
+				UINT8 speed = KARTSPEED_NORMAL;
 				boolean encore = false;
 				INT16 avg = 0, min = 0;
-				UINT8 i, t = 0;
+				UINT8 i, t = 1;
 
 				avg = K_CalculatePowerLevelAvg();
 
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
+					if (!playeringame[i] || players[i].spectator
+						|| clientpowerlevels[i][t] == 0) // splitscreen player
+						continue;
+
 					if (min == 0 || clientpowerlevels[i][0] < min)
 						min = clientpowerlevels[i][0];
+				}
+
+				CONS_Printf("Min: %d, Avg: %d\n", min, avg);
+
+				if (avg == 0 || min == 0)
+				{
+					CONS_Printf("No average/minimum, no scramblin'.\n");
+					speedscramble = encorescramble = -1;
+					return;
 				}
 
 				if (min >= 7800)
@@ -161,6 +183,10 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 					else
 						t = 1;
 				}
+#if 1
+				else
+					t = 1;
+#else
 				else if (min >= 1800)
 				{
 					if (avg >= 2200)
@@ -170,34 +196,40 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 				}
 				else
 					t = 0;
+#endif
+
+				CONS_Printf("Table position: %d\n", t);
 
 				switch (t)
 				{
 					case 5:
-						speed = 2;
+						speed = KARTSPEED_HARD;
 						encore = true;
 						break;
 					case 4:
-						speed = M_RandomChance((7<<FRACBITS)/10) ? 2 : 1;
-						encore = M_RandomChance(FRACUNIT>>1);
+						speed = P_RandomChance((7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
+						encore = P_RandomChance(FRACUNIT>>1);
 						break;
 					case 3:
-						speed = M_RandomChance((3<<FRACBITS)/10) ? 2 : 1;
-						encore = M_RandomChance(FRACUNIT>>2);
+						speed = P_RandomChance((3<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
+						encore = P_RandomChance(FRACUNIT>>2);
 						break;
 					case 2:
 						speed = 1;
-						encore = M_RandomChance(FRACUNIT>>3);
+						encore = P_RandomChance(FRACUNIT>>3);
 						break;
 					case 1: default:
-						speed = 1;
+						speed = KARTSPEED_NORMAL;
 						encore = false;
 						break;
 					case 0:
-						speed = M_RandomChance((3<<FRACBITS)/10) ? 0 : 1;
+						speed = P_RandomChance((3<<FRACBITS)/10) ? KARTSPEED_EASY : KARTSPEED_NORMAL;
 						encore = false;
 						break;
 				}
+
+				CONS_Printf("Rolled speed: %d\n", speed);
+				CONS_Printf("Rolled encore: %s\n", (encore ? "true" : "false"));
 
 				if (cv_kartspeed.value == -1)
 					speedscramble = speed;

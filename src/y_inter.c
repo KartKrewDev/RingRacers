@@ -605,7 +605,7 @@ dotimer:
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, hilicol, M_GetText("Teams will be scrambled next round!"));*/
 		if (speedscramble != -1 && speedscramble != gamespeed)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
-				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[speedscramble].strvalue));
+				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
 	//}
 }
 
@@ -1000,8 +1000,6 @@ void Y_StartIntermission(void)
 			powertype = PWRLV_BATTLE;
 	}
 
-	K_SetPowerLevelScrambles(powertype);
-
 	if (!multiplayer)
 	{
 		timer = 0;
@@ -1078,7 +1076,7 @@ void Y_StartIntermission(void)
 			break;
 	}
 
-	if (powertype != -1)
+	if (powertype != PWRLV_DISABLED)
 		K_UpdatePowerLevels();
 
 	//if (intertype == int_race || intertype == int_match)
