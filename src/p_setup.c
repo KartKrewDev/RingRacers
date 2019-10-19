@@ -84,6 +84,7 @@
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_pwrlv.h"
 
 //
 // Map MD5, calculated on level load.
@@ -2396,7 +2397,12 @@ static void P_LevelInitStuff(void)
 		if (G_BattleGametype())
 			gamespeed = 0;
 		else
-			gamespeed = (UINT8)cv_kartspeed.value;
+		{
+			if (cv_kartspeed.value == -1)
+				gamespeed = ((speedscramble == -1) ? atoi(cv_kartspeed.defaultvalue) : (UINT8)speedscramble);
+			else
+				gamespeed = (UINT8)cv_kartspeed.value;
+		}
 		franticitems = (boolean)cv_kartfrantic.value;
 		comeback = (boolean)cv_kartcomeback.value;
 	}
@@ -2405,6 +2411,7 @@ static void P_LevelInitStuff(void)
 		battlewanted[i] = -1;
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
+	speedscramble = encorescramble = -1;
 }
 
 //
@@ -3290,7 +3297,10 @@ boolean P_SetupLevel(boolean skipprecip)
 	indirectitemcooldown = 0;
 	hyubgone = 0;
 	mapreset = 0;
-	nospectategrief = 0;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		nospectategrief[i] = -1;
+
 	thwompsactive = false;
 	spbplace = -1;
 

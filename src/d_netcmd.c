@@ -47,6 +47,7 @@
 #include "m_cond.h"
 #include "m_anigif.h"
 #include "k_kart.h" // SRB2kart
+#include "k_pwrlv.h"
 #include "y_inter.h"
 
 #ifdef NETGAME_DEVMODE
@@ -61,6 +62,7 @@
 
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
 static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
+static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum);
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum);
@@ -358,12 +360,13 @@ consvar_t cv_kartminimap = {"kartminimap", "4", CV_SAVE, kartminimap_cons_t, NUL
 consvar_t cv_kartcheck = {"kartcheck", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartinvinsfx_cons_t[] = {{0, "Music"}, {1, "SFX"}, {0, NULL}};
 consvar_t cv_kartinvinsfx = {"kartinvinsfx", "SFX", CV_SAVE, kartinvinsfx_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_kartspeed = {"kartspeed", "Normal", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_kartspeed = {"kartspeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartbumpers_cons_t[] = {{1, "MIN"}, {12, "MAX"}, {0, NULL}};
 consvar_t cv_kartbumpers = {"kartbumpers", "3", CV_NETVAR|CV_CHEAT, kartbumpers_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartfrantic = {"kartfrantic", "Off", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOINIT, CV_OnOff, KartFrantic_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartcomeback = {"kartcomeback", "On", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOINIT, CV_OnOff, KartComeback_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_kartencore = {"kartencore", "Off", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartEncore_OnChange, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t kartencore_cons_t[] = {{-1, "Auto"}, {0, "Off"}, {1, "On"}, {0, NULL}};
+consvar_t cv_kartencore = {"kartencore", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartencore_cons_t, KartEncore_OnChange, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartvoterulechanges_cons_t[] = {{0, "Never"}, {1, "Sometimes"}, {2, "Frequent"}, {3, "Always"}, {0, NULL}};
 consvar_t cv_kartvoterulechanges = {"kartvoterulechanges", "Frequent", CV_NETVAR, kartvoterulechanges_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartspeedometer_cons_t[] = {{0, "Off"}, {1, "Percentage"}, {2, "Kilometers"}, {3, "Miles"}, {4, "Fracunits"}, {0, NULL}};
@@ -372,6 +375,8 @@ static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, 
 consvar_t cv_kartvoices = {"kartvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_karteliminatelast = {"karteliminatelast", "Yes", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOSHOWHELP, CV_YesNo, KartEliminateLast_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_kartusepwrlv = {"kartusepwrlv", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t kartdebugitem_cons_t[] = {{-1, "MIN"}, {NUMKARTITEMS-1, "MAX"}, {0, NULL}};
 consvar_t cv_kartdebugitem = {"kartdebugitem", "0", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugitem_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -500,6 +505,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"MODIFYVOTE",
 	"PICKVOTE",
 	"REMOVEPLAYER",
+	"POWERLEVEL",
 #ifdef HAVE_BLUA
 	"LUACMD",
 	"LUAVAR"
@@ -531,6 +537,7 @@ void D_RegisterServerCommands(void)
 
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
+	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
 	RegisterNetXCmd(XD_MAP, Got_Mapcmd);
 	RegisterNetXCmd(XD_EXITLEVEL, Got_ExitLevelcmd);
 	RegisterNetXCmd(XD_ADDFILE, Got_Addfilecmd);
@@ -1924,6 +1931,17 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 		players[playernum].pflags |= PF_ANALOGMODE;
 }
 
+static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
+{
+	UINT16 race = (UINT16)READUINT16(*cp);
+	UINT16 battle = (UINT16)READUINT16(*cp);
+
+	clientpowerlevels[playernum][PWRLV_RACE] = min(PWRLVRECORD_MAX, race);
+	clientpowerlevels[playernum][PWRLV_BATTLE] = min(PWRLVRECORD_MAX, battle);
+
+	CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", playernum, race);
+}
+
 void D_SendPlayerConfig(void)
 {
 	SendNameAndColor();
@@ -1940,6 +1958,31 @@ void D_SendPlayerConfig(void)
 		SendWeaponPref3();
 	if (splitscreen > 2)
 		SendWeaponPref4();
+
+	{
+		UINT8 buf[4];
+		UINT8 *buf_p = buf;
+
+		WRITEUINT16(buf_p, vspowerlevel[PWRLV_RACE]);
+		WRITEUINT16(buf_p, vspowerlevel[PWRLV_BATTLE]);
+
+		SendNetXCmd(XD_POWERLEVEL, buf, 4);
+	}
+
+	if (splitscreen)
+	{
+		UINT8 buf[4];
+		UINT8 *buf_p = buf;
+
+		WRITEUINT16(buf_p, 0);
+		WRITEUINT16(buf_p, 0);
+
+		SendNetXCmd2(XD_POWERLEVEL, buf, 4);
+		if (splitscreen > 1)
+			SendNetXCmd3(XD_POWERLEVEL, buf, 4);
+		if (splitscreen > 2)
+			SendNetXCmd4(XD_POWERLEVEL, buf, 4);
+	}
 }
 
 // Only works for displayplayer, sorry!
@@ -2352,7 +2395,7 @@ void D_SetupVote(void)
 	UINT8 secondgt = G_SometimesGetDifferentGametype();
 	INT16 votebuffer[3] = {-1,-1,-1};
 
-	if (cv_kartencore.value && G_RaceGametype())
+	if ((cv_kartencore.value == 1) && G_RaceGametype())
 		WRITEUINT8(p, (gametype|0x80));
 	else
 		WRITEUINT8(p, gametype);
@@ -2523,7 +2566,7 @@ static void Command_Map_f(void)
 	// new encoremode value
 	// use cvar by default
 
-	newencoremode = (boolean)cv_kartencore.value;
+	newencoremode = (cv_kartencore.value == 1);
 
 	if (COM_CheckParm("-encore"))
 	{
@@ -3650,6 +3693,9 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 			if (K_IsPlayerWanted(&players[playernum]))
 				K_CalculateBattleWanted();
 		}
+
+		K_PlayerForfeit(playernum, true);
+
 		players[playernum].health = 1;
 		if (players[playernum].mo)
 			players[playernum].mo->health = 1;
@@ -5739,7 +5785,7 @@ static void KartSpeed_OnChange(void)
 	if (!M_SecretUnlocked(SECRET_HARDSPEED) && cv_kartspeed.value == 2)
 	{
 		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSetValue(&cv_kartspeed, 1);
+		CV_StealthSet(&cv_kartspeed, cv_kartspeed.defaultvalue);
 		return;
 	}
 
@@ -5759,10 +5805,10 @@ static void KartEncore_OnChange(void)
 {
 	if (G_RaceGametype())
 	{
-		if ((boolean)cv_kartencore.value != encoremode && gamestate == GS_LEVEL /*&& leveltime > starttime*/)
-			CONS_Printf(M_GetText("Encore Mode will be turned %s next round.\n"), cv_kartencore.value ? M_GetText("on") : M_GetText("off"));
+		if ((cv_kartencore.value == 1) != encoremode && gamestate == GS_LEVEL /*&& leveltime > starttime*/)
+			CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
 		else
-			CONS_Printf(M_GetText("Encore Mode has been turned %s.\n"), cv_kartencore.value ? M_GetText("on") : M_GetText("off"));
+			CONS_Printf(M_GetText("Encore Mode has been set to %s.\n"), cv_kartencore.string);
 	}
 }
 
