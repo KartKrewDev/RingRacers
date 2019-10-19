@@ -5412,7 +5412,7 @@ static void DrawReplayHutReplayInfo(void)
 			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", demolist[dir_on[menudepthleft]].numlaps));
 
 		V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, demolist[dir_on[menudepthleft]].gametype == GT_RACE ?
-			va("Race (%s speed)", kartspeed_cons_t[demolist[(dir_on[menudepthleft]].kartspeed & ~DF_ENCORE) + 1].strvalue) :
+			va("Race (%s speed)", kartspeed_cons_t[(demolist[dir_on[menudepthleft]].kartspeed & ~DF_ENCORE) + 1].strvalue) :
 			"Battle Mode");
 
 		if (!demolist[dir_on[menudepthleft]].standings[0].ranking)
