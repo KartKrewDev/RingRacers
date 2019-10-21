@@ -6926,7 +6926,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	(void)extrainfo_p;
 	sprintf(pdemo->winnername, "transrights420");
 	pdemo->winnerskin = 1;
-	pdemo->winnercolor = SKINCOLOR_MOONSLAM;
+	pdemo->winnercolor = SKINCOLOR_MOONSET;
 	pdemo->winnertime = 6666;*/
 
 	// Read standings!
