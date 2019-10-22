@@ -5736,11 +5736,11 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 					UINT32 adddist;
 					fixed_t disttowaypoint =
 						P_AproxDistance(
-							player->mo->x - player->nextwaypoint->mobj->x,
-							player->mo->y - player->nextwaypoint->mobj->y);
-					disttowaypoint = P_AproxDistance(disttowaypoint, player->mo->z - player->nextwaypoint->mobj->z);
+							(player->mo->x >> FRACBITS) - (player->nextwaypoint->mobj->x >> FRACBITS),
+							(player->mo->y >> FRACBITS) - (player->nextwaypoint->mobj->y >> FRACBITS));
+					disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
 
-					adddist = ((UINT32)disttowaypoint) >> FRACBITS;
+					adddist = (UINT32)disttowaypoint;
 
 					player->distancetofinish = pathtofinish.totaldist + adddist;
 					Z_Free(pathtofinish.array);

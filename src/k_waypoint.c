@@ -221,8 +221,10 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 		for (i = 0; i < numwaypoints; i++)
 		{
 			checkwaypoint = &waypointheap[i];
-			checkdist = P_AproxDistance(mobj->x - checkwaypoint->mobj->x, mobj->y - checkwaypoint->mobj->y);
-			checkdist = P_AproxDistance(checkdist, mobj->z - checkwaypoint->mobj->z);
+			checkdist = P_AproxDistance(
+				(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
+				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
+			checkdist = P_AproxDistance(checkdist, (mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS));
 
 			if (checkdist < closestdist)
 			{
@@ -258,8 +260,10 @@ waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj)
 		for (i = 0; i < numwaypoints; i++)
 		{
 			checkwaypoint = &waypointheap[i];
-			checkdist = P_AproxDistance(mobj->x - checkwaypoint->mobj->x, mobj->y - checkwaypoint->mobj->y);
-			checkdist = P_AproxDistance(checkdist, mobj->z - checkwaypoint->mobj->z);
+			checkdist = P_AproxDistance(
+				(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
+				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
+			checkdist = P_AproxDistance(checkdist, (mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS));
 
 			// The mobj has to be touching this waypoint to update to it.
 			if (checkdist <= checkwaypoint->mobj->radius)
