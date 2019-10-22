@@ -5488,28 +5488,33 @@ void K_KartPlayerAfterThink(player_t *player)
 
 	Input Arguments:-
 		player - The player the next waypoint is being found for
+		closest - Use closest waypoint algorithm, instead of best touching
 
 	Return:-
 		The waypoint that is the player's next waypoint
 --------------------------------------------------*/
-static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
+static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 {
 	waypoint_t *bestwaypoint = NULL;
 	if ((player != NULL) && (player->mo != NULL) && (P_MobjWasRemoved(player->mo) == false))
 	{
 		waypoint_t *waypoint = NULL;
 
-		waypoint = K_GetClosestWaypointToMobj(player->mo);
+		if (closest)
+			waypoint = K_GetClosestWaypointToMobj(player->mo);
+		else
+			waypoint = K_GetBestWaypointTouchingMobj(player->mo);
+
 		bestwaypoint = waypoint;
 
 		// check the waypoint's location in relation to the player
 		// If it's generally in front, it's fine, otherwise, use the best next/previous waypoint.
-		// EXCEPTION: If our closest waypoint is the finishline AND we're facing towards it, don't do this.
+		// EXCEPTION: If our best waypoint is the finishline AND we're facing towards it, don't do this.
 		// Otherwise it breaks the distance calculations.
 		if (waypoint != NULL)
 		{
 			boolean finishlinehack  = false;
-			angle_t playerangle     = player->mo->angle;
+			angle_t playerangle     = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy); //player->mo->angle
 			angle_t angletowaypoint =
 				R_PointToAngle2(player->mo->x, player->mo->y, waypoint->mobj->x, waypoint->mobj->y);
 			angle_t angledelta      = playerangle - angletowaypoint;
@@ -5667,9 +5672,16 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 		else
 		{
 			waypoint_t *finishline   = K_GetFinishLineWaypoint();
-			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player);
+			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player, false);
 
-			if ((nextwaypoint != player->nextwaypoint) &&
+			if ((nextwaypoint == NULL) && (player->nextwaypoint == NULL))
+			{
+				// Special case: if player nextwaypoint is still NULL, we want to fix that as soon as possible, so use the closest waypoint instead.
+				nextwaypoint = K_GetPlayerNextWaypoint(player, true);
+			}
+
+			if ((nextwaypoint != NULL) &&
+			(nextwaypoint != player->nextwaypoint) &&
 			(K_GetWaypointIsShortcut(nextwaypoint) == false) && (K_GetWaypointIsEnabled(nextwaypoint) == true))
 			{
 				size_t     i            = 0U;
@@ -5699,7 +5711,11 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				}
 			}
 
-			player->nextwaypoint = nextwaypoint;
+			if (nextwaypoint != NULL)
+			{
+				// At this point, we don't want to update the waypoint until we touch another.
+				player->nextwaypoint = nextwaypoint;
+			}
 
 			// nextwaypoint is now the waypoint that is in front of us
 			if ((player->nextwaypoint != NULL) && (finishline != NULL))

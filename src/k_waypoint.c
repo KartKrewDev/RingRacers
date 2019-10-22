@@ -236,6 +236,76 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 }
 
 /*--------------------------------------------------
+	waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj)
+{
+	waypoint_t *bestwaypoint = NULL;
+
+	if ((mobj == NULL) || P_MobjWasRemoved(mobj))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_GetBestWaypointTouchingMobj.\n");
+	}
+	else
+	{
+		size_t     i              = 0U;
+		waypoint_t *checkwaypoint = NULL;
+		fixed_t    bestdist       = INT32_MAX;
+		fixed_t    checkdist      = INT32_MAX;
+
+		for (i = 0; i < numwaypoints; i++)
+		{
+			checkwaypoint = &waypointheap[i];
+			checkdist = P_AproxDistance(mobj->x - checkwaypoint->mobj->x, mobj->y - checkwaypoint->mobj->y);
+			checkdist = P_AproxDistance(checkdist, mobj->z - checkwaypoint->mobj->z);
+
+			// The mobj has to be touching this waypoint to update to it.
+			if (checkdist <= checkwaypoint->mobj->radius)
+			{
+#if 0
+				// This kind of algorithm may or may not be more reliable than what's below.
+				// But it's a little heavier, computation-wise.
+				// We'll see if simple closer checks work fine in netgame testing, or if it needs this.
+				boolean success = false;
+				path_t pathtofinish = {};
+				success = K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, false, false);
+
+				// If you're touching more than 1 waypoint, then we use the closest one to the finish line.
+				if (success == true)
+				{
+					// Add euclidean distance to the next waypoint to the distancetofinish
+					UINT32 distancetofinish;
+					UINT32 adddist;
+
+					adddist = ((UINT32)checkdist) >> FRACBITS;
+
+					distancetofinish = pathtofinish.totaldist + adddist;
+					Z_Free(pathtofinish.array);
+
+					if (distancetofinish < bestdist)
+					{
+						bestwaypoint = checkwaypoint;
+						bestdist = checkdist;
+					}
+				}
+#else
+				// Simple closest check
+				if (checkdist < bestdist)
+				{
+					bestwaypoint = checkwaypoint;
+					bestdist = checkdist;
+				}
+#endif
+			}
+		}
+	}
+
+	return bestwaypoint;
+}
+
+/*--------------------------------------------------
 	size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
 
 		See header file for description.

@@ -8511,9 +8511,9 @@ void A_SPBChase(mobj_t *actor)
 	if (actor->threshold) // Just fired, go straight.
 	{
 		actor->lastlook = -1;
+		actor->cusval = -1;
 		spbplace = -1;
 		P_InstaThrust(actor, actor->angle, wspeed);
-		actor->flags &=  ~MF_NOCLIPTHING;	// just in case.
 		return;
 	}
 
@@ -8539,11 +8539,18 @@ void A_SPBChase(mobj_t *actor)
 		}
 	}
 
+	// lastlook = last player num targetted
+	// cvmem = stored speed
+	// cusval = next waypoint heap index
+	// extravalue1 = SPB movement mode
+	// extravalue2 = mode misc option
+
 	if (actor->extravalue1 == 1) // MODE: TARGETING
 	{
+		actor->cusval = -1; // Reset waypoint
+
 		if (actor->tracer && actor->tracer->health)
 		{
-
 			fixed_t defspeed = wspeed;
 			fixed_t range = (160*actor->tracer->scale);
 			fixed_t cx = 0, cy =0;
@@ -8678,6 +8685,7 @@ void A_SPBChase(mobj_t *actor)
 	else if (actor->extravalue1 == 2) // MODE: WAIT...
 	{
 		actor->momx = actor->momy = actor->momz = 0; // Stoooop
+		actor->cusval = -1; // Reset waypoint
 
 		if (actor->lastlook != -1
 			&& playeringame[actor->lastlook]
@@ -8703,8 +8711,10 @@ void A_SPBChase(mobj_t *actor)
 	}
 	else // MODE: SEEKING
 	{
-		waypoint_t *closestwaypoint = NULL;
-		waypoint_t *nextwaypoint    = NULL;
+		waypoint_t *lastwaypoint = NULL;
+		waypoint_t *bestwaypoint = NULL;
+		waypoint_t *nextwaypoint = NULL;
+
 		actor->lastlook = -1; // Just make sure this is reset
 
 		if (!player || !player->mo || player->mo->health <= 0 || player->kartstuff[k_respawn])
@@ -8719,11 +8729,24 @@ void A_SPBChase(mobj_t *actor)
 		// Found someone, now get close enough to initiate the slaughter...
 		P_SetTarget(&actor->tracer, player->mo);
 		spbplace = bestrank;
-
 		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
 
-		closestwaypoint = K_GetClosestWaypointToMobj(actor);
-		if (closestwaypoint != NULL)
+		// Move along the waypoints until you get close enough
+		if (actor->cusval > -1)
+		{
+			// Previously set nextwaypoint
+			lastwaypoint = K_GetWaypointFromIndex((size_t)actor->cusval);
+		}
+
+		bestwaypoint = K_GetBestWaypointTouchingMobj(actor);
+
+		if (bestwaypoint == NULL && lastwaypoint == NULL)
+		{
+			// We have invalid waypoints all around, so use closest to try and make it non-NULL.
+			bestwaypoint = K_GetClosestWaypointToMobj(actor);
+		}
+
+		if (bestwaypoint != NULL)
 		{
 			const boolean huntbackwards = false;
 			boolean       useshortcuts  = false;
@@ -8735,15 +8758,24 @@ void A_SPBChase(mobj_t *actor)
 			}
 
 			nextwaypoint = K_GetNextWaypointToDestination(
-				closestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
+				bestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
+		}
+
+		if (nextwaypoint == NULL && lastwaypoint != NULL)
+		{
+			// Restore to the last nextwaypoint
+			nextwaypoint = lastwaypoint;
 		}
 
 		if (nextwaypoint != NULL)
 		{
 			const fixed_t xywaypointdist = P_AproxDistance(
 				actor->x - nextwaypoint->mobj->x, actor->y - nextwaypoint->mobj->y);
+
 			hang = R_PointToAngle2(actor->x, actor->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
 			vang = R_PointToAngle2(0, actor->z, xywaypointdist, nextwaypoint->mobj->z);
+
+			actor->cusval = (INT32)K_GetWaypointHeapIndex(nextwaypoint);
 		}
 		else
 		{

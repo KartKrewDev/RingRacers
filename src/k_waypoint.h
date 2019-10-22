@@ -152,6 +152,20 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj);
 
 
 /*--------------------------------------------------
+	waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj)
+
+		Returns the waypoint closest to the finish line that an mobj is touching
+
+	Input Arguments:-
+		mobj - mobj to get the waypoint for.
+
+	Return:-
+		The best waypoint for the mobj
+--------------------------------------------------*/
+waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj);
+
+
+/*--------------------------------------------------
 	boolean K_PathfindToWaypoint(
 		waypoint_t *const sourcewaypoint,
 		waypoint_t *const destinationwaypoint,

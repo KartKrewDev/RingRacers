@@ -12289,7 +12289,7 @@ ML_NOCLIMB : Direction not controllable
 	case MT_WAYPOINT:
 	{
 		size_t line;
-		mobj->radius = 256*FRACUNIT;
+		mobj->radius = 384*FRACUNIT;
 		// Same reason as for MT_SPINMACEPOINT we can't use the function to find the linedef
 		for (line = 0; line < numlines; line++)
 		{
