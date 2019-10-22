@@ -11,9 +11,9 @@ static const UINT32 SPARKLES_PER_CONNECTION = 16U;
 
 // Some defaults for the size of the dynamically allocated sets for pathfinding. These are kept for the purpose of
 // allocating a size that is less likely to need reallocating again during the pathfinding.
-#define OPENSET_BASE_SIZE    16U;
-#define CLOSEDSET_BASE_SIZE  256U;
-#define NODESARRAY_BASE_SIZE 256U;
+#define OPENSET_BASE_SIZE    (16U)
+#define CLOSEDSET_BASE_SIZE  (256U)
+#define NODESARRAY_BASE_SIZE (256U)
 
 static waypoint_t *waypointheap = NULL;
 static waypoint_t *firstwaypoint = NULL;
