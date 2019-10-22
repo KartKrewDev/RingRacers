@@ -68,12 +68,12 @@ CV_PossibleValue_t CV_YesNo[] = {{0, "No"}, {1, "Yes"}, {0, NULL}};
 CV_PossibleValue_t CV_Unsigned[] = {{0, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 
-//SRB2kart
+// SRB2kart
 CV_PossibleValue_t kartspeed_cons_t[] = {
-	{-1, "Auto"},
-	{0, "Easy"},
-	{1, "Normal"},
-	{2, "Hard"},
+	{KARTSPEED_AUTO, "Auto"},
+	{KARTSPEED_EASY, "Easy"},
+	{KARTSPEED_NORMAL, "Normal"},
+	{KARTSPEED_HARD, "Hard"},
 	{0, NULL}
 };
 
