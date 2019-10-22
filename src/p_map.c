@@ -2881,6 +2881,11 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	// reset this to 0 at the start of each trymove call as it's only used here
 	numspechitint = 0U;
 
+	// This makes sure that there are no freezes from computing extremely small movements.
+	// Originally was MAXRADIUS/2, but that causes some inconsistencies for small players.
+	if (radius < mapobjectscale)
+		radius = mapobjectscale;
+
 	do {
 		if (thing->flags & MF_NOCLIP) {
 			tryx = x;
