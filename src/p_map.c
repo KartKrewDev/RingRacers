@@ -2789,25 +2789,12 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			//All things are affected by their scale.
 			fixed_t maxstep = FixedMul(MAXSTEPMOVE, mapobjectscale);
 
-			if (thing->player)
-			{
-				// If using type Section1:13, double the maxstep.
-				if (P_PlayerTouchingSectorSpecial(thing->player, 1, 13)
-				|| GETSECSPECIAL(R_PointInSubsector(x, y)->sector->special, 1) == 13)
-					maxstep <<= 1;
-				// If using type Section1:12, no maxstep. For ledges you don't want the player to climb! (see: Egg Zeppelin & SMK port walls)
-				else if (P_PlayerTouchingSectorSpecial(thing->player, 1, 12)
-				|| GETSECSPECIAL(R_PointInSubsector(x, y)->sector->special, 1) == 12)
-					maxstep = 0;
-
-				// Don't 'step up' while springing,
-				// Only step up "if needed".
-				/* // SRB2kart - don't need
-				if (thing->state == &states[S_PLAY_SPRING]
-				&& P_MobjFlip(thing)*thing->momz > FixedMul(FRACUNIT, thing->scale))
-					maxstep = 0;
-				*/
-			}
+			// If using type Section1:13, double the maxstep.
+			if (P_MobjTouchingSectorSpecial(thing, 1, 13))
+				maxstep <<= 1;
+			// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
+			else if (P_MobjTouchingSectorSpecial(thing, 1, 12))
+				maxstep = 0;
 
 			if (thing->type == MT_SKIM)
 				maxstep = 0;
@@ -2830,12 +2817,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				return false; // mobj must lower itself to fit
 
 			// Ramp test
-			if (maxstep > 0 && !(
-				thing->player && (
-				P_PlayerTouchingSectorSpecial(thing->player, 1, 14)
-				|| GETSECSPECIAL(R_PointInSubsector(x, y)->sector->special, 1) == 14)
-				)
-			)
+			if ((maxstep > 0) && !(P_MobjTouchingSectorSpecial(thing, 1, 14)))
 			{
 				// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 				// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.

@@ -8355,14 +8355,8 @@ void P_MobjThinker(mobj_t *mobj)
 
 				P_Thrust(mobj, mobj->angle, thrustamount);
 
-				if (grounded)
-				{
-					sector_t *sec2 = P_ThingOnSpecial3DFloor(mobj);
-					if ((sec2 && GETSECSPECIAL(sec2->special, 3) == 1)
-						|| (P_IsObjectOnRealGround(mobj, mobj->subsector->sector)
-						&& GETSECSPECIAL(mobj->subsector->sector->special, 3) == 1))
-						K_DoPogoSpring(mobj, 0, 1);
-				}
+				if (P_MobjTouchingSectorSpecial(mobj, 3, 1))
+					K_DoPogoSpring(mobj, 0, 1);
 
 				if (mobj->threshold > 0)
 					mobj->threshold--;
@@ -8374,7 +8368,6 @@ void P_MobjThinker(mobj_t *mobj)
 		}
 		case MT_JAWZ:
 		{
-			sector_t *sec2;
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 
 			if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
@@ -8392,10 +8385,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 			K_DriftDustHandling(mobj);
 
-			sec2 = P_ThingOnSpecial3DFloor(mobj);
-			if ((sec2 && GETSECSPECIAL(sec2->special, 3) == 1)
-				|| (P_IsObjectOnRealGround(mobj, mobj->subsector->sector)
-				&& GETSECSPECIAL(mobj->subsector->sector->special, 3) == 1))
+			if (P_MobjTouchingSectorSpecial(mobj, 3, 1))
 				K_DoPogoSpring(mobj, 0, 1);
 
 			break;
@@ -9602,13 +9592,9 @@ void P_MobjThinker(mobj_t *mobj)
 			break;
 		case MT_BLUEFLAG:
 		case MT_REDFLAG:
-			{
-				sector_t *sec2;
-				sec2 = P_ThingOnSpecial3DFloor(mobj);
-				if ((sec2 && GETSECSPECIAL(sec2->special, 4) == 2) || (GETSECSPECIAL(mobj->subsector->sector->special, 4) == 2))
-					mobj->fuse = 1; // Return to base.
-				break;
-			}
+			if (P_MobjTouchingSectorSpecial(mobj, 4, 2))
+				mobj->fuse = 1; // Return to base.
+			break;
 		case MT_CANNONBALL:
 #ifdef FLOORSPLATS
 			R_AddFloorSplat(mobj->tracer->subsector, mobj->tracer, "TARGET", mobj->tracer->x,
