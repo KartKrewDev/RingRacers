@@ -8501,7 +8501,8 @@ static const char *const KARTSTUFF_LIST[] = {
 	"TIREGREASE",
 	"SPRINGSTARS",
 	"SPRINGCOLOR",
-	"KILLFIELD"
+	"KILLFIELD",
+	"WRONGWAY"
 };
 #endif
 

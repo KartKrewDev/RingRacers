@@ -5556,6 +5556,8 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 						{
 							bestwaypoint = waypoint->nextwaypoints[i];
 							nextbestdelta = angledelta;
+
+							player->kartstuff[k_wrongway] = 0;
 						}
 					}
 				}
@@ -5578,6 +5580,8 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 						{
 							bestwaypoint = waypoint->prevwaypoints[i];
 							nextbestdelta = angledelta;
+
+							player->kartstuff[k_wrongway] = 1;
 						}
 					}
 				}
@@ -10276,6 +10280,9 @@ void K_drawKartHUD(void)
 #endif
 			K_drawKartFreePlay(leveltime);
 	}
+
+	if (stplyr->kartstuff[k_wrongway] && ((leveltime / 8) & 1))
+		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP, "WRONG WAY");
 
 	if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();
