@@ -2389,18 +2389,18 @@ static void P_LevelInitStuff(void)
 	// SRB2Kart: map load variables
 	if (modeattacking) // Just play it safe and set everything
 	{
-		gamespeed = 2;
+		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
 		comeback = true;
 	}
 	else
 	{
 		if (G_BattleGametype())
-			gamespeed = 0;
+			gamespeed = KARTSPEED_EASY;
 		else
 		{
-			if (cv_kartspeed.value == -1)
-				gamespeed = ((speedscramble == -1) ? atoi(cv_kartspeed.defaultvalue) : (UINT8)speedscramble);
+			if (cv_kartspeed.value == KARTSPEED_AUTO)
+				gamespeed = ((speedscramble == -1) ? KARTSPEED_NORMAL : (UINT8)speedscramble);
 			else
 				gamespeed = (UINT8)cv_kartspeed.value;
 		}

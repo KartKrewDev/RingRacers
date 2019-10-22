@@ -5771,7 +5771,7 @@ static void KartFrantic_OnChange(void)
 
 static void KartSpeed_OnChange(void)
 {
-	if (!M_SecretUnlocked(SECRET_HARDSPEED) && cv_kartspeed.value == 2)
+	if (!M_SecretUnlocked(SECRET_HARDSPEED) && cv_kartspeed.value == KARTSPEED_HARD)
 	{
 		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
 		CV_StealthSet(&cv_kartspeed, cv_kartspeed.defaultvalue);
@@ -5780,12 +5780,14 @@ static void KartSpeed_OnChange(void)
 
 	if (G_RaceGametype())
 	{
-		if ((UINT8)cv_kartspeed.value != gamespeed && gamestate == GS_LEVEL && leveltime > starttime)
-			CONS_Printf(M_GetText("Game speed will be changed to \"%s\" next round.\n"), cv_kartspeed.string);
-		else
+		if ((gamestate == GS_LEVEL && leveltime < starttime) && (cv_kartspeed.value != KARTSPEED_AUTO))
 		{
 			CONS_Printf(M_GetText("Game speed has been changed to \"%s\".\n"), cv_kartspeed.string);
 			gamespeed = (UINT8)cv_kartspeed.value;
+		}
+		else if (cv_kartspeed.value != (signed)gamespeed)
+		{
+			CONS_Printf(M_GetText("Game speed will be changed to \"%s\" next round.\n"), cv_kartspeed.string);
 		}
 	}
 }

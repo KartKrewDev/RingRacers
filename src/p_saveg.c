@@ -3305,6 +3305,9 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT8(save_p, franticitems);
 	WRITEUINT8(save_p, comeback);
 
+	WRITESINT8(save_p, speedscramble);
+	WRITESINT8(save_p, encorescramble);
+
 	for (i = 0; i < 4; i++)
 		WRITESINT8(save_p, battlewanted[i]);
 
@@ -3424,6 +3427,9 @@ static inline boolean P_NetUnArchiveMisc(void)
 	gamespeed = READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);
 	comeback = (boolean)READUINT8(save_p);
+
+	speedscramble = READSINT8(save_p);
+	encorescramble = READSINT8(save_p);
 
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = READSINT8(save_p);
