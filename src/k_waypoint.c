@@ -421,11 +421,11 @@ void K_DebugWaypointsVisualise(void)
 			}
 			else if (waypoint->numnextwaypoints == 0 || waypoint->numprevwaypoints == 0)
 			{
-				debugmobj->color = SKINCOLOR_ORANGE;
+				debugmobj->color = SKINCOLOR_YELLOW;
 			}
 			else if (waypoint == players[displayplayers[0]].nextwaypoint)
 			{
-				debugmobj->color = SKINCOLOR_YELLOW;
+				debugmobj->color = SKINCOLOR_GREEN;
 			}
 			else
 			{
