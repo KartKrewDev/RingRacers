@@ -1554,7 +1554,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 			//mobj1->player->kartstuff[k_spinouttype] = 1; // Enforce type
 		}
 		else if (mobj2->player // Player VS player bumping only
-			&& (K_GetShieldFromItem(mobj1->player->kartstuff[k_itemtype]) == KITEM_NONE)) // Ignore for shields
+			&& (K_GetShieldFromItem(mobj1->player->kartstuff[k_itemtype]) == KSHIELD_NONE)) // Ignore for shields
 		{
 			if (mobj1->player->kartstuff[k_rings] <= 0)
 			{
@@ -1579,7 +1579,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 			//mobj2->player->kartstuff[k_spinouttype] = 1; // Enforce type
 		}
 		else if (mobj1->player // Player VS player bumping only
-			&& (K_GetShieldFromItem(mobj2->player->kartstuff[k_itemtype]) == KITEM_NONE)) // Ignore for shields
+			&& (K_GetShieldFromItem(mobj2->player->kartstuff[k_itemtype]) == KSHIELD_NONE)) // Ignore for shields
 		{
 			if (mobj2->player->kartstuff[k_rings] <= 0)
 			{
