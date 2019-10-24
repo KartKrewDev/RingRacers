@@ -709,7 +709,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][6] =
 			   /*Jawz x2*/ { 0, 0, 1, 2, 4, 2 }  // Jawz x2
 };
 
-#define DISTVAR (4096) // Magic number distance for use with item roulette tiers
+#define DISTVAR (2048) // Magic number distance for use with item roulette tiers
 
 /**	\brief	Item Roulette for Kart
 
@@ -897,7 +897,8 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 				POWERITEMODDS(newodds);
 			break;
 		case KITEM_SPB:
-			if ((indirectitemcooldown > 0) || (pexiting > 0) || (secondist/DISTVAR < 3))
+			if ((indirectitemcooldown > 0) || (secondist/DISTVAR < 3)
+				|| (first != -1 && players[first].distancetofinish > 8*DISTVAR)) // No SPB near the end of the race
 				newodds = 0;
 			else
 				newodds *= min((secondist/DISTVAR)-4, 3); // POWERITEMODDS(newodds);
