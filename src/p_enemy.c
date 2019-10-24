@@ -8714,6 +8714,7 @@ void A_SPBChase(mobj_t *actor)
 		waypoint_t *lastwaypoint = NULL;
 		waypoint_t *bestwaypoint = NULL;
 		waypoint_t *nextwaypoint = NULL;
+		waypoint_t *tempwaypoint = NULL;
 
 		actor->lastlook = -1; // Just make sure this is reset
 
@@ -8732,13 +8733,22 @@ void A_SPBChase(mobj_t *actor)
 		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
 
 		// Move along the waypoints until you get close enough
-		if (actor->cusval > -1)
+		if (actor->cusval > -1 && actor->extravalue2 > 0)
 		{
 			// Previously set nextwaypoint
 			lastwaypoint = K_GetWaypointFromIndex((size_t)actor->cusval);
-		}
+			tempwaypoint = K_GetBestWaypointTouchingMobj(actor);
+			// check if the tempwaypoint corresponds to lastwaypoint's next ID at least;
+			// This is to avoid situations where the SPB decides to suicide jump down a bridge because it found a COMPLETELY unrelated waypoint down there.
 
-		bestwaypoint = K_GetBestWaypointTouchingMobj(actor);
+			if (K_GetWaypointID(tempwaypoint) == K_GetWaypointNextID(lastwaypoint) || K_GetWaypointID(tempwaypoint) == K_GetWaypointID(lastwaypoint))
+				// either our previous or curr waypoint ID, sure, take it
+				bestwaypoint = tempwaypoint;
+			else
+				bestwaypoint = K_GetWaypointFromIndex((size_t)actor->extravalue2);	// keep going from the PREVIOUS wp.
+		}
+		else
+			bestwaypoint = K_GetBestWaypointTouchingMobj(actor);
 
 		if (bestwaypoint == NULL && lastwaypoint == NULL)
 		{
@@ -8761,12 +8771,6 @@ void A_SPBChase(mobj_t *actor)
 				bestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
 		}
 
-		if (nextwaypoint == NULL && lastwaypoint != NULL)
-		{
-			// Restore to the last nextwaypoint
-			nextwaypoint = lastwaypoint;
-		}
-
 		if (nextwaypoint != NULL)
 		{
 			const fixed_t xywaypointdist = P_AproxDistance(
@@ -8776,6 +8780,7 @@ void A_SPBChase(mobj_t *actor)
 			vang = R_PointToAngle2(0, actor->z, xywaypointdist, nextwaypoint->mobj->z);
 
 			actor->cusval = (INT32)K_GetWaypointHeapIndex(nextwaypoint);
+			actor->extravalue2 = (INT32)K_GetWaypointHeapIndex(bestwaypoint);	// save our last best, used above.
 		}
 		else
 		{
@@ -8831,6 +8836,13 @@ void A_SPBChase(mobj_t *actor)
 			actor->cvmem = wspeed;
 		}
 	}
+
+	// Finally, no matter what, the spb should not be able to be under the ground, or above the ceiling;
+	if (actor->z < actor->floorz + 8*mapobjectscale)
+		actor->z = actor->floorz + 8*mapobjectscale;
+	else if (actor->z > actor->ceilingz - 8*mapobjectscale)
+		actor->z = actor->ceilingz - 8*mapobjectscale;
+
 
 	return;
 }
