@@ -821,7 +821,6 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 	INT32 newodds;
 	INT32 i;
 	UINT8 pingame = 0, pexiting = 0;
-	boolean shieldout[NUMKARTSHIELDS-1];
 	SINT8 first = -1, second = -1;
 	INT32 secondist = 0;
 	INT32 shieldtype = KSHIELD_NONE;
@@ -846,7 +845,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 	// Base multiplication to ALL item odds to simulate fractional precision
 	newodds *= 4;
 
-	memset(shieldout, false, sizeof(shieldout));
+	shieldtype = K_GetShieldFromItem(item);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -859,9 +858,11 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 		if (players[i].exiting)
 			pexiting++;
 
-		shieldtype = K_GetShieldFromItem(players[i].kartstuff[k_itemtype]);
-		if (shieldtype != KSHIELD_NONE)
-			shieldout[shieldtype-1] = true;
+		if (shieldtype != KSHIELD_NONE && shieldtype == K_GetShieldFromItem(players[i].kartstuff[k_itemtype]))
+		{
+			// Don't allow more than one of each shield type at a time
+			return 0;
+		}
 
 		if (players[i].mo && G_RaceGametype())
 		{
@@ -881,11 +882,6 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			secondist = (15 * secondist) / 14;
 		secondist = ((28 + (8-pingame)) * secondist) / 28;
 	}
-
-	// Don't allow more than one of each shield type at a time
-	shieldtype = K_GetShieldFromItem(item);
-	if (shieldtype != KSHIELD_NONE && shieldout[shieldtype-1])
-		return 0;
 
 	// POWERITEMODDS handles all of the "frantic item" related functionality, for all of our powerful items.
 	// First, it multiplies it by 2 if franticitems is true; easy-peasy.
