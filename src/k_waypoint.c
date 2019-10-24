@@ -265,43 +265,12 @@ waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj)
 				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
 			checkdist = P_AproxDistance(checkdist, (mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS));
 
-			// The mobj has to be touching this waypoint to update to it.
-			if (checkdist <= checkwaypoint->mobj->radius)
+			// The mobj has to be touching this waypoint to use it.
+			if ((checkdist <= checkwaypoint->mobj->radius)
+			&& (checkdist < bestdist))
 			{
-#if 0
-				// This kind of algorithm may or may not be more reliable than what's below.
-				// But it's a little heavier, computation-wise.
-				// We'll see if simple closer checks work fine in netgame testing, or if it needs this.
-				boolean success = false;
-				path_t pathtofinish = {};
-				success = K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, false, false);
-
-				// If you're touching more than 1 waypoint, then we use the closest one to the finish line.
-				if (success == true)
-				{
-					// Add euclidean distance to the next waypoint to the distancetofinish
-					UINT32 distancetofinish;
-					UINT32 adddist;
-
-					adddist = ((UINT32)checkdist) >> FRACBITS;
-
-					distancetofinish = pathtofinish.totaldist + adddist;
-					Z_Free(pathtofinish.array);
-
-					if (distancetofinish < bestdist)
-					{
-						bestwaypoint = checkwaypoint;
-						bestdist = checkdist;
-					}
-				}
-#else
-				// Simple closest check
-				if (checkdist < bestdist)
-				{
-					bestwaypoint = checkwaypoint;
-					bestdist = checkdist;
-				}
-#endif
+				bestwaypoint = checkwaypoint;
+				bestdist = checkdist;
 			}
 		}
 	}

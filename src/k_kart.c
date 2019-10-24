@@ -5500,7 +5500,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 	{
 		waypoint_t *waypoint = NULL;
 
-		if (closest)
+		if (closest == true)
 			waypoint = K_GetClosestWaypointToMobj(player->mo);
 		else
 			waypoint = K_GetBestWaypointTouchingMobj(player->mo);
@@ -5514,10 +5514,18 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 		if (waypoint != NULL)
 		{
 			boolean finishlinehack  = false;
-			angle_t playerangle     = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy); //player->mo->angle
+			angle_t playerangle     = player->mo->angle;
 			angle_t angletowaypoint =
 				R_PointToAngle2(player->mo->x, player->mo->y, waypoint->mobj->x, waypoint->mobj->y);
-			angle_t angledelta      = playerangle - angletowaypoint;
+			angle_t angledelta      = ANGLE_MAX;
+
+			if (player->mo->momx != 0 || player->mo->momy != 0) 
+			{
+				// Default to facing angle if you're not moving, but use momentum angle otherwise.
+				playerangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+			}
+
+			angledelta = playerangle - angletowaypoint;
 
 			if (angledelta > ANGLE_180)
 			{
@@ -5533,6 +5541,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 				}
 			}
 
+			// The wrong way flag will use its previous value if we're facing sideways
 			if ((angledelta > ANGLE_45) && (finishlinehack == false))
 			{
 				angle_t nextbestdelta = angledelta;
@@ -5557,6 +5566,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 							bestwaypoint = waypoint->nextwaypoints[i];
 							nextbestdelta = angledelta;
 
+							// Remove wrong way flag if we're using nextwaypoints
 							player->kartstuff[k_wrongway] = 0;
 						}
 					}
@@ -5581,6 +5591,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 							bestwaypoint = waypoint->prevwaypoints[i];
 							nextbestdelta = angledelta;
 
+							// Set wrong way flag if we're using prevwaypoints
 							player->kartstuff[k_wrongway] = 1;
 						}
 					}
@@ -5681,6 +5692,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 			if ((nextwaypoint == NULL) && (player->nextwaypoint == NULL))
 			{
 				// Special case: if player nextwaypoint is still NULL, we want to fix that as soon as possible, so use the closest waypoint instead.
+				// This will most likely only happen on map load or player spawn.
 				nextwaypoint = K_GetPlayerNextWaypoint(player, true);
 			}
 
@@ -5695,6 +5707,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				player->starpostz = nextwaypoint->mobj->z >> FRACBITS;
 
 				// player gravflip determines which way to respawn
+				// (should waypoints have a flip option?)
 				player->kartstuff[k_starpostflip] = player->mo->flags2 & MF2_OBJECTFLIP;
 
 				// starpostangle is to the first valid nextwaypoint for simplicity
@@ -5717,7 +5730,8 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 			if (nextwaypoint != NULL)
 			{
-				// At this point, we don't want to update the waypoint until we touch another.
+				// If nextwaypoint is NULL, it means we don't want to update the waypoint until we touch another one.
+				// player->nextwaypoint will keep its previous value in this case.
 				player->nextwaypoint = nextwaypoint;
 			}
 
