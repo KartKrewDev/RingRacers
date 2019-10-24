@@ -2302,7 +2302,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
 	{
 		fixed_t dashval = ((player->kartstuff[k_flamedash]<<FRACBITS) / TICRATE) / 20; // 1 second = +5% top speed
-		ADDBOOST(FRACUNIT/2 + dashval, 2*FRACUNIT); // + infinite top speed, + 100% acceleration
+		ADDBOOST(FRACUNIT/2 + dashval, 2*FRACUNIT); // + infinite top speed, + 200% acceleration
 	}
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
@@ -2313,6 +2313,9 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_ringboost]) // Ring Boost
 		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 400% acceleration
+
+	if (player->kartstuff[k_eggmanexplode]) // Ready-to-explode
+		ADDBOOST(FRACUNIT/5, 2*FRACUNIT); // + 20% top speed, + 200% acceleration
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
@@ -5216,17 +5219,27 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			// Speed lines
 			if (EITHERSNEAKER(player) || player->kartstuff[k_ringboost]
-				|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost])
+				|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]
+				|| player->kartstuff[k_eggmanexplode])
 			{
 				mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
 					player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
 					player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
 					MT_FASTLINE);
+
 				fast->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
 				fast->momx = 3*player->mo->momx/4;
 				fast->momy = 3*player->mo->momy/4;
 				fast->momz = 3*player->mo->momz/4;
+
 				K_MatchGenericExtraFlags(fast, player->mo);
+
+				// Make it red when you have the eggman speed boost
+				if (player->kartstuff[k_eggmanexplode])
+				{
+					fast->color = SKINCOLOR_RED;
+					fast->colorized = true;
+				}
 			}
 
 			if (player->kartstuff[k_numboosts] > 0) // Boosting after images
