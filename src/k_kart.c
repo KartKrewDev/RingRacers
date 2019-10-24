@@ -930,8 +930,8 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 
 static UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper, boolean spbrush)
 {
-	INT32 i;
-	INT32 n = 0;
+	UINT8 i;
+	UINT8 n = 0;
 	UINT8 useodds = 0;
 	UINT8 disttable[14];
 	UINT8 totallen = 0;
@@ -940,7 +940,7 @@ static UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 
 
 	for (i = 0; i < 8; i++)
 	{
-		INT32 j;
+		UINT8 j;
 		boolean available = false;
 
 		if (G_BattleGametype() && i > 5)
