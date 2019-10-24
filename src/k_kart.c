@@ -709,7 +709,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][6] =
 			   /*Jawz x2*/ { 0, 0, 1, 2, 4, 2 }  // Jawz x2
 };
 
-#define DISTVAR (1024) // Magic number distance for use with item roulette tiers
+#define DISTVAR (4096) // Magic number distance for use with item roulette tiers
 
 /**	\brief	Item Roulette for Kart
 
@@ -926,13 +926,13 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 	return newodds;
 }
 
-//{ SRB2kart Roulette Code - Distance Based, no waypoints
+//{ SRB2kart Roulette Code - Distance Based, yes waypoints
 
-static INT32 K_FindUseodds(player_t *player, fixed_t mashed, INT32 pdis, INT32 bestbumper, boolean spbrush)
+static UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper, boolean spbrush)
 {
 	INT32 i;
 	INT32 n = 0;
-	INT32 useodds = 0;
+	UINT8 useodds = 0;
 	UINT8 disttable[14];
 	UINT8 totallen = 0;
 	UINT8 distlen = 0;
@@ -1001,9 +1001,9 @@ static INT32 K_FindUseodds(player_t *player, fixed_t mashed, INT32 pdis, INT32 b
 		SETUPDISTTABLE(6,3);
 		SETUPDISTTABLE(7,1);
 
-		if (pdis <= 0)									// (64*14) *  0 =     0
+		if (pdis == 0)
 			useodds = disttable[0];
-		else if (pdis > DISTVAR * ((12 * distlen) / 14))	// (64*14) * 12 = 10752
+		else if (pdis > DISTVAR * ((12 * distlen) / 14))
 			useodds = disttable[distlen-1];
 		else
 		{
@@ -1028,11 +1028,11 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	INT32 i;
 	UINT8 pingame = 0;
 	UINT8 roulettestop;
-	INT32 pdis = 0;
-	INT32 useodds = 0;
+	UINT32 pdis = 0;
+	UINT8 useodds = 0;
 	INT32 spawnchance[NUMKARTRESULTS];
 	INT32 totalspawnchance = 0;
-	INT32 bestbumper = 0;
+	UINT8 bestbumper = 0;
 	fixed_t mashed = 0;
 	boolean dontforcespb = false;
 	boolean spbrush = false;
@@ -6046,7 +6046,12 @@ void K_KartUpdatePosition(player_t *player)
 	fixed_t i;
 
 	if (player->spectator || !player->mo)
+	{
+		// Ensure these are reset for spectators
+		player->kartstuff[k_position] = 0;
+		player->kartstuff[k_positiondelay] = 0;
 		return;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -9975,9 +9980,9 @@ static void K_drawDistributionDebugger(void)
 		kp_orbinaut[4],
 		kp_jawz[1]
 	};
-	INT32 useodds = 0;
-	INT32 pingame = 0, bestbumper = 0;
-	INT32 pdis = 0;
+	UINT8 useodds = 0;
+	UINT8 pingame = 0, bestbumper = 0;
+	UINT32 pdis = 0;
 	INT32 i;
 	INT32 x = -9, y = -9;
 	boolean spbrush = false;
