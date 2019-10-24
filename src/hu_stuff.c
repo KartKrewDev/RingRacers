@@ -2386,7 +2386,7 @@ void HU_Drawer(void)
 	}*/
 
 	// draw song credits
-	if (cv_songcredits.value)
+	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
 		HU_DrawSongCredits();
 
 	// draw desynch text
@@ -3017,7 +3017,7 @@ static void HU_DrawRankings(void)
 		}
 
 		V_DrawCenteredString(256, 8, 0, "GAME SPEED");
-		V_DrawCenteredString(256, 16, hilicol, cv_kartspeed.string);
+		V_DrawCenteredString(256, 16, hilicol, kartspeed_cons_t[1+gamespeed].strvalue);
 	}
 
 	// When you play, you quickly see your score because your name is displayed in white.

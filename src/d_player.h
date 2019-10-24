@@ -340,6 +340,10 @@ typedef enum
 	k_getsparks,		// Disable drift sparks at low speed, JUST enough to give acceleration the actual headstart above speed
 	k_jawztargetdelay,	// Delay for Jawz target switching, to make it less twitchy
 	k_spectatewait,		// How long have you been waiting as a spectator
+	k_tiregrease,		// Reduced friction timer after hitting a horizontal spring
+	k_springstars,		// Spawn stars around a player when they hit a spring
+	k_springcolor,		// Color of spring stars
+	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
 
 	NUMKARTSTUFF
 } kartstufftype_t;

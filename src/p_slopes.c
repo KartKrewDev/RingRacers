@@ -625,8 +625,7 @@ void P_ResetDynamicSlopes(void) {
 	slopelist = NULL;
 	slopecount = 0;
 
-	// We'll handle copy slopes later, after all the tag lists have been made.
-	// Yes, this means copied slopes won't affect things' spawning heights. Too bad for you.
+	/// Generates line special-defined slopes.
 	for (i = 0; i < numlines; i++)
 	{
 		switch (lines[i].special)
@@ -725,10 +724,20 @@ void P_ResetDynamicSlopes(void) {
 				break;
 		}
 	}
+
+	/// Copies slopes from tagged sectors via line specials.
+	/// \note Doesn't actually copy, but instead they share the same pointers.
+	for (i = 0; i < numlines; i++)
+		switch (lines[i].special)
+		{
+			case 720:
+			case 721:
+			case 722:
+				P_CopySectorSlope(&lines[i]);
+			default:
+				break;
+		}
 }
-
-
-
 
 // ============================================================================
 //
@@ -827,6 +836,9 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 		if (P_MobjFlip(thing)*(thing->momz) < 0) { // falling, land on slope
 			thing->momz = -P_MobjFlip(thing);
 			thing->standingslope = slope;
+#ifdef HWRENDER
+			thing->modeltilt = thing->standingslope;
+#endif
 		}
 		return;
 	}
@@ -843,6 +855,9 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 		thing->momz = -P_MobjFlip(thing);
 
 		thing->standingslope = slope;
+#ifdef HWRENDER
+		thing->modeltilt = thing->standingslope;
+#endif
 	}
 }
 
@@ -862,32 +877,30 @@ void P_ButteredSlope(mobj_t *mo)
 		return; // don't slide down slopes if you can't touch them or you're not affected by gravity
 
 	if (mo->player) {
-		if (abs(mo->standingslope->zdelta) < FRACUNIT/4 && !(mo->player->pflags & PF_SPINNING))
+		// Changed in kart to only not apply physics on very slight slopes (I think about 4 degree angles)
+		if (abs(mo->standingslope->zdelta) < FRACUNIT/21 && !(mo->player->pflags & PF_SPINNING))
 			return; // Don't slide on non-steep slopes unless spinning
 
+		// This only means you can be stopped on slopes that aren't steeper than 45 degrees
 		if (abs(mo->standingslope->zdelta) < FRACUNIT/2 && !(mo->player->rmomx || mo->player->rmomy))
 			return; // Allow the player to stand still on slopes below a certain steepness
 	}
 
-	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 15 / 16 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
+	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 4 / 5 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
 
-	if (mo->player && (mo->player->pflags & PF_SPINNING)) {
-		fixed_t mult = 0;
+	if (mo->player) {
+		fixed_t mult = FRACUNIT;
 		if (mo->momx || mo->momy) {
 			angle_t angle = R_PointToAngle2(0, 0, mo->momx, mo->momy) - mo->standingslope->xydirection;
 
 			if (P_MobjFlip(mo) * mo->standingslope->zdelta < 0)
 				angle ^= ANGLE_180;
 
-			mult = FINECOSINE(angle >> ANGLETOFINESHIFT);
+			mult = FRACUNIT + (FRACUNIT + FINECOSINE(angle>>ANGLETOFINESHIFT))*3/2;
 		}
 
-		thrust = FixedMul(thrust, FRACUNIT*2/3 + mult/8);
+		thrust = FixedMul(thrust, mult);
 	}
-
-	if (mo->momx || mo->momy) // Slightly increase thrust based on the object's speed
-		thrust = FixedMul(thrust, FRACUNIT+P_AproxDistance(mo->momx, mo->momy)/16);
-	// This makes it harder to zigzag up steep slopes, as well as allows greater top speed when rolling down
 
 	// Let's get the gravity strength for the object...
 	thrust = FixedMul(thrust, abs(P_GetMobjGravity(mo)));

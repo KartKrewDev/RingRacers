@@ -158,9 +158,6 @@ extern FILE *logstream;
 // AND appveyor.yml, for the build bots!
 #endif
 
-// Maintain compatibility with 1.0.x record attack replays?
-//#define DEMO_COMPAT_100
-
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
 #define USE_PATCH_FILE
@@ -248,6 +245,9 @@ extern FILE *logstream;
 #define MAXSKINS 128
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
+
+// Master Server compatibility ONLY
+#define MSCOMPAT_MAXPLAYERS (32)
 
 typedef enum
 {
