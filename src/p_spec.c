@@ -3777,10 +3777,10 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 6: // Death Pit (Camera Mod)
 		case 7: // Death Pit (No Camera Mod)
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-				P_DamageMobj(player->mo, NULL, NULL, 10000);
+				K_DoIngameRespawn(player);
 			break;
 		case 8: // Instant Kill
-			P_DamageMobj(player->mo, NULL, NULL, 10000);
+			K_DoIngameRespawn(player);
 			break;
 		case 9: // Ring Drainer (Floor Touch)
 		case 10: // Ring Drainer (No Floor Touch)
@@ -6954,8 +6954,8 @@ void T_Scroll(scroll_t *s)
 
 						height = P_GetSpecialBottomZ(thing, sec, psec);
 
-						if (!(thing->flags & MF_NOCLIP)) // Thing must be clipped
-						if (!(thing->flags & MF_NOGRAVITY || thing->z+thing->height != height)) // Thing must a) be non-floating and have z+height == height
+						if (!(thing->flags & MF_NOCLIP) && // Thing must be clipped
+							(!(thing->flags & MF_NOGRAVITY || thing->z+thing->height != height))) // Thing must a) be non-floating and have z+height == height
 						{
 							// Move objects only if on floor
 							// non-floating, and clipped.
@@ -7030,8 +7030,8 @@ void T_Scroll(scroll_t *s)
 
 						height = P_GetSpecialTopZ(thing, sec, psec);
 
-						if (!(thing->flags & MF_NOCLIP)) // Thing must be clipped
-						if (!(thing->flags & MF_NOGRAVITY || thing->z != height))// Thing must a) be non-floating and have z == height
+						if (!(thing->flags & MF_NOCLIP) && // Thing must be clipped
+							(!(thing->flags & MF_NOGRAVITY || thing->z != height))) // Thing must a) be non-floating and have z == height
 						{
 							// Move objects only if on floor or underwater,
 							// non-floating, and clipped.

@@ -1005,12 +1005,20 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (thing->type == MT_PLAYER)
 		{
-			S_StartSound(NULL, sfx_bsnipe); //let all players hear it.
+			mobj_t *explosion;
+
+			S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
+
 			HU_SetCEchoFlags(0);
 			HU_SetCEchoDuration(5);
 			HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[thing->player-players]));
 			I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[thing->player-players]);
-			P_DamageMobj(thing, tmthing, tmthing->target, 10000);
+
+			explosion = P_SpawnMobj(thing->x, thing->y, thing->z, MT_SPBEXPLOSION);
+			explosion->extravalue1 = 1; // Tell K_ExplodePlayer to use extra knockback
+			if (tmthing->target && !P_MobjWasRemoved(tmthing->target))
+				P_SetTarget(&explosion->target, tmthing->target);
+
 			P_KillMobj(tmthing, thing, thing);
 		}
 
@@ -1269,15 +1277,23 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		}
 		else if (thing->type == MT_SINK)
 		{
+			mobj_t *explosion;
+
 			if ((thing->target == tmthing) && (thing->threshold > 0))
 				return true;
 
-			S_StartSound(NULL, sfx_cgot); //let all players hear it.
+			S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
+
 			HU_SetCEchoFlags(0);
 			HU_SetCEchoDuration(5);
 			HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[tmthing->player-players]));
 			I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[tmthing->player-players]);
-			P_DamageMobj(tmthing, thing, thing->target, 10000);
+
+			explosion = P_SpawnMobj(tmthing->x, tmthing->y, tmthing->z, MT_SPBEXPLOSION);
+			explosion->extravalue1 = 1; // Tell K_ExplodePlayer to use extra knockback
+			if (thing->target && !P_MobjWasRemoved(thing->target))
+				P_SetTarget(&explosion->target, thing->target);
+
 			P_KillMobj(thing, tmthing, tmthing);
 		}
 
@@ -1662,7 +1678,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			{
 				// Objects kill you if it falls from above.
 				if (thing != tmthing->target)
-					P_DamageMobj(thing, tmthing, tmthing->target, 10000);
+					K_DoIngameRespawn(thing->player);
 
 				tmthing->momz = -tmthing->momz/2; // Bounce, just for fun!
 				// The tmthing->target allows the pusher of the object

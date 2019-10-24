@@ -2842,13 +2842,15 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	// incase the above checks were modified to allow sending a respawn on these occasions:
-	if (players[respawnplayer].mo && !P_IsObjectOnGround(players[respawnplayer].mo))
-		return;
-
 	if (players[respawnplayer].mo)
-		P_DamageMobj(players[respawnplayer].mo, NULL, NULL, 10000);
-	demo_extradata[playernum] |= DXD_RESPAWN;
+	{
+		// incase the above checks were modified to allow sending a respawn on these occasions:
+		if (!P_IsObjectOnGround(players[respawnplayer].mo))
+			return;
+
+		K_DoIngameRespawn(&players[respawnplayer]);
+		demo_extradata[playernum] |= DXD_RESPAWN;
+	}
 }
 
 /** Deals with an ::XD_RANDOMSEED message in a netgame.

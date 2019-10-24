@@ -1919,6 +1919,29 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	sparks->flags2 |= MF2_DONTDRAW;
 }
 
+/**	\brief	Preps a player to respawn
+
+	\param	player	player to respawn
+
+	\return	void
+*/
+void K_DoIngameRespawn(player_t *player)
+{
+	if (!player->mo || P_MobjWasRemoved(player->mo))
+		return;
+
+	if (player->kartstuff[k_respawn])
+		return;
+
+	if (leveltime <= starttime)
+		return;
+
+	player->mo->flags &= ~(MF_SOLID|MF_SHOOTABLE);
+	player->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
+	player->mo->flags2 &= ~MF2_DONTDRAW;
+	player->kartstuff[k_respawn] = 48;
+}
+
 /**	\brief	Calculates the respawn timer and drop-boosting
 
 	\param	player	player object passed from K_KartPlayerThink
@@ -1934,39 +1957,136 @@ void K_RespawnChecker(player_t *player)
 
 	if (player->kartstuff[k_respawn] > 1)
 	{
-		player->kartstuff[k_respawn]--;
-		player->mo->momz = 0;
+		fixed_t destx = 0, desty = 0, destz = 0;
+
+		player->mo->momx = player->mo->momy = player->mo->momz = 0;
 		player->powers[pw_flashing] = 2;
 		player->powers[pw_nocontrol] = 2;
-		if (leveltime % 8 == 0)
+
+		if (leveltime % 8 == 0 && !mapreset)
+			S_StartSound(player->mo, sfx_s3kcas);
+
+		destx = (player->starpostx << FRACBITS);
+		desty = (player->starposty << FRACBITS);
+		destz = (player->starpostz << FRACBITS);
+
+		if (player->kartstuff[k_starpostflip])
+			destz -= (128 * mapobjectscale) + (player->mo->height);
+		else
+			destz += (128 * mapobjectscale);
+
+		if (player->mo->x != destx || player->mo->y != desty || player->mo->z != destz)
 		{
-			INT32 i;
-			if (!mapreset)
-				S_StartSound(player->mo, sfx_s3kcas);
+			fixed_t step = 64*mapobjectscale;
+			fixed_t dist = P_AproxDistance(P_AproxDistance(player->mo->x - destx, player->mo->y - desty), player->mo->z - destz);
 
-			for (i = 0; i < 8; i++)
+			if (dist <= step) // You're ready to respawn
 			{
-				mobj_t *mo;
-				angle_t newangle;
-				fixed_t newx, newy, newz;
+				P_TryMove(player->mo, destx, desty, true);
+				player->mo->z = destz;
+			}
+			else
+			{
+				fixed_t stepx = 0, stepy = 0, stepz = 0;
+				angle_t stepha = R_PointToAngle2(player->mo->x, player->mo->y, destx, desty);
+				angle_t stepva = R_PointToAngle2(0, player->mo->z, P_AproxDistance(player->mo->x - destx, player->mo->y - desty), destz);
+				fixed_t laserx = 0, lasery = 0, laserz = 0;
+				UINT8 lasersteps = 4;
 
-				newangle = FixedAngle(((360/8)*i)*FRACUNIT);
-				newx = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31<<FRACBITS); // does NOT use scale, since this effect doesn't scale properly
-				newy = player->mo->y + P_ReturnThrustY(player->mo, newangle, 31<<FRACBITS);
-				if (player->mo->eflags & MFE_VERTICALFLIP)
-					newz = player->mo->z + player->mo->height;
-				else
-					newz = player->mo->z;
+				// Move toward the respawn point
+				stepx = FixedMul(FixedMul(FINECOSINE(stepha >> ANGLETOFINESHIFT), step), FINECOSINE(stepva >> ANGLETOFINESHIFT));
+				stepy = FixedMul(FixedMul(FINESINE(stepha >> ANGLETOFINESHIFT), step), FINECOSINE(stepva >> ANGLETOFINESHIFT));
+				stepz = FixedMul(FINESINE(stepva >> ANGLETOFINESHIFT), 2*step);
 
-				mo = P_SpawnMobj(newx, newy, newz, MT_DEZLASER);
-				if (mo)
+				P_TryMove(player->mo, player->mo->x + stepx, player->mo->y + stepy, true);
+				player->mo->z += stepz;
+
+				// Spawn lasers along the path
+				laserx = player->mo->x + (stepx / 2);
+				lasery = player->mo->y + (stepy / 2);
+				laserz = player->mo->z + (stepz / 2);
+				dist = P_AproxDistance(P_AproxDistance(laserx - destx, lasery - desty), laserz - destz);
+
+				if (dist > step/2)
 				{
+					while (lasersteps)
+					{
+						
+						stepha = R_PointToAngle2(laserx, lasery, destx, desty);
+						stepva = R_PointToAngle2(0, laserz, P_AproxDistance(laserx - destx, lasery - desty), destz);
+
+						stepx = FixedMul(FixedMul(FINECOSINE(stepha >> ANGLETOFINESHIFT), step), FINECOSINE(stepva >> ANGLETOFINESHIFT));
+						stepy = FixedMul(FixedMul(FINESINE(stepha >> ANGLETOFINESHIFT), step), FINECOSINE(stepva >> ANGLETOFINESHIFT));
+						stepz = FixedMul(FINESINE(stepva >> ANGLETOFINESHIFT), 2*step);
+
+						laserx += stepx;
+						lasery += stepy;
+						laserz += stepz;
+						dist = P_AproxDistance(P_AproxDistance(laserx - destx, lasery - desty), laserz - destz);
+
+						if (dist <= step/2)
+							break;
+
+						lasersteps--;
+					}
+				}
+
+				if (lasersteps == 0) // Don't spawn them beyond the respawn point.
+				{
+					mobj_t *laser;
+
+					laser = P_SpawnMobj(laserx, lasery, laserz + (player->mo->height / 2), MT_DEZLASER);
+
+					if (laser && !P_MobjWasRemoved(laser))
+					{
+						P_SetMobjState(laser, S_DEZLASER_TRAIL1);
+						if (player->mo->eflags & MFE_VERTICALFLIP)
+							laser->eflags |= MFE_VERTICALFLIP;
+						P_SetTarget(&laser->target, player->mo);
+						laser->angle = stepha + ANGLE_90;
+						P_SetScale(laser, (laser->destscale = FRACUNIT));
+					}
+				}
+			}
+		}
+		else
+		{
+			player->kartstuff[k_respawn]--;
+
+			player->mo->flags |= MF_SOLID|MF_SHOOTABLE;
+			player->mo->flags &= ~(MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY);
+			if (!(player->pflags & PF_NOCLIP))
+				player->mo->flags &= ~MF_NOCLIP;
+
+			if (leveltime % 8 == 0)
+			{
+				INT32 i;
+
+				for (i = 0; i < 8; i++)
+				{
+					mobj_t *laser;
+					angle_t newangle;
+					fixed_t newx, newy, newz;
+
+					newangle = FixedAngle(((360/8)*i)*FRACUNIT);
+					newx = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31<<FRACBITS); // does NOT use scale, since this effect doesn't scale properly
+					newy = player->mo->y + P_ReturnThrustY(player->mo, newangle, 31<<FRACBITS);
 					if (player->mo->eflags & MFE_VERTICALFLIP)
-						mo->eflags |= MFE_VERTICALFLIP;
-					P_SetTarget(&mo->target, player->mo);
-					mo->angle = newangle+ANGLE_90;
-					mo->momz = (8<<FRACBITS) * P_MobjFlip(player->mo);
-					P_SetScale(mo, (mo->destscale = FRACUNIT));
+						newz = player->mo->z + player->mo->height;
+					else
+						newz = player->mo->z;
+
+					laser = P_SpawnMobj(newx, newy, newz, MT_DEZLASER);
+
+					if (laser && !P_MobjWasRemoved(laser))
+					{
+						if (player->mo->eflags & MFE_VERTICALFLIP)
+							laser->eflags |= MFE_VERTICALFLIP;
+						P_SetTarget(&laser->target, player->mo);
+						laser->angle = newangle+ANGLE_90;
+						laser->momz = (8<<FRACBITS) * P_MobjFlip(player->mo);
+						P_SetScale(laser, (laser->destscale = FRACUNIT));
+					}
 				}
 			}
 		}
@@ -5316,7 +5436,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_stolentimer]--;
 
 	if (player->kartstuff[k_squishedtimer])
+	{
 		player->kartstuff[k_squishedtimer]--;
+
+		if ((player->kartstuff[k_squishedtimer] == 0) && !(player->pflags & PF_NOCLIP))
+		{
+			player->mo->flags &= ~MF_NOCLIP;
+		}
+	}
 
 	if (player->kartstuff[k_justbumped])
 		player->kartstuff[k_justbumped]--;
@@ -5701,10 +5828,12 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 			if ((nextwaypoint != NULL) &&
 			(nextwaypoint != player->nextwaypoint) &&
+			(player->kartstuff[k_respawn] == 0) &&
 			(K_GetWaypointIsShortcut(nextwaypoint) == false) && (K_GetWaypointIsEnabled(nextwaypoint) == true))
 			{
 				size_t     i            = 0U;
 				waypoint_t *aimwaypoint = NULL;
+
 				player->starpostx = nextwaypoint->mobj->x >> FRACBITS;
 				player->starposty = nextwaypoint->mobj->y >> FRACBITS;
 				player->starpostz = nextwaypoint->mobj->z >> FRACBITS;
@@ -6898,13 +7027,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	// Squishing
 	// If a Grow player or a sector crushes you, get flattened instead of being killed.
 
-	if (player->kartstuff[k_squishedtimer] <= 0)
+	if (player->kartstuff[k_squishedtimer] > 0)
 	{
-		player->mo->flags &= ~MF_NOCLIP;
-	}
-	else
-	{
-		player->mo->flags |= MF_NOCLIP;
+		//player->mo->flags |= MF_NOCLIP;
 		player->mo->momx = 0;
 		player->mo->momy = 0;
 	}
@@ -10312,7 +10437,7 @@ void K_drawKartHUD(void)
 	}
 
 	if (stplyr->kartstuff[k_wrongway] && ((leveltime / 8) & 1))
-		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP, "WRONG WAY");
+		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP|V_SNAPTOBOTTOM, "WRONG WAY");
 
 	if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();
