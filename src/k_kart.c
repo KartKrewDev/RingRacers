@@ -10426,7 +10426,7 @@ void K_drawKartHUD(void)
 	}
 
 	if (stplyr->kartstuff[k_wrongway] && ((leveltime / 8) & 1))
-		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP, "WRONG WAY");
+		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP|V_SNAPTOBOTTOM, "WRONG WAY");
 
 	if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();
