@@ -4985,6 +4985,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_UpdateDraft(player);
 	K_UpdateEngineSounds(player, cmd); // Thanks, VAda!
 
+	if (spbplace == -1)	// no spb
+		player->axis1 = NULL;	// remove this
+
 	// update boost angle if not spun out
 	if (!player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow])
 		player->kartstuff[k_boostangle] = (INT32)player->mo->angle;
@@ -5519,7 +5522,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 				R_PointToAngle2(player->mo->x, player->mo->y, waypoint->mobj->x, waypoint->mobj->y);
 			angle_t angledelta      = ANGLE_MAX;
 
-			if (player->mo->momx != 0 || player->mo->momy != 0) 
+			if (player->mo->momx != 0 || player->mo->momy != 0)
 			{
 				// Default to facing angle if you're not moving, but use momentum angle otherwise.
 				playerangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
@@ -9418,6 +9421,10 @@ static void K_drawKartMinimap(void)
 			if ((G_RaceGametype() && players[i].kartstuff[k_position] == spbplace)
 			|| (G_BattleGametype() && K_IsPlayerWanted(&players[i])))
 				K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+
+			if (players[i].axis1 && !P_MobjWasRemoved(players[i].axis1))	// SPB after the player?
+				K_drawKartMinimapIcon(players[i].axis1->x, players[i].axis1->y, x, y, splitflags, kp_ringspblocksmall[14 + leveltime%4 /2], NULL, AutomapPic);
+
 		}
 	}
 
@@ -9451,6 +9458,10 @@ static void K_drawKartMinimap(void)
 		if ((G_RaceGametype() && players[localplayers[i]].kartstuff[k_position] == spbplace)
 		|| (G_BattleGametype() && K_IsPlayerWanted(&players[localplayers[i]])))
 			K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+
+		if (players[localplayers[i]].axis1 && !P_MobjWasRemoved(players[localplayers[i]].axis1))	// SPB after the player?
+			K_drawKartMinimapIcon(players[localplayers[i]].axis1->x, players[localplayers[i]].axis1->y, x, y, splitflags, kp_ringspblocksmall[14 + leveltime%4 /2], NULL, AutomapPic);
+
 	}
 }
 

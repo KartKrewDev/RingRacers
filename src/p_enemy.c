@@ -8495,11 +8495,15 @@ static void SpawnSPBTrailRings(mobj_t *actor)
 void A_SPBChase(mobj_t *actor)
 {
 	player_t *player = NULL;
+	player_t *scplayer = NULL;	// secondary target for seeking
 	UINT8 i;
 	UINT8 bestrank = UINT8_MAX;
 	fixed_t dist;
 	angle_t hang, vang;
 	fixed_t wspeed, xyspeed, zspeed;
+	fixed_t pdist = 1536<<FRACBITS;	// best player distance when seeking
+	angle_t pangle;		// angle between us and the player
+
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_SPBChase", actor))
 		return;
@@ -8538,6 +8542,9 @@ void A_SPBChase(mobj_t *actor)
 			player = &players[i];
 		}
 	}
+
+	if (player)
+		P_SetTarget(&player->axis1, actor);	// axis is the SPB trailing the player.
 
 	// lastlook = last player num targetted
 	// cvmem = stored speed
@@ -8828,9 +8835,35 @@ void A_SPBChase(mobj_t *actor)
 			actor->movedir += input;
 		}
 
+
 		actor->momx = FixedMul(FixedMul(xyspeed, FINECOSINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
+
+		// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
+		for (i=0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator || players[i].exiting)
+				continue; // not in-game
+
+			if (R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y) < pdist)
+			{
+				pdist = R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y);
+				scplayer = &players[i];	// it doesn't matter if we override this guy now.
+			}
+		}
+
+		// different player from our main target, try and ram into em~!
+		if (scplayer && scplayer != player)
+		{
+			pangle = actor->angle - R_PointToAngle2(actor->x, actor->y,scplayer->mo->x, scplayer->mo->y);
+			// check if the angle wouldn't make us LOSE speed...
+			if ((INT32)pangle/ANG1 >= -80 && (INT32)pangle/ANG1 <= 80)	// allow for around 80 degrees
+			{
+				// Thrust us towards the guy, try to screw em up!
+				P_Thrust(actor, R_PointToAngle2(actor->x, actor->y, scplayer->mo->x, scplayer->mo->y), actor->movefactor/4);	// not too fast though.
+			}
+		}
 
 		// Spawn a trail of rings behind the SPB!
 		SpawnSPBTrailRings(actor);
