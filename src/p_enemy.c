@@ -8771,6 +8771,13 @@ void A_SPBChase(mobj_t *actor)
 				bestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
 		}
 
+		if (nextwaypoint == NULL && lastwaypoint != NULL)
+		{
+			// Restore to the last nextwaypoint
+			nextwaypoint = lastwaypoint;
+		}
+
+
 		if (nextwaypoint != NULL)
 		{
 			const fixed_t xywaypointdist = P_AproxDistance(
