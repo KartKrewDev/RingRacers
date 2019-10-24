@@ -1253,7 +1253,7 @@ void P_RestoreMusic(player_t *player)
 #if 0
 			// Event - Final Lap
 			// Still works for GME, but disabled for consistency
-			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value - 1))
+			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value))
 				S_SpeedMusic(1.2f);
 #endif
 			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
@@ -3716,11 +3716,6 @@ void P_Telekinesis(player_t *player, fixed_t thrust, fixed_t range)
 	player->pflags |= PF_THOKKED;
 }
 
-boolean P_AnalogMove(player_t *player)
-{
-	return player->pflags & PF_ANALOGMODE;
-}
-
 //
 // P_GetPlayerControlDirection
 //
@@ -3762,14 +3757,6 @@ boolean P_AnalogMove(player_t *player)
 			return 0;
 		origtempangle = tempangle = 0; // relative to the axis rather than the player!
 		controlplayerdirection = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-	}
-	else if (P_AnalogMove(player) && thiscam->chase)
-	{
-		if (player->awayviewtics)
-			origtempangle = tempangle = player->awayviewmobj->angle;
-		else
-			origtempangle = tempangle = thiscam->angle;
-		controlplayerdirection = player->mo->angle;
 	}
 	else
 	{
@@ -3994,7 +3981,6 @@ static void P_3dMovement(player_t *player)
 	angle_t dangle; // replaces old quadrants bits
 	//boolean dangleflip = false; // SRB2kart - toaster
 	//fixed_t normalspd = FixedMul(player->normalspeed, player->mo->scale);
-	boolean analogmove = false;
 	fixed_t oldMagnitude, newMagnitude;
 #ifdef ESLOPE
 	vector3_t totalthrust;
@@ -4005,8 +3991,6 @@ static void P_3dMovement(player_t *player)
 
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
-
-	analogmove = P_AnalogMove(player);
 
 	cmd = &player->cmd;
 
@@ -4020,19 +4004,13 @@ static void P_3dMovement(player_t *player)
 	if (!(player->pflags & PF_FORCESTRAFE) && !player->kartstuff[k_pogospring])
 		cmd->sidemove = 0;
 
-	if (analogmove)
-	{
-		movepushangle = (cmd->angleturn<<16 /* not FRACBITS */);
-	}
+	if (player->kartstuff[k_drift] != 0)
+		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
+	else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
+		movepushangle = (angle_t)player->kartstuff[k_boostangle];
 	else
-	{
-		if (player->kartstuff[k_drift] != 0)
-			movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
-		else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
-			movepushangle = (angle_t)player->kartstuff[k_boostangle];
-		else
-			movepushangle = player->mo->angle;
-	}
+		movepushangle = player->mo->angle;
+
 	movepushsideangle = movepushangle-ANGLE_90;
 
 	// cmomx/cmomy stands for the conveyor belt speed.
@@ -6191,69 +6169,6 @@ static void P_MovePlayer(player_t *player)
 		player->pflags &= ~PF_STARTDASH;
 	*/
 
-	//////////////////
-	//ANALOG CONTROL//
-	//////////////////
-
-#if 0
-	// This really looks like it should be moved to P_3dMovement. -Red
-	if (P_AnalogMove(player)
-		&& (cmd->forwardmove != 0 || cmd->sidemove != 0) && !player->climbing && !twodlevel && !(player->mo->flags2 & MF2_TWOD))
-	{
-		// If travelling slow enough, face the way the controls
-		// point and not your direction of movement.
-		if (player->speed < FixedMul(5*FRACUNIT, player->mo->scale) || player->pflags & PF_GLIDING || !onground)
-		{
-			angle_t tempangle;
-
-			tempangle = (cmd->angleturn << 16);
-
-#ifdef REDSANALOG // Ease to it. Chillax. ~Red
-			tempangle += R_PointToAngle2(0, 0, cmd->forwardmove*FRACUNIT, -cmd->sidemove*FRACUNIT);
-			{
-				fixed_t tweenvalue = max(abs(cmd->forwardmove), abs(cmd->sidemove));
-
-				if (tweenvalue < 10 && (cmd->buttons & (BT_FORWARD|BT_BACKWARD)) == (BT_FORWARD|BT_BACKWARD)) {
-					tempangle = (cmd->angleturn << 16);
-					tweenvalue = 16;
-				}
-
-				tweenvalue *= tweenvalue*tweenvalue*1536;
-
-				//if (player->pflags & PF_GLIDING)
-					//tweenvalue >>= 1;
-
-				tempangle -= player->mo->angle;
-
-				if (tempangle < ANGLE_180 && tempangle > tweenvalue)
-					player->mo->angle += tweenvalue;
-				else if (tempangle >= ANGLE_180 && InvAngle(tempangle) > tweenvalue)
-					player->mo->angle -= tweenvalue;
-				else
-					player->mo->angle += tempangle;
-			}
-#else
-			// Less math this way ~Red
-			player->mo->angle = R_PointToAngle2(0, 0, cmd->forwardmove*FRACUNIT, -cmd->sidemove*FRACUNIT)+tempangle;
-#endif
-		}
-		// Otherwise, face the direction you're travelling.
-		else if (player->panim == PA_WALK || player->panim == PA_RUN || player->panim == PA_ROLL
-		/*|| ((player->mo->state >= &states[S_PLAY_ABL1] && player->mo->state <= &states[S_PLAY_SPC4]) && player->charability == CA_FLY)*/) // SRB2kart - idk
-			player->mo->angle = R_PointToAngle2(0, 0, player->rmomx, player->rmomy);
-
-		// Update the local angle control.
-		if (player == &players[consoleplayer])
-			localangle[0] = player->mo->angle;
-		else if (player == &players[displayplayers[1]])
-			localangle[1] = player->mo->angle;
-		else if (player == &players[displayplayers[2]])
-			localangle[2] = player->mo->angle;
-		else if (player == &players[displayplayers[3]])
-			localangle[3] = player->mo->angle;
-	}
-#endif
-
 	///////////////////////////
 	//BOMB SHIELD ACTIVATION,//
 	//HOMING, AND OTHER COOL //
@@ -8140,8 +8055,6 @@ void P_PlayerThink(player_t *player)
 
 	cmd = &player->cmd;
 
-	//@TODO This fixes a one-tic latency on direction handling, AND makes behavior consistent while paused, but is not BC with 1.0.4. Do this for 1.1!
-#if 0
 	// SRB2kart
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
@@ -8151,7 +8064,6 @@ void P_PlayerThink(player_t *player)
 		player->kartstuff[k_throwdir] = -1;
 	else
 		player->kartstuff[k_throwdir] = 0;
-#endif
 
 	// Add some extra randomization.
 	if (cmd->forwardmove)
@@ -8373,26 +8285,7 @@ void P_PlayerThink(player_t *player)
 		player->mo->reactiontime--;
 	else if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
 	{
-		// SRB2kart - don't need no rope hangin'
-		//if (player->pflags & PF_ROPEHANG)
-		//{
-		//	if (!P_AnalogMove(player))
-		//		player->mo->angle = (cmd->angleturn<<16 /* not FRACBITS */);
-
-		//	ticruned++;
-		//	if ((cmd->angleturn & TICCMD_RECEIVED) == 0)
-		//		ticmiss++;
-
-		//	P_DoRopeHang(player);
-		//	P_SetPlayerMobjState(player->mo, S_PLAY_CARRY);
-		//	P_DoJumpStuff(player, &player->cmd);
-		//}
-		//else
-		{
-			P_DoZoomTube(player);
-			//if (!(player->panim == PA_ROLL) && player->charability2 == CA2_SPINDASH) // SRB2kart
-			//	P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
-		}
+		P_DoZoomTube(player);
 		player->rmomx = player->rmomy = 0; // no actual momentum from your controls
 		P_ResetScore(player);
 	}

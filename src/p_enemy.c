@@ -24,6 +24,7 @@
 #include "i_video.h"
 #include "lua_hook.h"
 #include "k_kart.h" // SRB2kart
+#include "k_waypoint.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -3558,8 +3559,6 @@ void A_BubbleCheck(mobj_t *actor)
 //
 void A_AttractChase(mobj_t *actor)
 {
-	fixed_t z;
-
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_AttractChase", actor))
 		return;
@@ -3603,12 +3602,11 @@ void A_AttractChase(mobj_t *actor)
 			{
 				fixed_t offz = FixedMul(80*actor->target->scale, FINESINE(FixedAngle((90 - (9 * abs(10 - actor->extravalue1))) << FRACBITS) >> ANGLETOFINESHIFT));
 				//P_SetScale(actor, (actor->destscale = actor->target->scale));
-				z = actor->target->z;
-				if (( actor->eflags & MFE_VERTICALFLIP ))
-					z -= actor->height + offz;
-				else
-					z += actor->target->height + offz;
-				P_TeleportMove(actor, actor->target->x, actor->target->y, z);
+				actor->z = actor->target->z;
+				K_MatchGenericExtraFlags(actor, actor->target);
+				P_TeleportMove(actor, actor->target->x, actor->target->y,
+						actor->z +
+						( actor->target->height + offz )* P_MobjFlip(actor));
 				actor->extravalue1++;
 			}
 		}
@@ -3635,15 +3633,12 @@ void A_AttractChase(mobj_t *actor)
 				fixed_t dist = (actor->target->radius/4) * (16 - actor->extravalue1);
 
 				P_SetScale(actor, (actor->destscale = actor->target->scale - ((actor->target->scale/14) * actor->extravalue1)));
-				z = actor->target->z;
-				if (( actor->eflags & MFE_VERTICALFLIP ))
-					z += actor->target->height - actor->height - 24 * actor->target->scale;
-				else
-					z += 24 * actor->target->scale;
+				actor->z = actor->target->z;
+				K_MatchGenericExtraFlags(actor, actor->target);
 				P_TeleportMove(actor,
 					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
 					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),
-					z);
+					actor->z + actor->target->scale * 24 * P_MobjFlip(actor));
 
 				actor->angle += ANG30;
 				actor->extravalue1++;
@@ -8299,7 +8294,7 @@ void A_ItemPop(mobj_t *actor)
 	remains->flags = actor->flags; // Transfer flags
 	remains->flags2 = actor->flags2; // Transfer flags2
 	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->threshold = (actor->threshold == 69 ? 69 : 68);
+	remains->threshold = (actor->threshold == 70 ? 70 : (actor->threshold == 69 ? 69 : 68));
 	remains->skin = NULL;
 	remains->spawnpoint = actor->spawnpoint;
 
@@ -8313,7 +8308,7 @@ void A_ItemPop(mobj_t *actor)
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
-	if (G_BattleGametype() && actor->threshold != 69)
+	if (G_BattleGametype() && (actor->threshold != 69 && actor->threshold != 70))
 		numgotboxes++;
 
 	P_RemoveMobj(actor);
@@ -8483,6 +8478,20 @@ void A_JawzExplode(mobj_t *actor)
 	return;
 }
 
+static void SpawnSPBTrailRings(mobj_t *actor)
+{
+	if (actor != NULL)
+	{
+		if (leveltime % 6 == 0)
+		{
+			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
+				actor->z - actor->momz + (24*mapobjectscale), MT_RING);
+			ring->threshold = 10;
+			ring->fuse = 120*TICRATE;
+		}
+	}
+}
+
 void A_SPBChase(mobj_t *actor)
 {
 	player_t *player = NULL;
@@ -8502,9 +8511,9 @@ void A_SPBChase(mobj_t *actor)
 	if (actor->threshold) // Just fired, go straight.
 	{
 		actor->lastlook = -1;
+		actor->cusval = -1;
 		spbplace = -1;
 		P_InstaThrust(actor, actor->angle, wspeed);
-		actor->flags &=  ~MF_NOCLIPTHING;	// just in case.
 		return;
 	}
 
@@ -8530,17 +8539,21 @@ void A_SPBChase(mobj_t *actor)
 		}
 	}
 
+	// lastlook = last player num targetted
+	// cvmem = stored speed
+	// cusval = next waypoint heap index
+	// extravalue1 = SPB movement mode
+	// extravalue2 = mode misc option
+
 	if (actor->extravalue1 == 1) // MODE: TARGETING
 	{
+		actor->cusval = -1; // Reset waypoint
+
 		if (actor->tracer && actor->tracer->health)
 		{
-
 			fixed_t defspeed = wspeed;
 			fixed_t range = (160*actor->tracer->scale);
 			fixed_t cx = 0, cy =0;
-
-			// we're tailing a player, now's a good time to regain our damage properties
-			actor->flags &=  ~MF_NOCLIPTHING;
 
 			// Play the intimidating gurgle
 			if (!S_SoundPlaying(actor, actor->info->activesound))
@@ -8639,13 +8652,7 @@ void A_SPBChase(mobj_t *actor)
 			actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
 			// Spawn a trail of rings behind the SPB!
-			if (leveltime % 6 == 0)
-			{
-				mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
-					actor->z - actor->momz + (24*mapobjectscale), MT_RING);
-				ring->threshold = 10;
-				ring->fuse = 120*TICRATE;
-			}
+			SpawnSPBTrailRings(actor);
 
 			// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
 			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
@@ -8678,9 +8685,7 @@ void A_SPBChase(mobj_t *actor)
 	else if (actor->extravalue1 == 2) // MODE: WAIT...
 	{
 		actor->momx = actor->momy = actor->momz = 0; // Stoooop
-
-		// don't hurt players that have nothing to do with this:
-		actor->flags |= MF_NOCLIPTHING;
+		actor->cusval = -1; // Reset waypoint
 
 		if (actor->lastlook != -1
 			&& playeringame[actor->lastlook]
@@ -8706,6 +8711,10 @@ void A_SPBChase(mobj_t *actor)
 	}
 	else // MODE: SEEKING
 	{
+		waypoint_t *lastwaypoint = NULL;
+		waypoint_t *bestwaypoint = NULL;
+		waypoint_t *nextwaypoint = NULL;
+
 		actor->lastlook = -1; // Just make sure this is reset
 
 		if (!player || !player->mo || player->mo->health <= 0 || player->kartstuff[k_respawn])
@@ -8718,17 +8727,62 @@ void A_SPBChase(mobj_t *actor)
 		}
 
 		// Found someone, now get close enough to initiate the slaughter...
-
-		// don't hurt players that have nothing to do with this:
-		actor->flags |= MF_NOCLIPTHING;
-
 		P_SetTarget(&actor->tracer, player->mo);
 		spbplace = bestrank;
-
 		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
 
-		hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
-		vang = R_PointToAngle2(0, actor->z, dist, actor->tracer->z);
+		// Move along the waypoints until you get close enough
+		if (actor->cusval > -1)
+		{
+			// Previously set nextwaypoint
+			lastwaypoint = K_GetWaypointFromIndex((size_t)actor->cusval);
+		}
+
+		bestwaypoint = K_GetBestWaypointTouchingMobj(actor);
+
+		if (bestwaypoint == NULL && lastwaypoint == NULL)
+		{
+			// We have invalid waypoints all around, so use closest to try and make it non-NULL.
+			bestwaypoint = K_GetClosestWaypointToMobj(actor);
+		}
+
+		if (bestwaypoint != NULL)
+		{
+			const boolean huntbackwards = false;
+			boolean       useshortcuts  = false;
+
+			// If the player is on a shortcut, use shortcuts. No escape.
+			if (K_GetWaypointIsShortcut(player->nextwaypoint))
+			{
+				useshortcuts = true;
+			}
+
+			nextwaypoint = K_GetNextWaypointToDestination(
+				bestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
+		}
+
+		if (nextwaypoint == NULL && lastwaypoint != NULL)
+		{
+			// Restore to the last nextwaypoint
+			nextwaypoint = lastwaypoint;
+		}
+
+		if (nextwaypoint != NULL)
+		{
+			const fixed_t xywaypointdist = P_AproxDistance(
+				actor->x - nextwaypoint->mobj->x, actor->y - nextwaypoint->mobj->y);
+
+			hang = R_PointToAngle2(actor->x, actor->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
+			vang = R_PointToAngle2(0, actor->z, xywaypointdist, nextwaypoint->mobj->z);
+
+			actor->cusval = (INT32)K_GetWaypointHeapIndex(nextwaypoint);
+		}
+		else
+		{
+			// continue straight ahead... Shouldn't happen.
+			hang = actor->angle;
+			vang = 0U;
+		}
 
 		{
 			// Smoothly rotate horz angle
@@ -8766,9 +8820,12 @@ void A_SPBChase(mobj_t *actor)
 		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
-		if (dist <= (3072*actor->tracer->scale)) // Close enough to target?
+		// Spawn a trail of rings behind the SPB!
+		SpawnSPBTrailRings(actor);
+
+		if (dist <= (1024*actor->tracer->scale)) // Close enough to target?
 		{
-			S_StartSound(actor, actor->info->attacksound); // Siren sound; might not need this anymore, but I'm keeping it for now just for debugging.
+			S_StartSound(actor, actor->info->attacksound);
 			actor->extravalue1 = 1; // TARGET ACQUIRED
 			actor->extravalue2 = 7*TICRATE;
 			actor->cvmem = wspeed;

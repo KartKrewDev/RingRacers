@@ -80,7 +80,7 @@ typedef struct menudemo_s {
 	UINT16 map;
 	UINT8 addonstatus; // What do we need to do addon-wise to play this demo?
 	UINT8 gametype;
-	UINT8 kartspeed; // Add OR DF_ENCORE for encore mode, idk
+	SINT8 kartspeed; // Add OR DF_ENCORE for encore mode, idk
 	UINT8 numlaps;
 
 	struct {

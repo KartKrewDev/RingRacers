@@ -120,13 +120,14 @@ extern consvar_t cv_kartencore;
 extern consvar_t cv_kartvoterulechanges;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
-
 extern consvar_t cv_karteliminatelast;
+extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
+extern consvar_t cv_kartdebugwaypoints;
 
 extern consvar_t cv_itemfinder;
 
@@ -178,9 +179,10 @@ typedef enum
 	XD_MODIFYVOTE,  // 23
 	XD_PICKVOTE,    // 24
 	XD_REMOVEPLAYER,// 25
+	XD_POWERLEVEL,  // 26
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 26
-	XD_LUAVAR,      // 27
+	XD_LUACMD,      // 27
+	XD_LUAVAR,      // 28
 #endif
 	MAXNETXCMD
 } netxcmd_t;

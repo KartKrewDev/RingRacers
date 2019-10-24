@@ -68,6 +68,20 @@ line_t *ceilingline;
 // that is, for any line which is 'solid'
 line_t *blockingline;
 
+// Mostly re-ported from DOOM Legacy
+// Keep track of special lines as they are hit, process them when the move is valid
+static size_t *spechit = NULL;
+static size_t spechit_max = 0U;
+static size_t numspechit = 0U;
+
+// Need a intermediate buffer for P_TryMove because it performs multiple moves
+// the lines put into spechit will be moved into here after each checkposition,
+// then and duplicates will be removed before processing
+static size_t *spechitint = NULL;
+static size_t spechitint_max = 0U;
+static size_t numspechitint = 0U;
+
+
 msecnode_t *sector_list = NULL;
 mprecipsecnode_t *precipsector_list = NULL;
 camera_t *mapcampointer;
@@ -81,6 +95,8 @@ camera_t *mapcampointer;
 //
 boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 {
+	numspechit = 0U;
+
 	// the move is ok,
 	// so link the thing into its new position
 	P_UnsetThingPosition(thing);
@@ -113,7 +129,99 @@ boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 //                       MOVEMENT ITERATOR FUNCTIONS
 // =========================================================================
 
-//#define TELEPORTJANK
+// For our intermediate buffer, remove any duplicate entries by adding each one to
+// a temprary buffer if it's not already in there, copy the temporary buffer back over the intermediate afterwards
+static void spechitint_removedups(void)
+{
+	// Only needs to be run if there's more than 1 line crossed
+	if (numspechitint > 1U)
+	{
+		boolean valueintemp = false;
+		size_t i = 0U, j = 0U;
+		size_t numspechittemp = 0U;
+		size_t *spechittemp = Z_Calloc(numspechitint * sizeof(size_t), PU_STATIC, NULL);
+
+		// Fill the hashtable
+		for (i = 0U; i < numspechitint; i++)
+		{
+			valueintemp = false;
+			for (j = 0; j < numspechittemp; j++)
+			{
+				if (spechitint[i] == spechittemp[j])
+				{
+					valueintemp = true;
+					break;
+				}
+			}
+
+			if (!valueintemp)
+			{
+				spechittemp[numspechittemp] = spechitint[i];
+				numspechittemp++;
+			}
+		}
+
+		// The hash table now IS the result we want to send back
+		// easiest way to handle this is a memcpy
+		if (numspechittemp != numspechitint)
+		{
+			memcpy(spechitint, spechittemp, numspechittemp * sizeof(size_t));
+			numspechitint = numspechittemp;
+		}
+
+		Z_Free(spechittemp);
+	}
+}
+
+// copy the contents of spechit into the end of spechitint
+static void spechitint_copyinto(void)
+{
+	if (numspechit > 0U)
+	{
+		if (numspechitint + numspechit >= spechitint_max)
+		{
+			spechitint_max = spechitint_max + numspechit;
+			spechitint = Z_Realloc(spechitint, spechitint_max * sizeof(size_t), PU_STATIC, NULL);
+		}
+
+		memcpy(&spechitint[numspechitint], spechit, numspechit * sizeof(size_t));
+		numspechitint += numspechit;
+	}
+}
+
+static void add_spechit(line_t *ld)
+{
+	if (numspechit >= spechit_max)
+	{
+		spechit_max = spechit_max ? spechit_max * 2U : 16U;
+		spechit = Z_Realloc(spechit, spechit_max * sizeof(size_t), PU_STATIC, NULL);
+	}
+
+	spechit[numspechit] = ld - lines;
+	numspechit++;
+}
+
+static boolean P_SpecialIsLinedefCrossType(UINT16 ldspecial)
+{
+	boolean linedefcrossspecial = false;
+
+	switch (ldspecial)
+	{
+		case 2001: // Finish line
+		{
+			linedefcrossspecial = true;
+		}
+		break;
+
+		default:
+		{
+			linedefcrossspecial = false;
+		}
+		break;
+	}
+
+	return linedefcrossspecial;
+}
 
 boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
@@ -146,7 +254,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	object->eflags |= MFE_SPRUNG; // apply this flag asap!
 	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
 
-#ifdef TELEPORTJANK
+#if 0
 	if (horizspeed && vertispeed) // Mimic SA
 	{
 		object->momx = object->momy = 0;
@@ -1309,7 +1417,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			thing->angle = tmthing->angle;
 
-			if (!demo.playback || P_AnalogMove(thing->player))
+			if (!demo.playback)
 			{
 				if (thing->player == &players[consoleplayer])
 					localangle[0] = thing->angle;
@@ -1972,7 +2080,7 @@ static boolean PIT_CheckLine(line_t *ld)
 	if (P_BoxOnLineSide(tmbbox, ld) != -1)
 		return true;
 
-if (tmthing->flags & MF_PAPERCOLLISION) // Caution! Turning whilst up against a wall will get you stuck. You probably shouldn't give the player this flag.
+	if (tmthing->flags & MF_PAPERCOLLISION) // Caution! Turning whilst up against a wall will get you stuck. You probably shouldn't give the player this flag.
 	{
 		fixed_t cosradius, sinradius;
 		cosradius = FixedMul(tmthing->radius, FINECOSINE(tmthing->angle>>ANGLETOFINESHIFT));
@@ -2038,6 +2146,12 @@ if (tmthing->flags & MF_PAPERCOLLISION) // Caution! Turning whilst up against a 
 
 	if (lowfloor < tmdropoffz)
 		tmdropoffz = lowfloor;
+
+	// we've crossed the line
+	if (P_SpecialIsLinedefCrossType(ld->special))
+	{
+		add_spechit(ld);
+	}
 
 	return true;
 }
@@ -2312,6 +2426,9 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 	tmhitthing = NULL;
 
 	validcount++;
+
+	// reset special lines
+	numspechit = 0U;
 
 	if (tmflags & MF_NOCLIP)
 		return true;
@@ -2752,6 +2869,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 {
 	fixed_t tryx = thing->x;
 	fixed_t tryy = thing->y;
+	fixed_t oldx = tryx;
+	fixed_t oldy = tryy;
 	fixed_t radius = thing->radius;
 	fixed_t thingtop = thing->z + thing->height;
 #ifdef ESLOPE
@@ -2759,8 +2878,13 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 #endif
 	floatok = false;
 
-	if (radius < MAXRADIUS/2)
-		radius = MAXRADIUS/2;
+	// reset this to 0 at the start of each trymove call as it's only used here
+	numspechitint = 0U;
+
+	// This makes sure that there are no freezes from computing extremely small movements.
+	// Originally was MAXRADIUS/2, but that causes some inconsistencies for small players.
+	if (radius < mapobjectscale)
+		radius = mapobjectscale;
 
 	do {
 		if (thing->flags & MF_NOCLIP) {
@@ -2783,6 +2907,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 		if (!P_CheckPosition(thing, tryx, tryy))
 			return false; // solid wall or thing
+
+		// copy into the spechitint buffer from spechit
+		spechitint_copyinto();
 
 		if (!(thing->flags & MF_NOCLIP))
 		{
@@ -2970,6 +3097,30 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		thing->eflags |= MFE_ONGROUND;
 
 	P_SetThingPosition(thing);
+
+	// remove any duplicates that may be in spechitint
+	spechitint_removedups();
+
+	// handle any of the special lines that were crossed
+	if (!(thing->flags & (MF_NOCLIP)))
+	{
+		line_t *ld = NULL;
+		INT32 side = 0, oldside = 0;
+		while (numspechitint--)
+		{
+			ld = &lines[spechitint[numspechitint]];
+			side = P_PointOnLineSide(thing->x, thing->y, ld);
+			oldside = P_PointOnLineSide(oldx, oldy, ld);
+			if (side != oldside)
+			{
+				if (ld->special)
+				{
+					P_CrossSpecialLine(ld, oldside, thing);
+				}
+			}
+		}
+	}
+
 	return true;
 }
 
