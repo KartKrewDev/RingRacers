@@ -8047,12 +8047,6 @@ void P_PlayerThink(player_t *player)
 		// The timer might've reached zero, but we'll run the remote view camera anyway by setting it to -1.
 	}
 
-	/// \note do this in the cheat code
-	if (player->pflags & PF_NOCLIP)
-		player->mo->flags |= MF_NOCLIP;
-	else
-		player->mo->flags &= ~MF_NOCLIP;
-
 	cmd = &player->cmd;
 
 	// SRB2kart

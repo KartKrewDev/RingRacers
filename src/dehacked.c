@@ -6661,6 +6661,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	// DEZ respawn laser
 	"S_DEZLASER",
+	"S_DEZLASER_TRAIL1",
+	"S_DEZLASER_TRAIL2",
+	"S_DEZLASER_TRAIL3",
+	"S_DEZLASER_TRAIL4",
+	"S_DEZLASER_TRAIL5",
 
 	// Audience Members
 	"S_RANDOMAUDIENCE",

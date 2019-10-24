@@ -11475,6 +11475,9 @@ void P_SpawnPlayer(INT32 playernum)
 	// Spawn with a pity shield if necessary.
 	//P_DoPityCheck(p);
 
+	if (p->kartstuff[k_respawn] != 0)
+		p->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
+
 	if (G_BattleGametype()) // SRB2kart
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + P_GetPlayerHeight(p)+16*FRACUNIT, MT_PLAYERARROW);
@@ -11691,11 +11694,10 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	sector->ceilingheight;
 
 	if (mobj->player->kartstuff[k_starpostflip])
-		z = (p->starpostz<<FRACBITS) - FixedMul(128<<FRACBITS, mapobjectscale) - mobj->height;
+		z = (p->starpostz<<FRACBITS) - (128 * mapobjectscale) - mobj->height;
 	else
-		z = (p->starpostz<<FRACBITS) + FixedMul(128<<FRACBITS, mapobjectscale);
+		z = (p->starpostz<<FRACBITS) + (128 * mapobjectscale);
 
-	//z = (p->starpostz + 128) << FRACBITS; // reverse gravity exists, pls
 	mobj->player->kartstuff[k_starpostflip] = 0;
 
 	if (z < floor)
