@@ -8878,10 +8878,10 @@ void A_SPBChase(mobj_t *actor)
 	}
 
 	// Finally, no matter what, the spb should not be able to be under the ground, or above the ceiling;
-	if (actor->z < actor->floorz + 8*mapobjectscale)
-		actor->z = actor->floorz + 8*mapobjectscale;
-	else if (actor->z > actor->ceilingz - 8*mapobjectscale)
-		actor->z = actor->ceilingz - 8*mapobjectscale;
+	if (actor->z < actor->floorz)
+		actor->z = actor->floorz;
+	else if (actor->z > actor->ceilingz - actor->height)
+		actor->z = actor->ceilingz - actor->height;
 
 
 	return;
