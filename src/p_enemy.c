@@ -8543,9 +8543,6 @@ void A_SPBChase(mobj_t *actor)
 		}
 	}
 
-	if (player)
-		P_SetTarget(&player->axis1, actor);	// axis is the SPB trailing the player.
-
 	// lastlook = last player num targetted
 	// cvmem = stored speed
 	// cusval = next waypoint heap index

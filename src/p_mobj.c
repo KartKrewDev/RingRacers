@@ -48,6 +48,7 @@ actioncache_t actioncachehead;
 
 static mobj_t *overlaycap = NULL;
 static mobj_t *shadowcap = NULL;
+mobj_t *kitemcap = NULL;	// Used for Kart offensive items (the ones that can get removed by sizedown)
 mobj_t *waypointcap = NULL;
 
 void P_InitCachedActions(void)
@@ -6101,6 +6102,71 @@ static boolean P_AddShield(mobj_t *thing)
 	return true;
 }*/
 
+
+// Kartitem stuff.
+boolean P_IsKartItem(INT32 type)
+{
+	if (type == MT_EGGMANITEM || type == MT_EGGMANITEM_SHIELD ||
+		type == MT_BANANA || type == MT_BANANA_SHIELD ||
+		type == MT_ORBINAUT || type == MT_ORBINAUT_SHIELD ||
+		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
+		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
+		type == MT_SINK || type == MT_SINK_SHIELD ||
+		type == MT_FLOATINGITEM || type == MT_SPB)
+		return true;
+	else
+		return false;
+}
+
+// Called when a kart item "thinks"
+void P_AddKartItem(mobj_t *thing)
+{
+	I_Assert(thing != NULL);
+
+	if (kitemcap == NULL)
+		P_SetTarget(&kitemcap, thing);
+	else {
+		mobj_t *mo;
+		for (mo = kitemcap; mo && mo->itnext; mo = mo->itnext)
+			;
+
+		I_Assert(mo != NULL);
+		I_Assert(mo->itnext == NULL);
+
+		P_SetTarget(&mo->itnext, thing);
+	}
+	P_SetTarget(&thing->itnext, NULL);
+}
+
+// Called only when a kart item is removed
+// Keeps the hnext list from corrupting.
+static void P_RemoveKartItem(mobj_t *thing)
+{
+	mobj_t *mo;
+	for (mo = kitemcap; mo; mo = mo->itnext)
+		if (mo->itnext == thing)
+		{
+			P_SetTarget(&mo->itnext, thing->itnext);
+			P_SetTarget(&thing->itnext, NULL);
+			return;
+		}
+}
+
+// Doesn't actually do anything since items have their own thinkers,
+// but this is necessary for the sole purpose of updating kitemcap
+void P_RunKartItems(void)
+{
+	mobj_t *mobj, *next;
+
+	for (mobj = kitemcap; mobj; mobj = next)
+	{
+		next = mobj->itnext;
+		P_SetTarget(&mobj->itnext, NULL);
+	}
+	P_SetTarget(&kitemcap, NULL);
+}
+
+
 void P_RunOverlays(void)
 {
 	// run overlays
@@ -9961,6 +10027,12 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 		}
 	}
 
+	if (P_MobjWasRemoved(mobj))
+		return; // obligatory paranoia check
+
+	if (P_IsKartItem(mobj->type))	// mobj is a kart item we want on the list:
+		P_AddKartItem(mobj);		// add to kitem list
+
 	// Can end up here if a player dies.
 	if (mobj->player)
 		P_CyclePlayerMobjState(mobj);
@@ -10886,6 +10958,9 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	if (mobj->type == MT_SPB)
 		spbplace = -1;
+
+	if (P_IsKartItem(mobj->type))
+		P_RemoveKartItem(mobj);
 
 	mobj->health = 0; // Just because
 

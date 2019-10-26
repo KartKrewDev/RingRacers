@@ -183,6 +183,7 @@ void P_InitThinkers(void)
 {
 	thinkercap.prev = thinkercap.next = &thinkercap;
 	waypointcap = NULL;
+	kitemcap = NULL;
 }
 
 //
@@ -638,6 +639,9 @@ void P_Ticker(boolean run)
 
 	if (runemeraldmanager)
 		P_EmeraldManager(); // Power stone mode*/
+
+	// formality so kitemcap gets updated properly each frame.
+	P_RunKartItems();
 
 	if (run)
 	{

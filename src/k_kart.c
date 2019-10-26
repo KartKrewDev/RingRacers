@@ -2011,7 +2011,7 @@ void K_RespawnChecker(player_t *player)
 				{
 					while (lasersteps)
 					{
-						
+
 						stepha = R_PointToAngle2(laserx, lasery, destx, desty);
 						stepva = R_PointToAngle2(0, laserz, P_AproxDistance(laserx - destx, lasery - desty), destz);
 
@@ -4109,6 +4109,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 static void K_DoShrink(player_t *user)
 {
 	INT32 i;
+	mobj_t *mobj, *next;
 
 	S_StartSound(user->mo, sfx_kc46); // Sound the BANG!
 	user->pflags |= PF_ATTACKDOWN;
@@ -4145,6 +4146,43 @@ static void K_DoShrink(player_t *user)
 				}
 			}
 		}
+	}
+
+	// kill everything in the kitem list while we're at it:
+	for (mobj = kitemcap; mobj; mobj = next)
+	{
+		next = mobj->itnext;
+
+		// check if the item is being held by a player behind us before removing it.
+		// check if the item is a "shield" first, bc i'm p sure thrown items keep the player that threw em as target anyway
+
+		if (mobj->type == MT_BANANA_SHIELD || mobj->type == MT_JAWZ_SHIELD ||
+		mobj->type == MT_SSMINE_SHIELD || mobj->type == MT_EGGMANITEM_SHIELD ||
+		mobj->type == MT_SINK_SHIELD || mobj->type == MT_ORBINAUT_SHIELD)
+		{
+			if (mobj->target && mobj->target->player)
+			{
+				if (mobj->target->player->kartstuff[k_position] > user->kartstuff[k_position])
+					continue;	// this guy's behind us, don't take his stuff away!
+			}
+		}
+
+		// @TODO: This should probably go into the P_KillMobj code for items?
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+			mobj->z -= mobj->height;
+		else
+			mobj->z += mobj->height;
+
+		S_StartSound(mobj, mobj->info->deathsound);
+		P_KillMobj(mobj, user->mo, user->mo);
+
+		P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
+		P_InstaThrust(mobj, (angle_t)P_RandomRange(0, 359)*ANG1, 16*FRACUNIT);
+
+		if (mobj->type == MT_SPB)
+			spbplace = -1;
+
 	}
 }
 
@@ -4318,6 +4356,7 @@ void K_DropHnextList(player_t *player)
 
 		dropwork = P_SpawnMobj(work->x, work->y, work->z, type);
 		P_SetTarget(&dropwork->target, player->mo);
+		P_AddKartItem(dropwork);	// needs to be called here so shrink can bust items off players in front of the user.
 		dropwork->angle = work->angle;
 		dropwork->flags2 = work->flags2;
 		dropwork->flags |= MF_NOCLIPTHING;
@@ -5104,9 +5143,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_UpdateOffroad(player);
 	K_UpdateDraft(player);
 	K_UpdateEngineSounds(player, cmd); // Thanks, VAda!
-
-	if (spbplace == -1)	// no spb
-		player->axis1 = NULL;	// remove this
 
 	// update boost angle if not spun out
 	if (!player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow])
@@ -9395,6 +9431,7 @@ static void K_drawKartMinimap(void)
 	UINT8 *colormap = NULL;
 	SINT8 localplayers[4];
 	SINT8 numlocalplayers = 0;
+	mobj_t *mobj, *next;	// for SPB drawing (or any other item(s) we may wanna draw, I dunno!)
 
 	// Draw the HUD only when playing in a level.
 	// hu_stuff needs this, unlike st_stuff.
@@ -9546,10 +9583,6 @@ static void K_drawKartMinimap(void)
 			if ((G_RaceGametype() && players[i].kartstuff[k_position] == spbplace)
 			|| (G_BattleGametype() && K_IsPlayerWanted(&players[i])))
 				K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
-
-			if (players[i].axis1 && !P_MobjWasRemoved(players[i].axis1))	// SPB after the player?
-				K_drawKartMinimapIcon(players[i].axis1->x, players[i].axis1->y, x, y, splitflags, kp_ringspblocksmall[14 + leveltime%4 /2], NULL, AutomapPic);
-
 		}
 	}
 
@@ -9583,11 +9616,16 @@ static void K_drawKartMinimap(void)
 		if ((G_RaceGametype() && players[localplayers[i]].kartstuff[k_position] == spbplace)
 		|| (G_BattleGametype() && K_IsPlayerWanted(&players[localplayers[i]])))
 			K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
-
-		if (players[localplayers[i]].axis1 && !P_MobjWasRemoved(players[localplayers[i]].axis1))	// SPB after the player?
-			K_drawKartMinimapIcon(players[localplayers[i]].axis1->x, players[localplayers[i]].axis1->y, x, y, splitflags, kp_ringspblocksmall[14 + leveltime%4 /2], NULL, AutomapPic);
-
 	}
+
+	// draw SPB(s?)
+	for (mobj = kitemcap; mobj; mobj = next)
+	{
+		next = mobj->itnext;
+		if (mobj->type == MT_SPB)
+			K_drawKartMinimapIcon(mobj->x, mobj->y, x, y, splitflags, kp_ringspblocksmall[14 + leveltime%4 /2], NULL, AutomapPic);
+	}
+
 }
 
 static void K_drawKartStartCountdown(void)
