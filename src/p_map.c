@@ -2787,18 +2787,22 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		if (!(thing->flags & MF_NOCLIP))
 		{
 			//All things are affected by their scale.
-			fixed_t maxstep = FixedMul(MAXSTEPMOVE, mapobjectscale);
+			const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
+			fixed_t maxstep = maxstepmove;
 
 			if (thing->player)
 			{
+				if (thing->player->kartstuff[k_waterskip])
+					maxstep += maxstepmove; // Force some stepmove when waterskipping
+
 				// If using type Section1:13, double the maxstep.
 				if (P_PlayerTouchingSectorSpecial(thing->player, 1, 13)
 				|| GETSECSPECIAL(R_PointInSubsector(x, y)->sector->special, 1) == 13)
-					maxstep <<= 1;
+					maxstep += maxstepmove;
 				// If using type Section1:12, no maxstep. For ledges you don't want the player to climb! (see: Egg Zeppelin & SMK port walls)
 				else if (P_PlayerTouchingSectorSpecial(thing->player, 1, 12)
 				|| GETSECSPECIAL(R_PointInSubsector(x, y)->sector->special, 1) == 12)
-					maxstep = 0;
+					maxstep -= maxstepmove;
 
 				// Don't 'step up' while springing,
 				// Only step up "if needed".
