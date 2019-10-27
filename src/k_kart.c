@@ -12,6 +12,7 @@
 #include "m_random.h"
 #include "p_local.h"
 #include "p_slopes.h"
+#include "p_setup.h"
 #include "r_draw.h"
 #include "r_local.h"
 #include "s_sound.h"
@@ -1937,9 +1938,101 @@ void K_DoIngameRespawn(player_t *player)
 	if (leveltime <= starttime)
 		return;
 
+	if (player->nextwaypoint == NULL) // Starpost xyz not initalized(?)
+	{
+		UINT32 bestdist = UINT32_MAX;
+		mapthing_t *beststart = NULL;
+		UINT8 numstarts = 0;
+
+		if (G_RaceGametype())
+		{
+			numstarts = numcoopstarts;
+		}
+		else if (G_BattleGametype())
+		{
+			numstarts = numdmstarts;
+		}
+
+		if (numstarts > 0)
+		{
+			UINT8 i = 0;
+
+			for (i = 0; i < numstarts; i++)
+			{
+				UINT32 dist = UINT32_MAX;
+				mapthing_t *checkstart = NULL;
+
+				if (G_RaceGametype())
+				{
+					checkstart = playerstarts[i];
+				}
+				else if (G_BattleGametype())
+				{
+					checkstart = deathmatchstarts[i];
+				}
+				else
+				{
+					break;
+				}
+
+				dist = (UINT32)P_AproxDistance((player->mo->x >> FRACBITS) - checkstart->x,
+					(player->mo->y >> FRACBITS) - checkstart->y);
+
+				if (dist < bestdist)
+				{
+					beststart = checkstart;
+					bestdist = dist;
+				}
+			}
+		}
+
+		if (beststart == NULL)
+		{
+			CONS_Alert(CONS_WARNING, "No respawn points!\n");
+		}
+		else
+		{
+			sector_t *s;
+			fixed_t z = (beststart->options >> ZSHIFT);
+
+			player->starpostx = beststart->x;
+			player->starposty = beststart->y;
+			s = R_PointInSubsector(beststart->x << FRACBITS, beststart->y << FRACBITS)->sector;
+
+			if (beststart->options & MTF_OBJECTFLIP)
+			{
+				player->starpostz = (
+#ifdef ESLOPE
+				s->c_slope ? P_GetZAt(s->c_slope, beststart->x << FRACBITS, beststart->y << FRACBITS) :
+#endif
+				s->ceilingheight) >> FRACBITS;
+
+				if (z)
+					player->starpostz -= z;
+
+				player->starpostz -= mobjinfo[MT_PLAYER].height;
+				player->kartstuff[k_starpostflip] = 1;
+			}
+			else
+			{
+				player->starpostz = (
+#ifdef ESLOPE
+				s->f_slope ? P_GetZAt(s->f_slope, beststart->x << FRACBITS, beststart->y << FRACBITS) :
+#endif
+				s->floorheight) >> FRACBITS;
+
+				if (z)
+					player->starpostz += z;
+
+				player->kartstuff[k_starpostflip] = 0;
+			}
+		}
+	}
+
 	player->mo->flags &= ~(MF_SOLID|MF_SHOOTABLE);
 	player->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
 	player->mo->flags2 &= ~MF2_DONTDRAW;
+
 	player->kartstuff[k_respawn] = 48;
 }
 
