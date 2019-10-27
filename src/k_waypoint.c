@@ -266,7 +266,7 @@ waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj)
 			checkdist = P_AproxDistance(checkdist, (mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS));
 
 			// The mobj has to be touching this waypoint to use it.
-			if ((checkdist <= checkwaypoint->mobj->radius)
+			if ((checkdist <= (checkwaypoint->mobj->radius >> FRACBITS))
 			&& (checkdist < bestdist))
 			{
 				bestwaypoint = checkwaypoint;
