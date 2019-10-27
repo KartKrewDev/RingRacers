@@ -175,7 +175,7 @@ static void M_DrawMenuPreviews(void)
 {
 	V_DrawFixedPatch(172<<FRACBITS, 29<<FRACBITS, FRACUNIT, 0, W_CachePatchName("MENUPREV", PU_CACHE), NULL);
 	if (currentMenu->menuitems[itemOn].patch != NULL)
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName(currentMenu->menuitems[itemOn].patch, PU_CACHE), NULL);
+		V_DrawFixedPatch(181<<FRACBITS, 39<<FRACBITS, FRACUNIT, 0, W_CachePatchName(currentMenu->menuitems[itemOn].patch, PU_CACHE), NULL);
 }
 
 // Converts a string into question marks.

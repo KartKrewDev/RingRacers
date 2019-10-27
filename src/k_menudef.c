@@ -157,7 +157,7 @@ menu_t PLAY_TimeAttackDef = {
 menuitem_t PLAY_BattleGamemodesMenu[] =
 {
 	{IT_STRING | IT_CALL, "Survival", "It's last hedgehog standing in this free-for-all!",
-		NULL, M_LevelSelectInit, 0, GT_MATCH},
+		"MENIMG00", M_LevelSelectInit, 0, GT_MATCH},
 
 	{IT_STRING | IT_CALL, "Time Attack", "Bust up all of the capsules in record time!",
 		NULL, M_LevelSelectInit, 1, GT_MATCH},
