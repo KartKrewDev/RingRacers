@@ -321,6 +321,9 @@ typedef struct mobj_s
 	struct mobj_s *hnext;
 	struct mobj_s *hprev;
 
+	// One last pointer for kart item lists
+	struct mobj_s *itnext;
+
 	mobjtype_t type;
 	const mobjinfo_t *info; // &mobjinfo[mobj->type]
 
@@ -436,11 +439,17 @@ typedef struct actioncache_s
 
 extern actioncache_t actioncachehead;
 
+extern mobj_t *kitemcap;
 extern mobj_t *waypointcap;
 
 void P_InitCachedActions(void);
 void P_RunCachedActions(void);
 void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
+
+// kartitem stuff: Returns true if the specified 'type' is one of the kart item constants we want in the kitemcap list
+boolean P_IsKartItem(INT32 type);
+void P_AddKartItem(mobj_t *thing);	// needs to be called in k_kart.c
+void P_RunKartItems(void);
 
 // check mobj against water content, before movement code
 void P_MobjCheckWater(mobj_t *mobj);
