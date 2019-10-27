@@ -3692,6 +3692,7 @@ static void G_DoCompleted(void)
 {
 	INT32 i, j = 0;
 	boolean gottoken = false;
+	SINT8 powertype = PWRLV_DISABLED;
 
 	tokenlist = 0; // Reset the list
 
@@ -3830,12 +3831,22 @@ static void G_DoCompleted(void)
 			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
 	}
 
-
 	// We are committed to this map now.
 	// We may as well allocate its header if it doesn't exist
 	// (That is, if it's a real map)
 	if (nextmap < NUMMAPS && !mapheaderinfo[nextmap])
 		P_AllocMapHeader(nextmap);
+
+	// Set up power level gametype scrambles
+	if (netgame && cv_kartusepwrlv.value)
+	{
+		if (G_RaceGametype())
+			powertype = PWRLV_RACE;
+		else if (G_BattleGametype())
+			powertype = PWRLV_BATTLE;
+	}
+
+	K_SetPowerLevelScrambles(powertype);
 
 demointermission:
 
@@ -4111,7 +4122,11 @@ void G_LoadGameData(void)
 	matchesplayed = READUINT32(save_p);
 
 	for (i = 0; i < PWRLV_NUMTYPES; i++)
+	{
 		vspowerlevel[i] = READUINT16(save_p);
+		if (vspowerlevel[i] < PWRLVRECORD_MIN || vspowerlevel[i] > PWRLVRECORD_MAX)
+			goto datacorrupt;
+	}
 
 	modded = READUINT8(save_p);
 
@@ -6903,7 +6918,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	extrainfo_p = infobuffer + READUINT32(info_p);
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
-	pdemo->kartspeed = 1; // Default to normal speed
+	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
 	count = READUINT16(info_p);
 	while (count--)
 	{

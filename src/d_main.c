@@ -1535,10 +1535,11 @@ void D_SRB2Main(void)
 					newskill = (INT16)kartspeed_cons_t[j].value;
 					break;
 				}
+
 			if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
 			{
 				j = atoi(sskill); // assume they gave us a skill number, which is okay too
-				if (j >= 0 && j <= 2)
+				if (j >= KARTSPEED_EASY && j <= KARTSPEED_HARD)
 					newskill = (INT16)j;
 			}
 

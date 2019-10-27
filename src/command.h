@@ -131,6 +131,10 @@ extern CV_PossibleValue_t CV_Unsigned[];
 extern CV_PossibleValue_t CV_Natural[];
 
 // SRB2kart
+#define KARTSPEED_AUTO -1
+#define KARTSPEED_EASY 0
+#define KARTSPEED_NORMAL 1
+#define KARTSPEED_HARD 2
 extern CV_PossibleValue_t kartspeed_cons_t[];
 
 extern consvar_t cv_execversion;
