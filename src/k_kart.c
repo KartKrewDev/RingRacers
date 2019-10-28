@@ -4225,10 +4225,7 @@ static void K_DoShrink(player_t *user)
 			// Grow should get taken away.
 			if (players[i].kartstuff[k_growshrinktimer] > 0)
 				K_RemoveGrowShrink(&players[i]);
-			// Don't hit while invulnerable!
-			else if (!players[i].kartstuff[k_invincibilitytimer]
-				&& players[i].kartstuff[k_growshrinktimer] <= 0
-				&& !players[i].kartstuff[k_hyudorotimer])
+			else
 			{
 				// Start shrinking!
 				K_DropItems(&players[i]);
@@ -4261,26 +4258,15 @@ static void K_DoShrink(player_t *user)
 			if (mobj->target && mobj->target->player)
 			{
 				if (mobj->target->player->kartstuff[k_position] > user->kartstuff[k_position])
-					continue;	// this guy's behind us, don't take his stuff away!
+					continue; // this guy's behind us, don't take his stuff away!
 			}
 		}
 
-		// @TODO: This should probably go into the P_KillMobj code for items?
-
-		if (mobj->eflags & MFE_VERTICALFLIP)
-			mobj->z -= mobj->height;
-		else
-			mobj->z += mobj->height;
-
-		S_StartSound(mobj, mobj->info->deathsound);
-		P_KillMobj(mobj, user->mo, user->mo);
-
-		P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
-		P_InstaThrust(mobj, (angle_t)P_RandomRange(0, 359)*ANG1, 16*FRACUNIT);
+		mobj->destscale = 0;
+		mobj->flags |= (MF_NOTHINK|MF_NOCLIPTHING);
 
 		if (mobj->type == MT_SPB)
 			spbplace = -1;
-
 	}
 }
 
@@ -9342,17 +9328,17 @@ static void K_drawKartWanted(void)
 		return;
 
 	// set X/Y coords depending on splitscreen.
-	if (splitscreen < 3)		// 1P and 2P use the same code.
+	if (splitscreen < 3) // 1P and 2P use the same code.
 	{
 		basex = WANT_X;
 		basey = WANT_Y;
 		if (splitscreen == 2)
 		{
-			basey += 16;	// slight adjust for 3P
+			basey += 16; // slight adjust for 3P
 			basex -= 6;
 		}
 	}
-	else if (splitscreen == 3)	// 4P splitscreen...
+	else if (splitscreen == 3) // 4P splitscreen...
 	{
 		basex = BASEVIDWIDTH/2 - (SHORT(kp_wantedsplit->width)/2);	// center on screen
 		basey = BASEVIDHEIGHT - 55;

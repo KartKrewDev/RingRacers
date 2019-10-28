@@ -1658,18 +1658,11 @@ void P_XYMovement(mobj_t *mo)
 		{
 			mo->health--;
 			if (mo->health == 0)
-				mo->destscale = 1;
-		}
-		else
-		{
-			if (mo->scale < mapobjectscale/16)
-			{
-				P_RemoveMobj(mo);
-				return;
-			}
+				mo->destscale = 0;
 		}
 	}
 	//}
+
 	if (!P_TryMove(mo, mo->x + xmove, mo->y + ymove, true) && !(mo->eflags & MFE_SPRUNG))
 	{
 		// blocked move
@@ -6112,7 +6105,7 @@ boolean P_IsKartItem(INT32 type)
 		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
 		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
 		type == MT_SINK || type == MT_SINK_SHIELD ||
-		type == MT_FLOATINGITEM || type == MT_SPB)
+		type == MT_SPB)
 		return true;
 	else
 		return false;
@@ -6881,16 +6874,25 @@ void P_MobjThinker(mobj_t *mobj)
 			mobj->z -= mobj->height - oldheight;
 
 		if (mobj->scale == mobj->destscale)
+		{
 			/// \todo Lua hook for "reached destscale"?
-			switch(mobj->type)
+
+			if (mobj->scale == 0)
 			{
-			case MT_EGGMOBILE_FIRE:
-				mobj->destscale = FRACUNIT;
-				mobj->scalespeed = FRACUNIT>>4;
-				break;
-			default:
-				break;
+				P_RemoveMobj(mobj);
+				return;
 			}
+
+			switch (mobj->type)
+			{
+				case MT_EGGMOBILE_FIRE:
+					mobj->destscale = FRACUNIT;
+					mobj->scalespeed = FRACUNIT>>4;
+					break;
+				default:
+					break;
+			}
+		}
 	}
 
 	if (mobj->type == MT_GHOST && mobj->fuse > 0 // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
