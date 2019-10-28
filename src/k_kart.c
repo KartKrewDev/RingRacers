@@ -9680,7 +9680,19 @@ static void K_drawKartMinimap(void)
 	{
 		next = mobj->itnext;
 		if (mobj->type == MT_SPB)
-			K_drawKartMinimapIcon(mobj->x, mobj->y, x, y, splitflags, kp_spbminimap, NULL, AutomapPic);
+		{
+			UINT8 *colormap = NULL;
+
+			if (mobj->target && !P_MobjWasRemoved(mobj->target))
+			{
+				if (mobj->player && mobj->player->skincolor)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->player->skincolor, GTC_CACHE);
+				else if (mobj->color)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
+			}
+
+			K_drawKartMinimapIcon(mobj->x, mobj->y, x, y, splitflags, kp_spbminimap, colormap, AutomapPic);
+		}
 	}
 
 	// draw our local players here, opaque.
