@@ -8484,7 +8484,7 @@ static void SpawnSPBTrailRings(mobj_t *actor)
 	{
 		if (leveltime % 6 == 0)
 		{
-			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
+			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
 				actor->z - actor->momz + (24*mapobjectscale), MT_RING);
 			ring->threshold = 10;
 			ring->fuse = 120*TICRATE;
