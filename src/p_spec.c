@@ -6740,8 +6740,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 			case 2002: // Linedef Trigger: Race Lap
 				break;
-			case 2003: // Linedef Executor: Enable/Disable Waypoint
-				break;
 			default:
 				break;
 		}
