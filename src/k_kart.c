@@ -9681,7 +9681,7 @@ static void K_drawKartMinimap(void)
 		next = mobj->itnext;
 		if (mobj->type == MT_SPB)
 		{
-			UINT8 *colormap = NULL;
+			colormap = NULL;
 
 			if (mobj->target && !P_MobjWasRemoved(mobj->target))
 			{
