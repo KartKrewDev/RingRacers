@@ -8480,11 +8480,11 @@ void A_JawzExplode(mobj_t *actor)
 
 static void SpawnSPBTrailRings(mobj_t *actor)
 {
-	if (actor != NULL)
+	if (actor != NULL && !P_MobjWasRemoved(actor))
 	{
 		if (leveltime % 6 == 0)
 		{
-			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
+			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
 				actor->z - actor->momz + (24*mapobjectscale), MT_RING);
 			ring->threshold = 10;
 			ring->fuse = 120*TICRATE;
@@ -8492,72 +8492,64 @@ static void SpawnSPBTrailRings(mobj_t *actor)
 	}
 }
 
-void A_SPBChase(mobj_t *actor)
+static void ModifySPBSpeedForAngle(mobj_t *actor, angle_t *hang, angle_t *vang, fixed_t *xyspeed, fixed_t *zspeed)
 {
-	player_t *player = NULL;
-	player_t *scplayer = NULL;	// secondary target for seeking
-	UINT8 i;
-	UINT8 bestrank = UINT8_MAX;
-	fixed_t dist;
-	angle_t hang, vang;
-	fixed_t wspeed, xyspeed, zspeed;
-	fixed_t pdist = 1536<<FRACBITS;	// best player distance when seeking
-	angle_t pangle;		// angle between us and the player
-
-#ifdef HAVE_BLUA
-	if (LUA_CallAction("A_SPBChase", actor))
-		return;
-#endif
-
-	// Default speed
-	wspeed = actor->movefactor;
-
-	if (actor->threshold) // Just fired, go straight.
+	if (actor != NULL && !P_MobjWasRemoved(actor))
 	{
-		actor->lastlook = -1;
-		actor->cusval = -1;
-		spbplace = -1;
-		P_InstaThrust(actor, actor->angle, wspeed);
-		return;
+		// Smoothly rotate horz angle
+		angle_t input = hang - actor->angle;
+		boolean invert = (input > ANGLE_180);
+		if (invert)
+			input = InvAngle(input);
+
+		// Slow down when turning; it looks better and makes U-turns not unfair
+		xyspeed = FixedMul(actor->cvmem, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
+
+		input = FixedAngle(AngleFixed(input)/4);
+		if (invert)
+			input = InvAngle(input);
+
+		actor->angle += input;
+
+		// Smoothly rotate vert angle
+		input = vang - actor->movedir;
+		invert = (input > ANGLE_180);
+		if (invert)
+			input = InvAngle(input);
+
+		// Slow down when turning; might as well do it for momz, since we do it above too
+		zspeed = FixedMul(actor->cvmem, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
+
+		input = FixedAngle(AngleFixed(input)/4);
+		if (invert)
+			input = InvAngle(input);
+
+		actor->movedir += input;
 	}
+}
 
-	// Find the player with the best rank
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator || players[i].exiting)
-			continue; // not in-game
-
-		/*if (!players[i].mo)
-			continue; // no mobj
-
-		if (players[i].mo->health <= 0)
-			continue; // dead
-
-		if (players[i].kartstuff[k_respawn])
-			continue;*/ // respawning
-
-		if (players[i].kartstuff[k_position] < bestrank)
-		{
-			bestrank = players[i].kartstuff[k_position];
-			player = &players[i];
-		}
-	}
-
-	// lastlook = last player num targetted
-	// cvmem = stored speed
-	// cusval = next waypoint heap index
-	// extravalue1 = SPB movement mode
-	// extravalue2 = mode misc option
-
-	if (actor->extravalue1 == 1) // MODE: TARGETING
+static void SPBTargettingChase(mobj_t *actor, fixed_t wspeed, UINT8 bestrank)
+{
+	if (actor != NULL && !P_MobjWasRemoved(actor))
 	{
 		actor->cusval = -1; // Reset waypoint
 
-		if (actor->tracer && actor->tracer->health)
+		if (actor->tracer == NULL || P_MobjWasRemoved(actor->tracer) || !actor->tracer->health)
 		{
+			// Target's gone, return to SEEKING
+			P_SetTarget(&actor->tracer, NULL);
+			actor->extravalue1 = 2; // WAIT...
+			actor->extravalue2 = 52; // Slightly over the respawn timer length
+			return;
+		}
+		else
+		{
+			fixed_t xyspeed, zspeed;
+			angle_t hang, vang;
+			fixed_t dist;
 			fixed_t defspeed = wspeed;
 			fixed_t range = (160*actor->tracer->scale);
-			fixed_t cx = 0, cy =0;
+			fixed_t cx = 0, cy = 0;
 
 			// Play the intimidating gurgle
 			if (!S_SoundPlaying(actor, actor->info->activesound))
@@ -8608,7 +8600,6 @@ void A_SPBChase(mobj_t *actor)
 				wspeed = 20*actor->tracer->scale;
 			if (actor->tracer->player->pflags & PF_SLIDING)
 				wspeed = actor->tracer->player->speed/2;
-			//  ^^^^ current section: These are annoying, and grand metropolis in particular needs this.
 
 			hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
 			vang = R_PointToAngle2(0, actor->z, dist, actor->tracer->z);
@@ -8619,37 +8610,7 @@ void A_SPBChase(mobj_t *actor)
 			else
 				actor->cvmem = wspeed;
 
-			{
-				// Smoothly rotate horz angle
-				angle_t input = hang - actor->angle;
-				boolean invert = (input > ANGLE_180);
-				if (invert)
-					input = InvAngle(input);
-
-				// Slow down when turning; it looks better and makes U-turns not unfair
-				xyspeed = FixedMul(actor->cvmem, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
-
-				input = FixedAngle(AngleFixed(input)/4);
-				if (invert)
-					input = InvAngle(input);
-
-				actor->angle += input;
-
-				// Smoothly rotate vert angle
-				input = vang - actor->movedir;
-				invert = (input > ANGLE_180);
-				if (invert)
-					input = InvAngle(input);
-
-				// Slow down when turning; might as well do it for momz, since we do it above too
-				zspeed = FixedMul(actor->cvmem, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
-
-				input = FixedAngle(AngleFixed(input)/4);
-				if (invert)
-					input = InvAngle(input);
-
-				actor->movedir += input;
-			}
+			ModifySPBSpeedForAngle(actor, &hang, &vang, &xyspeed, &zspeed);
 
 			actor->momx = cx + FixedMul(FixedMul(xyspeed, FINECOSINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 			actor->momy = cy + FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
@@ -8675,46 +8636,21 @@ void A_SPBChase(mobj_t *actor)
 				fast->colorized = true;
 				K_MatchGenericExtraFlags(fast, actor);
 			}
-
-			return;
-		}
-		else // Target's gone, return to SEEKING
-		{
-			P_SetTarget(&actor->tracer, NULL);
-			actor->extravalue1 = 2; // WAIT...
-			actor->extravalue2 = 52; // Slightly over the respawn timer length
-			return;
 		}
 	}
-	else if (actor->extravalue1 == 2) // MODE: WAIT...
-	{
-		actor->momx = actor->momy = actor->momz = 0; // Stoooop
-		actor->cusval = -1; // Reset waypoint
+}
 
-		if (actor->lastlook != -1
-			&& playeringame[actor->lastlook]
-			&& !players[actor->lastlook].spectator
-			&& !players[actor->lastlook].exiting)
-		{
-			spbplace = players[actor->lastlook].kartstuff[k_position];
-			players[actor->lastlook].kartstuff[k_ringlock] = 1;
-			if (actor->extravalue2-- <= 0 && players[actor->lastlook].mo)
-			{
-				P_SetTarget(&actor->tracer, players[actor->lastlook].mo);
-				actor->extravalue1 = 1; // TARGET ACQUIRED
-				actor->extravalue2 = 7*TICRATE;
-				actor->cvmem = wspeed;
-			}
-		}
-		else
-		{
-			actor->extravalue1 = 0; // SEEKING
-			actor->extravalue2 = 0;
-			spbplace = -1;
-		}
-	}
-	else // MODE: SEEKING
+static void SPBSeekingChase(mobj_t *actor, player_t *player, fixed_t wspeed, UINT8 bestrank)
+{
+	if (actor != NULL && !P_MobjWasRemoved(actor))
 	{
+#define TARGETDIST 1536
+		fixed_t xyspeed, zspeed;
+		angle_t hang, vang;
+		fixed_t dist;
+		player_t *scplayer = NULL; // secondary target for swerving
+		fixed_t pdist = TARGETDIST<<FRACBITS; // Used for swerving on our way toward other players
+		angle_t pangle; // angle between us and the swerve player
 		waypoint_t *lastwaypoint = NULL;
 		waypoint_t *bestwaypoint = NULL;
 		waypoint_t *nextwaypoint = NULL;
@@ -8800,38 +8736,8 @@ void A_SPBChase(mobj_t *actor)
 			vang = 0U;
 		}
 
-		{
-			// Smoothly rotate horz angle
-			angle_t input = hang - actor->angle;
-			boolean invert = (input > ANGLE_180);
-			if (invert)
-				input = InvAngle(input);
-
-			// Slow down when turning; it looks better and makes U-turns not unfair
-			xyspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
-
-			input = FixedAngle(AngleFixed(input)/4);
-			if (invert)
-				input = InvAngle(input);
-
-			actor->angle += input;
-
-			// Smoothly rotate vert angle
-			input = vang - actor->movedir;
-			invert = (input > ANGLE_180);
-			if (invert)
-				input = InvAngle(input);
-
-			// Slow down when turning; might as well do it for momz, since we do it above too
-			zspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
-
-			input = FixedAngle(AngleFixed(input)/4);
-			if (invert)
-				input = InvAngle(input);
-
-			actor->movedir += input;
-		}
-
+		actor->cvmem = wspeed;
+		ModifySPBSpeedForAngle(actor, &hang, &vang, &xyspeed, &zspeed);
 
 		actor->momx = FixedMul(FixedMul(xyspeed, FINECOSINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
@@ -8846,7 +8752,7 @@ void A_SPBChase(mobj_t *actor)
 			if (R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y) < pdist)
 			{
 				pdist = R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y);
-				scplayer = &players[i];	// it doesn't matter if we override this guy now.
+				scplayer = &players[i];
 			}
 		}
 
@@ -8865,13 +8771,97 @@ void A_SPBChase(mobj_t *actor)
 		// Spawn a trail of rings behind the SPB!
 		SpawnSPBTrailRings(actor);
 
-		if (dist <= (1024*actor->tracer->scale)) // Close enough to target?
+		if (dist <= (TARGETDIST * actor->tracer->scale)) // Close enough to target?
 		{
 			S_StartSound(actor, actor->info->attacksound);
 			actor->extravalue1 = 1; // TARGET ACQUIRED
 			actor->extravalue2 = 7*TICRATE;
 			actor->cvmem = wspeed;
 		}
+
+#undef TARGETDIST
+	}
+}
+
+void A_SPBChase(mobj_t *actor)
+{
+	UINT8 i;
+	UINT8 bestrank = UINT8_MAX;
+	player_t *bestplayer = NULL;
+	fixed_t wspeed;
+
+#ifdef HAVE_BLUA
+	if (LUA_CallAction("A_SPBChase", actor))
+		return;
+#endif
+
+	// Default speed
+	wspeed = actor->movefactor;
+
+	if (actor->threshold) // Just fired, go straight.
+	{
+		actor->lastlook = -1;
+		actor->cusval = -1;
+		spbplace = -1;
+		P_InstaThrust(actor, actor->angle, wspeed);
+		return;
+	}
+
+	// Find the player with the best rank
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || players[i].exiting)
+			continue; // not in-game
+
+		if (players[i].kartstuff[k_position] < bestrank)
+		{
+			bestrank = players[i].kartstuff[k_position];
+			bestplayer = &players[i];
+		}
+	}
+
+	// lastlook = last player num targetted
+	// cvmem = stored speed
+	// cusval = next waypoint heap index
+	// extravalue1 = SPB movement mode
+	// extravalue2 = mode misc option
+
+	switch (actor->extravalue1)
+	{
+		case 1: // MODE: TARGETING
+			SPBTargettingChase(actor, wspeed, bestrank);
+			break;
+
+		case 2: // MODE: WAIT...
+			actor->momx = actor->momy = actor->momz = 0; // Stoooop
+			actor->cusval = -1; // Reset waypoint
+
+			if (actor->lastlook != -1
+				&& playeringame[actor->lastlook]
+				&& !players[actor->lastlook].spectator
+				&& !players[actor->lastlook].exiting)
+			{
+				spbplace = players[actor->lastlook].kartstuff[k_position];
+				players[actor->lastlook].kartstuff[k_ringlock] = 1;
+				if (actor->extravalue2-- <= 0 && players[actor->lastlook].mo)
+				{
+					P_SetTarget(&actor->tracer, players[actor->lastlook].mo);
+					actor->extravalue1 = 1; // TARGET ACQUIRED
+					actor->extravalue2 = 7*TICRATE;
+					actor->cvmem = wspeed;
+				}
+			}
+			else
+			{
+				actor->extravalue1 = 0; // SEEKING
+				actor->extravalue2 = 0;
+				spbplace = -1;
+			}
+			break;
+
+		case 0:
+			SPBSeekingChase(actor, bestplayer, wspeed, bestrank);
+			break;
 	}
 
 	// Finally, no matter what, the spb should not be able to be under the ground, or above the ceiling;
@@ -8879,7 +8869,6 @@ void A_SPBChase(mobj_t *actor)
 		actor->z = actor->floorz;
 	else if (actor->z > actor->ceilingz - actor->height)
 		actor->z = actor->ceilingz - actor->height;
-
 
 	return;
 }
