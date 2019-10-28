@@ -1705,41 +1705,6 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (!(ALL7EMERALDS(emeralds)))
 				return false;
 		}
-		else if (GETSECSPECIAL(caller->special, 2) == 7) // SRB2Kart: reusing for Race Lap executor
-		{
-			UINT8 lap;
-
-			if (actor && actor->player && triggerline->flags & ML_EFFECT4)
-			{
-				/*if (maptol & TOL_NIGHTS)
-					lap = actor->player->mare;
-				else*/
-					lap = actor->player->laps;
-			}
-			else
-			{
-				/*if (maptol & TOL_NIGHTS)
-					lap = P_FindLowestMare();
-				else*/
-					lap = P_FindLowestLap();
-			}
-
-			if (triggerline->flags & ML_NOCLIMB) // Need higher than or equal to
-			{
-				if (lap < (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
-					return false;
-			}
-			else if (triggerline->flags & ML_BLOCKMONSTERS) // Need lower than or equal to
-			{
-				if (lap > (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
-					return false;
-			}
-			else // Need equal to
-			{
-				if (lap != (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
-					return false;
-			}
-		}
 		// If we were not triggered by a sector type especially for the purpose,
 		// a Linedef Executor linedef trigger is not handling sector triggers properly, return.
 
@@ -1937,15 +1902,17 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	else
 	// These special types work only once
 	if (specialtype == 302  // Once
-	 || specialtype == 304  // Ring count - Once
-	 || specialtype == 307  // Character ability - Once
-	 || specialtype == 308  // Race only - Once
-	 || specialtype == 315  // No of pushables - Once
-	 || specialtype == 318  // Unlockable trigger - Once
-	 || specialtype == 320  // Unlockable - Once
-	 || specialtype == 321 || specialtype == 322 // Trigger on X calls - Continuous + Each Time
-	 || specialtype == 328 // Encore Load
-	 || specialtype == 399) // Level Load
+		|| specialtype == 304  // Ring count - Once
+		|| specialtype == 307  // Character ability - Once
+		|| specialtype == 308  // Race only - Once
+		|| specialtype == 315  // No of pushables - Once
+		|| specialtype == 318  // Unlockable trigger - Once
+		|| specialtype == 320  // Unlockable - Once
+		|| specialtype == 321 || specialtype == 322 // Trigger on X calls - Continuous + Each Time
+		|| specialtype == 328 // Encore Load
+		|| specialtype == 399 // Level Load
+		|| specialtype == 2002 // SRB2Kart Race Lap
+	)
 		triggerline->special = 0; // Clear it out
 
 	return true;
@@ -1981,6 +1948,7 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 		if (lines[masterline].special == 313
 		 || lines[masterline].special == 399
 		 || lines[masterline].special == 328
+		 || lines[masterline].special == 2002 // SRB2Kart race lap trigger
 		 // Each-time executors handle themselves, too
 		 || lines[masterline].special == 301 // Each time
 		 || lines[masterline].special == 306 // Character ability - Each time
@@ -2207,7 +2175,7 @@ static void K_HandleLapIncrement(player_t *player)
 	{
 		if ((player->starpostnum == numstarposts) || (player->laps == 0))
 		{
-			UINT8 i = 0;
+			size_t i = 0;
 			UINT8 nump = 0;
 
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -2284,6 +2252,41 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			thwompsactive = true; // Lap 2 effects
+
+			for (i = 0; i < numlines; i++)
+			{
+				if (lines[i].special == 2002) // Race lap trigger
+				{
+					UINT8 lap;
+
+					if (lines[i].flags & ML_EFFECT4)
+					{
+						lap = player->laps;
+					}
+					else
+					{
+						lap = P_FindLowestLap();
+					}
+
+					if (lines[i].flags & ML_NOCLIMB) // Need higher than or equal to
+					{
+						if (lap < (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS))
+							continue;
+					}
+					else if (lines[i].flags & ML_BLOCKMONSTERS) // Need lower than or equal to
+					{
+						if (lap > (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS))
+							continue;
+					}
+					else // Need equal to
+					{
+						if (lap != (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS))
+							continue;
+					}
+
+					P_RunTriggerLinedef(&lines[i], player->mo, NULL);
+				}
+			}
 		}
 		else if (player->starpostnum)
 		{
@@ -6728,11 +6731,16 @@ void P_SpawnSpecials(INT32 fromnetsave)
 					sectors[s].midmap = lines[i].frontsector->midmap;
 				break;
 
+			// SRB2Kart
 			case 2000: // Waypoint Parameters
 				break;
 			case 2001: // Finish Line
 				if (G_RaceGametype())
 					circuitmap = true;
+				break;
+			case 2002: // Linedef Trigger: Race Lap
+				break;
+			case 2003: // Linedef Executor: Enable/Disable Waypoint
 				break;
 			default:
 				break;
