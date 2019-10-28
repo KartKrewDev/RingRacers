@@ -4263,7 +4263,8 @@ static void K_DoShrink(player_t *user)
 		}
 
 		mobj->destscale = 0;
-		mobj->flags |= (MF_NOTHINK|MF_NOCLIPTHING);
+		mobj->flags &= ~(MF_SOLID|MF_SHOOTABLE|MF_SPECIAL);
+		mobj->flags |= MF_NOCLIPTHING; // Just for safety
 
 		if (mobj->type == MT_SPB)
 			spbplace = -1;
