@@ -7538,6 +7538,8 @@ static patch_t *kp_winnernum[NUMPOSFRAMES];
 static patch_t *kp_facenum[MAXPLAYERS+1];
 static patch_t *kp_facehighlight[8];
 
+static patch_t *kp_spbminimap;
+
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
 static patch_t *kp_ring[6];
@@ -7689,6 +7691,8 @@ void K_LoadKartHUDGraphics(void)
 		buffer[7] = '0'+(i+1);
 		kp_facehighlight[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
 	}
+
+	kp_spbminimap =				W_CachePatchName("SPBMMAP", PU_HUDGFX);
 
 	// Rings & Lives
 	kp_ringsticker[0] =			W_CachePatchName("RNGBACKA", PU_HUDGFX);
@@ -9670,6 +9674,14 @@ static void K_drawKartMinimap(void)
 		}
 	}
 
+	// draw SPB(s?)
+	for (mobj = kitemcap; mobj; mobj = next)
+	{
+		next = mobj->itnext;
+		if (mobj->type == MT_SPB)
+			K_drawKartMinimapIcon(mobj->x, mobj->y, x, y, splitflags, kp_spbminimap, NULL, AutomapPic);
+	}
+
 	// draw our local players here, opaque.
 	splitflags &= ~V_HUDTRANSHALF;
 	splitflags |= V_HUDTRANS;
@@ -9701,15 +9713,6 @@ static void K_drawKartMinimap(void)
 		|| (G_BattleGametype() && K_IsPlayerWanted(&players[localplayers[i]])))
 			K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 	}
-
-	// draw SPB(s?)
-	for (mobj = kitemcap; mobj; mobj = next)
-	{
-		next = mobj->itnext;
-		if (mobj->type == MT_SPB)
-			K_drawKartMinimapIcon(mobj->x, mobj->y, x, y, splitflags, kp_ringspblocksmall[14 + leveltime%4 /2], NULL, AutomapPic);
-	}
-
 }
 
 static void K_drawKartStartCountdown(void)
