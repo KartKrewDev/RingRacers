@@ -4086,6 +4086,11 @@ void G_LoadGameData(void)
 	// Allow saving of gamedata beyond this point
 	gamedataloaded = true;
 
+	if (M_CheckParm("-gamedata") && M_IsNextParm())
+	{
+		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
+	}
+
 	if (M_CheckParm("-resetdata"))
 		return; // Don't load (essentially, reset).
 
