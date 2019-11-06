@@ -1555,62 +1555,69 @@ void Y_VoteTicker(void)
 		if (votetic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
 			return;
 
-		for (i = 0; i <= splitscreen; i++)
+		/*
+		The vote ended, but it will take at least a tic for that to reach us from
+		the server. Don't let me change the vote now, it won't matter anyway!
+		*/
+		if (timer)
 		{
-			UINT8 p;
-			boolean pressed = false;
-
-			switch (i)
+			for (i = 0; i <= splitscreen; i++)
 			{
-				case 1:
-					p = displayplayers[1];
-					break;
-				case 2:
-					p = displayplayers[2];
-					break;
-				case 3:
-					p = displayplayers[3];
-					break;
-				default:
-					p = consoleplayer;
-					break;
-			}
+				UINT8 p;
+				boolean pressed = false;
 
-			if (voteclient.playerinfo[i].delay)
-				voteclient.playerinfo[i].delay--;
-
-			if ((playeringame[p] && !players[p].spectator)
-				&& !voteclient.playerinfo[i].delay
-				&& pickedvote == -1 && votes[p] == -1)
-			{
-				if (InputDown(gc_aimforward, i+1) || JoyAxis(AXISAIM, i+1) < 0)
+				switch (i)
 				{
-					voteclient.playerinfo[i].selection--;
-					pressed = true;
+					case 1:
+						p = displayplayers[1];
+						break;
+					case 2:
+						p = displayplayers[2];
+						break;
+					case 3:
+						p = displayplayers[3];
+						break;
+					default:
+						p = consoleplayer;
+						break;
 				}
 
-				if ((InputDown(gc_aimbackward, i+1) || JoyAxis(AXISAIM, i+1) > 0) && !pressed)
+				if (voteclient.playerinfo[i].delay)
+					voteclient.playerinfo[i].delay--;
+
+				if ((playeringame[p] && !players[p].spectator)
+						&& !voteclient.playerinfo[i].delay
+						&& pickedvote == -1 && votes[p] == -1)
 				{
-					voteclient.playerinfo[i].selection++;
-					pressed = true;
+					if (InputDown(gc_aimforward, i+1) || JoyAxis(AXISAIM, i+1) < 0)
+					{
+						voteclient.playerinfo[i].selection--;
+						pressed = true;
+					}
+
+					if ((InputDown(gc_aimbackward, i+1) || JoyAxis(AXISAIM, i+1) > 0) && !pressed)
+					{
+						voteclient.playerinfo[i].selection++;
+						pressed = true;
+					}
+
+					if (voteclient.playerinfo[i].selection < 0)
+						voteclient.playerinfo[i].selection = 3;
+					if (voteclient.playerinfo[i].selection > 3)
+						voteclient.playerinfo[i].selection = 0;
+
+					if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
+					{
+						D_ModifyClientVote(voteclient.playerinfo[i].selection, i);
+						pressed = true;
+					}
 				}
 
-				if (voteclient.playerinfo[i].selection < 0)
-					voteclient.playerinfo[i].selection = 3;
-				if (voteclient.playerinfo[i].selection > 3)
-					voteclient.playerinfo[i].selection = 0;
-
-				if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
+				if (pressed)
 				{
-					D_ModifyClientVote(voteclient.playerinfo[i].selection, i);
-					pressed = true;
+					S_StartSound(NULL, sfx_kc4a);
+					voteclient.playerinfo[i].delay = NEWTICRATE/7;
 				}
-			}
-
-			if (pressed)
-			{
-				S_StartSound(NULL, sfx_kc4a);
-				voteclient.playerinfo[i].delay = NEWTICRATE/7;
 			}
 		}
 
