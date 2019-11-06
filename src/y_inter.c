@@ -155,6 +155,7 @@ static y_votelvlinfo levelinfo[5];
 static y_voteclient voteclient;
 static INT32 votetic;
 static INT32 voteendtic = -1;
+static boolean votenotyetpicked;
 static patch_t *cursor = NULL;
 static patch_t *cursor1 = NULL;
 static patch_t *cursor2 = NULL;
@@ -1550,7 +1551,7 @@ void Y_VoteTicker(void)
 		else
 			voteclient.ranim = pickedvote;
 	}
-	else
+	else if (votenotyetpicked)
 	{
 		if (votetic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
 			return;
@@ -1642,7 +1643,10 @@ void Y_VoteTicker(void)
 
 			timer = 0;
 			if (voteendtic == -1)
+			{
+				votenotyetpicked = false;/* don't pick vote twice */
 				D_PickVote();
+			}
 		}
 	}
 }
@@ -1675,6 +1679,8 @@ void Y_StartVote(void)
 
 	timer = cv_votetime.value*TICRATE;
 	pickedvote = -1;
+
+	votenotyetpicked = true;
 
 	for (i = 0; i < 3; i++)
 	{
