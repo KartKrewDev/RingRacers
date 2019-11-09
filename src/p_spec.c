@@ -3360,6 +3360,7 @@ void P_SetupSignExit(player_t *player)
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
+		thing->angle = player->mo->angle;
 		P_SetupSignObject(thing, player->mo);
 	}
 }
