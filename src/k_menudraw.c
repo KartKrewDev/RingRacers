@@ -162,8 +162,11 @@ void M_Drawer(void)
 static void M_DrawMenuTooltips(void)
 {
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+	}
 }
 
 //
@@ -174,8 +177,16 @@ static void M_DrawMenuTooltips(void)
 static void M_DrawMenuPreviews(void)
 {
 	V_DrawFixedPatch(172<<FRACBITS, 29<<FRACBITS, FRACUNIT, 0, W_CachePatchName("MENUPREV", PU_CACHE), NULL);
-	if (currentMenu->menuitems[itemOn].patch != NULL)
+
+	if (currentMenu->menuitems[itemOn].patch == NULL)
+	{
+		patch_t *st = W_CachePatchName(va("MIMGST0%d", (skullAnimCounter % 4) + 1), PU_CACHE);
+		V_DrawFixedPatch(181<<FRACBITS, 39<<FRACBITS, FRACUNIT, 0, st, NULL);
+	}
+	else
+	{
 		V_DrawFixedPatch(181<<FRACBITS, 39<<FRACBITS, FRACUNIT, 0, W_CachePatchName(currentMenu->menuitems[itemOn].patch, PU_CACHE), NULL);
+	}
 }
 
 // Converts a string into question marks.
