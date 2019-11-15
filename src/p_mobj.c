@@ -1268,6 +1268,8 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			P_PlayerFlip(mo);
 		if (mo->player->kartstuff[k_pogospring])
 			gravityadd = (5*gravityadd)/2;
+		if (mo->player->kartstuff[k_waterskip])
+			gravityadd = (4*gravityadd)/3;
 	}
 	else
 	{
@@ -3301,26 +3303,19 @@ void P_MobjCheckWater(mobj_t *mobj)
 			// skipping stone!
 			if (p && p->kartstuff[k_waterskip] < 2
 				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
-				|| (p->speed > K_GetKartSpeed(p,false)/3 && p->kartstuff[k_waterskip])) // Already skipped once, so you can skip once more!
+				|| (p->speed > 20*mapobjectscale && p->kartstuff[k_waterskip])) // Already skipped once, so you can skip once more!
 				&& ((!(mobj->eflags & MFE_VERTICALFLIP) && thingtop - mobj->momz > mobj->watertop)
 				|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->z - mobj->momz < mobj->waterbottom)))
 			{
-				const fixed_t min = 6<<FRACBITS;
-				//const fixed_t max = 8<<FRACBITS;
+				const fixed_t hop = 5<<FRACBITS;
 
-				mobj->momx = mobj->momx/2;
-				mobj->momy = mobj->momy/2;
-				mobj->momz = -mobj->momz/2;
+				mobj->momx = (4*mobj->momx)/5;
+				mobj->momy = (4*mobj->momy)/5;
 
-				if (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->momz < FixedMul(min, mobj->scale))
-					mobj->momz = FixedMul(min, mobj->scale);
-				else if (mobj->eflags & MFE_VERTICALFLIP && mobj->momz > FixedMul(-min, mobj->scale))
-					mobj->momz = FixedMul(-min, mobj->scale);
-
-				/*if (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->momz > FixedMul(max, mobj->scale))
-					mobj->momz = FixedMul(max, mobj->scale);
-				else if (mobj->eflags & MFE_VERTICALFLIP && mobj->momz < FixedMul(-max, mobj->scale))
-					mobj->momz = FixedMul(-max, mobj->scale);*/
+				if (mobj->eflags & MFE_VERTICALFLIP)
+					mobj->momz = FixedMul(-hop, mobj->scale);
+				else
+					mobj->momz = FixedMul(hop, mobj->scale);
 
 				p->kartstuff[k_waterskip]++;
 			}
