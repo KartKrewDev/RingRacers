@@ -88,7 +88,7 @@ menuitem_t PLAY_RaceGamemodesMenu[] =
 		NULL, M_LevelSelectInit, 2, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Match Race", "Play by your own rules in a specialized, single race!",
-		NULL, M_LevelSelectInit, 0, GT_RACE},
+		"MENIMG01", M_LevelSelectInit, 0, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Time Attack", "Record your best time on any track!",
 		NULL, M_LevelSelectInit, 1, GT_RACE},
