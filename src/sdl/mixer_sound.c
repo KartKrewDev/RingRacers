@@ -579,7 +579,7 @@ static void count_music_bytes(int chan, void *stream, int len, void *udata)
 	{
 		music_stutter_bytes += len;
 	}
-	else
+	else if (stutter_threshold)
 	{
 		if (music_stutter_bytes >= stutter_threshold)
 		{
