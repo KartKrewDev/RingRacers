@@ -13,6 +13,12 @@
 
 #if defined(HAVE_SDL) && defined(HAVE_MIXER) && SOUND==SOUND_MIXER
 
+/*
+Just for hu_stopped. I promise I didn't
+write netcode into the sound code, OKAY?
+*/
+#include "../d_clisrv.h"
+
 #include "../sounds.h"
 #include "../s_sound.h"
 #include "../i_sound.h"
@@ -74,12 +80,16 @@
 
 UINT8 sound_started = false;
 
+static UINT32 stutter_threshold;
+
 static Mix_Music *music;
 static UINT8 music_volume, sfx_volume, internal_volume;
 static float loop_point;
 static float song_length; // length in seconds
 static boolean songpaused;
+static UINT32 music_end_bytes;
 static UINT32 music_bytes;
+static UINT32 music_stutter_bytes;
 static boolean is_looping;
 
 // fading
@@ -101,6 +111,8 @@ static void var_cleanup(void)
 	loop_point = song_length =\
 	 music_bytes = fading_source = fading_target =\
 	 fading_timer = fading_duration = 0;
+	music_end_bytes = 0;
+	music_stutter_bytes = 0;
 
 	songpaused = is_looping =\
 	 is_fading = false;
@@ -554,6 +566,8 @@ static void do_fading_callback(void)
 
 static void count_music_bytes(int chan, void *stream, int len, void *udata)
 {
+	UINT32 bytes;
+
 	(void)chan;
 	(void)stream;
 	(void)udata;
@@ -561,12 +575,35 @@ static void count_music_bytes(int chan, void *stream, int len, void *udata)
 	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID)
 		return;
 	music_bytes += len;
+	if (hu_stopped)
+	{
+		music_stutter_bytes += len;
+	}
+	else
+	{
+		if (music_stutter_bytes >= stutter_threshold)
+		{
+			/*
+			This would be after looping. If we're too near to the start of the
+			file, subtracting the delta will just underflow.
+			*/
+			if (music_stutter_bytes > music_bytes)
+			{
+				/* We already know where the end is because we looped. */
+				bytes = ( music_end_bytes - ( music_stutter_bytes - music_bytes ));
+			}
+			else
+				bytes = ( music_bytes - music_stutter_bytes );
+			I_SetSongPosition((int)( bytes/4/44100.0*1000 ));
+		}
+	}
 }
 
 static void music_loop(void)
 {
 	if (is_looping)
 	{
+		music_end_bytes = music_bytes;
 		Mix_PlayMusic(music, 0);
 		Mix_SetMusicPosition(loop_point);
 		music_bytes = loop_point*44100.0L*4; //assume 44.1khz, 4-byte length (see I_GetSongPosition)
@@ -848,6 +885,8 @@ boolean I_SetSongPosition(UINT32 position)
 			// NOT if position input is greater than song length.
 			music_bytes = 0;
 
+		music_stutter_bytes = 0;
+
 		return true;
 	}
 }
@@ -890,6 +929,12 @@ UINT32 I_GetSongPosition(void)
 		// 4 = byte length for 16-bit samples (AUDIO_S16SYS), stereo (2-channel)
 		// This is hardcoded in I_StartupSound. Other formats for factor:
 		// 8M: 1 | 8S: 2 | 16M: 2 | 16S: 4
+}
+
+void
+I_UpdateSongLagThreshold (void)
+{
+	stutter_threshold = cv_music_resync_threshold.value/1000.0*(4*44100);
 }
 
 /// ------------------------

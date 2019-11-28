@@ -36,6 +36,8 @@ extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
 extern consvar_t cv_playsoundifunfocused;
 
+extern consvar_t cv_music_resync_threshold;
+
 #ifdef SNDSERV
 extern consvar_t sndserver_cmd, sndserver_arg;
 #endif
