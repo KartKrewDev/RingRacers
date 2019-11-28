@@ -1377,6 +1377,8 @@ static menuitem_t OP_SoundOptionsMenu[] =
 
 	{IT_STRING|IT_CVAR,        NULL, "Play Music While Unfocused", &cv_playmusicifunfocused, 125},
 	{IT_STRING|IT_CVAR,        NULL, "Play SFX While Unfocused", &cv_playsoundifunfocused, 135},
+
+	{IT_STRING|IT_CVAR,        NULL, "Music Resynch Threshold (MS)", &cv_music_resync_threshold, 150},
 };
 
 static menuitem_t OP_DataOptionsMenu[] =
