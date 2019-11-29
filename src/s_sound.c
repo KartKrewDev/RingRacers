@@ -1563,6 +1563,7 @@ static char      music_name[7]; // up to 6-character name
 static void      *music_data;
 static UINT16    music_flags;
 static boolean   music_looping;
+static consvar_t *music_refade_cv;
 
 static char      queue_name[7];
 static UINT16    queue_flags;
@@ -1946,6 +1947,8 @@ static void S_UnloadMusic(void)
 	music_name[0] = 0;
 	music_flags = 0;
 	music_looping = false;
+
+	music_refade_cv = 0;
 }
 
 static boolean S_PlayMusic(boolean looping, UINT32 fadeinms)
@@ -2165,6 +2168,21 @@ void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume)
 			I_SetMusicVolume(digvolume&31);
 			break;
 	}
+}
+
+void
+S_SetRestoreMusicFadeInCvar (consvar_t *cv)
+{
+	music_refade_cv = cv;
+}
+
+int
+S_GetRestoreMusicFadeIn (void)
+{
+	if (music_refade_cv)
+		return music_refade_cv->value;
+	else
+		return 0;
 }
 
 /// ------------------------

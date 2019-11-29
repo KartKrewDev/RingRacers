@@ -1244,10 +1244,16 @@ void P_RestoreMusic(player_t *player)
 
 		// Item - Grow
 		if (wantedmus == 2)
+		{
 			S_ChangeMusicInternal("kgrow", true);
+			S_SetRestoreMusicFadeInCvar(&cv_growmusicfade);
+		}
 		// Item - Invincibility
 		else if (wantedmus == 1)
+		{
 			S_ChangeMusicInternal("kinvnc", true);
+			S_SetRestoreMusicFadeInCvar(&cv_invincmusicfade);
+		}
 		else
 		{
 #if 0
@@ -1256,7 +1262,8 @@ void P_RestoreMusic(player_t *player)
 			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value))
 				S_SpeedMusic(1.2f);
 #endif
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0,
+					S_GetRestoreMusicFadeIn());
 		}
 	}
 }
