@@ -187,6 +187,8 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 #define S_ChangeMusic(a,b,c) S_ChangeMusicEx(a,b,c,0,0,0)
 
 void S_SetRestoreMusicFadeInCvar (consvar_t *cvar);
+#define S_ClearRestoreMusicFadeInCvar() \
+	S_SetRestoreMusicFadeInCvar(0)
 int  S_GetRestoreMusicFadeIn (void);
 
 // Stops the music.
