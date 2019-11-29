@@ -2232,6 +2232,7 @@ void S_Start(void)
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
+		mapmusresume = 0;
 	}
 
 	//if (cv_resetmusic.value) // Starting ambience should always be restarted
@@ -2306,6 +2307,7 @@ static void Command_Tunes_f(void)
 	mapmusname[6] = 0;
 	mapmusflags = (track & MUSIC_TRACKMASK);
 	mapmusposition = position;
+	mapmusresume = 0;
 
 	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 
