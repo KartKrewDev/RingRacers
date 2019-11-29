@@ -564,17 +564,11 @@ static void do_fading_callback(void)
 /// Music Hooks
 /// ------------------------
 
-static void count_music_bytes(int chan, void *stream, int len, void *udata)
+static void
+Countstutter (int len)
 {
 	UINT32 bytes;
 
-	(void)chan;
-	(void)stream;
-	(void)udata;
-
-	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID)
-		return;
-	music_bytes += len;
 	if (hu_stopped)
 	{
 		music_stutter_bytes += len;
@@ -597,6 +591,20 @@ static void count_music_bytes(int chan, void *stream, int len, void *udata)
 			I_SetSongPosition((int)( bytes/4/44100.0*1000 ));
 		}
 	}
+}
+
+static void count_music_bytes(int chan, void *stream, int len, void *udata)
+{
+	(void)chan;
+	(void)stream;
+	(void)udata;
+
+	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID)
+		return;
+	music_bytes += len;
+
+	if (gamestate == GS_LEVEL)
+		Countstutter(len);
 }
 
 static void music_loop(void)
