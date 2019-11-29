@@ -533,6 +533,9 @@ consvar_t cv_deadzone4 = {"joy4_deadzone", "0.5", CV_FLOAT|CV_SAVE, deadzone_con
 consvar_t cv_invincmusicfade = {"invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_growmusicfade = {"growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_respawnfademusicout = {"respawnfademusicout", "1000", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_respawnfademusicback = {"respawnfademusicback", "500", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 consvar_t cv_resume = {"resume", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 #if MAXPLAYERS > 16
@@ -2751,7 +2754,19 @@ void G_PlayerReborn(INT32 player)
 		}
 	}
 
-	P_RestoreMusic(p);
+	if (S_MusicPlaying())
+	{
+		P_RestoreMusic(p);
+		/* mid-way fading out, fade back up */
+		S_FadeMusic(100, cv_respawnfademusicback.value);
+	}
+	else
+	{
+		/* this could be considered a hack, but I like it ...kinda */
+		S_SetRestoreMusicFadeInCvar(&cv_respawnfademusicback);
+		P_RestoreMusic(p);
+	}
+
 	if (songcredit)
 		S_ShowMusicCredit();
 

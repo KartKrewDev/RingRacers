@@ -121,6 +121,9 @@ extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_gu
 extern consvar_t cv_invincmusicfade;
 extern consvar_t cv_growmusicfade;
 
+extern consvar_t cv_respawnfademusicout;
+extern consvar_t cv_respawnfademusicback;
+
 extern consvar_t cv_resume;
 
 typedef enum
