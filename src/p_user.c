@@ -1188,6 +1188,8 @@ boolean P_EndingMusic(player_t *player)
 //
 void P_RestoreMusic(player_t *player)
 {
+	UINT32 position;
+
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
 
@@ -1262,8 +1264,14 @@ void P_RestoreMusic(player_t *player)
 			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value))
 				S_SpeedMusic(1.2f);
 #endif
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0,
+			if (mapmusresume && cv_resume.value)
+				position = mapmusresume;
+			else
+				position = mapmusposition;
+
+			S_ChangeMusicEx(mapmusname, mapmusflags, true, position, 0,
 					S_GetRestoreMusicFadeIn());
+			mapmusresume = 0;
 		}
 	}
 }
