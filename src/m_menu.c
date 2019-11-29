@@ -1378,7 +1378,7 @@ static menuitem_t OP_SoundOptionsMenu[] =
 	{IT_STRING|IT_CVAR,        NULL, "Play Music While Unfocused", &cv_playmusicifunfocused, 125},
 	{IT_STRING|IT_CVAR,        NULL, "Play SFX While Unfocused", &cv_playsoundifunfocused, 135},
 
-	{IT_STRING|IT_CVAR|IT_CV_NOPRINT, NULL, "Music Resynch Threshold", &cv_music_resync_threshold, 150},
+	{IT_STRING|IT_CVAR,        NULL, "Music Resynch Threshold (MS)", &cv_music_resync_threshold, 150},
 };
 
 static menuitem_t OP_DataOptionsMenu[] =
@@ -6417,23 +6417,12 @@ static void M_DrawSkyRoom(void)
 			(midi_disabled ? warningflags : highlightflags),
 			(midi_disabled ? "OFF" : "ON"));*/
 
-		V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x,
-				currentMenu->y+currentMenu->menuitems[12].alphaKey,
-				highlightflags,
-				( (cv_music_resync_threshold.value) ?
-					va("%s MS", cv_music_resync_threshold.string) : "OFF" ));
-
 		if (itemOn == 0)
 			lengthstring = 8*(sound_disabled ? 3 : 2);
 		else if (itemOn == 2)
 			lengthstring = 8*(digital_disabled ? 3 : 2);
 		/*else if (itemOn == 5)
 			lengthstring = 8*(midi_disabled ? 3 : 2);*/
-		else if (itemOn == 12)
-		{
-			lengthstring = 8*( (cv_music_resync_threshold.value) ?
-					strlen(cv_music_resync_threshold.string) + 3 : 3 );
-		}
 	}
 
 	for (i = 0; i < currentMenu->numitems; ++i)
