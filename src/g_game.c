@@ -2755,18 +2755,7 @@ void G_PlayerReborn(INT32 player)
 		}
 	}
 
-	if (S_MusicPlaying())
-	{
-		P_RestoreMusic(p);
-		/* mid-way fading out, fade back up */
-		S_FadeMusic(100, cv_respawnfademusicback.value);
-	}
-	else
-	{
-		/* this could be considered a hack, but I like it ...kinda */
-		S_SetRestoreMusicFadeInCvar(&cv_respawnfademusicback);
-		P_RestoreMusic(p);
-	}
+	P_RestoreMusic(p);
 
 	if (songcredit)
 		S_ShowMusicCredit();
