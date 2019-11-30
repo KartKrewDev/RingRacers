@@ -2596,6 +2596,9 @@ void G_PlayerReborn(INT32 player)
 	INT32 respawnflip;
 	boolean songcredit = false;
 
+	boolean local;
+	boolean playing;
+
 	score = players[player].score;
 	marescore = players[player].marescore;
 	lives = players[player].lives;
@@ -2755,7 +2758,30 @@ void G_PlayerReborn(INT32 player)
 		}
 	}
 
+	/* I'm putting this here because lol */
+
+	local = P_IsLocalPlayer(p);
+
+	if (local)
+	{
+		playing = S_MusicPlaying();
+
+		/*
+		Fade it in with the same call to avoid
+		max volume for a few milliseconds (?).
+		*/
+		if (! playing)
+			S_SetRestoreMusicFadeInCvar(&cv_respawnfademusicback);
+	}
+
 	P_RestoreMusic(p);
+
+	if (local)
+	{
+		/* mid-way fading out, fade back up */
+		if (playing)
+			S_FadeMusic(100, cv_respawnfademusicback.value);
+	}
 
 	if (songcredit)
 		S_ShowMusicCredit();

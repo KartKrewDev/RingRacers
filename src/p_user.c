@@ -1189,8 +1189,6 @@ boolean P_EndingMusic(player_t *player)
 void P_RestoreMusic(player_t *player)
 {
 	UINT32 position;
-	boolean playing;
-	int fadein;
 
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
@@ -1271,25 +1269,10 @@ void P_RestoreMusic(player_t *player)
 			else
 				position = mapmusposition;
 
-			playing = S_MusicPlaying();
-
-			/*
-			So if the music isn't playing, it's
-			most likely because we were dead.
-			*/
-			if (! playing)
-				fadein = cv_respawnfademusicback.value;
-
-			if (playing || ! fadein)
-				fadein = S_GetRestoreMusicFadeIn();
-
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, position, 0, fadein);
+			S_ChangeMusicEx(mapmusname, mapmusflags, true, position, 0,
+					S_GetRestoreMusicFadeIn());
 			S_ClearRestoreMusicFadeInCvar();
 			mapmusresume = 0;
-
-			/* mid-way fading out, fade back up */
-			if (playing)
-				S_FadeMusic(100, cv_respawnfademusicback.value);
 		}
 	}
 }
