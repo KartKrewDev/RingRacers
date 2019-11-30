@@ -80,6 +80,7 @@ write netcode into the sound code, OKAY?
 
 UINT8 sound_started = false;
 
+static UINT32 stutter_threshold_user;
 static UINT32 stutter_threshold;
 
 static Mix_Music *music;
@@ -942,7 +943,17 @@ UINT32 I_GetSongPosition(void)
 void
 I_UpdateSongLagThreshold (void)
 {
-	stutter_threshold = cv_music_resync_threshold.value/1000.0*(4*44100);
+	stutter_threshold_user = cv_music_resync_threshold.value/1000.0*(4*44100);
+	I_UpdateSongLagConditions();
+}
+
+void
+I_UpdateSongLagConditions (void)
+{
+	if (! cv_music_resync_powerups_only.value || S_MusicUsage() == MUS_SPECIAL)
+		stutter_threshold = stutter_threshold_user;
+	else
+		stutter_threshold = 0;
 }
 
 /// ------------------------
