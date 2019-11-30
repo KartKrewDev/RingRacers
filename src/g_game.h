@@ -124,6 +124,8 @@ extern consvar_t cv_growmusicfade;
 extern consvar_t cv_respawnfademusicout;
 extern consvar_t cv_respawnfademusicback;
 
+extern consvar_t cv_resetspecialmusic;
+
 extern consvar_t cv_resume;
 
 typedef enum

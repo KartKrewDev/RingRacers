@@ -1247,15 +1247,13 @@ void P_RestoreMusic(player_t *player)
 		// Item - Grow
 		if (wantedmus == 2)
 		{
-			S_ChangeMusicInternal("kgrow", true);
-			S_SetMusicUsage(MUS_SPECIAL);
+			S_ChangeMusicSpecial("kgrow");
 			S_SetRestoreMusicFadeInCvar(&cv_growmusicfade);
 		}
 		// Item - Invincibility
 		else if (wantedmus == 1)
 		{
-			S_ChangeMusicInternal("kinvnc", true);
-			S_SetMusicUsage(MUS_SPECIAL);
+			S_ChangeMusicSpecial("kinvnc");
 			S_SetRestoreMusicFadeInCvar(&cv_invincmusicfade);
 		}
 		else

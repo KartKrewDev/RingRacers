@@ -991,6 +991,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_respawnfademusicout);
 	CV_RegisterVar(&cv_respawnfademusicback);
 
+	CV_RegisterVar(&cv_resetspecialmusic);
+
 	CV_RegisterVar(&cv_resume);
 
 	// ingame object placing
