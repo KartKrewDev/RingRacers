@@ -2419,11 +2419,15 @@ boolean M_IsPathAbsolute(const char *path)
 
 /** I_mkdir for each part of the path.
 */
-void M_MkdirEach(const char *cpath, int start, int mode)
+void M_MkdirEachUntil(const char *cpath, int start, int end, int mode)
 {
 	char path[MAX_WADPATH];
 	char *p;
 	char *t;
+
+	if (end > 0 && end <= start)
+		return;
+
 	strlcpy(path, cpath, sizeof path);
 #ifdef _WIN32
 	if (strncmp(&path[1], ":\\", 2) == 0)
@@ -2431,6 +2435,10 @@ void M_MkdirEach(const char *cpath, int start, int mode)
 	else
 #endif
 		p = path;
+
+	if (end > 0)
+		end -= start;
+
 	for (; start > 0; --start)
 	{
 		p += strspn(p, PATHSEP);
@@ -2440,6 +2448,9 @@ void M_MkdirEach(const char *cpath, int start, int mode)
 	p += strspn(p, PATHSEP);
 	for (;;)
 	{
+		if (end > 0 && !--end)
+			break;
+
 		t = p;
 		if (( p = strchr(p, PATHSEP[0]) ))
 		{
@@ -2455,4 +2466,9 @@ void M_MkdirEach(const char *cpath, int start, int mode)
 			break;
 		}
 	}
+}
+
+void M_MkdirEach(const char *path, int start, int mode)
+{
+	M_MkdirEachUntil(path, start, -1, mode);
 }
