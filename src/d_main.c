@@ -1679,6 +1679,8 @@ void D_SRB2Main(void)
 		// as having been modified for the first game.
 		M_PushSpecialParameters(); // push all "+" parameter at the command buffer
 
+		COM_BufExecute(); // ensure the command buffer gets executed before the map starts (+skin)
+
 		strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 
 		if (M_CheckParm("-gametype") && M_IsNextParm())
