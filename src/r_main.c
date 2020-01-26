@@ -1705,6 +1705,8 @@ void R_RegisterEngineStuff(void)
 		CV_RegisterVar(&cv_cam_rotate[i]);
 	}
 
+	CV_RegisterVar(&cv_inverseslope);
+
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);
 

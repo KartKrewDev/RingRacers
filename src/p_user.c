@@ -2725,6 +2725,8 @@ consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
 	{"cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 
+consvar_t cv_inverseslope = {"inverseslope", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
@@ -4160,6 +4162,33 @@ static void P_HandleFollower(player_t *player)
 	}
 }
 
+	/* gaysed script from me, based on Golden's sprite slope roll */
+
+static void
+DoABarrelRoll (player_t *player)
+{
+	angle_t slope;
+	angle_t delta;
+
+	if (player->mo->standingslope)
+	{
+		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
+		slope = FixedMul(FINESINE (delta>>ANGLETOFINESHIFT),
+				player->mo->standingslope->zangle);
+		if (cv_inverseslope.value)
+			slope = -slope;
+	}
+	else
+		slope = 0;
+
+	delta = (INT32)( slope - player->viewrollangle )/ 16;
+
+	if (delta)
+		player->viewrollangle += delta;
+	else
+		player->viewrollangle  = slope;
+}
+
 //
 // P_PlayerThink
 //
@@ -4534,6 +4563,8 @@ void P_PlayerThink(player_t *player)
 	player->pflags &= ~PF_SLIDING;
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
+
+	DoABarrelRoll(player);
 
 	LUAh_PlayerThink(player);
 }
