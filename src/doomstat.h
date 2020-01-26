@@ -304,6 +304,7 @@ extern struct quake
 {
 	// camera offsets and duration
 	fixed_t x,y,z;
+	angle_t roll;
 	UINT16 time;
 
 	// location, radius, and intensity...
