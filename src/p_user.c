@@ -2726,6 +2726,7 @@ consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
 };
 
 consvar_t cv_inverseslope = {"inverseslope", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_quaketilt = {"quaketilt", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
@@ -4164,6 +4165,38 @@ static void P_HandleFollower(player_t *player)
 
 	/* gaysed script from me, based on Golden's sprite slope roll */
 
+// holy SHIT
+static INT32
+Quaketilt (player_t *player)
+{
+	angle_t tilt;
+	fixed_t lowb; // this threshold for speed
+	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	angle_t delta = (INT32)( player->mo->angle - moma );
+	fixed_t speed;
+	// Hi! I'm "not a math guy"!
+	if (abs(delta) > ANGLE_90)
+		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
+	if (P_IsObjectOnGround(player->mo))
+	{
+		tilt = ANGLE_11hh;
+		lowb = 15*FRACUNIT;
+	}
+	else
+	{
+		tilt = ANGLE_45;
+		lowb = 10*FRACUNIT;
+	}
+	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
+	speed = abs( player->mo->momx + player->mo->momy );
+	if (speed < lowb)
+	{
+		// ease out tilt as we slow...
+		moma = FixedMul(moma, FixedDiv(speed, lowb));
+	}
+	return moma;
+}
+
 static void
 DoABarrelRoll (player_t *player)
 {
@@ -4180,6 +4213,9 @@ DoABarrelRoll (player_t *player)
 	}
 	else
 		slope = 0;
+
+	if (cv_quaketilt.value)
+		slope += Quaketilt(player);
 
 	delta = (INT32)( slope - player->viewrollangle )/ 16;
 
