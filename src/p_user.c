@@ -4179,12 +4179,12 @@ Quaketilt (player_t *player)
 		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
 	if (P_IsObjectOnGround(player->mo))
 	{
-		tilt = ANGLE_11hh;
+		tilt = 4*ANGLE_11hh/5;
 		lowb = 15*FRACUNIT;
 	}
 	else
 	{
-		tilt = ANGLE_45;
+		tilt = ANGLE_22h;
 		lowb = 10*FRACUNIT;
 	}
 	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
