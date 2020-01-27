@@ -132,9 +132,11 @@ extern camera_t camera[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS], cv_cam_still[MAXSPLITSCREENPLAYERS], cv_cam_height[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS], cv_cam_rotate[MAXSPLITSCREENPLAYERS];
 
-extern fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS], t_cam_height[MAXSPLITSCREENPLAYERS], t_cam_rotate[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_inverseslope;
+extern consvar_t cv_slopeview;
 extern consvar_t cv_quaketilt;
+
+extern fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS], t_cam_height[MAXSPLITSCREENPLAYERS], t_cam_rotate[MAXSPLITSCREENPLAYERS];
 
 void P_AddPlayerScore(player_t *player, UINT32 amount);
 void P_ResetCamera(player_t *player, camera_t *thiscam);
