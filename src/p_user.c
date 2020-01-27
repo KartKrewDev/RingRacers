@@ -2733,7 +2733,7 @@ static CV_PossibleValue_t slopeview_cons_t[] =
 
 	{0}
 };
-consvar_t cv_slopeview = {"slopeview", "Off", CV_SAVE, slopeview_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_slopeview = {"slopeview", "On", CV_SAVE, slopeview_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_quaketilt = {"quaketilt", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_actionmovie = {"actionmovie", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
