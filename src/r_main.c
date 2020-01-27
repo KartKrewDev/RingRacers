@@ -639,7 +639,7 @@ void R_CheckViewMorph(int s)
 	float fisheyemap[MAXVIDWIDTH/2 + 1];
 #endif
 
-	angle_t rollangle = players[displayplayers[s]].viewrollangle + quake.roll;
+	angle_t rollangle = players[displayplayers[s]].viewrollangle;
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
 #endif
@@ -648,6 +648,9 @@ void R_CheckViewMorph(int s)
 	{
 		v->zoomneeded = FRACUNIT;
 	}
+
+	if (cv_actionmovie.value)
+		rollangle += quake.roll;
 
 	rollangle >>= ANGLETOFINESHIFT;
 	rollangle = ((rollangle+2) & ~3) & FINEMASK; // Limit the distinct number of angles to reduce recalcs from angles changing a lot.
@@ -1707,6 +1710,7 @@ void R_RegisterEngineStuff(void)
 
 	CV_RegisterVar(&cv_slopeview);
 	CV_RegisterVar(&cv_quaketilt);
+	CV_RegisterVar(&cv_actionmovie);
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);
