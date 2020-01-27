@@ -36,10 +36,7 @@ cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, 
 // Allocates buffer screens, call before R_Init.
 void V_Init(void);
 
-// Taken from my videos-in-SRB2 project
-// Generates a color look-up table
-// which has up to 64 colors at each channel
-
+// Color look-up table
 #define COLORBITS 6
 #define SHIFTCOLORBITS (8-COLORBITS)
 #define CLUTSIZE (1<<COLORBITS)
