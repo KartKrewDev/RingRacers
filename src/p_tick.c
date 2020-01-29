@@ -25,6 +25,7 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_waypoint.h"
+#include "i_system.h"
 
 // Object place
 #include "m_cheat.h"
