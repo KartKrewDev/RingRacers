@@ -2386,7 +2386,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						if (bot) // This might put poor Tails in a wall if he's too far behind! D: But okay, whatever! >:3
 							P_TeleportMove(bot, bot->x + x, bot->y + y, bot->z + z);
 
-						for (i = 0; i <= splitscreen; i++)
+						for (i = 0; i <= r_splitscreen; i++)
 						{
 							if (mo->player == &players[displayplayers[i]] && camera[i].chase)
 							{

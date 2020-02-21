@@ -1122,12 +1122,12 @@ boolean P_EndingMusic(player_t *player)
 
 	// Event - Level Finish
 	// Check for if this is valid or not
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_TIMEOVER))
 			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_TIMEOVER))
-			|| ((splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_TIMEOVER)))
-			|| ((splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_TIMEOVER)))))
+			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_TIMEOVER)))
+			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_TIMEOVER)))))
 			return false;
 
 		bestlocalplayer = &players[displayplayers[0]];
@@ -1139,9 +1139,9 @@ boolean P_EndingMusic(player_t *player)
 		bestlocalpos = ((players[p].pflags & PF_TIMEOVER) ? MAXPLAYERS+1 : players[p].kartstuff[k_position]); \
 	}
 		setbests(displayplayers[1]);
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			setbests(displayplayers[2]);
-		if (splitscreen > 2)
+		if (r_splitscreen > 2)
 			setbests(displayplayers[3]);
 #undef setbests
 	}
@@ -1211,7 +1211,7 @@ void P_RestoreMusic(player_t *player)
 	{
 		INT32 wantedmus = 0; // 0 is level music, 1 is invincibility, 2 is grow
 
-		if (splitscreen)
+		if (r_splitscreen)
 		{
 			INT32 bestlocaltimer = 1;
 
@@ -1225,9 +1225,9 @@ void P_RestoreMusic(player_t *player)
 	}
 			setbests(displayplayers[0]);
 			setbests(displayplayers[1]);
-			if (splitscreen > 1)
+			if (r_splitscreen > 1)
 				setbests(displayplayers[2]);
-			if (splitscreen > 2)
+			if (r_splitscreen > 2)
 				setbests(displayplayers[3]);
 #undef setbests
 		}
@@ -1490,9 +1490,9 @@ boolean P_IsLocalPlayer(player_t *player)
 
 	if (player == &players[consoleplayer])
 		return true;
-	else if (splitscreen)
+	else if (r_splitscreen)
 	{
-		for (i = 1; i <= splitscreen; i++) // Skip P1
+		for (i = 1; i <= r_splitscreen; i++) // Skip P1
 		{
 			if (player == &players[displayplayers[i]])
 				return true;
@@ -1512,7 +1512,7 @@ boolean P_IsDisplayPlayer(player_t *player)
 {
 	UINT8 i;
 
-	for (i = 0; i <= splitscreen; i++) // DON'T skip P1
+	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
 	{
 		if (player == &players[displayplayers[i]])
 			return true;
@@ -7913,7 +7913,7 @@ static void P_CalcPostImg(player_t *player)
 		pviewheight = player->awayviewmobj->z + 20*FRACUNIT;
 	}
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -8078,7 +8078,7 @@ void P_PlayerThink(player_t *player)
 	}
 
 #ifdef SEENAMES
-	if (netgame && player == &players[displayplayers[0]] && !(leveltime % (TICRATE/5)) && !splitscreen)
+	if (netgame && player == &players[displayplayers[0]] && !(leveltime % (TICRATE/5)) && !r_splitscreen)
 	{
 		seenplayer = NULL;
 
@@ -8434,7 +8434,7 @@ void P_PlayerThink(player_t *player)
 		// Hide the mobj from our sights if we're the displayplayer and chasecam is off.
 		// Why not just not spawn the mobj?  Well, I'd rather only flirt with
 		// consistency so much...
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (player == &players[displayplayers[i]] && !camera[i].chase)
 			{
@@ -8664,7 +8664,7 @@ void P_PlayerAfterThink(player_t *player)
 		P_PlayerInSpecialSector(player);
 #endif
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{

@@ -125,7 +125,7 @@ void COM_Lua_f(void)
 			lua_pop(gL, 1); // pop command info table
 			return; // can't execute splitscreen command without player 2!
 		}
-		playernum = displayplayers[1];
+		playernum = displayplayers[localdisplayplayers[1]];
 	}
 
 	if (netgame)

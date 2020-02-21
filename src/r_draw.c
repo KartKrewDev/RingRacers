@@ -299,7 +299,7 @@ void R_InitViewBuffer(INT32 width, INT32 height)
 	for (i = 0; i < height; i++)
 	{
 		ylookup[i] = ylookup1[i] = screens[0] + i*vid.width*bytesperpixel;
-		if (splitscreen == 1)
+		if (r_splitscreen == 1)
 			ylookup2[i] = screens[0] + (i+viewheight)*vid.width*bytesperpixel;
 		else
 			ylookup2[i] = screens[0] + i*vid.width*bytesperpixel + (viewwidth*bytesperpixel);

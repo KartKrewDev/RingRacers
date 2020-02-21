@@ -115,6 +115,7 @@ player_t players[MAXPLAYERS];
 
 INT32 consoleplayer; // player taking events and displaying
 INT32 displayplayers[MAXSPLITSCREENPLAYERS]; // view being displayed
+INT32 localdisplayplayers[MAXSPLITSCREENPLAYERS];
 
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
@@ -1256,7 +1257,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (ssplayer == 1)
 		player = &players[consoleplayer];
 	else
-		player = &players[displayplayers[ssplayer-1]];
+		player = &players[displayplayers[localdisplayplayers[ssplayer-1]]];
 
 	if (ssplayer == 2)
 		thiscam = (player->bot == 2 ? &camera[0] : &camera[ssplayer-1]);
@@ -1595,8 +1596,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	//Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
-		&& displayplayers[0] != consoleplayer && ssplayer == 1)
-		displayplayers[0] = consoleplayer;
+		&& displayplayers[localdisplayplayers[0]] != consoleplayer && ssplayer == 1)
+		displayplayers[localdisplayplayers[0]] = consoleplayer;
 
 }
 
@@ -1748,12 +1749,12 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (!resetplayer)
 		P_FindEmerald();
 
-	displayplayers[0] = consoleplayer; // view the guy you are playing
+	displayplayers[localdisplayplayers[0]] = consoleplayer; // view the guy you are playing
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		if (i > 0 && !(i == 1 && botingame) && splitscreen < i)
-			displayplayers[i] = consoleplayer;
+		if (i > 0 && !(i == 1 && botingame) && r_splitscreen < i)
+			displayplayers[localdisplayplayers[i]] = consoleplayer;
 	}
 
 	gameaction = ga_nothing;
@@ -1761,10 +1762,10 @@ void G_DoLoadLevel(boolean resetplayer)
 	Z_CheckHeap(-2);
 #endif
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (camera[i].chase)
-			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
+			P_ResetCamera(&players[displayplayers[localdisplayplayers[i]]], &camera[i]);
 	}
 
 	// clear cmd building stuff
@@ -1874,8 +1875,8 @@ boolean G_Responder(event_t *ev)
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
 		&& (ev->data1 == KEY_F12 || ev->data1 == gamecontrol[gc_viewpoint][0] || ev->data1 == gamecontrol[gc_viewpoint][1]))
 	{
-		if (!demo.playback && (splitscreen || !netgame))
-			displayplayers[0] = consoleplayer;
+		if (!demo.playback && (r_splitscreen || !netgame))
+			displayplayers[localdisplayplayers[0]] = consoleplayer;
 		else
 		{
 			G_AdjustView(1, 1, true);
@@ -2139,7 +2140,7 @@ boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 	if (!(onlyactive ? G_CouldView(playernum) : (playeringame[playernum] && !players[playernum].spectator)))
 		return false;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 	if (viewnum > splits)
 		viewnum = splits;
 
@@ -2210,7 +2211,7 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	INT32 olddisplayplayer;
 	INT32 playersviewable;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 
 	/* Promote splits */
 	if (viewnum > splits)
@@ -2221,7 +2222,7 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 
 		if (viewnum > playersviewable)
 			viewnum = playersviewable;
-		splitscreen = viewnum-1;
+		r_splitscreen = viewnum-1;
 
 		/* Prepare extra views for G_FindView to pass. */
 		for (viewd = splits+1; viewd < viewnum; ++viewd)
@@ -2294,14 +2295,14 @@ void G_ResetViews(void)
 
 	INT32 playersviewable;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 
 	playersviewable = G_CountPlayersPotentiallyViewable(false);
 	/* Demote splits */
 	if (playersviewable < splits)
 	{
 		splits = playersviewable;
-		splitscreen = max(splits-1, 0);
+		r_splitscreen = max(splits-1, 0);
 		R_ExecuteSetViewSize();
 	}
 
@@ -2884,18 +2885,18 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost)
 		if (nummapthings)
 		{
 			if (playernum == consoleplayer
-				|| (splitscreen && playernum == displayplayers[1])
-				|| (splitscreen > 1 && playernum == displayplayers[2])
-				|| (splitscreen > 2 && playernum == displayplayers[3]))
+				|| (splitscreen && playernum == displayplayers[localdisplayplayers[1]])
+				|| (splitscreen > 1 && playernum == displayplayers[localdisplayplayers[2]])
+				|| (splitscreen > 2 && playernum == displayplayers[localdisplayplayers[3]]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the first mapthing!\n"));
 			spawnpoint = &mapthings[0];
 		}
 		else
 		{
 			if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == displayplayers[localdisplayplayers[1]])
+			|| (splitscreen > 1 && playernum == displayplayers[localdisplayplayers[2]])
+			|| (splitscreen > 2 && playernum == displayplayers[localdisplayplayers[3]]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the origin!\n"));
 			//P_MovePlayerToSpawn handles this fine if the spawnpoint is NULL.
 		}
@@ -2990,17 +2991,17 @@ mapthing_t *G_FindMatchStart(INT32 playernum)
 				return deathmatchstarts[i];
 		}
 		if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == displayplayers[localdisplayplayers[1]])
+			|| (splitscreen > 1 && playernum == displayplayers[localdisplayplayers[2]])
+			|| (splitscreen > 2 && playernum == displayplayers[localdisplayplayers[3]]))
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Deathmatch starts!\n"));
 		return NULL;
 	}
 
 	if (playernum == consoleplayer
-		|| (splitscreen && playernum == displayplayers[1])
-		|| (splitscreen > 1 && playernum == displayplayers[2])
-		|| (splitscreen > 2 && playernum == displayplayers[3]))
+		|| (splitscreen && playernum == displayplayers[localdisplayplayers[1]])
+		|| (splitscreen > 1 && playernum == displayplayers[localdisplayplayers[2]])
+		|| (splitscreen > 2 && playernum == displayplayers[localdisplayplayers[3]]))
 		CONS_Alert(CONS_WARNING, M_GetText("No Deathmatch starts in this map!\n"));
 	return NULL;
 }
@@ -3088,17 +3089,17 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 		//return playerstarts[0];
 
 		if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == displayplayers[localdisplayplayers[1]])
+			|| (splitscreen > 1 && playernum == displayplayers[localdisplayplayers[2]])
+			|| (splitscreen > 2 && playernum == displayplayers[localdisplayplayers[3]]))
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Race starts!\n"));
 		return NULL;
 	}
 
 	if (playernum == consoleplayer
-		|| (splitscreen && playernum == displayplayers[1])
-		|| (splitscreen > 1 && playernum == displayplayers[2])
-		|| (splitscreen > 2 && playernum == displayplayers[3]))
+		|| (splitscreen && playernum == displayplayers[localdisplayplayers[1]])
+		|| (splitscreen > 1 && playernum == displayplayers[localdisplayplayers[2]])
+		|| (splitscreen > 2 && playernum == displayplayers[localdisplayplayers[3]]))
 		CONS_Alert(CONS_WARNING, M_GetText("No Race starts in this map!\n"));
 	return NULL;
 }
@@ -3712,7 +3713,7 @@ static void G_DoCompleted(void)
 		}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
-	if (G_RaceGametype() && ((multiplayer && demo.playback) || j == splitscreen+1) && (cv_inttime.value > 0))
+	if (G_RaceGametype() && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
 		S_ChangeMusicInternal("racent", true);
 
 	if (automapactive)

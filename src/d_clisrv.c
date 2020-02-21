@@ -2718,8 +2718,8 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 		RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 	}
 
-	if (playernum == displayplayers[0] && !demo.playback)
-		displayplayers[0] = consoleplayer; // don't look through someone's view who isn't there
+	if (playernum == displayplayers[localdisplayplayers[0]] && !demo.playback)
+		displayplayers[localdisplayplayers[0]] = consoleplayer; // don't look through someone's view who isn't there
 
 #ifdef HAVE_BLUA
 	LUA_InvalidatePlayer(&players[playernum]);
@@ -3503,7 +3503,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		{
 			consoleplayer = newplayernum;
 			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
 				displayplayers[i] = newplayernum;
+				localdisplayplayers[i] = i;
+			}
 			DEBFILE("spawning me\n");
 		}
 
@@ -3705,6 +3708,7 @@ void SV_StopServer(void)
 		D_Clearticcmd(i);
 
 	consoleplayer = 0;
+	localdisplayplayers[0] = 0;
 	cl_mode = CL_SEARCHING;
 	maketic = gametic+1;
 	neededtic = maketic;

@@ -1477,7 +1477,7 @@ static void HU_drawMiniChat(void)
 	if (!chat_nummsg_min)
 		return; // needless to say it's useless to do anything if we don't have anything to draw.
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 		boxw = max(64, boxw/2);
 
 	for (; i>0; i--)
@@ -1529,10 +1529,10 @@ static void HU_drawMiniChat(void)
 	y = chaty - charheight*(msglines+1);
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
@@ -1620,10 +1620,10 @@ static void HU_drawChatLog(INT32 offset)
 		chat_scroll = chat_maxscroll;
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		boxh = max(6, boxh/2);
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			boxw = max(64, boxw/2);
 	}
 #endif
@@ -1631,10 +1631,10 @@ static void HU_drawChatLog(INT32 offset)
 	y = chaty - offset*charheight - (chat_scroll*charheight) - boxh*charheight - 12;
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
@@ -1739,10 +1739,10 @@ static void HU_DrawChat(void)
 	const char *mute = "Chat has been muted.";
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 		{
 			y += 16;
 			boxw = max(64, boxw/2);
@@ -1836,10 +1836,10 @@ static void HU_DrawChat(void)
 		INT32 count = 0;
 		INT32 p_dispy = chaty - charheight -1;
 #ifdef NETSPLITSCREEN
-		if (splitscreen)
+		if (r_splitscreen)
 		{
 			p_dispy -= BASEVIDHEIGHT/2;
-			if (splitscreen > 1)
+			if (r_splitscreen > 1)
 				p_dispy += 16;
 		}
 		else
@@ -2250,7 +2250,7 @@ void HU_DrawSongCredits(void)
 {
 	char *str;
 	INT32 len, destx;
-	INT32 y = (splitscreen ? (BASEVIDHEIGHT/2)-4 : 32);
+	INT32 y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32);
 	INT32 bgt;
 
 	if (!cursongcredit.def) // No def
@@ -3022,7 +3022,7 @@ static void HU_DrawRankings(void)
 
 	// When you play, you quickly see your score because your name is displayed in white.
 	// When playing back a demo, you quickly see who's the view.
-	if (!splitscreen)
+	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	scorelines = 0;

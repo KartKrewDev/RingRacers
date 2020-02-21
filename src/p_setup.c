@@ -2567,29 +2567,29 @@ static void P_ForceCharacter(const char *forcecharskin)
 	{
 		if (splitscreen)
 		{
-			SetPlayerSkin(displayplayers[1], forcecharskin);
-			if ((unsigned)cv_playercolor2.value != skins[players[displayplayers[1]].skin].prefcolor && !modeattacking)
+			SetPlayerSkin(displayplayers[localdisplayplayers[1]], forcecharskin);
+			if ((unsigned)cv_playercolor2.value != skins[players[displayplayers[localdisplayplayers[1]]].skin].prefcolor && !modeattacking)
 			{
-				CV_StealthSetValue(&cv_playercolor2, skins[players[displayplayers[1]].skin].prefcolor);
-				players[displayplayers[1]].skincolor = skins[players[displayplayers[1]].skin].prefcolor;
+				CV_StealthSetValue(&cv_playercolor2, skins[players[displayplayers[localdisplayplayers[1]]].skin].prefcolor);
+				players[displayplayers[localdisplayplayers[1]]].skincolor = skins[players[displayplayers[localdisplayplayers[1]]].skin].prefcolor;
 			}
 
 			if (splitscreen > 1)
 			{
-				SetPlayerSkin(displayplayers[2], forcecharskin);
-				if ((unsigned)cv_playercolor3.value != skins[players[displayplayers[2]].skin].prefcolor && !modeattacking)
+				SetPlayerSkin(displayplayers[localdisplayplayers[2]], forcecharskin);
+				if ((unsigned)cv_playercolor3.value != skins[players[displayplayers[localdisplayplayers[2]]].skin].prefcolor && !modeattacking)
 				{
-					CV_StealthSetValue(&cv_playercolor3, skins[players[displayplayers[2]].skin].prefcolor);
-					players[displayplayers[2]].skincolor = skins[players[displayplayers[2]].skin].prefcolor;
+					CV_StealthSetValue(&cv_playercolor3, skins[players[displayplayers[localdisplayplayers[2]]].skin].prefcolor);
+					players[displayplayers[localdisplayplayers[2]]].skincolor = skins[players[displayplayers[localdisplayplayers[2]]].skin].prefcolor;
 				}
 
 				if (splitscreen > 2)
 				{
-					SetPlayerSkin(displayplayers[3], forcecharskin);
-					if ((unsigned)cv_playercolor4.value != skins[players[displayplayers[3]].skin].prefcolor && !modeattacking)
+					SetPlayerSkin(displayplayers[localdisplayplayers[3]], forcecharskin);
+					if ((unsigned)cv_playercolor4.value != skins[players[displayplayers[localdisplayplayers[3]]].skin].prefcolor && !modeattacking)
 					{
-						CV_StealthSetValue(&cv_playercolor4, skins[players[displayplayers[3]].skin].prefcolor);
-						players[displayplayers[3]].skincolor = skins[players[displayplayers[3]].skin].prefcolor;
+						CV_StealthSetValue(&cv_playercolor4, skins[players[displayplayers[localdisplayplayers[3]]].skin].prefcolor);
+						players[displayplayers[localdisplayplayers[3]]].skincolor = skins[players[displayplayers[localdisplayplayers[3]]].skin].prefcolor;
 					}
 				}
 			}
@@ -2824,7 +2824,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	P_LevelInitStuff();
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0')
@@ -3228,7 +3228,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (!dedicated)
 	{
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 			P_SetupCamera(displayplayers[i], &camera[i]);
 
 		// Salt: CV_ClearChangedFlags() messes with your settings :(
@@ -3270,7 +3270,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		/*if (rendermode != render_none)
 			CV_Set(&cv_fov, cv_fov.defaultvalue);*/
 
-		displayplayers[0] = consoleplayer; // Start with your OWN view, please!
+		displayplayers[localdisplayplayers[0]] = consoleplayer; // Start with your OWN view, please!
 	}
 
 	/*if (cv_useranalog.value)

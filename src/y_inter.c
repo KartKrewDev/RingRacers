@@ -366,7 +366,7 @@ void Y_IntermissionDrawer(void)
 	if (usebuffer) // Fade everything out
 		V_DrawFadeScreen(0xFF00, 22);
 
-	if (!splitscreen)
+	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	if (cons_menuhighlight.value)
@@ -1263,19 +1263,19 @@ void Y_VoteDrawer(void)
 					{
 						case 1:
 							thiscurs = cursor2;
-							p = displayplayers[1];
+							p = displayplayers[localdisplayplayers[1]];
 							break;
 						case 2:
 							thiscurs = cursor3;
-							p = displayplayers[2];
+							p = displayplayers[localdisplayplayers[2]];
 							break;
 						case 3:
 							thiscurs = cursor4;
-							p = displayplayers[3];
+							p = displayplayers[localdisplayplayers[3]];
 							break;
 						default:
 							thiscurs = cursor1;
-							p = displayplayers[0];
+							p = displayplayers[localdisplayplayers[0]];
 							break;
 					}
 
@@ -1563,13 +1563,13 @@ void Y_VoteTicker(void)
 			switch (i)
 			{
 				case 1:
-					p = displayplayers[1];
+					p = displayplayers[localdisplayplayers[1]];
 					break;
 				case 2:
-					p = displayplayers[2];
+					p = displayplayers[localdisplayplayers[2]];
 					break;
 				case 3:
-					p = displayplayers[3];
+					p = displayplayers[localdisplayplayers[3]];
 					break;
 				default:
 					p = consoleplayer;

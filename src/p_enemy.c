@@ -4229,7 +4229,7 @@ void A_OverlayThink(mobj_t *actor)
 	if (!actor->target)
 		return;
 
-	if (!splitscreen && rendermode != render_soft)
+	if (!r_splitscreen && rendermode != render_soft)
 	{
 		angle_t viewingangle;
 

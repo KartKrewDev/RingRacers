@@ -73,6 +73,8 @@ boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisibl
 sector_t *viewsector;
 player_t *viewplayer;
 
+int r_splitscreen;
+
 // PORTALS!
 // You can thank and/or curse JTE for these.
 UINT8 portalrender;
@@ -191,6 +193,12 @@ consvar_t cv_maxportals = {"maxportals", "2", CV_SAVE, maxportals_cons_t, NULL, 
 void SplitScreen_OnChange(void)
 {
 	UINT8 i;
+
+	/*
+	local splitscreen is updated before you're in a game,
+	so this is the first value for renderer splitscreen
+	*/
+	r_splitscreen = splitscreen;
 
 	// recompute screen size
 	R_ExecuteSetViewSize();
@@ -659,12 +667,12 @@ void R_ExecuteSetViewSize(void)
 	scaledviewwidth = vid.width;
 	viewheight = vid.height;
 
-	if (splitscreen)
+	if (r_splitscreen)
 		viewheight >>= 1;
 
 	viewwidth = scaledviewwidth;
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 	{
 		viewwidth >>= 1;
 		scaledviewwidth >>= 1;
@@ -677,7 +685,7 @@ void R_ExecuteSetViewSize(void)
 
 	fov = FixedAngle(cv_fov.value/2) + ANGLE_90;
 	fovtan = FINETANGENT(fov >> ANGLETOFINESHIFT);
-	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
+	if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 		fovtan = 17*fovtan/10;
 
 	projection = projectiony = FixedDiv(centerxfrac, fovtan);
@@ -848,9 +856,9 @@ void R_SkyboxFrame(player_t *player)
 	camera_t *thiscam = &camera[0];
 	UINT8 i;
 
-	if (splitscreen)
+	if (r_splitscreen)
 	{
-		for (i = 1; i <= splitscreen; i++)
+		for (i = 1; i <= r_splitscreen; i++)
 		{
 			if (player == &players[displayplayers[i]])
 			{
@@ -891,9 +899,9 @@ void R_SkyboxFrame(player_t *player)
 				viewangle = localangle[0]; // WARNING: camera uses this
 				aimingangle = localaiming[0];
 			}
-			else if (splitscreen)
+			else if (r_splitscreen)
 			{
-				for (i = 1; i <= splitscreen; i++)
+				for (i = 1; i <= r_splitscreen; i++)
 				{
 					if (player == &players[displayplayers[i]])
 					{
@@ -1080,17 +1088,17 @@ void R_SetupFrame(player_t *player, boolean skybox)
 	camera_t *thiscam;
 	boolean chasecam = false;
 
-	if (splitscreen > 2 && player == &players[displayplayers[3]])
+	if (r_splitscreen > 2 && player == &players[displayplayers[3]])
 	{
 		thiscam = &camera[3];
 		chasecam = (cv_chasecam4.value != 0);
 	}
-	else if (splitscreen > 1 && player == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
 	{
 		thiscam = &camera[2];
 		chasecam = (cv_chasecam3.value != 0);
 	}
-	else if (splitscreen && player == &players[displayplayers[1]])
+	else if (r_splitscreen && player == &players[displayplayers[1]])
 	{
 		thiscam = &camera[1];
 		chasecam = (cv_chasecam2.value != 0);
@@ -1150,10 +1158,10 @@ void R_SetupFrame(player_t *player, boolean skybox)
 				viewangle = localangle[0]; // WARNING: camera uses this
 				aimingangle = localaiming[0];
 			}
-			else if (splitscreen)
+			else if (r_splitscreen)
 			{
 				UINT8 i;
-				for (i = 1; i <= splitscreen; i++)
+				for (i = 1; i <= r_splitscreen; i++)
 				{
 					if (player == &players[displayplayers[i]])
 					{
@@ -1334,7 +1342,7 @@ void R_RenderPlayerView(player_t *player)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 32+(timeinmap&15));
 	}
 	// Draw over the fourth screen so you don't have to stare at a HOM :V
-	else if (splitscreen == 2 && player == &players[displayplayers[2]])
+	else if (r_splitscreen == 2 && player == &players[displayplayers[2]])
 #if 1
 	{
 		// V_DrawPatchFill, but for the fourth screen only
@@ -1353,7 +1361,7 @@ void R_RenderPlayerView(player_t *player)
 #endif
 
 	// load previous saved value of skyVisible for the player
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -1463,7 +1471,7 @@ void R_RenderPlayerView(player_t *player)
 
 	// save value to skyVisiblePerPlayer
 	// this is so that P1 can't affect whether P2 can see a skybox or not, or vice versa
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{

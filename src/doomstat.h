@@ -82,6 +82,7 @@ extern INT16 gametype;
 
 #define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 extern UINT8 splitscreen;
+extern int r_splitscreen;
 
 extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
@@ -122,6 +123,8 @@ extern boolean gamedataloaded;
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
+/* displayplayers[localdisplayplayers[0]] = consoleplayer */
+extern INT32 localdisplayplayers[MAXSPLITSCREENPLAYERS];
 
 // Maps of special importance
 extern INT16 spstage_start;
