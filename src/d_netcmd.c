@@ -2053,7 +2053,27 @@ static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
 
 static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 {
+	if (playerconsole[playernum] != playernum)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal accept splitscreen invite received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
 	splitscreen_invitations[playernum] = -1;
+	if (splitscreen_party_size[playernum] >
+			splitscreen_original_party_size[playernum])
+	{
+		G_RemovePartyMember(playernum);
+		G_ResetSplitscreen(playernum);
+	}
 }
 
 void D_SendPlayerConfig(void)

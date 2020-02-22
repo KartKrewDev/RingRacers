@@ -310,6 +310,7 @@ void G_AdjustView(UINT8 viewnum, INT32 offset, boolean onlyactive);
 
 void G_AddPartyMember (int party_member, int new_party_member);
 void G_RemovePartyMember (int party_member);
+void G_ResetSplitscreen (int playernum);
 
 void G_AddPlayer(INT32 playernum);
 

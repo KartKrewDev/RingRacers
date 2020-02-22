@@ -2652,7 +2652,6 @@ void CL_ClearPlayer(INT32 playernum)
 	}
 
 	splitscreen_invitations[playernum] = -1;
-	splitscreen_partied[playernum] = false;
 
 	memset(&players[playernum], 0, sizeof (player_t));
 }
@@ -2745,6 +2744,8 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 	{
 		RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 	}
+
+	G_RemovePartyMember(playernum);
 
 	if (playernum == displayplayers[localdisplayplayers[0]] && !demo.playback)
 		displayplayers[localdisplayplayers[0]] = consoleplayer; // don't look through someone's view who isn't there
@@ -3381,6 +3382,8 @@ void SV_ResetServer(void)
 		K_ClearClientPowerLevels();
 		splitscreen_invitations[i] = -1;
 	}
+
+	memset(splitscreen_partied, 0, sizeof splitscreen_partied);
 
 	mynode = 0;
 	cl_packetmissed = false;

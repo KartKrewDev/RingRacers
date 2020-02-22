@@ -22,8 +22,8 @@ int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 boolean splitscreen_partied[MAXPLAYERS];
 
-static void
-ResetParty (int playernum)
+void
+G_ResetSplitscreen (int playernum)
 {
 	INT32 old_displayplayers[MAXSPLITSCREENPLAYERS];
 
@@ -91,15 +91,15 @@ G_RemovePartyMember (int playernum)
 			memcpy(old_party, splitscreen_party[playernum], sizeof old_party);
 			memcpy(new_party, old_party, before * sizeof *old_party);
 
-			while (i < after)
-			{
-				splitscreen_partied[old_party[i]] = false;
-
-				i++;
-			}
-
 			memcpy(&new_party[before], &old_party[after],
 					( old_party_size - after ) * sizeof *new_party);
+
+			if (splitscreen_partied[playernum] &&
+					localdisplayplayers[0] >= after)
+			{
+				for (i = 0; i < MAXSPLITSCREENPLAYERS; ++i)
+					localdisplayplayers[i] -= views;
+			}
 
 			views = ( old_party_size - views );
 
@@ -114,8 +114,7 @@ G_RemovePartyMember (int playernum)
 				}
 			}
 
-			ResetParty(playernum);
-
+			/* don't want to remove yourself from your own screen! */
 			if (playernum != consoleplayer && splitscreen_partied[playernum])
 			{
 				splitscreen_partied[playernum] = false;
@@ -181,6 +180,8 @@ G_AddPartyMember (int invitation, int playernum)
 	/* in my party or adding me? */
 	if (splitscreen_partied[invitation])
 	{
+		splitscreen_partied[playernum] = true;
+
 		for (i = old_party_size; i < new_party_size; ++i)
 		{
 			displayplayers[i] = party[i];
@@ -192,6 +193,8 @@ G_AddPartyMember (int invitation, int playernum)
 	}
 	else if (playernum == consoleplayer)
 	{
+		splitscreen_partied[invitation] = true;
+
 		for (i = 0; i <= splitscreen; ++i)
 		{
 			localdisplayplayers[i] = ( old_party_size + i );
