@@ -308,6 +308,9 @@ void G_ResetViews(void);
 void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive);
 void G_AdjustView(UINT8 viewnum, INT32 offset, boolean onlyactive);
 
+void G_AddPartyMember (int party_member, int new_party_member);
+void G_RemovePartyMember (int party_member);
+
 void G_AddPlayer(INT32 playernum);
 
 void G_SetExitGameFlag(void);

@@ -84,6 +84,8 @@ static boolean serverrunning = false;
 INT32 serverplayer = 0;
 char motd[254], server_context[8]; // Message of the Day, Unique Context (even without Mumble support)
 
+int playerconsole[MAXPLAYERS];
+
 // Server specific vars
 UINT8 playernode[MAXPLAYERS];
 
@@ -1505,6 +1507,8 @@ static boolean SV_SendServerConfig(INT32 node)
 	UINT8 *p, *op;
 	boolean waspacketsent;
 
+	memset(&netbuffer->u.servercfg, 0, sizeof netbuffer->u.servercfg);
+
 	netbuffer->packettype = PT_SERVERCFG;
 
 	netbuffer->u.servercfg.version = VERSION;
@@ -1524,7 +1528,6 @@ static boolean SV_SendServerConfig(INT32 node)
 	memset(netbuffer->u.servercfg.playercolor, 0xFF, sizeof(netbuffer->u.servercfg.playercolor));
 
 	memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
-	memset(netbuffer->u.servercfg.powerlevels, 0, sizeof(netbuffer->u.servercfg.powerlevels));
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1534,6 +1537,19 @@ static boolean SV_SendServerConfig(INT32 node)
 
 		if (!playeringame[i])
 			continue;
+
+		netbuffer->u.servercfg.consoleplayers[i] = playerconsole[i];
+		netbuffer->u.servercfg.invitations[i] = splitscreen_invitations[i];
+		netbuffer->u.servercfg.party_size[i] = splitscreen_party_size[i];
+		netbuffer->u.servercfg.original_party_size[i] =
+			splitscreen_original_party_size[i];
+
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; ++j)
+		{
+			netbuffer->u.servercfg.party[i][j] = splitscreen_party[i][j];
+			netbuffer->u.servercfg.original_party[i][j] =
+				splitscreen_original_party[i][j];
+		}
 
 		netbuffer->u.servercfg.playerskins[i] = (UINT8)players[i].skin;
 		netbuffer->u.servercfg.playercolor[i] = (UINT8)players[i].skincolor;
@@ -2619,6 +2635,8 @@ static void ResetNode(INT32 node);
 //
 void CL_ClearPlayer(INT32 playernum)
 {
+	int i;
+
 	if (players[playernum].mo)
 	{
 		// Don't leave a NiGHTS ghost!
@@ -2626,6 +2644,16 @@ void CL_ClearPlayer(INT32 playernum)
 			P_RemoveMobj(players[playernum].mo->tracer);
 		P_RemoveMobj(players[playernum].mo);
 	}
+
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (splitscreen_invitations[i] == playernum)
+			splitscreen_invitations[i] = -1;
+	}
+
+	splitscreen_invitations[playernum] = -1;
+	splitscreen_partied[playernum] = false;
+
 	memset(&players[playernum], 0, sizeof (player_t));
 }
 
@@ -3351,6 +3379,7 @@ void SV_ResetServer(void)
 		sprintf(player_names[i], "Player %d", i + 1);
 		adminplayers[i] = -1; // Populate the entire adminplayers array with -1.
 		K_ClearClientPowerLevels();
+		splitscreen_invitations[i] = -1;
 	}
 
 	mynode = 0;
@@ -3455,6 +3484,7 @@ static inline void SV_AddNode(INT32 node)
 static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 {
 	INT16 node, newplayernum;
+	int console;
 	UINT8 splitscreenplayer = 0;
 	UINT8 i;
 
@@ -3475,6 +3505,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	node = (UINT8)READUINT8(*p);
 	newplayernum = (UINT8)READUINT8(*p);
+	console = (UINT8)READUINT8(*p);
 	splitscreenplayer = (UINT8)READUINT8(*p);
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d %d\n", node, newplayernum, splitscreenplayer);
@@ -3507,6 +3538,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 				displayplayers[i] = newplayernum;
 				localdisplayplayers[i] = i;
 			}
+			splitscreen_partied[newplayernum] = true;
 			DEBFILE("spawning me\n");
 		}
 
@@ -3515,6 +3547,12 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	}
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
+
+	playerconsole[newplayernum] = console;
+	splitscreen_original_party_size[console] =
+		++splitscreen_party_size[console];
+	splitscreen_original_party[console][splitscreenplayer] =
+		splitscreen_party[console][splitscreenplayer] = newplayernum;
 
 	if (netgame)
 	{
@@ -3577,7 +3615,7 @@ static boolean SV_AddWaitingPlayers(void)
 		// splitscreen can allow 2+ players in one node
 		for (; nodewaiting[node] > 0; nodewaiting[node]--)
 		{
-			UINT8 buf[3];
+			UINT8 buf[4];
 			UINT8 *buf_p = buf;
 
 			newplayer = true;
@@ -3614,6 +3652,7 @@ static boolean SV_AddWaitingPlayers(void)
 			else if (playerpernode[node] < 4)
 				nodetoplayer4[node] = newplayernum;
 
+			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
 			WRITEUINT8(buf_p, playerpernode[node]); // splitscreen num
 
 			playerpernode[node]++;
@@ -4141,6 +4180,21 @@ static void HandlePacketFromAwayNode(SINT8 node)
 					adminplayers[j] = netbuffer->u.servercfg.adminplayers[j];
 					for (k = 0; k < PWRLV_NUMTYPES; k++)
 						clientpowerlevels[j][k] = netbuffer->u.servercfg.powerlevels[j][k];
+
+					/* all spitscreen related */
+					playerconsole[j] = netbuffer->u.servercfg.consoleplayers[j];
+					splitscreen_invitations[j] = netbuffer->u.servercfg.invitations[j];
+					splitscreen_original_party_size[j] =
+						netbuffer->u.servercfg.original_party_size[j];
+					splitscreen_party_size[j] =
+						netbuffer->u.servercfg.party_size[j];
+					for (k = 0; k < MAXSPLITSCREENPLAYERS; ++k)
+					{
+						splitscreen_original_party[j][k] =
+							netbuffer->u.servercfg.original_party[j][k];
+						splitscreen_party[j][k] =
+							netbuffer->u.servercfg.party[j][k];
+					}
 				}
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}

@@ -63,6 +63,9 @@
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
 static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
 static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
+static void Got_PartyInvite(UINT8 **cp, INT32 playernum);
+static void Got_AcceptPartyInvite(UINT8 **cp, INT32 playernum);
+static void Got_LeaveParty(UINT8 **cp, INT32 playernum);
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum);
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum);
@@ -133,6 +136,11 @@ static void Command_ResetCamera_f(void);
 
 static void Command_View_f (void);
 static void Command_SetViews_f(void);
+
+static void Command_Invite_f(void);
+static void Command_AcceptInvite_f(void);
+static void Command_RejectInvite_f(void);
+static void Command_LeaveParty_f(void);
 
 static void Command_Addfile(void);
 static void Command_ListWADS_f(void);
@@ -544,6 +552,9 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
 	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
+	RegisterNetXCmd(XD_PARTYINVITE, Got_PartyInvite);
+	RegisterNetXCmd(XD_ACCEPTPARTYINVITE, Got_AcceptPartyInvite);
+	RegisterNetXCmd(XD_LEAVEPARTY, Got_LeaveParty);
 	RegisterNetXCmd(XD_MAP, Got_Mapcmd);
 	RegisterNetXCmd(XD_EXITLEVEL, Got_ExitLevelcmd);
 	RegisterNetXCmd(XD_ADDFILE, Got_Addfilecmd);
@@ -752,6 +763,11 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("changeteam2", Command_Teamchange2_f);
 	COM_AddCommand("changeteam3", Command_Teamchange3_f);
 	COM_AddCommand("changeteam4", Command_Teamchange4_f);
+
+	COM_AddCommand("invite", Command_Invite_f);
+	COM_AddCommand("acceptinvite", Command_AcceptInvite_f);
+	COM_AddCommand("rejectinvite", Command_RejectInvite_f);
+	COM_AddCommand("leaveparty", Command_LeaveParty_f);
 
 	COM_AddCommand("playdemo", Command_Playdemo_f);
 	COM_AddCommand("timedemo", Command_Timedemo_f);
@@ -1942,6 +1958,104 @@ static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
 	CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", playernum, race);
 }
 
+static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
+{
+	int invitee;
+
+	boolean kick = false;
+
+	invitee = READUINT8 (*cp);
+
+	if (
+			invitee >= 0 &&
+			invitee < MAXPLAYERS &&
+			playeringame[invitee] &&
+			playerconsole[playernum] == playernum/* only consoleplayer may! */
+	){
+		invitee = playerconsole[invitee];
+		/* you cannot invite yourself or your computer */
+		if (invitee == playernum)
+			kick = true;
+	}
+	else
+		kick = true;
+
+	if (kick)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal splitscreen invitation received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	if (splitscreen_invitations[invitee] < 0)
+	{
+		splitscreen_invitations[invitee] = playernum;
+
+		if (invitee == consoleplayer)/* hey that's me! */
+		{
+			CONS_Printf(
+					"You have been invited to join %s",
+					player_names[playernum]
+			);
+			if (splitscreen_party_size[playernum] > 1)
+			{
+				CONS_Printf(
+						" and %d others",
+						( splitscreen_party_size[playernum] - 1 )
+				);
+			}
+			CONS_Printf(".\n");
+		}
+	}
+}
+
+static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
+{
+	int invitation;
+	int old_party_size;
+	int views;
+
+	if (playerconsole[playernum] != playernum)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal accept splitscreen invite received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	invitation = splitscreen_invitations[playernum];
+
+	if (invitation >= 0)
+	{
+		old_party_size = splitscreen_party_size[invitation];
+		views = splitscreen_original_party_size[playernum];
+
+		if (( old_party_size + views ) <= MAXSPLITSCREENPLAYERS)
+		{
+			G_RemovePartyMember(playernum);
+			G_AddPartyMember(invitation, playernum);
+		}
+	}
+}
+
+static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
+{
+	splitscreen_invitations[playernum] = -1;
+}
+
 void D_SendPlayerConfig(void)
 {
 	SendNameAndColor();
@@ -2179,6 +2293,85 @@ static void Command_SetViews_f(void)
 	{
 		r_splitscreen = newsplits-1;
 		R_ExecuteSetViewSize();
+	}
+}
+
+static void
+Command_Invite_f (void)
+{
+	UINT8 invitee;
+
+	if (COM_Argc() != 2)
+	{
+		CONS_Printf("invite <player>: Invite a player to your party.\n");
+		return;
+	}
+
+	if (r_splitscreen >= MAXSPLITSCREENPLAYERS)
+	{
+		CONS_Alert(CONS_WARNING, "Your party is full!\n");
+		return;
+	}
+
+	invitee = LookupPlayer(COM_Argv(1));
+
+	if (invitee == -1)
+	{
+		CONS_Alert(CONS_WARNING, "There is no player by that name!\n");
+		return;
+	}
+	if (!playeringame[invitee])
+	{
+		CONS_Alert(CONS_WARNING, "There is no player using that slot!\n");
+		return;
+	}
+
+	if (invitee == consoleplayer)
+	{
+		CONS_Alert(CONS_WARNING, "You cannot invite yourself! Bruh!\n");
+		return;
+	}
+
+	if (splitscreen_invitations[invitee] >= 0)
+	{
+		CONS_Alert(CONS_WARNING,
+				"That player has already been invited to join another party.\n");
+	}
+
+	SendNetXCmd(XD_PARTYINVITE, &invitee, 1);
+}
+
+static boolean
+CheckPartyInvite (void)
+{
+	if (splitscreen_invitations[consoleplayer] < 0)
+	{
+		CONS_Alert(CONS_WARNING, "There is no open party invitation.\n");
+		return false;
+	}
+	return true;
+}
+
+static void
+Command_AcceptInvite_f (void)
+{
+	if (CheckPartyInvite())
+		SendNetXCmd(XD_ACCEPTPARTYINVITE, NULL, 0);
+}
+
+static void
+Command_RejectInvite_f (void)
+{
+	if (CheckPartyInvite())
+		SendNetXCmd(XD_LEAVEPARTY, NULL, 0);
+}
+
+static void
+Command_LeaveParty_f (void)
+{
+	if (r_splitscreen > splitscreen)
+	{
+		SendNetXCmd(XD_LEAVEPARTY, NULL, 0);
 	}
 }
 
@@ -5299,7 +5492,29 @@ static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
   */
 static void Command_Displayplayer_f(void)
 {
-	CONS_Printf(M_GetText("Displayplayer is %d\n"), displayplayers[localdisplayplayers[0]]);
+	int playernum;
+	int i;
+	for (i = 0; i <= splitscreen; ++i)
+	{
+		playernum = displayplayers[localdisplayplayers[i]];
+		CONS_Printf(
+				"local   player %d: \x84(%d) \x83%s\x80\n",
+				i,
+				playernum,
+				player_names[playernum]
+		);
+	}
+	CONS_Printf("\x83----------------------------------------\x80\n");
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		playernum = displayplayers[i];
+		CONS_Printf(
+				"display player %d: \x84(%d) \x83%s\x80\n",
+				i,
+				playernum,
+				player_names[playernum]
+		);
+	}
 }
 
 /** Quits a game and returns to the title screen.

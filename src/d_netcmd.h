@@ -179,9 +179,12 @@ typedef enum
 	XD_PICKVOTE,    // 24
 	XD_REMOVEPLAYER,// 25
 	XD_POWERLEVEL,  // 26
+	XD_PARTYINVITE, // 27
+	XD_ACCEPTPARTYINVITE, // 28
+	XD_LEAVEPARTY, // 29
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 27
-	XD_LUAVAR,      // 28
+	XD_LUACMD,      // 30
+	XD_LUAVAR,      // 31
 #endif
 	MAXNETXCMD
 } netxcmd_t;
