@@ -3529,6 +3529,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		if (splitscreenplayer)
 		{
 			displayplayers[splitscreenplayer] = newplayernum;
+			localdisplayplayers[splitscreenplayer] = splitscreenplayer;
 			DEBFILE(va("spawning sister # %d\n", splitscreenplayer));
 			if (splitscreenplayer == 1 && botingame)
 				players[newplayernum].bot = 1;
@@ -3539,7 +3540,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 			{
 				displayplayers[i] = newplayernum;
-				localdisplayplayers[i] = i;
+				localdisplayplayers[i] = 0;
 			}
 			splitscreen_partied[newplayernum] = true;
 			DEBFILE("spawning me\n");

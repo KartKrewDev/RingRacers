@@ -7339,17 +7339,17 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		focusangle = localangle[0];
 		focusaiming = localaiming[0];
 	}
-	else if (player == &players[displayplayers[1]])
+	else if (player == &players[displayplayers[localdisplayplayers[1]]])
 	{
 		focusangle = localangle[1];
 		focusaiming = localaiming[1];
 	}
-	else if (player == &players[displayplayers[2]])
+	else if (player == &players[displayplayers[localdisplayplayers[2]]])
 	{
 		focusangle = localangle[2];
 		focusaiming = localaiming[2];
 	}
-	else if (player == &players[displayplayers[3]])
+	else if (player == &players[displayplayers[localdisplayplayers[3]]])
 	{
 		focusangle = localangle[3];
 		focusaiming = localaiming[3];

@@ -51,7 +51,7 @@ G_ResetSplitscreen (int playernum)
 		while (i < MAXSPLITSCREENPLAYERS)
 		{
 			displayplayers[i] = consoleplayer;
-			localdisplayplayers[i] = i;
+			localdisplayplayers[i] = 0;
 
 			i++;
 		}
@@ -203,6 +203,7 @@ G_AddPartyMember (int invitation, int playernum)
 		while (++i < new_party_size)
 		{
 			displayplayers[i] = party[i];
+			localdisplayplayers[i] = old_party_size;
 		}
 
 		r_splitscreen = ( new_party_size - 1 );
