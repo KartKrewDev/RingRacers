@@ -1318,6 +1318,38 @@ static void ForceAllSkins(INT32 forcedskin)
 	}
 }
 
+static const char *
+VaguePartyDescription (int playernum, int *party_sizes, int default_color)
+{
+	static char description[1 + MAXPLAYERNAME + 1 + sizeof " and x others"];
+	const char *name;
+	int size;
+	name = player_names[playernum];
+	size = party_sizes[playernum];
+	/*
+	less than check for the dumb compiler because I KNOW it'll
+	complain about "writing x bytes into an area of y bytes"!!!
+	*/
+	if (size > 1 && size <= MAXSPLITSCREENPLAYERS)
+	{
+		sprintf(description,
+				"\x83%s%c and %d others",
+				name,
+				( size - 1 ),
+				default_color
+		);
+	}
+	else
+	{
+		sprintf(description,
+				"\x83%s%c",
+				name,
+				default_color
+		);
+	}
+	return description;
+}
+
 static INT32 snacpending = 0, snac2pending = 0, snac3pending = 0, snac4pending = 0, chmappending = 0;
 
 // name, color, or skin has changed
@@ -2000,18 +2032,11 @@ static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
 
 		if (invitee == consoleplayer)/* hey that's me! */
 		{
-			CONS_Printf(
-					"You have been invited to join %s",
-					player_names[playernum]
-			);
-			if (splitscreen_party_size[playernum] > 1)
-			{
-				CONS_Printf(
-						" and %d others",
-						( splitscreen_party_size[playernum] - 1 )
-				);
-			}
-			CONS_Printf(".\n");
+			HU_AddChatText(va(
+						"\x82*You have been invited to join %s.",
+						VaguePartyDescription(
+							playernum, splitscreen_party_size, '\x82')
+			), true);
 		}
 	}
 }
@@ -2040,6 +2065,23 @@ static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
 
 	if (invitation >= 0)
 	{
+		if (splitscreen_partied[invitation])
+		{
+			HU_AddChatText(va(
+						"\x82*%s has joined your party!",
+						VaguePartyDescription(
+							playernum, splitscreen_original_party_size, '\x82')
+			), true);
+		}
+		else if (playernum == consoleplayer)
+		{
+			HU_AddChatText(va(
+						"\x82*You joined %s's party!",
+						VaguePartyDescription(
+							invitation, splitscreen_party_size, '\x82')
+			), true);
+		}
+
 		old_party_size = splitscreen_party_size[invitation];
 		views = splitscreen_original_party_size[playernum];
 
@@ -2069,11 +2111,28 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 		return;
 	}
 
+	if (consoleplayer == splitscreen_invitations[playernum])
+	{
+		HU_AddChatText(va(
+					"\x85*\x83%s\x85 rejected your invitation.",
+					player_names[playernum]
+		), true);
+	}
+
 	splitscreen_invitations[playernum] = -1;
 
 	if (splitscreen_party_size[playernum] >
 			splitscreen_original_party_size[playernum])
 	{
+		if (splitscreen_partied[playernum] && playernum != consoleplayer)
+		{
+			HU_AddChatText(va(
+						"\x85*%s left your party.",
+						VaguePartyDescription(
+							playernum, splitscreen_original_party_size, '\x85')
+			), true);
+		}
+
 		G_RemovePartyMember(playernum);
 		G_ResetSplitscreen(playernum);
 	}
@@ -2361,6 +2420,20 @@ Command_Invite_f (void)
 				"That player has already been invited to join another party.\n");
 	}
 
+	if (( splitscreen_party_size[consoleplayer] +
+				splitscreen_original_party_size[invitee] ) > MAXSPLITSCREENPLAYERS)
+	{
+		CONS_Alert(CONS_WARNING,
+				"That player joined with too many "
+				"splitscreen players for your party.\n");
+	}
+
+	CONS_Printf(
+			"Inviting %s...\n",
+			VaguePartyDescription(
+				invitee, splitscreen_original_party_size, '\x80')
+	);
+
 	SendNetXCmd(XD_PARTYINVITE, &invitee, 1);
 }
 
@@ -2386,7 +2459,11 @@ static void
 Command_RejectInvite_f (void)
 {
 	if (CheckPartyInvite())
+	{
+		CONS_Printf("\x85Rejecting invite...\n");
+
 		SendNetXCmd(XD_LEAVEPARTY, NULL, 0);
+	}
 }
 
 static void
@@ -2394,6 +2471,8 @@ Command_LeaveParty_f (void)
 {
 	if (r_splitscreen > splitscreen)
 	{
+		CONS_Printf("\x85Leaving party...\n");
+
 		SendNetXCmd(XD_LEAVEPARTY, NULL, 0);
 	}
 }
