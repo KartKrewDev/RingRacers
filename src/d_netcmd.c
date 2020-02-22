@@ -2048,6 +2048,8 @@ static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
 			G_RemovePartyMember(playernum);
 			G_AddPartyMember(invitation, playernum);
 		}
+
+		splitscreen_invitations[playernum] = -1;
 	}
 }
 
@@ -2068,6 +2070,7 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 	}
 
 	splitscreen_invitations[playernum] = -1;
+
 	if (splitscreen_party_size[playernum] >
 			splitscreen_original_party_size[playernum])
 	{
