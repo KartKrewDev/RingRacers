@@ -495,7 +495,7 @@ void Y_IntermissionDrawer(void)
 
 				y2 = y;
 
-				if (data.match.num[i] == 0 && server_lagless)
+				if (playerconsole[data.match.num[i]] == 0 && server_lagless)
 				{
 					static int alagles_timer = 0;
 					patch_t *alagles;
