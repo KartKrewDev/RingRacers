@@ -4960,6 +4960,28 @@ static void CL_SendClientCmd(void)
 	size_t packetsize = 0;
 	boolean mis = false;
 
+	int fastest;
+	int lag;
+	int i;
+
+	fastest = 0;
+
+	if (server)
+	{
+		for (i = 0; i < MAXPLAYERS; ++i)
+		{
+			if (playernode[i] > 0 && playeringame[i])
+			{
+				lag = GetLag(playernode[i]);
+				if (! fastest || lag < fastest)
+					fastest = lag;
+			}
+		}
+	}
+
+	if (fastest && ( gametic % fastest ))
+		return;
+
 	netbuffer->packettype = PT_CLIENTCMD;
 
 	if (cl_packetmissed)
