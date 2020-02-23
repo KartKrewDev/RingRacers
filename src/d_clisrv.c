@@ -4966,7 +4966,7 @@ static void CL_SendClientCmd(void)
 
 	fastest = 0;
 
-	if (server)
+	if (server && ! cv_lagless.value)
 	{
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
