@@ -435,6 +435,7 @@ void Y_IntermissionDrawer(void)
 		INT32 y = 41, gutter = ((data.match.numplayers > NUMFORNEWCOLUMN) ? 0 : (BASEVIDWIDTH/2));
 		INT32 dupadjust = (vid.width/vid.dupx), duptweak = (dupadjust - BASEVIDWIDTH)/2;
 		const char *timeheader;
+		int y2;
 
 		if (data.match.rankingsmode)
 			timeheader = "PWR.LV";
@@ -492,10 +493,41 @@ void Y_IntermissionDrawer(void)
 
 				STRBUFCPY(strtime, data.match.name[i]);
 
+				y2 = y;
+
+				if (data.match.num[i] == 0 && server_lagless)
+				{
+					static int alagles_timer = 0;
+					patch_t *alagles;
+
+					y2 = ( y - 4 );
+
+					V_DrawScaledPatch(x + 36, y2, 0, W_CachePatchName(va("BLAGLES%d", (intertic / 3) % 6), PU_CACHE));
+					// every 70 tics
+					if (( leveltime % 70 ) == 0)
+					{
+						alagles_timer = 9;
+					}
+					if (alagles_timer > 0)
+					{
+						alagles = W_CachePatchName(va("ALAGLES%d", alagles_timer), PU_CACHE);
+						V_DrawScaledPatch(x + 36, y2, 0, alagles);
+						if (( leveltime % 2 ) == 0)
+							alagles_timer--;
+					}
+					else
+					{
+						alagles = W_CachePatchName("ALAGLES0", PU_CACHE);
+						V_DrawScaledPatch(x + 36, y2, 0, alagles);
+					}
+
+					y2 += SHORT (alagles->height) + 1;
+				}
+
 				if (data.match.numplayers > NUMFORNEWCOLUMN)
-					V_DrawThinString(x+36, y-1, ((data.match.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
+					V_DrawThinString(x+36, y2-1, ((data.match.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
 				else
-					V_DrawString(x+36, y, ((data.match.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
+					V_DrawString(x+36, y2, ((data.match.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
 
 				if (data.match.rankingsmode)
 				{

@@ -97,6 +97,7 @@ UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
 tic_t servermaxping = 800;			// server's max ping. Defaults to 800
+boolean server_lagless;
 SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
 SINT8 nodetoplayer3[MAXNETNODES]; // say the numplayer for this node if any (splitscreen == 2)
@@ -4966,7 +4967,7 @@ static void CL_SendClientCmd(void)
 
 	fastest = 0;
 
-	if (server && ! cv_lagless.value)
+	if (server && ! server_lagless)
 	{
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{

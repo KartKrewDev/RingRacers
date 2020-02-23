@@ -8406,7 +8406,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 
 		y2 = y;
 
-		if (tab[i].num == 0 && cv_lagless.value)
+		if (tab[i].num == 0 && server_lagless)
 		{
 			y2 = ( y - 4 );
 
