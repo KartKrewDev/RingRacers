@@ -8399,7 +8399,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 			continue; //ignore them.
 
 		if (netgame // don't draw it offline
-		&& tab[i].num != serverplayer)
+		&& ( tab[i].num != serverplayer || ! server_lagless ))
 			HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
 
 		STRBUFCPY(strtime, tab[i].name);
