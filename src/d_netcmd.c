@@ -2068,7 +2068,7 @@ static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
 		if (splitscreen_partied[invitation])
 		{
 			HU_AddChatText(va(
-						"\x82*%s has joined your party!",
+						"\x82*%s joined your party!",
 						VaguePartyDescription(
 							playernum, splitscreen_original_party_size, '\x82')
 			), true);
