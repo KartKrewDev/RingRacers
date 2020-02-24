@@ -1596,8 +1596,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	//Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
-		&& g_localplayers[0] != consoleplayer && ssplayer == 1)
-		g_localplayers[0] = consoleplayer;
+		&& ! r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
+		displayplayers[0] = consoleplayer;
 
 }
 
