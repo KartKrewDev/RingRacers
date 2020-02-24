@@ -617,33 +617,10 @@ void P_Ticker(boolean run)
 		}
 		if (demo.playback)
 		{
-
-#ifdef DEMO_COMPAT_100
-			if (demo.version == 0x0001)
-			{
-				G_ReadDemoTiccmd(&players[consoleplayer].cmd, 0);
-			}
-			else
-			{
-#endif
-				G_ReadDemoExtraData();
-				for (i = 0; i < MAXPLAYERS; i++)
-					if (playeringame[i])
-					{
-						//@TODO all this throwdir stuff shouldn't be here! But it's added to maintain 1.0.4 compat for now...
-						// Remove for 1.1!
-						if (players[i].cmd.buttons & BT_FORWARD)
-							players[i].kartstuff[k_throwdir] = 1;
-						else if (players[i].cmd.buttons & BT_BACKWARD)
-							players[i].kartstuff[k_throwdir] = -1;
-						else
-							players[i].kartstuff[k_throwdir] = 0;
-
-						G_ReadDemoTiccmd(&players[i].cmd, i);
-					}
-#ifdef DEMO_COMPAT_100
-			}
-#endif
+			G_ReadDemoExtraData();
+			for (i = 0; i < MAXPLAYERS; i++)
+				if (playeringame[i])
+					G_ReadDemoTiccmd(&players[i].cmd, i);
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -664,6 +641,8 @@ void P_Ticker(boolean run)
 	if (run)
 	{
 		P_RunThinkers();
+		if (G_BattleGametype() && battleovertime.enabled)
+			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -759,11 +738,6 @@ void P_Ticker(boolean run)
 		}
 		else if (demo.playback) // Use Ghost data for consistency checks.
 		{
-#ifdef DEMO_COMPAT_100
-			if (demo.version == 0x0001)
-				G_ConsGhostTic(0);
-			else
-#endif
 			G_ConsAllGhostTics();
 		}
 
@@ -821,6 +795,8 @@ void P_PreTicker(INT32 frames)
 			}
 
 		P_RunThinkers();
+		if (G_BattleGametype() && battleovertime.enabled)
+			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)

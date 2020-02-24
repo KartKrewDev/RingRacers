@@ -233,6 +233,7 @@ static char returnWadPath[256];
 #include "../d_net.h"
 #include "../g_game.h"
 #include "../filesrch.h"
+#include "../k_pwrlv.h"
 #include "endtxt.h"
 #include "sdlmain.h"
 
@@ -2977,6 +2978,11 @@ void I_Quit(void)
 #ifndef NONET
 	D_SaveBan(); // save the ban list
 #endif
+
+	// Make sure you lose points for ALT-F4
+	if (Playing())
+		K_PlayerForfeit(consoleplayer, true);
+
 	G_SaveGameData(); // Tails 12-08-2002
 	//added:16-02-98: when recording a demo, should exit using 'q' key,
 	//        but sometimes we forget and use 'F10'.. so save here too.

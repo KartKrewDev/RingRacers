@@ -3558,8 +3558,6 @@ void A_BubbleCheck(mobj_t *actor)
 //
 void A_AttractChase(mobj_t *actor)
 {
-	fixed_t z;
-
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_AttractChase", actor))
 		return;
@@ -3603,12 +3601,11 @@ void A_AttractChase(mobj_t *actor)
 			{
 				fixed_t offz = FixedMul(80*actor->target->scale, FINESINE(FixedAngle((90 - (9 * abs(10 - actor->extravalue1))) << FRACBITS) >> ANGLETOFINESHIFT));
 				//P_SetScale(actor, (actor->destscale = actor->target->scale));
-				z = actor->target->z;
-				if (( actor->eflags & MFE_VERTICALFLIP ))
-					z -= actor->height + offz;
-				else
-					z += actor->target->height + offz;
-				P_TeleportMove(actor, actor->target->x, actor->target->y, z);
+				actor->z = actor->target->z;
+				K_MatchGenericExtraFlags(actor, actor->target);
+				P_TeleportMove(actor, actor->target->x, actor->target->y,
+						actor->z +
+						( actor->target->height + offz )* P_MobjFlip(actor));
 				actor->extravalue1++;
 			}
 		}
@@ -3635,15 +3632,12 @@ void A_AttractChase(mobj_t *actor)
 				fixed_t dist = (actor->target->radius/4) * (16 - actor->extravalue1);
 
 				P_SetScale(actor, (actor->destscale = actor->target->scale - ((actor->target->scale/14) * actor->extravalue1)));
-				z = actor->target->z;
-				if (( actor->eflags & MFE_VERTICALFLIP ))
-					z += actor->target->height - actor->height - 24 * actor->target->scale;
-				else
-					z += 24 * actor->target->scale;
+				actor->z = actor->target->z;
+				K_MatchGenericExtraFlags(actor, actor->target);
 				P_TeleportMove(actor,
 					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
 					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),
-					z);
+					actor->z + actor->target->scale * 24 * P_MobjFlip(actor));
 
 				actor->angle += ANG30;
 				actor->extravalue1++;
@@ -8299,7 +8293,7 @@ void A_ItemPop(mobj_t *actor)
 	remains->flags = actor->flags; // Transfer flags
 	remains->flags2 = actor->flags2; // Transfer flags2
 	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->threshold = (actor->threshold == 69 ? 69 : 68);
+	remains->threshold = (actor->threshold == 70 ? 70 : (actor->threshold == 69 ? 69 : 68));
 	remains->skin = NULL;
 	remains->spawnpoint = actor->spawnpoint;
 
@@ -8313,7 +8307,7 @@ void A_ItemPop(mobj_t *actor)
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
-	if (G_BattleGametype() && actor->threshold != 69)
+	if (G_BattleGametype() && (actor->threshold != 69 && actor->threshold != 70))
 		numgotboxes++;
 
 	P_RemoveMobj(actor);
@@ -8321,7 +8315,11 @@ void A_ItemPop(mobj_t *actor)
 
 void A_JawzChase(mobj_t *actor)
 {
+	const fixed_t currentspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
 	player_t *player;
+	fixed_t thrustamount = 0;
+	fixed_t frictionsafety = (actor->friction == 0) ? 1 : actor->friction;
+	fixed_t topspeed = actor->movefactor;
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_JawzChase", actor))
 		return;
@@ -8334,19 +8332,99 @@ void A_JawzChase(mobj_t *actor)
 
 		if (actor->tracer->health)
 		{
+			const angle_t targetangle = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
 			mobj_t *ret;
+			angle_t angledelta = actor->angle - targetangle;
+			boolean turnclockwise = true;
+
+			if (G_RaceGametype())
+			{
+				const fixed_t distbarrier = FixedMul(512*mapobjectscale, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
+				const fixed_t distaway = P_AproxDistance(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
+				if (distaway < distbarrier)
+				{
+					if (actor->tracer->player)
+					{
+						fixed_t speeddifference = abs(topspeed - min(actor->tracer->player->speed, K_GetKartSpeed(actor->tracer->player, false)));
+						topspeed = topspeed - FixedMul(speeddifference, FRACUNIT-FixedDiv(distaway, distbarrier));
+					}
+				}
+			}
+
+			if (angledelta != 0)
+			{
+				angle_t MAX_JAWZ_TURN = ANGLE_90/15; // We can turn a maximum of 6 degrees per frame at regular max speed
+				// MAX_JAWZ_TURN gets stronger the slower the top speed of jawz
+				if (topspeed < actor->movefactor)
+				{
+					if (topspeed == 0)
+					{
+						MAX_JAWZ_TURN = ANGLE_180;
+					}
+					else
+					{
+						fixed_t anglemultiplier = FixedDiv(actor->movefactor, topspeed);
+						MAX_JAWZ_TURN += FixedAngle(FixedMul(AngleFixed(MAX_JAWZ_TURN), anglemultiplier));
+					}
+				}
+
+				if (angledelta > ANGLE_180)
+				{
+					angledelta = InvAngle(angledelta);
+					turnclockwise = false;
+				}
+
+				if (angledelta > MAX_JAWZ_TURN)
+				{
+					angledelta = MAX_JAWZ_TURN;
+				}
+
+				if (turnclockwise)
+				{
+					actor->angle -= angledelta;
+				}
+				else
+				{
+					actor->angle += angledelta;
+				}
+			}
 
 			ret = P_SpawnMobj(actor->tracer->x, actor->tracer->y, actor->tracer->z, MT_PLAYERRETICULE);
 			P_SetTarget(&ret->target, actor->tracer);
 			ret->frame |= ((leveltime % 10) / 2) + 5;
 			ret->color = actor->cvmem;
-
-			P_Thrust(actor, R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y), (7*actor->movefactor)/64);
-			return;
 		}
 		else
 			P_SetTarget(&actor->tracer, NULL);
 	}
+
+	if (!P_IsObjectOnGround(actor))
+	{
+		// No friction in the air
+		frictionsafety = FRACUNIT;
+	}
+
+	if (currentspeed >= topspeed)
+	{
+		// Thrust as if you were at top speed, slow down naturally
+		thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
+	}
+	else
+	{
+		const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
+		// Thrust to immediately get to top speed
+		thrustamount = beatfriction + FixedDiv(topspeed - currentspeed, frictionsafety);
+	}
+
+	if (!actor->tracer)
+	{
+		actor->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
+	}
+
+	P_Thrust(actor, actor->angle, thrustamount);
+
+	if ((actor->tracer != NULL) && (actor->tracer->health > 0))
+		return;
 
 	if (actor->extravalue1) // Disable looking by setting this
 		return;

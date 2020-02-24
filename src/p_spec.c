@@ -2802,7 +2802,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 423: // Change Sky
 			if ((mo && mo->player && P_IsLocalPlayer(mo->player)) || (line->flags & ML_NOCLIMB))
-				P_SetupLevelSky(sides[line->sidenum[0]].textureoffset>>FRACBITS, (line->flags & ML_NOCLIMB));
+				P_SetupLevelSky(sides[line->sidenum[0]].text, (line->flags & ML_NOCLIMB));
 			break;
 
 		case 424: // Change Weather
@@ -3637,10 +3637,9 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			break;
 		case 9: // Ring Drainer (Floor Touch)
 		case 10: // Ring Drainer (No Floor Touch)
-			if (leveltime % (TICRATE/2) == 0 && player->mo->health > 1)
+			if (leveltime % (TICRATE/2) == 0 && player->kartstuff[k_rings] > 0)
 			{
-				player->mo->health--;
-				player->health--;
+				player->kartstuff[k_rings]--;
 				S_StartSound(player->mo, sfx_itemup);
 			}
 			break;
@@ -4308,10 +4307,6 @@ DoneSection2:
 
 					// Play the starpost sound for 'consistency'
 					// S_StartSound(player->mo, sfx_strpst);
-
-					// Figure out how many are playing on the last lap, to prevent spectate griefing
-					if (!nospectategrief && player->laps >= (UINT8)(cv_numlaps.value - 1))
-						nospectategrief = nump;
 
 					thwompsactive = true; // Lap 2 effects
 				}
