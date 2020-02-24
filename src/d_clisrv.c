@@ -2652,6 +2652,8 @@ void CL_ClearPlayer(INT32 playernum)
 	}
 
 	splitscreen_invitations[playernum] = -1;
+	splitscreen_party_size[playernum] = 0;
+	splitscreen_original_party_size[playernum] = 0;
 
 	memset(&players[playernum], 0, sizeof (player_t));
 }
@@ -2728,6 +2730,8 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 	(void)reason;
 #endif
 
+	G_RemovePartyMember(playernum);
+
 	// Reset player data
 	CL_ClearPlayer(playernum);
 
@@ -2744,8 +2748,6 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 	{
 		RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 	}
-
-	G_RemovePartyMember(playernum);
 
 	if (playernum == g_localplayers[0] && !demo.playback)
 		g_localplayers[0] = consoleplayer; // don't look through someone's view who isn't there
