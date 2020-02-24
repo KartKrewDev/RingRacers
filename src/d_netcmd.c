@@ -1333,10 +1333,11 @@ VaguePartyDescription (int playernum, int *party_sizes, int default_color)
 	if (size > 1 && size <= MAXSPLITSCREENPLAYERS)
 	{
 		sprintf(description,
-				"\x83%s%c and %d others",
+				"\x83%s%c and %d other%s",
 				name,
 				default_color,
-				( size - 1 )
+				( size - 1 ),
+				( (size > 2) ? "s" : "" )
 		);
 	}
 	else
