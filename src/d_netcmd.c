@@ -1335,8 +1335,8 @@ VaguePartyDescription (int playernum, int *party_sizes, int default_color)
 		sprintf(description,
 				"\x83%s%c and %d others",
 				name,
-				( size - 1 ),
-				default_color
+				default_color,
+				( size - 1 )
 		);
 	}
 	else
