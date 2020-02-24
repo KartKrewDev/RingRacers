@@ -899,11 +899,11 @@ void R_SkyboxFrame(player_t *player)
 				viewangle = localangle[0]; // WARNING: camera uses this
 				aimingangle = localaiming[0];
 			}
-			else if (r_splitscreen)
+			else if (splitscreen)
 			{
-				for (i = 1; i <= r_splitscreen; i++)
+				for (i = 1; i <= splitscreen; i++)
 				{
-					if (player == &players[displayplayers[i]])
+					if (player == &players[g_localplayers[i]])
 					{
 						viewangle = localangle[i];
 						aimingangle = localaiming[i];
@@ -1158,12 +1158,12 @@ void R_SetupFrame(player_t *player, boolean skybox)
 				viewangle = localangle[0]; // WARNING: camera uses this
 				aimingangle = localaiming[0];
 			}
-			else if (r_splitscreen)
+			else if (splitscreen)
 			{
 				UINT8 i;
-				for (i = 1; i <= r_splitscreen; i++)
+				for (i = 1; i <= splitscreen; i++)
 				{
-					if (player == &players[displayplayers[i]])
+					if (player == &players[g_localplayers[i]])
 					{
 						viewangle = localangle[i];
 						aimingangle = localaiming[i];
