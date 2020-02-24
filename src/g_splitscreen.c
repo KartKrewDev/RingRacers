@@ -94,11 +94,13 @@ G_RemovePartyMember (int playernum)
 			memcpy(&new_party[before], &old_party[after],
 					( old_party_size - after ) * sizeof *new_party);
 
-			if (splitscreen_partied[playernum] &&
-					localdisplayplayers[0] >= after)
+			if (splitscreen_partied[playernum])
 			{
-				for (i = 0; i < MAXSPLITSCREENPLAYERS; ++i)
+				for (i = 0; i < MAXSPLITSCREENPLAYERS &&
+						localdisplayplayers[i] >= after; ++i)
+				{
 					localdisplayplayers[i] -= views;
+				}
 			}
 
 			views = ( old_party_size - views );
@@ -204,6 +206,13 @@ G_AddPartyMember (int invitation, int playernum)
 		{
 			displayplayers[i] = party[i];
 			localdisplayplayers[i] = old_party_size;
+		}
+		while (i < MAXSPLITSCREENPLAYERS)
+		{
+			displayplayers[i] = consoleplayer;
+			localdisplayplayers[i] = old_party_size;
+
+			i++;
 		}
 
 		r_splitscreen = ( new_party_size - 1 );
