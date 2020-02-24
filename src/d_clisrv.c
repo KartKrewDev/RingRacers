@@ -99,6 +99,8 @@ UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
 tic_t servermaxping = 800;			// server's max ping. Defaults to 800
+static tic_t lowest_lag;
+boolean server_lagless;
 SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
 SINT8 nodetoplayer3[MAXNETNODES]; // say the numplayer for this node if any (splitscreen == 2)
@@ -5023,6 +5025,9 @@ static void CL_SendClientCmd(void)
 	size_t packetsize = 0;
 	boolean mis = false;
 
+	if (lowest_lag && ( gametic % lowest_lag ))
+		return;
+
 	netbuffer->packettype = PT_CLIENTCMD;
 
 	if (cl_packetmissed)
@@ -5491,16 +5496,65 @@ static tic_t gametime = 0;
 
 static void UpdatePingTable(void)
 {
+	int fastest;
+	tic_t lag;
+
 	INT32 i;
+
 	if (server)
 	{
 		if (netgame && !(gametime % 35))	// update once per second.
 			PingUpdate();
+
+		fastest = 0;
+
 		// update node latency values so we can take an average later.
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i])
-				realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
+		{
+			if (playeringame[i] && playernode[i] > 0)
+			{
+				if (! server_lagless && playernode[i] > 0)
+				{
+					lag = GetLag(playernode[i]);
+					realpingtable[i] += G_TicsToMilliseconds(lag);
+
+					if (! fastest || lag < fastest)
+						fastest = lag;
+				}
+				else
+					realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
+			}
+		}
 		pingmeasurecount++;
+
+		if (server_lagless)
+			lowest_lag = 0;
+		else
+		{
+			lowest_lag = fastest;
+
+			if (fastest)
+				lag = fastest;
+			else
+				lag = GetLag(0);
+
+			lag = ( realpingtable[0] + G_TicsToMilliseconds(lag) );
+
+			switch (playerpernode[0])
+			{
+				case 4:
+					realpingtable[nodetoplayer4[0]] = lag;
+					/*FALLTHRU*/
+				case 3:
+					realpingtable[nodetoplayer3[0]] = lag;
+					/*FALLTHRU*/
+				case 2:
+					realpingtable[nodetoplayer2[0]] = lag;
+					/*FALLTHRU*/
+				case 1:
+					realpingtable[nodetoplayer[0]] = lag;
+			}
+		}
 	}
 }
 
