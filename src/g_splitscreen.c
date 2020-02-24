@@ -11,6 +11,7 @@
 
 #include "doomdef.h"
 #include "g_game.h"
+#include "p_local.h"
 #include "r_local.h"
 
 int splitscreen_original_party_size[MAXPLAYERS];
@@ -46,6 +47,7 @@ G_ResetSplitscreen (int playernum)
 		for (i = 0; i <= splitscreen; ++i)
 		{
 			displayplayers[i] = g_localplayers[i];
+			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 		}
 		while (i < MAXSPLITSCREENPLAYERS)
 		{
@@ -113,6 +115,7 @@ G_RemovePartyMember (int playernum)
 				for (i = 0; i < views; ++i)
 				{
 					displayplayers[i] = new_party[i];
+					P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 				}
 				while (i < MAXSPLITSCREENPLAYERS)
 				{
@@ -176,6 +179,7 @@ G_AddPartyMember (int invitation, int playernum)
 		for (i = old_party_size; i < new_party_size; ++i)
 		{
 			displayplayers[i] = party[i];
+			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 		}
 
 		r_splitscreen += views;
@@ -189,6 +193,7 @@ G_AddPartyMember (int invitation, int playernum)
 		for (i = 0; i < new_party_size; ++i)
 		{
 			displayplayers[i] = party[i];
+			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 		}
 		while (i < MAXSPLITSCREENPLAYERS)
 		{
