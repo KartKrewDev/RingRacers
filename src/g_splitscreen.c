@@ -45,13 +45,11 @@ G_ResetSplitscreen (int playernum)
 		/* easier to just rebuild displayplayers with local players */
 		for (i = 0; i <= splitscreen; ++i)
 		{
-			displayplayers[i] = old_displayplayers[localdisplayplayers[i]];
-			localdisplayplayers[i] = i;
+			displayplayers[i] = g_localplayers[i];
 		}
 		while (i < MAXSPLITSCREENPLAYERS)
 		{
 			displayplayers[i] = consoleplayer;
-			localdisplayplayers[i] = 0;
 
 			i++;
 		}
@@ -93,15 +91,6 @@ G_RemovePartyMember (int playernum)
 
 			memcpy(&new_party[before], &old_party[after],
 					( old_party_size - after ) * sizeof *new_party);
-
-			if (splitscreen_partied[playernum])
-			{
-				for (i = 0; i < MAXSPLITSCREENPLAYERS &&
-						localdisplayplayers[i] >= after; ++i)
-				{
-					localdisplayplayers[i] -= views;
-				}
-			}
 
 			views = ( old_party_size - views );
 
@@ -197,20 +186,13 @@ G_AddPartyMember (int invitation, int playernum)
 	{
 		splitscreen_partied[invitation] = true;
 
-		for (i = 0; i <= splitscreen; ++i)
-		{
-			localdisplayplayers[i] = ( old_party_size + i );
-			displayplayers[i] = party[i];
-		}
-		while (++i < new_party_size)
+		for (i = 0; i < new_party_size; ++i)
 		{
 			displayplayers[i] = party[i];
-			localdisplayplayers[i] = old_party_size;
 		}
 		while (i < MAXSPLITSCREENPLAYERS)
 		{
 			displayplayers[i] = consoleplayer;
-			localdisplayplayers[i] = old_party_size;
 
 			i++;
 		}

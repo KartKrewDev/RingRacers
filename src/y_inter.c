@@ -1263,19 +1263,19 @@ void Y_VoteDrawer(void)
 					{
 						case 1:
 							thiscurs = cursor2;
-							p = displayplayers[localdisplayplayers[1]];
+							p = g_localplayers[1];
 							break;
 						case 2:
 							thiscurs = cursor3;
-							p = displayplayers[localdisplayplayers[2]];
+							p = g_localplayers[2];
 							break;
 						case 3:
 							thiscurs = cursor4;
-							p = displayplayers[localdisplayplayers[3]];
+							p = g_localplayers[3];
 							break;
 						default:
 							thiscurs = cursor1;
-							p = displayplayers[localdisplayplayers[0]];
+							p = g_localplayers[0];
 							break;
 					}
 
@@ -1563,13 +1563,13 @@ void Y_VoteTicker(void)
 			switch (i)
 			{
 				case 1:
-					p = displayplayers[localdisplayplayers[1]];
+					p = g_localplayers[1];
 					break;
 				case 2:
-					p = displayplayers[localdisplayplayers[2]];
+					p = g_localplayers[2];
 					break;
 				case 3:
-					p = displayplayers[localdisplayplayers[3]];
+					p = g_localplayers[3];
 					break;
 				default:
 					p = consoleplayer;

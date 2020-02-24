@@ -122,8 +122,8 @@ extern boolean gamedataloaded;
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
-/* displayplayers[localdisplayplayers[0]] = consoleplayer */
-extern INT32 localdisplayplayers[MAXSPLITSCREENPLAYERS];
+/* g_localplayers[0] = consoleplayer */
+extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 /* spitscreen players sync */
 extern int splitscreen_original_party_size[MAXPLAYERS];

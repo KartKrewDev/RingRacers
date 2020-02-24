@@ -2089,7 +2089,7 @@ void ST_Drawer(void)
 	UINT8 i;
 
 #ifdef SEENAMES
-	if (cv_seenames.value && cv_allowseenames.value && displayplayers[localdisplayplayers[0]] == consoleplayer && seenplayer && seenplayer->mo && !mapreset)
+	if (cv_seenames.value && cv_allowseenames.value && g_localplayers[0] == consoleplayer && seenplayer && seenplayer->mo && !mapreset)
 	{
 		if (cv_seenames.value == 1)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 + 15, V_HUDTRANSHALF, player_names[seenplayer-players]);

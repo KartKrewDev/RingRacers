@@ -2567,29 +2567,29 @@ static void P_ForceCharacter(const char *forcecharskin)
 	{
 		if (splitscreen)
 		{
-			SetPlayerSkin(displayplayers[localdisplayplayers[1]], forcecharskin);
-			if ((unsigned)cv_playercolor2.value != skins[players[displayplayers[localdisplayplayers[1]]].skin].prefcolor && !modeattacking)
+			SetPlayerSkin(g_localplayers[1], forcecharskin);
+			if ((unsigned)cv_playercolor2.value != skins[players[g_localplayers[1]].skin].prefcolor && !modeattacking)
 			{
-				CV_StealthSetValue(&cv_playercolor2, skins[players[displayplayers[localdisplayplayers[1]]].skin].prefcolor);
-				players[displayplayers[localdisplayplayers[1]]].skincolor = skins[players[displayplayers[localdisplayplayers[1]]].skin].prefcolor;
+				CV_StealthSetValue(&cv_playercolor2, skins[players[g_localplayers[1]].skin].prefcolor);
+				players[g_localplayers[1]].skincolor = skins[players[g_localplayers[1]].skin].prefcolor;
 			}
 
 			if (splitscreen > 1)
 			{
-				SetPlayerSkin(displayplayers[localdisplayplayers[2]], forcecharskin);
-				if ((unsigned)cv_playercolor3.value != skins[players[displayplayers[localdisplayplayers[2]]].skin].prefcolor && !modeattacking)
+				SetPlayerSkin(g_localplayers[2], forcecharskin);
+				if ((unsigned)cv_playercolor3.value != skins[players[g_localplayers[2]].skin].prefcolor && !modeattacking)
 				{
-					CV_StealthSetValue(&cv_playercolor3, skins[players[displayplayers[localdisplayplayers[2]]].skin].prefcolor);
-					players[displayplayers[localdisplayplayers[2]]].skincolor = skins[players[displayplayers[localdisplayplayers[2]]].skin].prefcolor;
+					CV_StealthSetValue(&cv_playercolor3, skins[players[g_localplayers[2]].skin].prefcolor);
+					players[g_localplayers[2]].skincolor = skins[players[g_localplayers[2]].skin].prefcolor;
 				}
 
 				if (splitscreen > 2)
 				{
-					SetPlayerSkin(displayplayers[localdisplayplayers[3]], forcecharskin);
-					if ((unsigned)cv_playercolor4.value != skins[players[displayplayers[localdisplayplayers[3]]].skin].prefcolor && !modeattacking)
+					SetPlayerSkin(g_localplayers[3], forcecharskin);
+					if ((unsigned)cv_playercolor4.value != skins[players[g_localplayers[3]].skin].prefcolor && !modeattacking)
 					{
-						CV_StealthSetValue(&cv_playercolor4, skins[players[displayplayers[localdisplayplayers[3]]].skin].prefcolor);
-						players[displayplayers[localdisplayplayers[3]]].skincolor = skins[players[displayplayers[localdisplayplayers[3]]].skin].prefcolor;
+						CV_StealthSetValue(&cv_playercolor4, skins[players[g_localplayers[3]].skin].prefcolor);
+						players[g_localplayers[3]].skincolor = skins[players[g_localplayers[3]].skin].prefcolor;
 					}
 				}
 			}
@@ -3270,7 +3270,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		/*if (rendermode != render_none)
 			CV_Set(&cv_fov, cv_fov.defaultvalue);*/
 
-		displayplayers[localdisplayplayers[0]] = consoleplayer; // Start with your OWN view, please!
+		g_localplayers[0] = consoleplayer; // Start with your OWN view, please!
 	}
 
 	/*if (cv_useranalog.value)

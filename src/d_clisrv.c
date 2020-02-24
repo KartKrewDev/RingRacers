@@ -2747,8 +2747,8 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 
 	G_RemovePartyMember(playernum);
 
-	if (playernum == displayplayers[localdisplayplayers[0]] && !demo.playback)
-		displayplayers[localdisplayplayers[0]] = consoleplayer; // don't look through someone's view who isn't there
+	if (playernum == g_localplayers[0] && !demo.playback)
+		g_localplayers[0] = consoleplayer; // don't look through someone's view who isn't there
 
 #ifdef HAVE_BLUA
 	LUA_InvalidatePlayer(&players[playernum]);
@@ -3529,7 +3529,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		if (splitscreenplayer)
 		{
 			displayplayers[splitscreenplayer] = newplayernum;
-			localdisplayplayers[splitscreenplayer] = splitscreenplayer;
+			g_localplayers[splitscreenplayer] = newplayernum;
 			DEBFILE(va("spawning sister # %d\n", splitscreenplayer));
 			if (splitscreenplayer == 1 && botingame)
 				players[newplayernum].bot = 1;
@@ -3540,7 +3540,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 			{
 				displayplayers[i] = newplayernum;
-				localdisplayplayers[i] = 0;
+				g_localplayers[i] = newplayernum;
 			}
 			splitscreen_partied[newplayernum] = true;
 			DEBFILE("spawning me\n");
@@ -3751,7 +3751,6 @@ void SV_StopServer(void)
 		D_Clearticcmd(i);
 
 	consoleplayer = 0;
-	localdisplayplayers[0] = 0;
 	cl_mode = CL_SEARCHING;
 	maketic = gametic+1;
 	neededtic = maketic;

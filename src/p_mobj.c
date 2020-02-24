@@ -3656,11 +3656,11 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 				fixed_t cam_height = cv_cam_height.value;
 				thiscam->z = thiscam->floorz;
 
-				if (player == &players[displayplayers[localdisplayplayers[1]]])
+				if (player == &players[g_localplayers[1]])
 					cam_height = cv_cam2_height.value;
-				if (player == &players[displayplayers[localdisplayplayers[2]]])
+				if (player == &players[g_localplayers[2]])
 					cam_height = cv_cam3_height.value;
-				if (player == &players[displayplayers[localdisplayplayers[3]]])
+				if (player == &players[g_localplayers[3]])
 					cam_height = cv_cam4_height.value;
 				if (thiscam->z > player->mo->z + player->mo->height + FixedMul(cam_height*FRACUNIT + 16*FRACUNIT, player->mo->scale))
 				{
@@ -7282,7 +7282,7 @@ void P_MobjThinker(mobj_t *mobj)
 				if (mobj->target && mobj->target->health && mobj->tracer
 					&& mobj->target->player && !mobj->target->player->spectator
 					&& mobj->target->player->health && mobj->target->player->playerstate != PST_DEAD
-					&& players[displayplayers[localdisplayplayers[0]]].mo && !players[displayplayers[localdisplayplayers[0]]].spectator)
+					&& players[g_localplayers[0]].mo && !players[g_localplayers[0]].spectator)
 				{
 					fixed_t scale = 3*mobj->target->scale;
 
@@ -11136,13 +11136,13 @@ void P_PrecipitationEffects(void)
 
 	// Local effects from here on out!
 	// If we're not in game fully yet, we don't worry about them.
-	if (!playeringame[displayplayers[localdisplayplayers[0]]] || !players[displayplayers[localdisplayplayers[0]]].mo)
+	if (!playeringame[g_localplayers[0]] || !players[g_localplayers[0]].mo)
 		return;
 
 	if (sound_disabled)
 		return; // Sound off? D'aw, no fun.
 
-	if (players[displayplayers[localdisplayplayers[0]]].mo->subsector->sector->ceilingpic == skyflatnum)
+	if (players[g_localplayers[0]].mo->subsector->sector->ceilingpic == skyflatnum)
 		volume = 255; // Sky above? We get it full blast.
 	else
 	{
@@ -11150,17 +11150,17 @@ void P_PrecipitationEffects(void)
 		fixed_t closedist, newdist;
 
 		// Essentially check in a 1024 unit radius of the player for an outdoor area.
-		yl = players[displayplayers[localdisplayplayers[0]]].mo->y - 1024*FRACUNIT;
-		yh = players[displayplayers[localdisplayplayers[0]]].mo->y + 1024*FRACUNIT;
-		xl = players[displayplayers[localdisplayplayers[0]]].mo->x - 1024*FRACUNIT;
-		xh = players[displayplayers[localdisplayplayers[0]]].mo->x + 1024*FRACUNIT;
+		yl = players[g_localplayers[0]].mo->y - 1024*FRACUNIT;
+		yh = players[g_localplayers[0]].mo->y + 1024*FRACUNIT;
+		xl = players[g_localplayers[0]].mo->x - 1024*FRACUNIT;
+		xh = players[g_localplayers[0]].mo->x + 1024*FRACUNIT;
 		closedist = 2048*FRACUNIT;
 		for (y = yl; y <= yh; y += FRACUNIT*64)
 			for (x = xl; x <= xh; x += FRACUNIT*64)
 			{
 				if (R_PointInSubsector(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
 				{
-					newdist = S_CalculateSoundDistance(players[displayplayers[localdisplayplayers[0]]].mo->x, players[displayplayers[localdisplayplayers[0]]].mo->y, 0, x, y, 0);
+					newdist = S_CalculateSoundDistance(players[g_localplayers[0]].mo->x, players[g_localplayers[0]].mo->y, 0, x, y, 0);
 					if (newdist < closedist)
 						closedist = newdist;
 				}
@@ -11175,7 +11175,7 @@ void P_PrecipitationEffects(void)
 		volume = 255;
 
 	if (sounds_rain && (!leveltime || leveltime % 80 == 1))
-		S_StartSoundAtVolume(players[displayplayers[localdisplayplayers[0]]].mo, sfx_rainin, volume);
+		S_StartSoundAtVolume(players[g_localplayers[0]].mo, sfx_rainin, volume);
 
 	if (!sounds_thunder)
 		return;
@@ -11183,7 +11183,7 @@ void P_PrecipitationEffects(void)
 	if (effects_lightning && lightningStrike && volume)
 	{
 		// Large, close thunder sounds to go with our lightning.
-		S_StartSoundAtVolume(players[displayplayers[localdisplayplayers[0]]].mo, sfx_litng1 + M_RandomKey(4), volume);
+		S_StartSoundAtVolume(players[g_localplayers[0]].mo, sfx_litng1 + M_RandomKey(4), volume);
 	}
 	else if (thunderchance < 20)
 	{
@@ -11191,7 +11191,7 @@ void P_PrecipitationEffects(void)
 		if (volume < 80)
 			volume = 80;
 
-		S_StartSoundAtVolume(players[displayplayers[localdisplayplayers[0]]].mo, sfx_athun1 + M_RandomKey(2), volume);
+		S_StartSoundAtVolume(players[g_localplayers[0]].mo, sfx_athun1 + M_RandomKey(2), volume);
 	}
 }
 

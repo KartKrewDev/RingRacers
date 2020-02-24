@@ -6635,7 +6635,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 
 	// Play the starting countdown sounds
-	if (player == &players[displayplayers[localdisplayplayers[0]]]) // Don't play louder in splitscreen
+	if (player == &players[g_localplayers[0]]) // Don't play louder in splitscreen
 	{
 		if ((leveltime == starttime-(3*TICRATE)) || (leveltime == starttime-(2*TICRATE)) || (leveltime == starttime-TICRATE))
 			S_StartSound(NULL, sfx_s3ka7);
