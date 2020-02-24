@@ -8766,10 +8766,10 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->angle = ang;
 
 				if (leveltime & 1)
-					mobj->flags2 |= MF2_DONTDRAW;
+					mobj->drawflags |= MFD_DONTDRAW;
 
 				if (trans >= NUMTRANSMAPS)
-					mobj->flags2 |= MF2_DONTDRAW;
+					mobj->drawflags |= MFD_DONTDRAW;
 				else if (trans == 0)
 					mobj->frame = (mobj->frame & ~FF_TRANSMASK);
 				else
