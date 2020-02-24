@@ -1488,11 +1488,19 @@ boolean P_IsLocalPlayer(player_t *player)
 {
 	UINT8 i;
 
-	if (player == &players[consoleplayer])
-		return true;
-	else if (r_splitscreen)
+	if (r_splitscreen > splitscreen)
 	{
-		for (i = 1; i <= r_splitscreen; i++) // Skip P1
+		for (i = 0; i <= r_splitscreen; ++i)
+		{
+			if (player == &players[displayplayers[i]])
+				return true;
+		}
+	}
+	else if (player == &players[consoleplayer])
+		return true;
+	else if (splitscreen)
+	{
+		for (i = 1; i <= splitscreen; i++) // Skip P1
 		{
 			if (player == &players[displayplayers[i]])
 				return true;
