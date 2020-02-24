@@ -1231,7 +1231,6 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p)
 //
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
-boolean camspin[MAXSPLITSCREENPLAYERS];
 
 static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
 static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
@@ -1456,6 +1455,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (InputDown(gc_drift, ssplayer) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_DRIFT;
 
+	// rear view with any button/key
+	axis = JoyAxis(AXISLOOKBACK, ssplayer);
+	if (InputDown(gc_lookback, ssplayer) || (usejoystick && axis > 0))
+		cmd->buttons |= BT_LOOKBACK;
+
 	// Lua scriptable buttons
 	if (InputDown(gc_custom1, ssplayer))
 		cmd->buttons |= BT_CUSTOM1;
@@ -1576,7 +1580,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		keyboard_look[ssplayer-1] = kbl;
 		turnheld[ssplayer-1] = th;
 		resetdown[ssplayer-1] = rd;
-		camspin[ssplayer-1] = InputDown(gc_lookback, ssplayer);
 	}
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.

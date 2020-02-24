@@ -8874,7 +8874,7 @@ static void K_drawKartPlayerCheck(void)
 	if (stplyr->awayviewtics)
 		return;
 
-	if (camspin[0])
+	if (( stplyr->cmd.buttons & BT_LOOKBACK ))
 		return;
 
 	for (i = 0; i < MAXPLAYERS; i++)

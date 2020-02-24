@@ -129,6 +129,7 @@ typedef enum
 	AXISDEAD, //Axises that don't want deadzones
 	AXISFIRE,
 	AXISDRIFT,
+	AXISLOOKBACK,
 } axis_input_e;
 
 // mouseaiming (looking up/down with the mouse or keyboard)
@@ -154,7 +155,6 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p);
 
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
-extern boolean camspin[MAXSPLITSCREENPLAYERS]; // SRB2Kart
 
 //
 // GAME
