@@ -3251,7 +3251,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
 	P_SetTarget(&cur->hnext->target, sign);
 	P_SetMobjState(cur->hnext, S_SIGN_FACE);
 	cur->hnext->extravalue1 = 6;
-	cur->hnext->extravalue2 = 2;
+	cur->hnext->extravalue2 = 0;
 
 	prev = cur;
 	cur = cur->hnext;
@@ -3263,7 +3263,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
 	cur->hnext->skin = pmo->skin;
 	P_SetMobjState(cur->hnext, S_PLAY_SIGN);
 	cur->hnext->extravalue1 = 7;
-	cur->hnext->extravalue2 = 2;
+	cur->hnext->extravalue2 = 0;
 
 	prev = cur;
 	cur = cur->hnext;
@@ -3274,7 +3274,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
 	P_SetTarget(&cur->hnext->target, sign);
 	P_SetMobjState(cur->hnext, S_SIGN_BACK);
 	cur->hnext->extravalue1 = 6;
-	cur->hnext->extravalue2 = 0;
+	cur->hnext->extravalue2 = 2;
 
 	prev = cur;
 	cur = cur->hnext;
