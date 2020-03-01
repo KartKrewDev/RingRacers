@@ -17,6 +17,9 @@
 #include "m_random.h"
 #include "r_sky.h" // skyflatnum
 
+// Battle overtime info
+struct battleovertime battleovertime;
+
 // Capsules mode enabled for this map?
 boolean battlecapsules = false;
 

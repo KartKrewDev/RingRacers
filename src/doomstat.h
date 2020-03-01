@@ -487,15 +487,6 @@ extern INT16 votelevels[5][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
 
-/** Battle overtime information
-  */
-extern struct battleovertime
-{
-	UINT16 enabled; ///< Has this been initalized yet?
-	fixed_t radius, minradius; ///< Radius of kill field
-	fixed_t x, y, z; ///< Position to center on
-} battleovertime;
-
 extern tic_t hidetime;
 
 extern UINT32 timesBeaten; // # of times the game has been beaten.

@@ -4,8 +4,12 @@
 #include "doomtype.h"
 #include "d_player.h"
 
-// Battle overtime system
-struct battleovertime battleovertime;
+extern struct battleovertime
+{
+	UINT16 enabled; ///< Has this been initalized yet?
+	fixed_t radius, minradius; ///< Radius of kill field
+	fixed_t x, y, z; ///< Position to center on
+} battleovertime;
 
 extern boolean battlecapsules;
 extern UINT8 maptargets, numtargets;
