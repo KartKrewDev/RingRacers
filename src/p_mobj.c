@@ -10448,9 +10448,6 @@ void P_RemoveMobj(mobj_t *mobj)
 	if (mobj->type == MT_OVERLAY)
 		P_RemoveOverlay(mobj);
 
-	if (mobj->type == MT_SHADOW)
-		P_RemoveShadow(mobj);
-
 	if (mobj->type == MT_SPB)
 		spbplace = -1;
 
