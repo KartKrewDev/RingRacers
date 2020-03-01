@@ -11037,7 +11037,7 @@ void P_SpawnPrecipitation(void)
 			if (precipsector->sector->ceilingpic != skyflatnum)
 				continue;
 
-			height = abs(precipsector->sector->ceilingheight - precipsector->sector->floorheight);
+			height = precipsector->sector->ceilingheight - precipsector->sector->floorheight;
 
 			// Exists, but is too small for reasonable precipitation.
 			if (height < 64<<FRACBITS)
