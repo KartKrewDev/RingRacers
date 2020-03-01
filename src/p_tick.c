@@ -658,8 +658,6 @@ void P_Ticker(boolean run)
 	//P_RunShields();
 	P_RunOverlays();
 
-	P_RunShadows();
-
 	P_UpdateSpecials();
 	P_RespawnSpecials();
 
