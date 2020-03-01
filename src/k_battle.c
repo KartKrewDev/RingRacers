@@ -13,6 +13,9 @@
 #include "r_main.h"
 #include "r_defs.h" // MAXFFLOORS
 #include "info.h"
+#include "s_sound.h"
+#include "m_random.h"
+#include "r_sky.h" // skyflatnum
 
 // Capsules mode enabled for this map?
 boolean battlecapsules = false;
@@ -239,6 +242,217 @@ void K_CheckBumpers(void)
 
 	for (i = 0; i < MAXPLAYERS; i++) // and it can't be merged with this loop because it needs to be all updated before exiting... multi-loops suck...
 		P_DoPlayerExit(&players[i]);
+}
+
+#define MAXPLANESPERSECTOR (MAXFFLOORS+1)*2
+
+static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjtype_t type, boolean ceiling)
+{
+	UINT8 i;
+	fixed_t flatz[MAXPLANESPERSECTOR];
+	boolean flip[MAXPLANESPERSECTOR];
+	UINT8 numflats = 0;
+	mobj_t *mo;
+	subsector_t *ss = R_IsPointInSubsector(x, y);
+	sector_t *sec;
+
+	if (!ss)
+		return;
+	sec = ss->sector;
+
+	// convoluted stuff JUST to get all of the planes we need to draw orbs on :V
+
+	for (i = 0; i < MAXPLANESPERSECTOR; i++)
+		flip[i] = false;
+
+	if (sec->floorpic != skyflatnum)
+	{
+#ifdef ESLOPE
+		flatz[numflats] = (sec->f_slope ? P_GetZAt(sec->f_slope, x, y) : sec->floorheight);
+#else
+		flatz[numflats] = (sec->floorheight);
+#endif
+		numflats++;
+	}
+	if (sec->ceilingpic != skyflatnum && ceiling)
+	{
+#ifdef ESLOPE
+		flatz[numflats] = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
+#else
+		flatz[numflats] = (sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
+#endif
+		flip[numflats] = true;
+		numflats++;
+	}
+
+	if (sec->ffloors)
+	{
+		ffloor_t *rover;
+		for (rover = sec->ffloors; rover; rover = rover->next)
+		{
+			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER))
+				continue;
+			if (*rover->toppic != skyflatnum)
+			{
+#ifdef ESLOPE
+				flatz[numflats] = (*rover->t_slope ? P_GetZAt(*rover->t_slope, x, y) : *rover->topheight);
+#else
+				flatz[numflats] = (*rover->topheight);
+#endif
+				numflats++;
+			}
+			if (*rover->bottompic != skyflatnum && ceiling)
+			{
+#ifdef ESLOPE
+				flatz[numflats] = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
+#else
+				flatz[numflats] = (*rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
+#endif
+				flip[numflats] = true;
+				numflats++;
+			}
+		}
+	}
+
+	if (numflats <= 0) // no flats
+		return;
+
+	for (i = 0; i < numflats; i++)
+	{
+		mo = P_SpawnMobj(x, y, flatz[i], type);
+
+		// Lastly, if this can see the skybox mobj, then... we just wasted our time :V
+		if (skyboxmo[0] && !P_MobjWasRemoved(skyboxmo[0]))
+		{
+			const fixed_t sbz = skyboxmo[0]->z;
+			fixed_t checkz = sec->floorheight;
+
+			while (checkz < sec->ceilingheight)
+			{
+				P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, checkz);
+				if (P_CheckSight(skyboxmo[0], mo))
+				{
+					P_RemoveMobj(mo);
+					break;
+				}
+				else
+					checkz += 32*mapobjectscale;
+			}
+
+			P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, sbz);
+
+			if (P_MobjWasRemoved(mo))
+				continue;
+		}
+
+		P_SetScale(mo, scale);
+
+		if (flip[i])
+		{
+			mo->flags2 |= MF2_OBJECTFLIP;
+			mo->eflags |= MFE_VERTICALFLIP;
+		}
+
+		switch(type)
+		{
+			case MT_OVERTIMEFOG:
+				mo->destscale = 8*mo->scale;
+				mo->momz = P_RandomRange(1,8)*mo->scale;
+				break;
+			case MT_OVERTIMEORB:
+				//mo->destscale = mo->scale/4;
+				mo->frame += ((leveltime/4) % 8);
+				/*if (battleovertime.enabled < 10*TICRATE)
+					mo->flags2 |= MF2_SHADOW;*/
+				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
+				mo->z += P_RandomRange(0,48) * mo->scale;
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+#undef MAXPLANESPERSECTOR
+
+void K_RunBattleOvertime(void)
+{
+	UINT16 i, j;
+
+	if (battleovertime.enabled < 10*TICRATE)
+	{
+		battleovertime.enabled++;
+		if (battleovertime.enabled == TICRATE)
+			S_StartSound(NULL, sfx_bhurry);
+		if (battleovertime.enabled == 10*TICRATE)
+			S_StartSound(NULL, sfx_kc40);
+	}
+	else
+	{
+		if (battleovertime.radius > battleovertime.minradius)
+			battleovertime.radius -= mapobjectscale;
+		else
+			battleovertime.radius = battleovertime.minradius;
+	}
+
+	if (leveltime & 1)
+	{
+		UINT8 transparency = tr_trans50;
+
+		if (!splitscreen && players[displayplayers[0]].mo)
+		{
+			INT32 dist = P_AproxDistance(battleovertime.x-players[displayplayers[0]].mo->x, battleovertime.y-players[displayplayers[0]].mo->y);
+			transparency = max(0, NUMTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
+		}
+
+		if (transparency < NUMTRANSMAPS)
+		{
+			mobj_t *beam = P_SpawnMobj(battleovertime.x, battleovertime.y, battleovertime.z + (mobjinfo[MT_RANDOMITEM].height/2), MT_OVERTIMEBEAM);
+			P_SetScale(beam, beam->scale*2);
+			if (transparency > 0)
+				beam->frame |= transparency<<FF_TRANSSHIFT;
+		}
+	}
+
+	// 16 orbs at the normal minimum size of 512
+	{
+		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
+		fixed_t scale = mapobjectscale + (battleovertime.radius/2048);
+		fixed_t sprwidth = 32*scale;
+		fixed_t circumference = FixedMul(pi, battleovertime.radius<<1);
+		UINT16 orbs = circumference / sprwidth;
+		angle_t angoff = ANGLE_MAX / orbs;
+
+		for (i = 0; i < orbs; i++)
+		{
+			angle_t ang = (i * angoff) + FixedAngle((leveltime/2)<<FRACBITS);
+			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
+			K_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEORB, false);
+		}
+	}
+
+	if (battleovertime.enabled < 10*TICRATE)
+		return;
+
+	/*if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
+		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapobjectscale) - battleovertime.radius)>>FRACBITS / 2));*/
+
+	for (i = 0; i < 16; i++)
+	{
+		j = 0;
+		while (j < 32) // max attempts
+		{
+			fixed_t x = battleovertime.x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t y = battleovertime.y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
+			fixed_t closestdist = battleovertime.radius + (8*mobjinfo[MT_OVERTIMEFOG].radius);
+			j++;
+			if (P_AproxDistance(x-battleovertime.x, y-battleovertime.y) < closestdist)
+				continue;
+			K_SpawnOvertimeParticles(x, y, 4*mapobjectscale, MT_OVERTIMEFOG, false);
+			break;
+		}
+	}
 }
 
 static void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
