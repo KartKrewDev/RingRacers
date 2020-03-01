@@ -2787,7 +2787,11 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		if (!(thing->flags & MF_NOCLIP))
 		{
 			//All things are affected by their scale.
-			fixed_t maxstep = FixedMul(MAXSTEPMOVE, mapobjectscale);
+			const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
+			fixed_t maxstep = maxstepmove;
+
+			if (thing->player->kartstuff[k_waterskip])
+				maxstep += maxstepmove; // Add some extra stepmove when waterskipping
 
 			// If using type Section1:13, double the maxstep.
 			if (P_MobjTouchingSectorSpecial(thing, 1, 13, false))
