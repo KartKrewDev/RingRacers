@@ -11005,6 +11005,8 @@ consvar_t cv_suddendeath = {"suddendeath", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHE
 void P_SpawnPrecipitation(void)
 {
 	INT32 i, j, k;
+	mobjtype_t type = precipprops[curWeather].type;
+	INT32 randomstates = mobjinfo[type].damage;
 	fixed_t basex, basey, x, y, z, height;
 	subsector_t *precipsector = NULL;
 	precipmobj_t *rainmo = NULL;
@@ -11049,15 +11051,15 @@ void P_SpawnPrecipitation(void)
 
 			for (j = 0; j < numparticles; j++)
 			{
-				rainmo = P_SpawnPrecipMobj(x, y, z, precipprops[curWeather].type);
+				rainmo = P_SpawnPrecipMobj(x, y, z, type);
 
-				if (precipprops[curWeather].randomstates > 0)
+				if (randomstates > 0 && randomstates < UINT8_MAX)
 				{
 					UINT8 mrand = M_RandomByte();
-					UINT8 threshold = UINT8_MAX / (precipprops[curWeather].randomstates + 1);
-					statenum_t st = mobjinfo[precipprops[curWeather].type].spawnstate;
+					UINT8 threshold = UINT8_MAX / (randomstates + 1);
+					statenum_t st = mobjinfo[type].spawnstate;
 
-					for (k = 0; k < precipprops[curWeather].randomstates; k++)
+					for (k = 0; k < randomstates; k++)
 					{
 						if (mrand < (threshold * (k+1)))
 						{

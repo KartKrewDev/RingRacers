@@ -68,7 +68,6 @@ typedef struct
 {
 	mobjtype_t type;
 	precipeffect_t effects;
-	UINT8 randomstates;
 } precipprops_t;
 
 extern precipprops_t precipprops[MAXPRECIP];

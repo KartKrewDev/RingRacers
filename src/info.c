@@ -11486,7 +11486,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4*FRACUNIT,     // height
 		0,              // display offset
 		0,              // mass
-		0,              // damage
+		2,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP,  // flags
 		S_NULL          // raisestate
@@ -11513,7 +11513,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4*FRACUNIT,     // height
 		0,              // display offset
 		0,              // mass
-		0,              // damage
+		2,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP,  // flags
 		S_NULL          // raisestate
