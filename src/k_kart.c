@@ -1542,7 +1542,7 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 
 	for (i = 2; i < 5; i++)
 	{
-		if (P_MobjTouchingSectorSpecial(mo, 1, i))
+		if (P_MobjTouchingSectorSpecial(mo, 1, i, true))
 			return i-1;
 	}
 

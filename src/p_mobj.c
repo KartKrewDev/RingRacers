@@ -8355,7 +8355,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 				P_Thrust(mobj, mobj->angle, thrustamount);
 
-				if (P_MobjTouchingSectorSpecial(mobj, 3, 1))
+				if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
 					K_DoPogoSpring(mobj, 0, 1);
 
 				if (mobj->threshold > 0)
@@ -8385,7 +8385,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 			K_DriftDustHandling(mobj);
 
-			if (P_MobjTouchingSectorSpecial(mobj, 3, 1))
+			if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
 				K_DoPogoSpring(mobj, 0, 1);
 
 			break;
@@ -8437,14 +8437,8 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
 				P_Thrust(mobj, mobj->angle, thrustamount);
 
-				if (grounded)
-				{
-					sector_t *sec2 = P_ThingOnSpecial3DFloor(mobj);
-					if ((sec2 && GETSECSPECIAL(sec2->special, 3) == 1)
-						|| (P_IsObjectOnRealGround(mobj, mobj->subsector->sector)
-						&& GETSECSPECIAL(mobj->subsector->sector->special, 3) == 1))
-						K_DoPogoSpring(mobj, 0, 1);
-				}
+				if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
+					K_DoPogoSpring(mobj, 0, 1);
 
 				if (mobj->threshold > 0)
 					mobj->threshold--;
@@ -9592,7 +9586,7 @@ void P_MobjThinker(mobj_t *mobj)
 			break;
 		case MT_BLUEFLAG:
 		case MT_REDFLAG:
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 2))
+			if (P_MobjTouchingSectorSpecial(mobj, 4, 2, false))
 				mobj->fuse = 1; // Return to base.
 			break;
 		case MT_CANNONBALL:

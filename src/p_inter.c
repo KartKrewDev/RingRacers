@@ -925,7 +925,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						special->fuse = 1;
 						special->flags2 |= MF2_JUSTATTACKED;
 
-						if (!P_MobjTouchingSectorSpecial(player->mo, 4, 2 + flagteam))
+						if (!P_MobjTouchingSectorSpecial(player->mo, 4, 2 + flagteam, false))
 						{
 							CONS_Printf(M_GetText("%s returned the %c%s%c to base.\n"), plname, flagcolor, flagtext, 0x80);
 

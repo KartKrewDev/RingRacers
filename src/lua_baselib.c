@@ -1318,10 +1318,11 @@ static int lib_pMobjTouchingSectorSpecial(lua_State *L)
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	INT32 section = (INT32)luaL_checkinteger(L, 2);
 	INT32 number = (INT32)luaL_checkinteger(L, 3);
+	boolean touchground = lua_optboolean(L, 4);
 	//HUDSAFE
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number), META_SECTOR);
+	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number, touchground), META_SECTOR);
 	return 1;
 }
 

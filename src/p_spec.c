@@ -3371,11 +3371,12 @@ boolean P_IsFlagAtBase(mobjtype_t flag)
 // the particular type that it finds.
 // Returns NULL if it doesn't find it.
 //
-// Sal: There was absolutely no reason for
-// this to be a player_t only function.
+// Sal: Couldn't see a reason for this to
+// be a player_t only function.
 //
-sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number)
+sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, boolean touchground)
 {
+	fixed_t topheight, bottomheight;
 	msecnode_t *node;
 	ffloor_t *rover;
 
@@ -3384,13 +3385,34 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number)
 
 	// Check default case first
 	if (GETSECSPECIAL(mo->subsector->sector->special, section) == number)
-		return mo->subsector->sector;
+	{
+		if (touchground)
+		{
+			topheight = P_GetSpecialTopZ(mo, mo->subsector->sector, mo->subsector->sector);
+			bottomheight = P_GetSpecialBottomZ(mo, mo->subsector->sector, mo->subsector->sector);
+
+			// Thing must be on top of the floor to be affected...
+			if (mo->subsector->sector->flags & SF_FLIPSPECIAL_FLOOR)
+			{
+				if (!(mo->eflags & MFE_VERTICALFLIP) && mo->z <= bottomheight)
+					return mo->subsector->sector;
+			}
+
+			if (mo->subsector->sector->flags & SF_FLIPSPECIAL_CEILING)
+			{
+				if ((mo->eflags & MFE_VERTICALFLIP) && mo->z + mo->height >= topheight)
+					return mo->subsector->sector;
+			}
+		}
+		else
+		{
+			return mo->subsector->sector;
+		}
+	}
 
 	// Hmm.. maybe there's a FOF that has it...
 	for (rover = mo->subsector->sector->ffloors; rover; rover = rover->next)
 	{
-		fixed_t topheight, bottomheight;
-
 		if (GETSECSPECIAL(rover->master->frontsector->special, section) != number)
 			continue;
 
@@ -3444,14 +3466,35 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number)
 			// are we allowed to touch it?
 			if (node->m_sector == mo->subsector->sector
 				|| (node->m_sector->flags & SF_TRIGGERSPECIAL_TOUCH))
-				return node->m_sector;
+			{
+				if (touchground)
+				{
+					topheight = P_GetSpecialTopZ(mo, node->m_sector, node->m_sector);
+					bottomheight = P_GetSpecialBottomZ(mo, node->m_sector, node->m_sector);
+
+					// Thing must be on top of the floor to be affected...
+					if (node->m_sector->flags & SF_FLIPSPECIAL_FLOOR)
+					{
+						if (!(mo->eflags & MFE_VERTICALFLIP) && mo->z <= bottomheight)
+							return node->m_sector;
+					}
+
+					if (node->m_sector->flags & SF_FLIPSPECIAL_CEILING)
+					{
+						if ((mo->eflags & MFE_VERTICALFLIP) && mo->z + mo->height >= topheight)
+							return node->m_sector;
+					}
+				}
+				else
+				{
+					return node->m_sector;
+				}
+			}
 		}
 
 		// Hmm.. maybe there's a FOF that has it...
 		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			fixed_t topheight, bottomheight;
-
 			if (GETSECSPECIAL(rover->master->frontsector->special, section) != number)
 				continue;
 
