@@ -2134,12 +2134,7 @@ void ST_Drawer(void)
 			ST_MayonakaStatic();
 	}
 
-	// Draw a white fade on level opening
-	if (timeinmap < 15)
-	{
-		if (timeinmap <= 5)
-			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,0); // Pure white on first few frames, to hide SRB2's awful level load artifacts
-		else
-			V_DrawFadeScreen(0, 15-timeinmap); // Then gradually fade out from there
-	}
+	// Draw a fade on level opening
+	if (timeinmap < 16)
+		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 32-(timeinmap*2)); // Then gradually fade out from there
 }
