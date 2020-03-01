@@ -60,7 +60,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"WIPD","DRIF","BDRF","DUST","RSHE","FITM","BANA","ORBN","JAWZ","SSMN",
 	"KRBM","BHOG","BHBM","SPBM","THNS","SINK","SITR","KBLN","DEZL","POKE",
 	"AUDI","DECO","DOOD","SNES","GBAS","SPRS","BUZB","CHOM","SACO","CRAB",
-	"SHAD","BRNG","BUMP","FLEN","CLAS","PSHW","ISTA","ISTB","ARRO","ITEM",
+	"BRNG","BUMP","FLEN","CLAS","PSHW","ISTA","ISTB","ARRO","ITEM",
 	"ITMO","ITMI","ITMN","WANT","PBOM","HIT1","HIT2","HIT3","RETI","AIDU",
 	"KSPK","LZI1","LZI2","KLIT","FZSM","FZBM","FPRT","SBUS","MARB","FUFO",
 	"RUST","BLON","VAPE","HTZA","HTZB","SGVA","SGVB","SGVC","PGTR","PGF1",
@@ -2987,10 +2987,6 @@ state_t states[NUMSTATES] =
 	{SPR_CRAB,  9,  2, {NULL}, 0, 0, S_FLYINGGARG1}, // S_FLYINGGARG8
 	{SPR_CRAB, 10, -1, {NULL}, 0, 0, S_NULL},        // S_LAMPPOST
 	{SPR_CRAB, 11, -1, {NULL}, 0, 0, S_NULL},        // S_MOSSYTREE
-
-	// Fake Shadow
-	{SPR_SHAD, FF_TRANS50, -1, {NULL}, 0, 0, S_NULL}, // S_SHADOW
-	{SPR_SHAD, FF_FULLBRIGHT|FF_TRANS50|1, -1, {NULL}, 0, 0, S_NULL}, // S_WHITESHADOW
 
 	{SPR_BUMP, FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_BUMP2}, // S_BUMP1
 	{SPR_BUMP, FF_FULLBRIGHT|1, 3, {NULL}, 0, 0, S_BUMP3}, // S_BUMP2
@@ -17248,33 +17244,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		33558528,       // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SHADOW
-		-1,             // doomednum
-		S_SHADOW,       // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		60*FRACUNIT,    // speed
-		50*FRACUNIT,    // radius
-		1*FRACUNIT,     // height
-		-1,             // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

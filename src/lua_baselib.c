@@ -639,16 +639,6 @@ static int lib_pCheckSolidLava(lua_State *L)
 	return 1;
 }
 
-static int lib_pSpawnShadowMobj(lua_State *L)
-{
-	mobj_t *caster = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	NOHUD
-	if (!caster)
-		return LUA_ErrInvalid(L, "mobj_t");
-	P_SpawnShadowMobj(caster);
-	return 0;
-}
-
 // P_USER
 ////////////
 
@@ -2672,7 +2662,6 @@ static luaL_Reg lib[] = {
 	{"P_InsideANonSolidFFloor",lib_pInsideANonSolidFFloor},
 	{"P_CheckDeathPitCollide",lib_pCheckDeathPitCollide},
 	{"P_CheckSolidLava",lib_pCheckSolidLava},
-	{"P_SpawnShadowMobj",lib_pSpawnShadowMobj},
 
 	// p_user
 	{"P_GetPlayerHeight",lib_pGetPlayerHeight},
