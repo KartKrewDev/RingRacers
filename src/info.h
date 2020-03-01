@@ -4766,8 +4766,6 @@ typedef enum mobj_type
 	MT_LAMPPOST,
 	MT_MOSSYTREE,
 
-	MT_SHADOW,
-
 	MT_BUMP,
 
 	MT_FLINGENERGY,
