@@ -6212,6 +6212,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					P_SetMobjState(ring, S_FASTRING1);
 					ring->extravalue1 = 1; // Ring use animation timer
 					ring->extravalue2 = 1; // Ring use animation flag
+					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
 					player->kartstuff[k_rings]--;
 					player->kartstuff[k_ringdelay] = 3;
