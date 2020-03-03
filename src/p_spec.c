@@ -2041,7 +2041,7 @@ void P_SwitchWeather(UINT8 newWeather)
 	}
 	else if (swap != MT_NULL) // Rather than respawn all that crap, reuse it!
 	{
-		INT32 randomstates = mobjinfo[swap].damage;
+		UINT8 randomstates = (UINT8)mobjinfo[swap].damage;
 		thinker_t *think;
 		precipmobj_t *precipmobj;
 		statenum_t st;
@@ -2057,7 +2057,7 @@ void P_SwitchWeather(UINT8 newWeather)
 
 			st = mobjinfo[swap].spawnstate;
 			
-			if (randomstates > 0 && randomstates < UINT8_MAX)
+			if (randomstates > 0)
 			{
 				UINT8 mrand = M_RandomByte();
 				UINT8 threshold = UINT8_MAX / (randomstates + 1);

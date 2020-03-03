@@ -11006,7 +11006,7 @@ void P_SpawnPrecipitation(void)
 {
 	INT32 i, j, k;
 	mobjtype_t type = precipprops[curWeather].type;
-	INT32 randomstates = mobjinfo[type].damage;
+	UINT8 randomstates = (UINT8)mobjinfo[type].damage;
 	fixed_t basex, basey, x, y, z, height;
 	subsector_t *precipsector = NULL;
 	precipmobj_t *rainmo = NULL;
@@ -11053,7 +11053,7 @@ void P_SpawnPrecipitation(void)
 			{
 				rainmo = P_SpawnPrecipMobj(x, y, z, type);
 
-				if (randomstates > 0 && randomstates < UINT8_MAX)
+				if (randomstates > 0)
 				{
 					UINT8 mrand = M_RandomByte();
 					UINT8 threshold = UINT8_MAX / (randomstates + 1);
