@@ -6006,14 +6006,16 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 		else
 		{
 			waypoint_t *finishline   = K_GetFinishLineWaypoint();
-			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player, false);
+			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player, true); //false
 
+			/*
 			if ((nextwaypoint == NULL) && (player->nextwaypoint == NULL))
 			{
 				// Special case: if player nextwaypoint is still NULL, we want to fix that as soon as possible, so use the closest waypoint instead.
 				// This will most likely only happen on map load or player spawn.
 				nextwaypoint = K_GetPlayerNextWaypoint(player, true);
 			}
+			*/
 
 			if (nextwaypoint != NULL)
 			{
