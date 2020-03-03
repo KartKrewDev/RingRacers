@@ -5739,23 +5739,18 @@ void K_KartPlayerAfterThink(player_t *player)
 
 	Input Arguments:-
 		player - The player the next waypoint is being found for
-		closest - Use closest waypoint algorithm, instead of best touching
 
 	Return:-
 		The waypoint that is the player's next waypoint
 --------------------------------------------------*/
-static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
+static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 {
 	waypoint_t *bestwaypoint = NULL;
+
 	if ((player != NULL) && (player->mo != NULL) && (P_MobjWasRemoved(player->mo) == false))
 	{
-		waypoint_t *waypoint     = NULL;
+		waypoint_t *waypoint     = K_GetClosestWaypointToMobj(player->mo);
 		boolean    updaterespawn = false;
-
-		if (closest == true)
-			waypoint = K_GetClosestWaypointToMobj(player->mo);
-		else
-			waypoint = K_GetBestWaypointTouchingMobj(player->mo);
 
 		bestwaypoint = waypoint;
 
@@ -6006,16 +6001,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 		else
 		{
 			waypoint_t *finishline   = K_GetFinishLineWaypoint();
-			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player, true); //false
-
-			/*
-			if ((nextwaypoint == NULL) && (player->nextwaypoint == NULL))
-			{
-				// Special case: if player nextwaypoint is still NULL, we want to fix that as soon as possible, so use the closest waypoint instead.
-				// This will most likely only happen on map load or player spawn.
-				nextwaypoint = K_GetPlayerNextWaypoint(player, true);
-			}
-			*/
+			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player);
 
 			if (nextwaypoint != NULL)
 			{
