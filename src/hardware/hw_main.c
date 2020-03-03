@@ -4144,11 +4144,11 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 		angle_t shadowdir;
 
 		// Set direction
-		if (splitscreen && stplyr == &players[displayplayers[1]])
+		if (r_splitscreen && stplyr == &players[displayplayers[1]])
 			shadowdir = localangle[1] + FixedAngle(cv_cam2_rotate.value);
-		else if (splitscreen > 1 && stplyr == &players[displayplayers[2]])
+		else if (r_splitscreen > 1 && stplyr == &players[displayplayers[2]])
 			shadowdir = localangle[2] + FixedAngle(cv_cam3_rotate.value);
-		else if (splitscreen > 2 && stplyr == &players[displayplayers[3]])
+		else if (r_splitscreen > 2 && stplyr == &players[displayplayers[3]])
 			shadowdir = localangle[3] + FixedAngle(cv_cam4_rotate.value);
 		else
 			shadowdir = localangle[0] + FixedAngle(cv_cam_rotate.value);
@@ -5485,7 +5485,7 @@ static void HWR_AddSprites(sector_t *sec)
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
 					if (viewssnum != 0)
@@ -5495,11 +5495,11 @@ static void HWR_AddSprites(sector_t *sec)
 					if (viewssnum != 1)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
 					if (viewssnum != 2)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
 					if (viewssnum != 3)
 						continue;
 			}
@@ -5520,7 +5520,7 @@ static void HWR_AddSprites(sector_t *sec)
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
 					if (viewssnum != 0)
@@ -5530,11 +5530,11 @@ static void HWR_AddSprites(sector_t *sec)
 					if (viewssnum != 1)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
 					if (viewssnum != 2)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
 					if (viewssnum != 3)
 						continue;
 			}
@@ -5971,7 +5971,7 @@ static void HWR_DrawSkyBackground(void)
 
 	dimensionmultiply = ((float)tex->height/(128.0f*aspectratio));
 
-	if (splitscreen == 1)
+	if (r_splitscreen == 1)
 	{
 		dimensionmultiply *= 2;
 		angle *= 2;
@@ -6043,10 +6043,10 @@ void HWR_SetViewSize(void)
 	gr_viewwidth = (float)vid.width;
 	gr_viewheight = (float)vid.height;
 
-	if (splitscreen)
+	if (r_splitscreen)
 		gr_viewheight /= 2;
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 		gr_viewwidth /= 2;
 
 	gr_basecenterx = gr_viewwidth / 2;
@@ -6102,13 +6102,13 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	gr_viewwindowy = gr_baseviewwindowy;
 	gr_windowcentery = gr_basewindowcentery;
 
-	if ((splitscreen == 1 && viewnumber == 1) || (splitscreen > 1 && viewnumber > 1))
+	if ((r_splitscreen == 1 && viewnumber == 1) || (r_splitscreen > 1 && viewnumber > 1))
 	{
 		gr_viewwindowy += gr_viewheight;
 		gr_windowcentery += gr_viewheight;
 	}
 
-	if (splitscreen > 1 && viewnumber & 1)
+	if (r_splitscreen > 1 && viewnumber & 1)
 	{
 		gr_viewwindowx += gr_viewwidth;
 		gr_windowcenterx += gr_viewwidth;
@@ -6150,7 +6150,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	atransform.splitscreen = splitscreen;
+	atransform.splitscreen = r_splitscreen;
 
 	gr_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
 
@@ -6169,7 +6169,7 @@ if (0)
 		HWR_DrawSkyBackground();
 
 	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = splitscreen;
+	drawsky = r_splitscreen;
 
 	HWR_ClearSprites();
 
@@ -6202,11 +6202,11 @@ if (0)
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
 		viewangle = localaiming[0];
-	else if (splitscreen && player == &players[displayplayers[1]])
+	else if (r_splitscreen && player == &players[displayplayers[1]])
 		viewangle = localaiming[1];
-	else if (splitscreen > 1 && player == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
 		viewangle = localaiming[2];
-	else if (splitscreen > 2 && player == &players[displayplayers[3]])
+	else if (r_splitscreen > 2 && player == &players[displayplayers[3]])
 		viewangle = localaiming[3];
 
 	// Handle stuff when you are looking farther up or down.
@@ -6336,13 +6336,13 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	gr_viewwindowy = gr_baseviewwindowy;
 	gr_windowcentery = gr_basewindowcentery;
 
-	if ((splitscreen == 1 && viewnumber == 1) || (splitscreen > 1 && viewnumber > 1))
+	if ((r_splitscreen == 1 && viewnumber == 1) || (r_splitscreen > 1 && viewnumber > 1))
 	{
 		gr_viewwindowy += gr_viewheight;
 		gr_windowcentery += gr_viewheight;
 	}
 
-	if (splitscreen > 1 && viewnumber & 1)
+	if (r_splitscreen > 1 && viewnumber & 1)
 	{
 		gr_viewwindowx += gr_viewwidth;
 		gr_windowcenterx += gr_viewwidth;
@@ -6384,7 +6384,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	atransform.splitscreen = splitscreen;
+	atransform.splitscreen = r_splitscreen;
 
 	gr_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
 
@@ -6403,7 +6403,7 @@ if (0)
 		HWR_DrawSkyBackground();
 
 	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = splitscreen;
+	drawsky = r_splitscreen;
 
 	HWR_ClearSprites();
 
@@ -6436,11 +6436,11 @@ if (0)
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
 		viewangle = localaiming[0];
-	else if (splitscreen && player == &players[displayplayers[1]])
+	else if (r_splitscreen && player == &players[displayplayers[1]])
 		viewangle = localaiming[1];
-	else if (splitscreen > 1 && player == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
 		viewangle = localaiming[2];
-	else if (splitscreen > 2 && player == &players[displayplayers[3]])
+	else if (r_splitscreen > 2 && player == &players[displayplayers[3]])
 		viewangle = localaiming[3];
 
 	// Handle stuff when you are looking farther up or down.
@@ -6920,7 +6920,7 @@ void HWR_DoPostProcessor(player_t *player)
 	postimg_t *type = &postimgtype[0];
 	UINT8 i;
 
-	for (i = splitscreen; i > 0; i--)
+	for (i = r_splitscreen; i > 0; i--)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -6958,7 +6958,7 @@ void HWR_DoPostProcessor(player_t *player)
 	if(gamestate != GS_INTERMISSION)
 		HWD.pfnMakeScreenTexture();
 
-	if (splitscreen) // Not supported in splitscreen - someone want to add support?
+	if (r_splitscreen) // Not supported in splitscreen - someone want to add support?
 		return;
 
 	// Drunken vision! WooOOooo~
