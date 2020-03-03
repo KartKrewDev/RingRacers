@@ -8741,7 +8741,7 @@ void A_SPBChase(mobj_t *actor)
 		{
 			// Previously set nextwaypoint
 			lastwaypoint = K_GetWaypointFromIndex((size_t)actor->cusval);
-			tempwaypoint = K_GetBestWaypointTouchingMobj(actor);
+			tempwaypoint = K_GetBestWaypointForMobj(actor);
 			// check if the tempwaypoint corresponds to lastwaypoint's next ID at least;
 			// This is to avoid situations where the SPB decides to suicide jump down a bridge because it found a COMPLETELY unrelated waypoint down there.
 
@@ -8752,7 +8752,7 @@ void A_SPBChase(mobj_t *actor)
 				bestwaypoint = K_GetWaypointFromIndex((size_t)actor->extravalue2);	// keep going from the PREVIOUS wp.
 		}
 		else
-			bestwaypoint = K_GetBestWaypointTouchingMobj(actor);
+			bestwaypoint = K_GetBestWaypointForMobj(actor);
 
 		if (bestwaypoint == NULL && lastwaypoint == NULL)
 		{
@@ -8780,7 +8780,6 @@ void A_SPBChase(mobj_t *actor)
 			// Restore to the last nextwaypoint
 			nextwaypoint = lastwaypoint;
 		}
-
 
 		if (nextwaypoint != NULL)
 		{

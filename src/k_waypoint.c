@@ -222,8 +222,46 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 		{
 			checkwaypoint = &waypointheap[i];
 
-			// TODO: Keep the old version of this function,
-			// make the vertical axis faking & sight checks a separate function.
+			checkdist = P_AproxDistance(
+				(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
+				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
+			checkdist = P_AproxDistance(checkdist, (mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS));
+
+			if (checkdist < closestdist)
+			{
+				closestwaypoint = checkwaypoint;
+				closestdist = checkdist;
+			}
+		}
+	}
+
+	return closestwaypoint;
+}
+
+/*--------------------------------------------------
+	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+{
+	waypoint_t *bestwaypoint = NULL;
+
+	if ((mobj == NULL) || P_MobjWasRemoved(mobj))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_GetBestWaypointForMobj.\n");
+	}
+	else
+	{
+		size_t     i              = 0U;
+		waypoint_t *checkwaypoint = NULL;
+		fixed_t    closestdist    = INT32_MAX;
+		fixed_t    checkdist      = INT32_MAX;
+
+		for (i = 0; i < numwaypoints; i++)
+		{
+			checkwaypoint = &waypointheap[i];
+
 			checkdist = P_AproxDistance(
 				(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
 				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
@@ -237,49 +275,8 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 					continue;
 				}
 
-				closestwaypoint = checkwaypoint;
-				closestdist = checkdist;
-			}
-		}
-	}
-
-	return closestwaypoint;
-}
-
-/*--------------------------------------------------
-	waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj)
-
-		See header file for description.
---------------------------------------------------*/
-waypoint_t *K_GetBestWaypointTouchingMobj(mobj_t *const mobj)
-{
-	waypoint_t *bestwaypoint = NULL;
-
-	if ((mobj == NULL) || P_MobjWasRemoved(mobj))
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_GetBestWaypointTouchingMobj.\n");
-	}
-	else
-	{
-		size_t     i              = 0U;
-		waypoint_t *checkwaypoint = NULL;
-		fixed_t    bestdist       = INT32_MAX;
-		fixed_t    checkdist      = INT32_MAX;
-
-		for (i = 0; i < numwaypoints; i++)
-		{
-			checkwaypoint = &waypointheap[i];
-			checkdist = P_AproxDistance(
-				(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
-				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
-			checkdist = P_AproxDistance(checkdist, (mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS));
-
-			// The mobj has to be touching this waypoint to use it.
-			if ((checkdist <= (checkwaypoint->mobj->radius >> FRACBITS))
-			&& (checkdist < bestdist))
-			{
 				bestwaypoint = checkwaypoint;
-				bestdist = checkdist;
+				closestdist = checkdist;
 			}
 		}
 	}
