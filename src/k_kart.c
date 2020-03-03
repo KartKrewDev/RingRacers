@@ -5880,7 +5880,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 			}
 		}
 
-		if (P_IsObjectOnGround(player->mo))
+		if (!P_IsObjectOnGround(player->mo))
 		{
 			updaterespawn = false;
 		}
