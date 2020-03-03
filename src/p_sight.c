@@ -484,7 +484,7 @@ boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
 			/// \todo Improve by checking fog density/translucency
 			/// and setting a sight limit.
 			if (!(rover->flags & FF_EXISTS)
-				|| !(rover->flags & FF_RENDERPLANES) || rover->flags & FF_TRANSLUCENT)
+				|| !(rover->flags & FF_RENDERPLANES) /*|| (rover->flags & FF_TRANSLUCENT)*/)
 			{
 				continue;
 			}
