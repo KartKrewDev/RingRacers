@@ -223,26 +223,22 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 			checkwaypoint = &waypointheap[i];
 
 			// TODO: Keep the old version of this function,
-			// make this 128 check & sight checks a separate function.
-			checkdist = abs((mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS));
+			// make the vertical axis faking & sight checks a separate function.
+			checkdist = P_AproxDistance(
+				(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
+				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
+			checkdist = P_AproxDistance(checkdist, ((mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS)) << 2);
 
-			if (checkdist <= 128) 
+			if (checkdist < closestdist)
 			{
-				checkdist = P_AproxDistance(
-					(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
-					(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
-
-				if (checkdist < closestdist)
+				if (!P_CheckSight(mobj, checkwaypoint->mobj))
 				{
-					if (!P_CheckSight(mobj, checkwaypoint->mobj))
-					{
-						// Save sight checks for the end, so we only do it if we have to
-						continue;
-					}
-
-					closestwaypoint = checkwaypoint;
-					closestdist = checkdist;
+					// Save sight checks for the end, so we only do it if we have to
+					continue;
 				}
+
+				closestwaypoint = checkwaypoint;
+				closestdist = checkdist;
 			}
 		}
 	}
