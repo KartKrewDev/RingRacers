@@ -5880,6 +5880,11 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player, boolean closest)
 			}
 		}
 
+		if (P_IsObjectOnGround(player->mo))
+		{
+			updaterespawn = false;
+		}
+
 		// Respawn point should only be updated when we're going to a nextwaypoint
 		if ((updaterespawn) &&
 		(bestwaypoint != NULL) &&
