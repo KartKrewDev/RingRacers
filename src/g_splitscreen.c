@@ -119,7 +119,7 @@ G_RemovePartyMember (int playernum)
 				}
 				while (i < MAXSPLITSCREENPLAYERS)
 				{
-					displayplayers[i] = consoleplayer;
+					displayplayers[i] = displayplayers[0];
 
 					i++;
 				}
@@ -197,7 +197,7 @@ G_AddPartyMember (int invitation, int playernum)
 		}
 		while (i < MAXSPLITSCREENPLAYERS)
 		{
-			displayplayers[i] = consoleplayer;
+			displayplayers[i] = displayplayers[0];
 
 			i++;
 		}
