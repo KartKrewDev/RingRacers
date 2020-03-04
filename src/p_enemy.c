@@ -8806,13 +8806,13 @@ void A_SPBChase(mobj_t *actor)
 			if (invert)
 				input = InvAngle(input);
 
+			input = FixedAngle(AngleFixed(input)/8);
+
 			// Slow down when turning; it looks better and makes U-turns not unfair
 			xyspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
 
-			input = FixedAngle(AngleFixed(input)/4);
 			if (invert)
 				input = InvAngle(input);
-
 			actor->angle += input;
 
 			// Smoothly rotate vert angle
@@ -8821,16 +8821,15 @@ void A_SPBChase(mobj_t *actor)
 			if (invert)
 				input = InvAngle(input);
 
+			input = FixedAngle(AngleFixed(input)/8);
+
 			// Slow down when turning; might as well do it for momz, since we do it above too
 			zspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
 
-			input = FixedAngle(AngleFixed(input)/4);
 			if (invert)
 				input = InvAngle(input);
-
 			actor->movedir += input;
 		}
-
 
 		actor->momx = FixedMul(FixedMul(xyspeed, FINECOSINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
@@ -8878,7 +8877,6 @@ void A_SPBChase(mobj_t *actor)
 		actor->z = actor->floorz;
 	else if (actor->z > actor->ceilingz - actor->height)
 		actor->z = actor->ceilingz - actor->height;
-
 
 	return;
 }
