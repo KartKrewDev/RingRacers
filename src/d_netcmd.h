@@ -183,9 +183,10 @@ typedef enum
 	XD_PARTYINVITE, // 27
 	XD_ACCEPTPARTYINVITE, // 28
 	XD_LEAVEPARTY, // 29
+	XD_CANCELPARTYINVITE, // 30
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 30
-	XD_LUAVAR,      // 31
+	XD_LUACMD,      // 31
+	XD_LUAVAR,      // 32
 #endif
 	MAXNETXCMD
 } netxcmd_t;

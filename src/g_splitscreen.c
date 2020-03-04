@@ -188,10 +188,10 @@ G_AddPartyMember (int invitation, int playernum)
 	}
 	else if (playernum == consoleplayer)
 	{
-		splitscreen_partied[invitation] = true;
-
 		for (i = 0; i < new_party_size; ++i)
 		{
+			splitscreen_partied[playerconsole[party[i]]] = true;
+
 			displayplayers[i] = party[i];
 			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 		}
