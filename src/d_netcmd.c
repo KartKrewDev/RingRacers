@@ -65,6 +65,7 @@ static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
 static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
 static void Got_PartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_AcceptPartyInvite(UINT8 **cp, INT32 playernum);
+static void Got_CancelPartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_LeaveParty(UINT8 **cp, INT32 playernum);
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum);
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
@@ -138,6 +139,7 @@ static void Command_View_f (void);
 static void Command_SetViews_f(void);
 
 static void Command_Invite_f(void);
+static void Command_CancelInvite_f(void);
 static void Command_AcceptInvite_f(void);
 static void Command_RejectInvite_f(void);
 static void Command_LeaveParty_f(void);
@@ -554,6 +556,7 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
 	RegisterNetXCmd(XD_PARTYINVITE, Got_PartyInvite);
 	RegisterNetXCmd(XD_ACCEPTPARTYINVITE, Got_AcceptPartyInvite);
+	RegisterNetXCmd(XD_CANCELPARTYINVITE, Got_CancelPartyInvite);
 	RegisterNetXCmd(XD_LEAVEPARTY, Got_LeaveParty);
 	RegisterNetXCmd(XD_MAP, Got_Mapcmd);
 	RegisterNetXCmd(XD_EXITLEVEL, Got_ExitLevelcmd);
@@ -765,6 +768,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("changeteam4", Command_Teamchange4_f);
 
 	COM_AddCommand("invite", Command_Invite_f);
+	COM_AddCommand("cancelinvite", Command_CancelInvite_f);
 	COM_AddCommand("acceptinvite", Command_AcceptInvite_f);
 	COM_AddCommand("rejectinvite", Command_RejectInvite_f);
 	COM_AddCommand("leaveparty", Command_LeaveParty_f);
@@ -2096,6 +2100,43 @@ static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
 	}
 }
 
+static void Got_CancelPartyInvite(UINT8 **cp,INT32 playernum)
+{
+	UINT8 invitee;
+
+	invitee = READUINT8 (*cp);
+
+	if (
+			invitee >= 0 &&
+			invitee < MAXPLAYERS &&
+			playeringame[invitee]
+	){
+		invitee = playerconsole[invitee];
+
+		if (splitscreen_invitations[invitee] == playerconsole[playernum])
+		{
+			splitscreen_invitations[invitee] = -1;
+
+			if (consoleplayer == invitee)
+			{
+				HU_AddChatText("\x85*Your invitation has been rescinded.", true);
+			}
+		}
+	}
+	else
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal cancel splitscreen invite received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+	}
+}
+
 static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 {
 	if (playerconsole[playernum] != playernum)
@@ -2436,6 +2477,45 @@ Command_Invite_f (void)
 	);
 
 	SendNetXCmd(XD_PARTYINVITE, &invitee, 1);
+}
+
+static void
+Command_CancelInvite_f (void)
+{
+	UINT8 invitee;
+
+	if (COM_Argc() != 2)
+	{
+		CONS_Printf("cancelinvite <player>: Rescind a party invitation.\n");
+		return;
+	}
+
+	invitee = LookupPlayer(COM_Argv(1));
+
+	if (invitee == -1)
+	{
+		CONS_Alert(CONS_WARNING, "There is no player by that name!\n");
+		return;
+	}
+	if (!playeringame[invitee])
+	{
+		CONS_Alert(CONS_WARNING, "There is no player using that slot!\n");
+		return;
+	}
+
+	if (splitscreen_invitations[invitee] != consoleplayer)
+	{
+		CONS_Alert(CONS_WARNING,
+				"You have not invited this player!\n");
+	}
+
+	CONS_Printf(
+			"Rescinding invite to %s...\n",
+			VaguePartyDescription(
+				invitee, splitscreen_original_party_size, '\x80')
+	);
+
+	SendNetXCmd(XD_CANCELPARTYINVITE, &invitee, 1);
 }
 
 static boolean
