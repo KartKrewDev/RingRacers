@@ -34,6 +34,9 @@
 #include "p_slopes.h"
 #endif
 
+// SRB2Kart
+#include "k_pwrlv.h"
+
 savedata_t savedata;
 UINT8 *save_p;
 
@@ -947,8 +950,8 @@ typedef enum
 	MD2_EXTVAL2     = 1<<6,
 	MD2_HNEXT       = 1<<7,
 	MD2_HPREV       = 1<<8,
-	MD2_COLORIZED	= 1<<9,
-	MD2_WAYPOINTCAP	= 1<<10
+	MD2_COLORIZED   = 1<<9,
+	MD2_WAYPOINTCAP = 1<<10
 #ifdef ESLOPE
 	, MD2_SLOPE       = 1<<11
 #endif
@@ -3287,14 +3290,28 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT8(save_p, franticitems);
 	WRITEUINT8(save_p, comeback);
 
+	WRITESINT8(save_p, speedscramble);
+	WRITESINT8(save_p, encorescramble);
+
 	for (i = 0; i < 4; i++)
 		WRITESINT8(save_p, battlewanted[i]);
+
+	// battleovertime_t
+	WRITEUINT16(save_p, battleovertime.enabled);
+	WRITEFIXED(save_p, battleovertime.radius);
+	WRITEFIXED(save_p, battleovertime.minradius);
+	WRITEFIXED(save_p, battleovertime.x);
+	WRITEFIXED(save_p, battleovertime.y);
+	WRITEFIXED(save_p, battleovertime.z);
 
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
 	WRITEUINT32(save_p, hyubgone);
 	WRITEUINT32(save_p, mapreset);
-	WRITEUINT8(save_p, nospectategrief);
+
+	for (i = 0; i < MAXPLAYERS; i++) 
+		WRITEINT16(save_p, nospectategrief[i]);
+
 	WRITEUINT8(save_p, thwompsactive);
 	WRITESINT8(save_p, spbplace);
 
@@ -3396,14 +3413,28 @@ static inline boolean P_NetUnArchiveMisc(void)
 	franticitems = (boolean)READUINT8(save_p);
 	comeback = (boolean)READUINT8(save_p);
 
+	speedscramble = READSINT8(save_p);
+	encorescramble = READSINT8(save_p);
+
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = READSINT8(save_p);
+
+	// battleovertime_t
+	battleovertime.enabled = READUINT16(save_p);
+	battleovertime.radius = READFIXED(save_p);
+	battleovertime.minradius = READFIXED(save_p);
+	battleovertime.x = READFIXED(save_p);
+	battleovertime.y = READFIXED(save_p);
+	battleovertime.z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);
 	hyubgone = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
-	nospectategrief = READUINT8(save_p);
+
+	for (i = 0; i < MAXPLAYERS; i++) 
+		nospectategrief[i] = READINT16(save_p);
+
 	thwompsactive = (boolean)READUINT8(save_p);
 	spbplace = READSINT8(save_p);
 

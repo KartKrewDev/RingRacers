@@ -165,6 +165,7 @@ static char returnWadPath[256];
 #include "../d_net.h"
 #include "../g_game.h"
 #include "../filesrch.h"
+#include "../k_pwrlv.h"
 #include "endtxt.h"
 #include "sdlmain.h"
 
@@ -3056,6 +3057,11 @@ void I_Quit(void)
 #ifndef NONET
 	D_SaveBan(); // save the ban list
 #endif
+
+	// Make sure you lose points for ALT-F4
+	if (Playing())
+		K_PlayerForfeit(consoleplayer, true);
+
 	G_SaveGameData(false); // Tails 12-08-2002
 	//added:16-02-98: when recording a demo, should exit using 'q' key,
 	//        but sometimes we forget and use 'F10'.. so save here too.
@@ -3177,11 +3183,14 @@ void I_Error(const char *error, ...)
 #endif
 	G_SaveGameData(false); // Tails 12-08-2002
 
+	/* Prevent segmentation fault if testers go to Record Attack... */
+#ifndef TESTERS
 	// Shutdown. Here might be other errors.
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording();
+#endif
 
 	D_QuitNetGame();
 	I_ShutdownMusic();

@@ -308,13 +308,6 @@ static void D_Display(void)
 		wipedefindex = gamestate; // wipe_xxx_toblack
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
 			wipedefindex = wipe_timeattack_toblack;
-		else if (gamestate == GS_INTERMISSION)
-		{
-			if (intertype == int_spec) // Special Stage
-				wipedefindex = wipe_specinter_toblack;
-			else //if (intertype != int_coop) // Multiplayer
-				wipedefindex = wipe_multinter_toblack;
-		}
 
 		if (rendermode != render_none)
 		{
@@ -325,7 +318,7 @@ static void D_Display(void)
 				F_WipeStartScreen();
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK);
+				F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
@@ -556,7 +549,7 @@ static void D_Display(void)
 		if (rendermode != render_none)
 		{
 			F_WipeEndScreen();
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", true, false);
 		}
 	}
 
@@ -1543,10 +1536,11 @@ void D_SRB2Main(void)
 					newskill = (INT16)kartspeed_cons_t[j].value;
 					break;
 				}
+
 			if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
 			{
 				j = atoi(sskill); // assume they gave us a skill number, which is okay too
-				if (j >= 0 && j <= 2)
+				if (j >= KARTSPEED_EASY && j <= KARTSPEED_HARD)
 					newskill = (INT16)j;
 			}
 
@@ -1566,7 +1560,7 @@ void D_SRB2Main(void)
 			else if (!dedicated && M_MapLocked(pstartmap))
 				I_Error("You need to unlock this level before you can warp to it!\n");
 			else
-				D_MapChange(pstartmap, gametype, (boolean)cv_kartencore.value, true, 0, false, false);
+				D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
 		}
 	}
 	else if (M_CheckParm("-skipintro"))
