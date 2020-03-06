@@ -1533,20 +1533,16 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 
 	\return	boolean
 */
-static UINT8 K_CheckOffroadCollide(mobj_t *mo, sector_t *sec)
+static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 {
 	UINT8 i;
-	sector_t *sec2;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	sec2 = P_ThingOnSpecial3DFloor(mo);
-
 	for (i = 2; i < 5; i++)
 	{
-		if ((sec2 && GETSECSPECIAL(sec2->special, 1) == i)
-			|| (P_IsObjectOnRealGround(mo, sec) && GETSECSPECIAL(sec->special, 1) == i))
+		if (P_MobjTouchingSectorSpecial(mo, 1, i, true))
 			return i-1;
 	}
 
@@ -1561,25 +1557,16 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo, sector_t *sec)
 */
 static void K_UpdateOffroad(player_t *player)
 {
-	fixed_t offroad;
-	sector_t *nextsector = R_PointInSubsector(
-		player->mo->x + player->mo->momx*2, player->mo->y + player->mo->momy*2)->sector;
-	UINT8 offroadstrength = K_CheckOffroadCollide(player->mo, nextsector);
+	fixed_t offroadstrength = (K_CheckOffroadCollide(player->mo) << FRACBITS);
 
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
 	{
-		if (K_CheckOffroadCollide(player->mo, player->mo->subsector->sector) && player->kartstuff[k_offroad] == 0)
-			player->kartstuff[k_offroad] = TICRATE;
+		if (player->kartstuff[k_offroad] < offroadstrength)
+			player->kartstuff[k_offroad] += offroadstrength / TICRATE;
 
-		if (player->kartstuff[k_offroad] > 0)
-		{
-			offroad = (offroadstrength << FRACBITS) / TICRATE;
-			player->kartstuff[k_offroad] += offroad;
-		}
-
-		if (player->kartstuff[k_offroad] > (offroadstrength << FRACBITS))
-			player->kartstuff[k_offroad] = (offroadstrength << FRACBITS);
+		if (player->kartstuff[k_offroad] > offroadstrength)
+			player->kartstuff[k_offroad] = offroadstrength;
 	}
 	else
 		player->kartstuff[k_offroad] = 0;

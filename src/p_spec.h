@@ -37,7 +37,7 @@ void P_SpawnSpecials(INT32 fromnetsave);
 
 // every tic
 void P_UpdateSpecials(void);
-sector_t *P_PlayerTouchingSectorSpecial(player_t *player, INT32 section, INT32 number);
+sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, boolean touchground);
 void P_PlayerInSpecialSector(player_t *player);
 void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *roversector);
 

@@ -2276,7 +2276,7 @@ void T_EachTimeThinker(levelspecthink_t *eachtime)
 					continue;
 
 				if (!(players[i].mo->subsector->sector == sec
-					|| P_PlayerTouchingSectorSpecial(&players[i], 2, (GETSECSPECIAL(sec->special, 2))) == sec))
+					|| P_MobjTouchingSectorSpecial(players[i].mo, 2, (GETSECSPECIAL(sec->special, 2)), false) == sec))
 					continue;
 
 				if (floortouch == true && P_IsObjectOnRealGround(players[i].mo, sec))
