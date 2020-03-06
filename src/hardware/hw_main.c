@@ -5882,10 +5882,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	// okay, we can't return now... this is a hack, but weather isn't networked, so it should be ok
 	if (!(thing->precipflags & PCF_THUNK))
 	{
-		if (thing->precipflags & PCF_RAIN)
-			P_RainThinker(thing);
-		else
-			P_SnowThinker(thing);
+		P_PrecipThinker(thing);
 		thing->precipflags |= PCF_THUNK;
 	}
 

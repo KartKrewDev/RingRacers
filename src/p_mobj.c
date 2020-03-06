@@ -3925,51 +3925,60 @@ void P_NullPrecipThinker(precipmobj_t *mobj)
 	mobj->precipflags &= ~PCF_THUNK;
 }
 
-void P_SnowThinker(precipmobj_t *mobj)
+void P_PrecipThinker(precipmobj_t *mobj)
 {
 	P_CycleStateAnimation((mobj_t *)mobj);
 
-	// adjust height
-	if ((mobj->z += mobj->momz) <= mobj->floorz)
-		mobj->z = mobj->ceilingz;
-}
-
-void P_RainThinker(precipmobj_t *mobj)
-{
-	P_CycleStateAnimation((mobj_t *)mobj);
-
-	if (mobj->state != &states[S_RAIN1])
+	if (mobj->state == &states[S_RAINRETURN])
 	{
-		// cycle through states,
-		// calling action functions at transitions
-		if (mobj->tics <= 0)
-			return;
-
-		if (--mobj->tics)
-			return;
-
-		if (!P_SetPrecipMobjState(mobj, mobj->state->nextstate))
-			return;
-
-		if (mobj->state != &states[S_RAINRETURN])
-			return;
-
+		// Reset to ceiling!
+		P_SetPrecipMobjState(mobj, mobj->info->spawnstate);
 		mobj->z = mobj->ceilingz;
-		P_SetPrecipMobjState(mobj, S_RAIN1);
-
-		return;
+		mobj->momz = mobj->info->speed;
+		mobj->precipflags &= ~PCF_SPLASH;
 	}
 
+	if (mobj->tics != -1)
+	{
+		if (mobj->tics)
+		{
+			mobj->tics--;
+		}
+
+		if (mobj->tics == 0)
+		{
+			if ((mobj->precipflags & PCF_SPLASH) && (mobj->state->nextstate == S_NULL))
+			{
+				// HACK: sprite changes are 1 tic late, so you would see splashes on the ceiling if not for this state.
+				// We need to use the settings from the previous state, since some of those are NOT 1 tic late.
+				INT32 frame = (mobj->frame & ~FF_FRAMEMASK);
+				P_SetPrecipMobjState(mobj, S_RAINRETURN);
+				mobj->frame = frame;
+				return;
+			}
+			else
+			{
+				if (!P_SetPrecipMobjState(mobj, mobj->state->nextstate))
+					return;
+			}
+		}
+	}
+
+	if (mobj->precipflags & PCF_SPLASH)
+		return;
+
 	// adjust height
 	if ((mobj->z += mobj->momz) <= mobj->floorz)
 	{
-		// no splashes on sky or bottomless pits
-		if (mobj->precipflags & PCF_PIT)
+		if ((mobj->info->deathstate == S_NULL) || (mobj->precipflags & PCF_PIT)) // no splashes on sky or bottomless pits
+		{
 			mobj->z = mobj->ceilingz;
+		}
 		else
 		{
+			P_SetPrecipMobjState(mobj, mobj->info->deathstate);
 			mobj->z = mobj->floorz;
-			P_SetPrecipMobjState(mobj, S_SPLASH1);
+			mobj->precipflags |= PCF_SPLASH;
 		}
 	}
 }
@@ -6351,9 +6360,8 @@ fixed_t P_CalculateShadowFloor(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fi
 		}
 	}
 
-#if 0
 	mobj->standingslope = slope;
-#endif
+
 #ifdef HWRENDER
 	mobj->modeltilt = slope;
 #endif
@@ -10824,17 +10832,21 @@ mobj_t *P_SpawnShadowMobj(mobj_t * caster)
 
 static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 {
+	const mobjinfo_t *info = &mobjinfo[type];
 	state_t *st;
 	precipmobj_t *mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
 	fixed_t starting_floorz;
 
+	mobj->type = type;
+	mobj->info = info;
+
 	mobj->x = x;
 	mobj->y = y;
-	mobj->flags = mobjinfo[type].flags;
+	mobj->flags = info->flags;
 
 	// do not set the state with P_SetMobjState,
 	// because action routines can not be called yet
-	st = &states[mobjinfo[type].spawnstate];
+	st = &states[info->spawnstate];
 
 	mobj->state = st;
 	mobj->tics = st->tics;
@@ -10857,7 +10869,7 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 				mobj->subsector->sector->ceilingheight;
 
 	mobj->z = z;
-	mobj->momz = mobjinfo[type].speed;
+	mobj->momz = info->speed;
 
 	mobj->thinker.function.acp1 = (actionf_p1)P_NullPrecipThinker;
 	P_AddThinker(&mobj->thinker);
@@ -10872,21 +10884,6 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 		mobj->precipflags |= PCF_PIT;
 
 	return mobj;
-}
-
-static inline precipmobj_t *P_SpawnRainMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
-{
-	precipmobj_t *mo = P_SpawnPrecipMobj(x,y,z,type);
-	mo->precipflags |= PCF_RAIN;
-	//mo->thinker.function.acp1 = (actionf_p1)P_RainThinker;
-	return mo;
-}
-
-static inline precipmobj_t *P_SpawnSnowMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
-{
-	precipmobj_t *mo = P_SpawnPrecipMobj(x,y,z,type);
-	//mo->thinker.function.acp1 = (actionf_p1)P_SnowThinker;
-	return mo;
 }
 
 //
@@ -11077,8 +11074,10 @@ consvar_t cv_suddendeath = {"suddendeath", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHE
 
 void P_SpawnPrecipitation(void)
 {
-	INT32 i, mrand;
-	fixed_t basex, basey, x, y, height;
+	INT32 i, j, k;
+	mobjtype_t type = precipprops[curWeather].type;
+	UINT8 randomstates = (UINT8)mobjinfo[type].damage;
+	fixed_t basex, basey, x, y, z, height;
 	subsector_t *precipsector = NULL;
 	precipmobj_t *rainmo = NULL;
 
@@ -11091,8 +11090,9 @@ void P_SpawnPrecipitation(void)
 		basex = bmaporgx + (i % bmapwidth) * MAPBLOCKSIZE;
 		basey = bmaporgy + (i / bmapwidth) * MAPBLOCKSIZE;
 
-		//for (j = 0; j < cv_precipdensity.value; ++j) -- density is 1 for kart always
 		{
+			UINT16 numparticles = 0;
+
 			x = basex + ((M_RandomKey(MAPBLOCKUNITS<<3)<<FRACBITS)>>3);
 			y = basey + ((M_RandomKey(MAPBLOCKUNITS<<3)<<FRACBITS)>>3);
 
@@ -11107,39 +11107,42 @@ void P_SpawnPrecipitation(void)
 			if (precipsector->sector->ceilingpic != skyflatnum)
 				continue;
 
+			height = precipsector->sector->ceilingheight - precipsector->sector->floorheight;
+
 			// Exists, but is too small for reasonable precipitation.
-			if (!(precipsector->sector->floorheight <= precipsector->sector->ceilingheight - (32<<FRACBITS)))
+			if (height < 64<<FRACBITS)
 				continue;
 
-			// Don't set height yet...
-			height = precipsector->sector->ceilingheight;
+			// Hack around a quirk of this entire system, where taller sectors look like they get less precipitation.
+			numparticles = 1 + (height / (MAPBLOCKUNITS<<4<<FRACBITS));
 
-			if (curWeather == PRECIP_SNOW)
+			// Don't set z properly yet...
+			z = precipsector->sector->ceilingheight;
+
+			for (j = 0; j < numparticles; j++)
 			{
-				rainmo = P_SpawnSnowMobj(x, y, height, MT_SNOWFLAKE);
-				mrand = M_RandomByte();
-				if (mrand < 64)
-					P_SetPrecipMobjState(rainmo, S_SNOW3);
-				else if (mrand < 144)
-					P_SetPrecipMobjState(rainmo, S_SNOW2);
+				rainmo = P_SpawnPrecipMobj(x, y, z, type);
+
+				if (randomstates > 0)
+				{
+					UINT8 mrand = M_RandomByte();
+					UINT8 threshold = UINT8_MAX / (randomstates + 1);
+					statenum_t st = mobjinfo[type].spawnstate;
+
+					for (k = 0; k < randomstates; k++)
+					{
+						if (mrand < (threshold * (k+1)))
+						{
+							P_SetPrecipMobjState(rainmo, st+k+1);
+							break;
+						}
+					}
+				}
+
+				// Randomly assign a height, now that floorz is set.
+				rainmo->z = M_RandomRange(rainmo->floorz>>FRACBITS, rainmo->ceilingz>>FRACBITS)<<FRACBITS;
 			}
-			else // everything else.
-				rainmo = P_SpawnRainMobj(x, y, height, MT_RAIN);
-
-			// Randomly assign a height, now that floorz is set.
-			rainmo->z = M_RandomRange(rainmo->floorz>>FRACBITS, rainmo->ceilingz>>FRACBITS)<<FRACBITS;
 		}
-	}
-
-	if (curWeather == PRECIP_BLANK)
-	{
-		curWeather = PRECIP_RAIN;
-		P_SwitchWeather(PRECIP_BLANK);
-	}
-	else if (curWeather == PRECIP_STORM_NORAIN)
-	{
-		curWeather = PRECIP_RAIN;
-		P_SwitchWeather(PRECIP_STORM_NORAIN);
 	}
 }
 
@@ -11152,46 +11155,37 @@ void P_PrecipitationEffects(void)
 	INT32 volume;
 	size_t i;
 
-	boolean sounds_rain = true;
-	boolean sounds_thunder = true;
-	boolean effects_lightning = true;
+	INT32 rainsfx = mobjinfo[precipprops[curWeather].type].seesound;
+	INT32 rainfreq = mobjinfo[precipprops[curWeather].type].mass;
+
+	boolean sounds_thunder = (precipprops[curWeather].effects & PRECIPFX_THUNDER);
+	boolean effects_lightning = (precipprops[curWeather].effects & PRECIPFX_LIGHTNING);
 	boolean lightningStrike = false;
 
 	// No thunder except every other tic.
-	if (leveltime & 1);
-	// Before, consistency failures were possible if a level started
-	// with global rain and switched players to anything else ...
-	// If the global weather has lightning strikes,
-	// EVERYONE gets them at the SAME time!
-	else if (globalweather == PRECIP_STORM
-	 || globalweather == PRECIP_STORM_NORAIN)
-		thunderchance = (P_RandomKey(8192));
-	// But on the other hand, if the global weather is ANYTHING ELSE,
-	// don't sync lightning strikes.
-	// It doesn't matter whatever curWeather is, we'll only use
-	// the variable if we care about it.
-	else
-		thunderchance = (M_RandomKey(8192));
+	if (!(leveltime & 1))
+	{
+		if ((precipprops[globalweather].effects & PRECIPFX_THUNDER)
+		|| (precipprops[globalweather].effects & PRECIPFX_LIGHTNING))
+		{
+			// Before, consistency failures were possible if a level started
+			// with global rain and switched players to anything else ...
+			// If the global weather has lightning strikes,
+			// EVERYONE gets them at the SAME time!
+			thunderchance = (P_RandomKey(8192));
+		}
+		else if (sounds_thunder || effects_lightning)
+		{
+			// But on the other hand, if the global weather is ANYTHING ELSE,
+			// don't sync lightning strikes.
+			// While we'll only use the variable if we care about it, it's
+			// nice to save on RNG calls when we don't need it.
+			thunderchance = (M_RandomKey(8192));
+		}
+	}
 
 	if (thunderchance < 70)
 		lightningStrike = true;
-
-	switch (curWeather)
-	{
-		case PRECIP_RAIN: // no lightning or thunder whatsoever
-			sounds_thunder = false;
-			/* FALLTHRU */
-		case PRECIP_STORM_NOSTRIKES: // no lightning strikes specifically
-			effects_lightning = false;
-			break;
-		case PRECIP_STORM_NORAIN: // no rain, lightning and thunder allowed
-			sounds_rain = false;
-		case PRECIP_STORM: // everything.
-			break;
-		default:
-			// Other weathers need not apply.
-			return;
-	}
 
 	// Currently thunderstorming with lightning, and we're sounding the thunder...
 	// and where there's thunder, there's gotta be lightning!
@@ -11244,8 +11238,8 @@ void P_PrecipitationEffects(void)
 	else if (volume > 255)
 		volume = 255;
 
-	if (sounds_rain && (!leveltime || leveltime % 80 == 1))
-		S_StartSoundAtVolume(players[displayplayers[0]].mo, sfx_rainin, volume);
+	if (rainsfx != sfx_None && (!leveltime || leveltime % rainfreq == 1))
+		S_StartSoundAtVolume(players[displayplayers[0]].mo, rainsfx, volume);
 
 	if (!sounds_thunder)
 		return;

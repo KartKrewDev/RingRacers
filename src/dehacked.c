@@ -5672,6 +5672,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SNOW2",
 	"S_SNOW3",
 
+	// Blizzard Snowball
+	"S_BLIZZARDSNOW1",
+	"S_BLIZZARDSNOW2",
+	"S_BLIZZARDSNOW3",
+
 	// Water Splish
 	"S_SPLISH1",
 	"S_SPLISH2",
@@ -7572,6 +7577,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Environmental Effects
 	"MT_RAIN", // Rain
 	"MT_SNOWFLAKE", // Snowflake
+	"MT_BLIZZARDSNOW", // Blizzard Snowball
 	"MT_SPLISH", // Water splish!
 	"MT_SMOKE",
 	"MT_SMALLBUBBLE", // small bubble
@@ -8683,10 +8689,10 @@ struct {
 
 	// Precipitation
 	{"PRECIP_NONE",PRECIP_NONE},
-	{"PRECIP_STORM",PRECIP_STORM},
-	{"PRECIP_SNOW",PRECIP_SNOW},
 	{"PRECIP_RAIN",PRECIP_RAIN},
-	{"PRECIP_BLANK",PRECIP_BLANK},
+	{"PRECIP_SNOW",PRECIP_SNOW},
+	{"PRECIP_BLIZZARD",PRECIP_BLIZZARD},
+	{"PRECIP_STORM",PRECIP_STORM},
 	{"PRECIP_STORM_NORAIN",PRECIP_STORM_NORAIN},
 	{"PRECIP_STORM_NOSTRIKES",PRECIP_STORM_NOSTRIKES},
 

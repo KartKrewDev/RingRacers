@@ -2003,57 +2003,28 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 //
 // Switches the weather!
 //
-void P_SwitchWeather(INT32 weathernum)
+void P_SwitchWeather(UINT8 newWeather)
 {
 	boolean purge = false;
-	INT32 swap = 0;
+	mobjtype_t swap = MT_NULL;
 
-	switch (weathernum)
+	if (precipprops[newWeather].type == MT_NULL)
 	{
-		case PRECIP_NONE: // None
-			if (curWeather == PRECIP_NONE)
-				return; // Nothing to do.
-			purge = true;
-			break;
-		case PRECIP_STORM: // Storm
-		case PRECIP_STORM_NOSTRIKES: // Storm w/ no lightning
-		case PRECIP_RAIN: // Rain
-			if (curWeather == PRECIP_SNOW || curWeather == PRECIP_BLANK || curWeather == PRECIP_STORM_NORAIN)
-				swap = PRECIP_RAIN;
-			break;
-		case PRECIP_SNOW: // Snow
-			if (curWeather == PRECIP_SNOW)
-				return; // Nothing to do.
-			if (curWeather == PRECIP_RAIN || curWeather == PRECIP_STORM || curWeather == PRECIP_STORM_NOSTRIKES || curWeather == PRECIP_BLANK || curWeather == PRECIP_STORM_NORAIN)
-				swap = PRECIP_SNOW; // Need to delete the other precips.
-			break;
-		case PRECIP_STORM_NORAIN: // Storm w/o rain
-			if (curWeather == PRECIP_SNOW
-				|| curWeather == PRECIP_STORM
-				|| curWeather == PRECIP_STORM_NOSTRIKES
-				|| curWeather == PRECIP_RAIN
-				|| curWeather == PRECIP_BLANK)
-				swap = PRECIP_STORM_NORAIN;
-			else if (curWeather == PRECIP_STORM_NORAIN)
-				return;
-			break;
-		case PRECIP_BLANK:
-			if (curWeather == PRECIP_SNOW
-				|| curWeather == PRECIP_STORM
-				|| curWeather == PRECIP_STORM_NOSTRIKES
-				|| curWeather == PRECIP_RAIN)
-				swap = PRECIP_BLANK;
-			else if (curWeather == PRECIP_STORM_NORAIN)
-				swap = PRECIP_BLANK;
-			else if (curWeather == PRECIP_BLANK)
-				return;
-			break;
-		default:
-			CONS_Debug(DBG_GAMELOGIC, "P_SwitchWeather: Unknown weather type %d.\n", weathernum);
-			break;
+		// New type is null, we want to purge the weather.
+		if (precipprops[curWeather].type == MT_NULL)
+			return; // Nothing to do.
+		purge = true;
+	}
+	else 
+	{
+		if (precipprops[curWeather].type != MT_NULL)
+		{
+			// There are already existing weather particles to reuse.
+			swap = precipprops[newWeather].type;
+		}
 	}
 
-	if (purge)
+	if (purge == true)
 	{
 		thinker_t *think;
 		precipmobj_t *precipmobj;
@@ -2068,136 +2039,54 @@ void P_SwitchWeather(INT32 weathernum)
 			P_RemovePrecipMobj(precipmobj);
 		}
 	}
-	else if (swap && !((swap == PRECIP_BLANK && curWeather == PRECIP_STORM_NORAIN) || (swap == PRECIP_STORM_NORAIN && curWeather == PRECIP_BLANK))) // Rather than respawn all that crap, reuse it!
+	else if (swap != MT_NULL) // Rather than respawn all that crap, reuse it!
 	{
+		UINT8 randomstates = (UINT8)mobjinfo[swap].damage;
 		thinker_t *think;
 		precipmobj_t *precipmobj;
-		state_t *st;
+		statenum_t st;
 
 		for (think = thinkercap.next; think != &thinkercap; think = think->next)
 		{
 			if (think->function.acp1 != (actionf_p1)P_NullPrecipThinker)
 				continue; // not a precipmobj thinker
+
 			precipmobj = (precipmobj_t *)think;
 
-			if (swap == PRECIP_RAIN) // Snow To Rain
+			precipmobj->flags = mobjinfo[swap].flags;
+
+			st = mobjinfo[swap].spawnstate;
+			
+			if (randomstates > 0)
 			{
-				precipmobj->flags = mobjinfo[MT_RAIN].flags;
-				st = &states[mobjinfo[MT_RAIN].spawnstate];
-				precipmobj->state = st;
-				precipmobj->tics = st->tics;
-				precipmobj->sprite = st->sprite;
-				precipmobj->frame = st->frame;
-				precipmobj->momz = mobjinfo[MT_RAIN].speed;
+				UINT8 mrand = M_RandomByte();
+				UINT8 threshold = UINT8_MAX / (randomstates + 1);
+				UINT8 i;
 
-				precipmobj->precipflags &= ~PCF_INVISIBLE;
-
-				precipmobj->precipflags |= PCF_RAIN;
-				//think->function.acp1 = (actionf_p1)P_RainThinker;
+				for (i = 0; i < randomstates; i++)
+				{
+					if (mrand < (threshold * (i+1)))
+					{
+						st += i+1;
+						break;
+					}
+				}
 			}
-			else if (swap == PRECIP_SNOW) // Rain To Snow
-			{
-				INT32 z;
 
-				precipmobj->flags = mobjinfo[MT_SNOWFLAKE].flags;
-				z = M_RandomByte();
+			precipmobj->state = &states[st];
+			precipmobj->tics = precipmobj->state->tics;
+			precipmobj->sprite = precipmobj->state->sprite;
+			precipmobj->frame = precipmobj->state->frame;
 
-				if (z < 64)
-					z = 2;
-				else if (z < 144)
-					z = 1;
-				else
-					z = 0;
-
-				st = &states[mobjinfo[MT_SNOWFLAKE].spawnstate+z];
-				precipmobj->state = st;
-				precipmobj->tics = st->tics;
-				precipmobj->sprite = st->sprite;
-				precipmobj->frame = st->frame;
-				precipmobj->momz = mobjinfo[MT_SNOWFLAKE].speed;
-
-				precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_RAIN);
-
-				//think->function.acp1 = (actionf_p1)P_SnowThinker;
-			}
-			else if (swap == PRECIP_BLANK || swap == PRECIP_STORM_NORAIN) // Remove precip, but keep it around for reuse.
-			{
-				//think->function.acp1 = (actionf_p1)P_NullPrecipThinker;
-
-				precipmobj->precipflags |= PCF_INVISIBLE;
-			}
+			precipmobj->momz = mobjinfo[swap].speed;
+			precipmobj->precipflags &= ~PCF_INVISIBLE;
 		}
 	}
 
-	switch (weathernum)
-	{
-		case PRECIP_SNOW: // snow
-			curWeather = PRECIP_SNOW;
+	curWeather = newWeather;
 
-			if (!swap)
-				P_SpawnPrecipitation();
-
-			break;
-		case PRECIP_RAIN: // rain
-		{
-			boolean dontspawn = false;
-
-			if (curWeather == PRECIP_RAIN || curWeather == PRECIP_STORM || curWeather == PRECIP_STORM_NOSTRIKES)
-				dontspawn = true;
-
-			curWeather = PRECIP_RAIN;
-
-			if (!dontspawn && !swap)
-				P_SpawnPrecipitation();
-
-			break;
-		}
-		case PRECIP_STORM: // storm
-		{
-			boolean dontspawn = false;
-
-			if (curWeather == PRECIP_RAIN || curWeather == PRECIP_STORM || curWeather == PRECIP_STORM_NOSTRIKES)
-				dontspawn = true;
-
-			curWeather = PRECIP_STORM;
-
-			if (!dontspawn && !swap)
-				P_SpawnPrecipitation();
-
-			break;
-		}
-		case PRECIP_STORM_NOSTRIKES: // storm w/o lightning
-		{
-			boolean dontspawn = false;
-
-			if (curWeather == PRECIP_RAIN || curWeather == PRECIP_STORM || curWeather == PRECIP_STORM_NOSTRIKES)
-				dontspawn = true;
-
-			curWeather = PRECIP_STORM_NOSTRIKES;
-
-			if (!dontspawn && !swap)
-				P_SpawnPrecipitation();
-
-			break;
-		}
-		case PRECIP_STORM_NORAIN: // storm w/o rain
-			curWeather = PRECIP_STORM_NORAIN;
-
-			if (!swap)
-				P_SpawnPrecipitation();
-
-			break;
-		case PRECIP_BLANK:
-			curWeather = PRECIP_BLANK;
-
-			if (!swap)
-				P_SpawnPrecipitation();
-
-			break;
-		default:
-			curWeather = PRECIP_NONE;
-			break;
-	}
+	if (swap == MT_NULL && precipprops[newWeather].type != MT_NULL)
+		P_SpawnPrecipitation();
 }
 
 /** Gets an object.
@@ -5726,25 +5615,10 @@ void P_InitSpecials(void)
 
 	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
-	// Set curWeather
-	switch (mapheaderinfo[gamemap-1]->weather)
-	{
-		case PRECIP_SNOW: // snow
-		case PRECIP_RAIN: // rain
-		case PRECIP_STORM: // storm
-		case PRECIP_STORM_NORAIN: // storm w/o rain
-		case PRECIP_STORM_NOSTRIKES: // storm w/o lightning
-			curWeather = mapheaderinfo[gamemap-1]->weather;
-			break;
-		default: // blank/none
-			curWeather = PRECIP_NONE;
-			break;
-	}
+	// Set weather
+	curWeather = globalweather = mapheaderinfo[gamemap-1]->weather;
 
-	// Set globalweather
-	globalweather = mapheaderinfo[gamemap-1]->weather;
-
-	P_InitTagLists();   // Create xref tables for tags
+	P_InitTagLists(); // Create xref tables for tags
 }
 
 /** After the map has loaded, scans for specials that spawn 3Dfloors and
