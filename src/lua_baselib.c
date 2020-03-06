@@ -1303,15 +1303,16 @@ static int lib_pExplodeMissile(lua_State *L)
 	return 0;
 }
 
-static int lib_pPlayerTouchingSectorSpecial(lua_State *L)
+static int lib_pMobjTouchingSectorSpecial(lua_State *L)
 {
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	INT32 section = (INT32)luaL_checkinteger(L, 2);
 	INT32 number = (INT32)luaL_checkinteger(L, 3);
+	boolean touchground = lua_optboolean(L, 4);
 	//HUDSAFE
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	LUA_PushUserdata(L, P_PlayerTouchingSectorSpecial(player, section, number), META_SECTOR);
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number, touchground), META_SECTOR);
 	return 1;
 }
 
@@ -2725,7 +2726,7 @@ static luaL_Reg lib[] = {
 	{"P_SetMobjStateNF",lib_pSetMobjStateNF},
 	{"P_DoSuperTransformation",lib_pDoSuperTransformation},
 	{"P_ExplodeMissile",lib_pExplodeMissile},
-	{"P_PlayerTouchingSectorSpecial",lib_pPlayerTouchingSectorSpecial},
+	{"P_MobjTouchingSectorSpecial",lib_pMobjTouchingSectorSpecial},
 	{"P_FindSpecialLineFromTag",lib_pFindSpecialLineFromTag},
 	{"P_SwitchWeather",lib_pSwitchWeather},
 	{"P_LinedefExecute",lib_pLinedefExecute},

@@ -1533,20 +1533,16 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 
 	\return	boolean
 */
-static UINT8 K_CheckOffroadCollide(mobj_t *mo, sector_t *sec)
+static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 {
 	UINT8 i;
-	sector_t *sec2;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	sec2 = P_ThingOnSpecial3DFloor(mo);
-
 	for (i = 2; i < 5; i++)
 	{
-		if ((sec2 && GETSECSPECIAL(sec2->special, 1) == i)
-			|| (P_IsObjectOnRealGround(mo, sec) && GETSECSPECIAL(sec->special, 1) == i))
+		if (P_MobjTouchingSectorSpecial(mo, 1, i, true))
 			return i-1;
 	}
 
@@ -1561,25 +1557,16 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo, sector_t *sec)
 */
 static void K_UpdateOffroad(player_t *player)
 {
-	fixed_t offroad;
-	sector_t *nextsector = R_PointInSubsector(
-		player->mo->x + player->mo->momx*2, player->mo->y + player->mo->momy*2)->sector;
-	UINT8 offroadstrength = K_CheckOffroadCollide(player->mo, nextsector);
+	fixed_t offroadstrength = (K_CheckOffroadCollide(player->mo) << FRACBITS);
 
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
 	{
-		if (K_CheckOffroadCollide(player->mo, player->mo->subsector->sector) && player->kartstuff[k_offroad] == 0)
-			player->kartstuff[k_offroad] = TICRATE;
+		if (player->kartstuff[k_offroad] < offroadstrength)
+			player->kartstuff[k_offroad] += offroadstrength / TICRATE;
 
-		if (player->kartstuff[k_offroad] > 0)
-		{
-			offroad = (offroadstrength << FRACBITS) / TICRATE;
-			player->kartstuff[k_offroad] += offroad;
-		}
-
-		if (player->kartstuff[k_offroad] > (offroadstrength << FRACBITS))
-			player->kartstuff[k_offroad] = (offroadstrength << FRACBITS);
+		if (player->kartstuff[k_offroad] > offroadstrength)
+			player->kartstuff[k_offroad] = offroadstrength;
 	}
 	else
 		player->kartstuff[k_offroad] = 0;
@@ -6770,7 +6757,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
-	K_KartDrift(player, onground);
+	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
 
 	// Quick Turning
 	// You can't turn your kart when you're not moving.
@@ -7246,6 +7233,9 @@ static patch_t *kp_lapanim_hand[3];
 static patch_t *kp_yougotem;
 static patch_t *kp_itemminimap;
 
+static patch_t *kp_alagles[10];
+static patch_t *kp_blagles[6];
+
 void K_LoadKartHUDGraphics(void)
 {
 	INT32 i, j;
@@ -7546,6 +7536,20 @@ void K_LoadKartHUDGraphics(void)
 
 	kp_yougotem = (patch_t *) W_CachePatchName("YOUGOTEM", PU_HUDGFX);
 	kp_itemminimap = (patch_t *) W_CachePatchName("MMAPITEM", PU_HUDGFX);
+
+	sprintf(buffer, "ALAGLESx");
+	for (i = 0; i < 10; ++i)
+	{
+		buffer[7] = '0'+i;
+		kp_alagles[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
+	sprintf(buffer, "BLAGLESx");
+	for (i = 0; i < 6; ++i)
+	{
+		buffer[7] = '0'+i;
+		kp_blagles[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
 }
 
 // For the item toggle menu
@@ -8518,9 +8522,11 @@ static boolean K_drawKartPositionFaces(void)
 //
 void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol)
 {
+	static tic_t alagles_timer = 9;
 	INT32 i, rightoffset = 240;
 	const UINT8 *colormap;
 	INT32 dupadjust = (vid.width/vid.dupx), duptweak = (dupadjust - BASEVIDWIDTH)/2;
+	int y2;
 
 	//this function is designed for 9 or less score lines only
 	//I_Assert(scorelines <= 9); -- not today bitch, kart fixed it up
@@ -8541,15 +8547,39 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 			continue; //ignore them.
 
 		if (netgame // don't draw it offline
-		&& tab[i].num != serverplayer)
+		&& ( tab[i].num != serverplayer || ! server_lagless ))
 			HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
 
 		STRBUFCPY(strtime, tab[i].name);
 
+		y2 = y;
+
+		if (tab[i].num == 0 && server_lagless)
+		{
+			y2 = ( y - 4 );
+
+			V_DrawScaledPatch(x + 20, y2, 0, kp_blagles[(leveltime / 3) % 6]);
+			// every 70 tics
+			if (( leveltime % 70 ) == 0)
+			{
+				alagles_timer = 9;
+			}
+			if (alagles_timer > 0)
+			{
+				V_DrawScaledPatch(x + 20, y2, 0, kp_alagles[alagles_timer]);
+				if (( leveltime % 2 ) == 0)
+					alagles_timer--;
+			}
+			else
+				V_DrawScaledPatch(x + 20, y2, 0, kp_alagles[0]);
+
+			y2 += SHORT (kp_alagles[0]->height) + 1;
+		}
+
 		if (scorelines > 8)
-			V_DrawThinString(x + 20, y, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
+			V_DrawThinString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
 		else
-			V_DrawString(x + 20, y, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
+			V_DrawString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
 
 		if (players[tab[i].num].mo->color)
 		{

@@ -63,7 +63,6 @@ void A_ThrownRing(); // Sparkle trail for red ring
 void A_GrenadeRing(); // SRB2kart
 void A_SetSolidSteam();
 void A_UnsetSolidSteam();
-void A_SignPlayer();
 void A_OverlayThink();
 void A_JetChase();
 void A_JetbThink(); // Jetty-Syn Bomber Thinker
@@ -475,6 +474,7 @@ typedef enum sprite
 	// Environmental Effects
 	SPR_RAIN, // Rain
 	SPR_SNO1, // Snowflake
+	SPR_SNO2, // Blizzard Snowball
 	SPR_SPLH, // Water Splish
 	SPR_SPLA, // Water Splash
 	SPR_SMOK,
@@ -1775,27 +1775,10 @@ typedef enum state
 	S_BUBBLES2,
 
 	// Level End Sign
-	S_SIGN1,
-	S_SIGN2,
-	S_SIGN3,
-	S_SIGN4,
-	S_SIGN5,
-	S_SIGN6,
-	S_SIGN7,
-	S_SIGN8,
-	S_SIGN9,
-	S_SIGN10,
-	S_SIGN11,
-	S_SIGN12,
-	S_SIGN13,
-	S_SIGN14,
-	S_SIGN15,
-	S_SIGN16,
-	S_SIGN17,
-	S_SIGN18,
-	S_SIGN19,
-	S_SIGN20,
-	S_SIGN_END,
+	S_SIGN_POLE,
+	S_SIGN_BACK,
+	S_SIGN_SIDE,
+	S_SIGN_FACE,
 
 	// Steam Riser
 	S_STEAM1,
@@ -2577,6 +2560,11 @@ typedef enum state
 	S_SNOW1,
 	S_SNOW2,
 	S_SNOW3,
+
+	// Blizzard Snowball
+	S_BLIZZARDSNOW1,
+	S_BLIZZARDSNOW2,
+	S_BLIZZARDSNOW3,
 
 	// Water Splish
 	S_SPLISH1,
@@ -4280,6 +4268,7 @@ typedef enum mobj_type
 	// Interactive Objects
 	MT_BUBBLES, // Bubble source
 	MT_SIGN, // Level end sign
+	MT_SIGN_PIECE,
 	MT_SPIKEBALL, // Spike Ball
 	MT_SPECIALSPIKEBALL,
 	MT_SPINFIRE,
@@ -4506,6 +4495,7 @@ typedef enum mobj_type
 	// Environmental Effects
 	MT_RAIN, // Rain
 	MT_SNOWFLAKE, // Snowflake
+	MT_BLIZZARDSNOW, // Blizzard Snowball
 	MT_SPLISH, // Water splish!
 	MT_SMOKE,
 	MT_SMALLBUBBLE, // small bubble

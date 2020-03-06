@@ -1988,13 +1988,9 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	// okay, we can't return now except for vertical clipping... this is a hack, but weather isn't networked, so it should be ok
 	if (!(thing->precipflags & PCF_THUNK))
 	{
-		if (thing->precipflags & PCF_RAIN)
-			P_RainThinker(thing);
-		else
-			P_SnowThinker(thing);
+		P_PrecipThinker(thing);
 		thing->precipflags |= PCF_THUNK;
 	}
-
 
 	//SoM: 3/17/2000: Disregard sprites that are out of view..
 	gzt = thing->z + spritecachedinfo[lump].topoffset;
