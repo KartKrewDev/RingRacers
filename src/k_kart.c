@@ -6609,7 +6609,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
-	K_KartDrift(player, onground);
+	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
 
 	// Quick Turning
 	// You can't turn your kart when you're not moving.
