@@ -5496,7 +5496,7 @@ static tic_t gametime = 0;
 
 static void UpdatePingTable(void)
 {
-	int fastest;
+	tic_t fastest;
 	tic_t lag;
 
 	INT32 i;
