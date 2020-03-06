@@ -93,6 +93,8 @@ static void TeamScramble_OnChange(void);
 static void NetTimeout_OnChange(void);
 static void JoinTimeout_OnChange(void);
 
+static void Lagless_OnChange (void);
+
 static void Ringslinger_OnChange(void);
 static void Gravity_OnChange(void);
 static void ForceSkin_OnChange(void);
@@ -447,6 +449,8 @@ consvar_t cv_jointimeout = {"jointimeout", "105", CV_CALL|CV_SAVE, nettimeout_co
 static CV_PossibleValue_t maxping_cons_t[] = {{0, "MIN"}, {1000, "MAX"}, {0, NULL}};
 consvar_t cv_maxping = {"maxping", "800", CV_SAVE, maxping_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_lagless = {"lagless", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Lagless_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
 static CV_PossibleValue_t pingtimeout_cons_t[] = {{8, "MIN"}, {120, "MAX"}, {0, NULL}};
 consvar_t cv_pingtimeout = {"pingtimeout", "10", CV_SAVE, pingtimeout_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -711,6 +715,7 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_skipmapcheck);
 	CV_RegisterVar(&cv_sleep);
 	CV_RegisterVar(&cv_maxping);
+	CV_RegisterVar(&cv_lagless);
 	CV_RegisterVar(&cv_pingtimeout);
 	CV_RegisterVar(&cv_showping);
 
@@ -4767,6 +4772,14 @@ static void NetTimeout_OnChange(void)
 static void JoinTimeout_OnChange(void)
 {
 	jointimeout = (tic_t)cv_jointimeout.value;
+}
+
+static void
+Lagless_OnChange (void)
+{
+	/* don't back out of dishonesty, or go lagless after playing honestly */
+	if (cv_lagless.value && gamestate == GS_LEVEL)
+		server_lagless = true;
 }
 
 UINT32 timelimitintics = 0;

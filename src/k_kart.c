@@ -7085,6 +7085,9 @@ static patch_t *kp_lapanim_hand[3];
 static patch_t *kp_yougotem;
 static patch_t *kp_itemminimap;
 
+static patch_t *kp_alagles[10];
+static patch_t *kp_blagles[6];
+
 void K_LoadKartHUDGraphics(void)
 {
 	INT32 i, j;
@@ -7385,6 +7388,20 @@ void K_LoadKartHUDGraphics(void)
 
 	kp_yougotem = (patch_t *) W_CachePatchName("YOUGOTEM", PU_HUDGFX);
 	kp_itemminimap = (patch_t *) W_CachePatchName("MMAPITEM", PU_HUDGFX);
+
+	sprintf(buffer, "ALAGLESx");
+	for (i = 0; i < 10; ++i)
+	{
+		buffer[7] = '0'+i;
+		kp_alagles[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
+	sprintf(buffer, "BLAGLESx");
+	for (i = 0; i < 6; ++i)
+	{
+		buffer[7] = '0'+i;
+		kp_blagles[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
 }
 
 // For the item toggle menu
@@ -8357,9 +8374,11 @@ static boolean K_drawKartPositionFaces(void)
 //
 void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol)
 {
+	static tic_t alagles_timer = 9;
 	INT32 i, rightoffset = 240;
 	const UINT8 *colormap;
 	INT32 dupadjust = (vid.width/vid.dupx), duptweak = (dupadjust - BASEVIDWIDTH)/2;
+	int y2;
 
 	//this function is designed for 9 or less score lines only
 	//I_Assert(scorelines <= 9); -- not today bitch, kart fixed it up
@@ -8380,15 +8399,39 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 			continue; //ignore them.
 
 		if (netgame // don't draw it offline
-		&& tab[i].num != serverplayer)
+		&& ( tab[i].num != serverplayer || ! server_lagless ))
 			HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
 
 		STRBUFCPY(strtime, tab[i].name);
 
+		y2 = y;
+
+		if (tab[i].num == 0 && server_lagless)
+		{
+			y2 = ( y - 4 );
+
+			V_DrawScaledPatch(x + 20, y2, 0, kp_blagles[(leveltime / 3) % 6]);
+			// every 70 tics
+			if (( leveltime % 70 ) == 0)
+			{
+				alagles_timer = 9;
+			}
+			if (alagles_timer > 0)
+			{
+				V_DrawScaledPatch(x + 20, y2, 0, kp_alagles[alagles_timer]);
+				if (( leveltime % 2 ) == 0)
+					alagles_timer--;
+			}
+			else
+				V_DrawScaledPatch(x + 20, y2, 0, kp_alagles[0]);
+
+			y2 += SHORT (kp_alagles[0]->height) + 1;
+		}
+
 		if (scorelines > 8)
-			V_DrawThinString(x + 20, y, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
+			V_DrawThinString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
 		else
-			V_DrawString(x + 20, y, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
+			V_DrawString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
 
 		if (players[tab[i].num].mo->color)
 		{
