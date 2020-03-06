@@ -1329,9 +1329,6 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				case MT_JAWZ_DUD:
 					gravityadd = (5*gravityadd)/2;
 					break;
-				case MT_SIGN:
-					gravityadd /= 8;
-					break;
 				case MT_KARMAFIREWORK:
 					gravityadd /= 3;
 					break;
@@ -8957,31 +8954,104 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			break;
 		case MT_SIGN: // Kart's unique sign behavior
-			if (mobj->movecount)
+			if (mobj->movecount != 0)
 			{
-				if (mobj->z <= mobj->movefactor)
+				mobj_t *cur = mobj->hnext;
+				SINT8 newskin = -1;
+				UINT8 newcolor = SKINCOLOR_NONE;
+				angle_t endangle = FixedAngle(mobj->extravalue1 << FRACBITS);
+
+				if (mobj->movecount == 1)
 				{
-					P_SetMobjState(mobj, S_SIGN_END);
-					if (mobj->info->attacksound)
-						S_StartSound(mobj, mobj->info->attacksound);
-					mobj->flags |= MF_NOGRAVITY; // ?
-					mobj->flags &= ~MF_NOCLIPHEIGHT;
-					mobj->z = mobj->movefactor;
-					mobj->movecount = 0;
-				}
-				else
-				{
-					P_SpawnMobj(mobj->x + (P_RandomRange(-48,48)*mobj->scale),
-						mobj->y + (P_RandomRange(-48,48)*mobj->scale),
-						mobj->z + (24*mobj->scale) + (P_RandomRange(-8,8)*mobj->scale),
-						MT_SIGNSPARKLE);
-					mobj->flags &= ~MF_NOGRAVITY;
-					if (abs(mobj->z - mobj->movefactor) <= (512*mobj->scale) && !mobj->cvmem)
+					if (mobj->z + mobj->momz <= mobj->movefactor)
 					{
-						if (mobj->info->seesound)
-							S_StartSound(mobj, mobj->info->seesound);
-						mobj->cvmem = 1;
+						if (mobj->info->attacksound)
+							S_StartSound(mobj, mobj->info->attacksound);
+
+						mobj->z = mobj->movefactor;
+						mobj->momz = 0;
+						mobj->movecount = 2;
+
+						newskin = ((skin_t*)mobj->target->skin)-skins;
+						newcolor = mobj->target->player->skincolor;
 					}
+					else
+					{
+						fixed_t g = (6*mobj->scale);
+						UINT16 ticstilimpact = abs(mobj->z - mobj->movefactor) / g;
+
+						P_SpawnMobj(
+							mobj->x + FixedMul(48*mobj->scale, FINECOSINE(mobj->angle >> ANGLETOFINESHIFT)),
+							mobj->y + FixedMul(48*mobj->scale, FINESINE(mobj->angle >> ANGLETOFINESHIFT)),
+							mobj->z + ((24 + ((leveltime % 4) * 8)) * mobj->scale),
+							MT_SIGNSPARKLE
+						);
+
+						if (ticstilimpact == (3*TICRATE/2))
+						{
+							if (mobj->info->seesound)
+								S_StartSound(mobj, mobj->info->seesound);
+						}
+
+						mobj->angle += ANGLE_45;
+						mobj->momz = -g;
+
+						if (mobj->angle == endangle + ANGLE_180)
+						{
+							if (ticstilimpact <= 8)
+							{
+								newskin = ((skin_t*)mobj->target->skin)-skins;
+								newcolor = mobj->target->player->skincolor;
+							}
+							else
+							{
+								newskin = leveltime % numskins;
+								newcolor = skins[newskin].prefcolor;
+							}
+						}
+					}
+				}
+				else if (mobj->movecount == 2)
+				{
+					if (mobj->angle != endangle)
+						mobj->angle += ANGLE_11hh;
+				}
+
+				while (cur && !P_MobjWasRemoved(cur))
+				{
+					fixed_t amt = cur->extravalue1 * mobj->scale;
+					angle_t dir = mobj->angle + (cur->extravalue2 * ANGLE_90);
+					fixed_t z = mobj->z + (23*mobj->scale);
+
+					if (cur->state == &states[S_SIGN_FACE])
+					{
+						if (newcolor != SKINCOLOR_NONE)
+						{
+							cur->color = KartColor_Opposite[newcolor*2];
+							cur->frame = states[S_SIGN_FACE].frame + KartColor_Opposite[newcolor*2+1];
+						}
+					}
+					else if (cur->state == &states[S_PLAY_SIGN])
+					{
+						z += (5*mobj->scale);
+						amt += 1;
+
+						if (newskin != -1)
+							cur->skin = &skins[newskin];
+
+						if (newcolor != SKINCOLOR_NONE)
+							cur->color = newcolor;
+					}
+
+					P_TeleportMove(
+						cur,
+						mobj->x + FixedMul(amt, FINECOSINE(dir >> ANGLETOFINESHIFT)),
+						mobj->y + FixedMul(amt, FINESINE(dir >> ANGLETOFINESHIFT)),
+						z
+					);
+					cur->angle = dir + ANGLE_90;
+
+					cur = cur->hnext;
 				}
 			}
 			break;

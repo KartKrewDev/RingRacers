@@ -193,7 +193,7 @@ state_t states[NUMSTATES] =
 	{SPR_NULL,  0, 18, {NULL}, 0,  4, S_NULL},       // S_PLAY_ICON3
 
 	// Level end sign (uses player sprite)
-	{SPR_PLAY, 18, 1, {NULL}, 0, 24, S_PLAY_SIGN},         // S_PLAY_SIGN	S
+	{SPR_PLAY, 18|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_PLAY_SIGN}, // S_PLAY_SIGN
 
 	// Blue Crawla
 	{SPR_POSS, 0, 5, {A_Look}, 0, 0, S_POSS_STND},   // S_POSS_STND
@@ -1063,27 +1063,10 @@ state_t states[NUMSTATES] =
 	{SPR_BUBL, 1, 8, {A_BubbleCheck}, 0, 0, S_BUBBLES1}, // S_BUBBLES2
 
 	// Level End Sign
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN2},         // S_SIGN1
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN3},         // S_SIGN2
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN4},         // S_SIGN3
-	{SPR_SIGN, 3, 1, {NULL}, 0, 0, S_SIGN5},         // S_SIGN4
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN6},         // S_SIGN5
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN7},         // S_SIGN6
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN8},         // S_SIGN7
-	{SPR_SIGN, 4, 1, {NULL}, 0, 0, S_SIGN9},         // S_SIGN8
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN10},        // S_SIGN9
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN11},        // S_SIGN10
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN12},        // S_SIGN11
-	{SPR_SIGN, 5, 1, {NULL}, 0, 0, S_SIGN13},        // S_SIGN12
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN14},        // S_SIGN13
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN15},        // S_SIGN14
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN16},        // S_SIGN15
-	{SPR_SIGN, 6, 1, {NULL}, 0, 0, S_SIGN17},        // S_SIGN16
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN18},        // S_SIGN17
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN19},        // S_SIGN18
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN20},        // S_SIGN19
-	{SPR_SIGN, 7, 1, {NULL}, 0, 0, S_SIGN1},         // S_SIGN20
-	{SPR_SIGN, 8, -1, {A_SignPlayer}, 0, 0, S_NULL}, // S_SIGN_END
+	{SPR_SIGN, 0, -1, {NULL}, 0, 0, S_SIGN_POLE}, // S_SIGN_POLE
+	{SPR_SIGN, 1|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_SIGN_BACK}, // S_SIGN_BACK
+	{SPR_SIGN, 2|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_SIGN_SIDE}, // S_SIGN_SIDE
+	{SPR_SIGN, 3|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_SIGN_FACE}, // S_SIGN_FACE
 
 	// Steam Riser
 	{SPR_STEM, 0, 2, {A_SetSolidSteam}, 0, 0, S_STEAM2},   // S_STEAM1
@@ -6434,7 +6417,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		501,            // doomednum
 		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
-		S_PLAY_SIGN,    // seestate
+		S_NULL,         // seestate
 		sfx_s3kb8,      // seesound
 		8,              // reactiontime
 		sfx_s3k7e,      // attacksound
@@ -6448,12 +6431,39 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // deathsound
 		8,              // speed
 		8*FRACUNIT,     // radius
-		32*FRACUNIT,    // height
+		48*FRACUNIT,    // height
 		0,              // display offset
 		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SIGN_PIECE
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		8*FRACUNIT,     // radius
+		48*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_NOTHINK|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
