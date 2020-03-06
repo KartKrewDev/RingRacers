@@ -47,7 +47,6 @@ consvar_t cv_splats = {"splats", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0
 actioncache_t actioncachehead;
 
 static mobj_t *overlaycap = NULL;
-static mobj_t *shadowcap = NULL;
 mobj_t *waypointcap = NULL;
 
 void P_InitCachedActions(void)
@@ -3727,11 +3726,15 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		mobj->z += mobj->momz;
 		P_SetThingPosition(mobj);
 		P_CheckPosition(mobj, mobj->x, mobj->y);
+		mobj->floorz = tmfloorz;
+		mobj->ceilingz = tmceilingz;
 		goto animonly;
 	}
 	else if (mobj->player->pflags & PF_MACESPIN && mobj->tracer)
 	{
 		P_CheckPosition(mobj, mobj->x, mobj->y);
+		mobj->floorz = tmfloorz;
+		mobj->ceilingz = tmceilingz;
 		goto animonly;
 	}
 
@@ -6369,123 +6372,6 @@ fixed_t P_CalculateShadowFloor(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fi
 	return newz;
 }
 
-void P_RunShadows(void)
-{
-	mobj_t *mobj, *next, *dest;
-
-	for (mobj = shadowcap; mobj; mobj = next)
-	{
-		boolean flip;
-		fixed_t newz;
-
-		next = mobj->hnext;
-		P_SetTarget(&mobj->hnext, NULL);
-
-		if (!mobj->target || P_MobjWasRemoved(mobj->target))
-		{
-			mobj->flags2 |= MF2_DONTDRAW;
-			continue; // shouldn't you already be dead?
-		}
-
-		K_MatchGenericExtraFlags(mobj, mobj->target);
-		flip = (mobj->eflags & MFE_VERTICALFLIP);
-
-		newz = P_CalculateShadowFloor(mobj, mobj->target->x, mobj->target->y, mobj->target->z,
-			mobj->target->radius, mobj->target->height, flip, (mobj->target->player != NULL));
-
-		if (flip)
-		{
-			if ((mobj->target->z + mobj->target->height) > newz)
-				mobj->flags2 |= MF2_DONTDRAW;
-		}
-		else
-		{
-			if (mobj->target->z < newz)
-				mobj->flags2 |= MF2_DONTDRAW;
-		}
-
-		// First scale to the same radius
-		P_SetScale(mobj, FixedDiv(mobj->target->radius, mobj->info->radius));
-
-		dest = mobj->target;
-
-		if (dest->type == MT_THUNDERSHIELD)
-			dest = dest->target;
-
-		P_TeleportMove(mobj, dest->x, dest->y, mobj->target->z);
-
-		if ((flip && newz > (mobj->z + mobj->height)) || (!flip && newz < mobj->z))
-		{
-			INT32 i;
-			fixed_t prevz;
-
-			mobj->z = newz;
-
-			for (i = 0; i < MAXFFLOORS; i++)
-			{
-				prevz = mobj->z;
-
-				// Now scale again based on height difference
-				P_SetScale(mobj, FixedDiv(mobj->scale, max(FRACUNIT, ((mobj->target->z-mobj->z)/200)+FRACUNIT)));
-
-				// Check new position to see if you should still be on that ledge
-				P_TeleportMove(mobj, dest->x, dest->y, mobj->z);
-
-				mobj->z = newz;
-
-				if (mobj->z == prevz)
-					break;
-			}
-		}
-
-		if (mobj->target->type == MT_FLOATINGITEM)
-			P_SetScale(mobj, mobj->scale/3);
-	}
-	P_SetTarget(&shadowcap, NULL);
-}
-
-// called whenever shadows think
-// It must be done this way so that level changes don't break when the shadowcap can't be reset
-static void P_AddShadow(mobj_t *thing)
-{
-	I_Assert(thing != NULL);
-
-	if (shadowcap == NULL)
-		P_SetTarget(&shadowcap, thing);
-	else {
-		mobj_t *mo;
-		for (mo = shadowcap; mo && mo->hnext; mo = mo->hnext)
-			;
-
-		I_Assert(mo != NULL);
-		I_Assert(mo->hnext == NULL);
-
-		P_SetTarget(&mo->hnext, thing);
-	}
-	P_SetTarget(&thing->hnext, NULL);
-}
-
-// Called only when MT_SHADOW (or anything else in the shadowcap list) is removed.
-// Keeps the hnext list from corrupting.
-static void P_RemoveShadow(mobj_t *thing)
-{
-	mobj_t *mo;
-	if (shadowcap == thing)
-	{
-		P_SetTarget(&shadowcap, thing->hnext);
-		P_SetTarget(&thing->hnext, NULL);
-		return;
-	}
-
-	for (mo = shadowcap; mo; mo = mo->hnext)
-		if (mo->hnext == thing)
-		{
-			P_SetTarget(&mo->hnext, thing->hnext);
-			P_SetTarget(&thing->hnext, NULL);
-			return;
-		}
-}
-
 // SAL'S KART BATTLE MODE OVERTIME HANDLER
 #define MAXPLANESPERSECTOR (MAXFFLOORS+1)*2
 static void P_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjtype_t type, boolean ceiling)
@@ -6896,15 +6782,6 @@ void P_MobjThinker(mobj_t *mobj)
 				}
 
 				P_AddOverlay(mobj);
-				break;
-			case MT_SHADOW:
-				if (!mobj->target)
-				{
-					P_RemoveMobj(mobj);
-					return;
-				}
-
-				P_AddShadow(mobj);
 				break;
 			/*case MT_BLACKORB:
 			case MT_WHITEORB:
@@ -10249,6 +10126,63 @@ void P_SceneryThinker(mobj_t *mobj)
 // GAME SPAWN FUNCTIONS
 //
 
+static void P_DefaultMobjShadowScale(mobj_t *thing)
+{
+	thing->shadowscale = 0;
+	thing->whiteshadow = (thing->frame & FF_FULLBRIGHT);
+
+	switch (thing->type)
+	{
+		case MT_PLAYER:
+		case MT_SMALLMACE:
+		case MT_BIGMACE:
+		case MT_PUMA:
+		case MT_BIGPUMA:
+		case MT_FALLINGROCK:
+		case MT_SMK_MOLE:
+		case MT_SMK_THWOMP:
+		case MT_BATTLEBUMPER:
+		case MT_BANANA:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_JAWZ:
+		case MT_JAWZ_DUD:
+		case MT_JAWZ_SHIELD:
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
+		case MT_BALLHOG:
+		case MT_SINK:
+		case MT_THUNDERSHIELD:
+		case MT_ROCKETSNEAKER:
+		case MT_SPB:
+			thing->shadowscale = 3*FRACUNIT/2;
+			break;
+		case MT_BANANA_SHIELD:
+			thing->shadowscale = 12*FRACUNIT/5;
+			break;
+		case MT_RANDOMITEM:
+			thing->shadowscale = FRACUNIT/2;
+			thing->whiteshadow = false;
+			break;
+		case MT_EGGMANITEM:
+			thing->shadowscale = FRACUNIT;
+			thing->whiteshadow = false;
+			break;
+		case MT_EGGMANITEM_SHIELD:
+			thing->shadowscale = 3*FRACUNIT/2;
+			thing->whiteshadow = false;
+			break;
+		case MT_RING:
+		case MT_FLOATINGITEM:
+			thing->shadowscale = FRACUNIT/2;
+			break;
+		default:
+			if (thing->flags & (MF_ENEMY|MF_BOSS))
+				thing->shadowscale = FRACUNIT;
+			break;
+	}
+}
+
 //
 // P_SpawnMobj
 //
@@ -10348,6 +10282,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		mobj->z = z;
 
 	mobj->colorized = false;
+
+	// Set shadowscale here, before spawn hook so that Lua can change it
+	P_DefaultMobjShadowScale(mobj);
 
 #ifdef HAVE_BLUA
 	// DANGER! This can cause P_SpawnMobj to return NULL!
@@ -10638,29 +10575,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 	}
 
-	switch (mobj->type)
-	{
-		case MT_PLAYER:
-		case MT_SMALLMACE:		case MT_BIGMACE:
-		case MT_PUMA:			case MT_BIGPUMA:
-		case MT_FALLINGROCK:
-		case MT_SMK_MOLE:		case MT_SMK_THWOMP:
-		//case MT_RANDOMITEM:
-		case MT_FLOATINGITEM:
-		case MT_BATTLEBUMPER:
-		case MT_BANANA:			case MT_BANANA_SHIELD:
-		//case MT_EGGMANITEM:	case MT_EGGMANITEM_SHIELD:
-		case MT_ORBINAUT:		case MT_ORBINAUT_SHIELD:
-		case MT_JAWZ:			case MT_JAWZ_DUD:		case MT_JAWZ_SHIELD:
-		case MT_SSMINE:			case MT_SSMINE_SHIELD:
-		case MT_BALLHOG:		case MT_SINK:
-		case MT_THUNDERSHIELD:	case MT_ROCKETSNEAKER:
-		case MT_SPB:
-			P_SpawnShadowMobj(mobj);
-		default:
-			break;
-	}
-
 	if (!(mobj->flags & MF_NOTHINK))
 		P_AddThinker(&mobj->thinker);
 
@@ -10692,120 +10606,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 	if (CheckForReverseGravity && !(mobj->flags & MF_NOBLOCKMAP))
 		P_CheckGravity(mobj, false);
-
-	return mobj;
-}
-
-//
-// P_SpawnShadowMobj
-// warning: Do not send a shadow mobj as a caster into here, or try to spawn spawn shadows for shadows in P_SpawnMobj, we do not want recursive shadows
-//
-mobj_t *P_SpawnShadowMobj(mobj_t * caster)
-{
-	const mobjinfo_t *info = &mobjinfo[MT_SHADOW];
-	state_t *st;
-	mobj_t *mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
-
-	// this is officially a mobj, declared as soon as possible.
-	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker;
-	mobj->type = MT_SHADOW;
-	mobj->info = info;
-
-	mobj->x = caster->x;
-	mobj->y = caster->y;
-
-	mobj->radius = info->radius;
-	mobj->height = info->height;
-	mobj->flags = info->flags;
-
-	mobj->health = info->spawnhealth;
-
-	mobj->reactiontime = info->reactiontime;
-
-	mobj->lastlook = -1; // stuff moved in P_enemy.P_LookForPlayer
-
-	// do not set the state with P_SetMobjState,
-	// because action routines can not be called yet
-	if (caster->frame & FF_FULLBRIGHT)
-		st = &states[S_WHITESHADOW];
-	else
-		st = &states[info->spawnstate];
-
-	mobj->state = st;
-	mobj->tics = st->tics;
-	mobj->sprite = st->sprite;
-	mobj->frame = st->frame; // FF_FRAMEMASK for frame, and other bits..
-	P_SetupStateAnimation(mobj, st);
-
-	mobj->friction = ORIG_FRICTION;
-
-	mobj->movefactor = ORIG_FRICTION_FACTOR;
-
-	// All mobjs are created at 100% scale.
-	mobj->scale = FRACUNIT;
-	mobj->destscale = mobj->scale;
-	mobj->scalespeed = FRACUNIT/12;
-
-	if (mapobjectscale != FRACUNIT) //&& !(mobj->type == MT_BLACKEGGMAN)
-	{
-		mobj->destscale = mapobjectscale;
-		mobj->scalespeed = mapobjectscale/12;
-	}
-
-	P_SetScale(mobj, mobj->destscale);
-
-	// set subsector and/or block links
-	P_SetThingPosition(mobj);
-	I_Assert(mobj->subsector != NULL);
-
-	// Make sure scale matches destscale immediately when spawned
-	P_SetScale(mobj, mobj->destscale);
-
-	mobj->floorz = mobj->subsector->sector->floorheight;
-	mobj->ceilingz = mobj->subsector->sector->ceilingheight;
-
-	// Tells MobjCheckWater that the water height was not set.
-	mobj->watertop = INT32_MAX;
-
-	mobj->z = mobj->floorz;
-
-	// defaults onground
-	if (mobj->z == mobj->floorz)
-		mobj->eflags |= MFE_ONGROUND;
-
-	if (!(mobj->flags & MF_NOTHINK))
-		P_AddThinker(&mobj->thinker);
-
-	// Call action functions when the state is set
-	if (st->action.acp1 && (mobj->flags & MF_RUNSPAWNFUNC))
-	{
-		if (levelloading)
-		{
-			// Cache actions in a linked list
-			// with function pointer, and
-			// var1 & var2, which will be executed
-			// when the level finishes loading.
-			P_AddCachedAction(mobj, mobj->info->spawnstate);
-		}
-		else
-		{
-			var1 = st->var1;
-			var2 = st->var2;
-#ifdef HAVE_BLUA
-			astate = st;
-#endif
-			st->action.acp1(mobj);
-			// DANGER! This is the ONLY way for P_SpawnMobj to return NULL!
-			// Avoid using MF_RUNSPAWNFUNC on mobjs whose spawn state expects target or tracer to already be set!
-			if (P_MobjWasRemoved(mobj))
-				return NULL;
-		}
-	}
-
-	if (CheckForReverseGravity && !(mobj->flags & MF_NOBLOCKMAP))
-		P_CheckGravity(mobj, false);
-
-	P_SetTarget(&mobj->target, caster); // set the shadow's caster as the target
 
 	return mobj;
 }
@@ -10922,9 +10722,6 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	if (mobj->type == MT_OVERLAY)
 		P_RemoveOverlay(mobj);
-
-	if (mobj->type == MT_SHADOW)
-		P_RemoveShadow(mobj);
 
 	if (mobj->type == MT_SPB)
 		spbplace = -1;

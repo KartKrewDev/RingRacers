@@ -639,7 +639,6 @@ typedef enum sprite
 	SPR_CHOM, // Sapphire Coast Chomper
 	SPR_SACO, // Sapphire Coast Fauna
 	SPR_CRAB, // Crystal Abyss mobs
-	SPR_SHAD, // TD shadows
 	SPR_BRNG, // Chaotix Big Ring
 
 	SPR_BUMP, // Player/shell bump
@@ -3656,9 +3655,6 @@ typedef enum state
 	S_LAMPPOST,
 	S_MOSSYTREE,
 
-	S_SHADOW,
-	S_WHITESHADOW,
-
 	S_BUMP1,
 	S_BUMP2,
 	S_BUMP3,
@@ -4759,8 +4755,6 @@ typedef enum mobj_type
 	MT_FLYINGGARG,
 	MT_LAMPPOST,
 	MT_MOSSYTREE,
-
-	MT_SHADOW,
 
 	MT_BUMP,
 

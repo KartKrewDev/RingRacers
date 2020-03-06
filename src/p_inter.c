@@ -2157,6 +2157,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	target->flags &= ~(MF_SHOOTABLE|MF_FLOAT|MF_SPECIAL);
 	target->flags2 &= ~(MF2_SKULLFLY|MF2_NIGHTSPULL);
 	target->health = 0; // This makes it easy to check if something's dead elsewhere.
+	target->shadowscale = 0;
 
 #ifdef HAVE_BLUA
 	if (LUAh_MobjDeath(target, inflictor, source) || P_MobjWasRemoved(target))

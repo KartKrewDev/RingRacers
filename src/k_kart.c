@@ -4332,6 +4332,167 @@ void K_RepairOrbitChain(mobj_t *orbit)
 	}
 }
 
+// Simplified version of a code bit in P_MobjFloorZ
+static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t radius, boolean ceiling)
+{
+	fixed_t testx, testy;
+
+	if (slope->d.x < 0)
+		testx = radius;
+	else
+		testx = -radius;
+
+	if (slope->d.y < 0)
+		testy = radius;
+	else
+		testy = -radius;
+
+	if ((slope->zdelta > 0) ^ !!(ceiling))
+	{
+		testx = -testx;
+		testy = -testy;
+	}
+
+	testx += x;
+	testy += y;
+
+	return P_GetZAt(slope, testx, testy);
+}
+
+static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player)
+{
+	fixed_t newz;
+	sector_t *sec;
+#ifdef ESLOPE
+	pslope_t *slope = NULL;
+#endif
+
+	sec = R_PointInSubsector(x, y)->sector;
+
+	if (flip)
+	{
+#ifdef ESLOPE
+		if (sec->c_slope)
+		{
+			slope = sec->c_slope;
+			newz = K_BananaSlopeZ(slope, x, y, radius, true);
+		}
+		else
+#endif
+			newz = sec->ceilingheight;
+	}
+	else
+	{
+#ifdef ESLOPE
+		if (sec->f_slope)
+		{
+			slope = sec->f_slope;
+			newz = K_BananaSlopeZ(slope, x, y, radius, false);
+		}
+		else
+#endif
+			newz = sec->floorheight;
+	}
+
+	// Check FOFs for a better suited slope
+	if (sec->ffloors)
+	{
+		ffloor_t *rover;
+
+		for (rover = sec->ffloors; rover; rover = rover->next)
+		{
+			fixed_t top, bottom;
+			fixed_t d1, d2;
+
+			if (!(rover->flags & FF_EXISTS))
+				continue;
+
+			if ((!(((rover->flags & FF_BLOCKPLAYER && player)
+				|| (rover->flags & FF_BLOCKOTHERS && !player))
+				|| (rover->flags & FF_QUICKSAND))
+				|| (rover->flags & FF_SWIMMABLE)))
+				continue;
+
+#ifdef ESLOPE
+			if (*rover->t_slope)
+				top = K_BananaSlopeZ(*rover->t_slope, x, y, radius, false);
+			else
+#endif
+				top = *rover->topheight;
+
+#ifdef ESLOPE
+			if (*rover->b_slope)
+				bottom = K_BananaSlopeZ(*rover->b_slope, x, y, radius, true);
+			else
+#endif
+				bottom = *rover->bottomheight;
+
+			if (flip)
+			{
+				if (rover->flags & FF_QUICKSAND)
+				{
+					if (z < top && (z + height) > bottom)
+					{
+						if (newz > (z + height))
+						{
+							newz = (z + height);
+							slope = NULL;
+						}
+					}
+					continue;
+				}
+
+				d1 = (z + height) - (top + ((bottom - top)/2));
+				d2 = z - (top + ((bottom - top)/2));
+
+				if (bottom < newz && abs(d1) < abs(d2))
+				{
+					newz = bottom;
+#ifdef ESLOPE
+					if (*rover->b_slope)
+						slope = *rover->b_slope;
+#endif
+				}
+			}
+			else
+			{
+				if (rover->flags & FF_QUICKSAND)
+				{
+					if (z < top && (z + height) > bottom)
+					{
+						if (newz < z)
+						{
+							newz = z;
+							slope = NULL;
+						}
+					}
+					continue;
+				}
+
+				d1 = z - (bottom + ((top - bottom)/2));
+				d2 = (z + height) - (bottom + ((top - bottom)/2));
+
+				if (top > newz && abs(d1) < abs(d2))
+				{
+					newz = top;
+#ifdef ESLOPE
+					if (*rover->t_slope)
+						slope = *rover->t_slope;
+#endif
+				}
+			}
+		}
+	}
+
+#if 0
+	mobj->standingslope = slope;
+#endif
+
+#ifdef HWRENDER
+	mobj->modeltilt = slope;
+#endif
+}
+
 // Move the hnext chain!
 static void K_MoveHeldObjects(player_t *player)
 {
@@ -4519,8 +4680,7 @@ static void K_MoveHeldObjects(player_t *player)
 #ifdef ESLOPE
 					if (P_IsObjectOnGround(cur))
 					{
-						// Slope values are set in the function, but we DON'T want to use its return value.
-						P_CalculateShadowFloor(cur, cur->x, cur->y, cur->z,
+						K_CalculateBananaSlope(cur, cur->x, cur->y, cur->z,
 							cur->radius, cur->height, (cur->eflags & MFE_VERTICALFLIP), false);
 					}
 #endif
@@ -6039,6 +6199,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					P_SetMobjState(ring, S_FASTRING1);
 					ring->extravalue1 = 1; // Ring use animation timer
 					ring->extravalue2 = 1; // Ring use animation flag
+					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
 					player->kartstuff[k_rings]--;
 					player->kartstuff[k_ringdelay] = 3;

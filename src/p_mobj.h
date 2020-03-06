@@ -372,6 +372,9 @@ typedef struct mobj_s
 
 	boolean colorized; // Whether the mobj uses the rainbow colormap
 
+	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
+	boolean whiteshadow; // Use white shadow, set to true by default for fullbright objects
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
 
