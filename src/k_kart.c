@@ -3658,7 +3658,7 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 			if (mo)
 			{
 				angle_t fa = player->mo->angle>>ANGLETOFINESHIFT;
-				fixed_t HEIGHT = (20 + (dir*10))*mapobjectscale + (player->mo->momz*P_MobjFlip(player->mo));
+				fixed_t HEIGHT = (20 + (dir*10))*FRACUNIT + (player->mo->momz*P_MobjFlip(player->mo));
 
 				P_SetObjectMomZ(mo, HEIGHT, false);
 				mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), PROJSPEED*dir);
