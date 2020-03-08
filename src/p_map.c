@@ -118,8 +118,8 @@ boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
 	//INT32 pflags;
-	const fixed_t hscale = mapobjectscale + (mapobjectscale - object->scale);
-	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
+	const fixed_t hscale = FRACUNIT + (FRACUNIT - object->scale);
+	const fixed_t vscale = FRACUNIT + (object->scale - FRACUNIT);
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
 	UINT8 starcolor = (spring->info->painchance % MAXTRANSLATIONS);
