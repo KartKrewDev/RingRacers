@@ -1937,8 +1937,8 @@ void K_RespawnChecker(player_t *player)
 				fixed_t newx, newy, newz;
 
 				newangle = FixedAngle(((360/8)*i)*FRACUNIT);
-				newx = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31<<FRACBITS); // does NOT use scale, since this effect doesn't scale properly
-				newy = player->mo->y + P_ReturnThrustY(player->mo, newangle, 31<<FRACBITS);
+				newx = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31 * player->mo->scale);
+				newy = player->mo->y + P_ReturnThrustY(player->mo, newangle, 31 * player->mo->scale);
 				if (player->mo->eflags & MFE_VERTICALFLIP)
 					newz = player->mo->z + player->mo->height;
 				else
@@ -1951,8 +1951,8 @@ void K_RespawnChecker(player_t *player)
 						mo->eflags |= MFE_VERTICALFLIP;
 					P_SetTarget(&mo->target, player->mo);
 					mo->angle = newangle+ANGLE_90;
-					mo->momz = (8<<FRACBITS) * P_MobjFlip(player->mo);
-					P_SetScale(mo, (mo->destscale = FRACUNIT));
+					mo->momz = (8 * player->mo->scale) * P_MobjFlip(player->mo);
+					P_SetScale(mo, (mo->destscale = player->mo->scale));
 				}
 			}
 		}
