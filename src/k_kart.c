@@ -1101,6 +1101,9 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	if (mapobjectscale != FRACUNIT)
+		pdis = FixedDiv(pdis, mapobjectscale);
+
 	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
 		pdis = (15 * pdis) / 14;
 
