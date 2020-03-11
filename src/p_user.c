@@ -7503,11 +7503,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	pitch = thiscam->pitch + (angle_t)FixedMul(pitch - thiscam->pitch, camspeed/4);
 
-	if (rendermode == render_opengl)
+	if (rendermode == render_opengl && !cv_grshearing.value)
 		distxy = FixedMul(dist, FINECOSINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
 	else
 		distxy = dist;
 	distz = -FixedMul(dist, FINESINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
+	if (splitscreen == 1) // 2 player is weird, this helps keep players on screen
+		distz = 3*distz/5;
 
 	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
 	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
