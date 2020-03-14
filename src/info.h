@@ -3236,6 +3236,8 @@ typedef enum state
 	S_DRIFTSPARK_B1,
 	S_DRIFTSPARK_C1,
 	S_DRIFTSPARK_C2,
+	S_DRIFTSPARK_D1,
+	S_DRIFTSPARK_D2,
 
 	// Brake drift sparks
 	S_BRAKEDRIFT,

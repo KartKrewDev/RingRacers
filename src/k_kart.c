@@ -3151,13 +3151,17 @@ static void K_SpawnDriftSparks(player_t *player)
 	if (!P_IsObjectOnGround(player->mo))
 		return;
 
-	if (!player->kartstuff[k_drift] || player->kartstuff[k_driftcharge] < K_GetKartDriftSparkValue(player))
+	if (!player->kartstuff[k_drift]
+		|| (player->kartstuff[k_driftcharge] < K_GetKartDriftSparkValue(player) && !(player->kartstuff[k_driftcharge] < 0)))
 		return;
 
 	travelangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
 
 	for (i = 0; i < 2; i++)
 	{
+		SINT8 size = 1;
+		UINT8 trail = 0;
+
 		newx = player->mo->x + P_ReturnThrustX(player->mo, travelangle + ((i&1) ? -1 : 1)*ANGLE_135, FixedMul(32*FRACUNIT, player->mo->scale));
 		newy = player->mo->y + P_ReturnThrustY(player->mo, travelangle + ((i&1) ? -1 : 1)*ANGLE_135, FixedMul(32*FRACUNIT, player->mo->scale));
 		spark = P_SpawnMobj(newx, newy, player->mo->z, MT_DRIFTSPARK);
@@ -3171,20 +3175,62 @@ static void K_SpawnDriftSparks(player_t *player)
 		spark->momy = player->mo->momy/2;
 		//spark->momz = player->mo->momz/2;
 
-		if (player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(player)*4)
+		if (player->kartstuff[k_driftcharge] < 0)
 		{
-			spark->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+			// Stage 0: Yellow
+			spark->color = SKINCOLOR_GOLD;
+			size = 0;
+		}
+		else if (player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(player)*4)
+		{
+			// Stage 3: Rainbow
+			size = 2;
+
+			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player)*4)+(32*3))
+			{
+				// transition
+				spark->color = SKINCOLOR_SILVER;
+				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
+				trail = 1;
+			}
+			else
+			{
+				spark->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+				spark->colorized = true;
+				trail = 2;
+			}
 		}
 		else if (player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(player)*2)
 		{
-			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player)*2)+(24*3))
-				spark->color = SKINCOLOR_RASPBERRY; // transition
+			// Stage 2: Blue
+			size = 2;
+
+			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player)*2)+(32*3))
+			{
+				// transition
+				spark->color = SKINCOLOR_PURPLE;
+				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
+			}
 			else
-				spark->color = SKINCOLOR_KETCHUP;
+			{
+				spark->color = SKINCOLOR_SAPPHIRE;
+			}
 		}
 		else
 		{
-			spark->color = SKINCOLOR_SAPPHIRE;
+			// Stage 1: Red
+			size = 1;
+
+			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player))+(32*3))
+			{
+				// transition
+				spark->color = SKINCOLOR_RASPBERRY;
+				P_SetScale(spark, (spark->destscale = spark->scale*2));
+			}
+			else
+			{
+				spark->color = SKINCOLOR_KETCHUP;
+			}
 		}
 
 		if ((player->kartstuff[k_drift] > 0 && player->cmd.driftturn > 0) // Inward drifts
@@ -3192,21 +3238,39 @@ static void K_SpawnDriftSparks(player_t *player)
 		{
 			if ((player->kartstuff[k_drift] < 0 && (i & 1))
 				|| (player->kartstuff[k_drift] > 0 && !(i & 1)))
-				P_SetMobjState(spark, S_DRIFTSPARK_A1);
+			{
+				size++;
+			}
 			else if ((player->kartstuff[k_drift] < 0 && !(i & 1))
 				|| (player->kartstuff[k_drift] > 0 && (i & 1)))
-				P_SetMobjState(spark, S_DRIFTSPARK_C1);
+			{
+				size--;
+			}
 		}
 		else if ((player->kartstuff[k_drift] > 0 && player->cmd.driftturn < 0) // Outward drifts
 			|| (player->kartstuff[k_drift] < 0 && player->cmd.driftturn > 0))
 		{
 			if ((player->kartstuff[k_drift] < 0 && (i & 1))
 				|| (player->kartstuff[k_drift] > 0 && !(i & 1)))
-				P_SetMobjState(spark, S_DRIFTSPARK_C1);
+			{
+				size--;
+			}
 			else if ((player->kartstuff[k_drift] < 0 && !(i & 1))
 				|| (player->kartstuff[k_drift] > 0 && (i & 1)))
-				P_SetMobjState(spark, S_DRIFTSPARK_A1);
+			{
+				size++;
+			}
 		}
+
+		if (size == 2)
+			P_SetMobjState(spark, S_DRIFTSPARK_A1);
+		else if (size < 1)
+			P_SetMobjState(spark, S_DRIFTSPARK_C1);
+		else if (size > 2)
+			P_SetMobjState(spark, S_DRIFTSPARK_D1);
+
+		if (trail > 0)
+			spark->tics += trail;
 
 		K_MatchGenericExtraFlags(spark, player->mo);
 	}
@@ -5721,42 +5785,40 @@ static void K_KartDrift(player_t *player, boolean onground)
 	// Drift Release (Moved here so you can't "chain" drifts)
 	if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
 		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& player->kartstuff[k_driftcharge] < dsone
 		&& onground)
 	{
-		player->kartstuff[k_driftcharge] = 0;
-	}
-	else if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
-		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
-		&& onground)
-	{
-		if (player->kartstuff[k_driftboost] < 20)
-			player->kartstuff[k_driftboost] = 20;
-		S_StartSound(player->mo, sfx_s23c);
-		//K_SpawnDashDustRelease(player);
-		player->kartstuff[k_driftcharge] = 0;
-	}
-	else if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
-		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& player->kartstuff[k_driftcharge] < dsthree
-		&& onground)
-	{
-		if (player->kartstuff[k_driftboost] < 50)
-			player->kartstuff[k_driftboost] = 50;
-		S_StartSound(player->mo, sfx_s23c);
-		//K_SpawnDashDustRelease(player);
-		player->kartstuff[k_driftcharge] = 0;
-	}
-	else if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
-		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& player->kartstuff[k_driftcharge] >= dsthree
-		&& onground)
-	{
-		if (player->kartstuff[k_driftboost] < 125)
-			player->kartstuff[k_driftboost] = 125;
-		S_StartSound(player->mo, sfx_s23c);
-		//K_SpawnDashDustRelease(player);
+		if (player->kartstuff[k_driftcharge] < 0 || player->kartstuff[k_driftcharge] >= dsone)
+		{
+			S_StartSound(player->mo, sfx_s23c);
+			//K_SpawnDashDustRelease(player);
+
+			if (player->kartstuff[k_driftcharge] < 0)
+			{
+				// Stage 0: Yellow sparks
+				if (player->kartstuff[k_driftboost] < 15)
+					player->kartstuff[k_driftboost] = 15;
+			}
+			else if (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
+			{
+				// Stage 1: Red sparks
+				if (player->kartstuff[k_driftboost] < 20)
+					player->kartstuff[k_driftboost] = 20;
+			}
+			else if (player->kartstuff[k_driftcharge] < dsthree)
+			{
+				// Stage 2: Blue sparks
+				if (player->kartstuff[k_driftboost] < 50)
+					player->kartstuff[k_driftboost] = 50;
+			}
+			else if (player->kartstuff[k_driftcharge] >= dsthree)
+			{
+				// Stage 3: Rainbow sparks
+				if (player->kartstuff[k_driftboost] < 125)
+					player->kartstuff[k_driftboost] = 125;
+			}
+		}
+
+		// Remove charge
 		player->kartstuff[k_driftcharge] = 0;
 	}
 
@@ -5792,10 +5854,16 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->kartstuff[k_driftend] = 0;
 	}
 
-
-	// Incease/decrease the drift value to continue drifting in that direction
-	if (player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_jmp] == 1 && onground && player->kartstuff[k_drift] != 0)
+	if (player->kartstuff[k_spinouttimer] > 0)
 	{
+		// Stop drifting
+		player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
+		player->kartstuff[k_aizdriftstrat] = player->kartstuff[k_brakedrift] = 0;
+		player->kartstuff[k_getsparks] = 0;
+	}
+	else if (player->kartstuff[k_jmp] == 1 && onground && player->kartstuff[k_drift] != 0)
+	{
+		// Incease/decrease the drift value to continue drifting in that direction
 		fixed_t driftadditive = 24;
 
 		if (player->kartstuff[k_drift] >= 1) // Drifting to the left
@@ -5828,11 +5896,26 @@ static void K_KartDrift(player_t *player, boolean onground)
 			&& !player->kartstuff[k_hyudorotimer]
 			&& !EITHERSNEAKER(player)))
 			driftadditive = 0;
-		if (player->speed > minspeed*2)
+
+		if (player->speed >= minspeed*2)
+		{
 			player->kartstuff[k_getsparks] = 1;
 
+			if (player->kartstuff[k_driftcharge] <= -1)
+				player->kartstuff[k_driftcharge] = dsone;
+		}
+		else
+		{
+			player->kartstuff[k_getsparks] = 0;
+			driftadditive = 0;
+
+			if (player->kartstuff[k_driftcharge] >= dsone)
+				player->kartstuff[k_driftcharge] = -1;
+		}
+
 		// This spawns the drift sparks
-		if (player->kartstuff[k_driftcharge] + driftadditive >= dsone)
+		if ((player->kartstuff[k_driftcharge] + driftadditive >= dsone)
+			|| (player->kartstuff[k_driftcharge] < 0))
 			K_SpawnDriftSparks(player);
 
 		// Sound whenever you get a different tier of sparks
@@ -5847,14 +5930,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 		player->kartstuff[k_driftcharge] += driftadditive;
 		player->kartstuff[k_driftend] = 0;
-	}
-
-	// Stop drifting
-	if (player->kartstuff[k_spinouttimer] > 0 || player->speed < minspeed)
-	{
-		player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
-		player->kartstuff[k_aizdriftstrat] = player->kartstuff[k_brakedrift] = 0;
-		player->kartstuff[k_getsparks] = 0;
 	}
 
 	if ((!EITHERSNEAKER(player))
