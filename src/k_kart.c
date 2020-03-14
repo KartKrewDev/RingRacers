@@ -5854,7 +5854,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->kartstuff[k_driftend] = 0;
 	}
 
-	if (player->kartstuff[k_spinouttimer] > 0)
+	if (player->kartstuff[k_spinouttimer] > 0 || player->speed == 0)
 	{
 		// Stop drifting
 		player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
