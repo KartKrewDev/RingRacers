@@ -5912,8 +5912,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			if (player->kartstuff[k_driftcharge] >= dsone)
 				player->kartstuff[k_driftcharge] = -1; // Set yellow sparks
-			else
-				player->kartstuff[k_driftcharge] = 0; // No sparks
 		}
 
 		// This spawns the drift sparks
