@@ -3185,25 +3185,25 @@ static void K_SpawnDriftSparks(player_t *player)
 		{
 			// Stage 3: Rainbow
 			size = 2;
+			trail = 2;
 
 			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player)*4)+(32*3))
 			{
 				// transition
 				spark->color = SKINCOLOR_SILVER;
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
-				trail = 1;
 			}
 			else
 			{
 				spark->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
 				spark->colorized = true;
-				trail = 2;
 			}
 		}
 		else if (player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(player)*2)
 		{
 			// Stage 2: Blue
 			size = 2;
+			trail = 1;
 
 			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player)*2)+(32*3))
 			{
