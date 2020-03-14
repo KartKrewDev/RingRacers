@@ -5897,20 +5897,23 @@ static void K_KartDrift(player_t *player, boolean onground)
 			&& !EITHERSNEAKER(player)))
 			driftadditive = 0;
 
-		if (player->speed >= minspeed*2)
+		// Inbetween minspeed and minspeed*2, it'll keep your previous drift-spark state.
+		if (player->speed > minspeed*2)
 		{
 			player->kartstuff[k_getsparks] = 1;
 
 			if (player->kartstuff[k_driftcharge] <= -1)
-				player->kartstuff[k_driftcharge] = dsone;
+				player->kartstuff[k_driftcharge] = dsone; // Back to red
 		}
-		else
+		else if (player->speed <= minspeed)
 		{
 			player->kartstuff[k_getsparks] = 0;
 			driftadditive = 0;
 
 			if (player->kartstuff[k_driftcharge] >= dsone)
-				player->kartstuff[k_driftcharge] = -1;
+				player->kartstuff[k_driftcharge] = -1; // Set yellow sparks
+			else
+				player->kartstuff[k_driftcharge] = 0; // No sparks
 		}
 
 		// This spawns the drift sparks
