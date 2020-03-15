@@ -5801,6 +5801,8 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		switch(GETSECSPECIAL(sector->special, 4))
 		{
 			case 10: // Circuit finish line (Unused)
+				// Remove before release
+				CONS_Alert(CONS_WARNING, "Finish line sector type is deprecated.\n");
 				break;
 		}
 	}
