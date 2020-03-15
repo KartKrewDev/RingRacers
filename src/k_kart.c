@@ -5783,36 +5783,48 @@ static void K_KartDrift(player_t *player, boolean onground)
 	// Holding the Jump button will enable drifting.
 
 	// Drift Release (Moved here so you can't "chain" drifts)
-	if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
-		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& onground)
+	if (player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
 	{
 		if (player->kartstuff[k_driftcharge] < 0 || player->kartstuff[k_driftcharge] >= dsone)
 		{
+			angle_t pushdir = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+
 			S_StartSound(player->mo, sfx_s23c);
 			//K_SpawnDashDustRelease(player);
 
 			if (player->kartstuff[k_driftcharge] < 0)
 			{
 				// Stage 0: Yellow sparks
+				if (!onground)
+					P_Thrust(player->mo, pushdir, player->speed / 8);
+
 				if (player->kartstuff[k_driftboost] < 15)
 					player->kartstuff[k_driftboost] = 15;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
 			{
 				// Stage 1: Red sparks
+				if (!onground)
+					P_Thrust(player->mo, pushdir, player->speed / 4);
+
 				if (player->kartstuff[k_driftboost] < 20)
 					player->kartstuff[k_driftboost] = 20;
 			}
 			else if (player->kartstuff[k_driftcharge] < dsthree)
 			{
 				// Stage 2: Blue sparks
+				if (!onground)
+					P_Thrust(player->mo, pushdir, player->speed / 3);
+
 				if (player->kartstuff[k_driftboost] < 50)
 					player->kartstuff[k_driftboost] = 50;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsthree)
 			{
 				// Stage 3: Rainbow sparks
+				if (!onground)
+					P_Thrust(player->mo, pushdir, player->speed / 2);
+
 				if (player->kartstuff[k_driftboost] < 125)
 					player->kartstuff[k_driftboost] = 125;
 			}
