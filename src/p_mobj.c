@@ -8289,6 +8289,37 @@ void P_MobjThinker(mobj_t *mobj)
 				S_StartSound(mobj, sfx_s3k4e);
 			mobj->health--;
 			break;
+		case MT_DRIFTEXPLODE:
+			if (!mobj->target || !mobj->target->health)
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
+			mobj->angle = mobj->target->angle;
+			P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
+				mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
+			P_SetScale(mobj, mobj->target->scale);
+			mobj->flags2 ^= MF2_DONTDRAW;
+#ifdef HWRENDER
+			mobj->modeltilt = mobj->target->modeltilt;
+#endif
+
+			{
+				player_t *p = NULL;
+				if (mobj->target->target && mobj->target->target->player)
+					p = mobj->target->target->player;
+				else if (mobj->target->player)
+					p = mobj->target->player;
+
+				if (p)
+				{
+					if (p->kartstuff[k_driftboost] > mobj->movecount)
+						; // reset animation
+					mobj->movecount = p->kartstuff[k_driftboost];
+				}
+			}
+			break;
 		case MT_BOOSTFLAME:
 			if (!mobj->target || !mobj->target->health)
 			{

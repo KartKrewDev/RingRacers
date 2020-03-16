@@ -3202,9 +3202,6 @@ static void K_SpawnDriftSparks(player_t *player)
 	if (leveltime % 2 == 1)
 		return;
 
-	if (!P_IsObjectOnGround(player->mo))
-		return;
-
 	if (!player->kartstuff[k_drift]
 		|| (player->kartstuff[k_driftcharge] < ds && !(player->kartstuff[k_driftcharge] < 0)))
 		return;
@@ -5861,6 +5858,11 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		if (player->kartstuff[k_driftcharge] < 0 || player->kartstuff[k_driftcharge] >= dsone)
 		{
+			//mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DRIFTEXPLODE);
+			//P_SetTarget(&overlay->target, player->mo);
+			//P_SetScale(overlay, (overlay->destscale = player->mo->scale));
+			//K_FlipFromObject(overlay, player->mo);
+
 			S_StartSound(player->mo, sfx_s23c);
 			//K_SpawnDashDustRelease(player);
 
@@ -5869,24 +5871,36 @@ static void K_KartDrift(player_t *player, boolean onground)
 				// Stage 0: Yellow sparks
 				if (player->kartstuff[k_driftboost] < 15)
 					player->kartstuff[k_driftboost] = 15;
+
+				//overlay->color = SKINCOLOR_GOLD;
+				//overlay->fuse = 8;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
 			{
 				// Stage 1: Red sparks
 				if (player->kartstuff[k_driftboost] < 20)
 					player->kartstuff[k_driftboost] = 20;
+
+				//overlay->color = SKINCOLOR_KETCHUP;
+				//overlay->fuse = 16;
 			}
 			else if (player->kartstuff[k_driftcharge] < dsthree)
 			{
 				// Stage 2: Blue sparks
 				if (player->kartstuff[k_driftboost] < 50)
 					player->kartstuff[k_driftboost] = 50;
+
+				//overlay->color = SKINCOLOR_SAPPHIRE;
+				//overlay->fuse = 32;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsthree)
 			{
 				// Stage 3: Rainbow sparks
 				if (player->kartstuff[k_driftboost] < 125)
 					player->kartstuff[k_driftboost] = 125;
+
+				//overlay->color = SKINCOLOR_SILVER;
+				//overlay->fuse = 120;
 			}
 		}
 
@@ -5933,64 +5947,71 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->kartstuff[k_aizdriftstrat] = player->kartstuff[k_brakedrift] = 0;
 		player->kartstuff[k_getsparks] = 0;
 	}
-	else if (player->kartstuff[k_jmp] == 1 && onground && player->kartstuff[k_drift] != 0)
+	else if (player->kartstuff[k_jmp] == 1 && player->kartstuff[k_drift] != 0)
 	{
 		// Incease/decrease the drift value to continue drifting in that direction
 		fixed_t driftadditive = 24;
 		boolean playsound = false;
 
-		if (player->kartstuff[k_drift] >= 1) // Drifting to the left
+		if (onground)
 		{
-			player->kartstuff[k_drift]++;
-			if (player->kartstuff[k_drift] > 5)
-				player->kartstuff[k_drift] = 5;
-
-			if (player->cmd.driftturn > 0) // Inward
-				driftadditive += abs(player->cmd.driftturn)/100;
-			if (player->cmd.driftturn < 0) // Outward
-				driftadditive -= abs(player->cmd.driftturn)/75;
-		}
-		else if (player->kartstuff[k_drift] <= -1) // Drifting to the right
-		{
-			player->kartstuff[k_drift]--;
-			if (player->kartstuff[k_drift] < -5)
-				player->kartstuff[k_drift] = -5;
-
-			if (player->cmd.driftturn < 0) // Inward
-				driftadditive += abs(player->cmd.driftturn)/100;
-			if (player->cmd.driftturn > 0) // Outward
-				driftadditive -= abs(player->cmd.driftturn)/75;
-		}
-
-		// Disable drift-sparks until you're going fast enough
-		if (player->kartstuff[k_getsparks] == 0
-			|| (player->kartstuff[k_offroad]
-			&& !player->kartstuff[k_invincibilitytimer]
-			&& !player->kartstuff[k_hyudorotimer]
-			&& !EITHERSNEAKER(player)))
-			driftadditive = 0;
-
-		// Inbetween minspeed and minspeed*2, it'll keep your previous drift-spark state.
-		if (player->speed > minspeed*2)
-		{
-			player->kartstuff[k_getsparks] = 1;
-
-			if (player->kartstuff[k_driftcharge] <= -1)
+			if (player->kartstuff[k_drift] >= 1) // Drifting to the left
 			{
-				player->kartstuff[k_driftcharge] = dsone; // Back to red
-				playsound = true;
+				player->kartstuff[k_drift]++;
+				if (player->kartstuff[k_drift] > 5)
+					player->kartstuff[k_drift] = 5;
+
+				if (player->cmd.driftturn > 0) // Inward
+					driftadditive += abs(player->cmd.driftturn)/100;
+				if (player->cmd.driftturn < 0) // Outward
+					driftadditive -= abs(player->cmd.driftturn)/75;
+			}
+			else if (player->kartstuff[k_drift] <= -1) // Drifting to the right
+			{
+				player->kartstuff[k_drift]--;
+				if (player->kartstuff[k_drift] < -5)
+					player->kartstuff[k_drift] = -5;
+
+				if (player->cmd.driftturn < 0) // Inward
+					driftadditive += abs(player->cmd.driftturn)/100;
+				if (player->cmd.driftturn > 0) // Outward
+					driftadditive -= abs(player->cmd.driftturn)/75;
+			}
+
+			// Disable drift-sparks until you're going fast enough
+			if (player->kartstuff[k_getsparks] == 0
+				|| (player->kartstuff[k_offroad]
+				&& !player->kartstuff[k_invincibilitytimer]
+				&& !player->kartstuff[k_hyudorotimer]
+				&& !EITHERSNEAKER(player)))
+				driftadditive = 0;
+
+			// Inbetween minspeed and minspeed*2, it'll keep your previous drift-spark state.
+			if (player->speed > minspeed*2)
+			{
+				player->kartstuff[k_getsparks] = 1;
+
+				if (player->kartstuff[k_driftcharge] <= -1)
+				{
+					player->kartstuff[k_driftcharge] = dsone; // Back to red
+					playsound = true;
+				}
+			}
+			else if (player->speed <= minspeed)
+			{
+				player->kartstuff[k_getsparks] = 0;
+				driftadditive = 0;
+
+				if (player->kartstuff[k_driftcharge] >= dsone)
+				{
+					player->kartstuff[k_driftcharge] = -1; // Set yellow sparks
+					playsound = true;
+				}
 			}
 		}
-		else if (player->speed <= minspeed)
+		else
 		{
-			player->kartstuff[k_getsparks] = 0;
 			driftadditive = 0;
-
-			if (player->kartstuff[k_driftcharge] >= dsone)
-			{
-				player->kartstuff[k_driftcharge] = -1; // Set yellow sparks
-				playsound = true;
-			}
 		}
 
 		// This spawns the drift sparks

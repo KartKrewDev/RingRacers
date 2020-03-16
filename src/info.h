@@ -786,6 +786,8 @@ typedef enum sprite
 
 	SPR_OTFG,
 
+	SPR_DBOS, // Drift boost flame
+
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
 	SPR_XMS5,
@@ -3271,7 +3273,11 @@ typedef enum state
 	S_FASTDUST6,
 	S_FASTDUST7,
 
-	// Magnet Burst
+	// Drift boost effect
+	S_DRIFTEXPLODE1,
+	S_DRIFTEXPLODE2,
+	S_DRIFTEXPLODE3,
+	S_DRIFTEXPLODE4,
 
 	// Sneaker boost effect
 	S_BOOSTFLAME,
@@ -4664,6 +4670,7 @@ typedef enum mobj_type
 
 	MT_FASTLINE,
 	MT_FASTDUST,
+	MT_DRIFTEXPLODE,
 	MT_BOOSTFLAME,
 	MT_BOOSTSMOKE,
 	MT_SNEAKERTRAIL,
