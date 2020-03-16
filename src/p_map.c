@@ -129,6 +129,8 @@ boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 //                       MOVEMENT ITERATOR FUNCTIONS
 // =========================================================================
 
+//#define TELEPORTJANK
+
 // For our intermediate buffer, remove any duplicate entries by adding each one to
 // a temprary buffer if it's not already in there, copy the temporary buffer back over the intermediate afterwards
 static void spechitint_removedups(void)
@@ -228,9 +230,11 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	//INT32 pflags;
 	const fixed_t hscale = mapobjectscale + (mapobjectscale - object->scale);
 	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
-	fixed_t offx, offy;
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
+	UINT8 starcolor = (spring->info->painchance % MAXTRANSLATIONS);
+	fixed_t savemomx = 0;
+	fixed_t savemomy = 0;
 
 	if (object->eflags & MFE_SPRUNG) // Object was already sprung this tic
 		return false;
@@ -252,29 +256,36 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	object->eflags |= MFE_SPRUNG; // apply this flag asap!
 	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
 
+#ifdef TELEPORTJANK
 	if (horizspeed && vertispeed) // Mimic SA
 	{
 		object->momx = object->momy = 0;
 		P_TryMove(object, spring->x, spring->y, true);
 	}
+#endif
 
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
 
+	// Vertical springs teleport you on TOP of them.
 	if (vertispeed > 0)
 		object->z = spring->z + spring->height + 1;
 	else if (vertispeed < 0)
 		object->z = spring->z - object->height - 1;
 	else
 	{
+		fixed_t offx, offy;
+
 		// Horizontal springs teleport you in FRONT of them.
+		savemomx = object->momx;
+		savemomy = object->momy;
 		object->momx = object->momy = 0;
 
 		// Overestimate the distance to position you at
 		offx = P_ReturnThrustX(spring, spring->angle, (spring->radius + object->radius + 1) * 2);
 		offy = P_ReturnThrustY(spring, spring->angle, (spring->radius + object->radius + 1) * 2);
 
-		// Make it square by clipping
+		// Then clip it down to a square, so it matches the hitbox size.
 		if (offx > (spring->radius + object->radius + 1))
 			offx = spring->radius + object->radius + 1;
 		else if (offx < -(spring->radius + object->radius + 1))
@@ -285,27 +296,94 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		else if (offy < -(spring->radius + object->radius + 1))
 			offy = -(spring->radius + object->radius + 1);
 
-		// Set position!
 		P_TryMove(object, spring->x + offx, spring->y + offy, true);
 	}
 
 	if (vertispeed)
-		object->momz = FixedMul(vertispeed,FixedSqrt(FixedMul(vscale, spring->scale)));
+		object->momz = FixedMul(vertispeed, FixedSqrt(FixedMul(vscale, spring->scale)));
 
 	if (horizspeed)
 	{
-		if (!object->player)
-			P_InstaThrustEvenIn2D(object, spring->angle, FixedMul(horizspeed,FixedSqrt(FixedMul(hscale, spring->scale))));
+		angle_t finalAngle = spring->angle;
+		fixed_t finalSpeed = horizspeed;
+		fixed_t objectSpeed;
+
+		if (object->player)
+			objectSpeed = object->player->speed;
 		else
+			objectSpeed = R_PointToDist2(0, 0, savemomx, savemomy);
+
+		if (!vertispeed)
 		{
-			fixed_t finalSpeed = FixedDiv(horizspeed, hscale);
-			fixed_t pSpeed = object->player->speed;
+			// Scale to gamespeed
+			finalSpeed = FixedMul(finalSpeed, K_GetKartGameSpeedScalar(gamespeed));
 
-			if (pSpeed > finalSpeed)
-				finalSpeed = pSpeed;
+			// Reflect your momentum angle against the surface of horizontal springs.
+			// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
+			if (savemomx || savemomy)
+			{
+				angle_t momang;
+				INT32 angoffset;
+				boolean subtract = false;
 
-			P_InstaThrustEvenIn2D(object, spring->angle, FixedMul(finalSpeed,FixedSqrt(FixedMul(hscale, spring->scale))));
+				momang = R_PointToAngle2(0, 0, savemomx, savemomy);
+
+				angoffset = momang;
+				angoffset -= spring->angle; // Subtract
+
+				// Flip on wrong side
+				if ((angle_t)angoffset > ANGLE_180)
+				{
+					angoffset = InvAngle((angle_t)angoffset);
+					subtract = !subtract;
+				}
+
+				// Fix going directly against the spring's angle sending you the wrong way
+				if ((spring->angle - momang) > ANGLE_90)
+					angoffset = ANGLE_180 - angoffset;
+
+				// Offset is reduced to cap it (90 / 2 = max of 45 degrees)
+				angoffset /= 2;
+
+				// Reduce further based on how slow your speed is compared to the spring's speed
+				if (finalSpeed > objectSpeed)
+					angoffset = FixedDiv(angoffset, FixedDiv(finalSpeed, objectSpeed));
+
+				if (subtract)
+					angoffset = (signed)(spring->angle) - angoffset;
+				else
+					angoffset = (signed)(spring->angle) + angoffset;
+
+				finalAngle = angoffset;
+			}
 		}
+
+		if (object->player)
+		{
+			// Less friction when hitting horizontal springs
+			if (!vertispeed)
+			{
+				if (!object->player->kartstuff[k_tiregrease])
+				{
+					UINT8 i;
+					for (i = 0; i < 2; i++)
+					{
+						mobj_t *grease;
+						grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
+						P_SetTarget(&grease->target, object);
+						grease->angle = R_PointToAngle2(0, 0, object->momx, object->momy);
+						grease->extravalue1 = i;
+					}
+				}
+
+				object->player->kartstuff[k_tiregrease] = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
+			}
+		}
+
+		// Horizontal speed is used as a minimum thrust, not a direct replacement
+		finalSpeed = max(objectSpeed, finalSpeed);
+
+		P_InstaThrustEvenIn2D(object, finalAngle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
 	}
 
 	// Re-solidify
@@ -318,46 +396,12 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		if (spring->flags & MF_ENEMY) // Spring shells
 			P_SetTarget(&spring->target, object);
 
-		if (horizspeed && object->player->cmd.forwardmove == 0 && object->player->cmd.sidemove == 0)
-		{
-			object->angle = spring->angle;
-
-			if (!demo.playback || P_AnalogMove(object->player))
-			{
-				if (object->player == &players[consoleplayer])
-					localangle[0] = spring->angle;
-				else if (object->player == &players[displayplayers[1]])
-					localangle[1] = spring->angle;
-				else if (object->player == &players[displayplayers[2]])
-					localangle[2] = spring->angle;
-				else if (object->player == &players[displayplayers[3]])
-					localangle[3] = spring->angle;
-			}
-		}
-
-		//pflags = object->player->pflags & (PF_JUMPED|PF_SPINNING|PF_THOKKED); // I still need these.
 		P_ResetPlayer(object->player);
 
-		/* // SRB2kart - Springs don't need to change player state in kart.
-		if (P_MobjFlip(object)*vertispeed > 0)
-			P_SetPlayerMobjState(object, S_PLAY_SPRING);
-		else if (P_MobjFlip(object)*vertispeed < 0)
-			P_SetPlayerMobjState(object, S_PLAY_FALL1);
-		else // horizontal spring
-		{
-			if (pflags & (PF_JUMPED|PF_SPINNING) && object->player->panim == PA_ROLL)
-				object->player->pflags = pflags;
-			else
-				P_SetPlayerMobjState(object, S_PLAY_RUN1);
-		}
-
-		if (spring->info->painchance)
-		{
-			object->player->pflags |= PF_JUMPED;
-			P_SetPlayerMobjState(object, S_PLAY_ATK1);
-		}
-		*/
+		object->player->kartstuff[k_springstars] = max(vertispeed, horizspeed) / FRACUNIT / 2;
+		object->player->kartstuff[k_springcolor] = starcolor;
 	}
+
 	return true;
 }
 
@@ -1273,6 +1317,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		//else if (tmz > thzh - sprarea && tmz < thzh) // Don't damage people springing up / down
 			return true;
 	}
+
 	// missiles can hit other things
 	if (tmthing->flags & MF_MISSILE || tmthing->type == MT_SHELL)
 	{
@@ -2869,27 +2914,18 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		if (!(thing->flags & MF_NOCLIP))
 		{
 			//All things are affected by their scale.
-			fixed_t maxstep = FixedMul(MAXSTEPMOVE, mapobjectscale);
+			const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
+			fixed_t maxstep = maxstepmove;
 
-			if (thing->player)
-			{
-				// If using type Section1:13, double the maxstep.
-				if (P_PlayerTouchingSectorSpecial(thing->player, 1, 13)
-				|| GETSECSPECIAL(R_PointInSubsector(x, y)->sector->special, 1) == 13)
-					maxstep <<= 1;
-				// If using type Section1:12, no maxstep. For ledges you don't want the player to climb! (see: Egg Zeppelin & SMK port walls)
-				else if (P_PlayerTouchingSectorSpecial(thing->player, 1, 12)
-				|| GETSECSPECIAL(R_PointInSubsector(x, y)->sector->special, 1) == 12)
-					maxstep = 0;
+			if (thing->player && thing->player->kartstuff[k_waterskip])
+				maxstep += maxstepmove; // Add some extra stepmove when waterskipping
 
-				// Don't 'step up' while springing,
-				// Only step up "if needed".
-				/* // SRB2kart - don't need
-				if (thing->state == &states[S_PLAY_SPRING]
-				&& P_MobjFlip(thing)*thing->momz > FixedMul(FRACUNIT, thing->scale))
-					maxstep = 0;
-				*/
-			}
+			// If using type Section1:13, double the maxstep.
+			if (P_MobjTouchingSectorSpecial(thing, 1, 13, false))
+				maxstep <<= 1;
+			// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
+			else if (P_MobjTouchingSectorSpecial(thing, 1, 12, false))
+				maxstep = 0;
 
 			if (thing->type == MT_SKIM)
 				maxstep = 0;
@@ -2912,12 +2948,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				return false; // mobj must lower itself to fit
 
 			// Ramp test
-			if (maxstep > 0 && !(
-				thing->player && (
-				P_PlayerTouchingSectorSpecial(thing->player, 1, 14)
-				|| GETSECSPECIAL(R_PointInSubsector(x, y)->sector->special, 1) == 14)
-				)
-			)
+			if ((maxstep > 0) && !(P_MobjTouchingSectorSpecial(thing, 1, 14, false)))
 			{
 				// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 				// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
@@ -3019,14 +3050,24 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				P_HandleSlopeLanding(thing, tmfloorslope);
 
 			if (thing->momz <= 0)
+			{
 				thing->standingslope = tmfloorslope;
+#ifdef HWRENDER
+				thing->modeltilt = thing->standingslope;
+#endif
+			}
 		}
 		else if (thing->z+thing->height >= tmceilingz && (thing->eflags & MFE_VERTICALFLIP)) {
 			if (!startingonground && tmceilingslope)
 				P_HandleSlopeLanding(thing, tmceilingslope);
 
 			if (thing->momz >= 0)
+			{
 				thing->standingslope = tmceilingslope;
+#ifdef HWRENDER
+				thing->modeltilt = thing->standingslope;
+#endif
+			}
 		}
 	}
 	else // don't set standingslope if you're not going to clip against it
@@ -4853,7 +4894,7 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 			if (!(rover->flags & FF_EXISTS))
 				continue;
 
-			if ((!(rover->flags & FF_SOLID || rover->flags & FF_QUICKSAND) || (rover->flags & FF_SWIMMABLE)))
+			if (!((rover->flags & FF_SOLID) || (rover->flags & FF_QUICKSAND)) || (rover->flags & FF_SWIMMABLE))
 				continue;
 
 			topheight = *rover->topheight;

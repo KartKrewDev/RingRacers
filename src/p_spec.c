@@ -2003,57 +2003,28 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 //
 // Switches the weather!
 //
-void P_SwitchWeather(INT32 weathernum)
+void P_SwitchWeather(UINT8 newWeather)
 {
 	boolean purge = false;
-	INT32 swap = 0;
+	mobjtype_t swap = MT_NULL;
 
-	switch (weathernum)
+	if (precipprops[newWeather].type == MT_NULL)
 	{
-		case PRECIP_NONE: // None
-			if (curWeather == PRECIP_NONE)
-				return; // Nothing to do.
-			purge = true;
-			break;
-		case PRECIP_STORM: // Storm
-		case PRECIP_STORM_NOSTRIKES: // Storm w/ no lightning
-		case PRECIP_RAIN: // Rain
-			if (curWeather == PRECIP_SNOW || curWeather == PRECIP_BLANK || curWeather == PRECIP_STORM_NORAIN)
-				swap = PRECIP_RAIN;
-			break;
-		case PRECIP_SNOW: // Snow
-			if (curWeather == PRECIP_SNOW)
-				return; // Nothing to do.
-			if (curWeather == PRECIP_RAIN || curWeather == PRECIP_STORM || curWeather == PRECIP_STORM_NOSTRIKES || curWeather == PRECIP_BLANK || curWeather == PRECIP_STORM_NORAIN)
-				swap = PRECIP_SNOW; // Need to delete the other precips.
-			break;
-		case PRECIP_STORM_NORAIN: // Storm w/o rain
-			if (curWeather == PRECIP_SNOW
-				|| curWeather == PRECIP_STORM
-				|| curWeather == PRECIP_STORM_NOSTRIKES
-				|| curWeather == PRECIP_RAIN
-				|| curWeather == PRECIP_BLANK)
-				swap = PRECIP_STORM_NORAIN;
-			else if (curWeather == PRECIP_STORM_NORAIN)
-				return;
-			break;
-		case PRECIP_BLANK:
-			if (curWeather == PRECIP_SNOW
-				|| curWeather == PRECIP_STORM
-				|| curWeather == PRECIP_STORM_NOSTRIKES
-				|| curWeather == PRECIP_RAIN)
-				swap = PRECIP_BLANK;
-			else if (curWeather == PRECIP_STORM_NORAIN)
-				swap = PRECIP_BLANK;
-			else if (curWeather == PRECIP_BLANK)
-				return;
-			break;
-		default:
-			CONS_Debug(DBG_GAMELOGIC, "P_SwitchWeather: Unknown weather type %d.\n", weathernum);
-			break;
+		// New type is null, we want to purge the weather.
+		if (precipprops[curWeather].type == MT_NULL)
+			return; // Nothing to do.
+		purge = true;
+	}
+	else 
+	{
+		if (precipprops[curWeather].type != MT_NULL)
+		{
+			// There are already existing weather particles to reuse.
+			swap = precipprops[newWeather].type;
+		}
 	}
 
-	if (purge)
+	if (purge == true)
 	{
 		thinker_t *think;
 		precipmobj_t *precipmobj;
@@ -2068,136 +2039,54 @@ void P_SwitchWeather(INT32 weathernum)
 			P_RemovePrecipMobj(precipmobj);
 		}
 	}
-	else if (swap && !((swap == PRECIP_BLANK && curWeather == PRECIP_STORM_NORAIN) || (swap == PRECIP_STORM_NORAIN && curWeather == PRECIP_BLANK))) // Rather than respawn all that crap, reuse it!
+	else if (swap != MT_NULL) // Rather than respawn all that crap, reuse it!
 	{
+		UINT8 randomstates = (UINT8)mobjinfo[swap].damage;
 		thinker_t *think;
 		precipmobj_t *precipmobj;
-		state_t *st;
+		statenum_t st;
 
 		for (think = thinkercap.next; think != &thinkercap; think = think->next)
 		{
 			if (think->function.acp1 != (actionf_p1)P_NullPrecipThinker)
 				continue; // not a precipmobj thinker
+
 			precipmobj = (precipmobj_t *)think;
 
-			if (swap == PRECIP_RAIN) // Snow To Rain
+			precipmobj->flags = mobjinfo[swap].flags;
+
+			st = mobjinfo[swap].spawnstate;
+			
+			if (randomstates > 0)
 			{
-				precipmobj->flags = mobjinfo[MT_RAIN].flags;
-				st = &states[mobjinfo[MT_RAIN].spawnstate];
-				precipmobj->state = st;
-				precipmobj->tics = st->tics;
-				precipmobj->sprite = st->sprite;
-				precipmobj->frame = st->frame;
-				precipmobj->momz = mobjinfo[MT_RAIN].speed;
+				UINT8 mrand = M_RandomByte();
+				UINT8 threshold = UINT8_MAX / (randomstates + 1);
+				UINT8 i;
 
-				precipmobj->precipflags &= ~PCF_INVISIBLE;
-
-				precipmobj->precipflags |= PCF_RAIN;
-				//think->function.acp1 = (actionf_p1)P_RainThinker;
+				for (i = 0; i < randomstates; i++)
+				{
+					if (mrand < (threshold * (i+1)))
+					{
+						st += i+1;
+						break;
+					}
+				}
 			}
-			else if (swap == PRECIP_SNOW) // Rain To Snow
-			{
-				INT32 z;
 
-				precipmobj->flags = mobjinfo[MT_SNOWFLAKE].flags;
-				z = M_RandomByte();
+			precipmobj->state = &states[st];
+			precipmobj->tics = precipmobj->state->tics;
+			precipmobj->sprite = precipmobj->state->sprite;
+			precipmobj->frame = precipmobj->state->frame;
 
-				if (z < 64)
-					z = 2;
-				else if (z < 144)
-					z = 1;
-				else
-					z = 0;
-
-				st = &states[mobjinfo[MT_SNOWFLAKE].spawnstate+z];
-				precipmobj->state = st;
-				precipmobj->tics = st->tics;
-				precipmobj->sprite = st->sprite;
-				precipmobj->frame = st->frame;
-				precipmobj->momz = mobjinfo[MT_SNOWFLAKE].speed;
-
-				precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_RAIN);
-
-				//think->function.acp1 = (actionf_p1)P_SnowThinker;
-			}
-			else if (swap == PRECIP_BLANK || swap == PRECIP_STORM_NORAIN) // Remove precip, but keep it around for reuse.
-			{
-				//think->function.acp1 = (actionf_p1)P_NullPrecipThinker;
-
-				precipmobj->precipflags |= PCF_INVISIBLE;
-			}
+			precipmobj->momz = mobjinfo[swap].speed;
+			precipmobj->precipflags &= ~PCF_INVISIBLE;
 		}
 	}
 
-	switch (weathernum)
-	{
-		case PRECIP_SNOW: // snow
-			curWeather = PRECIP_SNOW;
+	curWeather = newWeather;
 
-			if (!swap)
-				P_SpawnPrecipitation();
-
-			break;
-		case PRECIP_RAIN: // rain
-		{
-			boolean dontspawn = false;
-
-			if (curWeather == PRECIP_RAIN || curWeather == PRECIP_STORM || curWeather == PRECIP_STORM_NOSTRIKES)
-				dontspawn = true;
-
-			curWeather = PRECIP_RAIN;
-
-			if (!dontspawn && !swap)
-				P_SpawnPrecipitation();
-
-			break;
-		}
-		case PRECIP_STORM: // storm
-		{
-			boolean dontspawn = false;
-
-			if (curWeather == PRECIP_RAIN || curWeather == PRECIP_STORM || curWeather == PRECIP_STORM_NOSTRIKES)
-				dontspawn = true;
-
-			curWeather = PRECIP_STORM;
-
-			if (!dontspawn && !swap)
-				P_SpawnPrecipitation();
-
-			break;
-		}
-		case PRECIP_STORM_NOSTRIKES: // storm w/o lightning
-		{
-			boolean dontspawn = false;
-
-			if (curWeather == PRECIP_RAIN || curWeather == PRECIP_STORM || curWeather == PRECIP_STORM_NOSTRIKES)
-				dontspawn = true;
-
-			curWeather = PRECIP_STORM_NOSTRIKES;
-
-			if (!dontspawn && !swap)
-				P_SpawnPrecipitation();
-
-			break;
-		}
-		case PRECIP_STORM_NORAIN: // storm w/o rain
-			curWeather = PRECIP_STORM_NORAIN;
-
-			if (!swap)
-				P_SpawnPrecipitation();
-
-			break;
-		case PRECIP_BLANK:
-			curWeather = PRECIP_BLANK;
-
-			if (!swap)
-				P_SpawnPrecipitation();
-
-			break;
-		default:
-			curWeather = PRECIP_NONE;
-			break;
-	}
+	if (swap == MT_NULL && precipprops[newWeather].type != MT_NULL)
+		P_SpawnPrecipitation();
 }
 
 // Passed over the finish line forwards
@@ -2957,7 +2846,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 423: // Change Sky
 			if ((mo && mo->player && P_IsLocalPlayer(mo->player)) || (line->flags & ML_NOCLIMB))
-				P_SetupLevelSky(sides[line->sidenum[0]].textureoffset>>FRACBITS, (line->flags & ML_NOCLIMB));
+				P_SetupLevelSky(sides[line->sidenum[0]].text, (line->flags & ML_NOCLIMB));
 			break;
 
 		case 424: // Change Weather
@@ -3387,6 +3276,76 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 	}
 }
 
+static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
+{
+	mobj_t *cur = sign, *prev = NULL;
+
+	// Setup the sign itself
+	P_SetTarget(&sign->target, pmo);
+	P_SetMobjState(sign, S_SIGN_POLE);
+
+	sign->movefactor = sign->z;
+	sign->z += (768*sign->scale) * P_MobjFlip(sign);
+	sign->movecount = 1;
+	sign->extravalue1 = AngleFixed(sign->angle) >> FRACBITS;
+
+	// Setup the overlay pieces
+	// Front
+	cur->hnext = P_SpawnMobj(sign->x, sign->y, sign->z, MT_SIGN_PIECE);
+	P_SetTarget(&cur->hnext->target, sign);
+	P_SetMobjState(cur->hnext, S_SIGN_FACE);
+	cur->hnext->extravalue1 = 6;
+	cur->hnext->extravalue2 = 0;
+
+	prev = cur;
+	cur = cur->hnext;
+	cur->hprev = prev;
+
+	// Player icon
+	cur->hnext = P_SpawnMobj(sign->x, sign->y, sign->z, MT_SIGN_PIECE);
+	P_SetTarget(&cur->hnext->target, sign);
+	cur->hnext->skin = pmo->skin;
+	P_SetMobjState(cur->hnext, S_PLAY_SIGN);
+	cur->hnext->extravalue1 = 7;
+	cur->hnext->extravalue2 = 0;
+
+	prev = cur;
+	cur = cur->hnext;
+	cur->hprev = prev;
+
+	// Back
+	cur->hnext = P_SpawnMobj(sign->x, sign->y, sign->z, MT_SIGN_PIECE);
+	P_SetTarget(&cur->hnext->target, sign);
+	P_SetMobjState(cur->hnext, S_SIGN_BACK);
+	cur->hnext->extravalue1 = 6;
+	cur->hnext->extravalue2 = 2;
+
+	prev = cur;
+	cur = cur->hnext;
+	cur->hprev = prev;
+
+	// Sides
+	cur->hnext = P_SpawnMobj(sign->x, sign->y, sign->z, MT_SIGN_PIECE);
+	P_SetTarget(&cur->hnext->target, sign);
+	P_SetMobjState(cur->hnext, S_SIGN_SIDE);
+	cur->hnext->extravalue1 = 30;
+	cur->hnext->extravalue2 = 1;
+
+	prev = cur;
+	cur = cur->hnext;
+	cur->hprev = prev;
+
+	cur->hnext = P_SpawnMobj(sign->x, sign->y, sign->z, MT_SIGN_PIECE);
+	P_SetTarget(&cur->hnext->target, sign);
+	P_SetMobjState(cur->hnext, S_SIGN_SIDE);
+	cur->hnext->extravalue1 = 30;
+	cur->hnext->extravalue2 = 3;
+
+	prev = cur;
+	cur = cur->hnext;
+	cur->hprev = prev;
+}
+
 //
 // P_SetupSignExit
 //
@@ -3412,13 +3371,7 @@ void P_SetupSignExit(player_t *player)
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
-		P_SetTarget(&thing->target, player->mo);
-		P_SetMobjState(thing, S_SIGN1);
-
-		// SRB2Kart: Set sign spinning variables
-		thing->movefactor = thing->z;
-		thing->z += (768*thing->scale) * P_MobjFlip(thing);
-		thing->movecount = 1;
+		P_SetupSignObject(thing, player->mo);
 
 		++numfound;
 	}
@@ -3440,14 +3393,7 @@ void P_SetupSignExit(player_t *player)
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
-		P_SetTarget(&thing->target, player->mo);
-		P_SetMobjState(thing, S_SIGN1);
-
-		// SRB2Kart: Set sign spinning variables
-		thing->movefactor = thing->z;
-		thing->z += (768*thing->scale) * P_MobjFlip(thing);
-		thing->movecount = 1;
-
+		P_SetupSignObject(thing, player->mo);
 		++numfound;
 	}
 
@@ -3455,14 +3401,11 @@ void P_SetupSignExit(player_t *player)
 		return;
 
 	// SRB2Kart: FINALLY, add in an alternative if no place is found
-	if (player->mo)
+	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
-		mobj_t *sign = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + (768*mapobjectscale), MT_SIGN);
-
-		P_SetTarget(&sign->target, player->mo);
-		P_SetMobjState(sign, S_SIGN1);
-		sign->movefactor = player->mo->floorz;
-		sign->movecount = 1;
+		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
+		thing->angle = player->mo->angle;
+		P_SetupSignObject(thing, player->mo);
 	}
 }
 
@@ -3516,7 +3459,7 @@ boolean P_IsFlagAtBase(mobjtype_t flag)
 }
 
 //
-// P_PlayerTouchingSectorSpecial
+// P_MobjTouchingSectorSpecial
 //
 // Replaces the old player->specialsector.
 // This allows a player to touch more than
@@ -3526,60 +3469,86 @@ boolean P_IsFlagAtBase(mobjtype_t flag)
 // the particular type that it finds.
 // Returns NULL if it doesn't find it.
 //
-sector_t *P_PlayerTouchingSectorSpecial(player_t *player, INT32 section, INT32 number)
+// Sal: Couldn't see a reason for this to
+// be a player_t only function.
+//
+sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, boolean touchground)
 {
+	fixed_t topheight, bottomheight;
 	msecnode_t *node;
 	ffloor_t *rover;
 
-	if (!player->mo)
+	if (!mo)
 		return NULL;
 
 	// Check default case first
-	if (GETSECSPECIAL(player->mo->subsector->sector->special, section) == number)
-		return player->mo->subsector->sector;
+	if (GETSECSPECIAL(mo->subsector->sector->special, section) == number)
+	{
+		if (touchground)
+		{
+			topheight = P_GetSpecialTopZ(mo, mo->subsector->sector, mo->subsector->sector);
+			bottomheight = P_GetSpecialBottomZ(mo, mo->subsector->sector, mo->subsector->sector);
+
+			// Thing must be on top of the floor to be affected...
+			if (mo->subsector->sector->flags & SF_FLIPSPECIAL_FLOOR)
+			{
+				if (!(mo->eflags & MFE_VERTICALFLIP) && mo->z <= bottomheight)
+					return mo->subsector->sector;
+			}
+
+			if (mo->subsector->sector->flags & SF_FLIPSPECIAL_CEILING)
+			{
+				if ((mo->eflags & MFE_VERTICALFLIP) && mo->z + mo->height >= topheight)
+					return mo->subsector->sector;
+			}
+		}
+		else
+		{
+			return mo->subsector->sector;
+		}
+	}
 
 	// Hmm.. maybe there's a FOF that has it...
-	for (rover = player->mo->subsector->sector->ffloors; rover; rover = rover->next)
+	for (rover = mo->subsector->sector->ffloors; rover; rover = rover->next)
 	{
-		fixed_t topheight, bottomheight;
-
 		if (GETSECSPECIAL(rover->master->frontsector->special, section) != number)
 			continue;
 
 		if (!(rover->flags & FF_EXISTS))
 			continue;
 
-		topheight = P_GetSpecialTopZ(player->mo, sectors + rover->secnum, player->mo->subsector->sector);
-		bottomheight = P_GetSpecialBottomZ(player->mo, sectors + rover->secnum, player->mo->subsector->sector);
+		topheight = P_GetSpecialTopZ(mo, sectors + rover->secnum, mo->subsector->sector);
+		bottomheight = P_GetSpecialBottomZ(mo, sectors + rover->secnum, mo->subsector->sector);
 
 		// Check the 3D floor's type...
-		if (rover->flags & FF_BLOCKPLAYER)
+		if (((rover->flags & FF_BLOCKPLAYER) && mo->player)
+			|| ((rover->flags & FF_BLOCKOTHERS) && !mo->player))
 		{
 			// Thing must be on top of the floor to be affected...
 			if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR)
 				&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING))
 			{
-				if ((player->mo->eflags & MFE_VERTICALFLIP) || player->mo->z != topheight)
+				if ((mo->eflags & MFE_VERTICALFLIP) || mo->z != topheight)
 					continue;
 			}
 			else if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING)
 				&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR))
 			{
-				if (!(player->mo->eflags & MFE_VERTICALFLIP)
-					|| player->mo->z + player->mo->height != bottomheight)
+				if (!(mo->eflags & MFE_VERTICALFLIP)
+					|| mo->z + mo->height != bottomheight)
 					continue;
 			}
 			else if (rover->master->frontsector->flags & SF_FLIPSPECIAL_BOTH)
 			{
-				if (!((player->mo->eflags & MFE_VERTICALFLIP && player->mo->z + player->mo->height == bottomheight)
-					|| (!(player->mo->eflags & MFE_VERTICALFLIP) && player->mo->z == topheight)))
+				if (!((mo->eflags & MFE_VERTICALFLIP && mo->z + mo->height == bottomheight)
+					|| (!(mo->eflags & MFE_VERTICALFLIP) && mo->z == topheight)))
 					continue;
 			}
 		}
 		else
 		{
 			// Water and DEATH FOG!!! heh
-			if (player->mo->z > topheight || (player->mo->z + player->mo->height) < bottomheight)
+			if (mo->z > topheight || (mo->z + mo->height) < bottomheight)
 				continue;
 		}
 
@@ -3587,64 +3556,86 @@ sector_t *P_PlayerTouchingSectorSpecial(player_t *player, INT32 section, INT32 n
 		return rover->master->frontsector;
 	}
 
-	for (node = player->mo->touching_sectorlist; node; node = node->m_sectorlist_next)
+	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
 		if (GETSECSPECIAL(node->m_sector->special, section) == number)
 		{
 			// This sector has the special we're looking for, but
 			// are we allowed to touch it?
-			if (node->m_sector == player->mo->subsector->sector
+			if (node->m_sector == mo->subsector->sector
 				|| (node->m_sector->flags & SF_TRIGGERSPECIAL_TOUCH))
-				return node->m_sector;
+			{
+				if (touchground)
+				{
+					topheight = P_GetSpecialTopZ(mo, node->m_sector, node->m_sector);
+					bottomheight = P_GetSpecialBottomZ(mo, node->m_sector, node->m_sector);
+
+					// Thing must be on top of the floor to be affected...
+					if (node->m_sector->flags & SF_FLIPSPECIAL_FLOOR)
+					{
+						if (!(mo->eflags & MFE_VERTICALFLIP) && mo->z <= bottomheight)
+							return node->m_sector;
+					}
+
+					if (node->m_sector->flags & SF_FLIPSPECIAL_CEILING)
+					{
+						if ((mo->eflags & MFE_VERTICALFLIP) && mo->z + mo->height >= topheight)
+							return node->m_sector;
+					}
+				}
+				else
+				{
+					return node->m_sector;
+				}
+			}
 		}
 
 		// Hmm.. maybe there's a FOF that has it...
 		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			fixed_t topheight, bottomheight;
-
 			if (GETSECSPECIAL(rover->master->frontsector->special, section) != number)
 				continue;
 
 			if (!(rover->flags & FF_EXISTS))
 				continue;
 
-			topheight = P_GetSpecialTopZ(player->mo, sectors + rover->secnum, player->mo->subsector->sector);
-			bottomheight = P_GetSpecialBottomZ(player->mo, sectors + rover->secnum, player->mo->subsector->sector);
+			topheight = P_GetSpecialTopZ(mo, sectors + rover->secnum, mo->subsector->sector);
+			bottomheight = P_GetSpecialBottomZ(mo, sectors + rover->secnum, mo->subsector->sector);
 
 			// Check the 3D floor's type...
-			if (rover->flags & FF_BLOCKPLAYER)
+			if (((rover->flags & FF_BLOCKPLAYER) && mo->player)
+				|| ((rover->flags & FF_BLOCKOTHERS) && !mo->player))
 			{
 				// Thing must be on top of the floor to be affected...
 				if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR)
 					&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING))
 				{
-					if ((player->mo->eflags & MFE_VERTICALFLIP) || player->mo->z != topheight)
+					if ((mo->eflags & MFE_VERTICALFLIP) || mo->z != topheight)
 						continue;
 				}
 				else if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING)
 					&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR))
 				{
-					if (!(player->mo->eflags & MFE_VERTICALFLIP)
-						|| player->mo->z + player->mo->height != bottomheight)
+					if (!(mo->eflags & MFE_VERTICALFLIP)
+						|| mo->z + mo->height != bottomheight)
 						continue;
 				}
 				else if (rover->master->frontsector->flags & SF_FLIPSPECIAL_BOTH)
 				{
-					if (!((player->mo->eflags & MFE_VERTICALFLIP && player->mo->z + player->mo->height == bottomheight)
-						|| (!(player->mo->eflags & MFE_VERTICALFLIP) && player->mo->z == topheight)))
+					if (!((mo->eflags & MFE_VERTICALFLIP && mo->z + mo->height == bottomheight)
+						|| (!(mo->eflags & MFE_VERTICALFLIP) && mo->z == topheight)))
 						continue;
 				}
 			}
 			else
 			{
 				// Water and DEATH FOG!!! heh
-				if (player->mo->z > topheight || (player->mo->z + player->mo->height) < bottomheight)
+				if (mo->z > topheight || (mo->z + mo->height) < bottomheight)
 					continue;
 			}
 
 			// This FOF has the special we're looking for, but are we allowed to touch it?
-			if (node->m_sector == player->mo->subsector->sector
+			if (node->m_sector == mo->subsector->sector
 				|| (rover->master->frontsector->flags & SF_TRIGGERSPECIAL_TOUCH))
 				return rover->master->frontsector;
 		}
@@ -3792,10 +3783,9 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			break;
 		case 9: // Ring Drainer (Floor Touch)
 		case 10: // Ring Drainer (No Floor Touch)
-			if (leveltime % (TICRATE/2) == 0 && player->mo->health > 1)
+			if (leveltime % (TICRATE/2) == 0 && player->kartstuff[k_rings] > 0)
 			{
-				player->mo->health--;
-				player->health--;
+				player->kartstuff[k_rings]--;
 				S_StartSound(player->mo, sfx_itemup);
 			}
 			break;
@@ -5723,25 +5713,10 @@ void P_InitSpecials(void)
 
 	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
-	// Set curWeather
-	switch (mapheaderinfo[gamemap-1]->weather)
-	{
-		case PRECIP_SNOW: // snow
-		case PRECIP_RAIN: // rain
-		case PRECIP_STORM: // storm
-		case PRECIP_STORM_NORAIN: // storm w/o rain
-		case PRECIP_STORM_NOSTRIKES: // storm w/o lightning
-			curWeather = mapheaderinfo[gamemap-1]->weather;
-			break;
-		default: // blank/none
-			curWeather = PRECIP_NONE;
-			break;
-	}
+	// Set weather
+	curWeather = globalweather = mapheaderinfo[gamemap-1]->weather;
 
-	// Set globalweather
-	globalweather = mapheaderinfo[gamemap-1]->weather;
-
-	P_InitTagLists();   // Create xref tables for tags
+	P_InitTagLists(); // Create xref tables for tags
 }
 
 /** After the map has loaded, scans for specials that spawn 3Dfloors and

@@ -84,6 +84,7 @@
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_pwrlv.h"
 #include "k_waypoint.h"
 
 //
@@ -181,6 +182,8 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
+	INT32 exists = (mapheaderinfo[num]->menuflags & LF2_EXISTSHACK);
+
 	DEH_WriteUndoline("LEVELNAME", mapheaderinfo[num]->lvlttl, UNDO_NONE);
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	DEH_WriteUndoline("SUBTITLE", mapheaderinfo[num]->subttl, UNDO_NONE);
@@ -208,8 +211,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
 	DEH_WriteUndoline("WEATHER", va("%d", mapheaderinfo[num]->weather), UNDO_NONE);
 	mapheaderinfo[num]->weather = 0;
-	DEH_WriteUndoline("SKYNUM", va("%d", mapheaderinfo[num]->skynum), UNDO_NONE);
-	mapheaderinfo[num]->skynum = 1;
+	DEH_WriteUndoline("SKYTEXTURE", va("%d", mapheaderinfo[num]->skytexture), UNDO_NONE);
+	snprintf(mapheaderinfo[num]->skytexture, 9, "SKY1");
+	mapheaderinfo[num]->skytexture[8] = 0;
 	DEH_WriteUndoline("SKYBOXSCALEX", va("%d", mapheaderinfo[num]->skybox_scalex), UNDO_NONE);
 	mapheaderinfo[num]->skybox_scalex = 16;
 	DEH_WriteUndoline("SKYBOXSCALEY", va("%d", mapheaderinfo[num]->skybox_scaley), UNDO_NONE);
@@ -245,7 +249,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	DEH_WriteUndoline("LEVELFLAGS", va("%d", mapheaderinfo[num]->levelflags), UNDO_NONE);
 	mapheaderinfo[num]->levelflags = 0;
 	DEH_WriteUndoline("MENUFLAGS", va("%d", mapheaderinfo[num]->menuflags), UNDO_NONE);
-	mapheaderinfo[num]->menuflags = (mainwads ? 0 : LF2_EXISTSHACK); // see p_setup.c - prevents replacing maps in addons with easier versions
+	mapheaderinfo[num]->menuflags = exists; // see p_setup.c - prevents replacing maps in addons with easier versions
 	// TODO grades support for delfile (pfft yeah right)
 	P_DeleteGrades(num);
 	// SRB2Kart
@@ -2256,17 +2260,18 @@ static inline boolean P_CheckLevel(lumpnum_t lumpnum)
 /** Sets up a sky texture to use for the level.
   * The sky texture is used instead of F_SKY1.
   */
-void P_SetupLevelSky(INT32 skynum, boolean global)
+void P_SetupLevelSky(const char *skytexname, boolean global)
 {
-	char skytexname[12];
+	char tex[9];
+	strncpy(tex, skytexname, 9);
+	tex[8] = 0;
 
-	sprintf(skytexname, "SKY%d", skynum);
-	skytexture = R_TextureNumForName(skytexname);
-	levelskynum = skynum;
+	skytexture = R_TextureNumForName(tex);
+	strncpy(levelskytexture, tex, 9);
 
 	// Global change
 	if (global)
-		globallevelskynum = levelskynum;
+		strncpy(globallevelskytexture, tex, 9);
 
 	// Don't go beyond for dedicated servers
 	if (dedicated)
@@ -2386,22 +2391,30 @@ static void P_LevelInitStuff(void)
 	// SRB2Kart: map load variables
 	if (modeattacking) // Just play it safe and set everything
 	{
-		gamespeed = 2;
+		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
 		comeback = true;
 	}
 	else
 	{
 		if (G_BattleGametype())
-			gamespeed = 0;
+			gamespeed = KARTSPEED_EASY;
 		else
-			gamespeed = (UINT8)cv_kartspeed.value;
+		{
+			if (cv_kartspeed.value == KARTSPEED_AUTO)
+				gamespeed = ((speedscramble == -1) ? KARTSPEED_NORMAL : (UINT8)speedscramble);
+			else
+				gamespeed = (UINT8)cv_kartspeed.value;
+		}
 		franticitems = (boolean)cv_kartfrantic.value;
 		comeback = (boolean)cv_kartcomeback.value;
 	}
 
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = -1;
+
+	memset(&battleovertime, 0, sizeof(struct battleovertime));
+	speedscramble = encorescramble = -1;
 }
 
 //
@@ -2779,7 +2792,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
-	INT32 i, loadprecip = 1, ranspecialwipe = 0;
+	INT32 i, loadprecip = 1;
 	INT32 loademblems = 1;
 	INT32 fromnetsave = 0;
 	boolean loadedbm = false;
@@ -2858,36 +2871,50 @@ boolean P_SetupLevel(boolean skipprecip)
 
 		S_StartSound(NULL, sfx_ruby1);
 
+		// Fade to an inverted screen, with a circle fade...
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 209);
 
+		V_EncoreInvertScreen();
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
 
+		F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
+
+		// Hold on invert for extra effect.
+		// (This define might be useful for other areas of code? Not sure)
+#define WAIT(timetowait) \
+	locstarttime = nowtime = lastwipetic; \
+	endtime = locstarttime + timetowait; \
+	while (nowtime < endtime) \
+	{ \
+		while (!((nowtime = I_GetTime()) - lastwipetic)) \
+			I_Sleep(); \
+		lastwipetic = nowtime; \
+		if (moviemode) \
+			M_SaveFrame(); \
+		NetKeepAlive(); \
+	} \
+
+		WAIT((3*TICRATE)/2);
+		S_StartSound(NULL, sfx_ruby2);
+
+		// Then fade to a white screen
 		F_WipeStartScreen();
+
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
-
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_level_final], false);
 
-		locstarttime = nowtime = lastwipetic;
-		endtime = locstarttime + (3*TICRATE)/2;
+		F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
 
-		// Hold on white for extra effect.
-		while (nowtime < endtime)
-		{
-			// wait loop
-			while (!((nowtime = I_GetTime()) - lastwipetic))
-				I_Sleep();
-			lastwipetic = nowtime;
-			if (moviemode) // make sure we save frames for the white hold too
-				M_SaveFrame();
+		// THEN fade to a black screen.
+		F_WipeStartScreen();
 
-			// Keep the network alive
-			NetKeepAlive();
-		}
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+		F_WipeEndScreen();
 
-		ranspecialwipe = 1;
+		F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+		// Wait a bit longer.
+		WAIT((3*TICRATE)/4);
 	}
 
 	// Make sure all sounds are stopped before Z_FreeTags.
@@ -2898,17 +2925,18 @@ boolean P_SetupLevel(boolean skipprecip)
 	// We should be fine starting it here.
 	S_Start();
 
-	levelfadecol = (encoremode && !ranspecialwipe ? 209 : 0);
+	levelfadecol = (encoremode ? 0 : 31);
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
-	if (rendermode != render_none && !ranspecialwipe && !demo.rewinding)
+	if (rendermode != render_none && !demo.rewinding)
 	{
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[(encoremode ? wipe_level_final : wipe_level_toblack)], false);
+
+		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
 
 	// Reset the palette now all fades have been done
@@ -2974,7 +3002,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	CON_SetupBackColormap();
 
 	// SRB2 determines the sky texture to be used depending on the map header.
-	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skynum, true);
+	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skytexture, true);
 
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
 
@@ -3283,7 +3311,10 @@ boolean P_SetupLevel(boolean skipprecip)
 	indirectitemcooldown = 0;
 	hyubgone = 0;
 	mapreset = 0;
-	nospectategrief = 0;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		nospectategrief[i] = -1;
+
 	thwompsactive = false;
 	spbplace = -1;
 

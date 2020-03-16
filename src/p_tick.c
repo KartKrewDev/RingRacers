@@ -59,8 +59,6 @@ void Command_Numthinkers_f(void)
 		CONS_Printf(M_GetText("numthinkers <#>: Count number of thinkers\n"));
 		CONS_Printf(
 			"\t1: P_MobjThinker\n"
-			/*"\t2: P_RainThinker\n"
-			"\t3: P_SnowThinker\n"*/
 			"\t2: P_NullPrecipThinker\n"
 			"\t3: T_Friction\n"
 			"\t4: T_Pusher\n"
@@ -76,14 +74,6 @@ void Command_Numthinkers_f(void)
 			action = (actionf_p1)P_MobjThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_MobjThinker");
 			break;
-		/*case 2:
-			action = (actionf_p1)P_RainThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_RainThinker");
-			break;
-		case 3:
-			action = (actionf_p1)P_SnowThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_SnowThinker");
-			break;*/
 		case 2:
 			action = (actionf_p1)P_NullPrecipThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_NullPrecipThinker");
@@ -618,33 +608,10 @@ void P_Ticker(boolean run)
 		}
 		if (demo.playback)
 		{
-
-#ifdef DEMO_COMPAT_100
-			if (demo.version == 0x0001)
-			{
-				G_ReadDemoTiccmd(&players[consoleplayer].cmd, 0);
-			}
-			else
-			{
-#endif
-				G_ReadDemoExtraData();
-				for (i = 0; i < MAXPLAYERS; i++)
-					if (playeringame[i])
-					{
-						//@TODO all this throwdir stuff shouldn't be here! But it's added to maintain 1.0.4 compat for now...
-						// Remove for 1.1!
-						if (players[i].cmd.buttons & BT_FORWARD)
-							players[i].kartstuff[k_throwdir] = 1;
-						else if (players[i].cmd.buttons & BT_BACKWARD)
-							players[i].kartstuff[k_throwdir] = -1;
-						else
-							players[i].kartstuff[k_throwdir] = 0;
-
-						G_ReadDemoTiccmd(&players[i].cmd, i);
-					}
-#ifdef DEMO_COMPAT_100
-			}
-#endif
+			G_ReadDemoExtraData();
+			for (i = 0; i < MAXPLAYERS; i++)
+				if (playeringame[i])
+					G_ReadDemoTiccmd(&players[i].cmd, i);
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -665,6 +632,8 @@ void P_Ticker(boolean run)
 	if (run)
 	{
 		P_RunThinkers();
+		if (G_BattleGametype() && battleovertime.enabled)
+			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -679,8 +648,6 @@ void P_Ticker(boolean run)
 	// Run shield positioning
 	//P_RunShields();
 	P_RunOverlays();
-
-	P_RunShadows();
 
 	P_UpdateSpecials();
 	P_RespawnSpecials();
@@ -760,11 +727,6 @@ void P_Ticker(boolean run)
 		}
 		else if (demo.playback) // Use Ghost data for consistency checks.
 		{
-#ifdef DEMO_COMPAT_100
-			if (demo.version == 0x0001)
-				G_ConsGhostTic(0);
-			else
-#endif
 			G_ConsAllGhostTics();
 		}
 
@@ -827,6 +789,8 @@ void P_PreTicker(INT32 frames)
 			}
 
 		P_RunThinkers();
+		if (G_BattleGametype() && battleovertime.enabled)
+			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)

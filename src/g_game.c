@@ -48,6 +48,7 @@
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "k_kart.h" // SRB2kart
+#include "k_pwrlv.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -82,8 +83,21 @@ UINT32 mapmusposition; // Position to jump to
 
 INT16 gamemap = 1;
 INT16 maptol;
+
 UINT8 globalweather = 0;
-INT32 curWeather = PRECIP_NONE;
+UINT8 curWeather = PRECIP_NONE;
+
+precipprops_t precipprops[MAXPRECIP] =
+{
+	{MT_NULL, 0}, // PRECIP_NONE
+	{MT_RAIN, 0}, // PRECIP_RAIN
+	{MT_SNOWFLAKE, 0}, // PRECIP_SNOW
+	{MT_BLIZZARDSNOW, 0}, // PRECIP_BLIZZARD
+	{MT_RAIN, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
+	{MT_NULL, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
+	{MT_RAIN, PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
+};
+
 INT32 cursaveslot = -1; // Auto-save 1p savegame slot
 INT16 lastmapsaved = 0; // Last map we auto-saved at
 boolean gamecomplete = false;
@@ -216,6 +230,7 @@ INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;
 INT32 comebacktime = 10*TICRATE;
 INT32 bumptime = 6;
+INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
 INT32 wantedreduce = 5*TICRATE;
 INT32 wantedfrequency = 10*TICRATE;
@@ -260,13 +275,15 @@ INT16 votelevels[5][2]; // Levels that were rolled by the host
 SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
 
+// Battle overtime system
+struct battleovertime battleovertime;
+
 // Server-sided, synched variables
 SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
 tic_t indirectitemcooldown; // Cooldown before any more Shrink, SPB, or any other item that works indirectly is awarded
 tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
-UINT8 nospectategrief; // How many players need to be in-game to eliminate last; for preventing spectate griefing
 boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
 
@@ -1777,6 +1794,8 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
+
+	server_lagless = cv_lagless.value;
 }
 
 static INT32 pausedelay = 0;
@@ -2336,7 +2355,7 @@ void G_Ticker(boolean run)
 
 			G_DoReborn(consoleplayer);*/
 
-			D_MapChange(gamemap, gametype, cv_kartencore.value, true, 1, false, false);
+			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), true, 1, false, false);
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -2368,21 +2387,7 @@ void G_Ticker(boolean run)
 
 		if (playeringame[i])
 		{
-			//@TODO all this throwdir stuff shouldn't be here! But it stays for now to maintain 1.0.4 compat...
-			// Remove for 1.1!
-
-			// SRB2kart
-			// Save the dir the player is holding
-			//  to allow items to be thrown forward or backward.
-			if (cmd->buttons & BT_FORWARD)
-				players[i].kartstuff[k_throwdir] = 1;
-			else if (cmd->buttons & BT_BACKWARD)
-				players[i].kartstuff[k_throwdir] = -1;
-			else
-				players[i].kartstuff[k_throwdir] = 0;
-
 			G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
-
 			// Use the leveltime sent in the player's ticcmd to determine control lag
 			cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
 		}
@@ -3041,8 +3046,17 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 						continue;
 					if (j == i)
 						continue;
-					if (players[j].score == players[i].score)
-						num++;
+
+					if (netgame && cv_kartusepwrlv.value)
+					{
+						if (clientpowerlevels[j][PWRLV_RACE] == clientpowerlevels[i][PWRLV_RACE])
+							num++;
+					}
+					else
+					{
+						if (players[j].score == players[i].score)
+							num++;
+					}
 				}
 
 				if (num > 1) // found dupes
@@ -3050,8 +3064,21 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 			}
 			else
 			{
-				if (players[i].score > players[playernum].score || i < playernum)
+				if (i < playernum)
 					pos++;
+				else
+				{
+					if (netgame && cv_kartusepwrlv.value)
+					{
+						if (clientpowerlevels[i][PWRLV_RACE] > clientpowerlevels[playernum][PWRLV_RACE])
+							pos++;
+					}
+					else
+					{
+						if (players[i].score > players[playernum].score)
+							pos++;
+					}
+				}
 			}
 		}
 
@@ -3381,9 +3408,10 @@ boolean G_BattleGametype(void)
 //
 INT16 G_SometimesGetDifferentGametype(void)
 {
-	boolean encorepossible = (M_SecretUnlocked(SECRET_ENCORE) && G_RaceGametype());
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1) && G_RaceGametype());
 
-	if (!cv_kartvoterulechanges.value) // never
+	if (!cv_kartvoterulechanges.value // never
+		&& encorescramble != 1) // destroying the code for this one instance
 		return gametype;
 
 	if (randmapbuffer[NUMMAPS] > 0 && (encorepossible || cv_kartvoterulechanges.value != 3))
@@ -3391,24 +3419,32 @@ INT16 G_SometimesGetDifferentGametype(void)
 		randmapbuffer[NUMMAPS]--;
 		if (encorepossible)
 		{
-			switch (cv_kartvoterulechanges.value)
+			if (encorescramble != -1)
+				encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
+			else
 			{
-				case 3: // always
-					randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
-					break;
-				case 2: // frequent
-					encorepossible = M_RandomChance(FRACUNIT>>1);
-					break;
-				case 1: // sometimes
-				default:
-					encorepossible = M_RandomChance(FRACUNIT>>2);
-					break;
+				switch (cv_kartvoterulechanges.value)
+				{
+					case 3: // always
+						randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
+						break;
+					case 2: // frequent
+						encorepossible = M_RandomChance(FRACUNIT>>1);
+						break;
+					case 1: // sometimes
+					default:
+						encorepossible = M_RandomChance(FRACUNIT>>2);
+						break;
+				}
 			}
-			if (encorepossible != (boolean)cv_kartencore.value)
+			if (encorepossible != (cv_kartencore.value == 1))
 				return (gametype|0x80);
 		}
 		return gametype;
 	}
+
+	if (!cv_kartvoterulechanges.value) // never (again)
+		return gametype;
 
 	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
 	{
@@ -3638,7 +3674,7 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = (TOLMaps(G_TOLFlag(gametype)) / 2) + 1;
+	INT16 bufx, refreshnum = max(0, TOLMaps(G_TOLFlag(gametype))-3);
 
 	// Add the map to the buffer.
 	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
@@ -3662,6 +3698,7 @@ static void G_DoCompleted(void)
 {
 	INT32 i, j = 0;
 	boolean gottoken = false;
+	SINT8 powertype = PWRLV_DISABLED;
 
 	tokenlist = 0; // Reset the list
 
@@ -3800,12 +3837,22 @@ static void G_DoCompleted(void)
 			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
 	}
 
-
 	// We are committed to this map now.
 	// We may as well allocate its header if it doesn't exist
 	// (That is, if it's a real map)
 	if (nextmap < NUMMAPS && !mapheaderinfo[nextmap])
 		P_AllocMapHeader(nextmap);
+
+	// Set up power level gametype scrambles
+	if (netgame && cv_kartusepwrlv.value)
+	{
+		if (G_RaceGametype())
+			powertype = PWRLV_RACE;
+		else if (G_BattleGametype())
+			powertype = PWRLV_BATTLE;
+	}
+
+	K_SetPowerLevelScrambles(powertype);
 
 demointermission:
 
@@ -3878,7 +3925,7 @@ void G_NextLevel(void)
 		}
 
 		forceresetplayers = false;
-		deferencoremode = (boolean)cv_kartencore.value;
+		deferencoremode = (cv_kartencore.value == 1);
 	}
 
 	gameaction = ga_worlddone;
@@ -4041,14 +4088,23 @@ void G_LoadGameData(void)
 	// to new gamedata
 	G_ClearRecords(); // main and nights records
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
+
 	totalplaytime = 0; // total play time (separate from all)
 	matchesplayed = 0; // SRB2Kart: matches played & finished
+
+	for (i = 0; i < PWRLV_NUMTYPES; i++) // SRB2Kart: online rank system
+		vspowerlevel[i] = PWRLVRECORD_START;
 
 	if (M_CheckParm("-nodata"))
 		return; // Don't load.
 
 	// Allow saving of gamedata beyond this point
 	gamedataloaded = true;
+
+	if (M_CheckParm("-gamedata") && M_IsNextParm())
+	{
+		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
+	}
 
 	if (M_CheckParm("-resetdata"))
 		return; // Don't load (essentially, reset).
@@ -4073,6 +4129,13 @@ void G_LoadGameData(void)
 
 	totalplaytime = READUINT32(save_p);
 	matchesplayed = READUINT32(save_p);
+
+	for (i = 0; i < PWRLV_NUMTYPES; i++)
+	{
+		vspowerlevel[i] = READUINT16(save_p);
+		if (vspowerlevel[i] < PWRLVRECORD_MIN || vspowerlevel[i] > PWRLVRECORD_MAX)
+			goto datacorrupt;
+	}
 
 	modded = READUINT8(save_p);
 
@@ -4218,6 +4281,9 @@ void G_SaveGameData(boolean force)
 
 	WRITEUINT32(save_p, totalplaytime);
 	WRITEUINT32(save_p, matchesplayed);
+
+	for (i = 0; i < PWRLV_NUMTYPES; i++)
+		WRITEUINT16(save_p, vspowerlevel[i]);
 
 	btemp = (UINT8)(savemoddata); // what used to be here was profoundly dunderheaded
 	WRITEUINT8(save_p, btemp);
@@ -4731,7 +4797,7 @@ char *G_BuildMapTitle(INT32 mapnum)
 // DEMO RECORDING
 //
 
-#define DEMOVERSION 0x0002
+#define DEMOVERSION 0x0003
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_GHOST        0x01 // This demo contains ghost data too!
@@ -4741,12 +4807,6 @@ char *G_BuildMapTitle(INT32 mapnum)
 #define DF_ATTACKSHIFT  1
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
-
-#ifdef DEMO_COMPAT_100
-#define DF_FILELIST     0x08 // This demo contains an extra files list
-#define DF_GAMETYPEMASK 0x30
-#define DF_GAMESHIFT    4
-#endif
 
 #define DEMO_SPECTATOR 0x40
 
@@ -4888,7 +4948,6 @@ void G_ReadDemoExtraData(void)
 
 			kartspeed = READUINT8(demo_p);
 			kartweight = READUINT8(demo_p);
-
 
 			if (stricmp(skins[players[p].skin].name, name) != 0)
 				FindClosestSkinForStats(p, kartspeed, kartweight);
@@ -5607,16 +5666,9 @@ void G_ConsGhostTic(INT32 playernum)
 		else
 			ghostext[playernum].desyncframes = 0;
 
-		if (
-#ifdef DEMO_COMPAT_100
-			demo.version != 0x0001 &&
-#endif
-			(
-				players[playernum].kartstuff[k_itemtype] != ghostext[playernum].kartitem ||
-				players[playernum].kartstuff[k_itemamount] != ghostext[playernum].kartamount ||
-				players[playernum].kartstuff[k_bumper] != ghostext[playernum].kartbumpers
-			)
-		)
+		if (players[playernum].kartstuff[k_itemtype] != ghostext[playernum].kartitem
+			|| players[playernum].kartstuff[k_itemamount] != ghostext[playernum].kartamount
+			|| players[playernum].kartstuff[k_bumper] != ghostext[playernum].kartbumpers)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
@@ -5644,10 +5696,6 @@ void G_GhostTicker(void)
 		// Skip normal demo data.
 		UINT8 ziptic = READUINT8(g->p);
 
-#ifdef DEMO_COMPAT_100
-		if (g->version != 0x0001)
-		{
-#endif
 		while (ziptic != DW_END) // Get rid of extradata stuff
 		{
 			if (ziptic == 0) // Only support player 0 info for now
@@ -5671,9 +5719,6 @@ void G_GhostTicker(void)
 		}
 
 		ziptic = READUINT8(g->p); // Back to actual ziptic stuff
-#ifdef DEMO_COMPAT_100
-		}
-#endif
 
 		if (ziptic & ZT_FWD)
 			g->p++;
@@ -5693,18 +5738,12 @@ void G_GhostTicker(void)
 		// Grab ghost data.
 		ziptic = READUINT8(g->p);
 
-#ifdef DEMO_COMPAT_100
-		if (g->version != 0x0001)
-		{
-#endif
 		if (ziptic == 0xFF)
 			goto skippedghosttic; // Didn't write ghost info this frame
 		else if (ziptic != 0)
 			I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
 		ziptic = READUINT8(g->p);
-#ifdef DEMO_COMPAT_100
-		}
-#endif
+
 		if (ziptic & GZT_XYZ)
 		{
 			g->oldmo.x = READFIXED(g->p);
@@ -5845,15 +5884,8 @@ void G_GhostTicker(void)
 				g->p += 12; // kartitem, kartamount, kartbumpers
 		}
 
-#ifdef DEMO_COMPAT_100
-		if (g->version != 0x0001)
-		{
-#endif
 		if (READUINT8(g->p) != 0xFF) // Make sure there isn't other ghost data here.
 			I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
-#ifdef DEMO_COMPAT_100
-		}
-#endif
 
 skippedghosttic:
 		// Tick ghost colors (Super and Mario Invincibility flashing)
@@ -6363,20 +6395,15 @@ void G_BeginRecording(void)
 
 	switch ((demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		demotime_p = demo_p;
-		WRITEUINT32(demo_p,UINT32_MAX); // time
-		WRITEUINT32(demo_p,UINT32_MAX); // lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		demotime_p = demo_p;
-		WRITEUINT32(demo_p,UINT32_MAX); // time
-		WRITEUINT32(demo_p,0); // score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			demotime_p = demo_p;
+			WRITEUINT32(demo_p,UINT32_MAX); // time
+			WRITEUINT32(demo_p,UINT32_MAX); // lap
+			break;
+		default: // 3
+			break;
 	}
 
 	WRITEUINT32(demo_p,P_GetInitSeed());
@@ -6415,6 +6442,9 @@ void G_BeginRecording(void)
 
 			// Score, since Kart uses this to determine where you start on the map
 			WRITEUINT32(demo_p, player->score);
+
+			// Power Levels
+			WRITEUINT16(demo_p, clientpowerlevels[p][G_BattleGametype() ? PWRLV_BATTLE : PWRLV_RACE]);
 
 			// Kart speed and weight
 			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
@@ -6514,18 +6544,13 @@ void G_SetDemoTime(UINT32 ptime, UINT32 plap)
 {
 	if (!demo.recording || !demotime_p)
 		return;
+
 	if (demoflags & DF_RECORDATTACK)
 	{
 		WRITEUINT32(demotime_p, ptime);
 		WRITEUINT32(demotime_p, plap);
 		demotime_p = NULL;
 	}
-	/*else if (demoflags & DF_NIGHTSATTACK)
-	{
-		WRITEUINT32(demotime_p, ptime);
-		WRITEUINT32(demotime_p, pscore);
-		demotime_p = NULL;
-	}*/
 }
 
 static void G_LoadDemoExtraFiles(UINT8 **pp)
@@ -6768,13 +6793,6 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	case DEMOVERSION: // latest always supported
 		p += 64; // full demo title
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		// Old replays gotta go :]
-		CONS_Alert(CONS_NOTICE, M_GetText("File '%s' outdated version. It will be overwritten. Nyeheheh.\n"), oldname);
-		Z_Free(buffer);
-		return UINT8_MAX;
-#endif
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_NOTICE, M_GetText("File '%s' invalid format. It will be overwritten.\n"), oldname);
@@ -6866,12 +6884,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		info_p += 64;
 
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		pdemo->type = MD_OUTDATED;
-		sprintf(pdemo->title, "Legacy Replay");
-		break;
-#endif
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_ERROR, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemo->filepath);
@@ -6906,16 +6918,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		Z_Free(infobuffer);
 		return;
 	}
-#ifdef DEMO_COMPAT_100
-	else if (pdemoversion == 0x0001)
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("%s is a legacy multiplayer replay and cannot be played.\n"), pdemo->filepath);
-		pdemo->type = MD_INVALID;
-		sprintf(pdemo->title, "INVALID REPLAY");
-		Z_Free(infobuffer);
-		return;
-	}
-#endif
 
 	pdemo->gametype = READUINT8(info_p);
 
@@ -6925,7 +6927,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	extrainfo_p = infobuffer + READUINT32(info_p);
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
-	pdemo->kartspeed = 1; // Default to normal speed
+	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
 	count = READUINT16(info_p);
 	while (count--)
 	{
@@ -7116,10 +7118,6 @@ void G_DoPlayDemo(char *defdemoname)
 		demo_p += 64;
 
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		break;
-#endif
 	// too old, cannot support.
 	default:
 		snprintf(msg, 1024, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemoname);
@@ -7148,24 +7146,6 @@ void G_DoPlayDemo(char *defdemoname)
 	demo_p += 16; // mapmd5
 
 	demoflags = READUINT8(demo_p);
-#ifdef DEMO_COMPAT_100
-	if (demo.version == 0x0001)
-	{
-		if (demoflags & DF_MULTIPLAYER)
-		{
-			snprintf(msg, 1024, M_GetText("%s is an alpha multiplayer replay and cannot be played.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-	}
-	else
-	{
-#endif
 	gametype = READUINT8(demo_p);
 
 	if (demo.title) // Titledemos should always play and ought to always be compatible with whatever wadlist is running.
@@ -7223,9 +7203,6 @@ void G_DoPlayDemo(char *defdemoname)
 			return;
 		}
 	}
-#ifdef DEMO_COMPAT_100
-	}
-#endif
 
 	modeattacking = (demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT;
 	multiplayer = !!(demoflags & DF_MULTIPLAYER);
@@ -7253,109 +7230,20 @@ void G_DoPlayDemo(char *defdemoname)
 
 	// Random seed
 	randseed = READUINT32(demo_p);
-#ifdef DEMO_COMPAT_100
-	if (demo.version != 0x0001)
-#endif
 	demo_p += 4; // Extrainfo location
 
-#ifdef DEMO_COMPAT_100
-	if (demo.version == 0x0001)
+	// ...*map* not loaded?
+	if (!gamemap || (gamemap > NUMMAPS) || !mapheaderinfo[gamemap-1] || !(mapheaderinfo[gamemap-1]->menuflags & LF2_EXISTSHACK))
 	{
-		// Player name
-		M_Memcpy(player_names[0],demo_p,16);
-		demo_p += 16;
-
-		// Skin
-		M_Memcpy(skin,demo_p,16);
-		demo_p += 16;
-
-		// Color
-		M_Memcpy(color,demo_p,16);
-		demo_p += 16;
-
-		demo_p += 5; // Backwards compat - some stats
-		// SRB2kart
-		kartspeed[0] = READUINT8(demo_p);
-		kartweight[0] = READUINT8(demo_p);
-		//
-		demo_p += 9; // Backwards compat - more stats
-
-		// Skin not loaded?
-		if (!SetPlayerSkin(0, skin))
-		{
-			snprintf(msg, 1024, M_GetText("%s features a character that is not currently loaded.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-
-		// ...*map* not loaded?
-		if (!gamemap || (gamemap > NUMMAPS) || !mapheaderinfo[gamemap-1] || !(mapheaderinfo[gamemap-1]->menuflags & LF2_EXISTSHACK))
-		{
-			snprintf(msg, 1024, M_GetText("%s features a course that is not currently loaded.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-
-		// Set color
-		for (i = 0; i < MAXSKINCOLORS; i++)
-			if (!stricmp(KartColor_Names[i],color))				// SRB2kart
-			{
-				players[0].skincolor = i;
-				break;
-			}
-
-		// net var data
-		CV_LoadNetVars(&demo_p);
-
-		// Sigh ... it's an empty demo.
-		if (*demo_p == DEMOMARKER)
-		{
-			snprintf(msg, 1024, M_GetText("%s contains no data to be played.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-
+		snprintf(msg, 1024, M_GetText("%s features a course that is not currently loaded.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
-
-		memset(&oldcmd,0,sizeof(oldcmd));
-		memset(&oldghost,0,sizeof(oldghost));
-		memset(&ghostext,0,sizeof(ghostext));
-
-		CONS_Alert(CONS_WARNING, M_GetText("Demo version does not match game version. Desyncs may occur.\n"));
-
-		// console warning messages
-#if defined(SKIPERRORS) && !defined(DEVELOP)
-		demosynced = (!skiperrors);
-#else
-		demosynced = true;
-#endif
-
-		// didn't start recording right away.
-		demo.deferstart = false;
-
-		consoleplayer = 0;
-		memset(displayplayers, 0, sizeof(displayplayers));
-		memset(playeringame, 0, sizeof(playeringame));
-		playeringame[0] = true;
-
-		goto post_compat;
+		Z_Free(demobuffer);
+		demo.playback = false;
+		demo.title = false;
+		return;
 	}
-#endif
 
 	// net var data
 	CV_LoadNetVars(&demo_p);
@@ -7470,6 +7358,9 @@ void G_DoPlayDemo(char *defdemoname)
 		// Score, since Kart uses this to determine where you start on the map
 		players[p].score = READUINT32(demo_p);
 
+		// Power Levels
+		clientpowerlevels[p][G_BattleGametype() ? PWRLV_BATTLE : PWRLV_RACE] = READUINT16(demo_p);
+
 		// Kart stats, temporarily
 		kartspeed[p] = READUINT8(demo_p);
 		kartweight[p] = READUINT8(demo_p);
@@ -7493,10 +7384,6 @@ void G_DoPlayDemo(char *defdemoname)
 	}
 
 	R_ExecuteSetViewSize();
-
-#ifdef DEMO_COMPAT_100
-post_compat:
-#endif
 
 	P_SetRandSeed(randseed);
 	G_InitNew(demoflags & DF_ENCORE, G_BuildMapName(gamemap), true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
@@ -7588,10 +7475,6 @@ void G_AddGhost(char *defdemoname)
 	case DEMOVERSION: // latest always supported
 		p += 64; // title
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		break;
-#endif
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo version incompatible.\n"), pdemoname);
@@ -7632,15 +7515,9 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-#endif
-		p++; // gametype
+	p++; // gametype
+	G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-#endif
-		G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
 	case ATTACKING_NONE: // 0
@@ -7656,41 +7533,6 @@ void G_AddGhost(char *defdemoname)
 	}
 
 	p += 4; // random seed
-
-#ifdef DEMO_COMPAT_100
-	if (ghostversion == 0x0001)
-	{
-		// Player name (TODO: Display this somehow if it doesn't match cv_playername!)
-		M_Memcpy(name, p,16);
-		p += 16;
-
-		// Skin
-		M_Memcpy(skin, p,16);
-		p += 16;
-
-		// Color
-		M_Memcpy(color, p,16);
-		p += 16;
-
-		// Ghosts do not have a player structure to put this in.
-		p++; // charability
-		p++; // charability2
-		p++; // actionspd
-		p++; // mindash
-		p++; // maxdash
-		// SRB2kart
-		p++; // kartspeed
-		p++; // kartweight
-		//
-		p++; // normalspeed
-		p++; // runspeed
-		p++; // thrustfactor
-		p++; // accelstart
-		p++; // acceleration
-		p += 4; // jumpfactor
-	}
-	else
-#endif
 	p += 4; // Extra data location reference
 
 	// net var data
@@ -7710,10 +7552,6 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-	{
-#endif
 	if (READUINT8(p) != 0)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
@@ -7735,6 +7573,7 @@ void G_AddGhost(char *defdemoname)
 	p += 16;
 
 	p += 4; // score
+	p += 2; // powerlevel
 
 	kartspeed = READUINT8(p);
 	kartweight = READUINT8(p);
@@ -7746,9 +7585,6 @@ void G_AddGhost(char *defdemoname)
 		Z_Free(buffer);
 		return;
 	}
-#ifdef DEMO_COMPAT_100
-	}
-#endif
 
 	for (i = 0; i < numskins; i++)
 		if (!stricmp(skins[i].name,skin))
@@ -7848,18 +7684,13 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	ghostversion = READUINT16(p);
 	switch(ghostversion)
 	{
-	case DEMOVERSION: // latest always supported
-		p += 64; // full demo title
-		break;
+		case DEMOVERSION: // latest always supported
+			p += 64; // full demo title
+			break;
 
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		break;
-#endif
-
-	// too old, cannot support.
-	default:
-		goto fail;
+		// too old, cannot support.
+		default:
+			goto fail;
 	}
 
 	p += 16; // demo checksum
@@ -7879,43 +7710,22 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 		goto fail; // we don't NEED to do it here, but whatever
 	}
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-#endif
 	p++; // Gametype
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-#endif
 	G_SkipDemoExtraFiles(&p);
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		p += 8; // demo time, lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		p += 8; // demo time left, score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			p += 8; // demo time, lap
+			break;
+		default: // 3
+			break;
 	}
 
 	p += 4; // random seed
-
-
-#ifdef DEMO_COMPAT_100
-	if (ghostversion == 0x0001)
-	{
-		// Player name
-		M_Memcpy(dummystaffname, p,16);
-		dummystaffname[16] = '\0';
-		goto fail; // Not really a failure but whatever
-	}
-#endif
-
 	p += 4; // Extrainfo location marker
 
 	// Ehhhh don't need ghostversion here (?) so I'll reuse the var here
@@ -8000,10 +7810,6 @@ void G_DoPlayMetal(void)
 	{
 	case DEMOVERSION: // latest always supported
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		I_Error("You need to implement demo compat here, doofus! %s:%d", __FILE__, __LINE__);
-#endif
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_WARNING, M_GetText("Failed to load bot recording for this map, format version incompatible.\n"));
