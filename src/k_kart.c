@@ -3175,7 +3175,7 @@ UINT8 K_DriftSparkColor(player_t *player, INT32 charge)
 		if (charge <= (ds)+(32*3))
 		{
 			// transition
-			color = SKINCOLOR_RASPBERRY;
+			color = SKINCOLOR_TANGERINE;
 		}
 		else
 		{
@@ -3188,6 +3188,7 @@ UINT8 K_DriftSparkColor(player_t *player, INT32 charge)
 
 static void K_SpawnDriftSparks(player_t *player)
 {
+	INT32 ds = K_GetKartDriftSparkValue(player);
 	fixed_t newx;
 	fixed_t newy;
 	mobj_t *spark;
@@ -3205,14 +3206,13 @@ static void K_SpawnDriftSparks(player_t *player)
 		return;
 
 	if (!player->kartstuff[k_drift]
-		|| (player->kartstuff[k_driftcharge] < K_GetKartDriftSparkValue(player) && !(player->kartstuff[k_driftcharge] < 0)))
+		|| (player->kartstuff[k_driftcharge] < ds && !(player->kartstuff[k_driftcharge] < 0)))
 		return;
 
 	travelangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
 
 	for (i = 0; i < 2; i++)
 	{
-		INT32 ds = K_GetKartDriftSparkValue(player);
 		SINT8 size = 1;
 		UINT8 trail = 0;
 
@@ -5937,6 +5937,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		// Incease/decrease the drift value to continue drifting in that direction
 		fixed_t driftadditive = 24;
+		boolean playsound = false;
 
 		if (player->kartstuff[k_drift] >= 1) // Drifting to the left
 		{
@@ -5975,7 +5976,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->kartstuff[k_getsparks] = 1;
 
 			if (player->kartstuff[k_driftcharge] <= -1)
+			{
 				player->kartstuff[k_driftcharge] = dsone; // Back to red
+				playsound = true;
+			}
 		}
 		else if (player->speed <= minspeed)
 		{
@@ -5983,22 +5987,33 @@ static void K_KartDrift(player_t *player, boolean onground)
 			driftadditive = 0;
 
 			if (player->kartstuff[k_driftcharge] >= dsone)
+			{
 				player->kartstuff[k_driftcharge] = -1; // Set yellow sparks
+				playsound = true;
+			}
 		}
 
 		// This spawns the drift sparks
 		if ((player->kartstuff[k_driftcharge] + driftadditive >= dsone)
 			|| (player->kartstuff[k_driftcharge] < 0))
+		{
 			K_SpawnDriftSparks(player);
+		}
+
+		if ((player->kartstuff[k_driftcharge] < dsone && player->kartstuff[k_driftcharge]+driftadditive >= dsone)
+			|| (player->kartstuff[k_driftcharge] < dstwo && player->kartstuff[k_driftcharge]+driftadditive >= dstwo)
+			|| (player->kartstuff[k_driftcharge] < dsthree && player->kartstuff[k_driftcharge]+driftadditive >= dsthree))
+		{
+			playsound = true;
+		}
 
 		// Sound whenever you get a different tier of sparks
-		if (P_IsDisplayPlayer(player) // UGHGHGH...
-			&& ((player->kartstuff[k_driftcharge] < dsone && player->kartstuff[k_driftcharge]+driftadditive >= dsone)
-			|| (player->kartstuff[k_driftcharge] < dstwo && player->kartstuff[k_driftcharge]+driftadditive >= dstwo)
-			|| (player->kartstuff[k_driftcharge] < dsthree && player->kartstuff[k_driftcharge]+driftadditive >= dsthree)))
+		if (playsound && P_IsDisplayPlayer(player))
 		{
-			//S_StartSound(player->mo, sfx_s3ka2);
-			S_StartSoundAtVolume(player->mo, sfx_s3ka2, 192); // Ugh...
+			if (player->kartstuff[k_driftcharge] == -1)
+				S_StartSoundAtVolume(player->mo, sfx_sploss, 192); // Yellow spark sound
+			else
+				S_StartSoundAtVolume(player->mo, sfx_s3ka2, 192);
 		}
 
 		player->kartstuff[k_driftcharge] += driftadditive;
