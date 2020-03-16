@@ -84,8 +84,8 @@
 
 // SRB2Kart
 #include "k_kart.h"
-#include "k_waypoint.h"
 #include "k_pwrlv.h"
+#include "k_waypoint.h"
 
 //
 // Map MD5, calculated on level load.

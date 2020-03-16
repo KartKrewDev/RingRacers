@@ -223,6 +223,8 @@ static boolean P_SpecialIsLinedefCrossType(UINT16 ldspecial)
 	return linedefcrossspecial;
 }
 
+//#define TELEPORTJANK
+
 boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
 	//INT32 pflags;
