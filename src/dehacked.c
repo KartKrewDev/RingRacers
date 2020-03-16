@@ -6359,6 +6359,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTDUST3",
 	"S_DRIFTDUST4",
 
+	// Drift Sparkles
+	"S_DRIFTWARNSPARK1",
+	"S_DRIFTWARNSPARK2",
+	"S_DRIFTWARNSPARK3",
+	"S_DRIFTWARNSPARK4",
+
 	// Fast lines
 	"S_FASTLINE1",
 	"S_FASTLINE2",
@@ -6375,7 +6381,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FASTDUST6",
 	"S_FASTDUST7",
 
-	// Thunder Shield Burst
+	// Drift boost effect
+	"S_DRIFTEXPLODE1",
+	"S_DRIFTEXPLODE2",
+	"S_DRIFTEXPLODE3",
+	"S_DRIFTEXPLODE4",
 
 	// Sneaker boost effect
 	"S_BOOSTFLAME",
@@ -7736,6 +7746,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_FASTLINE",
 	"MT_FASTDUST",
+	"MT_DRIFTEXPLODE",
 	"MT_BOOSTFLAME",
 	"MT_BOOSTSMOKE",
 	"MT_SNEAKERTRAIL",

@@ -3133,8 +3133,62 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	return NULL;
 }
 
+UINT8 K_DriftSparkColor(player_t *player, INT32 charge)
+{
+	INT32 ds = K_GetKartDriftSparkValue(player);
+	UINT8 color = SKINCOLOR_NONE;
+
+	if (charge < 0)
+	{
+		// Stage 0: Yellow
+		color = SKINCOLOR_GOLD;
+	}
+	else if (charge >= ds*4)
+	{
+		// Stage 3: Rainbow
+		if (charge <= (ds*4)+(32*3))
+		{
+			// transition
+			color = SKINCOLOR_SILVER;
+		}
+		else
+		{
+			color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+		}
+	}
+	else if (charge >= ds*2)
+	{
+		// Stage 2: Blue
+		if (charge <= (ds*2)+(32*3))
+		{
+			// transition
+			color = SKINCOLOR_PURPLE;
+		}
+		else
+		{
+			color = SKINCOLOR_SAPPHIRE;
+		}
+	}
+	else if (charge >= ds)
+	{
+		// Stage 1: Red
+		if (charge <= (ds)+(32*3))
+		{
+			// transition
+			color = SKINCOLOR_TANGERINE;
+		}
+		else
+		{
+			color = SKINCOLOR_KETCHUP;
+		}
+	}
+
+	return color;
+}
+
 static void K_SpawnDriftSparks(player_t *player)
 {
+	INT32 ds = K_GetKartDriftSparkValue(player);
 	fixed_t newx;
 	fixed_t newy;
 	mobj_t *spark;
@@ -3148,11 +3202,8 @@ static void K_SpawnDriftSparks(player_t *player)
 	if (leveltime % 2 == 1)
 		return;
 
-	if (!P_IsObjectOnGround(player->mo))
-		return;
-
 	if (!player->kartstuff[k_drift]
-		|| (player->kartstuff[k_driftcharge] < K_GetKartDriftSparkValue(player) && !(player->kartstuff[k_driftcharge] < 0)))
+		|| (player->kartstuff[k_driftcharge] < ds && !(player->kartstuff[k_driftcharge] < 0)))
 		return;
 
 	travelangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
@@ -3175,45 +3226,39 @@ static void K_SpawnDriftSparks(player_t *player)
 		spark->momy = player->mo->momy/2;
 		//spark->momz = player->mo->momz/2;
 
+		spark->color = K_DriftSparkColor(player, player->kartstuff[k_driftcharge]);
+
 		if (player->kartstuff[k_driftcharge] < 0)
 		{
 			// Stage 0: Yellow
-			spark->color = SKINCOLOR_GOLD;
 			size = 0;
 		}
-		else if (player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(player)*4)
+		else if (player->kartstuff[k_driftcharge] >= ds*4)
 		{
 			// Stage 3: Rainbow
 			size = 2;
 			trail = 2;
 
-			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player)*4)+(32*3))
+			if (player->kartstuff[k_driftcharge] <= (ds*4)+(32*3))
 			{
 				// transition
-				spark->color = SKINCOLOR_SILVER;
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
 			}
 			else
 			{
-				spark->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
 				spark->colorized = true;
 			}
 		}
-		else if (player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(player)*2)
+		else if (player->kartstuff[k_driftcharge] >= ds*2)
 		{
 			// Stage 2: Blue
 			size = 2;
 			trail = 1;
 
-			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player)*2)+(32*3))
+			if (player->kartstuff[k_driftcharge] <= (ds*2)+(32*3))
 			{
 				// transition
-				spark->color = SKINCOLOR_PURPLE;
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
-			}
-			else
-			{
-				spark->color = SKINCOLOR_SAPPHIRE;
 			}
 		}
 		else
@@ -3221,15 +3266,10 @@ static void K_SpawnDriftSparks(player_t *player)
 			// Stage 1: Red
 			size = 1;
 
-			if (player->kartstuff[k_driftcharge] <= (K_GetKartDriftSparkValue(player))+(32*3))
+			if (player->kartstuff[k_driftcharge] <= (ds)+(32*3))
 			{
 				// transition
-				spark->color = SKINCOLOR_RASPBERRY;
 				P_SetScale(spark, (spark->destscale = spark->scale*2));
-			}
-			else
-			{
-				spark->color = SKINCOLOR_KETCHUP;
 			}
 		}
 
@@ -3550,7 +3590,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 		{
 			angle_t playerangle = spawner->angle;
 
-			if (spawner->player->speed < 5<<FRACBITS)
+			if (spawner->player->speed < 5*spawner->scale)
 				return;
 
 			if (spawner->player->cmd.forwardmove < 0)
@@ -3561,7 +3601,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 	}
 	else
 	{
-		if (P_AproxDistance(spawner->momx, spawner->momy) < 5<<FRACBITS)
+		if (P_AproxDistance(spawner->momx, spawner->momy) < 5*spawner->scale)
 			return;
 
 		anglediff = abs((signed)(spawner->angle - R_PointToAngle2(0, 0, spawner->momx, spawner->momy)));
@@ -3572,12 +3612,12 @@ void K_DriftDustHandling(mobj_t *spawner)
 
 	if (anglediff > ANG10*4) // Trying to turn further than 40 degrees
 	{
-		fixed_t spawnx = P_RandomRange(-spawnrange, spawnrange)<<FRACBITS;
-		fixed_t spawny = P_RandomRange(-spawnrange, spawnrange)<<FRACBITS;
+		fixed_t spawnx = P_RandomRange(-spawnrange, spawnrange) * spawner->scale;
+		fixed_t spawny = P_RandomRange(-spawnrange, spawnrange) * spawner->scale;
 		INT32 speedrange = 2;
 		mobj_t *dust = P_SpawnMobj(spawner->x + spawnx, spawner->y + spawny, spawner->z, MT_DRIFTDUST);
-		dust->momx = FixedMul(spawner->momx + (P_RandomRange(-speedrange, speedrange)<<FRACBITS), 3*(spawner->scale)/4);
-		dust->momy = FixedMul(spawner->momy + (P_RandomRange(-speedrange, speedrange)<<FRACBITS), 3*(spawner->scale)/4);
+		dust->momx = FixedMul(spawner->momx + (P_RandomRange(-speedrange, speedrange) * spawner->scale), 3*(spawner->scale)/4);
+		dust->momy = FixedMul(spawner->momy + (P_RandomRange(-speedrange, speedrange) * spawner->scale), 3*(spawner->scale)/4);
 		dust->momz = P_MobjFlip(spawner) * (P_RandomRange(1, 4) * (spawner->scale));
 		P_SetScale(dust, spawner->scale/2);
 		dust->destscale = spawner->scale * 3;
@@ -3587,6 +3627,35 @@ void K_DriftDustHandling(mobj_t *spawner)
 			S_StartSound(spawner, sfx_screec);
 
 		K_MatchGenericExtraFlags(dust, spawner);
+
+		// Sparkle-y warning for when you're about to change drift sparks!
+		if (spawner->player && spawner->player->kartstuff[k_drift])
+		{
+			INT32 driftval = K_GetKartDriftSparkValue(spawner->player);
+			INT32 warntime = driftval/3;
+			INT32 dc = spawner->player->kartstuff[k_driftcharge];
+			UINT8 c = SKINCOLOR_NONE;
+			boolean rainbow = false;
+
+			if (dc >= 0)
+			{
+				dc += warntime;
+			}
+
+			c = K_DriftSparkColor(spawner->player, dc);
+
+			if (dc > (4*driftval)+(32*3))
+			{
+				rainbow = true;
+			}
+
+			if (c != SKINCOLOR_NONE)
+			{
+				P_SetMobjState(dust, S_DRIFTWARNSPARK1);
+				dust->color = c;
+				dust->colorized = rainbow;
+			}
+		}
 	}
 }
 
@@ -5788,6 +5857,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (player->kartstuff[k_driftcharge] < 0 || player->kartstuff[k_driftcharge] >= dsone)
 		{
 			angle_t pushdir = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+			//mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DRIFTEXPLODE);
+			//P_SetTarget(&overlay->target, player->mo);
+			//P_SetScale(overlay, (overlay->destscale = player->mo->scale));
+			//K_FlipFromObject(overlay, player->mo);
 
 			S_StartSound(player->mo, sfx_s23c);
 			//K_SpawnDashDustRelease(player);
@@ -5800,6 +5873,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				if (player->kartstuff[k_driftboost] < 15)
 					player->kartstuff[k_driftboost] = 15;
+
+				//overlay->color = SKINCOLOR_GOLD;
+				//overlay->fuse = 8;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
 			{
@@ -5809,6 +5885,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				if (player->kartstuff[k_driftboost] < 20)
 					player->kartstuff[k_driftboost] = 20;
+
+				//overlay->color = SKINCOLOR_KETCHUP;
+				//overlay->fuse = 16;
 			}
 			else if (player->kartstuff[k_driftcharge] < dsthree)
 			{
@@ -5818,6 +5897,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				if (player->kartstuff[k_driftboost] < 50)
 					player->kartstuff[k_driftboost] = 50;
+
+				//overlay->color = SKINCOLOR_SAPPHIRE;
+				//overlay->fuse = 32;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsthree)
 			{
@@ -5827,6 +5909,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				if (player->kartstuff[k_driftboost] < 125)
 					player->kartstuff[k_driftboost] = 125;
+
+				//overlay->color = SKINCOLOR_SILVER;
+				//overlay->fuse = 120;
 			}
 		}
 
@@ -5873,72 +5958,94 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->kartstuff[k_aizdriftstrat] = player->kartstuff[k_brakedrift] = 0;
 		player->kartstuff[k_getsparks] = 0;
 	}
-	else if (player->kartstuff[k_jmp] == 1 && onground && player->kartstuff[k_drift] != 0)
+	else if (player->kartstuff[k_jmp] == 1 && player->kartstuff[k_drift] != 0)
 	{
 		// Incease/decrease the drift value to continue drifting in that direction
 		fixed_t driftadditive = 24;
+		boolean playsound = false;
 
-		if (player->kartstuff[k_drift] >= 1) // Drifting to the left
+		if (onground)
 		{
-			player->kartstuff[k_drift]++;
-			if (player->kartstuff[k_drift] > 5)
-				player->kartstuff[k_drift] = 5;
+			if (player->kartstuff[k_drift] >= 1) // Drifting to the left
+			{
+				player->kartstuff[k_drift]++;
+				if (player->kartstuff[k_drift] > 5)
+					player->kartstuff[k_drift] = 5;
 
-			if (player->cmd.driftturn > 0) // Inward
-				driftadditive += abs(player->cmd.driftturn)/100;
-			if (player->cmd.driftturn < 0) // Outward
-				driftadditive -= abs(player->cmd.driftturn)/75;
-		}
-		else if (player->kartstuff[k_drift] <= -1) // Drifting to the right
-		{
-			player->kartstuff[k_drift]--;
-			if (player->kartstuff[k_drift] < -5)
-				player->kartstuff[k_drift] = -5;
+				if (player->cmd.driftturn > 0) // Inward
+					driftadditive += abs(player->cmd.driftturn)/100;
+				if (player->cmd.driftturn < 0) // Outward
+					driftadditive -= abs(player->cmd.driftturn)/75;
+			}
+			else if (player->kartstuff[k_drift] <= -1) // Drifting to the right
+			{
+				player->kartstuff[k_drift]--;
+				if (player->kartstuff[k_drift] < -5)
+					player->kartstuff[k_drift] = -5;
 
-			if (player->cmd.driftturn < 0) // Inward
-				driftadditive += abs(player->cmd.driftturn)/100;
-			if (player->cmd.driftturn > 0) // Outward
-				driftadditive -= abs(player->cmd.driftturn)/75;
-		}
+				if (player->cmd.driftturn < 0) // Inward
+					driftadditive += abs(player->cmd.driftturn)/100;
+				if (player->cmd.driftturn > 0) // Outward
+					driftadditive -= abs(player->cmd.driftturn)/75;
+			}
 
-		// Disable drift-sparks until you're going fast enough
-		if (player->kartstuff[k_getsparks] == 0
-			|| (player->kartstuff[k_offroad]
-			&& !player->kartstuff[k_invincibilitytimer]
-			&& !player->kartstuff[k_hyudorotimer]
-			&& !EITHERSNEAKER(player)))
-			driftadditive = 0;
+			// Disable drift-sparks until you're going fast enough
+			if (player->kartstuff[k_getsparks] == 0
+				|| (player->kartstuff[k_offroad]
+				&& !player->kartstuff[k_invincibilitytimer]
+				&& !player->kartstuff[k_hyudorotimer]
+				&& !EITHERSNEAKER(player)))
+				driftadditive = 0;
 
-		// Inbetween minspeed and minspeed*2, it'll keep your previous drift-spark state.
-		if (player->speed > minspeed*2)
-		{
-			player->kartstuff[k_getsparks] = 1;
+			// Inbetween minspeed and minspeed*2, it'll keep your previous drift-spark state.
+			if (player->speed > minspeed*2)
+			{
+				player->kartstuff[k_getsparks] = 1;
 
-			if (player->kartstuff[k_driftcharge] <= -1)
-				player->kartstuff[k_driftcharge] = dsone; // Back to red
+				if (player->kartstuff[k_driftcharge] <= -1)
+				{
+					player->kartstuff[k_driftcharge] = dsone; // Back to red
+					playsound = true;
+				}
+			}
+			else if (player->speed <= minspeed)
+			{
+				player->kartstuff[k_getsparks] = 0;
+				driftadditive = 0;
+
+				if (player->kartstuff[k_driftcharge] >= dsone)
+				{
+					player->kartstuff[k_driftcharge] = -1; // Set yellow sparks
+					playsound = true;
+				}
+			}
 		}
 		else
 		{
-			player->kartstuff[k_getsparks] = 0;
 			driftadditive = 0;
-
-			if (player->kartstuff[k_driftcharge] >= dsone)
-				player->kartstuff[k_driftcharge] = -1; // Set yellow sparks
 		}
 
 		// This spawns the drift sparks
 		if ((player->kartstuff[k_driftcharge] + driftadditive >= dsone)
 			|| (player->kartstuff[k_driftcharge] < 0))
+		{
 			K_SpawnDriftSparks(player);
+		}
+
+		if ((player->kartstuff[k_driftcharge] < dsone && player->kartstuff[k_driftcharge]+driftadditive >= dsone)
+			|| (player->kartstuff[k_driftcharge] < dstwo && player->kartstuff[k_driftcharge]+driftadditive >= dstwo)
+			|| (player->kartstuff[k_driftcharge] < dsthree && player->kartstuff[k_driftcharge]+driftadditive >= dsthree))
+		{
+			playsound = true;
+		}
 
 		// Sound whenever you get a different tier of sparks
-		if (P_IsDisplayPlayer(player) // UGHGHGH...
-			&& ((player->kartstuff[k_driftcharge] < dsone && player->kartstuff[k_driftcharge]+driftadditive >= dsone)
-			|| (player->kartstuff[k_driftcharge] < dstwo && player->kartstuff[k_driftcharge]+driftadditive >= dstwo)
-			|| (player->kartstuff[k_driftcharge] < dsthree && player->kartstuff[k_driftcharge]+driftadditive >= dsthree)))
+		if (playsound && P_IsDisplayPlayer(player))
 		{
-			//S_StartSound(player->mo, sfx_s3ka2);
-			S_StartSoundAtVolume(player->mo, sfx_s3ka2, 192); // Ugh...
+			if (player->kartstuff[k_driftcharge] == -1)
+				S_StartSoundAtVolume(player->mo, sfx_sploss, 192); // Yellow spark sound
+			else
+				S_StartSoundAtVolume(player->mo, sfx_s3ka2, 192);
 		}
 
 		player->kartstuff[k_driftcharge] += driftadditive;
@@ -9725,57 +9832,44 @@ static void K_drawKartFirstPerson(void)
 
 	if (stplyr->mo)
 	{
-		INT32 dsone = K_GetKartDriftSparkValue(stplyr);
-		INT32 dstwo = dsone*2;
-		INT32 dsthree = dstwo*2;
+		UINT8 driftcolor = K_DriftSparkColor(stplyr, stplyr->kartstuff[k_driftcharge]);
+		const angle_t ang = R_PointToAngle2(0, 0, stplyr->rmomx, stplyr->rmomy) - stplyr->frameangle;
+		// yes, the following is correct. no, you do not need to swap the x and y.
+		fixed_t xoffs = -P_ReturnThrustY(stplyr->mo, ang, (BASEVIDWIDTH<<(FRACBITS-2))/2);
+		fixed_t yoffs = -(P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT) - 4*FRACUNIT);
 
-#ifndef DONTLIKETOASTERSFPTWEAKS
+		if (splitscreen)
+			xoffs = FixedMul(xoffs, scale);
+
+		xoffs -= (tn)*scale;
+		xoffs -= (dr)*scale;
+
+		if (stplyr->frameangle == stplyr->mo->angle)
 		{
-			const angle_t ang = R_PointToAngle2(0, 0, stplyr->rmomx, stplyr->rmomy) - stplyr->frameangle;
-			// yes, the following is correct. no, you do not need to swap the x and y.
-			fixed_t xoffs = -P_ReturnThrustY(stplyr->mo, ang, (BASEVIDWIDTH<<(FRACBITS-2))/2);
-			fixed_t yoffs = -(P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT) - 4*FRACUNIT);
+			const fixed_t mag = FixedDiv(stplyr->speed, 10*stplyr->mo->scale);
 
-			if (splitscreen)
-				xoffs = FixedMul(xoffs, scale);
-
-			xoffs -= (tn)*scale;
-			xoffs -= (dr)*scale;
-
-			if (stplyr->frameangle == stplyr->mo->angle)
+			if (mag < FRACUNIT)
 			{
-				const fixed_t mag = FixedDiv(stplyr->speed, 10*stplyr->mo->scale);
-
-				if (mag < FRACUNIT)
-				{
-					xoffs = FixedMul(xoffs, mag);
-					if (!splitscreen)
-						yoffs = FixedMul(yoffs, mag);
-				}
+				xoffs = FixedMul(xoffs, mag);
+				if (!splitscreen)
+					yoffs = FixedMul(yoffs, mag);
 			}
-
-			if (stplyr->mo->momz > 0) // TO-DO: Draw more of the kart so we can remove this if!
-				yoffs += stplyr->mo->momz/3;
-
-			if (encoremode)
-				x -= xoffs;
-			else
-				x += xoffs;
-			if (!splitscreen)
-				y += yoffs;
 		}
 
-		// drift sparks!
-		if ((leveltime & 1) && (stplyr->kartstuff[k_driftcharge] >= dsthree))
-			colmap = R_GetTranslationColormap(TC_RAINBOW, (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1))), GTC_CACHE);
-		else if ((leveltime & 1) && (stplyr->kartstuff[k_driftcharge] >= dstwo))
-			colmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_KETCHUP, GTC_CACHE);
-		else if ((leveltime & 1) && (stplyr->kartstuff[k_driftcharge] >= dsone))
-			colmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SAPPHIRE, GTC_CACHE);
+		if (stplyr->mo->momz > 0) // TO-DO: Draw more of the kart so we can remove this if!
+			yoffs += stplyr->mo->momz/3;
+
+		if (encoremode)
+			x -= xoffs;
 		else
-#endif
-		// invincibility/grow/shrink!
-		if (stplyr->mo->colorized && stplyr->mo->color)
+			x += xoffs;
+		if (!splitscreen)
+			y += yoffs;
+
+		
+		if ((leveltime & 1) && (driftcolor != SKINCOLOR_NONE)) // drift sparks!
+			colmap = R_GetTranslationColormap(TC_RAINBOW, driftcolor, GTC_CACHE);
+		else if (stplyr->mo->colorized && stplyr->mo->color) // invincibility/grow/shrink!
 			colmap = R_GetTranslationColormap(TC_RAINBOW, stplyr->mo->color, GTC_CACHE);
 	}
 
