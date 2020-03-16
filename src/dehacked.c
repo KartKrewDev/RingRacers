@@ -6359,6 +6359,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTDUST3",
 	"S_DRIFTDUST4",
 
+	// Drift Sparkles
+	"S_DRIFTWARNSPARK1",
+	"S_DRIFTWARNSPARK2",
+	"S_DRIFTWARNSPARK3",
+	"S_DRIFTWARNSPARK4",
+
 	// Fast lines
 	"S_FASTLINE1",
 	"S_FASTLINE2",

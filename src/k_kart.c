@@ -3587,6 +3587,47 @@ void K_DriftDustHandling(mobj_t *spawner)
 			S_StartSound(spawner, sfx_screec);
 
 		K_MatchGenericExtraFlags(dust, spawner);
+
+		// Sparkle-y warning for when you're about to change drift sparks!
+		if (spawner->player && spawner->player->kartstuff[k_drift])
+		{
+			INT32 driftval = K_GetKartDriftSparkValue(spawner->player);
+			INT32 warntime = driftval/3;
+			INT32 dc = spawner->player->kartstuff[k_driftcharge];
+			UINT8 c = SKINCOLOR_NONE;
+			boolean rainbow = false;
+
+			if (dc < 0)
+			{
+				c = SKINCOLOR_GOLD;
+			}
+			else if (dc >= (driftval - warntime))
+			{
+				if (dc >= ((2*driftval) - warntime))
+				{
+					if (dc >= ((4*driftval) - warntime))
+					{
+						c = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+						rainbow = true;
+					}
+					else
+					{
+						c = SKINCOLOR_SAPPHIRE;
+					}
+				}
+				else
+				{
+					c = SKINCOLOR_KETCHUP;
+				}
+			}
+
+			if (c != SKINCOLOR_NONE)
+			{
+				P_SetMobjState(dust, S_DRIFTWARNSPARK1);
+				dust->color = c;
+				dust->colorized = rainbow;
+			}
+		}
 	}
 }
 

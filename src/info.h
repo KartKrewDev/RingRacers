@@ -608,6 +608,7 @@ typedef enum sprite
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
 	SPR_DUST, // Drift Dust
+	SPR_DRWS, // Drift dust sparks
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -3247,6 +3248,12 @@ typedef enum state
 	S_DRIFTDUST2,
 	S_DRIFTDUST3,
 	S_DRIFTDUST4,
+
+	// Drift Sparkles
+	S_DRIFTWARNSPARK1,
+	S_DRIFTWARNSPARK2,
+	S_DRIFTWARNSPARK3,
+	S_DRIFTWARNSPARK4,
 
 	// Fast lines
 	S_FASTLINE1,
