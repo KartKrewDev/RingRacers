@@ -59,8 +59,6 @@ void Command_Numthinkers_f(void)
 		CONS_Printf(M_GetText("numthinkers <#>: Count number of thinkers\n"));
 		CONS_Printf(
 			"\t1: P_MobjThinker\n"
-			/*"\t2: P_RainThinker\n"
-			"\t3: P_SnowThinker\n"*/
 			"\t2: P_NullPrecipThinker\n"
 			"\t3: T_Friction\n"
 			"\t4: T_Pusher\n"
@@ -76,14 +74,6 @@ void Command_Numthinkers_f(void)
 			action = (actionf_p1)P_MobjThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_MobjThinker");
 			break;
-		/*case 2:
-			action = (actionf_p1)P_RainThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_RainThinker");
-			break;
-		case 3:
-			action = (actionf_p1)P_SnowThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_SnowThinker");
-			break;*/
 		case 2:
 			action = (actionf_p1)P_NullPrecipThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_NullPrecipThinker");
@@ -662,8 +652,6 @@ void P_Ticker(boolean run)
 	// Run shield positioning
 	//P_RunShields();
 	P_RunOverlays();
-
-	P_RunShadows();
 
 	P_UpdateSpecials();
 	P_RespawnSpecials();

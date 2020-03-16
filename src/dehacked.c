@@ -1774,7 +1774,6 @@ static actionpointer_t actionpointers[] =
 	{{A_GrenadeRing},          "A_GRENADERING"}, // SRB2kart
 	{{A_SetSolidSteam},        "A_SETSOLIDSTEAM"},
 	{{A_UnsetSolidSteam},      "A_UNSETSOLIDSTEAM"},
-	{{A_SignPlayer},           "A_SIGNPLAYER"},
 	{{A_OverlayThink},         "A_OVERLAYTHINK"},
 	{{A_JetChase},             "A_JETCHASE"},
 	{{A_JetbThink},            "A_JETBTHINK"},
@@ -4887,27 +4886,10 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BUBBLES2",
 
 	// Level End Sign
-	"S_SIGN1",
-	"S_SIGN2",
-	"S_SIGN3",
-	"S_SIGN4",
-	"S_SIGN5",
-	"S_SIGN6",
-	"S_SIGN7",
-	"S_SIGN8",
-	"S_SIGN9",
-	"S_SIGN10",
-	"S_SIGN11",
-	"S_SIGN12",
-	"S_SIGN13",
-	"S_SIGN14",
-	"S_SIGN15",
-	"S_SIGN16",
-	"S_SIGN17",
-	"S_SIGN18",
-	"S_SIGN19",
-	"S_SIGN20",
-	"S_SIGN_END",
+	"S_SIGN_POLE",
+	"S_SIGN_BACK",
+	"S_SIGN_SIDE",
+	"S_SIGN_FACE",
 
 	// Steam Riser
 	"S_STEAM1",
@@ -5689,6 +5671,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SNOW1",
 	"S_SNOW2",
 	"S_SNOW3",
+
+	// Blizzard Snowball
+	"S_BLIZZARDSNOW1",
+	"S_BLIZZARDSNOW2",
+	"S_BLIZZARDSNOW3",
 
 	// Water Splish
 	"S_SPLISH1",
@@ -6784,9 +6771,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_LAMPPOST",
 	"S_MOSSYTREE",
 
-	"S_SHADOW",
-	"S_WHITESHADOW",
-
 	"S_BUMP1",
 	"S_BUMP2",
 	"S_BUMP3",
@@ -7368,6 +7352,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Interactive Objects
 	"MT_BUBBLES", // Bubble source
 	"MT_SIGN", // Level end sign
+	"MT_SIGN_PIECE",
 	"MT_SPIKEBALL", // Spike Ball
 	"MT_SPECIALSPIKEBALL",
 	"MT_SPINFIRE",
@@ -7594,6 +7579,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Environmental Effects
 	"MT_RAIN", // Rain
 	"MT_SNOWFLAKE", // Snowflake
+	"MT_BLIZZARDSNOW", // Blizzard Snowball
 	"MT_SPLISH", // Water splish!
 	"MT_SMOKE",
 	"MT_SMALLBUBBLE", // small bubble
@@ -7853,8 +7839,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_FLYINGGARG",
 	"MT_LAMPPOST",
 	"MT_MOSSYTREE",
-
-	"MT_SHADOW",
 
 	"MT_BUMP",
 
@@ -8702,10 +8686,10 @@ struct {
 
 	// Precipitation
 	{"PRECIP_NONE",PRECIP_NONE},
-	{"PRECIP_STORM",PRECIP_STORM},
-	{"PRECIP_SNOW",PRECIP_SNOW},
 	{"PRECIP_RAIN",PRECIP_RAIN},
-	{"PRECIP_BLANK",PRECIP_BLANK},
+	{"PRECIP_SNOW",PRECIP_SNOW},
+	{"PRECIP_BLIZZARD",PRECIP_BLIZZARD},
+	{"PRECIP_STORM",PRECIP_STORM},
 	{"PRECIP_STORM_NORAIN",PRECIP_STORM_NORAIN},
 	{"PRECIP_STORM_NOSTRIKES",PRECIP_STORM_NOSTRIKES},
 

@@ -44,23 +44,23 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BSZ7","BSZ8","STLG","DBAL","RCRY","ARMA","ARMF","ARMB","WIND","MAGN",
 	"ELEM","FORC","PITY","IVSP","SSPK","GOAL","BIRD","BUNY","MOUS","CHIC",
 	"COWZ","RBRD","SPVY","SPVR","SPVB","SPVG","SPDY","SPDR","SPDB","SPDG",
-	"SPHY","SPHR","SPHB","SPHG","RAIN","SNO1","SPLH","SPLA","SMOK","BUBP",
-	"BUBO","BUBN","BUBM","POPP","TFOG","SEED","PRTL","SCOR","DRWN","TTAG",
-	"GFLG","RRNG","RNGB","RNGR","RNGI","RNGA","RNGE","RNGS","RNGG","PIKB",
-	"PIKR","PIKA","PIKE","PIKS","PIKG","TAUT","TGRE","TSCR","COIN","CPRK",
-	"GOOM","BGOM","FFWR","FBLL","SHLL","PUMA","HAMM","KOOP","BFLM","MAXE",
-	"MUS1","MUS2","TOAD","NDRN","SUPE","SUPZ","NDRL","NSPK","NBMP","HOOP",
-	"NSCR","NPRU","CAPS","SUPT","SPRK","BOM1","BOM2","BOM3","BOM4","ROIA",
-	"ROIB","ROIC","ROID","ROIE","ROIF","ROIG","ROIH","ROII","ROIJ","ROIK",
-	"ROIL","ROIM","ROIN","ROIO","ROIP","BBAL","GWLG","GWLR","SRBA","SRBB",
-	"SRBC","SRBD","SRBE","SRBF","SRBG","SRBH","SRBI","SRBJ","SRBK","SRBL",
-	"SRBM","SRBN","SRBO",
+	"SPHY","SPHR","SPHB","SPHG","RAIN","SNO1","SNO2","SPLH","SPLA","SMOK",
+	"BUBP","BUBO","BUBN","BUBM","POPP","TFOG","SEED","PRTL","SCOR","DRWN",
+	"TTAG","GFLG","RRNG","RNGB","RNGR","RNGI","RNGA","RNGE","RNGS","RNGG",
+	"PIKB","PIKR","PIKA","PIKE","PIKS","PIKG","TAUT","TGRE","TSCR","COIN",
+	"CPRK","GOOM","BGOM","FFWR","FBLL","SHLL","PUMA","HAMM","KOOP","BFLM",
+	"MAXE","MUS1","MUS2","TOAD","NDRN","SUPE","SUPZ","NDRL","NSPK","NBMP",
+	"HOOP","NSCR","NPRU","CAPS","SUPT","SPRK","BOM1","BOM2","BOM3","BOM4",
+	"ROIA","ROIB","ROIC","ROID","ROIE","ROIF","ROIG","ROIH","ROII","ROIJ",
+	"ROIK","ROIL","ROIM","ROIN","ROIO","ROIP","BBAL","GWLG","GWLR","SRBA",
+	"SRBB","SRBC","SRBD","SRBE","SRBF","SRBG","SRBH","SRBI","SRBJ","SRBK",
+	"SRBL","SRBM","SRBN","SRBO",
 	//SRB2kart Sprites
 	"RNDM","RPOP","SGNS","FAST","DSHR","BOST","BOSM","KFRE","KINV","KINF",
 	"WIPD","DRIF","BDRF","DUST","RSHE","FITM","BANA","ORBN","JAWZ","SSMN",
 	"KRBM","BHOG","BHBM","SPBM","THNS","SINK","SITR","KBLN","DEZL","POKE",
 	"AUDI","DECO","DOOD","SNES","GBAS","SPRS","BUZB","CHOM","SACO","CRAB",
-	"SHAD","BRNG","BUMP","FLEN","CLAS","PSHW","ISTA","ISTB","ARRO","ITEM",
+	"BRNG","BUMP","FLEN","CLAS","PSHW","ISTA","ISTB","ARRO","ITEM",
 	"ITMO","ITMI","ITMN","WANT","PBOM","HIT1","HIT2","HIT3","RETI","AIDU",
 	"KSPK","LZI1","LZI2","KLIT","FZSM","FZBM","FPRT","SBUS","MARB","FUFO",
 	"RUST","BLON","VAPE","HTZA","HTZB","SGVA","SGVB","SGVC","PGTR","PGF1",
@@ -193,7 +193,7 @@ state_t states[NUMSTATES] =
 	{SPR_NULL,  0, 18, {NULL}, 0,  4, S_NULL},       // S_PLAY_ICON3
 
 	// Level end sign (uses player sprite)
-	{SPR_PLAY, 18, 1, {NULL}, 0, 24, S_PLAY_SIGN},         // S_PLAY_SIGN	S
+	{SPR_PLAY, 18|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_PLAY_SIGN}, // S_PLAY_SIGN
 
 	// Blue Crawla
 	{SPR_POSS, 0, 5, {A_Look}, 0, 0, S_POSS_STND},   // S_POSS_STND
@@ -1063,27 +1063,10 @@ state_t states[NUMSTATES] =
 	{SPR_BUBL, 1, 8, {A_BubbleCheck}, 0, 0, S_BUBBLES1}, // S_BUBBLES2
 
 	// Level End Sign
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN2},         // S_SIGN1
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN3},         // S_SIGN2
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN4},         // S_SIGN3
-	{SPR_SIGN, 3, 1, {NULL}, 0, 0, S_SIGN5},         // S_SIGN4
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN6},         // S_SIGN5
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN7},         // S_SIGN6
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN8},         // S_SIGN7
-	{SPR_SIGN, 4, 1, {NULL}, 0, 0, S_SIGN9},         // S_SIGN8
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN10},        // S_SIGN9
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN11},        // S_SIGN10
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN12},        // S_SIGN11
-	{SPR_SIGN, 5, 1, {NULL}, 0, 0, S_SIGN13},        // S_SIGN12
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN14},        // S_SIGN13
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN15},        // S_SIGN14
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN16},        // S_SIGN15
-	{SPR_SIGN, 6, 1, {NULL}, 0, 0, S_SIGN17},        // S_SIGN16
-	{SPR_SIGN, 0, 1, {NULL}, 0, 0, S_SIGN18},        // S_SIGN17
-	{SPR_SIGN, 1, 1, {NULL}, 0, 0, S_SIGN19},        // S_SIGN18
-	{SPR_SIGN, 2, 1, {NULL}, 0, 0, S_SIGN20},        // S_SIGN19
-	{SPR_SIGN, 7, 1, {NULL}, 0, 0, S_SIGN1},         // S_SIGN20
-	{SPR_SIGN, 8, -1, {A_SignPlayer}, 0, 0, S_NULL}, // S_SIGN_END
+	{SPR_SIGN, 0, -1, {NULL}, 0, 0, S_SIGN_POLE}, // S_SIGN_POLE
+	{SPR_SIGN, 1|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_SIGN_BACK}, // S_SIGN_BACK
+	{SPR_SIGN, 2|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_SIGN_SIDE}, // S_SIGN_SIDE
+	{SPR_SIGN, 3|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_SIGN_FACE}, // S_SIGN_FACE
 
 	// Steam Riser
 	{SPR_STEM, 0, 2, {A_SetSolidSteam}, 0, 0, S_STEAM2},   // S_STEAM1
@@ -1869,12 +1852,17 @@ state_t states[NUMSTATES] =
 
 	// Rain
 	{SPR_RAIN, FF_TRANS50, -1, {NULL}, 0, 0, S_NULL}, // S_RAIN1
-	{SPR_RAIN, FF_TRANS50, 1, {NULL}, 0, 0, S_RAIN1}, // S_RAINRETURN
+	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_NULL}, // S_RAINRETURN
 
 	// Snowflake
 	{SPR_SNO1, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SNOW1
 	{SPR_SNO1, 1, -1, {NULL}, 0, 0, S_NULL}, // S_SNOW2
 	{SPR_SNO1, 2, -1, {NULL}, 0, 0, S_NULL}, // S_SNOW3
+
+	// Blizzard Snowball
+	{SPR_SNO2, 0, -1, {NULL}, 0, 0, S_NULL}, // S_BLIZZARDSNOW1
+	{SPR_SNO2, 1, -1, {NULL}, 0, 0, S_NULL}, // S_BLIZZARDSNOW2
+	{SPR_SNO2, 2, -1, {NULL}, 0, 0, S_NULL}, // S_BLIZZARDSNOW3
 
 	// Water Splish
 	{SPR_SPLH, FF_TRANS50  , 2, {NULL}, 0, 0, S_SPLISH2}, // S_SPLISH1
@@ -1888,9 +1876,9 @@ state_t states[NUMSTATES] =
 	{SPR_SPLH, FF_TRANS50|8, 2, {NULL}, 0, 0, S_NULL},    // S_SPLISH9
 
 	// Water Splash
-	{SPR_SPLA, FF_TRANS50  , 3, {NULL}, 0, 0, S_SPLASH2},    // S_SPLASH1
-	{SPR_SPLA, FF_TRANS70|1, 3, {NULL}, 0, 0, S_SPLASH3},    // S_SPLASH2
-	{SPR_SPLA, FF_TRANS90|2, 3, {NULL}, 0, 0, S_RAINRETURN}, // S_SPLASH3
+	{SPR_SPLA, FF_TRANS50  , 3, {NULL}, 0, 0, S_SPLASH2}, // S_SPLASH1
+	{SPR_SPLA, FF_TRANS70|1, 3, {NULL}, 0, 0, S_SPLASH3}, // S_SPLASH2
+	{SPR_SPLA, FF_TRANS90|2, 3, {NULL}, 0, 0, S_NULL}, // S_SPLASH3
 
 	// Smoke
 	{SPR_SMOK, FF_TRANS50  , 4, {NULL}, 0, 0, S_SMOKE2}, // S_SMOKE1
@@ -2992,10 +2980,6 @@ state_t states[NUMSTATES] =
 	{SPR_CRAB,  9,  2, {NULL}, 0, 0, S_FLYINGGARG1}, // S_FLYINGGARG8
 	{SPR_CRAB, 10, -1, {NULL}, 0, 0, S_NULL},        // S_LAMPPOST
 	{SPR_CRAB, 11, -1, {NULL}, 0, 0, S_NULL},        // S_MOSSYTREE
-
-	// Fake Shadow
-	{SPR_SHAD, FF_TRANS50, -1, {NULL}, 0, 0, S_NULL}, // S_SHADOW
-	{SPR_SHAD, FF_FULLBRIGHT|FF_TRANS50|1, -1, {NULL}, 0, 0, S_NULL}, // S_WHITESHADOW
 
 	{SPR_BUMP, FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_BUMP2}, // S_BUMP1
 	{SPR_BUMP, FF_FULLBRIGHT|1, 3, {NULL}, 0, 0, S_BUMP3}, // S_BUMP2
@@ -6439,7 +6423,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		501,            // doomednum
 		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
-		S_PLAY_SIGN,    // seestate
+		S_NULL,         // seestate
 		sfx_s3kb8,      // seesound
 		8,              // reactiontime
 		sfx_s3k7e,      // attacksound
@@ -6453,12 +6437,39 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // deathsound
 		8,              // speed
 		8*FRACUNIT,     // radius
-		32*FRACUNIT,    // height
+		48*FRACUNIT,    // height
 		0,              // display offset
 		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SIGN_PIECE
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		8*FRACUNIT,     // radius
+		48*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_NOTHINK|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -11443,22 +11454,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_RAIN1,        // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
+		sfx_rainin,     // seesound
+		0,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
 		0,              // painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_NULL,         // deathstate
+		S_SPLASH1,      // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		-72*FRACUNIT,   // speed -- -24*FRACUNIT originally, srb2kart x3 (nya)
 		1*FRACUNIT,     // radius
 		8*FRACUNIT,     // height
 		0,              // display offset
-		4,              // mass
+		80,             // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP,  // flags
@@ -11471,7 +11482,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
-		8,              // reactiontime
+		0,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
 		0,              // painchance
@@ -11485,8 +11496,35 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4*FRACUNIT,     // radius
 		4*FRACUNIT,     // height
 		0,              // display offset
-		4,              // mass
-		0,              // damage
+		0,              // mass
+		2,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP,  // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BLIZZARDSNOW
+		-1,             // doomednum
+		S_BLIZZARDSNOW1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		-24*FRACUNIT,   // speed
+		4*FRACUNIT,     // radius
+		4*FRACUNIT,     // height
+		0,              // display offset
+		0,              // mass
+		2,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP,  // flags
 		S_NULL          // raisestate
@@ -17253,33 +17291,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		33558528,       // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SHADOW
-		-1,             // doomednum
-		S_SHADOW,       // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		60*FRACUNIT,    // speed
-		50*FRACUNIT,    // radius
-		1*FRACUNIT,     // height
-		-1,             // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
