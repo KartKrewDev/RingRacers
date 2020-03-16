@@ -5905,7 +5905,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			if (player->kartstuff[k_driftcharge] <= -1)
 				player->kartstuff[k_driftcharge] = dsone; // Back to red
 		}
-		else
+		else if (player->speed <= minspeed)
 		{
 			player->kartstuff[k_getsparks] = 0;
 			driftadditive = 0;
