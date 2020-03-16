@@ -8363,6 +8363,7 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
+				UINT8 driftcolor = K_DriftSparkColor(mobj->target->player, mobj->target->player->kartstuff[k_driftcharge]);
 				fixed_t newx, newy;
 				angle_t travelangle;
 
@@ -8375,14 +8376,8 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->angle = travelangle - ((ANGLE_90/5)*mobj->target->player->kartstuff[k_drift]);
 				P_SetScale(mobj, (mobj->destscale = mobj->target->scale));
 
-				if (mobj->target->player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(mobj->target->player)*4)
-					mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
-				else if (mobj->target->player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(mobj->target->player)*2)
-					mobj->color = SKINCOLOR_SAPPHIRE;
-				else if (mobj->target->player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(mobj->target->player))
-					mobj->color = SKINCOLOR_KETCHUP;
-				else if (mobj->target->player->kartstuff[k_driftcharge] < 0)
-					mobj->color = SKINCOLOR_GOLD;
+				if (driftcolor != SKINCOLOR_NONE)
+					mobj->color = driftcolor;
 				else
 					mobj->color = SKINCOLOR_SILVER;
 
