@@ -6749,6 +6749,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											K_ThrowKartItem(player, (player->kartstuff[k_throwdir] > 0), MT_BUBBLESHIELDTRAP, -1, 0);
 											K_PlayAttackTaunt(player->mo);
 											player->kartstuff[k_bubbleblowup] = 0;
+											player->kartstuff[k_bubblecool] = 0;
+											player->kartstuff[k_holdready] = 0;
 											player->kartstuff[k_itemamount]--;
 										}
 									}
@@ -6757,8 +6759,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								{
 									if (player->kartstuff[k_bubbleblowup] > bubbletime)
 										player->kartstuff[k_bubbleblowup] = bubbletime;
+
 									if (player->kartstuff[k_bubbleblowup])
 										player->kartstuff[k_bubbleblowup]--;
+
 									player->kartstuff[k_holdready] = (player->kartstuff[k_bubblecool] ? 0 : 1);
 								}
 							}
