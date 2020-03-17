@@ -83,8 +83,21 @@ UINT32 mapmusposition; // Position to jump to
 
 INT16 gamemap = 1;
 INT16 maptol;
+
 UINT8 globalweather = 0;
-INT32 curWeather = PRECIP_NONE;
+UINT8 curWeather = PRECIP_NONE;
+
+precipprops_t precipprops[MAXPRECIP] =
+{
+	{MT_NULL, 0}, // PRECIP_NONE
+	{MT_RAIN, 0}, // PRECIP_RAIN
+	{MT_SNOWFLAKE, 0}, // PRECIP_SNOW
+	{MT_BLIZZARDSNOW, 0}, // PRECIP_BLIZZARD
+	{MT_RAIN, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
+	{MT_NULL, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
+	{MT_RAIN, PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
+};
+
 INT32 cursaveslot = -1; // Auto-save 1p savegame slot
 INT16 lastmapsaved = 0; // Last map we auto-saved at
 boolean gamecomplete = false;
@@ -1782,6 +1795,8 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
+
+	server_lagless = cv_lagless.value;
 }
 
 static INT32 pausedelay = 0;
@@ -4090,6 +4105,11 @@ void G_LoadGameData(void)
 
 	// Allow saving of gamedata beyond this point
 	gamedataloaded = true;
+
+	if (M_CheckParm("-gamedata") && M_IsNextParm())
+	{
+		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
+	}
 
 	if (M_CheckParm("-resetdata"))
 		return; // Don't load (essentially, reset).

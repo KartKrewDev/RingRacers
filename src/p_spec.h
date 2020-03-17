@@ -37,7 +37,7 @@ void P_SpawnSpecials(INT32 fromnetsave);
 
 // every tic
 void P_UpdateSpecials(void);
-sector_t *P_PlayerTouchingSectorSpecial(player_t *player, INT32 section, INT32 number);
+sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, boolean touchground);
 void P_PlayerInSpecialSector(player_t *player);
 void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *roversector);
 
@@ -59,7 +59,7 @@ INT32 P_FindMinSurroundingLight(sector_t *sector, INT32 max);
 void P_SetupSignExit(player_t *player);
 boolean P_IsFlagAtBase(mobjtype_t flag);
 
-void P_SwitchWeather(INT32 weathernum);
+void P_SwitchWeather(UINT8 newWeather);
 
 boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller);
 void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller);

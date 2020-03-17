@@ -253,24 +253,22 @@ typedef enum
 // PRECIPITATION flags ?! ?! ?!
 //
 typedef enum {
-	// Don't draw.
-	PCF_INVISIBLE = 1,
-	// Above pit.
-	PCF_PIT = 2,
-	// Above FOF.
-	PCF_FOF = 4,
-	// Above MOVING FOF (this means we need to keep floorz up to date...)
-	PCF_MOVINGFOF = 8,
-	// Is rain.
-	PCF_RAIN = 16,
-	// Ran the thinker this tic.
-	PCF_THUNK = 32,
+	PCF_INVISIBLE = 1, // Don't draw.
+	PCF_PIT       = 1<<1, // Above pit.
+	PCF_FOF       = 1<<2, // Above FOF.
+	PCF_MOVINGFOF = 1<<3, // Above MOVING FOF (this means we need to keep floorz up to date...)
+	PCF_SPLASH    = 1<<4, // Splashed on the ground, return to the ceiling after the animation's over
+	PCF_THUNK     = 1<<5, // Ran the thinker this tic.
 } precipflag_t;
+
 // Map Object definition.
 typedef struct mobj_s
 {
 	// List: thinker links.
 	thinker_t thinker;
+
+	mobjtype_t type;
+	const mobjinfo_t *info; // &mobjinfo[mobj->type]
 
 	// Info for drawing: position.
 	fixed_t x, y, z;
@@ -320,9 +318,6 @@ typedef struct mobj_s
 	// Additional pointers for NiGHTS hoops
 	struct mobj_s *hnext;
 	struct mobj_s *hprev;
-
-	mobjtype_t type;
-	const mobjinfo_t *info; // &mobjinfo[mobj->type]
 
 	INT32 health; // for player this is rings + 1
 
@@ -377,6 +372,9 @@ typedef struct mobj_s
 
 	boolean colorized; // Whether the mobj uses the rainbow colormap
 
+	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
+	boolean whiteshadow; // Use white shadow, set to true by default for fullbright objects
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
 
@@ -391,6 +389,9 @@ typedef struct precipmobj_s
 {
 	// List: thinker links.
 	thinker_t thinker;
+
+	mobjtype_t type;
+	const mobjinfo_t *info; // &mobjinfo[mobj->type]
 
 	// Info for drawing: position.
 	fixed_t x, y, z;
@@ -459,8 +460,7 @@ void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 numb
 boolean P_BossTargetPlayer(mobj_t *actor, boolean closest);
 boolean P_SupermanLook4Players(mobj_t *actor);
 void P_DestroyRobots(void);
-void P_SnowThinker(precipmobj_t *mobj);
-void P_RainThinker(precipmobj_t *mobj);
+void P_PrecipThinker(precipmobj_t *mobj);
 void P_NullPrecipThinker(precipmobj_t *mobj);
 void P_RemovePrecipMobj(precipmobj_t *mobj);
 void P_SetScale(mobj_t *mobj, fixed_t newscale);
