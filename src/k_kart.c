@@ -2218,11 +2218,44 @@ void K_RespawnChecker(player_t *player)
 				player->kartstuff[k_startboost] = 50;
 				K_SpawnDashDustRelease(player);
 			}
+
 			player->mo->colorized = false;
 			player->kartstuff[k_dropdash] = 0;
 			player->kartstuff[k_respawn] = 0;
+
 			//P_PlayRinglossSound(player->mo);
 			P_PlayerRingBurst(player, 3);
+
+			if (G_BattleGametype())
+			{
+				if (player->kartstuff[k_bumper] > 0)
+				{
+					if (player->kartstuff[k_bumper] == 1)
+					{
+						mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX); // Player hitbox is too small!!
+						P_SetTarget(&karmahitbox->target, player->mo);
+						karmahitbox->destscale = player->mo->scale;
+						P_SetScale(karmahitbox, player->mo->scale);
+						CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
+					}
+					player->kartstuff[k_bumper]--;
+					if (K_IsPlayerWanted(player))
+						K_CalculateBattleWanted();
+				}
+
+				if (!player->kartstuff[k_bumper])
+				{
+					player->kartstuff[k_comebacktimer] = comebacktime;
+					if (player->kartstuff[k_comebackmode] == 2)
+					{
+						mobj_t *poof = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EXPLODE);
+						S_StartSound(poof, mobjinfo[MT_KARMAHITBOX].seesound);
+						player->kartstuff[k_comebackmode] = 0;
+					}
+				}
+
+				K_CheckBumpers();
+			}
 		}
 	}
 }
