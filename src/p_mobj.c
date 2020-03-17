@@ -9709,12 +9709,13 @@ void P_MobjThinker(mobj_t *mobj)
 			{
 				player_t *player = mobj->tracer->player;
 
+				mobj->flags = MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_DONTENCOREMAP;
 				mobj->extravalue1 = 1;
 
 				P_TeleportMove(mobj,
-					mobj->tracer->x + P_ReturnThrustX(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
-					mobj->tracer->y + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
-					mobj->tracer->z - (4*mobj->tracer->scale) + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
+					mobj->tracer->x + mobj->tracer->momx + P_ReturnThrustX(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
+					mobj->tracer->y + mobj->tracer->momy + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
+					mobj->tracer->z + mobj->tracer->momz - (4*mobj->tracer->scale) + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
 
 				mobj->cvmem /= 2;
 				mobj->momz = 0;
