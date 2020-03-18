@@ -10318,7 +10318,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_BUBBLESHIELD:
 		case MT_BUBBLESHIELDTRAP:
 		case MT_FLAMESHIELD:
-			thing->shadowscale = 2*FRACUNIT;
+			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_RING:
 		case MT_FLOATINGITEM:
