@@ -6734,25 +6734,22 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 							if (!HOLDING_ITEM && NO_HYUDORO)
 							{
-								if (cmd->buttons & BT_ATTACK)
+								if ((cmd->buttons & BT_ATTACK) && player->kartstuff[k_holdready])
 								{
-									if (player->kartstuff[k_holdready])
+									if (player->kartstuff[k_bubbleblowup] == 0)
+										S_StartSound(player->mo, sfx_s3k75);
+
+									player->kartstuff[k_bubbleblowup]++;
+									player->kartstuff[k_bubblecool] = player->kartstuff[k_bubbleblowup]*4;
+
+									if (player->kartstuff[k_bubbleblowup] > bubbletime*2)
 									{
-										if (player->kartstuff[k_bubbleblowup] == 0)
-											S_StartSound(player->mo, sfx_s3k75);
-
-										player->kartstuff[k_bubbleblowup]++;
-										player->kartstuff[k_bubblecool] = player->kartstuff[k_bubbleblowup]*4;
-
-										if (player->kartstuff[k_bubbleblowup] > bubbletime*2)
-										{
-											K_ThrowKartItem(player, (player->kartstuff[k_throwdir] > 0), MT_BUBBLESHIELDTRAP, -1, 0);
-											K_PlayAttackTaunt(player->mo);
-											player->kartstuff[k_bubbleblowup] = 0;
-											player->kartstuff[k_bubblecool] = 0;
-											player->kartstuff[k_holdready] = 0;
-											player->kartstuff[k_itemamount]--;
-										}
+										K_ThrowKartItem(player, (player->kartstuff[k_throwdir] > 0), MT_BUBBLESHIELDTRAP, -1, 0);
+										K_PlayAttackTaunt(player->mo);
+										player->kartstuff[k_bubbleblowup] = 0;
+										player->kartstuff[k_bubblecool] = 0;
+										player->kartstuff[k_holdready] = 0;
+										player->kartstuff[k_itemamount]--;
 									}
 								}
 								else
