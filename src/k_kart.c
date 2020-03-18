@@ -2283,10 +2283,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST((3*FRACUNIT)/8, 3*FRACUNIT); // + 37.5% top speed, + 300% acceleration
 
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
-	{
-		fixed_t dashval = ((player->kartstuff[k_flamedash]<<FRACBITS) / TICRATE) / 20; // 1 second = +5% top speed
-		ADDBOOST(FRACUNIT/2 + dashval, 2*FRACUNIT); // + infinite top speed, + 200% acceleration
-	}
+		ADDBOOST((3*FRACUNIT)/4, 6*FRACUNIT); // + 75% top speed, + 600% acceleration
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
 		ADDBOOST(FRACUNIT/4, 6*FRACUNIT); // + 25% top speed, + 600% acceleration
@@ -2298,7 +2295,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 400% acceleration
 
 	if (player->kartstuff[k_eggmanexplode]) // Ready-to-explode
-		ADDBOOST(FRACUNIT/5, 2*FRACUNIT); // + 20% top speed, + 200% acceleration
+		ADDBOOST(FRACUNIT/5, FRACUNIT); // + 20% top speed, + 100% acceleration
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
@@ -5620,6 +5617,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_levelbooster])
 		player->kartstuff[k_levelbooster]--;
 
+	if (player->kartstuff[k_flamedash])
+		player->kartstuff[k_flamedash]--;
+
 	if (EITHERSNEAKER(player) && player->kartstuff[k_wipeoutslow] > 0 && player->kartstuff[k_wipeoutslow] < wipeoutslowtime+1)
 		player->kartstuff[k_wipeoutslow] = wipeoutslowtime+1;
 
@@ -5764,12 +5764,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_bubblecool] = 0;
 	}
 
-	if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD
-		|| player->exiting || player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer])
+	if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD || player->exiting)
 	{
 		if (player->kartstuff[k_flamedash])
 			K_FlameShieldPop(player->mo);
-		player->kartstuff[k_flamedash] = 0;
 	}
 
 	if (player->kartstuff[k_comebacktimer])
@@ -5921,14 +5919,6 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 	if (player->spectator)
 		return turnvalue;
-
-	if (player->kartstuff[k_flamedash]) // Reduce turning
-	{
-		fixed_t dashval = ((player->kartstuff[k_flamedash]<<FRACBITS) / TICRATE) / 40; // 1 second = -2.5% handling
-		if (dashval > FRACUNIT)
-			return 0; // NO MORE TURNING!
-		turnvalue = FixedMul(turnvalue, FRACUNIT-dashval);
-	}
 
 	if (player->kartstuff[k_drift] != 0 && P_IsObjectOnGround(player->mo))
 	{
@@ -6776,35 +6766,36 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 							if (!HOLDING_ITEM && NO_HYUDORO)
 							{
+								INT32 flamemax = 16 * (TICRATE/4);
+
 								if ((cmd->buttons & BT_ATTACK) && player->kartstuff[k_holdready])
 								{
+									if (player->kartstuff[k_flamemeter] > flamemax)
+										player->kartstuff[k_flamemeter] = flamemax;
+
 									if (player->kartstuff[k_flamedash] == 0)
 										K_PlayBoostTaunt(player->mo);
 
-									player->kartstuff[k_flamedash]++;
+									player->kartstuff[k_flamedash] += 2;
 
-									if (player->kartstuff[k_flamedash] > 10*TICRATE)
+									if (player->kartstuff[k_flamemeter] <= 0)
 									{
 										K_FlameShieldPop(player->mo);
-										player->kartstuff[k_flamedash] = 0;
-										player->kartstuff[k_holdready] = 0;
-										player->kartstuff[k_itemamount]--;
-									}
-								}
-								else
-								{
-									if (player->kartstuff[k_flamedash] > (TICRATE*2))
-									{
-										K_FlameShieldPop(player->mo);
-										player->kartstuff[k_flamedash] = 0;
+										player->kartstuff[k_flamemeter] = flamemax;
 										player->kartstuff[k_holdready] = 0;
 										player->kartstuff[k_itemamount]--;
 									}
 									else
-									{
-										player->kartstuff[k_flamedash] = 0;
-										player->kartstuff[k_holdready] = 1;
-									}
+										player->kartstuff[k_flamemeter] -= 2;
+								}
+								else
+								{
+									player->kartstuff[k_holdready] = 1;
+
+									if (player->kartstuff[k_flamemeter] > flamemax || player->kartstuff[k_flamemeter] == 0)
+										player->kartstuff[k_flamemeter] = flamemax;
+									else if (player->kartstuff[k_flamemeter] < flamemax)
+										player->kartstuff[k_flamemeter]++;
 								}
 							}
 							break;
@@ -7466,6 +7457,9 @@ static patch_t *kp_check[6];
 
 static patch_t *kp_eggnum[4];
 
+static patch_t *kp_flameshieldmeter[104];
+static patch_t *kp_flameshieldmeter_bg;
+
 static patch_t *kp_fpview[3];
 static patch_t *kp_inputwheel[5];
 
@@ -7673,6 +7667,17 @@ void K_LoadKartHUDGraphics(void)
 	kp_pogospring[0] = 			W_CachePatchName("K_ITPOGO", PU_HUDGFX);
 	kp_kitchensink[0] = 		W_CachePatchName("K_ITSINK", PU_HUDGFX);
 	kp_sadface[0] = 			W_CachePatchName("K_ITSAD", PU_HUDGFX);
+
+	kp_flameshieldmeter_bg =	W_CachePatchName("FSMBG001", PU_HUDGFX);
+
+	sprintf(buffer, "FSMFGxxx");
+	for (i = 0; i < 104; i++)
+	{
+		buffer[5] = '0'+((i+1)/100);
+		buffer[6] = '0'+(((i+1)/10)%10);
+		buffer[7] = '0'+((i+1)%10);
+		kp_flameshieldmeter[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
 
 	// Splitscreen
 	kp_itembg[2] = 				W_CachePatchName("K_ISBG", PU_HUDGFX);
@@ -8230,15 +8235,11 @@ static void K_drawKartItem(void)
 					localbg = kp_itembg[offset+1];
 					break;
 				case KITEM_BUBBLESHIELD:
-					
 					localpatch = kp_bubbleshield[offset];
 					localbg = kp_itembg[offset+1];
 					break;
 				case KITEM_FLAMESHIELD:
-					if (stplyr->kartstuff[k_flamedash] > (TICRATE*2) && (leveltime & 1))
-						localpatch = kp_nodraw;
-					else
-						localpatch = kp_flameshield[offset];
+					localpatch = kp_flameshield[offset];
 					localbg = kp_itembg[offset+1];
 					break;
 				case KITEM_HYUDORO:
@@ -8355,6 +8356,23 @@ static void K_drawKartItem(void)
 	// Quick Eggman numbers
 	if (stplyr->kartstuff[k_eggmanexplode] > 1 /*&& stplyr->kartstuff[k_eggmanexplode] <= 3*TICRATE*/)
 		V_DrawScaledPatch(fx+17, fy+13-offset, V_HUDTRANS|fflags, kp_eggnum[min(3, G_TicsToSeconds(stplyr->kartstuff[k_eggmanexplode]))]);
+
+	if (stplyr->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+	{
+		INT32 flamemax = 16 * (TICRATE/4);
+		INT32 numframes = 104;
+		INT32 f = (stplyr->kartstuff[k_flamemeter] * numframes) / flamemax;
+
+		if (f < 1)
+			f = 1;
+		if (f > numframes)
+			f = numframes;
+
+		V_DrawScaledPatch(fx-6, fy-4, V_HUDTRANS|fflags, kp_flameshieldmeter_bg);
+
+		if (stplyr->kartstuff[k_flamemeter] < flamemax)
+			V_DrawScaledPatch(fx-6, fy-4, V_HUDTRANS|fflags, kp_flameshieldmeter[f-1]);
+	}
 }
 
 void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UINT8 mode)

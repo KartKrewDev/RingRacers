@@ -319,6 +319,7 @@ typedef enum
 	k_bubblecool,			// Bubble Shield use cooldown
 	k_bubbleblowup,			// Bubble Shield usage blowup
 	k_flamedash,			// Flame Shield dash power
+	k_flamemeter,			// Flame Shield dash meter left
 	k_eggmanheld,			// Eggman monitor held, separate from k_itemheld so it doesn't stop you from getting items
 	k_eggmanexplode,		// Fake item recieved, explode in a few seconds
 	k_eggmanblame,			// Fake item recieved, who set this fake
