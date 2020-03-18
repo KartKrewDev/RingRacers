@@ -6776,20 +6776,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 							if (!HOLDING_ITEM && NO_HYUDORO)
 							{
-								if (cmd->buttons & BT_ATTACK)
+								if ((cmd->buttons & BT_ATTACK) && player->kartstuff[k_holdready])
 								{
-									if (player->kartstuff[k_holdready])
+									if (player->kartstuff[k_flamedash] == 0)
+										K_PlayBoostTaunt(player->mo);
+
+									player->kartstuff[k_flamedash]++;
+
+									if (player->kartstuff[k_flamedash] > 10*TICRATE)
 									{
-										if (player->kartstuff[k_flamedash] == 0)
-											K_PlayBoostTaunt(player->mo);
-										player->kartstuff[k_flamedash]++;
-										if (player->kartstuff[k_flamedash] > 10*TICRATE)
-										{
-											K_FlameShieldPop(player->mo);
-											player->kartstuff[k_flamedash] = 0;
-											player->kartstuff[k_holdready] = 0;
-											player->kartstuff[k_itemamount]--;
-										}
+										K_FlameShieldPop(player->mo);
+										player->kartstuff[k_flamedash] = 0;
+										player->kartstuff[k_holdready] = 0;
+										player->kartstuff[k_itemamount]--;
 									}
 								}
 								else
