@@ -108,7 +108,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		return false;
 
 	/*if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0) // No bumpers in Match
-        return false;*/
+		return false;*/
 
 	if (weapon)
 	{
@@ -118,10 +118,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 			// Invulnerable
 			if (player->powers[pw_flashing] > 0
 				|| (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)
-				|| player->kartstuff[k_squishedtimer] > 0
-				|| player->kartstuff[k_invincibilitytimer] > 0
-				|| player->kartstuff[k_growshrinktimer] > 0
-				|| player->kartstuff[k_hyudorotimer] > 0)
+				|| player->kartstuff[k_squishedtimer] > 0)
 				return false;
 
 			// Already have fake
