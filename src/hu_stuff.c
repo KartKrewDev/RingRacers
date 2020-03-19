@@ -78,6 +78,7 @@ patch_t *cred_font[CRED_FONTSIZE];
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
 patch_t *pingnum[10];
 patch_t *pinggfx[5];	// small ping graphic
+patch_t *mping[5]; // smaller ping graphic
 
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
@@ -311,6 +312,8 @@ void HU_LoadGraphics(void)
 	{
 		sprintf(buffer, "PINGGFX%d", i+1);
 		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		sprintf(buffer, "MPING%d", i+1);
+		mping[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
 	// fps stuff
@@ -2480,28 +2483,49 @@ void HU_Erase(void)
 //                   IN-LEVEL MULTIPLAYER RANKINGS
 //======================================================================
 
+static int
+Ping_gfx_num (int ping)
+{
+	if (ping < 76)
+		return 0;
+	else if (ping < 137)
+		return 1;
+	else if (ping < 256)
+		return 2;
+	else if (ping < 500)
+		return 3;
+	else
+		return 4;
+}
+
 //
 // HU_drawPing
 //
 void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
-	INT32 gfxnum = 4;	// gfx to draw
+	INT32 gfxnum;	// gfx to draw
 	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SALMON, GTC_CACHE);
 
-	if (ping < 76)
-		gfxnum = 0;
-	else if (ping < 137)
-		gfxnum = 1;
-	else if (ping < 256)
-		gfxnum = 2;
-	else if (ping < 500)
-		gfxnum = 3;
+	gfxnum = Ping_gfx_num(ping);
 
 	V_DrawScaledPatch(x, y, flags, pinggfx[gfxnum]);
 	if (servermaxping && ping > servermaxping && hu_tick < 4)		// flash ping red if too high
 		V_DrawPingNum(x, y+9, flags, ping, colormap);
 	else
 		V_DrawPingNum(x, y+9, flags, ping, NULL);
+}
+
+void
+HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
+{
+	patch_t *patch;
+
+	patch = mping[Ping_gfx_num(ping)];
+
+	if (( flags & V_SNAPTORIGHT ))
+		x += ( BASEVIDWIDTH - SHORT (patch->width) );
+
+	V_DrawScaledPatch(x, y, flags, patch);
 }
 
 //

@@ -9884,6 +9884,35 @@ void K_drawKartFreePlay(UINT32 flashtime)
 		LAPS_Y+3, V_HUDTRANS|V_SNAPTOBOTTOM|V_SNAPTORIGHT, "FREE PLAY");
 }
 
+static void
+Draw_party_ping (int ss, INT32 snap)
+{
+	HU_drawMiniPing(0, 0, playerpingtable[displayplayers[ss]], V_HUDTRANS|snap);
+}
+
+static void
+K_drawMiniPing (void)
+{
+	if (cv_showping.value)
+	{
+		switch (r_splitscreen)
+		{
+			case 3:
+				Draw_party_ping(3, V_SNAPTORIGHT|V_SPLITSCREEN);
+				/*FALLTHRU*/
+			case 2:
+				Draw_party_ping(2, V_SPLITSCREEN);
+				Draw_party_ping(1, V_SNAPTORIGHT);
+				Draw_party_ping(0, 0);
+				break;
+			case 1:
+				Draw_party_ping(1, V_SNAPTORIGHT|V_SPLITSCREEN);
+				Draw_party_ping(0, V_SNAPTORIGHT);
+				break;
+		}
+	}
+}
+
 static void K_drawDistributionDebugger(void)
 {
 	patch_t *items[NUMKARTRESULTS] = {
@@ -10210,6 +10239,11 @@ void K_drawKartHUD(void)
 		if (LUA_HudEnabled(hud_freeplay))
 #endif
 			K_drawKartFreePlay(leveltime);
+	}
+
+	if (netgame && r_splitscreen)
+	{
+		K_drawMiniPing();
 	}
 
 	if (cv_kartdebugdistribution.value)
