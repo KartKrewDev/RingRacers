@@ -3950,11 +3950,12 @@ static void K_FlameShieldPop(mobj_t *src)
 		smoke->destscale = 3*src->scale/2;
 		smoke->scalespeed = src->scale/12;
 
-		smoke->momx = src->momx/2;
-		smoke->momy = src->momy/2;
-		smoke->momz = src->momz/2;
+		smoke->momx = 3*src->momx/4;
+		smoke->momy = 3*src->momy/4;
+		smoke->momz = 3*src->momz/4;
 
 		P_Thrust(smoke, src->angle + FixedAngle(P_RandomRange(135, 225)<<FRACBITS), P_RandomRange(0, 8) * src->scale);
+		smoke->momz += P_RandomRange(0, 4) * src->scale;
 	}
 }
 
