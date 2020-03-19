@@ -3940,24 +3940,21 @@ static void K_DoThunderShield(player_t *player)
 
 static void K_FlameShieldPop(mobj_t *src)
 {
-	mobj_t *smoke;
 	UINT8 i;
 
-	//S_StartSound(src, sfx_zio3);
-
-	// spawn vertical bolt
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 2; i++)
 	{
-		smoke = P_SpawnMobj(src->x, src->y, src->z, MT_SMOKE);
-		P_SetMobjState(smoke, S_OPAQUESMOKE1);
-		P_SetScale(smoke, 2*smoke->scale);
-		smoke->destscale = 8*smoke->scale;
-		smoke->angle = FixedAngle((i*45)<<FRACBITS);
-		smoke->fuse = P_RandomRange(20, 50);
-		smoke->momx = src->momx;
-		smoke->momy = src->momy;
-		smoke->momz = src->momz + (P_RandomRange(1,4) * smoke->scale);
-		P_Thrust(smoke, smoke->angle, (P_RandomRange(1,2) * smoke->scale));
+		mobj_t *smoke = P_SpawnMobj(src->x, src->y, src->z+(8<<FRACBITS), MT_BOOSTSMOKE);
+
+		P_SetScale(smoke, src->scale);
+		smoke->destscale = 3*src->scale/2;
+		smoke->scalespeed = src->scale/12;
+
+		smoke->momx = src->momx/2;
+		smoke->momy = src->momy/2;
+		smoke->momz = src->momz/2;
+
+		P_Thrust(smoke, src->angle + FixedAngle(P_RandomRange(135, 225)<<FRACBITS), P_RandomRange(0, 8) * src->scale);
 	}
 }
 
