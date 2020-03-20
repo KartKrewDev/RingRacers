@@ -223,9 +223,9 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 			checkwaypoint = &waypointheap[i];
 
 			checkdist = P_AproxDistance(
-				(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
-				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
-			checkdist = P_AproxDistance(checkdist, (mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS));
+				(mobj->x / FRACUNIT) - (checkwaypoint->mobj->x / FRACUNIT),
+				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
+			checkdist = P_AproxDistance(checkdist, (mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT));
 
 			if (checkdist < closestdist)
 			{
@@ -263,9 +263,9 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 			checkwaypoint = &waypointheap[i];
 
 			checkdist = P_AproxDistance(
-				(mobj->x >> FRACBITS) - (checkwaypoint->mobj->x >> FRACBITS),
-				(mobj->y >> FRACBITS) - (checkwaypoint->mobj->y >> FRACBITS));
-			checkdist = P_AproxDistance(checkdist, ((mobj->z >> FRACBITS) - (checkwaypoint->mobj->z >> FRACBITS)) << 2);
+				(mobj->x / FRACUNIT) - (checkwaypoint->mobj->x / FRACUNIT),
+				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
+			checkdist = P_AproxDistance(checkdist, ((mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT)) * 4);
 
 			if (checkdist < closestdist)
 			{
