@@ -810,7 +810,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
@@ -827,7 +827,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 
 			P_SpawnMobj(thing->x/2 + tmthing->x/2, thing->y/2 + tmthing->y/2, thing->z/2 + tmthing->z/2, MT_ITEMCLASH);
@@ -841,7 +841,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_SSMINE_SHIELD || thing->type == MT_SSMINE)
@@ -855,7 +855,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 
 			// Bomb death
@@ -975,7 +975,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD
@@ -992,7 +992,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 
 			P_SpawnMobj(thing->x/2 + tmthing->x/2, thing->y/2 + tmthing->y/2, thing->z/2 + tmthing->z/2, MT_ITEMCLASH);
@@ -1006,7 +1006,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 
@@ -1052,7 +1052,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 
@@ -1103,7 +1103,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_BANANA_SHIELD || thing->type == MT_BANANA
@@ -1131,7 +1131,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_SSMINE_SHIELD || thing->type == MT_SSMINE)
