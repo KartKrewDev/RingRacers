@@ -3135,13 +3135,15 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	th = P_SpawnMobj(x, y, z, type);
 
 	th->flags2 |= flags2;
-
 	th->threshold = 10;
 
 	if (th->info->seesound)
 		S_StartSound(source, th->info->seesound);
 
 	P_SetTarget(&th->target, source);
+
+	P_SetScale(th, source->scale);
+	th->destscale = source->destscale;
 
 	if (P_IsObjectOnGround(source))
 	{
@@ -3801,6 +3803,9 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 
 			mo->threshold = 10;
 			P_SetTarget(&mo->target, player->mo);
+
+			P_SetScale(mo, player->mo->scale);
+			mo->destscale = player->mo->destscale;
 
 			if (P_IsObjectOnGround(player->mo))
 			{
