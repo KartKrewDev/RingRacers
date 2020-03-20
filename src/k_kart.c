@@ -6810,6 +6810,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (player->kartstuff[k_flamemeter] > flamemax)
 									{
 										K_FlameShieldPop(player->mo);
+										P_Thrust(player->mo, R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy), player->speed);
 										player->kartstuff[k_flamemeter] = 0;
 										player->kartstuff[k_flamelength] = 0;
 										player->kartstuff[k_holdready] = 0;
