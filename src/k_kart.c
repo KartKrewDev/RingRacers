@@ -2048,6 +2048,8 @@ void K_RespawnChecker(player_t *player)
 		fixed_t destx = 0, desty = 0, destz = 0;
 
 		player->mo->momx = player->mo->momy = player->mo->momz = 0;
+		player->kartstuff[k_spinouttimer] = 0;
+		player->kartstuff[k_wipeoutslow] = 0;	// Don't spinout anymore
 		player->powers[pw_flashing] = 2;
 		player->powers[pw_nocontrol] = 2;
 
@@ -2059,9 +2061,20 @@ void K_RespawnChecker(player_t *player)
 		destz = (player->starpostz << FRACBITS);
 
 		if (player->kartstuff[k_starpostflip])
+		{
+			// This variable is set from the settings of the best waypoint, thus this waypoint is FLIPPED as well.
+			// So we should flip the player in advance for it as well.
+			player->mo->flags2 |= MF2_OBJECTFLIP;
+			player->mo->eflags |= MFE_VERTICALFLIP;
 			destz -= (128 * mapobjectscale) + (player->mo->height);
+		}
 		else
+		{
+			// Ditto, but this waypoint isn't flipped, so make sure the player also isn't flipped!
+			player->mo->flags2 &= ~MF2_OBJECTFLIP;
+			player->mo->eflags &= ~MFE_VERTICALFLIP;
 			destz += (128 * mapobjectscale);
+		}
 
 		if (player->mo->x != destx || player->mo->y != desty || player->mo->z != destz)
 		{
@@ -6068,6 +6081,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		(bestwaypoint != NULL) &&
 		(bestwaypoint != player->nextwaypoint) &&
 		(player->kartstuff[k_respawn] == 0) &&
+		(!(bestwaypoint->mobj->spawnpoint->options & MTF_AMBUSH)) &&	// Don't try to respawn on waypoints with the MTF_AMBUSH (No respawn) flag!
 		(K_GetWaypointIsShortcut(bestwaypoint) == false) && (K_GetWaypointIsEnabled(bestwaypoint) == true))
 		{
 			size_t     i            = 0U;
