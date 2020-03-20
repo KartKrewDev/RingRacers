@@ -6295,10 +6295,12 @@ static INT32 K_FlameShieldMax(player_t *player)
 			numplayers++;
 	}
 
-	if (numplayers > 1)
-		return player->kartstuff[k_position] + 8;
-	else
+	if (numplayers <= 1)
 		return 16; // max when alone, for testing
+	else if (player->kartstuff[k_position] == 1)
+		return 1; // minimum for first
+	else
+		return (player->kartstuff[k_position] * 16) / numplayers;
 }
 
 //
