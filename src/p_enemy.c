@@ -8459,6 +8459,78 @@ static void SpawnSPBTrailRings(mobj_t *actor)
 	}
 }
 
+// Spawns the V shaped dust. To be used when the SPB is going mostly forward.
+static void SpawnSPBDust(mobj_t *mo)
+{
+	// The easiest way to spawn a V shaped cone of dust from the SPB is simply to spawn 2 particles, and to both move them to the sides in opposite direction.
+	mobj_t *dust;
+	fixed_t sx;
+	fixed_t sy;
+	fixed_t sz = mo->floorz;
+	angle_t sa = mo->angle - ANG1*60;
+	INT32 i;
+
+	if (mo->eflags & MFE_VERTICALFLIP)
+		sz = mo->ceilingz;
+
+	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*32)	// Only ever other frame. Also don't spawn it if we're way above the ground.
+	{
+		// Determine spawning position next to the SPB:
+		for (i=0; i < 2; i++)
+		{
+			sx = mo->x + FixedMul((mo->scale*96), FINECOSINE((sa)>>ANGLETOFINESHIFT));
+			sy = mo->y + FixedMul((mo->scale*96), FINESINE((sa)>>ANGLETOFINESHIFT));
+
+			dust = P_SpawnMobj(sx, sy, sz, MT_SPBDUST);
+			dust->momx = mo->momx/2;
+			dust->momy = mo->momy/2;
+			dust->momz = mo->momz/2;	// Give some of the momentum to the dust
+			P_SetScale(dust, mo->scale*2);
+			dust->colorized = true;
+			dust->color = SKINCOLOR_RED;
+			dust->angle = mo->angle - FixedAngle(FRACUNIT*90 - FRACUNIT*180*i);	// The first one will spawn to the right of the spb, the second one to the left.
+			P_Thrust(dust, dust->angle, 6*dust->scale);
+
+			K_MatchGenericExtraFlags(dust, mo);
+
+			sa += ANG1*120;	// Add 120 degrees to get to mo->angle + ANG1*60
+		}
+	}
+}
+
+// Spawns SPB slip tide. To be used when the SPB is turning.
+// Modified version of K_SpawnAIZDust. Maybe we could merge those to be cleaner?
+
+// dir should be either 1 or -1 to determine where to spawn the dust.
+
+static void SpawnSPBAIZDust(mobj_t *mo, INT32 dir)
+{
+	fixed_t newx;
+	fixed_t newy;
+	mobj_t *spark;
+	angle_t travelangle;
+
+	travelangle = R_PointToAngle2(0, 0, mo->momx, mo->momy);
+	if (leveltime & 1)
+	{
+		newx = mo->x + P_ReturnThrustX(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
+		newy = mo->y + P_ReturnThrustY(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
+		spark = P_SpawnMobj(newx, newy, mo->z, MT_AIZDRIFTSTRAT);
+		spark->colorized = true;
+		spark->color = SKINCOLOR_RED;
+		spark->flags = MF_NOGRAVITY|MF_PAIN;
+		P_SetTarget(&spark->target, mo);
+
+		spark->angle = travelangle+(dir*ANGLE_90);
+		P_SetScale(spark, (spark->destscale = mo->scale*3/2));
+
+		spark->momx = (6*mo->momx)/5;
+		spark->momy = (6*mo->momy)/5;
+
+		K_MatchGenericExtraFlags(spark, mo);
+	}
+}
+
 void A_SPBChase(mobj_t *actor)
 {
 	player_t *player = NULL;
@@ -8703,6 +8775,12 @@ void A_SPBChase(mobj_t *actor)
 		spbplace = bestrank;
 		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
 
+		/*
+			K_GetBestWaypointForMobj returns the waypoint closest to the object that isn't its current waypoint. While this is usually good enough,
+			in cases where the track overlaps, this means that the SPB will sometimes target a waypoint on an earlier/later portion of the track instead of following along.
+			For this reason, we're going to try and make sure to avoid these situations.
+		*/
+
 		// Move along the waypoints until you get close enough
 		if (actor->cusval > -1 && actor->extravalue2 > 0)
 		{
@@ -8770,6 +8848,8 @@ void A_SPBChase(mobj_t *actor)
 			// Smoothly rotate horz angle
 			angle_t input = hang - actor->angle;
 			boolean invert = (input > ANGLE_180);
+			INT32 turnangle;
+
 			if (invert)
 				input = InvAngle(input);
 
@@ -8781,6 +8861,15 @@ void A_SPBChase(mobj_t *actor)
 			if (invert)
 				input = InvAngle(input);
 			actor->angle += input;
+
+			// If input is small enough, spawn dust. Otherwise, spawn a slip tide!
+			turnangle = AngleFixed(input)/FRACUNIT;
+
+			// The SPB is really turning if that value is >= 3 and <= 357. This looks pretty bad check-wise so feel free to change it for something that isn't as terrible.
+			if (turnangle >= 3 && turnangle <= 357)
+				SpawnSPBAIZDust(actor, turnangle < 180 ? 1 : -1);	// 1 if turning left, -1 if turning right. Angles work counterclockwise, remember!
+			else
+				SpawnSPBDust(actor);	// if we're mostly going straight, then spawn the V dust cone!
 
 			// Smoothly rotate vert angle
 			input = vang - actor->movedir;
@@ -8830,7 +8919,7 @@ void A_SPBChase(mobj_t *actor)
 		// Spawn a trail of rings behind the SPB!
 		SpawnSPBTrailRings(actor);
 
-		if (dist <= (1024*actor->tracer->scale)) // Close enough to target?
+		if (dist <= (1024*actor->tracer->scale) && !actor->reactiontime) // Close enough to target? Reactiontime is used for debug purposes.
 		{
 			S_StartSound(actor, actor->info->attacksound);
 			actor->extravalue1 = 1; // TARGET ACQUIRED

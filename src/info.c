@@ -20293,6 +20293,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL          // raisestate
 	},
 
+	{           // MT_SPBDUST
+	    -1,             // doomednum
+	    S_DRAFTDUST1,   // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    16<<FRACBITS,    // radius
+	    32<<FRACBITS,   // height
+	    1,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_DONTENCOREMAP|MF_NOGRAVITY|MF_PAIN, // flags
+	    S_NULL          // raisestate
+	},
+
 	{           // MT_TIREGREASE
 	    -1,             // doomednum
 	    S_TIREGREASE,   // spawnstate
