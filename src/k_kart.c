@@ -1296,7 +1296,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 {
-	fixed_t weight = 5*mobj->scale;
+	fixed_t weight = 5*FRACUNIT;
 
 	if (!mobj->player)
 		return weight;
@@ -1309,11 +1309,11 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 	}
 	else
 	{
-		weight = (mobj->player->kartweight) * mobj->scale;
+		weight = (mobj->player->kartweight) * FRACUNIT;
 		if (mobj->player->speed > K_GetKartSpeed(mobj->player, false))
 			weight += (mobj->player->speed - K_GetKartSpeed(mobj->player, false))/8;
 		if (mobj->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD)
-			weight += 9*mobj->scale;
+			weight += 9*FRACUNIT;
 	}
 
 	return weight;
@@ -1321,7 +1321,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 
 static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 {
-	fixed_t weight = 5*mobj->scale;
+	fixed_t weight = 5*FRACUNIT;
 
 	switch (mobj->type)
 	{
@@ -1351,15 +1351,15 @@ static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 		case MT_JAWZ_DUD:
 		case MT_JAWZ_SHIELD:
 			if (against->player)
-				weight = K_PlayerWeight(against, NULL) + (3*against->scale);
+				weight = K_PlayerWeight(against, NULL) + (3*FRACUNIT);
 			else
-				weight += 3*mobj->scale;
+				weight += 3*FRACUNIT;
 			break;
 		default:
 			break;
 	}
 
-	return weight;
+	return FixedMul(weight, mobj->scale);
 }
 
 // This kind of wipeout happens with no rings -- doesn't remove a bumper, has no invulnerability, and is much shorter.
