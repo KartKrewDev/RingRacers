@@ -6794,7 +6794,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										player->kartstuff[k_flamemeter] = 0;
 
 									if (player->kartstuff[k_flamedash] == 0)
+									{
+										S_StartSound(player->mo, sfx_s3k43);
 										K_PlayBoostTaunt(player->mo);
+									}
 
 									player->kartstuff[k_flamedash] += 2;
 									player->kartstuff[k_flamemeter] += 2;
