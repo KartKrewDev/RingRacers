@@ -8449,12 +8449,14 @@ static void SpawnSPBTrailRings(mobj_t *actor)
 {
 	if (actor != NULL)
 	{
-		if (leveltime % 6 == 0)
+		if (leveltime % (actor->extravalue1 == 2 ? 6 : 3) == 0)	// Extravalue1 == 2 is seeking mode. Because the SPB is about twice as fast as normal in that mode, also spawn the rings twice as often to make up for it!
 		{
 			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
 				actor->z - actor->momz + (24*mapobjectscale), MT_RING);
 			ring->threshold = 10;
-			ring->fuse = 120*TICRATE;
+			ring->fuse = 35*TICRATE;
+			ring->colorized = true;
+			ring->color = SKINCOLOR_RED;
 		}
 	}
 }
@@ -8473,7 +8475,7 @@ static void SpawnSPBDust(mobj_t *mo)
 	if (mo->eflags & MFE_VERTICALFLIP)
 		sz = mo->ceilingz;
 
-	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*32)	// Only ever other frame. Also don't spawn it if we're way above the ground.
+	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*64)	// Only ever other frame. Also don't spawn it if we're way above the ground.
 	{
 		// Determine spawning position next to the SPB:
 		for (i=0; i < 2; i++)
@@ -8509,13 +8511,17 @@ static void SpawnSPBAIZDust(mobj_t *mo, INT32 dir)
 	fixed_t newy;
 	mobj_t *spark;
 	angle_t travelangle;
+	fixed_t sz = mo->floorz;
+
+	if (mo->eflags & MFE_VERTICALFLIP)
+		sz = mo->ceilingz;
 
 	travelangle = R_PointToAngle2(0, 0, mo->momx, mo->momy);
-	if (leveltime & 1)
+	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*64)
 	{
 		newx = mo->x + P_ReturnThrustX(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
 		newy = mo->y + P_ReturnThrustY(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
-		spark = P_SpawnMobj(newx, newy, mo->z, MT_AIZDRIFTSTRAT);
+		spark = P_SpawnMobj(newx, newy, sz, MT_AIZDRIFTSTRAT);
 		spark->colorized = true;
 		spark->color = SKINCOLOR_RED;
 		spark->flags = MF_NOGRAVITY|MF_PAIN;
@@ -8530,6 +8536,21 @@ static void SpawnSPBAIZDust(mobj_t *mo, INT32 dir)
 		K_MatchGenericExtraFlags(spark, mo);
 	}
 }
+
+// Used for seeking and when SPB is trailing its target from way too close!
+static void SpawnSPBSpeedLines(mobj_t *actor)
+{
+	mobj_t *fast = P_SpawnMobj(actor->x + (P_RandomRange(-24,24) * actor->scale),
+		actor->y + (P_RandomRange(-24,24) * actor->scale),
+		actor->z + (actor->height/2) + (P_RandomRange(-24,24) * actor->scale),
+		MT_FASTLINE);
+
+	fast->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
+	fast->color = SKINCOLOR_RED;
+	fast->colorized = true;
+	K_MatchGenericExtraFlags(fast, actor);
+}
+
 
 void A_SPBChase(mobj_t *actor)
 {
@@ -8549,7 +8570,7 @@ void A_SPBChase(mobj_t *actor)
 #endif
 
 	// Default speed
-	wspeed = actor->movefactor;
+	wspeed = FixedMul(mapobjectscale, K_GetKartSpeedFromStat(5)*2);	// Go at twice the average speed a player would be going at!
 
 	if (actor->threshold) // Just fired, go straight.
 	{
@@ -8701,19 +8722,7 @@ void A_SPBChase(mobj_t *actor)
 			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
 				: (16*R_PointToDist2(0, 0, actor->tracer->momx, actor->tracer->momy))/15) // Going faster than the target
 				&& xyspeed > K_GetKartSpeed(actor->tracer->player, false)/4) // Don't display speedup lines at pitifully low speeds
-			{
-				mobj_t *fast = P_SpawnMobj(actor->x + (P_RandomRange(-24,24) * actor->scale),
-					actor->y + (P_RandomRange(-24,24) * actor->scale),
-					actor->z + (actor->height/2) + (P_RandomRange(-24,24) * actor->scale),
-					MT_FASTLINE);
-				fast->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
-				//fast->momx = (3*actor->momx)/4;
-				//fast->momy = (3*actor->momy)/4;
-				//fast->momz = (3*actor->momz)/4;
-				fast->color = SKINCOLOR_RED;
-				fast->colorized = true;
-				K_MatchGenericExtraFlags(fast, actor);
-			}
+					SpawnSPBSpeedLines(actor);
 
 			return;
 		}
@@ -8871,6 +8880,8 @@ void A_SPBChase(mobj_t *actor)
 			else
 				SpawnSPBDust(actor);	// if we're mostly going straight, then spawn the V dust cone!
 
+			SpawnSPBSpeedLines(actor);	// Always spawn speed lines while seeking
+
 			// Smoothly rotate vert angle
 			input = vang - actor->movedir;
 			invert = (input > ANGLE_180);
@@ -8919,7 +8930,7 @@ void A_SPBChase(mobj_t *actor)
 		// Spawn a trail of rings behind the SPB!
 		SpawnSPBTrailRings(actor);
 
-		if (dist <= (1024*actor->tracer->scale) && !actor->reactiontime) // Close enough to target? Reactiontime is used for debug purposes.
+		if (dist <= (1024*actor->tracer->scale) && !(actor->flags2 & MF2_AMBUSH)) // Close enough to target? Use Ambush flag to disable targetting so I can have an easier time testing stuff...
 		{
 			S_StartSound(actor, actor->info->attacksound);
 			actor->extravalue1 = 1; // TARGET ACQUIRED

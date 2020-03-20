@@ -2499,20 +2499,29 @@ static void K_GetKartBoostPower(player_t *player)
 	player->kartstuff[k_numboosts] = numboosts;
 }
 
-fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
+// Returns kart speed from a stat. Boost power and scale are NOT taken into account, no player or object is necessary.
+fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 {
 	const fixed_t xspd = (3*FRACUNIT)/64;
 	fixed_t g_cc = K_GetKartGameSpeedScalar(gamespeed) + xspd;
 	fixed_t k_speed = 150;
-	UINT8 kartspeed = player->kartspeed;
 	fixed_t finalspeed;
-
-	if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
-		kartspeed = 1;
 
 	k_speed += kartspeed*3; // 153 - 177
 
 	finalspeed = FixedMul(k_speed<<14, g_cc);
+	return finalspeed;
+}
+
+fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
+{
+	fixed_t finalspeed;
+	UINT8 kartspeed = player->kartspeed;
+
+	if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
+		kartspeed = 1;
+
+	finalspeed = K_GetKartSpeedFromStat(kartspeed);
 
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 		finalspeed = FixedMul(finalspeed, player->mo->scale);
