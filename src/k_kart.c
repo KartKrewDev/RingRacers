@@ -6012,8 +6012,14 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 						{
 							bestwaypoint = waypoint->nextwaypoints[i];
 
-							nextbestdelta = angledelta;
-							nextbestmomdelta = momdelta;
+							if (angledelta < nextbestdelta)
+							{
+								nextbestdelta = angledelta;
+							}
+							if (momdelta < nextbestmomdelta)
+							{
+								nextbestmomdelta = momdelta;
+							}
 
 							// Remove wrong way flag if we're using nextwaypoints
 							player->kartstuff[k_wrongway] = 0;
@@ -6049,7 +6055,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 							nextbestdelta = angledelta;
 							nextbestmomdelta = momdelta;
 
-							// Ser wrong way flag if we're using prevwaypoints
+							// Set wrong way flag if we're using prevwaypoints
 							player->kartstuff[k_wrongway] = 1;
 							updaterespawn = false;
 						}
@@ -10619,6 +10625,7 @@ static void K_DrawWaypointDebugger(void)
 {
 	if ((cv_kartdebugwaypoints.value != 0) && (stplyr == &players[displayplayers[0]]))
 	{
+		V_DrawString(8, 166, 0, va("'Best' Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
 		V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
 	}
 }
@@ -10823,8 +10830,10 @@ void K_drawKartHUD(void)
 			K_drawKartFreePlay(leveltime);
 	}
 
-	if (stplyr->kartstuff[k_wrongway] && ((leveltime / 8) & 1))
+	if (splitscreen == 0 && stplyr->kartstuff[k_wrongway] && ((leveltime / 8) & 1))
+	{
 		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP|V_SNAPTOBOTTOM, "WRONG WAY");
+	}
 
 	if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();

@@ -461,6 +461,9 @@ void K_DebugWaypointsVisualise(void)
 		debugmobj = P_SpawnMobj(waypointmobj->x, waypointmobj->y, waypointmobj->z, MT_SPARK);
 		P_SetMobjState(debugmobj, S_THOK);
 
+		debugmobj->frame &= ~FF_TRANSMASK;
+		debugmobj->frame |= FF_TRANS20;
+
 		// There's a waypoint setup for this mobj! So draw that it's a valid waypoint and draw lines to its connections
 		if (waypoint != NULL)
 		{
