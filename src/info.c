@@ -1851,7 +1851,7 @@ state_t states[NUMSTATES] =
 	{SPR_SPHG, 2, 4, {NULL}, 0, 0, S_GHORIZ1},   // S_GHORIZ4
 
 	// Rain
-	{SPR_RAIN, FF_TRANS50, -1, {NULL}, 0, 0, S_NULL}, // S_RAIN1
+	{SPR_RAIN, 0, -1, {NULL}, 0, 0, S_NULL}, // S_RAIN1
 	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_NULL}, // S_RAINRETURN
 
 	// Snowflake
@@ -1876,9 +1876,9 @@ state_t states[NUMSTATES] =
 	{SPR_SPLH, FF_TRANS50|8, 2, {NULL}, 0, 0, S_NULL},    // S_SPLISH9
 
 	// Water Splash
-	{SPR_SPLA, FF_TRANS50  , 3, {NULL}, 0, 0, S_SPLASH2}, // S_SPLASH1
-	{SPR_SPLA, FF_TRANS70|1, 3, {NULL}, 0, 0, S_SPLASH3}, // S_SPLASH2
-	{SPR_SPLA, FF_TRANS90|2, 3, {NULL}, 0, 0, S_NULL}, // S_SPLASH3
+	{SPR_SPLA, 0, 3, {NULL}, 0, 0, S_SPLASH2}, // S_SPLASH1
+	{SPR_SPLA, 1, 3, {NULL}, 0, 0, S_SPLASH3}, // S_SPLASH2
+	{SPR_SPLA, 2, 3, {NULL}, 0, 0, S_NULL}, // S_SPLASH3
 
 	// Smoke
 	{SPR_SMOK, FF_TRANS50  , 4, {NULL}, 0, 0, S_SMOKE2}, // S_SMOKE1

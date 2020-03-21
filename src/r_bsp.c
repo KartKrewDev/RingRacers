@@ -57,6 +57,16 @@ static boolean R_NoEncore(sector_t *sector, boolean ceiling)
 	return ((boolean)(sector->flags & SF_FLIPSPECIAL_FLOOR));
 }
 
+static void R_PlaneLightOverride(sector_t *sector, boolean ceiling, INT32 *lightlevel)
+{
+	if (GETSECSPECIAL(sector->special, 4) == 6) // Fullbright sneaker panels
+	{
+		if ((ceiling && (sector->flags & SF_FLIPSPECIAL_CEILING))
+			|| (!ceiling && (sector->flags & SF_FLIPSPECIAL_FLOOR)))
+			*lightlevel = 255;
+	}
+}
+
 //
 // R_ClearDrawSegs
 //
@@ -895,6 +905,9 @@ static void R_Subsector(size_t num)
 
 	sub->sector->extra_colormap = frontsector->extra_colormap;
 
+	R_PlaneLightOverride(frontsector, false, &floorlightlevel);
+	R_PlaneLightOverride(frontsector, true, &ceilinglightlevel);
+
 	if (((
 #ifdef ESLOPE
 			frontsector->f_slope ? P_GetZAt(frontsector->f_slope, viewx, viewy) :
@@ -923,8 +936,8 @@ static void R_Subsector(size_t num)
 		|| (frontsector->heightsec != -1
 		&& sectors[frontsector->heightsec].floorpic == skyflatnum)))
 	{
-		ceilingplane = R_FindPlane(frontsector->ceilingheight, frontsector->ceilingpic,
-			ceilinglightlevel, frontsector->ceiling_xoffs, frontsector->ceiling_yoffs, frontsector->ceilingpic_angle,
+		ceilingplane = R_FindPlane(frontsector->ceilingheight, frontsector->ceilingpic, ceilinglightlevel,
+			frontsector->ceiling_xoffs, frontsector->ceiling_yoffs, frontsector->ceilingpic_angle,
 			ceilingcolormap, NULL
 #ifdef POLYOBJECTS_PLANES
 			, NULL

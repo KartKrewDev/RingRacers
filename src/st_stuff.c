@@ -1894,38 +1894,40 @@ static void ST_overlayDrawer(void)
 			V_DrawScaledPatch(hudinfo[HUD_GRAVBOOTSICO].x, STRINGY(hudinfo[HUD_GRAVBOOTSICO].y), V_SNAPTORIGHT, gravboots);
 		*/
 
-		if (!(multiplayer && demo.playback))
+		if (cv_showviewpointtext.value)
 		{
-			if(!P_IsLocalPlayer(stplyr))
+			if (!(multiplayer && demo.playback))
 			{
-				/*char name[MAXPLAYERNAME+1];
-				// shorten the name if its more than twelve characters.
-				strlcpy(name, player_names[stplyr-players], 13);*/
+				if(!P_IsLocalPlayer(stplyr))
+				{
+					/*char name[MAXPLAYERNAME+1];
+					// shorten the name if its more than twelve characters.
+					strlcpy(name, player_names[stplyr-players], 13);*/
 
-				// Show name of player being displayed
-				V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, 0, M_GetText("Viewpoint:"));
-				V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_ALLOWLOWERCASE, player_names[stplyr-players]);
+					// Show name of player being displayed
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, 0, M_GetText("VIEWPOINT:"));
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_ALLOWLOWERCASE, player_names[stplyr-players]);
+				}
 			}
-		}
-		else if (!demo.title)
-		{
+			else if (!demo.title)
+			{
+				if (!r_splitscreen)
+				{
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("VIEWPOINT:"));
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_HUDTRANSHALF|V_ALLOWLOWERCASE, player_names[stplyr-players]);
+				}
+				else if (r_splitscreen == 1)
+				{
+					char name[MAXPLAYERNAME+12];
 
-			if (!r_splitscreen)
-			{
-				V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("Viewpoint:"));
-				V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_HUDTRANSHALF|V_ALLOWLOWERCASE, player_names[stplyr-players]);
-			}
-			else if (r_splitscreen == 1)
-			{
-				char name[MAXPLAYERNAME+12];
-
-				INT32 y = (stplyr == &players[displayplayers[0]]) ? 4 : BASEVIDHEIGHT/2-12;
-				sprintf(name, "VIEWPOINT: %s", player_names[stplyr-players]);
-				V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT), name);
-			}
-			else if (r_splitscreen)
-			{
-				V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT), player_names[stplyr-players]);
+					INT32 y = (stplyr == &players[displayplayers[0]]) ? 4 : BASEVIDHEIGHT/2-12;
+					sprintf(name, "VIEWPOINT: %s", player_names[stplyr-players]);
+					V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT), name);
+				}
+				else if (r_splitscreen)
+				{
+					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT), player_names[stplyr-players]);
+				}
 			}
 		}
 

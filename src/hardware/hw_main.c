@@ -3564,6 +3564,9 @@ static void HWR_Subsector(size_t num)
 
 	sub->sector->extra_colormap = gr_frontsector->extra_colormap;
 
+	//R_PlaneLightOverride(gr_frontsector, false, &floorlightlevel);
+	//R_PlaneLightOverride(gr_frontsector, true, &ceilinglightlevel);
+
 	// render floor ?
 #ifdef DOPLANES
 	// yeah, easy backface cull! :)

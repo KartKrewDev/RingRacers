@@ -139,6 +139,8 @@ enum cameraf {
 	camera_momx,
 	camera_momy,
 	camera_momz,
+	camera_pan,
+	camera_pitch,
 	camera_pnum
 };
 
@@ -158,6 +160,8 @@ static const char *const camera_opt[] = {
 	"momx",
 	"momy",
 	"momz",
+	"pan",
+	"pitch",
 	"pnum",
 	NULL};
 
@@ -313,6 +317,12 @@ static int camera_get(lua_State *L)
 		break;
 	case camera_momz:
 		lua_pushinteger(L, cam->momz);
+		break;
+	case camera_pan:
+		lua_pushinteger(L, cam->pan);
+		break;
+	case camera_pitch:
+		lua_pushinteger(L, cam->pitch);
 		break;
 	case camera_pnum:
 		lua_pushinteger(L, camnum);
