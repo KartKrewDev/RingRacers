@@ -195,7 +195,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	if (horizspeed)
 	{
 		angle_t finalAngle = spring->angle;
-		fixed_t finalSpeed = horizspeed;
+		fixed_t finalSpeed = FixedMul(horizspeed, FixedSqrt(FixedMul(hscale, spring->scale)));
 		fixed_t objectSpeed;
 
 		if (object->player)
@@ -273,7 +273,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		// Horizontal speed is used as a minimum thrust, not a direct replacement
 		finalSpeed = max(objectSpeed, finalSpeed);
 
-		P_InstaThrustEvenIn2D(object, finalAngle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
+		P_InstaThrustEvenIn2D(object, finalAngle, finalSpeed);
 	}
 
 	// Re-solidify
