@@ -14,21 +14,21 @@
 #include "p_local.h"
 #include "r_local.h"
 
-int splitscreen_original_party_size[MAXPLAYERS];
-int splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+INT32 splitscreen_original_party_size[MAXPLAYERS];
+INT32 splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
-int splitscreen_invitations[MAXPLAYERS];
-int splitscreen_party_size[MAXPLAYERS];
-int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+INT32 splitscreen_invitations[MAXPLAYERS];
+INT32 splitscreen_party_size[MAXPLAYERS];
+INT32 splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 boolean splitscreen_partied[MAXPLAYERS];
 
 void
-G_ResetSplitscreen (int playernum)
+G_ResetSplitscreen (INT32 playernum)
 {
 	INT32 old_displayplayers[MAXSPLITSCREENPLAYERS];
 
-	int i;
+	INT32 i;
 
 	splitscreen_party_size[playernum] =
 		splitscreen_original_party_size[playernum];
@@ -63,18 +63,18 @@ G_ResetSplitscreen (int playernum)
 }
 
 void
-G_RemovePartyMember (int playernum)
+G_RemovePartyMember (INT32 playernum)
 {
-	int old_party[MAXSPLITSCREENPLAYERS];
-	int new_party[MAXSPLITSCREENPLAYERS];
+	INT32 old_party[MAXSPLITSCREENPLAYERS];
+	INT32 new_party[MAXSPLITSCREENPLAYERS];
 
-	int old_party_size;
-	int before;
-	int after;
-	int views;
+	INT32 old_party_size;
+	INT32 before;
+	INT32 after;
+	INT32 views;
 
-	int i;
-	int n;
+	INT32 i;
+	INT32 n;
 
 	old_party_size = splitscreen_party_size[playernum];
 
@@ -135,18 +135,18 @@ G_RemovePartyMember (int playernum)
 }
 
 void
-G_AddPartyMember (int invitation, int playernum)
+G_AddPartyMember (INT32 invitation, INT32 playernum)
 {
-	int *    party;
-	int *add_party;
+	INT32 *    party;
+	INT32 *add_party;
 
-	int old_party_size;
-	int new_party_size;
+	INT32 old_party_size;
+	INT32 new_party_size;
 
-	int views;
+	INT32 views;
 
-	int i;
-	int n;
+	INT32 i;
+	INT32 n;
 
 	views = splitscreen_original_party_size[playernum];
 
