@@ -107,6 +107,8 @@ typedef struct camera_s
 
 	// SRB2Kart: camera pans while drifting
 	fixed_t pan;
+	// SRB2Kart: camera pitches on slopes
+	angle_t pitch;
 } camera_t;
 
 extern camera_t camera[MAXSPLITSCREENPLAYERS];

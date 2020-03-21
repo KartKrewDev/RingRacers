@@ -305,7 +305,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	if (horizspeed)
 	{
 		angle_t finalAngle = spring->angle;
-		fixed_t finalSpeed = horizspeed;
+		fixed_t finalSpeed = FixedMul(horizspeed, FixedSqrt(FixedMul(hscale, spring->scale)));
 		fixed_t objectSpeed;
 
 		if (object->player)
@@ -383,7 +383,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		// Horizontal speed is used as a minimum thrust, not a direct replacement
 		finalSpeed = max(objectSpeed, finalSpeed);
 
-		P_InstaThrustEvenIn2D(object, finalAngle, FixedMul(finalSpeed, FixedSqrt(FixedMul(hscale, spring->scale))));
+		P_InstaThrustEvenIn2D(object, finalAngle, finalSpeed);
 	}
 
 	// Re-solidify
@@ -920,7 +920,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
@@ -937,7 +937,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 
 			P_SpawnMobj(thing->x/2 + tmthing->x/2, thing->y/2 + tmthing->y/2, thing->z/2 + tmthing->z/2, MT_ITEMCLASH);
@@ -951,7 +951,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_SSMINE_SHIELD || thing->type == MT_SSMINE)
@@ -965,7 +965,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 
 			// Bomb death
@@ -1093,7 +1093,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD
@@ -1110,7 +1110,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 
 			P_SpawnMobj(thing->x/2 + tmthing->x/2, thing->y/2 + tmthing->y/2, thing->z/2 + tmthing->z/2, MT_ITEMCLASH);
@@ -1124,7 +1124,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(tmthing, tmthing->info->deathsound);
 			P_KillMobj(tmthing, thing, thing);
 
-			P_SetObjectMomZ(tmthing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(tmthing, 12*FRACUNIT, false);
 			P_InstaThrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 
@@ -1170,7 +1170,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 
@@ -1221,7 +1221,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_BANANA_SHIELD || thing->type == MT_BANANA
@@ -1249,7 +1249,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			S_StartSound(thing, thing->info->deathsound);
 			P_KillMobj(thing, tmthing, tmthing);
 
-			P_SetObjectMomZ(thing, 8*FRACUNIT, false);
+			P_SetObjectMomZ(thing, 12*FRACUNIT, false);
 			P_InstaThrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y)+ANGLE_90, 16*FRACUNIT);
 		}
 		else if (thing->type == MT_SSMINE_SHIELD || thing->type == MT_SSMINE)
@@ -3836,8 +3836,6 @@ void P_BouncePlayerMove(mobj_t *mo)
 	mmomx = mo->player->rmomx;
 	mmomy = mo->player->rmomy;
 
-	mo->player->kartstuff[k_drift] = 0;
-	mo->player->kartstuff[k_driftcharge] = 0;
 	mo->player->kartstuff[k_pogospring] = 0;
 
 	// trace along the three leading corners

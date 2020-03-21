@@ -7149,8 +7149,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 {
 	static UINT8 lookbackdelay[4] = {0,0,0,0};
 	UINT8 num;
-	angle_t angle = 0, focusangle = 0, focusaiming = 0;
-	fixed_t x, y, z, dist, height, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
+	angle_t angle = 0, focusangle = 0, focusaiming = 0, pitch = 0;
+	fixed_t x, y, z, dist, distxy, distz, height, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
 	fixed_t pan, xpan, ypan;
 	INT32 camrotate;
 	boolean camstill, lookback;
@@ -7402,8 +7402,36 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		height -= FixedMul(height, player->karthud[khud_boostcam]);
 	}
 
-	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
-	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
+	if (mo->standingslope)
+	{
+		pitch = (angle_t)FixedMul(P_ReturnThrustX(mo, player->frameangle - mo->standingslope->xydirection, FRACUNIT), (fixed_t)mo->standingslope->zangle);
+		if (mo->eflags & MFE_VERTICALFLIP)
+		{
+			if (pitch >= ANGLE_180)
+				pitch = 0;
+		}
+		else
+		{
+			if (pitch < ANGLE_180)
+				pitch = 0;
+		}
+	}
+	pitch = thiscam->pitch + (angle_t)FixedMul(pitch - thiscam->pitch, camspeed/4);
+
+	if (rendermode == render_opengl
+#ifdef GL_SHADERS/* just so we can't possibly forget about it */
+			&& !cv_grshearing.value
+#endif
+	)
+		distxy = FixedMul(dist, FINECOSINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
+	else
+		distxy = dist;
+	distz = -FixedMul(dist, FINESINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
+	if (splitscreen == 1) // 2 player is weird, this helps keep players on screen
+		distz = 3*distz/5;
+
+	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
+	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
 
 	// SRB2Kart: set camera panning
 	if (camstill || resetcalled || player->playerstate == PST_DEAD)
@@ -7413,7 +7441,14 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		if (player->kartstuff[k_drift] != 0)
 		{
 			fixed_t panmax = (dist/5);
-			pan = FixedDiv(FixedMul(min((fixed_t)player->kartstuff[k_driftcharge], K_GetKartDriftSparkValue(player)), panmax), K_GetKartDriftSparkValue(player));
+			INT32 driftval = K_GetKartDriftSparkValue(player);
+			INT32 dc = player->kartstuff[k_driftcharge];
+
+			if (dc > driftval || dc < 0)
+				dc = driftval;
+
+			pan = FixedDiv(FixedMul((fixed_t)dc, panmax), driftval);
+
 			if (pan > panmax)
 				pan = panmax;
 			if (player->kartstuff[k_drift] < 0)
@@ -7434,9 +7469,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	pviewheight = FixedMul(32<<FRACBITS, mo->scale);
 
 	if (mo->eflags & MFE_VERTICALFLIP)
-		z = mo->z + mo->height - pviewheight - camheight;
+		z = mo->z + mo->height - pviewheight - camheight + distz;
 	else
-		z = mo->z + pviewheight + camheight;
+		z = mo->z + pviewheight + camheight + distz;
 
 #ifndef NOCLIPCAM // Disable all z-clipping for noclip cam
 	// move camera down to move under lower ceilings
@@ -7671,6 +7706,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 
 	thiscam->pan = pan;
+	thiscam->pitch = pitch;
 
 	// compute aming to look the viewed point
 	f1 = viewpointx-thiscam->x;
@@ -7678,9 +7714,17 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	dist = FixedHypot(f1, f2);
 
 	if (mo->eflags & MFE_VERTICALFLIP)
+	{
 		angle = R_PointToAngle2(0, thiscam->z + thiscam->height, dist, mo->z + mo->height - P_GetPlayerHeight(player));
+		if (thiscam->pitch < ANGLE_180 && thiscam->pitch > angle)
+			angle = thiscam->pitch;
+	}
 	else
+	{
 		angle = R_PointToAngle2(0, thiscam->z, dist, mo->z + P_GetPlayerHeight(player));
+		if (thiscam->pitch >= ANGLE_180 && thiscam->pitch < angle)
+			angle = thiscam->pitch;
+	}
 
 	if (player->playerstate != PST_DEAD && !((player->pflags & PF_NIGHTSMODE) && player->exiting))
 		angle += (focusaiming < ANGLE_180 ? focusaiming/2 : InvAngle(InvAngle(focusaiming)/2)); // overcomplicated version of '((signed)focusaiming)/2;'
