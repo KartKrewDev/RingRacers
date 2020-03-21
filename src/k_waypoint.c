@@ -11,9 +11,9 @@ static const UINT32 SPARKLES_PER_CONNECTION = 16U;
 
 // Some defaults for the size of the dynamically allocated sets for pathfinding. These are kept for the purpose of
 // allocating a size that is less likely to need reallocating again during the pathfinding.
-static const size_t OPENSET_BASE_SIZE    = 16U;
-static const size_t CLOSEDSET_BASE_SIZE  = 256U;
-static const size_t NODESARRAY_BASE_SIZE = 256U;
+#define OPENSET_BASE_SIZE    (16U)
+#define CLOSEDSET_BASE_SIZE  (256U)
+#define NODESARRAY_BASE_SIZE (256U)
 
 static waypoint_t *waypointheap = NULL;
 static waypoint_t *firstwaypoint = NULL;
@@ -221,8 +221,11 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 		for (i = 0; i < numwaypoints; i++)
 		{
 			checkwaypoint = &waypointheap[i];
-			checkdist = P_AproxDistance(mobj->x - checkwaypoint->mobj->x, mobj->y - checkwaypoint->mobj->y);
-			checkdist = P_AproxDistance(checkdist, mobj->z - checkwaypoint->mobj->z);
+
+			checkdist = P_AproxDistance(
+				(mobj->x / FRACUNIT) - (checkwaypoint->mobj->x / FRACUNIT),
+				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
+			checkdist = P_AproxDistance(checkdist, (mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT));
 
 			if (checkdist < closestdist)
 			{
@@ -233,6 +236,52 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 	}
 
 	return closestwaypoint;
+}
+
+/*--------------------------------------------------
+	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+{
+	waypoint_t *bestwaypoint = NULL;
+
+	if ((mobj == NULL) || P_MobjWasRemoved(mobj))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL mobj in K_GetBestWaypointForMobj.\n");
+	}
+	else
+	{
+		size_t     i              = 0U;
+		waypoint_t *checkwaypoint = NULL;
+		fixed_t    closestdist    = INT32_MAX;
+		fixed_t    checkdist      = INT32_MAX;
+
+		for (i = 0; i < numwaypoints; i++)
+		{
+			checkwaypoint = &waypointheap[i];
+
+			checkdist = P_AproxDistance(
+				(mobj->x / FRACUNIT) - (checkwaypoint->mobj->x / FRACUNIT),
+				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
+			checkdist = P_AproxDistance(checkdist, ((mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT)) * 4);
+
+			if (checkdist < closestdist)
+			{
+				if (!P_CheckSight(mobj, checkwaypoint->mobj))
+				{
+					// Save sight checks for the end, so we only do it if we have to
+					continue;
+				}
+
+				bestwaypoint = checkwaypoint;
+				closestdist = checkdist;
+			}
+		}
+	}
+
+	return bestwaypoint;
 }
 
 /*--------------------------------------------------
@@ -378,11 +427,11 @@ void K_DebugWaypointsVisualise(void)
 			}
 			else if (waypoint->numnextwaypoints == 0 || waypoint->numprevwaypoints == 0)
 			{
-				debugmobj->color = SKINCOLOR_ORANGE;
+				debugmobj->color = SKINCOLOR_YELLOW;
 			}
 			else if (waypoint == players[displayplayers[0]].nextwaypoint)
 			{
-				debugmobj->color = SKINCOLOR_YELLOW;
+				debugmobj->color = SKINCOLOR_GREEN;
 			}
 			else
 			{

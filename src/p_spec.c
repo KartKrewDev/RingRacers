@@ -1705,41 +1705,6 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (!(ALL7EMERALDS(emeralds)))
 				return false;
 		}
-		else if (GETSECSPECIAL(caller->special, 2) == 7) // SRB2Kart: reusing for Race Lap executor
-		{
-			UINT8 lap;
-
-			if (actor && actor->player && triggerline->flags & ML_EFFECT4)
-			{
-				/*if (maptol & TOL_NIGHTS)
-					lap = actor->player->mare;
-				else*/
-					lap = actor->player->laps;
-			}
-			else
-			{
-				/*if (maptol & TOL_NIGHTS)
-					lap = P_FindLowestMare();
-				else*/
-					lap = P_FindLowestLap();
-			}
-
-			if (triggerline->flags & ML_NOCLIMB) // Need higher than or equal to
-			{
-				if (lap < (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
-					return false;
-			}
-			else if (triggerline->flags & ML_BLOCKMONSTERS) // Need lower than or equal to
-			{
-				if (lap > (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
-					return false;
-			}
-			else // Need equal to
-			{
-				if (lap != (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
-					return false;
-			}
-		}
 		// If we were not triggered by a sector type especially for the purpose,
 		// a Linedef Executor linedef trigger is not handling sector triggers properly, return.
 
@@ -1937,15 +1902,17 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	else
 	// These special types work only once
 	if (specialtype == 302  // Once
-	 || specialtype == 304  // Ring count - Once
-	 || specialtype == 307  // Character ability - Once
-	 || specialtype == 308  // Race only - Once
-	 || specialtype == 315  // No of pushables - Once
-	 || specialtype == 318  // Unlockable trigger - Once
-	 || specialtype == 320  // Unlockable - Once
-	 || specialtype == 321 || specialtype == 322 // Trigger on X calls - Continuous + Each Time
-	 || specialtype == 328 // Encore Load
-	 || specialtype == 399) // Level Load
+		|| specialtype == 304  // Ring count - Once
+		|| specialtype == 307  // Character ability - Once
+		|| specialtype == 308  // Race only - Once
+		|| specialtype == 315  // No of pushables - Once
+		|| specialtype == 318  // Unlockable trigger - Once
+		|| specialtype == 320  // Unlockable - Once
+		|| specialtype == 321 || specialtype == 322 // Trigger on X calls - Continuous + Each Time
+		|| specialtype == 328 // Encore Load
+		|| specialtype == 399 // Level Load
+		|| specialtype == 2002 // SRB2Kart Race Lap
+	)
 		triggerline->special = 0; // Clear it out
 
 	return true;
@@ -1981,6 +1948,7 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 		if (lines[masterline].special == 313
 		 || lines[masterline].special == 399
 		 || lines[masterline].special == 328
+		 || lines[masterline].special == 2002 // SRB2Kart race lap trigger
 		 // Each-time executors handle themselves, too
 		 || lines[masterline].special == 301 // Each time
 		 || lines[masterline].special == 306 // Character ability - Each time
@@ -2096,7 +2064,7 @@ static void K_HandleLapIncrement(player_t *player)
 	{
 		if ((player->starpostnum == numstarposts) || (player->laps == 0))
 		{
-			UINT8 i = 0;
+			size_t i = 0;
 			UINT8 nump = 0;
 
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -2172,17 +2140,42 @@ static void K_HandleLapIncrement(player_t *player)
 				P_SetupSignExit(player);
 			}
 
-			//player->starpostangle = player->starposttime = player->starpostnum = 0;
-			//player->starpostx = player->starposty = player->starpostz = 0;
-
-			// Play the starpost sound for 'consistency'
-			// S_StartSound(player->mo, sfx_strpst);
-
-			// Figure out how many are playing on the last lap, to prevent spectate griefing
-			if (!nospectategrief && player->laps > (UINT8)(cv_numlaps.value))
-				nospectategrief = nump;
-
 			thwompsactive = true; // Lap 2 effects
+
+			for (i = 0; i < numlines; i++)
+			{
+				if (lines[i].special == 2002) // Race lap trigger
+				{
+					UINT8 lap;
+
+					if (lines[i].flags & ML_EFFECT4)
+					{
+						lap = player->laps;
+					}
+					else
+					{
+						lap = P_FindLowestLap();
+					}
+
+					if (lines[i].flags & ML_NOCLIMB) // Need higher than or equal to
+					{
+						if (lap < (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS))
+							continue;
+					}
+					else if (lines[i].flags & ML_BLOCKMONSTERS) // Need lower than or equal to
+					{
+						if (lap > (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS))
+							continue;
+					}
+					else // Need equal to
+					{
+						if (lap != (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS))
+							continue;
+					}
+
+					P_RunTriggerLinedef(&lines[i], player->mo, NULL);
+				}
+			}
 		}
 		else if (player->starpostnum)
 		{
@@ -2196,7 +2189,7 @@ static void K_HandleLapDecrement(player_t *player)
 {
 	if (player)
 	{
-		if (player->laps > 0)
+		if ((player->starpostnum == 0) && (player->laps > 0))
 		{
 			player->starpostnum = numstarposts;
 			player->laps--;
@@ -2220,7 +2213,7 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 		{
 			case 2001: // Finish Line
 			{
-				if (G_RaceGametype() && !(player->exiting))
+				if (G_RaceGametype() && !(player->exiting) && !(player->pflags & PF_HITFINISHLINE))
 				{
 					if (((line->flags & (ML_NOCLIMB)) && (side == 0))
 						|| (!(line->flags & (ML_NOCLIMB)) && (side == 1))) // crossed from behind to infront
@@ -2231,6 +2224,8 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 					{
 						K_HandleLapDecrement(player);
 					}
+
+					player->pflags |= PF_HITFINISHLINE;
 				}
 			}
 			break;
@@ -3776,10 +3771,10 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 6: // Death Pit (Camera Mod)
 		case 7: // Death Pit (No Camera Mod)
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-				P_DamageMobj(player->mo, NULL, NULL, 10000);
+				K_DoIngameRespawn(player);
 			break;
 		case 8: // Instant Kill
-			P_DamageMobj(player->mo, NULL, NULL, 10000);
+			K_DoIngameRespawn(player);
 			break;
 		case 9: // Ring Drainer (Floor Touch)
 		case 10: // Ring Drainer (No Floor Touch)
@@ -4017,7 +4012,7 @@ DoneSection2:
 				if (player->mo->scale > mapobjectscale)
 					linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
 
-				if (!demo.playback || P_AnalogMove(player))
+				if (!demo.playback)
 				{
 					if (player == &players[consoleplayer])
 						localangle[0] = player->mo->angle;
@@ -5782,6 +5777,8 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		switch(GETSECSPECIAL(sector->special, 4))
 		{
 			case 10: // Circuit finish line (Unused)
+				// Remove before release
+				CONS_Alert(CONS_WARNING, "Finish line sector type is deprecated.\n");
 				break;
 		}
 	}
@@ -6712,11 +6709,14 @@ void P_SpawnSpecials(INT32 fromnetsave)
 					sectors[s].midmap = lines[i].frontsector->midmap;
 				break;
 
+			// SRB2Kart
 			case 2000: // Waypoint Parameters
 				break;
 			case 2001: // Finish Line
 				if (G_RaceGametype())
 					circuitmap = true;
+				break;
+			case 2002: // Linedef Trigger: Race Lap
 				break;
 			default:
 				break;
@@ -6938,8 +6938,8 @@ void T_Scroll(scroll_t *s)
 
 						height = P_GetSpecialBottomZ(thing, sec, psec);
 
-						if (!(thing->flags & MF_NOCLIP)) // Thing must be clipped
-						if (!(thing->flags & MF_NOGRAVITY || thing->z+thing->height != height)) // Thing must a) be non-floating and have z+height == height
+						if (!(thing->flags & MF_NOCLIP) && // Thing must be clipped
+							(!(thing->flags & MF_NOGRAVITY || thing->z+thing->height != height))) // Thing must a) be non-floating and have z+height == height
 						{
 							// Move objects only if on floor
 							// non-floating, and clipped.
@@ -7014,8 +7014,8 @@ void T_Scroll(scroll_t *s)
 
 						height = P_GetSpecialTopZ(thing, sec, psec);
 
-						if (!(thing->flags & MF_NOCLIP)) // Thing must be clipped
-						if (!(thing->flags & MF_NOGRAVITY || thing->z != height))// Thing must a) be non-floating and have z == height
+						if (!(thing->flags & MF_NOCLIP) && // Thing must be clipped
+							(!(thing->flags & MF_NOGRAVITY || thing->z != height))) // Thing must a) be non-floating and have z == height
 						{
 							// Move objects only if on floor or underwater,
 							// non-floating, and clipped.
@@ -7910,7 +7910,7 @@ void T_Pusher(pusher_t *p)
 				thing->player->pflags |= PF_SLIDING;
 				thing->angle = R_PointToAngle2 (0, 0, xspeed<<(FRACBITS-PUSH_FACTOR), yspeed<<(FRACBITS-PUSH_FACTOR));
 
-				if (!demo.playback || P_AnalogMove(thing->player))
+				if (!demo.playback)
 				{
 					if (thing->player == &players[consoleplayer])
 					{

@@ -2597,7 +2597,7 @@ void G_PlayerReborn(INT32 player)
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_ANALOGMODE|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
@@ -4935,7 +4935,10 @@ void G_ReadDemoExtraData(void)
 		if (extradata & DXD_RESPAWN)
 		{
 			if (players[p].mo)
-				P_DamageMobj(players[p].mo, NULL, NULL, 10000); // Is this how this should work..?
+			{
+				// Is this how this should work..?
+				K_DoIngameRespawn(&players[p]);
+			}
 		}
 		if (extradata & DXD_SKIN)
 		{

@@ -47,6 +47,7 @@ consvar_t cv_splats = {"splats", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0
 actioncache_t actioncachehead;
 
 static mobj_t *overlaycap = NULL;
+mobj_t *kitemcap = NULL;	// Used for Kart offensive items (the ones that can get removed by sizedown)
 mobj_t *waypointcap = NULL;
 
 void P_InitCachedActions(void)
@@ -1655,18 +1656,11 @@ void P_XYMovement(mobj_t *mo)
 		{
 			mo->health--;
 			if (mo->health == 0)
-				mo->destscale = 1;
-		}
-		else
-		{
-			if (mo->scale < mapobjectscale/16)
-			{
-				P_RemoveMobj(mo);
-				return;
-			}
+				mo->destscale = 0;
 		}
 	}
 	//}
+
 	if (!P_TryMove(mo, mo->x + xmove, mo->y + ymove, true) && !(mo->eflags & MFE_SPRUNG))
 	{
 		// blocked move
@@ -6105,6 +6099,71 @@ static boolean P_AddShield(mobj_t *thing)
 	return true;
 }*/
 
+
+// Kartitem stuff.
+boolean P_IsKartItem(INT32 type)
+{
+	if (type == MT_EGGMANITEM || type == MT_EGGMANITEM_SHIELD ||
+		type == MT_BANANA || type == MT_BANANA_SHIELD ||
+		type == MT_ORBINAUT || type == MT_ORBINAUT_SHIELD ||
+		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
+		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
+		type == MT_SINK || type == MT_SINK_SHIELD ||
+		type == MT_SPB)
+		return true;
+	else
+		return false;
+}
+
+// Called when a kart item "thinks"
+void P_AddKartItem(mobj_t *thing)
+{
+	I_Assert(thing != NULL);
+
+	if (kitemcap == NULL)
+		P_SetTarget(&kitemcap, thing);
+	else {
+		mobj_t *mo;
+		for (mo = kitemcap; mo && mo->itnext; mo = mo->itnext)
+			;
+
+		I_Assert(mo != NULL);
+		I_Assert(mo->itnext == NULL);
+
+		P_SetTarget(&mo->itnext, thing);
+	}
+	P_SetTarget(&thing->itnext, NULL);
+}
+
+// Called only when a kart item is removed
+// Keeps the hnext list from corrupting.
+static void P_RemoveKartItem(mobj_t *thing)
+{
+	mobj_t *mo;
+	for (mo = kitemcap; mo; mo = mo->itnext)
+		if (mo->itnext == thing)
+		{
+			P_SetTarget(&mo->itnext, thing->itnext);
+			P_SetTarget(&thing->itnext, NULL);
+			return;
+		}
+}
+
+// Doesn't actually do anything since items have their own thinkers,
+// but this is necessary for the sole purpose of updating kitemcap
+void P_RunKartItems(void)
+{
+	mobj_t *mobj, *next;
+
+	for (mobj = kitemcap; mobj; mobj = next)
+	{
+		next = mobj->itnext;
+		P_SetTarget(&mobj->itnext, NULL);
+	}
+	P_SetTarget(&kitemcap, NULL);
+}
+
+
 void P_RunOverlays(void)
 {
 	// run overlays
@@ -6538,16 +6597,25 @@ void P_MobjThinker(mobj_t *mobj)
 			mobj->z -= mobj->height - oldheight;
 
 		if (mobj->scale == mobj->destscale)
+		{
 			/// \todo Lua hook for "reached destscale"?
-			switch(mobj->type)
+
+			if (mobj->scale == 0)
 			{
-			case MT_EGGMOBILE_FIRE:
-				mobj->destscale = FRACUNIT;
-				mobj->scalespeed = FRACUNIT>>4;
-				break;
-			default:
-				break;
+				P_RemoveMobj(mobj);
+				return;
 			}
+
+			switch (mobj->type)
+			{
+				case MT_EGGMOBILE_FIRE:
+					mobj->destscale = FRACUNIT;
+					mobj->scalespeed = FRACUNIT>>4;
+					break;
+				default:
+					break;
+			}
+		}
 	}
 
 	if (mobj->type == MT_GHOST && mobj->fuse > 0 // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
@@ -9728,6 +9796,12 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 		}
 	}
 
+	if (P_MobjWasRemoved(mobj))
+		return; // obligatory paranoia check
+
+	if (P_IsKartItem(mobj->type))	// mobj is a kart item we want on the list:
+		P_AddKartItem(mobj);		// add to kitem list
+
 	// Can end up here if a player dies.
 	if (mobj->player)
 		P_CyclePlayerMobjState(mobj);
@@ -10408,6 +10482,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				}
 			}
 			break;
+		case MT_BOSS3WAYPOINT:
+			// Remove before release
+			CONS_Alert(CONS_WARNING, "Boss waypoints are deprecated. Did you forget to remove the old checkpoints, too?\n");
+			break;
 		default:
 			break;
 	}
@@ -10562,6 +10640,9 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	if (mobj->type == MT_SPB)
 		spbplace = -1;
+
+	if (P_IsKartItem(mobj->type))
+		P_RemoveKartItem(mobj);
 
 	mobj->health = 0; // Just because
 
@@ -11148,6 +11229,9 @@ void P_SpawnPlayer(INT32 playernum)
 	// Spawn with a pity shield if necessary.
 	//P_DoPityCheck(p);
 
+	if (p->kartstuff[k_respawn] != 0)
+		p->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
+
 	if (G_BattleGametype()) // SRB2kart
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + P_GetPlayerHeight(p)+16*FRACUNIT, MT_PLAYERARROW);
@@ -11364,11 +11448,10 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	sector->ceilingheight;
 
 	if (mobj->player->kartstuff[k_starpostflip])
-		z = (p->starpostz<<FRACBITS) - FixedMul(128<<FRACBITS, mapobjectscale) - mobj->height;
+		z = (p->starpostz<<FRACBITS) - (128 * mapobjectscale) - mobj->height;
 	else
-		z = (p->starpostz<<FRACBITS) + FixedMul(128<<FRACBITS, mapobjectscale);
+		z = (p->starpostz<<FRACBITS) + (128 * mapobjectscale);
 
-	//z = (p->starpostz + 128) << FRACBITS; // reverse gravity exists, pls
 	mobj->player->kartstuff[k_starpostflip] = 0;
 
 	if (z < floor)
@@ -11962,7 +12045,7 @@ ML_NOCLIMB : Direction not controllable
 	case MT_WAYPOINT:
 	{
 		size_t line;
-		mobj->radius = 256*FRACUNIT;
+		mobj->radius = 384*FRACUNIT;
 		// Same reason as for MT_SPINMACEPOINT we can't use the function to find the linedef
 		for (line = 0; line < numlines; line++)
 		{

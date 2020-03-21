@@ -129,8 +129,6 @@ boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 //                       MOVEMENT ITERATOR FUNCTIONS
 // =========================================================================
 
-//#define TELEPORTJANK
-
 // For our intermediate buffer, remove any duplicate entries by adding each one to
 // a temprary buffer if it's not already in there, copy the temporary buffer back over the intermediate afterwards
 static void spechitint_removedups(void)
@@ -225,6 +223,8 @@ static boolean P_SpecialIsLinedefCrossType(UINT16 ldspecial)
 	return linedefcrossspecial;
 }
 
+//#define TELEPORTJANK
+
 boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
 	//INT32 pflags;
@@ -256,7 +256,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	object->eflags |= MFE_SPRUNG; // apply this flag asap!
 	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
 
-#ifdef TELEPORTJANK
+#if 0
 	if (horizspeed && vertispeed) // Mimic SA
 	{
 		object->momx = object->momy = 0;
@@ -1007,12 +1007,20 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (thing->type == MT_PLAYER)
 		{
-			S_StartSound(NULL, sfx_bsnipe); //let all players hear it.
+			mobj_t *explosion;
+
+			S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
+
 			HU_SetCEchoFlags(0);
 			HU_SetCEchoDuration(5);
 			HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[thing->player-players]));
 			I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[thing->player-players]);
-			P_DamageMobj(thing, tmthing, tmthing->target, 10000);
+
+			explosion = P_SpawnMobj(thing->x, thing->y, thing->z, MT_SPBEXPLOSION);
+			explosion->extravalue1 = 1; // Tell K_ExplodePlayer to use extra knockback
+			if (tmthing->target && !P_MobjWasRemoved(tmthing->target))
+				P_SetTarget(&explosion->target, tmthing->target);
+
 			P_KillMobj(tmthing, thing, thing);
 		}
 
@@ -1271,15 +1279,23 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		}
 		else if (thing->type == MT_SINK)
 		{
+			mobj_t *explosion;
+
 			if ((thing->target == tmthing) && (thing->threshold > 0))
 				return true;
 
-			S_StartSound(NULL, sfx_cgot); //let all players hear it.
+			S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
+
 			HU_SetCEchoFlags(0);
 			HU_SetCEchoDuration(5);
 			HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[tmthing->player-players]));
 			I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[tmthing->player-players]);
-			P_DamageMobj(tmthing, thing, thing->target, 10000);
+
+			explosion = P_SpawnMobj(tmthing->x, tmthing->y, tmthing->z, MT_SPBEXPLOSION);
+			explosion->extravalue1 = 1; // Tell K_ExplodePlayer to use extra knockback
+			if (thing->target && !P_MobjWasRemoved(thing->target))
+				P_SetTarget(&explosion->target, thing->target);
+
 			P_KillMobj(thing, tmthing, tmthing);
 		}
 
@@ -1419,7 +1435,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			thing->angle = tmthing->angle;
 
-			if (!demo.playback || P_AnalogMove(thing->player))
+			if (!demo.playback)
 			{
 				if (thing->player == &players[consoleplayer])
 					localangle[0] = thing->angle;
@@ -1664,7 +1680,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			{
 				// Objects kill you if it falls from above.
 				if (thing != tmthing->target)
-					P_DamageMobj(thing, tmthing, tmthing->target, 10000);
+					K_DoIngameRespawn(thing->player);
 
 				tmthing->momz = -tmthing->momz/2; // Bounce, just for fun!
 				// The tmthing->target allows the pusher of the object
@@ -2082,7 +2098,7 @@ static boolean PIT_CheckLine(line_t *ld)
 	if (P_BoxOnLineSide(tmbbox, ld) != -1)
 		return true;
 
-if (tmthing->flags & MF_PAPERCOLLISION) // Caution! Turning whilst up against a wall will get you stuck. You probably shouldn't give the player this flag.
+	if (tmthing->flags & MF_PAPERCOLLISION) // Caution! Turning whilst up against a wall will get you stuck. You probably shouldn't give the player this flag.
 	{
 		fixed_t cosradius, sinradius;
 		cosradius = FixedMul(tmthing->radius, FINECOSINE(tmthing->angle>>ANGLETOFINESHIFT));
@@ -2883,8 +2899,10 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	// reset this to 0 at the start of each trymove call as it's only used here
 	numspechitint = 0U;
 
-	if (radius < MAXRADIUS/2)
-		radius = MAXRADIUS/2;
+	// This makes sure that there are no freezes from computing extremely small movements.
+	// Originally was MAXRADIUS/2, but that causes some inconsistencies for small players.
+	if (radius < mapobjectscale)
+		radius = mapobjectscale;
 
 	do {
 		if (thing->flags & MF_NOCLIP) {

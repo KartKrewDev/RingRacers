@@ -1886,8 +1886,6 @@ void SendWeaponPref(void)
 	buf[0] = 0;
 	if (cv_flipcam.value)
 		buf[0] |= 1;
-	if (cv_analog.value)
-		buf[0] |= 2;
 	SendNetXCmd(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1898,8 +1896,6 @@ void SendWeaponPref2(void)
 	buf[0] = 0;
 	if (cv_flipcam2.value)
 		buf[0] |= 1;
-	if (cv_analog2.value)
-		buf[0] |= 2;
 	SendNetXCmd2(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1910,8 +1906,6 @@ void SendWeaponPref3(void)
 	buf[0] = 0;
 	if (cv_flipcam3.value)
 		buf[0] |= 1;
-	if (cv_analog3.value)
-		buf[0] |= 2;
 	SendNetXCmd3(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1922,8 +1916,6 @@ void SendWeaponPref4(void)
 	buf[0] = 0;
 	if (cv_flipcam4.value)
 		buf[0] |= 1;
-	if (cv_analog4.value)
-		buf[0] |= 2;
 	SendNetXCmd4(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1931,11 +1923,9 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
 	UINT8 prefs = READUINT8(*cp);
 
-	players[playernum].pflags &= ~(PF_FLIPCAM|PF_ANALOGMODE);
+	players[playernum].pflags &= ~(PF_FLIPCAM);
 	if (prefs & 1)
 		players[playernum].pflags |= PF_FLIPCAM;
-	if (prefs & 2)
-		players[playernum].pflags |= PF_ANALOGMODE;
 }
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
@@ -2857,13 +2847,15 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	// incase the above checks were modified to allow sending a respawn on these occasions:
-	if (players[respawnplayer].mo && !P_IsObjectOnGround(players[respawnplayer].mo))
-		return;
-
 	if (players[respawnplayer].mo)
-		P_DamageMobj(players[respawnplayer].mo, NULL, NULL, 10000);
-	demo_extradata[playernum] |= DXD_RESPAWN;
+	{
+		// incase the above checks were modified to allow sending a respawn on these occasions:
+		if (!P_IsObjectOnGround(players[respawnplayer].mo))
+			return;
+
+		K_DoIngameRespawn(&players[respawnplayer]);
+		demo_extradata[playernum] |= DXD_RESPAWN;
+	}
 }
 
 /** Deals with an ::XD_RANDOMSEED message in a netgame.
