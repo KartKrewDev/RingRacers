@@ -84,7 +84,7 @@ static boolean serverrunning = false;
 INT32 serverplayer = 0;
 char motd[254], server_context[8]; // Message of the Day, Unique Context (even without Mumble support)
 
-int playerconsole[MAXPLAYERS];
+UINT8 playerconsole[MAXPLAYERS];
 
 // Server specific vars
 UINT8 playernode[MAXPLAYERS];
@@ -3491,7 +3491,7 @@ static inline void SV_AddNode(INT32 node)
 static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 {
 	INT16 node, newplayernum;
-	int console;
+	UINT8 console;
 	UINT8 splitscreenplayer = 0;
 	UINT8 i;
 

@@ -2006,11 +2006,9 @@ static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
 
 static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
 {
-	int invitee;
+	UINT8 invitee;
 
 	boolean kick = false;
-
-	invitee = READUINT8 (*cp);
 
 	if (
 			invitee >= 0 &&
