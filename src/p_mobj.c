@@ -8289,6 +8289,37 @@ void P_MobjThinker(mobj_t *mobj)
 				S_StartSound(mobj, sfx_s3k4e);
 			mobj->health--;
 			break;
+		case MT_DRIFTEXPLODE:
+			if (!mobj->target || !mobj->target->health)
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
+			mobj->angle = mobj->target->angle;
+			P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
+				mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
+			P_SetScale(mobj, mobj->target->scale);
+			mobj->flags2 ^= MF2_DONTDRAW;
+#ifdef HWRENDER
+			mobj->modeltilt = mobj->target->modeltilt;
+#endif
+
+			{
+				player_t *p = NULL;
+				if (mobj->target->target && mobj->target->target->player)
+					p = mobj->target->target->player;
+				else if (mobj->target->player)
+					p = mobj->target->player;
+
+				if (p)
+				{
+					if (p->kartstuff[k_driftboost] > mobj->movecount)
+						; // reset animation
+					mobj->movecount = p->kartstuff[k_driftboost];
+				}
+			}
+			break;
 		case MT_BOOSTFLAME:
 			if (!mobj->target || !mobj->target->health)
 			{
@@ -8363,6 +8394,7 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
+				UINT8 driftcolor = K_DriftSparkColor(mobj->target->player, mobj->target->player->kartstuff[k_driftcharge]);
 				fixed_t newx, newy;
 				angle_t travelangle;
 
@@ -8375,12 +8407,8 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->angle = travelangle - ((ANGLE_90/5)*mobj->target->player->kartstuff[k_drift]);
 				P_SetScale(mobj, (mobj->destscale = mobj->target->scale));
 
-				if (mobj->target->player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(mobj->target->player)*4)
-					mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
-				else if (mobj->target->player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(mobj->target->player)*2)
-					mobj->color = SKINCOLOR_KETCHUP;
-				else if (mobj->target->player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(mobj->target->player))
-					mobj->color = SKINCOLOR_SAPPHIRE;
+				if (driftcolor != SKINCOLOR_NONE)
+					mobj->color = driftcolor;
 				else
 					mobj->color = SKINCOLOR_SILVER;
 
