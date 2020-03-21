@@ -4055,11 +4055,7 @@ DoneSection2:
 			}
 			break;
 
-		case 7: // SRB2kart 190117 - Oil Slick (deprecated)
-			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-			{
-				K_SpinPlayer(player, NULL, 0, NULL, false);
-			}
+		case 7: // SRB2Kart: Destroy items
 			break;
 
 		case 8: // Zoom Tube Start
