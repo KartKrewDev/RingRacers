@@ -125,7 +125,7 @@ extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
 
-extern consvar_t cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
+extern consvar_t cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
 
 extern consvar_t cv_itemfinder;

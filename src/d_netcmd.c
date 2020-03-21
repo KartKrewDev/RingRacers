@@ -388,6 +388,8 @@ static CV_PossibleValue_t kartdebugitem_cons_t[] =
 #undef  X
 	{0}
 };
+static CV_PossibleValue_t kartdebugamount_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
+consvar_t cv_kartdebugamount = {"kartdebugamount", "1", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugamount_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartallowgiveitem = {
 	"kartallowgiveitem",
 	/* :mhm: */
