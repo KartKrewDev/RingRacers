@@ -461,7 +461,7 @@ boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup
 							if (nodesarraycount >= pathfindsetup->nodesarraycapacity)
 							{
 								pathfindsetup->nodesarraycapacity = pathfindsetup->nodesarraycapacity * 2;
-								nodesarray = Z_Realloc(nodesarray, pathfindsetup->nodesarraycapacity, PU_STATIC, NULL);
+								nodesarray = Z_Realloc(nodesarray, pathfindsetup->nodesarraycapacity * sizeof(pathfindnode_t), PU_STATIC, NULL);
 
 								if (nodesarray == NULL)
 								{

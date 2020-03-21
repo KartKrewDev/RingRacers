@@ -327,6 +327,34 @@ waypoint_t *K_GetWaypointFromIndex(size_t waypointindex)
 }
 
 /*--------------------------------------------------
+	static UINT32 K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
+
+		Gets the Euclidean distance between 2 waypoints by using their mobjs. Used for the heuristic.
+
+	Input Arguments:-
+		waypoint1 - The first waypoint
+		waypoint2 - The second waypoint
+
+	Return:-
+		Euclidean distance between the 2 waypoints
+--------------------------------------------------*/
+static UINT32 K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
+{
+	UINT32 finaldist = UINT32_MAX;
+	I_Assert(waypoint1 != NULL);
+	I_Assert(waypoint2 != NULL);
+
+	{
+		const fixed_t xydist =
+			P_AproxDistance(waypoint1->mobj->x - waypoint2->mobj->x, waypoint1->mobj->y - waypoint2->mobj->y);
+		const fixed_t xyzdist = P_AproxDistance(xydist, waypoint1->mobj->z - waypoint2->mobj->z);
+		finaldist = ((UINT32)xyzdist >> FRACBITS);
+	}
+
+	return finaldist;
+}
+
+/*--------------------------------------------------
 	void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
 
 		Draw a debugging line between 2 waypoints
@@ -341,8 +369,21 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 	mobj_t *spawnedmobj;
 	fixed_t stepx, stepy, stepz;
 	fixed_t x, y, z;
+	UINT32 waypointdist;
 	INT32 n;
-	UINT32 numofframes = 1; // If this was 0 it could divide by 0
+	skincolors_t linkcolour = SKINCOLOR_GREEN;
+
+	// This array is used to choose which colour should be on this connection
+	const skincolors_t linkcolours[] = {
+		SKINCOLOR_RED,
+		SKINCOLOR_BLUE,
+		SKINCOLOR_ORANGE,
+		SKINCOLOR_PINK,
+		SKINCOLOR_DREAM,
+		SKINCOLOR_CYAN,
+		SKINCOLOR_WHITE,
+	};
+	const size_t linkcolourssize = sizeof(linkcolours) / sizeof(skincolors_t);
 
 	// Error conditions
 	I_Assert(waypoint1 != NULL);
@@ -351,13 +392,18 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 	I_Assert(waypoint2->mobj != NULL);
 	I_Assert(cv_kartdebugwaypoints.value != 0);
 
+	linkcolour = K_GetWaypointID(waypoint1)%linkcolourssize;
+
 	waypointmobj1 = waypoint1->mobj;
 	waypointmobj2 = waypoint2->mobj;
 
 	n = SPARKLES_PER_CONNECTION;
-	numofframes = S_SPRK16 - S_SPRK1;
 
-	// Draw the sparkles
+	// For every 2048 fracunits, double the number of sparkles
+	waypointdist = K_DistanceBetweenWaypoints(waypoint1, waypoint2);
+	n *= (waypointdist / 2048) + 1;
+
+	// Draw the line
 	stepx = (waypointmobj2->x - waypointmobj1->x) / n;
 	stepy = (waypointmobj2->y - waypointmobj1->y) / n;
 	stepz = (waypointmobj2->z - waypointmobj1->z) / n;
@@ -366,10 +412,17 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 	z = waypointmobj1->z;
 	do
 	{
-		spawnedmobj = P_SpawnMobj(x, y, z, MT_SPARK);
-		P_SetMobjState(spawnedmobj, S_SPRK1 + ((leveltime + n) % (numofframes + 1)));
-		spawnedmobj->state->nextstate = S_NULL;
-		spawnedmobj->state->tics = 1;
+		if ((leveltime + n) % 16 <= 4)
+		{
+			spawnedmobj = P_SpawnMobj(x, y, z, MT_SPARK);
+			P_SetMobjState(spawnedmobj, S_THOK);
+			spawnedmobj->state->nextstate = S_NULL;
+			spawnedmobj->state->tics = 1;
+			spawnedmobj->frame = spawnedmobj->frame & ~FF_TRANSMASK;
+			spawnedmobj->color = linkcolours[linkcolour];
+			spawnedmobj->scale = FixedMul(FRACUNIT/4, FixedDiv((15 - ((leveltime + n) % 16))*FRACUNIT, 15*FRACUNIT));
+		}
+
 		x += stepx;
 		y += stepy;
 		z += stepz;
@@ -576,34 +629,6 @@ static void K_UpdateNodesArrayBaseSize(size_t newnodesarraysize)
 	{
 		basenodesarraysize = newnodesarraysize;
 	}
-}
-
-/*--------------------------------------------------
-	static UINT32 K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
-
-		Gets the Euclidean distance between 2 waypoints by using their mobjs. Used for the heuristic.
-
-	Input Arguments:-
-		waypoint1 - The first waypoint
-		waypoint2 - The second waypoint
-
-	Return:-
-		Euclidean distance between the 2 waypoints
---------------------------------------------------*/
-static UINT32 K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
-{
-	UINT32 finaldist = UINT32_MAX;
-	I_Assert(waypoint1 != NULL);
-	I_Assert(waypoint2 != NULL);
-
-	{
-		const fixed_t xydist =
-			P_AproxDistance(waypoint1->mobj->x - waypoint2->mobj->x, waypoint1->mobj->y - waypoint2->mobj->y);
-		const fixed_t xyzdist = P_AproxDistance(xydist, waypoint1->mobj->z - waypoint2->mobj->z);
-		finaldist = ((UINT32)xyzdist >> FRACBITS);
-	}
-
-	return finaldist;
 }
 
 /*--------------------------------------------------
@@ -1443,13 +1468,16 @@ static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 
 	P_SetTarget(&madewaypoint->mobj, mobj);
 
-	// Go through the other waypoint mobjs in the map to find out how many waypoints are after this one
-	for (otherwaypointmobj = waypointcap; otherwaypointmobj != NULL; otherwaypointmobj = otherwaypointmobj->tracer)
-	{
-		// threshold = next waypoint id, movecount = my id
-		if (mobj->threshold == otherwaypointmobj->movecount)
+	// Don't allow a waypoint that has its next ID set to itself to work
+	if (mobj->threshold != mobj->movecount) {
+		// Go through the other waypoint mobjs in the map to find out how many waypoints are after this one
+		for (otherwaypointmobj = waypointcap; otherwaypointmobj != NULL; otherwaypointmobj = otherwaypointmobj->tracer)
 		{
-			madewaypoint->numnextwaypoints++;
+			// threshold = next waypoint id, movecount = my id
+			if (mobj->threshold == otherwaypointmobj->movecount)
+			{
+				madewaypoint->numnextwaypoints++;
+			}
 		}
 	}
 
