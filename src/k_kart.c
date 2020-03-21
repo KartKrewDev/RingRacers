@@ -3974,7 +3974,7 @@ static void K_DoHyudoroSteal(player_t *player)
 	INT32 hyu = hyudorotime;
 
 	if (G_RaceGametype())
-		hyu = (hyu<<1); // double in race
+		hyu *= 2; // double in race
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4001,7 +4001,7 @@ static void K_DoHyudoroSteal(player_t *player)
 
 	if (sink && numplayers > 0 && cv_kitchensink.value) // BEHOLD THE KITCHEN SINK
 	{
-		player->kartstuff[k_hyudorotimer] = hyudorotime;
+		player->kartstuff[k_hyudorotimer] = hyu;
 		player->kartstuff[k_stealingtimer] = stealtime;
 
 		player->kartstuff[k_itemtype] = KITEM_KITCHENSINK;
@@ -4011,7 +4011,7 @@ static void K_DoHyudoroSteal(player_t *player)
 	}
 	else if ((G_RaceGametype() && player->kartstuff[k_position] == 1) || numplayers == 0) // No-one can be stolen from? Oh well...
 	{
-		player->kartstuff[k_hyudorotimer] = hyudorotime;
+		player->kartstuff[k_hyudorotimer] = hyu;
 		player->kartstuff[k_stealingtimer] = stealtime;
 		return;
 	}
@@ -4026,7 +4026,7 @@ static void K_DoHyudoroSteal(player_t *player)
 
 	if (stealplayer > -1) // Now here's where we do the stealing, has to be done here because we still know the player we're stealing from
 	{
-		player->kartstuff[k_hyudorotimer] = hyudorotime;
+		player->kartstuff[k_hyudorotimer] = hyu;
 		player->kartstuff[k_stealingtimer] = stealtime;
 		players[stealplayer].kartstuff[k_stolentimer] = stealtime;
 
