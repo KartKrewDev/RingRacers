@@ -3554,10 +3554,18 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 		return NULL;
 
 	// Figure out projectile speed by game speed
-	if (missile && mapthing != MT_BALLHOG) // Trying to keep compatability...
-		PROJSPEED = FixedMul(mobjinfo[mapthing].speed, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
+	if (missile)
+	{
+		// Use info->speed for missiles
+		PROJSPEED = FixedMul(mobjinfo[mapthing].speed, K_GetKartGameSpeedScalar(gamespeed));
+	}
 	else
-		PROJSPEED = (82 + ((gamespeed-1) * 14)) * FRACUNIT; // Avg Speed is 41 in Normal
+	{
+		// Use pre-determined speed for tossing
+		PROJSPEED = FixedMul(82 << FRACBITS, K_GetKartGameSpeedScalar(gamespeed));
+	}
+
+	// Scale to map size
 	PROJSPEED = FixedMul(PROJSPEED, mapobjectscale);
 
 	if (altthrow)
@@ -3603,11 +3611,11 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 			if (dir == -1)
 			{
 				// Shoot backward
-				mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180 - 0x06000000, 0, PROJSPEED/4);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180 - 0x03000000, 0, PROJSPEED/4);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180, 0, PROJSPEED/4);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180 + 0x03000000, 0, PROJSPEED/4);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180 + 0x06000000, 0, PROJSPEED/4);
+				mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) - 0x06000000, 0, PROJSPEED/8);
+				K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) - 0x03000000, 0, PROJSPEED/8);
+				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180, 0, PROJSPEED/8);
+				K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + 0x03000000, 0, PROJSPEED/8);
+				K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + 0x06000000, 0, PROJSPEED/8);
 			}
 			else
 			{
@@ -3624,7 +3632,7 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 			if (dir == -1 && mapthing != MT_SPB)
 			{
 				// Shoot backward
-				mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180, 0, PROJSPEED/2);
+				mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180, 0, PROJSPEED/8);
 			}
 			else
 			{
