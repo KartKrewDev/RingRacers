@@ -1333,7 +1333,8 @@ static void ForceAllSkins(INT32 forcedskin)
 static const char *
 VaguePartyDescription (int playernum, int *party_sizes, int default_color)
 {
-	static char description[1 + MAXPLAYERNAME + 1 + sizeof " and x others"];
+	static char party_description
+		[1 + MAXPLAYERNAME + 1 + sizeof " and x others"];
 	const char *name;
 	int size;
 	name = player_names[playernum];
@@ -1344,7 +1345,7 @@ VaguePartyDescription (int playernum, int *party_sizes, int default_color)
 	*/
 	if (size > 1 && size <= MAXSPLITSCREENPLAYERS)
 	{
-		sprintf(description,
+		sprintf(party_description,
 				"\x83%s%c and %d other%s",
 				name,
 				default_color,
@@ -1354,13 +1355,13 @@ VaguePartyDescription (int playernum, int *party_sizes, int default_color)
 	}
 	else
 	{
-		sprintf(description,
+		sprintf(party_description,
 				"\x83%s%c",
 				name,
 				default_color
 		);
 	}
-	return description;
+	return party_description;
 }
 
 static INT32 snacpending = 0, snac2pending = 0, snac3pending = 0, snac4pending = 0, chmappending = 0;
@@ -2060,6 +2061,8 @@ static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
 	int old_party_size;
 	int views;
 
+	(void)cp;
+
 	if (playerconsole[playernum] != playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal accept splitscreen invite received from %s\n"), player_names[playernum]);
@@ -2115,7 +2118,6 @@ static void Got_CancelPartyInvite(UINT8 **cp,INT32 playernum)
 	invitee = READUINT8 (*cp);
 
 	if (
-			invitee >= 0 &&
 			invitee < MAXPLAYERS &&
 			playeringame[invitee]
 	){
@@ -2147,6 +2149,8 @@ static void Got_CancelPartyInvite(UINT8 **cp,INT32 playernum)
 
 static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 {
+	(void)cp;
+
 	if (playerconsole[playernum] != playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal accept splitscreen invite received from %s\n"), player_names[playernum]);
@@ -2431,7 +2435,9 @@ static void Command_SetViews_f(void)
 static void
 Command_Invite_f (void)
 {
-	UINT8 invitee;
+	UINT8 buffer[1];
+
+	int invitee;
 
 	if (COM_Argc() != 2)
 	{
@@ -2484,13 +2490,17 @@ Command_Invite_f (void)
 				invitee, splitscreen_original_party_size, '\x80')
 	);
 
-	SendNetXCmd(XD_PARTYINVITE, &invitee, 1);
+	buffer[0] = invitee;
+
+	SendNetXCmd(XD_PARTYINVITE, buffer, sizeof buffer);
 }
 
 static void
 Command_CancelInvite_f (void)
 {
-	UINT8 invitee;
+	UINT8 buffer[1];
+
+	int invitee;
 
 	if (COM_Argc() != 2)
 	{
@@ -2523,7 +2533,9 @@ Command_CancelInvite_f (void)
 				invitee, splitscreen_original_party_size, '\x80')
 	);
 
-	SendNetXCmd(XD_CANCELPARTYINVITE, &invitee, 1);
+	buffer[0] = invitee;
+
+	SendNetXCmd(XD_CANCELPARTYINVITE, buffer, sizeof buffer);
 }
 
 static boolean
