@@ -345,21 +345,11 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 	UINT32 numofframes = 1; // If this was 0 it could divide by 0
 
 	// Error conditions
-	if (waypoint1 == NULL || waypoint2 == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_DebugWaypointsSpawnLine.\n");
-		return;
-	}
-	if (waypoint1->mobj == NULL || waypoint2->mobj == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL mobj on waypoint in K_DebugWaypointsSpawnLine.\n");
-		return;
-	}
-	if (cv_kartdebugwaypoints.value == 0)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "In K_DebugWaypointsSpawnLine when kartdebugwaypoints is off.\n");
-		return;
-	}
+	I_Assert(waypoint1 != NULL);
+	I_Assert(waypoint1->mobj != NULL);
+	I_Assert(waypoint2 != NULL);
+	I_Assert(waypoint2->mobj != NULL);
+	I_Assert(cv_kartdebugwaypoints.value != 0);
 
 	waypointmobj1 = waypoint1->mobj;
 	waypointmobj2 = waypoint2->mobj;
@@ -603,15 +593,9 @@ static void K_UpdateNodesArrayBaseSize(size_t newnodesarraysize)
 static UINT32 K_DistanceBetweenWaypoints(waypoint_t *const waypoint1, waypoint_t *const waypoint2)
 {
 	UINT32 finaldist = UINT32_MAX;
-	if (waypoint1 == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint1 in K_DistanceBetweenWaypoints.\n");
-	}
-	else if (waypoint2 == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint2 in K_DistanceBetweenWaypoints.\n");
-	}
-	else
+	I_Assert(waypoint1 != NULL);
+	I_Assert(waypoint2 != NULL);
+
 	{
 		const fixed_t xydist =
 			P_AproxDistance(waypoint1->mobj->x - waypoint2->mobj->x, waypoint1->mobj->y - waypoint2->mobj->y);
@@ -1104,21 +1088,12 @@ static boolean K_CheckWaypointForMobj(waypoint_t *const waypoint, void *const mo
 	boolean mobjsmatch = false;
 
 	// Error Conditions
-	if (waypoint == NULL)
+	I_Assert(waypoint != NULL);
+	I_Assert(waypoint->mobj != NULL);
+	I_Assert(mobjpointer != NULL);
+
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_CheckWaypointForMobj.\n");
-	}
-	else if (waypoint->mobj == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Waypoint has NULL mobj in K_CheckWaypointForMobj.\n");
-	}
-	else if (mobjpointer == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL mobjpointer in K_CheckWaypointForMobj.\n");
-	}
-	else
-	{
-		mobj_t *mobj = (mobj_t *)mobjpointer;
+		mobj_t *const mobj = (mobj_t *)mobjpointer;
 
 		if (P_MobjWasRemoved(mobj))
 		{
@@ -1170,76 +1145,61 @@ static waypoint_t *K_TraverseWaypoints(
 	waypoint_t *foundwaypoint = NULL;
 
 	// Error conditions
-	if (condition == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL condition in K_TraverseWaypoints.\n");
-	}
-	else if (conditionalfunc == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL conditionalfunc in K_TraverseWaypoints.\n");
-	}
-	else if (visitedarray == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL visitedarray in K_TraverseWaypoints.\n");
-	}
-	else
-	{
+	I_Assert(condition != NULL);
+	I_Assert(conditionalfunc != NULL);
+	I_Assert(visitedarray != NULL);
 
 searchwaypointstart:
-		if (waypoint == NULL)
+	I_Assert(waypoint != NULL);
+
+	{
+		size_t waypointindex = K_GetWaypointHeapIndex(waypoint);
+		// If we've already visited this waypoint, we've already checked the next waypoints, no point continuing
+		if ((waypointindex != SIZE_MAX) && (visitedarray[waypointindex] != true))
 		{
-			CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_TraverseWaypoints.\n");
-		}
-		else
-		{
-			size_t waypointindex = K_GetWaypointHeapIndex(waypoint);
-			// If we've already visited this waypoint, we've already checked the next waypoints, no point continuing
-			if ((waypointindex != SIZE_MAX) && (visitedarray[waypointindex] != true))
+			// Mark this waypoint as being visited
+			visitedarray[waypointindex] = true;
+
+			if (conditionalfunc(waypoint, condition) == true)
 			{
-				// Mark this waypoint as being visited
-				visitedarray[waypointindex] = true;
-
-				if (conditionalfunc(waypoint, condition) == true)
+				foundwaypoint = waypoint;
+			}
+			else
+			{
+				// If this waypoint only has one next waypoint, set the waypoint to be the next one and jump back
+				// to the start, this is to avoid going too deep into the stack where we can
+				// Yes this is a horrible horrible goto, but the alternative is a do while loop with an extra
+				// variable, which is slightly more confusing. This is probably the fastest and least confusing
+				// option that keeps this functionality
+				if (waypoint->numnextwaypoints == 1 && waypoint->nextwaypoints[0] != NULL)
 				{
-					foundwaypoint = waypoint;
+					waypoint = waypoint->nextwaypoints[0];
+					goto searchwaypointstart;
 				}
-				else
+				else if (waypoint->numnextwaypoints != 0)
 				{
-					// If this waypoint only has one next waypoint, set the waypoint to be the next one and jump back
-					// to the start, this is to avoid going too deep into the stack where we can
-					// Yes this is a horrible horrible goto, but the alternative is a do while loop with an extra
-					// variable, which is slightly more confusing. This is probably the fastest and least confusing
-					// option that keeps this functionality
-					if (waypoint->numnextwaypoints == 1 && waypoint->nextwaypoints[0] != NULL)
+					// The nesting here is a bit nasty, but it's better than potentially a lot of function calls on
+					// the stack, and another function would be very small in this case
+					UINT32 i;
+					// For each next waypoint, Search through it's path continuation until we hopefully find the one
+					// we're looking for
+					for (i = 0; i < waypoint->numnextwaypoints; i++)
 					{
-						waypoint = waypoint->nextwaypoints[0];
-						goto searchwaypointstart;
-					}
-					else if (waypoint->numnextwaypoints != 0)
-					{
-						// The nesting here is a bit nasty, but it's better than potentially a lot of function calls on
-						// the stack, and another function would be very small in this case
-						UINT32 i;
-						// For each next waypoint, Search through it's path continuation until we hopefully find the one
-						// we're looking for
-						for (i = 0; i < waypoint->numnextwaypoints; i++)
+						if (waypoint->nextwaypoints[i] != NULL)
 						{
-							if (waypoint->nextwaypoints[i] != NULL)
-							{
-								foundwaypoint = K_TraverseWaypoints(waypoint->nextwaypoints[i], conditionalfunc,
-									condition, visitedarray);
+							foundwaypoint = K_TraverseWaypoints(waypoint->nextwaypoints[i], conditionalfunc,
+								condition, visitedarray);
 
-								if (foundwaypoint != NULL)
-								{
-									break;
-								}
+							if (foundwaypoint != NULL)
+							{
+								break;
 							}
 						}
 					}
-					else
-					{
-						// No next waypoints, this function will be returned from
-					}
+				}
+				else
+				{
+					// No next waypoints, this function will be returned from
 				}
 			}
 		}
@@ -1270,24 +1230,13 @@ static waypoint_t *K_SearchWaypointGraph(
 	waypoint_t *foundwaypoint = NULL;
 
 	// Error conditions
-	if (condition == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL condition in K_SearchWaypointGraph.\n");
-	}
-	else if (conditionalfunc == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL conditionalfunc in K_SearchWaypointGraph.\n");
-	}
-	else if (firstwaypoint == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "K_SearchWaypointsForMobj called when no first waypoint.\n");
-	}
-	else
-	{
-		visitedarray = Z_Calloc(numwaypoints * sizeof(boolean), PU_STATIC, NULL);
-		foundwaypoint = K_TraverseWaypoints(firstwaypoint, conditionalfunc, condition, visitedarray);
-		Z_Free(visitedarray);
-	}
+	I_Assert(condition != NULL);
+	I_Assert(conditionalfunc != NULL);
+	I_Assert(firstwaypoint != NULL);
+
+	visitedarray = Z_Calloc(numwaypoints * sizeof(boolean), PU_STATIC, NULL);
+	foundwaypoint = K_TraverseWaypoints(firstwaypoint, conditionalfunc, condition, visitedarray);
+	Z_Free(visitedarray);
 
 	return foundwaypoint;
 }
@@ -1339,30 +1288,19 @@ static waypoint_t *K_SearchWaypointHeap(
 	waypoint_t *foundwaypoint = NULL;
 
 	// Error conditions
-	if (condition == NULL)
+	I_Assert(condition != NULL);
+	I_Assert(conditionalfunc != NULL);
+	I_Assert(waypointheap != NULL);
+
+	// Simply search through the waypointheap for the waypoint which matches the condition. Much simpler when no
+	// pathfinding is needed. Search up to numwaypoints and NOT numwaypointmobjs as numwaypoints is the real number of
+	// waypoints setup in the heap while numwaypointmobjs ends up being the capacity
+	for (i = 0; i < numwaypoints; i++)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL condition in K_SearchWaypointHeap.\n");
-	}
-	else if (conditionalfunc == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL conditionalfunc in K_SearchWaypointHeap.\n");
-	}
-	else if (waypointheap == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "K_SearchWaypointHeap called when no waypointheap.\n");
-	}
-	else
-	{
-		// Simply search through the waypointheap for the waypoint which matches the condition. Much simpler when no
-		// pathfinding is needed. Search up to numwaypoints and NOT numwaypointmobjs as numwaypoints is the real number of
-		// waypoints setup in the heap while numwaypointmobjs ends up being the capacity
-		for (i = 0; i < numwaypoints; i++)
+		if (conditionalfunc(&waypointheap[i], condition) == true)
 		{
-			if (conditionalfunc(&waypointheap[i], condition) == true)
-			{
-				foundwaypoint = &waypointheap[i];
-				break;
-			}
+			foundwaypoint = &waypointheap[i];
+			break;
 		}
 	}
 
@@ -1408,37 +1346,30 @@ waypoint_t *K_SearchWaypointHeapForMobj(mobj_t *const mobj)
 --------------------------------------------------*/
 static UINT32 K_SetupCircuitLength(void)
 {
-	if ((firstwaypoint == NULL) || (numwaypoints == 0U))
+	I_Assert(firstwaypoint != NULL);
+	I_Assert(numwaypoints > 0U);
+	I_Assert(finishline != NULL);
+
+	// The circuit length only makes sense in circuit maps, sprint maps do not need to use it
+	// The main usage of the circuit length is to add onto a player's distance to finish line so crossing the finish
+	// line places people correctly relative to each other
+	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "K_SetupCircuitLength called with no waypoints.\n");
-	}
-	else if (finishline == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "K_SetupCircuitLength called with no finishline waypoint.\n");
+		circuitlength = 0U;
 	}
 	else
 	{
-		// The circuit length only makes sense in circuit maps, sprint maps do not need to use it
-		// The main usage of the circuit length is to add onto a player's distance to finish line so crossing the finish
-		// line places people correctly relative to each other
-		if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE)
-		{
-			circuitlength = 0U;
-		}
-		else
-		{
-			// Create a fake finishline waypoint, then try and pathfind to the finishline from it
-			waypoint_t    fakefinishline  = *finishline;
-			path_t        bestcircuitpath = {};
-			const boolean useshortcuts    = false;
-			const boolean huntbackwards   = false;
+		// Create a fake finishline waypoint, then try and pathfind to the finishline from it
+		waypoint_t    fakefinishline  = *finishline;
+		path_t        bestcircuitpath = {};
+		const boolean useshortcuts    = false;
+		const boolean huntbackwards   = false;
 
-			K_PathfindToWaypoint(&fakefinishline, finishline, &bestcircuitpath, useshortcuts, huntbackwards);
+		K_PathfindToWaypoint(&fakefinishline, finishline, &bestcircuitpath, useshortcuts, huntbackwards);
 
-			circuitlength = bestcircuitpath.totaldist;
+		circuitlength = bestcircuitpath.totaldist;
 
-			Z_Free(bestcircuitpath.array);
-		}
+		Z_Free(bestcircuitpath.array);
 	}
 
 	return circuitlength;
@@ -1460,35 +1391,27 @@ static UINT32 K_SetupCircuitLength(void)
 static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const prevwaypoint)
 {
 	// Error conditions
-	if (waypoint == NULL)
+	I_Assert(waypoint != NULL);
+	I_Assert(prevwaypoint != NULL);
+
+	waypoint->numprevwaypoints++;
+	waypoint->prevwaypoints =
+		Z_Realloc(waypoint->prevwaypoints, waypoint->numprevwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
+
+	if (!waypoint->prevwaypoints)
 	{
-		CONS_Debug(DBG_SETUP, "NULL waypoint in K_AddPrevToWaypoint.\n");
+		I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoints.");
 	}
-	else if (prevwaypoint == NULL)
+
+	waypoint->prevwaypointdistances =
+		Z_Realloc(waypoint->prevwaypointdistances, waypoint->numprevwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
+
+	if (!waypoint->prevwaypointdistances)
 	{
-		CONS_Debug(DBG_SETUP, "NULL prevwaypoint in K_AddPrevToWaypoint.\n");
+		I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoint distances.");
 	}
-	else
-	{
-		waypoint->numprevwaypoints++;
-		waypoint->prevwaypoints =
-			Z_Realloc(waypoint->prevwaypoints, waypoint->numprevwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
 
-		if (!waypoint->prevwaypoints)
-		{
-			I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoints.");
-		}
-
-		waypoint->prevwaypointdistances =
-			Z_Realloc(waypoint->prevwaypointdistances, waypoint->numprevwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
-
-		if (!waypoint->prevwaypointdistances)
-		{
-			I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoint distances.");
-		}
-
-		waypoint->prevwaypoints[waypoint->numprevwaypoints - 1] = prevwaypoint;
-	}
+	waypoint->prevwaypoints[waypoint->numprevwaypoints - 1] = prevwaypoint;
 }
 
 /*--------------------------------------------------
@@ -1509,52 +1432,42 @@ static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 	mobj_t *otherwaypointmobj = NULL;
 
 	// Error conditions
-	if (mobj == NULL || P_MobjWasRemoved(mobj))
-	{
-		CONS_Debug(DBG_SETUP, "NULL mobj in K_MakeWaypoint.\n");
-	}
-	else if (waypointcap == NULL)
-	{
-		CONS_Debug(DBG_SETUP, "K_MakeWaypoint called with NULL waypointcap.\n");
-	}
-	else if (numwaypoints >= numwaypointmobjs)
-	{
-		CONS_Debug(DBG_SETUP, "K_MakeWaypoint called with max waypoint capacity reached.\n");
-	}
-	else
-	{
-		// numwaypoints is incremented later in K_SetupWaypoint
-		madewaypoint = &waypointheap[numwaypoints];
-		numwaypoints++;
+	I_Assert(mobj != NULL);
+	I_Assert(!P_MobjWasRemoved(mobj));
+	I_Assert(waypointcap != NULL); // No waypoint mobjs in map load
+	I_Assert(numwaypoints < numwaypointmobjs); // waypoint array reached max capacity
 
-		P_SetTarget(&madewaypoint->mobj, mobj);
+	// numwaypoints is incremented later in K_SetupWaypoint
+	madewaypoint = &waypointheap[numwaypoints];
+	numwaypoints++;
 
-		// Go through the other waypoint mobjs in the map to find out how many waypoints are after this one
-		for (otherwaypointmobj = waypointcap; otherwaypointmobj != NULL; otherwaypointmobj = otherwaypointmobj->tracer)
+	P_SetTarget(&madewaypoint->mobj, mobj);
+
+	// Go through the other waypoint mobjs in the map to find out how many waypoints are after this one
+	for (otherwaypointmobj = waypointcap; otherwaypointmobj != NULL; otherwaypointmobj = otherwaypointmobj->tracer)
+	{
+		// threshold = next waypoint id, movecount = my id
+		if (mobj->threshold == otherwaypointmobj->movecount)
 		{
-			// threshold = next waypoint id, movecount = my id
-			if (mobj->threshold == otherwaypointmobj->movecount)
-			{
-				madewaypoint->numnextwaypoints++;
-			}
+			madewaypoint->numnextwaypoints++;
 		}
+	}
 
-		// No next waypoints
-		if (madewaypoint->numnextwaypoints != 0)
+	// No next waypoints
+	if (madewaypoint->numnextwaypoints != 0)
+	{
+		// Allocate memory to hold enough pointers to all of the next waypoints
+		madewaypoint->nextwaypoints =
+			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
+		if (madewaypoint->nextwaypoints == NULL)
 		{
-			// Allocate memory to hold enough pointers to all of the next waypoints
-			madewaypoint->nextwaypoints =
-				Z_Calloc(madewaypoint->numnextwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
-			if (madewaypoint->nextwaypoints == NULL)
-			{
-				I_Error("K_MakeWaypoint: Out of Memory allocating next waypoints.");
-			}
-			madewaypoint->nextwaypointdistances =
-				Z_Calloc(madewaypoint->numnextwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
-			if (madewaypoint->nextwaypointdistances == NULL)
-			{
-				I_Error("K_MakeWaypoint: Out of Memory allocating next waypoint distances.");
-			}
+			I_Error("K_MakeWaypoint: Out of Memory allocating next waypoints.");
+		}
+		madewaypoint->nextwaypointdistances =
+			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
+		if (madewaypoint->nextwaypointdistances == NULL)
+		{
+			I_Error("K_MakeWaypoint: Out of Memory allocating next waypoint distances.");
 		}
 	}
 
@@ -1578,92 +1491,82 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 	waypoint_t *thiswaypoint = NULL;
 
 	// Error conditions
-	if (mobj == NULL || P_MobjWasRemoved(mobj))
+	I_Assert(mobj != NULL);
+	I_Assert(!P_MobjWasRemoved(mobj));
+	I_Assert(mobj->type == MT_WAYPOINT);
+	I_Assert(waypointcap != NULL); // no waypoint mobjs in map load
+
+	// If we have waypoints already created, search through them first to see if this mobj is already added.
+	if (firstwaypoint != NULL)
 	{
-		CONS_Debug(DBG_SETUP, "NULL mobj in K_SetupWaypoint.\n");
+		thiswaypoint = K_SearchWaypointHeapForMobj(mobj);
 	}
-	else if (mobj->type != MT_WAYPOINT)
+
+	// The waypoint hasn't already been made, so make it
+	if (thiswaypoint == NULL)
 	{
-		CONS_Debug(DBG_SETUP, "Non MT_WAYPOINT mobj in K_SetupWaypoint. Type=%d.\n", mobj->type);
-	}
-	else if (waypointcap == NULL)
-	{
-		CONS_Debug(DBG_SETUP, "K_SetupWaypoint called with NULL waypointcap.\n");
-	}
-	else
-	{
-		// If we have waypoints already created, search through them first to see if this mobj is already added.
-		if (firstwaypoint != NULL)
+		mobj_t *otherwaypointmobj = NULL;
+		UINT32 nextwaypointindex = 0;
+
+		thiswaypoint = K_MakeWaypoint(mobj);
+
+		if (thiswaypoint != NULL)
 		{
-			thiswaypoint = K_SearchWaypointHeapForMobj(mobj);
-		}
-
-		// The waypoint hasn't already been made, so make it
-		if (thiswaypoint == NULL)
-		{
-			mobj_t *otherwaypointmobj = NULL;
-			UINT32 nextwaypointindex = 0;
-
-			thiswaypoint = K_MakeWaypoint(mobj);
-
-			if (thiswaypoint != NULL)
+			// Set the first waypoint if it isn't already
+			if (firstwaypoint == NULL)
 			{
-				// Set the first waypoint if it isn't already
-				if (firstwaypoint == NULL)
-				{
-					firstwaypoint = thiswaypoint;
-				}
+				firstwaypoint = thiswaypoint;
+			}
 
-				if (K_GetWaypointIsFinishline(thiswaypoint))
+			if (K_GetWaypointIsFinishline(thiswaypoint))
+			{
+				if (finishline != NULL)
 				{
-					if (finishline != NULL)
-					{
-						const INT32 oldfinishlineid = K_GetWaypointID(finishline);
-						const INT32 thiswaypointid  = K_GetWaypointID(thiswaypoint);
-						CONS_Alert(
-							CONS_WARNING, "Multiple finish line waypoints with IDs %d and %d! Using %d.",
-							oldfinishlineid, thiswaypointid, thiswaypointid);
-					}
-					finishline = thiswaypoint;
-				}
-
-				if (thiswaypoint->numnextwaypoints > 0)
-				{
-					waypoint_t *nextwaypoint = NULL;
-					fixed_t nextwaypointdistance = 0;
-					// Go through the waypoint mobjs to setup the next waypoints and make this waypoint know they're its
-					// next. I kept this out of K_MakeWaypoint so the stack isn't gone down as deep
-					for (otherwaypointmobj = waypointcap;
-						otherwaypointmobj != NULL;
-						otherwaypointmobj = otherwaypointmobj->tracer)
-					{
-						// threshold = next waypoint id, movecount = my id
-						if (mobj->threshold == otherwaypointmobj->movecount)
-						{
-							nextwaypoint = K_SetupWaypoint(otherwaypointmobj);
-							nextwaypointdistance = K_DistanceBetweenWaypoints(thiswaypoint, nextwaypoint);
-							thiswaypoint->nextwaypoints[nextwaypointindex] = nextwaypoint;
-							thiswaypoint->nextwaypointdistances[nextwaypointindex] = nextwaypointdistance;
-							K_AddPrevToWaypoint(nextwaypoint, thiswaypoint);
-							nextwaypoint->prevwaypointdistances[nextwaypoint->numprevwaypoints - 1] = nextwaypointdistance;
-							nextwaypointindex++;
-						}
-						if (nextwaypointindex >= thiswaypoint->numnextwaypoints)
-						{
-							break;
-						}
-					}
-				}
-				else
-				{
+					const INT32 oldfinishlineid = K_GetWaypointID(finishline);
+					const INT32 thiswaypointid  = K_GetWaypointID(thiswaypoint);
 					CONS_Alert(
-						CONS_WARNING, "Waypoint with ID %d has no next waypoint.\n", K_GetWaypointID(thiswaypoint));
+						CONS_WARNING, "Multiple finish line waypoints with IDs %d and %d! Using %d.",
+						oldfinishlineid, thiswaypointid, thiswaypointid);
+				}
+				finishline = thiswaypoint;
+			}
+
+			if (thiswaypoint->numnextwaypoints > 0)
+			{
+				waypoint_t *nextwaypoint = NULL;
+				fixed_t nextwaypointdistance = 0;
+				// Go through the waypoint mobjs to setup the next waypoints and make this waypoint know they're its
+				// next. I kept this out of K_MakeWaypoint so the stack isn't gone down as deep
+				for (otherwaypointmobj = waypointcap;
+					otherwaypointmobj != NULL;
+					otherwaypointmobj = otherwaypointmobj->tracer)
+				{
+					// threshold = next waypoint id, movecount = my id
+					if (mobj->threshold == otherwaypointmobj->movecount)
+					{
+						nextwaypoint = K_SetupWaypoint(otherwaypointmobj);
+						nextwaypointdistance = K_DistanceBetweenWaypoints(thiswaypoint, nextwaypoint);
+						thiswaypoint->nextwaypoints[nextwaypointindex] = nextwaypoint;
+						thiswaypoint->nextwaypointdistances[nextwaypointindex] = nextwaypointdistance;
+						K_AddPrevToWaypoint(nextwaypoint, thiswaypoint);
+						nextwaypoint->prevwaypointdistances[nextwaypoint->numprevwaypoints - 1] = nextwaypointdistance;
+						nextwaypointindex++;
+					}
+					if (nextwaypointindex >= thiswaypoint->numnextwaypoints)
+					{
+						break;
+					}
 				}
 			}
 			else
 			{
-				CONS_Debug(DBG_SETUP, "K_SetupWaypoint failed to make new waypoint with ID %d.\n", mobj->movecount);
+				CONS_Alert(
+					CONS_WARNING, "Waypoint with ID %d has no next waypoint.\n", K_GetWaypointID(thiswaypoint));
 			}
+		}
+		else
+		{
+			CONS_Debug(DBG_SETUP, "K_SetupWaypoint failed to make new waypoint with ID %d.\n", mobj->movecount);
 		}
 	}
 
@@ -1684,51 +1587,43 @@ static boolean K_AllocateWaypointHeap(void)
 	boolean allocationsuccessful = false;
 
 	// Error conditions
-	if (waypointheap != NULL)
+	I_Assert(waypointheap == NULL); // waypointheap is already allocated
+	I_Assert(waypointcap != NULL); // no waypoint mobjs at map load
+
+	// This should be an allocation for the first time. Reset the number of mobjs back to 0 if it's not already
+	numwaypointmobjs = 0;
+
+	// Find how many waypoint mobjs there are in the map, this is the maximum number of waypoints there CAN be
+	for (waypointmobj = waypointcap; waypointmobj != NULL; waypointmobj = waypointmobj->tracer)
 	{
-		CONS_Debug(DBG_SETUP, "K_AllocateWaypointHeap called when waypointheap is already allocated.\n");
+		if (waypointmobj->type != MT_WAYPOINT)
+		{
+			CONS_Debug(DBG_SETUP,
+				"Non MT_WAYPOINT mobj in waypointcap in K_AllocateWaypointHeap. Type=%d\n.", waypointmobj->type);
+			continue;
+		}
+
+		numwaypointmobjs++;
 	}
-	else if (waypointcap == NULL)
+
+	if (numwaypointmobjs > 0)
 	{
-		CONS_Debug(DBG_SETUP, "K_AllocateWaypointHeap called with NULL waypointcap.\n");
+		// Allocate space in the heap for every mobj, it's possible some mobjs aren't linked up and not all of the
+		// heap allocated will be used, but it's a fairly reasonable assumption that this isn't going to be awful
+		waypointheap = Z_Calloc(numwaypointmobjs * sizeof(waypoint_t), PU_LEVEL, NULL);
+
+		if (waypointheap == NULL)
+		{
+			// We could theoretically CONS_Debug here and continue without using waypoints, but I feel that will
+			// require error checks that will end up spamming the console when we think waypoints SHOULD be working.
+			// Safer to just exit if out of memory
+			I_Error("K_AllocateWaypointHeap: Out of memory.");
+		}
+		allocationsuccessful = true;
 	}
 	else
 	{
-		// This should be an allocation for the first time. Reset the number of mobjs back to 0 if it's not already
-		numwaypointmobjs = 0;
-
-		// Find how many waypoint mobjs there are in the map, this is the maximum number of waypoints there CAN be
-		for (waypointmobj = waypointcap; waypointmobj != NULL; waypointmobj = waypointmobj->tracer)
-		{
-			if (waypointmobj->type != MT_WAYPOINT)
-			{
-				CONS_Debug(DBG_SETUP,
-					"Non MT_WAYPOINT mobj in waypointcap in K_AllocateWaypointHeap. Type=%d\n.", waypointmobj->type);
-				continue;
-			}
-
-			numwaypointmobjs++;
-		}
-
-		if (numwaypointmobjs > 0)
-		{
-			// Allocate space in the heap for every mobj, it's possible some mobjs aren't linked up and not all of the
-			// heap allocated will be used, but it's a fairly reasonable assumption that this isn't going to be awful
-			waypointheap = Z_Calloc(numwaypointmobjs * sizeof(waypoint_t), PU_LEVEL, NULL);
-
-			if (waypointheap == NULL)
-			{
-				// We could theoretically CONS_Debug here and continue without using waypoints, but I feel that will
-				// require error checks that will end up spamming the console when we think waypoints SHOULD be working.
-				// Safer to just exit if out of memory
-				I_Error("K_AllocateWaypointHeap: Out of memory.");
-			}
-			allocationsuccessful = true;
-		}
-		else
-		{
-			CONS_Debug(DBG_SETUP, "No waypoint mobjs in waypointcap.\n");
-		}
+		CONS_Debug(DBG_SETUP, "No waypoint mobjs in waypointcap.\n");
 	}
 
 	return allocationsuccessful;
@@ -1794,7 +1689,11 @@ boolean K_SetupWaypointList(void)
 					finishline = firstwaypoint;
 				}
 
-				(void)K_SetupCircuitLength();
+				if (K_SetupCircuitLength() == 0
+					&& ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) != LF_SECTIONRACE))
+				{
+					CONS_Alert(CONS_ERROR, "Circuit track waypoints do not form a circuit.\n");
+				}
 
 				setupsuccessful = true;
 			}

@@ -18,20 +18,12 @@ static boolean K_BHeapItemValidate(bheap_t *heap, bheapitem_t *item)
 {
 	boolean heapitemvalid = false;
 
-	if (heap == NULL)
+	I_Assert(heap != NULL);
+	I_Assert(item != NULL);
+
+	if ((item->data != NULL) && (item->heapindex < SIZE_MAX / 2) && (item->owner == heap))
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapItemValidate.\n");
-	}
-	else if (item == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item in K_BHeapItemValidate.\n");
-	}
-	else
-	{
-		if ((item->data != NULL) && (item->heapindex < SIZE_MAX / 2) && (item->owner == heap))
-		{
-			heapitemvalid = true;
-		}
+		heapitemvalid = true;
 	}
 
 	return heapitemvalid;
@@ -53,40 +45,21 @@ static boolean K_BHeapItemValidate(bheap_t *heap, bheapitem_t *item)
 static bheapitem_t *K_BHeapItemsCompare(bheap_t *heap, bheapitem_t *item1, bheapitem_t *item2)
 {
 	bheapitem_t *lowervalueitem = NULL;
-	if (heap == NULL)
+
+	I_Assert(heap != NULL);
+	I_Assert(K_BHeapValid(heap));
+	I_Assert(item1 != NULL);
+	I_Assert(item2 != NULL);
+	I_Assert(K_BHeapItemValidate(heap, item1));
+	I_Assert(K_BHeapItemValidate(heap, item2));
+
+	if (item1->value < item2->value)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapItemsCompare.\n");
-	}
-	else if (K_BHeapValid(heap) == false)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Invalid heap in K_BHeapSwapItems.\n");
-	}
-	else if (item1 == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item1 in K_BHeapItemsCompare.\n");
-	}
-	else if (item2 == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item2 in K_BHeapItemsCompare.\n");
-	}
-	else if (K_BHeapItemValidate(heap, item1) == false)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Invalid item1 in K_BHeapItemsCompare.\n");
-	}
-	else if (K_BHeapItemValidate(heap, item2) == false)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Invalid item2 in K_BHeapItemsCompare.\n");
+		lowervalueitem = item1;
 	}
 	else
 	{
-		if (item1->value < item2->value)
-		{
-			lowervalueitem = item1;
-		}
-		else
-		{
-			lowervalueitem = item2;
-		}
+		lowervalueitem = item2;
 	}
 
 	return lowervalueitem;
@@ -107,31 +80,13 @@ static bheapitem_t *K_BHeapItemsCompare(bheap_t *heap, bheapitem_t *item1, bheap
 --------------------------------------------------*/
 static void K_BHeapSwapItems(bheap_t *heap, bheapitem_t *item1, bheapitem_t *item2)
 {
-	if (heap == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapSwapItems.\n");
-	}
-	else if (K_BHeapValid(heap) == false)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Invalid heap in K_BHeapSwapItems.\n");
-	}
-	else if (item1 == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item1 in K_BHeapSwapItems.\n");
-	}
-	else if (item2 == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item2 in K_BHeapSwapItems.\n");
-	}
-	else if (K_BHeapItemValidate(heap, item1) == false)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Invalid item1 in K_BHeapSwapItems.\n");
-	}
-	else if (K_BHeapItemValidate(heap, item2) == false)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Invalid item2 in K_BHeapSwapItems.\n");
-	}
-	else
+	I_Assert(heap != NULL);
+	I_Assert(K_BHeapValid(heap));
+	I_Assert(item1 != NULL);
+	I_Assert(item2 != NULL);
+	I_Assert(K_BHeapItemValidate(heap, item1));
+	I_Assert(K_BHeapItemValidate(heap, item2));
+
 	{
 		size_t      tempitemindex = item1->heapindex;
 		bheapitem_t tempitemstore = *item1;
@@ -170,18 +125,10 @@ static size_t K_BHeapItemGetParentIndex(bheapitem_t *item)
 {
 	size_t parentindex = SIZE_MAX;
 
-	if (item == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item in K_BHeapItemGetParentIndex.\n");
-	}
-	else if (item->heapindex >= (SIZE_MAX / 2))
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Bad item heapindex in K_BHeapItemGetParentIndex.\n");
-	}
-	else
-	{
-		parentindex = (item->heapindex - 1U) / 2U;
-	}
+	I_Assert(item != NULL);
+	I_Assert(item->heapindex < (SIZE_MAX / 2));
+
+	parentindex = (item->heapindex - 1U) / 2U;
 
 	return parentindex;
 }
@@ -201,18 +148,10 @@ static size_t K_BHeapItemGetLeftChildIndex(bheapitem_t *item)
 {
 	size_t leftchildindex = SIZE_MAX;
 
-	if (item == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item in K_BHeapItemGetLeftChildIndex.\n");
-	}
-	else if (item->heapindex >= (SIZE_MAX / 2))
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Bad item heapindex in K_BHeapItemGetLeftChildIndex.\n");
-	}
-	else
-	{
-		leftchildindex = (item->heapindex * 2U) + 1U;
-	}
+	I_Assert(item != NULL);
+	I_Assert(item->heapindex < (SIZE_MAX / 2));
+
+	leftchildindex = (item->heapindex * 2U) + 1U;
 
 	return leftchildindex;
 }
@@ -232,18 +171,10 @@ static size_t K_BHeapItemGetRightChildIndex(bheapitem_t *item)
 {
 	size_t rightchildindex = SIZE_MAX;
 
-	if (item == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item in K_BHeapItemGetRightChildIndex.\n");
-	}
-	else if (item->heapindex >= (SIZE_MAX / 2))
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Bad item heapindex in K_BHeapItemGetRightChildIndex.\n");
-	}
-	else
-	{
-		rightchildindex = (item->heapindex * 2U) + 2U;
-	}
+	I_Assert(item != NULL);
+	I_Assert(item->heapindex < (SIZE_MAX / 2));
+
+	rightchildindex = (item->heapindex * 2U) + 2U;
 
 	return rightchildindex;
 }
@@ -262,38 +193,27 @@ static size_t K_BHeapItemGetRightChildIndex(bheapitem_t *item)
 --------------------------------------------------*/
 static void K_BHeapSortUp(bheap_t *heap, bheapitem_t *item)
 {
-	if (heap == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapSortUp.\n");
-	}
-	else if (K_BHeapValid(heap) == false)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Invalid heap in K_BHeapSortUp.\n");
-	}
-	else if (item == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item in K_BHeapSortUp.\n");
-	}
-	else
-	{
-		if (item->heapindex > 0U)
-		{
-			size_t parentindex = SIZE_MAX;
-			do
-			{
-				parentindex = K_BHeapItemGetParentIndex(item);
+	I_Assert(heap != NULL);
+	I_Assert(K_BHeapValid(heap));
+	I_Assert(item != NULL);
 
-				// Swap the nodes if the parent has a higher value
-				if (K_BHeapItemsCompare(heap, item, &heap->array[parentindex]) == item)
-				{
-					K_BHeapSwapItems(heap, item, &heap->array[parentindex]);
-				}
-				else
-				{
-					break;
-				}
-			} while (parentindex > 0U);
-		}
+	if (item->heapindex > 0U)
+	{
+		size_t parentindex = SIZE_MAX;
+		do
+		{
+			parentindex = K_BHeapItemGetParentIndex(item);
+
+			// Swap the nodes if the parent has a higher value
+			if (K_BHeapItemsCompare(heap, item, &heap->array[parentindex]) == item)
+			{
+				K_BHeapSwapItems(heap, item, &heap->array[parentindex]);
+			}
+			else
+			{
+				break;
+			}
+		} while (parentindex > 0U);
 	}
 }
 
@@ -311,71 +231,59 @@ static void K_BHeapSortUp(bheap_t *heap, bheapitem_t *item)
 --------------------------------------------------*/
 static void K_BHeapSortDown(bheap_t *heap, bheapitem_t *item)
 {
-	if (heap == NULL)
+	I_Assert(heap != NULL);
+	I_Assert(K_BHeapValid(heap));
+	I_Assert(item != NULL);
+
+	if (heap->count > 0U)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapSortDown.\n");
-	}
-	else if (K_BHeapValid(heap) == false)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Invalid heap in K_BHeapSortDown.\n");
-	}
-	else if (item == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL item in K_BHeapSortDown.\n");
-	}
-	else
-	{
-		if (heap->count > 0U)
+		size_t      leftchildindex  = SIZE_MAX;
+		size_t      rightchildindex = SIZE_MAX;
+		bheapitem_t *leftchild      = NULL;
+		bheapitem_t *rightchild     = NULL;
+		bheapitem_t *swapchild      = NULL;
+		boolean     noswapneeded    = false;
+
+		do
 		{
-			size_t      leftchildindex  = SIZE_MAX;
-			size_t      rightchildindex = SIZE_MAX;
-			bheapitem_t *leftchild      = NULL;
-			bheapitem_t *rightchild     = NULL;
-			bheapitem_t *swapchild      = NULL;
-			boolean     noswapneeded    = false;
+			leftchildindex  = K_BHeapItemGetLeftChildIndex(item);
+			rightchildindex = K_BHeapItemGetRightChildIndex(item);
 
-			do
+			if (leftchildindex < heap->count)
 			{
-				leftchildindex  = K_BHeapItemGetLeftChildIndex(item);
-				rightchildindex = K_BHeapItemGetRightChildIndex(item);
-
-				if (leftchildindex < heap->count)
+				leftchild = &heap->array[leftchildindex];
+				swapchild = leftchild;
+				if (rightchildindex < heap->count)
 				{
-					leftchild = &heap->array[leftchildindex];
-					swapchild = leftchild;
-					if (rightchildindex < heap->count)
+					rightchild = &heap->array[rightchildindex];
+					// Choose the lower child node to swap with
+					if (K_BHeapItemsCompare(heap, leftchild, rightchild) == rightchild)
 					{
-						rightchild = &heap->array[rightchildindex];
-						// Choose the lower child node to swap with
-						if (K_BHeapItemsCompare(heap, leftchild, rightchild) == rightchild)
-						{
-							swapchild = rightchild;
-						}
+						swapchild = rightchild;
 					}
+				}
 
-					// Swap with the lower child, if it's lower than item
-					if (K_BHeapItemsCompare(heap, swapchild, item) == swapchild)
-					{
-						K_BHeapSwapItems(heap, item, swapchild);
-					}
-					else
-					{
-						noswapneeded = true;
-					}
-
+				// Swap with the lower child, if it's lower than item
+				if (K_BHeapItemsCompare(heap, swapchild, item) == swapchild)
+				{
+					K_BHeapSwapItems(heap, item, swapchild);
 				}
 				else
 				{
 					noswapneeded = true;
 				}
+			}
+			else
+			{
+				noswapneeded = true;
+			}
 
-				if (noswapneeded)
-				{
-					break;
-				}
+			if (noswapneeded)
+			{
+				break;
+			}
 
-			} while (item->heapindex < (heap->count - 1U));
-		}
+		} while (item->heapindex < (heap->count - 1U));
 	}
 }
 

@@ -23,14 +23,10 @@ static const size_t DEFAULT_CLOSEDSET_CAPACITY = 8U;
 static UINT32 K_NodeGetFScore(const pathfindnode_t *const node)
 {
 	UINT32 fscore = UINT32_MAX;
-	if (node == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL node in K_PathfindNodeGetFScore.");
-	}
-	else
-	{
-		fscore = node->gscore + node->hscore;
-	}
+
+	I_Assert(node != NULL);
+
+	fscore = node->gscore + node->hscore;
 
 	return fscore;
 }
@@ -52,7 +48,7 @@ static void K_NodeUpdateHeapIndex(void *const node, const size_t newheapindex)
 {
 	if (node == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL node in K_PathfindNodeUpdateHeapIndex.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL node in K_NodeUpdateHeapIndex.\n");
 	}
 	else
 	{
@@ -84,28 +80,20 @@ static pathfindnode_t *K_NodesArrayContainsNodeData(
 	size_t nodesarraycount)
 {
 	pathfindnode_t *foundnode = NULL;
+	size_t i = 0U;
 
-	if (nodesarray == NULL)
+	I_Assert(nodesarray != NULL);
+	I_Assert(nodedata != NULL);
+
+	// It is more likely that we'll find the node we are looking for from the end of the array
+	// Yes, the for loop looks weird, remember that size_t is unsigned and we want to check 0, after it hits 0 it
+	// will loop back up to SIZE_MAX
+	for (i = nodesarraycount - 1U; i < nodesarraycount; i--)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL nodesarray in K_NodesArrayContainsWaypoint.\n");
-	}
-	else if (nodedata == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL nodedata in K_NodesArrayContainsWaypoint.\n");
-	}
-	else
-	{
-		size_t i;
-		// It is more likely that we'll find the node we are looking for from the end of the array
-		// Yes, the for loop looks weird, remember that size_t is unsigned and we want to check 0, after it hits 0 it
-		// will loop back up to SIZE_MAX
-		for (i = nodesarraycount - 1U; i < nodesarraycount; i--)
+		if (nodesarray[i].nodedata == nodedata)
 		{
-			if (nodesarray[i].nodedata == nodedata)
-			{
-				foundnode = &nodesarray[i];
-				break;
-			}
+			foundnode = &nodesarray[i];
+			break;
 		}
 	}
 	return foundnode;
@@ -127,28 +115,19 @@ static pathfindnode_t *K_NodesArrayContainsNodeData(
 static boolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_t *node, size_t closedsetcount)
 {
 	boolean nodeisinclosedset = false;
+	size_t i = 0U;
 
-	if (closedset == NULL)
+	I_Assert(closedset != NULL);
+	I_Assert(node != NULL);
+	// It is more likely that we'll find the node we are looking for from the end of the array
+	// Yes, the for loop looks weird, remember that size_t is unsigned and we want to check 0, after it hits 0 it
+	// will loop back up to SIZE_MAX
+	for (i = closedsetcount - 1U; i < closedsetcount; i--)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL closedset in K_PathfindClosedsetContainsNode.\n");
-	}
-	else if (node == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL node in K_PathfindClosedsetContainsNode.\n");
-	}
-	else
-	{
-		size_t i;
-		// It is more likely that we'll find the node we are looking for from the end of the array
-		// Yes, the for loop looks weird, remember that size_t is unsigned and we want to check 0, after it hits 0 it
-		// will loop back up to SIZE_MAX
-		for (i = closedsetcount - 1U; i < closedsetcount; i--)
+		if (closedset[i] == node)
 		{
-			if (closedset[i] == node)
-			{
-				nodeisinclosedset = true;
-				break;
-			}
+			nodeisinclosedset = true;
+			break;
 		}
 	}
 	return nodeisinclosedset;
@@ -227,15 +206,9 @@ static boolean K_ReconstructPath(path_t *const path, pathfindnode_t *const desti
 {
 	boolean reconstructsuccess = false;
 
-	if (path == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL path in K_ReconstructPath.\n");
-	}
-	else if (destinationnode == NULL)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL destinationnode in K_ReconstructPath.\n");
-	}
-	else
+	I_Assert(path != NULL);
+	I_Assert(destinationnode != NULL);
+
 	{
 		size_t numnodes = 0U;
 		pathfindnode_t *thisnode = destinationnode;
