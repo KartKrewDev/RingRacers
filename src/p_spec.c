@@ -1651,7 +1651,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (rings > dist)
 				return false;
 		}
-		else if (triggerline->flags & ML_BLOCKMONSTERS)
+		else if (triggerline->flags & ML_BLOCKPLAYERS)
 		{
 			if (rings < dist)
 				return false;
@@ -1729,7 +1729,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 				if (lap < (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
 					return false;
 			}
-			else if (triggerline->flags & ML_BLOCKMONSTERS) // Need lower than or equal to
+			else if (triggerline->flags & ML_BLOCKPLAYERS) // Need lower than or equal to
 			{
 				if (lap > (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
 					return false;
@@ -2298,8 +2298,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						return;
 
 					if (bot)
-						P_Teleport(bot, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, (line->flags & ML_BLOCKMONSTERS) == 0, (line->flags & ML_EFFECT4) == ML_EFFECT4);
-					if (line->flags & ML_BLOCKMONSTERS)
+						P_Teleport(bot, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, (line->flags & ML_BLOCKPLAYERS) == 0, (line->flags & ML_EFFECT4) == ML_EFFECT4);
+					if (line->flags & ML_BLOCKPLAYERS)
 						P_Teleport(mo, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, false, (line->flags & ML_EFFECT4) == ML_EFFECT4);
 					else
 					{
@@ -2361,7 +2361,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					mapmusname[6] = 0;
 
 					mapmusflags = tracknum & MUSIC_TRACKMASK;
-					if (!(line->flags & ML_BLOCKMONSTERS))
+					if (!(line->flags & ML_BLOCKPLAYERS))
 						mapmusflags |= MUSIC_RELOADRESET;
 					if (line->flags & ML_BOUNCY)
 						mapmusflags |= MUSIC_FORCERESET;
@@ -2381,7 +2381,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					}
 				}
 
-				// Except, you can use the ML_BLOCKMONSTERS flag to change this behavior.
+				// Except, you can use the ML_BLOCKPLAYERS flag to change this behavior.
 				// if (mapmusflags & MUSIC_RELOADRESET) then it will reset the music in G_PlayerReborn.
 			}
 			break;
@@ -2451,7 +2451,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					// play the sound from nowhere
 					S_StartSound(NULL, sfxnum);
 				}
-				else if (line->flags & ML_BLOCKMONSTERS)
+				else if (line->flags & ML_BLOCKPLAYERS)
 				{
 					// play the sound from calling sector's soundorg
 					if (callsec)
@@ -2800,7 +2800,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 				var1 = sides[line->sidenum[0]].toptexture; //(line->dx>>FRACBITS)-1;
 
-				if (line->sidenum[1] != 0xffff && line->flags & ML_BLOCKMONSTERS) // read power from back sidedef
+				if (line->sidenum[1] != 0xffff && line->flags & ML_BLOCKPLAYERS) // read power from back sidedef
 					var2 = sides[line->sidenum[1]].toptexture;
 				else if (line->flags & ML_NOCLIMB) // 'Infinite'
 					var2 = UINT16_MAX;
@@ -3956,7 +3956,7 @@ DoneSection2:
 				if (gametype == GT_COOP && lineindex != -1) // Custom exit!
 				{
 					// Special goodies with the block monsters flag depending on emeralds collected
-					if ((lines[lineindex].flags & ML_BLOCKMONSTERS) && ALL7EMERALDS(emeralds))
+					if ((lines[lineindex].flags & ML_BLOCKPLAYERS) && ALL7EMERALDS(emeralds))
 						nextmapoverride = (INT16)(lines[lineindex].frontsector->ceilingheight>>FRACBITS);
 					else
 						nextmapoverride = (INT16)(lines[lineindex].frontsector->floorheight>>FRACBITS);
@@ -5349,7 +5349,7 @@ static void P_AddRaiseThinker(sector_t *sec, line_t *sourceline)
 
 	raise->thinker.function.acp1 = (actionf_p1)T_RaiseSector;
 
-	if (sourceline->flags & ML_BLOCKMONSTERS)
+	if (sourceline->flags & ML_BLOCKPLAYERS)
 		raise->vars[0] = 1;
 	else
 		raise->vars[0] = 0;
@@ -5408,7 +5408,7 @@ static void P_AddOldAirbob(sector_t *sec, line_t *sourceline, boolean noadjust)
 
 	airbob->vars[3] = airbob->vars[2];
 
-	if (sourceline->flags & ML_BLOCKMONSTERS)
+	if (sourceline->flags & ML_BLOCKPLAYERS)
 		airbob->vars[0] = 1;
 	else
 		airbob->vars[0] = 0;
@@ -5989,7 +5989,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 
 			case 64: // Appearing/Disappearing FOF option
-				if (lines[i].flags & ML_BLOCKMONSTERS) { // Find FOFs by control sector tag
+				if (lines[i].flags & ML_BLOCKPLAYERS) { // Find FOFs by control sector tag
 					for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
 						for (j = 0; (unsigned)j < sectors[s].linecount; j++)
 							if (sectors[s].lines[j]->special >= 100 && sectors[s].lines[j]->special < 300)
@@ -6217,7 +6217,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 			case 150: // Air bobbing platform
 			case 151: // Adjustable air bobbing platform
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL, secthinkers);
-				lines[i].flags |= ML_BLOCKMONSTERS;
+				lines[i].flags |= ML_BLOCKPLAYERS;
 				P_AddOldAirbob(lines[i].frontsector, lines + i, (lines[i].special != 151));
 				break;
 			case 152: // Adjustable air bobbing platform in reverse
@@ -6272,14 +6272,14 @@ void P_SpawnSpecials(INT32 fromnetsave)
 
 			case 176: // Air bobbing platform that will crumble and bob on the water when it falls and hits
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_FLOATBOB|FF_CRUMBLE, secthinkers);
-				lines[i].flags |= ML_BLOCKMONSTERS;
+				lines[i].flags |= ML_BLOCKPLAYERS;
 				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
 				break;
 
 			case 177: // Air bobbing platform that will crumble and bob on
 				// the water when it falls and hits, then never return
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL|FF_FLOATBOB|FF_CRUMBLE|FF_NORETURN, secthinkers);
-				lines[i].flags |= ML_BLOCKMONSTERS;
+				lines[i].flags |= ML_BLOCKPLAYERS;
 				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
 				break;
 
@@ -6293,7 +6293,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 
 			case 180: // Air bobbing platform that will crumble
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL|FF_CRUMBLE, secthinkers);
-				lines[i].flags |= ML_BLOCKMONSTERS;
+				lines[i].flags |= ML_BLOCKPLAYERS;
 				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
 				break;
 

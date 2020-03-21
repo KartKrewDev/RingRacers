@@ -2179,7 +2179,7 @@ boolean P_CheckSolidLava(mobj_t *mo, ffloor_t *rover)
 			*rover->topheight;
 
 		if (rover->flags & FF_SWIMMABLE && GETSECSPECIAL(rover->master->frontsector->special, 1) == 3
-			&& !(rover->master->flags & ML_BLOCKMONSTERS)
+			&& !(rover->master->flags & ML_BLOCKPLAYERS)
 			&& ((rover->master->flags & ML_EFFECT3) || mo->z-mo->momz > topheight - FixedMul(16*FRACUNIT, mo->scale)))
 				return true;
 	}
