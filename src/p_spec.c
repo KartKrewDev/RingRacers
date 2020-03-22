@@ -3401,6 +3401,97 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 		return rover->master->frontsector;
 	}
 
+#ifdef POLYOBJECTS
+	// Allow sector specials to be applied to polyobjects!
+	if (mo->subsector->polyList)
+	{
+		polyobj_t *po = mo->subsector->polyList;
+		sector_t *polysec;
+		boolean touching = false;
+		boolean inside = false;
+
+		while (po)
+		{
+			if (po->flags & POF_NOSPECIALS)
+			{
+				po = (polyobj_t *)(po->link.next);
+				continue;
+			}
+
+			polysec = po->lines[0]->backsector;
+
+			if (GETSECSPECIAL(polysec->special, section) != number)
+			{
+				po = (polyobj_t *)(po->link.next);
+				continue;
+			}
+
+			if ((polysec->flags & SF_TRIGGERSPECIAL_TOUCH))
+				touching = P_MobjTouchingPolyobj(po, mo);
+			else
+				touching = false;
+
+			inside = P_MobjInsidePolyobj(po, mo);
+
+			if (!(inside || touching))
+			{
+				po = (polyobj_t *)(po->link.next);
+				continue;
+			}
+
+			topheight = polysec->ceilingheight;
+			bottomheight = polysec->floorheight;
+
+			// We're inside it! Yess...
+			if (!(po->flags & POF_TESTHEIGHT)) // Don't do height checking
+			{
+			}
+			else if (po->flags & POF_SOLID)
+			{
+				// Thing must be on top of the floor to be affected...
+				if ((polysec->flags & SF_FLIPSPECIAL_FLOOR)
+					&& !(polysec->flags & SF_FLIPSPECIAL_CEILING))
+				{
+					if ((mo->eflags & MFE_VERTICALFLIP) || mo->z != topheight)
+					{
+						po = (polyobj_t *)(po->link.next);
+						continue;
+					}
+				}
+				else if ((polysec->flags & SF_FLIPSPECIAL_CEILING)
+					&& !(polysec->flags & SF_FLIPSPECIAL_FLOOR))
+				{
+					if (!(mo->eflags & MFE_VERTICALFLIP) || mo->z + mo->height != bottomheight)
+					{
+						po = (polyobj_t *)(po->link.next);
+						continue;
+					}
+				}
+				else if (polysec->flags & SF_FLIPSPECIAL_BOTH)
+				{
+					if (!((mo->eflags & MFE_VERTICALFLIP && mo->z + mo->height == bottomheight)
+						|| (!(mo->eflags & MFE_VERTICALFLIP) && mo->z == topheight)))
+					{
+						po = (polyobj_t *)(po->link.next);
+						continue;
+					}
+				}
+			}
+			else
+			{
+				// Water and DEATH FOG!!! heh
+				if (mo->z > topheight || (mo->z + mo->height) < bottomheight)
+				{
+					po = (polyobj_t *)(po->link.next);
+					continue;
+				}
+			}
+
+			return polysec;
+		}
+	}
+#endif
+
 	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
 		if (GETSECSPECIAL(node->m_sector->special, section) == number)
@@ -3461,8 +3552,7 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 				else if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING)
 					&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR))
 				{
-					if (!(mo->eflags & MFE_VERTICALFLIP)
-						|| mo->z + mo->height != bottomheight)
+					if (!(mo->eflags & MFE_VERTICALFLIP) || mo->z + mo->height != bottomheight)
 						continue;
 				}
 				else if (rover->master->frontsector->flags & SF_FLIPSPECIAL_BOTH)
