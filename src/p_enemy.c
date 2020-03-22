@@ -8447,15 +8447,14 @@ void A_JawzExplode(mobj_t *actor)
 
 static void SpawnSPBTrailRings(mobj_t *actor)
 {
-	if (actor != NULL)
+	I_Assert(actor != NULL);
+
+	if (leveltime % 6 == 0)
 	{
-		if (leveltime % 6 == 0)
-		{
-			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
-				actor->z - actor->momz + (24*mapobjectscale), MT_RING);
-			ring->threshold = 10;
-			ring->fuse = 120*TICRATE;
-		}
+		mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
+			actor->z - actor->momz + (24*mapobjectscale), MT_RING);
+		ring->threshold = 10;
+		ring->fuse = 120*TICRATE;
 	}
 }
 
