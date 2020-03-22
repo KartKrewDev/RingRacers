@@ -23,6 +23,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_waypoint.h"
 
 // Object place
 #include "m_cheat.h"
@@ -172,6 +173,7 @@ void P_InitThinkers(void)
 {
 	thinkercap.prev = thinkercap.next = &thinkercap;
 	waypointcap = NULL;
+	kitemcap = NULL;
 }
 
 //
@@ -628,6 +630,9 @@ void P_Ticker(boolean run)
 	if (runemeraldmanager)
 		P_EmeraldManager(); // Power stone mode*/
 
+	// formality so kitemcap gets updated properly each frame.
+	P_RunKartItems();
+
 	if (run)
 	{
 		P_RunThinkers();
@@ -736,6 +741,11 @@ void P_Ticker(boolean run)
 			&& --mapreset <= 1
 			&& server) // Remember: server uses it for mapchange, but EVERYONE ticks down for the animation
 				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+
+		if (cv_kartdebugwaypoints.value != 0)
+		{
+			K_DebugWaypointsVisualise();
+		}
 	}
 
 	// Always move the camera.
