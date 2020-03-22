@@ -815,7 +815,6 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_PINK:
 				case SKINCOLOR_ROSE:
 				case SKINCOLOR_LEMONADE:
-				case SKINCOLOR_BUBBLEGUM:
 				case SKINCOLOR_LILAC:
 				case SKINCOLOR_TAFFY:
 					cstart = "\x8d"; // V_PINKMAP
@@ -831,7 +830,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 					cstart = "\x85"; // V_REDMAP
 					break;
 				case SKINCOLOR_DAWN:
-				case SKINCOLOR_SUNSET:
+				case SKINCOLOR_SUNSLAM:
 				case SKINCOLOR_CREAMSICLE:
 				case SKINCOLOR_ORANGE:
 				case SKINCOLOR_ROSEWOOD:
@@ -909,7 +908,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 					break;
 				case SKINCOLOR_MAGENTA:
 				case SKINCOLOR_FUCHSIA:
-				case SKINCOLOR_MOONSLAM:
+				case SKINCOLOR_MOONSET:
+				case SKINCOLOR_VIOLET:
 					cstart = "\x8c"; // V_MAGENTAMAP
 					break;
 				case SKINCOLOR_DUSK:
