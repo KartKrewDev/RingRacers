@@ -8315,7 +8315,10 @@ void P_MobjThinker(mobj_t *mobj)
 				if (p)
 				{
 					if (p->kartstuff[k_driftboost] > mobj->movecount)
+					{
 						; // reset animation
+					}
+
 					mobj->movecount = p->kartstuff[k_driftboost];
 				}
 			}
