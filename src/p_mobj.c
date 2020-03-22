@@ -47,6 +47,7 @@ consvar_t cv_splats = {"splats", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0
 actioncache_t actioncachehead;
 
 static mobj_t *overlaycap = NULL;
+mobj_t *kitemcap = NULL;	// Used for Kart offensive items (the ones that can get removed by sizedown)
 mobj_t *waypointcap = NULL;
 
 void P_InitCachedActions(void)
@@ -1655,18 +1656,11 @@ void P_XYMovement(mobj_t *mo)
 		{
 			mo->health--;
 			if (mo->health == 0)
-				mo->destscale = 1;
-		}
-		else
-		{
-			if (mo->scale < mapobjectscale/16)
-			{
-				P_RemoveMobj(mo);
-				return;
-			}
+				mo->destscale = 0;
 		}
 	}
 	//}
+
 	if (!P_TryMove(mo, mo->x + xmove, mo->y + ymove, true) && !(mo->eflags & MFE_SPRUNG))
 	{
 		// blocked move
@@ -6105,6 +6099,71 @@ static boolean P_AddShield(mobj_t *thing)
 	return true;
 }*/
 
+
+// Kartitem stuff.
+boolean P_IsKartItem(INT32 type)
+{
+	if (type == MT_EGGMANITEM || type == MT_EGGMANITEM_SHIELD ||
+		type == MT_BANANA || type == MT_BANANA_SHIELD ||
+		type == MT_ORBINAUT || type == MT_ORBINAUT_SHIELD ||
+		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
+		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
+		type == MT_SINK || type == MT_SINK_SHIELD ||
+		type == MT_SPB)
+		return true;
+	else
+		return false;
+}
+
+// Called when a kart item "thinks"
+void P_AddKartItem(mobj_t *thing)
+{
+	I_Assert(thing != NULL);
+
+	if (kitemcap == NULL)
+		P_SetTarget(&kitemcap, thing);
+	else {
+		mobj_t *mo;
+		for (mo = kitemcap; mo && mo->itnext; mo = mo->itnext)
+			;
+
+		I_Assert(mo != NULL);
+		I_Assert(mo->itnext == NULL);
+
+		P_SetTarget(&mo->itnext, thing);
+	}
+	P_SetTarget(&thing->itnext, NULL);
+}
+
+// Called only when a kart item is removed
+// Keeps the hnext list from corrupting.
+static void P_RemoveKartItem(mobj_t *thing)
+{
+	mobj_t *mo;
+	for (mo = kitemcap; mo; mo = mo->itnext)
+		if (mo->itnext == thing)
+		{
+			P_SetTarget(&mo->itnext, thing->itnext);
+			P_SetTarget(&thing->itnext, NULL);
+			return;
+		}
+}
+
+// Doesn't actually do anything since items have their own thinkers,
+// but this is necessary for the sole purpose of updating kitemcap
+void P_RunKartItems(void)
+{
+	mobj_t *mobj, *next;
+
+	for (mobj = kitemcap; mobj; mobj = next)
+	{
+		next = mobj->itnext;
+		P_SetTarget(&mobj->itnext, NULL);
+	}
+	P_SetTarget(&kitemcap, NULL);
+}
+
+
 void P_RunOverlays(void)
 {
 	// run overlays
@@ -6538,16 +6597,25 @@ void P_MobjThinker(mobj_t *mobj)
 			mobj->z -= mobj->height - oldheight;
 
 		if (mobj->scale == mobj->destscale)
+		{
 			/// \todo Lua hook for "reached destscale"?
-			switch(mobj->type)
+
+			if (mobj->scale == 0)
 			{
-			case MT_EGGMOBILE_FIRE:
-				mobj->destscale = FRACUNIT;
-				mobj->scalespeed = FRACUNIT>>4;
-				break;
-			default:
-				break;
+				P_RemoveMobj(mobj);
+				return;
 			}
+
+			switch (mobj->type)
+			{
+				case MT_EGGMOBILE_FIRE:
+					mobj->destscale = FRACUNIT;
+					mobj->scalespeed = FRACUNIT>>4;
+					break;
+				default:
+					break;
+			}
+		}
 	}
 
 	if (mobj->type == MT_GHOST && mobj->fuse > 0 // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
@@ -8315,7 +8383,10 @@ void P_MobjThinker(mobj_t *mobj)
 				if (p)
 				{
 					if (p->kartstuff[k_driftboost] > mobj->movecount)
+					{
 						; // reset animation
+					}
+
 					mobj->movecount = p->kartstuff[k_driftboost];
 				}
 			}
@@ -9756,6 +9827,12 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 		}
 	}
 
+	if (P_MobjWasRemoved(mobj))
+		return; // obligatory paranoia check
+
+	if (P_IsKartItem(mobj->type))	// mobj is a kart item we want on the list:
+		P_AddKartItem(mobj);		// add to kitem list
+
 	// Can end up here if a player dies.
 	if (mobj->player)
 		P_CyclePlayerMobjState(mobj);
@@ -10436,6 +10513,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				}
 			}
 			break;
+		case MT_BOSS3WAYPOINT:
+			// Remove before release
+			CONS_Alert(CONS_WARNING, "Boss waypoints are deprecated. Did you forget to remove the old checkpoints, too?\n");
+			break;
 		default:
 			break;
 	}
@@ -10590,6 +10671,9 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	if (mobj->type == MT_SPB)
 		spbplace = -1;
+
+	if (P_IsKartItem(mobj->type))
+		P_RemoveKartItem(mobj);
 
 	mobj->health = 0; // Just because
 
@@ -11176,6 +11260,9 @@ void P_SpawnPlayer(INT32 playernum)
 	// Spawn with a pity shield if necessary.
 	//P_DoPityCheck(p);
 
+	if (p->kartstuff[k_respawn] != 0)
+		p->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
+
 	if (G_BattleGametype()) // SRB2kart
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + P_GetPlayerHeight(p)+16*FRACUNIT, MT_PLAYERARROW);
@@ -11392,11 +11479,10 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	sector->ceilingheight;
 
 	if (mobj->player->kartstuff[k_starpostflip])
-		z = (p->starpostz<<FRACBITS) - FixedMul(128<<FRACBITS, mapobjectscale) - mobj->height;
+		z = (p->starpostz<<FRACBITS) - (128 * mapobjectscale) - mobj->height;
 	else
-		z = (p->starpostz<<FRACBITS) + FixedMul(128<<FRACBITS, mapobjectscale);
+		z = (p->starpostz<<FRACBITS) + (128 * mapobjectscale);
 
-	//z = (p->starpostz + 128) << FRACBITS; // reverse gravity exists, pls
 	mobj->player->kartstuff[k_starpostflip] = 0;
 
 	if (z < floor)
@@ -11412,8 +11498,6 @@ void P_MovePlayerToStarpost(INT32 playernum)
 		mobj->eflags |= MFE_ONGROUND;
 
 	mobj->angle = p->starpostangle;
-
-	p->kartstuff[k_waypoint] = p->kartstuff[k_starpostwp]; // SRB2kart
 
 	P_AfterPlayerSpawn(playernum);
 
@@ -11723,6 +11807,26 @@ void P_SpawnMapThing(mapthing_t *mthing)
 		else
 			mthing->z = (INT16)(z>>FRACBITS);
 	}
+	else if (i == MT_WAYPOINT)
+	{
+		// just gets set on either the floor or ceiling
+		boolean flip = (!!(mobjinfo[i].flags & MF_SPAWNCEILING) ^ !!(mthing->options & MTF_OBJECTFLIP));
+
+		// applying offsets! (if any)
+		if (flip)
+		{
+			z = ONCEILINGZ;
+		}
+		else
+		{
+			z = ONFLOORZ;
+		}
+
+		if (z == ONFLOORZ)
+			mthing->z = 0;
+		else
+			mthing->z = (INT16)(z>>FRACBITS);
+	}
 	else
 	{
 		fixed_t offset = 0;
@@ -11969,6 +12073,69 @@ ML_NOCLIMB : Direction not controllable
 		if (mthing->angle >= 360)
 			mobj->tics += 7*(mthing->angle / 360) + 1; // starting delay
 		break;
+	case MT_WAYPOINT:
+	{
+		// Just like MT_SPINMACEPOINT, this now works here too!
+		INT32 line = P_FindSpecialLineFromTag(2000, mthing->angle, -1);
+		mobj->radius = 384*FRACUNIT;
+		// Set the radius, mobj z, and mthing z to match what the parameters want
+		if (line != -1)
+		{
+			fixed_t lineradius = sides[lines[line].sidenum[0]].textureoffset;
+			fixed_t linez = sides[lines[line].sidenum[0]].rowoffset;
+
+			if (lineradius > 0)
+				mobj->radius = lineradius;
+			mobj->z += linez;
+			mthing->z += linez >> FRACBITS;
+		}
+		// Use threshold to store the next waypoint ID
+		// movecount is being used for the current waypoint ID
+		// reactiontime lets us know if we can respawn at it
+		// lastlook is used for indicating the waypoint is a shortcut
+		// extravalue1 is used for indicating the waypoint is disabled
+		// extravalue2 is used for indicating the waypoint is the finishline
+		mobj->threshold = ((mthing->options >> ZSHIFT));
+		mobj->movecount = mthing->angle;
+		if (mthing->options & MTF_EXTRA)
+		{
+			mobj->extravalue1 = 0; // The waypoint is disabled if extra is on
+		}
+		else
+		{
+			mobj->extravalue1 = 1;
+		}
+		if (mthing->options & MTF_OBJECTSPECIAL)
+		{
+			mobj->lastlook = 1; // the waypoint is a shortcut if objectspecial is on
+		}
+		else
+		{
+			mobj->lastlook = 0;
+		}
+		if (mthing->options & MTF_AMBUSH)
+		{
+			mobj->reactiontime = 0; // Can't respawn at if Ambush is on
+		}
+		else
+		{
+			mobj->reactiontime = 1;
+		}
+		if (mthing->extrainfo == 1)
+		{
+			mobj->extravalue2 = 1; // extrainfo of 1 means the waypoint is at the finish line
+		}
+		else
+		{
+			mobj->extravalue2 = 0;
+		}
+
+
+		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead
+		P_SetTarget(&mobj->tracer, waypointcap);
+		P_SetTarget(&waypointcap, mobj);
+		break;
+	}
 	// SRB2Kart
 	case MT_BALLOON:
 		mobj->color = (1 + (mthing->angle % (MAXSKINCOLORS-1)));
@@ -12103,13 +12270,6 @@ ML_NOCLIMB : Direction not controllable
 
 		if (!foundanother)
 			numstarposts++;
-	}
-	else if (i == MT_BOSS3WAYPOINT) // SRB2kart 120217 - Used to store checkpoint num
-	{
-		mobj->health = mthing->angle;
-		mobj->movecount = mthing->extrainfo;
-		P_SetTarget(&mobj->tracer, waypointcap);
-		P_SetTarget(&waypointcap, mobj);
 	}
 	else if (i == MT_SPIKE)
 	{

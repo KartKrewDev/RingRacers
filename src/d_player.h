@@ -29,6 +29,9 @@
 // as commands per game tick.
 #include "d_ticcmd.h"
 
+// the player struct stores a waypoint for racing
+#include "k_waypoint.h"
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
@@ -118,7 +121,7 @@ typedef enum
 
 	/*** misc ***/
 	PF_FORCESTRAFE       = 1<<29, // Turning inputs are translated into strafing inputs
-	PF_ANALOGMODE        = 1<<30, // Analog mode?
+	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
 
 	// free: 1<<30 and 1<<31
 } pflags_t;
@@ -240,10 +243,6 @@ typedef enum
 	k_position,			// Used for Kart positions, mostly for deterministic stuff
 	k_oldposition,		// Used for taunting when you pass someone
 	k_positiondelay,	// Used for position number, so it can grow when passing/being passed
-	k_prevcheck,		// Previous checkpoint distance; for p_user.c (was "pw_pcd")
-	k_nextcheck,		// Next checkpoint distance; for p_user.c (was "pw_ncd")
-	k_waypoint,			// Waypoints.
-	k_starpostwp,		// Temporarily stores player waypoint for... some reason. Used when respawning and finishing.
 	k_starpostflip,		// the last starpost we hit requires flipping?
 	k_respawn,			// Timer for the DEZ laser respawn effect
 	k_dropdash,			// Charge up for respawn Drop Dash
@@ -331,6 +330,7 @@ typedef enum
 	k_springstars,		// Spawn stars around a player when they hit a spring
 	k_springcolor,		// Color of spring stars
 	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
+	k_wrongway, 		// Display WRONG WAY on screen
 
 	NUMKARTSTUFF
 } kartstufftype_t;
@@ -436,6 +436,8 @@ typedef struct player_s
 	angle_t frameangle; // for the player add the ability to have the sprite only face other angles
 	INT16 lturn_max[MAXPREDICTTICS]; // What's the expected turn value for full-left for a number of frames back (to account for netgame latency)?
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
+	UINT32 distancetofinish;
+	waypoint_t *nextwaypoint;
 
 	// Bit flags.
 	// See pflags_t, above.
