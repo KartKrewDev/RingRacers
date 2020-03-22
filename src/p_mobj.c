@@ -12073,7 +12073,7 @@ ML_NOCLIMB : Direction not controllable
 	case MT_WAYPOINT:
 	{
 		// Just like MT_SPINMACEPOINT, this now works here too!
-		INT32 line = P_FindSpecialLineFromTag(9, mthing->angle, -1);
+		INT32 line = P_FindSpecialLineFromTag(2000, mthing->angle, -1);
 		mobj->radius = 384*FRACUNIT;
 		// Set the radius, mobj z, and mthing z to match what the parameters want
 		if (line != -1)
