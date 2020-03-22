@@ -605,6 +605,9 @@ boolean K_IsPlayerLosing(player_t *player)
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
 
+	if (battlecapsules && player->kartstuff[k_bumper] <= 0)
+		return true; // DNF in break the capsules
+
 	if (player->kartstuff[k_position] == 1)
 		return false;
 
@@ -10131,10 +10134,14 @@ static void K_drawBattleFullscreen(void)
 			V_DrawFadeScreen(0xFF00, 16);
 		if (stplyr->exiting < 6*TICRATE && !stplyr->spectator)
 		{
-			if (stplyr->kartstuff[k_position] == 1)
-				V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, kp_battlewin, NULL);
-			else
-				V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, (K_IsPlayerLosing(stplyr) ? kp_battlelose : kp_battlecool), NULL);
+			patch_t *p = kp_battlecool;
+
+			if (K_IsPlayerLosing(stplyr))
+				p = kp_battlelose;
+			else if (stplyr->kartstuff[k_position] == 1)
+				p = kp_battlewin;
+
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, p, NULL);
 		}
 		else
 			K_drawKartFinish();

@@ -205,9 +205,7 @@ void K_CheckBumpers(void)
 	UINT8 numingame = 0;
 	SINT8 winnernum = -1;
 	INT32 winnerscoreadd = 0;
-
-	if (!multiplayer)
-		return;
+	boolean nobumpers = false;
 
 	if (!G_BattleGametype())
 		return;
@@ -227,8 +225,11 @@ void K_CheckBumpers(void)
 		winnerscoreadd += players[i].marescore;
 
 		if (players[i].kartstuff[k_bumper] <= 0) // if you don't have any bumpers, you're probably not a winner
+		{
+			nobumpers = true;
 			continue;
-		else if (winnernum > -1) // TWO winners? that's dumb :V
+		}
+		else if (winnernum != -1) // TWO winners? that's dumb :V
 			return;
 
 		winnernum = i;
@@ -238,7 +239,23 @@ void K_CheckBumpers(void)
 	if (numingame <= 1)
 	{
 		if (!battlecapsules)
+		{
+			// Reset map to turn on battle capsules
 			D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+		}
+		else
+		{
+			if (nobumpers)
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					players[i].pflags |= PF_TIMEOVER;
+					//players[i].lives = 0;
+					P_DoPlayerExit(&players[i]);
+				}
+			}
+		}
+
 		return;
 	}
 
@@ -534,7 +551,6 @@ static void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 void K_SpawnBattleCapsules(void)
 {
 	mapthing_t *mt;
-	UINT8 n = 0;
 	size_t i;
 
 	if (battlecapsules)
@@ -543,18 +559,27 @@ void K_SpawnBattleCapsules(void)
 	if (!G_BattleGametype())
 		return;
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (modeattacking == ATTACKING_CAPSULES)
 	{
-		if (playeringame[i] && !players[i].spectator)
-			n++;
-		if (players[i].exiting)
-			return;
-		if (n > 1)
-			break;
+		;
 	}
+	else
+	{
+		UINT8 n = 0;
 
-	if (n > 1)
-		return;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator)
+				n++;
+			if (players[i].exiting)
+				return;
+			if (n > 1)
+				break;
+		}
+
+		if (n > 1)
+			return;
+	}
 
 	mt = mapthings;
 	for (i = 0; i < nummapthings; i++, mt++)

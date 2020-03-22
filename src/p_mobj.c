@@ -3615,12 +3615,15 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 			dummy.y = thiscam->y;
 			dummy.z = thiscam->z;
 			dummy.height = thiscam->height;
-			if (player->pflags & PF_TIMEOVER)
+
+			if ((player->pflags & PF_TIMEOVER) && G_RaceGametype())
 				player->karthud[khud_timeovercam] = (2*TICRATE)+1;
+
 			if (!resetcalled && !(player->pflags & PF_NOCLIP || leveltime < introtime) && !P_CheckSight(&dummy, player->mo)) // TODO: "P_CheckCameraSight" instead.
 				P_ResetCamera(player, thiscam);
 			else
 				P_SlideCameraMove(thiscam);
+
 			if (resetcalled) // Okay this means the camera is fully reset.
 				return true;
 		}

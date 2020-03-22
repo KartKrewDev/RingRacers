@@ -796,16 +796,26 @@ static void Y_UpdateRecordReplays(void)
 	if (!mainrecords[gamemap-1])
 		G_AllocMainRecordData(gamemap-1);
 
-	if ((mainrecords[gamemap-1]->time == 0) || (players[consoleplayer].realtime < mainrecords[gamemap-1]->time))
-		mainrecords[gamemap-1]->time = players[consoleplayer].realtime;
+	if (players[consoleplayer].pflags & PF_TIMEOVER)
+	{
+		players[consoleplayer].realtime = UINT32_MAX;
+	}
 
-	if (modeattacking != ATTACKING_CAPSULES)
+	if (((mainrecords[gamemap-1]->time == 0) || (players[consoleplayer].realtime < mainrecords[gamemap-1]->time))
+		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
+	{
+		mainrecords[gamemap-1]->time = players[consoleplayer].realtime;
+	}
+
+	if (modeattacking == ATTACKING_RECORD)
 	{
 		if ((mainrecords[gamemap-1]->lap == 0) || (bestlap < mainrecords[gamemap-1]->lap))
 			mainrecords[gamemap-1]->lap = bestlap;
 	}
 	else
+	{
 		mainrecords[gamemap-1]->lap = 0;
+	}
 
 	// Save demo!
 	bestdemo[255] = '\0';
@@ -836,7 +846,7 @@ static void Y_UpdateRecordReplays(void)
 			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
 		}
 
-		if (modeattacking != ATTACKING_CAPSULES)
+		if (modeattacking == ATTACKING_RECORD)
 		{
 			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
 			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
