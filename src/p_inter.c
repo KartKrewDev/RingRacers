@@ -1786,7 +1786,7 @@ void P_CheckTimeLimit(void)
 	if (!(multiplayer || netgame))
 		return;
 
-	if (G_RaceGametype())
+	if (G_RaceGametype() || battlecapsules)
 		return;
 
 	if (leveltime < (timelimitintics + starttime))
