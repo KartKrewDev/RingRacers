@@ -608,6 +608,7 @@ typedef enum sprite
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
 	SPR_DUST, // Drift Dust
+	SPR_DRWS, // Drift dust sparks
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -784,6 +785,8 @@ typedef enum sprite
 	SPR_GRES,
 
 	SPR_OTFG,
+
+	SPR_DBOS, // Drift boost flame
 
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
@@ -3236,6 +3239,8 @@ typedef enum state
 	S_DRIFTSPARK_B1,
 	S_DRIFTSPARK_C1,
 	S_DRIFTSPARK_C2,
+	S_DRIFTSPARK_D1,
+	S_DRIFTSPARK_D2,
 
 	// Brake drift sparks
 	S_BRAKEDRIFT,
@@ -3245,6 +3250,12 @@ typedef enum state
 	S_DRIFTDUST2,
 	S_DRIFTDUST3,
 	S_DRIFTDUST4,
+
+	// Drift Sparkles
+	S_DRIFTWARNSPARK1,
+	S_DRIFTWARNSPARK2,
+	S_DRIFTWARNSPARK3,
+	S_DRIFTWARNSPARK4,
 
 	// Fast lines
 	S_FASTLINE1,
@@ -3262,7 +3273,11 @@ typedef enum state
 	S_FASTDUST6,
 	S_FASTDUST7,
 
-	// Magnet Burst
+	// Drift boost effect
+	S_DRIFTEXPLODE1,
+	S_DRIFTEXPLODE2,
+	S_DRIFTEXPLODE3,
+	S_DRIFTEXPLODE4,
 
 	// Sneaker boost effect
 	S_BOOSTFLAME,
@@ -3537,6 +3552,11 @@ typedef enum state
 
 	// DEZ Laser respawn
 	S_DEZLASER,
+	S_DEZLASER_TRAIL1,
+	S_DEZLASER_TRAIL2,
+	S_DEZLASER_TRAIL3,
+	S_DEZLASER_TRAIL4,
+	S_DEZLASER_TRAIL5,
 
 	// Audience Members
 	S_RANDOMAUDIENCE,
@@ -4655,6 +4675,7 @@ typedef enum mobj_type
 
 	MT_FASTLINE,
 	MT_FASTDUST,
+	MT_DRIFTEXPLODE,
 	MT_BOOSTFLAME,
 	MT_BOOSTSMOKE,
 	MT_SNEAKERTRAIL,
