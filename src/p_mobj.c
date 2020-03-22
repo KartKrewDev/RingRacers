@@ -12072,16 +12072,11 @@ ML_NOCLIMB : Direction not controllable
 		break;
 	case MT_WAYPOINT:
 	{
-		size_t line;
+		// Just like MT_SPINMACEPOINT, this now works here too!
+		INT32 line = P_FindSpecialLineFromTag(9, mthing->angle, -1);
 		mobj->radius = 384*FRACUNIT;
-		// Same reason as for MT_SPINMACEPOINT we can't use the function to find the linedef
-		for (line = 0; line < numlines; line++)
-		{
-			if (lines[line].special == 2000 && lines[line].tag == mthing->angle)
-				break;
-		}
 		// Set the radius, mobj z, and mthing z to match what the parameters want
-		if (line < numlines)
+		if (line != -1)
 		{
 			fixed_t lineradius = sides[lines[line].sidenum[0]].textureoffset;
 			fixed_t linez = sides[lines[line].sidenum[0]].rowoffset;
