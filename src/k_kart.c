@@ -2059,9 +2059,20 @@ void K_RespawnChecker(player_t *player)
 		destz = (player->starpostz << FRACBITS);
 
 		if (player->kartstuff[k_starpostflip])
+		{
+			// This variable is set from the settings of the best waypoint, thus this waypoint is FLIPPED as well.
+			// So we should flip the player in advance for it as well.
+			player->mo->flags2 |= MF2_OBJECTFLIP;
+			player->mo->eflags |= MFE_VERTICALFLIP;
 			destz -= (128 * mapobjectscale) + (player->mo->height);
+		}
 		else
+		{
+			// Ditto, but this waypoint isn't flipped, so make sure the player also isn't flipped!
+			player->mo->flags2 &= ~MF2_OBJECTFLIP;
+			player->mo->eflags &= ~MFE_VERTICALFLIP;
 			destz += (128 * mapobjectscale);
+		}
 
 		if (player->mo->x != destx || player->mo->y != desty || player->mo->z != destz)
 		{
@@ -2196,7 +2207,7 @@ void K_RespawnChecker(player_t *player)
 			// Sal: The old behavior was stupid and prone to accidental usage.
 			// Let's rip off Mania instead, and turn this into a Drop Dash!
 
-			if (cmd->buttons & BT_ACCELERATE)
+			if (cmd->buttons & BT_ACCELERATE && !player->kartstuff[k_spinouttimer])	// Lat: Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
 				player->kartstuff[k_dropdash]++;
 			else
 				player->kartstuff[k_dropdash] = 0;
@@ -6215,6 +6226,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		(bestwaypoint != NULL) &&
 		(bestwaypoint != player->nextwaypoint) &&
 		(player->kartstuff[k_respawn] == 0) &&
+		(K_GetWaypointIsSpawnpoint(bestwaypoint)) &&	// Don't try to respawn on waypoints that are marked with no respawn
 		(K_GetWaypointIsShortcut(bestwaypoint) == false) && (K_GetWaypointIsEnabled(bestwaypoint) == true))
 		{
 			size_t     i            = 0U;
