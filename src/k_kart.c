@@ -9863,7 +9863,7 @@ static void K_drawKartFirstPerson(void)
 		if (!splitscreen)
 			y += yoffs;
 
-		
+
 		if ((leveltime & 1) && (driftcolor != SKINCOLOR_NONE)) // drift sparks!
 			colmap = R_GetTranslationColormap(TC_RAINBOW, driftcolor, GTC_CACHE);
 		else if (stplyr->mo->colorized && stplyr->mo->color) // invincibility/grow/shrink!

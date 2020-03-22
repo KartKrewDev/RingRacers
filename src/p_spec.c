@@ -2015,7 +2015,7 @@ void P_SwitchWeather(UINT8 newWeather)
 			return; // Nothing to do.
 		purge = true;
 	}
-	else 
+	else
 	{
 		if (precipprops[curWeather].type != MT_NULL)
 		{
@@ -2056,7 +2056,7 @@ void P_SwitchWeather(UINT8 newWeather)
 			precipmobj->flags = mobjinfo[swap].flags;
 
 			st = mobjinfo[swap].spawnstate;
-			
+
 			if (randomstates > 0)
 			{
 				UINT8 mrand = M_RandomByte();

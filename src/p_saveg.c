@@ -3309,7 +3309,7 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT32(save_p, hyubgone);
 	WRITEUINT32(save_p, mapreset);
 
-	for (i = 0; i < MAXPLAYERS; i++) 
+	for (i = 0; i < MAXPLAYERS; i++)
 		WRITEINT16(save_p, nospectategrief[i]);
 
 	WRITEUINT8(save_p, thwompsactive);
@@ -3432,7 +3432,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 	hyubgone = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
-	for (i = 0; i < MAXPLAYERS; i++) 
+	for (i = 0; i < MAXPLAYERS; i++)
 		nospectategrief[i] = READINT16(save_p);
 
 	thwompsactive = (boolean)READUINT8(save_p);
