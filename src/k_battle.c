@@ -29,8 +29,8 @@ UINT8 numtargets = 0; // Capsules busted
 
 INT32 K_StartingBumperCount(void)
 {
-	if (modeattacking)
-		return 1; // Break the Capsules
+	if (battlecapsules)
+		return 1; // always 1 hit in Break the Capsules
 
 	return cv_kartbumpers.value;
 }
