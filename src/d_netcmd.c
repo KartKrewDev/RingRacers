@@ -2002,8 +2002,9 @@ static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
 
 	boolean kick = false;
 
+	invitee = READUINT8 (*cp);
+
 	if (
-			invitee >= 0 &&
 			invitee < MAXPLAYERS &&
 			playeringame[invitee] &&
 			playerconsole[playernum] == playernum/* only consoleplayer may! */
