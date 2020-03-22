@@ -610,7 +610,7 @@ SINT8 nametonum(const char *name);
 extern char motd[254], server_context[8];
 extern UINT8 playernode[MAXPLAYERS];
 /* consoleplayer of this player (splitscreen) */
-extern int playerconsole[MAXPLAYERS];
+extern UINT8 playerconsole[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
 void D_ResetTiccmds(void);
