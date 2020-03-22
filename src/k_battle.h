@@ -12,6 +12,7 @@ extern struct battleovertime
 } battleovertime;
 
 extern boolean battlecapsules;
+extern INT32 nummapboxes, numgotboxes; // keep track of spawned battle mode items
 extern UINT8 maptargets, numtargets;
 
 INT32 K_StartingBumperCount(void);

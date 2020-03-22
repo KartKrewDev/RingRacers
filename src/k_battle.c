@@ -23,6 +23,10 @@ struct battleovertime battleovertime;
 // Capsules mode enabled for this map?
 boolean battlecapsules = false;
 
+// box respawning in battle mode
+INT32 nummapboxes = 0;
+INT32 numgotboxes = 0;
+
 // Capsule counters
 UINT8 maptargets = 0; // Capsules in map
 UINT8 numtargets = 0; // Capsules busted
