@@ -27,6 +27,14 @@ boolean battlecapsules = false;
 UINT8 maptargets = 0; // Capsules in map
 UINT8 numtargets = 0; // Capsules busted
 
+INT32 K_StartingBumperCount(void)
+{
+	if (modeattacking)
+		return 1; // Break the Capsules
+
+	return cv_kartbumpers.value;
+}
+
 boolean K_IsPlayerWanted(player_t *player)
 {
 	UINT8 i;

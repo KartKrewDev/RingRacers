@@ -2633,7 +2633,7 @@ void G_PlayerReborn(INT32 player)
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
-		bumper = (G_BattleGametype() ? cv_kartbumpers.value : 0);
+		bumper = (G_BattleGametype() ? K_StartingBumperCount() : 0);
 		rings = (G_BattleGametype() ? 0 : 5);
 		comebackpoints = 0;
 		wanted = 0;

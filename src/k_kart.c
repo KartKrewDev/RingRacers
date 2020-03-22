@@ -3036,7 +3036,7 @@ void K_StealBumper(player_t *player, player_t *victim, boolean force)
 
 	if (!force)
 	{
-		if (victim->kartstuff[k_bumper] <= 0) // || player->kartstuff[k_bumper] >= cv_kartbumpers.value+2
+		if (victim->kartstuff[k_bumper] <= 0) // || player->kartstuff[k_bumper] >= K_StartingBumperCount()+2
 			return;
 
 		if (player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0)
@@ -9520,9 +9520,10 @@ static void K_drawKartBumpersOrKarma(void)
 			}
 			else
 			{
+				INT32 maxbumper = K_StartingBumperCount();
 				V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|splitflags, kp_rankbumper, colormap);
 
-				if (stplyr->kartstuff[k_bumper] > 9 || cv_kartbumpers.value > 9)
+				if (stplyr->kartstuff[k_bumper] > 9 || maxbumper > 9)
 				{
 					UINT8 ln[2];
 					ln[0] = ((abs(stplyr->kartstuff[k_bumper]) / 10) % 10);
@@ -9531,8 +9532,8 @@ static void K_drawKartBumpersOrKarma(void)
 					V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
 					V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
 
-					ln[0] = ((abs(cv_kartbumpers.value) / 10) % 10);
-					ln[1] = (abs(cv_kartbumpers.value) % 10);
+					ln[0] = ((abs(maxbumper) / 10) % 10);
+					ln[1] = (abs(maxbumper) % 10);
 
 					V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
 					V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
@@ -9540,7 +9541,7 @@ static void K_drawKartBumpersOrKarma(void)
 				else
 				{
 					V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, kp_facenum[(stplyr->kartstuff[k_bumper]) % 10]);
-					V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, kp_facenum[(cv_kartbumpers.value) % 10]);
+					V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, kp_facenum[(maxbumper) % 10]);
 				}
 			}
 		}
@@ -9564,11 +9565,14 @@ static void K_drawKartBumpersOrKarma(void)
 			}
 			else
 			{
-				if (stplyr->kartstuff[k_bumper] > 9 && cv_kartbumpers.value > 9)
+				INT32 maxbumper = K_StartingBumperCount();
+
+				if (stplyr->kartstuff[k_bumper] > 9 && maxbumper > 9)
 					V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_bumperstickerwide, colormap);
 				else
 					V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_bumpersticker, colormap);
-				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|splitflags, va("%d/%d", stplyr->kartstuff[k_bumper], cv_kartbumpers.value));
+
+				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|splitflags, va("%d/%d", stplyr->kartstuff[k_bumper], maxbumper));
 			}
 		}
 	}

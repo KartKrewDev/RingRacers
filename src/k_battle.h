@@ -14,6 +14,7 @@ extern struct battleovertime
 extern boolean battlecapsules;
 extern UINT8 maptargets, numtargets;
 
+INT32 K_StartingBumperCount(void);
 boolean K_IsPlayerWanted(player_t *player);
 void K_CalculateBattleWanted(void);
 void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount);

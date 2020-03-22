@@ -11323,7 +11323,7 @@ void P_SpawnPlayer(INT32 playernum)
 			|| (p->jointime <= 1 && pcount <= 1))
 		{
 			if (leveltime < 1 || (p->jointime <= 1 && pcount <= 1)) // Start of the map?
-				p->kartstuff[k_bumper] = cv_kartbumpers.value; // Reset those bumpers!
+				p->kartstuff[k_bumper] = K_StartingBumperCount(); // Reset those bumpers!
 
 			if (p->kartstuff[k_bumper])
 			{
