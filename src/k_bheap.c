@@ -65,6 +65,8 @@ static bheapitem_t *K_BHeapItemsCompare(bheap_t *heap, bheapitem_t *item1, bheap
 	I_Assert(K_BHeapItemValidate(heap, item1));
 	I_Assert(K_BHeapItemValidate(heap, item2));
 
+	(void)heap;
+
 	if (item1->value < item2->value)
 	{
 		lowervalueitem = item1;
@@ -98,6 +100,8 @@ static void K_BHeapSwapItems(bheap_t *heap, bheapitem_t *item1, bheapitem_t *ite
 	I_Assert(item2 != NULL);
 	I_Assert(K_BHeapItemValidate(heap, item1));
 	I_Assert(K_BHeapItemValidate(heap, item2));
+
+	(void)heap;
 
 	{
 		size_t      tempitemindex = item1->heapindex;
