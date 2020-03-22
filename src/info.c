@@ -2876,7 +2876,12 @@ state_t states[NUMSTATES] =
 	{SPR_KBLN, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_BATTLEBUMPER2}, // S_BATTLEBUMPER2
 	{SPR_KBLN, FF_FULLBRIGHT|2, -1, {NULL}, 0, 0, S_BATTLEBUMPER3}, // S_BATTLEBUMPER3
 
-	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE, 8, {NULL}, 0, 0, S_NULL},  // S_DEZLASER
+	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE, 8, {NULL}, 0, 0, S_NULL}, // S_DEZLASER
+	{SPR_DEZL, FF_FULLBRIGHT|1, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL2}, // S_DEZLASER_TRAIL1
+	{SPR_DEZL, FF_FULLBRIGHT|2, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL3}, // S_DEZLASER_TRAIL2
+	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE|3, 4, {NULL}, 0, 0, S_DEZLASER_TRAIL4}, // S_DEZLASER_TRAIL3
+	{SPR_DEZL, FF_FULLBRIGHT|2, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL5}, // S_DEZLASER_TRAIL4
+	{SPR_DEZL, FF_FULLBRIGHT|1, 2, {NULL}, 0, 0, S_NULL}, // S_DEZLASER_TRAIL5
 
 	{SPR_NULL, 0,  1, {A_RandomStateRange}, S_AUDIENCE_CHAO_CHEER1, S_AUDIENCE_CHAO_CHEER2, S_RANDOMAUDIENCE}, // S_RANDOMAUDIENCE
 
@@ -16076,7 +16081,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_SPB_DEAD,     // deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k5d,      // deathsound
-		64*FRACUNIT,    // speed
+		80*FRACUNIT,    // speed
 		24*FRACUNIT,    // radius
 		48*FRACUNIT,    // height
 		0,              // display offset
@@ -16278,7 +16283,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_WAYPOINT
 		2001,           // doomednum
-		S_NULL,         // spawnstate
+		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -16299,7 +16304,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOCLIP|MF_NOGRAVITY, // flags
+		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY, // flags
 		S_NULL          // raisestate
 	},
 

@@ -6660,6 +6660,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	// DEZ respawn laser
 	"S_DEZLASER",
+	"S_DEZLASER_TRAIL1",
+	"S_DEZLASER_TRAIL2",
+	"S_DEZLASER_TRAIL3",
+	"S_DEZLASER_TRAIL4",
+	"S_DEZLASER_TRAIL5",
 
 	// Audience Members
 	"S_RANDOMAUDIENCE",
@@ -8180,7 +8185,7 @@ static const char *const PLAYERFLAG_LIST[] = {
 
 	/*** misc ***/
 	"FORCESTRAFE", // Translate turn inputs into strafe inputs
-	"ANALOGMODE", // Analog mode?
+	"HITFINISHLINE", // Already hit the finish line this tic
 
 	NULL // stop loop here.
 };
@@ -8417,10 +8422,6 @@ static const char *const KARTSTUFF_LIST[] = {
 	"POSITION",
 	"OLDPOSITION",
 	"POSITIONDELAY",
-	"PREVCHECK",
-	"NEXTCHECK",
-	"WAYPOINT",
-	"STARPOSTWP",
 	"STARPOSTFLIP",
 	"RESPAWN",
 	"DROPDASH",
@@ -8502,7 +8503,8 @@ static const char *const KARTSTUFF_LIST[] = {
 	"TIREGREASE",
 	"SPRINGSTARS",
 	"SPRINGCOLOR",
-	"KILLFIELD"
+	"KILLFIELD",
+	"WRONGWAY"
 };
 #endif
 
