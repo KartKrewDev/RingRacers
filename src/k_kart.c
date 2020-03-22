@@ -2157,8 +2157,8 @@ void K_RespawnChecker(player_t *player)
 					fixed_t newx, newy, newz;
 
 					newangle = FixedAngle(((360/8)*i)*FRACUNIT);
-				newx = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31 * player->mo->scale);
-				newy = player->mo->y + P_ReturnThrustY(player->mo, newangle, 31 * player->mo->scale);
+					newx = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31 * player->mo->scale);
+					newy = player->mo->y + P_ReturnThrustY(player->mo, newangle, 31 * player->mo->scale);
 					if (player->mo->eflags & MFE_VERTICALFLIP)
 						newz = player->mo->z + player->mo->height;
 					else
@@ -2172,8 +2172,8 @@ void K_RespawnChecker(player_t *player)
 							laser->eflags |= MFE_VERTICALFLIP;
 						P_SetTarget(&laser->target, player->mo);
 						laser->angle = newangle+ANGLE_90;
-					mo->momz = (8 * player->mo->scale) * P_MobjFlip(player->mo);
-					P_SetScale(mo, (mo->destscale = player->mo->scale));
+						laser->momz = (8 * player->mo->scale) * P_MobjFlip(player->mo);
+						P_SetScale(laser, (laser->destscale = player->mo->scale));
 					}
 				}
 			}
