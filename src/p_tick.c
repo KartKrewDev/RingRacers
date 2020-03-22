@@ -24,6 +24,7 @@
 #include "lua_hook.h"
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_waypoint.h"
 
 // Object place
 #include "m_cheat.h"
@@ -59,8 +60,6 @@ void Command_Numthinkers_f(void)
 		CONS_Printf(M_GetText("numthinkers <#>: Count number of thinkers\n"));
 		CONS_Printf(
 			"\t1: P_MobjThinker\n"
-			/*"\t2: P_RainThinker\n"
-			"\t3: P_SnowThinker\n"*/
 			"\t2: P_NullPrecipThinker\n"
 			"\t3: T_Friction\n"
 			"\t4: T_Pusher\n"
@@ -76,14 +75,6 @@ void Command_Numthinkers_f(void)
 			action = (actionf_p1)P_MobjThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_MobjThinker");
 			break;
-		/*case 2:
-			action = (actionf_p1)P_RainThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_RainThinker");
-			break;
-		case 3:
-			action = (actionf_p1)P_SnowThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_SnowThinker");
-			break;*/
 		case 2:
 			action = (actionf_p1)P_NullPrecipThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_NullPrecipThinker");
@@ -183,6 +174,7 @@ void P_InitThinkers(void)
 {
 	thinkercap.prev = thinkercap.next = &thinkercap;
 	waypointcap = NULL;
+	kitemcap = NULL;
 }
 
 //
@@ -639,6 +631,9 @@ void P_Ticker(boolean run)
 	if (runemeraldmanager)
 		P_EmeraldManager(); // Power stone mode*/
 
+	// formality so kitemcap gets updated properly each frame.
+	P_RunKartItems();
+
 	if (run)
 	{
 		P_RunThinkers();
@@ -659,8 +654,6 @@ void P_Ticker(boolean run)
 	// Run shield positioning
 	//P_RunShields();
 	P_RunOverlays();
-
-	P_RunShadows();
 
 	P_UpdateSpecials();
 	P_RespawnSpecials();
@@ -750,6 +743,11 @@ void P_Ticker(boolean run)
 			&& --mapreset <= 1
 			&& server) // Remember: server uses it for mapchange, but EVERYONE ticks down for the animation
 				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+
+		if (cv_kartdebugwaypoints.value != 0)
+		{
+			K_DebugWaypointsVisualise();
+		}
 	}
 
 	// Always move the camera.

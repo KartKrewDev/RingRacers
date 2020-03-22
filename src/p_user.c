@@ -1253,7 +1253,7 @@ void P_RestoreMusic(player_t *player)
 #if 0
 			// Event - Final Lap
 			// Still works for GME, but disabled for consistency
-			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value - 1))
+			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value))
 				S_SpeedMusic(1.2f);
 #endif
 			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
@@ -3716,11 +3716,6 @@ void P_Telekinesis(player_t *player, fixed_t thrust, fixed_t range)
 	player->pflags |= PF_THOKKED;
 }
 
-boolean P_AnalogMove(player_t *player)
-{
-	return player->pflags & PF_ANALOGMODE;
-}
-
 //
 // P_GetPlayerControlDirection
 //
@@ -3762,14 +3757,6 @@ boolean P_AnalogMove(player_t *player)
 			return 0;
 		origtempangle = tempangle = 0; // relative to the axis rather than the player!
 		controlplayerdirection = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-	}
-	else if (P_AnalogMove(player) && thiscam->chase)
-	{
-		if (player->awayviewtics)
-			origtempangle = tempangle = player->awayviewmobj->angle;
-		else
-			origtempangle = tempangle = thiscam->angle;
-		controlplayerdirection = player->mo->angle;
 	}
 	else
 	{
@@ -3994,7 +3981,6 @@ static void P_3dMovement(player_t *player)
 	angle_t dangle; // replaces old quadrants bits
 	//boolean dangleflip = false; // SRB2kart - toaster
 	//fixed_t normalspd = FixedMul(player->normalspeed, player->mo->scale);
-	boolean analogmove = false;
 	fixed_t oldMagnitude, newMagnitude;
 #ifdef ESLOPE
 	vector3_t totalthrust;
@@ -4005,8 +3991,6 @@ static void P_3dMovement(player_t *player)
 
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
-
-	analogmove = P_AnalogMove(player);
 
 	cmd = &player->cmd;
 
@@ -4020,19 +4004,13 @@ static void P_3dMovement(player_t *player)
 	if (!(player->pflags & PF_FORCESTRAFE) && !player->kartstuff[k_pogospring])
 		cmd->sidemove = 0;
 
-	if (analogmove)
-	{
-		movepushangle = (cmd->angleturn<<16 /* not FRACBITS */);
-	}
+	if (player->kartstuff[k_drift] != 0)
+		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
+	else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
+		movepushangle = (angle_t)player->kartstuff[k_boostangle];
 	else
-	{
-		if (player->kartstuff[k_drift] != 0)
-			movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
-		else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
-			movepushangle = (angle_t)player->kartstuff[k_boostangle];
-		else
-			movepushangle = player->mo->angle;
-	}
+		movepushangle = player->mo->angle;
+
 	movepushsideangle = movepushangle-ANGLE_90;
 
 	// cmomx/cmomy stands for the conveyor belt speed.
@@ -6191,69 +6169,6 @@ static void P_MovePlayer(player_t *player)
 		player->pflags &= ~PF_STARTDASH;
 	*/
 
-	//////////////////
-	//ANALOG CONTROL//
-	//////////////////
-
-#if 0
-	// This really looks like it should be moved to P_3dMovement. -Red
-	if (P_AnalogMove(player)
-		&& (cmd->forwardmove != 0 || cmd->sidemove != 0) && !player->climbing && !twodlevel && !(player->mo->flags2 & MF2_TWOD))
-	{
-		// If travelling slow enough, face the way the controls
-		// point and not your direction of movement.
-		if (player->speed < FixedMul(5*FRACUNIT, player->mo->scale) || player->pflags & PF_GLIDING || !onground)
-		{
-			angle_t tempangle;
-
-			tempangle = (cmd->angleturn << 16);
-
-#ifdef REDSANALOG // Ease to it. Chillax. ~Red
-			tempangle += R_PointToAngle2(0, 0, cmd->forwardmove*FRACUNIT, -cmd->sidemove*FRACUNIT);
-			{
-				fixed_t tweenvalue = max(abs(cmd->forwardmove), abs(cmd->sidemove));
-
-				if (tweenvalue < 10 && (cmd->buttons & (BT_FORWARD|BT_BACKWARD)) == (BT_FORWARD|BT_BACKWARD)) {
-					tempangle = (cmd->angleturn << 16);
-					tweenvalue = 16;
-				}
-
-				tweenvalue *= tweenvalue*tweenvalue*1536;
-
-				//if (player->pflags & PF_GLIDING)
-					//tweenvalue >>= 1;
-
-				tempangle -= player->mo->angle;
-
-				if (tempangle < ANGLE_180 && tempangle > tweenvalue)
-					player->mo->angle += tweenvalue;
-				else if (tempangle >= ANGLE_180 && InvAngle(tempangle) > tweenvalue)
-					player->mo->angle -= tweenvalue;
-				else
-					player->mo->angle += tempangle;
-			}
-#else
-			// Less math this way ~Red
-			player->mo->angle = R_PointToAngle2(0, 0, cmd->forwardmove*FRACUNIT, -cmd->sidemove*FRACUNIT)+tempangle;
-#endif
-		}
-		// Otherwise, face the direction you're travelling.
-		else if (player->panim == PA_WALK || player->panim == PA_RUN || player->panim == PA_ROLL
-		/*|| ((player->mo->state >= &states[S_PLAY_ABL1] && player->mo->state <= &states[S_PLAY_SPC4]) && player->charability == CA_FLY)*/) // SRB2kart - idk
-			player->mo->angle = R_PointToAngle2(0, 0, player->rmomx, player->rmomy);
-
-		// Update the local angle control.
-		if (player == &players[consoleplayer])
-			localangle[0] = player->mo->angle;
-		else if (player == &players[displayplayers[1]])
-			localangle[1] = player->mo->angle;
-		else if (player == &players[displayplayers[2]])
-			localangle[2] = player->mo->angle;
-		else if (player == &players[displayplayers[3]])
-			localangle[3] = player->mo->angle;
-	}
-#endif
-
 	///////////////////////////
 	//BOMB SHIELD ACTIVATION,//
 	//HOMING, AND OTHER COOL //
@@ -7234,8 +7149,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 {
 	static UINT8 lookbackdelay[4] = {0,0,0,0};
 	UINT8 num;
-	angle_t angle = 0, focusangle = 0, focusaiming = 0;
-	fixed_t x, y, z, dist, height, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
+	angle_t angle = 0, focusangle = 0, focusaiming = 0, pitch = 0;
+	fixed_t x, y, z, dist, distxy, distz, height, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
 	fixed_t pan, xpan, ypan;
 	INT32 camrotate;
 	boolean camstill, lookback;
@@ -7487,8 +7402,36 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		height -= FixedMul(height, player->karthud[khud_boostcam]);
 	}
 
-	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
-	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
+	if (mo->standingslope)
+	{
+		pitch = (angle_t)FixedMul(P_ReturnThrustX(mo, player->frameangle - mo->standingslope->xydirection, FRACUNIT), (fixed_t)mo->standingslope->zangle);
+		if (mo->eflags & MFE_VERTICALFLIP)
+		{
+			if (pitch >= ANGLE_180)
+				pitch = 0;
+		}
+		else
+		{
+			if (pitch < ANGLE_180)
+				pitch = 0;
+		}
+	}
+	pitch = thiscam->pitch + (angle_t)FixedMul(pitch - thiscam->pitch, camspeed/4);
+
+	if (rendermode == render_opengl
+#ifdef GL_SHADERS/* just so we can't possibly forget about it */
+			&& !cv_grshearing.value
+#endif
+	)
+		distxy = FixedMul(dist, FINECOSINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
+	else
+		distxy = dist;
+	distz = -FixedMul(dist, FINESINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
+	if (splitscreen == 1) // 2 player is weird, this helps keep players on screen
+		distz = 3*distz/5;
+
+	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
+	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
 
 	// SRB2Kart: set camera panning
 	if (camstill || resetcalled || player->playerstate == PST_DEAD)
@@ -7498,7 +7441,14 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		if (player->kartstuff[k_drift] != 0)
 		{
 			fixed_t panmax = (dist/5);
-			pan = FixedDiv(FixedMul(min((fixed_t)player->kartstuff[k_driftcharge], K_GetKartDriftSparkValue(player)), panmax), K_GetKartDriftSparkValue(player));
+			INT32 driftval = K_GetKartDriftSparkValue(player);
+			INT32 dc = player->kartstuff[k_driftcharge];
+
+			if (dc > driftval || dc < 0)
+				dc = driftval;
+
+			pan = FixedDiv(FixedMul((fixed_t)dc, panmax), driftval);
+
 			if (pan > panmax)
 				pan = panmax;
 			if (player->kartstuff[k_drift] < 0)
@@ -7519,9 +7469,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	pviewheight = FixedMul(32<<FRACBITS, mo->scale);
 
 	if (mo->eflags & MFE_VERTICALFLIP)
-		z = mo->z + mo->height - pviewheight - camheight;
+		z = mo->z + mo->height - pviewheight - camheight + distz;
 	else
-		z = mo->z + pviewheight + camheight;
+		z = mo->z + pviewheight + camheight + distz;
 
 #ifndef NOCLIPCAM // Disable all z-clipping for noclip cam
 	// move camera down to move under lower ceilings
@@ -7756,6 +7706,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 
 	thiscam->pan = pan;
+	thiscam->pitch = pitch;
 
 	// compute aming to look the viewed point
 	f1 = viewpointx-thiscam->x;
@@ -7763,9 +7714,17 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	dist = FixedHypot(f1, f2);
 
 	if (mo->eflags & MFE_VERTICALFLIP)
+	{
 		angle = R_PointToAngle2(0, thiscam->z + thiscam->height, dist, mo->z + mo->height - P_GetPlayerHeight(player));
+		if (thiscam->pitch < ANGLE_180 && thiscam->pitch > angle)
+			angle = thiscam->pitch;
+	}
 	else
+	{
 		angle = R_PointToAngle2(0, thiscam->z, dist, mo->z + P_GetPlayerHeight(player));
+		if (thiscam->pitch >= ANGLE_180 && thiscam->pitch < angle)
+			angle = thiscam->pitch;
+	}
 
 	if (player->playerstate != PST_DEAD && !((player->pflags & PF_NIGHTSMODE) && player->exiting))
 		angle += (focusaiming < ANGLE_180 ? focusaiming/2 : InvAngle(InvAngle(focusaiming)/2)); // overcomplicated version of '((signed)focusaiming)/2;'
@@ -8132,12 +8091,6 @@ void P_PlayerThink(player_t *player)
 		// The timer might've reached zero, but we'll run the remote view camera anyway by setting it to -1.
 	}
 
-	/// \note do this in the cheat code
-	if (player->pflags & PF_NOCLIP)
-		player->mo->flags |= MF_NOCLIP;
-	else
-		player->mo->flags &= ~MF_NOCLIP;
-
 	cmd = &player->cmd;
 
 	// SRB2kart
@@ -8370,26 +8323,7 @@ void P_PlayerThink(player_t *player)
 		player->mo->reactiontime--;
 	else if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
 	{
-		// SRB2kart - don't need no rope hangin'
-		//if (player->pflags & PF_ROPEHANG)
-		//{
-		//	if (!P_AnalogMove(player))
-		//		player->mo->angle = (cmd->angleturn<<16 /* not FRACBITS */);
-
-		//	ticruned++;
-		//	if ((cmd->angleturn & TICCMD_RECEIVED) == 0)
-		//		ticmiss++;
-
-		//	P_DoRopeHang(player);
-		//	P_SetPlayerMobjState(player->mo, S_PLAY_CARRY);
-		//	P_DoJumpStuff(player, &player->cmd);
-		//}
-		//else
-		{
-			P_DoZoomTube(player);
-			//if (!(player->panim == PA_ROLL) && player->charability2 == CA2_SPINDASH) // SRB2kart
-			//	P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
-		}
+		P_DoZoomTube(player);
 		player->rmomx = player->rmomy = 0; // no actual momentum from your controls
 		P_ResetScore(player);
 	}

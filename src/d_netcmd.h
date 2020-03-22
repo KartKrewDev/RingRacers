@@ -127,6 +127,7 @@ extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
+extern consvar_t cv_kartdebugwaypoints;
 
 extern consvar_t cv_itemfinder;
 
@@ -144,8 +145,10 @@ extern consvar_t cv_ringslinger, cv_soundtest;
 extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionboxes;
 
 extern consvar_t cv_maxping;
+extern consvar_t cv_lagless;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
+extern consvar_t cv_showviewpointtext;
 
 extern consvar_t cv_skipmapcheck;
 

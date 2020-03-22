@@ -497,6 +497,9 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/k_collide.o\
 		$(OBJDIR)/k_battle.o \
 		$(OBJDIR)/k_pwrlv.o  \
+		$(OBJDIR)/k_waypoint.o\
+		$(OBJDIR)/k_pathfind.o\
+		$(OBJDIR)/k_bheap.o  \
 		$(OBJDIR)/m_aatree.o \
 		$(OBJDIR)/m_anigif.o \
 		$(OBJDIR)/m_argv.o   \

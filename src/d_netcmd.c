@@ -94,6 +94,8 @@ static void TeamScramble_OnChange(void);
 static void NetTimeout_OnChange(void);
 static void JoinTimeout_OnChange(void);
 
+static void Lagless_OnChange (void);
+
 static void Ringslinger_OnChange(void);
 static void Gravity_OnChange(void);
 static void ForceSkin_OnChange(void);
@@ -386,6 +388,8 @@ consvar_t cv_kartdebugamount = {"kartdebugamount", "1", CV_NETVAR|CV_CHEAT|CV_NO
 consvar_t cv_kartdebugshrink = {"kartdebugshrink", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartdebugdistribution = {"kartdebugdistribution", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartdebughuddrop = {"kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
+consvar_t cv_kartdebugwaypoints = {"kartdebugwaypoints", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugwaypoint_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_kartdebugcheckpoint = {"kartdebugcheckpoint", "Off", CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartdebugnodes = {"kartdebugnodes", "Off", CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -448,12 +452,16 @@ consvar_t cv_jointimeout = {"jointimeout", "105", CV_CALL|CV_SAVE, nettimeout_co
 static CV_PossibleValue_t maxping_cons_t[] = {{0, "MIN"}, {1000, "MAX"}, {0, NULL}};
 consvar_t cv_maxping = {"maxping", "800", CV_SAVE, maxping_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_lagless = {"lagless", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Lagless_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
 static CV_PossibleValue_t pingtimeout_cons_t[] = {{8, "MIN"}, {120, "MAX"}, {0, NULL}};
 consvar_t cv_pingtimeout = {"pingtimeout", "10", CV_SAVE, pingtimeout_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)
 static CV_PossibleValue_t showping_cons_t[] = {{0, "Off"}, {1, "Always"}, {2, "Warning"}, {0, NULL}};
 consvar_t cv_showping = {"showping", "Always", CV_SAVE, showping_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_showviewpointtext = {"showviewpointtext", "On", CV_SAVE, CV_OnOff, 0, 0, NULL, NULL, 0, 0, NULL};
 
 // Intermission time Tails 04-19-2002
 static CV_PossibleValue_t inttime_cons_t[] = {{0, "MIN"}, {3600, "MAX"}, {0, NULL}};
@@ -712,8 +720,10 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_skipmapcheck);
 	CV_RegisterVar(&cv_sleep);
 	CV_RegisterVar(&cv_maxping);
+	CV_RegisterVar(&cv_lagless);
 	CV_RegisterVar(&cv_pingtimeout);
 	CV_RegisterVar(&cv_showping);
+	CV_RegisterVar(&cv_showviewpointtext);
 
 #ifdef SEENAMES
 	 CV_RegisterVar(&cv_allowseenames);
@@ -1880,8 +1890,6 @@ void SendWeaponPref(void)
 	buf[0] = 0;
 	if (cv_flipcam.value)
 		buf[0] |= 1;
-	if (cv_analog.value)
-		buf[0] |= 2;
 	SendNetXCmd(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1892,8 +1900,6 @@ void SendWeaponPref2(void)
 	buf[0] = 0;
 	if (cv_flipcam2.value)
 		buf[0] |= 1;
-	if (cv_analog2.value)
-		buf[0] |= 2;
 	SendNetXCmd2(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1904,8 +1910,6 @@ void SendWeaponPref3(void)
 	buf[0] = 0;
 	if (cv_flipcam3.value)
 		buf[0] |= 1;
-	if (cv_analog3.value)
-		buf[0] |= 2;
 	SendNetXCmd3(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1916,8 +1920,6 @@ void SendWeaponPref4(void)
 	buf[0] = 0;
 	if (cv_flipcam4.value)
 		buf[0] |= 1;
-	if (cv_analog4.value)
-		buf[0] |= 2;
 	SendNetXCmd4(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1925,11 +1927,9 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
 	UINT8 prefs = READUINT8(*cp);
 
-	players[playernum].pflags &= ~(PF_FLIPCAM|PF_ANALOGMODE);
+	players[playernum].pflags &= ~(PF_FLIPCAM);
 	if (prefs & 1)
 		players[playernum].pflags |= PF_FLIPCAM;
-	if (prefs & 2)
-		players[playernum].pflags |= PF_ANALOGMODE;
 }
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
@@ -2851,13 +2851,15 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	// incase the above checks were modified to allow sending a respawn on these occasions:
-	if (players[respawnplayer].mo && !P_IsObjectOnGround(players[respawnplayer].mo))
-		return;
-
 	if (players[respawnplayer].mo)
-		P_DamageMobj(players[respawnplayer].mo, NULL, NULL, 10000);
-	demo_extradata[playernum] |= DXD_RESPAWN;
+	{
+		// incase the above checks were modified to allow sending a respawn on these occasions:
+		if (!P_IsObjectOnGround(players[respawnplayer].mo))
+			return;
+
+		K_DoIngameRespawn(&players[respawnplayer]);
+		demo_extradata[playernum] |= DXD_RESPAWN;
+	}
 }
 
 /** Deals with an ::XD_RANDOMSEED message in a netgame.
@@ -4768,6 +4770,14 @@ static void NetTimeout_OnChange(void)
 static void JoinTimeout_OnChange(void)
 {
 	jointimeout = (tic_t)cv_jointimeout.value;
+}
+
+static void
+Lagless_OnChange (void)
+{
+	/* don't back out of dishonesty, or go lagless after playing honestly */
+	if (cv_lagless.value && gamestate == GS_LEVEL)
+		server_lagless = true;
 }
 
 UINT32 timelimitintics = 0;

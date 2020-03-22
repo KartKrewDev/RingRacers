@@ -63,7 +63,6 @@ void A_ThrownRing(); // Sparkle trail for red ring
 void A_GrenadeRing(); // SRB2kart
 void A_SetSolidSteam();
 void A_UnsetSolidSteam();
-void A_SignPlayer();
 void A_OverlayThink();
 void A_JetChase();
 void A_JetbThink(); // Jetty-Syn Bomber Thinker
@@ -475,6 +474,7 @@ typedef enum sprite
 	// Environmental Effects
 	SPR_RAIN, // Rain
 	SPR_SNO1, // Snowflake
+	SPR_SNO2, // Blizzard Snowball
 	SPR_SPLH, // Water Splish
 	SPR_SPLA, // Water Splash
 	SPR_SMOK,
@@ -608,6 +608,7 @@ typedef enum sprite
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
 	SPR_DUST, // Drift Dust
+	SPR_DRWS, // Drift dust sparks
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -639,7 +640,6 @@ typedef enum sprite
 	SPR_CHOM, // Sapphire Coast Chomper
 	SPR_SACO, // Sapphire Coast Fauna
 	SPR_CRAB, // Crystal Abyss mobs
-	SPR_SHAD, // TD shadows
 	SPR_BRNG, // Chaotix Big Ring
 
 	SPR_BUMP, // Player/shell bump
@@ -785,6 +785,8 @@ typedef enum sprite
 	SPR_GRES,
 
 	SPR_OTFG,
+
+	SPR_DBOS, // Drift boost flame
 
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
@@ -1776,27 +1778,10 @@ typedef enum state
 	S_BUBBLES2,
 
 	// Level End Sign
-	S_SIGN1,
-	S_SIGN2,
-	S_SIGN3,
-	S_SIGN4,
-	S_SIGN5,
-	S_SIGN6,
-	S_SIGN7,
-	S_SIGN8,
-	S_SIGN9,
-	S_SIGN10,
-	S_SIGN11,
-	S_SIGN12,
-	S_SIGN13,
-	S_SIGN14,
-	S_SIGN15,
-	S_SIGN16,
-	S_SIGN17,
-	S_SIGN18,
-	S_SIGN19,
-	S_SIGN20,
-	S_SIGN_END,
+	S_SIGN_POLE,
+	S_SIGN_BACK,
+	S_SIGN_SIDE,
+	S_SIGN_FACE,
 
 	// Steam Riser
 	S_STEAM1,
@@ -2579,6 +2564,11 @@ typedef enum state
 	S_SNOW2,
 	S_SNOW3,
 
+	// Blizzard Snowball
+	S_BLIZZARDSNOW1,
+	S_BLIZZARDSNOW2,
+	S_BLIZZARDSNOW3,
+
 	// Water Splish
 	S_SPLISH1,
 	S_SPLISH2,
@@ -3249,6 +3239,8 @@ typedef enum state
 	S_DRIFTSPARK_B1,
 	S_DRIFTSPARK_C1,
 	S_DRIFTSPARK_C2,
+	S_DRIFTSPARK_D1,
+	S_DRIFTSPARK_D2,
 
 	// Brake drift sparks
 	S_BRAKEDRIFT,
@@ -3258,6 +3250,12 @@ typedef enum state
 	S_DRIFTDUST2,
 	S_DRIFTDUST3,
 	S_DRIFTDUST4,
+
+	// Drift Sparkles
+	S_DRIFTWARNSPARK1,
+	S_DRIFTWARNSPARK2,
+	S_DRIFTWARNSPARK3,
+	S_DRIFTWARNSPARK4,
 
 	// Fast lines
 	S_FASTLINE1,
@@ -3275,7 +3273,11 @@ typedef enum state
 	S_FASTDUST6,
 	S_FASTDUST7,
 
-	// Magnet Burst
+	// Drift boost effect
+	S_DRIFTEXPLODE1,
+	S_DRIFTEXPLODE2,
+	S_DRIFTEXPLODE3,
+	S_DRIFTEXPLODE4,
 
 	// Sneaker boost effect
 	S_BOOSTFLAME,
@@ -3550,6 +3552,11 @@ typedef enum state
 
 	// DEZ Laser respawn
 	S_DEZLASER,
+	S_DEZLASER_TRAIL1,
+	S_DEZLASER_TRAIL2,
+	S_DEZLASER_TRAIL3,
+	S_DEZLASER_TRAIL4,
+	S_DEZLASER_TRAIL5,
 
 	// Audience Members
 	S_RANDOMAUDIENCE,
@@ -3667,9 +3674,6 @@ typedef enum state
 	S_FLYINGGARG8,
 	S_LAMPPOST,
 	S_MOSSYTREE,
-
-	S_SHADOW,
-	S_WHITESHADOW,
 
 	S_BUMP1,
 	S_BUMP2,
@@ -4291,6 +4295,7 @@ typedef enum mobj_type
 	// Interactive Objects
 	MT_BUBBLES, // Bubble source
 	MT_SIGN, // Level end sign
+	MT_SIGN_PIECE,
 	MT_SPIKEBALL, // Spike Ball
 	MT_SPECIALSPIKEBALL,
 	MT_SPINFIRE,
@@ -4517,6 +4522,7 @@ typedef enum mobj_type
 	// Environmental Effects
 	MT_RAIN, // Rain
 	MT_SNOWFLAKE, // Snowflake
+	MT_BLIZZARDSNOW, // Blizzard Snowball
 	MT_SPLISH, // Water splish!
 	MT_SMOKE,
 	MT_SMALLBUBBLE, // small bubble
@@ -4676,6 +4682,7 @@ typedef enum mobj_type
 
 	MT_FASTLINE,
 	MT_FASTDUST,
+	MT_DRIFTEXPLODE,
 	MT_BOOSTFLAME,
 	MT_BOOSTSMOKE,
 	MT_SNEAKERTRAIL,
@@ -4776,8 +4783,6 @@ typedef enum mobj_type
 	MT_FLYINGGARG,
 	MT_LAMPPOST,
 	MT_MOSSYTREE,
-
-	MT_SHADOW,
 
 	MT_BUMP,
 

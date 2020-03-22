@@ -86,6 +86,7 @@
 #include "k_kart.h"
 #include "k_battle.h" // K_SpawnBattleCapsules
 #include "k_pwrlv.h"
+#include "k_waypoint.h"
 
 //
 // Map MD5, calculated on level load.
@@ -182,6 +183,8 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
+	INT32 exists = (mapheaderinfo[num]->menuflags & LF2_EXISTSHACK);
+
 	DEH_WriteUndoline("LEVELNAME", mapheaderinfo[num]->lvlttl, UNDO_NONE);
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	DEH_WriteUndoline("SUBTITLE", mapheaderinfo[num]->subttl, UNDO_NONE);
@@ -247,7 +250,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	DEH_WriteUndoline("LEVELFLAGS", va("%d", mapheaderinfo[num]->levelflags), UNDO_NONE);
 	mapheaderinfo[num]->levelflags = 0;
 	DEH_WriteUndoline("MENUFLAGS", va("%d", mapheaderinfo[num]->menuflags), UNDO_NONE);
-	mapheaderinfo[num]->menuflags = (mainwads ? 0 : LF2_EXISTSHACK); // see p_setup.c - prevents replacing maps in addons with easier versions
+	mapheaderinfo[num]->menuflags = exists; // see p_setup.c - prevents replacing maps in addons with easier versions
 	// TODO grades support for delfile (pfft yeah right)
 	P_DeleteGrades(num);
 	// SRB2Kart
@@ -3126,6 +3129,17 @@ boolean P_SetupLevel(boolean skipprecip)
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
 
+
+	// The waypoint data that's in PU_LEVEL needs to be reset back to 0/NULL now since PU_LEVEL was cleared
+	K_ClearWaypoints();
+	// Load the waypoints please!
+	if (G_RaceGametype())
+	{
+		if (K_SetupWaypointList() == false)
+		{
+			CONS_Alert(CONS_ERROR, "Waypoints were not able to be setup! Player positions will not work correctly.\n");
+		}
+	}
 #ifdef HWRENDER // not win32 only 19990829 by Kin
 	if (rendermode != render_soft && rendermode != render_none)
 	{
