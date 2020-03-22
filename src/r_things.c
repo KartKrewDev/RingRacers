@@ -2102,7 +2102,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 
 	// Handle all things in sector.
 	// If a limit exists, handle things a tiny bit different.
-	if ((limit_dist = (fixed_t)(/*(maptol & TOL_NIGHTS) ? cv_drawdist_nights.value : */cv_drawdist.value) << FRACBITS))
+	if ((limit_dist = (fixed_t)(cv_drawdist.value) * mapobjectscale))
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
@@ -2168,7 +2168,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	}
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
-	if ((limit_dist = (fixed_t)cv_drawdist_precip.value << FRACBITS))
+	if ((limit_dist = (fixed_t)(cv_drawdist_precip.value) * mapobjectscale))
 	{
 		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
 		{

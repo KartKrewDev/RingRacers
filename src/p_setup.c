@@ -85,6 +85,7 @@
 // SRB2Kart
 #include "k_kart.h"
 #include "k_pwrlv.h"
+#include "k_waypoint.h"
 
 //
 // Map MD5, calculated on level load.
@@ -3115,6 +3116,17 @@ boolean P_SetupLevel(boolean skipprecip)
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
 
+
+	// The waypoint data that's in PU_LEVEL needs to be reset back to 0/NULL now since PU_LEVEL was cleared
+	K_ClearWaypoints();
+	// Load the waypoints please!
+	if (G_RaceGametype())
+	{
+		if (K_SetupWaypointList() == false)
+		{
+			CONS_Alert(CONS_ERROR, "Waypoints were not able to be setup! Player positions will not work correctly.\n");
+		}
+	}
 #ifdef HWRENDER // not win32 only 19990829 by Kin
 	if (rendermode != render_soft && rendermode != render_none)
 	{

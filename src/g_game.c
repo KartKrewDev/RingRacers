@@ -2577,7 +2577,6 @@ void G_PlayerReborn(INT32 player)
 	SINT8 pity;
 
 	// SRB2kart
-	INT32 starpostwp;
 	INT32 itemtype;
 	INT32 itemamount;
 	INT32 itemroulette;
@@ -2599,7 +2598,7 @@ void G_PlayerReborn(INT32 player)
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_ANALOGMODE|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
@@ -2641,12 +2640,9 @@ void G_PlayerReborn(INT32 player)
 		rings = (G_BattleGametype() ? 0 : 5);
 		comebackpoints = 0;
 		wanted = 0;
-		starpostwp = 0;
 	}
 	else
 	{
-		starpostwp = players[player].kartstuff[k_starpostwp];
-
 		itemroulette = (players[player].kartstuff[k_itemroulette] > 0 ? 1 : 0);
 		roulettetype = players[player].kartstuff[k_roulettetype];
 
@@ -2713,7 +2709,6 @@ void G_PlayerReborn(INT32 player)
 	p->pity = pity;
 
 	// SRB2kart
-	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync (Does it...?)
 	p->kartstuff[k_itemroulette] = itemroulette;
 	p->kartstuff[k_roulettetype] = roulettetype;
 	p->kartstuff[k_itemtype] = itemtype;
@@ -3249,7 +3244,8 @@ void G_DoReborn(INT32 playernum)
 		// respawn at the start
 		mobj_t *oldmo = NULL;
 
-		if (player->starpostnum || ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) && player->laps)) // SRB2kart
+		// Now only respawn at the start if you haven't crossed it at all
+		if (player->laps) // SRB2kart
 			starpost = true;
 
 		// first dissasociate the corpse
@@ -4940,7 +4936,10 @@ void G_ReadDemoExtraData(void)
 		if (extradata & DXD_RESPAWN)
 		{
 			if (players[p].mo)
-				P_DamageMobj(players[p].mo, NULL, NULL, 10000); // Is this how this should work..?
+			{
+				// Is this how this should work..?
+				K_DoIngameRespawn(&players[p]);
+			}
 		}
 		if (extradata & DXD_SKIN)
 		{
@@ -6962,7 +6961,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	(void)extrainfo_p;
 	sprintf(pdemo->winnername, "transrights420");
 	pdemo->winnerskin = 1;
-	pdemo->winnercolor = SKINCOLOR_MOONSLAM;
+	pdemo->winnercolor = SKINCOLOR_MOONSET;
 	pdemo->winnertime = 6666;*/
 
 	// Read standings!

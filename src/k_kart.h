@@ -32,6 +32,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 void K_KartPainEnergyFling(player_t *player);
 void K_FlipFromObject(mobj_t *mo, mobj_t *master);
 void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master);
+void K_DoIngameRespawn(player_t *player);
 void K_RespawnChecker(player_t *player);
 void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
@@ -45,6 +46,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor);
 void K_StealBumper(player_t *player, player_t *victim, boolean force);
 void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle, boolean spawncenter, boolean ghostit, mobj_t *source);
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color);
+UINT8 K_DriftSparkColor(player_t *player, INT32 charge);
 void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
 void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent);

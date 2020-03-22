@@ -57,7 +57,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SRBL","SRBM","SRBN","SRBO",
 	//SRB2kart Sprites
 	"RNDM","RPOP","SGNS","FAST","DSHR","BOST","BOSM","KFRE","KINV","KINF",
-	"WIPD","DRIF","BDRF","DUST","RSHE","FITM","BANA","ORBN","JAWZ","SSMN",
+	"WIPD","DRIF","BDRF","DUST","DRWS","RSHE","FITM","BANA","ORBN","JAWZ","SSMN",
 	"KRBM","BHOG","BHBM","SPBM","THNS","BUBS","BWVE","FLMS","SINK","SITR",
 	"KBLN","DEZL","POKE","AUDI","DECO","DOOD","SNES","GBAS","SPRS","BUZB",
 	"CHOM","SACO","CRAB","BRNG","BUMP","FLEN","CLAS","PSHW","ISTA",
@@ -70,7 +70,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
 	"ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH",
 	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
-	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","XMS4","XMS5","VIEW"
+	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","XMS4","XMS5","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -1876,9 +1876,9 @@ state_t states[NUMSTATES] =
 	{SPR_SPLH, FF_TRANS50|8, 2, {NULL}, 0, 0, S_NULL},    // S_SPLISH9
 
 	// Water Splash
-	{SPR_SPLA, FF_TRANS50  , 3, {NULL}, 0, 0, S_SPLASH2}, // S_SPLASH1
-	{SPR_SPLA, FF_TRANS70|1, 3, {NULL}, 0, 0, S_SPLASH3}, // S_SPLASH2
-	{SPR_SPLA, FF_TRANS90|2, 3, {NULL}, 0, 0, S_NULL}, // S_SPLASH3
+	{SPR_SPLA, 0, 3, {NULL}, 0, 0, S_SPLASH2}, // S_SPLASH1
+	{SPR_SPLA, 1, 3, {NULL}, 0, 0, S_SPLASH3}, // S_SPLASH2
+	{SPR_SPLA, 2, 3, {NULL}, 0, 0, S_NULL}, // S_SPLASH3
 
 	// Smoke
 	{SPR_SMOK, FF_TRANS50  , 4, {NULL}, 0, 0, S_SMOKE2}, // S_SMOKE1
@@ -2587,12 +2587,20 @@ state_t states[NUMSTATES] =
 	{SPR_DRIF, FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_DRIFTSPARK_C2}, // S_DRIFTSPARK_C1
 	{SPR_DRIF, FF_FULLBRIGHT|FF_TRANS20, 1, {NULL}, 0, 0, S_DRIFTSPARK_A3}, // S_DRIFTSPARK_C2 (Loop back to A3)
 
+	{SPR_DRIF, FF_FULLBRIGHT|3, 2, {NULL}, 0, 0, S_DRIFTSPARK_D2}, // S_DRIFTSPARK_D1
+	{SPR_DRIF, FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_DRIFTSPARK_A2}, // S_DRIFTSPARK_D2 (Loop back to A2)
+
 	{SPR_BDRF, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, -1, {NULL}, 5, 2, S_BRAKEDRIFT}, // S_BRAKEDRIFT
 
 	{SPR_DUST, 0,  3, {NULL}, 0, 0, S_DRIFTDUST2}, // S_DRIFTDUST1
 	{SPR_DUST, 1,  3, {NULL}, 0, 0, S_DRIFTDUST3}, // S_DRIFTDUST2
 	{SPR_DUST, FF_TRANS20|2,  3, {NULL}, 0, 0, S_DRIFTDUST4}, // S_DRIFTDUST3
 	{SPR_DUST, FF_TRANS20|3,  3, {NULL}, 0, 0, S_NULL}, // S_DRIFTDUST4
+
+	{SPR_DRWS, FF_FULLBRIGHT|0,  3, {NULL}, 0, 0, S_DRIFTWARNSPARK2}, // S_DRIFTWARNSPARK1
+	{SPR_DRWS, FF_FULLBRIGHT|1,  3, {NULL}, 0, 0, S_DRIFTWARNSPARK3}, // S_DRIFTWARNSPARK2
+	{SPR_DRWS, FF_FULLBRIGHT|FF_TRANS20|2,  3, {NULL}, 0, 0, S_DRIFTWARNSPARK4}, // S_DRIFTWARNSPARK3
+	{SPR_DRWS, FF_FULLBRIGHT|FF_TRANS20|3,  3, {NULL}, 0, 0, S_NULL}, // S_DRIFTWARNSPARK4
 
 	{SPR_FAST, FF_PAPERSPRITE|FF_FULLBRIGHT,   1, {NULL}, 0, 0, S_FASTLINE2}, // S_FASTLINE1
 	{SPR_FAST, FF_PAPERSPRITE|FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_FASTLINE3}, // S_FASTLINE2
@@ -2607,6 +2615,11 @@ state_t states[NUMSTATES] =
 	{SPR_DSHR, FF_PAPERSPRITE|4, 1, {NULL}, 0, 0, S_FASTDUST6}, // S_FASTDUST5
 	{SPR_DSHR, FF_PAPERSPRITE|5, 1, {NULL}, 0, 0, S_FASTDUST7}, // S_FASTDUST6
 	{SPR_DSHR, FF_PAPERSPRITE|6, 1, {NULL}, 0, 0, S_NULL}, // S_FASTDUST7
+
+	{SPR_DBOS, FF_FULLBRIGHT, 2, {NULL}, 6, 1, S_DRIFTEXPLODE2}, // S_DRIFTEXPLODE1
+	{SPR_DBOS, FF_FULLBRIGHT|1, 2, {NULL}, 6, 1, S_DRIFTEXPLODE3}, // S_DRIFTEXPLODE2
+	{SPR_DBOS, FF_FULLBRIGHT|2, 2, {NULL}, 6, 1, S_DRIFTEXPLODE4}, // S_DRIFTEXPLODE3
+	{SPR_DBOS, FF_FULLBRIGHT|3, 2, {NULL}, 6, 1, S_DRIFTEXPLODE1}, // S_DRIFTEXPLODE4
 
 	{SPR_BOST, FF_FULLBRIGHT|FF_ANIMATE, TICRATE, {NULL}, 6, 1, S_BOOSTSMOKESPAWNER}, // S_BOOSTFLAME
 	{SPR_NULL, 0,                      TICRATE/2, {NULL}, 0, 0, S_NULL}, // S_BOOSTSMOKESPAWNER
@@ -2917,7 +2930,12 @@ state_t states[NUMSTATES] =
 	{SPR_KBLN, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_BATTLEBUMPER2}, // S_BATTLEBUMPER2
 	{SPR_KBLN, FF_FULLBRIGHT|2, -1, {NULL}, 0, 0, S_BATTLEBUMPER3}, // S_BATTLEBUMPER3
 
-	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE, 8, {NULL}, 0, 0, S_NULL},  // S_DEZLASER
+	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE, 8, {NULL}, 0, 0, S_NULL}, // S_DEZLASER
+	{SPR_DEZL, FF_FULLBRIGHT|1, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL2}, // S_DEZLASER_TRAIL1
+	{SPR_DEZL, FF_FULLBRIGHT|2, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL3}, // S_DEZLASER_TRAIL2
+	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE|3, 4, {NULL}, 0, 0, S_DEZLASER_TRAIL4}, // S_DEZLASER_TRAIL3
+	{SPR_DEZL, FF_FULLBRIGHT|2, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL5}, // S_DEZLASER_TRAIL4
+	{SPR_DEZL, FF_FULLBRIGHT|1, 2, {NULL}, 0, 0, S_NULL}, // S_DEZLASER_TRAIL5
 
 	{SPR_NULL, 0,  1, {A_RandomStateRange}, S_AUDIENCE_CHAO_CHEER1, S_AUDIENCE_CHAO_CHEER2, S_RANDOMAUDIENCE}, // S_RANDOMAUDIENCE
 
@@ -15264,6 +15282,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL					// raisestate
 	},
 
+	{           // MT_DRIFTEXPLODE
+		-1,						// doomednum
+		S_DRIFTEXPLODE1,		// spawnstate
+		1000,					// spawnhealth
+		S_NULL,					// seestate
+		sfx_None,				// seesound
+		8,						// reactiontime
+		sfx_None,				// attacksound
+		S_NULL,					// painstate
+		0,						// painchance
+		sfx_None,				// painsound
+		S_NULL,					// meleestate
+		S_NULL,					// missilestate
+		S_NULL,					// deathstate
+		S_NULL,					// xdeathstate
+		sfx_None,				// deathsound
+		8,						// speed
+		32*FRACUNIT,			// radius
+		64*FRACUNIT,			// height
+		1,						// display offset
+		100,					// mass
+		0,						// damage
+		sfx_None,				// activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL					// raisestate
+	},
+
 	{           // MT_BOOSTFLAME
 		-1,						// doomednum
 		S_BOOSTFLAME,	        // spawnstate
@@ -16036,7 +16081,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_BALLHOG_DEAD, // deathstate
 		S_NULL,         // xdeathstate
 		sfx_hogbom,     // deathsound
-		64*FRACUNIT,    // speed
+		80*FRACUNIT,    // speed
 		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
@@ -16090,7 +16135,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_SPB_DEAD,     // deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k5d,      // deathsound
-		64*FRACUNIT,    // speed
+		80*FRACUNIT,    // speed
 		24*FRACUNIT,    // radius
 		48*FRACUNIT,    // height
 		0,              // display offset
@@ -16373,7 +16418,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_WAYPOINT
 		2001,           // doomednum
-		S_NULL,         // spawnstate
+		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -16394,7 +16439,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOCLIP|MF_NOGRAVITY, // flags
+		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY, // flags
 		S_NULL          // raisestate
 	},
 

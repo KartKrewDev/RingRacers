@@ -1483,15 +1483,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_STARPOST:
 			if (player->bot)
 				return;
-			// SRB2kart - 150117
-			if (player->exiting) //STOP MESSING UP MY STATS FASDFASDF
-			{
-				player->kartstuff[k_starpostwp] = player->kartstuff[k_waypoint];
-				return;
-			}
 			//
 			// SRB2kart: make sure the player will have enough checkpoints to touch
-			if (circuitmap && special->health >= ((numstarposts/2) + player->starpostnum))
+			if (circuitmap && special->health - player->starpostnum > 1)
 			{
 				// blatant reuse of a variable that's normally unused in circuit
 				if (!player->tossdelay)
@@ -1512,13 +1506,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			// Save the player's time and position.
 			player->starposttime = player->realtime; //this makes race mode's timers work correctly whilst not affecting sp -x
-			//player->starposttime = leveltime;
-			player->starpostx = toucher->x>>FRACBITS;
-			player->starposty = toucher->y>>FRACBITS;
-			player->starpostz = special->z>>FRACBITS;
-			player->starpostangle = special->angle;
 			player->starpostnum = special->health;
-			player->kartstuff[k_starpostflip] = special->spawnpoint->options & MTF_OBJECTFLIP;	// store flipping
 
 			//S_StartSound(toucher, special->info->painsound);
 			return;

@@ -279,6 +279,9 @@ static void P_NetArchivePlayers(void)
 			WRITEINT16(save_p, players[i].lturn_max[j]);
 			WRITEINT16(save_p, players[i].rturn_max[j]);
 		}
+
+		WRITEUINT32(save_p, players[i].distancetofinish);
+		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 	}
 }
 
@@ -447,6 +450,9 @@ static void P_NetUnArchivePlayers(void)
 			players[i].lturn_max[j] = READINT16(save_p);
 			players[i].rturn_max[j] = READINT16(save_p);
 		}
+
+		players[i].distancetofinish = READUINT32(save_p);
+		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 	}
 }
 
@@ -951,9 +957,11 @@ typedef enum
 	MD2_HNEXT       = 1<<7,
 	MD2_HPREV       = 1<<8,
 	MD2_COLORIZED   = 1<<9,
-	MD2_WAYPOINTCAP = 1<<10
+	MD2_WAYPOINTCAP = 1<<10,
+	MD2_KITEMCAP	= 1<<11,
+	MD2_ITNEXT		= 1<<12
 #ifdef ESLOPE
-	, MD2_SLOPE       = 1<<11
+	, MD2_SLOPE       = 1<<13
 #endif
 } mobj_diff2_t;
 
@@ -1145,6 +1153,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_HNEXT;
 	if (mobj->hprev)
 		diff2 |= MD2_HPREV;
+	if (mobj->itnext)
+		diff2 |= MD2_ITNEXT;
 #ifdef ESLOPE
 	if (mobj->standingslope)
 		diff2 |= MD2_SLOPE;
@@ -1153,6 +1163,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_COLORIZED;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
+	if (mobj == kitemcap)
+		diff2 |= MD2_KITEMCAP;
 	if (diff2 != 0)
 		diff |= MD_MORE;
 
@@ -1268,6 +1280,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEUINT32(save_p, mobj->hnext->mobjnum);
 	if (diff2 & MD2_HPREV)
 		WRITEUINT32(save_p, mobj->hprev->mobjnum);
+	if (diff2 & MD2_ITNEXT)
+		WRITEUINT32(save_p, mobj->itnext->mobjnum);
 #ifdef ESLOPE
 	if (diff2 & MD2_SLOPE)
 		WRITEUINT16(save_p, mobj->standingslope->id);
@@ -2145,6 +2159,8 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->hnext = (mobj_t *)(size_t)READUINT32(save_p);
 	if (diff2 & MD2_HPREV)
 		mobj->hprev = (mobj_t *)(size_t)READUINT32(save_p);
+	if (diff2 & MD2_ITNEXT)
+		mobj->itnext = (mobj_t *)(size_t)READUINT32(save_p);
 #ifdef ESLOPE
 	if (diff2 & MD2_SLOPE)
 	{
@@ -2185,6 +2201,9 @@ static void LoadMobjThinker(actionf_p1 thinker)
 
 	if (diff2 & MD2_WAYPOINTCAP)
 		P_SetTarget(&waypointcap, mobj);
+
+	if (diff2 & MD2_KITEMCAP)
+		P_SetTarget(&kitemcap, mobj);
 
 	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
 }
@@ -3038,6 +3057,13 @@ static void P_RelinkPointers(void)
 				if (!(mobj->hprev = P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 			}
+			if (mobj->itnext)
+			{
+				temp = (UINT32)(size_t)mobj->itnext;
+				mobj->itnext = NULL;
+				if (!(mobj->itnext = P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
+			}
 			if (mobj->player && mobj->player->capsule)
 			{
 				temp = (UINT32)(size_t)mobj->player->capsule;
@@ -3065,6 +3091,15 @@ static void P_RelinkPointers(void)
 				mobj->player->awayviewmobj = NULL;
 				if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
+			}
+			if (mobj->player && mobj->player->nextwaypoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
+				mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
+				if (mobj->player->nextwaypoint == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
+				}
 			}
 		}
 	}
@@ -3309,7 +3344,7 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT32(save_p, hyubgone);
 	WRITEUINT32(save_p, mapreset);
 
-	for (i = 0; i < MAXPLAYERS; i++) 
+	for (i = 0; i < MAXPLAYERS; i++)
 		WRITEINT16(save_p, nospectategrief[i]);
 
 	WRITEUINT8(save_p, thwompsactive);
@@ -3432,7 +3467,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 	hyubgone = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
-	for (i = 0; i < MAXPLAYERS; i++) 
+	for (i = 0; i < MAXPLAYERS; i++)
 		nospectategrief[i] = READINT16(save_p);
 
 	thwompsactive = (boolean)READUINT8(save_p);
