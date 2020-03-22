@@ -1,3 +1,16 @@
+// SONIC ROBO BLAST 2 KART
+//-----------------------------------------------------------------------------
+// Copyright (C) 2018-2020 by Sean "Sryder" Ryder
+// Copyright (C) 2018-2020 by Kart Krew
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  k_waypoint.c
+/// \brief Waypoint handling from the relevant mobjs
+///        Setup and interfacing with waypoints for the main game
+
 #include "k_waypoint.h"
 
 #include "d_netcmd.h"
