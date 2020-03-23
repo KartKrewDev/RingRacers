@@ -7091,7 +7091,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 
 	disttofinish = player->distancetofinish - disttofinish;
 
-	return 1 + (disttofinish / (DISTVAR*2));
+	return min(16, 1 + (disttofinish / DISTVAR));
 }
 
 //
