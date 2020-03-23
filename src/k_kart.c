@@ -4324,7 +4324,7 @@ static void K_DoThunderShield(player_t *player)
 
 #undef THUNDERRADIUS
 
-static void K_FlameShieldPop(mobj_t *src)
+static void K_FlameDashLeftoverSmoke(mobj_t *src)
 {
 	UINT8 i;
 
@@ -4682,7 +4682,6 @@ void K_DropHnextList(player_t *player)
 	}
 	else if (player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 	{
-		K_FlameShieldPop(player->mo);
 		player->kartstuff[k_itemtype] = KITEM_NONE;
 		player->kartstuff[k_itemamount] = 0;
 		player->kartstuff[k_curshield] = KSHIELD_NONE;
@@ -6187,7 +6186,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD || player->exiting)
 	{
 		if (player->kartstuff[k_flamedash])
-			K_FlameShieldPop(player->mo);
+			K_FlameDashLeftoverSmoke(player->mo);
 	}
 
 	if (player->kartstuff[k_comebacktimer])
@@ -7578,7 +7577,16 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 							if (!HOLDING_ITEM && NO_HYUDORO)
 							{
-								INT32 flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
+								INT32 destlen = K_FlameShieldMax(player);
+								INT32 flamemax = 0;
+
+								if (player->kartstuff[k_flamelength] < destlen)
+									player->kartstuff[k_flamelength]++; // Can always go up!
+
+								flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
+
+								if (flamemax > 0)
+									flamemax += (TICRATE/4);
 
 								if ((cmd->buttons & BT_ATTACK) && player->kartstuff[k_holdready])
 								{
@@ -7596,12 +7604,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 									if (player->kartstuff[k_flamemeter] > flamemax)
 									{
-										K_FlameShieldPop(player->mo);
 										P_Thrust(
-											player->mo,
-											R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy),
-											20 * K_GetKartGameSpeedScalar(gamespeed)
+											player->mo, player->mo->angle,
+											FixedMul((50*mapobjectscale), K_GetKartGameSpeedScalar(gamespeed))
 										);
+
 										player->kartstuff[k_flamemeter] = 0;
 										player->kartstuff[k_flamelength] = 0;
 										player->kartstuff[k_holdready] = 0;
@@ -7614,6 +7621,18 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 									if (player->kartstuff[k_flamemeter] > 0)
 										player->kartstuff[k_flamemeter]--;
+
+									if (player->kartstuff[k_flamelength] > destlen)
+									{
+										player->kartstuff[k_flamelength]--; // Can ONLY go down if you're not using it
+
+										flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
+										if (flamemax > 0)
+											flamemax += (TICRATE/4);
+									}
+
+									if (player->kartstuff[k_flamemeter] > flamemax)
+										player->kartstuff[k_flamemeter] = flamemax;
 								}
 							}
 							break;
@@ -7700,15 +7719,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			|| player->kartstuff[k_growshrinktimer] < 0)
 			indirectitemcooldown = 20*TICRATE;
 
-		if (player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
-		{
-			INT32 destlen = K_FlameShieldMax(player);
-			if (player->kartstuff[k_flamelength] > destlen)
-				player->kartstuff[k_flamelength]--;
-			else if (player->kartstuff[k_flamelength] < destlen)
-				player->kartstuff[k_flamelength]++;
-		}
-		else
+		if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD)
 		{
 			player->kartstuff[k_flamelength] = 0;
 		}
@@ -9047,6 +9058,7 @@ static void K_drawKartItem(void)
 		INT32 numframes = 104;
 		INT32 absolutemax = 16 * (TICRATE/4);
 		INT32 flamemax = stplyr->kartstuff[k_flamelength] * (TICRATE/4);
+		INT32 flen = 1;
 		INT32 bf = 16 - (flamemax / (TICRATE/4));
 		INT32 ff = numframes - ((stplyr->kartstuff[k_flamemeter] * numframes) / absolutemax);
 		INT32 xo = 6, yo = 4;
@@ -9063,15 +9075,20 @@ static void K_drawKartItem(void)
 			}
 		}
 
+		if (stplyr->kartstuff[k_flamelength] > 0)
+		{
+			flen = (numframes * 16) / stplyr->kartstuff[k_flamelength];
+		}
+
 		if (ff < 0) {ff = 0;}
-		if (ff > numframes-1) {ff = numframes-1;}
+		if (ff > flen-1) {ff = flen-1;}
 
 		if (flamemax > 0)
 			V_DrawScaledPatch(fx-xo, fy-yo, V_HUDTRANS|fflags|flip, kp_flameshieldmeter_bg[bf][offset]);
 
 		if (stplyr->kartstuff[k_flamemeter] > 0)
 		{
-			if (stplyr->kartstuff[k_flamemeter] > (flamemax - (TICRATE/2)) && (leveltime & 1))
+			if (stplyr->kartstuff[k_flamemeter] > (flamemax - (TICRATE/4)) && (leveltime & 1))
 			{
 				UINT8 *fsflash = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_WHITE, GTC_CACHE);
 				V_DrawMappedPatch(fx-xo, fy-yo, V_HUDTRANS|fflags|flip, kp_flameshieldmeter[ff][offset], fsflash);
