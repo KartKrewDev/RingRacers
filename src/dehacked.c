@@ -8203,8 +8203,8 @@ static const char *const PLAYERFLAG_LIST[] = {
 #ifdef HAVE_BLUA
 // Linedef flags
 static const char *const ML_LIST[16] = {
-	"IMPASSIBLE",
-	"BLOCKMONSTERS",
+	"IMPASSABLE",
+	"BLOCKPLAYERS",
 	"TWOSIDED",
 	"DONTPEGTOP",
 	"DONTPEGBOTTOM",

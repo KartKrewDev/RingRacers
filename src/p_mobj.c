@@ -2174,7 +2174,7 @@ boolean P_CheckSolidLava(mobj_t *mo, ffloor_t *rover)
 			*rover->topheight;
 
 		if (rover->flags & FF_SWIMMABLE && GETSECSPECIAL(rover->master->frontsector->special, 1) == 3
-			&& !(rover->master->flags & ML_BLOCKMONSTERS)
+			&& !(rover->master->flags & ML_BLOCKPLAYERS)
 			&& ((rover->master->flags & ML_EFFECT3) || mo->z-mo->momz > topheight - FixedMul(16*FRACUNIT, mo->scale)))
 				return true;
 	}
@@ -7909,6 +7909,13 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_ORBINAUT:
 		{
 			boolean grounded = P_IsObjectOnGround(mobj);
+
+			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
 			if (mobj->flags2 & MF2_AMBUSH)
 			{
 				if (grounded && (mobj->flags & MF_NOCLIPTHING))
@@ -7979,6 +7986,12 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 
+			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
 			if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
 			{
 				ghost->color = mobj->target->player->skincolor;
@@ -8002,6 +8015,13 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_JAWZ_DUD:
 		{
 			boolean grounded = P_IsObjectOnGround(mobj);
+
+			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
 			if (mobj->flags2 & MF2_AMBUSH)
 			{
 				if (grounded && (mobj->flags & MF_NOCLIPTHING))
@@ -8062,6 +8082,12 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_EGGMANITEM:
 			mobj->friction = ORIG_FRICTION/4;
 
+			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
 			if (mobj->momx || mobj->momy)
 			{
 				mobj_t *ghost = P_SpawnGhostMobj(mobj);
@@ -8090,6 +8116,12 @@ void P_MobjThinker(mobj_t *mobj)
 			{
 				mobj_t *ghost = P_SpawnGhostMobj(mobj);
 				ghost->fuse = 3;
+
+				if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
+				{
+					P_RemoveMobj(mobj);
+					return;
+				}
 
 				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
 				{
@@ -8123,6 +8155,12 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->threshold--;
 			break;
 		case MT_SSMINE:
+			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
 			if (mobj->target && mobj->target->player)
 				mobj->color = mobj->target->player->skincolor;
 			else
