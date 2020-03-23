@@ -19,7 +19,7 @@ UINT16 clientpowerlevels[MAXPLAYERS][PWRLV_NUMTYPES];
 
 // Which players spec-scummed, and their power level before scumming.
 // On race finish, everyone is considered to have "won" against these people.
-INT16 nospectategrief[MAXPLAYERS]; 
+INT16 nospectategrief[MAXPLAYERS];
 
 // Game setting scrambles based on server Power Level
 SINT8 speedscramble = -1;

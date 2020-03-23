@@ -5,6 +5,7 @@
 ///        All of the SRB2kart-unique stuff.
 
 #include "k_kart.h"
+#include "k_battle.h"
 #include "k_pwrlv.h"
 #include "doomdef.h"
 #include "hu_stuff.h"
@@ -604,6 +605,9 @@ boolean K_IsPlayerLosing(player_t *player)
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
 
+	if (battlecapsules && player->kartstuff[k_bumper] <= 0)
+		return true; // DNF in break the capsules
+
 	if (player->kartstuff[k_position] == 1)
 		return false;
 
@@ -623,21 +627,6 @@ boolean K_IsPlayerLosing(player_t *player)
 		winningpos++;
 
 	return (player->kartstuff[k_position] > winningpos);
-}
-
-boolean K_IsPlayerWanted(player_t *player)
-{
-	UINT8 i;
-	if (!(G_BattleGametype()))
-		return false;
-	for (i = 0; i < 4; i++)
-	{
-		if (battlewanted[i] == -1)
-			break;
-		if (player == &players[battlewanted[i]])
-			return true;
-	}
-	return false;
 }
 
 fixed_t K_GetKartGameSpeedScalar(SINT8 value)
@@ -1179,8 +1168,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			}
 			else
 			{
-				if (modeattacking || cv_orbinaut.value) // Waited patiently? You get an orbinaut!
-					K_KartGetItemResult(player, KITEM_ORBINAUT);
+				if (modeattacking || cv_tripleorbinaut.value) // Waited patiently? You get Orbinaut x3!
+					K_KartGetItemResult(player, KRITEM_TRIPLEORBINAUT);
 				else  // Default to sad if nothing's enabled...
 					K_KartGetItemResult(player, KITEM_SAD);
 				player->karthud[khud_itemblinkmode] = 0;
@@ -2630,32 +2619,6 @@ void K_DoInstashield(player_t *player)
 	P_SetTarget(&layerb->target, player->mo);
 }
 
-void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount)
-{
-	statenum_t st;
-	mobj_t *pt;
-
-	if (!source || !source->mo)
-		return;
-
-	if (amount == 1)
-		st = S_BATTLEPOINT1A;
-	else if (amount == 2)
-		st = S_BATTLEPOINT2A;
-	else if (amount == 3)
-		st = S_BATTLEPOINT3A;
-	else
-		return; // NO STATE!
-
-	pt = P_SpawnMobj(source->mo->x, source->mo->y, source->mo->z, MT_BATTLEPOINT);
-	P_SetTarget(&pt->target, source->mo);
-	P_SetMobjState(pt, st);
-	if (victim && victim->skincolor)
-		pt->color = victim->skincolor;
-	else
-		pt->color = source->skincolor;
-}
-
 void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflictor, boolean trapitem)
 {
 	UINT8 scoremultiply = 1;
@@ -3076,7 +3039,7 @@ void K_StealBumper(player_t *player, player_t *victim, boolean force)
 
 	if (!force)
 	{
-		if (victim->kartstuff[k_bumper] <= 0) // || player->kartstuff[k_bumper] >= cv_kartbumpers.value+2
+		if (victim->kartstuff[k_bumper] <= 0) // || player->kartstuff[k_bumper] >= K_StartingBumperCount()+2
 			return;
 
 		if (player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0)
@@ -7665,181 +7628,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 }
 
-void K_CalculateBattleWanted(void)
-{
-	UINT8 numingame = 0, numplaying = 0, numwanted = 0;
-	SINT8 bestbumperplayer = -1, bestbumper = -1;
-	SINT8 camppos[MAXPLAYERS]; // who is the biggest camper
-	UINT8 ties = 0, nextcamppos = 0;
-	boolean setbumper = false;
-	UINT8 i, j;
-
-	if (!G_BattleGametype())
-	{
-		for (i = 0; i < 4; i++)
-			battlewanted[i] = -1;
-		return;
-	}
-
-	wantedcalcdelay = wantedfrequency;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		camppos[i] = -1; // initialize
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		UINT8 position = 1;
-
-		if (!playeringame[i] || players[i].spectator) // Not playing
-			continue;
-
-		if (players[i].exiting) // We're done, don't calculate.
-			return;
-
-		numplaying++;
-
-		if (players[i].kartstuff[k_bumper] <= 0) // Not alive, so don't do anything else
-			continue;
-
-		numingame++;
-
-		if (bestbumper == -1 || players[i].kartstuff[k_bumper] > bestbumper)
-		{
-			bestbumper = players[i].kartstuff[k_bumper];
-			bestbumperplayer = i;
-		}
-		else if (players[i].kartstuff[k_bumper] == bestbumper)
-			bestbumperplayer = -1; // Tie, no one has best bumper.
-
-		for (j = 0; j < MAXPLAYERS; j++)
-		{
-			if (!playeringame[j] || players[j].spectator)
-				continue;
-			if (players[j].kartstuff[k_bumper] <= 0)
-				continue;
-			if (j == i)
-				continue;
-			if (players[j].kartstuff[k_wanted] == players[i].kartstuff[k_wanted] && players[j].marescore > players[i].marescore)
-				position++;
-			else if (players[j].kartstuff[k_wanted] > players[i].kartstuff[k_wanted])
-				position++;
-		}
-
-		position--; // Make zero based
-
-		while (camppos[position] != -1) // Port priority!
-			position++;
-
-		camppos[position] = i;
-	}
-
-	if (numplaying <= 2 || (numingame <= 2 && bestbumper == 1)) // In 1v1s then there's no need for WANTED. In bigger netgames, don't show anyone as WANTED when they're equally matched.
-		numwanted = 0;
-	else
-		numwanted = min(4, 1 + ((numingame-2) / 4));
-
-	for (i = 0; i < 4; i++)
-	{
-		if (i+1 > numwanted) // Not enough players for this slot to be wanted!
-			battlewanted[i] = -1;
-		else if (bestbumperplayer != -1 && !setbumper) // If there's a player who has an untied bumper lead over everyone else, they are the first to be wanted.
-		{
-			battlewanted[i] = bestbumperplayer;
-			setbumper = true; // Don't set twice
-		}
-		else
-		{
-			// Don't accidentally set the same player, if the bestbumperplayer is also a huge camper.
-			while (bestbumperplayer != -1 && camppos[nextcamppos] != -1
-				&& bestbumperplayer == camppos[nextcamppos])
-				nextcamppos++;
-
-			// Do not add *any* more people if there's too many times that are tied with others.
-			// This could theoretically happen very easily if people don't hit each other for a while after the start of a match.
-			// (I will be sincerely impressed if more than 2 people tie after people start hitting each other though)
-
-			if (camppos[nextcamppos] == -1 // Out of entries
-				|| ties >= (numwanted-i)) // Already counted ties
-			{
-				battlewanted[i] = -1;
-				continue;
-			}
-
-			if (ties < (numwanted-i))
-			{
-				ties = 0; // Reset
-				for (j = 0; j < 2; j++)
-				{
-					if (camppos[nextcamppos+(j+1)] == -1) // Nothing beyond, cancel
-						break;
-					if (players[camppos[nextcamppos]].kartstuff[k_wanted] == players[camppos[nextcamppos+(j+1)]].kartstuff[k_wanted])
-						ties++;
-				}
-			}
-
-			if (ties < (numwanted-i)) // Is it still low enough after counting?
-			{
-				battlewanted[i] = camppos[nextcamppos];
-				nextcamppos++;
-			}
-			else
-				battlewanted[i] = -1;
-		}
-	}
-}
-
-void K_CheckBumpers(void)
-{
-	UINT8 i;
-	UINT8 numingame = 0;
-	SINT8 winnernum = -1;
-	INT32 winnerscoreadd = 0;
-
-	if (!multiplayer)
-		return;
-
-	if (!G_BattleGametype())
-		return;
-
-	if (gameaction == ga_completed)
-		return;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator) // not even in-game
-			continue;
-
-		if (players[i].exiting) // we're already exiting! stop!
-			return;
-
-		numingame++;
-		winnerscoreadd += players[i].marescore;
-
-		if (players[i].kartstuff[k_bumper] <= 0) // if you don't have any bumpers, you're probably not a winner
-			continue;
-		else if (winnernum > -1) // TWO winners? that's dumb :V
-			return;
-
-		winnernum = i;
-		winnerscoreadd -= players[i].marescore;
-	}
-
-	if (numingame <= 1)
-		return;
-
-	if (winnernum > -1 && playeringame[winnernum])
-	{
-		players[winnernum].marescore += winnerscoreadd;
-		CONS_Printf(M_GetText("%s recieved %d point%s for winning!\n"), player_names[winnernum], winnerscoreadd, (winnerscoreadd == 1 ? "" : "s"));
-	}
-
-	for (i = 0; i < MAXPLAYERS; i++) // This can't go in the earlier loop because winning adds points
-		K_KartUpdatePosition(&players[i]);
-
-	for (i = 0; i < MAXPLAYERS; i++) // and it can't be merged with this loop because it needs to be all updated before exiting... multi-loops suck...
-		P_DoPlayerExit(&players[i]);
-}
-
 void K_CheckSpectateStatus(void)
 {
 	UINT8 respawnlist[MAXPLAYERS];
@@ -7953,6 +7741,8 @@ static patch_t *kp_lapstickernarrow;
 static patch_t *kp_splitlapflag;
 static patch_t *kp_bumpersticker;
 static patch_t *kp_bumperstickerwide;
+static patch_t *kp_capsulesticker;
+static patch_t *kp_capsulestickerwide;
 static patch_t *kp_karmasticker;
 static patch_t *kp_splitkarmabomb;
 static patch_t *kp_timeoutsticker;
@@ -7983,6 +7773,7 @@ static patch_t *kp_speedometerlabel[4];
 static patch_t *kp_rankbumper;
 static patch_t *kp_tinybumper[2];
 static patch_t *kp_ranknobumpers;
+static patch_t *kp_rankcapsule;
 
 static patch_t *kp_battlewin;
 static patch_t *kp_battlecool;
@@ -8055,6 +7846,8 @@ void K_LoadKartHUDGraphics(void)
 	kp_splitlapflag = 			W_CachePatchName("K_SPTLAP", PU_HUDGFX);
 	kp_bumpersticker = 			W_CachePatchName("K_STBALN", PU_HUDGFX);
 	kp_bumperstickerwide = 		W_CachePatchName("K_STBALW", PU_HUDGFX);
+	kp_capsulesticker = 		W_CachePatchName("K_STCAPN", PU_HUDGFX);
+	kp_capsulestickerwide = 	W_CachePatchName("K_STCAPW", PU_HUDGFX);
 	kp_karmasticker = 			W_CachePatchName("K_STKARM", PU_HUDGFX);
 	kp_splitkarmabomb = 		W_CachePatchName("K_SPTKRM", PU_HUDGFX);
 	kp_timeoutsticker = 		W_CachePatchName("K_STTOUT", PU_HUDGFX);
@@ -8181,6 +7974,7 @@ void K_LoadKartHUDGraphics(void)
 	kp_tinybumper[0] =			W_CachePatchName("K_BLNA", PU_HUDGFX);
 	kp_tinybumper[1] =			W_CachePatchName("K_BLNB", PU_HUDGFX);
 	kp_ranknobumpers =			W_CachePatchName("K_NOBLNS", PU_HUDGFX);
+	kp_rankcapsule =			W_CachePatchName("K_CAPICO", PU_HUDGFX);
 
 	// Battle graphics
 	kp_battlewin = 				W_CachePatchName("K_BWIN", PU_HUDGFX);
@@ -9524,8 +9318,8 @@ static void K_drawKartLapsAndRings(void)
 		if (cv_numlaps.value >= 10)
 		{
 			UINT8 ln[2];
-			ln[0] = ((abs(stplyr->laps) / 10) % 10);
-			ln[1] = (abs(stplyr->laps) % 10);
+			ln[0] = ((stplyr->laps / 10) % 10);
+			ln[1] = (stplyr->laps % 10);
 
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
 			V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
@@ -9705,52 +9499,95 @@ static void K_drawKartBumpersOrKarma(void)
 		V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|splitflags|flipflag, kp_ringstickersplit[0]);
 		V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|splitflags, frameslash);
 
-		if (stplyr->kartstuff[k_bumper] <= 0)
+		if (battlecapsules)
 		{
-			V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|splitflags, kp_splitkarmabomb, colormap);
-			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, kp_facenum[(stplyr->kartstuff[k_comebackpoints]) % 10]);
-			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, kp_facenum[2]);
-		}
-		else
-		{
-			V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|splitflags, kp_rankbumper, colormap);
+			V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|splitflags, kp_rankcapsule, NULL);
 
-			if (stplyr->kartstuff[k_bumper] > 9 || cv_kartbumpers.value > 9)
+			if (numtargets > 9 || maptargets > 9)
 			{
 				UINT8 ln[2];
-				ln[0] = ((abs(stplyr->kartstuff[k_bumper]) / 10) % 10);
-				ln[1] = (abs(stplyr->kartstuff[k_bumper]) % 10);
+				ln[0] = ((numtargets / 10) % 10);
+				ln[1] = (numtargets % 10);
 
 				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
 				V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
 
-				ln[0] = ((abs(cv_kartbumpers.value) / 10) % 10);
-				ln[1] = (abs(cv_kartbumpers.value) % 10);
+				ln[0] = ((maptargets / 10) % 10);
+				ln[1] = (maptargets % 10);
 
 				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
 				V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
 			}
 			else
 			{
-				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, kp_facenum[(stplyr->kartstuff[k_bumper]) % 10]);
-				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, kp_facenum[(cv_kartbumpers.value) % 10]);
+				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, kp_facenum[numtargets % 10]);
+				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, kp_facenum[maptargets % 10]);
+			}
+		}
+		else
+		{
+			if (stplyr->kartstuff[k_bumper] <= 0)
+			{
+				V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|splitflags, kp_splitkarmabomb, colormap);
+				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, kp_facenum[(stplyr->kartstuff[k_comebackpoints]) % 10]);
+				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, kp_facenum[2]);
+			}
+			else
+			{
+				INT32 maxbumper = K_StartingBumperCount();
+				V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|splitflags, kp_rankbumper, colormap);
+
+				if (stplyr->kartstuff[k_bumper] > 9 || maxbumper > 9)
+				{
+					UINT8 ln[2];
+					ln[0] = ((abs(stplyr->kartstuff[k_bumper]) / 10) % 10);
+					ln[1] = (abs(stplyr->kartstuff[k_bumper]) % 10);
+
+					V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
+					V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
+
+					ln[0] = ((abs(maxbumper) / 10) % 10);
+					ln[1] = (abs(maxbumper) % 10);
+
+					V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
+					V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
+				}
+				else
+				{
+					V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, kp_facenum[(stplyr->kartstuff[k_bumper]) % 10]);
+					V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, kp_facenum[(maxbumper) % 10]);
+				}
 			}
 		}
 	}
 	else
 	{
-		if (stplyr->kartstuff[k_bumper] <= 0)
+		if (battlecapsules)
 		{
-			V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_karmasticker, colormap);
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|splitflags, va("%d/2", stplyr->kartstuff[k_comebackpoints]));
+			if (numtargets > 9 && maptargets > 9)
+				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_capsulestickerwide, NULL);
+			else
+				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_capsulesticker, NULL);
+			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|splitflags, va("%d/%d", numtargets, maptargets));
 		}
 		else
 		{
-			if (stplyr->kartstuff[k_bumper] > 9 && cv_kartbumpers.value > 9)
-				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_bumperstickerwide, colormap);
+			if (stplyr->kartstuff[k_bumper] <= 0)
+			{
+				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_karmasticker, colormap);
+				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|splitflags, va("%d/2", stplyr->kartstuff[k_comebackpoints]));
+			}
 			else
-				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_bumpersticker, colormap);
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|splitflags, va("%d/%d", stplyr->kartstuff[k_bumper], cv_kartbumpers.value));
+			{
+				INT32 maxbumper = K_StartingBumperCount();
+
+				if (stplyr->kartstuff[k_bumper] > 9 && maxbumper > 9)
+					V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_bumperstickerwide, colormap);
+				else
+					V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|splitflags, kp_bumpersticker, colormap);
+
+				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|splitflags, va("%d/%d", stplyr->kartstuff[k_bumper], maxbumper));
+			}
 		}
 	}
 }
@@ -10308,10 +10145,14 @@ static void K_drawBattleFullscreen(void)
 			V_DrawFadeScreen(0xFF00, 16);
 		if (stplyr->exiting < 6*TICRATE && !stplyr->spectator)
 		{
-			if (stplyr->kartstuff[k_position] == 1)
-				V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, kp_battlewin, NULL);
-			else
-				V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, (K_IsPlayerLosing(stplyr) ? kp_battlelose : kp_battlecool), NULL);
+			patch_t *p = kp_battlecool;
+
+			if (K_IsPlayerLosing(stplyr))
+				p = kp_battlelose;
+			else if (stplyr->kartstuff[k_position] == 1)
+				p = kp_battlewin;
+
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, p, NULL);
 		}
 		else
 			K_drawKartFinish();

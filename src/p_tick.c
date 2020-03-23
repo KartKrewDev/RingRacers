@@ -23,6 +23,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_battle.h"
 #include "k_waypoint.h"
 
 // Object place
@@ -636,13 +637,14 @@ void P_Ticker(boolean run)
 	if (run)
 	{
 		P_RunThinkers();
-		if (G_BattleGametype() && battleovertime.enabled)
-			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
+
+		if (G_BattleGametype() && battleovertime.enabled)
+			K_RunBattleOvertime();
 
 #ifdef HAVE_BLUA
 		LUAh_ThinkFrame();
@@ -793,13 +795,14 @@ void P_PreTicker(INT32 frames)
 			}
 
 		P_RunThinkers();
-		if (G_BattleGametype() && battleovertime.enabled)
-			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
+
+		if (G_BattleGametype() && battleovertime.enabled)
+			K_RunBattleOvertime();
 
 #ifdef HAVE_BLUA
 		LUAh_ThinkFrame();

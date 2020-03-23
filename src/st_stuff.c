@@ -1272,7 +1272,7 @@ static void ST_drawNiGHTSHUD(void) // SRB2kart - unused.
 #endif
 	)
 	{
-		if (modeattacking == ATTACKING_NIGHTS)
+		if (modeattacking == ATTACKING_CAPSULES)
 		{
 			INT32 maretime = max(stplyr->realtime - stplyr->marebegunat, 0);
 			fixed_t cornerx = vid.width, cornery = vid.height-SCZ(20);

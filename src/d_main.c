@@ -468,7 +468,7 @@ static void D_Display(void)
 									break;
 							}
 
-							
+
 							topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
 						}
 

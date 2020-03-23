@@ -47,6 +47,7 @@
 #include "m_cond.h"
 #include "m_anigif.h"
 #include "k_kart.h" // SRB2kart
+#include "k_battle.h"
 #include "k_pwrlv.h"
 #include "y_inter.h"
 

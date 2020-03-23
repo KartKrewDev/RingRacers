@@ -138,8 +138,8 @@ typedef enum
 {
 	LLM_CREATESERVER,
 	LLM_LEVELSELECT,
-	LLM_RECORDATTACK,
-	LLM_NIGHTSATTACK
+	LLM_TIMEATTACK,
+	LLM_BREAKTHECAPSULES
 } levellist_mode_t;
 
 levellist_mode_t levellistmode = LLM_CREATESERVER;
@@ -205,9 +205,7 @@ static char *M_GetConditionString(condition_t cond);
 menu_t SR_MainDef, SR_UnlockChecklistDef;
 
 // Misc. Main Menu
-#if 0 // Bring this back when we have actual single-player
 static void M_SinglePlayerMenu(INT32 choice);
-#endif
 static void M_Options(INT32 choice);
 static void M_Manual(INT32 choice);
 static void M_SelectableClearMenus(INT32 choice);
@@ -230,7 +228,7 @@ menu_t MISC_ScrambleTeamDef, MISC_ChangeTeamDef, MISC_ChangeSpectateDef;
 //static void M_LoadGame(INT32 choice);
 static void M_TimeAttack(INT32 choice);
 static boolean M_QuitTimeAttackMenu(void);
-//static void M_NightsAttack(INT32 choice);
+static void M_BreakTheCapsules(INT32 choice);
 static void M_Statistics(INT32 choice);
 static void M_HandleStaffReplay(INT32 choice);
 static void M_ReplayTimeAttack(INT32 choice);
@@ -482,11 +480,10 @@ static consvar_t cv_dummystaff = {"dummystaff", "0", CV_HIDEN|CV_CALL, dummystaf
 static menuitem_t MainMenu[] =
 {
 	{IT_SUBMENU|IT_STRING, NULL, "Extras",      &SR_MainDef,        76},
-	//{IT_CALL   |IT_STRING, NULL, "1 Player",    M_SinglePlayerMenu, 84},
 #ifdef TESTERS
-	{IT_GRAYEDOUT,         NULL, "Time Attack", NULL,               84},
+	{IT_GRAYEDOUT,         NULL, "1 Player",    NULL,               84},
 #else
-	{IT_CALL   |IT_STRING, NULL, "Time Attack", M_TimeAttack,       84},
+	{IT_CALL   |IT_STRING, NULL, "1 Player",    M_SinglePlayerMenu, 84},
 #endif
 	{IT_SUBMENU|IT_STRING, NULL, "Multiplayer", &MP_MainDef,        92},
 	{IT_CALL   |IT_STRING, NULL, "Options",     M_Options,          100},
@@ -806,18 +803,16 @@ static menuitem_t SR_EmblemHintMenu[] =
 // Single Player Main
 static menuitem_t SP_MainMenu[] =
 {
-	//{IT_CALL | IT_STRING,                       NULL, "Start Game",    M_LoadGame,        92},
-	{IT_SECRET,                                 NULL, "Record Attack", M_TimeAttack,     100},
-	//{IT_SECRET,                                 NULL, "NiGHTS Mode",   M_NightsAttack,   108},
-	{IT_CALL | IT_STRING | IT_CALL_NOTMODIFIED, NULL, "Statistics",    M_Statistics,     108},
+	//{IT_CALL | IT_STRING,                       NULL, "Grand Prix",         M_LoadGame,          92},
+	{IT_SECRET,                                 NULL, "Time Attack",        M_TimeAttack,       100},
+	{IT_SECRET,                                 NULL, "Break the Capsules", M_BreakTheCapsules, 108},
 };
 
 enum
 {
-	//sploadgame,
-	sprecordattack,
-	//spnightsmode,
-	spstatistics
+	//spgrandprix,
+	sptimeattack,
+	spbreakthecapsules
 };
 
 // Single Player Load Game
@@ -1879,52 +1874,6 @@ static menu_t SP_GhostDef =
 	NULL
 };
 
-/*static menu_t SP_NightsAttackDef =
-{
-	"M_NIGHTS",
-	sizeof (SP_NightsAttackMenu)/sizeof (menuitem_t),
-	&MainDef,  // Doesn't matter.
-	SP_NightsAttackMenu,
-	M_DrawNightsAttackMenu,
-	32, 40,
-	0,
-	NULL
-};
-static menu_t SP_NightsReplayDef =
-{
-	"M_NIGHTS",
-	sizeof(SP_NightsReplayMenu)/sizeof(menuitem_t),
-	&SP_NightsAttackDef,
-	SP_NightsReplayMenu,
-	M_DrawNightsAttackMenu,
-	32, 120,
-	0,
-	NULL
-};
-static menu_t SP_NightsGuestReplayDef =
-{
-	"M_NIGHTS",
-	sizeof(SP_NightsGuestReplayMenu)/sizeof(menuitem_t),
-	&SP_NightsAttackDef,
-	SP_NightsGuestReplayMenu,
-	M_DrawNightsAttackMenu,
-	32, 120,
-	0,
-	NULL
-};
-static menu_t SP_NightsGhostDef =
-{
-	"M_NIGHTS",
-	sizeof(SP_NightsGhostMenu)/sizeof(menuitem_t),
-	&SP_NightsAttackDef,
-	SP_NightsGhostMenu,
-	M_DrawNightsAttackMenu,
-	32, 120,
-	0,
-	NULL
-};*/
-
-
 /*menu_t SP_PlayerDef =
 {
 	"M_PICKP",
@@ -2163,7 +2112,7 @@ static void Nextmap_OnChange(void)
 
 		CV_StealthSetValue(&cv_dummystaff, 0);
 
-		active = false;
+		active = 0;
 		SP_TimeAttackMenu[taguest].status = IT_DISABLED;
 		SP_TimeAttackMenu[tareplay].status = IT_DISABLED;
 		//SP_TimeAttackMenu[taghost].status = IT_DISABLED;
@@ -2184,11 +2133,15 @@ static void Nextmap_OnChange(void)
 			SP_GuestReplayMenu[0].status = IT_WHITESTRING|IT_CALL;
 			active |= 3;
 		}
-		if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, cv_chooseskin.string))) {
-			SP_ReplayMenu[1].status = IT_WHITESTRING|IT_CALL;
-			SP_GuestReplayMenu[1].status = IT_WHITESTRING|IT_CALL;
-			active |= 3;
+
+		if (levellistmode != LLM_BREAKTHECAPSULES) {
+			if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, cv_chooseskin.string))) {
+				SP_ReplayMenu[1].status = IT_WHITESTRING|IT_CALL;
+				SP_GuestReplayMenu[1].status = IT_WHITESTRING|IT_CALL;
+				active |= 3;
+			}
 		}
+
 		if (FIL_FileExists(va("%s-%s-last.lmp", gpath, cv_chooseskin.string))) {
 			SP_ReplayMenu[2].status = IT_WHITESTRING|IT_CALL;
 			SP_GuestReplayMenu[2].status = IT_WHITESTRING|IT_CALL;
@@ -4263,11 +4216,13 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 				return false; // not unlocked
 
 			return true;*/
-		case LLM_RECORDATTACK:
+		case LLM_TIMEATTACK:
+		case LLM_BREAKTHECAPSULES:
 			/*if (!(mapheaderinfo[mapnum]->menuflags & LF2_RECORDATTACK))
 				return false;*/
 
-			if (!(mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
+			if ((levellistmode == LLM_TIMEATTACK && !(mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
+			|| (levellistmode == LLM_BREAKTHECAPSULES && !(mapheaderinfo[mapnum]->typeoflevel & TOL_MATCH)))
 				return false;
 
 			if (M_MapLocked(mapnum+1))
@@ -4286,20 +4241,6 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 				return false;*/
 
 			return true;
-		/*case LLM_NIGHTSATTACK:
-			if (!(mapheaderinfo[mapnum]->menuflags & LF2_NIGHTSATTACK))
-				return false;
-
-			if (M_MapLocked(mapnum+1))
-				return false; // not unlocked
-
-			if (mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
-				return true;
-
-			if (!mapvisited[mapnum])
-				return false;
-
-			return true;*/
 		default:
 			return false;
 	}
@@ -6627,18 +6568,16 @@ static void M_Credits(INT32 choice)
 // SINGLE PLAYER MENU
 // ==================
 
-#if 0 // Bring this back when we have actual single-player
 static void M_SinglePlayerMenu(INT32 choice)
 {
 	(void)choice;
-	SP_MainMenu[sprecordattack].status =
-		(M_SecretUnlocked(SECRET_RECORDATTACK)) ? IT_CALL|IT_STRING : IT_SECRET;
-	/*SP_MainMenu[spnightsmode].status =
-		(M_SecretUnlocked(SECRET_NIGHTSMODE)) ? IT_CALL|IT_STRING : IT_SECRET;*/
+	SP_MainMenu[sptimeattack].status =
+		(M_SecretUnlocked(SECRET_TIMEATTACK)) ? IT_CALL|IT_STRING : IT_SECRET;
+	SP_MainMenu[spbreakthecapsules].status =
+		(M_SecretUnlocked(SECRET_BREAKTHECAPSULES)) ? IT_CALL|IT_STRING : IT_SECRET;
 
 	M_SetupNextMenu(&SP_MainDef);
 }
-#endif
 
 /*static void M_LoadGameLevelSelect(INT32 choice)
 {
@@ -7624,8 +7563,11 @@ void M_DrawTimeAttackMenu(void)
 
 		V_DrawFill((BASEVIDWIDTH - dupadjust)>>1, 78, dupadjust, 36, 159);
 
-		V_DrawRightAlignedString(149, 80, highlightflags, "BEST LAP:");
-		K_drawKartTimestamp(lap, 19, 86, 0, 2);
+		if (levellistmode != LLM_BREAKTHECAPSULES)
+		{
+			V_DrawRightAlignedString(149, 80, highlightflags, "BEST LAP:");
+			K_drawKartTimestamp(lap, 19, 86, 0, 2);
+		}
 
 		V_DrawRightAlignedString(292, 80, highlightflags, "BEST TIME:");
 		K_drawKartTimestamp(time, 162, 86, cv_nextmap.value, 1);
@@ -7714,11 +7656,43 @@ static void M_TimeAttack(INT32 choice)
 
 	memset(skins_cons_t, 0, sizeof (skins_cons_t));
 
-	levellistmode = LLM_RECORDATTACK; // Don't be dependent on cv_newgametype
+	levellistmode = LLM_TIMEATTACK; // Don't be dependent on cv_newgametype
 
 	if (M_CountLevelsToShowInList() == 0)
 	{
-		M_StartMessage(M_GetText("No record-attackable levels found.\n"),NULL,MM_NOTHING);
+		M_StartMessage(M_GetText("No levels found for Time Attack.\n"),NULL,MM_NOTHING);
+		return;
+	}
+
+	M_PatchSkinNameTable();
+
+	M_PrepareLevelSelect();
+	M_SetupNextMenu(&SP_TimeAttackDef);
+
+	G_SetGamestate(GS_TIMEATTACK);
+
+	if (cv_nextmap.value)
+		Nextmap_OnChange();
+	else
+		CV_AddValue(&cv_nextmap, 1);
+
+	itemOn = tastart; // "Start" is selected.
+
+	S_ChangeMusicInternal("racent", true);
+}
+
+// Same as above, but sets a different levellistmode. Should probably be merged...
+static void M_BreakTheCapsules(INT32 choice)
+{
+	(void)choice;
+
+	memset(skins_cons_t, 0, sizeof (skins_cons_t));
+
+	levellistmode = LLM_BREAKTHECAPSULES; // Don't be dependent on cv_newgametype
+
+	if (M_CountLevelsToShowInList() == 0)
+	{
+		M_StartMessage(M_GetText("No levels found for Break the Capsules.\n"),NULL,MM_NOTHING);
 		return;
 	}
 
@@ -7852,13 +7826,13 @@ static boolean M_QuitTimeAttackMenu(void)
 }*/
 
 // Going to Nights Attack menu...
-/*static void M_NightsAttack(INT32 choice)
+/*static void M_BreakTheCapsules(INT32 choice)
 {
 	(void)choice;
 
 	memset(skins_cons_t, 0, sizeof (skins_cons_t));
 
-	levellistmode = LLM_NIGHTSATTACK; // Don't be dependent on cv_newgametype
+	levellistmode = LLM_BREAKTHECAPSULES; // Don't be dependent on cv_newgametype
 
 	if (M_CountLevelsToShowInList() == 0)
 	{
@@ -7886,7 +7860,7 @@ static boolean M_QuitTimeAttackMenu(void)
 	(void)choice;
 	emeralds = 0;
 	M_ClearMenus(true);
-	modeattacking = ATTACKING_NIGHTS;
+	modeattacking = ATTACKING_CAPSULES;
 
 	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
 	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
@@ -7910,7 +7884,7 @@ static void M_ChooseTimeAttack(INT32 choice)
 	(void)choice;
 	emeralds = 0;
 	M_ClearMenus(true);
-	modeattacking = ATTACKING_RECORD;
+	modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_RECORD);
 
 	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
 	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
@@ -7960,7 +7934,7 @@ static void M_HandleStaffReplay(INT32 choice)
 			if (l == LUMPERROR)
 				break;
 			M_ClearMenus(true);
-			modeattacking = ATTACKING_RECORD;
+			modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_RECORD);
 			demo.loadfiles = false; demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 			G_DoPlayDemo(va("%sS%02u",G_BuildMapName(cv_nextmap.value),cv_dummystaff.value));
 			break;
@@ -7981,7 +7955,7 @@ static void M_ReplayTimeAttack(INT32 choice)
 {
 	const char *which;
 	M_ClearMenus(true);
-	modeattacking = ATTACKING_RECORD; // set modeattacking before G_DoPlayDemo so the map loader knows
+	modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_RECORD); // set modeattacking before G_DoPlayDemo so the map loader knows
 	demo.loadfiles = false; demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 
 	if (currentMenu == &SP_ReplayDef)
@@ -8128,10 +8102,8 @@ static void M_ModeAttackRetry(INT32 choice)
 {
 	(void)choice;
 	G_CheckDemoStatus(); // Cancel recording
-	if (modeattacking == ATTACKING_RECORD)
+	if (modeattacking)
 		M_ChooseTimeAttack(0);
-	/*else if (modeattacking == ATTACKING_NIGHTS)
-		M_ChooseNightsAttack(0);*/
 }
 
 static void M_ModeAttackEndGame(INT32 choice)
@@ -8143,16 +8115,10 @@ static void M_ModeAttackEndGame(INT32 choice)
 		Command_ExitGame_f();
 
 	M_StartControlPanel();
-	switch(modeattacking)
-	{
-	default:
-	case ATTACKING_RECORD:
+
+	if (modeattacking)
 		currentMenu = &SP_TimeAttackDef;
-		break;
-	/*case ATTACKING_NIGHTS:
-		currentMenu = &SP_NightsAttackDef;
-		break;*/
-	}
+
 	itemOn = currentMenu->lastOn;
 	G_SetGamestate(GS_TIMEATTACK);
 	modeattacking = ATTACKING_NONE;
