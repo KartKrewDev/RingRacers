@@ -1158,10 +1158,10 @@ boolean P_EndingMusic(player_t *player)
 		sprintf(buffer, "k*fail"); // F-Zero death results theme
 	else
 	{
-		if (bestlocalpos == 1)
-			sprintf(buffer, "k*win");
-		else if (K_IsPlayerLosing(bestlocalplayer))
+		if (K_IsPlayerLosing(bestlocalplayer))
 			sprintf(buffer, "k*lose");
+		else if (bestlocalpos == 1)
+			sprintf(buffer, "k*win");
 		else
 			sprintf(buffer, "k*ok");
 	}
@@ -6961,9 +6961,10 @@ static void P_DeathThink(player_t *player)
 	if (player->bot) // don't allow bots to do any of the below, B_CheckRespawn does all they need for respawning already
 		goto notrealplayer;
 
-	if (player->pflags & PF_TIMEOVER)
+	if ((player->pflags & PF_TIMEOVER) && G_RaceGametype())
 	{
 		player->karthud[khud_timeovercam]++;
+
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
@@ -7178,7 +7179,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		|| (leveltime < introtime)); // Kart intro cam
 #endif
 
-	if (player->pflags & PF_TIMEOVER) // 1 for momentum keep, 2 for turnaround
+	if ((player->pflags & PF_TIMEOVER) && G_RaceGametype()) // 1 for momentum keep, 2 for turnaround
 		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
 	else
 		timeover = 0;

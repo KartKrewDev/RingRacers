@@ -5699,6 +5699,9 @@ static void P_RunLevelLoadExecutors(void)
   */
 void P_InitSpecials(void)
 {
+	// Set the map object scale
+	mapobjectscale = mapheaderinfo[gamemap-1]->mobj_scale;
+
 	// Set the default gravity. Custom gravity overrides this setting.
 	gravity = (FRACUNIT*8)/10;
 
