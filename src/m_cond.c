@@ -172,7 +172,8 @@ unlockable_t unlockables[MAXUNLOCKABLES] =
 	/* 05 */ {"Encore Mode",     "",  4, 5, SECRET_ENCORE,     0, false, false, 0},
 	/* 06 */ {"Hell Attack",     "",  6, 6, SECRET_HELLATTACK, 0, false, false, 0},
 
-	/* 07 */ {"Record Attack", "", -1, -1, SECRET_RECORDATTACK, 0, true, true, 0},
+	/* 07 */ {"Time Attack", "", -1, -1, SECRET_TIMEATTACK, 0, true, true, 0},
+	/* 08 */ {"Break the Capsules", "", -1, -1, SECRET_BREAKTHECAPSULES, 0, true, true, 0},
 };
 
 // Default number of emblems and extra emblems

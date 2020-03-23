@@ -27,6 +27,7 @@
 #include "m_misc.h"
 #include "v_video.h" // video flags for CEchos
 #include "k_kart.h" // SRB2kart
+#include "k_battle.h"
 #include "k_pwrlv.h"
 
 // CTF player names
@@ -1806,7 +1807,7 @@ void P_CheckTimeLimit(void)
 	if (!(multiplayer || netgame))
 		return;
 
-	if (G_RaceGametype())
+	if (G_RaceGametype() || battlecapsules)
 		return;
 
 	if (leveltime < (timelimitintics + starttime))
@@ -2535,6 +2536,45 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				}
 				target->fuse = 10;
 				S_StartSound(target, sfx_s3k80);
+			}
+			break;
+		case MT_BATTLECAPSULE:
+			{
+				mobj_t *cur;
+
+				numtargets++;
+				target->fuse = 16;
+				target->flags |= MF_NOCLIP|MF_NOCLIPTHING;
+
+				cur = target->hnext;
+
+				while (cur && !P_MobjWasRemoved(cur))
+				{
+					// Shoot every piece outward
+					if (!(cur->x == target->x && cur->y == target->y))
+					{
+						P_InstaThrust(cur,
+							R_PointToAngle2(target->x, target->y, cur->x, cur->y),
+							R_PointToDist2(target->x, target->y, cur->x, cur->y) / 12
+						);
+					}
+
+					cur->momz = 8 * target->scale * P_MobjFlip(target);
+
+					cur->flags &= ~MF_NOGRAVITY;
+					cur->tics = TICRATE;
+					cur->frame &= ~FF_ANIMATE; // Stop animating the propellers
+
+					cur = cur->hnext;
+				}
+
+				// All targets busted!
+				if (numtargets >= maptargets)
+				{
+					UINT8 i;
+					for (i = 0; i < MAXPLAYERS; i++)
+						P_DoPlayerExit(&players[i]);
+				}
 			}
 			break;
 
