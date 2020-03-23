@@ -919,14 +919,25 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 				POWERITEMODDS(newodds);
 			break;
 		case KITEM_SPB:
-			if ((indirectitemcooldown > 0) || (secondist/DISTVAR < 3)
-				|| (first != -1 && players[first].distancetofinish > 8*DISTVAR)) // No SPB near the end of the race
+			if ((indirectitemcooldown > 0) || COOLDOWNONSTART
+				|| (first != -1 && players[first].distancetofinish < 8*DISTVAR)) // No SPB near the end of the race
+			{
 				newodds = 0;
+			}
 			else
-				newodds *= min((secondist/DISTVAR)-4, 3); // POWERITEMODDS(newodds);
+			{
+				INT32 multiplier = (secondist - (4*DISTVAR)) / DISTVAR;
+
+				if (multiplier < 0)
+					multiplier = 0;
+				if (multiplier > 3)
+					multiplier = 3;
+
+				newodds *= multiplier;
+			}
 			break;
 		case KITEM_SHRINK:
-			if ((indirectitemcooldown > 0) || (pingame-1 <= pexiting) || COOLDOWNONSTART)
+			if ((indirectitemcooldown > 0) || COOLDOWNONSTART || (pingame-1 <= pexiting))
 				newodds = 0;
 			else
 				POWERITEMODDS(newodds);
@@ -1124,7 +1135,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	}
 
 	if (mapobjectscale != FRACUNIT)
-		pdis = FixedDiv(pdis, mapobjectscale);
+		pdis = FixedDiv(pdis * FRACUNIT, mapobjectscale);
 
 	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
 		pdis = (15 * pdis) / 14;
