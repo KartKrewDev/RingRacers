@@ -746,7 +746,7 @@ void Y_Ticker(void)
 									remove = 10;
 
 								// Remove 10 points at a time
-								data.match.increase[data.match.num[q]] -= remove; 
+								data.match.increase[data.match.num[q]] -= remove;
 
 								// Still not zero, no kaching yet
 								if (data.match.increase[data.match.num[q]] != 0)
