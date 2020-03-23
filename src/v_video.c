@@ -2503,15 +2503,15 @@ void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param)
 		return;
 #endif
 
-	if (view < 0 || view > 3 || view > splitscreen)
+	if (view < 0 || view > 3 || view > r_splitscreen)
 		return;
 
-	if ((view == 1 && splitscreen == 1) || view >= 2)
+	if ((view == 1 && r_splitscreen == 1) || view >= 2)
 		yoffset = viewheight;
 	else
 		yoffset = 0;
 
-	if ((view == 1 || view == 3) && splitscreen > 1)
+	if ((view == 1 || view == 3) && r_splitscreen > 1)
 		xoffset = viewwidth;
 	else
 		xoffset = 0;
