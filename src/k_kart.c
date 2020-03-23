@@ -926,7 +926,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			}
 			else
 			{
-				INT32 multiplier = (secondist - (4*DISTVAR)) / DISTVAR;
+				INT32 multiplier = (secondist - (5*DISTVAR)) / DISTVAR;
 
 				if (multiplier < 0)
 					multiplier = 0;
