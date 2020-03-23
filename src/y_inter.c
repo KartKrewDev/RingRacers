@@ -169,7 +169,7 @@ static void Y_UnloadVoteData(void);
 //
 // SRB2Kart - Y_CalculateMatchData and ancillary functions
 //
-static void Y_CompareRace(INT32 i)
+static void Y_CompareTime(INT32 i)
 {
 	UINT32 val = ((players[i].pflags & PF_TIMEOVER || players[i].realtime == UINT32_MAX)
 		? (UINT32_MAX-1) : players[i].realtime);
@@ -181,7 +181,7 @@ static void Y_CompareRace(INT32 i)
 	data.match.num[data.match.numplayers] = i;
 }
 
-static void Y_CompareBattle(INT32 i)
+static void Y_CompareScore(INT32 i)
 {
 	UINT32 val = ((players[i].pflags & PF_TIMEOVER)
 			? (UINT32_MAX-1) : players[i].marescore);
@@ -1103,9 +1103,18 @@ void Y_StartIntermission(void)
 		case int_match:
 		{
 			// Calculate who won
-			Y_CalculateMatchData(0, battlecapsules ? Y_CompareRace : Y_CompareBattle);
+			if (battlecapsules)
+			{
+				Y_CalculateMatchData(0, Y_CompareTime);
+			}
+			else
+			{
+				Y_CalculateMatchData(0, Y_CompareScore);
+			}
+
 			if (cv_inttime.value > 0)
 				S_ChangeMusicInternal("racent", true); // loop it
+
 			break;
 		}
 		case int_race: // (time-only race)

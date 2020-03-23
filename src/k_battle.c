@@ -563,11 +563,7 @@ void K_SpawnBattleCapsules(void)
 	if (!G_BattleGametype())
 		return;
 
-	if (modeattacking == ATTACKING_CAPSULES)
-	{
-		;
-	}
-	else
+	if (modeattacking != ATTACKING_CAPSULES)
 	{
 		UINT8 n = 0;
 
