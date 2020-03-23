@@ -1983,7 +1983,7 @@ void P_SwitchWeather(UINT8 newWeather)
 			return; // Nothing to do.
 		purge = true;
 	}
-	else 
+	else
 	{
 		if (precipprops[curWeather].type != MT_NULL)
 		{
@@ -2024,7 +2024,7 @@ void P_SwitchWeather(UINT8 newWeather)
 			precipmobj->flags = mobjinfo[swap].flags;
 
 			st = mobjinfo[swap].spawnstate;
-			
+
 			if (randomstates > 0)
 			{
 				UINT8 mrand = M_RandomByte();
@@ -5700,6 +5700,9 @@ static void P_RunLevelLoadExecutors(void)
   */
 void P_InitSpecials(void)
 {
+	// Set the map object scale
+	mapobjectscale = mapheaderinfo[gamemap-1]->mobj_scale;
+
 	// Set the default gravity. Custom gravity overrides this setting.
 	gravity = (FRACUNIT*8)/10;
 

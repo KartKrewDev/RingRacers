@@ -47,6 +47,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_battle.h"
 #include "k_pwrlv.h"
 
 #ifdef CLIENT_LOADINGSCREEN
@@ -3480,7 +3481,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	splitscreenplayer = (UINT8)READUINT8(*p);
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d %d\n", node, newplayernum, splitscreenplayer);
-	
+
 	// Clear player before joining, lest some things get set incorrectly
 	CL_ClearPlayer(newplayernum);
 
@@ -3719,7 +3720,11 @@ void SV_StartSinglePlayerServer(void)
 	server = true;
 	netgame = false;
 	multiplayer = false;
-	gametype = GT_RACE; //srb2kart
+
+	if (modeattacking == ATTACKING_CAPSULES)
+		gametype = GT_MATCH; //srb2kart
+	else
+		gametype = GT_RACE; //srb2kart
 
 	// no more tic the game with this settings!
 	SV_StopServer();
