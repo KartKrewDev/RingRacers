@@ -1120,7 +1120,7 @@ void Y_StartIntermission(void)
 		case int_race: // (time-only race)
 		{
 			// Calculate who won
-			Y_CalculateMatchData(0, Y_CompareRace);
+			Y_CalculateMatchData(0, Y_CompareTime);
 			break;
 		}
 
