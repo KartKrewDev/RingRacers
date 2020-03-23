@@ -5455,7 +5455,7 @@ static void UpdatePingTable(void)
 		{
 			if (playeringame[i] && playernode[i] > 0)
 			{
-				if (! server_lagless && playernode[i] > 0)
+				if (! server_lagless && playernode[i] > 0 && !players[i].spectator)
 				{
 					lag = GetLag(playernode[i]);
 					realpingtable[i] += G_TicsToMilliseconds(lag);
