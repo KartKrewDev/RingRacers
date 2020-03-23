@@ -413,7 +413,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3k40",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR},
   {"s3k41",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR}, // Kart Thunder Shield spawned
   {"s3k42",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR},
-  {"s3k43",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR},
+  {"s3k43",  false,  96, 48, -1, NULL, 0,        -1,  -1, LUMPERROR},
   {"s3k44",  false,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR}, // Kart Bubble Shield reflect
   {"s3k45",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR},
   {"s3k46",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR},

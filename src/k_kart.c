@@ -7068,6 +7068,7 @@ void K_StripOther(player_t *player)
 
 static INT32 K_FlameShieldMax(player_t *player)
 {
+	UINT32 disttofinish = 0;
 	UINT8 numplayers = 0;
 	UINT8 i;
 
@@ -7075,14 +7076,22 @@ static INT32 K_FlameShieldMax(player_t *player)
 	{
 		if (playeringame[i] && !players[i].spectator)
 			numplayers++;
+		if (players[i].kartstuff[k_position] == 1)
+			disttofinish = players[i].distancetofinish;
 	}
 
 	if (numplayers <= 1)
+	{
 		return 16; // max when alone, for testing
+	}
 	else if (player->kartstuff[k_position] == 1)
-		return 1; // minimum for first
-	else
-		return (player->kartstuff[k_position] * 16) / numplayers;
+	{
+		return 0; // minimum for first
+	}
+
+	disttofinish = player->distancetofinish - disttofinish;
+
+	return 1 + (disttofinish / (DISTVAR*2));
 }
 
 //
@@ -7588,7 +7597,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (player->kartstuff[k_flamemeter] > flamemax)
 									{
 										K_FlameShieldPop(player->mo);
-										P_Thrust(player->mo, R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy), player->speed);
+										P_Thrust(
+											player->mo,
+											R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy),
+											20 * K_GetKartGameSpeedScalar(gamespeed)
+										);
 										player->kartstuff[k_flamemeter] = 0;
 										player->kartstuff[k_flamelength] = 0;
 										player->kartstuff[k_holdready] = 0;
