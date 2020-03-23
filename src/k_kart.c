@@ -9318,8 +9318,8 @@ static void K_drawKartLapsAndRings(void)
 		if (cv_numlaps.value >= 10)
 		{
 			UINT8 ln[2];
-			ln[0] = ((abs(stplyr->laps) / 10) % 10);
-			ln[1] = (abs(stplyr->laps) % 10);
+			ln[0] = ((stplyr->laps / 10) % 10);
+			ln[1] = (stplyr->laps % 10);
 
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
 			V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
