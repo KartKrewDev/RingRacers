@@ -672,7 +672,7 @@ static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", PNG, pngtext);
 }
 
-static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 width, PNG_CONST png_uint_32 height, const boolean palette)
+static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 width, PNG_CONST png_uint_32 height, PNG_CONST png_byte *palette)
 {
 	const png_byte png_interlace = PNG_INTERLACE_NONE; //PNG_INTERLACE_ADAM7
 	if (palette)
@@ -680,15 +680,13 @@ static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_
 		png_colorp png_PLTE = png_malloc(png_ptr, sizeof(png_color)*256); //palette
 		png_uint_16 i;
 
-		RGBA_t *pal = ((cv_screenshot_colorprofile.value)
-		? pLocalPalette
-		: pMasterPalette);
+		const png_byte *pal = palette;
 
 		for (i = 0; i < 256; i++)
 		{
-			png_PLTE[i].red   = pal[i].s.red;
-			png_PLTE[i].green = pal[i].s.green;
-			png_PLTE[i].blue  = pal[i].s.blue;
+			png_PLTE[i].red   = *pal; pal++;
+			png_PLTE[i].green = *pal; pal++;
+			png_PLTE[i].blue  = *pal; pal++;
 		}
 
 		png_set_IHDR(png_ptr, png_info_ptr, width, height, 8, PNG_COLOR_TYPE_PALETTE,
@@ -964,7 +962,7 @@ static void M_PNGfix_acTL(png_structp png_ptr, png_infop png_info_ptr,
 #endif
 }
 
-static boolean M_SetupaPNG(png_const_charp filename, boolean palette)
+static boolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
 {
 	apng_FILE = fopen(filename,"wb+"); // + mode for reading
 	if (!apng_FILE)
@@ -1016,7 +1014,7 @@ static boolean M_SetupaPNG(png_const_charp filename, boolean palette)
 	png_set_compression_strategy(apng_ptr, cv_zlib_strategya.value);
 	png_set_compression_window_bits(apng_ptr, cv_zlib_window_bitsa.value);
 
-	M_PNGhdr(apng_ptr, apng_info_ptr, vid.width, vid.height, palette);
+	M_PNGhdr(apng_ptr, apng_info_ptr, vid.width, vid.height, pal);
 
 	M_PNGText(apng_ptr, apng_info_ptr, true);
 
