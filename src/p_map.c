@@ -841,7 +841,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		return K_SMKIceBlockCollide(thing, tmthing);
 	}
 
-	if (tmthing->type == MT_EGGMANITEM)
+	if (tmthing->type == MT_EGGMANITEM || tmthing->type == MT_EGGMANITEM_SHIELD)
 	{
 		// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
@@ -849,10 +849,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return true; // underneath
 
-		K_EggItemCollide(tmthing, thing);
-		return true;
+		return K_EggItemCollide(tmthing, thing);
 	}
-	else if (thing->type == MT_EGGMANITEM)
+	else if (thing->type == MT_EGGMANITEM || thing->type == MT_EGGMANITEM_SHIELD)
 	{
 		// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
@@ -860,8 +859,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return true; // underneath
 
-		K_EggItemCollide(thing, tmthing);
-		return true;
+		return K_EggItemCollide(thing, tmthing);
 	}
 
 	if (tmthing->type == MT_RANDOMITEM)

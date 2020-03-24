@@ -183,7 +183,9 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->type == MT_RANDOMITEM || t2->type == MT_EGGMANITEM)
 		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y), t2->radius/4);
 
-	// Player collision is handled by TouchSpecial
+	if (t1->type == MT_EGGMANITEM && t2->player)
+		P_TouchSpecialThing(t1, t2, false);
+
 	return true;
 }
 

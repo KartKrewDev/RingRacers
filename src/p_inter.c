@@ -117,9 +117,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		if (weapon == 2)
 		{
 			// Invulnerable
-			if (player->powers[pw_flashing] > 0
-				|| (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)
-				|| player->kartstuff[k_squishedtimer] > 0)
+			if (player->powers[pw_flashing] > 0)
 				return false;
 
 			// Already have fake
