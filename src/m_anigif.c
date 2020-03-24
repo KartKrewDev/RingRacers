@@ -466,6 +466,10 @@ static void GIF_headwrite(void)
 	WRITEUINT16(p, rheight);
 
 	// colors, aspect, etc
+	/*
+	also these are magical values, check out
+	https://tronche.com/computer-graphics/gif/gif89a.html#screen-descriptor
+	*/
 	WRITEUINT8(p, 0xF7); // (0xF7 = 1111 0111)
 	WRITEUINT8(p, 0x00);
 	WRITEUINT8(p, 0x00);
