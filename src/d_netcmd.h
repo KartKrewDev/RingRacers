@@ -127,6 +127,7 @@ extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
+extern consvar_t cv_kartdebugwaypoints;
 
 extern consvar_t cv_itemfinder;
 
@@ -144,8 +145,10 @@ extern consvar_t cv_ringslinger, cv_soundtest;
 extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionboxes;
 
 extern consvar_t cv_maxping;
+extern consvar_t cv_lagless;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
+extern consvar_t cv_showviewpointtext;
 
 extern consvar_t cv_skipmapcheck;
 
@@ -179,9 +182,13 @@ typedef enum
 	XD_PICKVOTE,    // 24
 	XD_REMOVEPLAYER,// 25
 	XD_POWERLEVEL,  // 26
+	XD_PARTYINVITE, // 27
+	XD_ACCEPTPARTYINVITE, // 28
+	XD_LEAVEPARTY, // 29
+	XD_CANCELPARTYINVITE, // 30
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 27
-	XD_LUAVAR,      // 28
+	XD_LUACMD,      // 31
+	XD_LUAVAR,      // 32
 #endif
 	MAXNETXCMD
 } netxcmd_t;

@@ -78,6 +78,7 @@ patch_t *cred_font[CRED_FONTSIZE];
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
 patch_t *pingnum[10];
 patch_t *pinggfx[5];	// small ping graphic
+patch_t *mping[5]; // smaller ping graphic
 
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
@@ -311,6 +312,8 @@ void HU_LoadGraphics(void)
 	{
 		sprintf(buffer, "PINGGFX%d", i+1);
 		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		sprintf(buffer, "MPING%d", i+1);
+		mping[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
 	// fps stuff
@@ -812,7 +815,6 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_PINK:
 				case SKINCOLOR_ROSE:
 				case SKINCOLOR_LEMONADE:
-				case SKINCOLOR_BUBBLEGUM:
 				case SKINCOLOR_LILAC:
 				case SKINCOLOR_TAFFY:
 					cstart = "\x8d"; // V_PINKMAP
@@ -828,7 +830,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 					cstart = "\x85"; // V_REDMAP
 					break;
 				case SKINCOLOR_DAWN:
-				case SKINCOLOR_SUNSET:
+				case SKINCOLOR_SUNSLAM:
 				case SKINCOLOR_CREAMSICLE:
 				case SKINCOLOR_ORANGE:
 				case SKINCOLOR_ROSEWOOD:
@@ -906,7 +908,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 					break;
 				case SKINCOLOR_MAGENTA:
 				case SKINCOLOR_FUCHSIA:
-				case SKINCOLOR_MOONSLAM:
+				case SKINCOLOR_MOONSET:
+				case SKINCOLOR_VIOLET:
 					cstart = "\x8c"; // V_MAGENTAMAP
 					break;
 				case SKINCOLOR_DUSK:
@@ -1477,7 +1480,7 @@ static void HU_drawMiniChat(void)
 	if (!chat_nummsg_min)
 		return; // needless to say it's useless to do anything if we don't have anything to draw.
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 		boxw = max(64, boxw/2);
 
 	for (; i>0; i--)
@@ -1529,10 +1532,10 @@ static void HU_drawMiniChat(void)
 	y = chaty - charheight*(msglines+1);
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
@@ -1620,10 +1623,10 @@ static void HU_drawChatLog(INT32 offset)
 		chat_scroll = chat_maxscroll;
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		boxh = max(6, boxh/2);
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			boxw = max(64, boxw/2);
 	}
 #endif
@@ -1631,10 +1634,10 @@ static void HU_drawChatLog(INT32 offset)
 	y = chaty - offset*charheight - (chat_scroll*charheight) - boxh*charheight - 12;
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
@@ -1739,10 +1742,10 @@ static void HU_DrawChat(void)
 	const char *mute = "Chat has been muted.";
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 		{
 			y += 16;
 			boxw = max(64, boxw/2);
@@ -1836,10 +1839,10 @@ static void HU_DrawChat(void)
 		INT32 count = 0;
 		INT32 p_dispy = chaty - charheight -1;
 #ifdef NETSPLITSCREEN
-		if (splitscreen)
+		if (r_splitscreen)
 		{
 			p_dispy -= BASEVIDHEIGHT/2;
-			if (splitscreen > 1)
+			if (r_splitscreen > 1)
 				p_dispy += 16;
 		}
 		else
@@ -2250,7 +2253,7 @@ void HU_DrawSongCredits(void)
 {
 	char *str;
 	INT32 len, destx;
-	INT32 y = (splitscreen ? (BASEVIDHEIGHT/2)-4 : 32);
+	INT32 y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32);
 	INT32 bgt;
 
 	if (!cursongcredit.def) // No def
@@ -2480,28 +2483,49 @@ void HU_Erase(void)
 //                   IN-LEVEL MULTIPLAYER RANKINGS
 //======================================================================
 
+static int
+Ping_gfx_num (int ping)
+{
+	if (ping < 76)
+		return 0;
+	else if (ping < 137)
+		return 1;
+	else if (ping < 256)
+		return 2;
+	else if (ping < 500)
+		return 3;
+	else
+		return 4;
+}
+
 //
 // HU_drawPing
 //
 void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
-	INT32 gfxnum = 4;	// gfx to draw
+	INT32 gfxnum;	// gfx to draw
 	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SALMON, GTC_CACHE);
 
-	if (ping < 76)
-		gfxnum = 0;
-	else if (ping < 137)
-		gfxnum = 1;
-	else if (ping < 256)
-		gfxnum = 2;
-	else if (ping < 500)
-		gfxnum = 3;
+	gfxnum = Ping_gfx_num(ping);
 
 	V_DrawScaledPatch(x, y, flags, pinggfx[gfxnum]);
 	if (servermaxping && ping > servermaxping && hu_tick < 4)		// flash ping red if too high
 		V_DrawPingNum(x, y+9, flags, ping, colormap);
 	else
 		V_DrawPingNum(x, y+9, flags, ping, NULL);
+}
+
+void
+HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
+{
+	patch_t *patch;
+
+	patch = mping[Ping_gfx_num(ping)];
+
+	if (( flags & V_SNAPTORIGHT ))
+		x += ( BASEVIDWIDTH - SHORT (patch->width) );
+
+	V_DrawScaledPatch(x, y, flags, patch);
 }
 
 //
@@ -3022,7 +3046,7 @@ static void HU_DrawRankings(void)
 
 	// When you play, you quickly see your score because your name is displayed in white.
 	// When playing back a demo, you quickly see who's the view.
-	if (!splitscreen)
+	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	scorelines = 0;

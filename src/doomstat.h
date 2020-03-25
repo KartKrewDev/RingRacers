@@ -41,18 +41,36 @@ extern UINT32 mapmusposition;
 
 extern INT16 maptol;
 extern UINT8 globalweather;
-extern INT32 curWeather;
+extern UINT8 curWeather;
 extern INT32 cursaveslot;
 extern INT16 lastmapsaved;
 extern boolean gamecomplete;
 
-#define PRECIP_NONE  0
-#define PRECIP_STORM 1
-#define PRECIP_SNOW  2
-#define PRECIP_RAIN  3
-#define PRECIP_BLANK 4
-#define PRECIP_STORM_NORAIN 5
-#define PRECIP_STORM_NOSTRIKES 6
+typedef enum
+{
+	PRECIP_NONE = 0,
+	PRECIP_RAIN,
+	PRECIP_SNOW,
+	PRECIP_BLIZZARD,
+	PRECIP_STORM,
+	PRECIP_STORM_NORAIN,
+	PRECIP_STORM_NOSTRIKES,
+	MAXPRECIP
+} preciptype_t;
+
+typedef enum
+{
+	PRECIPFX_THUNDER = 1,
+	PRECIPFX_LIGHTNING = 1<<1
+} precipeffect_t;
+
+typedef struct
+{
+	mobjtype_t type;
+	precipeffect_t effects;
+} precipprops_t;
+
+extern precipprops_t precipprops[MAXPRECIP];
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -64,7 +82,7 @@ extern boolean metalrecording;
 
 #define ATTACKING_NONE   0
 #define ATTACKING_RECORD 1
-//#define ATTACKING_NIGHTS 2
+#define ATTACKING_CAPSULES 2
 extern UINT8 modeattacking;
 
 // menu demo things
@@ -80,8 +98,8 @@ extern boolean multiplayer;
 
 extern INT16 gametype;
 
-#define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 extern UINT8 splitscreen;
+extern int r_splitscreen;
 
 extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
@@ -122,6 +140,20 @@ extern boolean gamedataloaded;
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
+/* g_localplayers[0] = consoleplayer */
+extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
+
+/* spitscreen players sync */
+extern int splitscreen_original_party_size[MAXPLAYERS];
+extern int splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
+/* parties */
+extern int splitscreen_invitations[MAXPLAYERS];
+extern int splitscreen_party_size[MAXPLAYERS];
+extern int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
+/* the only local one */
+extern boolean splitscreen_partied[MAXPLAYERS];
 
 // Maps of special importance
 extern INT16 spstage_start;
@@ -353,7 +385,7 @@ extern UINT16 emeralds;
 #define EMERALD7 64
 #define ALL7EMERALDS(v) ((v & (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7)) == (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7))
 
-extern INT32 nummaprings, nummapboxes, numgotboxes; //keep track of spawned rings/coins/battle mode items
+extern INT32 nummaprings; // keep track of spawned rings/coins
 
 /** Time attack information, currently a very small structure.
   */
@@ -485,15 +517,6 @@ extern tic_t curlap, bestlap;
 extern INT16 votelevels[5][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
-
-/** Battle overtime information
-  */
-extern struct battleovertime
-{
-	UINT16 enabled; ///< Has this been initalized yet?
-	fixed_t radius, minradius; ///< Radius of kill field
-	fixed_t x, y, z; ///< Position to center on
-} battleovertime;
 
 extern tic_t hidetime;
 

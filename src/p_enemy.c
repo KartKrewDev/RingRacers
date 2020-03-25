@@ -24,6 +24,8 @@
 #include "i_video.h"
 #include "lua_hook.h"
 #include "k_kart.h" // SRB2kart
+#include "k_waypoint.h"
+#include "k_battle.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -117,7 +119,6 @@ void A_ThrownRing(mobj_t *actor);
 void A_GrenadeRing(mobj_t *actor);
 void A_SetSolidSteam(mobj_t *actor);
 void A_UnsetSolidSteam(mobj_t *actor);
-void A_SignPlayer(mobj_t *actor);
 void A_OverlayThink(mobj_t *actor);
 void A_JetChase(mobj_t *actor);
 void A_JetbThink(mobj_t *actor);
@@ -4180,38 +4181,6 @@ void A_UnsetSolidSteam(mobj_t *actor)
 	actor->flags |= MF_NOCLIP;
 }
 
-// Function: A_SignPlayer
-//
-// Description: Changes the state of a level end sign to reflect the player that hit it.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_SignPlayer(mobj_t *actor)
-{
-	mobj_t *ov;
-#ifdef HAVE_BLUA
-	if (LUA_CallAction("A_SignPlayer", actor))
-		return;
-#endif
-	if (!actor->target)
-		return;
-
-	if (!actor->target->player)
-		return;
-
-	// Set the sign to be an appropriate background color for this player's skincolor.
-	actor->color = KartColor_Opposite[actor->target->player->skincolor*2];
-	actor->frame += KartColor_Opposite[actor->target->player->skincolor*2+1];
-
-	// spawn an overlay of the player's face.
-	ov = P_SpawnMobj(actor->x, actor->y, actor->z, MT_OVERLAY);
-	P_SetTarget(&ov->target, actor);
-	ov->color = actor->target->player->skincolor;
-	ov->skin = &skins[actor->target->player->skin];
-	P_SetMobjState(ov, actor->info->seestate); // S_PLAY_SIGN
-}
-
 // Function: A_OverlayThink
 //
 // Description: Moves the overlay to the position of its target.
@@ -4229,7 +4198,7 @@ void A_OverlayThink(mobj_t *actor)
 	if (!actor->target)
 		return;
 
-	if (!splitscreen && rendermode != render_soft)
+	if (!r_splitscreen && rendermode != render_soft)
 	{
 		angle_t viewingangle;
 
@@ -8477,14 +8446,31 @@ void A_JawzExplode(mobj_t *actor)
 	return;
 }
 
+static void SpawnSPBTrailRings(mobj_t *actor)
+{
+	I_Assert(actor != NULL);
+
+	if (leveltime % 6 == 0)
+	{
+		mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
+			actor->z - actor->momz + (24*mapobjectscale), MT_RING);
+		ring->threshold = 10;
+		ring->fuse = 120*TICRATE;
+	}
+}
+
 void A_SPBChase(mobj_t *actor)
 {
 	player_t *player = NULL;
+	player_t *scplayer = NULL;	// secondary target for seeking
 	UINT8 i;
 	UINT8 bestrank = UINT8_MAX;
 	fixed_t dist;
 	angle_t hang, vang;
 	fixed_t wspeed, xyspeed, zspeed;
+	fixed_t pdist = 1536<<FRACBITS;	// best player distance when seeking
+	angle_t pangle;		// angle between us and the player
+
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_SPBChase", actor))
 		return;
@@ -8496,9 +8482,9 @@ void A_SPBChase(mobj_t *actor)
 	if (actor->threshold) // Just fired, go straight.
 	{
 		actor->lastlook = -1;
+		actor->cusval = -1;
 		spbplace = -1;
 		P_InstaThrust(actor, actor->angle, wspeed);
-		actor->flags &=  ~MF_NOCLIPTHING;	// just in case.
 		return;
 	}
 
@@ -8524,17 +8510,21 @@ void A_SPBChase(mobj_t *actor)
 		}
 	}
 
+	// lastlook = last player num targetted
+	// cvmem = stored speed
+	// cusval = next waypoint heap index
+	// extravalue1 = SPB movement mode
+	// extravalue2 = mode misc option
+
 	if (actor->extravalue1 == 1) // MODE: TARGETING
 	{
+		actor->cusval = -1; // Reset waypoint
+
 		if (actor->tracer && actor->tracer->health)
 		{
-
 			fixed_t defspeed = wspeed;
 			fixed_t range = (160*actor->tracer->scale);
 			fixed_t cx = 0, cy =0;
-
-			// we're tailing a player, now's a good time to regain our damage properties
-			actor->flags &=  ~MF_NOCLIPTHING;
 
 			// Play the intimidating gurgle
 			if (!S_SoundPlaying(actor, actor->info->activesound))
@@ -8633,13 +8623,7 @@ void A_SPBChase(mobj_t *actor)
 			actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
 			// Spawn a trail of rings behind the SPB!
-			if (leveltime % 6 == 0)
-			{
-				mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
-					actor->z - actor->momz + (24*mapobjectscale), MT_RING);
-				ring->threshold = 10;
-				ring->fuse = 120*TICRATE;
-			}
+			SpawnSPBTrailRings(actor);
 
 			// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
 			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
@@ -8672,9 +8656,7 @@ void A_SPBChase(mobj_t *actor)
 	else if (actor->extravalue1 == 2) // MODE: WAIT...
 	{
 		actor->momx = actor->momy = actor->momz = 0; // Stoooop
-
-		// don't hurt players that have nothing to do with this:
-		actor->flags |= MF_NOCLIPTHING;
+		actor->cusval = -1; // Reset waypoint
 
 		if (actor->lastlook != -1
 			&& playeringame[actor->lastlook]
@@ -8700,6 +8682,11 @@ void A_SPBChase(mobj_t *actor)
 	}
 	else // MODE: SEEKING
 	{
+		waypoint_t *lastwaypoint = NULL;
+		waypoint_t *bestwaypoint = NULL;
+		waypoint_t *nextwaypoint = NULL;
+		waypoint_t *tempwaypoint = NULL;
+
 		actor->lastlook = -1; // Just make sure this is reset
 
 		if (!player || !player->mo || player->mo->health <= 0 || player->kartstuff[k_respawn])
@@ -8712,17 +8699,72 @@ void A_SPBChase(mobj_t *actor)
 		}
 
 		// Found someone, now get close enough to initiate the slaughter...
-
-		// don't hurt players that have nothing to do with this:
-		actor->flags |= MF_NOCLIPTHING;
-
 		P_SetTarget(&actor->tracer, player->mo);
 		spbplace = bestrank;
-
 		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
 
-		hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
-		vang = R_PointToAngle2(0, actor->z, dist, actor->tracer->z);
+		// Move along the waypoints until you get close enough
+		if (actor->cusval > -1 && actor->extravalue2 > 0)
+		{
+			// Previously set nextwaypoint
+			lastwaypoint = K_GetWaypointFromIndex((size_t)actor->cusval);
+			tempwaypoint = K_GetBestWaypointForMobj(actor);
+			// check if the tempwaypoint corresponds to lastwaypoint's next ID at least;
+			// This is to avoid situations where the SPB decides to suicide jump down a bridge because it found a COMPLETELY unrelated waypoint down there.
+
+			if (K_GetWaypointID(tempwaypoint) == K_GetWaypointNextID(lastwaypoint) || K_GetWaypointID(tempwaypoint) == K_GetWaypointID(lastwaypoint))
+				// either our previous or curr waypoint ID, sure, take it
+				bestwaypoint = tempwaypoint;
+			else
+				bestwaypoint = K_GetWaypointFromIndex((size_t)actor->extravalue2);	// keep going from the PREVIOUS wp.
+		}
+		else
+			bestwaypoint = K_GetBestWaypointForMobj(actor);
+
+		if (bestwaypoint == NULL && lastwaypoint == NULL)
+		{
+			// We have invalid waypoints all around, so use closest to try and make it non-NULL.
+			bestwaypoint = K_GetClosestWaypointToMobj(actor);
+		}
+
+		if (bestwaypoint != NULL)
+		{
+			const boolean huntbackwards = false;
+			boolean       useshortcuts  = false;
+
+			// If the player is on a shortcut, use shortcuts. No escape.
+			if (K_GetWaypointIsShortcut(player->nextwaypoint))
+			{
+				useshortcuts = true;
+			}
+
+			nextwaypoint = K_GetNextWaypointToDestination(
+				bestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
+		}
+
+		if (nextwaypoint == NULL && lastwaypoint != NULL)
+		{
+			// Restore to the last nextwaypoint
+			nextwaypoint = lastwaypoint;
+		}
+
+		if (nextwaypoint != NULL)
+		{
+			const fixed_t xywaypointdist = P_AproxDistance(
+				actor->x - nextwaypoint->mobj->x, actor->y - nextwaypoint->mobj->y);
+
+			hang = R_PointToAngle2(actor->x, actor->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
+			vang = R_PointToAngle2(0, actor->z, xywaypointdist, nextwaypoint->mobj->z);
+
+			actor->cusval = (INT32)K_GetWaypointHeapIndex(nextwaypoint);
+			actor->extravalue2 = (INT32)K_GetWaypointHeapIndex(bestwaypoint);	// save our last best, used above.
+		}
+		else
+		{
+			// continue straight ahead... Shouldn't happen.
+			hang = actor->angle;
+			vang = 0U;
+		}
 
 		{
 			// Smoothly rotate horz angle
@@ -8731,13 +8773,13 @@ void A_SPBChase(mobj_t *actor)
 			if (invert)
 				input = InvAngle(input);
 
+			input = FixedAngle(AngleFixed(input)/8);
+
 			// Slow down when turning; it looks better and makes U-turns not unfair
 			xyspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
 
-			input = FixedAngle(AngleFixed(input)/4);
 			if (invert)
 				input = InvAngle(input);
-
 			actor->angle += input;
 
 			// Smoothly rotate vert angle
@@ -8746,13 +8788,13 @@ void A_SPBChase(mobj_t *actor)
 			if (invert)
 				input = InvAngle(input);
 
+			input = FixedAngle(AngleFixed(input)/8);
+
 			// Slow down when turning; might as well do it for momz, since we do it above too
 			zspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
 
-			input = FixedAngle(AngleFixed(input)/4);
 			if (invert)
 				input = InvAngle(input);
-
 			actor->movedir += input;
 		}
 
@@ -8760,14 +8802,48 @@ void A_SPBChase(mobj_t *actor)
 		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
-		if (dist <= (3072*actor->tracer->scale)) // Close enough to target?
+		// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
+		for (i=0; i < MAXPLAYERS; i++)
 		{
-			S_StartSound(actor, actor->info->attacksound); // Siren sound; might not need this anymore, but I'm keeping it for now just for debugging.
+			if (!playeringame[i] || players[i].spectator || players[i].exiting)
+				continue; // not in-game
+
+			if (R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y) < pdist)
+			{
+				pdist = R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y);
+				scplayer = &players[i];	// it doesn't matter if we override this guy now.
+			}
+		}
+
+		// different player from our main target, try and ram into em~!
+		if (scplayer && scplayer != player)
+		{
+			pangle = actor->angle - R_PointToAngle2(actor->x, actor->y,scplayer->mo->x, scplayer->mo->y);
+			// check if the angle wouldn't make us LOSE speed...
+			if ((INT32)pangle/ANG1 >= -80 && (INT32)pangle/ANG1 <= 80)	// allow for around 80 degrees
+			{
+				// Thrust us towards the guy, try to screw em up!
+				P_Thrust(actor, R_PointToAngle2(actor->x, actor->y, scplayer->mo->x, scplayer->mo->y), actor->movefactor/4);	// not too fast though.
+			}
+		}
+
+		// Spawn a trail of rings behind the SPB!
+		SpawnSPBTrailRings(actor);
+
+		if (dist <= (1024*actor->tracer->scale)) // Close enough to target?
+		{
+			S_StartSound(actor, actor->info->attacksound);
 			actor->extravalue1 = 1; // TARGET ACQUIRED
 			actor->extravalue2 = 7*TICRATE;
 			actor->cvmem = wspeed;
 		}
 	}
+
+	// Finally, no matter what, the spb should not be able to be under the ground, or above the ceiling;
+	if (actor->z < actor->floorz)
+		actor->z = actor->floorz;
+	else if (actor->z > actor->ceilingz - actor->height)
+		actor->z = actor->ceilingz - actor->height;
 
 	return;
 }
@@ -10610,8 +10686,8 @@ void A_RemoteDamage(mobj_t *actor)
 
 	if (locvar2 == 1) // Kill mobj!
 	{
-		if (target->player) // players die using P_DamageMobj instead for some reason
-			P_DamageMobj(target, source, source, 10000);
+		if (target->player)
+			K_DoIngameRespawn(target->player);
 		else
 			P_KillMobj(target, source, source);
 	}
