@@ -25,6 +25,7 @@
 #include "lua_hook.h"
 #include "k_kart.h" // SRB2kart
 #include "k_waypoint.h"
+#include "k_battle.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -4197,7 +4198,7 @@ void A_OverlayThink(mobj_t *actor)
 	if (!actor->target)
 		return;
 
-	if (!splitscreen && rendermode != render_soft)
+	if (!r_splitscreen && rendermode != render_soft)
 	{
 		angle_t viewingangle;
 
@@ -8447,7 +8448,9 @@ void A_JawzExplode(mobj_t *actor)
 
 static void SpawnSPBTrailRings(mobj_t *actor)
 {
-	if (actor != NULL)
+	I_Assert(actor != NULL);
+
+	if (leveltime % 6 == 0)
 	{
 		if (leveltime % (actor->extravalue1 == 2 ? 6 : 3) == 0)	// Extravalue1 == 2 is seeking mode. Because the SPB is about twice as fast as normal in that mode, also spawn the rings twice as often to make up for it!
 		{

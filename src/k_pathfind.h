@@ -1,3 +1,15 @@
+// SONIC ROBO BLAST 2 KART
+//-----------------------------------------------------------------------------
+// Copyright (C) 2018-2020 by Sean "Sryder" Ryder
+// Copyright (C) 2018-2020 by Kart Krew
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  k_pathfind.h
+/// \brief A* Pathfinding algorithm implementation for SRB2 code base.
+
 #ifndef __K_PATHFIND__
 #define __K_PATHFIND__
 

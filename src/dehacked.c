@@ -2473,10 +2473,10 @@ static void readunlockable(MYFILE *f, INT32 num)
 					unlockables[num].type = SECRET_PANDORA;
 				else if (fastcmp(word2, "CREDITS"))
 					unlockables[num].type = SECRET_CREDITS;
-				else if (fastcmp(word2, "RECORDATTACK"))
-					unlockables[num].type = SECRET_RECORDATTACK;
-				else if (fastcmp(word2, "NIGHTSMODE"))
-					unlockables[num].type = SECRET_NIGHTSMODE;
+				else if (fastcmp(word2, "TIMEATTACK"))
+					unlockables[num].type = SECRET_TIMEATTACK;
+				else if (fastcmp(word2, "BREAKTHECAPSULES"))
+					unlockables[num].type = SECRET_BREAKTHECAPSULES;
 				else if (fastcmp(word2, "HEADER"))
 					unlockables[num].type = SECRET_HEADER;
 				else if (fastcmp(word2, "LEVELSELECT"))
@@ -6347,6 +6347,8 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTSPARK_B1",
 	"S_DRIFTSPARK_C1",
 	"S_DRIFTSPARK_C2",
+	"S_DRIFTSPARK_D1",
+	"S_DRIFTSPARK_D2",
 
 	// Brake drift sparks
 	"S_BRAKEDRIFT",
@@ -6356,6 +6358,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTDUST2",
 	"S_DRIFTDUST3",
 	"S_DRIFTDUST4",
+
+	// Drift Sparkles
+	"S_DRIFTWARNSPARK1",
+	"S_DRIFTWARNSPARK2",
+	"S_DRIFTWARNSPARK3",
+	"S_DRIFTWARNSPARK4",
 
 	// Fast lines
 	"S_FASTLINE1",
@@ -6373,7 +6381,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FASTDUST6",
 	"S_FASTDUST7",
 
-	// Thunder Shield Burst
+	// Drift boost effect
+	"S_DRIFTEXPLODE1",
+	"S_DRIFTEXPLODE2",
+	"S_DRIFTEXPLODE3",
+	"S_DRIFTEXPLODE4",
 
 	// Sneaker boost effect
 	"S_BOOSTFLAME",
@@ -7207,6 +7219,13 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_OVERTIMEORB",
 	"S_OVERTIMEBEAM",
 
+	"S_BATTLECAPSULE_SIDE1",
+	"S_BATTLECAPSULE_SIDE2",
+	"S_BATTLECAPSULE_TOP",
+	"S_BATTLECAPSULE_BUTTON",
+	"S_BATTLECAPSULE_SUPPORT",
+	"S_BATTLECAPSULE_SUPPORTFLY",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -7739,6 +7758,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_FASTLINE",
 	"MT_FASTDUST",
+	"MT_DRIFTEXPLODE",
 	"MT_BOOSTFLAME",
 	"MT_BOOSTSMOKE",
 	"MT_SNEAKERTRAIL",
@@ -8006,6 +8026,9 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_OVERTIMEORB",
 	"MT_OVERTIMEBEAM",
 
+	"MT_BATTLECAPSULE",
+	"MT_BATTLECAPSULE_PIECE",
+
 #ifdef SEENAMES
 	"MT_NAMECHECK",
 #endif
@@ -8181,8 +8204,8 @@ static const char *const PLAYERFLAG_LIST[] = {
 #ifdef HAVE_BLUA
 // Linedef flags
 static const char *const ML_LIST[16] = {
-	"IMPASSIBLE",
-	"BLOCKMONSTERS",
+	"IMPASSABLE",
+	"BLOCKPLAYERS",
 	"TWOSIDED",
 	"DONTPEGTOP",
 	"DONTPEGBOTTOM",
@@ -8232,7 +8255,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"SCARLET",		// SKINCOLOR_SCARLET
 	"KETCHUP",		// SKINCOLOR_KETCHUP
 	"DAWN",			// SKINCOLOR_DAWN
-	"SUNSET",		// SKINCOLOR_SUNSET
+	"SUNSLAM",		// SKINCOLOR_SUNSLAM
 	"CREAMSICLE",	// SKINCOLOR_CREAMSICLE
 	"ORANGE",		// SKINCOLOR_ORANGE
 	"ROSEWOOD",		// SKINCOLOR_ROSEWOOD
@@ -8292,9 +8315,9 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"THISTLE",		// SKINCOLOR_THISTLE
 	"PURPLE",		// SKINCOLOR_PURPLE
 	"PASTEL",		// SKINCOLOR_PASTEL
-	"MOONSLAM",		// SKINCOLOR_MOONSLAM
+	"MOONSET",		// SKINCOLOR_MOONSET
 	"DUSK",			// SKINCOLOR_DUSK
-	"BUBBLEGUM",	// SKINCOLOR_BUBBLEGUM
+	"VIOLET",		// SKINCOLOR_VIOLET
 	"MAGENTA",		// SKINCOLOR_MAGENTA
 	"FUCHSIA",		// SKINCOLOR_FUCHSIA
 	"TOXIC",		// SKINCOLOR_TOXIC

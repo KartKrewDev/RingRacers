@@ -2102,14 +2102,14 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 
 	// Handle all things in sector.
 	// If a limit exists, handle things a tiny bit different.
-	if ((limit_dist = (fixed_t)(/*(maptol & TOL_NIGHTS) ? cv_drawdist_nights.value : */cv_drawdist.value) << FRACBITS))
+	if ((limit_dist = (fixed_t)(cv_drawdist.value) * mapobjectscale))
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
 					if (viewssnum != 0)
@@ -2119,11 +2119,11 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 					if (viewssnum != 1)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
 					if (viewssnum != 2)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
 					if (viewssnum != 3)
 						continue;
 			}
@@ -2144,7 +2144,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
 					if (viewssnum != 0)
@@ -2154,11 +2154,11 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 					if (viewssnum != 1)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
 					if (viewssnum != 2)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
 					if (viewssnum != 3)
 						continue;
 			}
@@ -2168,7 +2168,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	}
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
-	if ((limit_dist = (fixed_t)cv_drawdist_precip.value << FRACBITS))
+	if ((limit_dist = (fixed_t)(cv_drawdist_precip.value) * mapobjectscale))
 	{
 		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
 		{

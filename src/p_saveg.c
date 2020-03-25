@@ -35,6 +35,7 @@
 #endif
 
 // SRB2Kart
+#include "k_battle.h"
 #include "k_pwrlv.h"
 
 savedata_t savedata;
@@ -2017,7 +2018,7 @@ static void LoadMobjThinker(actionf_p1 thinker)
 				CONS_Alert(CONS_ERROR, "Found mobj with unknown map thing type %d\n", mobj->spawnpoint->type);
 			else
 				CONS_Alert(CONS_ERROR, "Found mobj with unknown map thing type NULL\n");
-			I_Error("Savegame corrupted");
+			I_Error("Netsave corrupted");
 		}
 		mobj->type = i;
 	}
@@ -3320,6 +3321,8 @@ static void P_NetArchiveMisc(void)
 
 	// SRB2kart
 	WRITEINT32(save_p, numgotboxes);
+	WRITEUINT8(save_p, numtargets);
+	WRITEUINT8(save_p, battlecapsules);
 
 	WRITEUINT8(save_p, gamespeed);
 	WRITEUINT8(save_p, franticitems);
@@ -3443,6 +3446,8 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	// SRB2kart
 	numgotboxes = READINT32(save_p);
+	numtargets = READUINT8(save_p);
+	battlecapsules = (boolean)READUINT8(save_p);
 
 	gamespeed = READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);

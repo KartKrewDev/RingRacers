@@ -107,6 +107,8 @@ typedef struct camera_s
 
 	// SRB2Kart: camera pans while drifting
 	fixed_t pan;
+	// SRB2Kart: camera pitches on slopes
+	angle_t pitch;
 } camera_t;
 
 extern camera_t camera[MAXSPLITSCREENPLAYERS];
@@ -225,7 +227,6 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
 //void P_RunShields(void);
 void P_RunOverlays(void);
-void P_RunBattleOvertime(void);
 void P_MobjThinker(mobj_t *mobj);
 boolean P_RailThinker(mobj_t *mobj);
 void P_PushableThinker(mobj_t *mobj);
