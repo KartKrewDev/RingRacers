@@ -230,7 +230,7 @@ void ST_doPaletteStuff(void)
 		if (rendermode != render_none)
 		{
 			//V_SetPaletteLump(GetPalette()); // Reset the palette -- is this needed?
-			if (!splitscreen)
+			if (!r_splitscreen)
 				V_SetPalette(palette);
 		}
 	}
@@ -515,9 +515,9 @@ static INT32 SCR(INT32 r)
 #define ST_DrawNumFromHud(h,n)        V_DrawTallNum(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, n)
 #define ST_DrawPadNumFromHud(h,n,q)   V_DrawPaddedTallNum(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, n, q)
 #define ST_DrawPatchFromHud(h,p)      V_DrawScaledPatch(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, p)
-#define ST_DrawNumFromHudWS(h,n)      V_DrawTallNum(SCX(hudinfo[h+!!splitscreen].x), SCY(hudinfo[h+!!splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n)
-#define ST_DrawPadNumFromHudWS(h,n,q) V_DrawPaddedTallNum(SCX(hudinfo[h+!!splitscreen].x), SCY(hudinfo[h+!!splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n, q)
-#define ST_DrawPatchFromHudWS(h,p)    V_DrawScaledPatch(SCX(hudinfo[h+!!splitscreen].x), SCY(hudinfo[h+!!splitscreen].y), V_NOSCALESTART|V_HUDTRANS, p)
+#define ST_DrawNumFromHudWS(h,n)      V_DrawTallNum(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n)
+#define ST_DrawPadNumFromHudWS(h,n,q) V_DrawPaddedTallNum(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n, q)
+#define ST_DrawPatchFromHudWS(h,p)    V_DrawScaledPatch(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, p)
 
 /*
 // Draw a number, scaled, over the view, maybe with set translucency
@@ -757,7 +757,7 @@ static void ST_drawLevelTitle(void)
 	INT32 dupcalc = (vid.width/vid.dupx);
 	UINT8 gtc = G_GetGametypeColor(gametype);
 	INT32 sub = 0;
-	INT32 bary = (splitscreen)
+	INT32 bary = (r_splitscreen)
 		? BASEVIDHEIGHT/2
 		: 163;
 	INT32 lvlw;
@@ -1272,7 +1272,7 @@ static void ST_drawNiGHTSHUD(void) // SRB2kart - unused.
 #endif
 	)
 	{
-		if (modeattacking == ATTACKING_NIGHTS)
+		if (modeattacking == ATTACKING_CAPSULES)
 		{
 			INT32 maretime = max(stplyr->realtime - stplyr->marebegunat, 0);
 			fixed_t cornerx = vid.width, cornery = vid.height-SCZ(20);
@@ -1911,12 +1911,12 @@ static void ST_overlayDrawer(void)
 			}
 			else if (!demo.title)
 			{
-				if (!splitscreen)
+				if (!r_splitscreen)
 				{
 					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("VIEWPOINT:"));
 					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_HUDTRANSHALF|V_ALLOWLOWERCASE, player_names[stplyr-players]);
 				}
-				else if (splitscreen == 1)
+				else if (r_splitscreen == 1)
 				{
 					char name[MAXPLAYERNAME+12];
 
@@ -1924,7 +1924,7 @@ static void ST_overlayDrawer(void)
 					sprintf(name, "VIEWPOINT: %s", player_names[stplyr-players]);
 					V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT), name);
 				}
-				else if (splitscreen)
+				else if (r_splitscreen)
 				{
 					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT), player_names[stplyr-players]);
 				}
@@ -2000,7 +2000,7 @@ static void ST_overlayDrawer(void)
 			}
 
 			// SRB2kart: changed positions & text
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				INT32 splitflags = K_calcSplitFlags(0);
 				V_DrawThinString(2, (BASEVIDHEIGHT/2)-20, V_YELLOWMAP|V_HUDTRANSHALF|splitflags, M_GetText("- SPECTATING -"));
@@ -2091,7 +2091,7 @@ void ST_Drawer(void)
 	UINT8 i;
 
 #ifdef SEENAMES
-	if (cv_seenames.value && cv_allowseenames.value && displayplayers[0] == consoleplayer && seenplayer && seenplayer->mo && !mapreset)
+	if (cv_seenames.value && cv_allowseenames.value && g_localplayers[0] == consoleplayer && seenplayer && seenplayer->mo && !mapreset)
 	{
 		if (cv_seenames.value == 1)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 + 15, V_HUDTRANSHALF, player_names[seenplayer-players]);
@@ -2125,7 +2125,7 @@ void ST_Drawer(void)
 	if (st_overlay)
 	{
 		// No deadview!
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			stplyr = &players[displayplayers[i]];
 			ST_overlayDrawer();

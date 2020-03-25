@@ -487,6 +487,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/f_wipe.o   \
 		$(OBJDIR)/g_game.o   \
 		$(OBJDIR)/g_input.o  \
+		$(OBJDIR)/g_splitscreen.o\
 		$(OBJDIR)/am_map.o   \
 		$(OBJDIR)/command.o  \
 		$(OBJDIR)/console.o  \
@@ -494,6 +495,8 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/y_inter.o  \
 		$(OBJDIR)/st_stuff.o \
 		$(OBJDIR)/k_kart.o   \
+		$(OBJDIR)/k_collide.o\
+		$(OBJDIR)/k_battle.o \
 		$(OBJDIR)/k_pwrlv.o  \
 		$(OBJDIR)/k_waypoint.o\
 		$(OBJDIR)/k_pathfind.o\

@@ -25,6 +25,7 @@
 #include "lua_hook.h"
 #include "k_kart.h" // SRB2kart
 #include "k_waypoint.h"
+#include "k_battle.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -4197,7 +4198,7 @@ void A_OverlayThink(mobj_t *actor)
 	if (!actor->target)
 		return;
 
-	if (!splitscreen && rendermode != render_soft)
+	if (!r_splitscreen && rendermode != render_soft)
 	{
 		angle_t viewingangle;
 
