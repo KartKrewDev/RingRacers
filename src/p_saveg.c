@@ -2018,7 +2018,7 @@ static void LoadMobjThinker(actionf_p1 thinker)
 				CONS_Alert(CONS_ERROR, "Found mobj with unknown map thing type %d\n", mobj->spawnpoint->type);
 			else
 				CONS_Alert(CONS_ERROR, "Found mobj with unknown map thing type NULL\n");
-			I_Error("Savegame corrupted");
+			I_Error("Netsave corrupted");
 		}
 		mobj->type = i;
 	}
