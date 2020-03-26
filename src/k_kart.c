@@ -7602,11 +7602,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->kartstuff[k_flamedash] += 2;
 									player->kartstuff[k_flamemeter] += 2;
 
+									if (!onground)
+									{
+										P_Thrust(
+											player->mo, R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy),
+											FixedMul(player->mo->scale, K_GetKartGameSpeedScalar(gamespeed))
+										);
+									}
+
 									if (player->kartstuff[k_flamemeter] > flamemax)
 									{
 										P_Thrust(
 											player->mo, player->mo->angle,
-											FixedMul((50*mapobjectscale), K_GetKartGameSpeedScalar(gamespeed))
+											FixedMul((50*player->mo->scale), K_GetKartGameSpeedScalar(gamespeed))
 										);
 
 										player->kartstuff[k_flamemeter] = 0;
