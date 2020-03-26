@@ -8370,6 +8370,30 @@ void P_MobjThinker(mobj_t *mobj)
 					mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
 					mobj->z + mobj->target->height * P_MobjFlip(mobj));
 			break;
+		case MT_FLAMESHIELDPAPER:
+			if (!mobj->target || P_MobjWasRemoved(mobj->target))
+			{
+				P_RemoveMobj(mobj);
+				return;
+			}
+
+			mobj->z = mobj->target->z;
+
+			K_MatchGenericExtraFlags(mobj, mobj->target);
+
+			{
+				INT32 perpendicular = ((mobj->extravalue1 & 1) ? -ANGLE_90 : ANGLE_90);
+				fixed_t newx = mobj->target->x + P_ReturnThrustX(NULL, mobj->target->angle + perpendicular, 8*mobj->target->scale);
+				fixed_t newy = mobj->target->y + P_ReturnThrustY(NULL, mobj->target->angle + perpendicular, 8*mobj->target->scale);
+
+				P_TeleportMove(mobj, newx, newy, mobj->target->z);
+
+				if (mobj->extravalue1 & 1)
+					mobj->angle = mobj->target->angle - ANGLE_45;
+				else
+					mobj->angle = mobj->target->angle + ANGLE_45;
+			}
+			break;
 		case MT_TIREGREASE:
 			if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->player
 				|| !mobj->target->player->kartstuff[k_tiregrease])

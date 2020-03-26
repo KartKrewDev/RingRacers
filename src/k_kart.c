@@ -7586,7 +7586,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
 
 								if (flamemax > 0)
-									flamemax += (TICRATE/2);
+									flamemax += 3*(TICRATE/4);
 
 								if ((cmd->buttons & BT_ATTACK) && player->kartstuff[k_holdready])
 								{
@@ -7636,7 +7636,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 										flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
 										if (flamemax > 0)
-											flamemax += (TICRATE/2);
+											flamemax += 3*(TICRATE/4);
 									}
 
 									if (player->kartstuff[k_flamemeter] > flamemax)
@@ -9067,14 +9067,17 @@ static void K_drawKartItem(void)
 	if (stplyr->kartstuff[k_eggmanexplode] > 1 /*&& stplyr->kartstuff[k_eggmanexplode] <= 3*TICRATE*/)
 		V_DrawScaledPatch(fx+17, fy+13-offset, V_HUDTRANS|fflags, kp_eggnum[min(3, G_TicsToSeconds(stplyr->kartstuff[k_eggmanexplode]))]);
 
-	if (stplyr->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+	if (stplyr->kartstuff[k_itemtype] == KITEM_FLAMESHIELD && stplyr->kartstuff[k_flamelength] > 0)
 	{
 		INT32 numframes = 104;
 		INT32 absolutemax = 16 * (TICRATE/4);
 		INT32 flamemax = stplyr->kartstuff[k_flamelength] * (TICRATE/4);
-		INT32 flen = 1;
-		INT32 bf = 16 - (flamemax / (TICRATE/4));
-		INT32 ff = numframes - ((stplyr->kartstuff[k_flamemeter] * numframes) / absolutemax);
+		INT32 flamemeter = min(stplyr->kartstuff[k_flamemeter], flamemax);
+
+		INT32 bf = 16 - stplyr->kartstuff[k_flamelength];
+		INT32 ff = numframes - ((flamemeter * numframes) / absolutemax);
+		INT32 fmin = (8 * (bf-1));
+
 		INT32 xo = 6, yo = 4;
 		INT32 flip = 0;
 
@@ -9089,18 +9092,13 @@ static void K_drawKartItem(void)
 			}
 		}
 
-		if (stplyr->kartstuff[k_flamelength] > 0)
-		{
-			flen = (numframes * 16) / stplyr->kartstuff[k_flamelength];
-		}
+		if (ff < fmin)
+			ff = fmin;
 
-		if (ff < 0) {ff = 0;}
-		if (ff > flen-1) {ff = flen-1;}
-
-		if (flamemax > 0)
+		if (bf >= 0 && bf < 16)
 			V_DrawScaledPatch(fx-xo, fy-yo, V_HUDTRANS|fflags|flip, kp_flameshieldmeter_bg[bf][offset]);
 
-		if (stplyr->kartstuff[k_flamemeter] > 0)
+		if (ff >= 0 && ff < numframes && stplyr->kartstuff[k_flamemeter] > 0)
 		{
 			if (stplyr->kartstuff[k_flamemeter] > (flamemax - (TICRATE/4)) && (leveltime & 1))
 			{

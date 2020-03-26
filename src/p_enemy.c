@@ -9350,8 +9350,9 @@ void A_FlameShieldPaper(mobj_t *actor)
 		INT32 perpendicular = ((i & 1) ? -ANGLE_90 : ANGLE_90);
 		fixed_t newx = actor->x + P_ReturnThrustX(NULL, actor->angle + perpendicular, 8*actor->scale);
 		fixed_t newy = actor->y + P_ReturnThrustY(NULL, actor->angle + perpendicular, 8*actor->scale);
-		mobj_t *paper = P_SpawnMobj(newx + actor->momx, newy + actor->momy, actor->z + actor->momz, MT_THOK);
+		mobj_t *paper = P_SpawnMobj(newx, newy, actor->z, MT_FLAMESHIELDPAPER);
 
+		P_SetTarget(&paper->target, actor);
 		P_SetScale(paper, actor->scale);
 		paper->destscale = actor->destscale;
 
@@ -9369,6 +9370,8 @@ void A_FlameShieldPaper(mobj_t *actor)
 		{
 			paper->frame |= framea;
 		}
+
+		paper->extravalue1 = i;
 	}
 }
 
