@@ -36,10 +36,18 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		if (t2->player->kartstuff[k_hyudorotimer])
 			return true; // no interaction
 
-		// Player Damage
-		P_DamageMobj(t2, t1, t1->target, 1);
-		K_KartBouncing(t2, t1, false, false);
-		S_StartSound(t2, sfx_s3k7b);
+		if (t2->player->kartstuff[k_flamedash] && t2->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+		{
+			// Melt item
+			S_StartSound(t2, sfx_s3k43);
+		}
+		else
+		{
+			// Player Damage
+			P_DamageMobj(t2, t1, t1->target, 1);
+			K_KartBouncing(t2, t1, false, false);
+			S_StartSound(t2, sfx_s3k7b);
+		}
 
 		damageitem = true;
 	}
@@ -126,8 +134,16 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->type == MT_BANANA && t1->health > 1)
 			S_StartSound(t2, sfx_bsnipe);
 
-		// Player Damage
-		K_SpinPlayer(t2->player, t1->target, 0, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
+		if (t2->player->kartstuff[k_flamedash] && t2->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+		{
+			// Melt item
+			S_StartSound(t2, sfx_s3k43);
+		}
+		else
+		{
+			// Player Damage
+			K_SpinPlayer(t2->player, t1->target, 0, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
+		}
 
 		damageitem = true;
 	}
