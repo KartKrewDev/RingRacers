@@ -8603,15 +8603,13 @@ void P_MobjThinker(mobj_t *mobj)
 
 			if (mobj->target->player->kartstuff[k_flamedash])
 			{
-				if (curstate != S_FLAMESHIELDDASH)
-					P_SetMobjState(mobj, S_FLAMESHIELDDASH);
-				mobj->flags2 ^= MF2_DONTDRAW;
+				if (!(curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH8))
+					P_SetMobjState(mobj, S_FLAMESHIELDDASH1);
 			}
 			else
 			{
-				if (curstate == S_FLAMESHIELDDASH)
+				if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH8)
 					P_SetMobjState(mobj, S_FLAMESHIELD1);
-				mobj->flags2 &= ~MF2_DONTDRAW;
 			}
 
 			if (!splitscreen /*&& rendermode != render_soft*/)
@@ -8625,7 +8623,7 @@ void P_MobjThinker(mobj_t *mobj)
 				else
 					viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
 
-				if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH && ((curstate-S_FLAMESHIELD1) & 1))
+				if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH1 && ((curstate-S_FLAMESHIELD1) & 1))
 					viewingangle += ANGLE_180;
 	
 				destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);

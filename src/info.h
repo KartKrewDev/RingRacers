@@ -177,6 +177,7 @@ void A_MayonakaArrow();	//SRB2kart: midnight channel arrow sign
 void A_ReaperThinker();	//SRB2kart: mementos reaper
 void A_MementosTPParticles();	//SRB2kart: mementos teleporter particles. Man that's a lot of actions for my shite.
 void A_FlameParticle(); // SRB2kart
+void A_FlameShieldPaper();
 void A_OrbitNights();
 void A_GhostMe();
 void A_SetObjectState();
@@ -625,6 +626,8 @@ typedef enum sprite
 	SPR_BUBS, // Bubble Shield (not Bubs)
 	SPR_BWVE, // Bubble Shield waves
 	SPR_FLMS, // Flame Shield
+	SPR_FLMD, // Flame Shield dash
+	SPR_FLMP, // Flame Shield paper sprites
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
 	SPR_KBLN, // Battle Mode Bumper
@@ -3595,7 +3598,17 @@ typedef enum state
 	S_FLAMESHIELD16,
 	S_FLAMESHIELD17,
 	S_FLAMESHIELD18,
-	S_FLAMESHIELDDASH,
+
+	S_FLAMESHIELDDASH1,
+	S_FLAMESHIELDDASH2,
+	S_FLAMESHIELDDASH3,
+	S_FLAMESHIELDDASH4,
+	S_FLAMESHIELDDASH5,
+	S_FLAMESHIELDDASH6,
+	S_FLAMESHIELDDASH7,
+	S_FLAMESHIELDDASH8,
+
+	S_FLAMESHIELDPAPER,
 
 	// The legend
 	S_SINK,

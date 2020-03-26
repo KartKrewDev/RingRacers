@@ -1887,6 +1887,7 @@ static actionpointer_t actionpointers[] =
 	{{A_ReaperThinker}, 	   "A_REAPERTHINKER"}, //SRB2kart
 	{{A_MementosTPParticles},  "A_MEMENTOSTPPARTICLES"}, //SRB2kart
 	{{A_FlameParticle},        "A_FLAMEPARTICLE"}, // SRB2kart
+	{{A_FlameShieldPaper},     "A_FLAMESHIELDPAPER"}, // SRB2kart
 	{{A_OrbitNights},          "A_ORBITNIGHTS"},
 	{{A_GhostMe},              "A_GHOSTME"},
 	{{A_SetObjectState},       "A_SETOBJECTSTATE"},
@@ -6700,7 +6701,17 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FLAMESHIELD16",
 	"S_FLAMESHIELD17",
 	"S_FLAMESHIELD18",
-	"S_FLAMESHIELDDASH",
+
+	"S_FLAMESHIELDDASH1",
+	"S_FLAMESHIELDDASH2",
+	"S_FLAMESHIELDDASH3",
+	"S_FLAMESHIELDDASH4",
+	"S_FLAMESHIELDDASH5",
+	"S_FLAMESHIELDDASH6",
+	"S_FLAMESHIELDDASH7",
+	"S_FLAMESHIELDDASH8",
+
+	"S_FLAMESHIELDPAPER",
 
 	// The legend
 	"S_SINK",
