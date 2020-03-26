@@ -7716,21 +7716,22 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->kartstuff[k_itemtype] = KITEM_NONE;
 		}
 
+		if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) == KSHIELD_NONE)
+		{
+			player->kartstuff[k_curshield] = KSHIELD_NONE; // RESET shield type
+			player->kartstuff[k_bubbleblowup] = 0;
+			player->kartstuff[k_bubblecool] = 0;
+			player->kartstuff[k_flamelength] = 0;
+			player->kartstuff[k_flamemeter] = 0;
+		}
+
 		if (spbplace == -1 || player->kartstuff[k_position] != spbplace)
 			player->kartstuff[k_ringlock] = 0; // reset ring lock
-
-		if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) == KSHIELD_NONE)
-			player->kartstuff[k_curshield] = KSHIELD_NONE; // RESET shield type
 
 		if (player->kartstuff[k_itemtype] == KITEM_SPB
 			|| player->kartstuff[k_itemtype] == KITEM_SHRINK
 			|| player->kartstuff[k_growshrinktimer] < 0)
 			indirectitemcooldown = 20*TICRATE;
-
-		if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD)
-		{
-			player->kartstuff[k_flamelength] = 0;
-		}
 
 		if (player->kartstuff[k_hyudorotimer] > 0)
 		{
