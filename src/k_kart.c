@@ -7586,7 +7586,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
 
 								if (flamemax > 0)
-									flamemax += (TICRATE/4);
+									flamemax += (TICRATE/2);
 
 								if ((cmd->buttons & BT_ATTACK) && player->kartstuff[k_holdready])
 								{
@@ -7628,7 +7628,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 										flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
 										if (flamemax > 0)
-											flamemax += (TICRATE/4);
+											flamemax += (TICRATE/2);
 									}
 
 									if (player->kartstuff[k_flamemeter] > flamemax)
