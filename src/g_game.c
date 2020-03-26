@@ -232,6 +232,7 @@ INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
 INT32 wantedreduce = 5*TICRATE;
 INT32 wantedfrequency = 10*TICRATE;
+INT32 flameseg = TICRATE/4;
 
 INT32 gameovertics = 15*TICRATE;
 

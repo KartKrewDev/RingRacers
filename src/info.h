@@ -628,6 +628,8 @@ typedef enum sprite
 	SPR_FLMS, // Flame Shield
 	SPR_FLMD, // Flame Shield dash
 	SPR_FLMP, // Flame Shield paper sprites
+	SPR_FLML, // Flame Shield speed lines
+	SPR_FLMF, // Flame Shield flash
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
 	SPR_KBLN, // Battle Mode Bumper
@@ -3609,6 +3611,10 @@ typedef enum state
 	S_FLAMESHIELDDASH8,
 
 	S_FLAMESHIELDPAPER,
+	S_FLAMESHIELDLINE1,
+	S_FLAMESHIELDLINE2,
+	S_FLAMESHIELDLINE3,
+	S_FLAMESHIELDFLASH,
 
 	// The legend
 	S_SINK,

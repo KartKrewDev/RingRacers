@@ -7583,10 +7583,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								if (player->kartstuff[k_flamelength] < destlen)
 									player->kartstuff[k_flamelength]++; // Can always go up!
 
-								flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
-
+								flamemax = player->kartstuff[k_flamelength] * flameseg;
 								if (flamemax > 0)
-									flamemax += 3*(TICRATE/4);
+									flamemax += TICRATE; // leniency period
 
 								if ((cmd->buttons & BT_ATTACK) && player->kartstuff[k_holdready])
 								{
@@ -7634,9 +7633,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										player->kartstuff[k_flamelength]--; // Can ONLY go down if you're not using it
 
-										flamemax = player->kartstuff[k_flamelength] * (TICRATE/4);
+										flamemax = player->kartstuff[k_flamelength] * flameseg;
 										if (flamemax > 0)
-											flamemax += 3*(TICRATE/4);
+											flamemax += TICRATE; // leniency period
 									}
 
 									if (player->kartstuff[k_flamemeter] > flamemax)
@@ -9070,8 +9069,8 @@ static void K_drawKartItem(void)
 	if (stplyr->kartstuff[k_itemtype] == KITEM_FLAMESHIELD && stplyr->kartstuff[k_flamelength] > 0)
 	{
 		INT32 numframes = 104;
-		INT32 absolutemax = 16 * (TICRATE/4);
-		INT32 flamemax = stplyr->kartstuff[k_flamelength] * (TICRATE/4);
+		INT32 absolutemax = 16 * flameseg;
+		INT32 flamemax = stplyr->kartstuff[k_flamelength] * flameseg;
 		INT32 flamemeter = min(stplyr->kartstuff[k_flamemeter], flamemax);
 
 		INT32 bf = 16 - stplyr->kartstuff[k_flamelength];
@@ -9100,7 +9099,7 @@ static void K_drawKartItem(void)
 
 		if (ff >= 0 && ff < numframes && stplyr->kartstuff[k_flamemeter] > 0)
 		{
-			if (stplyr->kartstuff[k_flamemeter] > (flamemax - (TICRATE/4)) && (leveltime & 1))
+			if ((stplyr->kartstuff[k_flamemeter] > flamemax) && (leveltime & 1))
 			{
 				UINT8 *fsflash = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_WHITE, GTC_CACHE);
 				V_DrawMappedPatch(fx-xo, fy-yo, V_HUDTRANS|fflags|flip, kp_flameshieldmeter[ff][offset], fsflash);

@@ -8614,6 +8614,7 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			fixed_t destx, desty;
 			statenum_t curstate;
+			INT32 flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player
 				|| mobj->target->player->kartstuff[k_curshield] != KSHIELD_FLAME)
@@ -8629,11 +8630,53 @@ void P_MobjThinker(mobj_t *mobj)
 			{
 				if (!(curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH8))
 					P_SetMobjState(mobj, S_FLAMESHIELDDASH1);
+
+				if (leveltime & 1)
+				{
+					UINT8 i;
+					UINT8 nl = 2;
+
+					if (mobj->target->player->kartstuff[k_flamedash] > mobj->extravalue1)
+						nl = 3;
+
+					for (i = 0; i < nl; i++)
+					{
+						mobj_t *fast = P_SpawnMobj(mobj->x + (P_RandomRange(-36,36) * mobj->scale),
+							mobj->y + (P_RandomRange(-36,36) * mobj->scale),
+							mobj->z + (mobj->height/2) + (P_RandomRange(-20,20) * mobj->scale),
+							MT_FASTLINE);
+
+						fast->angle = mobj->angle;
+						fast->momx = 3*mobj->target->momx/4;
+						fast->momy = 3*mobj->target->momy/4;
+						fast->momz = 3*mobj->target->momz/4;
+
+						K_MatchGenericExtraFlags(fast, mobj);
+						P_SetMobjState(fast, S_FLAMESHIELDLINE1 + i);
+					}
+				}
 			}
 			else
 			{
 				if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH8)
 					P_SetMobjState(mobj, S_FLAMESHIELD1);
+			}
+
+			mobj->extravalue1 = mobj->target->player->kartstuff[k_flamedash];
+
+			if (mobj->target->player->kartstuff[k_flamemeter] > flamemax)
+			{
+				mobj_t *flash = P_SpawnMobj(mobj->x + mobj->target->momx, mobj->y + mobj->target->momy, mobj->z + mobj->target->momz, MT_THOK);
+				P_SetMobjState(flash, S_FLAMESHIELDFLASH);
+
+				if (leveltime & 1)
+				{
+					flash->frame |= 2 + ((leveltime / 2) % 4);
+				}
+				else
+				{
+					flash->frame |= ((leveltime / 2) % 2);
+				}
 			}
 
 			if (!splitscreen /*&& rendermode != render_soft*/)
