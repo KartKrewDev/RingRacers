@@ -386,58 +386,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher);
 			break;
-		case MT_EGGMANITEM_SHIELD: // SRB2kart
-		case MT_EGGMANITEM:
-			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
-				return;
-
-			if (special->health <= 0 || toucher->health <= 0)
-				return;
-
-			if (!P_CanPickupItem(player, 2))
-				return;
-
-			if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
-			{
-				if (player->kartstuff[k_comebackmode] || player->kartstuff[k_comebacktimer])
-					return;
-				player->kartstuff[k_comebackmode] = 2;
-			}
-			else
-			{
-				K_DropItems(player); //K_StripItems(player);
-				//K_StripOther(player);
-				player->kartstuff[k_itemroulette] = 1;
-				player->kartstuff[k_roulettetype] = 2;
-			}
-
-#if 0
-			// Eggbox snipe!
-			if (special->type == MT_EGGMANITEM && special->health > 1)
-				S_StartSound(toucher, sfx_bsnipe);
-#endif
-
-			{
-				mobj_t *poof = P_SpawnMobj(special->x, special->y, special->z, MT_EXPLODE);
-				S_StartSound(poof, special->info->deathsound);
-			}
-
-			if (special->target && special->target->player)
-			{
-				if (G_RaceGametype() || special->target->player->kartstuff[k_bumper] > 0)
-					player->kartstuff[k_eggmanblame] = special->target->player-players;
-				else
-					player->kartstuff[k_eggmanblame] = player-players;
-
-				if (special->target->hnext == special)
-				{
-					P_SetTarget(&special->target->hnext, NULL);
-					special->target->player->kartstuff[k_eggmanheld] = 0;
-				}
-			}
-
-			P_RemoveMobj(special);
-			return;
 		case MT_KARMAHITBOX:
 			if (!special->target->player)
 				return;
