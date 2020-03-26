@@ -7735,6 +7735,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		if (player->kartstuff[k_hyudorotimer] > 0)
 		{
+			INT32 hyu = hyudorotime;
+
+			if (G_RaceGametype())
+				hyu *= 2; // double in race
+
 			if (splitscreen)
 			{
 				if (leveltime & 1)
@@ -7742,7 +7747,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				else
 					player->mo->flags2 &= ~MF2_DONTDRAW;
 
-				if (player->kartstuff[k_hyudorotimer] >= (TICRATE/2) && player->kartstuff[k_hyudorotimer] <= hyudorotime-(TICRATE/2))
+				if (player->kartstuff[k_hyudorotimer] >= (TICRATE/2) && player->kartstuff[k_hyudorotimer] <= hyu-(TICRATE/2))
 				{
 					if (player == &players[displayplayers[1]])
 						player->mo->eflags |= MFE_DRAWONLYFORP2;
@@ -7761,7 +7766,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				if (P_IsDisplayPlayer(player)
-					|| (!P_IsDisplayPlayer(player) && (player->kartstuff[k_hyudorotimer] < (TICRATE/2) || player->kartstuff[k_hyudorotimer] > hyudorotime-(TICRATE/2))))
+					|| (!P_IsDisplayPlayer(player) && (player->kartstuff[k_hyudorotimer] < (TICRATE/2) || player->kartstuff[k_hyudorotimer] > hyu-(TICRATE/2))))
 				{
 					if (leveltime & 1)
 						player->mo->flags2 |= MF2_DONTDRAW;
