@@ -2921,14 +2921,23 @@ state_t states[NUMSTATES] =
 	{SPR_FLMS, FF_FULLBRIGHT|8,   2, {NULL}, 0, 0, S_FLAMESHIELD18},		// S_FLAMESHIELD17
 	{SPR_FLMS, FF_FULLBRIGHT|17,  2, {NULL}, 0, 0, S_FLAMESHIELD1},			// S_FLAMESHIELD18
 
-	{SPR_FLMD, FF_FULLBRIGHT|1, 2, {NULL},               0, 0, S_FLAMESHIELDDASH2},	// S_FLAMESHIELDDASH1
-	{SPR_FLMD, FF_FULLBRIGHT,   2, {A_FlameShieldPaper}, 0, 2, S_FLAMESHIELDDASH3},	// S_FLAMESHIELDDASH2
-	{SPR_FLMD, FF_FULLBRIGHT|2, 2, {NULL},               0, 0, S_FLAMESHIELDDASH4},	// S_FLAMESHIELDDASH3
-	{SPR_FLMD, FF_FULLBRIGHT,   2, {A_FlameShieldPaper}, 1, 3, S_FLAMESHIELDDASH5},	// S_FLAMESHIELDDASH4
-	{SPR_FLMD, FF_FULLBRIGHT|3, 2, {NULL},               0, 0, S_FLAMESHIELDDASH6},	// S_FLAMESHIELDDASH5
-	{SPR_FLMD, FF_FULLBRIGHT,   2, {A_FlameShieldPaper}, 2, 0, S_FLAMESHIELDDASH7},	// S_FLAMESHIELDDASH6
-	{SPR_FLMD, FF_FULLBRIGHT|4, 2, {NULL},               0, 0, S_FLAMESHIELDDASH8},	// S_FLAMESHIELDDASH7
-	{SPR_FLMD, FF_FULLBRIGHT,   2, {A_FlameShieldPaper}, 3, 1, S_FLAMESHIELDDASH1},	// S_FLAMESHIELDDASH8
+	{SPR_FLMD, FF_FULLBRIGHT|1, 1, {NULL},               0, 0, S_FLAMESHIELDDASH2},		// S_FLAMESHIELDDASH1
+	{SPR_FLMD, FF_FULLBRIGHT|5, 1, {NULL},               0, 0, S_FLAMESHIELDDASH3},		// S_FLAMESHIELDDASH2
+	{SPR_FLMD, FF_FULLBRIGHT,   1, {A_FlameShieldPaper}, 0, 2, S_FLAMESHIELDDASH4},		// S_FLAMESHIELDDASH3
+	{SPR_FLMD, FF_FULLBRIGHT|2, 1, {NULL},               0, 0, S_FLAMESHIELDDASH5},		// S_FLAMESHIELDDASH4
+	{SPR_FLMD, FF_FULLBRIGHT|6, 1, {NULL},               0, 0, S_FLAMESHIELDDASH6},		// S_FLAMESHIELDDASH5
+	{SPR_FLMD, FF_FULLBRIGHT,   1, {A_FlameShieldPaper}, 1, 3, S_FLAMESHIELDDASH7},		// S_FLAMESHIELDDASH6
+	{SPR_FLMD, FF_FULLBRIGHT|3, 1, {NULL},               0, 0, S_FLAMESHIELDDASH8},		// S_FLAMESHIELDDASH7
+	{SPR_FLMD, FF_FULLBRIGHT|7, 1, {NULL},               0, 0, S_FLAMESHIELDDASH9},		// S_FLAMESHIELDDASH8
+	{SPR_FLMD, FF_FULLBRIGHT,   1, {A_FlameShieldPaper}, 2, 0, S_FLAMESHIELDDASH10},	// S_FLAMESHIELDDASH9
+	{SPR_FLMD, FF_FULLBRIGHT|4, 1, {NULL},               0, 0, S_FLAMESHIELDDASH11},	// S_FLAMESHIELDDASH10
+	{SPR_FLMD, FF_FULLBRIGHT|8, 1, {NULL},               0, 0, S_FLAMESHIELDDASH12},	// S_FLAMESHIELDDASH11
+	{SPR_FLMD, FF_FULLBRIGHT,   1, {A_FlameShieldPaper}, 3, 1, S_FLAMESHIELDDASH1},		// S_FLAMESHIELDDASH12
+
+	{SPR_FLMD, FF_FULLBRIGHT|9, 2, {NULL}, 0, 0, S_NULL},	// S_FLAMESHIELDDASH2_UNDERLAY
+	{SPR_FLMD, FF_FULLBRIGHT|10, 2, {NULL}, 0, 0, S_NULL},	// S_FLAMESHIELDDASH5_UNDERLAY
+	{SPR_FLMD, FF_FULLBRIGHT|11, 2, {NULL}, 0, 0, S_NULL},	// S_FLAMESHIELDDASH8_UNDERLAY
+	{SPR_FLMD, FF_FULLBRIGHT|12, 2, {NULL}, 0, 0, S_NULL},	// S_FLAMESHIELDDASH11_UNDERLAY
 
 	{SPR_FLMP, FF_FULLBRIGHT|FF_PAPERSPRITE, 3, {NULL}, 0, 0, S_NULL}, // S_FLAMESHIELDPAPER
 	{SPR_FLML, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 7, {NULL}, 6, 1, S_NULL}, // S_FLAMESHIELDLINE1
@@ -16277,6 +16286,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_FLAMESHIELDUNDERLAY
+	    -1,             // doomednum
+	    S_FLAMESHIELDDASH2_UNDERLAY, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    -1,             // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+	    S_NULL          // raisestate
+	},
+
 	{           // MT_FLAMESHIELDPAPER
 	    -1,             // doomednum
 	    S_FLAMESHIELDPAPER, // spawnstate
@@ -16300,7 +16336,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    100,            // mass
 	    0,              // damage
 	    sfx_None,       // activesound
-	    MF_NOBLOCKMAP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+	    MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 	    S_NULL          // raisestate
 	},
 

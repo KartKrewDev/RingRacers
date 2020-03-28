@@ -8652,6 +8652,7 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			fixed_t destx, desty;
 			statenum_t curstate;
+			statenum_t underlayst = S_NULL;
 			INT32 flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player
@@ -8666,8 +8667,17 @@ void P_MobjThinker(mobj_t *mobj)
 
 			if (mobj->target->player->kartstuff[k_flamedash])
 			{
-				if (!(curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH8))
+				if (!(curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12))
 					P_SetMobjState(mobj, S_FLAMESHIELDDASH1);
+
+				if (curstate == S_FLAMESHIELDDASH2)
+					underlayst = S_FLAMESHIELDDASH2_UNDERLAY;
+				else if (curstate == S_FLAMESHIELDDASH5)
+					underlayst = S_FLAMESHIELDDASH5_UNDERLAY;
+				else if (curstate == S_FLAMESHIELDDASH8)
+					underlayst = S_FLAMESHIELDDASH8_UNDERLAY;
+				else if (curstate == S_FLAMESHIELDDASH11)
+					underlayst = S_FLAMESHIELDDASH11_UNDERLAY;
 
 				if (leveltime & 1)
 				{
@@ -8696,7 +8706,7 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
-				if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH8)
+				if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12)
 					P_SetMobjState(mobj, S_FLAMESHIELD1);
 			}
 
@@ -8745,6 +8755,13 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
 			else
 				mobj->angle = mobj->target->angle;
+
+			if (underlayst != S_NULL)
+			{
+				mobj_t *underlay = P_SpawnMobj(mobj->target->x, mobj->target->y, mobj->target->z, MT_FLAMESHIELDUNDERLAY);
+				underlay->angle = mobj->angle;
+				P_SetMobjState(underlay, underlayst);
+			}
 			break;
 		}
 		case MT_ROCKETSNEAKER:
