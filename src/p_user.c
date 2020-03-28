@@ -1122,12 +1122,12 @@ boolean P_EndingMusic(player_t *player)
 
 	// Event - Level Finish
 	// Check for if this is valid or not
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_TIMEOVER))
 			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_TIMEOVER))
-			|| ((splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_TIMEOVER)))
-			|| ((splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_TIMEOVER)))))
+			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_TIMEOVER)))
+			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_TIMEOVER)))))
 			return false;
 
 		bestlocalplayer = &players[displayplayers[0]];
@@ -1139,9 +1139,9 @@ boolean P_EndingMusic(player_t *player)
 		bestlocalpos = ((players[p].pflags & PF_TIMEOVER) ? MAXPLAYERS+1 : players[p].kartstuff[k_position]); \
 	}
 		setbests(displayplayers[1]);
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			setbests(displayplayers[2]);
-		if (splitscreen > 2)
+		if (r_splitscreen > 2)
 			setbests(displayplayers[3]);
 #undef setbests
 	}
@@ -1211,7 +1211,7 @@ void P_RestoreMusic(player_t *player)
 	{
 		INT32 wantedmus = 0; // 0 is level music, 1 is invincibility, 2 is grow
 
-		if (splitscreen)
+		if (r_splitscreen)
 		{
 			INT32 bestlocaltimer = 1;
 
@@ -1225,9 +1225,9 @@ void P_RestoreMusic(player_t *player)
 	}
 			setbests(displayplayers[0]);
 			setbests(displayplayers[1]);
-			if (splitscreen > 1)
+			if (r_splitscreen > 1)
 				setbests(displayplayers[2]);
-			if (splitscreen > 2)
+			if (r_splitscreen > 2)
 				setbests(displayplayers[3]);
 #undef setbests
 		}
@@ -1488,7 +1488,15 @@ boolean P_IsLocalPlayer(player_t *player)
 {
 	UINT8 i;
 
-	if (player == &players[consoleplayer])
+	if (r_splitscreen > splitscreen)
+	{
+		for (i = 0; i <= r_splitscreen; ++i)
+		{
+			if (player == &players[displayplayers[i]])
+				return true;
+		}
+	}
+	else if (player == &players[consoleplayer])
 		return true;
 	else if (splitscreen)
 	{
@@ -1512,7 +1520,7 @@ boolean P_IsDisplayPlayer(player_t *player)
 {
 	UINT8 i;
 
-	for (i = 0; i <= splitscreen; i++) // DON'T skip P1
+	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
 	{
 		if (player == &players[displayplayers[i]])
 			return true;
@@ -7256,17 +7264,17 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		focusangle = localangle[0];
 		focusaiming = localaiming[0];
 	}
-	else if (player == &players[displayplayers[1]])
+	else if (player == &players[g_localplayers[1]])
 	{
 		focusangle = localangle[1];
 		focusaiming = localaiming[1];
 	}
-	else if (player == &players[displayplayers[2]])
+	else if (player == &players[g_localplayers[2]])
 	{
 		focusangle = localangle[2];
 		focusaiming = localaiming[2];
 	}
-	else if (player == &players[displayplayers[3]])
+	else if (player == &players[g_localplayers[3]])
 	{
 		focusangle = localangle[3];
 		focusaiming = localaiming[3];
@@ -7280,6 +7288,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (P_CameraThinker(player, thiscam, resetcalled))
 		return true;
 
+	lookback = ( player->cmd.buttons & BT_LOOKBACK );
 
 	if (thiscam == &camera[1]) // Camera 2
 	{
@@ -7289,7 +7298,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		camrotate = cv_cam2_rotate.value;
 		camdist = FixedMul(cv_cam2_dist.value, mapobjectscale);
 		camheight = FixedMul(cv_cam2_height.value, mapobjectscale);
-		lookback = camspin[1];
 	}
 	else if (thiscam == &camera[2]) // Camera 3
 	{
@@ -7299,7 +7307,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		camrotate = cv_cam3_rotate.value;
 		camdist = FixedMul(cv_cam3_dist.value, mapobjectscale);
 		camheight = FixedMul(cv_cam3_height.value, mapobjectscale);
-		lookback = camspin[2];
 	}
 	else if (thiscam == &camera[3]) // Camera 4
 	{
@@ -7309,7 +7316,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		camrotate = cv_cam4_rotate.value;
 		camdist = FixedMul(cv_cam4_dist.value, mapobjectscale);
 		camheight = FixedMul(cv_cam4_height.value, mapobjectscale);
-		lookback = camspin[3];
 	}
 	else // Camera 1
 	{
@@ -7319,7 +7325,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		camrotate = cv_cam_rotate.value;
 		camdist = FixedMul(cv_cam_dist.value, mapobjectscale);
 		camheight = FixedMul(cv_cam_height.value, mapobjectscale);
-		lookback = camspin[0];
 	}
 
 	if (timeover)
@@ -7429,7 +7434,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	else
 		distxy = dist;
 	distz = -FixedMul(dist, FINESINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
-	if (splitscreen == 1) // 2 player is weird, this helps keep players on screen
+	if (r_splitscreen == 1) // 2 player is weird, this helps keep players on screen
 		distz = 3*distz/5;
 
 	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
@@ -7846,8 +7851,8 @@ boolean P_SpectatorJoinGame(player_t *player)
 		player->playerstate = PST_REBORN;
 
 		//Reset away view
-		if (P_IsLocalPlayer(player) && displayplayers[0] != consoleplayer)
-			displayplayers[0] = consoleplayer;
+		if (P_IsLocalPlayer(player) && g_localplayers[0] != consoleplayer)
+			g_localplayers[0] = consoleplayer;
 
 		HU_AddChatText(va(M_GetText("\x82*%s entered the game."), player_names[player-players]), false);
 		return true; // no more player->mo, cannot continue.
@@ -7874,7 +7879,7 @@ static void P_CalcPostImg(player_t *player)
 		pviewheight = player->awayviewmobj->z + 20*FRACUNIT;
 	}
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -8039,7 +8044,7 @@ void P_PlayerThink(player_t *player)
 	}
 
 #ifdef SEENAMES
-	if (netgame && player == &players[displayplayers[0]] && !(leveltime % (TICRATE/5)) && !splitscreen)
+	if (netgame && player == &players[displayplayers[0]] && !(leveltime % (TICRATE/5)) && !r_splitscreen)
 	{
 		seenplayer = NULL;
 
@@ -8370,7 +8375,7 @@ void P_PlayerThink(player_t *player)
 		// Hide the mobj from our sights if we're the displayplayer and chasecam is off.
 		// Why not just not spawn the mobj?  Well, I'd rather only flirt with
 		// consistency so much...
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (player == &players[displayplayers[i]] && !camera[i].chase)
 			{
@@ -8600,7 +8605,7 @@ void P_PlayerAfterThink(player_t *player)
 		P_PlayerInSpecialSector(player);
 #endif
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{

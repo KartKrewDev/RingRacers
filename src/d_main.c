@@ -416,7 +416,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
-			for (i = 0; i <= splitscreen; i++)
+			for (i = 0; i <= r_splitscreen; i++)
 			{
 				if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)
 				{
@@ -443,7 +443,7 @@ static void D_Display(void)
 							switch (i)
 							{
 								case 1:
-									if (splitscreen > 1)
+									if (r_splitscreen > 1)
 									{
 										viewwindowx = viewwidth;
 										viewwindowy = 0;
@@ -482,7 +482,7 @@ static void D_Display(void)
 
 			if (rendermode == render_soft)
 			{
-				for (i = 0; i <= splitscreen; i++)
+				for (i = 0; i <= r_splitscreen; i++)
 				{
 					if (postimgtype[i])
 						V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
@@ -780,6 +780,7 @@ void D_StartTitle(void)
 
 	gameaction = ga_nothing;
 	memset(displayplayers, 0, sizeof(displayplayers));
+	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
 	//demosequence = -1;
 	gametype = GT_RACE; // SRB2kart

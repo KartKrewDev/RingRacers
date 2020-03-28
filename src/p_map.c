@@ -1939,10 +1939,10 @@ static boolean PIT_CheckLine(line_t *ld)
 	// missiles can cross uncrossable lines
 	if (!(tmthing->flags & MF_MISSILE))
 	{
-		if (ld->flags & ML_IMPASSIBLE) // block objects from moving through this linedef.
+		if (ld->flags & ML_IMPASSABLE) // block objects from moving through this linedef.
 			return false;
-		if ((tmthing->flags & (MF_ENEMY|MF_BOSS)) && ld->flags & ML_BLOCKMONSTERS)
-			return false; // block monsters only
+		if (tmthing->player && ld->flags & ML_BLOCKPLAYERS)
+			return false; // SRB2Kart: Only block players, not items
 	}
 
 	// set openrange, opentop, openbottom
@@ -2510,7 +2510,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 		itsatwodlevel = true;
 	else
 	{
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (thiscam == &camera[i] && players[displayplayers[i]].mo
 				&& (players[displayplayers[i]].mo->flags2 & MF2_TWOD))
@@ -2526,7 +2526,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 		fixed_t tryx = thiscam->x;
 		fixed_t tryy = thiscam->y;
 
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 #ifndef NOCLIPCAM
 			if ((thiscam == &camera[i] && (players[displayplayers[i]].pflags & PF_NOCLIP)) || (leveltime < introtime)) // Noclipping player camera noclips too!!
@@ -3304,10 +3304,10 @@ static boolean PTR_SlideTraverse(intercept_t *in)
 
 	if (!(slidemo->flags & MF_MISSILE))
 	{
-		if (li->flags & ML_IMPASSIBLE)
+		if (li->flags & ML_IMPASSABLE)
 			goto isblocking;
 
-		if ((slidemo->flags & (MF_ENEMY|MF_BOSS)) && li->flags & ML_BLOCKMONSTERS)
+		if (slidemo->player && li->flags & ML_BLOCKPLAYERS)
 			goto isblocking;
 	}
 

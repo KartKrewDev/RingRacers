@@ -594,7 +594,7 @@ void P_Ticker(boolean run)
 		return;
 	}
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	P_MapStart();
@@ -751,7 +751,7 @@ void P_Ticker(boolean run)
 	}
 
 	// Always move the camera.
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (camera[i].chase)
 			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
@@ -771,7 +771,7 @@ void P_PreTicker(INT32 frames)
 	INT32 i,framecnt;
 	ticcmd_t temptic;
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	for (framecnt = 0; framecnt < frames; ++framecnt)
