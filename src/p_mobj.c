@@ -9454,6 +9454,8 @@ void P_MobjThinker(mobj_t *mobj)
 			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->player)
 			{
 				player_t *player = mobj->tracer->player;
+				fixed_t destx, desty, curfz, destfz;
+				boolean blockmove = false;
 
 				mobj->flags = MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_DONTENCOREMAP;
 				mobj->extravalue1 = 1;
@@ -9462,16 +9464,38 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->momz = 0;
 				mobj->destscale = ((5*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
 
-				mobj->tracer->momx = (63*mobj->tracer->momx)/64;
-				mobj->tracer->momy = (63*mobj->tracer->momy)/64;
 				mobj->tracer->momz = (8*mobj->tracer->scale) * P_MobjFlip(mobj->tracer);
 
-				P_TeleportMove(mobj,
-					mobj->tracer->x + mobj->tracer->momx + P_ReturnThrustX(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
-					mobj->tracer->y + mobj->tracer->momy + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
-					mobj->tracer->z + mobj->tracer->momz - (4*mobj->tracer->scale) + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
+				mobj->tracer->momx = (31*mobj->tracer->momx)/32;
+				mobj->tracer->momy = (31*mobj->tracer->momy)/32;
 
-				if (mobj->movecount > 8*TICRATE)
+				destx = mobj->x + mobj->tracer->momx;
+				desty = mobj->y + mobj->tracer->momy;
+
+				if (mobj->tracer->eflags & MFE_VERTICALFLIP)
+				{
+					curfz = P_GetCeilingZ(mobj->tracer, mobj->tracer->subsector->sector, mobj->tracer->x, mobj->tracer->y, NULL);
+					destfz = P_GetCeilingZ(mobj->tracer, R_PointInSubsector(destx, desty)->sector, destx, desty, NULL);
+					blockmove = (curfz - destfz >= 24*mobj->scale);
+				}
+				else
+				{
+					curfz = P_GetFloorZ(mobj->tracer, mobj->tracer->subsector->sector, mobj->tracer->x, mobj->tracer->y, NULL);
+					destfz = P_GetFloorZ(mobj->tracer, R_PointInSubsector(destx, desty)->sector, destx, desty, NULL);
+					blockmove = (destfz - curfz >= 24*mobj->scale);
+				}
+
+				if (blockmove)
+				{
+					mobj->tracer->momx = mobj->tracer->momy = 0;
+				}
+
+				P_TeleportMove(mobj,
+					mobj->tracer->x + P_ReturnThrustX(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
+					mobj->tracer->y + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
+					mobj->tracer->z - (4*mobj->tracer->scale) + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
+
+				if (mobj->movecount > 4*TICRATE)
 				{
 					S_StartSound(mobj->tracer, sfx_s3k77);
 					mobj->tracer->flags &= ~MF_NOGRAVITY;

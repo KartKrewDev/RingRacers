@@ -637,8 +637,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			// attach to player!
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
-			toucher->momx = (15*toucher->momx)/16; // Huge initial speed cut
-			toucher->momy = (15*toucher->momy)/16;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
 			S_StartSound(toucher, sfx_s1b2); 
 			return;
