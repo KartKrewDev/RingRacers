@@ -44,7 +44,7 @@
 #include "v_video.h"
 #include "dehacked.h" // get_number (for ghost thok)
 #include "lua_hook.h"
-#include "b_bot.h"
+#include "k_bot.h"
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "k_kart.h" // SRB2kart
@@ -54,10 +54,6 @@
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
-
-boolean botingame;
-UINT8 botskin;
-UINT8 botcolor;
 
 JoyType_t Joystick;
 JoyType_t Joystick2;
@@ -1265,10 +1261,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else
 		player = &players[g_localplayers[ssplayer-1]];
 
-	if (ssplayer == 2)
-		thiscam = (player->bot == 2 ? &camera[0] : &camera[ssplayer-1]);
-	else
-		thiscam = &camera[ssplayer-1];
+	thiscam = &camera[ssplayer-1];
 	lang = localangle[ssplayer-1];
 	laim = localaiming[ssplayer-1];
 	th = turnheld[ssplayer-1];
@@ -1624,8 +1617,6 @@ static void UserAnalog_OnChange(void)
 
 static void UserAnalog2_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog2.value)
 		CV_SetValue(&cv_analog2, 1);
 	else
@@ -1634,8 +1625,6 @@ static void UserAnalog2_OnChange(void)
 
 static void UserAnalog3_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog3.value)
 		CV_SetValue(&cv_analog3, 1);
 	else
@@ -1644,8 +1633,6 @@ static void UserAnalog3_OnChange(void)
 
 static void UserAnalog4_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog4.value)
 		CV_SetValue(&cv_analog4, 1);
 	else
@@ -1671,7 +1658,7 @@ static void Analog_OnChange(void)
 
 static void Analog2_OnChange(void)
 {
-	if (!(splitscreen || botingame) || !cv_cam2_dist.string)
+	if (!splitscreen || !cv_cam2_dist.string)
 		return;
 
 	// cameras are not initialized at this point
@@ -1763,7 +1750,7 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		if (i > 0 && !(i == 1 && botingame) && r_splitscreen < i)
+		if (i > 0 && r_splitscreen < i)
 			g_localplayers[i] = consoleplayer;
 	}
 
@@ -2570,7 +2557,7 @@ void G_PlayerReborn(INT32 player)
 	tic_t jointime;
 	UINT8 splitscreenindex;
 	boolean spectator;
-	INT16 bot;
+	boolean bot;
 	SINT8 pity;
 
 	// SRB2kart
@@ -2701,8 +2688,7 @@ void G_PlayerReborn(INT32 player)
 	p->totalring = totalring;
 
 	p->mare = mare;
-	if (bot)
-		p->bot = 1; // reset to AI-controlled
+	p->bot = bot;
 	p->pity = pity;
 
 	// SRB2kart
@@ -3151,96 +3137,9 @@ void G_DoReborn(INT32 playernum)
 	player_t *player = &players[playernum];
 	boolean starpost = false;
 
-	/*if (modeattacking) // Not needed for SRB2Kart.
-	{
-		M_EndModeAttackRun();
-		return;
-	}*/
-
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
 
-	if (player->bot && playernum != consoleplayer)
-	{ // Bots respawn next to their master.
-		mobj_t *oldmo = NULL;
-
-		// first dissasociate the corpse
-		if (player->mo)
-		{
-			oldmo = player->mo;
-			// Don't leave your carcass stuck 10-billion feet in the ground!
-			P_RemoveMobj(player->mo);
-		}
-
-		B_RespawnBot(playernum);
-		if (oldmo)
-			G_ChangePlayerReferences(oldmo, players[playernum].mo);
-	}
-	/*else if (countdowntimeup || (!multiplayer && !modeattacking))
-	{
-		// reload the level from scratch
-		if (countdowntimeup)
-		{
-			player->starpostangle = 0;
-			player->starposttime = 0;
-			player->starpostx = 0;
-			player->starposty = 0;
-			player->starpostz = 0;
-			player->starpostnum = 0;
-		}
-		if (!countdowntimeup && (mapheaderinfo[gamemap-1]->levelflags & LF_NORELOAD))
-		{
-			INT32 i;
-
-			player->playerstate = PST_REBORN;
-
-			P_LoadThingsOnly();
-
-			// Do a wipe
-			wipegamestate = -1;
-
-			if (player->starpostnum) // SRB2kart
-				starpost = true;
-
-			for (i = 0; i <= splitscreen; i++)
-			{
-				if (camera[i].chase)
-					P_ResetCamera(&players[displayplayers[i]], &camera[i]);
-			}
-
-			// clear cmd building stuff
-			memset(gamekeydown, 0, sizeof (gamekeydown));
-			for (i = 0;i < JOYAXISSET; i++)
-			{
-				joyxmove[i] = joyymove[i] = 0;
-				joy2xmove[i] = joy2ymove[i] = 0;
-				joy3xmove[i] = joy3ymove[i] = 0;
-				joy4xmove[i] = joy4ymove[i] = 0;
-			}
-			mousex = mousey = 0;
-			mouse2x = mouse2y = 0;
-
-			// clear hud messages remains (usually from game startup)
-			CON_ClearHUD();
-
-			// Starpost support
-			G_SpawnPlayer(playernum, starpost);
-
-			if (botingame)
-			{ // Bots respawn next to their master.
-				players[displayplayers[1]].playerstate = PST_REBORN;
-				G_SpawnPlayer(displayplayers[1], false);
-			}
-		}
-		else
-		{
-#ifdef HAVE_BLUA
-			LUAh_MapChange(gamemap);
-#endif
-			G_DoLoadLevel(true);
-		}
-	}*/
-	else
 	{
 		// respawn at the start
 		mobj_t *oldmo = NULL;
@@ -4602,9 +4501,6 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 	if (savedata.lives > 0)
 	{
 		color = savedata.skincolor;
-		botskin = savedata.botskin;
-		botcolor = savedata.botcolor;
-		botingame = (botskin != 0);
 	}
 	else if (splitscreen != ssplayers)
 	{

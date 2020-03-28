@@ -2278,12 +2278,8 @@ static mobj_t *P_GetObjectTypeInSectorNum(mobjtype_t type, size_t s)
 static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 {
 	INT32 secnum = -1;
-	mobj_t *bot = NULL;
 
 	I_Assert(!mo || !P_MobjWasRemoved(mo)); // If mo is there, mo must be valid!
-
-	if (mo && mo->player && botingame)
-		bot = players[displayplayers[1]].mo;
 
 	// note: only commands with linedef types >= 400 && < 500 can be used
 	switch (line->special)
@@ -2423,9 +2419,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					{
 						UINT8 i;
 
-						if (bot) // This might put poor Tails in a wall if he's too far behind! D: But okay, whatever! >:3
-							P_TeleportMove(bot, bot->x + x, bot->y + y, bot->z + z);
-
 						for (i = 0; i <= r_splitscreen; i++)
 						{
 							if (mo->player == &players[displayplayers[i]] && camera[i].chase)
@@ -2448,8 +2441,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					if (!dest)
 						return;
 
-					if (bot)
-						P_Teleport(bot, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, (line->flags & ML_BLOCKPLAYERS) == 0, (line->flags & ML_EFFECT4) == ML_EFFECT4);
 					if (line->flags & ML_BLOCKPLAYERS)
 						P_Teleport(mo, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, false, (line->flags & ML_EFFECT4) == ML_EFFECT4);
 					else
@@ -2882,18 +2873,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				mo->player->cmomx = mo->player->cmomy = 0;
 				P_ResetPlayer(mo->player);
 				P_SetPlayerMobjState(mo, S_KART_STND1); // SRB2kart - was S_PLAY_STND
-
-				// Reset bot too.
-				if (bot) {
-					if (line->flags & ML_NOCLIMB)
-						P_TeleportMove(bot, mo->x, mo->y, mo->z);
-					bot->momx = bot->momy = bot->momz = 1;
-					bot->pmomz = 0;
-					bot->player->rmomx = bot->player->rmomy = 1;
-					bot->player->cmomx = bot->player->cmomy = 0;
-					P_ResetPlayer(bot->player);
-					P_SetPlayerMobjState(bot, S_KART_STND1); // SRB2kart - was S_PLAY_STND
-				}
 			}
 			break;
 
@@ -2925,13 +2904,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					mo->flags2 &= ~MF2_TWOD;
 				else
 					mo->flags2 |= MF2_TWOD;
-
-				// Copy effect to bot if necessary
-				// (Teleport them to you so they don't break it.)
-				if (bot && (bot->flags2 & MF2_TWOD) != (mo->flags2 & MF2_TWOD)) {
-					bot->flags2 = (bot->flags2 & ~MF2_TWOD) | (mo->flags2 & MF2_TWOD);
-					P_TeleportMove(bot, mo->x, mo->y, mo->z);
-				}
 			}
 			break;
 
@@ -2940,8 +2912,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				mo->flags2 &= ~MF2_OBJECTFLIP;
 			else
 				mo->flags2 |= MF2_OBJECTFLIP;
-			if (bot)
-				bot->flags2 = (bot->flags2 & ~MF2_OBJECTFLIP) | (mo->flags2 & MF2_OBJECTFLIP);
 			break;
 
 		case 434: // Custom Power
@@ -2961,10 +2931,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				P_SetTarget(&dummy->target, mo);
 				A_CustomPower(dummy);
 
-				if (bot) {
-					P_SetTarget(&dummy->target, bot);
-					A_CustomPower(dummy);
-				}
 				P_RemoveMobj(dummy);
 			}
 			break;
@@ -3033,8 +2999,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				if (line->flags & ML_NOCLIMB)
 					fractime |= 1<<15; //more crazy &ing, as if music stuff wasn't enough
 				mo->player->powers[pw_nocontrol] = fractime;
-				if (bot)
-					bot->player->powers[pw_nocontrol] = fractime;
 			}
 			break;
 
@@ -3044,8 +3008,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				mo->destscale = FixedDiv(P_AproxDistance(line->dx, line->dy), 100<<FRACBITS);
 				if (mo->destscale < FRACUNIT/100)
 					mo->destscale = FRACUNIT/100;
-				if (mo->player && bot)
-					bot->destscale = mo->destscale;
 			}
 			break;
 
@@ -3876,7 +3838,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			}
 			break;
 		case 11: // Special Stage Damage - Kind of like a mini-P_DamageMobj()
-			if (player->powers[pw_invulnerability] || player->powers[pw_flashing] || player->powers[pw_super] || player->exiting || player->bot)
+			if (player->powers[pw_invulnerability] || player->powers[pw_flashing] || player->powers[pw_super] || player->exiting)
 				break;
 
 			if (!(player->powers[pw_shield] || player->mo->health > 1)) // Don't do anything if no shield or rings anyway
@@ -3920,7 +3882,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 3: // Linedef executor requires all players present
 			/// \todo check continues for proper splitscreen support?
 			for (i = 0; i < MAXPLAYERS; i++)
-				if (playeringame[i] && !players[i].bot && players[i].mo && (gametype != GT_COOP || players[i].lives > 0))
+				if (playeringame[i] && players[i].mo && (gametype != GT_COOP || players[i].lives > 0))
 				{
 					if (roversector)
 					{
@@ -3978,8 +3940,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 5: // Linedef executor
 		case 6: // Linedef executor (7 Emeralds)
 		case 7: // Linedef executor (NiGHTS Mare)
-			if (!player->bot)
-				P_LinedefExecute(sector->tag, player->mo, sector);
+			P_LinedefExecute(sector->tag, player->mo, sector);
 			break;
 		case 8: // Tells pushable things to check FOFs
 			break;
@@ -3989,7 +3950,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			mobj_t *mo2;
 			line_t junk;
 
-			if (player->bot || sector->ceilingdata || sector->floordata)
+			if (sector->ceilingdata || sector->floordata)
 				return;
 
 			// Find the center of the Eggtrap and release all the pretty animals!
@@ -4177,8 +4138,6 @@ DoneSection2:
 		}
 
 		case 2: // Special stage GOAL sector / Exit Sector / CTF Flag Return
-			if (player->bot)
-				break;
 			if (!useNightsSS && G_IsSpecialStage(gamemap) && sstimer > 6)
 				sstimer = 6; // Just let P_Ticker take care of the rest.
 

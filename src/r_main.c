@@ -202,7 +202,7 @@ void SplitScreen_OnChange(void)
 	// recompute screen size
 	R_ExecuteSetViewSize();
 
-	if (!demo.playback && !botingame)
+	if (!demo.playback)
 	{
 		for (i = 1; i < MAXSPLITSCREENPLAYERS; i++)
 		{
@@ -259,8 +259,6 @@ static void ChaseCam_OnChange(void)
 
 static void ChaseCam2_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (!cv_chasecam2.value || !cv_useranalog2.value)
 		CV_SetValue(&cv_analog2, 0);
 	else

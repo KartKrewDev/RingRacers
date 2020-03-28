@@ -49,6 +49,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_bot.h"
 #include "y_inter.h"
 
 #ifdef NETGAME_DEVMODE
@@ -525,6 +526,11 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"PICKVOTE",
 	"REMOVEPLAYER",
 	"POWERLEVEL",
+	"PARTYINVITE",
+	"ACCEPTPARTYINVITE",
+	"LEAVEPARTY",
+	"CANCELPARTYINVITE",
+	"ADDBOT",
 #ifdef HAVE_BLUA
 	"LUACMD",
 	"LUAVAR"
@@ -1493,7 +1499,7 @@ static void SendNameAndColor2(void)
 	XBOXSTATIC char buf[MAXPLAYERNAME+2];
 	char *p;
 
-	if (splitscreen < 1 && !botingame)
+	if (splitscreen < 1)
 		return; // can happen if skin2/color2/name2 changed
 
 	if (g_localplayers[1] != consoleplayer)
@@ -1531,15 +1537,7 @@ static void SendNameAndColor2(void)
 		return;
 
 	// If you're not in a netgame, merely update the skin, color, and name.
-	if (botingame)
-	{
-		players[secondplaya].skincolor = botcolor;
-		if (players[secondplaya].mo)
-			players[secondplaya].mo->color = players[secondplaya].skincolor;
-		SetPlayerSkinByNum(secondplaya, botskin-1);
-		return;
-	}
-	else if (!netgame)
+	if (!netgame)
 	{
 		INT32 foundskin;
 
@@ -1769,15 +1767,7 @@ static void SendNameAndColor4(void)
 		return;
 
 	// If you're not in a netgame, merely update the skin, color, and name.
-	if (botingame)
-	{
-		players[fourthplaya].skincolor = botcolor;
-		if (players[fourthplaya].mo)
-			players[fourthplaya].mo->color = players[fourthplaya].skincolor;
-		SetPlayerSkinByNum(fourthplaya, botskin-1);
-		return;
-	}
-	else if (!netgame)
+	if (!netgame)
 	{
 		INT32 foundskin;
 
@@ -2187,7 +2177,7 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 void D_SendPlayerConfig(void)
 {
 	SendNameAndColor();
-	if (splitscreen || botingame)
+	if (splitscreen)
 		SendNameAndColor2();
 	if (splitscreen > 1)
 		SendNameAndColor3();
@@ -2745,28 +2735,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 				return;
 		}
 
-		// Kick bot from special stages
-		if (botskin)
-		{
-			if (G_IsSpecialStage(mapnum))
-			{
-				if (botingame)
-				{
-					//CL_RemoveSplitscreenPlayer();
-					botingame = false;
-					playeringame[1] = false;
-				}
-			}
-			else if (!botingame)
-			{
-				//CL_AddSplitscreenPlayer();
-				botingame = true;
-				displayplayers[1] = 1;
-				playeringame[1] = true;
-				players[1].bot = 1;
-				SendNameAndColor2();
-			}
-		}
+		K_AddBots(13);
 
 		chmappending++;
 		if (netgame)
@@ -5738,8 +5707,7 @@ void Command_ExitGame_f(void)
 
 	splitscreen = 0;
 	SplitScreen_OnChange();
-	botingame = false;
-	botskin = 0;
+
 	cv_debug = 0;
 	emeralds = 0;
 

@@ -7,7 +7,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  b_bot.c
+/// \file  k_bot.c
 /// \brief Basic bot handling
 
 #include "doomdef.h"
@@ -15,14 +15,60 @@
 #include "g_game.h"
 #include "r_main.h"
 #include "p_local.h"
-#include "b_bot.h"
+#include "k_bot.h"
 #include "lua_hook.h"
+#include "byteptr.h"
+#include "d_net.h" // nodetoplayer
 
 // If you want multiple bots, variables like this will
 // have to be stuffed in something accessible through player_t.
 static boolean lastForward = false;
 static boolean lastBlocked = false;
 static boolean blocked = false;
+
+void K_AddBots(UINT8 numbots)
+{
+	UINT8 newplayernum = 0;
+	UINT8 buf[4];
+	UINT8 *buf_p = buf;
+
+	if (dedicated)
+		newplayernum = 1;
+
+	while (numbots > 0)
+	{
+		numbots--;
+
+		// search for a free playernum
+		// we can't use playeringame since it is not updated here
+		for (; newplayernum < MAXPLAYERS; newplayernum++)
+		{
+			UINT8 n;
+
+			for (n = 0; n < MAXNETNODES; n++)
+				if (nodetoplayer[n] == newplayernum
+				|| nodetoplayer2[n] == newplayernum
+				|| nodetoplayer3[n] == newplayernum
+				|| nodetoplayer4[n] == newplayernum)
+					break;
+
+			if (n == MAXNETNODES)
+				break;
+		}
+
+		// should never happen since we check the playernum
+		// before accepting the join
+		I_Assert(newplayernum < MAXPLAYERS);
+
+		WRITEUINT8(buf_p, newplayernum);
+
+		SendNetXCmd(XD_ADDPLAYER, buf, buf_p - buf);
+
+		DEBFILE(va("Server added bot %d\n", newplayernum));
+		// use the next free slot (we can't put playeringame[newplayernum] = true here)
+		newplayernum++;
+	}
+}
 
 static inline void B_BuildTailsTiccmd(mobj_t *sonic, mobj_t *tails, ticcmd_t *cmd)
 {
@@ -242,7 +288,6 @@ void B_RespawnBot(INT32 playernum)
 	if (!sonic || sonic->health <= 0)
 		return;
 
-	player->bot = 1;
 	P_SpawnPlayer(playernum);
 	tails = player->mo;
 

@@ -16,7 +16,7 @@
 #include "p_mobj.h"
 #include "g_game.h"
 #include "r_things.h"
-#include "b_bot.h"
+#include "k_bot.h"
 #include "z_zone.h"
 
 #include "lua_script.h"

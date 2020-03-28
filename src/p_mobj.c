@@ -30,7 +30,7 @@
 #include "info.h"
 #include "i_video.h"
 #include "lua_hook.h"
-#include "b_bot.h"
+#include "k_bot.h"
 #ifdef ESLOPE
 #include "p_slopes.h"
 #endif
@@ -1667,10 +1667,6 @@ void P_XYMovement(mobj_t *mo)
 		// blocked move
 		moved = false;
 
-		if (player) {
-			if (player->bot)
-				B_MoveBlocked(player);
-		}
 		//{ SRB2kart - Jawz
 		if (mo->type == MT_JAWZ || mo->type == MT_JAWZ_DUD)
 		{

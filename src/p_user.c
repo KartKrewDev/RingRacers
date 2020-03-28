@@ -39,7 +39,7 @@
 #include "st_stuff.h"
 #include "lua_script.h"
 #include "lua_hook.h"
-#include "b_bot.h"
+#include "k_bot.h"
 // Objectplace
 #include "m_cheat.h"
 // SRB2kart
@@ -705,10 +705,6 @@ void P_NightserizePlayer(player_t *player, INT32 nighttime)
 {
 	INT32 oldmare;
 
-	// Bots can't be super, silly!1 :P
-	if (player->bot)
-		return;
-
 	if (!(player->pflags & PF_NIGHTSMODE))
 	{
 		P_SetTarget(&player->mo->tracer, P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_NIGHTSCHAR));
@@ -934,8 +930,6 @@ void P_ResetPlayer(player_t *player)
 	player->powers[pw_tailsfly] = 0;
 	player->onconveyor = 0;
 	player->skidtime = 0;
-	/*if (player-players == consoleplayer && botingame)
-		CV_SetValue(&cv_analog2, true);*/
 }
 
 //
@@ -1028,9 +1022,6 @@ void P_AddPlayerScore(player_t *player, UINT32 amount)
 
 	if (!(G_BattleGametype()))
 		return;
-
-	if (player->bot)
-		player = &players[consoleplayer];
 
 	if (player->exiting) // srb2kart
 		return;
@@ -2264,7 +2255,7 @@ static void P_CheckUnderwaterAndSpaceTimer(player_t *player)
 	}
 
 	// Underwater audio cues
-	if (P_IsLocalPlayer(player) && !player->bot)
+	if (P_IsLocalPlayer(player))
 	{
 		if (player->powers[pw_underwater] == 11*TICRATE + 1
 		&& player == &players[consoleplayer])
@@ -8038,6 +8029,7 @@ void P_PlayerThink(player_t *player)
 			if (B_CheckRespawn(player))
 				player->playerstate = PST_REBORN;
 		}
+
 		if (player->playerstate == PST_REBORN)
 			return;
 	}

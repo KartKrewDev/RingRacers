@@ -1326,8 +1326,6 @@ static boolean CL_SendJoin(void)
 
 	if (splitscreen)
 		localplayers += splitscreen;
-	else if (botingame)
-		localplayers++;
 
 	netbuffer->u.clientcfg.localplayers = localplayers;
 	netbuffer->u.clientcfg.version = VERSION;
@@ -2623,8 +2621,7 @@ static void Command_connect(void)
 		splitscreen = cv_splitplayers.value-1;
 		SplitScreen_OnChange();
 	}
-	botingame = false;
-	botskin = 0;
+
 	CL_ConnectToServer(viams);
 }
 #endif
@@ -3292,6 +3289,7 @@ consvar_t cv_downloadspeed = {"downloadspeed", "16", CV_SAVE, downloadspeed_cons
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 static void Got_RemovePlayer(UINT8 **p, INT32 playernum);
+static void Got_AddBot(UINT8 **p, INT32 playernum);
 
 // called one time at init
 void D_ClientServerInit(void)
@@ -3321,6 +3319,7 @@ void D_ClientServerInit(void)
 	RegisterNetXCmd(XD_KICK, Got_KickCmd);
 	RegisterNetXCmd(XD_ADDPLAYER, Got_AddPlayer);
 	RegisterNetXCmd(XD_REMOVEPLAYER, Got_RemovePlayer);
+	RegisterNetXCmd(XD_ADDBOT, Got_AddBot);
 #ifndef NONET
 #ifdef DUMPCONSISTENCY
 	CV_RegisterVar(&cv_dumpconsistency);
@@ -3536,8 +3535,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 			displayplayers[splitscreenplayer] = newplayernum;
 			g_localplayers[splitscreenplayer] = newplayernum;
 			DEBFILE(va("spawning sister # %d\n", splitscreenplayer));
-			if (splitscreenplayer == 1 && botingame)
-				players[newplayernum].bot = 1;
 		}
 		else
 		{
@@ -3556,6 +3553,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	}
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
+	players[newplayernum].bot = false;
 
 	playerconsole[newplayernum] = console;
 	splitscreen_original_party_size[console] =
@@ -3607,6 +3605,54 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 	reason = READUINT8(*p);
 
 	CL_RemovePlayer(pnum, reason);
+}
+
+// Xcmd XD_ADDBOT
+// Compacted version of XD_ADDPLAYER for simplicity
+static void Got_AddBot(UINT8 **p, INT32 playernum)
+{
+	INT16 newplayernum;
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		// protect against hacked/buggy client
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal add player command received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	newplayernum = (UINT8)READUINT8(*p);
+
+	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
+
+	// Clear player before joining, lest some things get set incorrectly
+	CL_ClearPlayer(newplayernum);
+
+	playeringame[newplayernum] = true;
+	G_AddPlayer(newplayernum);
+	if (newplayernum+1 > doomcom->numslots)
+		doomcom->numslots = (INT16)(newplayernum+1);
+
+	players[newplayernum].splitscreenindex = 0;
+	players[newplayernum].bot = true;
+
+	playerconsole[newplayernum] = 0;
+
+	if (netgame)
+	{
+		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
+	}
+
+#ifdef HAVE_BLUA
+	LUAh_PlayerJoin(newplayernum);
+#endif
 }
 
 static boolean SV_AddWaitingPlayers(void)
@@ -5057,7 +5103,7 @@ static void CL_SendClientCmd(void)
 		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds, 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%BACKUPTICS]);
 
-		if (splitscreen || botingame) // Send a special packet with 2 cmd for splitscreen
+		if (splitscreen) // Send a special packet with 2 cmd for splitscreen
 		{
 			netbuffer->packettype = (mis ? PT_CLIENT2MIS : PT_CLIENT2CMD);
 			packetsize = sizeof (client2cmd_pak);
@@ -5253,7 +5299,7 @@ static void Local_Maketic(INT32 realtics)
 	if (!dedicated) rendergametic = gametic;
 	// translate inputs (keyboard/mouse/joystick) into game controls
 	G_BuildTiccmd(&localcmds, realtics, 1);
-	if (splitscreen || botingame)
+	if (splitscreen)
 	{
 		G_BuildTiccmd(&localcmds2, realtics, 2);
 		if (splitscreen > 1)
