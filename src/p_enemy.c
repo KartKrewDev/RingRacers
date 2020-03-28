@@ -203,6 +203,7 @@ void A_MayonakaArrow(mobj_t *actor);	//SRB2kart
 void A_ReaperThinker(mobj_t *actor);	//SRB2kart
 void A_MementosTPParticles(mobj_t *actor);	//SRB2kart
 void A_FlameParticle(mobj_t *actor); // SRB2kart
+void A_FlameShieldPaper(mobj_t *actor); // SRB2kart
 void A_OrbitNights(mobj_t *actor);
 void A_GhostMe(mobj_t *actor);
 void A_SetObjectState(mobj_t *actor);
@@ -3678,7 +3679,7 @@ void A_AttractChase(mobj_t *actor)
 		if (actor->tracer && actor->tracer->player && actor->tracer->health
 			//&& P_CheckSight(actor, actor->tracer)
 			&& actor->tracer->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
-			&& (actor->tracer->player->kartstuff[k_rings]+actor->tracer->player->kartstuff[k_pickuprings]) < 20
+			&& RINGTOTAL(actor->tracer->player) < 20
 			&& !actor->tracer->player->kartstuff[k_ringlock])
 		{
 			fixed_t dist;
@@ -9429,6 +9430,52 @@ void A_FlameParticle(mobj_t *actor)
 		actor->z + (P_RandomRange(hei/2, hei)<<FRACBITS),
 		actor->info->painchance);
 	par->momz = actor->scale<<1;
+}
+
+void A_FlameShieldPaper(mobj_t *actor)
+{
+	INT32 framea = 0;
+	INT32 frameb = 0;
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+	UINT8 i;
+
+#ifdef HAVE_BLUA
+	if (LUA_CallAction("A_FlameShieldPaper", actor))
+		return;
+#endif
+
+	framea = (locvar1 & FF_FRAMEMASK);
+	frameb = (locvar2 & FF_FRAMEMASK);
+
+	for (i = 0; i < 2; i++)
+	{
+		INT32 perpendicular = ((i & 1) ? -ANGLE_90 : ANGLE_90);
+		fixed_t newx = actor->x + P_ReturnThrustX(NULL, actor->angle + perpendicular, 8*actor->scale);
+		fixed_t newy = actor->y + P_ReturnThrustY(NULL, actor->angle + perpendicular, 8*actor->scale);
+		mobj_t *paper = P_SpawnMobj(newx, newy, actor->z, MT_FLAMESHIELDPAPER);
+
+		P_SetTarget(&paper->target, actor);
+		P_SetScale(paper, actor->scale);
+		paper->destscale = actor->destscale;
+
+		P_SetMobjState(paper, S_FLAMESHIELDPAPER);
+		paper->frame &= ~FF_FRAMEMASK;
+
+		paper->angle = actor->angle + ANGLE_45;
+
+		if (i & 1)
+		{
+			paper->angle -= ANGLE_90;
+			paper->frame |= frameb;
+		}
+		else
+		{
+			paper->frame |= framea;
+		}
+
+		paper->extravalue1 = i;
+	}
 }
 
 //}
