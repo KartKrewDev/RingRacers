@@ -109,7 +109,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		return false;
 
 	/*if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0) // No bumpers in Match
-        return false;*/
+		return false;*/
 
 	if (weapon)
 	{
@@ -117,12 +117,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		if (weapon == 2)
 		{
 			// Invulnerable
-			if (player->powers[pw_flashing] > 0
-				|| (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)
-				|| player->kartstuff[k_squishedtimer] > 0
-				|| player->kartstuff[k_invincibilitytimer] > 0
-				|| player->kartstuff[k_growshrinktimer] > 0
-				|| player->kartstuff[k_hyudorotimer] > 0)
+			if (player->powers[pw_flashing] > 0)
 				return false;
 
 			// Already have fake
@@ -134,7 +129,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		{
 			// Item-specific timer going off
 			if (player->kartstuff[k_stealingtimer] || player->kartstuff[k_stolentimer]
-				|| player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_rocketsneakertimer]
+				|| player->kartstuff[k_rocketsneakertimer]
 				|| player->kartstuff[k_eggmanexplode])
 				return false;
 
@@ -144,8 +139,8 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				|| player->kartstuff[k_itemheld])
 				return false;
 
-			if (weapon == 3 && player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
-				return false; // No stacking thunder shields!
+			if (weapon == 3 && K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
+				return false; // No stacking shields!
 		}
 	}
 
@@ -389,58 +384,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher);
 			break;
-		case MT_EGGMANITEM_SHIELD: // SRB2kart
-		case MT_EGGMANITEM:
-			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
-				return;
-
-			if (special->health <= 0 || toucher->health <= 0)
-				return;
-
-			if (!P_CanPickupItem(player, 2))
-				return;
-
-			if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
-			{
-				if (player->kartstuff[k_comebackmode] || player->kartstuff[k_comebacktimer])
-					return;
-				player->kartstuff[k_comebackmode] = 2;
-			}
-			else
-			{
-				K_DropItems(player); //K_StripItems(player);
-				//K_StripOther(player);
-				player->kartstuff[k_itemroulette] = 1;
-				player->kartstuff[k_roulettetype] = 2;
-			}
-
-#if 0
-			// Eggbox snipe!
-			if (special->type == MT_EGGMANITEM && special->health > 1)
-				S_StartSound(toucher, sfx_bsnipe);
-#endif
-
-			{
-				mobj_t *poof = P_SpawnMobj(special->x, special->y, special->z, MT_EXPLODE);
-				S_StartSound(poof, special->info->deathsound);
-			}
-
-			if (special->target && special->target->player)
-			{
-				if (G_RaceGametype() || special->target->player->kartstuff[k_bumper] > 0)
-					player->kartstuff[k_eggmanblame] = special->target->player-players;
-				else
-					player->kartstuff[k_eggmanblame] = player-players;
-
-				if (special->target->hnext == special)
-				{
-					P_SetTarget(&special->target->hnext, NULL);
-					special->target->player->kartstuff[k_eggmanheld] = 0;
-				}
-			}
-
-			P_RemoveMobj(special);
-			return;
 		case MT_KARMAHITBOX:
 			if (!special->target->player)
 				return;
@@ -595,11 +538,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				mobj_t *spbexplode;
 
-				if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
+				if (player->kartstuff[k_bubbleblowup] > 0)
 				{
-					//player->powers[pw_flashing] = 0;
 					K_DropHnextList(player);
-					K_StripItems(player);
+					special->extravalue1 = 2; // WAIT...
+					special->extravalue2 = 52; // Slightly over the respawn timer length
+					return;
 				}
 
 				S_StopSound(special); // Don't continue playing the gurgle or the siren
@@ -629,7 +573,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// kill
-			if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0)
+			if (player->kartstuff[k_invincibilitytimer] > 0
+				|| player->kartstuff[k_growshrinktimer] > 0
+				|| player->kartstuff[k_flamedash] > 0)
 			{
 				P_KillMobj(special, toucher, toucher);
 				return;
@@ -673,6 +619,25 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_BALLOON: // SRB2kart
 			P_SetObjectMomZ(toucher, 20<<FRACBITS, false);
 			break;
+		case MT_BUBBLESHIELDTRAP:
+			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
+				return;
+
+			if (special->tracer && !P_MobjWasRemoved(special->tracer))
+				return;
+
+			if (special->health <= 0 || toucher->health <= 0)
+				return;
+
+			if (!player->mo || player->spectator)
+				return;
+
+			// attach to player!
+			P_SetTarget(&special->tracer, toucher);
+			toucher->flags |= MF_NOGRAVITY;
+			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
+			S_StartSound(toucher, sfx_s1b2); 
+			return;
 
 // ***************************************** //
 // Rings, coins, spheres, weapon panels, etc //
@@ -704,7 +669,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// Reached the cap, don't waste 'em!
-			if ((player->kartstuff[k_rings] + player->kartstuff[k_pickuprings]) >= 20)
+			if (RINGTOTAL(player) >= 20)
 				return;
 
 			special->momx = special->momy = special->momz = 0;
@@ -3302,8 +3267,8 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	if (!player)
 		return;
 
-	// Has a shield? Don't lose your rings!
-	if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+	// Have a shield? You get hit, but don't lose your rings!
+	if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		return;
 
 	// 20 is the ring cap in kart

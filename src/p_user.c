@@ -1074,7 +1074,7 @@ void P_PlayLivesJingle(player_t *player)
 
 void P_PlayRinglossSound(mobj_t *source)
 {
-	if (source->player && source->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+	if (source->player && K_GetShieldFromItem(source->player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		S_StartSound(source, sfx_s1a3); // Shield hit (no ring loss)
 	else if (source->player && source->player->kartstuff[k_rings] <= 0)
 		S_StartSound(source, sfx_s1a6); // Ring debt (lessened ring loss)
@@ -1209,10 +1209,10 @@ void P_RestoreMusic(player_t *player)
 #define setbests(p) \
 	if (players[p].playerstate == PST_LIVE) \
 	{ \
-		if (players[p].kartstuff[k_growshrinktimer] > bestlocaltimer) \
-		{ wantedmus = 2; bestlocaltimer = players[p].kartstuff[k_growshrinktimer]; } \
-		else if (players[p].kartstuff[k_invincibilitytimer] > bestlocaltimer) \
+		if (players[p].kartstuff[k_invincibilitytimer] > bestlocaltimer) \
 		{ wantedmus = 1; bestlocaltimer = players[p].kartstuff[k_invincibilitytimer]; } \
+		else if (players[p].kartstuff[k_growshrinktimer] > bestlocaltimer) \
+		{ wantedmus = 2; bestlocaltimer = players[p].kartstuff[k_growshrinktimer]; } \
 	}
 			setbests(displayplayers[0]);
 			setbests(displayplayers[1]);
@@ -1226,10 +1226,10 @@ void P_RestoreMusic(player_t *player)
 		{
 			if (player->playerstate == PST_LIVE)
 			{
-				if (player->kartstuff[k_growshrinktimer] > 1)
-					wantedmus = 2;
-				else if (player->kartstuff[k_invincibilitytimer] > 1)
+				if (player->kartstuff[k_invincibilitytimer] > 1)
 					wantedmus = 1;
+				else if (player->kartstuff[k_growshrinktimer] > 1)
+					wantedmus = 2;
 			}
 		}
 
@@ -6133,7 +6133,8 @@ static void P_MovePlayer(player_t *player)
 	////////////////////////////
 
 	// SRB2kart - Drifting smoke and fire
-	if (EITHERSNEAKER(player) && onground && (leveltime & 1))
+	if ((EITHERSNEAKER(player) || player->kartstuff[k_flamedash])
+		&& onground && (leveltime & 1))
 		K_SpawnBoostTrail(player);
 
 	if (player->kartstuff[k_invincibilitytimer] > 0)
