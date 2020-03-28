@@ -465,12 +465,14 @@ extern INT32 hyudorotime;
 extern INT32 stealtime;
 extern INT32 sneakertime;
 extern INT32 itemtime;
+extern INT32 bubbletime;
 extern INT32 comebacktime;
 extern INT32 bumptime;
 extern INT32 greasetics;
 extern INT32 wipeoutslowtime;
 extern INT32 wantedreduce;
 extern INT32 wantedfrequency;
+extern INT32 flameseg;
 
 extern UINT8 introtoplay;
 extern UINT8 creditscutscene;
