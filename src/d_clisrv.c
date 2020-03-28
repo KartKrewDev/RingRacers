@@ -49,6 +49,7 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_bot.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -3612,6 +3613,7 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 static void Got_AddBot(UINT8 **p, INT32 playernum)
 {
 	INT16 newplayernum;
+	UINT8 skinnum = 0;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -3629,6 +3631,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	}
 
 	newplayernum = (UINT8)READUINT8(*p);
+	skinnum = (UINT8)READUINT8(*p);
 
 	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
 
@@ -3643,7 +3646,9 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	players[newplayernum].splitscreenindex = 0;
 	players[newplayernum].bot = true;
 
-	playerconsole[newplayernum] = 0;
+	players[newplayernum].skincolor = skins[skinnum].prefcolor;
+	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
+	SetPlayerSkinByNum(newplayernum, skinnum);
 
 	if (netgame)
 	{
@@ -3777,6 +3782,8 @@ boolean SV_SpawnServer(void)
 		if (!dedicated)
 			CL_ConnectToServer(false);
 		else doomcom->numslots = 1;
+
+		K_AddBots(7); // test
 	}
 
 	return SV_AddWaitingPlayers();

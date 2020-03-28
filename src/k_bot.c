@@ -19,24 +19,20 @@
 #include "lua_hook.h"
 #include "byteptr.h"
 #include "d_net.h" // nodetoplayer
-
-// If you want multiple bots, variables like this will
-// have to be stuffed in something accessible through player_t.
-static boolean lastForward = false;
-static boolean lastBlocked = false;
-static boolean blocked = false;
+#include "k_kart.h"
 
 void K_AddBots(UINT8 numbots)
 {
 	UINT8 newplayernum = 0;
-	UINT8 buf[4];
-	UINT8 *buf_p = buf;
 
 	if (dedicated)
 		newplayernum = 1;
 
 	while (numbots > 0)
 	{
+		UINT8 buf[2];
+		UINT8 *buf_p = buf;
+
 		numbots--;
 
 		// search for a free playernum
@@ -56,13 +52,19 @@ void K_AddBots(UINT8 numbots)
 				break;
 		}
 
-		// should never happen since we check the playernum
-		// before accepting the join
-		I_Assert(newplayernum < MAXPLAYERS);
-
 		WRITEUINT8(buf_p, newplayernum);
 
-		SendNetXCmd(XD_ADDPLAYER, buf, buf_p - buf);
+		// test skins
+		if (numbots == 6)
+			WRITEUINT8(buf_p, 0);
+		else if (numbots == 5)
+			WRITEUINT8(buf_p, 1);
+		else if (numbots == 4)
+			WRITEUINT8(buf_p, 9);
+		else
+			WRITEUINT8(buf_p, 10);
+
+		SendNetXCmd(XD_ADDBOT, buf, buf_p - buf);
 
 		DEBFILE(va("Server added bot %d\n", newplayernum));
 		// use the next free slot (we can't put playeringame[newplayernum] = true here)
@@ -70,90 +72,30 @@ void K_AddBots(UINT8 numbots)
 	}
 }
 
-static inline void B_BuildTailsTiccmd(mobj_t *sonic, mobj_t *tails, ticcmd_t *cmd)
+boolean K_PlayerUsesBotMovement(player_t *player)
 {
-	boolean forward=false, backward=false, left=false, right=false, jump=false, spin=false;
-	angle_t angle;
-	INT16 rangle;
-	fixed_t dist;
+	if (player->bot || player->exiting)
+		return true;
 
-	// We can't follow Sonic if he's not around!
-	if (!sonic || sonic->health <= 0)
-		return;
-
-#ifdef HAVE_BLUA
-	// Lua can handle it!
-	if (LUAh_BotAI(sonic, tails, cmd))
-		return;
-#endif
-
-	if (tails->player->pflags & (PF_MACESPIN|PF_ITEMHANG))
-	{
-		dist = P_AproxDistance(tails->x-sonic->x, tails->y-sonic->y);
-		if (sonic->player->cmd.buttons & BT_DRIFT && sonic->player->pflags & (PF_JUMPED|PF_MACESPIN|PF_ITEMHANG))
-			cmd->buttons |= BT_DRIFT;
-		if (sonic->player->pflags & (PF_MACESPIN|PF_ITEMHANG))
-		{
-			cmd->forwardmove = sonic->player->cmd.forwardmove;
-			cmd->angleturn = abs((signed)(tails->angle - sonic->angle))>>16;
-			if (sonic->angle < tails->angle)
-				cmd->angleturn = -cmd->angleturn;
-		} else if (dist > FixedMul(512*FRACUNIT, tails->scale))
-			cmd->buttons |= BT_DRIFT;
-		return;
-	}
-
-	// Gather data about the environment
-	dist = P_AproxDistance(tails->x-sonic->x, tails->y-sonic->y);
-	if (tails->player->pflags & PF_STARTDASH)
-		angle = sonic->angle;
-	else
-		angle = R_PointToAngle2(tails->x, tails->y, sonic->x, sonic->y);
-
-	// Decide which direction to turn
-	angle = (tails->angle - angle);
-	if (angle < ANGLE_180) {
-		right = true; // We need to turn right
-		rangle = AngleFixed(angle)>>FRACBITS;
-	} else {
-		left = true; // We need to turn left
-		rangle = 360-(AngleFixed(angle)>>FRACBITS);
-	}
-
-	// Decide to move forward if you're finished turning
-	if (abs(rangle) < 10) { // We're facing the right way?
-		left = right = false; // Stop turning
-		forward = true; // and walk forward instead.
-	}
-	if (dist < (sonic->radius+tails->radius)*3) // We're close enough?
-		forward = false; // Stop walking.
-
-	// Decide when to jump
-	if (!(tails->player->pflags & (PF_JUMPED|PF_JUMPDOWN))) { // We're not jumping yet...
-		if (forward && lastForward && blocked && lastBlocked) // We've been stopped by a wall or something
-			jump = true; // Try to jump up
-	} else if ((tails->player->pflags & (PF_JUMPDOWN|PF_JUMPED)) == (PF_JUMPDOWN|PF_JUMPED)) { // When we're already jumping...
-		if (lastForward && blocked) // We're still stuck on something?
-			jump = true;
-		if (sonic->floorz > tails->floorz) // He's still above us? Jump HIGHER, then!
-			jump = true;
-	}
-
-	// Decide when to spin
-	if (sonic->player->pflags & PF_STARTDASH
-	&& (tails->player->pflags & PF_STARTDASH || (P_AproxDistance(tails->momx, tails->momy) < 2*FRACUNIT && !forward)))
-		spin = true;
-
-	// Turn the virtual keypresses into ticcmd_t.
-	B_KeysToTiccmd(tails, cmd, forward, backward, left, right, false, false, jump, spin);
-
-	// Update our status
-	lastForward = forward;
-	lastBlocked = blocked;
-	blocked = false;
+	return false;
 }
 
-void B_BuildTiccmd(player_t *player, ticcmd_t *cmd)
+fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
+{
+	fixed_t v1toc[2] = {cx - v1x, cy - v1y};
+	fixed_t v1tov2[2] = {v2x - v1x, v2y - v1y};
+
+	fixed_t mag = FixedMul(v1tov2[0], v1tov2[0]) + FixedMul(v1tov2[1], v1tov2[1]);
+	fixed_t dot = FixedMul(v1toc[0], v1tov2[0]) + FixedMul(v1toc[1], v1tov2[1]);
+	fixed_t t = FixedDiv(dot, mag);
+
+	fixed_t px = v1x + FixedMul(v1tov2[0], t);
+	fixed_t py = v1y + FixedMul(v1tov2[1], t);
+
+	return P_AproxDistance(cx - px, cy - py);
+}
+
+void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
@@ -161,13 +103,9 @@ void B_BuildTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (player->playerstate == PST_DEAD)
 	{
-		if (B_CheckRespawn(player))
-			cmd->buttons |= BT_DRIFT;
+		cmd->buttons |= BT_ACCELERATE;
 		return;
 	}
-
-	// Bot AI isn't programmed in analog.
-	//CV_SetValue(&cv_analog2, false);
 
 #ifdef HAVE_BLUA
 	// Let Lua scripts build ticcmds
@@ -175,148 +113,103 @@ void B_BuildTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 #endif
 
-	// We don't have any main character AI, sorry. D:
-	if (player-players == consoleplayer)
-		return;
+	if (player->nextwaypoint != NULL && player->nextwaypoint->mobj != NULL && !P_MobjWasRemoved(player->nextwaypoint->mobj))
+	{
+		INT16 turnamt = KART_FULLTURN;
+		SINT8 turnsign = 0;
+		angle_t wpangle, moveangle, angle;
+		INT16 anglediff;
 
-	// Basic Tails AI
-	B_BuildTailsTiccmd(players[consoleplayer].mo, player->mo, cmd);
-}
+		wpangle = R_PointToAngle2(player->mo->x, player->mo->y, player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y);
 
-void B_KeysToTiccmd(mobj_t *mo, ticcmd_t *cmd, boolean forward, boolean backward, boolean left, boolean right, boolean strafeleft, boolean straferight, boolean jump, boolean spin)
-{
-	// Turn the virtual keypresses into ticcmd_t.
-	if (twodlevel || mo->flags2 & MF2_TWOD) {
-		if (players[consoleplayer].climbing
-		|| mo->player->pflags & PF_GLIDING) {
-			// Don't mess with bot inputs during these unhandled movement conditions.
-			// The normal AI doesn't use abilities, so custom AI should be sending us exactly what it wants anyway.
-			if (forward)
-				cmd->forwardmove += MAXPLMOVE<<FRACBITS>>16;
-			if (backward)
-				cmd->forwardmove -= MAXPLMOVE<<FRACBITS>>16;
-			if (left || strafeleft)
-				cmd->sidemove -= MAXPLMOVE<<FRACBITS>>16;
-			if (right || straferight)
-				cmd->sidemove += MAXPLMOVE<<FRACBITS>>16;
-		} else {
-			// In standard 2D mode, interpret "forward" as "the way you're facing" and everything else as "the way you're not facing"
-			if (left || right)
-				backward = true;
-			left = right = false;
-			if (forward) {
-				if (mo->angle < ANGLE_90 || mo->angle > ANGLE_270)
-					right = true;
-				else
-					left = true;
-			} else if (backward) {
-				if (mo->angle < ANGLE_90 || mo->angle > ANGLE_270)
-					left = true;
-				else
-					right = true;
+		if (player->mo->momx || player->mo->momy)
+		{
+			angle_t movevswp;
+
+			moveangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+
+			movevswp = (moveangle - wpangle);
+			if (movevswp > ANGLE_180)
+			{
+				movevswp = InvAngle(movevswp);
 			}
-			if (left || strafeleft)
-				cmd->sidemove -= MAXPLMOVE<<FRACBITS>>16;
-			if (right || straferight)
-				cmd->sidemove += MAXPLMOVE<<FRACBITS>>16;
+
+			if (movevswp > ANGLE_45)
+			{
+				// Use facing direction when going the wrong way
+				moveangle = player->mo->angle;
+			}
 		}
-	} else {
-		if (forward)
-			cmd->forwardmove += MAXPLMOVE<<FRACBITS>>16;
-		if (backward)
-			cmd->forwardmove -= MAXPLMOVE<<FRACBITS>>16;
-		if (left)
-			cmd->angleturn += 1280;
-		if (right)
-			cmd->angleturn -= 1280;
-		if (strafeleft)
-			cmd->sidemove -= MAXPLMOVE<<FRACBITS>>16;
-		if (straferight)
-			cmd->sidemove += MAXPLMOVE<<FRACBITS>>16;
+		else
+		{
+			// Default to facing direction
+			moveangle = player->mo->angle;
+		}
+
+		angle = (moveangle - wpangle);
+
+		if (angle < ANGLE_180)
+		{
+			turnsign = -1; // Turn right
+			anglediff = AngleFixed(angle)>>FRACBITS;
+		}
+		else 
+		{
+			turnsign = 1; // Turn left
+			anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+		}
+
+		anglediff = abs(anglediff);
+
+		if (anglediff > 90)
+		{
+			// Wrong way!
+			cmd->forwardmove = -25;
+			cmd->buttons |= BT_BRAKE;
+		}
+		else
+		{
+			fixed_t rad = player->nextwaypoint->mobj->radius - (player->mo->radius*2);
+			fixed_t dirdist = K_DistanceOfLineFromPoint(
+				player->mo->x, player->mo->y,
+				player->mo->x + FINECOSINE(moveangle >> ANGLETOFINESHIFT), player->mo->y + FINESINE(moveangle >> ANGLETOFINESHIFT),
+				player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y
+			);
+
+			if (player == &players[displayplayers[0]])
+				CONS_Printf("perpendicular dist: %d\n", dirdist / FRACUNIT);
+
+			cmd->buttons |= BT_ACCELERATE;
+
+			// Full speed ahead!
+			cmd->forwardmove = 50;
+
+			if (dirdist <= 3*rad/4)
+			{
+				if (dirdist < rad/4)
+				{
+					// Don't need to turn!
+					turnamt = 0;
+				}
+				else
+				{
+					// Make minor adjustments
+					turnamt /= 4;
+				}
+			}
+			else
+			{
+				// Actually, don't go too fast...
+				cmd->forwardmove /= 2;
+				cmd->buttons |= BT_BRAKE;
+			}
+		}
+
+		if (turnamt != 0)
+		{
+			cmd->driftturn = KART_FULLTURN * turnsign;
+			cmd->angleturn += KART_FULLTURN * turnsign;
+		}
 	}
-	if (jump)
-		cmd->buttons |= BT_DRIFT;
-	if (spin)
-		cmd->buttons |= BT_BRAKE;
 }
 
-void B_MoveBlocked(player_t *player)
-{
-	(void)player;
-	blocked = true;
-}
-
-boolean B_CheckRespawn(player_t *player)
-{
-	mobj_t *sonic = players[consoleplayer].mo;
-	mobj_t *tails = player->mo;
-
-	// We can't follow Sonic if he's not around!
-	if (!sonic || sonic->health <= 0)
-		return false;
-
-	// Check if Sonic is busy first.
-	// If he's doing any of these things, he probably doesn't want to see us.
-	if (sonic->player->pflags & (PF_ROPEHANG|PF_GLIDING|PF_CARRIED|PF_SLIDING|PF_ITEMHANG|PF_MACESPIN|PF_NIGHTSMODE)
-	|| (sonic->player->panim != PA_IDLE && sonic->player->panim != PA_WALK))
-		return false;
-
-	// Low ceiling, do not want!
-	if (sonic->ceilingz - sonic->z < 2*sonic->height)
-		return false;
-
-	// If you're dead, wait a few seconds to respawn.
-	if (player->playerstate == PST_DEAD) {
-		if (player->deadtimer > 4*TICRATE)
-			return true;
-		return false;
-	}
-
-	// If you can't see Sonic, I guess we should?
-	if (!P_CheckSight(sonic, tails) && P_AproxDistance(P_AproxDistance(tails->x-sonic->x, tails->y-sonic->y), tails->z-sonic->z) > FixedMul(1024*FRACUNIT, tails->scale))
-		return true;
-	return false;
-}
-
-void B_RespawnBot(INT32 playernum)
-{
-	player_t *player = &players[playernum];
-	fixed_t x,y,z;
-	mobj_t *sonic = players[consoleplayer].mo;
-	mobj_t *tails;
-
-	if (!sonic || sonic->health <= 0)
-		return;
-
-	P_SpawnPlayer(playernum);
-	tails = player->mo;
-
-	x = sonic->x;
-	y = sonic->y;
-	if (sonic->eflags & MFE_VERTICALFLIP) {
-		tails->eflags |= MFE_VERTICALFLIP;
-		z = sonic->z - FixedMul(512*FRACUNIT,sonic->scale);
-		if (z < sonic->floorz)
-			z = sonic->floorz;
-	} else {
-		z = sonic->z + sonic->height + FixedMul(512*FRACUNIT,sonic->scale);
-		if (z > sonic->ceilingz - sonic->height)
-			z = sonic->ceilingz - sonic->height;
-	}
-
-	if (sonic->flags2 & MF2_OBJECTFLIP)
-		tails->flags2 |= MF2_OBJECTFLIP;
-	if (sonic->flags2 & MF2_TWOD)
-		tails->flags2 |= MF2_TWOD;
-	if (sonic->eflags & MFE_UNDERWATER)
-		tails->eflags |= MFE_UNDERWATER;
-	player->powers[pw_underwater] = sonic->player->powers[pw_underwater];
-	player->powers[pw_spacetime] = sonic->player->powers[pw_spacetime];
-	player->powers[pw_gravityboots] = sonic->player->powers[pw_gravityboots];
-	player->powers[pw_nocontrol] = sonic->player->powers[pw_nocontrol];
-
-	P_TeleportMove(tails, x, y, z);
-	P_SetPlayerMobjState(tails, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
-	P_SetScale(tails, sonic->scale);
-	tails->destscale = sonic->destscale;
-}

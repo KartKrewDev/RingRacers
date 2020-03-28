@@ -8023,18 +8023,6 @@ void P_PlayerThink(player_t *player)
 		player->playerstate = PST_DEAD;
 	}
 
-	if (player->bot)
-	{
-		if (player->playerstate == PST_LIVE || player->playerstate == PST_DEAD)
-		{
-			if (B_CheckRespawn(player))
-				player->playerstate = PST_REBORN;
-		}
-
-		if (player->playerstate == PST_REBORN)
-			return;
-	}
-
 #ifdef SEENAMES
 	if (netgame && player == &players[displayplayers[0]] && !(leveltime % (TICRATE/5)) && !r_splitscreen)
 	{

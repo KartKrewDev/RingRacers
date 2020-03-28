@@ -945,6 +945,12 @@ boolean LUAh_PlayerCmd(player_t *player, ticcmd_t *cmd)
 // Hook for B_BuildTailsTiccmd by skin name
 boolean LUAh_BotAI(mobj_t *sonic, mobj_t *tails, ticcmd_t *cmd)
 {
+#if 1
+	(void)sonic;
+	(void)tails;
+	(void)cmd;
+	return false;
+#else
 	hook_p hookp;
 	boolean hooked = false;
 	if (!gL || !(hooksAvailable[hook_BotAI/8] & (1<<(hook_BotAI%8))))
@@ -1001,6 +1007,7 @@ boolean LUAh_BotAI(mobj_t *sonic, mobj_t *tails, ticcmd_t *cmd)
 
 	lua_settop(gL, 0);
 	return hooked;
+#endif
 }
 
 // Hook for linedef executors

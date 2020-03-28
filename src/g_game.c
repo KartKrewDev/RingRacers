@@ -1297,6 +1297,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		return;
 	}
 
+	if (K_PlayerUsesBotMovement(player))
+	{
+		return;
+	}
+
 	switch (ssplayer)
 	{
 		case 2:
@@ -1601,9 +1606,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	//Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
-		&& ! r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
+		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
 		displayplayers[0] = consoleplayer;
-
 }
 
 // User has designated that they want
@@ -2374,9 +2378,17 @@ void G_Ticker(boolean run)
 
 		if (playeringame[i])
 		{
-			G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
-			// Use the leveltime sent in the player's ticcmd to determine control lag
-			cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
+			if (K_PlayerUsesBotMovement(&players[i]))
+			{
+				K_BuildBotTiccmd(&players[i], cmd);
+				cmd->latency = 0;
+			}
+			else
+			{
+				G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
+				// Use the leveltime sent in the player's ticcmd to determine control lag
+				cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
+			}
 		}
 	}
 

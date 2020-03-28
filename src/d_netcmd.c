@@ -49,7 +49,6 @@
 #include "k_kart.h" // SRB2kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
-#include "k_bot.h"
 #include "y_inter.h"
 
 #ifdef NETGAME_DEVMODE
@@ -2736,8 +2735,6 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 			if (!Playing()) // you failed to start a server somehow, so cancel the map change
 				return;
 		}
-
-		K_AddBots(13);
 
 		chmappending++;
 		if (netgame)

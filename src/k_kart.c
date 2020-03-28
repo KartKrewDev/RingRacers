@@ -27,6 +27,7 @@
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
 
 #include "k_waypoint.h"
+#include "k_bot.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -6402,7 +6403,8 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 					}
 				}
 
-				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U))
+				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U)
+				&& !K_PlayerUsesBotMovement(player))
 				{
 					for (i = 0U; i < waypoint->numprevwaypoints; i++)
 					{
@@ -6557,70 +6559,67 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
 	if ((player != NULL) && (player->mo != NULL))
 	{
+		waypoint_t *finishline   = K_GetFinishLineWaypoint();
+		waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player);
+
+		if (nextwaypoint != NULL)
+		{
+			// If nextwaypoint is NULL, it means we don't want to update the waypoint until we touch another one.
+			// player->nextwaypoint will keep its previous value in this case.
+			player->nextwaypoint = nextwaypoint;
+		}
+
+		// nextwaypoint is now the waypoint that is in front of us
 		if (player->exiting)
 		{
-			player->nextwaypoint     = K_GetFinishLineWaypoint();
+			// Player has finished, we don't need to calculate distance
 			player->distancetofinish = 0U;
 		}
-		else
+		else if ((player->nextwaypoint != NULL) && (finishline != NULL))
 		{
-			waypoint_t *finishline   = K_GetFinishLineWaypoint();
-			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player);
+			const boolean useshortcuts = false;
+			const boolean huntbackwards = false;
+			boolean pathfindsuccess = false;
+			path_t pathtofinish = {};
 
-			if (nextwaypoint != NULL)
+			pathfindsuccess =
+				K_PathfindToWaypoint(player->nextwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+
+			// Update the player's distance to the finish line if a path was found.
+			// Using shortcuts won't find a path, so distance won't be updated until the player gets back on track
+			if (pathfindsuccess == true)
 			{
-				// If nextwaypoint is NULL, it means we don't want to update the waypoint until we touch another one.
-				// player->nextwaypoint will keep its previous value in this case.
-				player->nextwaypoint = nextwaypoint;
-			}
+				// Add euclidean distance to the next waypoint to the distancetofinish
+				UINT32 adddist;
+				fixed_t disttowaypoint =
+					P_AproxDistance(
+						(player->mo->x >> FRACBITS) - (player->nextwaypoint->mobj->x >> FRACBITS),
+						(player->mo->y >> FRACBITS) - (player->nextwaypoint->mobj->y >> FRACBITS));
+				disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
 
-			// nextwaypoint is now the waypoint that is in front of us
-			if ((player->nextwaypoint != NULL) && (finishline != NULL))
-			{
-				const boolean useshortcuts = false;
-				const boolean huntbackwards = false;
-				boolean pathfindsuccess = false;
-				path_t pathtofinish = {};
+				adddist = (UINT32)disttowaypoint;
 
-				pathfindsuccess =
-					K_PathfindToWaypoint(player->nextwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+				player->distancetofinish = pathtofinish.totaldist + adddist;
+				Z_Free(pathtofinish.array);
 
-				// Update the player's distance to the finish line if a path was found.
-				// Using shortcuts won't find a path, so distance won't be updated until the player gets back on track
-				if (pathfindsuccess == true)
+				// distancetofinish is currently a flat distance to the finish line, but in order to be fully
+				// correct we need to add to it the length of the entire circuit multiplied by the number of laps
+				// left after this one. This will give us the total distance to the finish line, and allow item
+				// distance calculation to work easily
+				if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					// Add euclidean distance to the next waypoint to the distancetofinish
-					UINT32 adddist;
-					fixed_t disttowaypoint =
-						P_AproxDistance(
-							(player->mo->x >> FRACBITS) - (player->nextwaypoint->mobj->x >> FRACBITS),
-							(player->mo->y >> FRACBITS) - (player->nextwaypoint->mobj->y >> FRACBITS));
-					disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
+					const UINT8 numfulllapsleft = ((UINT8)cv_numlaps.value - player->laps);
 
-					adddist = (UINT32)disttowaypoint;
+					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 
-					player->distancetofinish = pathtofinish.totaldist + adddist;
-					Z_Free(pathtofinish.array);
-
-					// distancetofinish is currently a flat distance to the finish line, but in order to be fully
-					// correct we need to add to it the length of the entire circuit multiplied by the number of laps
-					// left after this one. This will give us the total distance to the finish line, and allow item
-					// distance calculation to work easily
-					if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
+					// An additional HACK, to fix looking backwards towards the finish line
+					// If the player's next waypoint is the finishline and the angle distance from player to
+					// connectin waypoints implies they're closer to a next waypoint, add a full track distance
+					if (player->nextwaypoint == finishline)
 					{
-						const UINT8 numfulllapsleft = ((UINT8)cv_numlaps.value - player->laps);
-
-						player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
-
-						// An additional HACK, to fix looking backwards towards the finish line
-						// If the player's next waypoint is the finishline and the angle distance from player to
-						// connectin waypoints implies they're closer to a next waypoint, add a full track distance
-						if (player->nextwaypoint == finishline)
+						if (K_PlayerCloserToNextWaypoints(player->nextwaypoint, player) == true)
 						{
-							if (K_PlayerCloserToNextWaypoints(player->nextwaypoint, player) == true)
-							{
-								player->distancetofinish += K_GetCircuitLength();
-							}
+							player->distancetofinish += K_GetCircuitLength();
 						}
 					}
 				}

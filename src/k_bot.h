@@ -11,8 +11,6 @@
 /// \brief Basic bot handling
 
 void K_AddBots(UINT8 numbots);
-void B_BuildTiccmd(player_t *player, ticcmd_t *cmd);
-void B_KeysToTiccmd(mobj_t *mo, ticcmd_t *cmd, boolean forward, boolean backward, boolean left, boolean right, boolean strafeleft, boolean straferight, boolean jump, boolean spin);
-boolean B_CheckRespawn(player_t *player);
-void B_MoveBlocked(player_t *player);
-void B_RespawnBot(INT32 playernum);
+boolean K_PlayerUsesBotMovement(player_t *player);
+fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy);
+void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);
