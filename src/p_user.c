@@ -4075,9 +4075,8 @@ static void P_3dMovement(player_t *player)
 	player->aiming = cmd->aiming<<FRACBITS;
 
 	// Forward movement
-	if (!((player->exiting || mapreset) || (P_PlayerInPain(player) && !onground)))
+	if (!(P_PlayerInPain(player) && !onground))
 	{
-		//movepushforward = cmd->forwardmove * (thrustfactor * acceleration);
 		movepushforward = K_3dKartMovement(player, onground, cmd->forwardmove);
 
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
@@ -4095,12 +4094,8 @@ static void P_3dMovement(player_t *player)
 			movepushforward = 0;
 		}
 
-#ifdef ESLOPE
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
-#else
-		P_Thrust(player->mo, movepushangle, movepushforward);
-#endif
 	}
 	else if (!(player->kartstuff[k_spinouttimer]))
 	{
@@ -4115,15 +4110,10 @@ static void P_3dMovement(player_t *player)
 		else
 			movepushside = (cmd->sidemove * FRACUNIT/128) - FixedDiv(player->speed, K_GetKartSpeed(player, true));
 
-#ifdef ESLOPE
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushsideangle, movepushside);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushsideangle, movepushside);
-#else
-		P_Thrust(player->mo, movepushsideangle, movepushside);
-#endif
 	}
 
-#ifdef ESLOPE
 	if ((totalthrust.x || totalthrust.y)
 		&& player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) && abs(player->mo->standingslope->zdelta) > FRACUNIT/2) {
 		// Factor thrust to slope, but only for the part pushing up it!
@@ -4141,6 +4131,11 @@ static void P_3dMovement(player_t *player)
 		}
 	}
 
+	if (K_PlayerUsesBotMovement(player))
+	{
+		K_MomentumToFacing(player);
+	}
+
 	player->mo->momx += totalthrust.x;
 	player->mo->momy += totalthrust.y;
 
@@ -4155,7 +4150,6 @@ static void P_3dMovement(player_t *player)
 			player->mo->momy = FixedMul(FixedDiv(player->mo->momy, speed), newspeed);
 		}
 	}
-#endif
 
 	// Time to ask three questions:
 	// 1) Are we over topspeed?

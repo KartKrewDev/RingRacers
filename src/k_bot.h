@@ -12,5 +12,4 @@
 
 void K_AddBots(UINT8 numbots);
 boolean K_PlayerUsesBotMovement(player_t *player);
-fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy);
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);

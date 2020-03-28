@@ -80,7 +80,7 @@ boolean K_PlayerUsesBotMovement(player_t *player)
 	return false;
 }
 
-fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
+static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
 {
 	fixed_t v1toc[2] = {cx - v1x, cy - v1y};
 	fixed_t v1tov2[2] = {v2x - v1x, v2y - v1y};
@@ -121,30 +121,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		INT16 anglediff;
 
 		wpangle = R_PointToAngle2(player->mo->x, player->mo->y, player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y);
-
-		if (player->mo->momx || player->mo->momy)
-		{
-			angle_t movevswp;
-
-			moveangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-
-			movevswp = (moveangle - wpangle);
-			if (movevswp > ANGLE_180)
-			{
-				movevswp = InvAngle(movevswp);
-			}
-
-			if (movevswp > ANGLE_45)
-			{
-				// Use facing direction when going the wrong way
-				moveangle = player->mo->angle;
-			}
-		}
-		else
-		{
-			// Default to facing direction
-			moveangle = player->mo->angle;
-		}
+		moveangle = player->mo->angle;
 
 		angle = (moveangle - wpangle);
 
@@ -184,9 +161,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			// Full speed ahead!
 			cmd->forwardmove = 50;
 
-			if (dirdist <= 3*rad/4)
+			if (dirdist <= rad)
 			{
-				if (dirdist < rad/4)
+				if (dirdist < rad/2)
 				{
 					// Don't need to turn!
 					turnamt = 0;
@@ -197,12 +174,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					turnamt /= 4;
 				}
 			}
-			else
+			/*else
 			{
 				// Actually, don't go too fast...
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
-			}
+			}*/
 		}
 
 		if (turnamt != 0)
