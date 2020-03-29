@@ -63,7 +63,6 @@ void A_ThrownRing(); // Sparkle trail for red ring
 void A_GrenadeRing(); // SRB2kart
 void A_SetSolidSteam();
 void A_UnsetSolidSteam();
-void A_SignPlayer();
 void A_OverlayThink();
 void A_JetChase();
 void A_JetbThink(); // Jetty-Syn Bomber Thinker
@@ -178,6 +177,7 @@ void A_MayonakaArrow();	//SRB2kart: midnight channel arrow sign
 void A_ReaperThinker();	//SRB2kart: mementos reaper
 void A_MementosTPParticles();	//SRB2kart: mementos teleporter particles. Man that's a lot of actions for my shite.
 void A_FlameParticle(); // SRB2kart
+void A_FlameShieldPaper();
 void A_OrbitNights();
 void A_GhostMe();
 void A_SetObjectState();
@@ -459,15 +459,23 @@ typedef enum sprite
 	SPR_RBRD, // Red Birdie in Bubble
 
 	// Springs
-	SPR_SPRY, // yellow spring
-	SPR_SPRR, // red spring
-	SPR_SPRB, // Blue springs
-	SPR_YSPR, // Yellow Diagonal Spring
-	SPR_RSPR, // Red Diagonal Spring
+	SPR_SPVY, // Yellow Vertical Spring
+	SPR_SPVR, // Red Vertical Spring
+	SPR_SPVB, // Blue Vertical Spring
+	SPR_SPVG, // Grey Vertical Spring
+	SPR_SPDY, // Yellow Diagonal Spring
+	SPR_SPDR, // Red Diagonal Spring
+	SPR_SPDB, // Blue Diagonal Spring
+	SPR_SPDG, // Grey Diagonal Spring
+	SPR_SPHY, // Yellow Horizontal Spring
+	SPR_SPHR, // Red Horizontal Spring
+	SPR_SPHB, // Blue Horizontal Spring
+	SPR_SPHG, // Grey Horizontal Spring
 
 	// Environmental Effects
 	SPR_RAIN, // Rain
 	SPR_SNO1, // Snowflake
+	SPR_SNO2, // Blizzard Snowball
 	SPR_SPLH, // Water Splish
 	SPR_SPLA, // Water Splash
 	SPR_SMOK,
@@ -587,9 +595,6 @@ typedef enum sprite
 	SPR_SRBO,
 
 	// Springs
-	SPR_SPRG, // Gray Spring
-	SPR_BSPR, // Blue Diagonal Spring
-
 	SPR_RNDM, // Random Item Box
 	SPR_RPOP, // Random Item Box Pop
 	SPR_SGNS, // Signpost sparkle
@@ -604,6 +609,7 @@ typedef enum sprite
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
 	SPR_DUST, // Drift Dust
+	SPR_DRWS, // Drift dust sparks
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -617,6 +623,13 @@ typedef enum sprite
 	SPR_BHBM, // Ballhog BOOM
 	SPR_SPBM, // Self-Propelled Bomb
 	SPR_THNS, // Thunder Shield
+	SPR_BUBS, // Bubble Shield (not Bubs)
+	SPR_BWVE, // Bubble Shield waves
+	SPR_FLMS, // Flame Shield
+	SPR_FLMD, // Flame Shield dash
+	SPR_FLMP, // Flame Shield paper sprites
+	SPR_FLML, // Flame Shield speed lines
+	SPR_FLMF, // Flame Shield flash
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
 	SPR_KBLN, // Battle Mode Bumper
@@ -635,7 +648,6 @@ typedef enum sprite
 	SPR_CHOM, // Sapphire Coast Chomper
 	SPR_SACO, // Sapphire Coast Fauna
 	SPR_CRAB, // Crystal Abyss mobs
-	SPR_SHAD, // TD shadows
 	SPR_BRNG, // Chaotix Big Ring
 
 	SPR_BUMP, // Player/shell bump
@@ -775,6 +787,14 @@ typedef enum sprite
 	SPR_WBLN,
 
 	SPR_FWRK,
+	SPR_MXCL,
+	SPR_RGSP,
+	SPR_DRAF,
+	SPR_GRES,
+
+	SPR_OTFG,
+
+	SPR_DBOS, // Drift boost flame
 
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
@@ -1678,6 +1698,18 @@ typedef enum state
 
 	// Ring
 	S_RING,
+	S_FASTRING1,
+	S_FASTRING2,
+	S_FASTRING3,
+	S_FASTRING4,
+	S_FASTRING5,
+	S_FASTRING6,
+	S_FASTRING7,
+	S_FASTRING8,
+	S_FASTRING9,
+	S_FASTRING10,
+	S_FASTRING11,
+	S_FASTRING12,
 
 	// Blue Sphere for special stages
 	S_BLUEBALL,
@@ -1757,27 +1789,10 @@ typedef enum state
 	S_BUBBLES2,
 
 	// Level End Sign
-	S_SIGN1,
-	S_SIGN2,
-	S_SIGN3,
-	S_SIGN4,
-	S_SIGN5,
-	S_SIGN6,
-	S_SIGN7,
-	S_SIGN8,
-	S_SIGN9,
-	S_SIGN10,
-	S_SIGN11,
-	S_SIGN12,
-	S_SIGN13,
-	S_SIGN14,
-	S_SIGN15,
-	S_SIGN16,
-	S_SIGN17,
-	S_SIGN18,
-	S_SIGN19,
-	S_SIGN20,
-	S_SIGN_END,
+	S_SIGN_POLE,
+	S_SIGN_BACK,
+	S_SIGN_SIDE,
+	S_SIGN_FACE,
 
 	// Steam Riser
 	S_STEAM1,
@@ -2479,44 +2494,77 @@ typedef enum state
 	S_RBIRD2,
 	S_RBIRD3,
 
-	S_YELLOWSPRING,
+	// Yellow Spring
+	S_YELLOWSPRING1,
 	S_YELLOWSPRING2,
 	S_YELLOWSPRING3,
 	S_YELLOWSPRING4,
-	S_YELLOWSPRING5,
 
-	S_REDSPRING,
+	// Red Spring
+	S_REDSPRING1,
 	S_REDSPRING2,
 	S_REDSPRING3,
 	S_REDSPRING4,
-	S_REDSPRING5,
 
-	// Blue Springs
-	S_BLUESPRING,
+	// Blue Spring
+	S_BLUESPRING1,
 	S_BLUESPRING2,
 	S_BLUESPRING3,
 	S_BLUESPRING4,
-	S_BLUESPRING5,
+
+	// Grey Spring
+	S_GREYSPRING1,
+	S_GREYSPRING2,
+	S_GREYSPRING3,
+	S_GREYSPRING4,
 
 	// Yellow Diagonal Spring
 	S_YDIAG1,
 	S_YDIAG2,
 	S_YDIAG3,
 	S_YDIAG4,
-	S_YDIAG5,
-	S_YDIAG6,
-	S_YDIAG7,
-	S_YDIAG8,
 
 	// Red Diagonal Spring
 	S_RDIAG1,
 	S_RDIAG2,
 	S_RDIAG3,
 	S_RDIAG4,
-	S_RDIAG5,
-	S_RDIAG6,
-	S_RDIAG7,
-	S_RDIAG8,
+
+	// Blue Diagonal Spring
+	S_BDIAG1,
+	S_BDIAG2,
+	S_BDIAG3,
+	S_BDIAG4,
+
+	// Grey Diagonal Spring
+	S_GDIAG1,
+	S_GDIAG2,
+	S_GDIAG3,
+	S_GDIAG4,
+
+	// Yellow Horizontal Spring
+	S_YHORIZ1,
+	S_YHORIZ2,
+	S_YHORIZ3,
+	S_YHORIZ4,
+
+	// Red Horizontal Spring
+	S_RHORIZ1,
+	S_RHORIZ2,
+	S_RHORIZ3,
+	S_RHORIZ4,
+
+	// Blue Horizontal Spring
+	S_BHORIZ1,
+	S_BHORIZ2,
+	S_BHORIZ3,
+	S_BHORIZ4,
+
+	// Grey Horizontal Spring
+	S_GHORIZ1,
+	S_GHORIZ2,
+	S_GHORIZ3,
+	S_GHORIZ4,
 
 	// Rain
 	S_RAIN1,
@@ -2526,6 +2574,11 @@ typedef enum state
 	S_SNOW1,
 	S_SNOW2,
 	S_SNOW3,
+
+	// Blizzard Snowball
+	S_BLIZZARDSNOW1,
+	S_BLIZZARDSNOW2,
+	S_BLIZZARDSNOW3,
 
 	// Water Splish
 	S_SPLISH1,
@@ -3141,26 +3194,6 @@ typedef enum state
 	S_SRB1_GENREX1,
 	S_SRB1_GENREX2,
 
-	// Gray Springs
-	S_GRAYSPRING,
-	S_GRAYSPRING2,
-	S_GRAYSPRING3,
-	S_GRAYSPRING4,
-	S_GRAYSPRING5,
-
-	// Invis-spring - this is used just for the sproing sound.
-	S_INVISSPRING,
-
-	// Blue Diagonal Spring
-	S_BDIAG1,
-	S_BDIAG2,
-	S_BDIAG3,
-	S_BDIAG4,
-	S_BDIAG5,
-	S_BDIAG6,
-	S_BDIAG7,
-	S_BDIAG8,
-
 	//{ Random Item Box
 	S_RANDOMITEM1,
 	S_RANDOMITEM2,
@@ -3217,6 +3250,8 @@ typedef enum state
 	S_DRIFTSPARK_B1,
 	S_DRIFTSPARK_C1,
 	S_DRIFTSPARK_C2,
+	S_DRIFTSPARK_D1,
+	S_DRIFTSPARK_D2,
 
 	// Brake drift sparks
 	S_BRAKEDRIFT,
@@ -3226,6 +3261,12 @@ typedef enum state
 	S_DRIFTDUST2,
 	S_DRIFTDUST3,
 	S_DRIFTDUST4,
+
+	// Drift Sparkles
+	S_DRIFTWARNSPARK1,
+	S_DRIFTWARNSPARK2,
+	S_DRIFTWARNSPARK3,
+	S_DRIFTWARNSPARK4,
 
 	// Fast lines
 	S_FASTLINE1,
@@ -3243,7 +3284,11 @@ typedef enum state
 	S_FASTDUST6,
 	S_FASTDUST7,
 
-	// Magnet Burst
+	// Drift boost effect
+	S_DRIFTEXPLODE1,
+	S_DRIFTEXPLODE2,
+	S_DRIFTEXPLODE3,
+	S_DRIFTEXPLODE4,
 
 	// Sneaker boost effect
 	S_BOOSTFLAME,
@@ -3504,6 +3549,85 @@ typedef enum state
 	S_THUNDERSHIELD23,
 	S_THUNDERSHIELD24,
 
+	// Bubble Shield
+	S_BUBBLESHIELD1,
+	S_BUBBLESHIELD2,
+	S_BUBBLESHIELD3,
+	S_BUBBLESHIELD4,
+	S_BUBBLESHIELD5,
+	S_BUBBLESHIELD6,
+	S_BUBBLESHIELD7,
+	S_BUBBLESHIELD8,
+	S_BUBBLESHIELD9,
+	S_BUBBLESHIELD10,
+	S_BUBBLESHIELD11,
+	S_BUBBLESHIELD12,
+	S_BUBBLESHIELD13,
+	S_BUBBLESHIELD14,
+	S_BUBBLESHIELD15,
+	S_BUBBLESHIELD16,
+	S_BUBBLESHIELD17,
+	S_BUBBLESHIELD18,
+	S_BUBBLESHIELDBLOWUP,
+	S_BUBBLESHIELDTRAP1,
+	S_BUBBLESHIELDTRAP2,
+	S_BUBBLESHIELDTRAP3,
+	S_BUBBLESHIELDTRAP4,
+	S_BUBBLESHIELDTRAP5,
+	S_BUBBLESHIELDTRAP6,
+	S_BUBBLESHIELDTRAP7,
+	S_BUBBLESHIELDTRAP8,
+	S_BUBBLESHIELDWAVE1,
+	S_BUBBLESHIELDWAVE2,
+	S_BUBBLESHIELDWAVE3,
+	S_BUBBLESHIELDWAVE4,
+	S_BUBBLESHIELDWAVE5,
+	S_BUBBLESHIELDWAVE6,
+
+	// Flame Shield
+	S_FLAMESHIELD1,
+	S_FLAMESHIELD2,
+	S_FLAMESHIELD3,
+	S_FLAMESHIELD4,
+	S_FLAMESHIELD5,
+	S_FLAMESHIELD6,
+	S_FLAMESHIELD7,
+	S_FLAMESHIELD8,
+	S_FLAMESHIELD9,
+	S_FLAMESHIELD10,
+	S_FLAMESHIELD11,
+	S_FLAMESHIELD12,
+	S_FLAMESHIELD13,
+	S_FLAMESHIELD14,
+	S_FLAMESHIELD15,
+	S_FLAMESHIELD16,
+	S_FLAMESHIELD17,
+	S_FLAMESHIELD18,
+
+	S_FLAMESHIELDDASH1,
+	S_FLAMESHIELDDASH2,
+	S_FLAMESHIELDDASH3,
+	S_FLAMESHIELDDASH4,
+	S_FLAMESHIELDDASH5,
+	S_FLAMESHIELDDASH6,
+	S_FLAMESHIELDDASH7,
+	S_FLAMESHIELDDASH8,
+	S_FLAMESHIELDDASH9,
+	S_FLAMESHIELDDASH10,
+	S_FLAMESHIELDDASH11,
+	S_FLAMESHIELDDASH12,
+
+	S_FLAMESHIELDDASH2_UNDERLAY,
+	S_FLAMESHIELDDASH5_UNDERLAY,
+	S_FLAMESHIELDDASH8_UNDERLAY,
+	S_FLAMESHIELDDASH11_UNDERLAY,
+
+	S_FLAMESHIELDPAPER,
+	S_FLAMESHIELDLINE1,
+	S_FLAMESHIELDLINE2,
+	S_FLAMESHIELDLINE3,
+	S_FLAMESHIELDFLASH,
+
 	// The legend
 	S_SINK,
 	S_SINK_SHIELD,
@@ -3518,6 +3642,11 @@ typedef enum state
 
 	// DEZ Laser respawn
 	S_DEZLASER,
+	S_DEZLASER_TRAIL1,
+	S_DEZLASER_TRAIL2,
+	S_DEZLASER_TRAIL3,
+	S_DEZLASER_TRAIL4,
+	S_DEZLASER_TRAIL5,
 
 	// Audience Members
 	S_RANDOMAUDIENCE,
@@ -3635,9 +3764,6 @@ typedef enum state
 	S_FLYINGGARG8,
 	S_LAMPPOST,
 	S_MOSSYTREE,
-
-	S_SHADOW,
-	S_WHITESHADOW,
 
 	S_BUMP1,
 	S_BUMP2,
@@ -4087,6 +4213,42 @@ typedef enum state
 	S_CHEESEHAPPY3,
 	S_CHEESEHAPPY4,
 
+	S_RINGDEBT,
+	S_RINGSPARKS1,
+	S_RINGSPARKS2,
+	S_RINGSPARKS3,
+	S_RINGSPARKS4,
+	S_RINGSPARKS5,
+	S_RINGSPARKS6,
+	S_RINGSPARKS7,
+	S_RINGSPARKS8,
+	S_RINGSPARKS9,
+	S_RINGSPARKS10,
+	S_RINGSPARKS11,
+	S_RINGSPARKS12,
+	S_RINGSPARKS13,
+	S_RINGSPARKS14,
+	S_RINGSPARKS15,
+
+	S_DRAFTDUST1,
+	S_DRAFTDUST2,
+	S_DRAFTDUST3,
+	S_DRAFTDUST4,
+	S_DRAFTDUST5,
+
+	S_TIREGREASE,
+
+	S_OVERTIMEFOG,
+	S_OVERTIMEORB,
+	S_OVERTIMEBEAM,
+
+	S_BATTLECAPSULE_SIDE1,
+	S_BATTLECAPSULE_SIDE2,
+	S_BATTLECAPSULE_TOP,
+	S_BATTLECAPSULE_BUTTON,
+	S_BATTLECAPSULE_SUPPORT,
+	S_BATTLECAPSULE_SUPPORTFLY,
+
 #ifdef SEENAMES
 	S_NAMECHECK,
 #endif
@@ -4233,15 +4395,23 @@ typedef enum mobj_type
 	// Springs and others
 	MT_FAN,
 	MT_STEAM, // Steam riser
-	MT_BLUESPRING,
 	MT_YELLOWSPRING,
 	MT_REDSPRING,
+	MT_BLUESPRING,
+	MT_GREYSPRING,
 	MT_YELLOWDIAG, // Yellow Diagonal Spring
 	MT_REDDIAG, // Red Diagonal Spring
+	MT_BLUEDIAG, // Blue Diagonal Spring
+	MT_GREYDIAG, // Grey Diagonal Spring
+	MT_YELLOWHORIZ, // Yellow Horizontal Spring
+	MT_REDHORIZ, // Red Horizontal Spring
+	MT_BLUEHORIZ, // Blue Horizontal Spring
+	MT_GREYHORIZ, // Grey Horizontal Spring
 
 	// Interactive Objects
 	MT_BUBBLES, // Bubble source
 	MT_SIGN, // Level end sign
+	MT_SIGN_PIECE,
 	MT_SPIKEBALL, // Spike Ball
 	MT_SPECIALSPIKEBALL,
 	MT_SPINFIRE,
@@ -4468,6 +4638,7 @@ typedef enum mobj_type
 	// Environmental Effects
 	MT_RAIN, // Rain
 	MT_SNOWFLAKE, // Snowflake
+	MT_BLIZZARDSNOW, // Blizzard Snowball
 	MT_SPLISH, // Water splish!
 	MT_SMOKE,
 	MT_SMALLBUBBLE, // small bubble
@@ -4619,9 +4790,6 @@ typedef enum mobj_type
 	MT_SRB1_GENREX,
 
 	// SRB2kart
-	MT_GRAYSPRING,
-	MT_INVISSPRING,
-	MT_BLUEDIAG,
 	MT_RANDOMITEM,
 	MT_RANDOMITEMPOP,
 	MT_FLOATINGITEM,
@@ -4630,6 +4798,7 @@ typedef enum mobj_type
 
 	MT_FASTLINE,
 	MT_FASTDUST,
+	MT_DRIFTEXPLODE,
 	MT_BOOSTFLAME,
 	MT_BOOSTSMOKE,
 	MT_SNEAKERTRAIL,
@@ -4673,7 +4842,12 @@ typedef enum mobj_type
 	MT_SPB, // SPB stuff
 	MT_SPBEXPLOSION,
 
-	MT_THUNDERSHIELD, // Thunder Shield stuff
+	MT_THUNDERSHIELD, // Shields
+	MT_BUBBLESHIELD,
+	MT_FLAMESHIELD,
+	MT_FLAMESHIELDUNDERLAY,
+	MT_FLAMESHIELDPAPER,
+	MT_BUBBLESHIELDTRAP,
 
 	MT_SINK, // Kitchen Sink Stuff
 	MT_SINK_SHIELD,
@@ -4730,8 +4904,6 @@ typedef enum mobj_type
 	MT_FLYINGGARG,
 	MT_LAMPPOST,
 	MT_MOSSYTREE,
-
-	MT_SHADOW,
 
 	MT_BUMP,
 
@@ -4890,6 +5062,16 @@ typedef enum mobj_type
 	MT_LIONMAN,
 
 	MT_KARMAFIREWORK,
+	MT_RINGSPARKS,
+	MT_DRAFTDUST,
+	MT_TIREGREASE,
+
+	MT_OVERTIMEFOG,
+	MT_OVERTIMEORB,
+	MT_OVERTIMEBEAM,
+
+	MT_BATTLECAPSULE,
+	MT_BATTLECAPSULE_PIECE,
 
 	MT_FOLLOWER,
 

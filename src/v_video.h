@@ -79,11 +79,11 @@ extern UINT8 hudtrans;
 #define V_SKYMAP             0x00008000
 #define V_LAVENDERMAP        0x00009000
 #define V_GOLDMAP            0x0000A000
-#define V_TEAMAP             0x0000B000
-#define V_STEELMAP           0x0000C000
+#define V_AQUAMAP            0x0000B000
+#define V_MAGENTAMAP         0x0000C000
 #define V_PINKMAP            0x0000D000
 #define V_BROWNMAP           0x0000E000
-#define V_PEACHMAP           0x0000F000
+#define V_TANMAP             0x0000F000
 
 // use bits 17-20 for alpha transparency
 #define V_ALPHASHIFT         16
@@ -158,8 +158,9 @@ void V_DrawVhsEffect(boolean rewind);
 
 // fade down the screen buffer before drawing the menu over
 void V_DrawFadeScreen(UINT16 color, UINT8 strength);
-
+void V_DrawCustomFadeScreen(const char *lump, UINT8 strength);
 void V_DrawFadeConsBack(INT32 plines);
+void V_EncoreInvertScreen(void);
 
 // draw a single character
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);

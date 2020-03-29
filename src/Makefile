@@ -60,6 +60,7 @@
 #     Compile with GCC 4.6x version, add 'GCC46=1'
 #     Compile a profile version, add 'PROFILEMODE=1'
 #     Compile a debug version, add 'DEBUGMODE=1'
+#     Compile for the testers group (they don't get to play unless we're watching *wink*), add 'TESTERS=1'
 #     Compile with extra warnings, add 'WARNINGMODE=1'
 #     Compile without NASM's tmap.nas, add 'NOASM=1'
 #     Compile without 3D hardware support, add 'NOHW=1'
@@ -83,16 +84,14 @@
 
 # SRB2 data files
 D_DIR?=../bin/Resources
-D_FILES=$(D_DIR)/srb2.srb \
-	$(D_DIR)/patch.dta \
-	#$(D_DIR)/music.dta \
-	$(D_DIR)/gfx.kart \
-	$(D_DIR)/textures.kart \
-	$(D_DIR)/chars.kart \
-	$(D_DIR)/maps.kart \
-	$(D_DIR)/sounds.kart \
-	$(D_DIR)/patch.kart \
-	$(D_DIR)/music.kart \
+D_FILES=$(D_DIR)/main.kart \
+	$(D_DIR)/gfx.pk3 \
+	$(D_DIR)/textures.pk3 \
+	$(D_DIR)/chars.pk3 \
+	$(D_DIR)/maps.wad \
+	$(D_DIR)/patch.pk3 \
+	$(D_DIR)/sounds.wad \
+	$(D_DIR)/music.wad \
 
 PKG_CONFIG?=pkg-config
 
@@ -436,6 +435,10 @@ else
 endif
 	CFLAGS+=-g $(OPTS) $(ARCHOPTS) $(WINDRESFLAGS)
 
+ifdef TESTERS
+	OPTS+=-DTESTERS
+endif
+
 ifdef YASM
 ifdef STABS
 	NASMOPTS?= -g stabs
@@ -484,6 +487,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/f_wipe.o   \
 		$(OBJDIR)/g_game.o   \
 		$(OBJDIR)/g_input.o  \
+		$(OBJDIR)/g_splitscreen.o\
 		$(OBJDIR)/am_map.o   \
 		$(OBJDIR)/command.o  \
 		$(OBJDIR)/console.o  \
@@ -491,6 +495,12 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/y_inter.o  \
 		$(OBJDIR)/st_stuff.o \
 		$(OBJDIR)/k_kart.o   \
+		$(OBJDIR)/k_collide.o\
+		$(OBJDIR)/k_battle.o \
+		$(OBJDIR)/k_pwrlv.o  \
+		$(OBJDIR)/k_waypoint.o\
+		$(OBJDIR)/k_pathfind.o\
+		$(OBJDIR)/k_bheap.o  \
 		$(OBJDIR)/m_aatree.o \
 		$(OBJDIR)/m_anigif.o \
 		$(OBJDIR)/m_argv.o   \

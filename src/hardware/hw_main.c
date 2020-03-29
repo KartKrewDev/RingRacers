@@ -39,6 +39,7 @@
 #include "../st_stuff.h"
 #include "../i_system.h"
 #include "../m_cheat.h"
+#include "../r_things.h" // R_GetShadowZ
 #ifdef ESLOPE
 #include "../p_slopes.h"
 #endif
@@ -1319,7 +1320,7 @@ static void HWR_SplitWall(sector_t *sector, wallVert3D *wallVerts, INT32 texnum,
 
 // HWR_DrawSkyWalls
 // Draw walls into the depth buffer so that anything behind is culled properly
-static void HWR_DrawSkyWall(wallVert3D *wallVerts, FSurfaceInfo *Surf, fixed_t bottom, fixed_t top)
+static void HWR_DrawSkyWall(wallVert3D *wallVerts, FSurfaceInfo *Surf)
 {
 	HWD.pfnSetTexture(NULL);
 	// no texture
@@ -1327,9 +1328,6 @@ static void HWR_DrawSkyWall(wallVert3D *wallVerts, FSurfaceInfo *Surf, fixed_t b
 	wallVerts[0].t = wallVerts[1].t = 0;
 	wallVerts[0].s = wallVerts[3].s = 0;
 	wallVerts[2].s = wallVerts[1].s = 0;
-	// set top/bottom coords
-	wallVerts[2].y = wallVerts[3].y = FIXED_TO_FLOAT(top); // No real way to find the correct height of this
-	wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(bottom); // worldlow/bottom because it needs to cover up the lower thok barrier wall
 	HWR_ProjectWall(wallVerts, Surf, PF_Invisible|PF_Clip|PF_NoTexture, 255, NULL);
 	// PF_Invisible so it's not drawn into the colour buffer
 	// PF_NoTexture for no texture
@@ -1461,6 +1459,111 @@ static void HWR_StoreWallRange(double startfrac, double endfrac)
 		worldhigh = gr_backsector->ceilingheight;
 		worldlow  = gr_backsector->floorheight;
 #endif
+
+		// Sky culling
+		if (!gr_curline->polyseg) // Don't do it for polyobjects
+		{
+			// Sky Ceilings
+			wallVerts[3].y = wallVerts[2].y = FIXED_TO_FLOAT(INT32_MAX);
+
+			if (gr_frontsector->ceilingpic == skyflatnum)
+			{
+				if (gr_backsector->ceilingpic == skyflatnum)
+				{
+					// Both front and back sectors are sky, needs skywall from the frontsector's ceiling, but only if the
+					// backsector is lower
+					if ((worldhigh <= worldtop)
+#ifdef ESLOPE
+					&& (worldhighslope <= worldtopslope)
+#endif
+					)
+					{
+#ifdef ESLOPE
+						wallVerts[0].y = FIXED_TO_FLOAT(worldhigh);
+						wallVerts[1].y = FIXED_TO_FLOAT(worldhighslope);
+#else
+						wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(worldhigh);
+#endif
+						HWR_DrawSkyWall(wallVerts, &Surf);
+					}
+				}
+				else
+				{
+					// Only the frontsector is sky, just draw a skywall from the front ceiling
+#ifdef ESLOPE
+					wallVerts[0].y = FIXED_TO_FLOAT(worldtop);
+					wallVerts[1].y = FIXED_TO_FLOAT(worldtopslope);
+#else
+					wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(worldtop);
+#endif
+					HWR_DrawSkyWall(wallVerts, &Surf);
+				}
+			}
+			else if (gr_backsector->ceilingpic == skyflatnum)
+			{
+				// Only the backsector is sky, just draw a skywall from the front ceiling
+#ifdef ESLOPE
+				wallVerts[0].y = FIXED_TO_FLOAT(worldtop);
+				wallVerts[1].y = FIXED_TO_FLOAT(worldtopslope);
+#else
+				wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(worldtop);
+#endif
+				HWR_DrawSkyWall(wallVerts, &Surf);
+			}
+
+
+			// Sky Floors
+			wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(INT32_MIN);
+
+			if (gr_frontsector->floorpic == skyflatnum)
+			{
+				if (gr_backsector->floorpic == skyflatnum)
+				{
+					// Both front and back sectors are sky, needs skywall from the backsector's floor, but only if the
+					// it's higher, also needs to check for bottomtexture as the floors don't usually move down
+					// when both sides are sky floors
+					if ((worldlow >= worldbottom)
+#ifdef ESLOPE
+					&& (worldlowslope >= worldbottomslope)
+#endif
+					&& !(gr_sidedef->bottomtexture))
+					{
+#ifdef ESLOPE
+						wallVerts[3].y = FIXED_TO_FLOAT(worldlow);
+						wallVerts[2].y = FIXED_TO_FLOAT(worldlowslope);
+#else
+						wallVerts[3].y = wallVerts[2].y = FIXED_TO_FLOAT(worldlow);
+#endif
+
+						HWR_DrawSkyWall(wallVerts, &Surf);
+					}
+				}
+				else
+				{
+					// Only the backsector has sky, just draw a skywall from the back floor
+#ifdef ESLOPE
+					wallVerts[3].y = FIXED_TO_FLOAT(worldbottom);
+					wallVerts[2].y = FIXED_TO_FLOAT(worldbottomslope);
+#else
+					wallVerts[3].y = wallVerts[2].y = FIXED_TO_FLOAT(worldbottom);
+#endif
+
+					HWR_DrawSkyWall(wallVerts, &Surf);
+				}
+			}
+			else if ((gr_backsector->floorpic == skyflatnum) && !(gr_sidedef->bottomtexture))
+			{
+				// Only the backsector has sky, just draw a skywall from the back floor if there's no bottomtexture
+#ifdef ESLOPE
+				wallVerts[3].y = FIXED_TO_FLOAT(worldlow);
+				wallVerts[2].y = FIXED_TO_FLOAT(worldlowslope);
+#else
+				wallVerts[3].y = wallVerts[2].y = FIXED_TO_FLOAT(worldlow);
+#endif
+
+				HWR_DrawSkyWall(wallVerts, &Surf);
+			}
+		}
 
 		// hack to allow height changes in outdoor areas
 		// This is what gets rid of the upper textures if there should be sky
@@ -1914,92 +2017,13 @@ static void HWR_StoreWallRange(double startfrac, double endfrac)
 				Surf.FlatColor.rgba = 0xffffffff;
 			}*/
 		}
-
-		// Isn't this just the most lovely mess
-		if (!gr_curline->polyseg) // Don't do it for polyobjects
-		{
-			if (gr_frontsector->ceilingpic == skyflatnum || gr_backsector->ceilingpic == skyflatnum)
-			{
-				fixed_t depthwallheight;
-
-				if (!gr_sidedef->toptexture || (gr_frontsector->ceilingpic == skyflatnum && gr_backsector->ceilingpic == skyflatnum)) // when both sectors are sky, the top texture isn't drawn
-					depthwallheight = gr_frontsector->ceilingheight < gr_backsector->ceilingheight ? gr_frontsector->ceilingheight : gr_backsector->ceilingheight;
-				else
-					depthwallheight = gr_frontsector->ceilingheight > gr_backsector->ceilingheight ? gr_frontsector->ceilingheight : gr_backsector->ceilingheight;
-
-				if (gr_frontsector->ceilingheight-gr_frontsector->floorheight <= 0) // current sector is a thok barrier
-				{
-					if (gr_backsector->ceilingheight-gr_backsector->floorheight <= 0) // behind sector is also a thok barrier
-					{
-						if (!gr_sidedef->bottomtexture) // Only extend further down if there's no texture
-							HWR_DrawSkyWall(wallVerts, &Surf, worldbottom < worldlow ? worldbottom : worldlow, INT32_MAX);
-						else
-							HWR_DrawSkyWall(wallVerts, &Surf, worldbottom > worldlow ? worldbottom : worldlow, INT32_MAX);
-					}
-					// behind sector is not a thok barrier
-					else if (gr_backsector->ceilingheight <= gr_frontsector->ceilingheight) // behind sector ceiling is lower or equal to current sector
-						HWR_DrawSkyWall(wallVerts, &Surf, depthwallheight, INT32_MAX);
-						// gr_front/backsector heights need to be used here because of the worldtop being set to worldhigh earlier on
-				}
-				else if (gr_backsector->ceilingheight-gr_backsector->floorheight <= 0) // behind sector is a thok barrier, current sector is not
-				{
-					if (gr_backsector->ceilingheight >= gr_frontsector->ceilingheight // thok barrier ceiling height is equal to or greater than current sector ceiling height
-						|| gr_backsector->floorheight <= gr_frontsector->floorheight // thok barrier ceiling height is equal to or less than current sector floor height
-						|| gr_backsector->ceilingpic != skyflatnum) // thok barrier is not a sky
-						HWR_DrawSkyWall(wallVerts, &Surf, depthwallheight, INT32_MAX);
-				}
-				else // neither sectors are thok barriers
-				{
-					if ((gr_backsector->ceilingheight < gr_frontsector->ceilingheight && !gr_sidedef->toptexture) // no top texture and sector behind is lower
-						|| gr_backsector->ceilingpic != skyflatnum) // behind sector is not a sky
-						HWR_DrawSkyWall(wallVerts, &Surf, depthwallheight, INT32_MAX);
-				}
-			}
-			// And now for sky floors!
-			if (gr_frontsector->floorpic == skyflatnum || gr_backsector->floorpic == skyflatnum)
-			{
-				fixed_t depthwallheight;
-
-				if (!gr_sidedef->bottomtexture)
-					depthwallheight = worldbottom > worldlow ? worldbottom : worldlow;
-				else
-					depthwallheight = worldbottom < worldlow ? worldbottom : worldlow;
-
-				if (gr_frontsector->ceilingheight-gr_frontsector->floorheight <= 0) // current sector is a thok barrier
-				{
-					if (gr_backsector->ceilingheight-gr_backsector->floorheight <= 0) // behind sector is also a thok barrier
-					{
-						if (!gr_sidedef->toptexture) // Only extend up if there's no texture
-							HWR_DrawSkyWall(wallVerts, &Surf, INT32_MIN, worldtop > worldhigh ? worldtop : worldhigh);
-						else
-							HWR_DrawSkyWall(wallVerts, &Surf, INT32_MIN, worldtop < worldhigh ? worldtop : worldhigh);
-					}
-					// behind sector is not a thok barrier
-					else if (gr_backsector->floorheight >= gr_frontsector->floorheight) // behind sector floor is greater or equal to current sector
-						HWR_DrawSkyWall(wallVerts, &Surf, INT32_MIN, depthwallheight);
-				}
-				else if (gr_backsector->ceilingheight-gr_backsector->floorheight <= 0) // behind sector is a thok barrier, current sector is not
-				{
-					if (gr_backsector->floorheight <= gr_frontsector->floorheight // thok barrier floor height is equal to or less than current sector floor height
-						|| gr_backsector->ceilingheight >= gr_frontsector->ceilingheight // thok barrier floor height is equal to or greater than current sector ceiling height
-						|| gr_backsector->floorpic != skyflatnum) // thok barrier is not a sky
-						HWR_DrawSkyWall(wallVerts, &Surf, INT32_MIN, depthwallheight);
-				}
-				else // neither sectors are thok barriers
-				{
-					if ((gr_backsector->floorheight > gr_frontsector->floorheight && !gr_sidedef->bottomtexture) // no bottom texture and sector behind is higher
-						|| gr_backsector->floorpic != skyflatnum) // behind sector is not a sky
-						HWR_DrawSkyWall(wallVerts, &Surf, INT32_MIN, depthwallheight);
-				}
-			}
-		}
 	}
 	else
 	{
 		// Single sided line... Deal only with the middletexture (if one exists)
 		gr_midtexture = R_GetTextureNum(gr_sidedef->midtexture);
 		if (gr_midtexture
-			&& gr_linedef->special != 41) // Ignore horizon line for OGL
+			&& gr_linedef->special != HORIZONSPECIAL) // Ignore horizon line for OGL
 		{
 			{
 				fixed_t     texturevpeg;
@@ -2060,13 +2084,52 @@ static void HWR_StoreWallRange(double startfrac, double endfrac)
 					HWR_ProjectWall(wallVerts, &Surf, PF_Masked, lightnum, colormap);
 			}
 		}
+		else
+		{
+#ifdef ESLOPE
+			//Set textures properly on single sided walls that are sloped
+			wallVerts[3].y = FIXED_TO_FLOAT(worldtop);
+			wallVerts[0].y = FIXED_TO_FLOAT(worldbottom);
+			wallVerts[2].y = FIXED_TO_FLOAT(worldtopslope);
+			wallVerts[1].y = FIXED_TO_FLOAT(worldbottomslope);
+#else
+			// set top/bottom coords
+			wallVerts[2].y = wallVerts[3].y = FIXED_TO_FLOAT(worldtop);
+			wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(worldbottom);
+#endif
 
+			// When there's no midtexture, draw a skywall to prevent rendering behind it
+			HWR_DrawSkyWall(wallVerts, &Surf);
+		}
+
+
+		// Single sided lines are simple for skywalls, just need to draw from the top or bottom of the sector if there's
+		// a sky flat
 		if (!gr_curline->polyseg)
 		{
 			if (gr_frontsector->ceilingpic == skyflatnum) // It's a single-sided line with sky for its sector
-				HWR_DrawSkyWall(wallVerts, &Surf, worldtop, INT32_MAX);
+			{
+				wallVerts[3].y = wallVerts[2].y = FIXED_TO_FLOAT(INT32_MAX);
+#ifdef ESLOPE
+				wallVerts[0].y = FIXED_TO_FLOAT(worldtop);
+				wallVerts[1].y = FIXED_TO_FLOAT(worldtopslope);
+#else
+				wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(worldtop);
+#endif
+				HWR_DrawSkyWall(wallVerts, &Surf);
+			}
 			if (gr_frontsector->floorpic == skyflatnum)
-				HWR_DrawSkyWall(wallVerts, &Surf, INT32_MIN, worldbottom);
+			{
+#ifdef ESLOPE
+				wallVerts[3].y = FIXED_TO_FLOAT(worldbottom);
+				wallVerts[2].y = FIXED_TO_FLOAT(worldbottomslope);
+#else
+				wallVerts[3].y = wallVerts[2].y = FIXED_TO_FLOAT(worldbottom);
+#endif
+				wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(INT32_MIN);
+
+				HWR_DrawSkyWall(wallVerts, &Surf);
+			}
 		}
 	}
 
@@ -2381,7 +2444,7 @@ static void HWR_StoreWallRange(double startfrac, double endfrac)
 // e6y: Check whether the player can look beyond this line
 //
 #ifdef NEWCLIP
-boolean checkforemptylines = true;
+static boolean checkforemptylines = true;
 // Don't modify anything here, just check
 // Kalaron: Modified for sloped linedefs
 static boolean CheckClip(seg_t * seg, sector_t * afrontsector, sector_t * abacksector)
@@ -2421,62 +2484,47 @@ static boolean CheckClip(seg_t * seg, sector_t * afrontsector, sector_t * abacks
 		backc1 = backc2 = abacksector->ceilingheight;
 	}
 
-	// now check for closed sectors!
-	if (backc1 <= frontf1 && backc2 <= frontf2)
+	if (viewsector != abacksector && viewsector != afrontsector)
 	{
-		checkforemptylines = false;
-		if (!seg->sidedef->toptexture)
-			return false;
+		boolean mydoorclosed = false; // My door? Closed!? (doorclosed is actually otherwise unused in openGL)
 
-		if (abacksector->ceilingpic == skyflatnum && afrontsector->ceilingpic == skyflatnum)
-			return false;
-
-		return true;
-	}
-
-	if (backf1 >= frontc1 && backf2 >= frontc2)
-	{
-		checkforemptylines = false;
-		if (!seg->sidedef->bottomtexture)
-			return false;
-
-		// properly render skies (consider door "open" if both floors are sky):
-		if (abacksector->ceilingpic == skyflatnum && afrontsector->ceilingpic == skyflatnum)
-			return false;
-
-		return true;
-	}
-
-	if (backc1 <= backf1 && backc2 <= backf2)
-	{
-		checkforemptylines = false;
-		// preserve a kind of transparent door/lift special effect:
-		if (backc1 < frontc1 || backc2 < frontc2)
-		{
-			if (!seg->sidedef->toptexture)
-				return false;
-		}
-		if (backf1 > frontf1 || backf2 > frontf2)
-		{
-			if (!seg->sidedef->bottomtexture)
-				return false;
-		}
-		if (abacksector->ceilingpic == skyflatnum && afrontsector->ceilingpic == skyflatnum)
-			return false;
-
-		if (abacksector->floorpic == skyflatnum && afrontsector->floorpic == skyflatnum)
-			return false;
-
-		return true;
-	}
-
-	if (backc1 != frontc1 || backc2 != frontc2
-		|| backf1 != frontf1 || backf2 != frontf2)
+		// If the sector behind the line blocks all kinds of view past it
+		// (back ceiling is lower than close floor, or back floor is higher than close ceiling)
+		if ((backc1 <= frontf1 && backc2 <= frontf2)
+			|| (backf1 >= frontc1 && backf2 >= frontc2))
 		{
 			checkforemptylines = false;
-			return false;
+			return true;
 		}
 
+		// The door is closed if:
+		// backsector is 0 height or less and
+		// back ceiling is higher than close ceiling or we need to render a top texture and
+		// back floor is lower than close floor or we need to render a bottom texture and
+		// neither front or back sectors are using the sky ceiling
+		mydoorclosed = (backc1 <= backf1 && backc2 <= backf2
+		&& ((backc1 >= frontc1 && backc2 >= frontc2) || seg->sidedef->toptexture)
+		&& ((backf1 <= frontf1 && backf2 >= frontf2) || seg->sidedef->bottomtexture)
+		&& (abacksector->ceilingpic != skyflatnum || afrontsector->ceilingpic != skyflatnum));
+
+		if (mydoorclosed)
+		{
+			checkforemptylines = false;
+			return true;
+		}
+	}
+
+	// Window.
+	// We know it's a window when the above isn't true and the back and front sectors don't match
+	if (backc1 != frontc1 || backc2 != frontc2
+		|| backf1 != frontf1 || backf2 != frontf2)
+	{
+		checkforemptylines = false;
+		return false;
+	}
+
+	// In this case we just need to check whether there is actually a need to render any lines, so checkforempty lines
+	// stays true
 	return false;
 }
 #else
@@ -3516,6 +3564,9 @@ static void HWR_Subsector(size_t num)
 
 	sub->sector->extra_colormap = gr_frontsector->extra_colormap;
 
+	//R_PlaneLightOverride(gr_frontsector, false, &floorlightlevel);
+	//R_PlaneLightOverride(gr_frontsector, true, &ceilinglightlevel);
+
 	// render floor ?
 #ifdef DOPLANES
 	// yeah, easy backface cull! :)
@@ -4011,37 +4062,6 @@ static gr_vissprite_t *HWR_NewVisSprite(void)
 	return HWR_GetVisSprite(gr_visspritecount++);
 }
 
-// Finds a floor through which light does not pass.
-static fixed_t HWR_OpaqueFloorAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
-{
-	const sector_t *sec = R_PointInSubsector(x, y)->sector;
-	fixed_t floorz = sec->floorheight;
-
-	if (sec->ffloors)
-	{
-		ffloor_t *rover;
-		fixed_t delta1, delta2;
-		const fixed_t thingtop = z + height;
-
-		for (rover = sec->ffloors; rover; rover = rover->next)
-		{
-			if (!(rover->flags & FF_EXISTS)
-			|| !(rover->flags & FF_RENDERPLANES)
-			|| rover->flags & FF_TRANSLUCENT
-			|| rover->flags & FF_FOG
-			|| rover->flags & FF_INVERTPLANES)
-				continue;
-
-			delta1 = z - (*rover->bottomheight + ((*rover->topheight - *rover->bottomheight)/2));
-			delta2 = thingtop - (*rover->bottomheight + ((*rover->topheight - *rover->bottomheight)/2));
-			if (*rover->topheight > floorz && abs(delta1) < abs(delta2))
-				floorz = *rover->topheight;
-		}
-	}
-
-	return floorz;
-}
-
 //
 // HWR_DoCulling
 // Hardware version of R_DoCulling
@@ -4082,181 +4102,116 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 	return false;
 }
 
-static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float this_scale)
+static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 {
-	FOutVector swallVerts[4];
+	GLPatch_t *gpatch;
+	FOutVector shadowVerts[4];
 	FSurfaceInfo sSurf;
-	fixed_t floorheight, mobjfloor;
-	float offset = 0;
+	float fscale; float fx; float fy; float offset;
+	UINT8 lightlevel = 0;
+	extracolormap_t *colormap = NULL;
+	UINT8 i;
 
-	mobjfloor = HWR_OpaqueFloorAtPos(
-		spr->mobj->x, spr->mobj->y,
-		spr->mobj->z, spr->mobj->height);
-	if (cv_shadowoffs.value)
+	INT32 light;
+	fixed_t scalemul;
+	UINT16 alpha;
+	fixed_t floordiff;
+	fixed_t floorz;
+	fixed_t slopez;
+	pslope_t *floorslope;
+
+	floorz = R_GetShadowZ(thing, &floorslope);
+	floordiff = abs(thing->z - floorz);
+
+	alpha = floordiff / (4*FRACUNIT) + 75;
+	if (alpha >= 255) return;
+	alpha = 255 - alpha;
+
+	if (thing->whiteshadow)
 	{
-		angle_t shadowdir;
-
-		// Set direction
-		if (splitscreen && stplyr == &players[displayplayers[1]])
-			shadowdir = localangle[1] + FixedAngle(cv_cam2_rotate.value);
-		else if (splitscreen > 1 && stplyr == &players[displayplayers[2]])
-			shadowdir = localangle[2] + FixedAngle(cv_cam3_rotate.value);
-		else if (splitscreen > 2 && stplyr == &players[displayplayers[3]])
-			shadowdir = localangle[3] + FixedAngle(cv_cam4_rotate.value);
-		else
-			shadowdir = localangle[0] + FixedAngle(cv_cam_rotate.value);
-
-		// Find floorheight
-		floorheight = HWR_OpaqueFloorAtPos(
-			spr->mobj->x + P_ReturnThrustX(spr->mobj, shadowdir, spr->mobj->z - mobjfloor),
-			spr->mobj->y + P_ReturnThrustY(spr->mobj, shadowdir, spr->mobj->z - mobjfloor),
-			spr->mobj->z, spr->mobj->height);
-
-		// The shadow is falling ABOVE it's mobj?
-		// Don't draw it, then!
-		if (spr->mobj->z < floorheight)
-			return;
-		else
-		{
-			fixed_t floorz;
-			floorz = HWR_OpaqueFloorAtPos(
-				spr->mobj->x + P_ReturnThrustX(spr->mobj, shadowdir, spr->mobj->z - floorheight),
-				spr->mobj->y + P_ReturnThrustY(spr->mobj, shadowdir, spr->mobj->z - floorheight),
-				spr->mobj->z, spr->mobj->height);
-			// The shadow would be falling on a wall? Don't draw it, then.
-			// Would draw midair otherwise.
-			if (floorz < floorheight)
-				return;
-		}
-
-		floorheight = FixedInt(spr->mobj->z - floorheight);
-
-		offset = floorheight;
+		gpatch = (GLPatch_t *)W_CachePatchName("LSHADOW", PU_CACHE);
+		lightlevel = 255;
 	}
 	else
-		floorheight = FixedInt(spr->mobj->z - mobjfloor);
+	{
+		gpatch = (GLPatch_t *)W_CachePatchName("DSHADOW", PU_CACHE);
+		lightlevel = 0;
+	}
 
-	// create the sprite billboard
-	//
+	if (!(gpatch && gpatch->mipmap.grInfo.format)) return;
+	HWR_GetPatch(gpatch);
+
+	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
+	scalemul = FixedMul(scalemul, (thing->radius*2) / gpatch->height);
+
+	fscale = FIXED_TO_FLOAT(scalemul);
+	fx = FIXED_TO_FLOAT(thing->x);
+	fy = FIXED_TO_FLOAT(thing->y);
+
 	//  3--2
 	//  | /|
 	//  |/ |
 	//  0--1
 
-	// x1/x2 were already scaled in HWR_ProjectSprite
-	// First match the normal sprite
-	swallVerts[0].x = swallVerts[3].x = spr->x1;
-	swallVerts[2].x = swallVerts[1].x = spr->x2;
-	swallVerts[0].z = swallVerts[3].z = spr->z1;
-	swallVerts[2].z = swallVerts[1].z = spr->z2;
-
-	if (spr->mobj && fabsf(this_scale - 1.0f) > 1.0E-36f)
-	{
-		// Always a pixel above the floor, perfectly flat.
-		swallVerts[0].y = swallVerts[1].y = swallVerts[2].y = swallVerts[3].y = spr->ty - gpatch->topoffset * this_scale - (floorheight+3);
-
-		// Now transform the TOP vertices along the floor in the direction of the camera
-		swallVerts[3].x = spr->x1 + ((gpatch->height * this_scale) + offset) * gr_viewcos;
-		swallVerts[2].x = spr->x2 + ((gpatch->height * this_scale) + offset) * gr_viewcos;
-		swallVerts[3].z = spr->z1 + ((gpatch->height * this_scale) + offset) * gr_viewsin;
-		swallVerts[2].z = spr->z2 + ((gpatch->height * this_scale) + offset) * gr_viewsin;
-	}
+	if (thing && fabsf(fscale - 1.0f) > 1.0E-36f)
+		offset = (gpatch->height/2) * fscale;
 	else
-	{
-		// Always a pixel above the floor, perfectly flat.
-		swallVerts[0].y = swallVerts[1].y = swallVerts[2].y = swallVerts[3].y = spr->ty - gpatch->topoffset - (floorheight+3);
+		offset = (float)(gpatch->height/2);
 
-		// Now transform the TOP vertices along the floor in the direction of the camera
-		swallVerts[3].x = spr->x1 + (gpatch->height + offset) * gr_viewcos;
-		swallVerts[2].x = spr->x2 + (gpatch->height + offset) * gr_viewcos;
-		swallVerts[3].z = spr->z1 + (gpatch->height + offset) * gr_viewsin;
-		swallVerts[2].z = spr->z2 + (gpatch->height + offset) * gr_viewsin;
+	shadowVerts[2].x = shadowVerts[3].x = fx + offset;
+	shadowVerts[1].x = shadowVerts[0].x = fx - offset;
+	shadowVerts[1].z = shadowVerts[2].z = fy - offset;
+	shadowVerts[0].z = shadowVerts[3].z = fy + offset;
+
+	for (i = 0; i < 4; i++)
+	{
+		float oldx = shadowVerts[i].x;
+		float oldy = shadowVerts[i].z;
+		shadowVerts[i].x = fx + ((oldx - fx) * gr_viewcos) - ((oldy - fy) * gr_viewsin);
+		shadowVerts[i].z = fy + ((oldx - fx) * gr_viewsin) + ((oldy - fy) * gr_viewcos);
 	}
 
-	// We also need to move the bottom ones away when shadowoffs is on
-	if (cv_shadowoffs.value)
+	if (floorslope)
 	{
-		swallVerts[0].x = spr->x1 + offset * gr_viewcos;
-		swallVerts[1].x = spr->x2 + offset * gr_viewcos;
-		swallVerts[0].z = spr->z1 + offset * gr_viewsin;
-		swallVerts[1].z = spr->z2 + offset * gr_viewsin;
-	}
-
-	if (spr->flip)
-	{
-		swallVerts[0].sow = swallVerts[3].sow = gpatch->max_s;
-		swallVerts[2].sow = swallVerts[1].sow = 0;
-	}
-	else
-	{
-		swallVerts[0].sow = swallVerts[3].sow = 0;
-		swallVerts[2].sow = swallVerts[1].sow = gpatch->max_s;
-	}
-
-	// flip the texture coords (look familiar?)
-	if (spr->vflip)
-	{
-		swallVerts[3].tow = swallVerts[2].tow = gpatch->max_t;
-		swallVerts[0].tow = swallVerts[1].tow = 0;
-	}
-	else
-	{
-		swallVerts[3].tow = swallVerts[2].tow = 0;
-		swallVerts[0].tow = swallVerts[1].tow = gpatch->max_t;
-	}
-
-	sSurf.FlatColor.s.red = 0x00;
-	sSurf.FlatColor.s.blue = 0x00;
-	sSurf.FlatColor.s.green = 0x00;
-
-	/*if (spr->mobj->frame & FF_TRANSMASK || spr->mobj->flags2 & MF2_SHADOW)
-	{
-		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 255;
-		extracolormap_t *colormap = sector->extra_colormap;
-
-		if (sector->numlights)
+		for (i = 0; i < 4; i++)
 		{
-			INT32 light = R_GetPlaneLight(sector, spr->mobj->floorz, false);
-
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = *sector->lightlist[light].lightlevel;
-
-			if (sector->lightlist[light].extra_colormap)
-				colormap = sector->lightlist[light].extra_colormap;
+			slopez = P_GetZAt(floorslope, FLOAT_TO_FIXED(shadowVerts[i].x), FLOAT_TO_FIXED(shadowVerts[i].z));
+			shadowVerts[i].y = FIXED_TO_FLOAT(slopez) + 0.05f;
 		}
-		else
-		{
-			lightlevel = sector->lightlevel;
-
-			if (sector->extra_colormap)
-				colormap = sector->extra_colormap;
-		}
-
-		if (colormap)
-			sSurf.FlatColor.rgba = HWR_Lighting(lightlevel/2, colormap->rgba, colormap->fadergba, false, true);
-		else
-			sSurf.FlatColor.rgba = HWR_Lighting(lightlevel/2, NORMALFOG, FADEFOG, false, true);
-	}*/
-
-	// shadow is always half as translucent as the sprite itself
-	if (!cv_translucency.value) // use default translucency (main sprite won't have any translucency)
-		sSurf.FlatColor.s.alpha = 0x80; // default
-	else if (spr->mobj->flags2 & MF2_SHADOW)
-		sSurf.FlatColor.s.alpha = 0x20;
-	else if (spr->mobj->frame & FF_TRANSMASK)
-	{
-		HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &sSurf);
-		sSurf.FlatColor.s.alpha /= 2; //cut alpha in half!
 	}
 	else
-		sSurf.FlatColor.s.alpha = 0x80; // default
-
-	if (sSurf.FlatColor.s.alpha > floorheight/4)
 	{
-		sSurf.FlatColor.s.alpha = (UINT8)(sSurf.FlatColor.s.alpha - floorheight/4);
-		HWD.pfnDrawPolygon(&sSurf, swallVerts, 4, PF_Translucent|PF_Modulated|PF_Clip);
+		for (i = 0; i < 4; i++)
+			shadowVerts[i].y = FIXED_TO_FLOAT(floorz) + 0.05f;
 	}
+
+	shadowVerts[0].sow = shadowVerts[3].sow = 0;
+	shadowVerts[2].sow = shadowVerts[1].sow = gpatch->max_s;
+
+	shadowVerts[3].tow = shadowVerts[2].tow = 0;
+	shadowVerts[0].tow = shadowVerts[1].tow = gpatch->max_t;
+
+	if (thing->subsector->sector->numlights)
+	{
+		light = R_GetPlaneLight(thing->subsector->sector, floorz, false); // Always use the light at the top instead of whatever I was doing before
+
+		if (thing->subsector->sector->lightlist[light].extra_colormap)
+			colormap = thing->subsector->sector->lightlist[light].extra_colormap;
+	}
+	else
+	{
+		if (thing->subsector->sector->extra_colormap)
+			colormap = thing->subsector->sector->extra_colormap;
+	}
+
+	if (colormap)
+		sSurf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
+	else
+		sSurf.FlatColor.rgba = HWR_Lighting(lightlevel, NORMALFOG, FADEFOG, false, false);
+
+	sSurf.FlatColor.s.alpha = alpha;
+
+	HWD.pfnDrawPolygon(&sSurf, shadowVerts, 4, PF_Translucent|PF_Modulated|PF_Clip);
 }
 
 // This is expecting a pointer to an array containing 4 wallVerts for a sprite
@@ -4332,22 +4287,6 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 	//12/12/99: Hurdler: same comment as above (for md2)
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	HWR_GetMappedPatch(gpatch, spr->colormap);
-
-	// Draw shadow BEFORE sprite
-	if (cv_shadow.value // Shadows enabled
-		&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
-		&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
-#ifdef ALAM_LIGHTING
-		&& !(t_lspr[spr->mobj->sprite]->type // Things with dynamic lights have no shadow.
-		&& (!spr->mobj->player || spr->mobj->player->powers[pw_super])) // Except for non-super players.
-#endif
-		&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
-	{
-		////////////////////
-		// SHADOW SPRITE! //
-		////////////////////
-		HWR_DrawSpriteShadow(spr, gpatch, this_scale);
-	}
 
 	baseWallVerts[0].x = baseWallVerts[3].x = spr->x1;
 	baseWallVerts[2].x = baseWallVerts[1].x = spr->x2;
@@ -4441,16 +4380,20 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 
 	alpha = Surf.FlatColor.s.alpha;
 
-	// Start with the lightlevel and colormap from the top of the sprite
-	lightlevel = *list[sector->numlights - 1].lightlevel;
-	colormap = list[sector->numlights - 1].extra_colormap;
-	i = 0;
 	temp = FLOAT_TO_FIXED(realtop);
 
-	if (spr->mobj->frame & FF_FULLBRIGHT)
-		lightlevel = 255;
-
 #ifdef ESLOPE
+	// Start with the lightlevel and colormap from the top of the sprite
+	lightlevel = 255;
+	colormap = list[sector->numlights - 1].extra_colormap;
+
+	if (!(spr->mobj->frame & FF_FULLBRIGHT))
+	{
+		lightlevel = *list[sector->numlights - 1].lightlevel;
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
+	}
+
 	for (i = 1; i < sector->numlights; i++)
 	{
 		fixed_t h = sector->lightlist[i].slope ? P_GetZAt(sector->lightlist[i].slope, spr->mobj->x, spr->mobj->y)
@@ -4458,7 +4401,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		if (h <= temp)
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			{
 				lightlevel = *list[i-1].lightlevel;
+				if (spr->mobj->frame & FF_SEMIBRIGHT)
+					lightlevel = 128 + (lightlevel>>1);
+			}
 			colormap = list[i-1].extra_colormap;
 			break;
 		}
@@ -4466,7 +4413,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 #else
 	i = R_GetPlaneLight(sector, temp, false);
 	if (!(spr->mobj->frame & FF_FULLBRIGHT))
+	{
 		lightlevel = *list[i].lightlevel;
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
+	}
 	colormap = list[i].extra_colormap;
 #endif
 
@@ -4482,7 +4433,11 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			{
 				lightlevel = *list[i].lightlevel;
+				if (spr->mobj->frame & FF_SEMIBRIGHT)
+					lightlevel = 128 + (lightlevel>>1);
+			}
 			colormap = list[i].extra_colormap;
 		}
 
@@ -4735,22 +4690,6 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	HWR_GetMappedPatch(gpatch, spr->colormap);
 
-	// Draw shadow BEFORE sprite
-	if (cv_shadow.value // Shadows enabled
-		&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
-		&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
-#ifdef ALAM_LIGHTING
-		&& !(t_lspr[spr->mobj->sprite]->type // Things with dynamic lights have no shadow.
-		&& (!spr->mobj->player || spr->mobj->player->powers[pw_super])) // Except for non-super players.
-#endif
-		&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
-	{
-		////////////////////
-		// SHADOW SPRITE! //
-		////////////////////
-		HWR_DrawSpriteShadow(spr, gpatch, this_scale);
-	}
-
 	// if it has a dispoffset, push it a little towards the camera
 	if (spr->dispoffset) {
 		float co = -gr_viewcos*(0.05f*spr->dispoffset);
@@ -4775,7 +4714,11 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 		extracolormap_t *colormap = sector->extra_colormap;
 
 		if (!(spr->mobj->frame & FF_FULLBRIGHT))
+		{
 			lightlevel = sector->lightlevel;
+			if (spr->mobj->frame & FF_SEMIBRIGHT)
+				lightlevel = 128 + (lightlevel>>1);
+		}
 
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
@@ -4885,6 +4828,9 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
+
+		if (spr->mobj->frame & FF_SEMIBRIGHT)
+			lightlevel = 128 + (lightlevel>>1);
 
 		if (colormap)
 			Surf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, false);
@@ -5356,6 +5302,12 @@ static void HWR_DrawSprites(void)
 				HWR_DrawPrecipitationSprite(spr);
 			else
 #endif
+			{
+				if (spr->mobj && spr->mobj->shadowscale && cv_shadow.value)
+				{
+					HWR_DrawDropShadow(spr->mobj, spr->mobj->shadowscale);
+				}
+
 				if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 				{
 					// 8/1/19: Only don't display player models if no default SPR_PLAY is found.
@@ -5371,6 +5323,7 @@ static void HWR_DrawSprites(void)
 					else
 						HWR_DrawMD2(spr);
 				}
+			}
 		}
 	}
 }
@@ -5404,14 +5357,14 @@ static void HWR_AddSprites(sector_t *sec)
 
 	// Handle all things in sector.
 	// If a limit exists, handle things a tiny bit different.
-	if ((limit_dist = (fixed_t)(/*(maptol & TOL_NIGHTS) ? cv_drawdist_nights.value : */cv_drawdist.value) << FRACBITS))
+	if ((limit_dist = (fixed_t)(cv_drawdist.value) * mapobjectscale))
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
 					if (viewssnum != 0)
@@ -5421,11 +5374,11 @@ static void HWR_AddSprites(sector_t *sec)
 					if (viewssnum != 1)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
 					if (viewssnum != 2)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
 					if (viewssnum != 3)
 						continue;
 			}
@@ -5446,7 +5399,7 @@ static void HWR_AddSprites(sector_t *sec)
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
 					if (viewssnum != 0)
@@ -5456,11 +5409,11 @@ static void HWR_AddSprites(sector_t *sec)
 					if (viewssnum != 1)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
 					if (viewssnum != 2)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
 					if (viewssnum != 3)
 						continue;
 			}
@@ -5470,8 +5423,8 @@ static void HWR_AddSprites(sector_t *sec)
 	}
 
 #ifdef HWPRECIP
-	// Someone seriously wants infinite draw distance for precipitation?
-	if ((limit_dist = (fixed_t)cv_drawdist_precip.value << FRACBITS))
+	// No to infinite precipitation draw distance.
+	if ((limit_dist = (fixed_t)(cv_drawdist_precip.value) * mapobjectscale))
 	{
 		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
 		{
@@ -5485,13 +5438,6 @@ static void HWR_AddSprites(sector_t *sec)
 
 			HWR_ProjectPrecipitationSprite(precipthing);
 		}
-	}
-	else
-	{
-		// Draw everything in sector, no checks
-		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
-			if (!(precipthing->precipflags & PCF_INVISIBLE))
-				HWR_ProjectPrecipitationSprite(precipthing);
 	}
 #endif
 }
@@ -5515,6 +5461,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	size_t lumpoff;
 	unsigned rot;
 	UINT8 flip;
+	boolean vflip = (!(thing->eflags & MFE_VERTICALFLIP) != !(thing->frame & FF_VERTICALFLIP));
 	angle_t ang;
 	INT32 heightsec, phs;
 	const boolean papersprite = (thing->frame & FF_PAPERSPRITE);
@@ -5646,7 +5593,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	x1 = tr_x + x1 * rightcos;
 	x2 = tr_x - x2 * rightcos;
 
-	if (thing->eflags & MFE_VERTICALFLIP)
+	if (vflip)
 	{
 		gz = FIXED_TO_FLOAT(thing->z+thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gzt = gz + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
@@ -5733,10 +5680,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	//CONS_Debug(DBG_RENDER, "------------------\nH: sprite  : %d\nH: frame   : %x\nH: type    : %d\nH: sname   : %s\n\n",
 	//            thing->sprite, thing->frame, thing->type, sprnames[thing->sprite]);
 
-	if (thing->eflags & MFE_VERTICALFLIP)
-		vis->vflip = true;
-	else
-		vis->vflip = false;
+	vis->vflip = vflip;
 
 	vis->precip = false;
 }
@@ -5817,10 +5761,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	// okay, we can't return now... this is a hack, but weather isn't networked, so it should be ok
 	if (!(thing->precipflags & PCF_THUNK))
 	{
-		if (thing->precipflags & PCF_RAIN)
-			P_RainThinker(thing);
-		else
-			P_SnowThinker(thing);
+		P_PrecipThinker(thing);
 		thing->precipflags |= PCF_THUNK;
 	}
 
@@ -5857,13 +5798,15 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 static void HWR_DrawSkyBackground(void)
 {
 	FOutVector v[4];
+	texture_t *tex;
 	angle_t angle;
 	float dimensionmultiply;
 	float aspectratio;
 	float angleturn;
 
+	tex = textures[texturetranslation[skytexture]];
 	HWR_GetTexture(texturetranslation[skytexture]);
-	aspectratio = (float)vid.width/(float)vid.height;
+	aspectratio = (float)vid.width / (float)vid.height;
 
 	//Hurdler: the sky is the only texture who need 4.0f instead of 1.0
 	//         because it's called just after clearing the screen
@@ -5887,24 +5830,24 @@ static void HWR_DrawSkyBackground(void)
 	// software doesn't draw any further than 1024 for skies anyway, but this doesn't overlap properly
 	// The only time this will probably be an issue is when a sky wider than 1024 is used as a sky AND a regular wall texture
 
-	angle = (dup_viewangle + gr_xtoviewangle[0]);
-	dimensionmultiply = ((float)textures[texturetranslation[skytexture]]->width/256.0f);
+	angle = -(dup_viewangle + gr_xtoviewangle[0]);
+	dimensionmultiply = ((float)tex->width/256.0f);
 
 	if (atransform.mirror)
 	{
 		angle = InvAngle(angle);
-		dimensionmultiply *= -1;
+		dimensionmultiply = -dimensionmultiply;
 	}
 
 	v[0].sow = v[3].sow = ((float) angle / ((ANGLE_90-1)*dimensionmultiply));
-	v[2].sow = v[1].sow = (-1.0f/dimensionmultiply)+((float) angle / ((ANGLE_90-1)*dimensionmultiply));
+	v[2].sow = v[1].sow = (1.0f/dimensionmultiply)+((float) angle / ((ANGLE_90-1)*dimensionmultiply));
 
 	// Y
 	angle = aimingangle;
 
-	dimensionmultiply = ((float)textures[texturetranslation[skytexture]]->height/(128.0f*aspectratio));
+	dimensionmultiply = ((float)tex->height/(128.0f*aspectratio));
 
-	if (splitscreen == 1)
+	if (r_splitscreen == 1)
 	{
 		dimensionmultiply *= 2;
 		angle *= 2;
@@ -5976,10 +5919,10 @@ void HWR_SetViewSize(void)
 	gr_viewwidth = (float)vid.width;
 	gr_viewheight = (float)vid.height;
 
-	if (splitscreen)
+	if (r_splitscreen)
 		gr_viewheight /= 2;
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 		gr_viewwidth /= 2;
 
 	gr_basecenterx = gr_viewwidth / 2;
@@ -6035,13 +5978,13 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	gr_viewwindowy = gr_baseviewwindowy;
 	gr_windowcentery = gr_basewindowcentery;
 
-	if ((splitscreen == 1 && viewnumber == 1) || (splitscreen > 1 && viewnumber > 1))
+	if ((r_splitscreen == 1 && viewnumber == 1) || (r_splitscreen > 1 && viewnumber > 1))
 	{
 		gr_viewwindowy += gr_viewheight;
 		gr_windowcentery += gr_viewheight;
 	}
 
-	if (splitscreen > 1 && viewnumber & 1)
+	if (r_splitscreen > 1 && viewnumber & 1)
 	{
 		gr_viewwindowx += gr_viewwidth;
 		gr_windowcenterx += gr_viewwidth;
@@ -6083,7 +6026,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	atransform.splitscreen = splitscreen;
+	atransform.splitscreen = r_splitscreen;
 
 	gr_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
 
@@ -6102,7 +6045,7 @@ if (0)
 		HWR_DrawSkyBackground();
 
 	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = splitscreen;
+	drawsky = r_splitscreen;
 
 	HWR_ClearSprites();
 
@@ -6135,11 +6078,11 @@ if (0)
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
 		viewangle = localaiming[0];
-	else if (splitscreen && player == &players[displayplayers[1]])
+	else if (r_splitscreen && player == &players[displayplayers[1]])
 		viewangle = localaiming[1];
-	else if (splitscreen > 1 && player == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
 		viewangle = localaiming[2];
-	else if (splitscreen > 2 && player == &players[displayplayers[3]])
+	else if (r_splitscreen > 2 && player == &players[displayplayers[3]])
 		viewangle = localaiming[3];
 
 	// Handle stuff when you are looking farther up or down.
@@ -6269,13 +6212,13 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	gr_viewwindowy = gr_baseviewwindowy;
 	gr_windowcentery = gr_basewindowcentery;
 
-	if ((splitscreen == 1 && viewnumber == 1) || (splitscreen > 1 && viewnumber > 1))
+	if ((r_splitscreen == 1 && viewnumber == 1) || (r_splitscreen > 1 && viewnumber > 1))
 	{
 		gr_viewwindowy += gr_viewheight;
 		gr_windowcentery += gr_viewheight;
 	}
 
-	if (splitscreen > 1 && viewnumber & 1)
+	if (r_splitscreen > 1 && viewnumber & 1)
 	{
 		gr_viewwindowx += gr_viewwidth;
 		gr_windowcenterx += gr_viewwidth;
@@ -6317,7 +6260,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	atransform.splitscreen = splitscreen;
+	atransform.splitscreen = r_splitscreen;
 
 	gr_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
 
@@ -6336,7 +6279,7 @@ if (0)
 		HWR_DrawSkyBackground();
 
 	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = splitscreen;
+	drawsky = r_splitscreen;
 
 	HWR_ClearSprites();
 
@@ -6369,11 +6312,11 @@ if (0)
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
 		viewangle = localaiming[0];
-	else if (splitscreen && player == &players[displayplayers[1]])
+	else if (r_splitscreen && player == &players[displayplayers[1]])
 		viewangle = localaiming[1];
-	else if (splitscreen > 1 && player == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
 		viewangle = localaiming[2];
-	else if (splitscreen > 2 && player == &players[displayplayers[3]])
+	else if (r_splitscreen > 2 && player == &players[displayplayers[3]])
 		viewangle = localaiming[3];
 
 	// Handle stuff when you are looking farther up or down.
@@ -6853,7 +6796,7 @@ void HWR_DoPostProcessor(player_t *player)
 	postimg_t *type = &postimgtype[0];
 	UINT8 i;
 
-	for (i = splitscreen; i > 0; i--)
+	for (i = r_splitscreen; i > 0; i--)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -6891,7 +6834,7 @@ void HWR_DoPostProcessor(player_t *player)
 	if(gamestate != GS_INTERMISSION)
 		HWD.pfnMakeScreenTexture();
 
-	if (splitscreen) // Not supported in splitscreen - someone want to add support?
+	if (r_splitscreen) // Not supported in splitscreen - someone want to add support?
 		return;
 
 	// Drunken vision! WooOOooo~

@@ -41,18 +41,36 @@ extern UINT32 mapmusposition;
 
 extern INT16 maptol;
 extern UINT8 globalweather;
-extern INT32 curWeather;
+extern UINT8 curWeather;
 extern INT32 cursaveslot;
 extern INT16 lastmapsaved;
 extern boolean gamecomplete;
 
-#define PRECIP_NONE  0
-#define PRECIP_STORM 1
-#define PRECIP_SNOW  2
-#define PRECIP_RAIN  3
-#define PRECIP_BLANK 4
-#define PRECIP_STORM_NORAIN 5
-#define PRECIP_STORM_NOSTRIKES 6
+typedef enum
+{
+	PRECIP_NONE = 0,
+	PRECIP_RAIN,
+	PRECIP_SNOW,
+	PRECIP_BLIZZARD,
+	PRECIP_STORM,
+	PRECIP_STORM_NORAIN,
+	PRECIP_STORM_NOSTRIKES,
+	MAXPRECIP
+} preciptype_t;
+
+typedef enum
+{
+	PRECIPFX_THUNDER = 1,
+	PRECIPFX_LIGHTNING = 1<<1
+} precipeffect_t;
+
+typedef struct
+{
+	mobjtype_t type;
+	precipeffect_t effects;
+} precipprops_t;
+
+extern precipprops_t precipprops[MAXPRECIP];
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -64,7 +82,7 @@ extern boolean metalrecording;
 
 #define ATTACKING_NONE   0
 #define ATTACKING_RECORD 1
-//#define ATTACKING_NIGHTS 2
+#define ATTACKING_CAPSULES 2
 extern UINT8 modeattacking;
 
 // menu demo things
@@ -80,8 +98,8 @@ extern boolean multiplayer;
 
 extern INT16 gametype;
 
-#define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 extern UINT8 splitscreen;
+extern int r_splitscreen;
 
 extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
@@ -122,6 +140,20 @@ extern boolean gamedataloaded;
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
+/* g_localplayers[0] = consoleplayer */
+extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
+
+/* spitscreen players sync */
+extern int splitscreen_original_party_size[MAXPLAYERS];
+extern int splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
+/* parties */
+extern int splitscreen_invitations[MAXPLAYERS];
+extern int splitscreen_party_size[MAXPLAYERS];
+extern int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
+/* the only local one */
+extern boolean splitscreen_partied[MAXPLAYERS];
 
 // Maps of special importance
 extern INT16 spstage_start;
@@ -227,7 +259,7 @@ typedef struct
 	UINT32 muspos;    ///< Music position to jump to.
 	char forcecharacter[17];  ///< (SKINNAMESIZE+1) Skin to switch to or "" to disable.
 	UINT8 weather;         ///< 0 = sunny day, 1 = storm, 2 = snow, 3 = rain, 4 = blank, 5 = thunder w/o rain, 6 = rain w/o lightning, 7 = heat wave.
-	INT16 skynum;          ///< Sky number to use.
+	char skytexture[9];    ///< Sky texture to use.
 	INT16 skybox_scalex;   ///< Skybox X axis scale. (0 = no movement, 1 = 1:1 movement, 16 = 16:1 slow movement, -4 = 1:4 fast movement, etc.)
 	INT16 skybox_scaley;   ///< Skybox Y axis scale.
 	INT16 skybox_scalez;   ///< Skybox Z axis scale.
@@ -353,7 +385,7 @@ extern UINT16 emeralds;
 #define EMERALD7 64
 #define ALL7EMERALDS(v) ((v & (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7)) == (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7))
 
-extern INT32 nummaprings, nummapboxes, numgotboxes; //keep track of spawned rings/coins/battle mode items
+extern INT32 nummaprings; // keep track of spawned rings/coins
 
 /** Time attack information, currently a very small structure.
   */
@@ -433,11 +465,14 @@ extern INT32 hyudorotime;
 extern INT32 stealtime;
 extern INT32 sneakertime;
 extern INT32 itemtime;
+extern INT32 bubbletime;
 extern INT32 comebacktime;
 extern INT32 bumptime;
+extern INT32 greasetics;
 extern INT32 wipeoutslowtime;
 extern INT32 wantedreduce;
 extern INT32 wantedfrequency;
+extern INT32 flameseg;
 
 extern UINT8 introtoplay;
 extern UINT8 creditscutscene;
@@ -474,7 +509,6 @@ extern tic_t wantedcalcdelay;
 extern tic_t indirectitemcooldown;
 extern tic_t hyubgone;
 extern tic_t mapreset;
-extern UINT8 nospectategrief;
 extern boolean thwompsactive;
 extern SINT8 spbplace;
 

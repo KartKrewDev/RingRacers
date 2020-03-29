@@ -267,7 +267,7 @@ static UINT8 *R_GenerateTexture(size_t texnum)
 	texturememory += blocksize;
 	block = Z_Malloc(blocksize+1, PU_STATIC, &texturecache[texnum]);
 
-	memset(block, 0xF7, blocksize+1); // Transparency hack
+	memset(block, 0xFF, blocksize+1); // TRANSPARENTPIXEL
 
 	// columns lookup table
 	colofs = (UINT32 *)(void *)block;
@@ -1177,7 +1177,6 @@ void R_ClearColormaps(void)
 //
 static double deltas[256][3], map[256][3];
 
-static UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b);
 static int RoundUp(double number);
 
 #ifdef HASINVERT
@@ -1403,7 +1402,7 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 
 // Thanks to quake2 source!
 // utils3/qdata/images.c
-static UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b)
+UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b)
 {
 	int dr, dg, db;
 	int distortion, bestdistortion = 256 * 256 * 4, bestcolor = 0, i;
@@ -1631,7 +1630,7 @@ void R_PrecacheLevel(void)
 
 	// Sky texture is always present.
 	// Note that F_SKY1 is the name used to indicate a sky floor/ceiling as a flat,
-	// while the sky texture is stored like a wall texture, with a skynum dependent name.
+	// while the sky texture is stored like a wall texture, with a texture name set by the map.
 	texturepresent[skytexture] = 1;
 
 	texturememory = 0;

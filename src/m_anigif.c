@@ -422,7 +422,7 @@ static void GIF_headwrite(void)
 	WRITEUINT16(p, rheight);
 
 	// colors, aspect, etc
-	WRITEUINT8(p, 0xF7);
+	WRITEUINT8(p, 0xFF); // TRANSPARENTPIXEL
 	WRITEUINT8(p, 0x00);
 	WRITEUINT8(p, 0x00);
 

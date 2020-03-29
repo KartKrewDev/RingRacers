@@ -78,6 +78,7 @@ patch_t *cred_font[CRED_FONTSIZE];
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
 patch_t *pingnum[10];
 patch_t *pinggfx[5];	// small ping graphic
+patch_t *mping[5]; // smaller ping graphic
 
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
@@ -311,6 +312,8 @@ void HU_LoadGraphics(void)
 	{
 		sprintf(buffer, "PINGGFX%d", i+1);
 		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		sprintf(buffer, "MPING%d", i+1);
+		mping[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
 	// fps stuff
@@ -793,13 +796,14 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_GREY:
 				case SKINCOLOR_NICKEL:
 				case SKINCOLOR_BLACK:
-				case SKINCOLOR_SKUNK:
+				case SKINCOLOR_PLATINUM:
 				case SKINCOLOR_JET:
 					cstart = "\x86"; // V_GRAYMAP
 					break;
 				case SKINCOLOR_SEPIA:
 				case SKINCOLOR_BEIGE:
-				case SKINCOLOR_WALNUT:
+				case SKINCOLOR_CARAMEL:
+				case SKINCOLOR_PEACH:
 				case SKINCOLOR_BROWN:
 				case SKINCOLOR_LEATHER:
 				case SKINCOLOR_RUST:
@@ -810,38 +814,32 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_SALMON:
 				case SKINCOLOR_PINK:
 				case SKINCOLOR_ROSE:
-				case SKINCOLOR_BRICK:
 				case SKINCOLOR_LEMONADE:
-				case SKINCOLOR_BUBBLEGUM:
 				case SKINCOLOR_LILAC:
+				case SKINCOLOR_TAFFY:
 					cstart = "\x8d"; // V_PINKMAP
 					break;
 				case SKINCOLOR_CINNAMON:
 				case SKINCOLOR_RUBY:
 				case SKINCOLOR_RASPBERRY:
-				case SKINCOLOR_CHERRY:
 				case SKINCOLOR_RED:
 				case SKINCOLOR_CRIMSON:
 				case SKINCOLOR_MAROON:
-				case SKINCOLOR_FLAME:
 				case SKINCOLOR_SCARLET:
 				case SKINCOLOR_KETCHUP:
 					cstart = "\x85"; // V_REDMAP
 					break;
 				case SKINCOLOR_DAWN:
-				case SKINCOLOR_SUNSET:
+				case SKINCOLOR_SUNSLAM:
 				case SKINCOLOR_CREAMSICLE:
 				case SKINCOLOR_ORANGE:
-				case SKINCOLOR_PUMPKIN:
 				case SKINCOLOR_ROSEWOOD:
-				case SKINCOLOR_BURGUNDY:
 				case SKINCOLOR_TANGERINE:
 					cstart = "\x87"; // V_ORANGEMAP
 					break;
-				case SKINCOLOR_PEACH:
-				case SKINCOLOR_CARAMEL:
+				case SKINCOLOR_TAN:
 				case SKINCOLOR_CREAM:
-					cstart = "\x8f"; // V_PEACHMAP
+					cstart = "\x8f"; // V_TANMAP
 					break;
 				case SKINCOLOR_GOLD:
 				case SKINCOLOR_ROYAL:
@@ -851,39 +849,43 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 					cstart = "\x8A"; // V_GOLDMAP
 					break;
 				case SKINCOLOR_POPCORN:
-				case SKINCOLOR_QUARRY:
 				case SKINCOLOR_YELLOW:
 				case SKINCOLOR_MUSTARD:
-				case SKINCOLOR_CROCODILE:
+				case SKINCOLOR_BANANA:
 				case SKINCOLOR_OLIVE:
+				case SKINCOLOR_CROCODILE:
 					cstart = "\x82"; // V_YELLOWMAP
 					break;
 				case SKINCOLOR_ARTICHOKE:
+				case SKINCOLOR_PERIDOT:
 				case SKINCOLOR_VOMIT:
 				case SKINCOLOR_GARDEN:
-				case SKINCOLOR_TEA:
-				case SKINCOLOR_PISTACHIO:
-					cstart = "\x8b"; // V_TEAMAP
-					break;
 				case SKINCOLOR_LIME:
 				case SKINCOLOR_HANDHELD:
+				case SKINCOLOR_TEA:
+				case SKINCOLOR_PISTACHIO:
 				case SKINCOLOR_MOSS:
 				case SKINCOLOR_CAMOUFLAGE:
 				case SKINCOLOR_ROBOHOOD:
 				case SKINCOLOR_MINT:
 				case SKINCOLOR_GREEN:
 				case SKINCOLOR_PINETREE:
-				case SKINCOLOR_EMERALD:
+				case SKINCOLOR_TURTLE:
 				case SKINCOLOR_SWAMP:
 				case SKINCOLOR_DREAM:
 				case SKINCOLOR_PLAGUE:
+				case SKINCOLOR_EMERALD:
 				case SKINCOLOR_ALGAE:
 					cstart = "\x83"; // V_GREENMAP
 					break;
 				case SKINCOLOR_CARIBBEAN:
 				case SKINCOLOR_AZURE:
-				case SKINCOLOR_AQUA:
+				case SKINCOLOR_AQUAMARINE:
+				case SKINCOLOR_TURQUOISE:
 				case SKINCOLOR_TEAL:
+					cstart = "\x8b"; // V_AQUAMAP
+					break;
+				case SKINCOLOR_PIGEON:
 				case SKINCOLOR_CYAN:
 				case SKINCOLOR_JAWZ:
 				case SKINCOLOR_CERULEAN:
@@ -891,24 +893,25 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_SAPPHIRE:
 					cstart = "\x88"; // V_SKYMAP
 					break;
-				case SKINCOLOR_PIGEON:
-				case SKINCOLOR_PLATINUM:
 				case SKINCOLOR_STEEL:
-					cstart = "\x8c"; // V_STEELMAP
-					break;
+				case SKINCOLOR_ULTRAMARINE:
 				case SKINCOLOR_PERIWINKLE:
 				case SKINCOLOR_BLUE:
 				case SKINCOLOR_BLUEBERRY:
 				case SKINCOLOR_NOVA:
 					cstart = "\x84"; // V_BLUEMAP
 					break;
-				case SKINCOLOR_ULTRAVIOLET:
+				case SKINCOLOR_THISTLE:
 				case SKINCOLOR_PURPLE:
-				case SKINCOLOR_FUCHSIA:
+				case SKINCOLOR_PASTEL:
 					cstart = "\x81"; // V_PURPLEMAP
 					break;
-				case SKINCOLOR_PASTEL:
-				case SKINCOLOR_MOONSLAM:
+				case SKINCOLOR_MAGENTA:
+				case SKINCOLOR_FUCHSIA:
+				case SKINCOLOR_MOONSET:
+				case SKINCOLOR_VIOLET:
+					cstart = "\x8c"; // V_MAGENTAMAP
+					break;
 				case SKINCOLOR_DUSK:
 				case SKINCOLOR_TOXIC:
 				case SKINCOLOR_MAUVE:
@@ -1477,7 +1480,7 @@ static void HU_drawMiniChat(void)
 	if (!chat_nummsg_min)
 		return; // needless to say it's useless to do anything if we don't have anything to draw.
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 		boxw = max(64, boxw/2);
 
 	for (; i>0; i--)
@@ -1529,10 +1532,10 @@ static void HU_drawMiniChat(void)
 	y = chaty - charheight*(msglines+1);
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
@@ -1581,7 +1584,7 @@ static void HU_drawMiniChat(void)
 			else
 			{
 				if (cv_chatbacktint.value) // on request of wolfy
-					V_DrawFillConsoleMap(x + dx + 2, y+dy, charwidth, charheight, 239|V_SNAPTOBOTTOM|V_SNAPTOLEFT);
+					V_DrawFillConsoleMap(x + dx + 2, y+dy, charwidth, charheight, 159|V_SNAPTOBOTTOM|V_SNAPTOLEFT);
 
 				V_DrawChatCharacter(x + dx + 2, y+dy, msg[j++] |V_SNAPTOBOTTOM|V_SNAPTOLEFT|transflag, !cv_allcaps.value, colormap);
 			}
@@ -1620,10 +1623,10 @@ static void HU_drawChatLog(INT32 offset)
 		chat_scroll = chat_maxscroll;
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		boxh = max(6, boxh/2);
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			boxw = max(64, boxw/2);
 	}
 #endif
@@ -1631,10 +1634,10 @@ static void HU_drawChatLog(INT32 offset)
 	y = chaty - offset*charheight - (chat_scroll*charheight) - boxh*charheight - 12;
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
@@ -1645,7 +1648,7 @@ static void HU_drawChatLog(INT32 offset)
 	chat_topy = y + chat_scroll*charheight;
 	chat_bottomy = chat_topy + boxh*charheight;
 
-	V_DrawFillConsoleMap(chatx, chat_topy, boxw, boxh*charheight +2, 239|V_SNAPTOBOTTOM|V_SNAPTOLEFT); // log box
+	V_DrawFillConsoleMap(chatx, chat_topy, boxw, boxh*charheight +2, 159|V_SNAPTOBOTTOM|V_SNAPTOLEFT); // log box
 
 	for (i=0; i<chat_nummsg_log; i++) // iterate through our chatlog
 	{
@@ -1739,10 +1742,10 @@ static void HU_DrawChat(void)
 	const char *mute = "Chat has been muted.";
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 		{
 			y += 16;
 			boxw = max(64, boxw/2);
@@ -1770,7 +1773,7 @@ static void HU_DrawChat(void)
 		cflag = V_GRAYMAP; // set text in gray if chat is muted.
 	}
 
-	V_DrawFillConsoleMap(chatx, y-1, boxw, (typelines*charheight), 239 | V_SNAPTOBOTTOM | V_SNAPTOLEFT);
+	V_DrawFillConsoleMap(chatx, y-1, boxw, (typelines*charheight), 159 | V_SNAPTOBOTTOM | V_SNAPTOLEFT);
 
 	while (talk[i])
 	{
@@ -1836,10 +1839,10 @@ static void HU_DrawChat(void)
 		INT32 count = 0;
 		INT32 p_dispy = chaty - charheight -1;
 #ifdef NETSPLITSCREEN
-		if (splitscreen)
+		if (r_splitscreen)
 		{
 			p_dispy -= BASEVIDHEIGHT/2;
-			if (splitscreen > 1)
+			if (r_splitscreen > 1)
 				p_dispy += 16;
 		}
 		else
@@ -1897,14 +1900,14 @@ static void HU_DrawChat(void)
 			{
 				char name[MAXPLAYERNAME+1];
 				strlcpy(name, player_names[i], 7); // shorten name to 7 characters.
-				V_DrawFillConsoleMap(chatx+ boxw + 2, p_dispy- (6*count), 48, 6, 239 | V_SNAPTOBOTTOM | V_SNAPTOLEFT); // fill it like the chat so the text doesn't become hard to read because of the hud.
+				V_DrawFillConsoleMap(chatx+ boxw + 2, p_dispy- (6*count), 48, 6, 159 | V_SNAPTOBOTTOM | V_SNAPTOLEFT); // fill it like the chat so the text doesn't become hard to read because of the hud.
 				V_DrawSmallString(chatx+ boxw + 4, p_dispy- (6*count), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, va("\x82%d\x80 - %s", i, name));
 				count++;
 			}
 		}
 		if (count == 0) // no results.
 		{
-			V_DrawFillConsoleMap(chatx+boxw+2, p_dispy- (6*count), 48, 6, 239 | V_SNAPTOBOTTOM | V_SNAPTOLEFT); // fill it like the chat so the text doesn't become hard to read because of the hud.
+			V_DrawFillConsoleMap(chatx+boxw+2, p_dispy- (6*count), 48, 6, 159 | V_SNAPTOBOTTOM | V_SNAPTOLEFT); // fill it like the chat so the text doesn't become hard to read because of the hud.
 			V_DrawSmallString(chatx+boxw+4, p_dispy- (6*count), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, "NO RESULT.");
 		}
 	}
@@ -2250,7 +2253,7 @@ void HU_DrawSongCredits(void)
 {
 	char *str;
 	INT32 len, destx;
-	INT32 y = (splitscreen ? (BASEVIDHEIGHT/2)-4 : 32);
+	INT32 y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32);
 	INT32 bgt;
 
 	if (!cursongcredit.def) // No def
@@ -2386,7 +2389,7 @@ void HU_Drawer(void)
 	}*/
 
 	// draw song credits
-	if (cv_songcredits.value)
+	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
 		HU_DrawSongCredits();
 
 	// draw desynch text
@@ -2480,28 +2483,49 @@ void HU_Erase(void)
 //                   IN-LEVEL MULTIPLAYER RANKINGS
 //======================================================================
 
+static int
+Ping_gfx_num (int ping)
+{
+	if (ping < 76)
+		return 0;
+	else if (ping < 137)
+		return 1;
+	else if (ping < 256)
+		return 2;
+	else if (ping < 500)
+		return 3;
+	else
+		return 4;
+}
+
 //
 // HU_drawPing
 //
 void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
-	INT32 gfxnum = 4;	// gfx to draw
+	INT32 gfxnum;	// gfx to draw
 	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SALMON, GTC_CACHE);
 
-	if (ping < 76)
-		gfxnum = 0;
-	else if (ping < 137)
-		gfxnum = 1;
-	else if (ping < 256)
-		gfxnum = 2;
-	else if (ping < 500)
-		gfxnum = 3;
+	gfxnum = Ping_gfx_num(ping);
 
 	V_DrawScaledPatch(x, y, flags, pinggfx[gfxnum]);
 	if (servermaxping && ping > servermaxping && hu_tick < 4)		// flash ping red if too high
 		V_DrawPingNum(x, y+9, flags, ping, colormap);
 	else
 		V_DrawPingNum(x, y+9, flags, ping, NULL);
+}
+
+void
+HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
+{
+	patch_t *patch;
+
+	patch = mping[Ping_gfx_num(ping)];
+
+	if (( flags & V_SNAPTORIGHT ))
+		x += ( BASEVIDWIDTH - SHORT (patch->width) );
+
+	V_DrawScaledPatch(x, y, flags, patch);
 }
 
 //
@@ -3017,12 +3041,12 @@ static void HU_DrawRankings(void)
 		}
 
 		V_DrawCenteredString(256, 8, 0, "GAME SPEED");
-		V_DrawCenteredString(256, 16, hilicol, cv_kartspeed.string);
+		V_DrawCenteredString(256, 16, hilicol, kartspeed_cons_t[1+gamespeed].strvalue);
 	}
 
 	// When you play, you quickly see your score because your name is displayed in white.
 	// When playing back a demo, you quickly see who's the view.
-	if (!splitscreen)
+	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	scorelines = 0;

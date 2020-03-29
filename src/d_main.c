@@ -152,6 +152,7 @@ char srb2path[256] = ".";
 #endif
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
+static char addonsdir[MAX_WADPATH];
 
 //
 // EVENT HANDLING
@@ -308,13 +309,6 @@ static void D_Display(void)
 		wipedefindex = gamestate; // wipe_xxx_toblack
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
 			wipedefindex = wipe_timeattack_toblack;
-		else if (gamestate == GS_INTERMISSION)
-		{
-			if (intertype == int_spec) // Special Stage
-				wipedefindex = wipe_specinter_toblack;
-			else //if (intertype != int_coop) // Multiplayer
-				wipedefindex = wipe_multinter_toblack;
-		}
 
 		if (rendermode != render_none)
 		{
@@ -325,7 +319,7 @@ static void D_Display(void)
 				F_WipeStartScreen();
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK);
+				F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
@@ -423,7 +417,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
-			for (i = 0; i <= splitscreen; i++)
+			for (i = 0; i <= r_splitscreen; i++)
 			{
 				if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)
 				{
@@ -447,10 +441,10 @@ static void D_Display(void)
 					{
 						if (i > 0) // Splitscreen-specific
 						{
-							switch (i) 
+							switch (i)
 							{
 								case 1:
-									if (splitscreen > 1)
+									if (r_splitscreen > 1)
 									{
 										viewwindowx = viewwidth;
 										viewwindowy = 0;
@@ -475,7 +469,7 @@ static void D_Display(void)
 									break;
 							}
 
-							
+
 							topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
 						}
 
@@ -489,7 +483,7 @@ static void D_Display(void)
 
 			if (rendermode == render_soft)
 			{
-				for (i = 0; i <= splitscreen; i++)
+				for (i = 0; i <= r_splitscreen; i++)
 				{
 					if (postimgtype[i])
 						V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
@@ -532,7 +526,7 @@ static void D_Display(void)
 	}
 
 	if (demo.rewinding)
-		V_DrawFadeScreen(TC_RAINBOW, (leveltime & 0x20) ? SKINCOLOR_PASTEL : SKINCOLOR_MOONSLAM);
+		V_DrawFadeScreen(TC_RAINBOW, (leveltime & 0x20) ? SKINCOLOR_PASTEL : SKINCOLOR_MOONSET);
 
 	// vid size change is now finished if it was on...
 	vid.recalc = 0;
@@ -556,7 +550,7 @@ static void D_Display(void)
 		if (rendermode != render_none)
 		{
 			F_WipeEndScreen();
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", true, false);
 		}
 	}
 
@@ -787,6 +781,7 @@ void D_StartTitle(void)
 
 	gameaction = ga_nothing;
 	memset(displayplayers, 0, sizeof(displayplayers));
+	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
 	//demosequence = -1;
 	gametype = GT_RACE; // SRB2kart
@@ -836,11 +831,11 @@ static inline void D_CleanFile(char **filearray)
 
 static void IdentifyVersion(void)
 {
-	char *srb2wad1, *srb2wad2;
+	char *mainresource;
 	const char *srb2waddir = NULL;
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	// change to the directory where 'srb2.srb' is found
+	// change to the directory where 'main.kart' is found
 	srb2waddir = I_LocateWad();
 #endif
 
@@ -871,49 +866,43 @@ static void IdentifyVersion(void)
 		srb2waddir = I_GetWadDir();
 #endif
 	// Commercial.
-	srb2wad1 = malloc(strlen(srb2waddir)+1+8+1);
-	srb2wad2 = malloc(strlen(srb2waddir)+1+8+1);
-	if (srb2wad1 == NULL && srb2wad2 == NULL)
+	mainresource = malloc(strlen(srb2waddir)+1+9+1);
+	if (mainresource == NULL)
 		I_Error("No more free memory to look in %s", srb2waddir);
-	if (srb2wad1 != NULL)
-		sprintf(srb2wad1, pandf, srb2waddir, "srb2.srb");
-	if (srb2wad2 != NULL)
-		sprintf(srb2wad2, pandf, srb2waddir, "srb2.wad");
+	if (mainresource != NULL)
+		sprintf(mainresource, pandf, srb2waddir, "main.kart");
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
 	configfile[sizeof configfile - 1] = '\0';
 
 	// Load the IWAD
-	if (srb2wad2 != NULL && FIL_ReadFileOK(srb2wad2))
-		D_AddFile(srb2wad2, startupwadfiles);
-	else if (srb2wad1 != NULL && FIL_ReadFileOK(srb2wad1))
-		D_AddFile(srb2wad1, startupwadfiles);
+	if (mainresource != NULL && FIL_ReadFileOK(mainresource))
+		D_AddFile(mainresource, startupwadfiles);
 	else
-		I_Error("SRB2.SRB/SRB2.WAD not found! Expected in %s, ss files: %s or %s\n", srb2waddir, srb2wad1, srb2wad2);
+		I_Error("MAIN.KART not found! Expected in %s, ss file: %s \n", srb2waddir, mainresource);
 
-	if (srb2wad1)
-		free(srb2wad1);
-	if (srb2wad2)
-		free(srb2wad2);
+	if (mainresource)
+		free(mainresource);
 
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-#ifdef USE_PATCH_DTA
-	// Add our crappy patches to fix our bugs
-	D_AddFile(va(pandf,srb2waddir,"patch.dta"));
+	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"textures.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"chars.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"maps.pk3"), startupwadfiles);
+#ifdef USE_PATCH_FILE
+	D_AddFile(va(pandf,srb2waddir,"patch.pk3"), startupwadfiles);
 #endif
 
-	D_AddFile(va(pandf,srb2waddir,"gfx.kart"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"textures.kart"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"chars.kart"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"maps.kart"), startupwadfiles);
-#ifdef USE_PATCH_KART
-	D_AddFile(va(pandf,srb2waddir,"patch.kart"), startupwadfiles);
-#endif
-	D_AddFile(va(pandf,srb2waddir,"followers.kart"), startupwadfiles);       // merge this in GFX later, this is mostly to avoid uploading a MASSIVE patch.kart /gfx.kart for testing. -Lat'
-
+#if 0
+	// TODO: pk3 doesn't support music replacement IIRC
+	// music barely benefits from the compression anyway
+	// would be nice for the folders, though
+	D_AddFile(va(pandf,srb2waddir,"sounds.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"music.pk3"), startupwadfiles);
+#else
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 #define MUSICTEST(str) \
 	{\
@@ -924,9 +913,10 @@ static void IdentifyVersion(void)
 		else if (ms == 0) \
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
 	}
-	MUSICTEST("sounds.kart")
-	MUSICTEST("music.kart")
+	MUSICTEST("sounds.wad")
+	MUSICTEST("music.wad")
 #undef MUSICTEST
+#endif
 #endif
 }
 
@@ -1102,7 +1092,6 @@ void D_SRB2Main(void)
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
 
-			I_mkdir(srb2home, 0700);
 #else
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
@@ -1122,6 +1111,10 @@ void D_SRB2Main(void)
 	strcpy(downloaddir, "/ram"); // the dreamcast's TMP
 #endif
 	}
+
+	// Create addons dir
+	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
+	I_mkdir(addonsdir, 0755);
 
 	// rand() needs seeded regardless of password
 	srand((unsigned int)time(NULL));
@@ -1195,12 +1188,12 @@ void D_SRB2Main(void)
 	M_InitCharacterTables();
 
 	// load wad, including the main wad file
-	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
+	CONS_Printf("W_InitMultipleFiles(): Adding main IWAD and PWADs.\n");
 	if (!W_InitMultipleFiles(startupwadfiles, false))
 #ifdef _DEBUG
-		CONS_Error("A WAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		CONS_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #else
-		I_Error("A WAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		I_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #endif
 	D_CleanFile(startupwadfiles);
 
@@ -1209,27 +1202,21 @@ void D_SRB2Main(void)
 #ifndef DEVELOP
 	// Check MD5s of autoloaded files
 	// Note: Do not add any files that ignore MD5!
-	W_VerifyFileMD5(mainwads, ASSET_HASH_SRB2_SRB);						// srb2.srb/srb2.wad
-#ifdef USE_PATCH_DTA
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_DTA);		// patch.dta
-#endif
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_KART);			// gfx.kart
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_KART);	// textures.kart
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_KART);		// chars.kart
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_KART);		// maps.kart -- 4 - If you touch this, make sure to touch up the majormods stuff below.
-#ifdef USE_PATCH_KART
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_KART);		// patch.kart
+	W_VerifyFileMD5(mainwads, ASSET_HASH_MAIN_KART);					// main.kart
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);			// gfx.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_PK3);		// textures.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);		// chars.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);			// maps.pk3 -- 4 - If you touch this, make sure to touch up the majormods stuff below.
+#ifdef USE_PATCH_FILE
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
 #else
-#ifdef USE_PATCH_DTA
-	mainwads++;	// patch.dta
-#endif
-	mainwads++;	// gfx.kart
-	mainwads++;	// textures.kart
-	mainwads++;	// chars.kart
-	mainwads++;	// maps.kart
-#ifdef USE_PATCH_KART
-	mainwads++;	// patch.kart
+	mainwads++;	// gfx.pk3
+	mainwads++;	// textures.pk3
+	mainwads++;	// chars.pk3
+	mainwads++;	// maps.pk3
+#ifdef USE_PATCH_FILE
+	mainwads++;	// patch.pk3
 #endif
 
 #endif //ifndef DEVELOP
@@ -1260,8 +1247,9 @@ void D_SRB2Main(void)
 		}
 	}
 
+	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
 	if (!W_InitMultipleFiles(startuppwads, true))
-		CONS_Error("A PWAD file was not found or not valid.\nCheck the log to see which ones.\n");
+		M_StartMessage(M_GetText("A PWAD file was not found or not valid.\nCheck log.txt to see which ones.\n\nPress ESC\n"), NULL, MM_NOTHING);
 	D_CleanFile(startuppwads);
 
 	//
@@ -1553,10 +1541,11 @@ void D_SRB2Main(void)
 					newskill = (INT16)kartspeed_cons_t[j].value;
 					break;
 				}
+
 			if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
 			{
 				j = atoi(sskill); // assume they gave us a skill number, which is okay too
-				if (j >= 0 && j <= 2)
+				if (j >= KARTSPEED_EASY && j <= KARTSPEED_HARD)
 					newskill = (INT16)j;
 			}
 
@@ -1576,7 +1565,7 @@ void D_SRB2Main(void)
 			else if (!dedicated && M_MapLocked(pstartmap))
 				I_Error("You need to unlock this level before you can warp to it!\n");
 			else
-				D_MapChange(pstartmap, gametype, (boolean)cv_kartencore.value, true, 0, false, false);
+				D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
 		}
 	}
 	else if (M_CheckParm("-skipintro"))

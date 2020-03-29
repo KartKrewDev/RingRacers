@@ -48,6 +48,8 @@
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "k_kart.h" // SRB2kart
+#include "k_battle.h"
+#include "k_pwrlv.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -82,8 +84,21 @@ UINT32 mapmusposition; // Position to jump to
 
 INT16 gamemap = 1;
 INT16 maptol;
+
 UINT8 globalweather = 0;
-INT32 curWeather = PRECIP_NONE;
+UINT8 curWeather = PRECIP_NONE;
+
+precipprops_t precipprops[MAXPRECIP] =
+{
+	{MT_NULL, 0}, // PRECIP_NONE
+	{MT_RAIN, 0}, // PRECIP_RAIN
+	{MT_SNOWFLAKE, 0}, // PRECIP_SNOW
+	{MT_BLIZZARDSNOW, 0}, // PRECIP_BLIZZARD
+	{MT_RAIN, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
+	{MT_NULL, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
+	{MT_RAIN, PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
+};
+
 INT32 cursaveslot = -1; // Auto-save 1p savegame slot
 INT16 lastmapsaved = 0; // Last map we auto-saved at
 boolean gamecomplete = false;
@@ -114,6 +129,7 @@ player_t players[MAXPLAYERS];
 
 INT32 consoleplayer; // player taking events and displaying
 INT32 displayplayers[MAXSPLITSCREENPLAYERS]; // view being displayed
+INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
@@ -184,10 +200,6 @@ UINT32 bluescore, redscore; // CTF and Team Match team scores
 // ring count... for PERFECT!
 INT32 nummaprings = 0;
 
-// box respawning in battle mode
-INT32 nummapboxes = 0;
-INT32 numgotboxes = 0;
-
 // Elminates unnecessary searching.
 boolean CheckForBustableBlocks;
 boolean CheckForBouncySector;
@@ -214,11 +226,14 @@ INT32 hyudorotime = 7*TICRATE;
 INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;
+INT32 bubbletime = TICRATE/2;
 INT32 comebacktime = 10*TICRATE;
 INT32 bumptime = 6;
+INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
 INT32 wantedreduce = 5*TICRATE;
 INT32 wantedfrequency = 10*TICRATE;
+INT32 flameseg = TICRATE/4;
 
 INT32 gameovertics = 15*TICRATE;
 
@@ -266,7 +281,6 @@ tic_t wantedcalcdelay; // Time before it recalculates WANTED
 tic_t indirectitemcooldown; // Cooldown before any more Shrink, SPB, or any other item that works indirectly is awarded
 tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
-UINT8 nospectategrief; // How many players need to be in-game to eliminate last; for preventing spectate griefing
 boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
 
@@ -1226,7 +1240,6 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p)
 //
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
-boolean camspin[MAXSPLITSCREENPLAYERS];
 
 static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
 static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
@@ -1249,7 +1262,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (demo.playback) return;
 
-	player = &players[displayplayers[ssplayer-1]];
+	if (ssplayer == 1)
+		player = &players[consoleplayer];
+	else
+		player = &players[g_localplayers[ssplayer-1]];
+
 	if (ssplayer == 2)
 		thiscam = (player->bot == 2 ? &camera[0] : &camera[ssplayer-1]);
 	else
@@ -1402,7 +1419,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
 		axis = JoyAxis(AXISMOVE, ssplayer);
-		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
+		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || EITHERSNEAKER(player))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = forwardmove[1];	// 50
@@ -1446,6 +1463,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	axis = JoyAxis(AXISDRIFT, ssplayer);
 	if (InputDown(gc_drift, ssplayer) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_DRIFT;
+
+	// rear view with any button/key
+	axis = JoyAxis(AXISLOOKBACK, ssplayer);
+	if (InputDown(gc_lookback, ssplayer) || (usejoystick && axis > 0))
+		cmd->buttons |= BT_LOOKBACK;
 
 	// Lua scriptable buttons
 	if (InputDown(gc_custom1, ssplayer))
@@ -1551,11 +1573,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	cmd->angleturn *= realtics;
 
 	// SRB2kart - no additional angle if not moving
-	if (((player->mo && player->speed > 0) // Moving
+	if ((player->mo && player->speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 		|| (player->kartstuff[k_respawn]) // Respawning
 		|| (player->spectator || objectplacing)) // Not a physical player
-		&& !(player->kartstuff[k_spinouttimer] && player->kartstuff[k_sneakertimer])) // Spinning and boosting cancels out turning
 		lang += (cmd->angleturn<<16);
 
 	cmd->angleturn = (INT16)(lang >> 16);
@@ -1568,7 +1589,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		keyboard_look[ssplayer-1] = kbl;
 		turnheld[ssplayer-1] = th;
 		resetdown[ssplayer-1] = rd;
-		camspin[ssplayer-1] = InputDown(gc_lookback, ssplayer);
 	}
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.
@@ -1588,7 +1608,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	//Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
-		&& displayplayers[0] != consoleplayer && ssplayer == 1)
+		&& ! r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
 		displayplayers[0] = consoleplayer;
 
 }
@@ -1741,12 +1761,12 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (!resetplayer)
 		P_FindEmerald();
 
-	displayplayers[0] = consoleplayer; // view the guy you are playing
+	g_localplayers[0] = consoleplayer; // view the guy you are playing
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		if (i > 0 && !(i == 1 && botingame) && splitscreen < i)
-			displayplayers[i] = consoleplayer;
+		if (i > 0 && !(i == 1 && botingame) && r_splitscreen < i)
+			g_localplayers[i] = consoleplayer;
 	}
 
 	gameaction = ga_nothing;
@@ -1754,10 +1774,10 @@ void G_DoLoadLevel(boolean resetplayer)
 	Z_CheckHeap(-2);
 #endif
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (camera[i].chase)
-			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
+			P_ResetCamera(&players[g_localplayers[i]], &camera[i]);
 	}
 
 	// clear cmd building stuff
@@ -1774,6 +1794,8 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
+
+	server_lagless = cv_lagless.value;
 }
 
 static INT32 pausedelay = 0;
@@ -1867,8 +1889,8 @@ boolean G_Responder(event_t *ev)
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
 		&& (ev->data1 == KEY_F12 || ev->data1 == gamecontrol[gc_viewpoint][0] || ev->data1 == gamecontrol[gc_viewpoint][1]))
 	{
-		if (!demo.playback && (splitscreen || !netgame))
-			displayplayers[0] = consoleplayer;
+		if (!demo.playback && (r_splitscreen || !netgame))
+			g_localplayers[0] = consoleplayer;
 		else
 		{
 			G_AdjustView(1, 1, true);
@@ -2132,7 +2154,7 @@ boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 	if (!(onlyactive ? G_CouldView(playernum) : (playeringame[playernum] && !players[playernum].spectator)))
 		return false;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 	if (viewnum > splits)
 		viewnum = splits;
 
@@ -2203,7 +2225,7 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	INT32 olddisplayplayer;
 	INT32 playersviewable;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 
 	/* Promote splits */
 	if (viewnum > splits)
@@ -2214,7 +2236,7 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 
 		if (viewnum > playersviewable)
 			viewnum = playersviewable;
-		splitscreen = viewnum-1;
+		r_splitscreen = viewnum-1;
 
 		/* Prepare extra views for G_FindView to pass. */
 		for (viewd = splits+1; viewd < viewnum; ++viewd)
@@ -2287,14 +2309,14 @@ void G_ResetViews(void)
 
 	INT32 playersviewable;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 
 	playersviewable = G_CountPlayersPotentiallyViewable(false);
 	/* Demote splits */
 	if (playersviewable < splits)
 	{
 		splits = playersviewable;
-		splitscreen = max(splits-1, 0);
+		r_splitscreen = max(splits-1, 0);
 		R_ExecuteSetViewSize();
 	}
 
@@ -2333,7 +2355,7 @@ void G_Ticker(boolean run)
 
 			G_DoReborn(consoleplayer);*/
 
-			D_MapChange(gamemap, gametype, cv_kartencore.value, true, 1, false, false);
+			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), true, 1, false, false);
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -2365,21 +2387,7 @@ void G_Ticker(boolean run)
 
 		if (playeringame[i])
 		{
-			//@TODO all this throwdir stuff shouldn't be here! But it stays for now to maintain 1.0.4 compat...
-			// Remove for 1.1!
-
-			// SRB2kart
-			// Save the dir the player is holding
-			//  to allow items to be thrown forward or backward.
-			if (cmd->buttons & BT_FORWARD)
-				players[i].kartstuff[k_throwdir] = 1;
-			else if (cmd->buttons & BT_BACKWARD)
-				players[i].kartstuff[k_throwdir] = -1;
-			else
-				players[i].kartstuff[k_throwdir] = 0;
-
 			G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
-
 			// Use the leveltime sent in the player's ticcmd to determine control lag
 			cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
 		}
@@ -2571,7 +2579,6 @@ void G_PlayerReborn(INT32 player)
 	SINT8 pity;
 
 	// SRB2kart
-	INT32 starpostwp;
 	INT32 itemtype;
 	INT32 itemamount;
 	INT32 itemroulette;
@@ -2580,6 +2587,7 @@ void G_PlayerReborn(INT32 player)
 	INT32 bumper;
 	INT32 comebackpoints;
 	INT32 wanted;
+	INT32 rings;
 	INT32 respawnflip;
 	boolean songcredit = false;
 
@@ -2592,7 +2600,7 @@ void G_PlayerReborn(INT32 player)
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_ANALOGMODE|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
@@ -2633,15 +2641,13 @@ void G_PlayerReborn(INT32 player)
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
-		bumper = (G_BattleGametype() ? cv_kartbumpers.value : 0);
+		bumper = (G_BattleGametype() ? K_StartingBumperCount() : 0);
+		rings = (G_BattleGametype() ? 0 : 5);
 		comebackpoints = 0;
 		wanted = 0;
-		starpostwp = 0;
 	}
 	else
 	{
-		starpostwp = players[player].kartstuff[k_starpostwp];
-
 		itemroulette = (players[player].kartstuff[k_itemroulette] > 0 ? 1 : 0);
 		roulettetype = players[player].kartstuff[k_roulettetype];
 
@@ -2663,6 +2669,7 @@ void G_PlayerReborn(INT32 player)
 			growshrinktimer = 0;
 
 		bumper = players[player].kartstuff[k_bumper];
+		rings = players[player].kartstuff[k_rings];
 		comebackpoints = players[player].kartstuff[k_comebackpoints];
 		wanted = players[player].kartstuff[k_wanted];
 	}
@@ -2707,17 +2714,18 @@ void G_PlayerReborn(INT32 player)
 	p->pity = pity;
 
 	// SRB2kart
-	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync
 	p->kartstuff[k_itemroulette] = itemroulette;
 	p->kartstuff[k_roulettetype] = roulettetype;
 	p->kartstuff[k_itemtype] = itemtype;
 	p->kartstuff[k_itemamount] = itemamount;
 	p->kartstuff[k_growshrinktimer] = growshrinktimer;
 	p->kartstuff[k_bumper] = bumper;
+	p->kartstuff[k_rings] = rings;
 	p->kartstuff[k_comebackpoints] = comebackpoints;
 	p->kartstuff[k_comebacktimer] = comebacktime;
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
+	p->kartstuff[k_lastdraft] = -1;
 	p->kartstuff[k_starpostflip] = respawnflip;
 
 	if (follower)
@@ -2866,9 +2874,13 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost)
 		return;
 	}
 
+	// -- Record Attack --
+	if (modeattacking || battlecapsules)
+		spawnpoint = playerstarts[0];
+
 	// -- CTF --
 	// Order: CTF->DM->Coop
-	if (gametype == GT_CTF && players[playernum].ctfteam)
+	else if (gametype == GT_CTF && players[playernum].ctfteam)
 	{
 		if (!(spawnpoint = G_FindCTFStart(playernum)) // find a CTF start
 		&& !(spawnpoint = G_FindMatchStart(playernum))) // find a DM start
@@ -2900,18 +2912,18 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost)
 		if (nummapthings)
 		{
 			if (playernum == consoleplayer
-				|| (splitscreen && playernum == displayplayers[1])
-				|| (splitscreen > 1 && playernum == displayplayers[2])
-				|| (splitscreen > 2 && playernum == displayplayers[3]))
+				|| (splitscreen && playernum == g_localplayers[1])
+				|| (splitscreen > 1 && playernum == g_localplayers[2])
+				|| (splitscreen > 2 && playernum == g_localplayers[3]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the first mapthing!\n"));
 			spawnpoint = &mapthings[0];
 		}
 		else
 		{
 			if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == g_localplayers[1])
+			|| (splitscreen > 1 && playernum == g_localplayers[2])
+			|| (splitscreen > 2 && playernum == g_localplayers[3]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the origin!\n"));
 			//P_MovePlayerToSpawn handles this fine if the spawnpoint is NULL.
 		}
@@ -3006,17 +3018,17 @@ mapthing_t *G_FindMatchStart(INT32 playernum)
 				return deathmatchstarts[i];
 		}
 		if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == g_localplayers[1])
+			|| (splitscreen > 1 && playernum == g_localplayers[2])
+			|| (splitscreen > 2 && playernum == g_localplayers[3]))
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Deathmatch starts!\n"));
 		return NULL;
 	}
 
 	if (playernum == consoleplayer
-		|| (splitscreen && playernum == displayplayers[1])
-		|| (splitscreen > 1 && playernum == displayplayers[2])
-		|| (splitscreen > 2 && playernum == displayplayers[3]))
+		|| (splitscreen && playernum == g_localplayers[1])
+		|| (splitscreen > 1 && playernum == g_localplayers[2])
+		|| (splitscreen > 2 && playernum == g_localplayers[3]))
 		CONS_Alert(CONS_WARNING, M_GetText("No Deathmatch starts in this map!\n"));
 	return NULL;
 }
@@ -3052,8 +3064,17 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 						continue;
 					if (j == i)
 						continue;
-					if (players[j].score == players[i].score)
-						num++;
+
+					if (netgame && cv_kartusepwrlv.value)
+					{
+						if (clientpowerlevels[j][PWRLV_RACE] == clientpowerlevels[i][PWRLV_RACE])
+							num++;
+					}
+					else
+					{
+						if (players[j].score == players[i].score)
+							num++;
+					}
 				}
 
 				if (num > 1) // found dupes
@@ -3061,8 +3082,21 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 			}
 			else
 			{
-				if (players[i].score > players[playernum].score || i < playernum)
+				if (i < playernum)
 					pos++;
+				else
+				{
+					if (netgame && cv_kartusepwrlv.value)
+					{
+						if (clientpowerlevels[i][PWRLV_RACE] > clientpowerlevels[playernum][PWRLV_RACE])
+							pos++;
+					}
+					else
+					{
+						if (players[i].score > players[playernum].score)
+							pos++;
+					}
+				}
 			}
 		}
 
@@ -3082,17 +3116,17 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 		//return playerstarts[0];
 
 		if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == g_localplayers[1])
+			|| (splitscreen > 1 && playernum == g_localplayers[2])
+			|| (splitscreen > 2 && playernum == g_localplayers[3]))
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Race starts!\n"));
 		return NULL;
 	}
 
 	if (playernum == consoleplayer
-		|| (splitscreen && playernum == displayplayers[1])
-		|| (splitscreen > 1 && playernum == displayplayers[2])
-		|| (splitscreen > 2 && playernum == displayplayers[3]))
+		|| (splitscreen && playernum == g_localplayers[1])
+		|| (splitscreen > 1 && playernum == g_localplayers[2])
+		|| (splitscreen > 2 && playernum == g_localplayers[3]))
 		CONS_Alert(CONS_WARNING, M_GetText("No Race starts in this map!\n"));
 	return NULL;
 }
@@ -3227,7 +3261,8 @@ void G_DoReborn(INT32 playernum)
 		// respawn at the start
 		mobj_t *oldmo = NULL;
 
-		if (player->starpostnum || ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) && player->laps)) // SRB2kart
+		// Now only respawn at the start if you haven't crossed it at all
+		if (player->laps) // SRB2kart
 			starpost = true;
 
 		// first dissasociate the corpse
@@ -3391,9 +3426,10 @@ boolean G_BattleGametype(void)
 //
 INT16 G_SometimesGetDifferentGametype(void)
 {
-	boolean encorepossible = (M_SecretUnlocked(SECRET_ENCORE) && G_RaceGametype());
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1) && G_RaceGametype());
 
-	if (!cv_kartvoterulechanges.value) // never
+	if (!cv_kartvoterulechanges.value // never
+		&& encorescramble != 1) // destroying the code for this one instance
 		return gametype;
 
 	if (randmapbuffer[NUMMAPS] > 0 && (encorepossible || cv_kartvoterulechanges.value != 3))
@@ -3401,24 +3437,32 @@ INT16 G_SometimesGetDifferentGametype(void)
 		randmapbuffer[NUMMAPS]--;
 		if (encorepossible)
 		{
-			switch (cv_kartvoterulechanges.value)
+			if (encorescramble != -1)
+				encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
+			else
 			{
-				case 3: // always
-					randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
-					break;
-				case 2: // frequent
-					encorepossible = M_RandomChance(FRACUNIT>>1);
-					break;
-				case 1: // sometimes
-				default:
-					encorepossible = M_RandomChance(FRACUNIT>>2);
-					break;
+				switch (cv_kartvoterulechanges.value)
+				{
+					case 3: // always
+						randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
+						break;
+					case 2: // frequent
+						encorepossible = M_RandomChance(FRACUNIT>>1);
+						break;
+					case 1: // sometimes
+					default:
+						encorepossible = M_RandomChance(FRACUNIT>>2);
+						break;
+				}
 			}
-			if (encorepossible != (boolean)cv_kartencore.value)
+			if (encorepossible != (cv_kartencore.value == 1))
 				return (gametype|0x80);
 		}
 		return gametype;
 	}
+
+	if (!cv_kartvoterulechanges.value) // never (again)
+		return gametype;
 
 	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
 	{
@@ -3450,12 +3494,12 @@ UINT8 G_GetGametypeColor(INT16 gt)
 {
 	if (modeattacking // == ATTACKING_RECORD
 	|| gamestate == GS_TIMEATTACK)
-		return orangemap[120];
+		return orangemap[0];
 	if (gt == GT_MATCH)
-		return redmap[120];
+		return redmap[0];
 	if (gt == GT_RACE)
-		return skymap[120];
-	return 247; // FALLBACK
+		return skymap[0];
+	return 255; // FALLBACK
 }
 
 //
@@ -3648,7 +3692,7 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = (TOLMaps(G_TOLFlag(gametype)) / 2) + 1;
+	INT16 bufx, refreshnum = max(0, TOLMaps(G_TOLFlag(gametype))-3);
 
 	// Add the map to the buffer.
 	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
@@ -3672,6 +3716,7 @@ static void G_DoCompleted(void)
 {
 	INT32 i, j = 0;
 	boolean gottoken = false;
+	SINT8 powertype = PWRLV_DISABLED;
 
 	tokenlist = 0; // Reset the list
 
@@ -3696,7 +3741,7 @@ static void G_DoCompleted(void)
 		}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
-	if (G_RaceGametype() && ((multiplayer && demo.playback) || j == splitscreen+1) && (cv_inttime.value > 0))
+	if (G_RaceGametype() && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
 		S_ChangeMusicInternal("racent", true);
 
 	if (automapactive)
@@ -3810,12 +3855,22 @@ static void G_DoCompleted(void)
 			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
 	}
 
-
 	// We are committed to this map now.
 	// We may as well allocate its header if it doesn't exist
 	// (That is, if it's a real map)
 	if (nextmap < NUMMAPS && !mapheaderinfo[nextmap])
 		P_AllocMapHeader(nextmap);
+
+	// Set up power level gametype scrambles
+	if (netgame && cv_kartusepwrlv.value)
+	{
+		if (G_RaceGametype())
+			powertype = PWRLV_RACE;
+		else if (G_BattleGametype())
+			powertype = PWRLV_BATTLE;
+	}
+
+	K_SetPowerLevelScrambles(powertype);
 
 demointermission:
 
@@ -3888,7 +3943,7 @@ void G_NextLevel(void)
 		}
 
 		forceresetplayers = false;
-		deferencoremode = (boolean)cv_kartencore.value;
+		deferencoremode = (cv_kartencore.value == 1);
 	}
 
 	gameaction = ga_worlddone;
@@ -4051,14 +4106,23 @@ void G_LoadGameData(void)
 	// to new gamedata
 	G_ClearRecords(); // main and nights records
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
+
 	totalplaytime = 0; // total play time (separate from all)
 	matchesplayed = 0; // SRB2Kart: matches played & finished
+
+	for (i = 0; i < PWRLV_NUMTYPES; i++) // SRB2Kart: online rank system
+		vspowerlevel[i] = PWRLVRECORD_START;
 
 	if (M_CheckParm("-nodata"))
 		return; // Don't load.
 
 	// Allow saving of gamedata beyond this point
 	gamedataloaded = true;
+
+	if (M_CheckParm("-gamedata") && M_IsNextParm())
+	{
+		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
+	}
 
 	if (M_CheckParm("-resetdata"))
 		return; // Don't load (essentially, reset).
@@ -4083,6 +4147,13 @@ void G_LoadGameData(void)
 
 	totalplaytime = READUINT32(save_p);
 	matchesplayed = READUINT32(save_p);
+
+	for (i = 0; i < PWRLV_NUMTYPES; i++)
+	{
+		vspowerlevel[i] = READUINT16(save_p);
+		if (vspowerlevel[i] < PWRLVRECORD_MIN || vspowerlevel[i] > PWRLVRECORD_MAX)
+			goto datacorrupt;
+	}
 
 	modded = READUINT8(save_p);
 
@@ -4228,6 +4299,9 @@ void G_SaveGameData(boolean force)
 
 	WRITEUINT32(save_p, totalplaytime);
 	WRITEUINT32(save_p, matchesplayed);
+
+	for (i = 0; i < PWRLV_NUMTYPES; i++)
+		WRITEUINT16(save_p, vspowerlevel[i]);
 
 	btemp = (UINT8)(savemoddata); // what used to be here was profoundly dunderheaded
 	WRITEUINT8(save_p, btemp);
@@ -4741,22 +4815,16 @@ char *G_BuildMapTitle(INT32 mapnum)
 // DEMO RECORDING
 //
 
-#define DEMOVERSION 0x0002
+#define DEMOVERSION 0x0003
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_GHOST        0x01 // This demo contains ghost data too!
-#define DF_RECORDATTACK 0x02 // This demo is from record attack and contains its final completion time!
-#define DF_NIGHTSATTACK 0x04 // This demo is from NiGHTS attack and contains its time left, score, and mares!
+#define DF_TIMEATTACK   0x02 // This demo is from Time Attack and contains its final completion time & best lap!
+#define DF_BREAKTHECAPSULES 0x04 // This demo is from Break the Capsules and contains its final completion time!
 #define DF_ATTACKMASK   0x06 // This demo is from ??? attack and contains ???
 #define DF_ATTACKSHIFT  1
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
-
-#ifdef DEMO_COMPAT_100
-#define DF_FILELIST     0x08 // This demo contains an extra files list
-#define DF_GAMETYPEMASK 0x30
-#define DF_GAMESHIFT    4
-#endif
 
 #define DEMO_SPECTATOR 0x40
 
@@ -4790,7 +4858,6 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 // Not used for Metal Sonic
 #define GZT_SPRITE 0x10 // Animation frame
 #define GZT_EXTRA  0x20
-#define GZT_NIGHTS 0x40 // NiGHTS Mode stuff!
 
 // GZT_EXTRA flags
 #define EZT_THOK   0x01 // Spawned a thok object
@@ -4885,7 +4952,10 @@ void G_ReadDemoExtraData(void)
 		if (extradata & DXD_RESPAWN)
 		{
 			if (players[p].mo)
-				P_DamageMobj(players[p].mo, NULL, NULL, 10000); // Is this how this should work..?
+			{
+				// Is this how this should work..?
+				K_DoIngameRespawn(&players[p]);
+			}
 		}
 		if (extradata & DXD_SKIN)
 		{
@@ -4898,7 +4968,6 @@ void G_ReadDemoExtraData(void)
 
 			kartspeed = READUINT8(demo_p);
 			kartweight = READUINT8(demo_p);
-
 
 			if (stricmp(skins[players[p].skin].name, name) != 0)
 				FindClosestSkinForStats(p, kartspeed, kartweight);
@@ -5130,7 +5199,8 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 		|| (players[displayplayers[0]].kartstuff[k_respawn]) // Respawning
 		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
-		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer] && players[displayplayers[0]].kartstuff[k_sneakertimer])) // Spinning and boosting cancels out spinout
+		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
+		&& (players[displayplayers[0]].kartstuff[k_sneakertimer] || players[displayplayers[0]].kartstuff[k_levelbooster]))) // Spinning and boosting cancels out spinout
 		localangle[0] += (cmd->angleturn<<16);
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
@@ -5309,13 +5379,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	if (!(demoflags & DF_GHOST))
 		return; // No ghost data to write.
 
-	if (ghost->player && ghost->player->pflags & PF_NIGHTSMODE && ghost->tracer)
-	{
-		// We're talking about the NiGHTS thing, not the normal platforming thing!
-		ziptic |= GZT_NIGHTS;
-		ghost = ghost->tracer;
-	}
-
 	ziptic_p = demo_p++; // the ziptic, written at the end of this function
 
 	#define MAXMOM (0x7FFF<<8)
@@ -5378,7 +5441,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	// Store the sprite frame.
-	frame = ghost->frame & 0xFF;
+	frame = ghost->frame & FF_FRAMEMASK;
 	if (frame != oldghost[playernum].frame)
 	{
 		oldghost[playernum].frame = frame;
@@ -5532,12 +5595,6 @@ void G_ConsGhostTic(INT32 playernum)
 		demo_p++;
 	if (ziptic & GZT_SPRITE)
 		demo_p++;
-	if(ziptic & GZT_NIGHTS) {
-		if (!testmo || !testmo->player || !(testmo->player->pflags & PF_NIGHTSMODE) || !testmo->tracer)
-			nightsfail = true;
-		else
-			testmo = testmo->tracer;
-	}
 
 	if (ziptic & GZT_EXTRA)
 	{ // But wait, there's more!
@@ -5632,16 +5689,9 @@ void G_ConsGhostTic(INT32 playernum)
 		else
 			ghostext[playernum].desyncframes = 0;
 
-		if (
-#ifdef DEMO_COMPAT_100
-			demo.version != 0x0001 &&
-#endif
-			(
-				players[playernum].kartstuff[k_itemtype] != ghostext[playernum].kartitem ||
-				players[playernum].kartstuff[k_itemamount] != ghostext[playernum].kartamount ||
-				players[playernum].kartstuff[k_bumper] != ghostext[playernum].kartbumpers
-			)
-		)
+		if (players[playernum].kartstuff[k_itemtype] != ghostext[playernum].kartitem
+			|| players[playernum].kartstuff[k_itemamount] != ghostext[playernum].kartamount
+			|| players[playernum].kartstuff[k_bumper] != ghostext[playernum].kartbumpers)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
@@ -5669,10 +5719,6 @@ void G_GhostTicker(void)
 		// Skip normal demo data.
 		UINT8 ziptic = READUINT8(g->p);
 
-#ifdef DEMO_COMPAT_100
-		if (g->version != 0x0001)
-		{
-#endif
 		while (ziptic != DW_END) // Get rid of extradata stuff
 		{
 			if (ziptic == 0) // Only support player 0 info for now
@@ -5698,9 +5744,6 @@ void G_GhostTicker(void)
 		}
 
 		ziptic = READUINT8(g->p); // Back to actual ziptic stuff
-#ifdef DEMO_COMPAT_100
-		}
-#endif
 
 		if (ziptic & ZT_FWD)
 			g->p++;
@@ -5720,18 +5763,12 @@ void G_GhostTicker(void)
 		// Grab ghost data.
 		ziptic = READUINT8(g->p);
 
-#ifdef DEMO_COMPAT_100
-		if (g->version != 0x0001)
-		{
-#endif
 		if (ziptic == 0xFF)
 			goto skippedghosttic; // Didn't write ghost info this frame
 		else if (ziptic != 0)
 			I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
 		ziptic = READUINT8(g->p);
-#ifdef DEMO_COMPAT_100
-		}
-#endif
+
 		if (ziptic & GZT_XYZ)
 		{
 			g->oldmo.x = READFIXED(g->p);
@@ -5872,15 +5909,8 @@ void G_GhostTicker(void)
 				g->p += 12; // kartitem, kartamount, kartbumpers
 		}
 
-#ifdef DEMO_COMPAT_100
-		if (g->version != 0x0001)
-		{
-#endif
 		if (READUINT8(g->p) != 0xFF) // Make sure there isn't other ghost data here.
 			I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
-#ifdef DEMO_COMPAT_100
-		}
-#endif
 
 skippedghosttic:
 		// Tick ghost colors (Super and Mario Invincibility flashing)
@@ -5973,7 +6003,8 @@ void G_StoreRewindInfo(void)
 
 void G_PreviewRewind(tic_t previewtime)
 {
-	size_t i, j;
+	SINT8 i;
+	size_t j;
 	fixed_t tweenvalue = 0;
 	rewindinfo_t *info = rewindhead, *next_info = rewindhead;
 
@@ -6033,13 +6064,14 @@ void G_PreviewRewind(tic_t previewtime)
 			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];
 	}
 
-	for (i = splitscreen+1; i > 0; i--)
+	for (i = splitscreen; i >= 0; i--)
 		P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 }
 
 void G_ConfirmRewind(tic_t rewindtime)
 {
-	tic_t i;
+	SINT8 i;
+	tic_t j;
 	boolean oldmenuactive = menuactive, oldsounddisabled = sound_disabled;
 
 	INT32 olddp1 = displayplayers[0], olddp2 = displayplayers[1], olddp3 = displayplayers[2], olddp4 = displayplayers[3];
@@ -6059,10 +6091,10 @@ void G_ConfirmRewind(tic_t rewindtime)
 
 	G_DoPlayDemo(NULL); // Restart the current demo
 
-	for (i = 0; i < rewindtime && leveltime < rewindtime; i++)
+	for (j = 0; j < rewindtime && leveltime < rewindtime; j++)
 	{
 		//TryRunTics(1);
-		G_Ticker((i % NEWTICRATERATIO) == 0);
+		G_Ticker((j % NEWTICRATERATIO) == 0);
 	}
 
 	demo.rewinding = false;
@@ -6081,7 +6113,7 @@ void G_ConfirmRewind(tic_t rewindtime)
 	R_ExecuteSetViewSize();
 	G_ResetViews();
 
-	for (i = splitscreen+1; i > 0; i--)
+	for (i = splitscreen; i >= 0; i--)
 		P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 }
 
@@ -6388,20 +6420,19 @@ void G_BeginRecording(void)
 
 	switch ((demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		demotime_p = demo_p;
-		WRITEUINT32(demo_p,UINT32_MAX); // time
-		WRITEUINT32(demo_p,UINT32_MAX); // lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		demotime_p = demo_p;
-		WRITEUINT32(demo_p,UINT32_MAX); // time
-		WRITEUINT32(demo_p,0); // score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			demotime_p = demo_p;
+			WRITEUINT32(demo_p,UINT32_MAX); // time
+			WRITEUINT32(demo_p,UINT32_MAX); // lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			demotime_p = demo_p;
+			WRITEUINT32(demo_p,UINT32_MAX); // time
+			break;
+		default: // 3
+			break;
 	}
 
 	WRITEUINT32(demo_p,P_GetInitSeed());
@@ -6452,6 +6483,9 @@ void G_BeginRecording(void)
 
 			// Score, since Kart uses this to determine where you start on the map
 			WRITEUINT32(demo_p, player->score);
+
+			// Power Levels
+			WRITEUINT16(demo_p, clientpowerlevels[p][G_BattleGametype() ? PWRLV_BATTLE : PWRLV_RACE]);
 
 			// Kart speed and weight
 			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
@@ -6516,10 +6550,10 @@ void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT8 color, UINT
 {
 	char temp[16];
 
-	if (demoinfo_p && (UINT32)(*demoinfo_p) == 0)
+	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
 	{
 		WRITEUINT8(demo_p, DEMOMARKER); // add the demo end marker
-		WRITEUINT32(demoinfo_p, demo_p - demobuffer);
+		*(UINT32 *)demoinfo_p = demo_p - demobuffer;
 	}
 
 	WRITEUINT8(demo_p, DW_STANDING);
@@ -6551,18 +6585,18 @@ void G_SetDemoTime(UINT32 ptime, UINT32 plap)
 {
 	if (!demo.recording || !demotime_p)
 		return;
-	if (demoflags & DF_RECORDATTACK)
+	if (demoflags & DF_TIMEATTACK)
 	{
 		WRITEUINT32(demotime_p, ptime);
 		WRITEUINT32(demotime_p, plap);
 		demotime_p = NULL;
 	}
-	/*else if (demoflags & DF_NIGHTSATTACK)
+	else if (demoflags & DF_BREAKTHECAPSULES)
 	{
 		WRITEUINT32(demotime_p, ptime);
-		WRITEUINT32(demotime_p, pscore);
+		(void)plap;
 		demotime_p = NULL;
-	}*/
+	}
 }
 
 static void G_LoadDemoExtraFiles(UINT8 **pp)
@@ -6738,6 +6772,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	UINT8 c;
 	UINT16 s ATTRUNUSED;
 	UINT8 aflags = 0;
+	boolean uselaps = false;
 
 	// load the new file
 	FIL_DefaultExtension(newname, ".lmp");
@@ -6764,20 +6799,17 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p++; // gametype
 	G_SkipDemoExtraFiles(&p);
 
-	aflags = flags & (DF_RECORDATTACK|DF_NIGHTSATTACK);
+	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
 	I_Assert(aflags);
-	if (flags & DF_RECORDATTACK)
-	{
-		newtime = READUINT32(p);
+
+	if (flags & DF_TIMEATTACK)
+		uselaps = true; // get around uninitalized error
+
+	newtime = READUINT32(p);
+	if (uselaps)
 		newlap = READUINT32(p);
-	}
-	/*else if (flags & DF_NIGHTSATTACK)
-	{
-		newtime = READUINT32(p);
-		newscore = READUINT32(p);
-	}*/
-	else // appease compiler
-		return 0;
+	else
+		newlap = UINT32_MAX;
 
 	Z_Free(buffer);
 
@@ -6805,13 +6837,6 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	case DEMOVERSION: // latest always supported
 		p += 64; // full demo title
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		// Old replays gotta go :]
-		CONS_Alert(CONS_NOTICE, M_GetText("File '%s' outdated version. It will be overwritten. Nyeheheh.\n"), oldname);
-		Z_Free(buffer);
-		return UINT8_MAX;
-#endif
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_NOTICE, M_GetText("File '%s' invalid format. It will be overwritten.\n"), oldname);
@@ -6836,28 +6861,32 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 		Z_Free(buffer);
 		return UINT8_MAX;
 	}
-	if (flags & DF_RECORDATTACK)
-	{
-		oldtime = READUINT32(p);
+
+	oldtime = READUINT32(p);
+	if (uselaps)
 		oldlap = READUINT32(p);
-	}
-	/*else if (flags & DF_NIGHTSATTACK)
-	{
-		oldtime = READUINT32(p);
-		oldscore = READUINT32(p);
-	}*/
-	else // appease compiler
-		return UINT8_MAX;
+	else
+		oldlap = 0;
 
 	Z_Free(buffer);
 
 	c = 0;
-	if (newtime < oldtime
-	|| (newtime == oldtime && (newlap < oldlap)))
-		c |= 1; // Better time
-	if (newlap < oldlap
-	|| (newlap == oldlap && newtime < oldtime))
-		c |= 1<<1; // Better lap time
+
+	if (uselaps)
+	{
+		if (newtime < oldtime
+		|| (newtime == oldtime && (newlap < oldlap)))
+			c |= 1; // Better time
+		if (newlap < oldlap
+		|| (newlap == oldlap && newtime < oldtime))
+			c |= 1<<1; // Better lap time
+	}
+	else
+	{
+		if (newtime < oldtime)
+			c |= 1; // Better time
+	}
+
 	return c;
 }
 
@@ -6903,12 +6932,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		info_p += 64;
 
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		pdemo->type = MD_OUTDATED;
-		sprintf(pdemo->title, "Legacy Replay");
-		break;
-#endif
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_ERROR, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemo->filepath);
@@ -6943,16 +6966,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		Z_Free(infobuffer);
 		return;
 	}
-#ifdef DEMO_COMPAT_100
-	else if (pdemoversion == 0x0001)
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("%s is a legacy multiplayer replay and cannot be played.\n"), pdemo->filepath);
-		pdemo->type = MD_INVALID;
-		sprintf(pdemo->title, "INVALID REPLAY");
-		Z_Free(infobuffer);
-		return;
-	}
-#endif
 
 	pdemo->gametype = READUINT8(info_p);
 
@@ -6962,7 +6975,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	extrainfo_p = infobuffer + READUINT32(info_p);
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
-	pdemo->kartspeed = 1; // Default to normal speed
+	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
 	count = READUINT16(info_p);
 	while (count--)
 	{
@@ -6992,7 +7005,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	(void)extrainfo_p;
 	sprintf(pdemo->winnername, "transrights420");
 	pdemo->winnerskin = 1;
-	pdemo->winnercolor = SKINCOLOR_MOONSLAM;
+	pdemo->winnercolor = SKINCOLOR_MOONSET;
 	pdemo->winnertime = 6666;*/
 
 	// Read standings!
@@ -7154,10 +7167,6 @@ void G_DoPlayDemo(char *defdemoname)
 		demo_p += 64;
 
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		break;
-#endif
 	// too old, cannot support.
 	default:
 		snprintf(msg, 1024, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemoname);
@@ -7186,24 +7195,6 @@ void G_DoPlayDemo(char *defdemoname)
 	demo_p += 16; // mapmd5
 
 	demoflags = READUINT8(demo_p);
-#ifdef DEMO_COMPAT_100
-	if (demo.version == 0x0001)
-	{
-		if (demoflags & DF_MULTIPLAYER)
-		{
-			snprintf(msg, 1024, M_GetText("%s is an alpha multiplayer replay and cannot be played.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-	}
-	else
-	{
-#endif
 	gametype = READUINT8(demo_p);
 
 	if (demo.title) // Titledemos should always play and ought to always be compatible with whatever wadlist is running.
@@ -7261,9 +7252,6 @@ void G_DoPlayDemo(char *defdemoname)
 			return;
 		}
 	}
-#ifdef DEMO_COMPAT_100
-	}
-#endif
 
 	modeattacking = (demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT;
 	multiplayer = !!(demoflags & DF_MULTIPLAYER);
@@ -7274,143 +7262,36 @@ void G_DoPlayDemo(char *defdemoname)
 
 	switch (modeattacking)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		hu_demotime  = READUINT32(demo_p);
-		hu_demolap  = READUINT32(demo_p);
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		hu_demotime  = READUINT32(demo_p);
-		hu_demoscore = READUINT32(demo_p);
-		break;*/
-	default: // 3
-		modeattacking = ATTACKING_NONE;
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			hu_demotime = READUINT32(demo_p);
+			hu_demolap = READUINT32(demo_p);
+			break;
+		case ATTACKING_CAPSULES: // 2
+			hu_demotime = READUINT32(demo_p);
+			break;
+		default: // 3
+			modeattacking = ATTACKING_NONE;
+			break;
 	}
 
 	// Random seed
 	randseed = READUINT32(demo_p);
-#ifdef DEMO_COMPAT_100
-	if (demo.version != 0x0001)
-#endif
 	demo_p += 4; // Extrainfo location
 
-#ifdef DEMO_COMPAT_100
-	if (demo.version == 0x0001)
+	// ...*map* not loaded?
+	if (!gamemap || (gamemap > NUMMAPS) || !mapheaderinfo[gamemap-1] || !(mapheaderinfo[gamemap-1]->menuflags & LF2_EXISTSHACK))
 	{
-		// Player name
-		M_Memcpy(player_names[0],demo_p,16);
-		demo_p += 16;
-
-		// Skin
-		M_Memcpy(skin,demo_p,16);
-		demo_p += 16;
-
-		// Color
-		M_Memcpy(color,demo_p,16);
-		demo_p += 16;
-
-		// Follower
-		M_Memcpy(follower,demo_p,16);
-		demo_p += 16;
-
-		demo_p += 5; // Backwards compat - some stats
-		// SRB2kart
-		kartspeed[0] = READUINT8(demo_p);
-		kartweight[0] = READUINT8(demo_p);
-		//
-		demo_p += 9; // Backwards compat - more stats
-
-		// Skin not loaded?
-		if (!SetPlayerSkin(0, skin))
-		{
-			snprintf(msg, 1024, M_GetText("%s features a character that is not currently loaded.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-
-		// ...*map* not loaded?
-		if (!gamemap || (gamemap > NUMMAPS) || !mapheaderinfo[gamemap-1] || !(mapheaderinfo[gamemap-1]->menuflags & LF2_EXISTSHACK))
-		{
-			snprintf(msg, 1024, M_GetText("%s features a course that is not currently loaded.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-
-		// Set color
-		for (i = 0; i < MAXSKINCOLORS; i++)
-			if (!stricmp(KartColor_Names[i],color))				// SRB2kart
-			{
-				players[0].skincolor = i;
-				break;
-			}
-
-		// Follower
-		if (!SetPlayerFollower(0, follower))
-		{
-			snprintf(msg, 1024, M_GetText("%s features a follower that is not currently loaded.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-
-		// net var data
-		CV_LoadNetVars(&demo_p);
-
-		// Sigh ... it's an empty demo.
-		if (*demo_p == DEMOMARKER)
-		{
-			snprintf(msg, 1024, M_GetText("%s contains no data to be played.\n"), pdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			Z_Free(pdemoname);
-			Z_Free(demobuffer);
-			demo.playback = false;
-			demo.title = false;
-			return;
-		}
-
+		snprintf(msg, 1024, M_GetText("%s features a course that is not currently loaded.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
-
-		memset(&oldcmd,0,sizeof(oldcmd));
-		memset(&oldghost,0,sizeof(oldghost));
-		memset(&ghostext,0,sizeof(ghostext));
-
-		CONS_Alert(CONS_WARNING, M_GetText("Demo version does not match game version. Desyncs may occur.\n"));
-
-		// console warning messages
-#if defined(SKIPERRORS) && !defined(DEVELOP)
-		demosynced = (!skiperrors);
-#else
-		demosynced = true;
-#endif
-
-		// didn't start recording right away.
-		demo.deferstart = false;
-
-		consoleplayer = 0;
-		memset(displayplayers, 0, sizeof(displayplayers));
-		memset(playeringame, 0, sizeof(playeringame));
-		playeringame[0] = true;
-
-		goto post_compat;
+		Z_Free(demobuffer);
+		demo.playback = false;
+		demo.title = false;
+		return;
 	}
-#endif
 
 	// net var data
 	CV_LoadNetVars(&demo_p);
@@ -7530,6 +7411,9 @@ void G_DoPlayDemo(char *defdemoname)
 		// Score, since Kart uses this to determine where you start on the map
 		players[p].score = READUINT32(demo_p);
 
+		// Power Levels
+		clientpowerlevels[p][G_BattleGametype() ? PWRLV_BATTLE : PWRLV_RACE] = READUINT16(demo_p);
+
 		// Kart stats, temporarily
 		kartspeed[p] = READUINT8(demo_p);
 		kartweight[p] = READUINT8(demo_p);
@@ -7553,10 +7437,6 @@ void G_DoPlayDemo(char *defdemoname)
 	}
 
 	R_ExecuteSetViewSize();
-
-#ifdef DEMO_COMPAT_100
-post_compat:
-#endif
 
 	P_SetRandSeed(randseed);
 	G_InitNew(demoflags & DF_ENCORE, G_BuildMapName(gamemap), true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
@@ -7648,10 +7528,6 @@ void G_AddGhost(char *defdemoname)
 	case DEMOVERSION: // latest always supported
 		p += 64; // title
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		break;
-#endif
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo version incompatible.\n"), pdemoname);
@@ -7692,68 +7568,24 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-#endif
-		p++; // gametype
+	p++; // gametype
+	G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-#endif
-		G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		p += 8; // demo time, lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		p += 8; // demo time left, score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			p += 8; // demo time, lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			p += 4; // demo time
+			break;
+		default: // 3
+			break;
 	}
 
 	p += 4; // random seed
-
-#ifdef DEMO_COMPAT_100
-	if (ghostversion == 0x0001)
-	{
-		// Player name (TODO: Display this somehow if it doesn't match cv_playername!)
-		M_Memcpy(name, p,16);
-		p += 16;
-
-		// Skin
-		M_Memcpy(skin, p,16);
-		p += 16;
-
-		// Color
-		M_Memcpy(color, p,16);
-		p += 16;
-
-		// Follower data was here, doesn't matter for ghosts
-		p += 16;
-
-		// Ghosts do not have a player structure to put this in.
-		p++; // charability
-		p++; // charability2
-		p++; // actionspd
-		p++; // mindash
-		p++; // maxdash
-		// SRB2kart
-		p++; // kartspeed
-		p++; // kartweight
-		//
-		p++; // normalspeed
-		p++; // runspeed
-		p++; // thrustfactor
-		p++; // accelstart
-		p++; // acceleration
-		p += 4; // jumpfactor
-	}
-	else
-#endif
 	p += 4; // Extra data location reference
 
 	// net var data
@@ -7773,10 +7605,6 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-	{
-#endif
 	if (READUINT8(p) != 0)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
@@ -7801,6 +7629,7 @@ void G_AddGhost(char *defdemoname)
 	p += 16;
 
 	p += 4; // score
+	p += 2; // powerlevel
 
 	kartspeed = READUINT8(p);
 	kartweight = READUINT8(p);
@@ -7812,9 +7641,6 @@ void G_AddGhost(char *defdemoname)
 		Z_Free(buffer);
 		return;
 	}
-#ifdef DEMO_COMPAT_100
-	}
-#endif
 
 	for (i = 0; i < numskins; i++)
 		if (!stricmp(skins[i].name,skin))
@@ -7914,18 +7740,13 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	ghostversion = READUINT16(p);
 	switch(ghostversion)
 	{
-	case DEMOVERSION: // latest always supported
-		p += 64; // full demo title
-		break;
+		case DEMOVERSION: // latest always supported
+			p += 64; // full demo title
+			break;
 
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		break;
-#endif
-
-	// too old, cannot support.
-	default:
-		goto fail;
+		// too old, cannot support.
+		default:
+			goto fail;
 	}
 
 	p += 16; // demo checksum
@@ -7945,43 +7766,25 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 		goto fail; // we don't NEED to do it here, but whatever
 	}
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-#endif
 	p++; // Gametype
 
-#ifdef DEMO_COMPAT_100
-	if (ghostversion != 0x0001)
-#endif
 	G_SkipDemoExtraFiles(&p);
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		p += 8; // demo time, lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		p += 8; // demo time left, score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			p += 8; // demo time, lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			p += 4; // demo time
+			break;
+		default: // 3
+			break;
 	}
 
 	p += 4; // random seed
-
-
-#ifdef DEMO_COMPAT_100
-	if (ghostversion == 0x0001)
-	{
-		// Player name
-		M_Memcpy(dummystaffname, p,16);
-		dummystaffname[16] = '\0';
-		goto fail; // Not really a failure but whatever
-	}
-#endif
-
 	p += 4; // Extrainfo location marker
 
 	// Ehhhh don't need ghostversion here (?) so I'll reuse the var here
@@ -8066,10 +7869,6 @@ void G_DoPlayMetal(void)
 	{
 	case DEMOVERSION: // latest always supported
 		break;
-#ifdef DEMO_COMPAT_100
-	case 0x0001:
-		I_Error("You need to implement demo compat here, doofus! %s:%d", __FILE__, __LINE__);
-#endif
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_WARNING, M_GetText("Failed to load bot recording for this map, format version incompatible.\n"));
@@ -8240,16 +8039,17 @@ boolean G_CheckDemoStatus(void)
 
 void G_SaveDemo(void)
 {
-	UINT8 *p = demobuffer+16; // checksum position
+	UINT8 *p = demobuffer+16; // after version
+	UINT32 length;
 #ifdef NOMD5
 	UINT8 i;
 #endif
 
 	// Ensure extrainfo pointer is always available, even if no info is present.
-	if (demoinfo_p && (UINT32)(*demoinfo_p) == 0)
+	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
 	{
 		WRITEUINT8(demo_p, DEMOMARKER); // add the demo end marker
-		WRITEUINT32(demoinfo_p, (UINT32)(demo_p - demobuffer));
+		*(UINT32 *)demoinfo_p = demo_p - demobuffer;
 	}
 	WRITEUINT8(demo_p, DW_END); // Mark end of demo extra data.
 
@@ -8295,12 +8095,14 @@ void G_SaveDemo(void)
 		sprintf(writepoint, "%s.lmp", demo_slug);
 	}
 
+	length = *(UINT32 *)demoinfo_p;
+	WRITEUINT32(demoinfo_p, length);
 #ifdef NOMD5
 	for (i = 0; i < 16; i++, p++)
 		*p = M_RandomByte(); // This MD5 was chosen by fair dice roll and most likely < 50% correct.
 #else
 	// Make a checksum of everything after the checksum in the file up to the end of the standard data. Extrainfo is freely modifiable.
-	md5_buffer((char *)p+16, (demobuffer + (UINT32)*demoinfo_p) - (p+16), p);
+	md5_buffer((char *)p+16, (demobuffer + length) - (p+16), p);
 #endif
 
 
@@ -8309,7 +8111,7 @@ void G_SaveDemo(void)
 	free(demobuffer);
 	demo.recording = false;
 
-	if (modeattacking != ATTACKING_RECORD)
+	if (!modeattacking)
 	{
 		if (demo.savemode == DSM_SAVED)
 			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);

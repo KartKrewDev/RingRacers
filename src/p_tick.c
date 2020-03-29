@@ -23,6 +23,8 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_battle.h"
+#include "k_waypoint.h"
 
 // Object place
 #include "m_cheat.h"
@@ -58,8 +60,6 @@ void Command_Numthinkers_f(void)
 		CONS_Printf(M_GetText("numthinkers <#>: Count number of thinkers\n"));
 		CONS_Printf(
 			"\t1: P_MobjThinker\n"
-			/*"\t2: P_RainThinker\n"
-			"\t3: P_SnowThinker\n"*/
 			"\t2: P_NullPrecipThinker\n"
 			"\t3: T_Friction\n"
 			"\t4: T_Pusher\n"
@@ -75,14 +75,6 @@ void Command_Numthinkers_f(void)
 			action = (actionf_p1)P_MobjThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_MobjThinker");
 			break;
-		/*case 2:
-			action = (actionf_p1)P_RainThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_RainThinker");
-			break;
-		case 3:
-			action = (actionf_p1)P_SnowThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_SnowThinker");
-			break;*/
 		case 2:
 			action = (actionf_p1)P_NullPrecipThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_NullPrecipThinker");
@@ -182,6 +174,7 @@ void P_InitThinkers(void)
 {
 	thinkercap.prev = thinkercap.next = &thinkercap;
 	waypointcap = NULL;
+	kitemcap = NULL;
 }
 
 //
@@ -601,7 +594,7 @@ void P_Ticker(boolean run)
 		return;
 	}
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	P_MapStart();
@@ -617,33 +610,10 @@ void P_Ticker(boolean run)
 		}
 		if (demo.playback)
 		{
-
-#ifdef DEMO_COMPAT_100
-			if (demo.version == 0x0001)
-			{
-				G_ReadDemoTiccmd(&players[consoleplayer].cmd, 0);
-			}
-			else
-			{
-#endif
-				G_ReadDemoExtraData();
-				for (i = 0; i < MAXPLAYERS; i++)
-					if (playeringame[i])
-					{
-						//@TODO all this throwdir stuff shouldn't be here! But it's added to maintain 1.0.4 compat for now...
-						// Remove for 1.1!
-						if (players[i].cmd.buttons & BT_FORWARD)
-							players[i].kartstuff[k_throwdir] = 1;
-						else if (players[i].cmd.buttons & BT_BACKWARD)
-							players[i].kartstuff[k_throwdir] = -1;
-						else
-							players[i].kartstuff[k_throwdir] = 0;
-
-						G_ReadDemoTiccmd(&players[i].cmd, i);
-					}
-#ifdef DEMO_COMPAT_100
-			}
-#endif
+			G_ReadDemoExtraData();
+			for (i = 0; i < MAXPLAYERS; i++)
+				if (playeringame[i])
+					G_ReadDemoTiccmd(&players[i].cmd, i);
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -661,6 +631,9 @@ void P_Ticker(boolean run)
 	if (runemeraldmanager)
 		P_EmeraldManager(); // Power stone mode*/
 
+	// formality so kitemcap gets updated properly each frame.
+	P_RunKartItems();
+
 	if (run)
 	{
 		P_RunThinkers();
@@ -670,6 +643,9 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
+		if (G_BattleGametype() && battleovertime.enabled)
+			K_RunBattleOvertime();
+
 #ifdef HAVE_BLUA
 		LUAh_ThinkFrame();
 #endif
@@ -678,8 +654,6 @@ void P_Ticker(boolean run)
 	// Run shield positioning
 	//P_RunShields();
 	P_RunOverlays();
-
-	P_RunShadows();
 
 	P_UpdateSpecials();
 	P_RespawnSpecials();
@@ -759,11 +733,6 @@ void P_Ticker(boolean run)
 		}
 		else if (demo.playback) // Use Ghost data for consistency checks.
 		{
-#ifdef DEMO_COMPAT_100
-			if (demo.version == 0x0001)
-				G_ConsGhostTic(0);
-			else
-#endif
 			G_ConsAllGhostTics();
 		}
 
@@ -774,10 +743,15 @@ void P_Ticker(boolean run)
 			&& --mapreset <= 1
 			&& server) // Remember: server uses it for mapchange, but EVERYONE ticks down for the animation
 				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+
+		if (cv_kartdebugwaypoints.value != 0)
+		{
+			K_DebugWaypointsVisualise();
+		}
 	}
 
 	// Always move the camera.
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (camera[i].chase)
 			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
@@ -797,7 +771,7 @@ void P_PreTicker(INT32 frames)
 	INT32 i,framecnt;
 	ticcmd_t temptic;
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	for (framecnt = 0; framecnt < frames; ++framecnt)
@@ -826,6 +800,9 @@ void P_PreTicker(INT32 frames)
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
+
+		if (G_BattleGametype() && battleovertime.enabled)
+			K_RunBattleOvertime();
 
 #ifdef HAVE_BLUA
 		LUAh_ThinkFrame();

@@ -84,6 +84,9 @@
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_battle.h" // K_SpawnBattleCapsules
+#include "k_pwrlv.h"
+#include "k_waypoint.h"
 
 //
 // Map MD5, calculated on level load.
@@ -180,6 +183,8 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
+	INT32 exists = (mapheaderinfo[num]->menuflags & LF2_EXISTSHACK);
+
 	DEH_WriteUndoline("LEVELNAME", mapheaderinfo[num]->lvlttl, UNDO_NONE);
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	DEH_WriteUndoline("SUBTITLE", mapheaderinfo[num]->subttl, UNDO_NONE);
@@ -207,8 +212,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
 	DEH_WriteUndoline("WEATHER", va("%d", mapheaderinfo[num]->weather), UNDO_NONE);
 	mapheaderinfo[num]->weather = 0;
-	DEH_WriteUndoline("SKYNUM", va("%d", mapheaderinfo[num]->skynum), UNDO_NONE);
-	mapheaderinfo[num]->skynum = 1;
+	DEH_WriteUndoline("SKYTEXTURE", va("%d", mapheaderinfo[num]->skytexture), UNDO_NONE);
+	snprintf(mapheaderinfo[num]->skytexture, 9, "SKY1");
+	mapheaderinfo[num]->skytexture[8] = 0;
 	DEH_WriteUndoline("SKYBOXSCALEX", va("%d", mapheaderinfo[num]->skybox_scalex), UNDO_NONE);
 	mapheaderinfo[num]->skybox_scalex = 16;
 	DEH_WriteUndoline("SKYBOXSCALEY", va("%d", mapheaderinfo[num]->skybox_scaley), UNDO_NONE);
@@ -244,7 +250,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	DEH_WriteUndoline("LEVELFLAGS", va("%d", mapheaderinfo[num]->levelflags), UNDO_NONE);
 	mapheaderinfo[num]->levelflags = 0;
 	DEH_WriteUndoline("MENUFLAGS", va("%d", mapheaderinfo[num]->menuflags), UNDO_NONE);
-	mapheaderinfo[num]->menuflags = (mainwads ? 0 : LF2_EXISTSHACK); // see p_setup.c - prevents replacing maps in addons with easier versions
+	mapheaderinfo[num]->menuflags = exists; // see p_setup.c - prevents replacing maps in addons with easier versions
 	// TODO grades support for delfile (pfft yeah right)
 	P_DeleteGrades(num);
 	// SRB2Kart
@@ -1021,6 +1027,12 @@ static void P_LoadThings(void)
 		if (mt->type == mobjinfo[MT_RANDOMITEM].doomednum)
 			nummapboxes++;
 
+		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
+		{
+			maptargets++;
+			continue; // These should not be spawned *yet*
+		}
+
 		mt->mobj = NULL;
 		P_SpawnMapThing(mt);
 	}
@@ -1077,14 +1089,19 @@ static void P_LoadThings(void)
 	for (i = 0; i < nummapthings; i++, mt++)
 	{
 		if (mt->type == 300 || mt->type == 308 || mt->type == 309
-		 || mt->type == 1706 || (mt->type >= 600 && mt->type <= 609)
-		 || mt->type == 1705 || mt->type == 1713 || mt->type == 1800)
+			|| mt->type == 1706 || (mt->type >= 600 && mt->type <= 609)
+			|| mt->type == 1705 || mt->type == 1713 || mt->type == 1800)
 		{
+			sector_t *mtsector = R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
+	
 			mt->mobj = NULL;
 
-			// Z for objects Tails 05-26-2002
-			mt->z = (INT16)(R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)
-				->sector->floorheight>>FRACBITS);
+			// Z for objects
+			mt->z = (INT16)(
+#ifdef ESLOPE
+				mtsector->f_slope ? P_GetZAt(mtsector->f_slope, mt->x << FRACBITS, mt->y << FRACBITS) :
+#endif
+				mtsector->floorheight)>>FRACBITS;
 
 			P_SpawnHoopsAndRings (mt);
 		}
@@ -2255,17 +2272,18 @@ static inline boolean P_CheckLevel(lumpnum_t lumpnum)
 /** Sets up a sky texture to use for the level.
   * The sky texture is used instead of F_SKY1.
   */
-void P_SetupLevelSky(INT32 skynum, boolean global)
+void P_SetupLevelSky(const char *skytexname, boolean global)
 {
-	char skytexname[12];
+	char tex[9];
+	strncpy(tex, skytexname, 9);
+	tex[8] = 0;
 
-	sprintf(skytexname, "SKY%d", skynum);
-	skytexture = R_TextureNumForName(skytexname);
-	levelskynum = skynum;
+	skytexture = R_TextureNumForName(tex);
+	strncpy(levelskytexture, tex, 9);
 
 	// Global change
 	if (global)
-		globallevelskynum = levelskynum;
+		strncpy(globallevelskytexture, tex, 9);
 
 	// Don't go beyond for dedicated servers
 	if (dedicated)
@@ -2291,15 +2309,13 @@ static void P_LevelInitStuff(void)
 
 	memset(localaiming, 0, sizeof(localaiming));
 
-	// map object scale
-	mapobjectscale = mapheaderinfo[gamemap-1]->mobj_scale;
-
 	// special stage tokens, emeralds, and ring total
 	tokenbits = 0;
 	runemeraldmanager = false;
 	nummaprings = 0;
-	nummapboxes = 0;
-	numgotboxes = 0;
+	nummapboxes = numgotboxes = 0;
+	maptargets = numtargets = 0;
+	battlecapsules = false;
 
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;
@@ -2388,22 +2404,30 @@ static void P_LevelInitStuff(void)
 	// SRB2Kart: map load variables
 	if (modeattacking) // Just play it safe and set everything
 	{
-		gamespeed = 2;
+		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
 		comeback = true;
 	}
 	else
 	{
 		if (G_BattleGametype())
-			gamespeed = 0;
+			gamespeed = KARTSPEED_EASY;
 		else
-			gamespeed = (UINT8)cv_kartspeed.value;
+		{
+			if (cv_kartspeed.value == KARTSPEED_AUTO)
+				gamespeed = ((speedscramble == -1) ? KARTSPEED_NORMAL : (UINT8)speedscramble);
+			else
+				gamespeed = (UINT8)cv_kartspeed.value;
+		}
 		franticitems = (boolean)cv_kartfrantic.value;
 		comeback = (boolean)cv_kartcomeback.value;
 	}
 
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = -1;
+
+	memset(&battleovertime, 0, sizeof(struct battleovertime));
+	speedscramble = encorescramble = -1;
 }
 
 //
@@ -2559,29 +2583,29 @@ static void P_ForceCharacter(const char *forcecharskin)
 	{
 		if (splitscreen)
 		{
-			SetPlayerSkin(displayplayers[1], forcecharskin);
-			if ((unsigned)cv_playercolor2.value != skins[players[displayplayers[1]].skin].prefcolor && !modeattacking)
+			SetPlayerSkin(g_localplayers[1], forcecharskin);
+			if ((unsigned)cv_playercolor2.value != skins[players[g_localplayers[1]].skin].prefcolor && !modeattacking)
 			{
-				CV_StealthSetValue(&cv_playercolor2, skins[players[displayplayers[1]].skin].prefcolor);
-				players[displayplayers[1]].skincolor = skins[players[displayplayers[1]].skin].prefcolor;
+				CV_StealthSetValue(&cv_playercolor2, skins[players[g_localplayers[1]].skin].prefcolor);
+				players[g_localplayers[1]].skincolor = skins[players[g_localplayers[1]].skin].prefcolor;
 			}
 
 			if (splitscreen > 1)
 			{
-				SetPlayerSkin(displayplayers[2], forcecharskin);
-				if ((unsigned)cv_playercolor3.value != skins[players[displayplayers[2]].skin].prefcolor && !modeattacking)
+				SetPlayerSkin(g_localplayers[2], forcecharskin);
+				if ((unsigned)cv_playercolor3.value != skins[players[g_localplayers[2]].skin].prefcolor && !modeattacking)
 				{
-					CV_StealthSetValue(&cv_playercolor3, skins[players[displayplayers[2]].skin].prefcolor);
-					players[displayplayers[2]].skincolor = skins[players[displayplayers[2]].skin].prefcolor;
+					CV_StealthSetValue(&cv_playercolor3, skins[players[g_localplayers[2]].skin].prefcolor);
+					players[g_localplayers[2]].skincolor = skins[players[g_localplayers[2]].skin].prefcolor;
 				}
 
 				if (splitscreen > 2)
 				{
-					SetPlayerSkin(displayplayers[3], forcecharskin);
-					if ((unsigned)cv_playercolor4.value != skins[players[displayplayers[3]].skin].prefcolor && !modeattacking)
+					SetPlayerSkin(g_localplayers[3], forcecharskin);
+					if ((unsigned)cv_playercolor4.value != skins[players[g_localplayers[3]].skin].prefcolor && !modeattacking)
 					{
-						CV_StealthSetValue(&cv_playercolor4, skins[players[displayplayers[3]].skin].prefcolor);
-						players[displayplayers[3]].skincolor = skins[players[displayplayers[3]].skin].prefcolor;
+						CV_StealthSetValue(&cv_playercolor4, skins[players[g_localplayers[3]].skin].prefcolor);
+						players[g_localplayers[3]].skincolor = skins[players[g_localplayers[3]].skin].prefcolor;
 					}
 				}
 			}
@@ -2623,15 +2647,18 @@ static void P_LoadRecordGhosts(void)
 	}
 
 	// Best Lap ghost
-	if (cv_ghost_bestlap.value)
+	if (modeattacking != ATTACKING_CAPSULES)
 	{
-		for (i = 0; i < numskins; ++i)
+		if (cv_ghost_bestlap.value)
 		{
-			if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
-				continue;
+			for (i = 0; i < numskins; ++i)
+			{
+				if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
+					continue;
 
-			if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
+				if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, skins[i].name)))
+					G_AddGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
+			}
 		}
 	}
 
@@ -2781,7 +2808,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
-	INT32 i, loadprecip = 1, ranspecialwipe = 0;
+	INT32 i, loadprecip = 1;
 	INT32 loademblems = 1;
 	INT32 fromnetsave = 0;
 	boolean loadedbm = false;
@@ -2816,11 +2843,10 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	P_LevelInitStuff();
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
-	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0'
-	&& atoi(mapheaderinfo[gamemap-1]->forcecharacter) != 255)
+	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0')
 		P_ForceCharacter(mapheaderinfo[gamemap-1]->forcecharacter);
 
 	// chasecam on in chaos, race, coop
@@ -2861,36 +2887,50 @@ boolean P_SetupLevel(boolean skipprecip)
 
 		S_StartSound(NULL, sfx_ruby1);
 
+		// Fade to an inverted screen, with a circle fade...
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 122);
 
+		V_EncoreInvertScreen();
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
 
+		F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
+
+		// Hold on invert for extra effect.
+		// (This define might be useful for other areas of code? Not sure)
+#define WAIT(timetowait) \
+	locstarttime = nowtime = lastwipetic; \
+	endtime = locstarttime + timetowait; \
+	while (nowtime < endtime) \
+	{ \
+		while (!((nowtime = I_GetTime()) - lastwipetic)) \
+			I_Sleep(); \
+		lastwipetic = nowtime; \
+		if (moviemode) \
+			M_SaveFrame(); \
+		NetKeepAlive(); \
+	} \
+
+		WAIT((3*TICRATE)/2);
+		S_StartSound(NULL, sfx_ruby2);
+
+		// Then fade to a white screen
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
 
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_level_final], false);
 
-		locstarttime = nowtime = lastwipetic;
-		endtime = locstarttime + (3*TICRATE)/2;
+		F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
 
-		// Hold on white for extra effect.
-		while (nowtime < endtime)
-		{
-			// wait loop
-			while (!((nowtime = I_GetTime()) - lastwipetic))
-				I_Sleep();
-			lastwipetic = nowtime;
-			if (moviemode) // make sure we save frames for the white hold too
-				M_SaveFrame();
+		// THEN fade to a black screen.
+		F_WipeStartScreen();
 
-			// Keep the network alive
-			NetKeepAlive();
-		}
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+		F_WipeEndScreen();
 
-		ranspecialwipe = 1;
+		F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+		// Wait a bit longer.
+		WAIT((3*TICRATE)/4);
 	}
 
 	// Make sure all sounds are stopped before Z_FreeTags.
@@ -2901,17 +2941,18 @@ boolean P_SetupLevel(boolean skipprecip)
 	// We should be fine starting it here.
 	S_Start();
 
-	levelfadecol = (encoremode && !ranspecialwipe ? 122 : 120);
+	levelfadecol = (encoremode ? 0 : 31);
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
-	if (rendermode != render_none && !ranspecialwipe && !demo.rewinding)
+	if (rendermode != render_none && !demo.rewinding)
 	{
 		F_WipeStartScreen();
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[(encoremode ? wipe_level_final : wipe_level_toblack)], false);
+
+		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
 
 	// Reset the palette now all fades have been done
@@ -2977,7 +3018,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	CON_SetupBackColormap();
 
 	// SRB2 determines the sky texture to be used depending on the map header.
-	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skynum, true);
+	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skytexture, true);
 
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
 
@@ -3069,6 +3110,10 @@ boolean P_SetupLevel(boolean skipprecip)
 		P_PrepareThings(lastloadedmaplumpnum + ML_THINGS);
 	}
 
+	// init gravity, tag lists,
+	// anything that P_ResetDynamicSlopes/P_LoadThings needs to know
+	P_InitSpecials();
+
 #ifdef ESLOPE
 	P_ResetDynamicSlopes();
 #endif
@@ -3087,8 +3132,17 @@ boolean P_SetupLevel(boolean skipprecip)
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
 
-	globalweather = mapheaderinfo[gamemap-1]->weather;
 
+	// The waypoint data that's in PU_LEVEL needs to be reset back to 0/NULL now since PU_LEVEL was cleared
+	K_ClearWaypoints();
+	// Load the waypoints please!
+	if (G_RaceGametype())
+	{
+		if (K_SetupWaypointList() == false)
+		{
+			CONS_Alert(CONS_ERROR, "Waypoints were not able to be setup! Player positions will not work correctly.\n");
+		}
+	}
 #ifdef HWRENDER // not win32 only 19990829 by Kin
 	if (rendermode != render_soft && rendermode != render_none)
 	{
@@ -3137,49 +3191,10 @@ boolean P_SetupLevel(boolean skipprecip)
 			}
 		}
 
-	if (modeattacking == ATTACKING_RECORD && !demo.playback)
+	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
-	/*else if (modeattacking == ATTACKING_NIGHTS && !demo.playback)
-		P_LoadNightsGhosts();*/
 
-	if (G_TagGametype())
-	{
-		INT32 realnumplayers = 0;
-		INT32 playersactive[MAXPLAYERS];
-
-		//I just realized how problematic this code can be.
-		//D_NumPlayers() will not always cover the scope of the netgame.
-		//What if one player is node 0 and the other node 31?
-		//The solution? Make a temp array of all players that are currently playing and pick from them.
-		//Future todo? When a player leaves, shift all nodes down so D_NumPlayers() can be used as intended?
-		//Also, you'd never have to loop through all 32 players slots to find anything ever again.
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && !players[i].spectator)
-			{
-				playersactive[realnumplayers] = i; //stores the player's node in the array.
-				realnumplayers++;
-			}
-		}
-
-		if (realnumplayers) //this should also fix the dedicated crash bug. You only pick a player if one exists to be picked.
-		{
-			i = P_RandomKey(realnumplayers);
-			players[playersactive[i]].pflags |= PF_TAGIT; //choose our initial tagger before map starts.
-
-			// Taken and modified from G_DoReborn()
-			// Remove the player so he can respawn elsewhere.
-			// first dissasociate the corpse
-			if (players[playersactive[i]].mo)
-				P_RemoveMobj(players[playersactive[i]].mo);
-
-			G_SpawnPlayer(playersactive[i], false); //respawn the lucky player in his dedicated spawn location.
-		}
-		else
-			CONS_Printf(M_GetText("No player currently available to become IT. Awaiting available players.\n"));
-
-	}
-	else if (G_RaceGametype() && server)
+	if (G_RaceGametype() && server)
 		CV_StealthSetValue(&cv_numlaps,
 			((netgame || multiplayer) && cv_basenumlaps.value
 				&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
@@ -3204,7 +3219,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (!dedicated)
 	{
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 			P_SetupCamera(displayplayers[i], &camera[i]);
 
 		// Salt: CV_ClearChangedFlags() messes with your settings :(
@@ -3246,7 +3261,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		/*if (rendermode != render_none)
 			CV_Set(&cv_fov, cv_fov.defaultvalue);*/
 
-		displayplayers[0] = consoleplayer; // Start with your OWN view, please!
+		g_localplayers[0] = consoleplayer; // Start with your OWN view, please!
 	}
 
 	/*if (cv_useranalog.value)
@@ -3273,7 +3288,10 @@ boolean P_SetupLevel(boolean skipprecip)
 	indirectitemcooldown = 0;
 	hyubgone = 0;
 	mapreset = 0;
-	nospectategrief = 0;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		nospectategrief[i] = -1;
+
 	thwompsactive = false;
 	spbplace = -1;
 
@@ -3305,6 +3323,8 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (!(netgame || multiplayer) && !majormods)
 		mapvisited[gamemap-1] |= MV_VISITED;
+
+	G_AddMapToBuffer(gamemap-1);
 
 	levelloading = false;
 
@@ -3343,7 +3363,8 @@ boolean P_SetupLevel(boolean skipprecip)
 #endif
 	}
 
-	G_AddMapToBuffer(gamemap-1);
+	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
+	K_SpawnBattleCapsules();
 
 	return true;
 }

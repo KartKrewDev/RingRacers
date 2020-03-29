@@ -427,13 +427,13 @@ void SCR_DisplayTicRate(void)
 		ticcntcolor|V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));*/
 
 	// draw "FPS"
-	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
+	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
 	// draw total frame:
-	V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT, TICRATE, ticcntcolor);
+	V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, TICRATE, ticcntcolor);
 	// draw "/"
-	V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT, frameslash, ticcntcolor);
+	V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
 	// draw our actual framerate
-	V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT, totaltics, ticcntcolor);
+	V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, totaltics, ticcntcolor);
 
 
 	lasttic = ontic;
@@ -445,9 +445,9 @@ void SCR_DisplayTicRate(void)
 void SCR_DisplayLocalPing(void)
 {
 	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
-	if (cv_showping.value == 1 || (cv_showping.value == 2 && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
+	if (! r_splitscreen && ( cv_showping.value == 1 || (cv_showping.value == 2 && ping > servermaxping) ))	// only show 2 (warning) if our ping is at a bad level
 	{
 		INT32 dispy = cv_ticrate.value ? 160 : 181;
-		HU_drawPing(307, dispy, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
+		HU_drawPing(307, dispy, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM | V_HUDTRANS);
 	}
 }

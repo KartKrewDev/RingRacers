@@ -18,6 +18,7 @@
 #include "d_netcmd.h"
 #include "tables.h"
 #include "d_player.h"
+#include "k_pwrlv.h" // PWRLV_NUMTYPES
 
 #include "md5.h"
 
@@ -325,6 +326,15 @@ typedef struct
 	UINT8 gametype;
 	UINT8 modifiedgame;
 	SINT8 adminplayers[MAXPLAYERS]; // Needs to be signed
+	UINT16 powerlevels[MAXPLAYERS][PWRLV_NUMTYPES]; // SRB2kart: player power levels
+
+	UINT8 consoleplayers[MAXPLAYERS];
+	/* splitscreen */
+	SINT8 invitations[MAXPLAYERS];
+	UINT8 party_size[MAXPLAYERS];
+	UINT8 party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+	UINT8 original_party_size[MAXPLAYERS];
+	UINT8 original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
@@ -387,6 +397,10 @@ typedef struct
 	UINT8 actnum;
 	UINT8 iszone;
 	UINT8 fileneeded[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
+	// Anything beyond this point won't be read by the normal SRB2 Master Server display.
+	// The MS uses a simple unpack, so the size of the packet above shouldn't be changed, either.
+	// As long as those two conditions are met, we can add as much information as we want to the end.
+	INT16 avgpwrlv; // Kart avg power level
 } ATTRPACK serverinfo_pak;
 
 typedef struct
@@ -468,7 +482,7 @@ typedef struct
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
 		askinfo_pak askinfo;                //          61 bytes
 		msaskinfo_pak msaskinfo;            //          22 bytes
-		plrinfo playerinfo[MAXPLAYERS];     //         576 bytes(?)
+		plrinfo playerinfo[MSCOMPAT_MAXPLAYERS];//         576 bytes(?)
 		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
 		INT32 filesneedednum;               //           4 bytes
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
@@ -537,6 +551,8 @@ extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
 
+extern boolean server_lagless;
+
 extern consvar_t
 #ifdef VANILLAJOINNEXTROUND
 	cv_joinnextround,
@@ -593,6 +609,8 @@ SINT8 nametonum(const char *name);
 
 extern char motd[254], server_context[8];
 extern UINT8 playernode[MAXPLAYERS];
+/* consoleplayer of this player (splitscreen) */
+extern UINT8 playerconsole[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
 void D_ResetTiccmds(void);

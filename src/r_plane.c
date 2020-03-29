@@ -734,7 +734,7 @@ void R_DrawPlanes(void)
 						dc_x = x;
 						dc_source =
 							R_GetColumn(texturetranslation[skytexture],
-								angle);
+								-angle); // Negative because skies were being drawn horizontally flipped
 						wallcolfunc();
 					}
 				}
@@ -883,12 +883,12 @@ void R_DrawSinglePlane(visplane_t *pl)
 				if (bottom > vid.height)
 					bottom = vid.height;
 
-				if (splitscreen > 2 && viewplayer == &players[displayplayers[3]]) // Only copy the part of the screen we need
+				if (r_splitscreen > 2 && viewplayer == &players[displayplayers[3]]) // Only copy the part of the screen we need
 					scr = (screens[0] + (top+(viewheight))*vid.width + viewwidth);
-				else if ((splitscreen == 1 && viewplayer == &players[displayplayers[1]])
-					|| (splitscreen > 1 && viewplayer == &players[displayplayers[2]]))
+				else if ((r_splitscreen == 1 && viewplayer == &players[displayplayers[1]])
+					|| (r_splitscreen > 1 && viewplayer == &players[displayplayers[2]]))
 					scr = (screens[0] + (top+(viewheight))*vid.width);
-				else if (splitscreen > 1 && viewplayer == &players[displayplayers[1]])
+				else if (r_splitscreen > 1 && viewplayer == &players[displayplayers[1]])
 					scr = (screens[0] + ((top)*vid.width) + viewwidth);
 				else
 					scr = (screens[0] + ((top)*vid.width));

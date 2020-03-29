@@ -34,6 +34,10 @@
 #include "p_slopes.h"
 #endif
 
+// SRB2Kart
+#include "k_battle.h"
+#include "k_pwrlv.h"
+
 savedata_t savedata;
 UINT8 *save_p;
 
@@ -289,6 +293,9 @@ static void P_NetArchivePlayers(void)
 			WRITEINT16(save_p, players[i].lturn_max[j]);
 			WRITEINT16(save_p, players[i].rturn_max[j]);
 		}
+
+		WRITEUINT32(save_p, players[i].distancetofinish);
+		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 	}
 }
 
@@ -465,6 +472,9 @@ static void P_NetUnArchivePlayers(void)
 			players[i].lturn_max[j] = READINT16(save_p);
 			players[i].rturn_max[j] = READINT16(save_p);
 		}
+
+		players[i].distancetofinish = READUINT32(save_p);
+		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 	}
 }
 
@@ -968,10 +978,12 @@ typedef enum
 	MD2_EXTVAL2     = 1<<6,
 	MD2_HNEXT       = 1<<7,
 	MD2_HPREV       = 1<<8,
-	MD2_COLORIZED	= 1<<9,
-	MD2_WAYPOINTCAP	= 1<<10
+	MD2_COLORIZED   = 1<<9,
+	MD2_WAYPOINTCAP = 1<<10,
+	MD2_KITEMCAP	= 1<<11,
+	MD2_ITNEXT		= 1<<12
 #ifdef ESLOPE
-	, MD2_SLOPE       = 1<<11
+	, MD2_SLOPE       = 1<<13
 #endif
 } mobj_diff2_t;
 
@@ -1163,6 +1175,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_HNEXT;
 	if (mobj->hprev)
 		diff2 |= MD2_HPREV;
+	if (mobj->itnext)
+		diff2 |= MD2_ITNEXT;
 #ifdef ESLOPE
 	if (mobj->standingslope)
 		diff2 |= MD2_SLOPE;
@@ -1171,6 +1185,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_COLORIZED;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
+	if (mobj == kitemcap)
+		diff2 |= MD2_KITEMCAP;
 	if (diff2 != 0)
 		diff |= MD_MORE;
 
@@ -1286,6 +1302,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEUINT32(save_p, mobj->hnext->mobjnum);
 	if (diff2 & MD2_HPREV)
 		WRITEUINT32(save_p, mobj->hprev->mobjnum);
+	if (diff2 & MD2_ITNEXT)
+		WRITEUINT32(save_p, mobj->itnext->mobjnum);
 #ifdef ESLOPE
 	if (diff2 & MD2_SLOPE)
 		WRITEUINT16(save_p, mobj->standingslope->id);
@@ -2021,7 +2039,7 @@ static void LoadMobjThinker(actionf_p1 thinker)
 				CONS_Alert(CONS_ERROR, "Found mobj with unknown map thing type %d\n", mobj->spawnpoint->type);
 			else
 				CONS_Alert(CONS_ERROR, "Found mobj with unknown map thing type NULL\n");
-			I_Error("Savegame corrupted");
+			I_Error("Netsave corrupted");
 		}
 		mobj->type = i;
 	}
@@ -2163,9 +2181,16 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->hnext = (mobj_t *)(size_t)READUINT32(save_p);
 	if (diff2 & MD2_HPREV)
 		mobj->hprev = (mobj_t *)(size_t)READUINT32(save_p);
+	if (diff2 & MD2_ITNEXT)
+		mobj->itnext = (mobj_t *)(size_t)READUINT32(save_p);
 #ifdef ESLOPE
 	if (diff2 & MD2_SLOPE)
+	{
 		mobj->standingslope = P_SlopeById(READUINT16(save_p));
+#ifdef HWRENDER
+		mobj->modeltilt = mobj->standingslope;
+#endif
+	}
 #endif
 	if (diff2 & MD2_COLORIZED)
 		mobj->colorized = READUINT8(save_p);
@@ -2198,6 +2223,9 @@ static void LoadMobjThinker(actionf_p1 thinker)
 
 	if (diff2 & MD2_WAYPOINTCAP)
 		P_SetTarget(&waypointcap, mobj);
+
+	if (diff2 & MD2_KITEMCAP)
+		P_SetTarget(&kitemcap, mobj);
 
 	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
 }
@@ -3051,6 +3079,13 @@ static void P_RelinkPointers(void)
 				if (!(mobj->hprev = P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 			}
+			if (mobj->itnext)
+			{
+				temp = (UINT32)(size_t)mobj->itnext;
+				mobj->itnext = NULL;
+				if (!(mobj->itnext = P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
+			}
 			if (mobj->player && mobj->player->capsule)
 			{
 				temp = (UINT32)(size_t)mobj->player->capsule;
@@ -3086,6 +3121,15 @@ static void P_RelinkPointers(void)
 				if (!P_SetTarget(&mobj->player->follower, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "follower not found on %d\n", mobj->type);
 			}
+			if (mobj->player && mobj->player->nextwaypoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
+				mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
+				if (mobj->player->nextwaypoint == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
+				}
+			}
 		}
 	}
 }
@@ -3119,7 +3163,7 @@ static inline void P_NetArchiveSpecials(void)
 	WRITEUINT32(save_p, 0xffffffff);
 
 	// Sky number
-	WRITEINT32(save_p, globallevelskynum);
+	WRITESTRINGN(save_p, globallevelskytexture, 9);
 
 	// Current global weather type
 	WRITEUINT8(save_p, globalweather);
@@ -3138,8 +3182,8 @@ static inline void P_NetArchiveSpecials(void)
 //
 static void P_NetUnArchiveSpecials(void)
 {
+	char skytex[9];
 	size_t i;
-	INT32 j;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_SPECIALS)
 		I_Error("Bad $$$.sav at archive block Specials");
@@ -3152,9 +3196,9 @@ static void P_NetUnArchiveSpecials(void)
 		itemrespawntime[iquehead++] = READINT32(save_p);
 	}
 
-	j = READINT32(save_p);
-	if (j != globallevelskynum)
-		P_SetupLevelSky(j, true);
+	READSTRINGN(save_p, skytex, sizeof(skytex));
+	if (strcmp(skytex, globallevelskytexture))
+		P_SetupLevelSky(skytex, true);
 
 	globalweather = READUINT8(save_p);
 
@@ -3305,19 +3349,35 @@ static void P_NetArchiveMisc(void)
 
 	// SRB2kart
 	WRITEINT32(save_p, numgotboxes);
+	WRITEUINT8(save_p, numtargets);
+	WRITEUINT8(save_p, battlecapsules);
 
 	WRITEUINT8(save_p, gamespeed);
 	WRITEUINT8(save_p, franticitems);
 	WRITEUINT8(save_p, comeback);
 
+	WRITESINT8(save_p, speedscramble);
+	WRITESINT8(save_p, encorescramble);
+
 	for (i = 0; i < 4; i++)
 		WRITESINT8(save_p, battlewanted[i]);
+
+	// battleovertime_t
+	WRITEUINT16(save_p, battleovertime.enabled);
+	WRITEFIXED(save_p, battleovertime.radius);
+	WRITEFIXED(save_p, battleovertime.minradius);
+	WRITEFIXED(save_p, battleovertime.x);
+	WRITEFIXED(save_p, battleovertime.y);
+	WRITEFIXED(save_p, battleovertime.z);
 
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
 	WRITEUINT32(save_p, hyubgone);
 	WRITEUINT32(save_p, mapreset);
-	WRITEUINT8(save_p, nospectategrief);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		WRITEINT16(save_p, nospectategrief[i]);
+
 	WRITEUINT8(save_p, thwompsactive);
 	WRITESINT8(save_p, spbplace);
 
@@ -3414,19 +3474,35 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	// SRB2kart
 	numgotboxes = READINT32(save_p);
+	numtargets = READUINT8(save_p);
+	battlecapsules = (boolean)READUINT8(save_p);
 
 	gamespeed = READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);
 	comeback = (boolean)READUINT8(save_p);
 
+	speedscramble = READSINT8(save_p);
+	encorescramble = READSINT8(save_p);
+
 	for (i = 0; i < 4; i++)
 		battlewanted[i] = READSINT8(save_p);
+
+	// battleovertime_t
+	battleovertime.enabled = READUINT16(save_p);
+	battleovertime.radius = READFIXED(save_p);
+	battleovertime.minradius = READFIXED(save_p);
+	battleovertime.x = READFIXED(save_p);
+	battleovertime.y = READFIXED(save_p);
+	battleovertime.z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);
 	hyubgone = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
-	nospectategrief = READUINT8(save_p);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		nospectategrief[i] = READINT16(save_p);
+
 	thwompsactive = (boolean)READUINT8(save_p);
 	spbplace = READSINT8(save_p);
 

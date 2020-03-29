@@ -130,7 +130,8 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 
 		nameonly(strcpy(wadfilename, wadfiles[i]->filename));
 
-		if (p + 1 + 4 + strlen(wadfilename) + 16 > p_start + MAXFILENEEDED)
+		// Look below at the WRITE macros to understand what these numbers mean.
+		if (p + 1 + 4 + min(strlen(wadfilename) + 1, MAX_WADPATH) + 16 > p_start + MAXFILENEEDED)
 		{
 			// Too many files to send all at once
 			if (netbuffer->packettype == PT_MOREFILESNEEDED)
@@ -358,7 +359,6 @@ INT32 CL_CheckFiles(void)
 //		return 1;
 
 	// the first is the iwad (the main wad file)
-	// we don't care if it's called srb2.srb or srb2.wad.
 	// Never download the IWAD, just assume it's there and identical
 	// ...No! Why were we sending the base wads to begin with??
 	//fileneeded[0].status = FS_OPEN;
@@ -742,7 +742,7 @@ void SV_FileSendTicker(void)
 		if (ram)
 			M_Memcpy(p->data, &f->id.ram[transfer[i].position], size);
 		else if (fread(p->data, 1, size, transfer[i].currentfile) != size)
-			I_Error("SV_FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(size), f->id.filename, transfer[i].position, strerror(ferror(transfer[i].currentfile)));
+			I_Error("SV_FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(size), f->id.filename, transfer[i].position, M_FileError(transfer[i].currentfile));
 		p->position = LONG(transfer[i].position);
 		// Put flag so receiver knows the total size
 		if (transfer[i].position + size == f->size)
@@ -774,17 +774,14 @@ void Got_Filetxpak(void)
 	char *filename = file->filename;
 	static INT32 filetime = 0;
 
-	if (!(strcmp(filename, "srb2.srb")
-		&& strcmp(filename, "srb2.wad")
-		&& strcmp(filename, "patch.dta")
-		//&& strcmp(filename, "music.dta")
-		&& strcmp(filename, "gfx.kart")
-		&& strcmp(filename, "textures.kart")
-		&& strcmp(filename, "chars.kart")
-		&& strcmp(filename, "maps.kart")
-		&& strcmp(filename, "sounds.kart")
-		&& strcmp(filename, "music.kart")
-		&& strcmp(filename, "patch.kart")
+	if (!(strcmp(filename, "main.kart")
+		&& strcmp(filename, "gfx.pk3")
+		&& strcmp(filename, "textures.pk3")
+		&& strcmp(filename, "chars.pk3")
+		&& strcmp(filename, "maps.wad")
+		&& strcmp(filename, "patch.pk3")
+		&& strcmp(filename, "sounds.wad")
+		&& strcmp(filename, "music.wad")
 		))
 		I_Error("Tried to download \"%s\"", filename);
 
@@ -821,7 +818,7 @@ void Got_Filetxpak(void)
 		// We can receive packet in the wrong order, anyway all os support gaped file
 		fseek(file->file, pos, SEEK_SET);
 		if (fwrite(netbuffer->u.filetxpak.data,size,1,file->file) != 1)
-			I_Error("Can't write to %s: %s\n",filename, strerror(ferror(file->file)));
+			I_Error("Can't write to %s: %s\n",filename, M_FileError(file->file));
 		file->currentsize += size;
 
 		// Finished?

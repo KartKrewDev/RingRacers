@@ -292,8 +292,17 @@ void Command_CheatNoClip_f(void)
 	REQUIRE_NOULTIMATE;
 
 	plyr = &players[consoleplayer];
+
+	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
+		return;
+
 	plyr->pflags ^= PF_NOCLIP;
 	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->pflags & PF_NOCLIP ? M_GetText("On") : M_GetText("Off"));
+
+	if (plyr->pflags & PF_NOCLIP)
+		plyr->mo->flags |= MF_NOCLIP;
+	else
+		plyr->mo->flags &= ~MF_NOCLIP;
 
 	G_SetGameModified(multiplayer, true);
 }
@@ -577,14 +586,14 @@ void Command_Skynum_f(void)
 
 	if (COM_Argc() != 2)
 	{
-		CONS_Printf(M_GetText("skynum <sky#>: change the sky\n"));
-		CONS_Printf(M_GetText("Current sky is %d\n"), levelskynum);
+		CONS_Printf(M_GetText("skynum <texture name>: change the sky\n"));
+		CONS_Printf(M_GetText("Current sky is %s\n"), levelskytexture);
 		return;
 	}
 
 	CONS_Printf(M_GetText("Previewing sky %s...\n"), COM_Argv(1));
 
-	P_SetupLevelSky(atoi(COM_Argv(1)), false);
+	P_SetupLevelSky(COM_Argv(1), false);
 }
 
 void Command_Weather_f(void)

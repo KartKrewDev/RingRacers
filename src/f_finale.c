@@ -173,7 +173,7 @@ static void F_SkyScroll(INT32 scrollspeed)
 	// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
 	if (rendermode != render_none)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 		x = -((INT32)animtimer);
 		y = 0;
@@ -220,7 +220,7 @@ void F_StartIntro(void)
 		F_WipeStartScreen();
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_level_final], false);
+		F_RunWipe(wipedefs[wipe_intro_toblack], false, "FADEMAP0", false, false);
 	}
 
 	if (introtoplay)
@@ -274,7 +274,7 @@ static void F_IntroDrawScene(void)
 		highres = true;
 	}
 
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 
 	if (background)
 	{
@@ -306,7 +306,7 @@ void F_IntroDrawer(void)
 				F_WipeStartScreen();
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 				F_WipeEndScreen();
-				F_RunWipe(99,true);
+				F_RunWipe(99, true, "FADEMAP0", false, false);
 			}
 
 			// Stay on black for a bit. =)
@@ -438,6 +438,7 @@ static const char *credits[] = {
 	"",
 	"\1Support Programming",
 	"Colette \"fickleheart\" Bordelon",
+	"James R.",
 	"\"Lat\'\"",
 	"\"Monster Iestyn\"",
 	"\"Shuffle\"",
@@ -459,9 +460,13 @@ static const char *credits[] = {
 	"\"ZarroTsu\"",
 	"",
 	"\1External Artists",
+	"\"1-Up Mason\"",
+	"\"Chengi\"",
 	"\"Chrispy\"",
 	"\"DirkTheHusky\"",
+	"\"LJSTAR\"",
 	"\"MotorRoach\"",
+	"\"Mr. McScrewup\"",
 	"\"Nev3r\"",
 	"\"Ritz\"",
 	"\"Rob\"",
@@ -470,6 +475,7 @@ static const char *credits[] = {
 	"\"Spherallic\"",
 	"\"VAdaPEGA\"",
 	"\"Virt\"",
+	"\"Voltrix\"",
 	"\"zxyspku\"",
 	"",
 	"\1Sound Design",
@@ -496,13 +502,18 @@ static const char *credits[] = {
 	"\"DrTapeworm\"",
 	"Paul \"Boinciel\" Clempson",
 	"Sherman \"CoatRack\" DesJardins",
+	"Colette \"fickleheart\" Bordelon",
 	"Vivian \"toaster\" Grannell",
 	"James \"SeventhSentinel\" Hall",
 	"\"Lat\'\"",
+	"\"MK\"",
+	"\"Ninferno\"",
 	"Sean \"Sryder\" Ryder",
 	"\"Ryuspark\"",
 	"\"Simsmagic\"",
 	"\"SP47\"",
+	"\"TG\"",
+	"\"Victor Rush Turbo\"",
 	"\"ZarroTsu\"",
 	"",
 	"\1Testing",
@@ -555,7 +566,7 @@ static struct {
 	// This Tyler52 gag is troublesome
 	// Alignment should be ((spaces+1 * 100) + (headers+1 * 38) + (lines * 15))
 	// Current max image spacing: (200*17)
-	{112, (15*100)+(17*38)+(72*15), "TYLER52", SKINCOLOR_NONE},
+	{112, (15*100)+(17*38)+(86*15), "TYLER52", SKINCOLOR_NONE},
 	{0, 0, NULL, SKINCOLOR_NONE}
 };
 
@@ -965,7 +976,7 @@ void F_TitleScreenDrawer(void)
 	}
 	else if (finalecount < 52)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 		V_DrawSmallScaledPatch(84, 36, 0, ttkflash);
 	}
 	else
@@ -981,7 +992,7 @@ void F_TitleScreenDrawer(void)
 		V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + FixedMul(40<<FRACBITS, FixedDiv(finalecount%70, 70)), V_SNAPTOTOP|V_SNAPTORIGHT, ttcheckers, FRACUNIT);
 
 		if (transval)
-			V_DrawFadeScreen(120, 10 - transval);
+			V_DrawFadeScreen(0, 10 - transval);
 
 		V_DrawSmallScaledPatch(84, 36, 0, ttbanner);
 
@@ -1409,7 +1420,7 @@ void F_CutsceneDrawer(void)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, cutscenes[cutnum]->scene[scenenum].fadecolor);
 
 			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
+			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true, NULL, false, false);
 
 			F_WipeStartScreen();
 		}
@@ -1429,7 +1440,7 @@ void F_CutsceneDrawer(void)
 	if (dofadenow && rendermode != render_none)
 	{
 		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
+		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true, NULL, false, false);
 	}
 
 	V_DrawString(textxpos, textypos, 0, cutscene_disptext);

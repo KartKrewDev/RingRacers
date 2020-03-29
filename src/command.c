@@ -68,10 +68,14 @@ CV_PossibleValue_t CV_YesNo[] = {{0, "No"}, {1, "Yes"}, {0, NULL}};
 CV_PossibleValue_t CV_Unsigned[] = {{0, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 
-//SRB2kart
+// SRB2kart
 CV_PossibleValue_t kartspeed_cons_t[] = {
-	{0, "Easy"}, {1, "Normal"}, {2, "Hard"},
-	{0, NULL}};
+	{KARTSPEED_AUTO, "Auto"},
+	{KARTSPEED_EASY, "Easy"},
+	{KARTSPEED_NORMAL, "Normal"},
+	{KARTSPEED_HARD, "Hard"},
+	{0, NULL}
+};
 
 // Filter consvars by EXECVERSION
 // First implementation is 2 (1.0.2), so earlier configs default at 1 (1.0.0)
@@ -902,7 +906,10 @@ static void COM_Add_f(void)
 		return;
 	}
 
-	CV_AddValue(cvar, atoi(COM_Argv(2)));
+	if (( cvar->flags & CV_FLOAT ))
+		CV_Set(cvar, va("%f", FIXED_TO_FLOAT (cvar->value) + atof(COM_Argv(2))));
+	else
+		CV_AddValue(cvar, atoi(COM_Argv(2)));
 }
 
 // =========================================================================
@@ -1766,7 +1773,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				{
 					newvalue = var->value + 1;
 					if (newvalue > maxspeed)
-						newvalue = 0;
+						newvalue = -1;
 					var->value = newvalue;
 					var->string = var->PossibleValue[var->value].strvalue;
 					var->func();
@@ -1775,7 +1782,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				else if (increment < 0) // Going down!
 				{
 					newvalue = var->value - 1;
-					if (newvalue < 0)
+					if (newvalue < -1)
 						newvalue = maxspeed;
 					var->value = newvalue;
 					var->string = var->PossibleValue[var->value].strvalue;

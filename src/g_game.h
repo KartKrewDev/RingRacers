@@ -80,7 +80,7 @@ typedef struct menudemo_s {
 	UINT16 map;
 	UINT8 addonstatus; // What do we need to do addon-wise to play this demo?
 	UINT8 gametype;
-	UINT8 kartspeed; // Add OR DF_ENCORE for encore mode, idk
+	SINT8 kartspeed; // Add OR DF_ENCORE for encore mode, idk
 	UINT8 numlaps;
 
 	struct {
@@ -129,6 +129,7 @@ typedef enum
 	AXISDEAD, //Axises that don't want deadzones
 	AXISFIRE,
 	AXISDRIFT,
+	AXISLOOKBACK,
 } axis_input_e;
 
 // mouseaiming (looking up/down with the mouse or keyboard)
@@ -154,7 +155,6 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p);
 
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
-extern boolean camspin[MAXSPLITSCREENPLAYERS]; // SRB2Kart
 
 //
 // GAME
@@ -308,6 +308,10 @@ INT32 G_CountPlayersPotentiallyViewable(boolean active);
 void G_ResetViews(void);
 void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive);
 void G_AdjustView(UINT8 viewnum, INT32 offset, boolean onlyactive);
+
+void G_AddPartyMember (INT32 party_member, INT32 new_party_member);
+void G_RemovePartyMember (INT32 party_member);
+void G_ResetSplitscreen (INT32 playernum);
 
 void G_AddPlayer(INT32 playernum);
 

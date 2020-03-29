@@ -107,6 +107,8 @@ typedef struct camera_s
 
 	// SRB2Kart: camera pans while drifting
 	fixed_t pan;
+	// SRB2Kart: camera pitches on slopes
+	angle_t pitch;
 } camera_t;
 
 extern camera_t camera[MAXSPLITSCREENPLAYERS];
@@ -180,7 +182,6 @@ boolean P_LookForEnemies(player_t *player);
 void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius);
 void P_HomingAttack(mobj_t *source, mobj_t *enemy); /// \todo doesn't belong in p_user
 //boolean P_SuperReady(player_t *player);
-boolean P_AnalogMove(player_t *player);
 /*boolean P_TransferToNextMare(player_t *player);
 UINT8 P_FindLowestMare(void);*/
 UINT8 P_FindLowestLap(void);
@@ -211,11 +212,10 @@ extern tic_t itemrespawntime[ITEMQUESIZE];
 extern size_t iquehead, iquetail;
 extern consvar_t cv_gravity/*, cv_viewheight*/;
 
+void P_RespawnBattleBoxes(void);
 void P_RespawnSpecials(void);
 
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
-
-mobj_t *P_SpawnShadowMobj(mobj_t * caster);
 
 void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
@@ -227,7 +227,6 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
 //void P_RunShields(void);
 void P_RunOverlays(void);
-void P_RunShadows(void);
 void P_MobjThinker(mobj_t *mobj);
 boolean P_RailThinker(mobj_t *mobj);
 void P_PushableThinker(mobj_t *mobj);
@@ -390,9 +389,6 @@ void P_RemoveShield(player_t *player);
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage);
 void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source);
 void P_PlayerRingBurst(player_t *player, INT32 num_rings); /// \todo better fit in p_user.c
-void P_PlayerWeaponPanelBurst(player_t *player);
-void P_PlayerWeaponAmmoBurst(player_t *player);
-void P_PlayerEmeraldBurst(player_t *player, boolean toss);
 
 void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck);
 void P_PlayerFlagBurst(player_t *player, boolean toss);

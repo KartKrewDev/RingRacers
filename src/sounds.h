@@ -14,6 +14,8 @@
 #ifndef __SOUNDS__
 #define __SOUNDS__
 
+#include "doomdef.h"
+
 // Customisable sounds for Skins
 typedef enum
 {
@@ -890,7 +892,9 @@ typedef enum
 	sfx_chain,
 	sfx_mkuma,
 	sfx_toada,
+	sfx_bhurry,
 	sfx_bsnipe,
+	sfx_sploss,
 	sfx_itfree,
 	sfx_dbgsal,
 

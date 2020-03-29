@@ -24,6 +24,8 @@
 #include "i_video.h"
 #include "lua_hook.h"
 #include "k_kart.h" // SRB2kart
+#include "k_waypoint.h"
+#include "k_battle.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -117,7 +119,6 @@ void A_ThrownRing(mobj_t *actor);
 void A_GrenadeRing(mobj_t *actor);
 void A_SetSolidSteam(mobj_t *actor);
 void A_UnsetSolidSteam(mobj_t *actor);
-void A_SignPlayer(mobj_t *actor);
 void A_OverlayThink(mobj_t *actor);
 void A_JetChase(mobj_t *actor);
 void A_JetbThink(mobj_t *actor);
@@ -202,6 +203,7 @@ void A_MayonakaArrow(mobj_t *actor);	//SRB2kart
 void A_ReaperThinker(mobj_t *actor);	//SRB2kart
 void A_MementosTPParticles(mobj_t *actor);	//SRB2kart
 void A_FlameParticle(mobj_t *actor); // SRB2kart
+void A_FlameShieldPaper(mobj_t *actor); // SRB2kart
 void A_OrbitNights(mobj_t *actor);
 void A_GhostMe(mobj_t *actor);
 void A_SetObjectState(mobj_t *actor);
@@ -705,59 +707,6 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed
 		else
 			P_SetTarget(&actor->target, player->mo);
 		return true;
-	}
-
-	//return false;
-}
-
-/** Looks for a player with a ring shield.
-  * Used by rings.
-  *
-  * \param actor Ring looking for a shield to be attracted to.
-  * \return True if a player with ring shield is found, otherwise false.
-  * \sa A_AttractChase
-  */
-static boolean P_LookForShield(mobj_t *actor)
-{
-	INT32 c = 0, stop;
-	player_t *player;
-
-	// BP: first time init, this allow minimum lastlook changes
-	if (actor->lastlook < 0)
-		actor->lastlook = P_RandomByte();
-
-	actor->lastlook %= MAXPLAYERS;
-
-	stop = (actor->lastlook - 1) & PLAYERSMASK;
-
-	for (; ; actor->lastlook = ((actor->lastlook + 1) & PLAYERSMASK))
-	{
-		// done looking
-		if (actor->lastlook == stop)
-			return false;
-
-		if (!playeringame[actor->lastlook])
-			continue;
-
-		if (c++ == 2)
-			return false;
-
-		player = &players[actor->lastlook];
-
-		if (player->health <= 0 || !player->mo)
-			continue; // dead
-
-		//When in CTF, don't pull rings that you cannot pick up.
-		if ((actor->type == MT_REDTEAMRING && player->ctfteam != 1) ||
-			(actor->type == MT_BLUETEAMRING && player->ctfteam != 2))
-			continue;
-
-		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT
-			&& (P_AproxDistance(P_AproxDistance(actor->x-player->mo->x, actor->y-player->mo->y), actor->z-player->mo->z) < FixedMul(RING_DIST/4, player->mo->scale)))
-		{
-			P_SetTarget(&actor->tracer, player->mo);
-			return true;
-		}
 	}
 
 	//return false;
@@ -3615,57 +3564,169 @@ void A_AttractChase(mobj_t *actor)
 	if (LUA_CallAction("A_AttractChase", actor))
 		return;
 #endif
+
 	if (actor->flags2 & MF2_NIGHTSPULL || !actor->health)
 		return;
 
-	// spilled rings flicker before disappearing
-	if (leveltime & 1 && actor->type == (mobjtype_t)actor->info->reactiontime && actor->fuse && actor->fuse < 2*TICRATE)
-		actor->flags2 |= MF2_DONTDRAW;
+	if (actor->extravalue1) // SRB2Kart
+	{
+#define RINGBOOSTPWR (((9 - actor->target->player->kartspeed) + (9 - actor->target->player->kartweight)) / 2)
+		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
+		{
+			P_RemoveMobj(actor);
+			return;
+		}
+
+		if (actor->extravalue2) // Using for ring boost
+		{
+			// Always fullbright
+			actor->frame |= FF_FULLBRIGHT;
+
+			if (actor->extravalue1 >= 21)
+			{
+				mobj_t *sparkle;
+				angle_t offset = FixedAngle(18<<FRACBITS);
+
+				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
+				actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
+				S_StartSound(actor->target, sfx_s1b5);
+
+				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
+				P_SetTarget(&sparkle->target, actor->target);
+				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->kartstuff[k_sparkleanim]);
+				actor->target->player->kartstuff[k_sparkleanim] = (actor->target->player->kartstuff[k_sparkleanim]+1) % 20;
+
+				P_KillMobj(actor, actor->target, actor->target);
+				return;
+			}
+			else
+			{
+				fixed_t offz = FixedMul(80*actor->target->scale, FINESINE(FixedAngle((90 - (9 * abs(10 - actor->extravalue1))) << FRACBITS) >> ANGLETOFINESHIFT));
+				//P_SetScale(actor, (actor->destscale = actor->target->scale));
+				actor->z = actor->target->z;
+				K_MatchGenericExtraFlags(actor, actor->target);
+				P_TeleportMove(actor, actor->target->x, actor->target->y,
+						actor->z +
+						( actor->target->height + offz )* P_MobjFlip(actor));
+				actor->extravalue1++;
+			}
+		}
+		else // Collecting
+		{
+			if (actor->extravalue1 >= 16)
+			{
+				if (actor->target->player->kartstuff[k_rings] >= 20)
+					actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
+				else
+					P_GivePlayerRings(actor->target->player, 1);
+
+				if (actor->cvmem) // caching
+					S_StartSound(actor->target, sfx_s1c5);
+				else
+					S_StartSound(actor->target, sfx_s227);
+
+				actor->target->player->kartstuff[k_pickuprings]--;
+				P_RemoveMobj(actor);
+				return;
+			}
+			else
+			{
+				fixed_t dist = (actor->target->radius/4) * (16 - actor->extravalue1);
+
+				P_SetScale(actor, (actor->destscale = actor->target->scale - ((actor->target->scale/14) * actor->extravalue1)));
+				actor->z = actor->target->z;
+				K_MatchGenericExtraFlags(actor, actor->target);
+				P_TeleportMove(actor,
+					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
+					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),
+					actor->z + actor->target->scale * 24 * P_MobjFlip(actor));
+
+				actor->angle += ANG30;
+				actor->extravalue1++;
+			}
+		}
+#undef RINGBOOSTPWR
+	}
 	else
-		actor->flags2 &= ~MF2_DONTDRAW;
-
-	// Turn flingrings back into regular rings if attracted.
-	if (actor->tracer && actor->tracer->player
-		&& (actor->tracer->player->powers[pw_shield] & SH_NOSTACK) != SH_ATTRACT
-		&& actor->info->reactiontime && actor->type != (mobjtype_t)actor->info->reactiontime)
 	{
-		mobj_t *newring;
-		newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
-		newring->momx = actor->momx;
-		newring->momy = actor->momy;
-		newring->momz = actor->momz;
-		P_RemoveMobj(actor);
-		return;
+		// Don't immediately pick up spilled rings
+		if (actor->threshold > 0)
+			actor->threshold--;
+
+		// Rings flicker before disappearing
+		if (actor->fuse && actor->fuse < 5*TICRATE && (leveltime & 1))
+			actor->flags2 |= MF2_DONTDRAW;
+		else
+			actor->flags2 &= ~MF2_DONTDRAW;
+
+		// spilled rings have ghost trails and get capped to a certain speed
+		if (actor->type == (mobjtype_t)actor->info->reactiontime)
+		{
+			const fixed_t maxspeed = 4<<FRACBITS;
+			fixed_t oldspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
+
+			if (oldspeed > maxspeed)
+			{
+				fixed_t newspeed = max(maxspeed, oldspeed-FRACUNIT);
+				actor->momx = FixedMul(FixedDiv(actor->momx, oldspeed), newspeed);
+				actor->momy = FixedMul(FixedDiv(actor->momy, oldspeed), newspeed);
+			}
+
+			if (!P_IsObjectOnGround(actor))
+				P_SpawnGhostMobj(actor)->tics = 3;
+		}
+
+		if (actor->tracer && actor->tracer->player && actor->tracer->health
+			//&& P_CheckSight(actor, actor->tracer)
+			&& actor->tracer->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
+			&& RINGTOTAL(actor->tracer->player) < 20
+			&& !actor->tracer->player->kartstuff[k_ringlock])
+		{
+			fixed_t dist;
+			angle_t hang, vang;
+
+			// If a flung ring gets attracted by a shield, change it into a normal ring.
+			if (actor->type == (mobjtype_t)actor->info->reactiontime)
+			{
+				P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->painchance);
+				P_RemoveMobj(actor);
+				return;
+			}
+
+			// Keep stuff from going down inside floors and junk
+			actor->flags &= ~MF_NOCLIPHEIGHT;
+
+			// Let attracted rings move through walls and such.
+			actor->flags |= MF_NOCLIP;
+
+			// P_Attract is too "smart" for Kart; keep it simple, stupid!
+			dist = P_AproxDistance(P_AproxDistance(actor->x - actor->tracer->x, actor->y - actor->tracer->y), actor->z - actor->tracer->z);
+			hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
+			vang = R_PointToAngle2(actor->z , 0, actor->tracer->z, dist);
+
+			actor->momx -= actor->momx>>4, actor->momy -= actor->momy>>4, actor->momz -= actor->momz>>4;
+			actor->momx += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINECOSINE(hang>>ANGLETOFINESHIFT), 4*actor->scale));
+			actor->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), 4*actor->scale));
+			actor->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), 4*actor->scale);
+		}
+		else
+		{
+			// Turn rings back into flung rings if lost
+			if (actor->cusval && actor->info->reactiontime && actor->type != (mobjtype_t)actor->info->reactiontime)
+			{
+				mobj_t *newring;
+				newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
+				P_InstaThrust(newring, P_RandomRange(0,7) * ANGLE_45, 2<<FRACBITS);
+				newring->momz = 8<<FRACBITS;
+				newring->fuse = 120*TICRATE;
+				P_RemoveMobj(actor);
+				return;
+			}
+			/*else
+				P_LookForShield(actor);*/
+			// SRB2Kart: now it's the PLAYER'S job to use the blockmap to find rings, not the ring's.
+		}
 	}
-
-	P_LookForShield(actor); // Go find 'em, boy!
-
-	if (!actor->tracer
-		|| !actor->tracer->player
-		|| !actor->tracer->health
-		|| !P_CheckSight(actor, actor->tracer)) // You have to be able to SEE it...sorta
-	{
-		// Lost attracted rings don't through walls anymore.
-		actor->flags &= ~MF_NOCLIP;
-		P_SetTarget(&actor->tracer, NULL);
-		return;
-	}
-
-	// If a FlingRing gets attracted by a shield, change it into a normal ring.
-	if (actor->type == (mobjtype_t)actor->info->reactiontime)
-	{
-		P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->painchance);
-		P_RemoveMobj(actor);
-		return;
-	}
-
-	// Keep stuff from going down inside floors and junk
-	actor->flags &= ~MF_NOCLIPHEIGHT;
-
-	// Let attracted rings move through walls and such.
-	actor->flags |= MF_NOCLIP;
-
-	P_Attract(actor, actor->tracer, false);
 }
 
 // Function: A_DropMine
@@ -4121,38 +4182,6 @@ void A_UnsetSolidSteam(mobj_t *actor)
 	actor->flags |= MF_NOCLIP;
 }
 
-// Function: A_SignPlayer
-//
-// Description: Changes the state of a level end sign to reflect the player that hit it.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_SignPlayer(mobj_t *actor)
-{
-	mobj_t *ov;
-#ifdef HAVE_BLUA
-	if (LUA_CallAction("A_SignPlayer", actor))
-		return;
-#endif
-	if (!actor->target)
-		return;
-
-	if (!actor->target->player)
-		return;
-
-	// Set the sign to be an appropriate background color for this player's skincolor.
-	actor->color = KartColor_Opposite[actor->target->player->skincolor*2];
-	actor->frame += KartColor_Opposite[actor->target->player->skincolor*2+1];
-
-	// spawn an overlay of the player's face.
-	ov = P_SpawnMobj(actor->x, actor->y, actor->z, MT_OVERLAY);
-	P_SetTarget(&ov->target, actor);
-	ov->color = actor->target->player->skincolor;
-	ov->skin = &skins[actor->target->player->skin];
-	P_SetMobjState(ov, actor->info->seestate); // S_PLAY_SIGN
-}
-
 // Function: A_OverlayThink
 //
 // Description: Moves the overlay to the position of its target.
@@ -4170,7 +4199,7 @@ void A_OverlayThink(mobj_t *actor)
 	if (!actor->target)
 		return;
 
-	if (!splitscreen && rendermode != render_soft)
+	if (!r_splitscreen && rendermode != render_soft)
 	{
 		angle_t viewingangle;
 
@@ -8234,7 +8263,7 @@ void A_ItemPop(mobj_t *actor)
 	remains->flags = actor->flags; // Transfer flags
 	remains->flags2 = actor->flags2; // Transfer flags2
 	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->threshold = (actor->threshold == 69 ? 69 : 68);
+	remains->threshold = (actor->threshold == 70 ? 70 : (actor->threshold == 69 ? 69 : 68));
 	remains->skin = NULL;
 	remains->spawnpoint = actor->spawnpoint;
 
@@ -8248,7 +8277,7 @@ void A_ItemPop(mobj_t *actor)
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
-	if (G_BattleGametype() && actor->threshold != 69)
+	if (G_BattleGametype() && (actor->threshold != 69 && actor->threshold != 70))
 		numgotboxes++;
 
 	P_RemoveMobj(actor);
@@ -8256,7 +8285,11 @@ void A_ItemPop(mobj_t *actor)
 
 void A_JawzChase(mobj_t *actor)
 {
+	const fixed_t currentspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
 	player_t *player;
+	fixed_t thrustamount = 0;
+	fixed_t frictionsafety = (actor->friction == 0) ? 1 : actor->friction;
+	fixed_t topspeed = actor->movefactor;
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_JawzChase", actor))
 		return;
@@ -8269,19 +8302,99 @@ void A_JawzChase(mobj_t *actor)
 
 		if (actor->tracer->health)
 		{
+			const angle_t targetangle = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
 			mobj_t *ret;
+			angle_t angledelta = actor->angle - targetangle;
+			boolean turnclockwise = true;
+
+			if (G_RaceGametype())
+			{
+				const fixed_t distbarrier = FixedMul(512*mapobjectscale, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
+				const fixed_t distaway = P_AproxDistance(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
+				if (distaway < distbarrier)
+				{
+					if (actor->tracer->player)
+					{
+						fixed_t speeddifference = abs(topspeed - min(actor->tracer->player->speed, K_GetKartSpeed(actor->tracer->player, false)));
+						topspeed = topspeed - FixedMul(speeddifference, FRACUNIT-FixedDiv(distaway, distbarrier));
+					}
+				}
+			}
+
+			if (angledelta != 0)
+			{
+				angle_t MAX_JAWZ_TURN = ANGLE_90/15; // We can turn a maximum of 6 degrees per frame at regular max speed
+				// MAX_JAWZ_TURN gets stronger the slower the top speed of jawz
+				if (topspeed < actor->movefactor)
+				{
+					if (topspeed == 0)
+					{
+						MAX_JAWZ_TURN = ANGLE_180;
+					}
+					else
+					{
+						fixed_t anglemultiplier = FixedDiv(actor->movefactor, topspeed);
+						MAX_JAWZ_TURN += FixedAngle(FixedMul(AngleFixed(MAX_JAWZ_TURN), anglemultiplier));
+					}
+				}
+
+				if (angledelta > ANGLE_180)
+				{
+					angledelta = InvAngle(angledelta);
+					turnclockwise = false;
+				}
+
+				if (angledelta > MAX_JAWZ_TURN)
+				{
+					angledelta = MAX_JAWZ_TURN;
+				}
+
+				if (turnclockwise)
+				{
+					actor->angle -= angledelta;
+				}
+				else
+				{
+					actor->angle += angledelta;
+				}
+			}
 
 			ret = P_SpawnMobj(actor->tracer->x, actor->tracer->y, actor->tracer->z, MT_PLAYERRETICULE);
 			P_SetTarget(&ret->target, actor->tracer);
 			ret->frame |= ((leveltime % 10) / 2) + 5;
 			ret->color = actor->cvmem;
-
-			P_Thrust(actor, R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y), (7*actor->movefactor)/64);
-			return;
 		}
 		else
 			P_SetTarget(&actor->tracer, NULL);
 	}
+
+	if (!P_IsObjectOnGround(actor))
+	{
+		// No friction in the air
+		frictionsafety = FRACUNIT;
+	}
+
+	if (currentspeed >= topspeed)
+	{
+		// Thrust as if you were at top speed, slow down naturally
+		thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
+	}
+	else
+	{
+		const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
+		// Thrust to immediately get to top speed
+		thrustamount = beatfriction + FixedDiv(topspeed - currentspeed, frictionsafety);
+	}
+
+	if (!actor->tracer)
+	{
+		actor->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
+	}
+
+	P_Thrust(actor, actor->angle, thrustamount);
+
+	if ((actor->tracer != NULL) && (actor->tracer->health > 0))
+		return;
 
 	if (actor->extravalue1) // Disable looking by setting this
 		return;
@@ -8334,14 +8447,31 @@ void A_JawzExplode(mobj_t *actor)
 	return;
 }
 
+static void SpawnSPBTrailRings(mobj_t *actor)
+{
+	I_Assert(actor != NULL);
+
+	if (leveltime % 6 == 0)
+	{
+		mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
+			actor->z - actor->momz + (24*mapobjectscale), MT_RING);
+		ring->threshold = 10;
+		ring->fuse = 120*TICRATE;
+	}
+}
+
 void A_SPBChase(mobj_t *actor)
 {
 	player_t *player = NULL;
+	player_t *scplayer = NULL;	// secondary target for seeking
 	UINT8 i;
 	UINT8 bestrank = UINT8_MAX;
 	fixed_t dist;
 	angle_t hang, vang;
 	fixed_t wspeed, xyspeed, zspeed;
+	fixed_t pdist = 1536<<FRACBITS;	// best player distance when seeking
+	angle_t pangle;		// angle between us and the player
+
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_SPBChase", actor))
 		return;
@@ -8353,6 +8483,7 @@ void A_SPBChase(mobj_t *actor)
 	if (actor->threshold) // Just fired, go straight.
 	{
 		actor->lastlook = -1;
+		actor->cusval = -1;
 		spbplace = -1;
 		P_InstaThrust(actor, actor->angle, wspeed);
 		return;
@@ -8380,8 +8511,16 @@ void A_SPBChase(mobj_t *actor)
 		}
 	}
 
+	// lastlook = last player num targetted
+	// cvmem = stored speed
+	// cusval = next waypoint heap index
+	// extravalue1 = SPB movement mode
+	// extravalue2 = mode misc option
+
 	if (actor->extravalue1 == 1) // MODE: TARGETING
 	{
+		actor->cusval = -1; // Reset waypoint
+
 		if (actor->tracer && actor->tracer->health)
 		{
 			fixed_t defspeed = wspeed;
@@ -8400,6 +8539,7 @@ void A_SPBChase(mobj_t *actor)
 				fixed_t easiness = ((actor->tracer->player->kartspeed + (10-spark)) << FRACBITS) / 2;
 
 				actor->lastlook = actor->tracer->player-players; // Save the player num for death scumming...
+				actor->tracer->player->kartstuff[k_ringlock] = 1; // set ring lock
 
 				if (!P_IsObjectOnGround(actor->tracer) /*&& !actor->tracer->player->kartstuff[k_pogospring]*/)
 				{
@@ -8483,6 +8623,9 @@ void A_SPBChase(mobj_t *actor)
 			actor->momy = cy + FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 			actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
+			// Spawn a trail of rings behind the SPB!
+			SpawnSPBTrailRings(actor);
+
 			// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
 			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
 				: (16*R_PointToDist2(0, 0, actor->tracer->momx, actor->tracer->momy))/15) // Going faster than the target
@@ -8514,6 +8657,7 @@ void A_SPBChase(mobj_t *actor)
 	else if (actor->extravalue1 == 2) // MODE: WAIT...
 	{
 		actor->momx = actor->momy = actor->momz = 0; // Stoooop
+		actor->cusval = -1; // Reset waypoint
 
 		if (actor->lastlook != -1
 			&& playeringame[actor->lastlook]
@@ -8521,6 +8665,7 @@ void A_SPBChase(mobj_t *actor)
 			&& !players[actor->lastlook].exiting)
 		{
 			spbplace = players[actor->lastlook].kartstuff[k_position];
+			players[actor->lastlook].kartstuff[k_ringlock] = 1;
 			if (actor->extravalue2-- <= 0 && players[actor->lastlook].mo)
 			{
 				P_SetTarget(&actor->tracer, players[actor->lastlook].mo);
@@ -8538,6 +8683,11 @@ void A_SPBChase(mobj_t *actor)
 	}
 	else // MODE: SEEKING
 	{
+		waypoint_t *lastwaypoint = NULL;
+		waypoint_t *bestwaypoint = NULL;
+		waypoint_t *nextwaypoint = NULL;
+		waypoint_t *tempwaypoint = NULL;
+
 		actor->lastlook = -1; // Just make sure this is reset
 
 		if (!player || !player->mo || player->mo->health <= 0 || player->kartstuff[k_respawn])
@@ -8552,11 +8702,70 @@ void A_SPBChase(mobj_t *actor)
 		// Found someone, now get close enough to initiate the slaughter...
 		P_SetTarget(&actor->tracer, player->mo);
 		spbplace = bestrank;
-
 		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
 
-		hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
-		vang = R_PointToAngle2(0, actor->z, dist, actor->tracer->z);
+		// Move along the waypoints until you get close enough
+		if (actor->cusval > -1 && actor->extravalue2 > 0)
+		{
+			// Previously set nextwaypoint
+			lastwaypoint = K_GetWaypointFromIndex((size_t)actor->cusval);
+			tempwaypoint = K_GetBestWaypointForMobj(actor);
+			// check if the tempwaypoint corresponds to lastwaypoint's next ID at least;
+			// This is to avoid situations where the SPB decides to suicide jump down a bridge because it found a COMPLETELY unrelated waypoint down there.
+
+			if (K_GetWaypointID(tempwaypoint) == K_GetWaypointNextID(lastwaypoint) || K_GetWaypointID(tempwaypoint) == K_GetWaypointID(lastwaypoint))
+				// either our previous or curr waypoint ID, sure, take it
+				bestwaypoint = tempwaypoint;
+			else
+				bestwaypoint = K_GetWaypointFromIndex((size_t)actor->extravalue2);	// keep going from the PREVIOUS wp.
+		}
+		else
+			bestwaypoint = K_GetBestWaypointForMobj(actor);
+
+		if (bestwaypoint == NULL && lastwaypoint == NULL)
+		{
+			// We have invalid waypoints all around, so use closest to try and make it non-NULL.
+			bestwaypoint = K_GetClosestWaypointToMobj(actor);
+		}
+
+		if (bestwaypoint != NULL)
+		{
+			const boolean huntbackwards = false;
+			boolean       useshortcuts  = false;
+
+			// If the player is on a shortcut, use shortcuts. No escape.
+			if (K_GetWaypointIsShortcut(player->nextwaypoint))
+			{
+				useshortcuts = true;
+			}
+
+			nextwaypoint = K_GetNextWaypointToDestination(
+				bestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
+		}
+
+		if (nextwaypoint == NULL && lastwaypoint != NULL)
+		{
+			// Restore to the last nextwaypoint
+			nextwaypoint = lastwaypoint;
+		}
+
+		if (nextwaypoint != NULL)
+		{
+			const fixed_t xywaypointdist = P_AproxDistance(
+				actor->x - nextwaypoint->mobj->x, actor->y - nextwaypoint->mobj->y);
+
+			hang = R_PointToAngle2(actor->x, actor->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
+			vang = R_PointToAngle2(0, actor->z, xywaypointdist, nextwaypoint->mobj->z);
+
+			actor->cusval = (INT32)K_GetWaypointHeapIndex(nextwaypoint);
+			actor->extravalue2 = (INT32)K_GetWaypointHeapIndex(bestwaypoint);	// save our last best, used above.
+		}
+		else
+		{
+			// continue straight ahead... Shouldn't happen.
+			hang = actor->angle;
+			vang = 0U;
+		}
 
 		{
 			// Smoothly rotate horz angle
@@ -8565,13 +8774,13 @@ void A_SPBChase(mobj_t *actor)
 			if (invert)
 				input = InvAngle(input);
 
+			input = FixedAngle(AngleFixed(input)/8);
+
 			// Slow down when turning; it looks better and makes U-turns not unfair
 			xyspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
 
-			input = FixedAngle(AngleFixed(input)/4);
 			if (invert)
 				input = InvAngle(input);
-
 			actor->angle += input;
 
 			// Smoothly rotate vert angle
@@ -8580,13 +8789,13 @@ void A_SPBChase(mobj_t *actor)
 			if (invert)
 				input = InvAngle(input);
 
+			input = FixedAngle(AngleFixed(input)/8);
+
 			// Slow down when turning; might as well do it for momz, since we do it above too
 			zspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
 
-			input = FixedAngle(AngleFixed(input)/4);
 			if (invert)
 				input = InvAngle(input);
-
 			actor->movedir += input;
 		}
 
@@ -8594,14 +8803,48 @@ void A_SPBChase(mobj_t *actor)
 		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
-		if (dist <= (3072*actor->tracer->scale)) // Close enough to target?
+		// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
+		for (i=0; i < MAXPLAYERS; i++)
 		{
-			S_StartSound(actor, actor->info->attacksound); // Siren sound; might not need this anymore, but I'm keeping it for now just for debugging.
+			if (!playeringame[i] || players[i].spectator || players[i].exiting)
+				continue; // not in-game
+
+			if (R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y) < pdist)
+			{
+				pdist = R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y);
+				scplayer = &players[i];	// it doesn't matter if we override this guy now.
+			}
+		}
+
+		// different player from our main target, try and ram into em~!
+		if (scplayer && scplayer != player)
+		{
+			pangle = actor->angle - R_PointToAngle2(actor->x, actor->y,scplayer->mo->x, scplayer->mo->y);
+			// check if the angle wouldn't make us LOSE speed...
+			if ((INT32)pangle/ANG1 >= -80 && (INT32)pangle/ANG1 <= 80)	// allow for around 80 degrees
+			{
+				// Thrust us towards the guy, try to screw em up!
+				P_Thrust(actor, R_PointToAngle2(actor->x, actor->y, scplayer->mo->x, scplayer->mo->y), actor->movefactor/4);	// not too fast though.
+			}
+		}
+
+		// Spawn a trail of rings behind the SPB!
+		SpawnSPBTrailRings(actor);
+
+		if (dist <= (1024*actor->tracer->scale)) // Close enough to target?
+		{
+			S_StartSound(actor, actor->info->attacksound);
 			actor->extravalue1 = 1; // TARGET ACQUIRED
 			actor->extravalue2 = 7*TICRATE;
 			actor->cvmem = wspeed;
 		}
 	}
+
+	// Finally, no matter what, the spb should not be able to be under the ground, or above the ceiling;
+	if (actor->z < actor->floorz)
+		actor->z = actor->floorz;
+	else if (actor->z > actor->ceilingz - actor->height)
+		actor->z = actor->ceilingz - actor->height;
 
 	return;
 }
@@ -9084,6 +9327,52 @@ void A_FlameParticle(mobj_t *actor)
 		actor->z + (P_RandomRange(hei/2, hei)<<FRACBITS),
 		actor->info->painchance);
 	par->momz = actor->scale<<1;
+}
+
+void A_FlameShieldPaper(mobj_t *actor)
+{
+	INT32 framea = 0;
+	INT32 frameb = 0;
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+	UINT8 i;
+
+#ifdef HAVE_BLUA
+	if (LUA_CallAction("A_FlameShieldPaper", actor))
+		return;
+#endif
+
+	framea = (locvar1 & FF_FRAMEMASK);
+	frameb = (locvar2 & FF_FRAMEMASK);
+
+	for (i = 0; i < 2; i++)
+	{
+		INT32 perpendicular = ((i & 1) ? -ANGLE_90 : ANGLE_90);
+		fixed_t newx = actor->x + P_ReturnThrustX(NULL, actor->angle + perpendicular, 8*actor->scale);
+		fixed_t newy = actor->y + P_ReturnThrustY(NULL, actor->angle + perpendicular, 8*actor->scale);
+		mobj_t *paper = P_SpawnMobj(newx, newy, actor->z, MT_FLAMESHIELDPAPER);
+
+		P_SetTarget(&paper->target, actor);
+		P_SetScale(paper, actor->scale);
+		paper->destscale = actor->destscale;
+
+		P_SetMobjState(paper, S_FLAMESHIELDPAPER);
+		paper->frame &= ~FF_FRAMEMASK;
+
+		paper->angle = actor->angle + ANGLE_45;
+
+		if (i & 1)
+		{
+			paper->angle -= ANGLE_90;
+			paper->frame |= frameb;
+		}
+		else
+		{
+			paper->frame |= framea;
+		}
+
+		paper->extravalue1 = i;
+	}
 }
 
 //}
@@ -10444,8 +10733,8 @@ void A_RemoteDamage(mobj_t *actor)
 
 	if (locvar2 == 1) // Kill mobj!
 	{
-		if (target->player) // players die using P_DamageMobj instead for some reason
-			P_DamageMobj(target, source, source, 10000);
+		if (target->player)
+			K_DoIngameRespawn(target->player);
 		else
 			P_KillMobj(target, source, source);
 	}

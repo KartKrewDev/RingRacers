@@ -1466,8 +1466,9 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "WEATHER"))
 				mapheaderinfo[num-1]->weather = (UINT8)get_number(word2);
-			else if (fastcmp(word, "SKYNUM"))
-				mapheaderinfo[num-1]->skynum = (INT16)i;
+			else if (fastcmp(word, "SKYTEXTURE"))
+				deh_strlcpy(mapheaderinfo[num-1]->skytexture, word2,
+					sizeof(mapheaderinfo[num-1]->skytexture), va("Level header %d: sky texture", num));
 			else if (fastcmp(word, "INTERSCREEN"))
 				strncpy(mapheaderinfo[num-1]->interscreen, word2, 8);
 			else if (fastcmp(word, "PRECUTSCENENUM"))
@@ -2009,7 +2010,6 @@ static actionpointer_t actionpointers[] =
 	{{A_GrenadeRing},          "A_GRENADERING"}, // SRB2kart
 	{{A_SetSolidSteam},        "A_SETSOLIDSTEAM"},
 	{{A_UnsetSolidSteam},      "A_UNSETSOLIDSTEAM"},
-	{{A_SignPlayer},           "A_SIGNPLAYER"},
 	{{A_OverlayThink},         "A_OVERLAYTHINK"},
 	{{A_JetChase},             "A_JETCHASE"},
 	{{A_JetbThink},            "A_JETBTHINK"},
@@ -2123,6 +2123,7 @@ static actionpointer_t actionpointers[] =
 	{{A_ReaperThinker}, 	   "A_REAPERTHINKER"}, //SRB2kart
 	{{A_MementosTPParticles},  "A_MEMENTOSTPPARTICLES"}, //SRB2kart
 	{{A_FlameParticle},        "A_FLAMEPARTICLE"}, // SRB2kart
+	{{A_FlameShieldPaper},     "A_FLAMESHIELDPAPER"}, // SRB2kart
 	{{A_OrbitNights},          "A_ORBITNIGHTS"},
 	{{A_GhostMe},              "A_GHOSTME"},
 	{{A_SetObjectState},       "A_SETOBJECTSTATE"},
@@ -2709,10 +2710,10 @@ static void readunlockable(MYFILE *f, INT32 num)
 					unlockables[num].type = SECRET_PANDORA;
 				else if (fastcmp(word2, "CREDITS"))
 					unlockables[num].type = SECRET_CREDITS;
-				else if (fastcmp(word2, "RECORDATTACK"))
-					unlockables[num].type = SECRET_RECORDATTACK;
-				else if (fastcmp(word2, "NIGHTSMODE"))
-					unlockables[num].type = SECRET_NIGHTSMODE;
+				else if (fastcmp(word2, "TIMEATTACK"))
+					unlockables[num].type = SECRET_TIMEATTACK;
+				else if (fastcmp(word2, "BREAKTHECAPSULES"))
+					unlockables[num].type = SECRET_BREAKTHECAPSULES;
 				else if (fastcmp(word2, "HEADER"))
 					unlockables[num].type = SECRET_HEADER;
 				else if (fastcmp(word2, "LEVELSELECT"))
@@ -2788,6 +2789,19 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
 	}
+	else if ((offset=0) || fastcmp(params[0], "POWERLEVEL"))
+	{
+		PARAMCHECK(2);
+		ty = UC_POWERLEVEL;
+		re = atoi(params[1]);
+		x1 = atoi(params[2]);
+
+		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
+		{
+			deh_warning("Power level type %d out of range (0 - %d)", x1, PWRLV_NUMTYPES-1);
+			return;
+		}
+	}
 	else if ((offset=0) || fastcmp(params[0], "GAMECLEAR")
 	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
 	//||        (++offset && fastcmp(params[0], "ULTIMATECLEAR")))
@@ -2840,7 +2854,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (x1 < 0 || x1 >= NUMMAPS)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
+			deh_warning("Level number %d out of range (1 - %d)", x1, NUMMAPS);
 			return;
 		}
 	}
@@ -3492,29 +3506,13 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_intermission_final;
 			}
-			else if (fastncmp(word, "SPECINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
 			else if (fastncmp(word, "VOTING_", 7))
 			{
 				pword = word + 7;
 				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
+					wipeoffset = wipe_voting_toblack;
 				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
-			else if (fastncmp(word, "MULTINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_multinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_multinter_final;
+					wipeoffset = wipe_voting_final;
 			}
 			else if (fastncmp(word, "CONTINUING_", 11))
 			{
@@ -3566,11 +3564,13 @@ static void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_gameend_final;
 			}
-			else if (fastncmp(word, "SPECLEVEL_", 10))
+			else if (fastncmp(word, "ENCORE_", 7))
 			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOWHITE"))
-					wipeoffset = wipe_speclevel_towhite;
+				pword = word + 7;
+				if (fastcmp(pword, "TOINVERT"))
+					wipeoffset = wipe_encore_toinvert;
+				else if (fastcmp(pword, "TOWHITE"))
+					wipeoffset = wipe_encore_towhite;
 			}
 
 			if (wipeoffset < 0)
@@ -3580,10 +3580,10 @@ static void readwipes(MYFILE *f)
 			}
 
 			if (value == UINT8_MAX
-			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_speclevel_towhite))
+			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_encore_toinvert))
 			{
 				 // Cannot disable non-toblack wipes
-				 // (or the level toblack wipe, or the special towhite wipe)
+				 // (or the level toblack wipe, or the special encore wipe)
 				deh_warning("Wipes: can't disable wipe of type '%s'", word);
 				continue;
 			}
@@ -3992,8 +3992,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				}
 				else if (fastcmp(word, "SRB2"))
 				{
-					if (mainwads) // srb2.srb triggers this warning otherwise
-						deh_warning("Patch is only compatible with base SRB2.");
+					deh_warning("Patch is only compatible with base SRB2.");
 				}
 				// Clear all data in certain locations (mostly for unlocks)
 				// Unless you REALLY want to piss people off,
@@ -5040,6 +5039,18 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	// Ring
 	"S_RING",
+	"S_FASTRING1",
+	"S_FASTRING2",
+	"S_FASTRING3",
+	"S_FASTRING4",
+	"S_FASTRING5",
+	"S_FASTRING6",
+	"S_FASTRING7",
+	"S_FASTRING8",
+	"S_FASTRING9",
+	"S_FASTRING10",
+	"S_FASTRING11",
+	"S_FASTRING12",
 
 	// Blue Sphere for special stages
 	"S_BLUEBALL",
@@ -5119,27 +5130,10 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BUBBLES2",
 
 	// Level End Sign
-	"S_SIGN1",
-	"S_SIGN2",
-	"S_SIGN3",
-	"S_SIGN4",
-	"S_SIGN5",
-	"S_SIGN6",
-	"S_SIGN7",
-	"S_SIGN8",
-	"S_SIGN9",
-	"S_SIGN10",
-	"S_SIGN11",
-	"S_SIGN12",
-	"S_SIGN13",
-	"S_SIGN14",
-	"S_SIGN15",
-	"S_SIGN16",
-	"S_SIGN17",
-	"S_SIGN18",
-	"S_SIGN19",
-	"S_SIGN20",
-	"S_SIGN_END",
+	"S_SIGN_POLE",
+	"S_SIGN_BACK",
+	"S_SIGN_SIDE",
+	"S_SIGN_FACE",
 
 	// Steam Riser
 	"S_STEAM1",
@@ -5841,44 +5835,77 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_RBIRD2",
 	"S_RBIRD3",
 
-	"S_YELLOWSPRING",
+	// Yellow Spring
+	"S_YELLOWSPRING1",
 	"S_YELLOWSPRING2",
 	"S_YELLOWSPRING3",
 	"S_YELLOWSPRING4",
-	"S_YELLOWSPRING5",
 
-	"S_REDSPRING",
+	// Red Spring
+	"S_REDSPRING1",
 	"S_REDSPRING2",
 	"S_REDSPRING3",
 	"S_REDSPRING4",
-	"S_REDSPRING5",
 
-	// Blue Springs
-	"S_BLUESPRING",
+	// Blue Spring
+	"S_BLUESPRING1",
 	"S_BLUESPRING2",
 	"S_BLUESPRING3",
 	"S_BLUESPRING4",
-	"S_BLUESPRING5",
+
+	// Grey Spring
+	"S_GREYSPRING1",
+	"S_GREYSPRING2",
+	"S_GREYSPRING3",
+	"S_GREYSPRING4",
 
 	// Yellow Diagonal Spring
 	"S_YDIAG1",
 	"S_YDIAG2",
 	"S_YDIAG3",
 	"S_YDIAG4",
-	"S_YDIAG5",
-	"S_YDIAG6",
-	"S_YDIAG7",
-	"S_YDIAG8",
 
 	// Red Diagonal Spring
 	"S_RDIAG1",
 	"S_RDIAG2",
 	"S_RDIAG3",
 	"S_RDIAG4",
-	"S_RDIAG5",
-	"S_RDIAG6",
-	"S_RDIAG7",
-	"S_RDIAG8",
+
+	// Blue Diagonal Spring
+	"S_BDIAG1",
+	"S_BDIAG2",
+	"S_BDIAG3",
+	"S_BDIAG4",
+
+	// Grey Diagonal Spring
+	"S_GDIAG1",
+	"S_GDIAG2",
+	"S_GDIAG3",
+	"S_GDIAG4",
+
+	// Yellow Horizontal Spring
+	"S_YHORIZ1",
+	"S_YHORIZ2",
+	"S_YHORIZ3",
+	"S_YHORIZ4",
+
+	// Red Horizontal Spring
+	"S_RHORIZ1",
+	"S_RHORIZ2",
+	"S_RHORIZ3",
+	"S_RHORIZ4",
+
+	// Blue Horizontal Spring
+	"S_BHORIZ1",
+	"S_BHORIZ2",
+	"S_BHORIZ3",
+	"S_BHORIZ4",
+
+	// Grey Horizontal Spring
+	"S_GHORIZ1",
+	"S_GHORIZ2",
+	"S_GHORIZ3",
+	"S_GHORIZ4",
 
 	// Rain
 	"S_RAIN1",
@@ -5888,6 +5915,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SNOW1",
 	"S_SNOW2",
 	"S_SNOW3",
+
+	// Blizzard Snowball
+	"S_BLIZZARDSNOW1",
+	"S_BLIZZARDSNOW2",
+	"S_BLIZZARDSNOW3",
 
 	// Water Splish
 	"S_SPLISH1",
@@ -6503,26 +6535,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SRB1_GENREX1",
 	"S_SRB1_GENREX2",
 
-	// Gray Springs
-	"S_GRAYSPRING",
-	"S_GRAYSPRING2",
-	"S_GRAYSPRING3",
-	"S_GRAYSPRING4",
-	"S_GRAYSPRING5",
-
-	// Invis-spring - this is used just for the sproing sound.
-	"S_INVISSPRING",
-
-	// Blue Diagonal Spring
-	"S_BDIAG1",
-	"S_BDIAG2",
-	"S_BDIAG3",
-	"S_BDIAG4",
-	"S_BDIAG5",
-	"S_BDIAG6",
-	"S_BDIAG7",
-	"S_BDIAG8",
-
 	//{ Random Item Box
 	"S_RANDOMITEM1",
 	"S_RANDOMITEM2",
@@ -6579,6 +6591,8 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTSPARK_B1",
 	"S_DRIFTSPARK_C1",
 	"S_DRIFTSPARK_C2",
+	"S_DRIFTSPARK_D1",
+	"S_DRIFTSPARK_D2",
 
 	// Brake drift sparks
 	"S_BRAKEDRIFT",
@@ -6588,6 +6602,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTDUST2",
 	"S_DRIFTDUST3",
 	"S_DRIFTDUST4",
+
+	// Drift Sparkles
+	"S_DRIFTWARNSPARK1",
+	"S_DRIFTWARNSPARK2",
+	"S_DRIFTWARNSPARK3",
+	"S_DRIFTWARNSPARK4",
 
 	// Fast lines
 	"S_FASTLINE1",
@@ -6605,7 +6625,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FASTDUST6",
 	"S_FASTDUST7",
 
-	// Thunder Shield Burst
+	// Drift boost effect
+	"S_DRIFTEXPLODE1",
+	"S_DRIFTEXPLODE2",
+	"S_DRIFTEXPLODE3",
+	"S_DRIFTEXPLODE4",
 
 	// Sneaker boost effect
 	"S_BOOSTFLAME",
@@ -6866,6 +6890,85 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_THUNDERSHIELD23",
 	"S_THUNDERSHIELD24",
 
+	// Bubble Shield
+	"S_BUBBLESHIELD1",
+	"S_BUBBLESHIELD2",
+	"S_BUBBLESHIELD3",
+	"S_BUBBLESHIELD4",
+	"S_BUBBLESHIELD5",
+	"S_BUBBLESHIELD6",
+	"S_BUBBLESHIELD7",
+	"S_BUBBLESHIELD8",
+	"S_BUBBLESHIELD9",
+	"S_BUBBLESHIELD10",
+	"S_BUBBLESHIELD11",
+	"S_BUBBLESHIELD12",
+	"S_BUBBLESHIELD13",
+	"S_BUBBLESHIELD14",
+	"S_BUBBLESHIELD15",
+	"S_BUBBLESHIELD16",
+	"S_BUBBLESHIELD17",
+	"S_BUBBLESHIELD18",
+	"S_BUBBLESHIELDBLOWUP",
+	"S_BUBBLESHIELDTRAP1",
+	"S_BUBBLESHIELDTRAP2",
+	"S_BUBBLESHIELDTRAP3",
+	"S_BUBBLESHIELDTRAP4",
+	"S_BUBBLESHIELDTRAP5",
+	"S_BUBBLESHIELDTRAP6",
+	"S_BUBBLESHIELDTRAP7",
+	"S_BUBBLESHIELDTRAP8",
+	"S_BUBBLESHIELDWAVE1",
+	"S_BUBBLESHIELDWAVE2",
+	"S_BUBBLESHIELDWAVE3",
+	"S_BUBBLESHIELDWAVE4",
+	"S_BUBBLESHIELDWAVE5",
+	"S_BUBBLESHIELDWAVE6",
+
+	// Flame Shield
+	"S_FLAMESHIELD1",
+	"S_FLAMESHIELD2",
+	"S_FLAMESHIELD3",
+	"S_FLAMESHIELD4",
+	"S_FLAMESHIELD5",
+	"S_FLAMESHIELD6",
+	"S_FLAMESHIELD7",
+	"S_FLAMESHIELD8",
+	"S_FLAMESHIELD9",
+	"S_FLAMESHIELD10",
+	"S_FLAMESHIELD11",
+	"S_FLAMESHIELD12",
+	"S_FLAMESHIELD13",
+	"S_FLAMESHIELD14",
+	"S_FLAMESHIELD15",
+	"S_FLAMESHIELD16",
+	"S_FLAMESHIELD17",
+	"S_FLAMESHIELD18",
+
+	"S_FLAMESHIELDDASH1",
+	"S_FLAMESHIELDDASH2",
+	"S_FLAMESHIELDDASH3",
+	"S_FLAMESHIELDDASH4",
+	"S_FLAMESHIELDDASH5",
+	"S_FLAMESHIELDDASH6",
+	"S_FLAMESHIELDDASH7",
+	"S_FLAMESHIELDDASH8",
+	"S_FLAMESHIELDDASH9",
+	"S_FLAMESHIELDDASH10",
+	"S_FLAMESHIELDDASH11",
+	"S_FLAMESHIELDDASH12",
+
+	"S_FLAMESHIELDDASH2_UNDERLAY",
+	"S_FLAMESHIELDDASH5_UNDERLAY",
+	"S_FLAMESHIELDDASH8_UNDERLAY",
+	"S_FLAMESHIELDDASH11_UNDERLAY",
+
+	"S_FLAMESHIELDPAPER",
+	"S_FLAMESHIELDLINE1",
+	"S_FLAMESHIELDLINE2",
+	"S_FLAMESHIELDLINE3",
+	"S_FLAMESHIELDFLASH",
+
 	// The legend
 	"S_SINK",
 	"S_SINK_SHIELD",
@@ -6880,6 +6983,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	// DEZ respawn laser
 	"S_DEZLASER",
+	"S_DEZLASER_TRAIL1",
+	"S_DEZLASER_TRAIL2",
+	"S_DEZLASER_TRAIL3",
+	"S_DEZLASER_TRAIL4",
+	"S_DEZLASER_TRAIL5",
 
 	// Audience Members
 	"S_RANDOMAUDIENCE",
@@ -6997,9 +7105,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FLYINGGARG8",
 	"S_LAMPPOST",
 	"S_MOSSYTREE",
-
-	"S_SHADOW",
-	"S_WHITESHADOW",
 
 	"S_BUMP1",
 	"S_BUMP2",
@@ -7430,6 +7535,42 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_CHEESEHAPPY3",
 	"S_CHEESEHAPPY4",
 
+	"S_RINGDEBT",
+	"S_RINGSPARKS1",
+	"S_RINGSPARKS2",
+	"S_RINGSPARKS3",
+	"S_RINGSPARKS4",
+	"S_RINGSPARKS5",
+	"S_RINGSPARKS6",
+	"S_RINGSPARKS7",
+	"S_RINGSPARKS8",
+	"S_RINGSPARKS9",
+	"S_RINGSPARKS10",
+	"S_RINGSPARKS11",
+	"S_RINGSPARKS12",
+	"S_RINGSPARKS13",
+	"S_RINGSPARKS14",
+	"S_RINGSPARKS15",
+
+	"S_DRAFTDUST1",
+	"S_DRAFTDUST2",
+	"S_DRAFTDUST3",
+	"S_DRAFTDUST4",
+	"S_DRAFTDUST5",
+
+	"S_TIREGREASE",
+
+	"S_OVERTIMEFOG",
+	"S_OVERTIMEORB",
+	"S_OVERTIMEBEAM",
+
+	"S_BATTLECAPSULE_SIDE1",
+	"S_BATTLECAPSULE_SIDE2",
+	"S_BATTLECAPSULE_TOP",
+	"S_BATTLECAPSULE_BUTTON",
+	"S_BATTLECAPSULE_SUPPORT",
+	"S_BATTLECAPSULE_SUPPORTFLY",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -7559,15 +7700,23 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Springs and others
 	"MT_FAN",
 	"MT_STEAM", // Steam riser
-	"MT_BLUESPRING",
 	"MT_YELLOWSPRING",
 	"MT_REDSPRING",
+	"MT_BLUESPRING",
+	"MT_GREYSPRING",
 	"MT_YELLOWDIAG", // Yellow Diagonal Spring
 	"MT_REDDIAG", // Red Diagonal Spring
+	"MT_BLUEDIAG", // Blue Diagonal Spring
+	"MT_GREYDIAG", // Grey Diagonal Spring
+	"MT_YELLOWHORIZ", // Yellow Horizontal Spring
+	"MT_REDHORIZ", // Red Horizontal Spring
+	"MT_BLUEHORIZ", // Blue Horizontal Spring
+	"MT_GREYHORIZ", // Grey Horizontal Spring
 
 	// Interactive Objects
 	"MT_BUBBLES", // Bubble source
 	"MT_SIGN", // Level end sign
+	"MT_SIGN_PIECE",
 	"MT_SPIKEBALL", // Spike Ball
 	"MT_SPECIALSPIKEBALL",
 	"MT_SPINFIRE",
@@ -7794,6 +7943,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Environmental Effects
 	"MT_RAIN", // Rain
 	"MT_SNOWFLAKE", // Snowflake
+	"MT_BLIZZARDSNOW", // Blizzard Snowball
 	"MT_SPLISH", // Water splish!
 	"MT_SMOKE",
 	"MT_SMALLBUBBLE", // small bubble
@@ -7945,9 +8095,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_SRB1_GENREX",
 
 	// SRB2kart
-	"MT_GRAYSPRING",
-	"MT_INVISSPRING",
-	"MT_BLUEDIAG",
 	"MT_RANDOMITEM",
 	"MT_RANDOMITEMPOP",
 	"MT_FLOATINGITEM",
@@ -7956,6 +8103,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_FASTLINE",
 	"MT_FASTDUST",
+	"MT_DRIFTEXPLODE",
 	"MT_BOOSTFLAME",
 	"MT_BOOSTSMOKE",
 	"MT_SNEAKERTRAIL",
@@ -7999,7 +8147,12 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_SPB", // Self-Propelled Bomb
 	"MT_SPBEXPLOSION",
 
-	"MT_THUNDERSHIELD", // Thunder Shield stuff
+	"MT_THUNDERSHIELD", // Shields
+	"MT_BUBBLESHIELD",
+	"MT_FLAMESHIELD",
+	"MT_FLAMESHIELDUNDERLAY",
+	"MT_FLAMESHIELDPAPER",
+	"MT_BUBBLESHIELDTRAP",
 
 	"MT_SINK", // Kitchen Sink Stuff
 	"MT_SINK_SHIELD",
@@ -8056,8 +8209,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_FLYINGGARG",
 	"MT_LAMPPOST",
 	"MT_MOSSYTREE",
-
-	"MT_SHADOW",
 
 	"MT_BUMP",
 
@@ -8216,6 +8367,16 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_LIONMAN",
 
 	"MT_KARMAFIREWORK",
+	"MT_RINGSPARKS",
+	"MT_DRAFTDUST",
+	"MT_TIREGREASE",
+
+	"MT_OVERTIMEFOG",
+	"MT_OVERTIMEORB",
+	"MT_OVERTIMEBEAM",
+
+	"MT_BATTLECAPSULE",
+	"MT_BATTLECAPSULE_PIECE",
 
 	"MT_FOLLOWER",
 
@@ -8386,7 +8547,7 @@ static const char *const PLAYERFLAG_LIST[] = {
 
 	/*** misc ***/
 	"FORCESTRAFE", // Translate turn inputs into strafe inputs
-	"ANALOGMODE", // Analog mode?
+	"HITFINISHLINE", // Already hit the finish line this tic
 
 	NULL // stop loop here.
 };
@@ -8394,8 +8555,8 @@ static const char *const PLAYERFLAG_LIST[] = {
 #ifdef HAVE_BLUA
 // Linedef flags
 static const char *const ML_LIST[16] = {
-	"IMPASSIBLE",
-	"BLOCKMONSTERS",
+	"IMPASSABLE",
+	"BLOCKPLAYERS",
 	"TWOSIDED",
 	"DONTPEGTOP",
 	"DONTPEGBOTTOM",
@@ -8422,51 +8583,46 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"GREY",			// SKINCOLOR_GREY
 	"NICKEL",		// SKINCOLOR_NICKEL
 	"BLACK",		// SKINCOLOR_BLACK
-	"SKUNK",		// SKINCOLOR_SKUNK
 	"FAIRY",		// SKINCOLOR_FAIRY
 	"POPCORN",		// SKINCOLOR_POPCORN
 	"ARTICHOKE",	// SKINCOLOR_ARTICHOKE
 	"PIGEON",		// SKINCOLOR_PIGEON
 	"SEPIA",		// SKINCOLOR_SEPIA
 	"BEIGE",		// SKINCOLOR_BEIGE
-	"WALNUT",		// SKINCOLOR_WALNUT
+	"CARAMEL",		// SKINCOLOR_CARAMEL
+	"PEACH",		// SKINCOLOR_PEACH
 	"BROWN",		// SKINCOLOR_BROWN
 	"LEATHER",		// SKINCOLOR_LEATHER
 	"SALMON",		// SKINCOLOR_SALMON
 	"PINK",			// SKINCOLOR_PINK
 	"ROSE",			// SKINCOLOR_ROSE
-	"BRICK",		// SKINCOLOR_BRICK
 	"CINNAMON",		// SKINCOLOR_CINNAMON
 	"RUBY",			// SKINCOLOR_RUBY
 	"RASPBERRY",	// SKINCOLOR_RASPBERRY
-	"CHERRY",		// SKINCOLOR_CHERRY
 	"RED",			// SKINCOLOR_RED
 	"CRIMSON",		// SKINCOLOR_CRIMSON
 	"MAROON",		// SKINCOLOR_MAROON
 	"LEMONADE",		// SKINCOLOR_LEMONADE
-	"FLAME",		// SKINCOLOR_FLAME
 	"SCARLET",		// SKINCOLOR_SCARLET
 	"KETCHUP",		// SKINCOLOR_KETCHUP
 	"DAWN",			// SKINCOLOR_DAWN
-	"SUNSET",		// SKINCOLOR_SUNSET
+	"SUNSLAM",		// SKINCOLOR_SUNSLAM
 	"CREAMSICLE",	// SKINCOLOR_CREAMSICLE
 	"ORANGE",		// SKINCOLOR_ORANGE
-	"PUMPKIN",		// SKINCOLOR_PUMPKIN
 	"ROSEWOOD",		// SKINCOLOR_ROSEWOOD
-	"BURGUNDY",		// SKINCOLOR_BURGUNDY
 	"TANGERINE",	// SKINCOLOR_TANGERINE
-	"PEACH",		// SKINCOLOR_PEACH
-	"CARAMEL",		// SKINCOLOR_CARAMEL
+	"TAN",			// SKINCOLOR_TAN
 	"CREAM",		// SKINCOLOR_CREAM
 	"GOLD",			// SKINCOLOR_GOLD
 	"ROYAL",		// SKINCOLOR_ROYAL
 	"BRONZE",		// SKINCOLOR_BRONZE
 	"COPPER",		// SKINCOLOR_COPPER
-	"QUARRY",		// SKINCOLOR_QUARRY
 	"YELLOW",		// SKINCOLOR_YELLOW
 	"MUSTARD",		// SKINCOLOR_MUSTARD
-	"CROCODILE",	// SKINCOLOR_CROCODILE
+	"BANANA",		// SKINCOLOR_BANANA
 	"OLIVE",		// SKINCOLOR_OLIVE
+	"CROCODILE",	// SKINCOLOR_CROCODILE
+	"PERIDOT",		// SKINCOLOR_PERIDOT
 	"VOMIT",		// SKINCOLOR_VOMIT
 	"GARDEN",		// SKINCOLOR_GARDEN
 	"LIME",			// SKINCOLOR_LIME
@@ -8479,14 +8635,16 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"MINT",			// SKINCOLOR_MINT
 	"GREEN",		// SKINCOLOR_GREEN
 	"PINETREE",		// SKINCOLOR_PINETREE
-	"EMERALD",		// SKINCOLOR_EMERALD
+	"TURTLE",		// SKINCOLOR_TURTLE
 	"SWAMP",		// SKINCOLOR_SWAMP
 	"DREAM",		// SKINCOLOR_DREAM
 	"PLAGUE",		// SKINCOLOR_PLAGUE
+	"EMERALD",		// SKINCOLOR_EMERALD
 	"ALGAE",		// SKINCOLOR_ALGAE
 	"CARIBBEAN",	// SKINCOLOR_CARIBBEAN
 	"AZURE",		// SKINCOLOR_AZURE
-	"AQUA",			// SKINCOLOR_AQUA
+	"AQUAMARINE",	// SKINCOLOR_AQUAMARINE
+	"TURQUOISE",	// SKINCOLOR_TURQUOISE
 	"TEAL",			// SKINCOLOR_TEAL
 	"CYAN",			// SKINCOLOR_CYAN
 	"JAWZ",			// SKINCOLOR_JAWZ
@@ -8496,20 +8654,22 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"SLATE",		// SKINCOLOR_SLATE
 	"STEEL",		// SKINCOLOR_STEEL
 	"THUNDER",		// SKINCOLOR_THUNDER
+	"NOVA",			// SKINCOLOR_NOVA
 	"RUST",			// SKINCOLOR_RUST
 	"WRISTWATCH",	// SKINCOLOR_WRISTWATCH
 	"JET",			// SKINCOLOR_JET
 	"SAPPHIRE",		// SKINCOLOR_SAPPHIRE
+	"ULTRAMARINE",	// SKINCOLOR_ULTRAMARINE
 	"PERIWINKLE",	// SKINCOLOR_PERIWINKLE
 	"BLUE",			// SKINCOLOR_BLUE
 	"BLUEBERRY",	// SKINCOLOR_BLUEBERRY
-	"NOVA",			// SKINCOLOR_NOVA
-	"PASTEL",		// SKINCOLOR_PASTEL
-	"MOONSLAM",		// SKINCOLOR_MOONSLAM
-	"ULTRAVIOLET",	// SKINCOLOR_ULTRAVIOLET
-	"DUSK",			// SKINCOLOR_DUSK
-	"BUBBLEGUM",	// SKINCOLOR_BUBBLEGUM
+	"THISTLE",		// SKINCOLOR_THISTLE
 	"PURPLE",		// SKINCOLOR_PURPLE
+	"PASTEL",		// SKINCOLOR_PASTEL
+	"MOONSET",		// SKINCOLOR_MOONSET
+	"DUSK",			// SKINCOLOR_DUSK
+	"VIOLET",		// SKINCOLOR_VIOLET
+	"MAGENTA",		// SKINCOLOR_MAGENTA
 	"FUCHSIA",		// SKINCOLOR_FUCHSIA
 	"TOXIC",		// SKINCOLOR_TOXIC
 	"MAUVE",		// SKINCOLOR_MAUVE
@@ -8517,6 +8677,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"BYZANTIUM",	// SKINCOLOR_BYZANTIUM
 	"POMEGRANATE",	// SKINCOLOR_POMEGRANATE
 	"LILAC",		// SKINCOLOR_LILAC
+	"TAFFY",		// SKINCOLOR_TAFFY
 
 	// Special super colors
 	// Super Sonic Yellow
@@ -8623,22 +8784,12 @@ static const char *const KARTSTUFF_LIST[] = {
 	"POSITION",
 	"OLDPOSITION",
 	"POSITIONDELAY",
-	"PREVCHECK",
-	"NEXTCHECK",
-	"WAYPOINT",
-	"STARPOSTWP",
 	"STARPOSTFLIP",
 	"RESPAWN",
 	"DROPDASH",
 
 	"THROWDIR",
-	"LAPANIMATION",
-	"LAPHAND",
-	"CARDANIMATION",
-	"VOICES",
-	"TAUNTVOICES",
 	"INSTASHIELD",
-	"ENGINESND",
 
 	"FLOORBOOST",
 	"SPINOUTTYPE",
@@ -8649,18 +8800,27 @@ static const char *const KARTSTUFF_LIST[] = {
 	"DRIFTBOOST",
 	"BOOSTCHARGE",
 	"STARTBOOST",
+	"RINGS",
+	"PICKUPRINGS",
+	"USERINGS",
+	"RINGDELAY",
+	"RINGBOOST",
+	"RINGLOCK",
+	"SPARKLEANIM",
 	"JMP",
 	"OFFROAD",
 	"POGOSPRING",
 	"BRAKESTOP",
 	"WATERSKIP",
 	"DASHPADCOOLDOWN",
+	"NUMBOOSTS",
 	"BOOSTPOWER",
 	"SPEEDBOOST",
 	"ACCELBOOST",
-	"BOOSTCAM",
-	"DESTBOOSTCAM",
-	"TIMEOVERCAM",
+	"DRAFTPOWER",
+	"DRAFTLEEWAY",
+	"LASTDRAFT",
+	"BOOSTANGLE",
 	"AIZDRIFTSTRAT",
 	"BRAKEDRIFT",
 
@@ -8670,16 +8830,24 @@ static const char *const KARTSTUFF_LIST[] = {
 	"ITEMTYPE",
 	"ITEMAMOUNT",
 	"ITEMHELD",
+	"HOLDREADY",
 
 	"CURSHIELD",
 	"HYUDOROTIMER",
 	"STEALINGTIMER",
 	"STOLENTIMER",
+	"SUPERRING",
 	"SNEAKERTIMER",
+	"LEVELBOOSTER",
 	"GROWSHRINKTIMER",
 	"SQUISHEDTIMER",
 	"ROCKETSNEAKERTIMER",
 	"INVINCIBILITYTIMER",
+	"BUBBLECOOL",
+	"BUBBLEBLOWUP",
+	"FLAMEDASH",
+	"FLAMEMETER",
+	"FLAMELENGTH",
 	"EGGMANHELD",
 	"EGGMANEXPLODE",
 	"EGGMANBLAME",
@@ -8695,14 +8863,15 @@ static const char *const KARTSTUFF_LIST[] = {
 	"COMEBACKPOINTS",
 	"COMEBACKMODE",
 	"WANTED",
-	"YOUGOTEM",
 
-	"ITEMBLINK",
-	"ITEMBLINKMODE",
 	"GETSPARKS",
 	"JAWZTARGETDELAY",
 	"SPECTATEWAIT",
-	"GROWCANCEL"
+	"TIREGREASE",
+	"SPRINGSTARS",
+	"SPRINGCOLOR",
+	"KILLFIELD",
+	"WRONGWAY"
 };
 #endif
 
@@ -8796,9 +8965,13 @@ struct {
 
 	// Frame settings
 	{"FF_FRAMEMASK",FF_FRAMEMASK},
-	{"FF_PAPERSPRITE",FF_PAPERSPRITE},
 	{"FF_ANIMATE",FF_ANIMATE},
+	{"FF_RANDOMANIM",FF_RANDOMANIM},
+	{"FF_GLOBALANIM",FF_GLOBALANIM},
 	{"FF_FULLBRIGHT",FF_FULLBRIGHT},
+	{"FF_SEMIBRIGHT",FF_SEMIBRIGHT},
+	{"FF_PAPERSPRITE",FF_PAPERSPRITE},
+	{"FF_VERTICALFLIP",FF_VERTICALFLIP},
 	{"FF_TRANSMASK",FF_TRANSMASK},
 	{"FF_TRANSSHIFT",FF_TRANSSHIFT},
 	// new preshifted translucency (used in source)
@@ -8893,10 +9066,10 @@ struct {
 
 	// Precipitation
 	{"PRECIP_NONE",PRECIP_NONE},
-	{"PRECIP_STORM",PRECIP_STORM},
-	{"PRECIP_SNOW",PRECIP_SNOW},
 	{"PRECIP_RAIN",PRECIP_RAIN},
-	{"PRECIP_BLANK",PRECIP_BLANK},
+	{"PRECIP_SNOW",PRECIP_SNOW},
+	{"PRECIP_BLIZZARD",PRECIP_BLIZZARD},
+	{"PRECIP_STORM",PRECIP_STORM},
 	{"PRECIP_STORM_NORAIN",PRECIP_STORM_NORAIN},
 	{"PRECIP_STORM_NOSTRIKES",PRECIP_STORM_NOSTRIKES},
 
@@ -9155,11 +9328,11 @@ struct {
 	{"V_SKYMAP",V_SKYMAP},
 	{"V_LAVENDERMAP",V_LAVENDERMAP},
 	{"V_GOLDMAP",V_GOLDMAP},
-	{"V_TEAMAP",V_TEAMAP},
-	{"V_STEELMAP",V_STEELMAP},
+	{"V_AQUAMAP",V_AQUAMAP},
+	{"V_MAGENTAMAP",V_MAGENTAMAP},
 	{"V_PINKMAP",V_PINKMAP},
 	{"V_BROWNMAP",V_BROWNMAP},
-	{"V_PEACHMAP",V_PEACHMAP},
+	{"V_TANMAP",V_TANMAP},
 	{"V_TRANSLUCENT",V_TRANSLUCENT},
 	{"V_10TRANS",V_10TRANS},
 	{"V_20TRANS",V_20TRANS},
@@ -9221,8 +9394,11 @@ struct {
 	{"KITEM_GROW",KITEM_GROW},
 	{"KITEM_SHRINK",KITEM_SHRINK},
 	{"KITEM_THUNDERSHIELD",KITEM_THUNDERSHIELD},
+	{"KITEM_BUBBLESHIELD",KITEM_BUBBLESHIELD},
+	{"KITEM_FLAMESHIELD",KITEM_FLAMESHIELD},
 	{"KITEM_HYUDORO",KITEM_HYUDORO},
 	{"KITEM_POGOSPRING",KITEM_POGOSPRING},
+	{"KITEM_SUPERRING",KITEM_SUPERRING},
 	{"KITEM_KITCHENSINK",KITEM_KITCHENSINK},
 	{"NUMKARTITEMS",NUMKARTITEMS},
 	{"KRITEM_TRIPLESNEAKER",KRITEM_TRIPLESNEAKER}, // Additional roulette IDs (not usable for much in Lua besides K_GetItemPatch)
@@ -9232,6 +9408,13 @@ struct {
 	{"KRITEM_QUADORBINAUT",KRITEM_QUADORBINAUT},
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
 	{"NUMKARTRESULTS",NUMKARTRESULTS},
+
+	// kartshields_t
+	{"KSHIELD_NONE",KSHIELD_NONE},
+	{"KSHIELD_THUNDER",KSHIELD_THUNDER},
+	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
+	{"KSHIELD_FLAME",KSHIELD_FLAME},
+	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
 
 	// translation colormaps
 	{"TC_DEFAULT",TC_DEFAULT},
@@ -9616,7 +9799,7 @@ fixed_t get_number(const char *word)
 
 void DEH_Check(void)
 {
-#if defined(_DEBUG) || defined(PARANOIA)
+//#if defined(_DEBUG) || defined(PARANOIA)
 	const size_t dehstates = sizeof(STATE_LIST)/sizeof(const char*);
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
 	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
@@ -9637,7 +9820,7 @@ void DEH_Check(void)
 
 	if (dehcolors != MAXTRANSLATIONS)
 		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", MAXTRANSLATIONS, sizeu1(dehcolors));
-#endif
+//#endif
 }
 
 #ifdef HAVE_BLUA
@@ -10127,11 +10310,11 @@ static inline int lib_getenum(lua_State *L)
 	} else if (fastcmp(word,"globalweather")) {
 		lua_pushinteger(L, globalweather);
 		return 1;
-	} else if (fastcmp(word,"levelskynum")) {
-		lua_pushinteger(L, levelskynum);
+	} else if (fastcmp(word,"levelskytexture")) {
+		lua_pushstring(L, levelskytexture);
 		return 1;
-	} else if (fastcmp(word,"globallevelskynum")) {
-		lua_pushinteger(L, globallevelskynum);
+	} else if (fastcmp(word,"globallevelskytexture")) {
+		lua_pushstring(L, globallevelskytexture);
 		return 1;
 	} else if (fastcmp(word,"mapmusname")) {
 		lua_pushstring(L, mapmusname);

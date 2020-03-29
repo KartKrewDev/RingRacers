@@ -145,7 +145,7 @@ void __set_fpscr(long); // in libgcc / kernel's startup.s?
 #define O_BINARY 0
 #endif
 
-// Locations for searching the srb2.srb
+// Locations for searching the main.kart
 #ifdef _arch_dreamcast
 #define DEFAULTWADLOCATION1 "/cd"
 #define DEFAULTWADLOCATION2 "/pc"
@@ -217,8 +217,7 @@ void __set_fpscr(long); // in libgcc / kernel's startup.s?
 
 /**	\brief WAD file to look for
 */
-#define WADKEYWORD1 "srb2.srb"
-#define WADKEYWORD2 "srb2.wad"
+#define WADKEYWORD "main.kart"
 /**	\brief holds wad path
 */
 static char returnWadPath[256];
@@ -234,6 +233,7 @@ static char returnWadPath[256];
 #include "../d_net.h"
 #include "../g_game.h"
 #include "../filesrch.h"
+#include "../k_pwrlv.h"
 #include "endtxt.h"
 #include "sdlmain.h"
 
@@ -2978,6 +2978,11 @@ void I_Quit(void)
 #ifndef NONET
 	D_SaveBan(); // save the ban list
 #endif
+
+	// Make sure you lose points for ALT-F4
+	if (Playing())
+		K_PlayerForfeit(consoleplayer, true);
+
 	G_SaveGameData(); // Tails 12-08-2002
 	//added:16-02-98: when recording a demo, should exit using 'q' key,
 	//        but sometimes we forget and use 'F10'.. so save here too.
@@ -3398,15 +3403,7 @@ static boolean isWadPathOk(const char *path)
 	if (!wad3path)
 		return false;
 
-	sprintf(wad3path, pandf, path, WADKEYWORD1);
-
-	if (FIL_ReadFileOK(wad3path))
-	{
-		free(wad3path);
-		return true;
-	}
-
-	sprintf(wad3path, pandf, path, WADKEYWORD2);
+	sprintf(wad3path, pandf, path, WADKEYWORD);
 
 	if (FIL_ReadFileOK(wad3path))
 	{
@@ -3431,7 +3428,7 @@ static void pathonly(char *s)
 		}
 }
 
-/**	\brief	search for srb2.srb in the given path
+/**	\brief	search for main.kart in the given path
 
 	\param	searchDir	starting path
 
@@ -3444,7 +3441,7 @@ static const char *searchWad(const char *searchDir)
 	static char tempsw[256] = "";
 	filestatus_t fstemp;
 
-	strcpy(tempsw, WADKEYWORD1);
+	strcpy(tempsw, WADKEYWORD);
 	fstemp = filesearch(tempsw,searchDir,NULL,true,20);
 	if (fstemp == FS_FOUND)
 	{
@@ -3452,19 +3449,12 @@ static const char *searchWad(const char *searchDir)
 		return tempsw;
 	}
 
-	strcpy(tempsw, WADKEYWORD2);
-	fstemp = filesearch(tempsw, searchDir, NULL, true, 20);
-	if (fstemp == FS_FOUND)
-	{
-		pathonly(tempsw);
-		return tempsw;
-	}
 	return NULL;
 }
 
-/**	\brief go through all possible paths and look for srb2.srb
+/**	\brief go through all possible paths and look for main.kart
 
-  \return path to srb2.srb if any
+  \return path to main.kart if any
 */
 static const char *locateWad(void)
 {
@@ -3581,7 +3571,7 @@ const char *I_LocateWad(void)
 
 	if (waddir)
 	{
-		// change to the directory where we found srb2.srb
+		// change to the directory where we found main.kart
 #if (defined (_WIN32) && !defined (_WIN32_WCE)) && !defined (_XBOX)
 		SetCurrentDirectoryA(waddir);
 #elif !defined (_WIN32_WCE) && !defined (_PS3)

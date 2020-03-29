@@ -292,7 +292,7 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 #ifdef HAVE_VIDCOPY
     VID_BlitLinearScreen_ASM(srcptr,destptr,width,height,srcrowbytes,destrowbytes);
 #else
-	if (srcrowbytes == destrowbytes)
+	if ((srcrowbytes == destrowbytes) && (srcrowbytes == (size_t)width))
 		M_Memcpy(destptr, srcptr, srcrowbytes * height);
 	else
 	{
@@ -1287,28 +1287,75 @@ void V_DrawVhsEffect(boolean rewind)
 void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 {
 #ifdef HWRENDER
-    if (rendermode != render_soft && rendermode != render_none)
-    {
-        HWR_FadeScreenMenuBack(color, strength);
-        return;
-    }
+	if (rendermode != render_soft && rendermode != render_none)
+	{
+		HWR_FadeScreenMenuBack(color, strength);
+		return;
+	}
 #endif
 
-    {
-        const UINT8 *fadetable =
+	{
+		const UINT8 *fadetable =
 			(color > 0xFFF0) // Grab a specific colormap palette?
 			? R_GetTranslationColormap(color | 0xFFFF0000, strength, GTC_CACHE)
 			: ((color & 0xFF00) // Color is not palette index?
 			? ((UINT8 *)colormaps + strength*256) // Do COLORMAP fade.
 			: ((UINT8 *)transtables + ((9-strength)<<FF_TRANSSHIFT) + color*256)); // Else, do TRANSMAP** fade.
-        const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
-        UINT8 *buf = screens[0];
+		const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+		UINT8 *buf = screens[0];
 
-        // heavily simplified -- we don't need to know x or y
-        // position when we're doing a full screen fade
-        for (; buf < deststop; ++buf)
-            *buf = fadetable[*buf];
-    }
+		// heavily simplified -- we don't need to know x or y
+		// position when we're doing a full screen fade
+		for (; buf < deststop; ++buf)
+			*buf = fadetable[*buf];
+	}
+}
+
+//
+// Fade the screen buffer, using a custom COLORMAP lump.
+// Split from V_DrawFadeScreen, because that function has
+// WAY too many options piled on top of it as is. :V
+//
+void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
+{
+#ifdef HWRENDER
+	if (rendermode != render_soft && rendermode != render_none)
+	{
+		//HWR_DrawCustomFadeScreen(color, strength);
+		return;
+	}
+#endif
+
+	{
+		lumpnum_t lumpnum = LUMPERROR;
+		lighttable_t *clm = NULL;
+
+		if (lump != NULL)
+			lumpnum = W_GetNumForName(lump);
+		else
+			return;
+
+		if (lumpnum != LUMPERROR)
+		{
+			clm = Z_MallocAlign((256 * 32), PU_STATIC, NULL, 8);
+			W_ReadLump(lumpnum, clm);
+
+			if (clm != NULL)
+			{
+				const UINT8 *fadetable = ((UINT8 *)clm + strength*256);
+				const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+				UINT8 *buf = screens[0];
+
+				// heavily simplified -- we don't need to know x or y
+				// position when we're doing a full screen fade
+				for (; buf < deststop; ++buf)
+					*buf = fadetable[*buf];
+
+				Z_Free(clm);
+				clm = NULL;
+			}
+		}
+	}
 }
 
 // Simple translucency with one color, over a set number of lines starting from the top.
@@ -1330,6 +1377,34 @@ void V_DrawFadeConsBack(INT32 plines)
 	deststop = screens[0] + vid.rowbytes * min(plines, vid.height);
 	for (buf = screens[0]; buf < deststop; ++buf)
 		*buf = consolebgmap[*buf];
+}
+
+//
+// Invert the entire screen, for Encore fades
+//
+void V_EncoreInvertScreen(void)
+{
+#ifdef HWRENDER
+	if (rendermode != render_soft && rendermode != render_none)
+	{
+		//HWR_EncoreInvertScreen();
+		return;
+	}
+#endif
+
+	{
+		const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+		UINT8 *buf = screens[0];
+
+		for (; buf < deststop; ++buf)
+		{
+			*buf = NearestColor(
+				256 - pLocalPalette[*buf].s.red,
+				256 - pLocalPalette[*buf].s.green,
+				256 - pLocalPalette[*buf].s.blue
+			);
+		}
+	}
 }
 
 // Gets string colormap, used for 0x80 color codes
@@ -1359,16 +1434,16 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 		return lavendermap;
 	case 10: // 0x8A, gold
 		return goldmap;
-	case 11: // 0x8B, tea-green
-		return teamap;
-	case 12: // 0x8C, steel
-		return steelmap;
+	case 11: // 0x8B, aqua-green
+		return aquamap;
+	case 12: // 0x8C, magenta
+		return magentamap;
 	case 13: // 0x8D, pink
 		return pinkmap;
 	case 14: // 0x8E, brown
 		return brownmap;
-	case 15: // 0x8F, peach
-		return peachmap;
+	case 15: // 0x8F, tan
+		return tanmap;
 	default: // reset
 		return NULL;
 	}
@@ -2404,7 +2479,7 @@ INT32 V_ThinStringWidth(const char *string, INT32 option)
 
 boolean *heatshifter = NULL;
 INT32 lastheight = 0;
-INT32 heatindex[2] = { 0, 0 };
+INT32 heatindex[MAXSPLITSCREENPLAYERS] = {0, 0, 0, 0};
 
 //
 // V_DoPostProcessor
@@ -2428,15 +2503,15 @@ void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param)
 		return;
 #endif
 
-	if (view < 0 || view > 3 || view > splitscreen)
+	if (view < 0 || view > 3 || view > r_splitscreen)
 		return;
 
-	if ((view == 1 && splitscreen == 1) || view >= 2)
+	if ((view == 1 && r_splitscreen == 1) || view >= 2)
 		yoffset = viewheight;
 	else
 		yoffset = 0;
 
-	if ((view == 1 || view == 3) && splitscreen > 1)
+	if ((view == 1 || view == 3) && r_splitscreen > 1)
 		xoffset = viewwidth;
 	else
 		xoffset = 0;
@@ -2537,9 +2612,6 @@ Unoptimized version
 		UINT8 *srcscr = screens[0];
 		INT32 y;
 
-		if (splitscreen > 1) // 3P/4P has trouble supporting this, anyone want to fix it? :p
-			return;
-
 		// Make sure table is built
 		if (heatshifter == NULL || lastheight != viewheight)
 		{
@@ -2554,7 +2626,7 @@ Unoptimized version
 					heatshifter[y] = true;
 			}
 
-			heatindex[0] = heatindex[1] = 0;
+			heatindex[0] = heatindex[1] = heatindex[2] = heatindex[3] = 0;
 			lastheight = viewheight;
 		}
 
