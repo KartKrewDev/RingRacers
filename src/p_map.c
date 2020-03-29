@@ -841,7 +841,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		return K_SMKIceBlockCollide(thing, tmthing);
 	}
 
-	if (tmthing->type == MT_EGGMANITEM)
+	if (tmthing->type == MT_EGGMANITEM || tmthing->type == MT_EGGMANITEM_SHIELD)
 	{
 		// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
@@ -849,10 +849,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return true; // underneath
 
-		K_EggItemCollide(tmthing, thing);
-		return true;
+		return K_EggItemCollide(tmthing, thing);
 	}
-	else if (thing->type == MT_EGGMANITEM)
+	else if (thing->type == MT_EGGMANITEM || thing->type == MT_EGGMANITEM_SHIELD)
 	{
 		// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
@@ -860,11 +859,132 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return true; // underneath
 
-		K_EggItemCollide(thing, tmthing);
-		return true;
+		return K_EggItemCollide(thing, tmthing);
 	}
 
 	if (tmthing->type == MT_RANDOMITEM)
+		return true;
+
+	// Bubble Shield reflect
+	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->kartstuff[k_bubbleblowup])
+		|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
+		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
+		|| tmthing->type == MT_SSMINE || tmthing->type == MT_SINK
+		|| (tmthing->type == MT_PLAYER && thing->target != tmthing)))
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		if (tmthing->type == MT_PLAYER)
+		{
+			// Counter desyncs
+			/*mobj_t *oldthing = thing;
+			mobj_t *oldtmthing = tmthing;
+
+			P_Thrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y), 4*thing->scale);
+
+			thing = oldthing;
+			P_SetTarget(&tmthing, oldtmthing);*/
+
+			if (tmthing->player->kartstuff[k_spinouttimer] || tmthing->player->kartstuff[k_squishedtimer]
+				|| tmthing->player->powers[pw_flashing] || tmthing->player->kartstuff[k_hyudorotimer]
+				|| tmthing->player->kartstuff[k_justbumped] || tmthing->scale > thing->scale + (mapobjectscale/8))
+				return true;
+
+			// Player Damage
+			K_SpinPlayer(tmthing->player, thing, 0, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), false);
+			S_StartSound(thing, sfx_s3k44);
+		}
+		else
+		{
+			if (!tmthing->threshold)
+			{
+				if (!tmthing->momx && !tmthing->momy)
+				{
+					tmthing->momz += (24*tmthing->scale) * P_MobjFlip(tmthing);
+				}
+				else
+				{
+					tmthing->momx = -tmthing->momx;
+					tmthing->momy = -tmthing->momy;
+					tmthing->momz = -tmthing->momz;
+					tmthing->angle += ANGLE_180;
+				}
+				if (tmthing->type == MT_JAWZ)
+					P_SetTarget(&tmthing->tracer, tmthing->target); // Back to the source!
+				tmthing->threshold = 10;
+				S_StartSound(thing, sfx_s3k44);
+			}
+		}
+
+		// no interaction
+		return true;
+	}
+	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->kartstuff[k_bubbleblowup])
+		|| (tmthing->player && tmthing->player->kartstuff[k_bubbleblowup]))
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
+		|| thing->type == MT_SSMINE || thing->type == MT_SINK
+		|| (thing->type == MT_PLAYER && tmthing->target != thing)))
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		if (thing->type == MT_PLAYER)
+		{
+			// Counter desyncs
+			/*mobj_t *oldthing = thing;
+			mobj_t *oldtmthing = tmthing;
+
+			P_Thrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y), 4*tmthing->scale);
+
+			thing = oldthing;
+			P_SetTarget(&tmthing, oldtmthing);*/
+
+			if (thing->player->kartstuff[k_spinouttimer] || thing->player->kartstuff[k_squishedtimer]
+				|| thing->player->powers[pw_flashing] || thing->player->kartstuff[k_hyudorotimer]
+				|| thing->player->kartstuff[k_justbumped] || thing->scale > tmthing->scale + (mapobjectscale/8))
+				return true;
+
+			// Player Damage
+			K_SpinPlayer(thing->player, tmthing, 0, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), false);
+			S_StartSound(tmthing, sfx_s3k44);
+		}
+		else
+		{
+			if (!thing->threshold)
+			{
+				if (!thing->momx && !thing->momy)
+				{
+					thing->momz += (24*thing->scale) * P_MobjFlip(thing);
+				}
+				else
+				{
+					thing->momx = -thing->momx;
+					thing->momy = -thing->momy;
+					thing->momz = -thing->momz;
+					thing->angle += ANGLE_180;
+				}
+				if (thing->type == MT_JAWZ)
+					P_SetTarget(&thing->tracer, thing->target); // Back to the source!
+				thing->threshold = 10;
+				S_StartSound(tmthing, sfx_s3k44);
+			}
+		}
+
+		// no interaction
+		return true;
+	}
+
+	// double make sure bubbles won't collide with anything else
+	if (thing->type == MT_BUBBLESHIELD || tmthing->type == MT_BUBBLESHIELD)
 		return true;
 
 	if (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
@@ -1296,7 +1416,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	// Make sure they aren't able to damage you ANYWHERE along the Z axis, you have to be TOUCHING the person.
 		&& !(thing->z + thing->height < tmthing->z || thing->z > tmthing->z + tmthing->height))
 	{
-
 		if (tmthing->scale > thing->scale + (mapobjectscale/8)) // SRB2kart - Handle squishes first!
 			K_SquishPlayer(thing->player, tmthing, tmthing);
 		else if (thing->scale > tmthing->scale + (mapobjectscale/8))
@@ -1304,6 +1423,12 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		else if (tmthing->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer]) // SRB2kart - Then invincibility!
 			P_DamageMobj(thing, tmthing, tmthing, 1);
 		else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
+			P_DamageMobj(tmthing, thing, thing, 1);
+		else if ((tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+			&& !(thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
+			P_DamageMobj(thing, tmthing, tmthing, 1);
+		else if ((thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+			&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
 			P_DamageMobj(tmthing, thing, thing, 1);
 
 		/*if (G_BattleGametype() && (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam))
@@ -1814,10 +1939,10 @@ static boolean PIT_CheckLine(line_t *ld)
 	// missiles can cross uncrossable lines
 	if (!(tmthing->flags & MF_MISSILE))
 	{
-		if (ld->flags & ML_IMPASSIBLE) // block objects from moving through this linedef.
+		if (ld->flags & ML_IMPASSABLE) // block objects from moving through this linedef.
 			return false;
-		if ((tmthing->flags & (MF_ENEMY|MF_BOSS)) && ld->flags & ML_BLOCKMONSTERS)
-			return false; // block monsters only
+		if (tmthing->player && ld->flags & ML_BLOCKPLAYERS)
+			return false; // SRB2Kart: Only block players, not items
 	}
 
 	// set openrange, opentop, openbottom
@@ -2385,7 +2510,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 		itsatwodlevel = true;
 	else
 	{
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (thiscam == &camera[i] && players[displayplayers[i]].mo
 				&& (players[displayplayers[i]].mo->flags2 & MF2_TWOD))
@@ -2401,7 +2526,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 		fixed_t tryx = thiscam->x;
 		fixed_t tryy = thiscam->y;
 
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 #ifndef NOCLIPCAM
 			if ((thiscam == &camera[i] && (players[displayplayers[i]].pflags & PF_NOCLIP)) || (leveltime < introtime)) // Noclipping player camera noclips too!!
@@ -3179,10 +3304,10 @@ static boolean PTR_SlideTraverse(intercept_t *in)
 
 	if (!(slidemo->flags & MF_MISSILE))
 	{
-		if (li->flags & ML_IMPASSIBLE)
+		if (li->flags & ML_IMPASSABLE)
 			goto isblocking;
 
-		if ((slidemo->flags & (MF_ENEMY|MF_BOSS)) && li->flags & ML_BLOCKMONSTERS)
+		if (slidemo->player && li->flags & ML_BLOCKPLAYERS)
 			goto isblocking;
 	}
 

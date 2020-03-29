@@ -152,6 +152,7 @@ char srb2path[256] = ".";
 #endif
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
+static char addonsdir[MAX_WADPATH];
 
 //
 // EVENT HANDLING
@@ -416,7 +417,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
-			for (i = 0; i <= splitscreen; i++)
+			for (i = 0; i <= r_splitscreen; i++)
 			{
 				if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)
 				{
@@ -443,7 +444,7 @@ static void D_Display(void)
 							switch (i)
 							{
 								case 1:
-									if (splitscreen > 1)
+									if (r_splitscreen > 1)
 									{
 										viewwindowx = viewwidth;
 										viewwindowy = 0;
@@ -482,7 +483,7 @@ static void D_Display(void)
 
 			if (rendermode == render_soft)
 			{
-				for (i = 0; i <= splitscreen; i++)
+				for (i = 0; i <= r_splitscreen; i++)
 				{
 					if (postimgtype[i])
 						V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
@@ -780,6 +781,7 @@ void D_StartTitle(void)
 
 	gameaction = ga_nothing;
 	memset(displayplayers, 0, sizeof(displayplayers));
+	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
 	//demosequence = -1;
 	gametype = GT_RACE; // SRB2kart
@@ -1090,7 +1092,6 @@ void D_SRB2Main(void)
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
 
-			I_mkdir(srb2home, 0700);
 #else
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
@@ -1110,6 +1111,10 @@ void D_SRB2Main(void)
 	strcpy(downloaddir, "/ram"); // the dreamcast's TMP
 #endif
 	}
+
+	// Create addons dir
+	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
+	I_mkdir(addonsdir, 0755);
 
 	// rand() needs seeded regardless of password
 	srand((unsigned int)time(NULL));

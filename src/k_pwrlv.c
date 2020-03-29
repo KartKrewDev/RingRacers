@@ -48,7 +48,7 @@ INT16 K_CalculatePowerLevelInc(INT16 diff)
 		diff = -MAXDIFF;
 #undef MAXDIFF
 
-	x = ((diff-2)<<FRACBITS) / PWRLVRECORD_DEF;
+	x = ((diff-2)<<FRACBITS) / PWRLVRECORD_START;
 
 	for (j = 3; j < 10; j++) // Just skipping to 3 since 0 thru 2 will always just add 0...
 	{

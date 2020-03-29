@@ -36,10 +36,18 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		if (t2->player->kartstuff[k_hyudorotimer])
 			return true; // no interaction
 
-		// Player Damage
-		P_DamageMobj(t2, t1, t1->target, 1);
-		K_KartBouncing(t2, t1, false, false);
-		S_StartSound(t2, sfx_s3k7b);
+		if (t2->player->kartstuff[k_flamedash] && t2->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+		{
+			// Melt item
+			S_StartSound(t2, sfx_s3k43);
+		}
+		else
+		{
+			// Player Damage
+			P_DamageMobj(t2, t1, t1->target, 1);
+			K_KartBouncing(t2, t1, false, false);
+			S_StartSound(t2, sfx_s3k7b);
+		}
 
 		damageitem = true;
 	}
@@ -126,8 +134,16 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->type == MT_BANANA && t1->health > 1)
 			S_StartSound(t2, sfx_bsnipe);
 
-		// Player Damage
-		K_SpinPlayer(t2->player, t1->target, 0, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
+		if (t2->player->kartstuff[k_flamedash] && t2->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+		{
+			// Melt item
+			S_StartSound(t2, sfx_s3k43);
+		}
+		else
+		{
+			// Player Damage
+			K_SpinPlayer(t2->player, t1->target, 0, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
+		}
 
 		damageitem = true;
 	}
@@ -181,9 +197,73 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 {
 	// Push fakes out of other item boxes
 	if (t2->type == MT_RANDOMITEM || t2->type == MT_EGGMANITEM)
+	{
 		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y), t2->radius/4);
+		return true;
+	}
 
-	// Player collision is handled by TouchSpecial
+	if (t2->player)
+	{
+		if ((t1->target == t2 || t1->target == t2->target) && (t1->threshold > 0))
+			return true;
+
+		if (t1->health <= 0 || t2->health <= 0)
+			return true;
+
+		if (!P_CanPickupItem(t2->player, 2))
+			return true;
+
+		if (G_BattleGametype() && t2->player->kartstuff[k_bumper] <= 0)
+		{
+			if (t2->player->kartstuff[k_comebackmode] || t2->player->kartstuff[k_comebacktimer])
+				return true;
+			t2->player->kartstuff[k_comebackmode] = 2;
+		}
+		else
+		{
+			K_DropItems(t2->player); //K_StripItems(t2->player);
+			//K_StripOther(t2->player);
+			t2->player->kartstuff[k_itemroulette] = 1;
+			t2->player->kartstuff[k_roulettetype] = 2;
+		}
+
+		if (t2->player->kartstuff[k_flamedash] && t2->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+		{
+			// Melt item
+			S_StartSound(t2, sfx_s3k43);
+			P_KillMobj(t1, t2, t2);
+			return true;
+		}
+		else
+		{
+			mobj_t *poof = P_SpawnMobj(t1->x, t1->y, t1->z, MT_EXPLODE);
+			S_StartSound(poof, t1->info->deathsound);
+
+#if 0
+			// Eggbox snipe!
+			if (t1->type == MT_EGGMANITEM && t1->health > 1)
+				S_StartSound(t2, sfx_bsnipe);
+#endif
+
+			if (t1->target && t1->target->player)
+			{
+				if (G_RaceGametype() || t1->target->player->kartstuff[k_bumper] > 0)
+					t2->player->kartstuff[k_eggmanblame] = t1->target->player-players;
+				else
+					t2->player->kartstuff[k_eggmanblame] = t2->player-players;
+
+				if (t1->target->hnext == t1)
+				{
+					P_SetTarget(&t1->target->hnext, NULL);
+					t1->target->player->kartstuff[k_eggmanheld] = 0;
+				}
+			}
+
+			P_RemoveMobj(t1);
+			return true;
+		}
+	}
+
 	return true;
 }
 
