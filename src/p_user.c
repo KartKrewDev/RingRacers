@@ -8072,17 +8072,15 @@ static void P_HandleFollower(player_t *player)
 	sy = player->mo->y + FixedMul((player->mo->scale*fl.dist), FINESINE((an)>>ANGLETOFINESHIFT));
 
 	// for the z coordinate, don't be a doof like Steel and forget that MFE_VERTICALFLIP exists :P
-	sz = player->mo->z + FixedMul(player->mo->scale, zoffs);
-	/*if (player->mo->eflags & MFE_VERTICALFLIP)	// it's safe to assume that VERTICALFLIP accounts for MF2_OBJECTFLIP too
-		sz -= (player->mo->height + FixedMul(player->mo->scale, zoffs*2));*/
-	// ^ handled by K_matchgenericextraflags oops
-
+	sz = player->mo->z + FixedMul(player->mo->scale, zoffs)*P_MobjFlip(player->mo);
+	if (player->mo->eflags & MFE_VERTICALFLIP)
+		sz += fl.height*player->mo->scale;
 
 	// finally, add a cool floating effect to the z height.
 	// not stolen from k_kart I swear!!
 	const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
 	fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * leveltime)>>ANGLETOFINESHIFT) & FINEMASK);
-	sz += sine;
+	sz += FixedMul(player->mo->scale, sine)*P_MobjFlip(player->mo);
 
 	if (!player->follower)	// follower doesn't exist / isn't valid
 	{
@@ -8111,13 +8109,13 @@ static void P_HandleFollower(player_t *player)
 		// move the follower next to us (yes, this is really basic maths but it looks pretty damn clean in practice)!
 		player->follower->momx = (sx - player->follower->x)/fl.horzlag;
 		player->follower->momy = (sy - player->follower->y)/fl.horzlag;
-		player->follower->momz = (sz - player->follower->z)/fl.vertlag;	// make z momentum a bit floatier, it'll look cute I promise!
+		player->follower->momz = (sz - player->follower->z)/fl.vertlag;
 		player->follower->angle = player->mo->angle;
 		player->follower->color = player->mo->color;
 		player->follower->colorized = player->mo->colorized;
 
 		P_SetScale(player->follower, FixedMul(fl.scale, player->mo->scale));
-		K_MatchGenericExtraFlags(player->follower, player->mo);
+		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo);	// Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
 
 		// For comeback in battle.
 		player->follower->flags2 = (player->follower->flags2 & ~MF2_SHADOW)|(player->mo->flags2 & MF2_SHADOW);
@@ -8127,11 +8125,12 @@ static void P_HandleFollower(player_t *player)
 		if (player->pflags & PF_TIMEOVER || (!cv_showfollowers.value && (!P_IsDisplayPlayer(player) || displayplayers[0] != consoleplayer) ))
 			player->follower->flags2 |= MF2_DONTDRAW;
 
-		if (player->speed)
+		if (player->speed && (player->follower->momx || player->follower->momy))
 			player->follower->angle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);
 			// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
+			// Make sure the follower itself is also moving however, otherwise we'll be facing angle 0
 
-		// handle follower animations. Yes, it looks like very bad kiddie script so what, do you have any better idea genius? Go get a life instead of criticizing my unpaid work!!!!!!
+		// handle follower animations. Could probably be better...
 		// hurt or dead
 		if (player->kartstuff[k_spinouttimer] || player->mo->state == &states[S_KART_SPIN] || player->mo->health <= 0)
 		{

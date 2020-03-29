@@ -1930,6 +1930,21 @@ void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master)
 	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP4)|(master->eflags & MFE_DRAWONLYFORP4);
 }
 
+// same as above, but does not adjust Z height when flipping
+void K_GenericExtraFlagsNoZAdjust(mobj_t *mo, mobj_t *master)
+{
+	// flipping
+	mo->eflags = (mo->eflags & ~MFE_VERTICALFLIP)|(master->eflags & MFE_VERTICALFLIP);
+	mo->flags2 = (mo->flags2 & ~MF2_OBJECTFLIP)|(master->flags2 & MF2_OBJECTFLIP);
+
+	// visibility (usually for hyudoro)
+	mo->flags2 = (mo->flags2 & ~MF2_DONTDRAW)|(master->flags2 & MF2_DONTDRAW);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP1)|(master->eflags & MFE_DRAWONLYFORP1);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP2)|(master->eflags & MFE_DRAWONLYFORP2);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP3)|(master->eflags & MFE_DRAWONLYFORP3);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP4)|(master->eflags & MFE_DRAWONLYFORP4);
+}
+
 static void K_SpawnDashDustRelease(player_t *player)
 {
 	fixed_t newx;

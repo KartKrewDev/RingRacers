@@ -721,6 +721,7 @@ static void readfollower(MYFILE *f)
 	followers[numfollowers].scale = FRACUNIT;
 	followers[numfollowers].atangle = 230;
 	followers[numfollowers].dist = 16;
+	followers[numfollowers].height = 16;
 	followers[numfollowers].zoffs = 32;
 	followers[numfollowers].horzlag = 2;
 	followers[numfollowers].vertlag = 6;
@@ -801,6 +802,11 @@ static void readfollower(MYFILE *f)
 				DEH_WriteUndoline(word, va("%d", followers[numfollowers].dist), UNDO_NONE);
 				followers[numfollowers].dist = (INT32)atoi(word2);
 			}
+			else if (fastcmp(word, "HEIGHT"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].height), UNDO_NONE);
+				followers[numfollowers].height = (INT32)atoi(word2);
+			}			
 			else if (fastcmp(word, "IDLESTATE"))
 			{
 				if (word2)
@@ -897,6 +903,7 @@ if (followers[numfollowers].field < threshold) \
 } \
 
 	FALLBACK(dist, "DIST", 0, 0);
+	FALLBACK(height, "HEIGHT", 1, 1);
 	FALLBACK(zoffs, "ZOFFS", 0, 0);
 	FALLBACK(horzlag, "HORZLAG", 1, 1);
 	FALLBACK(vertlag, "VERTLAG", 1, 1);
