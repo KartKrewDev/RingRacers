@@ -10,6 +10,14 @@
 /// \file  b_bot.h
 /// \brief Basic bot handling
 
-void K_AddBots(UINT8 numbots);
+#include "k_waypoint.h"
+
+// Path that bot will attempt to take
+typedef struct botprediction_s {
+	fixed_t x, y;
+	fixed_t radius;
+} botprediction_t;
+
+void K_AddBots(SINT8 numbots);
 boolean K_PlayerUsesBotMovement(player_t *player);
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);

@@ -20,8 +20,9 @@
 #include "byteptr.h"
 #include "d_net.h" // nodetoplayer
 #include "k_kart.h"
+#include "z_zone.h"
 
-void K_AddBots(UINT8 numbots)
+void K_AddBots(SINT8 numbots)
 {
 	UINT8 newplayernum = 0;
 
@@ -60,7 +61,13 @@ void K_AddBots(UINT8 numbots)
 		else if (numbots == 5)
 			WRITEUINT8(buf_p, 1);
 		else if (numbots == 4)
-			WRITEUINT8(buf_p, 9);
+			WRITEUINT8(buf_p, 2);
+		else if (numbots == 3)
+			WRITEUINT8(buf_p, 3);
+		else if (numbots == 2)
+			WRITEUINT8(buf_p, 5);
+		else if (numbots == 1)
+			WRITEUINT8(buf_p, 7);
 		else
 			WRITEUINT8(buf_p, 10);
 
@@ -95,6 +102,72 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 	return P_AproxDistance(cx - px, cy - py);
 }
 
+static botprediction_t *K_CreateBotPrediction(player_t *player)
+{
+	const INT32 distance = ((256 * player->mo->scale) + (player->speed * 16)) / FRACUNIT;
+	INT32 distanceleft = distance;
+	botprediction_t *predictcoords = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
+	waypoint_t *wp = player->nextwaypoint;
+	size_t nwp;
+	size_t i;
+	INT32 lp = 0;
+
+	while (distanceleft > 0)
+	{
+		lp++;
+
+		nwp = 0;
+
+		if (wp->numnextwaypoints == 0)
+		{
+			distanceleft = 0;
+			break;
+		}
+
+		if (wp->numnextwaypoints > 1)
+		{
+			fixed_t closest = INT32_MAX;
+			fixed_t dist    = INT32_MAX;
+
+			for (i = 0; i < wp->numnextwaypoints; i++)
+			{
+				dist = P_AproxDistance(
+					player->mo->x - wp->nextwaypoints[i]->mobj->x,
+					player->mo->y - wp->nextwaypoints[i]->mobj->y
+				);
+
+				if (dist < closest)
+				{
+					nwp = i;
+					closest = dist;
+				}
+			}
+		}
+
+		if ((INT32)(wp->nextwaypointdistances[nwp]) > distanceleft)
+		{
+			break;
+		}
+
+		wp = wp->nextwaypoints[nwp];
+		distanceleft -= wp->nextwaypointdistances[nwp];
+	}
+
+	predictcoords->x = wp->mobj->x;
+	predictcoords->y = wp->mobj->y;
+	predictcoords->radius = wp->mobj->radius;
+
+	if (distanceleft > 0)
+	{
+		angle_t a = R_PointToAngle2(wp->mobj->x, wp->mobj->y, wp->nextwaypoints[nwp]->mobj->x, wp->nextwaypoints[nwp]->mobj->y);
+
+		predictcoords->x += P_ReturnThrustX(NULL, a, distanceleft * FRACUNIT);
+		predictcoords->y += P_ReturnThrustY(NULL, a, distanceleft * FRACUNIT);
+	}
+
+	return predictcoords;
+}
+
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	// Can't build a ticcmd if we aren't spawned...
@@ -113,17 +186,25 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 #endif
 
+	if (leveltime <= starttime)
+	{
+		if (leveltime >= starttime-50)
+			cmd->buttons |= BT_ACCELERATE;
+		return;
+	}
+
 	if (player->nextwaypoint != NULL && player->nextwaypoint->mobj != NULL && !P_MobjWasRemoved(player->nextwaypoint->mobj))
 	{
+		botprediction_t *predict = K_CreateBotPrediction(player);
 		INT16 turnamt = KART_FULLTURN;
 		SINT8 turnsign = 0;
-		angle_t wpangle, moveangle, angle;
+		angle_t destangle, moveangle, angle;
 		INT16 anglediff;
 
-		wpangle = R_PointToAngle2(player->mo->x, player->mo->y, player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y);
+		destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 		moveangle = player->mo->angle;
 
-		angle = (moveangle - wpangle);
+		angle = (moveangle - destangle);
 
 		if (angle < ANGLE_180)
 		{
@@ -146,15 +227,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			fixed_t rad = player->nextwaypoint->mobj->radius - (player->mo->radius*2);
+			fixed_t rad = predict->radius - (player->mo->radius*2);
 			fixed_t dirdist = K_DistanceOfLineFromPoint(
 				player->mo->x, player->mo->y,
 				player->mo->x + FINECOSINE(moveangle >> ANGLETOFINESHIFT), player->mo->y + FINESINE(moveangle >> ANGLETOFINESHIFT),
-				player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y
+				predict->x, predict->y
 			);
-
-			if (player == &players[displayplayers[0]])
-				CONS_Printf("perpendicular dist: %d\n", dirdist / FRACUNIT);
 
 			cmd->buttons |= BT_ACCELERATE;
 
@@ -187,6 +265,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			cmd->driftturn = KART_FULLTURN * turnsign;
 			cmd->angleturn += KART_FULLTURN * turnsign;
 		}
+
+		Z_Free(predict);
 	}
 }
 
