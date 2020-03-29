@@ -270,9 +270,12 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 		waypoint_t *checkwaypoint = NULL;
 		fixed_t    closestdist    = INT32_MAX;
 		fixed_t    checkdist      = INT32_MAX;
+		fixed_t    bestfindist    = INT32_MAX;
 
 		for (i = 0; i < numwaypoints; i++)
 		{
+			fixed_t rad;
+
 			checkwaypoint = &waypointheap[i];
 
 			checkdist = P_AproxDistance(
@@ -280,7 +283,34 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
 			checkdist = P_AproxDistance(checkdist, ((mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT)) * 4);
 
-			if (checkdist < closestdist)
+			rad = (checkwaypoint->mobj->radius / FRACUNIT);
+
+			if (closestdist < rad && checkdist < rad && finishline != NULL)
+			{
+				const boolean useshortcuts = false;
+				const boolean huntbackwards = false;
+				boolean pathfindsuccess = false;
+				path_t pathtofinish = {};
+
+				// If the mobj is touching multiple waypoints at once,
+				// then solve ties by taking the one closest to the finish line.
+				// Prevents position from flickering wildly when taking turns.
+
+				pathfindsuccess =
+					K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+
+				if (pathfindsuccess == true)
+				{
+					if ((INT32)(pathtofinish.totaldist) < bestfindist)
+					{
+						bestwaypoint = checkwaypoint;
+						bestfindist = pathtofinish.totaldist;
+					}
+
+					Z_Free(pathtofinish.array);
+				}
+			}
+			else if (checkdist < closestdist && bestfindist == INT32_MAX)
 			{
 				if (!P_CheckSight(mobj, checkwaypoint->mobj))
 				{
