@@ -3993,11 +3993,9 @@ static void P_3dMovement(player_t *player)
 
 	cmd = &player->cmd;
 
-	if ((player->exiting || mapreset) || player->pflags & PF_STASIS || player->kartstuff[k_spinouttimer]) // pw_introcam?
+	if (player->pflags & PF_STASIS || player->kartstuff[k_spinouttimer]) // pw_introcam?
 	{
 		cmd->forwardmove = cmd->sidemove = 0;
-		if (EITHERSNEAKER(player))
-			cmd->forwardmove = 50;
 	}
 
 	if (!(player->pflags & PF_FORCESTRAFE) && !player->kartstuff[k_pogospring])

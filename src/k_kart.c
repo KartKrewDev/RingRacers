@@ -2674,6 +2674,9 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 	//   0 with no gas, and
 	// -25 when only braking.
 
+	if (EITHERSNEAKER(player))
+		forwardmove = 50;
+
 	finalspeed *= forwardmove/25;
 	finalspeed /= 2;
 
@@ -5459,7 +5462,7 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	class = s+(3*w);
 
 	// Silence the engines
-	if (leveltime < 8 || player->spectator || player->exiting)
+	if (leveltime < 8 || player->spectator)
 	{
 		player->karthud[khud_enginesnd] = 0; // Reset sound number
 		return;
@@ -6184,7 +6187,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_bubblecool] = 0;
 	}
 
-	if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD || player->exiting)
+	if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD)
 	{
 		if (player->kartstuff[k_flamedash])
 			K_FlameDashLeftoverSmoke(player->mo);
@@ -6403,8 +6406,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 					}
 				}
 
-				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U)
-				&& !K_PlayerUsesBotMovement(player))
+				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U))
 				{
 					for (i = 0U; i < waypoint->numprevwaypoints; i++)
 					{
@@ -6572,7 +6574,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 		// nextwaypoint is now the waypoint that is in front of us
 		if (player->exiting)
 		{
-			// Player has finished, we don't need to calculate distance
+			// Player has finished, we don't need to calculate this
 			player->distancetofinish = 0U;
 		}
 		else if ((player->nextwaypoint != NULL) && (finishline != NULL))
@@ -7141,7 +7143,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	else if (cmd->buttons & BT_ATTACK)
 		player->pflags |= PF_ATTACKDOWN;
 
-	if (player && player->mo && player->mo->health > 0 && !player->spectator && !(player->exiting || mapreset) && leveltime > starttime
+	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > starttime
 		&& player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_squishedtimer] == 0 && player->kartstuff[k_respawn] == 0)
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
