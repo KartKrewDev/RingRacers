@@ -762,6 +762,8 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	if (getitem == KITEM_HYUDORO) // Hyudoro cooldown
 		hyubgone = 5*TICRATE;
 
+	player->kartstuff[k_botitemdelay] = TICRATE;
+
 	switch (getitem)
 	{
 		// Special roulettes first, then the generic ones are handled by default
@@ -810,7 +812,7 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	\return	void
 */
 
-static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush)
+static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, boolean bot)
 {
 	INT32 newodds;
 	INT32 i;
@@ -895,6 +897,27 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 }
 
 #define COOLDOWNONSTART (leveltime < (30*TICRATE)+starttime)
+
+	if (bot)
+	{
+		// TODO: Item use on bots should all be passed-in functions.
+		// Instead of manually inserting these, it should return 0
+		// for any items without an item use function supplied
+
+		switch (item)
+		{
+			case KITEM_SNEAKER:
+			case KITEM_INVINCIBILITY:
+			case KITEM_SPB:
+			case KITEM_GROW:
+			case KITEM_SHRINK:
+			case KITEM_HYUDORO:
+			case KITEM_SUPERRING:
+				break;
+			default:
+				return 0;
+		}
+	}
 
 	switch (item)
 	{
@@ -987,7 +1010,7 @@ static UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 
 
 		for (j = 1; j < NUMKARTRESULTS; j++)
 		{
-			if (K_KartGetItemOdds(i, j, mashed, spbrush) > 0)
+			if (K_KartGetItemOdds(i, j, mashed, spbrush, player->bot) > 0)
 			{
 				available = true;
 				break;
@@ -1275,7 +1298,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	useodds = K_FindUseodds(player, mashed, pdis, bestbumper, spbrush);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
-		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, mashed, spbrush));
+		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, mashed, spbrush, player->bot));
 
 	// Award the player whatever power is rolled
 	if (totalspawnchance > 0)
@@ -2513,6 +2536,13 @@ void K_MomentumToFacing(player_t *player)
 	player->mo->momy = FixedMul(player->mo->momy - player->cmomy, player->mo->friction) + player->cmomy;
 }
 
+static boolean K_ApplyOffroad(player_t *player)
+{
+	if (player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || EITHERSNEAKER(player))
+		return false;
+	return true;
+}
+
 // sets k_boostpower, k_speedboost, and k_accelboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
@@ -2527,8 +2557,7 @@ static void K_GetKartBoostPower(player_t *player)
 	}
 
 	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
-	if (!(player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || EITHERSNEAKER(player))
-		&& player->kartstuff[k_offroad] >= 0)
+	if (K_ApplyOffroad(player) && player->kartstuff[k_offroad] >= 0)
 		boostpower = FixedDiv(boostpower, FixedMul(player->kartstuff[k_offroad], K_GetKartGameSpeedScalar(gamespeed)) + FRACUNIT);
 
 	if (player->kartstuff[k_bananadrag] > TICRATE)
@@ -5985,6 +6014,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->powers[pw_flashing]--;
 	}
 
+	if (player->kartstuff[k_botitemdelay])
+		player->kartstuff[k_botitemdelay]--;
+
 	if (player->kartstuff[k_spinouttimer])
 	{
 		if ((P_IsObjectOnGround(player->mo)
@@ -6866,10 +6898,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			// Disable drift-sparks until you're going fast enough
 			if (player->kartstuff[k_getsparks] == 0
-				|| (player->kartstuff[k_offroad]
-				&& !player->kartstuff[k_invincibilitytimer]
-				&& !player->kartstuff[k_hyudorotimer]
-				&& !EITHERSNEAKER(player)))
+				|| (player->kartstuff[k_offroad] && K_ApplyOffroad(player)))
 				driftadditive = 0;
 
 			// Inbetween minspeed and minspeed*2, it'll keep your previous drift-spark state.
@@ -11056,7 +11085,7 @@ static void K_drawDistributionDebugger(void)
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		const INT32 itemodds = K_KartGetItemOdds(useodds, i, 0, spbrush);
+		const INT32 itemodds = K_KartGetItemOdds(useodds, i, 0, spbrush, stplyr->bot);
 		if (itemodds <= 0)
 			continue;
 

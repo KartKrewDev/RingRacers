@@ -347,6 +347,8 @@ typedef enum
 	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
 	k_wrongway, 		// Display WRONG WAY on screen
 
+	k_botitemdelay,
+
 	NUMKARTSTUFF
 } kartstufftype_t;
 

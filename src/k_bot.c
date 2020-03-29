@@ -21,6 +21,7 @@
 #include "d_net.h" // nodetoplayer
 #include "k_kart.h"
 #include "z_zone.h"
+#include "i_system.h"
 
 void K_AddBots(SINT8 numbots)
 {
@@ -174,6 +175,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	if (!player->mo)
 		return;
 
+	cmd->forwardmove = 0;
+	cmd->driftturn = 0;
+	cmd->buttons = 0;
+
 	if (player->playerstate == PST_DEAD)
 	{
 		cmd->buttons |= BT_ACCELERATE;
@@ -188,7 +193,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (leveltime <= starttime)
 	{
-		if (leveltime >= starttime-50)
+		if (leveltime >= starttime-35)
 			cmd->buttons |= BT_ACCELERATE;
 		return;
 	}
@@ -267,6 +272,35 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 
 		Z_Free(predict);
+	}
+
+	if (player->kartstuff[k_userings] == 1 && !player->exiting)
+	{
+		if (player->kartstuff[k_rings] > 10)
+			cmd->buttons |= BT_ATTACK;
+	}
+	else
+	{
+		if (player->kartstuff[k_botitemdelay])
+			return;
+
+		switch (player->kartstuff[k_itemtype])
+		{
+			case KITEM_SNEAKER:
+				if (player->kartstuff[k_offroad] || K_GetWaypointIsShortcut(player->nextwaypoint) == true)
+					cmd->buttons |= BT_ATTACK;
+				break;
+			case KITEM_INVINCIBILITY:
+			case KITEM_SPB:
+			case KITEM_GROW:
+			case KITEM_SHRINK:
+			case KITEM_HYUDORO:
+			case KITEM_SUPERRING:
+				cmd->buttons |= BT_ATTACK;
+				break;
+			default:
+				break;
+		}
 	}
 }
 
