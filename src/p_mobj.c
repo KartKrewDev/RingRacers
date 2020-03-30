@@ -8107,8 +8107,20 @@ void P_MobjThinker(mobj_t *mobj)
 
 			break;
 		}
-		case MT_BANANA:
 		case MT_EGGMANITEM:
+			{
+				UINT8 color = K_GetClosestPlayersColor(mobj);
+
+				if (color == SKINCOLOR_NONE)
+				{
+					color = SKINCOLOR_BLACK;
+				}
+
+				mobj->color = color;
+				mobj->colorized = false;
+			}
+			/* FALLTHRU */
+		case MT_BANANA:
 			mobj->friction = ORIG_FRICTION/4;
 
 			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
@@ -9957,7 +9969,14 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
-				mobj->color = SKINCOLOR_NONE;
+				UINT8 color = K_GetClosestPlayersColor(mobj);
+
+				if (color == SKINCOLOR_NONE)
+				{
+					color = SKINCOLOR_BLACK;
+				}
+
+				mobj->color = color;
 				mobj->colorized = false;
 			}
 			break;

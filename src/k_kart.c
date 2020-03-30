@@ -542,6 +542,39 @@ UINT8 K_GetKartColorByName(const char *name)
 
 //}
 
+UINT8 K_GetClosestPlayersColor(mobj_t *mobj)
+{
+	fixed_t closest = INT32_MAX;
+	UINT8 color = SKINCOLOR_NONE;
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo)
+			&& !players[i].spectator && !players[i].exiting)
+		{
+			fixed_t dist = P_AproxDistance(P_AproxDistance(
+				players[i].mo->x - mobj->x,
+				players[i].mo->y - mobj->y),
+				players[i].mo->z - mobj->z
+			);
+
+			if (dist > 8192*mobj->scale)
+			{
+				continue;
+			}
+
+			if (dist < closest)
+			{
+				color = players[i].skincolor;
+				closest = dist;
+			}
+		}
+	}
+
+	return color;
+}
+
 //{ SRB2kart Net Variables
 
 void K_RegisterKartStuff(void)
@@ -5184,6 +5217,13 @@ static void K_MoveHeldObjects(player_t *player)
 					angle_t ang;
 					fixed_t targx, targy, targz;
 					fixed_t speed, dist;
+
+					if (cur->type == MT_EGGMANITEM_SHIELD)
+					{
+						// K_GetClosestPlayersColor will practically always get our player anyway
+						// so we might as well save the effort
+						cur->color = player->skincolor; 
+					}
 
 					cur->flags &= ~MF_NOCLIPTHING;
 
