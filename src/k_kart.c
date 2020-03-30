@@ -542,16 +542,21 @@ UINT8 K_GetKartColorByName(const char *name)
 
 //}
 
-UINT8 K_GetClosestPlayersColor(mobj_t *mobj)
+player_t *K_GetItemBoxPlayer(mobj_t *mobj)
 {
 	fixed_t closest = INT32_MAX;
-	UINT8 color = SKINCOLOR_NONE;
+	player_t *player = NULL;
 	UINT8 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo)
-			&& !players[i].spectator && !players[i].exiting)
+		if (!(playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo) && !players[i].spectator))
+		{
+			continue;
+		}
+
+		// Always use normal item box rules -- could pass in "2" for fakes but they blend in better like this
+		if (P_CanPickupItem(&players[i], 1))
 		{
 			fixed_t dist = P_AproxDistance(P_AproxDistance(
 				players[i].mo->x - mobj->x,
@@ -566,13 +571,13 @@ UINT8 K_GetClosestPlayersColor(mobj_t *mobj)
 
 			if (dist < closest)
 			{
-				color = players[i].skincolor;
+				player = &players[i];
 				closest = dist;
 			}
 		}
 	}
 
-	return color;
+	return player;
 }
 
 //{ SRB2kart Net Variables
@@ -5220,9 +5225,8 @@ static void K_MoveHeldObjects(player_t *player)
 
 					if (cur->type == MT_EGGMANITEM_SHIELD)
 					{
-						// K_GetClosestPlayersColor will practically always get our player anyway
-						// so we might as well save the effort
-						cur->color = player->skincolor; 
+						// Decided that this should use their "canon" color.
+						cur->color = SKINCOLOR_BLACK; 
 					}
 
 					cur->flags &= ~MF_NOCLIPTHING;

@@ -8109,11 +8109,12 @@ void P_MobjThinker(mobj_t *mobj)
 		}
 		case MT_EGGMANITEM:
 			{
-				UINT8 color = K_GetClosestPlayersColor(mobj);
+				player_t *player = K_GetItemBoxPlayer(mobj);
+				UINT8 color = SKINCOLOR_BLACK;
 
-				if (color == SKINCOLOR_NONE)
+				if (player != NULL)
 				{
-					color = SKINCOLOR_BLACK;
+					color = player->skincolor;
 				}
 
 				mobj->color = color;
@@ -8872,8 +8873,8 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (mobj->target->player->kartstuff[k_comebacktimer] > 0)
 				{
-					if (state < mobj->info->spawnstate || state > mobj->info->spawnstate+19)
-						P_SetMobjState(mobj, mobj->info->spawnstate);
+					if (state < S_PLAYERBOMB1 || state > S_PLAYERBOMB20)
+						P_SetMobjState(mobj, S_PLAYERBOMB1);
 					if (mobj->target->player->kartstuff[k_comebacktimer] < TICRATE && (leveltime & 1))
 						mobj->flags2 &= ~MF2_DONTDRAW;
 					else
@@ -8882,14 +8883,14 @@ void P_MobjThinker(mobj_t *mobj)
 				else
 				{
 					if (!mobj->target->player->kartstuff[k_comebackmode]
-						&& (state < mobj->info->spawnstate || state > mobj->info->spawnstate+19))
-						P_SetMobjState(mobj, mobj->info->spawnstate);
+						&& (state < S_PLAYERBOMB1 || state > S_PLAYERBOMB20))
+						P_SetMobjState(mobj, S_PLAYERBOMB1);
 					else if (mobj->target->player->kartstuff[k_comebackmode] == 1
-						&& state != mobj->info->seestate)
-						P_SetMobjState(mobj, mobj->info->seestate);
+						&& (state < S_PLAYERITEM1 || state > S_PLAYERITEM12))
+						P_SetMobjState(mobj, S_PLAYERITEM1);
 					else if (mobj->target->player->kartstuff[k_comebackmode] == 2
-						&& state != mobj->info->painstate)
-						P_SetMobjState(mobj, mobj->info->painstate);
+						&& (state < S_PLAYERFAKE1 || state > S_PLAYERFAKE12))
+						P_SetMobjState(mobj, S_PLAYERFAKE1);
 
 					if (mobj->target->player->powers[pw_flashing] && (leveltime & 1))
 						mobj->flags2 |= MF2_DONTDRAW;
@@ -9969,11 +9970,12 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
-				UINT8 color = K_GetClosestPlayersColor(mobj);
+				player_t *player = K_GetItemBoxPlayer(mobj);
+				UINT8 color = SKINCOLOR_BLACK;
 
-				if (color == SKINCOLOR_NONE)
+				if (player != NULL)
 				{
-					color = SKINCOLOR_BLACK;
+					color = player->skincolor;
 				}
 
 				mobj->color = color;
