@@ -23,6 +23,8 @@
 #include <unistd.h>
 #endif
 
+#include <errno.h>
+
 // Extended map support.
 #include <ctype.h>
 
@@ -30,6 +32,7 @@
 #include "g_game.h"
 #include "m_misc.h"
 #include "hu_stuff.h"
+#include "st_stuff.h"
 #include "v_video.h"
 #include "z_zone.h"
 #include "g_input.h"
@@ -104,8 +107,13 @@ static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2
 consvar_t cv_screenshot_option = {"screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_screenshot_folder = {"screenshot_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_screenshot_colorprofile = {"screenshot_colorprofile", "Yes", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
 consvar_t cv_moviemode = {"moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_movie_option = {"movie_option", "Default", CV_SAVE, screenshot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_movie_folder = {"movie_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t zlib_mem_level_t[] = {
 	{1, "(Min Memory) 1"},
@@ -586,6 +594,21 @@ void M_SaveConfig(const char *filename)
 	fclose(f);
 }
 
+// ==========================================================================
+//                              SCREENSHOTS
+// ==========================================================================
+static UINT8 screenshot_palette[768];
+static void M_CreateScreenShotPalette(void)
+{
+	size_t i, j;
+	for (i = 0, j = 0; i < 768; i += 3, j++)
+	{
+		RGBA_t locpal = pLocalPalette[(max(st_palette,0)*256)+j];
+		screenshot_palette[i] = locpal.s.red;
+		screenshot_palette[i+1] = locpal.s.green;
+		screenshot_palette[i+2] = locpal.s.blue;
+	}
+}
 
 #if NUMSCREENS > 2
 static const char *Newsnapshotfile(const char *pathname, const char *ext)
@@ -660,14 +683,17 @@ static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_
 	if (palette)
 	{
 		png_colorp png_PLTE = png_malloc(png_ptr, sizeof(png_color)*256); //palette
-		const png_byte *pal = palette;
 		png_uint_16 i;
+
+		const png_byte *pal = palette;
+
 		for (i = 0; i < 256; i++)
 		{
 			png_PLTE[i].red   = *pal; pal++;
 			png_PLTE[i].green = *pal; pal++;
 			png_PLTE[i].blue  = *pal; pal++;
 		}
+
 		png_set_IHDR(png_ptr, png_info_ptr, width, height, 8, PNG_COLOR_TYPE_PALETTE,
 		 png_interlace, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 		png_write_info_before_PLTE(png_ptr, png_info_ptr);
@@ -1017,6 +1043,7 @@ static boolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
 static inline moviemode_t M_StartMovieAPNG(const char *pathname)
 {
 #ifdef USE_APNG
+	UINT8 *palette;
 	const char *freename = NULL;
 	boolean ret = false;
 
@@ -1032,10 +1059,8 @@ static inline moviemode_t M_StartMovieAPNG(const char *pathname)
 		return MM_OFF;
 	}
 
-	if (rendermode == render_soft)
-		ret = M_SetupaPNG(va(pandf,pathname,freename), W_CacheLumpName(GetPalette(), PU_CACHE));
-	else
-		ret = M_SetupaPNG(va(pandf,pathname,freename), NULL);
+	if (rendermode == render_soft) M_CreateScreenShotPalette();
+	ret = M_SetupaPNG(va(pandf,pathname,freename), (palette = screenshot_palette));
 
 	if (!ret)
 	{
@@ -1080,19 +1105,25 @@ static inline moviemode_t M_StartMovieGIF(const char *pathname)
 void M_StartMovie(void)
 {
 #if NUMSCREENS > 2
-	const char *pathname = ".";
+	char pathname[MAX_WADPATH];
 
 	if (moviemode)
 		return;
 
-	if (cv_screenshot_option.value == 0)
-		pathname = usehome ? srb2home : srb2path;
-	else if (cv_screenshot_option.value == 1)
-		pathname = srb2home;
-	else if (cv_screenshot_option.value == 2)
-		pathname = srb2path;
-	else if (cv_screenshot_option.value == 3 && *cv_screenshot_folder.string != '\0')
-		pathname = cv_screenshot_folder.string;
+	if (cv_movie_option.value == 0)
+		strcpy(pathname, usehome ? srb2home : srb2path);
+	else if (cv_movie_option.value == 1)
+		strcpy(pathname, srb2home);
+	else if (cv_movie_option.value == 2)
+		strcpy(pathname, srb2path);
+	else if (cv_movie_option.value == 3 && *cv_movie_folder.string != '\0')
+		strcpy(pathname, cv_movie_folder.string);
+
+	if (cv_movie_option.value != 3)
+	{
+		strcat(pathname, PATHSEP"movies"PATHSEP);
+		I_mkdir(pathname, 0755);
+	}
 
 	if (rendermode == render_none)
 		I_Error("Can't make a movie without a render system\n");
@@ -1100,12 +1131,8 @@ void M_StartMovie(void)
 	switch (cv_moviemode.value)
 	{
 		case MM_GIF:
-			if (rendermode == render_soft)
-			{
-				moviemode = M_StartMovieGIF(pathname);
-				break;
-			}
-			/* FALLTHRU */
+			moviemode = M_StartMovieGIF(pathname);
+			break;
 		case MM_APNG:
 			moviemode = M_StartMovieAPNG(pathname);
 			break;
@@ -1238,14 +1265,13 @@ void M_StopMovie(void)
   * \param data     The image data.
   * \param width    Width of the picture.
   * \param height   Height of the picture.
-  * \param palette  Palette of image data
+  * \param palette  Palette of image data.
   *  \note if palette is NULL, BGR888 format
   */
 boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette)
 {
 	png_structp png_ptr;
 	png_infop png_info_ptr;
-	PNG_CONST png_byte *PLTE = (const png_byte *)palette;
 #ifdef PNG_SETJMP_SUPPORTED
 #ifdef USE_FAR_KEYWORD
 	jmp_buf jmpbuf;
@@ -1260,8 +1286,7 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, const
 		return false;
 	}
 
-	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL,
-	 PNG_error, PNG_warn);
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, PNG_error, PNG_warn);
 	if (!png_ptr)
 	{
 		CONS_Debug(DBG_RENDER, "M_SavePNG: Error on initialize libpng\n");
@@ -1308,7 +1333,7 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, const
 	png_set_compression_strategy(png_ptr, cv_zlib_strategy.value);
 	png_set_compression_window_bits(png_ptr, cv_zlib_window_bits.value);
 
-	M_PNGhdr(png_ptr, png_info_ptr, width, height, PLTE);
+	M_PNGhdr(png_ptr, png_info_ptr, width, height, palette);
 
 	M_PNGText(png_ptr, png_info_ptr, false);
 
@@ -1355,7 +1380,7 @@ typedef struct
   * \param palette  Palette of image data
   */
 #if NUMSCREENS > 2
-static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, int height, const UINT8 *palette)
+static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, int height)
 {
 	int i;
 	size_t length;
@@ -1396,8 +1421,20 @@ static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, 
 
 	// write the palette
 	*pack++ = 0x0c; // palette ID byte
-	for (i = 0; i < 768; i++)
-		*pack++ = *palette++;
+
+	// write color table
+	{
+		RGBA_t *pal = ((cv_screenshot_colorprofile.value)
+		? pLocalPalette
+		: pMasterPalette);
+
+		for (i = 0; i < 256; i++)
+		{
+			*pack++ = pal[i].s.red;
+			*pack++ = pal[i].s.green;
+			*pack++ = pal[i].s.blue;
+		}
+	}
 
 	// write output file
 	length = pack - (UINT8 *)pcx;
@@ -1415,42 +1452,49 @@ void M_ScreenShot(void)
 }
 
 /** Takes a screenshot.
-  * The screenshot is saved as "kartxxxx.pcx" (or "kartxxxx.tga" in hardware
-  * rendermode) where xxxx is the lowest four-digit number for which a file
-  * does not already exist.
+  * The screenshot is saved as "srb2xxxx.png" where xxxx is the lowest
+  * four-digit number for which a file does not already exist.
   *
   * \sa HWR_ScreenShot
   */
 void M_DoScreenShot(void)
 {
 #if NUMSCREENS > 2
-	const char *freename = NULL, *pathname = ".";
+	const char *freename = NULL;
+	char pathname[MAX_WADPATH];
 	boolean ret = false;
 	UINT8 *linear = NULL;
 
 	// Don't take multiple screenshots, obviously
 	takescreenshot = false;
 
+	// how does one take a screenshot without a render system?
+	if (rendermode == render_none)
+		return;
+
 	if (cv_screenshot_option.value == 0)
-		pathname = usehome ? srb2home : srb2path;
+		strcpy(pathname, usehome ? srb2home : srb2path);
 	else if (cv_screenshot_option.value == 1)
-		pathname = srb2home;
+		strcpy(pathname, srb2home);
 	else if (cv_screenshot_option.value == 2)
-		pathname = srb2path;
+		strcpy(pathname, srb2path);
 	else if (cv_screenshot_option.value == 3 && *cv_screenshot_folder.string != '\0')
-		pathname = cv_screenshot_folder.string;
+		strcpy(pathname, cv_screenshot_folder.string);
+
+	if (cv_screenshot_option.value != 3)
+	{
+		strcat(pathname, PATHSEP"screenshots"PATHSEP);
+		I_mkdir(pathname, 0755);
+	}
 
 #ifdef USE_PNG
-	if (rendermode != render_none)
-		freename = Newsnapshotfile(pathname,"png");
+	freename = Newsnapshotfile(pathname,"png");
 #else
 	if (rendermode == render_soft)
 		freename = Newsnapshotfile(pathname,"pcx");
-	else if (rendermode != render_none)
+	else if (rendermode == render_opengl)
 		freename = Newsnapshotfile(pathname,"tga");
 #endif
-	else
-		I_Error("Can't take a screenshot without a render system");
 
 	if (rendermode == render_soft)
 	{
@@ -1464,18 +1508,16 @@ void M_DoScreenShot(void)
 
 	// save the pcx file
 #ifdef HWRENDER
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		ret = HWR_Screenshot(va(pandf,pathname,freename));
 	else
 #endif
-	if (rendermode != render_none)
 	{
+		M_CreateScreenShotPalette();
 #ifdef USE_PNG
-		ret = M_SavePNG(va(pandf,pathname,freename), linear, vid.width, vid.height,
-			W_CacheLumpName(GetPalette(), PU_CACHE));
+		ret = M_SavePNG(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
 #else
-		ret = WritePCXfile(va(pandf,pathname,freename), linear, vid.width, vid.height,
-			W_CacheLumpName(GetPalette(), PU_CACHE));
+		ret = WritePCXfile(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
 #endif
 	}
 
@@ -1483,14 +1525,14 @@ failure:
 	if (ret)
 	{
 		if (moviemode != MM_SCREENSHOT)
-			CONS_Printf(M_GetText("screen shot %s saved in %s\n"), freename, pathname);
+			CONS_Printf(M_GetText("Screen shot %s saved in %s\n"), freename, pathname);
 	}
 	else
 	{
 		if (freename)
-			CONS_Printf(M_GetText("Couldn't create screen shot %s in %s\n"), freename, pathname);
+			CONS_Alert(CONS_ERROR, M_GetText("Couldn't create screen shot %s in %s\n"), freename, pathname);
 		else
-			CONS_Printf(M_GetText("Couldn't create screen shot (all 10000 slots used!) in %s\n"), pathname);
+			CONS_Alert(CONS_ERROR, M_GetText("Couldn't create screen shot in %s (all 10000 slots used!)\n"), pathname);
 
 		if (moviemode == MM_SCREENSHOT)
 			M_StopMovie();
@@ -2354,4 +2396,105 @@ void M_SetupMemcpy(void)
 #if 0
 	M_Memcpy = cpu_cpy;
 #endif
+}
+
+/** Return the appropriate message for a file error or end of file.
+*/
+const char *M_FileError(FILE *fp)
+{
+	if (ferror(fp))
+		return strerror(errno);
+	else
+		return "end-of-file";
+}
+
+/** Return the number of parts of this path.
+*/
+int M_PathParts(const char *path)
+{
+	int n;
+	const char *p;
+	const char *t;
+	if (path == NULL)
+		return 0;
+	for (n = 0, p = path ;; ++n)
+	{
+		t = p;
+		if (( p = strchr(p, PATHSEP[0]) ))
+			p += strspn(p, PATHSEP);
+		else
+		{
+			if (*t)/* there is something after the final delimiter */
+				n++;
+			break;
+		}
+	}
+	return n;
+}
+
+/** Check whether a path is an absolute path.
+*/
+boolean M_IsPathAbsolute(const char *path)
+{
+#ifdef _WIN32
+	return ( strncmp(&path[1], ":\\", 2) == 0 );
+#else
+	return ( path[0] == '/' );
+#endif
+}
+
+/** I_mkdir for each part of the path.
+*/
+void M_MkdirEachUntil(const char *cpath, int start, int end, int mode)
+{
+	char path[MAX_WADPATH];
+	char *p;
+	char *t;
+
+	if (end > 0 && end <= start)
+		return;
+
+	strlcpy(path, cpath, sizeof path);
+#ifdef _WIN32
+	if (strncmp(&path[1], ":\\", 2) == 0)
+		p = &path[3];
+	else
+#endif
+		p = path;
+
+	if (end > 0)
+		end -= start;
+
+	for (; start > 0; --start)
+	{
+		p += strspn(p, PATHSEP);
+		if (!( p = strchr(p, PATHSEP[0]) ))
+			return;
+	}
+	p += strspn(p, PATHSEP);
+	for (;;)
+	{
+		if (end > 0 && !--end)
+			break;
+
+		t = p;
+		if (( p = strchr(p, PATHSEP[0]) ))
+		{
+			*p = '\0';
+			I_mkdir(path, mode);
+			*p = PATHSEP[0];
+			p += strspn(p, PATHSEP);
+		}
+		else
+		{
+			if (*t)
+				I_mkdir(path, mode);
+			break;
+		}
+	}
+}
+
+void M_MkdirEach(const char *path, int start, int mode)
+{
+	M_MkdirEachUntil(path, start, -1, mode);
 }

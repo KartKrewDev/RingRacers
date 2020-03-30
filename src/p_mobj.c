@@ -3987,6 +3987,9 @@ void P_PrecipThinker(precipmobj_t *mobj)
 
 static void P_RingThinker(mobj_t *mobj)
 {
+
+	mobj_t *spark;	// Ring Fuse
+
 	if (mobj->momx || mobj->momy)
 	{
 		P_RingXYMovement(mobj);
@@ -4004,6 +4007,38 @@ static void P_RingThinker(mobj_t *mobj)
 
 		if (P_MobjWasRemoved(mobj))
 			return;
+	}
+
+	// This thinker splits apart before the regular fuse handling so we need to handle it here instead.
+	if (mobj->fuse)
+	{
+		mobj->fuse--;
+
+		if (mobj->fuse < TICRATE*3)
+		{
+			if (leveltime & 1)
+				mobj->flags2 |= MF2_DONTDRAW;
+			else
+				mobj->flags2 &= ~MF2_DONTDRAW;
+		}
+
+		if (!mobj->fuse)
+		{
+#ifdef HAVE_BLUA
+			if (!LUAh_MobjFuse(mobj))
+#endif
+			{
+				mobj->flags2 &= ~MF2_DONTDRAW;
+				spark = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_SIGNSPARKLE);	// Spawn a fancy sparkle
+				K_MatchGenericExtraFlags(spark, mobj);
+				spark->colorized = true;
+				spark->color = mobj->color ? : SKINCOLOR_YELLOW;	// Use yellow if the ring doesn't use a skin color. (It should be red for SPB rings, but let normal rings look fancy too!)
+				P_RemoveMobj(mobj);	// Adieu, monde cruel!
+				return;
+			}
+
+		}
+
 	}
 
 	P_CycleMobjState(mobj);
@@ -8648,6 +8683,7 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			fixed_t destx, desty;
 			statenum_t curstate;
+			statenum_t underlayst = S_NULL;
 			INT32 flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player
@@ -8662,8 +8698,17 @@ void P_MobjThinker(mobj_t *mobj)
 
 			if (mobj->target->player->kartstuff[k_flamedash])
 			{
-				if (!(curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH8))
+				if (!(curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12))
 					P_SetMobjState(mobj, S_FLAMESHIELDDASH1);
+
+				if (curstate == S_FLAMESHIELDDASH2)
+					underlayst = S_FLAMESHIELDDASH2_UNDERLAY;
+				else if (curstate == S_FLAMESHIELDDASH5)
+					underlayst = S_FLAMESHIELDDASH5_UNDERLAY;
+				else if (curstate == S_FLAMESHIELDDASH8)
+					underlayst = S_FLAMESHIELDDASH8_UNDERLAY;
+				else if (curstate == S_FLAMESHIELDDASH11)
+					underlayst = S_FLAMESHIELDDASH11_UNDERLAY;
 
 				if (leveltime & 1)
 				{
@@ -8692,7 +8737,7 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
-				if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH8)
+				if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12)
 					P_SetMobjState(mobj, S_FLAMESHIELD1);
 			}
 
@@ -8741,6 +8786,13 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
 			else
 				mobj->angle = mobj->target->angle;
+
+			if (underlayst != S_NULL)
+			{
+				mobj_t *underlay = P_SpawnMobj(mobj->target->x, mobj->target->y, mobj->target->z, MT_FLAMESHIELDUNDERLAY);
+				underlay->angle = mobj->angle;
+				P_SetMobjState(underlay, underlayst);
+			}
 			break;
 		}
 		case MT_ROCKETSNEAKER:

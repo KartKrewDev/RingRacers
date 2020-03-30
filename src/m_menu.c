@@ -1252,7 +1252,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING|IT_CVAR,		NULL,	"Fullscreen",			&cv_fullscreen,			 20},
 #endif
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-							NULL,	"Gamma",				&cv_usegamma,			 30},
+							NULL,	"Gamma",				&cv_globalgamma,			 30},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Draw Distance",		&cv_drawdist,			 45},
 	//{IT_STRING | IT_CVAR,	NULL,	"NiGHTS Draw Dist",		&cv_drawdist_nights,	 55},
@@ -2675,7 +2675,7 @@ boolean M_Responder(event_t *ev)
 				return true;
 
 			case KEY_F11: // Gamma Level
-				CV_AddValue(&cv_usegamma, 1);
+				CV_AddValue(&cv_globalgamma, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
@@ -3321,9 +3321,6 @@ void M_Init(void)
 #ifndef NONET
 	CV_RegisterVar(&cv_serversort);
 #endif
-
-	//todo put this somewhere better...
-	CV_RegisterVar(&cv_allcaps);
 }
 
 void M_InitCharacterTables(void)
