@@ -763,6 +763,7 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 		hyubgone = 5*TICRATE;
 
 	player->kartstuff[k_botitemdelay] = TICRATE;
+	player->kartstuff[k_botitemconfirm] = 0;
 
 	switch (getitem)
 	{
@@ -907,12 +908,14 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 		switch (item)
 		{
 			case KITEM_SNEAKER:
+			case KITEM_ROCKETSNEAKER:
 			case KITEM_INVINCIBILITY:
 			case KITEM_SPB:
 			case KITEM_GROW:
 			case KITEM_SHRINK:
 			case KITEM_HYUDORO:
 			case KITEM_SUPERRING:
+			case KRITEM_TRIPLESNEAKER:
 				break;
 			default:
 				return 0;
@@ -2536,7 +2539,7 @@ void K_MomentumToFacing(player_t *player)
 	player->mo->momy = FixedMul(player->mo->momy - player->cmomy, player->mo->friction) + player->cmomy;
 }
 
-static boolean K_ApplyOffroad(player_t *player)
+boolean K_ApplyOffroad(player_t *player)
 {
 	if (player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || EITHERSNEAKER(player))
 		return false;
@@ -6023,9 +6026,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->powers[pw_flashing]--;
 	}
 
-	if (player->kartstuff[k_botitemdelay])
-		player->kartstuff[k_botitemdelay]--;
-
 	if (player->kartstuff[k_spinouttimer])
 	{
 		if ((P_IsObjectOnGround(player->mo)
@@ -6411,6 +6411,13 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				{
 					for (i = 0U; i < waypoint->numnextwaypoints; i++)
 					{
+						if (K_GetWaypointIsShortcut(waypoint->nextwaypoints[i])
+							&& K_PlayerUsesBotMovement(player)
+							&& !K_BotCanTakeCut(player))
+						{
+							continue;
+						}
+
 						angletowaypoint = R_PointToAngle2(
 							player->mo->x, player->mo->y,
 							waypoint->nextwaypoints[i]->mobj->x, waypoint->nextwaypoints[i]->mobj->y);
@@ -6451,6 +6458,13 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				{
 					for (i = 0U; i < waypoint->numprevwaypoints; i++)
 					{
+						if (K_GetWaypointIsShortcut(waypoint->prevwaypoints[i])
+							&& K_PlayerUsesBotMovement(player)
+							&& !K_BotCanTakeCut(player))
+						{
+							continue;
+						}
+
 						angletowaypoint = R_PointToAngle2(
 							player->mo->x, player->mo->y,
 							waypoint->prevwaypoints[i]->mobj->x, waypoint->prevwaypoints[i]->mobj->y);
@@ -6744,6 +6758,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	turnvalue = FixedMul(turnvalue, adjustangle); // Weight has a small effect on turning
 
 	if (EITHERSNEAKER(player) || player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_growshrinktimer] > 0)
+		turnvalue = FixedMul(turnvalue, (5*FRACUNIT)/4);
+
+	if (K_PlayerUsesBotMovement(player))
 		turnvalue = FixedMul(turnvalue, (5*FRACUNIT)/4);
 
 	return turnvalue;

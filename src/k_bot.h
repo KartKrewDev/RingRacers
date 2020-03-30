@@ -20,4 +20,5 @@ typedef struct botprediction_s {
 
 void K_AddBots(SINT8 numbots);
 boolean K_PlayerUsesBotMovement(player_t *player);
+boolean K_BotCanTakeCut(player_t *player);
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);

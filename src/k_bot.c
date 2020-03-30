@@ -68,7 +68,7 @@ void K_AddBots(SINT8 numbots)
 		else if (numbots == 2)
 			WRITEUINT8(buf_p, 5);
 		else if (numbots == 1)
-			WRITEUINT8(buf_p, 7);
+			WRITEUINT8(buf_p, 9);
 		else
 			WRITEUINT8(buf_p, 10);
 
@@ -83,6 +83,17 @@ void K_AddBots(SINT8 numbots)
 boolean K_PlayerUsesBotMovement(player_t *player)
 {
 	if (player->bot || player->exiting)
+		return true;
+
+	return false;
+}
+
+boolean K_BotCanTakeCut(player_t *player)
+{
+	if (!K_ApplyOffroad(player)
+		|| player->kartstuff[k_itemtype] == KITEM_SNEAKER
+		|| player->kartstuff[k_itemtype] == KITEM_INVINCIBILITY
+		|| player->kartstuff[k_itemtype] == KITEM_HYUDORO)
 		return true;
 
 	return false;
@@ -105,13 +116,21 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
-	const INT32 distance = ((256 * player->mo->scale) + (player->speed * 16)) / FRACUNIT;
+	const INT32 distance = (player->speed / FRACUNIT) * TICRATE;
 	INT32 distanceleft = distance;
 	botprediction_t *predictcoords = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
 	waypoint_t *wp = player->nextwaypoint;
 	size_t nwp;
 	size_t i;
 	INT32 lp = 0;
+
+	if (distance <= 0)
+	{
+		predictcoords->x = wp->mobj->x;
+		predictcoords->y = wp->mobj->y;
+		predictcoords->radius = wp->mobj->radius;
+		return predictcoords;
+	}
 
 	while (distanceleft > 0)
 	{
@@ -132,6 +151,11 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 			for (i = 0; i < wp->numnextwaypoints; i++)
 			{
+				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) && !K_BotCanTakeCut(player))
+				{
+					continue;
+				}
+
 				dist = P_AproxDistance(
 					player->mo->x - wp->nextwaypoints[i]->mobj->x,
 					player->mo->y - wp->nextwaypoints[i]->mobj->y
@@ -246,7 +270,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 			if (dirdist <= rad)
 			{
-				if (dirdist < rad/2)
+				if (dirdist < 2*rad/3)
 				{
 					// Don't need to turn!
 					turnamt = 0;
@@ -257,12 +281,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					turnamt /= 4;
 				}
 			}
-			/*else
+			else if (anglediff > 45)
 			{
 				// Actually, don't go too fast...
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
-			}*/
+			}
 		}
 
 		if (turnamt != 0)
@@ -282,13 +306,51 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	else
 	{
 		if (player->kartstuff[k_botitemdelay])
+		{
+			player->kartstuff[k_botitemdelay]--;
+			player->kartstuff[k_botitemconfirm] = 0;
 			return;
+		}
 
 		switch (player->kartstuff[k_itemtype])
 		{
 			case KITEM_SNEAKER:
-				if (player->kartstuff[k_offroad] || K_GetWaypointIsShortcut(player->nextwaypoint) == true)
+				if ((player->kartstuff[k_offroad] && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
+					|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
+					|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
+					|| player->kartstuff[k_speedboost] > 0 // Have another type of boost (tethering)
+					|| player->kartstuff[k_botitemconfirm] > 4*TICRATE) // Held onto it for too long
+				{
 					cmd->buttons |= BT_ATTACK;
+					player->kartstuff[k_botitemconfirm] -= TICRATE;
+				}
+				else
+				{
+					player->kartstuff[k_botitemconfirm]++;
+				}
+				break;
+			case KITEM_ROCKETSNEAKER:
+				if (player->kartstuff[k_rocketsneakertimer] <= 0)
+				{
+					cmd->buttons |= BT_ATTACK;
+					player->kartstuff[k_botitemconfirm] = 0;
+				}
+				else
+				{
+					if ((player->kartstuff[k_offroad] && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
+						|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
+						|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
+						|| player->kartstuff[k_speedboost] > 0 // Have another type of boost (tethering)
+						|| player->kartstuff[k_botitemconfirm] > TICRATE) // Held onto it for too long
+					{
+						cmd->buttons |= BT_ATTACK;
+						player->kartstuff[k_botitemconfirm] -= TICRATE/2;
+					}
+					else
+					{
+						player->kartstuff[k_botitemconfirm]++;
+					}
+				}
 				break;
 			case KITEM_INVINCIBILITY:
 			case KITEM_SPB:
@@ -297,8 +359,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			case KITEM_HYUDORO:
 			case KITEM_SUPERRING:
 				cmd->buttons |= BT_ATTACK;
+				player->kartstuff[k_botitemconfirm] = 0;
 				break;
 			default:
+				player->kartstuff[k_botitemconfirm] = 0;
 				break;
 		}
 	}

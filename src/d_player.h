@@ -348,6 +348,7 @@ typedef enum
 	k_wrongway, 		// Display WRONG WAY on screen
 
 	k_botitemdelay,
+	k_botitemconfirm,
 
 	NUMKARTSTUFF
 } kartstufftype_t;
