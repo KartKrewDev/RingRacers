@@ -318,6 +318,11 @@ size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
 	return waypointindex;
 }
 
+/*--------------------------------------------------
+	size_t K_GetNumWaypoints(void)
+
+		See header file for description.
+--------------------------------------------------*/
 size_t K_GetNumWaypoints(void)
 {
 	return numwaypoints;
