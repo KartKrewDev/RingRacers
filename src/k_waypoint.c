@@ -319,6 +319,16 @@ size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
+	size_t K_GetNumWaypoints(void)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetNumWaypoints(void)
+{
+	return numwaypoints;
+}
+
+/*--------------------------------------------------
 	waypoint_t *K_GetWaypointFromIndex(size_t waypointindex)
 
 		See header file for description.
@@ -1478,7 +1488,6 @@ static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 	I_Assert(waypointcap != NULL); // No waypoint mobjs in map load
 	I_Assert(numwaypoints < numwaypointmobjs); // waypoint array reached max capacity
 
-	// numwaypoints is incremented later in K_SetupWaypoint
 	madewaypoint = &waypointheap[numwaypoints];
 	numwaypoints++;
 
