@@ -328,6 +328,14 @@ typedef struct
 	SINT8 adminplayers[MAXPLAYERS]; // Needs to be signed
 	UINT16 powerlevels[MAXPLAYERS][PWRLV_NUMTYPES]; // SRB2kart: player power levels
 
+	UINT8 consoleplayers[MAXPLAYERS];
+	/* splitscreen */
+	SINT8 invitations[MAXPLAYERS];
+	UINT8 party_size[MAXPLAYERS];
+	UINT8 party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+	UINT8 original_party_size[MAXPLAYERS];
+	UINT8 original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
 	char server_context[8]; // Unique context id, generated at server startup.
 
 	UINT8 varlengthinputs[0]; // Playernames and netvars
@@ -543,6 +551,8 @@ extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
 
+extern boolean server_lagless;
+
 extern consvar_t
 #ifdef VANILLAJOINNEXTROUND
 	cv_joinnextround,
@@ -599,6 +609,8 @@ SINT8 nametonum(const char *name);
 
 extern char motd[254], server_context[8];
 extern UINT8 playernode[MAXPLAYERS];
+/* consoleplayer of this player (splitscreen) */
+extern UINT8 playerconsole[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
 void D_ResetTiccmds(void);

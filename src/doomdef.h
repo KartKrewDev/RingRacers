@@ -138,6 +138,7 @@
 
 #ifdef LOGMESSAGES
 extern FILE *logstream;
+extern char logfilename[1024];
 #endif
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
@@ -242,6 +243,7 @@ extern FILE *logstream;
 // NOTE: it needs more than this to increase the number of players...
 
 #define MAXPLAYERS 16
+#define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 #define MAXSKINS 128
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
@@ -280,7 +282,7 @@ typedef enum
 	SKINCOLOR_SCARLET,
 	SKINCOLOR_KETCHUP,
 	SKINCOLOR_DAWN,
-	SKINCOLOR_SUNSET,
+	SKINCOLOR_SUNSLAM,
 	SKINCOLOR_CREAMSICLE,
 	SKINCOLOR_ORANGE,
 	SKINCOLOR_ROSEWOOD,
@@ -340,9 +342,9 @@ typedef enum
 	SKINCOLOR_THISTLE,
 	SKINCOLOR_PURPLE,
 	SKINCOLOR_PASTEL,
-	SKINCOLOR_MOONSLAM,
+	SKINCOLOR_MOONSET,
 	SKINCOLOR_DUSK,
-	SKINCOLOR_BUBBLEGUM,
+	SKINCOLOR_VIOLET,
 	SKINCOLOR_MAGENTA,
 	SKINCOLOR_FUCHSIA,
 	SKINCOLOR_TOXIC,

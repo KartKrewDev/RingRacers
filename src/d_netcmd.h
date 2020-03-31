@@ -104,7 +104,8 @@ extern consvar_t cv_recycler;*/
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
 extern consvar_t cv_eggmanmonitor, cv_orbinaut, cv_jawz, cv_mine;
 extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
-extern consvar_t cv_thundershield, cv_hyudoro, cv_pogospring, cv_kitchensink;
+extern consvar_t cv_thundershield, cv_bubbleshield, cv_flameshield;
+extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
 
 extern consvar_t cv_triplesneaker, cv_triplebanana, cv_decabanana;
 extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
@@ -127,6 +128,7 @@ extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
+extern consvar_t cv_kartdebugwaypoints;
 
 extern consvar_t cv_itemfinder;
 
@@ -144,8 +146,10 @@ extern consvar_t cv_ringslinger, cv_soundtest;
 extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionboxes;
 
 extern consvar_t cv_maxping;
+extern consvar_t cv_lagless;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
+extern consvar_t cv_showviewpointtext;
 
 extern consvar_t cv_skipmapcheck;
 
@@ -179,10 +183,14 @@ typedef enum
 	XD_PICKVOTE,    // 24
 	XD_REMOVEPLAYER,// 25
 	XD_POWERLEVEL,  // 26
-	XD_GIVEITEM,    // 27
+	XD_PARTYINVITE, // 27
+	XD_ACCEPTPARTYINVITE, // 28
+	XD_LEAVEPARTY, // 29
+	XD_CANCELPARTYINVITE, // 30
+	XD_GIVEITEM,    // 31
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 28
-	XD_LUAVAR,      // 29
+	XD_LUACMD,      // 32
+	XD_LUAVAR,      // 33
 #endif
 	MAXNETXCMD
 } netxcmd_t;

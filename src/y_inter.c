@@ -39,6 +39,7 @@
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PLAYER1INPUTDOWN
 #include "k_kart.h" // colortranslations
+#include "k_battle.h"
 #include "k_pwrlv.h"
 #include "console.h" // cons_menuhighlight
 #include "lua_hook.h" // IntermissionThinker hook
@@ -168,7 +169,7 @@ static void Y_UnloadVoteData(void);
 //
 // SRB2Kart - Y_CalculateMatchData and ancillary functions
 //
-static void Y_CompareRace(INT32 i)
+static void Y_CompareTime(INT32 i)
 {
 	UINT32 val = ((players[i].pflags & PF_TIMEOVER || players[i].realtime == UINT32_MAX)
 		? (UINT32_MAX-1) : players[i].realtime);
@@ -180,7 +181,7 @@ static void Y_CompareRace(INT32 i)
 	data.match.num[data.match.numplayers] = i;
 }
 
-static void Y_CompareBattle(INT32 i)
+static void Y_CompareScore(INT32 i)
 {
 	UINT32 val = ((players[i].pflags & PF_TIMEOVER)
 			? (UINT32_MAX-1) : players[i].marescore);
@@ -366,7 +367,7 @@ void Y_IntermissionDrawer(void)
 	if (usebuffer) // Fade everything out
 		V_DrawFadeScreen(0xFF00, 22);
 
-	if (!splitscreen)
+	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	if (cons_menuhighlight.value)
@@ -435,11 +436,12 @@ void Y_IntermissionDrawer(void)
 		INT32 y = 41, gutter = ((data.match.numplayers > NUMFORNEWCOLUMN) ? 0 : (BASEVIDWIDTH/2));
 		INT32 dupadjust = (vid.width/vid.dupx), duptweak = (dupadjust - BASEVIDWIDTH)/2;
 		const char *timeheader;
+		int y2;
 
 		if (data.match.rankingsmode)
 			timeheader = "PWR.LV";
 		else
-			timeheader = (intertype == int_race ? "TIME" : "SCORE");
+			timeheader = ((intertype == int_race || (intertype == int_match && battlecapsules)) ? "TIME" : "SCORE");
 
 		// draw the level name
 		V_DrawCenteredString(-4 + x + BASEVIDWIDTH/2, 12, 0, data.match.levelstring);
@@ -492,10 +494,41 @@ void Y_IntermissionDrawer(void)
 
 				STRBUFCPY(strtime, data.match.name[i]);
 
+				y2 = y;
+
+				if (playerconsole[data.match.num[i]] == 0 && server_lagless)
+				{
+					static int alagles_timer = 0;
+					patch_t *alagles;
+
+					y2 = ( y - 4 );
+
+					V_DrawScaledPatch(x + 36, y2, 0, W_CachePatchName(va("BLAGLES%d", (intertic / 3) % 6), PU_CACHE));
+					// every 70 tics
+					if (( leveltime % 70 ) == 0)
+					{
+						alagles_timer = 9;
+					}
+					if (alagles_timer > 0)
+					{
+						alagles = W_CachePatchName(va("ALAGLES%d", alagles_timer), PU_CACHE);
+						V_DrawScaledPatch(x + 36, y2, 0, alagles);
+						if (( leveltime % 2 ) == 0)
+							alagles_timer--;
+					}
+					else
+					{
+						alagles = W_CachePatchName("ALAGLES0", PU_CACHE);
+						V_DrawScaledPatch(x + 36, y2, 0, alagles);
+					}
+
+					y2 += SHORT (alagles->height) + 1;
+				}
+
 				if (data.match.numplayers > NUMFORNEWCOLUMN)
-					V_DrawThinString(x+36, y-1, ((data.match.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
+					V_DrawThinString(x+36, y2-1, ((data.match.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
 				else
-					V_DrawString(x+36, y, ((data.match.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
+					V_DrawString(x+36, y2, ((data.match.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
 
 				if (data.match.rankingsmode)
 				{
@@ -527,7 +560,7 @@ void Y_IntermissionDrawer(void)
 						V_DrawRightAlignedThinString(x+152+gutter, y-1, (data.match.numplayers > NUMFORNEWCOLUMN ? V_6WIDTHSPACE : 0), "NO CONTEST.");
 					else
 					{
-						if (intertype == int_race)
+						if (intertype == int_race || (intertype == int_match && battlecapsules))
 						{
 							snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.match.val[i], true),
 							G_TicsToSeconds(data.match.val[i]), G_TicsToCentiseconds(data.match.val[i]));
@@ -605,7 +638,7 @@ dotimer:
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, hilicol, M_GetText("Teams will be scrambled next round!"));*/
 		if (speedscramble != -1 && speedscramble != gamespeed)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
-				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[speedscramble].strvalue));
+				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
 	//}
 }
 
@@ -713,7 +746,7 @@ void Y_Ticker(void)
 									remove = 10;
 
 								// Remove 10 points at a time
-								data.match.increase[data.match.num[q]] -= remove; 
+								data.match.increase[data.match.num[q]] -= remove;
 
 								// Still not zero, no kaching yet
 								if (data.match.increase[data.match.num[q]] != 0)
@@ -763,11 +796,26 @@ static void Y_UpdateRecordReplays(void)
 	if (!mainrecords[gamemap-1])
 		G_AllocMainRecordData(gamemap-1);
 
-	if ((mainrecords[gamemap-1]->time == 0) || (players[consoleplayer].realtime < mainrecords[gamemap-1]->time))
-		mainrecords[gamemap-1]->time = players[consoleplayer].realtime;
+	if (players[consoleplayer].pflags & PF_TIMEOVER)
+	{
+		players[consoleplayer].realtime = UINT32_MAX;
+	}
 
-	if ((mainrecords[gamemap-1]->lap == 0) || (bestlap < mainrecords[gamemap-1]->lap))
-		mainrecords[gamemap-1]->lap = bestlap;
+	if (((mainrecords[gamemap-1]->time == 0) || (players[consoleplayer].realtime < mainrecords[gamemap-1]->time))
+		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
+	{
+		mainrecords[gamemap-1]->time = players[consoleplayer].realtime;
+	}
+
+	if (modeattacking == ATTACKING_RECORD)
+	{
+		if ((mainrecords[gamemap-1]->lap == 0) || (bestlap < mainrecords[gamemap-1]->lap))
+			mainrecords[gamemap-1]->lap = bestlap;
+	}
+	else
+	{
+		mainrecords[gamemap-1]->lap = 0;
+	}
 
 	// Save demo!
 	bestdemo[255] = '\0';
@@ -798,13 +846,16 @@ static void Y_UpdateRecordReplays(void)
 			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
 		}
 
-		snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
-		if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
-		{ // Better lap time, save this demo.
-			if (FIL_FileExists(bestdemo))
-				remove(bestdemo);
-			FIL_WriteFile(bestdemo, buf, len);
-			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD LAP!"), M_GetText("Saved replay as"), bestdemo);
+		if (modeattacking == ATTACKING_RECORD)
+		{
+			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
+			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
+			{ // Better lap time, save this demo.
+				if (FIL_FileExists(bestdemo))
+					remove(bestdemo);
+				FIL_WriteFile(bestdemo, buf, len);
+				CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD LAP!"), M_GetText("Saved replay as"), bestdemo);
+			}
 		}
 
 		//CONS_Printf("%s '%s'\n", M_GetText("Saved replay as"), lastdemo);
@@ -1000,18 +1051,24 @@ void Y_StartIntermission(void)
 			powertype = PWRLV_BATTLE;
 	}
 
-	K_SetPowerLevelScrambles(powertype);
-
 	if (!multiplayer)
 	{
 		timer = 0;
 
-		/* // srb2kart: time attack tally is UGLY rn
-		if (modeattacking)
-			intertype = int_timeattack;
-		else
-		*/
-			intertype = int_race;
+		if (!majormods && !multiplayer && !demo.playback) // move this once we have a proper time attack screen
+		{
+			// Update visitation flags
+			mapvisited[gamemap-1] |= MV_BEATEN;
+			if (ALL7EMERALDS(emeralds))
+				mapvisited[gamemap-1] |= MV_ALLEMERALDS;
+			/*if (ultimatemode)
+				mapvisited[gamemap-1] |= MV_ULTIMATE;
+			if (data.coop.gotperfbonus)
+				mapvisited[gamemap-1] |= MV_PERFECT;*/
+
+			if (modeattacking)
+				Y_UpdateRecordReplays();
+		}
 	}
 	else
 	{
@@ -1026,12 +1083,12 @@ void Y_StartIntermission(void)
 			if (!timer)
 				timer = 1;
 		}
-
-		if (gametype == GT_MATCH)
-			intertype = int_match;
-		else //if (gametype == GT_RACE)
-			intertype = int_race;
 	}
+
+	if (gametype == GT_MATCH)
+		intertype = int_match;
+	else //if (gametype == GT_RACE)
+		intertype = int_race;
 
 	// We couldn't display the intermission even if we wanted to.
 	// But we still need to give the players their score bonuses, dummy.
@@ -1046,30 +1103,24 @@ void Y_StartIntermission(void)
 		case int_match:
 		{
 			// Calculate who won
-			Y_CalculateMatchData(0, Y_CompareBattle);
+			if (battlecapsules)
+			{
+				Y_CalculateMatchData(0, Y_CompareTime);
+			}
+			else
+			{
+				Y_CalculateMatchData(0, Y_CompareScore);
+			}
+
 			if (cv_inttime.value > 0)
 				S_ChangeMusicInternal("racent", true); // loop it
+
 			break;
 		}
 		case int_race: // (time-only race)
 		{
-			if (!majormods && !multiplayer && !demo.playback) // remove this once we have a proper time attack screen
-			{
-				// Update visitation flags
-				mapvisited[gamemap-1] |= MV_BEATEN;
-				if (ALL7EMERALDS(emeralds))
-					mapvisited[gamemap-1] |= MV_ALLEMERALDS;
-				/*if (ultimatemode)
-					mapvisited[gamemap-1] |= MV_ULTIMATE;
-				if (data.coop.gotperfbonus)
-					mapvisited[gamemap-1] |= MV_PERFECT;*/
-
-				if (modeattacking == ATTACKING_RECORD)
-					Y_UpdateRecordReplays();
-			}
-
 			// Calculate who won
-			Y_CalculateMatchData(0, Y_CompareRace);
+			Y_CalculateMatchData(0, Y_CompareTime);
 			break;
 		}
 
@@ -1078,7 +1129,7 @@ void Y_StartIntermission(void)
 			break;
 	}
 
-	if (powertype != -1)
+	if (powertype != PWRLV_DISABLED)
 		K_UpdatePowerLevels();
 
 	//if (intertype == int_race || intertype == int_match)
@@ -1265,19 +1316,19 @@ void Y_VoteDrawer(void)
 					{
 						case 1:
 							thiscurs = cursor2;
-							p = displayplayers[1];
+							p = g_localplayers[1];
 							break;
 						case 2:
 							thiscurs = cursor3;
-							p = displayplayers[2];
+							p = g_localplayers[2];
 							break;
 						case 3:
 							thiscurs = cursor4;
-							p = displayplayers[3];
+							p = g_localplayers[3];
 							break;
 						default:
 							thiscurs = cursor1;
-							p = displayplayers[0];
+							p = g_localplayers[0];
 							break;
 					}
 
@@ -1565,13 +1616,13 @@ void Y_VoteTicker(void)
 			switch (i)
 			{
 				case 1:
-					p = displayplayers[1];
+					p = g_localplayers[1];
 					break;
 				case 2:
-					p = displayplayers[2];
+					p = g_localplayers[2];
 					break;
 				case 3:
-					p = displayplayers[3];
+					p = g_localplayers[3];
 					break;
 				default:
 					p = consoleplayer;

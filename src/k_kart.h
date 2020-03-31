@@ -8,6 +8,7 @@
 
 #include "doomdef.h"
 #include "d_player.h" // Need for player_t
+#include "command.h" // Need for player_t
 
 #define KART_FULLTURN 800
 
@@ -17,29 +18,34 @@ extern const UINT8 KartColor_Opposite[MAXSKINCOLORS*2];
 void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
 void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color);
 UINT8 K_GetKartColorByName(const char *name);
+player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 
 void K_RegisterKartStuff(void);
 
 boolean K_IsPlayerLosing(player_t *player);
-boolean K_IsPlayerWanted(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
+
+extern consvar_t *KartItemCVars[NUMKARTRESULTS-1];
+
+INT32 K_GetShieldFromItem(INT32 item);
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
 void K_KartPainEnergyFling(player_t *player);
 void K_FlipFromObject(mobj_t *mo, mobj_t *master);
 void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master);
+void K_DoIngameRespawn(player_t *player);
 void K_RespawnChecker(player_t *player);
 void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
 void K_KartPlayerAfterThink(player_t *player);
 void K_DoInstashield(player_t *player);
-void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount);
 void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflictor, boolean trapitem);
 void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor);
 void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor);
 void K_StealBumper(player_t *player, player_t *victim, boolean force);
 void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle, boolean spawncenter, boolean ghostit, mobj_t *source);
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color);
+UINT8 K_DriftSparkColor(player_t *player, INT32 charge);
 void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
 void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent);
@@ -61,13 +67,12 @@ void K_DropItems(player_t *player);
 void K_StripItems(player_t *player);
 void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
+fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower);
 fixed_t K_GetKartAccel(player_t *player);
 UINT16 K_GetKartFlashing(player_t *player);
 fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove);
 void K_MoveKartPlayer(player_t *player, boolean onground);
-void K_CalculateBattleWanted(void);
-void K_CheckBumpers(void);
 void K_CheckSpectateStatus(void);
 
 // sound stuff for lua

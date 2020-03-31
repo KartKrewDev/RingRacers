@@ -29,6 +29,9 @@
 // as commands per game tick.
 #include "d_ticcmd.h"
 
+// the player struct stores a waypoint for racing
+#include "k_waypoint.h"
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
@@ -118,7 +121,7 @@ typedef enum
 
 	/*** misc ***/
 	PF_FORCESTRAFE       = 1<<29, // Turning inputs are translated into strafing inputs
-	PF_ANALOGMODE        = 1<<30, // Analog mode?
+	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
 
 	// free: 1<<30 and 1<<31
 } pflags_t;
@@ -218,10 +221,12 @@ Run this macro, then #undef X afterward
 	X (GROW,          11),\
 	X (SHRINK,        12),\
 	X (THUNDERSHIELD, 13),\
-	X (HYUDORO,       14),\
-	X (POGOSPRING,    15),\
-	X (SUPERRING,     16),\
-	X (KITCHENSINK,   17)
+	X (BUBBLESHIELD,  14),\
+	X (FLAMESHIELD,   15),\
+	X (HYUDORO,       16),\
+	X (POGOSPRING,    17),\
+	X (SUPERRING,     18),\
+	X (KITCHENSINK,   19)
 
 typedef enum
 {
@@ -242,6 +247,15 @@ typedef enum
 	NUMKARTRESULTS
 } kartitems_t;
 
+typedef enum
+{
+	KSHIELD_NONE = 0,
+	KSHIELD_THUNDER = 1,
+	KSHIELD_BUBBLE = 2,
+	KSHIELD_FLAME = 3,
+	NUMKARTSHIELDS
+} kartshields_t;
+
 //{ SRB2kart - kartstuff
 typedef enum
 {
@@ -250,10 +264,6 @@ typedef enum
 	k_position,			// Used for Kart positions, mostly for deterministic stuff
 	k_oldposition,		// Used for taunting when you pass someone
 	k_positiondelay,	// Used for position number, so it can grow when passing/being passed
-	k_prevcheck,		// Previous checkpoint distance; for p_user.c (was "pw_pcd")
-	k_nextcheck,		// Next checkpoint distance; for p_user.c (was "pw_ncd")
-	k_waypoint,			// Waypoints.
-	k_starpostwp,		// Temporarily stores player waypoint for... some reason. Used when respawning and finishing.
 	k_starpostflip,		// the last starpost we hit requires flipping?
 	k_respawn,			// Timer for the DEZ laser respawn effect
 	k_dropdash,			// Charge up for respawn Drop Dash
@@ -301,20 +311,25 @@ typedef enum
 	k_itemtype,		// KITEM_ constant for item number
 	k_itemamount,	// Amount of said item
 	k_itemheld,		// Are you holding an item?
+	k_holdready,	// Hold button-style item is ready to activate
 
 	// Some items use timers for their duration or effects
-	//k_thunderanim,			// Duration of Thunder Shield's use animation
 	k_curshield,			// 0 = no shield, 1 = thunder shield
 	k_hyudorotimer,			// Duration of the Hyudoro offroad effect itself
 	k_stealingtimer,		// You are stealing an item, this is your timer
 	k_stolentimer,			// You are being stolen from, this is your timer
 	k_superring,			// Spawn rings on top of you every tic!
 	k_sneakertimer,			// Duration of the Sneaker Boost itself
-	k_levelbooster,			// Duration of a level booster's boost (same as sneaker, but separated for )
+	k_levelbooster,			// Duration of a level booster's boost (same as sneaker, but separated for boost stacking)
 	k_growshrinktimer,		// > 0 = Big, < 0 = small
 	k_squishedtimer,		// Squished frame timer
 	k_rocketsneakertimer,	// Rocket Sneaker duration timer
 	k_invincibilitytimer,	// Invincibility timer
+	k_bubblecool,			// Bubble Shield use cooldown
+	k_bubbleblowup,			// Bubble Shield usage blowup
+	k_flamedash,			// Flame Shield dash power
+	k_flamemeter,			// Flame Shield dash meter left
+	k_flamelength,			// Flame Shield dash meter, number of segments
 	k_eggmanheld,			// Eggman monitor held, separate from k_itemheld so it doesn't stop you from getting items
 	k_eggmanexplode,		// Fake item recieved, explode in a few seconds
 	k_eggmanblame,			// Fake item recieved, who set this fake
@@ -336,11 +351,11 @@ typedef enum
 	k_getsparks,		// Disable drift sparks at low speed, JUST enough to give acceleration the actual headstart above speed
 	k_jawztargetdelay,	// Delay for Jawz target switching, to make it less twitchy
 	k_spectatewait,		// How long have you been waiting as a spectator
-	k_growcancel,		// Hold the item button down to cancel Grow
 	k_tiregrease,		// Reduced friction timer after hitting a horizontal spring
 	k_springstars,		// Spawn stars around a player when they hit a spring
 	k_springcolor,		// Color of spring stars
 	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
+	k_wrongway, 		// Display WRONG WAY on screen
 
 	NUMKARTSTUFF
 } kartstufftype_t;
@@ -381,6 +396,9 @@ typedef enum
 
 // QUICKLY GET EITHER SNEAKER OR LEVEL BOOSTER SINCE THEY ARE FUNCTIONALLY IDENTICAL
 #define EITHERSNEAKER(p) (p->kartstuff[k_sneakertimer] || p->kartstuff[k_levelbooster])
+
+// QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
+#define RINGTOTAL(p) (p->kartstuff[k_rings] + p->kartstuff[k_pickuprings])
 
 //}
 
@@ -446,6 +464,8 @@ typedef struct player_s
 	angle_t frameangle; // for the player add the ability to have the sprite only face other angles
 	INT16 lturn_max[MAXPREDICTTICS]; // What's the expected turn value for full-left for a number of frames back (to account for netgame latency)?
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
+	UINT32 distancetofinish;
+	waypoint_t *nextwaypoint;
 
 	// Bit flags.
 	// See pflags_t, above.

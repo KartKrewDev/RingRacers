@@ -22,7 +22,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "p_setup.h" // levelflats
-#include "v_video.h" // pLocalPalette
+#include "v_video.h" // pMasterPalette
 #include "dehacked.h"
 
 #if defined (_WIN32) || defined (_WIN32_WCE)
@@ -1192,7 +1192,7 @@ void R_MakeInvertmap(void)
 INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 {
 	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb;
-	double maskamt = 0, othermask = 0;
+	double r, g, b, cbrightness, maskamt = 0, othermask = 0;
 	int mask, fog = 0;
 	size_t mapnum = num_extra_colormaps;
 	size_t i;
@@ -1300,6 +1300,32 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 
 	num_extra_colormaps++;
 
+	if (rendermode == render_soft)
+	{
+		for (i = 0; i < 256; i++)
+		{
+			r = pMasterPalette[i].s.red;
+			g = pMasterPalette[i].s.green;
+			b = pMasterPalette[i].s.blue;
+			cbrightness = sqrt((r*r) + (g*g) + (b*b));
+
+			map[i][0] = (cbrightness * cmaskr) + (r * othermask);
+			if (map[i][0] > 255.0l)
+				map[i][0] = 255.0l;
+			deltas[i][0] = (map[i][0] - cdestr) / (double)fadedist;
+
+			map[i][1] = (cbrightness * cmaskg) + (g * othermask);
+			if (map[i][1] > 255.0l)
+				map[i][1] = 255.0l;
+			deltas[i][1] = (map[i][1] - cdestg) / (double)fadedist;
+
+			map[i][2] = (cbrightness * cmaskb) + (b * othermask);
+			if (map[i][2] > 255.0l)
+				map[i][2] = 255.0l;
+			deltas[i][2] = (map[i][2] - cdestb) / (double)fadedist;
+		}
+	}
+
 	foundcolormaps[mapnum] = LUMPERROR;
 
 	// aligned on 8 bit for asm code
@@ -1313,7 +1339,6 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 
 	if (rendermode == render_soft)
 	{
-		double r, g, b, cbrightness;
 		int p;
 		lighttable_t *colormap_p;
 
@@ -1324,9 +1349,9 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 		//  map[i]'s values are decremented by after each use
 		for (i = 0; i < 256; i++)
 		{
-			r = pLocalPalette[i].s.red;
-			g = pLocalPalette[i].s.green;
-			b = pLocalPalette[i].s.blue;
+			r = pMasterPalette[i].s.red;
+			g = pMasterPalette[i].s.green;
+			b = pMasterPalette[i].s.blue;
 			cbrightness = sqrt((r*r) + (g*g) + (b*b));
 
 			map[i][0] = (cbrightness * cmaskr) + (r * othermask);
@@ -1402,16 +1427,20 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 
 // Thanks to quake2 source!
 // utils3/qdata/images.c
-UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b)
+UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette)
 {
 	int dr, dg, db;
 	int distortion, bestdistortion = 256 * 256 * 4, bestcolor = 0, i;
 
+	// Use master palette if none specified
+	if (palette == NULL)
+		palette = pMasterPalette;
+
 	for (i = 0; i < 256; i++)
 	{
-		dr = r - pLocalPalette[i].s.red;
-		dg = g - pLocalPalette[i].s.green;
-		db = b - pLocalPalette[i].s.blue;
+		dr = r - palette[i].s.red;
+		dg = g - palette[i].s.green;
+		db = b - palette[i].s.blue;
 		distortion = dr*dr + dg*dg + db*db;
 		if (distortion < bestdistortion)
 		{

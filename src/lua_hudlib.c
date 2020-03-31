@@ -139,6 +139,8 @@ enum cameraf {
 	camera_momx,
 	camera_momy,
 	camera_momz,
+	camera_pan,
+	camera_pitch,
 	camera_pnum
 };
 
@@ -158,6 +160,8 @@ static const char *const camera_opt[] = {
 	"momx",
 	"momy",
 	"momz",
+	"pan",
+	"pitch",
 	"pnum",
 	NULL};
 
@@ -314,6 +318,12 @@ static int camera_get(lua_State *L)
 	case camera_momz:
 		lua_pushinteger(L, cam->momz);
 		break;
+	case camera_pan:
+		lua_pushinteger(L, cam->pan);
+		break;
+	case camera_pitch:
+		lua_pushinteger(L, cam->pitch);
+		break;
 	case camera_pnum:
 		lua_pushinteger(L, camnum);
 		break;
@@ -426,15 +436,15 @@ static int libd_drawOnMinimap(lua_State *L)
 	// first, check what position the mmap is supposed to be in (pasted from k_kart.c):
 	MM_X = BASEVIDWIDTH - 50;		// 270
 	MM_Y = (BASEVIDHEIGHT/2)-16; //  84
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		MM_Y = (BASEVIDHEIGHT/2);
-		if (splitscreen > 1)	// 3P : bottom right
+		if (r_splitscreen > 1)	// 3P : bottom right
 		{
 			MM_X = (3*BASEVIDWIDTH/4);
 			MM_Y = (3*BASEVIDHEIGHT/4);
 
-			if (splitscreen > 2) // 4P: centered
+			if (r_splitscreen > 2) // 4P: centered
 			{
 				MM_X = (BASEVIDWIDTH/2);
 				MM_Y = (BASEVIDHEIGHT/2);
@@ -443,7 +453,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	}
 
 	// splitscreen flags
-	splitflags = (splitscreen == 3 ? 0 : V_SNAPTORIGHT);	// flags should only be 0 when it's centered (4p split)
+	splitflags = (r_splitscreen == 3 ? 0 : V_SNAPTORIGHT);	// flags should only be 0 when it's centered (4p split)
 
 	// translucency:
 	if (timeinmap > 105)
@@ -461,7 +471,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	minimaptrans = ((10-minimaptrans)<<FF_TRANSSHIFT);
 	splitflags |= minimaptrans;
 
-	if (!(splitscreen == 2))
+	if (!(r_splitscreen == 2))
 	{
 		splitflags &= ~minimaptrans;
 		splitflags |= V_HUDTRANSHALF;
@@ -973,17 +983,17 @@ void LUAh_GameHUD(player_t *stplayr)
 	lua_remove(gL, -3); // pop HUD
 	LUA_PushUserdata(gL, stplayr, META_PLAYER);
 
-	if (splitscreen > 2 && stplayr == &players[displayplayers[3]])
+	if (r_splitscreen > 2 && stplayr == &players[displayplayers[3]])
 	{
 		LUA_PushUserdata(gL, &camera[3], META_CAMERA);
 		camnum = 4;
 	}
-	else if (splitscreen > 1 && stplayr == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && stplayr == &players[displayplayers[2]])
 	{
 		LUA_PushUserdata(gL, &camera[2], META_CAMERA);
 		camnum = 3;
 	}
-	else if (splitscreen && stplayr == &players[displayplayers[1]])
+	else if (r_splitscreen && stplayr == &players[displayplayers[1]])
 	{
 		LUA_PushUserdata(gL, &camera[1], META_CAMERA);
 		camnum = 2;
