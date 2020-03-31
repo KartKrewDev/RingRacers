@@ -1083,7 +1083,6 @@ void D_SRB2Main(void)
 			// use user specific config file
 #ifdef DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
-			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, srb2home);
 			else
@@ -1094,7 +1093,6 @@ void D_SRB2Main(void)
 
 #else
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
-			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
 			else
@@ -1115,6 +1113,10 @@ void D_SRB2Main(void)
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
 	I_mkdir(addonsdir, 0755);
+
+	/* and downloads in a subdirectory */
+	snprintf(downloaddir, sizeof downloaddir, "%.255s%.1s%.255s",/* fuck!! */
+			addonsdir, PATHSEP, "downloads");
 
 	// rand() needs seeded regardless of password
 	srand((unsigned int)time(NULL));
