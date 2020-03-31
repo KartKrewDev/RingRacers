@@ -18,6 +18,7 @@ extern const UINT8 KartColor_Opposite[MAXSKINCOLORS*2];
 void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
 void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color);
 UINT8 K_GetKartColorByName(const char *name);
+player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 
 void K_RegisterKartStuff(void);
 
