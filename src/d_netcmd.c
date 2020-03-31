@@ -398,9 +398,9 @@ consvar_t cv_kartusepwrlv = {"kartusepwrlv", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo
 
 static CV_PossibleValue_t kartdebugitem_cons_t[] =
 {
-#define X( name, n ) { n, #name }
+#define FOREACH( name, n ) { n, #name }
 	KART_ITEM_ITERATOR,
-#undef  X
+#undef  FOREACH
 	{0}
 };
 consvar_t cv_kartdebugitem = {"kartdebugitem", "0", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugitem_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};

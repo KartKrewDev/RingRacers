@@ -201,38 +201,38 @@ typedef enum
 } powertype_t;
 
 /*
-To use: #define X( name, number )
+To use: #define FOREACH( name, number )
 Do with it whatever you want.
-Run this macro, then #undef X afterward
+Run this macro, then #undef FOREACH afterward
 */
 #define KART_ITEM_ITERATOR \
-	X (SAD,           -1),\
-	X (NONE,           0),\
-	X (SNEAKER,        1),\
-	X (ROCKETSNEAKER,  2),\
-	X (INVINCIBILITY,  3),\
-	X (BANANA,         4),\
-	X (EGGMAN,         5),\
-	X (ORBINAUT,       6),\
-	X (JAWZ,           7),\
-	X (MINE,           8),\
-	X (BALLHOG,        9),\
-	X (SPB,           10),\
-	X (GROW,          11),\
-	X (SHRINK,        12),\
-	X (THUNDERSHIELD, 13),\
-	X (BUBBLESHIELD,  14),\
-	X (FLAMESHIELD,   15),\
-	X (HYUDORO,       16),\
-	X (POGOSPRING,    17),\
-	X (SUPERRING,     18),\
-	X (KITCHENSINK,   19)
+	FOREACH (SAD,           -1),\
+	FOREACH (NONE,           0),\
+	FOREACH (SNEAKER,        1),\
+	FOREACH (ROCKETSNEAKER,  2),\
+	FOREACH (INVINCIBILITY,  3),\
+	FOREACH (BANANA,         4),\
+	FOREACH (EGGMAN,         5),\
+	FOREACH (ORBINAUT,       6),\
+	FOREACH (JAWZ,           7),\
+	FOREACH (MINE,           8),\
+	FOREACH (BALLHOG,        9),\
+	FOREACH (SPB,           10),\
+	FOREACH (GROW,          11),\
+	FOREACH (SHRINK,        12),\
+	FOREACH (THUNDERSHIELD, 13),\
+	FOREACH (BUBBLESHIELD,  14),\
+	FOREACH (FLAMESHIELD,   15),\
+	FOREACH (HYUDORO,       16),\
+	FOREACH (POGOSPRING,    17),\
+	FOREACH (SUPERRING,     18),\
+	FOREACH (KITCHENSINK,   19)
 
 typedef enum
 {
-#define X( name, n ) KITEM_ ## name = n
+#define FOREACH( name, n ) KITEM_ ## name = n
 	KART_ITEM_ITERATOR,
-#undef  X
+#undef  FOREACH
 
 	NUMKARTITEMS,
 
