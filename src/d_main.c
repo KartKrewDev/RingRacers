@@ -1108,7 +1108,7 @@ void D_SRB2Main(void)
 	I_mkdir(addonsdir, 0755);
 
 	/* and downloads in a subdirectory */
-	snprintf(downloaddir, sizeof downloaddir, "%.255s%.1s%.255s",/* fuck!! */
+	snprintf(downloaddir, sizeof downloaddir, "%s%s%s",
 			addonsdir, PATHSEP, "downloads");
 
 	// rand() needs seeded regardless of password
