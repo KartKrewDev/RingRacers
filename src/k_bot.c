@@ -223,14 +223,10 @@ static void K_SteerFromWall(mobj_t *bot, line_t *ld)
 
 	if (angle < ANGLE_180)
 	{
-		if (bot->player == &players[displayplayers[0]])
-			CONS_Printf("turn dir 2\n");
 		badsteerglobal = -amount;
 	}
 	else
 	{
-		if (bot->player == &players[displayplayers[0]])
-			CONS_Printf("turn dir 1\n");
 		badsteerglobal = amount;
 	}
 }
