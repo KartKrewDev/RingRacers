@@ -12634,12 +12634,12 @@ ML_NOCLIMB : Direction not controllable
 	{
 		// Just like MT_SPINMACEPOINT, this now works here too!
 		INT32 line = P_FindSpecialLineFromTag(2000, mthing->angle, -1);
-		mobj->radius = 384*FRACUNIT;
+		mobj->radius = 384 * mapobjectscale;
 		// Set the radius, mobj z, and mthing z to match what the parameters want
 		if (line != -1)
 		{
-			fixed_t lineradius = sides[lines[line].sidenum[0]].textureoffset;
-			fixed_t linez = sides[lines[line].sidenum[0]].rowoffset;
+			fixed_t lineradius = FixedMul(sides[lines[line].sidenum[0]].textureoffset, mapobjectscale);
+			fixed_t linez = sides[lines[line].sidenum[0]].rowoffset; // mapthing z heights aren't affected by mapobjectscale, so I left this alone.
 
 			if (lineradius > 0)
 				mobj->radius = lineradius;
@@ -12686,7 +12686,6 @@ ML_NOCLIMB : Direction not controllable
 		{
 			mobj->extravalue2 = 0;
 		}
-
 
 		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead
 		P_SetTarget(&mobj->tracer, waypointcap);
