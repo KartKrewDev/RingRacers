@@ -287,6 +287,16 @@ waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj);
 --------------------------------------------------*/
 size_t K_GetWaypointHeapIndex(waypoint_t *waypoint);
 
+/*--------------------------------------------------
+	size_t K_GetNumWaypoints(void)
+
+		Returns the number of waypoints that are in the heap.
+		Intended for Net Archiving/Unarchiving
+
+	Return:-
+		The number of waypoints in the heap
+--------------------------------------------------*/
+size_t K_GetNumWaypoints(void);
 
 /*--------------------------------------------------
 	waypoint_t *K_GetWaypointFromIndex(size_t waypointindex)
