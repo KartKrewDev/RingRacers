@@ -116,10 +116,12 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
-	const INT32 distance = (player->speed / FRACUNIT) * TICRATE;
+	const INT32 futuresight = (3*TICRATE/4); // How far ahead into the future to try and predict
+	const INT32 distance = (player->speed / FRACUNIT) * futuresight;
 	INT32 distanceleft = distance;
 	botprediction_t *predictcoords = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
 	waypoint_t *wp = player->nextwaypoint;
+	fixed_t smallestradius = wp->mobj->radius;
 	size_t nwp;
 	size_t i;
 	INT32 lp = 0;
@@ -128,7 +130,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	{
 		predictcoords->x = wp->mobj->x;
 		predictcoords->y = wp->mobj->y;
-		predictcoords->radius = wp->mobj->radius;
+		predictcoords->radius = smallestradius;
 		return predictcoords;
 	}
 
@@ -174,13 +176,19 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 			break;
 		}
 
-		wp = wp->nextwaypoints[nwp];
 		distanceleft -= wp->nextwaypointdistances[nwp];
+
+		if (wp->nextwaypoints[nwp]->mobj->radius < smallestradius)
+		{
+			smallestradius = wp->nextwaypoints[nwp]->mobj->radius;
+		}
+
+		wp = wp->nextwaypoints[nwp];
 	}
 
 	predictcoords->x = wp->mobj->x;
 	predictcoords->y = wp->mobj->y;
-	predictcoords->radius = wp->mobj->radius;
+	predictcoords->radius = smallestradius;
 
 	if (distanceleft > 0)
 	{
@@ -195,6 +203,9 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
+	boolean ontrack = false;
+	INT16 turnamt = KART_FULLTURN;
+
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
 		return;
@@ -225,7 +236,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	if (player->nextwaypoint != NULL && player->nextwaypoint->mobj != NULL && !P_MobjWasRemoved(player->nextwaypoint->mobj))
 	{
 		botprediction_t *predict = K_CreateBotPrediction(player);
-		INT16 turnamt = KART_FULLTURN;
 		SINT8 turnsign = 0;
 		angle_t destangle, moveangle, angle;
 		INT16 anglediff;
@@ -256,12 +266,17 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			fixed_t rad = predict->radius - (player->mo->radius*2);
+			fixed_t rad = predict->radius - (player->mo->radius*4);
 			fixed_t dirdist = K_DistanceOfLineFromPoint(
 				player->mo->x, player->mo->y,
 				player->mo->x + FINECOSINE(moveangle >> ANGLETOFINESHIFT), player->mo->y + FINESINE(moveangle >> ANGLETOFINESHIFT),
 				predict->x, predict->y
 			);
+
+			if (rad < 0)
+			{
+				rad = 0;
+			}
 
 			cmd->buttons |= BT_ACCELERATE;
 
@@ -270,7 +285,22 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 			if (dirdist <= rad)
 			{
-				if (dirdist < 2*rad/3)
+				fixed_t speedmul = FixedMul(player->speed, K_GetKartSpeed(player, false));
+				fixed_t speedrad = rad/4;
+
+				ontrack = true;
+
+				if (speedmul > FRACUNIT)
+				{
+					speedmul = FRACUNIT;
+				}
+
+				// Increase radius with speed
+				// At low speed, the CPU will try to be more accurate
+				// At high speed, they're more likely to lawnmower
+				speedrad += FixedMul(speedmul, rad/2);
+
+				if (dirdist < speedrad)
 				{
 					// Don't need to turn!
 					turnamt = 0;
@@ -291,17 +321,36 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		if (turnamt != 0)
 		{
-			cmd->driftturn = KART_FULLTURN * turnsign;
-			cmd->angleturn += KART_FULLTURN * turnsign;
+			cmd->driftturn = turnamt * turnsign;
+			cmd->angleturn += turnamt * turnsign;
 		}
 
 		Z_Free(predict);
 	}
-
-	if (player->kartstuff[k_userings] == 1 && !player->exiting)
+	else
 	{
-		if (player->kartstuff[k_rings] > 10)
-			cmd->buttons |= BT_ATTACK;
+		turnamt = 0;
+	}
+
+	(void)ontrack;
+
+	if (player->kartstuff[k_userings] == 1)
+	{
+		if (!player->exiting)
+		{
+			INT32 saferingsval = 8 + K_GetKartRingPower(player);
+
+			if (player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
+				|| player->kartstuff[k_speedboost] > 0) // Have another type of boost (tethering)
+			{
+				saferingsval -= 5;
+			}
+
+			if (player->kartstuff[k_rings] > saferingsval)
+			{
+				cmd->buttons |= BT_ATTACK;
+			}
+		}
 	}
 	else
 	{
@@ -312,58 +361,63 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			return;
 		}
 
-		switch (player->kartstuff[k_itemtype])
+		if (player->kartstuff[k_rocketsneakertimer] > 0)
 		{
-			case KITEM_SNEAKER:
-				if ((player->kartstuff[k_offroad] && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
-					|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
-					|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
-					|| player->kartstuff[k_speedboost] > 0 // Have another type of boost (tethering)
-					|| player->kartstuff[k_botitemconfirm] > 4*TICRATE) // Held onto it for too long
-				{
-					cmd->buttons |= BT_ATTACK;
-					player->kartstuff[k_botitemconfirm] -= TICRATE;
-				}
-				else
-				{
-					player->kartstuff[k_botitemconfirm]++;
-				}
-				break;
-			case KITEM_ROCKETSNEAKER:
-				if (player->kartstuff[k_rocketsneakertimer] <= 0)
+			if (player->kartstuff[k_botitemconfirm] > TICRATE)
+			{
+				if (player->kartstuff[k_sneakertimer] <= (TICRATE/3) && !(player->pflags & PF_ATTACKDOWN))
 				{
 					cmd->buttons |= BT_ATTACK;
 					player->kartstuff[k_botitemconfirm] = 0;
 				}
-				else
-				{
+			}
+			else
+			{
+				player->kartstuff[k_botitemconfirm]++;
+			}
+		}
+		else
+		{
+			switch (player->kartstuff[k_itemtype])
+			{
+				case KITEM_SNEAKER:
 					if ((player->kartstuff[k_offroad] && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
 						|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
 						|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
 						|| player->kartstuff[k_speedboost] > 0 // Have another type of boost (tethering)
-						|| player->kartstuff[k_botitemconfirm] > TICRATE) // Held onto it for too long
+						|| player->kartstuff[k_botitemconfirm] > 4*TICRATE) // Held onto it for too long
 					{
-						cmd->buttons |= BT_ATTACK;
-						player->kartstuff[k_botitemconfirm] -= TICRATE/2;
+						if (player->kartstuff[k_sneakertimer] <= (TICRATE/3) && !(player->pflags & PF_ATTACKDOWN))
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->kartstuff[k_botitemconfirm] -= 2*TICRATE;
+						}
 					}
 					else
 					{
 						player->kartstuff[k_botitemconfirm]++;
 					}
-				}
-				break;
-			case KITEM_INVINCIBILITY:
-			case KITEM_SPB:
-			case KITEM_GROW:
-			case KITEM_SHRINK:
-			case KITEM_HYUDORO:
-			case KITEM_SUPERRING:
-				cmd->buttons |= BT_ATTACK;
-				player->kartstuff[k_botitemconfirm] = 0;
-				break;
-			default:
-				player->kartstuff[k_botitemconfirm] = 0;
-				break;
+					break;
+				case KITEM_ROCKETSNEAKER:
+					if (player->kartstuff[k_rocketsneakertimer] <= 0)
+					{
+						cmd->buttons |= BT_ATTACK;
+						player->kartstuff[k_botitemconfirm] = 0;
+					}
+					break;
+				case KITEM_INVINCIBILITY:
+				case KITEM_SPB:
+				case KITEM_GROW:
+				case KITEM_SHRINK:
+				case KITEM_HYUDORO:
+				case KITEM_SUPERRING:
+					cmd->buttons |= BT_ATTACK;
+					player->kartstuff[k_botitemconfirm] = 0;
+					break;
+				default:
+					player->kartstuff[k_botitemconfirm] = 0;
+					break;
+			}
 		}
 	}
 }

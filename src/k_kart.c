@@ -6455,9 +6455,9 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				{
 					for (i = 0U; i < waypoint->numnextwaypoints; i++)
 					{
-						if (K_GetWaypointIsShortcut(waypoint->nextwaypoints[i])
-							&& K_PlayerUsesBotMovement(player)
-							&& !K_BotCanTakeCut(player))
+						if (K_PlayerUsesBotMovement(player)
+						&& K_GetWaypointIsShortcut(waypoint->nextwaypoints[i])
+						&& !K_BotCanTakeCut(player))
 						{
 							continue;
 						}
@@ -6498,17 +6498,11 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 					}
 				}
 
-				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U))
+				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U)
+				&& !(K_PlayerUsesBotMovement(player))) // Bots do not need prev waypoints
 				{
 					for (i = 0U; i < waypoint->numprevwaypoints; i++)
 					{
-						if (K_GetWaypointIsShortcut(waypoint->prevwaypoints[i])
-							&& K_PlayerUsesBotMovement(player)
-							&& !K_BotCanTakeCut(player))
-						{
-							continue;
-						}
-
 						angletowaypoint = R_PointToAngle2(
 							player->mo->x, player->mo->y,
 							waypoint->prevwaypoints[i]->mobj->x, waypoint->prevwaypoints[i]->mobj->y);
@@ -6727,6 +6721,11 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 			}
 		}
 	}
+}
+
+INT32 K_GetKartRingPower(player_t *player)
+{
+	return (((9 - player->kartspeed) + (9 - player->kartweight)) / 2);
 }
 
 // Returns false if this player being placed here causes them to collide with any other player

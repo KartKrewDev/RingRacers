@@ -16,6 +16,7 @@
 typedef struct botprediction_s {
 	fixed_t x, y;
 	fixed_t radius;
+	angle_t dir;
 } botprediction_t;
 
 void K_AddBots(SINT8 numbots);
