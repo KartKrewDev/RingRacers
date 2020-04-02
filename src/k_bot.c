@@ -322,7 +322,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		if (turnamt != 0)
 		{
 			cmd->driftturn = turnamt * turnsign;
-			cmd->angleturn += turnamt * turnsign;
+			cmd->angleturn = ( player->mo->angle >> 16 ) + turnamt * turnsign;
 		}
 
 		Z_Free(predict);
