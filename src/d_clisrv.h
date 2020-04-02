@@ -323,6 +323,8 @@ typedef struct
 	UINT8 playerskins[MAXPLAYERS];
 	UINT8 playercolor[MAXPLAYERS];
 
+	UINT8 playerisbot[MAXPLAYERS];
+
 	UINT8 gametype;
 	UINT8 modifiedgame;
 	SINT8 adminplayers[MAXPLAYERS]; // Needs to be signed

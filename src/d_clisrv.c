@@ -1555,6 +1555,8 @@ static boolean SV_SendServerConfig(INT32 node)
 
 		netbuffer->u.servercfg.playerskins[i] = (UINT8)players[i].skin;
 		netbuffer->u.servercfg.playercolor[i] = (UINT8)players[i].skincolor;
+
+		netbuffer->u.servercfg.playerisbot[i] = players[i].bot;
 	}
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
@@ -4289,6 +4291,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				playeringame[j] = true;
 				SetPlayerSkinByNum(j, (INT32)netbuffer->u.servercfg.playerskins[j]);
 				players[j].skincolor = netbuffer->u.servercfg.playercolor[j];
+				players[j].bot = netbuffer->u.servercfg.playerisbot[j];
 			}
 
 			scp = netbuffer->u.servercfg.varlengthinputs;
