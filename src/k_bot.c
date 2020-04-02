@@ -22,6 +22,7 @@
 #include "k_kart.h"
 #include "z_zone.h"
 #include "i_system.h"
+#include "p_maputl.h"
 
 void K_AddBots(SINT8 numbots)
 {
@@ -201,10 +202,145 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	return predictcoords;
 }
 
+mobj_t *botmo = NULL;
+INT16 badsteerglobal = 0;
+INT32 predictx = 0, predicty = 0;
+
+static void K_SteerFromWall(mobj_t *bot, line_t *ld)
+{
+	const INT16 amount = KART_FULLTURN + (KART_FULLTURN/4); // KART_FULLTURN/4, but cancel out full turn from earlier turning
+	INT32 side = P_PointOnLineSide(bot->x, bot->y, ld);
+	angle_t lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy) - ANGLE_90;
+	angle_t destangle = R_PointToAngle2(bot->x, bot->y, predictx, predicty);
+	angle_t angle;
+
+	if (side == 1)
+	{
+		lineangle += ANGLE_180;
+	}
+
+	angle = (destangle - lineangle);
+
+	if (angle < ANGLE_180)
+	{
+		if (bot->player == &players[displayplayers[0]])
+			CONS_Printf("turn dir 2\n");
+		badsteerglobal = -amount;
+	}
+	else
+	{
+		if (bot->player == &players[displayplayers[0]])
+			CONS_Printf("turn dir 1\n");
+		badsteerglobal = amount;
+	}
+}
+
+static inline boolean K_FindBlockingWalls(line_t *ld)
+{
+	// Condensed version of PIT_CheckLine
+	const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
+	fixed_t maxstep = maxstepmove;
+
+	if (ld->polyobj && !(ld->polyobj->flags & POF_SOLID))
+	{
+		return true;
+	}
+
+	if (tmbbox[BOXRIGHT] <= ld->bbox[BOXLEFT] || tmbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
+		|| tmbbox[BOXTOP] <= ld->bbox[BOXBOTTOM] || tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
+	{
+		return true;
+	}
+
+	if (P_BoxOnLineSide(tmbbox, ld) != -1)
+	{
+		return true;
+	}
+
+	// one sided line
+	if (!ld->backsector)
+	{
+		if (P_PointOnLineSide(botmo->x, botmo->y, ld))
+		{
+			// don't hit the back side
+			return true;
+		}
+
+		K_SteerFromWall(botmo, ld);
+		return false;
+	}
+
+	if ((ld->flags & ML_IMPASSABLE) || (ld->flags & ML_BLOCKPLAYERS))
+	{
+		K_SteerFromWall(botmo, ld);
+		return false;
+	}
+
+	// set openrange, opentop, openbottom
+	P_LineOpening(ld, botmo);
+
+	if (botmo->player->kartstuff[k_waterskip])
+		maxstep += maxstepmove;
+
+	if (P_MobjTouchingSectorSpecial(botmo, 1, 13, false))
+		maxstep <<= 1;
+	else if (P_MobjTouchingSectorSpecial(botmo, 1, 12, false))
+		maxstep = 0;
+
+	if ((openrange < botmo->height) // doesn't fit
+		|| (opentop - botmo->z < botmo->height) // mobj is too high
+		|| (openbottom - botmo->z > maxstep)) // too big a step up
+	{
+		K_SteerFromWall(botmo, ld);
+		return false;
+	}
+
+	return true;
+}
+
+static INT16 K_BotSteerFromWalls(player_t *player, botprediction_t *predict)
+{
+	INT32 xl, xh, yl, yh, bx, by;
+	fixed_t radius = predict->radius / 3;
+
+	badsteerglobal = 0;
+
+	botmo = player->mo;
+	tmx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, player->speed);
+	tmy = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, player->speed);
+
+	predictx = predict->x;
+	predicty = predict->y;
+
+	xl = (unsigned)(tmx - radius - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(tmx + radius - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(tmy - radius - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(tmy + radius - bmaporgy)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX(xl, xh, yl, yh);
+
+	tmbbox[BOXTOP] = tmy + radius;
+	tmbbox[BOXBOTTOM] = tmy - radius;
+	tmbbox[BOXRIGHT] = tmx + radius;
+	tmbbox[BOXLEFT] = tmx - radius;
+
+	// check lines
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
+		{
+			P_BlockLinesIterator(bx, by, K_FindBlockingWalls);
+		}
+	}
+
+	return badsteerglobal;
+}
+
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
+	botprediction_t *predict = NULL;
 	boolean ontrack = false;
-	INT16 turnamt = KART_FULLTURN;
+	INT16 turnamt = 0;
 
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
@@ -235,10 +371,11 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (player->nextwaypoint != NULL && player->nextwaypoint->mobj != NULL && !P_MobjWasRemoved(player->nextwaypoint->mobj))
 	{
-		botprediction_t *predict = K_CreateBotPrediction(player);
 		SINT8 turnsign = 0;
 		angle_t destangle, moveangle, angle;
 		INT16 anglediff;
+
+		predict = K_CreateBotPrediction(player);
 
 		destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 		moveangle = player->mo->angle;
@@ -257,6 +394,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 
 		anglediff = abs(anglediff);
+		turnamt = KART_FULLTURN * turnsign;
 
 		if (anglediff > 90)
 		{
@@ -319,17 +457,22 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			}
 		}
 
-		if (turnamt != 0)
+		turnamt += K_BotSteerFromWalls(player, predict);
+	}
+
+	if (turnamt != 0)
+	{
+		if (turnamt > KART_FULLTURN)
 		{
-			cmd->driftturn = turnamt * turnsign;
-			cmd->angleturn += turnamt * turnsign;
+			turnamt = KART_FULLTURN;
+		}
+		else if (turnamt < -KART_FULLTURN)
+		{
+			turnamt = -KART_FULLTURN;
 		}
 
-		Z_Free(predict);
-	}
-	else
-	{
-		turnamt = 0;
+		cmd->driftturn = turnamt;
+		cmd->angleturn += turnamt;
 	}
 
 	(void)ontrack;
@@ -419,6 +562,11 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					break;
 			}
 		}
+	}
+
+	if (predict != NULL)
+	{
+		Z_Free(predict);
 	}
 }
 
