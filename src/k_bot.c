@@ -120,7 +120,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT32 futuresight = (3*TICRATE/4); // How far ahead into the future to try and predict
 	const INT32 distance = (player->speed / FRACUNIT) * futuresight;
 	INT32 distanceleft = distance;
-	botprediction_t *predictcoords = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
+	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
 	waypoint_t *wp = player->nextwaypoint;
 	fixed_t smallestradius = wp->mobj->radius;
 	size_t nwp;
@@ -129,10 +129,10 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 	if (distance <= 0)
 	{
-		predictcoords->x = wp->mobj->x;
-		predictcoords->y = wp->mobj->y;
-		predictcoords->radius = smallestradius;
-		return predictcoords;
+		predict->x = wp->mobj->x;
+		predict->y = wp->mobj->y;
+		predict->radius = smallestradius;
+		return predict;
 	}
 
 	while (distanceleft > 0)
@@ -187,24 +187,24 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		wp = wp->nextwaypoints[nwp];
 	}
 
-	predictcoords->x = wp->mobj->x;
-	predictcoords->y = wp->mobj->y;
-	predictcoords->radius = smallestradius;
+	predict->x = wp->mobj->x;
+	predict->y = wp->mobj->y;
+	predict->radius = smallestradius;
 
 	if (distanceleft > 0)
 	{
 		angle_t a = R_PointToAngle2(wp->mobj->x, wp->mobj->y, wp->nextwaypoints[nwp]->mobj->x, wp->nextwaypoints[nwp]->mobj->y);
 
-		predictcoords->x += P_ReturnThrustX(NULL, a, distanceleft * FRACUNIT);
-		predictcoords->y += P_ReturnThrustY(NULL, a, distanceleft * FRACUNIT);
+		predict->x += P_ReturnThrustX(NULL, a, distanceleft * FRACUNIT);
+		predict->y += P_ReturnThrustY(NULL, a, distanceleft * FRACUNIT);
 	}
 
-	return predictcoords;
+	return predict;
 }
 
 mobj_t *botmo = NULL;
 INT16 badsteerglobal = 0;
-INT32 predictx = 0, predicty = 0;
+fixed_t predictx = 0, predicty = 0;
 
 static void K_SteerFromWall(mobj_t *bot, line_t *ld)
 {
