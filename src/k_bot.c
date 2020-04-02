@@ -472,7 +472,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 
 		cmd->driftturn = turnamt;
-		cmd->angleturn += turnamt;
+		cmd->angleturn = (player->mo->angle >> 16) + turnamt;
 	}
 
 	(void)ontrack;
