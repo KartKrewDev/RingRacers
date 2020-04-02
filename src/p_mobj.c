@@ -12638,8 +12638,8 @@ ML_NOCLIMB : Direction not controllable
 		// Set the radius, mobj z, and mthing z to match what the parameters want
 		if (line != -1)
 		{
-			fixed_t lineradius = FixedMul(sides[lines[line].sidenum[0]].textureoffset, mapobjectscale);
-			fixed_t linez = sides[lines[line].sidenum[0]].rowoffset; // mapthing z heights aren't affected by mapobjectscale, so I left this alone.
+			fixed_t lineradius = sides[lines[line].sidenum[0]].textureoffset;
+			fixed_t linez = sides[lines[line].sidenum[0]].rowoffset;
 
 			if (lineradius > 0)
 				mobj->radius = lineradius;
