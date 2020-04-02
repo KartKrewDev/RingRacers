@@ -445,7 +445,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					turnamt /= 4;
 				}
 			}
-			else if (anglediff > 45)
+			else if (anglediff > 60)
 			{
 				// Actually, don't go too fast...
 				cmd->forwardmove /= 2;
