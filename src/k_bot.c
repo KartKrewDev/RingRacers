@@ -367,7 +367,7 @@ static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, boolean towards)
 
 		amount = -amount;
 
-		if (dist <= (bot->radius + thing->radius) * 2)
+		if (dist <= (bot->radius + thing->radius))
 		{
 			// Don't need to turn any harder!
 			return;
@@ -406,11 +406,16 @@ static inline boolean K_BotSteerObjects(mobj_t *thing)
 	switch (thing->type)
 	{
 		case MT_BANANA:
+		case MT_BANANA_SHIELD:
 		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
 		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
 		case MT_JAWZ:
 		case MT_JAWZ_DUD:
+		case MT_JAWZ_SHIELD:
 		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
 		case MT_BALLHOG:
 		case MT_SPB:
 			K_SteerFromObject(botmo, thing, false);
@@ -506,7 +511,7 @@ static inline boolean K_BotSteerObjects(mobj_t *thing)
 			}
 			break;
 		default:
-			if (thing->flags & (MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE|MF_FIRE))
+			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE|MF_FIRE))
 			{
 				K_SteerFromObject(botmo, thing, false);
 			}
