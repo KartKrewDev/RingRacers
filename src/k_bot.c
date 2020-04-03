@@ -637,7 +637,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			{
 				fixed_t speedmul = FixedMul(player->speed, K_GetKartSpeed(player, false));
 				fixed_t speedrad = rad/4;
-				
 
 				if (speedmul > FRACUNIT)
 				{
@@ -690,7 +689,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	{
 		if (!player->exiting)
 		{
-			INT32 saferingsval = 8 + K_GetKartRingPower(player);
+			INT32 saferingsval = 16 - K_GetKartRingPower(player);
 
 			if (player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
 				|| player->kartstuff[k_speedboost] > 0) // Have another type of boost (tethering)
