@@ -1507,6 +1507,7 @@ static void Y_VoteStops(SINT8 pick, SINT8 level)
 void Y_VoteTicker(void)
 {
 	INT32 i;
+	boolean everyone_voted;
 
 	if (paused || P_AutoPause() || !voteclient.loaded)
 		return;
@@ -1655,7 +1656,7 @@ void Y_VoteTicker(void)
 
 				if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
 				{
-					D_ModifyClientVote(voteclient.playerinfo[i].selection, i);
+					D_ModifyClientVote(consoleplayer, voteclient.playerinfo[i].selection, i);
 					pressed = true;
 				}
 			}
@@ -1669,6 +1670,8 @@ void Y_VoteTicker(void)
 
 		if (server)
 		{
+			everyone_voted = true;/* the default condition */
+
 			if (timer == 0)
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
@@ -1682,13 +1685,25 @@ void Y_VoteTicker(void)
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
 					if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
-						return;
+					{
+						if (players[i].bot)
+						{
+							if (( M_RandomFixed() % 100 ) == 0)
+								D_ModifyClientVote(i, M_RandomKey(4), 0);
+						}
+
+						if (votes[i] == -1)
+							everyone_voted = false;
+					}
 				}
 			}
 
-			timer = 0;
-			if (voteendtic == -1)
-				D_PickVote();
+			if (everyone_voted)
+			{
+				timer = 0;
+				if (voteendtic == -1)
+					D_PickVote();
+			}
 		}
 	}
 }
