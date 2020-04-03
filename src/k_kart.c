@@ -1394,7 +1394,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 	return weight;
 }
 
-static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
+fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 {
 	fixed_t weight = 5*FRACUNIT;
 

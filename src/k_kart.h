@@ -28,6 +28,7 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 extern consvar_t *KartItemCVars[NUMKARTRESULTS-1];
 
 INT32 K_GetShieldFromItem(INT32 item);
+fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
 void K_KartPainEnergyFling(player_t *player);
 void K_FlipFromObject(mobj_t *mo, mobj_t *master);

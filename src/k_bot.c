@@ -107,10 +107,19 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 
 	fixed_t mag = FixedMul(v1tov2[0], v1tov2[0]) + FixedMul(v1tov2[1], v1tov2[1]);
 	fixed_t dot = FixedMul(v1toc[0], v1tov2[0]) + FixedMul(v1toc[1], v1tov2[1]);
-	fixed_t t = FixedDiv(dot, mag);
 
-	fixed_t px = v1x + FixedMul(v1tov2[0], t);
-	fixed_t py = v1y + FixedMul(v1tov2[1], t);
+	fixed_t t;
+	fixed_t px, py;
+
+	if (mag == 0)
+	{
+		return 0;
+	}
+
+	t = FixedDiv(dot, mag);
+
+	px = v1x + FixedMul(v1tov2[0], t);
+	py = v1y + FixedMul(v1tov2[1], t);
 
 	return P_AproxDistance(cx - px, cy - py);
 }
@@ -203,12 +212,13 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 }
 
 mobj_t *botmo = NULL;
+fixed_t distancetocheck = 0;
 INT16 badsteerglobal = 0;
 fixed_t predictx = 0, predicty = 0;
 
 static void K_SteerFromWall(mobj_t *bot, line_t *ld)
 {
-	const INT16 amount = KART_FULLTURN + (KART_FULLTURN/4); // KART_FULLTURN/4, but cancel out full turn from earlier turning
+	const INT16 amount = 2*KART_FULLTURN;
 	INT32 side = P_PointOnLineSide(bot->x, bot->y, ld);
 	angle_t lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy) - ANGLE_90;
 	angle_t destangle = R_PointToAngle2(bot->x, bot->y, predictx, predicty);
@@ -223,11 +233,11 @@ static void K_SteerFromWall(mobj_t *bot, line_t *ld)
 
 	if (angle < ANGLE_180)
 	{
-		badsteerglobal = -amount;
+		badsteerglobal -= amount;
 	}
 	else
 	{
-		badsteerglobal = amount;
+		badsteerglobal += amount;
 	}
 }
 
@@ -236,6 +246,12 @@ static inline boolean K_FindBlockingWalls(line_t *ld)
 	// Condensed version of PIT_CheckLine
 	const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
 	fixed_t maxstep = maxstepmove;
+	INT32 lineside = 0;
+
+	if (!botmo || P_MobjWasRemoved(botmo) || !botmo->player)
+	{
+		return false;
+	}
 
 	if (ld->polyobj && !(ld->polyobj->flags & POF_SOLID))
 	{
@@ -253,23 +269,25 @@ static inline boolean K_FindBlockingWalls(line_t *ld)
 		return true;
 	}
 
+	lineside = P_PointOnLineSide(botmo->x, botmo->y, ld);
+
 	// one sided line
 	if (!ld->backsector)
 	{
-		if (P_PointOnLineSide(botmo->x, botmo->y, ld))
+		if (lineside)
 		{
 			// don't hit the back side
 			return true;
 		}
 
 		K_SteerFromWall(botmo, ld);
-		return false;
+		return true;
 	}
 
 	if ((ld->flags & ML_IMPASSABLE) || (ld->flags & ML_BLOCKPLAYERS))
 	{
 		K_SteerFromWall(botmo, ld);
-		return false;
+		return true;
 	}
 
 	// set openrange, opentop, openbottom
@@ -288,7 +306,7 @@ static inline boolean K_FindBlockingWalls(line_t *ld)
 		|| (openbottom - botmo->z > maxstep)) // too big a step up
 	{
 		K_SteerFromWall(botmo, ld);
-		return false;
+		return true;
 	}
 
 	return true;
@@ -297,30 +315,31 @@ static inline boolean K_FindBlockingWalls(line_t *ld)
 static INT16 K_BotSteerFromWalls(player_t *player, botprediction_t *predict)
 {
 	INT32 xl, xh, yl, yh, bx, by;
-	fixed_t radius = predict->radius / 3;
 
 	badsteerglobal = 0;
 
 	botmo = player->mo;
+	distancetocheck = player->mo->radius * 8;
+
 	tmx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, player->speed);
 	tmy = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, player->speed);
 
 	predictx = predict->x;
 	predicty = predict->y;
 
-	xl = (unsigned)(tmx - radius - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(tmx + radius - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(tmy - radius - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(tmy + radius - bmaporgy)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(tmx - distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(tmx + distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(tmy - distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(tmy + distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX(xl, xh, yl, yh);
 
-	tmbbox[BOXTOP] = tmy + radius;
-	tmbbox[BOXBOTTOM] = tmy - radius;
-	tmbbox[BOXRIGHT] = tmx + radius;
-	tmbbox[BOXLEFT] = tmx - radius;
+	tmbbox[BOXTOP] = tmy + distancetocheck;
+	tmbbox[BOXBOTTOM] = tmy - distancetocheck;
+	tmbbox[BOXRIGHT] = tmx + distancetocheck;
+	tmbbox[BOXLEFT] = tmx - distancetocheck;
 
-	// check lines
+	// Check for lines that the bot might collide with
 	for (bx = xl; bx <= xh; bx++)
 	{
 		for (by = yl; by <= yh; by++)
@@ -332,19 +351,210 @@ static INT16 K_BotSteerFromWalls(player_t *player, botprediction_t *predict)
 	return badsteerglobal;
 }
 
+static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, boolean towards)
+{
+	INT16 amount = KART_FULLTURN;
+	angle_t destangle = R_PointToAngle2(bot->x, bot->y, thing->x, thing->y);
+	angle_t angle;
+
+	if (towards)
+	{
+		fixed_t dist = K_DistanceOfLineFromPoint(
+			bot->x, bot->y,
+			bot->x + FINECOSINE(bot->angle >> ANGLETOFINESHIFT), bot->y + FINESINE(bot->angle >> ANGLETOFINESHIFT),
+			thing->x, thing->y
+		);
+
+		amount = -amount;
+
+		if (dist <= (bot->radius + thing->radius) * 2)
+		{
+			// Don't need to turn any harder!
+			return;
+		}
+	}
+
+	angle = (bot->angle - destangle);
+
+	if (angle < ANGLE_180)
+	{
+		badsteerglobal -= amount;
+	}
+	else
+	{
+		badsteerglobal += amount;
+	}
+}
+
+static inline boolean K_BotSteerObjects(mobj_t *thing)
+{
+	if (!botmo || P_MobjWasRemoved(botmo) || !botmo->player)
+	{
+		return false;
+	}
+
+	if (!thing->health)
+	{
+		return true;
+	}
+
+	if (P_AproxDistance(botmo->x - thing->x, botmo->y - thing->y) > distancetocheck)
+	{
+		return true;
+	}
+
+	switch (thing->type)
+	{
+		case MT_BANANA:
+		case MT_EGGMANITEM:
+		case MT_ORBINAUT:
+		case MT_JAWZ:
+		case MT_JAWZ_DUD:
+		case MT_SSMINE:
+		case MT_BALLHOG:
+		case MT_SPB:
+			K_SteerFromObject(botmo, thing, false);
+			break;
+		case MT_RANDOMITEM:
+			if (P_CanPickupItem(botmo->player, 1))
+			{
+				K_SteerFromObject(botmo, thing, true);
+			}
+			break;
+		case MT_FLOATINGITEM:
+			if (P_CanPickupItem(botmo->player, 3))
+			{
+				K_SteerFromObject(botmo, thing, true);
+			}
+			break;
+		case MT_RING:
+		case MT_FLINGRING:
+			if (RINGTOTAL(botmo->player) < 20 && !botmo->player->kartstuff[k_ringlock])
+			{
+				K_SteerFromObject(botmo, thing, true);
+			}
+			break;
+		case MT_PLAYER:
+			if (thing->player
+				&& !thing->player->kartstuff[k_hyudorotimer]
+				&& !botmo->player->kartstuff[k_hyudorotimer])
+			{
+				// Squish
+				if (botmo->scale > thing->scale + (mapobjectscale/8))
+				{
+					K_SteerFromObject(botmo, thing, true);
+				}
+				else if (thing->scale > botmo->scale + (mapobjectscale/8))
+				{
+					K_SteerFromObject(botmo, thing, false);
+				}
+				// Invincibility
+				else if (botmo->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer])
+				{
+					K_SteerFromObject(botmo, thing, true);
+				}
+				else if (thing->player->kartstuff[k_invincibilitytimer] && !botmo->player->kartstuff[k_invincibilitytimer])
+				{
+					K_SteerFromObject(botmo, thing, false);
+				}
+				// Flame Shield
+				// Not a check for Flame Shield && flame dash, because they could potentially flame dash at any time!
+				else if (botmo->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD
+					&& thing->player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD)
+				{
+					K_SteerFromObject(botmo, thing, true);
+				}
+				else if (thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD
+					&& botmo->player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD)
+				{
+					K_SteerFromObject(botmo, thing, false);
+				}
+				// Has shield item
+				else if (botmo->player->kartstuff[k_itemheld] && !thing->player->kartstuff[k_itemheld])
+				{
+					K_SteerFromObject(botmo, thing, true);
+				}
+				else if (thing->player->kartstuff[k_itemheld] && !botmo->player->kartstuff[k_itemheld])
+				{
+					K_SteerFromObject(botmo, thing, false);
+				}
+				// Ring Sting
+				else if ((thing->player->kartstuff[k_rings] <= 0)
+					&& !(botmo->player->kartstuff[k_rings] <= 0))
+				{
+					K_SteerFromObject(botmo, thing, true);
+				}
+				else if ((botmo->player->kartstuff[k_rings] <= 0)
+					&& !(thing->player->kartstuff[k_rings] <= 0))
+				{
+					K_SteerFromObject(botmo, thing, false);
+				}
+				else
+				{
+					// After ALL of that, we can do standard bumping
+					fixed_t weightdiff = K_GetMobjWeight(thing, botmo) - K_GetMobjWeight(botmo, thing);
+
+					if (weightdiff > mapobjectscale)
+					{
+						K_SteerFromObject(botmo, thing, false);
+					}
+					else if (weightdiff < -mapobjectscale)
+					{
+						K_SteerFromObject(botmo, thing, true);
+					}
+				}
+			}
+			break;
+		default:
+			if (thing->flags & (MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE|MF_FIRE))
+			{
+				K_SteerFromObject(botmo, thing, false);
+			}
+			break;
+	}
+
+	return true;
+}
+
+static INT16 K_BotFindObjects(player_t *player)
+{
+	INT32 xl, xh, yl, yh, bx, by;
+
+	badsteerglobal = 0;
+
+	botmo = player->mo;
+	distancetocheck = (player->mo->radius * 8) + (player->speed * 2);
+
+	xl = (unsigned)(botmo->x - distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(botmo->x + distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(botmo->y - distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(botmo->y + distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX(xl, xh, yl, yh);
+
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
+		{
+			P_BlockThingsIterator(bx, by, K_BotSteerObjects);
+		}
+	}
+
+	return badsteerglobal;
+}
+
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	botprediction_t *predict = NULL;
-	boolean ontrack = false;
 	INT16 turnamt = 0;
 
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
 		return;
 
-	cmd->forwardmove = 0;
-	cmd->driftturn = 0;
-	cmd->buttons = 0;
+	// Remove any existing controls
+	memset(cmd, 0, sizeof(ticcmd_t));
+	cmd->angleturn = (player->mo->angle >> 16);
 
 	if (player->playerstate == PST_DEAD)
 	{
@@ -353,14 +563,15 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	}
 
 #ifdef HAVE_BLUA
-	// Let Lua scripts build ticcmds
+	// Complete override of all ticcmd functionality
 	if (LUAh_BotTiccmd(player, cmd))
 		return;
 #endif
 
+	// Start boost handler
 	if (leveltime <= starttime)
 	{
-		if (leveltime >= starttime-35)
+		if (leveltime >= starttime-40)
 			cmd->buttons |= BT_ACCELERATE;
 		return;
 	}
@@ -400,6 +611,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
+			INT16 wallsteer = K_BotSteerFromWalls(player, predict);
 			fixed_t rad = predict->radius - (player->mo->radius*4);
 			fixed_t dirdist = K_DistanceOfLineFromPoint(
 				player->mo->x, player->mo->y,
@@ -417,12 +629,15 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			// Full speed ahead!
 			cmd->forwardmove = 50;
 
-			if (dirdist <= rad)
+			if (wallsteer != 0)
+			{
+				turnamt = wallsteer;
+			}
+			else if (dirdist <= rad)
 			{
 				fixed_t speedmul = FixedMul(player->speed, K_GetKartSpeed(player, false));
 				fixed_t speedrad = rad/4;
-
-				ontrack = true;
+				
 
 				if (speedmul > FRACUNIT)
 				{
@@ -437,7 +652,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				if (dirdist < speedrad)
 				{
 					// Don't need to turn!
-					turnamt = 0;
+					// Instead, lets turn based off of objects around us.
+					turnamt = K_BotFindObjects(player);
 				}
 				else
 				{
@@ -445,15 +661,14 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					turnamt /= 4;
 				}
 			}
-			else if (anglediff > 60)
+
+			if (anglediff > 60)
 			{
 				// Actually, don't go too fast...
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
 			}
 		}
-
-		turnamt += K_BotSteerFromWalls(player, predict);
 	}
 
 	if (turnamt != 0)
@@ -468,10 +683,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 
 		cmd->driftturn = turnamt;
-		cmd->angleturn = (player->mo->angle >> 16) + turnamt;
+		cmd->angleturn += turnamt;
 	}
-
-	(void)ontrack;
 
 	if (player->kartstuff[k_userings] == 1)
 	{
@@ -504,7 +717,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		{
 			if (player->kartstuff[k_botitemconfirm] > TICRATE)
 			{
-				if (player->kartstuff[k_sneakertimer] <= (TICRATE/3) && !(player->pflags & PF_ATTACKDOWN))
+				if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
 				{
 					cmd->buttons |= BT_ATTACK;
 					player->kartstuff[k_botitemconfirm] = 0;
@@ -526,10 +739,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 						|| player->kartstuff[k_speedboost] > 0 // Have another type of boost (tethering)
 						|| player->kartstuff[k_botitemconfirm] > 4*TICRATE) // Held onto it for too long
 					{
-						if (player->kartstuff[k_sneakertimer] <= (TICRATE/3) && !(player->pflags & PF_ATTACKDOWN))
+						if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
 						{
 							cmd->buttons |= BT_ATTACK;
-							player->kartstuff[k_botitemconfirm] -= 2*TICRATE;
+							player->kartstuff[k_botitemconfirm] = 2*TICRATE;
 						}
 					}
 					else
