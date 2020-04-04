@@ -5150,12 +5150,49 @@ static inline void P_AddFFloorToList(sector_t *sec, ffloor_t *ffloor)
 {
 	ffloor_t *rover;
 
+	fixed_t top;
+
 	if (!sec->ffloors)
 	{
 		sec->ffloors = ffloor;
+		if (sec->ffloor_sorting)
+		{
+			sec->lowest_ffloor = ffloor;
+			sec->highest_ffloor = ffloor;
+		}
 		ffloor->next = 0;
 		ffloor->prev = 0;
 		return;
+	}
+
+	if (sec->ffloor_sorting)
+	{
+		top = P_VeryTopOfFOF(ffloor);
+
+		for (rover = sec->lowest_ffloor; rover; rover = rover->higher)
+		{
+			if (top < P_VeryTopOfFOF(rover))
+				break;
+		}
+
+		if (rover)
+		{
+			if (rover->lower)
+				rover->lower->higher = ffloor;
+			else
+				sec->lowest_ffloor = ffloor;
+
+			ffloor->lower = rover->lower;
+			ffloor->higher = rover;
+
+			rover->lower = ffloor;
+		}
+		else
+		{
+			sec->highest_ffloor->higher = ffloor;
+			ffloor->lower = sec->highest_ffloor;
+			sec->highest_ffloor = ffloor;
+		}
 	}
 
 	for (rover = sec->ffloors; rover->next; rover = rover->next);

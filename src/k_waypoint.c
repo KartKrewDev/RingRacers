@@ -16,6 +16,7 @@
 #include "d_netcmd.h"
 #include "p_local.h"
 #include "p_tick.h"
+#include "r_state.h"
 #include "z_zone.h"
 #include "g_game.h"
 
@@ -1769,4 +1770,89 @@ void K_ClearWaypoints(void)
 	numwaypoints     = 0U;
 	numwaypointmobjs = 0U;
 	circuitlength    = 0U;
+}
+
+/*--------------------------------------------------
+	void K_AdjustWaypointsParameters(void)
+
+		See header file for description.
+--------------------------------------------------*/
+
+void K_AdjustWaypointsParameters (void)
+{
+	mobj_t *waypointmobj;
+	mobj_t *riser;
+
+	fixed_t x;
+	fixed_t y;
+
+	sector_t *sector;
+	ffloor_t *rover;
+
+	boolean descending;
+
+	UINT16 fof_no;
+
+	for (
+			waypointmobj = waypointcap;
+			waypointmobj;
+			waypointmobj = waypointmobj->tracer
+	){
+		sector = waypointmobj->subsector->sector;
+
+		for (
+				riser = sector->thinglist;
+				riser;
+				riser = riser->snext
+		){
+			if (
+					riser->type == MT_WAYPOINT_RISER &&
+					riser->spawnpoint->angle == waypointmobj->spawnpoint->angle
+			){
+				if (( riser->spawnpoint->options & MTF_AMBUSH ))
+				{
+					waypointmobj->z = riser->z;
+				}
+				else
+				{
+					descending = ( riser->spawnpoint->options & MTF_OBJECTFLIP );
+
+					fof_no = ( riser->spawnpoint->options >> ZSHIFT );
+
+					if (descending)
+						rover = sector->highest_ffloor;
+					else
+						rover = sector->lowest_ffloor;
+
+					while (rover)
+					{
+						if (fof_no > 0)
+						{
+							if (descending)
+								rover = rover->lower;
+							else
+								rover = rover->higher;
+
+							fof_no--;
+						}
+						else
+						{
+							x = waypointmobj->x;
+							y = waypointmobj->y;
+
+							if (( waypointmobj->flags2 & MF2_OBJECTFLIP ))
+							{
+								waypointmobj->z = P_GetFOFBottomZAt(rover, x, y) -
+									waypointmobj->info->height;
+							}
+							else
+								waypointmobj->z = P_GetFOFTopZAt(rover, x, y);
+
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
 }

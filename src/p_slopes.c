@@ -757,7 +757,6 @@ fixed_t P_GetZAt(pslope_t *slope, fixed_t x, fixed_t y)
    return slope->o.z + FixedMul(dist, slope->zdelta);
 }
 
-
 //
 // P_QuantizeMomentumToSlope
 //

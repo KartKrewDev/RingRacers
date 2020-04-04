@@ -4829,6 +4829,7 @@ typedef enum mobj_type
 	MT_DEZLASER,
 
 	MT_WAYPOINT,
+	MT_WAYPOINT_RISER,
 
 	MT_RANDOMAUDIENCE,
 
