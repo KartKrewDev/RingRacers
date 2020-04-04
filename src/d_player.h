@@ -349,6 +349,7 @@ typedef enum
 
 	k_botitemdelay,
 	k_botitemconfirm,
+	k_botlastturn,
 
 	NUMKARTSTUFF
 } kartstufftype_t;

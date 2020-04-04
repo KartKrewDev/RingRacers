@@ -8608,7 +8608,8 @@ static const char *const KARTSTUFF_LIST[] = {
 	"WRONGWAY",
 
 	"BOTITEMDELAY",
-	"BOTITEMCONFIRM"
+	"BOTITEMCONFIRM",
+	"BOTLASTTURN"
 };
 #endif
 

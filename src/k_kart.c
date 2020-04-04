@@ -953,6 +953,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			case KITEM_SHRINK:
 			case KITEM_HYUDORO:
 			case KITEM_SUPERRING:
+			case KITEM_THUNDERSHIELD:
 			case KRITEM_TRIPLESNEAKER:
 				break;
 			default:
@@ -2679,6 +2680,18 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		kartspeed = 1;
 
 	finalspeed = K_GetKartSpeedFromStat(kartspeed);
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		fixed_t speedmul = FRACUNIT;
+
+		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
+		speedmul += ((kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
+
+		// TODO: Rubberbanding goes here. Do it for accel too!
+
+		finalspeed = FixedMul(finalspeed, speedmul);
+	}
 
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 		finalspeed = FixedMul(finalspeed, player->mo->scale);
