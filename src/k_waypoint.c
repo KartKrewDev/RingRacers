@@ -1807,7 +1807,10 @@ void K_AdjustWaypointsParameters (void)
 		){
 			if (
 					riser->type == MT_WAYPOINT_RISER &&
-					riser->spawnpoint->angle == waypointmobj->spawnpoint->angle
+					(
+						!( riser->spawnpoint->options & MTF_OBJECTSPECIAL ) ||
+						riser->spawnpoint->angle == waypointmobj->spawnpoint->angle
+					)
 			){
 				if (( riser->spawnpoint->options & MTF_AMBUSH ))
 				{
