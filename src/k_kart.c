@@ -948,6 +948,11 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			case KITEM_SNEAKER:
 			case KITEM_ROCKETSNEAKER:
 			case KITEM_INVINCIBILITY:
+			case KITEM_BANANA:
+			case KITEM_ORBINAUT:
+			case KITEM_JAWZ:
+			case KITEM_MINE:
+			case KITEM_BALLHOG:
 			case KITEM_SPB:
 			case KITEM_GROW:
 			case KITEM_SHRINK:
@@ -955,6 +960,11 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			case KITEM_SUPERRING:
 			case KITEM_THUNDERSHIELD:
 			case KRITEM_TRIPLESNEAKER:
+			case KRITEM_TRIPLEBANANA:
+			case KRITEM_TENFOLDBANANA:
+			case KRITEM_TRIPLEORBINAUT:
+			case KRITEM_QUADORBINAUT:
+			case KRITEM_DUALJAWZ:
 				break;
 			default:
 				return 0;

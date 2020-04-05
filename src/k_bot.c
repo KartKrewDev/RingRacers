@@ -653,6 +653,43 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 	return false;
 }
 
+static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
+{
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *target = NULL;
+		fixed_t dist = INT32_MAX;
+
+		if (!playeringame[i])
+		{
+			continue;
+		}
+
+		target = &players[i];
+
+		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+			|| player == target || target->spectator
+			|| target->powers[pw_flashing])
+		{
+			continue;
+		}
+
+		dist = P_AproxDistance(
+			x - target->mo->x,
+			y - target->mo->y
+		);
+
+		if (dist <= radius)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	botprediction_t *predict = NULL;
@@ -885,6 +922,388 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 						{
 							cmd->buttons |= BT_ATTACK;
 							player->kartstuff[k_botitemconfirm] = 0;
+						}
+						break;
+					case KITEM_BANANA:
+						if (!player->kartstuff[k_itemheld])
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->kartstuff[k_botitemconfirm] = 0;
+						}
+						else
+						{
+							SINT8 throwdir = -1;
+							UINT8 i;
+
+							if (abs(turnamt) >= KART_FULLTURN/2)
+							{
+								player->kartstuff[k_botitemconfirm]++;
+							}
+							else
+							{
+								const UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
+								const fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+								const fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+								const fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+
+								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
+								{
+									player->kartstuff[k_botitemconfirm] += 4;
+									throwdir = 1;
+								}
+							}
+
+							for (i = 0; i < MAXPLAYERS; i++)
+							{
+								player_t *target = NULL;
+								fixed_t dist = INT32_MAX;
+
+								if (!playeringame[i])
+								{
+									continue;
+								}
+
+								target = &players[i];
+
+								if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+									|| player == target || target->spectator
+									|| target->powers[pw_flashing]
+									|| !P_CheckSight(player->mo, target->mo))
+								{
+									continue;
+								}
+
+								dist = P_AproxDistance(P_AproxDistance(
+									player->mo->x - target->mo->x,
+									player->mo->y - target->mo->y),
+									(player->mo->z - target->mo->z) / 4
+								);
+
+								if (dist <= (player->mo->radius * 16))
+								{
+									angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+									INT16 ad = 0;
+									const INT16 cone = 10;
+
+									if (a < ANGLE_180)
+									{
+										ad = AngleFixed(a)>>FRACBITS;
+									}
+									else 
+									{
+										ad = 360-(AngleFixed(a)>>FRACBITS);
+									}
+
+									ad = abs(ad);
+
+									if (ad >= 180-cone)
+									{
+										player->kartstuff[k_botitemconfirm] += 2;
+										throwdir = -1;
+									}
+								}
+							}
+
+							if ((player->kartstuff[k_botitemconfirm] > 2*TICRATE)
+								|| (player->kartstuff[k_bananadrag] >= TICRATE))
+							{
+								if (throwdir == 1)
+								{
+									cmd->buttons |= BT_FORWARD;
+								}
+								else if (throwdir == -1)
+								{
+									cmd->buttons |= BT_BACKWARD;
+								}
+
+								cmd->buttons |= BT_ATTACK;
+								player->kartstuff[k_botitemconfirm] = 0;
+							}
+						}
+						break;
+					case KITEM_ORBINAUT:
+						if (!player->kartstuff[k_itemheld])
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->kartstuff[k_botitemconfirm] = 0;
+						}
+						else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
+						/* FALL-THRU */
+					case KITEM_BALLHOG:
+						{
+							const fixed_t topspeed = K_GetKartSpeed(player, false);
+							fixed_t radius = (player->mo->radius * 32);
+							SINT8 throwdir = -1;
+							UINT8 i;
+
+							if (player->speed > topspeed)
+							{
+								radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+							}
+
+							for (i = 0; i < MAXPLAYERS; i++)
+							{
+								player_t *target = NULL;
+								fixed_t dist = INT32_MAX;
+
+								if (!playeringame[i])
+								{
+									continue;
+								}
+
+								target = &players[i];
+
+								if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+									|| player == target || target->spectator
+									|| target->powers[pw_flashing]
+									|| !P_CheckSight(player->mo, target->mo))
+								{
+									continue;
+								}
+
+								dist = P_AproxDistance(P_AproxDistance(
+									player->mo->x - target->mo->x,
+									player->mo->y - target->mo->y),
+									(player->mo->z - target->mo->z) / 4
+								);
+
+								if (dist <= radius)
+								{
+									angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+									INT16 ad = 0;
+									const INT16 cone = 10;
+
+									if (a < ANGLE_180)
+									{
+										ad = AngleFixed(a)>>FRACBITS;
+									}
+									else 
+									{
+										ad = 360-(AngleFixed(a)>>FRACBITS);
+									}
+
+									ad = abs(ad);
+
+									if (ad <= cone)
+									{
+										player->kartstuff[k_botitemconfirm] += 4;
+										throwdir = 1;
+									}
+									else if (ad >= 180-cone)
+									{
+										player->kartstuff[k_botitemconfirm] += 2;
+									}
+								}
+							}
+
+							if (player->kartstuff[k_botitemconfirm] > 5*TICRATE)
+							{
+								if (throwdir == 1)
+								{
+									cmd->buttons |= BT_FORWARD;
+								}
+								else if (throwdir == -1)
+								{
+									cmd->buttons |= BT_BACKWARD;
+								}
+
+								cmd->buttons |= BT_ATTACK;
+								player->kartstuff[k_botitemconfirm] = 0;
+							}
+						}
+						break;
+					case KITEM_JAWZ:
+						if (!player->kartstuff[k_itemheld])
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->kartstuff[k_botitemconfirm] = 0;
+						}
+						else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
+						{
+							SINT8 throwdir = 1;
+							UINT8 i;
+
+							player->kartstuff[k_botitemconfirm]++;
+
+							for (i = 0; i < MAXPLAYERS; i++)
+							{
+								player_t *target = NULL;
+								fixed_t dist = INT32_MAX;
+
+								if (!playeringame[i])
+								{
+									continue;
+								}
+
+								target = &players[i];
+
+								if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+									|| player == target || target->spectator
+									|| target->powers[pw_flashing]
+									|| !P_CheckSight(player->mo, target->mo))
+								{
+									continue;
+								}
+
+								dist = P_AproxDistance(P_AproxDistance(
+									player->mo->x - target->mo->x,
+									player->mo->y - target->mo->y),
+									(player->mo->z - target->mo->z) / 4
+								);
+
+								if (dist <= (player->mo->radius * 32))
+								{
+									angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+									INT16 ad = 0;
+									const INT16 cone = 10;
+
+									if (a < ANGLE_180)
+									{
+										ad = AngleFixed(a)>>FRACBITS;
+									}
+									else 
+									{
+										ad = 360-(AngleFixed(a)>>FRACBITS);
+									}
+
+									ad = abs(ad);
+
+									if (ad >= 180-cone)
+									{
+										player->kartstuff[k_botitemconfirm] += 2;
+										throwdir = -1;
+									}
+								}
+							}
+
+							if (player->kartstuff[k_lastjawztarget] != -1)
+							{
+								player->kartstuff[k_botitemconfirm] += 4;
+								throwdir = 1;
+							}
+
+							if (player->kartstuff[k_botitemconfirm] > 5*TICRATE)
+							{
+								if (throwdir == 1)
+								{
+									cmd->buttons |= BT_FORWARD;
+								}
+								else if (throwdir == -1)
+								{
+									cmd->buttons |= BT_BACKWARD;
+								}
+
+								cmd->buttons |= BT_ATTACK;
+								player->kartstuff[k_botitemconfirm] = 0;
+							}
+						}
+						break;
+					case KITEM_MINE:
+						if (!player->kartstuff[k_itemheld])
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->kartstuff[k_botitemconfirm] = 0;
+						}
+						else
+						{
+							SINT8 throwdir = 0;
+							UINT8 i;
+
+							for (i = 0; i < MAXPLAYERS; i++)
+							{
+								player_t *target = NULL;
+								fixed_t dist = INT32_MAX;
+
+								if (!playeringame[i])
+								{
+									continue;
+								}
+
+								target = &players[i];
+
+								if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+									|| player == target || target->spectator
+									|| target->powers[pw_flashing]
+									|| !P_CheckSight(player->mo, target->mo))
+								{
+									continue;
+								}
+
+								dist = P_AproxDistance(P_AproxDistance(
+									player->mo->x - target->mo->x,
+									player->mo->y - target->mo->y),
+									(player->mo->z - target->mo->z) / 4
+								);
+
+								if (dist <= (player->mo->radius * 16))
+								{
+									angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+									INT16 ad = 0;
+									const INT16 cone = 10;
+
+									if (a < ANGLE_180)
+									{
+										ad = AngleFixed(a)>>FRACBITS;
+									}
+									else 
+									{
+										ad = 360-(AngleFixed(a)>>FRACBITS);
+									}
+
+									ad = abs(ad);
+
+									if (ad >= 180-cone)
+									{
+										player->kartstuff[k_botitemconfirm] += 2;
+										throwdir = -1;
+									}
+								}
+							}
+
+							if (abs(turnamt) >= KART_FULLTURN/2)
+							{
+								player->kartstuff[k_botitemconfirm]++;
+							}
+							else
+							{
+								UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
+								fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+								fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+								fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+
+								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
+								{
+									player->kartstuff[k_botitemconfirm] += 4;
+									throwdir = 0;
+								}
+
+								airtime = FixedDiv((40 * player->mo->scale) + player->mo->momz, gravity);
+								throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) * 2;
+								estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+								esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+
+								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
+								{
+									player->kartstuff[k_botitemconfirm] += 4;
+									throwdir = 1;
+								}
+							}
+
+							if ((player->kartstuff[k_botitemconfirm] > 2*TICRATE)
+								|| (player->kartstuff[k_bananadrag] >= TICRATE))
+							{
+								if (throwdir == 1)
+								{
+									cmd->buttons |= BT_FORWARD;
+								}
+								else if (throwdir == -1)
+								{
+									cmd->buttons |= BT_BACKWARD;
+								}
+
+								cmd->buttons |= BT_ATTACK;
+								player->kartstuff[k_botitemconfirm] = 0;
+							}
 						}
 						break;
 					case KITEM_THUNDERSHIELD:
