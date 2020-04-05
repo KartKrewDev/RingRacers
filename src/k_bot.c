@@ -218,7 +218,7 @@ fixed_t predictx = 0, predicty = 0;
 
 static void K_SteerFromWall(mobj_t *bot, line_t *ld)
 {
-	const INT16 amount = 2*KART_FULLTURN;
+	const INT16 amount = 4*KART_FULLTURN;
 	INT32 side = P_PointOnLineSide(bot->x, bot->y, ld);
 	angle_t lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy) - ANGLE_90;
 	angle_t destangle = R_PointToAngle2(bot->x, bot->y, predictx, predicty);
@@ -498,78 +498,52 @@ static inline boolean K_BotSteerObjects(mobj_t *thing)
 				INT16 attack = ((9 - botmo->player->kartspeed) * KART_FULLTURN) / 8; // Acceleration chars are more aggressive
 				INT16 dodge = ((9 - botmo->player->kartweight) * KART_FULLTURN) / 8; // Handling chars dodge better
 
-				// Squish
-				if (botmo->scale > thing->scale + (mapobjectscale/8))
-				{
-					K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack);
-				}
-				else if (thing->scale > botmo->scale + (mapobjectscale/8))
-				{
-					K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
-				}
+#define PlayerAttackSteer(botcond, thingcond) \
+	if ((botcond) && !(thingcond)) \
+	{ \
+		K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack); \
+	} \
+	else if ((thingcond) && !(botcond)) \
+	{ \
+		K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge); \
+	}
+
+				// There REALLY ought to be a better way to handle this logic, right?!
+				// Squishing
+				PlayerAttackSteer(
+					botmo->scale > thing->scale + (mapobjectscale/8),
+					thing->scale > botmo->scale + (mapobjectscale/8)
+				)
 				// Invincibility
-				else if (botmo->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer])
-				{
-					K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack);
-				}
-				else if (thing->player->kartstuff[k_invincibilitytimer] && !botmo->player->kartstuff[k_invincibilitytimer])
-				{
-					K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
-				}
+				else PlayerAttackSteer(
+					botmo->player->kartstuff[k_invincibilitytimer],
+					thing->player->kartstuff[k_invincibilitytimer]
+				)
 				// Thunder Shield
-				else if (botmo->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
-					&& thing->player->kartstuff[k_itemtype] != KITEM_THUNDERSHIELD)
-				{
-					K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack);
-				}
-				else if (thing->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
-					&& botmo->player->kartstuff[k_itemtype] != KITEM_THUNDERSHIELD)
-				{
-					K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
-				}
+				else PlayerAttackSteer(
+					botmo->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD,
+					thing->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
+				)
 				// Bubble Shield
-				else if (botmo->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD
-					&& thing->player->kartstuff[k_itemtype] != KITEM_BUBBLESHIELD)
-				{
-					K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack);
-				}
-				else if (thing->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD
-					&& botmo->player->kartstuff[k_itemtype] != KITEM_BUBBLESHIELD)
-				{
-					K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
-				}
+				else PlayerAttackSteer(
+					botmo->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD,
+					thing->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD
+				)
 				// Flame Shield
-				// Not a check for Flame Shield && flame dash, because they could potentially flame dash at any time!
-				else if (botmo->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD
-					&& thing->player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD)
-				{
-					K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack);
-				}
-				else if (thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD
-					&& botmo->player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD)
-				{
-					K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
-				}
-				// Has shield item
-				else if (botmo->player->kartstuff[k_itemheld] && !thing->player->kartstuff[k_itemheld])
-				{
-					K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack);
-				}
-				else if (thing->player->kartstuff[k_itemheld] && !botmo->player->kartstuff[k_itemheld])
-				{
-					K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
-				}
+				else PlayerAttackSteer(
+					botmo->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD,
+					thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD
+				)
+				// Has held item shield
+				else PlayerAttackSteer(
+					(botmo->player->kartstuff[k_itemheld] || botmo->player->kartstuff[k_eggmanheld]),
+					(thing->player->kartstuff[k_itemheld] || thing->player->kartstuff[k_eggmanheld])
+				)
 				// Ring Sting
-				else if ((thing->player->kartstuff[k_rings] <= 0)
-					&& !(botmo->player->kartstuff[k_rings] <= 0))
-				{
-					K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack);
-				}
-				else if ((botmo->player->kartstuff[k_rings] <= 0)
-					&& !(thing->player->kartstuff[k_rings] <= 0))
-				{
-					K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
-				}
+				else PlayerAttackSteer(
+					thing->player->kartstuff[k_rings] <= 0,
+					botmo->player->kartstuff[k_rings] <= 0
+				)
 				else
 				{
 					// After ALL of that, we can do standard bumping
@@ -666,7 +640,7 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 		dist = P_AproxDistance(P_AproxDistance(
 			player->mo->x - target->mo->x,
 			player->mo->y - target->mo->y),
-			player->mo->z - target->mo->z
+			(player->mo->z - target->mo->z) / 4
 		);
 
 		if (dist <= radius)
@@ -780,7 +754,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
 			}
-			else if (anglediff <= 15 || dirdist <= rad)
+			else if (anglediff <= 23 || dirdist <= rad)
 			{
 				objectsteer = K_BotFindObjects(player);
 			}
