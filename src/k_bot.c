@@ -100,6 +100,56 @@ boolean K_BotCanTakeCut(player_t *player)
 	return false;
 }
 
+fixed_t K_BotRubberband(player_t *player)
+{
+	fixed_t rubberband = FRACUNIT;
+	player_t *besthumanplayer = NULL;
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || players[i].exiting)
+		{
+			continue;
+		}
+
+		if (&players[i] == player || players[i].bot)
+		{
+			continue;
+		}
+
+		if (besthumanplayer == NULL || players[i].distancetofinish < besthumanplayer->distancetofinish)
+		{
+			besthumanplayer = &players[i];
+		}
+	}
+
+	if (besthumanplayer != NULL)
+	{
+		UINT32 wanteddist = besthumanplayer->distancetofinish; // TODO: Add difficulty here
+
+		if (wanteddist > player->distancetofinish)
+		{
+			rubberband = FRACUNIT + (2 * (player->distancetofinish - wanteddist));
+		}
+		else
+		{
+			rubberband = FRACUNIT + (8 * (player->distancetofinish - wanteddist));
+		}
+	}
+
+	if (rubberband > 2*FRACUNIT)
+	{
+		rubberband = 2*FRACUNIT;
+	}
+	else if (rubberband < 2*FRACUNIT/3)
+	{
+		rubberband = 2*FRACUNIT/3;
+	}
+
+	return rubberband;
+}
+
 static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
 {
 	fixed_t v1toc[2] = {cx - v1x, cy - v1y};

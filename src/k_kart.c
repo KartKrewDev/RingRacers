@@ -2693,12 +2693,10 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 
 	if (K_PlayerUsesBotMovement(player))
 	{
-		fixed_t speedmul = FRACUNIT;
+		fixed_t speedmul = K_BotRubberband(player);
 
 		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
 		speedmul += ((kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
-
-		// TODO: Rubberbanding goes here. Do it for accel too!
 
 		finalspeed = FixedMul(finalspeed, speedmul);
 	}
@@ -2721,6 +2719,11 @@ fixed_t K_GetKartAccel(player_t *player)
 
 	//k_accel += 3 * (9 - kartspeed); // 36 - 60
 	k_accel += 4 * (9 - kartspeed); // 32 - 64
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		k_accel = FixedMul(k_accel, K_BotRubberband(player));
+	}
 
 	return FixedMul(k_accel, FRACUNIT+player->kartstuff[k_accelboost]);
 }
@@ -6474,6 +6477,13 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				angle_t nextbestmomdelta = momdelta;
 				size_t i = 0U;
 
+				if (K_PlayerUsesBotMovement(player))
+				{
+					// Try to force bots to use a next waypoint
+					nextbestdelta = ANGLE_MAX;
+					nextbestmomdelta = ANGLE_MAX;
+				}
+
 				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
 				{
 					for (i = 0U; i < waypoint->numnextwaypoints; i++)
@@ -6806,6 +6816,12 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if (player->spectator)
 		return turnvalue;
 
+	if (K_PlayerUsesBotMovement(player))
+	{
+		turnvalue = FixedMul(turnvalue, (5*FRACUNIT)/4); // Base increase to turning
+		turnvalue = FixedMul(turnvalue, K_BotRubberband(player));
+	}
+
 	if (player->kartstuff[k_drift] != 0 && P_IsObjectOnGround(player->mo))
 	{
 		// If we're drifting we have a completely different turning value
@@ -6824,9 +6840,6 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	turnvalue = FixedMul(turnvalue, adjustangle); // Weight has a small effect on turning
 
 	if (EITHERSNEAKER(player) || player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_growshrinktimer] > 0)
-		turnvalue = FixedMul(turnvalue, (5*FRACUNIT)/4);
-
-	if (K_PlayerUsesBotMovement(player))
 		turnvalue = FixedMul(turnvalue, (5*FRACUNIT)/4);
 
 	return turnvalue;
