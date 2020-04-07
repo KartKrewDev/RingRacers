@@ -130,10 +130,12 @@ fixed_t K_BotRubberband(player_t *player)
 
 		if (wanteddist > player->distancetofinish)
 		{
-			rubberband = FRACUNIT + (2 * (player->distancetofinish - wanteddist));
+			// When ahead, they will rubberband much less than when behind
+			rubberband = FRACUNIT + (player->distancetofinish - wanteddist);
 		}
 		else
 		{
+			// Catch up to 1st!
 			rubberband = FRACUNIT + (8 * (player->distancetofinish - wanteddist));
 		}
 	}
