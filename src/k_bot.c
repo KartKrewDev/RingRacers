@@ -59,9 +59,9 @@ void K_AddBots(SINT8 numbots)
 
 		// test skins
 		if (numbots == 6)
-			WRITEUINT8(buf_p, 0);
-		else if (numbots == 5)
 			WRITEUINT8(buf_p, 1);
+		else if (numbots == 5)
+			WRITEUINT8(buf_p, 0);
 		else if (numbots == 4)
 			WRITEUINT8(buf_p, 2);
 		else if (numbots == 3)
@@ -128,12 +128,7 @@ fixed_t K_BotRubberband(player_t *player)
 	{
 		UINT32 wanteddist = besthumanplayer->distancetofinish; // TODO: Add difficulty here
 
-		if (wanteddist > player->distancetofinish)
-		{
-			// When ahead, they will rubberband much less than when behind
-			rubberband = FRACUNIT + (player->distancetofinish - wanteddist);
-		}
-		else
+		if (wanteddist < player->distancetofinish)
 		{
 			// Catch up to 1st!
 			rubberband = FRACUNIT + (8 * (player->distancetofinish - wanteddist));
@@ -143,10 +138,6 @@ fixed_t K_BotRubberband(player_t *player)
 	if (rubberband > 2*FRACUNIT)
 	{
 		rubberband = 2*FRACUNIT;
-	}
-	else if (rubberband < 2*FRACUNIT/3)
-	{
-		rubberband = 2*FRACUNIT/3;
 	}
 
 	return rubberband;
@@ -373,8 +364,8 @@ static INT16 K_BotSteerFromWalls(player_t *player, botprediction_t *predict)
 	botmo = player->mo;
 	distancetocheck = player->mo->radius * 8;
 
-	tmx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, player->speed);
-	tmy = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, player->speed);
+	tmx = player->mo->x;
+	tmy = player->mo->y;
 
 	predictx = predict->x;
 	predicty = predict->y;

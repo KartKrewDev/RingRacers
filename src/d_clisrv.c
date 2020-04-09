@@ -3785,7 +3785,8 @@ boolean SV_SpawnServer(void)
 			CL_ConnectToServer(false);
 		else doomcom->numslots = 1;
 
-		K_AddBots(7); // test
+		// TEST
+		K_AddBots(7);
 	}
 
 	return SV_AddWaitingPlayers();
