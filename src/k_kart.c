@@ -1150,17 +1150,21 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	// If the roulette finishes or the player presses BT_ATTACK, stop the roulette and calculate the item.
 	// I'm returning via the exact opposite, however, to forgo having another bracket embed. Same result either way, I think.
 	// Finally, if you get past this check, now you can actually start calculating what item you get.
-	if ((cmd->buttons & BT_ATTACK) && (player->kartstuff[k_itemroulette] >= roulettestop)
+	if (((cmd->buttons & BT_ATTACK) && !(player->pflags & PF_ATTACKDOWN))
+		&& (player->kartstuff[k_itemroulette] >= roulettestop)
 		&& !(player->kartstuff[k_eggmanheld] || player->kartstuff[k_itemheld] || player->kartstuff[k_userings]))
 	{
 		// Mashing reduces your chances for the good items
 		mashed = FixedDiv((player->kartstuff[k_itemroulette])*FRACUNIT, ((TICRATE*3)+roulettestop)*FRACUNIT) - FRACUNIT;
 	}
-	else if (!(player->kartstuff[k_itemroulette] >= (TICRATE*3)))
-		return;
+	else
+	{
+		if (cmd->buttons & BT_ATTACK)
+			player->pflags |= PF_ATTACKDOWN;
 
-	if (cmd->buttons & BT_ATTACK)
-		player->pflags |= PF_ATTACKDOWN;
+		if (!(player->kartstuff[k_itemroulette] >= (TICRATE*3)))
+			return;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
