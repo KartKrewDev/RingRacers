@@ -4700,6 +4700,13 @@ void K_UpdateHnextList(player_t *player, boolean clean)
 
 		P_RemoveMobj(work);
 	}
+
+	if (player->mo->hnext == NULL || P_MobjWasRemoved(player->mo->hnext))
+	{
+		// Like below, try to clean up the pointer if it's NULL.
+		// Maybe this was a cause of the shrink/eggbox fails?
+		P_SetTarget(&player->mo->hnext, NULL);
+	}
 }
 
 // For getting hit!
