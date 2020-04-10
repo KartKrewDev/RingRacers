@@ -56,7 +56,7 @@ void K_DoSneaker(player_t *player, INT32 type);
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound);
 void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source);
 void K_UpdateHnextList(player_t *player, boolean clean);
-void K_DropHnextList(player_t *player);
+void K_DropHnextList(player_t *player, boolean keepshields);
 void K_RepairOrbitChain(mobj_t *orbit);
 player_t *K_FindJawzTarget(mobj_t *actor, player_t *source);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
