@@ -796,6 +796,7 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 {
 	if (getitem == KITEM_SPB || getitem == KITEM_SHRINK) // Indirect items
 		indirectitemcooldown = 20*TICRATE;
+
 	if (getitem == KITEM_HYUDORO) // Hyudoro cooldown
 		hyubgone = 5*TICRATE;
 
@@ -1167,7 +1168,17 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			&& players[i].kartstuff[k_position] == 1)
 		{
 			// This player is first! Yay!
-			pdis = player->distancetofinish - players[i].distancetofinish;
+
+			if (player->distancetofinish <= players[i].distancetofinish)
+			{
+				// Guess you're in first / tied for first?
+				pdis = 0;
+			}
+			else
+			{
+				// Subtract 1st's distance from your distance, to get your distance from 1st!
+				pdis = player->distancetofinish - players[i].distancetofinish;
+			}
 			break;
 		}
 	}
@@ -1281,7 +1292,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 				player->kartstuff[k_itemroulette] = 0;
 				player->kartstuff[k_roulettetype] = 0;
 				if (P_IsDisplayPlayer(player))
-					S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
+					S_StartSound(NULL, sfx_itrolm);
 				return;
 			}
 		}
