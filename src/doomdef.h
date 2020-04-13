@@ -150,7 +150,7 @@ extern char logfilename[1024];
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-#define VERSION    200 // Game version
+#define VERSION    2 // Game version
 #define SUBVERSION 0 // more precise version number
 #define VERSIONSTRING "v2.0"
 #define VERSIONSTRINGW L"v2.0"
