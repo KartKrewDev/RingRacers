@@ -59,6 +59,7 @@ void K_UpdateHnextList(player_t *player, boolean clean);
 void K_DropHnextList(player_t *player);
 void K_RepairOrbitChain(mobj_t *orbit);
 player_t *K_FindJawzTarget(mobj_t *actor, player_t *source);
+void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
 INT32 K_GetKartDriftSparkValue(player_t *player);

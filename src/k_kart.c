@@ -6287,10 +6287,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 void K_KartPlayerAfterThink(player_t *player)
 {
-	// Moved to afterthink, as at this point the players have had their distances to the finish line updated
-	// and this will correctly account for all players
-	K_KartUpdatePosition(player);
-
 	if (player->kartstuff[k_curshield]
 		|| player->kartstuff[k_invincibilitytimer]
 		|| (player->kartstuff[k_growshrinktimer] != 0 && player->kartstuff[k_growshrinktimer] % 5 == 4)) // 4 instead of 0 because this is afterthink!
@@ -6607,7 +6603,7 @@ static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_
 }
 
 /*--------------------------------------------------
-	static void K_UpdateDistanceFromFinishLine(player_t *const player)
+	void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 		Updates the distance a player has to the finish line.
 
@@ -6617,7 +6613,7 @@ static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_UpdateDistanceFromFinishLine(player_t *const player)
+void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
 	if ((player != NULL) && (player->mo != NULL))
 	{
@@ -7167,7 +7163,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	boolean HOLDING_ITEM = (player->kartstuff[k_itemheld] || player->kartstuff[k_eggmanheld]);
 	boolean NO_HYUDORO = (player->kartstuff[k_stolentimer] == 0 && player->kartstuff[k_stealingtimer] == 0);
 
-	K_UpdateDistanceFromFinishLine(player);
 	player->pflags &= ~PF_HITFINISHLINE;
 
 	if (!player->exiting)
