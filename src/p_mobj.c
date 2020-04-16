@@ -12324,11 +12324,6 @@ void P_SpawnMapThing(mapthing_t *mthing)
 	y = mthing->y << FRACBITS;
 	ss = R_PointInSubsector(x, y);
 
-	if (i == MT_WAYPOINT_RISER)
-	{
-		ss->sector->ffloor_sorting = true;
-	}
-
 	if (i == MT_NIGHTSBUMPER)
 		z = (
 #ifdef ESLOPE

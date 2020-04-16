@@ -741,10 +741,6 @@ static void P_LoadRawSectors(UINT8 *data, size_t i)
 		ss->maxattached = 1;
 		ss->moved = true;
 
-		ss->ffloor_sorting = false;
-		ss->lowest_ffloor = NULL;
-		ss->highest_ffloor = NULL;
-
 		ss->extra_colormap = NULL;
 
 		ss->floor_xoffs = ss->ceiling_xoffs = ss->floor_yoffs = ss->ceiling_yoffs = 0;

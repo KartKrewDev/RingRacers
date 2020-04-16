@@ -170,10 +170,6 @@ typedef struct ffloor_s
 	struct ffloor_s *next;
 	struct ffloor_s *prev;
 
-	/* if sector->ffloor_sorting */
-	struct ffloor_s *higher;/* by top height */
-	struct ffloor_s *lower;/* by bottom height */
-
 	INT32 lastlight;
 	INT32 alpha;
 	tic_t norender; // for culling
@@ -350,10 +346,6 @@ typedef struct sector_s
 	lightlist_t *lightlist;
 	INT32 numlights;
 	boolean moved;
-
-	boolean ffloor_sorting;
-	ffloor_t *lowest_ffloor;
-	ffloor_t *highest_ffloor;
 
 	// per-sector colormaps!
 	extracolormap_t *extra_colormap;
