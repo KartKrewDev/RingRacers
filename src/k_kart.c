@@ -6488,11 +6488,18 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				{
 					for (i = 0U; i < waypoint->numnextwaypoints; i++)
 					{
-						if (K_PlayerUsesBotMovement(player)
-						&& K_GetWaypointIsShortcut(waypoint->nextwaypoints[i])
-						&& !K_BotCanTakeCut(player))
+						if (K_PlayerUsesBotMovement(player) == true
+						&& K_GetWaypointIsShortcut(waypoint->nextwaypoints[i]) == true
+						&& K_BotCanTakeCut(player) == false)
 						{
-							continue;
+							// Bots that aren't able to take a shortcut will ignore shortcut waypoints.
+							// (However, if they're already on a shortcut, then we want them to keep going.)
+
+							if (player->nextwaypoint == NULL
+							|| K_GetWaypointIsShortcut(player->nextwaypoint) == false)
+							{
+								continue;
+							}
 						}
 
 						angletowaypoint = R_PointToAngle2(
