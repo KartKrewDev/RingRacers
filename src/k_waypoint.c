@@ -1791,7 +1791,8 @@ void K_AdjustWaypointsParameters (void)
 
 	boolean descending;
 
-	UINT16 fof_no;
+	fixed_t sort;
+	fixed_t z;
 
 	for (
 			waypointmobj = waypointcap;
@@ -1818,42 +1819,38 @@ void K_AdjustWaypointsParameters (void)
 				}
 				else
 				{
+					x = waypointmobj->x;
+					y = waypointmobj->y;
+
 					descending = ( riser->spawnpoint->options & MTF_OBJECTFLIP );
 
-					fof_no = ( riser->spawnpoint->options >> ZSHIFT );
-
 					if (descending)
-						rover = sector->highest_ffloor;
+						sort = sector->ceilingheight;
 					else
-						rover = sector->lowest_ffloor;
+						sort = sector->floorheight;
 
-					while (rover)
-					{
-						if (fof_no > 0)
+					for (
+							rover = sector->ffloors;
+							rover;
+							rover = rover->next
+					){
+						if (descending)
 						{
-							if (descending)
-								rover = rover->lower;
-							else
-								rover = rover->higher;
+							z = P_GetFOFBottomZAt(rover, x, y);
 
-							fof_no--;
+							if (z > riser->z && z < sort)
+								sort = z;
 						}
 						else
 						{
-							x = waypointmobj->x;
-							y = waypointmobj->y;
+							z = P_GetFOFTopZAt(rover, x, y);
 
-							if (( waypointmobj->flags2 & MF2_OBJECTFLIP ))
-							{
-								waypointmobj->z = P_GetFOFBottomZAt(rover, x, y) -
-									waypointmobj->info->height;
-							}
-							else
-								waypointmobj->z = P_GetFOFTopZAt(rover, x, y);
-
-							break;
+							if (z < riser->z && z > sort)
+								sort = z;
 						}
 					}
+
+					waypointmobj->z = sort;
 				}
 			}
 		}
