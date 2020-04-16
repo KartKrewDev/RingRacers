@@ -7251,8 +7251,11 @@ static void P_SpawnScrollers(void)
 
 			s  = l->sidenum[1];
 
-			bx = -(sides[s].textureoffset);
-			by =   sides[s].rowoffset;
+			if (s != 0xffff)
+			{
+				bx = -(sides[s].textureoffset);
+				by =   sides[s].rowoffset;
+			}
 		}
 
 		switch (special)
@@ -7315,7 +7318,8 @@ static void P_SpawnScrollers(void)
 					if (s != (INT32)i)
 					{
 						Add_Scroller(sc_side, dx, dy, control, lines[s].sidenum[0], accel, 0);
-						Add_Scroller(sc_side, bx, by, control, lines[s].sidenum[1], accel, 0);
+						if (lines[s].sidenum[1] != 0xffff)
+							Add_Scroller(sc_side, bx, by, control, lines[s].sidenum[1], accel, 0);
 					}
 				}
 				break;
