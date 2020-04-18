@@ -1121,8 +1121,8 @@ void M_StartMovie(void)
 
 	if (cv_movie_option.value != 3)
 	{
-		strcat(pathname, PATHSEP"movies"PATHSEP);
-		I_mkdir(pathname, 0755);
+		strcat(pathname, PATHSEP"media"PATHSEP"movies"PATHSEP);
+		M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 	}
 
 	if (rendermode == render_none)
@@ -1483,8 +1483,8 @@ void M_DoScreenShot(void)
 
 	if (cv_screenshot_option.value != 3)
 	{
-		strcat(pathname, PATHSEP"screenshots"PATHSEP);
-		I_mkdir(pathname, 0755);
+		strcat(pathname, PATHSEP"media"PATHSEP"screenshots"PATHSEP);
+		M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 	}
 
 #ifdef USE_PNG
