@@ -2704,7 +2704,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 
 	if (K_PlayerUsesBotMovement(player))
 	{
-		fixed_t speedmul = K_BotRubberband(player);
+		fixed_t speedmul = FRACUNIT + ((K_BotRubberband(player) - FRACUNIT) / 2);
 
 		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
 		speedmul += ((kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
