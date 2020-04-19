@@ -60,19 +60,40 @@ void K_AddBots(SINT8 numbots)
 
 		// test skins
 		if (numbots == 6)
+		{
+			difficulty = MAXBOTDIFFICULTY;
 			WRITEUINT8(buf_p, 1);
+		}
 		else if (numbots == 5)
+		{
+			difficulty = MAXBOTDIFFICULTY;
 			WRITEUINT8(buf_p, 0);
+		}
 		else if (numbots == 4)
+		{
+			difficulty = MAXBOTDIFFICULTY-1;
 			WRITEUINT8(buf_p, 2);
+		}
 		else if (numbots == 3)
+		{
+			difficulty = MAXBOTDIFFICULTY-2;
 			WRITEUINT8(buf_p, 3);
+		}
 		else if (numbots == 2)
+		{
+			difficulty = MAXBOTDIFFICULTY-4;
 			WRITEUINT8(buf_p, 5);
+		}
 		else if (numbots == 1)
+		{
+			difficulty = MAXBOTDIFFICULTY-4;
 			WRITEUINT8(buf_p, 9);
+		}
 		else
+		{
+			difficulty = MAXBOTDIFFICULTY-2;
 			WRITEUINT8(buf_p, 10);
+		}
 
 		WRITEUINT8(buf_p, difficulty);
 
@@ -114,6 +135,11 @@ fixed_t K_BotRubberband(player_t *player)
 	player_t *firstplace = NULL;
 	UINT8 i;
 
+	if (player->exiting)
+	{
+		return FRACUNIT;
+	}
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator || players[i].exiting)
@@ -134,7 +160,7 @@ fixed_t K_BotRubberband(player_t *player)
 
 	if (firstplace != NULL)
 	{
-		const UINT32 spacing = 1024;
+		const UINT32 spacing = 2048;
 		UINT32 easiness = (MAXBOTDIFFICULTY - player->botvars.difficulty);
 		UINT32 wanteddist = firstplace->distancetofinish + (spacing * easiness);
 
@@ -142,11 +168,6 @@ fixed_t K_BotRubberband(player_t *player)
 		{
 			// Catch up to 1st!
 			rubberband = FRACUNIT + (player->botvars.difficulty * (player->distancetofinish - wanteddist));
-		}
-
-		if (P_IsDisplayPlayer(player))
-		{ 
-			CONS_Printf("difficulty: %d, easiness: %d, wanted: %d, rubberband: %d\n", player->botvars.difficulty, easiness, wanteddist, rubberband);
 		}
 	}
 
