@@ -27,13 +27,14 @@
 void K_AddBots(SINT8 numbots)
 {
 	UINT8 newplayernum = 0;
+	UINT8 difficulty = MAXBOTDIFFICULTY;
 
 	if (dedicated)
 		newplayernum = 1;
 
 	while (numbots > 0)
 	{
-		UINT8 buf[2];
+		UINT8 buf[3];
 		UINT8 *buf_p = buf;
 
 		numbots--;
@@ -73,7 +74,14 @@ void K_AddBots(SINT8 numbots)
 		else
 			WRITEUINT8(buf_p, 10);
 
+		WRITEUINT8(buf_p, difficulty);
+
 		SendNetXCmd(XD_ADDBOT, buf, buf_p - buf);
+
+		if (difficulty > 0)
+		{
+			difficulty--;
+		}
 
 		DEBFILE(va("Server added bot %d\n", newplayernum));
 		// use the next free slot (we can't put playeringame[newplayernum] = true here)
@@ -103,7 +111,7 @@ boolean K_BotCanTakeCut(player_t *player)
 fixed_t K_BotRubberband(player_t *player)
 {
 	fixed_t rubberband = FRACUNIT;
-	player_t *besthumanplayer = NULL;
+	player_t *firstplace = NULL;
 	UINT8 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -113,25 +121,32 @@ fixed_t K_BotRubberband(player_t *player)
 			continue;
 		}
 
-		if (&players[i] == player || players[i].bot)
+		/*if (players[i].bot)
 		{
 			continue;
-		}
+		}*/
 
-		if (besthumanplayer == NULL || players[i].distancetofinish < besthumanplayer->distancetofinish)
+		if (firstplace == NULL || players[i].distancetofinish < firstplace->distancetofinish)
 		{
-			besthumanplayer = &players[i];
+			firstplace = &players[i];
 		}
 	}
 
-	if (besthumanplayer != NULL)
+	if (firstplace != NULL)
 	{
-		UINT32 wanteddist = besthumanplayer->distancetofinish; // TODO: Add difficulty here
+		const UINT32 spacing = 1024;
+		UINT32 easiness = (MAXBOTDIFFICULTY - player->botvars.difficulty);
+		UINT32 wanteddist = firstplace->distancetofinish + (spacing * easiness);
 
 		if (wanteddist < player->distancetofinish)
 		{
 			// Catch up to 1st!
-			rubberband = FRACUNIT + (8 * (player->distancetofinish - wanteddist));
+			rubberband = FRACUNIT + (player->botvars.difficulty * (player->distancetofinish - wanteddist));
+		}
+
+		if (P_IsDisplayPlayer(player))
+		{ 
+			CONS_Printf("difficulty: %d, easiness: %d, wanted: %d, rubberband: %d\n", player->botvars.difficulty, easiness, wanteddist, rubberband);
 		}
 	}
 
@@ -904,10 +919,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	}
 	else
 	{
-		if (player->kartstuff[k_botitemdelay])
+		if (player->botvars.itemdelay)
 		{
-			player->kartstuff[k_botitemdelay]--;
-			player->kartstuff[k_botitemconfirm] = 0;
+			player->botvars.itemdelay--;
+			player->botvars.itemconfirm = 0;
 		}
 		else if (player->kartstuff[k_stealingtimer] == 0 && player->kartstuff[k_stolentimer] == 0)
 		{
@@ -917,17 +932,17 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			}
 			else if (player->kartstuff[k_rocketsneakertimer] > 0)
 			{
-				if (player->kartstuff[k_botitemconfirm] > TICRATE)
+				if (player->botvars.itemconfirm > TICRATE)
 				{
 					if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
 					{
 						cmd->buttons |= BT_ATTACK;
-						player->kartstuff[k_botitemconfirm] = 0;
+						player->botvars.itemconfirm = 0;
 					}
 				}
 				else
 				{
-					player->kartstuff[k_botitemconfirm]++;
+					player->botvars.itemconfirm++;
 				}
 			}
 			else
@@ -941,38 +956,38 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					case KITEM_HYUDORO:
 					case KITEM_SUPERRING:
 						cmd->buttons |= BT_ATTACK;
-						player->kartstuff[k_botitemconfirm] = 0;
+						player->botvars.itemconfirm = 0;
 						break;
 					case KITEM_SNEAKER:
 						if ((player->kartstuff[k_offroad] && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
 							|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
 							|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
 							|| player->kartstuff[k_speedboost] > (FRACUNIT/8) // Have another type of boost (tethering)
-							|| player->kartstuff[k_botitemconfirm] > 4*TICRATE) // Held onto it for too long
+							|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
 						{
 							if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
 							{
 								cmd->buttons |= BT_ATTACK;
-								player->kartstuff[k_botitemconfirm] = 2*TICRATE;
+								player->botvars.itemconfirm = 2*TICRATE;
 							}
 						}
 						else
 						{
-							player->kartstuff[k_botitemconfirm]++;
+							player->botvars.itemconfirm++;
 						}
 						break;
 					case KITEM_ROCKETSNEAKER:
 						if (player->kartstuff[k_rocketsneakertimer] <= 0)
 						{
 							cmd->buttons |= BT_ATTACK;
-							player->kartstuff[k_botitemconfirm] = 0;
+							player->botvars.itemconfirm = 0;
 						}
 						break;
 					case KITEM_BANANA:
 						if (!player->kartstuff[k_itemheld])
 						{
 							cmd->buttons |= BT_ATTACK;
-							player->kartstuff[k_botitemconfirm] = 0;
+							player->botvars.itemconfirm = 0;
 						}
 						else
 						{
@@ -981,7 +996,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 							if (abs(turnamt) >= KART_FULLTURN/2)
 							{
-								player->kartstuff[k_botitemconfirm]++;
+								player->botvars.itemconfirm++;
 							}
 							else
 							{
@@ -992,7 +1007,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
 								{
-									player->kartstuff[k_botitemconfirm] += 4;
+									player->botvars.itemconfirm += 4;
 									throwdir = 1;
 								}
 							}
@@ -1042,13 +1057,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 									if (ad >= 180-cone)
 									{
-										player->kartstuff[k_botitemconfirm] += 2;
+										player->botvars.itemconfirm += 2;
 										throwdir = -1;
 									}
 								}
 							}
 
-							if ((player->kartstuff[k_botitemconfirm] > 2*TICRATE)
+							if ((player->botvars.itemconfirm > 2*TICRATE)
 								|| (player->kartstuff[k_bananadrag] >= TICRATE))
 							{
 								if (throwdir == 1)
@@ -1061,7 +1076,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 								}
 
 								cmd->buttons |= BT_ATTACK;
-								player->kartstuff[k_botitemconfirm] = 0;
+								player->botvars.itemconfirm = 0;
 							}
 						}
 						break;
@@ -1069,7 +1084,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 						if (!player->kartstuff[k_itemheld])
 						{
 							cmd->buttons |= BT_ATTACK;
-							player->kartstuff[k_botitemconfirm] = 0;
+							player->botvars.itemconfirm = 0;
 						}
 						else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
 						/* FALL-THRU */
@@ -1130,17 +1145,17 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 									if (ad <= cone)
 									{
-										player->kartstuff[k_botitemconfirm] += 4;
+										player->botvars.itemconfirm += 4;
 										throwdir = 1;
 									}
 									else if (ad >= 180-cone)
 									{
-										player->kartstuff[k_botitemconfirm] += 2;
+										player->botvars.itemconfirm += 2;
 									}
 								}
 							}
 
-							if (player->kartstuff[k_botitemconfirm] > 5*TICRATE)
+							if (player->botvars.itemconfirm > 5*TICRATE)
 							{
 								if (throwdir == 1)
 								{
@@ -1152,7 +1167,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 								}
 
 								cmd->buttons |= BT_ATTACK;
-								player->kartstuff[k_botitemconfirm] = 0;
+								player->botvars.itemconfirm = 0;
 							}
 						}
 						break;
@@ -1160,14 +1175,14 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 						if (!player->kartstuff[k_itemheld])
 						{
 							cmd->buttons |= BT_ATTACK;
-							player->kartstuff[k_botitemconfirm] = 0;
+							player->botvars.itemconfirm = 0;
 						}
 						else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
 						{
 							SINT8 throwdir = 1;
 							UINT8 i;
 
-							player->kartstuff[k_botitemconfirm]++;
+							player->botvars.itemconfirm++;
 
 							for (i = 0; i < MAXPLAYERS; i++)
 							{
@@ -1214,7 +1229,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 									if (ad >= 180-cone)
 									{
-										player->kartstuff[k_botitemconfirm] += 2;
+										player->botvars.itemconfirm += 2;
 										throwdir = -1;
 									}
 								}
@@ -1222,11 +1237,11 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 							if (player->kartstuff[k_lastjawztarget] != -1)
 							{
-								player->kartstuff[k_botitemconfirm] += 4;
+								player->botvars.itemconfirm += 4;
 								throwdir = 1;
 							}
 
-							if (player->kartstuff[k_botitemconfirm] > 5*TICRATE)
+							if (player->botvars.itemconfirm > 5*TICRATE)
 							{
 								if (throwdir == 1)
 								{
@@ -1238,7 +1253,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 								}
 
 								cmd->buttons |= BT_ATTACK;
-								player->kartstuff[k_botitemconfirm] = 0;
+								player->botvars.itemconfirm = 0;
 							}
 						}
 						break;
@@ -1246,7 +1261,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 						if (!player->kartstuff[k_itemheld])
 						{
 							cmd->buttons |= BT_ATTACK;
-							player->kartstuff[k_botitemconfirm] = 0;
+							player->botvars.itemconfirm = 0;
 						}
 						else
 						{
@@ -1298,7 +1313,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 									if (ad >= 180-cone)
 									{
-										player->kartstuff[k_botitemconfirm] += 2;
+										player->botvars.itemconfirm += 2;
 										throwdir = -1;
 									}
 								}
@@ -1306,7 +1321,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 							if (abs(turnamt) >= KART_FULLTURN/2)
 							{
-								player->kartstuff[k_botitemconfirm]++;
+								player->botvars.itemconfirm++;
 							}
 							else
 							{
@@ -1317,7 +1332,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
 								{
-									player->kartstuff[k_botitemconfirm] += 4;
+									player->botvars.itemconfirm += 4;
 									throwdir = 0;
 								}
 
@@ -1328,12 +1343,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
 								{
-									player->kartstuff[k_botitemconfirm] += 4;
+									player->botvars.itemconfirm += 4;
 									throwdir = 1;
 								}
 							}
 
-							if ((player->kartstuff[k_botitemconfirm] > 2*TICRATE)
+							if ((player->botvars.itemconfirm > 2*TICRATE)
 								|| (player->kartstuff[k_bananadrag] >= TICRATE))
 							{
 								if (throwdir == 1)
@@ -1346,26 +1361,26 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 								}
 
 								cmd->buttons |= BT_ATTACK;
-								player->kartstuff[k_botitemconfirm] = 0;
+								player->botvars.itemconfirm = 0;
 							}
 						}
 						break;
 					case KITEM_THUNDERSHIELD:
 						if (!K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale))
 						{
-							if (player->kartstuff[k_botitemconfirm] > 10*TICRATE)
+							if (player->botvars.itemconfirm > 10*TICRATE)
 							{
 								cmd->buttons |= BT_ATTACK;
-								player->kartstuff[k_botitemconfirm] = 0;
+								player->botvars.itemconfirm = 0;
 							}
 							else
 							{
-								player->kartstuff[k_botitemconfirm]++;
+								player->botvars.itemconfirm++;
 							}
 						}
 						break;
 					default:
-						player->kartstuff[k_botitemconfirm] = 0;
+						player->botvars.itemconfirm = 0;
 						break;
 				}
 			}
@@ -1383,16 +1398,16 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			turnamt = -KART_FULLTURN;
 		}
 
-		if ((turnamt > 0 && player->kartstuff[k_botlastturn] >= 0)
-			|| (turnamt < 0 && player->kartstuff[k_botlastturn] <= 0))
+		if ((turnamt > 0 && player->botvars.lastturn >= 0)
+			|| (turnamt < 0 && player->botvars.lastturn <= 0))
 		{
 			if (turnamt > 0)
 			{
-				player->kartstuff[k_botlastturn] = 1;
+				player->botvars.lastturn = 1;
 			}
 			else if (turnamt < 0)
 			{
-				player->kartstuff[k_botlastturn] = -1;
+				player->botvars.lastturn = -1;
 			}
 
 			cmd->driftturn = turnamt;
@@ -1400,7 +1415,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			player->kartstuff[k_botlastturn] = 0;
+			player->botvars.lastturn = 0;
 		}
 	}
 

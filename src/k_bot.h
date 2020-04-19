@@ -7,10 +7,13 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  b_bot.h
+/// \file  k_bot.h
 /// \brief Basic bot handling
 
 #include "k_waypoint.h"
+#include "d_player.h"
+
+#define MAXBOTDIFFICULTY 9
 
 // Path that bot will attempt to take
 typedef struct botprediction_s {

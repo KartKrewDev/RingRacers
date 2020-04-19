@@ -347,10 +347,6 @@ typedef enum
 	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
 	k_wrongway, 		// Display WRONG WAY on screen
 
-	k_botitemdelay,
-	k_botitemconfirm,
-	k_botlastturn,
-
 	NUMKARTSTUFF
 } kartstufftype_t;
 
@@ -413,6 +409,17 @@ typedef enum
 	RW_EXPLODE = 16,
 	RW_RAIL    = 32
 } ringweapons_t;
+
+// player_t struct for all bot variables
+typedef struct botvars_s
+{
+	UINT8 difficulty;
+
+	tic_t itemdelay;
+	tic_t itemconfirm;
+
+	INT16 lastturn;
+} botvars_t;
 
 // ========================================================================
 //                          PLAYER STRUCTURE
@@ -587,7 +594,9 @@ typedef struct player_s
 	angle_t awayviewaiming; // Used for cut-away view
 
 	boolean spectator;
-	UINT8 bot;
+
+	boolean bot;
+	botvars_t botvars;
 
 	tic_t jointime; // Timer when player joins game to change skin/color
 

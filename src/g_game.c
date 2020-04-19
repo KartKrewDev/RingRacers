@@ -2572,6 +2572,7 @@ void G_PlayerReborn(INT32 player)
 	UINT8 splitscreenindex;
 	boolean spectator;
 	boolean bot;
+	UINT8 botdifficulty;
 	SINT8 pity;
 
 	// SRB2kart
@@ -2624,6 +2625,7 @@ void G_PlayerReborn(INT32 player)
 
 	mare = players[player].mare;
 	bot = players[player].bot;
+	botdifficulty = players[player].botvars.difficulty;
 	pity = players[player].pity;
 
 	// SRB2kart
@@ -2703,6 +2705,7 @@ void G_PlayerReborn(INT32 player)
 
 	p->mare = mare;
 	p->bot = bot;
+	p->botvars.difficulty = botdifficulty;
 	p->pity = pity;
 
 	// SRB2kart

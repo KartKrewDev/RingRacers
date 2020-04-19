@@ -801,8 +801,8 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	if (getitem == KITEM_HYUDORO) // Hyudoro cooldown
 		hyubgone = 5*TICRATE;
 
-	player->kartstuff[k_botitemdelay] = TICRATE;
-	player->kartstuff[k_botitemconfirm] = 0;
+	player->botvars.itemdelay = TICRATE;
+	player->botvars.itemconfirm = 0;
 
 	switch (getitem)
 	{
@@ -2704,19 +2704,35 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 
 	if (K_PlayerUsesBotMovement(player))
 	{
-		fixed_t speedmul = FRACUNIT + ((K_BotRubberband(player) - FRACUNIT) / 2);
-
 		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
-		speedmul += ((kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
-
-		finalspeed = FixedMul(finalspeed, speedmul);
+		fixed_t speedmul = ((kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
+		finalspeed = FixedMul(finalspeed, FRACUNIT + speedmul);
 	}
 
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 		finalspeed = FixedMul(finalspeed, player->mo->scale);
 
 	if (doboostpower)
+	{
+		if (K_PlayerUsesBotMovement(player))
+		{
+			fixed_t rubberband = K_BotRubberband(player);
+
+			if (rubberband > 3*FRACUNIT/2)
+			{
+				rubberband = 3*FRACUNIT/2;
+			}
+			else if (rubberband < FRACUNIT)
+			{
+				rubberband = FRACUNIT;
+			}
+
+			finalspeed = FixedMul(finalspeed, rubberband);
+		}
+
 		return FixedMul(finalspeed, player->kartstuff[k_boostpower]+player->kartstuff[k_speedboost]);
+	}
+
 	return finalspeed;
 }
 
