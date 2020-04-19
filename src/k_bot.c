@@ -528,7 +528,8 @@ static inline boolean K_BotSteerObjects(mobj_t *thing)
 
 			if ((RINGTOTAL(botmo->player) < 20 && !botmo->player->kartstuff[k_ringlock]
 				&& P_CanPickupItem(botmo->player, 0))
-				&& (!thing->extravalue1))
+				&& !thing->extravalue1
+				&& (botmo->player->kartstuff[k_itemtype] != KITEM_THUNDERSHIELD))
 			{
 				K_SteerFromObject(botmo, thing, true, (RINGTOTAL(botmo->player) <= 0 ? 2*KART_FULLTURN : KART_FULLTURN));
 			}
