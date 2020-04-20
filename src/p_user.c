@@ -7434,8 +7434,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	else
 		distxy = dist;
 	distz = -FixedMul(dist, FINESINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
-	if (r_splitscreen == 1) // 2 player is weird, this helps keep players on screen
-		distz = 3*distz/5;
+	//if (r_splitscreen == 1) // 2 player is weird, this helps keep players on screen
+		//distz = 3*distz/5;
 
 	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
 	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
