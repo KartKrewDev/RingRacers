@@ -7411,7 +7411,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (mo->standingslope)
 	{
-		pitch = (angle_t)FixedMul(P_ReturnThrustX(mo, player->frameangle - mo->standingslope->xydirection, FRACUNIT), (fixed_t)mo->standingslope->zangle);
+		pitch = (angle_t)FixedMul(P_ReturnThrustX(mo, thiscam->angle - mo->standingslope->xydirection, FRACUNIT), (fixed_t)mo->standingslope->zangle);
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
 			if (pitch >= ANGLE_180)
@@ -7476,9 +7476,15 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	pviewheight = FixedMul(32<<FRACBITS, mo->scale);
 
 	if (mo->eflags & MFE_VERTICALFLIP)
-		z = mo->z + mo->height - pviewheight - camheight + distz;
+	{
+		distz = min(-height, distz);
+		z = mo->z + mo->height - pviewheight + distz;
+	}
 	else
-		z = mo->z + pviewheight + camheight + distz;
+	{
+		distz = max(height, distz);
+		z = mo->z + pviewheight + distz;
+	}
 
 #ifndef NOCLIPCAM // Disable all z-clipping for noclip cam
 	// move camera down to move under lower ceilings
@@ -7724,13 +7730,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		angle = R_PointToAngle2(0, thiscam->z + thiscam->height, dist, mo->z + mo->height - P_GetPlayerHeight(player));
 		if (thiscam->pitch < ANGLE_180 && thiscam->pitch > angle)
-			angle = thiscam->pitch;
+			angle += (thiscam->pitch - angle)/2;
 	}
 	else
 	{
 		angle = R_PointToAngle2(0, thiscam->z, dist, mo->z + P_GetPlayerHeight(player));
 		if (thiscam->pitch >= ANGLE_180 && thiscam->pitch < angle)
-			angle = thiscam->pitch;
+			angle -= (angle - thiscam->pitch)/2;
 	}
 
 	if (player->playerstate != PST_DEAD && !((player->pflags & PF_NIGHTSMODE) && player->exiting))
