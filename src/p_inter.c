@@ -2117,7 +2117,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 {
 	mobjtype_t item;
 	mobj_t *mo;
-	int ms;
 
 	//if (inflictor && (inflictor->type == MT_SHELL || inflictor->type == MT_FIREBALL))
 	//	P_SetTarget(&target->tracer, inflictor);
@@ -2331,23 +2330,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			}
 		}
 		target->player->playerstate = PST_DEAD;
-
-		if (P_IsLocalPlayer(target->player))
-		{
-			if (netgame || multiplayer)
-				ms = cv_respawntime.value * 1000;
-			else
-				ms = 1000;
-
-			/*
-			If the time spent with the music paused is less than half
-			a second, continue playing the song (just mute it).
-			*/
-			if (( ms - cv_respawnfademusicout.value ) < 500)
-				S_FadeMusic(0, cv_respawnfademusicout.value);
-			else
-				S_FadeOutStopMusic(cv_respawnfademusicout.value);
-		}
 
 		if (target->player == &players[consoleplayer])
 		{
