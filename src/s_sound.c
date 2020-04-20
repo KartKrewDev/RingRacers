@@ -126,14 +126,9 @@ static CV_PossibleValue_t music_resync_threshold_cons_t[] = {
 
 	{0}
 };
-consvar_t cv_music_resync_threshold = {
-	"music_resync_threshold", "100", CV_SAVE|CV_CALL,
-	music_resync_threshold_cons_t, I_UpdateSongLagThreshold
-};
-consvar_t cv_music_resync_powerups_only = {
-	"music_resync_powerups_only", "No", CV_SAVE|CV_CALL,
-	CV_YesNo, I_UpdateSongLagConditions
-};
+consvar_t cv_music_resync_threshold = {"music_resync_threshold", "100", CV_SAVE|CV_CALL, music_resync_threshold_cons_t, I_UpdateSongLagThreshold, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_music_resync_powerups_only = {"music_resync_powerups_only", "No", CV_SAVE|CV_CALL, CV_YesNo, I_UpdateSongLagConditions, 0, NULL, NULL, 0, 0, NULL};
 
 #define S_MAX_VOLUME 127
 
