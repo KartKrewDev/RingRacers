@@ -16,7 +16,7 @@
 #include "d_netcmd.h"
 #include "p_local.h"
 #include "p_tick.h"
-#include "r_state.h"
+#include "r_local.h"
 #include "z_zone.h"
 #include "g_game.h"
 
@@ -1855,6 +1855,37 @@ static boolean K_RaiseWaypoint(
 }
 
 /*--------------------------------------------------
+	static boolean K_AnchorWaypointRadius(
+		mobj_t *const       waypointmobj,
+		const mobj_t *const anchor)
+
+		Adjust a waypoint's radius by distance from an "anchor".
+
+	Input Arguments:-
+		waypointmobj - The mobj of the waypoint whose radius to adjust
+		riser        - The waypoint anchor mobj
+
+	Return:-
+		True if the waypoint's radius was adjusted, false if not.
+--------------------------------------------------*/
+
+static boolean K_AnchorWaypointRadius(
+		mobj_t *const       waypointmobj,
+		const mobj_t *const anchor)
+{
+	if (anchor->spawnpoint->angle == waypointmobj->spawnpoint->angle)
+	{
+		waypointmobj->radius = R_PointToDist2(
+				waypointmobj->x, waypointmobj->y,
+				anchor->x, anchor->y);
+
+		return true;
+	}
+	else
+		return false;
+}
+
+/*--------------------------------------------------
 	void K_AdjustWaypointsParameters(void)
 
 		See header file for description.
@@ -1864,6 +1895,9 @@ void K_AdjustWaypointsParameters (void)
 {
 	mobj_t *waypointmobj;
 	const mobj_t *riser;
+
+	const thinker_t *th;
+	const mobj_t *anchor;
 
 	const sector_t *sector;
 
@@ -1883,6 +1917,29 @@ void K_AdjustWaypointsParameters (void)
 			{
 				if (K_RaiseWaypoint(waypointmobj, riser))
 					break;
+			}
+		}
+	}
+
+	for (
+			th = thinkercap.next;
+			th != &thinkercap;
+			th = th->next
+	){
+		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+		{
+			anchor = (const mobj_t *)th;
+
+			if (anchor->type == MT_WAYPOINT_ANCHOR)
+			{
+				for (
+						waypointmobj = waypointcap;
+						waypointmobj;
+						waypointmobj = waypointmobj->tracer
+				){
+					if (K_AnchorWaypointRadius(waypointmobj, anchor))
+						break;
+				}
 			}
 		}
 	}
