@@ -1773,6 +1773,88 @@ void K_ClearWaypoints(void)
 }
 
 /*--------------------------------------------------
+	static boolean K_RaiseWaypoint(
+		mobj_t *const       waypointmobj,
+		const mobj_t *const riser)
+
+		Raise a waypoint according a waypoint riser thing.
+
+	Input Arguments:-
+		waypointmobj - The mobj of the waypoint to raise
+		riser        - The waypoint riser mobj
+
+	Return:-
+		True if the waypoint was risen, false if not.
+--------------------------------------------------*/
+
+static boolean K_RaiseWaypoint(
+		mobj_t *const       waypointmobj,
+		const mobj_t *const riser)
+{
+	fixed_t x;
+	fixed_t y;
+
+	const sector_t *sector;
+	ffloor_t *rover;
+
+	boolean descending;
+
+	fixed_t sort;
+	fixed_t z;
+
+	if (
+			!( riser->spawnpoint->options & MTF_OBJECTSPECIAL ) ||
+			riser->spawnpoint->angle == waypointmobj->spawnpoint->angle
+	){
+		if (( riser->spawnpoint->options & MTF_AMBUSH ))
+		{
+			waypointmobj->z = riser->z;
+		}
+		else
+		{
+			x = waypointmobj->x;
+			y = waypointmobj->y;
+
+			descending = ( riser->spawnpoint->options & MTF_OBJECTFLIP );
+
+			sector = waypointmobj->subsector->sector;
+
+			if (descending)
+				sort = sector->ceilingheight;
+			else
+				sort = sector->floorheight;
+
+			for (
+					rover = sector->ffloors;
+					rover;
+					rover = rover->next
+			){
+				if (descending)
+				{
+					z = P_GetFOFBottomZAt(rover, x, y);
+
+					if (z > riser->z && z < sort)
+						sort = z;
+				}
+				else
+				{
+					z = P_GetFOFTopZAt(rover, x, y);
+
+					if (z < riser->z && z > sort)
+						sort = z;
+				}
+			}
+
+			waypointmobj->z = sort;
+		}
+
+		return true;
+	}
+	else
+		return false;
+}
+
+/*--------------------------------------------------
 	void K_AdjustWaypointsParameters(void)
 
 		See header file for description.
@@ -1781,18 +1863,9 @@ void K_ClearWaypoints(void)
 void K_AdjustWaypointsParameters (void)
 {
 	mobj_t *waypointmobj;
-	mobj_t *riser;
+	const mobj_t *riser;
 
-	fixed_t x;
-	fixed_t y;
-
-	sector_t *sector;
-	ffloor_t *rover;
-
-	boolean descending;
-
-	fixed_t sort;
-	fixed_t z;
+	const sector_t *sector;
 
 	for (
 			waypointmobj = waypointcap;
@@ -1806,52 +1879,10 @@ void K_AdjustWaypointsParameters (void)
 				riser;
 				riser = riser->snext
 		){
-			if (
-					riser->type == MT_WAYPOINT_RISER &&
-					(
-						!( riser->spawnpoint->options & MTF_OBJECTSPECIAL ) ||
-						riser->spawnpoint->angle == waypointmobj->spawnpoint->angle
-					)
-			){
-				if (( riser->spawnpoint->options & MTF_AMBUSH ))
-				{
-					waypointmobj->z = riser->z;
-				}
-				else
-				{
-					x = waypointmobj->x;
-					y = waypointmobj->y;
-
-					descending = ( riser->spawnpoint->options & MTF_OBJECTFLIP );
-
-					if (descending)
-						sort = sector->ceilingheight;
-					else
-						sort = sector->floorheight;
-
-					for (
-							rover = sector->ffloors;
-							rover;
-							rover = rover->next
-					){
-						if (descending)
-						{
-							z = P_GetFOFBottomZAt(rover, x, y);
-
-							if (z > riser->z && z < sort)
-								sort = z;
-						}
-						else
-						{
-							z = P_GetFOFTopZAt(rover, x, y);
-
-							if (z < riser->z && z > sort)
-								sort = z;
-						}
-					}
-
-					waypointmobj->z = sort;
-				}
+			if (riser->type == MT_WAYPOINT_RISER)
+			{
+				if (K_RaiseWaypoint(waypointmobj, riser))
+					break;
 			}
 		}
 	}
