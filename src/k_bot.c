@@ -160,20 +160,24 @@ fixed_t K_BotRubberband(player_t *player)
 
 	if (firstplace != NULL)
 	{
-		const UINT32 spacing = 2048;
+		const UINT32 spacing = 4096;
 		UINT32 easiness = (MAXBOTDIFFICULTY - player->botvars.difficulty);
 		UINT32 wanteddist = firstplace->distancetofinish + (spacing * easiness);
 
 		if (wanteddist < player->distancetofinish)
 		{
 			// Catch up to 1st!
-			rubberband = FRACUNIT + (player->botvars.difficulty * (player->distancetofinish - wanteddist));
+			rubberband = FRACUNIT + ((3*player->botvars.difficulty/2) * (player->distancetofinish - wanteddist));
 		}
 	}
 
 	if (rubberband > 2*FRACUNIT)
 	{
 		rubberband = 2*FRACUNIT;
+	}
+	else if (rubberband < FRACUNIT)
+	{
+		rubberband = FRACUNIT;
 	}
 
 	return rubberband;
@@ -770,10 +774,99 @@ static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t 
 	return false;
 }
 
+static boolean K_BotRevealsBanana(player_t *player, INT16 turnamt, boolean mine)
+{
+	UINT8 i;
+
+	// Only get out bananas if you have a target
+
+	if (abs(turnamt) >= KART_FULLTURN/2)
+	{
+		return false;
+	}
+	else
+	{
+		UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
+		fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+		fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+		fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+
+		if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
+		{
+			return true;
+		}
+
+		if (mine)
+		{
+			airtime = FixedDiv((40 * player->mo->scale) + player->mo->momz, gravity);
+			throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) * 2;
+			estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+			esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+
+			if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
+			{
+				return true;
+			}
+		}
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *target = NULL;
+		fixed_t dist = INT32_MAX;
+
+		if (!playeringame[i])
+		{
+			continue;
+		}
+
+		target = &players[i];
+
+		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+			|| player == target || target->spectator
+			|| target->powers[pw_flashing]
+			|| !P_CheckSight(player->mo, target->mo))
+		{
+			continue;
+		}
+
+		dist = P_AproxDistance(P_AproxDistance(
+			player->mo->x - target->mo->x,
+			player->mo->y - target->mo->y),
+			(player->mo->z - target->mo->z) / 4
+		);
+
+		if (dist <= (player->mo->radius * 16))
+		{
+			angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+			INT16 ad = 0;
+			const INT16 cone = 10;
+
+			if (a < ANGLE_180)
+			{
+				ad = AngleFixed(a)>>FRACBITS;
+			}
+			else 
+			{
+				ad = 360-(AngleFixed(a)>>FRACBITS);
+			}
+
+			ad = abs(ad);
+
+			if (ad >= 180-cone)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	botprediction_t *predict = NULL;
-	INT16 turnamt = 0;
+	INT32 turnamt = 0;
 
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
@@ -781,7 +874,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
-	cmd->angleturn = (player->mo->angle >> 16);
+	cmd->angleturn = (player->mo->angle >> 16) | TICCMD_RECEIVED;
 
 	if (player->playerstate == PST_DEAD)
 	{
@@ -838,9 +931,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
+			const fixed_t realrad = predict->radius - (player->mo->radius*2);
+
 			INT16 wallsteer = K_BotSteerFromWalls(player, predict);
 			INT16 objectsteer = 0;
-			fixed_t rad = predict->radius - (player->mo->radius*4);
+
+			fixed_t rad = realrad;
 			fixed_t dirdist = K_DistanceOfLineFromPoint(
 				player->mo->x, player->mo->y,
 				player->mo->x + FINECOSINE(moveangle >> ANGLETOFINESHIFT), player->mo->y + FINESINE(moveangle >> ANGLETOFINESHIFT),
@@ -871,7 +967,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
 			}
-			else if (anglediff <= 23 || dirdist <= rad)
+			else if (anglediff <= 23 || dirdist <= realrad)
 			{
 				objectsteer = K_BotFindObjects(player);
 			}
@@ -1007,17 +1103,22 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					case KITEM_BANANA:
 						if (!player->kartstuff[k_itemheld])
 						{
-							cmd->buttons |= BT_ATTACK;
-							player->botvars.itemconfirm = 0;
+							if (K_BotRevealsBanana(player, turnamt, false) || (player->botvars.itemconfirm++ > 5*TICRATE))
+							{
+								cmd->buttons |= BT_ATTACK;
+								player->botvars.itemconfirm = 0;
+							}
 						}
 						else
 						{
 							SINT8 throwdir = -1;
 							UINT8 i;
 
+							player->botvars.itemconfirm++;
+
 							if (abs(turnamt) >= KART_FULLTURN/2)
 							{
-								player->botvars.itemconfirm++;
+								player->botvars.itemconfirm += 2;
 							}
 							else
 							{
@@ -1028,7 +1129,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
 								{
-									player->botvars.itemconfirm += 4;
+									player->botvars.itemconfirm += 8;
 									throwdir = 1;
 								}
 							}
@@ -1078,7 +1179,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 									if (ad >= 180-cone)
 									{
-										player->botvars.itemconfirm += 2;
+										player->botvars.itemconfirm += 4;
 										throwdir = -1;
 									}
 								}
@@ -1166,12 +1267,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 									if (ad <= cone)
 									{
-										player->botvars.itemconfirm += 4;
+										player->botvars.itemconfirm += 8;
 										throwdir = 1;
 									}
 									else if (ad >= 180-cone)
 									{
-										player->botvars.itemconfirm += 2;
+										player->botvars.itemconfirm += 4;
 									}
 								}
 							}
@@ -1250,7 +1351,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 									if (ad >= 180-cone)
 									{
-										player->botvars.itemconfirm += 2;
+										player->botvars.itemconfirm += 4;
 										throwdir = -1;
 									}
 								}
@@ -1258,7 +1359,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 							if (player->kartstuff[k_lastjawztarget] != -1)
 							{
-								player->botvars.itemconfirm += 4;
+								player->botvars.itemconfirm += 8;
 								throwdir = 1;
 							}
 
@@ -1281,13 +1382,18 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					case KITEM_MINE:
 						if (!player->kartstuff[k_itemheld])
 						{
-							cmd->buttons |= BT_ATTACK;
-							player->botvars.itemconfirm = 0;
+							if (K_BotRevealsBanana(player, turnamt, true) || (player->botvars.itemconfirm++ > 5*TICRATE))
+							{
+								cmd->buttons |= BT_ATTACK;
+								player->botvars.itemconfirm = 0;
+							}
 						}
 						else
 						{
 							SINT8 throwdir = 0;
 							UINT8 i;
+
+							player->botvars.itemconfirm++;
 
 							for (i = 0; i < MAXPLAYERS; i++)
 							{
@@ -1334,7 +1440,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 									if (ad >= 180-cone)
 									{
-										player->botvars.itemconfirm += 2;
+										player->botvars.itemconfirm += 4;
 										throwdir = -1;
 									}
 								}
@@ -1342,7 +1448,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 							if (abs(turnamt) >= KART_FULLTURN/2)
 							{
-								player->botvars.itemconfirm++;
+								player->botvars.itemconfirm += 2;
+								throwdir = -1;
 							}
 							else
 							{
@@ -1353,7 +1460,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
 								{
-									player->botvars.itemconfirm += 4;
+									player->botvars.itemconfirm += 8;
 									throwdir = 0;
 								}
 
