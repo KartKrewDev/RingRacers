@@ -7161,7 +7161,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	static UINT8 lookbackdelay[MAXSPLITSCREENPLAYERS];
 	UINT8 num;
 	angle_t angle = 0, focusangle = 0, focusaiming = 0, pitch = 0;
-	fixed_t x, y, z, dist, distxy, distz, height, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
+	fixed_t x, y, z, dist, distxy, distz, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
 	fixed_t pan, xpan, ypan;
 	INT32 camrotate;
 	boolean camstill, lookback, lookbackdown;
@@ -7399,8 +7399,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		thiscam->angle = angle;
 	}
 
-	height = camheight;
-
 	// sets ideal cam pos
 	dist = camdist;
 
@@ -7409,10 +7407,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	dist += abs(thiscam->momz)/4;
 
 	if (player->karthud[khud_boostcam])
-	{
 		dist -= FixedMul(11*dist/16, player->karthud[khud_boostcam]);
-		height -= FixedMul(height, player->karthud[khud_boostcam]);
-	}
 
 	if (mo->standingslope)
 	{
@@ -7480,12 +7475,12 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (mo->eflags & MFE_VERTICALFLIP)
 	{
-		distz = min(-height, distz);
+		distz = min(-camheight, distz);
 		z = mo->z + mo->height - pviewheight + distz;
 	}
 	else
 	{
-		distz = max(height, distz);
+		distz = max(camheight, distz);
 		z = mo->z + pviewheight + distz;
 	}
 
