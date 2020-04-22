@@ -6153,7 +6153,7 @@ boolean P_IsKartItem(INT32 type)
 		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
 		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
 		type == MT_SINK || type == MT_SINK_SHIELD ||
-		type == MT_SPB)
+		type == MT_SPB || type == MT_BALLHOG || type == MT_BUBBLESHIELDTRAP)
 		return true;
 	else
 		return false;
@@ -7175,6 +7175,41 @@ void P_MobjThinker(mobj_t *mobj)
 			return;
 	}
 #endif
+
+	// Destroy items sector special
+	if (mobj->type == MT_BANANA || mobj->type == MT_EGGMANITEM
+	|| mobj->type == MT_ORBINAUT || mobj->type == MT_BALLHOG
+	|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD
+	|| mobj->type == MT_SSMINE || mobj->type == MT_BUBBLESHIELDTRAP)
+	{
+		if (mobj->health > 0 && P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
+		{
+			if (mobj->type == MT_SSMINE
+			|| mobj->type == MT_BUBBLESHIELDTRAP
+			|| mobj->type == MT_BALLHOG)
+			{
+				S_StartSound(mobj, mobj->info->deathsound);
+				P_KillMobj(mobj, NULL, NULL);
+			}
+			else
+			{
+				// This Item Damage
+				if (mobj->eflags & MFE_VERTICALFLIP)
+					mobj->z -= mobj->height;
+				else
+					mobj->z += mobj->height;
+
+				S_StartSound(mobj, mobj->info->deathsound);
+				P_KillMobj(mobj, NULL, NULL);
+
+				P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
+				P_InstaThrust(mobj, R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_90, 16*FRACUNIT);
+			}
+
+			return;
+		}
+	}
+
 	// if it's pushable, or if it would be pushable other than temporary disablement, use the
 	// separate thinker
 	if (mobj->flags & MF_PUSHABLE || (mobj->info->flags & MF_PUSHABLE && mobj->fuse))
@@ -7939,12 +7974,6 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			boolean grounded = P_IsObjectOnGround(mobj);
 
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
-
 			if (mobj->flags2 & MF2_AMBUSH)
 			{
 				if (grounded && (mobj->flags & MF_NOCLIPTHING))
@@ -8015,12 +8044,6 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
-
 			if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
 			{
 				ghost->color = mobj->target->player->skincolor;
@@ -8044,12 +8067,6 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_JAWZ_DUD:
 		{
 			boolean grounded = P_IsObjectOnGround(mobj);
-
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
 
 			if (mobj->flags2 & MF2_AMBUSH)
 			{
@@ -8124,12 +8141,6 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_BANANA:
 			mobj->friction = ORIG_FRICTION/4;
 
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
-
 			if (mobj->momx || mobj->momy)
 			{
 				mobj_t *ghost = P_SpawnGhostMobj(mobj);
@@ -8158,12 +8169,6 @@ void P_MobjThinker(mobj_t *mobj)
 			{
 				mobj_t *ghost = P_SpawnGhostMobj(mobj);
 				ghost->fuse = 3;
-
-				if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-				{
-					P_RemoveMobj(mobj);
-					return;
-				}
 
 				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
 				{
@@ -8197,12 +8202,6 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->threshold--;
 			break;
 		case MT_SSMINE:
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
-
 			if (mobj->target && mobj->target->player)
 				mobj->color = mobj->target->player->skincolor;
 			else
