@@ -268,6 +268,11 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT32(save_p, players[i].distancetofinish);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
+
+		WRITEUINT8(save_p, players[i].botvars.difficulty);
+		WRITEUINT32(save_p, players[i].botvars.itemdelay);
+		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
+		WRITEINT16(save_p, players[i].botvars.lastturn);
 	}
 }
 
@@ -439,6 +444,11 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
+
+		players[i].botvars.difficulty = READUINT8(save_p);
+		players[i].botvars.itemdelay = READUINT32(save_p);
+		players[i].botvars.itemconfirm = READUINT32(save_p);
+		players[i].botvars.lastturn = READINT16(save_p);
 	}
 }
 
