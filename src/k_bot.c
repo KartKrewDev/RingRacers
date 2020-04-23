@@ -123,6 +123,7 @@ boolean K_BotCanTakeCut(player_t *player)
 {
 	if (!K_ApplyOffroad(player)
 		|| player->kartstuff[k_itemtype] == KITEM_SNEAKER
+		|| player->kartstuff[k_itemtype] == KITEM_ROCKETSNEAKER
 		|| player->kartstuff[k_itemtype] == KITEM_INVINCIBILITY
 		|| player->kartstuff[k_itemtype] == KITEM_HYUDORO)
 		return true;
@@ -210,6 +211,7 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
+	const tic_t futuresight = (3*TICRATE/4); // How far ahead into the future to try and predict
 	const INT32 distance = (player->speed / FRACUNIT) * futuresight;
 	INT32 distanceleft = distance;
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
