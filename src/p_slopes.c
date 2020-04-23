@@ -54,6 +54,13 @@ static void P_ReconfigureVertexSlope(pslope_t *slope)
 		max(max(abs(vec1.x), abs(vec1.y)), abs(vec1.z)),
 		max(max(abs(vec2.x), abs(vec2.y)), abs(vec2.z))
 	) >> (FRACBITS+5);
+
+	if (slope->extent == 0)
+	{
+		// Prevent divide by zero
+		slope->extent = 1;
+	}
+
 	vec1.x /= slope->extent;
 	vec1.y /= slope->extent;
 	vec1.z /= slope->extent;
