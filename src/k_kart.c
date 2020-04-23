@@ -6863,8 +6863,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		// If we're drifting we have a completely different turning value
 		if (player->kartstuff[k_driftend] == 0)
 		{
-			// 800 is the max set in g_game.c with angleturn
-			fixed_t countersteer = FixedDiv(turnvalue*FRACUNIT, 800*FRACUNIT);
+			fixed_t countersteer = FixedDiv(turnvalue*FRACUNIT, KART_FULLTURN*FRACUNIT);
 			turnvalue = K_GetKartDriftValue(player, countersteer);
 		}
 		else
