@@ -7140,13 +7140,14 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled)
 {
-	static UINT8 lookbackdelay[4] = {0,0,0,0};
+	static boolean lookbackactive[MAXSPLITSCREENPLAYERS];
+	static UINT8 lookbackdelay[MAXSPLITSCREENPLAYERS];
 	UINT8 num;
 	angle_t angle = 0, focusangle = 0, focusaiming = 0, pitch = 0;
-	fixed_t x, y, z, dist, distxy, distz, height, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
+	fixed_t x, y, z, dist, distxy, distz, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
 	fixed_t pan, xpan, ypan;
 	INT32 camrotate;
-	boolean camstill, lookback;
+	boolean camstill, lookback, lookbackdown;
 	UINT8 timeover;
 	mobj_t *mo;
 	fixed_t f1, f2;
@@ -7326,15 +7327,19 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		camstill = true;
 	else if (lookback || lookbackdelay[num]) // SRB2kart - Camera flipper
 	{
+#define MAXLOOKBACKDELAY 2
 		camspeed = FRACUNIT;
 		if (lookback)
 		{
 			camrotate += 180;
-			lookbackdelay[num] = 2;
+			lookbackdelay[num] = MAXLOOKBACKDELAY;
 		}
 		else
 			lookbackdelay[num]--;
 	}
+	lookbackdown = (lookbackdelay[num] == MAXLOOKBACKDELAY) != lookbackactive[num];
+	lookbackactive[num] = (lookbackdelay[num] == MAXLOOKBACKDELAY);
+#undef MAXLOOKBACKDELAY
 
 	if (mo->eflags & MFE_VERTICALFLIP)
 		camheight += thiscam->height;
@@ -7377,8 +7382,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		thiscam->angle = angle;
 	}
 
-	height = camheight;
-
 	// sets ideal cam pos
 	dist = camdist;
 
@@ -7387,14 +7390,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	dist += abs(thiscam->momz)/4;
 
 	if (player->karthud[khud_boostcam])
-	{
 		dist -= FixedMul(11*dist/16, player->karthud[khud_boostcam]);
-		height -= FixedMul(height, player->karthud[khud_boostcam]);
-	}
 
 	if (mo->standingslope)
 	{
-		pitch = (angle_t)FixedMul(P_ReturnThrustX(mo, player->frameangle - mo->standingslope->xydirection, FRACUNIT), (fixed_t)mo->standingslope->zangle);
+		pitch = (angle_t)FixedMul(P_ReturnThrustX(mo, thiscam->angle - mo->standingslope->xydirection, FRACUNIT), (fixed_t)mo->standingslope->zangle);
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
 			if (pitch >= ANGLE_180)
@@ -7417,8 +7417,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	else
 		distxy = dist;
 	distz = -FixedMul(dist, FINESINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
-	if (r_splitscreen == 1) // 2 player is weird, this helps keep players on screen
-		distz = 3*distz/5;
 
 	x = mo->x - FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
 	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
@@ -7459,9 +7457,15 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	pviewheight = FixedMul(32<<FRACBITS, mo->scale);
 
 	if (mo->eflags & MFE_VERTICALFLIP)
-		z = mo->z + mo->height - pviewheight - camheight + distz;
+	{
+		distz = min(-camheight, distz);
+		z = mo->z + mo->height - pviewheight + distz;
+	}
 	else
-		z = mo->z + pviewheight + camheight + distz;
+	{
+		distz = max(camheight, distz);
+		z = mo->z + pviewheight + distz;
+	}
 
 #ifndef NOCLIPCAM // Disable all z-clipping for noclip cam
 	// move camera down to move under lower ceilings
@@ -7707,13 +7711,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		angle = R_PointToAngle2(0, thiscam->z + thiscam->height, dist, mo->z + mo->height - P_GetPlayerHeight(player));
 		if (thiscam->pitch < ANGLE_180 && thiscam->pitch > angle)
-			angle = thiscam->pitch;
+			angle += (thiscam->pitch - angle)/2;
 	}
 	else
 	{
 		angle = R_PointToAngle2(0, thiscam->z, dist, mo->z + P_GetPlayerHeight(player));
 		if (thiscam->pitch >= ANGLE_180 && thiscam->pitch < angle)
-			angle = thiscam->pitch;
+			angle -= (angle - thiscam->pitch)/2;
 	}
 
 	if (player->playerstate != PST_DEAD && !((player->pflags & PF_NIGHTSMODE) && player->exiting))
@@ -7755,6 +7759,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		else if (mo->eflags & MFE_VERTICALFLIP && thiscam->aiming > ANGLE_22h && thiscam->aiming < ANGLE_180)
 			thiscam->aiming = ANGLE_22h;
 	}
+
+	if (lookbackdown)
+		P_MoveChaseCamera(player, thiscam, false);
 
 	return (x == thiscam->x && y == thiscam->y && z == thiscam->z && angle == thiscam->aiming);
 }
