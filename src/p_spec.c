@@ -7205,8 +7205,14 @@ static void P_SpawnScrollers(void)
 	{
 		fixed_t dx = l->dx >> SCROLL_SHIFT; // direction and speed of scrolling
 		fixed_t dy = l->dy >> SCROLL_SHIFT;
+
+		fixed_t bx = 0;/* backside variants */
+		fixed_t by = 0;
+
 		INT32 control = -1, accel = 0; // no control sector or acceleration
 		INT32 special = l->special;
+
+		INT32 s;
 
 		// These types are same as the ones they get set to except that the
 		// first side's sector's heights cause scrolling when they change, and
@@ -7236,10 +7242,24 @@ static void P_SpawnScrollers(void)
 			control = (INT32)(sides[*l->sidenum].sector - sectors);
 		}
 
+		if (special == 507) // front and back scrollers
+		{
+			s  = l->sidenum[0];
+
+			dx = -(sides[s].textureoffset);
+			dy =   sides[s].rowoffset;
+
+			s  = l->sidenum[1];
+
+			if (s != 0xffff)
+			{
+				bx = -(sides[s].textureoffset);
+				by =   sides[s].rowoffset;
+			}
+		}
+
 		switch (special)
 		{
-			register INT32 s;
-
 			case 513: // scroll effect ceiling
 			case 533: // scroll and carry objects on ceiling
 				for (s = -1; (s = P_FindSectorFromLineTag(l, s)) >= 0 ;)
@@ -7290,6 +7310,18 @@ static void P_SpawnScrollers(void)
 					Add_Scroller(sc_side, -sides[s].textureoffset, sides[s].rowoffset, -1, lines[i].sidenum[0], accel, 0);
 				else
 					CONS_Debug(DBG_GAMELOGIC, "Line special 506 (line #%s) missing 2nd side!\n", sizeu1(i));
+				break;
+
+			case 507: // scroll front and backside of tagged lines
+				for (s = -1; (s = P_FindLineFromLineTag(l, s)) >= 0 ;)
+				{
+					if (s != (INT32)i)
+					{
+						Add_Scroller(sc_side, dx, dy, control, lines[s].sidenum[0], accel, 0);
+						if (lines[s].sidenum[1] != 0xffff)
+							Add_Scroller(sc_side, bx, by, control, lines[s].sidenum[1], accel, 0);
+					}
+				}
 				break;
 
 			case 500: // scroll first side
