@@ -5150,8 +5150,6 @@ static inline void P_AddFFloorToList(sector_t *sec, ffloor_t *ffloor)
 {
 	ffloor_t *rover;
 
-	fixed_t top;
-
 	if (!sec->ffloors)
 	{
 		sec->ffloors = ffloor;
