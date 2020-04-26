@@ -220,7 +220,9 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	size_t nwp;
 	size_t i;
 
-	if (distance <= 0)
+	distanceleft -= P_AproxDistance(player->mo->x - wp->mobj->x, player->mo->y - wp->mobj->y) / FRACUNIT;
+
+	if (distanceleft <= 0)
 	{
 		predict->x = wp->mobj->x;
 		predict->y = wp->mobj->y;
