@@ -209,12 +209,153 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 	return P_AproxDistance(cx - px, cy - py);
 }
 
+mobj_t *botmo = NULL;
+fixed_t distancetocheck = 0;
+
+fixed_t closestlinedist = INT32_MAX;
+
+INT16 badsteerglobal = 0;
+
+static inline boolean K_FindBlockingWalls(line_t *line)
+{
+	// Condensed version of PIT_CheckLine
+	const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
+	fixed_t maxstep = maxstepmove;
+	fixed_t linedist = INT32_MAX;
+	INT32 lineside = 0;
+
+	if (!botmo || P_MobjWasRemoved(botmo) || !botmo->player)
+	{
+		return false;
+	}
+
+	if (line->polyobj && !(line->polyobj->flags & POF_SOLID))
+	{
+		return true;
+	}
+
+	if (tmbbox[BOXRIGHT] <= line->bbox[BOXLEFT] || tmbbox[BOXLEFT] >= line->bbox[BOXRIGHT]
+		|| tmbbox[BOXTOP] <= line->bbox[BOXBOTTOM] || tmbbox[BOXBOTTOM] >= line->bbox[BOXTOP])
+	{
+		return true;
+	}
+
+	if (P_BoxOnLineSide(tmbbox, line) != -1)
+	{
+		return true;
+	}
+
+	lineside = P_PointOnLineSide(botmo->x, botmo->y, line);
+
+	// one sided line
+	if (!line->backsector)
+	{
+		if (lineside)
+		{
+			// don't hit the back side
+			return true;
+		}
+
+		goto blocked;
+	}
+
+	if ((line->flags & ML_IMPASSABLE) || (line->flags & ML_BLOCKPLAYERS))
+	{
+		goto blocked;
+	}
+
+	// set openrange, opentop, openbottom
+	P_LineOpening(line, botmo);
+
+	if (botmo->player->kartstuff[k_waterskip])
+		maxstep += maxstepmove;
+
+	if (P_MobjTouchingSectorSpecial(botmo, 1, 13, false))
+		maxstep <<= 1;
+	else if (P_MobjTouchingSectorSpecial(botmo, 1, 12, false))
+		maxstep = 0;
+
+	if ((openrange < botmo->height) // doesn't fit
+		|| (opentop - botmo->z < botmo->height) // mobj is too high
+		|| (openbottom - botmo->z > maxstep)) // too big a step up
+	{
+		goto blocked;
+	}
+
+	// We weren't blocked!
+	return true;
+
+blocked:
+	linedist = K_DistanceOfLineFromPoint(line->v1->x, line->v1->y, line->v2->x, line->v2->y, botmo->x, botmo->y);
+	linedist -= (botmo->radius * 4); // Maintain a reasonable distance away from it
+
+	if (linedist > distancetocheck)
+	{
+		return true;
+	}
+
+	if (linedist <= 0)
+	{
+		closestlinedist = 0;
+		return false;
+	}
+
+	if (linedist < closestlinedist)
+	{
+		closestlinedist = linedist;
+	}
+
+	return true;
+}
+
+static fixed_t K_BotReducePrediction(player_t *player)
+{
+	INT32 xl, xh, yl, yh, bx, by;
+
+	botmo = player->mo;
+	distancetocheck = player->mo->radius * 16;
+	closestlinedist = INT32_MAX;
+
+	tmx = player->mo->x;
+	tmy = player->mo->y;
+
+	xl = (unsigned)(tmx - distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(tmx + distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(tmy - distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(tmy + distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX(xl, xh, yl, yh);
+
+	tmbbox[BOXTOP] = tmy + distancetocheck;
+	tmbbox[BOXBOTTOM] = tmy - distancetocheck;
+	tmbbox[BOXRIGHT] = tmx + distancetocheck;
+	tmbbox[BOXLEFT] = tmx - distancetocheck;
+
+	// Check for lines that the bot might collide with
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
+		{
+			P_BlockLinesIterator(bx, by, K_FindBlockingWalls);
+		}
+	}
+
+	if (closestlinedist == INT32_MAX)
+	{
+		return FRACUNIT;
+	}
+
+	return FixedDiv(closestlinedist, distancetocheck);
+}
+
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
 	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN); // Reduce prediction based on how fast you can turn
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
-	const INT32 distance = (player->speed / FRACUNIT) * futuresight;
+	const fixed_t distreduce = K_BotReducePrediction(player);
+	const fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
+	const INT32 distance = (FixedMul(player->speed, distreduce) / FRACUNIT) * futuresight;
 	INT32 distanceleft = distance;
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
 	waypoint_t *wp = player->nextwaypoint;
@@ -228,7 +369,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	{
 		predict->x = wp->mobj->x;
 		predict->y = wp->mobj->y;
-		predict->radius = wp->mobj->radius;
+		predict->radius = FixedMul(wp->mobj->radius, radreduce);
 		return predict;
 	}
 
@@ -284,7 +425,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 	predict->x = wp->mobj->x;
 	predict->y = wp->mobj->y;
-	predict->radius = smallestradius;
+	predict->radius = FixedMul(smallestradius, radreduce);
 
 	if (distanceleft > 0)
 	{
@@ -296,11 +437,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 	return predict;
 }
-
-mobj_t *botmo = NULL;
-fixed_t distancetocheck = 0;
-INT16 badsteerglobal = 0;
-fixed_t predictx = 0, predicty = 0;
 
 static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, fixed_t fulldist, fixed_t xdist, boolean towards, INT16 amount)
 {
@@ -907,6 +1043,17 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			{
 				cmd->buttons |= BT_ATTACK;
 			}
+		}
+	}
+	else if (player->kartstuff[k_itemroulette] && !(player->pflags & PF_ATTACKDOWN))
+	{
+		// Mashing behaviors
+
+		if (player->kartstuff[k_rings] < 0 && cv_superring.value)
+		{
+			// Uh oh, we need a loan!
+			// It'll be better in the long run for bots to lose an item set for 10 free rings.
+			cmd->buttons |= BT_ATTACK;
 		}
 	}
 	else
