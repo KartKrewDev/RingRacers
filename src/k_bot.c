@@ -798,7 +798,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			const fixed_t realrad = predict->radius - player->mo->radius;
+			const fixed_t realrad = predict->radius - (player->mo->radius * 2);
 
 			INT16 objectsteer = 0;
 
