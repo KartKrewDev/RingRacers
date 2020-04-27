@@ -302,20 +302,16 @@ fixed_t distancetocheck = 0;
 INT16 badsteerglobal = 0;
 fixed_t predictx = 0, predicty = 0;
 
-static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, boolean towards, INT16 amount)
+static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, fixed_t fulldist, fixed_t xdist, boolean towards, INT16 amount)
 {
 	angle_t destangle = R_PointToAngle2(bot->x, bot->y, thing->x, thing->y);
 	angle_t angle;
 
+	amount = (amount * FixedDiv(distancetocheck - fulldist, distancetocheck)) / FRACUNIT;
+
 	if (towards)
 	{
-		fixed_t dist = K_DistanceOfLineFromPoint(
-			bot->x, bot->y,
-			bot->x + FINECOSINE(bot->angle >> ANGLETOFINESHIFT), bot->y + FINESINE(bot->angle >> ANGLETOFINESHIFT),
-			thing->x, thing->y
-		);
-
-		if (dist <= (bot->radius + thing->radius))
+		if (xdist < (bot->radius + thing->radius))
 		{
 			// Don't need to turn any harder!
 			return;
@@ -339,20 +335,10 @@ static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, boolean towards, INT16
 static boolean K_BotSteerObjects(mobj_t *thing)
 {
 	INT16 anglediff;
-	fixed_t dist;
+	fixed_t xdist, ydist, fulldist;
 	angle_t destangle, angle;
 	INT16 attack = ((9 - botmo->player->kartspeed) * KART_FULLTURN) / 8; // Acceleration chars are more aggressive
 	INT16 dodge = ((9 - botmo->player->kartweight) * KART_FULLTURN) / 8; // Handling chars dodge better
-
-#define PlayerAttackSteer(botcond, thingcond) \
-	if ((botcond) && !(thingcond)) \
-	{ \
-		K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack); \
-	} \
-	else if ((thingcond) && !(botcond)) \
-	{ \
-		K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge); \
-	}
 
 	if (!botmo || P_MobjWasRemoved(botmo) || !botmo->player)
 	{
@@ -369,13 +355,21 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 		return true;
 	}
 
-	dist = P_AproxDistance(P_AproxDistance(
-		botmo->x - thing->x,
-		botmo->y - thing->y),
-		(botmo->z - thing->z) / 4
+	xdist = K_DistanceOfLineFromPoint(
+		botmo->x, botmo->y,
+		botmo->x + FINECOSINE(botmo->angle >> ANGLETOFINESHIFT), botmo->y + FINESINE(botmo->angle >> ANGLETOFINESHIFT),
+		thing->x, thing->y
+	) / 2; // weight x dist more heavily than y dist
+
+	ydist = K_DistanceOfLineFromPoint(
+		botmo->x, botmo->y,
+		botmo->x + FINECOSINE((botmo->angle + ANGLE_90) >> ANGLETOFINESHIFT), botmo->y + FINESINE((botmo->angle + ANGLE_90) >> ANGLETOFINESHIFT),
+		thing->x, thing->y
 	);
 
-	if (dist > distancetocheck)
+	fulldist = FixedHypot(xdist, ydist);
+
+	if (fulldist > distancetocheck)
 	{
 		return true;
 	}
@@ -399,6 +393,16 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 	anglediff = abs(anglediff);
 
+#define PlayerAttackSteer(botcond, thingcond) \
+	if ((botcond) && !(thingcond)) \
+	{ \
+		K_SteerFromObject(botmo, thing, fulldist, xdist, true, 2 * (KART_FULLTURN + attack)); \
+	} \
+	else if ((thingcond) && !(botcond)) \
+	{ \
+		K_SteerFromObject(botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge)); \
+	}
+
 	switch (thing->type)
 	{
 		case MT_BANANA:
@@ -415,7 +419,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 		case MT_BALLHOG:
 		case MT_SPB:
 		case MT_BUBBLESHIELDTRAP:
-			K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
+			K_SteerFromObject(botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
 			break;
 		case MT_RANDOMITEM:
 			if (anglediff > 90)
@@ -425,7 +429,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 			if (P_CanPickupItem(botmo->player, 1))
 			{
-				K_SteerFromObject(botmo, thing, true, 2*KART_FULLTURN);
+				K_SteerFromObject(botmo, thing, fulldist, xdist, true, KART_FULLTURN + attack);
 			}
 			break;
 		case MT_FLOATINGITEM:
@@ -436,7 +440,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 			if (P_CanPickupItem(botmo->player, 3))
 			{
-				K_SteerFromObject(botmo, thing, true, 2*KART_FULLTURN);
+				K_SteerFromObject(botmo, thing, fulldist, xdist, true, KART_FULLTURN + attack);
 			}
 			break;
 		case MT_RING:
@@ -451,7 +455,11 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 				&& !thing->extravalue1
 				&& (botmo->player->kartstuff[k_itemtype] != KITEM_THUNDERSHIELD))
 			{
-				K_SteerFromObject(botmo, thing, true, (RINGTOTAL(botmo->player) <= 0 ? 2*KART_FULLTURN : KART_FULLTURN));
+				K_SteerFromObject(botmo, thing, fulldist, xdist, true,
+					(RINGTOTAL(botmo->player) < 3
+					? (2 * (KART_FULLTURN + attack))
+					: ((KART_FULLTURN + attack) / 2))
+				);
 			}
 			break;
 		case MT_PLAYER:
@@ -513,11 +521,11 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 					if (weightdiff > mapobjectscale)
 					{
-						K_SteerFromObject(botmo, thing, true, KART_FULLTURN + attack);
+						K_SteerFromObject(botmo, thing, fulldist, xdist, true, KART_FULLTURN + attack);
 					}
 					else
 					{
-						K_SteerFromObject(botmo, thing, false, KART_FULLTURN + dodge);
+						K_SteerFromObject(botmo, thing, fulldist, xdist, false, KART_FULLTURN + dodge);
 					}
 				}
 			}
@@ -525,7 +533,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 		default:
 			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE|MF_FIRE))
 			{
-				K_SteerFromObject(botmo, thing, false, 2*KART_FULLTURN);
+				K_SteerFromObject(botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
 			}
 			break;
 	}
@@ -737,11 +745,19 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
+	{
 		return;
+	}
 
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 	cmd->angleturn = (player->mo->angle >> 16) | TICCMD_RECEIVED;
+
+	if (gamestate != GS_LEVEL)
+	{
+		// No need to do anything else.
+		return;
+	}
 
 	if (player->playerstate == PST_DEAD)
 	{
@@ -798,10 +814,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			const fixed_t realrad = predict->radius - (player->mo->radius * 2);
-
-			INT16 objectsteer = 0;
-
+			const fixed_t playerwidth = (player->mo->radius * 2);
+			const fixed_t realrad = predict->radius - (playerwidth * 2); // Remove a "safe" distance away from the edges of the road
 			fixed_t rad = realrad;
 			fixed_t dirdist = K_DistanceOfLineFromPoint(
 				player->mo->x, player->mo->y,
@@ -821,9 +835,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			{
 				rad = realrad;
 			}
-			else if (rad < 2*player->mo->radius)
+			else if (rad < playerwidth)
 			{
-				rad = 2*player->mo->radius;
+				rad = playerwidth;
 			}
 
 			cmd->buttons |= BT_ACCELERATE;
@@ -837,9 +851,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
 			}
-			else if (anglediff <= 23 || dirdist <= realrad)
+			else if (dirdist <= realrad)
 			{
-				objectsteer = K_BotFindObjects(player);
+				// Steer towards/away from objects!
+				turnamt += K_BotFindObjects(player);
 			}
 
 			if (dirdist <= rad)
@@ -857,9 +872,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				// At high speed, they're more likely to lawnmower
 				speedrad += FixedMul(speedmul, (3*rad/4) - speedrad);
 
-				if (speedrad < 2*player->mo->radius)
+				if (speedrad < playerwidth)
 				{
-					speedrad = 2*player->mo->radius;
+					speedrad = playerwidth;
 				}
 
 				if (dirdist <= speedrad)
@@ -872,11 +887,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					// Make minor adjustments
 					turnamt /= 4;
 				}
-			}
-
-			if (objectsteer != 0)
-			{
-				turnamt += objectsteer;
 			}
 		}
 	}
