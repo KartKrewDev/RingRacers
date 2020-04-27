@@ -211,7 +211,9 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
-	const tic_t futuresight = (3*TICRATE/4); // How far ahead into the future to try and predict
+	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN); // Reduce prediction based on how fast you can turn
+	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
+	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
 	const INT32 distance = (player->speed / FRACUNIT) * futuresight;
 	INT32 distanceleft = distance;
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
