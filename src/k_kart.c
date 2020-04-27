@@ -2718,11 +2718,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		{
 			fixed_t rubberband = K_BotRubberband(player);
 
-			if (rubberband > 3*FRACUNIT/2)
-			{
-				rubberband = 3*FRACUNIT/2;
-			}
-			else if (rubberband < FRACUNIT)
+			if (rubberband < FRACUNIT)
 			{
 				rubberband = FRACUNIT;
 			}
