@@ -216,6 +216,24 @@ fixed_t closestlinedist = INT32_MAX;
 
 INT16 badsteerglobal = 0;
 
+static boolean K_BotHatesThisSector(sector_t *sec)
+{
+	switch (GETSECSPECIAL(sec->special, 1))
+	{
+		case 1: // Damage
+		//case 2: case 3: // Offroad (let's let them lawnmower)
+		case 4: // Offroad (Strong)
+		case 5: // Spikes
+		case 6: case 7: // Death Pit
+		case 8: // Instant Kill
+			return true;
+		default:
+			break;
+	}
+
+	return false;
+}
+
 static inline boolean K_FindBlockingWalls(line_t *line)
 {
 	// Condensed version of PIT_CheckLine
@@ -280,6 +298,22 @@ static inline boolean K_FindBlockingWalls(line_t *line)
 		|| (openbottom - botmo->z > maxstep)) // too big a step up
 	{
 		goto blocked;
+	}
+
+	if (!K_BotHatesThisSector(botmo->subsector->sector))
+	{
+		// Treat damage sectors like walls
+
+		if (lineside)
+		{
+			if (K_BotHatesThisSector(line->frontsector))
+				goto blocked;
+		}
+		else
+		{
+			if (K_BotHatesThisSector(line->backsector))
+				goto blocked;
+		}
 	}
 
 	// We weren't blocked!
