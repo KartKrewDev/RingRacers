@@ -345,4 +345,14 @@ boolean K_SetupWaypointList(void);
 
 void K_ClearWaypoints(void);
 
+/*--------------------------------------------------
+	void K_AdjustWaypointsParameters(void)
+
+		Adjusts waypoint parameters after P_SpawnSpecials. This is for
+		raising waypoints to an FOF, which requires that the FOF is
+		already spawned.
+--------------------------------------------------*/
+
+void K_AdjustWaypointsParameters (void);
+
 #endif

@@ -355,6 +355,12 @@ boolean PIT_PushableMoved(mobj_t *thing);
 
 boolean P_DoSpring(mobj_t *spring, mobj_t *object);
 
+fixed_t P_GetFOFTopZAt (ffloor_t *rover, fixed_t x, fixed_t y);
+fixed_t P_GetFOFBottomZAt (ffloor_t *rover, fixed_t x, fixed_t y);
+
+fixed_t P_VeryTopOfFOF (ffloor_t *rover);
+fixed_t P_VeryBottomOfFOF (ffloor_t *rover);
+
 //
 // P_SETUP
 //
