@@ -4664,3 +4664,51 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 
 	return floorz;
 }
+
+fixed_t
+P_GetFOFTopZAt (ffloor_t *rover, fixed_t x, fixed_t y)
+{
+	(void)x;
+	(void)y;
+#ifdef ESLOPE
+	if (*rover->t_slope)
+		return P_GetZAt(*rover->t_slope, x, y);
+	else
+#endif
+		return *rover->topheight;
+}
+
+fixed_t
+P_GetFOFBottomZAt (ffloor_t *rover, fixed_t x, fixed_t y)
+{
+	(void)x;
+	(void)y;
+#ifdef ESLOPE
+	if (*rover->b_slope)
+		return P_GetZAt(*rover->b_slope, x, y);
+	else
+#endif
+		return *rover->bottomheight;
+}
+
+fixed_t
+P_VeryTopOfFOF (ffloor_t *rover)
+{
+#ifdef ESLOPE
+	if (*rover->t_slope)
+		return (*rover->t_slope)->highz;
+	else
+#endif
+		return *rover->topheight;
+}
+
+fixed_t
+P_VeryBottomOfFOF (ffloor_t *rover)
+{
+#ifdef ESLOPE
+	if (*rover->b_slope)
+		return (*rover->b_slope)->lowz;
+	else
+#endif
+		return *rover->bottomheight;
+}

@@ -16,6 +16,7 @@
 #include "d_netcmd.h"
 #include "p_local.h"
 #include "p_tick.h"
+#include "r_local.h"
 #include "z_zone.h"
 #include "g_game.h"
 
@@ -1799,4 +1800,177 @@ void K_ClearWaypoints(void)
 	numwaypoints     = 0U;
 	numwaypointmobjs = 0U;
 	circuitlength    = 0U;
+}
+
+/*--------------------------------------------------
+	static boolean K_RaiseWaypoint(
+		mobj_t *const       waypointmobj,
+		const mobj_t *const riser)
+
+		Raise a waypoint according a waypoint riser thing.
+
+	Input Arguments:-
+		waypointmobj - The mobj of the waypoint to raise
+		riser        - The waypoint riser mobj
+
+	Return:-
+		True if the waypoint was risen, false if not.
+--------------------------------------------------*/
+
+static boolean K_RaiseWaypoint(
+		mobj_t *const       waypointmobj,
+		const mobj_t *const riser)
+{
+	fixed_t x;
+	fixed_t y;
+
+	const sector_t *sector;
+	ffloor_t *rover;
+
+	boolean descending;
+
+	fixed_t sort;
+	fixed_t z;
+
+	if (
+			!( riser->spawnpoint->options & MTF_OBJECTSPECIAL ) ||
+			riser->spawnpoint->angle == waypointmobj->spawnpoint->angle
+	){
+		if (( riser->spawnpoint->options & MTF_AMBUSH ))
+		{
+			waypointmobj->z = riser->z;
+		}
+		else
+		{
+			x = waypointmobj->x;
+			y = waypointmobj->y;
+
+			descending = ( riser->spawnpoint->options & MTF_OBJECTFLIP );
+
+			sector = waypointmobj->subsector->sector;
+
+			if (descending)
+				sort = sector->ceilingheight;
+			else
+				sort = sector->floorheight;
+
+			for (
+					rover = sector->ffloors;
+					rover;
+					rover = rover->next
+			){
+				if (descending)
+				{
+					z = P_GetFOFBottomZAt(rover, x, y);
+
+					if (z > riser->z && z < sort)
+						sort = z;
+				}
+				else
+				{
+					z = P_GetFOFTopZAt(rover, x, y);
+
+					if (z < riser->z && z > sort)
+						sort = z;
+				}
+			}
+
+			waypointmobj->z = sort;
+		}
+
+		return true;
+	}
+	else
+		return false;
+}
+
+/*--------------------------------------------------
+	static boolean K_AnchorWaypointRadius(
+		mobj_t *const       waypointmobj,
+		const mobj_t *const anchor)
+
+		Adjust a waypoint's radius by distance from an "anchor".
+
+	Input Arguments:-
+		waypointmobj - The mobj of the waypoint whose radius to adjust
+		riser        - The waypoint anchor mobj
+
+	Return:-
+		True if the waypoint's radius was adjusted, false if not.
+--------------------------------------------------*/
+
+static boolean K_AnchorWaypointRadius(
+		mobj_t *const       waypointmobj,
+		const mobj_t *const anchor)
+{
+	if (anchor->spawnpoint->angle == waypointmobj->spawnpoint->angle)
+	{
+		waypointmobj->radius = R_PointToDist2(
+				waypointmobj->x, waypointmobj->y,
+				anchor->x, anchor->y);
+
+		return true;
+	}
+	else
+		return false;
+}
+
+/*--------------------------------------------------
+	void K_AdjustWaypointsParameters(void)
+
+		See header file for description.
+--------------------------------------------------*/
+
+void K_AdjustWaypointsParameters (void)
+{
+	mobj_t *waypointmobj;
+	const mobj_t *riser;
+
+	const thinker_t *th;
+	const mobj_t *anchor;
+
+	const sector_t *sector;
+
+	for (
+			waypointmobj = waypointcap;
+			waypointmobj;
+			waypointmobj = waypointmobj->tracer
+	){
+		sector = waypointmobj->subsector->sector;
+
+		for (
+				riser = sector->thinglist;
+				riser;
+				riser = riser->snext
+		){
+			if (riser->type == MT_WAYPOINT_RISER)
+			{
+				if (K_RaiseWaypoint(waypointmobj, riser))
+					break;
+			}
+		}
+	}
+
+	for (
+			th = thinkercap.next;
+			th != &thinkercap;
+			th = th->next
+	){
+		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+		{
+			anchor = (const mobj_t *)th;
+
+			if (anchor->type == MT_WAYPOINT_ANCHOR)
+			{
+				for (
+						waypointmobj = waypointcap;
+						waypointmobj;
+						waypointmobj = waypointmobj->tracer
+				){
+					if (K_AnchorWaypointRadius(waypointmobj, anchor))
+						break;
+				}
+			}
+		}
+	}
 }

@@ -5309,6 +5309,72 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, f
 	return ffloor;
 }
 
+static fixed_t
+Floor_height (sector_t *s, fixed_t x, fixed_t y)
+{
+#ifdef ESLOPE
+	return s->f_slope ? P_GetZAt(s->f_slope, x, y) : s->floorheight;
+#else
+	(void)x;
+	(void)y;
+	return s->floorheight;
+#endif
+}
+
+static fixed_t
+Ceiling_height (sector_t *s, fixed_t x, fixed_t y)
+{
+#ifdef ESLOPE
+	return s->c_slope ? P_GetZAt(s->c_slope, x, y) : s->ceilingheight;
+#else
+	(void)x;
+	(void)y;
+	return s->ceilingheight;
+#endif
+}
+
+static void
+P_RaiseTaggedThingsToFakeFloor (
+		UINT16    type,
+		INT16     tag,
+		sector_t *control
+){
+	sector_t *target;
+
+	mobj_t     *mo;
+	mapthing_t *mthing;
+
+	fixed_t offset;
+
+	size_t i;
+
+	for (i = 0; i < control->numattached; ++i)
+	{
+		target = &sectors[control->attached[i]];
+
+		for (mo = target->thinglist; mo; mo = mo->snext)
+		{
+			mthing = mo->spawnpoint;
+
+			if (
+					mthing->type  == type &&
+					mthing->angle == tag
+			){
+				if (( mo->flags2 & MF2_OBJECTFLIP ))
+				{
+					offset = ( mo->ceilingz - mo->info->height ) - mo->z;
+					mo->z = ( Floor_height(control, mo->x, mo->y) - mo->info->height ) - offset;
+				}
+				else
+				{
+					offset = mo->z - mo->floorz;
+					mo->z = Ceiling_height(control, mo->x, mo->y) + offset;
+				}
+			}
+		}
+	}
+}
+
 //
 // SPECIAL SPAWNING
 //
@@ -6768,6 +6834,22 @@ void P_SpawnSpecials(INT32 fromnetsave)
 			case 2002: // Linedef Trigger: Race Lap
 				break;
 			default:
+				break;
+		}
+	}
+
+	/* some things have to be done after FOF spawn */
+
+	for (i = 0; i < numlines; ++i)
+	{
+		switch (lines[i].special)
+		{
+			case 80: // Raise tagged things by type to this FOF
+				P_RaiseTaggedThingsToFakeFloor(
+						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
+						lines[i].tag,
+						lines[i].frontsector
+				);
 				break;
 		}
 	}
