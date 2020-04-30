@@ -2723,6 +2723,41 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 				rubberband = FRACUNIT;
 			}
 
+			// Only allow you to go fast if you're facing the right direction
+			if (rubberband > FRACUNIT && player->mo != NULL && player->nextwaypoint != NULL)
+			{
+				const INT16 mindiff = 30;
+				const INT16 maxdiff = 60;
+				INT16 anglediff = 0;
+				fixed_t amt = rubberband - FRACUNIT;
+				angle_t destangle = R_PointToAngle2(
+					player->mo->x, player->mo->y,
+					player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y
+				);
+				angle_t angle = player->mo->angle - destangle;
+
+				if (angle < ANGLE_180)
+				{
+					anglediff = AngleFixed(angle) >> FRACBITS;
+				}
+				else 
+				{
+					anglediff = 360 - (AngleFixed(angle) >> FRACBITS);
+				}
+
+				anglediff = abs(anglediff);
+
+				if (anglediff >= maxdiff)
+				{
+					rubberband = FRACUNIT;
+				}
+				else if (anglediff > mindiff)
+				{
+					amt = (amt * (maxdiff - anglediff)) / mindiff;
+					rubberband = FRACUNIT + amt;
+				}
+			}
+
 			finalspeed = FixedMul(finalspeed, rubberband);
 		}
 
@@ -6815,59 +6850,74 @@ boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y)
 // turndir is the direction the controls are telling us to turn, -1 if turning right and 1 if turning left
 static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 {
-	INT16 basedrift, driftangle;
+	INT16 basedrift, driftadjust;
 	fixed_t driftweight = player->kartweight*14; // 12
 
-	// If they aren't drifting or on the ground this doesn't apply
 	if (player->kartstuff[k_drift] == 0 || !P_IsObjectOnGround(player->mo))
+	{
+		// If they aren't drifting or on the ground, this doesn't apply
 		return 0;
+	}
 
 	if (player->kartstuff[k_driftend] != 0)
-		return -266*player->kartstuff[k_drift]; // Drift has ended and we are tweaking their angle back a bit
+	{
+		// Drift has ended and we are tweaking their angle back a bit
+		return -266*player->kartstuff[k_drift];
+	}
 
-	//basedrift = 90*player->kartstuff[k_drift]; // 450
-	//basedrift = 93*player->kartstuff[k_drift] - driftweight*3*player->kartstuff[k_drift]/10; // 447 - 303
-	basedrift = 83*player->kartstuff[k_drift] - (driftweight - 14)*player->kartstuff[k_drift]/5; // 415 - 303
-	driftangle = abs((252 - driftweight)*player->kartstuff[k_drift]/5);
+	basedrift = (83 * player->kartstuff[k_drift]) - (((driftweight - 14) * player->kartstuff[k_drift]) / 5); // 415 - 303
+	driftadjust = abs((252 - driftweight) * player->kartstuff[k_drift] / 5);
 
 	if (player->kartstuff[k_tiregrease] > 0) // Buff drift-steering while in greasemode
+	{
 		basedrift += (basedrift / greasetics) * player->kartstuff[k_tiregrease];
+	}
 
-	return basedrift + FixedMul(driftangle, countersteer);
+	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
 }
 
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 {
-	fixed_t p_maxspeed = FixedMul(K_GetKartSpeed(player, false), 3*FRACUNIT);
-	fixed_t adjustangle = FixedDiv((p_maxspeed>>16) - (player->speed>>16), (p_maxspeed>>16) + player->kartweight);
+	fixed_t p_maxspeed = K_GetKartSpeed(player, false);
+	fixed_t p_speed = min(player->speed, (p_maxspeed * 2));
+	fixed_t weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (player->spectator)
+	{
 		return turnvalue;
+	}
 
 	if (K_PlayerUsesBotMovement(player))
 	{
-		turnvalue = FixedMul(turnvalue, (5*FRACUNIT)/4); // Base increase to turning
-		turnvalue = FixedMul(turnvalue, K_BotRubberband(player));
+		turnvalue = 5*turnvalue/4; // Base increase to turning
+		turnvalue = FixedMul(
+			turnvalue * FRACUNIT,
+			K_BotRubberband(player)
+		) / FRACUNIT;
 	}
 
 	if (player->kartstuff[k_drift] != 0 && P_IsObjectOnGround(player->mo))
 	{
+		fixed_t countersteer = FixedDiv(turnvalue*FRACUNIT, KART_FULLTURN*FRACUNIT);
+
 		// If we're drifting we have a completely different turning value
-		if (player->kartstuff[k_driftend] == 0)
+
+		if (player->kartstuff[k_driftend] != 0)
 		{
-			fixed_t countersteer = FixedDiv(turnvalue*FRACUNIT, KART_FULLTURN*FRACUNIT);
-			turnvalue = K_GetKartDriftValue(player, countersteer);
+			countersteer = FRACUNIT;
 		}
-		else
-			turnvalue = (INT16)(turnvalue + K_GetKartDriftValue(player, FRACUNIT));
+
+		turnvalue = K_GetKartDriftValue(player, countersteer);
 
 		return turnvalue;
 	}
 
-	turnvalue = FixedMul(turnvalue, adjustangle); // Weight has a small effect on turning
-
 	if (EITHERSNEAKER(player) || player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_growshrinktimer] > 0)
-		turnvalue = FixedMul(turnvalue, (5*FRACUNIT)/4);
+	{
+		turnvalue = 5*turnvalue/4;
+	}
+
+	turnvalue = FixedMul(turnvalue * FRACUNIT, weightadjust) / FRACUNIT; // Weight has a small effect on turning
 
 	return turnvalue;
 }

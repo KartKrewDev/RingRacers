@@ -169,7 +169,7 @@ fixed_t K_BotRubberband(player_t *player)
 		if (wanteddist < player->distancetofinish)
 		{
 			// Catch up to 1st!
-			rubberband = FRACUNIT + ((2*player->botvars.difficulty) * (player->distancetofinish - wanteddist));
+			rubberband += (2*player->botvars.difficulty) * (player->distancetofinish - wanteddist);
 		}
 	}
 
