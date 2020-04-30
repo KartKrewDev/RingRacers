@@ -2580,29 +2580,29 @@ static void P_ForceCharacter(const char *forcecharskin)
 	{
 		if (splitscreen)
 		{
-			SetPlayerSkin(displayplayers[1], forcecharskin);
-			if ((unsigned)cv_playercolor2.value != skins[players[displayplayers[1]].skin].prefcolor && !modeattacking)
+			SetPlayerSkin(g_localplayers[1], forcecharskin);
+			if ((unsigned)cv_playercolor2.value != skins[players[g_localplayers[1]].skin].prefcolor && !modeattacking)
 			{
-				CV_StealthSetValue(&cv_playercolor2, skins[players[displayplayers[1]].skin].prefcolor);
-				players[displayplayers[1]].skincolor = skins[players[displayplayers[1]].skin].prefcolor;
+				CV_StealthSetValue(&cv_playercolor2, skins[players[g_localplayers[1]].skin].prefcolor);
+				players[g_localplayers[1]].skincolor = skins[players[g_localplayers[1]].skin].prefcolor;
 			}
 
 			if (splitscreen > 1)
 			{
-				SetPlayerSkin(displayplayers[2], forcecharskin);
-				if ((unsigned)cv_playercolor3.value != skins[players[displayplayers[2]].skin].prefcolor && !modeattacking)
+				SetPlayerSkin(g_localplayers[2], forcecharskin);
+				if ((unsigned)cv_playercolor3.value != skins[players[g_localplayers[2]].skin].prefcolor && !modeattacking)
 				{
-					CV_StealthSetValue(&cv_playercolor3, skins[players[displayplayers[2]].skin].prefcolor);
-					players[displayplayers[2]].skincolor = skins[players[displayplayers[2]].skin].prefcolor;
+					CV_StealthSetValue(&cv_playercolor3, skins[players[g_localplayers[2]].skin].prefcolor);
+					players[g_localplayers[2]].skincolor = skins[players[g_localplayers[2]].skin].prefcolor;
 				}
 
 				if (splitscreen > 2)
 				{
-					SetPlayerSkin(displayplayers[3], forcecharskin);
-					if ((unsigned)cv_playercolor4.value != skins[players[displayplayers[3]].skin].prefcolor && !modeattacking)
+					SetPlayerSkin(g_localplayers[3], forcecharskin);
+					if ((unsigned)cv_playercolor4.value != skins[players[g_localplayers[3]].skin].prefcolor && !modeattacking)
 					{
-						CV_StealthSetValue(&cv_playercolor4, skins[players[displayplayers[3]].skin].prefcolor);
-						players[displayplayers[3]].skincolor = skins[players[displayplayers[3]].skin].prefcolor;
+						CV_StealthSetValue(&cv_playercolor4, skins[players[g_localplayers[3]].skin].prefcolor);
+						players[g_localplayers[3]].skincolor = skins[players[g_localplayers[3]].skin].prefcolor;
 					}
 				}
 			}
@@ -2621,14 +2621,14 @@ static void P_ForceCharacter(const char *forcecharskin)
 static void P_LoadRecordGhosts(void)
 {
 	// see also m_menu.c's Nextmap_OnChange
-	const size_t glen = strlen(srb2home)+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
+	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath = malloc(glen);
 	INT32 i;
 
 	if (!gpath)
 		return;
 
-	sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
+	sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
 
 	// Best Time ghost
 	if (cv_ghost_besttime.value)
@@ -2840,7 +2840,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	P_LevelInitStuff();
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0')
@@ -3126,6 +3126,8 @@ boolean P_SetupLevel(boolean skipprecip)
 	// set up world state
 	P_SpawnSpecials(fromnetsave);
 
+	K_AdjustWaypointsParameters();
+
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
 
@@ -3203,10 +3205,12 @@ boolean P_SetupLevel(boolean skipprecip)
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
 	if (!demo.playback && multiplayer && !dedicated) {
 		static char buf[256];
-		sprintf(buf, "replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
+		char *path;
+		sprintf(buf, "media"PATHSEP"replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
 
-		I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
-		I_mkdir(va("%s"PATHSEP"replay"PATHSEP"online", srb2home), 0755);
+		path = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online", srb2home);
+		M_MkdirEach(path, M_PathParts(path) - 4, 0755);
+
 		G_RecordDemo(buf);
 	}
 
@@ -3216,7 +3220,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (!dedicated)
 	{
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 			P_SetupCamera(displayplayers[i], &camera[i]);
 
 		// Salt: CV_ClearChangedFlags() messes with your settings :(
@@ -3258,7 +3262,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		/*if (rendermode != render_none)
 			CV_Set(&cv_fov, cv_fov.defaultvalue);*/
 
-		displayplayers[0] = consoleplayer; // Start with your OWN view, please!
+		g_localplayers[0] = consoleplayer; // Start with your OWN view, please!
 	}
 
 	/*if (cv_useranalog.value)

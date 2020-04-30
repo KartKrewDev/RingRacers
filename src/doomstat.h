@@ -99,8 +99,8 @@ extern boolean multiplayer;
 
 extern INT16 gametype;
 
-#define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 extern UINT8 splitscreen;
+extern int r_splitscreen;
 
 extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
@@ -141,6 +141,20 @@ extern boolean gamedataloaded;
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
+/* g_localplayers[0] = consoleplayer */
+extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
+
+/* spitscreen players sync */
+extern int splitscreen_original_party_size[MAXPLAYERS];
+extern int splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
+/* parties */
+extern int splitscreen_invitations[MAXPLAYERS];
+extern int splitscreen_party_size[MAXPLAYERS];
+extern int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
+/* the only local one */
+extern boolean splitscreen_partied[MAXPLAYERS];
 
 // Maps of special importance
 extern INT16 spstage_start;
@@ -452,12 +466,14 @@ extern INT32 hyudorotime;
 extern INT32 stealtime;
 extern INT32 sneakertime;
 extern INT32 itemtime;
+extern INT32 bubbletime;
 extern INT32 comebacktime;
 extern INT32 bumptime;
 extern INT32 greasetics;
 extern INT32 wipeoutslowtime;
 extern INT32 wantedreduce;
 extern INT32 wantedfrequency;
+extern INT32 flameseg;
 
 extern UINT8 introtoplay;
 extern UINT8 creditscutscene;

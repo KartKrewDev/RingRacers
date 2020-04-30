@@ -1651,7 +1651,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (rings > dist)
 				return false;
 		}
-		else if (triggerline->flags & ML_BLOCKMONSTERS)
+		else if (triggerline->flags & ML_BLOCKPLAYERS)
 		{
 			if (rings < dist)
 				return false;
@@ -1705,6 +1705,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (!(ALL7EMERALDS(emeralds)))
 				return false;
 		}
+
 		// If we were not triggered by a sector type especially for the purpose,
 		// a Linedef Executor linedef trigger is not handling sector triggers properly, return.
 
@@ -2162,7 +2163,7 @@ static void K_HandleLapIncrement(player_t *player)
 						if (lap < (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS))
 							continue;
 					}
-					else if (lines[i].flags & ML_BLOCKMONSTERS) // Need lower than or equal to
+					else if (lines[i].flags & ML_BLOCKPLAYERS) // Need lower than or equal to
 					{
 						if (lap > (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS))
 							continue;
@@ -2425,7 +2426,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						if (bot) // This might put poor Tails in a wall if he's too far behind! D: But okay, whatever! >:3
 							P_TeleportMove(bot, bot->x + x, bot->y + y, bot->z + z);
 
-						for (i = 0; i <= splitscreen; i++)
+						for (i = 0; i <= r_splitscreen; i++)
 						{
 							if (mo->player == &players[displayplayers[i]] && camera[i].chase)
 							{
@@ -2448,8 +2449,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						return;
 
 					if (bot)
-						P_Teleport(bot, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, (line->flags & ML_BLOCKMONSTERS) == 0, (line->flags & ML_EFFECT4) == ML_EFFECT4);
-					if (line->flags & ML_BLOCKMONSTERS)
+						P_Teleport(bot, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, (line->flags & ML_BLOCKPLAYERS) == 0, (line->flags & ML_EFFECT4) == ML_EFFECT4);
+					if (line->flags & ML_BLOCKPLAYERS)
 						P_Teleport(mo, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, false, (line->flags & ML_EFFECT4) == ML_EFFECT4);
 					else
 					{
@@ -2511,7 +2512,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					mapmusname[6] = 0;
 
 					mapmusflags = tracknum & MUSIC_TRACKMASK;
-					if (!(line->flags & ML_BLOCKMONSTERS))
+					if (!(line->flags & ML_BLOCKPLAYERS))
 						mapmusflags |= MUSIC_RELOADRESET;
 					if (line->flags & ML_BOUNCY)
 						mapmusflags |= MUSIC_FORCERESET;
@@ -2532,7 +2533,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					}
 				}
 
-				// Except, you can use the ML_BLOCKMONSTERS flag to change this behavior.
+				// Except, you can use the ML_BLOCKPLAYERS flag to change this behavior.
 				// if (mapmusflags & MUSIC_RELOADRESET) then it will reset the music in G_PlayerReborn.
 			}
 			break;
@@ -2602,7 +2603,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					// play the sound from nowhere
 					S_StartSound(NULL, sfxnum);
 				}
-				else if (line->flags & ML_BLOCKMONSTERS)
+				else if (line->flags & ML_BLOCKPLAYERS)
 				{
 					// play the sound from calling sector's soundorg
 					if (callsec)
@@ -2951,7 +2952,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 				var1 = sides[line->sidenum[0]].toptexture; //(line->dx>>FRACBITS)-1;
 
-				if (line->sidenum[1] != 0xffff && line->flags & ML_BLOCKMONSTERS) // read power from back sidedef
+				if (line->sidenum[1] != 0xffff && line->flags & ML_BLOCKPLAYERS) // read power from back sidedef
 					var2 = sides[line->sidenum[1]].toptexture;
 				else if (line->flags & ML_NOCLIMB) // 'Infinite'
 					var2 = UINT16_MAX;
@@ -3552,6 +3553,97 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 		return rover->master->frontsector;
 	}
 
+#ifdef POLYOBJECTS
+	// Allow sector specials to be applied to polyobjects!
+	if (mo->subsector->polyList)
+	{
+		polyobj_t *po = mo->subsector->polyList;
+		sector_t *polysec;
+		boolean touching = false;
+		boolean inside = false;
+
+		while (po)
+		{
+			if (po->flags & POF_NOSPECIALS)
+			{
+				po = (polyobj_t *)(po->link.next);
+				continue;
+			}
+
+			polysec = po->lines[0]->backsector;
+
+			if (GETSECSPECIAL(polysec->special, section) != number)
+			{
+				po = (polyobj_t *)(po->link.next);
+				continue;
+			}
+
+			if ((polysec->flags & SF_TRIGGERSPECIAL_TOUCH))
+				touching = P_MobjTouchingPolyobj(po, mo);
+			else
+				touching = false;
+
+			inside = P_MobjInsidePolyobj(po, mo);
+
+			if (!(inside || touching))
+			{
+				po = (polyobj_t *)(po->link.next);
+				continue;
+			}
+
+			topheight = polysec->ceilingheight;
+			bottomheight = polysec->floorheight;
+
+			// We're inside it! Yess...
+			if (!(po->flags & POF_TESTHEIGHT)) // Don't do height checking
+			{
+			}
+			else if (po->flags & POF_SOLID)
+			{
+				// Thing must be on top of the floor to be affected...
+				if ((polysec->flags & SF_FLIPSPECIAL_FLOOR)
+					&& !(polysec->flags & SF_FLIPSPECIAL_CEILING))
+				{
+					if ((mo->eflags & MFE_VERTICALFLIP) || mo->z != topheight)
+					{
+						po = (polyobj_t *)(po->link.next);
+						continue;
+					}
+				}
+				else if ((polysec->flags & SF_FLIPSPECIAL_CEILING)
+					&& !(polysec->flags & SF_FLIPSPECIAL_FLOOR))
+				{
+					if (!(mo->eflags & MFE_VERTICALFLIP) || mo->z + mo->height != bottomheight)
+					{
+						po = (polyobj_t *)(po->link.next);
+						continue;
+					}
+				}
+				else if (polysec->flags & SF_FLIPSPECIAL_BOTH)
+				{
+					if (!((mo->eflags & MFE_VERTICALFLIP && mo->z + mo->height == bottomheight)
+						|| (!(mo->eflags & MFE_VERTICALFLIP) && mo->z == topheight)))
+					{
+						po = (polyobj_t *)(po->link.next);
+						continue;
+					}
+				}
+			}
+			else
+			{
+				// Water and DEATH FOG!!! heh
+				if (mo->z > topheight || (mo->z + mo->height) < bottomheight)
+				{
+					po = (polyobj_t *)(po->link.next);
+					continue;
+				}
+			}
+
+			return polysec;
+		}
+	}
+#endif
+
 	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
 		if (GETSECSPECIAL(node->m_sector->special, section) == number)
@@ -3612,8 +3704,7 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 				else if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING)
 					&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR))
 				{
-					if (!(mo->eflags & MFE_VERTICALFLIP)
-						|| mo->z + mo->height != bottomheight)
+					if (!(mo->eflags & MFE_VERTICALFLIP) || mo->z + mo->height != bottomheight)
 						continue;
 				}
 				else if (rover->master->frontsector->flags & SF_FLIPSPECIAL_BOTH)
@@ -4107,7 +4198,7 @@ DoneSection2:
 				if (gametype == GT_COOP && lineindex != -1) // Custom exit!
 				{
 					// Special goodies with the block monsters flag depending on emeralds collected
-					if ((lines[lineindex].flags & ML_BLOCKMONSTERS) && ALL7EMERALDS(emeralds))
+					if ((lines[lineindex].flags & ML_BLOCKPLAYERS) && ALL7EMERALDS(emeralds))
 						nextmapoverride = (INT16)(lines[lineindex].frontsector->ceilingheight>>FRACBITS);
 					else
 						nextmapoverride = (INT16)(lines[lineindex].frontsector->floorheight>>FRACBITS);
@@ -4206,11 +4297,7 @@ DoneSection2:
 			}
 			break;
 
-		case 7: // SRB2kart 190117 - Oil Slick (deprecated)
-			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-			{
-				K_SpinPlayer(player, NULL, 0, NULL, false);
-			}
+		case 7: // SRB2Kart: Destroy items
 			break;
 
 		case 8: // Zoom Tube Start
@@ -5264,6 +5351,72 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, f
 	return ffloor;
 }
 
+static fixed_t
+Floor_height (sector_t *s, fixed_t x, fixed_t y)
+{
+#ifdef ESLOPE
+	return s->f_slope ? P_GetZAt(s->f_slope, x, y) : s->floorheight;
+#else
+	(void)x;
+	(void)y;
+	return s->floorheight;
+#endif
+}
+
+static fixed_t
+Ceiling_height (sector_t *s, fixed_t x, fixed_t y)
+{
+#ifdef ESLOPE
+	return s->c_slope ? P_GetZAt(s->c_slope, x, y) : s->ceilingheight;
+#else
+	(void)x;
+	(void)y;
+	return s->ceilingheight;
+#endif
+}
+
+static void
+P_RaiseTaggedThingsToFakeFloor (
+		UINT16    type,
+		INT16     tag,
+		sector_t *control
+){
+	sector_t *target;
+
+	mobj_t     *mo;
+	mapthing_t *mthing;
+
+	fixed_t offset;
+
+	size_t i;
+
+	for (i = 0; i < control->numattached; ++i)
+	{
+		target = &sectors[control->attached[i]];
+
+		for (mo = target->thinglist; mo; mo = mo->snext)
+		{
+			mthing = mo->spawnpoint;
+
+			if (
+					mthing->type  == type &&
+					mthing->angle == tag
+			){
+				if (( mo->flags2 & MF2_OBJECTFLIP ))
+				{
+					offset = ( mo->ceilingz - mo->info->height ) - mo->z;
+					mo->z = ( Floor_height(control, mo->x, mo->y) - mo->info->height ) - offset;
+				}
+				else
+				{
+					offset = mo->z - mo->floorz;
+					mo->z = Ceiling_height(control, mo->x, mo->y) + offset;
+				}
+			}
+		}
+	}
+}
+
 //
 // SPECIAL SPAWNING
 //
@@ -5395,7 +5548,7 @@ static void P_AddRaiseThinker(sector_t *sec, line_t *sourceline)
 
 	raise->thinker.function.acp1 = (actionf_p1)T_RaiseSector;
 
-	if (sourceline->flags & ML_BLOCKMONSTERS)
+	if (sourceline->flags & ML_BLOCKPLAYERS)
 		raise->vars[0] = 1;
 	else
 		raise->vars[0] = 0;
@@ -5454,7 +5607,7 @@ static void P_AddOldAirbob(sector_t *sec, line_t *sourceline, boolean noadjust)
 
 	airbob->vars[3] = airbob->vars[2];
 
-	if (sourceline->flags & ML_BLOCKMONSTERS)
+	if (sourceline->flags & ML_BLOCKPLAYERS)
 		airbob->vars[0] = 1;
 	else
 		airbob->vars[0] = 0;
@@ -6038,7 +6191,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 
 			case 64: // Appearing/Disappearing FOF option
-				if (lines[i].flags & ML_BLOCKMONSTERS) { // Find FOFs by control sector tag
+				if (lines[i].flags & ML_BLOCKPLAYERS) { // Find FOFs by control sector tag
 					for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
 						for (j = 0; (unsigned)j < sectors[s].linecount; j++)
 							if (sectors[s].lines[j]->special >= 100 && sectors[s].lines[j]->special < 300)
@@ -6266,7 +6419,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 			case 150: // Air bobbing platform
 			case 151: // Adjustable air bobbing platform
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL, secthinkers);
-				lines[i].flags |= ML_BLOCKMONSTERS;
+				lines[i].flags |= ML_BLOCKPLAYERS;
 				P_AddOldAirbob(lines[i].frontsector, lines + i, (lines[i].special != 151));
 				break;
 			case 152: // Adjustable air bobbing platform in reverse
@@ -6321,14 +6474,14 @@ void P_SpawnSpecials(INT32 fromnetsave)
 
 			case 176: // Air bobbing platform that will crumble and bob on the water when it falls and hits
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_FLOATBOB|FF_CRUMBLE, secthinkers);
-				lines[i].flags |= ML_BLOCKMONSTERS;
+				lines[i].flags |= ML_BLOCKPLAYERS;
 				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
 				break;
 
 			case 177: // Air bobbing platform that will crumble and bob on
 				// the water when it falls and hits, then never return
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL|FF_FLOATBOB|FF_CRUMBLE|FF_NORETURN, secthinkers);
-				lines[i].flags |= ML_BLOCKMONSTERS;
+				lines[i].flags |= ML_BLOCKPLAYERS;
 				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
 				break;
 
@@ -6342,7 +6495,7 @@ void P_SpawnSpecials(INT32 fromnetsave)
 
 			case 180: // Air bobbing platform that will crumble
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL|FF_CRUMBLE, secthinkers);
-				lines[i].flags |= ML_BLOCKMONSTERS;
+				lines[i].flags |= ML_BLOCKPLAYERS;
 				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
 				break;
 
@@ -6723,6 +6876,22 @@ void P_SpawnSpecials(INT32 fromnetsave)
 			case 2002: // Linedef Trigger: Race Lap
 				break;
 			default:
+				break;
+		}
+	}
+
+	/* some things have to be done after FOF spawn */
+
+	for (i = 0; i < numlines; ++i)
+	{
+		switch (lines[i].special)
+		{
+			case 80: // Raise tagged things by type to this FOF
+				P_RaiseTaggedThingsToFakeFloor(
+						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
+						lines[i].tag,
+						lines[i].frontsector
+				);
 				break;
 		}
 	}
@@ -7119,8 +7288,14 @@ static void P_SpawnScrollers(void)
 	{
 		fixed_t dx = l->dx >> SCROLL_SHIFT; // direction and speed of scrolling
 		fixed_t dy = l->dy >> SCROLL_SHIFT;
+
+		fixed_t bx = 0;/* backside variants */
+		fixed_t by = 0;
+
 		INT32 control = -1, accel = 0; // no control sector or acceleration
 		INT32 special = l->special;
+
+		INT32 s;
 
 		// These types are same as the ones they get set to except that the
 		// first side's sector's heights cause scrolling when they change, and
@@ -7150,10 +7325,24 @@ static void P_SpawnScrollers(void)
 			control = (INT32)(sides[*l->sidenum].sector - sectors);
 		}
 
+		if (special == 507) // front and back scrollers
+		{
+			s  = l->sidenum[0];
+
+			dx = -(sides[s].textureoffset);
+			dy =   sides[s].rowoffset;
+
+			s  = l->sidenum[1];
+
+			if (s != 0xffff)
+			{
+				bx = -(sides[s].textureoffset);
+				by =   sides[s].rowoffset;
+			}
+		}
+
 		switch (special)
 		{
-			register INT32 s;
-
 			case 513: // scroll effect ceiling
 			case 533: // scroll and carry objects on ceiling
 				for (s = -1; (s = P_FindSectorFromLineTag(l, s)) >= 0 ;)
@@ -7204,6 +7393,18 @@ static void P_SpawnScrollers(void)
 					Add_Scroller(sc_side, -sides[s].textureoffset, sides[s].rowoffset, -1, lines[i].sidenum[0], accel, 0);
 				else
 					CONS_Debug(DBG_GAMELOGIC, "Line special 506 (line #%s) missing 2nd side!\n", sizeu1(i));
+				break;
+
+			case 507: // scroll front and backside of tagged lines
+				for (s = -1; (s = P_FindLineFromLineTag(l, s)) >= 0 ;)
+				{
+					if (s != (INT32)i)
+					{
+						Add_Scroller(sc_side, dx, dy, control, lines[s].sidenum[0], accel, 0);
+						if (lines[s].sidenum[1] != 0xffff)
+							Add_Scroller(sc_side, bx, by, control, lines[s].sidenum[1], accel, 0);
+					}
+				}
 				break;
 
 			case 500: // scroll first side

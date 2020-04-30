@@ -1252,7 +1252,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING|IT_CVAR,		NULL,	"Fullscreen",			&cv_fullscreen,			 20},
 #endif
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-							NULL,	"Gamma",				&cv_usegamma,			 30},
+							NULL,	"Gamma",				&cv_globalgamma,			 30},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Draw Distance",		&cv_drawdist,			 45},
 	//{IT_STRING | IT_CVAR,	NULL,	"NiGHTS Draw Dist",		&cv_drawdist_nights,	 55},
@@ -2101,14 +2101,14 @@ static void Nextmap_OnChange(void)
 	if (currentMenu == &SP_TimeAttackDef)
 	{
 		// see also p_setup.c's P_LoadRecordGhosts
-		const size_t glen = strlen(srb2home)+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
+		const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 		char *gpath = malloc(glen);
 		INT32 i;
 
 		if (!gpath)
 			return;
 
-		sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(cv_nextmap.value));
+		sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(cv_nextmap.value));
 
 		CV_StealthSetValue(&cv_dummystaff, 0);
 
@@ -2675,7 +2675,7 @@ boolean M_Responder(event_t *ev)
 				return true;
 
 			case KEY_F11: // Gamma Level
-				CV_AddValue(&cv_usegamma, 1);
+				CV_AddValue(&cv_globalgamma, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
@@ -3321,9 +3321,6 @@ void M_Init(void)
 #ifndef NONET
 	CV_RegisterVar(&cv_serversort);
 #endif
-
-	//todo put this somewhere better...
-	CV_RegisterVar(&cv_allcaps);
 }
 
 void M_InitCharacterTables(void)
@@ -5145,7 +5142,7 @@ void M_ReplayHut(INT32 choice)
 
 	if (!demo.inreplayhut)
 	{
-		snprintf(menupath, 1024, "%s"PATHSEP"replay"PATHSEP"online"PATHSEP, srb2home);
+		snprintf(menupath, 1024, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP, srb2home);
 		menupathindex[(menudepthleft = menudepth-1)] = strlen(menupath);
 	}
 	if (!preparefilemenu(false, true))
@@ -5730,9 +5727,9 @@ static void M_DrawPlaybackMenu(void)
 	{
 		PlaybackMenu[playback_viewcount].status = IT_ARROWS|IT_STRING;
 
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 			PlaybackMenu[playback_view1+i].status = IT_ARROWS|IT_STRING;
-		for (i = splitscreen+1; i < 4; i++)
+		for (i = r_splitscreen+1; i < 4; i++)
 			PlaybackMenu[playback_view1+i].status = IT_DISABLED;
 
 		//PlaybackMenu[playback_moreoptions].alphaKey = 156;
@@ -5755,7 +5752,7 @@ static void M_DrawPlaybackMenu(void)
 		{
 			if (modeattacking) continue;
 
-			if (splitscreen >= i - playback_view1)
+			if (r_splitscreen >= i - playback_view1)
 			{
 				INT32 ply = displayplayers[i - playback_view1];
 
@@ -5791,18 +5788,18 @@ static void M_DrawPlaybackMenu(void)
 			{
 				char *str;
 
-				if (!(i == playback_viewcount && splitscreen == 3))
+				if (!(i == playback_viewcount && r_splitscreen == 3))
 					V_DrawCharacter(BASEVIDWIDTH/2 - 4, currentMenu->y + 28 - (skullAnimCounter/5),
 						'\x1A' | V_SNAPTOTOP|highlightflags, false); // up arrow
 
-				if (!(i == playback_viewcount && splitscreen == 0))
+				if (!(i == playback_viewcount && r_splitscreen == 0))
 					V_DrawCharacter(BASEVIDWIDTH/2 - 4, currentMenu->y + 48 + (skullAnimCounter/5),
 						'\x1B' | V_SNAPTOTOP|highlightflags, false); // down arrow
 
 				switch (i)
 				{
 				case playback_viewcount:
-					str = va("%d", splitscreen+1);
+					str = va("%d", r_splitscreen+1);
 					break;
 
 				case playback_view1:
@@ -5895,12 +5892,12 @@ static void M_PlaybackSetViews(INT32 choice)
 {
 	if (choice > 0)
 	{
-		if (splitscreen < 3)
-			G_AdjustView(splitscreen + 2, 0, true);
+		if (r_splitscreen < 3)
+			G_AdjustView(r_splitscreen + 2, 0, true);
 	}
-	else if (splitscreen)
+	else if (r_splitscreen)
 	{
-		splitscreen--;
+		r_splitscreen--;
 		R_ExecuteSetViewSize();
 	}
 }
@@ -7879,20 +7876,21 @@ static boolean M_QuitTimeAttackMenu(void)
 static void M_ChooseTimeAttack(INT32 choice)
 {
 	char *gpath;
-	const size_t glen = strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
+	const size_t glen = strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char nameofdemo[256];
 	(void)choice;
 	emeralds = 0;
 	M_ClearMenus(true);
 	modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_RECORD);
 
-	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
-	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
+	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
+			srb2home, timeattackfolder);
+	M_MkdirEach(gpath, M_PathParts(gpath) - 3, 0755);
 
 	if ((gpath = malloc(glen)) == NULL)
 		I_Error("Out of memory for replay filepath\n");
 
-	sprintf(gpath,"replay"PATHSEP"%s"PATHSEP"%s", timeattackfolder, G_BuildMapName(cv_nextmap.value));
+	sprintf(gpath,"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", timeattackfolder, G_BuildMapName(cv_nextmap.value));
 	snprintf(nameofdemo, sizeof nameofdemo, "%s-%s-last", gpath, cv_chooseskin.string);
 
 	if (!cv_autorecord.value)
@@ -9491,7 +9489,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 	strcpy (setupm_name, cv_playername2.string);
 
 	// set for splitscreen secondary player
-	setupm_player = &players[displayplayers[1]];
+	setupm_player = &players[g_localplayers[1]];
 	setupm_cvskin = &cv_skin2;
 	setupm_cvcolor = &cv_playercolor2;
 	setupm_cvname = &cv_playername2;
@@ -9503,7 +9501,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 	setupm_fakecolor = setupm_cvcolor->value;
 
 	// disable skin changes if we can't actually change skins
-	if (splitscreen && !CanChangeSkin(displayplayers[1]))
+	if (splitscreen && !CanChangeSkin(g_localplayers[1]))
 		MP_PlayerSetupMenu[2].status = (IT_GRAYEDOUT);
 	else
 		MP_PlayerSetupMenu[2].status = (IT_KEYHANDLER | IT_STRING);
@@ -9522,7 +9520,7 @@ static void M_SetupMultiPlayer3(INT32 choice)
 	strcpy(setupm_name, cv_playername3.string);
 
 	// set for splitscreen third player
-	setupm_player = &players[displayplayers[2]];
+	setupm_player = &players[g_localplayers[2]];
 	setupm_cvskin = &cv_skin3;
 	setupm_cvcolor = &cv_playercolor3;
 	setupm_cvname = &cv_playername3;
@@ -9534,7 +9532,7 @@ static void M_SetupMultiPlayer3(INT32 choice)
 	setupm_fakecolor = setupm_cvcolor->value;
 
 	// disable skin changes if we can't actually change skins
-	if (splitscreen > 1 && !CanChangeSkin(displayplayers[2]))
+	if (splitscreen > 1 && !CanChangeSkin(g_localplayers[2]))
 		MP_PlayerSetupMenu[2].status = (IT_GRAYEDOUT);
 	else
 		MP_PlayerSetupMenu[2].status = (IT_KEYHANDLER | IT_STRING);
@@ -9553,7 +9551,7 @@ static void M_SetupMultiPlayer4(INT32 choice)
 	strcpy(setupm_name, cv_playername4.string);
 
 	// set for splitscreen fourth player
-	setupm_player = &players[displayplayers[3]];
+	setupm_player = &players[g_localplayers[3]];
 	setupm_cvskin = &cv_skin4;
 	setupm_cvcolor = &cv_playercolor4;
 	setupm_cvname = &cv_playername4;
@@ -9565,7 +9563,7 @@ static void M_SetupMultiPlayer4(INT32 choice)
 	setupm_fakecolor = setupm_cvcolor->value;
 
 	// disable skin changes if we can't actually change skins
-	if (splitscreen > 2 && !CanChangeSkin(displayplayers[3]))
+	if (splitscreen > 2 && !CanChangeSkin(g_localplayers[3]))
 		MP_PlayerSetupMenu[2].status = (IT_GRAYEDOUT);
 	else
 		MP_PlayerSetupMenu[2].status = (IT_KEYHANDLER | IT_STRING);
@@ -10636,31 +10634,6 @@ static void M_HandleVideoMode(INT32 ch)
 // ===============
 // Monitor Toggles
 // ===============
-static consvar_t *kartitemcvs[NUMKARTRESULTS-1] = {
-	&cv_sneaker,
-	&cv_rocketsneaker,
-	&cv_invincibility,
-	&cv_banana,
-	&cv_eggmanmonitor,
-	&cv_orbinaut,
-	&cv_jawz,
-	&cv_mine,
-	&cv_ballhog,
-	&cv_selfpropelledbomb,
-	&cv_grow,
-	&cv_shrink,
-	&cv_thundershield,
-	&cv_hyudoro,
-	&cv_pogospring,
-	&cv_superring,
-	&cv_kitchensink,
-	&cv_triplesneaker,
-	&cv_triplebanana,
-	&cv_decabanana,
-	&cv_tripleorbinaut,
-	&cv_quadorbinaut,
-	&cv_dualjawz
-};
 
 static tic_t shitsfree = 0;
 
@@ -10729,7 +10702,7 @@ static void M_DrawMonitorToggles(void)
 				continue;
 			}
 
-			cv = kartitemcvs[currentMenu->menuitems[thisitem].alphaKey-1];
+			cv = KartItemCVars[currentMenu->menuitems[thisitem].alphaKey-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			switch (currentMenu->menuitems[thisitem].alphaKey)
@@ -10798,7 +10771,7 @@ static void M_DrawMonitorToggles(void)
 		}
 		else
 		{
-			cv = kartitemcvs[currentMenu->menuitems[itemOn].alphaKey-1];
+			cv = KartItemCVars[currentMenu->menuitems[itemOn].alphaKey-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			switch (currentMenu->menuitems[itemOn].alphaKey)
@@ -10914,14 +10887,14 @@ static void M_HandleMonitorToggles(INT32 choice)
 				S_StartSound(NULL, sfx_s1b4);
 				for (i = 0; i < NUMKARTRESULTS-1; i++)
 				{
-					if (kartitemcvs[i]->value == v)
-						CV_AddValue(kartitemcvs[i], 1);
+					if (KartItemCVars[i]->value == v)
+						CV_AddValue(KartItemCVars[i], 1);
 				}
 			}
 			else
 			{
 				S_StartSound(NULL, sfx_s1ba);
-				CV_AddValue(kartitemcvs[currentMenu->menuitems[itemOn].alphaKey-1], 1);
+				CV_AddValue(KartItemCVars[currentMenu->menuitems[itemOn].alphaKey-1], 1);
 			}
 			break;
 

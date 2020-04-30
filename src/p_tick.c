@@ -594,7 +594,7 @@ void P_Ticker(boolean run)
 		return;
 	}
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	P_MapStart();
@@ -616,6 +616,17 @@ void P_Ticker(boolean run)
 					G_ReadDemoTiccmd(&players[i].cmd, i);
 		}
 
+		// First loop: Ensure all players' distance to the finish line are all accurate
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_UpdateDistanceFromFinishLine(&players[i]);
+
+		// Second loop: Ensure all player positions reflect everyone's distances
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_KartUpdatePosition(&players[i]);
+
+		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
@@ -751,7 +762,7 @@ void P_Ticker(boolean run)
 	}
 
 	// Always move the camera.
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (camera[i].chase)
 			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
@@ -771,13 +782,24 @@ void P_PreTicker(INT32 frames)
 	INT32 i,framecnt;
 	ticcmd_t temptic;
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	for (framecnt = 0; framecnt < frames; ++framecnt)
 	{
 		P_MapStart();
 
+		// First loop: Ensure all players' distance to the finish line are all accurate
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_UpdateDistanceFromFinishLine(&players[i]);
+
+		// Second loop: Ensure all player positions reflect everyone's distances
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_KartUpdatePosition(&players[i]);
+
+		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 			{

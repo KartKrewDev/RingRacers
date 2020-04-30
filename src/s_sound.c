@@ -470,19 +470,19 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	if (players[displayplayers[0]].awayviewtics)
 		listenmobj = players[displayplayers[0]].awayviewmobj;
 
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		listenmobj2 = players[displayplayers[1]].mo;
 		if (players[displayplayers[1]].awayviewtics)
 			listenmobj2 = players[displayplayers[1]].awayviewmobj;
 
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 		{
 			listenmobj3 = players[displayplayers[2]].mo;
 			if (players[displayplayers[2]].awayviewtics)
 				listenmobj3 = players[displayplayers[2]].awayviewmobj;
 
-			if (splitscreen > 2)
+			if (r_splitscreen > 2)
 			{
 				listenmobj4 = players[displayplayers[3]].mo;
 				if (players[displayplayers[3]].awayviewtics)
@@ -587,10 +587,10 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	pitch = NORM_PITCH;
 	priority = NORM_PRIORITY;
 
-	if (splitscreen && origin)
-		volume = FixedDiv(volume<<FRACBITS, FixedSqrt((splitscreen+1)<<FRACBITS))>>FRACBITS;
+	if (r_splitscreen && origin)
+		volume = FixedDiv(volume<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
 
-	if (splitscreen && listenmobj2) // Copy the sound for the split player
+	if (r_splitscreen && listenmobj2) // Copy the sound for the split player
 	{
 		// Check to see if it is audible, and if not, modify the params
 		if (origin && origin != listenmobj2)
@@ -646,7 +646,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 
 dontplay:
 
-	if (splitscreen > 1 && listenmobj3) // Copy the sound for the third player
+	if (r_splitscreen > 1 && listenmobj3) // Copy the sound for the third player
 	{
 		// Check to see if it is audible, and if not, modify the params
 		if (origin && origin != listenmobj3)
@@ -702,7 +702,7 @@ dontplay:
 
 dontplay3:
 
-	if (splitscreen > 2 && listenmobj4) // Copy the sound for the split player
+	if (r_splitscreen > 2 && listenmobj4) // Copy the sound for the split player
 	{
 		// Check to see if it is audible, and if not, modify the params
 		if (origin && origin != listenmobj4)
@@ -955,19 +955,19 @@ void S_UpdateSounds(void)
 	if (players[displayplayers[0]].awayviewtics)
 		listenmobj = players[displayplayers[0]].awayviewmobj;
 
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		listenmobj2 = players[displayplayers[1]].mo;
 		if (players[displayplayers[1]].awayviewtics)
 			listenmobj2 = players[displayplayers[1]].awayviewmobj;
 
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 		{
 			listenmobj3 = players[displayplayers[2]].mo;
 			if (players[displayplayers[2]].awayviewtics)
 				listenmobj3 = players[displayplayers[2]].awayviewmobj;
 
-			if (splitscreen > 2)
+			if (r_splitscreen > 2)
 			{
 				listenmobj4 = players[displayplayers[3]].mo;
 				if (players[displayplayers[3]].awayviewtics)
@@ -1071,24 +1071,24 @@ void S_UpdateSounds(void)
 				pitch = NORM_PITCH;
 				sep = NORM_SEP;
 
-				if (splitscreen && c->origin)
-					volume = FixedDiv(volume<<FRACBITS, FixedSqrt((splitscreen+1)<<FRACBITS))>>FRACBITS;
+				if (r_splitscreen && c->origin)
+					volume = FixedDiv(volume<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
 
 				// check non-local sounds for distance clipping
 				//  or modify their params
-				if (c->origin && ((c->origin != players[consoleplayer].mo)
-					|| (splitscreen && c->origin != players[displayplayers[1]].mo)
-					|| (splitscreen > 1 && c->origin != players[displayplayers[2]].mo)
-					|| (splitscreen > 2 && c->origin != players[displayplayers[3]].mo)))
+				if (c->origin && ((c->origin != players[displayplayers[0]].mo)
+					|| (r_splitscreen && c->origin != players[displayplayers[1]].mo)
+					|| (r_splitscreen > 1 && c->origin != players[displayplayers[2]].mo)
+					|| (r_splitscreen > 2 && c->origin != players[displayplayers[3]].mo)))
 				{
 					// Whomever is closer gets the sound, but only in splitscreen.
-					if (splitscreen)
+					if (r_splitscreen)
 					{
 						const mobj_t *soundmobj = c->origin;
 						fixed_t recdist = -1;
 						INT32 i, p = -1;
 
-						for (i = 0; i <= splitscreen; i++)
+						for (i = 0; i <= r_splitscreen; i++)
 						{
 							fixed_t thisdist = -1;
 
@@ -1143,7 +1143,7 @@ void S_UpdateSounds(void)
 								S_StopChannel(cnum);
 						}
 					}
-					else if (listenmobj && !splitscreen)
+					else if (listenmobj && !r_splitscreen)
 					{
 						// In the case of a single player, he or she always should get updated sound.
 						audible = S_AdjustSoundParams(listenmobj, c->origin, &volume, &sep, &pitch,
@@ -1271,21 +1271,21 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 		listensource.z = camera[0].z;
 		listensource.angle = camera[0].angle;
 	}
-	else if (splitscreen && listener == players[displayplayers[1]].mo && camera[1].chase)
+	else if (r_splitscreen && listener == players[displayplayers[1]].mo && camera[1].chase)
 	{
 		listensource.x = camera[1].x;
 		listensource.y = camera[1].y;
 		listensource.z = camera[1].z;
 		listensource.angle = camera[1].angle;
 	}
-	else if (splitscreen > 1 && listener == players[displayplayers[2]].mo && camera[2].chase)
+	else if (r_splitscreen > 1 && listener == players[displayplayers[2]].mo && camera[2].chase)
 	{
 		listensource.x = camera[2].x;
 		listensource.y = camera[2].y;
 		listensource.z = camera[2].z;
 		listensource.angle = camera[2].angle;
 	}
-	else if (splitscreen > 2 && listener == players[displayplayers[3]].mo && camera[3].chase)
+	else if (r_splitscreen > 2 && listener == players[displayplayers[3]].mo && camera[3].chase)
 	{
 		listensource.x = camera[3].x;
 		listensource.y = camera[3].y;
@@ -1385,8 +1385,8 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 		*vol = (15 * ((S_CLIPPING_DIST - approx_dist)>>FRACBITS)) / S_ATTENUATOR;
 	}
 
-	if (splitscreen)
-		*vol = FixedDiv((*vol)<<FRACBITS, FixedSqrt((splitscreen+1)<<FRACBITS))>>FRACBITS;
+	if (r_splitscreen)
+		*vol = FixedDiv((*vol)<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
 
 	return (*vol > 0);
 }

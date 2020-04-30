@@ -367,7 +367,7 @@ void Y_IntermissionDrawer(void)
 	if (usebuffer) // Fade everything out
 		V_DrawFadeScreen(0xFF00, 22);
 
-	if (!splitscreen)
+	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	if (cons_menuhighlight.value)
@@ -496,7 +496,7 @@ void Y_IntermissionDrawer(void)
 
 				y2 = y;
 
-				if (data.match.num[i] == 0 && server_lagless)
+				if (playerconsole[data.match.num[i]] == 0 && server_lagless)
 				{
 					static int alagles_timer = 0;
 					patch_t *alagles;
@@ -787,7 +787,7 @@ void Y_Ticker(void)
 //
 static void Y_UpdateRecordReplays(void)
 {
-	const size_t glen = strlen(srb2home)+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
+	const size_t glen = strlen(srb2home)+1+strlen("media")+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath;
 	char lastdemo[256], bestdemo[256];
 	UINT8 earnedEmblems;
@@ -823,13 +823,14 @@ static void Y_UpdateRecordReplays(void)
 	G_SetDemoTime(players[consoleplayer].realtime, bestlap);
 	G_CheckDemoStatus();
 
-	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
-	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
+	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
+			srb2home, timeattackfolder);
+	M_MkdirEach(gpath, M_PathParts(gpath) - 3, 0755);
 
 	if ((gpath = malloc(glen)) == NULL)
 		I_Error("Out of memory for replay filepath\n");
 
-	sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
+	sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
 	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_chooseskin.string);
 
 	if (FIL_FileExists(lastdemo))
@@ -1316,19 +1317,19 @@ void Y_VoteDrawer(void)
 					{
 						case 1:
 							thiscurs = cursor2;
-							p = displayplayers[1];
+							p = g_localplayers[1];
 							break;
 						case 2:
 							thiscurs = cursor3;
-							p = displayplayers[2];
+							p = g_localplayers[2];
 							break;
 						case 3:
 							thiscurs = cursor4;
-							p = displayplayers[3];
+							p = g_localplayers[3];
 							break;
 						default:
 							thiscurs = cursor1;
-							p = displayplayers[0];
+							p = g_localplayers[0];
 							break;
 					}
 
@@ -1616,13 +1617,13 @@ void Y_VoteTicker(void)
 			switch (i)
 			{
 				case 1:
-					p = displayplayers[1];
+					p = g_localplayers[1];
 					break;
 				case 2:
-					p = displayplayers[2];
+					p = g_localplayers[2];
 					break;
 				case 3:
-					p = displayplayers[3];
+					p = g_localplayers[3];
 					break;
 				default:
 					p = consoleplayer;

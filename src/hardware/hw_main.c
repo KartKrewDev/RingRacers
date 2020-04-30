@@ -582,7 +582,7 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, boolean is
 	if (nrPlaneVerts < 3)   //not even a triangle ?
 		return;
 
-	if ((UINT32)nrPlaneVerts > UINT16_MAX) // FIXME: exceeds plVerts size
+	if (nrPlaneVerts > INT16_MAX) // FIXME: exceeds plVerts size
 	{
 		CONS_Debug(DBG_RENDER, "polygon size of %d exceeds max value of %d vertices\n", nrPlaneVerts, UINT16_MAX);
 		return;
@@ -2023,7 +2023,7 @@ static void HWR_StoreWallRange(double startfrac, double endfrac)
 		// Single sided line... Deal only with the middletexture (if one exists)
 		gr_midtexture = R_GetTextureNum(gr_sidedef->midtexture);
 		if (gr_midtexture
-			&& gr_linedef->special != 41) // Ignore horizon line for OGL
+			&& gr_linedef->special != HORIZONSPECIAL) // Ignore horizon line for OGL
 		{
 			{
 				fixed_t     texturevpeg;
@@ -3229,7 +3229,7 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, boolean isceiling, 
 	if (nrPlaneVerts < 3)   //not even a triangle ?
 		return;
 
-	if (nrPlaneVerts > UINT16_MAX) // FIXME: exceeds plVerts size
+	if (nrPlaneVerts > INT16_MAX) // FIXME: exceeds plVerts size
 	{
 		CONS_Debug(DBG_RENDER, "polygon size of %s exceeds max value of %d vertices\n", sizeu1(nrPlaneVerts), UINT16_MAX);
 		return;
@@ -5364,7 +5364,7 @@ static void HWR_AddSprites(sector_t *sec)
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
 					if (viewssnum != 0)
@@ -5374,11 +5374,11 @@ static void HWR_AddSprites(sector_t *sec)
 					if (viewssnum != 1)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
 					if (viewssnum != 2)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
 					if (viewssnum != 3)
 						continue;
 			}
@@ -5399,7 +5399,7 @@ static void HWR_AddSprites(sector_t *sec)
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
 					if (viewssnum != 0)
@@ -5409,11 +5409,11 @@ static void HWR_AddSprites(sector_t *sec)
 					if (viewssnum != 1)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
 					if (viewssnum != 2)
 						continue;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
 					if (viewssnum != 3)
 						continue;
 			}
@@ -5847,7 +5847,7 @@ static void HWR_DrawSkyBackground(void)
 
 	dimensionmultiply = ((float)tex->height/(128.0f*aspectratio));
 
-	if (splitscreen == 1)
+	if (r_splitscreen == 1)
 	{
 		dimensionmultiply *= 2;
 		angle *= 2;
@@ -5919,10 +5919,10 @@ void HWR_SetViewSize(void)
 	gr_viewwidth = (float)vid.width;
 	gr_viewheight = (float)vid.height;
 
-	if (splitscreen)
+	if (r_splitscreen)
 		gr_viewheight /= 2;
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 		gr_viewwidth /= 2;
 
 	gr_basecenterx = gr_viewwidth / 2;
@@ -5978,13 +5978,13 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	gr_viewwindowy = gr_baseviewwindowy;
 	gr_windowcentery = gr_basewindowcentery;
 
-	if ((splitscreen == 1 && viewnumber == 1) || (splitscreen > 1 && viewnumber > 1))
+	if ((r_splitscreen == 1 && viewnumber == 1) || (r_splitscreen > 1 && viewnumber > 1))
 	{
 		gr_viewwindowy += gr_viewheight;
 		gr_windowcentery += gr_viewheight;
 	}
 
-	if (splitscreen > 1 && viewnumber & 1)
+	if (r_splitscreen > 1 && viewnumber & 1)
 	{
 		gr_viewwindowx += gr_viewwidth;
 		gr_windowcenterx += gr_viewwidth;
@@ -6026,7 +6026,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	atransform.splitscreen = splitscreen;
+	atransform.splitscreen = r_splitscreen;
 
 	gr_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
 
@@ -6045,7 +6045,7 @@ if (0)
 		HWR_DrawSkyBackground();
 
 	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = splitscreen;
+	drawsky = r_splitscreen;
 
 	HWR_ClearSprites();
 
@@ -6078,11 +6078,11 @@ if (0)
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
 		viewangle = localaiming[0];
-	else if (splitscreen && player == &players[displayplayers[1]])
+	else if (r_splitscreen && player == &players[displayplayers[1]])
 		viewangle = localaiming[1];
-	else if (splitscreen > 1 && player == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
 		viewangle = localaiming[2];
-	else if (splitscreen > 2 && player == &players[displayplayers[3]])
+	else if (r_splitscreen > 2 && player == &players[displayplayers[3]])
 		viewangle = localaiming[3];
 
 	// Handle stuff when you are looking farther up or down.
@@ -6212,13 +6212,13 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	gr_viewwindowy = gr_baseviewwindowy;
 	gr_windowcentery = gr_basewindowcentery;
 
-	if ((splitscreen == 1 && viewnumber == 1) || (splitscreen > 1 && viewnumber > 1))
+	if ((r_splitscreen == 1 && viewnumber == 1) || (r_splitscreen > 1 && viewnumber > 1))
 	{
 		gr_viewwindowy += gr_viewheight;
 		gr_windowcentery += gr_viewheight;
 	}
 
-	if (splitscreen > 1 && viewnumber & 1)
+	if (r_splitscreen > 1 && viewnumber & 1)
 	{
 		gr_viewwindowx += gr_viewwidth;
 		gr_windowcenterx += gr_viewwidth;
@@ -6260,7 +6260,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	atransform.splitscreen = splitscreen;
+	atransform.splitscreen = r_splitscreen;
 
 	gr_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
 
@@ -6279,7 +6279,7 @@ if (0)
 		HWR_DrawSkyBackground();
 
 	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = splitscreen;
+	drawsky = r_splitscreen;
 
 	HWR_ClearSprites();
 
@@ -6312,11 +6312,11 @@ if (0)
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
 		viewangle = localaiming[0];
-	else if (splitscreen && player == &players[displayplayers[1]])
+	else if (r_splitscreen && player == &players[displayplayers[1]])
 		viewangle = localaiming[1];
-	else if (splitscreen > 1 && player == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
 		viewangle = localaiming[2];
-	else if (splitscreen > 2 && player == &players[displayplayers[3]])
+	else if (r_splitscreen > 2 && player == &players[displayplayers[3]])
 		viewangle = localaiming[3];
 
 	// Handle stuff when you are looking farther up or down.
@@ -6796,7 +6796,7 @@ void HWR_DoPostProcessor(player_t *player)
 	postimg_t *type = &postimgtype[0];
 	UINT8 i;
 
-	for (i = splitscreen; i > 0; i--)
+	for (i = r_splitscreen; i > 0; i--)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -6834,7 +6834,7 @@ void HWR_DoPostProcessor(player_t *player)
 	if(gamestate != GS_INTERMISSION)
 		HWD.pfnMakeScreenTexture();
 
-	if (splitscreen) // Not supported in splitscreen - someone want to add support?
+	if (r_splitscreen) // Not supported in splitscreen - someone want to add support?
 		return;
 
 	// Drunken vision! WooOOooo~

@@ -487,6 +487,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/f_wipe.o   \
 		$(OBJDIR)/g_game.o   \
 		$(OBJDIR)/g_input.o  \
+		$(OBJDIR)/g_splitscreen.o\
 		$(OBJDIR)/am_map.o   \
 		$(OBJDIR)/command.o  \
 		$(OBJDIR)/console.o  \

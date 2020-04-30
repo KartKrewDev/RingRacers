@@ -104,7 +104,8 @@ extern consvar_t cv_recycler;*/
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
 extern consvar_t cv_eggmanmonitor, cv_orbinaut, cv_jawz, cv_mine;
 extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
-extern consvar_t cv_thundershield, cv_hyudoro, cv_pogospring, cv_kitchensink;
+extern consvar_t cv_thundershield, cv_bubbleshield, cv_flameshield;
+extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
 
 extern consvar_t cv_triplesneaker, cv_triplebanana, cv_decabanana;
 extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
@@ -182,9 +183,13 @@ typedef enum
 	XD_PICKVOTE,    // 24
 	XD_REMOVEPLAYER,// 25
 	XD_POWERLEVEL,  // 26
+	XD_PARTYINVITE, // 27
+	XD_ACCEPTPARTYINVITE, // 28
+	XD_LEAVEPARTY, // 29
+	XD_CANCELPARTYINVITE, // 30
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 27
-	XD_LUAVAR,      // 28
+	XD_LUACMD,      // 31
+	XD_LUAVAR,      // 32
 #endif
 	MAXNETXCMD
 } netxcmd_t;
