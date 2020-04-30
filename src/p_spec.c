@@ -4134,8 +4134,6 @@ DoneSection2:
 				P_InstaThrust(player->mo, player->mo->angle, linespeed);
 
 				player->kartstuff[k_dashpadcooldown] = TICRATE/3;
-				player->kartstuff[k_drift] = 0;
-				player->kartstuff[k_driftcharge] = 0;
 				player->kartstuff[k_pogospring] = 0;
 				S_StartSound(player->mo, sfx_spdpad);
 
