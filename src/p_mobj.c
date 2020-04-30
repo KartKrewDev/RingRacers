@@ -12691,6 +12691,39 @@ ML_NOCLIMB : Direction not controllable
 		P_SetTarget(&waypointcap, mobj);
 		break;
 	}
+	case MT_BOTHINT:
+	{
+		// Change size
+		if (mthing->angle > 0)
+		{
+			mobj->radius = mthing->angle * FRACUNIT;
+		}
+		else
+		{
+			mobj->radius = 32 * mapobjectscale;
+		}
+
+		// Steer away instead of towards
+		if (mthing->options & MTF_AMBUSH)
+		{
+			mobj->extravalue1 = 0;
+		}
+		else
+		{
+			mobj->extravalue1 = 1;
+		}
+
+		// Steering amount
+		if (mthing->extrainfo == 0)
+		{
+			mobj->extravalue2 = 2;
+		}
+		else
+		{
+			mobj->extravalue2 = mthing->extrainfo;
+		}
+		break;
+	}
 	// SRB2Kart
 	case MT_BALLOON:
 		mobj->color = (1 + (mthing->angle % (MAXSKINCOLORS-1)));

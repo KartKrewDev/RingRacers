@@ -209,30 +209,32 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 	return P_AproxDistance(cx - px, cy - py);
 }
 
-mobj_t *botmo = NULL;
-fixed_t distancetocheck = 0;
-
-fixed_t closestlinedist = INT32_MAX;
-
-INT16 badsteerglobal = 0;
-
-static boolean K_BotHatesThisSector(sector_t *sec)
+static boolean K_BotHatesThisSector(player_t *player, sector_t *sec)
 {
 	switch (GETSECSPECIAL(sec->special, 1))
 	{
 		case 1: // Damage
-		//case 2: case 3: // Offroad (let's let them lawnmower)
-		case 4: // Offroad (Strong)
 		case 5: // Spikes
 		case 6: case 7: // Death Pit
 		case 8: // Instant Kill
 			return true;
+		//case 2: case 3: // Offroad (let's let them lawnmower)
+		case 4: // Offroad (Strong)
+			if (!K_BotCanTakeCut(player))
+				return true;
 		default:
 			break;
 	}
 
 	return false;
 }
+
+mobj_t *botmo = NULL;
+fixed_t distancetocheck = 0;
+
+fixed_t closestlinedist = INT32_MAX;
+
+INT16 badsteerglobal = 0;
 
 static inline boolean K_FindBlockingWalls(line_t *line)
 {
@@ -300,18 +302,18 @@ static inline boolean K_FindBlockingWalls(line_t *line)
 		goto blocked;
 	}
 
-	if (!K_BotHatesThisSector(botmo->subsector->sector))
+	if (!K_BotHatesThisSector(botmo->player, botmo->subsector->sector))
 	{
 		// Treat damage sectors like walls
 
 		if (lineside)
 		{
-			if (K_BotHatesThisSector(line->frontsector))
+			if (K_BotHatesThisSector(botmo->player, line->frontsector))
 				goto blocked;
 		}
 		else
 		{
-			if (K_BotHatesThisSector(line->backsector))
+			if (K_BotHatesThisSector(botmo->player, line->backsector))
 				goto blocked;
 		}
 	}
@@ -698,6 +700,15 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 						K_SteerFromObject(botmo, thing, fulldist, xdist, false, KART_FULLTURN + dodge);
 					}
 				}
+			}
+			break;
+		case MT_BOTHINT:
+			if (thing->extravalue1 == 0)
+			{
+				K_SteerFromObject(botmo, thing, fulldist, xdist, false, thing->extravalue2 * (KART_FULLTURN + dodge));
+			}
+			{
+				K_SteerFromObject(botmo, thing, fulldist, xdist, true, thing->extravalue2 * (KART_FULLTURN + attack));
 			}
 			break;
 		default:
