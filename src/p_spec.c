@@ -4096,24 +4096,10 @@ DoneSection2:
 				lineangle = R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y);
 				linespeed = P_AproxDistance(lines[i].v2->x-lines[i].v1->x, lines[i].v2->y-lines[i].v1->y);
 
-				player->mo->angle = lineangle;
-
 				// SRB2Kart: Scale the speed you get from them!
 				// This is scaled differently from other horizontal speed boosts from stuff like springs, because of how this is used for some ramp jumps.
 				if (player->mo->scale > mapobjectscale)
 					linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
-
-				if (!demo.playback)
-				{
-					if (player == &players[consoleplayer])
-						localangle[0] = player->mo->angle;
-					else if (player == &players[displayplayers[1]])
-						localangle[1] = player->mo->angle;
-					else if (player == &players[displayplayers[2]])
-						localangle[2] = player->mo->angle;
-					else if (player == &players[displayplayers[3]])
-						localangle[3] = player->mo->angle;
-				}
 
 				if (!(lines[i].flags & ML_EFFECT4))
 				{
@@ -4131,7 +4117,7 @@ DoneSection2:
 					P_SetThingPosition(player->mo);
 				}
 
-				P_InstaThrust(player->mo, player->mo->angle, linespeed);
+				P_InstaThrust(player->mo, lineangle, linespeed);
 
 				player->kartstuff[k_dashpadcooldown] = TICRATE/3;
 				player->kartstuff[k_pogospring] = 0;
