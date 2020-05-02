@@ -209,7 +209,7 @@ static fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, 
 	return P_AproxDistance(cx - px, cy - py);
 }
 
-static boolean K_BotHatesThisSector(player_t *player, sector_t *sec)
+static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 {
 	switch (GETSECSPECIAL(sec->special, 1))
 	{
@@ -224,6 +224,54 @@ static boolean K_BotHatesThisSector(player_t *player, sector_t *sec)
 				return true;
 		default:
 			break;
+	}
+
+	return false;
+}
+
+static boolean K_BotHatesThisSector(player_t *player, sector_t *sec)
+{
+	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
+	INT32 flag;
+	ffloor_t *rover;
+
+	if (flip)
+	{
+		flag = SF_FLIPSPECIAL_CEILING;
+	}
+	else
+	{
+		flag = SF_FLIPSPECIAL_FLOOR;
+	}
+
+	if (sec->flags & flag)
+	{
+		if (K_BotHatesThisSectorsSpecial(player, sec))
+		{
+			return true;
+		}
+	}
+
+	for (rover = sec->ffloors; rover; rover = rover->next)
+	{
+		if (!(rover->flags & FF_EXISTS))
+		{
+			continue;
+		}
+
+		if (!(rover->master->frontsector->flags & flag))
+		{
+			continue;
+		}
+
+		if (((*rover->bottomheight >= player->mo->z + player->mo->height) && (flip))
+		|| ((*rover->topheight <= player->mo->z) && (!flip)))
+		{
+			if (K_BotHatesThisSectorsSpecial(player, sec))
+			{
+				return true;
+			}
+		}
 	}
 
 	return false;
