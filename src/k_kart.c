@@ -950,6 +950,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			case KITEM_ROCKETSNEAKER:
 			case KITEM_INVINCIBILITY:
 			case KITEM_BANANA:
+			case KITEM_EGGMAN:
 			case KITEM_ORBINAUT:
 			case KITEM_JAWZ:
 			case KITEM_MINE:

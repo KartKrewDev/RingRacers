@@ -236,6 +236,96 @@ fixed_t closestlinedist = INT32_MAX;
 
 INT16 badsteerglobal = 0;
 
+fixed_t eggboxx, eggboxy;
+UINT8 randomitems = 0;
+UINT8 eggboxes = 0;
+
+static boolean K_FindRandomItems(mobj_t *thing)
+{
+	fixed_t dist;
+
+	if (thing->type != MT_RANDOMITEM)
+	{
+		return true;
+	}
+
+	if (!thing->health)
+	{
+		return true;
+	}
+
+	dist = P_AproxDistance(thing->x - eggboxx, thing->y - eggboxy);
+
+	if (dist > distancetocheck)
+	{
+		return true;
+	}
+
+	randomitems++;
+	return true;
+}
+
+static boolean K_FindEggboxes(mobj_t *thing)
+{
+	fixed_t dist;
+
+	if (thing->type != MT_EGGMANITEM)
+	{
+		return true;
+	}
+
+	if (!thing->health)
+	{
+		return true;
+	}
+
+	dist = P_AproxDistance(thing->x - eggboxx, thing->y - eggboxy);
+
+	if (dist > distancetocheck)
+	{
+		return true;
+	}
+
+	eggboxes++;
+	return true;
+}
+
+static UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
+{
+	INT32 xl, xh, yl, yh, bx, by;
+
+	eggboxx = x;
+	eggboxy = y;
+	distancetocheck = (mapobjectscale * 256);
+	randomitems = 0;
+	eggboxes = 0;
+
+	xl = (unsigned)(eggboxx - distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(eggboxx + distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(eggboxy - distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(eggboxy + distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX(xl, xh, yl, yh);
+
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
+		{
+			P_BlockThingsIterator(bx, by, K_FindRandomItems);
+		}
+	}
+
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
+		{
+			P_BlockThingsIterator(bx, by, K_FindEggboxes);
+		}
+	}
+
+	return randomitems * eggboxes;
+}
+
 static inline boolean K_FindBlockingWalls(line_t *line)
 {
 	// Condensed version of PIT_CheckLine
@@ -579,7 +669,6 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 	{
 		case MT_BANANA:
 		case MT_BANANA_SHIELD:
-		case MT_EGGMANITEM:
 		case MT_EGGMANITEM_SHIELD:
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
@@ -602,6 +691,27 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			if (P_CanPickupItem(botmo->player, 1))
 			{
 				K_SteerFromObject(botmo, thing, fulldist, xdist, true, KART_FULLTURN + attack);
+			}
+			break;
+		case MT_EGGMANITEM:
+			if (anglediff > 90)
+			{
+				break;
+			}
+
+			if (P_CanPickupItem(botmo->player, 1)) // Can pick up an actual item
+			{
+				const UINT8 stealth = K_EggboxStealth(thing->x, thing->y);
+				const UINT8 requiredstealth = (botmo->player->botvars.difficulty * botmo->player->botvars.difficulty);
+
+				if (stealth >= requiredstealth)
+				{
+					K_SteerFromObject(botmo, thing, fulldist, xdist, true, 2 * (KART_FULLTURN + attack));
+				}
+				else
+				{
+					K_SteerFromObject(botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
+				}
 			}
 			break;
 		case MT_FLOATINGITEM:
@@ -844,10 +954,11 @@ static boolean K_BotRevealsBanana(player_t *player, INT16 turnamt, boolean mine)
 	{
 		UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
 		fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
-		fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
-		fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+		const angle_t momangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+		fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, momangle, (throwspeed + player->speed) * airtime);
+		fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, momangle, (throwspeed + player->speed) * airtime);
 
-		if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
+		if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 2))
 		{
 			return true;
 		}
@@ -856,14 +967,87 @@ static boolean K_BotRevealsBanana(player_t *player, INT16 turnamt, boolean mine)
 		{
 			airtime = FixedDiv((40 * player->mo->scale) + player->mo->momz, gravity);
 			throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) * 2;
-			estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
-			esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+			estx = player->mo->x + P_ReturnThrustX(NULL, momangle, (throwspeed + player->speed) * airtime);
+			esty = player->mo->y + P_ReturnThrustY(NULL, momangle, (throwspeed + player->speed) * airtime);
 
-			if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
+			if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 2))
 			{
 				return true;
 			}
 		}
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *target = NULL;
+		fixed_t dist = INT32_MAX;
+
+		if (!playeringame[i])
+		{
+			continue;
+		}
+
+		target = &players[i];
+
+		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+			|| player == target || target->spectator
+			|| target->powers[pw_flashing]
+			|| !P_CheckSight(player->mo, target->mo))
+		{
+			continue;
+		}
+
+		dist = P_AproxDistance(P_AproxDistance(
+			player->mo->x - target->mo->x,
+			player->mo->y - target->mo->y),
+			(player->mo->z - target->mo->z) / 4
+		);
+
+		if (dist <= (player->mo->radius * 16))
+		{
+			angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+			INT16 ad = 0;
+			const INT16 cone = 10;
+
+			if (a < ANGLE_180)
+			{
+				ad = AngleFixed(a)>>FRACBITS;
+			}
+			else 
+			{
+				ad = 360-(AngleFixed(a)>>FRACBITS);
+			}
+
+			ad = abs(ad);
+
+			if (ad >= 180-cone)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+static boolean K_BotRevealsEggbox(player_t *player)
+{
+	const UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
+	const fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	const angle_t momangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	const fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, momangle, (throwspeed + player->speed) * airtime);
+	const fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, momangle, (throwspeed + player->speed) * airtime);
+	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
+	UINT8 i;
+
+	if (stealth > 1)
+	{
+		return true;
+	}
+
+	if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 2))
+	{
+		return true;
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1108,484 +1292,600 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			player->botvars.itemdelay--;
 			player->botvars.itemconfirm = 0;
 		}
-		else if (player->kartstuff[k_stealingtimer] == 0 && player->kartstuff[k_stolentimer] == 0)
+		else if (player->kartstuff[k_eggmanexplode])
 		{
-			if (player->kartstuff[k_eggmanexplode])
+			if (player->kartstuff[k_position] == 1)
 			{
-				K_BotUseItemNearPlayer(player, cmd, 128*player->mo->scale);
+				cmd->forwardmove /= 2;
+				cmd->buttons |= BT_BRAKE;
 			}
-			else if (player->kartstuff[k_rocketsneakertimer] > 0)
+
+			K_BotUseItemNearPlayer(player, cmd, 128*player->mo->scale);
+		}
+		else if (player->kartstuff[k_eggmanheld])
+		{
+			const UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
+			const fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+			const angle_t momangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+			const fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, momangle, (throwspeed + player->speed) * airtime);
+			const fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, momangle, (throwspeed + player->speed) * airtime);
+			const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
+			SINT8 throwdir = -1;
+			UINT8 i;
+
+			player->botvars.itemconfirm++;
+
+			if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 2))
 			{
-				if (player->botvars.itemconfirm > TICRATE)
+				player->botvars.itemconfirm += player->botvars.difficulty / 2;
+				throwdir = 1;
+			}
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				player_t *target = NULL;
+				fixed_t dist = INT32_MAX;
+
+				if (!playeringame[i])
 				{
-					if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
+					continue;
+				}
+
+				target = &players[i];
+
+				if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+					|| player == target || target->spectator
+					|| target->powers[pw_flashing]
+					|| !P_CheckSight(player->mo, target->mo))
+				{
+					continue;
+				}
+
+				dist = P_AproxDistance(P_AproxDistance(
+					player->mo->x - target->mo->x,
+					player->mo->y - target->mo->y),
+					(player->mo->z - target->mo->z) / 4
+				);
+
+				if (dist <= (player->mo->radius * 16))
+				{
+					angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+					INT16 ad = 0;
+					const INT16 cone = 10;
+
+					if (a < ANGLE_180)
 					{
-						cmd->buttons |= BT_ATTACK;
-						player->botvars.itemconfirm = 0;
+						ad = AngleFixed(a)>>FRACBITS;
+					}
+					else 
+					{
+						ad = 360-(AngleFixed(a)>>FRACBITS);
+					}
+
+					ad = abs(ad);
+
+					if (ad >= 180-cone)
+					{
+						player->botvars.itemconfirm += player->botvars.difficulty;
+						throwdir = -1;
 					}
 				}
-				else
+			}
+
+			if (stealth > 1)
+			{
+				player->botvars.itemconfirm += player->botvars.difficulty * 4;
+				throwdir = -1;
+			}
+
+			if (player->kartstuff[k_itemroulette] > 0) // Just grabbed an item
+			{
+				player->botvars.itemconfirm += player->botvars.difficulty * 4;
+				throwdir = -1;
+			}
+
+			if ((player->botvars.itemconfirm > 2*TICRATE || player->kartstuff[k_bananadrag] >= TICRATE)
+				&& !(player->pflags & PF_ATTACKDOWN))
+			{
+				if (throwdir == 1)
 				{
-					player->botvars.itemconfirm++;
+					cmd->buttons |= BT_FORWARD;
+				}
+				else if (throwdir == -1)
+				{
+					cmd->buttons |= BT_BACKWARD;
+				}
+
+				cmd->buttons |= BT_ATTACK;
+				player->botvars.itemconfirm = 0;
+			}
+		}
+		else if (player->kartstuff[k_rocketsneakertimer] > 0)
+		{
+			if (player->botvars.itemconfirm > TICRATE)
+			{
+				if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
+				{
+					cmd->buttons |= BT_ATTACK;
+					player->botvars.itemconfirm = 0;
 				}
 			}
 			else
 			{
-				switch (player->kartstuff[k_itemtype])
-				{
-					case KITEM_INVINCIBILITY:
-					case KITEM_SPB:
-					case KITEM_GROW:
-					case KITEM_SHRINK:
-					case KITEM_HYUDORO:
-					case KITEM_SUPERRING:
-						if (!(player->pflags & PF_ATTACKDOWN))
+				player->botvars.itemconfirm++;
+			}
+		}
+		else if (player->kartstuff[k_stealingtimer] == 0 && player->kartstuff[k_stolentimer] == 0)
+		{
+			switch (player->kartstuff[k_itemtype])
+			{
+				case KITEM_INVINCIBILITY:
+				case KITEM_SPB:
+				case KITEM_GROW:
+				case KITEM_SHRINK:
+				case KITEM_HYUDORO:
+				case KITEM_SUPERRING:
+					if (!(player->pflags & PF_ATTACKDOWN))
+					{
+						cmd->buttons |= BT_ATTACK;
+						player->botvars.itemconfirm = 0;
+					}
+					break;
+				case KITEM_SNEAKER:
+					if ((player->kartstuff[k_offroad] && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
+						|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
+						|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
+						|| player->kartstuff[k_speedboost] > (FRACUNIT/8) // Have another type of boost (tethering)
+						|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
+					{
+						if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->botvars.itemconfirm = 2*TICRATE;
+						}
+					}
+					else
+					{
+						player->botvars.itemconfirm++;
+					}
+					break;
+				case KITEM_ROCKETSNEAKER:
+					if (player->kartstuff[k_rocketsneakertimer] <= 0 && !(player->pflags & PF_ATTACKDOWN))
+					{
+						cmd->buttons |= BT_ATTACK;
+						player->botvars.itemconfirm = 0;
+					}
+					break;
+				case KITEM_BANANA:
+					if (!player->kartstuff[k_itemheld])
+					{
+						if ((K_BotRevealsBanana(player, turnamt, false) || (player->botvars.itemconfirm++ > 5*TICRATE))
+							&& !(player->pflags & PF_ATTACKDOWN))
 						{
 							cmd->buttons |= BT_ATTACK;
 							player->botvars.itemconfirm = 0;
 						}
-						break;
-					case KITEM_SNEAKER:
-						if ((player->kartstuff[k_offroad] && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
-							|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
-							|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
-							|| player->kartstuff[k_speedboost] > (FRACUNIT/8) // Have another type of boost (tethering)
-							|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
+					}
+					else
+					{
+						SINT8 throwdir = -1;
+						UINT8 i;
+
+						player->botvars.itemconfirm++;
+
+						if (abs(turnamt) >= KART_FULLTURN/2)
 						{
-							if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
-							{
-								cmd->buttons |= BT_ATTACK;
-								player->botvars.itemconfirm = 2*TICRATE;
-							}
+							player->botvars.itemconfirm += player->botvars.difficulty / 2;
 						}
 						else
 						{
-							player->botvars.itemconfirm++;
-						}
-						break;
-					case KITEM_ROCKETSNEAKER:
-						if (player->kartstuff[k_rocketsneakertimer] <= 0 && !(player->pflags & PF_ATTACKDOWN))
-						{
-							cmd->buttons |= BT_ATTACK;
-							player->botvars.itemconfirm = 0;
-						}
-						break;
-					case KITEM_BANANA:
-						if (!player->kartstuff[k_itemheld])
-						{
-							if ((K_BotRevealsBanana(player, turnamt, false) || (player->botvars.itemconfirm++ > 5*TICRATE))
-								&& !(player->pflags & PF_ATTACKDOWN))
+							const UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
+							const fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+							const angle_t momangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+							const fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, momangle, (throwspeed + player->speed) * airtime);
+							const fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, momangle, (throwspeed + player->speed) * airtime);
+
+							if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 2))
 							{
-								cmd->buttons |= BT_ATTACK;
-								player->botvars.itemconfirm = 0;
-							}
-						}
-						else
-						{
-							SINT8 throwdir = -1;
-							UINT8 i;
-
-							player->botvars.itemconfirm++;
-
-							if (abs(turnamt) >= KART_FULLTURN/2)
-							{
-								player->botvars.itemconfirm += 2;
-							}
-							else
-							{
-								const UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
-								const fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
-								const fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
-								const fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
-
-								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
-								{
-									player->botvars.itemconfirm += 8;
-									throwdir = 1;
-								}
-							}
-
-							for (i = 0; i < MAXPLAYERS; i++)
-							{
-								player_t *target = NULL;
-								fixed_t dist = INT32_MAX;
-
-								if (!playeringame[i])
-								{
-									continue;
-								}
-
-								target = &players[i];
-
-								if (target->mo == NULL || P_MobjWasRemoved(target->mo)
-									|| player == target || target->spectator
-									|| target->powers[pw_flashing]
-									|| !P_CheckSight(player->mo, target->mo))
-								{
-									continue;
-								}
-
-								dist = P_AproxDistance(P_AproxDistance(
-									player->mo->x - target->mo->x,
-									player->mo->y - target->mo->y),
-									(player->mo->z - target->mo->z) / 4
-								);
-
-								if (dist <= (player->mo->radius * 16))
-								{
-									angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
-									INT16 ad = 0;
-									const INT16 cone = 10;
-
-									if (a < ANGLE_180)
-									{
-										ad = AngleFixed(a)>>FRACBITS;
-									}
-									else 
-									{
-										ad = 360-(AngleFixed(a)>>FRACBITS);
-									}
-
-									ad = abs(ad);
-
-									if (ad >= 180-cone)
-									{
-										player->botvars.itemconfirm += 4;
-										throwdir = -1;
-									}
-								}
-							}
-
-							if ((player->botvars.itemconfirm > 2*TICRATE || player->kartstuff[k_bananadrag] >= TICRATE)
-								&& !(player->pflags & PF_ATTACKDOWN))
-							{
-								if (throwdir == 1)
-								{
-									cmd->buttons |= BT_FORWARD;
-								}
-								else if (throwdir == -1)
-								{
-									cmd->buttons |= BT_BACKWARD;
-								}
-
-								cmd->buttons |= BT_ATTACK;
-								player->botvars.itemconfirm = 0;
-							}
-						}
-						break;
-					case KITEM_ORBINAUT:
-						if (!player->kartstuff[k_itemheld] && !(player->pflags & PF_ATTACKDOWN))
-						{
-							cmd->buttons |= BT_ATTACK;
-							player->botvars.itemconfirm = 0;
-						}
-						else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
-						/* FALL-THRU */
-					case KITEM_BALLHOG:
-						{
-							const fixed_t topspeed = K_GetKartSpeed(player, false);
-							fixed_t radius = (player->mo->radius * 32);
-							SINT8 throwdir = -1;
-							UINT8 i;
-
-							if (player->speed > topspeed)
-							{
-								radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
-							}
-
-							for (i = 0; i < MAXPLAYERS; i++)
-							{
-								player_t *target = NULL;
-								fixed_t dist = INT32_MAX;
-
-								if (!playeringame[i])
-								{
-									continue;
-								}
-
-								target = &players[i];
-
-								if (target->mo == NULL || P_MobjWasRemoved(target->mo)
-									|| player == target || target->spectator
-									|| target->powers[pw_flashing]
-									|| !P_CheckSight(player->mo, target->mo))
-								{
-									continue;
-								}
-
-								dist = P_AproxDistance(P_AproxDistance(
-									player->mo->x - target->mo->x,
-									player->mo->y - target->mo->y),
-									(player->mo->z - target->mo->z) / 4
-								);
-
-								if (dist <= radius)
-								{
-									angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
-									INT16 ad = 0;
-									const INT16 cone = 10;
-
-									if (a < ANGLE_180)
-									{
-										ad = AngleFixed(a)>>FRACBITS;
-									}
-									else 
-									{
-										ad = 360-(AngleFixed(a)>>FRACBITS);
-									}
-
-									ad = abs(ad);
-
-									if (ad <= cone)
-									{
-										player->botvars.itemconfirm += 8;
-										throwdir = 1;
-									}
-									else if (ad >= 180-cone)
-									{
-										player->botvars.itemconfirm += 4;
-									}
-								}
-							}
-
-							if ((player->botvars.itemconfirm > 5*TICRATE)
-								&& !(player->pflags & PF_ATTACKDOWN))
-							{
-								if (throwdir == 1)
-								{
-									cmd->buttons |= BT_FORWARD;
-								}
-								else if (throwdir == -1)
-								{
-									cmd->buttons |= BT_BACKWARD;
-								}
-
-								cmd->buttons |= BT_ATTACK;
-								player->botvars.itemconfirm = 0;
-							}
-						}
-						break;
-					case KITEM_JAWZ:
-						if (!player->kartstuff[k_itemheld] && !(player->pflags & PF_ATTACKDOWN))
-						{
-							cmd->buttons |= BT_ATTACK;
-							player->botvars.itemconfirm = 0;
-						}
-						else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
-						{
-							SINT8 throwdir = 1;
-							UINT8 i;
-
-							player->botvars.itemconfirm++;
-
-							for (i = 0; i < MAXPLAYERS; i++)
-							{
-								player_t *target = NULL;
-								fixed_t dist = INT32_MAX;
-
-								if (!playeringame[i])
-								{
-									continue;
-								}
-
-								target = &players[i];
-
-								if (target->mo == NULL || P_MobjWasRemoved(target->mo)
-									|| player == target || target->spectator
-									|| target->powers[pw_flashing]
-									|| !P_CheckSight(player->mo, target->mo))
-								{
-									continue;
-								}
-
-								dist = P_AproxDistance(P_AproxDistance(
-									player->mo->x - target->mo->x,
-									player->mo->y - target->mo->y),
-									(player->mo->z - target->mo->z) / 4
-								);
-
-								if (dist <= (player->mo->radius * 32))
-								{
-									angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
-									INT16 ad = 0;
-									const INT16 cone = 10;
-
-									if (a < ANGLE_180)
-									{
-										ad = AngleFixed(a)>>FRACBITS;
-									}
-									else 
-									{
-										ad = 360-(AngleFixed(a)>>FRACBITS);
-									}
-
-									ad = abs(ad);
-
-									if (ad >= 180-cone)
-									{
-										player->botvars.itemconfirm += 4;
-										throwdir = -1;
-									}
-								}
-							}
-
-							if (player->kartstuff[k_lastjawztarget] != -1)
-							{
-								player->botvars.itemconfirm += 8;
+								player->botvars.itemconfirm += player->botvars.difficulty * 2;
 								throwdir = 1;
 							}
+						}
 
-							if ((player->botvars.itemconfirm > 5*TICRATE)
-								&& !(player->pflags & PF_ATTACKDOWN))
+						for (i = 0; i < MAXPLAYERS; i++)
+						{
+							player_t *target = NULL;
+							fixed_t dist = INT32_MAX;
+
+							if (!playeringame[i])
 							{
-								if (throwdir == 1)
+								continue;
+							}
+
+							target = &players[i];
+
+							if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+								|| player == target || target->spectator
+								|| target->powers[pw_flashing]
+								|| !P_CheckSight(player->mo, target->mo))
+							{
+								continue;
+							}
+
+							dist = P_AproxDistance(P_AproxDistance(
+								player->mo->x - target->mo->x,
+								player->mo->y - target->mo->y),
+								(player->mo->z - target->mo->z) / 4
+							);
+
+							if (dist <= (player->mo->radius * 16))
+							{
+								angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+								INT16 ad = 0;
+								const INT16 cone = 10;
+
+								if (a < ANGLE_180)
 								{
-									cmd->buttons |= BT_FORWARD;
+									ad = AngleFixed(a)>>FRACBITS;
 								}
-								else if (throwdir == -1)
+								else 
 								{
-									cmd->buttons |= BT_BACKWARD;
+									ad = 360-(AngleFixed(a)>>FRACBITS);
 								}
 
-								cmd->buttons |= BT_ATTACK;
-								player->botvars.itemconfirm = 0;
+								ad = abs(ad);
+
+								if (ad >= 180-cone)
+								{
+									player->botvars.itemconfirm += player->botvars.difficulty;
+									throwdir = -1;
+								}
 							}
 						}
-						break;
-					case KITEM_MINE:
-						if (!player->kartstuff[k_itemheld])
+
+						if ((player->botvars.itemconfirm > 2*TICRATE || player->kartstuff[k_bananadrag] >= TICRATE)
+							&& !(player->pflags & PF_ATTACKDOWN))
 						{
-							if ((K_BotRevealsBanana(player, turnamt, true) || (player->botvars.itemconfirm++ > 5*TICRATE))
-								&& !(player->pflags & PF_ATTACKDOWN))
+							if (throwdir == 1)
 							{
-								cmd->buttons |= BT_ATTACK;
-								player->botvars.itemconfirm = 0;
+								cmd->buttons |= BT_FORWARD;
 							}
+							else if (throwdir == -1)
+							{
+								cmd->buttons |= BT_BACKWARD;
+							}
+
+							cmd->buttons |= BT_ATTACK;
+							player->botvars.itemconfirm = 0;
+						}
+					}
+					break;
+				case KITEM_EGGMAN:
+					if (!player->kartstuff[k_eggmanheld])
+					{
+						if ((K_BotRevealsEggbox(player) || (player->botvars.itemconfirm++ > 20*TICRATE))
+							&& !(player->pflags & PF_ATTACKDOWN))
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->botvars.itemconfirm = 0;
+						}
+					}
+					break;
+				case KITEM_ORBINAUT:
+					if (!player->kartstuff[k_itemheld] && !(player->pflags & PF_ATTACKDOWN))
+					{
+						cmd->buttons |= BT_ATTACK;
+						player->botvars.itemconfirm = 0;
+					}
+					else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
+					/* FALL-THRU */
+				case KITEM_BALLHOG:
+					{
+						const fixed_t topspeed = K_GetKartSpeed(player, false);
+						fixed_t radius = (player->mo->radius * 32);
+						SINT8 throwdir = -1;
+						UINT8 i;
+
+						if (player->speed > topspeed)
+						{
+							radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+						}
+
+						for (i = 0; i < MAXPLAYERS; i++)
+						{
+							player_t *target = NULL;
+							fixed_t dist = INT32_MAX;
+
+							if (!playeringame[i])
+							{
+								continue;
+							}
+
+							target = &players[i];
+
+							if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+								|| player == target || target->spectator
+								|| target->powers[pw_flashing]
+								|| !P_CheckSight(player->mo, target->mo))
+							{
+								continue;
+							}
+
+							dist = P_AproxDistance(P_AproxDistance(
+								player->mo->x - target->mo->x,
+								player->mo->y - target->mo->y),
+								(player->mo->z - target->mo->z) / 4
+							);
+
+							if (dist <= radius)
+							{
+								angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+								INT16 ad = 0;
+								const INT16 cone = 10;
+
+								if (a < ANGLE_180)
+								{
+									ad = AngleFixed(a)>>FRACBITS;
+								}
+								else 
+								{
+									ad = 360-(AngleFixed(a)>>FRACBITS);
+								}
+
+								ad = abs(ad);
+
+								if (ad <= cone)
+								{
+									player->botvars.itemconfirm += player->botvars.difficulty * 2;
+									throwdir = 1;
+								}
+								else if (ad >= 180-cone)
+								{
+									player->botvars.itemconfirm += player->botvars.difficulty;
+								}
+							}
+						}
+
+						if ((player->botvars.itemconfirm > 5*TICRATE)
+							&& !(player->pflags & PF_ATTACKDOWN))
+						{
+							if (throwdir == 1)
+							{
+								cmd->buttons |= BT_FORWARD;
+							}
+							else if (throwdir == -1)
+							{
+								cmd->buttons |= BT_BACKWARD;
+							}
+
+							cmd->buttons |= BT_ATTACK;
+							player->botvars.itemconfirm = 0;
+						}
+					}
+					break;
+				case KITEM_JAWZ:
+					if (!player->kartstuff[k_itemheld] && !(player->pflags & PF_ATTACKDOWN))
+					{
+						cmd->buttons |= BT_ATTACK;
+						player->botvars.itemconfirm = 0;
+					}
+					else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
+					{
+						SINT8 throwdir = 1;
+						UINT8 i;
+
+						player->botvars.itemconfirm++;
+
+						for (i = 0; i < MAXPLAYERS; i++)
+						{
+							player_t *target = NULL;
+							fixed_t dist = INT32_MAX;
+
+							if (!playeringame[i])
+							{
+								continue;
+							}
+
+							target = &players[i];
+
+							if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+								|| player == target || target->spectator
+								|| target->powers[pw_flashing]
+								|| !P_CheckSight(player->mo, target->mo))
+							{
+								continue;
+							}
+
+							dist = P_AproxDistance(P_AproxDistance(
+								player->mo->x - target->mo->x,
+								player->mo->y - target->mo->y),
+								(player->mo->z - target->mo->z) / 4
+							);
+
+							if (dist <= (player->mo->radius * 32))
+							{
+								angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+								INT16 ad = 0;
+								const INT16 cone = 10;
+
+								if (a < ANGLE_180)
+								{
+									ad = AngleFixed(a)>>FRACBITS;
+								}
+								else 
+								{
+									ad = 360-(AngleFixed(a)>>FRACBITS);
+								}
+
+								ad = abs(ad);
+
+								if (ad >= 180-cone)
+								{
+									player->botvars.itemconfirm += player->botvars.difficulty;
+									throwdir = -1;
+								}
+							}
+						}
+
+						if (player->kartstuff[k_lastjawztarget] != -1)
+						{
+							player->botvars.itemconfirm += player->botvars.difficulty * 2;
+							throwdir = 1;
+						}
+
+						if ((player->botvars.itemconfirm > 5*TICRATE)
+							&& !(player->pflags & PF_ATTACKDOWN))
+						{
+							if (throwdir == 1)
+							{
+								cmd->buttons |= BT_FORWARD;
+							}
+							else if (throwdir == -1)
+							{
+								cmd->buttons |= BT_BACKWARD;
+							}
+
+							cmd->buttons |= BT_ATTACK;
+							player->botvars.itemconfirm = 0;
+						}
+					}
+					break;
+				case KITEM_MINE:
+					if (!player->kartstuff[k_itemheld])
+					{
+						if ((K_BotRevealsBanana(player, turnamt, true) || (player->botvars.itemconfirm++ > 5*TICRATE))
+							&& !(player->pflags & PF_ATTACKDOWN))
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->botvars.itemconfirm = 0;
+						}
+					}
+					else
+					{
+						SINT8 throwdir = 0;
+						UINT8 i;
+
+						player->botvars.itemconfirm++;
+
+						for (i = 0; i < MAXPLAYERS; i++)
+						{
+							player_t *target = NULL;
+							fixed_t dist = INT32_MAX;
+
+							if (!playeringame[i])
+							{
+								continue;
+							}
+
+							target = &players[i];
+
+							if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+								|| player == target || target->spectator
+								|| target->powers[pw_flashing]
+								|| !P_CheckSight(player->mo, target->mo))
+							{
+								continue;
+							}
+
+							dist = P_AproxDistance(P_AproxDistance(
+								player->mo->x - target->mo->x,
+								player->mo->y - target->mo->y),
+								(player->mo->z - target->mo->z) / 4
+							);
+
+							if (dist <= (player->mo->radius * 16))
+							{
+								angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
+								INT16 ad = 0;
+								const INT16 cone = 10;
+
+								if (a < ANGLE_180)
+								{
+									ad = AngleFixed(a)>>FRACBITS;
+								}
+								else 
+								{
+									ad = 360-(AngleFixed(a)>>FRACBITS);
+								}
+
+								ad = abs(ad);
+
+								if (ad >= 180-cone)
+								{
+									player->botvars.itemconfirm += player->botvars.difficulty;
+									throwdir = -1;
+								}
+							}
+						}
+
+						if (abs(turnamt) >= KART_FULLTURN/2)
+						{
+							player->botvars.itemconfirm += player->botvars.difficulty / 2;
+							throwdir = -1;
 						}
 						else
 						{
-							SINT8 throwdir = 0;
-							UINT8 i;
+							UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
+							fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+							angle_t momangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+							fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, momangle, (throwspeed + player->speed) * airtime);
+							fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, momangle, (throwspeed + player->speed) * airtime);
 
-							player->botvars.itemconfirm++;
-
-							for (i = 0; i < MAXPLAYERS; i++)
+							if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 2))
 							{
-								player_t *target = NULL;
-								fixed_t dist = INT32_MAX;
-
-								if (!playeringame[i])
-								{
-									continue;
-								}
-
-								target = &players[i];
-
-								if (target->mo == NULL || P_MobjWasRemoved(target->mo)
-									|| player == target || target->spectator
-									|| target->powers[pw_flashing]
-									|| !P_CheckSight(player->mo, target->mo))
-								{
-									continue;
-								}
-
-								dist = P_AproxDistance(P_AproxDistance(
-									player->mo->x - target->mo->x,
-									player->mo->y - target->mo->y),
-									(player->mo->z - target->mo->z) / 4
-								);
-
-								if (dist <= (player->mo->radius * 16))
-								{
-									angle_t a = player->mo->angle - R_PointToAngle2(player->mo->x, player->mo->y, target->mo->x, target->mo->y);
-									INT16 ad = 0;
-									const INT16 cone = 10;
-
-									if (a < ANGLE_180)
-									{
-										ad = AngleFixed(a)>>FRACBITS;
-									}
-									else 
-									{
-										ad = 360-(AngleFixed(a)>>FRACBITS);
-									}
-
-									ad = abs(ad);
-
-									if (ad >= 180-cone)
-									{
-										player->botvars.itemconfirm += 4;
-										throwdir = -1;
-									}
-								}
+								player->botvars.itemconfirm += player->botvars.difficulty * 2;
+								throwdir = 0;
 							}
 
-							if (abs(turnamt) >= KART_FULLTURN/2)
+							airtime = FixedDiv((40 * player->mo->scale) + player->mo->momz, gravity);
+							throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) * 2;
+							estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+							esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+
+							if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 2))
 							{
-								player->botvars.itemconfirm += 2;
-								throwdir = -1;
-							}
-							else
-							{
-								UINT32 airtime = FixedDiv((30 * player->mo->scale) + player->mo->momz, gravity);
-								fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
-								fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
-								fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
-
-								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
-								{
-									player->botvars.itemconfirm += 8;
-									throwdir = 0;
-								}
-
-								airtime = FixedDiv((40 * player->mo->scale) + player->mo->momz, gravity);
-								throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) * 2;
-								estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
-								esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
-
-								if (K_PlayerNearSpot(player, estx, esty, player->mo->radius * 16))
-								{
-									player->botvars.itemconfirm += 4;
-									throwdir = 1;
-								}
-							}
-
-							if (((player->botvars.itemconfirm > 2*TICRATE)
-								|| (player->kartstuff[k_bananadrag] >= TICRATE))
-								&& !(player->pflags & PF_ATTACKDOWN))
-							{
-								if (throwdir == 1)
-								{
-									cmd->buttons |= BT_FORWARD;
-								}
-								else if (throwdir == -1)
-								{
-									cmd->buttons |= BT_BACKWARD;
-								}
-
-								cmd->buttons |= BT_ATTACK;
-								player->botvars.itemconfirm = 0;
+								player->botvars.itemconfirm += player->botvars.difficulty / 2;
+								throwdir = 1;
 							}
 						}
-						break;
-					case KITEM_THUNDERSHIELD:
-						if (!K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale))
+
+						if (((player->botvars.itemconfirm > 2*TICRATE)
+							|| (player->kartstuff[k_bananadrag] >= TICRATE))
+							&& !(player->pflags & PF_ATTACKDOWN))
 						{
-							if (player->botvars.itemconfirm > 10*TICRATE && !(player->pflags & PF_ATTACKDOWN))
+							if (throwdir == 1)
 							{
-								cmd->buttons |= BT_ATTACK;
-								player->botvars.itemconfirm = 0;
+								cmd->buttons |= BT_FORWARD;
 							}
-							else
+							else if (throwdir == -1)
 							{
-								player->botvars.itemconfirm++;
+								cmd->buttons |= BT_BACKWARD;
 							}
+
+							cmd->buttons |= BT_ATTACK;
+							player->botvars.itemconfirm = 0;
 						}
-						break;
-					default:
-						player->botvars.itemconfirm = 0;
-						break;
-				}
+					}
+					break;
+				case KITEM_THUNDERSHIELD:
+					if (!K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale))
+					{
+						if (player->botvars.itemconfirm > 10*TICRATE && !(player->pflags & PF_ATTACKDOWN))
+						{
+							cmd->buttons |= BT_ATTACK;
+							player->botvars.itemconfirm = 0;
+						}
+						else
+						{
+							player->botvars.itemconfirm++;
+						}
+					}
+					break;
+				default:
+					if (player->kartstuff[k_itemtype] != KITEM_NONE && !(player->pflags & PF_ATTACKDOWN))
+						cmd->buttons |= BT_ATTACK;
+					player->botvars.itemconfirm = 0;
+					break;
 			}
 		}
 	}
