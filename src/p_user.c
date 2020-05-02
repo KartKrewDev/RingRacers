@@ -4139,11 +4139,21 @@ static void P_3dMovement(player_t *player)
 
 	if (!onground)
 	{
-		fixed_t airspeedcap = (50*mapobjectscale);
-		fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+		const fixed_t airspeedcap = (50*mapobjectscale);
+		const fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+
 		if (speed > airspeedcap)
 		{
-			fixed_t newspeed = speed - ((speed - airspeedcap) / 32);
+			fixed_t div = 32*FRACUNIT;
+			fixed_t newspeed;
+
+			if (K_PlayerUsesBotMovement(player))
+			{
+				div = FixedMul(div, K_BotRubberband(player));
+			}
+
+			newspeed = speed - FixedDiv((speed - airspeedcap), div);
+
 			player->mo->momx = FixedMul(FixedDiv(player->mo->momx, speed), newspeed);
 			player->mo->momy = FixedMul(FixedDiv(player->mo->momy, speed), newspeed);
 		}
