@@ -976,6 +976,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 		}
 	}
 	*/
+	(void)bot;
 
 	switch (item)
 	{
