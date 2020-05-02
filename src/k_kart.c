@@ -938,6 +938,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 
 #define COOLDOWNONSTART (leveltime < (30*TICRATE)+starttime)
 
+	/*
 	if (bot)
 	{
 		// TODO: Item use on bots should all be passed-in functions.
@@ -961,6 +962,8 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			case KITEM_HYUDORO:
 			case KITEM_SUPERRING:
 			case KITEM_THUNDERSHIELD:
+			case KITEM_BUBBLESHIELD:
+			case KITEM_FLAMESHIELD:
 			case KRITEM_TRIPLESNEAKER:
 			case KRITEM_TRIPLEBANANA:
 			case KRITEM_TENFOLDBANANA:
@@ -972,6 +975,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 				return 0;
 		}
 	}
+	*/
 
 	switch (item)
 	{

@@ -1881,6 +1881,90 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 						}
 					}
 					break;
+				case KITEM_BUBBLESHIELD:
+					{
+						boolean hold = false;
+
+						if (player->kartstuff[k_bubbleblowup] <= 0)
+						{
+							UINT8 i;
+
+							player->botvars.itemconfirm++;
+
+							if (player->kartstuff[k_bubblecool] <= 0)
+							{
+								const fixed_t radius = 192 * player->mo->scale;
+
+								for (i = 0; i < MAXPLAYERS; i++)
+								{
+									player_t *target = NULL;
+									fixed_t dist = INT32_MAX;
+
+									if (!playeringame[i])
+									{
+										continue;
+									}
+
+									target = &players[i];
+
+									if (target->mo == NULL || P_MobjWasRemoved(target->mo)
+										|| player == target || target->spectator
+										|| target->powers[pw_flashing])
+									{
+										continue;
+									}
+
+									dist = P_AproxDistance(P_AproxDistance(
+										player->mo->x - target->mo->x,
+										player->mo->y - target->mo->y),
+										(player->mo->z - target->mo->z) / 4
+									);
+
+									if (dist <= radius)
+									{
+										hold = true;
+										break;
+									}
+								}
+							}
+						}
+						else if (player->kartstuff[k_bubbleblowup] >= bubbletime)
+						{
+							if (player->botvars.itemconfirm >= 10*TICRATE)
+							{
+								hold = true;
+							}
+						}
+						else if (player->kartstuff[k_bubbleblowup] < bubbletime)
+						{
+							hold = true;
+						}
+
+						if (hold && player->kartstuff[k_holdready])
+						{
+							cmd->buttons |= BT_ATTACK;
+						}
+					}
+					break;
+				case KITEM_FLAMESHIELD:
+					if (player->botvars.itemconfirm > 0)
+					{
+						player->botvars.itemconfirm--;
+					}
+					else if (player->kartstuff[k_holdready])
+					{
+						INT32 flamemax = player->kartstuff[k_flamelength] * flameseg;
+
+						if (player->kartstuff[k_flamemeter] < flamemax || flamemax == 0)
+						{
+							cmd->buttons |= BT_ATTACK;
+						}
+						else
+						{
+							player->botvars.itemconfirm = 3*flamemax/4;
+						}
+					}
+					break;
 				default:
 					if (player->kartstuff[k_itemtype] != KITEM_NONE && !(player->pflags & PF_ATTACKDOWN))
 						cmd->buttons |= BT_ATTACK;
