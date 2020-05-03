@@ -2518,6 +2518,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						mapmusflags |= MUSIC_FORCERESET;
 
 					mapmusposition = position;
+					mapmusresume = 0;
 
 					S_ChangeMusicEx(mapmusname, mapmusflags, !(line->flags & ML_EFFECT4), position,
 						!(line->flags & ML_EFFECT2) ? prefadems : 0,

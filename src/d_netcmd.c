@@ -1034,6 +1034,13 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_soundtest);
 
+	CV_RegisterVar(&cv_invincmusicfade);
+	CV_RegisterVar(&cv_growmusicfade);
+
+	CV_RegisterVar(&cv_resetspecialmusic);
+
+	CV_RegisterVar(&cv_resume);
+
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
 	COM_AddCommand("writethings", Command_Writethings_f);
