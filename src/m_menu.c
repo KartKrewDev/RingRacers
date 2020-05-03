@@ -1254,7 +1254,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING|IT_CVAR,		NULL,	"Fullscreen",			&cv_fullscreen,			 20},
 #endif
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-							NULL,	"Gamma",				&cv_usegamma,			 30},
+							NULL,	"Gamma",				&cv_globalgamma,			 30},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Draw Distance",		&cv_drawdist,			 45},
 	//{IT_STRING | IT_CVAR,	NULL,	"NiGHTS Draw Dist",		&cv_drawdist_nights,	 55},
@@ -2106,14 +2106,14 @@ static void Nextmap_OnChange(void)
 	if (currentMenu == &SP_TimeAttackDef)
 	{
 		// see also p_setup.c's P_LoadRecordGhosts
-		const size_t glen = strlen(srb2home)+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
+		const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 		char *gpath = malloc(glen);
 		INT32 i;
 
 		if (!gpath)
 			return;
 
-		sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(cv_nextmap.value));
+		sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(cv_nextmap.value));
 
 		CV_StealthSetValue(&cv_dummystaff, 0);
 
@@ -2680,7 +2680,7 @@ boolean M_Responder(event_t *ev)
 				return true;
 
 			case KEY_F11: // Gamma Level
-				CV_AddValue(&cv_usegamma, 1);
+				CV_AddValue(&cv_globalgamma, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
@@ -3328,9 +3328,6 @@ void M_Init(void)
 #ifndef NONET
 	CV_RegisterVar(&cv_serversort);
 #endif
-
-	//todo put this somewhere better...
-	CV_RegisterVar(&cv_allcaps);
 }
 
 void M_InitCharacterTables(void)
@@ -5152,7 +5149,7 @@ void M_ReplayHut(INT32 choice)
 
 	if (!demo.inreplayhut)
 	{
-		snprintf(menupath, 1024, "%s"PATHSEP"replay"PATHSEP"online"PATHSEP, srb2home);
+		snprintf(menupath, 1024, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP, srb2home);
 		menupathindex[(menudepthleft = menudepth-1)] = strlen(menupath);
 	}
 	if (!preparefilemenu(false, true))
@@ -7886,20 +7883,21 @@ static boolean M_QuitTimeAttackMenu(void)
 static void M_ChooseTimeAttack(INT32 choice)
 {
 	char *gpath;
-	const size_t glen = strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
+	const size_t glen = strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char nameofdemo[256];
 	(void)choice;
 	emeralds = 0;
 	M_ClearMenus(true);
 	modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_RECORD);
 
-	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
-	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
+	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
+			srb2home, timeattackfolder);
+	M_MkdirEach(gpath, M_PathParts(gpath) - 3, 0755);
 
 	if ((gpath = malloc(glen)) == NULL)
 		I_Error("Out of memory for replay filepath\n");
 
-	sprintf(gpath,"replay"PATHSEP"%s"PATHSEP"%s", timeattackfolder, G_BuildMapName(cv_nextmap.value));
+	sprintf(gpath,"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", timeattackfolder, G_BuildMapName(cv_nextmap.value));
 	snprintf(nameofdemo, sizeof nameofdemo, "%s-%s-last", gpath, cv_chooseskin.string);
 
 	if (!cv_autorecord.value)

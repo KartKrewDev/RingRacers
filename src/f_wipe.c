@@ -157,7 +157,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	while (lsize--)
 	{
 		// Determine pixel to use from fademask
-		pcolor = &pLocalPalette[*lump++];
+		pcolor = &pMasterPalette[*lump++];
 		*mask++ = FixedDiv((pcolor->s.red+1)<<FRACBITS, paldiv)>>FRACBITS;
 	}
 

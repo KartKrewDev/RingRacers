@@ -49,6 +49,7 @@ UINT8 *save_p;
 #define ARCHIVEBLOCK_POBJS    0x7F928546
 #define ARCHIVEBLOCK_THINKERS 0x7F37037C
 #define ARCHIVEBLOCK_SPECIALS 0x7F228378
+#define ARCHIVEBLOCK_WAYPOINTS 0x7F46498F
 
 // Note: This cannot be bigger
 // than an UINT16
@@ -1929,6 +1930,49 @@ static void P_NetArchiveThinkers(void)
 	WRITEUINT8(save_p, tc_end);
 }
 
+static void P_NetArchiveWaypoints(void)
+{
+	waypoint_t *waypoint;
+	size_t i;
+	size_t numWaypoints = K_GetNumWaypoints();
+
+	WRITEUINT32(save_p, ARCHIVEBLOCK_WAYPOINTS);
+	WRITEUINT32(save_p, numWaypoints);
+
+	for (i = 0U; i < numWaypoints; i++) {
+		waypoint = K_GetWaypointFromIndex(i);
+
+		// The only thing we save for each waypoint is the mobj.
+		// Waypoints should NEVER be completely created or destroyed mid-race as a result of this
+		WRITEUINT32(save_p, waypoint->mobj->mobjnum);
+	}
+}
+
+static void P_NetUnArchiveWaypoints(void)
+{
+	if (READUINT32(save_p) != ARCHIVEBLOCK_WAYPOINTS)
+		I_Error("Bad $$$.sav at archive block Waypoints!");
+	else {
+		UINT32 numArchiveWaypoints = READUINT32(save_p);
+		size_t numSpawnedWaypoints = K_GetNumWaypoints();
+
+		if (numArchiveWaypoints != numSpawnedWaypoints) {
+			I_Error("Bad $$$.sav: More saved waypoints than created!");
+		} else {
+			waypoint_t *waypoint;
+			UINT32 i;
+			UINT32 temp;
+			for (i = 0U; i < numArchiveWaypoints; i++) {
+				waypoint = K_GetWaypointFromIndex(i);
+				temp = READUINT32(save_p);
+				if (!P_SetTarget(&waypoint->mobj, P_FindNewPosition(temp))) {
+					CONS_Debug(DBG_GAMELOGIC, "waypoint mobj not found for %d\n", i);
+				}
+			}
+		}
+	}
+}
+
 // Now save the pointers, tracer and target, but at load time we must
 // relink to this; the savegame contains the old position in the pointer
 // field copyed in the info field temporarily, but finally we just search
@@ -3554,6 +3598,7 @@ void P_SaveNetGame(void)
 #endif
 		P_NetArchiveThinkers();
 		P_NetArchiveSpecials();
+		P_NetArchiveWaypoints();
 	}
 #ifdef HAVE_BLUA
 	LUA_Archive();
@@ -3598,6 +3643,7 @@ boolean P_LoadNetGame(void)
 #endif
 		P_NetUnArchiveThinkers();
 		P_NetUnArchiveSpecials();
+		P_NetUnArchiveWaypoints();
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}

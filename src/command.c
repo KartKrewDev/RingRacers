@@ -1543,7 +1543,7 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 		}
 
 		// Only add to netcmd buffer if in a netgame, otherwise, just change it.
-		if (netgame || multiplayer)
+		if (netgame)
 		{
 			WRITEUINT16(p, var->netid);
 			WRITESTRING(p, value);

@@ -3991,6 +3991,9 @@ void P_PrecipThinker(precipmobj_t *mobj)
 
 static void P_RingThinker(mobj_t *mobj)
 {
+
+	mobj_t *spark;	// Ring Fuse
+
 	if (mobj->momx || mobj->momy)
 	{
 		P_RingXYMovement(mobj);
@@ -4008,6 +4011,38 @@ static void P_RingThinker(mobj_t *mobj)
 
 		if (P_MobjWasRemoved(mobj))
 			return;
+	}
+
+	// This thinker splits apart before the regular fuse handling so we need to handle it here instead.
+	if (mobj->fuse)
+	{
+		mobj->fuse--;
+
+		if (mobj->fuse < TICRATE*3)
+		{
+			if (leveltime & 1)
+				mobj->flags2 |= MF2_DONTDRAW;
+			else
+				mobj->flags2 &= ~MF2_DONTDRAW;
+		}
+
+		if (!mobj->fuse)
+		{
+#ifdef HAVE_BLUA
+			if (!LUAh_MobjFuse(mobj))
+#endif
+			{
+				mobj->flags2 &= ~MF2_DONTDRAW;
+				spark = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_SIGNSPARKLE);	// Spawn a fancy sparkle
+				K_MatchGenericExtraFlags(spark, mobj);
+				spark->colorized = true;
+				spark->color = mobj->color ? : SKINCOLOR_YELLOW;	// Use yellow if the ring doesn't use a skin color. (It should be red for SPB rings, but let normal rings look fancy too!)
+				P_RemoveMobj(mobj);	// Adieu, monde cruel!
+				return;
+			}
+
+		}
+
 	}
 
 	P_CycleMobjState(mobj);
@@ -6118,7 +6153,7 @@ boolean P_IsKartItem(INT32 type)
 		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
 		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
 		type == MT_SINK || type == MT_SINK_SHIELD ||
-		type == MT_SPB)
+		type == MT_SPB || type == MT_BALLHOG || type == MT_BUBBLESHIELDTRAP)
 		return true;
 	else
 		return false;
@@ -7147,6 +7182,41 @@ void P_MobjThinker(mobj_t *mobj)
 			return;
 	}
 #endif
+
+	// Destroy items sector special
+	if (mobj->type == MT_BANANA || mobj->type == MT_EGGMANITEM
+	|| mobj->type == MT_ORBINAUT || mobj->type == MT_BALLHOG
+	|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD
+	|| mobj->type == MT_SSMINE || mobj->type == MT_BUBBLESHIELDTRAP)
+	{
+		if (mobj->health > 0 && P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
+		{
+			if (mobj->type == MT_SSMINE
+			|| mobj->type == MT_BUBBLESHIELDTRAP
+			|| mobj->type == MT_BALLHOG)
+			{
+				S_StartSound(mobj, mobj->info->deathsound);
+				P_KillMobj(mobj, NULL, NULL);
+			}
+			else
+			{
+				// This Item Damage
+				if (mobj->eflags & MFE_VERTICALFLIP)
+					mobj->z -= mobj->height;
+				else
+					mobj->z += mobj->height;
+
+				S_StartSound(mobj, mobj->info->deathsound);
+				P_KillMobj(mobj, NULL, NULL);
+
+				P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
+				P_InstaThrust(mobj, R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_90, 16*FRACUNIT);
+			}
+
+			return;
+		}
+	}
+
 	// if it's pushable, or if it would be pushable other than temporary disablement, use the
 	// separate thinker
 	if (mobj->flags & MF_PUSHABLE || (mobj->info->flags & MF_PUSHABLE && mobj->fuse))
@@ -7911,12 +7981,6 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			boolean grounded = P_IsObjectOnGround(mobj);
 
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
-
 			if (mobj->flags2 & MF2_AMBUSH)
 			{
 				if (grounded && (mobj->flags & MF_NOCLIPTHING))
@@ -7987,12 +8051,6 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
-
 			if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
 			{
 				ghost->color = mobj->target->player->skincolor;
@@ -8016,12 +8074,6 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_JAWZ_DUD:
 		{
 			boolean grounded = P_IsObjectOnGround(mobj);
-
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
 
 			if (mobj->flags2 & MF2_AMBUSH)
 			{
@@ -8079,15 +8131,22 @@ void P_MobjThinker(mobj_t *mobj)
 
 			break;
 		}
-		case MT_BANANA:
 		case MT_EGGMANITEM:
-			mobj->friction = ORIG_FRICTION/4;
-
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
 			{
-				P_RemoveMobj(mobj);
-				return;
+				player_t *player = K_GetItemBoxPlayer(mobj);
+				UINT8 color = SKINCOLOR_BLACK;
+
+				if (player != NULL)
+				{
+					color = player->skincolor;
+				}
+
+				mobj->color = color;
+				mobj->colorized = false;
 			}
+			/* FALLTHRU */
+		case MT_BANANA:
+			mobj->friction = ORIG_FRICTION/4;
 
 			if (mobj->momx || mobj->momy)
 			{
@@ -8117,12 +8176,6 @@ void P_MobjThinker(mobj_t *mobj)
 			{
 				mobj_t *ghost = P_SpawnGhostMobj(mobj);
 				ghost->fuse = 3;
-
-				if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-				{
-					P_RemoveMobj(mobj);
-					return;
-				}
 
 				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
 				{
@@ -8156,12 +8209,6 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->threshold--;
 			break;
 		case MT_SSMINE:
-			if (P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
-			{
-				P_RemoveMobj(mobj);
-				return;
-			}
-
 			if (mobj->target && mobj->target->player)
 				mobj->color = mobj->target->player->skincolor;
 			else
@@ -8832,8 +8879,8 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (mobj->target->player->kartstuff[k_comebacktimer] > 0)
 				{
-					if (state < mobj->info->spawnstate || state > mobj->info->spawnstate+19)
-						P_SetMobjState(mobj, mobj->info->spawnstate);
+					if (state < S_PLAYERBOMB1 || state > S_PLAYERBOMB20)
+						P_SetMobjState(mobj, S_PLAYERBOMB1);
 					if (mobj->target->player->kartstuff[k_comebacktimer] < TICRATE && (leveltime & 1))
 						mobj->flags2 &= ~MF2_DONTDRAW;
 					else
@@ -8842,14 +8889,14 @@ void P_MobjThinker(mobj_t *mobj)
 				else
 				{
 					if (!mobj->target->player->kartstuff[k_comebackmode]
-						&& (state < mobj->info->spawnstate || state > mobj->info->spawnstate+19))
-						P_SetMobjState(mobj, mobj->info->spawnstate);
+						&& (state < S_PLAYERBOMB1 || state > S_PLAYERBOMB20))
+						P_SetMobjState(mobj, S_PLAYERBOMB1);
 					else if (mobj->target->player->kartstuff[k_comebackmode] == 1
-						&& state != mobj->info->seestate)
-						P_SetMobjState(mobj, mobj->info->seestate);
+						&& (state < S_PLAYERITEM1 || state > S_PLAYERITEM12))
+						P_SetMobjState(mobj, S_PLAYERITEM1);
 					else if (mobj->target->player->kartstuff[k_comebackmode] == 2
-						&& state != mobj->info->painstate)
-						P_SetMobjState(mobj, mobj->info->painstate);
+						&& (state < S_PLAYERFAKE1 || state > S_PLAYERFAKE12))
+						P_SetMobjState(mobj, S_PLAYERFAKE1);
 
 					if (mobj->target->player->powers[pw_flashing] && (leveltime & 1))
 						mobj->flags2 |= MF2_DONTDRAW;
@@ -9929,7 +9976,15 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 			else
 			{
-				mobj->color = SKINCOLOR_NONE;
+				player_t *player = K_GetItemBoxPlayer(mobj);
+				UINT8 color = SKINCOLOR_BLACK;
+
+				if (player != NULL)
+				{
+					color = player->skincolor;
+				}
+
+				mobj->color = color;
 				mobj->colorized = false;
 			}
 			break;

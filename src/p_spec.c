@@ -5350,6 +5350,72 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, f
 	return ffloor;
 }
 
+static fixed_t
+Floor_height (sector_t *s, fixed_t x, fixed_t y)
+{
+#ifdef ESLOPE
+	return s->f_slope ? P_GetZAt(s->f_slope, x, y) : s->floorheight;
+#else
+	(void)x;
+	(void)y;
+	return s->floorheight;
+#endif
+}
+
+static fixed_t
+Ceiling_height (sector_t *s, fixed_t x, fixed_t y)
+{
+#ifdef ESLOPE
+	return s->c_slope ? P_GetZAt(s->c_slope, x, y) : s->ceilingheight;
+#else
+	(void)x;
+	(void)y;
+	return s->ceilingheight;
+#endif
+}
+
+static void
+P_RaiseTaggedThingsToFakeFloor (
+		UINT16    type,
+		INT16     tag,
+		sector_t *control
+){
+	sector_t *target;
+
+	mobj_t     *mo;
+	mapthing_t *mthing;
+
+	fixed_t offset;
+
+	size_t i;
+
+	for (i = 0; i < control->numattached; ++i)
+	{
+		target = &sectors[control->attached[i]];
+
+		for (mo = target->thinglist; mo; mo = mo->snext)
+		{
+			mthing = mo->spawnpoint;
+
+			if (
+					mthing->type  == type &&
+					mthing->angle == tag
+			){
+				if (( mo->flags2 & MF2_OBJECTFLIP ))
+				{
+					offset = ( mo->ceilingz - mo->info->height ) - mo->z;
+					mo->z = ( Floor_height(control, mo->x, mo->y) - mo->info->height ) - offset;
+				}
+				else
+				{
+					offset = mo->z - mo->floorz;
+					mo->z = Ceiling_height(control, mo->x, mo->y) + offset;
+				}
+			}
+		}
+	}
+}
+
 //
 // SPECIAL SPAWNING
 //
@@ -6813,6 +6879,22 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		}
 	}
 
+	/* some things have to be done after FOF spawn */
+
+	for (i = 0; i < numlines; ++i)
+	{
+		switch (lines[i].special)
+		{
+			case 80: // Raise tagged things by type to this FOF
+				P_RaiseTaggedThingsToFakeFloor(
+						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
+						lines[i].tag,
+						lines[i].frontsector
+				);
+				break;
+		}
+	}
+
 	// Allocate each list
 	for (i = 0; i < numsectors; i++)
 		if(secthinkers[i].thinkers)
@@ -7205,8 +7287,14 @@ static void P_SpawnScrollers(void)
 	{
 		fixed_t dx = l->dx >> SCROLL_SHIFT; // direction and speed of scrolling
 		fixed_t dy = l->dy >> SCROLL_SHIFT;
+
+		fixed_t bx = 0;/* backside variants */
+		fixed_t by = 0;
+
 		INT32 control = -1, accel = 0; // no control sector or acceleration
 		INT32 special = l->special;
+
+		INT32 s;
 
 		// These types are same as the ones they get set to except that the
 		// first side's sector's heights cause scrolling when they change, and
@@ -7236,10 +7324,24 @@ static void P_SpawnScrollers(void)
 			control = (INT32)(sides[*l->sidenum].sector - sectors);
 		}
 
+		if (special == 507) // front and back scrollers
+		{
+			s  = l->sidenum[0];
+
+			dx = -(sides[s].textureoffset);
+			dy =   sides[s].rowoffset;
+
+			s  = l->sidenum[1];
+
+			if (s != 0xffff)
+			{
+				bx = -(sides[s].textureoffset);
+				by =   sides[s].rowoffset;
+			}
+		}
+
 		switch (special)
 		{
-			register INT32 s;
-
 			case 513: // scroll effect ceiling
 			case 533: // scroll and carry objects on ceiling
 				for (s = -1; (s = P_FindSectorFromLineTag(l, s)) >= 0 ;)
@@ -7290,6 +7392,18 @@ static void P_SpawnScrollers(void)
 					Add_Scroller(sc_side, -sides[s].textureoffset, sides[s].rowoffset, -1, lines[i].sidenum[0], accel, 0);
 				else
 					CONS_Debug(DBG_GAMELOGIC, "Line special 506 (line #%s) missing 2nd side!\n", sizeu1(i));
+				break;
+
+			case 507: // scroll front and backside of tagged lines
+				for (s = -1; (s = P_FindLineFromLineTag(l, s)) >= 0 ;)
+				{
+					if (s != (INT32)i)
+					{
+						Add_Scroller(sc_side, dx, dy, control, lines[s].sidenum[0], accel, 0);
+						if (lines[s].sidenum[1] != 0xffff)
+							Add_Scroller(sc_side, bx, by, control, lines[s].sidenum[1], accel, 0);
+					}
+				}
 				break;
 
 			case 500: // scroll first side

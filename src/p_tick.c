@@ -616,6 +616,17 @@ void P_Ticker(boolean run)
 					G_ReadDemoTiccmd(&players[i].cmd, i);
 		}
 
+		// First loop: Ensure all players' distance to the finish line are all accurate
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_UpdateDistanceFromFinishLine(&players[i]);
+
+		// Second loop: Ensure all player positions reflect everyone's distances
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_KartUpdatePosition(&players[i]);
+
+		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
@@ -778,6 +789,17 @@ void P_PreTicker(INT32 frames)
 	{
 		P_MapStart();
 
+		// First loop: Ensure all players' distance to the finish line are all accurate
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_UpdateDistanceFromFinishLine(&players[i]);
+
+		// Second loop: Ensure all player positions reflect everyone's distances
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_KartUpdatePosition(&players[i]);
+
+		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 			{

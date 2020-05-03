@@ -2624,14 +2624,14 @@ static void P_ForceCharacter(const char *forcecharskin)
 static void P_LoadRecordGhosts(void)
 {
 	// see also m_menu.c's Nextmap_OnChange
-	const size_t glen = strlen(srb2home)+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
+	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath = malloc(glen);
 	INT32 i;
 
 	if (!gpath)
 		return;
 
-	sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
+	sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
 
 	// Best Time ghost
 	if (cv_ghost_besttime.value)
@@ -3129,6 +3129,8 @@ boolean P_SetupLevel(boolean skipprecip)
 	// set up world state
 	P_SpawnSpecials(fromnetsave);
 
+	K_AdjustWaypointsParameters();
+
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
 
@@ -3206,10 +3208,12 @@ boolean P_SetupLevel(boolean skipprecip)
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
 	if (!demo.playback && multiplayer && !dedicated) {
 		static char buf[256];
-		sprintf(buf, "replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
+		char *path;
+		sprintf(buf, "media"PATHSEP"replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
 
-		I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
-		I_mkdir(va("%s"PATHSEP"replay"PATHSEP"online", srb2home), 0755);
+		path = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online", srb2home);
+		M_MkdirEach(path, M_PathParts(path) - 4, 0755);
+
 		G_RecordDemo(buf);
 	}
 
