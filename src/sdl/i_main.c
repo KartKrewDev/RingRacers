@@ -213,6 +213,7 @@ int main(int argc, char **argv)
 			I_OutputMsg("Error symlinking latest-log.txt: %s\n", strerror(errno));
 		}
 #else/*__unix__*/
+		(void)link;
 		logstream = fopen("latest-log.txt", "wt+");
 #endif/*__unix__*/
 	}

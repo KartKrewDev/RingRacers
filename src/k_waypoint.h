@@ -287,6 +287,16 @@ waypoint_t *K_SearchWaypointHeapForMobj(mobj_t * const mobj);
 --------------------------------------------------*/
 size_t K_GetWaypointHeapIndex(waypoint_t *waypoint);
 
+/*--------------------------------------------------
+	size_t K_GetNumWaypoints(void)
+
+		Returns the number of waypoints that are in the heap.
+		Intended for Net Archiving/Unarchiving
+
+	Return:-
+		The number of waypoints in the heap
+--------------------------------------------------*/
+size_t K_GetNumWaypoints(void);
 
 /*--------------------------------------------------
 	waypoint_t *K_GetWaypointFromIndex(size_t waypointindex)
@@ -334,5 +344,15 @@ boolean K_SetupWaypointList(void);
 --------------------------------------------------*/
 
 void K_ClearWaypoints(void);
+
+/*--------------------------------------------------
+	void K_AdjustWaypointsParameters(void)
+
+		Adjusts waypoint parameters after P_SpawnSpecials. This is for
+		raising waypoints to an FOF, which requires that the FOF is
+		already spawned.
+--------------------------------------------------*/
+
+void K_AdjustWaypointsParameters (void);
 
 #endif

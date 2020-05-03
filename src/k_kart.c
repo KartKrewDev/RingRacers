@@ -542,6 +542,44 @@ UINT8 K_GetKartColorByName(const char *name)
 
 //}
 
+player_t *K_GetItemBoxPlayer(mobj_t *mobj)
+{
+	fixed_t closest = INT32_MAX;
+	player_t *player = NULL;
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!(playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo) && !players[i].spectator))
+		{
+			continue;
+		}
+
+		// Always use normal item box rules -- could pass in "2" for fakes but they blend in better like this
+		if (P_CanPickupItem(&players[i], 1))
+		{
+			fixed_t dist = P_AproxDistance(P_AproxDistance(
+				players[i].mo->x - mobj->x,
+				players[i].mo->y - mobj->y),
+				players[i].mo->z - mobj->z
+			);
+
+			if (dist > 8192*mobj->scale)
+			{
+				continue;
+			}
+
+			if (dist < closest)
+			{
+				player = &players[i];
+				closest = dist;
+			}
+		}
+	}
+
+	return player;
+}
+
 //{ SRB2kart Net Variables
 
 void K_RegisterKartStuff(void)
@@ -758,6 +796,7 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 {
 	if (getitem == KITEM_SPB || getitem == KITEM_SHRINK) // Indirect items
 		indirectitemcooldown = 20*TICRATE;
+
 	if (getitem == KITEM_HYUDORO) // Hyudoro cooldown
 		hyubgone = 5*TICRATE;
 
@@ -1129,7 +1168,17 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			&& players[i].kartstuff[k_position] == 1)
 		{
 			// This player is first! Yay!
-			pdis = player->distancetofinish - players[i].distancetofinish;
+
+			if (player->distancetofinish <= players[i].distancetofinish)
+			{
+				// Guess you're in first / tied for first?
+				pdis = 0;
+			}
+			else
+			{
+				// Subtract 1st's distance from your distance, to get your distance from 1st!
+				pdis = player->distancetofinish - players[i].distancetofinish;
+			}
 			break;
 		}
 	}
@@ -1243,7 +1292,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 				player->kartstuff[k_itemroulette] = 0;
 				player->kartstuff[k_roulettetype] = 0;
 				if (P_IsDisplayPlayer(player))
-					S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
+					S_StartSound(NULL, sfx_itrolm);
 				return;
 			}
 		}
@@ -1396,7 +1445,7 @@ static void K_DebtStingPlayer(player_t *player, INT32 length)
 	if (player->mo->state != &states[S_KART_SPIN])
 		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
 
-	K_DropHnextList(player);
+	K_DropHnextList(player, false);
 	return;
 }
 
@@ -2585,20 +2634,29 @@ static void K_GetKartBoostPower(player_t *player)
 	player->kartstuff[k_numboosts] = numboosts;
 }
 
-fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
+// Returns kart speed from a stat. Boost power and scale are NOT taken into account, no player or object is necessary.
+fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 {
 	const fixed_t xspd = (3*FRACUNIT)/64;
 	fixed_t g_cc = K_GetKartGameSpeedScalar(gamespeed) + xspd;
 	fixed_t k_speed = 150;
-	UINT8 kartspeed = player->kartspeed;
 	fixed_t finalspeed;
-
-	if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
-		kartspeed = 1;
 
 	k_speed += kartspeed*3; // 153 - 177
 
 	finalspeed = FixedMul(k_speed<<14, g_cc);
+	return finalspeed;
+}
+
+fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
+{
+	fixed_t finalspeed;
+	UINT8 kartspeed = player->kartspeed;
+
+	if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
+		kartspeed = 1;
+
+	finalspeed = K_GetKartSpeedFromStat(kartspeed);
 
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 		finalspeed = FixedMul(finalspeed, player->mo->scale);
@@ -2828,7 +2886,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 	if (cv_kartdebughuddrop.value && !modeattacking)
 		K_DropItems(player);
 	else
-		K_DropHnextList(player);
+		K_DropHnextList(player, false);
 	return;
 }
 
@@ -2973,7 +3031,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 	if (cv_kartdebughuddrop.value && !modeattacking)
 		K_DropItems(player);
 	else
-		K_DropHnextList(player);
+		K_DropHnextList(player, false);
 	return;
 }
 
@@ -3179,7 +3237,7 @@ void K_StealBumper(player_t *player, player_t *victim, boolean force)
 	if (cv_kartdebughuddrop.value && !modeattacking)
 		K_DropItems(victim);
 	else
-		K_DropHnextList(victim);
+		K_DropHnextList(victim, false);
 	return;
 }
 
@@ -4642,54 +4700,58 @@ void K_UpdateHnextList(player_t *player, boolean clean)
 
 	nextwork = work->hnext;
 
-	while ((work = nextwork) && !P_MobjWasRemoved(work))
+	while ((work = nextwork) && !(work == NULL || P_MobjWasRemoved(work)))
 	{
 		nextwork = work->hnext;
 
 		if (!clean && (!work->movedir || work->movedir <= (UINT16)player->kartstuff[k_itemamount]))
+		{
 			continue;
+		}
 
 		P_RemoveMobj(work);
+	}
+
+	if (player->mo->hnext == NULL || P_MobjWasRemoved(player->mo->hnext))
+	{
+		// Like below, try to clean up the pointer if it's NULL.
+		// Maybe this was a cause of the shrink/eggbox fails?
+		P_SetTarget(&player->mo->hnext, NULL);
 	}
 }
 
 // For getting hit!
-void K_DropHnextList(player_t *player)
+void K_DropHnextList(player_t *player, boolean keepshields)
 {
 	mobj_t *work = player->mo, *nextwork, *dropwork;
 	INT32 flip;
 	mobjtype_t type;
 	boolean orbit, ponground, dropall = true;
+	INT32 shield = K_GetShieldFromItem(player->kartstuff[k_itemtype]);
 
-	if (!work || P_MobjWasRemoved(work))
+	if (work == NULL || P_MobjWasRemoved(work))
+	{
 		return;
+	}
 
 	flip = P_MobjFlip(player->mo);
 	ponground = P_IsObjectOnGround(player->mo);
 
-	if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+	if (shield != KSHIELD_NONE && !keepshields)
 	{
-		K_DoThunderShield(player);
-		player->kartstuff[k_itemtype] = KITEM_NONE;
-		player->kartstuff[k_itemamount] = 0;
+		if (shield == KSHIELD_THUNDER)
+		{
+			K_DoThunderShield(player);
+		}
+
 		player->kartstuff[k_curshield] = KSHIELD_NONE;
-	}
-	else if (player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD)
-	{
 		player->kartstuff[k_itemtype] = KITEM_NONE;
-		player->kartstuff[k_itemamount] = 0;
-		player->kartstuff[k_curshield] = KSHIELD_NONE;
-	}
-	else if (player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
-	{
-		player->kartstuff[k_itemtype] = KITEM_NONE;
-		player->kartstuff[k_itemamount] = 0;
-		player->kartstuff[k_curshield] = KSHIELD_NONE;
+		player->kartstuff[k_itemamount] = player->kartstuff[k_itemheld] = 0;
 	}
 
 	nextwork = work->hnext;
 
-	while ((work = nextwork) && !P_MobjWasRemoved(work))
+	while ((work = nextwork) && !(work == NULL || P_MobjWasRemoved(work)))
 	{
 		nextwork = work->hnext;
 
@@ -4718,20 +4780,20 @@ void K_DropHnextList(player_t *player)
 				orbit = false;
 				type = MT_EGGMANITEM;
 				break;
-			// intentionally do nothing
-			case MT_SINK_SHIELD:
-			case MT_ROCKETSNEAKER:
-				return;
 			default:
 				continue;
 		}
 
 		dropwork = P_SpawnMobj(work->x, work->y, work->z, type);
+
 		P_SetTarget(&dropwork->target, player->mo);
-		P_AddKartItem(dropwork);	// needs to be called here so shrink can bust items off players in front of the user.
+		P_AddKartItem(dropwork); // needs to be called here so shrink can bust items off players in front of the user.
+
 		dropwork->angle = work->angle;
-		dropwork->flags2 = work->flags2;
+
 		dropwork->flags |= MF_NOCLIPTHING;
+		dropwork->flags2 = work->flags2;
+
 		dropwork->floorz = work->floorz;
 		dropwork->ceilingz = work->ceilingz;
 
@@ -4760,19 +4822,29 @@ void K_DropHnextList(player_t *player)
 		if (orbit) // splay out
 		{
 			dropwork->flags2 |= MF2_AMBUSH;
+
 			dropwork->z += flip;
+
 			dropwork->momx = player->mo->momx>>1;
 			dropwork->momy = player->mo->momy>>1;
 			dropwork->momz = 3*flip*mapobjectscale;
+
 			if (dropwork->eflags & MFE_UNDERWATER)
 				dropwork->momz = (117 * dropwork->momz) / 200;
+
 			P_Thrust(dropwork, work->angle - ANGLE_90, 6*mapobjectscale);
+
 			dropwork->movecount = 2;
 			dropwork->movedir = work->angle - ANGLE_90;
+
 			P_SetMobjState(dropwork, dropwork->info->deathstate);
+
 			dropwork->tics = -1;
+
 			if (type == MT_JAWZ_DUD)
+			{
 				dropwork->z += 20*flip*dropwork->scale;
+			}
 			else
 			{
 				dropwork->color = work->color;
@@ -4788,39 +4860,33 @@ void K_DropHnextList(player_t *player)
 		P_RemoveMobj(work);
 	}
 
+	// we need this here too because this is done in afterthink - pointers are cleaned up at the START of each tic...
+	P_SetTarget(&player->mo->hnext, NULL);
+
+	player->kartstuff[k_bananadrag] = 0;
+
+	if (player->kartstuff[k_eggmanheld])
 	{
-		// we need this here too because this is done in afterthink - pointers are cleaned up at the START of each tic...
-		P_SetTarget(&player->mo->hnext, NULL);
-		player->kartstuff[k_bananadrag] = 0;
-		if (player->kartstuff[k_eggmanheld])
-			player->kartstuff[k_eggmanheld] = 0;
-		else if (player->kartstuff[k_itemheld]
-			&& (dropall || (--player->kartstuff[k_itemamount] <= 0)))
-		{
-			player->kartstuff[k_itemamount] = player->kartstuff[k_itemheld] = 0;
-			player->kartstuff[k_itemtype] = KITEM_NONE;
-		}
+		player->kartstuff[k_eggmanheld] = 0;
+	}
+	else if (player->kartstuff[k_itemheld]
+		&& (dropall || (--player->kartstuff[k_itemamount] <= 0)))
+	{
+		player->kartstuff[k_itemamount] = player->kartstuff[k_itemheld] = 0;
+		player->kartstuff[k_itemtype] = KITEM_NONE;
 	}
 }
 
 // For getting EXTRA hit!
 void K_DropItems(player_t *player)
 {
-	INT32 shieldhack = 0;
+	K_DropHnextList(player, true);
 
-	if (player->kartstuff[k_curshield])
-		shieldhack = K_GetShieldFromItem(player->kartstuff[k_itemtype]);
-
-	if (shieldhack)
-		player->kartstuff[k_itemtype] = KITEM_NONE;
-
-	K_DropHnextList(player);
-
-	if (player->mo && !P_MobjWasRemoved(player->mo) && player->kartstuff[k_itemamount])
+	if (player->mo && !P_MobjWasRemoved(player->mo) && player->kartstuff[k_itemamount] > 0)
 	{
 		mobj_t *drop = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_FLOATINGITEM);
 		P_SetScale(drop, drop->scale>>4);
-		drop->destscale = (3*drop->destscale)/2;;
+		drop->destscale = (3*drop->destscale)/2;
 
 		drop->angle = player->mo->angle + ANGLE_90;
 		P_Thrust(drop,
@@ -4830,13 +4896,7 @@ void K_DropItems(player_t *player)
 		if (drop->eflags & MFE_UNDERWATER)
 			drop->momz = (117 * drop->momz) / 200;
 
-		switch (shieldhack)
-		{
-			case KSHIELD_THUNDER: drop->threshold = KITEM_THUNDERSHIELD; break;
-			case KSHIELD_BUBBLE: drop->threshold = KITEM_BUBBLESHIELD; break;
-			case KSHIELD_FLAME: drop->threshold = KITEM_FLAMESHIELD; break;
-			default: drop->threshold = player->kartstuff[k_itemtype]; break;
-		}
+		drop->threshold = player->kartstuff[k_itemtype];
 		drop->movecount = player->kartstuff[k_itemamount];
 
 		drop->flags |= MF_NOCLIPTHING;
@@ -5175,6 +5235,12 @@ static void K_MoveHeldObjects(player_t *player)
 					angle_t ang;
 					fixed_t targx, targy, targz;
 					fixed_t speed, dist;
+
+					if (cur->type == MT_EGGMANITEM_SHIELD)
+					{
+						// Decided that this should use their "canon" color.
+						cur->color = SKINCOLOR_BLACK; 
+					}
 
 					cur->flags &= ~MF_NOCLIPTHING;
 
@@ -6223,10 +6289,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 void K_KartPlayerAfterThink(player_t *player)
 {
-	// Moved to afterthink, as at this point the players have had their distances to the finish line updated
-	// and this will correctly account for all players
-	K_KartUpdatePosition(player);
-
 	if (player->kartstuff[k_curshield]
 		|| player->kartstuff[k_invincibilitytimer]
 		|| (player->kartstuff[k_growshrinktimer] != 0 && player->kartstuff[k_growshrinktimer] % 5 == 4)) // 4 instead of 0 because this is afterthink!
@@ -6543,7 +6605,7 @@ static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_
 }
 
 /*--------------------------------------------------
-	static void K_UpdateDistanceFromFinishLine(player_t *const player)
+	void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 		Updates the distance a player has to the finish line.
 
@@ -6553,7 +6615,7 @@ static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_UpdateDistanceFromFinishLine(player_t *const player)
+void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
 	if ((player != NULL) && (player->mo != NULL))
 	{
@@ -7103,7 +7165,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	boolean HOLDING_ITEM = (player->kartstuff[k_itemheld] || player->kartstuff[k_eggmanheld]);
 	boolean NO_HYUDORO = (player->kartstuff[k_stolentimer] == 0 && player->kartstuff[k_stealingtimer] == 0);
 
-	K_UpdateDistanceFromFinishLine(player);
 	player->pflags &= ~PF_HITFINISHLINE;
 
 	if (!player->exiting)

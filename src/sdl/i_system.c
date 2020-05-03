@@ -3282,7 +3282,7 @@ static void Shittylogcopy(void)
 {
 	char buf[8192];
 	FILE *fp;
-	int n;
+	size_t n;
 	if (fseek(logstream, 0, SEEK_SET) == -1)
 	{
 		Shittycopyerror("fseek");

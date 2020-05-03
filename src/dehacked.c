@@ -6305,18 +6305,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_RANDOMITEM10",
 	"S_RANDOMITEM11",
 	"S_RANDOMITEM12",
-	"S_RANDOMITEM13",
-	"S_RANDOMITEM14",
-	"S_RANDOMITEM15",
-	"S_RANDOMITEM16",
-	"S_RANDOMITEM17",
-	"S_RANDOMITEM18",
-	"S_RANDOMITEM19",
-	"S_RANDOMITEM20",
-	"S_RANDOMITEM21",
-	"S_RANDOMITEM22",
-	"S_RANDOMITEM23",
-	"S_RANDOMITEM24",
 	"S_DEADRANDOMITEM",
 
 	// Random Item Pop
@@ -6456,18 +6444,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_EGGMANITEM10",
 	"S_EGGMANITEM11",
 	"S_EGGMANITEM12",
-	"S_EGGMANITEM13",
-	"S_EGGMANITEM14",
-	"S_EGGMANITEM15",
-	"S_EGGMANITEM16",
-	"S_EGGMANITEM17",
-	"S_EGGMANITEM18",
-	"S_EGGMANITEM19",
-	"S_EGGMANITEM20",
-	"S_EGGMANITEM21",
-	"S_EGGMANITEM22",
-	"S_EGGMANITEM23",
-	"S_EGGMANITEM24",
 	"S_EGGMANITEM_DEAD",
 	//}
 
@@ -6931,8 +6907,32 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_PLAYERBOMB18",
 	"S_PLAYERBOMB19",
 	"S_PLAYERBOMB20",
-	"S_PLAYERITEM", // Player item overlay
-	"S_PLAYERFAKE", // Player fake overlay
+
+	"S_PLAYERITEM1", // Player item overlay
+	"S_PLAYERITEM2",
+	"S_PLAYERITEM3",
+	"S_PLAYERITEM4",
+	"S_PLAYERITEM5",
+	"S_PLAYERITEM6",
+	"S_PLAYERITEM7",
+	"S_PLAYERITEM8",
+	"S_PLAYERITEM9",
+	"S_PLAYERITEM10",
+	"S_PLAYERITEM11",
+	"S_PLAYERITEM12",
+
+	"S_PLAYERFAKE1", // Player fake overlay
+	"S_PLAYERFAKE2",
+	"S_PLAYERFAKE3",
+	"S_PLAYERFAKE4",
+	"S_PLAYERFAKE5",
+	"S_PLAYERFAKE6",
+	"S_PLAYERFAKE7",
+	"S_PLAYERFAKE8",
+	"S_PLAYERFAKE9",
+	"S_PLAYERFAKE10",
+	"S_PLAYERFAKE11",
+	"S_PLAYERFAKE12",
 
 	"S_KARMAWHEEL", // Karma player wheels
 
@@ -7898,6 +7898,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_DEZLASER",
 
 	"MT_WAYPOINT",
+	"MT_WAYPOINT_RISER",
+	"MT_WAYPOINT_ANCHOR",
 
 	"MT_RANDOMAUDIENCE",
 
@@ -8104,6 +8106,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_KARMAFIREWORK",
 	"MT_RINGSPARKS",
 	"MT_DRAFTDUST",
+	"MT_SPBDUST",
 	"MT_TIREGREASE",
 
 	"MT_OVERTIMEFOG",

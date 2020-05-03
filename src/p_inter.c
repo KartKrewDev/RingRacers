@@ -542,7 +542,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 				if (player->kartstuff[k_bubbleblowup] > 0)
 				{
-					K_DropHnextList(player);
+					K_DropHnextList(player, false);
 					special->extravalue1 = 2; // WAIT...
 					special->extravalue2 = 52; // Slightly over the respawn timer length
 					return;
