@@ -4780,6 +4780,10 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 				orbit = false;
 				type = MT_EGGMANITEM;
 				break;
+			// intentionally do nothing
+			case MT_ROCKETSNEAKER:
+			case MT_SINK_SHIELD:
+				return;
 			default:
 				continue;
 		}
