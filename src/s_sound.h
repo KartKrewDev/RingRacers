@@ -36,6 +36,9 @@ extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
 extern consvar_t cv_playsoundifunfocused;
 
+extern consvar_t cv_music_resync_threshold;
+extern consvar_t cv_music_resync_powerups_only;
+
 #ifdef SNDSERV
 extern consvar_t sndserver_cmd, sndserver_arg;
 #endif
@@ -176,6 +179,11 @@ UINT32 S_GetMusicPosition(void);
 // Music Playback
 //
 
+enum
+{
+	MUS_SPECIAL = 1,/* powerups--invincibility, grow */
+};
+
 // Start music track, arbitrary, given its name, and set whether looping
 // note: music flags 12 bits for tracknum (gme, other formats with more than one track)
 //       13-15 aren't used yet
@@ -183,6 +191,16 @@ UINT32 S_GetMusicPosition(void);
 void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 position, UINT32 prefadems, UINT32 fadeinms);
 #define S_ChangeMusicInternal(a,b) S_ChangeMusicEx(a,0,b,0,0,0)
 #define S_ChangeMusic(a,b,c) S_ChangeMusicEx(a,b,c,0,0,0)
+
+void S_ChangeMusicSpecial (const char *mmusic);
+
+void S_SetRestoreMusicFadeInCvar (consvar_t *cvar);
+#define S_ClearRestoreMusicFadeInCvar() \
+	S_SetRestoreMusicFadeInCvar(0)
+int  S_GetRestoreMusicFadeIn (void);
+
+void S_SetMusicUsage (int type);
+int  S_MusicUsage (void);
 
 // Stops the music.
 void S_StopMusic(void);

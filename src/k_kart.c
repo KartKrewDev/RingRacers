@@ -630,6 +630,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugitem);
 	CV_RegisterVar(&cv_kartdebugamount);
 	CV_RegisterVar(&cv_kartdebugshrink);
+	CV_RegisterVar(&cv_kartallowgiveitem);
 	CV_RegisterVar(&cv_kartdebugdistribution);
 	CV_RegisterVar(&cv_kartdebughuddrop);
 	CV_RegisterVar(&cv_kartdebugwaypoints);
@@ -4895,6 +4896,10 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 				orbit = false;
 				type = MT_EGGMANITEM;
 				break;
+			// intentionally do nothing
+			case MT_ROCKETSNEAKER:
+			case MT_SINK_SHIELD:
+				return;
 			default:
 				continue;
 		}
@@ -7505,9 +7510,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									P_SetScale(overlay, player->mo->scale);
 								}
 								player->kartstuff[k_invincibilitytimer] = itemtime+(2*TICRATE); // 10 seconds
+								if (P_IsDisplayPlayer(player))
+									S_ChangeMusicSpecial("kinvnc");
+								else
+									S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kinvnc));
 								P_RestoreMusic(player);
-								if (!P_IsDisplayPlayer(player))
-									S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmi : sfx_kinvnc));
 								K_PlayPowerGloatSound(player->mo);
 								player->kartstuff[k_itemamount]--;
 							}
@@ -7707,9 +7714,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
 										player->mo->destscale = (6*player->mo->destscale)/8;
 									player->kartstuff[k_growshrinktimer] = itemtime+(4*TICRATE); // 12 seconds
-									P_RestoreMusic(player);
-									if (!P_IsDisplayPlayer(player))
+									if (P_IsDisplayPlayer(player))
+										S_ChangeMusicSpecial("kgrow");
+									else
 										S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
+									P_RestoreMusic(player);
 									S_StartSound(player->mo, sfx_kc5a);
 								}
 								player->kartstuff[k_itemamount]--;

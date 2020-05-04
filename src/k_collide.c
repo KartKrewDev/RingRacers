@@ -15,6 +15,7 @@
 boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 {
 	boolean damageitem = false;
+	boolean sprung = false;
 
 	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
@@ -81,7 +82,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->flags & MF_SPRING && (t1->type != MT_ORBINAUT_SHIELD && t1->type != MT_JAWZ_SHIELD))
 	{
 		// Let thrown items hit springs!
-		P_DoSpring(t2, t1);
+		sprung = P_DoSpring(t2, t1);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
@@ -103,6 +104,11 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
 		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
+	}
+
+	if (sprung)
+	{
+		return false;
 	}
 
 	return true;
