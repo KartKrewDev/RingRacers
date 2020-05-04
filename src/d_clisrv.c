@@ -3647,6 +3647,8 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	if (newplayernum+1 > doomcom->numslots)
 		doomcom->numslots = (INT16)(newplayernum+1);
 
+	playernode[newplayernum] = servernode;
+
 	players[newplayernum].splitscreenindex = 0;
 	players[newplayernum].bot = true;
 	players[newplayernum].botvars.difficulty = difficulty;
@@ -5778,9 +5780,15 @@ FILESTAMP
 INT32 D_NumPlayers(void)
 {
 	INT32 num = 0, ix;
+
 	for (ix = 0; ix < MAXPLAYERS; ix++)
-		if (playeringame[ix])
+	{
+		if (playeringame[ix] && !players[ix].bot)
+		{
 			num++;
+		}
+	}
+
 	return num;
 }
 
