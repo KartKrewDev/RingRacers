@@ -1774,7 +1774,6 @@ static actionpointer_t actionpointers[] =
 	{{A_GrenadeRing},          "A_GRENADERING"}, // SRB2kart
 	{{A_SetSolidSteam},        "A_SETSOLIDSTEAM"},
 	{{A_UnsetSolidSteam},      "A_UNSETSOLIDSTEAM"},
-	{{A_SignPlayer},           "A_SIGNPLAYER"},
 	{{A_OverlayThink},         "A_OVERLAYTHINK"},
 	{{A_JetChase},             "A_JETCHASE"},
 	{{A_JetbThink},            "A_JETBTHINK"},
@@ -1888,6 +1887,7 @@ static actionpointer_t actionpointers[] =
 	{{A_ReaperThinker}, 	   "A_REAPERTHINKER"}, //SRB2kart
 	{{A_MementosTPParticles},  "A_MEMENTOSTPPARTICLES"}, //SRB2kart
 	{{A_FlameParticle},        "A_FLAMEPARTICLE"}, // SRB2kart
+	{{A_FlameShieldPaper},     "A_FLAMESHIELDPAPER"}, // SRB2kart
 	{{A_OrbitNights},          "A_ORBITNIGHTS"},
 	{{A_GhostMe},              "A_GHOSTME"},
 	{{A_SetObjectState},       "A_SETOBJECTSTATE"},
@@ -2474,10 +2474,10 @@ static void readunlockable(MYFILE *f, INT32 num)
 					unlockables[num].type = SECRET_PANDORA;
 				else if (fastcmp(word2, "CREDITS"))
 					unlockables[num].type = SECRET_CREDITS;
-				else if (fastcmp(word2, "RECORDATTACK"))
-					unlockables[num].type = SECRET_RECORDATTACK;
-				else if (fastcmp(word2, "NIGHTSMODE"))
-					unlockables[num].type = SECRET_NIGHTSMODE;
+				else if (fastcmp(word2, "TIMEATTACK"))
+					unlockables[num].type = SECRET_TIMEATTACK;
+				else if (fastcmp(word2, "BREAKTHECAPSULES"))
+					unlockables[num].type = SECRET_BREAKTHECAPSULES;
 				else if (fastcmp(word2, "HEADER"))
 					unlockables[num].type = SECRET_HEADER;
 				else if (fastcmp(word2, "LEVELSELECT"))
@@ -4887,27 +4887,10 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BUBBLES2",
 
 	// Level End Sign
-	"S_SIGN1",
-	"S_SIGN2",
-	"S_SIGN3",
-	"S_SIGN4",
-	"S_SIGN5",
-	"S_SIGN6",
-	"S_SIGN7",
-	"S_SIGN8",
-	"S_SIGN9",
-	"S_SIGN10",
-	"S_SIGN11",
-	"S_SIGN12",
-	"S_SIGN13",
-	"S_SIGN14",
-	"S_SIGN15",
-	"S_SIGN16",
-	"S_SIGN17",
-	"S_SIGN18",
-	"S_SIGN19",
-	"S_SIGN20",
-	"S_SIGN_END",
+	"S_SIGN_POLE",
+	"S_SIGN_BACK",
+	"S_SIGN_SIDE",
+	"S_SIGN_FACE",
 
 	// Steam Riser
 	"S_STEAM1",
@@ -5690,6 +5673,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SNOW2",
 	"S_SNOW3",
 
+	// Blizzard Snowball
+	"S_BLIZZARDSNOW1",
+	"S_BLIZZARDSNOW2",
+	"S_BLIZZARDSNOW3",
+
 	// Water Splish
 	"S_SPLISH1",
 	"S_SPLISH2",
@@ -6317,18 +6305,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_RANDOMITEM10",
 	"S_RANDOMITEM11",
 	"S_RANDOMITEM12",
-	"S_RANDOMITEM13",
-	"S_RANDOMITEM14",
-	"S_RANDOMITEM15",
-	"S_RANDOMITEM16",
-	"S_RANDOMITEM17",
-	"S_RANDOMITEM18",
-	"S_RANDOMITEM19",
-	"S_RANDOMITEM20",
-	"S_RANDOMITEM21",
-	"S_RANDOMITEM22",
-	"S_RANDOMITEM23",
-	"S_RANDOMITEM24",
 	"S_DEADRANDOMITEM",
 
 	// Random Item Pop
@@ -6360,6 +6336,8 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTSPARK_B1",
 	"S_DRIFTSPARK_C1",
 	"S_DRIFTSPARK_C2",
+	"S_DRIFTSPARK_D1",
+	"S_DRIFTSPARK_D2",
 
 	// Brake drift sparks
 	"S_BRAKEDRIFT",
@@ -6369,6 +6347,12 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTDUST2",
 	"S_DRIFTDUST3",
 	"S_DRIFTDUST4",
+
+	// Drift Sparkles
+	"S_DRIFTWARNSPARK1",
+	"S_DRIFTWARNSPARK2",
+	"S_DRIFTWARNSPARK3",
+	"S_DRIFTWARNSPARK4",
 
 	// Fast lines
 	"S_FASTLINE1",
@@ -6386,7 +6370,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FASTDUST6",
 	"S_FASTDUST7",
 
-	// Thunder Shield Burst
+	// Drift boost effect
+	"S_DRIFTEXPLODE1",
+	"S_DRIFTEXPLODE2",
+	"S_DRIFTEXPLODE3",
+	"S_DRIFTEXPLODE4",
 
 	// Sneaker boost effect
 	"S_BOOSTFLAME",
@@ -6456,18 +6444,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_EGGMANITEM10",
 	"S_EGGMANITEM11",
 	"S_EGGMANITEM12",
-	"S_EGGMANITEM13",
-	"S_EGGMANITEM14",
-	"S_EGGMANITEM15",
-	"S_EGGMANITEM16",
-	"S_EGGMANITEM17",
-	"S_EGGMANITEM18",
-	"S_EGGMANITEM19",
-	"S_EGGMANITEM20",
-	"S_EGGMANITEM21",
-	"S_EGGMANITEM22",
-	"S_EGGMANITEM23",
-	"S_EGGMANITEM24",
 	"S_EGGMANITEM_DEAD",
 	//}
 
@@ -6647,6 +6623,85 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_THUNDERSHIELD23",
 	"S_THUNDERSHIELD24",
 
+	// Bubble Shield
+	"S_BUBBLESHIELD1",
+	"S_BUBBLESHIELD2",
+	"S_BUBBLESHIELD3",
+	"S_BUBBLESHIELD4",
+	"S_BUBBLESHIELD5",
+	"S_BUBBLESHIELD6",
+	"S_BUBBLESHIELD7",
+	"S_BUBBLESHIELD8",
+	"S_BUBBLESHIELD9",
+	"S_BUBBLESHIELD10",
+	"S_BUBBLESHIELD11",
+	"S_BUBBLESHIELD12",
+	"S_BUBBLESHIELD13",
+	"S_BUBBLESHIELD14",
+	"S_BUBBLESHIELD15",
+	"S_BUBBLESHIELD16",
+	"S_BUBBLESHIELD17",
+	"S_BUBBLESHIELD18",
+	"S_BUBBLESHIELDBLOWUP",
+	"S_BUBBLESHIELDTRAP1",
+	"S_BUBBLESHIELDTRAP2",
+	"S_BUBBLESHIELDTRAP3",
+	"S_BUBBLESHIELDTRAP4",
+	"S_BUBBLESHIELDTRAP5",
+	"S_BUBBLESHIELDTRAP6",
+	"S_BUBBLESHIELDTRAP7",
+	"S_BUBBLESHIELDTRAP8",
+	"S_BUBBLESHIELDWAVE1",
+	"S_BUBBLESHIELDWAVE2",
+	"S_BUBBLESHIELDWAVE3",
+	"S_BUBBLESHIELDWAVE4",
+	"S_BUBBLESHIELDWAVE5",
+	"S_BUBBLESHIELDWAVE6",
+
+	// Flame Shield
+	"S_FLAMESHIELD1",
+	"S_FLAMESHIELD2",
+	"S_FLAMESHIELD3",
+	"S_FLAMESHIELD4",
+	"S_FLAMESHIELD5",
+	"S_FLAMESHIELD6",
+	"S_FLAMESHIELD7",
+	"S_FLAMESHIELD8",
+	"S_FLAMESHIELD9",
+	"S_FLAMESHIELD10",
+	"S_FLAMESHIELD11",
+	"S_FLAMESHIELD12",
+	"S_FLAMESHIELD13",
+	"S_FLAMESHIELD14",
+	"S_FLAMESHIELD15",
+	"S_FLAMESHIELD16",
+	"S_FLAMESHIELD17",
+	"S_FLAMESHIELD18",
+
+	"S_FLAMESHIELDDASH1",
+	"S_FLAMESHIELDDASH2",
+	"S_FLAMESHIELDDASH3",
+	"S_FLAMESHIELDDASH4",
+	"S_FLAMESHIELDDASH5",
+	"S_FLAMESHIELDDASH6",
+	"S_FLAMESHIELDDASH7",
+	"S_FLAMESHIELDDASH8",
+	"S_FLAMESHIELDDASH9",
+	"S_FLAMESHIELDDASH10",
+	"S_FLAMESHIELDDASH11",
+	"S_FLAMESHIELDDASH12",
+
+	"S_FLAMESHIELDDASH2_UNDERLAY",
+	"S_FLAMESHIELDDASH5_UNDERLAY",
+	"S_FLAMESHIELDDASH8_UNDERLAY",
+	"S_FLAMESHIELDDASH11_UNDERLAY",
+
+	"S_FLAMESHIELDPAPER",
+	"S_FLAMESHIELDLINE1",
+	"S_FLAMESHIELDLINE2",
+	"S_FLAMESHIELDLINE3",
+	"S_FLAMESHIELDFLASH",
+
 	// The legend
 	"S_SINK",
 	"S_SINK_SHIELD",
@@ -6661,6 +6716,11 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	// DEZ respawn laser
 	"S_DEZLASER",
+	"S_DEZLASER_TRAIL1",
+	"S_DEZLASER_TRAIL2",
+	"S_DEZLASER_TRAIL3",
+	"S_DEZLASER_TRAIL4",
+	"S_DEZLASER_TRAIL5",
 
 	// Audience Members
 	"S_RANDOMAUDIENCE",
@@ -6779,9 +6839,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_LAMPPOST",
 	"S_MOSSYTREE",
 
-	"S_SHADOW",
-	"S_WHITESHADOW",
-
 	"S_BUMP1",
 	"S_BUMP2",
 	"S_BUMP3",
@@ -6850,8 +6907,32 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_PLAYERBOMB18",
 	"S_PLAYERBOMB19",
 	"S_PLAYERBOMB20",
-	"S_PLAYERITEM", // Player item overlay
-	"S_PLAYERFAKE", // Player fake overlay
+
+	"S_PLAYERITEM1", // Player item overlay
+	"S_PLAYERITEM2",
+	"S_PLAYERITEM3",
+	"S_PLAYERITEM4",
+	"S_PLAYERITEM5",
+	"S_PLAYERITEM6",
+	"S_PLAYERITEM7",
+	"S_PLAYERITEM8",
+	"S_PLAYERITEM9",
+	"S_PLAYERITEM10",
+	"S_PLAYERITEM11",
+	"S_PLAYERITEM12",
+
+	"S_PLAYERFAKE1", // Player fake overlay
+	"S_PLAYERFAKE2",
+	"S_PLAYERFAKE3",
+	"S_PLAYERFAKE4",
+	"S_PLAYERFAKE5",
+	"S_PLAYERFAKE6",
+	"S_PLAYERFAKE7",
+	"S_PLAYERFAKE8",
+	"S_PLAYERFAKE9",
+	"S_PLAYERFAKE10",
+	"S_PLAYERFAKE11",
+	"S_PLAYERFAKE12",
 
 	"S_KARMAWHEEL", // Karma player wheels
 
@@ -7218,6 +7299,13 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_OVERTIMEORB",
 	"S_OVERTIMEBEAM",
 
+	"S_BATTLECAPSULE_SIDE1",
+	"S_BATTLECAPSULE_SIDE2",
+	"S_BATTLECAPSULE_TOP",
+	"S_BATTLECAPSULE_BUTTON",
+	"S_BATTLECAPSULE_SUPPORT",
+	"S_BATTLECAPSULE_SUPPORTFLY",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -7363,6 +7451,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Interactive Objects
 	"MT_BUBBLES", // Bubble source
 	"MT_SIGN", // Level end sign
+	"MT_SIGN_PIECE",
 	"MT_SPIKEBALL", // Spike Ball
 	"MT_SPECIALSPIKEBALL",
 	"MT_SPINFIRE",
@@ -7589,6 +7678,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Environmental Effects
 	"MT_RAIN", // Rain
 	"MT_SNOWFLAKE", // Snowflake
+	"MT_BLIZZARDSNOW", // Blizzard Snowball
 	"MT_SPLISH", // Water splish!
 	"MT_SMOKE",
 	"MT_SMALLBUBBLE", // small bubble
@@ -7748,6 +7838,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_FASTLINE",
 	"MT_FASTDUST",
+	"MT_DRIFTEXPLODE",
 	"MT_BOOSTFLAME",
 	"MT_BOOSTSMOKE",
 	"MT_SNEAKERTRAIL",
@@ -7791,7 +7882,12 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_SPB", // Self-Propelled Bomb
 	"MT_SPBEXPLOSION",
 
-	"MT_THUNDERSHIELD", // Thunder Shield stuff
+	"MT_THUNDERSHIELD", // Shields
+	"MT_BUBBLESHIELD",
+	"MT_FLAMESHIELD",
+	"MT_FLAMESHIELDUNDERLAY",
+	"MT_FLAMESHIELDPAPER",
+	"MT_BUBBLESHIELDTRAP",
 
 	"MT_SINK", // Kitchen Sink Stuff
 	"MT_SINK_SHIELD",
@@ -7802,6 +7898,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_DEZLASER",
 
 	"MT_WAYPOINT",
+	"MT_WAYPOINT_RISER",
+	"MT_WAYPOINT_ANCHOR",
 
 	"MT_RANDOMAUDIENCE",
 
@@ -7848,8 +7946,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_FLYINGGARG",
 	"MT_LAMPPOST",
 	"MT_MOSSYTREE",
-
-	"MT_SHADOW",
 
 	"MT_BUMP",
 
@@ -8010,11 +8106,15 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_KARMAFIREWORK",
 	"MT_RINGSPARKS",
 	"MT_DRAFTDUST",
+	"MT_SPBDUST",
 	"MT_TIREGREASE",
 
 	"MT_OVERTIMEFOG",
 	"MT_OVERTIMEORB",
 	"MT_OVERTIMEBEAM",
+
+	"MT_BATTLECAPSULE",
+	"MT_BATTLECAPSULE_PIECE",
 
 #ifdef SEENAMES
 	"MT_NAMECHECK",
@@ -8183,7 +8283,7 @@ static const char *const PLAYERFLAG_LIST[] = {
 
 	/*** misc ***/
 	"FORCESTRAFE", // Translate turn inputs into strafe inputs
-	"ANALOGMODE", // Analog mode?
+	"HITFINISHLINE", // Already hit the finish line this tic
 
 	NULL // stop loop here.
 };
@@ -8191,8 +8291,8 @@ static const char *const PLAYERFLAG_LIST[] = {
 #ifdef HAVE_BLUA
 // Linedef flags
 static const char *const ML_LIST[16] = {
-	"IMPASSIBLE",
-	"BLOCKMONSTERS",
+	"IMPASSABLE",
+	"BLOCKPLAYERS",
 	"TWOSIDED",
 	"DONTPEGTOP",
 	"DONTPEGBOTTOM",
@@ -8242,7 +8342,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"SCARLET",		// SKINCOLOR_SCARLET
 	"KETCHUP",		// SKINCOLOR_KETCHUP
 	"DAWN",			// SKINCOLOR_DAWN
-	"SUNSET",		// SKINCOLOR_SUNSET
+	"SUNSLAM",		// SKINCOLOR_SUNSLAM
 	"CREAMSICLE",	// SKINCOLOR_CREAMSICLE
 	"ORANGE",		// SKINCOLOR_ORANGE
 	"ROSEWOOD",		// SKINCOLOR_ROSEWOOD
@@ -8302,9 +8402,9 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"THISTLE",		// SKINCOLOR_THISTLE
 	"PURPLE",		// SKINCOLOR_PURPLE
 	"PASTEL",		// SKINCOLOR_PASTEL
-	"MOONSLAM",		// SKINCOLOR_MOONSLAM
+	"MOONSET",		// SKINCOLOR_MOONSET
 	"DUSK",			// SKINCOLOR_DUSK
-	"BUBBLEGUM",	// SKINCOLOR_BUBBLEGUM
+	"VIOLET",		// SKINCOLOR_VIOLET
 	"MAGENTA",		// SKINCOLOR_MAGENTA
 	"FUCHSIA",		// SKINCOLOR_FUCHSIA
 	"TOXIC",		// SKINCOLOR_TOXIC
@@ -8420,10 +8520,6 @@ static const char *const KARTSTUFF_LIST[] = {
 	"POSITION",
 	"OLDPOSITION",
 	"POSITIONDELAY",
-	"PREVCHECK",
-	"NEXTCHECK",
-	"WAYPOINT",
-	"STARPOSTWP",
 	"STARPOSTFLIP",
 	"RESPAWN",
 	"DROPDASH",
@@ -8470,6 +8566,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"ITEMTYPE",
 	"ITEMAMOUNT",
 	"ITEMHELD",
+	"HOLDREADY",
 
 	"CURSHIELD",
 	"HYUDOROTIMER",
@@ -8482,6 +8579,11 @@ static const char *const KARTSTUFF_LIST[] = {
 	"SQUISHEDTIMER",
 	"ROCKETSNEAKERTIMER",
 	"INVINCIBILITYTIMER",
+	"BUBBLECOOL",
+	"BUBBLEBLOWUP",
+	"FLAMEDASH",
+	"FLAMEMETER",
+	"FLAMELENGTH",
 	"EGGMANHELD",
 	"EGGMANEXPLODE",
 	"EGGMANBLAME",
@@ -8501,11 +8603,11 @@ static const char *const KARTSTUFF_LIST[] = {
 	"GETSPARKS",
 	"JAWZTARGETDELAY",
 	"SPECTATEWAIT",
-	"GROWCANCEL",
 	"TIREGREASE",
 	"SPRINGSTARS",
 	"SPRINGCOLOR",
-	"KILLFIELD"
+	"KILLFIELD",
+	"WRONGWAY"
 };
 #endif
 
@@ -8700,10 +8802,10 @@ struct {
 
 	// Precipitation
 	{"PRECIP_NONE",PRECIP_NONE},
-	{"PRECIP_STORM",PRECIP_STORM},
-	{"PRECIP_SNOW",PRECIP_SNOW},
 	{"PRECIP_RAIN",PRECIP_RAIN},
-	{"PRECIP_BLANK",PRECIP_BLANK},
+	{"PRECIP_SNOW",PRECIP_SNOW},
+	{"PRECIP_BLIZZARD",PRECIP_BLIZZARD},
+	{"PRECIP_STORM",PRECIP_STORM},
 	{"PRECIP_STORM_NORAIN",PRECIP_STORM_NORAIN},
 	{"PRECIP_STORM_NOSTRIKES",PRECIP_STORM_NOSTRIKES},
 
@@ -9028,6 +9130,8 @@ struct {
 	{"KITEM_GROW",KITEM_GROW},
 	{"KITEM_SHRINK",KITEM_SHRINK},
 	{"KITEM_THUNDERSHIELD",KITEM_THUNDERSHIELD},
+	{"KITEM_BUBBLESHIELD",KITEM_BUBBLESHIELD},
+	{"KITEM_FLAMESHIELD",KITEM_FLAMESHIELD},
 	{"KITEM_HYUDORO",KITEM_HYUDORO},
 	{"KITEM_POGOSPRING",KITEM_POGOSPRING},
 	{"KITEM_SUPERRING",KITEM_SUPERRING},
@@ -9040,6 +9144,13 @@ struct {
 	{"KRITEM_QUADORBINAUT",KRITEM_QUADORBINAUT},
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
 	{"NUMKARTRESULTS",NUMKARTRESULTS},
+
+	// kartshields_t
+	{"KSHIELD_NONE",KSHIELD_NONE},
+	{"KSHIELD_THUNDER",KSHIELD_THUNDER},
+	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
+	{"KSHIELD_FLAME",KSHIELD_FLAME},
+	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
 
 	// translation colormaps
 	{"TC_DEFAULT",TC_DEFAULT},

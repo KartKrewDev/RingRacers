@@ -50,6 +50,8 @@ void R_SortVisSprites(void);
 //     (only sprites from namelist are added or replaced)
 void R_AddSpriteDefs(UINT16 wadnum);
 
+fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
+
 #ifdef DELFILE
 void R_DelSpriteDefs(UINT16 wadnum);
 #endif
@@ -114,7 +116,8 @@ typedef enum
 	SC_FULLBRIGHT = 1<<4,
 	SC_SEMIBRIGHT = 1<<5,
 	SC_VFLIP = 1<<6,
-	SC_ISSCALED = 1>>7,
+	SC_ISSCALED = 1<<7,
+	SC_SHADOW = 1<<8,
 	// masks
 	SC_CUTMASK = SC_TOP|SC_BOTTOM,
 	SC_FLAGMASK = ~SC_CUTMASK
@@ -139,7 +142,15 @@ typedef struct vissprite_s
 	fixed_t startfrac; // horizontal position of x1
 	fixed_t scale, sortscale; // sortscale only differs from scale for flat sprites
 	fixed_t scalestep; // only for flat sprites, 0 otherwise
+	fixed_t paperoffset, paperdistance; // for paper sprites, offset/dist relative to the angle
 	fixed_t xiscale; // negative if flipped
+
+	angle_t centerangle; // for paper sprites
+
+	struct {
+		fixed_t tan; // The amount to shear the sprite vertically per row
+		INT32 offset; // The center of the shearing location offset from x1
+	} shear;
 
 	fixed_t texturemid;
 	lumpnum_t patch;
@@ -208,7 +219,7 @@ char *GetPlayerFacePic(INT32 skinnum);
 // Future: [[ ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz!@ ]]
 FUNCMATH FUNCINLINE static ATTRINLINE char R_Frame2Char(UINT8 frame)
 {
-#if 1 // 2.1 compat
+#if 0 // 2.1 compat
 	return 'A' + frame;
 #else
 	if (frame < 26) return 'A' + frame;
@@ -222,7 +233,7 @@ FUNCMATH FUNCINLINE static ATTRINLINE char R_Frame2Char(UINT8 frame)
 
 FUNCMATH FUNCINLINE static ATTRINLINE UINT8 R_Char2Frame(char cn)
 {
-#if 1 // 2.1 compat
+#if 0 // 2.1 compat
 	if (cn == '+') return '\\' - 'A'; // PK3 can't use backslash, so use + instead
 	return cn - 'A';
 #else

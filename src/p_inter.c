@@ -27,6 +27,7 @@
 #include "m_misc.h"
 #include "v_video.h" // video flags for CEchos
 #include "k_kart.h" // SRB2kart
+#include "k_battle.h"
 #include "k_pwrlv.h"
 
 // CTF player names
@@ -63,11 +64,11 @@ void P_ForceConstant(const BasicFF_t *FFInfo)
 	ConstantQuake.Magnitude = FFInfo->Magnitude;
 	if (FFInfo->player == &players[consoleplayer])
 		I_Tactile(ConstantForce, &ConstantQuake);
-	else if (splitscreen && FFInfo->player == &players[displayplayers[1]])
+	else if (splitscreen && FFInfo->player == &players[g_localplayers[1]])
 		I_Tactile2(ConstantForce, &ConstantQuake);
-	else if (splitscreen > 1 && FFInfo->player == &players[displayplayers[2]])
+	else if (splitscreen > 1 && FFInfo->player == &players[g_localplayers[2]])
 		I_Tactile3(ConstantForce, &ConstantQuake);
-	else if (splitscreen > 2 && FFInfo->player == &players[displayplayers[3]])
+	else if (splitscreen > 2 && FFInfo->player == &players[g_localplayers[3]])
 		I_Tactile4(ConstantForce, &ConstantQuake);
 }
 void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
@@ -84,11 +85,11 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 	RampQuake.End       = End;
 	if (FFInfo->player == &players[consoleplayer])
 		I_Tactile(ConstantForce, &RampQuake);
-	else if (splitscreen && FFInfo->player == &players[displayplayers[1]])
+	else if (splitscreen && FFInfo->player == &players[g_localplayers[1]])
 		I_Tactile2(ConstantForce, &RampQuake);
-	else if (splitscreen > 1 && FFInfo->player == &players[displayplayers[2]])
+	else if (splitscreen > 1 && FFInfo->player == &players[g_localplayers[2]])
 		I_Tactile3(ConstantForce, &RampQuake);
-	else if (splitscreen > 2 && FFInfo->player == &players[displayplayers[3]])
+	else if (splitscreen > 2 && FFInfo->player == &players[g_localplayers[3]])
 		I_Tactile4(ConstantForce, &RampQuake);
 }
 
@@ -108,7 +109,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		return false;
 
 	/*if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0) // No bumpers in Match
-        return false;*/
+		return false;*/
 
 	if (weapon)
 	{
@@ -116,12 +117,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		if (weapon == 2)
 		{
 			// Invulnerable
-			if (player->powers[pw_flashing] > 0
-				|| (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)
-				|| player->kartstuff[k_squishedtimer] > 0
-				|| player->kartstuff[k_invincibilitytimer] > 0
-				|| player->kartstuff[k_growshrinktimer] > 0
-				|| player->kartstuff[k_hyudorotimer] > 0)
+			if (player->powers[pw_flashing] > 0)
 				return false;
 
 			// Already have fake
@@ -133,7 +129,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		{
 			// Item-specific timer going off
 			if (player->kartstuff[k_stealingtimer] || player->kartstuff[k_stolentimer]
-				|| player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_rocketsneakertimer]
+				|| player->kartstuff[k_rocketsneakertimer]
 				|| player->kartstuff[k_eggmanexplode])
 				return false;
 
@@ -143,8 +139,8 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				|| player->kartstuff[k_itemheld])
 				return false;
 
-			if (weapon == 3 && player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
-				return false; // No stacking thunder shields!
+			if (weapon == 3 && K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
+				return false; // No stacking shields!
 		}
 	}
 
@@ -390,58 +386,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher);
 			break;
-		case MT_EGGMANITEM_SHIELD: // SRB2kart
-		case MT_EGGMANITEM:
-			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
-				return;
-
-			if (special->health <= 0 || toucher->health <= 0)
-				return;
-
-			if (!P_CanPickupItem(player, 2))
-				return;
-
-			if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
-			{
-				if (player->kartstuff[k_comebackmode] || player->kartstuff[k_comebacktimer])
-					return;
-				player->kartstuff[k_comebackmode] = 2;
-			}
-			else
-			{
-				K_DropItems(player); //K_StripItems(player);
-				//K_StripOther(player);
-				player->kartstuff[k_itemroulette] = 1;
-				player->kartstuff[k_roulettetype] = 2;
-			}
-
-#if 0
-			// Eggbox snipe!
-			if (special->type == MT_EGGMANITEM && special->health > 1)
-				S_StartSound(toucher, sfx_bsnipe);
-#endif
-
-			{
-				mobj_t *poof = P_SpawnMobj(special->x, special->y, special->z, MT_EXPLODE);
-				S_StartSound(poof, special->info->deathsound);
-			}
-
-			if (special->target && special->target->player)
-			{
-				if (G_RaceGametype() || special->target->player->kartstuff[k_bumper] > 0)
-					player->kartstuff[k_eggmanblame] = special->target->player-players;
-				else
-					player->kartstuff[k_eggmanblame] = player-players;
-
-				if (special->target->hnext == special)
-				{
-					P_SetTarget(&special->target->hnext, NULL);
-					special->target->player->kartstuff[k_eggmanheld] = 0;
-				}
-			}
-
-			P_RemoveMobj(special);
-			return;
 		case MT_KARMAHITBOX:
 			if (!special->target->player)
 				return;
@@ -596,11 +540,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				mobj_t *spbexplode;
 
-				if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
+				if (player->kartstuff[k_bubbleblowup] > 0)
 				{
-					//player->powers[pw_flashing] = 0;
-					K_DropHnextList(player);
-					K_StripItems(player);
+					K_DropHnextList(player, false);
+					special->extravalue1 = 2; // WAIT...
+					special->extravalue2 = 52; // Slightly over the respawn timer length
+					return;
 				}
 
 				S_StopSound(special); // Don't continue playing the gurgle or the siren
@@ -630,7 +575,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// kill
-			if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0)
+			if (player->kartstuff[k_invincibilitytimer] > 0
+				|| player->kartstuff[k_growshrinktimer] > 0
+				|| player->kartstuff[k_flamedash] > 0)
 			{
 				P_KillMobj(special, toucher, toucher);
 				return;
@@ -674,6 +621,25 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_BALLOON: // SRB2kart
 			P_SetObjectMomZ(toucher, 20<<FRACBITS, false);
 			break;
+		case MT_BUBBLESHIELDTRAP:
+			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
+				return;
+
+			if (special->tracer && !P_MobjWasRemoved(special->tracer))
+				return;
+
+			if (special->health <= 0 || toucher->health <= 0)
+				return;
+
+			if (!player->mo || player->spectator)
+				return;
+
+			// attach to player!
+			P_SetTarget(&special->tracer, toucher);
+			toucher->flags |= MF_NOGRAVITY;
+			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
+			S_StartSound(toucher, sfx_s1b2); 
+			return;
 
 // ***************************************** //
 // Rings, coins, spheres, weapon panels, etc //
@@ -705,7 +671,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// Reached the cap, don't waste 'em!
-			if ((player->kartstuff[k_rings] + player->kartstuff[k_pickuprings]) >= 20)
+			if (RINGTOTAL(player) >= 20)
 				return;
 
 			special->momx = special->momy = special->momz = 0;
@@ -925,7 +891,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						special->fuse = 1;
 						special->flags2 |= MF2_JUSTATTACKED;
 
-						if (!P_PlayerTouchingSectorSpecial(player, 4, 2 + flagteam))
+						if (!P_MobjTouchingSectorSpecial(player->mo, 4, 2 + flagteam, false))
 						{
 							CONS_Printf(M_GetText("%s returned the %c%s%c to base.\n"), plname, flagcolor, flagtext, 0x80);
 
@@ -1462,15 +1428,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_STARPOST:
 			if (player->bot)
 				return;
-			// SRB2kart - 150117
-			if (player->exiting) //STOP MESSING UP MY STATS FASDFASDF
-			{
-				player->kartstuff[k_starpostwp] = player->kartstuff[k_waypoint];
-				return;
-			}
 			//
 			// SRB2kart: make sure the player will have enough checkpoints to touch
-			if (circuitmap && special->health >= ((numstarposts/2) + player->starpostnum))
+			if (circuitmap && special->health - player->starpostnum > 1)
 			{
 				// blatant reuse of a variable that's normally unused in circuit
 				if (!player->tossdelay)
@@ -1491,13 +1451,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			// Save the player's time and position.
 			player->starposttime = player->realtime; //this makes race mode's timers work correctly whilst not affecting sp -x
-			//player->starposttime = leveltime;
-			player->starpostx = toucher->x>>FRACBITS;
-			player->starposty = toucher->y>>FRACBITS;
-			player->starpostz = special->z>>FRACBITS;
-			player->starpostangle = special->angle;
 			player->starpostnum = special->health;
-			player->kartstuff[k_starpostflip] = special->spawnpoint->options & MTF_OBJECTFLIP;	// store flipping
 
 			//S_StartSound(toucher, special->info->painsound);
 			return;
@@ -1797,7 +1751,7 @@ void P_CheckTimeLimit(void)
 	if (!(multiplayer || netgame))
 		return;
 
-	if (G_RaceGametype())
+	if (G_RaceGametype() || battlecapsules)
 		return;
 
 	if (leveltime < (timelimitintics + starttime))
@@ -2157,6 +2111,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	target->flags &= ~(MF_SHOOTABLE|MF_FLOAT|MF_SPECIAL);
 	target->flags2 &= ~(MF2_SKULLFLY|MF2_NIGHTSPULL);
 	target->health = 0; // This makes it easy to check if something's dead elsewhere.
+	target->shadowscale = 0;
 
 #ifdef HAVE_BLUA
 	if (LUAh_MobjDeath(target, inflictor, source) || P_MobjWasRemoved(target))
@@ -2525,6 +2480,45 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				}
 				target->fuse = 10;
 				S_StartSound(target, sfx_s3k80);
+			}
+			break;
+		case MT_BATTLECAPSULE:
+			{
+				mobj_t *cur;
+
+				numtargets++;
+				target->fuse = 16;
+				target->flags |= MF_NOCLIP|MF_NOCLIPTHING;
+
+				cur = target->hnext;
+
+				while (cur && !P_MobjWasRemoved(cur))
+				{
+					// Shoot every piece outward
+					if (!(cur->x == target->x && cur->y == target->y))
+					{
+						P_InstaThrust(cur,
+							R_PointToAngle2(target->x, target->y, cur->x, cur->y),
+							R_PointToDist2(target->x, target->y, cur->x, cur->y) / 12
+						);
+					}
+
+					cur->momz = 8 * target->scale * P_MobjFlip(target);
+
+					cur->flags &= ~MF_NOGRAVITY;
+					cur->tics = TICRATE;
+					cur->frame &= ~FF_ANIMATE; // Stop animating the propellers
+
+					cur = cur->hnext;
+				}
+
+				// All targets busted!
+				if (numtargets >= maptargets)
+				{
+					UINT8 i;
+					for (i = 0; i < MAXPLAYERS; i++)
+						P_DoPlayerExit(&players[i]);
+				}
 			}
 			break;
 
@@ -3303,8 +3297,8 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	if (!player)
 		return;
 
-	// Has a shield? Don't lose your rings!
-	if (player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
+	// Have a shield? You get hit, but don't lose your rings!
+	if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		return;
 
 	// 20 is the ring cap in kart

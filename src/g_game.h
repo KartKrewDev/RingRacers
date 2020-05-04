@@ -118,6 +118,13 @@ extern consvar_t cv_turnaxis3,cv_moveaxis3,cv_brakeaxis3,cv_aimaxis3,cv_lookaxis
 extern consvar_t cv_turnaxis4,cv_moveaxis4,cv_brakeaxis4,cv_aimaxis4,cv_lookaxis4,cv_fireaxis4,cv_driftaxis4,cv_deadzone4;
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
+extern consvar_t cv_invincmusicfade;
+extern consvar_t cv_growmusicfade;
+
+extern consvar_t cv_resetspecialmusic;
+
+extern consvar_t cv_resume;
+
 typedef enum
 {
 	AXISNONE = 0,
@@ -129,6 +136,7 @@ typedef enum
 	AXISDEAD, //Axises that don't want deadzones
 	AXISFIRE,
 	AXISDRIFT,
+	AXISLOOKBACK,
 } axis_input_e;
 
 // mouseaiming (looking up/down with the mouse or keyboard)
@@ -154,7 +162,6 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p);
 
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
-extern boolean camspin[MAXSPLITSCREENPLAYERS]; // SRB2Kart
 
 //
 // GAME
@@ -307,6 +314,10 @@ INT32 G_CountPlayersPotentiallyViewable(boolean active);
 void G_ResetViews(void);
 void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive);
 void G_AdjustView(UINT8 viewnum, INT32 offset, boolean onlyactive);
+
+void G_AddPartyMember (INT32 party_member, INT32 new_party_member);
+void G_RemovePartyMember (INT32 party_member);
+void G_ResetSplitscreen (INT32 playernum);
 
 void G_AddPlayer(INT32 playernum);
 
