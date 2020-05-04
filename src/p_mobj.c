@@ -8988,13 +8988,39 @@ void P_MobjThinker(mobj_t *mobj)
 						{
 							if (ticstilimpact <= 8)
 							{
-								newskin = ((skin_t*)mobj->target->skin)-skins;
+								newskin = mobj->target->player->skin;
 								newcolor = mobj->target->player->skincolor;
 							}
 							else
 							{
-								newskin = leveltime % numskins;
-								newcolor = skins[newskin].prefcolor;
+								UINT8 plist[MAXPLAYERS];
+								UINT8 plistlen = 0;
+								UINT8 i;
+
+								memset(plist, 0, sizeof(plist));
+
+								for (i = 0; i < MAXPLAYERS; i++)
+								{
+									if (playeringame[i] && !players[i].spectator)
+									{
+										plist[plistlen] = i;
+										plistlen++;
+									}
+								}
+
+								if (plistlen <= 1)
+								{
+									// Default to the winner
+									newskin = mobj->target->player->skin;
+									newcolor = mobj->target->player->skincolor;
+								}
+								else
+								{
+									// Pick another player in the server!
+									player_t *p = &players[plist[P_RandomKey(plistlen)]];
+									newskin = p->skin;
+									newcolor = p->skincolor;
+								}
 							}
 						}
 					}

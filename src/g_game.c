@@ -81,6 +81,7 @@ static void G_DoStartVote(void);
 char   mapmusname[7]; // Music name
 UINT16 mapmusflags; // Track and reset bit
 UINT32 mapmusposition; // Position to jump to
+UINT32 mapmusresume;
 
 INT16 gamemap = 1;
 INT16 maptol;
@@ -526,6 +527,12 @@ consvar_t cv_fireaxis4 = {"joyaxis4_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NU
 consvar_t cv_driftaxis4 = {"joyaxis4_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_deadzone4 = {"joy4_deadzone", "0.5", CV_FLOAT|CV_SAVE, deadzone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_invincmusicfade = {"invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_growmusicfade = {"growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_resetspecialmusic = {"resetspecialmusic", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_resume = {"resume", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 #if MAXPLAYERS > 16
 #error "please update player_name table using the new value for MAXPLAYERS"
@@ -2756,11 +2763,13 @@ void G_PlayerReborn(INT32 player)
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
+			mapmusresume = 0;
 			songcredit = true;
 		}
 	}
 
 	P_RestoreMusic(p);
+
 	if (songcredit)
 		S_ShowMusicCredit();
 

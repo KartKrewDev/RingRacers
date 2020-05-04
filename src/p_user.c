@@ -1188,6 +1188,8 @@ boolean P_EndingMusic(player_t *player)
 //
 void P_RestoreMusic(player_t *player)
 {
+	UINT32 position;
+
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
 
@@ -1244,10 +1246,16 @@ void P_RestoreMusic(player_t *player)
 
 		// Item - Grow
 		if (wantedmus == 2)
+		{
 			S_ChangeMusicInternal("kgrow", true);
+			S_SetRestoreMusicFadeInCvar(&cv_growmusicfade);
+		}
 		// Item - Invincibility
 		else if (wantedmus == 1)
+		{
 			S_ChangeMusicInternal("kinvnc", true);
+			S_SetRestoreMusicFadeInCvar(&cv_invincmusicfade);
+		}
 		else
 		{
 #if 0
@@ -1256,7 +1264,15 @@ void P_RestoreMusic(player_t *player)
 			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value))
 				S_SpeedMusic(1.2f);
 #endif
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+			if (mapmusresume && cv_resume.value)
+				position = mapmusresume;
+			else
+				position = mapmusposition;
+
+			S_ChangeMusicEx(mapmusname, mapmusflags, true, position, 0,
+					S_GetRestoreMusicFadeIn());
+			S_ClearRestoreMusicFadeInCvar();
+			mapmusresume = 0;
 		}
 	}
 }
@@ -7168,6 +7184,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	UINT8 timeover;
 	mobj_t *mo;
 	fixed_t f1, f2;
+	fixed_t speed;
 #ifndef NOCLIPCAM
 	boolean cameranoclip;
 	subsector_t *newsubsec;
@@ -7402,8 +7419,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	// sets ideal cam pos
 	dist = camdist;
 
-	if (player->speed > K_GetKartSpeed(player, false))
-		dist += 4*(player->speed - K_GetKartSpeed(player, false));
+	/* player->speed subtracts conveyors, janks up the camera */
+	speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+
+	if (speed > K_GetKartSpeed(player, false))
+		dist += 4*(speed - K_GetKartSpeed(player, false));
 	dist += abs(thiscam->momz)/4;
 
 	if (player->karthud[khud_boostcam])

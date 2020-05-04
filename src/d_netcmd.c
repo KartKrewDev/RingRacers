@@ -73,6 +73,7 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum);
 static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum);
 static void Got_PickVotecmd(UINT8 **cp, INT32 playernum);
+static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum);
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum);
 #ifdef DELFILE
 static void Got_Delfilecmd(UINT8 **cp, INT32 playernum);
@@ -206,6 +207,8 @@ static void Command_Togglemodified_f(void);
 static void Command_Archivetest_f(void);
 #endif
 #endif
+
+static void Command_KartGiveItem_f(void);
 
 // =========================================================================
 //                           CLIENT VARIABLES
@@ -407,10 +410,24 @@ consvar_t cv_karteliminatelast = {"karteliminatelast", "Yes", CV_NETVAR|CV_CHEAT
 
 consvar_t cv_kartusepwrlv = {"kartusepwrlv", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-static CV_PossibleValue_t kartdebugitem_cons_t[] = {{-1, "MIN"}, {NUMKARTITEMS-1, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t kartdebugitem_cons_t[] =
+{
+#define FOREACH( name, n ) { n, #name }
+	KART_ITEM_ITERATOR,
+#undef  FOREACH
+	{0}
+};
 consvar_t cv_kartdebugitem = {"kartdebugitem", "0", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugitem_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartdebugamount_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
 consvar_t cv_kartdebugamount = {"kartdebugamount", "1", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugamount_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_kartallowgiveitem = {"kartallowgiveitem",
+#ifdef DEVELOP
+	"Yes",
+#else
+	"No",
+#endif
+	CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL
+};
 consvar_t cv_kartdebugshrink = {"kartdebugshrink", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartdebugdistribution = {"kartdebugdistribution", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartdebughuddrop = {"kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -541,6 +558,11 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"PICKVOTE",
 	"REMOVEPLAYER",
 	"POWERLEVEL",
+	"PARTYINVITE",
+	"ACCEPTPARTYINVITE",
+	"LEAVEPARTY",
+	"CANCELPARTYINVITE",
+	"GIVEITEM",
 #ifdef HAVE_BLUA
 	"LUACMD",
 	"LUAVAR"
@@ -601,6 +623,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_MODIFYVOTE, Got_ModifyVotecmd);
 	RegisterNetXCmd(XD_PICKVOTE, Got_PickVotecmd);
 
+	RegisterNetXCmd(XD_GIVEITEM, Got_GiveItemcmd);
+
 	// Remote Administration
 	CV_RegisterVar(&cv_dummyjoinpassword);
 	COM_AddCommand("joinpassword", Command_ChangeJoinPassword_f);
@@ -658,6 +682,8 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("archivetest", Command_Archivetest_f);
 #endif
 #endif
+
+	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
 
 	// for master server connection
 	AddMServCommands();
@@ -1052,6 +1078,13 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_height);
 
 	CV_RegisterVar(&cv_soundtest);
+
+	CV_RegisterVar(&cv_invincmusicfade);
+	CV_RegisterVar(&cv_growmusicfade);
+
+	CV_RegisterVar(&cv_resetspecialmusic);
+
+	CV_RegisterVar(&cv_resume);
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
@@ -5781,6 +5814,41 @@ static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
 	Y_SetupVoteFinish(pick, level);
 }
 
+static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
+{
+	int item;
+	int  amt;
+
+	INT32 *kartstuff;
+
+	item = READSINT8 (*cp);
+	amt  = READUINT8 (*cp);
+
+	if (
+			( netgame && ! cv_kartallowgiveitem.value ) ||
+			( item < KITEM_SAD || item >= NUMKARTITEMS )
+	)
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal give item received from %s\n"),
+				player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	kartstuff = players[playernum].kartstuff;
+
+	kartstuff[k_itemtype]   = item;
+	kartstuff[k_itemamount] = amt;
+}
+
 /** Prints the number of displayplayers[0].
   *
   * \todo Possibly remove this; it was useful for debugging at one point.
@@ -5965,6 +6033,80 @@ static void Command_Archivetest_f(void)
 }
 #endif
 #endif
+
+/** Give yourself an, optional quantity or one of, an item.
+  *
+  * \sa cv_kartallowgiveitem
+*/
+static void Command_KartGiveItem_f(void)
+{
+	char         buf[2];
+
+	int           ac;
+	const char *name;
+	int         item;
+
+	const char * str;
+
+	int i;
+
+	/* Allow always in local games. */
+	if (! netgame || cv_kartallowgiveitem.value)
+	{
+		ac = COM_Argc();
+		if (ac < 2)
+		{
+			CONS_Printf(
+"kartgiveitem <item> [amount]: Give yourself an item\n"
+			);
+		}
+		else
+		{
+			item = NUMKARTITEMS;
+
+			name = COM_Argv(1);
+
+			if (isdigit(*name) || *name == '-')
+			{
+				item = atoi(name);
+			}
+			else
+			{
+				for (i = 0; ( str = kartdebugitem_cons_t[i].strvalue ); ++i)
+				{
+					if (strcasecmp(name, str) == 0)
+					{
+						item = kartdebugitem_cons_t[i].value;
+						break;
+					}
+				}
+			}
+
+			if (item < NUMKARTITEMS)
+			{
+				buf[0] = item;
+
+				if (ac > 2)
+					buf[1] = atoi(COM_Argv(2));
+				else
+					buf[1] = 1;/* default to one quantity */
+
+				SendNetXCmd(XD_GIVEITEM, buf, 2);
+			}
+			else
+			{
+				CONS_Alert(CONS_WARNING,
+						"No item matches '%s'\n",
+						name);
+			}
+		}
+	}
+	else
+	{
+		CONS_Alert(CONS_NOTICE,
+				"The server does not allow this.\n");
+	}
+}
 
 /** Makes a change to ::cv_forceskin take effect immediately.
   *
