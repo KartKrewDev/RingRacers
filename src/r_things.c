@@ -3045,7 +3045,7 @@ void SetFollower(INT32 playernum, INT32 skinnum)
 	player_t *player = &players[playernum];
 
 	player->followerready = true;	// we are ready to perform follower related actions in the player thinker, now.
-	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
+	if (skinnum >= -1 && skinnum <= numfollowers && player->followerskin != skinnum) // Make sure it exists!
 	{
 		player->followerskin = skinnum;
 		//CONS_Printf("Updated player follower num\n");

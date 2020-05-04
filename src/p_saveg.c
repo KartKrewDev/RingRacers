@@ -283,6 +283,7 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].followerskin);
 		WRITEUINT8(save_p, players[i].followerready);	// booleans are really just numbers eh??
+		WRITEUINT8(save_p, players[i].followercolor);
 		if (flags & FOLLOWER)
 			WRITEUINT32(save_p, players[i].follower->mobjnum);
 
@@ -463,6 +464,7 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].followerskin = READUINT8(save_p);
 		players[i].followerready = READUINT8(save_p);
+		players[i].followercolor = READUINT8(save_p);
 		if (flags & FOLLOWER)
 			players[i].follower = (mobj_t *)(size_t)READUINT32(save_p);
 

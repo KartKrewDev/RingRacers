@@ -110,6 +110,8 @@ typedef struct follower_s
 	char skinname[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything.
 	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
 
+	UINT8 defaultcolor;		// default color for menus.
+
 	fixed_t scale;			// Scale relative to the player's.
 
 	// some position shenanigans:

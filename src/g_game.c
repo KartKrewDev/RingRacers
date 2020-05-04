@@ -2561,6 +2561,7 @@ void G_PlayerReborn(INT32 player)
 	UINT8 kartweight;
 	boolean followerready;
 	INT32 followerskin;
+	UINT8 followercolor;
 	mobj_t *follower;	// old follower, will probably be removed by the time we're dead but you never know.
 	//
 	INT32 charflags;
@@ -2624,6 +2625,7 @@ void G_PlayerReborn(INT32 player)
 	kartweight = players[player].kartweight;
 	follower = players[player].follower;
 	followerready = players[player].followerready;
+	followercolor = players[player].followercolor;
 	followerskin = players[player].followerskin;
 	//
 	charflags = players[player].charflags;
@@ -2740,6 +2742,7 @@ void G_PlayerReborn(INT32 player)
 
 	p->followerready = followerready;
 	p->followerskin = followerskin;
+	p->followercolor = followercolor;
 	p->follower = NULL;	// respawn a new one with you, it looks better.
 
 
@@ -5010,6 +5013,18 @@ void G_ReadDemoExtraData(void)
 			M_Memcpy(name, demo_p, 16);
 			demo_p += 16;
 			SetPlayerFollower(p, name);
+			
+			// Follower's color
+			M_Memcpy(name, demo_p, 16);
+			demo_p += 16;
+			for (i = 0; i < MAXSKINCOLORS; i++)
+				if (!stricmp(KartColor_Names[i], name))				// SRB2kart
+				{
+					players[p].followercolor = i;
+					break;
+				}	
+
+			
 		}
 		if (extradata & DXD_PLAYSTATE)
 		{
@@ -5740,7 +5755,7 @@ void G_GhostTicker(void)
 				if (ziptic & DXD_NAME)
 					g->p += 16; // yea
 				if (ziptic & DXD_FOLLOWER)
-					g->p += 16; // ok
+					g->p += 32; // ok (32 because there's both the skin and the colour)
 				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
 					I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
 			}

@@ -113,10 +113,16 @@ static void Skin_OnChange(void);
 static void Skin2_OnChange(void);
 static void Skin3_OnChange(void);
 static void Skin4_OnChange(void);
+
 static void Follower_OnChange(void);
 static void Follower2_OnChange(void);
 static void Follower3_OnChange(void);
 static void Follower4_OnChange(void);
+static void Followercolor_OnChange(void);
+static void Followercolor2_OnChange(void);
+static void Followercolor3_OnChange(void);
+static void Followercolor4_OnChange(void);
+
 static void Color_OnChange(void);
 static void Color2_OnChange(void);
 static void Color3_OnChange(void);
@@ -299,6 +305,13 @@ consvar_t cv_follower = {"follower", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Foll
 consvar_t cv_follower2 = {"follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_follower3 = {"follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_follower4 = {"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+// player's follower colors... Also saved...
+consvar_t cv_followercolor = {"followercolor", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_followercolor2 = {"followercolor2", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_followercolor3 = {"followercolor3", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_followercolor4 = {"followercolor4", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
 
 // Follower toggle
 static CV_PossibleValue_t followers_cons_t[] = {{0, "Yours only"}, {1, "Everyone's"}, {0, NULL}};
@@ -803,11 +816,14 @@ void D_RegisterClientCommands(void)
 
 	for (i = 0; i < MAXSKINCOLORS; i++)
 	{
-		Color_cons_t[i].value = i;
-		Color_cons_t[i].strvalue = KartColor_Names[i];				// SRB2kart
+		Color_cons_t[i].value = Followercolor_cons_t[i].value = i;
+		Color_cons_t[i].strvalue = Followercolor_cons_t[i].strvalue = KartColor_Names[i];				// SRB2kart
 	}
-	Color_cons_t[MAXSKINCOLORS].value = 0;
-	Color_cons_t[MAXSKINCOLORS].strvalue = NULL;
+	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+1].value = 0;
+	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+1].strvalue = NULL;
+
+	Followercolor_cons_t[MAXSKINCOLORS].value = MAXSKINCOLORS;
+	Followercolor_cons_t[MAXSKINCOLORS].strvalue = "Match";			// Add "Match" option, which will make the follower color match the player's
 
 	if (dedicated)
 		return;
@@ -880,22 +896,26 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_playercolor);
 	CV_RegisterVar(&cv_skin); // r_things.c (skin NAME)
 	CV_RegisterVar(&cv_follower);
+	CV_RegisterVar(&cv_followercolor);
 	CV_RegisterVar(&cv_showfollowers);
 	// secondary player (splitscreen)
 	CV_RegisterVar(&cv_playername2);
 	CV_RegisterVar(&cv_playercolor2);
 	CV_RegisterVar(&cv_skin2);
 	CV_RegisterVar(&cv_follower2);
+	CV_RegisterVar(&cv_followercolor2);
 	// third player
 	CV_RegisterVar(&cv_playername3);
 	CV_RegisterVar(&cv_playercolor3);
 	CV_RegisterVar(&cv_skin3);
 	CV_RegisterVar(&cv_follower3);
+	CV_RegisterVar(&cv_followercolor3);
 	// fourth player
 	CV_RegisterVar(&cv_playername4);
 	CV_RegisterVar(&cv_playercolor4);
 	CV_RegisterVar(&cv_skin4);
 	CV_RegisterVar(&cv_follower4);
+	CV_RegisterVar(&cv_followercolor4);
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);
 
@@ -1478,15 +1498,13 @@ static void SendNameAndColor(void)
 			CV_StealthSet(&cv_playercolor, cv_playercolor.defaultvalue);
 	}
 
+	// ditto for follower colour:
+	if (!cv_followercolor.value)
+		CV_StealthSet(&cv_followercolor, "Match");	// set it to "Match". I don't care about your stupidity!
+
 	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
 	if (cv_follower.value > numfollowers-1 || cv_follower.value < -1)
 		CV_StealthSet(&cv_follower, "-1");
-
-	if (!strcmp(cv_playername.string, player_names[consoleplayer])
-		&& cv_playercolor.value == players[consoleplayer].skincolor
-		&& !strcmp(cv_skin.string, skins[players[consoleplayer].skin].name)
-		&& cv_follower.value == players[consoleplayer].followerskin)
-		return;
 
 	// We'll handle it later if we're not playing.
 	if (!Playing())
@@ -1573,6 +1591,7 @@ static void SendNameAndColor(void)
 	WRITEUINT8(p, (UINT8)cv_playercolor.value);
 	WRITEUINT8(p, (UINT8)cv_skin.value);
 	WRITESINT8(p, (UINT8)cv_follower.value);
+	WRITESINT8(p, (UINT8)cv_followercolor.value);
 	SendNetXCmd(XD_NAMEANDCOLOR, buf, p - buf);
 }
 
@@ -1615,6 +1634,10 @@ static void SendNameAndColor2(void)
 		else
 			CV_StealthSet(&cv_playercolor2, cv_playercolor2.defaultvalue);
 	}
+
+	// ditto for follower colour:
+	if (!cv_followercolor2.value)
+		CV_StealthSet(&cv_followercolor2, "Match");	// set it to "Match". I don't care about your stupidity!
 
 	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
 	if (cv_follower2.value > numfollowers-1 || cv_follower2.value < -1)
@@ -1706,6 +1729,7 @@ static void SendNameAndColor2(void)
 	WRITEUINT8(p, (UINT8)cv_playercolor2.value);
 	WRITEUINT8(p, (UINT8)cv_skin2.value);
 	WRITESINT8(p, (UINT8)cv_follower2.value);
+	WRITESINT8(p, (UINT8)cv_followercolor2.value);
 	SendNetXCmd2(XD_NAMEANDCOLOR, buf, p - buf);
 }
 
@@ -1736,6 +1760,10 @@ static void SendNameAndColor3(void)
 		else if (players[thirdplaya].ctfteam == 2 && cv_playercolor3.value != skincolor_blueteam)
 			CV_StealthSetValue(&cv_playercolor3, skincolor_blueteam);
 	}
+
+	// ditto for follower colour:
+	if (!cv_followercolor3.value)
+		CV_StealthSet(&cv_followercolor3, "Match");	// set it to "Match". I don't care about your stupidity!
 
 	// never allow the color "none"
 	if (!cv_playercolor3.value)
@@ -1830,6 +1858,7 @@ static void SendNameAndColor3(void)
 	WRITEUINT8(p, (UINT8)cv_playercolor3.value);
 	WRITEUINT8(p, (UINT8)cv_skin3.value);
 	WRITESINT8(p, (UINT8)cv_follower3.value);
+	WRITESINT8(p, (UINT8)cv_followercolor3.value);
 	SendNetXCmd3(XD_NAMEANDCOLOR, buf, p - buf);
 }
 
@@ -1860,6 +1889,10 @@ static void SendNameAndColor4(void)
 		else if (players[fourthplaya].ctfteam == 2 && cv_playercolor4.value != skincolor_blueteam)
 			CV_StealthSetValue(&cv_playercolor4, skincolor_blueteam);
 	}
+
+	// ditto for follower colour:
+	if (!cv_followercolor4.value)
+		CV_StealthSet(&cv_followercolor4, "Match");	// set it to "Match". I don't care about your stupidity!
 
 	// never allow the color "none"
 	if (!cv_playercolor4.value)
@@ -1962,6 +1995,7 @@ static void SendNameAndColor4(void)
 	WRITEUINT8(p, (UINT8)cv_playercolor4.value);
 	WRITEUINT8(p, (UINT8)cv_skin4.value);
 	WRITESINT8(p, (UINT8)cv_follower4.value);
+	WRITESINT8(p, (UINT8)cv_followercolor4.value);
 	SendNetXCmd4(XD_NAMEANDCOLOR, buf, p - buf);
 }
 
@@ -1969,7 +2003,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 {
 	player_t *p = &players[playernum];
 	char name[MAXPLAYERNAME+1];
-	UINT8 color, skin;
+	UINT8 color, skin, followercolor;
 	SINT8 follower;
 
 #ifdef PARANOIA
@@ -1995,6 +2029,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	color = READUINT8(*cp);
 	skin = READUINT8(*cp);
 	follower = READSINT8(*cp);
+	followercolor = READSINT8(*cp);
 
 	// set name
 	if (strcasecmp(player_names[playernum], name) != 0)
@@ -2055,7 +2090,11 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	else
 		SetPlayerSkinByNum(playernum, skin);
 
-	// set follower:
+	// set follower colour:
+	// Don't bother doing garbage and kicking if we receive None, this is both silly and a waste of time, this will be handled properly in P_HandleFollower.
+	p->followercolor = followercolor;
+
+	// set follower
 	SetFollower(playernum, follower);
 }
 
@@ -6208,6 +6247,22 @@ static void Follower_OnChange(void)
 	SendNameAndColor();
 }
 
+// About the same as Color_OnChange but for followers.
+static void Followercolor_OnChange(void)
+{
+
+	if (!Playing())
+		return; // do whatever you want if you aren't in the game or don't have a follower.
+
+	if (!P_PlayerMoving(consoleplayer))
+	{
+		// Color change menu scrolling fix is no longer necessary
+		SendNameAndColor();
+	}
+}
+
+// repeat for the 3 other players
+
 static void Follower2_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
@@ -6237,6 +6292,19 @@ static void Follower2_OnChange(void)
 		CV_StealthSet(&cv_follower2, set);	// set it to a number. It's easier for us to send later :)
 	}
 	SendNameAndColor2();
+}
+
+static void Followercolor2_OnChange(void)
+{
+
+	if (!Playing())
+		return; // do whatever you want if you aren't in the game or don't have a follower.
+
+	if (!P_PlayerMoving(g_localplayers[1]))
+	{
+		// Color change menu scrolling fix is no longer necessary
+		SendNameAndColor2();
+	}
 }
 
 static void Follower3_OnChange(void)
@@ -6269,6 +6337,19 @@ static void Follower3_OnChange(void)
 	SendNameAndColor3();
 }
 
+static void Followercolor3_OnChange(void)
+{
+
+	if (!Playing())
+		return; // do whatever you want if you aren't in the game or don't have a follower.
+
+	if (!P_PlayerMoving(g_localplayers[2]))
+	{
+		// Color change menu scrolling fix is no longer necessary
+		SendNameAndColor3();
+	}
+}
+
 static void Follower4_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
@@ -6297,6 +6378,19 @@ static void Follower4_OnChange(void)
 		CV_StealthSet(&cv_follower4, set);	// set it to a number. It's easier for us to send later :)
 	}
 	SendNameAndColor4();
+}
+
+static void Followercolor4_OnChange(void)
+{
+
+	if (!Playing())
+		return; // do whatever you want if you aren't in the game or don't have a follower.
+
+	if (!P_PlayerMoving(g_localplayers[3]))
+	{
+		// Color change menu scrolling fix is no longer necessary
+		SendNameAndColor4();
+	}
 }
 
 /** Sends a skin change for the console player, unless that player is moving.

@@ -720,7 +720,7 @@ static void readfollower(MYFILE *f)
 	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
 	followers[numfollowers].scale = FRACUNIT;
 	followers[numfollowers].atangle = 230;
-	followers[numfollowers].dist = 16;
+	followers[numfollowers].dist = 32;		// changed from 16 to 32 to better account for ogl models
 	followers[numfollowers].height = 16;
 	followers[numfollowers].zoffs = 32;
 	followers[numfollowers].horzlag = 2;
@@ -728,6 +728,7 @@ static void readfollower(MYFILE *f)
 	followers[numfollowers].bobspeed = TICRATE*2;
 	followers[numfollowers].bobamp = 4;
 	followers[numfollowers].hitconfirmtime = TICRATE;
+	followers[numfollowers].defaultcolor = 1;
 
 	do
 	{
@@ -762,6 +763,12 @@ static void readfollower(MYFILE *f)
 				strcpy(followers[numfollowers].name, word2);
 				nameset = true;
 			}
+			else if (fastcmp(word, "DEFAULTCOLOR"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].defaultcolor), UNDO_NONE);
+				followers[numfollowers].defaultcolor = get_number(word2);
+			}
+
 			else if (fastcmp(word, "SCALE"))
 			{
 				DEH_WriteUndoline(word, va("%d", followers[numfollowers].scale), UNDO_NONE);
@@ -806,7 +813,7 @@ static void readfollower(MYFILE *f)
 			{
 				DEH_WriteUndoline(word, va("%d", followers[numfollowers].height), UNDO_NONE);
 				followers[numfollowers].height = (INT32)atoi(word2);
-			}			
+			}
 			else if (fastcmp(word, "IDLESTATE"))
 			{
 				if (word2)
@@ -910,6 +917,14 @@ if (followers[numfollowers].field < threshold) \
 	FALLBACK(bobamp, "BOBAMP", 0, 0);
 	FALLBACK(bobspeed, "BOBSPEED", 0, 0);
 	FALLBACK(hitconfirmtime, "HITCONFIRMTIME", 1, 1);
+
+	// Special case for color I suppose
+	if (followers[numfollowers].defaultcolor < 0 || followers[numfollowers].defaultcolor > MAXSKINCOLORS-1)
+	{
+		followers[numfollowers].defaultcolor = 1;
+		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, MAXSKINCOLORS-1);
+	}
+
 #undef FALLBACK
 
 	// also check if we forgot states. If we did, we will set any missing state to the follower's idlestate.

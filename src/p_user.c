@@ -8082,6 +8082,7 @@ static void P_HandleFollower(player_t *player)
 	angle_t an;
 	fixed_t zoffs;
 	fixed_t sx, sy, sz;
+	UINT8 color;
 
 	if (!player->followerready)
 		return;	// we aren't ready to perform anything follower related yet.
@@ -8120,6 +8121,12 @@ static void P_HandleFollower(player_t *player)
 	fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * leveltime)>>ANGLETOFINESHIFT) & FINEMASK);
 	sz += FixedMul(player->mo->scale, sine)*P_MobjFlip(player->mo);
 
+	// extra step, give the follower a color !?
+	color = player->followercolor;
+	// little extra check to make sure this isn't garbage:
+	if (!color || color > MAXSKINCOLORS-1)
+		color = player->skincolor;		// "Match" option. Essentially a fallback as well.
+
 	if (!player->follower)	// follower doesn't exist / isn't valid
 	{
 		//CONS_Printf("Spawning follower...\n");
@@ -8127,6 +8134,7 @@ static void P_HandleFollower(player_t *player)
 		player->follower = P_SpawnMobj(sx, sy, sz, MT_FOLLOWER);
 		P_SetFollowerState(player->follower, fl.idlestate);
 		P_SetTarget(&player->follower->target, player->mo);	// we need that to know when we need to disappear
+		player->follower->angle = player->mo->angle;
 
 		player->follower->extravalue1 = 0;	// extravalue1 is used to know what "state set" to use.
 		/*
@@ -8158,7 +8166,12 @@ static void P_HandleFollower(player_t *player)
 		player->follower->momy = (sy - player->follower->y)/fl.horzlag;
 		player->follower->momz = (sz - player->follower->z)/fl.vertlag;
 		player->follower->angle = player->mo->angle;
-		player->follower->color = player->mo->color;
+
+		if (player->mo->colorized)
+			player->follower->color = player->mo->color;
+		else
+			player->follower->color = color;
+
 		player->follower->colorized = player->mo->colorized;
 
 		P_SetScale(player->follower, FixedMul(fl.scale, player->mo->scale));
