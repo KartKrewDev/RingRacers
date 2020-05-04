@@ -126,7 +126,7 @@ extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
 
-extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
+extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
 extern consvar_t cv_kartdebugwaypoints;
 
@@ -187,9 +187,10 @@ typedef enum
 	XD_ACCEPTPARTYINVITE, // 28
 	XD_LEAVEPARTY, // 29
 	XD_CANCELPARTYINVITE, // 30
+	XD_GIVEITEM,    // 31
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 31
-	XD_LUAVAR,      // 32
+	XD_LUACMD,      // 32
+	XD_LUAVAR,      // 33
 #endif
 	MAXNETXCMD
 } netxcmd_t;
