@@ -3045,19 +3045,20 @@ void SetFollower(INT32 playernum, INT32 skinnum)
 	player_t *player = &players[playernum];
 
 	player->followerready = true;	// we are ready to perform follower related actions in the player thinker, now.
-	if (skinnum >= -1 && skinnum <= numfollowers && player->followerskin != skinnum) // Make sure it exists!
+	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
 	{
-		player->followerskin = skinnum;
-		//CONS_Printf("Updated player follower num\n");
 		/*
 			We don't spawn the follower here since it'll be easier to handle all of it in the Player thinker itself.
 			However, we will despawn it right here if there's any to make it easy for the player thinker to replace it or delete it.
 		*/
-		if (player->follower)
+		if (player->follower && skinnum != player->followerskin)	// this is also called when we change colour so don't respawn the follower unless we changed skins
 		{
 			P_RemoveMobj(player->follower);
 			player->follower = NULL;
 		}
+
+		player->followerskin = skinnum;
+		//CONS_Printf("Updated player follower num\n");
 
 		// for replays: We have changed our follower mid-game; let the game know so it can do the same in the replay!
 		demo_extradata[playernum] |= DXD_FOLLOWER;
