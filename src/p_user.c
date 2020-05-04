@@ -8047,6 +8047,17 @@ void P_DoTimeOver(player_t *player)
 */
 static void P_SetFollowerState(mobj_t *f, INT32 state)
 {
+
+	if (!f || P_MobjWasRemoved(f))
+		return;		// safety net
+
+	// No, do NOT set the follower to S_NULL. Set it to S_INVISIBLE.
+	if (state == S_NULL)
+	{
+		state = S_INVISIBLE;
+		f->threshold = 1;	// Threshold = 1 means stop doing anything related to setting states, so that we don't get out of S_INVISIBLE
+	}
+
 	// extravalue2 stores the last "first state" we used.
 	// because states default to idlestates, if we use an animation that uses an "ongoing" state line, don't reset it!
 	// this prevents it from looking very dumb
@@ -8129,6 +8140,15 @@ static void P_HandleFollower(player_t *player)
 	}
 	else	// follower exists, woo!
 	{
+
+		// Safety net (2)
+
+		if (P_MobjWasRemoved(player->follower))
+		{
+			player->follower = NULL;	// Remove this and respawn one, don't crash the game if Lua decides to P_RemoveMobj this thing.
+			return;
+		}
+
 		// first of all, handle states following the same model as above:
 		if (player->follower->tics == 1)
 			P_SetFollowerState(player->follower, player->follower->state->nextstate);
@@ -8156,6 +8176,12 @@ static void P_HandleFollower(player_t *player)
 			player->follower->angle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);
 			// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
 			// Make sure the follower itself is also moving however, otherwise we'll be facing angle 0
+
+		if (player->follower->threshold)
+			return;	// Threshold means the follower was "despanwed" with S_NULL.
+
+		// However with how the code is factored, this is just a special case of S_INVISBLE to avoid having to add other player variables.
+
 
 		// handle follower animations. Could probably be better...
 		// hurt or dead
