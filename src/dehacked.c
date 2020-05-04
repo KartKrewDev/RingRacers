@@ -766,7 +766,7 @@ static void readfollower(MYFILE *f)
 			else if (fastcmp(word, "DEFAULTCOLOR"))
 			{
 				DEH_WriteUndoline(word, va("%d", followers[numfollowers].defaultcolor), UNDO_NONE);
-				followers[numfollowers].defaultcolor = get_number(word2);
+				followers[numfollowers].defaultcolor = (UINT8)get_number(word2);
 			}
 
 			else if (fastcmp(word, "SCALE"))
