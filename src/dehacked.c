@@ -1305,6 +1305,8 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}*/
 			else if (fastcmp(word, "MOBJSCALE"))
 				mapheaderinfo[num-1]->mobj_scale = get_number(word2);
+			else if (fastcmp(word, "DEFAULTWAYPOINTRADIUS"))
+				mapheaderinfo[num-1]->default_waypoint_radius = get_number(word2);
 
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))

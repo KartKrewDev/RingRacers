@@ -258,6 +258,8 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	//mapheaderinfo[num]->automap = false;
 	DEH_WriteUndoline("MOBJSCALE", va("%d", mapheaderinfo[num]->mobj_scale), UNDO_NONE);
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
+	DEH_WriteUndoline("DEFAULTWAYPOINTRADIUS", va("%d", mapheaderinfo[num]->default_waypoint_radius), UNDO_NONE);
+	mapheaderinfo[num]->default_waypoint_radius = DEFAULT_WAYPOINT_RADIUS;
 	// an even further impossibility, delfile custom opts support
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
