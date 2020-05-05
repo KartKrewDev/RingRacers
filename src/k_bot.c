@@ -461,7 +461,7 @@ static inline boolean K_FindBlockingWalls(line_t *line)
 
 blocked:
 	linedist = K_DistanceOfLineFromPoint(line->v1->x, line->v1->y, line->v2->x, line->v2->y, botmo->x, botmo->y);
-	linedist -= (botmo->radius * 4); // Maintain a reasonable distance away from it
+	linedist -= (botmo->radius * 8); // Maintain a reasonable distance away from it
 
 	if (linedist > distancetocheck)
 	{
@@ -1228,7 +1228,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		else
 		{
 			const fixed_t playerwidth = (player->mo->radius * 2);
-			const fixed_t realrad = predict->radius - (playerwidth * 2); // Remove a "safe" distance away from the edges of the road
+			const fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
 			fixed_t rad = realrad;
 			fixed_t dirdist = K_DistanceOfLineFromPoint(
 				player->mo->x, player->mo->y,
