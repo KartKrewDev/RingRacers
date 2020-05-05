@@ -10559,7 +10559,7 @@ static void K_drawKartMinimap(void)
 			g = g->next;
 		}
 
-		if (!stplyr->mo || stplyr->spectator) // do we need the latter..?
+		if (!stplyr->mo || stplyr->spectator || stplyr->exiting)
 			return;
 
 		localplayers[numlocalplayers] = stplyr-players;
@@ -10571,7 +10571,7 @@ static void K_drawKartMinimap(void)
 		{
 			if (!playeringame[i])
 				continue;
-			if (!players[i].mo || players[i].spectator)
+			if (!players[i].mo || players[i].spectator || players[i].exiting)
 				continue;
 
 			if (i != displayplayers[0] || r_splitscreen)
