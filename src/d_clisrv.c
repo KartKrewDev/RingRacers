@@ -646,6 +646,12 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	rsp->splitscreenindex = players[i].splitscreenindex;
 
+	rsp->bot = players[i].bot;
+	rsp->bot_difficulty = players[i].botvars.difficulty;
+	rsp->bot_itemdelay = players[i].botvars.itemdelay;
+	rsp->bot_itemconfirm = players[i].botvars.itemconfirm;
+	rsp->bot_lastturn = players[i].botvars.lastturn;
+
 	rsp->hasmo = false;
 	//Transfer important mo information if the player has a body.
 	//This lets us resync players even if they are dead.
@@ -768,6 +774,12 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].jointime = (tic_t)LONG(rsp->jointime);
 
 	players[i].splitscreenindex = rsp->splitscreenindex;
+
+	players[i].bot = rsp->bot;
+	players[i].botvars.difficulty = rsp->bot_difficulty;
+	players[i].botvars.itemdelay = rsp->bot_itemdelay;
+	players[i].botvars.itemconfirm = rsp->bot_itemconfirm;
+	players[i].botvars.lastturn = rsp->bot_lastturn;
 
 	//We get a packet for each player in game.
 	if (!playeringame[i])

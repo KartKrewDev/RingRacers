@@ -280,6 +280,12 @@ typedef struct
 
 	UINT8 splitscreenindex;
 
+	boolean bot;
+	UINT8 bot_difficulty;
+	tic_t bot_itemdelay;
+	tic_t bot_itemconfirm;
+	INT16 bot_lastturn;
+
 	//player->mo stuff
 	UINT8 hasmo; // Boolean
 
