@@ -1937,8 +1937,7 @@ void K_AdjustWaypointsParameters (void)
 						waypointmobj;
 						waypointmobj = waypointmobj->tracer
 				){
-					if (K_AnchorWaypointRadius(waypointmobj, anchor))
-						break;
+					K_AnchorWaypointRadius(waypointmobj, anchor);
 				}
 			}
 		}
