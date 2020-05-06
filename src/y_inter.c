@@ -156,6 +156,7 @@ static y_votelvlinfo levelinfo[5];
 static y_voteclient voteclient;
 static INT32 votetic;
 static INT32 voteendtic = -1;
+static boolean votenotyetpicked;
 static patch_t *cursor = NULL;
 static patch_t *cursor1 = NULL;
 static patch_t *cursor2 = NULL;
@@ -1605,67 +1606,74 @@ void Y_VoteTicker(void)
 		else
 			voteclient.ranim = pickedvote;
 	}
-	else
+	else if (votenotyetpicked)
 	{
 		if (votetic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
 			return;
 
-		for (i = 0; i <= splitscreen; i++)
+		/*
+		The vote ended, but it will take at least a tic for that to reach us from
+		the server. Don't let me change the vote now, it won't matter anyway!
+		*/
+		if (timer)
 		{
-			UINT8 p;
-			boolean pressed = false;
-
-			switch (i)
+			for (i = 0; i <= splitscreen; i++)
 			{
-				case 1:
-					p = g_localplayers[1];
-					break;
-				case 2:
-					p = g_localplayers[2];
-					break;
-				case 3:
-					p = g_localplayers[3];
-					break;
-				default:
-					p = consoleplayer;
-					break;
-			}
+				UINT8 p;
+				boolean pressed = false;
 
-			if (voteclient.playerinfo[i].delay)
-				voteclient.playerinfo[i].delay--;
-
-			if ((playeringame[p] && !players[p].spectator)
-				&& !voteclient.playerinfo[i].delay
-				&& pickedvote == -1 && votes[p] == -1)
-			{
-				if (InputDown(gc_aimforward, i+1) || JoyAxis(AXISAIM, i+1) < 0)
+				switch (i)
 				{
-					voteclient.playerinfo[i].selection--;
-					pressed = true;
+					case 1:
+						p = g_localplayers[1];
+						break;
+					case 2:
+						p = g_localplayers[2];
+						break;
+					case 3:
+						p = g_localplayers[3];
+						break;
+					default:
+						p = consoleplayer;
+						break;
 				}
 
-				if ((InputDown(gc_aimbackward, i+1) || JoyAxis(AXISAIM, i+1) > 0) && !pressed)
+				if (voteclient.playerinfo[i].delay)
+					voteclient.playerinfo[i].delay--;
+
+				if ((playeringame[p] && !players[p].spectator)
+						&& !voteclient.playerinfo[i].delay
+						&& pickedvote == -1 && votes[p] == -1)
 				{
-					voteclient.playerinfo[i].selection++;
-					pressed = true;
+					if (InputDown(gc_aimforward, i+1) || JoyAxis(AXISAIM, i+1) < 0)
+					{
+						voteclient.playerinfo[i].selection--;
+						pressed = true;
+					}
+
+					if ((InputDown(gc_aimbackward, i+1) || JoyAxis(AXISAIM, i+1) > 0) && !pressed)
+					{
+						voteclient.playerinfo[i].selection++;
+						pressed = true;
+					}
+
+					if (voteclient.playerinfo[i].selection < 0)
+						voteclient.playerinfo[i].selection = 3;
+					if (voteclient.playerinfo[i].selection > 3)
+						voteclient.playerinfo[i].selection = 0;
+
+					if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
+					{
+						D_ModifyClientVote(consoleplayer, voteclient.playerinfo[i].selection, i);
+						pressed = true;
+					}
 				}
 
-				if (voteclient.playerinfo[i].selection < 0)
-					voteclient.playerinfo[i].selection = 3;
-				if (voteclient.playerinfo[i].selection > 3)
-					voteclient.playerinfo[i].selection = 0;
-
-				if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
+				if (pressed)
 				{
-					D_ModifyClientVote(consoleplayer, voteclient.playerinfo[i].selection, i);
-					pressed = true;
+					S_StartSound(NULL, sfx_kc4a);
+					voteclient.playerinfo[i].delay = NEWTICRATE/7;
 				}
-			}
-
-			if (pressed)
-			{
-				S_StartSound(NULL, sfx_kc4a);
-				voteclient.playerinfo[i].delay = NEWTICRATE/7;
 			}
 		}
 
@@ -1703,7 +1711,10 @@ void Y_VoteTicker(void)
 			{
 				timer = 0;
 				if (voteendtic == -1)
+				{
+					votenotyetpicked = false;/* don't pick vote twice */
 					D_PickVote();
+				}
 			}
 		}
 	}
@@ -1737,6 +1748,8 @@ void Y_StartVote(void)
 
 	timer = cv_votetime.value*TICRATE;
 	pickedvote = -1;
+
+	votenotyetpicked = true;
 
 	for (i = 0; i < 3; i++)
 	{
