@@ -354,6 +354,41 @@ boolean K_BotCanTakeCut(player_t *player)
 	return false;
 }
 
+static UINT32 K_BotRubberbandDistance(player_t *player)
+{
+	const UINT32 spacing = 2048;
+	const UINT8 portpriority = player - players;
+	UINT8 pos = 0;
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (i == portpriority)
+		{
+			continue;
+		}
+
+		if (playeringame[i] && players[i].bot)
+		{
+			// First check difficulty levels, then score, then settle it with port priority!
+			if (player->botvars.difficulty < players[i].botvars.difficulty)
+			{
+				pos++;
+			}
+			else if (player->score < players[i].score)
+			{
+				pos++;
+			}
+			else if (i < portpriority)
+			{
+				pos++;
+			}
+		}
+	}
+
+	return (pos * spacing);
+}
+
 fixed_t K_BotRubberband(player_t *player)
 {
 	fixed_t rubberband = FRACUNIT;
@@ -385,14 +420,18 @@ fixed_t K_BotRubberband(player_t *player)
 
 	if (firstplace != NULL)
 	{
-		const UINT32 spacing = 4096;
-		UINT32 easiness = (MAXBOTDIFFICULTY - player->botvars.difficulty);
-		UINT32 wanteddist = firstplace->distancetofinish + (spacing * easiness);
+		const UINT32 wanteddist = firstplace->distancetofinish + K_BotRubberbandDistance(player);
+		const INT32 distdiff = player->distancetofinish - wanteddist;
 
-		if (wanteddist < player->distancetofinish)
+		if (wanteddist > player->distancetofinish)
 		{
-			// Catch up to 1st!
-			rubberband += (2*player->botvars.difficulty) * (player->distancetofinish - wanteddist);
+			// Whoa, you're too far ahead!
+			rubberband += (MAXBOTDIFFICULTY - player->botvars.difficulty) * distdiff;
+		}
+		else
+		{
+			// Catch up to your position!
+			rubberband += (2*player->botvars.difficulty) * distdiff;
 		}
 	}
 
