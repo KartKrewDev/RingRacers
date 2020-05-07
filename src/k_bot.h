@@ -22,7 +22,8 @@ typedef struct botprediction_s {
 	angle_t dir;
 } botprediction_t;
 
-void K_AddBots(SINT8 numbots);
+boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *newplayernum);
+void K_UpdateMatchRaceBots(void);
 boolean K_PlayerUsesBotMovement(player_t *player);
 boolean K_BotCanTakeCut(player_t *player);
 fixed_t K_BotRubberband(player_t *player);

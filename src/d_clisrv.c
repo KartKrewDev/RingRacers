@@ -2687,7 +2687,7 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 
 	demo_extradata[playernum] |= DXD_PLAYSTATE;
 
-	if (server && !demo.playback)
+	if (server && !demo.playback && !players[playernum].bot)
 	{
 		INT32 node = playernode[playernum];
 		//playerpernode[node] = 0; // It'd be better to remove them all at once, but ghosting happened, so continue to let CL_RemovePlayer do it one-by-one
@@ -3696,6 +3696,7 @@ static boolean SV_AddWaitingPlayers(void)
 		{
 			UINT8 buf[4];
 			UINT8 *buf_p = buf;
+			UINT8 nobotoverwrite;
 
 			newplayer = true;
 
@@ -3711,6 +3712,21 @@ static boolean SV_AddWaitingPlayers(void)
 						break;
 				if (n == MAXNETNODES)
 					break;
+			}
+
+			nobotoverwrite = newplayernum;
+
+			while (playeringame[nobotoverwrite]
+			&& players[nobotoverwrite].bot
+			&& nobotoverwrite < MAXPLAYERS)
+			{
+				// Only overwrite bots if there are NO other slots available.
+				nobotoverwrite++;
+			}
+
+			if (nobotoverwrite < MAXPLAYERS)
+			{
+				newplayernum = nobotoverwrite;
 			}
 
 			// should never happen since we check the playernum
@@ -3801,9 +3817,6 @@ boolean SV_SpawnServer(void)
 		if (!dedicated)
 			CL_ConnectToServer(false);
 		else doomcom->numslots = 1;
-
-		// TEST
-		K_AddBots(7);
 	}
 
 	return SV_AddWaitingPlayers();

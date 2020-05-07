@@ -87,6 +87,7 @@
 #include "k_battle.h" // K_SpawnBattleCapsules
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
+#include "k_bot.h"
 
 //
 // Map MD5, calculated on level load.
@@ -2425,6 +2426,9 @@ static void P_LevelInitStuff(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
+
+	//if (!grandprix)
+		K_UpdateMatchRaceBots();
 }
 
 //

@@ -24,92 +24,315 @@
 #include "i_system.h"
 #include "p_maputl.h"
 #include "d_ticcmd.h"
+#include "m_random.h"
+#include "r_things.h" // numskins
 
-void K_AddBots(SINT8 numbots)
+boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
 {
-	UINT8 newplayernum = 0;
-	UINT8 difficulty = MAXBOTDIFFICULTY;
+	UINT8 buf[3];
+	UINT8 *buf_p = buf;
+	UINT8 newplayernum = *p;
 
-	if (dedicated)
-		newplayernum = 1;
-
-	while (numbots > 0)
+	// search for a free playernum
+	// we can't use playeringame since it is not updated here
+	for (; newplayernum < MAXPLAYERS; newplayernum++)
 	{
-		UINT8 buf[3];
-		UINT8 *buf_p = buf;
+		UINT8 n;
 
-		numbots--;
-
-		// search for a free playernum
-		// we can't use playeringame since it is not updated here
-		for (; newplayernum < MAXPLAYERS; newplayernum++)
-		{
-			UINT8 n;
-
-			for (n = 0; n < MAXNETNODES; n++)
-				if (nodetoplayer[n] == newplayernum
-				|| nodetoplayer2[n] == newplayernum
-				|| nodetoplayer3[n] == newplayernum
-				|| nodetoplayer4[n] == newplayernum)
-					break;
-
-			if (n == MAXNETNODES)
+		for (n = 0; n < MAXNETNODES; n++)
+			if (nodetoplayer[n] == newplayernum
+			|| nodetoplayer2[n] == newplayernum
+			|| nodetoplayer3[n] == newplayernum
+			|| nodetoplayer4[n] == newplayernum)
 				break;
+
+		if (n == MAXNETNODES)
+			break;
+	}
+
+	while (playeringame[newplayernum]
+		&& players[newplayernum].bot
+		&& newplayernum < MAXPLAYERS)
+	{
+		newplayernum++;
+	}
+
+	if (newplayernum >= MAXPLAYERS)
+	{
+		*p = newplayernum;
+		return false;
+	}
+
+	WRITEUINT8(buf_p, newplayernum);
+
+	if (skin > numskins)
+	{
+		skin = numskins;
+	}
+
+	WRITEUINT8(buf_p, skin);
+
+	if (difficulty < 1)
+	{
+		difficulty = 1;
+	}
+	else if (difficulty > MAXBOTDIFFICULTY)
+	{
+		difficulty = MAXBOTDIFFICULTY;
+	}
+
+	WRITEUINT8(buf_p, difficulty);
+
+	SendNetXCmd(XD_ADDBOT, buf, buf_p - buf);
+
+	DEBFILE(va("Server added bot %d\n", newplayernum));
+	// use the next free slot (we can't put playeringame[newplayernum] = true here)
+	newplayernum++;
+
+	*p = newplayernum;
+	return true;
+}
+
+void K_UpdateMatchRaceBots(void)
+{
+	const UINT8 difficulty = cv_kartbot.value;
+	UINT8 pmax = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value);
+	UINT8 numplayers = 0;
+	UINT8 numbots = 0;
+	UINT8 numwaiting = 0;
+	SINT8 wantedbots = 0;
+	UINT8 i;
+
+	if (difficulty != 0)
+	{
+		if (cv_ingamecap.value > 0)
+		{
+			pmax = min(pmax, cv_ingamecap.value);
 		}
 
-		WRITEUINT8(buf_p, newplayernum);
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i])
+			{
+				if (!players[i].spectator)
+				{
+					if (players[i].bot)
+					{
+						numbots++;
 
-		// test skins
-		if (numbots == 6)
-		{
-			difficulty = MAXBOTDIFFICULTY;
-			WRITEUINT8(buf_p, 1);
+						// While we're here, we should update bot difficulty to the proper value.
+						players[i].botvars.difficulty = difficulty;
+					}
+					else
+					{
+						numplayers++;
+					}
+				}
+				else if (players[i].pflags & PF_WANTSTOJOIN)
+				{
+					numwaiting++;
+				}
+			}
 		}
-		else if (numbots == 5)
+
+		wantedbots = pmax - numplayers - numwaiting;
+
+		if (wantedbots < 0)
 		{
-			difficulty = MAXBOTDIFFICULTY;
-			WRITEUINT8(buf_p, 0);
+			wantedbots = 0;
 		}
-		else if (numbots == 4)
+	}
+	else
+	{
+		wantedbots = 0;
+	}
+
+	if (numbots < wantedbots)
+	{
+		// We require MORE bots!
+		UINT8 newplayernum = 0;
+
+		if (dedicated)
 		{
-			difficulty = MAXBOTDIFFICULTY-1;
-			WRITEUINT8(buf_p, 2);
+			newplayernum = 1;
 		}
-		else if (numbots == 3)
+
+		while (numbots < wantedbots)
 		{
-			difficulty = MAXBOTDIFFICULTY-2;
-			WRITEUINT8(buf_p, 3);
+			if (!K_AddBot(M_RandomKey(numskins), difficulty, &newplayernum))
+			{
+				// Not enough player slots to add the bot, break the loop.
+				break;
+			}
+
+			numbots++;
 		}
-		else if (numbots == 2)
+	}
+	else if (numbots > wantedbots)
+	{
+		UINT8 buf[2];
+
+		i = 0;
+
+		while (numbots > wantedbots && i < MAXPLAYERS)
 		{
-			difficulty = MAXBOTDIFFICULTY-4;
-			WRITEUINT8(buf_p, 5);
+			if (playeringame[i] && players[i].bot)
+			{
+				buf[0] = i;
+				buf[1] = KR_LEAVE;
+				SendNetXCmd(XD_REMOVEPLAYER, &buf, 2);
+
+				CONS_Printf("Removed bot %s\n", player_names[i]);
+				numbots--;
+			}
+
+			i++;
 		}
-		else if (numbots == 1)
+	}
+
+	// We should have enough bots now :)
+}
+
+#if 0
+// This is mostly just pesudo code right now...
+void K_InitGrandPrixBots(void)
+{
+	const UINT8 defaultbotskin = 9; // eggrobo
+
+	// startingdifficulty: Easy = 3, Normal = 6, Hard = 9
+	const UINT8 startingdifficulty = min(MAXBOTDIFFICULTY, (cv_kartspeed.value + 1) * 3);
+	UINT8 difficultylevels[MAXPLAYERS];
+
+	UINT8 playercount = 8;
+	UINT8 wantedbots = 0;
+
+	UINT8 numplayers = 0;
+	UINT8 competitors[4];
+
+	boolean skinusable[MAXSKINS];
+	UINT8 botskinlist[MAXPLAYERS];
+	UINT8 botskinlistpos = 0;
+
+	UINT8 i;
+
+	memset(difficultylevels, MAXBOTDIFFICULTY, sizeof (difficultylevels));
+	memset(competitors, MAXPLAYERS, sizeof (competitors));
+	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
+
+	// init usable bot skins list
+	for (i = 0; i < MAXSKINS; i++)
+	{
+		if (i < numskins)
 		{
-			difficulty = MAXBOTDIFFICULTY-4;
-			WRITEUINT8(buf_p, 9);
+			skinusable[i] = true;
 		}
 		else
 		{
-			difficulty = MAXBOTDIFFICULTY-2;
-			WRITEUINT8(buf_p, 10);
+			skinusable[i] = false;
 		}
+	}
 
-		WRITEUINT8(buf_p, difficulty);
+	// init difficulty levels list
+	//if (!mastermodebots) {
+	difficultylevels[MAXPLAYERS] = {
+		max(1, startingdifficulty),
+		max(1, startingdifficulty-1),
+		max(1, startingdifficulty-2),
+		max(1, startingdifficulty-3),
+		max(1, startingdifficulty-3),
+		max(1, startingdifficulty-4),
+		max(1, startingdifficulty-4),
+		max(1, startingdifficulty-4),
+		max(1, startingdifficulty-5),
+		max(1, startingdifficulty-5),
+		max(1, startingdifficulty-6),
+		max(1, startingdifficulty-6),
+		max(1, startingdifficulty-7),
+		max(1, startingdifficulty-7),
+		max(1, startingdifficulty-8),
+		max(1, startingdifficulty-8),
+	};
 
-		SendNetXCmd(XD_ADDBOT, buf, buf_p - buf);
-
-		if (difficulty > 0)
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (numplayers < MAXSPLITSCREENPLAYERS)
 		{
-			difficulty--;
+			if (playeringame[i] && !players[i].spectator)
+			{
+				competitors[numplayers] = i;
+				numplayers++;
+			}
 		}
+		else
+		{
+			if (playeringame[i])
+			{
+				players[i].spectator = true; // force spectate for all other players, if they happen to exist?
+			}
+		}
+	}
 
-		DEBFILE(va("Server added bot %d\n", newplayernum));
-		// use the next free slot (we can't put playeringame[newplayernum] = true here)
-		newplayernum++;
+	if (numplayers > 2)
+	{
+		// Add 3 bots per player beyond 2P
+		playercount += (numplayers-2) * 3;
+	}
+
+	wantedbots = playercount - numplayers;
+
+	// Create rival list
+
+	// TODO: Use player skin's set rivals
+	// Starting with P1's rival1, P2's rival1, P3's rival1, P4's rival1,
+	// then P1's rival2, P2's rival2, etc etc etc etc.......
+	// then skip over any duplicates.
+
+	// Pad the remaining list with random skins if we need to
+	if (botskinlistpos < wantedbots)
+	{
+		for (i = botskinlistpos; i < wantedbots; i++)
+		{
+			UINT8 val = M_RandomKey(numskins);
+			UINT8 loops = 0;
+
+			while (!skinusable[val])
+			{
+				if (loops >= numskins)
+				{
+					// no more skins
+					break;
+				}
+
+				val++;
+
+				if (val >= numskins)
+				{
+					val = 0;
+				}
+
+				loops++;
+			}
+
+			if (loops >= numskins)
+			{
+				// leave the rest of the table as the default skin
+				break;
+			}
+
+			botskinlist[i] = val;
+			skinusable[val] = false;
+		}
+	}
+
+	for (i = 0; i < wantedbots; i++)
+	{
+		if (!K_AddBot(botskinlist[i], difficultylevels[i], &newplayernum))
+		{
+			break;
+		}
 	}
 }
+#endif
 
 boolean K_PlayerUsesBotMovement(player_t *player)
 {

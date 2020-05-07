@@ -623,6 +623,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartvoterulechanges);
 	CV_RegisterVar(&cv_kartspeedometer);
 	CV_RegisterVar(&cv_kartvoices);
+	CV_RegisterVar(&cv_kartbot);
 	CV_RegisterVar(&cv_karteliminatelast);
 	CV_RegisterVar(&cv_kartusepwrlv);
 	CV_RegisterVar(&cv_votetime);

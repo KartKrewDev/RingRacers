@@ -121,6 +121,7 @@ extern consvar_t cv_kartencore;
 extern consvar_t cv_kartvoterulechanges;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
+extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_kartusepwrlv;
 

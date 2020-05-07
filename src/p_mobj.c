@@ -11762,9 +11762,20 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 
 	// spawn as spectator determination
-	if (multiplayer && demo.playback); // Don't mess with spectator values since the demo setup handles them already.
+	if (multiplayer && demo.playback)
+	{
+		; // Don't mess with spectator values since the demo setup handles them already.
+	}
 	else if (!G_GametypeHasSpectators())
+	{
+		// We don't have spectators
 		p->spectator = false;
+	}
+	else if (p->bot)
+	{
+		// No point in a spectating bot!
+		p->spectator = false;
+	}
 	else if (netgame && p->jointime <= 1 && pcount)
 	{
 		p->spectator = true;
