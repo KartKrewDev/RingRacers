@@ -103,6 +103,11 @@ void K_UpdateMatchRaceBots(void)
 	SINT8 wantedbots = 0;
 	UINT8 i;
 
+	if (!server)
+	{
+		return;
+	}
+
 	if (difficulty != 0)
 	{
 		if (cv_ingamecap.value > 0)
@@ -182,7 +187,6 @@ void K_UpdateMatchRaceBots(void)
 				buf[1] = KR_LEAVE;
 				SendNetXCmd(XD_REMOVEPLAYER, &buf, 2);
 
-				CONS_Printf("Removed bot %s\n", player_names[i]);
 				numbots--;
 			}
 
