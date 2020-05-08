@@ -378,6 +378,8 @@ typedef struct mobj_s
 	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
 	boolean whiteshadow; // Use white shadow, set to true by default for fullbright objects
 
+	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
 

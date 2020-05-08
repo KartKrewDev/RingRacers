@@ -1674,6 +1674,10 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->modeltilt = mobj->modeltilt;
 #endif
 
+	ghost->sprxoff = mobj->sprxoff;
+	ghost->spryoff = mobj->spryoff;
+	ghost->sprzoff = mobj->sprzoff;
+
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
 
