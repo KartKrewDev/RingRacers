@@ -100,7 +100,7 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		thing->player->starpostnum = starpostnum;
 
 		P_ResetPlayer(thing->player);
-		P_SetPlayerMobjState(thing, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+		P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 
 		P_FlashPal(thing->player, PAL_MIXUP, 10);
 	}
@@ -185,7 +185,7 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 			thing->player->rmomx = thing->player->rmomy = 0;
 			thing->player->speed = 0;
 			P_ResetPlayer(thing->player);
-			P_SetPlayerMobjState(thing, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+			P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 		}
 
 		if (flash)

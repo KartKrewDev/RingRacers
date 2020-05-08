@@ -2882,7 +2882,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				mo->player->rmomx = mo->player->rmomy = 1;
 				mo->player->cmomx = mo->player->cmomy = 0;
 				P_ResetPlayer(mo->player);
-				P_SetPlayerMobjState(mo, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+				P_SetPlayerMobjState(mo, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 
 				// Reset bot too.
 				if (bot) {
@@ -2893,7 +2893,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					bot->player->rmomx = bot->player->rmomy = 1;
 					bot->player->cmomx = bot->player->cmomy = 0;
 					P_ResetPlayer(bot->player);
-					P_SetPlayerMobjState(bot, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+					P_SetPlayerMobjState(bot, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 				}
 			}
 			break;
@@ -4349,8 +4349,8 @@ DoneSection2:
 				player->pflags &= ~PF_GLIDING;
 				player->climbing = 0;
 
-				if (!(player->mo->state >= &states[S_KART_RUN1] && player->mo->state <= &states[S_KART_RUN2]))
-					P_SetPlayerMobjState(player->mo, S_KART_RUN1);
+				if (!(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
 
 				//if (!(player->mo->state >= &states[S_PLAY_ATK1] && player->mo->state <= &states[S_PLAY_ATK4])) // SRB2kart
 				//{
@@ -4424,8 +4424,8 @@ DoneSection2:
 				player->pflags &= ~PF_SPINNING; // SRB2kart 200117
 				player->pflags &= ~PF_JUMPED;
 
-				if (!(player->mo->state >= &states[S_KART_RUN1] && player->mo->state <= &states[S_KART_RUN2]))
-					P_SetPlayerMobjState(player->mo, S_KART_RUN1);
+				if (!(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
 
 				//if (!(player->mo->state >= &states[S_PLAY_ATK1] && player->mo->state <= &states[S_PLAY_ATK4])) // SRB2kart
 				//{

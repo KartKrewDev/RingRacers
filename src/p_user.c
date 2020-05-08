@@ -2934,7 +2934,7 @@ static void P_DoClimbing(player_t *player)  // SRB2kart - unused
 	if (player->climbing && P_IsObjectOnGround(player->mo))
 	{
 		P_ResetPlayer(player);
-		P_SetPlayerMobjState(player->mo, S_KART_STND1); // SRB2kart
+		P_SetPlayerMobjState(player->mo, S_KART_STILL1); // SRB2kart
 	}
 }
 
@@ -3640,7 +3640,7 @@ static void P_DoSpinDash(player_t *player, ticcmd_t *cmd) // SRB2kart - unused.
 		{
 			player->skidtime = 0;
 			player->pflags &= ~PF_SPINNING;
-			P_SetPlayerMobjState(player->mo, S_KART_STND1);
+			P_SetPlayerMobjState(player->mo, S_KART_STILL1);
 			player->mo->momx = player->cmomx;
 			player->mo->momy = player->cmomy;
 		}
@@ -3836,14 +3836,14 @@ static void P_2dMovement(player_t *player)
 			else if (player->exiting)
 			{
 				player->pflags &= ~PF_GLIDING;
-				P_SetPlayerMobjState(player->mo, S_KART_WALK1); // SRB2kart - was S_PLAY_RUN1
+				P_SetPlayerMobjState(player->mo, S_KART_SLOW1); // SRB2kart - was S_PLAY_RUN1
 				player->skidtime = 0;
 			}
 		}
 		if (player->pflags & PF_SPINNING && !player->exiting)
 		{
 			player->pflags &= ~PF_SPINNING;
-			P_SetPlayerMobjState(player->mo, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+			P_SetPlayerMobjState(player->mo, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 		}
 	}
 
@@ -5830,18 +5830,18 @@ static void P_MovePlayer(player_t *player)
 		// If the player is moving fast enough,
 		// break into a run!
 		if (player->speed >= runspd && player->panim == PA_WALK && !player->skidtime && (onground || player->powers[pw_super]))
-			P_SetPlayerMobjState (player->mo, S_KART_RUN1); // SRB2kart - was S_PLAY_SPD1
+			P_SetPlayerMobjState (player->mo, S_KART_FAST1); // SRB2kart - was S_PLAY_SPD1
 
 		// Otherwise, just walk.
 		else if ((player->rmomx || player->rmomy) && player->panim == PA_IDLE)
-			P_SetPlayerMobjState (player->mo, S_KART_WALK1); // SRB2kart - was S_PLAY_RUN1
+			P_SetPlayerMobjState (player->mo, S_KART_SLOW1); // SRB2kart - was S_PLAY_RUN1
 	}
 	*/
 
 	// If your running animation is playing, and you're
 	// going too slow, switch back to the walking frames.
 	//if (player->panim == PA_RUN && player->speed < runspd && player->kartstuff[k_spinouttimer] == 0)
-		//P_SetPlayerMobjState(player->mo, S_KART_WALK1); // SRB2kart - was S_PLAY_RUN1
+		//P_SetPlayerMobjState(player->mo, S_KART_SLOW1); // SRB2kart - was S_PLAY_RUN1
 
 	// If Springing, but travelling DOWNWARD, change back!
 	//if (player->mo->state == &states[S_PLAY_SPRING] && P_MobjFlip(player->mo)*player->mo->momz < 0)
@@ -5889,16 +5889,26 @@ static void P_MovePlayer(player_t *player)
 		K_KartMoveAnimation(player);
 
 		if (player->kartstuff[k_pogospring])
+		{
 			player->frameangle += ANGLE_22h;
+		}
 		else
+		{
 			player->frameangle = player->mo->angle;
+
+			if (player->kartstuff[k_drift] != 0)
+			{
+				INT32 a = (ANGLE_45 / 5) * player->kartstuff[k_drift];
+				player->frameangle += a;
+			}
+		}
 	}
 
 	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
 
 	// If you are stopped and are still walking, stand still!
 	if (!player->mo->momx && !player->mo->momy && !player->mo->momz && player->panim == PA_WALK)
-		P_SetPlayerMobjState(player->mo, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+		P_SetPlayerMobjState(player->mo, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 
 	//{ SRB2kart
 
@@ -5929,7 +5939,7 @@ static void P_MovePlayer(player_t *player)
 		player->jumping = 0;
 		player->secondjump = 0;
 		player->pflags &= ~PF_THOKKED;
-		P_SetPlayerMobjState(player->mo, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+		P_SetPlayerMobjState(player->mo, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 	}
 
 	if (/*!(player->charability == CA_GLIDEANDCLIMB) ||*/ player->gotflag) // If you can't glide, then why the heck would you be gliding?
@@ -8498,7 +8508,7 @@ void P_PlayerThink(player_t *player)
 
 	if (player->powers[pw_ingoop])
 	{
-		if (player->mo->state == &states[S_KART_STND1]) // SRB2kart - was S_PLAY_STND
+		if (player->mo->state == &states[S_KART_STILL1]) // SRB2kart - was S_PLAY_STND
 			player->mo->tics = 2;
 
 		player->powers[pw_ingoop]--;
