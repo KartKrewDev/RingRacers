@@ -883,6 +883,10 @@ void P_ButteredSlope(mobj_t *mo)
 		return; // don't slide down slopes if you can't touch them or you're not affected by gravity
 
 	if (mo->player) {
+		// SRB2Kart - spindash negates slopes
+		if (((mo->player->cmd.buttons & (BT_BRAKE|BT_ACCELERATE)) == (BT_BRAKE|BT_ACCELERATE)) && !mo->player->kartstuff[k_drift])
+			return;
+
 		// Changed in kart to only not apply physics on very slight slopes (I think about 4 degree angles)
 		if (abs(mo->standingslope->zdelta) < FRACUNIT/21 && !(mo->player->pflags & PF_SPINNING))
 			return; // Don't slide on non-steep slopes unless spinning

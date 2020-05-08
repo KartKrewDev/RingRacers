@@ -2728,7 +2728,6 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 
 	// forwardmove is:
 	//  50 while accelerating,
-	//  25 while clutching,
 	//   0 with no gas, and
 	// -25 when only braking.
 
@@ -7889,11 +7888,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		// Friction
 		if (!player->kartstuff[k_offroad])
 		{
-			if (player->speed > 0 && cmd->forwardmove == 0 && player->mo->friction == 59392)
+			if (player->speed > 0 && cmd->forwardmove == 0 && !(cmd->buttons & BT_BRAKE) && player->mo->friction == 59392)
 				player->mo->friction += 4608;
 		}
 
-		if (player->speed > 0 && cmd->forwardmove < 0)	// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
+		if ((cmd->buttons & (BT_BRAKE|BT_ACCELERATE)) == (BT_BRAKE|BT_ACCELERATE) && !(player->kartstuff[k_drift]))
+			player->mo->friction -= 3072;
+		else if (player->speed > 0 && cmd->forwardmove < 0)	// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
 			player->mo->friction -= 2048;
 
 		// Karma ice physics

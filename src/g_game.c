@@ -1248,7 +1248,7 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p)
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
-static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
+static fixed_t forwardmove = 50<<FRACBITS>>16;
 static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
 static fixed_t angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
 
@@ -1418,9 +1418,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->buttons |= BT_BRAKE;
 		axis = JoyAxis(AXISAIM, ssplayer);
 		if (InputDown(gc_aimforward, ssplayer) || (usejoystick && axis < 0))
-			forward += forwardmove[1];
+			forward += forwardmove;
 		if (InputDown(gc_aimbackward, ssplayer) || (usejoystick && axis > 0))
-			forward -= forwardmove[1];
+			forward -= forwardmove;
 	}
 	else
 	{
@@ -1429,13 +1429,13 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || EITHERSNEAKER(player))
 		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward = forwardmove[1];	// 50
+			forward = forwardmove;	// 50
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			forward += ((axis * forwardmove[1]) >> 10)*2;
+			forward += ((axis * forwardmove) >> 10)*2;
 		}
 
 		axis = JoyAxis(AXISBRAKE, ssplayer);
@@ -1443,14 +1443,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		{
 			cmd->buttons |= BT_BRAKE;
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= forwardmove[0];	// 25 - Halved value so clutching is possible
+				forward -= forwardmove;
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
 			cmd->buttons |= BT_BRAKE;
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= ((axis * forwardmove[0]) >> 10);
+				forward -= ((axis * forwardmove) >> 10);
 		}
 
 		// But forward/backward IS used for aiming.
