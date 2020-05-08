@@ -5906,10 +5906,6 @@ static void P_MovePlayer(player_t *player)
 
 	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
 
-	// If you are stopped and are still walking, stand still!
-	if (!player->mo->momx && !player->mo->momy && !player->mo->momz && player->panim == PA_WALK)
-		P_SetPlayerMobjState(player->mo, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
-
 	//{ SRB2kart
 
 	// Drifting sound
