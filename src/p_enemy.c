@@ -24,6 +24,8 @@
 #include "i_video.h"
 #include "lua_hook.h"
 #include "k_kart.h" // SRB2kart
+#include "k_waypoint.h"
+#include "k_battle.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -117,7 +119,6 @@ void A_ThrownRing(mobj_t *actor);
 void A_GrenadeRing(mobj_t *actor);
 void A_SetSolidSteam(mobj_t *actor);
 void A_UnsetSolidSteam(mobj_t *actor);
-void A_SignPlayer(mobj_t *actor);
 void A_OverlayThink(mobj_t *actor);
 void A_JetChase(mobj_t *actor);
 void A_JetbThink(mobj_t *actor);
@@ -202,6 +203,7 @@ void A_MayonakaArrow(mobj_t *actor);	//SRB2kart
 void A_ReaperThinker(mobj_t *actor);	//SRB2kart
 void A_MementosTPParticles(mobj_t *actor);	//SRB2kart
 void A_FlameParticle(mobj_t *actor); // SRB2kart
+void A_FlameShieldPaper(mobj_t *actor); // SRB2kart
 void A_OrbitNights(mobj_t *actor);
 void A_GhostMe(mobj_t *actor);
 void A_SetObjectState(mobj_t *actor);
@@ -3677,7 +3679,7 @@ void A_AttractChase(mobj_t *actor)
 		if (actor->tracer && actor->tracer->player && actor->tracer->health
 			//&& P_CheckSight(actor, actor->tracer)
 			&& actor->tracer->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
-			&& (actor->tracer->player->kartstuff[k_rings]+actor->tracer->player->kartstuff[k_pickuprings]) < 20
+			&& RINGTOTAL(actor->tracer->player) < 20
 			&& !actor->tracer->player->kartstuff[k_ringlock])
 		{
 			fixed_t dist;
@@ -4180,38 +4182,6 @@ void A_UnsetSolidSteam(mobj_t *actor)
 	actor->flags |= MF_NOCLIP;
 }
 
-// Function: A_SignPlayer
-//
-// Description: Changes the state of a level end sign to reflect the player that hit it.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_SignPlayer(mobj_t *actor)
-{
-	mobj_t *ov;
-#ifdef HAVE_BLUA
-	if (LUA_CallAction("A_SignPlayer", actor))
-		return;
-#endif
-	if (!actor->target)
-		return;
-
-	if (!actor->target->player)
-		return;
-
-	// Set the sign to be an appropriate background color for this player's skincolor.
-	actor->color = KartColor_Opposite[actor->target->player->skincolor*2];
-	actor->frame += KartColor_Opposite[actor->target->player->skincolor*2+1];
-
-	// spawn an overlay of the player's face.
-	ov = P_SpawnMobj(actor->x, actor->y, actor->z, MT_OVERLAY);
-	P_SetTarget(&ov->target, actor);
-	ov->color = actor->target->player->skincolor;
-	ov->skin = &skins[actor->target->player->skin];
-	P_SetMobjState(ov, actor->info->seestate); // S_PLAY_SIGN
-}
-
 // Function: A_OverlayThink
 //
 // Description: Moves the overlay to the position of its target.
@@ -4229,7 +4199,7 @@ void A_OverlayThink(mobj_t *actor)
 	if (!actor->target)
 		return;
 
-	if (!splitscreen && rendermode != render_soft)
+	if (!r_splitscreen && rendermode != render_soft)
 	{
 		angle_t viewingangle;
 
@@ -8477,28 +8447,141 @@ void A_JawzExplode(mobj_t *actor)
 	return;
 }
 
+static void SpawnSPBTrailRings(mobj_t *actor)
+{
+	I_Assert(actor != NULL);
+
+	if (leveltime % 6 == 0)
+	{
+		if (leveltime % (actor->extravalue1 == 2 ? 6 : 3) == 0)	// Extravalue1 == 2 is seeking mode. Because the SPB is about twice as fast as normal in that mode, also spawn the rings twice as often to make up for it!
+		{
+			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
+				actor->z - actor->momz + (24*mapobjectscale), MT_RING);
+			ring->threshold = 10;
+			ring->fuse = 35*TICRATE;
+			ring->colorized = true;
+			ring->color = SKINCOLOR_RED;
+		}
+	}
+}
+
+// Spawns the V shaped dust. To be used when the SPB is going mostly forward.
+static void SpawnSPBDust(mobj_t *mo)
+{
+	// The easiest way to spawn a V shaped cone of dust from the SPB is simply to spawn 2 particles, and to both move them to the sides in opposite direction.
+	mobj_t *dust;
+	fixed_t sx;
+	fixed_t sy;
+	fixed_t sz = mo->floorz;
+	angle_t sa = mo->angle - ANG1*60;
+	INT32 i;
+
+	if (mo->eflags & MFE_VERTICALFLIP)
+		sz = mo->ceilingz;
+
+	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*64)	// Only ever other frame. Also don't spawn it if we're way above the ground.
+	{
+		// Determine spawning position next to the SPB:
+		for (i=0; i < 2; i++)
+		{
+			sx = mo->x + FixedMul((mo->scale*96), FINECOSINE((sa)>>ANGLETOFINESHIFT));
+			sy = mo->y + FixedMul((mo->scale*96), FINESINE((sa)>>ANGLETOFINESHIFT));
+
+			dust = P_SpawnMobj(sx, sy, sz, MT_SPBDUST);
+			dust->momx = mo->momx/2;
+			dust->momy = mo->momy/2;
+			dust->momz = mo->momz/2;	// Give some of the momentum to the dust
+			P_SetScale(dust, mo->scale*2);
+			dust->colorized = true;
+			dust->color = SKINCOLOR_RED;
+			dust->angle = mo->angle - FixedAngle(FRACUNIT*90 - FRACUNIT*180*i);	// The first one will spawn to the right of the spb, the second one to the left.
+			P_Thrust(dust, dust->angle, 6*dust->scale);
+
+			K_MatchGenericExtraFlags(dust, mo);
+
+			sa += ANG1*120;	// Add 120 degrees to get to mo->angle + ANG1*60
+		}
+	}
+}
+
+// Spawns SPB slip tide. To be used when the SPB is turning.
+// Modified version of K_SpawnAIZDust. Maybe we could merge those to be cleaner?
+
+// dir should be either 1 or -1 to determine where to spawn the dust.
+
+static void SpawnSPBAIZDust(mobj_t *mo, INT32 dir)
+{
+	fixed_t newx;
+	fixed_t newy;
+	mobj_t *spark;
+	angle_t travelangle;
+	fixed_t sz = mo->floorz;
+
+	if (mo->eflags & MFE_VERTICALFLIP)
+		sz = mo->ceilingz;
+
+	travelangle = R_PointToAngle2(0, 0, mo->momx, mo->momy);
+	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*64)
+	{
+		newx = mo->x + P_ReturnThrustX(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
+		newy = mo->y + P_ReturnThrustY(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
+		spark = P_SpawnMobj(newx, newy, sz, MT_AIZDRIFTSTRAT);
+		spark->colorized = true;
+		spark->color = SKINCOLOR_RED;
+		spark->flags = MF_NOGRAVITY|MF_PAIN;
+		P_SetTarget(&spark->target, mo);
+
+		spark->angle = travelangle+(dir*ANGLE_90);
+		P_SetScale(spark, (spark->destscale = mo->scale*3/2));
+
+		spark->momx = (6*mo->momx)/5;
+		spark->momy = (6*mo->momy)/5;
+
+		K_MatchGenericExtraFlags(spark, mo);
+	}
+}
+
+// Used for seeking and when SPB is trailing its target from way too close!
+static void SpawnSPBSpeedLines(mobj_t *actor)
+{
+	mobj_t *fast = P_SpawnMobj(actor->x + (P_RandomRange(-24,24) * actor->scale),
+		actor->y + (P_RandomRange(-24,24) * actor->scale),
+		actor->z + (actor->height/2) + (P_RandomRange(-24,24) * actor->scale),
+		MT_FASTLINE);
+
+	fast->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
+	fast->color = SKINCOLOR_RED;
+	fast->colorized = true;
+	K_MatchGenericExtraFlags(fast, actor);
+}
+
+
 void A_SPBChase(mobj_t *actor)
 {
 	player_t *player = NULL;
+	player_t *scplayer = NULL;	// secondary target for seeking
 	UINT8 i;
 	UINT8 bestrank = UINT8_MAX;
 	fixed_t dist;
 	angle_t hang, vang;
 	fixed_t wspeed, xyspeed, zspeed;
+	fixed_t pdist = 1536<<FRACBITS;	// best player distance when seeking
+	angle_t pangle;		// angle between us and the player
+
 #ifdef HAVE_BLUA
 	if (LUA_CallAction("A_SPBChase", actor))
 		return;
 #endif
 
 	// Default speed
-	wspeed = actor->movefactor;
+	wspeed = FixedMul(mapobjectscale, K_GetKartSpeedFromStat(5)*2);	// Go at twice the average speed a player would be going at!
 
 	if (actor->threshold) // Just fired, go straight.
 	{
 		actor->lastlook = -1;
+		actor->cusval = -1;
 		spbplace = -1;
 		P_InstaThrust(actor, actor->angle, wspeed);
-		actor->flags &=  ~MF_NOCLIPTHING;	// just in case.
 		return;
 	}
 
@@ -8524,17 +8607,21 @@ void A_SPBChase(mobj_t *actor)
 		}
 	}
 
+	// lastlook = last player num targetted
+	// cvmem = stored speed
+	// cusval = next waypoint heap index
+	// extravalue1 = SPB movement mode
+	// extravalue2 = mode misc option
+
 	if (actor->extravalue1 == 1) // MODE: TARGETING
 	{
+		actor->cusval = -1; // Reset waypoint
+
 		if (actor->tracer && actor->tracer->health)
 		{
-
 			fixed_t defspeed = wspeed;
 			fixed_t range = (160*actor->tracer->scale);
 			fixed_t cx = 0, cy =0;
-
-			// we're tailing a player, now's a good time to regain our damage properties
-			actor->flags &=  ~MF_NOCLIPTHING;
 
 			// Play the intimidating gurgle
 			if (!S_SoundPlaying(actor, actor->info->activesound))
@@ -8633,31 +8720,13 @@ void A_SPBChase(mobj_t *actor)
 			actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
 			// Spawn a trail of rings behind the SPB!
-			if (leveltime % 6 == 0)
-			{
-				mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momx,
-					actor->z - actor->momz + (24*mapobjectscale), MT_RING);
-				ring->threshold = 10;
-				ring->fuse = 120*TICRATE;
-			}
+			SpawnSPBTrailRings(actor);
 
 			// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
 			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
 				: (16*R_PointToDist2(0, 0, actor->tracer->momx, actor->tracer->momy))/15) // Going faster than the target
 				&& xyspeed > K_GetKartSpeed(actor->tracer->player, false)/4) // Don't display speedup lines at pitifully low speeds
-			{
-				mobj_t *fast = P_SpawnMobj(actor->x + (P_RandomRange(-24,24) * actor->scale),
-					actor->y + (P_RandomRange(-24,24) * actor->scale),
-					actor->z + (actor->height/2) + (P_RandomRange(-24,24) * actor->scale),
-					MT_FASTLINE);
-				fast->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
-				//fast->momx = (3*actor->momx)/4;
-				//fast->momy = (3*actor->momy)/4;
-				//fast->momz = (3*actor->momz)/4;
-				fast->color = SKINCOLOR_RED;
-				fast->colorized = true;
-				K_MatchGenericExtraFlags(fast, actor);
-			}
+					SpawnSPBSpeedLines(actor);
 
 			return;
 		}
@@ -8672,9 +8741,7 @@ void A_SPBChase(mobj_t *actor)
 	else if (actor->extravalue1 == 2) // MODE: WAIT...
 	{
 		actor->momx = actor->momy = actor->momz = 0; // Stoooop
-
-		// don't hurt players that have nothing to do with this:
-		actor->flags |= MF_NOCLIPTHING;
+		actor->cusval = -1; // Reset waypoint
 
 		if (actor->lastlook != -1
 			&& playeringame[actor->lastlook]
@@ -8700,6 +8767,11 @@ void A_SPBChase(mobj_t *actor)
 	}
 	else // MODE: SEEKING
 	{
+		waypoint_t *lastwaypoint = NULL;
+		waypoint_t *bestwaypoint = NULL;
+		waypoint_t *nextwaypoint = NULL;
+		waypoint_t *tempwaypoint = NULL;
+
 		actor->lastlook = -1; // Just make sure this is reset
 
 		if (!player || !player->mo || player->mo->health <= 0 || player->kartstuff[k_respawn])
@@ -8712,33 +8784,107 @@ void A_SPBChase(mobj_t *actor)
 		}
 
 		// Found someone, now get close enough to initiate the slaughter...
-
-		// don't hurt players that have nothing to do with this:
-		actor->flags |= MF_NOCLIPTHING;
-
 		P_SetTarget(&actor->tracer, player->mo);
 		spbplace = bestrank;
-
 		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
 
-		hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
-		vang = R_PointToAngle2(0, actor->z, dist, actor->tracer->z);
+		/*
+			K_GetBestWaypointForMobj returns the waypoint closest to the object that isn't its current waypoint. While this is usually good enough,
+			in cases where the track overlaps, this means that the SPB will sometimes target a waypoint on an earlier/later portion of the track instead of following along.
+			For this reason, we're going to try and make sure to avoid these situations.
+		*/
+
+		// Move along the waypoints until you get close enough
+		if (actor->cusval > -1 && actor->extravalue2 > 0)
+		{
+			// Previously set nextwaypoint
+			lastwaypoint = K_GetWaypointFromIndex((size_t)actor->cusval);
+			tempwaypoint = K_GetBestWaypointForMobj(actor);
+			// check if the tempwaypoint corresponds to lastwaypoint's next ID at least;
+			// This is to avoid situations where the SPB decides to suicide jump down a bridge because it found a COMPLETELY unrelated waypoint down there.
+
+			if (K_GetWaypointID(tempwaypoint) == K_GetWaypointNextID(lastwaypoint) || K_GetWaypointID(tempwaypoint) == K_GetWaypointID(lastwaypoint))
+				// either our previous or curr waypoint ID, sure, take it
+				bestwaypoint = tempwaypoint;
+			else
+				bestwaypoint = K_GetWaypointFromIndex((size_t)actor->extravalue2);	// keep going from the PREVIOUS wp.
+		}
+		else
+			bestwaypoint = K_GetBestWaypointForMobj(actor);
+
+		if (bestwaypoint == NULL && lastwaypoint == NULL)
+		{
+			// We have invalid waypoints all around, so use closest to try and make it non-NULL.
+			bestwaypoint = K_GetClosestWaypointToMobj(actor);
+		}
+
+		if (bestwaypoint != NULL)
+		{
+			const boolean huntbackwards = false;
+			boolean       useshortcuts  = false;
+
+			// If the player is on a shortcut, use shortcuts. No escape.
+			if (K_GetWaypointIsShortcut(player->nextwaypoint))
+			{
+				useshortcuts = true;
+			}
+
+			nextwaypoint = K_GetNextWaypointToDestination(
+				bestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
+		}
+
+		if (nextwaypoint == NULL && lastwaypoint != NULL)
+		{
+			// Restore to the last nextwaypoint
+			nextwaypoint = lastwaypoint;
+		}
+
+		if (nextwaypoint != NULL)
+		{
+			const fixed_t xywaypointdist = P_AproxDistance(
+				actor->x - nextwaypoint->mobj->x, actor->y - nextwaypoint->mobj->y);
+
+			hang = R_PointToAngle2(actor->x, actor->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
+			vang = R_PointToAngle2(0, actor->z, xywaypointdist, nextwaypoint->mobj->z);
+
+			actor->cusval = (INT32)K_GetWaypointHeapIndex(nextwaypoint);
+			actor->extravalue2 = (INT32)K_GetWaypointHeapIndex(bestwaypoint);	// save our last best, used above.
+		}
+		else
+		{
+			// continue straight ahead... Shouldn't happen.
+			hang = actor->angle;
+			vang = 0U;
+		}
 
 		{
 			// Smoothly rotate horz angle
 			angle_t input = hang - actor->angle;
 			boolean invert = (input > ANGLE_180);
+			INT32 turnangle;
+
 			if (invert)
 				input = InvAngle(input);
+
+			input = FixedAngle(AngleFixed(input)/8);
 
 			// Slow down when turning; it looks better and makes U-turns not unfair
 			xyspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
 
-			input = FixedAngle(AngleFixed(input)/4);
 			if (invert)
 				input = InvAngle(input);
-
 			actor->angle += input;
+
+			// If input is small enough, spawn dust. Otherwise, spawn a slip tide!
+			turnangle = AngleFixed(input)/FRACUNIT;
+
+			// The SPB is really turning if that value is >= 3 and <= 357. This looks pretty bad check-wise so feel free to change it for something that isn't as terrible.
+			if (turnangle >= 3 && turnangle <= 357)
+				SpawnSPBAIZDust(actor, turnangle < 180 ? 1 : -1);	// 1 if turning left, -1 if turning right. Angles work counterclockwise, remember!
+			else
+				SpawnSPBDust(actor);	// if we're mostly going straight, then spawn the V dust cone!
+
+			SpawnSPBSpeedLines(actor);	// Always spawn speed lines while seeking
 
 			// Smoothly rotate vert angle
 			input = vang - actor->movedir;
@@ -8746,13 +8892,13 @@ void A_SPBChase(mobj_t *actor)
 			if (invert)
 				input = InvAngle(input);
 
+			input = FixedAngle(AngleFixed(input)/8);
+
 			// Slow down when turning; might as well do it for momz, since we do it above too
 			zspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
 
-			input = FixedAngle(AngleFixed(input)/4);
 			if (invert)
 				input = InvAngle(input);
-
 			actor->movedir += input;
 		}
 
@@ -8760,14 +8906,48 @@ void A_SPBChase(mobj_t *actor)
 		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
 		actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
 
-		if (dist <= (3072*actor->tracer->scale)) // Close enough to target?
+		// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
+		for (i=0; i < MAXPLAYERS; i++)
 		{
-			S_StartSound(actor, actor->info->attacksound); // Siren sound; might not need this anymore, but I'm keeping it for now just for debugging.
+			if (!playeringame[i] || players[i].spectator || players[i].exiting)
+				continue; // not in-game
+
+			if (R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y) < pdist)
+			{
+				pdist = R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y);
+				scplayer = &players[i];	// it doesn't matter if we override this guy now.
+			}
+		}
+
+		// different player from our main target, try and ram into em~!
+		if (scplayer && scplayer != player)
+		{
+			pangle = actor->angle - R_PointToAngle2(actor->x, actor->y,scplayer->mo->x, scplayer->mo->y);
+			// check if the angle wouldn't make us LOSE speed...
+			if ((INT32)pangle/ANG1 >= -80 && (INT32)pangle/ANG1 <= 80)	// allow for around 80 degrees
+			{
+				// Thrust us towards the guy, try to screw em up!
+				P_Thrust(actor, R_PointToAngle2(actor->x, actor->y, scplayer->mo->x, scplayer->mo->y), actor->movefactor/4);	// not too fast though.
+			}
+		}
+
+		// Spawn a trail of rings behind the SPB!
+		SpawnSPBTrailRings(actor);
+
+		if (dist <= (1024*actor->tracer->scale) && !(actor->flags2 & MF2_AMBUSH)) // Close enough to target? Use Ambush flag to disable targetting so I can have an easier time testing stuff...
+		{
+			S_StartSound(actor, actor->info->attacksound);
 			actor->extravalue1 = 1; // TARGET ACQUIRED
 			actor->extravalue2 = 7*TICRATE;
 			actor->cvmem = wspeed;
 		}
 	}
+
+	// Finally, no matter what, the spb should not be able to be under the ground, or above the ceiling;
+	if (actor->z < actor->floorz)
+		actor->z = actor->floorz;
+	else if (actor->z > actor->ceilingz - actor->height)
+		actor->z = actor->ceilingz - actor->height;
 
 	return;
 }
@@ -9250,6 +9430,52 @@ void A_FlameParticle(mobj_t *actor)
 		actor->z + (P_RandomRange(hei/2, hei)<<FRACBITS),
 		actor->info->painchance);
 	par->momz = actor->scale<<1;
+}
+
+void A_FlameShieldPaper(mobj_t *actor)
+{
+	INT32 framea = 0;
+	INT32 frameb = 0;
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+	UINT8 i;
+
+#ifdef HAVE_BLUA
+	if (LUA_CallAction("A_FlameShieldPaper", actor))
+		return;
+#endif
+
+	framea = (locvar1 & FF_FRAMEMASK);
+	frameb = (locvar2 & FF_FRAMEMASK);
+
+	for (i = 0; i < 2; i++)
+	{
+		INT32 perpendicular = ((i & 1) ? -ANGLE_90 : ANGLE_90);
+		fixed_t newx = actor->x + P_ReturnThrustX(NULL, actor->angle + perpendicular, 8*actor->scale);
+		fixed_t newy = actor->y + P_ReturnThrustY(NULL, actor->angle + perpendicular, 8*actor->scale);
+		mobj_t *paper = P_SpawnMobj(newx, newy, actor->z, MT_FLAMESHIELDPAPER);
+
+		P_SetTarget(&paper->target, actor);
+		P_SetScale(paper, actor->scale);
+		paper->destscale = actor->destscale;
+
+		P_SetMobjState(paper, S_FLAMESHIELDPAPER);
+		paper->frame &= ~FF_FRAMEMASK;
+
+		paper->angle = actor->angle + ANGLE_45;
+
+		if (i & 1)
+		{
+			paper->angle -= ANGLE_90;
+			paper->frame |= frameb;
+		}
+		else
+		{
+			paper->frame |= framea;
+		}
+
+		paper->extravalue1 = i;
+	}
 }
 
 //}
@@ -10610,8 +10836,8 @@ void A_RemoteDamage(mobj_t *actor)
 
 	if (locvar2 == 1) // Kill mobj!
 	{
-		if (target->player) // players die using P_DamageMobj instead for some reason
-			P_DamageMobj(target, source, source, 10000);
+		if (target->player)
+			K_DoIngameRespawn(target->player);
 		else
 			P_KillMobj(target, source, source);
 	}

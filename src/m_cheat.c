@@ -259,8 +259,17 @@ void Command_CheatNoClip_f(void)
 	REQUIRE_NOULTIMATE;
 
 	plyr = &players[consoleplayer];
+
+	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
+		return;
+
 	plyr->pflags ^= PF_NOCLIP;
 	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->pflags & PF_NOCLIP ? M_GetText("On") : M_GetText("Off"));
+
+	if (plyr->pflags & PF_NOCLIP)
+		plyr->mo->flags |= MF_NOCLIP;
+	else
+		plyr->mo->flags &= ~MF_NOCLIP;
 
 	G_SetGameModified(multiplayer, true);
 }

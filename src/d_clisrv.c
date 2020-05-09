@@ -47,6 +47,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_battle.h"
 #include "k_pwrlv.h"
 
 #ifdef CLIENT_LOADINGSCREEN
@@ -80,9 +81,11 @@
 boolean server = true; // true or false but !server == client
 #define client (!server)
 boolean nodownload = false;
-static boolean serverrunning = false;
+boolean serverrunning = false;
 INT32 serverplayer = 0;
 char motd[254], server_context[8]; // Message of the Day, Unique Context (even without Mumble support)
+
+UINT8 playerconsole[MAXPLAYERS];
 
 // Server specific vars
 UINT8 playernode[MAXPLAYERS];
@@ -97,6 +100,8 @@ UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
 tic_t servermaxping = 800;			// server's max ping. Defaults to 800
+static tic_t lowest_lag;
+boolean server_lagless;
 SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
 SINT8 nodetoplayer3[MAXNETNODES]; // say the numplayer for this node if any (splitscreen == 2)
@@ -1505,6 +1510,8 @@ static boolean SV_SendServerConfig(INT32 node)
 	UINT8 *p, *op;
 	boolean waspacketsent;
 
+	memset(&netbuffer->u.servercfg, 0, sizeof netbuffer->u.servercfg);
+
 	netbuffer->packettype = PT_SERVERCFG;
 
 	netbuffer->u.servercfg.version = VERSION;
@@ -1524,7 +1531,6 @@ static boolean SV_SendServerConfig(INT32 node)
 	memset(netbuffer->u.servercfg.playercolor, 0xFF, sizeof(netbuffer->u.servercfg.playercolor));
 
 	memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
-	memset(netbuffer->u.servercfg.powerlevels, 0, sizeof(netbuffer->u.servercfg.powerlevels));
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1534,6 +1540,19 @@ static boolean SV_SendServerConfig(INT32 node)
 
 		if (!playeringame[i])
 			continue;
+
+		netbuffer->u.servercfg.consoleplayers[i] = playerconsole[i];
+		netbuffer->u.servercfg.invitations[i] = splitscreen_invitations[i];
+		netbuffer->u.servercfg.party_size[i] = splitscreen_party_size[i];
+		netbuffer->u.servercfg.original_party_size[i] =
+			splitscreen_original_party_size[i];
+
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; ++j)
+		{
+			netbuffer->u.servercfg.party[i][j] = splitscreen_party[i][j];
+			netbuffer->u.servercfg.original_party[i][j] =
+				splitscreen_original_party[i][j];
+		}
 
 		netbuffer->u.servercfg.playerskins[i] = (UINT8)players[i].skin;
 		netbuffer->u.servercfg.playercolor[i] = (UINT8)players[i].skincolor;
@@ -1861,7 +1880,7 @@ void CL_UpdateServerList(boolean internetsearch, INT32 room)
 		{
 			char version[8] = "";
 #if VERSION > 0 || SUBVERSION > 0
-			snprintf(version, sizeof (version), "%d.%d.%d", VERSION/100, VERSION%100, SUBVERSION);
+			snprintf(version, sizeof (version), "%d.%d", VERSION, SUBVERSION);
 #else
 			strcpy(version, GetRevisionString());
 #endif
@@ -2336,8 +2355,8 @@ static void CL_ConnectToServer(boolean viams)
 			gametypestr = Gametype_Names[num];
 		if (gametypestr)
 			CONS_Printf(M_GetText("Gametype: %s\n"), gametypestr);
-		CONS_Printf(M_GetText("Version: %d.%d.%u\n"), serverlist[i].info.version/100,
-		 serverlist[i].info.version%100, serverlist[i].info.subversion);
+		CONS_Printf(M_GetText("Version: %d.%d\n"),
+		 serverlist[i].info.version, serverlist[i].info.subversion);
 	}
 	SL_ClearServerList(servernode);
 #endif
@@ -2619,6 +2638,8 @@ static void ResetNode(INT32 node);
 //
 void CL_ClearPlayer(INT32 playernum)
 {
+	int i;
+
 	if (players[playernum].mo)
 	{
 		// Don't leave a NiGHTS ghost!
@@ -2626,6 +2647,17 @@ void CL_ClearPlayer(INT32 playernum)
 			P_RemoveMobj(players[playernum].mo->tracer);
 		P_RemoveMobj(players[playernum].mo);
 	}
+
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (splitscreen_invitations[i] == playernum)
+			splitscreen_invitations[i] = -1;
+	}
+
+	splitscreen_invitations[playernum] = -1;
+	splitscreen_party_size[playernum] = 0;
+	splitscreen_original_party_size[playernum] = 0;
+
 	memset(&players[playernum], 0, sizeof (player_t));
 }
 
@@ -2701,6 +2733,8 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 	(void)reason;
 #endif
 
+	G_RemovePartyMember(playernum);
+
 	// Reset player data
 	CL_ClearPlayer(playernum);
 
@@ -2718,8 +2752,8 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 		RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 	}
 
-	if (playernum == displayplayers[0] && !demo.playback)
-		displayplayers[0] = consoleplayer; // don't look through someone's view who isn't there
+	if (playernum == g_localplayers[0] && !demo.playback)
+		g_localplayers[0] = consoleplayer; // don't look through someone's view who isn't there
 
 #ifdef HAVE_BLUA
 	LUA_InvalidatePlayer(&players[playernum]);
@@ -3262,8 +3296,8 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum);
 // called one time at init
 void D_ClientServerInit(void)
 {
-	DEBFILE(va("- - -== SRB2Kart v%d.%.2d.%d "VERSIONSTRING" debugfile ==- - -\n",
-		VERSION/100, VERSION%100, SUBVERSION));
+	DEBFILE(va("- - -== SRB2Kart v%d.%d "VERSIONSTRING" debugfile ==- - -\n",
+		VERSION, SUBVERSION));
 
 #ifndef NONET
 	COM_AddCommand("getplayernum", Command_GetPlayerNum);
@@ -3351,7 +3385,10 @@ void SV_ResetServer(void)
 		sprintf(player_names[i], "Player %d", i + 1);
 		adminplayers[i] = -1; // Populate the entire adminplayers array with -1.
 		K_ClearClientPowerLevels();
+		splitscreen_invitations[i] = -1;
 	}
+
+	memset(splitscreen_partied, 0, sizeof splitscreen_partied);
 
 	mynode = 0;
 	cl_packetmissed = false;
@@ -3455,6 +3492,7 @@ static inline void SV_AddNode(INT32 node)
 static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 {
 	INT16 node, newplayernum;
+	UINT8 console;
 	UINT8 splitscreenplayer = 0;
 	UINT8 i;
 
@@ -3475,10 +3513,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	node = (UINT8)READUINT8(*p);
 	newplayernum = (UINT8)READUINT8(*p);
+	console = (UINT8)READUINT8(*p);
 	splitscreenplayer = (UINT8)READUINT8(*p);
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d %d\n", node, newplayernum, splitscreenplayer);
-	
+
 	// Clear player before joining, lest some things get set incorrectly
 	CL_ClearPlayer(newplayernum);
 
@@ -3495,6 +3534,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		if (splitscreenplayer)
 		{
 			displayplayers[splitscreenplayer] = newplayernum;
+			g_localplayers[splitscreenplayer] = newplayernum;
 			DEBFILE(va("spawning sister # %d\n", splitscreenplayer));
 			if (splitscreenplayer == 1 && botingame)
 				players[newplayernum].bot = 1;
@@ -3503,7 +3543,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		{
 			consoleplayer = newplayernum;
 			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
 				displayplayers[i] = newplayernum;
+				g_localplayers[i] = newplayernum;
+			}
+			splitscreen_partied[newplayernum] = true;
 			DEBFILE("spawning me\n");
 		}
 
@@ -3512,6 +3556,12 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	}
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
+
+	playerconsole[newplayernum] = console;
+	splitscreen_original_party_size[console] =
+		++splitscreen_party_size[console];
+	splitscreen_original_party[console][splitscreenplayer] =
+		splitscreen_party[console][splitscreenplayer] = newplayernum;
 
 	if (netgame)
 	{
@@ -3574,7 +3624,7 @@ static boolean SV_AddWaitingPlayers(void)
 		// splitscreen can allow 2+ players in one node
 		for (; nodewaiting[node] > 0; nodewaiting[node]--)
 		{
-			UINT8 buf[3];
+			UINT8 buf[4];
 			UINT8 *buf_p = buf;
 
 			newplayer = true;
@@ -3611,6 +3661,7 @@ static boolean SV_AddWaitingPlayers(void)
 			else if (playerpernode[node] < 4)
 				nodetoplayer4[node] = newplayernum;
 
+			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
 			WRITEUINT8(buf_p, playerpernode[node]); // splitscreen num
 
 			playerpernode[node]++;
@@ -3717,7 +3768,11 @@ void SV_StartSinglePlayerServer(void)
 	server = true;
 	netgame = false;
 	multiplayer = false;
-	gametype = GT_RACE; //srb2kart
+
+	if (modeattacking == ATTACKING_CAPSULES)
+		gametype = GT_MATCH; //srb2kart
+	else
+		gametype = GT_RACE; //srb2kart
 
 	// no more tic the game with this settings!
 	SV_StopServer();
@@ -3767,7 +3822,7 @@ static void HandleConnect(SINT8 node)
 		SV_SendRefuse(node, M_GetText("You have been banned\nfrom the server"));
 	else if (netbuffer->u.clientcfg.version != VERSION
 		|| netbuffer->u.clientcfg.subversion != SUBVERSION)
-		SV_SendRefuse(node, va(M_GetText("Different SRB2Kart versions cannot\nplay a netgame!\n(server version %d.%d.%d)"), VERSION/100, VERSION%100, SUBVERSION));
+		SV_SendRefuse(node, va(M_GetText("Different SRB2Kart versions cannot\nplay a netgame!\n(server version %d.%d)"), VERSION, SUBVERSION));
 	else if (!cv_allownewplayer.value && node)
 		SV_SendRefuse(node, M_GetText("The server is not accepting\njoins for the moment"));
 	else if (D_NumPlayers() >= maxplayers)
@@ -4137,6 +4192,21 @@ static void HandlePacketFromAwayNode(SINT8 node)
 					adminplayers[j] = netbuffer->u.servercfg.adminplayers[j];
 					for (k = 0; k < PWRLV_NUMTYPES; k++)
 						clientpowerlevels[j][k] = netbuffer->u.servercfg.powerlevels[j][k];
+
+					/* all spitscreen related */
+					playerconsole[j] = netbuffer->u.servercfg.consoleplayers[j];
+					splitscreen_invitations[j] = netbuffer->u.servercfg.invitations[j];
+					splitscreen_original_party_size[j] =
+						netbuffer->u.servercfg.original_party_size[j];
+					splitscreen_party_size[j] =
+						netbuffer->u.servercfg.party_size[j];
+					for (k = 0; k < MAXSPLITSCREENPLAYERS; ++k)
+					{
+						splitscreen_original_party[j][k] =
+							netbuffer->u.servercfg.original_party[j][k];
+						splitscreen_party[j][k] =
+							netbuffer->u.servercfg.party[j][k];
+					}
 				}
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
@@ -4960,6 +5030,9 @@ static void CL_SendClientCmd(void)
 	size_t packetsize = 0;
 	boolean mis = false;
 
+	if (lowest_lag && ( gametic % lowest_lag ))
+		return;
+
 	netbuffer->packettype = PT_CLIENTCMD;
 
 	if (cl_packetmissed)
@@ -5428,16 +5501,65 @@ static tic_t gametime = 0;
 
 static void UpdatePingTable(void)
 {
+	tic_t fastest;
+	tic_t lag;
+
 	INT32 i;
+
 	if (server)
 	{
 		if (netgame && !(gametime % 35))	// update once per second.
 			PingUpdate();
+
+		fastest = 0;
+
 		// update node latency values so we can take an average later.
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i])
-				realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
+		{
+			if (playeringame[i] && playernode[i] > 0)
+			{
+				if (! server_lagless && playernode[i] > 0 && !players[i].spectator)
+				{
+					lag = GetLag(playernode[i]);
+					realpingtable[i] += G_TicsToMilliseconds(lag);
+
+					if (! fastest || lag < fastest)
+						fastest = lag;
+				}
+				else
+					realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
+			}
+		}
 		pingmeasurecount++;
+
+		if (server_lagless)
+			lowest_lag = 0;
+		else
+		{
+			lowest_lag = fastest;
+
+			if (fastest)
+				lag = fastest;
+			else
+				lag = GetLag(0);
+
+			lag = ( realpingtable[0] + G_TicsToMilliseconds(lag) );
+
+			switch (playerpernode[0])
+			{
+				case 4:
+					realpingtable[nodetoplayer4[0]] = lag;
+					/*FALLTHRU*/
+				case 3:
+					realpingtable[nodetoplayer3[0]] = lag;
+					/*FALLTHRU*/
+				case 2:
+					realpingtable[nodetoplayer2[0]] = lag;
+					/*FALLTHRU*/
+				case 1:
+					realpingtable[nodetoplayer[0]] = lag;
+			}
+		}
 	}
 }
 

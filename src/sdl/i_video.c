@@ -1386,8 +1386,11 @@ void I_FinishUpdate(void)
 		if (cv_ticrate.value)
 			SCR_DisplayTicRate();
 
-		if (cv_showping.value && netgame && consoleplayer != serverplayer)
+		if (cv_showping.value && netgame &&
+				( consoleplayer != serverplayer || ! server_lagless ))
+		{
 			SCR_DisplayLocalPing();
+		}
 	}
 
 	if (rendermode == render_soft && screens[0])
@@ -1648,6 +1651,7 @@ INT32 VID_SetMode(INT32 modeNum)
 	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
 
 	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN);
+	Impl_VideoSetupBuffer();
 
 	if (rendermode == render_soft)
 	{
@@ -1656,8 +1660,6 @@ INT32 VID_SetMode(INT32 modeNum)
 			SDL_FreeSurface(bufSurface);
 			bufSurface = NULL;
 		}
-
-		Impl_VideoSetupBuffer();
 	}
 
 	return SDL_TRUE;
@@ -1780,7 +1782,7 @@ static void Impl_VideoSetupSDLBuffer(void)
 static void Impl_VideoSetupBuffer(void)
 {
 	// Set up game's software render buffer
-	if (rendermode == render_soft)
+	//if (rendermode == render_soft)
 	{
 		vid.rowbytes = vid.width * vid.bpp;
 		vid.direct = NULL;

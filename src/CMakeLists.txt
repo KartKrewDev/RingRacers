@@ -18,6 +18,7 @@ set(SRB2_CORE_SOURCES
 	filesrch.c
 	g_game.c
 	g_input.c
+	g_splitscreen.c
 	hu_stuff.c
 	i_tcp.c
 	info.c
@@ -156,7 +157,13 @@ set(SRB2_CORE_GAME_SOURCES
 	p_telept.c
 	p_tick.c
 	p_user.c
+	k_battle.c
+	k_bheap.c
+	k_collide.c
 	k_kart.c
+	k_pathfind.c
+	k_pwrlv.c
+	k_waypoint.c
 
 	p_local.h
 	p_maputl.h
@@ -168,7 +175,13 @@ set(SRB2_CORE_GAME_SOURCES
 	p_slopes.h
 	p_spec.h
 	p_tick.h
+	k_battle.h
+	k_bheap.h
+	k_collide.h
 	k_kart.h
+	k_pathfind.h
+	k_pwrlv.h
+	k_waypoint.h
 )
 
 if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))

@@ -157,7 +157,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	while (lsize--)
 	{
 		// Determine pixel to use from fademask
-		pcolor = &pLocalPalette[*lump++];
+		pcolor = &pMasterPalette[*lump++];
 		*mask++ = FixedDiv((pcolor->s.red+1)<<FRACBITS, paldiv)>>FRACBITS;
 	}
 
@@ -204,7 +204,7 @@ static void F_DoWipe(fademask_t *fademask, lighttable_t *fadecolormap, boolean r
 	// ---
 	// Sal: I kinda destroyed some of this code by introducing Genesis-style fades.
 	// A colormap can be provided in F_RunWipe, which the white/black values will be
-	// remapped to the appropriate entry in the fade colormap. 
+	// remapped to the appropriate entry in the fade colormap.
 	{
 		// wipe screen, start, end
 		UINT8       *w = wipe_scr;
@@ -434,7 +434,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		reverse = false;
 	}
 
-	paldiv = FixedDiv(257<<FRACBITS, pallen<<FRACBITS); 
+	paldiv = FixedDiv(257<<FRACBITS, pallen<<FRACBITS);
 
 	// Init the wipe
 	WipeInAction = true;

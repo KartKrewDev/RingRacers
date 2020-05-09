@@ -27,11 +27,23 @@
 
 extern UINT8 *screens[5];
 
-extern const UINT8 gammatable[5][256];
-extern consvar_t cv_ticrate, cv_usegamma, cv_allcaps, cv_constextsize;
+extern consvar_t cv_ticrate, cv_constextsize,\
+cv_globalgamma, cv_globalsaturation, \
+cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue,\
+cv_rgamma, cv_ygamma, cv_ggamma, cv_cgamma, cv_bgamma, cv_mgamma, \
+cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, cv_msaturation;
 
 // Allocates buffer screens, call before R_Init.
 void V_Init(void);
+
+// Color look-up table
+#define COLORBITS 6
+#define SHIFTCOLORBITS (8-COLORBITS)
+#define CLUTSIZE (1<<COLORBITS)
+
+extern UINT8 colorlookup[CLUTSIZE][CLUTSIZE][CLUTSIZE];
+
+void InitColorLUT(RGBA_t *palette);
 
 // Set the current RGB palette lookup to use for palettized graphics
 void V_SetPalette(INT32 palettenum);
@@ -42,6 +54,7 @@ const char *R_GetPalname(UINT16 num);
 const char *GetPalette(void);
 
 extern RGBA_t *pLocalPalette;
+extern RGBA_t *pMasterPalette;
 
 extern UINT8 hudtrans;
 

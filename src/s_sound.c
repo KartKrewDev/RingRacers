@@ -120,6 +120,16 @@ consvar_t cv_gamesounds = {"sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, 
 consvar_t cv_playmusicifunfocused = {"playmusicifunfocused",  "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlayMusicIfUnfocused_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_playsoundifunfocused = {"playsoundsifunfocused", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlaySoundIfUnfocused_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
+static CV_PossibleValue_t music_resync_threshold_cons_t[] = {
+	{0,    "MIN"},
+	{1000, "MAX"},
+
+	{0}
+};
+consvar_t cv_music_resync_threshold = {"music_resync_threshold", "100", CV_SAVE|CV_CALL, music_resync_threshold_cons_t, I_UpdateSongLagThreshold, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_music_resync_powerups_only = {"music_resync_powerups_only", "No", CV_SAVE|CV_CALL, CV_YesNo, I_UpdateSongLagConditions, 0, NULL, NULL, 0, 0, NULL};
+
 #define S_MAX_VOLUME 127
 
 // when to clip out sounds
@@ -282,6 +292,9 @@ void S_RegisterSoundStuff(void)
 
 	CV_RegisterVar(&cv_playmusicifunfocused);
 	CV_RegisterVar(&cv_playsoundifunfocused);
+
+	CV_RegisterVar(&cv_music_resync_threshold);
+	CV_RegisterVar(&cv_music_resync_powerups_only);
 
 	COM_AddCommand("tunes", Command_Tunes_f);
 	COM_AddCommand("restartaudio", Command_RestartAudio_f);
@@ -457,19 +470,19 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	if (players[displayplayers[0]].awayviewtics)
 		listenmobj = players[displayplayers[0]].awayviewmobj;
 
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		listenmobj2 = players[displayplayers[1]].mo;
 		if (players[displayplayers[1]].awayviewtics)
 			listenmobj2 = players[displayplayers[1]].awayviewmobj;
 
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 		{
 			listenmobj3 = players[displayplayers[2]].mo;
 			if (players[displayplayers[2]].awayviewtics)
 				listenmobj3 = players[displayplayers[2]].awayviewmobj;
 
-			if (splitscreen > 2)
+			if (r_splitscreen > 2)
 			{
 				listenmobj4 = players[displayplayers[3]].mo;
 				if (players[displayplayers[3]].awayviewtics)
@@ -574,10 +587,10 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	pitch = NORM_PITCH;
 	priority = NORM_PRIORITY;
 
-	if (splitscreen && origin)
-		volume = FixedDiv(volume<<FRACBITS, FixedSqrt((splitscreen+1)<<FRACBITS))>>FRACBITS;
+	if (r_splitscreen && origin)
+		volume = FixedDiv(volume<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
 
-	if (splitscreen && listenmobj2) // Copy the sound for the split player
+	if (r_splitscreen && listenmobj2) // Copy the sound for the split player
 	{
 		// Check to see if it is audible, and if not, modify the params
 		if (origin && origin != listenmobj2)
@@ -633,7 +646,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 
 dontplay:
 
-	if (splitscreen > 1 && listenmobj3) // Copy the sound for the third player
+	if (r_splitscreen > 1 && listenmobj3) // Copy the sound for the third player
 	{
 		// Check to see if it is audible, and if not, modify the params
 		if (origin && origin != listenmobj3)
@@ -689,7 +702,7 @@ dontplay:
 
 dontplay3:
 
-	if (splitscreen > 2 && listenmobj4) // Copy the sound for the split player
+	if (r_splitscreen > 2 && listenmobj4) // Copy the sound for the split player
 	{
 		// Check to see if it is audible, and if not, modify the params
 		if (origin && origin != listenmobj4)
@@ -942,19 +955,19 @@ void S_UpdateSounds(void)
 	if (players[displayplayers[0]].awayviewtics)
 		listenmobj = players[displayplayers[0]].awayviewmobj;
 
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		listenmobj2 = players[displayplayers[1]].mo;
 		if (players[displayplayers[1]].awayviewtics)
 			listenmobj2 = players[displayplayers[1]].awayviewmobj;
 
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 		{
 			listenmobj3 = players[displayplayers[2]].mo;
 			if (players[displayplayers[2]].awayviewtics)
 				listenmobj3 = players[displayplayers[2]].awayviewmobj;
 
-			if (splitscreen > 2)
+			if (r_splitscreen > 2)
 			{
 				listenmobj4 = players[displayplayers[3]].mo;
 				if (players[displayplayers[3]].awayviewtics)
@@ -1058,24 +1071,24 @@ void S_UpdateSounds(void)
 				pitch = NORM_PITCH;
 				sep = NORM_SEP;
 
-				if (splitscreen && c->origin)
-					volume = FixedDiv(volume<<FRACBITS, FixedSqrt((splitscreen+1)<<FRACBITS))>>FRACBITS;
+				if (r_splitscreen && c->origin)
+					volume = FixedDiv(volume<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
 
 				// check non-local sounds for distance clipping
 				//  or modify their params
-				if (c->origin && ((c->origin != players[consoleplayer].mo)
-					|| (splitscreen && c->origin != players[displayplayers[1]].mo)
-					|| (splitscreen > 1 && c->origin != players[displayplayers[2]].mo)
-					|| (splitscreen > 2 && c->origin != players[displayplayers[3]].mo)))
+				if (c->origin && ((c->origin != players[displayplayers[0]].mo)
+					|| (r_splitscreen && c->origin != players[displayplayers[1]].mo)
+					|| (r_splitscreen > 1 && c->origin != players[displayplayers[2]].mo)
+					|| (r_splitscreen > 2 && c->origin != players[displayplayers[3]].mo)))
 				{
 					// Whomever is closer gets the sound, but only in splitscreen.
-					if (splitscreen)
+					if (r_splitscreen)
 					{
 						const mobj_t *soundmobj = c->origin;
 						fixed_t recdist = -1;
 						INT32 i, p = -1;
 
-						for (i = 0; i <= splitscreen; i++)
+						for (i = 0; i <= r_splitscreen; i++)
 						{
 							fixed_t thisdist = -1;
 
@@ -1130,7 +1143,7 @@ void S_UpdateSounds(void)
 								S_StopChannel(cnum);
 						}
 					}
-					else if (listenmobj && !splitscreen)
+					else if (listenmobj && !r_splitscreen)
 					{
 						// In the case of a single player, he or she always should get updated sound.
 						audible = S_AdjustSoundParams(listenmobj, c->origin, &volume, &sep, &pitch,
@@ -1258,21 +1271,21 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 		listensource.z = camera[0].z;
 		listensource.angle = camera[0].angle;
 	}
-	else if (splitscreen && listener == players[displayplayers[1]].mo && camera[1].chase)
+	else if (r_splitscreen && listener == players[displayplayers[1]].mo && camera[1].chase)
 	{
 		listensource.x = camera[1].x;
 		listensource.y = camera[1].y;
 		listensource.z = camera[1].z;
 		listensource.angle = camera[1].angle;
 	}
-	else if (splitscreen > 1 && listener == players[displayplayers[2]].mo && camera[2].chase)
+	else if (r_splitscreen > 1 && listener == players[displayplayers[2]].mo && camera[2].chase)
 	{
 		listensource.x = camera[2].x;
 		listensource.y = camera[2].y;
 		listensource.z = camera[2].z;
 		listensource.angle = camera[2].angle;
 	}
-	else if (splitscreen > 2 && listener == players[displayplayers[3]].mo && camera[3].chase)
+	else if (r_splitscreen > 2 && listener == players[displayplayers[3]].mo && camera[3].chase)
 	{
 		listensource.x = camera[3].x;
 		listensource.y = camera[3].y;
@@ -1372,8 +1385,8 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 		*vol = (15 * ((S_CLIPPING_DIST - approx_dist)>>FRACBITS)) / S_ATTENUATOR;
 	}
 
-	if (splitscreen)
-		*vol = FixedDiv((*vol)<<FRACBITS, FixedSqrt((splitscreen+1)<<FRACBITS))>>FRACBITS;
+	if (r_splitscreen)
+		*vol = FixedDiv((*vol)<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
 
 	return (*vol > 0);
 }
@@ -1550,6 +1563,8 @@ static char      music_name[7]; // up to 6-character name
 static void      *music_data;
 static UINT16    music_flags;
 static boolean   music_looping;
+static consvar_t *music_refade_cv;
+static int       music_usage;
 
 static char      queue_name[7];
 static UINT16    queue_flags;
@@ -1933,12 +1948,17 @@ static void S_UnloadMusic(void)
 	music_name[0] = 0;
 	music_flags = 0;
 	music_looping = false;
+
+	music_refade_cv = 0;
+	music_usage = 0;
 }
 
 static boolean S_PlayMusic(boolean looping, UINT32 fadeinms)
 {
 	if (S_MusicDisabled())
 		return false;
+
+	I_UpdateSongLagConditions();
 
 	if ((!fadeinms && !I_PlaySong(looping)) ||
 		(fadeinms && !I_FadeInPlaySong(fadeinms, looping)))
@@ -2050,12 +2070,24 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	}
 }
 
+void
+S_ChangeMusicSpecial (const char *mmusic)
+{
+	if (cv_resetspecialmusic.value)
+		S_ChangeMusic(mmusic, MUSIC_FORCERESET, true);
+	else
+		S_ChangeMusicInternal(mmusic, true);
+}
+
 void S_StopMusic(void)
 {
 	if (!I_SongPlaying()
 		|| demo.rewinding // Don't mess with music while rewinding!
 		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
 		return;
+
+	if (strcasecmp(music_name, mapmusname) == 0)
+		mapmusresume = I_GetSongPosition();
 
 	if (I_SongPaused())
 		I_ResumeSong();
@@ -2154,6 +2186,34 @@ void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume)
 	}
 }
 
+void
+S_SetRestoreMusicFadeInCvar (consvar_t *cv)
+{
+	music_refade_cv = cv;
+}
+
+int
+S_GetRestoreMusicFadeIn (void)
+{
+	if (music_refade_cv)
+		return music_refade_cv->value;
+	else
+		return 0;
+}
+
+void
+S_SetMusicUsage (int type)
+{
+	music_usage = type;
+	I_UpdateSongLagConditions();
+}
+
+int
+S_MusicUsage (void)
+{
+	return music_usage;
+}
+
 /// ------------------------
 /// Music Fading
 /// ------------------------
@@ -2198,6 +2258,7 @@ void S_Start(void)
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
+		mapmusresume = 0;
 	}
 
 	//if (cv_resetmusic.value) // Starting ambience should always be restarted
@@ -2272,6 +2333,7 @@ static void Command_Tunes_f(void)
 	mapmusname[6] = 0;
 	mapmusflags = (track & MUSIC_TRACKMASK);
 	mapmusposition = position;
+	mapmusresume = 0;
 
 	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 

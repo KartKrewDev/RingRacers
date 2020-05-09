@@ -47,6 +47,7 @@
 #include "m_cond.h"
 #include "m_anigif.h"
 #include "k_kart.h" // SRB2kart
+#include "k_battle.h"
 #include "k_pwrlv.h"
 #include "y_inter.h"
 
@@ -63,11 +64,16 @@
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
 static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
 static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
+static void Got_PartyInvite(UINT8 **cp, INT32 playernum);
+static void Got_AcceptPartyInvite(UINT8 **cp, INT32 playernum);
+static void Got_CancelPartyInvite(UINT8 **cp, INT32 playernum);
+static void Got_LeaveParty(UINT8 **cp, INT32 playernum);
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum);
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum);
 static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum);
 static void Got_PickVotecmd(UINT8 **cp, INT32 playernum);
+static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum);
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum);
 #ifdef DELFILE
 static void Got_Delfilecmd(UINT8 **cp, INT32 playernum);
@@ -92,6 +98,8 @@ static void TeamScramble_OnChange(void);
 
 static void NetTimeout_OnChange(void);
 static void JoinTimeout_OnChange(void);
+
+static void Lagless_OnChange (void);
 
 static void Ringslinger_OnChange(void);
 static void Gravity_OnChange(void);
@@ -133,6 +141,12 @@ static void Command_ResetCamera_f(void);
 
 static void Command_View_f (void);
 static void Command_SetViews_f(void);
+
+static void Command_Invite_f(void);
+static void Command_CancelInvite_f(void);
+static void Command_AcceptInvite_f(void);
+static void Command_RejectInvite_f(void);
+static void Command_LeaveParty_f(void);
 
 static void Command_Addfile(void);
 static void Command_ListWADS_f(void);
@@ -189,6 +203,8 @@ static void Command_Togglemodified_f(void);
 static void Command_Archivetest_f(void);
 #endif
 #endif
+
+static void Command_KartGiveItem_f(void);
 
 // =========================================================================
 //                           CLIENT VARIABLES
@@ -344,6 +360,8 @@ consvar_t cv_selfpropelledbomb =	{"selfpropelledbomb", 	"On", CV_NETVAR|CV_CHEAT
 consvar_t cv_grow = 				{"grow", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_shrink = 				{"shrink", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_thundershield = 		{"thundershield", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_bubbleshield = 		{"bubbleshield", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_flameshield = 			{"flameshield", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_hyudoro = 				{"hyudoro", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_pogospring = 			{"pogospring", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kitchensink = 			{"kitchensink", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -378,13 +396,29 @@ consvar_t cv_karteliminatelast = {"karteliminatelast", "Yes", CV_NETVAR|CV_CHEAT
 
 consvar_t cv_kartusepwrlv = {"kartusepwrlv", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-static CV_PossibleValue_t kartdebugitem_cons_t[] = {{-1, "MIN"}, {NUMKARTITEMS-1, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t kartdebugitem_cons_t[] =
+{
+#define FOREACH( name, n ) { n, #name }
+	KART_ITEM_ITERATOR,
+#undef  FOREACH
+	{0}
+};
 consvar_t cv_kartdebugitem = {"kartdebugitem", "0", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugitem_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t kartdebugamount_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
 consvar_t cv_kartdebugamount = {"kartdebugamount", "1", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugamount_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_kartallowgiveitem = {"kartallowgiveitem",
+#ifdef DEVELOP
+	"Yes",
+#else
+	"No",
+#endif
+	CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL
+};
 consvar_t cv_kartdebugshrink = {"kartdebugshrink", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartdebugdistribution = {"kartdebugdistribution", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartdebughuddrop = {"kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
+consvar_t cv_kartdebugwaypoints = {"kartdebugwaypoints", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugwaypoint_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_kartdebugcheckpoint = {"kartdebugcheckpoint", "Off", CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kartdebugnodes = {"kartdebugnodes", "Off", CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -447,12 +481,16 @@ consvar_t cv_jointimeout = {"jointimeout", "105", CV_CALL|CV_SAVE, nettimeout_co
 static CV_PossibleValue_t maxping_cons_t[] = {{0, "MIN"}, {1000, "MAX"}, {0, NULL}};
 consvar_t cv_maxping = {"maxping", "800", CV_SAVE, maxping_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_lagless = {"lagless", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Lagless_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
 static CV_PossibleValue_t pingtimeout_cons_t[] = {{8, "MIN"}, {120, "MAX"}, {0, NULL}};
 consvar_t cv_pingtimeout = {"pingtimeout", "10", CV_SAVE, pingtimeout_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)
 static CV_PossibleValue_t showping_cons_t[] = {{0, "Off"}, {1, "Always"}, {2, "Warning"}, {0, NULL}};
 consvar_t cv_showping = {"showping", "Always", CV_SAVE, showping_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_showviewpointtext = {"showviewpointtext", "On", CV_SAVE, CV_OnOff, 0, 0, NULL, NULL, 0, 0, NULL};
 
 // Intermission time Tails 04-19-2002
 static CV_PossibleValue_t inttime_cons_t[] = {{0, "MIN"}, {3600, "MAX"}, {0, NULL}};
@@ -506,6 +544,11 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"PICKVOTE",
 	"REMOVEPLAYER",
 	"POWERLEVEL",
+	"PARTYINVITE",
+	"ACCEPTPARTYINVITE",
+	"LEAVEPARTY",
+	"CANCELPARTYINVITE",
+	"GIVEITEM",
 #ifdef HAVE_BLUA
 	"LUACMD",
 	"LUAVAR"
@@ -538,6 +581,10 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
 	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
+	RegisterNetXCmd(XD_PARTYINVITE, Got_PartyInvite);
+	RegisterNetXCmd(XD_ACCEPTPARTYINVITE, Got_AcceptPartyInvite);
+	RegisterNetXCmd(XD_CANCELPARTYINVITE, Got_CancelPartyInvite);
+	RegisterNetXCmd(XD_LEAVEPARTY, Got_LeaveParty);
 	RegisterNetXCmd(XD_MAP, Got_Mapcmd);
 	RegisterNetXCmd(XD_EXITLEVEL, Got_ExitLevelcmd);
 	RegisterNetXCmd(XD_ADDFILE, Got_Addfilecmd);
@@ -555,6 +602,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_SETUPVOTE, Got_SetupVotecmd);
 	RegisterNetXCmd(XD_MODIFYVOTE, Got_ModifyVotecmd);
 	RegisterNetXCmd(XD_PICKVOTE, Got_PickVotecmd);
+
+	RegisterNetXCmd(XD_GIVEITEM, Got_GiveItemcmd);
 
 	// Remote Administration
 	CV_RegisterVar(&cv_dummyjoinpassword);
@@ -613,6 +662,8 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("archivetest", Command_Archivetest_f);
 #endif
 #endif
+
+	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
 
 	// for master server connection
 	AddMServCommands();
@@ -705,8 +756,10 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_skipmapcheck);
 	CV_RegisterVar(&cv_sleep);
 	CV_RegisterVar(&cv_maxping);
+	CV_RegisterVar(&cv_lagless);
 	CV_RegisterVar(&cv_pingtimeout);
 	CV_RegisterVar(&cv_showping);
+	CV_RegisterVar(&cv_showviewpointtext);
 
 #ifdef SEENAMES
 	 CV_RegisterVar(&cv_allowseenames);
@@ -747,6 +800,12 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("changeteam3", Command_Teamchange3_f);
 	COM_AddCommand("changeteam4", Command_Teamchange4_f);
 
+	COM_AddCommand("invite", Command_Invite_f);
+	COM_AddCommand("cancelinvite", Command_CancelInvite_f);
+	COM_AddCommand("acceptinvite", Command_AcceptInvite_f);
+	COM_AddCommand("rejectinvite", Command_RejectInvite_f);
+	COM_AddCommand("leaveparty", Command_LeaveParty_f);
+
 	COM_AddCommand("playdemo", Command_Playdemo_f);
 	COM_AddCommand("timedemo", Command_Timedemo_f);
 	COM_AddCommand("stopdemo", Command_Stopdemo_f);
@@ -772,7 +831,10 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_screenshot_option);
 	CV_RegisterVar(&cv_screenshot_folder);
+	CV_RegisterVar(&cv_screenshot_colorprofile);
 	CV_RegisterVar(&cv_moviemode);
+	CV_RegisterVar(&cv_movie_option);
+	CV_RegisterVar(&cv_movie_folder);
 	// PNG variables
 	CV_RegisterVar(&cv_zlib_level);
 	CV_RegisterVar(&cv_zlib_memory);
@@ -787,6 +849,7 @@ void D_RegisterClientCommands(void)
 	// GIF variables
 	CV_RegisterVar(&cv_gif_optimize);
 	CV_RegisterVar(&cv_gif_downscale);
+	CV_RegisterVar(&cv_gif_localcolortable);
 
 #ifdef WALLSPLATS
 	CV_RegisterVar(&cv_splats);
@@ -843,7 +906,29 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_netdemosyncquality);
 
 	// FIXME: not to be here.. but needs be done for config loading
-	CV_RegisterVar(&cv_usegamma);
+	CV_RegisterVar(&cv_globalgamma);
+	CV_RegisterVar(&cv_globalsaturation);
+
+	CV_RegisterVar(&cv_rhue);
+	CV_RegisterVar(&cv_yhue);
+	CV_RegisterVar(&cv_ghue);
+	CV_RegisterVar(&cv_chue);
+	CV_RegisterVar(&cv_bhue);
+	CV_RegisterVar(&cv_mhue);
+
+	CV_RegisterVar(&cv_rgamma);
+	CV_RegisterVar(&cv_ygamma);
+	CV_RegisterVar(&cv_ggamma);
+	CV_RegisterVar(&cv_cgamma);
+	CV_RegisterVar(&cv_bgamma);
+	CV_RegisterVar(&cv_mgamma);
+
+	CV_RegisterVar(&cv_rsaturation);
+	CV_RegisterVar(&cv_ysaturation);
+	CV_RegisterVar(&cv_gsaturation);
+	CV_RegisterVar(&cv_csaturation);
+	CV_RegisterVar(&cv_bsaturation);
+	CV_RegisterVar(&cv_msaturation);
 
 	// k_menu.c
 	//CV_RegisterVar(&cv_compactscoreboard);
@@ -974,6 +1059,13 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_height);
 
 	CV_RegisterVar(&cv_soundtest);
+
+	CV_RegisterVar(&cv_invincmusicfade);
+	CV_RegisterVar(&cv_growmusicfade);
+
+	CV_RegisterVar(&cv_resetspecialmusic);
+
+	CV_RegisterVar(&cv_resume);
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
@@ -1180,11 +1272,11 @@ static void CleanupPlayerName(INT32 playernum, const char *newname)
 	// spaces may have been removed
 	if (playernum == consoleplayer)
 		CV_StealthSet(&cv_playername, tmpname);
-	else if (playernum == displayplayers[1] || (!netgame && playernum == 1))
+	else if (playernum == g_localplayers[1] || (!netgame && playernum == 1))
 		CV_StealthSet(&cv_playername2, tmpname);
-	else if (playernum == displayplayers[2] || (!netgame && playernum == 2))
+	else if (playernum == g_localplayers[2] || (!netgame && playernum == 2))
 		CV_StealthSet(&cv_playername3, tmpname);
-	else if (playernum == displayplayers[3] || (!netgame && playernum == 3))
+	else if (playernum == g_localplayers[3] || (!netgame && playernum == 3))
 		CV_StealthSet(&cv_playername4, tmpname);
 	else I_Assert(((void)"CleanupPlayerName used on non-local player", 0));
 
@@ -1292,14 +1384,48 @@ static void ForceAllSkins(INT32 forcedskin)
 		{
 			if (i == consoleplayer)
 				CV_StealthSet(&cv_skin, skins[forcedskin].name);
-			else if (i == displayplayers[1])
+			else if (i == g_localplayers[1])
 				CV_StealthSet(&cv_skin2, skins[forcedskin].name);
-			else if (i == displayplayers[2])
+			else if (i == g_localplayers[2])
 				CV_StealthSet(&cv_skin3, skins[forcedskin].name);
-			else if (i == displayplayers[3])
+			else if (i == g_localplayers[3])
 				CV_StealthSet(&cv_skin4, skins[forcedskin].name);
 		}
 	}
+}
+
+static const char *
+VaguePartyDescription (int playernum, int *party_sizes, int default_color)
+{
+	static char party_description
+		[1 + MAXPLAYERNAME + 1 + sizeof " and x others"];
+	const char *name;
+	int size;
+	name = player_names[playernum];
+	size = party_sizes[playernum];
+	/*
+	less than check for the dumb compiler because I KNOW it'll
+	complain about "writing x bytes into an area of y bytes"!!!
+	*/
+	if (size > 1 && size <= MAXSPLITSCREENPLAYERS)
+	{
+		sprintf(party_description,
+				"\x83%s%c and %d other%s",
+				name,
+				default_color,
+				( size - 1 ),
+				( (size > 2) ? "s" : "" )
+		);
+	}
+	else
+	{
+		sprintf(party_description,
+				"\x83%s%c",
+				name,
+				default_color
+		);
+	}
+	return party_description;
 }
 
 static INT32 snacpending = 0, snac2pending = 0, snac3pending = 0, snac4pending = 0, chmappending = 0;
@@ -1431,8 +1557,8 @@ static void SendNameAndColor2(void)
 	if (splitscreen < 1 && !botingame)
 		return; // can happen if skin2/color2/name2 changed
 
-	if (displayplayers[1] != consoleplayer)
-		secondplaya = displayplayers[1];
+	if (g_localplayers[1] != consoleplayer)
+		secondplaya = g_localplayers[1];
 	else if (!netgame) // HACK
 		secondplaya = 1;
 
@@ -1520,14 +1646,14 @@ static void SendNameAndColor2(void)
 	snac2pending++;
 
 	// Don't change name if muted
-	if (cv_mute.value && !(server || IsPlayerAdmin(displayplayers[1])))
-		CV_StealthSet(&cv_playername2, player_names[displayplayers[1]]);
+	if (cv_mute.value && !(server || IsPlayerAdmin(g_localplayers[1])))
+		CV_StealthSet(&cv_playername2, player_names[g_localplayers[1]]);
 	else // Cleanup name if changing it
-		CleanupPlayerName(displayplayers[1], cv_playername2.zstring);
+		CleanupPlayerName(g_localplayers[1], cv_playername2.zstring);
 
 	// Don't change skin if the server doesn't want you to.
-	if (!CanChangeSkin(displayplayers[1]))
-		CV_StealthSet(&cv_skin2, skins[players[displayplayers[1]].skin].name);
+	if (!CanChangeSkin(g_localplayers[1]))
+		CV_StealthSet(&cv_skin2, skins[players[g_localplayers[1]].skin].name);
 
 	// check if player has the skin loaded (cv_skin2 may have
 	// the name of a skin that was available in the previous game)
@@ -1554,8 +1680,8 @@ static void SendNameAndColor3(void)
 	if (splitscreen < 2)
 		return; // can happen if skin3/color3/name3 changed
 
-	if (displayplayers[2] != consoleplayer)
-		thirdplaya = displayplayers[2];
+	if (g_localplayers[2] != consoleplayer)
+		thirdplaya = g_localplayers[2];
 	else if (!netgame) // HACK
 		thirdplaya = 2;
 
@@ -1635,14 +1761,14 @@ static void SendNameAndColor3(void)
 	snac3pending++;
 
 	// Don't change name if muted
-	if (cv_mute.value && !(server || IsPlayerAdmin(displayplayers[2])))
-		CV_StealthSet(&cv_playername3, player_names[displayplayers[2]]);
+	if (cv_mute.value && !(server || IsPlayerAdmin(g_localplayers[2])))
+		CV_StealthSet(&cv_playername3, player_names[g_localplayers[2]]);
 	else // Cleanup name if changing it
-		CleanupPlayerName(displayplayers[2], cv_playername3.zstring);
+		CleanupPlayerName(g_localplayers[2], cv_playername3.zstring);
 
 	// Don't change skin if the server doesn't want you to.
-	if (!CanChangeSkin(displayplayers[2]))
-		CV_StealthSet(&cv_skin3, skins[players[displayplayers[2]].skin].name);
+	if (!CanChangeSkin(g_localplayers[2]))
+		CV_StealthSet(&cv_skin3, skins[players[g_localplayers[2]].skin].name);
 
 	// check if player has the skin loaded (cv_skin3 may have
 	// the name of a skin that was available in the previous game)
@@ -1669,8 +1795,8 @@ static void SendNameAndColor4(void)
 	if (splitscreen < 3)
 		return; // can happen if skin4/color4/name4 changed
 
-	if (displayplayers[3] != consoleplayer)
-		fourthplaya = displayplayers[3];
+	if (g_localplayers[3] != consoleplayer)
+		fourthplaya = g_localplayers[3];
 	else if (!netgame) // HACK
 		fourthplaya = 3;
 
@@ -1758,14 +1884,14 @@ static void SendNameAndColor4(void)
 	snac4pending++;
 
 	// Don't change name if muted
-	if (cv_mute.value && !(server || IsPlayerAdmin(displayplayers[3])))
-		CV_StealthSet(&cv_playername4, player_names[displayplayers[3]]);
+	if (cv_mute.value && !(server || IsPlayerAdmin(g_localplayers[3])))
+		CV_StealthSet(&cv_playername4, player_names[g_localplayers[3]]);
 	else // Cleanup name if changing it
-		CleanupPlayerName(displayplayers[3], cv_playername4.zstring);
+		CleanupPlayerName(g_localplayers[3], cv_playername4.zstring);
 
 	// Don't change skin if the server doesn't want you to.
-	if (!CanChangeSkin(displayplayers[3]))
-		CV_StealthSet(&cv_skin4, skins[players[displayplayers[3]].skin].name);
+	if (!CanChangeSkin(g_localplayers[3]))
+		CV_StealthSet(&cv_skin4, skins[players[g_localplayers[3]].skin].name);
 
 	// check if player has the skin loaded (cv_skin4 may have
 	// the name of a skin that was available in the previous game)
@@ -1796,11 +1922,11 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 
 	if (playernum == consoleplayer)
 		snacpending--; // TODO: make snacpending an array instead of 4 separate vars?
-	else if (playernum == displayplayers[1])
+	else if (playernum == g_localplayers[1])
 		snac2pending--;
-	else if (playernum == displayplayers[2])
+	else if (playernum == g_localplayers[2])
 		snac3pending--;
-	else if (playernum == displayplayers[3])
+	else if (playernum == g_localplayers[3])
 		snac4pending--;
 
 #ifdef PARANOIA
@@ -1823,8 +1949,8 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	demo_extradata[playernum] |= DXD_COLOR;
 
 	// normal player colors
-	if (server && (p != &players[consoleplayer] && p != &players[displayplayers[1]]
-		&& p != &players[displayplayers[2]] && p != &players[displayplayers[3]]))
+	if (server && (p != &players[consoleplayer] && p != &players[g_localplayers[1]]
+		&& p != &players[g_localplayers[2]] && p != &players[g_localplayers[3]]))
 	{
 		boolean kick = false;
 
@@ -1861,11 +1987,11 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 
 		if (playernum == consoleplayer)
 			CV_StealthSet(&cv_skin, skins[forcedskin].name);
-		else if (playernum == displayplayers[1])
+		else if (playernum == g_localplayers[1])
 			CV_StealthSet(&cv_skin2, skins[forcedskin].name);
-		else if (playernum == displayplayers[2])
+		else if (playernum == g_localplayers[2])
 			CV_StealthSet(&cv_skin3, skins[forcedskin].name);
-		else if (playernum == displayplayers[3])
+		else if (playernum == g_localplayers[3])
 			CV_StealthSet(&cv_skin4, skins[forcedskin].name);
 	}
 	else
@@ -1879,8 +2005,6 @@ void SendWeaponPref(void)
 	buf[0] = 0;
 	if (cv_flipcam.value)
 		buf[0] |= 1;
-	if (cv_analog.value)
-		buf[0] |= 2;
 	SendNetXCmd(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1891,8 +2015,6 @@ void SendWeaponPref2(void)
 	buf[0] = 0;
 	if (cv_flipcam2.value)
 		buf[0] |= 1;
-	if (cv_analog2.value)
-		buf[0] |= 2;
 	SendNetXCmd2(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1903,8 +2025,6 @@ void SendWeaponPref3(void)
 	buf[0] = 0;
 	if (cv_flipcam3.value)
 		buf[0] |= 1;
-	if (cv_analog3.value)
-		buf[0] |= 2;
 	SendNetXCmd3(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1915,8 +2035,6 @@ void SendWeaponPref4(void)
 	buf[0] = 0;
 	if (cv_flipcam4.value)
 		buf[0] |= 1;
-	if (cv_analog4.value)
-		buf[0] |= 2;
 	SendNetXCmd4(XD_WEAPONPREF, buf, 1);
 }
 
@@ -1924,11 +2042,9 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
 	UINT8 prefs = READUINT8(*cp);
 
-	players[playernum].pflags &= ~(PF_FLIPCAM|PF_ANALOGMODE);
+	players[playernum].pflags &= ~(PF_FLIPCAM);
 	if (prefs & 1)
 		players[playernum].pflags |= PF_FLIPCAM;
-	if (prefs & 2)
-		players[playernum].pflags |= PF_ANALOGMODE;
 }
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
@@ -1940,6 +2056,193 @@ static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
 	clientpowerlevels[playernum][PWRLV_BATTLE] = min(PWRLVRECORD_MAX, battle);
 
 	CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", playernum, race);
+}
+
+static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
+{
+	UINT8 invitee;
+
+	boolean kick = false;
+
+	invitee = READUINT8 (*cp);
+
+	if (
+			invitee < MAXPLAYERS &&
+			playeringame[invitee] &&
+			playerconsole[playernum] == playernum/* only consoleplayer may! */
+	){
+		invitee = playerconsole[invitee];
+		/* you cannot invite yourself or your computer */
+		if (invitee == playernum)
+			kick = true;
+	}
+	else
+		kick = true;
+
+	if (kick)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal splitscreen invitation received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	if (splitscreen_invitations[invitee] < 0)
+	{
+		splitscreen_invitations[invitee] = playernum;
+
+		if (invitee == consoleplayer)/* hey that's me! */
+		{
+			HU_AddChatText(va(
+						"\x82*You have been invited to join %s.",
+						VaguePartyDescription(
+							playernum, splitscreen_party_size, '\x82')
+			), true);
+		}
+	}
+}
+
+static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
+{
+	int invitation;
+	int old_party_size;
+	int views;
+
+	(void)cp;
+
+	if (playerconsole[playernum] != playernum)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal accept splitscreen invite received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	invitation = splitscreen_invitations[playernum];
+
+	if (invitation >= 0)
+	{
+		if (splitscreen_partied[invitation])
+		{
+			HU_AddChatText(va(
+						"\x82*%s joined your party!",
+						VaguePartyDescription(
+							playernum, splitscreen_original_party_size, '\x82')
+			), true);
+		}
+		else if (playernum == consoleplayer)
+		{
+			HU_AddChatText(va(
+						"\x82*You joined %s's party!",
+						VaguePartyDescription(
+							invitation, splitscreen_party_size, '\x82')
+			), true);
+		}
+
+		old_party_size = splitscreen_party_size[invitation];
+		views = splitscreen_original_party_size[playernum];
+
+		if (( old_party_size + views ) <= MAXSPLITSCREENPLAYERS)
+		{
+			G_RemovePartyMember(playernum);
+			G_AddPartyMember(invitation, playernum);
+		}
+
+		splitscreen_invitations[playernum] = -1;
+	}
+}
+
+static void Got_CancelPartyInvite(UINT8 **cp,INT32 playernum)
+{
+	UINT8 invitee;
+
+	invitee = READUINT8 (*cp);
+
+	if (
+			invitee < MAXPLAYERS &&
+			playeringame[invitee]
+	){
+		invitee = playerconsole[invitee];
+
+		if (splitscreen_invitations[invitee] == playerconsole[playernum])
+		{
+			splitscreen_invitations[invitee] = -1;
+
+			if (consoleplayer == invitee)
+			{
+				HU_AddChatText("\x85*Your invitation has been rescinded.", true);
+			}
+		}
+	}
+	else
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal cancel splitscreen invite received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+	}
+}
+
+static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
+{
+	(void)cp;
+
+	if (playerconsole[playernum] != playernum)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal accept splitscreen invite received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	if (consoleplayer == splitscreen_invitations[playernum])
+	{
+		HU_AddChatText(va(
+					"\x85*\x83%s\x85 rejected your invitation.",
+					player_names[playernum]
+		), true);
+	}
+
+	splitscreen_invitations[playernum] = -1;
+
+	if (splitscreen_party_size[playernum] >
+			splitscreen_original_party_size[playernum])
+	{
+		if (splitscreen_partied[playernum] && playernum != consoleplayer)
+		{
+			HU_AddChatText(va(
+						"\x85*%s left your party.",
+						VaguePartyDescription(
+							playernum, splitscreen_original_party_size, '\x85')
+			), true);
+		}
+
+		G_RemovePartyMember(playernum);
+		G_ResetSplitscreen(playernum);
+	}
 }
 
 void D_SendPlayerConfig(void)
@@ -1988,7 +2291,7 @@ void D_SendPlayerConfig(void)
 // Only works for displayplayer, sorry!
 static void Command_ResetCamera_f(void)
 {
-	P_ResetCamera(&players[displayplayers[0]], &camera[0]);
+	P_ResetCamera(&players[g_localplayers[0]], &camera[0]);
 }
 
 /* Consider replacing nametonum with this */
@@ -2144,7 +2447,7 @@ static void Command_View_f(void)
 	}
 	else/* print current view */
 	{
-		if (splitscreen < viewnum-1)/* We can't see those guys! */
+		if (r_splitscreen < viewnum-1)/* We can't see those guys! */
 			return;
 		PRINTVIEWPOINT ("Currently ",)
 	}
@@ -2169,7 +2472,7 @@ static void Command_SetViews_f(void)
 		return;
 	}
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 
 	newsplits = atoi(COM_Argv(1));
 	newsplits = min(max(newsplits, 1), 4);
@@ -2177,8 +2480,154 @@ static void Command_SetViews_f(void)
 		G_AdjustView(newsplits, 0, true);
 	else
 	{
-		splitscreen = newsplits-1;
+		r_splitscreen = newsplits-1;
 		R_ExecuteSetViewSize();
+	}
+}
+
+static void
+Command_Invite_f (void)
+{
+	UINT8 buffer[1];
+
+	int invitee;
+
+	if (COM_Argc() != 2)
+	{
+		CONS_Printf("invite <player>: Invite a player to your party.\n");
+		return;
+	}
+
+	if (r_splitscreen >= MAXSPLITSCREENPLAYERS)
+	{
+		CONS_Alert(CONS_WARNING, "Your party is full!\n");
+		return;
+	}
+
+	invitee = LookupPlayer(COM_Argv(1));
+
+	if (invitee == -1)
+	{
+		CONS_Alert(CONS_WARNING, "There is no player by that name!\n");
+		return;
+	}
+	if (!playeringame[invitee])
+	{
+		CONS_Alert(CONS_WARNING, "There is no player using that slot!\n");
+		return;
+	}
+
+	if (invitee == consoleplayer)
+	{
+		CONS_Alert(CONS_WARNING, "You cannot invite yourself! Bruh!\n");
+		return;
+	}
+
+	if (splitscreen_invitations[invitee] >= 0)
+	{
+		CONS_Alert(CONS_WARNING,
+				"That player has already been invited to join another party.\n");
+	}
+
+	if (( splitscreen_party_size[consoleplayer] +
+				splitscreen_original_party_size[invitee] ) > MAXSPLITSCREENPLAYERS)
+	{
+		CONS_Alert(CONS_WARNING,
+				"That player joined with too many "
+				"splitscreen players for your party.\n");
+	}
+
+	CONS_Printf(
+			"Inviting %s...\n",
+			VaguePartyDescription(
+				invitee, splitscreen_original_party_size, '\x80')
+	);
+
+	buffer[0] = invitee;
+
+	SendNetXCmd(XD_PARTYINVITE, buffer, sizeof buffer);
+}
+
+static void
+Command_CancelInvite_f (void)
+{
+	UINT8 buffer[1];
+
+	int invitee;
+
+	if (COM_Argc() != 2)
+	{
+		CONS_Printf("cancelinvite <player>: Rescind a party invitation.\n");
+		return;
+	}
+
+	invitee = LookupPlayer(COM_Argv(1));
+
+	if (invitee == -1)
+	{
+		CONS_Alert(CONS_WARNING, "There is no player by that name!\n");
+		return;
+	}
+	if (!playeringame[invitee])
+	{
+		CONS_Alert(CONS_WARNING, "There is no player using that slot!\n");
+		return;
+	}
+
+	if (splitscreen_invitations[invitee] != consoleplayer)
+	{
+		CONS_Alert(CONS_WARNING,
+				"You have not invited this player!\n");
+	}
+
+	CONS_Printf(
+			"Rescinding invite to %s...\n",
+			VaguePartyDescription(
+				invitee, splitscreen_original_party_size, '\x80')
+	);
+
+	buffer[0] = invitee;
+
+	SendNetXCmd(XD_CANCELPARTYINVITE, buffer, sizeof buffer);
+}
+
+static boolean
+CheckPartyInvite (void)
+{
+	if (splitscreen_invitations[consoleplayer] < 0)
+	{
+		CONS_Alert(CONS_WARNING, "There is no open party invitation.\n");
+		return false;
+	}
+	return true;
+}
+
+static void
+Command_AcceptInvite_f (void)
+{
+	if (CheckPartyInvite())
+		SendNetXCmd(XD_ACCEPTPARTYINVITE, NULL, 0);
+}
+
+static void
+Command_RejectInvite_f (void)
+{
+	if (CheckPartyInvite())
+	{
+		CONS_Printf("\x85Rejecting invite...\n");
+
+		SendNetXCmd(XD_LEAVEPARTY, NULL, 0);
+	}
+}
+
+static void
+Command_LeaveParty_f (void)
+{
+	if (r_splitscreen > splitscreen)
+	{
+		CONS_Printf("\x85Leaving party...\n");
+
+		SendNetXCmd(XD_LEAVEPARTY, NULL, 0);
 	}
 }
 
@@ -2426,7 +2875,7 @@ void D_ModifyClientVote(SINT8 voted, UINT8 splitplayer)
 	UINT8 player = consoleplayer;
 
 	if (splitplayer > 0)
-		player = displayplayers[splitplayer];
+		player = g_localplayers[splitplayer];
 
 	WRITESINT8(p, voted);
 	WRITEUINT8(p, player);
@@ -2850,13 +3299,15 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	// incase the above checks were modified to allow sending a respawn on these occasions:
-	if (players[respawnplayer].mo && !P_IsObjectOnGround(players[respawnplayer].mo))
-		return;
-
 	if (players[respawnplayer].mo)
-		P_DamageMobj(players[respawnplayer].mo, NULL, NULL, 10000);
-	demo_extradata[playernum] |= DXD_RESPAWN;
+	{
+		// incase the above checks were modified to allow sending a respawn on these occasions:
+		if (!P_IsObjectOnGround(players[respawnplayer].mo))
+			return;
+
+		K_DoIngameRespawn(&players[respawnplayer]);
+		demo_extradata[playernum] |= DXD_RESPAWN;
+	}
 }
 
 /** Deals with an ::XD_RANDOMSEED message in a netgame.
@@ -3078,11 +3529,11 @@ static void Command_Teamchange2_f(void)
 		return;
 	}
 
-	if (players[displayplayers[1]].spectator)
-		error = !(NetPacket.packet.newteam || (players[displayplayers[1]].pflags & PF_WANTSTOJOIN));
+	if (players[g_localplayers[1]].spectator)
+		error = !(NetPacket.packet.newteam || (players[g_localplayers[1]].pflags & PF_WANTSTOJOIN));
 	else if (G_GametypeHasTeams())
-		error = (NetPacket.packet.newteam == (unsigned)players[displayplayers[1]].ctfteam);
-	else if (G_GametypeHasSpectators() && !players[displayplayers[1]].spectator)
+		error = (NetPacket.packet.newteam == (unsigned)players[g_localplayers[1]].ctfteam);
+	else if (G_GametypeHasSpectators() && !players[g_localplayers[1]].spectator)
 		error = (NetPacket.packet.newteam == 3);
 #ifdef PARANOIA
 	else
@@ -3169,11 +3620,11 @@ static void Command_Teamchange3_f(void)
 		return;
 	}
 
-	if (players[displayplayers[2]].spectator)
-		error = !(NetPacket.packet.newteam || (players[displayplayers[2]].pflags & PF_WANTSTOJOIN));
+	if (players[g_localplayers[2]].spectator)
+		error = !(NetPacket.packet.newteam || (players[g_localplayers[2]].pflags & PF_WANTSTOJOIN));
 	else if (G_GametypeHasTeams())
-		error = (NetPacket.packet.newteam == (unsigned)players[displayplayers[2]].ctfteam);
-	else if (G_GametypeHasSpectators() && !players[displayplayers[2]].spectator)
+		error = (NetPacket.packet.newteam == (unsigned)players[g_localplayers[2]].ctfteam);
+	else if (G_GametypeHasSpectators() && !players[g_localplayers[2]].spectator)
 		error = (NetPacket.packet.newteam == 3);
 #ifdef PARANOIA
 	else
@@ -3260,11 +3711,11 @@ static void Command_Teamchange4_f(void)
 		return;
 	}
 
-	if (players[displayplayers[3]].spectator)
-		error = !(NetPacket.packet.newteam || (players[displayplayers[3]].pflags & PF_WANTSTOJOIN));
+	if (players[g_localplayers[3]].spectator)
+		error = !(NetPacket.packet.newteam || (players[g_localplayers[3]].pflags & PF_WANTSTOJOIN));
 	else if (G_GametypeHasTeams())
-		error = (NetPacket.packet.newteam == (unsigned)players[displayplayers[3]].ctfteam);
-	else if (G_GametypeHasSpectators() && !players[displayplayers[3]].spectator)
+		error = (NetPacket.packet.newteam == (unsigned)players[g_localplayers[3]].ctfteam);
+	else if (G_GametypeHasSpectators() && !players[g_localplayers[3]].spectator)
 		error = (NetPacket.packet.newteam == 3);
 #ifdef PARANOIA
 	else
@@ -3661,8 +4112,8 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
 	//reset view if you are changed, or viewing someone who was changed.
-	if (playernum == consoleplayer || displayplayers[0] == playernum)
-		displayplayers[0] = consoleplayer;
+	if (playernum == consoleplayer || g_localplayers[0] == playernum)
+		g_localplayers[0] = consoleplayer;
 
 	if (G_GametypeHasTeams())
 	{
@@ -4769,6 +5220,14 @@ static void JoinTimeout_OnChange(void)
 	jointimeout = (tic_t)cv_jointimeout.value;
 }
 
+static void
+Lagless_OnChange (void)
+{
+	/* don't back out of dishonesty, or go lagless after playing honestly */
+	if (cv_lagless.value && gamestate == GS_LEVEL)
+		server_lagless = true;
+}
+
 UINT32 timelimitintics = 0;
 
 /** Deals with a timelimit change by printing the change to the console.
@@ -5296,13 +5755,70 @@ static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
 	Y_SetupVoteFinish(pick, level);
 }
 
+static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
+{
+	int item;
+	int  amt;
+
+	INT32 *kartstuff;
+
+	item = READSINT8 (*cp);
+	amt  = READUINT8 (*cp);
+
+	if (
+			( netgame && ! cv_kartallowgiveitem.value ) ||
+			( item < KITEM_SAD || item >= NUMKARTITEMS )
+	)
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal give item received from %s\n"),
+				player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	kartstuff = players[playernum].kartstuff;
+
+	kartstuff[k_itemtype]   = item;
+	kartstuff[k_itemamount] = amt;
+}
+
 /** Prints the number of displayplayers[0].
   *
   * \todo Possibly remove this; it was useful for debugging at one point.
   */
 static void Command_Displayplayer_f(void)
 {
-	CONS_Printf(M_GetText("Displayplayer is %d\n"), displayplayers[0]);
+	int playernum;
+	int i;
+	for (i = 0; i <= splitscreen; ++i)
+	{
+		playernum = g_localplayers[i];
+		CONS_Printf(
+				"local   player %d: \x84(%d) \x83%s\x80\n",
+				i,
+				playernum,
+				player_names[playernum]
+		);
+	}
+	CONS_Printf("\x83----------------------------------------\x80\n");
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		playernum = displayplayers[i];
+		CONS_Printf(
+				"display player %d: \x84(%d) \x83%s\x80\n",
+				i,
+				playernum,
+				player_names[playernum]
+		);
+	}
 }
 
 /** Quits a game and returns to the title screen.
@@ -5459,6 +5975,80 @@ static void Command_Archivetest_f(void)
 #endif
 #endif
 
+/** Give yourself an, optional quantity or one of, an item.
+  *
+  * \sa cv_kartallowgiveitem
+*/
+static void Command_KartGiveItem_f(void)
+{
+	char         buf[2];
+
+	int           ac;
+	const char *name;
+	int         item;
+
+	const char * str;
+
+	int i;
+
+	/* Allow always in local games. */
+	if (! netgame || cv_kartallowgiveitem.value)
+	{
+		ac = COM_Argc();
+		if (ac < 2)
+		{
+			CONS_Printf(
+"kartgiveitem <item> [amount]: Give yourself an item\n"
+			);
+		}
+		else
+		{
+			item = NUMKARTITEMS;
+
+			name = COM_Argv(1);
+
+			if (isdigit(*name) || *name == '-')
+			{
+				item = atoi(name);
+			}
+			else
+			{
+				for (i = 0; ( str = kartdebugitem_cons_t[i].strvalue ); ++i)
+				{
+					if (strcasecmp(name, str) == 0)
+					{
+						item = kartdebugitem_cons_t[i].value;
+						break;
+					}
+				}
+			}
+
+			if (item < NUMKARTITEMS)
+			{
+				buf[0] = item;
+
+				if (ac > 2)
+					buf[1] = atoi(COM_Argv(2));
+				else
+					buf[1] = 1;/* default to one quantity */
+
+				SendNetXCmd(XD_GIVEITEM, buf, 2);
+			}
+			else
+			{
+				CONS_Alert(CONS_WARNING,
+						"No item matches '%s'\n",
+						name);
+			}
+		}
+	}
+	else
+	{
+		CONS_Alert(CONS_NOTICE,
+				"The server does not allow this.\n");
+	}
+}
+
 /** Makes a change to ::cv_forceskin take effect immediately.
   *
   * \sa Command_SetForcedSkin_f, cv_forceskin, forcedskin
@@ -5497,7 +6087,7 @@ static void Name2_OnChange(void)
 	if (cv_mute.value) //Secondary player can't be admin.
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You may not change your name when chat is muted.\n"));
-		CV_StealthSet(&cv_playername2, player_names[displayplayers[1]]);
+		CV_StealthSet(&cv_playername2, player_names[g_localplayers[1]]);
 	}
 	else
 		SendNameAndColor2();
@@ -5508,7 +6098,7 @@ static void Name3_OnChange(void)
 	if (cv_mute.value) //Third player can't be admin.
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You may not change your name when chat is muted.\n"));
-		CV_StealthSet(&cv_playername3, player_names[displayplayers[2]]);
+		CV_StealthSet(&cv_playername3, player_names[g_localplayers[2]]);
 	}
 	else
 		SendNameAndColor3();
@@ -5519,7 +6109,7 @@ static void Name4_OnChange(void)
 	if (cv_mute.value) //Secondary player can't be admin.
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You may not change your name when chat is muted.\n"));
-		CV_StealthSet(&cv_playername4, player_names[displayplayers[3]]);
+		CV_StealthSet(&cv_playername4, player_names[g_localplayers[3]]);
 	}
 	else
 		SendNameAndColor4();
@@ -5560,12 +6150,12 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkin(displayplayers[1]) && !P_PlayerMoving(displayplayers[1]))
+	if (CanChangeSkin(g_localplayers[1]) && !P_PlayerMoving(g_localplayers[1]))
 		SendNameAndColor2();
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
-		CV_StealthSet(&cv_skin2, skins[players[displayplayers[1]].skin].name);
+		CV_StealthSet(&cv_skin2, skins[players[g_localplayers[1]].skin].name);
 	}
 }
 
@@ -5574,12 +6164,12 @@ static void Skin3_OnChange(void)
 	if (!Playing() || splitscreen < 2)
 		return; // do whatever you want
 
-	if (CanChangeSkin(displayplayers[2]) && !P_PlayerMoving(displayplayers[2]))
+	if (CanChangeSkin(g_localplayers[2]) && !P_PlayerMoving(g_localplayers[2]))
 		SendNameAndColor3();
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
-		CV_StealthSet(&cv_skin3, skins[players[displayplayers[2]].skin].name);
+		CV_StealthSet(&cv_skin3, skins[players[g_localplayers[2]].skin].name);
 	}
 }
 
@@ -5588,12 +6178,12 @@ static void Skin4_OnChange(void)
 	if (!Playing() || splitscreen < 3)
 		return; // do whatever you want
 
-	if (CanChangeSkin(displayplayers[3]) && !P_PlayerMoving(displayplayers[3]))
+	if (CanChangeSkin(g_localplayers[3]) && !P_PlayerMoving(g_localplayers[3]))
 		SendNameAndColor4();
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
-		CV_StealthSet(&cv_skin4, skins[players[displayplayers[3]].skin].name);
+		CV_StealthSet(&cv_skin4, skins[players[g_localplayers[3]].skin].name);
 	}
 }
 
@@ -5634,7 +6224,7 @@ static void Color2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (!P_PlayerMoving(displayplayers[1]))
+	if (!P_PlayerMoving(g_localplayers[1]))
 	{
 		// Color change menu scrolling fix is no longer necessary
 		SendNameAndColor2();
@@ -5642,7 +6232,7 @@ static void Color2_OnChange(void)
 	else
 	{
 		CV_StealthSetValue(&cv_playercolor2,
-			players[displayplayers[1]].skincolor);
+			players[g_localplayers[1]].skincolor);
 	}
 }
 
@@ -5651,7 +6241,7 @@ static void Color3_OnChange(void)
 	if (!Playing() || splitscreen < 2)
 		return; // do whatever you want
 
-	if (!P_PlayerMoving(displayplayers[2]))
+	if (!P_PlayerMoving(g_localplayers[2]))
 	{
 		// Color change menu scrolling fix is no longer necessary
 		SendNameAndColor3();
@@ -5659,7 +6249,7 @@ static void Color3_OnChange(void)
 	else
 	{
 		CV_StealthSetValue(&cv_playercolor3,
-			players[displayplayers[2]].skincolor);
+			players[g_localplayers[2]].skincolor);
 	}
 }
 
@@ -5668,7 +6258,7 @@ static void Color4_OnChange(void)
 	if (!Playing() || splitscreen < 3)
 		return; // do whatever you want
 
-	if (!P_PlayerMoving(displayplayers[3]))
+	if (!P_PlayerMoving(g_localplayers[3]))
 	{
 		// Color change menu scrolling fix is no longer necessary
 		SendNameAndColor4();
@@ -5676,7 +6266,7 @@ static void Color4_OnChange(void)
 	else
 	{
 		CV_StealthSetValue(&cv_playercolor4,
-			players[displayplayers[3]].skincolor);
+			players[g_localplayers[3]].skincolor);
 	}
 }
 
