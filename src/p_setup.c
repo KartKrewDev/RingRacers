@@ -88,6 +88,7 @@
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
 #include "k_bot.h"
+#include "k_grandprix.h"
 
 //
 // Map MD5, calculated on level load.
@@ -2426,9 +2427,6 @@ static void P_LevelInitStuff(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
-
-	//if (!grandprix)
-		K_UpdateMatchRaceBots();
 }
 
 //
@@ -3367,6 +3365,19 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_SpawnBattleCapsules();
+
+	if (grandprixmatch == 0)
+	{
+		K_UpdateMatchRaceBots();
+	}
+	else
+	{
+		if (initgpbots == true)
+		{
+			K_InitGrandPrixBots();
+			initgpbots = false;
+		}
+	}
 
 	return true;
 }

@@ -59,6 +59,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_pwrlv.h"
 #include "d_player.h" // KITEM_ constants
+#include "k_grandprix.h"
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -225,7 +226,7 @@ menu_t SP_MainDef, MP_MainDef, OP_MainDef;
 menu_t MISC_ScrambleTeamDef, MISC_ChangeTeamDef, MISC_ChangeSpectateDef;
 
 // Single Player
-//static void M_LoadGame(INT32 choice);
+static void M_StartGrandPrix(INT32 choice);
 static void M_TimeAttack(INT32 choice);
 static boolean M_QuitTimeAttackMenu(void);
 static void M_BreakTheCapsules(INT32 choice);
@@ -803,14 +804,14 @@ static menuitem_t SR_EmblemHintMenu[] =
 // Single Player Main
 static menuitem_t SP_MainMenu[] =
 {
-	//{IT_CALL | IT_STRING,                       NULL, "Grand Prix",         M_LoadGame,          92},
-	{IT_SECRET,                                 NULL, "Time Attack",        M_TimeAttack,       100},
-	{IT_SECRET,                                 NULL, "Break the Capsules", M_BreakTheCapsules, 108},
+	{IT_CALL | IT_STRING,	NULL, "Grand Prix",			M_StartGrandPrix,	 92},
+	{IT_SECRET,				NULL, "Time Attack",		M_TimeAttack,		100},
+	{IT_SECRET,				NULL, "Break the Capsules",	M_BreakTheCapsules,	108},
 };
 
 enum
 {
-	//spgrandprix,
+	spgrandprix,
 	sptimeattack,
 	spbreakthecapsules
 };
@@ -6568,6 +6569,8 @@ static void M_Credits(INT32 choice)
 static void M_SinglePlayerMenu(INT32 choice)
 {
 	(void)choice;
+
+	SP_MainMenu[spgrandprix].status = IT_CALL|IT_STRING;
 	SP_MainMenu[sptimeattack].status =
 		(M_SecretUnlocked(SECRET_TIMEATTACK)) ? IT_CALL|IT_STRING : IT_SECRET;
 	SP_MainMenu[spbreakthecapsules].status =
@@ -7645,6 +7648,20 @@ void M_DrawTimeAttackMenu(void)
 		}
 	}
 }
+
+// Start Grand Prix!
+static void M_StartGrandPrix(INT32 choice)
+{
+	(void)choice;
+
+	M_ClearMenus(true);
+
+	grandprixmatch = 1;
+	initgpbots = true;
+
+	G_DeferedInitNew(false, "MAP01", (UINT8)(cv_chooseskin.value-1), 0, false); // G_BuildMapName(startmap)
+}
+
 
 // Going to Time Attack menu...
 static void M_TimeAttack(INT32 choice)

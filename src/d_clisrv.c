@@ -50,6 +50,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_bot.h"
+#include "k_grandprix.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen

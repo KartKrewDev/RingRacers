@@ -774,6 +774,7 @@ void D_StartTitle(void)
 	// In case someone exits out at the same time they start a time attack run,
 	// reset modeattacking
 	modeattacking = ATTACKING_NONE;
+	grandprixmatch = 0;
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
