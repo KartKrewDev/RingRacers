@@ -5013,7 +5013,7 @@ void G_ReadDemoExtraData(void)
 			M_Memcpy(name, demo_p, 16);
 			demo_p += 16;
 			SetPlayerFollower(p, name);
-			
+
 			// Follower's color
 			M_Memcpy(name, demo_p, 16);
 			demo_p += 16;
@@ -5022,9 +5022,9 @@ void G_ReadDemoExtraData(void)
 				{
 					players[p].followercolor = i;
 					break;
-				}	
+				}
 
-			
+
 		}
 		if (extradata & DXD_PLAYSTATE)
 		{
@@ -5153,6 +5153,13 @@ void G_WriteDemoExtraData(void)
 				strncpy(name, followers[players[i].followerskin].skinname, 16);
 				M_Memcpy(demo_p, name, 16);
 				demo_p += 16;
+
+				// write follower color
+				memset(name, 0, 16);
+				strncpy(name, KartColor_Names[players[i].followercolor], 16);
+				M_Memcpy(demo_p,name,16);
+				demo_p += 16;
+
 			}
 			if (demo_extradata[i] & DXD_PLAYSTATE)
 			{
