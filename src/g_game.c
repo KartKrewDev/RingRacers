@@ -166,6 +166,10 @@ struct quake quake;
 // Map Header Information
 mapheader_t* mapheaderinfo[NUMMAPS] = {NULL};
 
+// Kart cup definitions
+cupheader_t *kartcupheaders = NULL;
+UINT16 numkartcupheaders = 0;
+
 static boolean exitgame = false;
 static boolean retrying = false;
 
