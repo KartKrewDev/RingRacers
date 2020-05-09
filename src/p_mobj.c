@@ -12942,16 +12942,30 @@ ML_NOCLIMB : Direction not controllable
 
 	mobj->angle = FixedAngle(mthing->angle*FRACUNIT);
 
+	if ((mobj->flags & MF_SPRING)
+	&& mobj->info->damage != 0
+	&& mobj->info->mass == 0)
+	{
+		// Offset sprite of horizontal springs
+		angle_t a = mobj->angle + ANGLE_180;
+		mobj->sprxoff = FixedMul(mobj->radius, FINECOSINE(a >> ANGLETOFINESHIFT));
+		mobj->spryoff = FixedMul(mobj->radius, FINESINE(a >> ANGLETOFINESHIFT));
+	}
+
 	if ((mthing->options & MTF_AMBUSH)
 	&& (mthing->options & MTF_OBJECTSPECIAL)
 	&& (mobj->flags & MF_PUSHABLE))
+	{
 		mobj->flags2 |= MF2_CLASSICPUSH;
+	}
 	else
 	{
 		if (mthing->options & MTF_AMBUSH)
 		{
-			if (mobj->flags & MF_SPRING && mobj->info->damage)
+			if ((mobj->flags & MF_SPRING) && mobj->info->damage)
+			{
 				mobj->angle += ANGLE_22h;
+			}
 
 			if (mobj->flags & MF_NIGHTSITEM)
 			{
