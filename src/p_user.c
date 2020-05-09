@@ -8121,11 +8121,26 @@ static void P_HandleFollower(player_t *player)
 	fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * leveltime)>>ANGLETOFINESHIFT) & FINEMASK);
 	sz += FixedMul(player->mo->scale, sine)*P_MobjFlip(player->mo);
 
-	// extra step, give the follower a color !?
-	color = player->followercolor;
-	// little extra check to make sure this isn't garbage:
-	if (!color || color > MAXSKINCOLORS-1)
-		color = player->skincolor;		// "Match" option. Essentially a fallback as well.
+	// Set follower colour
+
+	switch (player->followercolor)
+	{
+		case MAXSKINCOLORS:		// "Match"
+			color = player->skincolor;
+			break;
+		case MAXSKINCOLORS+1:	// "Opposite"
+			color = KartColor_Opposite[player->skincolor*2];
+			break;
+		default:
+
+			color = player->followercolor;
+			if (!color || color > MAXSKINCOLORS+2)	// Make sure this isn't garbage
+				color = player->skincolor;	// "Match" as fallback.
+
+			break;
+	}
+
+
 
 	if (!player->follower)	// follower doesn't exist / isn't valid
 	{

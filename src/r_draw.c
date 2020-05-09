@@ -147,7 +147,7 @@ static UINT8** translationtablecache[TT_CACHE_SIZE] = {NULL};
 // SKINCOLOR DEFINITIONS HAVE BEEN MOVED TO K_KART.C
 
 CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
-CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+2];
+CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
 /**	\brief The R_InitTranslationTables
 

@@ -819,11 +819,14 @@ void D_RegisterClientCommands(void)
 		Color_cons_t[i].value = Followercolor_cons_t[i].value = i;
 		Color_cons_t[i].strvalue = Followercolor_cons_t[i].strvalue = KartColor_Names[i];				// SRB2kart
 	}
-	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+1].value = 0;
-	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+1].strvalue = NULL;
+	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
+	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
 
 	Followercolor_cons_t[MAXSKINCOLORS].value = MAXSKINCOLORS;
 	Followercolor_cons_t[MAXSKINCOLORS].strvalue = "Match";			// Add "Match" option, which will make the follower color match the player's
+
+	Followercolor_cons_t[MAXSKINCOLORS+1].value = MAXSKINCOLORS+1;
+	Followercolor_cons_t[MAXSKINCOLORS+1].strvalue = "Opposite";			// Add "Opposite" option, ...which is like "Match", but for coloropposite.
 
 	if (dedicated)
 		return;
