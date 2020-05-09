@@ -112,7 +112,7 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY,  10,   1, {NULL}, 0, 0, S_KART_SLOW2_L},			// S_KART_SLOW1_L		K
 	{SPR_PLAY,   7,   1, {NULL}, 0, 0, S_KART_SLOW1_L},			// S_KART_SLOW2_L		H
 	{SPR_PLAY,  11,   1, {NULL}, 0, 0, S_KART_SLOW2_R},			// S_KART_SLOW1_R		L
-	{SPR_PLAY,   8,   1, {NULL}, 0, 0, S_KART_SLOW1_R},			// S_KART_SLOW1_R		I
+	{SPR_PLAY,   8,   1, {NULL}, 0, 0, S_KART_SLOW1_R},			// S_KART_SLOW2_R		I
 	{SPR_PLAY,   0,   1, {NULL}, 0, 0, S_KART_FAST2},			// S_KART_FAST1			A
 	{SPR_PLAY,   9,   1, {NULL}, 0, 0, S_KART_FAST1},			// S_KART_FAST2			J
 	{SPR_PLAY,   2,   1, {NULL}, 0, 0, S_KART_FAST2_L},			// S_KART_FAST1_L		C
