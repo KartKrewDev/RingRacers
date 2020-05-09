@@ -5156,7 +5156,7 @@ void G_WriteDemoExtraData(void)
 
 				// write follower color
 				memset(name, 0, 16);
-				strncpy(name, KartColor_Names[players[i].followercolor], 16);
+				strncpy(name, Followercolor_cons_t[players[i].followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 				M_Memcpy(demo_p,name,16);
 				demo_p += 16;
 
