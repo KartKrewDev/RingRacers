@@ -1394,6 +1394,113 @@ static void readlevelheader(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
+static void readcupheader(MYFILE *f, cupheader_t *cup)
+{
+	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+	char *word;
+	char *word2;
+	char *tmp;
+	INT32 i;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			// First remove trailing newline, if there is one
+			tmp = strchr(s, '\n');
+			if (tmp)
+				*tmp = '\0';
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			// Set / reset word, because some things (Lua.) move it
+			word = s;
+
+			// Get the part before the " = "
+			tmp = strchr(s, '=');
+			if (tmp)
+				*(tmp-1) = '\0';
+			else
+				break;
+			strupr(word);
+
+			// Now get the part after
+			word2 = tmp += 2;
+			i = atoi(word2); // used for numerical settings
+			strupr(word2);
+
+			if (fastcmp(word, "ICON"))
+			{
+				deh_strlcpy(cup->icon, word2,
+					sizeof(cup->icon), va("%s Cup: icon", cup->name));
+			}
+			else if (fastcmp(word, "LEVELLIST"))
+			{
+				cup->numlevels = 0;
+
+				tmp = strtok(word2,",");
+				do {
+					INT32 map = atoi(tmp);
+
+					if (tmp[0] >= 'A' && tmp[0] <= 'Z' && tmp[2] == '\0')
+						map = M_MapNumber(tmp[0], tmp[1]);
+
+					if (!map)
+						break;
+
+					if (cup->numlevels >= MAXLEVELLIST)
+					{
+						deh_warning("%s Cup: reached max levellist (%d)\n", cup->name, MAXLEVELLIST);
+						break;
+					}
+
+					cup->levellist[cup->numlevels] = map - 1;
+					cup->numlevels++;
+				} while((tmp = strtok(NULL,",")) != NULL);
+			}
+			else if (fastcmp(word, "BONUSGAME"))
+			{
+				// Convert to map number
+				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
+					i = M_MapNumber(word2[0], word2[1]);
+				cup->bonusgame = (INT16)i - 1;
+			}
+			else if (fastcmp(word, "SPECIALSTAGE"))
+			{
+				// Convert to map number
+				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
+					i = M_MapNumber(word2[0], word2[1]);
+				cup->specialstage = (INT16)i - 1;
+			}
+			else if (fastcmp(word, "EMERALDNUM"))
+			{
+				if (i >= 0 && i <= 14)
+					cup->emeraldnum = (UINT8)i;
+				else
+					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
+			}
+			else if (fastcmp(word, "UNLOCKABLE"))
+			{
+				if (i >= 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
+					cup->unlockrequired = (SINT8)i - 1;
+				else
+					deh_warning("%s Cup: invalid unlockable number %d", cup->name, i);
+			}
+			else
+				deh_warning("%s Cup: unknown word '%s'", cup->name, word);
+		}
+	} while (!myfeof(f)); // finish when the line is empty
+
+	Z_Free(s);
+}
+
 static void readcutscenescene(MYFILE *f, INT32 num, INT32 scenenum)
 {
 	char *s = Z_Calloc(MAXLINELEN, PU_STATIC, NULL);
@@ -3564,6 +3671,42 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 						deh_warning("Level number %d out of range (1 - %d)", i, NUMMAPS);
 						ignorelines(f);
 					}
+					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+				}
+				else if (fastcmp(word, "CUP"))
+				{
+					cupheader_t *cup = kartcupheaders;
+					cupheader_t *prev = NULL;
+
+					while (cup)
+					{
+						if (fastcmp(cup->name, word2))
+						{
+							// mark as a major mod if it replaces an already-existing cup
+							G_SetGameModified(multiplayer, true);
+							break;
+						}
+
+						prev = cup;
+						cup = cup->next;
+					}
+
+					// Nothing found, add to the end.
+					if (!cup)
+					{
+						cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
+						cup->id = numkartcupheaders;
+						deh_strlcpy(cup->name, word2,
+							sizeof(cup->name), va("Cup header %s: name", word2));
+						if (prev != NULL)
+							prev->next = cup;
+						if (kartcupheaders == NULL)
+							kartcupheaders = cup;
+						numkartcupheaders++;
+						CONS_Printf("Added cup %d ('%s')\n", cup->id, cup->name);
+					}
+
+					readcupheader(f, cup);
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
 				}
 				else if (fastcmp(word, "CUTSCENE"))
