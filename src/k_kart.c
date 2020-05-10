@@ -7900,6 +7900,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
 			player->mo->friction += 1228;
 
+		if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+			player->mo->friction += 614;
+
 		// Wipeout slowdown
 		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
 		{
