@@ -3629,7 +3629,7 @@ void G_AddMapToBuffer(INT16 map)
 static void G_DoCompleted(void)
 {
 	INT32 i, j = 0;
-	SINT8 powertype = PWRLV_DISABLED;
+	SINT8 powertype = K_UsingPowerLevels();
 
 	tokenlist = 0; // Reset the list
 
@@ -3762,14 +3762,6 @@ static void G_DoCompleted(void)
 		P_AllocMapHeader(nextmap);
 
 	// Set up power level gametype scrambles
-	if (netgame && cv_kartusepwrlv.value)
-	{
-		if (G_RaceGametype())
-			powertype = PWRLV_RACE;
-		else if (G_BattleGametype())
-			powertype = PWRLV_BATTLE;
-	}
-
 	K_SetPowerLevelScrambles(powertype);
 
 demointermission:
