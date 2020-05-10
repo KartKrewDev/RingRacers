@@ -719,6 +719,7 @@ static void readfollower(MYFILE *f)
 
 	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
 	followers[numfollowers].scale = FRACUNIT;
+	followers[numfollowers].bubblescale = 0;	// No bubble by default
 	followers[numfollowers].atangle = 230;
 	followers[numfollowers].dist = 32;		// changed from 16 to 32 to better account for ogl models
 	followers[numfollowers].height = 16;
@@ -773,6 +774,11 @@ static void readfollower(MYFILE *f)
 			{
 				DEH_WriteUndoline(word, va("%d", followers[numfollowers].scale), UNDO_NONE);
 				followers[numfollowers].scale = get_number(word2);
+			}
+			else if (fastcmp(word, "BUBBLESCALE"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].bubblescale), UNDO_NONE);
+				followers[numfollowers].bubblescale = get_number(word2);
 			}
 			else if (fastcmp(word, "ATANGLE"))
 			{
@@ -917,6 +923,8 @@ if (followers[numfollowers].field < threshold) \
 	FALLBACK(bobamp, "BOBAMP", 0, 0);
 	FALLBACK(bobspeed, "BOBSPEED", 0, 0);
 	FALLBACK(hitconfirmtime, "HITCONFIRMTIME", 1, 1);
+	FALLBACK(scale, "SCALE", 1, 1);				// No null/negative scale
+	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
 
 	// Special case for color I suppose
 	if (followers[numfollowers].defaultcolor < 0 || followers[numfollowers].defaultcolor > MAXSKINCOLORS-1)
@@ -7546,6 +7554,9 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_GCHAOHAPPY3",
 	"S_GCHAOHAPPY4",
 
+	"S_FOLLOWERBUBBLE_FRONT",
+	"S_FOLLOWERBUBBLE_BACK",
+
 	"S_CHEESEIDLE",
 	"S_CHEESEFLY",
 	"S_CHEESESAD1",
@@ -8404,6 +8415,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_BATTLECAPSULE_PIECE",
 
 	"MT_FOLLOWER",
+	"MT_FOLLOWERBUBBLE_FRONT",
+	"MT_FOLLOWERBUBBLE_BACK",
 
 #ifdef SEENAMES
 	"MT_NAMECHECK",

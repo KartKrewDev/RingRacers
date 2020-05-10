@@ -73,8 +73,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
 	"ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH",
 	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
-	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","XMS4","XMS5","GCHA",
-	"CHEZ","VIEW"
+	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","XMS4","XMS5","FBUB",
+	"GCHA","CHEZ","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -3512,6 +3512,10 @@ state_t states[NUMSTATES] =
 
 
 	// followers:
+
+	// bubble
+	{SPR_FBUB, 11|FF_ANIMATE|FF_TRANS70|FF_FULLBRIGHT, -1, {NULL}, 10, 3, S_FOLLOWERBUBBLE_FRONT},	// S_FOLLOWERBUBBLE_FRONT
+	{SPR_FBUB, FF_ANIMATE|0|FF_FULLBRIGHT, -1, {NULL}, 10, 3, S_FOLLOWERBUBBLE_BACK},	// S_FOLLOWERBUBBLE_BACK
 
 	// generic chao:
 	{SPR_GCHA, FF_ANIMATE, -1, {NULL}, 1, 4, S_GCHAOIDLE},		//S_GCHAOIDLE
@@ -20846,6 +20850,62 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    8<<FRACBITS,    // radius
 	    16<<FRACBITS,   // height
 	    1,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+
+	    MF_NOCLIPTHING|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
+		S_NULL,			// raisestate
+	},
+
+	{           // MT_FOLLOWERBUBBLE_FRONT
+	    -1,             // doomednum
+	    S_FOLLOWERBUBBLE_FRONT, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    2,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+
+	    MF_NOCLIPTHING|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
+		S_NULL,			// raisestate
+	},
+
+	{           // MT_FOLLOWERBUBBLE_BACK
+	    -1,             // doomednum
+	    S_FOLLOWERBUBBLE_BACK, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    -2,              // display offset
 	    100,            // mass
 	    0,              // damage
 	    sfx_None,       // activesound

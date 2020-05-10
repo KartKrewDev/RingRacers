@@ -800,6 +800,7 @@ typedef enum sprite
 	SPR_XMS4,
 	SPR_XMS5,
 
+	SPR_FBUB,	// follower bubble
 	SPR_GCHA,	// follower: generic chao
 	SPR_CHEZ,	// follower: cheese
 
@@ -4189,6 +4190,10 @@ typedef enum state
 
 	// followers:
 
+	// bubble:
+	S_FOLLOWERBUBBLE_FRONT,
+	S_FOLLOWERBUBBLE_BACK,
+
 	// generic chao:
 	S_GCHAOIDLE,
 	S_GCHAOFLY,
@@ -5077,6 +5082,8 @@ typedef enum mobj_type
 	MT_BATTLECAPSULE_PIECE,
 
 	MT_FOLLOWER,
+	MT_FOLLOWERBUBBLE_FRONT,
+	MT_FOLLOWERBUBBLE_BACK,
 
 #ifdef SEENAMES
 	MT_NAMECHECK,

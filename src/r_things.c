@@ -3043,6 +3043,8 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 void SetFollower(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
+	mobj_t *bub;
+	mobj_t *tmp;
 
 	player->followerready = true;	// we are ready to perform follower related actions in the player thinker, now.
 	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
@@ -3053,6 +3055,17 @@ void SetFollower(INT32 playernum, INT32 skinnum)
 		*/
 		if (player->follower && skinnum != player->followerskin)	// this is also called when we change colour so don't respawn the follower unless we changed skins
 		{
+
+			// Remove follower's possible hnext list (bubble)
+			bub = player->follower->hnext;
+
+			while (bub && !P_MobjWasRemoved(bub))
+			{
+				tmp = bub->hnext;
+				P_RemoveMobj(bub);
+				bub = tmp;
+			}
+
 			P_RemoveMobj(player->follower);
 			player->follower = NULL;
 		}

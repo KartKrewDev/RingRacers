@@ -113,6 +113,7 @@ typedef struct follower_s
 	UINT8 defaultcolor;		// default color for menus.
 
 	fixed_t scale;			// Scale relative to the player's.
+	fixed_t bubblescale;	// Bubble scale relative to the player scale. If not set, no bubble will spawn (default)
 
 	// some position shenanigans:
 	INT32 atangle;			// angle the object will be at around the player. The object itself will always face the same direction as the player.

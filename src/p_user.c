@@ -8084,6 +8084,10 @@ static void P_HandleFollower(player_t *player)
 	fixed_t sx, sy, sz;
 	UINT8 color;
 
+	fixed_t bubble;	// bubble scale (0 if no bubble)
+	mobj_t *bmobj;	// temp bubble mobj
+
+
 	if (!player->followerready)
 		return;	// we aren't ready to perform anything follower related yet.
 
@@ -8105,6 +8109,7 @@ static void P_HandleFollower(player_t *player)
 
 	an = player->mo->angle + (fl.atangle)*ANG1;		// it's aproximative but it really doesn't matter in the grand scheme of things...
 	zoffs = (fl.zoffs)*FRACUNIT;
+	bubble = fl.bubblescale;	// 0 if no bubble to spawn.
 
 	// do you like angle maths? I certainly don't...
 	sx = player->mo->x + FixedMul((player->mo->scale*fl.dist), FINECOSINE((an)>>ANGLETOFINESHIFT));
@@ -8150,6 +8155,18 @@ static void P_HandleFollower(player_t *player)
 		P_SetFollowerState(player->follower, fl.idlestate);
 		P_SetTarget(&player->follower->target, player->mo);	// we need that to know when we need to disappear
 		player->follower->angle = player->mo->angle;
+
+		// This is safe to only spawn it here, the follower is removed then respawned when switched.
+		if (bubble)
+		{
+			bmobj = P_SpawnMobj(player->follower->x, player->follower->y, player->follower->z, MT_FOLLOWERBUBBLE_FRONT);
+			P_SetTarget(&player->follower->hnext, bmobj);
+			P_SetTarget(&bmobj->target, player->follower);	// Used to know if we have to despawn at some point.
+
+			bmobj = P_SpawnMobj(player->follower->x, player->follower->y, player->follower->z, MT_FOLLOWERBUBBLE_BACK);
+			P_SetTarget(&player->follower->hnext->hnext, bmobj);	// this seems absolutely stupid, I know, but this will make updating the momentums/flags of these a bit easier.
+			P_SetTarget(&bmobj->target, player->follower);	// Ditto
+		}
 
 		player->follower->extravalue1 = 0;	// extravalue1 is used to know what "state set" to use.
 		/*
@@ -8204,6 +8221,29 @@ static void P_HandleFollower(player_t *player)
 			player->follower->angle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);
 			// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
 			// Make sure the follower itself is also moving however, otherwise we'll be facing angle 0
+
+		// Finally, if the follower has bubbles, move them, set their scale, etc....
+		// This is what I meant earlier by it being easier, now we can just use this weird lil loop to get the job done!
+
+		bmobj = player->follower->hnext;	// will be NULL if there's no bubble
+
+		while (bmobj && !P_MobjWasRemoved(bmobj))
+		{
+			// match follower's momentums and (e)flags(2).
+			bmobj->momx = player->follower->momx;
+			bmobj->momy = player->follower->momy;
+			bmobj->momz = player->follower->momz;
+
+			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
+			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
+			bmobj->flags2 = (player->follower->flags2 & ~MF2_SHADOW)|(player->mo->flags2 & MF2_SHADOW);
+
+			if (player->follower->threshold)	// threshold means the follower was "despawned" with S_NULL (is actually just set to S_INVISIBLE)
+				P_SetMobjState(bmobj, S_INVISIBLE);	// sooooo... let's do the same!
+
+			bmobj = bmobj->hnext;	// switch to other bubble layer or exit
+		}
+
 
 		if (player->follower->threshold)
 			return;	// Threshold means the follower was "despanwed" with S_NULL.

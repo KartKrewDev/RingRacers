@@ -6476,9 +6476,23 @@ void P_MobjThinker(mobj_t *mobj)
 				// small thinker for follower:
 				// We cleanse ourselves from existence if our target player doesn't exist for whatever reason. (generally players leaving)
 				if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->player || mobj->target->player->spectator || mobj->target->player->followerskin < 0)
+				{
+					// Remove possible hnext list (bubble)
+					mobj_t *bub = mobj->hnext;
+					mobj_t *tmp;
+
+					while (bub && !P_MobjWasRemoved(bub))
+					{
+						tmp = bub->hnext;
+						P_RemoveMobj(bub);
+						bub = tmp;
+					}
+
 					P_RemoveMobj(mobj);
-				
+				}
+
 				return;
+
 			case MT_HOOP:
 				if (mobj->fuse > 1)
 					P_MoveHoop(mobj);
@@ -8798,7 +8812,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH1 && ((curstate-S_FLAMESHIELD1) & 1))
 					viewingangle += ANGLE_180;
-	
+
 				destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
 				desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
 			}
@@ -11847,7 +11861,7 @@ void P_SpawnPlayer(INT32 playernum)
 	//awayview stuff
 	p->awayviewmobj = NULL;
 	p->awayviewtics = 0;
-	
+
 	p->follower = NULL;	// cleanse follower from existence
 
 	// set the scale to the mobj's destscale so settings get correctly set.  if we don't, they sometimes don't.
