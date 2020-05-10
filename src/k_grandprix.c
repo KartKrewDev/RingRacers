@@ -178,3 +178,55 @@ void K_InitGrandPrixBots(void)
 		}
 	}
 }
+
+void K_FakeBotResults(player_t *bot)
+{
+	const UINT32 distfactor = 32;
+	UINT32 worstdist = 0;
+	tic_t besttime = UINT32_MAX;
+	UINT8 numplayers = 0;
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator)
+		{
+			numplayers++;
+
+			if (players[i].exiting && players[i].realtime < besttime)
+			{
+				besttime = players[i].realtime;
+			}
+		}
+	}
+
+	if (besttime == UINT32_MAX)
+	{
+		// No one finished, so you don't finish either.
+		bot->pflags |= PF_TIMEOVER;
+		return;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator)
+		{
+			if (players[i].distancetofinish > worstdist)
+			{
+				worstdist = players[i].distancetofinish;
+			}
+		}
+	}
+
+	if (bot->distancetofinish >= worstdist)
+	{
+		// Last place, you aren't going to finish.
+		bot->pflags |= PF_TIMEOVER;
+		return;
+	}
+
+	// hey, you "won"
+	bot->exiting = 2;
+	bot->realtime = bot->realtime + (bot->distancetofinish / distfactor);
+	bot->distancetofinish = 0;
+}

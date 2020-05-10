@@ -15,6 +15,7 @@ extern struct grandprixinfo
 } grandprixinfo;
 
 void K_InitGrandPrixBots(void);
+void K_FakeBotResults(player_t *bot);
 
 #endif
 

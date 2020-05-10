@@ -3646,10 +3646,21 @@ static void G_DoCompleted(void)
 			// SRB2Kart: exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_TIMEOVER))
 			{
-				players[i].pflags |= PF_TIMEOVER;
-				if (P_IsLocalPlayer(&players[i]))
-					j++;
+				if (players[i].bot)
+				{
+					K_FakeBotResults(&players[i]);
+				}
+				else
+				{
+					players[i].pflags |= PF_TIMEOVER;
+
+					if (P_IsLocalPlayer(&players[i]))
+					{
+						j++;
+					}
+				}
 			}
+
 			G_PlayerFinishLevel(i); // take away cards and stuff
 		}
 
@@ -3918,7 +3929,7 @@ static void G_DoContinued(void)
 	token = 0;
 
 	// Reset # of lives
-	pl->lives = (ultimatemode) ? 1 : 3;
+	pl->lives = 3;
 
 	D_MapChange(gamemap, gametype, false, false, 0, false, false);
 
@@ -4562,27 +4573,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 			players[i].starpostangle = players[i].starpostnum = players[i].starposttime = 0;
 			players[i].starpostx = players[i].starposty = players[i].starpostz = 0;
 
-#if 0
-			if (netgame || multiplayer)
-			{
-				players[i].lives = cv_startinglives.value;
-				players[i].continues = 0;
-			}
-			else if (pultmode)
-			{
-				players[i].lives = 1;
-				players[i].continues = 0;
-			}
-			else
-			{
-				players[i].lives = 3;
-				players[i].continues = 1;
-			}
-
-			players[i].xtralife = 0;
-#else
-			players[i].lives = 1; // SRB2Kart
-#endif
+			players[i].lives = 3; // SRB2Kart
 
 			// The latter two should clear by themselves, but just in case
 			players[i].pflags &= ~(PF_TAGIT|PF_TAGGED|PF_FULLSTASIS);

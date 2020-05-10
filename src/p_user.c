@@ -8023,8 +8023,6 @@ void P_DoTimeOver(player_t *player)
 		P_DamageMobj(player->mo, NULL, NULL, 10000);
 	}
 
-	player->lives = 0;
-
 	P_EndingMusic(player);
 
 	if (!countdown2)
