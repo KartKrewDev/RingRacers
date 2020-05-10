@@ -219,8 +219,9 @@ boolean K_BotCanTakeCut(player_t *player)
 
 static UINT32 K_BotRubberbandDistance(player_t *player)
 {
-	const UINT32 spacing = 2048;
+	const UINT32 spacing = 1024;
 	const UINT8 portpriority = player - players;
+	UINT32 dist = 0;
 	UINT8 pos = 0;
 	UINT8 i;
 
@@ -236,20 +237,23 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 			// First check difficulty levels, then score, then settle it with port priority!
 			if (player->botvars.difficulty < players[i].botvars.difficulty)
 			{
-				pos++;
+				pos += 3;
 			}
 			else if (player->score < players[i].score)
 			{
-				pos++;
+				pos += 2;
 			}
 			else if (i < portpriority)
 			{
-				pos++;
+				pos += 1;
 			}
 		}
 	}
 
-	return (pos * spacing);
+	dist = (pos * spacing);
+	dist = FixedDiv(dist * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+
+	return dist;
 }
 
 fixed_t K_BotRubberband(player_t *player)
