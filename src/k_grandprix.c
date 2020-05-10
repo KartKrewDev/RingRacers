@@ -40,7 +40,7 @@ void K_InitGrandPrixBots(void)
 	UINT8 botskinlistpos = 0;
 
 	UINT8 newplayernum = 0;
-	UINT8 i;
+	UINT8 i, j;
 
 	memset(difficultylevels, MAXBOTDIFFICULTY, sizeof (difficultylevels));
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
@@ -107,11 +107,25 @@ void K_InitGrandPrixBots(void)
 	wantedbots = playercount - numplayers;
 
 	// Create rival list
+	if (numplayers > 0)
+	{
+		for (i = 0; i < SKINRIVALS; i++)
+		{
+			for (j = 0; j < numplayers; j++)
+			{
+				player_t *p = &players[competitors[j]];
+				char *rivalname = skins[p->skin].rivals[i];
+				SINT8 rivalnum = R_SkinAvailable(rivalname);
 
-	// TODO: Use player skin's set rivals
-	// Starting with P1's rival1, P2's rival1, P3's rival1, P4's rival1,
-	// then P1's rival2, P2's rival2, etc etc etc etc.......
-	// then skip over any duplicates.
+				if (rivalnum != -1 && skinusable[rivalnum])
+				{
+					botskinlist[botskinlistpos] = rivalnum;
+					skinusable[rivalnum] = false;
+					botskinlistpos++;
+				}
+			}
+		}
+	}
 
 	// Pad the remaining list with random skins if we need to
 	if (botskinlistpos < wantedbots)

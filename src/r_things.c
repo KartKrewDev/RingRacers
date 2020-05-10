@@ -2893,6 +2893,11 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	strncpy(skin->facewant, "PLAYWANT", 9);
 	strncpy(skin->facemmap, "PLAYMMAP", 9);
 
+	for (i = 0; i < SKINRIVALS; i++)
+	{
+		strcpy(skin->rivals[i], "");
+	}
+
 	skin->starttranscolor = 96;
 	skin->prefcolor = SKINCOLOR_GREEN;
 
@@ -3162,6 +3167,45 @@ void R_AddSkins(UINT16 wadnum)
 			{
 				strupr(value);
 				strncpy(skin->facemmap, value, sizeof skin->facemmap);
+			}
+			else if (!stricmp(stoken, "rivals"))
+			{
+				size_t len = strlen(value);
+				size_t i;
+				char rivalname[SKINNAMESIZE] = "";
+				UINT8 pos = 0;
+				UINT8 numrivals = 0;
+
+				// Can't use strtok, because this function's already using it.
+				// Using it causes it to upset the saved pointer,
+				// corrupting the reading for the rest of the file.
+
+				// So instead we get to crawl through the value, character by character,
+				// and write it down as we go, until we hit a comma or the end of the string.
+				// Yaaay.
+
+				for (i = 0; i <= len; i++)
+				{
+					if (numrivals >= SKINRIVALS)
+					{
+						break;
+					}
+
+					if (value[i] == ',' || i == len)
+					{
+						STRBUFCPY(skin->rivals[numrivals], rivalname);
+						strlwr(skin->rivals[numrivals]);
+						numrivals++;
+
+						memset(rivalname, 0, sizeof (rivalname));
+						pos = 0;
+
+						continue;
+					}
+
+					rivalname[pos] = value[i];
+					pos++;
+				}
 			}
 
 #define FULLPROCESS(field) else if (!stricmp(stoken, #field)) skin->field = get_number(value);
