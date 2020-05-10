@@ -42,7 +42,6 @@ void K_InitGrandPrixBots(void)
 	UINT8 newplayernum = 0;
 	UINT8 i, j;
 
-	memset(difficultylevels, MAXBOTDIFFICULTY, sizeof (difficultylevels));
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
 	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
 
@@ -63,24 +62,31 @@ void K_InitGrandPrixBots(void)
 	I_Error("GP bot difficulty levels need rebalacned for the new player count!\n");
 #endif
 
-	// init difficulty levels list
-	//if (!mastermodebots) { // leave as all level 9
-	difficultylevels[0] = max(1, startingdifficulty);
-	difficultylevels[1] = max(1, startingdifficulty-1);
-	difficultylevels[2] = max(1, startingdifficulty-2);
-	difficultylevels[3] = max(1, startingdifficulty-3);
-	difficultylevels[4] = max(1, startingdifficulty-3);
-	difficultylevels[5] = max(1, startingdifficulty-4);
-	difficultylevels[6] = max(1, startingdifficulty-4);
-	difficultylevels[7] = max(1, startingdifficulty-4);
-	difficultylevels[8] = max(1, startingdifficulty-5);
-	difficultylevels[9] = max(1, startingdifficulty-5);
-	difficultylevels[10] = max(1, startingdifficulty-5);
-	difficultylevels[11] = max(1, startingdifficulty-6);
-	difficultylevels[12] = max(1, startingdifficulty-6);
-	difficultylevels[13] = max(1, startingdifficulty-6);
-	difficultylevels[14] = max(1, startingdifficulty-7);
-	difficultylevels[15] = max(1, startingdifficulty-7);
+	if (grandprixinfo.masterbots)
+	{
+		// Everyone is max difficulty!!
+		memset(difficultylevels, MAXBOTDIFFICULTY, sizeof (difficultylevels));
+	}
+	else
+	{
+		// init difficulty levels list
+		difficultylevels[0] = max(1, startingdifficulty);
+		difficultylevels[1] = max(1, startingdifficulty-1);
+		difficultylevels[2] = max(1, startingdifficulty-2);
+		difficultylevels[3] = max(1, startingdifficulty-3);
+		difficultylevels[4] = max(1, startingdifficulty-3);
+		difficultylevels[5] = max(1, startingdifficulty-4);
+		difficultylevels[6] = max(1, startingdifficulty-4);
+		difficultylevels[7] = max(1, startingdifficulty-4);
+		difficultylevels[8] = max(1, startingdifficulty-5);
+		difficultylevels[9] = max(1, startingdifficulty-5);
+		difficultylevels[10] = max(1, startingdifficulty-5);
+		difficultylevels[11] = max(1, startingdifficulty-6);
+		difficultylevels[12] = max(1, startingdifficulty-6);
+		difficultylevels[13] = max(1, startingdifficulty-6);
+		difficultylevels[14] = max(1, startingdifficulty-7);
+		difficultylevels[15] = max(1, startingdifficulty-7);
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
