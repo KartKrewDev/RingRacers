@@ -1,18 +1,20 @@
-// SONIC ROBO BLAST 2
-//-----------------------------------------------------------------------------
-// Copyright (C) 2007-2016 by John "JTE" Muniz.
-// Copyright (C) 2012-2018 by Sonic Team Junior.
-//
-// This program is free software distributed under the
-// terms of the GNU General Public License, version 2.
-// See the 'LICENSE' file for more details.
-//-----------------------------------------------------------------------------
-/// \file  k_grandprix.h
-/// \brief Grand Prix mode specific code
+#ifndef __K_GRANDPRIX__
+#define __K_GRANDPRIX__
 
 #include "doomdef.h"
+#include "doomstat.h"
 
-extern UINT8 grandprixmatch;
-extern boolean initgpbots;
+extern struct grandprixinfo
+{
+	UINT8 roundnum; ///< Round number -- if 0, then we're not in a Grand Prix.
+	cupheader_t *cup; ///< Which cup are we playing?
+	UINT8 gamespeed; ///< Copy of gamespeed, just to make sure you can't cheat it with cvars
+	boolean encore; ///< Ditto, but for encore mode
+	boolean masterbots; ///< If true, all bots should be max difficulty (Master Mode)
+	boolean initbots; ///< If true, we need to initialize the bots that are competing.
+} grandprixinfo;
 
 void K_InitGrandPrixBots(void);
+
+#endif
+

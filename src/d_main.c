@@ -75,6 +75,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "fastcmp.h"
 #include "keys.h"
 #include "filesrch.h" // refreshdirmenu
+#include "k_grandprix.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -774,7 +775,9 @@ void D_StartTitle(void)
 	// In case someone exits out at the same time they start a time attack run,
 	// reset modeattacking
 	modeattacking = ATTACKING_NONE;
-	grandprixmatch = 0;
+
+	// Reset GP
+	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;

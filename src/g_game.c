@@ -50,6 +50,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_grandprix.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -3628,7 +3629,6 @@ void G_AddMapToBuffer(INT16 map)
 static void G_DoCompleted(void)
 {
 	INT32 i, j = 0;
-	boolean gottoken = false;
 	SINT8 powertype = PWRLV_DISABLED;
 
 	tokenlist = 0; // Reset the list
@@ -3669,11 +3669,25 @@ static void G_DoCompleted(void)
 	// go to next level
 	// nextmap is 0-based, unlike gamemap
 	if (nextmapoverride != 0)
+	{
 		nextmap = (INT16)(nextmapoverride-1);
-	else if (mapheaderinfo[gamemap-1]->nextlevel == 1101) // SRB2Kart: !!! WHENEVER WE GET GRAND PRIX, GO TO AWARDS MAP INSTEAD !!!
-		nextmap = (INT16)(mapheaderinfo[gamemap] ? gamemap : (spstage_start-1)); // (gamemap-1)+1 == gamemap :V
+	}
+	else if (grandprixinfo.roundnum != 0)
+	{
+		if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+		{
+			nextmap = 1101; // ceremonymap
+		}
+		else
+		{
+			nextmap = grandprixinfo.cup->levellist[grandprixinfo.roundnum];
+			grandprixinfo.roundnum++;
+		}
+	}
 	else
+	{
 		nextmap = (INT16)(mapheaderinfo[gamemap-1]->nextlevel-1);
+	}
 
 	// Remember last map for when you come out of the special stage.
 	if (!G_IsSpecialStage(gamemap))
@@ -3683,8 +3697,7 @@ static void G_DoCompleted(void)
 	// a map of the proper gametype -- skip levels that don't support
 	// the current gametype. (Helps avoid playing boss levels in Race,
 	// for instance).
-	if (!token && !G_IsSpecialStage(gamemap) && !modeattacking
-		&& (nextmap >= 0 && nextmap < NUMMAPS))
+	if (!modeattacking && (grandprixinfo.roundnum == 0) && (nextmap >= 0 && nextmap < NUMMAPS))
 	{
 		register INT16 cm = nextmap;
 		INT16 tolflag = G_TOLFlag(gametype);
@@ -3728,44 +3741,18 @@ static void G_DoCompleted(void)
 	if (nextmap < 0 || (nextmap >= NUMMAPS && nextmap < 1100-1) || nextmap > 1102-1)
 		I_Error("Followed map %d to invalid map %d\n", prevmap + 1, nextmap + 1);
 
-	// wrap around in race
-	if (nextmap >= 1100-1 && nextmap <= 1102-1 && G_RaceGametype())
-		nextmap = (INT16)(spstage_start-1);
-
-	if (gametype == GT_COOP && token)
-	{
-		token--;
-		gottoken = true;
-
-		if (!(emeralds & EMERALD1))
-			nextmap = (INT16)(sstage_start - 1); // Special Stage 1
-		else if (!(emeralds & EMERALD2))
-			nextmap = (INT16)(sstage_start); // Special Stage 2
-		else if (!(emeralds & EMERALD3))
-			nextmap = (INT16)(sstage_start + 1); // Special Stage 3
-		else if (!(emeralds & EMERALD4))
-			nextmap = (INT16)(sstage_start + 2); // Special Stage 4
-		else if (!(emeralds & EMERALD5))
-			nextmap = (INT16)(sstage_start + 3); // Special Stage 5
-		else if (!(emeralds & EMERALD6))
-			nextmap = (INT16)(sstage_start + 4); // Special Stage 6
-		else if (!(emeralds & EMERALD7))
-			nextmap = (INT16)(sstage_start + 5); // Special Stage 7
-		else
-			gottoken = false;
-	}
-
-	if (G_IsSpecialStage(gamemap) && !gottoken)
-		nextmap = lastmap; // Exiting from a special stage? Go back to the game. Tails 08-11-2001
-
 	automapactive = false;
 
 	if (gametype != GT_COOP)
 	{
 		if (cv_advancemap.value == 0) // Stay on same map.
+		{
 			nextmap = prevmap;
+		}
 		else if (cv_advancemap.value == 2) // Go to random map.
+		{
 			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
+		}
 	}
 
 	// We are committed to this map now.
@@ -3842,7 +3829,7 @@ void G_NextLevel(void)
 {
 	if (gamestate != GS_VOTING)
 	{
-		if ((cv_advancemap.value == 3) && !modeattacking && !skipstats && (multiplayer || netgame))
+		if ((cv_advancemap.value == 3) && grandprixinfo.roundnum == 0 && !modeattacking && !skipstats && (multiplayer || netgame))
 		{
 			UINT8 i;
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -4508,7 +4495,7 @@ void G_SaveGame(UINT32 savegameslot)
 void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
 {
 	INT32 i;
-	UINT8 color = 0;
+	//UINT8 color = 0;
 	paused = false;
 
 	if (demo.playback)
@@ -4528,23 +4515,20 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 	// this leave the actual game if needed
 	SV_StartSinglePlayerServer();
 
-	if (savedata.lives > 0)
-	{
-		color = savedata.skincolor;
-	}
-	else if (splitscreen != ssplayers)
+	if (splitscreen != ssplayers)
 	{
 		splitscreen = ssplayers;
 		SplitScreen_OnChange();
 	}
 
-	if (!color && !modeattacking)
-		color = skins[pickedchar].prefcolor;
+	//if (!color)
+		//color = skins[pickedchar].prefcolor;
+
 	SetPlayerSkinByNum(consoleplayer, pickedchar);
 	CV_StealthSet(&cv_skin, skins[pickedchar].name);
 
-	if (color)
-		CV_StealthSetValue(&cv_playercolor, color);
+	//if (color)
+		//CV_StealthSetValue(&cv_playercolor, color);
 
 	if (mapname)
 		D_MapChange(M_MapNumber(mapname[3], mapname[4]), gametype, pencoremode, true, 1, false, FLS);

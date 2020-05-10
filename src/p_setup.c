@@ -2401,8 +2401,23 @@ static void P_LevelInitStuff(void)
 	}
 
 	// SRB2Kart: map load variables
-	if (modeattacking) // Just play it safe and set everything
+	if (grandprixinfo.roundnum != 0)
 	{
+		if (G_BattleGametype())
+		{
+			gamespeed = KARTSPEED_EASY;
+		}
+		else
+		{
+			gamespeed = grandprixinfo.gamespeed;
+		}
+
+		franticitems = false;
+		comeback = true;
+	}
+	else if (modeattacking)
+	{
+		// Just play it safe and set everything
 		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
 		comeback = true;
@@ -2611,12 +2626,6 @@ static void P_ForceCharacter(const char *forcecharskin)
 		}
 
 		SetPlayerSkin(consoleplayer, forcecharskin);
-		// normal player colors in single player
-		if ((unsigned)cv_playercolor.value != skins[players[consoleplayer].skin].prefcolor && !modeattacking)
-		{
-			CV_StealthSetValue(&cv_playercolor, skins[players[consoleplayer].skin].prefcolor);
-			players[consoleplayer].skincolor = skins[players[consoleplayer].skin].prefcolor;
-		}
 	}
 }
 
@@ -3366,17 +3375,18 @@ boolean P_SetupLevel(boolean skipprecip)
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_SpawnBattleCapsules();
 
-	if (grandprixmatch == 0)
+	if (grandprixinfo.roundnum != 0)
 	{
-		K_UpdateMatchRaceBots();
+		if (grandprixinfo.initbots == true)
+		{
+			K_InitGrandPrixBots();
+			grandprixinfo.initbots = false;
+		}
 	}
 	else
 	{
-		if (initgpbots == true)
-		{
-			K_InitGrandPrixBots();
-			initgpbots = false;
-		}
+		// We're in a Match Race, use simplistic randomized bots.
+		K_UpdateMatchRaceBots();
 	}
 
 	return true;

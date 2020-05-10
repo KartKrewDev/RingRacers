@@ -50,6 +50,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "y_inter.h"
+#include "k_grandprix.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -2760,6 +2761,12 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	if (netgame || multiplayer)
 		FLS = false;
 
+	if (grandprixinfo.roundnum != 0)
+	{
+		// Too lazy to change the input value for every instance of this function.......
+		pencoremode = grandprixinfo.encore;
+	}
+
 	if (delay != 2)
 	{
 		UINT8 flags = 0;
@@ -2983,7 +2990,6 @@ static void Command_Map_f(void)
 
 	// new encoremode value
 	// use cvar by default
-
 	newencoremode = (cv_kartencore.value == 1);
 
 	if (COM_CheckParm("-encore"))
@@ -6314,7 +6320,7 @@ static void Command_ShowTime_f(void)
 // SRB2Kart: On change messages
 static void BaseNumLaps_OnChange(void)
 {
-	if (gamestate == GS_LEVEL)
+	if (gamestate == GS_LEVEL && grandprixinfo.roundnum == 0)
 	{
 		if (cv_basenumlaps.value)
 			CONS_Printf(M_GetText("Number of laps will be changed to %d next round.\n"), cv_basenumlaps.value);
@@ -6344,7 +6350,7 @@ static void KartSpeed_OnChange(void)
 		return;
 	}
 
-	if (G_RaceGametype())
+	if (G_RaceGametype() && grandprixinfo.roundnum == 0)
 	{
 		if ((gamestate == GS_LEVEL && leveltime < starttime) && (cv_kartspeed.value != KARTSPEED_AUTO))
 		{
@@ -6360,7 +6366,7 @@ static void KartSpeed_OnChange(void)
 
 static void KartEncore_OnChange(void)
 {
-	if (G_RaceGametype())
+	if (G_RaceGametype() && grandprixinfo.roundnum == 0)
 	{
 		if ((cv_kartencore.value == 1) != encoremode && gamestate == GS_LEVEL /*&& leveltime > starttime*/)
 			CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
@@ -6385,6 +6391,6 @@ static void KartComeback_OnChange(void)
 
 static void KartEliminateLast_OnChange(void)
 {
-	if (G_RaceGametype() && cv_karteliminatelast.value)
+	if (G_RaceGametype() && cv_karteliminatelast.value && grandprixinfo.roundnum == 0)
 		P_CheckRacers();
 }

@@ -19,8 +19,7 @@
 #include "m_random.h"
 #include "r_things.h"
 
-UINT8 grandprixmatch = 0;
-boolean initgpbots = false;
+struct grandprixinfo grandprixinfo;
 
 void K_InitGrandPrixBots(void)
 {
@@ -42,11 +41,6 @@ void K_InitGrandPrixBots(void)
 
 	UINT8 newplayernum = 0;
 	UINT8 i;
-
-	if (initgpbots != true)
-	{
-		return;
-	}
 
 	memset(difficultylevels, MAXBOTDIFFICULTY, sizeof (difficultylevels));
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
@@ -163,6 +157,4 @@ void K_InitGrandPrixBots(void)
 			break;
 		}
 	}
-
-	initgpbots = false;
 }
