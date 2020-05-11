@@ -42,7 +42,7 @@
 #include "../r_things.h"
 #include "../r_draw.h"
 #include "../p_tick.h"
-#include "../k_kart.h" // colortranslations
+#include "../k_color.h" // colortranslations
 #include "hw_model.h"
 
 #include "hw_main.h"
@@ -648,15 +648,6 @@ spritemd2found:
 	fclose(f);
 }
 
-// Define for getting accurate color brightness readings according to how the human eye sees them.
-// https://en.wikipedia.org/wiki/Relative_luminance
-// 0.2126 to red
-// 0.7152 to green
-// 0.0722 to blue
-// (See this same define in hw_md2.c!)
-#define SETBRIGHTNESS(brightness,r,g,b) \
-	brightness = (UINT8)(((1063*(UINT16)(r))/5000) + ((3576*(UINT16)(g))/5000) + ((361*(UINT16)(b))/5000))
-
 static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, INT32 skinnum, skincolors_t color)
 {
 	UINT16 w = gpatch->width, h = gpatch->height;
@@ -701,8 +692,10 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			else
 			{
 				UINT16 imagebright, blendbright;
-				SETBRIGHTNESS(imagebright,image->s.red,image->s.green,image->s.blue);
-				SETBRIGHTNESS(blendbright,blendimage->s.red,blendimage->s.green,blendimage->s.blue);
+
+				imagebright = K_ColorRelativeLuminance(image->s.red, image->s.green, image->s.blue);
+				blendbright = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
+
 				// slightly dumb average between the blend image color and base image colour, usually one or the other will be fully opaque anyway
 				brightness = (imagebright*(255-blendimage->s.alpha))/255 + (blendbright*blendimage->s.alpha)/255;
 			}
@@ -717,7 +710,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			}
 			else
 			{
-				SETBRIGHTNESS(brightness,blendimage->s.red,blendimage->s.green,blendimage->s.blue);
+				brightness = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
 			}
 		}
 
@@ -751,7 +744,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 				for (i = 0; i < 16; i++)
 				{
 					RGBA_t tempc = V_GetColor(colortranslations[color][i]);
-					SETBRIGHTNESS(colorbrightnesses[i], tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
+					colorbrightnesses[i] = K_ColorRelativeLuminance(tempc.s.red, tempc.s.green, tempc.s.blue);
 				}
 
 				for (i = 0; i < 16; i++)
@@ -828,7 +821,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			UINT32 tempcolor;
 			UINT16 colorbright;
 
-			SETBRIGHTNESS(colorbright,blendcolor.s.red,blendcolor.s.green,blendcolor.s.blue);
+			colorbright = K_ColorRelativeLuminance(blendcolor.s.red, blendcolor.s.green, blendcolor.s.blue);
 			if (colorbright == 0)
 				colorbright = 1; // no dividing by 0 please
 

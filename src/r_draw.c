@@ -25,7 +25,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "console.h" // Until buffering gets finished
-#include "k_kart.h" // SRB2kart
+#include "k_color.h" // SRB2kart
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"

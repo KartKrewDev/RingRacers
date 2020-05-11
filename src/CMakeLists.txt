@@ -164,6 +164,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_pathfind.c
 	k_pwrlv.c
 	k_waypoint.c
+	k_color.c
 
 	p_local.h
 	p_maputl.h
@@ -182,6 +183,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_pathfind.h
 	k_pwrlv.h
 	k_waypoint.h
+	k_color.h
 )
 
 if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))

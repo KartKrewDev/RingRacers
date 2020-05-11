@@ -50,6 +50,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_color.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
