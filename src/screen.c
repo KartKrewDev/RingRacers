@@ -418,7 +418,7 @@ void SCR_DisplayTicRate(void)
 		if (fpsgraph[i])
 			++totaltics;
 
-	if (totaltics <= TICRATE/2) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SALMON, GTC_CACHE);
+	if (totaltics <= TICRATE/2) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
 	else if (totaltics == TICRATE) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
 
 	/*V_DrawString(vid.width-(24*vid.dupx), vid.height-(16*vid.dupy),
