@@ -136,9 +136,6 @@ static void HWR_DrawPatchInCache(GLMipmap_t *mipmap,
 				if (texel == HWR_PATCHES_CHROMAKEY_COLORINDEX && (mipmap->flags & TF_CHROMAKEYED))
 					alpha = 0x00;
 
-					//texel = HWR_CHROMAKEY_EQUIVALENTCOLORINDEX;
-				// Lat:  Don't do that, some weirdos still use CYAN on their WALLTEXTURES for translucency :V
-
 				//Hurdler: 25/04/2000: now support colormap in hardware mode
 				if (mipmap->colormap)
 					texel = mipmap->colormap[texel];
@@ -364,7 +361,7 @@ static void HWR_GenerateTexture(INT32 texnum, GLTexture_t *grtex)
 		INT32 j;
 		RGBA_t col;
 
-		col = V_GetColor(HWR_CHROMAKEY_EQUIVALENTCOLORINDEX);
+		col = V_GetColor(HWR_PATCHES_CHROMAKEY_COLORINDEX);
 		for (j = 0; j < blockheight; j++)
 		{
 			for (i = 0; i < blockwidth; i++)

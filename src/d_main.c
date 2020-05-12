@@ -332,7 +332,7 @@ static void D_Display(void)
 		}
 		else //dedicated servers
 		{
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
 			wipegamestate = gamestate;
 		}
 	}
