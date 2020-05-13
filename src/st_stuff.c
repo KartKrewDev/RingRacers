@@ -614,9 +614,7 @@ static void ST_drawDebugInfo(void)
 	}
 
 	if (cv_debug & DBG_MEMORY)
-	{
 		V_DrawRightAlignedString(320, height,     V_MONOSPACE, va("Heap used: %7sKB", sizeu1(Z_TagsUsage(0, INT32_MAX)>>10)));
-	}
 }
 
 /*
@@ -1834,7 +1832,7 @@ static void ST_overlayDrawer(void)
 	{
 		patch_t *p;
 
-		if (countdown == 1)
+		if (racecountdown == 1)
 			p = timeover;
 		else
 			p = sboover;
@@ -1956,7 +1954,7 @@ static void ST_overlayDrawer(void)
 
 	if (!hu_showscores && netgame && !mapreset)
 	{
-		/*if (G_GametypeUsesLives() && stplyr->lives <= 0 && countdown != 1)
+		/*if (G_GametypeUsesLives() && stplyr->lives <= 0 && racecountdown != 1)
 			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), 0, M_GetText("Press Viewpoint Key to watch a player."));
 		else if (gametype == GT_HIDEANDSEEK &&
 		 (!stplyr->spectator && !(stplyr->pflags & PF_TAGIT)) && (leveltime > hidetime * TICRATE))
@@ -2041,8 +2039,6 @@ static void ST_overlayDrawer(void)
 			break;
 		}
 	}
-
-	ST_drawDebugInfo();
 }
 
 void ST_DrawDemoTitleEntry(void)
@@ -2139,4 +2135,6 @@ void ST_Drawer(void)
 	// Draw a fade on level opening
 	if (timeinmap < 16)
 		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 32-(timeinmap*2)); // Then gradually fade out from there
+
+	ST_drawDebugInfo();
 }
