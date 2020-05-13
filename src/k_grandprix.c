@@ -23,7 +23,8 @@ struct grandprixinfo grandprixinfo;
 
 void K_InitGrandPrixBots(void)
 {
-	const UINT8 defaultbotskin = 9; // eggrobo
+	const char *defaultbotskinname = "eggrobo";
+	SINT8 defaultbotskin = R_SkinAvailable(defaultbotskinname);
 
 	// startingdifficulty: Easy = 3, Normal = 6, Hard = 9
 	const UINT8 startingdifficulty = min(MAXBOTDIFFICULTY, (gamespeed + 1) * 3);
@@ -41,6 +42,12 @@ void K_InitGrandPrixBots(void)
 
 	UINT8 newplayernum = 0;
 	UINT8 i, j;
+
+	if (defaultbotskin == -1)
+	{
+		// This shouldn't happen, but just in case
+		defaultbotskin = 0;
+	}
 
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
 	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
