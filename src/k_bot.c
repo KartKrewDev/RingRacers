@@ -207,9 +207,8 @@ boolean K_BotCanTakeCut(player_t *player)
 
 static UINT32 K_BotRubberbandDistance(player_t *player)
 {
-	const UINT32 spacing = 1024;
+	const UINT32 spacing = FixedDiv(512 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
-	UINT32 dist = 0;
 	UINT8 pos = 0;
 	UINT8 i;
 
@@ -238,10 +237,7 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 		}
 	}
 
-	dist = (pos * spacing);
-	dist = FixedDiv(dist * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
-
-	return dist;
+	return (pos * spacing);
 }
 
 fixed_t K_BotRubberband(player_t *player)
@@ -280,8 +276,8 @@ fixed_t K_BotRubberband(player_t *player)
 
 		if (wanteddist > player->distancetofinish)
 		{
-			// Whoa, you're too far ahead!
-			rubberband += (MAXBOTDIFFICULTY - player->botvars.difficulty) * distdiff;
+			// Whoa, you're too far ahead! Slow back down a little.
+			rubberband += (MAXBOTDIFFICULTY - player->botvars.difficulty) * (distdiff / 3);
 		}
 		else
 		{
