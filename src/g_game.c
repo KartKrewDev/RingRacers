@@ -2354,15 +2354,17 @@ void G_Ticker(boolean run)
 	if (gamestate == GS_LEVEL)
 	{
 		// Or, alternatively, retry.
-		if (!(netgame || multiplayer) && G_GetRetryFlag())
+		if (G_GetRetryFlag())
 		{
 			G_ClearRetryFlag();
 
-			// Costs a life to retry ... unless the player in question is dead already.
-			/*if (G_GametypeUsesLives() && players[consoleplayer].playerstate == PST_LIVE)
-				players[consoleplayer].lives -= 1;
-
-			G_DoReborn(consoleplayer);*/
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i])
+				{
+					K_PlayerLoseLife(&players[i]);
+				}
+			}
 
 			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), true, 1, false, false);
 		}
@@ -2569,6 +2571,7 @@ void G_PlayerReborn(INT32 player)
 	player_t *p;
 	INT32 score, marescore;
 	INT32 lives;
+	boolean lostlife;
 	INT32 continues;
 	// SRB2kart
 	UINT8 kartspeed;
@@ -2613,6 +2616,7 @@ void G_PlayerReborn(INT32 player)
 	score = players[player].score;
 	marescore = players[player].marescore;
 	lives = players[player].lives;
+	lostlife = players[player].lostlife;
 	continues = players[player].continues;
 	ctfteam = players[player].ctfteam;
 	exiting = players[player].exiting;
@@ -2697,6 +2701,7 @@ void G_PlayerReborn(INT32 player)
 	p->score = score;
 	p->marescore = marescore;
 	p->lives = lives;
+	p->lostlife = lostlife;
 	p->continues = continues;
 	p->pflags = pflags;
 	p->ctfteam = ctfteam;
@@ -3217,6 +3222,47 @@ void G_ExitLevel(void)
 {
 	if (gamestate == GS_LEVEL)
 	{
+		if (grandprixinfo.roundnum > 0 && grandprixinfo.wonround != true)
+		{
+			UINT8 i;
+
+			// You didn't win...
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && !players[i].spectator && !players[i].bot)
+				{
+					if (players[i].lives > 0)
+					{
+						break;
+					}
+				}
+			}
+
+			if (i == MAXPLAYERS)
+			{
+				// GAME OVER, try again from the start!
+
+				if (netgame)
+				{
+					; // restart cup here if we do online GP
+				}
+				else
+				{
+					D_QuitNetGame();
+					CL_Reset();
+					D_StartTitle();
+				}
+			}
+			else
+			{
+				// Go redo this course.
+				G_SetRetryFlag();
+			}
+
+			return;
+		}
+
 		gameaction = ga_completed;
 		lastdraw = true;
 
@@ -3292,18 +3338,15 @@ boolean G_IsSpecialStage(INT32 mapnum)
 //
 boolean G_GametypeUsesLives(void)
 {
-	// SRB2kart NEEDS no lives
-#if 0
-	// Coop, Competitive
-	if ((gametype == GT_COOP || gametype == GT_COMPETITION)
-	 && !modeattacking // No lives in Time Attack
-	 //&& !G_IsSpecialStage(gamemap)
-	 && !(maptol & TOL_NIGHTS)) // No lives in NiGHTS
+	if ((grandprixinfo.roundnum > 0) // In Grand Prix
+		&& (gametype == GT_RACE) // NOT in bonus round
+		&& !(modeattacking) // NOT in Record Attack
+		&& !G_IsSpecialStage(gamemap)) // NOT in special stage
+	{
 		return true;
+	}
+
 	return false;
-#else
-	return false;
-#endif
 }
 
 //
@@ -4570,42 +4613,41 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	if (!demo.playback && !netgame) // Netgame sets random seed elsewhere, demo playback sets seed just before us!
 		P_SetRandSeed(M_RandomizedSeed()); // Use a more "Random" random seed
 
-	//SRB2Kart - Score is literally the only thing you SHOULDN'T reset at all times
-	//if (resetplayer)
+	// Clear a bunch of variables
+	tokenlist = token = sstimer = redscore = bluescore = lastmap = 0;
+	racecountdown = exitcountdown = mapreset = 0;
+
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		// Clear a bunch of variables
-		tokenlist = token = sstimer = redscore = bluescore = lastmap = 0;
-		racecountdown = exitcountdown = mapreset = 0;
+		players[i].playerstate = PST_REBORN;
+		players[i].starpostangle = players[i].starpostnum = players[i].starposttime = 0;
+		players[i].starpostx = players[i].starposty = players[i].starpostz = 0;
 
-		for (i = 0; i < MAXPLAYERS; i++)
+		// The latter two should clear by themselves, but just in case
+		players[i].pflags &= ~(PF_TAGIT|PF_TAGGED|PF_FULLSTASIS);
+
+		// Clear cheatcodes too, just in case.
+		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);
+
+		players[i].marescore = 0;
+
+		if (resetplayer && !(multiplayer && demo.playback)) // SRB2Kart
 		{
-			players[i].playerstate = PST_REBORN;
-			players[i].starpostangle = players[i].starpostnum = players[i].starposttime = 0;
-			players[i].starpostx = players[i].starposty = players[i].starpostz = 0;
+			players[i].score = 0;
 
-			players[i].lives = 3; // SRB2Kart
-
-			// The latter two should clear by themselves, but just in case
-			players[i].pflags &= ~(PF_TAGIT|PF_TAGGED|PF_FULLSTASIS);
-
-			// Clear cheatcodes too, just in case.
-			players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);
-
-			players[i].marescore = 0;
-
-			if (resetplayer && !(multiplayer && demo.playback)) // SRB2Kart
+			if (grandprixinfo.roundnum == 0 || grandprixinfo.initalize == true)
 			{
-				players[i].score = 0;
+				players[i].lives = 3;
 			}
 		}
-
-		// Reset unlockable triggers
-		unlocktriggers = 0;
-
-		// clear itemfinder, just in case
-		if (!dedicated)	// except in dedicated servers, where it is not registered and can actually I_Error debug builds
-			CV_StealthSetValue(&cv_itemfinder, 0);
 	}
+
+	// Reset unlockable triggers
+	unlocktriggers = 0;
+
+	// clear itemfinder, just in case
+	if (!dedicated)	// except in dedicated servers, where it is not registered and can actually I_Error debug builds
+		CV_StealthSetValue(&cv_itemfinder, 0);
 
 	// internal game map
 	// well this check is useless because it is done before (d_netcmd.c::command_map_f)

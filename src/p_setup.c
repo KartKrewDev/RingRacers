@@ -2350,6 +2350,8 @@ static void P_LevelInitStuff(void)
 
 	memset(localaiming, 0, sizeof(localaiming));
 
+	grandprixinfo.wonround = false;
+
 	// special stage tokens, emeralds, and ring total
 	tokenbits = 0;
 	runemeraldmanager = false;
@@ -2399,6 +2401,7 @@ static void P_LevelInitStuff(void)
 		players[i].realtime = racecountdown = exitcountdown = 0;
 		curlap = bestlap = 0; // SRB2Kart
 
+		players[i].lostlife = false;
 		players[i].gotcontinue = false;
 
 		players[i].xtralife = players[i].deadtimer = players[i].numboxes = players[i].totalring = players[i].laps = 0;
@@ -3362,6 +3365,23 @@ boolean P_SetupLevel(boolean skipprecip)
 	}
 #endif
 
+	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
+	K_SpawnBattleCapsules();
+
+	if (grandprixinfo.roundnum != 0)
+	{
+		if (grandprixinfo.initalize == true)
+		{
+			K_InitGrandPrixBots();
+			grandprixinfo.initalize = false;
+		}
+	}
+	else if (!modeattacking)
+	{
+		// We're in a Match Race, use simplistic randomized bots.
+		K_UpdateMatchRaceBots();
+	}
+
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
@@ -3411,23 +3431,6 @@ boolean P_SetupLevel(boolean skipprecip)
 #ifdef HAVE_BLUA
 		LUAh_MapLoad();
 #endif
-	}
-
-	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
-	K_SpawnBattleCapsules();
-
-	if (grandprixinfo.roundnum != 0)
-	{
-		if (grandprixinfo.initbots == true)
-		{
-			K_InitGrandPrixBots();
-			grandprixinfo.initbots = false;
-		}
-	}
-	else if (!modeattacking)
-	{
-		// We're in a Match Race, use simplistic randomized bots.
-		K_UpdateMatchRaceBots();
 	}
 
 	return true;

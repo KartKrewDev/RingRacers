@@ -580,6 +580,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	// Score is resynched in the rspfirm resync packet
 	rsp->health = 0; // resynched with mo health
 	rsp->lives = players[i].lives;
+	rsp->lostlife = players[i].lostlife;
 	rsp->continues = players[i].continues;
 	rsp->scoreadd = players[i].scoreadd;
 	rsp->xtralife = players[i].xtralife;
@@ -710,6 +711,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	// Score is resynched in the rspfirm resync packet
 	players[i].health = rsp->health;
 	players[i].lives = rsp->lives;
+	players[i].lostlife = rsp->lostlife;
 	players[i].continues = rsp->continues;
 	players[i].scoreadd = rsp->scoreadd;
 	players[i].xtralife = rsp->xtralife;

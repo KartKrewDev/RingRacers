@@ -7649,7 +7649,9 @@ static void M_StartGrandPrix(INT32 choice)
 	grandprixinfo.cup = gpcup;
 
 	grandprixinfo.roundnum = 1;
-	grandprixinfo.initbots = true;
+	grandprixinfo.wonround = false;
+
+	grandprixinfo.initalize = true;
 
 	G_DeferedInitNew(
 		false,

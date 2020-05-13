@@ -29,6 +29,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_grandprix.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -1972,71 +1973,133 @@ void P_CheckPointLimit(void)
 // Checks whether or not to end a race netgame.
 boolean P_CheckRacers(void)
 {
-	INT32 i, j, numplayersingame = 0, numexiting = 0;
+	UINT8 i;
+	UINT8 numplayersingame = 0;
+	UINT8 numexiting = 0;
+	boolean eliminatelast = cv_karteliminatelast.value;
+	boolean canexit = true;
 	boolean griefed = false;
 
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].exiting || players[i].bot || !players[i].lives)
-			continue;
+		if (nospectategrief[i] != -1) // prevent spectate griefing
+		{
+			griefed = true;
+		}
 
-		break;
+		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0) // Not playing
+		{
+			// Y'all aren't even playing
+			continue;
+		}
+
+		numplayersingame++;
+
+		if (players[i].exiting || (players[i].pflags & PF_TIMEOVER))
+		{
+			numexiting++;
+		}
+		else
+		{
+			if (players[i].bot)
+			{
+				// Isn't a human, thus doesn't matter. (Sorry, robots.)
+				continue;
+			}
+
+			canexit = false;
+		}
 	}
 
-	if (i == MAXPLAYERS) // finished
+	if (canexit)
 	{
+		// Everyone's finished, we're done here!
 		racecountdown = exitcountdown = 0;
 		return true;
 	}
 
-	for (j = 0; j < MAXPLAYERS; j++)
+	if (numplayersingame <= 1)
 	{
-		if (nospectategrief[j] != -1) // prevent spectate griefing
-			griefed = true;
-		if (!playeringame[j] || players[j].spectator)
-			continue;
-		numplayersingame++;
-		if (players[j].exiting)
-			numexiting++;
+		// Never do this without enough players.
+		eliminatelast = false;
+	}
+	else
+	{
+		if (grandprixinfo.roundnum > 0)
+		{
+			// Always do this in GP
+			eliminatelast = true;
+		}
+		else if (griefed)
+		{
+			// Don't do this if someone spectated
+			eliminatelast = false;
+		}
 	}
 
-	if (cv_karteliminatelast.value && numplayersingame > 1 && !griefed)
+	if (eliminatelast == true && (numplayersingame <= numexiting-1))
 	{
-		// check if we just got unlucky and there was only one guy who was a problem
-		for (j = i+1; j < MAXPLAYERS; j++)
+		// Everyone's done playing but one guy apparently.
+		// Just kill everyone who is still playing.
+
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!playeringame[j] || players[j].spectator || players[j].exiting || !players[j].lives)
+			if (!playeringame[i] || players[i].spectator || players[i].lives <= 0) // Not playing
+			{
+				// Y'all aren't even playing
 				continue;
-			break;
+			}
+
+			if (players[i].exiting || (players[i].pflags & PF_TIMEOVER))
+			{
+				// You're done, you're free to go.
+				continue;
+			}
+
+			P_DoTimeOver(&players[i]);
 		}
 
-		if (j == MAXPLAYERS) // finish anyways, force a time over
-		{
-			P_DoTimeOver(&players[i]);
-			racecountdown = exitcountdown = 0;
-			return true;
-		}
+		// Everyone should be done playing at this point now.
+		racecountdown = exitcountdown = 0;
+		return true;
 	}
 
-	if (!racecountdown) // Check to see if the winners have finished, to set countdown.
+	// SO, we're not done playing.
+	// Let's see if it's time to start the death counter!
+
+	if (!racecountdown)
 	{
+		// If the winners are all done, then start the death timer.
 		UINT8 winningpos = 1;
 
 		winningpos = max(1, numplayersingame/2);
 		if (numplayersingame % 2) // any remainder?
+		{
 			winningpos++;
+		}
 
 		if (numexiting >= winningpos)
-			racecountdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
+		{
+			tic_t countdown = 30*TICRATE; // 30 seconds left to finish, get going!
+
+			if (netgame)
+			{
+				// Custom timer
+				countdown = cv_countdowntime.value * TICRATE;
+			}
+
+			racecountdown = countdown + 1;
+		}
 	}
 
-	if (numplayersingame < 2) // reset nospectategrief in free play
+	// We're still playing, but no one else is, so we need to reset spectator griefing.
+	if (numplayersingame <= 1)
 	{
-		for (j = 0; j < MAXPLAYERS; j++)
-			nospectategrief[j] = -1;
+		memset(nospectategrief, -1, sizeof (nospectategrief));
 	}
 
+	// Turns out we're still having a good time & playing the game, we didn't have to do anything :)
 	return false;
 }
 
@@ -2249,20 +2312,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		P_UnsetThingPosition(target);
 		target->flags |= MF_NOBLOCKMAP|MF_NOCLIPHEIGHT;
 		P_SetThingPosition(target);
-
-		if (!target->player->bot && !G_IsSpecialStage(gamemap) && G_GametypeUsesLives())
-		{
-			target->player->lives -= 1; // Lose a life Tails 03-11-2000
-
-			if (target->player->lives <= 0) // Tails 03-14-2000
-			{
-				if (P_IsLocalPlayer(target->player)/* && target->player == &players[consoleplayer] */)
-				{
-					S_StopMusic(); // Stop the Music! Tails 03-14-2000
-					S_ChangeMusicInternal("gmover", false); // Yousa dead now, Okieday? Tails 03-14-2000
-				}
-			}
-		}
 
 		target->player->playerstate = PST_DEAD;
 

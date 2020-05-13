@@ -1,15 +1,3 @@
-// SONIC ROBO BLAST 2
-//-----------------------------------------------------------------------------
-// Copyright (C) 2007-2016 by John "JTE" Muniz.
-// Copyright (C) 2011-2018 by Sonic Team Junior.
-//
-// This program is free software distributed under the
-// terms of the GNU General Public License, version 2.
-// See the 'LICENSE' file for more details.
-//-----------------------------------------------------------------------------
-/// \file  k_bot.c
-/// \brief Basic bot handling
-
 #include "doomdef.h"
 #include "d_player.h"
 #include "g_game.h"

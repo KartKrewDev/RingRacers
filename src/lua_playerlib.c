@@ -241,6 +241,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->charflags);
 	else if (fastcmp(field,"lives"))
 		lua_pushinteger(L, plr->lives);
+	else if (fastcmp(field,"lostlife"))
+		lua_pushboolean(L, plr->lostlife);
 	else if (fastcmp(field,"continues"))
 		lua_pushinteger(L, plr->continues);
 	else if (fastcmp(field,"xtralife"))
@@ -489,6 +491,8 @@ static int player_set(lua_State *L)
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lives"))
 		plr->lives = (SINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lostlife"))
+		plr->lostlife = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"continues"))
 		plr->continues = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"xtralife"))

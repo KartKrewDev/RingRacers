@@ -506,6 +506,7 @@ typedef struct player_s
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
 	                 // See SF_ flags
 	SINT8 lives;
+	boolean lostlife;
 	SINT8 continues; // continues that player has acquired
 
 	SINT8 xtralife; // Ring Extra Life counter

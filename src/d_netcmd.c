@@ -5710,14 +5710,14 @@ void Command_ExitGame_f(void)
 
 void Command_Retry_f(void)
 {
-	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING))
+	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION))
+	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
-	else if (netgame || multiplayer)
-		CONS_Printf(M_GetText("This only works in single player.\n"));
-	/*else if (!&players[consoleplayer] || players[consoleplayer].lives <= 1)
-		CONS_Printf(M_GetText("You can't retry without any lives remaining!\n"));
-	else if (G_IsSpecialStage(gamemap))
-		CONS_Printf(M_GetText("You can't retry special stages!\n"));*/
+	}
+	else if (netgame || grandprixinfo.roundnum == 0)
+	{
+		CONS_Printf(M_GetText("This only works in Grand Prix.\n"));
+	}
 	else
 	{
 		M_ClearMenus(true);

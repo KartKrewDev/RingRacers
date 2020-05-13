@@ -142,6 +142,7 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].dashspeed);
 		WRITEINT32(save_p, players[i].dashtime);
 		WRITESINT8(save_p, players[i].lives);
+		WRITEUINT8(save_p, players[i].lostlife);
 		WRITESINT8(save_p, players[i].continues);
 		WRITESINT8(save_p, players[i].xtralife);
 		WRITEUINT8(save_p, players[i].gotcontinue);
@@ -327,6 +328,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].dashspeed = READFIXED(save_p); // dashing speed
 		players[i].dashtime = READINT32(save_p); // dashing speed
 		players[i].lives = READSINT8(save_p);
+		players[i].lostlife = (boolean)READUINT8(save_p);
 		players[i].continues = READSINT8(save_p); // continues that player has acquired
 		players[i].xtralife = READSINT8(save_p); // Ring Extra Life counter
 		players[i].gotcontinue = READUINT8(save_p); // got continue from stage

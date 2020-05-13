@@ -230,3 +230,30 @@ void K_FakeBotResults(player_t *bot)
 	bot->realtime = bot->realtime + (bot->distancetofinish / distfactor);
 	bot->distancetofinish = 0;
 }
+
+void K_PlayerLoseLife(player_t *player)
+{
+	if (!G_GametypeUsesLives())
+	{
+		return;
+	}
+
+	if (player->spectator || player->exiting || player->bot || player->lostlife)
+	{
+		return;
+	}
+
+	player->lives--;
+	player->lostlife = true;
+
+#if 0
+	if (player->lives <= 0)
+	{
+		if (P_IsLocalPlayer(player))
+		{
+			S_StopMusic();
+			S_ChangeMusicInternal("gmover", false);
+		}
+	}
+#endif
+}

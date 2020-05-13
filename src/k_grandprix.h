@@ -11,11 +11,12 @@ extern struct grandprixinfo
 	UINT8 gamespeed; ///< Copy of gamespeed, just to make sure you can't cheat it with cvars
 	boolean encore; ///< Ditto, but for encore mode
 	boolean masterbots; ///< If true, all bots should be max difficulty (Master Mode)
-	boolean initbots; ///< If true, we need to initialize the bots that are competing.
+	boolean initalize; ///< If true, we need to initialize a new cup.
+	boolean wonround; ///< If false, then we retry the map instead of going to the next.
 } grandprixinfo;
 
 void K_InitGrandPrixBots(void);
 void K_FakeBotResults(player_t *bot);
+void K_PlayerLoseLife(player_t *player);
 
 #endif
-

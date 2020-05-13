@@ -219,6 +219,7 @@ typedef struct
 	// Score is resynched in the confirm resync packet
 	INT32 health;
 	SINT8 lives;
+	boolean lostlife;
 	SINT8 continues;
 	UINT8 scoreadd;
 	SINT8 xtralife;
