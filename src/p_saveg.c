@@ -3346,8 +3346,8 @@ static void P_NetArchiveMisc(void)
 	WRITEINT16(save_p, scrambletotal);
 	WRITEINT16(save_p, scramblecount);
 
-	WRITEUINT32(save_p, countdown);
-	WRITEUINT32(save_p, countdown2);
+	WRITEUINT32(save_p, racecountdown);
+	WRITEUINT32(save_p, exitcountdown);
 
 	WRITEFIXED(save_p, gravity);
 	WRITEFIXED(save_p, mapobjectscale);
@@ -3471,8 +3471,8 @@ static inline boolean P_NetUnArchiveMisc(void)
 	scrambletotal = READINT16(save_p);
 	scramblecount = READINT16(save_p);
 
-	countdown = READUINT32(save_p);
-	countdown2 = READUINT32(save_p);
+	racecountdown = READUINT32(save_p);
+	exitcountdown = READUINT32(save_p);
 
 	gravity = READFIXED(save_p);
 	mapobjectscale = READFIXED(save_p);
