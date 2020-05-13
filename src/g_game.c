@@ -2366,7 +2366,7 @@ void G_Ticker(boolean run)
 				}
 			}
 
-			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), true, 1, false, false);
+			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), false, 1, false, false);
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -4633,12 +4633,8 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 
 		if (resetplayer && !(multiplayer && demo.playback)) // SRB2Kart
 		{
+			players[i].lives = 3;
 			players[i].score = 0;
-
-			if (grandprixinfo.roundnum == 0 || grandprixinfo.initalize == true)
-			{
-				players[i].lives = 3;
-			}
 		}
 	}
 
