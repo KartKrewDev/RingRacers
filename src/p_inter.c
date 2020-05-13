@@ -1986,7 +1986,7 @@ boolean P_CheckRacers(void)
 
 	if (i == MAXPLAYERS) // finished
 	{
-		countdown = countdown2 = 0;
+		racecountdown = exitcountdown = 0;
 		return true;
 	}
 
@@ -2014,12 +2014,12 @@ boolean P_CheckRacers(void)
 		if (j == MAXPLAYERS) // finish anyways, force a time over
 		{
 			P_DoTimeOver(&players[i]);
-			countdown = countdown2 = 0;
+			racecountdown = exitcountdown = 0;
 			return true;
 		}
 	}
 
-	if (!countdown) // Check to see if the winners have finished, to set countdown.
+	if (!racecountdown) // Check to see if the winners have finished, to set countdown.
 	{
 		UINT8 winningpos = 1;
 
@@ -2028,7 +2028,7 @@ boolean P_CheckRacers(void)
 			winningpos++;
 
 		if (numexiting >= winningpos)
-			countdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
+			racecountdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
 	}
 
 	if (numplayersingame < 2) // reset nospectategrief in free play

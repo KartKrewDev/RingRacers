@@ -473,11 +473,7 @@ static void P_LoadRawSegs(UINT8 *data, size_t i)
 		li->length = P_SegLength(li);
 #ifdef HWRENDER
 		if (rendermode == render_opengl)
-		{
 			li->flength = P_SegLengthFloat(li);
-			//Hurdler: 04/12/2000: for now, only used in hardware mode
-			li->lightmaps = NULL; // list of static lightmap for this seg
-		}
 		li->pv1 = li->pv2 = NULL;
 #endif
 
@@ -1426,11 +1422,12 @@ static inline void P_LoadSideDefs(lumpnum_t lumpnum)
 	P_LoadRawSideDefs(W_LumpLength(lumpnum));
 }
 
-
 static void P_LoadRawSideDefs2(void *data)
 {
 	UINT16 i;
 	INT32 num;
+	size_t j;
+	UINT32 cr, cg, cb;
 
 	for (i = 0; i < numsides; i++)
 	{
@@ -1509,16 +1506,43 @@ static void P_LoadRawSideDefs2(void *data)
 						{
 							col = msd->toptexture;
 
-							sec->extra_colormap->rgba =
-								(HEX2INT(col[1]) << 4) + (HEX2INT(col[2]) << 0) +
-								(HEX2INT(col[3]) << 12) + (HEX2INT(col[4]) << 8) +
-								(HEX2INT(col[5]) << 20) + (HEX2INT(col[6]) << 16);
+							// encore mode colormaps!
+							// do it like software by aproximating a color to a palette index, and then convert it to its encore variant and then back to a color code.
+							// do this for both the start and fade colormaps.
+
+							cr = (HEX2INT(col[1]) << 4) + (HEX2INT(col[2]) << 0);
+							cg = (HEX2INT(col[3]) << 12) + (HEX2INT(col[4]) << 8);
+							cb = (HEX2INT(col[5]) << 20) + (HEX2INT(col[6]) << 16);
+
+#ifdef GLENCORE
+							if (encoremap)
+							{
+								j = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
+								//CONS_Printf("R_CreateColormap: encoremap[%d] = %d\n", j, encoremap[j]); -- moved encoremap upwards for optimisation
+								cr = pLocalPalette[j].s.red;
+								cg = pLocalPalette[j].s.green;
+								cb = pLocalPalette[j].s.blue;
+							}
+#endif
+
+							sec->extra_colormap->rgba = cr + cg + cb;
 
 							// alpha
 							if (msd->toptexture[7])
 								sec->extra_colormap->rgba += (ALPHA2INT(col[7]) << 24);
 							else
 								sec->extra_colormap->rgba += (25 << 24);
+
+							/*nearest = NearestColor(
+								(HEX2INT(col[1]) << 4) + (HEX2INT(col[2]) << 0),
+								(HEX2INT(col[3]) << 4) + (HEX2INT(col[4]) << 0),
+								(HEX2INT(col[5]) << 4) + (HEX2INT(col[6]) << 0)
+							);
+
+							sec->extra_colormap->rgba =
+								pLocalPalette[nearest].s.red +
+								(pLocalPalette[nearest].s.green << 8) +
+								(pLocalPalette[nearest].s.blue << 16);*/
 						}
 						else
 							sec->extra_colormap->rgba = 0;
@@ -1527,10 +1551,24 @@ static void P_LoadRawSideDefs2(void *data)
 						{
 							col = msd->bottomtexture;
 
-							sec->extra_colormap->fadergba =
-								(HEX2INT(col[1]) << 4) + (HEX2INT(col[2]) << 0) +
-								(HEX2INT(col[3]) << 12) + (HEX2INT(col[4]) << 8) +
-								(HEX2INT(col[5]) << 20) + (HEX2INT(col[6]) << 16);
+							// do the exact same thing as above here.
+
+							cr = (HEX2INT(col[1]) << 4) + (HEX2INT(col[2]) << 0);
+							cg = (HEX2INT(col[3]) << 12) + (HEX2INT(col[4]) << 8);
+							cb = (HEX2INT(col[5]) << 20) + (HEX2INT(col[6]) << 16);
+
+#ifdef GLENCORE
+							if (encoremap)
+							{
+								j = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
+								//CONS_Printf("R_CreateColormap: encoremap[%d] = %d\n", j, encoremap[j]); -- moved encoremap upwards for optimisation
+								cr = pLocalPalette[j].s.red;
+								cg = pLocalPalette[j].s.green;
+								cb = pLocalPalette[j].s.blue;
+							}
+#endif
+
+							sec->extra_colormap->fadergba = cr + cg + cb;
 
 							// alpha
 							if (msd->bottomtexture[7])
@@ -1676,6 +1714,7 @@ static void P_LoadRawSideDefs2(void *data)
 	}
 	R_ClearTextureNumCache(true);
 }
+
 
 // Delay loading texture names until after loaded linedefs.
 static void P_LoadSideDefs2(lumpnum_t lumpnum)
@@ -2357,7 +2396,7 @@ static void P_LevelInitStuff(void)
 			players[i].lives = 3;
 		}
 
-		players[i].realtime = countdown = countdown2 = 0;
+		players[i].realtime = racecountdown = exitcountdown = 0;
 		curlap = bestlap = 0; // SRB2Kart
 
 		players[i].gotcontinue = false;
@@ -2882,24 +2921,24 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	if (rendermode != render_none && encoremode && !prevencoremode && !demo.rewinding)
+	if (encoremode && !prevencoremode && !demo.rewinding)
 	{
-		tic_t locstarttime, endtime, nowtime;
+		if (rendermode != render_none)
+		{
+			tic_t locstarttime, endtime, nowtime;
 
-		S_StopMusic(); // er, about that...
+			S_StopMusic(); // er, about that...
 
-		S_StartSound(NULL, sfx_ruby1);
+			// Fade to an inverted screen, with a circle fade...
+			F_WipeStartScreen();
 
-		// Fade to an inverted screen, with a circle fade...
-		F_WipeStartScreen();
+			V_EncoreInvertScreen();
+			F_WipeEndScreen();
 
-		V_EncoreInvertScreen();
-		F_WipeEndScreen();
+			F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
 
-		F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
-
-		// Hold on invert for extra effect.
-		// (This define might be useful for other areas of code? Not sure)
+			// Hold on invert for extra effect.
+			// (This define might be useful for other areas of code? Not sure)
 #define WAIT(timetowait) \
 	locstarttime = nowtime = lastwipetic; \
 	endtime = locstarttime + timetowait; \
@@ -2913,27 +2952,34 @@ boolean P_SetupLevel(boolean skipprecip)
 		NetKeepAlive(); \
 	} \
 
-		WAIT((3*TICRATE)/2);
-		S_StartSound(NULL, sfx_ruby2);
+			WAIT((3*TICRATE)/2);
+			S_StartSound(NULL, sfx_ruby2);
 
-		// Then fade to a white screen
-		F_WipeStartScreen();
+			// Then fade to a white screen
+			F_WipeStartScreen();
 
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
-		F_WipeEndScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
+			F_WipeEndScreen();
 
-		F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
+			F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
 
-		// THEN fade to a black screen.
-		F_WipeStartScreen();
+			// THEN fade to a black screen.
+			F_WipeStartScreen();
 
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-		F_WipeEndScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			F_WipeEndScreen();
 
-		F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
-		// Wait a bit longer.
-		WAIT((3*TICRATE)/4);
+			// Wait a bit longer.
+			WAIT((3*TICRATE)/4);
+		}
+		else
+		{
+			// dedicated servers can call this now, to wait the appropriate amount of time for clients to wipe
+			F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true);
+			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+		}
 	}
 
 	// Make sure all sounds are stopped before Z_FreeTags.
@@ -2948,12 +2994,15 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
-	if (rendermode != render_none && !demo.rewinding)
+	if (!demo.rewinding)
 	{
-		F_WipeStartScreen();
+		if (rendermode != render_none)
+		{
+			F_WipeStartScreen();
 
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-		F_WipeEndScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
+			F_WipeEndScreen();
+		}
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
@@ -3151,10 +3200,6 @@ boolean P_SetupLevel(boolean skipprecip)
 #ifdef HWRENDER // not win32 only 19990829 by Kin
 	if (rendermode != render_soft && rendermode != render_none)
 	{
-#ifdef ALAM_LIGHTING
-		// BP: reset light between levels (we draw preview frame lights on current frame)
-		HWR_ResetLights();
-#endif
 		// Correct missing sidedefs & deep water trick
 		HWR_CorrectSWTricks();
 		HWR_CreatePlanePolygons((INT32)numnodes - 1);
@@ -3226,7 +3271,8 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (!dedicated)
 	{
-		for (i = 0; i <= r_splitscreen; i++)
+		if (!demo.freecam)
+			for (i = 0; i <= r_splitscreen; i++)
 			P_SetupCamera(displayplayers[i], &camera[i]);
 
 		// Salt: CV_ClearChangedFlags() messes with your settings :(
@@ -3355,7 +3401,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	if (loadprecip) // uglier hack
 	{ // to make a newly loaded level start on the second frame.
-		INT32 buf = gametic % BACKUPTICS;
+		INT32 buf = gametic % TICQUEUE;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i])
@@ -3378,7 +3424,7 @@ boolean P_SetupLevel(boolean skipprecip)
 			grandprixinfo.initbots = false;
 		}
 	}
-	else
+	else if (!modeattacking)
 	{
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();
