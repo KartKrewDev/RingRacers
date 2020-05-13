@@ -682,8 +682,6 @@ void D_RegisterServerCommands(void)
 	AddMServCommands();
 
 	// p_mobj.c
-	CV_RegisterVar(&cv_itemrespawntime);
-	CV_RegisterVar(&cv_itemrespawn);
 	CV_RegisterVar(&cv_flagtime);
 	CV_RegisterVar(&cv_suddendeath);
 
@@ -5152,11 +5150,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 	// There will always be a server, and this only needs to be done once.
 	if (server && (multiplayer || netgame))
 	{
-		if (gametype == GT_COMPETITION || gametype == GT_COOP)
-			CV_SetValue(&cv_itemrespawn, 0);
-		else if (!cv_itemrespawn.changed)
-			CV_SetValue(&cv_itemrespawn, 1);
-
 		switch (gametype)
 		{
 			case GT_MATCH:
@@ -5167,8 +5160,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 					CV_SetValue(&cv_pointlimit,  0);
 					CV_SetValue(&cv_timelimit, 120);
 				}
-				if (!cv_itemrespawntime.changed)
-					CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue); // respawn normally
 				break;
 			case GT_TAG:
 			case GT_HIDEANDSEEK:
@@ -5179,8 +5170,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 					CV_SetValue(&cv_timelimit, 5);
 					CV_SetValue(&cv_pointlimit, 0);
 				}
-				if (!cv_itemrespawntime.changed)
-					CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue); // respawn normally
 				break;
 			case GT_CTF:
 				if (!cv_timelimit.changed && !cv_pointlimit.changed) // user hasn't changed limits
@@ -5189,17 +5178,12 @@ void D_GameTypeChanged(INT32 lastgametype)
 					CV_SetValue(&cv_timelimit, 0);
 					CV_SetValue(&cv_pointlimit, 5);
 				}
-				if (!cv_itemrespawntime.changed)
-					CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue); // respawn normally
 				break;
 		}
 	}
 	else if (!multiplayer && !netgame)
 	{
-		gametype = GT_RACE; // SRB2kart
-		// These shouldn't matter anymore
-		//CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue);
-		//CV_SetValue(&cv_itemrespawn, 0);
+		gametype = GT_RACE;
 	}
 
 	// reset timelimit and pointlimit in race/coop, prevent stupid cheats
