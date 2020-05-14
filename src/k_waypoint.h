@@ -18,6 +18,8 @@
 #include "p_mobj.h"
 #include "k_pathfind.h"
 
+#define DEFAULT_WAYPOINT_RADIUS (384)
+
 typedef struct waypoint_s
 {
 	mobj_t             *mobj;
