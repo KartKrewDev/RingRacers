@@ -188,7 +188,7 @@ void K_InitGrandPrixBots(void)
 
 void K_FakeBotResults(player_t *bot)
 {
-	const UINT32 distfactor = 32;
+	const UINT32 distfactor = FixedMul(32 * bot->mo->scale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	UINT32 worstdist = 0;
 	tic_t besttime = UINT32_MAX;
 	UINT8 numplayers = 0;
@@ -234,7 +234,7 @@ void K_FakeBotResults(player_t *bot)
 
 	// hey, you "won"
 	bot->exiting = 2;
-	bot->realtime = bot->realtime + (bot->distancetofinish / distfactor);
+	bot->realtime += (bot->distancetofinish / distfactor);
 	bot->distancetofinish = 0;
 }
 
