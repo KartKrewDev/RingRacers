@@ -1518,8 +1518,7 @@ static int lib_pStartQuake(lua_State *L)
 	quake.radius = luaL_optinteger(L, 4, 512*FRACUNIT);
 
 	// These things are actually used in 2.1.
-	quake.intensity = q_intensity;
-	quake.time = q_time;
+	P_StartQuake(q_intensity, q_time);
 	return 0;
 }
 

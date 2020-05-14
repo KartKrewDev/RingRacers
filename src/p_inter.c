@@ -638,7 +638,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
-			S_StartSound(toucher, sfx_s1b2); 
+			S_StartSound(toucher, sfx_s1b2);
 			return;
 
 // ***************************************** //
@@ -3192,10 +3192,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_KartPainEnergyFling(player);
 
 				if (P_IsDisplayPlayer(player))
-				{
-					quake.intensity = 32*FRACUNIT;
-					quake.time = 5;
-				}
+					P_StartQuake(32<<FRACBITS, 5);
 			}
 			else
 				K_SpinPlayer(player, source, 0, inflictor, false);

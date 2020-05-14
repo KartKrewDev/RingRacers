@@ -19,6 +19,10 @@
 
 extern mobj_t *skyboxmo[2];
 
+// Something that should've been done long ago???
+// We won't be using epicenter or radius anytime soon so I don't think it's worth it yet.
+void P_StartQuake(fixed_t intensity, tic_t time);
+
 // GETSECSPECIAL (specialval, section)
 //
 // Pulls out the special # from a particular section.

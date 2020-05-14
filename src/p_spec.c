@@ -8273,3 +8273,11 @@ static void P_SearchForDisableLinedefs(void)
 		}
 	}
 }
+
+// Rudimentary function to start a earthquake.
+// epicenter and radius are not yet used.
+void P_StartQuake(fixed_t intensity, tic_t time)
+{
+	quake.intensity = intensity;
+	quake.time = time;
+}

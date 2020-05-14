@@ -3157,10 +3157,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	K_PlayPainSound(player->mo);
 
 	if (P_IsDisplayPlayer(player))
-	{
-		quake.intensity = 64*FRACUNIT;
-		quake.time = 5;
-	}
+		P_StartQuake(64<<FRACBITS, 5);
 
 	player->kartstuff[k_instashield] = 15;
 	K_DropItems(player);
@@ -5244,7 +5241,7 @@ static void K_MoveHeldObjects(player_t *player)
 					if (cur->type == MT_EGGMANITEM_SHIELD)
 					{
 						// Decided that this should use their "canon" color.
-						cur->color = SKINCOLOR_BLACK; 
+						cur->color = SKINCOLOR_BLACK;
 					}
 
 					cur->flags &= ~MF_NOCLIPTHING;
@@ -5613,7 +5610,7 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 		{
 			if (player->kartstuff[k_invincibilitytimer] > 0) // Prioritize invincibility
 				sfxnum = sfx_alarmi;
-			else if (player->kartstuff[k_growshrinktimer] > 0) 
+			else if (player->kartstuff[k_growshrinktimer] > 0)
 				sfxnum = sfx_alarmg;
 		}
 		else
