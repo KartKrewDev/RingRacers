@@ -21,13 +21,75 @@
 
 struct grandprixinfo grandprixinfo;
 
+UINT8 K_BotStartingDifficulty(SINT8 value)
+{
+	// startingdifficulty: Easy = 3, Normal = 6, Hard = 9
+	SINT8 difficulty = (value + 1) * 3;
+
+	if (difficulty > MAXBOTDIFFICULTY)
+	{
+		difficulty = MAXBOTDIFFICULTY;
+	}
+	else if (difficulty < 1)
+	{
+		difficulty = 1;
+	}
+
+	return difficulty;
+}
+
+INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
+{
+	INT16 points;
+
+	if (position >= numplayers || position == 0)
+	{
+		// Invalid position, no points
+		return 0;
+	}
+
+	points = numplayers - position;
+
+	// Give bonus to high-ranking players, depending on player count
+	// This rounds out the point gain when you get 1st every race,
+	// and gives bots able to catch up in points if a player gets an early lead.
+	// The maximum points you can get in a cup is: ((number of players - 1) + (max extra points)) * (number of races)
+	// 8P: (7 + 3) * 5 = 50 maximum points
+	// 12P: (11 + 3) * 5 = 70 maximum points
+	// 16P: (15 + 3) * 5 = 90 maximum points
+	switch (numplayers)
+	{
+		case 0: case 1: case 2: // 1v1
+			break; // No bonus needed.
+		case 3: case 4: // 3-4P
+			if (position == 1) { points += 1; } // 1st gets +1 extra point
+			break;
+		case 5: case 6:
+			if (position == 1) { points += 2; } // 1st gets +2 extra points
+			else if (position == 2) { points += 1; } // 2nd gets +1 extra point
+			break;
+		default: // Normal matches
+			if (position == 1) { points += 3; } // 1st gets +3 extra points
+			else if (position == 2) { points += 2; } // 2nd gets +2 extra points
+			else if (position == 3) { points += 1; } // 3rd gets +1 extra point
+			break;
+	}
+
+	// somehow underflowed?
+	if (points < 0)
+	{
+		points = 0;
+	}
+
+	return points;
+}
+
 void K_InitGrandPrixBots(void)
 {
 	const char *defaultbotskinname = "eggrobo";
 	SINT8 defaultbotskin = R_SkinAvailable(defaultbotskinname);
 
-	// startingdifficulty: Easy = 3, Normal = 6, Hard = 9
-	const UINT8 startingdifficulty = min(MAXBOTDIFFICULTY, (gamespeed + 1) * 3);
+	const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
 	UINT8 difficultylevels[MAXPLAYERS];
 
 	UINT8 playercount = 8;

@@ -308,17 +308,21 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		data.match.name[data.match.numplayers] = player_names[i];
 
 		if (data.match.numplayers && (data.match.val[data.match.numplayers] == data.match.val[data.match.numplayers-1]))
+		{
 			data.match.pos[data.match.numplayers] = data.match.pos[data.match.numplayers-1];
+		}
 		else
+		{
 			data.match.pos[data.match.numplayers] = data.match.numplayers+1;
+		}
 
 		if ((powertype == PWRLV_DISABLED)
 			&& (!rankingsmode)
 			&& !(players[i].pflags & PF_TIMEOVER)
 			&& (data.match.pos[data.match.numplayers] < (numplayersingame + numgriefers)))
 		{
-			// Single player rankings (grand prix). Online rank is handled below.
-			data.match.increase[i] = (numplayersingame + numgriefers) - data.match.pos[data.match.numplayers];
+			// Online rank is handled further below in this file.
+			data.match.increase[i] = K_CalculateGPRankPoints(data.match.pos[data.match.numplayers], numplayersingame + numgriefers);
 			players[i].score += data.match.increase[i];
 		}
 
