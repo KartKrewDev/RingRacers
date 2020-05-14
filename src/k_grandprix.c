@@ -248,6 +248,179 @@ void K_InitGrandPrixBots(void)
 	}
 }
 
+static INT16 K_RivalScore(player_t *bot)
+{
+	const UINT16 difficulty = bot->botvars.difficulty;
+	const UINT16 score = bot->score;
+	const SINT8 roundsleft = grandprixinfo.cup->numlevels - grandprixinfo.roundnum;
+
+	// In the early game, difficulty is more important for long-term challenge.
+	// When we're running low on matches left though, we need to focus more on score.
+
+	return (difficulty * roundsleft) + (score * grandprixinfo.roundnum);
+}
+
+void K_UpdateGrandPrixBots(void)
+{
+	player_t *oldrival = NULL;
+	player_t *newrival = NULL;
+	UINT16 newrivalscore = 0;
+	UINT8 i;
+
+	// Find the rival.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || !players[i].bot)
+		{
+			continue;
+		}
+
+		if (players[i].botvars.diffincrease)
+		{
+			players[i].botvars.difficulty += players[i].botvars.diffincrease;
+
+			if (players[i].botvars.difficulty > MAXBOTDIFFICULTY)
+			{
+				players[i].botvars.difficulty = MAXBOTDIFFICULTY;
+			}
+
+			players[i].botvars.diffincrease = 0;
+		}
+
+		if (players[i].botvars.rival)
+		{
+			if (oldrival == NULL)
+			{
+				// Record the old rival to compare with our calculated new rival
+				oldrival = &players[i];
+			}
+			else
+			{
+				// Somehow 2 rivals were set?!
+				// Let's quietly fix our mess...
+				players[i].botvars.rival = false;
+			}
+		}
+	}
+
+	// Find the bot with the best average of score & difficulty.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		UINT16 ns = 0;
+
+		if (!playeringame[i] || players[i].spectator || !players[i].bot)
+		{
+			continue;
+		}
+
+		ns = K_RivalScore(&players[i]);
+
+		if (ns > newrivalscore)
+		{
+			newrival = &players[i];
+			newrivalscore = ns;
+		}
+	}
+
+	// Even if there's a new rival, we want to make sure that they're a better fit than the current one!
+	if (oldrival != newrival)
+	{
+		if (oldrival != NULL)
+		{
+			UINT16 os = K_RivalScore(oldrival);
+
+			if (newrivalscore <= os + 100)
+			{
+				// Our current rival's just fine, thank you very much.
+				return;
+			}
+
+			// Hand over your badge.
+			oldrival->botvars.rival = false;
+		}
+
+		// Set our new rival!
+		newrival->botvars.rival = true;
+		CONS_Printf("Rival is now %s\n", player_names[newrival - players]);
+	}
+}
+
+static UINT8 K_BotExpectedStanding(player_t *bot)
+{
+	UINT8 pos = 1;
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (i == (bot - players))
+		{
+			continue;
+		}
+
+		if (playeringame[i] && !players[i].spectator)
+		{
+			if (players[i].bot)
+			{
+				if (players[i].botvars.difficulty > bot->botvars.difficulty)
+				{
+					pos++;
+				}
+				else if (players[i].score > bot->score)
+				{
+					pos++;
+				}
+			}
+			else
+			{
+				// Human player, always increment
+				pos++;
+			}
+		}
+	}
+
+	return pos;
+}
+
+void K_IncreaseBotDifficulty(player_t *bot)
+{
+	UINT8 expectedstanding;
+	INT16 standingdiff;
+
+	if (bot->botvars.difficulty >= MAXBOTDIFFICULTY)
+	{
+		// Already at max difficulty, don't need to increase
+		return;
+	}
+
+	// Increment bot difficulty based on what position you were meant to come in!
+	expectedstanding = K_BotExpectedStanding(bot);
+	standingdiff = expectedstanding - bot->kartstuff[k_position];
+
+	if (standingdiff >= -2)
+	{
+		UINT8 increase;
+
+		if (standingdiff > 5)
+		{
+			increase = 3;
+		}
+		else if (standingdiff > 2)
+		{
+			increase = 2;
+		}
+		else
+		{
+			increase = 1;
+		}
+
+		bot->botvars.diffincrease = increase;
+	}
+	else
+	{
+		bot->botvars.diffincrease = 0;
+	}
+}
+
 void K_FakeBotResults(player_t *bot)
 {
 	const UINT32 distfactor = FixedMul(32 * bot->mo->scale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
@@ -298,6 +471,7 @@ void K_FakeBotResults(player_t *bot)
 	bot->exiting = 2;
 	bot->realtime += (bot->distancetofinish / distfactor);
 	bot->distancetofinish = 0;
+	K_IncreaseBotDifficulty(bot);
 }
 
 void K_PlayerLoseLife(player_t *player)

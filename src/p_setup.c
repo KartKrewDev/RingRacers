@@ -3375,6 +3375,10 @@ boolean P_SetupLevel(boolean skipprecip)
 			K_InitGrandPrixBots();
 			grandprixinfo.initalize = false;
 		}
+		else
+		{
+			K_UpdateGrandPrixBots();
+		}
 	}
 	else if (!modeattacking)
 	{

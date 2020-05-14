@@ -18,6 +18,8 @@ extern struct grandprixinfo
 UINT8 K_BotStartingDifficulty(SINT8 value);
 INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
 void K_InitGrandPrixBots(void);
+void K_UpdateGrandPrixBots(void);
+void K_IncreaseBotDifficulty(player_t *bot);
 void K_FakeBotResults(player_t *bot);
 void K_PlayerLoseLife(player_t *player);
 

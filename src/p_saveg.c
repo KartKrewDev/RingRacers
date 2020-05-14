@@ -271,6 +271,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 
 		WRITEUINT8(save_p, players[i].botvars.difficulty);
+		WRITEUINT8(save_p, players[i].botvars.diffincrease);
+		WRITEUINT8(save_p, players[i].botvars.rival);
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITEINT16(save_p, players[i].botvars.lastturn);
@@ -448,6 +450,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 
 		players[i].botvars.difficulty = READUINT8(save_p);
+		players[i].botvars.diffincrease = READUINT8(save_p);
+		players[i].botvars.rival = (boolean)READUINT8(save_p);
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.lastturn = READINT16(save_p);

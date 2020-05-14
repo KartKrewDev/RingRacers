@@ -423,12 +423,14 @@ typedef enum
 // player_t struct for all bot variables
 typedef struct botvars_s
 {
-	UINT8 difficulty;
+	UINT8 difficulty; // Bot's difficulty setting
+	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
+	boolean rival; // If true, they're the GP rival
 
-	tic_t itemdelay;
-	tic_t itemconfirm;
+	tic_t itemdelay; // Delay before using item at all
+	tic_t itemconfirm; // When high enough, they will use their item
 
-	INT16 lastturn;
+	INT16 lastturn; // Last turn direction
 } botvars_t;
 
 // ========================================================================

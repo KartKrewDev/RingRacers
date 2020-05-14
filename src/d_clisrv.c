@@ -650,6 +650,8 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	rsp->bot = players[i].bot;
 	rsp->bot_difficulty = players[i].botvars.difficulty;
+	rsp->bot_diffincrease = players[i].botvars.diffincrease;
+	rsp->bot_rival = players[i].botvars.rival;
 	rsp->bot_itemdelay = players[i].botvars.itemdelay;
 	rsp->bot_itemconfirm = players[i].botvars.itemconfirm;
 	rsp->bot_lastturn = players[i].botvars.lastturn;
@@ -780,6 +782,8 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	players[i].bot = rsp->bot;
 	players[i].botvars.difficulty = rsp->bot_difficulty;
+	players[i].botvars.diffincrease = rsp->bot_diffincrease;
+	players[i].botvars.rival = rsp->bot_rival;
 	players[i].botvars.itemdelay = rsp->bot_itemdelay;
 	players[i].botvars.itemconfirm = rsp->bot_itemconfirm;
 	players[i].botvars.lastturn = rsp->bot_lastturn;

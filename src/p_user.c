@@ -1735,10 +1735,18 @@ void P_DoPlayerExit(player_t *player)
 	else
 		player->exiting = raceexittime+2; // Accidental death safeguard???
 
-	if (grandprixinfo.roundnum > 0 && !losing && !player->bot)
+	if (grandprixinfo.roundnum > 0)
 	{
-		// YOU WIN
-		grandprixinfo.wonround = true;
+		if (player->bot)
+		{
+			// Bots are going to get harder... :)
+			K_IncreaseBotDifficulty(player);
+		}
+		else if (!losing)
+		{
+			// YOU WIN
+			grandprixinfo.wonround = true;
+		}
 	}
 
 	player->powers[pw_underwater] = 0;

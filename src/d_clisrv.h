@@ -288,6 +288,8 @@ typedef struct
 
 	boolean bot;
 	UINT8 bot_difficulty;
+	UINT8 bot_diffincrease;
+	boolean bot_rival;
 	tic_t bot_itemdelay;
 	tic_t bot_itemconfirm;
 	INT16 bot_lastturn;
