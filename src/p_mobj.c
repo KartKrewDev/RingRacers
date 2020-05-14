@@ -1250,7 +1250,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	// Less gravity underwater.
 	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity)
 	{
-		if (mo->momz <= 0)
+		if (mo->momz * P_MobjFlip(mo) <= 0)
 		{
 			gravityadd = 4*gravityadd/3;
 		}
