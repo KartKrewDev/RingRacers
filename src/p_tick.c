@@ -722,6 +722,9 @@ void P_Ticker(boolean run)
 				K_CalculateBattleWanted();
 		}
 
+		if (bombflashtimer)
+			bombflashtimer--;	// Bomb seizure prevention
+
 		if (quake.time)
 		{
 			fixed_t ir = quake.intensity>>1;

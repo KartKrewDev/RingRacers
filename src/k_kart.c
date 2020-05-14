@@ -3321,6 +3321,8 @@ void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32
 	}
 }
 
+#define MINEQUAKEDIST 4096
+
 // Spawns the purely visual explosion
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 {
@@ -3329,6 +3331,28 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 	mobj_t *dust;
 	mobj_t *truc;
 	INT32 speed, speed2;
+	INT32 pnum;
+	player_t *p;
+
+	// check for potential display players near the source so we can have a sick earthquake / flashpal.
+	for (pnum = 0; pnum < MAXPLAYERS; pnum++)
+	{
+		p = &players[pnum];
+
+		if (!playeringame[pnum] || !P_IsDisplayPlayer(p))
+			continue;
+
+		if (R_PointToDist2(p->mo->x, p->mo->y, source->x, source->y) < mapobjectscale*MINEQUAKEDIST)
+		{
+			P_StartQuake(55<<FRACBITS, 12);
+			if (!bombflashtimer && P_CheckSight(p->mo, source))
+			{
+				bombflashtimer = TICRATE*5;
+				P_FlashPal(p, 1, 1);
+			}
+			break;	// we can break right now because quakes are global to all split players somehow.
+		}
+	}
 
 	K_MatchGenericExtraFlags(smoldering, source);
 	smoldering->tics = TICRATE*3;
@@ -3398,6 +3422,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		truc->color = color;
 	}
 }
+
+#undef MINEQUAKEDIST
 
 static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed)
 {
