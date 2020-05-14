@@ -6745,6 +6745,11 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 		basedrift += (basedrift / greasetics) * player->kartstuff[k_tiregrease];
 	}
 
+	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	{
+		countersteer = 3*countersteer/2;
+	}
+
 	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
 }
 
@@ -6778,6 +6783,11 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if (EITHERSNEAKER(player) || player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_growshrinktimer] > 0)
 	{
 		turnvalue = 5*turnvalue/4;
+	}
+
+	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	{
+		turnvalue = 3*turnvalue/2;
 	}
 
 	turnvalue = FixedMul(turnvalue * FRACUNIT, weightadjust) / FRACUNIT; // Weight has a small effect on turning
@@ -7899,6 +7909,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		// Karma ice physics
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
 			player->mo->friction += 1228;
+
+		if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+			player->mo->friction += 614;
 
 		// Wipeout slowdown
 		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
