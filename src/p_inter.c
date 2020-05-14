@@ -1977,7 +1977,8 @@ boolean P_CheckRacers(void)
 	UINT8 numplayersingame = 0;
 	UINT8 numexiting = 0;
 	boolean eliminatelast = cv_karteliminatelast.value;
-	boolean canexit = true;
+	boolean everyonedone = true;
+	boolean eliminatebots = false;
 	boolean griefed = false;
 
 	// Check if all the players in the race have finished. If so, end the level.
@@ -2005,14 +2006,19 @@ boolean P_CheckRacers(void)
 			if (players[i].bot)
 			{
 				// Isn't a human, thus doesn't matter. (Sorry, robots.)
+				// Set this so that we can check for bots that need to get eliminated, though!
+				eliminatebots = true;
 				continue;
 			}
 
-			canexit = false;
+			everyonedone = false;
 		}
 	}
 
-	if (canexit)
+	// If we returned here with bots left, then the last place bot may have a chance to finish the map and NOT get time over.
+	// Not that it affects anything, they didn't make the map take longer or even get any points from it. But... it's a bit inconsistent!
+	// So if there's any bots, we'll let the game skip this, continue onto calculating eliminatelast, THEN we return true anyway.
+	if (everyonedone && !eliminatebots)
 	{
 		// Everyone's finished, we're done here!
 		racecountdown = exitcountdown = 0;
@@ -2061,6 +2067,13 @@ boolean P_CheckRacers(void)
 		}
 
 		// Everyone should be done playing at this point now.
+		racecountdown = exitcountdown = 0;
+		return true;
+	}
+
+	if (everyonedone)
+	{
+		// See above: there might be bots that are still going, but all players are done, so we can exit now.
 		racecountdown = exitcountdown = 0;
 		return true;
 	}
