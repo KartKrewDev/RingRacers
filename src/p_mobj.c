@@ -12665,9 +12665,17 @@ ML_NOCLIMB : Direction not controllable
 		break;
 	case MT_WAYPOINT:
 	{
+		const fixed_t mobjscale =
+			mapheaderinfo[gamemap-1]->default_waypoint_radius;
+
 		// Just like MT_SPINMACEPOINT, this now works here too!
 		INT32 line = P_FindSpecialLineFromTag(2000, mthing->angle, -1);
-		mobj->radius = 384*FRACUNIT;
+
+		if (mobjscale == 0)
+			mobj->radius = DEFAULT_WAYPOINT_RADIUS * mapobjectscale;
+		else
+			mobj->radius = mobjscale;
+
 		// Set the radius, mobj z, and mthing z to match what the parameters want
 		if (line != -1)
 		{
