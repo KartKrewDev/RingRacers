@@ -212,6 +212,12 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 	UINT8 pos = 0;
 	UINT8 i;
 
+	if (player->botvars.rival)
+	{
+		// The rival should always try to be the front runner for the race.
+		return 0;
+	}
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (i == portpriority)
