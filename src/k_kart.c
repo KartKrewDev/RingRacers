@@ -2403,49 +2403,183 @@ void K_RespawnChecker(player_t *player)
 */
 void K_KartMoveAnimation(player_t *player)
 {
+	const INT16 minturn = KART_FULLTURN/8;
+	SINT8 turndir = 0;
+
+	const fixed_t fastspeed = (K_GetKartSpeed(player, false) * 17) / 20; // 85%
+	const fixed_t speedthreshold = player->mo->scale / 8;
+
+	const boolean onground = P_IsObjectOnGround(player->mo);
+
 	ticcmd_t *cmd = &player->cmd;
-	// Standing frames - S_KART_STND1   S_KART_STND1_L   S_KART_STND1_R
-	if (player->speed == 0)
+	const boolean spinningwheels = ((cmd->buttons & BT_ACCELERATE) || (onground && player->speed > 0));
+
+	if (cmd->driftturn < -minturn)
 	{
-		if (cmd->driftturn < 0 && !(player->mo->state >= &states[S_KART_STND1_R] && player->mo->state <= &states[S_KART_STND2_R]))
-			P_SetPlayerMobjState(player->mo, S_KART_STND1_R);
-		else if (cmd->driftturn > 0 && !(player->mo->state >= &states[S_KART_STND1_L] && player->mo->state <= &states[S_KART_STND2_L]))
-			P_SetPlayerMobjState(player->mo, S_KART_STND1_L);
-		else if (cmd->driftturn == 0 && !(player->mo->state >= &states[S_KART_STND1] && player->mo->state <= &states[S_KART_STND2]))
-			P_SetPlayerMobjState(player->mo, S_KART_STND1);
+		turndir = -1;
 	}
-	// Drifting Left - S_KART_DRIFT1_L
-	else if (player->kartstuff[k_drift] > 0 && P_IsObjectOnGround(player->mo))
+	else if (cmd->driftturn > minturn)
 	{
-		if (!(player->mo->state >= &states[S_KART_DRIFT1_L] && player->mo->state <= &states[S_KART_DRIFT2_L]))
-			P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L);
+		turndir = 1;
 	}
-	// Drifting Right - S_KART_DRIFT1_R
-	else if (player->kartstuff[k_drift] < 0 && P_IsObjectOnGround(player->mo))
+
+	if (!onground)
 	{
-		if (!(player->mo->state >= &states[S_KART_DRIFT1_R] && player->mo->state <= &states[S_KART_DRIFT2_R]))
-			P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R);
+		// Only use certain frames in the air, to make it look like your tires are spinning fruitlessly!
+
+		if (player->kartstuff[k_drift] > 0)
+		{
+			if (!spinningwheels || !(player->mo->state >= &states[S_KART_DRIFT1_L] && player->mo->state <= &states[S_KART_DRIFT2_L]))
+			{
+				// Neutral drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L);
+			}
+		}
+		else if (player->kartstuff[k_drift] > 0)
+		{
+			if (!spinningwheels || !(player->mo->state >= &states[S_KART_DRIFT1_R] && player->mo->state <= &states[S_KART_DRIFT2_R]))
+			{
+				// Neutral drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R);
+			}
+		}
+		else
+		{
+			if ((turndir == -1)
+			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1_R] && player->mo->state <= &states[S_KART_FAST2_R])))
+			{
+				P_SetPlayerMobjState(player->mo, S_KART_FAST2_R);
+			}
+			else if ((turndir == 1)
+			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1_L] && player->mo->state <= &states[S_KART_FAST2_L])))
+			{
+				P_SetPlayerMobjState(player->mo, S_KART_FAST2_L);
+			}
+			else if ((turndir == 0)
+			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2])))
+			{
+				P_SetPlayerMobjState(player->mo, S_KART_FAST2);
+			}
+		}
 	}
-	// Run frames - S_KART_RUN1   S_KART_RUN1_L   S_KART_RUN1_R
-	else if (player->speed > (20*player->mo->scale))
+	else
 	{
-		if (cmd->driftturn < 0 && !(player->mo->state >= &states[S_KART_RUN1_R] && player->mo->state <= &states[S_KART_RUN2_R]))
-			P_SetPlayerMobjState(player->mo, S_KART_RUN1_R);
-		else if (cmd->driftturn > 0 && !(player->mo->state >= &states[S_KART_RUN1_L] && player->mo->state <= &states[S_KART_RUN2_L]))
-			P_SetPlayerMobjState(player->mo, S_KART_RUN1_L);
-		else if (cmd->driftturn == 0 && !(player->mo->state >= &states[S_KART_RUN1] && player->mo->state <= &states[S_KART_RUN2]))
-			P_SetPlayerMobjState(player->mo, S_KART_RUN1);
+		if (player->kartstuff[k_drift] > 0)
+		{
+			// Drifting LEFT!
+
+			if ((turndir == -1)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_L_OUT] && player->mo->state <= &states[S_KART_DRIFT2_L_OUT]))
+			{
+				// Right -- outwards drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L_OUT);
+			}
+			else if ((turndir == 1)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_L_IN] && player->mo->state <= &states[S_KART_DRIFT4_L_IN]))
+			{
+				// Left -- inwards drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L_IN);
+			}
+			else if ((turndir == 0)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_L] && player->mo->state <= &states[S_KART_DRIFT2_L]))
+			{
+				// Neutral drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L);
+			}
+		}
+		else if (player->kartstuff[k_drift] < 0)
+		{
+			// Drifting RIGHT!
+
+			if ((turndir == -1)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_R_IN] && player->mo->state <= &states[S_KART_DRIFT4_R_IN]))
+			{
+				// Right -- inwards drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R_IN);
+			}
+			else if ((turndir == 1)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_R_OUT] && player->mo->state <= &states[S_KART_DRIFT2_R_OUT]))
+			{
+				// Left -- outwards drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R_OUT);
+			}
+			else if ((turndir == 0)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_R] && player->mo->state <= &states[S_KART_DRIFT2_R]))
+			{
+				// Neutral drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R);
+			}
+		}
+		else
+		{
+			if (player->speed >= fastspeed && player->speed >= (player->lastspeed - speedthreshold))
+			{
+				// Going REAL fast!
+
+				if ((turndir == -1)
+				&& !(player->mo->state >= &states[S_KART_FAST1_R] && player->mo->state <= &states[S_KART_FAST2_R]))
+				{
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1_R);
+				}
+				else if ((turndir == 1)
+				&& !(player->mo->state >= &states[S_KART_FAST1_L] && player->mo->state <= &states[S_KART_FAST2_L]))
+				{
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1_L);
+				}
+				else if ((turndir == 0)
+				&& !(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
+				{
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
+				}
+			}
+			else
+			{
+				if (spinningwheels)
+				{
+					// Drivin' slow.
+
+					if ((turndir == -1)
+					&& !(player->mo->state >= &states[S_KART_SLOW1_R] && player->mo->state <= &states[S_KART_SLOW2_R]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_SLOW1_R);
+					}
+					else if ((turndir == 1)
+					&& !(player->mo->state >= &states[S_KART_SLOW1_L] && player->mo->state <= &states[S_KART_SLOW2_L]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_SLOW1_L);
+					}
+					else if ((turndir == 0)
+					&& !(player->mo->state >= &states[S_KART_SLOW1] && player->mo->state <= &states[S_KART_SLOW2]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_SLOW1);
+					}
+				}
+				else
+				{
+					// Completely still.
+
+					if ((turndir == -1)
+					&& !(player->mo->state >= &states[S_KART_STILL1_R] && player->mo->state <= &states[S_KART_STILL2_R]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_STILL1_R);
+					}
+					else if ((turndir == 1)
+					&& !(player->mo->state >= &states[S_KART_STILL1_L] && player->mo->state <= &states[S_KART_STILL2_L]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_STILL1_L);
+					}
+					else if ((turndir == 0)
+					&& !(player->mo->state >= &states[S_KART_STILL1] && player->mo->state <= &states[S_KART_STILL2]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_STILL1);
+					}
+				}
+			}
+		}
 	}
-	// Walk frames - S_KART_WALK1   S_KART_WALK1_L   S_KART_WALK1_R
-	else if (player->speed <= (20*player->mo->scale))
-	{
-		if (cmd->driftturn < 0 && !(player->mo->state >= &states[S_KART_WALK1_R] && player->mo->state <= &states[S_KART_WALK2_R]))
-			P_SetPlayerMobjState(player->mo, S_KART_WALK1_R);
-		else if (cmd->driftturn > 0 && !(player->mo->state >= &states[S_KART_WALK1_L] && player->mo->state <= &states[S_KART_WALK2_L]))
-			P_SetPlayerMobjState(player->mo, S_KART_WALK1_L);
-		else if (cmd->driftturn == 0 && !(player->mo->state >= &states[S_KART_WALK1] && player->mo->state <= &states[S_KART_WALK2]))
-			P_SetPlayerMobjState(player->mo, S_KART_WALK1);
-	}
+
+	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
+	player->lastspeed = player->speed;
 }
 
 static void K_TauntVoiceTimers(player_t *player)
