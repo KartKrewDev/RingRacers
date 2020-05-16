@@ -8563,6 +8563,7 @@ static void SpawnSPBSpeedLines(mobj_t *actor)
 		actor->z + (actor->height/2) + (P_RandomRange(-24,24) * actor->scale),
 		MT_FASTLINE);
 
+	P_SetTarget(&fast->target, actor);
 	fast->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
 	fast->color = SKINCOLOR_RED;
 	fast->colorized = true;
