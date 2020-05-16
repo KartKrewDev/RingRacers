@@ -1910,6 +1910,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 		|| specialtype == 318  // Unlockable trigger - Once
 		|| specialtype == 320  // Unlockable - Once
 		|| specialtype == 321 || specialtype == 322 // Trigger on X calls - Continuous + Each Time
+		|| specialtype == 323  // Record attack only - Once
 		|| specialtype == 328 // Encore Load
 		|| specialtype == 399 // Level Load
 		|| specialtype == 2002 // SRB2Kart Race Lap
@@ -1950,6 +1951,7 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 		 || lines[masterline].special == 399
 		 || lines[masterline].special == 328
 		 || lines[masterline].special == 2002 // SRB2Kart race lap trigger
+		 || lines[masterline].special == 323
 		 // Each-time executors handle themselves, too
 		 || lines[masterline].special == 301 // Each time
 		 || lines[masterline].special == 306 // Character ability - Each time
@@ -2882,7 +2884,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				mo->player->rmomx = mo->player->rmomy = 1;
 				mo->player->cmomx = mo->player->cmomy = 0;
 				P_ResetPlayer(mo->player);
-				P_SetPlayerMobjState(mo, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+				P_SetPlayerMobjState(mo, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 
 				// Reset bot too.
 				if (bot) {
@@ -2893,7 +2895,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					bot->player->rmomx = bot->player->rmomy = 1;
 					bot->player->cmomx = bot->player->cmomy = 0;
 					P_ResetPlayer(bot->player);
-					P_SetPlayerMobjState(bot, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+					P_SetPlayerMobjState(bot, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 				}
 			}
 			break;
@@ -4044,12 +4046,14 @@ DoneSection2:
 			{
 				const fixed_t hscale = mapobjectscale + (mapobjectscale - player->mo->scale);
 				const fixed_t minspeed = 24*hscale;
+				angle_t pushangle = FixedHypot(player->mo->momx, player->mo->momy) ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle;
+				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
 
 				if (player->mo->eflags & MFE_SPRUNG)
 					break;
 
 				if (player->speed < minspeed) // Push forward to prevent getting stuck
-					P_InstaThrust(player->mo, player->mo->angle, minspeed);
+					P_InstaThrust(player->mo, pushangle, minspeed);
 
 				player->kartstuff[k_pogospring] = 1;
 				K_DoPogoSpring(player->mo, 0, 1);
@@ -4065,14 +4069,16 @@ DoneSection2:
 				const fixed_t hscale = mapobjectscale + (mapobjectscale - player->mo->scale);
 				const fixed_t minspeed = 24*hscale;
 				const fixed_t maxspeed = 28*hscale;
+				angle_t pushangle = FixedHypot(player->mo->momx, player->mo->momy) ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle;
+				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
 
 				if (player->mo->eflags & MFE_SPRUNG)
 					break;
 
 				if (player->speed > maxspeed) // Prevent overshooting jumps
-					P_InstaThrust(player->mo, R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy), maxspeed);
+					P_InstaThrust(player->mo, pushangle, maxspeed);
 				else if (player->speed < minspeed) // Push forward to prevent getting stuck
-					P_InstaThrust(player->mo, player->mo->angle, minspeed);
+					P_InstaThrust(player->mo, pushangle, minspeed);
 
 				player->kartstuff[k_pogospring] = 2;
 				K_DoPogoSpring(player->mo, 0, 1);
@@ -4349,8 +4355,8 @@ DoneSection2:
 				player->pflags &= ~PF_GLIDING;
 				player->climbing = 0;
 
-				if (!(player->mo->state >= &states[S_KART_RUN1] && player->mo->state <= &states[S_KART_RUN2]))
-					P_SetPlayerMobjState(player->mo, S_KART_RUN1);
+				if (!(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
 
 				//if (!(player->mo->state >= &states[S_PLAY_ATK1] && player->mo->state <= &states[S_PLAY_ATK4])) // SRB2kart
 				//{
@@ -4424,8 +4430,8 @@ DoneSection2:
 				player->pflags &= ~PF_SPINNING; // SRB2kart 200117
 				player->pflags &= ~PF_JUMPED;
 
-				if (!(player->mo->state >= &states[S_KART_RUN1] && player->mo->state <= &states[S_KART_RUN2]))
-					P_SetPlayerMobjState(player->mo, S_KART_RUN1);
+				if (!(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
 
 				//if (!(player->mo->state >= &states[S_PLAY_ATK1] && player->mo->state <= &states[S_PLAY_ATK4])) // SRB2kart
 				//{
@@ -5823,7 +5829,7 @@ static void P_RunLevelLoadExecutors(void)
 
 	for (i = 0; i < numlines; i++)
 	{
-		if (lines[i].special == 399 || lines[i].special == 328)
+		if (lines[i].special == 399 || lines[i].special == 328 || lines[i].special == 323)
 			P_RunTriggerLinedef(&lines[i], NULL, NULL);
 	}
 }
@@ -6726,6 +6732,11 @@ void P_SpawnSpecials(INT32 fromnetsave)
 					sec = sides[*lines[i].sidenum].sector - sectors;
 					P_AddEachTimeThinker(&sectors[sec], &lines[i]);
 				}
+				break;
+			// Record attack only linedef exec
+			case 323:
+				if (!modeattacking)
+					lines[i].special = 0;
 				break;
 
 			case 328: // Encore-only linedef execute on map load

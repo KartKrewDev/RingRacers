@@ -1176,7 +1176,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 					P_ResetPlayer(player);
 
-					P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+					P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 				}
 			}
 			return;
@@ -1482,7 +1482,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (player->pflags & PF_GLIDING)
 				{
 					player->pflags &= ~(PF_GLIDING|PF_JUMPED);
-					P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+					P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 				}
 
 				// Play a bounce sound?
@@ -1549,7 +1549,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					if (player->pflags & PF_GLIDING)
 					{
 						player->pflags &= ~(PF_GLIDING|PF_JUMPED);
-						P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+						P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 					}
 
 					// Play a bounce sound?
@@ -1605,7 +1605,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				player->pflags |= PF_MACESPIN;
 				S_StartSound(toucher, sfx_spin);
-				P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_ATK1
+				P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_ATK1
 			}
 			else
 				player->pflags |= PF_ITEMHANG;
@@ -2016,7 +2016,7 @@ boolean P_CheckRacers(void)
 
 	if (i == MAXPLAYERS) // finished
 	{
-		countdown = countdown2 = 0;
+		racecountdown = exitcountdown = 0;
 		return true;
 	}
 
@@ -2044,12 +2044,12 @@ boolean P_CheckRacers(void)
 		if (j == MAXPLAYERS) // finish anyways, force a time over
 		{
 			P_DoTimeOver(&players[i]);
-			countdown = countdown2 = 0;
+			racecountdown = exitcountdown = 0;
 			return true;
 		}
 	}
 
-	if (!countdown) // Check to see if the winners have finished, to set countdown.
+	if (!racecountdown) // Check to see if the winners have finished, to set countdown.
 	{
 		UINT8 winningpos = 1;
 
@@ -2058,7 +2058,7 @@ boolean P_CheckRacers(void)
 			winningpos++;
 
 		if (numexiting >= winningpos)
-			countdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
+			racecountdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
 	}
 
 	if (numplayersingame < 2) // reset nospectategrief in free play

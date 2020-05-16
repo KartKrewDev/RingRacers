@@ -271,7 +271,7 @@ void B_RespawnBot(INT32 playernum)
 	player->powers[pw_nocontrol] = sonic->player->powers[pw_nocontrol];
 
 	P_TeleportMove(tails, x, y, z);
-	P_SetPlayerMobjState(tails, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+	P_SetPlayerMobjState(tails, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 	P_SetScale(tails, sonic->scale);
 	tails->destscale = sonic->destscale;
 }

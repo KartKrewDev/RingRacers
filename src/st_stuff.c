@@ -614,9 +614,7 @@ static void ST_drawDebugInfo(void)
 	}
 
 	if (cv_debug & DBG_MEMORY)
-	{
 		V_DrawRightAlignedString(320, height,     V_MONOSPACE, va("Heap used: %7sKB", sizeu1(Z_TagsUsage(0, INT32_MAX)>>10)));
-	}
 }
 
 /*
@@ -1799,10 +1797,12 @@ static void ST_doItemFinderIconsAndSound(void) // SRB2kart - unused.
 //
 static void ST_overlayDrawer(void)
 {
-	/* SRB2kart doesn't need this stuff
 	//hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
 	{
+		K_drawKartHUD();
+
+	/* SRB2kart doesn't need this stuff
 		if (maptol & TOL_NIGHTS)
 			ST_drawNiGHTSHUD();
 		else
@@ -1826,15 +1826,15 @@ static void ST_overlayDrawer(void)
 			)
 				ST_drawLives();
 		}
-	}
 	*/
+	}
 
 	// GAME OVER pic
 	/*if (G_GametypeUsesLives() && stplyr->lives <= 0 && !(hu_showscores && (netgame || multiplayer)))
 	{
 		patch_t *p;
 
-		if (countdown == 1)
+		if (racecountdown == 1)
 			p = timeover;
 		else
 			p = sboover;
@@ -1846,8 +1846,6 @@ static void ST_overlayDrawer(void)
 	{
 		// Countdown timer for Race Mode
 		// ...moved to k_kart.c so we can take advantage of the LAPS_Y value
-
-		K_drawKartHUD();
 
 		/* SRB2kart doesn't need this stuff, I think
 		// If you are in overtime, put a big honkin' flashin' message on the screen.
@@ -1956,7 +1954,7 @@ static void ST_overlayDrawer(void)
 
 	if (!hu_showscores && netgame && !mapreset)
 	{
-		/*if (G_GametypeUsesLives() && stplyr->lives <= 0 && countdown != 1)
+		/*if (G_GametypeUsesLives() && stplyr->lives <= 0 && racecountdown != 1)
 			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), 0, M_GetText("Press Viewpoint Key to watch a player."));
 		else if (gametype == GT_HIDEANDSEEK &&
 		 (!stplyr->spectator && !(stplyr->pflags & PF_TAGIT)) && (leveltime > hidetime * TICRATE))
@@ -2041,8 +2039,6 @@ static void ST_overlayDrawer(void)
 			break;
 		}
 	}
-
-	ST_drawDebugInfo();
 }
 
 void ST_DrawDemoTitleEntry(void)
@@ -2139,4 +2135,6 @@ void ST_Drawer(void)
 	// Draw a fade on level opening
 	if (timeinmap < 16)
 		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 32-(timeinmap*2)); // Then gradually fade out from there
+
+	ST_drawDebugInfo();
 }

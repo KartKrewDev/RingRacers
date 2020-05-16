@@ -1135,7 +1135,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		dontforcespb = true;
 
 	// This makes the roulette produce the random noises.
-	if ((player->kartstuff[k_itemroulette] % 3) == 1 && P_IsDisplayPlayer(player))
+	if ((player->kartstuff[k_itemroulette] % 3) == 1 && P_IsDisplayPlayer(player) && !demo.freecam)
 	{
 #define PLAYROULETTESND S_StartSound(NULL, sfx_itrol1 + ((player->kartstuff[k_itemroulette] / 3) % 8))
 		for (i = 0; i <= r_splitscreen; i++)
@@ -1207,7 +1207,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		//player->karthud[khud_itemblinkmode] = 1;
 		player->kartstuff[k_itemroulette] = 0;
 		player->kartstuff[k_roulettetype] = 0;
-		if (P_IsDisplayPlayer(player))
+		if (P_IsDisplayPlayer(player) && !demo.freecam)
 			S_StartSound(NULL, sfx_itrole);
 		return;
 	}
@@ -1222,7 +1222,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		player->karthud[khud_itemblinkmode] = 2;
 		player->kartstuff[k_itemroulette] = 0;
 		player->kartstuff[k_roulettetype] = 0;
-		if (P_IsDisplayPlayer(player))
+		if (P_IsDisplayPlayer(player) && !demo.freecam)
 			S_StartSound(NULL, sfx_dbgsal);
 		return;
 	}
@@ -1340,7 +1340,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_itemamount] = 1;
 	}
 
-	if (P_IsDisplayPlayer(player))
+	if (P_IsDisplayPlayer(player) && !demo.freecam)
 		S_StartSound(NULL, ((player->kartstuff[k_roulettetype] == 1) ? sfx_itrolk : (mashed ? sfx_itrolm : sfx_itrolf)));
 
 	player->karthud[khud_itemblink] = TICRATE;
@@ -2403,49 +2403,183 @@ void K_RespawnChecker(player_t *player)
 */
 void K_KartMoveAnimation(player_t *player)
 {
+	const INT16 minturn = KART_FULLTURN/8;
+	SINT8 turndir = 0;
+
+	const fixed_t fastspeed = (K_GetKartSpeed(player, false) * 17) / 20; // 85%
+	const fixed_t speedthreshold = player->mo->scale / 8;
+
+	const boolean onground = P_IsObjectOnGround(player->mo);
+
 	ticcmd_t *cmd = &player->cmd;
-	// Standing frames - S_KART_STND1   S_KART_STND1_L   S_KART_STND1_R
-	if (player->speed == 0)
+	const boolean spinningwheels = ((cmd->buttons & BT_ACCELERATE) || (onground && player->speed > 0));
+
+	if (cmd->driftturn < -minturn)
 	{
-		if (cmd->driftturn < 0 && !(player->mo->state >= &states[S_KART_STND1_R] && player->mo->state <= &states[S_KART_STND2_R]))
-			P_SetPlayerMobjState(player->mo, S_KART_STND1_R);
-		else if (cmd->driftturn > 0 && !(player->mo->state >= &states[S_KART_STND1_L] && player->mo->state <= &states[S_KART_STND2_L]))
-			P_SetPlayerMobjState(player->mo, S_KART_STND1_L);
-		else if (cmd->driftturn == 0 && !(player->mo->state >= &states[S_KART_STND1] && player->mo->state <= &states[S_KART_STND2]))
-			P_SetPlayerMobjState(player->mo, S_KART_STND1);
+		turndir = -1;
 	}
-	// Drifting Left - S_KART_DRIFT1_L
-	else if (player->kartstuff[k_drift] > 0 && P_IsObjectOnGround(player->mo))
+	else if (cmd->driftturn > minturn)
 	{
-		if (!(player->mo->state >= &states[S_KART_DRIFT1_L] && player->mo->state <= &states[S_KART_DRIFT2_L]))
-			P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L);
+		turndir = 1;
 	}
-	// Drifting Right - S_KART_DRIFT1_R
-	else if (player->kartstuff[k_drift] < 0 && P_IsObjectOnGround(player->mo))
+
+	if (!onground)
 	{
-		if (!(player->mo->state >= &states[S_KART_DRIFT1_R] && player->mo->state <= &states[S_KART_DRIFT2_R]))
-			P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R);
+		// Only use certain frames in the air, to make it look like your tires are spinning fruitlessly!
+
+		if (player->kartstuff[k_drift] > 0)
+		{
+			if (!spinningwheels || !(player->mo->state >= &states[S_KART_DRIFT1_L] && player->mo->state <= &states[S_KART_DRIFT2_L]))
+			{
+				// Neutral drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L);
+			}
+		}
+		else if (player->kartstuff[k_drift] > 0)
+		{
+			if (!spinningwheels || !(player->mo->state >= &states[S_KART_DRIFT1_R] && player->mo->state <= &states[S_KART_DRIFT2_R]))
+			{
+				// Neutral drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R);
+			}
+		}
+		else
+		{
+			if ((turndir == -1)
+			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1_R] && player->mo->state <= &states[S_KART_FAST2_R])))
+			{
+				P_SetPlayerMobjState(player->mo, S_KART_FAST2_R);
+			}
+			else if ((turndir == 1)
+			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1_L] && player->mo->state <= &states[S_KART_FAST2_L])))
+			{
+				P_SetPlayerMobjState(player->mo, S_KART_FAST2_L);
+			}
+			else if ((turndir == 0)
+			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2])))
+			{
+				P_SetPlayerMobjState(player->mo, S_KART_FAST2);
+			}
+		}
 	}
-	// Run frames - S_KART_RUN1   S_KART_RUN1_L   S_KART_RUN1_R
-	else if (player->speed > (20*player->mo->scale))
+	else
 	{
-		if (cmd->driftturn < 0 && !(player->mo->state >= &states[S_KART_RUN1_R] && player->mo->state <= &states[S_KART_RUN2_R]))
-			P_SetPlayerMobjState(player->mo, S_KART_RUN1_R);
-		else if (cmd->driftturn > 0 && !(player->mo->state >= &states[S_KART_RUN1_L] && player->mo->state <= &states[S_KART_RUN2_L]))
-			P_SetPlayerMobjState(player->mo, S_KART_RUN1_L);
-		else if (cmd->driftturn == 0 && !(player->mo->state >= &states[S_KART_RUN1] && player->mo->state <= &states[S_KART_RUN2]))
-			P_SetPlayerMobjState(player->mo, S_KART_RUN1);
+		if (player->kartstuff[k_drift] > 0)
+		{
+			// Drifting LEFT!
+
+			if ((turndir == -1)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_L_OUT] && player->mo->state <= &states[S_KART_DRIFT2_L_OUT]))
+			{
+				// Right -- outwards drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L_OUT);
+			}
+			else if ((turndir == 1)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_L_IN] && player->mo->state <= &states[S_KART_DRIFT4_L_IN]))
+			{
+				// Left -- inwards drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L_IN);
+			}
+			else if ((turndir == 0)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_L] && player->mo->state <= &states[S_KART_DRIFT2_L]))
+			{
+				// Neutral drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L);
+			}
+		}
+		else if (player->kartstuff[k_drift] < 0)
+		{
+			// Drifting RIGHT!
+
+			if ((turndir == -1)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_R_IN] && player->mo->state <= &states[S_KART_DRIFT4_R_IN]))
+			{
+				// Right -- inwards drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R_IN);
+			}
+			else if ((turndir == 1)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_R_OUT] && player->mo->state <= &states[S_KART_DRIFT2_R_OUT]))
+			{
+				// Left -- outwards drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R_OUT);
+			}
+			else if ((turndir == 0)
+			&& !(player->mo->state >= &states[S_KART_DRIFT1_R] && player->mo->state <= &states[S_KART_DRIFT2_R]))
+			{
+				// Neutral drift
+				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R);
+			}
+		}
+		else
+		{
+			if (player->speed >= fastspeed && player->speed >= (player->lastspeed - speedthreshold))
+			{
+				// Going REAL fast!
+
+				if ((turndir == -1)
+				&& !(player->mo->state >= &states[S_KART_FAST1_R] && player->mo->state <= &states[S_KART_FAST2_R]))
+				{
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1_R);
+				}
+				else if ((turndir == 1)
+				&& !(player->mo->state >= &states[S_KART_FAST1_L] && player->mo->state <= &states[S_KART_FAST2_L]))
+				{
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1_L);
+				}
+				else if ((turndir == 0)
+				&& !(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
+				{
+					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
+				}
+			}
+			else
+			{
+				if (spinningwheels)
+				{
+					// Drivin' slow.
+
+					if ((turndir == -1)
+					&& !(player->mo->state >= &states[S_KART_SLOW1_R] && player->mo->state <= &states[S_KART_SLOW2_R]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_SLOW1_R);
+					}
+					else if ((turndir == 1)
+					&& !(player->mo->state >= &states[S_KART_SLOW1_L] && player->mo->state <= &states[S_KART_SLOW2_L]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_SLOW1_L);
+					}
+					else if ((turndir == 0)
+					&& !(player->mo->state >= &states[S_KART_SLOW1] && player->mo->state <= &states[S_KART_SLOW2]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_SLOW1);
+					}
+				}
+				else
+				{
+					// Completely still.
+
+					if ((turndir == -1)
+					&& !(player->mo->state >= &states[S_KART_STILL1_R] && player->mo->state <= &states[S_KART_STILL2_R]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_STILL1_R);
+					}
+					else if ((turndir == 1)
+					&& !(player->mo->state >= &states[S_KART_STILL1_L] && player->mo->state <= &states[S_KART_STILL2_L]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_STILL1_L);
+					}
+					else if ((turndir == 0)
+					&& !(player->mo->state >= &states[S_KART_STILL1] && player->mo->state <= &states[S_KART_STILL2]))
+					{
+						P_SetPlayerMobjState(player->mo, S_KART_STILL1);
+					}
+				}
+			}
+		}
 	}
-	// Walk frames - S_KART_WALK1   S_KART_WALK1_L   S_KART_WALK1_R
-	else if (player->speed <= (20*player->mo->scale))
-	{
-		if (cmd->driftturn < 0 && !(player->mo->state >= &states[S_KART_WALK1_R] && player->mo->state <= &states[S_KART_WALK2_R]))
-			P_SetPlayerMobjState(player->mo, S_KART_WALK1_R);
-		else if (cmd->driftturn > 0 && !(player->mo->state >= &states[S_KART_WALK1_L] && player->mo->state <= &states[S_KART_WALK2_L]))
-			P_SetPlayerMobjState(player->mo, S_KART_WALK1_L);
-		else if (cmd->driftturn == 0 && !(player->mo->state >= &states[S_KART_WALK1] && player->mo->state <= &states[S_KART_WALK2]))
-			P_SetPlayerMobjState(player->mo, S_KART_WALK1);
-	}
+
+	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
+	player->lastspeed = player->speed;
 }
 
 static void K_TauntVoiceTimers(player_t *player)
@@ -5850,6 +5984,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
 					MT_FASTLINE);
 
+				P_SetTarget(&fast->target, player->mo);
 				fast->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
 				fast->momx = 3*player->mo->momx/4;
 				fast->momy = 3*player->mo->momy/4;
@@ -6745,6 +6880,11 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 		basedrift += (basedrift / greasetics) * player->kartstuff[k_tiregrease];
 	}
 
+	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	{
+		countersteer = 3*countersteer/2;
+	}
+
 	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
 }
 
@@ -6778,6 +6918,11 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if (EITHERSNEAKER(player) || player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_growshrinktimer] > 0)
 	{
 		turnvalue = 5*turnvalue/4;
+	}
+
+	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	{
+		turnvalue = 3*turnvalue/2;
 	}
 
 	turnvalue = FixedMul(turnvalue * FRACUNIT, weightadjust) / FRACUNIT; // Weight has a small effect on turning
@@ -7899,6 +8044,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		// Karma ice physics
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
 			player->mo->friction += 1228;
+
+		if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+			player->mo->friction += 614;
 
 		// Wipeout slowdown
 		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
@@ -11200,6 +11348,7 @@ void K_drawKartHUD(void)
 {
 	boolean isfreeplay = false;
 	boolean battlefullscreen = false;
+	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
 	UINT8 i;
 
 	// Define the X and Y for each drawn object
@@ -11209,7 +11358,7 @@ void K_drawKartHUD(void)
 	// Draw that fun first person HUD! Drawn ASAP so it looks more "real".
 	for (i = 0; i <= r_splitscreen; i++)
 	{
-		if (stplyr == &players[displayplayers[i]] && !camera[i].chase)
+		if (stplyr == &players[displayplayers[i]] && !camera[i].chase && !freecam)
 			K_drawKartFirstPerson();
 	}
 
@@ -11230,8 +11379,11 @@ void K_drawKartHUD(void)
 	if (!demo.title && (!battlefullscreen || r_splitscreen))
 	{
 		// Draw the CHECK indicator before the other items, so it's overlapped by everything else
-		if (cv_kartcheck.value && !r_splitscreen && !players[displayplayers[0]].exiting)
-			K_drawKartPlayerCheck();
+#ifdef HAVE_BLUA
+		if (LUA_HudEnabled(hud_check))	// delete lua when?
+#endif
+			if (cv_kartcheck.value && !splitscreen && !players[displayplayers[0]].exiting && !freecam)
+				K_drawKartPlayerCheck();
 
 		// Draw WANTED status
 		if (G_BattleGametype())
@@ -11251,7 +11403,7 @@ void K_drawKartHUD(void)
 		}
 	}
 
-	if (battlefullscreen)
+	if (battlefullscreen && !freecam)
 	{
 #ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_battlefullscreen))
@@ -11262,7 +11414,7 @@ void K_drawKartHUD(void)
 
 	// Draw the item window
 #ifdef HAVE_BLUA
-	if (LUA_HudEnabled(hud_item))
+	if (LUA_HudEnabled(hud_item) && !freecam)
 #endif
 		K_drawKartItem();
 
@@ -11285,7 +11437,7 @@ void K_drawKartHUD(void)
 		}
 	}
 
-	if (!stplyr->spectator) // Bottom of the screen elements, don't need in spectate mode
+	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
 		// Draw the speedometer
 		if (cv_kartspeedometer.value && !r_splitscreen)
@@ -11359,9 +11511,9 @@ void K_drawKartHUD(void)
 	if (leveltime >= starttime-(3*TICRATE)
 		&& leveltime < starttime+TICRATE)
 		K_drawKartStartCountdown();
-	else if (countdown && (!r_splitscreen || !stplyr->exiting))
+	else if (racecountdown && (!r_splitscreen || !stplyr->exiting))
 	{
-		char *countstr = va("%d", countdown/TICRATE);
+		char *countstr = va("%d", racecountdown/TICRATE);
 
 		if (r_splitscreen > 1)
 			V_DrawCenteredString(BASEVIDWIDTH/4, LAPS_Y+1, K_calcSplitFlags(0), countstr);
@@ -11373,7 +11525,7 @@ void K_drawKartHUD(void)
 	}
 
 	// Race overlays
-	if (G_RaceGametype())
+	if (G_RaceGametype() && !freecam)
 	{
 		if (stplyr->exiting)
 			K_drawKartFinish();
@@ -11381,7 +11533,7 @@ void K_drawKartHUD(void)
 			K_drawLapStartAnim();
 	}
 
-	if (modeattacking) // everything after here is MP and debug only
+	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
 
 	if (G_BattleGametype() && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
