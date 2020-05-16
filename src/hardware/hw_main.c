@@ -2831,6 +2831,10 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 
 static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 {
+	const fixed_t thingxpos = thing->x + thing->sprxoff;
+	const fixed_t thingypos = thing->y + thing->spryoff;
+	const fixed_t thingzpos = thing->z + thing->sprzoff;
+
 	GLPatch_t *gpatch;
 	FOutVector shadowVerts[4];
 	FSurfaceInfo sSurf;
@@ -2848,7 +2852,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	pslope_t *floorslope;
 
 	floorz = R_GetShadowZ(thing, &floorslope);
-	floordiff = abs(thing->z - floorz);
+	floordiff = abs(thingzpos - floorz);
 
 	alpha = floordiff / (4*FRACUNIT) + 75;
 	if (alpha >= 255) return;
@@ -2872,8 +2876,8 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	scalemul = FixedMul(scalemul, (thing->radius*2) / gpatch->height);
 
 	fscale = FIXED_TO_FLOAT(scalemul);
-	fx = FIXED_TO_FLOAT(thing->x);
-	fy = FIXED_TO_FLOAT(thing->y);
+	fx = FIXED_TO_FLOAT(thingxpos);
+	fy = FIXED_TO_FLOAT(thingypos);
 
 	//  3--2
 	//  | /|
@@ -4096,6 +4100,10 @@ void HWR_AddSprites(sector_t *sec)
 // BP why not use xtoviexangle/viewangletox like in bsp ?....
 void HWR_ProjectSprite(mobj_t *thing)
 {
+	const fixed_t thingxpos = thing->x + thing->sprxoff;
+	const fixed_t thingypos = thing->y + thing->spryoff;
+	const fixed_t thingzpos = thing->z + thing->sprzoff;
+
 	gr_vissprite_t *vis;
 	float tr_x, tr_y;
 	float tz;
@@ -4120,8 +4128,8 @@ void HWR_ProjectSprite(mobj_t *thing)
 		this_scale = FIXED_TO_FLOAT(thing->scale);
 
 	// transform the origin point
-	tr_x = FIXED_TO_FLOAT(thing->x) - gr_viewx;
-	tr_y = FIXED_TO_FLOAT(thing->y) - gr_viewy;
+	tr_x = FIXED_TO_FLOAT(thingxpos) - gr_viewx;
+	tr_y = FIXED_TO_FLOAT(thingypos) - gr_viewy;
 
 	// rotation around vertical axis
 	tz = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
@@ -4131,8 +4139,8 @@ void HWR_ProjectSprite(mobj_t *thing)
 		return;
 
 	// The above can stay as it works for cutting sprites that are too close
-	tr_x = FIXED_TO_FLOAT(thing->x);
-	tr_y = FIXED_TO_FLOAT(thing->y);
+	tr_x = FIXED_TO_FLOAT(thingxpos);
+	tr_y = FIXED_TO_FLOAT(thingypos);
 
 	// decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
@@ -4168,9 +4176,9 @@ void HWR_ProjectSprite(mobj_t *thing)
 #endif
 
 	if (thing->player)
-		ang = R_PointToAngle (thing->x, thing->y) - thing->player->frameangle;
+		ang = R_PointToAngle (thingxpos, thingypos) - thing->player->frameangle;
 	else
-		ang = R_PointToAngle (thing->x, thing->y) - thing->angle;
+		ang = R_PointToAngle (thingxpos, thingypos) - thing->angle;
 
 	if (sprframe->rotate == SRF_SINGLE)
 	{
@@ -4242,12 +4250,12 @@ void HWR_ProjectSprite(mobj_t *thing)
 
 	if (vflip)
 	{
-		gz = FIXED_TO_FLOAT(thing->z+thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
+		gz = FIXED_TO_FLOAT(thingzpos + thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gzt = gz + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
 	}
 	else
 	{
-		gzt = FIXED_TO_FLOAT(thing->z) + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
+		gzt = FIXED_TO_FLOAT(thingzpos) + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gz = gzt - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
 	}
 
@@ -4266,12 +4274,12 @@ void HWR_ProjectSprite(mobj_t *thing)
 	if (heightsec != -1 && phs != -1) // only clip things which are in special sectors
 	{
 		if (gr_viewz < FIXED_TO_FLOAT(sectors[phs].floorheight) ?
-		FIXED_TO_FLOAT(thing->z) >= FIXED_TO_FLOAT(sectors[heightsec].floorheight) :
+		FIXED_TO_FLOAT(thingzpos) >= FIXED_TO_FLOAT(sectors[heightsec].floorheight) :
 		gzt < FIXED_TO_FLOAT(sectors[heightsec].floorheight))
 			return;
 		if (gr_viewz > FIXED_TO_FLOAT(sectors[phs].ceilingheight) ?
 		gzt < FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) && gr_viewz >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) :
-		FIXED_TO_FLOAT(thing->z) >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight))
+		FIXED_TO_FLOAT(thingzpos) >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight))
 			return;
 	}
 
