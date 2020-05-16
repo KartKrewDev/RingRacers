@@ -1249,29 +1249,45 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	}
 
 	// Less gravity underwater.
-	if (mo->eflags & MFE_UNDERWATER && !goopgravity)
-		gravityadd = gravityadd/3;
+	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity)
+	{
+		if (mo->momz * P_MobjFlip(mo) <= 0)
+		{
+			gravityadd = 4*gravityadd/3;
+		}
+		else
+		{
+			gravityadd = gravityadd/3;
+		}
+	}
 
 	if (mo->player)
 	{
-		//if ((mo->player->pflags & PF_GLIDING)
-		//|| (mo->player->charability == CA_FLY && (mo->player->powers[pw_tailsfly]
-		//	|| (mo->state >= &states[S_PLAY_SPC1] && mo->state <= &states[S_PLAY_SPC4]))))
-		//	gravityadd = gravityadd/3; // less gravity while flying/gliding
 		if (mo->player->climbing || (mo->player->pflags & PF_NIGHTSMODE))
+		{
 			return 0;
+		}
 
 		if (!(mo->flags2 & MF2_OBJECTFLIP) != !(mo->player->powers[pw_gravityboots])) // negated to turn numeric into bool - would be double negated, but not needed if both would be
 		{
 			gravityadd = -gravityadd;
 			mo->eflags ^= MFE_VERTICALFLIP;
 		}
+
 		if (wasflip == !(mo->eflags & MFE_VERTICALFLIP)) // note!! == ! is not equivalent to != here - turns numeric into bool this way
+		{
 			P_PlayerFlip(mo);
+		}
+
 		if (mo->player->kartstuff[k_pogospring])
+		{
 			gravityadd = (5*gravityadd)/2;
+		}
+
 		if (mo->player->kartstuff[k_waterskip])
+		{
 			gravityadd = (4*gravityadd)/3;
+		}
 	}
 	else
 	{
@@ -1279,10 +1295,15 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		if (mo->flags2 & MF2_OBJECTFLIP)
 		{
 			mo->eflags |= MFE_VERTICALFLIP;
+
 			if (mo->z + mo->height >= mo->ceilingz)
+			{
 				gravityadd = 0;
+			}
 			else if (gravityadd < 0) // Don't sink, only rise up
-				gravityadd *= -1;
+			{
+				gravityadd = -gravityadd;
+			}
 		}
 		else //Otherwise, sort through the other exceptions.
 		{
@@ -1317,7 +1338,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 					}
 					break;
 				case MT_WATERDROP:
-					gravityadd >>= 1;
+					gravityadd /= 2;
 					break;
 				case MT_BANANA:
 				case MT_EGGMANITEM:
@@ -1342,7 +1363,9 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 	// Goop has slower, reversed gravity
 	if (goopgravity)
+	{
 		gravityadd = -gravityadd/5;
+	}
 
 	gravityadd = FixedMul(gravityadd, mo->scale);
 
@@ -12666,9 +12689,17 @@ ML_NOCLIMB : Direction not controllable
 		break;
 	case MT_WAYPOINT:
 	{
+		const fixed_t mobjscale =
+			mapheaderinfo[gamemap-1]->default_waypoint_radius;
+
 		// Just like MT_SPINMACEPOINT, this now works here too!
 		INT32 line = P_FindSpecialLineFromTag(2000, mthing->angle, -1);
-		mobj->radius = 384*FRACUNIT;
+
+		if (mobjscale == 0)
+			mobj->radius = DEFAULT_WAYPOINT_RADIUS * mapobjectscale;
+		else
+			mobj->radius = mobjscale;
+
 		// Set the radius, mobj z, and mthing z to match what the parameters want
 		if (line != -1)
 		{
