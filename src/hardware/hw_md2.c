@@ -1121,6 +1121,10 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 
 	// Look at HWR_ProjectSprite for more
 	{
+		const fixed_t thingxpos = spr->mobj->x + spr->mobj->sprxoff;
+		const fixed_t thingypos = spr->mobj->y + spr->mobj->spryoff;
+		const fixed_t thingzpos = spr->mobj->z + spr->mobj->sprzoff;
+
 		GLPatch_t *gpatch;
 		INT32 durs = spr->mobj->state->tics;
 		INT32 tics = spr->mobj->tics;
@@ -1266,13 +1270,13 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 #endif
 
 		//Hurdler: it seems there is still a small problem with mobj angle
-		p.x = FIXED_TO_FLOAT(spr->mobj->x);
-		p.y = FIXED_TO_FLOAT(spr->mobj->y)+md2->offset;
+		p.x = FIXED_TO_FLOAT(thingxpos);
+		p.y = FIXED_TO_FLOAT(thingypos) + md2->offset;
 
 		if (spr->mobj->eflags & MFE_VERTICALFLIP)
-			p.z = FIXED_TO_FLOAT(spr->mobj->z + spr->mobj->height);
+			p.z = FIXED_TO_FLOAT(thingzpos + spr->mobj->height);
 		else
-			p.z = FIXED_TO_FLOAT(spr->mobj->z);
+			p.z = FIXED_TO_FLOAT(thingzpos);
 
 		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			sprdef = &((skin_t *)spr->mobj->skin)->spritedef;
@@ -1292,7 +1296,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		}
 		else
 		{
-			const fixed_t anglef = AngleFixed((R_PointToAngle(spr->mobj->x, spr->mobj->y))-ANGLE_180);
+			const fixed_t anglef = AngleFixed((R_PointToAngle(thingxpos, thingypos))-ANGLE_180);
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 		p.anglex = 0.0f;
