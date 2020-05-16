@@ -249,9 +249,11 @@ void D_ProcessEvents(void)
 			continue; // menu ate the event
 
 		// Demo input:
-		//if (demo.playback)
-			//if (M_DemoResponder(ev))
-				//continue;	// demo ate the event
+		/*
+		if (demo.playback)
+			if (M_DemoResponder(ev))
+				continue;	// demo ate the event
+		*/
 
 		// console input
 		if (CON_Responder(ev))
@@ -332,7 +334,7 @@ static void D_Display(void)
 		}
 		else //dedicated servers
 		{
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false, false);
 			wipegamestate = gamestate;
 		}
 	}

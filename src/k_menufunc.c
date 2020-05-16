@@ -1323,9 +1323,6 @@ void M_Init(void)
 #ifndef NONET
 	CV_RegisterVar(&cv_serversort);
 #endif
-
-	//todo put this somewhere better...
-	CV_RegisterVar(&cv_allcaps);
 }
 
 // ==================================================
@@ -2266,11 +2263,6 @@ void M_LevelSelectHandler(INT32 choice)
 
 					// Still need to reset devmode
 					cv_debug = 0;
-
-					if (strlen(cv_dummyjoinpassword.string) > 0)
-						D_SetJoinPassword(cv_dummyjoinpassword.string);
-					else
-						joinpasswordset = false;
 
 					if (demo.playback)
 						G_StopDemo();

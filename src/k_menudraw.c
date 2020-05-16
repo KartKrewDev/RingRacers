@@ -500,17 +500,15 @@ void M_DrawMessageMenu(void)
 // You can even put multiple images in one menu!
 void M_DrawImageDef(void)
 {
-	// Grr.  Need to autodetect for pic_ts.
-	pic_t *pictest = (pic_t *)W_CachePatchName(currentMenu->menuitems[itemOn].patch, PU_CACHE);
-	if (!pictest->zero)
-		V_DrawScaledPic(0,0,0,W_GetNumForName(currentMenu->menuitems[itemOn].patch));
+	patch_t *patch = W_CachePatchName(currentMenu->menuitems[itemOn].text, PU_CACHE);
+
+	if (patch->width <= BASEVIDWIDTH)
+	{
+		V_DrawScaledPatch(0, 0, 0, patch);
+	}
 	else
 	{
-		patch_t *patch = W_CachePatchName(currentMenu->menuitems[itemOn].patch, PU_CACHE);
-		if (patch->height <= BASEVIDHEIGHT)
-			V_DrawScaledPatch(0,0,0,patch);
-		else
-			V_DrawSmallScaledPatch(0,0,0,patch);
+		V_DrawSmallScaledPatch(0, 0, 0, patch);
 	}
 
 	if (currentMenu->menuitems[itemOn].mvar1)
@@ -658,7 +656,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 		if (skin != -1)
 		{
-			statenum_t st = S_KART_WALK1;
+			statenum_t st = S_KART_FAST1;
 			UINT32 flags = 0;
 			UINT32 frame;
 
