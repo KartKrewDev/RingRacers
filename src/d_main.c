@@ -249,9 +249,9 @@ void D_ProcessEvents(void)
 			continue; // menu ate the event
 
 		// Demo input:
-		if (demo.playback)
-			if (M_DemoResponder(ev))
-				continue;	// demo ate the event
+		//if (demo.playback)
+			//if (M_DemoResponder(ev))
+				//continue;	// demo ate the event
 
 		// console input
 		if (CON_Responder(ev))
