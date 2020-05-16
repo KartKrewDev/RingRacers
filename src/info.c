@@ -20,9 +20,6 @@
 #include "z_zone.h"
 #include "d_player.h"
 #include "lzf.h"
-#ifdef HWRENDER
-#include "hardware/hw_light.h"
-#endif
 
 // Hey, moron! If you change this table, don't forget about the sprite enum in info.h and the sprite lights in hw_light.c!
 char sprnames[NUMSPRITES + 1][5] =
@@ -112,7 +109,7 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY,  10,   1, {NULL}, 0, 0, S_KART_SLOW2_L},			// S_KART_SLOW1_L		K
 	{SPR_PLAY,   7,   1, {NULL}, 0, 0, S_KART_SLOW1_L},			// S_KART_SLOW2_L		H
 	{SPR_PLAY,  11,   1, {NULL}, 0, 0, S_KART_SLOW2_R},			// S_KART_SLOW1_R		L
-	{SPR_PLAY,   8,   1, {NULL}, 0, 0, S_KART_SLOW1_R},			// S_KART_SLOW1_R		I
+	{SPR_PLAY,   8,   1, {NULL}, 0, 0, S_KART_SLOW1_R},			// S_KART_SLOW2_R		I
 	{SPR_PLAY,   0,   1, {NULL}, 0, 0, S_KART_FAST2},			// S_KART_FAST1			A
 	{SPR_PLAY,   9,   1, {NULL}, 0, 0, S_KART_FAST1},			// S_KART_FAST2			J
 	{SPR_PLAY,   2,   1, {NULL}, 0, 0, S_KART_FAST2_L},			// S_KART_FAST1_L		C
@@ -121,7 +118,7 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY,  11,   1, {NULL}, 0, 0, S_KART_FAST1_R},			// S_KART_FAST2_R		L
 	{SPR_PLAY,  12,   1, {NULL}, 0, 0, S_KART_DRIFT2_L},		// S_KART_DRIFT1_L		M
 	{SPR_PLAY,  13,   1, {NULL}, 0, 0, S_KART_DRIFT1_L},		// S_KART_DRIFT2_L		N
-	{SPR_PLAY,  12,   1, {NULL}, 0, 0, S_KART_DRIFT2_L_OUT},	// S_KART_DRIFT1_L_OUT	M
+	{SPR_PLAY,  13,   1, {NULL}, 0, 0, S_KART_DRIFT2_L_OUT},	// S_KART_DRIFT1_L_OUT	N
 	{SPR_PLAY,  14,   1, {NULL}, 0, 0, S_KART_DRIFT1_L_OUT},	// S_KART_DRIFT2_L_OUT	O
 	{SPR_PLAY,  13,   1, {NULL}, 0, 0, S_KART_DRIFT2_L_IN},		// S_KART_DRIFT1_L_IN	N
 	{SPR_PLAY,  15,   1, {NULL}, 0, 0, S_KART_DRIFT3_L_IN},		// S_KART_DRIFT2_L_IN	P
@@ -129,7 +126,7 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY,  16,   1, {NULL}, 0, 0, S_KART_DRIFT1_L_IN},		// S_KART_DRIFT4_L_IN	Q
 	{SPR_PLAY,  17,   1, {NULL}, 0, 0, S_KART_DRIFT2_R},		// S_KART_DRIFT1_R		R
 	{SPR_PLAY,  18,   1, {NULL}, 0, 0, S_KART_DRIFT1_R},		// S_KART_DRIFT2_R		S
-	{SPR_PLAY,  17,   1, {NULL}, 0, 0, S_KART_DRIFT2_R_OUT},	// S_KART_DRIFT1_R_OUT	R
+	{SPR_PLAY,  18,   1, {NULL}, 0, 0, S_KART_DRIFT2_R_OUT},	// S_KART_DRIFT1_R_OUT	S
 	{SPR_PLAY,  19,   1, {NULL}, 0, 0, S_KART_DRIFT1_R_OUT},	// S_KART_DRIFT2_R_OUT	T
 	{SPR_PLAY,  18,   1, {NULL}, 0, 0, S_KART_DRIFT2_R_IN},		// S_KART_DRIFT1_R_IN	S
 	{SPR_PLAY,  20,   1, {NULL}, 0, 0, S_KART_DRIFT3_R_IN},		// S_KART_DRIFT2_R_IN	U
@@ -20793,7 +20790,7 @@ void P_PatchInfoTables(void)
 	char *tempname;
 
 #if NUMSPRITEFREESLOTS > 1000
-"Update P_PatchInfoTables, you big dumb head"
+#error "Update P_PatchInfoTables, you big dumb head"
 #endif
 
 	// empty out free slots
@@ -20805,9 +20802,6 @@ void P_PatchInfoTables(void)
 		tempname[2] = (char)('0' + (char)(((i-SPR_FIRSTFREESLOT+1)/10)%10));
 		tempname[3] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)%10));
 		tempname[4] = '\0';
-#ifdef HWRENDER
-		t_lspr[i] = &lspr[NOLIGHT];
-#endif
 	}
 	sprnames[i][0] = '\0'; // i == NUMSPRITES
 	memset(&states[S_FIRSTFREESLOT], 0, sizeof (state_t) * NUMSTATEFREESLOTS);

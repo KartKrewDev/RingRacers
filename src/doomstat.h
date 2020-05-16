@@ -290,6 +290,7 @@ typedef struct
 	// SRB2kart
 	//boolean automap;    ///< Displays a level's white map outline in modified games
 	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
+	fixed_t default_waypoint_radius; ///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
 	// Music stuff.
 	UINT32 musinterfadeout;  ///< Fade out level music on intermission screen in milliseconds
@@ -484,7 +485,7 @@ extern UINT8 maxXtraLife; // Max extra lives from rings
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
 // For racing
-extern UINT32 countdown, countdown2;
+extern tic_t racecountdown, exitcountdown;
 
 extern fixed_t gravity;
 extern fixed_t mapobjectscale;
@@ -584,7 +585,7 @@ extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
 extern consvar_t cv_jointimeout;
 extern consvar_t cv_maxping;
-extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
+extern ticcmd_t netcmds[TICQUEUE][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];
 
