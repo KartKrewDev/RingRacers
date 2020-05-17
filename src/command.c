@@ -547,10 +547,7 @@ static void COM_ExecuteString(char *ptext)
 		if (!stricmp(com_argv[0], a->name))
 		{
 			if (recursion > MAX_ALIAS_RECURSION)
-			{	
 				CONS_Alert(CONS_WARNING, M_GetText("Alias recursion cycle detected!\n"));
-				recursion = 0;
-			}
 			else
 			{
 				char buf[1024];
@@ -582,8 +579,10 @@ static void COM_ExecuteString(char *ptext)
 				}
 				WRITESTRING(write, read);
 
+				// Monster Iestyn: keep track of how many levels of recursion we're in
 				recursion++;
 				COM_BufInsertText(buf);
+				recursion--;
 			}
 			return;
 		}
