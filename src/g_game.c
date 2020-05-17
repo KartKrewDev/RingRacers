@@ -7716,7 +7716,7 @@ void G_AddGhost(char *defdemoname)
 		}
 		gh->mo->z = z;
 	}
-	gh->mo->state = states+S_KART_STND1; // SRB2kart - was S_PLAY_STND
+	gh->mo->state = states+S_KART_STILL1; // SRB2kart - was S_PLAY_STND
 	gh->mo->sprite = gh->mo->state->sprite;
 	gh->mo->frame = (gh->mo->state->frame & FF_FRAMEMASK) | tr_trans20<<FF_TRANSSHIFT;
 	gh->mo->tics = -1;

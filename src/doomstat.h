@@ -290,6 +290,7 @@ typedef struct
 	// SRB2kart
 	//boolean automap;    ///< Displays a level's white map outline in modified games
 	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
+	fixed_t default_waypoint_radius; ///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
 	// Music stuff.
 	UINT32 musinterfadeout;  ///< Fade out level music on intermission screen in milliseconds
