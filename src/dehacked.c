@@ -1164,6 +1164,8 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}*/
 			else if (fastcmp(word, "MOBJSCALE"))
 				mapheaderinfo[num-1]->mobj_scale = get_number(word2);
+			else if (fastcmp(word, "DEFAULTWAYPOINTRADIUS"))
+				mapheaderinfo[num-1]->default_waypoint_radius = get_number(word2);
 
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))
@@ -3755,88 +3757,52 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_THOK",
 
 	// SRB2kart Frames
-	"S_KART_STND1",
-	"S_KART_STND2",
-	"S_KART_STND1_L",
-	"S_KART_STND2_L",
-	"S_KART_STND1_R",
-	"S_KART_STND2_R",
-	"S_KART_WALK1",
-	"S_KART_WALK2",
-	"S_KART_WALK1_L",
-	"S_KART_WALK2_L",
-	"S_KART_WALK1_R",
-	"S_KART_WALK2_R",
-	"S_KART_RUN1",
-	"S_KART_RUN2",
-	"S_KART_RUN1_L",
-	"S_KART_RUN2_L",
-	"S_KART_RUN1_R",
-	"S_KART_RUN2_R",
+	"S_KART_STILL1",
+	"S_KART_STILL2",
+	"S_KART_STILL1_L",
+	"S_KART_STILL2_L",
+	"S_KART_STILL1_R",
+	"S_KART_STILL2_R",
+
+	"S_KART_SLOW1",
+	"S_KART_SLOW2",
+	"S_KART_SLOW1_L",
+	"S_KART_SLOW2_L",
+	"S_KART_SLOW1_R",
+	"S_KART_SLOW2_R",
+
+	"S_KART_FAST1",
+	"S_KART_FAST2",
+	"S_KART_FAST1_L",
+	"S_KART_FAST2_L",
+	"S_KART_FAST1_R",
+	"S_KART_FAST2_R",
+
 	"S_KART_DRIFT1_L",
 	"S_KART_DRIFT2_L",
+
+	"S_KART_DRIFT1_L_OUT",
+	"S_KART_DRIFT2_L_OUT",
+
+	"S_KART_DRIFT1_L_IN",
+	"S_KART_DRIFT2_L_IN",
+	"S_KART_DRIFT3_L_IN",
+	"S_KART_DRIFT4_L_IN",
+
 	"S_KART_DRIFT1_R",
 	"S_KART_DRIFT2_R",
+
+	"S_KART_DRIFT1_R_OUT",
+	"S_KART_DRIFT2_R_OUT",
+
+	"S_KART_DRIFT1_R_IN",
+	"S_KART_DRIFT2_R_IN",
+	"S_KART_DRIFT3_R_IN",
+	"S_KART_DRIFT4_R_IN",
+
 	"S_KART_SPIN",
 	"S_KART_PAIN",
 	"S_KART_SQUISH",
-	/*
-	"S_PLAY_STND",
-	"S_PLAY_TAP1",
-	"S_PLAY_TAP2",
-	"S_PLAY_RUN1",
-	"S_PLAY_RUN2",
-	"S_PLAY_RUN3",
-	"S_PLAY_RUN4",
-	"S_PLAY_RUN5",
-	"S_PLAY_RUN6",
-	"S_PLAY_RUN7",
-	"S_PLAY_RUN8",
-	"S_PLAY_SPD1",
-	"S_PLAY_SPD2",
-	"S_PLAY_SPD3",
-	"S_PLAY_SPD4",
-	"S_PLAY_ATK1",
-	"S_PLAY_ATK2",
-	"S_PLAY_ATK3",
-	"S_PLAY_ATK4",
-	"S_PLAY_SPRING",
-	"S_PLAY_FALL1",
-	"S_PLAY_FALL2",
-	"S_PLAY_ABL1",
-	"S_PLAY_ABL2",
-	"S_PLAY_SPC1",
-	"S_PLAY_SPC2",
-	"S_PLAY_SPC3",
-	"S_PLAY_SPC4",
-	"S_PLAY_CLIMB1",
-	"S_PLAY_CLIMB2",
-	"S_PLAY_CLIMB3",
-	"S_PLAY_CLIMB4",
-	"S_PLAY_CLIMB5",
-	"S_PLAY_GASP",
-	"S_PLAY_PAIN",
-	"S_PLAY_DIE",
-	"S_PLAY_TEETER1",
-	"S_PLAY_TEETER2",
-	"S_PLAY_CARRY",
-	"S_PLAY_SUPERSTAND",
-	"S_PLAY_SUPERWALK1",
-	"S_PLAY_SUPERWALK2",
-	"S_PLAY_SUPERFLY1",
-	"S_PLAY_SUPERFLY2",
-	"S_PLAY_SUPERTEETER",
-	"S_PLAY_SUPERHIT",
-	"S_PLAY_SUPERTRANS1",
-	"S_PLAY_SUPERTRANS2",
-	"S_PLAY_SUPERTRANS3",
-	"S_PLAY_SUPERTRANS4",
-	"S_PLAY_SUPERTRANS5",
-	"S_PLAY_SUPERTRANS6",
-	"S_PLAY_SUPERTRANS7",
-	"S_PLAY_SUPERTRANS8",
-	"S_PLAY_SUPERTRANS9", // This has special significance in the code. If you add more frames, search for it and make the appropriate changes.
-	*/
 
 	// technically the player goes here but it's an infinite tic state
 	"S_OBJPLACE_DUMMY",
@@ -8149,6 +8115,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"GREY",			// SKINCOLOR_GREY
 	"NICKEL",		// SKINCOLOR_NICKEL
 	"BLACK",		// SKINCOLOR_BLACK
+	"SKUNK",		// SKINCOLOR_SKUNK
 	"FAIRY",		// SKINCOLOR_FAIRY
 	"POPCORN",		// SKINCOLOR_POPCORN
 	"ARTICHOKE",	// SKINCOLOR_ARTICHOKE
@@ -8159,7 +8126,6 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"PEACH",		// SKINCOLOR_PEACH
 	"BROWN",		// SKINCOLOR_BROWN
 	"LEATHER",		// SKINCOLOR_LEATHER
-	"SALMON",		// SKINCOLOR_SALMON
 	"PINK",			// SKINCOLOR_PINK
 	"ROSE",			// SKINCOLOR_ROSE
 	"CINNAMON",		// SKINCOLOR_CINNAMON
@@ -8197,7 +8163,6 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"PISTACHIO",	// SKINCOLOR_PISTACHIO
 	"MOSS",			// SKINCOLOR_MOSS
 	"CAMOUFLAGE",	// SKINCOLOR_CAMOUFLAGE
-	"ROBOHOOD",		// SKINCOLOR_ROBOHOOD
 	"MINT",			// SKINCOLOR_MINT
 	"GREEN",		// SKINCOLOR_GREEN
 	"PINETREE",		// SKINCOLOR_PINETREE
@@ -8207,11 +8172,10 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"PLAGUE",		// SKINCOLOR_PLAGUE
 	"EMERALD",		// SKINCOLOR_EMERALD
 	"ALGAE",		// SKINCOLOR_ALGAE
-	"CARIBBEAN",	// SKINCOLOR_CARIBBEAN
-	"AZURE",		// SKINCOLOR_AZURE
 	"AQUAMARINE",	// SKINCOLOR_AQUAMARINE
 	"TURQUOISE",	// SKINCOLOR_TURQUOISE
 	"TEAL",			// SKINCOLOR_TEAL
+	"ROBIN",		// SKINCOLOR_ROBIN
 	"CYAN",			// SKINCOLOR_CYAN
 	"JAWZ",			// SKINCOLOR_JAWZ
 	"CERULEAN",		// SKINCOLOR_CERULEAN
@@ -8228,6 +8192,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"ULTRAMARINE",	// SKINCOLOR_ULTRAMARINE
 	"PERIWINKLE",	// SKINCOLOR_PERIWINKLE
 	"BLUE",			// SKINCOLOR_BLUE
+	"MIDNIGHT",		// SKINCOLOR_MIDNIGHT
 	"BLUEBERRY",	// SKINCOLOR_BLUEBERRY
 	"THISTLE",		// SKINCOLOR_THISTLE
 	"PURPLE",		// SKINCOLOR_PURPLE
@@ -8243,6 +8208,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"BYZANTIUM",	// SKINCOLOR_BYZANTIUM
 	"POMEGRANATE",	// SKINCOLOR_POMEGRANATE
 	"LILAC",		// SKINCOLOR_LILAC
+	"BLOSSOM",		// SKINCOLOR_BLOSSOM
 	"TAFFY",		// SKINCOLOR_TAFFY
 
 	// Special super colors

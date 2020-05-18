@@ -37,6 +37,7 @@
 
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_color.h"
 
 // protos.
 //static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
@@ -211,11 +212,11 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 	// Set animation state
 	// The pflags version of this was just as convoluted.
 	// Rewriten for SRB2kart ... though I don't know what this is.
-	if ((state >= S_KART_STND1 && state <= S_KART_STND2_R) || state == S_KART_SQUISH || state == S_KART_SPIN)
+	if ((state >= S_KART_STILL1 && state <= S_KART_STILL2_R) || state == S_KART_SQUISH || state == S_KART_SPIN)
 		player->panim = PA_IDLE;
-	else if (state >= S_KART_WALK1 && state <= S_KART_WALK2_R)
+	else if (state >= S_KART_SLOW1 && state <= S_KART_SLOW2_R)
 		player->panim = PA_WALK;
-	else if (state >= S_KART_RUN1 && state <= S_KART_DRIFT2_R)
+	else if (state >= S_KART_FAST1 && state <= S_KART_DRIFT2_R)
 		player->panim = PA_RUN;
 	//else if (state >= S_PLAY_ATK1 && state <= S_PLAY_ATK4)
 	//	player->panim = PA_ROLL;
@@ -1248,29 +1249,45 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	}
 
 	// Less gravity underwater.
-	if (mo->eflags & MFE_UNDERWATER && !goopgravity)
-		gravityadd = gravityadd/3;
+	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity)
+	{
+		if (mo->momz * P_MobjFlip(mo) <= 0)
+		{
+			gravityadd = 4*gravityadd/3;
+		}
+		else
+		{
+			gravityadd = gravityadd/3;
+		}
+	}
 
 	if (mo->player)
 	{
-		//if ((mo->player->pflags & PF_GLIDING)
-		//|| (mo->player->charability == CA_FLY && (mo->player->powers[pw_tailsfly]
-		//	|| (mo->state >= &states[S_PLAY_SPC1] && mo->state <= &states[S_PLAY_SPC4]))))
-		//	gravityadd = gravityadd/3; // less gravity while flying/gliding
 		if (mo->player->climbing || (mo->player->pflags & PF_NIGHTSMODE))
+		{
 			return 0;
+		}
 
 		if (!(mo->flags2 & MF2_OBJECTFLIP) != !(mo->player->powers[pw_gravityboots])) // negated to turn numeric into bool - would be double negated, but not needed if both would be
 		{
 			gravityadd = -gravityadd;
 			mo->eflags ^= MFE_VERTICALFLIP;
 		}
+
 		if (wasflip == !(mo->eflags & MFE_VERTICALFLIP)) // note!! == ! is not equivalent to != here - turns numeric into bool this way
+		{
 			P_PlayerFlip(mo);
+		}
+
 		if (mo->player->kartstuff[k_pogospring])
+		{
 			gravityadd = (5*gravityadd)/2;
+		}
+
 		if (mo->player->kartstuff[k_waterskip])
+		{
 			gravityadd = (4*gravityadd)/3;
+		}
 	}
 	else
 	{
@@ -1278,10 +1295,15 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		if (mo->flags2 & MF2_OBJECTFLIP)
 		{
 			mo->eflags |= MFE_VERTICALFLIP;
+
 			if (mo->z + mo->height >= mo->ceilingz)
+			{
 				gravityadd = 0;
+			}
 			else if (gravityadd < 0) // Don't sink, only rise up
-				gravityadd *= -1;
+			{
+				gravityadd = -gravityadd;
+			}
 		}
 		else //Otherwise, sort through the other exceptions.
 		{
@@ -1316,7 +1338,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 					}
 					break;
 				case MT_WATERDROP:
-					gravityadd >>= 1;
+					gravityadd /= 2;
 					break;
 				case MT_BANANA:
 				case MT_EGGMANITEM:
@@ -1341,7 +1363,9 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 	// Goop has slower, reversed gravity
 	if (goopgravity)
+	{
 		gravityadd = -gravityadd/5;
+	}
 
 	gravityadd = FixedMul(gravityadd, mo->scale);
 
@@ -1445,7 +1469,7 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 		{
 			// if in a walking frame, stop moving
 			if (player->panim == PA_WALK && player->kartstuff[k_spinouttimer] == 0)
-				P_SetPlayerMobjState(mo, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+				P_SetPlayerMobjState(mo, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 			mo->momx = player->cmomx;
 			mo->momy = player->cmomy;
 		}
@@ -2735,7 +2759,7 @@ static void P_PlayerZMovement(mobj_t *mo)
 		// Get up if you fell.
 		if ((mo->state == &states[mo->info->painstate] || mo->state == &states[S_KART_SPIN])
 			&& mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->kartstuff[k_squishedtimer] == 0) // SRB2kart
-			P_SetPlayerMobjState(mo, S_KART_STND1);
+			P_SetPlayerMobjState(mo, S_KART_STILL1);
 
 #ifdef ESLOPE
 		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope)) {
@@ -3848,7 +3872,7 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		{
 			mobj->player->secondjump = 0;
 			mobj->player->powers[pw_tailsfly] = 0;
-			P_SetPlayerMobjState(mobj, S_KART_WALK1); // SRB2kart - was S_PLAY_RUN1
+			P_SetPlayerMobjState(mobj, S_KART_SLOW1); // SRB2kart - was S_PLAY_RUN1
 		}
 		mobj->eflags &= ~MFE_JUSTHITFLOOR;
 	}
@@ -11934,7 +11958,7 @@ void P_AfterPlayerSpawn(INT32 playernum)
 	else
 		p->viewz = p->mo->z + p->viewheight;
 
-	P_SetPlayerMobjState(p->mo, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+	P_SetPlayerMobjState(p->mo, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 	p->pflags &= ~PF_SPINNING;
 
 	if (playernum == consoleplayer)
@@ -12672,9 +12696,17 @@ ML_NOCLIMB : Direction not controllable
 		break;
 	case MT_WAYPOINT:
 	{
+		const fixed_t mobjscale =
+			mapheaderinfo[gamemap-1]->default_waypoint_radius;
+
 		// Just like MT_SPINMACEPOINT, this now works here too!
 		INT32 line = P_FindSpecialLineFromTag(2000, mthing->angle, -1);
-		mobj->radius = 384 * mapobjectscale;
+
+		if (mobjscale == 0)
+			mobj->radius = DEFAULT_WAYPOINT_RADIUS * mapobjectscale;
+		else
+			mobj->radius = mobjscale;
+
 		// Set the radius, mobj z, and mthing z to match what the parameters want
 		if (line != -1)
 		{
@@ -12981,16 +13013,30 @@ ML_NOCLIMB : Direction not controllable
 
 	mobj->angle = FixedAngle(mthing->angle*FRACUNIT);
 
+	if ((mobj->flags & MF_SPRING)
+	&& mobj->info->damage != 0
+	&& mobj->info->mass == 0)
+	{
+		// Offset sprite of horizontal springs
+		angle_t a = mobj->angle + ANGLE_180;
+		mobj->sprxoff = FixedMul(mobj->radius, FINECOSINE(a >> ANGLETOFINESHIFT));
+		mobj->spryoff = FixedMul(mobj->radius, FINESINE(a >> ANGLETOFINESHIFT));
+	}
+
 	if ((mthing->options & MTF_AMBUSH)
 	&& (mthing->options & MTF_OBJECTSPECIAL)
 	&& (mobj->flags & MF_PUSHABLE))
+	{
 		mobj->flags2 |= MF2_CLASSICPUSH;
+	}
 	else
 	{
 		if (mthing->options & MTF_AMBUSH)
 		{
-			if (mobj->flags & MF_SPRING && mobj->info->damage)
+			if ((mobj->flags & MF_SPRING) && mobj->info->damage)
+			{
 				mobj->angle += ANGLE_22h;
+			}
 
 			if (mobj->flags & MF_NIGHTSITEM)
 			{

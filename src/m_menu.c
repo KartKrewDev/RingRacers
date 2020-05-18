@@ -59,6 +59,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_pwrlv.h"
 #include "d_player.h" // KITEM_ constants
+#include "k_color.h"
 
 #include "i_joy.h" // for joystick menu controls
 

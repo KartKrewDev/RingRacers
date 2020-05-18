@@ -27,6 +27,7 @@
 #include "console.h"
 #include "k_kart.h" // SRB2Kart
 #include "k_battle.h"
+#include "k_color.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 
 #include "lua_script.h"
