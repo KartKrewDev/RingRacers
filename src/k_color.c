@@ -7,8 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  k_color.c
-/// \brief Waypoint handling from the relevant mobjs
-///        Setup and interfacing with waypoints for the main game
+/// \brief Skincolor & colormapping code
 
 #include "k_color.h"
 
