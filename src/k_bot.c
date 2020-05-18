@@ -270,10 +270,13 @@ fixed_t K_BotRubberband(player_t *player)
 			continue;
 		}
 
-		/*if (players[i].bot)
+#if 0
+		// Only rubberband up to players.
+		if (players[i].bot)
 		{
 			continue;
-		}*/
+		}
+#endif
 
 		if (firstplace == NULL || players[i].distancetofinish < firstplace->distancetofinish)
 		{
@@ -413,36 +416,11 @@ fixed_t eggboxx, eggboxy;
 UINT8 randomitems = 0;
 UINT8 eggboxes = 0;
 
-static boolean K_FindRandomItems(mobj_t *thing)
-{
-	fixed_t dist;
-
-	if (thing->type != MT_RANDOMITEM)
-	{
-		return true;
-	}
-
-	if (!thing->health)
-	{
-		return true;
-	}
-
-	dist = P_AproxDistance(thing->x - eggboxx, thing->y - eggboxy);
-
-	if (dist > distancetocheck)
-	{
-		return true;
-	}
-
-	randomitems++;
-	return true;
-}
-
 static boolean K_FindEggboxes(mobj_t *thing)
 {
 	fixed_t dist;
 
-	if (thing->type != MT_EGGMANITEM)
+	if (thing->type != MT_RANDOMITEM && thing->type != MT_EGGMANITEM)
 	{
 		return true;
 	}
@@ -459,7 +437,14 @@ static boolean K_FindEggboxes(mobj_t *thing)
 		return true;
 	}
 
-	eggboxes++;
+	if (thing->type == MT_RANDOMITEM)
+	{
+		randomitems++;
+	}
+	else
+	{
+		eggboxes++;
+	}
 	return true;
 }
 
@@ -484,19 +469,11 @@ static UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 	{
 		for (by = yl; by <= yh; by++)
 		{
-			P_BlockThingsIterator(bx, by, K_FindRandomItems);
-		}
-	}
-
-	for (bx = xl; bx <= xh; bx++)
-	{
-		for (by = yl; by <= yh; by++)
-		{
 			P_BlockThingsIterator(bx, by, K_FindEggboxes);
 		}
 	}
 
-	return randomitems * eggboxes;
+	return (randomitems * eggboxes);
 }
 
 static inline boolean K_FindBlockingWalls(line_t *line)
