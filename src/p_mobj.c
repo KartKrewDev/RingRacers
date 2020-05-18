@@ -37,6 +37,7 @@
 
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_color.h"
 
 // protos.
 //static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
