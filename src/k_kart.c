@@ -3347,7 +3347,7 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 			P_StartQuake(55<<FRACBITS, 12);
 			if (!bombflashtimer && P_CheckSight(p->mo, source))
 			{
-				bombflashtimer = TICRATE*5;
+				bombflashtimer = TICRATE*2;
 				P_FlashPal(p, 1, 1);
 			}
 			break;	// we can break right now because quakes are global to all split players somehow.
