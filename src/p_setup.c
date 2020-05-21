@@ -446,6 +446,26 @@ static inline float P_SegLengthFloat(seg_t *seg)
 }
 #endif
 
+/** Updates the light offset
+  *
+  * \param li Seg to update the light offsets of
+  */
+void P_UpdateSegLightOffset(seg_t *li)
+{
+	fixed_t extralight = 0;
+
+	extralight = -(8*FRACUNIT) +
+		FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
+		abs(li->v1->x - li->v2->x),
+		abs(li->v1->y - li->v2->y))), 90*FRACUNIT) * 16;
+
+	// Between -1 and 1 for software, -8 and 8 for hardware
+	li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+#ifdef HWRENDER
+	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+#endif
+}
+
 /** Loads the SEGS resource from a level.
   *
   * \param lump Lump number of the SEGS resource.
@@ -494,16 +514,7 @@ static void P_LoadRawSegs(UINT8 *data, size_t i)
 		li->numlights = 0;
 		li->rlights = NULL;
 
-		extralight = -(8*FRACUNIT) +
-			FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
-			abs(li->v1->x - li->v2->x),
-			abs(li->v1->y - li->v2->y))), 90*FRACUNIT) * 16;
-
-		// Between -1 and 1 for software, -8 and 8 for hardware
-		li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
-#ifdef HWRENDER
-		li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
-#endif
+		P_UpdateSegLightOffset(li);
 	}
 }
 
