@@ -446,6 +446,27 @@ static inline float P_SegLengthFloat(seg_t *seg)
 }
 #endif
 
+/** Updates the light offset
+  *
+  * \param li Seg to update the light offsets of
+  */
+void P_UpdateSegLightOffset(seg_t *li)
+{
+	const UINT8 contrast = 16;
+	fixed_t extralight = 0;
+
+	extralight = -((fixed_t)contrast*FRACUNIT) +
+		FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
+		abs(li->v1->x - li->v2->x),
+		abs(li->v1->y - li->v2->y))), 90*FRACUNIT) * ((fixed_t)contrast * 2);
+
+	// Between -2 and 2 for software, -16 and 16 for hardware
+	li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+#ifdef HWRENDER
+	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+#endif
+}
+
 /** Loads the SEGS resource from a level.
   *
   * \param lump Lump number of the SEGS resource.
@@ -492,6 +513,8 @@ static void P_LoadRawSegs(UINT8 *data, size_t i)
 
 		li->numlights = 0;
 		li->rlights = NULL;
+
+		P_UpdateSegLightOffset(li);
 	}
 }
 
@@ -1091,7 +1114,7 @@ static void P_LoadThings(void)
 			|| mt->type == 1705 || mt->type == 1713 || mt->type == 1800)
 		{
 			sector_t *mtsector = R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
-	
+
 			mt->mobj = NULL;
 
 			// Z for objects
