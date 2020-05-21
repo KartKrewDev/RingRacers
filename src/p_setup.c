@@ -457,6 +457,7 @@ static void P_LoadRawSegs(UINT8 *data, size_t i)
 	mapseg_t *ml;
 	seg_t *li;
 	line_t *ldef;
+	fixed_t extralight = 0;
 
 	numsegs = i / sizeof (mapseg_t);
 	if (numsegs <= 0)
@@ -492,6 +493,17 @@ static void P_LoadRawSegs(UINT8 *data, size_t i)
 
 		li->numlights = 0;
 		li->rlights = NULL;
+
+		extralight = -(8*FRACUNIT) +
+			FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
+			abs(li->v1->x - li->v2->x),
+			abs(li->v1->y - li->v2->y))), 90*FRACUNIT) * 16;
+
+		// Between -1 and 1 for software, -8 and 8 for hardware
+		li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+#ifdef HWRENDER
+		li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+#endif
 	}
 }
 
@@ -1091,7 +1103,7 @@ static void P_LoadThings(void)
 			|| mt->type == 1705 || mt->type == 1713 || mt->type == 1800)
 		{
 			sector_t *mtsector = R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
-	
+
 			mt->mobj = NULL;
 
 			// Z for objects
