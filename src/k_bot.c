@@ -554,11 +554,12 @@ fixed_t eggboxx, eggboxy;
 UINT8 randomitems = 0;
 UINT8 eggboxes = 0;
 
-static boolean K_FindRandomItems(mobj_t *thing)
+static boolean K_FindRandomItemsAndEggboxes(mobj_t *thing)
 {
 	fixed_t dist;
+	boolean egg = (thing->type == MT_EGGMANITEM);
 
-	if (thing->type != MT_RANDOMITEM)
+	if (!egg && thing->type != MT_RANDOMITEM)
 	{
 		return true;
 	}
@@ -575,32 +576,10 @@ static boolean K_FindRandomItems(mobj_t *thing)
 		return true;
 	}
 
-	randomitems++;
-	return true;
-}
-
-static boolean K_FindEggboxes(mobj_t *thing)
-{
-	fixed_t dist;
-
-	if (thing->type != MT_EGGMANITEM)
-	{
-		return true;
-	}
-
-	if (!thing->health)
-	{
-		return true;
-	}
-
-	dist = P_AproxDistance(thing->x - eggboxx, thing->y - eggboxy);
-
-	if (dist > distancetocheck)
-	{
-		return true;
-	}
-
-	eggboxes++;
+	if (egg)
+		eggboxes++;
+	else
+		randomitems++;
 	return true;
 }
 
@@ -625,15 +604,7 @@ static UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 	{
 		for (by = yl; by <= yh; by++)
 		{
-			P_BlockThingsIterator(bx, by, K_FindRandomItems);
-		}
-	}
-
-	for (bx = xl; bx <= xh; bx++)
-	{
-		for (by = yl; by <= yh; by++)
-		{
-			P_BlockThingsIterator(bx, by, K_FindEggboxes);
+			P_BlockThingsIterator(bx, by, K_FindRandomItemsAndEggboxes);
 		}
 	}
 
