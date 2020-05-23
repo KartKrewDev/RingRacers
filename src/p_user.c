@@ -4170,7 +4170,12 @@ static void P_3dMovement(player_t *player)
 
 			if (K_PlayerUsesBotMovement(player))
 			{
-				div = FixedMul(div, K_BotRubberband(player));
+				fixed_t rubberband = K_BotRubberband(player);
+
+				if (rubberband > FRACUNIT)
+				{
+					div = FixedMul(div, 4*rubberband);
+				}
 			}
 
 			newspeed = speed - FixedDiv((speed - airspeedcap), div);
