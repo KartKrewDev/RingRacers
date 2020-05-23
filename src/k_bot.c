@@ -728,7 +728,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 			wp->nextwaypoints[nwp]->mobj->x, wp->nextwaypoints[nwp]->mobj->y
 		);
 
-		disttonext = (wp->nextwaypointdistances[nwp] * FRACUNIT) / FRACUNIT;
+		disttonext = (INT32)wp->nextwaypointdistances[nwp];
 
 		if (disttonext > distanceleft)
 		{
