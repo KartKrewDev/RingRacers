@@ -8728,7 +8728,7 @@ void P_MobjThinker(mobj_t *mobj)
 			fixed_t destx, desty;
 			statenum_t curstate;
 			statenum_t underlayst = S_NULL;
-			INT32 flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
+			INT32 flamemax = 0;
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player
 				|| mobj->target->player->kartstuff[k_curshield] != KSHIELD_FLAME)
@@ -8736,6 +8736,9 @@ void P_MobjThinker(mobj_t *mobj)
 				P_RemoveMobj(mobj);
 				return;
 			}
+
+			flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
+
 			P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
 			curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
@@ -8815,7 +8818,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH1 && ((curstate-S_FLAMESHIELD1) & 1))
 					viewingangle += ANGLE_180;
-	
+
 				destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
 				desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
 			}
