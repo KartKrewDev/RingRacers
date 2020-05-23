@@ -628,19 +628,29 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
 	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN); // Reduce prediction based on how fast you can turn
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
-	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
+
 	const fixed_t distreduce = K_BotReducePrediction(player);
 	const fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
-	const INT32 distance = (FixedMul(player->speed, distreduce) / FRACUNIT) * futuresight;
-	INT32 distanceleft = distance;
+
+	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
+	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy) + (K_GetKartSpeed(player, false) / 2);
+	const INT32 distance = (FixedMul(speed, distreduce) / FRACUNIT) * futuresight;
+
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
 	waypoint_t *wp = player->nextwaypoint;
+
+	INT32 distanceleft = distance;
 	fixed_t smallestradius = INT32_MAX;
+	angle_t angletonext = ANGLE_MAX;
+
 	size_t nwp;
 	size_t i;
 
+	// Reduce distance left by your distance to the starting waypoint.
+	// This prevents looking too far ahead if the closest waypoint is really far away.
 	distanceleft -= P_AproxDistance(player->mo->x - wp->mobj->x, player->mo->y - wp->mobj->y) / FRACUNIT;
 
+	// We don't want to look ahead at all, just go to the first waypoint.
 	if (distanceleft <= 0)
 	{
 		predict->x = wp->mobj->x;
@@ -649,66 +659,99 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		return predict;
 	}
 
+	angletonext = R_PointToAngle2(
+		player->mo->x, player->mo->y,
+		wp->mobj->x, wp->mobj->y
+	);
+
+	// Go through waypoints until we've traveled the distance we wanted to predict ahead!
 	while (distanceleft > 0)
 	{
+		INT32 disttonext = INT32_MAX;
+
 		if (wp->mobj->radius < smallestradius)
 		{
 			smallestradius = wp->mobj->radius;
 		}
 
-		nwp = 0;
-
 		if (wp->numnextwaypoints == 0)
 		{
+			// Well, this is where I get off.
 			distanceleft = 0;
 			break;
 		}
 
+		// Calculate nextwaypoints index to use
+		// nextwaypoints[0] by default
+		nwp = 0;
+
+		// There are multiple nextwaypoints,
+		// so we need to find the most convenient one to us.
+		// Let's compare the angle to the player's!
 		if (wp->numnextwaypoints > 1)
 		{
-			fixed_t closest = INT32_MAX;
-			fixed_t dist    = INT32_MAX;
+			angle_t delta = ANGLE_MAX;
+			angle_t a     = ANGLE_MAX;
 
 			for (i = 0; i < wp->numnextwaypoints; i++)
 			{
+
 				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) && !K_BotCanTakeCut(player))
 				{
 					continue;
 				}
 
-				dist = P_AproxDistance(
-					player->mo->x - wp->nextwaypoints[i]->mobj->x,
-					player->mo->y - wp->nextwaypoints[i]->mobj->y
+				// Unlike the other parts of this function, we're comparing the player's physical position, NOT the position of the waypoint!!
+				// This should roughly correspond with how players will think about path splits.
+				a = R_PointToAngle2(
+					player->mo->x, player->mo->y,
+					wp->nextwaypoints[i]->mobj->x, wp->nextwaypoints[i]->mobj->y
 				);
+				if (a > ANGLE_180)
+				{
+					a = InvAngle(a);
+				}
 
-				if (dist < closest)
+				a = player->mo->angle - a;
+
+				if (a < delta)
 				{
 					nwp = i;
-					closest = dist;
+					delta = a;
 				}
 			}
 		}
 
-		if ((INT32)(wp->nextwaypointdistances[nwp]) > distanceleft)
+		// Save angle for the next loop's oldangle 
+		angletonext = R_PointToAngle2(
+			wp->mobj->x, wp->mobj->y,
+			wp->nextwaypoints[nwp]->mobj->x, wp->nextwaypoints[nwp]->mobj->y
+		);
+
+		disttonext = (wp->nextwaypointdistances[nwp] * FRACUNIT) / FRACUNIT;
+
+		if (disttonext > distanceleft)
 		{
 			break;
 		}
 
-		distanceleft -= wp->nextwaypointdistances[nwp];
+		distanceleft -= disttonext;
 
 		wp = wp->nextwaypoints[nwp];
 	}
 
+	// Set our predicted point's coordinates,
+	// and use the smallest radius of all of the waypoints in the chain!
 	predict->x = wp->mobj->x;
 	predict->y = wp->mobj->y;
 	predict->radius = FixedMul(smallestradius, radreduce);
 
+	// Set the prediction coordinates between the 2 waypoints if there's still distance left.
 	if (distanceleft > 0)
 	{
-		angle_t a = R_PointToAngle2(wp->mobj->x, wp->mobj->y, wp->nextwaypoints[nwp]->mobj->x, wp->nextwaypoints[nwp]->mobj->y);
-
-		predict->x += P_ReturnThrustX(NULL, a, distanceleft * FRACUNIT);
-		predict->y += P_ReturnThrustY(NULL, a, distanceleft * FRACUNIT);
+		// Scaled with the leftover anglemul!
+		predict->x += P_ReturnThrustX(NULL, angletonext, distanceleft * FRACUNIT);
+		predict->y += P_ReturnThrustY(NULL, angletonext, distanceleft * FRACUNIT);
 	}
 
 	return predict;
