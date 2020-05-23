@@ -589,7 +589,7 @@ static fixed_t K_BotReducePrediction(player_t *player)
 	INT32 xl, xh, yl, yh, bx, by;
 
 	botmo = player->mo;
-	distancetocheck = player->mo->radius * 16;
+	distancetocheck = (player->mo->radius * 8) + (player->speed * 4);
 	closestlinedist = INT32_MAX;
 
 	tmx = player->mo->x;
