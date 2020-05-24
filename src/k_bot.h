@@ -20,7 +20,7 @@
 
 // How many tics in a row do you need to turn in this direction before we'll let you turn.
 // Made it as small as possible without making it look like the bots are twitching constantly.
-#define BOTTURNCONFIRM 7
+#define BOTTURNCONFIRM 4
 
 // Point for bots to aim for
 typedef struct botprediction_s {

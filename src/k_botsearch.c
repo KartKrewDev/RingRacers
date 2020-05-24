@@ -95,7 +95,6 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 
-	memset(&globalsmuggle, 0, sizeof (struct globalsmuggle));
 	globalsmuggle.eggboxx = x;
 	globalsmuggle.eggboxy = y;
 	globalsmuggle.distancetocheck = (mapobjectscale * 256);
@@ -347,9 +346,8 @@ fixed_t K_BotReducePrediction(player_t *player)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 
-	memset(&globalsmuggle, 0, sizeof (struct globalsmuggle));
 	globalsmuggle.botmo = player->mo;
-	globalsmuggle.distancetocheck = (player->mo->radius * 8) + (player->speed * 4);
+	globalsmuggle.distancetocheck = (player->mo->radius * 16);
 	globalsmuggle.closestlinedist = INT32_MAX;
 
 	tmx = player->mo->x;
@@ -724,11 +722,10 @@ INT16 K_BotFindObjects(player_t *player, INT16 turn)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 
-	memset(&globalsmuggle, 0, sizeof (struct globalsmuggle));
 	globalsmuggle.steer = 0;
 	globalsmuggle.botmo = player->mo;
 	globalsmuggle.curturn = turn;
-	globalsmuggle.distancetocheck = 2048*mapobjectscale;
+	globalsmuggle.distancetocheck = (player->mo->radius * 32) + (player->speed * 4);
 
 	xl = (unsigned)(globalsmuggle.botmo->x - globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
 	xh = (unsigned)(globalsmuggle.botmo->x + globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
