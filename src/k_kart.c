@@ -6787,6 +6787,7 @@ void K_StripOther(player_t *player)
 static INT32 K_FlameShieldMax(player_t *player)
 {
 	UINT32 disttofinish = 0;
+	UINT32 distv = DISTVAR;
 	UINT8 numplayers = 0;
 	UINT8 i;
 
@@ -6808,8 +6809,8 @@ static INT32 K_FlameShieldMax(player_t *player)
 	}
 
 	disttofinish = player->distancetofinish - disttofinish;
-
-	return min(16, 1 + (disttofinish / DISTVAR));
+	distv = FixedDiv(distv * FRACUNIT, mapobjectscale) / FRACUNIT;
+	return min(16, 1 + (disttofinish / distv));
 }
 
 //
