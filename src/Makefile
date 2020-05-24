@@ -563,6 +563,8 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/lzf.o	     \
 		$(OBJDIR)/vid_copy.o \
 		$(OBJDIR)/k_bot.o \
+		$(OBJDIR)/k_botitem.o \
+		$(OBJDIR)/k_botsearch.o \
 		$(i_cdmus_o)    \
 		$(i_net_o)      \
 		$(i_system_o)   \

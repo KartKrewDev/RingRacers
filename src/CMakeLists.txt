@@ -166,6 +166,8 @@ set(SRB2_CORE_GAME_SOURCES
 	k_waypoint.c
 	k_color.c
 	k_bot.c
+	k_botitem.c
+	k_botsearch.c
 
 	p_local.h
 	p_maputl.h
