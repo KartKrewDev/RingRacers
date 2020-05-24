@@ -2209,7 +2209,8 @@ static void K_HandleLapDecrement(player_t *player)
 void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 {
 	// only used for the players currently
-	if (thing && thing->player)
+	if (!(thing && thing->player && !thing->player->spectator && !(thing->player->pflags & PF_TIMEOVER)))
+		return;
 	{
 		player_t *player = thing->player;
 		switch (line->special)
