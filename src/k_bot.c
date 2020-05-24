@@ -630,11 +630,13 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN); // Reduce prediction based on how fast you can turn
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
+	const fixed_t topspeed = K_GetKartSpeed(player, false);
+	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy) + (topspeed / 4);
+
 	const fixed_t distreduce = K_BotReducePrediction(player);
-	const fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
+	fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
 
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
-	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy) + (K_GetKartSpeed(player, false) / 2);
 	const INT32 distance = (FixedMul(speed, distreduce) / FRACUNIT) * futuresight;
 
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
@@ -650,6 +652,12 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	// Reduce distance left by your distance to the starting waypoint.
 	// This prevents looking too far ahead if the closest waypoint is really far away.
 	distanceleft -= P_AproxDistance(player->mo->x - wp->mobj->x, player->mo->y - wp->mobj->y) / FRACUNIT;
+
+	if (speed > topspeed)
+	{
+		// Play more in the center when going fast.
+		radreduce = FixedDiv(radreduce, speed / topspeed);
+	}
 
 	// We don't want to look ahead at all, just go to the first waypoint.
 	if (distanceleft <= 0)
