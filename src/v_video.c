@@ -84,7 +84,7 @@ static void CV_Gammaxxx_ONChange(void);
 // - You can change them in software,
 // but they won't do anything.
 static CV_PossibleValue_t grgamma_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t grfakecontrast_cons_t[] = {{0, "Off"}, {1, "Standard"}, {2, "Smooth"}, {0, NULL}};
+static CV_PossibleValue_t grfakecontrast_cons_t[] = {{0, "Standard"}, {1, "Smooth"}, {0, NULL}};
 
 consvar_t cv_grshaders = {"gr_shaders", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grfovchange = {"gr_fovchange", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};

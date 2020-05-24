@@ -2244,6 +2244,12 @@ boolean K_ApplyOffroad(player_t *player)
 	return true;
 }
 
+static fixed_t K_FlameShieldDashVar(INT32 val)
+{
+	// 1 second = 75% + 50% top speed
+	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
+}
+
 // sets k_boostpower, k_speedboost, and k_accelboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
@@ -2280,10 +2286,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST((3*FRACUNIT)/8, 3*FRACUNIT); // + 37.5% top speed, + 300% acceleration
 
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
-	{
-		fixed_t dashval = ((player->kartstuff[k_flamedash]<<FRACBITS) / TICRATE) / 2; // 1 second = +50% top speed
-		ADDBOOST((3*FRACUNIT)/4 + dashval, 3*FRACUNIT); // + infinite top speed, + 300% acceleration
-	}
+		ADDBOOST(K_FlameShieldDashVar(player->kartstuff[k_flamedash]), 3*FRACUNIT); // + infinite top speed, + 300% acceleration
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
 		ADDBOOST(FRACUNIT/4, 6*FRACUNIT); // + 25% top speed, + 600% acceleration
@@ -2903,10 +2906,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	K_PlayPainSound(player->mo);
 
 	if (P_IsDisplayPlayer(player))
-	{
-		quake.intensity = 64*FRACUNIT;
-		quake.time = 5;
-	}
+		P_StartQuake(64<<FRACBITS, 5);
 
 	player->kartstuff[k_instashield] = 15;
 	K_DropItems(player);
@@ -3070,6 +3070,8 @@ void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32
 	}
 }
 
+#define MINEQUAKEDIST 4096
+
 // Spawns the purely visual explosion
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 {
@@ -3078,6 +3080,28 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 	mobj_t *dust;
 	mobj_t *truc;
 	INT32 speed, speed2;
+	INT32 pnum;
+	player_t *p;
+
+	// check for potential display players near the source so we can have a sick earthquake / flashpal.
+	for (pnum = 0; pnum < MAXPLAYERS; pnum++)
+	{
+		p = &players[pnum];
+
+		if (!playeringame[pnum] || !P_IsDisplayPlayer(p))
+			continue;
+
+		if (R_PointToDist2(p->mo->x, p->mo->y, source->x, source->y) < mapobjectscale*MINEQUAKEDIST)
+		{
+			P_StartQuake(55<<FRACBITS, 12);
+			if (!bombflashtimer && P_CheckSight(p->mo, source))
+			{
+				bombflashtimer = TICRATE*2;
+				P_FlashPal(p, 1, 1);
+			}
+			break;	// we can break right now because quakes are global to all split players somehow.
+		}
+	}
 
 	K_MatchGenericExtraFlags(smoldering, source);
 	smoldering->tics = TICRATE*3;
@@ -3147,6 +3171,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		truc->color = color;
 	}
 }
+
+#undef MINEQUAKEDIST
 
 static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed)
 {
@@ -4990,7 +5016,7 @@ static void K_MoveHeldObjects(player_t *player)
 					if (cur->type == MT_EGGMANITEM_SHIELD)
 					{
 						// Decided that this should use their "canon" color.
-						cur->color = SKINCOLOR_BLACK; 
+						cur->color = SKINCOLOR_BLACK;
 					}
 
 					cur->flags &= ~MF_NOCLIPTHING;
@@ -5359,7 +5385,7 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 		{
 			if (player->kartstuff[k_invincibilitytimer] > 0) // Prioritize invincibility
 				sfxnum = sfx_alarmi;
-			else if (player->kartstuff[k_growshrinktimer] > 0) 
+			else if (player->kartstuff[k_growshrinktimer] > 0)
 				sfxnum = sfx_alarmg;
 		}
 		else
@@ -6565,12 +6591,20 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnvalue = 5*turnvalue/4;
 	}
 
+	if (player->kartstuff[k_flamedash] > 0)
+	{
+		fixed_t multiplier = K_FlameShieldDashVar(player->kartstuff[k_flamedash]);
+		multiplier = FRACUNIT + (FixedDiv(multiplier, FRACUNIT/2) / 4);
+		turnvalue = FixedMul(turnvalue * FRACUNIT, multiplier) / FRACUNIT;
+	}
+
 	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
 	{
 		turnvalue = 3*turnvalue/2;
 	}
 
-	turnvalue = FixedMul(turnvalue * FRACUNIT, weightadjust) / FRACUNIT; // Weight has a small effect on turning
+	// Weight has a small effect on turning
+	turnvalue = FixedMul(turnvalue * FRACUNIT, weightadjust) / FRACUNIT;
 
 	return turnvalue;
 }
@@ -6933,6 +6967,7 @@ void K_StripOther(player_t *player)
 static INT32 K_FlameShieldMax(player_t *player)
 {
 	UINT32 disttofinish = 0;
+	UINT32 distv = DISTVAR;
 	UINT8 numplayers = 0;
 	UINT8 i;
 
@@ -6954,8 +6989,8 @@ static INT32 K_FlameShieldMax(player_t *player)
 	}
 
 	disttofinish = player->distancetofinish - disttofinish;
-
-	return min(16, 1 + (disttofinish / DISTVAR));
+	distv = FixedDiv(distv * FRACUNIT, mapobjectscale) / FRACUNIT;
+	return min(16, 1 + (disttofinish / distv));
 }
 
 //
