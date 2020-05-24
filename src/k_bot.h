@@ -13,7 +13,12 @@
 #include "k_waypoint.h"
 #include "d_player.h"
 
+// Maximum value of botvars.difficulty
 #define MAXBOTDIFFICULTY 9
+
+// How many tics in a row do you need to turn in this direction before we'll let you turn.
+// Made it as small as possible without making it look like the bots are twitching constantly.
+#define BOTTURNCONFIRM 7
 
 // Path that bot will attempt to take
 typedef struct botprediction_s {

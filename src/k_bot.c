@@ -410,6 +410,7 @@ fixed_t distancetocheck = 0;
 
 fixed_t closestlinedist = INT32_MAX;
 
+INT16 curturn = 0;
 INT16 badsteerglobal = 0;
 
 fixed_t eggboxx, eggboxy;
@@ -761,30 +762,60 @@ static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, fixed_t fulldist, fixe
 {
 	angle_t destangle = R_PointToAngle2(bot->x, bot->y, thing->x, thing->y);
 	angle_t angle;
+	SINT8 flip = 1;
 
 	amount = (amount * FixedDiv(distancetocheck - fulldist, distancetocheck)) / FRACUNIT;
 
+	if (amount == 0)
+	{
+		// Shouldn't happen
+		return;
+	}
+
 	if (towards)
 	{
-		if (xdist < (bot->radius + thing->radius))
+		if (xdist < FixedHypot(bot->radius, thing->radius))
 		{
 			// Don't need to turn any harder!
+
+			if (abs(badsteerglobal) <= amount)
+			{
+				badsteerglobal = 0;
+			}
+			else
+			{
+				if (badsteerglobal > 0)
+				{
+					badsteerglobal -= amount;
+				}
+				else if (badsteerglobal < 0)
+				{
+					badsteerglobal += amount;
+				}
+			}
+
 			return;
 		}
 
-		amount = -amount;
+		// Still turning towards it, flip.
+		flip = -flip;
 	}
 
 	angle = (bot->angle - destangle);
-
 	if (angle < ANGLE_180)
 	{
-		badsteerglobal -= amount;
+		flip = -flip;
 	}
-	else
+
+	// If going in the opposite direction of where you wanted to turn,
+	// then reduce the amount that you can turn in that direction.
+	if ((flip == 1 && curturn < 0)
+	|| (flip == -1 && curturn > 0))
 	{
-		badsteerglobal += amount;
+		amount /= 4;
 	}
+
+	badsteerglobal += amount * flip;
 }
 
 static boolean K_BotSteerObjects(mobj_t *thing)
@@ -876,7 +907,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			K_SteerFromObject(botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
 			break;
 		case MT_RANDOMITEM:
-			if (anglediff > 90)
+			if (anglediff >= 60)
 			{
 				break;
 			}
@@ -887,7 +918,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			}
 			break;
 		case MT_EGGMANITEM:
-			if (anglediff > 90)
+			if (anglediff >= 60)
 			{
 				break;
 			}
@@ -908,7 +939,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			}
 			break;
 		case MT_FLOATINGITEM:
-			if (anglediff > 90)
+			if (anglediff >= 60)
 			{
 				break;
 			}
@@ -920,7 +951,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			break;
 		case MT_RING:
 		case MT_FLINGRING:
-			if (anglediff > 90)
+			if (anglediff >= 60)
 			{
 				break;
 			}
@@ -932,8 +963,8 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			{
 				K_SteerFromObject(botmo, thing, fulldist, xdist, true,
 					(RINGTOTAL(botmo->player) < 3
-					? (2 * (KART_FULLTURN + attack))
-					: ((KART_FULLTURN + attack) / 2))
+					? (4 * (KART_FULLTURN + attack))
+					: (KART_FULLTURN + attack))
 				);
 			}
 			break;
@@ -985,7 +1016,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 					fixed_t theirweight = K_GetMobjWeight(thing, botmo);
 					fixed_t weightdiff = 0;
 
-					if (anglediff > 90)
+					if (anglediff >= 90)
 					{
 						weightdiff = theirweight - ourweight;
 					}
@@ -1006,6 +1037,11 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			}
 			break;
 		case MT_BOTHINT:
+			if (anglediff >= 60)
+			{
+				break;
+			}
+
 			if (thing->extravalue1 == 0)
 			{
 				K_SteerFromObject(botmo, thing, fulldist, xdist, false, thing->extravalue2 * (KART_FULLTURN + dodge));
@@ -1025,14 +1061,15 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 	return true;
 }
 
-static INT16 K_BotFindObjects(player_t *player)
+static INT16 K_BotFindObjects(player_t *player, INT16 turn)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 
 	badsteerglobal = 0;
 
 	botmo = player->mo;
-	distancetocheck = (player->mo->radius * 32) + (player->speed * 4);
+	curturn = turn;
+	distancetocheck = 2048*mapobjectscale;
 
 	xl = (unsigned)(botmo->x - distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
 	xh = (unsigned)(botmo->x + distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
@@ -1409,11 +1446,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
 			}
-			else if (dirdist <= realrad)
-			{
-				// Steer towards/away from objects!
-				turnamt += K_BotFindObjects(player);
-			}
 
 			if (dirdist <= rad)
 			{
@@ -1445,6 +1477,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					// Make minor adjustments
 					turnamt /= 4;
 				}
+			}
+
+			if (anglediff < 60)
+			{
+				// Steer towards/away from objects!
+				turnamt += K_BotFindObjects(player, turnamt);
 			}
 		}
 	}
@@ -2169,8 +2207,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (turnamt != 0)
 	{
-		const INT16 minturn = KART_FULLTURN/2;
-
 		if (turnamt > KART_FULLTURN)
 		{
 			turnamt = KART_FULLTURN;
@@ -2180,25 +2216,38 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			turnamt = -KART_FULLTURN;
 		}
 
-		if ((turnamt > minturn && player->botvars.lastturn >= 0)
-			|| (turnamt < -minturn && player->botvars.lastturn <= 0))
+		if (turnamt > 0)
 		{
-			if (turnamt > 0)
+			if (player->botvars.turnconfirm < 0)
 			{
-				player->botvars.lastturn = 1;
-			}
-			else if (turnamt < 0)
-			{
-				player->botvars.lastturn = -1;
+				// Reset turn confirm
+				player->botvars.turnconfirm = 0;
 			}
 
+			if (player->botvars.turnconfirm < BOTTURNCONFIRM)
+			{
+				player->botvars.turnconfirm++;
+			}
+		}
+		else if (turnamt < 0)
+		{
+			if (player->botvars.turnconfirm > 0)
+			{
+				// Reset turn confirm
+				player->botvars.turnconfirm = 0;
+			}
+
+			if (player->botvars.turnconfirm > -BOTTURNCONFIRM)
+			{
+				player->botvars.turnconfirm--;
+			}
+		}
+
+		if (abs(player->botvars.turnconfirm) >= BOTTURNCONFIRM)
+		{
+			// You're probably commiting to your turn, here you go.
 			cmd->driftturn = turnamt;
 			cmd->angleturn += K_GetKartTurnValue(player, turnamt);
-		}
-		else
-		{
-			// Can reset turn dir
-			player->botvars.lastturn = 0;
 		}
 	}
 

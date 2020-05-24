@@ -428,7 +428,7 @@ typedef struct botvars_s
 	tic_t itemdelay;
 	tic_t itemconfirm;
 
-	INT16 lastturn;
+	SINT8 turnconfirm;
 } botvars_t;
 
 // ========================================================================
