@@ -396,7 +396,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
 	const fixed_t distreduce = K_BotReducePrediction(player);
-	fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
+	const fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
 
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
 	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
