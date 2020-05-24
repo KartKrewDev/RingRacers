@@ -440,7 +440,7 @@ void Y_IntermissionDrawer(void)
 		int y2;
 
 		if (data.match.rankingsmode)
-			timeheader = "PWR.LV";
+			timeheader = (powertype != -1 ? "PWR.LV" : "RANK");
 		else
 			timeheader = ((intertype == int_race || (intertype == int_match && battlecapsules)) ? "TIME" : "SCORE");
 
@@ -497,7 +497,7 @@ void Y_IntermissionDrawer(void)
 
 				y2 = y;
 
-				if (playerconsole[data.match.num[i]] == 0 && server_lagless)
+				if (netgame && playerconsole[data.match.num[i]] == 0 && server_lagless && !players[data.match.num[i]].bot)
 				{
 					static int alagles_timer = 0;
 					patch_t *alagles;
@@ -533,7 +533,7 @@ void Y_IntermissionDrawer(void)
 
 				if (data.match.rankingsmode)
 				{
-					if (!clientpowerlevels[data.match.num[i]][powertype]) // No power level (splitscreen guests)
+					if (powertype != -1 && !clientpowerlevels[data.match.num[i]][powertype]) // No power level (splitscreen guests)
 						STRBUFCPY(strtime, "----");
 					else
 					{

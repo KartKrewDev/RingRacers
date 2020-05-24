@@ -9434,7 +9434,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 
 		y2 = y;
 
-		if (playerconsole[tab[i].num] == 0 && server_lagless)
+		if (netgame && playerconsole[tab[i].num] == 0 && server_lagless && !players[tab[i].num].bot)
 		{
 			y2 = ( y - 4 );
 
