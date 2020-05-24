@@ -302,7 +302,7 @@ fixed_t K_BotRubberband(player_t *player)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].exiting)
+		if (!playeringame[i] || players[i].spectator)
 		{
 			continue;
 		}
