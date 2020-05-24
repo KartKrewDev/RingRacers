@@ -2192,6 +2192,12 @@ void K_MomentumToFacing(player_t *player)
 	player->mo->momy = FixedMul(player->mo->momy - player->cmomy, player->mo->friction) + player->cmomy;
 }
 
+static fixed_t K_FlameShieldDashVar(INT32 val)
+{
+	// 1 second = 75% + 50% top speed
+	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
+}
+
 // sets k_boostpower, k_speedboost, and k_accelboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
@@ -2229,10 +2235,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST((3*FRACUNIT)/8, 3*FRACUNIT); // + 37.5% top speed, + 300% acceleration
 
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
-	{
-		fixed_t dashval = ((player->kartstuff[k_flamedash]<<FRACBITS) / TICRATE) / 2; // 1 second = +50% top speed
-		ADDBOOST((3*FRACUNIT)/4 + dashval, 3*FRACUNIT); // + infinite top speed, + 300% acceleration
-	}
+		ADDBOOST(K_FlameShieldDashVar(player->kartstuff[k_flamedash]), 3*FRACUNIT); // + infinite top speed, + 300% acceleration
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
 		ADDBOOST(FRACUNIT/4, 6*FRACUNIT); // + 25% top speed, + 600% acceleration
@@ -6439,12 +6442,20 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnvalue = 5*turnvalue/4;
 	}
 
+	if (player->kartstuff[k_flamedash] > 0)
+	{
+		fixed_t multiplier = K_FlameShieldDashVar(player->kartstuff[k_flamedash]);
+		multiplier = FRACUNIT + (FixedDiv(multiplier, FRACUNIT/2) / 4);
+		turnvalue = FixedMul(turnvalue * FRACUNIT, multiplier) / FRACUNIT;
+	}
+
 	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
 	{
 		turnvalue = 3*turnvalue/2;
 	}
 
-	turnvalue = FixedMul(turnvalue * FRACUNIT, weightadjust) / FRACUNIT; // Weight has a small effect on turning
+	// Weight has a small effect on turning
+	turnvalue = FixedMul(turnvalue * FRACUNIT, weightadjust) / FRACUNIT;
 
 	return turnvalue;
 }
@@ -6810,6 +6821,7 @@ void K_StripOther(player_t *player)
 static INT32 K_FlameShieldMax(player_t *player)
 {
 	UINT32 disttofinish = 0;
+	UINT32 distv = DISTVAR;
 	UINT8 numplayers = 0;
 	UINT8 i;
 
@@ -6831,8 +6843,8 @@ static INT32 K_FlameShieldMax(player_t *player)
 	}
 
 	disttofinish = player->distancetofinish - disttofinish;
-
-	return min(16, 1 + (disttofinish / DISTVAR));
+	distv = FixedDiv(distv * FRACUNIT, mapobjectscale) / FRACUNIT;
+	return min(16, 1 + (disttofinish / distv));
 }
 
 //
