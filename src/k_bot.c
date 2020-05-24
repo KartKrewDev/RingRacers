@@ -111,6 +111,7 @@ void K_UpdateMatchRaceBots(void)
 	UINT8 numbots = 0;
 	UINT8 numwaiting = 0;
 	SINT8 wantedbots = 0;
+	boolean skinusable[MAXSKINS];
 	UINT8 i;
 
 	if (!server)
@@ -118,38 +119,57 @@ void K_UpdateMatchRaceBots(void)
 		return;
 	}
 
-	if (difficulty != 0)
+	// init usable bot skins list
+	for (i = 0; i < MAXSKINS; i++)
 	{
-		if (cv_ingamecap.value > 0)
+		if (i < numskins)
 		{
-			pmax = min(pmax, cv_ingamecap.value);
+			skinusable[i] = true;
 		}
-
-		for (i = 0; i < MAXPLAYERS; i++)
+		else
 		{
-			if (playeringame[i])
-			{
-				if (!players[i].spectator)
-				{
-					if (players[i].bot)
-					{
-						numbots++;
+			skinusable[i] = false;
+		}
+	}
 
-						// While we're here, we should update bot difficulty to the proper value.
-						players[i].botvars.difficulty = difficulty;
-					}
-					else
-					{
-						numplayers++;
-					}
-				}
-				else if (players[i].pflags & PF_WANTSTOJOIN)
+	if (cv_ingamecap.value > 0)
+	{
+		pmax = min(pmax, cv_ingamecap.value);
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i])
+		{
+			if (!players[i].spectator)
+			{
+				skinusable[players[i].skin] = false;
+
+				if (players[i].bot)
 				{
-					numwaiting++;
+					numbots++;
+
+					// While we're here, we should update bot difficulty to the proper value.
+					players[i].botvars.difficulty = difficulty;
+				}
+				else
+				{
+					numplayers++;
 				}
 			}
+			else if (players[i].pflags & PF_WANTSTOJOIN)
+			{
+				numwaiting++;
+			}
 		}
+	}
 
+	if (difficulty == 0)
+	{
+		wantedbots = 0;
+	}
+	else
+	{
 		wantedbots = pmax - numplayers - numwaiting;
 
 		if (wantedbots < 0)
@@ -157,15 +177,12 @@ void K_UpdateMatchRaceBots(void)
 			wantedbots = 0;
 		}
 	}
-	else
-	{
-		wantedbots = 0;
-	}
 
 	if (numbots < wantedbots)
 	{
 		// We require MORE bots!
 		UINT8 newplayernum = 0;
+		boolean usedallskins = false;
 
 		if (dedicated)
 		{
@@ -174,12 +191,39 @@ void K_UpdateMatchRaceBots(void)
 
 		while (numbots < wantedbots)
 		{
-			if (!K_AddBot(M_RandomKey(numskins), difficulty, &newplayernum))
+			UINT8 skin = M_RandomKey(numskins);
+
+			if (usedallskins == false)
+			{
+				UINT8 loops = 0;
+
+				while (!skinusable[skin])
+				{
+					if (loops >= numskins)
+					{
+						// no more skins, stick to our first choice
+						usedallskins = true;
+						break;
+					}
+
+					skin++;
+
+					if (skin >= numskins)
+					{
+						skin = 0;
+					}
+
+					loops++;
+				}
+			}
+
+			if (!K_AddBot(skin, difficulty, &newplayernum))
 			{
 				// Not enough player slots to add the bot, break the loop.
 				break;
 			}
 
+			skinusable[skin] = false;
 			numbots++;
 		}
 	}
