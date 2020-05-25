@@ -654,7 +654,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->bot_rival = players[i].botvars.rival;
 	rsp->bot_itemdelay = players[i].botvars.itemdelay;
 	rsp->bot_itemconfirm = players[i].botvars.itemconfirm;
-	rsp->bot_lastturn = players[i].botvars.lastturn;
+	rsp->bot_turnconfirm = players[i].botvars.turnconfirm;
 
 	rsp->hasmo = false;
 	//Transfer important mo information if the player has a body.
@@ -786,7 +786,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].botvars.rival = rsp->bot_rival;
 	players[i].botvars.itemdelay = rsp->bot_itemdelay;
 	players[i].botvars.itemconfirm = rsp->bot_itemconfirm;
-	players[i].botvars.lastturn = rsp->bot_lastturn;
+	players[i].botvars.turnconfirm = rsp->bot_turnconfirm;
 
 	//We get a packet for each player in game.
 	if (!playeringame[i])

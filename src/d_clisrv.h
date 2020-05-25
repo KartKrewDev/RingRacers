@@ -292,7 +292,7 @@ typedef struct
 	boolean bot_rival;
 	tic_t bot_itemdelay;
 	tic_t bot_itemconfirm;
-	INT16 bot_lastturn;
+	SINT8 bot_turnconfirm;
 
 	//player->mo stuff
 	UINT8 hasmo; // Boolean

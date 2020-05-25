@@ -430,7 +430,7 @@ typedef struct botvars_s
 	tic_t itemdelay; // Delay before using item at all
 	tic_t itemconfirm; // When high enough, they will use their item
 
-	INT16 lastturn; // Last turn direction
+	SINT8 turnconfirm; // Confirm turn direction
 } botvars_t;
 
 // ========================================================================

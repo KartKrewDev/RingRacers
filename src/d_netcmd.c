@@ -50,6 +50,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "y_inter.h"
+#include "k_color.h"
 #include "k_grandprix.h"
 
 #ifdef NETGAME_DEVMODE
@@ -393,12 +394,19 @@ static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, 
 consvar_t cv_kartvoices = {"kartvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t kartbot_cons_t[] = {
-	{1, "MIN"},
-	{9, "MAX"},
 	{0, "Off"},
+	{1, "Lv.1"},
+	{2, "Lv.2"},
+	{3, "Lv.3"},
+	{4, "Lv.4"},
+	{5, "Lv.5"},
+	{6, "Lv.6"},
+	{7, "Lv.7"},
+	{8, "Lv.8"},
+	{9, "Lv.9"},
 	{0, NULL}
 };
-consvar_t cv_kartbot = {"kartbot", "5", CV_NETVAR|CV_CHEAT, kartbot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_kartbot = {"kartbot", "0", CV_NETVAR|CV_CHEAT, kartbot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_karteliminatelast = {"karteliminatelast", "Yes", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOSHOWHELP, CV_YesNo, KartEliminateLast_OnChange, 0, NULL, NULL, 0, 0, NULL};
 

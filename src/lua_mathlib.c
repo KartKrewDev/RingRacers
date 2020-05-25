@@ -16,7 +16,7 @@
 #include "tables.h"
 #include "p_local.h"
 #include "doomstat.h" // for ALL7EMERALDS
-#include "k_kart.h" // KartColor_Opposite
+#include "k_color.h" // KartColor_Opposite
 
 #include "lua_script.h"
 #include "lua_libs.h"

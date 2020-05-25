@@ -38,7 +38,7 @@
 
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PLAYER1INPUTDOWN
-#include "k_kart.h" // colortranslations
+#include "k_color.h" // colortranslations
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "console.h" // cons_menuhighlight
@@ -539,7 +539,7 @@ void Y_IntermissionDrawer(void)
 
 				y2 = y;
 
-				if (playerconsole[data.match.num[i]] == 0 && server_lagless)
+				if (netgame && playerconsole[data.match.num[i]] == 0 && server_lagless && !players[data.match.num[i]].bot)
 				{
 					static int alagles_timer = 0;
 					patch_t *alagles;

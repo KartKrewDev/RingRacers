@@ -275,7 +275,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].botvars.rival);
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
-		WRITEINT16(save_p, players[i].botvars.lastturn);
+		WRITESINT8(save_p, players[i].botvars.turnconfirm);
 	}
 }
 
@@ -454,7 +454,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.rival = (boolean)READUINT8(save_p);
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
-		players[i].botvars.lastturn = READINT16(save_p);
+		players[i].botvars.turnconfirm = READSINT8(save_p);
 	}
 }
 

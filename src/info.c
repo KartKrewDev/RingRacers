@@ -6154,7 +6154,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -6262,7 +6262,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -6370,7 +6370,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
