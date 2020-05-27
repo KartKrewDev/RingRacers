@@ -38,7 +38,7 @@
 
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PLAYER1INPUTDOWN
-#include "k_kart.h" // colortranslations
+#include "k_color.h" // colortranslations
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "console.h" // cons_menuhighlight

@@ -1941,7 +1941,7 @@ static boolean PIT_CheckLine(line_t *ld)
 	{
 		if (ld->flags & ML_IMPASSABLE) // block objects from moving through this linedef.
 			return false;
-		if (tmthing->player && ld->flags & ML_BLOCKPLAYERS)
+		if (tmthing->player && !tmthing->player->spectator && ld->flags & ML_BLOCKPLAYERS)
 			return false; // SRB2Kart: Only block players, not items
 	}
 
@@ -3307,7 +3307,7 @@ static boolean PTR_SlideTraverse(intercept_t *in)
 		if (li->flags & ML_IMPASSABLE)
 			goto isblocking;
 
-		if (slidemo->player && li->flags & ML_BLOCKPLAYERS)
+		if (slidemo->player && !slidemo->player->spectator && li->flags & ML_BLOCKPLAYERS)
 			goto isblocking;
 	}
 

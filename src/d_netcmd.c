@@ -50,6 +50,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "y_inter.h"
+#include "k_color.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR

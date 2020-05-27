@@ -37,6 +37,7 @@
 
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_color.h"
 
 // protos.
 //static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
@@ -8727,7 +8728,7 @@ void P_MobjThinker(mobj_t *mobj)
 			fixed_t destx, desty;
 			statenum_t curstate;
 			statenum_t underlayst = S_NULL;
-			INT32 flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
+			INT32 flamemax = 0;
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player
 				|| mobj->target->player->kartstuff[k_curshield] != KSHIELD_FLAME)
@@ -8735,6 +8736,9 @@ void P_MobjThinker(mobj_t *mobj)
 				P_RemoveMobj(mobj);
 				return;
 			}
+
+			flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
+
 			P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
 			curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
@@ -8814,7 +8818,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH1 && ((curstate-S_FLAMESHIELD1) & 1))
 					viewingangle += ANGLE_180;
-	
+
 				destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
 				desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
 			}
@@ -12973,16 +12977,30 @@ ML_NOCLIMB : Direction not controllable
 
 	mobj->angle = FixedAngle(mthing->angle*FRACUNIT);
 
+	if ((mobj->flags & MF_SPRING)
+	&& mobj->info->damage != 0
+	&& mobj->info->mass == 0)
+	{
+		// Offset sprite of horizontal springs
+		angle_t a = mobj->angle + ANGLE_180;
+		mobj->sprxoff = FixedMul(mobj->radius, FINECOSINE(a >> ANGLETOFINESHIFT));
+		mobj->spryoff = FixedMul(mobj->radius, FINESINE(a >> ANGLETOFINESHIFT));
+	}
+
 	if ((mthing->options & MTF_AMBUSH)
 	&& (mthing->options & MTF_OBJECTSPECIAL)
 	&& (mobj->flags & MF_PUSHABLE))
+	{
 		mobj->flags2 |= MF2_CLASSICPUSH;
+	}
 	else
 	{
 		if (mthing->options & MTF_AMBUSH)
 		{
-			if (mobj->flags & MF_SPRING && mobj->info->damage)
+			if ((mobj->flags & MF_SPRING) && mobj->info->damage)
+			{
 				mobj->angle += ANGLE_22h;
+			}
 
 			if (mobj->flags & MF_NIGHTSITEM)
 			{
