@@ -9461,9 +9461,17 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 		if (players[tab[i].num].spectator || !players[tab[i].num].mo)
 			continue; //ignore them.
 
-		if (netgame // don't draw it offline
-		&& ( tab[i].num != serverplayer || ! server_lagless ))
-			HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
+		if (netgame) // don't draw ping offline
+		{
+			if (players[tab[i].num].bot)
+			{
+				; // TODO: Put a graphic here to indicate this player is a bot!
+			}
+			else if (tab[i].num != serverplayer || !server_lagless)
+			{
+				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
+			}
+		}
 
 		STRBUFCPY(strtime, tab[i].name);
 
