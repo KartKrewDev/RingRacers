@@ -66,17 +66,33 @@ boolean K_BotCanTakeCut(player_t *player);
 /*--------------------------------------------------
 	fixed_t K_BotRubberband(player_t *player);
 
-		Gives a multiplier for a bot's rubberbanding. Meant to be used for top speed,
-		acceleration, and handling.
+		Gives a multiplier for a bot's rubberbanding.
+		Meant to be used for acceleration and handling.
 
 	Input Arguments:-
 		player - Player to check.
 
 	Return:-
-		A multiplier in fixed point scale, between 0.875 and 2.0.
+		A multiplier in fixed point scale.
 --------------------------------------------------*/
 
 fixed_t K_BotRubberband(player_t *player);
+
+
+/*--------------------------------------------------
+	fixed_t K_BotTopSpeedRubberband(player_t *player);
+
+		Gives a multiplier for a bot's rubberbanding.
+		Adjusted from K_BotRubberband to be used for top speed.
+
+	Input Arguments:-
+		player - Player to check.
+
+	Return:-
+		A multiplier in fixed point scale.
+--------------------------------------------------*/
+
+fixed_t K_BotTopSpeedRubberband(player_t *player);
 
 
 /*--------------------------------------------------

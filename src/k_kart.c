@@ -2357,49 +2357,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 	{
 		if (K_PlayerUsesBotMovement(player))
 		{
-			fixed_t rubberband = K_BotRubberband(player);
-
-			if (rubberband < FRACUNIT)
-			{
-				rubberband = FRACUNIT;
-			}
-
-			// Only allow you to go fast if you're facing the right direction
-			if (rubberband > FRACUNIT && player->mo != NULL && player->nextwaypoint != NULL)
-			{
-				const INT16 mindiff = 30;
-				const INT16 maxdiff = 60;
-				INT16 anglediff = 0;
-				fixed_t amt = rubberband - FRACUNIT;
-				angle_t destangle = R_PointToAngle2(
-					player->mo->x, player->mo->y,
-					player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y
-				);
-				angle_t angle = player->mo->angle - destangle;
-
-				if (angle < ANGLE_180)
-				{
-					anglediff = AngleFixed(angle) >> FRACBITS;
-				}
-				else 
-				{
-					anglediff = 360 - (AngleFixed(angle) >> FRACBITS);
-				}
-
-				anglediff = abs(anglediff);
-
-				if (anglediff >= maxdiff)
-				{
-					rubberband = FRACUNIT;
-				}
-				else if (anglediff > mindiff)
-				{
-					amt = (amt * (maxdiff - anglediff)) / mindiff;
-					rubberband = FRACUNIT + amt;
-				}
-			}
-
-			finalspeed = FixedMul(finalspeed, rubberband);
+			finalspeed = FixedMul(finalspeed, K_BotTopSpeedRubberband(player));
 		}
 
 		return FixedMul(finalspeed, player->kartstuff[k_boostpower]+player->kartstuff[k_speedboost]);

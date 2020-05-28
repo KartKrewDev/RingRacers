@@ -395,6 +395,59 @@ fixed_t K_BotRubberband(player_t *player)
 }
 
 /*--------------------------------------------------
+	fixed_t K_BotTopSpeedRubberband(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_BotTopSpeedRubberband(player_t *player)
+{
+	fixed_t rubberband = K_BotRubberband(player);
+
+	if (rubberband < FRACUNIT)
+	{
+		// Never go below your regular top speed
+		rubberband = FRACUNIT;
+	}
+
+	// Only allow you to go faster than your regular top speed if you're facing the right direction
+	if (rubberband > FRACUNIT && player->mo != NULL && player->nextwaypoint != NULL)
+	{
+		const INT16 mindiff = 30;
+		const INT16 maxdiff = 60;
+		INT16 anglediff = 0;
+		fixed_t amt = rubberband - FRACUNIT;
+		angle_t destangle = R_PointToAngle2(
+			player->mo->x, player->mo->y,
+			player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y
+		);
+		angle_t angle = player->mo->angle - destangle;
+
+		if (angle < ANGLE_180)
+		{
+			anglediff = AngleFixed(angle) >> FRACBITS;
+		}
+		else 
+		{
+			anglediff = 360 - (AngleFixed(angle) >> FRACBITS);
+		}
+
+		anglediff = abs(anglediff);
+
+		if (anglediff >= maxdiff)
+		{
+			rubberband = FRACUNIT;
+		}
+		else if (anglediff > mindiff)
+		{
+			amt = (amt * (maxdiff - anglediff)) / mindiff;
+			rubberband = FRACUNIT + amt;
+		}
+	}
+
+	return rubberband;
+}
+
+/*--------------------------------------------------
 	fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
 
 		See header file for description.
