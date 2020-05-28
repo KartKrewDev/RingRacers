@@ -496,7 +496,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
 
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
-	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
+	const fixed_t speed = max(P_AproxDistance(player->mo->momx, player->mo->momy), K_GetKartSpeed(player, false) / 4);
 	const INT32 distance = (FixedMul(speed, distreduce) / FRACUNIT) * futuresight;
 
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
