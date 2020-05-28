@@ -752,7 +752,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				// Increase radius with speed
 				// At low speed, the CPU will try to be more accurate
 				// At high speed, they're more likely to lawnmower
-				speedrad += FixedMul(speedmul, (3*rad/4) - speedrad);
+				speedrad += FixedMul(speedmul, rad - speedrad);
 
 				if (speedrad < playerwidth)
 				{
