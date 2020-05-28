@@ -741,7 +741,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 			if (dirdist <= rad)
 			{
-				fixed_t speedmul = FixedMul(player->speed, K_GetKartSpeed(player, false));
+				fixed_t speedmul = FixedDiv(player->speed, K_GetKartSpeed(player, false));
 				fixed_t speedrad = rad/4;
 
 				if (speedmul > FRACUNIT)
