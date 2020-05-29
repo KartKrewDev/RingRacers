@@ -92,10 +92,7 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(DrawModel);
 	GETFUNC(CreateModelVBOs);
 	GETFUNC(SetTransform);
-<<<<<<< HEAD
-=======
 	GETFUNC(GetRenderVersion);
->>>>>>> srb2/next
 	GETFUNC(PostImgRedraw);
 	GETFUNC(FlushScreenTextures);
 	GETFUNC(StartScreenWipe);
@@ -105,7 +102,7 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(MakeScreenTexture);
 	GETFUNC(MakeScreenFinalTexture);
 	GETFUNC(DrawScreenFinalTexture);
-	
+
 	GETFUNC(RenderSkyDome);
 
 	GETFUNC(LoadShaders);
@@ -115,7 +112,7 @@ void *hwSym(const char *funcName,void *handle)
 
 	GETFUNC(LoadCustomShader);
 	GETFUNC(InitCustomShaders);
-	
+
 	GETFUNC(StartBatching);
 	GETFUNC(RenderBatches);
 

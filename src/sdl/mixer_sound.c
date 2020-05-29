@@ -816,8 +816,6 @@ static void mix_gme(void *udata, Uint8 *stream, int len)
 }
 #endif
 
-<<<<<<< HEAD
-=======
 #ifdef HAVE_OPENMPT
 static void mix_openmpt(void *udata, Uint8 *stream, int len)
 {
@@ -842,7 +840,6 @@ static void mix_openmpt(void *udata, Uint8 *stream, int len)
 }
 #endif
 
->>>>>>> srb2/next
 /// ------------------------
 /// Music System
 /// ------------------------

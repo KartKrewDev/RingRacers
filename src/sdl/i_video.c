@@ -65,10 +65,7 @@
 #include "../m_menu.h"
 #include "../d_main.h"
 #include "../s_sound.h"
-<<<<<<< HEAD
 #include "../i_sound.h"  	// midi pause/unpause
-=======
->>>>>>> srb2/next
 #include "../i_joy.h"
 #include "../st_stuff.h"
 #include "../hu_stuff.h"
@@ -365,8 +362,6 @@ static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 	return 0;
 }
 
-<<<<<<< HEAD
-=======
 static boolean IgnoreMouse(void)
 {
 	if (cv_alwaysgrabmouse.value)
@@ -380,7 +375,6 @@ static boolean IgnoreMouse(void)
 	return false;
 }
 
->>>>>>> srb2/next
 static void SDLdoGrabMouse(void)
 {
 	SDL_ShowCursor(SDL_DISABLE);
@@ -668,17 +662,10 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 	{
 		// Tell game we lost focus, pause music
 		window_notinfocus = true;
-<<<<<<< HEAD
 		if (!cv_playmusicifunfocused.value)
 			I_PauseSong();
 		if (!cv_playsoundifunfocused.value)
 			S_DisableSound();
-=======
-		if (! cv_playmusicifunfocused.value)
-			S_PauseAudio();
-		if (! cv_playsoundsifunfocused.value)
-			S_StopSounds();
->>>>>>> srb2/next
 
 		if (!disable_mouse)
 		{
@@ -1322,11 +1309,7 @@ void I_StartupMouse(void)
 	}
 	else
 		firsttimeonmouse = SDL_FALSE;
-<<<<<<< HEAD
-	if (cv_usemouse.value)
-=======
 	if (cv_usemouse.value && !IgnoreMouse())
->>>>>>> srb2/next
 		SDLdoGrabMouse();
 	else
 		SDLdoUngrabMouse();
@@ -1412,10 +1395,6 @@ static inline boolean I_SkipFrame(void)
 			if (!paused)
 				return false;
 			/* FALLTHRU */
-<<<<<<< HEAD
-=======
-		//case GS_TIMEATTACK: -- sorry optimisation but now we have a cool level platter and that being laggardly looks terrible
->>>>>>> srb2/next
 		case GS_WAITINGPLAYERS:
 			return skip; // Skip odd frames
 		default:
@@ -1436,7 +1415,6 @@ void I_FinishUpdate(void)
 	if (I_SkipFrame())
 		return;
 
-<<<<<<< HEAD
 	if (st_overlay)
 	{
 		if (cv_ticrate.value)
@@ -1448,17 +1426,10 @@ void I_FinishUpdate(void)
 			SCR_DisplayLocalPing();
 		}
 	}
-=======
+
 	// draw captions if enabled
 	if (cv_closedcaptioning.value)
 		SCR_ClosedCaptions();
-
-	if (cv_ticrate.value)
-		SCR_DisplayTicRate();
->>>>>>> srb2/next
-
-	if (cv_showping.value && netgame && consoleplayer != serverplayer)
-		SCR_DisplayLocalPing();
 
 	if (rendermode == render_soft && screens[0])
 	{
@@ -1736,11 +1707,6 @@ void VID_CheckGLLoaded(rendermode_t oldrender)
 			setrenderneeded = 0;
 		}
 	}
-<<<<<<< HEAD
-	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
-
-	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN);
-=======
 #endif
 }
 
@@ -1804,7 +1770,6 @@ void VID_CheckRenderer(void)
 	}
 
 	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN, (rendererchanged ? SDL_FALSE : SDL_TRUE));
->>>>>>> srb2/next
 	Impl_VideoSetupBuffer();
 
 	if (rendermode == render_soft)
@@ -1814,8 +1779,6 @@ void VID_CheckRenderer(void)
 			SDL_FreeSurface(bufSurface);
 			bufSurface = NULL;
 		}
-<<<<<<< HEAD
-=======
 
 		if (rendererchanged)
 		{
@@ -1834,7 +1797,6 @@ void VID_CheckRenderer(void)
 			R_InitHardwareMode();
 			V_SetPalette(0);
 		}
->>>>>>> srb2/next
 	}
 #else
 	(void)oldrenderer;
@@ -1857,7 +1819,7 @@ INT32 VID_SetMode(INT32 modeNum)
 	vid.height = windowedModes[modeNum][1];
 	vid.modenum = modeNum;
 
-	//Impl_SetWindowName("SRB2 "VERSIONSTRING);
+	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
 	VID_CheckRenderer();
 	return SDL_TRUE;
 }
@@ -1913,7 +1875,7 @@ static void Impl_SetWindowName(const char *title)
 static void Impl_SetWindowIcon(void)
 {
 	if (window && icoSurface)
-		SDL_SetWindowIcon(window, icoSurface);	
+		SDL_SetWindowIcon(window, icoSurface);
 }
 
 static void Impl_VideoSetupSDLBuffer(void)
@@ -1947,16 +1909,12 @@ static void Impl_VideoSetupSDLBuffer(void)
 static void Impl_VideoSetupBuffer(void)
 {
 	// Set up game's software render buffer
-<<<<<<< HEAD
-	//if (rendermode == render_soft)
-=======
 	vid.rowbytes = vid.width * vid.bpp;
 	vid.direct = NULL;
 	if (vid.buffer)
 		free(vid.buffer);
 	vid.buffer = calloc(vid.rowbytes*vid.height, NUMSCREENS);
 	if (!vid.buffer)
->>>>>>> srb2/next
 	{
 		I_Error("%s", M_GetText("Not enough memory for video buffer\n"));
 	}
@@ -2003,14 +1961,6 @@ void I_StartupGraphics(void)
 		))
 			framebuffer = SDL_TRUE;
 	}
-<<<<<<< HEAD
-	if (M_CheckParm("-software"))
-		rendermode = render_soft;
-#ifdef HWRENDER
-	else if (M_CheckParm("-opengl"))
-		rendermode = render_opengl;
-#endif
-=======
 
 #ifdef HWRENDER
 	if (M_CheckParm("-opengl"))
@@ -2018,7 +1968,6 @@ void I_StartupGraphics(void)
 	else if (M_CheckParm("-software"))
 #endif
 		chosenrendermode = rendermode = render_soft;
->>>>>>> srb2/next
 
 	usesdl2soft = M_CheckParm("-softblit");
 	borderlesswindow = M_CheckParm("-borderless");
@@ -2027,63 +1976,16 @@ void I_StartupGraphics(void)
 	VID_Command_ModeList_f();
 
 #ifdef HWRENDER
-<<<<<<< HEAD
-	if (rendermode == render_opengl)
-	{
-		HWD.pfnInit             = hwSym("Init",NULL);
-		HWD.pfnFinishUpdate     = NULL;
-		HWD.pfnDraw2DLine       = hwSym("Draw2DLine",NULL);
-		HWD.pfnDrawPolygon      = hwSym("DrawPolygon",NULL);
-		HWD.pfnSetBlend         = hwSym("SetBlend",NULL);
-		HWD.pfnClearBuffer      = hwSym("ClearBuffer",NULL);
-		HWD.pfnSetTexture       = hwSym("SetTexture",NULL);
-		HWD.pfnReadRect         = hwSym("ReadRect",NULL);
-		HWD.pfnGClipRect        = hwSym("GClipRect",NULL);
-		HWD.pfnClearMipMapCache = hwSym("ClearMipMapCache",NULL);
-		HWD.pfnSetSpecialState  = hwSym("SetSpecialState",NULL);
-		HWD.pfnSetPalette       = hwSym("SetPalette",NULL);
-		HWD.pfnGetTextureUsed   = hwSym("GetTextureUsed",NULL);
-		HWD.pfnDrawModel        = hwSym("DrawModel",NULL);
-		HWD.pfnCreateModelVBOs  = hwSym("CreateModelVBOs",NULL);
-		HWD.pfnSetTransform     = hwSym("SetTransform",NULL);
-		HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
-		HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
-		HWD.pfnStartScreenWipe  = hwSym("StartScreenWipe",NULL);
-		HWD.pfnEndScreenWipe    = hwSym("EndScreenWipe",NULL);
-		HWD.pfnDoScreenWipe     = hwSym("DoScreenWipe",NULL);
-		HWD.pfnDrawIntermissionBG=hwSym("DrawIntermissionBG",NULL);
-		HWD.pfnMakeScreenTexture= hwSym("MakeScreenTexture",NULL);
-		HWD.pfnMakeScreenFinalTexture=hwSym("MakeScreenFinalTexture",NULL);
-		HWD.pfnDrawScreenFinalTexture=hwSym("DrawScreenFinalTexture",NULL);
-
-		HWD.pfnRenderSkyDome = hwSym("RenderSkyDome",NULL);
-
-		HWD.pfnLoadShaders = hwSym("LoadShaders",NULL);
-		HWD.pfnKillShaders = hwSym("KillShaders",NULL);
-		HWD.pfnSetShader = hwSym("SetShader",NULL);
-		HWD.pfnUnSetShader = hwSym("UnSetShader",NULL);
-
-		HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
-		HWD.pfnInitCustomShaders = hwSym("InitCustomShaders",NULL);
-
-		HWD.pfnStartBatching = hwSym("StartBatching",NULL);
-		HWD.pfnRenderBatches = hwSym("RenderBatches",NULL);
-
-		if (!HWD.pfnInit()) // load the OpenGL library
-			rendermode = render_soft;
-	}
-=======
 	if (M_CheckParm("-nogl"))
 		vid_opengl_state = -1; // Don't startup OpenGL
 	else if (chosenrendermode == render_opengl)
 		VID_StartupOpenGL();
->>>>>>> srb2/next
 #endif
 
 	// Window icon
 #ifdef HAVE_IMAGE
 	icoSurface = IMG_ReadXPMFromArray(SDL_icon_xpm);
-#endif	
+#endif
 
 	// Fury: we do window initialization after GL setup to allow
 	// SDL_GL_LoadLibrary to work well on Windows
