@@ -79,12 +79,6 @@ static inline void P_ArchivePlayer(void)
 	WRITEUINT32(save_p, player->score);
 	WRITEINT32(save_p, pllives);
 	WRITEINT32(save_p, player->continues);
-
-	if (botskin)
-	{
-		WRITEUINT8(save_p, botskin);
-		WRITEUINT8(save_p, botcolor);
-	}
 }
 
 //
@@ -98,16 +92,6 @@ static inline void P_UnArchivePlayer(void)
 	savedata.score = READINT32(save_p);
 	savedata.lives = READINT32(save_p);
 	savedata.continues = READINT32(save_p);
-
-	if (savedata.botcolor)
-	{
-		savedata.botskin = READUINT8(save_p);
-		if (savedata.botskin-1 >= numskins)
-			savedata.botskin = 0;
-		savedata.botcolor = READUINT8(save_p);
-	}
-	else
-		savedata.botskin = 0;
 }
 
 //
@@ -284,6 +268,11 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT32(save_p, players[i].distancetofinish);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
+
+		WRITEUINT8(save_p, players[i].botvars.difficulty);
+		WRITEUINT32(save_p, players[i].botvars.itemdelay);
+		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
+		WRITESINT8(save_p, players[i].botvars.turnconfirm);
 	}
 }
 
@@ -455,6 +444,11 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
+
+		players[i].botvars.difficulty = READUINT8(save_p);
+		players[i].botvars.itemdelay = READUINT32(save_p);
+		players[i].botvars.itemconfirm = READUINT32(save_p);
+		players[i].botvars.turnconfirm = READSINT8(save_p);
 	}
 }
 
@@ -3247,7 +3241,7 @@ static inline void P_ArchiveMisc(void)
 
 	lastmapsaved = gamemap;
 
-	WRITEUINT16(save_p, (botskin ? (emeralds|(1<<10)) : emeralds)+357);
+	WRITEUINT16(save_p, emeralds+357);
 	WRITESTRINGN(save_p, timeattackfolder, sizeof(timeattackfolder));
 }
 

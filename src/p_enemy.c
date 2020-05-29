@@ -3570,7 +3570,6 @@ void A_AttractChase(mobj_t *actor)
 
 	if (actor->extravalue1) // SRB2Kart
 	{
-#define RINGBOOSTPWR (((9 - actor->target->player->kartspeed) + (9 - actor->target->player->kartweight)) / 2)
 		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
 		{
 			P_RemoveMobj(actor);
@@ -3588,7 +3587,7 @@ void A_AttractChase(mobj_t *actor)
 				angle_t offset = FixedAngle(18<<FRACBITS);
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
-				actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
+				actor->target->player->kartstuff[k_ringboost] += K_GetKartRingPower(actor->target->player)+3;
 				S_StartSound(actor->target, sfx_s1b5);
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
@@ -3616,7 +3615,7 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 16)
 			{
 				if (actor->target->player->kartstuff[k_rings] >= 20)
-					actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
+					actor->target->player->kartstuff[k_ringboost] += K_GetKartRingPower(actor->target->player)+3;
 				else
 					P_GivePlayerRings(actor->target->player, 1);
 
@@ -3645,7 +3644,6 @@ void A_AttractChase(mobj_t *actor)
 				actor->extravalue1++;
 			}
 		}
-#undef RINGBOOSTPWR
 	}
 	else
 	{

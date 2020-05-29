@@ -28,6 +28,7 @@
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
 
 #include "k_waypoint.h"
+#include "k_bot.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -118,6 +119,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartvoterulechanges);
 	CV_RegisterVar(&cv_kartspeedometer);
 	CV_RegisterVar(&cv_kartvoices);
+	CV_RegisterVar(&cv_kartbot);
 	CV_RegisterVar(&cv_karteliminatelast);
 	CV_RegisterVar(&cv_kartusepwrlv);
 	CV_RegisterVar(&cv_votetime);
@@ -297,6 +299,9 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	if (getitem == KITEM_HYUDORO) // Hyudoro cooldown
 		hyubgone = 5*TICRATE;
 
+	player->botvars.itemdelay = TICRATE;
+	player->botvars.itemconfirm = 0;
+
 	switch (getitem)
 	{
 		// Special roulettes first, then the generic ones are handled by default
@@ -345,7 +350,7 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	\return	void
 */
 
-static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush)
+static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, boolean bot)
 {
 	INT32 newodds;
 	INT32 i;
@@ -430,6 +435,46 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 }
 
 #define COOLDOWNONSTART (leveltime < (30*TICRATE)+starttime)
+
+	/*
+	if (bot)
+	{
+		// TODO: Item use on bots should all be passed-in functions.
+		// Instead of manually inserting these, it should return 0
+		// for any items without an item use function supplied
+
+		switch (item)
+		{
+			case KITEM_SNEAKER:
+			case KITEM_ROCKETSNEAKER:
+			case KITEM_INVINCIBILITY:
+			case KITEM_BANANA:
+			case KITEM_EGGMAN:
+			case KITEM_ORBINAUT:
+			case KITEM_JAWZ:
+			case KITEM_MINE:
+			case KITEM_BALLHOG:
+			case KITEM_SPB:
+			case KITEM_GROW:
+			case KITEM_SHRINK:
+			case KITEM_HYUDORO:
+			case KITEM_SUPERRING:
+			case KITEM_THUNDERSHIELD:
+			case KITEM_BUBBLESHIELD:
+			case KITEM_FLAMESHIELD:
+			case KRITEM_TRIPLESNEAKER:
+			case KRITEM_TRIPLEBANANA:
+			case KRITEM_TENFOLDBANANA:
+			case KRITEM_TRIPLEORBINAUT:
+			case KRITEM_QUADORBINAUT:
+			case KRITEM_DUALJAWZ:
+				break;
+			default:
+				return 0;
+		}
+	}
+	*/
+	(void)bot;
 
 	switch (item)
 	{
@@ -522,7 +567,7 @@ static UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 
 
 		for (j = 1; j < NUMKARTRESULTS; j++)
 		{
-			if (K_KartGetItemOdds(i, j, mashed, spbrush) > 0)
+			if (K_KartGetItemOdds(i, j, mashed, spbrush, player->bot) > 0)
 			{
 				available = true;
 				break;
@@ -820,7 +865,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	useodds = K_FindUseodds(player, mashed, pdis, bestbumper, spbrush);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
-		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, mashed, spbrush));
+		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, mashed, spbrush, player->bot));
 
 	// Award the player whatever power is rolled
 	if (totalspawnchance > 0)
@@ -875,7 +920,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 	return weight;
 }
 
-static fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
+fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 {
 	fixed_t weight = 5*FRACUNIT;
 
@@ -2192,6 +2237,13 @@ void K_MomentumToFacing(player_t *player)
 	player->mo->momy = FixedMul(player->mo->momy - player->cmomy, player->mo->friction) + player->cmomy;
 }
 
+boolean K_ApplyOffroad(player_t *player)
+{
+	if (player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || EITHERSNEAKER(player))
+		return false;
+	return true;
+}
+
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
@@ -2212,8 +2264,7 @@ static void K_GetKartBoostPower(player_t *player)
 	}
 
 	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
-	if (!(player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] || EITHERSNEAKER(player))
-		&& player->kartstuff[k_offroad] >= 0)
+	if (K_ApplyOffroad(player) && player->kartstuff[k_offroad] >= 0)
 		boostpower = FixedDiv(boostpower, FixedMul(player->kartstuff[k_offroad], K_GetKartGameSpeedScalar(gamespeed)) + FRACUNIT);
 
 	if (player->kartstuff[k_bananadrag] > TICRATE)
@@ -2292,11 +2343,26 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 
 	finalspeed = K_GetKartSpeedFromStat(kartspeed);
 
+	if (K_PlayerUsesBotMovement(player))
+	{
+		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
+		fixed_t speedmul = ((kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
+		finalspeed = FixedMul(finalspeed, FRACUNIT + speedmul);
+	}
+
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 		finalspeed = FixedMul(finalspeed, player->mo->scale);
 
 	if (doboostpower)
+	{
+		if (K_PlayerUsesBotMovement(player))
+		{
+			finalspeed = FixedMul(finalspeed, K_BotTopSpeedRubberband(player));
+		}
+
 		return FixedMul(finalspeed, player->kartstuff[k_boostpower]+player->kartstuff[k_speedboost]);
+	}
+
 	return finalspeed;
 }
 
@@ -2310,6 +2376,11 @@ fixed_t K_GetKartAccel(player_t *player)
 
 	//k_accel += 3 * (9 - kartspeed); // 36 - 60
 	k_accel += 4 * (9 - kartspeed); // 32 - 64
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		k_accel = FixedMul(k_accel, K_BotRubberband(player));
+	}
 
 	return FixedMul(k_accel, FRACUNIT+player->kartstuff[k_accelboost]);
 }
@@ -2364,6 +2435,9 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 	//  25 while clutching,
 	//   0 with no gas, and
 	// -25 when only braking.
+
+	if (EITHERSNEAKER(player))
+		forwardmove = 50;
 
 	finalspeed *= forwardmove/25;
 	finalspeed /= 2;
@@ -5185,7 +5259,7 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	class = s+(3*w);
 
 	// Silence the engines
-	if (leveltime < 8 || player->spectator || player->exiting)
+	if (leveltime < 8 || player->spectator)
 	{
 		player->karthud[khud_enginesnd] = 0; // Reset sound number
 		return;
@@ -5911,7 +5985,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_bubblecool] = 0;
 	}
 
-	if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD || player->exiting)
+	if (player->kartstuff[k_itemtype] != KITEM_FLAMESHIELD)
 	{
 		if (player->kartstuff[k_flamedash])
 			K_FlameDashLeftoverSmoke(player->mo);
@@ -6086,10 +6160,31 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				angle_t nextbestmomdelta = momdelta;
 				size_t i = 0U;
 
+				if (K_PlayerUsesBotMovement(player))
+				{
+					// Try to force bots to use a next waypoint
+					nextbestdelta = ANGLE_MAX;
+					nextbestmomdelta = ANGLE_MAX;
+				}
+
 				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
 				{
 					for (i = 0U; i < waypoint->numnextwaypoints; i++)
 					{
+						if (K_PlayerUsesBotMovement(player) == true
+						&& K_GetWaypointIsShortcut(waypoint->nextwaypoints[i]) == true
+						&& K_BotCanTakeCut(player) == false)
+						{
+							// Bots that aren't able to take a shortcut will ignore shortcut waypoints.
+							// (However, if they're already on a shortcut, then we want them to keep going.)
+
+							if (player->nextwaypoint == NULL
+							|| K_GetWaypointIsShortcut(player->nextwaypoint) == false)
+							{
+								continue;
+							}
+						}
+
 						angletowaypoint = R_PointToAngle2(
 							player->mo->x, player->mo->y,
 							waypoint->nextwaypoints[i]->mobj->x, waypoint->nextwaypoints[i]->mobj->y);
@@ -6126,7 +6221,8 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 					}
 				}
 
-				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U))
+				if ((waypoint->prevwaypoints != NULL) && (waypoint->numprevwaypoints > 0U)
+				&& !(K_PlayerUsesBotMovement(player))) // Bots do not need prev waypoints
 				{
 					for (i = 0U; i < waypoint->numprevwaypoints; i++)
 					{
@@ -6281,76 +6377,78 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
 	if ((player != NULL) && (player->mo != NULL))
 	{
+		waypoint_t *finishline   = K_GetFinishLineWaypoint();
+		waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player);
+
+		if (nextwaypoint != NULL)
+		{
+			// If nextwaypoint is NULL, it means we don't want to update the waypoint until we touch another one.
+			// player->nextwaypoint will keep its previous value in this case.
+			player->nextwaypoint = nextwaypoint;
+		}
+
+		// nextwaypoint is now the waypoint that is in front of us
 		if (player->exiting)
 		{
-			player->nextwaypoint     = K_GetFinishLineWaypoint();
+			// Player has finished, we don't need to calculate this
 			player->distancetofinish = 0U;
 		}
-		else
+		else if ((player->nextwaypoint != NULL) && (finishline != NULL))
 		{
-			waypoint_t *finishline   = K_GetFinishLineWaypoint();
-			waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player);
+			const boolean useshortcuts = false;
+			const boolean huntbackwards = false;
+			boolean pathfindsuccess = false;
+			path_t pathtofinish = {};
 
-			if (nextwaypoint != NULL)
+			pathfindsuccess =
+				K_PathfindToWaypoint(player->nextwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+
+			// Update the player's distance to the finish line if a path was found.
+			// Using shortcuts won't find a path, so distance won't be updated until the player gets back on track
+			if (pathfindsuccess == true)
 			{
-				// If nextwaypoint is NULL, it means we don't want to update the waypoint until we touch another one.
-				// player->nextwaypoint will keep its previous value in this case.
-				player->nextwaypoint = nextwaypoint;
-			}
+				// Add euclidean distance to the next waypoint to the distancetofinish
+				UINT32 adddist;
+				fixed_t disttowaypoint =
+					P_AproxDistance(
+						(player->mo->x >> FRACBITS) - (player->nextwaypoint->mobj->x >> FRACBITS),
+						(player->mo->y >> FRACBITS) - (player->nextwaypoint->mobj->y >> FRACBITS));
+				disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
 
-			// nextwaypoint is now the waypoint that is in front of us
-			if ((player->nextwaypoint != NULL) && (finishline != NULL))
-			{
-				const boolean useshortcuts = false;
-				const boolean huntbackwards = false;
-				boolean pathfindsuccess = false;
-				path_t pathtofinish = {};
+				adddist = (UINT32)disttowaypoint;
 
-				pathfindsuccess =
-					K_PathfindToWaypoint(player->nextwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+				player->distancetofinish = pathtofinish.totaldist + adddist;
+				Z_Free(pathtofinish.array);
 
-				// Update the player's distance to the finish line if a path was found.
-				// Using shortcuts won't find a path, so distance won't be updated until the player gets back on track
-				if (pathfindsuccess == true)
+				// distancetofinish is currently a flat distance to the finish line, but in order to be fully
+				// correct we need to add to it the length of the entire circuit multiplied by the number of laps
+				// left after this one. This will give us the total distance to the finish line, and allow item
+				// distance calculation to work easily
+				if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					// Add euclidean distance to the next waypoint to the distancetofinish
-					UINT32 adddist;
-					fixed_t disttowaypoint =
-						P_AproxDistance(
-							(player->mo->x >> FRACBITS) - (player->nextwaypoint->mobj->x >> FRACBITS),
-							(player->mo->y >> FRACBITS) - (player->nextwaypoint->mobj->y >> FRACBITS));
-					disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
+					const UINT8 numfulllapsleft = ((UINT8)cv_numlaps.value - player->laps);
 
-					adddist = (UINT32)disttowaypoint;
+					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 
-					player->distancetofinish = pathtofinish.totaldist + adddist;
-					Z_Free(pathtofinish.array);
-
-					// distancetofinish is currently a flat distance to the finish line, but in order to be fully
-					// correct we need to add to it the length of the entire circuit multiplied by the number of laps
-					// left after this one. This will give us the total distance to the finish line, and allow item
-					// distance calculation to work easily
-					if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
+					// An additional HACK, to fix looking backwards towards the finish line
+					// If the player's next waypoint is the finishline and the angle distance from player to
+					// connectin waypoints implies they're closer to a next waypoint, add a full track distance
+					if (player->nextwaypoint == finishline)
 					{
-						const UINT8 numfulllapsleft = ((UINT8)cv_numlaps.value - player->laps);
-
-						player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
-
-						// An additional HACK, to fix looking backwards towards the finish line
-						// If the player's next waypoint is the finishline and the angle distance from player to
-						// connectin waypoints implies they're closer to a next waypoint, add a full track distance
-						if (player->nextwaypoint == finishline)
+						if (K_PlayerCloserToNextWaypoints(player->nextwaypoint, player) == true)
 						{
-							if (K_PlayerCloserToNextWaypoints(player->nextwaypoint, player) == true)
-							{
-								player->distancetofinish += K_GetCircuitLength();
-							}
+							player->distancetofinish += K_GetCircuitLength();
 						}
 					}
 				}
 			}
 		}
 	}
+}
+
+INT32 K_GetKartRingPower(player_t *player)
+{
+	return (((9 - player->kartspeed) + (9 - player->kartweight)) / 2);
 }
 
 // Returns false if this player being placed here causes them to collide with any other player
@@ -6419,6 +6517,15 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if (player->spectator)
 	{
 		return turnvalue;
+	}
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		turnvalue = 5*turnvalue/4; // Base increase to turning
+		turnvalue = FixedMul(
+			turnvalue * FRACUNIT,
+			K_BotRubberband(player)
+		) / FRACUNIT;
 	}
 
 	if (player->kartstuff[k_drift] != 0 && P_IsObjectOnGround(player->mo))
@@ -6618,10 +6725,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			// Disable drift-sparks until you're going fast enough
 			if (player->kartstuff[k_getsparks] == 0
-				|| (player->kartstuff[k_offroad]
-				&& !player->kartstuff[k_invincibilitytimer]
-				&& !player->kartstuff[k_hyudorotimer]
-				&& !EITHERSNEAKER(player)))
+				|| (player->kartstuff[k_offroad] && K_ApplyOffroad(player)))
 				driftadditive = 0;
 
 			// Inbetween minspeed and minspeed*2, it'll keep your previous drift-spark state.
@@ -6895,7 +6999,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	else if (cmd->buttons & BT_ATTACK)
 		player->pflags |= PF_ATTACKDOWN;
 
-	if (player && player->mo && player->mo->health > 0 && !player->spectator && !(player->exiting || mapreset) && leveltime > starttime
+	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > starttime
 		&& player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_squishedtimer] == 0 && player->kartstuff[k_respawn] == 0)
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
@@ -9315,15 +9419,23 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 		if (players[tab[i].num].spectator || !players[tab[i].num].mo)
 			continue; //ignore them.
 
-		if (netgame // don't draw it offline
-		&& ( tab[i].num != serverplayer || ! server_lagless ))
-			HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
+		if (netgame) // don't draw ping offline
+		{
+			if (players[tab[i].num].bot)
+			{
+				; // TODO: Put a graphic here to indicate this player is a bot!
+			}
+			else if (tab[i].num != serverplayer || !server_lagless)
+			{
+				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
+			}
+		}
 
 		STRBUFCPY(strtime, tab[i].name);
 
 		y2 = y;
 
-		if (playerconsole[tab[i].num] == 0 && server_lagless)
+		if (netgame && playerconsole[tab[i].num] == 0 && server_lagless && !players[tab[i].num].bot)
 		{
 			y2 = ( y - 4 );
 
@@ -10093,7 +10205,7 @@ static void K_drawKartMinimap(void)
 			g = g->next;
 		}
 
-		if (!stplyr->mo || stplyr->spectator) // do we need the latter..?
+		if (!stplyr->mo || stplyr->spectator || stplyr->exiting)
 			return;
 
 		localplayers[numlocalplayers] = stplyr-players;
@@ -10105,7 +10217,7 @@ static void K_drawKartMinimap(void)
 		{
 			if (!playeringame[i])
 				continue;
-			if (!players[i].mo || players[i].spectator)
+			if (!players[i].mo || players[i].spectator || players[i].exiting)
 				continue;
 
 			if (i != displayplayers[0] || r_splitscreen)
@@ -10815,7 +10927,7 @@ static void K_drawDistributionDebugger(void)
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		const INT32 itemodds = K_KartGetItemOdds(useodds, i, 0, spbrush);
+		const INT32 itemodds = K_KartGetItemOdds(useodds, i, 0, spbrush, stplyr->bot);
 		if (itemodds <= 0)
 			continue;
 
