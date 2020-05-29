@@ -611,12 +611,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->weapondelay = LONG(players[i].weapondelay);
 	rsp->tossdelay = LONG(players[i].tossdelay);
 
-	rsp->starpostx = SHORT(players[i].starpostx);
-	rsp->starposty = SHORT(players[i].starposty);
-	rsp->starpostz = SHORT(players[i].starpostz);
 	rsp->starpostnum = LONG(players[i].starpostnum);
-	rsp->starposttime = (tic_t)LONG(players[i].starposttime);
-	rsp->starpostangle = (angle_t)LONG(players[i].starpostangle);
 
 	rsp->maxlink = LONG(players[i].maxlink);
 	rsp->dashspeed = (fixed_t)LONG(players[i].dashspeed);
@@ -734,12 +729,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].weapondelay = LONG(rsp->weapondelay);
 	players[i].tossdelay = LONG(rsp->tossdelay);
 
-	players[i].starpostx = SHORT(rsp->starpostx);
-	players[i].starposty = SHORT(rsp->starposty);
-	players[i].starpostz = SHORT(rsp->starpostz);
 	players[i].starpostnum = LONG(rsp->starpostnum);
-	players[i].starposttime = (tic_t)LONG(rsp->starposttime);
-	players[i].starpostangle = (angle_t)LONG(rsp->starpostangle);
 
 	players[i].maxlink = LONG(rsp->maxlink);
 	players[i].dashspeed = (fixed_t)LONG(rsp->dashspeed);

@@ -506,6 +506,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/y_inter.o  \
 		$(OBJDIR)/st_stuff.o \
 		$(OBJDIR)/k_kart.o   \
+		$(OBJDIR)/k_respawn.o\
 		$(OBJDIR)/k_collide.o\
 		$(OBJDIR)/k_color.o  \
 		$(OBJDIR)/k_battle.o \

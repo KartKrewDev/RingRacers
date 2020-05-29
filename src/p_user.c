@@ -47,6 +47,7 @@
 #include "m_cond.h" // M_UpdateUnlockablesAndExtraEmblems
 #include "k_kart.h"
 #include "console.h" // CON_LogMessage
+#include "k_respawn.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -5772,7 +5773,7 @@ static void P_MovePlayer(player_t *player)
 		// Kart: store the current turn range for later use
 		if ((player->mo && player->speed > 0) // Moving
 			|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-			|| (player->kartstuff[k_respawn]) // Respawning
+			|| (player->respawnvars.respawnstate != RESPAWNST_NONE) // Respawning
 			|| (player->spectator || objectplacing)) // Not a physical player
 		{
 			player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
@@ -8607,19 +8608,34 @@ void P_PlayerThink(player_t *player)
 			player->linkcount = 0;
 	}
 
-	// Move around.
-	// Reactiontime is used to prevent movement
-	//  for a bit after a teleport.
-	if (player->mo->reactiontime)
+	if (player->respawnvars.respawnstate != RESPAWNST_NONE)
+	{
+		K_RespawnChecker(player);
+		player->rmomx = player->rmomy = 0;
+
+		if (player->respawnvars.respawnstate == RESPAWNST_DROP)
+		{
+			// Allows some turning
+			P_MovePlayer(player);
+		}
+	}
+	else if (player->mo->reactiontime)
+	{
+		// Reactiontime is used to prevent movement
+		// for a bit after a teleport.
 		player->mo->reactiontime--;
+	}
 	else if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
 	{
 		P_DoZoomTube(player);
-		player->rmomx = player->rmomy = 0; // no actual momentum from your controls
+		player->rmomx = player->rmomy = 0;
 		P_ResetScore(player);
 	}
 	else
+	{
+		// Move around.
 		P_MovePlayer(player);
+	}
 
 	if (!player->mo)
 		return; // P_MovePlayer removed player->mo.
@@ -8796,7 +8812,7 @@ void P_PlayerThink(player_t *player)
 	if (!(//player->pflags & PF_NIGHTSMODE ||
 		player->kartstuff[k_hyudorotimer] // SRB2kart - fixes Hyudoro not flashing when it should.
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
-		|| player->kartstuff[k_respawn] // Respawn timer (for drop dash effect)
+		|| (player->respawnvars.respawnstate != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_TIMEOVER) // NO CONTEST explosion
 		|| (G_BattleGametype() && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
 		|| leveltime < starttime)) // Level intro

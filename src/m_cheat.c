@@ -682,13 +682,11 @@ void Command_Savecheckpoint_f(void)
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
 
-	players[consoleplayer].starposttime = players[consoleplayer].realtime;
-	players[consoleplayer].starpostx = players[consoleplayer].mo->x>>FRACBITS;
-	players[consoleplayer].starposty = players[consoleplayer].mo->y>>FRACBITS;
-	players[consoleplayer].starpostz = players[consoleplayer].mo->floorz>>FRACBITS;
-	players[consoleplayer].starpostangle = players[consoleplayer].mo->angle;
+	players[consoleplayer].respawnvars.pointx = players[consoleplayer].mo->x;
+	players[consoleplayer].respawnvars.pointy = players[consoleplayer].mo->y;
+	players[consoleplayer].respawnvars.pointz = players[consoleplayer].mo->floorz;
 
-	CONS_Printf(M_GetText("Temporary checkpoint created at %d, %d, %d\n"), players[consoleplayer].starpostx, players[consoleplayer].starposty, players[consoleplayer].starpostz);
+	CONS_Printf(M_GetText("Temporary checkpoint created at %d, %d, %d\n"), players[consoleplayer].respawnvars.pointx, players[consoleplayer].respawnvars.pointy, players[consoleplayer].respawnvars.pointz);
 }
 
 // Like M_GetAllEmeralds() but for console devmode junkies.

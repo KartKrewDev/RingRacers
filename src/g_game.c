@@ -53,6 +53,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_color.h"
+#include "k_respawn.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -1587,7 +1588,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// SRB2kart - no additional angle if not moving
 	if ((player->mo && player->speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (player->kartstuff[k_respawn]) // Respawning
+		|| (player->respawnvars.respawnstate != RESPAWNST_NONE) // Respawning
 		|| (player->spectator || objectplacing)) // Not a physical player
 		lang += (cmd->angleturn<<16);
 
@@ -2536,12 +2537,9 @@ static inline void G_PlayerFinishLevel(INT32 player)
 
 	p->mo->flags2 &= ~MF2_SHADOW; // cancel invisibility
 	P_FlashPal(p, 0, 0); // Resets
-	p->starpostangle = 0;
-	p->starposttime = 0;
-	p->starpostx = 0;
-	p->starposty = 0;
-	p->starpostz = 0;
+
 	p->starpostnum = 0;
+	memset(&p->respawnvars, 0, sizeof (p->respawnvars));
 
 	// SRB2kart: Increment the "matches played" counter.
 	if (player == consoleplayer)
@@ -2575,12 +2573,7 @@ void G_PlayerReborn(INT32 player)
 	INT32 charflags;
 	INT32 pflags;
 	INT32 ctfteam;
-	INT32 starposttime;
-	INT16 starpostx;
-	INT16 starposty;
-	INT16 starpostz;
 	INT32 starpostnum;
-	INT32 starpostangle;
 	INT32 exiting;
 	INT16 numboxes;
 	INT16 totalring;
@@ -2604,7 +2597,6 @@ void G_PlayerReborn(INT32 player)
 	INT32 comebackpoints;
 	INT32 wanted;
 	INT32 rings;
-	INT32 respawnflip;
 	boolean songcredit = false;
 
 	score = players[player].score;
@@ -2634,13 +2626,7 @@ void G_PlayerReborn(INT32 player)
 	//
 	charflags = players[player].charflags;
 
-	starposttime = players[player].starposttime;
-	starpostx = players[player].starpostx;
-	starposty = players[player].starposty;
-	starpostz = players[player].starpostz;
 	starpostnum = players[player].starpostnum;
-	respawnflip = players[player].kartstuff[k_starpostflip];	//SRB2KART
-	starpostangle = players[player].starpostangle;
 
 	mare = players[player].mare;
 	bot = players[player].bot;
@@ -2709,12 +2695,7 @@ void G_PlayerReborn(INT32 player)
 	//
 	p->charflags = charflags;
 
-	p->starposttime = starposttime;
-	p->starpostx = starpostx;
-	p->starposty = starposty;
-	p->starpostz = starpostz;
 	p->starpostnum = starpostnum;
-	p->starpostangle = starpostangle;
 	p->exiting = exiting;
 
 	p->numboxes = numboxes;
@@ -2739,7 +2720,6 @@ void G_PlayerReborn(INT32 player)
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
 	p->kartstuff[k_lastdraft] = -1;
-	p->kartstuff[k_starpostflip] = respawnflip;
 
 	// Don't do anything immediately
 	p->pflags |= PF_USEDOWN;
@@ -2772,7 +2752,9 @@ void G_PlayerReborn(INT32 player)
 		S_ShowMusicCredit();
 
 	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
-		p->kartstuff[k_respawn] = 48; // Respawn effect
+	{
+		K_DoIngameRespawn(p);
+	}
 
 	if (gametype == GT_COOP)
 		P_FindEmerald(); // scan for emeralds to hunt for
@@ -4680,8 +4662,8 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			players[i].playerstate = PST_REBORN;
-			players[i].starpostangle = players[i].starpostnum = players[i].starposttime = 0;
-			players[i].starpostx = players[i].starposty = players[i].starpostz = 0;
+			players[i].starpostnum = 0;
+			memset(&players[i].respawnvars, 0, sizeof (players[i].respawnvars));
 
 #if 0
 			if (netgame || multiplayer)
@@ -5203,7 +5185,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	// SRB2kart: Copy-pasted from ticcmd building, removes that crappy demo cam
 	if (((players[displayplayers[0]].mo && players[displayplayers[0]].speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (players[displayplayers[0]].kartstuff[k_respawn]) // Respawning
+		|| (players[displayplayers[0]].respawnvars.respawnstate != RESPAWNST_NONE) // Respawning
 		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
 		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
 		&& (players[displayplayers[0]].kartstuff[k_sneakertimer] || players[displayplayers[0]].kartstuff[k_levelbooster]))) // Spinning and boosting cancels out spinout

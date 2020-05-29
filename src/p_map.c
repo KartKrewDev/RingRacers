@@ -26,6 +26,7 @@
 #include "w_wad.h"
 #include "k_kart.h" // SRB2kart 011617
 #include "k_collide.h"
+#include "k_respawn.h"
 
 #include "hu_stuff.h" // SRB2kart
 #include "i_system.h" // SRB2kart

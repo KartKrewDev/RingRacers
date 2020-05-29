@@ -252,12 +252,7 @@ typedef struct
 	INT32 weapondelay;
 	INT32 tossdelay;
 
-	INT16 starpostx;
-	INT16 starposty;
-	INT16 starpostz;
 	INT32 starpostnum;
-	tic_t starposttime;
-	angle_t starpostangle;
 
 	INT32 maxlink;
 	fixed_t dashspeed;

@@ -188,6 +188,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].totalring);
 		WRITEUINT32(save_p, players[i].realtime);
 		WRITEUINT8(save_p, players[i].laps);
+		WRITEINT32(save_p, players[i].starpostnum);
 
 		////////////////////
 		// CTF Mode Stuff //
@@ -197,13 +198,6 @@ static void P_NetArchivePlayers(void)
 
 		WRITEINT32(save_p, players[i].weapondelay);
 		WRITEINT32(save_p, players[i].tossdelay);
-
-		WRITEUINT32(save_p, players[i].starposttime);
-		WRITEINT16(save_p, players[i].starpostx);
-		WRITEINT16(save_p, players[i].starposty);
-		WRITEINT16(save_p, players[i].starpostz);
-		WRITEINT32(save_p, players[i].starpostnum);
-		WRITEANGLE(save_p, players[i].starpostangle);
 
 		WRITEANGLE(save_p, players[i].angle_pos);
 		WRITEANGLE(save_p, players[i].old_angle_pos);
@@ -368,6 +362,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].totalring = READINT16(save_p); // Total number of rings obtained for Race Mode
 		players[i].realtime = READUINT32(save_p); // integer replacement for leveltime
 		players[i].laps = READUINT8(save_p); // Number of laps (optional)
+		players[i].starpostnum = READINT32(save_p);
 
 		////////////////////
 		// CTF Mode Stuff //
@@ -377,13 +372,6 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].weapondelay = READINT32(save_p);
 		players[i].tossdelay = READINT32(save_p);
-
-		players[i].starposttime = READUINT32(save_p);
-		players[i].starpostx = READINT16(save_p);
-		players[i].starposty = READINT16(save_p);
-		players[i].starpostz = READINT16(save_p);
-		players[i].starpostnum = READINT32(save_p);
-		players[i].starpostangle = READANGLE(save_p);
 
 		players[i].angle_pos = READANGLE(save_p);
 		players[i].old_angle_pos = READANGLE(save_p);
