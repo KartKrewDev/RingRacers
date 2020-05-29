@@ -754,13 +754,10 @@ static INT32 SolveTProblem(void)
 		return 0;
 
 	CONS_Debug(DBG_RENDER, "Solving T-joins. This may take a while. Please wait...\n");
-<<<<<<< HEAD
-=======
 #ifdef HWR_LOADING_SCREEN
 	CON_Drawer(); //let the user know what we are doing
 	I_FinishUpdate(); // page flip or blit buffer
 #endif
->>>>>>> srb2/next
 
 	numsplitpoly = 0;
 
@@ -888,11 +885,8 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	CON_Drawer(); //let the user know what we are doing
 	I_FinishUpdate(); // page flip or blit buffer
 #endif
-<<<<<<< HEAD
-=======
 
 	HWR_ClearPolys();
->>>>>>> srb2/next
 
 	// find min/max boundaries of map
 	//CONS_Debug(DBG_RENDER, "Looking for boundaries of map...\n");

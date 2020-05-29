@@ -252,11 +252,8 @@ model_t *MD2_LoadModel(const char *fileName, int ztag, boolean useFloat)
 	md2triangle_t *tris;
 	md2texcoord_t *texcoords;
 	md2frame_t *frames;
-<<<<<<< HEAD
-=======
 	char *fname = NULL;
 	int foffset = 0;
->>>>>>> srb2/next
 
 	int t;
 
@@ -331,8 +328,6 @@ model_t *MD2_LoadModel(const char *fileName, int ztag, boolean useFloat)
 	texcoords = (md2texcoord_t*)&buffer[header->offsetST];
 	frames = (md2frame_t*)&buffer[header->offsetFrames];
 
-<<<<<<< HEAD
-=======
 	retModel->framenames = (char*)Z_Calloc(header->numFrames*16, ztag, 0);
 	fname = retModel->framenames;
 	for (i = 0; i < header->numFrames; i++)
@@ -343,7 +338,6 @@ model_t *MD2_LoadModel(const char *fileName, int ztag, boolean useFloat)
 		fname += 16;
 	}
 
->>>>>>> srb2/next
 	// Read in textures
 	retModel->numMaterials = header->numSkins;
 

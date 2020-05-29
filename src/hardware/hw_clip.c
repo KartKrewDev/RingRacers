@@ -381,11 +381,7 @@ void gld_FrustrumSetup(void)
 	float t;
 	float clip[16];
 
-<<<<<<< HEAD
 	pglGetFloatv(GL_PROJECTION_MATRIX, projMatrix);
-=======
-	pglGeFloatv(GL_PROJECTION_MATRIX, projMatrix);
->>>>>>> srb2/next
 	pglGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);
 
 	clip[0]  = CALCMATRIX(0, 0, 1, 4, 2, 8, 3, 12);
