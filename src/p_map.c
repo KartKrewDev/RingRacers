@@ -2993,6 +2993,100 @@ boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y)
 }
 
 //
+// PTR_GetSpecialLines
+//
+static boolean PTR_GetSpecialLines(intercept_t *in)
+{
+	line_t *ld;
+
+	I_Assert(in->isaline);
+
+	ld = in->d.line;
+
+	if (!ld->backsector)
+	{
+		return true;
+	}
+
+	if (P_SpecialIsLinedefCrossType(ld->special))
+	{
+		add_spechit(ld);
+	}
+
+	return true;
+}
+
+//
+// P_HitSpecialLines
+// Finds all special lines in the provided path and tries to cross them.
+// For zoom tubes and respawning, which noclip but need to cross finish lines.
+//
+void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_t momy)
+{
+	fixed_t leadx, leady;
+	fixed_t trailx, traily;
+	line_t *ld = NULL;
+	INT32 side = 0, oldside = 0;
+
+	I_Assert(thing != NULL);
+#ifdef PARANOIA
+	if (P_MobjWasRemoved(thing))
+		I_Error("Previously-removed Thing of type %u crashes P_CheckPosition!", thing->type);
+#endif
+
+	// reset special lines
+	numspechitint = 0U;
+	numspechit = 0U;
+
+	// trace along the three leading corners
+	if (momx > 0)
+	{
+		leadx = thing->x + thing->radius;
+		trailx = thing->x - thing->radius;
+	}
+	else
+	{
+		leadx = thing->x - thing->radius;
+		trailx = thing->x + thing->radius;
+	}
+
+	if (momy > 0)
+	{
+		leady = thing->y + thing->radius;
+		traily = thing->y - thing->radius;
+	}
+	else
+	{
+		leady = thing->y - thing->radius;
+		traily = thing->y + thing->radius;
+	}
+
+	P_PathTraverse(leadx, leady, leadx + momx, leady + momy, PT_ADDLINES, PTR_GetSpecialLines);
+	P_PathTraverse(trailx, leady, trailx + momx, leady + momy, PT_ADDLINES, PTR_GetSpecialLines);
+	P_PathTraverse(leadx, traily, leadx + momx, traily + momy, PT_ADDLINES, PTR_GetSpecialLines);
+
+	spechitint_copyinto();
+
+	// remove any duplicates that may be in spechitint
+	spechitint_removedups();
+
+	// handle any of the special lines that were crossed
+	while (numspechitint--)
+	{
+		ld = &lines[spechitint[numspechitint]];
+		side = P_PointOnLineSide(x + momx, y + momy, ld);
+		oldside = P_PointOnLineSide(x, y, ld);
+		if (side != oldside)
+		{
+			if (ld->special)
+			{
+				P_CrossSpecialLine(ld, oldside, thing);
+			}
+		}
+	}
+}
+
+//
 // P_ThingHeightClip
 // Takes a valid thing and adjusts the thing->floorz,
 // thing->ceilingz, and possibly thing->z.

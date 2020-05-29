@@ -3753,6 +3753,7 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	if ((mobj->tracer && mobj->tracer->type == MT_TUBEWAYPOINT)
 	|| (mobj->player->respawnvars.respawnstate == RESPAWNST_MOVE))
 	{
+		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
 		P_UnsetThingPosition(mobj);
 		mobj->x += mobj->momx;
 		mobj->y += mobj->momy;
