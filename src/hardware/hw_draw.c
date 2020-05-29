@@ -200,13 +200,12 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 		cy -= offsety;
 	}
 
-<<<<<<< HEAD
 	if (option & V_SPLITSCREEN)
 		cy += FIXED_TO_FLOAT((BASEVIDHEIGHT/2)<<FRACBITS);
 
 	if (option & V_HORZSCREEN)
 		cx += FIXED_TO_FLOAT((BASEVIDWIDTH/2)<<FRACBITS);
-=======
+
 	if (splitscreen && (option & V_PERPLAYER))
 	{
 		float adjusty = ((option & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)/2.0f;
@@ -274,7 +273,6 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 			}
 		}
 	}
->>>>>>> srb2/next
 
 	if (!(option & V_NOSCALESTART))
 	{
@@ -377,19 +375,11 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 	if (alphalevel)
 	{
 		FSurfaceInfo Surf;
-<<<<<<< HEAD
-		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
-		if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[hudtrans];
-		else if (alphalevel == 14) Surf.PolyColor.s.alpha = softwaretranstogl[hudtrans];
-		else if (alphalevel == 15) Surf.PolyColor.s.alpha = softwaretranstogl_hi[hudtrans];
-		else Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
-=======
 		Surf.FlatColor.s.red = Surf.FlatColor.s.green = Surf.FlatColor.s.blue = 0xff;
 		if (alphalevel == 13) Surf.FlatColor.s.alpha = softwaretranstogl_lo[st_translucency];
 		else if (alphalevel == 14) Surf.FlatColor.s.alpha = softwaretranstogl[st_translucency];
 		else if (alphalevel == 15) Surf.FlatColor.s.alpha = softwaretranstogl_hi[st_translucency];
 		else Surf.FlatColor.s.alpha = softwaretranstogl[10-alphalevel];
->>>>>>> srb2/next
 		flags |= PF_Modulated;
 		HWD.pfnDrawPolygon(&Surf, v, 4, flags);
 	}
@@ -520,12 +510,6 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 
 	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
 
-<<<<<<< HEAD
-	v[0].s = v[3].s = ((sx)/(float)SHORT(gpatch->width) )*gpatch->max_s;
-	v[2].s = v[1].s = ((w )/(float)SHORT(gpatch->width) )*gpatch->max_s;
-	v[0].t = v[1].t = ((sy)/(float)SHORT(gpatch->height))*gpatch->max_t;
-	v[2].t = v[3].t = ((h )/(float)SHORT(gpatch->height))*gpatch->max_t;
-=======
 	v[0].sow = v[3].sow     = ((sx  )/(float)SHORT(gpatch->width) )*gpatch->max_s;
 	if (sx + w > SHORT(gpatch->width))
 		v[2].sow = v[1].sow = gpatch->max_s;
@@ -537,7 +521,6 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 		v[2].tow = v[3].tow = gpatch->max_t;
 	else
 		v[2].tow = v[3].tow = ((sy+h)/(float)SHORT(gpatch->height))*gpatch->max_t;
->>>>>>> srb2/next
 
 	flags = PF_Translucent|PF_NoDepthTest;
 
@@ -550,19 +533,11 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 	if (alphalevel)
 	{
 		FSurfaceInfo Surf;
-<<<<<<< HEAD
-		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
-		if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[cv_translucenthud.value];
-		else if (alphalevel == 14) Surf.PolyColor.s.alpha = softwaretranstogl[cv_translucenthud.value];
-		else if (alphalevel == 15) Surf.PolyColor.s.alpha = softwaretranstogl_hi[cv_translucenthud.value];
-		else Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
-=======
 		Surf.FlatColor.s.red = Surf.FlatColor.s.green = Surf.FlatColor.s.blue = 0xff;
 		if (alphalevel == 13) Surf.FlatColor.s.alpha = softwaretranstogl_lo[st_translucency];
 		else if (alphalevel == 14) Surf.FlatColor.s.alpha = softwaretranstogl[st_translucency];
 		else if (alphalevel == 15) Surf.FlatColor.s.alpha = softwaretranstogl_hi[st_translucency];
 		else Surf.FlatColor.s.alpha = softwaretranstogl[10-alphalevel];
->>>>>>> srb2/next
 		flags |= PF_Modulated;
 		HWD.pfnDrawPolygon(&Surf, v, 4, flags);
 	}
@@ -635,11 +610,7 @@ void HWR_DrawFlatFill (INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum
 	v[0].t = v[1].t = (float)((y & flatflag)/dflatsize);
 	v[2].t = v[3].t = (float)(v[0].t + h/dflatsize);
 
-<<<<<<< HEAD
-	HWR_GetFlat(flatlumpnum, false);	// Never Encore map drawflatfill, duh.
-=======
-	HWR_LiterallyGetFlat(flatlumpnum);
->>>>>>> srb2/next
+	HWR_LiterallyGetFlat(flatlumpnum, false);
 
 	//Hurdler: Boris, the same comment as above... but maybe for pics
 	// it not a problem since they don't have any transparent pixel
@@ -660,33 +631,6 @@ void HWR_DrawFlatFill (INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum
 //  0--1
 void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 {
-<<<<<<< HEAD
-    FOutVector  v[4];
-    FSurfaceInfo Surf;
-
-    v[0].x = v[3].x = -1.0f;
-    v[2].x = v[1].x =  1.0f;
-    v[0].y = v[1].y = -1.0f;
-    v[2].y = v[3].y =  1.0f;
-    v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
-
-    v[0].s = v[3].s = 0.0f;
-    v[2].s = v[1].s = 1.0f;
-    v[0].t = v[1].t = 1.0f;
-    v[2].t = v[3].t = 0.0f;
-
-    if (color & 0xFF00) // Do COLORMAP fade.
-    {
-        Surf.PolyColor.rgba = UINT2RGBA(0x01010160);
-        Surf.PolyColor.s.alpha = (strength*8);
-    }
-    else // Do TRANSMAP** fade.
-    {
-        Surf.PolyColor.rgba = pLocalPalette[color].rgba;
-        Surf.PolyColor.s.alpha = (UINT8)(strength*25.5f);
-    }
-    HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
-=======
 	FOutVector  v[4];
 	FSurfaceInfo Surf;
 
@@ -887,7 +831,6 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 		Surf.FlatColor.s.alpha = softwaretranstogl[strength];
 	}
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
->>>>>>> srb2/next
 }
 
 // Draw the console background with translucency support
@@ -1357,13 +1300,8 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 	v[0].t = v[1].t = 0.0f;
 	v[2].t = v[3].t = 1.0f;
 
-<<<<<<< HEAD
-	Surf.PolyColor.rgba = UINT2RGBA(color);
-	Surf.PolyColor.s.alpha = 0x80;
-=======
 	Surf.FlatColor.rgba = UINT2RGBA(actualcolor);
 	Surf.FlatColor.s.alpha = 0x80;
->>>>>>> srb2/next
 
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
 }

@@ -7,13 +7,6 @@
 	the licensing is for Sonic Robo Blast 2.
 */
 
-<<<<<<< HEAD
-#include "../z_zone.h"
-#include "../doomdef.h"
-#include "hw_model.h"
-#include "hw_md2load.h"
-#include "hw_md3load.h"
-=======
 #include "../doomdef.h"
 #include "../doomtype.h"
 #include "../info.h"
@@ -22,7 +15,6 @@
 #include "hw_md2load.h"
 #include "hw_md3load.h"
 #include "hw_md2.h"
->>>>>>> srb2/next
 #include "u_list.h"
 #include <string.h>
 
@@ -206,12 +198,9 @@ model_t *LoadModel(const char *filename, int ztag)
 
 	Optimize(model);
 	GeneratePolygonNormals(model, ztag);
-<<<<<<< HEAD
-=======
 	LoadModelSprite2(model);
 	if (!model->spr2frames)
 		LoadModelInterpolationSettings(model);
->>>>>>> srb2/next
 
 	// Default material properties
 	for (i = 0 ; i < model->numMaterials; i++)
@@ -235,8 +224,6 @@ model_t *LoadModel(const char *filename, int ztag)
 	return model;
 }
 
-<<<<<<< HEAD
-=======
 void HWR_ReloadModels(void)
 {
 	size_t i;
@@ -375,7 +362,6 @@ void LoadModelSprite2(model_t *model)
 	model->spr2frames = spr2frames;
 }
 
->>>>>>> srb2/next
 //
 // GenerateVertexNormals
 //

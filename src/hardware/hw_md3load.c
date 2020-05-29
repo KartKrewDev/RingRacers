@@ -148,11 +148,8 @@ model_t *MD3_LoadModel(const char *fileName, int ztag, boolean useFloat)
 {
 	const float WUNITS = 1.0f;
 	model_t *retModel = NULL;
-<<<<<<< HEAD
-=======
 	md3Frame *frames = NULL;
 	char *fname = NULL;
->>>>>>> srb2/next
 	md3modelHeader *mdh;
 	long fileLen;
 	long fileReadLen;
@@ -232,8 +229,6 @@ model_t *MD3_LoadModel(const char *fileName, int ztag, boolean useFloat)
 
 	retModel->meshes = (mesh_t*)Z_Calloc(sizeof(mesh_t)*retModel->numMeshes, ztag, 0);
 
-<<<<<<< HEAD
-=======
 	frames = (md3Frame*)&buffer[mdh->offsetFrames];
 	retModel->framenames = (char*)Z_Calloc(mdh->numFrames*16, ztag, 0);
 	fname = retModel->framenames;
@@ -244,7 +239,6 @@ model_t *MD3_LoadModel(const char *fileName, int ztag, boolean useFloat)
 		frames++;
 	}
 
->>>>>>> srb2/next
 	matCount = 0;
 	for (i = 0, surfEnd = 0; i < mdh->numSurfaces; i++)
 	{

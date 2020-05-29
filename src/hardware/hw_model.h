@@ -73,8 +73,6 @@ typedef struct tag_s
 //	matrix_t transform;
 } tag_t;
 
-<<<<<<< HEAD
-=======
 #define MODEL_INTERPOLATION_FLAG "+i"
 
 typedef struct
@@ -84,7 +82,6 @@ typedef struct
 	boolean interpolate;
 } modelspr2frames_t;
 
->>>>>>> srb2/next
 typedef struct model_s
 {
 	int maxNumFrames;
@@ -98,32 +95,23 @@ typedef struct model_s
 
 	char *mdlFilename;
 	boolean unloaded;
-<<<<<<< HEAD
-=======
 
 	char *framenames;
 	boolean interpolate[256];
 	modelspr2frames_t *spr2frames;
->>>>>>> srb2/next
 } model_t;
 
 extern int numModels;
 extern model_t *modelHead;
 
-<<<<<<< HEAD
-=======
 void HWR_ReloadModels(void);
 
->>>>>>> srb2/next
 tag_t *GetTagByName(model_t *model, char *name, int frame);
 model_t *LoadModel(const char *filename, int ztag);
 void UnloadModel(model_t *model);
 void Optimize(model_t *model);
-<<<<<<< HEAD
-=======
 void LoadModelInterpolationSettings(model_t *model);
 void LoadModelSprite2(model_t *model);
->>>>>>> srb2/next
 void GenerateVertexNormals(model_t *model);
 void GeneratePolygonNormals(model_t *model, int ztag);
 void CreateVBOTiny(mesh_t *mesh, tinyframe_t *frame);

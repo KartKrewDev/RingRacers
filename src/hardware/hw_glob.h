@@ -16,20 +16,15 @@
 
 #include "hw_defs.h"
 #include "../m_misc.h"
-<<<<<<< HEAD
 #include "../r_defs.h"
-=======
 #include "../p_setup.h"
 
 // the original aspect ratio of Doom graphics isn't square
 #define ORIGINAL_ASPECT (320.0f/200.0f)
->>>>>>> srb2/next
 
 // Uncomment this to enable the OpenGL loading screen
 //#define HWR_LOADING_SCREEN
 
-<<<<<<< HEAD
-=======
 // -----------
 // structures
 // -----------
@@ -85,7 +80,6 @@ typedef struct gr_vissprite_s
 	float z1, z2;
 } gr_vissprite_t;
 
->>>>>>> srb2/next
 // --------
 // hw_bsp.c
 // --------
@@ -100,14 +94,8 @@ void HWR_FreeTextureCache(void);
 void HWR_FreeMipmapCache(void);
 void HWR_FreeExtraSubsectors(void);
 
-<<<<<<< HEAD
-void HWR_GetFlat(lumpnum_t flatlumpnum, boolean noencoremap);
-// ^ some flats must NOT be remapped to encore, since we remap them as we cache them for ease, adding a toggle here seems wise.
-
-=======
 void HWR_GetLevelFlat(levelflat_t *levelflat);
-void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum);
->>>>>>> srb2/next
+void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum, boolean noencoremap);
 GLTexture_t *HWR_GetTexture(INT32 tex);
 void HWR_GetPatch(GLPatch_t *gpatch);
 void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap);

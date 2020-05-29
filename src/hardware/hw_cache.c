@@ -25,11 +25,8 @@
 #include "../z_zone.h"
 #include "../v_video.h"
 #include "../r_draw.h"
-<<<<<<< HEAD
-=======
 #include "../r_patch.h"
 #include "../p_setup.h"
->>>>>>> srb2/next
 
 // Values set after a call to HWR_ResizeBlock()
 static INT32 blocksize, blockwidth, blockheight;
@@ -423,55 +420,11 @@ static void HWR_DrawTexturePatchInCache(GLMipmap_t *mipmap,
 		else
 			patchcol = (const column_t *)((const UINT8 *)realpatch + LONG(realpatch->columnofs[xfrac>>FRACBITS]));
 
-<<<<<<< HEAD
-			dest = block + (position*blockmodulo);
-			while (count > 0)
-			{
-				count--;
-
-				texel = source[yfrac>>FRACBITS];
-				alpha = 0xff;
-
-				//Hurdler: not perfect, but better than holes
-				if (texel == HWR_PATCHES_CHROMAKEY_COLORINDEX && (mipmap->flags & TF_CHROMAKEYED))
-					alpha = 0x00;
-
-				//Hurdler: 25/04/2000: now support colormap in hardware mode
-				if (mipmap->colormap)
-					texel = mipmap->colormap[texel];
-
-				// hope compiler will get this switch out of the loops (dreams...)
-				// gcc do it ! but vcc not ! (why don't use cygwin gcc for win32 ?)
-				// Alam: SRB2 uses Mingw, HUGS
-				switch (bpp)
-				{
-					case 2 : texelu16 = (UINT16)((alpha<<8) | texel);
-					         memcpy(dest, &texelu16, sizeof(UINT16));
-					         break;
-					case 3 : colortemp = V_GetColor(texel);
-					         memcpy(dest, &colortemp, sizeof(RGBA_t)-sizeof(UINT8));
-					         break;
-					case 4 : colortemp = V_GetColor(texel);
-					         colortemp.s.alpha = alpha;
-					         memcpy(dest, &colortemp, sizeof(RGBA_t));
-					         break;
-					// default is 1
-					default: *dest = texel;
-					         break;
-				}
-
-				dest += blockmodulo;
-				yfrac += yfracstep;
-			}
-			patchcol = (const column_t *)((const UINT8 *)patchcol + patchcol->length + 4);
-		}
-=======
 		ColumnDrawerPointer(patchcol, block, mipmap,
 								pblockheight, blockmodulo,
 								yfracstep, scale_y,
 								patch, height,
 								bpp);
->>>>>>> srb2/next
 	}
 }
 
@@ -525,23 +478,6 @@ static void HWR_ResizeBlock(INT32 originalwidth, INT32 originalheight,
 	(void)grInfo;
 #endif
 
-<<<<<<< HEAD
-	// size up to nearest power of 2
-	blockwidth = 1;
-	while (blockwidth < originalwidth)
-		blockwidth <<= 1;
-	// scale down the original graphics to fit in 2048
-	if (blockwidth > 2048)
-		blockwidth = 2048;
-
-	// size up to nearest power of 2
-	blockheight = 1;
-	while (blockheight < originalheight)
-		blockheight <<= 1;
-	// scale down the original graphics to fit in 2048
-	if (blockheight > 2048)
-		blockheight = 2048;
-=======
 	// find a power of 2 width/height
 	if (cv_grrounddown.value)
 	{
@@ -582,7 +518,6 @@ static void HWR_ResizeBlock(INT32 originalwidth, INT32 originalheight,
 		blockheight = originalheight;
 #endif
 	}
->>>>>>> srb2/next
 
 	// do the boring LOD stuff.. blech!
 #ifdef GLIDE_API_COMPATIBILITY
@@ -799,10 +734,6 @@ void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, bo
 	Z_Free(grMipmap->grInfo.data);
 	grMipmap->grInfo.data = NULL;
 
-<<<<<<< HEAD
-	newwidth  = min(grPatch->width, blockwidth);
-	newheight = min(grPatch->height, blockheight);
-=======
 	// if rounddown, rounddown patches as well as textures
 	if (cv_grrounddown.value)
 	{
@@ -815,7 +746,6 @@ void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, bo
 		newwidth  = min(grPatch->width, blockwidth);
 		newheight = min(grPatch->height, blockheight);
 	}
->>>>>>> srb2/next
 
 	if (makebitmap)
 	{
@@ -849,14 +779,6 @@ static void FreeMipmapColormap(INT32 patchnum, void *patch)
 {
 	GLPatch_t* const pat = patch;
 	(void)patchnum; //unused
-<<<<<<< HEAD
-	while (grpatch->mipmap->nextcolormap)
-	{
-		GLMipmap_t *grmip = grpatch->mipmap->nextcolormap;
-		grpatch->mipmap->nextcolormap = grmip->nextcolormap;
-		if (grmip->grInfo.data) Z_Free(grmip->grInfo.data);
-		free(grmip);
-=======
 
 	// The patch must be valid, obviously
 	if (!pat)
@@ -889,7 +811,6 @@ static void FreeMipmapColormap(INT32 patchnum, void *patch)
 
 		// Free the old colormap mipmap from memory.
 		free(next);
->>>>>>> srb2/next
 	}
 }
 
@@ -934,11 +855,6 @@ void HWR_LoadTextures(size_t pnumtextures)
 
 	// Why not Z_Malloc?
 	gr_numtextures = pnumtextures;
-<<<<<<< HEAD
-	gr_textures = calloc(pnumtextures, sizeof (*gr_textures));
-	if (gr_textures == NULL)
-		I_Error("HWR_PrepLevelCache: can't alloc gr_textures");
-=======
 	gr_textures = calloc(gr_numtextures, sizeof(*gr_textures));
 	gr_flats = calloc(gr_numtextures, sizeof(*gr_flats));
 
@@ -946,7 +862,6 @@ void HWR_LoadTextures(size_t pnumtextures)
 	// should never ever happen (right?!)
 	if ((gr_textures == NULL) || (gr_flats == NULL))
 		I_Error("HWR_LoadTextures: ran out of memory for OpenGL textures. Sad!");
->>>>>>> srb2/next
 }
 
 void HWR_SetPalette(RGBA_t *palette)
@@ -1076,17 +991,15 @@ static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum)
 }
 
 // Download a Doom 'flat' to the hardware cache and make it ready for use
-<<<<<<< HEAD
-void HWR_GetFlat(lumpnum_t flatlumpnum, boolean noencoremap)
-=======
-void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum)
->>>>>>> srb2/next
+void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 {
 	GLMipmap_t *grmip;
 	if (flatlumpnum == LUMPERROR)
 		return;
 
-<<<<<<< HEAD
+	if (needpatchflush)
+		W_FlushCachedPatches();
+
 	grmip = HWR_GetCachedGLPatch(flatlumpnum)->mipmap;
 
 	grmip->colormap = colormaps;
@@ -1102,11 +1015,6 @@ void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum)
 	if (!noencoremap && encoremap)
 		grmip->colormap += (256*32);
 #endif
-
-=======
-	if (needpatchflush)
-		W_FlushCachedPatches();
->>>>>>> srb2/next
 
 	grmip = HWR_GetCachedGLPatch(flatlumpnum)->mipmap;
 	if (!grmip->downloaded && !grmip->grInfo.data)
@@ -1194,14 +1102,6 @@ void HWR_GetPatch(GLPatch_t *gpatch)
 	{
 		// load the software patch, PU_STATIC or the Z_Malloc for hardware patch will
 		// flush the software patch before the conversion! oh yeah I suffered
-<<<<<<< HEAD
-		patch_t *patch = W_CacheLumpNumPwad(gpatch->wadnum, gpatch->lumpnum, PU_STATIC);
-		HWR_MakePatch(patch, gpatch, gpatch->mipmap, true);
-
-		// this is inefficient.. but the hardware patch in heap is purgeable so it should
-		// not fragment memory, and besides the REAL cache here is the hardware memory
-		Z_Free(patch);
-=======
 		patch_t *ptr = gpatch->rawpatch;
 		if (!ptr)
 			ptr = W_CacheLumpNumPwad(gpatch->wadnum, gpatch->lumpnum, PU_STATIC);
@@ -1211,7 +1111,6 @@ void HWR_GetPatch(GLPatch_t *gpatch)
 		// not fragment memory, and besides the REAL cache here is the hardware memory
 		if (!gpatch->rawpatch)
 			Z_Free(ptr);
->>>>>>> srb2/next
 	}
 
 	HWD.pfnSetTexture(gpatch->mipmap);
@@ -1274,8 +1173,6 @@ void HWR_UnlockCachedPatch(GLPatch_t *gpatch)
 	Z_ChangeTag(gpatch, PU_HWRPATCHINFO_UNLOCKED);
 }
 
-<<<<<<< HEAD
-=======
 static const INT32 picmode2GR[] =
 {
 	GR_TEXFMT_P_8,                // PALETTE
@@ -1433,7 +1330,6 @@ GLPatch_t *HWR_GetPic(lumpnum_t lumpnum)
 	return grpatch;
 }
 
->>>>>>> srb2/next
 GLPatch_t *HWR_GetCachedGLPatchPwad(UINT16 wadnum, UINT16 lumpnum)
 {
 	aatree_t *hwrcache = wadfiles[wadnum]->hwrcache;
@@ -1548,12 +1444,9 @@ void HWR_GetFadeMask(lumpnum_t fademasklumpnum)
 {
 	GLMipmap_t *grmip;
 
-<<<<<<< HEAD
-=======
 	if (needpatchflush)
 		W_FlushCachedPatches();
 
->>>>>>> srb2/next
 	grmip = HWR_GetCachedGLPatch(fademasklumpnum)->mipmap;
 
 	if (!grmip->downloaded && !grmip->grInfo.data)
