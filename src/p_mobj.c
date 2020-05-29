@@ -3750,7 +3750,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	mobj->eflags &= ~MFE_JUSTSTEPPEDDOWN;
 
 	// Zoom tube
-	if (mobj->tracer && mobj->tracer->type == MT_TUBEWAYPOINT)
+	if ((mobj->tracer && mobj->tracer->type == MT_TUBEWAYPOINT)
+	|| (mobj->player->respawnvars.respawnstate == RESPAWNST_MOVE))
 	{
 		P_UnsetThingPosition(mobj);
 		mobj->x += mobj->momx;
@@ -11877,9 +11878,6 @@ void P_SpawnPlayer(INT32 playernum)
 
 	// Spawn with a pity shield if necessary.
 	//P_DoPityCheck(p);
-
-	if (p->respawnvars.respawnstate != RESPAWNST_NONE)
-		p->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
 
 	if (G_BattleGametype()) // SRB2kart
 	{
