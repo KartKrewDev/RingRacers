@@ -477,7 +477,8 @@ typedef struct player_s
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
-	respawnvars_t respawnvars; // SRB2Kart: respawn info
+	respawnvars_t respawnvars; // Respawn info
+	tic_t airtime; // Keep track of how long you've been in the air
 
 	// Bit flags.
 	// See pflags_t, above.

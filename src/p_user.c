@@ -8361,16 +8361,6 @@ void P_PlayerThink(player_t *player)
 		player->awayviewtics = 0; // reset to zero
 	}
 
-	/*
-	if (player->pflags & PF_GLIDING)
-	{
-		if (player->panim != PA_ABILITY)
-			P_SetPlayerMobjState(player->mo, S_PLAY_ABL1);
-	}
-	else if ((player->pflags & PF_JUMPED) && !player->powers[pw_super] && player->panim != PA_ROLL && player->charability2 == CA2_SPINDASH)
-		P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
-	*/
-
 	if (player->flashcount)
 		player->flashcount--;
 
@@ -8383,21 +8373,33 @@ void P_PlayerThink(player_t *player)
 		// The timer might've reached zero, but we'll run the remote view camera anyway by setting it to -1.
 	}
 
+	// Track airtime
+	if (P_IsObjectOnGround(player->mo))
+	{
+		player->airtime = 0;
+	}
+	else
+	{
+		player->airtime++;
+	}
+
 	cmd = &player->cmd;
 
 	// SRB2kart
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
 	if (cmd->buttons & BT_FORWARD)
+	{
 		player->kartstuff[k_throwdir] = 1;
+	}
 	else if (cmd->buttons & BT_BACKWARD)
+	{
 		player->kartstuff[k_throwdir] = -1;
+	}
 	else
+	{
 		player->kartstuff[k_throwdir] = 0;
-
-	// Add some extra randomization.
-	if (cmd->forwardmove)
-		P_RandomFixed();
+	}
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)
@@ -8531,15 +8533,9 @@ void P_PlayerThink(player_t *player)
 
 	// SRB2kart 010217
 	if (leveltime < starttime)
-		player->powers[pw_nocontrol] = 2;
-	/*
-	if ((gametype == GT_RACE || gametype == GT_COMPETITION) && leveltime < 4*TICRATE)
 	{
-		cmd->buttons &= BT_BRAKE; // Remove all buttons except BT_BRAKE
-		cmd->forwardmove = 0;
-		cmd->sidemove = 0;
+		player->powers[pw_nocontrol] = 2;
 	}
-	*/
 
 	// Synchronizes the "real" amount of time spent in the level.
 	if (!player->exiting)

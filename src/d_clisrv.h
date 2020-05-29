@@ -215,6 +215,7 @@ typedef struct
 
 	INT32 kartstuff[NUMKARTSTUFF]; // SRB2kart
 	angle_t frameangle; // SRB2kart
+	tic_t airtime;
 
 	// Score is resynched in the confirm resync packet
 	INT32 health;
