@@ -72,11 +72,11 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 		return;
 	}
 
-	player->respawnvars.pointx = waypoint->mobj->x;
-	player->respawnvars.pointy = waypoint->mobj->y;
-	player->respawnvars.pointz = waypoint->mobj->z;
-	player->respawnvars.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP);
-	player->respawnvars.pointz += K_RespawnOffset(player, player->respawnvars.flip);
+	player->respawn.pointx = waypoint->mobj->x;
+	player->respawn.pointy = waypoint->mobj->y;
+	player->respawn.pointz = waypoint->mobj->z;
+	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP);
+	player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
 }
 
 /*--------------------------------------------------
@@ -91,7 +91,7 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (player->respawnvars.respawnstate != RESPAWNST_NONE)
+	if (player->respawn.state != RESPAWNST_NONE)
 	{
 		return;
 	}
@@ -108,11 +108,11 @@ void K_DoIngameRespawn(player_t *player)
 	player->kartstuff[k_pogospring] = 0;
 
 	// Set up respawn position if invalid
-	if (player->respawnvars.wp != NULL)
+	if (player->respawn.wp != NULL)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 32);
-		player->respawnvars.distanceleft = (dist * mapobjectscale) / FRACUNIT;
-		K_RespawnAtWaypoint(player, player->respawnvars.wp);
+		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
+		K_RespawnAtWaypoint(player, player->respawn.wp);
 	}
 	else
 	{
@@ -165,57 +165,57 @@ void K_DoIngameRespawn(player_t *player)
 		if (beststart == NULL)
 		{
 			CONS_Alert(CONS_WARNING, "No respawn points!\n");
-			player->respawnvars.pointx = 0;
-			player->respawnvars.pointy = 0;
-			player->respawnvars.pointz = 0;
-			player->respawnvars.flip = false;
+			player->respawn.pointx = 0;
+			player->respawn.pointy = 0;
+			player->respawn.pointz = 0;
+			player->respawn.flip = false;
 		}
 		else
 		{
 			sector_t *s;
 			fixed_t z = (beststart->options >> ZSHIFT) * FRACUNIT;
 
-			player->respawnvars.pointx = beststart->x << FRACBITS;
-			player->respawnvars.pointy = beststart->y << FRACBITS;
+			player->respawn.pointx = beststart->x << FRACBITS;
+			player->respawn.pointy = beststart->y << FRACBITS;
 
 			s = R_PointInSubsector(beststart->x << FRACBITS, beststart->y << FRACBITS)->sector;
 
-			player->respawnvars.flip = (beststart->options & MTF_OBJECTFLIP);
+			player->respawn.flip = (beststart->options & MTF_OBJECTFLIP);
 
-			if (player->respawnvars.flip == true)
+			if (player->respawn.flip == true)
 			{
-				player->respawnvars.pointz = (
+				player->respawn.pointz = (
 #ifdef ESLOPE
-				s->c_slope ? P_GetZAt(s->c_slope, player->respawnvars.pointx, player->respawnvars.pointy) :
+				s->c_slope ? P_GetZAt(s->c_slope, player->respawn.pointx, player->respawn.pointy) :
 #endif
 				s->ceilingheight);
 
 				if (z != 0)
 				{
-					player->respawnvars.pointz -= z;
+					player->respawn.pointz -= z;
 				}
 			}
 			else
 			{
-				player->respawnvars.pointz = (
+				player->respawn.pointz = (
 #ifdef ESLOPE
-				s->f_slope ? P_GetZAt(s->f_slope, player->respawnvars.pointx, player->respawnvars.pointy) :
+				s->f_slope ? P_GetZAt(s->f_slope, player->respawn.pointx, player->respawn.pointy) :
 #endif
 				s->floorheight);
 
 				if (z)
 				{
-					player->respawnvars.pointz += z;
+					player->respawn.pointz += z;
 				}
 			}
 		}
 
-		player->respawnvars.pointz += K_RespawnOffset(player, player->respawnvars.flip);
-		player->respawnvars.distanceleft = 0;
+		player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
+		player->respawn.distanceleft = 0;
 	}
 
-	player->respawnvars.timer = RESPAWN_TIME;
-	player->respawnvars.respawnstate = RESPAWNST_MOVE;
+	player->respawn.timer = RESPAWN_TIME;
+	player->respawn.state = RESPAWNST_MOVE;
 }
 
 /*--------------------------------------------------
@@ -286,9 +286,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		S_StartSound(player->mo, sfx_s3kcas);
 	}
 
-	dest.x = player->respawnvars.pointx;
-	dest.y = player->respawnvars.pointy;
-	dest.z = player->respawnvars.pointz;
+	dest.x = player->respawn.pointx;
+	dest.y = player->respawn.pointy;
+	dest.z = player->respawn.pointz;
 
 	dist = P_AproxDistance(P_AproxDistance(
 		player->mo->x - dest.x,
@@ -309,13 +309,13 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		P_SetThingPosition(player->mo);
 
 		// Find the next waypoint to head towards
-		if (player->respawnvars.wp != NULL)
+		if (player->respawn.wp != NULL)
 		{
-			size_t nwp = K_NextRespawnWaypointIndex(player->respawnvars.wp);
+			size_t nwp = K_NextRespawnWaypointIndex(player->respawn.wp);
 
 			if (nwp == SIZE_MAX)
 			{
-				player->respawnvars.respawnstate = RESPAWNST_DROP;
+				player->respawn.state = RESPAWNST_DROP;
 				return;
 			}
 
@@ -325,34 +325,34 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 				dest.x, dest.y
 			);
 
-			if ((player->respawnvars.distanceleft == 0)
-			&& (K_GetWaypointIsSpawnpoint(player->respawnvars.wp) == true))
+			if ((player->respawn.distanceleft == 0)
+			&& (K_GetWaypointIsSpawnpoint(player->respawn.wp) == true))
 			{
 				// Alright buddy, that's the end of the ride.
-				player->respawnvars.respawnstate = RESPAWNST_DROP;
+				player->respawn.state = RESPAWNST_DROP;
 				return;
 			}
 
-			if (player->respawnvars.distanceleft > player->respawnvars.wp->nextwaypointdistances[nwp])
+			if (player->respawn.distanceleft > player->respawn.wp->nextwaypointdistances[nwp])
 			{
-				player->respawnvars.distanceleft -= player->respawnvars.wp->nextwaypointdistances[nwp];
+				player->respawn.distanceleft -= player->respawn.wp->nextwaypointdistances[nwp];
 			}
 			else
 			{
-				player->respawnvars.distanceleft = 0;
+				player->respawn.distanceleft = 0;
 			}
 
-			player->respawnvars.wp = player->respawnvars.wp->nextwaypoints[nwp];
-			K_RespawnAtWaypoint(player, player->respawnvars.wp);
+			player->respawn.wp = player->respawn.wp->nextwaypoints[nwp];
+			K_RespawnAtWaypoint(player, player->respawn.wp);
 
-			dest.x = player->respawnvars.pointx;
-			dest.y = player->respawnvars.pointy;
-			dest.z = player->respawnvars.pointz;
+			dest.x = player->respawn.pointx;
+			dest.y = player->respawn.pointy;
+			dest.z = player->respawn.pointz;
 		}
 		else
 		{
 			// We can now drop!
-			player->respawnvars.respawnstate = RESPAWNST_DROP;
+			player->respawn.state = RESPAWNST_DROP;
 			return;
 		}
 	}
@@ -394,9 +394,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		step.z = FixedMul(FINESINE(stepva >> ANGLETOFINESHIFT), 2*stepamt);
 	}
 
-	laserdist = player->respawnvars.distanceleft;
-	laserwp = player->respawnvars.wp;
-	laserflip = player->respawnvars.flip;
+	laserdist = player->respawn.distanceleft;
+	laserwp = player->respawn.wp;
+	laserflip = player->respawn.flip;
 
 	laser.x = player->mo->x + (step.x / 2);
 	laser.y = player->mo->y + (step.y / 2);
@@ -531,7 +531,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 --------------------------------------------------*/
 static void K_DropDashWait(player_t *player)
 {
-	player->respawnvars.timer--;
+	player->respawn.timer--;
 
 	if (leveltime % 8 == 0)
 	{
@@ -622,19 +622,19 @@ static void K_HandleDropDash(player_t *player)
 
 		if ((cmd->buttons & BT_ACCELERATE) && !player->kartstuff[k_spinouttimer]) // Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
 		{
-			player->respawnvars.dropdash++;
+			player->respawn.dropdash++;
 		}
 		else
 		{
-			player->respawnvars.dropdash = 0;
+			player->respawn.dropdash = 0;
 		}
 
-		if (player->respawnvars.dropdash == TICRATE/4)
+		if (player->respawn.dropdash == TICRATE/4)
 		{
 			S_StartSound(player->mo, sfx_ddash);
 		}
 
-		if ((player->respawnvars.dropdash >= TICRATE/4) && (player->respawnvars.dropdash & 1))
+		if ((player->respawn.dropdash >= TICRATE/4) && (player->respawn.dropdash & 1))
 		{
 			player->mo->colorized = true;
 		}
@@ -645,7 +645,7 @@ static void K_HandleDropDash(player_t *player)
 	}
 	else
 	{
-		if ((cmd->buttons & BT_ACCELERATE) && (player->respawnvars.dropdash >= TICRATE/4))
+		if ((cmd->buttons & BT_ACCELERATE) && (player->respawn.dropdash >= TICRATE/4))
 		{
 			S_StartSound(player->mo, sfx_s23c);
 			player->kartstuff[k_startboost] = 50;
@@ -653,7 +653,7 @@ static void K_HandleDropDash(player_t *player)
 		}
 
 		player->mo->colorized = false;
-		player->respawnvars.dropdash = 0;
+		player->respawn.dropdash = 0;
 
 		//P_PlayRinglossSound(player->mo);
 		P_PlayerRingBurst(player, 3);
@@ -689,7 +689,7 @@ static void K_HandleDropDash(player_t *player)
 			K_CheckBumpers();
 		}
 
-		player->respawnvars.respawnstate = RESPAWNST_NONE;
+		player->respawn.state = RESPAWNST_NONE;
 	}
 }
 
@@ -700,18 +700,18 @@ static void K_HandleDropDash(player_t *player)
 --------------------------------------------------*/
 void K_RespawnChecker(player_t *player)
 {
-	if (player->respawnvars.respawnstate == RESPAWNST_NONE)
+	if (player->respawn.state == RESPAWNST_NONE)
 	{
 		return;
 	}
 
 	if (player->spectator)
 	{
-		player->respawnvars.respawnstate = RESPAWNST_NONE;
+		player->respawn.state = RESPAWNST_NONE;
 		return;
 	}
 
-	switch (player->respawnvars.respawnstate)
+	switch (player->respawn.state)
 	{
 		case RESPAWNST_MOVE:
 			player->mo->momx = player->mo->momy = player->mo->momz = 0;
@@ -719,7 +719,7 @@ void K_RespawnChecker(player_t *player)
 			return;
 		case RESPAWNST_DROP:
 			player->mo->momx = player->mo->momy = 0;
-			if (player->respawnvars.timer > 0)
+			if (player->respawn.timer > 0)
 			{
 				player->mo->momz = 0;
 				K_DropDashWait(player);
@@ -730,7 +730,7 @@ void K_RespawnChecker(player_t *player)
 			}
 			return;
 		default:
-			player->respawnvars.respawnstate = RESPAWNST_NONE;
+			player->respawn.state = RESPAWNST_NONE;
 			return;
 	}
 }

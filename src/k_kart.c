@@ -963,8 +963,8 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		|| (mobj2->player && mobj2->player->playerstate != PST_LIVE))
 		return;
 
-	if ((mobj1->player && mobj1->player->respawnvars.respawnstate != RESPAWNST_NONE)
-		|| (mobj2->player && mobj2->player->respawnvars.respawnstate != RESPAWNST_NONE))
+	if ((mobj1->player && mobj1->player->respawn.state != RESPAWNST_NONE)
+		|| (mobj2->player && mobj2->player->respawn.state != RESPAWNST_NONE))
 		return;
 
 	{ // Don't bump if you're flashing
@@ -4842,7 +4842,7 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 #endif
 		return;
 
-	if ((leveltime >= starttime-(2*TICRATE) && leveltime <= starttime) || (player->respawnvars.respawnstate == RESPAWNST_DROP)) // Startup boosts
+	if ((leveltime >= starttime-(2*TICRATE) && leveltime <= starttime) || (player->respawn.state == RESPAWNST_DROP)) // Startup boosts
 		targetsnd = ((cmd->buttons & BT_ACCELERATE) ? 12 : 0);
 	else
 		targetsnd = (((6*cmd->forwardmove)/25) + ((player->speed / mapobjectscale)/5))/2;
@@ -5243,7 +5243,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->playerstate == PST_DEAD || (player->respawnvars.respawnstate == RESPAWNST_MOVE)) // Ensure these are set correctly here
+	if (player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Ensure these are set correctly here
 	{
 		player->mo->colorized = false;
 		player->mo->color = player->skincolor;
@@ -5419,7 +5419,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_invincibilitytimer])
 		player->kartstuff[k_invincibilitytimer]--;
 
-	if ((player->respawnvars.respawnstate == RESPAWNST_NONE) && player->kartstuff[k_growshrinktimer] != 0)
+	if ((player->respawn.state == RESPAWNST_NONE) && player->kartstuff[k_growshrinktimer] != 0)
 	{
 		if (player->kartstuff[k_growshrinktimer] > 0)
 			player->kartstuff[k_growshrinktimer]--;
@@ -5489,7 +5489,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (G_BattleGametype() && player->kartstuff[k_bumper] > 0
 		&& !player->kartstuff[k_spinouttimer] && !player->kartstuff[k_squishedtimer]
-		&& (player->respawnvars.respawnstate == RESPAWNST_DROP) && !player->powers[pw_flashing])
+		&& (player->respawn.state == RESPAWNST_DROP) && !player->powers[pw_flashing])
 	{
 		player->kartstuff[k_wanted]++;
 		if (battleovertime.enabled >= 10*TICRATE)
@@ -5809,13 +5809,13 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 		// Respawn point should only be updated when we're going to a nextwaypoint
 		if ((updaterespawn) &&
-		(player->respawnvars.respawnstate == RESPAWNST_NONE) &&
+		(player->respawn.state == RESPAWNST_NONE) &&
 		(bestwaypoint != NULL) &&
 		(bestwaypoint != player->nextwaypoint) &&
 		(K_GetWaypointIsSpawnpoint(bestwaypoint)) &&
 		(K_GetWaypointIsEnabled(bestwaypoint) == true))
 		{
-			player->respawnvars.wp = bestwaypoint;
+			player->respawn.wp = bestwaypoint;
 		}
 	}
 
@@ -6513,7 +6513,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->pflags |= PF_ATTACKDOWN;
 
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !(player->exiting || mapreset) && leveltime > starttime
-		&& player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_squishedtimer] == 0 && (player->respawnvars.respawnstate == RESPAWNST_NONE))
+		&& player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_squishedtimer] == 0 && (player->respawn.state == RESPAWNST_NONE))
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
 		// Karma item dropping

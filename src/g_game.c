@@ -1588,7 +1588,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// SRB2kart - no additional angle if not moving
 	if ((player->mo && player->speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (player->respawnvars.respawnstate != RESPAWNST_NONE) // Respawning
+		|| (player->respawn.state != RESPAWNST_NONE) // Respawning
 		|| (player->spectator || objectplacing)) // Not a physical player
 		lang += (cmd->angleturn<<16);
 
@@ -2539,7 +2539,7 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	P_FlashPal(p, 0, 0); // Resets
 
 	p->starpostnum = 0;
-	memset(&p->respawnvars, 0, sizeof (p->respawnvars));
+	memset(&p->respawn, 0, sizeof (p->respawn));
 
 	// SRB2kart: Increment the "matches played" counter.
 	if (player == consoleplayer)
@@ -2588,6 +2588,7 @@ void G_PlayerReborn(INT32 player)
 	SINT8 pity;
 
 	// SRB2kart
+	respawnvars_t respawn;
 	INT32 itemtype;
 	INT32 itemamount;
 	INT32 itemroulette;
@@ -2673,6 +2674,8 @@ void G_PlayerReborn(INT32 player)
 		wanted = players[player].kartstuff[k_wanted];
 	}
 
+	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
+
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
 
@@ -2720,6 +2723,8 @@ void G_PlayerReborn(INT32 player)
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
 	p->kartstuff[k_lastdraft] = -1;
+
+	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
 	// Don't do anything immediately
 	p->pflags |= PF_USEDOWN;
@@ -4663,7 +4668,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		{
 			players[i].playerstate = PST_REBORN;
 			players[i].starpostnum = 0;
-			memset(&players[i].respawnvars, 0, sizeof (players[i].respawnvars));
+			memset(&players[i].respawn, 0, sizeof (players[i].respawn));
 
 #if 0
 			if (netgame || multiplayer)
@@ -5185,7 +5190,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	// SRB2kart: Copy-pasted from ticcmd building, removes that crappy demo cam
 	if (((players[displayplayers[0]].mo && players[displayplayers[0]].speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (players[displayplayers[0]].respawnvars.respawnstate != RESPAWNST_NONE) // Respawning
+		|| (players[displayplayers[0]].respawn.state != RESPAWNST_NONE) // Respawning
 		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
 		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
 		&& (players[displayplayers[0]].kartstuff[k_sneakertimer] || players[displayplayers[0]].kartstuff[k_levelbooster]))) // Spinning and boosting cancels out spinout

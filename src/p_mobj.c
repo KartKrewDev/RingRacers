@@ -3751,7 +3751,7 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 
 	// Zoom tube
 	if ((mobj->tracer && mobj->tracer->type == MT_TUBEWAYPOINT)
-	|| (mobj->player->respawnvars.respawnstate == RESPAWNST_MOVE))
+	|| (mobj->player->respawn.state == RESPAWNST_MOVE))
 	{
 		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
 		P_UnsetThingPosition(mobj);
@@ -12042,7 +12042,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	else
 		z = floor;
 
-	if (p->respawnvars.respawnstate != RESPAWNST_NONE)
+	if (p->respawn.state != RESPAWNST_NONE)
 	{
 		z += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP));
 	}
@@ -12082,8 +12082,8 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	K_DoIngameRespawn(p);
 
 	P_UnsetThingPosition(mobj);
-	mobj->x = p->respawnvars.pointx;
-	mobj->y = p->respawnvars.pointy;
+	mobj->x = p->respawn.pointx;
+	mobj->y = p->respawn.pointy;
 	P_SetThingPosition(mobj);
 	sector = R_PointInSubsector(mobj->x, mobj->y)->sector;
 
@@ -12098,7 +12098,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 #endif
 	sector->ceilingheight;
 
-	z = p->respawnvars.pointz;
+	z = p->respawn.pointz;
 
 	if (z < floor)
 		z = floor;

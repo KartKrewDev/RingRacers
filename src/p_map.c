@@ -3041,24 +3041,24 @@ void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_
 	// trace along the three leading corners
 	if (momx > 0)
 	{
-		leadx = thing->x + thing->radius;
-		trailx = thing->x - thing->radius;
+		leadx = x + thing->radius;
+		trailx = x - thing->radius;
 	}
 	else
 	{
-		leadx = thing->x - thing->radius;
-		trailx = thing->x + thing->radius;
+		leadx = x - thing->radius;
+		trailx = x + thing->radius;
 	}
 
 	if (momy > 0)
 	{
-		leady = thing->y + thing->radius;
-		traily = thing->y - thing->radius;
+		leady = y + thing->radius;
+		traily = y - thing->radius;
 	}
 	else
 	{
-		leady = thing->y - thing->radius;
-		traily = thing->y + thing->radius;
+		leady = y - thing->radius;
+		traily = y + thing->radius;
 	}
 
 	P_PathTraverse(leadx, leady, leadx + momx, leady + momy, PT_ADDLINES, PTR_GetSpecialLines);

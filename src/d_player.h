@@ -420,15 +420,15 @@ typedef enum
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
 {
-	UINT8 respawnstate; // 0: not respawning, 1: heading towards respawn point, 2: about to drop
+	UINT8 state; // 0: not respawning, 1: heading towards respawn point, 2: about to drop
 	waypoint_t *wp; // Waypoint that we're going towards, NULL if the position isn't linked to one
-	INT32 pointx; // Respawn position coords to go towards
-	INT32 pointy;
-	INT32 pointz;
+	fixed_t pointx; // Respawn position coords to go towards
+	fixed_t pointy;
+	fixed_t pointz;
 	boolean flip; // Flip upside down or not
-	INT32 timer; // Time left on respawn animation once you're there
+	tic_t timer; // Time left on respawn animation once you're there
 	UINT32 distanceleft; // How far along the course to respawn you
-	INT32 dropdash; // Drop Dash charge timer
+	tic_t dropdash; // Drop Dash charge timer
 } respawnvars_t;
 
 // ========================================================================
@@ -477,7 +477,7 @@ typedef struct player_s
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
-	respawnvars_t respawnvars; // Respawn info
+	respawnvars_t respawn; // Respawn info
 	tic_t airtime; // Keep track of how long you've been in the air
 
 	// Bit flags.

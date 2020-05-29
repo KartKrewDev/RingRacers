@@ -5679,15 +5679,15 @@ void A_MixUp(mobj_t *actor)
 		z = players[one].mo->z;
 		angle = players[one].mo->angle;
 
-		starpostx = players[one].respawnvars.pointx;
-		starposty = players[one].respawnvars.pointy;
-		starpostz = players[one].respawnvars.pointz;
+		starpostx = players[one].respawn.pointx;
+		starposty = players[one].respawn.pointy;
+		starpostz = players[one].respawn.pointz;
 		starpostnum = players[one].starpostnum;
 
 		mflags2 = players[one].mo->flags2;
 
 		P_MixUp(players[one].mo, players[two].mo->x, players[two].mo->y, players[two].mo->z, players[two].mo->angle,
-				players[two].respawnvars.pointx, players[two].respawnvars.pointy, players[two].respawnvars.pointz,
+				players[two].respawn.pointx, players[two].respawn.pointy, players[two].respawn.pointz,
 				players[two].starpostnum, 0, 0,
 				players[two].mo->flags2);
 
@@ -5749,9 +5749,9 @@ void A_MixUp(mobj_t *actor)
 				transspeed[counter] = players[i].speed;
 				transtracer[counter] = players[i].mo->tracer;
 
-				spposition[counter][0] = players[i].respawnvars.pointx;
-				spposition[counter][1] = players[i].respawnvars.pointy;
-				spposition[counter][2] = players[i].respawnvars.pointz;
+				spposition[counter][0] = players[i].respawn.pointx;
+				spposition[counter][1] = players[i].respawn.pointy;
+				spposition[counter][2] = players[i].respawn.pointz;
 				starpostnum[counter] = players[i].starpostnum;
 
 				flags2[counter] = players[i].mo->flags2;
@@ -8605,7 +8605,7 @@ void A_SPBChase(mobj_t *actor)
 		if (players[i].mo->health <= 0)
 			continue; // dead
 
-		if (players[i].respawnvars.respawnstate != RESPAWNST_NONE)
+		if (players[i].respawn.state != RESPAWNST_NONE)
 			continue;*/ // respawning
 
 		if (players[i].kartstuff[k_position] < bestrank)
@@ -8782,7 +8782,7 @@ void A_SPBChase(mobj_t *actor)
 
 		actor->lastlook = -1; // Just make sure this is reset
 
-		if (!player || !player->mo || player->mo->health <= 0 || (player->respawnvars.respawnstate != RESPAWNST_NONE))
+		if (!player || !player->mo || player->mo->health <= 0 || (player->respawn.state != RESPAWNST_NONE))
 		{
 			// No one there? Completely STOP.
 			actor->momx = actor->momy = actor->momz = 0;

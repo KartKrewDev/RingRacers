@@ -213,10 +213,6 @@ typedef struct
 
 	UINT16 powers[NUMPOWERS];
 
-	INT32 kartstuff[NUMKARTSTUFF]; // SRB2kart
-	angle_t frameangle; // SRB2kart
-	tic_t airtime;
-
 	// Score is resynched in the confirm resync packet
 	INT32 health;
 	SINT8 lives;
@@ -280,6 +276,21 @@ typedef struct
 	tic_t jointime;
 
 	UINT8 splitscreenindex;
+
+	// SRB2kart
+	INT32 kartstuff[NUMKARTSTUFF];
+	angle_t frameangle;
+	tic_t airtime;
+
+	// respawnvars_t
+	UINT8 respawn_state;
+	fixed_t respawn_pointx;
+	fixed_t respawn_pointy;
+	fixed_t respawn_pointz;
+	boolean respawn_flip;
+	tic_t respawn_timer;
+	UINT32 respawn_distanceleft;
+	tic_t respawn_dropdash;
 
 	//player->mo stuff
 	UINT8 hasmo; // Boolean

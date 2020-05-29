@@ -141,10 +141,6 @@ static void P_NetArchivePlayers(void)
 
 		for (j = 0; j < NUMPOWERS; j++)
 			WRITEUINT16(save_p, players[i].powers[j]);
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			WRITEINT32(save_p, players[i].kartstuff[j]);
-
-		WRITEANGLE(save_p, players[i].frameangle);
 
 		WRITEUINT8(save_p, players[i].playerstate);
 		WRITEUINT32(save_p, players[i].pflags);
@@ -270,15 +266,30 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].kartweight);
 		//
 
+		for (j = 0; j < NUMKARTSTUFF; j++)
+			WRITEINT32(save_p, players[i].kartstuff[j]);
+
 		for (j = 0; j < MAXPREDICTTICS; j++)
 		{
 			WRITEINT16(save_p, players[i].lturn_max[j]);
 			WRITEINT16(save_p, players[i].rturn_max[j]);
 		}
 
+		WRITEANGLE(save_p, players[i].frameangle);
 		WRITEUINT32(save_p, players[i].distancetofinish);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
+
+		// respawnvars_t
+		WRITEUINT8(save_p, players[i].respawn.state);
+		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].respawn.wp));
+		WRITEFIXED(save_p, players[i].respawn.pointx);
+		WRITEFIXED(save_p, players[i].respawn.pointy);
+		WRITEFIXED(save_p, players[i].respawn.pointz);
+		WRITEUINT8(save_p, players[i].respawn.flip);
+		WRITEUINT32(save_p, players[i].respawn.timer);
+		WRITEUINT32(save_p, players[i].respawn.distanceleft);
+		WRITEUINT32(save_p, players[i].respawn.dropdash);
 	}
 }
 
@@ -316,10 +327,6 @@ static void P_NetUnArchivePlayers(void)
 
 		for (j = 0; j < NUMPOWERS; j++)
 			players[i].powers[j] = READUINT16(save_p);
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			players[i].kartstuff[j] = READINT32(save_p);
-
-		players[i].frameangle = READANGLE(save_p);
 
 		players[i].playerstate = READUINT8(save_p);
 		players[i].pflags = READUINT32(save_p);
@@ -436,15 +443,30 @@ static void P_NetUnArchivePlayers(void)
 		players[i].kartweight = READUINT8(save_p);
 		//
 
+		for (j = 0; j < NUMKARTSTUFF; j++)
+			players[i].kartstuff[j] = READINT32(save_p);
+
 		for (j = 0; j < MAXPREDICTTICS; j++)
 		{
 			players[i].lturn_max[j] = READINT16(save_p);
 			players[i].rturn_max[j] = READINT16(save_p);
 		}
 
+		players[i].frameangle = READANGLE(save_p);
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
+
+		// respawnvars_t
+		players[i].respawn.state = READUINT8(save_p);
+		players[i].respawn.wp = (waypoint_t *)(size_t)READUINT32(save_p);
+		players[i].respawn.pointx = READFIXED(save_p);
+		players[i].respawn.pointy = READFIXED(save_p);
+		players[i].respawn.pointz = READFIXED(save_p);
+		players[i].respawn.flip = (boolean)READUINT8(save_p);
+		players[i].respawn.timer = READUINT32(save_p);
+		players[i].respawn.distanceleft = READUINT32(save_p);
+		players[i].respawn.dropdash = READUINT32(save_p);
 	}
 }
 
