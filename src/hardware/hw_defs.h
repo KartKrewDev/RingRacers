@@ -43,6 +43,13 @@ typedef unsigned char   FBOOLEAN;
 
 // byte value for paletted graphics, which represent the transparent color
 #define HWR_PATCHES_CHROMAKEY_COLORINDEX   255
+<<<<<<< HEAD
+=======
+//#define HWR_CHROMAKEY_EQUIVALENTCOLORINDEX 130
+
+// the chroma key color shows on border sprites, set it to black
+#define HWR_PATCHES_CHROMAKEY_COLORVALUE     (0x00000000)    //RGBA format as in grSstWinOpen()
+>>>>>>> srb2/next
 
 // RGBA Color components with float type ranging [ 0 ... 1 ]
 struct FRGBAFloat
@@ -141,6 +148,19 @@ typedef struct gr_vissprite_s
 // Vanilla features
 //#define USE_MODEL_NEXTFRAME
 
+<<<<<<< HEAD
+=======
+//Hurdler: Transform (coords + angles)
+//BP: transform order : scale(rotation_x(rotation_y(translation(v))))
+
+// Kart features
+//#define USE_FTRANSFORM_ANGLEZ
+//#define USE_FTRANSFORM_MIRROR
+
+// Vanilla features
+#define USE_MODEL_NEXTFRAME
+
+>>>>>>> srb2/next
 typedef struct
 {
 	FLOAT       x,y,z;           // position
@@ -153,11 +173,22 @@ typedef struct
 	FLOAT       fovxangle, fovyangle;
 	UINT8       splitscreen;
 	boolean     flip;            // screenflip
+<<<<<<< HEAD
 #ifdef USE_FTRANSFORM_MIRROR
 	boolean     mirror;          // SRB2Kart: Encore Mode
 #endif
 	boolean     shearing;        // 14042019
 	angle_t     viewaiming;      // 17052019
+=======
+	boolean     roll;
+	SINT8       rollflip;
+	FLOAT       rollangle; // done to not override USE_FTRANSFORM_ANGLEZ
+	UINT8       rotaxis;
+	FLOAT       centerx, centery;
+#ifdef USE_FTRANSFORM_MIRROR
+	boolean     mirror;          // SRB2Kart: Encore Mode
+#endif
+>>>>>>> srb2/next
 } FTransform;
 
 // Transformed vector, as passed to HWR API
@@ -195,9 +226,15 @@ enum EPolyFlags
 	PF_Decal            = 0x00000800,   // Enable polygon offset
 	PF_Modulated        = 0x00001000,   // Modulation (multiply output with constant ARGB)
 	                                    // When set, pass the color constant into the FSurfaceInfo -> FlatColor
+<<<<<<< HEAD
 	PF_NoTexture        = 0x00002000,   // Disable texture
 	PF_Ripple           = 0x00004000,	// Water shader effect
 	//                    0x00008000
+=======
+	PF_NoTexture        = 0x00002000,   // Use the small white texture
+	PF_Corona           = 0x00004000,   // Tell the rendrer we are drawing a corona
+	PF_Unused           = 0x00008000,   // Unused
+>>>>>>> srb2/next
 	PF_RemoveYWrap      = 0x00010000,   // Force clamp texture on Y
 	PF_ForceWrapX       = 0x00020000,   // Force repeat texture on X
 	PF_ForceWrapY       = 0x00040000,   // Force repeat texture on Y
@@ -240,8 +277,15 @@ typedef struct FSurfaceInfo FSurfaceInfo;
 
 enum hwdsetspecialstate
 {
+<<<<<<< HEAD
 	HWD_SET_SHADERS,
 
+=======
+	HWD_SET_MODEL_LIGHTING = 1,
+	HWD_SET_FOG_MODE,
+	HWD_SET_FOG_COLOR,
+	HWD_SET_FOG_DENSITY,
+>>>>>>> srb2/next
 	HWD_SET_TEXTUREFILTERMODE,
 	HWD_SET_TEXTUREANISOTROPICMODE,
 

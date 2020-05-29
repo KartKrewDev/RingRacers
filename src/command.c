@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -63,6 +63,8 @@ static consvar_t *consvar_vars; // list of registered console variables
 static char com_token[1024];
 static char *COM_Parse(char *data);
 
+static char * COM_Purge (char *text, int *lenp);
+
 CV_PossibleValue_t CV_OnOff[] = {{0, "Off"}, {1, "On"}, {0, NULL}};
 CV_PossibleValue_t CV_YesNo[] = {{0, "No"}, {1, "Yes"}, {0, NULL}};
 CV_PossibleValue_t CV_Unsigned[] = {{0, "MIN"}, {999999999, "MAX"}, {0, NULL}};
@@ -90,7 +92,11 @@ static boolean joyaxis_default[4] = {false,false,false,false};
 static INT32 joyaxis_count[4] = {0,0,0,0};
 #endif
 
+<<<<<<< HEAD
 #define COM_BUF_SIZE 0x4000 // command buffer size, 0x4000 = 16384
+=======
+#define COM_BUF_SIZE (32<<10) // command buffer size
+>>>>>>> srb2/next
 #define MAX_ALIAS_RECURSION 100 // max recursion allowed for aliases
 
 static INT32 com_wait; // one command per frame (for cmd sequences)
@@ -112,31 +118,61 @@ static cmdalias_t *com_alias; // aliases list
 
 static vsbuf_t com_text; // variable sized buffer
 
+/** Purges control characters out of some text.
+  *
+  * \param s The text.
+  * \param np Optionally a pointer to fill with the new string length.
+  * \return The text.
+  * \sa COM_ExecuteString
+  */
+static char *
+COM_Purge (char *s, int *np)
+{
+	char *t;
+	char *p;
+	int n;
+	n = strlen(s);
+	t = s + n + 1;
+	p = s;
+	while (( p = strchr(p, '\033') ))
+	{
+		memmove(p, &p[1], t - p - 1);
+		n--;
+	}
+	if (np)
+		(*np) = n;
+	return s;
+}
+
 /** Adds text into the command buffer for later execution.
   *
   * \param ptext The text to add.
-  * \sa COM_BufInsertText
+  * \sa COM_BufInsertTextEx
   */
-void COM_BufAddText(const char *ptext)
+void COM_BufAddTextEx(const char *ptext, int flags)
 {
-	size_t l;
+	int l;
+	char *text;
 
-	l = strlen(ptext);
+	text = COM_Purge(Z_StrDup(ptext), &l);
 
-	if (com_text.cursize + l >= com_text.maxsize)
+	if (com_text.cursize + 2 + l >= com_text.maxsize)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Command buffer full!\n"));
 		return;
 	}
-	VS_Write(&com_text, ptext, l);
+
+	VS_WriteEx(&com_text, text, l, flags);
+
+	Z_Free(text);
 }
 
 /** Adds command text and executes it immediately.
   *
   * \param ptext The text to execute. A newline is automatically added.
-  * \sa COM_BufAddText
+  * \sa COM_BufAddTextEx
   */
-void COM_BufInsertText(const char *ptext)
+void COM_BufInsertTextEx(const char *ptext, int flags)
 {
 	char *temp = NULL;
 	size_t templen;
@@ -150,7 +186,7 @@ void COM_BufInsertText(const char *ptext)
 	}
 
 	// add the entire text of the file (or alias)
-	COM_BufAddText(ptext);
+	COM_BufAddTextEx(ptext, flags);
 	COM_BufExecute(); // do it right away
 
 	// add the copied off data
@@ -284,6 +320,7 @@ static size_t com_argc;
 static char *com_argv[MAX_ARGS];
 static const char *com_null_string = "";
 static char *com_args = NULL; // current command args or NULL
+static int com_flags;
 
 static void Got_NetVar(UINT8 **p, INT32 playernum);
 
@@ -357,6 +394,40 @@ size_t COM_CheckParm(const char *check)
 	return 0;
 }
 
+/** \brief COM_CheckParm, but checks only the start of each argument.
+  *        E.g. checking for "-no" would match "-noerror" too.
+  */
+size_t COM_CheckPartialParm(const char *check)
+{
+	int  len;
+	size_t i;
+
+	len = strlen(check);
+
+	for (i = 1; i < com_argc; i++)
+	{
+		if (strncasecmp(check, com_argv[i], len) == 0)
+			return i;
+	}
+	return 0;
+}
+
+/** Find the first argument that starts with a hyphen (-).
+  * \return The index of the argument, or 0
+  *         if there are no such arguments.
+  */
+size_t COM_FirstOption(void)
+{
+	size_t i;
+
+	for (i = 1; i < com_argc; i++)
+	{
+		if (com_argv[i][0] == '-')/* options start with a hyphen */
+			return i;
+	}
+	return 0;
+}
+
 /** Parses a string into command-line tokens.
   *
   * \param ptext A null-terminated string. Does not need to be
@@ -372,12 +443,21 @@ static void COM_TokenizeString(char *ptext)
 
 	com_argc = 0;
 	com_args = NULL;
+	com_flags = 0;
 
 	while (com_argc < MAX_ARGS)
 	{
 		// Skip whitespace up to a newline.
 		while (*ptext != '\0' && *ptext <= ' ' && *ptext != '\n')
-			ptext++;
+		{
+			if (ptext[0] == '\033')
+			{
+				com_flags = (unsigned)ptext[1];
+				ptext += 2;
+			}
+			else
+				ptext++;
+		}
 
 		// A newline means end of command in buffer,
 		// thus end of this command's args too.
@@ -417,13 +497,11 @@ void COM_AddCommand(const char *name, com_func_t func)
 	{
 		if (!stricmp(name, cmd->name)) //case insensitive now that we have lower and uppercase!
 		{
-#ifdef HAVE_BLUA
 			// don't I_Error for Lua commands
 			// Lua commands can replace game commands, and they have priority.
 			// BUT, if for some reason we screwed up and made two console commands with the same name,
 			// it's good to have this here so we find out.
 			if (cmd->function != COM_Lua_f)
-#endif
 				I_Error("Command %s already exists\n", name);
 
 			return;
@@ -437,7 +515,6 @@ void COM_AddCommand(const char *name, com_func_t func)
 	com_commands = cmd;
 }
 
-#ifdef HAVE_BLUA
 /** Adds a console command for Lua.
   * No I_Errors allowed; return a negative code instead.
   *
@@ -470,7 +547,6 @@ int COM_AddLuaCommand(const char *name)
 	com_commands = cmd;
 	return 0;
 }
-#endif
 
 /** Tests if a command exists.
   *
@@ -744,12 +820,20 @@ static void COM_Help_f(void)
 		cvar = CV_FindVar(help);
 		if (cvar)
 		{
+<<<<<<< HEAD
+=======
+			boolean floatmode = false;
+			const char *cvalue = NULL;
+>>>>>>> srb2/next
 			CONS_Printf("\x82""Variable %s:\n", cvar->name);
 			CONS_Printf(M_GetText("  flags :"));
 			if (cvar->flags & CV_SAVE)
 				CONS_Printf("AUTOSAVE ");
 			if (cvar->flags & CV_FLOAT)
+			{
 				CONS_Printf("FLOAT ");
+				floatmode = true;
+			}
 			if (cvar->flags & CV_NETVAR)
 				CONS_Printf("NETVAR ");
 			if (cvar->flags & CV_CALL)
@@ -759,6 +843,7 @@ static void COM_Help_f(void)
 			CONS_Printf("\n");
 			if (cvar->PossibleValue)
 			{
+<<<<<<< HEAD
 				if (!stricmp(cvar->PossibleValue[0].strvalue, "MIN") && !stricmp(cvar->PossibleValue[1].strvalue, "MAX"))
 				{
 					CONS_Printf("  range from %d to %d\n", cvar->PossibleValue[0].value,
@@ -773,16 +858,62 @@ static void COM_Help_f(void)
 					{
 						CONS_Printf("  %-2d : %s\n", cvar->PossibleValue[i].value,
 							cvar->PossibleValue[i].strvalue);
+=======
+				CONS_Printf(" Possible values:\n");
+				if (cvar->PossibleValue == CV_YesNo)
+					CONS_Printf("  Yes or No (On or Off, 1 or 0)\n");
+				else if (cvar->PossibleValue == CV_OnOff)
+					CONS_Printf("  On or Off (Yes or No, 1 or 0)\n");
+				else
+				{
+#define MINVAL 0
+#define MAXVAL 1
+					if (!stricmp(cvar->PossibleValue[MINVAL].strvalue, "MIN"))
+					{
+						if (floatmode)
+						{
+							float fu = FIXED_TO_FLOAT(cvar->PossibleValue[MINVAL].value);
+							float ck = FIXED_TO_FLOAT(cvar->PossibleValue[MAXVAL].value);
+							CONS_Printf("  range from %ld%s to %ld%s\n",
+									(long)fu, M_Ftrim(fu),
+									(long)ck, M_Ftrim(ck));
+						}
+						else
+							CONS_Printf("  range from %d to %d\n", cvar->PossibleValue[MINVAL].value,
+								cvar->PossibleValue[MAXVAL].value);
+						i = MAXVAL+1;
+					}
+#undef MINVAL
+#undef MAXVAL
+
+					//CONS_Printf(M_GetText("  possible value : %s\n"), cvar->name);
+					while (cvar->PossibleValue[i].strvalue)
+					{
+						if (floatmode)
+							CONS_Printf("  %-2f : %s\n", FIXED_TO_FLOAT(cvar->PossibleValue[i].value),
+								cvar->PossibleValue[i].strvalue);
+						else
+							CONS_Printf("  %-2d : %s\n", cvar->PossibleValue[i].value,
+								cvar->PossibleValue[i].strvalue);
+>>>>>>> srb2/next
 						if (cvar->PossibleValue[i].value == cvar->value)
 							cvalue = cvar->PossibleValue[i].strvalue;
 						i++;
 					}
+<<<<<<< HEAD
 					if (cvalue)
 						CONS_Printf(" Current value: %s\n", cvalue);
 					else
 						CONS_Printf(" Current value: %d\n", cvar->value);
+=======
+>>>>>>> srb2/next
 				}
 			}
+
+			if (cvalue)
+				CONS_Printf(" Current value: %s\n", cvalue);
+			else if (cvar->string)
+				CONS_Printf(" Current value: %s\n", cvar->string);
 			else
 				CONS_Printf(" Current value: %d\n", cvar->value);
 		}
@@ -800,6 +931,7 @@ static void COM_Help_f(void)
 			}
 
 			CONS_Printf("No exact match, searching...\n");
+<<<<<<< HEAD
 			// commands
 			CONS_Printf("\x82""Commands:\n");
 			for (cmd = com_commands; cmd; cmd = cmd->next)
@@ -812,6 +944,11 @@ static void COM_Help_f(void)
 
 			// variables
 			CONS_Printf("\x82""\nVariables:\n");
+=======
+
+			// variables
+			CONS_Printf("\x82""Variables:\n");
+>>>>>>> srb2/next
 			for (cvar = consvar_vars; cvar; cvar = cvar->next)
 			{
 				if ((cvar->flags & CV_NOSHOWHELP) || (!strstr(cvar->name, help)))
@@ -820,6 +957,19 @@ static void COM_Help_f(void)
 				i++;
 			}
 
+<<<<<<< HEAD
+=======
+			// commands
+			CONS_Printf("\x82""\nCommands:\n");
+			for (cmd = com_commands; cmd; cmd = cmd->next)
+			{
+				if (!strstr(cmd->name, help))
+					continue;
+				CONS_Printf("%s ",cmd->name);
+				i++;
+			}
+
+>>>>>>> srb2/next
 			CONS_Printf("\x82""\nCheck wiki.srb2.org for more or type help <command or variable>\n");
 
 			CONS_Debug(DBG_GAMELOGIC, "\x87Total : %d\n", i);
@@ -828,14 +978,23 @@ static void COM_Help_f(void)
 	}
 
 	{
+<<<<<<< HEAD
 		// commands
 		CONS_Printf("\x82""Commands:\n");
 		for (cmd = com_commands; cmd; cmd = cmd->next)
+=======
+		// variables
+		CONS_Printf("\x82""Variables:\n");
+		for (cvar = consvar_vars; cvar; cvar = cvar->next)
+>>>>>>> srb2/next
 		{
-			CONS_Printf("%s ",cmd->name);
+			if (cvar->flags & CV_NOSHOWHELP)
+				continue;
+			CONS_Printf("%s ", cvar->name);
 			i++;
 		}
 
+<<<<<<< HEAD
 		// variables
 		CONS_Printf("\x82""\nVariables:\n");
 		for (cvar = consvar_vars; cvar; cvar = cvar->next)
@@ -843,6 +1002,13 @@ static void COM_Help_f(void)
 			if (cvar->flags & CV_NOSHOWHELP)
 				continue;
 			CONS_Printf("%s ", cvar->name);
+=======
+		// commands
+		CONS_Printf("\x82""\nCommands:\n");
+		for (cmd = com_commands; cmd; cmd = cmd->next)
+		{
+			CONS_Printf("%s ",cmd->name);
+>>>>>>> srb2/next
 			i++;
 		}
 
@@ -902,7 +1068,14 @@ static void COM_Add_f(void)
 	}
 
 	if (( cvar->flags & CV_FLOAT ))
+<<<<<<< HEAD
 		CV_Set(cvar, va("%f", FIXED_TO_FLOAT (cvar->value) + atof(COM_Argv(2))));
+=======
+	{
+		float n =FIXED_TO_FLOAT (cvar->value) + atof(COM_Argv(2));
+		CV_Set(cvar, va("%ld%s", (long)n, M_Ftrim(n)));
+	}
+>>>>>>> srb2/next
 	else
 		CV_AddValue(cvar, atoi(COM_Argv(2)));
 }
@@ -985,6 +1158,15 @@ void *VS_GetSpace(vsbuf_t *buf, size_t length)
 void VS_Write(vsbuf_t *buf, const void *data, size_t length)
 {
 	M_Memcpy(VS_GetSpace(buf, length), data, length);
+}
+
+void VS_WriteEx(vsbuf_t *buf, const void *data, size_t length, int flags)
+{
+	char *p;
+	p = VS_GetSpace(buf, 2 + length);
+	p[0] = '\033';
+	p[1] = flags;
+	M_Memcpy(&p[2], data, length);
 }
 
 /** Prints text in a variable buffer. Like VS_Write() plus a
@@ -1226,7 +1408,10 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 #define MINVAL 0
 #define MAXVAL 1
 			INT32 i;
+<<<<<<< HEAD
 
+=======
+>>>>>>> srb2/next
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
@@ -1234,13 +1419,21 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 
 			// search for other
 			for (i = MAXVAL+1; var->PossibleValue[i].strvalue; i++)
+<<<<<<< HEAD
 				if (!stricmp(var->PossibleValue[i].strvalue, valstr))
+=======
+				if (v == var->PossibleValue[i].value || !stricmp(var->PossibleValue[i].strvalue, valstr))
+>>>>>>> srb2/next
 				{
 					var->value = var->PossibleValue[i].value;
 					var->string = var->PossibleValue[i].strvalue;
 					goto finish;
 				}
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> srb2/next
 			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
 				v = var->PossibleValue[MINVAL].value;
@@ -1314,7 +1507,16 @@ found:
 		var->value = (INT32)(d * FRACUNIT);
 	}
 	else
-		var->value = atoi(var->string);
+	{
+		if (var == &cv_forceskin)
+		{
+			var->value = R_SkinAvailable(var->string);
+			if (!R_SkinUsable(-1, var->value))
+				var->value = -1;
+		}
+		else
+			var->value = atoi(var->string);
+	}
 
 finish:
 	// See the note above.
@@ -1339,9 +1541,7 @@ finish:
 	}
 	var->flags |= CV_MODIFIED;
 	// raise 'on change' code
-#ifdef HAVE_BLUA
 	LUA_CVarChanged(var->name); // let consolelib know what cvar this is.
-#endif
 	if (var->flags & CV_CALL && !stealth)
 		var->func();
 
@@ -1377,15 +1577,8 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 	{
 		// not from server or remote admin, must be hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal netvar command received from %s\n"), player_names[playernum]);
-
 		if (server)
-		{
-			XBOXSTATIC UINT8 buf[2];
-
-			buf[0] = (UINT8)playernum;
-			buf[1] = KICK_MSG_CON_FAIL;
-			SendNetXCmd(XD_KICK, &buf, 2);
-		}
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 		return;
 	}
 	netid = READUINT16(*p);
@@ -1399,9 +1592,6 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 		CONS_Alert(CONS_WARNING, "Netvar not found with netid %hu\n", netid);
 		return;
 	}
-#if 0 //defined (GP2X) || defined (PSP)
-	CONS_Printf("Netvar received: %s [netid=%d] value %s\n", cvar->name, netid, svalue);
-#endif
 	DEBFILE(va("Netvar received: %s [netid=%d] value %s\n", cvar->name, netid, svalue));
 
 	Setvalue(cvar, svalue, stealth);
@@ -1522,7 +1712,7 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 	if (var->flags & CV_NETVAR)
 	{
 		// send the value of the variable
-		XBOXSTATIC UINT8 buf[128];
+		UINT8 buf[128];
 		UINT8 *p = buf;
 		if (!(server || (IsPlayerAdmin(consoleplayer))))
 		{
@@ -1530,10 +1720,21 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 			return;
 		}
 
+<<<<<<< HEAD
 		if (var == &cv_kartencore && !M_SecretUnlocked(SECRET_ENCORE))
 		{
 			CONS_Printf(M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
+=======
+		if (var == &cv_forceskin)
+		{
+			INT32 skin = R_SkinAvailable(value);
+			if ((stricmp(value, "None")) && ((skin == -1) || !R_SkinUsable(-1, skin)))
+			{
+				CONS_Printf("Please provide a valid skin name (\"None\" disables).\n");
+				return;
+			}
+>>>>>>> srb2/next
 		}
 
 		// Only add to netcmd buffer if in a netgame, otherwise, just change it.
@@ -1569,6 +1770,32 @@ void CV_StealthSet(consvar_t *var, const char *value)
 	CV_SetCVar(var, value, true);
 }
 
+/** Sets a numeric value to a variable, sometimes calling its callback
+  * function.
+  *
+  * \param var   The variable.
+  * \param value The numeric value, converted to a string before setting.
+  * \param stealth Do we call the callback function or not?
+  */
+static void CV_SetValueMaybeStealth(consvar_t *var, INT32 value, boolean stealth)
+{
+	char val[SKINNAMESIZE+1];
+
+	if (var == &cv_forceskin) // Special handling.
+	{
+		const char *tmpskin = NULL;
+		if ((value < 0) || (value >= numskins))
+			tmpskin = "None";
+		else
+			tmpskin = skins[value].name;
+		strncpy(val, tmpskin, SKINNAMESIZE);
+	}
+	else
+		sprintf(val, "%d", value);
+
+	CV_SetCVar(var, val, stealth);
+}
+
 /** Sets a numeric value to a variable without calling its callback
   * function.
   *
@@ -1578,10 +1805,7 @@ void CV_StealthSet(consvar_t *var, const char *value)
   */
 void CV_StealthSetValue(consvar_t *var, INT32 value)
 {
-	char val[32];
-
-	sprintf(val, "%d", value);
-	CV_SetCVar(var, val, true);
+	CV_SetValueMaybeStealth(var, value, true);
 }
 
 // New wrapper for what used to be CV_Set()
@@ -1599,10 +1823,7 @@ void CV_Set(consvar_t *var, const char *value)
   */
 void CV_SetValue(consvar_t *var, INT32 value)
 {
-	char val[32];
-
-	sprintf(val, "%d", value);
-	CV_SetCVar(var, val, false);
+	CV_SetValueMaybeStealth(var, value, false);
 }
 
 /** Adds a value to a console variable.
@@ -1619,10 +1840,35 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 {
 	INT32 newvalue, max;
 
+	if (!increment)
+		return;
+
 	// count pointlimit better
+<<<<<<< HEAD
 	/*if (var == &cv_pointlimit && (gametype == GT_MATCH))
 		increment *= 50;*/
 	newvalue = var->value + increment;
+=======
+	if (var == &cv_pointlimit && (gametype == GT_MATCH))
+		increment *= 50;
+
+	if (var == &cv_forceskin) // Special handling.
+	{
+		INT32 oldvalue = var->value;
+		newvalue = oldvalue;
+		do
+		{
+			newvalue += increment;
+			if (newvalue < -1)
+				newvalue = (numskins - 1);
+			else if (newvalue >= numskins)
+				newvalue = -1;
+		} while ((oldvalue != newvalue)
+				&& !(R_SkinUsable(-1, newvalue)));
+	}
+	else
+		newvalue = var->value + increment;
+>>>>>>> srb2/next
 
 	if (var->PossibleValue)
 	{
@@ -1631,7 +1877,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			// Special case for the nextmap variable, used only directly from the menu
 			INT32 oldvalue = var->value - 1, gt;
 			gt = cv_newgametype.value;
-			if (increment != 0) // Going up!
 			{
 				newvalue = var->value - 1;
 				do
@@ -1663,7 +1908,11 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 #define MINVAL 0
 #define MAXVAL 1
 		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
+<<<<<<< HEAD
 		{ // SRB2Kart
+=======
+		{
+>>>>>>> srb2/next
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
@@ -1673,6 +1922,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			{
 				INT32 currentindice = -1, newindice;
 				for (max = MAXVAL+1; var->PossibleValue[max].strvalue; max++)
+<<<<<<< HEAD
 					if (var->PossibleValue[max].value == var->value)
 						currentindice = max;
 
@@ -1688,6 +1938,41 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				}
 				else
 					CV_Set(var, var->PossibleValue[newindice].strvalue);
+=======
+				{
+					if (var->PossibleValue[max].value == newvalue)
+					{
+						increment = 0;
+						currentindice = max;
+					}
+					else if (var->PossibleValue[max].value == var->value)
+						currentindice = max;
+				}
+
+				if (increment)
+				{
+					increment = (increment > 0) ? 1 : -1;
+					if (currentindice == -1 && max != MAXVAL+1)
+						newindice = ((increment > 0) ? MAXVAL : max) + increment;
+					else
+						newindice = currentindice + increment;
+
+					if (newindice >= max || newindice <= MAXVAL)
+					{
+						if (var == &cv_pointlimit && (gametype == GT_MATCH) && increment > 0)
+							CV_SetValue(var, 50);
+						else
+						{
+							newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
+							CV_SetValue(var, newvalue);
+						}
+					}
+					else
+						CV_Set(var, var->PossibleValue[newindice].strvalue);
+				}
+				else
+					CV_Set(var, var->PossibleValue[currentindice].strvalue);
+>>>>>>> srb2/next
 			}
 			else
 				CV_SetValue(var, newvalue);
@@ -1706,34 +1991,27 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			if (var == &cv_chooseskin)
 			{
 				// Special case for the chooseskin variable, used only directly from the menu
-				if (increment > 0) // Going up!
+				newvalue = var->value - 1;
+				do
 				{
-					newvalue = var->value - 1;
-					do
+					if (increment > 0) // Going up!
 					{
 						newvalue++;
 						if (newvalue == MAXSKINS)
 							newvalue = 0;
-					} while (var->PossibleValue[newvalue].strvalue == NULL);
-					var->value = newvalue + 1;
-					var->string = var->PossibleValue[newvalue].strvalue;
-					var->func();
-					return;
-				}
-				else if (increment < 0) // Going down!
-				{
-					newvalue = var->value - 1;
-					do
+					}
+					else if (increment < 0) // Going down!
 					{
 						newvalue--;
 						if (newvalue == -1)
 							newvalue = MAXSKINS-1;
-					} while (var->PossibleValue[newvalue].strvalue == NULL);
-					var->value = newvalue + 1;
-					var->string = var->PossibleValue[newvalue].strvalue;
-					var->func();
-					return;
-				}
+					}
+				} while (var->PossibleValue[newvalue].strvalue == NULL);
+
+				var->value = newvalue + 1;
+				var->string = var->PossibleValue[newvalue].strvalue;
+				var->func();
+				return;
 			}
 			else if (var == &cv_playercolor)
 			{
@@ -1837,6 +2115,7 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 
 	for (i = 0; i < 4; i++)
 	{
+<<<<<<< HEAD
 		if (joyaxis_default[i])
 		{
 			if (!stricmp(v->name, "joyaxis_fire"))
@@ -1868,6 +2147,122 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 		}
 	}
 #endif
+=======
+		if (!stricmp(v->name, "joyaxis_turn"))
+		{
+			if (joyaxis_count > 6) return false;
+			// we're currently setting the new defaults, don't interfere
+			else if (joyaxis_count == 6) return true;
+
+			if (!stricmp(valstr, "X-Axis")) joyaxis_count++;
+			else joyaxis_default = false;
+		}
+		if (!stricmp(v->name, "joyaxis_move"))
+		{
+			if (joyaxis_count > 6) return false;
+			else if (joyaxis_count == 6) return true;
+
+			if (!stricmp(valstr, "Y-Axis")) joyaxis_count++;
+			else joyaxis_default = false;
+		}
+		if (!stricmp(v->name, "joyaxis_side"))
+		{
+			if (joyaxis_count > 6) return false;
+			else if (joyaxis_count == 6) return true;
+
+			if (!stricmp(valstr, "Z-Axis")) joyaxis_count++;
+			else joyaxis_default = false;
+		}
+		if (!stricmp(v->name, "joyaxis_look"))
+		{
+			if (joyaxis_count > 6) return false;
+			else if (joyaxis_count == 6) return true;
+
+			if (!stricmp(valstr, "None")) joyaxis_count++;
+			else joyaxis_default = false;
+		}
+		if (!stricmp(v->name, "joyaxis_fire")
+			|| !stricmp(v->name, "joyaxis_firenormal"))
+		{
+			if (joyaxis_count > 6) return false;
+			else if (joyaxis_count == 6) return true;
+
+			if (!stricmp(valstr, "None")) joyaxis_count++;
+			else joyaxis_default = false;
+		}
+		// reset all axis settings to defaults
+		if (joyaxis_count == 6)
+		{
+			COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis.name, cv_turnaxis.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis.name, cv_moveaxis.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_sideaxis.name, cv_sideaxis.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis.name, cv_lookaxis.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis.name, cv_fireaxis.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_firenaxis.name, cv_firenaxis.defaultvalue));
+			joyaxis_count++;
+			return false;
+		}
+	}
+
+	if (joyaxis2_default)
+	{
+		if (!stricmp(v->name, "joyaxis2_turn"))
+		{
+			if (joyaxis2_count > 6) return false;
+			// we're currently setting the new defaults, don't interfere
+			else if (joyaxis2_count == 6) return true;
+
+			if (!stricmp(valstr, "X-Axis")) joyaxis2_count++;
+			else joyaxis2_default = false;
+		}
+		if (!stricmp(v->name, "joyaxis2_move"))
+		{
+			if (joyaxis2_count > 6) return false;
+			else if (joyaxis2_count == 6) return true;
+
+			if (!stricmp(valstr, "Y-Axis")) joyaxis2_count++;
+			else joyaxis2_default = false;
+		}
+		if (!stricmp(v->name, "joyaxis2_side"))
+		{
+			if (joyaxis2_count > 6) return false;
+			else if (joyaxis2_count == 6) return true;
+
+			if (!stricmp(valstr, "Z-Axis")) joyaxis2_count++;
+			else joyaxis2_default = false;
+		}
+		if (!stricmp(v->name, "joyaxis2_look"))
+		{
+			if (joyaxis2_count > 6) return false;
+			else if (joyaxis2_count == 6) return true;
+
+			if (!stricmp(valstr, "None")) joyaxis2_count++;
+			else joyaxis2_default = false;
+		}
+		if (!stricmp(v->name, "joyaxis2_fire")
+			|| !stricmp(v->name, "joyaxis2_firenormal"))
+		{
+			if (joyaxis2_count > 6) return false;
+			else if (joyaxis2_count == 6) return true;
+
+			if (!stricmp(valstr, "None")) joyaxis2_count++;
+			else joyaxis2_default = false;
+		}
+
+		// reset all axis settings to defaults
+		if (joyaxis2_count == 6)
+		{
+			COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis2.name, cv_turnaxis2.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis2.name, cv_moveaxis2.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_sideaxis2.name, cv_sideaxis2.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis2.name, cv_lookaxis2.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis2.name, cv_fireaxis2.defaultvalue));
+			COM_BufInsertText(va("%s \"%s\"\n", cv_firenaxis2.name, cv_firenaxis2.defaultvalue));
+			joyaxis2_count++;
+			return false;
+		}
+	}
+>>>>>>> srb2/next
 
 	// we haven't reached our counts yet, or we're not default
 	return true;
@@ -1919,6 +2314,9 @@ static boolean CV_Command(void)
 	if (!v)
 		return false;
 
+	if (( com_flags & COM_SAFE ) && ( v->flags & CV_NOLUA ))
+		return false;
+
 	// perform a variable print or set
 	if (COM_Argc() == 1)
 	{
@@ -1964,7 +2362,12 @@ void CV_SaveVariables(FILE *f)
 
 			// Silly hack for Min/Max vars
 			if (!strcmp(cvar->string, "MAX") || !strcmp(cvar->string, "MIN"))
-				sprintf(stringtowrite, "%d", cvar->value);
+			{
+				if (cvar->flags & CV_FLOAT)
+					sprintf(stringtowrite, "%f", FIXED_TO_FLOAT(cvar->value));
+				else
+					sprintf(stringtowrite, "%d", cvar->value);
+			}
 			else
 				strcpy(stringtowrite, cvar->string);
 
@@ -2020,8 +2423,13 @@ skipwhite:
 				com_token[len] = 0;
 				return data;
 			}
-			com_token[len] = c;
-			len++;
+			if (c == '\033')
+				data++;
+			else
+			{
+				com_token[len] = c;
+				len++;
+			}
 		}
 	}
 
@@ -2037,10 +2445,22 @@ skipwhite:
 	// parse a regular word
 	do
 	{
-		com_token[len] = c;
-		data++;
-		len++;
-		c = *data;
+		if (c == '\033')
+		{
+			do
+			{
+				data += 2;
+				c = *data;
+			}
+			while (c == '\033') ;
+		}
+		else
+		{
+			com_token[len] = c;
+			data++;
+			len++;
+			c = *data;
+		}
 		if (c == '{' || c == '}' || c == ')'|| c == '(' || c == '\'')
 			break;
 	} while (c > 32);

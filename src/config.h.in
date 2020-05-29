@@ -11,6 +11,7 @@
 
 #ifdef CMAKECONFIG
 
+<<<<<<< HEAD
 #define ASSET_HASH_MAIN_KART     "${SRB2_ASSET_main.kart_HASH}"
 #define ASSET_HASH_GFX_PK3       "${SRB2_ASSET_gfx.pk3_HASH}"
 #define ASSET_HASH_TEXTURES_PK3  "${SRB2_ASSET_textures.pk3_HASH}"
@@ -18,6 +19,13 @@
 #define ASSET_HASH_MAPS_PK3      "${SRB2_ASSET_maps.pk3_HASH}"
 #ifdef USE_PATCH_FILE
 #define ASSET_HASH_PATCH_PK3     "${SRB2_ASSET_patch.pk3_HASH}"
+=======
+#define ASSET_HASH_SRB2_PK3   "${SRB2_ASSET_srb2.pk3_HASH}"
+#define ASSET_HASH_PLAYER_DTA "${SRB2_ASSET_player.dta_HASH}"
+#define ASSET_HASH_ZONES_PK3  "${SRB2_ASSET_zones.pk3_HASH}"
+#ifdef USE_PATCH_DTA
+#define ASSET_HASH_PATCH_PK3  "${SRB2_ASSET_patch.pk3_HASH}"
+>>>>>>> srb2/next
 #endif
 
 #define SRB2_COMP_REVISION       "${SRB2_COMP_REVISION}"
@@ -28,6 +36,7 @@
 #else
 
 /* Manually defined asset hashes for non-CMake builds
+<<<<<<< HEAD
  * Last updated 2019 / 01 / 18 - Kart v1.0.2 - Main assets
  * Last updated 2020 / 05 / 09 - Kart v1.2 - patch.kart
  */
@@ -39,6 +48,18 @@
 #define ASSET_HASH_MAPS_PK3      "00000000000000000000000000000000"
 #ifdef USE_PATCH_FILE
 #define ASSET_HASH_PATCH_PK3     "00000000000000000000000000000000"
+=======
+ * Last updated 2020 / 02 / 15 - v2.2.1 - main assets
+ * Last updated 2020 / 02 / 22 - v2.2.2 - patch.pk3
+ * Last updated 2020 / 05 / 10 - v2.2.3 - player.dta & patch.pk3
+ * Last updated 2020 / 05 / 11 - v2.2.4 - patch.pk3
+ */
+#define ASSET_HASH_SRB2_PK3   "0277c9416756627004e83cbb5b2e3e28"
+#define ASSET_HASH_ZONES_PK3  "f7e88afb6af7996a834c7d663144bead"
+#define ASSET_HASH_PLAYER_DTA "8a4507ddf9bc0682c09174400f26ad65"
+#ifdef USE_PATCH_DTA
+#define ASSET_HASH_PATCH_PK3  "bbbf6af3b20349612ee06e0b55979a76"
+>>>>>>> srb2/next
 #endif
 
 #endif

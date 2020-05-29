@@ -80,6 +80,7 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(Init);
 	GETFUNC(Draw2DLine);
 	GETFUNC(DrawPolygon);
+	GETFUNC(RenderSkyDome);
 	GETFUNC(SetBlend);
 	GETFUNC(ClearBuffer);
 	GETFUNC(SetTexture);
@@ -91,6 +92,10 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(DrawModel);
 	GETFUNC(CreateModelVBOs);
 	GETFUNC(SetTransform);
+<<<<<<< HEAD
+=======
+	GETFUNC(GetRenderVersion);
+>>>>>>> srb2/next
 	GETFUNC(PostImgRedraw);
 	GETFUNC(FlushScreenTextures);
 	GETFUNC(StartScreenWipe);

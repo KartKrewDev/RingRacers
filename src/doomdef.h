@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -28,13 +28,11 @@
 
 // Use Mixer interface?
 #ifdef HAVE_MIXER
-    //#if !defined(DC) && !defined(_WIN32_WCE) && !defined(_XBOX) && !defined(GP2X)
     #define SOUND SOUND_MIXER
     #define NOHS // No HW3SOUND
     #ifdef HW3SOUND
     #undef HW3SOUND
     #endif
-    //#endif
 #endif
 
 // Use generic SDL interface.
@@ -70,7 +68,7 @@
 #endif
 #endif
 
-#if defined (_WIN32) || defined (_WIN32_WCE)
+#ifdef _WIN32
 #define ASMCALL __cdecl
 #else
 #define ASMCALL
@@ -87,13 +85,6 @@
 // warning C4152: nonstandard extension, function/data pointer conversion in expression
 // warning C4213: nonstandard extension used : cast on l-value
 
-#if defined (_WIN32_WCE) && defined (DEBUG) && defined (ARM)
-#if defined (ARMV4) || defined (ARMV4I)
-//#pragma warning(disable : 1166)
-// warning LNK1166: cannot adjust code at offset=
-#endif
-#endif
-
 
 #include "doomtype.h"
 
@@ -107,16 +98,14 @@
 
 #ifdef GETTEXT
 #include <libintl.h>
-#include <locale.h>
 #endif
+#include <locale.h> // locale should not be dependent on GETTEXT -- 11/01/20 Monster Iestyn
 
-#if !defined (_WIN32_WCE)
 #include <sys/types.h>
 #include <sys/stat.h>
-#endif
 #include <ctype.h>
 
-#if ((defined (_WIN32) && !defined (_WIN32_WCE)) || defined (__DJGPP__)) && !defined (_XBOX)
+#if defined (_WIN32) || defined (__DJGPP__)
 #include <io.h>
 #endif
 
@@ -142,7 +131,11 @@ extern char logfilename[1024];
 #endif
 
 /* A mod name to further distinguish versions. */
+<<<<<<< HEAD
 #define SRB2APPLICATION "SRB2Kart"
+=======
+#define SRB2APPLICATION "SRB2"
+>>>>>>> srb2/next
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
@@ -153,6 +146,7 @@ extern char logfilename[1024];
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
+<<<<<<< HEAD
 #define VERSION    2 // Game version
 #define SUBVERSION 0 // more precise version number
 #define VERSIONSTRING "v2.0"
@@ -160,7 +154,18 @@ extern char logfilename[1024];
 // Hey! If you change this, add 1 to the MODVERSION below! Otherwise we can't force updates!
 // And change CMakeLists.txt, for CMake users!
 // AND appveyor.yml, for the build bots!
+=======
+#define VERSION    202 // Game version
+#define SUBVERSION 4  // more precise version number
+#define VERSIONSTRING "v2.2.4"
+#define VERSIONSTRINGW L"v2.2.4"
+// Hey! If you change this, add 1 to the MODVERSION below!
+// Otherwise we can't force updates!
+>>>>>>> srb2/next
 #endif
+
+/* A custom URL protocol for server links. */
+#define SERVER_URL_PROTOCOL "srb2://"
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
@@ -211,19 +216,29 @@ extern char logfilename[1024];
 // and should not be changed unless you have merged changes between versions of SRB2
 // (such as 2.0.4 to 2.0.5, etc) into your working copy.
 // Will always resemble the versionstring, 205 = 2.0.5, 210 = 2.1, etc.
-#define CODEBASE 210
+#define CODEBASE 220
 
 // The Modification ID; must be obtained from Rob ( https://mb.srb2.org/private.php?do=newpm&u=546 ).
 // DO NOT try to set this otherwise, or your modification will be unplayable through the Master Server.
+<<<<<<< HEAD
 // "12" is the default mod ID for version 2.1
 // "17" is the 2.1 Kart's mod ID
 #define MODID 17
+=======
+// "18" is the default mod ID for version 2.2
+#define MODID 18
+>>>>>>> srb2/next
 
 // The Modification Version, starting from 1. Do not follow your version string for this,
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
+<<<<<<< HEAD
 // Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
 #define MODVERSION 6
+=======
+// Note that we use this to help keep internal testing in check; this is why v2.2.0 is not version "1".
+#define MODVERSION 44
+>>>>>>> srb2/next
 
 // Filter consvars by version
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
@@ -245,6 +260,7 @@ extern char logfilename[1024];
 // The maximum number of players, multiplayer/networking.
 // NOTE: it needs more than this to increase the number of players...
 
+<<<<<<< HEAD
 #define MAXPLAYERS 16
 #define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 #define MAXSKINS 128
@@ -253,13 +269,37 @@ extern char logfilename[1024];
 
 // Master Server compatibility ONLY
 #define MSCOMPAT_MAXPLAYERS (32)
+=======
+#define MAXPLAYERS 32
+#define MAXSKINS 32
+#define PLAYERSMASK (MAXPLAYERS-1)
+#define MAXPLAYERNAME 21
+
+#define COLORRAMPSIZE 16
+#define MAXCOLORNAME 32
+#define NUMCOLORFREESLOTS 1024
+
+typedef struct skincolor_s
+{
+	char name[MAXCOLORNAME+1];  // Skincolor name
+	UINT8 ramp[COLORRAMPSIZE];  // Colormap ramp
+	UINT16 invcolor;            // Signpost color
+	UINT8 invshade;             // Signpost color shade
+	UINT16 chatcolor;           // Chat color
+	boolean accessible;         // Accessible by the color command + setup menu
+} skincolor_t;
+>>>>>>> srb2/next
 
 typedef enum
 {
 	SKINCOLOR_NONE = 0,
+
+	// Greyscale ranges
 	SKINCOLOR_WHITE,
-	SKINCOLOR_SILVER,
+	SKINCOLOR_BONE,
+	SKINCOLOR_CLOUDY,
 	SKINCOLOR_GREY,
+<<<<<<< HEAD
 	SKINCOLOR_NICKEL,
 	SKINCOLOR_BLACK,
 	SKINCOLOR_SKUNK,
@@ -428,6 +468,145 @@ typedef enum
 
 	MAXTRANSLATIONS
 } skincolors_t;
+=======
+	SKINCOLOR_SILVER,
+	SKINCOLOR_CARBON,
+	SKINCOLOR_JET,
+	SKINCOLOR_BLACK,
+
+	// Desaturated
+	SKINCOLOR_AETHER,
+	SKINCOLOR_SLATE,
+	SKINCOLOR_BLUEBELL,
+	SKINCOLOR_PINK,
+	SKINCOLOR_YOGURT,
+	SKINCOLOR_BROWN,
+	SKINCOLOR_BRONZE,
+	SKINCOLOR_TAN,
+	SKINCOLOR_BEIGE,
+	SKINCOLOR_MOSS,
+	SKINCOLOR_AZURE,
+	SKINCOLOR_LAVENDER,
+
+	// Viv's vivid colours (toast 21/07/17)
+	SKINCOLOR_RUBY,
+	SKINCOLOR_SALMON,
+	SKINCOLOR_RED,
+	SKINCOLOR_CRIMSON,
+	SKINCOLOR_FLAME,
+	SKINCOLOR_KETCHUP,
+	SKINCOLOR_PEACHY,
+	SKINCOLOR_QUAIL,
+	SKINCOLOR_SUNSET,
+	SKINCOLOR_COPPER,
+	SKINCOLOR_APRICOT,
+	SKINCOLOR_ORANGE,
+	SKINCOLOR_RUST,
+	SKINCOLOR_GOLD,
+	SKINCOLOR_SANDY,
+	SKINCOLOR_YELLOW,
+	SKINCOLOR_OLIVE,
+	SKINCOLOR_LIME,
+	SKINCOLOR_PERIDOT,
+	SKINCOLOR_APPLE,
+	SKINCOLOR_GREEN,
+	SKINCOLOR_FOREST,
+	SKINCOLOR_EMERALD,
+	SKINCOLOR_MINT,
+	SKINCOLOR_SEAFOAM,
+	SKINCOLOR_AQUA,
+	SKINCOLOR_TEAL,
+	SKINCOLOR_WAVE,
+	SKINCOLOR_CYAN,
+	SKINCOLOR_SKY,
+	SKINCOLOR_CERULEAN,
+	SKINCOLOR_ICY,
+	SKINCOLOR_SAPPHIRE, // sweet mother, i cannot weave – slender aphrodite has overcome me with longing for a girl
+	SKINCOLOR_CORNFLOWER,
+	SKINCOLOR_BLUE,
+	SKINCOLOR_COBALT,
+	SKINCOLOR_VAPOR,
+	SKINCOLOR_DUSK,
+	SKINCOLOR_PASTEL,
+	SKINCOLOR_PURPLE,
+	SKINCOLOR_BUBBLEGUM,
+	SKINCOLOR_MAGENTA,
+	SKINCOLOR_NEON,
+	SKINCOLOR_VIOLET,
+	SKINCOLOR_LILAC,
+	SKINCOLOR_PLUM,
+	SKINCOLOR_RASPBERRY,
+	SKINCOLOR_ROSY,
+
+	FIRSTSUPERCOLOR,
+
+	// Super special awesome Super flashing colors!
+	SKINCOLOR_SUPERSILVER1 = FIRSTSUPERCOLOR,
+	SKINCOLOR_SUPERSILVER2,
+	SKINCOLOR_SUPERSILVER3,
+	SKINCOLOR_SUPERSILVER4,
+	SKINCOLOR_SUPERSILVER5,
+
+	SKINCOLOR_SUPERRED1,
+	SKINCOLOR_SUPERRED2,
+	SKINCOLOR_SUPERRED3,
+	SKINCOLOR_SUPERRED4,
+	SKINCOLOR_SUPERRED5,
+
+	SKINCOLOR_SUPERORANGE1,
+	SKINCOLOR_SUPERORANGE2,
+	SKINCOLOR_SUPERORANGE3,
+	SKINCOLOR_SUPERORANGE4,
+	SKINCOLOR_SUPERORANGE5,
+
+	SKINCOLOR_SUPERGOLD1,
+	SKINCOLOR_SUPERGOLD2,
+	SKINCOLOR_SUPERGOLD3,
+	SKINCOLOR_SUPERGOLD4,
+	SKINCOLOR_SUPERGOLD5,
+
+	SKINCOLOR_SUPERPERIDOT1,
+	SKINCOLOR_SUPERPERIDOT2,
+	SKINCOLOR_SUPERPERIDOT3,
+	SKINCOLOR_SUPERPERIDOT4,
+	SKINCOLOR_SUPERPERIDOT5,
+
+	SKINCOLOR_SUPERSKY1,
+	SKINCOLOR_SUPERSKY2,
+	SKINCOLOR_SUPERSKY3,
+	SKINCOLOR_SUPERSKY4,
+	SKINCOLOR_SUPERSKY5,
+
+	SKINCOLOR_SUPERPURPLE1,
+	SKINCOLOR_SUPERPURPLE2,
+	SKINCOLOR_SUPERPURPLE3,
+	SKINCOLOR_SUPERPURPLE4,
+	SKINCOLOR_SUPERPURPLE5,
+
+	SKINCOLOR_SUPERRUST1,
+	SKINCOLOR_SUPERRUST2,
+	SKINCOLOR_SUPERRUST3,
+	SKINCOLOR_SUPERRUST4,
+	SKINCOLOR_SUPERRUST5,
+
+	SKINCOLOR_SUPERTAN1,
+	SKINCOLOR_SUPERTAN2,
+	SKINCOLOR_SUPERTAN3,
+	SKINCOLOR_SUPERTAN4,
+	SKINCOLOR_SUPERTAN5,
+
+	SKINCOLOR_FIRSTFREESLOT,
+	SKINCOLOR_LASTFREESLOT = SKINCOLOR_FIRSTFREESLOT + NUMCOLORFREESLOTS - 1,
+
+	MAXSKINCOLORS,
+
+	NUMSUPERCOLORS = ((SKINCOLOR_FIRSTFREESLOT - FIRSTSUPERCOLOR)/5)
+} skincolornum_t;
+
+extern UINT16 numskincolors;
+
+extern skincolor_t skincolors[MAXSKINCOLORS];
+>>>>>>> srb2/next
 
 // State updates, number of tics / second.
 // NOTE: used to setup the timer rate, see I_StartupTimer().
@@ -443,20 +622,26 @@ typedef enum
 
 // Special linedef executor tag numbers!
 enum {
-	LE_PINCHPHASE      = -2, // A boss entered pinch phase (and, in most cases, is preparing their pinch phase attack!)
-	LE_ALLBOSSESDEAD   = -3, // All bosses in the map are dead (Egg capsule raise)
-	LE_BOSSDEAD        = -4, // A boss in the map died (Chaos mode boss tally)
-	LE_BOSS4DROP       = -5,  // CEZ boss dropped its cage
-	LE_BRAKVILEATACK   = -6  // Brak's doing his LOS attack, oh noes
+	LE_PINCHPHASE      =    -2, // A boss entered pinch phase (and, in most cases, is preparing their pinch phase attack!)
+	LE_ALLBOSSESDEAD   =    -3, // All bosses in the map are dead (Egg capsule raise)
+	LE_BOSSDEAD        =    -4, // A boss in the map died (Chaos mode boss tally)
+	LE_BOSS4DROP       =    -5, // CEZ boss dropped its cage (also subtract the number of hitpoints it's lost)
+	LE_BRAKVILEATACK   =    -6, // Brak's doing his LOS attack, oh noes
+	LE_TURRET          = 32000, // THZ turret
+	LE_BRAKPLATFORM    =  4200, // v2.0 Black Eggman destroys platform
+	LE_CAPSULE2        =   682, // Egg Capsule
+	LE_CAPSULE1        =   681, // Egg Capsule
+	LE_CAPSULE0        =   680, // Egg Capsule
+	LE_KOOPA           =   650, // Distant cousin to Gay Bowser
+	LE_AXE             =   649, // MKB Axe object
+	LE_PARAMWIDTH      =  -100  // If an object that calls LinedefExecute has a nonzero parameter value, this times the parameter will be subtracted. (Mostly for the purpose of coexisting bosses...)
 };
 
 // Name of local directory for config files and savegames
-#if !defined(_arch_dreamcast) && !defined(_WIN32_WCE) && !defined(GP2X) && !defined(_WII) && !defined(_PS3)
 #if (((defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)) && !defined (__APPLE__)
 #define DEFAULTDIR ".srb2kart"
 #else
 #define DEFAULTDIR "srb2kart"
-#endif
 #endif
 
 #include "g_state.h"
@@ -501,20 +686,23 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 
 // Things that used to be in dstrings.h
 #define SAVEGAMENAME "srb2sav"
-char savegamename[256];
+extern char savegamename[256];
 
 // m_misc.h
 #ifdef GETTEXT
 #define M_GetText(String) gettext(String)
-void M_StartupLocale(void);
 #else
 // If no translations are to be used, make a stub
 // M_GetText function that just returns the string.
 #define M_GetText(x) (x)
 #endif
+void M_StartupLocale(void);
 extern void *(*M_Memcpy)(void* dest, const void* src, size_t n) FUNCNONNULL;
 char *va(const char *format, ...) FUNCPRINTF;
 char *M_GetToken(const char *inputString);
+void M_UnGetToken(void);
+UINT32 M_GetTokenPos(void);
+void M_SetTokenPos(UINT32 newPos);
 char *sizeu1(size_t num);
 char *sizeu2(size_t num);
 char *sizeu3(size_t num);
@@ -528,7 +716,7 @@ extern INT32 cv_debug;
 
 #define DBG_BASIC       0x0001
 #define DBG_DETAILED    0x0002
-#define DBG_RANDOMIZER  0x0004
+#define DBG_PLAYER      0x0004
 #define DBG_RENDER      0x0008
 #define DBG_NIGHTSBASIC 0x0010
 #define DBG_NIGHTS      0x0020
@@ -538,10 +726,14 @@ extern INT32 cv_debug;
 #define DBG_MEMORY      0x0200
 #define DBG_SETUP       0x0400
 #define DBG_LUA         0x0800
+#define DBG_RANDOMIZER  0x1000
+#define DBG_VIEWMORPH   0x2000
 
 // =======================
 // Misc stuff for later...
 // =======================
+
+#define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
 
 // Modifier key variables, accessible anywhere
 extern UINT8 shiftdown, ctrldown, altdown;
@@ -552,6 +744,7 @@ extern boolean capslock;
 
 // if we ever make our alloc stuff...
 #define ZZ_Alloc(x) Z_Malloc(x, PU_STATIC, NULL)
+#define ZZ_Calloc(x) Z_Calloc(x, PU_STATIC, NULL)
 
 // i_system.c, replace getchar() once the keyboard has been appropriated
 INT32 I_GetKey(void);
@@ -563,6 +756,12 @@ INT32 I_GetKey(void);
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
+<<<<<<< HEAD
+=======
+// Max gamepad/joysticks that can be detected/used.
+#define MAX_JOYSTICKS 4
+
+>>>>>>> srb2/next
 #ifndef M_PIl
 #define M_PIl 3.1415926535897932384626433832795029L
 #endif
@@ -591,25 +790,14 @@ INT32 I_GetKey(void);
 	#define PATHSEP "/"
 #endif
 
+#define PUNCTUATION "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+
 // Compile date and time and revision.
 extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 // Disabled code and code under testing
 // None of these that are disabled in the normal build are guaranteed to work perfectly
 // Compile them at your own risk!
-
-/// Kalaron/Eternity Engine slope code (SRB2CB ported)
-#define ESLOPE
-
-#ifdef ESLOPE
-/// Backwards compatibility with SRB2CB's slope linedef types.
-///	\note	A simple shim that prints a warning.
-#define ESLOPE_TYPESHIM
-#endif
-
-///	Delete file while the game is running.
-///	\note	EXTREMELY buggy, tends to crash game.
-//#define DELFILE
 
 ///	Allows the use of devmode in multiplayer. AKA "fishcake"
 //#define NETGAME_DEVMODE
@@ -620,9 +808,12 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 ///	Dumps the contents of a network save game upon consistency failure for debugging.
 //#define DUMPCONSISTENCY
 
+<<<<<<< HEAD
 ///	Polyobject fake flat code
 #define POLYOBJECTS_PLANES
 
+=======
+>>>>>>> srb2/next
 ///	See name of player in your crosshair
 #define SEENAMES
 
@@ -635,14 +826,19 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 ///	    	Most modifications should probably enable this.
 //#define SAVEGAME_OTHERVERSIONS
 
+<<<<<<< HEAD
 #if !defined (_NDS) && !defined (_PSP)
+=======
+///	Shuffle's incomplete OpenGL sorting code.
+#define SHUFFLE // This has nothing to do with sorting, why was it disabled?
+
+>>>>>>> srb2/next
 ///	Allow the use of the SOC RESETINFO command.
 ///	\note	Builds that are tight on memory should disable this.
 ///	    	This stops the game from storing backups of the states, sprites, and mobjinfo tables.
 ///	    	Though this info is compressed under normal circumstances, it's still a lot of extra
 ///	    	memory that never gets touched.
 #define ALLOW_RESETDATA
-#endif
 
 #ifndef NONET
 ///	Display a connection screen on join attempts.
@@ -656,15 +852,28 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// \note	You should leave this enabled unless you're working with a future SRB2 version.
 #define MUSICSLOT_COMPATIBILITY
 
+/// Experimental attempts at preventing MF_PAPERCOLLISION objects from getting stuck in walls.
+//#define PAPER_COLLISIONCORRECTION
+
+/// FINALLY some real clipping that doesn't make walls dissappear AND speeds the game up
+/// (that was the original comment from SRB2CB, sadly it is a lie and actually slows game down)
+/// on the bright side it fixes some weird issues with translucent walls
+/// \note	SRB2CB port.
+///      	SRB2CB itself ported this from PrBoom+
+#define NEWCLIP
+
 /// Handle touching sector specials in P_PlayerAfterThink instead of P_PlayerThink.
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
 #define SECTORSPECIALSAFTERTHINK
+<<<<<<< HEAD
 
 /// SRB2Kart: Camera always has noclip.
 #define NOCLIPCAM
 
 /// SRB2Kart: MIDI support is shitty and busted and we don't want it, lets throw it behind a define
 #define NO_MIDI
+=======
+>>>>>>> srb2/next
 
 /// FINALLY some real clipping that doesn't make walls dissappear AND speeds the game up
 /// (that was the original comment from SRB2CB, sadly it is a lie and actually slows game down)
@@ -675,5 +884,21 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 /// Hardware renderer: OpenGL
 #define GL_SHADERS
+
+/// Cache patches in Lua in a way that renderer switching will work flawlessly.
+//#define LUA_PATCH_SAFETY
+
+/// Sprite rotation
+#define ROTSPRITE
+#define ROTANGLES 72 // Needs to be a divisor of 360 (45, 60, 90, 120...)
+#define ROTANGDIFF (360 / ROTANGLES)
+
+/// PNG support
+#ifndef HAVE_PNG
+#define NO_PNG_LUMPS
+#endif
+
+/// Render flats on walls
+#define WALLFLATS
 
 #endif // __DOOMDEF__

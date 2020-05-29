@@ -363,8 +363,12 @@ static poly_t *CutOutSubsecPoly(seg_t *lseg, INT32 count, poly_t *poly)
 	// for each seg of the subsector
 	for (; count--; lseg++)
 	{
-		//x,y,dx,dy (like a divline)
 		line_t *line = lseg->linedef;
+
+		if (lseg->glseg)
+			continue;
+
+		//x,y,dx,dy (like a divline)
 		p1.x = FIXED_TO_FLOAT(lseg->side ? line->v2->x : line->v1->x);
 		p1.y = FIXED_TO_FLOAT(lseg->side ? line->v2->y : line->v1->y);
 		p2.x = FIXED_TO_FLOAT(lseg->side ? line->v1->x : line->v2->x);
@@ -750,6 +754,13 @@ static INT32 SolveTProblem(void)
 		return 0;
 
 	CONS_Debug(DBG_RENDER, "Solving T-joins. This may take a while. Please wait...\n");
+<<<<<<< HEAD
+=======
+#ifdef HWR_LOADING_SCREEN
+	CON_Drawer(); //let the user know what we are doing
+	I_FinishUpdate(); // page flip or blit buffer
+#endif
+>>>>>>> srb2/next
 
 	numsplitpoly = 0;
 
@@ -793,12 +804,10 @@ static void AdjustSegs(void)
 			float distv1,distv2,tmp;
 			nearv1 = nearv2 = MYMAX;
 
-#ifdef POLYOBJECTS
 			// Don't touch polyobject segs. We'll compensate
 			// for this when we go about drawing them.
 			if (lseg->polyseg)
 				continue;
-#endif
 
 			if (p) {
 				for (j = 0; j < p->numpts; j++)
@@ -879,6 +888,11 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	CON_Drawer(); //let the user know what we are doing
 	I_FinishUpdate(); // page flip or blit buffer
 #endif
+<<<<<<< HEAD
+=======
+
+	HWR_ClearPolys();
+>>>>>>> srb2/next
 
 	// find min/max boundaries of map
 	//CONS_Debug(DBG_RENDER, "Looking for boundaries of map...\n");

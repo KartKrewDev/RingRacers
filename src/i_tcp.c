@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -18,20 +18,12 @@
 #ifdef __GNUC__
 #include <unistd.h>
 #endif
-#ifdef __OS2__
-#include <sys/types.h>
-#include <sys/time.h>
-#endif // __OS2__
-
-#ifdef _PS3
-#define NO_IPV6 // PSL1GHT v2 do not have IPv6 support
-#endif
 
 #ifndef NO_IPV6
 #define HAVE_IPV6
 #endif
 
-#if defined (_WIN32) || defined (_WIN32_WCE)
+#ifdef _WIN32
 #define USE_WINSOCK
 #if defined (_WIN64) || defined (HAVE_IPV6)
 #define USE_WINSOCK2
@@ -39,12 +31,6 @@
 #define USE_WINSOCK1
 #endif
 #endif //WIN32 OS
-
-#ifdef _XBOX // XBox have on WinSock API?
-#undef USE_WINSOCK
-#undef USE_WINSOCK1
-#undef USE_WINSOCK2
-#endif
 
 #ifdef USE_WINSOCK2
 #include <ws2tcpip.h>
@@ -61,17 +47,12 @@
 #else
 #ifdef USE_WINSOCK1
 #include <winsock.h>
-#elif !defined (SCOUW2) && !defined (SCOUW7) && !defined (__OS2__)
-#ifdef HAVE_LWIP
-#include <lwip/inet.h>
-#elif !defined (USE_WINSOCK)
+#elif !defined (SCOUW2) && !defined (SCOUW7)
+#ifndef USE_WINSOCK
 #include <arpa/inet.h>
 #endif //normal BSD API
 
-#ifdef HAVE_LWIP
-#include <lwip/sockets.h>
-#define ioctl lwip_ioctl
-#elif !defined (USE_WINSOCK) //!HAVE_LWIP
+#ifndef USE_WINSOCK
 #ifdef __APPLE_CC__
 #ifndef _BSD_SOCKLEN_T_
 #define _BSD_SOCKLEN_T_
@@ -81,24 +62,13 @@
 #include <netinet/in.h>
 #endif //normal BSD API
 
-#if defined(_arch_dreamcast) && !defined(HAVE_LWIP)
-#include <kos/net.h>
-#elif defined(HAVE_LWIP)
-#include <lwip/lwip.h>
-#elif defined (_PS3)
-#include <net/select.h>
-#include <net/net.h>
-#elif !defined(USE_WINSOCK) //!HAVE_LWIP
+#ifndef USE_WINSOCK
 #include <netdb.h>
 #include <sys/ioctl.h>
 #endif //normal BSD API
 
 #include <errno.h>
 #include <time.h>
-
-#ifdef _arch_dreamcast
-#include "sdl12/SRB2DC/dchelp.h"
-#endif
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
 	#include <sys/time.h>
@@ -190,11 +160,6 @@ static UINT8 UPNP_support = TRUE;
 	// winsock stuff (in winsock a socket is not a file)
 	#define ioctl ioctlsocket
 	#define close closesocket
-
-	#ifdef _WIN32_WCE
-	#include "sdl12/SRB2CE/cehelp.h"
-	#endif
-
 #endif
 
 #include "i_addrinfo.h"
@@ -205,9 +170,7 @@ static UINT8 UPNP_support = TRUE;
 #define SELECTTEST
 #endif
 
-#elif defined(HAVE_LWIP)
-#define SELECTTEST
-#elif !defined( _arch_dreamcast)
+#else
 #define SELECTTEST
 #endif
 
@@ -217,7 +180,7 @@ static UINT8 UPNP_support = TRUE;
 typedef SOCKET SOCKET_TYPE;
 #define ERRSOCKET (SOCKET_ERROR)
 #else
-#if (defined (__unix__) && !defined (MSDOS)) || defined (__APPLE__) || defined (__HAIKU__) || defined(_PS3)
+#if (defined (__unix__) && !defined (MSDOS)) || defined (__APPLE__) || defined (__HAIKU__)
 typedef int SOCKET_TYPE;
 #else
 typedef unsigned long SOCKET_TYPE;
@@ -1181,12 +1144,6 @@ boolean I_InitTcpDriver(void)
 		CONS_Debug(DBG_NETPLAY, "WinSock description: %s\n",WSAData.szDescription);
 		CONS_Debug(DBG_NETPLAY, "WinSock System Status: %s\n",WSAData.szSystemStatus);
 #endif
-#ifdef HAVE_LWIP
-		lwip_kos_init();
-#elif defined(_arch_dreamcast)
-		//return;
-		net_init();
-#endif
 #ifdef __DJGPP__
 #ifdef WATTCP // Alam_GBC: survive bootp, dhcp, rarp and wattcp/pktdrv from failing to load
 		survive_eth   = 1; // would be needed to not exit if pkt_eth_init() fails
@@ -1239,9 +1196,6 @@ boolean I_InitTcpDriver(void)
 			CONS_Debug(DBG_NETPLAY, "No TCP/IP driver detected\n");
 #endif // libsocket
 #endif // __DJGPP__
-#ifdef _PS3
-		netInitialize();
-#endif
 #ifndef __DJGPP__
 		init_tcp_driver = true;
 #endif
@@ -1289,11 +1243,6 @@ void I_ShutdownTcpDriver(void)
 	WS_addrinfocleanup();
 	WSACleanup();
 #endif
-#ifdef HAVE_LWIP
-	lwip_kos_shutdown();
-#elif defined(_arch_dreamcast)
-	net_shutdown();
-#endif
 #ifdef __DJGPP__
 #ifdef WATTCP // wattcp
 	//_outch = NULL;
@@ -1302,9 +1251,6 @@ void I_ShutdownTcpDriver(void)
 	__lsck_uninit();
 #endif // libsocket
 #endif // __DJGPP__
-#ifdef _PS3
-	netDeinitialize();
-#endif
 	CONS_Printf("shut down\n");
 	init_tcp_driver = false;
 #endif
@@ -1477,6 +1423,7 @@ static void SOCK_ClearBans(void)
 boolean I_InitTcpNetwork(void)
 {
 	char serverhostname[255];
+	const char *urlparam = NULL;
 	boolean ret = false;
 	// initilize the OS's TCP/IP stack
 	if (!I_InitTcpDriver())
@@ -1530,10 +1477,12 @@ boolean I_InitTcpNetwork(void)
 
 		ret = true;
 	}
-	else if (M_CheckParm("-connect"))
+	else if ((urlparam = M_GetUrlProtocolArg()) != NULL || M_CheckParm("-connect"))
 	{
-		if (M_IsNextParm())
-			strcpy(serverhostname, M_GetNextParm());
+		if (urlparam != NULL)
+			strlcpy(serverhostname, urlparam, sizeof(serverhostname));
+		else if (M_IsNextParm())
+			strlcpy(serverhostname, M_GetNextParm(), sizeof(serverhostname));
 		else
 			serverhostname[0] = 0; // assuming server in the LAN, use broadcast to detect it
 

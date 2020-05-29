@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -35,12 +35,18 @@
 
 // Level title font
 #define LT_FONTSTART '!' // the first font characters
-#define LT_FONTEND 'Z' // the last font characters
+#define LT_FONTEND 'z' // the last font characters
 #define LT_FONTSIZE (LT_FONTEND - LT_FONTSTART + 1)
 
 #define CRED_FONTSTART '!' // the first font character
 #define CRED_FONTEND 'Z' // the last font character
 #define CRED_FONTSIZE (CRED_FONTEND - CRED_FONTSTART + 1)
+
+// Name tag font
+// Used by base and outline font set
+#define NT_FONTSTART '!' // the first font character
+#define NT_FONTEND 'Z' // the last font character
+#define NT_FONTSIZE (NT_FONTEND - NT_FONTSTART + 1)
 
 #define HU_CROSSHAIRS 3 // maximum of 9 - see HU_Init();
 
@@ -87,14 +93,18 @@ extern patch_t *framecounter;
 extern patch_t *frameslash;
 extern patch_t *lt_font[LT_FONTSIZE];
 extern patch_t *cred_font[CRED_FONTSIZE];
-extern patch_t *emeraldpics[7];
-extern patch_t *tinyemeraldpics[7];
+extern patch_t *ntb_font[NT_FONTSIZE];
+extern patch_t *nto_font[NT_FONTSIZE];
+extern patch_t *ttlnum[10];
+extern patch_t *emeraldpics[3][8];
 extern patch_t *rflagico;
 extern patch_t *bflagico;
 extern patch_t *rmatcico;
 extern patch_t *bmatcico;
 extern patch_t *tagico;
 extern patch_t *tallminus;
+extern patch_t *tallinfin;
+extern patch_t *tokenicon;
 
 // set true whenever the tab rankings are being shown for any reason
 extern boolean hu_showscores;
@@ -114,11 +124,18 @@ void HU_Drawer(void);
 char HU_dequeueChatChar(void);
 void HU_Erase(void);
 void HU_clearChatChars(void);
+<<<<<<< HEAD
 void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);	// Lat': Ping drawer for scoreboard.
 void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);
 //void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer);
 //void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer);
 void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol);
+=======
+void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags);	// Lat': Ping drawer for scoreboard.
+void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer);
+void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer);
+void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer);
+>>>>>>> srb2/next
 void HU_DrawEmeralds(INT32 x, INT32 y, INT32 pemeralds);
 
 INT32 HU_CreateTeamScoresTbl(playersort_t *tab, UINT32 dmtotals[]);

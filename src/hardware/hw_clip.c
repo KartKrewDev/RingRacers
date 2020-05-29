@@ -73,14 +73,15 @@
 #include "hw_main.h"
 #include "hw_clip.h"
 #include "hw_glob.h"
+#include "../r_main.h"
 #include "../r_state.h"
 #include "../tables.h"
 #include "r_opengl/r_opengl.h"
 #include "../r_main.h"	// for cv_fov
 
 #ifdef HAVE_SPHEREFRUSTRUM
-static GLdouble viewMatrix[16];
-static GLdouble projMatrix[16];
+static GLfloat viewMatrix[16];
+static GLfloat projMatrix[16];
 float frustum[6][4];
 #endif
 
@@ -380,7 +381,11 @@ void gld_FrustrumSetup(void)
 	float t;
 	float clip[16];
 
+<<<<<<< HEAD
 	pglGetFloatv(GL_PROJECTION_MATRIX, projMatrix);
+=======
+	pglGeFloatv(GL_PROJECTION_MATRIX, projMatrix);
+>>>>>>> srb2/next
 	pglGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);
 
 	clip[0]  = CALCMATRIX(0, 0, 1, 4, 2, 8, 3, 12);

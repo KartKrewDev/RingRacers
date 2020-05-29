@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2013-2016 by Matthew "Inuyasha" Walsh.
+// Copyright (C) 2013-2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 2013      by "Ninji".
-// Copyright (C) 2013-2018 by Sonic Team Junior.
+// Copyright (C) 2013-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -24,10 +24,13 @@
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
+<<<<<<< HEAD
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
+=======
+>>>>>>> srb2/next
 
 // GIFs are always little-endian
 #include "byteptr.h"
@@ -411,6 +414,7 @@ const UINT8 gifhead_nsid[19] = {0x21,0xFF,0x0B, // extension block + size
 //
 static RGBA_t *GIF_getpalette(size_t palnum)
 {
+<<<<<<< HEAD
 	// In hardware mode, uses the master palette
 	return ((gif_colorprofile
 #ifdef HWRENDER
@@ -418,6 +422,15 @@ static RGBA_t *GIF_getpalette(size_t palnum)
 #endif
 	) ? &pLocalPalette[palnum*256]
 	: &pMasterPalette[palnum*256]);
+=======
+	// In hardware mode, always returns the local palette
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		return pLocalPalette;
+	else
+#endif
+		return (gif_colorprofile ? &pLocalPalette[palnum*256] : &pMasterPalette[palnum*256]);
+>>>>>>> srb2/next
 }
 
 //
@@ -470,10 +483,13 @@ static void GIF_headwrite(void)
 	WRITEUINT16(p, rheight);
 
 	// colors, aspect, etc
+<<<<<<< HEAD
 	/*
 	also these are magical values, check out
 	https://tronche.com/computer-graphics/gif/gif89a.html#screen-descriptor
 	*/
+=======
+>>>>>>> srb2/next
 	WRITEUINT8(p, 0xF7); // (0xF7 = 1111 0111)
 	WRITEUINT8(p, 0x00);
 	WRITEUINT8(p, 0x00);
@@ -525,6 +541,31 @@ static void hwrconvert(void)
 #endif
 
 //
+// GIF_rgbconvert
+// converts an RGB frame to a frame with a palette.
+//
+#ifdef HWRENDER
+static void GIF_rgbconvert(UINT8 *linear, UINT8 *scr)
+{
+	UINT8 r, g, b;
+	size_t src = 0, dest = 0;
+	size_t size = (vid.width * vid.height * 3);
+
+	InitColorLUT(gif_framepalette);
+
+	while (src < size)
+	{
+		r = (UINT8)linear[src];
+		g = (UINT8)linear[src + 1];
+		b = (UINT8)linear[src + 2];
+		scr[dest] = colorlookup[r >> SHIFTCOLORBITS][g >> SHIFTCOLORBITS][b >> SHIFTCOLORBITS];
+		src += (3 * scrbuf_downscaleamt);
+		dest += scrbuf_downscaleamt;
+	}
+}
+#endif
+
+//
 // GIF_framewrite
 // writes a frame into the file.
 //
@@ -564,7 +605,15 @@ static void GIF_framewrite(void)
 			I_ReadScreen(movie_screen);
 #ifdef HWRENDER
 		else if (rendermode == render_opengl)
+<<<<<<< HEAD
 			hwrconvert();
+=======
+		{
+			UINT8 *linear = HWR_GetScreenshot();
+			GIF_rgbconvert(linear, movie_screen);
+			free(linear);
+		}
+>>>>>>> srb2/next
 #endif
 	}
 	else
@@ -573,6 +622,7 @@ static void GIF_framewrite(void)
 		blitw = vid.width;
 		blith = vid.height;
 
+<<<<<<< HEAD
 		if (gif_frames == 0)
 		{
 			if (rendermode == render_soft)
@@ -585,6 +635,22 @@ static void GIF_framewrite(void)
 			}
 #endif
 		}
+=======
+#ifdef HWRENDER
+		// Copy the current OpenGL frame into the base screen
+		if (rendermode == render_opengl)
+		{
+			UINT8 *linear = HWR_GetScreenshot();
+			GIF_rgbconvert(linear, screens[0]);
+			free(linear);
+		}
+#endif
+
+		// Copy the first frame into the movie screen
+		// OpenGL already does the same above.
+		if (gif_frames == 0 && rendermode == render_soft)
+			I_ReadScreen(movie_screen);
+>>>>>>> srb2/next
 
 		movie_screen = screens[0];
 	}
@@ -687,6 +753,7 @@ static void GIF_framewrite(void)
 //
 INT32 GIF_open(const char *filename)
 {
+<<<<<<< HEAD
 #if 0
 	if (rendermode != render_soft)
 	{
@@ -695,6 +762,8 @@ INT32 GIF_open(const char *filename)
 	}
 #endif
 
+=======
+>>>>>>> srb2/next
 	gif_out = fopen(filename, "wb");
 	if (!gif_out)
 		return 0;

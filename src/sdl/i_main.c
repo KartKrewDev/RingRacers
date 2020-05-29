@@ -27,7 +27,11 @@
 #include <unistd.h>
 #endif
 
+<<<<<<< HEAD
 #ifdef __unix__
+=======
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+>>>>>>> srb2/next
 #include <errno.h>
 #endif
 
@@ -142,6 +146,7 @@ int main(int argc, char **argv)
 		const char *reldir;
 		int left;
 		boolean fileabs;
+<<<<<<< HEAD
 		const char *link;
 
 		logdir = D_Home();
@@ -216,6 +221,84 @@ int main(int argc, char **argv)
 		(void)link;
 		logstream = fopen("latest-log.txt", "wt+");
 #endif/*__unix__*/
+	}
+=======
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+		const char *link;
+#endif
+>>>>>>> srb2/next
+
+		logdir = D_Home();
+
+		my_time = time(NULL);
+		timeinfo = localtime(&my_time);
+
+		if (M_CheckParm("-logfile") && M_IsNextParm())
+		{
+			format = M_GetNextParm();
+			fileabs = M_IsPathAbsolute(format);
+		}
+		else
+		{
+			format = "log-%Y-%m-%d_%H-%M-%S.txt";
+			fileabs = false;
+		}
+
+		if (fileabs)
+		{
+			strftime(logfilename, sizeof logfilename, format, timeinfo);
+		}
+		else
+		{
+			if (M_CheckParm("-logdir") && M_IsNextParm())
+				reldir = M_GetNextParm();
+			else
+				reldir = "logs";
+
+			if (M_IsPathAbsolute(reldir))
+			{
+				left = snprintf(logfilename, sizeof logfilename,
+						"%s"PATHSEP, reldir);
+			}
+			else
+#ifdef DEFAULTDIR
+			if (logdir)
+			{
+				left = snprintf(logfilename, sizeof logfilename,
+						"%s"PATHSEP DEFAULTDIR PATHSEP"%s"PATHSEP, logdir, reldir);
+			}
+			else
+#endif/*DEFAULTDIR*/
+			{
+				left = snprintf(logfilename, sizeof logfilename,
+						"."PATHSEP"%s"PATHSEP, reldir);
+			}
+#endif/*LOGMESSAGES*/
+
+			strftime(&logfilename[left], sizeof logfilename - left,
+					format, timeinfo);
+		}
+
+		M_MkdirEachUntil(logfilename,
+				M_PathParts(logdir) - 1,
+				M_PathParts(logfilename) - 1, 0755);
+
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+		logstream = fopen(logfilename, "w");
+#ifdef DEFAULTDIR
+		if (logdir)
+			link = va("%s/"DEFAULTDIR"/latest-log.txt", logdir);
+		else
+#endif/*DEFAULTDIR*/
+			link = "latest-log.txt";
+		unlink(link);
+		if (symlink(logfilename, link) == -1)
+		{
+			I_OutputMsg("Error symlinking latest-log.txt: %s\n", strerror(errno));
+		}
+#else/*defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)*/
+		logstream = fopen("latest-log.txt", "wt+");
+#endif/*defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)*/
 	}
 
 	//I_OutputMsg("I_StartupSystem() ...\n");

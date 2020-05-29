@@ -14,6 +14,15 @@
 #ifndef _HWR_DATA_
 #define _HWR_DATA_
 
+<<<<<<< HEAD
+=======
+#if defined (_WIN32) && !defined (__CYGWIN__)
+//#define WIN32_LEAN_AND_MEAN
+#define RPC_NO_WINDOWS_H
+#include <windows.h>
+#endif
+
+>>>>>>> srb2/next
 #include "../doomdef.h"
 #include "../screen.h"
 
@@ -107,9 +116,14 @@ struct GLPatch_s
 	float               max_s,max_t;
 	UINT16              wadnum;      // the software patch lump num for when the hardware patch
 	UINT16              lumpnum;     // was flushed, and we need to re-create it
+<<<<<<< HEAD
 	GLMipmap_t         *mipmap;
 	
 	boolean             notfound; // if the texture file was not found, mark it here (used in model texture loading)
+=======
+	void                *rawpatch;   // :^)
+	GLMipmap_t          *mipmap;
+>>>>>>> srb2/next
 } ATTRPACK;
 typedef struct GLPatch_s GLPatch_t;
 

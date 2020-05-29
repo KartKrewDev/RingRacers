@@ -564,8 +564,9 @@ EXPORT void HWRAPI(FinishUpdate) (INT32 waitvbl)
 //                  : in OpenGL, we store values for conversion of paletted graphics when
 //                  : they are downloaded to the 3D card.
 // -----------------+
-EXPORT void HWRAPI(SetPalette) (RGBA_t *pal, RGBA_t *gamma)
+EXPORT void HWRAPI(SetPalette) (RGBA_t *pal)
 {
+<<<<<<< HEAD
 	INT32 i;
 
 	for (i = 0; i < 256; i++)
@@ -578,6 +579,15 @@ EXPORT void HWRAPI(SetPalette) (RGBA_t *pal, RGBA_t *gamma)
 
 	// on a palette change, you have to reload all of the textures
 	Flush();
+=======
+	size_t palsize = (sizeof(RGBA_t) * 256);
+	// on a palette change, you have to reload all of the textures
+	if (memcmp(&myPaletteData, pal, palsize))
+	{
+		memcpy(&myPaletteData, pal, palsize);
+		Flush();
+	}
+>>>>>>> srb2/next
 }
 
 #endif

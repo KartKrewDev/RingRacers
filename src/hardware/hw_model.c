@@ -7,11 +7,22 @@
 	the licensing is for Sonic Robo Blast 2.
 */
 
+<<<<<<< HEAD
 #include "../z_zone.h"
 #include "../doomdef.h"
 #include "hw_model.h"
 #include "hw_md2load.h"
 #include "hw_md3load.h"
+=======
+#include "../doomdef.h"
+#include "../doomtype.h"
+#include "../info.h"
+#include "../z_zone.h"
+#include "hw_model.h"
+#include "hw_md2load.h"
+#include "hw_md3load.h"
+#include "hw_md2.h"
+>>>>>>> srb2/next
 #include "u_list.h"
 #include <string.h>
 
@@ -195,6 +206,12 @@ model_t *LoadModel(const char *filename, int ztag)
 
 	Optimize(model);
 	GeneratePolygonNormals(model, ztag);
+<<<<<<< HEAD
+=======
+	LoadModelSprite2(model);
+	if (!model->spr2frames)
+		LoadModelInterpolationSettings(model);
+>>>>>>> srb2/next
 
 	// Default material properties
 	for (i = 0 ; i < model->numMaterials; i++)
@@ -218,6 +235,147 @@ model_t *LoadModel(const char *filename, int ztag)
 	return model;
 }
 
+<<<<<<< HEAD
+=======
+void HWR_ReloadModels(void)
+{
+	size_t i;
+	INT32 s;
+
+	for (s = 0; s < MAXSKINS; s++)
+	{
+		if (md2_playermodels[s].model)
+			LoadModelSprite2(md2_playermodels[s].model);
+	}
+
+	for (i = 0; i < NUMSPRITES; i++)
+	{
+		if (md2_models[i].model)
+			LoadModelInterpolationSettings(md2_models[i].model);
+	}
+}
+
+void LoadModelInterpolationSettings(model_t *model)
+{
+	INT32 i;
+	INT32 numframes = model->meshes[0].numFrames;
+	char *framename = model->framenames;
+
+	if (!framename)
+		return;
+
+	#define GET_OFFSET \
+		memcpy(&interpolation_flag, framename + offset, 2); \
+		model->interpolate[i] = (!memcmp(interpolation_flag, MODEL_INTERPOLATION_FLAG, 2));
+
+	for (i = 0; i < numframes; i++)
+	{
+		int offset = (strlen(framename) - 4);
+		char interpolation_flag[3];
+		memset(&interpolation_flag, 0x00, 3);
+
+		// find the +i on the frame name
+		// ANIM+i00
+		// so the offset is (frame name length - 4)
+		GET_OFFSET;
+
+		// maybe the frame had three digits?
+		// ANIM+i000
+		// so the offset is (frame name length - 5)
+		if (!model->interpolate[i])
+		{
+			offset--;
+			GET_OFFSET;
+		}
+
+		framename += 16;
+	}
+
+	#undef GET_OFFSET
+}
+
+void LoadModelSprite2(model_t *model)
+{
+	INT32 i;
+	modelspr2frames_t *spr2frames = NULL;
+	INT32 numframes = model->meshes[0].numFrames;
+	char *framename = model->framenames;
+
+	if (!framename)
+		return;
+
+	for (i = 0; i < numframes; i++)
+	{
+		char prefix[6];
+		char name[5];
+		char interpolation_flag[3];
+		char framechars[4];
+		UINT8 frame = 0;
+		UINT8 spr2idx;
+		boolean interpolate = false;
+
+		memset(&prefix, 0x00, 6);
+		memset(&name, 0x00, 5);
+		memset(&interpolation_flag, 0x00, 3);
+		memset(&framechars, 0x00, 4);
+
+		if (strlen(framename) >= 9)
+		{
+			boolean super;
+			char *modelframename = framename;
+			memcpy(&prefix, modelframename, 5);
+			modelframename += 5;
+			memcpy(&name, modelframename, 4);
+			modelframename += 4;
+			// Oh look
+			memcpy(&interpolation_flag, modelframename, 2);
+			if (!memcmp(interpolation_flag, MODEL_INTERPOLATION_FLAG, 2))
+			{
+				interpolate = true;
+				modelframename += 2;
+			}
+			memcpy(&framechars, modelframename, 3);
+
+			if ((super = (!memcmp(prefix, "SUPER", 5))) || (!memcmp(prefix, "SPR2_", 5)))
+			{
+				spr2idx = 0;
+				while (spr2idx < free_spr2)
+				{
+					if (!memcmp(spr2names[spr2idx], name, 4))
+					{
+						if (!spr2frames)
+							spr2frames = (modelspr2frames_t*)Z_Calloc(sizeof(modelspr2frames_t)*NUMPLAYERSPRITES*2, PU_STATIC, NULL);
+						if (super)
+							spr2idx |= FF_SPR2SUPER;
+						if (framechars[0])
+						{
+							frame = atoi(framechars);
+							if (spr2frames[spr2idx].numframes < frame+1)
+								spr2frames[spr2idx].numframes = frame+1;
+						}
+						else
+						{
+							frame = spr2frames[spr2idx].numframes;
+							spr2frames[spr2idx].numframes++;
+						}
+						spr2frames[spr2idx].frames[frame] = i;
+						spr2frames[spr2idx].interpolate = interpolate;
+						break;
+					}
+					spr2idx++;
+				}
+			}
+		}
+
+		framename += 16;
+	}
+
+	if (model->spr2frames)
+		Z_Free(model->spr2frames);
+	model->spr2frames = spr2frames;
+}
+
+>>>>>>> srb2/next
 //
 // GenerateVertexNormals
 //

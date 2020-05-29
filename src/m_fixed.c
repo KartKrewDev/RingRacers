@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -471,6 +471,20 @@ vector3_t *FV3_ClosestPointOnLine(const vector3_t *Line, const vector3_t *p, vec
 	return FV3_AddEx(&Line[0], &V, out);
 }
 
+
+//
+// ClosestPointOnVector
+//
+// Similar to ClosestPointOnLine, but uses a vector instead of two points.
+//
+void FV3_ClosestPointOnVector(const vector3_t *dir, const vector3_t *p, vector3_t *out)
+{
+	fixed_t t = FV3_Dot(dir, p);
+
+	// Return the point on the line closest
+	FV3_MulEx(dir, t, out);
+	return;
+}
 
 //
 // ClosestPointOnTriangle

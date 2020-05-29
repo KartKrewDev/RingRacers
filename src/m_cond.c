@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2012-2016 by Matthew "Inuyasha" Walsh.
-// Copyright (C) 2012-2018 by Sonic Team Junior.
+// Copyright (C) 2012-2016 by Matthew "Kaito Sinclaire" Walsh.
+// Copyright (C) 2012-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -18,10 +18,15 @@
 #include "v_video.h" // video flags
 
 #include "g_game.h" // record info
+<<<<<<< HEAD
 #include "r_things.h" // numskins
 //#include "r_draw.h" // R_GetColorByName
 #include "k_color.h" // K_GetKartColorByName
 #include "k_pwrlv.h"
+=======
+#include "r_skins.h" // numskins
+#include "r_draw.h" // R_GetColorByName
+>>>>>>> srb2/next
 
 // Map triggers for linedef executors
 // 32 triggers, one bit each
@@ -30,6 +35,7 @@ UINT32 unlocktriggers;
 // The meat of this system lies in condition sets
 conditionset_t conditionSets[MAXCONDITIONSETS];
 
+<<<<<<< HEAD
 // Default Emblem locations
 emblem_t emblemlocations[MAXEMBLEMS] =
 {
@@ -225,6 +231,20 @@ void M_SetupDefaultConditionSets(void)
 	// -- 14: Play 1000 matches
 	M_AddRawCondition(14, 1, UC_MATCHESPLAYED, 1000, 0, 0);
 }
+=======
+// Emblem locations
+emblem_t emblemlocations[MAXEMBLEMS];
+
+// Extra emblems
+extraemblem_t extraemblems[MAXEXTRAEMBLEMS];
+
+// Unlockables
+unlockable_t unlockables[MAXUNLOCKABLES];
+
+// Number of emblems and extra emblems
+INT32 numemblems = 0;
+INT32 numextraemblems = 0;
+>>>>>>> srb2/next
 
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
 {
@@ -429,7 +449,7 @@ UINT8 M_UpdateUnlockablesAndExtraEmblems(boolean force)
 	if (cechoLines)
 	{
 		char slashed[1024] = "";
-		for (i = 0; (i < 21) && (i < 24 - cechoLines); ++i)
+		for (i = 0; (i < 19) && (i < 24 - cechoLines); ++i)
 			slashed[i] = '\\';
 		slashed[i] = 0;
 
@@ -473,6 +493,8 @@ void M_SilentUpdateUnlockablesAndEmblems(void)
 			continue;
 		unlockables[i].unlocked = M_Achieved(unlockables[i].conditionset - 1);
 	}
+
+	players[consoleplayer].availabilities = players[1].availabilities = R_GetSkinAvailabilities(); // players[1] is supposed to be for 2p
 }
 
 // Emblem unlocking shit
@@ -487,7 +509,7 @@ UINT8 M_CheckLevelEmblems(void)
 	// Update Score, Time, Rings emblems
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (emblemlocations[i].type <= ET_SKIN || emblemlocations[i].collected)
+		if (emblemlocations[i].type <= ET_SKIN || emblemlocations[i].type == ET_MAP || emblemlocations[i].collected)
 			continue;
 
 		levelnum = emblemlocations[i].level;
@@ -513,6 +535,42 @@ UINT8 M_CheckLevelEmblems(void)
 			default: // unreachable but shuts the compiler up.
 				continue;
 		}
+
+		emblemlocations[i].collected = res;
+		if (res)
+			++somethingUnlocked;
+	}
+	return somethingUnlocked;
+}
+
+UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separate print when awarding emblems and it's sorta different enough.
+{
+	INT32 i;
+	INT32 embtype;
+	INT16 levelnum;
+	UINT8 res;
+	UINT8 somethingUnlocked = 0;
+	UINT8 flags;
+
+	for (i = 0; i < numemblems; ++i)
+	{
+		if (emblemlocations[i].type != ET_MAP || emblemlocations[i].collected)
+			continue;
+
+		levelnum = emblemlocations[i].level;
+		embtype = emblemlocations[i].var;
+		flags = MV_BEATEN;
+
+		if (embtype & ME_ALLEMERALDS)
+			flags |= MV_ALLEMERALDS;
+
+		if (embtype & ME_ULTIMATE)
+			flags |= MV_ULTIMATE;
+
+		if (embtype & ME_PERFECT)
+			flags |= MV_PERFECT;
+
+		res = ((mapvisited[levelnum - 1] & flags) == flags);
 
 		emblemlocations[i].collected = res;
 		if (res)
@@ -680,34 +738,54 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 	return NULL;
 }
 
-skincolors_t M_GetEmblemColor(emblem_t *em)
+skincolornum_t M_GetEmblemColor(emblem_t *em)
 {
-	if (!em || em->color >= MAXSKINCOLORS)
+	if (!em || em->color >= numskincolors)
 		return SKINCOLOR_NONE;
 	return em->color;
 }
 
-const char *M_GetEmblemPatch(emblem_t *em)
+const char *M_GetEmblemPatch(emblem_t *em, boolean big)
 {
-	static char pnamebuf[7] = "GOTITn";
+	static char pnamebuf[7];
+
+	if (!big)
+		strcpy(pnamebuf, "GOTITn");
+	else
+		strcpy(pnamebuf, "EMBMn0");
 
 	I_Assert(em->sprite >= 'A' && em->sprite <= 'Z');
-	pnamebuf[5] = em->sprite;
+
+	if (!big)
+		pnamebuf[5] = em->sprite;
+	else
+		pnamebuf[4] = em->sprite;
+
 	return pnamebuf;
 }
 
-skincolors_t M_GetExtraEmblemColor(extraemblem_t *em)
+skincolornum_t M_GetExtraEmblemColor(extraemblem_t *em)
 {
-	if (!em || em->color >= MAXSKINCOLORS)
+	if (!em || em->color >= numskincolors)
 		return SKINCOLOR_NONE;
 	return em->color;
 }
 
-const char *M_GetExtraEmblemPatch(extraemblem_t *em)
+const char *M_GetExtraEmblemPatch(extraemblem_t *em, boolean big)
 {
-	static char pnamebuf[7] = "GOTITn";
+	static char pnamebuf[7];
+
+	if (!big)
+		strcpy(pnamebuf, "GOTITn");
+	else
+		strcpy(pnamebuf, "EMBMn0");
 
 	I_Assert(em->sprite >= 'A' && em->sprite <= 'Z');
-	pnamebuf[5] = em->sprite;
+
+	if (!big)
+		pnamebuf[5] = em->sprite;
+	else
+		pnamebuf[4] = em->sprite;
+
 	return pnamebuf;
 }

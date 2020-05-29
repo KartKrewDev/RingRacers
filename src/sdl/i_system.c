@@ -5,7 +5,7 @@
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Portions Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 2014-2018 by Sonic Team Junior.
+// Copyright (C) 2014-2020 by Sonic Team Junior.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -137,7 +137,11 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <errno.h>
 #endif
 
+<<<<<<< HEAD
 // Locations for searching for main.kart
+=======
+// Locations for searching the srb2.pk3
+>>>>>>> srb2/next
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2Kart"
 #define DEFAULTWADLOCATION2 "/usr/local/games/SRB2Kart"
@@ -155,7 +159,11 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 /**	\brief WAD file to look for
 */
+<<<<<<< HEAD
 #define WADKEYWORD "main.kart"
+=======
+#define WADKEYWORD1 "srb2.pk3"
+>>>>>>> srb2/next
 /**	\brief holds wad path
 */
 static char returnWadPath[256];
@@ -178,6 +186,8 @@ static char returnWadPath[256];
 #include "../i_joy.h"
 
 #include "../m_argv.h"
+
+#include "../m_menu.h"
 
 #ifdef MAC_ALERT
 #include "macosx/mac_alert.h"
@@ -287,6 +297,7 @@ static void I_ReportSignal(int num, int coredumped)
 			sigmsg = 0;
 		else
 			sigmsg = msg;
+<<<<<<< HEAD
 	}
 
 	if (coredumped)
@@ -299,6 +310,20 @@ static void I_ReportSignal(int num, int coredumped)
 		sigmsg = msg;
 	}
 
+=======
+	}
+
+	if (coredumped)
+	{
+		if (sigmsg)
+			sprintf(msg, "%s (core dumped)", sigmsg);
+		else
+			strcat(msg, " (core dumped)");
+
+		sigmsg = msg;
+	}
+
+>>>>>>> srb2/next
 	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
 
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
@@ -572,7 +597,7 @@ static void Impl_HandleKeyboardConsoleEvent(KEY_EVENT_RECORD evt, HANDLE co)
 				break;
 			case VK_RETURN:
 				entering_con_command = false;
-				// Fall through.
+				/* FALLTHRU */
 			default:
 				event.data1 = MapVirtualKey(evt.wVirtualKeyCode,2); // convert in to char
 		}
@@ -720,7 +745,7 @@ static void I_RegisterSignals (void)
 void I_OutputMsg(const char *fmt, ...)
 {
 	size_t len;
-	XBOXSTATIC char txt[8192];
+	char txt[8192];
 	va_list  argptr;
 
 	va_start(argptr,fmt);
@@ -2243,9 +2268,22 @@ void I_InitJoystick2(void)
 	if (M_CheckParm("-nojoy"))
 		return;
 
+<<<<<<< HEAD
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
 		CONS_Printf("I_InitJoystick2()...\n");
+=======
+	if (M_CheckParm("-noxinput"))
+		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
+
+	if (M_CheckParm("-nohidapi"))
+		SDL_SetHintWithPriority("SDL_JOYSTICK_HIDAPI", "0", SDL_HINT_OVERRIDE);
+
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
+	{
+		CONS_Printf("I_InitJoystick2()...\n");
+
+>>>>>>> srb2/next
 		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1)
 		{
 			CONS_Printf(M_GetText("Couldn't initialize joystick: %s\n"), SDL_GetError());
@@ -2389,7 +2427,7 @@ INT32 I_NumJoys(void)
 	return numjoy;
 }
 
-static char joyname[255]; // MAX_PATH; joystick name is straight from the driver
+static char joyname[255]; // joystick name is straight from the driver
 
 const char *I_GetJoyName(INT32 joyindex)
 {
@@ -3162,7 +3200,6 @@ void I_Quit(void)
 	if (quiting) goto death;
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
-	I_ShutdownConsole();
 	M_SaveConfig(NULL); //save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -3179,9 +3216,10 @@ void I_Quit(void)
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
-		G_StopMetalRecording();
+		G_StopMetalRecording(false);
 
 	D_QuitNetGame();
+	M_FreePlayerSetupColors();
 	I_ShutdownMusic();
 	I_ShutdownSound();
 	I_ShutdownCD();
@@ -3285,8 +3323,6 @@ void I_Error(const char *error, ...)
 	I_OutputMsg("\nI_Error(): %s\n", buffer);
 	// ---
 
-	I_ShutdownConsole();
-
 	M_SaveConfig(NULL); // save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -3299,10 +3335,15 @@ void I_Error(const char *error, ...)
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
+<<<<<<< HEAD
 		G_StopMetalRecording();
 #endif
+=======
+		G_StopMetalRecording(false);
+>>>>>>> srb2/next
 
 	D_QuitNetGame();
+	M_FreePlayerSetupColors();
 	I_ShutdownMusic();
 	I_ShutdownSound();
 	I_ShutdownCD();
@@ -3378,7 +3419,11 @@ void I_RemoveExitFunc(void (*func)())
 	}
 }
 
+<<<<<<< HEAD
 #ifndef __unix__
+=======
+#if !(defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON))
+>>>>>>> srb2/next
 static void Shittycopyerror(const char *name)
 {
 	I_OutputMsg(
@@ -3392,16 +3437,26 @@ static void Shittylogcopy(void)
 {
 	char buf[8192];
 	FILE *fp;
+<<<<<<< HEAD
 	size_t n;
+=======
+	size_t r;
+>>>>>>> srb2/next
 	if (fseek(logstream, 0, SEEK_SET) == -1)
 	{
 		Shittycopyerror("fseek");
 	}
 	else if (( fp = fopen(logfilename, "wt") ))
 	{
+<<<<<<< HEAD
 		while (( n = fread(buf, 1, sizeof buf, logstream) ))
 		{
 			if (fwrite(buf, 1, n, fp) < n)
+=======
+		while (( r = fread(buf, 1, sizeof buf, logstream) ))
+		{
+			if (fwrite(buf, 1, r, fp) < r)
+>>>>>>> srb2/next
 			{
 				Shittycopyerror("fwrite");
 				break;
@@ -3418,7 +3473,11 @@ static void Shittylogcopy(void)
 		Shittycopyerror(logfilename);
 	}
 }
+<<<<<<< HEAD
 #endif/*__unix__*/
+=======
+#endif/*!(defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON))*/
+>>>>>>> srb2/next
 
 //
 //  Closes down everything. This includes restoring the initial
@@ -3442,7 +3501,11 @@ void I_ShutdownSystem(void)
 	if (logstream)
 	{
 		I_OutputMsg("I_ShutdownSystem(): end of logstream.\n");
+<<<<<<< HEAD
 #ifndef __unix__
+=======
+#if !(defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON))
+>>>>>>> srb2/next
 		Shittylogcopy();
 #endif
 		fclose(logstream);
@@ -3535,7 +3598,7 @@ char *I_GetUserName(void)
 INT32 I_mkdir(const char *dirname, INT32 unixright)
 {
 //[segabor]
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__) || defined (__OS2__)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__)
 	return mkdir(dirname, unixright);
 #elif defined (_WIN32)
 	UNREFERENCED_PARAMETER(unixright); /// \todo should implement ntright under nt...
@@ -3621,7 +3684,11 @@ static boolean isWadPathOk(const char *path)
 	if (!wad3path)
 		return false;
 
+<<<<<<< HEAD
 	sprintf(wad3path, pandf, path, WADKEYWORD);
+=======
+	sprintf(wad3path, pandf, path, WADKEYWORD1);
+>>>>>>> srb2/next
 
 	if (FIL_ReadFileOK(wad3path))
 	{
@@ -3646,7 +3713,11 @@ static void pathonly(char *s)
 		}
 }
 
+<<<<<<< HEAD
 /**	\brief	search for main.kart in the given path
+=======
+/**	\brief	search for srb2.pk3 in the given path
+>>>>>>> srb2/next
 
 	\param	searchDir	starting path
 
@@ -3670,9 +3741,15 @@ static const char *searchWad(const char *searchDir)
 	return NULL;
 }
 
+<<<<<<< HEAD
 /**	\brief go through all possible paths and look for main.kart
 
   \return path to main.kart if any
+=======
+/**	\brief go through all possible paths and look for srb2.pk3
+
+  \return path to srb2.pk3 if any
+>>>>>>> srb2/next
 */
 static const char *locateWad(void)
 {
@@ -3801,7 +3878,11 @@ const char *I_LocateWad(void)
 
 	if (waddir)
 	{
+<<<<<<< HEAD
 		// change to the directory where we found main.kart
+=======
+		// change to the directory where we found srb2.pk3
+>>>>>>> srb2/next
 #if defined (_WIN32)
 		SetCurrentDirectoryA(waddir);
 #else
@@ -3892,16 +3973,6 @@ UINT32 I_GetFreeMem(UINT32 *total)
 	if (total)
 		*total = (UINT32)info.dwTotalPhys;
 	return (UINT32)info.dwAvailPhys;
-#elif defined (__OS2__)
-	UINT32 pr_arena;
-
-	if (total)
-		DosQuerySysInfo( QSV_TOTPHYSMEM, QSV_TOTPHYSMEM,
-							(PVOID) total, sizeof (UINT32));
-	DosQuerySysInfo( QSV_MAXPRMEM, QSV_MAXPRMEM,
-				(PVOID) &pr_arena, sizeof (UINT32));
-
-	return pr_arena;
 #elif defined (__linux__)
 	/* Linux */
 	char buf[1024];

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -17,6 +17,7 @@
 #include "doomdef.h"
 #include "doomstat.h"
 #include "d_event.h"
+#include "g_demo.h"
 
 extern char gamedatafilename[64];
 extern char timeattackfolder[64];
@@ -31,6 +32,7 @@ extern char player_names[MAXPLAYERS][MAXPLAYERNAME+1];
 extern player_t players[MAXPLAYERS];
 extern boolean playeringame[MAXPLAYERS];
 
+<<<<<<< HEAD
 extern UINT8 *demo_p;
 
 // ======================================
@@ -99,16 +101,26 @@ typedef struct menudemo_s {
 
 extern mobj_t *metalplayback;
 
+=======
+>>>>>>> srb2/next
 // gametic at level start
 extern tic_t levelstarttic;
 
 // for modding?
 extern INT16 prevmap, nextmap;
 extern INT32 gameovertics;
+extern UINT8 ammoremovaltics;
 extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 extern INT16 rw_maximums[NUM_WEAPONS];
+extern INT32 pausedelay;
+extern boolean pausebreakkey;
+
+extern boolean promptactive;
+
+extern consvar_t cv_pauseifunfocused;
 
 // used in game menu
+<<<<<<< HEAD
 extern consvar_t cv_chatwidth, cv_chatnotifications, cv_chatheight, cv_chattime, cv_consolechat, cv_chatbacktint, cv_chatspamprotection/*, cv_compactscoreboard*/;
 extern consvar_t cv_songcredits;
 extern consvar_t cv_pauseifunfocused;
@@ -143,6 +155,43 @@ typedef enum
 	AXISDRIFT,
 	AXISLOOKBACK,
 } axis_input_e;
+=======
+extern consvar_t cv_tutorialprompt;
+extern consvar_t cv_chatwidth, cv_chatnotifications, cv_chatheight, cv_chattime, cv_consolechat, cv_chatbacktint, cv_chatspamprotection, cv_compactscoreboard;
+extern consvar_t cv_crosshair, cv_crosshair2;
+extern consvar_t cv_invertmouse, cv_alwaysfreelook, cv_chasefreelook, cv_mousemove;
+extern consvar_t cv_invertmouse2, cv_alwaysfreelook2, cv_chasefreelook2, cv_mousemove2;
+
+extern consvar_t cv_useranalog[2], cv_analog[2];
+extern consvar_t cv_directionchar[2];
+
+typedef enum {
+	CS_LEGACY,
+	CS_LMAOGALOG,
+	CS_STANDARD,
+	CS_SIMPLE = CS_LMAOGALOG|CS_STANDARD,
+} controlstyle_e;
+#define G_ControlStyle(ssplayer) (cv_directionchar[(ssplayer)-1].value == 3 ? CS_LMAOGALOG : ((cv_analog[(ssplayer)-1].value ? CS_LMAOGALOG : 0) | (cv_directionchar[(ssplayer)-1].value ? CS_STANDARD : 0)))
+#define P_ControlStyle(player) ((((player)->pflags & PF_ANALOGMODE) ? CS_LMAOGALOG : 0) | (((player)->pflags & PF_DIRECTIONCHAR) ? CS_STANDARD : 0))
+
+extern consvar_t cv_autobrake, cv_autobrake2;
+extern consvar_t cv_sideaxis,cv_turnaxis,cv_moveaxis,cv_lookaxis,cv_jumpaxis,cv_spinaxis,cv_fireaxis,cv_firenaxis,cv_deadzone,cv_digitaldeadzone;
+extern consvar_t cv_sideaxis2,cv_turnaxis2,cv_moveaxis2,cv_lookaxis2,cv_jumpaxis2,cv_spinaxis2,cv_fireaxis2,cv_firenaxis2,cv_deadzone2,cv_digitaldeadzone2;
+extern consvar_t cv_ghost_bestscore, cv_ghost_besttime, cv_ghost_bestrings, cv_ghost_last, cv_ghost_guest;
+>>>>>>> srb2/next
+
+// hi here's some new controls
+extern consvar_t cv_cam_shiftfacing[2], cv_cam_turnfacing[2],
+	cv_cam_turnfacingability[2], cv_cam_turnfacingspindash[2], cv_cam_turnfacinginput[2],
+	cv_cam_centertoggle[2], cv_cam_lockedinput[2], cv_cam_lockonboss[2];
+
+typedef enum
+{
+	LOCK_BOSS = 1<<0,
+	LOCK_ENEMY = 1<<1,
+	LOCK_INTERESTS = 1<<2,
+} lockassist_e;
+
 
 // mouseaiming (looking up/down with the mouse or keyboard)
 #define KB_LOOKSPEED (1<<25)
@@ -151,6 +200,12 @@ typedef enum
 
 // build an internal map name MAPxx from map number
 const char *G_BuildMapName(INT32 map);
+<<<<<<< HEAD
+=======
+
+extern boolean ticcmd_centerviewdown[2]; // For simple controls, lock the camera behind the player
+extern mobj_t *ticcmd_ztargetfocus[2]; // Locking onto an object?
+>>>>>>> srb2/next
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 // copy ticcmd_t to and fro the normal way
@@ -173,25 +228,68 @@ extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but sig
 //
 void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo);
 void G_DoReborn(INT32 playernum);
+<<<<<<< HEAD
 void G_PlayerReborn(INT32 player);
 void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer,
 	boolean skipprecutscene);
+=======
+void G_PlayerReborn(INT32 player, boolean betweenmaps);
+void G_InitNew(UINT8 pultmode, const char *mapname, boolean resetplayer,
+	boolean skipprecutscene, boolean FLS);
+>>>>>>> srb2/next
 char *G_BuildMapTitle(INT32 mapnum);
+
+struct searchdim
+{
+	UINT8 pos;
+	UINT8 siz;
+};
+
+typedef struct
+{
+	INT16  mapnum;
+	UINT8  matchc;
+	struct searchdim *matchd;/* offset that a pattern was matched */
+	UINT8  keywhc;
+	struct searchdim *keywhd;/* ...in KEYWORD */
+	UINT8  total;/* total hits */
+}
+mapsearchfreq_t;
+
+INT32 G_FindMap(const char *query, char **foundmapnamep,
+		mapsearchfreq_t **freqp, INT32 *freqc);
+void G_FreeMapSearch(mapsearchfreq_t *freq, INT32 freqc);
+
+/* Match map name by search + 2 digit map code or map number. */
+INT32 G_FindMapByNameOrCode(const char *query, char **foundmapnamep);
 
 // XMOD spawning
 mapthing_t *G_FindCTFStart(INT32 playernum);
 mapthing_t *G_FindMatchStart(INT32 playernum);
+<<<<<<< HEAD
 mapthing_t *G_FindRaceStart(INT32 playernum);
 void G_SpawnPlayer(INT32 playernum, boolean starpost);
+=======
+mapthing_t *G_FindCoopStart(INT32 playernum);
+mapthing_t *G_FindMapStart(INT32 playernum);
+void G_MovePlayerToSpawnOrStarpost(INT32 playernum);
+void G_SpawnPlayer(INT32 playernum);
+>>>>>>> srb2/next
 
 // Can be called by the startup code or M_Responder.
 // A normal game starts at map 1, but a warp test can start elsewhere
 void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar,
 	UINT8 ssplayers, boolean FLS);
 void G_DoLoadLevel(boolean resetplayer);
+<<<<<<< HEAD
 
 void G_LoadDemoInfo(menudemo_t *pdemo);
 void G_DeferedPlayDemo(const char *demo);
+=======
+void G_StartTitleCard(void);
+void G_PreLevelTitleCard(void);
+boolean G_IsTitleCardAvailable(void);
+>>>>>>> srb2/next
 
 // Can be called by the startup code or M_Responder, calls P_SetupLevel.
 void G_LoadGame(UINT32 slot, INT16 mapoverride);
@@ -200,12 +298,9 @@ void G_SaveGameData(boolean force);
 
 void G_SaveGame(UINT32 slot);
 
-// Only called by startup code.
-void G_RecordDemo(const char *name);
-void G_RecordMetal(void);
-void G_BeginRecording(void);
-void G_BeginMetal(void);
+void G_SaveGameOver(UINT32 slot, boolean modifylives);
 
+<<<<<<< HEAD
 // Only called by shutdown code.
 void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT8 color, UINT32 val);
 void G_SetDemoTime(UINT32 ptime, UINT32 plap);
@@ -289,10 +384,25 @@ void G_StopDemo(void);
 boolean G_CheckDemoStatus(void);
 void G_SaveDemo(void);
 boolean G_DemoTitleResponder(event_t *ev);
+=======
+extern UINT32 gametypedefaultrules[NUMGAMETYPES];
+extern UINT32 gametypetol[NUMGAMETYPES];
+extern INT16 gametyperankings[NUMGAMETYPES];
+
+void G_SetGametype(INT16 gametype);
+INT16 G_AddGametype(UINT32 rules);
+void G_AddGametypeConstant(INT16 gtype, const char *newgtconst);
+void G_UpdateGametypeSelections(void);
+void G_AddTOL(UINT32 newtol, const char *tolname);
+void G_AddGametypeTOL(INT16 gtype, UINT32 newtol);
+void G_SetGametypeDescription(INT16 gtype, char *descriptiontext, UINT8 leftcolor, UINT8 rightcolor);
+>>>>>>> srb2/next
 
 INT32 G_GetGametypeByName(const char *gametypestr);
 boolean G_IsSpecialStage(INT32 mapnum);
 boolean G_GametypeUsesLives(void);
+boolean G_GametypeUsesCoopLives(void);
+boolean G_GametypeUsesCoopStarposts(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
 boolean G_BattleGametype(void);
@@ -300,6 +410,8 @@ INT16 G_SometimesGetDifferentGametype(void);
 UINT8 G_GetGametypeColor(INT16 gt);
 boolean G_RaceGametype(void);
 boolean G_TagGametype(void);
+boolean G_CompetitionGametype(void);
+boolean G_EnoughPlayersFinished(void);
 void G_ExitLevel(void);
 void G_NextLevel(void);
 void G_Continue(void);
@@ -329,10 +441,14 @@ void G_AddPlayer(INT32 playernum);
 void G_SetExitGameFlag(void);
 void G_ClearExitGameFlag(void);
 boolean G_GetExitGameFlag(void);
+
 void G_SetRetryFlag(void);
 void G_ClearRetryFlag(void);
 boolean G_GetRetryFlag(void);
 
+void G_SetModeAttackRetryFlag(void);
+void G_ClearModeAttackRetryFlag(void);
+boolean G_GetModeAttackRetryFlag(void);
 
 void G_LoadGameData(void);
 void G_LoadGameSettings(void);
@@ -364,7 +480,7 @@ FUNCMATH INT32 G_TicsToCentiseconds(tic_t tics);
 FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 
 // Don't split up TOL handling
-INT16 G_TOLFlag(INT32 pgametype);
+UINT32 G_TOLFlag(INT32 pgametype);
 
 INT16 G_RandMap(INT16 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
 void G_AddMapToBuffer(INT16 map);

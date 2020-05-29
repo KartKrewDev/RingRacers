@@ -26,15 +26,27 @@
 //                                                       STANDARD DLL EXPORTS
 // ==========================================================================
 
+<<<<<<< HEAD
 EXPORT boolean HWRAPI(Init) (void);
 #if defined (PURESDL) || defined (macintosh)
 EXPORT void HWRAPI(SetPalette) (INT32 *, RGBA_t *gamma);
 #else
 EXPORT void HWRAPI(SetPalette) (RGBA_t *ppal, RGBA_t *pgamma);
 #endif
+=======
+EXPORT boolean HWRAPI(Init) (I_Error_t ErrorFunction);
+#ifndef HAVE_SDL
+EXPORT void HWRAPI(Shutdown) (void);
+#endif
+#ifdef _WINDOWS
+EXPORT void HWRAPI(GetModeList) (vmode_t **pvidmodes, INT32 *numvidmodes);
+#endif
+EXPORT void HWRAPI(SetPalette) (RGBA_t *ppal);
+>>>>>>> srb2/next
 EXPORT void HWRAPI(FinishUpdate) (INT32 waitvbl);
 EXPORT void HWRAPI(Draw2DLine) (F2DCoord *v1, F2DCoord *v2, RGBA_t Color);
 EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags);
+EXPORT void HWRAPI(RenderSkyDome) (INT32 tex, INT32 texture_width, INT32 texture_height, FTransform transform);
 EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags);
 EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask, FBOOLEAN DepthMask, FRGBAFloat *ClearColor);
 EXPORT void HWRAPI(SetTexture) (FTextureInfo *TexInfo);
@@ -46,13 +58,24 @@ EXPORT void HWRAPI(ClearMipMapCache) (void);
 EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value);
 
 //Hurdler: added for new development
+<<<<<<< HEAD
 EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, INT32 duration, INT32 tics, INT32 nextFrameIndex, FTransform *pos, float scale, UINT8 flipped, FSurfaceInfo *Surface);
 EXPORT void HWRAPI(CreateModelVBOs) (model_t *model);
 EXPORT void HWRAPI(SetTransform) (FTransform *stransform);
+=======
+EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, INT32 duration, INT32 tics, INT32 nextFrameIndex, FTransform *pos, float scale, UINT8 flipped, UINT8 *color);
+EXPORT void HWRAPI(CreateModelVBOs) (model_t *model);
+EXPORT void HWRAPI(SetTransform) (FTransform *ptransform);
+>>>>>>> srb2/next
 EXPORT INT32 HWRAPI(GetTextureUsed) (void);
 
+<<<<<<< HEAD
 EXPORT void HWRAPI(RenderSkyDome) (INT32 tex, INT32 texture_width, INT32 texture_height, FTransform transform);
 
+=======
+#define SCREENVERTS 10
+EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2]);
+>>>>>>> srb2/next
 EXPORT void HWRAPI(FlushScreenTextures) (void);
 EXPORT void HWRAPI(StartScreenWipe) (void);
 EXPORT void HWRAPI(EndScreenWipe) (void);
@@ -90,17 +113,32 @@ struct hwdriver_s
 	FinishUpdate        pfnFinishUpdate;
 	Draw2DLine          pfnDraw2DLine;
 	DrawPolygon         pfnDrawPolygon;
+	RenderSkyDome       pfnRenderSkyDome;
 	SetBlend            pfnSetBlend;
 	ClearBuffer         pfnClearBuffer;
 	SetTexture          pfnSetTexture;
 	ReadRect            pfnReadRect;
 	GClipRect           pfnGClipRect;
 	ClearMipMapCache    pfnClearMipMapCache;
+<<<<<<< HEAD
 	SetSpecialState     pfnSetSpecialState;
+=======
+	SetSpecialState     pfnSetSpecialState;//Hurdler: added for backward compatibility
+>>>>>>> srb2/next
 	DrawModel           pfnDrawModel;
 	CreateModelVBOs     pfnCreateModelVBOs;
 	SetTransform        pfnSetTransform;
 	GetTextureUsed      pfnGetTextureUsed;
+<<<<<<< HEAD
+=======
+	GetRenderVersion    pfnGetRenderVersion;
+#ifdef _WINDOWS
+	GetModeList         pfnGetModeList;
+#endif
+#ifndef HAVE_SDL
+	Shutdown            pfnShutdown;
+#endif
+>>>>>>> srb2/next
 	PostImgRedraw       pfnPostImgRedraw;
 	FlushScreenTextures pfnFlushScreenTextures;
 	StartScreenWipe     pfnStartScreenWipe;

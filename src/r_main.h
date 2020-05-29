@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -26,6 +26,7 @@ extern INT32 centerx, centery;
 
 extern fixed_t centerxfrac, centeryfrac;
 extern fixed_t projection, projectiony;
+extern fixed_t fovtan; // field of view
 
 extern size_t validcount, linecount, loopcount, framecount;
 
@@ -44,6 +45,8 @@ extern size_t validcount, linecount, loopcount, framecount;
 #define LIGHTSCALESHIFT 12
 #define MAXLIGHTZ 128
 #define LIGHTZSHIFT 20
+
+#define LIGHTRESOLUTIONFIX (640*fovtan/vid.width)
 
 extern lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 extern lighttable_t *scalelightfixed[MAXLIGHTSCALE];
@@ -64,7 +67,7 @@ fixed_t R_PointToDist2(fixed_t px2, fixed_t py2, fixed_t px1, fixed_t py1);
 
 fixed_t R_ScaleFromGlobalAngle(angle_t visangle);
 subsector_t *R_PointInSubsector(fixed_t x, fixed_t y);
-subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y);
+subsector_t *R_PointInSubsectorOrNull(fixed_t x, fixed_t y);
 
 boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph);
 
@@ -74,17 +77,33 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 
 extern consvar_t cv_showhud, cv_translucenthud;
 extern consvar_t cv_homremoval;
+<<<<<<< HEAD
 extern consvar_t cv_chasecam, cv_chasecam2, cv_chasecam3, cv_chasecam4;
 extern consvar_t cv_flipcam, cv_flipcam2, cv_flipcam3, cv_flipcam4;
 extern consvar_t cv_shadow;
 extern consvar_t cv_translucency;
 extern consvar_t /*cv_precipdensity,*/ cv_drawdist, /*cv_drawdist_nights,*/ cv_drawdist_precip;
+=======
+extern consvar_t cv_chasecam, cv_chasecam2;
+extern consvar_t cv_flipcam, cv_flipcam2;
+
+extern consvar_t cv_shadow;
+extern consvar_t cv_translucency;
+extern consvar_t cv_drawdist, cv_drawdist_nights, cv_drawdist_precip;
+>>>>>>> srb2/next
 extern consvar_t cv_fov;
 extern consvar_t cv_skybox;
 extern consvar_t cv_tailspickup;
 
 // Called by startup code.
 void R_Init(void);
+#ifdef HWRENDER
+void R_InitHardwareMode(void);
+#endif
+void R_ReloadHUDGraphics(void);
+
+void R_CheckViewMorph(void);
+void R_ApplyViewMorph(void);
 
 // just sets setsizeneeded true
 extern boolean setsizeneeded;
@@ -95,7 +114,7 @@ void R_ExecuteSetViewSize(void);
 
 void R_SkyboxFrame(player_t *player);
 
-void R_SetupFrame(player_t *player, boolean skybox);
+void R_SetupFrame(player_t *player);
 // Called by G_Drawer.
 void R_RenderPlayerView(player_t *player);
 

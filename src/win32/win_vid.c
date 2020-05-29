@@ -50,6 +50,7 @@ static consvar_t cv_stretch = {"stretch", "On", CV_SAVE|CV_NOSHOWHELP, CV_OnOff,
 static consvar_t cv_ontop = {"ontop", "Never", 0, CV_NeverOnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 boolean highcolor;
+int vid_opengl_state = 0;
 
 static BOOL bDIBMode; // means we are using DIB instead of DirectDraw surfaces
 static LPBITMAPINFO bmiMain = NULL;
@@ -228,6 +229,8 @@ void I_StartupGraphics(void)
 	if (!dedicated) graphics_started = true;
 }
 
+void VID_StartupOpenGL(void){}
+
 // ------------------
 // I_ShutdownGraphics
 // Close the screen, restore previous video mode.
@@ -295,8 +298,13 @@ static inline boolean I_SkipFrame(void)
 		case GS_LEVEL:
 			if (!paused)
 				return false;
+<<<<<<< HEAD
 			/* FALLTHRU */
+=======
+		//case GS_TIMEATTACK: -- sorry optimisation but now we have a cool level platter and that being laggardly looks terrible
+>>>>>>> srb2/next
 #ifndef CLIENT_LOADINGSCREEN
+		/* FALLTHRU */
 		case GS_WAITINGPLAYERS:
 #endif
 			return skip; // Skip odd frames
@@ -334,6 +342,10 @@ void I_FinishUpdate(void)
 
 	if (I_SkipFrame())
 		return;
+
+	// draw captions if enabled
+	if (cv_closedcaptioning.value)
+		SCR_ClosedCaptions();
 
 	// display a graph of ticrate
 	if (cv_ticrate.value)
@@ -854,6 +866,12 @@ INT32 VID_SetMode(INT32 modenum)
 
 	I_RestartSysMouse();
 	return 1;
+}
+
+void VID_CheckRenderer(void) {}
+void VID_CheckGLLoaded(rendermode_t oldrender)
+{
+	(void)oldrender;
 }
 
 // ========================================================================

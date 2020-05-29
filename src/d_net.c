@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -497,9 +497,9 @@ void Net_AckTicker(void)
 		node_t *node = &nodes[nodei];
 		if (ackpak[i].acknum && ackpak[i].senttime + NODETIMEOUT < I_GetTime())
 		{
-			if (ackpak[i].resentnum > 10 && (node->flags & NF_CLOSE))
+			if (ackpak[i].resentnum > 20 && (node->flags & NF_CLOSE))
 			{
-				DEBFILE(va("ack %d sent 10 times so connection is supposed lost: node %d\n",
+				DEBFILE(va("ack %d sent 20 times so connection is supposed lost: node %d\n",
 					i, nodei));
 				Net_CloseConnection(nodei | FORCECLOSE);
 
@@ -715,6 +715,8 @@ void Net_CloseConnection(INT32 node)
 
 	InitNode(&nodes[node]);
 	SV_AbortSendFiles(node);
+	if (server)
+		SV_AbortLuaFileTransfer(node);
 	I_NetFreeNodenum(node);
 #endif
 }
@@ -799,11 +801,17 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"RESYNCHEND",
 	"RESYNCHGET",
 
+<<<<<<< HEAD
 	"CLIENT3CMD",
 	"CLIENT3MIS",
 	"CLIENT4CMD",
 	"CLIENT4MIS",
 	"BASICKEEPALIVE",
+=======
+	"SENDINGLUAFILE",
+	"ASKLUAFILE",
+	"HASLUAFILE",
+>>>>>>> srb2/next
 
 	"FILEFRAGMENT",
 	"TEXTCMD",
@@ -813,6 +821,10 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"CLIENTJOIN",
 	"NODETIMEOUT",
 	"RESYNCHING",
+<<<<<<< HEAD
+=======
+	"LOGIN",
+>>>>>>> srb2/next
 	"PING"
 };
 
@@ -862,11 +874,16 @@ static void DebugPrintpacket(const char *header)
 		case PT_NODEKEEPALIVE:
 		case PT_NODEKEEPALIVEMIS:
 			fprintf(debugfile, "    tic %4u resendfrom %u\n",
+<<<<<<< HEAD
 				(UINT32)netbuffer->u.clientpak.client_tic,
 				(UINT32)netbuffer->u.clientpak.resendfrom);
 			break;
 		case PT_BASICKEEPALIVE:
 			fprintf(debugfile, "    keep alive\n");
+=======
+				(UINT32)ExpandTics(netbuffer->u.clientpak.client_tic, doomcom->remotenode),
+				(UINT32)ExpandTics (netbuffer->u.clientpak.resendfrom, doomcom->remotenode));
+>>>>>>> srb2/next
 			break;
 		case PT_TEXTCMD:
 		case PT_TEXTCMD2:
@@ -1337,11 +1354,6 @@ boolean D_CheckNetGame(void)
 	netbuffer = (doomdata_t *)(void *)&doomcom->data;
 
 #ifdef DEBUGFILE
-#ifdef _arch_dreamcast
-	//debugfile = stderr;
-	if (debugfile)
-			CONS_Printf(M_GetText("debug output to: %s\n"), "STDERR");
-#else
 	if (M_CheckParm("-debugfile"))
 	{
 		char filename[21];
@@ -1359,7 +1371,6 @@ boolean D_CheckNetGame(void)
 		else
 			CONS_Alert(CONS_WARNING, M_GetText("cannot debug output to file %s!\n"), va("%s" PATHSEP "%s", srb2home, filename));
 	}
-#endif
 #endif
 
 	D_ClientServerInit();

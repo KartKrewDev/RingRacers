@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -39,17 +39,17 @@ typedef struct
 extern sprcache_t *spritecachedinfo;
 
 extern lighttable_t *colormaps;
+<<<<<<< HEAD
 extern UINT8 *encoremap;
 #ifdef HASINVERT
 extern UINT8 invertmap[256];
 #endif
+=======
+extern lighttable_t *fadecolormap;
+>>>>>>> srb2/next
 
 // Boom colormaps.
-// Had to put a limit on colormaps :(
-#define MAXCOLORMAPS 60
-
-extern size_t num_extra_colormaps;
-extern extracolormap_t extra_colormaps[MAXCOLORMAPS];
+extern extracolormap_t *extra_colormaps;
 
 // for global animation
 extern INT32 *texturetranslation;
@@ -71,6 +71,7 @@ extern seg_t *segs;
 
 extern size_t numsectors;
 extern sector_t *sectors;
+extern sector_t *spawnsectors;
 
 extern size_t numsubsectors;
 extern subsector_t *subsectors;
@@ -80,24 +81,26 @@ extern node_t *nodes;
 
 extern size_t numlines;
 extern line_t *lines;
+extern line_t *spawnlines;
 
 extern size_t numsides;
 extern side_t *sides;
+extern side_t *spawnsides;
 
 //
 // POV data.
 //
 extern fixed_t viewx, viewy, viewz;
 extern angle_t viewangle, aimingangle;
+<<<<<<< HEAD
 extern UINT8 viewssnum; // splitscreen view number
 extern boolean viewsky, skyVisible;
 extern boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible of each splitscreen player
+=======
+>>>>>>> srb2/next
 extern sector_t *viewsector;
 extern player_t *viewplayer;
-extern UINT8 portalrender;
-extern sector_t *portalcullsector;
-extern line_t *portalclipline;
-extern INT32 portalclipstart, portalclipend;
+extern mobj_t *r_viewmobj;
 
 extern consvar_t cv_allowmlook;
 extern consvar_t cv_maxportals;

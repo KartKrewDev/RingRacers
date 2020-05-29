@@ -54,6 +54,8 @@
 
 #include "../screen.h"
 
+#include "../m_menu.h"
+
 // Wheel support for Win95/WinNT3.51
 #include <zmouse.h>
 
@@ -327,7 +329,7 @@ static inline VOID I_GetConsoleEvents(VOID)
 							break;
 						case VK_RETURN:
 							entering_con_command = false;
-							// Fall through.
+							/* FALLTHRU */
 						default:
 							ev.data1 = MapVirtualKey(input.Event.KeyEvent.wVirtualKeyCode,2); // convert in to char
 					}
@@ -647,9 +649,10 @@ void I_Error(const char *error, ...)
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
-		G_StopMetalRecording();
+		G_StopMetalRecording(false);
 
 	D_QuitNetGame();
+	M_FreePlayerSetupColors();
 
 	// shutdown everything that was started
 	I_ShutdownSystem();
@@ -733,7 +736,7 @@ void I_Quit(void)
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
-		G_StopMetalRecording();
+		G_StopMetalRecording(false);
 
 	M_SaveConfig(NULL); // save game config, cvars..
 #ifndef NONET
@@ -745,6 +748,8 @@ void I_Quit(void)
 	// or something else that will be finished by I_ShutdownSystem(),
 	// so do it before.
 	D_QuitNetGame();
+
+	M_FreePlayerSetupColors();
 
 	// shutdown everything that was started
 	I_ShutdownSystem();
@@ -1353,6 +1358,8 @@ getBufferedData:
 		}
 	}
 }
+
+void I_UpdateMouseGrab(void) {}
 
 // ===========================================================================================
 //                                                                       DIRECT INPUT JOYSTICK
@@ -3197,7 +3204,7 @@ INT32 I_GetKey(void)
 // -----------------
 #define DI_KEYBOARD_BUFFERSIZE 32 // number of data elements in keyboard buffer
 
-void I_StartupKeyboard(void)
+static void I_StartupKeyboard(void)
 {
 	DIPROPDWORD dip;
 
@@ -3432,6 +3439,8 @@ INT32 I_StartupSystem(void)
 
 	// some 'more global than globals' things to initialize here ?
 	graphics_started = keyboard_started = sound_started = cdaudio_started = false;
+
+	I_StartupKeyboard();
 
 #ifdef NDEBUG
 

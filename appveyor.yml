@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 version: 2.0.{branch}-{build}
+=======
+version: 2.2.4.{branch}-{build}
+>>>>>>> srb2/next
 os: MinGW
 
 environment:
@@ -29,6 +33,7 @@ environment:
  ##############################
  DPL_ENABLED: 0
  DPL_TAG_ENABLED: 0
+<<<<<<< HEAD
  DPL_INSTALLER_NAME: srb2kart-v20
  # Asset handling is barebones vs. Travis Deployer. We operate on 7z only.
  # Include the README files and the OpenGL batch in the main and patch archives.
@@ -38,6 +43,17 @@ environment:
  ASSET_ARCHIVE_X86_PATH: https://github.com/mazmazz/Kart-Public/releases/download/kart_assets/srb2kart-v102-x86-assets.7z
  ASSET_ARCHIVE_X64_PATH: https://github.com/mazmazz/Kart-Public/releases/download/kart_assets/srb2kart-v102-x64-assets.7z
  ASSET_ARCHIVE_OPTIONAL_PATH: https://github.com/mazmazz/Kart-Public/releases/download/kart_assets/srb2kart-v102-optional-assets.7z
+=======
+ DPL_INSTALLER_NAME: SRB2-v220
+ # Asset handling is barebones vs. Travis Deployer. We operate on 7z only.
+ # Include the README files and the OpenGL batch in the main and patch archives.
+ # The x86/x64 archives contain the DLL binaries.
+ ASSET_ARCHIVE_PATH: https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-assets.7z
+ ASSET_ARCHIVE_PATCH_PATH: https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-patch-assets.7z
+ ASSET_ARCHIVE_X86_PATH: https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-x86-assets.7z
+ ASSET_ARCHIVE_X64_PATH: https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-x64-assets.7z
+ ASSET_ARCHIVE_OPTIONAL_PATH: https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-optional-assets.7z
+>>>>>>> srb2/next
  # This is overridden to 1 for release tag builds
  ASSET_FILES_OPTIONAL_GET: 0
  # For patches, also include the X86/X64 DLLs.
@@ -72,7 +88,11 @@ install:
 
 configuration:
 - SDL
+<<<<<<< HEAD
 #- SDL64
+=======
+- SDL64
+>>>>>>> srb2/next
 
 before_build:
 - set "Path=%MINGW_SDK%\bin;%Path%"

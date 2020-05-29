@@ -27,10 +27,17 @@
 : ${_DPL_PACKAGE_ASSET}         # Build asset installation package. Linux only.
 
 # Asset File Parameters
+<<<<<<< HEAD
 : ${ASSET_ARCHIVE_PATH:=https://github.com/mazmazz/Kart-Public/releases/download/kart_assets/srb2kart-v102-assets.7z}
 : ${ASSET_ARCHIVE_OPTIONAL_PATH:=https://github.com/mazmazz/Kart-Public/releases/download/kart_assets/srb2kart-v102-optional-assets.7z}
 : ${ASSET_FILES_HASHED:=srb2.srb patch.kart gfx.kart textures.kart chars.kart maps.kart}
 : ${ASSET_FILES_DOCS:=README.txt HISTORY.txt LICENSE.txt LICENSE-3RD-PARTY.txt}
+=======
+: ${ASSET_ARCHIVE_PATH:=https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-assets.7z}
+: ${ASSET_ARCHIVE_OPTIONAL_PATH:=https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-optional-assets.7z}
+: ${ASSET_FILES_HASHED:=srb2.pk3 zones.pk3 player.dta} # POST v2.2 NOTE: Don't forget to add patch.pk3!
+: ${ASSET_FILES_DOCS:=README.txt LICENSE.txt LICENSE-3RD-PARTY.txt README-SDL.txt}
+>>>>>>> srb2/next
 : ${ASSET_FILES_OPTIONAL_GET:=0}
 
 # FTP Parameters
@@ -50,8 +57,13 @@
 : ${DPL_SSH_KEY_PASSPHRASE}     # Decodes the private key file.
 
 # Package Parameters
+<<<<<<< HEAD
 : ${PACKAGE_NAME:=srb2kart}
 : ${PACKAGE_VERSION:=1.0.2}
+=======
+: ${PACKAGE_NAME:=srb2}
+: ${PACKAGE_VERSION:=2.2.0}
+>>>>>>> srb2/next
 : ${PACKAGE_SUBVERSION}         # Highly recommended to set this to reflect the distro series target (e.g., ~18.04bionic)
 : ${PACKAGE_REVISION}           # Defaults to UTC timestamp
 : ${PACKAGE_INSTALL_PATH:=/usr/games/SRB2Kart}
@@ -62,6 +74,7 @@
 : ${PACKAGE_GROUP_NAME_EMAIL:=Kart Krew <stjr@srb2.org>}
 : ${PACKAGE_WEBSITE:=<https://mb.srb2.org/showthread.php?p=802695>}
 
+<<<<<<< HEAD
 : ${PACKAGE_ASSET_MINVERSION:=1.0.1} # Number this the version BEFORE the actual required version, because we do a > check
 : ${PACKAGE_ASSET_MAXVERSION:=1.0.3}  # Number this the version AFTER the actual required version, because we do a < check
 
@@ -70,6 +83,16 @@
 : ${PROGRAM_VERSION:=1.0.2}
 : ${PROGRAM_DESCRIPTION:=A kart racing mod based on the 3D Sonic the Hedgehog fangame Sonic Robo Blast 2.}
 : ${PROGRAM_FILENAME:=srb2kart}
+=======
+: ${PACKAGE_ASSET_MINVERSION:=2.1.26}  # Number this the version BEFORE the actual required version, because we do a > check
+: ${PACKAGE_ASSET_MAXVERSION:=2.2.1}  # Number this the version AFTER the actual required version, because we do a < check
+
+: ${PROGRAM_NAME:=Sonic Robo Blast 2}
+: ${PROGRAM_VENDOR:=Sonic Team Junior}
+: ${PROGRAM_VERSION:=2.2.0}
+: ${PROGRAM_DESCRIPTION:=A free 3D Sonic the Hedgehog fangame closely inspired by the original Sonic games on the Sega Genesis.}
+: ${PROGRAM_FILENAME:=srb2}
+>>>>>>> srb2/next
 
 : ${DPL_PGP_KEY_PRIVATE}        # Base64-encoded private key file. Used to sign Debian packages
 : ${DPL_PGP_KEY_PASSPHRASE}     # Decodes the private key file.

@@ -61,6 +61,13 @@
 extern FILE             *gllogstream;
 #endif
 
+<<<<<<< HEAD
+=======
+#ifndef DRIVER_STRING
+#define DRIVER_STRING "HWRAPI Init(): SRB2 OpenGL renderer" // Tails
+#endif
+
+>>>>>>> srb2/next
 // ==========================================================================
 //                                                                     PROTOS
 // ==========================================================================
@@ -73,10 +80,14 @@ void Flush(void);
 INT32 isExtAvailable(const char *extension, const GLubyte *start);
 void SetModelView(GLint w, GLint h);
 void SetStates(void);
+<<<<<<< HEAD
 #ifdef USE_PALETTED_TEXTURE
 extern PFNGLCOLORTABLEEXTPROC glColorTableEXT;
 extern GLubyte                palette_tex[256*3];
 #endif
+=======
+FUNCMATH float byteasfloat(UINT8 fbyte);
+>>>>>>> srb2/next
 
 #ifndef GL_EXT_texture_filter_anisotropic
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT     0x84FE
