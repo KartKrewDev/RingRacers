@@ -303,67 +303,24 @@ void P_CameraLineOpening(line_t *linedef)
 	// If you can see through it, why not move the camera through it too?
 	if (front->camsec >= 0)
 	{
-<<<<<<< HEAD
-		frontfloor = sectors[front->camsec].floorheight;
-		frontceiling = sectors[front->camsec].ceilingheight;
-#ifdef ESLOPE
-		if (sectors[front->camsec].f_slope) // SRB2CBTODO: ESLOPE (sectors[front->heightsec].f_slope)
-			frontfloor = P_GetZAt(sectors[front->camsec].f_slope, camera[0].x, camera[0].y);
-		if (sectors[front->camsec].c_slope)
-			frontceiling = P_GetZAt(sectors[front->camsec].c_slope, camera[0].x, camera[0].y);
-#endif
-=======
 		// SRB2CBTODO: ESLOPE (sectors[front->heightsec].f_slope)
 		frontfloor   = P_GetSectorFloorZAt  (&sectors[front->camsec], camera.x, camera.y);
 		frontceiling = P_GetSectorCeilingZAt(&sectors[front->camsec], camera.x, camera.y);
->>>>>>> srb2/next
-
 	}
 	else if (front->heightsec >= 0)
 	{
-<<<<<<< HEAD
-		frontfloor = sectors[front->heightsec].floorheight;
-		frontceiling = sectors[front->heightsec].ceilingheight;
-#ifdef ESLOPE
-		if (sectors[front->heightsec].f_slope) // SRB2CBTODO: ESLOPE (sectors[front->heightsec].f_slope)
-			frontfloor = P_GetZAt(sectors[front->heightsec].f_slope, camera[0].x, camera[0].y);
-		if (sectors[front->heightsec].c_slope)
-			frontceiling = P_GetZAt(sectors[front->heightsec].c_slope, camera[0].x, camera[0].y);
-#endif
-=======
 		// SRB2CBTODO: ESLOPE (sectors[front->heightsec].f_slope)
 		frontfloor   = P_GetSectorFloorZAt  (&sectors[front->heightsec], camera.x, camera.y);
 		frontceiling = P_GetSectorCeilingZAt(&sectors[front->heightsec], camera.x, camera.y);
->>>>>>> srb2/next
 	}
 	else
 	{
 		frontfloor   = P_CameraGetFloorZ  (mapcampointer, front, tmx, tmy, linedef);
 		frontceiling = P_CameraGetCeilingZ(mapcampointer, front, tmx, tmy, linedef);
 	}
+
 	if (back->camsec >= 0)
 	{
-<<<<<<< HEAD
-		backfloor = sectors[back->camsec].floorheight;
-		backceiling = sectors[back->camsec].ceilingheight;
-#ifdef ESLOPE
-		if (sectors[back->camsec].f_slope) // SRB2CBTODO: ESLOPE (sectors[front->heightsec].f_slope)
-			frontfloor = P_GetZAt(sectors[back->camsec].f_slope, camera[0].x, camera[0].y);
-		if (sectors[back->camsec].c_slope)
-			frontceiling = P_GetZAt(sectors[back->camsec].c_slope, camera[0].x, camera[0].y);
-#endif
-	}
-	else if (back->heightsec >= 0)
-	{
-		backfloor = sectors[back->heightsec].floorheight;
-		backceiling = sectors[back->heightsec].ceilingheight;
-#ifdef ESLOPE
-		if (sectors[back->heightsec].f_slope) // SRB2CBTODO: ESLOPE (sectors[front->heightsec].f_slope)
-			frontfloor = P_GetZAt(sectors[back->heightsec].f_slope, camera[0].x, camera[0].y);
-		if (sectors[back->heightsec].c_slope)
-			frontceiling = P_GetZAt(sectors[back->heightsec].c_slope, camera[0].x, camera[0].y);
-#endif
-=======
 		// SRB2CBTODO: ESLOPE (sectors[back->heightsec].f_slope)
 		backfloor   = P_GetSectorFloorZAt  (&sectors[back->camsec], camera.x, camera.y);
 		backceiling = P_GetSectorCeilingZAt(&sectors[back->camsec], camera.x, camera.y);
@@ -373,7 +330,6 @@ void P_CameraLineOpening(line_t *linedef)
 		// SRB2CBTODO: ESLOPE (sectors[back->heightsec].f_slope)
 		backfloor   = P_GetSectorFloorZAt  (&sectors[back->heightsec], camera.x, camera.y);
 		backceiling = P_GetSectorCeilingZAt(&sectors[back->heightsec], camera.x, camera.y);
->>>>>>> srb2/next
 	}
 	else
 	{
@@ -595,27 +551,9 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 			// Treat polyobj's backsector like a 3D Floor
 			if (linedef->polyobj->flags & POF_TESTHEIGHT)
 			{
-<<<<<<< HEAD
-				fixed_t topheight, bottomheight;
-				if (!(rover->flags & FF_EXISTS))
-					continue;
-
-				if (mobj->player && P_CheckSolidLava(mobj, rover))
-					;
-				else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
-					|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
-					continue;
-
-				topheight = P_GetFOFTopZ(mobj, front, rover, tmx, tmy, linedef);
-				bottomheight = P_GetFOFBottomZ(mobj, front, rover, tmx, tmy, linedef);
-
-				delta1 = abs(mobj->z - (bottomheight + ((topheight - bottomheight)/2)));
-				delta2 = abs(thingtop - (bottomheight + ((topheight - bottomheight)/2)));
-=======
 				const sector_t *polysec = linedef->backsector;
 				fixed_t polytop, polybottom;
 				fixed_t delta1, delta2;
->>>>>>> srb2/next
 
 				if (linedef->polyobj->flags & POF_CLIPPLANES)
 				{
@@ -651,22 +589,14 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				ffloor_t *rover;
 				fixed_t delta1, delta2;
 
-<<<<<<< HEAD
-				if (mobj->player && P_CheckSolidLava(mobj, rover))
-					;
-				else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
-					|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
-					continue;
-=======
 				// Check for frontsector's fake floors
 				for (rover = front->ffloors; rover; rover = rover->next)
 				{
 					fixed_t topheight, bottomheight;
 					if (!(rover->flags & FF_EXISTS))
 						continue;
->>>>>>> srb2/next
 
-					if (mobj->player && (P_CheckSolidLava(rover) || P_CanRunOnWater(mobj->player, rover)))
+					if (mobj->player && P_CheckSolidLava(rover))
 						;
 					else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
 						|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
@@ -708,7 +638,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					if (!(rover->flags & FF_EXISTS))
 						continue;
 
-					if (mobj->player && (P_CheckSolidLava(rover) || P_CanRunOnWater(mobj->player, rover)))
+					if (mobj->player && P_CheckSolidLava(rover))
 						;
 					else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
 						|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
