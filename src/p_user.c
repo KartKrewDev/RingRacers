@@ -4177,11 +4177,16 @@ static void P_3dMovement(player_t *player)
 
 			if (K_PlayerUsesBotMovement(player))
 			{
-				fixed_t rubberband = K_BotRubberband(player);
+				fixed_t baserubberband = K_BotRubberband(player);
+				fixed_t rubberband = FixedMul(baserubberband,
+					FixedMul(baserubberband,
+					FixedMul(baserubberband,
+					baserubberband
+				))); // This looks extremely goofy, but we need this really high, but at the same time, proportional.
 
 				if (rubberband > FRACUNIT)
 				{
-					div = FixedMul(div, 4*rubberband);
+					div = FixedMul(div, rubberband);
 				}
 			}
 

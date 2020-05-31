@@ -231,9 +231,9 @@ void K_UpdateMatchRaceBots(void)
 	{
 		UINT8 buf[2];
 
-		i = 0;
+		i = MAXPLAYERS;
 
-		while (numbots > wantedbots && i < MAXPLAYERS)
+		while (numbots > wantedbots && i > 0)
 		{
 			if (playeringame[i] && players[i].bot)
 			{
@@ -244,7 +244,7 @@ void K_UpdateMatchRaceBots(void)
 				numbots--;
 			}
 
-			i++;
+			i--;
 		}
 	}
 
@@ -401,6 +401,59 @@ fixed_t K_BotRubberband(player_t *player)
 }
 
 /*--------------------------------------------------
+	fixed_t K_BotTopSpeedRubberband(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_BotTopSpeedRubberband(player_t *player)
+{
+	fixed_t rubberband = K_BotRubberband(player);
+
+	if (rubberband < FRACUNIT)
+	{
+		// Never go below your regular top speed
+		rubberband = FRACUNIT;
+	}
+
+	// Only allow you to go faster than your regular top speed if you're facing the right direction
+	if (rubberband > FRACUNIT && player->mo != NULL && player->nextwaypoint != NULL)
+	{
+		const INT16 mindiff = 30;
+		const INT16 maxdiff = 60;
+		INT16 anglediff = 0;
+		fixed_t amt = rubberband - FRACUNIT;
+		angle_t destangle = R_PointToAngle2(
+			player->mo->x, player->mo->y,
+			player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y
+		);
+		angle_t angle = player->mo->angle - destangle;
+
+		if (angle < ANGLE_180)
+		{
+			anglediff = AngleFixed(angle) >> FRACBITS;
+		}
+		else 
+		{
+			anglediff = 360 - (AngleFixed(angle) >> FRACBITS);
+		}
+
+		anglediff = abs(anglediff);
+
+		if (anglediff >= maxdiff)
+		{
+			rubberband = FRACUNIT;
+		}
+		else if (anglediff > mindiff)
+		{
+			amt = (amt * (maxdiff - anglediff)) / mindiff;
+			rubberband = FRACUNIT + amt;
+		}
+	}
+
+	return rubberband;
+}
+
+/*--------------------------------------------------
 	fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
 
 		See header file for description.
@@ -449,7 +502,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
 
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
-	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
+	const fixed_t speed = max(P_AproxDistance(player->mo->momx, player->mo->momy), K_GetKartSpeed(player, false) / 4);
 	const INT32 distance = (FixedMul(speed, distreduce) / FRACUNIT) * futuresight;
 
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
@@ -694,7 +747,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 			if (dirdist <= rad)
 			{
-				fixed_t speedmul = FixedMul(player->speed, K_GetKartSpeed(player, false));
+				fixed_t speedmul = FixedDiv(player->speed, K_GetKartSpeed(player, false));
 				fixed_t speedrad = rad/4;
 
 				if (speedmul > FRACUNIT)
@@ -705,7 +758,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				// Increase radius with speed
 				// At low speed, the CPU will try to be more accurate
 				// At high speed, they're more likely to lawnmower
-				speedrad += FixedMul(speedmul, (3*rad/4) - speedrad);
+				speedrad += FixedMul(speedmul, rad - speedrad);
 
 				if (speedrad < playerwidth)
 				{

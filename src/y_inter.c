@@ -983,9 +983,11 @@ static void K_UpdatePowerLevels(void)
 				continue;
 			}
 
-			theirpower = PWRLVRECORD_DEF;
-			if (clientpowerlevels[jpnum][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
-				theirpower = clientpowerlevels[jpnum][powertype];
+			if (clientpowerlevels[jpnum][powertype] == 0) // No power level (splitscreen guests, bots)
+				continue;
+
+			theirpower = clientpowerlevels[jpnum][powertype];
+
 			CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
 			if (G_RaceGametype())
@@ -1025,9 +1027,11 @@ static void K_UpdatePowerLevels(void)
 
 				CONS_Debug(DBG_GAMELOGIC, "Player %d VS Player %d (griefer):\n", ipnum, jpnum);
 
-				theirpower = PWRLVRECORD_DEF;
-				if (nospectategrief[jpnum] != 0) // No power level acts as 5000 (used for splitscreen guests)
-					theirpower = nospectategrief[jpnum];
+				if (nospectategrief[jpnum] == 0) // No power level (splitscreen guests, bots)
+					continue;
+
+				theirpower = nospectategrief[jpnum];
+
 				CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
 				diff = theirpower - yourpower;

@@ -327,9 +327,10 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 		if (i == playernum)
 			continue;
 
-		theirpower = PWRLVRECORD_DEF;
-		if (clientpowerlevels[i][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
-			theirpower = clientpowerlevels[i][powertype];
+		if (clientpowerlevels[i][powertype] == 0) // No power level (splitscreen guests, bots)
+			continue;
+
+		theirpower = clientpowerlevels[i][powertype];
 
 		diff = yourpower - theirpower;
 		inc -= K_CalculatePowerLevelInc(diff);

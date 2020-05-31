@@ -25,6 +25,7 @@
 #include "d_ticcmd.h"
 #include "m_random.h"
 #include "r_things.h" // numskins
+#include "p_slopes.h" // P_GetZAt
 
 struct globalsmuggle
 {
@@ -156,64 +157,99 @@ static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 }
 
 /*--------------------------------------------------
-	static boolean K_BotHatesThisSector(player_t *player, sector_t *sec)
+	static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 
 		Tells us if a bot will play more careful around
-		this sector.
+		this sector. Checks FOFs in the sector, as well.
 
 	Input Arguments:-
 		player - Player to check against.
 		sec - Sector to check against.
+		x - Linedef cross X position, for slopes
+		y - Linedef cross Y position, for slopes
 
 	Return:-
 		true if avoiding this sector, false otherwise.
 --------------------------------------------------*/
-static boolean K_BotHatesThisSector(player_t *player, sector_t *sec)
+static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 {
 	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
-	INT32 flag;
+	INT32 specialflag = 0;
+	fixed_t highestfloor = INT32_MAX;
+	sector_t *bestsector = NULL;
 	ffloor_t *rover;
 
-	if (flip)
+	if (flip == true)
 	{
-		flag = SF_FLIPSPECIAL_CEILING;
+		specialflag = SF_FLIPSPECIAL_CEILING;
+		highestfloor = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight);
 	}
 	else
 	{
-		flag = SF_FLIPSPECIAL_FLOOR;
+		specialflag = SF_FLIPSPECIAL_FLOOR;
+		highestfloor = (sec->f_slope ? P_GetZAt(sec->f_slope, x, y) : sec->floorheight);
 	}
 
-	if (sec->flags & flag)
+	if (sec->flags & specialflag)
 	{
-		if (K_BotHatesThisSectorsSpecial(player, sec))
-		{
-			return true;
-		}
+		bestsector = sec;
 	}
 
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
+		fixed_t top = INT32_MAX;
+		fixed_t bottom = INT32_MAX;
+
 		if (!(rover->flags & FF_EXISTS))
 		{
 			continue;
 		}
 
-		if (!(rover->master->frontsector->flags & flag))
+		top = (*rover->t_slope ? P_GetZAt(*rover->t_slope, x, y) : *rover->topheight);
+		bottom = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight);
+
+		if (!(rover->flags & FF_BLOCKPLAYER))
+		{
+			if ((top >= player->mo->z) && (bottom <= player->mo->z + player->mo->height)
+			&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
+			{
+				// Bad intangible sector at our height, so we DEFINITELY want to avoid
+				return true;
+			}
+		}
+
+		if ((rover->flags & FF_BLOCKPLAYER) && !(rover->master->frontsector->flags & specialflag))
 		{
 			continue;
 		}
 
-		if (((*rover->bottomheight >= player->mo->z + player->mo->height) && (flip))
-		|| ((*rover->topheight <= player->mo->z) && (!flip)))
+		// Find the highest FOF floor beneath the player, and check it at the end.
+		if (flip == true)
 		{
-			if (K_BotHatesThisSectorsSpecial(player, sec))
+			if (bottom < highestfloor
+			&& bottom >= player->mo->z + player->mo->height)
 			{
-				return true;
+				bestsector = rover->master->frontsector;
+				highestfloor = bottom;
+			}
+		}
+		else
+		{
+			if (top > highestfloor
+			&& top <= player->mo->z)
+			{
+				bestsector = rover->master->frontsector;
+				highestfloor = top;
 			}
 		}
 	}
 
-	return false;
+	if (bestsector == NULL)
+	{
+		return false;
+	}
+
+	return K_BotHatesThisSectorsSpecial(player, bestsector);
 }
 
 /*--------------------------------------------------
@@ -236,6 +272,7 @@ static boolean K_FindBlockingWalls(line_t *line)
 	fixed_t maxstep = maxstepmove;
 	fixed_t linedist = INT32_MAX;
 	INT32 lineside = 0;
+	vertex_t pos;
 
 	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
 	{
@@ -295,20 +332,18 @@ static boolean K_FindBlockingWalls(line_t *line)
 		goto blocked;
 	}
 
-	if (!K_BotHatesThisSector(globalsmuggle.botmo->player, globalsmuggle.botmo->subsector->sector))
-	{
-		// Treat damage sectors like walls
+	// Treat damage sectors like walls
+	P_ClosestPointOnLine(globalsmuggle.botmo->x, globalsmuggle.botmo->y, line, &pos);
 
-		if (lineside)
-		{
-			if (K_BotHatesThisSector(globalsmuggle.botmo->player, line->frontsector))
-				goto blocked;
-		}
-		else
-		{
-			if (K_BotHatesThisSector(globalsmuggle.botmo->player, line->backsector))
-				goto blocked;
-		}
+	if (lineside)
+	{
+		if (K_BotHatesThisSector(globalsmuggle.botmo->player, line->frontsector, pos.x, pos.y))
+			goto blocked;
+	}
+	else
+	{
+		if (K_BotHatesThisSector(globalsmuggle.botmo->player, line->backsector, pos.x, pos.y))
+			goto blocked;
 	}
 
 	// We weren't blocked!
