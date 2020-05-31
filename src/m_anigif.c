@@ -24,13 +24,6 @@
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
-<<<<<<< HEAD
-
-#ifdef HWRENDER
-#include "hardware/hw_main.h"
-#endif
-=======
->>>>>>> srb2/next
 
 // GIFs are always little-endian
 #include "byteptr.h"
@@ -414,15 +407,6 @@ const UINT8 gifhead_nsid[19] = {0x21,0xFF,0x0B, // extension block + size
 //
 static RGBA_t *GIF_getpalette(size_t palnum)
 {
-<<<<<<< HEAD
-	// In hardware mode, uses the master palette
-	return ((gif_colorprofile
-#ifdef HWRENDER
-	&& (rendermode == render_soft)
-#endif
-	) ? &pLocalPalette[palnum*256]
-	: &pMasterPalette[palnum*256]);
-=======
 	// In hardware mode, always returns the local palette
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
@@ -430,7 +414,6 @@ static RGBA_t *GIF_getpalette(size_t palnum)
 	else
 #endif
 		return (gif_colorprofile ? &pLocalPalette[palnum*256] : &pMasterPalette[palnum*256]);
->>>>>>> srb2/next
 }
 
 //
@@ -483,13 +466,6 @@ static void GIF_headwrite(void)
 	WRITEUINT16(p, rheight);
 
 	// colors, aspect, etc
-<<<<<<< HEAD
-	/*
-	also these are magical values, check out
-	https://tronche.com/computer-graphics/gif/gif89a.html#screen-descriptor
-	*/
-=======
->>>>>>> srb2/next
 	WRITEUINT8(p, 0xF7); // (0xF7 = 1111 0111)
 	WRITEUINT8(p, 0x00);
 	WRITEUINT8(p, 0x00);
@@ -605,15 +581,11 @@ static void GIF_framewrite(void)
 			I_ReadScreen(movie_screen);
 #ifdef HWRENDER
 		else if (rendermode == render_opengl)
-<<<<<<< HEAD
-			hwrconvert();
-=======
 		{
 			UINT8 *linear = HWR_GetScreenshot();
 			GIF_rgbconvert(linear, movie_screen);
 			free(linear);
 		}
->>>>>>> srb2/next
 #endif
 	}
 	else
@@ -622,20 +594,6 @@ static void GIF_framewrite(void)
 		blitw = vid.width;
 		blith = vid.height;
 
-<<<<<<< HEAD
-		if (gif_frames == 0)
-		{
-			if (rendermode == render_soft)
-				I_ReadScreen(movie_screen);
-#ifdef HWRENDER
-			else if (rendermode == render_opengl)
-			{
-				hwrconvert();
-				VID_BlitLinearScreen(screens[2], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-			}
-#endif
-		}
-=======
 #ifdef HWRENDER
 		// Copy the current OpenGL frame into the base screen
 		if (rendermode == render_opengl)
@@ -650,7 +608,6 @@ static void GIF_framewrite(void)
 		// OpenGL already does the same above.
 		if (gif_frames == 0 && rendermode == render_soft)
 			I_ReadScreen(movie_screen);
->>>>>>> srb2/next
 
 		movie_screen = screens[0];
 	}
@@ -753,17 +710,6 @@ static void GIF_framewrite(void)
 //
 INT32 GIF_open(const char *filename)
 {
-<<<<<<< HEAD
-#if 0
-	if (rendermode != render_soft)
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("GIFs cannot be taken in non-software modes!\n"));
-		return 0;
-	}
-#endif
-
-=======
->>>>>>> srb2/next
 	gif_out = fopen(filename, "wb");
 	if (!gif_out)
 		return 0;
