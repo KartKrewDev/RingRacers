@@ -92,11 +92,7 @@ static boolean joyaxis_default[4] = {false,false,false,false};
 static INT32 joyaxis_count[4] = {0,0,0,0};
 #endif
 
-<<<<<<< HEAD
-#define COM_BUF_SIZE 0x4000 // command buffer size, 0x4000 = 16384
-=======
 #define COM_BUF_SIZE (32<<10) // command buffer size
->>>>>>> srb2/next
 #define MAX_ALIAS_RECURSION 100 // max recursion allowed for aliases
 
 static INT32 com_wait; // one command per frame (for cmd sequences)
@@ -820,11 +816,8 @@ static void COM_Help_f(void)
 		cvar = CV_FindVar(help);
 		if (cvar)
 		{
-<<<<<<< HEAD
-=======
 			boolean floatmode = false;
 			const char *cvalue = NULL;
->>>>>>> srb2/next
 			CONS_Printf("\x82""Variable %s:\n", cvar->name);
 			CONS_Printf(M_GetText("  flags :"));
 			if (cvar->flags & CV_SAVE)
@@ -843,22 +836,6 @@ static void COM_Help_f(void)
 			CONS_Printf("\n");
 			if (cvar->PossibleValue)
 			{
-<<<<<<< HEAD
-				if (!stricmp(cvar->PossibleValue[0].strvalue, "MIN") && !stricmp(cvar->PossibleValue[1].strvalue, "MAX"))
-				{
-					CONS_Printf("  range from %d to %d\n", cvar->PossibleValue[0].value,
-						cvar->PossibleValue[1].value);
-					i = 2;
-				}
-
-				{
-					const char *cvalue = NULL;
-					//CONS_Printf(M_GetText("  possible value : %s\n"), cvar->name);
-					while (cvar->PossibleValue[i].strvalue)
-					{
-						CONS_Printf("  %-2d : %s\n", cvar->PossibleValue[i].value,
-							cvar->PossibleValue[i].strvalue);
-=======
 				CONS_Printf(" Possible values:\n");
 				if (cvar->PossibleValue == CV_YesNo)
 					CONS_Printf("  Yes or No (On or Off, 1 or 0)\n");
@@ -895,18 +872,10 @@ static void COM_Help_f(void)
 						else
 							CONS_Printf("  %-2d : %s\n", cvar->PossibleValue[i].value,
 								cvar->PossibleValue[i].strvalue);
->>>>>>> srb2/next
 						if (cvar->PossibleValue[i].value == cvar->value)
 							cvalue = cvar->PossibleValue[i].strvalue;
 						i++;
 					}
-<<<<<<< HEAD
-					if (cvalue)
-						CONS_Printf(" Current value: %s\n", cvalue);
-					else
-						CONS_Printf(" Current value: %d\n", cvar->value);
-=======
->>>>>>> srb2/next
 				}
 			}
 
@@ -931,24 +900,9 @@ static void COM_Help_f(void)
 			}
 
 			CONS_Printf("No exact match, searching...\n");
-<<<<<<< HEAD
-			// commands
-			CONS_Printf("\x82""Commands:\n");
-			for (cmd = com_commands; cmd; cmd = cmd->next)
-			{
-				if (!strstr(cmd->name, help))
-					continue;
-				CONS_Printf("%s ",cmd->name);
-				i++;
-			}
-
-			// variables
-			CONS_Printf("\x82""\nVariables:\n");
-=======
 
 			// variables
 			CONS_Printf("\x82""Variables:\n");
->>>>>>> srb2/next
 			for (cvar = consvar_vars; cvar; cvar = cvar->next)
 			{
 				if ((cvar->flags & CV_NOSHOWHELP) || (!strstr(cvar->name, help)))
@@ -957,8 +911,6 @@ static void COM_Help_f(void)
 				i++;
 			}
 
-<<<<<<< HEAD
-=======
 			// commands
 			CONS_Printf("\x82""\nCommands:\n");
 			for (cmd = com_commands; cmd; cmd = cmd->next)
@@ -969,7 +921,6 @@ static void COM_Help_f(void)
 				i++;
 			}
 
->>>>>>> srb2/next
 			CONS_Printf("\x82""\nCheck wiki.srb2.org for more or type help <command or variable>\n");
 
 			CONS_Debug(DBG_GAMELOGIC, "\x87Total : %d\n", i);
@@ -978,15 +929,9 @@ static void COM_Help_f(void)
 	}
 
 	{
-<<<<<<< HEAD
-		// commands
-		CONS_Printf("\x82""Commands:\n");
-		for (cmd = com_commands; cmd; cmd = cmd->next)
-=======
 		// variables
 		CONS_Printf("\x82""Variables:\n");
 		for (cvar = consvar_vars; cvar; cvar = cvar->next)
->>>>>>> srb2/next
 		{
 			if (cvar->flags & CV_NOSHOWHELP)
 				continue;
@@ -994,21 +939,11 @@ static void COM_Help_f(void)
 			i++;
 		}
 
-<<<<<<< HEAD
-		// variables
-		CONS_Printf("\x82""\nVariables:\n");
-		for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		{
-			if (cvar->flags & CV_NOSHOWHELP)
-				continue;
-			CONS_Printf("%s ", cvar->name);
-=======
 		// commands
 		CONS_Printf("\x82""\nCommands:\n");
 		for (cmd = com_commands; cmd; cmd = cmd->next)
 		{
 			CONS_Printf("%s ",cmd->name);
->>>>>>> srb2/next
 			i++;
 		}
 
@@ -1068,14 +1003,10 @@ static void COM_Add_f(void)
 	}
 
 	if (( cvar->flags & CV_FLOAT ))
-<<<<<<< HEAD
-		CV_Set(cvar, va("%f", FIXED_TO_FLOAT (cvar->value) + atof(COM_Argv(2))));
-=======
 	{
 		float n =FIXED_TO_FLOAT (cvar->value) + atof(COM_Argv(2));
 		CV_Set(cvar, va("%ld%s", (long)n, M_Ftrim(n)));
 	}
->>>>>>> srb2/next
 	else
 		CV_AddValue(cvar, atoi(COM_Argv(2)));
 }
@@ -1408,10 +1339,6 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 #define MINVAL 0
 #define MAXVAL 1
 			INT32 i;
-<<<<<<< HEAD
-
-=======
->>>>>>> srb2/next
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
@@ -1419,21 +1346,13 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 
 			// search for other
 			for (i = MAXVAL+1; var->PossibleValue[i].strvalue; i++)
-<<<<<<< HEAD
-				if (!stricmp(var->PossibleValue[i].strvalue, valstr))
-=======
 				if (v == var->PossibleValue[i].value || !stricmp(var->PossibleValue[i].strvalue, valstr))
->>>>>>> srb2/next
 				{
 					var->value = var->PossibleValue[i].value;
 					var->string = var->PossibleValue[i].strvalue;
 					goto finish;
 				}
 
-<<<<<<< HEAD
-=======
-
->>>>>>> srb2/next
 			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
 				v = var->PossibleValue[MINVAL].value;
@@ -1720,12 +1639,12 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 			return;
 		}
 
-<<<<<<< HEAD
 		if (var == &cv_kartencore && !M_SecretUnlocked(SECRET_ENCORE))
 		{
 			CONS_Printf(M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
-=======
+		}
+
 		if (var == &cv_forceskin)
 		{
 			INT32 skin = R_SkinAvailable(value);
@@ -1734,7 +1653,6 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 				CONS_Printf("Please provide a valid skin name (\"None\" disables).\n");
 				return;
 			}
->>>>>>> srb2/next
 		}
 
 		// Only add to netcmd buffer if in a netgame, otherwise, just change it.
@@ -1843,14 +1761,8 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 	if (!increment)
 		return;
 
-	// count pointlimit better
-<<<<<<< HEAD
 	/*if (var == &cv_pointlimit && (gametype == GT_MATCH))
 		increment *= 50;*/
-	newvalue = var->value + increment;
-=======
-	if (var == &cv_pointlimit && (gametype == GT_MATCH))
-		increment *= 50;
 
 	if (var == &cv_forceskin) // Special handling.
 	{
@@ -1868,7 +1780,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 	}
 	else
 		newvalue = var->value + increment;
->>>>>>> srb2/next
 
 	if (var->PossibleValue)
 	{
@@ -1908,11 +1819,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 #define MINVAL 0
 #define MAXVAL 1
 		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
-<<<<<<< HEAD
-		{ // SRB2Kart
-=======
 		{
->>>>>>> srb2/next
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
@@ -1922,23 +1829,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			{
 				INT32 currentindice = -1, newindice;
 				for (max = MAXVAL+1; var->PossibleValue[max].strvalue; max++)
-<<<<<<< HEAD
-					if (var->PossibleValue[max].value == var->value)
-						currentindice = max;
-
-				if (currentindice == -1 && max != MAXVAL+1)
-					newindice = ((increment > 0) ? MAXVAL : max) + increment;
-				else
-					newindice = currentindice + increment;
-
-				if (newindice >= max || newindice <= MAXVAL)
-				{
-					newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
-					CV_SetValue(var, newvalue);
-				}
-				else
-					CV_Set(var, var->PossibleValue[newindice].strvalue);
-=======
 				{
 					if (var->PossibleValue[max].value == newvalue)
 					{
@@ -1959,9 +1849,9 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 					if (newindice >= max || newindice <= MAXVAL)
 					{
-						if (var == &cv_pointlimit && (gametype == GT_MATCH) && increment > 0)
+						/*if (var == &cv_pointlimit && (gametype == GT_MATCH) && increment > 0)
 							CV_SetValue(var, 50);
-						else
+						else*/
 						{
 							newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
 							CV_SetValue(var, newvalue);
@@ -1972,7 +1862,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				}
 				else
 					CV_Set(var, var->PossibleValue[currentindice].strvalue);
->>>>>>> srb2/next
 			}
 			else
 				CV_SetValue(var, newvalue);
@@ -2115,7 +2004,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 
 	for (i = 0; i < 4; i++)
 	{
-<<<<<<< HEAD
 		if (joyaxis_default[i])
 		{
 			if (!stricmp(v->name, "joyaxis_fire"))
@@ -2147,122 +2035,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 		}
 	}
 #endif
-=======
-		if (!stricmp(v->name, "joyaxis_turn"))
-		{
-			if (joyaxis_count > 6) return false;
-			// we're currently setting the new defaults, don't interfere
-			else if (joyaxis_count == 6) return true;
-
-			if (!stricmp(valstr, "X-Axis")) joyaxis_count++;
-			else joyaxis_default = false;
-		}
-		if (!stricmp(v->name, "joyaxis_move"))
-		{
-			if (joyaxis_count > 6) return false;
-			else if (joyaxis_count == 6) return true;
-
-			if (!stricmp(valstr, "Y-Axis")) joyaxis_count++;
-			else joyaxis_default = false;
-		}
-		if (!stricmp(v->name, "joyaxis_side"))
-		{
-			if (joyaxis_count > 6) return false;
-			else if (joyaxis_count == 6) return true;
-
-			if (!stricmp(valstr, "Z-Axis")) joyaxis_count++;
-			else joyaxis_default = false;
-		}
-		if (!stricmp(v->name, "joyaxis_look"))
-		{
-			if (joyaxis_count > 6) return false;
-			else if (joyaxis_count == 6) return true;
-
-			if (!stricmp(valstr, "None")) joyaxis_count++;
-			else joyaxis_default = false;
-		}
-		if (!stricmp(v->name, "joyaxis_fire")
-			|| !stricmp(v->name, "joyaxis_firenormal"))
-		{
-			if (joyaxis_count > 6) return false;
-			else if (joyaxis_count == 6) return true;
-
-			if (!stricmp(valstr, "None")) joyaxis_count++;
-			else joyaxis_default = false;
-		}
-		// reset all axis settings to defaults
-		if (joyaxis_count == 6)
-		{
-			COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis.name, cv_turnaxis.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis.name, cv_moveaxis.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_sideaxis.name, cv_sideaxis.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis.name, cv_lookaxis.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis.name, cv_fireaxis.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_firenaxis.name, cv_firenaxis.defaultvalue));
-			joyaxis_count++;
-			return false;
-		}
-	}
-
-	if (joyaxis2_default)
-	{
-		if (!stricmp(v->name, "joyaxis2_turn"))
-		{
-			if (joyaxis2_count > 6) return false;
-			// we're currently setting the new defaults, don't interfere
-			else if (joyaxis2_count == 6) return true;
-
-			if (!stricmp(valstr, "X-Axis")) joyaxis2_count++;
-			else joyaxis2_default = false;
-		}
-		if (!stricmp(v->name, "joyaxis2_move"))
-		{
-			if (joyaxis2_count > 6) return false;
-			else if (joyaxis2_count == 6) return true;
-
-			if (!stricmp(valstr, "Y-Axis")) joyaxis2_count++;
-			else joyaxis2_default = false;
-		}
-		if (!stricmp(v->name, "joyaxis2_side"))
-		{
-			if (joyaxis2_count > 6) return false;
-			else if (joyaxis2_count == 6) return true;
-
-			if (!stricmp(valstr, "Z-Axis")) joyaxis2_count++;
-			else joyaxis2_default = false;
-		}
-		if (!stricmp(v->name, "joyaxis2_look"))
-		{
-			if (joyaxis2_count > 6) return false;
-			else if (joyaxis2_count == 6) return true;
-
-			if (!stricmp(valstr, "None")) joyaxis2_count++;
-			else joyaxis2_default = false;
-		}
-		if (!stricmp(v->name, "joyaxis2_fire")
-			|| !stricmp(v->name, "joyaxis2_firenormal"))
-		{
-			if (joyaxis2_count > 6) return false;
-			else if (joyaxis2_count == 6) return true;
-
-			if (!stricmp(valstr, "None")) joyaxis2_count++;
-			else joyaxis2_default = false;
-		}
-
-		// reset all axis settings to defaults
-		if (joyaxis2_count == 6)
-		{
-			COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis2.name, cv_turnaxis2.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis2.name, cv_moveaxis2.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_sideaxis2.name, cv_sideaxis2.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis2.name, cv_lookaxis2.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis2.name, cv_fireaxis2.defaultvalue));
-			COM_BufInsertText(va("%s \"%s\"\n", cv_firenaxis2.name, cv_firenaxis2.defaultvalue));
-			joyaxis2_count++;
-			return false;
-		}
-	}
->>>>>>> srb2/next
 
 	// we haven't reached our counts yet, or we're not default
 	return true;
