@@ -34,23 +34,15 @@ extern UINT32 con_scalefactor; // console text scale factor
 
 extern consvar_t cons_backcolor, cons_menuhighlight;
 
-<<<<<<< HEAD
 extern UINT8 *yellowmap, *purplemap, *greenmap, *bluemap, *graymap, *redmap, *orangemap,\
  *skymap, *goldmap, *lavendermap, *aquamap, *magentamap, *pinkmap, *brownmap, *tanmap;
-=======
-extern UINT8 *yellowmap, *magentamap, *lgreenmap, *bluemap, *graymap, *redmap, *orangemap, *skymap, *purplemap, *aquamap, *peridotmap, *azuremap, *brownmap, *rosymap, *invertmap;
->>>>>>> srb2/next
 
 // Console bg color (auto updated to match)
 extern UINT8 *consolebgmap;
 extern UINT8 *promptbgmap;
 
-<<<<<<< HEAD
 INT32 CON_ShiftChar(INT32 ch);
-
-=======
 void CON_SetupBackColormapEx(INT32 color, boolean prompt);
->>>>>>> srb2/next
 void CON_SetupBackColormap(void);
 void CON_ClearHUD(void); // clear heads up messages
 

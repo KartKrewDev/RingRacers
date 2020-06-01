@@ -140,7 +140,6 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{0, NULL}};
 consvar_t cons_backcolor = {"con_backcolor", "Black", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
 
-<<<<<<< HEAD
 static CV_PossibleValue_t menuhighlight_cons_t[] =
 {
 	{0, "Game type"},
@@ -162,10 +161,6 @@ static CV_PossibleValue_t menuhighlight_cons_t[] =
 	{0, NULL}
 };
 consvar_t cons_menuhighlight = {"menuhighlight", "Game type", CV_SAVE, menuhighlight_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-=======
-
-consvar_t cons_backcolor = {"con_backcolor", "Green", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
->>>>>>> srb2/next
 
 static void CON_Print(char *msg);
 
@@ -252,16 +247,14 @@ static void CONS_Bind_f(void)
 //                          CONSOLE SETUP
 //======================================================================
 
-<<<<<<< HEAD
-=======
 // Font colormap colors
 // TODO: This could probably be improved somehow...
 // These colormaps are 99% identical, with just a few changed bytes
 // This could EASILY be handled by modifying a centralised colormap
 // for software depending on the prior state - but yknow, OpenGL...
-UINT8 *yellowmap, *magentamap, *lgreenmap, *bluemap, *graymap, *redmap, *orangemap, *skymap, *purplemap, *aquamap, *peridotmap, *azuremap, *brownmap, *rosymap, *invertmap;
+UINT8 *yellowmap, *purplemap, *greenmap, *bluemap, *graymap, *redmap, *orangemap,\
+ *skymap, *goldmap, *lavendermap, *aquamap, *magentamap, *pinkmap, *brownmap, *tanmap;
 
->>>>>>> srb2/next
 // Console BG color
 UINT8 *consolebgmap = NULL;
 UINT8 *promptbgmap = NULL;
@@ -281,7 +274,6 @@ void CON_SetupBackColormapEx(INT32 color, boolean prompt)
 
 	switch (color)
 	{
-<<<<<<< HEAD
 		case  0:	palindex =  15;				break; // White
 		case  1:	palindex =  31;				break; // Black
 		case  2:	palindex = 251;				break; // Sepia
@@ -303,30 +295,7 @@ void CON_SetupBackColormapEx(INT32 color, boolean prompt)
 		case 18:	palindex = 207; shift = 7;	break; // Rose
 		// Default black
 		default: palindex = 31; break;
-=======
-		case 0:		palindex = 15; 	break; 	// White
-		case 1:		palindex = 31;	break; 	// Black
-		case 2:		palindex = 251;	break;	// Sepia
-		case 3:		palindex = 239;	break; 	// Brown
-		case 4:		palindex = 215; shift = 7; 	break; 	// Pink
-		case 5:		palindex = 37; shift = 7;	break; 	// Raspberry
-		case 6:		palindex = 47; shift = 7;	break; 	// Red
-		case 7:		palindex = 53;	shift = 7;	break;	// Creamsicle
-		case 8:		palindex = 63;	break; 	// Orange
-		case 9:		palindex = 56; shift = 7;	break; 	// Gold
-		case 10:	palindex = 79; shift = 7;	break; 	// Yellow
-		case 11:	palindex = 119; shift = 7; 	break; 	// Emerald
-		case 12:	palindex = 111;	break; 	// Green
-		case 13:	palindex = 136;	shift = 7; break; 	// Cyan
-		case 14:	palindex = 175; shift = 7;	break; 	// Steel
-		case 15:	palindex = 166;	shift = 7; 	break; 	// Periwinkle
-		case 16:	palindex = 159;	break; 	// Blue
-		case 17:	palindex = 187; shift = 7; 	break; 	// Purple
-		case 18:	palindex = 199; shift = 7; 	break; 	// Lavender
-		// Default green
-		default:	palindex = 111; break;
 	}
->>>>>>> srb2/next
 
 	if (prompt)
 	{
@@ -363,18 +332,11 @@ static void CONS_backcolor_Change(void)
 	CON_SetupBackColormapEx(cons_backcolor.value, false);
 }
 
-// Font colormap colors
-// TODO: This could probably be improved somehow...
-// These colormaps are 99% identical, with just a few changed bytes
-UINT8 *yellowmap, *purplemap, *greenmap, *bluemap, *graymap, *redmap, *orangemap,\
- *skymap, *goldmap, *lavendermap, *aquamap, *magentamap, *pinkmap, *brownmap, *tanmap;
-
 static void CON_SetupColormaps(void)
 {
 	INT32 i;
 	UINT8 *memorysrc = (UINT8 *)Z_Malloc((256*15), PU_STATIC, NULL);
 
-<<<<<<< HEAD
 	purplemap   = memorysrc;
 	yellowmap   = (purplemap+256);
 	greenmap    = (yellowmap+256);
@@ -390,23 +352,6 @@ static void CON_SetupColormaps(void)
 	pinkmap     = (magentamap+256);
 	brownmap    = (pinkmap+256);
 	tanmap      = (brownmap+256);
-=======
-	magentamap = memorysrc;
-	yellowmap  = (magentamap+256);
-	lgreenmap  = (yellowmap+256);
-	bluemap    = (lgreenmap+256);
-	redmap     = (bluemap+256);
-	graymap    = (redmap+256);
-	orangemap  = (graymap+256);
-	skymap     = (orangemap+256);
-	purplemap  = (skymap+256);
-	aquamap    = (purplemap+256);
-	peridotmap = (aquamap+256);
-	azuremap   = (peridotmap+256);
-	brownmap   = (azuremap+256);
-	rosymap    = (brownmap+256);
-	invertmap  = (rosymap+256);
->>>>>>> srb2/next
 
 	// setup the other colormaps, for console text
 
@@ -416,8 +361,6 @@ static void CON_SetupColormaps(void)
 	for (i = 0; i < (256*15); i++, ++memorysrc)
 		*memorysrc = (UINT8)(i & 0xFF); // remap each color to itself...
 
-<<<<<<< HEAD
-	// SRB2Kart: Different console font, new colors
 	purplemap[0]   = (UINT8)163;
 	yellowmap[0]   = (UINT8)73;
 	greenmap[0]    = (UINT8)98;
@@ -433,31 +376,6 @@ static void CON_SetupColormaps(void)
 	pinkmap[0]     = (UINT8)210;
 	brownmap[0]    = (UINT8)224;
 	tanmap[0]      = (UINT8)217; // no longer nice :(
-=======
-#define colset(map, a, b, c) \
-	map[1] = (UINT8)a;\
-	map[3] = (UINT8)b;\
-	map[9] = (UINT8)c
-
-	colset(magentamap, 177, 178, 184);
-	colset(yellowmap,   82,  73,  66);
-	colset(lgreenmap,   97,  98, 106);
-	colset(bluemap,    146, 147, 155);
-	colset(redmap,     210,  32,  39);
-	colset(graymap,      6,  8,   14);
-	colset(orangemap,   51,  52,  57);
-	colset(skymap,     129, 130, 133);
-	colset(purplemap,  160, 161, 163);
-	colset(aquamap,    120, 121, 123);
-	colset(peridotmap,  88, 188, 190);
-	colset(azuremap,   144, 145, 170);
-	colset(brownmap,   219, 221, 224);
-	colset(rosymap,    200, 201, 203);
-	colset(invertmap,   27,  26,  22);
-	invertmap[26] = (UINT8)3;
-
-#undef colset
->>>>>>> srb2/next
 
 	// Init back colormap
 	CON_SetupBackColormap();
@@ -1424,13 +1342,8 @@ void CONS_Printf(const char *fmt, ...)
 	// if not in display loop, force screen update
 	if (con_startup && (!setrenderneeded))
 	{
-<<<<<<< HEAD
-#if (defined (_WINDOWS)) || (defined (__OS2__) && !defined (HAVE_SDL))
-		patch_t *con_backpic = W_CachePatchName("KARTKREW", PU_CACHE);
-=======
 #ifdef _WINDOWS
-		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_PATCH);
->>>>>>> srb2/next
+		patch_t *con_backpic = W_CachePatchName("KARTKREW", PU_CACHE);
 
 		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
 		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, con_backpic, NULL);
@@ -1673,7 +1586,7 @@ static void CON_DrawBackpic(void)
 	int x, w, h;
 
 	// Get the lumpnum for CONSBACK, or fallback into MISSING.
-	piclump = W_CheckNumForName("CONSBACK");
+	piclump = W_CheckNumForName("KARTKREW");
 	if (piclump == LUMPERROR)
 		piclump = W_GetNumForName("MISSING");
 
@@ -1731,18 +1644,7 @@ static void CON_DrawConsole(void)
 
 	// draw console background
 	if (cons_backpic.value || con_forcepic)
-<<<<<<< HEAD
-	{
-		patch_t *con_backpic = W_CachePatchName("KARTKREW", PU_CACHE);
-
-		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
-		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, con_backpic, NULL);
-
-		W_UnlockCachedPatch(con_backpic);
-	}
-=======
 		CON_DrawBackpic();
->>>>>>> srb2/next
 	else
 	{
 		// inu: no more width (was always 0 and vid.width)
@@ -1808,13 +1710,7 @@ void CON_Drawer(void)
 
 	if (con_curlines > 0)
 		CON_DrawConsole();
-<<<<<<< HEAD
 	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS
 		|| gamestate == GS_VOTING || gamestate == GS_EVALUATION || gamestate == GS_WAITINGPLAYERS)
-=======
-	else if (gamestate == GS_LEVEL
-	|| gamestate == GS_INTERMISSION || gamestate == GS_ENDING || gamestate == GS_CUTSCENE
-	|| gamestate == GS_CREDITS || gamestate == GS_EVALUATION)
->>>>>>> srb2/next
 		CON_DrawHudlines();
 }

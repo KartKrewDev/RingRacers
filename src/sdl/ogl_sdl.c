@@ -98,13 +98,8 @@ boolean LoadGL(void)
 	{
 		CONS_Alert(CONS_ERROR, "Could not load OpenGL Library: %s\n"
 					"Falling back to Software mode.\n", SDL_GetError());
-<<<<<<< HEAD
 		if (!M_CheckParm("-OGLlib"))
 			CONS_Printf("If you know what is the OpenGL library's name, use -OGLlib\n");
-=======
-		if (!M_CheckParm ("-OGLlib"))
-			CONS_Alert(CONS_ERROR, "If you know what is the OpenGL library's name, use -OGLlib\n");
->>>>>>> srb2/next
 		return 0;
 	}
 
@@ -135,23 +130,14 @@ boolean LoadGL(void)
 		else
 		{
 			CONS_Alert(CONS_ERROR, "Could not load GLU Library: %s\n", GLULibname);
-<<<<<<< HEAD
 			if (!M_CheckParm("-GLUlib"))
 				CONS_Printf("If you know what is the GLU library's name, use -GLUlib\n");
-=======
-			if (!M_CheckParm ("-GLUlib"))
-				CONS_Alert(CONS_ERROR, "If you know what is the GLU library's name, use -GLUlib\n");
->>>>>>> srb2/next
 		}
 	}
 	else
 	{
 		CONS_Alert(CONS_ERROR, "Could not load GLU Library\n");
-<<<<<<< HEAD
-		CONS_Printf("If you know what is the GLU library's name, use -GLUlib\n");
-=======
-		CONS_Alert(CONS_ERROR, "If you know what is the GLU library's name, use -GLUlib\n");
->>>>>>> srb2/next
+		CONS_Printf("If you know what is the GLU library's name, use -GLUlib\n");;
 	}
 #endif
 	return SetupGLfunc();
@@ -235,11 +221,7 @@ void OglSdlFinishUpdate(boolean waitvbl)
 	HWR_DrawScreenFinalTexture(realwidth, realheight);
 }
 
-<<<<<<< HEAD
-EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette, RGBA_t *pgamma)
-=======
 EXPORT void HWRAPI( OglSdlSetPalette) (RGBA_t *palette)
->>>>>>> srb2/next
 {
 	size_t palsize = (sizeof(RGBA_t) * 256);
 	// on a palette change, you have to reload all of the textures
