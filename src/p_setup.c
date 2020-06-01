@@ -87,6 +87,7 @@
 #include "k_battle.h" // K_SpawnBattleCapsules
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
+#include "k_bot.h"
 
 //
 // Map MD5, calculated on level load.
@@ -2489,6 +2490,11 @@ static void P_LevelInitStuff(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
+
+	if (!modeattacking)
+	{
+		K_UpdateMatchRaceBots();
+	}
 }
 
 //
@@ -2888,7 +2894,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_Initsecnode();
 
 	if (netgame || multiplayer)
-		cv_debug = botskin = 0;
+		cv_debug = 0;
 
 	if (metalplayback)
 		G_StopMetalDemo();
@@ -3333,7 +3339,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	/*if (cv_useranalog.value)
 		CV_SetValue(&cv_analog, true);
 
-	if ((splitscreen && cv_useranalog2.value) || botingame)
+	if (splitscreen && cv_useranalog2.value)
 		CV_SetValue(&cv_analog2, true);
 
 	if (splitscreen > 1 && cv_useranalog3.value)
@@ -3404,9 +3410,6 @@ boolean P_SetupLevel(boolean skipprecip)
 		players[consoleplayer].continues = savedata.continues;
 		players[consoleplayer].lives = savedata.lives;
 		players[consoleplayer].score = savedata.score;
-		botskin = savedata.botskin;
-		botcolor = savedata.botcolor;
-		botingame = (savedata.botskin != 0);
 		emeralds = savedata.emeralds;
 		savedata.lives = 0;
 	}

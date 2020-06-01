@@ -30,7 +30,7 @@
 #include "info.h"
 #include "i_video.h"
 #include "lua_hook.h"
-#include "b_bot.h"
+#include "k_bot.h"
 #ifdef ESLOPE
 #include "p_slopes.h"
 #endif
@@ -1692,10 +1692,6 @@ void P_XYMovement(mobj_t *mo)
 		// blocked move
 		moved = false;
 
-		if (player) {
-			if (player->bot)
-				B_MoveBlocked(player);
-		}
 		//{ SRB2kart - Jawz
 		if (mo->type == MT_JAWZ || mo->type == MT_JAWZ_DUD)
 		{
@@ -11796,9 +11792,20 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 
 	// spawn as spectator determination
-	if (multiplayer && demo.playback); // Don't mess with spectator values since the demo setup handles them already.
+	if (multiplayer && demo.playback)
+	{
+		; // Don't mess with spectator values since the demo setup handles them already.
+	}
 	else if (!G_GametypeHasSpectators())
+	{
+		// We don't have spectators
 		p->spectator = false;
+	}
+	else if (p->bot)
+	{
+		// No point in a spectating bot!
+		p->spectator = false;
+	}
 	else if (netgame && p->jointime <= 1 && pcount)
 	{
 		p->spectator = true;
@@ -12748,10 +12755,42 @@ ML_NOCLIMB : Direction not controllable
 			mobj->extravalue2 = 0;
 		}
 
-
 		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead
 		P_SetTarget(&mobj->tracer, waypointcap);
 		P_SetTarget(&waypointcap, mobj);
+		break;
+	}
+	case MT_BOTHINT:
+	{
+		// Change size
+		if (mthing->angle > 0)
+		{
+			mobj->radius = mthing->angle * FRACUNIT;
+		}
+		else
+		{
+			mobj->radius = 32 * mapobjectscale;
+		}
+
+		// Steer away instead of towards
+		if (mthing->options & MTF_AMBUSH)
+		{
+			mobj->extravalue1 = 0;
+		}
+		else
+		{
+			mobj->extravalue1 = 1;
+		}
+
+		// Steering amount
+		if (mthing->extrainfo == 0)
+		{
+			mobj->extravalue2 = 2;
+		}
+		else
+		{
+			mobj->extravalue2 = mthing->extrainfo;
+		}
 		break;
 	}
 	// SRB2Kart

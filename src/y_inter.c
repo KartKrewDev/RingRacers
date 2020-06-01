@@ -440,7 +440,7 @@ void Y_IntermissionDrawer(void)
 		int y2;
 
 		if (data.match.rankingsmode)
-			timeheader = "PWR.LV";
+			timeheader = (powertype != -1 ? "PWR.LV" : "RANK");
 		else
 			timeheader = ((intertype == int_race || (intertype == int_match && battlecapsules)) ? "TIME" : "SCORE");
 
@@ -497,7 +497,7 @@ void Y_IntermissionDrawer(void)
 
 				y2 = y;
 
-				if (playerconsole[data.match.num[i]] == 0 && server_lagless)
+				if (netgame && playerconsole[data.match.num[i]] == 0 && server_lagless && !players[data.match.num[i]].bot)
 				{
 					static int alagles_timer = 0;
 					patch_t *alagles;
@@ -533,7 +533,7 @@ void Y_IntermissionDrawer(void)
 
 				if (data.match.rankingsmode)
 				{
-					if (!clientpowerlevels[data.match.num[i]][powertype]) // No power level (splitscreen guests)
+					if (powertype != -1 && !clientpowerlevels[data.match.num[i]][powertype]) // No power level (splitscreen guests)
 						STRBUFCPY(strtime, "----");
 					else
 					{
@@ -939,9 +939,11 @@ static void K_UpdatePowerLevels(void)
 				continue;
 			}
 
-			theirpower = PWRLVRECORD_DEF;
-			if (clientpowerlevels[jpnum][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
-				theirpower = clientpowerlevels[jpnum][powertype];
+			if (clientpowerlevels[jpnum][powertype] == 0) // No power level (splitscreen guests, bots)
+				continue;
+
+			theirpower = clientpowerlevels[jpnum][powertype];
+
 			CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
 			if (G_RaceGametype())
@@ -981,9 +983,11 @@ static void K_UpdatePowerLevels(void)
 
 				CONS_Debug(DBG_GAMELOGIC, "Player %d VS Player %d (griefer):\n", ipnum, jpnum);
 
-				theirpower = PWRLVRECORD_DEF;
-				if (nospectategrief[jpnum] != 0) // No power level acts as 5000 (used for splitscreen guests)
-					theirpower = nospectategrief[jpnum];
+				if (nospectategrief[jpnum] == 0) // No power level (splitscreen guests, bots)
+					continue;
+
+				theirpower = nospectategrief[jpnum];
+
 				CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
 				diff = theirpower - yourpower;
@@ -1509,6 +1513,7 @@ static void Y_VoteStops(SINT8 pick, SINT8 level)
 void Y_VoteTicker(void)
 {
 	INT32 i;
+	boolean everyone_voted;
 
 	if (paused || P_AutoPause() || !voteclient.loaded)
 		return;
@@ -1667,7 +1672,7 @@ void Y_VoteTicker(void)
 
 					if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
 					{
-						D_ModifyClientVote(voteclient.playerinfo[i].selection, i);
+						D_ModifyClientVote(consoleplayer, voteclient.playerinfo[i].selection, i);
 						pressed = true;
 					}
 				}
@@ -1682,6 +1687,8 @@ void Y_VoteTicker(void)
 
 		if (server)
 		{
+			everyone_voted = true;/* the default condition */
+
 			if (timer == 0)
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
@@ -1695,15 +1702,27 @@ void Y_VoteTicker(void)
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
 					if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
-						return;
+					{
+						if (players[i].bot)
+						{
+							if (( M_RandomFixed() % 100 ) == 0)
+								D_ModifyClientVote(i, M_RandomKey(4), 0);
+						}
+
+						if (votes[i] == -1)
+							everyone_voted = false;
+					}
 				}
 			}
 
-			timer = 0;
-			if (voteendtic == -1)
+			if (everyone_voted)
 			{
-				votenotyetpicked = false;/* don't pick vote twice */
-				D_PickVote();
+				timer = 0;
+				if (voteendtic == -1)
+				{
+					votenotyetpicked = false;/* don't pick vote twice */
+					D_PickVote();
+				}
 			}
 		}
 	}

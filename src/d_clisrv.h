@@ -292,6 +292,13 @@ typedef struct
 	UINT32 respawn_distanceleft;
 	tic_t respawn_dropdash;
 
+	// botvars_t
+	boolean bot;
+	UINT8 bot_difficulty;
+	tic_t bot_itemdelay;
+	tic_t bot_itemconfirm;
+	SINT8 bot_turnconfirm;
+
 	//player->mo stuff
 	UINT8 hasmo; // Boolean
 
@@ -334,6 +341,8 @@ typedef struct
 	// 0xFF == not in game; else player skin num
 	UINT8 playerskins[MAXPLAYERS];
 	UINT8 playercolor[MAXPLAYERS];
+
+	UINT8 playerisbot[MAXPLAYERS];
 
 	UINT8 gametype;
 	UINT8 modifiedgame;

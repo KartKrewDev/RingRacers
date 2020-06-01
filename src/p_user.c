@@ -40,7 +40,7 @@
 #include "st_stuff.h"
 #include "lua_script.h"
 #include "lua_hook.h"
-#include "b_bot.h"
+#include "k_bot.h"
 // Objectplace
 #include "m_cheat.h"
 // SRB2kart
@@ -707,10 +707,6 @@ void P_NightserizePlayer(player_t *player, INT32 nighttime)
 {
 	INT32 oldmare;
 
-	// Bots can't be super, silly!1 :P
-	if (player->bot)
-		return;
-
 	if (!(player->pflags & PF_NIGHTSMODE))
 	{
 		P_SetTarget(&player->mo->tracer, P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_NIGHTSCHAR));
@@ -936,8 +932,6 @@ void P_ResetPlayer(player_t *player)
 	player->powers[pw_tailsfly] = 0;
 	player->onconveyor = 0;
 	player->skidtime = 0;
-	/*if (player-players == consoleplayer && botingame)
-		CV_SetValue(&cv_analog2, true);*/
 }
 
 //
@@ -1030,9 +1024,6 @@ void P_AddPlayerScore(player_t *player, UINT32 amount)
 
 	if (!(G_BattleGametype()))
 		return;
-
-	if (player->bot)
-		player = &players[consoleplayer];
 
 	if (player->exiting) // srb2kart
 		return;
@@ -2286,7 +2277,7 @@ static void P_CheckUnderwaterAndSpaceTimer(player_t *player)
 	}
 
 	// Underwater audio cues
-	if (P_IsLocalPlayer(player) && !player->bot)
+	if (P_IsLocalPlayer(player))
 	{
 		if (player->powers[pw_underwater] == 11*TICRATE + 1
 		&& player == &players[consoleplayer])
@@ -4024,11 +4015,9 @@ static void P_3dMovement(player_t *player)
 
 	cmd = &player->cmd;
 
-	if ((player->exiting || mapreset) || player->pflags & PF_STASIS || player->kartstuff[k_spinouttimer]) // pw_introcam?
+	if (player->pflags & PF_STASIS || player->kartstuff[k_spinouttimer]) // pw_introcam?
 	{
 		cmd->forwardmove = cmd->sidemove = 0;
-		if (EITHERSNEAKER(player))
-			cmd->forwardmove = 50;
 	}
 
 	if (!(player->pflags & PF_FORCESTRAFE) && !player->kartstuff[k_pogospring])
@@ -4106,9 +4095,8 @@ static void P_3dMovement(player_t *player)
 	player->aiming = cmd->aiming<<FRACBITS;
 
 	// Forward movement
-	if (!((player->exiting || mapreset) || (P_PlayerInPain(player) && !onground)))
+	if (!(P_PlayerInPain(player) && !onground))
 	{
-		//movepushforward = cmd->forwardmove * (thrustfactor * acceleration);
 		movepushforward = K_3dKartMovement(player, onground, cmd->forwardmove);
 
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
@@ -4126,12 +4114,8 @@ static void P_3dMovement(player_t *player)
 			movepushforward = 0;
 		}
 
-#ifdef ESLOPE
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
-#else
-		P_Thrust(player->mo, movepushangle, movepushforward);
-#endif
 	}
 	else if (!(player->kartstuff[k_spinouttimer]))
 	{
@@ -4146,15 +4130,10 @@ static void P_3dMovement(player_t *player)
 		else
 			movepushside = (cmd->sidemove * FRACUNIT/128) - FixedDiv(player->speed, K_GetKartSpeed(player, true));
 
-#ifdef ESLOPE
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushsideangle, movepushside);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushsideangle, movepushside);
-#else
-		P_Thrust(player->mo, movepushsideangle, movepushside);
-#endif
 	}
 
-#ifdef ESLOPE
 	if ((totalthrust.x || totalthrust.y)
 		&& player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) && abs(player->mo->standingslope->zdelta) > FRACUNIT/2) {
 		// Factor thrust to slope, but only for the part pushing up it!
@@ -4172,21 +4151,45 @@ static void P_3dMovement(player_t *player)
 		}
 	}
 
+	if (K_PlayerUsesBotMovement(player))
+	{
+		K_MomentumToFacing(player);
+	}
+
 	player->mo->momx += totalthrust.x;
 	player->mo->momy += totalthrust.y;
 
 	if (!onground)
 	{
-		fixed_t airspeedcap = (50*mapobjectscale);
-		fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+		const fixed_t airspeedcap = (50*mapobjectscale);
+		const fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+
 		if (speed > airspeedcap)
 		{
-			fixed_t newspeed = speed - ((speed - airspeedcap) / 32);
+			fixed_t div = 32*FRACUNIT;
+			fixed_t newspeed;
+
+			if (K_PlayerUsesBotMovement(player))
+			{
+				fixed_t baserubberband = K_BotRubberband(player);
+				fixed_t rubberband = FixedMul(baserubberband,
+					FixedMul(baserubberband,
+					FixedMul(baserubberband,
+					baserubberband
+				))); // This looks extremely goofy, but we need this really high, but at the same time, proportional.
+
+				if (rubberband > FRACUNIT)
+				{
+					div = FixedMul(div, rubberband);
+				}
+			}
+
+			newspeed = speed - FixedDiv((speed - airspeedcap), div);
+
 			player->mo->momx = FixedMul(FixedDiv(player->mo->momx, speed), newspeed);
 			player->mo->momy = FixedMul(FixedDiv(player->mo->momy, speed), newspeed);
 		}
 	}
-#endif
 
 	// Time to ask three questions:
 	// 1) Are we over topspeed?
@@ -8315,17 +8318,6 @@ void P_PlayerThink(player_t *player)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "P_PlayerThink: Player %s in PST_LIVE with 0 health. (\"Zombie bug\")\n", sizeu1(playeri));
 		player->playerstate = PST_DEAD;
-	}
-
-	if (player->bot)
-	{
-		if (player->playerstate == PST_LIVE || player->playerstate == PST_DEAD)
-		{
-			if (B_CheckRespawn(player))
-				player->playerstate = PST_REBORN;
-		}
-		if (player->playerstate == PST_REBORN)
-			return;
 	}
 
 #ifdef SEENAMES

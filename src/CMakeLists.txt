@@ -3,7 +3,6 @@
 # Core sources
 set(SRB2_CORE_SOURCES
 	am_map.c
-	b_bot.c
 	command.c
 	comptime.c
 	console.c
@@ -50,7 +49,6 @@ set(SRB2_CORE_SOURCES
 
 set(SRB2_CORE_HEADERS
 	am_map.h
-	b_bot.h
 	byteptr.h
 	command.h
 	console.h
@@ -165,6 +163,9 @@ set(SRB2_CORE_GAME_SOURCES
 	k_pwrlv.c
 	k_waypoint.c
 	k_color.c
+	k_bot.c
+	k_botitem.c
+	k_botsearch.c
 	k_respawn.c
 
 	p_local.h
@@ -185,6 +186,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_pwrlv.h
 	k_waypoint.h
 	k_color.h
+	k_bot.h
 	k_respawn.h
 )
 

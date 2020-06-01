@@ -79,12 +79,6 @@ static inline void P_ArchivePlayer(void)
 	WRITEUINT32(save_p, player->score);
 	WRITEINT32(save_p, pllives);
 	WRITEINT32(save_p, player->continues);
-
-	if (botskin)
-	{
-		WRITEUINT8(save_p, botskin);
-		WRITEUINT8(save_p, botcolor);
-	}
 }
 
 //
@@ -98,16 +92,6 @@ static inline void P_UnArchivePlayer(void)
 	savedata.score = READINT32(save_p);
 	savedata.lives = READINT32(save_p);
 	savedata.continues = READINT32(save_p);
-
-	if (savedata.botcolor)
-	{
-		savedata.botskin = READUINT8(save_p);
-		if (savedata.botskin-1 >= numskins)
-			savedata.botskin = 0;
-		savedata.botcolor = READUINT8(save_p);
-	}
-	else
-		savedata.botskin = 0;
 }
 
 //
@@ -290,6 +274,12 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].respawn.timer);
 		WRITEUINT32(save_p, players[i].respawn.distanceleft);
 		WRITEUINT32(save_p, players[i].respawn.dropdash);
+
+		// botvars_t
+		WRITEUINT8(save_p, players[i].botvars.difficulty);
+		WRITEUINT32(save_p, players[i].botvars.itemdelay);
+		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
+		WRITESINT8(save_p, players[i].botvars.turnconfirm);
 	}
 }
 
@@ -467,6 +457,12 @@ static void P_NetUnArchivePlayers(void)
 		players[i].respawn.timer = READUINT32(save_p);
 		players[i].respawn.distanceleft = READUINT32(save_p);
 		players[i].respawn.dropdash = READUINT32(save_p);
+
+		// botvars_t
+		players[i].botvars.difficulty = READUINT8(save_p);
+		players[i].botvars.itemdelay = READUINT32(save_p);
+		players[i].botvars.itemconfirm = READUINT32(save_p);
+		players[i].botvars.turnconfirm = READSINT8(save_p);
 	}
 }
 
@@ -3121,41 +3117,53 @@ static void P_RelinkPointers(void)
 				if (!(mobj->itnext = P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 			}
-			if (mobj->player && mobj->player->capsule)
+			if (mobj->player) && 
 			{
-				temp = (UINT32)(size_t)mobj->player->capsule;
-				mobj->player->capsule = NULL;
-				if (!P_SetTarget(&mobj->player->capsule, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "capsule not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->axis1)
-			{
-				temp = (UINT32)(size_t)mobj->player->axis1;
-				mobj->player->axis1 = NULL;
-				if (!P_SetTarget(&mobj->player->axis1, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "axis1 not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->axis2)
-			{
-				temp = (UINT32)(size_t)mobj->player->axis2;
-				mobj->player->axis2 = NULL;
-				if (!P_SetTarget(&mobj->player->axis2, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "axis2 not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->awayviewmobj)
-			{
-				temp = (UINT32)(size_t)mobj->player->awayviewmobj;
-				mobj->player->awayviewmobj = NULL;
-				if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->nextwaypoint)
-			{
-				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
-				mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
-				if (mobj->player->nextwaypoint == NULL)
+				if (mobj->player->capsule)
 				{
-					CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
+					temp = (UINT32)(size_t)mobj->player->capsule;
+					mobj->player->capsule = NULL;
+					if (!P_SetTarget(&mobj->player->capsule, P_FindNewPosition(temp)))
+						CONS_Debug(DBG_GAMELOGIC, "capsule not found on %d\n", mobj->type);
+				}
+				if (mobj->player->axis1)
+				{
+					temp = (UINT32)(size_t)mobj->player->axis1;
+					mobj->player->axis1 = NULL;
+					if (!P_SetTarget(&mobj->player->axis1, P_FindNewPosition(temp)))
+						CONS_Debug(DBG_GAMELOGIC, "axis1 not found on %d\n", mobj->type);
+				}
+				if (mobj->player->axis2)
+				{
+					temp = (UINT32)(size_t)mobj->player->axis2;
+					mobj->player->axis2 = NULL;
+					if (!P_SetTarget(&mobj->player->axis2, P_FindNewPosition(temp)))
+						CONS_Debug(DBG_GAMELOGIC, "axis2 not found on %d\n", mobj->type);
+				}
+				if (mobj->player->awayviewmobj)
+				{
+					temp = (UINT32)(size_t)mobj->player->awayviewmobj;
+					mobj->player->awayviewmobj = NULL;
+					if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
+						CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
+				}
+				if (mobj->player->nextwaypoint)
+				{
+					temp = (UINT32)(size_t)mobj->player->nextwaypoint;
+					mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
+					if (mobj->player->nextwaypoint == NULL)
+					{
+						CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
+					}
+				}
+				if (mobj->player->respawn.wp)
+				{
+					temp = (UINT32)(size_t)mobj->player->respawn.wp;
+					mobj->player->respawn.wp = K_GetWaypointFromIndex(temp);
+					if (mobj->player->respawn.wp == NULL)
+					{
+						CONS_Debug(DBG_GAMELOGIC, "respawn.wp not found on %d\n", mobj->type);
+					}
 				}
 			}
 		}
@@ -3259,7 +3267,7 @@ static inline void P_ArchiveMisc(void)
 
 	lastmapsaved = gamemap;
 
-	WRITEUINT16(save_p, (botskin ? (emeralds|(1<<10)) : emeralds)+357);
+	WRITEUINT16(save_p, emeralds+357);
 	WRITESTRINGN(save_p, timeattackfolder, sizeof(timeattackfolder));
 }
 

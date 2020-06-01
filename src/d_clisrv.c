@@ -48,6 +48,7 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_bot.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -653,6 +654,13 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->respawn_distanceleft = (UINT32)LONG(players[i].respawn.distanceleft);
 	rsp->respawn_dropdash = (tic_t)LONG(players[i].respawn.dropdash);
 
+	// botvars_t
+	rsp->bot = players[i].bot;
+	rsp->bot_difficulty = players[i].botvars.difficulty;
+	rsp->bot_itemdelay = players[i].botvars.itemdelay;
+	rsp->bot_itemconfirm = players[i].botvars.itemconfirm;
+	rsp->bot_turnconfirm = players[i].botvars.turnconfirm;
+
 	rsp->hasmo = false;
 	//Transfer important mo information if the player has a body.
 	//This lets us resync players even if they are dead.
@@ -783,6 +791,13 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].respawn.timer = (tic_t)LONG(rsp->respawn_timer);
 	players[i].respawn.distanceleft = (UINT32)LONG(rsp->respawn_distanceleft);
 	players[i].respawn.dropdash = (tic_t)LONG(rsp->respawn_dropdash);
+
+	// botvars_t
+	players[i].bot = rsp->bot;
+	players[i].botvars.difficulty = rsp->bot_difficulty;
+	players[i].botvars.itemdelay = rsp->bot_itemdelay;
+	players[i].botvars.itemconfirm = rsp->bot_itemconfirm;
+	players[i].botvars.turnconfirm = rsp->bot_turnconfirm;
 
 	//We get a packet for each player in game.
 	if (!playeringame[i])
@@ -1314,8 +1329,6 @@ static boolean CL_SendJoin(void)
 
 	if (splitscreen)
 		localplayers += splitscreen;
-	else if (botingame)
-		localplayers++;
 
 	netbuffer->u.clientcfg.localplayers = localplayers;
 	netbuffer->u.clientcfg._255 = 255;
@@ -1566,6 +1579,8 @@ static boolean SV_SendServerConfig(INT32 node)
 
 		netbuffer->u.servercfg.playerskins[i] = (UINT8)players[i].skin;
 		netbuffer->u.servercfg.playercolor[i] = (UINT8)players[i].skincolor;
+
+		netbuffer->u.servercfg.playerisbot[i] = players[i].bot;
 	}
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
@@ -2623,8 +2638,7 @@ static void Command_connect(void)
 		splitscreen = cv_splitplayers.value-1;
 		SplitScreen_OnChange();
 	}
-	botingame = false;
-	botskin = 0;
+
 	CL_ConnectToServer(viams);
 }
 #endif
@@ -2675,7 +2689,7 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 
 	demo_extradata[playernum] |= DXD_PLAYSTATE;
 
-	if (server && !demo.playback)
+	if (server && !demo.playback && !players[playernum].bot)
 	{
 		INT32 node = playernode[playernum];
 		//playerpernode[node] = 0; // It'd be better to remove them all at once, but ghosting happened, so continue to let CL_RemovePlayer do it one-by-one
@@ -3299,6 +3313,7 @@ consvar_t cv_downloadspeed = {"downloadspeed", "16", CV_SAVE, downloadspeed_cons
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 static void Got_RemovePlayer(UINT8 **p, INT32 playernum);
+static void Got_AddBot(UINT8 **p, INT32 playernum);
 
 // called one time at init
 void D_ClientServerInit(void)
@@ -3328,6 +3343,7 @@ void D_ClientServerInit(void)
 	RegisterNetXCmd(XD_KICK, Got_KickCmd);
 	RegisterNetXCmd(XD_ADDPLAYER, Got_AddPlayer);
 	RegisterNetXCmd(XD_REMOVEPLAYER, Got_RemovePlayer);
+	RegisterNetXCmd(XD_ADDBOT, Got_AddBot);
 #ifndef NONET
 #ifdef DUMPCONSISTENCY
 	CV_RegisterVar(&cv_dumpconsistency);
@@ -3540,8 +3556,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 			displayplayers[splitscreenplayer] = newplayernum;
 			g_localplayers[splitscreenplayer] = newplayernum;
 			DEBFILE(va("spawning sister # %d\n", splitscreenplayer));
-			if (splitscreenplayer == 1 && botingame)
-				players[newplayernum].bot = 1;
 		}
 		else
 		{
@@ -3560,6 +3574,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	}
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
+	players[newplayernum].bot = false;
 
 	playerconsole[newplayernum] = console;
 	splitscreen_original_party_size[console] =
@@ -3613,6 +3628,63 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 	CL_RemovePlayer(pnum, reason);
 }
 
+// Xcmd XD_ADDBOT
+// Compacted version of XD_ADDPLAYER for simplicity
+static void Got_AddBot(UINT8 **p, INT32 playernum)
+{
+	INT16 newplayernum;
+	UINT8 skinnum = 0;
+	UINT8 difficulty = MAXBOTDIFFICULTY;
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		// protect against hacked/buggy client
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal add player command received from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			XBOXSTATIC UINT8 buf[2];
+
+			buf[0] = (UINT8)playernum;
+			buf[1] = KICK_MSG_CON_FAIL;
+			SendNetXCmd(XD_KICK, &buf, 2);
+		}
+		return;
+	}
+
+	newplayernum = (UINT8)READUINT8(*p);
+	skinnum = (UINT8)READUINT8(*p);
+	difficulty = (UINT8)READUINT8(*p);
+
+	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
+
+	// Clear player before joining, lest some things get set incorrectly
+	CL_ClearPlayer(newplayernum);
+
+	playeringame[newplayernum] = true;
+	G_AddPlayer(newplayernum);
+	if (newplayernum+1 > doomcom->numslots)
+		doomcom->numslots = (INT16)(newplayernum+1);
+
+	playernode[newplayernum] = servernode;
+
+	players[newplayernum].splitscreenindex = 0;
+	players[newplayernum].bot = true;
+	players[newplayernum].botvars.difficulty = difficulty;
+
+	players[newplayernum].skincolor = skins[skinnum].prefcolor;
+	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
+	SetPlayerSkinByNum(newplayernum, skinnum);
+
+	if (netgame)
+	{
+		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
+	}
+
+#ifdef HAVE_BLUA
+	LUAh_PlayerJoin(newplayernum);
+#endif
+}
+
 static boolean SV_AddWaitingPlayers(void)
 {
 	INT32 node, n, newplayer = false;
@@ -3630,6 +3702,7 @@ static boolean SV_AddWaitingPlayers(void)
 		{
 			UINT8 buf[4];
 			UINT8 *buf_p = buf;
+			UINT8 nobotoverwrite;
 
 			newplayer = true;
 
@@ -3645,6 +3718,21 @@ static boolean SV_AddWaitingPlayers(void)
 						break;
 				if (n == MAXNETNODES)
 					break;
+			}
+
+			nobotoverwrite = newplayernum;
+
+			while (playeringame[nobotoverwrite]
+			&& players[nobotoverwrite].bot
+			&& nobotoverwrite < MAXPLAYERS)
+			{
+				// Only overwrite bots if there are NO other slots available.
+				nobotoverwrite++;
+			}
+
+			if (nobotoverwrite < MAXPLAYERS)
+			{
+				newplayernum = nobotoverwrite;
 			}
 
 			// should never happen since we check the playernum
@@ -4146,6 +4234,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				playeringame[j] = true;
 				SetPlayerSkinByNum(j, (INT32)netbuffer->u.servercfg.playerskins[j]);
 				players[j].skincolor = netbuffer->u.servercfg.playercolor[j];
+				players[j].bot = netbuffer->u.servercfg.playerisbot[j];
 			}
 
 			scp = netbuffer->u.servercfg.varlengthinputs;
@@ -4981,7 +5070,7 @@ static void CL_SendClientCmd(void)
 		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds, 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%TICQUEUE]);
 
-		if (splitscreen || botingame) // Send a special packet with 2 cmd for splitscreen
+		if (splitscreen) // Send a special packet with 2 cmd for splitscreen
 		{
 			netbuffer->packettype = (mis ? PT_CLIENT2MIS : PT_CLIENT2CMD);
 			packetsize = sizeof (client2cmd_pak);
@@ -5180,7 +5269,7 @@ static void Local_Maketic(INT32 realtics)
 	if (!dedicated) rendergametic = gametic;
 	// translate inputs (keyboard/mouse/joystick) into game controls
 	G_BuildTiccmd(&localcmds, realtics, 1);
-	if (splitscreen || botingame)
+	if (splitscreen)
 	{
 		G_BuildTiccmd(&localcmds2, realtics, 2);
 		if (splitscreen > 1)
@@ -5653,9 +5742,15 @@ FILESTAMP
 INT32 D_NumPlayers(void)
 {
 	INT32 num = 0, ix;
+
 	for (ix = 0; ix < MAXPLAYERS; ix++)
-		if (playeringame[ix])
+	{
+		if (playeringame[ix] && !players[ix].bot)
+		{
 			num++;
+		}
+	}
+
 	return num;
 }
 

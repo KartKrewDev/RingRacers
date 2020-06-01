@@ -393,6 +393,21 @@ consvar_t cv_kartspeedometer = {"kartdisplayspeed", "Off", CV_SAVE, kartspeedome
 static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
 consvar_t cv_kartvoices = {"kartvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+static CV_PossibleValue_t kartbot_cons_t[] = {
+	{0, "Off"},
+	{1, "Lv.1"},
+	{2, "Lv.2"},
+	{3, "Lv.3"},
+	{4, "Lv.4"},
+	{5, "Lv.5"},
+	{6, "Lv.6"},
+	{7, "Lv.7"},
+	{8, "Lv.8"},
+	{9, "Lv.9"},
+	{0, NULL}
+};
+consvar_t cv_kartbot = {"kartbot", "0", CV_NETVAR|CV_CHEAT, kartbot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 consvar_t cv_karteliminatelast = {"karteliminatelast", "Yes", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOSHOWHELP, CV_YesNo, KartEliminateLast_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_kartusepwrlv = {"kartusepwrlv", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -550,6 +565,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"LEAVEPARTY",
 	"CANCELPARTYINVITE",
 	"GIVEITEM",
+	"ADDBOT",
 #ifdef HAVE_BLUA
 	"LUACMD",
 	"LUAVAR"
@@ -1554,7 +1570,7 @@ static void SendNameAndColor2(void)
 	XBOXSTATIC char buf[MAXPLAYERNAME+2];
 	char *p;
 
-	if (splitscreen < 1 && !botingame)
+	if (splitscreen < 1)
 		return; // can happen if skin2/color2/name2 changed
 
 	if (g_localplayers[1] != consoleplayer)
@@ -1592,15 +1608,7 @@ static void SendNameAndColor2(void)
 		return;
 
 	// If you're not in a netgame, merely update the skin, color, and name.
-	if (botingame)
-	{
-		players[secondplaya].skincolor = botcolor;
-		if (players[secondplaya].mo)
-			players[secondplaya].mo->color = players[secondplaya].skincolor;
-		SetPlayerSkinByNum(secondplaya, botskin-1);
-		return;
-	}
-	else if (!netgame)
+	if (!netgame)
 	{
 		INT32 foundskin;
 
@@ -1830,15 +1838,7 @@ static void SendNameAndColor4(void)
 		return;
 
 	// If you're not in a netgame, merely update the skin, color, and name.
-	if (botingame)
-	{
-		players[fourthplaya].skincolor = botcolor;
-		if (players[fourthplaya].mo)
-			players[fourthplaya].mo->color = players[fourthplaya].skincolor;
-		SetPlayerSkinByNum(fourthplaya, botskin-1);
-		return;
-	}
-	else if (!netgame)
+	if (!netgame)
 	{
 		INT32 foundskin;
 
@@ -2248,7 +2248,7 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 void D_SendPlayerConfig(void)
 {
 	SendNameAndColor();
-	if (splitscreen || botingame)
+	if (splitscreen)
 		SendNameAndColor2();
 	if (splitscreen > 1)
 		SendNameAndColor3();
@@ -2809,29 +2809,6 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 				return;
 		}
 
-		// Kick bot from special stages
-		if (botskin)
-		{
-			if (G_IsSpecialStage(mapnum))
-			{
-				if (botingame)
-				{
-					//CL_RemoveSplitscreenPlayer();
-					botingame = false;
-					playeringame[1] = false;
-				}
-			}
-			else if (!botingame)
-			{
-				//CL_AddSplitscreenPlayer();
-				botingame = true;
-				displayplayers[1] = 1;
-				playeringame[1] = true;
-				players[1].bot = 1;
-				SendNameAndColor2();
-			}
-		}
-
 		chmappending++;
 		if (netgame)
 			WRITEUINT32(buf_p, M_RandomizedSeed()); // random seed
@@ -2871,11 +2848,10 @@ void D_SetupVote(void)
 	SendNetXCmd(XD_SETUPVOTE, buf, p - buf);
 }
 
-void D_ModifyClientVote(SINT8 voted, UINT8 splitplayer)
+void D_ModifyClientVote(UINT8 player, SINT8 voted, UINT8 splitplayer)
 {
 	char buf[2];
 	char *p = buf;
-	UINT8 player = consoleplayer;
 
 	if (splitplayer > 0)
 		player = g_localplayers[splitplayer];
@@ -5724,8 +5700,7 @@ void Command_ExitGame_f(void)
 
 	splitscreen = 0;
 	SplitScreen_OnChange();
-	botingame = false;
-	botskin = 0;
+
 	cv_debug = 0;
 	emeralds = 0;
 
