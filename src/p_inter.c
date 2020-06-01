@@ -2324,7 +2324,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		else*/ if (G_BattleGametype())
 			K_CheckBumpers();
 
-		target->player->kartstuff[k_pogospring] = 0;
+		target->player->trickpanel = 0;
 	}
 
 	if (source && target && target->player && source->player)

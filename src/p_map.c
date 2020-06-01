@@ -469,9 +469,14 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			{
 				if (object->eflags & MFE_SPRUNG)
 					break;
+
 				if (object->player)
-					object->player->kartstuff[k_pogospring] = 1;
-				K_DoPogoSpring(object, 0, 0);
+				{
+					object->player->trickpanel = 1;
+					object->player->trickdelay = TICRATE/2;
+				}
+
+				K_DoPogoSpring(object, 32<<FRACBITS, 0);
 				return;
 			}
 			else
@@ -1462,7 +1467,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					mo1 = thing;
 					mo2 = tmthing;
 
-					if (G_BattleGametype() && tmthing->player->kartstuff[k_pogospring])
+					if (G_BattleGametype() && tmthing->player->trickpanel)
 					{
 						K_StealBumper(tmthing->player, thing->player, false);
 						K_SpinPlayer(thing->player, tmthing, 0, tmthing, false);
@@ -1472,7 +1477,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				{
 					zbounce = true;
 
-					if (G_BattleGametype() && thing->player->kartstuff[k_pogospring])
+					if (G_BattleGametype() && thing->player->trickpanel)
 					{
 						K_StealBumper(thing->player, tmthing->player, false);
 						K_SpinPlayer(tmthing->player, thing, 0, thing, false);
@@ -3558,7 +3563,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 	mmomx = mo->player->rmomx;
 	mmomy = mo->player->rmomy;
 
-	mo->player->kartstuff[k_pogospring] = 0;
+	mo->player->trickpanel = 0;
 
 	// trace along the three leading corners
 	if (mo->momx > 0)

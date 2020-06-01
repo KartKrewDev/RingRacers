@@ -216,6 +216,10 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->kartstuff, META_KARTSTUFF);
 	else if (fastcmp(field,"frameangle"))
 		lua_pushangle(L, plr->frameangle);
+	else if (fastcmp(field,"trickpanel"))
+		lua_pushinteger(L, plr->trickpanel);
+	else if (fastcmp(field,"trickdelay"))
+		lua_pushinteger(L, plr->trickdelay);
 	else if (fastcmp(field,"pflags"))
 		lua_pushinteger(L, plr->pflags);
 	else if (fastcmp(field,"panim"))
@@ -483,6 +487,10 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"frameangle"))
 		plr->frameangle = luaL_checkangle(L, 3);
+	else if (fastcmp(field,"trickpanel"))
+		plr->trickpanel = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"trickdelay"))
+		plr->trickdelay = (tic_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartspeed"))
 		plr->kartspeed = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartweight"))

@@ -978,7 +978,7 @@ static void K_DebtStingPlayer(player_t *player, INT32 length)
 	player->kartstuff[k_driftboost] = 0;
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+	player->trickpanel = 0;
 
 	player->kartstuff[k_spinouttype] = 2;
 	player->kartstuff[k_spinouttimer] = length;
@@ -2416,18 +2416,6 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 		oldspeed = p_speed;
 	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), ORIG_FRICTION);
 
-	if (player->kartstuff[k_pogospring]) // Pogo Spring minimum/maximum thrust
-	{
-		const fixed_t hscale = mapobjectscale /*+ (mapobjectscale - player->mo->scale)*/;
-		const fixed_t minspeed = 24*hscale;
-		const fixed_t maxspeed = 28*hscale;
-
-		if (newspeed > maxspeed && player->kartstuff[k_pogospring] == 2)
-			newspeed = maxspeed;
-		if (newspeed < minspeed)
-			newspeed = minspeed;
-	}
-
 	finalspeed = newspeed - oldspeed;
 
 	// forwardmove is:
@@ -2526,7 +2514,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+	player->trickpanel = 0;
 
 	if (G_BattleGametype())
 	{
@@ -2673,7 +2661,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+	player->trickpanel = 0;
 
 	if (G_BattleGametype())
 	{
@@ -2800,7 +2788,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+	player->trickpanel = 0;
 
 	// This is the only part that SHOULDN'T combo :VVVVV
 	if (G_BattleGametype() && !(player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)))
@@ -4335,10 +4323,10 @@ static void K_DoShrink(player_t *user)
 	}
 }
 
-
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 {
 	const fixed_t vscale = mapobjectscale + (mo->scale - mapobjectscale);
+	fixed_t thrust = 0;
 
 	if (mo->player && mo->player->spectator)
 		return;
@@ -4352,47 +4340,39 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 
 	mo->eflags |= MFE_SPRUNG;
 
-	if (mo->eflags & MFE_VERTICALFLIP)
-		vertispeed *= -1;
-
 	if (vertispeed == 0)
 	{
-		fixed_t thrust;
-
-		if (mo->player)
-		{
-			thrust = 3*mo->player->speed/2;
-			if (thrust < 48<<FRACBITS)
-				thrust = 48<<FRACBITS;
-			if (thrust > 72<<FRACBITS)
-				thrust = 72<<FRACBITS;
-			if (mo->player->kartstuff[k_pogospring] != 2)
-			{
-				if (EITHERSNEAKER(mo->player))
-					thrust = FixedMul(thrust, (5*FRACUNIT)/4);
-				else if (mo->player->kartstuff[k_invincibilitytimer])
-					thrust = FixedMul(thrust, (9*FRACUNIT)/8);
-			}
-		}
-		else
-		{
-			thrust = FixedDiv(3*P_AproxDistance(mo->momx, mo->momy)/2, 5*FRACUNIT/2);
-			if (thrust < 16<<FRACBITS)
-				thrust = 16<<FRACBITS;
-			if (thrust > 32<<FRACBITS)
-				thrust = 32<<FRACBITS;
-		}
-
-		mo->momz = P_MobjFlip(mo)*FixedMul(FINESINE(ANGLE_22h>>ANGLETOFINESHIFT), FixedMul(thrust, vscale));
+		thrust = P_AproxDistance(mo->momx, mo->momy) * P_MobjFlip(mo);
+		thrust = FixedMul(thrust, FINESINE(ANGLE_22h >> ANGLETOFINESHIFT));
 	}
 	else
-		mo->momz = FixedMul(vertispeed, vscale);
+	{
+		thrust = vertispeed * P_MobjFlip(mo);
+	}
+
+	if (mo->player)
+	{
+		if (EITHERSNEAKER(mo->player))
+		{
+			thrust = FixedMul(thrust, 5*FRACUNIT/4);
+		}
+		else if (mo->player->kartstuff[k_invincibilitytimer])
+		{
+			thrust = FixedMul(thrust, 9*FRACUNIT/8);
+		}
+	}
+
+	mo->momz = FixedMul(thrust, vscale);
 
 	if (mo->eflags & MFE_UNDERWATER)
-		mo->momz = (117 * mo->momz) / 200;
+	{
+		mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
+	}
 
 	if (sound)
+	{
 		S_StartSound(mo, (sound == 1 ? sfx_kc2f : sfx_kpogos));
+	}
 }
 
 void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source)
@@ -5994,10 +5974,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_comebacktimer])
 		player->kartstuff[k_comebackmode] = 0;
 
-	if (P_IsObjectOnGround(player->mo) && player->kartstuff[k_pogospring])
+	if (P_IsObjectOnGround(player->mo) && player->trickpanel != 0)
 	{
-		if (P_MobjFlip(player->mo)*player->mo->momz <= 0)
-			player->kartstuff[k_pogospring] = 0;
+		if (P_MobjFlip(player->mo) * player->mo->momz <= 0)
+		{
+			player->trickpanel = 0;
+		}
 	}
 
 	if (cmd->buttons & BT_DRIFT)
@@ -6517,6 +6499,11 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if (player->spectator)
 	{
 		return turnvalue;
+	}
+
+	if (player->trickpanel != 0)
+	{
+		return 0;
 	}
 
 	if (K_PlayerUsesBotMovement(player))
@@ -7512,12 +7499,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_POGOSPRING:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && onground && NO_HYUDORO
-								&& !player->kartstuff[k_pogospring])
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && onground && NO_HYUDORO && player->trickpanel == 0)
 							{
 								K_PlayBoostTaunt(player->mo);
 								K_DoPogoSpring(player->mo, 32<<FRACBITS, 2);
-								player->kartstuff[k_pogospring] = 1;
+								player->trickpanel = 1;
+								player->trickdelay = TICRATE/2;
 								player->kartstuff[k_itemamount]--;
 							}
 							break;
@@ -7655,6 +7642,54 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		else if (G_RaceGametype() || player->kartstuff[k_bumper] > 0)
 		{
 			player->mo->flags2 &= ~MF2_SHADOW;
+		}
+
+		if (player->trickpanel == 1 && player->trickdelay <= 0)
+		{
+			const angle_t lr = ANGLE_45;
+			fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
+
+			if (cmd->driftturn > 0)
+			{
+				P_InstaThrust(player->mo, player->mo->angle + lr, speed*2);
+				player->trickpanel = 2;
+			}
+			else if (cmd->driftturn < 0)
+			{
+				P_InstaThrust(player->mo, player->mo->angle - lr, speed*2);
+				player->trickpanel = 3;
+			}
+			else if (player->kartstuff[k_throwdir] == 1)
+			{
+				if (player->mo->momz * P_MobjFlip(player->mo) > 0)
+				{
+					player->mo->momz = 0;
+				}
+
+				P_InstaThrust(player->mo, player->mo->angle, speed*3);
+				player->trickpanel = 2;
+			}
+			else if (player->kartstuff[k_throwdir] == -1)
+			{
+				boolean relative = true;
+
+				player->mo->momx /= 3;
+				player->mo->momy /= 3;
+				
+				if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
+				{
+					relative = false;
+				}
+
+				P_SetObjectMomZ(player->mo, 24*FRACUNIT, relative);
+
+				player->trickpanel = 3;
+			}
+		}
+
+		if (player->trickdelay > 0)
+		{
+			player->trickdelay--;
 		}
 	}
 

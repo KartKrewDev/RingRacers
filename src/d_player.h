@@ -289,7 +289,6 @@ typedef enum
 	k_sparkleanim,		// Angle offset for ring sparkle animation
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
-	k_pogospring,		// Pogo spring bounce effect
 	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
 	k_waterskip,		// Water skipping counter
 	k_dashpadcooldown,	// Separate the vanilla SA-style dash pads from using pw_flashing
@@ -477,6 +476,8 @@ typedef struct player_s
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
+	UINT8 trickpanel; // Trick panel state
+	tic_t trickdelay;
 
 	// Bit flags.
 	// See pflags_t, above.

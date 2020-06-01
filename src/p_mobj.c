@@ -1279,14 +1279,14 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			P_PlayerFlip(mo);
 		}
 
-		if (mo->player->kartstuff[k_pogospring])
-		{
-			gravityadd = (5*gravityadd)/2;
-		}
-
 		if (mo->player->kartstuff[k_waterskip])
 		{
 			gravityadd = (4*gravityadd)/3;
+		}
+
+		if (mo->player->trickpanel == 2 || mo->player->trickpanel == 3)
+		{
+			gravityadd = (5*gravityadd)/2;
 		}
 	}
 	else
@@ -8054,7 +8054,7 @@ void P_MobjThinker(mobj_t *mobj)
 				P_Thrust(mobj, mobj->angle, thrustamount);
 
 				if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
-					K_DoPogoSpring(mobj, 0, 1);
+					K_DoPogoSpring(mobj, 32<<FRACBITS, 1);
 
 				if (mobj->threshold > 0)
 					mobj->threshold--;
@@ -8084,7 +8084,7 @@ void P_MobjThinker(mobj_t *mobj)
 			K_DriftDustHandling(mobj);
 
 			if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
-				K_DoPogoSpring(mobj, 0, 1);
+				K_DoPogoSpring(mobj, 32<<FRACBITS, 1);
 
 			break;
 		}
@@ -8137,7 +8137,7 @@ void P_MobjThinker(mobj_t *mobj)
 				P_Thrust(mobj, mobj->angle, thrustamount);
 
 				if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
-					K_DoPogoSpring(mobj, 0, 1);
+					K_DoPogoSpring(mobj, 32<<FRACBITS, 1);
 
 				if (mobj->threshold > 0)
 					mobj->threshold--;

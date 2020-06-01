@@ -4019,8 +4019,7 @@ static void P_3dMovement(player_t *player)
 		cmd->forwardmove = cmd->sidemove = 0;
 	}
 
-	if (!(player->pflags & PF_FORCESTRAFE) && !player->kartstuff[k_pogospring])
-		cmd->sidemove = 0;
+	cmd->sidemove = 0; // TODO: Remove sidemove entirely
 
 	if (player->kartstuff[k_drift] != 0)
 		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
@@ -4088,8 +4087,7 @@ static void P_3dMovement(player_t *player)
 		cmd->forwardmove = 0;
 
 	// Do not let the player control movement if not onground.
-	// SRB2Kart: pogo spring and speed bumps are supposed to control like you're on the ground
-	onground = (P_IsObjectOnGround(player->mo) || (player->kartstuff[k_pogospring]));
+	onground = P_IsObjectOnGround(player->mo);
 
 	player->aiming = cmd->aiming<<FRACBITS;
 
@@ -5896,9 +5894,13 @@ static void P_MovePlayer(player_t *player)
 	{
 		K_KartMoveAnimation(player);
 
-		if (player->kartstuff[k_pogospring])
+		if (player->trickpanel == 2)
 		{
 			player->frameangle += ANGLE_22h;
+		}
+		else if (player->trickpanel == 3)
+		{
+			player->frameangle -= ANGLE_22h;
 		}
 		else
 		{

@@ -575,6 +575,8 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]); // SRB2kart
 
 	rsp->frameangle = (angle_t)LONG(players[i].frameangle); // SRB2kart
+	rsp->trickpanel = (UINT8)players[i].trickpanel;
+	rsp->trickdelay = (tic_t)LONG(players[i].trickdelay);
 
 	// Score is resynched in the rspfirm resync packet
 	rsp->health = 0; // resynched with mo health
@@ -705,6 +707,8 @@ static void resynch_read_player(resynch_pak *rsp)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]); // SRB2kart
 
 	players[i].frameangle = (angle_t)LONG(rsp->frameangle); // SRB2kart
+	players[i].trickpanel = (UINT8)rsp->trickpanel;
+	players[i].trickdelay = (tic_t)LONG(rsp->trickdelay);
 
 	// Score is resynched in the rspfirm resync packet
 	players[i].health = rsp->health;
