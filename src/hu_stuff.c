@@ -796,6 +796,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_GREY:
 				case SKINCOLOR_NICKEL:
 				case SKINCOLOR_BLACK:
+				case SKINCOLOR_SKUNK:
 				case SKINCOLOR_PLATINUM:
 				case SKINCOLOR_JET:
 					cstart = "\x86"; // V_GRAYMAP
@@ -811,11 +812,11 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 					cstart = "\x8e"; // V_BROWNMAP
 					break;
 				case SKINCOLOR_FAIRY:
-				case SKINCOLOR_SALMON:
 				case SKINCOLOR_PINK:
 				case SKINCOLOR_ROSE:
 				case SKINCOLOR_LEMONADE:
 				case SKINCOLOR_LILAC:
+				case SKINCOLOR_BLOSSOM:
 				case SKINCOLOR_TAFFY:
 					cstart = "\x8d"; // V_PINKMAP
 					break;
@@ -866,7 +867,6 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_PISTACHIO:
 				case SKINCOLOR_MOSS:
 				case SKINCOLOR_CAMOUFLAGE:
-				case SKINCOLOR_ROBOHOOD:
 				case SKINCOLOR_MINT:
 				case SKINCOLOR_GREEN:
 				case SKINCOLOR_PINETREE:
@@ -878,14 +878,13 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_ALGAE:
 					cstart = "\x83"; // V_GREENMAP
 					break;
-				case SKINCOLOR_CARIBBEAN:
-				case SKINCOLOR_AZURE:
 				case SKINCOLOR_AQUAMARINE:
 				case SKINCOLOR_TURQUOISE:
 				case SKINCOLOR_TEAL:
 					cstart = "\x8b"; // V_AQUAMAP
 					break;
 				case SKINCOLOR_PIGEON:
+				case SKINCOLOR_ROBIN:
 				case SKINCOLOR_CYAN:
 				case SKINCOLOR_JAWZ:
 				case SKINCOLOR_CERULEAN:
@@ -897,6 +896,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				case SKINCOLOR_ULTRAMARINE:
 				case SKINCOLOR_PERIWINKLE:
 				case SKINCOLOR_BLUE:
+				case SKINCOLOR_MIDNIGHT:
 				case SKINCOLOR_BLUEBERRY:
 				case SKINCOLOR_NOVA:
 					cstart = "\x84"; // V_BLUEMAP
@@ -1485,7 +1485,7 @@ static void HU_drawMiniChat(void)
 
 	for (; i>0; i--)
 	{
-		const char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i-1]);
+		char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i-1]);
 		size_t j = 0;
 		INT32 linescount = 0;
 
@@ -1527,6 +1527,8 @@ static void HU_drawMiniChat(void)
 		dy = 0;
 		dx = 0;
 		msglines += linescount+1;
+		if (msg)
+			Z_Free(msg);
 	}
 
 	y = chaty - charheight*(msglines+1);
@@ -1553,7 +1555,7 @@ static void HU_drawMiniChat(void)
 		INT32 timer = ((cv_chattime.value*TICRATE)-chat_timers[i]) - cv_chattime.value*TICRATE+9; // see below...
 		INT32 transflag = (timer >= 0 && timer <= 9) ? (timer*V_10TRANS) : 0; // you can make bad jokes out of this one.
 		size_t j = 0;
-		const char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i]); // get the current message, and word wrap it.
+		char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i]); // get the current message, and word wrap it.
 		UINT8 *colormap = NULL;
 
 		while(msg[j]) // iterate through msg
@@ -1599,6 +1601,8 @@ static void HU_drawMiniChat(void)
 		}
 		dy += charheight;
 		dx = 0;
+		if (msg)
+			Z_Free(msg);
 	}
 
 	// decrement addy and make that shit smooth:
@@ -1654,7 +1658,7 @@ static void HU_drawChatLog(INT32 offset)
 	{
 		INT32 clrflag = 0;
 		INT32 j = 0;
-		const char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_log[i]); // get the current message, and word wrap it.
+		char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_log[i]); // get the current message, and word wrap it.
 		UINT8 *colormap = NULL;
 		while(msg[j]) // iterate through msg
 		{
@@ -1694,6 +1698,8 @@ static void HU_drawChatLog(INT32 offset)
 		}
 		dy += charheight;
 		dx = 0;
+		if (msg)
+			Z_Free(msg);
 	}
 
 
@@ -2504,7 +2510,7 @@ Ping_gfx_num (int ping)
 void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
 	INT32 gfxnum;	// gfx to draw
-	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SALMON, GTC_CACHE);
+	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
 
 	gfxnum = Ping_gfx_num(ping);
 
@@ -3089,7 +3095,7 @@ static void HU_DrawRankings(void)
 		if (G_RaceGametype())
 		{
 			if (circuitmap)
-				tab[scorelines].count = players[i].laps+1;
+				tab[scorelines].count = players[i].laps;
 			else
 				tab[scorelines].count = players[i].realtime;
 		}

@@ -239,6 +239,7 @@ int main(int argc, char **argv)
 #endif
 	MakeCodeWritable();
 #endif
+
 	// startup SRB2
 	CONS_Printf("Setting up SRB2Kart...\n");
 	D_SRB2Main();

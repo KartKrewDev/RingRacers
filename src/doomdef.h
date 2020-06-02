@@ -141,6 +141,9 @@ extern FILE *logstream;
 extern char logfilename[1024];
 #endif
 
+/* A mod name to further distinguish versions. */
+#define SRB2APPLICATION "SRB2Kart"
+
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
 #define VERSION    0 // Game version
@@ -259,6 +262,7 @@ typedef enum
 	SKINCOLOR_GREY,
 	SKINCOLOR_NICKEL,
 	SKINCOLOR_BLACK,
+	SKINCOLOR_SKUNK,
 	SKINCOLOR_FAIRY,
 	SKINCOLOR_POPCORN,
 	SKINCOLOR_ARTICHOKE,
@@ -269,7 +273,6 @@ typedef enum
 	SKINCOLOR_PEACH,
 	SKINCOLOR_BROWN,
 	SKINCOLOR_LEATHER,
-	SKINCOLOR_SALMON,
 	SKINCOLOR_PINK,
 	SKINCOLOR_ROSE,
 	SKINCOLOR_CINNAMON,
@@ -307,7 +310,6 @@ typedef enum
 	SKINCOLOR_PISTACHIO,
 	SKINCOLOR_MOSS,
 	SKINCOLOR_CAMOUFLAGE,
-	SKINCOLOR_ROBOHOOD,
 	SKINCOLOR_MINT,
 	SKINCOLOR_GREEN,
 	SKINCOLOR_PINETREE,
@@ -317,11 +319,10 @@ typedef enum
 	SKINCOLOR_PLAGUE,
 	SKINCOLOR_EMERALD,
 	SKINCOLOR_ALGAE,
-	SKINCOLOR_CARIBBEAN,
-	SKINCOLOR_AZURE,
 	SKINCOLOR_AQUAMARINE,
 	SKINCOLOR_TURQUOISE,
 	SKINCOLOR_TEAL,
+	SKINCOLOR_ROBIN,
 	SKINCOLOR_CYAN,
 	SKINCOLOR_JAWZ, // Oni's torment
 	SKINCOLOR_CERULEAN,
@@ -338,6 +339,7 @@ typedef enum
 	SKINCOLOR_ULTRAMARINE,
 	SKINCOLOR_PERIWINKLE,
 	SKINCOLOR_BLUE,
+	SKINCOLOR_MIDNIGHT,
 	SKINCOLOR_BLUEBERRY,
 	SKINCOLOR_THISTLE,
 	SKINCOLOR_PURPLE,
@@ -353,6 +355,7 @@ typedef enum
 	SKINCOLOR_BYZANTIUM,
 	SKINCOLOR_POMEGRANATE,
 	SKINCOLOR_LILAC,
+	SKINCOLOR_BLOSSOM,
 	SKINCOLOR_TAFFY,
 
 	// "Careful! MAXSKINCOLORS cannot be greater than 0x40 -- Which it is now."
@@ -544,6 +547,9 @@ extern INT32 cv_debug;
 extern UINT8 shiftdown, ctrldown, altdown;
 extern boolean capslock;
 
+// WARNING: a should be unsigned but to add with 2048, it isn't!
+#define AIMINGTODY(a) (FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)
+
 // if we ever make our alloc stuff...
 #define ZZ_Alloc(x) Z_Malloc(x, PU_STATIC, NULL)
 
@@ -630,11 +636,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 //#define SAVEGAME_OTHERVERSIONS
 
 #if !defined (_NDS) && !defined (_PSP)
-///	Shuffle's incomplete OpenGL sorting code.
-#define SHUFFLE // This has nothing to do with sorting, why was it disabled?
-#endif
-
-#if !defined (_NDS) && !defined (_PSP)
 ///	Allow the use of the SOC RESETINFO command.
 ///	\note	Builds that are tight on memory should disable this.
 ///	    	This stops the game from storing backups of the states, sprites, and mobjinfo tables.
@@ -670,6 +671,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// on the bright side it fixes some weird issues with translucent walls
 /// \note	SRB2CB port.
 ///      	SRB2CB itself ported this from PrBoom+
-#define NEWCLIP
+//#define NEWCLIP
+
+/// Hardware renderer: OpenGL
+#define GL_SHADERS
 
 #endif // __DOOMDEF__

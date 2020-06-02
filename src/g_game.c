@@ -43,21 +43,20 @@
 #include "y_inter.h"
 #include "v_video.h"
 #include "dehacked.h" // get_number (for ghost thok)
+#include "lua_script.h"	// LUA_ArchiveDemo and LUA_UnArchiveDemo
 #include "lua_hook.h"
-#include "b_bot.h"
+#include "lua_libs.h"	// gL (Lua state)
+#include "k_bot.h"
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "k_kart.h" // SRB2kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_color.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
-
-boolean botingame;
-UINT8 botskin;
-UINT8 botcolor;
 
 JoyType_t Joystick;
 JoyType_t Joystick2;
@@ -249,7 +248,7 @@ mobj_t *hunt1;
 mobj_t *hunt2;
 mobj_t *hunt3;
 
-UINT32 countdown, countdown2; // for racing
+tic_t racecountdown, exitcountdown; // for racing
 
 fixed_t gravity;
 fixed_t mapobjectscale;
@@ -286,6 +285,7 @@ boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
+tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
 boolean legitimateexit; // Did this client actually finish the match?
 boolean comebackshowninfo; // Have you already seen the "ATTACK OR PROTECT" message?
 tic_t curlap; // Current lap time
@@ -302,7 +302,8 @@ UINT32 timesBeatenWithEmeralds;
 //@TODO put these all in a struct for namespacing purposes?
 static char demoname[128];
 static UINT8 *demobuffer = NULL;
-static UINT8 *demo_p, *demotime_p, *demoinfo_p;
+static UINT8 *demotime_p, *demoinfo_p;
+UINT8 *demo_p;
 static UINT8 *demoend;
 static UINT8 demoflags;
 static boolean demosynced = true; // console warning message
@@ -803,7 +804,7 @@ void G_SetGameModified(boolean silent, boolean major)
 	majormods = true;
 
 	if (!silent)
-		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to play record attack.\n"));
+		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to play Record Attack.\n"));
 
 	// If in record attack recording, cancel it.
 	if (modeattacking)
@@ -1274,10 +1275,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else
 		player = &players[g_localplayers[ssplayer-1]];
 
-	if (ssplayer == 2)
-		thiscam = (player->bot == 2 ? &camera[0] : &camera[ssplayer-1]);
-	else
-		thiscam = &camera[ssplayer-1];
+	thiscam = &camera[ssplayer-1];
 	lang = localangle[ssplayer-1];
 	laim = localaiming[ssplayer-1];
 	th = turnheld[ssplayer-1];
@@ -1308,6 +1306,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		cmd->angleturn = (INT16)(lang >> 16);
 		cmd->aiming = G_ClipAimingPitch(&laim);
+		return;
+	}
+
+	if (K_PlayerUsesBotMovement(player))
+	{
 		return;
 	}
 
@@ -1615,9 +1618,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	//Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
-		&& ! r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
+		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
 		displayplayers[0] = consoleplayer;
-
 }
 
 // User has designated that they want
@@ -1633,8 +1635,6 @@ static void UserAnalog_OnChange(void)
 
 static void UserAnalog2_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog2.value)
 		CV_SetValue(&cv_analog2, 1);
 	else
@@ -1643,8 +1643,6 @@ static void UserAnalog2_OnChange(void)
 
 static void UserAnalog3_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog3.value)
 		CV_SetValue(&cv_analog3, 1);
 	else
@@ -1653,8 +1651,6 @@ static void UserAnalog3_OnChange(void)
 
 static void UserAnalog4_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog4.value)
 		CV_SetValue(&cv_analog4, 1);
 	else
@@ -1680,7 +1676,7 @@ static void Analog_OnChange(void)
 
 static void Analog2_OnChange(void)
 {
-	if (!(splitscreen || botingame) || !cv_cam2_dist.string)
+	if (!splitscreen || !cv_cam2_dist.string)
 		return;
 
 	// cameras are not initialized at this point
@@ -1772,7 +1768,7 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		if (i > 0 && !(i == 1 && botingame) && r_splitscreen < i)
+		if (i > 0 && r_splitscreen < i)
 			g_localplayers[i] = consoleplayer;
 	}
 
@@ -1910,7 +1906,7 @@ boolean G_Responder(event_t *ev)
 		}
 	}
 
-	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback)
+	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
 		if (ev->data1 == gamecontrolbis[gc_viewpoint][0] || ev->data1 == gamecontrolbis[gc_viewpoint][1])
 		{
@@ -1954,11 +1950,8 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 
-		// Anything else opens the menu if not already open, except for a few keys...
-		if (!(
-			// Rankings
-			ev->data1 == gamecontrol[gc_scores][0] || ev->data1 == gamecontrol[gc_scores][1]
-		))
+		// open menu but only w/ esc
+		if (ev->data1 == 32)
 		{
 			M_StartControlPanel();
 
@@ -2346,6 +2339,12 @@ void G_Ticker(boolean run)
 	UINT32 i;
 	INT32 buf;
 	ticcmd_t *cmd;
+	UINT32 ra_timeskip = (modeattacking && !demo.playback && leveltime < starttime - TICRATE*4) ? 0 : (starttime - TICRATE*4 - 1);
+	// starttime - TICRATE*4 is where we want RA to start when we PLAY IT, so we will loop the main thinker on RA start to get it to this point,
+	// the reason this is done is to ensure that ghosts won't look out of synch with other map elements (objects, moving platforms...)
+	// when we REPLAY, don't skip, let the camera spin, do its thing etc~
+
+	// also the -1 is to ensure that the thinker runs in the loop below.
 
 	P_MapStart();
 	// do player reborns if needed
@@ -2384,7 +2383,7 @@ void G_Ticker(boolean run)
 			default: I_Error("gameaction = %d\n", gameaction);
 		}
 
-	buf = gametic % BACKUPTICS;
+	buf = gametic % TICQUEUE;
 
 	if (!demo.playback)
 	// read/write demo and check turbo cheat
@@ -2394,9 +2393,17 @@ void G_Ticker(boolean run)
 
 		if (playeringame[i])
 		{
-			G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
-			// Use the leveltime sent in the player's ticcmd to determine control lag
-			cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
+			if (K_PlayerUsesBotMovement(&players[i]))
+			{
+				K_BuildBotTiccmd(&players[i], cmd);
+				cmd->latency = 0;
+			}
+			else
+			{
+				G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
+				// Use the leveltime sent in the player's ticcmd to determine control lag
+				cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
+			}
 		}
 	}
 
@@ -2404,12 +2411,16 @@ void G_Ticker(boolean run)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
-			if (demo.title)
-				F_TitleDemoTicker();
-			P_Ticker(run); // tic the game
-			ST_Ticker();
-			AM_Ticker();
-			HU_Ticker();
+
+			for (; ra_timeskip < starttime - TICRATE*4; ra_timeskip++)	// this looks weird but this is done to not break compability with older demos for now.
+			{
+				if (demo.title)
+					F_TitleDemoTicker();
+				P_Ticker(run); // tic the game
+				ST_Ticker();
+				AM_Ticker();
+				HU_Ticker();
+			}
 			break;
 
 		case GS_INTERMISSION:
@@ -2583,7 +2594,8 @@ void G_PlayerReborn(INT32 player)
 	tic_t jointime;
 	UINT8 splitscreenindex;
 	boolean spectator;
-	INT16 bot;
+	boolean bot;
+	UINT8 botdifficulty;
 	SINT8 pity;
 
 	// SRB2kart
@@ -2640,6 +2652,7 @@ void G_PlayerReborn(INT32 player)
 
 	mare = players[player].mare;
 	bot = players[player].bot;
+	botdifficulty = players[player].botvars.difficulty;
 	pity = players[player].pity;
 
 	// SRB2kart
@@ -2718,8 +2731,8 @@ void G_PlayerReborn(INT32 player)
 	p->totalring = totalring;
 
 	p->mare = mare;
-	if (bot)
-		p->bot = 1; // reset to AI-controlled
+	p->bot = bot;
+	p->botvars.difficulty = botdifficulty;
 	p->pity = pity;
 
 	// SRB2kart
@@ -3179,96 +3192,9 @@ void G_DoReborn(INT32 playernum)
 	player_t *player = &players[playernum];
 	boolean starpost = false;
 
-	/*if (modeattacking) // Not needed for SRB2Kart.
-	{
-		M_EndModeAttackRun();
-		return;
-	}*/
-
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
 
-	if (player->bot && playernum != consoleplayer)
-	{ // Bots respawn next to their master.
-		mobj_t *oldmo = NULL;
-
-		// first dissasociate the corpse
-		if (player->mo)
-		{
-			oldmo = player->mo;
-			// Don't leave your carcass stuck 10-billion feet in the ground!
-			P_RemoveMobj(player->mo);
-		}
-
-		B_RespawnBot(playernum);
-		if (oldmo)
-			G_ChangePlayerReferences(oldmo, players[playernum].mo);
-	}
-	/*else if (countdowntimeup || (!multiplayer && !modeattacking))
-	{
-		// reload the level from scratch
-		if (countdowntimeup)
-		{
-			player->starpostangle = 0;
-			player->starposttime = 0;
-			player->starpostx = 0;
-			player->starposty = 0;
-			player->starpostz = 0;
-			player->starpostnum = 0;
-		}
-		if (!countdowntimeup && (mapheaderinfo[gamemap-1]->levelflags & LF_NORELOAD))
-		{
-			INT32 i;
-
-			player->playerstate = PST_REBORN;
-
-			P_LoadThingsOnly();
-
-			// Do a wipe
-			wipegamestate = -1;
-
-			if (player->starpostnum) // SRB2kart
-				starpost = true;
-
-			for (i = 0; i <= splitscreen; i++)
-			{
-				if (camera[i].chase)
-					P_ResetCamera(&players[displayplayers[i]], &camera[i]);
-			}
-
-			// clear cmd building stuff
-			memset(gamekeydown, 0, sizeof (gamekeydown));
-			for (i = 0;i < JOYAXISSET; i++)
-			{
-				joyxmove[i] = joyymove[i] = 0;
-				joy2xmove[i] = joy2ymove[i] = 0;
-				joy3xmove[i] = joy3ymove[i] = 0;
-				joy4xmove[i] = joy4ymove[i] = 0;
-			}
-			mousex = mousey = 0;
-			mouse2x = mouse2y = 0;
-
-			// clear hud messages remains (usually from game startup)
-			CON_ClearHUD();
-
-			// Starpost support
-			G_SpawnPlayer(playernum, starpost);
-
-			if (botingame)
-			{ // Bots respawn next to their master.
-				players[displayplayers[1]].playerstate = PST_REBORN;
-				G_SpawnPlayer(displayplayers[1], false);
-			}
-		}
-		else
-		{
-#ifdef HAVE_BLUA
-			LUAh_MapChange(gamemap);
-#endif
-			G_DoLoadLevel(true);
-		}
-	}*/
-	else
 	{
 		// respawn at the start
 		mobj_t *oldmo = NULL;
@@ -4630,9 +4556,6 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 	if (savedata.lives > 0)
 	{
 		color = savedata.skincolor;
-		botskin = savedata.botskin;
-		botcolor = savedata.botcolor;
-		botingame = (botskin != 0);
 	}
 	else if (splitscreen != ssplayers)
 	{
@@ -4680,7 +4603,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	{
 		// Clear a bunch of variables
 		tokenlist = token = sstimer = redscore = bluescore = lastmap = 0;
-		countdown = countdown2 = mapreset = 0;
+		racecountdown = exitcountdown = mapreset = 0;
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -4834,6 +4757,11 @@ char *G_BuildMapTitle(INT32 mapnum)
 #define DF_TIMEATTACK   0x02 // This demo is from Time Attack and contains its final completion time & best lap!
 #define DF_BREAKTHECAPSULES 0x04 // This demo is from Break the Capsules and contains its final completion time!
 #define DF_ATTACKMASK   0x06 // This demo is from ??? attack and contains ???
+
+#ifdef HAVE_BLUA
+#define DF_LUAVARS		0x20 // this demo contains extra lua vars; this is mostly used for backwards compability
+#endif
+
 #define DF_ATTACKSHIFT  1
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
@@ -4952,6 +4880,16 @@ void G_ReadDemoExtraData(void)
 {
 	INT32 p, extradata, i;
 	char name[17];
+
+	if (leveltime > starttime)
+	{
+		rewind_t *rewind = CL_SaveRewindPoint(demo_p - demobuffer);
+		if (rewind)
+		{
+			memcpy(rewind->oldcmd, oldcmd, sizeof (oldcmd));
+			memcpy(rewind->oldghost, oldghost, sizeof (oldghost));
+		}
+	}
 
 	memset(name, '\0', 17);
 
@@ -5991,6 +5929,8 @@ static rewindinfo_t *rewindhead = NULL; // Reverse chronological order
 
 void G_InitDemoRewind(void)
 {
+	CL_ClearRewinds();
+
 	while (rewindhead)
 	{
 		rewindinfo_t *p = rewindhead->prev;
@@ -6112,19 +6052,35 @@ void G_ConfirmRewind(tic_t rewindtime)
 
 	CV_StealthSetValue(&cv_renderview, 0);
 
-	if (rewindtime > starttime)
+	if (rewindtime <= starttime)
 	{
-		sound_disabled = true; // Prevent sound spam
-		demo.rewinding = true;
+		demo.rewinding = false;
+		G_DoPlayDemo(NULL); // Restart the current demo
 	}
 	else
-		demo.rewinding = false;
+	{
+		rewind_t *rewind;
+		sound_disabled = true; // Prevent sound spam
+		demo.rewinding = true;
 
-	G_DoPlayDemo(NULL); // Restart the current demo
+		rewind = CL_RewindToTime(rewindtime);
+
+		if (rewind)
+		{
+			demo_p = demobuffer + rewind->demopos;
+			memcpy(oldcmd, rewind->oldcmd, sizeof (oldcmd));
+			memcpy(oldghost, rewind->oldghost, sizeof (oldghost));
+			paused = false;
+		}
+		else
+		{
+			demo.rewinding = true;
+			G_DoPlayDemo(NULL); // Restart the current demo
+		}
+	}
 
 	for (j = 0; j < rewindtime && leveltime < rewindtime; j++)
 	{
-		//TryRunTics(1);
 		G_Ticker((j % NEWTICRATERATIO) == 0);
 	}
 
@@ -6135,6 +6091,9 @@ void G_ConfirmRewind(tic_t rewindtime)
 	wipegamestate = gamestate; // No fading back in!
 
 	COM_BufInsertText("renderview on\n");
+
+	if (demo.freecam)
+		return;	// don't touch from there
 
 	splitscreen = oldss;
 	displayplayers[0] = olddp1;
@@ -6411,6 +6370,10 @@ void G_BeginRecording(void)
 	if (encoremode)
 		demoflags |= DF_ENCORE;
 
+#ifdef HAVE_BLUA
+	demoflags |= DF_LUAVARS;
+#endif
+
 	// Setup header.
 	M_Memcpy(demo_p, DEMOHEADER, 12); demo_p += 12;
 	WRITEUINT8(demo_p,VERSION);
@@ -6521,10 +6484,16 @@ void G_BeginRecording(void)
 			// Kart speed and weight
 			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
 			WRITEUINT8(demo_p, skins[player->skin].kartweight);
+
 		}
 	}
 
 	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
+
+#ifdef HAVE_BLUA
+	// player lua vars, always saved even if empty
+	LUA_ArchiveDemo();
+#endif
 
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
@@ -6677,7 +6646,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Too many files loaded to add anymore for demo playback\n"));
 				if (!CON_Ready())
-					M_StartMessage(M_GetText("There are too many files loaded to add this demo's add-ons.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
+					M_StartMessage(M_GetText("There are too many files loaded to add this demo's addons.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
 			}
 			else if (ncs != FS_FOUND)
 			{
@@ -6689,7 +6658,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 					CONS_Alert(CONS_NOTICE, M_GetText("Unknown error finding file %s\n"), filename);
 
 				if (!CON_Ready())
-					M_StartMessage(M_GetText("There were errors trying to add this demo's add-ons. Check the console for more information.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
+					M_StartMessage(M_GetText("There were errors trying to add this demo's addons. Check the console for more information.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
 			}
 			else
 			{
@@ -7385,7 +7354,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 			if (modeattacking)
 			{
-				snprintf(msg, 1024, M_GetText("%s is a record attack replay with spectators, and is thus invalid.\n"), pdemoname);
+				snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with spectators, and is thus invalid.\n"), pdemoname);
 				CONS_Alert(CONS_ERROR, "%s", msg);
 				M_StartMessage(msg, NULL, MM_NOTHING);
 				Z_Free(pdemoname);
@@ -7399,7 +7368,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 		if (modeattacking && numslots > 1)
 		{
-			snprintf(msg, 1024, M_GetText("%s is a record attack replay with multiple players, and is thus invalid.\n"), pdemoname);
+			snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with multiple players, and is thus invalid.\n"), pdemoname);
 			CONS_Alert(CONS_ERROR, "%s", msg);
 			M_StartMessage(msg, NULL, MM_NOTHING);
 			Z_Free(pdemoname);
@@ -7455,6 +7424,18 @@ void G_DoPlayDemo(char *defdemoname)
 		// Look for the next player
 		p = READUINT8(demo_p);
 	}
+
+// end of player read (the 0xFF marker)
+// so this is where we are to read our lua variables (if possible!)
+#ifdef HAVE_BLUA
+	if (demoflags & DF_LUAVARS)	// again, used for compability, lua shit will be saved to replays regardless of if it's even been loaded
+	{
+		if (!gL)	// No Lua state! ...I guess we'll just start one...
+			LUA_ClearState();
+
+		LUA_UnArchiveDemo();
+	}
+#endif
 
 	splitscreen = 0;
 
@@ -7723,7 +7704,7 @@ void G_AddGhost(char *defdemoname)
 		}
 		gh->mo->z = z;
 	}
-	gh->mo->state = states+S_KART_STND1; // SRB2kart - was S_PLAY_STND
+	gh->mo->state = states+S_KART_STILL1; // SRB2kart - was S_PLAY_STND
 	gh->mo->sprite = gh->mo->state->sprite;
 	gh->mo->frame = (gh->mo->state->frame & FF_FRAMEMASK) | tr_trans20<<FF_TRANSSHIFT;
 	gh->mo->tics = -1;
@@ -7989,8 +7970,18 @@ void G_StopDemo(void)
 	demo.timing = false;
 	singletics = false;
 
+	demo.freecam = false;
+	// reset democam shit too:
+	democam.cam = NULL;
+	democam.soundmobj = NULL;
+	democam.localangle = 0;
+	democam.localaiming = 0;
+	democam.turnheld = false;
+	democam.keyboardlook = false;
+
 	CV_SetValue(&cv_playbackspeed, 1);
 	demo.rewinding = false;
+	CL_ClearRewinds();
 
 	if (gamestate == GS_LEVEL && rendermode != render_none)
 	{

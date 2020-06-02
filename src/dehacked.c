@@ -43,10 +43,6 @@
 #include "r_draw.h" // translation colormap consts (for lua)
 #endif
 
-#ifdef HWRENDER
-#include "hardware/hw_light.h"
-#endif
-
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
 //int	snprintf(char *str, size_t n, const char *fmt, ...);
@@ -335,21 +331,6 @@ static INT32 searchvalue(const char *s)
 		return 0;
 	}
 }
-
-#ifdef HWRENDER
-static float searchfvalue(const char *s)
-{
-	while (s[0] != '=' && s[0])
-		s++;
-	if (s[0] == '=')
-		return (float)atof(&s[1]);
-	else
-	{
-		deh_warning("No value found");
-		return 0;
-	}
-}
-#endif
 
 // These are for clearing all of various things
 static void clear_conditionsets(void)
@@ -1120,128 +1101,6 @@ static void readthing(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
-#ifdef HWRENDER
-static void readlight(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word;
-	char *tmp;
-	INT32 value;
-	float fvalue;
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			fvalue = searchfvalue(s);
-			value = searchvalue(s);
-
-			word = strtok(s, " ");
-			if (word)
-				strupr(word);
-			else
-				break;
-
-			if (fastcmp(word, "TYPE"))
-			{
-				DEH_WriteUndoline(word, va("%d", lspr[num].type), UNDO_NONE);
-				lspr[num].type = (UINT16)value;
-			}
-			else if (fastcmp(word, "OFFSETX"))
-			{
-				DEH_WriteUndoline(word, va("%f", lspr[num].light_xoffset), UNDO_NONE);
-				lspr[num].light_xoffset = fvalue;
-			}
-			else if (fastcmp(word, "OFFSETY"))
-			{
-				DEH_WriteUndoline(word, va("%f", lspr[num].light_yoffset), UNDO_NONE);
-				lspr[num].light_yoffset = fvalue;
-			}
-			else if (fastcmp(word, "CORONACOLOR"))
-			{
-				DEH_WriteUndoline(word, va("%u", lspr[num].corona_color), UNDO_NONE);
-				lspr[num].corona_color = value;
-			}
-			else if (fastcmp(word, "CORONARADIUS"))
-			{
-				DEH_WriteUndoline(word, va("%f", lspr[num].corona_radius), UNDO_NONE);
-				lspr[num].corona_radius = fvalue;
-			}
-			else if (fastcmp(word, "DYNAMICCOLOR"))
-			{
-				DEH_WriteUndoline(word, va("%u", lspr[num].dynamic_color), UNDO_NONE);
-				lspr[num].dynamic_color = value;
-			}
-			else if (fastcmp(word, "DYNAMICRADIUS"))
-			{
-				DEH_WriteUndoline(word, va("%f", lspr[num].dynamic_radius), UNDO_NONE);
-				lspr[num].dynamic_radius = fvalue;
-
-				/// \note Update the sqrradius! unnecessary?
-				lspr[num].dynamic_sqrradius = fvalue * fvalue;
-			}
-			else
-				deh_warning("Light %d: unknown word '%s'", num, word);
-		}
-	} while (!myfeof(f)); // finish when the line is empty
-
-	Z_Free(s);
-}
-
-static void readspritelight(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word;
-	char *tmp;
-	INT32 value;
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			value = searchvalue(s);
-
-			word = strtok(s, " ");
-			if (word)
-				strupr(word);
-			else
-				break;
-
-			if (fastcmp(word, "LIGHTTYPE"))
-			{
-				INT32 oldvar;
-				for (oldvar = 0; t_lspr[num] != &lspr[oldvar]; oldvar++)
-					;
-				DEH_WriteUndoline(word, va("%d", oldvar), UNDO_NONE);
-				t_lspr[num] = &lspr[value];
-			}
-			else
-				deh_warning("Sprite %d: unknown word '%s'", num, word);
-		}
-	} while (!myfeof(f)); // finish when the line is empty
-
-	Z_Free(s);
-}
-#endif // HWRENDER
-
 static const struct {
 	const char *name;
 	const UINT16 flag;
@@ -1571,6 +1430,8 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}*/
 			else if (fastcmp(word, "MOBJSCALE"))
 				mapheaderinfo[num-1]->mobj_scale = get_number(word2);
+			else if (fastcmp(word, "DEFAULTWAYPOINTRADIUS"))
+				mapheaderinfo[num-1]->default_waypoint_radius = get_number(word2);
 
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))
@@ -3786,37 +3647,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 					readAnimTex(f, i);
 					// This is not a major mod.
 				}*/
-				else if (fastcmp(word, "LIGHT"))
-				{
-#ifdef HWRENDER
-					// TODO: Read lights by name
-					if (i > 0 && i < NUMLIGHTS)
-						readlight(f, i);
-					else
-					{
-						deh_warning("Light number %d out of range (1 - %d)", i, NUMLIGHTS-1);
-						ignorelines(f);
-					}
-					DEH_WriteUndoline(word, word2, UNDO_HEADER);
-					// This is not a major mod.
-#endif
-				}
-				else if (fastcmp(word, "SPRITE"))
-				{
-#ifdef HWRENDER
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_sprite(word2); // find a sprite by name
-					if (i < NUMSPRITES && i >= 0)
-						readspritelight(f, i);
-					else
-					{
-						deh_warning("Sprite number %d out of range (0 - %d)", i, NUMSPRITES-1);
-						ignorelines(f);
-					}
-					DEH_WriteUndoline(word, word2, UNDO_HEADER);
-					// This is not a major mod.
-#endif
-				}
 				else if (fastcmp(word, "LEVEL"))
 				{
 					// Support using the actual map name,
@@ -4200,88 +4030,52 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_THOK",
 
 	// SRB2kart Frames
-	"S_KART_STND1",
-	"S_KART_STND2",
-	"S_KART_STND1_L",
-	"S_KART_STND2_L",
-	"S_KART_STND1_R",
-	"S_KART_STND2_R",
-	"S_KART_WALK1",
-	"S_KART_WALK2",
-	"S_KART_WALK1_L",
-	"S_KART_WALK2_L",
-	"S_KART_WALK1_R",
-	"S_KART_WALK2_R",
-	"S_KART_RUN1",
-	"S_KART_RUN2",
-	"S_KART_RUN1_L",
-	"S_KART_RUN2_L",
-	"S_KART_RUN1_R",
-	"S_KART_RUN2_R",
+	"S_KART_STILL1",
+	"S_KART_STILL2",
+	"S_KART_STILL1_L",
+	"S_KART_STILL2_L",
+	"S_KART_STILL1_R",
+	"S_KART_STILL2_R",
+
+	"S_KART_SLOW1",
+	"S_KART_SLOW2",
+	"S_KART_SLOW1_L",
+	"S_KART_SLOW2_L",
+	"S_KART_SLOW1_R",
+	"S_KART_SLOW2_R",
+
+	"S_KART_FAST1",
+	"S_KART_FAST2",
+	"S_KART_FAST1_L",
+	"S_KART_FAST2_L",
+	"S_KART_FAST1_R",
+	"S_KART_FAST2_R",
+
 	"S_KART_DRIFT1_L",
 	"S_KART_DRIFT2_L",
+
+	"S_KART_DRIFT1_L_OUT",
+	"S_KART_DRIFT2_L_OUT",
+
+	"S_KART_DRIFT1_L_IN",
+	"S_KART_DRIFT2_L_IN",
+	"S_KART_DRIFT3_L_IN",
+	"S_KART_DRIFT4_L_IN",
+
 	"S_KART_DRIFT1_R",
 	"S_KART_DRIFT2_R",
+
+	"S_KART_DRIFT1_R_OUT",
+	"S_KART_DRIFT2_R_OUT",
+
+	"S_KART_DRIFT1_R_IN",
+	"S_KART_DRIFT2_R_IN",
+	"S_KART_DRIFT3_R_IN",
+	"S_KART_DRIFT4_R_IN",
+
 	"S_KART_SPIN",
 	"S_KART_PAIN",
 	"S_KART_SQUISH",
-	/*
-	"S_PLAY_STND",
-	"S_PLAY_TAP1",
-	"S_PLAY_TAP2",
-	"S_PLAY_RUN1",
-	"S_PLAY_RUN2",
-	"S_PLAY_RUN3",
-	"S_PLAY_RUN4",
-	"S_PLAY_RUN5",
-	"S_PLAY_RUN6",
-	"S_PLAY_RUN7",
-	"S_PLAY_RUN8",
-	"S_PLAY_SPD1",
-	"S_PLAY_SPD2",
-	"S_PLAY_SPD3",
-	"S_PLAY_SPD4",
-	"S_PLAY_ATK1",
-	"S_PLAY_ATK2",
-	"S_PLAY_ATK3",
-	"S_PLAY_ATK4",
-	"S_PLAY_SPRING",
-	"S_PLAY_FALL1",
-	"S_PLAY_FALL2",
-	"S_PLAY_ABL1",
-	"S_PLAY_ABL2",
-	"S_PLAY_SPC1",
-	"S_PLAY_SPC2",
-	"S_PLAY_SPC3",
-	"S_PLAY_SPC4",
-	"S_PLAY_CLIMB1",
-	"S_PLAY_CLIMB2",
-	"S_PLAY_CLIMB3",
-	"S_PLAY_CLIMB4",
-	"S_PLAY_CLIMB5",
-	"S_PLAY_GASP",
-	"S_PLAY_PAIN",
-	"S_PLAY_DIE",
-	"S_PLAY_TEETER1",
-	"S_PLAY_TEETER2",
-	"S_PLAY_CARRY",
-	"S_PLAY_SUPERSTAND",
-	"S_PLAY_SUPERWALK1",
-	"S_PLAY_SUPERWALK2",
-	"S_PLAY_SUPERFLY1",
-	"S_PLAY_SUPERFLY2",
-	"S_PLAY_SUPERTEETER",
-	"S_PLAY_SUPERHIT",
-	"S_PLAY_SUPERTRANS1",
-	"S_PLAY_SUPERTRANS2",
-	"S_PLAY_SUPERTRANS3",
-	"S_PLAY_SUPERTRANS4",
-	"S_PLAY_SUPERTRANS5",
-	"S_PLAY_SUPERTRANS6",
-	"S_PLAY_SUPERTRANS7",
-	"S_PLAY_SUPERTRANS8",
-	"S_PLAY_SUPERTRANS9", // This has special significance in the code. If you add more frames, search for it and make the appropriate changes.
-	*/
 
 	// technically the player goes here but it's an infinite tic state
 	"S_OBJPLACE_DUMMY",
@@ -7838,7 +7632,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	// Castle Eggman Scenery
 	"MT_CHAIN", // CEZ Chain
-	"MT_FLAME", // Flame (has corona)
+	"MT_FLAME", // Flame
 	"MT_EGGSTATUE", // Eggman Statue
 	"MT_MACEPOINT", // Mace rotation point
 	"MT_SWINGMACEPOINT", // Mace swinging point
@@ -8198,6 +7992,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_WAYPOINT",
 	"MT_WAYPOINT_RISER",
 	"MT_WAYPOINT_ANCHOR",
+
+	"MT_BOTHINT",
 
 	"MT_RANDOMAUDIENCE",
 
@@ -8621,6 +8417,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"GREY",			// SKINCOLOR_GREY
 	"NICKEL",		// SKINCOLOR_NICKEL
 	"BLACK",		// SKINCOLOR_BLACK
+	"SKUNK",		// SKINCOLOR_SKUNK
 	"FAIRY",		// SKINCOLOR_FAIRY
 	"POPCORN",		// SKINCOLOR_POPCORN
 	"ARTICHOKE",	// SKINCOLOR_ARTICHOKE
@@ -8631,7 +8428,6 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"PEACH",		// SKINCOLOR_PEACH
 	"BROWN",		// SKINCOLOR_BROWN
 	"LEATHER",		// SKINCOLOR_LEATHER
-	"SALMON",		// SKINCOLOR_SALMON
 	"PINK",			// SKINCOLOR_PINK
 	"ROSE",			// SKINCOLOR_ROSE
 	"CINNAMON",		// SKINCOLOR_CINNAMON
@@ -8669,7 +8465,6 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"PISTACHIO",	// SKINCOLOR_PISTACHIO
 	"MOSS",			// SKINCOLOR_MOSS
 	"CAMOUFLAGE",	// SKINCOLOR_CAMOUFLAGE
-	"ROBOHOOD",		// SKINCOLOR_ROBOHOOD
 	"MINT",			// SKINCOLOR_MINT
 	"GREEN",		// SKINCOLOR_GREEN
 	"PINETREE",		// SKINCOLOR_PINETREE
@@ -8679,11 +8474,10 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"PLAGUE",		// SKINCOLOR_PLAGUE
 	"EMERALD",		// SKINCOLOR_EMERALD
 	"ALGAE",		// SKINCOLOR_ALGAE
-	"CARIBBEAN",	// SKINCOLOR_CARIBBEAN
-	"AZURE",		// SKINCOLOR_AZURE
 	"AQUAMARINE",	// SKINCOLOR_AQUAMARINE
 	"TURQUOISE",	// SKINCOLOR_TURQUOISE
 	"TEAL",			// SKINCOLOR_TEAL
+	"ROBIN",		// SKINCOLOR_ROBIN
 	"CYAN",			// SKINCOLOR_CYAN
 	"JAWZ",			// SKINCOLOR_JAWZ
 	"CERULEAN",		// SKINCOLOR_CERULEAN
@@ -8700,6 +8494,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"ULTRAMARINE",	// SKINCOLOR_ULTRAMARINE
 	"PERIWINKLE",	// SKINCOLOR_PERIWINKLE
 	"BLUE",			// SKINCOLOR_BLUE
+	"MIDNIGHT",		// SKINCOLOR_MIDNIGHT
 	"BLUEBERRY",	// SKINCOLOR_BLUEBERRY
 	"THISTLE",		// SKINCOLOR_THISTLE
 	"PURPLE",		// SKINCOLOR_PURPLE
@@ -8715,6 +8510,7 @@ static const char *COLOR_ENUMS[] = { // Rejigged for Kart.
 	"BYZANTIUM",	// SKINCOLOR_BYZANTIUM
 	"POMEGRANATE",	// SKINCOLOR_POMEGRANATE
 	"LILAC",		// SKINCOLOR_LILAC
+	"BLOSSOM",		// SKINCOLOR_BLOSSOM
 	"TAFFY",		// SKINCOLOR_TAFFY
 
 	// Special super colors
@@ -10268,8 +10064,7 @@ static inline int lib_getenum(lua_State *L)
 	if (mathlib) return luaL_error(L, "constant '%s' could not be parsed.\n", word);
 
 	// DYNAMIC variables too!!
-	// Try not to add anything that would break netgames or timeattack replays here.
-	// You know, like consoleplayer, displayplayers, or gametime.
+
 	if (fastcmp(word,"gamemap")) {
 		lua_pushinteger(L, gamemap);
 		return 1;
@@ -10350,23 +10145,22 @@ static inline int lib_getenum(lua_State *L)
 			return 0;
 		LUA_PushUserdata(L, &players[serverplayer], META_PLAYER);
 		return 1;
+	} else if (fastcmp(word,"consoleplayer")) {	// Player controlling the console, basically our local player
+		if (consoleplayer < 0 || !playeringame[consoleplayer])
+			return 0;
+		LUA_PushUserdata(L, &players[consoleplayer], META_PLAYER);
+		return 1;
 	/*} else if (fastcmp(word,"admin")) {
 		LUA_Deprecated(L, "admin", "IsPlayerAdmin(player)");
 		if (!playeringame[adminplayers[0]] || IsPlayerAdmin(serverplayer))
 			return 0;
 		LUA_PushUserdata(L, &players[adminplayers[0]], META_PLAYER);
 		return 1;*/
-	} else if (fastcmp(word,"emeralds")) {
-		lua_pushinteger(L, emeralds);
-		return 1;
 	} else if (fastcmp(word,"gravity")) {
 		lua_pushinteger(L, gravity);
 		return 1;
 	} else if (fastcmp(word,"VERSIONSTRING")) {
 		lua_pushstring(L, VERSIONSTRING);
-		return 1;
-	} else if (fastcmp(word, "token")) {
-		lua_pushinteger(L, token);
 		return 1;
 	} else if (fastcmp(word,"gamespeed")) {
 		lua_pushinteger(L, gamespeed);
@@ -10400,6 +10194,12 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	} else if (fastcmp(word,"numlaps")) {
 		lua_pushinteger(L, cv_numlaps.value);
+		return 1;
+	} else if (fastcmp(word,"racecountdown")) {
+		lua_pushinteger(L, racecountdown);
+		return 1;
+	} else if (fastcmp(word,"exitcountdown")) {
+		lua_pushinteger(L, exitcountdown);	// This name is pretty dumb. Hence why we'll prefer more descriptive names at least in Lua...
 		return 1;
 	}
 	return 0;

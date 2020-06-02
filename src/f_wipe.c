@@ -459,14 +459,18 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 			HWR_DoWipe(wipetype, wipeframe-1); // send in the wipe type and wipeframe because we need to cache the graphic
 		else
 #endif
-		F_DoWipe(fmask, fcolor, reverse);
 
-		if (encorewiggle)
+		if (rendermode != render_none) //this allows F_RunWipe to be called in dedicated servers
 		{
+			F_DoWipe(fmask, fcolor, reverse);
+
+			if (encorewiggle)
+			{
 #ifdef HWRENDER
-			if (rendermode != render_opengl)
+				if (rendermode != render_opengl)
 #endif
-				F_DoEncoreWiggle(wipeframe);
+					F_DoEncoreWiggle(wipeframe);
+			}
 		}
 
 		I_OsPolling();

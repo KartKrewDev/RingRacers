@@ -161,8 +161,6 @@ void P_DoNightsScore(player_t *player)
 		return; // Don't do any fancy shit for failures.
 
 	dummymo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z+player->mo->height/2, MT_NIGHTSCORE);
-	if (player->bot)
-		player = &players[consoleplayer];
 
 	if (G_IsSpecialStage(gamemap)) // Global link count? Maybe not a good idea...
 	{
@@ -638,7 +636,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
-			S_StartSound(toucher, sfx_s1b2); 
+			S_StartSound(toucher, sfx_s1b2);
 			return;
 
 // ***************************************** //
@@ -758,8 +756,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // ***************************** //
 		// Special Stage Token
 		case MT_EMMY:
-			if (player->bot)
-				return;
 			tokenlist += special->health;
 
 			if (ALL7EMERALDS(emeralds)) // Got all 7
@@ -776,9 +772,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 		// Emerald Hunt
 		case MT_EMERHUNT:
-			if (player->bot)
-				return;
-
 			if (hunt1 == special)
 				hunt1 = NULL;
 			else if (hunt2 == special)
@@ -807,9 +800,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_EMERALD5:
 		case MT_EMERALD6:
 		case MT_EMERALD7:
-			if (player->bot)
-				return;
-
 			if (special->threshold)
 				player->powers[pw_emeralds] |= special->info->speed;
 			else
@@ -837,12 +827,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
-				if (demo.playback || player->bot)
+				if (demo.playback)
 					return;
+
 				emblemlocations[special->health-1].collected = true;
-
 				M_UpdateUnlockablesAndExtraEmblems(false);
-
 				G_SaveGameData(false);
 				break;
 			}
@@ -850,8 +839,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// CTF Flags
 		case MT_REDFLAG:
 		case MT_BLUEFLAG:
-			if (player->bot)
-				return;
 			if (player->powers[pw_flashing] || player->tossdelay)
 				return;
 			if (!special->spawnpoint)
@@ -922,8 +909,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // NiGHTS gameplay items and powerups //
 // ********************************** //
 		/*case MT_NIGHTSDRONE:
-			if (player->bot)
-				return;
 			if (player->exiting)
 				return;
 			if (player->bonustime)
@@ -1077,9 +1062,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			return;
 		case MT_EGGCAPSULE:
-			if (player->bot)
-				return;
-
 			// make sure everything is as it should be, THEN take rings from players in special stages
 			if (player->pflags & PF_NIGHTSMODE && !toucher->target)
 				return;
@@ -1176,12 +1158,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 					P_ResetPlayer(player);
 
-					P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+					P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 				}
 			}
 			return;
 		/*case MT_NIGHTSSUPERLOOP:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 				player->powers[pw_nights_superloop] = (UINT16)special->info->speed;
@@ -1203,7 +1185,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_NIGHTSDRILLREFILL:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 				player->drillmeter = special->info->speed;
@@ -1225,7 +1207,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_NIGHTSHELPER:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 			{
@@ -1257,7 +1239,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_NIGHTSEXTRATIME:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 			{
@@ -1287,7 +1269,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_NIGHTSLINKFREEZE:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 			{
@@ -1358,8 +1340,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					if (playeringame[i] && players[i].pflags & PF_NIGHTSMODE)
 						players[i].drillmeter += TICRATE/2;
 			}
-			else if (player->bot)
-				players[consoleplayer].drillmeter += TICRATE/2;
 			else
 				player->drillmeter += TICRATE/2;
 
@@ -1393,9 +1373,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				thinker_t  *th;
 				mobj_t *mo2;
 
-				if (player->bot)
-					return;
-
 				junk.tag = 649;
 				EV_DoElevator(&junk, bridgeFall, false);
 
@@ -1415,8 +1392,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_FIREFLOWER:
-			if (player->bot)
-				return;
 			player->powers[pw_shield] |= SH_FIREFLOWER;
 			toucher->color = SKINCOLOR_WHITE;
 			G_GhostAddColor(player - players, GHC_FIREFLOWER);
@@ -1426,9 +1401,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // Misc touchables //
 // *************** //
 		case MT_STARPOST:
-			if (player->bot)
-				return;
-			//
 			// SRB2kart: make sure the player will have enough checkpoints to touch
 			if (circuitmap && special->health - player->starpostnum > 1)
 			{
@@ -1482,7 +1454,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (player->pflags & PF_GLIDING)
 				{
 					player->pflags &= ~(PF_GLIDING|PF_JUMPED);
-					P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+					P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 				}
 
 				// Play a bounce sound?
@@ -1549,7 +1521,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					if (player->pflags & PF_GLIDING)
 					{
 						player->pflags &= ~(PF_GLIDING|PF_JUMPED);
-						P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+						P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 					}
 
 					// Play a bounce sound?
@@ -1605,7 +1577,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				player->pflags |= PF_MACESPIN;
 				S_StartSound(toucher, sfx_spin);
-				P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_ATK1
+				P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_ATK1
 			}
 			else
 				player->pflags |= PF_ITEMHANG;
@@ -1631,7 +1603,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (player->powers[pw_invulnerability] || player->powers[pw_flashing]
 			|| (player->powers[pw_super] && !(ALL7EMERALDS(player->powers[pw_emeralds]))))
 				return;
-			if (player->powers[pw_shield] || player->bot)  //If One-Hit Shield
+			if (player->powers[pw_shield])  //If One-Hit Shield
 			{
 				P_RemoveShield(player);
 				S_StartSound(toucher, sfx_shldls); // Ba-Dum! Shield loss.
@@ -1716,8 +1688,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		default: // SOC or script pickup
-			if (player->bot)
-				return;
 			P_SetTarget(&special->target, toucher);
 			break;
 		}
@@ -2008,7 +1978,7 @@ boolean P_CheckRacers(void)
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].exiting || !players[i].lives)
+		if (!playeringame[i] || players[i].spectator || players[i].exiting || players[i].bot || !players[i].lives)
 			continue;
 
 		break;
@@ -2016,7 +1986,7 @@ boolean P_CheckRacers(void)
 
 	if (i == MAXPLAYERS) // finished
 	{
-		countdown = countdown2 = 0;
+		racecountdown = exitcountdown = 0;
 		return true;
 	}
 
@@ -2044,12 +2014,12 @@ boolean P_CheckRacers(void)
 		if (j == MAXPLAYERS) // finish anyways, force a time over
 		{
 			P_DoTimeOver(&players[i]);
-			countdown = countdown2 = 0;
+			racecountdown = exitcountdown = 0;
 			return true;
 		}
 	}
 
-	if (!countdown) // Check to see if the winners have finished, to set countdown.
+	if (!racecountdown) // Check to see if the winners have finished, to set countdown.
 	{
 		UINT8 winningpos = 1;
 
@@ -2058,7 +2028,7 @@ boolean P_CheckRacers(void)
 			winningpos++;
 
 		if (numexiting >= winningpos)
-			countdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
+			racecountdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
 	}
 
 	if (numplayersingame < 2) // reset nospectategrief in free play
@@ -2280,8 +2250,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		target->flags |= MF_NOBLOCKMAP|MF_NOCLIPHEIGHT;
 		P_SetThingPosition(target);
 
-		if (!target->player->bot && !G_IsSpecialStage(gamemap)
-		 && G_GametypeUsesLives())
+		if (!target->player->bot && !G_IsSpecialStage(gamemap) && G_GametypeUsesLives())
 		{
 			target->player->lives -= 1; // Lose a life Tails 03-11-2000
 
@@ -2294,6 +2263,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				}
 			}
 		}
+
 		target->player->playerstate = PST_DEAD;
 
 		if (target->player == &players[consoleplayer])
@@ -3038,7 +3008,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			return false;
 
 		// Make sure that boxes cannot be popped by enemies, red rings, etc.
-		if (target->flags & MF_MONITOR && ((!source || !source->player || source->player->bot) || (inflictor && !inflictor->player)))
+		if (target->flags & MF_MONITOR && ((!source || !source->player) || (inflictor && !inflictor->player)))
 			return false;
 	}
 
@@ -3192,10 +3162,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_KartPainEnergyFling(player);
 
 				if (P_IsDisplayPlayer(player))
-				{
-					quake.intensity = 32*FRACUNIT;
-					quake.time = 5;
-				}
+					P_StartQuake(32<<FRACBITS, 5);
 			}
 			else
 				K_SpinPlayer(player, source, 0, inflictor, false);

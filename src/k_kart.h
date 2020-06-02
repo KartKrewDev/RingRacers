@@ -12,12 +12,6 @@
 
 #define KART_FULLTURN 800
 
-UINT8 colortranslations[MAXTRANSLATIONS][16];
-extern const char *KartColor_Names[MAXSKINCOLORS];
-extern const UINT8 KartColor_Opposite[MAXSKINCOLORS*2];
-void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
-void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color);
-UINT8 K_GetKartColorByName(const char *name);
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 
 void K_RegisterKartStuff(void);
@@ -28,6 +22,7 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 extern consvar_t *KartItemCVars[NUMKARTRESULTS-1];
 
 INT32 K_GetShieldFromItem(INT32 item);
+fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
 void K_KartPainEnergyFling(player_t *player);
 void K_FlipFromObject(mobj_t *mo, mobj_t *master);
@@ -60,6 +55,7 @@ void K_UpdateHnextList(player_t *player, boolean clean);
 void K_DropHnextList(player_t *player, boolean keepshields);
 void K_RepairOrbitChain(mobj_t *orbit);
 player_t *K_FindJawzTarget(mobj_t *actor, player_t *source);
+INT32 K_GetKartRingPower(player_t *player);
 void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
@@ -69,6 +65,7 @@ void K_DropItems(player_t *player);
 void K_StripItems(player_t *player);
 void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
+boolean K_ApplyOffroad(player_t *player);
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower);
 fixed_t K_GetKartAccel(player_t *player);

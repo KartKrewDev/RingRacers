@@ -420,6 +420,17 @@ typedef enum
 	RW_RAIL    = 32
 } ringweapons_t;
 
+// player_t struct for all bot variables
+typedef struct botvars_s
+{
+	UINT8 difficulty;
+
+	tic_t itemdelay;
+	tic_t itemconfirm;
+
+	SINT8 turnconfirm;
+} botvars_t;
+
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
@@ -507,6 +518,7 @@ typedef struct player_s
 	UINT8 gotcontinue; // Got continue from this stage?
 
 	fixed_t speed; // Player's speed (distance formula of MOMX and MOMY values)
+	fixed_t lastspeed;
 	UINT8 jumping; // Jump counter
 	UINT8 secondjump;
 
@@ -599,7 +611,9 @@ typedef struct player_s
 	angle_t awayviewaiming; // Used for cut-away view
 
 	boolean spectator;
-	UINT8 bot;
+
+	boolean bot;
+	botvars_t botvars;
 
 	tic_t jointime; // Timer when player joins game to change skin/color
 
