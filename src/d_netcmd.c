@@ -6084,9 +6084,8 @@ static void Name4_OnChange(void)
 static void Follower_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
-
-	if (!Playing())
-		return; // do whatever you want
+	INT32 num;
+	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -6098,12 +6097,15 @@ static void Follower_OnChange(void)
 		if (stricmp(cpy, "None") == 0)
 		{
 			CV_StealthSet(&cv_follower, "-1");
+
+			if (!Playing())
+				return; // don't send anything there.
+
 			SendNameAndColor();
 			return;
 		}
 
-		INT32 num = R_FollowerAvailable(str);
-		char set[10];
+		num = R_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
@@ -6111,6 +6113,10 @@ static void Follower_OnChange(void)
 		sprintf(set, "%d", num);
 		CV_StealthSet(&cv_follower, set);	// set it to a number. It's easier for us to send later :)
 	}
+
+	if (!Playing())
+		return; // don't send anything there.
+
 	SendNameAndColor();
 }
 
