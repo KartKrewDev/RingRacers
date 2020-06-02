@@ -46,6 +46,7 @@
 // SRB2kart
 #include "m_cond.h" // M_UpdateUnlockablesAndExtraEmblems
 #include "k_kart.h"
+#include "k_color.h"	// KartColor_Opposite
 #include "console.h" // CON_LogMessage
 
 #ifdef HW3SOUND
