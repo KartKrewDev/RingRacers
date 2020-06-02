@@ -3117,7 +3117,7 @@ static void P_RelinkPointers(void)
 				if (!(mobj->itnext = P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 			}
-			if (mobj->player) && 
+			if (mobj->player)
 			{
 				if (mobj->player->capsule)
 				{
