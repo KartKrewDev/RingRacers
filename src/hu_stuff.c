@@ -3095,7 +3095,7 @@ static void HU_DrawRankings(void)
 		if (G_RaceGametype())
 		{
 			if (circuitmap)
-				tab[scorelines].count = players[i].laps+1;
+				tab[scorelines].count = players[i].laps;
 			else
 				tab[scorelines].count = players[i].realtime;
 		}
