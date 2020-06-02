@@ -63,8 +63,7 @@ void K_DoIngameRespawn(player_t *player);
 		player - Player to preform this for.
 
 	Return:-
-		true if the player is not supposed to collide with geometry,
-		otherwise false.
+		None
 --------------------------------------------------*/
 
 void K_RespawnChecker(player_t *player);
