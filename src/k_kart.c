@@ -8032,6 +8032,8 @@ static patch_t *kp_itemminimap;
 static patch_t *kp_alagles[10];
 static patch_t *kp_blagles[6];
 
+static patch_t *kp_cpu;
+
 void K_LoadKartHUDGraphics(void)
 {
 	INT32 i, j;
@@ -8389,6 +8391,8 @@ void K_LoadKartHUDGraphics(void)
 		buffer[7] = '0'+i;
 		kp_blagles[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
 	}
+
+	kp_cpu = (patch_t *) W_CachePatchName("K_CPU", PU_HUDGFX);
 }
 
 // For the item toggle menu
@@ -9433,7 +9437,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 		{
 			if (players[tab[i].num].bot)
 			{
-				; // TODO: Put a graphic here to indicate this player is a bot!
+				V_DrawScaledPatch(x + ((i < 8) ? -25 : rightoffset + 3), y-2, 0, kp_cpu);
 			}
 			else if (tab[i].num != serverplayer || !server_lagless)
 			{
