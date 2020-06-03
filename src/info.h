@@ -796,6 +796,8 @@ typedef enum sprite
 
 	SPR_DBOS, // Drift boost flame
 
+	SPR_EGOO,
+
 	// Xmas-specific sprites that don't fit aboxe
 	SPR_XMS4,
 	SPR_XMS5,
@@ -4183,6 +4185,8 @@ typedef enum state
 	S_BATTLECAPSULE_BUTTON,
 	S_BATTLECAPSULE_SUPPORT,
 	S_BATTLECAPSULE_SUPPORTFLY,
+
+	S_EGOORB,
 
 #ifdef SEENAMES
 	S_NAMECHECK,
