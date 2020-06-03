@@ -7100,6 +7100,8 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BATTLECAPSULE_SUPPORT",
 	"S_BATTLECAPSULE_SUPPORTFLY",
 
+	"S_EGOORB",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif

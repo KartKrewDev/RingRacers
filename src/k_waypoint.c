@@ -474,13 +474,47 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 			spawnedmobj->state->tics = 1;
 			spawnedmobj->frame = spawnedmobj->frame & ~FF_TRANSMASK;
 			spawnedmobj->color = linkcolours[linkcolour];
-			spawnedmobj->scale = FixedMul(FRACUNIT/4, FixedDiv((15 - ((leveltime + n) % 16))*FRACUNIT, 15*FRACUNIT));
+			spawnedmobj->scale = FixedMul(spawnedmobj->scale, FixedMul(FRACUNIT/4, FixedDiv((15 - ((leveltime + n) % 16))*FRACUNIT, 15*FRACUNIT)));
 		}
 
 		x += stepx;
 		y += stepy;
 		z += stepz;
 	} while (n--);
+}
+
+static void K_DebugWaypointDrawRadius(waypoint_t *waypoint)
+{
+	mobj_t *radiusOrb;
+	mobj_t *waypointmobj;
+	const INT32 numRadiusMobjs = 64;
+	INT32 i = 0;
+	angle_t spawnAngle = 0U;
+	fixed_t spawnX= 0;
+	fixed_t spawnY= 0;
+	fixed_t spawnZ= 0;
+
+	I_Assert(waypoint != NULL);
+	I_Assert(waypoint->mobj != NULL);
+
+	waypointmobj = waypoint->mobj;
+
+	for (i = 0; i < numRadiusMobjs; i++)
+	{
+		spawnAngle = (ANGLE_MAX / numRadiusMobjs) * i;
+
+		spawnZ = waypointmobj->z;
+		spawnX = waypointmobj->x + P_ReturnThrustX(waypointmobj, spawnAngle, waypointmobj->radius);
+		spawnY = waypointmobj->y + P_ReturnThrustY(waypointmobj, spawnAngle, waypointmobj->radius);
+
+		radiusOrb = P_SpawnMobj(spawnX, spawnY, spawnZ, MT_SPARK);
+		P_SetMobjState(radiusOrb, S_THOK);
+		radiusOrb->state->nextstate = S_NULL;
+		radiusOrb->state->tics = 1;
+		radiusOrb->frame = radiusOrb->frame & ~FF_TRANSMASK;
+		radiusOrb->color = SKINCOLOR_PURPLE;
+		radiusOrb->scale = radiusOrb->scale / 4;
+	}
 }
 
 /*--------------------------------------------------
@@ -523,15 +557,20 @@ void K_DebugWaypointsVisualise(void)
 		{
 			if (waypoint->numnextwaypoints == 0 && waypoint->numprevwaypoints == 0)
 			{
+				P_SetMobjState(debugmobj, S_EGOORB);
 				debugmobj->color = SKINCOLOR_RED;
+				debugmobj->colorized = true;
 			}
 			else if (waypoint->numnextwaypoints == 0 || waypoint->numprevwaypoints == 0)
 			{
+				P_SetMobjState(debugmobj, S_EGOORB);
 				debugmobj->color = SKINCOLOR_YELLOW;
+				debugmobj->colorized = true;
 			}
 			else if (waypoint == players[displayplayers[0]].nextwaypoint)
 			{
 				debugmobj->color = SKINCOLOR_GREEN;
+				K_DebugWaypointDrawRadius(waypoint);
 			}
 			else
 			{

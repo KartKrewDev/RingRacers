@@ -69,7 +69,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
 	"ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH",
 	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
-	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","XMS4","XMS5","VIEW"
+	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","EGOO","XMS4","XMS5",
+	"VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -3496,6 +3497,8 @@ state_t states[NUMSTATES] =
 	{SPR_CAPS, 3, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLECAPSULE_BUTTON
 	{SPR_CAPS, 4, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLECAPSULE_SUPPORT
 	{SPR_CAPS, FF_ANIMATE|5, -1, {NULL}, 3, 1, S_NULL}, // S_BATTLECAPSULE_SUPPORTFLY
+
+	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOO
 
 #ifdef SEENAMES
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
