@@ -2421,6 +2421,8 @@ static void P_LevelInitStuff(void)
 		if (grandprixinfo.roundnum == 0)
 		{
 			players[i].lives = 3;
+			players[i].xtralife = 0;
+			players[i].totalring = 0;
 		}
 
 		players[i].realtime = racecountdown = exitcountdown = 0;
@@ -2429,7 +2431,7 @@ static void P_LevelInitStuff(void)
 		players[i].lostlife = false;
 		players[i].gotcontinue = false;
 
-		players[i].xtralife = players[i].deadtimer = players[i].numboxes = players[i].totalring = players[i].laps = 0;
+		players[i].deadtimer = players[i].numboxes = players[i].totalring = players[i].laps = 0;
 		players[i].health = 1;
 		players[i].aiming = 0;
 		players[i].pflags &= ~PF_TIMEOVER;

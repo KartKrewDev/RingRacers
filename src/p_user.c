@@ -949,7 +949,6 @@ void P_GivePlayerRings(player_t *player, INT32 num_rings)
 		return;
 
 	player->kartstuff[k_rings] += num_rings;
-	//player->totalring += num_rings; // Used for GP lives later
 
 	if (player->kartstuff[k_rings] > 20)
 		player->kartstuff[k_rings] = 20; // Caps at 20 rings, sorry!
@@ -967,8 +966,8 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 {
 	player->lives += numlives;
 
-	if (player->lives > 99)
-		player->lives = 99;
+	if (player->lives > 9)
+		player->lives = 9;
 	else if (player->lives < 1)
 		player->lives = 1;
 }
@@ -1748,8 +1747,23 @@ void P_DoPlayerExit(player_t *player)
 		}
 		else if (!losing)
 		{
+			const UINT8 lifethreshold = 20;
+			UINT8 extra = 0;
+
 			// YOU WIN
 			grandprixinfo.wonround = true;
+
+			// Increase your total rings
+			player->totalring += RINGTOTAL(player);
+
+			extra = player->totalring / lifethreshold;
+
+			if (extra > player->xtralife)
+			{
+				P_GivePlayerLives(player, extra - player->xtralife);
+				S_StartSound(NULL, sfx_cdfm73);
+				player->xtralife = extra;
+			}
 		}
 	}
 

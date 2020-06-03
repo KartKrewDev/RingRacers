@@ -4642,6 +4642,8 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		if (resetplayer && !(multiplayer && demo.playback)) // SRB2Kart
 		{
 			players[i].lives = 3;
+			players[i].xtralife = 0;
+			players[i].totalring = 0;
 			players[i].score = 0;
 		}
 	}
