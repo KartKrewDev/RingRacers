@@ -483,6 +483,14 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 	} while (n--);
 }
 
+/*--------------------------------------------------
+	void K_DebugWaypointDrawRadius(waypoint_t *waypoint)
+
+		Draw a debugging circle to represent a waypoint's radius
+
+	Input Arguments:-
+		waypoint - A waypoint to draw the radius of
+--------------------------------------------------*/
 static void K_DebugWaypointDrawRadius(waypoint_t *waypoint)
 {
 	mobj_t *radiusOrb;
