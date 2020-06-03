@@ -2412,19 +2412,25 @@ UINT16 K_GetKartFlashing(player_t *player)
 
 fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove)
 {
-	fixed_t accelmax = 4000;
+	const fixed_t accelmax = 4000;
+	const fixed_t p_speed = K_GetKartSpeed(player, true);
+	const fixed_t p_accel = K_GetKartAccel(player);
 	fixed_t newspeed, oldspeed, finalspeed;
-	fixed_t p_speed = K_GetKartSpeed(player, true);
-	fixed_t p_accel = K_GetKartAccel(player);
+	fixed_t orig = ORIG_FRICTION;
 
 	if (!onground) return 0; // If the player isn't on the ground, there is no change in speed
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		orig = K_BotFrictionRubberband(player, ORIG_FRICTION);
+	}
 
 	// ACCELCODE!!!1!11!
 	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy); // FixedMul(P_AproxDistance(player->rmomx, player->rmomy), player->mo->scale);
 	// Don't calculate the acceleration as ever being above top speed
 	if (oldspeed > p_speed)
 		oldspeed = p_speed;
-	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), ORIG_FRICTION);
+	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), orig);
 
 	if (player->kartstuff[k_pogospring]) // Pogo Spring minimum/maximum thrust
 	{
@@ -7683,7 +7689,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->mo->friction += 4608;
 		}
 
-		if (player->speed > 0 && cmd->forwardmove < 0)	// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
+		// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
+		if (player->speed > 0 && cmd->forwardmove < 0)
 			player->mo->friction -= 2048;
 
 		// Karma ice physics
@@ -7719,6 +7726,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			if (player->mo->movefactor < 32)
 				player->mo->movefactor = 32;
+		}
+
+		// Don't go too far above your top speed when rubberbanding
+		// Down here, because we do NOT want to modify movefactor
+		if (K_PlayerUsesBotMovement(player))
+		{
+			player->mo->friction = K_BotFrictionRubberband(player, player->mo->friction);
 		}
 	}
 

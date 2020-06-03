@@ -454,6 +454,25 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 }
 
 /*--------------------------------------------------
+	fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
+{
+	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
+
+	if (rubberband <= 0)
+	{
+		// Never get stronger than normal friction
+		return frict;
+	}
+
+	// 128 is a magic number that felt good in-game
+	return FixedDiv(frict, FRACUNIT + (rubberband / 2));
+}
+
+/*--------------------------------------------------
 	fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
 
 		See header file for description.

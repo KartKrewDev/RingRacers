@@ -96,6 +96,23 @@ fixed_t K_BotTopSpeedRubberband(player_t *player);
 
 
 /*--------------------------------------------------
+	fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict);
+
+		Gives a multiplier for a bot's rubberbanding.
+		Adjusted from K_BotRubberband to be used for friction.
+
+	Input Arguments:-
+		player - Player to check.
+		frict - Friction value to adjust.
+
+	Return:-
+		The new friction value.
+--------------------------------------------------*/
+
+fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict);
+
+
+/*--------------------------------------------------
 	fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy);
 
 		Gets the distance of a point away from a line.
