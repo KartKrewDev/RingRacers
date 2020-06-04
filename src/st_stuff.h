@@ -65,7 +65,6 @@ extern INT32 st_palette; // 0 is default, any others are special palettes.
 
 extern lumpnum_t st_borderpatchnum;
 // patches, also used in intermission
-extern patch_t *tallnum[10];
 extern patch_t *sboscore;
 extern patch_t *sbotime;
 extern patch_t *sbocolon;
