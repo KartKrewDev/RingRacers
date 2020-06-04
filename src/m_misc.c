@@ -105,20 +105,13 @@ static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2
 consvar_t cv_screenshot_option = {"screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_screenshot_folder = {"screenshot_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-<<<<<<< HEAD
-consvar_t cv_screenshot_colorprofile = {"screenshot_colorprofile", "Yes", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-=======
 consvar_t cv_screenshot_colorprofile = {"screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 >>>>>>> srb2/next
 
 static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
 consvar_t cv_moviemode = {"moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange, 0, NULL, NULL, 0, 0, NULL};
 
-<<<<<<< HEAD
-consvar_t cv_movie_option = {"movie_option", "Default", CV_SAVE, screenshot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-=======
 consvar_t cv_movie_option = {"movie_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Moviemode_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
->>>>>>> srb2/next
 consvar_t cv_movie_folder = {"movie_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t zlib_mem_level_t[] = {
@@ -459,12 +452,8 @@ void Command_LoadConfig_f(void)
 
 	// load default control
 	G_ClearAllControlKeys();
-<<<<<<< HEAD
-	G_Controldefault(0);
-=======
 	G_CopyControls(gamecontrol, gamecontroldefault[gcs_fps], NULL, 0);
 	G_CopyControls(gamecontrolbis, gamecontrolbisdefault[gcs_fps], NULL, 0);
->>>>>>> srb2/next
 
 	// temporarily reset execversion to default
 	CV_ToggleExecVersion(true);
@@ -511,13 +500,9 @@ void M_FirstLoadConfig(void)
 	}
 
 	// load default control
-<<<<<<< HEAD
-	G_Controldefault(0);
-=======
 	G_DefineDefaultControls();
 	G_CopyControls(gamecontrol, gamecontroldefault[gcs_fps], NULL, 0);
 	G_CopyControls(gamecontrolbis, gamecontrolbisdefault[gcs_fps], NULL, 0);
->>>>>>> srb2/next
 
 	// register execversion here before we load any configs
 	CV_RegisterVar(&cv_execversion);
@@ -808,14 +793,8 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1]->lvlttl[0] != '\0')
 		snprintf(lvlttltext, 48, "%s%s%s",
 			mapheaderinfo[gamemap-1]->lvlttl,
-<<<<<<< HEAD
-			(strlen(mapheaderinfo[gamemap-1]->zonttl) > 0) ? va(" %s",mapheaderinfo[gamemap-1]->zonttl) : // SRB2kart
-			((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : " ZONE"),
-			(strlen(mapheaderinfo[gamemap-1]->actnum) > 0) ? va(" %s",mapheaderinfo[gamemap-1]->actnum) : "");
-=======
 			(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : " Zone",
 			(mapheaderinfo[gamemap-1]->actnum > 0) ? va(" %d",mapheaderinfo[gamemap-1]->actnum) : "");
->>>>>>> srb2/next
 	else
 		snprintf(lvlttltext, 48, "Unknown");
 
@@ -1176,13 +1155,8 @@ void M_StartMovie(void)
 
 	if (cv_movie_option.value != 3)
 	{
-<<<<<<< HEAD
 		strcat(pathname, PATHSEP"media"PATHSEP"movies"PATHSEP);
 		M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
-=======
-		strcat(pathname, PATHSEP"movies"PATHSEP);
-		I_mkdir(pathname, 0755);
->>>>>>> srb2/next
 	}
 
 	if (rendermode == render_none)
@@ -1440,11 +1414,7 @@ typedef struct
   * \param palette  Palette of image data
   */
 #if NUMSCREENS > 2
-<<<<<<< HEAD
-static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, int height)
-=======
 static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, int height, const UINT8 *pal)
->>>>>>> srb2/next
 {
 	int i;
 	size_t length;
@@ -1488,23 +1458,11 @@ static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, 
 
 	// write color table
 	{
-<<<<<<< HEAD
-		RGBA_t *pal = ((cv_screenshot_colorprofile.value)
-		? pLocalPalette
-		: pMasterPalette);
-
-		for (i = 0; i < 256; i++)
-		{
-			*pack++ = pal[i].s.red;
-			*pack++ = pal[i].s.green;
-			*pack++ = pal[i].s.blue;
-=======
 		for (i = 0; i < 256; i++)
 		{
 			*pack++ = *pal; pal++;
 			*pack++ = *pal; pal++;
 			*pack++ = *pal; pal++;
->>>>>>> srb2/next
 		}
 	}
 
@@ -1555,13 +1513,8 @@ void M_DoScreenShot(void)
 
 	if (cv_screenshot_option.value != 3)
 	{
-<<<<<<< HEAD
 		strcat(pathname, PATHSEP"media"PATHSEP"screenshots"PATHSEP);
 		M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
-=======
-		strcat(pathname, PATHSEP"screenshots"PATHSEP);
-		I_mkdir(pathname, 0755);
->>>>>>> srb2/next
 	}
 
 #ifdef USE_PNG
@@ -2625,8 +2578,6 @@ void M_MkdirEach(const char *path, int start, int mode)
 {
 	M_MkdirEachUntil(path, start, -1, mode);
 }
-<<<<<<< HEAD
-=======
 
 int M_JumpWord(const char *line)
 {
@@ -2682,4 +2633,3 @@ const char * M_Ftrim (double f)
 		return &dig[1];/* skip the 0 */
 	}
 }
->>>>>>> srb2/next
