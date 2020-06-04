@@ -4185,23 +4185,21 @@ static void P_3dMovement(player_t *player)
 		const fixed_t airspeedcap = (50*mapobjectscale);
 		const fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
 
+		// If you're going too fast in the air, ease back down to a certain speed.
+		// Helps lots of jumps from breaking when using speed items, since you can't move in the air.
 		if (speed > airspeedcap)
 		{
 			fixed_t div = 32*FRACUNIT;
 			fixed_t newspeed;
 
+			// Make rubberbanding bots slow down faster
 			if (K_PlayerUsesBotMovement(player))
 			{
-				fixed_t baserubberband = K_BotRubberband(player);
-				fixed_t rubberband = FixedMul(baserubberband,
-					FixedMul(baserubberband,
-					FixedMul(baserubberband,
-					baserubberband
-				))); // This looks extremely goofy, but we need this really high, but at the same time, proportional.
+				fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
 
-				if (rubberband > FRACUNIT)
+				if (rubberband > 0)
 				{
-					div = FixedMul(div, rubberband);
+					div = FixedDiv(div, FRACUNIT + (rubberband * 2));
 				}
 			}
 
