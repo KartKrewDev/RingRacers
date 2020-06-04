@@ -348,6 +348,7 @@ fixed_t K_BotRubberband(player_t *player)
 
 	if (player->exiting)
 	{
+		// You're done, we don't need to rubberband anymore.
 		return FRACUNIT;
 	}
 

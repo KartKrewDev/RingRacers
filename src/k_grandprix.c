@@ -253,11 +253,33 @@ static INT16 K_RivalScore(player_t *bot)
 	const UINT16 difficulty = bot->botvars.difficulty;
 	const UINT16 score = bot->score;
 	const SINT8 roundsleft = grandprixinfo.cup->numlevels - grandprixinfo.roundnum;
+	UINT16 lowestscore = UINT16_MAX;
+	UINT8 lowestdifficulty = MAXBOTDIFFICULTY;
+	UINT8 i;
 
-	// In the early game, difficulty is more important for long-term challenge.
-	// When we're running low on matches left though, we need to focus more on score.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
 
-	return (difficulty * roundsleft) + (score * grandprixinfo.roundnum);
+		if (players[i].score < lowestscore)
+		{
+			lowestscore = players[i].score;
+		}
+
+		if (players[i].bot == true && players[i].botvars.difficulty < lowestdifficulty)
+		{
+			lowestdifficulty = players[i].botvars.difficulty;
+		}
+	}
+
+	// In the early game, difficulty is more important.
+	// This will try to influence the higher difficulty bots to get rival more often & get even more points.
+	// However, when we're running low on matches left, we need to focus more on raw score!
+
+	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * grandprixinfo.roundnum);
 }
 
 void K_UpdateGrandPrixBots(void)
@@ -322,15 +344,16 @@ void K_UpdateGrandPrixBots(void)
 		}
 	}
 
-	// Even if there's a new rival, we want to make sure that they're a better fit than the current one!
+	// Even if there's a new rival, we want to make sure that they're a better fit than the current one.
 	if (oldrival != newrival)
 	{
 		if (oldrival != NULL)
 		{
 			UINT16 os = K_RivalScore(oldrival);
 
-			if (newrivalscore <= os + 100)
+			if (newrivalscore < os + 5)
 			{
+				// This rival's only *slightly* better, no need to fire the old one.
 				// Our current rival's just fine, thank you very much.
 				return;
 			}
@@ -341,7 +364,6 @@ void K_UpdateGrandPrixBots(void)
 
 		// Set our new rival!
 		newrival->botvars.rival = true;
-		CONS_Printf("Rival is now %s\n", player_names[newrival - players]);
 	}
 }
 
