@@ -10026,6 +10026,11 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 	{
 		*hud_x = FixedMul(NEWTAN(anglediff), swhalffixed) + swhalffixed;
 
+		if (encoremode)
+		{
+			*hud_x = (BASEVIDWIDTH * FRACUNIT) - *hud_x;
+		}
+
 		if (r_splitscreen >= 2)
 		{
 			*hud_x /= 2;
