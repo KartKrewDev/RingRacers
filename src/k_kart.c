@@ -8050,6 +8050,8 @@ static patch_t *kp_blagles[6];
 
 static patch_t *kp_cpu;
 
+static patch_t *kp_nametagstem;
+
 void K_LoadKartHUDGraphics(void)
 {
 	INT32 i, j;
@@ -8417,6 +8419,8 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	kp_cpu = (patch_t *) W_CachePatchName("K_CPU", PU_HUDGFX);
+
+	kp_nametagstem = (patch_t *) W_CachePatchName("K_NAMEST", PU_HUDGFX);
 }
 
 // For the item toggle menu
@@ -10287,7 +10291,9 @@ static void K_drawKartNameTags(void)
 			if ((ntplayer->kartstuff[k_position] >= stplyr->kartstuff[k_position]-1)
 			&& (ntplayer->kartstuff[k_position] <= stplyr->kartstuff[k_position]+1))
 			{
-				; // TODO: Draw a cool name tag for online
+				INT32 namelen = V_ThinStringWidth(str, V_6WIDTHSPACE);
+
+				V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS, kp_nametagstem, NULL);
 			}
 		}
 	}
