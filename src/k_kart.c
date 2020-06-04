@@ -10176,7 +10176,7 @@ static void K_drawKartPlayerCheck(void)
 
 static void K_drawKartNameTags(void)
 {
-	const fixed_t maxdistance = 4096*mapobjectscale;
+	const fixed_t maxdistance = 8192*mapobjectscale;
 	camera_t *thiscam;
 	vertex_t c;
 	UINT8 cnum = 0;
@@ -10247,7 +10247,7 @@ static void K_drawKartNameTags(void)
 			}
 		}
 
-		if (j < r_splitscreen)
+		if (j <= r_splitscreen)
 		{
 			// Is a player that's being shown on this computer
 			continue;
@@ -10286,14 +10286,46 @@ static void K_drawKartNameTags(void)
 				V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS, kp_rival[blink], NULL);
 			}
 		}
-		else
+		else if (netgame)
 		{
 			if ((ntplayer->kartstuff[k_position] >= stplyr->kartstuff[k_position]-1)
-			&& (ntplayer->kartstuff[k_position] <= stplyr->kartstuff[k_position]+1))
+			&& (ntplayer->kartstuff[k_position] <= stplyr->kartstuff[k_position]+2))
 			{
-				//INT32 namelen = V_ThinStringWidth(str, V_6WIDTHSPACE);
+				INT32 namelen = V_ThinStringWidth(player_names[i], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+				INT32 clr = K_SkincolorToTextColor(ntplayer->skincolor);
+				UINT8 *colormap = V_GetStringColormap(clr);
+				INT32 barx = 0, bary = 0, barw = 0;
 
-				V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS, kp_nametagstem, NULL);
+				// Since there's no "V_DrawFixedFill", and I don't feel like making it,
+				// fuck it, we're gonna just V_NOSCALESTART hack it
+				barw = (namelen * vid.dupx);
+
+				barx = (x * vid.dupx) / FRACUNIT;
+				bary = (y * vid.dupy) / FRACUNIT;
+
+				barx += (6 * vid.dupx);
+				bary -= (16 * vid.dupx);
+
+				// Center it if necessary
+				if (vid.width != BASEVIDWIDTH * vid.dupx)
+				{
+					barx += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+				}
+
+				if (vid.height != BASEVIDHEIGHT * vid.dupy)
+				{
+					bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+				}
+
+				V_DrawFill(barx, bary, barw, (3 * vid.dupy), colormap[31]|V_NOSCALESTART);
+				V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, colormap[0]|V_NOSCALESTART);
+				// END DRAWFILL DUMBNESS
+
+				// Draw the stem
+				V_DrawFixedPatch(x, y, FRACUNIT, 0, kp_nametagstem, colormap);
+
+				// Draw the name itself
+				V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), V_6WIDTHSPACE|V_ALLOWLOWERCASE|clr, player_names[i]);
 			}
 		}
 	}

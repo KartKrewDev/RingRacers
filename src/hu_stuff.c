@@ -54,6 +54,7 @@
 
 #include "s_sound.h" // song credits
 #include "k_kart.h"
+#include "k_color.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -739,168 +740,27 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		const char *prefix = "", *cstart = "", *cend = "", *adminchar = "\x82~\x83", *remotechar = "\x82@\x83", *fmt2, *textcolor = "\x80";
 		char *tempchar = NULL;
 
-		// player is a spectator?
-        if (players[playernum].spectator)
+		if (players[playernum].spectator)
 		{
-			cstart = "\x86";    // grey name
-			textcolor = "\x86";
+			// grey text
+			cstart = textcolor = "\x86";
 		}
 		else if (target == -1) // say team
 		{
-			if (players[playernum].ctfteam == 1) // red
+			if (players[playernum].ctfteam == 1) 
 			{
-				cstart = "\x85";
-				textcolor = "\x85";
+				// red text
+				cstart = textcolor = "\x85";
 			}
-			else // blue
+			else
 			{
-				cstart = "\x84";
-				textcolor = "\x84";
+				// blue text
+				cstart = textcolor = "\x84";
 			}
 		}
 		else
 		{
-			const UINT8 color = players[playernum].skincolor;
-
-			cstart = "\x83";
-
-			switch (color)
-			{
-				case SKINCOLOR_WHITE:
-				case SKINCOLOR_SILVER:
-				case SKINCOLOR_SLATE:
-					cstart = "\x80"; // White
-					break;
-				case SKINCOLOR_GREY:
-				case SKINCOLOR_NICKEL:
-				case SKINCOLOR_BLACK:
-				case SKINCOLOR_SKUNK:
-				case SKINCOLOR_PLATINUM:
-				case SKINCOLOR_JET:
-					cstart = "\x86"; // V_GRAYMAP
-					break;
-				case SKINCOLOR_SEPIA:
-				case SKINCOLOR_BEIGE:
-				case SKINCOLOR_CARAMEL:
-				case SKINCOLOR_PEACH:
-				case SKINCOLOR_BROWN:
-				case SKINCOLOR_LEATHER:
-				case SKINCOLOR_RUST:
-				case SKINCOLOR_WRISTWATCH:
-					cstart = "\x8e"; // V_BROWNMAP
-					break;
-				case SKINCOLOR_FAIRY:
-				case SKINCOLOR_PINK:
-				case SKINCOLOR_ROSE:
-				case SKINCOLOR_LEMONADE:
-				case SKINCOLOR_LILAC:
-				case SKINCOLOR_BLOSSOM:
-				case SKINCOLOR_TAFFY:
-					cstart = "\x8d"; // V_PINKMAP
-					break;
-				case SKINCOLOR_CINNAMON:
-				case SKINCOLOR_RUBY:
-				case SKINCOLOR_RASPBERRY:
-				case SKINCOLOR_RED:
-				case SKINCOLOR_CRIMSON:
-				case SKINCOLOR_MAROON:
-				case SKINCOLOR_SCARLET:
-				case SKINCOLOR_KETCHUP:
-					cstart = "\x85"; // V_REDMAP
-					break;
-				case SKINCOLOR_DAWN:
-				case SKINCOLOR_SUNSLAM:
-				case SKINCOLOR_CREAMSICLE:
-				case SKINCOLOR_ORANGE:
-				case SKINCOLOR_ROSEWOOD:
-				case SKINCOLOR_TANGERINE:
-					cstart = "\x87"; // V_ORANGEMAP
-					break;
-				case SKINCOLOR_TAN:
-				case SKINCOLOR_CREAM:
-					cstart = "\x8f"; // V_TANMAP
-					break;
-				case SKINCOLOR_GOLD:
-				case SKINCOLOR_ROYAL:
-				case SKINCOLOR_BRONZE:
-				case SKINCOLOR_COPPER:
-				case SKINCOLOR_THUNDER:
-					cstart = "\x8A"; // V_GOLDMAP
-					break;
-				case SKINCOLOR_POPCORN:
-				case SKINCOLOR_YELLOW:
-				case SKINCOLOR_MUSTARD:
-				case SKINCOLOR_BANANA:
-				case SKINCOLOR_OLIVE:
-				case SKINCOLOR_CROCODILE:
-					cstart = "\x82"; // V_YELLOWMAP
-					break;
-				case SKINCOLOR_ARTICHOKE:
-				case SKINCOLOR_PERIDOT:
-				case SKINCOLOR_VOMIT:
-				case SKINCOLOR_GARDEN:
-				case SKINCOLOR_LIME:
-				case SKINCOLOR_HANDHELD:
-				case SKINCOLOR_TEA:
-				case SKINCOLOR_PISTACHIO:
-				case SKINCOLOR_MOSS:
-				case SKINCOLOR_CAMOUFLAGE:
-				case SKINCOLOR_MINT:
-				case SKINCOLOR_GREEN:
-				case SKINCOLOR_PINETREE:
-				case SKINCOLOR_TURTLE:
-				case SKINCOLOR_SWAMP:
-				case SKINCOLOR_DREAM:
-				case SKINCOLOR_PLAGUE:
-				case SKINCOLOR_EMERALD:
-				case SKINCOLOR_ALGAE:
-					cstart = "\x83"; // V_GREENMAP
-					break;
-				case SKINCOLOR_AQUAMARINE:
-				case SKINCOLOR_TURQUOISE:
-				case SKINCOLOR_TEAL:
-					cstart = "\x8b"; // V_AQUAMAP
-					break;
-				case SKINCOLOR_PIGEON:
-				case SKINCOLOR_ROBIN:
-				case SKINCOLOR_CYAN:
-				case SKINCOLOR_JAWZ:
-				case SKINCOLOR_CERULEAN:
-				case SKINCOLOR_NAVY:
-				case SKINCOLOR_SAPPHIRE:
-					cstart = "\x88"; // V_SKYMAP
-					break;
-				case SKINCOLOR_STEEL:
-				case SKINCOLOR_ULTRAMARINE:
-				case SKINCOLOR_PERIWINKLE:
-				case SKINCOLOR_BLUE:
-				case SKINCOLOR_MIDNIGHT:
-				case SKINCOLOR_BLUEBERRY:
-				case SKINCOLOR_NOVA:
-					cstart = "\x84"; // V_BLUEMAP
-					break;
-				case SKINCOLOR_THISTLE:
-				case SKINCOLOR_PURPLE:
-				case SKINCOLOR_PASTEL:
-					cstart = "\x81"; // V_PURPLEMAP
-					break;
-				case SKINCOLOR_MAGENTA:
-				case SKINCOLOR_FUCHSIA:
-				case SKINCOLOR_MOONSET:
-				case SKINCOLOR_VIOLET:
-					cstart = "\x8c"; // V_MAGENTAMAP
-					break;
-				case SKINCOLOR_DUSK:
-				case SKINCOLOR_TOXIC:
-				case SKINCOLOR_MAUVE:
-				case SKINCOLOR_LAVENDER:
-				case SKINCOLOR_BYZANTIUM:
-				case SKINCOLOR_POMEGRANATE:
-					cstart = "\x89"; // V_LAVENDERMAP
-					break;
-				default:
-					break;
-			}
+			cstart = "\x80" + (K_SkincolorToTextColor(players[playernum].skincolor) >> V_CHARCOLORSHIFT);
 		}
 
 		prefix = cstart;
@@ -910,6 +770,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(adminchar) + 1, PU_STATIC, NULL);
 		else if (IsPlayerAdmin(playernum))
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(remotechar) + 1, PU_STATIC, NULL);
+
 		if (tempchar)
 		{
 			if (playernum == serverplayer)

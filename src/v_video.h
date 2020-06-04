@@ -225,6 +225,9 @@ void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *st
 #define V_DrawStringAtFixed( x,y,option,string ) \
 	V__DrawOneScaleString (x,y,FRACUNIT,option,HU_FONT,string)
 
+#define V_DrawThinStringAtFixed( x,y,option,string ) \
+	V__DrawOneScaleString (x,y,FRACUNIT,option,TINY_FONT,string)
+
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
 void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits);
