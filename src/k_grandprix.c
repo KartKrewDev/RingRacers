@@ -1,14 +1,14 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2 KART
 //-----------------------------------------------------------------------------
-// Copyright (C) 2007-2016 by John "JTE" Muniz.
-// Copyright (C) 2011-2018 by Sonic Team Junior.
+// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2018-2020 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  k_grandprix.c
-/// \brief Grand Prix mode specific code
+/// \brief Grand Prix mode game logic & bot behaviors
 
 #include "k_grandprix.h"
 #include "doomdef.h"
@@ -21,6 +21,11 @@
 
 struct grandprixinfo grandprixinfo;
 
+/*--------------------------------------------------
+	UINT8 K_BotStartingDifficulty(SINT8 value)
+
+		See header file for description.
+--------------------------------------------------*/
 UINT8 K_BotStartingDifficulty(SINT8 value)
 {
 	// startingdifficulty: Easy = 3, Normal = 6, Hard = 9
@@ -38,6 +43,11 @@ UINT8 K_BotStartingDifficulty(SINT8 value)
 	return difficulty;
 }
 
+/*--------------------------------------------------
+	INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
+
+		See header file for description.
+--------------------------------------------------*/
 INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 {
 	INT16 points;
@@ -84,6 +94,11 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 	return points;
 }
 
+/*--------------------------------------------------
+	void K_InitGrandPrixBots(void)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_InitGrandPrixBots(void)
 {
 	const char *defaultbotskinname = "eggrobo";
@@ -248,6 +263,18 @@ void K_InitGrandPrixBots(void)
 	}
 }
 
+/*--------------------------------------------------
+	static INT16 K_RivalScore(player_t *bot)
+
+		Creates a "rival score" for a bot, used to determine which bot is the
+		most deserving of the rival status.
+
+	Input Arguments:-
+		bot - Player to check.
+
+	Return:-
+		"Rival score" value.
+--------------------------------------------------*/
 static INT16 K_RivalScore(player_t *bot)
 {
 	const UINT16 difficulty = bot->botvars.difficulty;
@@ -282,6 +309,11 @@ static INT16 K_RivalScore(player_t *bot)
 	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * grandprixinfo.roundnum);
 }
 
+/*--------------------------------------------------
+	void K_UpdateGrandPrixBots(void)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_UpdateGrandPrixBots(void)
 {
 	player_t *oldrival = NULL;
@@ -367,6 +399,18 @@ void K_UpdateGrandPrixBots(void)
 	}
 }
 
+/*--------------------------------------------------
+	static UINT8 K_BotExpectedStanding(player_t *bot)
+
+		Predicts what placement a bot was expected to be in.
+		Used for determining if a bot's difficulty should raise.
+
+	Input Arguments:-
+		bot - Player to check.
+
+	Return:-
+		Position number the bot was expected to be in.
+--------------------------------------------------*/
 static UINT8 K_BotExpectedStanding(player_t *bot)
 {
 	UINT8 pos = 1;
@@ -403,6 +447,11 @@ static UINT8 K_BotExpectedStanding(player_t *bot)
 	return pos;
 }
 
+/*--------------------------------------------------
+	void K_IncreaseBotDifficulty(player_t *bot)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_IncreaseBotDifficulty(player_t *bot)
 {
 	UINT8 expectedstanding;
@@ -443,6 +492,11 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	}
 }
 
+/*--------------------------------------------------
+	void K_FakeBotResults(player_t *bot)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_FakeBotResults(player_t *bot)
 {
 	const UINT32 distfactor = FixedMul(32 * bot->mo->scale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
@@ -496,6 +550,11 @@ void K_FakeBotResults(player_t *bot)
 	K_IncreaseBotDifficulty(bot);
 }
 
+/*--------------------------------------------------
+	void K_PlayerLoseLife(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_PlayerLoseLife(player_t *player)
 {
 	if (!G_GametypeUsesLives())
