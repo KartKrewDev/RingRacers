@@ -10103,9 +10103,9 @@ static void K_drawKartPlayerCheck(void)
 
 	thiscam = &camera[cnum];
 
-	c.x = thiscam->x;
-	c.y = thiscam->y;
-	c.z = thiscam->z;
+	c.x = stplyr->mo->x;
+	c.y = stplyr->mo->y;
+	c.z = stplyr->mo->z;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
