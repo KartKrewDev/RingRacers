@@ -1695,6 +1695,7 @@ static inline fixed_t FixedCharacterDim(
 		INT32    dupx,
 		fixed_t *  cwp)
 {
+	(void)scale;
 	(void)hchw;
 	(void)dupx;
 	(*cwp) = chw;
