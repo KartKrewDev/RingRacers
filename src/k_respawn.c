@@ -110,7 +110,7 @@ void K_DoIngameRespawn(player_t *player)
 	// Set up respawn position if invalid
 	if (player->respawn.wp != NULL)
 	{
-		const UINT32 dist = RESPAWN_DIST + (player->airtime * 32);
+		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
 		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
 		K_RespawnAtWaypoint(player, player->respawn.wp);
 	}
