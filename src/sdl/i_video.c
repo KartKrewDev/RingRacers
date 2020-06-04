@@ -1375,6 +1375,8 @@ static inline boolean I_SkipFrame(void)
 //
 void I_FinishUpdate(void)
 {
+	int player;
+
 	if (rendermode == render_none)
 		return; //Alam: No software or OpenGl surface
 
@@ -1389,7 +1391,25 @@ void I_FinishUpdate(void)
 		if (cv_showping.value && netgame &&
 				( consoleplayer != serverplayer || ! server_lagless ))
 		{
-			SCR_DisplayLocalPing();
+			if (server_lagless)
+			{
+				if (consoleplayer != serverplayer)
+					SCR_DisplayLocalPing();
+			}
+			else
+			{
+				for (
+						player = 1;
+						player < MAXPLAYERS;
+						player++
+				){
+					if (D_IsPlayerHumanAndGaming(player))
+					{
+						SCR_DisplayLocalPing();
+						break;
+					}
+				}
+			}
 		}
 	}
 

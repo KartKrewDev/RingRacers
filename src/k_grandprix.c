@@ -1,14 +1,14 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2 KART
 //-----------------------------------------------------------------------------
-// Copyright (C) 2007-2016 by John "JTE" Muniz.
-// Copyright (C) 2011-2018 by Sonic Team Junior.
+// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2018-2020 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  k_grandprix.c
-/// \brief Grand Prix mode specific code
+/// \brief Grand Prix mode game logic & bot behaviors
 
 #include "k_grandprix.h"
 #include "doomdef.h"
@@ -21,6 +21,11 @@
 
 struct grandprixinfo grandprixinfo;
 
+/*--------------------------------------------------
+	UINT8 K_BotStartingDifficulty(SINT8 value)
+
+		See header file for description.
+--------------------------------------------------*/
 UINT8 K_BotStartingDifficulty(SINT8 value)
 {
 	// startingdifficulty: Easy = 3, Normal = 6, Hard = 9
@@ -38,6 +43,11 @@ UINT8 K_BotStartingDifficulty(SINT8 value)
 	return difficulty;
 }
 
+/*--------------------------------------------------
+	INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
+
+		See header file for description.
+--------------------------------------------------*/
 INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 {
 	INT16 points;
@@ -54,9 +64,9 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 	// This rounds out the point gain when you get 1st every race,
 	// and gives bots able to catch up in points if a player gets an early lead.
 	// The maximum points you can get in a cup is: ((number of players - 1) + (max extra points)) * (number of races)
-	// 8P: (7 + 3) * 5 = 50 maximum points
-	// 12P: (11 + 3) * 5 = 70 maximum points
-	// 16P: (15 + 3) * 5 = 90 maximum points
+	// 8P: (7 + 5) * 5 = 60 maximum points
+	// 12P: (11 + 5) * 5 = 80 maximum points
+	// 16P: (15 + 5) * 5 = 100 maximum points
 	switch (numplayers)
 	{
 		case 0: case 1: case 2: // 1v1
@@ -64,13 +74,13 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 		case 3: case 4: // 3-4P
 			if (position == 1) { points += 1; } // 1st gets +1 extra point
 			break;
-		case 5: case 6:
-			if (position == 1) { points += 2; } // 1st gets +2 extra points
+		case 5: case 6: // 5-6P
+			if (position == 1) { points += 3; } // 1st gets +3 extra points
 			else if (position == 2) { points += 1; } // 2nd gets +1 extra point
 			break;
 		default: // Normal matches
-			if (position == 1) { points += 3; } // 1st gets +3 extra points
-			else if (position == 2) { points += 2; } // 2nd gets +2 extra points
+			if (position == 1) { points += 5; } // 1st gets +5 extra points
+			else if (position == 2) { points += 3; } // 2nd gets +3 extra points
 			else if (position == 3) { points += 1; } // 3rd gets +1 extra point
 			break;
 	}
@@ -84,6 +94,11 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 	return points;
 }
 
+/*--------------------------------------------------
+	void K_InitGrandPrixBots(void)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_InitGrandPrixBots(void)
 {
 	const char *defaultbotskinname = "eggrobo";
@@ -248,18 +263,57 @@ void K_InitGrandPrixBots(void)
 	}
 }
 
+/*--------------------------------------------------
+	static INT16 K_RivalScore(player_t *bot)
+
+		Creates a "rival score" for a bot, used to determine which bot is the
+		most deserving of the rival status.
+
+	Input Arguments:-
+		bot - Player to check.
+
+	Return:-
+		"Rival score" value.
+--------------------------------------------------*/
 static INT16 K_RivalScore(player_t *bot)
 {
 	const UINT16 difficulty = bot->botvars.difficulty;
 	const UINT16 score = bot->score;
 	const SINT8 roundsleft = grandprixinfo.cup->numlevels - grandprixinfo.roundnum;
+	UINT16 lowestscore = UINT16_MAX;
+	UINT8 lowestdifficulty = MAXBOTDIFFICULTY;
+	UINT8 i;
 
-	// In the early game, difficulty is more important for long-term challenge.
-	// When we're running low on matches left though, we need to focus more on score.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
 
-	return (difficulty * roundsleft) + (score * grandprixinfo.roundnum);
+		if (players[i].score < lowestscore)
+		{
+			lowestscore = players[i].score;
+		}
+
+		if (players[i].bot == true && players[i].botvars.difficulty < lowestdifficulty)
+		{
+			lowestdifficulty = players[i].botvars.difficulty;
+		}
+	}
+
+	// In the early game, difficulty is more important.
+	// This will try to influence the higher difficulty bots to get rival more often & get even more points.
+	// However, when we're running low on matches left, we need to focus more on raw score!
+
+	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * grandprixinfo.roundnum);
 }
 
+/*--------------------------------------------------
+	void K_UpdateGrandPrixBots(void)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_UpdateGrandPrixBots(void)
 {
 	player_t *oldrival = NULL;
@@ -322,15 +376,16 @@ void K_UpdateGrandPrixBots(void)
 		}
 	}
 
-	// Even if there's a new rival, we want to make sure that they're a better fit than the current one!
+	// Even if there's a new rival, we want to make sure that they're a better fit than the current one.
 	if (oldrival != newrival)
 	{
 		if (oldrival != NULL)
 		{
 			UINT16 os = K_RivalScore(oldrival);
 
-			if (newrivalscore <= os + 100)
+			if (newrivalscore < os + 5)
 			{
+				// This rival's only *slightly* better, no need to fire the old one.
 				// Our current rival's just fine, thank you very much.
 				return;
 			}
@@ -341,10 +396,21 @@ void K_UpdateGrandPrixBots(void)
 
 		// Set our new rival!
 		newrival->botvars.rival = true;
-		CONS_Printf("Rival is now %s\n", player_names[newrival - players]);
 	}
 }
 
+/*--------------------------------------------------
+	static UINT8 K_BotExpectedStanding(player_t *bot)
+
+		Predicts what placement a bot was expected to be in.
+		Used for determining if a bot's difficulty should raise.
+
+	Input Arguments:-
+		bot - Player to check.
+
+	Return:-
+		Position number the bot was expected to be in.
+--------------------------------------------------*/
 static UINT8 K_BotExpectedStanding(player_t *bot)
 {
 	UINT8 pos = 1;
@@ -381,6 +447,11 @@ static UINT8 K_BotExpectedStanding(player_t *bot)
 	return pos;
 }
 
+/*--------------------------------------------------
+	void K_IncreaseBotDifficulty(player_t *bot)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_IncreaseBotDifficulty(player_t *bot)
 {
 	UINT8 expectedstanding;
@@ -421,6 +492,11 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	}
 }
 
+/*--------------------------------------------------
+	void K_FakeBotResults(player_t *bot)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_FakeBotResults(player_t *bot)
 {
 	const UINT32 distfactor = FixedMul(32 * bot->mo->scale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
@@ -474,6 +550,11 @@ void K_FakeBotResults(player_t *bot)
 	K_IncreaseBotDifficulty(bot);
 }
 
+/*--------------------------------------------------
+	void K_PlayerLoseLife(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_PlayerLoseLife(player_t *player)
 {
 	if (!G_GametypeUsesLives())

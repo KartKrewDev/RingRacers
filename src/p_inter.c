@@ -1402,7 +1402,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // Misc touchables //
 // *************** //
 		case MT_STARPOST:
-			// SRB2kart: make sure the player will have enough checkpoints to touch
 			if (circuitmap && special->health - player->starpostnum > 1)
 			{
 				// blatant reuse of a variable that's normally unused in circuit
@@ -1422,11 +1421,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (player->starpostnum >= special->health)
 				return; // Already hit this post
 
-			// Save the player's time and position.
-			player->starposttime = player->realtime; //this makes race mode's timers work correctly whilst not affecting sp -x
 			player->starpostnum = special->health;
 
-			//S_StartSound(toucher, special->info->painsound);
 			return;
 
 		case MT_FAKEMOBILE:

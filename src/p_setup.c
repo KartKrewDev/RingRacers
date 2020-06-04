@@ -3261,13 +3261,7 @@ boolean P_SetupLevel(boolean skipprecip)
 			else // gametype is GT_COOP or GT_RACE
 			{
 				players[i].mo = NULL;
-
-				if (players[i].starposttime)
-				{
-					G_SpawnPlayer(i, true);
-				}
-				else
-					G_SpawnPlayer(i, false);
+				G_SpawnPlayer(i, (players[i].starpostnum != 0));
 			}
 		}
 
