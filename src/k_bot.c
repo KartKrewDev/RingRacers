@@ -342,6 +342,7 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 fixed_t K_BotRubberband(player_t *player)
 {
 	fixed_t rubberband = FRACUNIT;
+	fixed_t max, min;
 	player_t *firstplace = NULL;
 	UINT8 i;
 
@@ -388,13 +389,23 @@ fixed_t K_BotRubberband(player_t *player)
 		}
 	}
 
-	if (rubberband > 2*FRACUNIT)
+	// Lv. 1: x1.0 max
+	// Lv. 5: x1.5 max
+	// Lv. 9: x2.0 max
+	max = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / (MAXBOTDIFFICULTY - 1));
+
+	// Lv. 1: x0.75 min
+	// Lv. 5: x0.875 min
+	// Lv. 9: x1.0 min
+	min = FRACUNIT - (((FRACUNIT/4) * (MAXBOTDIFFICULTY - player->botvars.difficulty)) / (MAXBOTDIFFICULTY - 1));
+
+	if (rubberband > max)
 	{
-		rubberband = 2*FRACUNIT;
+		rubberband = max;
 	}
-	else if (rubberband < 7*FRACUNIT/8)
+	else if (rubberband < min)
 	{
-		rubberband = 7*FRACUNIT/8;
+		rubberband = min;
 	}
 
 	return rubberband;
