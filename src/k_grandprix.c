@@ -111,7 +111,7 @@ void K_InitGrandPrixBots(void)
 	UINT8 wantedbots = 0;
 
 	UINT8 numplayers = 0;
-	UINT8 competitors[4];
+	UINT8 competitors[MAXSPLITSCREENPLAYERS];
 
 	boolean skinusable[MAXSKINS];
 	UINT8 botskinlist[MAXPLAYERS];
@@ -179,6 +179,7 @@ void K_InitGrandPrixBots(void)
 			if (numplayers < MAXSPLITSCREENPLAYERS && !players[i].spectator)
 			{
 				competitors[numplayers] = i;
+				skinusable[players[i].skin] = false;
 				numplayers++;
 			}
 			else
