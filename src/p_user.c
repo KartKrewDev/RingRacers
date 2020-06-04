@@ -47,6 +47,7 @@
 #include "m_cond.h" // M_UpdateUnlockablesAndExtraEmblems
 #include "k_kart.h"
 #include "console.h" // CON_LogMessage
+#include "k_respawn.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -5775,7 +5776,7 @@ static void P_MovePlayer(player_t *player)
 		// Kart: store the current turn range for later use
 		if ((player->mo && player->speed > 0) // Moving
 			|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-			|| (player->kartstuff[k_respawn]) // Respawning
+			|| (player->respawn.state != RESPAWNST_NONE) // Respawning
 			|| (player->spectator || objectplacing)) // Not a physical player
 		{
 			player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
@@ -8430,16 +8431,6 @@ void P_PlayerThink(player_t *player)
 		player->awayviewtics = 0; // reset to zero
 	}
 
-	/*
-	if (player->pflags & PF_GLIDING)
-	{
-		if (player->panim != PA_ABILITY)
-			P_SetPlayerMobjState(player->mo, S_PLAY_ABL1);
-	}
-	else if ((player->pflags & PF_JUMPED) && !player->powers[pw_super] && player->panim != PA_ROLL && player->charability2 == CA2_SPINDASH)
-		P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
-	*/
-
 	if (player->flashcount)
 		player->flashcount--;
 
@@ -8452,21 +8443,33 @@ void P_PlayerThink(player_t *player)
 		// The timer might've reached zero, but we'll run the remote view camera anyway by setting it to -1.
 	}
 
+	// Track airtime
+	if (P_IsObjectOnGround(player->mo))
+	{
+		player->airtime = 0;
+	}
+	else
+	{
+		player->airtime++;
+	}
+
 	cmd = &player->cmd;
 
 	// SRB2kart
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
 	if (cmd->buttons & BT_FORWARD)
+	{
 		player->kartstuff[k_throwdir] = 1;
+	}
 	else if (cmd->buttons & BT_BACKWARD)
+	{
 		player->kartstuff[k_throwdir] = -1;
+	}
 	else
+	{
 		player->kartstuff[k_throwdir] = 0;
-
-	// Add some extra randomization.
-	if (cmd->forwardmove)
-		P_RandomFixed();
+	}
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)
@@ -8600,15 +8603,9 @@ void P_PlayerThink(player_t *player)
 
 	// SRB2kart 010217
 	if (leveltime < starttime)
-		player->powers[pw_nocontrol] = 2;
-	/*
-	if ((gametype == GT_RACE || gametype == GT_COMPETITION) && leveltime < 4*TICRATE)
 	{
-		cmd->buttons &= BT_BRAKE; // Remove all buttons except BT_BRAKE
-		cmd->forwardmove = 0;
-		cmd->sidemove = 0;
+		player->powers[pw_nocontrol] = 2;
 	}
-	*/
 
 	// Synchronizes the "real" amount of time spent in the level.
 	if (!player->exiting)
@@ -8677,19 +8674,34 @@ void P_PlayerThink(player_t *player)
 			player->linkcount = 0;
 	}
 
-	// Move around.
-	// Reactiontime is used to prevent movement
-	//  for a bit after a teleport.
-	if (player->mo->reactiontime)
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		K_RespawnChecker(player);
+		player->rmomx = player->rmomy = 0;
+
+		if (player->respawn.state == RESPAWNST_DROP)
+		{
+			// Allows some turning
+			P_MovePlayer(player);
+		}
+	}
+	else if (player->mo->reactiontime)
+	{
+		// Reactiontime is used to prevent movement
+		// for a bit after a teleport.
 		player->mo->reactiontime--;
+	}
 	else if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
 	{
 		P_DoZoomTube(player);
-		player->rmomx = player->rmomy = 0; // no actual momentum from your controls
+		player->rmomx = player->rmomy = 0;
 		P_ResetScore(player);
 	}
 	else
+	{
+		// Move around.
 		P_MovePlayer(player);
+	}
 
 	if (!player->mo)
 		return; // P_MovePlayer removed player->mo.
@@ -8866,7 +8878,7 @@ void P_PlayerThink(player_t *player)
 	if (!(//player->pflags & PF_NIGHTSMODE ||
 		player->kartstuff[k_hyudorotimer] // SRB2kart - fixes Hyudoro not flashing when it should.
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
-		|| player->kartstuff[k_respawn] // Respawn timer (for drop dash effect)
+		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_TIMEOVER) // NO CONTEST explosion
 		|| (G_BattleGametype() && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
 		|| leveltime < starttime)) // Level intro

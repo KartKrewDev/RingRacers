@@ -571,10 +571,6 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	for (j = 0; j < NUMPOWERS; ++j)
 		rsp->powers[j] = (UINT16)SHORT(players[i].powers[j]);
-	for (j = 0; j < NUMKARTSTUFF; ++j)
-		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]); // SRB2kart
-
-	rsp->frameangle = (angle_t)LONG(players[i].frameangle); // SRB2kart
 
 	// Score is resynched in the rspfirm resync packet
 	rsp->health = 0; // resynched with mo health
@@ -612,12 +608,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->weapondelay = LONG(players[i].weapondelay);
 	rsp->tossdelay = LONG(players[i].tossdelay);
 
-	rsp->starpostx = SHORT(players[i].starpostx);
-	rsp->starposty = SHORT(players[i].starposty);
-	rsp->starpostz = SHORT(players[i].starpostz);
 	rsp->starpostnum = LONG(players[i].starpostnum);
-	rsp->starposttime = (tic_t)LONG(players[i].starposttime);
-	rsp->starpostangle = (angle_t)LONG(players[i].starpostangle);
 
 	rsp->maxlink = LONG(players[i].maxlink);
 	rsp->dashspeed = (fixed_t)LONG(players[i].dashspeed);
@@ -646,6 +637,24 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	rsp->splitscreenindex = players[i].splitscreenindex;
 
+	// SRB2kart
+	for (j = 0; j < NUMKARTSTUFF; ++j)
+		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]);
+
+	rsp->frameangle = (angle_t)LONG(players[i].frameangle);
+	rsp->airtime = (tic_t)LONG(players[i].airtime);
+
+	// respawnvars_t
+	rsp->respawn_state = players[i].respawn.state;
+	rsp->respawn_pointx = (fixed_t)LONG(players[i].respawn.pointx);
+	rsp->respawn_pointy = (fixed_t)LONG(players[i].respawn.pointy);
+	rsp->respawn_pointz = (fixed_t)LONG(players[i].respawn.pointz);
+	rsp->respawn_flip = players[i].respawn.flip;
+	rsp->respawn_timer = (tic_t)LONG(players[i].respawn.timer);
+	rsp->respawn_distanceleft = (UINT32)LONG(players[i].respawn.distanceleft);
+	rsp->respawn_dropdash = (tic_t)LONG(players[i].respawn.dropdash);
+
+	// botvars_t
 	rsp->bot = players[i].bot;
 	rsp->bot_difficulty = players[i].botvars.difficulty;
 	rsp->bot_itemdelay = players[i].botvars.itemdelay;
@@ -701,10 +710,6 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	for (j = 0; j < NUMPOWERS; ++j)
 		players[i].powers[j] = (UINT16)SHORT(rsp->powers[j]);
-	for (j = 0; j < NUMKARTSTUFF; ++j)
-		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]); // SRB2kart
-
-	players[i].frameangle = (angle_t)LONG(rsp->frameangle); // SRB2kart
 
 	// Score is resynched in the rspfirm resync packet
 	players[i].health = rsp->health;
@@ -741,12 +746,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].weapondelay = LONG(rsp->weapondelay);
 	players[i].tossdelay = LONG(rsp->tossdelay);
 
-	players[i].starpostx = SHORT(rsp->starpostx);
-	players[i].starposty = SHORT(rsp->starposty);
-	players[i].starpostz = SHORT(rsp->starpostz);
 	players[i].starpostnum = LONG(rsp->starpostnum);
-	players[i].starposttime = (tic_t)LONG(rsp->starposttime);
-	players[i].starpostangle = (angle_t)LONG(rsp->starpostangle);
 
 	players[i].maxlink = LONG(rsp->maxlink);
 	players[i].dashspeed = (fixed_t)LONG(rsp->dashspeed);
@@ -775,6 +775,24 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	players[i].splitscreenindex = rsp->splitscreenindex;
 
+	// SRB2kart
+	for (j = 0; j < NUMKARTSTUFF; ++j)
+		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
+
+	players[i].frameangle = (angle_t)LONG(rsp->frameangle);
+	players[i].airtime = (tic_t)LONG(rsp->airtime);
+
+	// respawnvars_t
+	players[i].respawn.state = rsp->respawn_state;
+	players[i].respawn.pointx = (fixed_t)LONG(rsp->respawn_pointx);
+	players[i].respawn.pointy = (fixed_t)LONG(rsp->respawn_pointy);
+	players[i].respawn.pointz = (fixed_t)LONG(rsp->respawn_pointz);
+	players[i].respawn.flip = (boolean)rsp->respawn_flip;
+	players[i].respawn.timer = (tic_t)LONG(rsp->respawn_timer);
+	players[i].respawn.distanceleft = (UINT32)LONG(rsp->respawn_distanceleft);
+	players[i].respawn.dropdash = (tic_t)LONG(rsp->respawn_dropdash);
+
+	// botvars_t
 	players[i].bot = rsp->bot;
 	players[i].botvars.difficulty = rsp->bot_difficulty;
 	players[i].botvars.itemdelay = rsp->bot_itemdelay;
