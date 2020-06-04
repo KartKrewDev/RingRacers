@@ -157,9 +157,7 @@ set(SRB2_CORE_GAME_SOURCES
 	p_user.c
 	k_battle.c
 	k_bheap.c
-	k_bot.c
 	k_collide.c
-	k_grandprix.c
 	k_kart.c
 	k_pathfind.c
 	k_pwrlv.c
@@ -169,6 +167,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_botitem.c
 	k_botsearch.c
 	k_respawn.c
+	k_grandprix.c
 
 	p_local.h
 	p_maputl.h
@@ -182,9 +181,7 @@ set(SRB2_CORE_GAME_SOURCES
 	p_tick.h
 	k_battle.h
 	k_bheap.h
-	k_bot.h
 	k_collide.h
-	k_grandprix.h
 	k_kart.h
 	k_pathfind.h
 	k_pwrlv.h
@@ -192,6 +189,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_color.h
 	k_bot.h
 	k_respawn.h
+	k_grandprix.h
 )
 
 if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
