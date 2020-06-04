@@ -5754,6 +5754,18 @@ INT32 D_NumPlayers(void)
 	return num;
 }
 
+/** Return whether a player is a real person (not a CPU) and not spectating.
+  */
+boolean D_IsPlayerHumanAndGaming (INT32 player_number)
+{
+	player_t * player = &players[player_number];
+	return (
+			playeringame[player_number] &&
+			! player->spectator &&
+			! player->bot
+	);
+}
+
 tic_t GetLag(INT32 node)
 {
 	return gametic - nettics[node];
