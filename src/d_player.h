@@ -264,9 +264,6 @@ typedef enum
 	k_position,			// Used for Kart positions, mostly for deterministic stuff
 	k_oldposition,		// Used for taunting when you pass someone
 	k_positiondelay,	// Used for position number, so it can grow when passing/being passed
-	k_starpostflip,		// the last starpost we hit requires flipping?
-	k_respawn,			// Timer for the DEZ laser respawn effect
-	k_dropdash,			// Charge up for respawn Drop Dash
 
 	k_throwdir, 		// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
 	k_instashield,		// Instashield no-damage animation timer
@@ -420,6 +417,20 @@ typedef enum
 	RW_RAIL    = 32
 } ringweapons_t;
 
+// player_t struct for all respawn variables
+typedef struct respawnvars_s
+{
+	UINT8 state; // 0: not respawning, 1: heading towards respawn point, 2: about to drop
+	waypoint_t *wp; // Waypoint that we're going towards, NULL if the position isn't linked to one
+	fixed_t pointx; // Respawn position coords to go towards
+	fixed_t pointy;
+	fixed_t pointz;
+	boolean flip; // Flip upside down or not
+	tic_t timer; // Time left on respawn animation once you're there
+	UINT32 distanceleft; // How far along the course to respawn you
+	tic_t dropdash; // Drop Dash charge timer
+} respawnvars_t;
+
 // player_t struct for all bot variables
 typedef struct botvars_s
 {
@@ -477,6 +488,8 @@ typedef struct player_s
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
+	respawnvars_t respawn; // Respawn info
+	tic_t airtime; // Keep track of how long you've been in the air
 
 	// Bit flags.
 	// See pflags_t, above.
@@ -542,6 +555,7 @@ typedef struct player_s
 	INT16 totalring; // Total number of rings obtained for Race Mode
 	tic_t realtime; // integer replacement for leveltime
 	UINT8 laps; // Number of laps (optional)
+	INT32 starpostnum; // The number of the last starpost you hit
 
 	////////////////////
 	// CTF Mode Stuff //
@@ -551,14 +565,6 @@ typedef struct player_s
 
 	INT32 weapondelay; // Delay (if any) to fire the weapon again
 	INT32 tossdelay;   // Delay (if any) to toss a flag/emeralds again
-
-	// Starpost information
-	INT16 starpostx;
-	INT16 starposty;
-	INT16 starpostz;
-	INT32 starpostnum; // The number of the last starpost you hit
-	tic_t starposttime; // Your time when you hit the starpost
-	angle_t starpostangle; // Angle that the starpost is facing - you respawn facing this way
 
 	/////////////////
 	// NiGHTS Stuff//
