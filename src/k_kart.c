@@ -8,6 +8,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_color.h"
+#include "k_respawn.h"
 #include "doomdef.h"
 #include "hu_stuff.h"
 #include "g_game.h"
@@ -1017,8 +1018,8 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		|| (mobj2->player && mobj2->player->playerstate != PST_LIVE))
 		return;
 
-	if ((mobj1->player && mobj1->player->kartstuff[k_respawn])
-		|| (mobj2->player && mobj2->player->kartstuff[k_respawn]))
+	if ((mobj1->player && mobj1->player->respawn.state != RESPAWNST_NONE)
+		|| (mobj2->player && mobj2->player->respawn.state != RESPAWNST_NONE))
 		return;
 
 	{ // Don't bump if you're flashing
@@ -1516,7 +1517,6 @@ void K_FlipFromObject(mobj_t *mo, mobj_t *master)
 		mo->z += master->height - FixedMul(master->scale, mo->height);
 }
 
-// These have to go earlier than its sisters because of K_RespawnChecker...
 void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master)
 {
 	// flipping
@@ -1531,7 +1531,7 @@ void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master)
 	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP4)|(master->eflags & MFE_DRAWONLYFORP4);
 }
 
-static void K_SpawnDashDustRelease(player_t *player)
+void K_SpawnDashDustRelease(player_t *player)
 {
 	fixed_t newx;
 	fixed_t newy;
@@ -1588,362 +1588,6 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	P_SetScale(sparks, (sparks->destscale = player->mo->scale));
 	K_MatchGenericExtraFlags(sparks, player->mo);
 	sparks->flags2 |= MF2_DONTDRAW;
-}
-
-/**	\brief	Preps a player to respawn
-
-	\param	player	player to respawn
-
-	\return	void
-*/
-void K_DoIngameRespawn(player_t *player)
-{
-	if (!player->mo || P_MobjWasRemoved(player->mo))
-		return;
-
-	if (player->kartstuff[k_respawn])
-		return;
-
-	if (leveltime <= starttime)
-		return;
-
-	if (player->nextwaypoint == NULL) // Starpost xyz not initalized(?)
-	{
-		UINT32 bestdist = UINT32_MAX;
-		mapthing_t *beststart = NULL;
-		UINT8 numstarts = 0;
-
-		if (G_RaceGametype())
-		{
-			numstarts = numcoopstarts;
-		}
-		else if (G_BattleGametype())
-		{
-			numstarts = numdmstarts;
-		}
-
-		if (numstarts > 0)
-		{
-			UINT8 i = 0;
-
-			for (i = 0; i < numstarts; i++)
-			{
-				UINT32 dist = UINT32_MAX;
-				mapthing_t *checkstart = NULL;
-
-				if (G_RaceGametype())
-				{
-					checkstart = playerstarts[i];
-				}
-				else if (G_BattleGametype())
-				{
-					checkstart = deathmatchstarts[i];
-				}
-				else
-				{
-					break;
-				}
-
-				dist = (UINT32)P_AproxDistance((player->mo->x >> FRACBITS) - checkstart->x,
-					(player->mo->y >> FRACBITS) - checkstart->y);
-
-				if (dist < bestdist)
-				{
-					beststart = checkstart;
-					bestdist = dist;
-				}
-			}
-		}
-
-		if (beststart == NULL)
-		{
-			CONS_Alert(CONS_WARNING, "No respawn points!\n");
-		}
-		else
-		{
-			sector_t *s;
-			fixed_t z = (beststart->options >> ZSHIFT);
-
-			player->starpostx = beststart->x;
-			player->starposty = beststart->y;
-			s = R_PointInSubsector(beststart->x << FRACBITS, beststart->y << FRACBITS)->sector;
-
-			if (beststart->options & MTF_OBJECTFLIP)
-			{
-				player->starpostz = (
-#ifdef ESLOPE
-				s->c_slope ? P_GetZAt(s->c_slope, beststart->x << FRACBITS, beststart->y << FRACBITS) :
-#endif
-				s->ceilingheight) >> FRACBITS;
-
-				if (z)
-					player->starpostz -= z;
-
-				player->starpostz -= mobjinfo[MT_PLAYER].height;
-				player->kartstuff[k_starpostflip] = 1;
-			}
-			else
-			{
-				player->starpostz = (
-#ifdef ESLOPE
-				s->f_slope ? P_GetZAt(s->f_slope, beststart->x << FRACBITS, beststart->y << FRACBITS) :
-#endif
-				s->floorheight) >> FRACBITS;
-
-				if (z)
-					player->starpostz += z;
-
-				player->kartstuff[k_starpostflip] = 0;
-			}
-		}
-	}
-
-	player->mo->flags &= ~(MF_SOLID|MF_SHOOTABLE);
-	player->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
-	player->mo->flags2 &= ~MF2_DONTDRAW;
-
-	player->kartstuff[k_respawn] = 48;
-}
-
-/**	\brief	Calculates the respawn timer and drop-boosting
-
-	\param	player	player object passed from K_KartPlayerThink
-
-	\return	void
-*/
-void K_RespawnChecker(player_t *player)
-{
-	ticcmd_t *cmd = &player->cmd;
-
-	if (player->spectator)
-		return;
-
-	if (player->kartstuff[k_respawn] > 1)
-	{
-		fixed_t destx = 0, desty = 0, destz = 0;
-
-		player->mo->momx = player->mo->momy = player->mo->momz = 0;
-		player->powers[pw_flashing] = 2;
-		player->powers[pw_nocontrol] = 2;
-
-		if (leveltime % 8 == 0 && !mapreset)
-			S_StartSound(player->mo, sfx_s3kcas);
-
-		destx = (player->starpostx << FRACBITS);
-		desty = (player->starposty << FRACBITS);
-		destz = (player->starpostz << FRACBITS);
-
-		if (player->kartstuff[k_starpostflip])
-		{
-			// This variable is set from the settings of the best waypoint, thus this waypoint is FLIPPED as well.
-			// So we should flip the player in advance for it as well.
-			player->mo->flags2 |= MF2_OBJECTFLIP;
-			player->mo->eflags |= MFE_VERTICALFLIP;
-			destz -= (128 * mapobjectscale) + (player->mo->height);
-		}
-		else
-		{
-			// Ditto, but this waypoint isn't flipped, so make sure the player also isn't flipped!
-			player->mo->flags2 &= ~MF2_OBJECTFLIP;
-			player->mo->eflags &= ~MFE_VERTICALFLIP;
-			destz += (128 * mapobjectscale);
-		}
-
-		if (player->mo->x != destx || player->mo->y != desty || player->mo->z != destz)
-		{
-			fixed_t step = 64*mapobjectscale;
-			fixed_t dist = P_AproxDistance(P_AproxDistance(player->mo->x - destx, player->mo->y - desty), player->mo->z - destz);
-
-			if (dist <= step) // You're ready to respawn
-			{
-				P_TryMove(player->mo, destx, desty, true);
-				player->mo->z = destz;
-			}
-			else
-			{
-				fixed_t stepx = 0, stepy = 0, stepz = 0;
-				angle_t stepha = R_PointToAngle2(player->mo->x, player->mo->y, destx, desty);
-				angle_t stepva = R_PointToAngle2(0, player->mo->z, P_AproxDistance(player->mo->x - destx, player->mo->y - desty), destz);
-				fixed_t laserx = 0, lasery = 0, laserz = 0;
-				UINT8 lasersteps = 4;
-
-				// Move toward the respawn point
-				stepx = FixedMul(FixedMul(FINECOSINE(stepha >> ANGLETOFINESHIFT), step), FINECOSINE(stepva >> ANGLETOFINESHIFT));
-				stepy = FixedMul(FixedMul(FINESINE(stepha >> ANGLETOFINESHIFT), step), FINECOSINE(stepva >> ANGLETOFINESHIFT));
-				stepz = FixedMul(FINESINE(stepva >> ANGLETOFINESHIFT), 2*step);
-
-				P_TryMove(player->mo, player->mo->x + stepx, player->mo->y + stepy, true);
-				player->mo->z += stepz;
-
-				// Spawn lasers along the path
-				laserx = player->mo->x + (stepx / 2);
-				lasery = player->mo->y + (stepy / 2);
-				laserz = player->mo->z + (stepz / 2);
-				dist = P_AproxDistance(P_AproxDistance(laserx - destx, lasery - desty), laserz - destz);
-
-				if (dist > step/2)
-				{
-					while (lasersteps)
-					{
-
-						stepha = R_PointToAngle2(laserx, lasery, destx, desty);
-						stepva = R_PointToAngle2(0, laserz, P_AproxDistance(laserx - destx, lasery - desty), destz);
-
-						stepx = FixedMul(FixedMul(FINECOSINE(stepha >> ANGLETOFINESHIFT), step), FINECOSINE(stepva >> ANGLETOFINESHIFT));
-						stepy = FixedMul(FixedMul(FINESINE(stepha >> ANGLETOFINESHIFT), step), FINECOSINE(stepva >> ANGLETOFINESHIFT));
-						stepz = FixedMul(FINESINE(stepva >> ANGLETOFINESHIFT), 2*step);
-
-						laserx += stepx;
-						lasery += stepy;
-						laserz += stepz;
-						dist = P_AproxDistance(P_AproxDistance(laserx - destx, lasery - desty), laserz - destz);
-
-						if (dist <= step/2)
-							break;
-
-						lasersteps--;
-					}
-				}
-
-				if (lasersteps == 0) // Don't spawn them beyond the respawn point.
-				{
-					mobj_t *laser;
-
-					laser = P_SpawnMobj(laserx, lasery, laserz + (player->mo->height / 2), MT_DEZLASER);
-
-					if (laser && !P_MobjWasRemoved(laser))
-					{
-						P_SetMobjState(laser, S_DEZLASER_TRAIL1);
-						if (player->mo->eflags & MFE_VERTICALFLIP)
-							laser->eflags |= MFE_VERTICALFLIP;
-						P_SetTarget(&laser->target, player->mo);
-						laser->angle = stepha + ANGLE_90;
-						P_SetScale(laser, (laser->destscale = FRACUNIT));
-					}
-				}
-			}
-		}
-		else
-		{
-			player->kartstuff[k_respawn]--;
-
-			player->mo->flags |= MF_SOLID|MF_SHOOTABLE;
-			player->mo->flags &= ~(MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY);
-			if (!(player->pflags & PF_NOCLIP))
-				player->mo->flags &= ~MF_NOCLIP;
-
-			if (leveltime % 8 == 0)
-			{
-				INT32 i;
-
-				for (i = 0; i < 8; i++)
-				{
-					mobj_t *laser;
-					angle_t newangle;
-					fixed_t newx, newy, newz;
-
-					newangle = FixedAngle(((360/8)*i)*FRACUNIT);
-					newx = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31 * player->mo->scale);
-					newy = player->mo->y + P_ReturnThrustY(player->mo, newangle, 31 * player->mo->scale);
-					if (player->mo->eflags & MFE_VERTICALFLIP)
-						newz = player->mo->z + player->mo->height;
-					else
-						newz = player->mo->z;
-
-					laser = P_SpawnMobj(newx, newy, newz, MT_DEZLASER);
-
-					if (laser && !P_MobjWasRemoved(laser))
-					{
-						if (player->mo->eflags & MFE_VERTICALFLIP)
-							laser->eflags |= MFE_VERTICALFLIP;
-						P_SetTarget(&laser->target, player->mo);
-						laser->angle = newangle+ANGLE_90;
-						laser->momz = (8 * player->mo->scale) * P_MobjFlip(player->mo);
-						P_SetScale(laser, (laser->destscale = player->mo->scale));
-					}
-				}
-			}
-		}
-	}
-	else if (player->kartstuff[k_respawn] == 1)
-	{
-		if (player->kartstuff[k_growshrinktimer] < 0)
-		{
-			player->mo->scalespeed = mapobjectscale/TICRATE;
-			player->mo->destscale = (6*mapobjectscale)/8;
-			if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
-				player->mo->destscale = (6*player->mo->destscale)/8;
-		}
-
-		if (!P_IsObjectOnGround(player->mo) && !mapreset)
-		{
-			player->powers[pw_flashing] = K_GetKartFlashing(player);
-
-			// Sal: The old behavior was stupid and prone to accidental usage.
-			// Let's rip off Mania instead, and turn this into a Drop Dash!
-
-			if (cmd->buttons & BT_ACCELERATE && !player->kartstuff[k_spinouttimer])	// Lat: Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
-				player->kartstuff[k_dropdash]++;
-			else
-				player->kartstuff[k_dropdash] = 0;
-
-			if (player->kartstuff[k_dropdash] == TICRATE/4)
-				S_StartSound(player->mo, sfx_ddash);
-
-			if ((player->kartstuff[k_dropdash] >= TICRATE/4)
-				&& (player->kartstuff[k_dropdash] & 1))
-				player->mo->colorized = true;
-			else
-				player->mo->colorized = false;
-		}
-		else
-		{
-			if ((cmd->buttons & BT_ACCELERATE) && (player->kartstuff[k_dropdash] >= TICRATE/4))
-			{
-				S_StartSound(player->mo, sfx_s23c);
-				player->kartstuff[k_startboost] = 50;
-				K_SpawnDashDustRelease(player);
-			}
-
-			player->mo->colorized = false;
-			player->kartstuff[k_dropdash] = 0;
-			player->kartstuff[k_respawn] = 0;
-
-			//P_PlayRinglossSound(player->mo);
-			P_PlayerRingBurst(player, 3);
-
-			if (G_BattleGametype())
-			{
-				if (player->kartstuff[k_bumper] > 0)
-				{
-					if (player->kartstuff[k_bumper] == 1)
-					{
-						mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX); // Player hitbox is too small!!
-						P_SetTarget(&karmahitbox->target, player->mo);
-						karmahitbox->destscale = player->mo->scale;
-						P_SetScale(karmahitbox, player->mo->scale);
-						CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
-					}
-					player->kartstuff[k_bumper]--;
-					if (K_IsPlayerWanted(player))
-						K_CalculateBattleWanted();
-				}
-
-				if (!player->kartstuff[k_bumper])
-				{
-					player->kartstuff[k_comebacktimer] = comebacktime;
-					if (player->kartstuff[k_comebackmode] == 2)
-					{
-						mobj_t *poof = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EXPLODE);
-						S_StartSound(poof, mobjinfo[MT_KARMAHITBOX].seesound);
-						player->kartstuff[k_comebackmode] = 0;
-					}
-				}
-
-				K_CheckBumpers();
-			}
-		}
-	}
 }
 
 /**	\brief Handles the state changing for moving players, moved here to eliminate duplicate code
@@ -5288,7 +4932,7 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 #endif
 		return;
 
-	if ((leveltime >= starttime-(2*TICRATE) && leveltime <= starttime) || (player->kartstuff[k_respawn] == 1)) // Startup boosts
+	if ((leveltime >= starttime-(2*TICRATE) && leveltime <= starttime) || (player->respawn.state == RESPAWNST_DROP)) // Startup boosts
 		targetsnd = ((cmd->buttons & BT_ACCELERATE) ? 12 : 0);
 	else
 		targetsnd = (((6*cmd->forwardmove)/25) + ((player->speed / mapobjectscale)/5))/2;
@@ -5689,7 +5333,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->playerstate == PST_DEAD || player->kartstuff[k_respawn] > 1) // Ensure these are set correctly here
+	if (player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Ensure these are set correctly here
 	{
 		player->mo->colorized = false;
 		player->mo->color = player->skincolor;
@@ -5865,7 +5509,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_invincibilitytimer])
 		player->kartstuff[k_invincibilitytimer]--;
 
-	if (!player->kartstuff[k_respawn] && player->kartstuff[k_growshrinktimer] != 0)
+	if ((player->respawn.state == RESPAWNST_NONE) && player->kartstuff[k_growshrinktimer] != 0)
 	{
 		if (player->kartstuff[k_growshrinktimer] > 0)
 			player->kartstuff[k_growshrinktimer]--;
@@ -5935,7 +5579,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (G_BattleGametype() && player->kartstuff[k_bumper] > 0
 		&& !player->kartstuff[k_spinouttimer] && !player->kartstuff[k_squishedtimer]
-		&& !player->kartstuff[k_respawn] && !player->powers[pw_flashing])
+		&& (player->respawn.state == RESPAWNST_DROP) && !player->powers[pw_flashing])
 	{
 		player->kartstuff[k_wanted]++;
 		if (battleovertime.enabled >= 10*TICRATE)
@@ -6020,10 +5664,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_jmp] = 1;
 	else
 		player->kartstuff[k_jmp] = 0;
-
-	// Respawn Checker
-	if (player->kartstuff[k_respawn])
-		K_RespawnChecker(player);
 
 	// Roulette Code
 	K_KartItemRoulette(player, cmd);
@@ -6281,36 +5921,13 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 		// Respawn point should only be updated when we're going to a nextwaypoint
 		if ((updaterespawn) &&
+		(player->respawn.state == RESPAWNST_NONE) &&
 		(bestwaypoint != NULL) &&
 		(bestwaypoint != player->nextwaypoint) &&
-		(player->kartstuff[k_respawn] == 0) &&
-		(K_GetWaypointIsSpawnpoint(bestwaypoint)) &&	// Don't try to respawn on waypoints that are marked with no respawn
-		(K_GetWaypointIsShortcut(bestwaypoint) == false) && (K_GetWaypointIsEnabled(bestwaypoint) == true))
+		(K_GetWaypointIsSpawnpoint(bestwaypoint)) &&
+		(K_GetWaypointIsEnabled(bestwaypoint) == true))
 		{
-			size_t     i            = 0U;
-			waypoint_t *aimwaypoint = NULL;
-
-			player->starpostx = bestwaypoint->mobj->x >> FRACBITS;
-			player->starposty = bestwaypoint->mobj->y >> FRACBITS;
-			player->starpostz = bestwaypoint->mobj->z >> FRACBITS;
-			player->kartstuff[k_starpostflip] = (bestwaypoint->mobj->flags2 & MF2_OBJECTFLIP);
-
-			// starpostangle is to the first valid nextwaypoint for simplicity
-			// if we reach the last waypoint and it's still not valid, just use it anyway. Someone needs to fix
-			// their map!
-			for (i = 0U; i < bestwaypoint->numnextwaypoints; i++)
-			{
-				aimwaypoint = bestwaypoint->nextwaypoints[i];
-
-				if ((i == bestwaypoint->numnextwaypoints - 1U)
-				|| ((K_GetWaypointIsEnabled(aimwaypoint) == true)
-				&& (K_GetWaypointIsSpawnpoint(aimwaypoint) == true)))
-				{
-					player->starpostangle = R_PointToAngle2(
-						bestwaypoint->mobj->x, bestwaypoint->mobj->y, aimwaypoint->mobj->x, aimwaypoint->mobj->y);
-					break;
-				}
-			}
+			player->respawn.wp = bestwaypoint;
 		}
 	}
 
@@ -6394,7 +6011,17 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 	if ((player != NULL) && (player->mo != NULL))
 	{
 		waypoint_t *finishline   = K_GetFinishLineWaypoint();
-		waypoint_t *nextwaypoint = K_GetPlayerNextWaypoint(player);
+		waypoint_t *nextwaypoint = NULL;
+
+		if (player->spectator)
+		{
+			// Don't update waypoints while spectating
+			nextwaypoint = finishline;
+		}
+		else
+		{
+			nextwaypoint = K_GetPlayerNextWaypoint(player);
+		}
 
 		if (nextwaypoint != NULL)
 		{
@@ -6404,7 +6031,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 		}
 
 		// nextwaypoint is now the waypoint that is in front of us
-		if (player->exiting)
+		if (player->exiting || player->spectator)
 		{
 			// Player has finished, we don't need to calculate this
 			player->distancetofinish = 0U;
@@ -7016,7 +6643,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->pflags |= PF_ATTACKDOWN;
 
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > starttime
-		&& player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_squishedtimer] == 0 && player->kartstuff[k_respawn] == 0)
+		&& player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_squishedtimer] == 0 && (player->respawn.state == RESPAWNST_NONE))
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
 		// Karma item dropping
