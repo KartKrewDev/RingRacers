@@ -2031,13 +2031,13 @@ fixed_t K_GetKartAccel(player_t *player)
 	//k_accel += 3 * (9 - kartspeed); // 36 - 60
 	k_accel += 4 * (9 - kartspeed); // 32 - 64
 
-#if 0
-	// Rubberbanding acceleration is disabled since it makes hits feel more meaningful
+	
 	if (K_PlayerUsesBotMovement(player))
 	{
-		k_accel = FixedMul(k_accel, K_BotRubberband(player));
+		// Rubberbanding acceleration is waekened since it makes hits feel more meaningful
+		fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
+		k_accel = FixedMul(k_accel, FRACUNIT + (rubberband/2));
 	}
-#endif
 
 	return FixedMul(k_accel, FRACUNIT+player->kartstuff[k_accelboost]);
 }
