@@ -7681,7 +7681,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					relative = false;
 				}
 
-				P_SetObjectMomZ(player->mo, 24*FRACUNIT, relative);
+				P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
 
 				player->trickpanel = 3;
 			}
