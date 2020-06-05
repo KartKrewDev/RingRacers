@@ -1755,15 +1755,18 @@ void P_DoPlayerExit(player_t *player)
 			grandprixinfo.wonround = true;
 
 			// Increase your total rings
-			player->totalring += RINGTOTAL(player);
-
-			extra = player->totalring / lifethreshold;
-
-			if (extra > player->xtralife)
+			if (RINGTOTAL(player) > 0)
 			{
-				P_GivePlayerLives(player, extra - player->xtralife);
-				S_StartSound(NULL, sfx_cdfm73);
-				player->xtralife = extra;
+				player->totalring += RINGTOTAL(player);
+
+				extra = player->totalring / lifethreshold;
+
+				if (extra > player->xtralife)
+				{
+					P_GivePlayerLives(player, extra - player->xtralife);
+					S_StartSound(NULL, sfx_cdfm73);
+					player->xtralife = extra;
+				}
 			}
 		}
 	}
