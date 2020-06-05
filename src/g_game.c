@@ -2596,6 +2596,7 @@ void G_PlayerReborn(INT32 player)
 	UINT8 botdiffincrease;
 	boolean botrival;
 	SINT8 pity;
+	SINT8 xtralife;
 
 	// SRB2kart
 	respawnvars_t respawn;
@@ -2646,6 +2647,7 @@ void G_PlayerReborn(INT32 player)
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 	pity = players[player].pity;
+	xtralife = players[player].xtralife;
 
 	// SRB2kart
 	if (leveltime <= starttime)
@@ -2726,6 +2728,7 @@ void G_PlayerReborn(INT32 player)
 	p->botvars.diffincrease = botdiffincrease;
 	p->botvars.rival = botrival;
 	p->pity = pity;
+	p->xtralife = xtralife;
 
 	// SRB2kart
 	p->kartstuff[k_itemroulette] = itemroulette;
