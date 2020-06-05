@@ -1430,7 +1430,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
 		axis = JoyAxis(AXISMOVE, ssplayer);
-		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || EITHERSNEAKER(player))
+		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = forwardmove[1];	// 50
@@ -5104,7 +5104,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		|| (players[displayplayers[0]].respawn.state != RESPAWNST_NONE) // Respawning
 		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
 		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
-		&& (players[displayplayers[0]].kartstuff[k_sneakertimer] || players[displayplayers[0]].kartstuff[k_levelbooster]))) // Spinning and boosting cancels out spinout
+		&& players[displayplayers[0]].kartstuff[k_sneakertimer])) // Spinning and boosting cancels out spinout
 		localangle[0] += (cmd->angleturn<<16);
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
