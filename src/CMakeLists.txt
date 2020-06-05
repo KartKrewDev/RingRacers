@@ -166,6 +166,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_bot.c
 	k_botitem.c
 	k_botsearch.c
+	k_respawn.c
 
 	p_local.h
 	p_maputl.h
@@ -186,6 +187,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_waypoint.h
 	k_color.h
 	k_bot.h
+	k_respawn.h
 )
 
 if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))

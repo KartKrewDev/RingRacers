@@ -37,6 +37,7 @@
 
 #include "k_kart.h" // SRB2kart
 #include "console.h" // CON_LogMessage
+#include "k_respawn.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -2111,7 +2112,6 @@ static void K_HandleLapIncrement(player_t *player)
 				curlap = 0;
 			}
 
-			player->starposttime = player->realtime;
 			player->starpostnum = 0;
 
 			if (P_IsDisplayPlayer(player))
