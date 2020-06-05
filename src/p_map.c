@@ -308,7 +308,12 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	{
 		angle_t finalAngle = spring->angle;
 		fixed_t finalSpeed = FixedMul(horizspeed, FixedSqrt(FixedMul(hscale, spring->scale)));
-		fixed_t objectSpeed = R_PointToDist2(0, 0, savemomx, savemomy);
+		fixed_t objectSpeed;
+
+		if (object->player)
+			objectSpeed = object->player->speed;
+		else
+			objectSpeed = R_PointToDist2(0, 0, savemomx, savemomy);
 
 		if (!vertispeed)
 		{
