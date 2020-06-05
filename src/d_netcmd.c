@@ -51,6 +51,7 @@
 #include "k_pwrlv.h"
 #include "y_inter.h"
 #include "k_color.h"
+#include "k_respawn.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR

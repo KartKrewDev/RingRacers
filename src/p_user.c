@@ -48,6 +48,7 @@
 #include "k_kart.h"
 #include "k_color.h"	// KartColor_Opposite
 #include "console.h" // CON_LogMessage
+#include "k_respawn.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -5776,7 +5777,7 @@ static void P_MovePlayer(player_t *player)
 		// Kart: store the current turn range for later use
 		if ((player->mo && player->speed > 0) // Moving
 			|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-			|| (player->kartstuff[k_respawn]) // Respawning
+			|| (player->respawn.state != RESPAWNST_NONE) // Respawning
 			|| (player->spectator || objectplacing)) // Not a physical player
 		{
 			player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
@@ -6046,6 +6047,7 @@ static void P_MovePlayer(player_t *player)
 	*/
 
 	// If you're running fast enough, you can create splashes as you run in shallow water.
+#if 0
 	if (!player->climbing
 	&& ((!(player->mo->eflags & MFE_VERTICALFLIP) && player->mo->z + player->mo->height >= player->mo->watertop && player->mo->z <= player->mo->watertop)
 		|| (player->mo->eflags & MFE_VERTICALFLIP && player->mo->z + player->mo->height >= player->mo->waterbottom && player->mo->z <= player->mo->waterbottom))
@@ -6065,6 +6067,83 @@ static void P_MovePlayer(player_t *player)
 		}
 		water->destscale = player->mo->scale;
 		P_SetScale(water, player->mo->scale);
+	}
+#endif
+
+	if (!player->climbing
+	&& ((!(player->mo->eflags & MFE_VERTICALFLIP) && player->mo->z + player->mo->height >= player->mo->watertop && player->mo->z <= player->mo->watertop)
+		|| (player->mo->eflags & MFE_VERTICALFLIP && player->mo->z + player->mo->height >= player->mo->waterbottom && player->mo->z <= player->mo->waterbottom))
+	&& (player->speed > runspd || (player->pflags & PF_STARTDASH))
+	&& player->mo->momz == 0 && !(player->pflags & PF_SLIDING) && !player->spectator)
+	{
+		fixed_t trailScale = FixedMul(FixedDiv(player->speed - runspd, K_GetKartSpeed(player, false) - runspd), mapobjectscale);
+		fixed_t playerTopSpeed = K_GetKartSpeed(player, false);
+
+		if (playerTopSpeed > runspd)
+			trailScale = FixedMul(FixedDiv(player->speed - runspd, playerTopSpeed - runspd), mapobjectscale);
+		else
+			trailScale = mapobjectscale; // Scaling is based off difference between runspeed and top speed
+
+		if (trailScale > 0)
+		{
+			const angle_t forwardangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+			const fixed_t playerVisualRadius = player->mo->radius + 8*FRACUNIT;
+			const size_t numFrames = S_WATERTRAIL8 - S_WATERTRAIL1;
+			const statenum_t curOverlayFrame = S_WATERTRAIL1 + (leveltime % numFrames);
+			const statenum_t curUnderlayFrame = S_WATERTRAILUNDERLAY1 + (leveltime % numFrames);
+			fixed_t x1, x2, y1, y2;
+			mobj_t *water;
+
+			x1 = player->mo->x + player->mo->momx + P_ReturnThrustX(player->mo, forwardangle + ANGLE_90, playerVisualRadius);
+			y1 = player->mo->y + player->mo->momy + P_ReturnThrustY(player->mo, forwardangle + ANGLE_90, playerVisualRadius);
+			x1 = x1 + P_ReturnThrustX(player->mo, forwardangle, playerVisualRadius);
+			y1 = y1 + P_ReturnThrustY(player->mo, forwardangle, playerVisualRadius);
+
+			x2 = player->mo->x + player->mo->momx + P_ReturnThrustX(player->mo, forwardangle - ANGLE_90, playerVisualRadius);
+			y2 = player->mo->y + player->mo->momy + P_ReturnThrustY(player->mo, forwardangle - ANGLE_90, playerVisualRadius);
+			x2 = x2 + P_ReturnThrustX(player->mo, forwardangle, playerVisualRadius);
+			y2 = y2 + P_ReturnThrustY(player->mo, forwardangle, playerVisualRadius);
+
+			// Left
+			// underlay
+			water = P_SpawnMobj(x1, y1,
+				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
+			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
+			water->destscale = trailScale;
+			P_SetScale(water, trailScale);
+			P_SetMobjState(water, curUnderlayFrame);
+
+			// overlay
+			water = P_SpawnMobj(x1, y1,
+				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
+			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
+			water->destscale = trailScale;
+			P_SetScale(water, trailScale);
+			P_SetMobjState(water, curOverlayFrame);
+
+			// Right
+			// Underlay
+			water = P_SpawnMobj(x2, y2,
+				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
+			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
+			water->destscale = trailScale;
+			P_SetScale(water, trailScale);
+			P_SetMobjState(water, curUnderlayFrame);
+
+			// Overlay
+			water = P_SpawnMobj(x2, y2,
+				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
+			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
+			water->destscale = trailScale;
+			P_SetScale(water, trailScale);
+			P_SetMobjState(water, curOverlayFrame);
+
+			if (!S_SoundPlaying(player->mo, sfx_s3kdbs))
+			{
+				const INT32 volume = (min(trailScale, FRACUNIT) * 255) / FRACUNIT;
+				S_StartSoundAtVolume(player->mo, sfx_s3kdbs, volume);
+			}
+		}
 	}
 
 	// Little water sound while touching water - just a nicety.
@@ -8635,16 +8714,6 @@ void P_PlayerThink(player_t *player)
 	// Run followes here. We need them to run even when we're dead to follow through what we're doing.
 	P_HandleFollower(player);
 
-	/*
-	if (player->pflags & PF_GLIDING)
-	{
-		if (player->panim != PA_ABILITY)
-			P_SetPlayerMobjState(player->mo, S_PLAY_ABL1);
-	}
-	else if ((player->pflags & PF_JUMPED) && !player->powers[pw_super] && player->panim != PA_ROLL && player->charability2 == CA2_SPINDASH)
-		P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
-	*/
-
 	if (player->flashcount)
 		player->flashcount--;
 
@@ -8657,21 +8726,33 @@ void P_PlayerThink(player_t *player)
 		// The timer might've reached zero, but we'll run the remote view camera anyway by setting it to -1.
 	}
 
+	// Track airtime
+	if (P_IsObjectOnGround(player->mo))
+	{
+		player->airtime = 0;
+	}
+	else
+	{
+		player->airtime++;
+	}
+
 	cmd = &player->cmd;
 
 	// SRB2kart
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
 	if (cmd->buttons & BT_FORWARD)
+	{
 		player->kartstuff[k_throwdir] = 1;
+	}
 	else if (cmd->buttons & BT_BACKWARD)
+	{
 		player->kartstuff[k_throwdir] = -1;
+	}
 	else
+	{
 		player->kartstuff[k_throwdir] = 0;
-
-	// Add some extra randomization.
-	if (cmd->forwardmove)
-		P_RandomFixed();
+	}
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)
@@ -8805,15 +8886,9 @@ void P_PlayerThink(player_t *player)
 
 	// SRB2kart 010217
 	if (leveltime < starttime)
-		player->powers[pw_nocontrol] = 2;
-	/*
-	if ((gametype == GT_RACE || gametype == GT_COMPETITION) && leveltime < 4*TICRATE)
 	{
-		cmd->buttons &= BT_BRAKE; // Remove all buttons except BT_BRAKE
-		cmd->forwardmove = 0;
-		cmd->sidemove = 0;
+		player->powers[pw_nocontrol] = 2;
 	}
-	*/
 
 	// Synchronizes the "real" amount of time spent in the level.
 	if (!player->exiting)
@@ -8882,19 +8957,34 @@ void P_PlayerThink(player_t *player)
 			player->linkcount = 0;
 	}
 
-	// Move around.
-	// Reactiontime is used to prevent movement
-	//  for a bit after a teleport.
-	if (player->mo->reactiontime)
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		K_RespawnChecker(player);
+		player->rmomx = player->rmomy = 0;
+
+		if (player->respawn.state == RESPAWNST_DROP)
+		{
+			// Allows some turning
+			P_MovePlayer(player);
+		}
+	}
+	else if (player->mo->reactiontime)
+	{
+		// Reactiontime is used to prevent movement
+		// for a bit after a teleport.
 		player->mo->reactiontime--;
+	}
 	else if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
 	{
 		P_DoZoomTube(player);
-		player->rmomx = player->rmomy = 0; // no actual momentum from your controls
+		player->rmomx = player->rmomy = 0;
 		P_ResetScore(player);
 	}
 	else
+	{
+		// Move around.
 		P_MovePlayer(player);
+	}
 
 	if (!player->mo)
 		return; // P_MovePlayer removed player->mo.
@@ -9071,7 +9161,7 @@ void P_PlayerThink(player_t *player)
 	if (!(//player->pflags & PF_NIGHTSMODE ||
 		player->kartstuff[k_hyudorotimer] // SRB2kart - fixes Hyudoro not flashing when it should.
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
-		|| player->kartstuff[k_respawn] // Respawn timer (for drop dash effect)
+		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_TIMEOVER) // NO CONTEST explosion
 		|| (G_BattleGametype() && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
 		|| leveltime < starttime)) // Level intro

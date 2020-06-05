@@ -38,6 +38,7 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_color.h"
+#include "k_respawn.h"
 
 // protos.
 //static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
@@ -3745,8 +3746,10 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	mobj->eflags &= ~MFE_JUSTSTEPPEDDOWN;
 
 	// Zoom tube
-	if (mobj->tracer && mobj->tracer->type == MT_TUBEWAYPOINT)
+	if ((mobj->tracer && mobj->tracer->type == MT_TUBEWAYPOINT)
+	|| (mobj->player->respawn.state == RESPAWNST_MOVE))
 	{
+		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
 		P_UnsetThingPosition(mobj);
 		mobj->x += mobj->momx;
 		mobj->y += mobj->momy;
@@ -11907,9 +11910,6 @@ void P_SpawnPlayer(INT32 playernum)
 	// Spawn with a pity shield if necessary.
 	//P_DoPityCheck(p);
 
-	if (p->kartstuff[k_respawn] != 0)
-		p->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
-
 	if (G_BattleGametype()) // SRB2kart
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + P_GetPlayerHeight(p)+16*FRACUNIT, MT_PLAYERARROW);
@@ -12055,16 +12055,12 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 			z = ceiling - mobjinfo[MT_PLAYER].height;
 			if (mthing->options >> ZSHIFT)
 				z -= ((mthing->options >> ZSHIFT) << FRACBITS);
-			if (p->kartstuff[k_respawn])
-				z -= 128*mapobjectscale;
 		}
 		else
 		{
 			z = floor;
 			if (mthing->options >> ZSHIFT)
 				z += ((mthing->options >> ZSHIFT) << FRACBITS);
-			if (p->kartstuff[k_respawn])
-				z += 128*mapobjectscale;
 		}
 
 		if (mthing->options & MTF_OBJECTFLIP) // flip the player!
@@ -12075,6 +12071,11 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	}
 	else
 		z = floor;
+
+	if (p->respawn.state != RESPAWNST_NONE)
+	{
+		z += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP));
+	}
 
 	if (z < floor)
 		z = floor;
@@ -12108,9 +12109,11 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj_t *mobj = p->mo;
 	I_Assert(mobj != NULL);
 
+	K_DoIngameRespawn(p);
+
 	P_UnsetThingPosition(mobj);
-	mobj->x = p->starpostx << FRACBITS;
-	mobj->y = p->starposty << FRACBITS;
+	mobj->x = p->respawn.pointx;
+	mobj->y = p->respawn.pointy;
 	P_SetThingPosition(mobj);
 	sector = R_PointInSubsector(mobj->x, mobj->y)->sector;
 
@@ -12125,12 +12128,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 #endif
 	sector->ceilingheight;
 
-	if (mobj->player->kartstuff[k_starpostflip])
-		z = (p->starpostz<<FRACBITS) - (128 * mapobjectscale) - mobj->height;
-	else
-		z = (p->starpostz<<FRACBITS) + (128 * mapobjectscale);
-
-	mobj->player->kartstuff[k_starpostflip] = 0;
+	z = p->respawn.pointz;
 
 	if (z < floor)
 		z = floor;
@@ -12144,12 +12142,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	if (mobj->z == mobj->floorz)
 		mobj->eflags |= MFE_ONGROUND;
 
-	mobj->angle = p->starpostangle;
-
 	P_AfterPlayerSpawn(playernum);
-
-	//if (!(netgame || multiplayer))
-	//	leveltime = p->starposttime;
 }
 
 #define MAXHUNTEMERALDS 64
