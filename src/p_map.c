@@ -308,12 +308,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	{
 		angle_t finalAngle = spring->angle;
 		fixed_t finalSpeed = FixedMul(horizspeed, FixedSqrt(FixedMul(hscale, spring->scale)));
-		fixed_t objectSpeed;
-
-		if (object->player)
-			objectSpeed = object->player->speed;
-		else
-			objectSpeed = R_PointToDist2(0, 0, savemomx, savemomy);
+		fixed_t objectSpeed = R_PointToDist2(0, 0, savemomx, savemomy);
 
 		if (!vertispeed)
 		{
@@ -324,39 +319,10 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
 			if (savemomx || savemomy)
 			{
-				angle_t momang;
-				INT32 angoffset;
-				boolean subtract = false;
-
-				momang = R_PointToAngle2(0, 0, savemomx, savemomy);
-
-				angoffset = momang;
-				angoffset -= spring->angle; // Subtract
-
-				// Flip on wrong side
-				if ((angle_t)angoffset > ANGLE_180)
-				{
-					angoffset = InvAngle((angle_t)angoffset);
-					subtract = !subtract;
-				}
-
-				// Fix going directly against the spring's angle sending you the wrong way
-				if ((spring->angle - momang) > ANGLE_90)
-					angoffset = ANGLE_180 - angoffset;
-
-				// Offset is reduced to cap it (90 / 2 = max of 45 degrees)
-				angoffset /= 2;
-
-				// Reduce further based on how slow your speed is compared to the spring's speed
-				if (finalSpeed > objectSpeed)
-					angoffset = FixedDiv(angoffset, FixedDiv(finalSpeed, objectSpeed));
-
-				if (subtract)
-					angoffset = (signed)(spring->angle) - angoffset;
-				else
-					angoffset = (signed)(spring->angle) + angoffset;
-
-				finalAngle = angoffset;
+				finalAngle = K_ReflectAngle(
+					R_PointToAngle2(0, 0, savemomx, savemomy), finalAngle,
+					objectSpeed, finalSpeed
+				);
 			}
 		}
 

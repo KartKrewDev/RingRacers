@@ -78,6 +78,48 @@ player_t *K_GetItemBoxPlayer(mobj_t *mobj)
 	return player;
 }
 
+// Angle reflection used by springs & speed pads
+angle_t K_ReflectAngle(angle_t yourangle, angle_t theirangle, fixed_t yourspeed, fixed_t theirspeed)
+{
+	INT32 angoffset;
+	boolean subtract = false;
+
+	angoffset = yourangle - theirangle;
+
+	if ((angle_t)angoffset > ANGLE_180)
+	{
+		// Flip on wrong side
+		angoffset = InvAngle((angle_t)angoffset);
+		subtract = !subtract;
+	}
+
+	// Fix going directly against the spring's angle sending you the wrong way
+	if ((angle_t)angoffset > ANGLE_90)
+	{
+		angoffset = ANGLE_180 - angoffset;
+	}
+
+	// Offset is reduced to cap it (90 / 2 = max of 45 degrees)
+	angoffset /= 2;
+
+	// Reduce further based on how slow your speed is compared to the spring's speed
+	// (set both to 0 to ignore this)
+	if (theirspeed != 0 && yourspeed != 0)
+	{
+		if (theirspeed > yourspeed)
+		{
+			angoffset = FixedDiv(angoffset, FixedDiv(theirspeed, yourspeed));
+		}
+	}
+
+	if (subtract)
+		angoffset = (signed)(theirangle) - angoffset;
+	else
+		angoffset = (signed)(theirangle) + angoffset;
+
+	return (angle_t)angoffset;
+}
+
 //{ SRB2kart Net Variables
 
 void K_RegisterKartStuff(void)
