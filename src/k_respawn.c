@@ -105,7 +105,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->kartstuff[k_driftboost] = 0;
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+	player->trickpanel = 0;
 
 	// Set up respawn position if invalid
 	if (player->respawn.wp != NULL)
