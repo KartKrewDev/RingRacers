@@ -4052,9 +4052,9 @@ DoneSection2:
 
 		case 5: // Speed pad w/o spin
 		case 6: // Speed pad w/ spin
-			if (player->kartstuff[k_dashpadcooldown] != 0)
+			if (player->kartstuff[k_floorboost] != 0)
 			{
-				player->kartstuff[k_dashpadcooldown] = 2;
+				player->kartstuff[k_floorboost] = 2;
 				break;
 			}
 
@@ -4080,8 +4080,9 @@ DoneSection2:
 
 				P_InstaThrust(player->mo, lineangle, max(linespeed, 2*playerspeed));
 
-				player->kartstuff[k_dashpadcooldown] = 2;
+				player->kartstuff[k_dashpadcooldown] = TICRATE/3;
 				player->kartstuff[k_pogospring] = 0;
+				player->kartstuff[k_floorboost] = 2;
 				S_StartSound(player->mo, sfx_cdfm62);
 			}
 			break;
