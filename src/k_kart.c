@@ -7317,6 +7317,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->trickdelay > 0)
 		{
 			player->trickdelay--;
+
+			if ((player->kartstuff[k_throwdir] != 0 || cmd->driftturn != 0) && player->trickdelay <= 0)
+			{
+				// Don't allow a trick until you go back to neutral
+				player->trickdelay = 1;
+			}
 		}
 	}
 
