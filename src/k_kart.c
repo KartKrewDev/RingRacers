@@ -3941,6 +3941,8 @@ void K_DoSneaker(player_t *player, INT32 type)
 		K_SpawnDashDustRelease(player);
 		if (intendedboost > player->kartstuff[k_speedboost])
 			player->karthud[khud_destboostcam] = FixedMul(FRACUNIT, FixedDiv((intendedboost - player->kartstuff[k_speedboost]), intendedboost));
+
+		player->kartstuff[k_numsneakers]++;
 	}
 
 	if (!player->kartstuff[k_sneakertimer])
@@ -3981,7 +3983,6 @@ void K_DoSneaker(player_t *player, INT32 type)
 	}
 
 	player->kartstuff[k_sneakertimer] = sneakertime;
-	player->kartstuff[k_numsneakers]++;
 
 	// set angle for spun out players:
 	player->kartstuff[k_boostangle] = (INT32)player->mo->angle;
