@@ -516,20 +516,7 @@ void K_FakeBotResults(player_t *bot)
 			{
 				besttime = players[i].realtime;
 			}
-		}
-	}
 
-	if (besttime == UINT32_MAX)
-	{
-		// No one finished, so you don't finish either.
-		bot->pflags |= PF_TIMEOVER;
-		return;
-	}
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !players[i].spectator)
-		{
 			if (players[i].distancetofinish > worstdist)
 			{
 				worstdist = players[i].distancetofinish;
@@ -537,9 +524,9 @@ void K_FakeBotResults(player_t *bot)
 		}
 	}
 
-	if (bot->distancetofinish >= worstdist)
+	if (besttime == UINT32_MAX // No one finished, so you don't finish either.
+	|| bot->distancetofinish >= worstdist) // Last place, you aren't going to finish.
 	{
-		// Last place, you aren't going to finish.
 		bot->pflags |= PF_TIMEOVER;
 		return;
 	}
