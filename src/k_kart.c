@@ -3928,9 +3928,9 @@ void K_DoSneaker(player_t *player, INT32 type)
 		const sfxenum_t smallsfx = sfx_cdfm40;
 		sfxenum_t sfx = normalsfx;
 
-		if (player->kartstuff[k_speedboost] > (intendedboost/2))
+		if (player->kartstuff[k_numsneakers])
 		{
-			// Use a less annoying sound when the booster will just sustain your current speed.
+			// Use a less annoying sound when stacking sneakers.
 			sfx = smallsfx;
 		}
 
