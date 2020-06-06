@@ -9732,6 +9732,7 @@ static void K_drawKartPlayerCheck(void)
 	{
 		player_t *checkplayer = &players[i];
 		fixed_t distance = maxdistance+1;
+		UINT8 *colormap = NULL;
 		UINT8 pnum = 0;
 		fixed_t x = 0;
 		vertex_t v;
@@ -9782,21 +9783,8 @@ static void K_drawKartPlayerCheck(void)
 
 		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, cnum, &v);
 
-		if (x <= 320*FRACUNIT && x >= 0)
-		{
-			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
-
-			if (x < 14*FRACUNIT)
-			{
-				x = 14*FRACUNIT;
-			}
-			else if (x > 306*FRACUNIT)
-			{
-				x = 306*FRACUNIT;
-			}
-
-			V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|splitflags, kp_check[pnum], colormap);
-		}
+		colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
+		V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|splitflags, kp_check[pnum], colormap);
 	}
 }
 
