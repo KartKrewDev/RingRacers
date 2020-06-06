@@ -7649,6 +7649,7 @@ static void M_StartGrandPrix(INT32 choice)
 
 	grandprixinfo.cup = gpcup;
 
+	grandprixinfo.gp = true;
 	grandprixinfo.roundnum = 1;
 	grandprixinfo.wonround = false;
 

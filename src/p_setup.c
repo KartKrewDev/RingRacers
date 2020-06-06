@@ -2418,7 +2418,7 @@ static void P_LevelInitStuff(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (grandprixinfo.roundnum == 0)
+		if (grandprixinfo.gp == false)
 		{
 			players[i].lives = 3;
 			players[i].xtralife = 0;
@@ -2465,7 +2465,7 @@ static void P_LevelInitStuff(void)
 	}
 
 	// SRB2Kart: map load variables
-	if (grandprixinfo.roundnum != 0)
+	if (grandprixinfo.gp == true)
 	{
 		if (G_BattleGametype())
 		{
@@ -3389,7 +3389,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_SpawnBattleCapsules();
 
-	if (grandprixinfo.roundnum != 0)
+	if (grandprixinfo.gp == true)
 	{
 		if (grandprixinfo.initalize == true)
 		{

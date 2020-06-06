@@ -1739,7 +1739,7 @@ void P_DoPlayerExit(player_t *player)
 	else
 		player->exiting = raceexittime+2; // Accidental death safeguard???
 
-	if (grandprixinfo.roundnum > 0)
+	if (grandprixinfo.gp == true)
 	{
 		if (player->bot)
 		{

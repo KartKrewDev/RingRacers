@@ -280,10 +280,16 @@ static INT16 K_RivalScore(player_t *bot)
 {
 	const UINT16 difficulty = bot->botvars.difficulty;
 	const UINT16 score = bot->score;
-	const SINT8 roundsleft = grandprixinfo.cup->numlevels - grandprixinfo.roundnum;
+	SINT8 roundnum = 1, roundsleft = 1;
 	UINT16 lowestscore = UINT16_MAX;
 	UINT8 lowestdifficulty = MAXBOTDIFFICULTY;
 	UINT8 i;
+
+	if (grandprixinfo.cup != NULL)
+	{
+		roundnum = grandprixinfo.roundnum;
+		roundsleft = grandprixinfo.cup->numlevels - grandprixinfo.roundnum;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -307,7 +313,7 @@ static INT16 K_RivalScore(player_t *bot)
 	// This will try to influence the higher difficulty bots to get rival more often & get even more points.
 	// However, when we're running low on matches left, we need to focus more on raw score!
 
-	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * grandprixinfo.roundnum);
+	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * roundnum);
 }
 
 /*--------------------------------------------------
@@ -568,4 +574,32 @@ void K_PlayerLoseLife(player_t *player)
 		}
 	}
 #endif
+}
+
+/*--------------------------------------------------
+	boolean K_CanChangeRules(void)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_CanChangeRules(void)
+{
+	if (demo.playback)
+	{
+		// We've already got our important settings!
+		return false;
+	}
+
+	if (grandprixinfo.gp == true && grandprixinfo.roundnum > 0)
+	{
+		// Don't cheat the rules of the GP!
+		return false;
+	}
+
+	if (modeattacking == true)
+	{
+		// Don't cheat the rules of Time Trials!
+		return false;
+	}
+
+	return true;
 }

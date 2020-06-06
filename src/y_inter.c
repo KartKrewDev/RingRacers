@@ -645,7 +645,7 @@ void Y_IntermissionDrawer(void)
 	}
 
 dotimer:
-	if (timer && grandprixinfo.roundnum == 0)
+	if (timer && grandprixinfo.gp == false)
 	{
 		char *string;
 		INT32 tickdown = (timer+1)/TICRATE;

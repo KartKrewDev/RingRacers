@@ -2028,7 +2028,7 @@ boolean P_CheckRacers(void)
 	}
 	else
 	{
-		if (grandprixinfo.roundnum > 0)
+		if (grandprixinfo.gp == true)
 		{
 			// Always do this in GP
 			eliminatelast = true;

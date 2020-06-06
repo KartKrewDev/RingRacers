@@ -1136,7 +1136,24 @@ void D_SRB2Main(void)
 		else
 		{
 			if (!M_CheckParm("-server"))
+			{
 				G_SetGameModified(true, true);
+
+				// Start up a "minor" grand prix session
+				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+				grandprixinfo.encore = false;
+				grandprixinfo.masterbots = false;
+
+				grandprixinfo.gp = true;
+				grandprixinfo.roundnum = 0;
+				grandprixinfo.cup = NULL;
+				grandprixinfo.wonround = false;
+
+				grandprixinfo.initalize = true;
+			}
+
 			autostart = true;
 		}
 	}
@@ -1519,18 +1536,46 @@ void D_SRB2Main(void)
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
-			for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-				if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
+			const UINT8 master = KARTSPEED_HARD+1;
+			const char *masterstr = "Master";
+
+			if (!strcasecmp(masterstr, sskill))
+			{
+				newskill = master;
+			}
+			else
+			{
+				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
 				{
-					newskill = (INT16)kartspeed_cons_t[j].value;
-					break;
+					if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
+					{
+						newskill = (INT16)kartspeed_cons_t[j].value;
+						break;
+					}
 				}
 
-			if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+				{
+					j = atoi(sskill); // assume they gave us a skill number, which is okay too
+					if (j >= KARTSPEED_EASY && j <= master)
+						newskill = (INT16)j;
+				}
+			}
+
+			if (grandprixinfo.gp == true)
 			{
-				j = atoi(sskill); // assume they gave us a skill number, which is okay too
-				if (j >= KARTSPEED_EASY && j <= KARTSPEED_HARD)
-					newskill = (INT16)j;
+				if (newskill == master)
+				{
+					grandprixinfo.masterbots = true;
+					newskill = KARTSPEED_HARD;
+				}
+
+				grandprixinfo.gamespeed = newskill;
+			}
+			else if (newskill == master)
+			{
+				grandprixinfo.masterbots = true;
+				newskill = KARTSPEED_HARD;
 			}
 
 			if (newskill != -1)
