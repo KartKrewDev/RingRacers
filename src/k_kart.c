@@ -2001,6 +2001,12 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 	{
 		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
 		fixed_t speedmul = ((kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
+
+		if (player->botvars.rival == true)
+		{
+			speedmul += FRACUNIT/10; // +10% for rival
+		}
+
 		finalspeed = FixedMul(finalspeed, FRACUNIT + speedmul);
 	}
 
