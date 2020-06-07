@@ -30,7 +30,7 @@ SINT8 K_UsingPowerLevels(void)
 {
 	SINT8 pt = PWRLV_DISABLED;
 
-	if (!cv_kartusepwrlv.value || !netgame || grandprixinfo.roundnum > 0)
+	if (!cv_kartusepwrlv.value || !netgame || grandprixinfo.gp == true)
 	{
 		return PWRLV_DISABLED;
 	}

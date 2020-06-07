@@ -2001,6 +2001,12 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 	{
 		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
 		fixed_t speedmul = ((kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
+
+		if (player->botvars.rival == true)
+		{
+			speedmul += FRACUNIT/10; // +10% for rival
+		}
+
 		finalspeed = FixedMul(finalspeed, FRACUNIT + speedmul);
 	}
 
@@ -2031,13 +2037,13 @@ fixed_t K_GetKartAccel(player_t *player)
 	//k_accel += 3 * (9 - kartspeed); // 36 - 60
 	k_accel += 4 * (9 - kartspeed); // 32 - 64
 
-#if 0
-	// Rubberbanding acceleration is disabled since it makes hits feel more meaningful
+	
 	if (K_PlayerUsesBotMovement(player))
 	{
-		k_accel = FixedMul(k_accel, K_BotRubberband(player));
+		// Rubberbanding acceleration is waekened since it makes hits feel more meaningful
+		fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
+		k_accel = FixedMul(k_accel, FRACUNIT + (rubberband/2));
 	}
-#endif
 
 	return FixedMul(k_accel, FRACUNIT+player->kartstuff[k_accelboost]);
 }
@@ -9741,6 +9747,7 @@ static void K_drawKartPlayerCheck(void)
 	{
 		player_t *checkplayer = &players[i];
 		fixed_t distance = maxdistance+1;
+		UINT8 *colormap = NULL;
 		UINT8 pnum = 0;
 		fixed_t x = 0;
 		vertex_t v;
@@ -9791,21 +9798,8 @@ static void K_drawKartPlayerCheck(void)
 
 		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, cnum, &v);
 
-		if (x <= 320*FRACUNIT && x >= 0)
-		{
-			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
-
-			if (x < 14*FRACUNIT)
-			{
-				x = 14*FRACUNIT;
-			}
-			else if (x > 306*FRACUNIT)
-			{
-				x = 306*FRACUNIT;
-			}
-
-			V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|splitflags, kp_check[pnum], colormap);
-		}
+		colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
+		V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|splitflags, kp_check[pnum], colormap);
 	}
 }
 

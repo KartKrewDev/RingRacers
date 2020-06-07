@@ -18,7 +18,8 @@
 
 extern struct grandprixinfo
 {
-	UINT8 roundnum;			///< Round number -- if 0, then we're not in a Grand Prix.
+	boolean gp;				///< If true, then we are in a Grand Prix.
+	UINT8 roundnum;			///< Round number. If 0, this is a single session from the warp command.
 	cupheader_t *cup;		///< Which cup are we playing?
 	UINT8 gamespeed;		///< Copy of gamespeed, just to make sure you can't cheat it with cvars
 	boolean encore;			///< Ditto, but for encore mode
@@ -123,5 +124,21 @@ void K_FakeBotResults(player_t *bot);
 --------------------------------------------------*/
 
 void K_PlayerLoseLife(player_t *player);
+
+
+/*--------------------------------------------------
+	boolean K_CanChangeRules(void);
+
+		Returns whenver or not the server is allowed
+		to change the game rules.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+boolean K_CanChangeRules(void);
 
 #endif

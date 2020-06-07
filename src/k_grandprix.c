@@ -111,7 +111,7 @@ void K_InitGrandPrixBots(void)
 	UINT8 wantedbots = 0;
 
 	UINT8 numplayers = 0;
-	UINT8 competitors[4];
+	UINT8 competitors[MAXSPLITSCREENPLAYERS];
 
 	boolean skinusable[MAXSKINS];
 	UINT8 botskinlist[MAXPLAYERS];
@@ -179,6 +179,7 @@ void K_InitGrandPrixBots(void)
 			if (numplayers < MAXSPLITSCREENPLAYERS && !players[i].spectator)
 			{
 				competitors[numplayers] = i;
+				skinusable[players[i].skin] = false;
 				numplayers++;
 			}
 			else
@@ -279,10 +280,16 @@ static INT16 K_RivalScore(player_t *bot)
 {
 	const UINT16 difficulty = bot->botvars.difficulty;
 	const UINT16 score = bot->score;
-	const SINT8 roundsleft = grandprixinfo.cup->numlevels - grandprixinfo.roundnum;
+	SINT8 roundnum = 1, roundsleft = 1;
 	UINT16 lowestscore = UINT16_MAX;
 	UINT8 lowestdifficulty = MAXBOTDIFFICULTY;
 	UINT8 i;
+
+	if (grandprixinfo.cup != NULL)
+	{
+		roundnum = grandprixinfo.roundnum;
+		roundsleft = grandprixinfo.cup->numlevels - grandprixinfo.roundnum;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -306,7 +313,7 @@ static INT16 K_RivalScore(player_t *bot)
 	// This will try to influence the higher difficulty bots to get rival more often & get even more points.
 	// However, when we're running low on matches left, we need to focus more on raw score!
 
-	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * grandprixinfo.roundnum);
+	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * roundnum);
 }
 
 /*--------------------------------------------------
@@ -515,20 +522,7 @@ void K_FakeBotResults(player_t *bot)
 			{
 				besttime = players[i].realtime;
 			}
-		}
-	}
 
-	if (besttime == UINT32_MAX)
-	{
-		// No one finished, so you don't finish either.
-		bot->pflags |= PF_TIMEOVER;
-		return;
-	}
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !players[i].spectator)
-		{
 			if (players[i].distancetofinish > worstdist)
 			{
 				worstdist = players[i].distancetofinish;
@@ -536,9 +530,9 @@ void K_FakeBotResults(player_t *bot)
 		}
 	}
 
-	if (bot->distancetofinish >= worstdist)
+	if (besttime == UINT32_MAX // No one finished, so you don't finish either.
+	|| bot->distancetofinish >= worstdist) // Last place, you aren't going to finish.
 	{
-		// Last place, you aren't going to finish.
 		bot->pflags |= PF_TIMEOVER;
 		return;
 	}
@@ -580,4 +574,32 @@ void K_PlayerLoseLife(player_t *player)
 		}
 	}
 #endif
+}
+
+/*--------------------------------------------------
+	boolean K_CanChangeRules(void)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_CanChangeRules(void)
+{
+	if (demo.playback)
+	{
+		// We've already got our important settings!
+		return false;
+	}
+
+	if (grandprixinfo.gp == true && grandprixinfo.roundnum > 0)
+	{
+		// Don't cheat the rules of the GP!
+		return false;
+	}
+
+	if (modeattacking == true)
+	{
+		// Don't cheat the rules of Time Trials!
+		return false;
+	}
+
+	return true;
 }

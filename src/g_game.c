@@ -2596,6 +2596,7 @@ void G_PlayerReborn(INT32 player)
 	UINT8 botdiffincrease;
 	boolean botrival;
 	SINT8 pity;
+	SINT8 xtralife;
 
 	// SRB2kart
 	respawnvars_t respawn;
@@ -2646,6 +2647,7 @@ void G_PlayerReborn(INT32 player)
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 	pity = players[player].pity;
+	xtralife = players[player].xtralife;
 
 	// SRB2kart
 	if (leveltime <= starttime)
@@ -2726,6 +2728,7 @@ void G_PlayerReborn(INT32 player)
 	p->botvars.diffincrease = botdiffincrease;
 	p->botvars.rival = botrival;
 	p->pity = pity;
+	p->xtralife = xtralife;
 
 	// SRB2kart
 	p->kartstuff[k_itemroulette] = itemroulette;
@@ -3217,7 +3220,7 @@ void G_ExitLevel(void)
 {
 	if (gamestate == GS_LEVEL)
 	{
-		if (grandprixinfo.roundnum > 0 && grandprixinfo.wonround != true)
+		if (grandprixinfo.gp == true && grandprixinfo.wonround != true)
 		{
 			UINT8 i;
 
@@ -3333,7 +3336,7 @@ boolean G_IsSpecialStage(INT32 mapnum)
 //
 boolean G_GametypeUsesLives(void)
 {
-	if ((grandprixinfo.roundnum > 0) // In Grand Prix
+	if ((grandprixinfo.gp == true) // In Grand Prix
 		&& (gametype == GT_RACE) // NOT in bonus round
 		&& !(modeattacking) // NOT in Record Attack
 		&& !G_IsSpecialStage(gamemap)) // NOT in special stage
@@ -3731,16 +3734,24 @@ static void G_DoCompleted(void)
 	{
 		nextmap = (INT16)(nextmapoverride-1);
 	}
-	else if (grandprixinfo.roundnum != 0)
+	else if (grandprixinfo.gp == true)
 	{
-		if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+		if (grandprixinfo.roundnum == 0 || grandprixinfo.cup == NULL) // Single session
 		{
-			nextmap = 1101; // ceremonymap
+			nextmap = prevmap; // Same map
 		}
 		else
 		{
-			nextmap = grandprixinfo.cup->levellist[grandprixinfo.roundnum];
-			grandprixinfo.roundnum++;
+			if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
+			{
+				nextmap = 1101; // ceremonymap
+			}
+			else
+			{
+				// Proceed to next map
+				nextmap = grandprixinfo.cup->levellist[grandprixinfo.roundnum];
+				grandprixinfo.roundnum++;
+			}
 		}
 	}
 	else
@@ -3756,7 +3767,7 @@ static void G_DoCompleted(void)
 	// a map of the proper gametype -- skip levels that don't support
 	// the current gametype. (Helps avoid playing boss levels in Race,
 	// for instance).
-	if (!modeattacking && (grandprixinfo.roundnum == 0) && (nextmap >= 0 && nextmap < NUMMAPS))
+	if (!modeattacking && grandprixinfo.gp == false && (nextmap >= 0 && nextmap < NUMMAPS))
 	{
 		register INT16 cm = nextmap;
 		INT16 tolflag = G_TOLFlag(gametype);
@@ -3880,7 +3891,7 @@ void G_NextLevel(void)
 {
 	if (gamestate != GS_VOTING)
 	{
-		if ((cv_advancemap.value == 3) && grandprixinfo.roundnum == 0 && !modeattacking && !skipstats && (multiplayer || netgame))
+		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && !modeattacking && !skipstats && (multiplayer || netgame))
 		{
 			UINT8 i;
 			for (i = 0; i < MAXPLAYERS; i++)
