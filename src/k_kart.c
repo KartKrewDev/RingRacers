@@ -9997,7 +9997,7 @@ static void K_drawKartNameTags(void)
 		}
 		else if (netgame)
 		{
-			if ((ntplayer->kartstuff[k_position] >= stplyr->kartstuff[k_position]-1)
+			if ((ntplayer->kartstuff[k_position] >= stplyr->kartstuff[k_position]-2)
 			&& (ntplayer->kartstuff[k_position] <= stplyr->kartstuff[k_position]+2))
 			{
 				INT32 namelen = V_ThinStringWidth(player_names[i], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
