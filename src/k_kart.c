@@ -7766,6 +7766,8 @@ static patch_t *kp_blagles[6];
 
 static patch_t *kp_cpu;
 
+static patch_t *kp_nametagstem;
+
 void K_LoadKartHUDGraphics(void)
 {
 	INT32 i, j;
@@ -8133,6 +8135,8 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	kp_cpu = (patch_t *) W_CachePatchName("K_CPU", PU_HUDGFX);
+
+	kp_nametagstem = (patch_t *) W_CachePatchName("K_NAMEST", PU_HUDGFX);
 }
 
 // For the item toggle menu
@@ -9359,14 +9363,14 @@ static void K_drawKartLapsAndRings(void)
 			ln[0] = ((stplyr->laps / 10) % 10);
 			ln[1] = (stplyr->laps % 10);
 
-			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
-			V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
+			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
+			V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 
 			ln[0] = ((abs(cv_numlaps.value) / 10) % 10);
 			ln[1] = (abs(cv_numlaps.value) % 10);
 
-			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
-			V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
+			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
+			V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 		}
 		else
 		{
@@ -9389,8 +9393,8 @@ static void K_drawKartLapsAndRings(void)
 		if (stplyr->kartstuff[k_rings] < 0) // Draw the minus for ring debt
 			V_DrawMappedPatch(fr+7, fy-10, V_HUDTRANS|splitflags, kp_ringdebtminussmall, ringmap);
 
-		V_DrawMappedPatch(fr+11, fy-10, V_HUDTRANS|splitflags, pingnum[rn[0]], ringmap);
-		V_DrawMappedPatch(fr+15, fy-10, V_HUDTRANS|splitflags, pingnum[rn[1]], ringmap);
+		V_DrawMappedPatch(fr+11, fy-10, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[rn[0]], ringmap);
+		V_DrawMappedPatch(fr+15, fy-10, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[rn[1]], ringmap);
 
 		// SPB ring lock
 		if (stplyr->kartstuff[k_ringlock])
@@ -9401,7 +9405,7 @@ static void K_drawKartLapsAndRings(void)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
 			V_DrawMappedPatch(fr+21, fy-13, V_HUDTRANS|splitflags, facemmapprefix[stplyr->skin], colormap);
-			V_DrawScaledPatch(fr+34, fy-10, V_HUDTRANS|splitflags, pingnum[(stplyr->lives % 10)]); // make sure this doesn't overflow
+			V_DrawScaledPatch(fr+34, fy-10, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[(stplyr->lives % 10)]); // make sure this doesn't overflow
 		}
 	}
 	else
@@ -9547,14 +9551,14 @@ static void K_drawKartBumpersOrKarma(void)
 				ln[0] = ((numtargets / 10) % 10);
 				ln[1] = (numtargets % 10);
 
-				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
-				V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
+				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
+				V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 
 				ln[0] = ((maptargets / 10) % 10);
 				ln[1] = (maptargets % 10);
 
-				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
-				V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
+				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
+				V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 			}
 			else
 			{
@@ -9581,14 +9585,14 @@ static void K_drawKartBumpersOrKarma(void)
 					ln[0] = ((abs(stplyr->kartstuff[k_bumper]) / 10) % 10);
 					ln[1] = (abs(stplyr->kartstuff[k_bumper]) % 10);
 
-					V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
-					V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
+					V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
+					V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 
 					ln[0] = ((abs(maxbumper) / 10) % 10);
 					ln[1] = (abs(maxbumper) % 10);
 
-					V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, pingnum[ln[0]]);
-					V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, pingnum[ln[1]]);
+					V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
+					V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 				}
 				else
 				{
@@ -9738,6 +9742,11 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 	{
 		*hud_x = FixedMul(NEWTAN(anglediff), swhalffixed) + swhalffixed;
 
+		if (encoremode)
+		{
+			*hud_x = (BASEVIDWIDTH * FRACUNIT) - *hud_x;
+		}
+
 		if (r_splitscreen >= 2)
 		{
 			*hud_x /= 2;
@@ -9810,9 +9819,9 @@ static void K_drawKartPlayerCheck(void)
 
 	thiscam = &camera[cnum];
 
-	c.x = thiscam->x;
-	c.y = thiscam->y;
-	c.z = thiscam->z;
+	c.x = stplyr->mo->x;
+	c.y = stplyr->mo->y;
+	c.z = stplyr->mo->z;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -9876,7 +9885,7 @@ static void K_drawKartPlayerCheck(void)
 
 static void K_drawKartNameTags(void)
 {
-	const fixed_t maxdistance = 4096*mapobjectscale;
+	const fixed_t maxdistance = 8192*mapobjectscale;
 	camera_t *thiscam;
 	vertex_t c;
 	UINT8 cnum = 0;
@@ -9947,7 +9956,7 @@ static void K_drawKartNameTags(void)
 			}
 		}
 
-		if (j < r_splitscreen)
+		if (j <= r_splitscreen)
 		{
 			// Is a player that's being shown on this computer
 			continue;
@@ -9986,12 +9995,46 @@ static void K_drawKartNameTags(void)
 				V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS, kp_rival[blink], NULL);
 			}
 		}
-		else
+		else if (netgame)
 		{
-			if ((ntplayer->kartstuff[k_position] >= stplyr->kartstuff[k_position]-1)
-			&& (ntplayer->kartstuff[k_position] <= stplyr->kartstuff[k_position]+1))
+			if ((ntplayer->kartstuff[k_position] >= stplyr->kartstuff[k_position]-2)
+			&& (ntplayer->kartstuff[k_position] <= stplyr->kartstuff[k_position]+2))
 			{
-				; // TODO: Draw a cool name tag for online
+				INT32 namelen = V_ThinStringWidth(player_names[i], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+				INT32 clr = K_SkincolorToTextColor(ntplayer->skincolor);
+				UINT8 *colormap = V_GetStringColormap(clr);
+				INT32 barx = 0, bary = 0, barw = 0;
+
+				// Since there's no "V_DrawFixedFill", and I don't feel like making it,
+				// fuck it, we're gonna just V_NOSCALESTART hack it
+				barw = (namelen * vid.dupx);
+
+				barx = (x * vid.dupx) / FRACUNIT;
+				bary = (y * vid.dupy) / FRACUNIT;
+
+				barx += (6 * vid.dupx);
+				bary -= (16 * vid.dupx);
+
+				// Center it if necessary
+				if (vid.width != BASEVIDWIDTH * vid.dupx)
+				{
+					barx += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+				}
+
+				if (vid.height != BASEVIDHEIGHT * vid.dupy)
+				{
+					bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+				}
+
+				V_DrawFill(barx, bary, barw, (3 * vid.dupy), colormap[31]|V_NOSCALESTART);
+				V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, colormap[0]|V_NOSCALESTART);
+				// END DRAWFILL DUMBNESS
+
+				// Draw the stem
+				V_DrawFixedPatch(x, y, FRACUNIT, 0, kp_nametagstem, colormap);
+
+				// Draw the name itself
+				V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), V_6WIDTHSPACE|V_ALLOWLOWERCASE|clr, player_names[i]);
 			}
 		}
 	}
@@ -10649,7 +10692,7 @@ static void K_drawInput(void)
 		V_DrawFill(x+(xoffs), y+BUTTH, BUTTW-1, 2, splitflags|31);\
 	}\
 	V_DrawFill(x+(xoffs), y+offs, BUTTW-1, BUTTH, col);\
-	V_DrawFixedPatch((x+1+(xoffs))<<FRACBITS, (y+offs+1)<<FRACBITS, FRACUNIT, splitflags, tny_font[symb-HU_FONTSTART], NULL)
+	V_DrawFixedPatch((x+1+(xoffs))<<FRACBITS, (y+offs+1)<<FRACBITS, FRACUNIT, splitflags, fontv[TINY_FONT].font[symb-HU_FONTSTART], NULL)
 
 	drawbutt(-2*BUTTW, BT_ACCELERATE, 'A');
 	drawbutt(  -BUTTW, BT_BRAKE,      'B');
