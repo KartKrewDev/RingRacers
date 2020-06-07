@@ -3232,6 +3232,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				|| inflictor->type == MT_SMK_THWOMP || inflictor->player))
 			{
 				player->kartstuff[k_sneakertimer] = 0;
+				player->kartstuff[k_numsneakers] = 0;
 
 				K_SpinPlayer(player, source, 1, inflictor, false);
 				K_KartPainEnergyFling(player);

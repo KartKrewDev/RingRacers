@@ -2375,8 +2375,6 @@ static void P_LevelInitStuff(void)
 
 	memset(localaiming, 0, sizeof(localaiming));
 
-	grandprixinfo.wonround = false;
-
 	// special stage tokens, emeralds, and ring total
 	tokenbits = 0;
 	runemeraldmanager = false;
@@ -3396,9 +3394,10 @@ boolean P_SetupLevel(boolean skipprecip)
 			K_InitGrandPrixBots();
 			grandprixinfo.initalize = false;
 		}
-		else
+		else if (grandprixinfo.wonround == true)
 		{
 			K_UpdateGrandPrixBots();
+			grandprixinfo.wonround = false;
 		}
 	}
 	else if (!modeattacking)
