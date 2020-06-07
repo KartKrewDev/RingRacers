@@ -1,5 +1,6 @@
 // SONIC ROBO BLAST 2 KART
 //-----------------------------------------------------------------------------
+// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour
 // Copyright (C) 2018-2020 by Kart Krew
 //
 // This program is free software distributed under the
@@ -93,6 +94,23 @@ fixed_t K_BotRubberband(player_t *player);
 --------------------------------------------------*/
 
 fixed_t K_BotTopSpeedRubberband(player_t *player);
+
+
+/*--------------------------------------------------
+	fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict);
+
+		Gives a multiplier for a bot's rubberbanding.
+		Adjusted from K_BotRubberband to be used for friction.
+
+	Input Arguments:-
+		player - Player to check.
+		frict - Friction value to adjust.
+
+	Return:-
+		The new friction value.
+--------------------------------------------------*/
+
+fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict);
 
 
 /*--------------------------------------------------
@@ -227,6 +245,5 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);
 --------------------------------------------------*/
 
 void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt);
-
 
 #endif

@@ -138,6 +138,7 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].dashspeed);
 		WRITEINT32(save_p, players[i].dashtime);
 		WRITESINT8(save_p, players[i].lives);
+		WRITEUINT8(save_p, players[i].lostlife);
 		WRITESINT8(save_p, players[i].continues);
 		WRITESINT8(save_p, players[i].xtralife);
 		WRITEUINT8(save_p, players[i].gotcontinue);
@@ -277,6 +278,8 @@ static void P_NetArchivePlayers(void)
 
 		// botvars_t
 		WRITEUINT8(save_p, players[i].botvars.difficulty);
+		WRITEUINT8(save_p, players[i].botvars.diffincrease);
+		WRITEUINT8(save_p, players[i].botvars.rival);
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
@@ -330,6 +333,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].dashspeed = READFIXED(save_p); // dashing speed
 		players[i].dashtime = READINT32(save_p); // dashing speed
 		players[i].lives = READSINT8(save_p);
+		players[i].lostlife = (boolean)READUINT8(save_p);
 		players[i].continues = READSINT8(save_p); // continues that player has acquired
 		players[i].xtralife = READSINT8(save_p); // Ring Extra Life counter
 		players[i].gotcontinue = READUINT8(save_p); // got continue from stage
@@ -460,6 +464,8 @@ static void P_NetUnArchivePlayers(void)
 
 		// botvars_t
 		players[i].botvars.difficulty = READUINT8(save_p);
+		players[i].botvars.diffincrease = READUINT8(save_p);
+		players[i].botvars.rival = (boolean)READUINT8(save_p);
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);

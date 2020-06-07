@@ -566,6 +566,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/k_bot.o \
 		$(OBJDIR)/k_botitem.o \
 		$(OBJDIR)/k_botsearch.o \
+		$(OBJDIR)/k_grandprix.o\
 		$(i_cdmus_o)    \
 		$(i_net_o)      \
 		$(i_system_o)   \

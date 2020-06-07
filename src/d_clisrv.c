@@ -49,6 +49,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_bot.h"
+#include "k_grandprix.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -575,6 +576,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	// Score is resynched in the rspfirm resync packet
 	rsp->health = 0; // resynched with mo health
 	rsp->lives = players[i].lives;
+	rsp->lostlife = players[i].lostlife;
 	rsp->continues = players[i].continues;
 	rsp->scoreadd = players[i].scoreadd;
 	rsp->xtralife = players[i].xtralife;
@@ -657,6 +659,8 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	// botvars_t
 	rsp->bot = players[i].bot;
 	rsp->bot_difficulty = players[i].botvars.difficulty;
+	rsp->bot_diffincrease = players[i].botvars.diffincrease;
+	rsp->bot_rival = players[i].botvars.rival;
 	rsp->bot_itemdelay = players[i].botvars.itemdelay;
 	rsp->bot_itemconfirm = players[i].botvars.itemconfirm;
 	rsp->bot_turnconfirm = players[i].botvars.turnconfirm;
@@ -714,6 +718,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	// Score is resynched in the rspfirm resync packet
 	players[i].health = rsp->health;
 	players[i].lives = rsp->lives;
+	players[i].lostlife = rsp->lostlife;
 	players[i].continues = rsp->continues;
 	players[i].scoreadd = rsp->scoreadd;
 	players[i].xtralife = rsp->xtralife;
@@ -795,6 +800,8 @@ static void resynch_read_player(resynch_pak *rsp)
 	// botvars_t
 	players[i].bot = rsp->bot;
 	players[i].botvars.difficulty = rsp->bot_difficulty;
+	players[i].botvars.diffincrease = rsp->bot_diffincrease;
+	players[i].botvars.rival = rsp->bot_rival;
 	players[i].botvars.itemdelay = rsp->bot_itemdelay;
 	players[i].botvars.itemconfirm = rsp->bot_itemconfirm;
 	players[i].botvars.turnconfirm = rsp->bot_turnconfirm;

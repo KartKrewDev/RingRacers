@@ -431,12 +431,14 @@ typedef struct respawnvars_s
 // player_t struct for all bot variables
 typedef struct botvars_s
 {
-	UINT8 difficulty;
+	UINT8 difficulty; // Bot's difficulty setting
+	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
+	boolean rival; // If true, they're the GP rival
 
-	tic_t itemdelay;
-	tic_t itemconfirm;
+	tic_t itemdelay; // Delay before using item at all
+	tic_t itemconfirm; // When high enough, they will use their item
 
-	SINT8 turnconfirm;
+	SINT8 turnconfirm; // Confirm turn direction
 } botvars_t;
 
 // ========================================================================
@@ -516,6 +518,7 @@ typedef struct player_s
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
 	                 // See SF_ flags
 	SINT8 lives;
+	boolean lostlife;
 	SINT8 continues; // continues that player has acquired
 
 	SINT8 xtralife; // Ring Extra Life counter
