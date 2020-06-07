@@ -1765,14 +1765,6 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (!resetplayer)
 		P_FindEmerald();
 
-	g_localplayers[0] = consoleplayer; // view the guy you are playing
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		if (i > 0 && r_splitscreen < i)
-			g_localplayers[i] = consoleplayer;
-	}
-
 	gameaction = ga_nothing;
 #ifdef PARANOIA
 	Z_CheckHeap(-2);
