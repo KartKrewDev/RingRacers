@@ -4052,52 +4052,38 @@ DoneSection2:
 
 		case 5: // Speed pad w/o spin
 		case 6: // Speed pad w/ spin
-			if (player->kartstuff[k_dashpadcooldown] != 0)
+			if (player->kartstuff[k_floorboost] != 0)
+			{
+				player->kartstuff[k_floorboost] = 2;
 				break;
+			}
 
 			i = P_FindSpecialLineFromTag(4, sector->tag, -1);
 
 			if (i != -1)
 			{
-				angle_t lineangle;
-				fixed_t linespeed;
-
-				lineangle = R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y);
-				linespeed = P_AproxDistance(lines[i].v2->x-lines[i].v1->x, lines[i].v2->y-lines[i].v1->y);
+				angle_t lineangle = R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y);
+				fixed_t linespeed = P_AproxDistance(lines[i].v2->x-lines[i].v1->x, lines[i].v2->y-lines[i].v1->y);
+				fixed_t playerspeed = P_AproxDistance(player->mo->momx, player->mo->momy);
 
 				// SRB2Kart: Scale the speed you get from them!
 				// This is scaled differently from other horizontal speed boosts from stuff like springs, because of how this is used for some ramp jumps.
 				if (player->mo->scale > mapobjectscale)
-					linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
-
-				if (!(lines[i].flags & ML_EFFECT4))
 				{
-					P_UnsetThingPosition(player->mo);
-					if (roversector) // make FOF speed pads work
-					{
-						player->mo->x = roversector->soundorg.x;
-						player->mo->y = roversector->soundorg.y;
-					}
-					else
-					{
-						player->mo->x = sector->soundorg.x;
-						player->mo->y = sector->soundorg.y;
-					}
-					P_SetThingPosition(player->mo);
+					linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
 				}
 
-				P_InstaThrust(player->mo, lineangle, linespeed);
+				lineangle = K_ReflectAngle(
+					R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy), lineangle,
+					playerspeed, linespeed
+				);
+
+				P_InstaThrust(player->mo, lineangle, max(linespeed, 2*playerspeed));
 
 				player->kartstuff[k_dashpadcooldown] = TICRATE/3;
 				player->kartstuff[k_pogospring] = 0;
-				S_StartSound(player->mo, sfx_spdpad);
-
-				{
-					sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
-					if (cv_kartvoices.value)
-						S_StartSound(player->mo, sfx_kbost1+pick);
-					//K_TauntVoiceTimers(player);
-				}
+				player->kartstuff[k_floorboost] = 2;
+				S_StartSound(player->mo, sfx_cdfm62);
 			}
 			break;
 

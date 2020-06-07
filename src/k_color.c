@@ -381,11 +381,159 @@ UINT8 colortranslations[MAXTRANSLATIONS][16] = {
 };
 
 /*--------------------------------------------------
+	INT32 K_SkincolorToTextColor(UINT8 skincolor)
+
+		See header file for description.
+--------------------------------------------------*/
+INT32 K_SkincolorToTextColor(UINT8 skincolor)
+{
+	INT32 textcolor = 0;
+
+	switch (skincolor)
+	{
+		default: // default to white?
+		case SKINCOLOR_WHITE:
+		case SKINCOLOR_SILVER:
+		case SKINCOLOR_SLATE:
+			textcolor = 0; // No color is white
+			break;
+		case SKINCOLOR_GREY:
+		case SKINCOLOR_NICKEL:
+		case SKINCOLOR_BLACK:
+		case SKINCOLOR_SKUNK:
+		case SKINCOLOR_PLATINUM:
+		case SKINCOLOR_JET:
+			textcolor = V_GRAYMAP;
+			break;
+		case SKINCOLOR_SEPIA:
+		case SKINCOLOR_BEIGE:
+		case SKINCOLOR_CARAMEL:
+		case SKINCOLOR_PEACH:
+		case SKINCOLOR_BROWN:
+		case SKINCOLOR_LEATHER:
+		case SKINCOLOR_RUST:
+		case SKINCOLOR_WRISTWATCH:
+			textcolor = V_BROWNMAP;
+			break;
+		case SKINCOLOR_FAIRY:
+		case SKINCOLOR_PINK:
+		case SKINCOLOR_ROSE:
+		case SKINCOLOR_LEMONADE:
+		case SKINCOLOR_LILAC:
+		case SKINCOLOR_BLOSSOM:
+		case SKINCOLOR_TAFFY:
+			textcolor = V_PINKMAP;
+			break;
+		case SKINCOLOR_CINNAMON:
+		case SKINCOLOR_RUBY:
+		case SKINCOLOR_RASPBERRY:
+		case SKINCOLOR_RED:
+		case SKINCOLOR_CRIMSON:
+		case SKINCOLOR_MAROON:
+		case SKINCOLOR_SCARLET:
+		case SKINCOLOR_KETCHUP:
+			textcolor = V_REDMAP;
+			break;
+		case SKINCOLOR_DAWN:
+		case SKINCOLOR_SUNSLAM:
+		case SKINCOLOR_CREAMSICLE:
+		case SKINCOLOR_ORANGE:
+		case SKINCOLOR_ROSEWOOD:
+		case SKINCOLOR_TANGERINE:
+			textcolor = V_ORANGEMAP;
+			break;
+		case SKINCOLOR_TAN:
+		case SKINCOLOR_CREAM:
+			textcolor = V_TANMAP;
+			break;
+		case SKINCOLOR_GOLD:
+		case SKINCOLOR_ROYAL:
+		case SKINCOLOR_BRONZE:
+		case SKINCOLOR_COPPER:
+		case SKINCOLOR_THUNDER:
+			textcolor = V_GOLDMAP;
+			break;
+		case SKINCOLOR_POPCORN:
+		case SKINCOLOR_YELLOW:
+		case SKINCOLOR_MUSTARD:
+		case SKINCOLOR_BANANA:
+		case SKINCOLOR_OLIVE:
+		case SKINCOLOR_CROCODILE:
+			textcolor = V_YELLOWMAP;
+			break;
+		case SKINCOLOR_ARTICHOKE:
+		case SKINCOLOR_PERIDOT:
+		case SKINCOLOR_VOMIT:
+		case SKINCOLOR_GARDEN:
+		case SKINCOLOR_LIME:
+		case SKINCOLOR_HANDHELD:
+		case SKINCOLOR_TEA:
+		case SKINCOLOR_PISTACHIO:
+		case SKINCOLOR_MOSS:
+		case SKINCOLOR_CAMOUFLAGE:
+		case SKINCOLOR_MINT:
+		case SKINCOLOR_GREEN:
+		case SKINCOLOR_PINETREE:
+		case SKINCOLOR_TURTLE:
+		case SKINCOLOR_SWAMP:
+		case SKINCOLOR_DREAM:
+		case SKINCOLOR_PLAGUE:
+		case SKINCOLOR_EMERALD:
+		case SKINCOLOR_ALGAE:
+			textcolor = V_GREENMAP;
+			break;
+		case SKINCOLOR_AQUAMARINE:
+		case SKINCOLOR_TURQUOISE:
+		case SKINCOLOR_TEAL:
+			textcolor = V_AQUAMAP;
+			break;
+		case SKINCOLOR_PIGEON:
+		case SKINCOLOR_ROBIN:
+		case SKINCOLOR_CYAN:
+		case SKINCOLOR_JAWZ:
+		case SKINCOLOR_CERULEAN:
+		case SKINCOLOR_NAVY:
+		case SKINCOLOR_SAPPHIRE:
+			textcolor = V_SKYMAP;
+			break;
+		case SKINCOLOR_STEEL:
+		case SKINCOLOR_ULTRAMARINE:
+		case SKINCOLOR_PERIWINKLE:
+		case SKINCOLOR_BLUE:
+		case SKINCOLOR_MIDNIGHT:
+		case SKINCOLOR_BLUEBERRY:
+		case SKINCOLOR_NOVA:
+			textcolor = V_BLUEMAP;
+			break;
+		case SKINCOLOR_THISTLE:
+		case SKINCOLOR_PURPLE:
+		case SKINCOLOR_PASTEL:
+			textcolor = V_PURPLEMAP;
+			break;
+		case SKINCOLOR_MAGENTA:
+		case SKINCOLOR_FUCHSIA:
+		case SKINCOLOR_MOONSET:
+		case SKINCOLOR_VIOLET:
+			textcolor = V_MAGENTAMAP;
+			break;
+		case SKINCOLOR_DUSK:
+		case SKINCOLOR_TOXIC:
+		case SKINCOLOR_MAUVE:
+		case SKINCOLOR_LAVENDER:
+		case SKINCOLOR_BYZANTIUM:
+		case SKINCOLOR_POMEGRANATE:
+			textcolor = V_LAVENDERMAP;
+			break;
+	}
+
+	return textcolor;
+}
+
+/*--------------------------------------------------
 	UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 
 		See header file for description.
 --------------------------------------------------*/
-
 UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 {
 	UINT32 redweight = 1063 * r;
@@ -400,7 +548,6 @@ UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 
 		See header file for description.
 --------------------------------------------------*/
-
 void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 {
 	INT32 i;
@@ -444,14 +591,11 @@ void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 	}
 }
 
-/**	\brief	Generates a translation colormap for Kart, to replace R_GenerateTranslationColormap in r_draw.c
+/*--------------------------------------------------
+	void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 
-	\param	dest_colormap	colormap to populate
-	\param	skinnum			number of skin, TC_DEFAULT or TC_BOSS
-	\param	color			translation color
-
-	\return	void
-*/
+		See header file for description.
+--------------------------------------------------*/
 void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 {
 	INT32 i;
@@ -505,12 +649,11 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 	}
 }
 
-/**	\brief	Pulls kart color by name, to replace R_GetColorByName in r_draw.c
+/*--------------------------------------------------
+	UINT8 K_GetKartColorByName(const char *name)
 
-	\param	name	color name
-
-	\return	0
-*/
+		See header file for description.
+--------------------------------------------------*/
 UINT8 K_GetKartColorByName(const char *name)
 {
 	UINT8 color = (UINT8)atoi(name);

@@ -60,10 +60,6 @@ extern consvar_t cv_usemouse2;
 extern consvar_t cv_mouse2opt;
 #endif
 
-// normally in p_mobj but the .h is not read
-extern consvar_t cv_itemrespawntime;
-extern consvar_t cv_itemrespawn;
-
 extern consvar_t cv_flagtime;
 extern consvar_t cv_suddendeath;
 
