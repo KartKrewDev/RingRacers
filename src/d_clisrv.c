@@ -5274,20 +5274,29 @@ static void Local_Maketic(INT32 realtics)
 	                   // game responder calls HU_Responder, AM_Responder, F_Responder,
 	                   // and G_MapEventsToControls
 	if (!dedicated) rendergametic = gametic;
+
 	// translate inputs (keyboard/mouse/joystick) into game controls
+
 	G_BuildTiccmd(&localcmds, realtics, 1);
+	localcmds.angleturn |= TICCMD_RECEIVED;
+
 	if (splitscreen)
 	{
 		G_BuildTiccmd(&localcmds2, realtics, 2);
+		localcmds2.angleturn |= TICCMD_RECEIVED;
+
 		if (splitscreen > 1)
 		{
 			G_BuildTiccmd(&localcmds3, realtics, 3);
+			localcmds3.angleturn |= TICCMD_RECEIVED;
+
 			if (splitscreen > 2)
+			{
 				G_BuildTiccmd(&localcmds4, realtics, 4);
+				localcmds4.angleturn |= TICCMD_RECEIVED;
+			}
 		}
 	}
-
-	localcmds.angleturn |= TICCMD_RECEIVED;
 }
 
 void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
@@ -5324,11 +5333,30 @@ void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
 static void SV_Maketic(void)
 {
 	INT32 j;
+	boolean b[MAXPLAYERS];
+
+	memset(b, false, sizeof (b));
+
+	for (j = 0; j < MAXPLAYERS; j++)
+	{
+		if (K_PlayerUsesBotMovement(&players[j]))
+		{
+			b[j] = true;
+			K_BuildBotTiccmd(&players[j], &netcmds[maketic%TICQUEUE][j]);
+		}
+	}
 
 	for (j = 0; j < MAXNETNODES; j++)
+	{
 		if (playerpernode[j])
 		{
 			INT32 player = nodetoplayer[j];
+
+			if (b[player])
+			{
+				continue;
+			}
+
 			if ((netcmds[maketic%TICQUEUE][player].angleturn & TICCMD_RECEIVED) == 0)
 			{ // we didn't receive this tic
 				INT32 i;
@@ -5349,6 +5377,7 @@ static void SV_Maketic(void)
 				}
 			}
 		}
+	}
 
 	// all tic are now proceed make the next
 	maketic++;

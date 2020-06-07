@@ -2401,16 +2401,18 @@ void G_Ticker(boolean run)
 
 		if (playeringame[i])
 		{
-			if (K_PlayerUsesBotMovement(&players[i]))
+			G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
+
+			// Use the leveltime sent in the player's ticcmd to determine control lag
+			if (modeattacking || K_PlayerUsesBotMovement(&players[i]))
 			{
-				K_BuildBotTiccmd(&players[i], cmd);
+				// Never has lag
 				cmd->latency = 0;
 			}
 			else
 			{
-				G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
-				// Use the leveltime sent in the player's ticcmd to determine control lag
-				cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
+				//@TODO add a cvar to allow setting this max
+				cmd->latency = min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1);
 			}
 		}
 	}
