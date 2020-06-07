@@ -21,6 +21,7 @@ extern UINT16 vspowerlevel[PWRLV_NUMTYPES];
 extern UINT16 clientpowerlevels[MAXPLAYERS][PWRLV_NUMTYPES];
 extern INT16 nospectategrief[MAXPLAYERS];
 
+SINT8 K_UsingPowerLevels(void);
 void K_ClearClientPowerLevels(void);
 INT16 K_CalculatePowerLevelInc(INT16 diff);
 INT16 K_CalculatePowerLevelAvg(void);

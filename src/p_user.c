@@ -40,7 +40,6 @@
 #include "st_stuff.h"
 #include "lua_script.h"
 #include "lua_hook.h"
-#include "k_bot.h"
 // Objectplace
 #include "m_cheat.h"
 // SRB2kart
@@ -49,6 +48,8 @@
 #include "k_color.h"	// KartColor_Opposite
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
+#include "k_bot.h"
+#include "k_grandprix.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -950,7 +951,6 @@ void P_GivePlayerRings(player_t *player, INT32 num_rings)
 		return;
 
 	player->kartstuff[k_rings] += num_rings;
-	//player->totalring += num_rings; // Used for GP lives later
 
 	if (player->kartstuff[k_rings] > 20)
 		player->kartstuff[k_rings] = 20; // Caps at 20 rings, sorry!
@@ -968,8 +968,8 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 {
 	player->lives += numlives;
 
-	if (player->lives > 99)
-		player->lives = 99;
+	if (player->lives > 9)
+		player->lives = 9;
 	else if (player->lives < 1)
 		player->lives = 1;
 }
@@ -1687,11 +1687,19 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 // Player exits the map via sector trigger
 void P_DoPlayerExit(player_t *player)
 {
+	const boolean losing = K_IsPlayerLosing(player);
+
 	if (player->exiting || mapreset)
 		return;
 
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 		legitimateexit = true;
+
+	if (G_GametypeUsesLives() && losing)
+	{
+		// Remove a life from the losing player
+		K_PlayerLoseLife(player);
+	}
 
 	if (G_RaceGametype()) // If in Race Mode, allow
 	{
@@ -1703,7 +1711,7 @@ void P_DoPlayerExit(player_t *player)
 			if (P_IsDisplayPlayer(player))
 			{
 				sfxenum_t sfx_id;
-				if (K_IsPlayerLosing(player))
+				if (losing)
 					sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_klose].skinsound];
 				else
 					sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_kwin].skinsound];
@@ -1711,7 +1719,7 @@ void P_DoPlayerExit(player_t *player)
 			}
 			else
 			{
-				if (K_IsPlayerLosing(player))
+				if (losing)
 					S_StartSound(player->mo, sfx_klose);
 				else
 					S_StartSound(player->mo, sfx_kwin);
@@ -1720,10 +1728,6 @@ void P_DoPlayerExit(player_t *player)
 
 		if (cv_inttime.value > 0)
 			P_EndingMusic(player);
-
-		// SRB2kart 120217
-		//if (!exitcountdown)
-			//exitcountdown = racecountdown + 8*TICRATE;
 
 		if (P_CheckRacers())
 			player->exiting = raceexittime+1;
@@ -1736,24 +1740,44 @@ void P_DoPlayerExit(player_t *player)
 	else
 		player->exiting = raceexittime+2; // Accidental death safeguard???
 
-	//player->pflags &= ~PF_GLIDING;
-	/*	// SRB2kart - don't need
-	if (player->climbing)
+	if (grandprixinfo.gp == true)
 	{
-		player->climbing = 0;
-		player->pflags |= PF_JUMPED;
-		P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
+		if (player->bot)
+		{
+			// Bots are going to get harder... :)
+			K_IncreaseBotDifficulty(player);
+		}
+		else if (!losing)
+		{
+			const UINT8 lifethreshold = 20;
+			UINT8 extra = 0;
+
+			// YOU WIN
+			grandprixinfo.wonround = true;
+
+			// Increase your total rings
+			if (RINGTOTAL(player) > 0)
+			{
+				player->totalring += RINGTOTAL(player);
+
+				extra = player->totalring / lifethreshold;
+
+				if (extra > player->xtralife)
+				{
+					P_GivePlayerLives(player, extra - player->xtralife);
+					S_StartSound(NULL, sfx_cdfm73);
+					player->xtralife = extra;
+				}
+			}
+		}
 	}
-	*/
+
 	player->powers[pw_underwater] = 0;
 	player->powers[pw_spacetime] = 0;
 	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
 
 	if (player == &players[consoleplayer])
 		demo.savebutton = leveltime;
-
-	/*if (playeringame[player-players] && netgame && !circuitmap)
-		CONS_Printf(M_GetText("%s has completed the level.\n"), player_names[player-players]);*/
 }
 
 #define SPACESPECIAL 12
@@ -4165,23 +4189,21 @@ static void P_3dMovement(player_t *player)
 		const fixed_t airspeedcap = (50*mapobjectscale);
 		const fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
 
+		// If you're going too fast in the air, ease back down to a certain speed.
+		// Helps lots of jumps from breaking when using speed items, since you can't move in the air.
 		if (speed > airspeedcap)
 		{
 			fixed_t div = 32*FRACUNIT;
 			fixed_t newspeed;
 
+			// Make rubberbanding bots slow down faster
 			if (K_PlayerUsesBotMovement(player))
 			{
-				fixed_t baserubberband = K_BotRubberband(player);
-				fixed_t rubberband = FixedMul(baserubberband,
-					FixedMul(baserubberband,
-					FixedMul(baserubberband,
-					baserubberband
-				))); // This looks extremely goofy, but we need this really high, but at the same time, proportional.
+				fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
 
-				if (rubberband > FRACUNIT)
+				if (rubberband > 0)
 				{
-					div = FixedMul(div, rubberband);
+					div = FixedDiv(div, FRACUNIT + (rubberband * 2));
 				}
 			}
 
@@ -6252,7 +6274,7 @@ static void P_MovePlayer(player_t *player)
 	////////////////////////////
 
 	// SRB2kart - Drifting smoke and fire
-	if ((EITHERSNEAKER(player) || player->kartstuff[k_flamedash])
+	if ((player->kartstuff[k_sneakertimer] || player->kartstuff[k_flamedash])
 		&& onground && (leveltime & 1))
 		K_SpawnBoostTrail(player);
 
@@ -7095,14 +7117,9 @@ static void P_DeathThink(player_t *player)
 
 	K_KartPlayerHUDUpdate(player);
 
-	// Force respawn if idle for more than 30 seconds in shooter modes.
-	if (player->lives > 0 /*&& leveltime >= starttime*/) // *could* you respawn?
+	if (player->lives > 0 && !(player->pflags & PF_TIMEOVER) && player->deadtimer > TICRATE)
 	{
-		// SRB2kart - spawn automatically after 1 second
-		if (player->deadtimer > ((netgame || multiplayer)
-			? cv_respawntime.value*TICRATE
-			: TICRATE)) // don't let them change it in record attack
-				player->playerstate = PST_REBORN;
+		player->playerstate = PST_REBORN;
 	}
 
 	// Keep time rolling
@@ -8356,21 +8373,34 @@ static void P_CalcPostImg(player_t *player)
 
 void P_DoTimeOver(player_t *player)
 {
-	if (netgame && player->health > 0)
+	if (player->pflags & PF_TIMEOVER)
+	{
+		// NO! Don't do this!
+		return;
+	}
+
+	if (P_IsLocalPlayer(player) && !demo.playback)
+	{
+		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
+	}
+
+	if (netgame && !player->bot)
+	{
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
+	}
 
 	player->pflags |= PF_TIMEOVER;
 
-	if (P_IsLocalPlayer(player) && !demo.playback)
-		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
+	if (G_GametypeUsesLives())
+	{
+		K_PlayerLoseLife(player);
+	}
 
 	if (player->mo)
 	{
 		S_StopSound(player->mo);
 		P_DamageMobj(player->mo, NULL, NULL, 10000);
 	}
-
-	player->lives = 0;
 
 	P_EndingMusic(player);
 
@@ -8770,7 +8800,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (playeringame[i] && !players[i].spectator)
 				{
-					if (!players[i].exiting && players[i].lives > 0)
+					if (!players[i].exiting && !(players[i].pflags & PF_TIMEOVER) && players[i].lives > 0)
 						break;
 				}
 			}
@@ -8778,24 +8808,26 @@ void P_PlayerThink(player_t *player)
 			if (i == MAXPLAYERS && player->exiting == raceexittime+2) // finished
 				player->exiting = raceexittime+1;
 
+#if 0
 			// If 10 seconds are left on the timer,
 			// begin the drown music for countdown!
-
-			// SRB2Kart: despite how perfect this is, it's disabled FOR A REASON
-			/*if (racecountdown == 11*TICRATE - 1)
+			if (racecountdown == 11*TICRATE - 1)
 			{
 				if (P_IsLocalPlayer(player))
 					S_ChangeMusicInternal("drown", false);
-			}*/
+			}
+#endif
 
 			// If you've hit the countdown and you haven't made
 			//  it to the exit, you're a goner!
-			else if (racecountdown == 1 && !player->exiting && !player->spectator && player->lives > 0)
+			if (racecountdown == 1 && !player->spectator && !player->exiting && !(player->pflags & PF_TIMEOVER) && player->lives > 0)
 			{
 				P_DoTimeOver(player);
 
 				if (player->playerstate == PST_DEAD)
+				{
 					return;
+				}
 			}
 		}
 
@@ -8809,33 +8841,9 @@ void P_PlayerThink(player_t *player)
 
 		if (player->exiting == 2 || exitcountdown == 2)
 		{
-			if (cv_playersforexit.value) // Count to be sure everyone's exited
+			if (server)
 			{
-				INT32 i;
-
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i] || players[i].spectator || players[i].bot)
-						continue;
-					if (players[i].lives <= 0)
-						continue;
-
-					if (!players[i].exiting || players[i].exiting > 3)
-						break;
-				}
-
-				if (i == MAXPLAYERS)
-				{
-					if (server)
-						SendNetXCmd(XD_EXITLEVEL, NULL, 0);
-				}
-				else
-					player->exiting = 3;
-			}
-			else
-			{
-				if (server)
-					SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
 			}
 		}
 	}
@@ -8872,17 +8880,6 @@ void P_PlayerThink(player_t *player)
 		player->mo->health = 1;
 		player->health = 1;
 	}
-
-#if 0
-	if ((netgame || multiplayer) && player->lives <= 0)
-	{
-		// In Co-Op, replenish a user's lives if they are depleted.
-		// of course, this is just a cheap hack, meh...
-		player->lives = cv_startinglives.value;
-	}
-#else
-	player->lives = 1; // SRB2Kart
-#endif
 
 	// SRB2kart 010217
 	if (leveltime < starttime)

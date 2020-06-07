@@ -88,6 +88,7 @@
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
 #include "k_bot.h"
+#include "k_grandprix.h"
 
 //
 // Map MD5, calculated on level load.
@@ -2415,22 +2416,20 @@ static void P_LevelInitStuff(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-#if 0
-		if ((netgame || multiplayer) && (gametype == GT_COMPETITION || players[i].lives <= 0))
+		if (grandprixinfo.gp == false)
 		{
-			// In Co-Op, replenish a user's lives if they are depleted.
-			players[i].lives = cv_startinglives.value;
+			players[i].lives = 3;
+			players[i].xtralife = 0;
+			players[i].totalring = 0;
 		}
-#else
-		players[i].lives = 1; // SRB2Kart
-#endif
 
 		players[i].realtime = racecountdown = exitcountdown = 0;
 		curlap = bestlap = 0; // SRB2Kart
 
+		players[i].lostlife = false;
 		players[i].gotcontinue = false;
 
-		players[i].xtralife = players[i].deadtimer = players[i].numboxes = players[i].totalring = players[i].laps = 0;
+		players[i].deadtimer = players[i].numboxes = players[i].laps = 0;
 		players[i].health = 1;
 		players[i].aiming = 0;
 		players[i].pflags &= ~PF_TIMEOVER;
@@ -2467,8 +2466,23 @@ static void P_LevelInitStuff(void)
 	}
 
 	// SRB2Kart: map load variables
-	if (modeattacking) // Just play it safe and set everything
+	if (grandprixinfo.gp == true)
 	{
+		if (G_BattleGametype())
+		{
+			gamespeed = KARTSPEED_EASY;
+		}
+		else
+		{
+			gamespeed = grandprixinfo.gamespeed;
+		}
+
+		franticitems = false;
+		comeback = true;
+	}
+	else if (modeattacking)
+	{
+		// Just play it safe and set everything
 		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
 		comeback = true;
@@ -2493,11 +2507,6 @@ static void P_LevelInitStuff(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
-
-	if (!modeattacking)
-	{
-		K_UpdateMatchRaceBots();
-	}
 }
 
 //
@@ -2682,12 +2691,6 @@ static void P_ForceCharacter(const char *forcecharskin)
 		}
 
 		SetPlayerSkin(consoleplayer, forcecharskin);
-		// normal player colors in single player
-		if ((unsigned)cv_playercolor.value != skins[players[consoleplayer].skin].prefcolor && !modeattacking)
-		{
-			CV_StealthSetValue(&cv_playercolor, skins[players[consoleplayer].skin].prefcolor);
-			players[consoleplayer].skincolor = skins[players[consoleplayer].skin].prefcolor;
-		}
 	}
 }
 
@@ -3384,6 +3387,28 @@ boolean P_SetupLevel(boolean skipprecip)
 	}
 #endif
 
+	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
+	K_SpawnBattleCapsules();
+
+	if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.initalize == true)
+		{
+			K_InitGrandPrixBots();
+			grandprixinfo.initalize = false;
+		}
+		else if (grandprixinfo.wonround == true)
+		{
+			K_UpdateGrandPrixBots();
+			grandprixinfo.wonround = false;
+		}
+	}
+	else if (!modeattacking)
+	{
+		// We're in a Match Race, use simplistic randomized bots.
+		K_UpdateMatchRaceBots();
+	}
+
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
@@ -3434,9 +3459,6 @@ boolean P_SetupLevel(boolean skipprecip)
 		LUAh_MapLoad();
 #endif
 	}
-
-	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
-	K_SpawnBattleCapsules();
 
 	return true;
 }
