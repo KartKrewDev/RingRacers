@@ -316,8 +316,8 @@ typedef enum
 	k_stealingtimer,		// You are stealing an item, this is your timer
 	k_stolentimer,			// You are being stolen from, this is your timer
 	k_superring,			// Spawn rings on top of you every tic!
-	k_sneakertimer,			// Duration of the Sneaker Boost itself
-	k_levelbooster,			// Duration of a level booster's boost (same as sneaker, but separated for boost stacking)
+	k_sneakertimer,			// Duration of a Sneaker Boost (from Sneakers or level boosters)
+	k_numsneakers,			// Number of stacked sneaker effects
 	k_growshrinktimer,		// > 0 = Big, < 0 = small
 	k_squishedtimer,		// Squished frame timer
 	k_rocketsneakertimer,	// Rocket Sneaker duration timer
@@ -390,9 +390,6 @@ typedef enum
 
 	NUMKARTHUD
 } karthudtype_t;
-
-// QUICKLY GET EITHER SNEAKER OR LEVEL BOOSTER SINCE THEY ARE FUNCTIONALLY IDENTICAL
-#define EITHERSNEAKER(p) (p->kartstuff[k_sneakertimer] || p->kartstuff[k_levelbooster])
 
 // QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
 #define RINGTOTAL(p) (p->kartstuff[k_rings] + p->kartstuff[k_pickuprings])
