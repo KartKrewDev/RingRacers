@@ -2796,7 +2796,6 @@ static void P_PlayerZMovement(mobj_t *mo)
 					// Check if we're on a polyobject
 					// that triggers a linedef executor.
 					msecnode_t *node;
-					boolean stopmovecut = false;
 
 					for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 					{
@@ -2828,8 +2827,8 @@ static void P_PlayerZMovement(mobj_t *mo)
 									polysec = po->lines[0]->backsector;
 
 									// Moving polyobjects should act like conveyors if the player lands on one. (I.E. none of the momentum cut thing below) -Red
-									if ((mo->z == polysec->ceilingheight || mo->z+mo->height == polysec->floorheight) && po->thinker)
-										stopmovecut = true;
+									/*if ((mo->z == polysec->ceilingheight || mo->z+mo->height == polysec->floorheight) && po->thinker)
+										stopmovecut = true;*/
 
 									if (!(po->flags & POF_LDEXEC))
 									{
@@ -2850,24 +2849,7 @@ static void P_PlayerZMovement(mobj_t *mo)
 							}
 						}
 					}
-
-					if (!stopmovecut)
 #endif
-
-					// Cut momentum in half when you hit the ground and
-					// aren't pressing any controls.
-					if (!(mo->player->cmd.forwardmove || mo->player->cmd.sidemove) && !mo->player->cmomx && !mo->player->cmomy
-						&& !(mo->player->kartstuff[k_spinouttimer]))
-					{
-						mo->momx = mo->momx/2;
-						mo->momy = mo->momy/2;
-
-						if (mo->player->cmd.buttons & BT_BRAKE && !(mo->player->cmd.forwardmove)) // FURTHER slowdown if you're braking.
-						{
-							mo->momx = mo->momx/2;
-							mo->momy = mo->momy/2;
-						}
-					}
 				}
 
 				if (mo->health)

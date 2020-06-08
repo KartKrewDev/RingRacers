@@ -42,6 +42,8 @@ typedef enum
 	BT_CUSTOM3		= 1<<15,
 } buttoncode_t;
 
+#define BT_SPINDASHMASK (BT_ACCELERATE|BT_BRAKE)
+
 // The data sampled per tick (single player)
 // and transmitted to other peers (multiplayer).
 // Mainly movements/button commands per game tick,

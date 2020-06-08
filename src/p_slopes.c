@@ -884,7 +884,9 @@ void P_ButteredSlope(mobj_t *mo)
 
 	if (mo->player) {
 		// SRB2Kart - spindash negates slopes
-		if (((mo->player->cmd.buttons & (BT_BRAKE|BT_ACCELERATE)) == (BT_BRAKE|BT_ACCELERATE)) && !mo->player->kartstuff[k_drift])
+		if (((mo->player->cmd.buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK)
+		&& !mo->player->kartstuff[k_drift]
+		&& !mo->player->kartstuff[k_spinouttimer])
 			return;
 
 		// Changed in kart to only not apply physics on very slight slopes (I think about 4 degree angles)

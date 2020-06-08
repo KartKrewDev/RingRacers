@@ -7404,7 +7404,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->mo->friction += 4608;
 		}
 
-		if ((cmd->buttons & (BT_BRAKE|BT_ACCELERATE)) == (BT_BRAKE|BT_ACCELERATE) && !(player->kartstuff[k_drift]))
+		if ((cmd->buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK
+		&& !player->kartstuff[k_drift])
 			player->mo->friction -= 3072;
 		else if (player->speed > 0 && cmd->forwardmove < 0)	// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
 			player->mo->friction -= 2048;
@@ -7454,13 +7455,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
 
-	// Quick Turning
-	// You can't turn your kart when you're not moving.
-	// So now it's time to burn some rubber!
-	if (player->speed < 2 && leveltime > starttime && cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE && cmd->driftturn != 0)
+	// Spindash
+	if ((cmd->buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK
+	&& !player->kartstuff[k_drift]
+	&& !player->kartstuff[k_spinouttimer]
+	&& leveltime > starttime)
 	{
-		if (leveltime % 8 == 0)
-			S_StartSound(player->mo, sfx_s224);
+		if (player->speed < 6*mapobjectscale)
+		{
+			if (cmd->driftturn != 0 && leveltime % 8 == 0)
+				S_StartSound(player->mo, sfx_ruburn);
+		}
+		else
+			if (leveltime % 4 == 0)
+				S_StartSound(player->mo, sfx_s3k36);
 	}
 
 	// Squishing

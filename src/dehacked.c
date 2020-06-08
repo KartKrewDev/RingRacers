@@ -8504,7 +8504,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"JMP",
 	"OFFROAD",
 	"POGOSPRING",
-	"BRAKESTOP",
+	"SPINDASH",
 	"WATERSKIP",
 	"DASHPADCOOLDOWN",
 	"NUMBOOSTS",

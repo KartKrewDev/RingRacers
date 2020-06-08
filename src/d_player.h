@@ -287,7 +287,7 @@ typedef enum
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	k_pogospring,		// Pogo spring bounce effect
-	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
+	k_spindash,		// Spindash charge
 	k_waterskip,		// Water skipping counter
 	k_dashpadcooldown,	// Separate the vanilla SA-style dash pads from using pw_flashing
 	k_numboosts,		// Count of how many boosts are being stacked, for after image spawning
