@@ -67,6 +67,7 @@ void R_DrawMasked(void);
 // SKINS STUFF
 // -----------
 #define SKINNAMESIZE 16
+#define SKINRIVALS 3
 // should be all lowercase!! S_SKIN processing does a strlwr
 #define DEFAULTSKIN "sonic"
 #define DEFAULTSKIN2 "tails" // secondary player
@@ -94,6 +95,8 @@ typedef struct
 	UINT8 starttranscolor;
 	UINT8 prefcolor;
 	fixed_t highresscale; // scale of highres, default is 0.5
+
+	char rivals[SKINRIVALS][SKINNAMESIZE+1]; // Your top 3 rivals for GP mode. Uses names so that you can reference skins that aren't added
 
 	// specific sounds per skin
 	sfxenum_t soundsid[NUMSKINSOUNDS]; // sound # in S_sfx table

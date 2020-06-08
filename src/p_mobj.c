@@ -30,13 +30,15 @@
 #include "info.h"
 #include "i_video.h"
 #include "lua_hook.h"
-#include "b_bot.h"
+#include "k_bot.h"
 #ifdef ESLOPE
 #include "p_slopes.h"
 #endif
 
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_color.h"
+#include "k_respawn.h"
 
 // protos.
 //static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
@@ -1690,10 +1692,6 @@ void P_XYMovement(mobj_t *mo)
 		// blocked move
 		moved = false;
 
-		if (player) {
-			if (player->bot)
-				B_MoveBlocked(player);
-		}
 		//{ SRB2kart - Jawz
 		if (mo->type == MT_JAWZ || mo->type == MT_JAWZ_DUD)
 		{
@@ -3748,8 +3746,10 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	mobj->eflags &= ~MFE_JUSTSTEPPEDDOWN;
 
 	// Zoom tube
-	if (mobj->tracer && mobj->tracer->type == MT_TUBEWAYPOINT)
+	if ((mobj->tracer && mobj->tracer->type == MT_TUBEWAYPOINT)
+	|| (mobj->player->respawn.state == RESPAWNST_MOVE))
 	{
+		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
 		P_UnsetThingPosition(mobj);
 		mobj->x += mobj->momx;
 		mobj->y += mobj->momy;
@@ -8348,10 +8348,9 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (p)
 				{
-					if (p->kartstuff[k_sneakertimer] > mobj->movecount
-						|| p->kartstuff[k_levelbooster] > mobj->movecount)
+					if (p->kartstuff[k_sneakertimer] > mobj->movecount)
 						P_SetMobjState(mobj, S_BOOSTFLAME);
-					mobj->movecount = max(p->kartstuff[k_sneakertimer], p->kartstuff[k_levelbooster]);
+					mobj->movecount = p->kartstuff[k_sneakertimer];
 				}
 			}
 
@@ -8727,7 +8726,7 @@ void P_MobjThinker(mobj_t *mobj)
 			fixed_t destx, desty;
 			statenum_t curstate;
 			statenum_t underlayst = S_NULL;
-			INT32 flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
+			INT32 flamemax = 0;
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player
 				|| mobj->target->player->kartstuff[k_curshield] != KSHIELD_FLAME)
@@ -8735,6 +8734,9 @@ void P_MobjThinker(mobj_t *mobj)
 				P_RemoveMobj(mobj);
 				return;
 			}
+
+			flamemax = mobj->target->player->kartstuff[k_flamelength] * flameseg;
+
 			P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
 			curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
@@ -8814,7 +8816,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH1 && ((curstate-S_FLAMESHIELD1) & 1))
 					viewingangle += ANGLE_180;
-	
+
 				destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
 				desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
 			}
@@ -11404,9 +11406,6 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 	P_RemoveThinker((thinker_t *)mobj);
 }
 
-static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_itemrespawntime = {"respawnitemtime", "2", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_itemrespawn = {"respawnitem", "On", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t flagtime_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_flagtime = {"flagtime", "30", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, flagtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_suddendeath = {"suddendeath", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -11677,10 +11676,6 @@ void P_RespawnSpecials(void)
 			time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
 	}
 
-	// only respawn items when cv_itemrespawn is on
-	//if (!cv_itemrespawn.value) // TODO: remove this cvar
-		//return;
-
 	// nothing left to respawn?
 	if (iquehead == iquetail)
 		return;
@@ -11789,9 +11784,20 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 
 	// spawn as spectator determination
-	if (multiplayer && demo.playback); // Don't mess with spectator values since the demo setup handles them already.
+	if (multiplayer && demo.playback)
+	{
+		; // Don't mess with spectator values since the demo setup handles them already.
+	}
 	else if (!G_GametypeHasSpectators())
+	{
+		// We don't have spectators
 		p->spectator = false;
+	}
+	else if (p->bot)
+	{
+		// No point in a spectating bot!
+		p->spectator = false;
+	}
 	else if (netgame && p->jointime <= 1 && pcount)
 	{
 		p->spectator = true;
@@ -11872,9 +11878,6 @@ void P_SpawnPlayer(INT32 playernum)
 
 	// Spawn with a pity shield if necessary.
 	//P_DoPityCheck(p);
-
-	if (p->kartstuff[k_respawn] != 0)
-		p->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
 
 	if (G_BattleGametype()) // SRB2kart
 	{
@@ -12021,16 +12024,12 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 			z = ceiling - mobjinfo[MT_PLAYER].height;
 			if (mthing->options >> ZSHIFT)
 				z -= ((mthing->options >> ZSHIFT) << FRACBITS);
-			if (p->kartstuff[k_respawn])
-				z -= 128*mapobjectscale;
 		}
 		else
 		{
 			z = floor;
 			if (mthing->options >> ZSHIFT)
 				z += ((mthing->options >> ZSHIFT) << FRACBITS);
-			if (p->kartstuff[k_respawn])
-				z += 128*mapobjectscale;
 		}
 
 		if (mthing->options & MTF_OBJECTFLIP) // flip the player!
@@ -12041,6 +12040,11 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	}
 	else
 		z = floor;
+
+	if (p->respawn.state != RESPAWNST_NONE)
+	{
+		z += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP));
+	}
 
 	if (z < floor)
 		z = floor;
@@ -12074,9 +12078,11 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj_t *mobj = p->mo;
 	I_Assert(mobj != NULL);
 
+	K_DoIngameRespawn(p);
+
 	P_UnsetThingPosition(mobj);
-	mobj->x = p->starpostx << FRACBITS;
-	mobj->y = p->starposty << FRACBITS;
+	mobj->x = p->respawn.pointx;
+	mobj->y = p->respawn.pointy;
 	P_SetThingPosition(mobj);
 	sector = R_PointInSubsector(mobj->x, mobj->y)->sector;
 
@@ -12091,12 +12097,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 #endif
 	sector->ceilingheight;
 
-	if (mobj->player->kartstuff[k_starpostflip])
-		z = (p->starpostz<<FRACBITS) - (128 * mapobjectscale) - mobj->height;
-	else
-		z = (p->starpostz<<FRACBITS) + (128 * mapobjectscale);
-
-	mobj->player->kartstuff[k_starpostflip] = 0;
+	z = p->respawn.pointz;
 
 	if (z < floor)
 		z = floor;
@@ -12110,12 +12111,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	if (mobj->z == mobj->floorz)
 		mobj->eflags |= MFE_ONGROUND;
 
-	mobj->angle = p->starpostangle;
-
 	P_AfterPlayerSpawn(playernum);
-
-	//if (!(netgame || multiplayer))
-	//	leveltime = p->starposttime;
 }
 
 #define MAXHUNTEMERALDS 64
@@ -12751,10 +12747,42 @@ ML_NOCLIMB : Direction not controllable
 			mobj->extravalue2 = 0;
 		}
 
-
 		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead
 		P_SetTarget(&mobj->tracer, waypointcap);
 		P_SetTarget(&waypointcap, mobj);
+		break;
+	}
+	case MT_BOTHINT:
+	{
+		// Change size
+		if (mthing->angle > 0)
+		{
+			mobj->radius = mthing->angle * FRACUNIT;
+		}
+		else
+		{
+			mobj->radius = 32 * mapobjectscale;
+		}
+
+		// Steer away instead of towards
+		if (mthing->options & MTF_AMBUSH)
+		{
+			mobj->extravalue1 = 0;
+		}
+		else
+		{
+			mobj->extravalue1 = 1;
+		}
+
+		// Steering amount
+		if (mthing->extrainfo == 0)
+		{
+			mobj->extravalue2 = 2;
+		}
+		else
+		{
+			mobj->extravalue2 = mthing->extrainfo;
+		}
 		break;
 	}
 	// SRB2Kart
@@ -12973,16 +13001,30 @@ ML_NOCLIMB : Direction not controllable
 
 	mobj->angle = FixedAngle(mthing->angle*FRACUNIT);
 
+	if ((mobj->flags & MF_SPRING)
+	&& mobj->info->damage != 0
+	&& mobj->info->mass == 0)
+	{
+		// Offset sprite of horizontal springs
+		angle_t a = mobj->angle + ANGLE_180;
+		mobj->sprxoff = FixedMul(mobj->radius, FINECOSINE(a >> ANGLETOFINESHIFT));
+		mobj->spryoff = FixedMul(mobj->radius, FINESINE(a >> ANGLETOFINESHIFT));
+	}
+
 	if ((mthing->options & MTF_AMBUSH)
 	&& (mthing->options & MTF_OBJECTSPECIAL)
 	&& (mobj->flags & MF_PUSHABLE))
+	{
 		mobj->flags2 |= MF2_CLASSICPUSH;
+	}
 	else
 	{
 		if (mthing->options & MTF_AMBUSH)
 		{
-			if (mobj->flags & MF_SPRING && mobj->info->damage)
+			if ((mobj->flags & MF_SPRING) && mobj->info->damage)
+			{
 				mobj->angle += ANGLE_22h;
+			}
 
 			if (mobj->flags & MF_NIGHTSITEM)
 			{

@@ -213,12 +213,10 @@ typedef struct
 
 	UINT16 powers[NUMPOWERS];
 
-	INT32 kartstuff[NUMKARTSTUFF]; // SRB2kart
-	angle_t frameangle; // SRB2kart
-
 	// Score is resynched in the confirm resync packet
 	INT32 health;
 	SINT8 lives;
+	boolean lostlife;
 	SINT8 continues;
 	UINT8 scoreadd;
 	SINT8 xtralife;
@@ -252,12 +250,7 @@ typedef struct
 	INT32 weapondelay;
 	INT32 tossdelay;
 
-	INT16 starpostx;
-	INT16 starposty;
-	INT16 starpostz;
 	INT32 starpostnum;
-	tic_t starposttime;
-	angle_t starpostangle;
 
 	INT32 maxlink;
 	fixed_t dashspeed;
@@ -284,6 +277,30 @@ typedef struct
 	tic_t jointime;
 
 	UINT8 splitscreenindex;
+
+	// SRB2kart
+	INT32 kartstuff[NUMKARTSTUFF];
+	angle_t frameangle;
+	tic_t airtime;
+
+	// respawnvars_t
+	UINT8 respawn_state;
+	fixed_t respawn_pointx;
+	fixed_t respawn_pointy;
+	fixed_t respawn_pointz;
+	boolean respawn_flip;
+	tic_t respawn_timer;
+	UINT32 respawn_distanceleft;
+	tic_t respawn_dropdash;
+
+	// botvars_t
+	boolean bot;
+	UINT8 bot_difficulty;
+	UINT8 bot_diffincrease;
+	boolean bot_rival;
+	tic_t bot_itemdelay;
+	tic_t bot_itemconfirm;
+	SINT8 bot_turnconfirm;
 
 	//player->mo stuff
 	UINT8 hasmo; // Boolean
@@ -327,6 +344,8 @@ typedef struct
 	// 0xFF == not in game; else player skin num
 	UINT8 playerskins[MAXPLAYERS];
 	UINT8 playercolor[MAXPLAYERS];
+
+	UINT8 playerisbot[MAXPLAYERS];
 
 	UINT8 gametype;
 	UINT8 modifiedgame;
@@ -621,6 +640,7 @@ extern UINT8 playernode[MAXPLAYERS];
 extern UINT8 playerconsole[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
+boolean D_IsPlayerHumanAndGaming(INT32 player_number);
 void D_ResetTiccmds(void);
 
 tic_t GetLag(INT32 node);

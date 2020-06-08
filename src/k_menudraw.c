@@ -411,8 +411,10 @@ void M_DrawKartGamemodeMenu(void)
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_STRING:
-				V_DrawRightAlignedGamemodeString(x, y, 0, currentMenu->menuitems[i].text,
-					(i == itemOn) ? SKINCOLOR_PLAGUE : SKINCOLOR_PIGEON);
+				{
+					UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, (i == itemOn) ? SKINCOLOR_PLAGUE : SKINCOLOR_PIGEON, GTC_CACHE);
+					V_DrawRightAlignedGamemodeString(x, y, 0, colormap, currentMenu->menuitems[i].text);
+				}
 				break;
 		}
 	}
@@ -1103,20 +1105,21 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 	word1[word1len] = '\0';
 	word2[word2len] = '\0';
 
-	for (i = 0; i < 2; i++)
 	{
-		INT32 c;
+		char addlen[3];
 
-		if (i >= word1len)
-			break;
+		for (i = 0; i < 2; i++)
+		{
+			if (!word1[i])
+				break;
 
-		c = toupper(word1[i]) - LT_FONTSTART;
+			addlen[i] = word1[i];
+		}
 
-		if (!title_font_high[c])
-			x2 += 16;
-		else
-			x2 += SHORT(title_font_high[c]->width) - 4;
+		addlen[i] = '\0';
+		x2 += V_LSTitleLowStringWidth(addlen, 0);
 	}
+
 
 	if (word1len)
 		V_DrawLSTitleHighString(x, y, 0, word1);

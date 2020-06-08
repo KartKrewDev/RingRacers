@@ -26,6 +26,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_waypoint.h"
 #include "k_battle.h"
+#include "k_respawn.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -3570,7 +3571,6 @@ void A_AttractChase(mobj_t *actor)
 
 	if (actor->extravalue1) // SRB2Kart
 	{
-#define RINGBOOSTPWR (((9 - actor->target->player->kartspeed) + (9 - actor->target->player->kartweight)) / 2)
 		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
 		{
 			P_RemoveMobj(actor);
@@ -3588,7 +3588,7 @@ void A_AttractChase(mobj_t *actor)
 				angle_t offset = FixedAngle(18<<FRACBITS);
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
-				actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
+				actor->target->player->kartstuff[k_ringboost] += K_GetKartRingPower(actor->target->player)+3;
 				S_StartSound(actor->target, sfx_s1b5);
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
@@ -3616,7 +3616,7 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 16)
 			{
 				if (actor->target->player->kartstuff[k_rings] >= 20)
-					actor->target->player->kartstuff[k_ringboost] += RINGBOOSTPWR+3;
+					actor->target->player->kartstuff[k_ringboost] += K_GetKartRingPower(actor->target->player)+3;
 				else
 					P_GivePlayerRings(actor->target->player, 1);
 
@@ -3645,7 +3645,6 @@ void A_AttractChase(mobj_t *actor)
 				actor->extravalue1++;
 			}
 		}
-#undef RINGBOOSTPWR
 	}
 	else
 	{
@@ -5638,10 +5637,8 @@ void A_MixUp(mobj_t *actor)
 		INT32 transspeed;          //player speed
 
 		// Starpost stuff
-		INT16 starpostx, starposty, starpostz;
+		fixed_t starpostx, starposty, starpostz;
 		INT32 starpostnum;
-		tic_t starposttime;
-		angle_t starpostangle;
 
 		INT32 mflags2;
 
@@ -5680,22 +5677,20 @@ void A_MixUp(mobj_t *actor)
 		z = players[one].mo->z;
 		angle = players[one].mo->angle;
 
-		starpostx = players[one].starpostx;
-		starposty = players[one].starposty;
-		starpostz = players[one].starpostz;
-		starpostangle = players[one].starpostangle;
+		starpostx = players[one].respawn.pointx;
+		starposty = players[one].respawn.pointy;
+		starpostz = players[one].respawn.pointz;
 		starpostnum = players[one].starpostnum;
-		starposttime = players[one].starposttime;
 
 		mflags2 = players[one].mo->flags2;
 
 		P_MixUp(players[one].mo, players[two].mo->x, players[two].mo->y, players[two].mo->z, players[two].mo->angle,
-				players[two].starpostx, players[two].starposty, players[two].starpostz,
-				players[two].starpostnum, players[two].starposttime, players[two].starpostangle,
+				players[two].respawn.pointx, players[two].respawn.pointy, players[two].respawn.pointz,
+				players[two].starpostnum, 0, 0,
 				players[two].mo->flags2);
 
 		P_MixUp(players[two].mo, x, y, z, angle, starpostx, starposty, starpostz,
-				starpostnum, starposttime, starpostangle,
+				starpostnum, 0, 0,
 				mflags2);
 
 		//flags set after mixup.  Stupid P_ResetPlayer() takes away some of the flags we look for...
@@ -5720,10 +5715,8 @@ void A_MixUp(mobj_t *actor)
 		INT32 transspeed[MAXPLAYERS];     //player speed
 
 		// Star post stuff
-		INT16 spposition[MAXPLAYERS][3];
+		fixed_t spposition[MAXPLAYERS][3];
 		INT32 starpostnum[MAXPLAYERS];
-		tic_t starposttime[MAXPLAYERS];
-		angle_t starpostangle[MAXPLAYERS];
 
 		INT32 flags2[MAXPLAYERS];
 
@@ -5754,12 +5747,10 @@ void A_MixUp(mobj_t *actor)
 				transspeed[counter] = players[i].speed;
 				transtracer[counter] = players[i].mo->tracer;
 
-				spposition[counter][0] = players[i].starpostx;
-				spposition[counter][1] = players[i].starposty;
-				spposition[counter][2] = players[i].starpostz;
+				spposition[counter][0] = players[i].respawn.pointx;
+				spposition[counter][1] = players[i].respawn.pointy;
+				spposition[counter][2] = players[i].respawn.pointz;
 				starpostnum[counter] = players[i].starpostnum;
-				starposttime[counter] = players[i].starposttime;
-				starpostangle[counter] = players[i].starpostangle;
 
 				flags2[counter] = players[i].mo->flags2;
 
@@ -5799,7 +5790,7 @@ void A_MixUp(mobj_t *actor)
 
 				P_MixUp(players[i].mo, position[teleportfrom][0], position[teleportfrom][1], position[teleportfrom][2], anglepos[teleportfrom],
 					spposition[teleportfrom][0], spposition[teleportfrom][1], spposition[teleportfrom][2],
-					starpostnum[teleportfrom], starposttime[teleportfrom], starpostangle[teleportfrom],
+					starpostnum[teleportfrom], 0, 0,
 					flags2[teleportfrom]);
 
 				//...flags after.  same reasoning.
@@ -8612,7 +8603,7 @@ void A_SPBChase(mobj_t *actor)
 		if (players[i].mo->health <= 0)
 			continue; // dead
 
-		if (players[i].kartstuff[k_respawn])
+		if (players[i].respawn.state != RESPAWNST_NONE)
 			continue;*/ // respawning
 
 		if (players[i].kartstuff[k_position] < bestrank)
@@ -8789,7 +8780,7 @@ void A_SPBChase(mobj_t *actor)
 
 		actor->lastlook = -1; // Just make sure this is reset
 
-		if (!player || !player->mo || player->mo->health <= 0 || player->kartstuff[k_respawn])
+		if (!player || !player->mo || player->mo->health <= 0 || (player->respawn.state != RESPAWNST_NONE))
 		{
 			// No one there? Completely STOP.
 			actor->momx = actor->momy = actor->momz = 0;

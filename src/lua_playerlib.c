@@ -216,6 +216,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->kartstuff, META_KARTSTUFF);
 	else if (fastcmp(field,"frameangle"))
 		lua_pushangle(L, plr->frameangle);
+	else if (fastcmp(field,"airtime"))
+		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"pflags"))
 		lua_pushinteger(L, plr->pflags);
 	else if (fastcmp(field,"panim"))
@@ -242,6 +244,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->charflags);
 	else if (fastcmp(field,"lives"))
 		lua_pushinteger(L, plr->lives);
+	else if (fastcmp(field,"lostlife"))
+		lua_pushboolean(L, plr->lostlife);
 	else if (fastcmp(field,"continues"))
 		lua_pushinteger(L, plr->continues);
 	else if (fastcmp(field,"xtralife"))
@@ -294,18 +298,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->weapondelay);
 	else if (fastcmp(field,"tossdelay"))
 		lua_pushinteger(L, plr->tossdelay);
-	else if (fastcmp(field,"starpostx"))
-		lua_pushinteger(L, plr->starpostx);
-	else if (fastcmp(field,"starposty"))
-		lua_pushinteger(L, plr->starposty);
-	else if (fastcmp(field,"starpostz"))
-		lua_pushinteger(L, plr->starpostz);
 	else if (fastcmp(field,"starpostnum"))
 		lua_pushinteger(L, plr->starpostnum);
-	else if (fastcmp(field,"starposttime"))
-		lua_pushinteger(L, plr->starposttime);
-	else if (fastcmp(field,"starpostangle"))
-		lua_pushangle(L, plr->starpostangle);
 	else if (fastcmp(field,"angle_pos"))
 		lua_pushangle(L, plr->angle_pos);
 	else if (fastcmp(field,"old_angle_pos"))
@@ -377,7 +371,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"spectator"))
 		lua_pushboolean(L, plr->spectator);
 	else if (fastcmp(field,"bot"))
-		lua_pushinteger(L, plr->bot);
+		lua_pushboolean(L, plr->bot);
 	else if (fastcmp(field,"jointime"))
 		lua_pushinteger(L, plr->jointime);
 	else if (fastcmp(field,"splitscreenindex"))
@@ -483,6 +477,8 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"frameangle"))
 		plr->frameangle = luaL_checkangle(L, 3);
+	else if (fastcmp(field,"airtime"))
+		plr->airtime = (tic_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartspeed"))
 		plr->kartspeed = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartweight"))
@@ -492,6 +488,8 @@ static int player_set(lua_State *L)
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lives"))
 		plr->lives = (SINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lostlife"))
+		plr->lostlife = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"continues"))
 		plr->continues = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"xtralife"))
@@ -544,18 +542,8 @@ static int player_set(lua_State *L)
 		plr->weapondelay = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tossdelay"))
 		plr->tossdelay = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostx"))
-		plr->starpostx = (INT16)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starposty"))
-		plr->starposty = (INT16)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostz"))
-		plr->starpostz = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"starpostnum"))
 		plr->starpostnum = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starposttime"))
-		plr->starposttime = (tic_t)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostangle"))
-		plr->starpostangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"angle_pos"))
 		plr->angle_pos = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"old_angle_pos"))

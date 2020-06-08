@@ -19,6 +19,7 @@ enum hud {
 	hud_minimap,
 	hud_item,
 	hud_position,
+	hud_names,			// online nametags
 	hud_check,			// "CHECK" f-zero indicator
 	hud_minirankings,	// Rankings to the left
 	hud_battlebumpers,	// mini rankings battle bumpers.

@@ -69,7 +69,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
 	"ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH",
 	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
-	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","XMS4","XMS5","VIEW"
+	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","EGOO","WTRL","XMS4",
+	"XMS5","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -3497,6 +3498,26 @@ state_t states[NUMSTATES] =
 	{SPR_CAPS, 4, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLECAPSULE_SUPPORT
 	{SPR_CAPS, FF_ANIMATE|5, -1, {NULL}, 3, 1, S_NULL}, // S_BATTLECAPSULE_SUPPORTFLY
 
+	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOORB
+
+	// Water Trail
+	{SPR_WTRL, FF_PAPERSPRITE  , 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL1
+	{SPR_WTRL, FF_PAPERSPRITE|1, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL2
+	{SPR_WTRL, FF_PAPERSPRITE|2, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL3
+	{SPR_WTRL, FF_PAPERSPRITE|3, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL4
+	{SPR_WTRL, FF_PAPERSPRITE|4, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL5
+	{SPR_WTRL, FF_PAPERSPRITE|5, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL6
+	{SPR_WTRL, FF_PAPERSPRITE|6, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL7
+	{SPR_WTRL, FF_PAPERSPRITE|7, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL8
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|8,  2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY1
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|9,  2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY2
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|10, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY3
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|11, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY4
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|12, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY5
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|13, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY6
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|14, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY7
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|15, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY8
+
 #ifdef SEENAMES
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
 #endif
@@ -6154,7 +6175,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -6262,7 +6283,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -6370,7 +6391,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -16534,6 +16555,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_BOTHINT
+		2004,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		100,            // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		1*FRACUNIT,     // radius
+		2*FRACUNIT,     // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_RANDOMAUDIENCE
 		1488,           // doomednum
 		S_RANDOMAUDIENCE, // spawnstate
@@ -20746,6 +20794,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    sfx_None,       // activesound
 	    MF_SCENERY|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOBLOCKMAP|MF_DONTENCOREMAP, // flags
 	    S_NULL          // raisestate
+	},
+
+	{           // MT_WATERTRAIL
+		-1,             // doomednum
+		S_WATERTRAIL1,  // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		1,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_WATERTRAILUNDERLAY
+		-1,             // doomednum
+		S_WATERTRAILUNDERLAY1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
 	},
 
 	// ============================================================================================================================//

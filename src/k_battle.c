@@ -254,7 +254,6 @@ void K_CheckBumpers(void)
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
 					players[i].pflags |= PF_TIMEOVER;
-					//players[i].lives = 0;
 					P_DoPlayerExit(&players[i]);
 				}
 			}

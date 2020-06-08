@@ -87,6 +87,8 @@
 #include "k_battle.h" // K_SpawnBattleCapsules
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
+#include "k_bot.h"
+#include "k_grandprix.h"
 
 //
 // Map MD5, calculated on level load.
@@ -446,6 +448,27 @@ static inline float P_SegLengthFloat(seg_t *seg)
 }
 #endif
 
+/** Updates the light offset
+  *
+  * \param li Seg to update the light offsets of
+  */
+void P_UpdateSegLightOffset(seg_t *li)
+{
+	const UINT8 contrast = 16;
+	fixed_t extralight = 0;
+
+	extralight = -((fixed_t)contrast*FRACUNIT) +
+		FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
+		abs(li->v1->x - li->v2->x),
+		abs(li->v1->y - li->v2->y))), 90*FRACUNIT) * ((fixed_t)contrast * 2);
+
+	// Between -2 and 2 for software, -16 and 16 for hardware
+	li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+#ifdef HWRENDER
+	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+#endif
+}
+
 /** Loads the SEGS resource from a level.
   *
   * \param lump Lump number of the SEGS resource.
@@ -492,6 +515,8 @@ static void P_LoadRawSegs(UINT8 *data, size_t i)
 
 		li->numlights = 0;
 		li->rlights = NULL;
+
+		P_UpdateSegLightOffset(li);
 	}
 }
 
@@ -1091,7 +1116,7 @@ static void P_LoadThings(void)
 			|| mt->type == 1705 || mt->type == 1713 || mt->type == 1800)
 		{
 			sector_t *mtsector = R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
-	
+
 			mt->mobj = NULL;
 
 			// Z for objects
@@ -2391,22 +2416,20 @@ static void P_LevelInitStuff(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-#if 0
-		if ((netgame || multiplayer) && (gametype == GT_COMPETITION || players[i].lives <= 0))
+		if (grandprixinfo.gp == false)
 		{
-			// In Co-Op, replenish a user's lives if they are depleted.
-			players[i].lives = cv_startinglives.value;
+			players[i].lives = 3;
+			players[i].xtralife = 0;
+			players[i].totalring = 0;
 		}
-#else
-		players[i].lives = 1; // SRB2Kart
-#endif
 
 		players[i].realtime = racecountdown = exitcountdown = 0;
 		curlap = bestlap = 0; // SRB2Kart
 
+		players[i].lostlife = false;
 		players[i].gotcontinue = false;
 
-		players[i].xtralife = players[i].deadtimer = players[i].numboxes = players[i].totalring = players[i].laps = 0;
+		players[i].deadtimer = players[i].numboxes = players[i].laps = 0;
 		players[i].health = 1;
 		players[i].aiming = 0;
 		players[i].pflags &= ~PF_TIMEOVER;
@@ -2440,8 +2463,23 @@ static void P_LevelInitStuff(void)
 	}
 
 	// SRB2Kart: map load variables
-	if (modeattacking) // Just play it safe and set everything
+	if (grandprixinfo.gp == true)
 	{
+		if (G_BattleGametype())
+		{
+			gamespeed = KARTSPEED_EASY;
+		}
+		else
+		{
+			gamespeed = grandprixinfo.gamespeed;
+		}
+
+		franticitems = false;
+		comeback = true;
+	}
+	else if (modeattacking)
+	{
+		// Just play it safe and set everything
 		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
 		comeback = true;
@@ -2650,12 +2688,6 @@ static void P_ForceCharacter(const char *forcecharskin)
 		}
 
 		SetPlayerSkin(consoleplayer, forcecharskin);
-		// normal player colors in single player
-		if ((unsigned)cv_playercolor.value != skins[players[consoleplayer].skin].prefcolor && !modeattacking)
-		{
-			CV_StealthSetValue(&cv_playercolor, skins[players[consoleplayer].skin].prefcolor);
-			players[consoleplayer].skincolor = skins[players[consoleplayer].skin].prefcolor;
-		}
 	}
 }
 
@@ -2865,7 +2897,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_Initsecnode();
 
 	if (netgame || multiplayer)
-		cv_debug = botskin = 0;
+		cv_debug = 0;
 
 	if (metalplayback)
 		G_StopMetalDemo();
@@ -3227,13 +3259,7 @@ boolean P_SetupLevel(boolean skipprecip)
 			else // gametype is GT_COOP or GT_RACE
 			{
 				players[i].mo = NULL;
-
-				if (players[i].starposttime)
-				{
-					G_SpawnPlayer(i, true);
-				}
-				else
-					G_SpawnPlayer(i, false);
+				G_SpawnPlayer(i, (players[i].starpostnum != 0));
 			}
 		}
 
@@ -3316,7 +3342,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	/*if (cv_useranalog.value)
 		CV_SetValue(&cv_analog, true);
 
-	if ((splitscreen && cv_useranalog2.value) || botingame)
+	if (splitscreen && cv_useranalog2.value)
 		CV_SetValue(&cv_analog2, true);
 
 	if (splitscreen > 1 && cv_useranalog3.value)
@@ -3358,6 +3384,28 @@ boolean P_SetupLevel(boolean skipprecip)
 	}
 #endif
 
+	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
+	K_SpawnBattleCapsules();
+
+	if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.initalize == true)
+		{
+			K_InitGrandPrixBots();
+			grandprixinfo.initalize = false;
+		}
+		else if (grandprixinfo.wonround == true)
+		{
+			K_UpdateGrandPrixBots();
+			grandprixinfo.wonround = false;
+		}
+	}
+	else if (!modeattacking)
+	{
+		// We're in a Match Race, use simplistic randomized bots.
+		K_UpdateMatchRaceBots();
+	}
+
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
@@ -3387,9 +3435,6 @@ boolean P_SetupLevel(boolean skipprecip)
 		players[consoleplayer].continues = savedata.continues;
 		players[consoleplayer].lives = savedata.lives;
 		players[consoleplayer].score = savedata.score;
-		botskin = savedata.botskin;
-		botcolor = savedata.botcolor;
-		botingame = (savedata.botskin != 0);
 		emeralds = savedata.emeralds;
 		savedata.lives = 0;
 	}
@@ -3411,9 +3456,6 @@ boolean P_SetupLevel(boolean skipprecip)
 		LUAh_MapLoad();
 #endif
 	}
-
-	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
-	K_SpawnBattleCapsules();
 
 	return true;
 }

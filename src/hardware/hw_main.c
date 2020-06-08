@@ -223,40 +223,27 @@ UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap) // Let's see if 
 	return surfcolor.s.alpha;
 }
 
-static FUINT HWR_CalcWallLight(FUINT lightnum, fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y)
+// Lightnum = current light
+// line = the seg to get the light offset from
+static FUINT HWR_CalcWallLight(seg_t *line, FUINT lightnum)
 {
 	INT16 finallight = lightnum;
 
-	if (cv_grfakecontrast.value != 0)
+	fixed_t extralight = 0;
+
+	if (cv_grfakecontrast.value == 1) // Smooth setting
+		extralight += line->hwLightOffset;
+	else
+		extralight += line->lightOffset * 8;
+
+	if (extralight != 0)
 	{
-		const UINT8 contrast = 8;
-		fixed_t extralight = 0;
+		finallight += extralight;
 
-		if (cv_grfakecontrast.value == 2) // Smooth setting
-		{
-			extralight = (-(contrast<<FRACBITS) +
-			FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
-				abs(v1x - v2x),
-				abs(v1y - v2y))), 90<<FRACBITS)
-			* (contrast * 2)) >> FRACBITS;
-		}
-		else
-		{
-			if (v1y == v2y)
-				extralight = -contrast;
-			else if (v1x == v2x)
-				extralight = contrast;
-		}
-
-		if (extralight != 0)
-		{
-			finallight += extralight;
-
-			if (finallight < 0)
-				finallight = 0;
-			if (finallight > 255)
-				finallight = 255;
-		}
+		if (finallight < 0)
+			finallight = 0;
+		if (finallight > 255)
+			finallight = 255;
 	}
 
 	return (FUINT)finallight;
@@ -414,7 +401,7 @@ void HWR_RenderPlane(extrasubsector_t *xsub, boolean isceiling, fixed_t fixedhei
 	if (angle) // Only needs to be done if there's an altered angle
 	{
 
-		angle = (InvAngle(angle)+ANGLE_180)>>ANGLETOFINESHIFT;
+		angle = InvAngle(angle)>>ANGLETOFINESHIFT;
 
 		// This needs to be done so that it scrolls in a different direction after rotation like software
 		/*tempxsow = FLOAT_TO_FIXED(scrollx);
@@ -446,7 +433,7 @@ void HWR_RenderPlane(extrasubsector_t *xsub, boolean isceiling, fixed_t fixedhei
 			tempxsow = FLOAT_TO_FIXED(v3d->s);
 			tempytow = FLOAT_TO_FIXED(v3d->t);
 			v3d->s = (FIXED_TO_FLOAT(FixedMul(tempxsow, FINECOSINE(angle)) - FixedMul(tempytow, FINESINE(angle))));
-			v3d->t = (FIXED_TO_FLOAT(-FixedMul(tempxsow, FINESINE(angle)) - FixedMul(tempytow, FINECOSINE(angle))));
+			v3d->t = (FIXED_TO_FLOAT(FixedMul(tempxsow, FINESINE(angle)) + FixedMul(tempytow, FINECOSINE(angle))));
 		}
 
 		//v3d->s = (float)(v3d->s - flatxref + scrollx);
@@ -618,7 +605,7 @@ void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum, FSurfa
 	INT32   solid, i;
 	lightlist_t *  list = sector->lightlist;
 	const UINT8 alpha = Surf->PolyColor.s.alpha;
-	FUINT lightnum = HWR_CalcWallLight(sector->lightlevel, v1x, v1y, v2x, v2y);
+	FUINT lightnum = HWR_CalcWallLight(gr_curline, sector->lightlevel);
 	extracolormap_t *colormap = NULL;
 
 	realtop = top = wallVerts[3].y;
@@ -647,12 +634,12 @@ void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum, FSurfa
 		{
 			if (pfloor && (pfloor->flags & FF_FOG))
 			{
-				lightnum = HWR_CalcWallLight(pfloor->master->frontsector->lightlevel, v1x, v1y, v2x, v2y);
+				lightnum = HWR_CalcWallLight(gr_curline, pfloor->master->frontsector->lightlevel);
 				colormap = pfloor->master->frontsector->extra_colormap;
 			}
 			else
 			{
-				lightnum = HWR_CalcWallLight(*list[i].lightlevel, v1x, v1y, v2x, v2y);
+				lightnum = HWR_CalcWallLight(gr_curline, *list[i].lightlevel);
 				colormap = list[i].extra_colormap;
 			}
 		}
@@ -933,7 +920,7 @@ void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 		cliphigh = (float)(texturehpeg + (gr_curline->flength*FRACUNIT));
 	}
 
-	lightnum = HWR_CalcWallLight(gr_frontsector->lightlevel, vs.x, vs.y, ve.x, ve.y);
+	lightnum = HWR_CalcWallLight(gr_curline, gr_frontsector->lightlevel);
 	colormap = gr_frontsector->extra_colormap;
 
 	if (gr_frontsector)
@@ -1759,7 +1746,7 @@ void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 					blendmode = PF_Fog|PF_NoTexture;
 
-					lightnum = HWR_CalcWallLight(rover->master->frontsector->lightlevel, vs.x, vs.y, ve.x, ve.y);
+					lightnum = HWR_CalcWallLight(gr_curline, rover->master->frontsector->lightlevel);
 					colormap = rover->master->frontsector->extra_colormap;
 
 					Surf.PolyColor.s.alpha = HWR_FogBlockAlpha(rover->master->frontsector->lightlevel, rover->master->frontsector->extra_colormap);
@@ -1871,7 +1858,7 @@ void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 					blendmode = PF_Fog|PF_NoTexture;
 
-					lightnum = HWR_CalcWallLight(rover->master->frontsector->lightlevel, vs.x, vs.y, ve.x, ve.y);
+					lightnum = HWR_CalcWallLight(gr_curline, rover->master->frontsector->lightlevel);
 					colormap = rover->master->frontsector->extra_colormap;
 
 					Surf.PolyColor.s.alpha = HWR_FogBlockAlpha(rover->master->frontsector->lightlevel, rover->master->frontsector->extra_colormap);
@@ -2831,6 +2818,10 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 
 static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 {
+	const fixed_t thingxpos = thing->x + thing->sprxoff;
+	const fixed_t thingypos = thing->y + thing->spryoff;
+	const fixed_t thingzpos = thing->z + thing->sprzoff;
+
 	GLPatch_t *gpatch;
 	FOutVector shadowVerts[4];
 	FSurfaceInfo sSurf;
@@ -2848,7 +2839,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	pslope_t *floorslope;
 
 	floorz = R_GetShadowZ(thing, &floorslope);
-	floordiff = abs(thing->z - floorz);
+	floordiff = abs(thingzpos - floorz);
 
 	alpha = floordiff / (4*FRACUNIT) + 75;
 	if (alpha >= 255) return;
@@ -2872,8 +2863,8 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	scalemul = FixedMul(scalemul, (thing->radius*2) / gpatch->height);
 
 	fscale = FIXED_TO_FLOAT(scalemul);
-	fx = FIXED_TO_FLOAT(thing->x);
-	fy = FIXED_TO_FLOAT(thing->y);
+	fx = FIXED_TO_FLOAT(thingxpos);
+	fy = FIXED_TO_FLOAT(thingypos);
 
 	//  3--2
 	//  | /|
@@ -3592,10 +3583,10 @@ static int CompareVisSprites(const void *p1, const void *p2)
 	gr_vissprite_t* spr2 = *(gr_vissprite_t*const*)p2;
 	int idiff;
 	float fdiff;
-	
+
 	// make transparent sprites last
 	// "boolean to int"
-	
+
 	int transparency1 = (spr1->mobj->flags2 & MF2_SHADOW) || (spr1->mobj->frame & FF_TRANSMASK);
 	int transparency2 = (spr2->mobj->flags2 & MF2_SHADOW) || (spr2->mobj->frame & FF_TRANSMASK);
 	idiff = transparency1 - transparency2;
@@ -4096,6 +4087,10 @@ void HWR_AddSprites(sector_t *sec)
 // BP why not use xtoviexangle/viewangletox like in bsp ?....
 void HWR_ProjectSprite(mobj_t *thing)
 {
+	const fixed_t thingxpos = thing->x + thing->sprxoff;
+	const fixed_t thingypos = thing->y + thing->spryoff;
+	const fixed_t thingzpos = thing->z + thing->sprzoff;
+
 	gr_vissprite_t *vis;
 	float tr_x, tr_y;
 	float tz;
@@ -4120,8 +4115,8 @@ void HWR_ProjectSprite(mobj_t *thing)
 		this_scale = FIXED_TO_FLOAT(thing->scale);
 
 	// transform the origin point
-	tr_x = FIXED_TO_FLOAT(thing->x) - gr_viewx;
-	tr_y = FIXED_TO_FLOAT(thing->y) - gr_viewy;
+	tr_x = FIXED_TO_FLOAT(thingxpos) - gr_viewx;
+	tr_y = FIXED_TO_FLOAT(thingypos) - gr_viewy;
 
 	// rotation around vertical axis
 	tz = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
@@ -4131,8 +4126,8 @@ void HWR_ProjectSprite(mobj_t *thing)
 		return;
 
 	// The above can stay as it works for cutting sprites that are too close
-	tr_x = FIXED_TO_FLOAT(thing->x);
-	tr_y = FIXED_TO_FLOAT(thing->y);
+	tr_x = FIXED_TO_FLOAT(thingxpos);
+	tr_y = FIXED_TO_FLOAT(thingypos);
 
 	// decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
@@ -4168,9 +4163,9 @@ void HWR_ProjectSprite(mobj_t *thing)
 #endif
 
 	if (thing->player)
-		ang = R_PointToAngle (thing->x, thing->y) - thing->player->frameangle;
+		ang = R_PointToAngle (thingxpos, thingypos) - thing->player->frameangle;
 	else
-		ang = R_PointToAngle (thing->x, thing->y) - thing->angle;
+		ang = R_PointToAngle (thingxpos, thingypos) - thing->angle;
 
 	if (sprframe->rotate == SRF_SINGLE)
 	{
@@ -4242,12 +4237,12 @@ void HWR_ProjectSprite(mobj_t *thing)
 
 	if (vflip)
 	{
-		gz = FIXED_TO_FLOAT(thing->z+thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
+		gz = FIXED_TO_FLOAT(thingzpos + thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gzt = gz + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
 	}
 	else
 	{
-		gzt = FIXED_TO_FLOAT(thing->z) + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
+		gzt = FIXED_TO_FLOAT(thingzpos) + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gz = gzt - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
 	}
 
@@ -4266,12 +4261,12 @@ void HWR_ProjectSprite(mobj_t *thing)
 	if (heightsec != -1 && phs != -1) // only clip things which are in special sectors
 	{
 		if (gr_viewz < FIXED_TO_FLOAT(sectors[phs].floorheight) ?
-		FIXED_TO_FLOAT(thing->z) >= FIXED_TO_FLOAT(sectors[heightsec].floorheight) :
+		FIXED_TO_FLOAT(thingzpos) >= FIXED_TO_FLOAT(sectors[heightsec].floorheight) :
 		gzt < FIXED_TO_FLOAT(sectors[heightsec].floorheight))
 			return;
 		if (gr_viewz > FIXED_TO_FLOAT(sectors[phs].ceilingheight) ?
 		gzt < FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) && gr_viewz >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) :
-		FIXED_TO_FLOAT(thing->z) >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight))
+		FIXED_TO_FLOAT(thingzpos) >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight))
 			return;
 	}
 

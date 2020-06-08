@@ -17,6 +17,7 @@
 #include "d_event.h"
 #include "w_wad.h"
 #include "r_defs.h"
+#include "font.h"
 
 //------------------------------------
 //           heads up font
@@ -46,6 +47,28 @@
 #define CRED_FONTSTART '!' // the first font character
 #define CRED_FONTEND 'Z' // the last font character
 #define CRED_FONTSIZE (CRED_FONTEND - CRED_FONTSTART + 1)
+
+#define X( name ) name ## _FONT
+/* fonts */
+enum
+{
+	X        (HU),
+	X      (TINY),
+
+	X        (LT),
+	X      (CRED),
+
+	X   (TALLNUM),
+	X (NIGHTSNUM),
+	X   (PINGNUM),
+
+	X      (KART),
+	X        (GM),
+	X      (FILE),
+	X      (LSHI),
+	X     (LSLOW),
+};
+#undef  X
 
 #define HU_CROSSHAIRS 3 // maximum of 9 - see HU_Init();
 
@@ -83,18 +106,9 @@ void HU_AddChatText(const char *text, boolean playsound);
 // set true when entering a chat message
 extern boolean chat_on;
 
-extern patch_t *hu_font[HU_FONTSIZE], *tny_font[HU_FONTSIZE];
-extern patch_t *kart_font[KART_FONTSIZE]; // SRB2kart
-extern patch_t *gamemode_font[AZ_FONTSIZE], *file_font[AZ_FONTSIZE];
-extern patch_t *title_font_high[LT_FONTSIZE], *title_font_low[LT_FONTSIZE];
-extern patch_t *tallnum[10];
-extern patch_t *pingnum[10];
 extern patch_t *pinggfx[5];
-extern patch_t *nightsnum[10];
 extern patch_t *framecounter;
 extern patch_t *frameslash;
-extern patch_t *lt_font[LT_FONTSIZE];
-extern patch_t *cred_font[CRED_FONTSIZE];
 extern patch_t *emeraldpics[7];
 extern patch_t *tinyemeraldpics[7];
 extern patch_t *rflagico;
@@ -111,6 +125,9 @@ extern boolean hu_showscores;
 void HU_Init(void);
 
 void HU_LoadGraphics(void);
+
+// Load a HUDGFX patch or NULL.
+patch_t *HU_CachePatch(const char *format, ...);
 
 // reset heads up when consoleplayer respawns.
 void HU_Start(void);
