@@ -104,8 +104,6 @@ static void P_NetArchivePlayers(void)
 	UINT16 flags;
 //	size_t q;
 
-	CONS_Printf("SENDING NET INFO\n");
-
 	WRITEUINT32(save_p, ARCHIVEBLOCK_PLAYERS);
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -307,8 +305,6 @@ static void P_NetUnArchivePlayers(void)
 {
 	INT32 i, j;
 	UINT16 flags;
-
-	CONS_Printf("FETCHING NET INFO\n");
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_PLAYERS)
 		I_Error("Bad $$$.sav at archive block Players");
