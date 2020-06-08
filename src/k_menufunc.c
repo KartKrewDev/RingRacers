@@ -48,6 +48,7 @@
 #include "k_kart.h" // SRB2kart
 #include "d_player.h" // KITEM_ constants
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
+#include "k_grandprix.h" // MAXSPLITSCREENPLAYERS
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -2066,10 +2067,10 @@ void M_LevelSelectInit(INT32 choice)
 			cupgrid.grandprix = false;
 			levellist.timeattack = true;
 			break;
-		/*case 2:
+		case 2:
 			cupgrid.grandprix = true;
 			levellist.timeattack = false;
-			break;*/
+			break;
 		default:
 			CONS_Alert(CONS_WARNING, "Bad level select init\n");
 			return;
@@ -2173,17 +2174,52 @@ void M_CupSelectHandler(INT32 choice)
 				break;
 			}
 
-			// Keep cursor position if you select the same cup again, reset if it's a different cup
-			if (!levellist.selectedcup || newcup->id != levellist.selectedcup->id)
+			if (cupgrid.grandprix == true)
 			{
-				levellist.cursor = 0;
-				levellist.selectedcup = newcup;
+				// Early fadeout to let the sound finish playing
+				F_WipeStartScreen();
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+				F_WipeEndScreen();
+				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+				M_ClearMenus(true);
+
+				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+				// TODO: game settings screen
+				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+				grandprixinfo.masterbots = false;
+				grandprixinfo.encore = false;
+
+				grandprixinfo.cup = newcup;
+
+				grandprixinfo.gp = true;
+				grandprixinfo.roundnum = 1;
+				grandprixinfo.initalize = true;
+
+				G_DeferedInitNew(
+					false,
+					G_BuildMapName(grandprixinfo.cup->levellist[0] + 1),
+					(UINT8)cv_skin.value,
+					(UINT8)(cv_splitplayers.value - 1),
+					false
+				);
+			}
+			else
+			{
+				// Keep cursor position if you select the same cup again, reset if it's a different cup
+				if (!levellist.selectedcup || newcup->id != levellist.selectedcup->id)
+				{
+					levellist.cursor = 0;
+					levellist.selectedcup = newcup;
+				}
+
+				M_LevelSelectScrollDest();
+				levellist.y = levellist.dest;
+
+				M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 			}
 
-			M_LevelSelectScrollDest();
-			levellist.y = levellist.dest;
-
-			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 			S_StartSound(NULL, sfx_s3k63);
 			break;
 		case KEY_ESCAPE:
