@@ -6492,6 +6492,12 @@ void G_BeginRecording(void)
 			M_Memcpy(demo_p,name,16);
 			demo_p += 16;
 
+			// Save follower's colour
+			memset(name, 0, 16);
+			strncpy(name, Followercolor_cons_t[players[i].followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+			M_Memcpy(demo_p, name, 16);
+			demo_p += 16;
+
 			// Score, since Kart uses this to determine where you start on the map
 			WRITEUINT32(demo_p, player->score);
 
@@ -7425,6 +7431,18 @@ void G_DoPlayDemo(char *defdemoname)
 		demo_p += 16;
 		SetPlayerFollower(p, follower);
 
+		// Follower colour
+		M_Memcpy(color, demo_p, 16);
+		demo_p += 16;
+		for (i = 0; i < MAXSKINCOLORS +2; i++)	// +2 because of Match and Opposite
+		{
+				if (!stricmp(Followercolor_cons_t[i].strvalue, color))
+				{
+						players[p].followercolor = i;
+						break;
+				}
+		}
+
 		// Score, since Kart uses this to determine where you start on the map
 		players[p].score = READUINT32(demo_p);
 
@@ -7655,7 +7673,7 @@ void G_AddGhost(char *defdemoname)
 	p += 16;
 
 	// Follower data was here, skip it, we don't care about it for ghosts.
-	p += 16;
+	p += 32;	// followerskin (16) + followercolor (16)
 
 	p += 4; // score
 	p += 2; // powerlevel
