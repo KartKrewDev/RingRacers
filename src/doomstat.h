@@ -290,6 +290,7 @@ typedef struct
 	// SRB2kart
 	//boolean automap;    ///< Displays a level's white map outline in modified games
 	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
+	fixed_t default_waypoint_radius; ///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
 	// Music stuff.
 	UINT32 musinterfadeout;  ///< Fade out level music on intermission screen in milliseconds
@@ -323,6 +324,27 @@ typedef struct
 #define SAVE_ALWAYS   1
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
+
+// This could support more, but is that a good idea?
+// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory. 
+#define MAXLEVELLIST 5
+
+typedef struct cupheader_s
+{
+	UINT16 id;                     ///< Cup ID
+	char name[15];                 ///< Cup title (14 chars)
+	char icon[9];                  ///< Name of the icon patch
+	INT16 levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
+	UINT8 numlevels;               ///< Number of levels defined in levellist
+	INT16 bonusgame;               ///< Map number to use for bonus game
+	INT16 specialstage;            ///< Map number to use for special stage
+	UINT8 emeraldnum;              ///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+	SINT8 unlockrequired;          ///< An unlockable is required to select this cup. -1 for no unlocking required.
+	struct cupheader_s *next;      ///< Next cup in linked list
+} cupheader_t;
+
+extern cupheader_t *kartcupheaders; // Start of cup linked list
+extern UINT16 numkartcupheaders;
 
 enum TypeOfLevel
 {
@@ -484,7 +506,7 @@ extern UINT8 maxXtraLife; // Max extra lives from rings
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
 // For racing
-extern UINT32 countdown, countdown2;
+extern tic_t racecountdown, exitcountdown;
 
 extern fixed_t gravity;
 extern fixed_t mapobjectscale;
@@ -513,6 +535,7 @@ extern tic_t mapreset;
 extern boolean thwompsactive;
 extern SINT8 spbplace;
 
+extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
 extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;
@@ -584,7 +607,7 @@ extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
 extern consvar_t cv_jointimeout;
 extern consvar_t cv_maxping;
-extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
+extern ticcmd_t netcmds[TICQUEUE][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];
 

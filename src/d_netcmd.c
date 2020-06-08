@@ -50,6 +50,9 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "y_inter.h"
+#include "k_color.h"
+#include "k_respawn.h"
+#include "k_grandprix.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -188,7 +191,6 @@ static void Got_Verification(UINT8 **cp, INT32 playernum);
 static void Got_Removal(UINT8 **cp, INT32 playernum);
 static void Command_Verify_f(void);
 static void Command_RemoveAdmin_f(void);
-static void Command_ChangeJoinPassword_f(void);
 static void Command_MotD_f(void);
 static void Got_MotD_f(UINT8 **cp, INT32 playernum);
 
@@ -392,6 +394,21 @@ consvar_t cv_kartspeedometer = {"kartdisplayspeed", "Off", CV_SAVE, kartspeedome
 static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
 consvar_t cv_kartvoices = {"kartvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+static CV_PossibleValue_t kartbot_cons_t[] = {
+	{0, "Off"},
+	{1, "Lv.1"},
+	{2, "Lv.2"},
+	{3, "Lv.3"},
+	{4, "Lv.4"},
+	{5, "Lv.5"},
+	{6, "Lv.6"},
+	{7, "Lv.7"},
+	{8, "Lv.8"},
+	{9, "Lv.9"},
+	{0, NULL}
+};
+consvar_t cv_kartbot = {"kartbot", "0", CV_NETVAR|CV_CHEAT, kartbot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 consvar_t cv_karteliminatelast = {"karteliminatelast", "Yes", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOSHOWHELP, CV_YesNo, KartEliminateLast_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_kartusepwrlv = {"kartusepwrlv", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -549,6 +566,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"LEAVEPARTY",
 	"CANCELPARTYINVITE",
 	"GIVEITEM",
+	"ADDBOT",
 #ifdef HAVE_BLUA
 	"LUACMD",
 	"LUAVAR"
@@ -612,8 +630,6 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_GIVEITEM, Got_GiveItemcmd);
 
 	// Remote Administration
-	CV_RegisterVar(&cv_dummyjoinpassword);
-	COM_AddCommand("joinpassword", Command_ChangeJoinPassword_f);
 	COM_AddCommand("password", Command_Changepassword_f);
 	RegisterNetXCmd(XD_LOGIN, Got_Login);
 	COM_AddCommand("login", Command_Login_f); // useful in dedicated to kick off remote admin
@@ -675,8 +691,6 @@ void D_RegisterServerCommands(void)
 	AddMServCommands();
 
 	// p_mobj.c
-	CV_RegisterVar(&cv_itemrespawntime);
-	CV_RegisterVar(&cv_itemrespawn);
 	CV_RegisterVar(&cv_flagtime);
 	CV_RegisterVar(&cv_suddendeath);
 
@@ -746,6 +760,7 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_maxsend);
 	CV_RegisterVar(&cv_noticedownload);
 	CV_RegisterVar(&cv_downloadspeed);
+	CV_RegisterVar(&cv_httpsource);
 #ifndef NONET
 	CV_RegisterVar(&cv_allownewplayer);
 #ifdef VANILLAJOINNEXTROUND
@@ -1554,7 +1569,7 @@ static void SendNameAndColor2(void)
 	XBOXSTATIC char buf[MAXPLAYERNAME+2];
 	char *p;
 
-	if (splitscreen < 1 && !botingame)
+	if (splitscreen < 1)
 		return; // can happen if skin2/color2/name2 changed
 
 	if (g_localplayers[1] != consoleplayer)
@@ -1592,15 +1607,7 @@ static void SendNameAndColor2(void)
 		return;
 
 	// If you're not in a netgame, merely update the skin, color, and name.
-	if (botingame)
-	{
-		players[secondplaya].skincolor = botcolor;
-		if (players[secondplaya].mo)
-			players[secondplaya].mo->color = players[secondplaya].skincolor;
-		SetPlayerSkinByNum(secondplaya, botskin-1);
-		return;
-	}
-	else if (!netgame)
+	if (!netgame)
 	{
 		INT32 foundskin;
 
@@ -1830,15 +1837,7 @@ static void SendNameAndColor4(void)
 		return;
 
 	// If you're not in a netgame, merely update the skin, color, and name.
-	if (botingame)
-	{
-		players[fourthplaya].skincolor = botcolor;
-		if (players[fourthplaya].mo)
-			players[fourthplaya].mo->color = players[fourthplaya].skincolor;
-		SetPlayerSkinByNum(fourthplaya, botskin-1);
-		return;
-	}
-	else if (!netgame)
+	if (!netgame)
 	{
 		INT32 foundskin;
 
@@ -2248,7 +2247,7 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 void D_SendPlayerConfig(void)
 {
 	SendNameAndColor();
-	if (splitscreen || botingame)
+	if (splitscreen)
 		SendNameAndColor2();
 	if (splitscreen > 1)
 		SendNameAndColor3();
@@ -2387,6 +2386,9 @@ static void Command_View_f(void)
 				"You must be viewing a multiplayer replay to use this.\n");
 		return;
 	}
+
+	if (demo.freecam)
+		return;
 
 	displayplayerp = &displayplayers[viewnum-1];
 
@@ -2767,6 +2769,12 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	if (netgame || multiplayer)
 		FLS = false;
 
+	if (grandprixinfo.gp == true)
+	{
+		// Too lazy to change the input value for every instance of this function.......
+		pencoremode = grandprixinfo.encore;
+	}
+
 	if (delay != 2)
 	{
 		UINT8 flags = 0;
@@ -2804,29 +2812,6 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 				buf[0] &= ~(1<<1);
 			if (!Playing()) // you failed to start a server somehow, so cancel the map change
 				return;
-		}
-
-		// Kick bot from special stages
-		if (botskin)
-		{
-			if (G_IsSpecialStage(mapnum))
-			{
-				if (botingame)
-				{
-					//CL_RemoveSplitscreenPlayer();
-					botingame = false;
-					playeringame[1] = false;
-				}
-			}
-			else if (!botingame)
-			{
-				//CL_AddSplitscreenPlayer();
-				botingame = true;
-				displayplayers[1] = 1;
-				playeringame[1] = true;
-				players[1].bot = 1;
-				SendNameAndColor2();
-			}
 		}
 
 		chmappending++;
@@ -2868,11 +2853,10 @@ void D_SetupVote(void)
 	SendNetXCmd(XD_SETUPVOTE, buf, p - buf);
 }
 
-void D_ModifyClientVote(SINT8 voted, UINT8 splitplayer)
+void D_ModifyClientVote(UINT8 player, SINT8 voted, UINT8 splitplayer)
 {
 	char buf[2];
 	char *p = buf;
-	UINT8 player = consoleplayer;
 
 	if (splitplayer > 0)
 		player = g_localplayers[splitplayer];
@@ -2938,6 +2922,7 @@ static void Command_Map_f(void)
 	INT32 newmapnum;
 	boolean newresetplayers, newencoremode;
 	INT32 newgametype = gametype;
+	boolean startgp = false;
 
 	// max length of command: map map03 -gametype race -noresetplayers -force -encore
 	//                         1    2       3       4         5           6      7
@@ -2968,6 +2953,7 @@ static void Command_Map_f(void)
 		if (COM_CheckParm("-force"))
 		{
 			G_SetGameModified(false, true);
+			startgp = true;
 		}
 		else
 		{
@@ -3014,7 +3000,6 @@ static void Command_Map_f(void)
 
 	// new encoremode value
 	// use cvar by default
-
 	newencoremode = (cv_kartencore.value == 1);
 
 	if (COM_CheckParm("-encore"))
@@ -3059,6 +3044,69 @@ static void Command_Map_f(void)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You need to unlock this level before you can warp to it!\n"));
 		return;
+	}
+
+	if (startgp)
+	{
+		i = COM_CheckParm("-skill");
+
+		grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
+		grandprixinfo.masterbots = false;
+
+		if (i)
+		{
+			const UINT8 master = KARTSPEED_HARD+1;
+			const char *masterstr = "Master";
+			const char *skillname = COM_Argv(i+1);
+			INT32 newskill = -1;
+			INT32 j;
+
+			if (!strcasecmp(masterstr, skillname))
+			{
+				newskill = master;
+			}
+			else
+			{
+				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
+				{
+					if (!strcasecmp(kartspeed_cons_t[j].strvalue, skillname))
+					{
+						newskill = (INT16)kartspeed_cons_t[j].value;
+						break;
+					}
+				}
+
+				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+				{
+					j = atoi(COM_Argv(i+1)); // assume they gave us a skill number, which is okay too
+					if (j >= KARTSPEED_EASY && j <= master)
+						newskill = (INT16)j;
+				}
+			}
+
+			if (newskill != -1)
+			{
+				if (newskill == master)
+				{
+					grandprixinfo.gamespeed = KARTSPEED_HARD;
+					grandprixinfo.masterbots = true;
+				}
+				else
+				{
+					grandprixinfo.gamespeed = newskill;
+					grandprixinfo.masterbots = false;
+				}
+			}
+		}
+
+		grandprixinfo.encore = newencoremode;
+
+		grandprixinfo.gp = true;
+		grandprixinfo.roundnum = 0;
+		grandprixinfo.cup = NULL;
+		grandprixinfo.wonround = false;
+
+		grandprixinfo.initalize = true;
 	}
 
 	fromlevelselect = false;
@@ -3182,11 +3230,17 @@ static void Command_Pause(void)
 
 	if (cv_pause.value || server || (IsPlayerAdmin(consoleplayer)))
 	{
-		if (!paused && (modeattacking || !(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING || gamestate == GS_WAITINGPLAYERS)))
+		if (!paused && (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING || gamestate == GS_WAITINGPLAYERS)))
 		{
 			CONS_Printf(M_GetText("You can't pause here.\n"));
 			return;
 		}
+		else if (modeattacking)	// in time attack, pausing restarts the map
+		{
+			M_ModeAttackRetry(0);	// directly call from m_menu;
+			return;
+		}
+
 		SendNetXCmd(XD_PAUSE, &buf, 2);
 	}
 	else
@@ -3263,6 +3317,12 @@ static void Command_Respawn(void)
 		return;
 	}
 
+	if (players[consoleplayer].mo && (players[consoleplayer].kartstuff[k_spinouttimer] || spbplace == players[consoleplayer].kartstuff[k_position])) // KART: Nice try, but no, you won't be cheesing spb anymore (x2)
+	{
+		CONS_Printf(M_GetText("Nice try.\n"));
+		return;
+	}
+
 	/*if (!G_RaceGametype()) // srb2kart: not necessary, respawning makes you lose a bumper in battle, so it's not desirable to use as a way to escape a hit
 	{
 		CONS_Printf(M_GetText("You may only use this in co-op, race, and competition!\n"));
@@ -3285,7 +3345,7 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 	INT32 respawnplayer = READINT32(*cp);
 
 	// You can't respawn someone else. Nice try, there.
-	if (respawnplayer != playernum) // srb2kart: "|| (!G_RaceGametype())"
+	if (respawnplayer != playernum || players[respawnplayer].kartstuff[k_spinouttimer] || spbplace == players[respawnplayer].kartstuff[k_position]) // srb2kart: "|| (!G_RaceGametype())"
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal respawn command received from %s\n"), player_names[playernum]);
 		if (server)
@@ -4455,131 +4515,6 @@ static void Got_Removal(UINT8 **cp, INT32 playernum)
 	CONS_Printf(M_GetText("You are no longer a server administrator.\n"));
 }
 
-// Join password stuff
-consvar_t cv_dummyjoinpassword = {"dummyjoinpassword", "", CV_HIDEN|CV_NOSHOWHELP|CV_PASSWORD, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-
-#define NUMJOINCHALLENGES 32
-static UINT8 joinpassmd5[MD5_LEN+1];
-boolean joinpasswordset = false;
-static UINT8 joinpasschallenges[NUMJOINCHALLENGES][MD5_LEN];
-static tic_t joinpasschallengeson[NUMJOINCHALLENGES];
-
-boolean D_IsJoinPasswordOn(void)
-{
-	return joinpasswordset;
-}
-
-static inline void GetChallengeAnswer(UINT8 *question, UINT8 *passwordmd5, UINT8 *answer)
-{
-	D_MD5PasswordPass(question, MD5_LEN, (char *) passwordmd5, answer);
-}
-
-void D_ComputeChallengeAnswer(UINT8 *question, const char *pw, UINT8 *answer)
-{
-	static UINT8 passwordmd5[MD5_LEN+1];
-
-	memset(passwordmd5, 0x00, MD5_LEN+1);
-	D_MD5PasswordPass((const UINT8 *)pw, strlen(pw), BASESALT, &passwordmd5);
-	GetChallengeAnswer(question, passwordmd5, answer);
-}
-
-void D_SetJoinPassword(const char *pw)
-{
-	memset(joinpassmd5, 0x00, MD5_LEN+1);
-	D_MD5PasswordPass((const UINT8 *)pw, strlen(pw), BASESALT, &joinpassmd5);
-	joinpasswordset = true;
-}
-
-boolean D_VerifyJoinPasswordChallenge(UINT8 num, UINT8 *answer)
-{
-	boolean passed = false;
-
-	num %= NUMJOINCHALLENGES;
-
-	//@TODO use a constant-time memcmp....
-	if (joinpasschallengeson[num] > 0 && memcmp(answer, joinpasschallenges[num], MD5_LEN) == 0)
-		passed = true;
-
-	// Wipe and reset the challenge so that it can't be tried against again, as a small measure against brute-force attacks.
-	memset(joinpasschallenges[num], 0x00, MD5_LEN);
-	joinpasschallengeson[num] = 0;
-
-	return passed;
-}
-
-void D_MakeJoinPasswordChallenge(UINT8 *num, UINT8 *question)
-{
-	size_t i;
-
-	for (i = 0; i < NUMJOINCHALLENGES; i++)
-	{
-		(*num) = M_RandomKey(NUMJOINCHALLENGES);
-
-		if (joinpasschallengeson[(*num)] == 0)
-			break;
-	}
-
-	if (joinpasschallengeson[(*num)] > 0)
-	{
-		// Ugh, all challenges are (probably) taken. Let's find the oldest one and overwrite it.
-		tic_t oldesttic = INT32_MAX;
-
-		for (i = 0; i < NUMJOINCHALLENGES; i++)
-		{
-			if (joinpasschallengeson[i] < oldesttic)
-			{
-				(*num) = i;
-				oldesttic = joinpasschallengeson[i];
-			}
-		}
-	}
-
-	joinpasschallengeson[(*num)] = I_GetTime();
-
-	memset(question, 0x00, MD5_LEN);
-	for (i = 0; i < MD5_LEN; i++)
-		question[i] = M_RandomByte();
-
-	// Store the answer in memory. What was the question again?
-	GetChallengeAnswer(question, joinpassmd5, joinpasschallenges[(*num)]);
-
-	// This ensures that num is always non-zero and will be valid when used for the answer
-	if ((*num) == 0)
-		(*num) = NUMJOINCHALLENGES;
-}
-
-// Remote Administration
-static void Command_ChangeJoinPassword_f(void)
-{
-#ifdef NOMD5
-	// If we have no MD5 support then completely disable XD_LOGIN responses for security.
-	CONS_Alert(CONS_NOTICE, "Remote administration commands are not supported in this build.\n");
-#else
-	if (client) // cannot change remotely
-	{
-		CONS_Printf(M_GetText("Only the server can use this.\n"));
-		return;
-	}
-
-	if (COM_Argc() != 2)
-	{
-		CONS_Printf(M_GetText("joinpassword <password>: set a password to join the server\nUse -remove to disable the password.\n"));
-		return;
-	}
-
-	if (strcmp(COM_Argv(1), "-remove") == 0)
-	{
-		joinpasswordset = false;
-		CONS_Printf(M_GetText("Join password removed.\n"));
-	}
-	else
-	{
-		D_SetJoinPassword(COM_Argv(1));
-		CONS_Printf(M_GetText("Join password set.\n"));
-	}
-#endif
-}
-
 static void Command_MotD_f(void)
 {
 	size_t i, j;
@@ -5197,14 +5132,16 @@ static void PointLimit_OnChange(void)
 
 static void NumLaps_OnChange(void)
 {
-	if (!G_RaceGametype() || (modeattacking || demo.playback))
+	if (K_CanChangeRules() == false)
+	{
 		return;
+	}
 
-	if (server && Playing()
-		&& (netgame || multiplayer)
-		&& (mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-		&& (cv_numlaps.value > mapheaderinfo[gamemap - 1]->numlaps))
+	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
+	&& (cv_numlaps.value > mapheaderinfo[gamemap - 1]->numlaps))
+	{
 		CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
+	}
 
 	// Just don't be verbose
 	CONS_Printf(M_GetText("Number of laps set to %d\n"), cv_numlaps.value);
@@ -5289,11 +5226,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 	// There will always be a server, and this only needs to be done once.
 	if (server && (multiplayer || netgame))
 	{
-		if (gametype == GT_COMPETITION || gametype == GT_COOP)
-			CV_SetValue(&cv_itemrespawn, 0);
-		else if (!cv_itemrespawn.changed)
-			CV_SetValue(&cv_itemrespawn, 1);
-
 		switch (gametype)
 		{
 			case GT_MATCH:
@@ -5304,8 +5236,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 					CV_SetValue(&cv_pointlimit,  0);
 					CV_SetValue(&cv_timelimit, 120);
 				}
-				if (!cv_itemrespawntime.changed)
-					CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue); // respawn normally
 				break;
 			case GT_TAG:
 			case GT_HIDEANDSEEK:
@@ -5316,8 +5246,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 					CV_SetValue(&cv_timelimit, 5);
 					CV_SetValue(&cv_pointlimit, 0);
 				}
-				if (!cv_itemrespawntime.changed)
-					CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue); // respawn normally
 				break;
 			case GT_CTF:
 				if (!cv_timelimit.changed && !cv_pointlimit.changed) // user hasn't changed limits
@@ -5326,17 +5254,12 @@ void D_GameTypeChanged(INT32 lastgametype)
 					CV_SetValue(&cv_timelimit, 0);
 					CV_SetValue(&cv_pointlimit, 5);
 				}
-				if (!cv_itemrespawntime.changed)
-					CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue); // respawn normally
 				break;
 		}
 	}
 	else if (!multiplayer && !netgame)
 	{
-		gametype = GT_RACE; // SRB2kart
-		// These shouldn't matter anymore
-		//CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue);
-		//CV_SetValue(&cv_itemrespawn, 0);
+		gametype = GT_RACE;
 	}
 
 	// reset timelimit and pointlimit in race/coop, prevent stupid cheats
@@ -5834,8 +5757,7 @@ void Command_ExitGame_f(void)
 
 	splitscreen = 0;
 	SplitScreen_OnChange();
-	botingame = false;
-	botskin = 0;
+
 	cv_debug = 0;
 	emeralds = 0;
 
@@ -5848,14 +5770,14 @@ void Command_ExitGame_f(void)
 
 void Command_Retry_f(void)
 {
-	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING))
+	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION))
+	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
-	else if (netgame || multiplayer)
-		CONS_Printf(M_GetText("This only works in single player.\n"));
-	/*else if (!&players[consoleplayer] || players[consoleplayer].lives <= 1)
-		CONS_Printf(M_GetText("You can't retry without any lives remaining!\n"));
-	else if (G_IsSpecialStage(gamemap))
-		CONS_Printf(M_GetText("You can't retry special stages!\n"));*/
+	}
+	else if (grandprixinfo.gp == false)
+	{
+		CONS_Printf(M_GetText("This only works in Grand Prix.\n"));
+	}
 	else
 	{
 		M_ClearMenus(true);
@@ -5889,11 +5811,11 @@ static void Fishcake_OnChange(void)
 static void Command_Isgamemodified_f(void)
 {
 	if (majormods)
-		CONS_Printf("The game has been modified with major add-ons, so you cannot play Record Attack.\n");
+		CONS_Printf("The game has been modified with major addons, so you cannot play Record Attack.\n");
 	else if (savemoddata)
-		CONS_Printf("The game has been modified with an add-on with its own save data, so you can play Record Attack and earn medals.\n");
+		CONS_Printf("The game has been modified with an addon with its own save data, so you can play Record Attack and earn medals.\n");
 	else if (modifiedgame)
-		CONS_Printf("The game has been modified with only minor add-ons. You can play Record Attack, earn medals and unlock extras.\n");
+		CONS_Printf("The game has been modified with only minor addons. You can play Record Attack, earn medals and unlock extras.\n");
 	else
 		CONS_Printf("The game has not been modified. You can play Record Attack, earn medals and unlock extras.\n");
 }
@@ -6346,24 +6268,35 @@ static void Command_ShowTime_f(void)
 // SRB2Kart: On change messages
 static void BaseNumLaps_OnChange(void)
 {
-	if (gamestate == GS_LEVEL)
+	if (K_CanChangeRules() == true)
 	{
-		if (cv_basenumlaps.value)
-			CONS_Printf(M_GetText("Number of laps will be changed to %d next round.\n"), cv_basenumlaps.value);
-		else
-			CONS_Printf(M_GetText("Number of laps will be changed to map defaults next round.\n"));
+		const char *str = va("%d", cv_basenumlaps.value);
+
+		if (cv_basenumlaps.value == 0)
+		{
+			str = "map defaults";
+		}
+
+		CONS_Printf(M_GetText("Number of laps will be changed to %s next round.\n"), str);
 	}
 }
 
 
 static void KartFrantic_OnChange(void)
 {
-	if ((boolean)cv_kartfrantic.value != franticitems && gamestate == GS_LEVEL && leveltime > starttime)
-		CONS_Printf(M_GetText("Frantic items will be turned %s next round.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
+	if (K_CanChangeRules() == false)
+	{
+		return;
+	}
+
+	if (leveltime < starttime)
+	{
+		CONS_Printf(M_GetText("Frantic items has been set to %s.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
+		franticitems = (boolean)cv_kartfrantic.value;
+	}
 	else
 	{
-		CONS_Printf(M_GetText("Frantic items has been turned %s.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
-		franticitems = (boolean)cv_kartfrantic.value;
+		CONS_Printf(M_GetText("Frantic items will be turned %s next round.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
 	}
 }
 
@@ -6376,47 +6309,59 @@ static void KartSpeed_OnChange(void)
 		return;
 	}
 
-	if (G_RaceGametype())
+	if (K_CanChangeRules() == false)
 	{
-		if ((gamestate == GS_LEVEL && leveltime < starttime) && (cv_kartspeed.value != KARTSPEED_AUTO))
-		{
-			CONS_Printf(M_GetText("Game speed has been changed to \"%s\".\n"), cv_kartspeed.string);
-			gamespeed = (UINT8)cv_kartspeed.value;
-		}
-		else if (cv_kartspeed.value != (signed)gamespeed)
-		{
-			CONS_Printf(M_GetText("Game speed will be changed to \"%s\" next round.\n"), cv_kartspeed.string);
-		}
+		return;
+	}
+
+	if (leveltime < starttime && cv_kartspeed.value != KARTSPEED_AUTO)
+	{
+		CONS_Printf(M_GetText("Game speed has been changed to \"%s\".\n"), cv_kartspeed.string);
+		gamespeed = (UINT8)cv_kartspeed.value;
+	}
+	else
+	{
+		CONS_Printf(M_GetText("Game speed will be changed to \"%s\" next round.\n"), cv_kartspeed.string);
 	}
 }
 
 static void KartEncore_OnChange(void)
 {
-	if (G_RaceGametype())
+	if (K_CanChangeRules() == false)
 	{
-		if ((cv_kartencore.value == 1) != encoremode && gamestate == GS_LEVEL /*&& leveltime > starttime*/)
-			CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
-		else
-			CONS_Printf(M_GetText("Encore Mode has been set to %s.\n"), cv_kartencore.string);
+		return;
 	}
+
+	CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
 }
 
 static void KartComeback_OnChange(void)
 {
-	if (G_BattleGametype())
+	if (K_CanChangeRules() == false)
 	{
-		if ((boolean)cv_kartcomeback.value != comeback && gamestate == GS_LEVEL && leveltime > starttime)
-			CONS_Printf(M_GetText("Karma Comeback will be turned %s next round.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
-		else
-		{
-			CONS_Printf(M_GetText("Karma Comeback has been turned %s.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
-			comeback = (boolean)cv_kartcomeback.value;
-		}
+		return;
+	}
+
+	if (leveltime < starttime)
+	{
+		CONS_Printf(M_GetText("Karma Comeback has been turned %s.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
+		comeback = (boolean)cv_kartcomeback.value;
+	}
+	else
+	{
+		CONS_Printf(M_GetText("Karma Comeback will be turned %s next round.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
 	}
 }
 
 static void KartEliminateLast_OnChange(void)
 {
-	if (G_RaceGametype() && cv_karteliminatelast.value)
+	if (K_CanChangeRules() == false)
+	{
+		CV_StealthSet(&cv_karteliminatelast, cv_karteliminatelast.defaultvalue);
+	}
+
+	if (G_RaceGametype())
+	{
 		P_CheckRacers();
+	}
 }

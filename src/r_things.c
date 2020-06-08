@@ -28,7 +28,7 @@
 #include "dehacked.h" // get_number (for thok)
 #include "d_netfil.h" // blargh. for nameonly().
 #include "m_cheat.h" // objectplace
-#include "k_kart.h" // SRB2kart
+#include "k_color.h" // SRB2kart
 #include "p_local.h" // stplyr
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
@@ -257,6 +257,7 @@ static boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef,
 			//BP: we cannot use special tric in hardware mode because feet in ground caused by z-buffer
 			if (rendermode != render_none) // not for psprite
 				spritecachedinfo[numspritelumps].topoffset += 4<<FRACBITS;
+
 			// Being selective with this causes bad things. :( Like the special stage tokens breaking apart.
 			/*if (rendermode != render_none // not for psprite
 			 && SHORT(patch.topoffset)>0 && SHORT(patch.topoffset)<SHORT(patch.height))
@@ -1435,6 +1436,10 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 //
 static void R_ProjectSprite(mobj_t *thing)
 {
+	const fixed_t thingxpos = thing->x + thing->sprxoff;
+	const fixed_t thingypos = thing->y + thing->spryoff;
+	const fixed_t thingzpos = thing->z + thing->sprzoff;
+
 	fixed_t tr_x, tr_y;
 	fixed_t gxt, gyt;
 	fixed_t tx, tz;
@@ -1471,8 +1476,8 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t this_scale = thing->scale;
 
 	// transform the origin point
-	tr_x = thing->x - viewx;
-	tr_y = thing->y - viewy;
+	tr_x = thingxpos - viewx;
+	tr_y = thingypos - viewy;
 
 	gxt = FixedMul(tr_x, viewcos);
 	gyt = -FixedMul(tr_y, viewsin);
@@ -1538,9 +1543,9 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (sprframe->rotate != SRF_SINGLE || papersprite)
 	{
 		if (thing->player)
-			ang = R_PointToAngle (thing->x, thing->y) - thing->player->frameangle;
+			ang = R_PointToAngle (thingxpos, thingypos) - thing->player->frameangle;
 		else
-			ang = R_PointToAngle (thing->x, thing->y) - thing->angle;
+			ang = R_PointToAngle (thingxpos, thingypos) - thing->angle;
 	}
 
 	if (sprframe->rotate == SRF_SINGLE)
@@ -1553,7 +1558,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	else
 	{
 		// choose a different rotation based on player view
-		//ang = R_PointToAngle (thing->x, thing->y) - thing->angle;
+		//ang = R_PointToAngle (thingxpos, thingypos) - thing->angle;
 
 		if ((ang < ANGLE_180) && (sprframe->rotate & SRF_RIGHT)) // See from right
 			rot = 6; // F7 slot
@@ -1700,7 +1705,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (x2 < portalclipstart || x1 > portalclipend)
 			return;
 
-		if (P_PointOnLineSide(thing->x, thing->y, portalclipline) != 0)
+		if (P_PointOnLineSide(thingxpos, thingypos, portalclipline) != 0)
 			return;
 	}
 
@@ -1710,12 +1715,12 @@ static void R_ProjectSprite(mobj_t *thing)
 		// When vertical flipped, draw sprites from the top down, at least as far as offsets are concerned.
 		// sprite height - sprite topoffset is the proper inverse of the vertical offset, of course.
 		// remember gz and gzt should be seperated by sprite height, not thing height - thing height can be shorter than the sprite itself sometimes!
-		gz = thing->z + thing->height - FixedMul(spritecachedinfo[lump].topoffset, this_scale);
+		gz = thingzpos + thing->height - FixedMul(spritecachedinfo[lump].topoffset, this_scale);
 		gzt = gz + FixedMul(spritecachedinfo[lump].height, this_scale);
 	}
 	else
 	{
-		gzt = thing->z + FixedMul(spritecachedinfo[lump].topoffset, this_scale);
+		gzt = thingzpos + FixedMul(spritecachedinfo[lump].topoffset, this_scale);
 		gz = gzt - FixedMul(spritecachedinfo[lump].height, this_scale);
 	}
 
@@ -1732,7 +1737,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		light = thing->subsector->sector->numlights - 1;
 
 		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
-			fixed_t h = thing->subsector->sector->lightlist[lightnum].slope ? P_GetZAt(thing->subsector->sector->lightlist[lightnum].slope, thing->x, thing->y)
+			fixed_t h = thing->subsector->sector->lightlist[lightnum].slope ? P_GetZAt(thing->subsector->sector->lightlist[lightnum].slope, thingxpos, thingypos)
 			            : thing->subsector->sector->lightlist[lightnum].height;
 			if (h <= gzt) {
 				light = lightnum - 1;
@@ -1761,12 +1766,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (heightsec != -1 && phs != -1) // only clip things which are in special sectors
 	{
 		if (viewz < sectors[phs].floorheight ?
-		thing->z >= sectors[heightsec].floorheight :
+		thingzpos >= sectors[heightsec].floorheight :
 		gzt < sectors[heightsec].floorheight)
 			return;
 		if (viewz > sectors[phs].ceilingheight ?
 		gzt < sectors[heightsec].ceilingheight && viewz >= sectors[heightsec].ceilingheight :
-		thing->z >= sectors[heightsec].ceilingheight)
+		thingzpos >= sectors[heightsec].ceilingheight)
 			return;
 	}
 
@@ -1777,12 +1782,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->scale = yscale; //<<detailshift;
 	vis->sortscale = sortscale;
 	vis->dispoffset = thing->info->dispoffset; // Monster Iestyn: 23/11/15
-	vis->gx = thing->x;
-	vis->gy = thing->y;
+	vis->gx = thingxpos;
+	vis->gy = thingypos;
 	vis->gz = gz;
 	vis->gzt = gzt;
 	vis->thingheight = thing->height;
-	vis->pz = thing->z;
+	vis->pz = thingzpos;
 	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = vis->gzt - viewz;
 	vis->scalestep = scalestep;
@@ -2073,6 +2078,9 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	INT32 lightnum;
 	fixed_t approx_dist, limit_dist;
 
+	INT32 splitflags;			// check if a mobj has spliscreen flags
+	boolean split_drawsprite;	// used for splitscreen flags
+
 	if (rendermode != render_soft)
 		return;
 
@@ -2106,27 +2114,36 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
+			split_drawsprite = false;
+
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (r_splitscreen)
+			splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
+
+			if (r_splitscreen && splitflags)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum != 0)
-						continue;
+					if (viewssnum == 0)
+						split_drawsprite = true;
 
 				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum != 1)
-						continue;
+					if (viewssnum == 1)
+						split_drawsprite = true;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
-					if (viewssnum != 2)
-						continue;
+				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+					if (viewssnum == 2)
+						split_drawsprite = true;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
-					if (viewssnum != 3)
-						continue;
+				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+					if (viewssnum == 3)
+						split_drawsprite = true;
 			}
+			else
+				split_drawsprite = true;
+
+			if (!split_drawsprite)
+				continue;
 
 			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
 
@@ -2141,27 +2158,37 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 		// Draw everything in sector, no checks
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
+
+			split_drawsprite = false;
+
 			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
 				continue;
 
-			if (r_splitscreen)
+			splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
+
+			if (r_splitscreen && splitflags)
 			{
 				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum != 0)
-						continue;
+					if (viewssnum == 0)
+						split_drawsprite = true;
 
 				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum != 1)
-						continue;
+					if (viewssnum == 1)
+						split_drawsprite = true;
 
-				if (thing->eflags & MFE_DRAWONLYFORP3 && r_splitscreen > 1)
-					if (viewssnum != 2)
-						continue;
+				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
+					if (viewssnum == 2)
+						split_drawsprite = true;
 
-				if (thing->eflags & MFE_DRAWONLYFORP4 && r_splitscreen > 2)
-					if (viewssnum != 3)
-						continue;
+				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
+					if (viewssnum == 3)
+						split_drawsprite = true;
 			}
+			else
+				split_drawsprite = true;
+
+			if (!split_drawsprite)
+				continue;
 
 			R_ProjectSprite(thing);
 		}
@@ -2893,6 +2920,11 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	strncpy(skin->facewant, "PLAYWANT", 9);
 	strncpy(skin->facemmap, "PLAYMMAP", 9);
 
+	for (i = 0; i < SKINRIVALS; i++)
+	{
+		strcpy(skin->rivals[i], "");
+	}
+
 	skin->starttranscolor = 96;
 	skin->prefcolor = SKINCOLOR_GREEN;
 
@@ -3162,6 +3194,45 @@ void R_AddSkins(UINT16 wadnum)
 			{
 				strupr(value);
 				strncpy(skin->facemmap, value, sizeof skin->facemmap);
+			}
+			else if (!stricmp(stoken, "rivals"))
+			{
+				size_t len = strlen(value);
+				size_t i;
+				char rivalname[SKINNAMESIZE] = "";
+				UINT8 pos = 0;
+				UINT8 numrivals = 0;
+
+				// Can't use strtok, because this function's already using it.
+				// Using it causes it to upset the saved pointer,
+				// corrupting the reading for the rest of the file.
+
+				// So instead we get to crawl through the value, character by character,
+				// and write it down as we go, until we hit a comma or the end of the string.
+				// Yaaay.
+
+				for (i = 0; i <= len; i++)
+				{
+					if (numrivals >= SKINRIVALS)
+					{
+						break;
+					}
+
+					if (value[i] == ',' || i == len)
+					{
+						STRBUFCPY(skin->rivals[numrivals], rivalname);
+						strlwr(skin->rivals[numrivals]);
+						numrivals++;
+
+						memset(rivalname, 0, sizeof (rivalname));
+						pos = 0;
+
+						continue;
+					}
+
+					rivalname[pos] = value[i];
+					pos++;
+				}
 			}
 
 #define FULLPROCESS(field) else if (!stricmp(stoken, #field)) skin->field = get_number(value);

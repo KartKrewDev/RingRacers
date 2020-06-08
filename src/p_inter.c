@@ -29,6 +29,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_grandprix.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -161,8 +162,6 @@ void P_DoNightsScore(player_t *player)
 		return; // Don't do any fancy shit for failures.
 
 	dummymo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z+player->mo->height/2, MT_NIGHTSCORE);
-	if (player->bot)
-		player = &players[consoleplayer];
 
 	if (G_IsSpecialStage(gamemap)) // Global link count? Maybe not a good idea...
 	{
@@ -638,7 +637,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
-			S_StartSound(toucher, sfx_s1b2); 
+			S_StartSound(toucher, sfx_s1b2);
 			return;
 
 // ***************************************** //
@@ -758,8 +757,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // ***************************** //
 		// Special Stage Token
 		case MT_EMMY:
-			if (player->bot)
-				return;
 			tokenlist += special->health;
 
 			if (ALL7EMERALDS(emeralds)) // Got all 7
@@ -776,9 +773,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 		// Emerald Hunt
 		case MT_EMERHUNT:
-			if (player->bot)
-				return;
-
 			if (hunt1 == special)
 				hunt1 = NULL;
 			else if (hunt2 == special)
@@ -807,9 +801,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_EMERALD5:
 		case MT_EMERALD6:
 		case MT_EMERALD7:
-			if (player->bot)
-				return;
-
 			if (special->threshold)
 				player->powers[pw_emeralds] |= special->info->speed;
 			else
@@ -837,12 +828,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
-				if (demo.playback || player->bot)
+				if (demo.playback)
 					return;
+
 				emblemlocations[special->health-1].collected = true;
-
 				M_UpdateUnlockablesAndExtraEmblems(false);
-
 				G_SaveGameData(false);
 				break;
 			}
@@ -850,8 +840,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// CTF Flags
 		case MT_REDFLAG:
 		case MT_BLUEFLAG:
-			if (player->bot)
-				return;
 			if (player->powers[pw_flashing] || player->tossdelay)
 				return;
 			if (!special->spawnpoint)
@@ -922,8 +910,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // NiGHTS gameplay items and powerups //
 // ********************************** //
 		/*case MT_NIGHTSDRONE:
-			if (player->bot)
-				return;
 			if (player->exiting)
 				return;
 			if (player->bonustime)
@@ -1077,9 +1063,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			return;
 		case MT_EGGCAPSULE:
-			if (player->bot)
-				return;
-
 			// make sure everything is as it should be, THEN take rings from players in special stages
 			if (player->pflags & PF_NIGHTSMODE && !toucher->target)
 				return;
@@ -1176,12 +1159,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 					P_ResetPlayer(player);
 
-					P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+					P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 				}
 			}
 			return;
 		/*case MT_NIGHTSSUPERLOOP:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 				player->powers[pw_nights_superloop] = (UINT16)special->info->speed;
@@ -1203,7 +1186,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_NIGHTSDRILLREFILL:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 				player->drillmeter = special->info->speed;
@@ -1225,7 +1208,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_NIGHTSHELPER:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 			{
@@ -1257,7 +1240,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_NIGHTSEXTRATIME:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 			{
@@ -1287,7 +1270,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_NIGHTSLINKFREEZE:
-			if (player->bot || !(player->pflags & PF_NIGHTSMODE))
+			if (!(player->pflags & PF_NIGHTSMODE))
 				return;
 			if (!G_IsSpecialStage(gamemap))
 			{
@@ -1358,8 +1341,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					if (playeringame[i] && players[i].pflags & PF_NIGHTSMODE)
 						players[i].drillmeter += TICRATE/2;
 			}
-			else if (player->bot)
-				players[consoleplayer].drillmeter += TICRATE/2;
 			else
 				player->drillmeter += TICRATE/2;
 
@@ -1393,9 +1374,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				thinker_t  *th;
 				mobj_t *mo2;
 
-				if (player->bot)
-					return;
-
 				junk.tag = 649;
 				EV_DoElevator(&junk, bridgeFall, false);
 
@@ -1415,8 +1393,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			break;
 		case MT_FIREFLOWER:
-			if (player->bot)
-				return;
 			player->powers[pw_shield] |= SH_FIREFLOWER;
 			toucher->color = SKINCOLOR_WHITE;
 			G_GhostAddColor(player - players, GHC_FIREFLOWER);
@@ -1426,10 +1402,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // Misc touchables //
 // *************** //
 		case MT_STARPOST:
-			if (player->bot)
-				return;
-			//
-			// SRB2kart: make sure the player will have enough checkpoints to touch
 			if (circuitmap && special->health - player->starpostnum > 1)
 			{
 				// blatant reuse of a variable that's normally unused in circuit
@@ -1449,11 +1421,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (player->starpostnum >= special->health)
 				return; // Already hit this post
 
-			// Save the player's time and position.
-			player->starposttime = player->realtime; //this makes race mode's timers work correctly whilst not affecting sp -x
 			player->starpostnum = special->health;
 
-			//S_StartSound(toucher, special->info->painsound);
 			return;
 
 		case MT_FAKEMOBILE:
@@ -1482,7 +1451,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (player->pflags & PF_GLIDING)
 				{
 					player->pflags &= ~(PF_GLIDING|PF_JUMPED);
-					P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+					P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 				}
 
 				// Play a bounce sound?
@@ -1549,7 +1518,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					if (player->pflags & PF_GLIDING)
 					{
 						player->pflags &= ~(PF_GLIDING|PF_JUMPED);
-						P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_FALL1
+						P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_FALL1
 					}
 
 					// Play a bounce sound?
@@ -1605,7 +1574,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				player->pflags |= PF_MACESPIN;
 				S_StartSound(toucher, sfx_spin);
-				P_SetPlayerMobjState(toucher, S_KART_STND1); // SRB2kart - was S_PLAY_ATK1
+				P_SetPlayerMobjState(toucher, S_KART_STILL1); // SRB2kart - was S_PLAY_ATK1
 			}
 			else
 				player->pflags |= PF_ITEMHANG;
@@ -1631,7 +1600,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (player->powers[pw_invulnerability] || player->powers[pw_flashing]
 			|| (player->powers[pw_super] && !(ALL7EMERALDS(player->powers[pw_emeralds]))))
 				return;
-			if (player->powers[pw_shield] || player->bot)  //If One-Hit Shield
+			if (player->powers[pw_shield])  //If One-Hit Shield
 			{
 				P_RemoveShield(player);
 				S_StartSound(toucher, sfx_shldls); // Ba-Dum! Shield loss.
@@ -1716,8 +1685,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		default: // SOC or script pickup
-			if (player->bot)
-				return;
 			P_SetTarget(&special->target, toucher);
 			break;
 		}
@@ -2002,71 +1969,146 @@ void P_CheckPointLimit(void)
 // Checks whether or not to end a race netgame.
 boolean P_CheckRacers(void)
 {
-	INT32 i, j, numplayersingame = 0, numexiting = 0;
+	UINT8 i;
+	UINT8 numplayersingame = 0;
+	UINT8 numexiting = 0;
+	boolean eliminatelast = cv_karteliminatelast.value;
+	boolean everyonedone = true;
+	boolean eliminatebots = false;
 	boolean griefed = false;
 
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].exiting || !players[i].lives)
-			continue;
+		if (nospectategrief[i] != -1) // prevent spectate griefing
+		{
+			griefed = true;
+		}
 
-		break;
+		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0) // Not playing
+		{
+			// Y'all aren't even playing
+			continue;
+		}
+
+		numplayersingame++;
+
+		if (players[i].exiting || (players[i].pflags & PF_TIMEOVER))
+		{
+			numexiting++;
+		}
+		else
+		{
+			if (players[i].bot)
+			{
+				// Isn't a human, thus doesn't matter. (Sorry, robots.)
+				// Set this so that we can check for bots that need to get eliminated, though!
+				eliminatebots = true;
+				continue;
+			}
+
+			everyonedone = false;
+		}
 	}
 
-	if (i == MAXPLAYERS) // finished
+	// If we returned here with bots left, then the last place bot may have a chance to finish the map and NOT get time over.
+	// Not that it affects anything, they didn't make the map take longer or even get any points from it. But... it's a bit inconsistent!
+	// So if there's any bots, we'll let the game skip this, continue onto calculating eliminatelast, THEN we return true anyway.
+	if (everyonedone && !eliminatebots)
 	{
-		countdown = countdown2 = 0;
+		// Everyone's finished, we're done here!
+		racecountdown = exitcountdown = 0;
 		return true;
 	}
 
-	for (j = 0; j < MAXPLAYERS; j++)
+	if (numplayersingame <= 1)
 	{
-		if (nospectategrief[j] != -1) // prevent spectate griefing
-			griefed = true;
-		if (!playeringame[j] || players[j].spectator)
-			continue;
-		numplayersingame++;
-		if (players[j].exiting)
-			numexiting++;
+		// Never do this without enough players.
+		eliminatelast = false;
+	}
+	else
+	{
+		if (grandprixinfo.gp == true)
+		{
+			// Always do this in GP
+			eliminatelast = true;
+		}
+		else if (griefed)
+		{
+			// Don't do this if someone spectated
+			eliminatelast = false;
+		}
 	}
 
-	if (cv_karteliminatelast.value && numplayersingame > 1 && !griefed)
+	if (eliminatelast == true && (numplayersingame <= numexiting-1))
 	{
-		// check if we just got unlucky and there was only one guy who was a problem
-		for (j = i+1; j < MAXPLAYERS; j++)
+		// Everyone's done playing but one guy apparently.
+		// Just kill everyone who is still playing.
+
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!playeringame[j] || players[j].spectator || players[j].exiting || !players[j].lives)
+			if (!playeringame[i] || players[i].spectator || players[i].lives <= 0) // Not playing
+			{
+				// Y'all aren't even playing
 				continue;
-			break;
+			}
+
+			if (players[i].exiting || (players[i].pflags & PF_TIMEOVER))
+			{
+				// You're done, you're free to go.
+				continue;
+			}
+
+			P_DoTimeOver(&players[i]);
 		}
 
-		if (j == MAXPLAYERS) // finish anyways, force a time over
-		{
-			P_DoTimeOver(&players[i]);
-			countdown = countdown2 = 0;
-			return true;
-		}
+		// Everyone should be done playing at this point now.
+		racecountdown = exitcountdown = 0;
+		return true;
 	}
 
-	if (!countdown) // Check to see if the winners have finished, to set countdown.
+	if (everyonedone)
 	{
+		// See above: there might be bots that are still going, but all players are done, so we can exit now.
+		racecountdown = exitcountdown = 0;
+		return true;
+	}
+
+	// SO, we're not done playing.
+	// Let's see if it's time to start the death counter!
+
+	if (!racecountdown)
+	{
+		// If the winners are all done, then start the death timer.
 		UINT8 winningpos = 1;
 
 		winningpos = max(1, numplayersingame/2);
 		if (numplayersingame % 2) // any remainder?
+		{
 			winningpos++;
+		}
 
 		if (numexiting >= winningpos)
-			countdown = (((netgame || multiplayer) ? cv_countdowntime.value : 30)*TICRATE) + 1; // 30 seconds to finish, get going!
+		{
+			tic_t countdown = 30*TICRATE; // 30 seconds left to finish, get going!
+
+			if (netgame)
+			{
+				// Custom timer
+				countdown = cv_countdowntime.value * TICRATE;
+			}
+
+			racecountdown = countdown + 1;
+		}
 	}
 
-	if (numplayersingame < 2) // reset nospectategrief in free play
+	// We're still playing, but no one else is, so we need to reset spectator griefing.
+	if (numplayersingame <= 1)
 	{
-		for (j = 0; j < MAXPLAYERS; j++)
-			nospectategrief[j] = -1;
+		memset(nospectategrief, -1, sizeof (nospectategrief));
 	}
 
+	// Turns out we're still having a good time & playing the game, we didn't have to do anything :)
 	return false;
 }
 
@@ -2184,11 +2226,28 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	{
 		if (target->flags & MF_MONITOR || target->type == MT_RANDOMITEM)
 		{
+			UINT8 i;
+
 			P_SetTarget(&target->target, source);
 			source->player->numboxes++;
-			if (cv_itemrespawn.value && (netgame || multiplayer))
+
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				target->fuse = cv_itemrespawntime.value*TICRATE + 2; // Random box generation
+				if (&players[i] == source->player)
+				{
+					continue;
+				}
+
+				if (playeringame[i] && !players[i].spectator && players[i].lives != 0)
+				{
+					break;
+				}
+			}
+
+			if (i < MAXPLAYERS)
+			{
+				// Respawn items in multiplayer, don't respawn them when alone
+				target->fuse = 2*TICRATE + 2;
 			}
 		}
 
@@ -2280,20 +2339,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		target->flags |= MF_NOBLOCKMAP|MF_NOCLIPHEIGHT;
 		P_SetThingPosition(target);
 
-		if (!target->player->bot && !G_IsSpecialStage(gamemap)
-		 && G_GametypeUsesLives())
-		{
-			target->player->lives -= 1; // Lose a life Tails 03-11-2000
-
-			if (target->player->lives <= 0) // Tails 03-14-2000
-			{
-				if (P_IsLocalPlayer(target->player)/* && target->player == &players[consoleplayer] */)
-				{
-					S_StopMusic(); // Stop the Music! Tails 03-14-2000
-					S_ChangeMusicInternal("gmover", false); // Yousa dead now, Okieday? Tails 03-14-2000
-				}
-			}
-		}
 		target->player->playerstate = PST_DEAD;
 
 		if (target->player == &players[consoleplayer])
@@ -3038,7 +3083,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			return false;
 
 		// Make sure that boxes cannot be popped by enemies, red rings, etc.
-		if (target->flags & MF_MONITOR && ((!source || !source->player || source->player->bot) || (inflictor && !inflictor->player)))
+		if (target->flags & MF_MONITOR && ((!source || !source->player) || (inflictor && !inflictor->player)))
 			return false;
 	}
 
@@ -3187,15 +3232,13 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				|| inflictor->type == MT_SMK_THWOMP || inflictor->player))
 			{
 				player->kartstuff[k_sneakertimer] = 0;
+				player->kartstuff[k_numsneakers] = 0;
 
 				K_SpinPlayer(player, source, 1, inflictor, false);
 				K_KartPainEnergyFling(player);
 
 				if (P_IsDisplayPlayer(player))
-				{
-					quake.intensity = 32*FRACUNIT;
-					quake.time = 5;
-				}
+					P_StartQuake(32<<FRACBITS, 5);
 			}
 			else
 				K_SpinPlayer(player, source, 0, inflictor, false);

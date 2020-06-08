@@ -38,11 +38,12 @@
 
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PLAYER1INPUTDOWN
-#include "k_kart.h" // colortranslations
+#include "k_color.h" // colortranslations
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "console.h" // cons_menuhighlight
 #include "lua_hook.h" // IntermissionThinker hook
+#include "k_grandprix.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -198,7 +199,12 @@ static void Y_CompareScore(INT32 i)
 static void Y_CompareRank(INT32 i)
 {
 	INT16 increase = ((data.match.increase[i] == INT16_MIN) ? 0 : data.match.increase[i]);
-	UINT32 score = (powertype != -1 ? clientpowerlevels[i][powertype] : players[i].score);
+	UINT32 score = players[i].score;
+
+	if (powertype != PWRLV_DISABLED)
+	{
+		score = clientpowerlevels[i][powertype];
+	}
 
 	if (!(data.match.val[data.match.numplayers] == UINT32_MAX || (score - increase) > data.match.val[data.match.numplayers]))
 		return;
@@ -302,18 +308,26 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		data.match.name[data.match.numplayers] = player_names[i];
 
 		if (data.match.numplayers && (data.match.val[data.match.numplayers] == data.match.val[data.match.numplayers-1]))
-			data.match.pos[data.match.numplayers] = data.match.pos[data.match.numplayers-1];
-		else
-			data.match.pos[data.match.numplayers] = data.match.numplayers+1;
-
-		if ((!rankingsmode && powertype == -1) // Single player rankings (grand prix). Online rank is handled below.
-			&& !(players[i].pflags & PF_TIMEOVER) && (data.match.pos[data.match.numplayers] < (numplayersingame + numgriefers)))
 		{
-			data.match.increase[i] = (numplayersingame + numgriefers) - data.match.pos[data.match.numplayers];
+			data.match.pos[data.match.numplayers] = data.match.pos[data.match.numplayers-1];
+		}
+		else
+		{
+			data.match.pos[data.match.numplayers] = data.match.numplayers+1;
+		}
+
+		if ((powertype == PWRLV_DISABLED)
+			&& (!rankingsmode)
+			&& !(players[i].pflags & PF_TIMEOVER)
+			&& (data.match.pos[data.match.numplayers] < (numplayersingame + numgriefers)))
+		{
+			// Online rank is handled further below in this file.
+			data.match.increase[i] = K_CalculateGPRankPoints(data.match.pos[data.match.numplayers], numplayersingame + numgriefers);
 			players[i].score += data.match.increase[i];
 		}
 
 		if (demo.recording && !rankingsmode)
+		{
 			G_WriteStanding(
 				data.match.pos[data.match.numplayers],
 				data.match.name[data.match.numplayers],
@@ -321,6 +335,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				*data.match.color[data.match.numplayers],
 				data.match.val[data.match.numplayers]
 			);
+		}
 
 		data.match.numplayers++;
 	}
@@ -440,9 +455,36 @@ void Y_IntermissionDrawer(void)
 		int y2;
 
 		if (data.match.rankingsmode)
-			timeheader = "PWR.LV";
+		{
+			if (powertype == PWRLV_DISABLED)
+			{
+				timeheader = "RANK";
+			}
+			else
+			{
+				timeheader = "PWR.LV";
+			}
+		}
 		else
-			timeheader = ((intertype == int_race || (intertype == int_match && battlecapsules)) ? "TIME" : "SCORE");
+		{
+			switch (intertype)
+			{
+				default:
+				case int_race:
+					timeheader = "TIME";
+					break;
+				case int_match:
+					if (battlecapsules)
+					{
+						timeheader = "TIME";
+					}
+					else
+					{
+						timeheader = "SCORE";
+					}
+					break;
+			}
+		}
 
 		// draw the level name
 		V_DrawCenteredString(-4 + x + BASEVIDWIDTH/2, 12, 0, data.match.levelstring);
@@ -497,7 +539,7 @@ void Y_IntermissionDrawer(void)
 
 				y2 = y;
 
-				if (playerconsole[data.match.num[i]] == 0 && server_lagless)
+				if (netgame && playerconsole[data.match.num[i]] == 0 && server_lagless && !players[data.match.num[i]].bot)
 				{
 					static int alagles_timer = 0;
 					patch_t *alagles;
@@ -533,8 +575,11 @@ void Y_IntermissionDrawer(void)
 
 				if (data.match.rankingsmode)
 				{
-					if (!clientpowerlevels[data.match.num[i]][powertype]) // No power level (splitscreen guests)
+					if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.match.num[i]][powertype])
+					{
+						// No power level (splitscreen guests)
 						STRBUFCPY(strtime, "----");
+					}
 					else
 					{
 						if (data.match.increase[data.match.num[i]] != INT16_MIN)
@@ -600,7 +645,7 @@ void Y_IntermissionDrawer(void)
 	}
 
 dotimer:
-	if (timer)
+	if (timer && grandprixinfo.gp == false)
 	{
 		char *string;
 		INT32 tickdown = (timer+1)/TICRATE;
@@ -705,74 +750,73 @@ void Y_Ticker(void)
 
 	if (intertype == int_race || intertype == int_match)
 	{
-		if (netgame || multiplayer)
+		if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
 		{
-			if (sorttic == -1)
-				sorttic = intertic + max((cv_inttime.value/2)-2, 2)*TICRATE; // 8 second pause after match results
-			else if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
+			if (!data.match.rankingsmode && (intertic >= sorttic + 8))
 			{
-				if (!data.match.rankingsmode && (intertic >= sorttic + 8))
-					Y_CalculateMatchData(1, Y_CompareRank);
+				Y_CalculateMatchData(1, Y_CompareRank);
+			}
 
-				if (data.match.rankingsmode && intertic > sorttic+16+(2*TICRATE))
+			if (data.match.rankingsmode && intertic > sorttic+16+(2*TICRATE))
+			{
+				INT32 q=0,r=0;
+				boolean kaching = true;
+
+				for (q = 0; q < data.match.numplayers; q++)
 				{
-					INT32 q=0,r=0;
-					boolean kaching = true;
-
-					for (q = 0; q < data.match.numplayers; q++)
-					{
-						if (data.match.num[q] == MAXPLAYERS
+					if (data.match.num[q] == MAXPLAYERS
 						|| !data.match.increase[data.match.num[q]]
 						|| data.match.increase[data.match.num[q]] == INT16_MIN)
-							continue;
+					{
+						continue;
+					}
 
-						r++;
-						data.match.jitter[data.match.num[q]] = 1;
+					r++;
+					data.match.jitter[data.match.num[q]] = 1;
 
-						if (powertype != -1)
+					if (powertype != PWRLV_DISABLED)
+					{
+						// Power Levels
+						if (abs(data.match.increase[data.match.num[q]]) < 10)
 						{
-							// Power Levels
-							if (abs(data.match.increase[data.match.num[q]]) < 10)
-							{
-								// Not a lot of point increase left, just set to 0 instantly
-								data.match.increase[data.match.num[q]] = 0;
-							}
-							else
-							{
-								SINT8 remove = 0; // default (should not happen)
-
-								if (data.match.increase[data.match.num[q]] < 0)
-									remove = -10;
-								else if (data.match.increase[data.match.num[q]] > 0)
-									remove = 10;
-
-								// Remove 10 points at a time
-								data.match.increase[data.match.num[q]] -= remove;
-
-								// Still not zero, no kaching yet
-								if (data.match.increase[data.match.num[q]] != 0)
-									kaching = false;
-							}
+							// Not a lot of point increase left, just set to 0 instantly
+							data.match.increase[data.match.num[q]] = 0;
 						}
 						else
 						{
-							// Basic bitch points
-							if (data.match.increase[data.match.num[q]])
-							{
-								if (--data.match.increase[data.match.num[q]])
-									kaching = false;
-							}
+							SINT8 remove = 0; // default (should not happen)
+
+							if (data.match.increase[data.match.num[q]] < 0)
+								remove = -10;
+							else if (data.match.increase[data.match.num[q]] > 0)
+								remove = 10;
+
+							// Remove 10 points at a time
+							data.match.increase[data.match.num[q]] -= remove;
+
+							// Still not zero, no kaching yet
+							if (data.match.increase[data.match.num[q]] != 0)
+								kaching = false;
 						}
 					}
-
-					if (r)
-					{
-						S_StartSound(NULL, (kaching ? sfx_chchng : sfx_ptally));
-						Y_CalculateMatchData(2, Y_CompareRank);
-					}
 					else
-						endtic = intertic + 3*TICRATE; // 3 second pause after end of tally
+					{
+						// Basic bitch points
+						if (data.match.increase[data.match.num[q]])
+						{
+							if (--data.match.increase[data.match.num[q]])
+								kaching = false;
+						}
+					}
 				}
+
+				if (r)
+				{
+					S_StartSound(NULL, (kaching ? sfx_chchng : sfx_ptally));
+					Y_CalculateMatchData(2, Y_CompareRank);
+				}
+				else
+					endtic = intertic + 3*TICRATE; // 3 second pause after end of tally
 			}
 		}
 		else
@@ -939,9 +983,11 @@ static void K_UpdatePowerLevels(void)
 				continue;
 			}
 
-			theirpower = PWRLVRECORD_DEF;
-			if (clientpowerlevels[jpnum][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
-				theirpower = clientpowerlevels[jpnum][powertype];
+			if (clientpowerlevels[jpnum][powertype] == 0) // No power level (splitscreen guests, bots)
+				continue;
+
+			theirpower = clientpowerlevels[jpnum][powertype];
+
 			CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
 			if (G_RaceGametype())
@@ -981,9 +1027,11 @@ static void K_UpdatePowerLevels(void)
 
 				CONS_Debug(DBG_GAMELOGIC, "Player %d VS Player %d (griefer):\n", ipnum, jpnum);
 
-				theirpower = PWRLVRECORD_DEF;
-				if (nospectategrief[jpnum] != 0) // No power level acts as 5000 (used for splitscreen guests)
-					theirpower = nospectategrief[jpnum];
+				if (nospectategrief[jpnum] == 0) // No power level (splitscreen guests, bots)
+					continue;
+
+				theirpower = nospectategrief[jpnum];
+
 				CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
 				diff = theirpower - yourpower;
@@ -1043,19 +1091,11 @@ void Y_StartIntermission(void)
 #endif
 
 	// set player Power Level type
-	powertype = PWRLV_DISABLED;
-
-	if (netgame && cv_kartusepwrlv.value)
-	{
-		if (G_RaceGametype())
-			powertype = PWRLV_RACE;
-		else if (G_BattleGametype())
-			powertype = PWRLV_BATTLE;
-	}
+	powertype = K_UsingPowerLevels();
 
 	if (!multiplayer)
 	{
-		timer = 0;
+		timer = 20*TICRATE;
 
 		if (!majormods && !multiplayer && !demo.playback) // move this once we have a proper time attack screen
 		{
@@ -1074,7 +1114,7 @@ void Y_StartIntermission(void)
 	}
 	else
 	{
-		if (cv_inttime.value == 0 && gametype == GT_COOP)
+		if (cv_inttime.value == 0)
 			timer = 0;
 		else if (demo.playback) // Override inttime (which is pulled from the replay anyway
 			timer = 10*TICRATE;
@@ -1086,6 +1126,8 @@ void Y_StartIntermission(void)
 				timer = 1;
 		}
 	}
+
+	sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE); // 8 second pause after match results
 
 	if (gametype == GT_MATCH)
 		intertype = int_match;
@@ -1132,7 +1174,9 @@ void Y_StartIntermission(void)
 	}
 
 	if (powertype != PWRLV_DISABLED)
+	{
 		K_UpdatePowerLevels();
+	}
 
 	//if (intertype == int_race || intertype == int_match)
 	{
@@ -1509,9 +1553,14 @@ static void Y_VoteStops(SINT8 pick, SINT8 level)
 void Y_VoteTicker(void)
 {
 	INT32 i;
+	boolean everyone_voted;
 
 	if (paused || P_AutoPause() || !voteclient.loaded)
 		return;
+
+#ifdef HAVE_BLUA
+	LUAh_VoteThinker();
+#endif
 
 	votetic++;
 
@@ -1663,7 +1712,7 @@ void Y_VoteTicker(void)
 
 					if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
 					{
-						D_ModifyClientVote(voteclient.playerinfo[i].selection, i);
+						D_ModifyClientVote(consoleplayer, voteclient.playerinfo[i].selection, i);
 						pressed = true;
 					}
 				}
@@ -1678,6 +1727,8 @@ void Y_VoteTicker(void)
 
 		if (server)
 		{
+			everyone_voted = true;/* the default condition */
+
 			if (timer == 0)
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
@@ -1691,15 +1742,27 @@ void Y_VoteTicker(void)
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
 					if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
-						return;
+					{
+						if (players[i].bot)
+						{
+							if (( M_RandomFixed() % 100 ) == 0)
+								D_ModifyClientVote(i, M_RandomKey(4), 0);
+						}
+
+						if (votes[i] == -1)
+							everyone_voted = false;
+					}
 				}
 			}
 
-			timer = 0;
-			if (voteendtic == -1)
+			if (everyone_voted)
 			{
-				votenotyetpicked = false;/* don't pick vote twice */
-				D_PickVote();
+				timer = 0;
+				if (voteendtic == -1)
+				{
+					votenotyetpicked = false;/* don't pick vote twice */
+					D_PickVote();
+				}
 			}
 		}
 	}

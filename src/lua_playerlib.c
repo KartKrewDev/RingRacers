@@ -17,6 +17,7 @@
 #include "d_player.h"
 #include "g_game.h"
 #include "p_local.h"
+#include "d_clisrv.h"
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -81,6 +82,88 @@ static int lib_lenPlayer(lua_State *L)
 	return 1;
 }
 
+// Same deal as the three functions above but for displayplayers
+
+static int lib_iterateDisplayplayers(lua_State *L)
+{
+	INT32 i = -1;
+	INT32 temp = -1;
+	INT32 iter = 0;
+
+	if (lua_gettop(L) < 2)
+	{
+		//return luaL_error(L, "Don't call displayplayers.iterate() directly, use it as 'for player in displayplayers.iterate do <block> end'.");
+		lua_pushcfunction(L, lib_iterateDisplayplayers);
+		return 1;
+	}
+	lua_settop(L, 2);
+	lua_remove(L, 1); // state is unused.
+	if (!lua_isnil(L, 1))
+	{
+		temp = (INT32)(*((player_t **)luaL_checkudata(L, 1, META_PLAYER)) - players);	// get the player # of the last iterated player.
+
+		// @FIXME:
+		// I didn't quite find a better way for this; Here, we go back to which player in displayplayers we last iterated to resume the for loop below for this new function call
+		// I don't understand enough about how the Lua stacks work to get this to work in possibly a single line.
+		// So anyone feel free to correct this!
+
+		for (; iter < MAXSPLITSCREENPLAYERS; iter++)
+		{
+			if (displayplayers[iter] == temp)
+			{
+				i = iter;
+				break;
+			}
+		}
+	}
+
+	for (i++; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (!playeringame[displayplayers[i]] || i > splitscreen)
+			return 0;	// Stop! There are no more players for us to go through. There will never be a player gap in displayplayers.
+
+		if (!players[displayplayers[i]].mo)
+			continue;
+		LUA_PushUserdata(L, &players[displayplayers[i]], META_PLAYER);
+		lua_pushinteger(L, i);	// push this to recall what number we were on for the next function call. I suppose this also means you can retrieve the splitscreen player number with 'for p, n in displayplayers.iterate'!
+		return 2;
+	}
+	return 0;
+}
+
+static int lib_getDisplayplayers(lua_State *L)
+{
+	const char *field;
+	// i -> players[i]
+	if (lua_type(L, 2) == LUA_TNUMBER)
+	{
+		lua_Integer i = luaL_checkinteger(L, 2);
+		if (i < 0 || i >= MAXSPLITSCREENPLAYERS)
+			return luaL_error(L, "displayplayers[] index %d out of range (0 - %d)", i, MAXSPLITSCREENPLAYERS-1);
+		if (!playeringame[displayplayers[i]])
+			return 0;
+		if (!players[displayplayers[i]].mo)
+			return 0;
+		LUA_PushUserdata(L, &players[displayplayers[i]], META_PLAYER);
+		return 1;
+	}
+
+	field = luaL_checkstring(L, 2);
+	if (fastcmp(field,"iterate"))
+	{
+		lua_pushcfunction(L, lib_iterateDisplayplayers);
+		return 1;
+	}
+	return 0;
+}
+
+// #displayplayers -> MAXSPLITSCREENPLAYERS
+static int lib_lenDisplayplayers(lua_State *L)
+{
+	lua_pushinteger(L, MAXSPLITSCREENPLAYERS);
+	return 1;
+}
+
 static int player_get(lua_State *L)
 {
 	player_t *plr = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -133,6 +216,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->kartstuff, META_KARTSTUFF);
 	else if (fastcmp(field,"frameangle"))
 		lua_pushangle(L, plr->frameangle);
+	else if (fastcmp(field,"airtime"))
+		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"pflags"))
 		lua_pushinteger(L, plr->pflags);
 	else if (fastcmp(field,"panim"))
@@ -159,6 +244,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->charflags);
 	else if (fastcmp(field,"lives"))
 		lua_pushinteger(L, plr->lives);
+	else if (fastcmp(field,"lostlife"))
+		lua_pushboolean(L, plr->lostlife);
 	else if (fastcmp(field,"continues"))
 		lua_pushinteger(L, plr->continues);
 	else if (fastcmp(field,"xtralife"))
@@ -211,18 +298,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->weapondelay);
 	else if (fastcmp(field,"tossdelay"))
 		lua_pushinteger(L, plr->tossdelay);
-	else if (fastcmp(field,"starpostx"))
-		lua_pushinteger(L, plr->starpostx);
-	else if (fastcmp(field,"starposty"))
-		lua_pushinteger(L, plr->starposty);
-	else if (fastcmp(field,"starpostz"))
-		lua_pushinteger(L, plr->starpostz);
 	else if (fastcmp(field,"starpostnum"))
 		lua_pushinteger(L, plr->starpostnum);
-	else if (fastcmp(field,"starposttime"))
-		lua_pushinteger(L, plr->starposttime);
-	else if (fastcmp(field,"starpostangle"))
-		lua_pushangle(L, plr->starpostangle);
 	else if (fastcmp(field,"angle_pos"))
 		lua_pushangle(L, plr->angle_pos);
 	else if (fastcmp(field,"old_angle_pos"))
@@ -294,7 +371,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"spectator"))
 		lua_pushboolean(L, plr->spectator);
 	else if (fastcmp(field,"bot"))
-		lua_pushinteger(L, plr->bot);
+		lua_pushboolean(L, plr->bot);
 	else if (fastcmp(field,"jointime"))
 		lua_pushinteger(L, plr->jointime);
 	else if (fastcmp(field,"splitscreenindex"))
@@ -303,6 +380,8 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"fovadd"))
 		lua_pushfixed(L, plr->fovadd);
 #endif
+	else if (fastcmp(field,"ping"))
+		lua_pushinteger(L, playerpingtable[( plr - players )]);
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -398,6 +477,8 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"frameangle"))
 		plr->frameangle = luaL_checkangle(L, 3);
+	else if (fastcmp(field,"airtime"))
+		plr->airtime = (tic_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartspeed"))
 		plr->kartspeed = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartweight"))
@@ -407,6 +488,8 @@ static int player_set(lua_State *L)
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lives"))
 		plr->lives = (SINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lostlife"))
+		plr->lostlife = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"continues"))
 		plr->continues = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"xtralife"))
@@ -459,18 +542,8 @@ static int player_set(lua_State *L)
 		plr->weapondelay = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tossdelay"))
 		plr->tossdelay = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostx"))
-		plr->starpostx = (INT16)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starposty"))
-		plr->starposty = (INT16)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostz"))
-		plr->starpostz = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"starpostnum"))
 		plr->starpostnum = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starposttime"))
-		plr->starposttime = (tic_t)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostangle"))
-		plr->starpostangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"angle_pos"))
 		plr->angle_pos = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"old_angle_pos"))
@@ -777,6 +850,18 @@ int LUA_PlayerLib(lua_State *L)
 			lua_setfield(L, -2, "__len");
 		lua_setmetatable(L, -2);
 	lua_setglobal(L, "players");
+
+	// push displayplayers in the same fashion
+	lua_newuserdata(L, 0);
+		lua_createtable(L, 0, 2);
+			lua_pushcfunction(L, lib_getDisplayplayers);
+			lua_setfield(L, -2, "__index");
+
+			lua_pushcfunction(L, lib_lenDisplayplayers);
+			lua_setfield(L, -2, "__len");
+		lua_setmetatable(L, -2);
+	lua_setglobal(L, "displayplayers");
+
 	return 0;
 }
 

@@ -20,9 +20,6 @@
 #include "z_zone.h"
 #include "d_player.h"
 #include "lzf.h"
-#ifdef HWRENDER
-#include "hardware/hw_light.h"
-#endif
 
 // Hey, moron! If you change this table, don't forget about the sprite enum in info.h and the sprite lights in hw_light.c!
 char sprnames[NUMSPRITES + 1][5] =
@@ -72,7 +69,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
 	"ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH",
 	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
-	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","XMS4","XMS5","VIEW"
+	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","EGOO","WTRL","XMS4",
+	"XMS5","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -101,88 +99,43 @@ state_t states[NUMSTATES] =
 	{SPR_THOK, FF_TRANS50, 8, {NULL}, 0, 0, S_NULL}, // S_THOK
 
 	// Player // SRB2kart
-	{SPR_PLAY,     0,   1, {NULL},   0, 0, S_KART_STND2},    // S_KART_STND1	A
-	{SPR_PLAY,     1,   1, {NULL},   0, 0, S_KART_STND1},    // S_KART_STND2	B
-	{SPR_PLAY,     2,   1, {NULL},   0, 0, S_KART_STND2_L},  // S_KART_STND1_L	C
-	{SPR_PLAY,     3,   1, {NULL},   0, 0, S_KART_STND1_L},  // S_KART_STND2_L	D
-	{SPR_PLAY,     4,   1, {NULL},   0, 0, S_KART_STND2_R},  // S_KART_STND1_R	E
-	{SPR_PLAY,     5,   1, {NULL},   0, 0, S_KART_STND1_R},  // S_KART_STND2_R	F
-	{SPR_PLAY,     9,   1, {NULL},   0, 0, S_KART_WALK2},    // S_KART_WALK1	J
-	{SPR_PLAY,     6,   1, {NULL},   0, 0, S_KART_WALK1},    // S_KART_WALK2	G
-	{SPR_PLAY,    10,   1, {NULL},   0, 0, S_KART_WALK2_L},  // S_KART_WALK1_L	K
-	{SPR_PLAY,     7,   1, {NULL},   0, 0, S_KART_WALK1_L},  // S_KART_WALK2_L	H
-	{SPR_PLAY,    11,   1, {NULL},   0, 0, S_KART_WALK2_R},  // S_KART_WALK1_R	L
-	{SPR_PLAY,     8,   1, {NULL},   0, 0, S_KART_WALK1_R},  // S_KART_WALK2_R	I
-	{SPR_PLAY,     0,   1, {NULL},   0, 0, S_KART_RUN2},     // S_KART_RUN1		A
-	{SPR_PLAY,     9,   1, {NULL},   0, 0, S_KART_RUN1},     // S_KART_RUN2		J
-	{SPR_PLAY,     2,   1, {NULL},   0, 0, S_KART_RUN2_L},   // S_KART_RUN1_L	C
-	{SPR_PLAY,    10,   1, {NULL},   0, 0, S_KART_RUN1_L},   // S_KART_RUN2_L	K
-	{SPR_PLAY,     4,   1, {NULL},   0, 0, S_KART_RUN2_R},   // S_KART_RUN1_R	E
-	{SPR_PLAY,    11,   1, {NULL},   0, 0, S_KART_RUN1_R},   // S_KART_RUN2_R	L
-	{SPR_PLAY,    12,   1, {NULL},   0, 0, S_KART_DRIFT2_L}, // S_KART_DRIFT1_L	M
-	{SPR_PLAY,    13,   1, {NULL},   0, 0, S_KART_DRIFT1_L}, // S_KART_DRIFT2_L	N
-	{SPR_PLAY,    14,   1, {NULL},   0, 0, S_KART_DRIFT2_R}, // S_KART_DRIFT1_R	O
-	{SPR_PLAY,    15,   1, {NULL},   0, 0, S_KART_DRIFT1_R}, // S_KART_DRIFT2_R	P
-	{SPR_PLAY,    16,  -1, {NULL},   0, 0, S_KART_SPIN},     // S_KART_SPIN		Q
-	{SPR_PLAY,    16, 350, {NULL},   0, 0, S_KART_STND1},    // S_KART_PAIN		Q
-	{SPR_PLAY,    17, 350, {NULL},   0, 0, S_KART_STND1},    // S_KART_SQUISH	R
-	/*
-	{SPR_PLAY,     0, 105, {NULL},   0, 0, S_PLAY_TAP1},        // S_PLAY_STND
-	{SPR_PLAY,     1,  16, {NULL},   0, 0, S_PLAY_TAP2},        // S_PLAY_TAP1
-	{SPR_PLAY,     2,  16, {NULL},   0, 0, S_PLAY_TAP1},        // S_PLAY_TAP2
-	{SPR_PLAY,     3,   4, {NULL},   0, 0, S_PLAY_RUN2},        // S_PLAY_RUN1
-	{SPR_PLAY,     4,   4, {NULL},   0, 0, S_PLAY_RUN3},        // S_PLAY_RUN2
-	{SPR_PLAY,     5,   4, {NULL},   0, 0, S_PLAY_RUN4},        // S_PLAY_RUN3
-	{SPR_PLAY,     6,   4, {NULL},   0, 0, S_PLAY_RUN5},        // S_PLAY_RUN4
-	{SPR_PLAY,     7,   4, {NULL},   0, 0, S_PLAY_RUN6},        // S_PLAY_RUN5
-	{SPR_PLAY,     8,   4, {NULL},   0, 0, S_PLAY_RUN7},        // S_PLAY_RUN6
-	{SPR_PLAY,     9,   4, {NULL},   0, 0, S_PLAY_RUN8},        // S_PLAY_RUN7
-	{SPR_PLAY,    10,   4, {NULL},   0, 0, S_PLAY_RUN1},        // S_PLAY_RUN8
-	{SPR_PLAY,    16,   2, {NULL},   0, 0, S_PLAY_SPD2},        // S_PLAY_SPD1
-	{SPR_PLAY,    17,   2, {NULL},   0, 0, S_PLAY_SPD3},        // S_PLAY_SPD2
-	{SPR_PLAY,    18,   2, {NULL},   0, 0, S_PLAY_SPD4},        // S_PLAY_SPD3
-	{SPR_PLAY,    19,   2, {NULL},   0, 0, S_PLAY_SPD1},        // S_PLAY_SPD4
-	{SPR_PLAY,    11,   1, {NULL},   0, 0, S_PLAY_ATK2},        // S_PLAY_ATK1
-	{SPR_PLAY,    12,   1, {NULL},   0, 0, S_PLAY_ATK3},        // S_PLAY_ATK2
-	{SPR_PLAY,    13,   1, {NULL},   0, 0, S_PLAY_ATK4},        // S_PLAY_ATK3
-	{SPR_PLAY,    14,   1, {NULL},   0, 0, S_PLAY_ATK1},        // S_PLAY_ATK4
-	{SPR_PLAY,    15,  -1, {NULL},   0, 0, S_PLAY_FALL1},       // S_PLAY_SPRING
-	{SPR_PLAY,    31,   2, {NULL},   0, 0, S_PLAY_FALL2},       // S_PLAY_FALL1
-	{SPR_PLAY,    32,   2, {NULL},   0, 0, S_PLAY_FALL1},       // S_PLAY_FALL2
-	{SPR_PLAY,    20,   2, {NULL},   0, 0, S_PLAY_ABL2},        // S_PLAY_ABL1
-	{SPR_PLAY,    21,   2, {NULL},   0, 0, S_PLAY_ABL1},        // S_PLAY_ABL2
-	{SPR_PLAY,    22,   6, {NULL},   0, 0, S_PLAY_SPC2},        // S_PLAY_SPC1
-	{SPR_PLAY,    23,   6, {NULL},   0, 0, S_PLAY_SPC3},        // S_PLAY_SPC2
-	{SPR_PLAY,    24,   6, {NULL},   0, 0, S_PLAY_SPC4},        // S_PLAY_SPC3
-	{SPR_PLAY,    25,   6, {NULL},   0, 0, S_PLAY_SPC1},        // S_PLAY_SPC4
-	{SPR_PLAY,    22,  -1, {NULL},   0, 0, S_NULL},             // S_PLAY_CLIMB1
-	{SPR_PLAY,    23,   5, {NULL},   0, 0, S_PLAY_CLIMB3},      // S_PLAY_CLIMB2
-	{SPR_PLAY,    24,   5, {NULL},   0, 0, S_PLAY_CLIMB4},      // S_PLAY_CLIMB3
-	{SPR_PLAY,    25,   5, {NULL},   0, 0, S_PLAY_CLIMB5},      // S_PLAY_CLIMB4
-	{SPR_PLAY,    24,   5, {NULL},   0, 0, S_PLAY_CLIMB2},      // S_PLAY_CLIMB5
-	{SPR_PLAY,    26,  14, {NULL},   0, 0, S_PLAY_RUN1},        // S_PLAY_GASP
-	{SPR_PLAY,    27, 350, {NULL},   0, 0, S_PLAY_FALL1},       // S_PLAY_PAIN
-	{SPR_PLAY,    28,  -1, {A_Fall}, 0, 0, S_NULL},             // S_PLAY_DIE
-	{SPR_PLAY,    29,  12, {NULL},   0, 0, S_PLAY_TEETER2},     // S_PLAY_TEETER1
-	{SPR_PLAY,    30,  12, {NULL},   0, 0, S_PLAY_TEETER1},     // S_PLAY_TEETER2
-	{SPR_PLAY,    33,  -1, {NULL},   0, 0, S_NULL},             // S_PLAY_CARRY
-	{SPR_PLAY,    20,  -1, {NULL},   0, 0, S_PLAY_SUPERSTAND},  // S_PLAY_SUPERSTAND
-	{SPR_PLAY,    20,   7, {NULL},   0, 0, S_PLAY_SUPERWALK2},  // S_PLAY_SUPERWALK1
-	{SPR_PLAY,    21,   7, {NULL},   0, 0, S_PLAY_SUPERWALK1},  // S_PLAY_SUPERWALK2
-	{SPR_PLAY,    22,   7, {NULL},   0, 0, S_PLAY_SUPERFLY2},   // S_PLAY_SUPERFLY1
-	{SPR_PLAY,    23,   7, {NULL},   0, 0, S_PLAY_SUPERFLY1},   // S_PLAY_SUPERFLY2
-	{SPR_PLAY,    24,  12, {NULL},   0, 0, S_PLAY_SUPERTEETER}, // S_PLAY_SUPERTEETER
-	{SPR_PLAY,    25,  -1, {NULL},   0, 0, S_PLAY_SUPERSTAND},  // S_PLAY_SUPERHIT
-	{SPR_PLAY,    36,   4, {NULL},   0, 0, S_PLAY_SUPERTRANS2}, // S_PLAY_SUPERTRANS1
-	{SPR_PLAY,    37,   4, {NULL},   0, 0, S_PLAY_SUPERTRANS3}, // S_PLAY_SUPERTRANS2
-	{SPR_PLAY, 32806,   4, {NULL},   0, 0, S_PLAY_SUPERTRANS4}, // S_PLAY_SUPERTRANS3
-	{SPR_PLAY,    39,   3, {NULL},   0, 0, S_PLAY_SUPERTRANS5}, // S_PLAY_SUPERTRANS4
-	{SPR_PLAY,    40,   3, {NULL},   0, 0, S_PLAY_SUPERTRANS6}, // S_PLAY_SUPERTRANS5
-	{SPR_PLAY,    41,   3, {NULL},   0, 0, S_PLAY_SUPERTRANS7}, // S_PLAY_SUPERTRANS6
-	{SPR_PLAY,    42,   3, {NULL},   0, 0, S_PLAY_SUPERTRANS8}, // S_PLAY_SUPERTRANS7
-	{SPR_PLAY,    43,   3, {NULL},   0, 0, S_PLAY_SUPERTRANS9}, // S_PLAY_SUPERTRANS8
-	{SPR_PLAY,    44,  16, {NULL},   0, 0, S_PLAY_RUN1},        // S_PLAY_SUPERTRANS9
-	*/
+	{SPR_PLAY,   0,   1, {NULL}, 0, 0, S_KART_STILL2},			// S_KART_STILL1		A
+	{SPR_PLAY,   1,   1, {NULL}, 0, 0, S_KART_STILL1},			// S_KART_STILL2		B
+	{SPR_PLAY,   2,   1, {NULL}, 0, 0, S_KART_STILL2_L},		// S_KART_STILL1_L		C
+	{SPR_PLAY,   3,   1, {NULL}, 0, 0, S_KART_STILL1_L},		// S_KART_STILL2_L		D
+	{SPR_PLAY,   4,   1, {NULL}, 0, 0, S_KART_STILL2_R},		// S_KART_STILL1_R		E
+	{SPR_PLAY,   5,   1, {NULL}, 0, 0, S_KART_STILL1_R},		// S_KART_STILL2_R		F
+	{SPR_PLAY,   9,   1, {NULL}, 0, 0, S_KART_SLOW2},			// S_KART_SLOW1			J
+	{SPR_PLAY,   6,   1, {NULL}, 0, 0, S_KART_SLOW1},			// S_KART_SLOW2			G
+	{SPR_PLAY,  10,   1, {NULL}, 0, 0, S_KART_SLOW2_L},			// S_KART_SLOW1_L		K
+	{SPR_PLAY,   7,   1, {NULL}, 0, 0, S_KART_SLOW1_L},			// S_KART_SLOW2_L		H
+	{SPR_PLAY,  11,   1, {NULL}, 0, 0, S_KART_SLOW2_R},			// S_KART_SLOW1_R		L
+	{SPR_PLAY,   8,   1, {NULL}, 0, 0, S_KART_SLOW1_R},			// S_KART_SLOW2_R		I
+	{SPR_PLAY,   0,   1, {NULL}, 0, 0, S_KART_FAST2},			// S_KART_FAST1			A
+	{SPR_PLAY,   9,   1, {NULL}, 0, 0, S_KART_FAST1},			// S_KART_FAST2			J
+	{SPR_PLAY,   2,   1, {NULL}, 0, 0, S_KART_FAST2_L},			// S_KART_FAST1_L		C
+	{SPR_PLAY,  10,   1, {NULL}, 0, 0, S_KART_FAST1_L},			// S_KART_FAST2_L		K
+	{SPR_PLAY,   4,   1, {NULL}, 0, 0, S_KART_FAST2_R},			// S_KART_FAST1_R		E
+	{SPR_PLAY,  11,   1, {NULL}, 0, 0, S_KART_FAST1_R},			// S_KART_FAST2_R		L
+	{SPR_PLAY,  12,   1, {NULL}, 0, 0, S_KART_DRIFT2_L},		// S_KART_DRIFT1_L		M
+	{SPR_PLAY,  13,   1, {NULL}, 0, 0, S_KART_DRIFT1_L},		// S_KART_DRIFT2_L		N
+	{SPR_PLAY,  13,   1, {NULL}, 0, 0, S_KART_DRIFT2_L_OUT},	// S_KART_DRIFT1_L_OUT	N
+	{SPR_PLAY,  14,   1, {NULL}, 0, 0, S_KART_DRIFT1_L_OUT},	// S_KART_DRIFT2_L_OUT	O
+	{SPR_PLAY,  13,   1, {NULL}, 0, 0, S_KART_DRIFT2_L_IN},		// S_KART_DRIFT1_L_IN	N
+	{SPR_PLAY,  15,   1, {NULL}, 0, 0, S_KART_DRIFT3_L_IN},		// S_KART_DRIFT2_L_IN	P
+	{SPR_PLAY,  13,   1, {NULL}, 0, 0, S_KART_DRIFT4_L_IN},		// S_KART_DRIFT3_L_IN	N
+	{SPR_PLAY,  16,   1, {NULL}, 0, 0, S_KART_DRIFT1_L_IN},		// S_KART_DRIFT4_L_IN	Q
+	{SPR_PLAY,  17,   1, {NULL}, 0, 0, S_KART_DRIFT2_R},		// S_KART_DRIFT1_R		R
+	{SPR_PLAY,  18,   1, {NULL}, 0, 0, S_KART_DRIFT1_R},		// S_KART_DRIFT2_R		S
+	{SPR_PLAY,  18,   1, {NULL}, 0, 0, S_KART_DRIFT2_R_OUT},	// S_KART_DRIFT1_R_OUT	S
+	{SPR_PLAY,  19,   1, {NULL}, 0, 0, S_KART_DRIFT1_R_OUT},	// S_KART_DRIFT2_R_OUT	T
+	{SPR_PLAY,  18,   1, {NULL}, 0, 0, S_KART_DRIFT2_R_IN},		// S_KART_DRIFT1_R_IN	S
+	{SPR_PLAY,  20,   1, {NULL}, 0, 0, S_KART_DRIFT3_R_IN},		// S_KART_DRIFT2_R_IN	U
+	{SPR_PLAY,  18,   1, {NULL}, 0, 0, S_KART_DRIFT4_R_IN},		// S_KART_DRIFT3_R_IN	S
+	{SPR_PLAY,  21,   1, {NULL}, 0, 0, S_KART_DRIFT1_R_IN},		// S_KART_DRIFT4_R_IN	V
+	{SPR_PLAY,  22,  -1, {NULL}, 0, 0, S_KART_SPIN},			// S_KART_SPIN			W
+	{SPR_PLAY,  22, 350, {NULL}, 0, 0, S_KART_STILL1},			// S_KART_PAIN			W
+	{SPR_PLAY,  23, 350, {NULL}, 0, 0, S_KART_STILL1},			// S_KART_SQUISH		X
 
 	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_OBJPLACE_DUMMY}, //S_OBJPLACE_DUMMY
 
@@ -195,7 +148,7 @@ state_t states[NUMSTATES] =
 	{SPR_NULL,  0, 18, {NULL}, 0,  4, S_NULL},       // S_PLAY_ICON3
 
 	// Level end sign (uses player sprite)
-	{SPR_PLAY, 18|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_PLAY_SIGN}, // S_PLAY_SIGN
+	{SPR_PLAY, 24|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_PLAY_SIGN}, // S_PLAY_SIGN
 
 	// Blue Crawla
 	{SPR_POSS, 0, 5, {A_Look}, 0, 0, S_POSS_STND},   // S_POSS_STND
@@ -3545,6 +3498,26 @@ state_t states[NUMSTATES] =
 	{SPR_CAPS, 4, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLECAPSULE_SUPPORT
 	{SPR_CAPS, FF_ANIMATE|5, -1, {NULL}, 3, 1, S_NULL}, // S_BATTLECAPSULE_SUPPORTFLY
 
+	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOORB
+
+	// Water Trail
+	{SPR_WTRL, FF_PAPERSPRITE  , 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL1
+	{SPR_WTRL, FF_PAPERSPRITE|1, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL2
+	{SPR_WTRL, FF_PAPERSPRITE|2, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL3
+	{SPR_WTRL, FF_PAPERSPRITE|3, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL4
+	{SPR_WTRL, FF_PAPERSPRITE|4, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL5
+	{SPR_WTRL, FF_PAPERSPRITE|5, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL6
+	{SPR_WTRL, FF_PAPERSPRITE|6, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL7
+	{SPR_WTRL, FF_PAPERSPRITE|7, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL8
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|8,  2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY1
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|9,  2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY2
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|10, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY3
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|11, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY4
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|12, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY5
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|13, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY6
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|14, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY7
+	{SPR_WTRL, FF_TRANS50|FF_PAPERSPRITE|15, 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAILUNDERLAY8
+
 #ifdef SEENAMES
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
 #endif
@@ -3635,9 +3608,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_PLAYER
 		-1,             // doomednum
-		S_KART_STND1,    // spawnstate
+		S_KART_STILL1,  // spawnstate
 		1,              // spawnhealth
-		S_KART_WALK1,    // seestate
+		S_KART_FAST1,   // seestate
 		sfx_None,       // seesound
 		0,              // reactiontime
 		sfx_thok,       // attacksound
@@ -6202,7 +6175,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -6310,7 +6283,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -6418,7 +6391,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		SKINCOLOR_SALMON, // painchance
+		SKINCOLOR_RASPBERRY, // painchance
 		sfx_s3kb1,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -16582,6 +16555,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_BOTHINT
+		2004,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		100,            // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		1*FRACUNIT,     // radius
+		2*FRACUNIT,     // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_RANDOMAUDIENCE
 		1488,           // doomednum
 		S_RANDOMAUDIENCE, // spawnstate
@@ -20796,6 +20796,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL          // raisestate
 	},
 
+	{           // MT_WATERTRAIL
+		-1,             // doomednum
+		S_WATERTRAIL1,  // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		1,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_WATERTRAILUNDERLAY
+		-1,             // doomednum
+		S_WATERTRAILUNDERLAY1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
 	// ============================================================================================================================//
 
 #ifdef SEENAMES
@@ -20838,7 +20892,7 @@ void P_PatchInfoTables(void)
 	char *tempname;
 
 #if NUMSPRITEFREESLOTS > 1000
-"Update P_PatchInfoTables, you big dumb head"
+#error "Update P_PatchInfoTables, you big dumb head"
 #endif
 
 	// empty out free slots
@@ -20850,9 +20904,6 @@ void P_PatchInfoTables(void)
 		tempname[2] = (char)('0' + (char)(((i-SPR_FIRSTFREESLOT+1)/10)%10));
 		tempname[3] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)%10));
 		tempname[4] = '\0';
-#ifdef HWRENDER
-		t_lspr[i] = &lspr[NOLIGHT];
-#endif
 	}
 	sprnames[i][0] = '\0'; // i == NUMSPRITES
 	memset(&states[S_FIRSTFREESLOT], 0, sizeof (state_t) * NUMSTATEFREESLOTS);

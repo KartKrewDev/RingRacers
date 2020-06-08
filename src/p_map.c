@@ -26,6 +26,7 @@
 #include "w_wad.h"
 #include "k_kart.h" // SRB2kart 011617
 #include "k_collide.h"
+#include "k_respawn.h"
 
 #include "hu_stuff.h" // SRB2kart
 #include "i_system.h" // SRB2kart
@@ -323,39 +324,10 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
 			if (savemomx || savemomy)
 			{
-				angle_t momang;
-				INT32 angoffset;
-				boolean subtract = false;
-
-				momang = R_PointToAngle2(0, 0, savemomx, savemomy);
-
-				angoffset = momang;
-				angoffset -= spring->angle; // Subtract
-
-				// Flip on wrong side
-				if ((angle_t)angoffset > ANGLE_180)
-				{
-					angoffset = InvAngle((angle_t)angoffset);
-					subtract = !subtract;
-				}
-
-				// Fix going directly against the spring's angle sending you the wrong way
-				if ((spring->angle - momang) > ANGLE_90)
-					angoffset = ANGLE_180 - angoffset;
-
-				// Offset is reduced to cap it (90 / 2 = max of 45 degrees)
-				angoffset /= 2;
-
-				// Reduce further based on how slow your speed is compared to the spring's speed
-				if (finalSpeed > objectSpeed)
-					angoffset = FixedDiv(angoffset, FixedDiv(finalSpeed, objectSpeed));
-
-				if (subtract)
-					angoffset = (signed)(spring->angle) - angoffset;
-				else
-					angoffset = (signed)(spring->angle) + angoffset;
-
-				finalAngle = angoffset;
+				finalAngle = K_ReflectAngle(
+					R_PointToAngle2(0, 0, savemomx, savemomy), finalAngle,
+					objectSpeed, finalSpeed
+				);
 			}
 		}
 
@@ -490,89 +462,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			break;
 	}
 }
-
-#if 0
-static void P_DoTailsCarry(player_t *sonic, player_t *tails)
-{
-	INT32 p;
-	fixed_t zdist; // z distance between the two players' bottoms
-
-	if ((tails->pflags & PF_CARRIED) && tails->mo->tracer == sonic->mo)
-		return;
-	if ((sonic->pflags & PF_CARRIED) && sonic->mo->tracer == tails->mo)
-		return;
-
-	//if (!tails->powers[pw_tailsfly] && !(tails->charability == CA_FLY && (tails->mo->state >= &states[S_PLAY_SPC1] && tails->mo->state <= &states[S_PLAY_SPC4])))
-	//	return; // SRB2kart - no changey statey
-
-	if (tails->bot == 1)
-		return;
-
-	if (sonic->pflags & PF_NIGHTSMODE)
-		return;
-
-	if (sonic->mo->tracer && sonic->mo->tracer->type == MT_TUBEWAYPOINT
-	&& !(sonic->pflags & PF_ROPEHANG))
-		return; // don't steal players from zoomtubes!
-
-	if ((sonic->mo->eflags & MFE_VERTICALFLIP) != (tails->mo->eflags & MFE_VERTICALFLIP))
-		return; // Both should be in same gravity
-
-	if (tails->mo->eflags & MFE_VERTICALFLIP)
-	{
-		if (tails->mo->ceilingz - (tails->mo->z + tails->mo->height) < sonic->mo->height-FixedMul(2*FRACUNIT, sonic->mo->scale))
-			return;
-	}
-	else if (tails->mo->z - tails->mo->floorz < sonic->mo->height-FixedMul(2*FRACUNIT, sonic->mo->scale))
-		return; // No room to pick up this guy!
-
-	// Search in case another player is already being carried by this fox.
-	for (p = 0; p < MAXPLAYERS; p++)
-		if (playeringame[p] && players[p].mo
-		&& players[p].pflags & PF_CARRIED && players[p].mo->tracer == tails->mo)
-			return;
-
-	if (tails->mo->eflags & MFE_VERTICALFLIP)
-		zdist = (sonic->mo->z + sonic->mo->height) - (tails->mo->z + tails->mo->height);
-	else
-		zdist = tails->mo->z - sonic->mo->z;
-
-	if (zdist <= sonic->mo->height + FixedMul(FRACUNIT, sonic->mo->scale)
-		&& zdist > sonic->mo->height*2/3
-		&& P_MobjFlip(tails->mo)*sonic->mo->momz <= 0)
-	{
-	// Why block opposing teams from tailsflying each other?
-		// Sneaking into the hands of a flying tails player in Race might be a viable strategy, who knows.
-		/*
-		if (gametype == GT_RACE || gametype == GT_COMPETITION
-			|| (netgame && (tails->spectator || sonic->spectator))
-			|| (G_TagGametype() && (!(tails->pflags & PF_TAGIT) != !(sonic->pflags & PF_TAGIT)))
-			|| (gametype == GT_MATCH)
-			|| (G_GametypeHasTeams() && tails->ctfteam != sonic->ctfteam))
-			sonic->pflags &= ~PF_CARRIED; */
-		if (tails->spectator || sonic->spectator || G_RaceGametype()) // SRB2kart
-			sonic->pflags &= ~PF_CARRIED;
-		else
-		{
-			if (sonic-players == consoleplayer && botingame)
-				//CV_SetValue(&cv_analog2, false);
-			P_ResetPlayer(sonic);
-			P_SetTarget(&sonic->mo->tracer, tails->mo);
-			sonic->pflags |= PF_CARRIED;
-			S_StartSound(sonic->mo, sfx_s3k4a);
-			P_UnsetThingPosition(sonic->mo);
-			sonic->mo->x = tails->mo->x;
-			sonic->mo->y = tails->mo->y;
-			P_SetThingPosition(sonic->mo);
-		}
-	}
-	else {
-		if (sonic-players == consoleplayer && botingame)
-			//CV_SetValue(&cv_analog2, true);
-		sonic->pflags &= ~PF_CARRIED;
-	}
-}
-#endif
 
 //
 // PIT_CheckThing
@@ -1463,8 +1352,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		}
 	}
 	else if (thing->player) {
-		if (thing->player-players == consoleplayer && botingame)
-			//CV_SetValue(&cv_analog2, true);
 		thing->player->pflags &= ~PF_CARRIED;
 	}*/
 
@@ -1941,7 +1828,7 @@ static boolean PIT_CheckLine(line_t *ld)
 	{
 		if (ld->flags & ML_IMPASSABLE) // block objects from moving through this linedef.
 			return false;
-		if (tmthing->player && ld->flags & ML_BLOCKPLAYERS)
+		if (tmthing->player && !tmthing->player->spectator && ld->flags & ML_BLOCKPLAYERS)
 			return false; // SRB2Kart: Only block players, not items
 	}
 
@@ -2992,6 +2879,100 @@ boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y)
 }
 
 //
+// PTR_GetSpecialLines
+//
+static boolean PTR_GetSpecialLines(intercept_t *in)
+{
+	line_t *ld;
+
+	I_Assert(in->isaline);
+
+	ld = in->d.line;
+
+	if (!ld->backsector)
+	{
+		return true;
+	}
+
+	if (P_SpecialIsLinedefCrossType(ld->special))
+	{
+		add_spechit(ld);
+	}
+
+	return true;
+}
+
+//
+// P_HitSpecialLines
+// Finds all special lines in the provided path and tries to cross them.
+// For zoom tubes and respawning, which noclip but need to cross finish lines.
+//
+void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_t momy)
+{
+	fixed_t leadx, leady;
+	fixed_t trailx, traily;
+	line_t *ld = NULL;
+	INT32 side = 0, oldside = 0;
+
+	I_Assert(thing != NULL);
+#ifdef PARANOIA
+	if (P_MobjWasRemoved(thing))
+		I_Error("Previously-removed Thing of type %u crashes P_CheckPosition!", thing->type);
+#endif
+
+	// reset special lines
+	numspechitint = 0U;
+	numspechit = 0U;
+
+	// trace along the three leading corners
+	if (momx > 0)
+	{
+		leadx = x + thing->radius;
+		trailx = x - thing->radius;
+	}
+	else
+	{
+		leadx = x - thing->radius;
+		trailx = x + thing->radius;
+	}
+
+	if (momy > 0)
+	{
+		leady = y + thing->radius;
+		traily = y - thing->radius;
+	}
+	else
+	{
+		leady = y - thing->radius;
+		traily = y + thing->radius;
+	}
+
+	P_PathTraverse(leadx, leady, leadx + momx, leady + momy, PT_ADDLINES, PTR_GetSpecialLines);
+	P_PathTraverse(trailx, leady, trailx + momx, leady + momy, PT_ADDLINES, PTR_GetSpecialLines);
+	P_PathTraverse(leadx, traily, leadx + momx, traily + momy, PT_ADDLINES, PTR_GetSpecialLines);
+
+	spechitint_copyinto();
+
+	// remove any duplicates that may be in spechitint
+	spechitint_removedups();
+
+	// handle any of the special lines that were crossed
+	while (numspechitint--)
+	{
+		ld = &lines[spechitint[numspechitint]];
+		side = P_PointOnLineSide(x + momx, y + momy, ld);
+		oldside = P_PointOnLineSide(x, y, ld);
+		if (side != oldside)
+		{
+			if (ld->special)
+			{
+				P_CrossSpecialLine(ld, oldside, thing);
+			}
+		}
+	}
+}
+
+//
 // P_ThingHeightClip
 // Takes a valid thing and adjusts the thing->floorz,
 // thing->ceilingz, and possibly thing->z.
@@ -3307,7 +3288,7 @@ static boolean PTR_SlideTraverse(intercept_t *in)
 		if (li->flags & ML_IMPASSABLE)
 			goto isblocking;
 
-		if (slidemo->player && li->flags & ML_BLOCKPLAYERS)
+		if (slidemo->player && !slidemo->player->spectator && li->flags & ML_BLOCKPLAYERS)
 			goto isblocking;
 	}
 

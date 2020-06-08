@@ -60,10 +60,6 @@ extern consvar_t cv_usemouse2;
 extern consvar_t cv_mouse2opt;
 #endif
 
-// normally in p_mobj but the .h is not read
-extern consvar_t cv_itemrespawntime;
-extern consvar_t cv_itemrespawn;
-
 extern consvar_t cv_flagtime;
 extern consvar_t cv_suddendeath;
 
@@ -121,6 +117,7 @@ extern consvar_t cv_kartencore;
 extern consvar_t cv_kartvoterulechanges;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
+extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_kartusepwrlv;
 
@@ -187,10 +184,11 @@ typedef enum
 	XD_ACCEPTPARTYINVITE, // 28
 	XD_LEAVEPARTY, // 29
 	XD_CANCELPARTYINVITE, // 30
-	XD_GIVEITEM,    // 31
+	XD_GIVEITEM, // 31
+	XD_ADDBOT, // 32
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 32
-	XD_LUAVAR,      // 33
+	XD_LUACMD,      // 33
+	XD_LUAVAR,      // 34
 #endif
 	MAXNETXCMD
 } netxcmd_t;
@@ -246,7 +244,7 @@ void Command_Retry_f(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
 void D_MapChange(INT32 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pfromlevelselect);
 void D_SetupVote(void);
-void D_ModifyClientVote(SINT8 voted, UINT8 splitplayer);
+void D_ModifyClientVote(UINT8 player, SINT8 voted, UINT8 splitplayer);
 void D_PickVote(void);
 void ObjectPlace_OnChange(void);
 boolean IsPlayerAdmin(INT32 playernum);
@@ -255,14 +253,6 @@ void ClearAdminPlayers(void);
 void RemoveAdminPlayer(INT32 playernum);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
-
-extern consvar_t cv_dummyjoinpassword;
-extern boolean joinpasswordset;
-boolean D_IsJoinPasswordOn(void);
-void D_ComputeChallengeAnswer(UINT8 *question, const char *pw, UINT8 *answer);
-void D_SetJoinPassword(const char *pw);
-boolean D_VerifyJoinPasswordChallenge(UINT8 num, UINT8 *answer);
-void D_MakeJoinPasswordChallenge(UINT8 *num, UINT8 *question);
 
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);

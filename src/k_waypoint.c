@@ -271,9 +271,12 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 		waypoint_t *checkwaypoint = NULL;
 		fixed_t    closestdist    = INT32_MAX;
 		fixed_t    checkdist      = INT32_MAX;
+		fixed_t    bestfindist    = INT32_MAX;
 
 		for (i = 0; i < numwaypoints; i++)
 		{
+			fixed_t rad;
+
 			checkwaypoint = &waypointheap[i];
 
 			checkdist = P_AproxDistance(
@@ -281,7 +284,34 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
 			checkdist = P_AproxDistance(checkdist, ((mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT)) * 4);
 
-			if (checkdist < closestdist)
+			rad = (checkwaypoint->mobj->radius / FRACUNIT);
+
+			if (closestdist < rad && checkdist < rad && finishline != NULL)
+			{
+				const boolean useshortcuts = false;
+				const boolean huntbackwards = false;
+				boolean pathfindsuccess = false;
+				path_t pathtofinish = {};
+
+				// If the mobj is touching multiple waypoints at once,
+				// then solve ties by taking the one closest to the finish line.
+				// Prevents position from flickering wildly when taking turns.
+
+				pathfindsuccess =
+					K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+
+				if (pathfindsuccess == true)
+				{
+					if ((INT32)(pathtofinish.totaldist) < bestfindist)
+					{
+						bestwaypoint = checkwaypoint;
+						bestfindist = pathtofinish.totaldist;
+					}
+
+					Z_Free(pathtofinish.array);
+				}
+			}
+			else if (checkdist < closestdist && bestfindist == INT32_MAX)
 			{
 				if (!P_CheckSight(mobj, checkwaypoint->mobj))
 				{
@@ -444,13 +474,55 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 			spawnedmobj->state->tics = 1;
 			spawnedmobj->frame = spawnedmobj->frame & ~FF_TRANSMASK;
 			spawnedmobj->color = linkcolours[linkcolour];
-			spawnedmobj->scale = FixedMul(FRACUNIT/4, FixedDiv((15 - ((leveltime + n) % 16))*FRACUNIT, 15*FRACUNIT));
+			spawnedmobj->scale = FixedMul(spawnedmobj->scale, FixedMul(FRACUNIT/4, FixedDiv((15 - ((leveltime + n) % 16))*FRACUNIT, 15*FRACUNIT)));
 		}
 
 		x += stepx;
 		y += stepy;
 		z += stepz;
 	} while (n--);
+}
+
+/*--------------------------------------------------
+	void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
+
+		Draw a debugging circle to represent a waypoint's radius
+
+	Input Arguments:-
+		waypoint - A waypoint to draw the radius of
+--------------------------------------------------*/
+static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
+{
+	mobj_t *radiusOrb;
+	mobj_t *waypointmobj;
+	const INT32 numRadiusMobjs = 64;
+	INT32 i = 0;
+	angle_t spawnAngle = 0U;
+	fixed_t spawnX= 0;
+	fixed_t spawnY= 0;
+	fixed_t spawnZ= 0;
+
+	I_Assert(waypoint != NULL);
+	I_Assert(waypoint->mobj != NULL);
+
+	waypointmobj = waypoint->mobj;
+
+	for (i = 0; i < numRadiusMobjs; i++)
+	{
+		spawnAngle = (ANGLE_MAX / numRadiusMobjs) * i;
+
+		spawnZ = waypointmobj->z;
+		spawnX = waypointmobj->x + P_ReturnThrustX(waypointmobj, spawnAngle, waypointmobj->radius);
+		spawnY = waypointmobj->y + P_ReturnThrustY(waypointmobj, spawnAngle, waypointmobj->radius);
+
+		radiusOrb = P_SpawnMobj(spawnX, spawnY, spawnZ, MT_SPARK);
+		P_SetMobjState(radiusOrb, S_THOK);
+		radiusOrb->state->nextstate = S_NULL;
+		radiusOrb->state->tics = 1;
+		radiusOrb->frame = radiusOrb->frame & ~FF_TRANSMASK;
+		radiusOrb->color = SKINCOLOR_PURPLE;
+		radiusOrb->scale = radiusOrb->scale / 4;
+	}
 }
 
 /*--------------------------------------------------
@@ -493,15 +565,20 @@ void K_DebugWaypointsVisualise(void)
 		{
 			if (waypoint->numnextwaypoints == 0 && waypoint->numprevwaypoints == 0)
 			{
+				P_SetMobjState(debugmobj, S_EGOORB);
 				debugmobj->color = SKINCOLOR_RED;
+				debugmobj->colorized = true;
 			}
 			else if (waypoint->numnextwaypoints == 0 || waypoint->numprevwaypoints == 0)
 			{
+				P_SetMobjState(debugmobj, S_EGOORB);
 				debugmobj->color = SKINCOLOR_YELLOW;
+				debugmobj->colorized = true;
 			}
 			else if (waypoint == players[displayplayers[0]].nextwaypoint)
 			{
 				debugmobj->color = SKINCOLOR_GREEN;
+				K_DebugWaypointDrawRadius(waypoint);
 			}
 			else
 			{
@@ -1937,8 +2014,7 @@ void K_AdjustWaypointsParameters (void)
 						waypointmobj;
 						waypointmobj = waypointmobj->tracer
 				){
-					if (K_AnchorWaypointRadius(waypointmobj, anchor))
-						break;
+					K_AnchorWaypointRadius(waypointmobj, anchor);
 				}
 			}
 		}

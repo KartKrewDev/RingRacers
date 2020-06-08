@@ -8,6 +8,7 @@
 #include "m_random.h"
 #include "m_cond.h" // M_UpdateUnlockablesAndExtraEmblems
 #include "p_tick.h" // leveltime
+#include "k_grandprix.h"
 
 // Online rankings for the main gametypes.
 // This array is saved to the gamedata.
@@ -24,6 +25,27 @@ INT16 nospectategrief[MAXPLAYERS];
 // Game setting scrambles based on server Power Level
 SINT8 speedscramble = -1;
 SINT8 encorescramble = -1;
+
+SINT8 K_UsingPowerLevels(void)
+{
+	SINT8 pt = PWRLV_DISABLED;
+
+	if (!cv_kartusepwrlv.value || !netgame || grandprixinfo.gp == true)
+	{
+		return PWRLV_DISABLED;
+	}
+
+	if (G_RaceGametype())
+	{
+		pt = PWRLV_RACE;
+	}
+	else if (G_BattleGametype())
+	{
+		pt = PWRLV_BATTLE;
+	}
+
+	return pt;
+}
 
 void K_ClearClientPowerLevels(void)
 {
@@ -305,9 +327,10 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 		if (i == playernum)
 			continue;
 
-		theirpower = PWRLVRECORD_DEF;
-		if (clientpowerlevels[i][powertype] != 0) // No power level acts as 5000 (used for splitscreen guests)
-			theirpower = clientpowerlevels[i][powertype];
+		if (clientpowerlevels[i][powertype] == 0) // No power level (splitscreen guests, bots)
+			continue;
+
+		theirpower = clientpowerlevels[i][powertype];
 
 		diff = yourpower - theirpower;
 		inc -= K_CalculatePowerLevelInc(diff);

@@ -27,7 +27,7 @@
 #include "doomstat.h"
 
 #ifdef HWRENDER
-#include "hardware/hw_glob.h"
+#include "hardware/hw_main.h"
 #endif
 
 // Each screen is [vid.width*vid.height];
@@ -84,30 +84,25 @@ static void CV_Gammaxxx_ONChange(void);
 // - You can change them in software,
 // but they won't do anything.
 static CV_PossibleValue_t grgamma_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t grsoftwarefog_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "LightPlanes"}, {0, NULL}};
+static CV_PossibleValue_t grfakecontrast_cons_t[] = {{0, "Standard"}, {1, "Smooth"}, {0, NULL}};
 
+consvar_t cv_grshaders = {"gr_shaders", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grfovchange = {"gr_fovchange", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grfog = {"gr_fog", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grfogcolor = {"gr_fogcolor", "AAAAAA", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grsoftwarefog = {"gr_softwarefog", "Off", CV_SAVE, grsoftwarefog_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grgammared = {"gr_gammared", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
                            CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grgammagreen = {"gr_gammagreen", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
                              CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grgammablue = {"gr_gammablue", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
                             CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
-#ifdef ALAM_LIGHTING
-consvar_t cv_grdynamiclighting = {"gr_dynamiclighting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grstaticlighting  = {"gr_staticlighting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grcoronas = {"gr_coronas", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grcoronasize = {"gr_coronasize", "1", CV_SAVE| CV_FLOAT, 0, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
 
 //static CV_PossibleValue_t CV_MD2[] = {{0, "Off"}, {1, "On"}, {2, "Old"}, {0, NULL}};
 // console variables in development
 consvar_t cv_grmdls = {"gr_mdls", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grfallbackplayermodel = {"gr_fallbackplayermodel", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_grshearing = {"gr_shearing", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grfakecontrast = {"gr_fakecontrast", "Standard", CV_SAVE, grfakecontrast_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 #endif
 
 // local copy of the palette for V_GetColor()
@@ -525,7 +520,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 
 #ifdef HWRENDER
 	//if (rendermode != render_soft && !con_startup)		// Why?
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawFixedPatch((GLPatch_t *)patch, x, y, pscale, scrn, colormap);
 		return;
@@ -747,8 +742,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 		return;
 
 #ifdef HWRENDER
-	// Done
-	if (rendermode != render_soft && !con_startup)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawCroppedPatch((GLPatch_t*)patch,x,y,pscale,scrn,sx,sy,w,h);
 		return;
@@ -894,61 +888,6 @@ void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const 
 	}
 }
 
-static void V_BlitScaledPic(INT32 px1, INT32 py1, INT32 scrn, pic_t *pic);
-//  Draw a linear pic, scaled, TOTALLY CRAP CODE!!! OPTIMISE AND ASM!!
-//
-void V_DrawScaledPic(INT32 rx1, INT32 ry1, INT32 scrn, INT32 lumpnum)
-{
-#ifdef HWRENDER
-	if (rendermode != render_soft)
-	{
-		HWR_DrawPic(rx1, ry1, lumpnum);
-		return;
-	}
-#endif
-
-	V_BlitScaledPic(rx1, ry1, scrn, W_CacheLumpNum(lumpnum, PU_CACHE));
-}
-
-static void V_BlitScaledPic(INT32 rx1, INT32 ry1, INT32 scrn, pic_t * pic)
-{
-	INT32 dupx, dupy;
-	INT32 x, y;
-	UINT8 *src, *dest;
-	INT32 width, height;
-
-	width = SHORT(pic->width);
-	height = SHORT(pic->height);
-	scrn &= V_PARAMMASK;
-
-	if (pic->mode != 0)
-	{
-		CONS_Debug(DBG_RENDER, "pic mode %d not supported in Software\n", pic->mode);
-		return;
-	}
-
-	dest = screens[scrn] + max(0, ry1 * vid.width) + max(0, rx1);
-	// y cliping to the screen
-	if (ry1 + height * vid.dupy >= vid.width)
-		height = (vid.width - ry1) / vid.dupy - 1;
-	// WARNING no x clipping (not needed for the moment)
-
-	for (y = max(0, -ry1 / vid.dupy); y < height; y++)
-	{
-		for (dupy = vid.dupy; dupy; dupy--)
-		{
-			src = pic->data + y * width;
-			for (x = 0; x < width; x++)
-			{
-				for (dupx = vid.dupx; dupx; dupx--)
-					*dest++ = *src;
-				src++;
-			}
-			dest += vid.width - vid.dupx * width;
-		}
-	}
-}
-
 //
 // Fills a box of pixels with a single color, NOTE: scaled to screen size
 //
@@ -961,7 +900,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		return;
 
 #ifdef HWRENDER
-	if (rendermode != render_soft && !con_startup)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawFill(x, y, w, h, c);
 		return;
@@ -1081,7 +1020,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		return;
 
 #ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
 	{
 		UINT32 hwcolor = V_GetHWConsBackColor();
 		HWR_DrawConsoleFill(x, y, w, h, hwcolor, c);	// we still use the regular color stuff but only for flags. actual draw color is "hwcolor" for this.
@@ -1292,7 +1231,7 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 	size_t size, lflatsize, flatshift;
 
 #ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawFlatFill(x, y, w, h, flatnum);
 		return;
@@ -1539,7 +1478,7 @@ void V_DrawFadeConsBack(INT32 plines)
 	UINT8 *deststop, *buf;
 
 #ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
 	{
 		UINT32 hwcolor = V_GetHWConsBackColor();
 		HWR_DrawConsoleBack(hwcolor, plines);
@@ -1643,17 +1582,17 @@ void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed)
 		c -= HU_FONTSTART;
 	else
 		c = toupper(c) - HU_FONTSTART;
-	if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+	if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
 		return;
 
-	w = SHORT(hu_font[c]->width);
+	w = SHORT(fontv[HU_FONT].font[c]->width);
 	if (x + w > vid.width)
 		return;
 
 	if (colormap != NULL)
-		V_DrawMappedPatch(x, y, flags, hu_font[c], colormap);
+		V_DrawMappedPatch(x, y, flags, fontv[HU_FONT].font[c], colormap);
 	else
-		V_DrawScaledPatch(x, y, flags, hu_font[c]);
+		V_DrawScaledPatch(x, y, flags, fontv[HU_FONT].font[c]);
 }
 
 // Writes a single character for the chat (half scaled). (draw WHITE if bit 7 set)
@@ -1670,14 +1609,14 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UI
 		c -= HU_FONTSTART;
 	else
 		c = toupper(c) - HU_FONTSTART;
-	if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+	if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
 		return;
 
-	w = SHORT(hu_font[c]->width)/2;
+	w = SHORT(fontv[HU_FONT].font[c]->width)/2;
 	if (x + w > vid.width)
 		return;
 
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/2, flags, hu_font[c], colormap);
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/2, flags, fontv[HU_FONT].font[c], colormap);
 }
 
 // Precompile a wordwrapped string to any given width.
@@ -1728,13 +1667,13 @@ char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 			c = toupper(c);
 		c -= HU_FONTSTART;
 
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+		if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
 		{
 			chw = spacewidth;
 			lastusablespace = i;
 		}
 		else
-			chw = (charwidth ? charwidth : hu_font[c]->width);
+			chw = (charwidth ? charwidth : fontv[HU_FONT].font[c]->width);
 
 		x += chw;
 
@@ -1749,214 +1688,297 @@ char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 	return newstring;
 }
 
-//
-// Write a string using the hu_font
-// NOTE: the text is centered for screens larger than the base width
-//
-void V_DrawString(INT32 x, INT32 y, INT32 option, const char *string)
+static inline fixed_t FixedCharacterDim(
+		fixed_t  scale,
+		fixed_t   chw,
+		INT32    hchw,
+		INT32    dupx,
+		fixed_t *  cwp)
 {
-	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, center = 0, left = 0;
-	const char *ch = string;
-	INT32 charflags = 0;
-	const UINT8 *colormap = NULL;
-	INT32 spacewidth = 4, charwidth = 0;
-
-	INT32 lowercase = (option & V_ALLOWLOWERCASE);
-	option &= ~V_FLIP; // which is also shared with V_ALLOWLOWERCASE...
-
-	if (option & V_NOSCALESTART)
-	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
-		scrwidth = vid.width;
-	}
-	else
-	{
-		dupx = dupy = 1;
-		scrwidth = vid.width/vid.dupx;
-		if (!(option & V_SNAPTOLEFT))
-		{
-			left = (scrwidth - BASEVIDWIDTH)/2;
-			scrwidth -= left;
-		}
-	}
-
-	charflags = (option & V_CHARCOLORMASK);
-	colormap = V_GetStringColormap(charflags);
-
-	switch (option & V_SPACINGMASK)
-	{
-		case V_MONOSPACE:
-			spacewidth = 8;
-			/* FALLTHRU */
-		case V_OLDSPACING:
-			charwidth = 8;
-			break;
-		case V_6WIDTHSPACE:
-			spacewidth = 6;
-		default:
-			break;
-	}
-
-	for (;;ch++)
-	{
-		if (!*ch)
-			break;
-		if (*ch & 0x80) //color parsing -x 2.16.09
-		{
-			// manually set flags override color codes
-			if (!(option & V_CHARCOLORMASK))
-			{
-				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
-				colormap = V_GetStringColormap(charflags);
-			}
-			continue;
-		}
-		if (*ch == '\n')
-		{
-			cx = x;
-
-			if (option & V_RETURN8)
-				cy += 8*dupy;
-			else
-				cy += 12*dupy;
-
-			continue;
-		}
-
-		c = *ch;
-		if (!lowercase)
-			c = toupper(c);
-		c -= HU_FONTSTART;
-
-		// character does not exist or is a space
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
-		{
-			cx += spacewidth * dupx;
-			continue;
-		}
-
-		if (charwidth)
-		{
-			w = charwidth * dupx;
-			center = w/2 - SHORT(hu_font[c]->width)*dupx/2;
-		}
-		else
-			w = SHORT(hu_font[c]->width) * dupx;
-
-		if (cx > scrwidth)
-			break;
-		if (cx+left + w < 0) //left boundary check
-		{
-			cx += w;
-			continue;
-		}
-
-		V_DrawFixedPatch((cx + center)<<FRACBITS, cy<<FRACBITS, FRACUNIT, option, hu_font[c], colormap);
-
-		cx += w;
-	}
+	(void)scale;
+	(void)hchw;
+	(void)dupx;
+	(*cwp) = chw;
+	return 0;
 }
 
-// SRB2kart
-void V_DrawKartString(INT32 x, INT32 y, INT32 option, const char *string)
+static inline fixed_t VariableCharacterDim(
+		fixed_t  scale,
+		fixed_t   chw,
+		INT32    hchw,
+		INT32    dupx,
+		fixed_t *  cwp)
 {
-	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, center = 0, left = 0;
-	const char *ch = string;
-	INT32 charflags = 0;
-	const UINT8 *colormap = NULL;
-	INT32 spacewidth = 12, charwidth = 0;
+	(void)chw;
+	(void)hchw;
+	(void)dupx;
+	(*cwp) = FixedMul ((*cwp) << FRACBITS, scale);
+	return 0;
+}
 
-	INT32 lowercase = (option & V_ALLOWLOWERCASE);
-	option &= ~V_FLIP; // which is also shared with V_ALLOWLOWERCASE...
+static inline fixed_t CenteredCharacterDim(
+		fixed_t  scale,
+		fixed_t   chw,
+		INT32    hchw,
+		INT32    dupx,
+		fixed_t *  cwp)
+{
+	INT32 cxoff;
+	/*
+	For example, center a 4 wide patch to 8 width:
+	4/2   = 2
+	8/2   = 4
+	4 - 2 = 2 (our offset)
+	2 + 4 = 6 = 8 - 2 (equal space on either side)
+	*/
+	cxoff  = hchw -((*cwp) >> 1 );
+	(*cwp) = chw;
+	return FixedMul (( cxoff * dupx )<< FRACBITS, scale);
+}
 
-	if (option & V_NOSCALESTART)
+static inline fixed_t BunchedCharacterDim(
+		fixed_t  scale,
+		fixed_t   chw,
+		INT32    hchw,
+		INT32    dupx,
+		fixed_t *  cwp)
+{
+	(void)chw;
+	(void)hchw;
+	(void)dupx;
+	(*cwp) = FixedMul (max (1, (*cwp) - 1) << FRACBITS, scale);
+	return 0;
+}
+
+void V_DrawStringScaled(
+		fixed_t    x,
+		fixed_t    y,
+		fixed_t      scale,
+		fixed_t spacescale,
+		fixed_t    lfscale,
+		INT32      flags,
+		int        fontno,
+		const char *s)
+{
+	fixed_t    chw;
+	INT32     hchw;/* half-width for centering */
+	fixed_t spacew;
+	fixed_t    lfh;
+
+	INT32     dupx;
+
+	fixed_t  right;
+	fixed_t    bot;
+
+	fixed_t (*dim_fn)(fixed_t,fixed_t,INT32,INT32,fixed_t *);
+
+	font_t   *font;
+
+	boolean uppercase;
+	boolean notcolored;
+
+	const UINT8 *colormap;
+
+	fixed_t cx, cy;
+
+	fixed_t cxoff;
+	fixed_t cw;
+
+	INT32     spacing;
+	fixed_t   left;
+
+	int c;
+
+	uppercase  = !( flags & V_ALLOWLOWERCASE );
+	flags     &= ~(V_FLIP);/* These two (V_ALLOWLOWERCASE) share a bit. */
+
+	colormap   =  V_GetStringColormap(( flags & V_CHARCOLORMASK ));
+	notcolored = !colormap;
+
+	font       = &fontv[fontno];
+
+	chw        = 0;
+
+	spacing = ( flags & V_SPACINGMASK );
+
+	/*
+	Hardcoded until a better system can be implemented
+	for determining how fonts space.
+	*/
+	switch (fontno)
 	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
-		scrwidth = vid.width;
+		default:
+		case HU_FONT:
+			spacew = 4;
+			switch (spacing)
+			{
+				case V_MONOSPACE:
+					spacew = 8;
+					/* FALLTHRU */
+				case V_OLDSPACING:
+					chw    = 8;
+					break;
+				case V_6WIDTHSPACE:
+					spacew = 6;
+			}
+			break;
+		case TINY_FONT:
+			spacew = 2;
+			switch (spacing)
+			{
+				case V_MONOSPACE:
+					spacew = 5;
+					/* FALLTHRU */
+				case V_OLDSPACING:
+					chw    = 5;
+					break;
+				// Out of video flags, so we're reusing this for alternate charwidth instead
+				/*case V_6WIDTHSPACE:
+				  spacewidth = 3;*/
+			}
+			break;
+		case KART_FONT:
+			spacew = 12;
+			switch (spacing)
+			{
+				case V_MONOSPACE:
+					spacew = 12;
+					/* FALLTHRU */
+				case V_OLDSPACING:
+					chw    = 12;
+					break;
+				case V_6WIDTHSPACE:
+					spacew = 6;
+			}
+			break;
+		case LT_FONT:
+			spacew = 12;
+			break;
+		case CRED_FONT:
+			spacew = 16;
+			break;
+	}
+	switch (fontno)
+	{
+		default:
+		case HU_FONT:
+		case TINY_FONT:
+		case KART_FONT:
+			if (( flags & V_RETURN8 ))
+				lfh =  8;
+			else
+				lfh = 12;
+			break;
+		case LT_FONT:
+		case CRED_FONT:
+			lfh    = 12;
+			break;
+	}
+
+	hchw     = chw >> 1;
+
+	chw    <<= FRACBITS;
+	spacew <<= FRACBITS;
+
+#define Mul( id, scale ) ( id = FixedMul (scale, id) )
+	Mul    (chw,      scale);
+	Mul (spacew,      scale);
+	Mul    (lfh,      scale);
+
+	Mul (spacew, spacescale);
+	Mul    (lfh,    lfscale);
+#undef  Mul
+
+	if (( flags & V_NOSCALESTART ))
+	{
+		dupx      = vid.dupx;
+
+		hchw     *=     dupx;
+
+		chw      *=     dupx;
+		spacew   *=     dupx;
+		lfh      *= vid.dupy;
+
+		right     = vid.width;
 	}
 	else
 	{
-		dupx = dupy = 1;
-		scrwidth = vid.width/vid.dupx;
-		left = (scrwidth - BASEVIDWIDTH)/2;
+		dupx      = 1;
+
+		right     = ( vid.width / vid.dupx );
+		if (!( flags & V_SNAPTOLEFT ))
+		{
+			left   = ( right - BASEVIDWIDTH )/ 2;/* left edge of drawable area */
+			x      = ( left << FRACBITS )+ x;
+			right -= left;
+		}
 	}
 
-	charflags = (option & V_CHARCOLORMASK);
-	colormap = V_GetStringColormap(charflags);
+	right      <<=               FRACBITS;
+	bot          = vid.height << FRACBITS;
 
-	switch (option & V_SPACINGMASK)
+	if (fontno == TINY_FONT)
 	{
-		case V_MONOSPACE:
-			spacewidth = 12;
-			/* FALLTHRU */
-		case V_OLDSPACING:
-			charwidth = 12;
-			break;
-		case V_6WIDTHSPACE:
-			spacewidth = 6;
-		default:
-			break;
-	}
-
-	for (;;ch++)
-	{
-		if (!*ch)
-			break;
-		if (*ch & 0x80) //color parsing -x 2.16.09
-		{
-			// manually set flags override color codes
-			if (!(option & V_CHARCOLORMASK))
-			{
-				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
-				colormap = V_GetStringColormap(charflags);
-			}
-			continue;
-		}
-		if (*ch == '\n')
-		{
-			cx = x;
-
-			if (option & V_RETURN8)
-				cy += 8*dupy;
-			else
-				cy += 12*dupy;
-
-			continue;
-		}
-
-		c = *ch;
-		if (!lowercase)
-			c = toupper(c);
-		c -= KART_FONTSTART;
-
-		// character does not exist or is a space
-		if (c < 0 || c >= KART_FONTSIZE || !kart_font[c])
-		{
-			cx += spacewidth * dupx;
-			continue;
-		}
-
-		if (charwidth)
-		{
-			w = charwidth * dupx;
-			center = w/2 - SHORT(kart_font[c]->width)*dupx/2;
-		}
+		if (chw)
+			dim_fn = FixedCharacterDim;
 		else
-			w = SHORT(kart_font[c]->width) * dupx;
-
-		if (cx > scrwidth)
-			break;
-		if (cx+left + w < 0) //left boundary check
 		{
-			cx += w;
-			continue;
+			/* Reuse this flag for the alternate bunched-up spacing. */
+			if (( flags & V_6WIDTHSPACE ))
+				dim_fn = BunchedCharacterDim;
+			else
+				dim_fn = VariableCharacterDim;
 		}
+	}
+	else
+	{
+		if (chw)
+			dim_fn = CenteredCharacterDim;
+		else
+			dim_fn = VariableCharacterDim;
+	}
 
-		V_DrawFixedPatch((cx + center)<<FRACBITS, cy<<FRACBITS, FRACUNIT, option, kart_font[c], colormap);
+	cx = x;
+	cy = y;
 
-		cx += w;
+	for (; ( c = *s ); ++s)
+	{
+		switch (c)
+		{
+			case '\n':
+				cy += lfh;
+				if (cy >= bot)
+					return;
+				cx  =   x;
+				break;
+			default:
+				if (( c & 0x80 ))
+				{
+					if (notcolored)
+					{
+						colormap = V_GetStringColormap(
+								( ( c & 0x7f )<< V_CHARCOLORSHIFT )&
+								V_CHARCOLORMASK);
+					}
+				}
+				else if (cx < right)
+				{
+					if (uppercase)
+						c = toupper(c);
+
+					c -= font->start;
+					if (c >= 0 && c < font->size && font->font[c])
+					{
+						cw = SHORT (font->font[c]->width) * dupx;
+						cxoff = (*dim_fn)(scale, chw, hchw, dupx, &cw);
+						V_DrawFixedPatch(cx + cxoff, cy, scale,
+								flags, font->font[c], colormap);
+						cx += cw;
+					}
+					else
+						cx += spacew;
+				}
+		}
 	}
 }
 //
@@ -1973,218 +1995,10 @@ void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string
 	V_DrawString(x, y, option, string);
 }
 
-//
-// Write a string using the hu_font, 0.5x scale
-// NOTE: the text is centered for screens larger than the base width
-//
-void V_DrawSmallString(INT32 x, INT32 y, INT32 option, const char *string)
-{
-	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, center = 0, left = 0;
-	const char *ch = string;
-	INT32 charflags = 0;
-	const UINT8 *colormap = NULL;
-	INT32 spacewidth = 2, charwidth = 0;
-
-	INT32 lowercase = (option & V_ALLOWLOWERCASE);
-	option &= ~V_FLIP; // which is also shared with V_ALLOWLOWERCASE...
-
-	if (option & V_NOSCALESTART)
-	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
-		scrwidth = vid.width;
-	}
-	else
-	{
-		dupx = dupy = 1;
-		scrwidth = vid.width/vid.dupx;
-		left = (scrwidth - BASEVIDWIDTH)/2;
-		scrwidth -= left;
-	}
-
-	charflags = (option & V_CHARCOLORMASK);
-	colormap = V_GetStringColormap(charflags);
-
-	switch (option & V_SPACINGMASK)
-	{
-		case V_MONOSPACE:
-			spacewidth = 4;
-			/* FALLTHRU */
-		case V_OLDSPACING:
-			charwidth = 4;
-			break;
-		case V_6WIDTHSPACE:
-			spacewidth = 3;
-		default:
-			break;
-	}
-
-	for (;;ch++)
-	{
-		if (!*ch)
-			break;
-		if (*ch & 0x80) //color parsing -x 2.16.09
-		{
-			// manually set flags override color codes
-			if (!(option & V_CHARCOLORMASK))
-			{
-				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
-				colormap = V_GetStringColormap(charflags);
-			}
-			continue;
-		}
-		if (*ch == '\n')
-		{
-			cx = x;
-
-			if (option & V_RETURN8)
-				cy += 4*dupy;
-			else
-				cy += 6*dupy;
-
-			continue;
-		}
-
-		c = *ch;
-		if (!lowercase)
-			c = toupper(c);
-		c -= HU_FONTSTART;
-
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
-		{
-			cx += spacewidth * dupx;
-			continue;
-		}
-
-		if (charwidth)
-		{
-			w = charwidth * dupx;
-			center = w/2 - SHORT(hu_font[c]->width)*dupx/4;
-		}
-		else
-			w = SHORT(hu_font[c]->width) * dupx / 2;
-		if (cx > scrwidth)
-			break;
-		if (cx+left + w < 0) //left boundary check
-		{
-			cx += w;
-			continue;
-		}
-
-		V_DrawFixedPatch((cx + center)<<FRACBITS, cy<<FRACBITS, FRACUNIT/2, option, hu_font[c], colormap);
-
-		cx += w;
-	}
-}
-
 void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *string)
 {
 	x -= V_SmallStringWidth(string, option);
 	V_DrawSmallString(x, y, option, string);
-}
-
-//
-// Write a string using the tny_font
-// NOTE: the text is centered for screens larger than the base width
-//
-void V_DrawThinString(INT32 x, INT32 y, INT32 option, const char *string)
-{
-	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, left = 0;
-	const char *ch = string;
-	INT32 charflags = 0;
-	const UINT8 *colormap = NULL;
-	INT32 spacewidth = 2, charwidth = 0;
-
-	INT32 lowercase = (option & V_ALLOWLOWERCASE);
-	option &= ~V_FLIP; // which is also shared with V_ALLOWLOWERCASE...
-
-	if (option & V_NOSCALESTART)
-	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
-		scrwidth = vid.width;
-	}
-	else
-	{
-		dupx = dupy = 1;
-		scrwidth = vid.width/vid.dupx;
-		left = (scrwidth - BASEVIDWIDTH)/2;
-		scrwidth -= left;
-	}
-
-	charflags = (option & V_CHARCOLORMASK);
-	colormap = V_GetStringColormap(charflags);
-
-	switch (option & V_SPACINGMASK)
-	{
-		case V_MONOSPACE:
-			spacewidth = 5;
-			/* FALLTHRU */
-		case V_OLDSPACING:
-			charwidth = 5;
-			break;
-		// Out of video flags, so we're reusing this for alternate charwidth instead
-		/*case V_6WIDTHSPACE:
-			spacewidth = 3;*/
-		default:
-			break;
-	}
-
-	for (;;ch++)
-	{
-		if (!*ch)
-			break;
-		if (*ch & 0x80) //color parsing -x 2.16.09
-		{
-			// manually set flags override color codes
-			if (!(option & V_CHARCOLORMASK))
-			{
-				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
-				colormap = V_GetStringColormap(charflags);
-			}
-			continue;
-		}
-		if (*ch == '\n')
-		{
-			cx = x;
-
-			if (option & V_RETURN8)
-				cy += 8*dupy;
-			else
-				cy += 12*dupy;
-
-			continue;
-		}
-
-		c = *ch;
-		if (!lowercase || !tny_font[c-HU_FONTSTART])
-			c = toupper(c);
-		c -= HU_FONTSTART;
-
-		if (c < 0 || c >= HU_FONTSIZE || !tny_font[c])
-		{
-			cx += spacewidth * dupx;
-			continue;
-		}
-
-		if (charwidth)
-			w = charwidth * dupx;
-		else
-			w = ((option & V_6WIDTHSPACE ? max(1, SHORT(tny_font[c]->width)-1) // Reuse this flag for the alternate bunched-up spacing
-				: SHORT(tny_font[c]->width)) * dupx);
-
-		if (cx > scrwidth)
-			break;
-		if (cx+left + w < 0) //left boundary check
-		{
-			cx += w;
-			continue;
-		}
-
-		V_DrawFixedPatch(cx<<FRACBITS, cy<<FRACBITS, FRACUNIT, option, tny_font[c], colormap);
-
-		cx += w;
-	}
 }
 
 void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string)
@@ -2199,101 +2013,10 @@ void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *st
 	V_DrawThinString(x, y, option, string);
 }
 
-// Draws a string at a fixed_t location.
-void V_DrawStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
-{
-	fixed_t cx = x, cy = y;
-	INT32 w, c, dupx, dupy, scrwidth, center = 0, left = 0;
-	const char *ch = string;
-	INT32 spacewidth = 4, charwidth = 0;
-
-	INT32 lowercase = (option & V_ALLOWLOWERCASE);
-	option &= ~V_FLIP; // which is also shared with V_ALLOWLOWERCASE...
-
-	if (option & V_NOSCALESTART)
-	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
-		scrwidth = vid.width;
-	}
-	else
-	{
-		dupx = dupy = 1;
-		scrwidth = vid.width/vid.dupx;
-		left = (scrwidth - BASEVIDWIDTH)/2;
-		scrwidth -= left;
-	}
-
-	switch (option & V_SPACINGMASK)
-	{
-		case V_MONOSPACE:
-			spacewidth = 8;
-			/* FALLTHRU */
-		case V_OLDSPACING:
-			charwidth = 8;
-			break;
-		case V_6WIDTHSPACE:
-			spacewidth = 6;
-		default:
-			break;
-	}
-
-	for (;;ch++)
-	{
-		if (!*ch)
-			break;
-		if (*ch & 0x80) //color ignoring
-			continue;
-		if (*ch == '\n')
-		{
-			cx = x;
-
-			if (option & V_RETURN8)
-				cy += (8*dupy)<<FRACBITS;
-			else
-				cy += (12*dupy)<<FRACBITS;
-
-			continue;
-		}
-
-		c = *ch;
-		if (!lowercase)
-			c = toupper(c);
-		c -= HU_FONTSTART;
-
-		// character does not exist or is a space
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
-		{
-			cx += (spacewidth * dupx)<<FRACBITS;
-			continue;
-		}
-
-		if (charwidth)
-		{
-			w = charwidth * dupx;
-			center = w/2 - SHORT(hu_font[c]->width)*(dupx/2);
-		}
-		else
-			w = SHORT(hu_font[c]->width) * dupx;
-
-		if ((cx>>FRACBITS) > scrwidth)
-			break;
-		if ((cx>>FRACBITS)+left + w < 0) //left boundary check
-		{
-			cx += w<<FRACBITS;
-			continue;
-		}
-
-		V_DrawSciencePatch(cx + (center<<FRACBITS), cy, option, hu_font[c], FRACUNIT);
-
-		cx += w<<FRACBITS;
-	}
-}
-
 // Draws a tallnum.  Replaces two functions in y_inter and st_stuff
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 {
-	INT32 w = SHORT(tallnum[0]->width);
+	INT32 w = SHORT(fontv[TALLNUM_FONT].font[0]->width);
 	boolean neg;
 
 	if (flags & V_NOSCALESTART)
@@ -2306,7 +2029,7 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 	do
 	{
 		x -= w;
-		V_DrawScaledPatch(x, y, flags, tallnum[num % 10]);
+		V_DrawScaledPatch(x, y, flags, fontv[TALLNUM_FONT].font[num % 10]);
 		num /= 10;
 	} while (num);
 
@@ -2319,7 +2042,7 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 // Does not handle negative numbers in a special way, don't try to feed it any.
 void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 {
-	INT32 w = SHORT(tallnum[0]->width);
+	INT32 w = SHORT(fontv[TALLNUM_FONT].font[0]->width);
 
 	if (flags & V_NOSCALESTART)
 		w *= vid.dupx;
@@ -2331,7 +2054,7 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 	do
 	{
 		x -= w;
-		V_DrawScaledPatch(x, y, flags, tallnum[num % 10]);
+		V_DrawScaledPatch(x, y, flags, fontv[TALLNUM_FONT].font[num % 10]);
 		num /= 10;
 	} while (--digits);
 }
@@ -2341,7 +2064,7 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 
 void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
 {
-	INT32 w = SHORT(pingnum[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
+	INT32 w = SHORT(fontv[PINGNUM_FONT].font[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
 
 	if (flags & V_NOSCALESTART)
 		w *= vid.dupx;
@@ -2353,59 +2076,9 @@ void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colorm
 	do
 	{
 		x -= (w-1);	// Oni wanted their outline to intersect.
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, pingnum[num%10], colormap);
+		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num%10], colormap);
 		num /= 10;
 	} while (num);
-}
-
-// Write a string using the credit font
-// NOTE: the text is centered for screens larger than the base width
-//
-void V_DrawCreditString(fixed_t x, fixed_t y, INT32 option, const char *string)
-{
-	INT32 w, c, dupx, dupy, scrwidth = BASEVIDWIDTH;
-	fixed_t cx = x, cy = y;
-	const char *ch = string;
-
-	// It's possible for string to be a null pointer
-	if (!string)
-		return;
-
-	if (option & V_NOSCALESTART)
-	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
-		scrwidth = vid.width;
-	}
-	else
-		dupx = dupy = 1;
-
-	for (;;)
-	{
-		c = *ch++;
-		if (!c)
-			break;
-		if (c == '\n')
-		{
-			cx = x;
-			cy += (12*dupy)<<FRACBITS;
-			continue;
-		}
-
-		c = toupper(c) - CRED_FONTSTART;
-		if (c < 0 || c >= CRED_FONTSIZE)
-		{
-			cx += (16*dupx)<<FRACBITS;
-			continue;
-		}
-
-		w = SHORT(cred_font[c]->width) * dupx;
-		if ((cx>>FRACBITS) > scrwidth)
-			break;
-
-		V_DrawSciencePatch(cx, cy, option, cred_font[c], FRACUNIT);
-		cx += w<<FRACBITS;
-	}
 }
 
 // Find string width from cred_font chars
@@ -2425,65 +2098,10 @@ INT32 V_CreditStringWidth(const char *string)
 		if (c < 0 || c >= CRED_FONTSIZE)
 			w += 16;
 		else
-			w += SHORT(cred_font[c]->width);
+			w += SHORT(fontv[CRED_FONT].font[c]->width);
 	}
 
 	return w;
-}
-
-// Write a string using the level title font
-// NOTE: the text is centered for screens larger than the base width
-//
-void V_DrawLevelTitle(INT32 x, INT32 y, INT32 option, const char *string)
-{
-	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, left = 0;
-	const char *ch = string;
-
-	if (option & V_NOSCALESTART)
-	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
-		scrwidth = vid.width;
-	}
-	else
-	{
-		dupx = dupy = 1;
-		scrwidth = vid.width/vid.dupx;
-		left = (scrwidth - BASEVIDWIDTH)/2;
-		scrwidth -= left;
-	}
-
-	for (;;)
-	{
-		c = *ch++;
-		if (!c)
-			break;
-		if (c == '\n')
-		{
-			cx = x;
-			cy += 12*dupy;
-			continue;
-		}
-
-		c = toupper(c) - LT_FONTSTART;
-		if (c < 0 || c >= LT_FONTSIZE || !lt_font[c])
-		{
-			cx += 12*dupx;
-			continue;
-		}
-
-		w = SHORT(lt_font[c]->width) * dupx;
-		if (cx > scrwidth)
-			break;
-		if (cx+left + w < 0) //left boundary check
-		{
-			cx += w;
-			continue;
-		}
-
-		V_DrawScaledPatch(cx, cy, option, lt_font[c]);
-		cx += w;
-	}
 }
 
 // Find string width from lt_font chars
@@ -2496,10 +2114,10 @@ INT32 V_LevelNameWidth(const char *string)
 	for (i = 0; i < strlen(string); i++)
 	{
 		c = toupper(string[i]) - LT_FONTSTART;
-		if (c < 0 || c >= LT_FONTSIZE || !lt_font[c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[LT_FONT].font[c])
 			w += 12;
 		else
-			w += SHORT(lt_font[c]->width);
+			w += SHORT(fontv[LT_FONT].font[c]->width);
 	}
 
 	return w;
@@ -2515,11 +2133,11 @@ INT32 V_LevelNameHeight(const char *string)
 	for (i = 0; i < strlen(string); i++)
 	{
 		c = toupper(string[i]) - LT_FONTSTART;
-		if (c < 0 || c >= LT_FONTSIZE || !lt_font[c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[LT_FONT].font[c])
 			continue;
 
-		if (SHORT(lt_font[c]->height) > w)
-			w = SHORT(lt_font[c]->height);
+		if (SHORT(fontv[LT_FONT].font[c]->height) > w)
+			w = SHORT(fontv[LT_FONT].font[c]->height);
 	}
 
 	return w;
@@ -2555,10 +2173,10 @@ INT32 V_StringWidth(const char *string, INT32 option)
 			continue;
 
 		c = toupper(c) - HU_FONTSTART;
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+		if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
 			w += spacewidth;
 		else
-			w += (charwidth ? charwidth : SHORT(hu_font[c]->width));
+			w += (charwidth ? charwidth : SHORT(fontv[HU_FONT].font[c]->width));
 	}
 
 	return w;
@@ -2594,10 +2212,10 @@ INT32 V_SmallStringWidth(const char *string, INT32 option)
 			continue;
 
 		c = toupper(c) - HU_FONTSTART;
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+		if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
 			w += spacewidth;
 		else
-			w += (charwidth ? charwidth : SHORT(hu_font[c]->width)/2);
+			w += (charwidth ? charwidth : SHORT(fontv[HU_FONT].font[c]->width)/2);
 	}
 
 	return w;
@@ -2634,17 +2252,17 @@ INT32 V_ThinStringWidth(const char *string, INT32 option)
 		if ((UINT8)c >= 0x80 && (UINT8)c <= 0x8F) //color parsing! -Inuyasha 2.16.09
 			continue;
 
-		if (!lowercase || !tny_font[c-HU_FONTSTART])
+		if (!lowercase || !fontv[TINY_FONT].font[c-HU_FONTSTART])
 			c = toupper(c);
 		c -= HU_FONTSTART;
 
-		if (c < 0 || c >= HU_FONTSIZE || !tny_font[c])
+		if (c < 0 || c >= HU_FONTSIZE || !fontv[TINY_FONT].font[c])
 			w += spacewidth;
 		else
 		{
 			w += (charwidth ? charwidth
-				: ((option & V_6WIDTHSPACE && i < strlen(string)-1) ? max(1, SHORT(tny_font[c]->width)-1) // Reuse this flag for the alternate bunched-up spacing
-				: SHORT(tny_font[c]->width)));
+				: ((option & V_6WIDTHSPACE && i < strlen(string)-1) ? max(1, SHORT(fontv[TINY_FONT].font[c]->width)-1) // Reuse this flag for the alternate bunched-up spacing
+				: SHORT(fontv[TINY_FONT].font[c]->width)));
 		}
 	}
 
@@ -2673,8 +2291,7 @@ void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param)
 	INT32 yoffset, xoffset;
 
 #ifdef HWRENDER
-	// draw a hardware converted patch
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode != render_soft)
 		return;
 #endif
 
@@ -2854,6 +2471,7 @@ void InitColorLUT(RGBA_t *palette)
 	UINT8 r, g, b;
 	static boolean clutinit = false;
 	static RGBA_t *lastpalette = NULL;
+
 	if ((!clutinit) || (lastpalette != palette))
 	{
 		for (r = 0; r < CLUTSIZE; r++)
