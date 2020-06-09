@@ -2176,13 +2176,13 @@ void M_CupSelectHandler(INT32 choice)
 
 			if (cupgrid.grandprix == true)
 			{
+				S_StartSound(NULL, sfx_s3k63);
+
 				// Early fadeout to let the sound finish playing
 				F_WipeStartScreen();
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 				F_WipeEndScreen();
 				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-				M_ClearMenus(true);
 
 				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
@@ -2197,13 +2197,20 @@ void M_CupSelectHandler(INT32 choice)
 				grandprixinfo.roundnum = 1;
 				grandprixinfo.initalize = true;
 
-				G_DeferedInitNew(
+				paused = false;
+				SV_StartSinglePlayerServer();
+				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+				D_MapChange(
+					grandprixinfo.cup->levellist[0] + 1,
+					GT_RACE,
+					grandprixinfo.encore,
+					true,
+					1,
 					false,
-					G_BuildMapName(grandprixinfo.cup->levellist[0] + 1),
-					(UINT8)cv_skin.value,
-					(UINT8)(cv_splitplayers.value - 1),
 					false
 				);
+
+				M_ClearMenus(true);
 			}
 			else
 			{
@@ -2218,9 +2225,8 @@ void M_CupSelectHandler(INT32 choice)
 				levellist.y = levellist.dest;
 
 				M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+				S_StartSound(NULL, sfx_s3k63);
 			}
-
-			S_StartSound(NULL, sfx_s3k63);
 			break;
 		case KEY_ESCAPE:
 			if (currentMenu->prevMenu)
