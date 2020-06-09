@@ -2373,13 +2373,13 @@ static void CL_ConnectToServer(boolean viams)
 
 		strncpy(connectedservername, serverlist[i].info.servername, MAXSERVERNAME);
 
-		CON_LogMessage(M_GetText("Connecting to: %s\n"), serverlist[i].info.servername);
+		CON_LogMessage(va(M_GetText("Connecting to: %s\n"), serverlist[i].info.servername));
 		if (num < NUMGAMETYPES)
 			gametypestr = Gametype_Names[num];
 		if (gametypestr)
-			CON_LogMessage(M_GetText("Gametype: %s\n"), gametypestr);
-		CON_LogMessage(M_GetText("Version: %d.%d\n"),
-		 serverlist[i].info.version, serverlist[i].info.subversion);
+			CON_LogMessage(va(M_GetText("Gametype: %s\n"), gametypestr));
+		CON_LogMessage(va(M_GetText("Version: %d.%d\n"),
+		 serverlist[i].info.version, serverlist[i].info.subversion));
 	}
 	SL_ClearServerList(servernode);
 #endif
