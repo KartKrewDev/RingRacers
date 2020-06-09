@@ -2700,6 +2700,9 @@ void G_PlayerReborn(INT32 player)
 		wanted = players[player].kartstuff[k_wanted];
 	}
 
+	// Obliterate follower from existence
+	P_SetTarget(&players[player].follower, NULL);
+
 	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
 
 	p = &players[player];
@@ -2762,7 +2765,8 @@ void G_PlayerReborn(INT32 player)
 	p->followerready = followerready;
 	p->followerskin = followerskin;
 	p->followercolor = followercolor;
-	p->follower = NULL;	// respawn a new one with you, it looks better.
+	//p->follower = NULL;	// respawn a new one with you, it looks better.
+	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
 
 
 	// Don't do anything immediately

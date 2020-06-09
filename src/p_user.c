@@ -8521,7 +8521,7 @@ static void P_HandleFollower(player_t *player)
 	{
 		//CONS_Printf("Spawning follower...\n");
 		// so let's spawn one!
-		player->follower = P_SpawnMobj(sx, sy, sz, MT_FOLLOWER);
+		P_SetTarget(&player->follower, P_SpawnMobj(sx, sy, sz, MT_FOLLOWER));
 		P_SetFollowerState(player->follower, fl.idlestate);
 		P_SetTarget(&player->follower->target, player->mo);	// we need that to know when we need to disappear
 		player->follower->angle = player->mo->angle;
@@ -8555,7 +8555,7 @@ static void P_HandleFollower(player_t *player)
 
 		if (P_MobjWasRemoved(player->follower))
 		{
-			player->follower = NULL;	// Remove this and respawn one, don't crash the game if Lua decides to P_RemoveMobj this thing.
+			P_SetTarget(&player->follower, NULL);	// Remove this and respawn one, don't crash the game if Lua decides to P_RemoveMobj this thing.
 			return;
 		}
 
