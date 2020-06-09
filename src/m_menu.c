@@ -7639,7 +7639,7 @@ static void M_StartGrandPrix(INT32 choice)
 			grandprixinfo.gamespeed = KARTSPEED_HARD;
 			grandprixinfo.masterbots = true;
 			break;
-		
+
 	}
 
 	grandprixinfo.encore = (boolean)(cv_dummygpencore.value);
@@ -9552,7 +9552,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 
 	sprframe = &sprdef->spriteframes[frame];
 	patch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
-	if (sprframe->flip & 1) // Only for first sprite
+	if (sprframe->flip & 2) // Only for first sprite
 		flags |= V_FLIP; // This sprite is left/right flipped!
 
 	// draw box around guy
@@ -9610,10 +9610,12 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			follower_frame = 0;	// frame doesn't exist, we went beyond it... what?
 		sprframe = &sprdef->spriteframes[follower_frame];
 		patch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
-		if (sprframe->flip & 1) // Only for first sprite
+		if (sprframe->flip & 2) // Only for first sprite
 			flags |= V_FLIP; // This sprite is left/right flipped!
 
-			// draw player sprite
+		// @TODO: Reminder that followers on the menu right now do NOT support the 'followercolor' command, considering this whole menu is getting remade anyway, I see no point in incorporating it in right now.
+
+		// draw follower sprite
 		if (setupm_fakecolor) // inverse should never happen
 		{
 
