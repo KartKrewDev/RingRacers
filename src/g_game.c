@@ -6487,8 +6487,15 @@ void G_BeginRecording(void)
 			demo_p += 16;
 
 			// Save follower's skin name
+			// PS: We must check for 'follower' to determine if the followerskin is valid. It's going to be 0 if we don't have a follower, but 0 is also absolutely a valid follower!
+			// Doesn't really matter if the follower mobj is valid so long as it exists in a way or another.
+
 			memset(name, 0, 16);
-			strncpy(name, followers[player->followerskin].skinname, 16);
+			if (player->follower)
+				strncpy(name, followers[player->followerskin].skinname, 16);
+			else
+				strncpy(name, "None", 16);	// Say we don't have one, then.
+
 			M_Memcpy(demo_p,name,16);
 			demo_p += 16;
 
