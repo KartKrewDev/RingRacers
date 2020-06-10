@@ -9638,7 +9638,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 static void M_GetFollowerState(void)
 {
 
-	if (setupm_fakefollower == -1 || setupm_fakefollower > numfollowers-1)	// yikes, there's none!
+	if (setupm_fakefollower <= -1 || setupm_fakefollower > numfollowers-1)	// yikes, there's none!
 		return;
 	// ^ we don't actually need to set anything since it won't be displayed anyway.
 
