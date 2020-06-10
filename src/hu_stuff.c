@@ -739,6 +739,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	{
 		const char *prefix = "", *cstart = "", *cend = "", *adminchar = "\x82~\x83", *remotechar = "\x82@\x83", *fmt2, *textcolor = "\x80";
 		char *tempchar = NULL;
+		char color_prefix[2];
 
 		if (players[playernum].spectator)
 		{
@@ -760,7 +761,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		}
 		else
 		{
-			cstart = "\x80" + (K_SkincolorToTextColor(players[playernum].skincolor) >> V_CHARCOLORSHIFT);
+			sprintf(color_prefix, "%c", '\x80' + (K_SkincolorToTextColor(players[playernum].skincolor) >> V_CHARCOLORSHIFT));
+			cstart = color_prefix;
 		}
 
 		prefix = cstart;
