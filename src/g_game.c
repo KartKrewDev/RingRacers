@@ -6497,7 +6497,7 @@ void G_BeginRecording(void)
 
 			// Save follower's colour
 			memset(name, 0, 16);
-			strncpy(name, Followercolor_cons_t[players->followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+			strncpy(name, Followercolor_cons_t[player->followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 			M_Memcpy(demo_p, name, 16);
 			demo_p += 16;
 
