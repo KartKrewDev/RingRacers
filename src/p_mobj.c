@@ -8348,10 +8348,9 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (p)
 				{
-					if (p->kartstuff[k_sneakertimer] > mobj->movecount
-						|| p->kartstuff[k_levelbooster] > mobj->movecount)
+					if (p->kartstuff[k_sneakertimer] > mobj->movecount)
 						P_SetMobjState(mobj, S_BOOSTFLAME);
-					mobj->movecount = max(p->kartstuff[k_sneakertimer], p->kartstuff[k_levelbooster]);
+					mobj->movecount = p->kartstuff[k_sneakertimer];
 				}
 			}
 
@@ -11407,9 +11406,6 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 	P_RemoveThinker((thinker_t *)mobj);
 }
 
-static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_itemrespawntime = {"respawnitemtime", "2", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_itemrespawn = {"respawnitem", "On", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t flagtime_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_flagtime = {"flagtime", "30", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, flagtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_suddendeath = {"suddendeath", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -11679,10 +11675,6 @@ void P_RespawnSpecials(void)
 		&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
 			time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
 	}
-
-	// only respawn items when cv_itemrespawn is on
-	//if (!cv_itemrespawn.value) // TODO: remove this cvar
-		//return;
 
 	// nothing left to respawn?
 	if (iquehead == iquetail)

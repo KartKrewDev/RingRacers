@@ -22,6 +22,7 @@
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
+#include "hu_stuff.h"
 
 #include "lua_script.h"
 #include "lua_libs.h"

@@ -60,6 +60,7 @@
 #include "k_pwrlv.h"
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"
+#include "k_grandprix.h"
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -226,7 +227,8 @@ menu_t SP_MainDef, MP_MainDef, OP_MainDef;
 menu_t MISC_ScrambleTeamDef, MISC_ChangeTeamDef, MISC_ChangeSpectateDef;
 
 // Single Player
-//static void M_LoadGame(INT32 choice);
+static void M_GrandPrixTemp(INT32 choice);
+static void M_StartGrandPrix(INT32 choice);
 static void M_TimeAttack(INT32 choice);
 static boolean M_QuitTimeAttackMenu(void);
 static void M_BreakTheCapsules(INT32 choice);
@@ -239,6 +241,7 @@ static void M_ModeAttackEndGame(INT32 choice);
 static void M_SetGuestReplay(INT32 choice);
 //static void M_ChoosePlayer(INT32 choice);
 menu_t SP_LevelStatsDef;
+static menu_t SP_GrandPrixTempDef;
 static menu_t SP_TimeAttackDef, SP_ReplayDef, SP_GuestReplayDef, SP_GhostDef;
 //static menu_t SP_NightsAttackDef, SP_NightsReplayDef, SP_NightsGuestReplayDef, SP_NightsGhostDef;
 
@@ -461,6 +464,13 @@ static consvar_t cv_dummylives = {"dummylives", "0", CV_HIDEN, liveslimit_cons_t
 static consvar_t cv_dummycontinues = {"dummycontinues", "0", CV_HIDEN, liveslimit_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 //static consvar_t cv_dummymares = {"dummymares", "Overall", CV_HIDEN|CV_CALL, dummymares_cons_t, Dummymares_OnChange, 0, NULL, NULL, 0, 0, NULL};
 static consvar_t cv_dummystaff = {"dummystaff", "0", CV_HIDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+static CV_PossibleValue_t dummygpdifficulty_cons_t[] = {{0, "Easy"}, {1, "Normal"}, {2, "Hard"}, {3, "Master"}, {0, NULL}};
+static CV_PossibleValue_t dummygpcup_cons_t[50] = {{1, "TEMP"}}; // A REALLY BIG NUMBER, SINCE THIS IS TEMP UNTIL NEW MENUS
+
+static consvar_t cv_dummygpdifficulty = {"dummygpdifficulty", "Normal", CV_HIDEN, dummygpdifficulty_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_dummygpencore = {"dummygpencore", "Off", CV_HIDEN, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_dummygpcup = {"dummygpcup", "TEMP", CV_HIDEN, dummygpcup_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -801,30 +811,30 @@ static menuitem_t SR_EmblemHintMenu[] =
 // Single Player Main
 static menuitem_t SP_MainMenu[] =
 {
-	//{IT_CALL | IT_STRING,                       NULL, "Grand Prix",         M_LoadGame,          92},
-	{IT_SECRET,                                 NULL, "Time Attack",        M_TimeAttack,       100},
-	{IT_SECRET,                                 NULL, "Break the Capsules", M_BreakTheCapsules, 108},
+	{IT_STRING|IT_CALL,		NULL, "Grand Prix",			M_GrandPrixTemp,	 92},
+	{IT_SECRET,				NULL, "Time Attack",		M_TimeAttack,		100},
+	{IT_SECRET,				NULL, "Break the Capsules",	M_BreakTheCapsules,	108},
 };
 
 enum
 {
-	//spgrandprix,
+	spgrandprix,
 	sptimeattack,
 	spbreakthecapsules
 };
 
 // Single Player Load Game
-/*static menuitem_t SP_LoadGameMenu[] =
+static menuitem_t SP_GrandPrixPlaceholderMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleLoadSave, '\0'},     // dummy menuitem for the control func
-};
+	{IT_STRING|IT_CVAR,	NULL, "Character",		&cv_chooseskin,			 10},
+	{IT_STRING|IT_CVAR,	NULL, "Color",			&cv_playercolor,		 20},
 
-// Single Player Level Select
-static menuitem_t SP_LevelSelectMenu[] =
-{
-	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,            78},
-	{IT_WHITESTRING|IT_CALL,         NULL, "Start",                 M_LevelSelectWarp,     130},
-};*/
+	{IT_STRING|IT_CVAR,	NULL, "Difficulty",		&cv_dummygpdifficulty,	 40},
+	{IT_STRING|IT_CVAR,	NULL, "Encore Mode",	&cv_dummygpencore,		 50},
+
+	{IT_STRING|IT_CVAR,	NULL, "Cup",			&cv_dummygpcup,			 70},
+	{IT_STRING|IT_CALL,	NULL, "Start",			M_StartGrandPrix,		 80},
+};
 
 // Single Player Time Attack
 static menuitem_t SP_TimeAttackMenu[] =
@@ -1804,6 +1814,8 @@ menu_t SP_LevelStatsDef =
 	0,
 	NULL
 };
+
+static menu_t SP_GrandPrixTempDef = DEFAULTMENUSTYLE(NULL, SP_GrandPrixPlaceholderMenu, &MainDef, 60, 30);
 
 static menu_t SP_TimeAttackDef =
 {
@@ -3369,6 +3381,10 @@ void M_Init(void)
 	//CV_RegisterVar(&cv_dummymares);
 	CV_RegisterVar(&cv_dummystaff);
 
+	CV_RegisterVar(&cv_dummygpdifficulty);
+	CV_RegisterVar(&cv_dummygpencore);
+	CV_RegisterVar(&cv_dummygpcup);
+
 	quitmsg[QUITMSG] = M_GetText("Eggman's tied explosives\nto your girlfriend, and\nwill activate them if\nyou press the 'Y' key!\nPress 'N' to save her!\n\n(Press 'Y' to quit)");
 	quitmsg[QUITMSG1] = M_GetText("What would Tails say if\nhe saw you quitting the game?\n\n(Press 'Y' to quit)");
 	quitmsg[QUITMSG2] = M_GetText("Hey!\nWhere do ya think you're goin'?\n\n(Press 'Y' to quit)");
@@ -4212,6 +4228,35 @@ static void M_PatchSkinNameTable(void)
 	CV_SetValue(&cv_chooseskin, j+1); // This causes crash sometimes?!
 
 	return;
+}
+
+//
+// M_PrepareCupList
+//
+static void M_PrepareCupList(void)
+{
+	cupheader_t *cup = kartcupheaders;
+	INT32 i = 0;
+
+	memset(dummygpcup_cons_t, 0, sizeof (dummygpcup_cons_t));
+
+	while (cup != NULL)
+	{
+		dummygpcup_cons_t[i].strvalue = cup->name;
+		dummygpcup_cons_t[i].value = i+1;
+		// this will probably crash or do something stupid at over 50 cups,
+		// but this is all behavior that gets completely overwritten in new-menus, so I'm not worried
+		i++;
+		cup = cup->next;
+	}
+
+	for (; i < 50; i++)
+	{
+		dummygpcup_cons_t[i].strvalue = NULL;
+		dummygpcup_cons_t[i].value = 0;
+	}
+
+	CV_SetValue(&cv_dummygpcup, 1); // This causes crash sometimes?!
 }
 
 // Call before showing any level-select menus
@@ -5442,7 +5487,11 @@ static void DrawReplayHutReplayInfo(void)
 		}
 
 		// Character face!
-		if (W_CheckNumForName(skins[demolist[dir_on[menudepthleft]].standings[0].skin].facewant) != LUMPERROR)
+
+		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
+		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
+
+		if (demolist[dir_on[menudepthleft]].standings[0].skin != 0xFF && W_CheckNumForName(skins[demolist[dir_on[menudepthleft]].standings[0].skin].facewant) != LUMPERROR)
 		{
 			patch = facewantprefix[demolist[dir_on[menudepthleft]].standings[0].skin];
 			colormap = R_GetTranslationColormap(
@@ -5640,7 +5689,11 @@ static void M_DrawReplayStartMenu(void)
 			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demolist[dir_on[menudepthleft]].standings[i].timeorscore));
 
 		// Character face!
-		if (W_CheckNumForName(skins[demolist[dir_on[menudepthleft]].standings[i].skin].facerank) != LUMPERROR)
+
+		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
+		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
+
+		if (demolist[dir_on[menudepthleft]].standings[0].skin != 0xFF && W_CheckNumForName(skins[demolist[dir_on[menudepthleft]].standings[i].skin].facerank) != LUMPERROR)
 		{
 			patch = facerankprefix[demolist[dir_on[menudepthleft]].standings[i].skin];
 			colormap = R_GetTranslationColormap(
@@ -6659,6 +6712,8 @@ static void M_Credits(INT32 choice)
 static void M_SinglePlayerMenu(INT32 choice)
 {
 	(void)choice;
+
+	SP_MainMenu[spgrandprix].status = IT_CALL|IT_STRING;
 	SP_MainMenu[sptimeattack].status =
 		(M_SecretUnlocked(SECRET_TIMEATTACK)) ? IT_CALL|IT_STRING : IT_SECRET;
 	SP_MainMenu[spbreakthecapsules].status =
@@ -7541,6 +7596,80 @@ static void M_HandleLevelStats(INT32 choice)
 		else
 			M_ClearMenus(true);
 	}
+}
+
+static void M_GrandPrixTemp(INT32 choice)
+{
+	(void)choice;
+	M_PatchSkinNameTable();
+	M_PrepareCupList();
+	M_SetupNextMenu(&SP_GrandPrixTempDef);
+}
+
+// Start Grand Prix!
+static void M_StartGrandPrix(INT32 choice)
+{
+	cupheader_t *gpcup = kartcupheaders;
+
+	(void)choice;
+
+	if (gpcup == NULL)
+	{
+		// welp
+		I_Error("No cup definitions for GP\n");
+		return;
+	}
+
+	M_ClearMenus(true);
+
+	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+	switch (cv_dummygpdifficulty.value)
+	{
+		case 0:
+			grandprixinfo.gamespeed = KARTSPEED_EASY;
+			break;
+		case 1:
+		default:
+			grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+			break;
+		case 2:
+			grandprixinfo.gamespeed = KARTSPEED_HARD;
+			break;
+		case 3:
+			grandprixinfo.gamespeed = KARTSPEED_HARD;
+			grandprixinfo.masterbots = true;
+			break;
+
+	}
+
+	grandprixinfo.encore = (boolean)(cv_dummygpencore.value);
+
+	while (gpcup != NULL && gpcup->id != cv_dummygpcup.value-1)
+	{
+		gpcup = gpcup->next;
+	}
+
+	if (gpcup == NULL)
+	{
+		gpcup = kartcupheaders;
+	}
+
+	grandprixinfo.cup = gpcup;
+
+	grandprixinfo.gp = true;
+	grandprixinfo.roundnum = 1;
+	grandprixinfo.wonround = false;
+
+	grandprixinfo.initalize = true;
+
+	G_DeferedInitNew(
+		false,
+		G_BuildMapName(grandprixinfo.cup->levellist[0] + 1),
+		(UINT8)(cv_chooseskin.value - 1),
+		(UINT8)(cv_splitplayers.value - 1),
+		false
+	);
 }
 
 // ===========

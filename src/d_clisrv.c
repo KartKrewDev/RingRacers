@@ -49,6 +49,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_bot.h"
+#include "k_grandprix.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -575,6 +576,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	// Score is resynched in the rspfirm resync packet
 	rsp->health = 0; // resynched with mo health
 	rsp->lives = players[i].lives;
+	rsp->lostlife = players[i].lostlife;
 	rsp->continues = players[i].continues;
 	rsp->scoreadd = players[i].scoreadd;
 	rsp->xtralife = players[i].xtralife;
@@ -659,6 +661,8 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	// botvars_t
 	rsp->bot = players[i].bot;
 	rsp->bot_difficulty = players[i].botvars.difficulty;
+	rsp->bot_diffincrease = players[i].botvars.diffincrease;
+	rsp->bot_rival = players[i].botvars.rival;
 	rsp->bot_itemdelay = players[i].botvars.itemdelay;
 	rsp->bot_itemconfirm = players[i].botvars.itemconfirm;
 	rsp->bot_turnconfirm = players[i].botvars.turnconfirm;
@@ -716,6 +720,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	// Score is resynched in the rspfirm resync packet
 	players[i].health = rsp->health;
 	players[i].lives = rsp->lives;
+	players[i].lostlife = rsp->lostlife;
 	players[i].continues = rsp->continues;
 	players[i].scoreadd = rsp->scoreadd;
 	players[i].xtralife = rsp->xtralife;
@@ -799,6 +804,8 @@ static void resynch_read_player(resynch_pak *rsp)
 	// botvars_t
 	players[i].bot = rsp->bot;
 	players[i].botvars.difficulty = rsp->bot_difficulty;
+	players[i].botvars.diffincrease = rsp->bot_diffincrease;
+	players[i].botvars.rival = rsp->bot_rival;
 	players[i].botvars.itemdelay = rsp->bot_itemdelay;
 	players[i].botvars.itemconfirm = rsp->bot_itemconfirm;
 	players[i].botvars.turnconfirm = rsp->bot_turnconfirm;
@@ -2770,8 +2777,8 @@ void CL_RemovePlayer(INT32 playernum, INT32 reason)
 		RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 	}
 
-	if (playernum == g_localplayers[0] && !demo.playback)
-		g_localplayers[0] = consoleplayer; // don't look through someone's view who isn't there
+	if (playernum == displayplayers[0] && !demo.playback)
+		displayplayers[0] = consoleplayer; // don't look through someone's view who isn't there
 
 #ifdef HAVE_BLUA
 	LUA_InvalidatePlayer(&players[playernum]);
@@ -5271,20 +5278,29 @@ static void Local_Maketic(INT32 realtics)
 	                   // game responder calls HU_Responder, AM_Responder, F_Responder,
 	                   // and G_MapEventsToControls
 	if (!dedicated) rendergametic = gametic;
+
 	// translate inputs (keyboard/mouse/joystick) into game controls
+
 	G_BuildTiccmd(&localcmds, realtics, 1);
+	localcmds.angleturn |= TICCMD_RECEIVED;
+
 	if (splitscreen)
 	{
 		G_BuildTiccmd(&localcmds2, realtics, 2);
+		localcmds2.angleturn |= TICCMD_RECEIVED;
+
 		if (splitscreen > 1)
 		{
 			G_BuildTiccmd(&localcmds3, realtics, 3);
+			localcmds3.angleturn |= TICCMD_RECEIVED;
+
 			if (splitscreen > 2)
+			{
 				G_BuildTiccmd(&localcmds4, realtics, 4);
+				localcmds4.angleturn |= TICCMD_RECEIVED;
+			}
 		}
 	}
-
-	localcmds.angleturn |= TICCMD_RECEIVED;
 }
 
 void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
@@ -5321,11 +5337,30 @@ void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
 static void SV_Maketic(void)
 {
 	INT32 j;
+	boolean b[MAXPLAYERS];
+
+	memset(b, false, sizeof (b));
+
+	for (j = 0; j < MAXPLAYERS; j++)
+	{
+		if (K_PlayerUsesBotMovement(&players[j]))
+		{
+			b[j] = true;
+			K_BuildBotTiccmd(&players[j], &netcmds[maketic%TICQUEUE][j]);
+		}
+	}
 
 	for (j = 0; j < MAXNETNODES; j++)
+	{
 		if (playerpernode[j])
 		{
 			INT32 player = nodetoplayer[j];
+
+			if (b[player])
+			{
+				continue;
+			}
+
 			if ((netcmds[maketic%TICQUEUE][player].angleturn & TICCMD_RECEIVED) == 0)
 			{ // we didn't receive this tic
 				INT32 i;
@@ -5346,6 +5381,7 @@ static void SV_Maketic(void)
 				}
 			}
 		}
+	}
 
 	// all tic are now proceed make the next
 	maketic++;

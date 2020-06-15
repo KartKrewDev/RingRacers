@@ -216,6 +216,7 @@ typedef struct
 	// Score is resynched in the confirm resync packet
 	INT32 health;
 	SINT8 lives;
+	boolean lostlife;
 	SINT8 continues;
 	UINT8 scoreadd;
 	SINT8 xtralife;
@@ -297,6 +298,8 @@ typedef struct
 	// botvars_t
 	boolean bot;
 	UINT8 bot_difficulty;
+	UINT8 bot_diffincrease;
+	boolean bot_rival;
 	tic_t bot_itemdelay;
 	tic_t bot_itemconfirm;
 	SINT8 bot_turnconfirm;

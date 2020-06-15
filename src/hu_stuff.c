@@ -14,6 +14,7 @@
 #include "doomdef.h"
 #include "byteptr.h"
 #include "hu_stuff.h"
+#include "font.h"
 
 #include "m_menu.h" // gametype_cons_t
 #include "m_cond.h" // emblems
@@ -53,6 +54,7 @@
 
 #include "s_sound.h" // song credits
 #include "k_kart.h"
+#include "k_color.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -64,19 +66,9 @@
 //-------------------------------------------
 //              heads up font
 //-------------------------------------------
-patch_t *hu_font[HU_FONTSIZE];
-patch_t *kart_font[KART_FONTSIZE];	// SRB2kart
-patch_t *tny_font[HU_FONTSIZE];
-patch_t *tallnum[10]; // 0-9
-patch_t *nightsnum[10]; // 0-9
-
-// Level title and credits fonts
-patch_t *lt_font[LT_FONTSIZE];
-patch_t *cred_font[CRED_FONTSIZE];
 
 // ping font
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
-patch_t *pingnum[10];
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
 
@@ -188,137 +180,53 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
-	char buffer[9];
-	INT32 i, j;
+	INT32 i;
 
 	if (dedicated)
 		return;
 
-	j = HU_FONTSTART;
-	for (i = 0; i < HU_FONTSIZE; i++, j++)
-	{
-		// cache the heads-up font for entire game execution
-		sprintf(buffer, "STCFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			hu_font[i] = NULL;
-		else
-			hu_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-
-		// tiny version of the heads-up font
-		sprintf(buffer, "TNYFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			tny_font[i] = NULL;
-		else
-			tny_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the level title font for entire game execution
-	lt_font[0] = (patch_t *)W_CachePatchName("LTFNT039", PU_HUDGFX); /// \note fake start hack
-
-	// Number support
-	lt_font[9] = (patch_t *)W_CachePatchName("LTFNT048", PU_HUDGFX);
-	lt_font[10] = (patch_t *)W_CachePatchName("LTFNT049", PU_HUDGFX);
-	lt_font[11] = (patch_t *)W_CachePatchName("LTFNT050", PU_HUDGFX);
-	lt_font[12] = (patch_t *)W_CachePatchName("LTFNT051", PU_HUDGFX);
-	lt_font[13] = (patch_t *)W_CachePatchName("LTFNT052", PU_HUDGFX);
-	lt_font[14] = (patch_t *)W_CachePatchName("LTFNT053", PU_HUDGFX);
-	lt_font[15] = (patch_t *)W_CachePatchName("LTFNT054", PU_HUDGFX);
-	lt_font[16] = (patch_t *)W_CachePatchName("LTFNT055", PU_HUDGFX);
-	lt_font[17] = (patch_t *)W_CachePatchName("LTFNT056", PU_HUDGFX);
-	lt_font[18] = (patch_t *)W_CachePatchName("LTFNT057", PU_HUDGFX);
-
-	// SRB2kart
-	j = KART_FONTSTART;
-	for (i = 0; i < KART_FONTSIZE; i++, j++)
-	{
-		// cache the heads-up font for entire game execution
-		sprintf(buffer, "MKFNT%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			kart_font[i] = NULL;
-		else
-			kart_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-	//
-
-	j = LT_FONTSTART;
-	for (i = 0; i < LT_FONTSIZE; i++)
-	{
-		sprintf(buffer, "LTFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			lt_font[i] = NULL;
-		else
-			lt_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the credits font for entire game execution (why not?)
-	j = CRED_FONTSTART;
-	for (i = 0; i < CRED_FONTSIZE; i++)
-	{
-		sprintf(buffer, "CRFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			cred_font[i] = NULL;
-		else
-			cred_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	//cache numbers too!
-	for (i = 0; i < 10; i++)
-	{
-		sprintf(buffer, "STTNUM%d", i);
-		tallnum[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "NGTNUM%d", i);
-		nightsnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "PINGN%d", i);
-		pingnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-	}
+	Font_Load();
 
 	// minus for negative tallnums
-	tallminus = (patch_t *)W_CachePatchName("STTMINUS", PU_HUDGFX);
+	tallminus          = HU_CachePatch("STTMINUS");
 
 	// cache the crosshairs, don't bother to know which one is being used,
 	// just cache all 3, they're so small anyway.
 	for (i = 0; i < HU_CROSSHAIRS; i++)
 	{
-		sprintf(buffer, "CROSHAI%c", '1'+i);
-		crosshair[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		crosshair[i]    = HU_CachePatch("CROSHAI%c", '1'+i);
 	}
 
-	emblemicon = W_CachePatchName("EMBLICON", PU_HUDGFX);
-	tokenicon = W_CachePatchName("TOKNICON", PU_HUDGFX);
+	emblemicon         = HU_CachePatch("EMBLICON");
+	tokenicon          = HU_CachePatch("TOKNICON");
 
-	emeraldpics[0] = W_CachePatchName("CHAOS1", PU_HUDGFX);
-	emeraldpics[1] = W_CachePatchName("CHAOS2", PU_HUDGFX);
-	emeraldpics[2] = W_CachePatchName("CHAOS3", PU_HUDGFX);
-	emeraldpics[3] = W_CachePatchName("CHAOS4", PU_HUDGFX);
-	emeraldpics[4] = W_CachePatchName("CHAOS5", PU_HUDGFX);
-	emeraldpics[5] = W_CachePatchName("CHAOS6", PU_HUDGFX);
-	emeraldpics[6] = W_CachePatchName("CHAOS7", PU_HUDGFX);
-	tinyemeraldpics[0] = W_CachePatchName("TEMER1", PU_HUDGFX);
-	tinyemeraldpics[1] = W_CachePatchName("TEMER2", PU_HUDGFX);
-	tinyemeraldpics[2] = W_CachePatchName("TEMER3", PU_HUDGFX);
-	tinyemeraldpics[3] = W_CachePatchName("TEMER4", PU_HUDGFX);
-	tinyemeraldpics[4] = W_CachePatchName("TEMER5", PU_HUDGFX);
-	tinyemeraldpics[5] = W_CachePatchName("TEMER6", PU_HUDGFX);
-	tinyemeraldpics[6] = W_CachePatchName("TEMER7", PU_HUDGFX);
+	emeraldpics[0]     = HU_CachePatch("CHAOS1");
+	emeraldpics[1]     = HU_CachePatch("CHAOS2");
+	emeraldpics[2]     = HU_CachePatch("CHAOS3");
+	emeraldpics[3]     = HU_CachePatch("CHAOS4");
+	emeraldpics[4]     = HU_CachePatch("CHAOS5");
+	emeraldpics[5]     = HU_CachePatch("CHAOS6");
+	emeraldpics[6]     = HU_CachePatch("CHAOS7");
+	tinyemeraldpics[0] = HU_CachePatch("TEMER1");
+	tinyemeraldpics[1] = HU_CachePatch("TEMER2");
+	tinyemeraldpics[2] = HU_CachePatch("TEMER3");
+	tinyemeraldpics[3] = HU_CachePatch("TEMER4");
+	tinyemeraldpics[4] = HU_CachePatch("TEMER5");
+	tinyemeraldpics[5] = HU_CachePatch("TEMER6");
+	tinyemeraldpics[6] = HU_CachePatch("TEMER7");
 
-	songcreditbg = W_CachePatchName("K_SONGCR", PU_HUDGFX);
+	songcreditbg       = HU_CachePatch("K_SONGCR");
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
 	{
-		sprintf(buffer, "PINGGFX%d", i+1);
-		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "MPING%d", i+1);
-		mping[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		pinggfx[i] = HU_CachePatch("PINGGFX%d", i+1);
+		mping[i] = HU_CachePatch("MPING%d", i+1);
 	}
 
 	// fps stuff
-	framecounter = W_CachePatchName("FRAMER", PU_HUDGFX);
-	frameslash  = W_CachePatchName("FRAMESL", PU_HUDGFX);;
+	framecounter       = HU_CachePatch("FRAMER");
+	frameslash         = HU_CachePatch("FRAMESL");;
 }
 
 // Initialise Heads up
@@ -326,6 +234,8 @@ void HU_LoadGraphics(void)
 //
 void HU_Init(void)
 {
+	font_t font;
+
 #ifndef NONET
 	COM_AddCommand("say", Command_Say_f);
 	COM_AddCommand("sayto", Command_Sayto_f);
@@ -337,7 +247,76 @@ void HU_Init(void)
 	// set shift translation table
 	shiftxform = english_shiftxform;
 
+	/*
+	Setup fonts
+	*/
+
+	if (!dedicated)
+	{
+#define  DIM( s, n ) ( font.start = s, font.size = n )
+#define ADIM( name )        DIM (name ## _FONTSTART, name ## _FONTSIZE)
+#define   PR( s )           strcpy(font.prefix, s)
+#define  DIG( n )           ( font.digits = n )
+#define  REG                Font_DumbRegister(&font)
+
+		DIG  (3);
+
+		ADIM (HU);
+
+		PR   ("STCFN");
+		REG;
+
+		PR   ("TNYFN");
+		REG;
+
+		ADIM (KART);
+		PR   ("MKFNT");
+		REG;
+
+		ADIM (LT);
+		PR   ("LTFNT");
+		REG;
+
+		ADIM (CRED);
+		PR   ("CRFNT");
+		REG;
+
+		DIG  (1);
+
+		DIM  (0, 10);
+
+		PR   ("STTNUM");
+		REG;
+
+		PR   ("NGTNUM");
+		REG;
+
+		PR   ("PINGN");
+		REG;
+
+#undef  REG
+#undef  DIG
+#undef  PR
+#undef  ADMIN
+#undef  DIM
+	}
+
 	HU_LoadGraphics();
+}
+
+patch_t *HU_CachePatch(const char *format, ...)
+{
+	va_list ap;
+	char buffer[9];
+
+	va_start (ap, format);
+	vsprintf(buffer, format, ap);
+	va_end   (ap);
+
+	if (W_CheckNumForName(buffer) == LUMPERROR)
+		return NULL;
+	else
+		return (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 }
 
 static inline void HU_Stop(void)
@@ -760,169 +739,30 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	{
 		const char *prefix = "", *cstart = "", *cend = "", *adminchar = "\x82~\x83", *remotechar = "\x82@\x83", *fmt2, *textcolor = "\x80";
 		char *tempchar = NULL;
+		char color_prefix[2];
 
-		// player is a spectator?
-        if (players[playernum].spectator)
+		if (players[playernum].spectator)
 		{
-			cstart = "\x86";    // grey name
-			textcolor = "\x86";
+			// grey text
+			cstart = textcolor = "\x86";
 		}
 		else if (target == -1) // say team
 		{
-			if (players[playernum].ctfteam == 1) // red
+			if (players[playernum].ctfteam == 1) 
 			{
-				cstart = "\x85";
-				textcolor = "\x85";
+				// red text
+				cstart = textcolor = "\x85";
 			}
-			else // blue
+			else
 			{
-				cstart = "\x84";
-				textcolor = "\x84";
+				// blue text
+				cstart = textcolor = "\x84";
 			}
 		}
 		else
 		{
-			const UINT8 color = players[playernum].skincolor;
-
-			cstart = "\x83";
-
-			switch (color)
-			{
-				case SKINCOLOR_WHITE:
-				case SKINCOLOR_SILVER:
-				case SKINCOLOR_SLATE:
-					cstart = "\x80"; // White
-					break;
-				case SKINCOLOR_GREY:
-				case SKINCOLOR_NICKEL:
-				case SKINCOLOR_BLACK:
-				case SKINCOLOR_SKUNK:
-				case SKINCOLOR_PLATINUM:
-				case SKINCOLOR_JET:
-					cstart = "\x86"; // V_GRAYMAP
-					break;
-				case SKINCOLOR_SEPIA:
-				case SKINCOLOR_BEIGE:
-				case SKINCOLOR_CARAMEL:
-				case SKINCOLOR_PEACH:
-				case SKINCOLOR_BROWN:
-				case SKINCOLOR_LEATHER:
-				case SKINCOLOR_RUST:
-				case SKINCOLOR_WRISTWATCH:
-					cstart = "\x8e"; // V_BROWNMAP
-					break;
-				case SKINCOLOR_FAIRY:
-				case SKINCOLOR_PINK:
-				case SKINCOLOR_ROSE:
-				case SKINCOLOR_LEMONADE:
-				case SKINCOLOR_LILAC:
-				case SKINCOLOR_BLOSSOM:
-				case SKINCOLOR_TAFFY:
-					cstart = "\x8d"; // V_PINKMAP
-					break;
-				case SKINCOLOR_CINNAMON:
-				case SKINCOLOR_RUBY:
-				case SKINCOLOR_RASPBERRY:
-				case SKINCOLOR_RED:
-				case SKINCOLOR_CRIMSON:
-				case SKINCOLOR_MAROON:
-				case SKINCOLOR_SCARLET:
-				case SKINCOLOR_KETCHUP:
-					cstart = "\x85"; // V_REDMAP
-					break;
-				case SKINCOLOR_DAWN:
-				case SKINCOLOR_SUNSLAM:
-				case SKINCOLOR_CREAMSICLE:
-				case SKINCOLOR_ORANGE:
-				case SKINCOLOR_ROSEWOOD:
-				case SKINCOLOR_TANGERINE:
-					cstart = "\x87"; // V_ORANGEMAP
-					break;
-				case SKINCOLOR_TAN:
-				case SKINCOLOR_CREAM:
-					cstart = "\x8f"; // V_TANMAP
-					break;
-				case SKINCOLOR_GOLD:
-				case SKINCOLOR_ROYAL:
-				case SKINCOLOR_BRONZE:
-				case SKINCOLOR_COPPER:
-				case SKINCOLOR_THUNDER:
-					cstart = "\x8A"; // V_GOLDMAP
-					break;
-				case SKINCOLOR_POPCORN:
-				case SKINCOLOR_YELLOW:
-				case SKINCOLOR_MUSTARD:
-				case SKINCOLOR_BANANA:
-				case SKINCOLOR_OLIVE:
-				case SKINCOLOR_CROCODILE:
-					cstart = "\x82"; // V_YELLOWMAP
-					break;
-				case SKINCOLOR_ARTICHOKE:
-				case SKINCOLOR_PERIDOT:
-				case SKINCOLOR_VOMIT:
-				case SKINCOLOR_GARDEN:
-				case SKINCOLOR_LIME:
-				case SKINCOLOR_HANDHELD:
-				case SKINCOLOR_TEA:
-				case SKINCOLOR_PISTACHIO:
-				case SKINCOLOR_MOSS:
-				case SKINCOLOR_CAMOUFLAGE:
-				case SKINCOLOR_MINT:
-				case SKINCOLOR_GREEN:
-				case SKINCOLOR_PINETREE:
-				case SKINCOLOR_TURTLE:
-				case SKINCOLOR_SWAMP:
-				case SKINCOLOR_DREAM:
-				case SKINCOLOR_PLAGUE:
-				case SKINCOLOR_EMERALD:
-				case SKINCOLOR_ALGAE:
-					cstart = "\x83"; // V_GREENMAP
-					break;
-				case SKINCOLOR_AQUAMARINE:
-				case SKINCOLOR_TURQUOISE:
-				case SKINCOLOR_TEAL:
-					cstart = "\x8b"; // V_AQUAMAP
-					break;
-				case SKINCOLOR_PIGEON:
-				case SKINCOLOR_ROBIN:
-				case SKINCOLOR_CYAN:
-				case SKINCOLOR_JAWZ:
-				case SKINCOLOR_CERULEAN:
-				case SKINCOLOR_NAVY:
-				case SKINCOLOR_SAPPHIRE:
-					cstart = "\x88"; // V_SKYMAP
-					break;
-				case SKINCOLOR_STEEL:
-				case SKINCOLOR_ULTRAMARINE:
-				case SKINCOLOR_PERIWINKLE:
-				case SKINCOLOR_BLUE:
-				case SKINCOLOR_MIDNIGHT:
-				case SKINCOLOR_BLUEBERRY:
-				case SKINCOLOR_NOVA:
-					cstart = "\x84"; // V_BLUEMAP
-					break;
-				case SKINCOLOR_THISTLE:
-				case SKINCOLOR_PURPLE:
-				case SKINCOLOR_PASTEL:
-					cstart = "\x81"; // V_PURPLEMAP
-					break;
-				case SKINCOLOR_MAGENTA:
-				case SKINCOLOR_FUCHSIA:
-				case SKINCOLOR_MOONSET:
-				case SKINCOLOR_VIOLET:
-					cstart = "\x8c"; // V_MAGENTAMAP
-					break;
-				case SKINCOLOR_DUSK:
-				case SKINCOLOR_TOXIC:
-				case SKINCOLOR_MAUVE:
-				case SKINCOLOR_LAVENDER:
-				case SKINCOLOR_BYZANTIUM:
-				case SKINCOLOR_POMEGRANATE:
-					cstart = "\x89"; // V_LAVENDERMAP
-					break;
-				default:
-					break;
-			}
+			sprintf(color_prefix, "%c", '\x80' + (K_SkincolorToTextColor(players[playernum].skincolor) >> V_CHARCOLORSHIFT));
+			cstart = color_prefix;
 		}
 
 		prefix = cstart;
@@ -932,6 +772,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(adminchar) + 1, PU_STATIC, NULL);
 		else if (IsPlayerAdmin(playernum))
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(remotechar) + 1, PU_STATIC, NULL);
+
 		if (tempchar)
 		{
 			if (playernum == serverplayer)
@@ -999,7 +840,7 @@ static inline boolean HU_keyInChatString(char *s, char ch)
 {
 	size_t l;
 
-	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && hu_font[ch-HU_FONTSTART])
+	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && fontv[HU_FONT].font[ch-HU_FONTSTART])
 	  || ch == ' ') // Allow spaces, of course
 	{
 		l = strlen(s);
@@ -1433,7 +1274,7 @@ static char *CHAT_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 			c = toupper(c);
 		c -= HU_FONTSTART;
 
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+		if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
 		{
 			chw = spacewidth;
 			lastusablespace = i;

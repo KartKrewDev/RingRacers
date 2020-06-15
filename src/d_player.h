@@ -315,8 +315,8 @@ typedef enum
 	k_stealingtimer,		// You are stealing an item, this is your timer
 	k_stolentimer,			// You are being stolen from, this is your timer
 	k_superring,			// Spawn rings on top of you every tic!
-	k_sneakertimer,			// Duration of the Sneaker Boost itself
-	k_levelbooster,			// Duration of a level booster's boost (same as sneaker, but separated for boost stacking)
+	k_sneakertimer,			// Duration of a Sneaker Boost (from Sneakers or level boosters)
+	k_numsneakers,			// Number of stacked sneaker effects
 	k_growshrinktimer,		// > 0 = Big, < 0 = small
 	k_squishedtimer,		// Squished frame timer
 	k_rocketsneakertimer,	// Rocket Sneaker duration timer
@@ -390,9 +390,6 @@ typedef enum
 	NUMKARTHUD
 } karthudtype_t;
 
-// QUICKLY GET EITHER SNEAKER OR LEVEL BOOSTER SINCE THEY ARE FUNCTIONALLY IDENTICAL
-#define EITHERSNEAKER(p) (p->kartstuff[k_sneakertimer] || p->kartstuff[k_levelbooster])
-
 // QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
 #define RINGTOTAL(p) (p->kartstuff[k_rings] + p->kartstuff[k_pickuprings])
 
@@ -433,12 +430,14 @@ typedef struct respawnvars_s
 // player_t struct for all bot variables
 typedef struct botvars_s
 {
-	UINT8 difficulty;
+	UINT8 difficulty; // Bot's difficulty setting
+	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
+	boolean rival; // If true, they're the GP rival
 
-	tic_t itemdelay;
-	tic_t itemconfirm;
+	tic_t itemdelay; // Delay before using item at all
+	tic_t itemconfirm; // When high enough, they will use their item
 
-	SINT8 turnconfirm;
+	SINT8 turnconfirm; // Confirm turn direction
 } botvars_t;
 
 // ========================================================================
@@ -520,6 +519,7 @@ typedef struct player_s
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
 	                 // See SF_ flags
 	SINT8 lives;
+	boolean lostlife;
 	SINT8 continues; // continues that player has acquired
 
 	SINT8 xtralife; // Ring Extra Life counter
