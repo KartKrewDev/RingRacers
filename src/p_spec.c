@@ -4011,8 +4011,6 @@ DoneSection2:
 				const fixed_t minspeed = 24*hscale;
 				fixed_t speed = FixedHypot(player->mo->momx, player->mo->momy);
 				fixed_t upwards = 32*FRACUNIT;
-				angle_t pushangle = (speed ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle);
-				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
 
 				if (player->mo->eflags & MFE_SPRUNG)
 				{
@@ -4036,8 +4034,7 @@ DoneSection2:
 					speed = minspeed;
 				}
 
-				player->mo->angle = pushangle;
-				P_InstaThrust(player->mo, pushangle, speed);
+				P_InstaThrust(player->mo, player->mo->angle, speed);
 			}
 			break;
 
