@@ -10095,9 +10095,10 @@ static void K_drawKartNameTags(void)
 				{
 					bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
 				}
-
-				V_DrawFill(barx, bary, barw, (3 * vid.dupy), colormap[31]|V_NOSCALESTART);
-				V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, colormap[0]|V_NOSCALESTART);
+			
+				// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
+				V_DrawFill(barx, bary, barw, (3 * vid.dupy), (colormap ? colormap[31] : 31)|V_NOSCALESTART);
+				V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, (colormap ? colormap[0] : 0)|V_NOSCALESTART);
 				// END DRAWFILL DUMBNESS
 
 				// Draw the stem
