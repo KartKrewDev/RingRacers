@@ -34,6 +34,8 @@ typedef enum
 	BT_BACKWARD		= 1<<6,		// Aim Item Backward
 	BT_LOOKBACK		= 1<<7,		// Look Backward
 
+	BT_EBRAKEMASK	= (BT_ACCELERATE|BT_BRAKE),
+
 	// free: 1<<8 to 1<<12
 
 	// Lua garbage
@@ -41,8 +43,6 @@ typedef enum
 	BT_CUSTOM2		= 1<<14,
 	BT_CUSTOM3		= 1<<15,
 } buttoncode_t;
-
-#define BT_SPINDASHMASK (BT_ACCELERATE|BT_BRAKE)
 
 // The data sampled per tick (single player)
 // and transmitted to other peers (multiplayer).

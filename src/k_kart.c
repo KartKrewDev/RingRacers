@@ -1588,7 +1588,7 @@ void K_SpawnDashDustRelease(player_t *player)
 	if (!P_IsObjectOnGround(player->mo))
 		return;
 
-	if (!player->speed && !player->kartstuff[k_startboost])
+	if (!player->speed && !player->kartstuff[k_startboost] && !player->kartstuff[k_spindash])
 		return;
 
 	travelangle = player->mo->angle;
@@ -6682,6 +6682,83 @@ static INT32 K_FlameShieldMax(player_t *player)
 	return min(16, 1 + (disttofinish / distv));
 }
 
+boolean K_PlayerEBrake(player_t *player)
+{
+	return (player->cmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK
+	&& !player->kartstuff[k_drift]
+	&& !player->kartstuff[k_spinouttimer]
+	&& !player->kartstuff[k_boostcharge]
+	&& !(player->kartstuff[k_spindash] < 0)
+	&& !player->powers[pw_nocontrol]
+	&& leveltime > starttime;
+}
+
+tic_t K_GetSpindashChargeTime(player_t *player)
+{
+	return (player->kartspeed + 4)*TICRATE/3; // more charge time for higher speed: Tails = 2s, Mighty = 3s, Fang = 4s
+}
+
+fixed_t K_GetSpindashChargeSpeed(player_t *player)
+{
+	return FixedMul(FRACUNIT + (player->kartweight - 5)*FRACUNIT/12, K_GetKartSpeed(player, false)); // more speed for higher weight: Tails = 75%, Fang = 100%, Mighty = 125%
+}
+
+void K_KartSpindash(player_t *player)
+{
+	ticcmd_t *cmd = &player->cmd;
+
+	if (!(K_PlayerEBrake(player) || (player->kartstuff[k_spindash] && !(cmd->buttons & BT_BRAKE))))
+	{
+		if (player->kartstuff[k_spindash])
+			player->kartstuff[k_spindash] = 0;
+		return;
+	}
+
+	if (player->speed < 6*mapobjectscale)
+	{
+		const tic_t MAXCHARGETIME = K_GetSpindashChargeTime(player);
+		const fixed_t MAXCHARGESPEED = K_GetSpindashChargeSpeed(player);
+
+		if (cmd->driftturn != 0 && leveltime % 8 == 0)
+			S_StartSound(player->mo, sfx_ruburn);
+
+		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
+		{
+			INT16 chargetime = MAXCHARGETIME - ++player->kartstuff[k_spindash];
+			if (chargetime > 0)
+			{
+				UINT16 soundcharge = 0;
+				UINT8 add = 0;
+				while ((soundcharge += ++add) < chargetime);
+				if (soundcharge == chargetime)
+				{
+					K_SpawnDashDustRelease(player);
+					S_StartSound(player->mo, sfx_s3kab);
+				}
+			}
+			else if (chargetime < -TICRATE)
+				K_SpinPlayer(player, NULL, 0, NULL, false);
+			else
+			{
+				if (player->kartstuff[k_spindash] % 4 == 0)
+				{
+					K_SpawnDashDustRelease(player);
+					K_FlameDashLeftoverSmoke(player->mo);
+				}
+			}
+		}
+		else if (player->kartstuff[k_spindash])
+		{
+			fixed_t speed = player->kartstuff[k_spindash]*MAXCHARGESPEED/MAXCHARGETIME;
+			player->kartstuff[k_spindash] = 0;
+			S_StartSound(player->mo, sfx_s23c);
+		}
+	}
+	else
+		if (leveltime % 4 == 0)
+			S_StartSound(player->mo, sfx_kc2b);
+}
+
 //
 // K_MoveKartPlayer
 //
@@ -7389,6 +7466,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
+	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
+
 	if (onground)
 	{
 		fixed_t prevfriction = player->mo->friction;
@@ -7404,8 +7483,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->mo->friction += 4608;
 		}
 
-		if ((cmd->buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK
-		&& !player->kartstuff[k_drift])
+		if (K_PlayerEBrake(player))
 			player->mo->friction -= 3072;
 		else if (player->speed > 0 && cmd->forwardmove < 0)	// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
 			player->mo->friction -= 2048;
@@ -7451,24 +7529,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			player->mo->friction = K_BotFrictionRubberband(player, player->mo->friction);
 		}
-	}
 
-	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
-
-	// Spindash
-	if ((cmd->buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK
-	&& !player->kartstuff[k_drift]
-	&& !player->kartstuff[k_spinouttimer]
-	&& leveltime > starttime)
-	{
-		if (player->speed < 6*mapobjectscale)
-		{
-			if (cmd->driftturn != 0 && leveltime % 8 == 0)
-				S_StartSound(player->mo, sfx_ruburn);
-		}
-		else
-			if (leveltime % 4 == 0)
-				S_StartSound(player->mo, sfx_s3k36);
+		K_KartSpindash(player);
 	}
 
 	// Squishing

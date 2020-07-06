@@ -5785,7 +5785,7 @@ static void P_MovePlayer(player_t *player)
 
 		// Kart: store the current turn range for later use
 		if ((player->mo && player->speed > 0) // Moving
-			|| (leveltime > starttime && (cmd->buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK) // Rubber-burn turn
+			|| (leveltime > starttime && (cmd->buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK) // Rubber-burn turn
 			|| (player->respawn.state != RESPAWNST_NONE) // Respawning
 			|| (player->spectator || objectplacing)) // Not a physical player
 		{
