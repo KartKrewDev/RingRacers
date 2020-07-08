@@ -472,13 +472,44 @@ boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup
 							// Reallocate nodesarray if it's full
 							if (nodesarraycount >= pathfindsetup->nodesarraycapacity)
 							{
+								pathfindnode_t *nodesarrayrealloc = NULL;
 								pathfindsetup->nodesarraycapacity = pathfindsetup->nodesarraycapacity * 2;
-								nodesarray = Z_Realloc(nodesarray, pathfindsetup->nodesarraycapacity * sizeof(pathfindnode_t), PU_STATIC, NULL);
+								nodesarrayrealloc = Z_Realloc(nodesarray, pathfindsetup->nodesarraycapacity * sizeof(pathfindnode_t), PU_STATIC, NULL);
 
-								if (nodesarray == NULL)
+								if (nodesarrayrealloc == NULL)
 								{
 									I_Error("K_PathfindAStar: Out of memory reallocating nodes array.");
 								}
+
+								// Need to update pointers in closedset, openset, and node "camefrom" if nodesarray moved.
+								if (nodesarray != nodesarrayrealloc)
+								{
+									size_t i = 0U;
+									size_t arrayindex = 0U;
+									for (i = 0U; i < closedsetcount; i++)
+									{
+										arrayindex = closedset[i] - nodesarray;
+										closedset[i] = &nodesarrayrealloc[arrayindex];
+									}
+									for (i = 0U; i < openset.count; i++)
+									{
+										arrayindex = ((pathfindnode_t *)(openset.array[i].data)) - nodesarray;
+										openset.array[i].data = &nodesarrayrealloc[arrayindex];
+									}
+									for (i = 0U; i < nodesarraycount; i++)
+									{
+										if (nodesarrayrealloc[i].camefrom != NULL)
+										{
+											arrayindex = nodesarrayrealloc[i].camefrom - nodesarray;
+											nodesarrayrealloc[i].camefrom = &nodesarrayrealloc[arrayindex];
+										}
+									}
+
+									arrayindex = currentnode - nodesarray;
+									currentnode = &nodesarrayrealloc[arrayindex];
+								}
+
+								nodesarray = nodesarrayrealloc;
 							}
 
 							// Create the new node and add it to the nodes array and open set
