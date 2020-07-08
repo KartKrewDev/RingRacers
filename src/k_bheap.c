@@ -469,6 +469,10 @@ boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 		heap->array[0] = heap->array[heap->count];
 		heap->array[0].heapindex = 0U;
 		memset(&heap->array[heap->count], 0x00, sizeof(bheapitem_t));
+		if (heap->array[0].indexchanged != NULL)
+		{
+			heap->array[0].indexchanged(heap->array[0].data, heap->array[0].heapindex);
+		}
 
 		K_BHeapSortDown(heap, &heap->array[0]);
 		popsuccess = true;
