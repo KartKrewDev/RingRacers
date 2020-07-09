@@ -8492,9 +8492,11 @@ static void P_HandleFollower(player_t *player)
 
 	// finally, add a cool floating effect to the z height.
 	// not stolen from k_kart I swear!!
-	const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
-	fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * leveltime)>>ANGLETOFINESHIFT) & FINEMASK);
-	sz += FixedMul(player->mo->scale, sine)*P_MobjFlip(player->mo);
+	{
+		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
+		fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * leveltime)>>ANGLETOFINESHIFT) & FINEMASK);
+		sz += FixedMul(player->mo->scale, sine)*P_MobjFlip(player->mo);
+	}
 
 	// Set follower colour
 
