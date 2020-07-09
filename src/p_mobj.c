@@ -8297,14 +8297,23 @@ void P_MobjThinker(mobj_t *mobj)
 				return;
 			}
 
-			mobj->angle = mobj->target->angle;
-			P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
-				mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
-			P_SetScale(mobj, mobj->target->scale);
+			//mobj->angle = mobj->target->angle;
+			{
+				angle_t angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+				mobj->angle = angle;
+				P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, angle+ANGLE_180, 4*mobj->target->radius),
+						mobj->target->y + P_ReturnThrustY(mobj, angle+ANGLE_180, 4*mobj->target->radius), mobj->target->z);
+			}
+			P_SetScale(mobj, FixedMul(3*FRACUNIT/2, mobj->target->scale));
 			mobj->flags2 ^= MF2_DONTDRAW;
 #ifdef HWRENDER
 			mobj->modeltilt = mobj->target->modeltilt;
 #endif
+
+			if (mobj->fuse <= 8)
+				mobj->color = SKINCOLOR_KETCHUP;
+			else if (mobj->fuse <= 16)
+				mobj->color = SKINCOLOR_SAPPHIRE;
 
 			{
 				player_t *p = NULL;
