@@ -53,6 +53,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SRBB","SRBC","SRBD","SRBE","SRBF","SRBG","SRBH","SRBI","SRBJ","SRBK",
 	"SRBL","SRBM","SRBN","SRBO",
 	//SRB2kart Sprites
+
 	"RNDM","RPOP","SGNS","FAST","DSHR","BOST","BOSM","KFRE","KINV","KINF",
 	"WIPD","DRIF","BDRF","DUST","DRWS","RSHE","FITM","BANA","ORBN","JAWZ","SSMN",
 	"KRBM","BHOG","BHBM","SPBM","THNS","BUBS","BWVE",
@@ -69,8 +70,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
 	"ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH",
 	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
+
 	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","EGOO","WTRL","XMS4",
-	"XMS5","VIEW"
+	"XMS5","FBUB","GCHA","CHEZ","VIEW"
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -3460,6 +3462,37 @@ state_t states[NUMSTATES] =
 	{SPR_SMOK, 2, 6, {NULL}, 0, 0, S_OPAQUESMOKE4}, // S_OPAQUESMOKE3
 	{SPR_SMOK, 3, 7, {NULL}, 0, 0, S_OPAQUESMOKE5}, // S_OPAQUESMOKE4
 	{SPR_SMOK, 4, 8, {NULL}, 0, 0, S_NULL},         // S_OPAQUESMOKE5
+
+
+	// followers:
+
+	// bubble
+	{SPR_FBUB, 11|FF_ANIMATE|FF_TRANS70|FF_FULLBRIGHT, -1, {NULL}, 10, 3, S_FOLLOWERBUBBLE_FRONT},	// S_FOLLOWERBUBBLE_FRONT
+	{SPR_FBUB, FF_ANIMATE|0|FF_FULLBRIGHT, -1, {NULL}, 10, 3, S_FOLLOWERBUBBLE_BACK},	// S_FOLLOWERBUBBLE_BACK
+
+	// generic chao:
+	{SPR_GCHA, FF_ANIMATE, -1, {NULL}, 1, 4, S_GCHAOIDLE},		//S_GCHAOIDLE
+	{SPR_GCHA, 2|FF_ANIMATE, -1, {NULL}, 1, 2, S_GCHAOFLY},	//S_GCHAOFLY
+	{SPR_GCHA, 7, 5, {NULL}, 0, 0, S_GCHAOSAD2},	//S_GCHAOSAD1
+	{SPR_GCHA, 8, 3, {NULL}, 0, 0, S_GCHAOSAD3},	//S_GCHAOSAD2
+	{SPR_GCHA, 9, 6, {NULL}, 0, 0, S_GCHAOSAD4},	//S_GCHAOSAD3
+	{SPR_GCHA, 8, 3, {NULL}, 0, 0, S_GCHAOSAD1},	//S_GCHAOSAD4
+	{SPR_GCHA, 4, 8, {NULL}, 0, 0, S_GCHAOHAPPY2},	//S_GCHAOHAPPY1
+	{SPR_GCHA, 5, 4, {NULL}, 0, 0, S_GCHAOHAPPY3},	//S_GCHAOHAPPY2
+	{SPR_GCHA, 6, 8, {NULL}, 0, 0, S_GCHAOHAPPY4},	//S_GCHAOHAPPY3
+	{SPR_GCHA, 5, 4, {NULL}, 0, 0, S_GCHAOHAPPY1},	//S_GCHAOHAPPY4
+
+	// cheese:
+	{SPR_CHEZ, FF_ANIMATE, -1, {NULL}, 1, 4, S_CHEESEIDLE},		//S_CHEESEIDLE
+	{SPR_CHEZ, 2|FF_ANIMATE, -1, {NULL}, 1, 2, S_CHEESEFLY},	//S_CHEESEFLY
+	{SPR_CHEZ, 7, 5, {NULL}, 0, 0, S_CHEESESAD2},	//S_CHEESESAD1
+	{SPR_CHEZ, 8, 3, {NULL}, 0, 0, S_CHEESESAD3},	//S_CHEESESAD2
+	{SPR_CHEZ, 9, 6, {NULL}, 0, 0, S_CHEESESAD4},	//S_CHEESESAD3
+	{SPR_CHEZ, 8, 3, {NULL}, 0, 0, S_CHEESESAD1},	//S_CHEESESAD4
+	{SPR_CHEZ, 4, 8, {NULL}, 0, 0, S_CHEESEHAPPY2},	//S_CHEESEHAPPY1
+	{SPR_CHEZ, 5, 4, {NULL}, 0, 0, S_CHEESEHAPPY3},	//S_CHEESEHAPPY2
+	{SPR_CHEZ, 6, 8, {NULL}, 0, 0, S_CHEESEHAPPY4},	//S_CHEESEHAPPY3
+	{SPR_CHEZ, 5, 4, {NULL}, 0, 0, S_CHEESEHAPPY1},	//S_CHEESEHAPPY4
 
 	{SPR_MXCL, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_RINGDEBT
 
@@ -20553,6 +20586,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL          // raisestate
 	},
 
+
 	{           // MT_RINGSPARKS
 	    -1,             // doomednum
 	    S_RINGSPARKS1,  // spawnstate
@@ -20794,6 +20828,90 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    sfx_None,       // activesound
 	    MF_SCENERY|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOBLOCKMAP|MF_DONTENCOREMAP, // flags
 	    S_NULL          // raisestate
+	},
+
+	{           // MT_FOLLOWER
+	    -1,             // doomednum
+	    S_INVISIBLE, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    1,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+
+	    MF_NOCLIPTHING|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
+		S_NULL,			// raisestate
+	},
+
+	{           // MT_FOLLOWERBUBBLE_FRONT
+	    -1,             // doomednum
+	    S_FOLLOWERBUBBLE_FRONT, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    2,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+
+	    MF_NOCLIPTHING|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
+		S_NULL,			// raisestate
+	},
+
+	{           // MT_FOLLOWERBUBBLE_BACK
+	    -1,             // doomednum
+	    S_FOLLOWERBUBBLE_BACK, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    8<<FRACBITS,    // radius
+	    16<<FRACBITS,   // height
+	    -2,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+
+	    MF_NOCLIPTHING|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
+		S_NULL,			// raisestate
 	},
 
 	{           // MT_WATERTRAIL

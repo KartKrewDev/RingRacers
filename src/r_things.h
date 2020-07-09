@@ -103,6 +103,45 @@ typedef struct
 } skin_t;
 
 extern CV_PossibleValue_t Forceskin_cons_t[];
+//
+// for followers.
+//
+// We'll define these here because they're really just a mobj that'll follow some rules behind a player
+//
+typedef struct follower_s
+{
+	char skinname[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything.
+	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
+
+	UINT8 defaultcolor;		// default color for menus.
+
+	fixed_t scale;			// Scale relative to the player's.
+	fixed_t bubblescale;	// Bubble scale relative to the player scale. If not set, no bubble will spawn (default)
+
+	// some position shenanigans:
+	INT32 atangle;			// angle the object will be at around the player. The object itself will always face the same direction as the player.
+	INT32 dist;				// distance relative to the player. (In a circle)
+	INT32 height;			// height of the follower, this is mostly important for Z flipping.
+	INT32 zoffs;			// Z offset relative to the player's height. Cannot be negative.
+
+	// movement options
+
+	INT32 horzlag;			// Lag for X/Y displacement. Default is 2. Must be > 0 because we divide by this number.
+	INT32 vertlag;			// not Vert from Neptunia lagging, this is for Z displacement lag Default is 6. Must be > 0 because we divide by this number.
+	INT32 bobamp;			// Bob amplitude. Default is 4.
+	INT32 bobspeed;			// Arbitrary modifier for bobbing speed, default is TICRATE*2 (70).
+
+	// from there on out, everything is STATES to allow customization
+	// these are only set once when the action is performed and are then free to animate however they want.
+
+	INT32 idlestate;		// state when the player is at a standstill
+	INT32 followstate;		// state when the player is moving
+	INT32 hurtstate;		// state when the player is being hurt
+	INT32 winstate;			// state when the player has won
+	INT32 losestate;		// state when the player has lost
+	INT32 hitconfirmstate;	// state for hit confirm
+	INT32 hitconfirmtime;	// time to keep the above playing for
+} follower_t;
 
 // -----------
 // NOT SKINS STUFF !
@@ -199,11 +238,17 @@ typedef struct drawnode_s
 
 extern INT32 numskins;
 extern skin_t skins[MAXSKINS];
+extern INT32 numfollowers;
+extern follower_t followers[MAXSKINS];	// again, use the same rules as skins, no reason not to.
 
 boolean SetPlayerSkin(INT32 playernum,const char *skinname);
 void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
 INT32 R_SkinAvailable(const char *name);
 void R_AddSkins(UINT16 wadnum);
+
+INT32 R_FollowerAvailable(const char *name);
+boolean SetPlayerFollower(INT32 playernum,const char *skinname);
+void SetFollower(INT32 playernum,INT32 skinnum);
 
 #ifdef DELFILE
 void R_DelSkins(UINT16 wadnum);
