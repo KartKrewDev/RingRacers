@@ -8304,7 +8304,7 @@ void P_MobjThinker(mobj_t *mobj)
 				P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, angle+ANGLE_180, 4*mobj->target->radius),
 						mobj->target->y + P_ReturnThrustY(mobj, angle+ANGLE_180, 4*mobj->target->radius), mobj->target->z);
 			}
-			P_SetScale(mobj, FixedMul(3*FRACUNIT/2, mobj->target->scale));
+			P_SetScale(mobj, mobj->target->scale);
 			mobj->flags2 ^= MF2_DONTDRAW;
 #ifdef HWRENDER
 			mobj->modeltilt = mobj->target->modeltilt;

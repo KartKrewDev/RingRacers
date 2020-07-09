@@ -6325,7 +6325,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			angle_t pushdir = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
 			mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DRIFTEXPLODE);
 			P_SetTarget(&overlay->target, player->mo);
-			P_SetScale(overlay, (overlay->destscale = FixedMul(3*FRACUNIT/2, player->mo->scale)));
+			P_SetScale(overlay, (overlay->destscale = player->mo->scale));
 			K_FlipFromObject(overlay, player->mo);
 
 			S_StartSound(player->mo, sfx_s23c);
