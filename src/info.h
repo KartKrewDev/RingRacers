@@ -804,6 +804,10 @@ typedef enum sprite
 	SPR_XMS4,
 	SPR_XMS5,
 
+	SPR_FBUB,	// follower bubble
+	SPR_GCHA,	// follower: generic chao
+	SPR_CHEZ,	// follower: cheese
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -4152,6 +4156,36 @@ typedef enum state
 	S_OPAQUESMOKE4,
 	S_OPAQUESMOKE5,
 
+	// followers:
+
+	// bubble:
+	S_FOLLOWERBUBBLE_FRONT,
+	S_FOLLOWERBUBBLE_BACK,
+
+	// generic chao:
+	S_GCHAOIDLE,
+	S_GCHAOFLY,
+	S_GCHAOSAD1,
+	S_GCHAOSAD2,
+	S_GCHAOSAD3,
+	S_GCHAOSAD4,
+	S_GCHAOHAPPY1,
+	S_GCHAOHAPPY2,
+	S_GCHAOHAPPY3,
+	S_GCHAOHAPPY4,
+
+	// cheese:
+	S_CHEESEIDLE,
+	S_CHEESEFLY,
+	S_CHEESESAD1,
+	S_CHEESESAD2,
+	S_CHEESESAD3,
+	S_CHEESESAD4,
+	S_CHEESEHAPPY1,
+	S_CHEESEHAPPY2,
+	S_CHEESEHAPPY3,
+	S_CHEESEHAPPY4,
+
 	S_RINGDEBT,
 	S_RINGSPARKS1,
 	S_RINGSPARKS2,
@@ -5035,6 +5069,10 @@ typedef enum mobj_type
 
 	MT_BATTLECAPSULE,
 	MT_BATTLECAPSULE_PIECE,
+
+	MT_FOLLOWER,
+	MT_FOLLOWERBUBBLE_FRONT,
+	MT_FOLLOWERBUBBLE_BACK,
 
 	MT_WATERTRAIL,
 	MT_WATERTRAILUNDERLAY,

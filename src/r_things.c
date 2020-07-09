@@ -2891,7 +2891,12 @@ void R_DrawMasked(void)
 //
 // ==========================================================================
 
+// We can assume those are tied to skins somewhat, hence why they're defined here.
 INT32 numskins = 0;
+follower_t followers[MAXSKINS];
+// default followers are defined in SOC_FLWR in followers.kart / gfx.kart (depending on what exe this is, at this point)
+
+
 skin_t skins[MAXSKINS];
 // FIXTHIS: don't work because it must be inistilised before the config load
 //#define SKINVALUES
@@ -2954,6 +2959,19 @@ INT32 R_SkinAvailable(const char *name)
 	return -1;
 }
 
+// same thing but for followers:
+INT32 R_FollowerAvailable(const char *name)
+{
+	INT32 i;
+
+	for (i = 0; i < numfollowers; i++)
+	{
+		if (stricmp(followers[i].skinname,name)==0)
+			return i;
+	}
+	return -1;
+}
+
 // network code calls this when a 'skin change' is received
 boolean SetPlayerSkin(INT32 playernum, const char *skinname)
 {
@@ -2979,13 +2997,37 @@ boolean SetPlayerSkin(INT32 playernum, const char *skinname)
 	return false;
 }
 
+// Again, same thing but for followers;
+boolean SetPlayerFollower(INT32 playernum, const char *skinname)
+{
+	INT32 i;
+	player_t *player = &players[playernum];
+
+	for (i = 0; i < numfollowers; i++)
+	{
+		// search in the skin list
+		if (stricmp(followers[i].skinname, skinname) == 0)
+		{
+			SetFollower(playernum, i);
+			return true;
+		}
+	}
+
+	if (P_IsLocalPlayer(player))
+		CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found.\n"), skinname);
+	else if(server || IsPlayerAdmin(consoleplayer))
+		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) follower '%s' not found\n"), playernum, player_names[playernum], skinname);
+
+	SetFollower(playernum, -1);	// reminder that -1 is nothing
+	return false;
+}
+
 // Same as SetPlayerSkin, but uses the skin #.
 // network code calls this when a 'skin change' is received
 void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
 	skin_t *skin = &skins[skinnum];
-
 	if (skinnum >= 0 && skinnum < numskins) // Make sure it exists!
 	{
 		player->skin = skinnum;
@@ -3016,6 +3058,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		if (player->mo)
 			P_SetScale(player->mo, player->mo->scale);
 
+		// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
 		demo_extradata[playernum] |= DXD_SKIN;
 
 		return;
@@ -3026,6 +3069,53 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);
 	SetPlayerSkinByNum(playernum, 0); // not found put the sonic skin
+}
+
+// you get the drill, now we do the same for followers:
+void SetFollower(INT32 playernum, INT32 skinnum)
+{
+	player_t *player = &players[playernum];
+	mobj_t *bub;
+	mobj_t *tmp;
+
+	player->followerready = true;	// we are ready to perform follower related actions in the player thinker, now.
+	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
+	{
+		/*
+			We don't spawn the follower here since it'll be easier to handle all of it in the Player thinker itself.
+			However, we will despawn it right here if there's any to make it easy for the player thinker to replace it or delete it.
+		*/
+		if (player->follower && skinnum != player->followerskin)	// this is also called when we change colour so don't respawn the follower unless we changed skins
+		{
+
+			// Remove follower's possible hnext list (bubble)
+			bub = player->follower->hnext;
+
+			while (bub && !P_MobjWasRemoved(bub))
+			{
+				tmp = bub->hnext;
+				P_RemoveMobj(bub);
+				bub = tmp;
+			}
+
+			P_RemoveMobj(player->follower);
+			P_SetTarget(&player->follower, NULL);
+		}
+
+		player->followerskin = skinnum;
+		//CONS_Printf("Updated player follower num\n");
+
+		// for replays: We have changed our follower mid-game; let the game know so it can do the same in the replay!
+		demo_extradata[playernum] |= DXD_FOLLOWER;
+
+		return;
+	}
+
+	if (P_IsLocalPlayer(player))
+		CONS_Alert(CONS_WARNING, M_GetText("Follower %d not found\n"), skinnum);
+	else if(server || IsPlayerAdmin(consoleplayer))
+		CONS_Alert(CONS_WARNING, "Player %d (%s) follower %d not found\n", playernum, player_names[playernum], skinnum);
+	SetFollower(playernum, -1); // Not found, then set -1 (nothing) as our follower.
 }
 
 //
