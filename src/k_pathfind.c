@@ -484,24 +484,24 @@ boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup
 								// Need to update pointers in closedset, openset, and node "camefrom" if nodesarray moved.
 								if (nodesarray != nodesarrayrealloc)
 								{
-									size_t i = 0U;
+									size_t j = 0U;
 									size_t arrayindex = 0U;
-									for (i = 0U; i < closedsetcount; i++)
+									for (j = 0U; j < closedsetcount; j++)
 									{
-										arrayindex = closedset[i] - nodesarray;
-										closedset[i] = &nodesarrayrealloc[arrayindex];
+										arrayindex = closedset[j] - nodesarray;
+										closedset[j] = &nodesarrayrealloc[arrayindex];
 									}
-									for (i = 0U; i < openset.count; i++)
+									for (j = 0U; j < openset.count; j++)
 									{
-										arrayindex = ((pathfindnode_t *)(openset.array[i].data)) - nodesarray;
-										openset.array[i].data = &nodesarrayrealloc[arrayindex];
+										arrayindex = ((pathfindnode_t *)(openset.array[j].data)) - nodesarray;
+										openset.array[j].data = &nodesarrayrealloc[arrayindex];
 									}
-									for (i = 0U; i < nodesarraycount; i++)
+									for (j = 0U; j < nodesarraycount; j++)
 									{
-										if (nodesarrayrealloc[i].camefrom != NULL)
+										if (nodesarrayrealloc[j].camefrom != NULL)
 										{
-											arrayindex = nodesarrayrealloc[i].camefrom - nodesarray;
-											nodesarrayrealloc[i].camefrom = &nodesarrayrealloc[arrayindex];
+											arrayindex = nodesarrayrealloc[j].camefrom - nodesarray;
+											nodesarrayrealloc[j].camefrom = &nodesarrayrealloc[arrayindex];
 										}
 									}
 
