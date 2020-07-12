@@ -1573,6 +1573,22 @@ void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master)
 	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP4)|(master->eflags & MFE_DRAWONLYFORP4);
 }
 
+// same as above, but does not adjust Z height when flipping
+void K_GenericExtraFlagsNoZAdjust(mobj_t *mo, mobj_t *master)
+{
+	// flipping
+	mo->eflags = (mo->eflags & ~MFE_VERTICALFLIP)|(master->eflags & MFE_VERTICALFLIP);
+	mo->flags2 = (mo->flags2 & ~MF2_OBJECTFLIP)|(master->flags2 & MF2_OBJECTFLIP);
+
+	// visibility (usually for hyudoro)
+	mo->flags2 = (mo->flags2 & ~MF2_DONTDRAW)|(master->flags2 & MF2_DONTDRAW);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP1)|(master->eflags & MFE_DRAWONLYFORP1);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP2)|(master->eflags & MFE_DRAWONLYFORP2);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP3)|(master->eflags & MFE_DRAWONLYFORP3);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP4)|(master->eflags & MFE_DRAWONLYFORP4);
+}
+
+
 void K_SpawnDashDustRelease(player_t *player)
 {
 	fixed_t newx;
@@ -1899,6 +1915,13 @@ void K_PlayPainSound(mobj_t *source)
 
 void K_PlayHitEmSound(mobj_t *source)
 {
+
+	if (source->player->follower)
+	{
+		follower_t fl = followers[source->player->followerskin];
+		source->player->follower->movecount = fl.hitconfirmtime;	// movecount is used to play the hitconfirm animation for followers.
+	}
+
 	if (cv_kartvoices.value)
 		S_StartSound(source, sfx_khitem);
 	else
@@ -2098,7 +2121,7 @@ fixed_t K_GetKartAccel(player_t *player)
 	//k_accel += 3 * (9 - kartspeed); // 36 - 60
 	k_accel += 4 * (9 - kartspeed); // 32 - 64
 
-	
+
 	if (K_PlayerUsesBotMovement(player))
 	{
 		// Rubberbanding acceleration is waekened since it makes hits feel more meaningful
@@ -3992,7 +4015,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 	{
 		player->pflags |= PF_ATTACKDOWN;
 		K_PlayBoostTaunt(player->mo);
-		
+
 	}
 
 	player->kartstuff[k_sneakertimer] = sneakertime;
@@ -6666,7 +6689,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 	}
 
 	disttofinish = player->distancetofinish - disttofinish;
-	distv = FixedDiv(distv * FRACUNIT, mapobjectscale) / FRACUNIT;
+	distv = FixedMul(distv * FRACUNIT, mapobjectscale) / FRACUNIT;
 	return min(16, 1 + (disttofinish / distv));
 }
 
@@ -10066,7 +10089,7 @@ static void K_drawKartNameTags(void)
 				{
 					bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
 				}
-			
+
 				// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
 				V_DrawFill(barx, bary, barw, (3 * vid.dupy), (colormap ? colormap[31] : 31)|V_NOSCALESTART);
 				V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, (colormap ? colormap[0] : 0)|V_NOSCALESTART);
