@@ -11750,8 +11750,8 @@ void P_RespawnSpecials(void)
 			ss->sector->ceilingheight) - (mthing->options >> ZSHIFT) * FRACUNIT;
 			if (mthing->options & MTF_AMBUSH
 			&& (i == MT_RING || i == MT_REDTEAMRING || i == MT_BLUETEAMRING || i == MT_COIN || P_WeaponOrPanel(i)))
-				z -= 24*FRACUNIT;
-			z -= mobjinfo[i].height; // Don't forget the height!
+				z -= 24 * mapobjectscale;
+			z -= FixedMul(mobjinfo[i].height, mapobjectscale); // Don't forget the height!
 		}
 		else
 		{
@@ -11762,7 +11762,7 @@ void P_RespawnSpecials(void)
 			ss->sector->floorheight) + (mthing->options >> ZSHIFT) * FRACUNIT;
 			if (mthing->options & MTF_AMBUSH
 			&& (i == MT_RING || i == MT_REDTEAMRING || i == MT_BLUETEAMRING || i == MT_COIN || P_WeaponOrPanel(i)))
-				z += 24*FRACUNIT;
+				z += 24 * mapobjectscale;
 		}
 
 		mo = P_SpawnMobj(x, y, z, i);
