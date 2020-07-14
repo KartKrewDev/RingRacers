@@ -11751,7 +11751,7 @@ void P_RespawnSpecials(void)
 			if (mthing->options & MTF_AMBUSH
 			&& (i == MT_RING || i == MT_REDTEAMRING || i == MT_BLUETEAMRING || i == MT_COIN || P_WeaponOrPanel(i)))
 				z -= 24 * mapobjectscale;
-			z -= mobjinfo[i].height; // Don't forget the height!
+			z -= FixedMul(mobjinfo[i].height, mapobjectscale); // Don't forget the height!
 		}
 		else
 		{
