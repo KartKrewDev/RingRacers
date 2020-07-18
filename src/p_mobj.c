@@ -8331,11 +8331,11 @@ void P_MobjThinker(mobj_t *mobj)
 			mobj->modeltilt = mobj->target->modeltilt;
 #endif
 
-			if (mobj->fuse <= 20)
+			if (mobj->fuse <= 16)
 				mobj->color = SKINCOLOR_KETCHUP;
-			else if (mobj->fuse <= 40)
+			else if (mobj->fuse <= 32)
 				mobj->color = SKINCOLOR_SAPPHIRE;
-			else if (mobj->fuse > 40)
+			else if (mobj->fuse > 32)
 				mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
 
 			{

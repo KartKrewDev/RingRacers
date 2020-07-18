@@ -6376,7 +6376,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->kartstuff[k_driftboost] = 20;
 
 				overlay->color = SKINCOLOR_KETCHUP;
-				overlay->fuse = 20;
+				overlay->fuse = 16;
 			}
 			else if (player->kartstuff[k_driftcharge] < dsthree)
 			{
@@ -6388,7 +6388,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->kartstuff[k_driftboost] = 50;
 
 				overlay->color = SKINCOLOR_SAPPHIRE;
-				overlay->fuse = 40;
+				overlay->fuse = 32;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsthree)
 			{
