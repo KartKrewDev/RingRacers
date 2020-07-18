@@ -3246,6 +3246,7 @@ typedef enum state
 	S_DRIFTEXPLODE2,
 	S_DRIFTEXPLODE3,
 	S_DRIFTEXPLODE4,
+	S_DRIFTEXPLODE5,
 
 	// Sneaker boost effect
 	S_BOOSTFLAME,

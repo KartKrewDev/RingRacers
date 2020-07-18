@@ -6364,7 +6364,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->kartstuff[k_driftboost] = 15;
 
 				overlay->color = SKINCOLOR_GOLD;
-				overlay->fuse = 8;
+				overlay->fuse = 10;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
 			{
@@ -6376,7 +6376,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->kartstuff[k_driftboost] = 20;
 
 				overlay->color = SKINCOLOR_KETCHUP;
-				overlay->fuse = 16;
+				overlay->fuse = 20;
 			}
 			else if (player->kartstuff[k_driftcharge] < dsthree)
 			{
@@ -6388,7 +6388,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->kartstuff[k_driftboost] = 50;
 
 				overlay->color = SKINCOLOR_SAPPHIRE;
-				overlay->fuse = 32;
+				overlay->fuse = 40;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsthree)
 			{
@@ -6400,7 +6400,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->kartstuff[k_driftboost] = 125;
 
 				overlay->color = SKINCOLOR_SILVER;
-				overlay->fuse = 48;
+				overlay->fuse = 120;
 			}
 		}
 
