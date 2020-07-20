@@ -908,7 +908,7 @@ if (followers[numfollowers].field < threshold) \
 	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
 
 	// Special case for color I suppose
-	if (followers[numfollowers].defaultcolor < 0 || followers[numfollowers].defaultcolor > MAXSKINCOLORS-1)
+	if (followers[numfollowers].defaultcolor > MAXSKINCOLORS-1)
 	{
 		followers[numfollowers].defaultcolor = 1;
 		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, MAXSKINCOLORS-1);

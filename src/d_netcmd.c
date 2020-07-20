@@ -6214,13 +6214,15 @@ static void Follower2_OnChange(void)
 		}
 
 
-		INT32 num = R_FollowerAvailable(str);
-		char set[10];
-		if (num == -1) // that's an error.
-			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+		{
+			INT32 num = R_FollowerAvailable(str);
+			char set[10];
+			if (num == -1) // that's an error.
+				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower2, set);	// set it to a number. It's easier for us to send later :)
+			sprintf(set, "%d", num);
+			CV_StealthSet(&cv_follower2, set);	// set it to a number. It's easier for us to send later :)
+		}
 	}
 	SendNameAndColor2();
 }
@@ -6257,13 +6259,15 @@ static void Follower3_OnChange(void)
 			return;
 		}
 
-		INT32 num = R_FollowerAvailable(str);
-		char set[10];
-		if (num == -1) // that's an error.
-			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+		{
+			INT32 num = R_FollowerAvailable(str);
+			char set[10];
+			if (num == -1) // that's an error.
+				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower3, set);	// set it to a number. It's easier for us to send later :)
+			sprintf(set, "%d", num);
+			CV_StealthSet(&cv_follower3, set);	// set it to a number. It's easier for us to send later :)
+		}
 	}
 	SendNameAndColor3();
 }
@@ -6300,13 +6304,15 @@ static void Follower4_OnChange(void)
 			return;
 		}
 
-		INT32 num = R_FollowerAvailable(str);
-		char set[10];
-		if (num == -1) // that's an error.
-			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+		{
+			INT32 num = R_FollowerAvailable(str);
+			char set[10];
+			if (num == -1) // that's an error.
+				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower4, set);	// set it to a number. It's easier for us to send later :)
+			sprintf(set, "%d", num);
+			CV_StealthSet(&cv_follower4, set);	// set it to a number. It's easier for us to send later :)
+		}
 	}
 	SendNameAndColor4();
 }
