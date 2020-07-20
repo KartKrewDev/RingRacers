@@ -1677,6 +1677,20 @@ void K_SpawnDriftBoostClip(player_t *player)
 			FixedMul(scale, player->speed));
 }
 
+void K_SpawnDriftBoostClipSpark(mobj_t *clip)
+{
+	mobj_t *spark;
+
+	spark = P_SpawnMobj(clip->x, clip->y, clip->z, MT_DRIFTCLIPSPARK);
+
+	P_SetTarget(&spark->target, clip);
+	P_SetScale(spark, ( spark->destscale = clip->scale ));
+	K_MatchGenericExtraFlags(spark, clip);
+
+	spark->momx = clip->momx/2;
+	spark->momy = clip->momx/2;
+}
+
 /**	\brief Handles the state changing for moving players, moved here to eliminate duplicate code
 
 	\param	player	player data

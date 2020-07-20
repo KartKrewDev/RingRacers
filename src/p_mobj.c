@@ -2461,11 +2461,7 @@ static boolean P_ZMovement(mobj_t *mo)
 		{
 			mom.z = -mom.z/2;
 			if (abs(mom.z) > 4 * mo->scale / 3)
-			{
-				mobj_t *spark = P_SpawnMobj(mo->x, mo->y, mo->z, MT_DRIFTCLIPSPARK);
-				spark->momx = mo->momx/2;
-				spark->momy = mo->momy/2;
-			}
+				K_SpawnDriftBoostClipSpark(mo);
 			else
 				mo->flags2 ^= MF2_DONTDRAW;
 		}
