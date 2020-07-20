@@ -1659,8 +1659,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprite = mobj->sprite;
 	ghost->frame = mobj->frame;
 	ghost->tics = -1;
-	ghost->frame &= ~FF_TRANSMASK;
-	ghost->frame |= tr_trans50<<FF_TRANSSHIFT;
+	ghost->drawflags |= tr_trans50 << MFD_TRANSSHIFT;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
@@ -7467,7 +7466,7 @@ void P_DemoCameraMovement(camera_t *cam)
 
 	awayviewmobj_hack = P_SpawnMobj(cam->x, cam->y, cam->z, MT_THOK);
 	awayviewmobj_hack->tics = 2;
-	awayviewmobj_hack->flags2 |= MF2_DONTDRAW;
+	awayviewmobj_hack->drawflags |= MFD_DONTDRAW;
 
 	democam.soundmobj = awayviewmobj_hack;
 
@@ -8581,13 +8580,13 @@ static void P_HandleFollower(player_t *player)
 		P_SetScale(player->follower, FixedMul(fl.scale, player->mo->scale));
 		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo);	// Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
 
-		// For comeback in battle.
-		player->follower->flags2 = (player->follower->flags2 & ~MF2_SHADOW)|(player->mo->flags2 & MF2_SHADOW);
+		// Match how the player is being drawn
+		player->follower->drawflags = player->mo->drawflags;
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
 		// Also make the follower invisible if we choose not to have it displayed because it isn't ours. (also quick hacky check for f12)
 		if (player->pflags & PF_TIMEOVER || (!cv_showfollowers.value && (!P_IsDisplayPlayer(player) || displayplayers[0] != consoleplayer) ))
-			player->follower->flags2 |= MF2_DONTDRAW;
+			player->follower->drawflags |= MFD_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
 			player->follower->angle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);
@@ -8608,7 +8607,7 @@ static void P_HandleFollower(player_t *player)
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
 			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
-			bmobj->flags2 = (player->follower->flags2 & ~MF2_SHADOW)|(player->mo->flags2 & MF2_SHADOW);
+			bmobj->drawflags = player->mo->drawflags;
 
 			if (player->follower->threshold)	// threshold means the follower was "despawned" with S_NULL (is actually just set to S_INVISIBLE)
 				P_SetMobjState(bmobj, S_INVISIBLE);	// sooooo... let's do the same!
@@ -9016,8 +9015,7 @@ void P_PlayerThink(player_t *player)
 		gmobj->fuse = 2;
 		if (leveltime & 1)
 		{
-			gmobj->frame &= ~FF_TRANSMASK;
-			gmobj->frame |= tr_trans70<<FF_TRANSSHIFT;
+			gmobj->drawflags |= tr_trans70 << MFD_TRANSSHIFT;
 		}
 
 		// Hide the mobj from our sights if we're the displayplayer and chasecam is off.
