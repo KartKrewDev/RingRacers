@@ -1670,7 +1670,7 @@ void K_SpawnDriftBoostClip(player_t *player)
 	K_MatchGenericExtraFlags(clip, player->mo);
 
 	clip->fuse = 105;
-	clip->momz = 4 * clip->scale;
+	clip->momz = 7 * clip->scale;
 
 	P_InstaThrust(clip, player->mo->angle +
 			K_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
