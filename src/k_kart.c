@@ -6432,6 +6432,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				overlay->color = SKINCOLOR_SAPPHIRE;
 				overlay->fuse = 32;
+
+				S_StartSound(player->mo, sfx_kc5b);
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsthree)
 			{

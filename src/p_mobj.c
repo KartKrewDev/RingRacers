@@ -2461,7 +2461,10 @@ static boolean P_ZMovement(mobj_t *mo)
 		{
 			mom.z = -mom.z/2;
 			if (abs(mom.z) > 4 * mo->scale / 3)
+			{
 				K_SpawnDriftBoostClipSpark(mo);
+				S_StartSound(mo, sfx_tink);
+			}
 			else
 				mo->flags2 ^= MF2_DONTDRAW;
 		}
