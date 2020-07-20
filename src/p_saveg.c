@@ -999,6 +999,7 @@ typedef enum
 	MD2_SLOPE       = 1<<13,
 #endif
 	MD2_SHADOWSCALE = 1<<14,
+	MD2_DRAWFLAGS   = 1<<15,
 } mobj_diff2_t;
 
 typedef enum
@@ -1197,6 +1198,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 #endif
 	if (mobj->shadowscale)
 		diff2 |= MD2_SHADOWSCALE;
+	if (mobj->drawflags)
+		diff2 |= MD2_DRAWFLAGS;
 	if (mobj->colorized)
 		diff2 |= MD2_COLORIZED;
 	if (mobj == waypointcap)
@@ -1328,6 +1331,17 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEUINT8(save_p, mobj->colorized);
 	if (diff2 & MD2_SHADOWSCALE)
 		WRITEFIXED(save_p, mobj->shadowscale);
+	if (diff2 & MD2_DRAWFLAGS)
+	{
+		UINT16 df = mobj->drawflags;
+
+		if ((mobj->drawflags & MFD_DONTDRAW) != MFD_DONTDRAW)
+		{
+			df = (mobj->drawflags & ~MFD_DONTDRAW);
+		}
+
+		WRITEUINT16(save_p, df);
+	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
