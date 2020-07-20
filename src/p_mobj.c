@@ -2457,6 +2457,17 @@ static boolean P_ZMovement(mobj_t *mo)
 			mom.z = P_MobjFlip(mo)*FixedMul(5*FRACUNIT, mo->scale);
 		else if (mo->type == MT_SPINFIRE) // elemental shield fire is another exception here
 			;
+		else if (mo->type == MT_DRIFTCLIP)
+		{
+			mom.z = -mom.z/2;
+			if (abs(mom.z) > 4 * mo->scale / 3)
+			{
+				K_SpawnDriftBoostClipSpark(mo);
+				S_StartSound(mo, sfx_tink);
+			}
+			else
+				mo->flags2 ^= MF2_DONTDRAW;
+		}
 		else if (mo->flags & MF_MISSILE)
 		{
 			if (!(mo->flags & MF_NOCLIP))
@@ -8318,14 +8329,47 @@ void P_MobjThinker(mobj_t *mobj)
 				return;
 			}
 
-			mobj->angle = mobj->target->angle;
-			P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
-				mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
+			//mobj->angle = mobj->target->angle;
+			{
+				angle_t angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+				fixed_t nudge;
+
+				mobj->angle = angle;
+
+				if (( mobj->fuse & 1 ))
+				{
+					nudge = 4*mobj->target->radius;
+				}
+				else
+				{
+					nudge = 2*mobj->target->radius;
+					/* rotate the papersprite frames to see the flat angle */
+					mobj->angle += ANGLE_90;
+				}
+
+				P_TeleportMove(mobj,
+						mobj->target->x + P_ReturnThrustX(mobj, angle + ANGLE_180, nudge),
+						mobj->target->y + P_ReturnThrustY(mobj, angle + ANGLE_180, nudge),
+						mobj->target->z);
+			}
 			P_SetScale(mobj, mobj->target->scale);
-			mobj->flags2 ^= MF2_DONTDRAW;
 #ifdef HWRENDER
 			mobj->modeltilt = mobj->target->modeltilt;
 #endif
+
+			if (mobj->fuse <= 16)
+			{
+				mobj->color = SKINCOLOR_KETCHUP;
+				/* don't draw papersprite frames after blue boost */
+				mobj->flags2 ^= MF2_DONTDRAW;
+			}
+			else if (mobj->fuse <= 32)
+				mobj->color = SKINCOLOR_SAPPHIRE;
+			else if (mobj->fuse > 32)
+				mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+
+			if (mobj->fuse == 17 || mobj->fuse == 33)/* to red/blue */
+				K_SpawnDriftBoostClip(mobj->target->player);
 
 			{
 				player_t *p = NULL;
@@ -10753,6 +10797,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_RING:
 		case MT_FLOATINGITEM:
 			thing->shadowscale = FRACUNIT/2;
+			break;
+		case MT_DRIFTCLIP:
+			thing->shadowscale = FRACUNIT/3;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))

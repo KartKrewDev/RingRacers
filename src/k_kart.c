@@ -1648,6 +1648,50 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	sparks->flags2 |= MF2_DONTDRAW;
 }
 
+static fixed_t K_RandomFlip(fixed_t f)
+{
+	return ( ( leveltime & 1 ) ? f : -f );
+}
+
+void K_SpawnDriftBoostClip(player_t *player)
+{
+	mobj_t *clip;
+	fixed_t scale = 115*FRACUNIT/100;
+	fixed_t z;
+
+	if (( player->mo->eflags & MFE_VERTICALFLIP ))
+		z = player->mo->z;
+	else
+		z = player->mo->z + player->mo->height;
+
+	clip = P_SpawnMobj(player->mo->x, player->mo->y, z, MT_DRIFTCLIP);
+
+	P_SetTarget(&clip->target, player->mo);
+	P_SetScale(clip, ( clip->destscale = FixedMul(scale, player->mo->scale) ));
+	K_MatchGenericExtraFlags(clip, player->mo);
+
+	clip->fuse = 105;
+	clip->momz = 7 * P_MobjFlip(clip) * clip->scale;
+
+	P_InstaThrust(clip, player->mo->angle +
+			K_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
+			FixedMul(scale, player->speed));
+}
+
+void K_SpawnDriftBoostClipSpark(mobj_t *clip)
+{
+	mobj_t *spark;
+
+	spark = P_SpawnMobj(clip->x, clip->y, clip->z, MT_DRIFTCLIPSPARK);
+
+	P_SetTarget(&spark->target, clip);
+	P_SetScale(spark, ( spark->destscale = clip->scale ));
+	K_MatchGenericExtraFlags(spark, clip);
+
+	spark->momx = clip->momx/2;
+	spark->momy = clip->momx/2;
+}
+
 /**	\brief Handles the state changing for moving players, moved here to eliminate duplicate code
 
 	\param	player	player data
@@ -6330,6 +6374,43 @@ INT32 K_GetKartDriftSparkValue(player_t *player)
 	return (26*4 + kartspeed*2 + (9 - player->kartweight))*8;
 }
 
+/*
+Stage 1: red sparks
+Stage 2: blue sparks
+Stage 3: big large rainbow sparks
+*/
+static void K_SpawnDriftBoostExplosion(player_t *player, int stage)
+{
+	mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DRIFTEXPLODE);
+
+	P_SetTarget(&overlay->target, player->mo);
+	P_SetScale(overlay, (overlay->destscale = player->mo->scale));
+	K_FlipFromObject(overlay, player->mo);
+
+	switch (stage)
+	{
+		case 1:
+			overlay->color = SKINCOLOR_KETCHUP;
+			overlay->fuse = 16;
+			break;
+
+		case 2:
+			overlay->color = SKINCOLOR_SAPPHIRE;
+			overlay->fuse = 32;
+
+			S_StartSound(player->mo, sfx_kc5b);
+			break;
+
+		case 3:
+			overlay->color = SKINCOLOR_SILVER;
+			overlay->fuse = 120;
+
+			S_StartSound(player->mo, sfx_kc5b);
+			S_StartSound(player->mo, sfx_s3kc4l);
+			break;
+	}
+}
+
 static void K_KartDrift(player_t *player, boolean onground)
 {
 	fixed_t minspeed = (10 * player->mo->scale);
@@ -6346,10 +6427,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (player->kartstuff[k_driftcharge] < 0 || player->kartstuff[k_driftcharge] >= dsone)
 		{
 			angle_t pushdir = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-			//mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DRIFTEXPLODE);
-			//P_SetTarget(&overlay->target, player->mo);
-			//P_SetScale(overlay, (overlay->destscale = player->mo->scale));
-			//K_FlipFromObject(overlay, player->mo);
 
 			S_StartSound(player->mo, sfx_s23c);
 			//K_SpawnDashDustRelease(player);
@@ -6362,9 +6439,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				if (player->kartstuff[k_driftboost] < 15)
 					player->kartstuff[k_driftboost] = 15;
-
-				//overlay->color = SKINCOLOR_GOLD;
-				//overlay->fuse = 8;
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
 			{
@@ -6375,8 +6449,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->kartstuff[k_driftboost] < 20)
 					player->kartstuff[k_driftboost] = 20;
 
-				//overlay->color = SKINCOLOR_KETCHUP;
-				//overlay->fuse = 16;
+				K_SpawnDriftBoostExplosion(player, 1);
 			}
 			else if (player->kartstuff[k_driftcharge] < dsthree)
 			{
@@ -6387,8 +6460,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->kartstuff[k_driftboost] < 50)
 					player->kartstuff[k_driftboost] = 50;
 
-				//overlay->color = SKINCOLOR_SAPPHIRE;
-				//overlay->fuse = 32;
+				K_SpawnDriftBoostExplosion(player, 2);
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsthree)
 			{
@@ -6399,8 +6471,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->kartstuff[k_driftboost] < 125)
 					player->kartstuff[k_driftboost] = 125;
 
-				//overlay->color = SKINCOLOR_SILVER;
-				//overlay->fuse = 120;
+				K_SpawnDriftBoostExplosion(player, 3);
 			}
 		}
 

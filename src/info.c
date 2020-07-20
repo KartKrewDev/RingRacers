@@ -72,7 +72,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
 
 	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","EGOO","WTRL","XMS4",
-	"XMS5","FBUB","GCHA","CHEZ","VIEW"
+	"XMS5","FBUB","GCHA","CHEZ","VIEW","DBCL","DBNC","DBST",
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -2560,10 +2560,42 @@ state_t states[NUMSTATES] =
 	{SPR_DSHR, FF_PAPERSPRITE|5, 1, {NULL}, 0, 0, S_FASTDUST7}, // S_FASTDUST6
 	{SPR_DSHR, FF_PAPERSPRITE|6, 1, {NULL}, 0, 0, S_NULL}, // S_FASTDUST7
 
-	{SPR_DBOS, FF_FULLBRIGHT, 2, {NULL}, 6, 1, S_DRIFTEXPLODE2}, // S_DRIFTEXPLODE1
-	{SPR_DBOS, FF_FULLBRIGHT|1, 2, {NULL}, 6, 1, S_DRIFTEXPLODE3}, // S_DRIFTEXPLODE2
-	{SPR_DBOS, FF_FULLBRIGHT|2, 2, {NULL}, 6, 1, S_DRIFTEXPLODE4}, // S_DRIFTEXPLODE3
-	{SPR_DBOS, FF_FULLBRIGHT|3, 2, {NULL}, 6, 1, S_DRIFTEXPLODE1}, // S_DRIFTEXPLODE4
+	{SPR_DBOS,                FF_FULLBRIGHT,   1, {NULL}, 6, 1, S_DRIFTEXPLODE2}, // S_DRIFTEXPLODE1
+	{SPR_DBST, FF_PAPERSPRITE|FF_FULLBRIGHT,   1, {NULL}, 6, 1, S_DRIFTEXPLODE3}, // S_DRIFTEXPLODE2
+	{SPR_DBOS,                FF_FULLBRIGHT|1, 1, {NULL}, 6, 1, S_DRIFTEXPLODE4}, // S_DRIFTEXPLODE3
+	{SPR_DBST, FF_PAPERSPRITE|FF_FULLBRIGHT|1, 1, {NULL}, 6, 1, S_DRIFTEXPLODE5}, // S_DRIFTEXPLODE4
+	{SPR_DBOS,                FF_FULLBRIGHT|2, 1, {NULL}, 6, 1, S_DRIFTEXPLODE6}, // S_DRIFTEXPLODE5
+	{SPR_DBST, FF_PAPERSPRITE|FF_FULLBRIGHT|2, 1, {NULL}, 6, 1, S_DRIFTEXPLODE7}, // S_DRIFTEXPLODE6
+	{SPR_DBOS,                FF_FULLBRIGHT|3, 1, {NULL}, 6, 1, S_DRIFTEXPLODE8}, // S_DRIFTEXPLODE7
+	{SPR_DBST, FF_PAPERSPRITE|FF_FULLBRIGHT|3, 1, {NULL}, 6, 1, S_DRIFTEXPLODE1}, // S_DRIFTEXPLODE8
+
+	{SPR_DBCL, FF_FULLBRIGHT|0x0, 1, {NULL}, 6, 1, S_DRIFTCLIPA2},  // S_DRIFTCLIPA1
+	{SPR_DBCL, FF_FULLBRIGHT|0x8, 1, {NULL}, 6, 1, S_DRIFTCLIPA3},  // S_DRIFTCLIPA2
+	{SPR_DBCL, FF_FULLBRIGHT|0x1, 1, {NULL}, 6, 1, S_DRIFTCLIPA4},  // S_DRIFTCLIPA3
+	{SPR_DBCL, FF_FULLBRIGHT|0x9, 1, {NULL}, 6, 1, S_DRIFTCLIPA5},  // S_DRIFTCLIPA4
+	{SPR_DBCL, FF_FULLBRIGHT|0x2, 1, {NULL}, 6, 1, S_DRIFTCLIPA6},  // S_DRIFTCLIPA5
+	{SPR_DBCL, FF_FULLBRIGHT|0xA, 1, {NULL}, 6, 1, S_DRIFTCLIPA7},  // S_DRIFTCLIPA6
+	{SPR_DBCL, FF_FULLBRIGHT|0x3, 1, {NULL}, 6, 1, S_DRIFTCLIPA8},  // S_DRIFTCLIPA7
+	{SPR_DBCL, FF_FULLBRIGHT|0xB, 1, {NULL}, 6, 1, S_DRIFTCLIPA9},  // S_DRIFTCLIPA8
+	{SPR_DBCL, FF_FULLBRIGHT|0x4, 1, {NULL}, 6, 1, S_DRIFTCLIPA10}, // S_DRIFTCLIPA9
+	{SPR_DBCL, FF_FULLBRIGHT|0xC, 1, {NULL}, 6, 1, S_DRIFTCLIPA11}, // S_DRIFTCLIPA10
+	{SPR_DBCL, FF_FULLBRIGHT|0x5, 1, {NULL}, 6, 1, S_DRIFTCLIPA12}, // S_DRIFTCLIPA11
+	{SPR_DBCL, FF_FULLBRIGHT|0xD, 1, {NULL}, 6, 1, S_DRIFTCLIPA13}, // S_DRIFTCLIPA12
+	{SPR_DBCL, FF_FULLBRIGHT|0x6, 1, {NULL}, 6, 1, S_DRIFTCLIPA14}, // S_DRIFTCLIPA13
+	{SPR_DBCL, FF_FULLBRIGHT|0xE, 1, {NULL}, 6, 1, S_DRIFTCLIPA15}, // S_DRIFTCLIPA14
+	{SPR_DBCL, FF_FULLBRIGHT|0x7, 1, {NULL}, 6, 1, S_DRIFTCLIPA16}, // S_DRIFTCLIPA15
+	{SPR_DBCL, FF_FULLBRIGHT|0xF, 1, {NULL}, 6, 1, S_DRIFTCLIPB1},  // S_DRIFTCLIPA16
+
+	{SPR_DBCL, FF_FULLBRIGHT,   2, {NULL}, 6, 1, S_DRIFTCLIPB2}, // S_DRIFTCLIPB1
+	{SPR_DBCL, FF_FULLBRIGHT|1, 2, {NULL}, 6, 1, S_DRIFTCLIPB3}, // S_DRIFTCLIPB2
+	{SPR_DBCL, FF_FULLBRIGHT|2, 2, {NULL}, 6, 1, S_DRIFTCLIPB4}, // S_DRIFTCLIPB3
+	{SPR_DBCL, FF_FULLBRIGHT|3, 2, {NULL}, 6, 1, S_DRIFTCLIPB5}, // S_DRIFTCLIPB4
+	{SPR_DBCL, FF_FULLBRIGHT|4, 2, {NULL}, 6, 1, S_DRIFTCLIPB6}, // S_DRIFTCLIPB5
+	{SPR_DBCL, FF_FULLBRIGHT|5, 2, {NULL}, 6, 1, S_DRIFTCLIPB7}, // S_DRIFTCLIPB6
+	{SPR_DBCL, FF_FULLBRIGHT|6, 2, {NULL}, 6, 1, S_DRIFTCLIPB8}, // S_DRIFTCLIPB7
+	{SPR_DBCL, FF_FULLBRIGHT|7, 2, {NULL}, 6, 1, S_DRIFTCLIPB1}, // S_DRIFTCLIPB8
+
+	{SPR_DBNC, FF_FULLBRIGHT|FF_ANIMATE, 14, {NULL}, 6, 1, S_NULL}, // S_DRIFTCLIPSPARK
 
 	{SPR_BOST, FF_FULLBRIGHT|FF_ANIMATE, TICRATE, {NULL}, 6, 1, S_BOOSTSMOKESPAWNER}, // S_BOOSTFLAME
 	{SPR_NULL, 0,                      TICRATE/2, {NULL}, 0, 0, S_NULL}, // S_BOOSTSMOKESPAWNER
@@ -15343,6 +15375,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,						// damage
 		sfx_None,				// activesound
 		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL					// raisestate
+	},
+
+	{           // MT_DRIFTCLIP
+		-1,						// doomednum
+		S_DRIFTCLIPA1,		// spawnstate
+		1000,					// spawnhealth
+		S_NULL,					// seestate
+		sfx_None,				// seesound
+		8,						// reactiontime
+		sfx_None,				// attacksound
+		S_NULL,					// painstate
+		0,						// painchance
+		sfx_None,				// painsound
+		S_NULL,					// meleestate
+		S_NULL,					// missilestate
+		S_NULL,					// deathstate
+		S_NULL,					// xdeathstate
+		sfx_None,				// deathsound
+		105,						// speed
+		32*FRACUNIT,			// radius
+		64*FRACUNIT,			// height
+		1,						// display offset
+		100,					// mass
+		0,						// damage
+		sfx_None,				// activesound
+		MF_NOBLOCKMAP|MF_DONTENCOREMAP|MF_GRENADEBOUNCE|MF_BOUNCE, // flags
+		S_NULL					// raisestate
+	},
+
+	{           // MT_DRIFTCLIPSPARK
+		-1,						// doomednum
+		S_DRIFTCLIPSPARK,		// spawnstate
+		1000,					// spawnhealth
+		S_NULL,					// seestate
+		sfx_None,				// seesound
+		8,						// reactiontime
+		sfx_None,				// attacksound
+		S_NULL,					// painstate
+		0,						// painchance
+		sfx_None,				// painsound
+		S_NULL,					// meleestate
+		S_NULL,					// missilestate
+		S_NULL,					// deathstate
+		S_NULL,					// xdeathstate
+		sfx_None,				// deathsound
+		8,						// speed
+		32*FRACUNIT,			// radius
+		64*FRACUNIT,			// height
+		1,						// display offset
+		100,					// mass
+		0,						// damage
+		sfx_None,				// activesound
+		MF_NOBLOCKMAP|MF_DONTENCOREMAP, // flags
 		S_NULL					// raisestate
 	},
 
