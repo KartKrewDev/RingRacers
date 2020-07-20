@@ -333,7 +333,7 @@ typedef struct mobj_s
 	UINT32 flags; // flags from mobjinfo tables
 	UINT32 flags2; // MF2_ flags
 	UINT16 eflags; // extra flags
-	UINT16 drawflags; // Rendering-related flags. These are not synched.
+	UINT16 drawflags; // Rendering-related flags. These should not be used for game logic.
 
 	void *skin; // overrides 'sprite' when non-NULL (for player bodies to 'remember' the skin)
 	// Player and mobj sprites in multiplayer modes are modified
