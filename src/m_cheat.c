@@ -292,8 +292,17 @@ void Command_CheatNoClip_f(void)
 	REQUIRE_NOULTIMATE;
 
 	plyr = &players[consoleplayer];
+
+	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
+		return;
+
 	plyr->pflags ^= PF_NOCLIP;
 	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->pflags & PF_NOCLIP ? M_GetText("On") : M_GetText("Off"));
+
+	if (plyr->pflags & PF_NOCLIP)
+		plyr->mo->flags |= MF_NOCLIP;
+	else
+		plyr->mo->flags &= ~MF_NOCLIP;
 
 	G_SetGameModified(multiplayer, true);
 }
@@ -673,13 +682,11 @@ void Command_Savecheckpoint_f(void)
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
 
-	players[consoleplayer].starposttime = players[consoleplayer].realtime;
-	players[consoleplayer].starpostx = players[consoleplayer].mo->x>>FRACBITS;
-	players[consoleplayer].starposty = players[consoleplayer].mo->y>>FRACBITS;
-	players[consoleplayer].starpostz = players[consoleplayer].mo->floorz>>FRACBITS;
-	players[consoleplayer].starpostangle = players[consoleplayer].mo->angle;
+	players[consoleplayer].respawn.pointx = players[consoleplayer].mo->x;
+	players[consoleplayer].respawn.pointy = players[consoleplayer].mo->y;
+	players[consoleplayer].respawn.pointz = players[consoleplayer].mo->floorz;
 
-	CONS_Printf(M_GetText("Temporary checkpoint created at %d, %d, %d\n"), players[consoleplayer].starpostx, players[consoleplayer].starposty, players[consoleplayer].starpostz);
+	CONS_Printf(M_GetText("Temporary checkpoint created at %d, %d, %d\n"), players[consoleplayer].respawn.pointx, players[consoleplayer].respawn.pointy, players[consoleplayer].respawn.pointz);
 }
 
 // Like M_GetAllEmeralds() but for console devmode junkies.
@@ -1299,7 +1306,7 @@ void Command_ObjectPlace_f(void)
 		op_oldmomy = players[0].mo->momy;
 		op_oldmomz = players[0].mo->momz;
 		op_oldheight = players[0].mo->height;
-		op_oldstate = S_KART_STND1; // SRB2kart - was S_PLAY_STND
+		op_oldstate = S_KART_STILL1; // SRB2kart - was S_PLAY_STND
 		op_oldcolor = players[0].mo->color; // save color too in case of super/fireflower
 
 		// Remove ALL flags and motion.

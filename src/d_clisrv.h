@@ -13,14 +13,19 @@
 #ifndef __D_CLISRV__
 #define __D_CLISRV__
 
-#include "d_event.h"
 #include "d_ticcmd.h"
+#include "d_net.h"
 #include "d_netcmd.h"
 #include "tables.h"
 #include "d_player.h"
 #include "k_pwrlv.h" // PWRLV_NUMTYPES
 
-#include "md5.h"
+/*
+The 'packet version' is used to distinguish packet formats.
+This version is independent of VERSION and SUBVERSION. Different
+applications may follow different packet versions.
+*/
+#define PACKETVERSION 0
 
 // Network play related stuff.
 // There is a data struct that stores network
@@ -30,7 +35,9 @@
 
 // SOME numpty changed all the gametype constants and it fell out of sync with vanilla and now we have to pretend to be vanilla when talking to the master server...
 #define VANILLA_GT_RACE 2
-#if VERSION < 210
+// Woah, what do these numbers mean? 200 refers to SRB2 2.0, 246 refers to
+// SRB2Riders. Both use the old 2.0 gametype numbers.
+#if VERSION == 200 || VERSION == 246
 #define VANILLA_GT_MATCH 1
 #else
 #define VANILLA_GT_MATCH 3
@@ -38,6 +45,7 @@
 
 // Networking and tick handling related.
 #define BACKUPTICS 32
+#define TICQUEUE 512 // more than enough for most timeouts....
 #define MAXTEXTCMD 256
 //
 // Packet structure
@@ -76,9 +84,6 @@ typedef enum
 	PT_CLIENT4CMD,    // 4P
 	PT_CLIENT4MIS,
 	PT_BASICKEEPALIVE,// Keep the network alive during wipes, as tics aren't advanced and NetUpdate isn't called
-
-	PT_JOINCHALLENGE, // You must give a password to joinnnnn
-	PT_DOWNLOADFILESOKAY, // You can download files from the server....
 
 	PT_CANFAIL,       // This is kind of a priority. Anything bigger than CANFAIL
 	                  // allows HSendPacket(*, true, *, *) to return false.
@@ -208,12 +213,10 @@ typedef struct
 
 	UINT16 powers[NUMPOWERS];
 
-	INT32 kartstuff[NUMKARTSTUFF]; // SRB2kart
-	angle_t frameangle; // SRB2kart
-
 	// Score is resynched in the confirm resync packet
 	INT32 health;
 	SINT8 lives;
+	boolean lostlife;
 	SINT8 continues;
 	UINT8 scoreadd;
 	SINT8 xtralife;
@@ -247,12 +250,7 @@ typedef struct
 	INT32 weapondelay;
 	INT32 tossdelay;
 
-	INT16 starpostx;
-	INT16 starposty;
-	INT16 starpostz;
 	INT32 starpostnum;
-	tic_t starposttime;
-	angle_t starpostangle;
 
 	INT32 maxlink;
 	fixed_t dashspeed;
@@ -279,6 +277,30 @@ typedef struct
 	tic_t jointime;
 
 	UINT8 splitscreenindex;
+
+	// SRB2kart
+	INT32 kartstuff[NUMKARTSTUFF];
+	angle_t frameangle;
+	tic_t airtime;
+
+	// respawnvars_t
+	UINT8 respawn_state;
+	fixed_t respawn_pointx;
+	fixed_t respawn_pointy;
+	fixed_t respawn_pointz;
+	boolean respawn_flip;
+	tic_t respawn_timer;
+	UINT32 respawn_distanceleft;
+	tic_t respawn_dropdash;
+
+	// botvars_t
+	boolean bot;
+	UINT8 bot_difficulty;
+	UINT8 bot_diffincrease;
+	boolean bot_rival;
+	tic_t bot_itemdelay;
+	tic_t bot_itemconfirm;
+	SINT8 bot_turnconfirm;
 
 	//player->mo stuff
 	UINT8 hasmo; // Boolean
@@ -323,10 +345,20 @@ typedef struct
 	UINT8 playerskins[MAXPLAYERS];
 	UINT8 playercolor[MAXPLAYERS];
 
+	UINT8 playerisbot[MAXPLAYERS];
+
 	UINT8 gametype;
 	UINT8 modifiedgame;
 	SINT8 adminplayers[MAXPLAYERS]; // Needs to be signed
 	UINT16 powerlevels[MAXPLAYERS][PWRLV_NUMTYPES]; // SRB2kart: player power levels
+
+	UINT8 consoleplayers[MAXPLAYERS];
+	/* splitscreen */
+	SINT8 invitations[MAXPLAYERS];
+	UINT8 party_size[MAXPLAYERS];
+	UINT8 party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+	UINT8 original_party_size[MAXPLAYERS];
+	UINT8 original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
@@ -344,32 +376,37 @@ typedef struct {
 #pragma warning(default : 4200)
 #endif
 
+#define MAXAPPLICATION 16
+
 typedef struct
 {
+	UINT8 _255;/* see serverinfo_pak */
+	UINT8 packetversion;
+	char application[MAXAPPLICATION];
 	UINT8 version; // Different versions don't work
 	UINT8 subversion; // Contains build version
-	UINT8 localplayers;
-	UINT8 needsdownload;
-	UINT8 challengenum; // Non-zero if trying to join with a password attempt
-	UINT8 challengeanswer[MD5_LEN]; // Join challenge
+	UINT8 localplayers;	// number of splitscreen players
+	UINT8 mode;
 } ATTRPACK clientconfig_pak;
 
-typedef struct
-{
-	UINT8 challengenum; // Number to send back in join attempt
-	UINT8 question[MD5_LEN]; // Challenge data to be manipulated and answered with
-} ATTRPACK joinchallenge_pak;
-
-#define SV_SPEEDMASK 0x03
-#define SV_LOTSOFADDONS 0x20
-#define SV_DEDICATED 0x40
-#define SV_PASSWORD 0x80
+#define SV_SPEEDMASK 0x03		// used to send kartspeed
+#define SV_DEDICATED 0x40		// server is dedicated
+#define SV_LOTSOFADDONS 0x20	// flag used to ask for full file list in d_netfil
 
 #define MAXSERVERNAME 32
 #define MAXFILENEEDED 915
+#define MAX_MIRROR_LENGTH 256
 // This packet is too large
 typedef struct
 {
+	/*
+	In the old packet, 'version' is the first field. Now that field is set
+	to 255 always, so older versions won't be confused with the new
+	versions or vice-versa.
+	*/
+	UINT8 _255;
+	UINT8 packetversion;
+	char  application[MAXAPPLICATION];
 	UINT8 version;
 	UINT8 subversion;
 	UINT8 numberofplayer;
@@ -379,7 +416,6 @@ typedef struct
 	UINT8 cheatsenabled;
 	UINT8 kartvars; // Previously isdedicated, now appropriated for our own nefarious purposes
 	UINT8 fileneedednum;
-	SINT8 adminplayer;
 	tic_t time;
 	tic_t leveltime;
 	char servername[MAXSERVERNAME];
@@ -388,6 +424,7 @@ typedef struct
 	unsigned char mapmd5[16];
 	UINT8 actnum;
 	UINT8 iszone;
+	char httpsource[MAX_MIRROR_LENGTH]; // HTTP URL to download from, always defined for compatibility
 	UINT8 fileneeded[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
 	// Anything beyond this point won't be read by the normal SRB2 Master Server display.
 	// The MS uses a simple unpack, so the size of the packet above shouldn't be changed, either.
@@ -469,7 +506,6 @@ typedef struct
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
 		clientconfig_pak clientcfg;         //         153 bytes
-		joinchallenge_pak joinchallenge;    //          17 bytes
 		serverinfo_pak serverinfo;          //        1024 bytes
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
 		askinfo_pak askinfo;                //          61 bytes
@@ -486,7 +522,7 @@ typedef struct
 #pragma pack()
 #endif
 
-#define MAXSERVERLIST 64 // Depends only on the display
+#define MAXSERVERLIST (MAXNETNODES-1)
 typedef struct
 {
 	SINT8 node;
@@ -499,7 +535,7 @@ extern INT32 mapchangepending;
 
 // Points inside doomcom
 extern doomdata_t *netbuffer;
-
+extern consvar_t cv_httpsource;
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
 
@@ -543,6 +579,8 @@ extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
 
+extern boolean server_lagless;
+
 extern consvar_t
 #ifdef VANILLAJOINNEXTROUND
 	cv_joinnextround,
@@ -550,7 +588,7 @@ extern consvar_t
 	cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail, cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
 // Used in d_net, the only dependence
-tic_t ExpandTics(INT32 low);
+tic_t ExpandTics(INT32 low, tic_t basetic);
 void D_ClientServerInit(void);
 
 // Initialise the other field
@@ -575,7 +613,6 @@ void CL_Reset(void);
 void CL_ClearPlayer(INT32 playernum);
 void CL_RemovePlayer(INT32 playernum, INT32 reason);
 void CL_UpdateServerList(boolean internetsearch, INT32 room);
-boolean CL_Responder(event_t *ev);
 // Is there a game running
 boolean Playing(void);
 
@@ -599,8 +636,11 @@ SINT8 nametonum(const char *name);
 
 extern char motd[254], server_context[8];
 extern UINT8 playernode[MAXPLAYERS];
+/* consoleplayer of this player (splitscreen) */
+extern UINT8 playerconsole[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
+boolean D_IsPlayerHumanAndGaming(INT32 player_number);
 void D_ResetTiccmds(void);
 
 tic_t GetLag(INT32 node);
@@ -608,4 +648,19 @@ UINT8 GetFreeXCmdSize(void);
 
 extern UINT8 hu_resynching;
 extern UINT8 hu_stopped; // kart, true when the game is stopped for players due to a disconnecting or connecting player
+
+typedef struct rewind_s {
+	UINT8 savebuffer[(768*1024)];
+	tic_t leveltime;
+	size_t demopos;
+
+	ticcmd_t oldcmd[MAXPLAYERS];
+	mobj_t oldghost[MAXPLAYERS];
+
+	struct rewind_s *next;
+} rewind_t;
+
+void CL_ClearRewinds(void);
+rewind_t *CL_SaveRewindPoint(size_t demopos);
+rewind_t *CL_RewindToTime(tic_t time);
 #endif

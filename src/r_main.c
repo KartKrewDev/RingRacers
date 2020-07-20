@@ -73,6 +73,8 @@ boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisibl
 sector_t *viewsector;
 player_t *viewplayer;
 
+int r_splitscreen;
+
 // PORTALS!
 // You can thank and/or curse JTE for these.
 UINT8 portalrender;
@@ -137,7 +139,7 @@ static CV_PossibleValue_t drawdist_precip_cons_t[] = {
 	{1024, "1024"},	{1536, "1536"},	{2048, "2048"},
 	{0, "None"},	{0, NULL}};
 
-static CV_PossibleValue_t fov_cons_t[] = {{0, "MIN"}, {179*FRACUNIT, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t fov_cons_t[] = {{5*FRACUNIT, "MIN"}, {178*FRACUNIT, "MAX"}, {0, NULL}};
 
 //static CV_PossibleValue_t precipdensity_cons_t[] = {{0, "None"}, {1, "Light"}, {2, "Moderate"}, {4, "Heavy"}, {6, "Thick"}, {8, "V.Thick"}, {0, NULL}};
 static CV_PossibleValue_t translucenthud_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
@@ -168,19 +170,21 @@ consvar_t cv_flipcam2 = {"flipcam2", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, 
 consvar_t cv_flipcam3 = {"flipcam3", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam3_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_flipcam4 = {"flipcam4", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam4_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_shadow = {"shadow", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_shadowoffs = {"offsetshadows", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_shadow = {"shadow", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_skybox = {"skybox", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_soniccd = {"soniccd", "Off", CV_NETVAR|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_allowmlook = {"allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_showhud = {"showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_translucenthud = {"translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_drawdist = {"drawdist", "Infinite", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_drawdist = {"drawdist", "8192", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 //consvar_t cv_drawdist_nights = {"drawdist_nights", "2048", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_drawdist_precip = {"drawdist_precip", "1024", CV_SAVE, drawdist_precip_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 //consvar_t cv_precipdensity = {"precipdensity", "Moderate", CV_SAVE, precipdensity_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+// cap fov, fov too high tears software apart.
+consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 // Okay, whoever said homremoval causes a performance hit should be shot.
 consvar_t cv_homremoval = {"homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -191,10 +195,16 @@ void SplitScreen_OnChange(void)
 {
 	UINT8 i;
 
+	/*
+	local splitscreen is updated before you're in a game,
+	so this is the first value for renderer splitscreen
+	*/
+	r_splitscreen = splitscreen;
+
 	// recompute screen size
 	R_ExecuteSetViewSize();
 
-	if (!demo.playback && !botingame)
+	if (!demo.playback)
 	{
 		for (i = 1; i < MAXSPLITSCREENPLAYERS; i++)
 		{
@@ -251,8 +261,6 @@ static void ChaseCam_OnChange(void)
 
 static void ChaseCam2_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (!cv_chasecam2.value || !cv_useranalog2.value)
 		CV_SetValue(&cv_analog2, 0);
 	else
@@ -539,9 +547,9 @@ static void R_InitTextureMapping(void)
 
 	for (i = 0; i < FINEANGLES/2; i++)
 	{
-		if (FINETANGENT(i) > FRACUNIT*2)
+		if (FINETANGENT(i) > fovtan*2)
 			t = -1;
-		else if (FINETANGENT(i) < -FRACUNIT*2)
+		else if (FINETANGENT(i) < -fovtan*2)
 			t = viewwidth+1;
 		else
 		{
@@ -658,12 +666,12 @@ void R_ExecuteSetViewSize(void)
 	scaledviewwidth = vid.width;
 	viewheight = vid.height;
 
-	if (splitscreen)
+	if (r_splitscreen)
 		viewheight >>= 1;
 
 	viewwidth = scaledviewwidth;
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 	{
 		viewwidth >>= 1;
 		scaledviewwidth >>= 1;
@@ -676,7 +684,7 @@ void R_ExecuteSetViewSize(void)
 
 	fov = FixedAngle(cv_fov.value/2) + ANGLE_90;
 	fovtan = FINETANGENT(fov >> ANGLETOFINESHIFT);
-	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
+	if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 		fovtan = 17*fovtan/10;
 
 	projection = projectiony = FixedDiv(centerxfrac, fovtan);
@@ -684,11 +692,6 @@ void R_ExecuteSetViewSize(void)
 	R_InitViewBuffer(scaledviewwidth, viewheight);
 
 	R_InitTextureMapping();
-
-#ifdef HWRENDER
-	if (rendermode != render_soft)
-		HWR_InitTextureMapping();
-#endif
 
 	// thing clipping
 	for (i = 0; i < viewwidth; i++)
@@ -819,37 +822,39 @@ subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
 
 static mobj_t *viewmobj;
 
-// WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) FixedDiv((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)>>FRACBITS, fovtan)
-
 // recalc necessary stuff for mouseaiming
 // slopes are already calculated for the full possible view (which is 4*viewheight).
 // 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
 static void R_SetupFreelook(void)
 {
 	INT32 dy = 0;
+
+	// clip it in the case we are looking a hardware 90 degrees full aiming
+	// (lmps, network and use F12...)
+	if (rendermode == render_soft
+#ifdef HWRENDER
+		|| cv_grshearing.value
+#endif
+	)
+		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
+
 	if (rendermode == render_soft)
 	{
-		// clip it in the case we are looking a hardware 90 degrees full aiming
-		// (lmps, network and use F12...)
-		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
-		dy = AIMINGTODY(aimingangle) * viewwidth/BASEVIDWIDTH;
+		dy = (AIMINGTODY(aimingangle)/fovtan) * viewwidth/BASEVIDWIDTH;
 		yslope = &yslopetab[viewheight*8 - (viewheight/2 + dy)];
 	}
 	centery = (viewheight/2) + dy;
 	centeryfrac = centery<<FRACBITS;
 }
 
-#undef AIMINGTODY
-
 void R_SkyboxFrame(player_t *player)
 {
 	camera_t *thiscam = &camera[0];
 	UINT8 i;
 
-	if (splitscreen)
+	if (r_splitscreen)
 	{
-		for (i = 1; i <= splitscreen; i++)
+		for (i = 1; i <= r_splitscreen; i++)
 		{
 			if (player == &players[displayplayers[i]])
 			{
@@ -894,7 +899,7 @@ void R_SkyboxFrame(player_t *player)
 			{
 				for (i = 1; i <= splitscreen; i++)
 				{
-					if (player == &players[displayplayers[i]])
+					if (player == &players[g_localplayers[i]])
 					{
 						viewangle = localangle[i];
 						aimingangle = localaiming[i];
@@ -1079,17 +1084,17 @@ void R_SetupFrame(player_t *player, boolean skybox)
 	camera_t *thiscam;
 	boolean chasecam = false;
 
-	if (splitscreen > 2 && player == &players[displayplayers[3]])
+	if (r_splitscreen > 2 && player == &players[displayplayers[3]])
 	{
 		thiscam = &camera[3];
 		chasecam = (cv_chasecam4.value != 0);
 	}
-	else if (splitscreen > 1 && player == &players[displayplayers[2]])
+	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
 	{
 		thiscam = &camera[2];
 		chasecam = (cv_chasecam3.value != 0);
 	}
-	else if (splitscreen && player == &players[displayplayers[1]])
+	else if (r_splitscreen && player == &players[displayplayers[1]])
 	{
 		thiscam = &camera[1];
 		chasecam = (cv_chasecam2.value != 0);
@@ -1142,7 +1147,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		aimingangle = player->aiming;
 		viewangle = viewmobj->angle;
 
-		if (/*!demo.playback && */player->playerstate != PST_DEAD)
+		if (!demo.playback && player->playerstate != PST_DEAD)
 		{
 			if (player == &players[consoleplayer])
 			{
@@ -1154,7 +1159,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 				UINT8 i;
 				for (i = 1; i <= splitscreen; i++)
 				{
-					if (player == &players[displayplayers[i]])
+					if (player == &players[g_localplayers[i]])
 					{
 						viewangle = localangle[i];
 						aimingangle = localaiming[i];
@@ -1175,7 +1180,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		viewx += quake.x;
 		viewy += quake.y;
 
-		if (thiscam->subsector)
+		if (thiscam->subsector && thiscam->subsector->sector)
 			viewsector = thiscam->subsector->sector;
 		else
 			viewsector = R_PointInSubsector(viewx, viewy)->sector;
@@ -1187,7 +1192,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		viewx += quake.x;
 		viewy += quake.y;
 
-		if (viewmobj->subsector)
+		if (viewmobj->subsector && thiscam->subsector->sector)
 			viewsector = viewmobj->subsector->sector;
 		else
 			viewsector = R_PointInSubsector(viewx, viewy)->sector;
@@ -1333,7 +1338,7 @@ void R_RenderPlayerView(player_t *player)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 32+(timeinmap&15));
 	}
 	// Draw over the fourth screen so you don't have to stare at a HOM :V
-	else if (splitscreen == 2 && player == &players[displayplayers[2]])
+	else if (r_splitscreen == 2 && player == &players[displayplayers[2]])
 #if 1
 	{
 		// V_DrawPatchFill, but for the fourth screen only
@@ -1352,7 +1357,7 @@ void R_RenderPlayerView(player_t *player)
 #endif
 
 	// load previous saved value of skyVisible for the player
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -1462,7 +1467,7 @@ void R_RenderPlayerView(player_t *player)
 
 	// save value to skyVisiblePerPlayer
 	// this is so that P1 can't affect whether P2 can see a skybox or not, or vice versa
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -1503,7 +1508,6 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_chasecam3);
 	CV_RegisterVar(&cv_chasecam4);
 	CV_RegisterVar(&cv_shadow);
-	CV_RegisterVar(&cv_shadowoffs);
 	CV_RegisterVar(&cv_skybox);
 
 	CV_RegisterVar(&cv_cam_dist);
@@ -1549,9 +1553,6 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_grgammagreen);
 	CV_RegisterVar(&cv_grgammared);
 	CV_RegisterVar(&cv_grfovchange);
-	CV_RegisterVar(&cv_grfog);
-	CV_RegisterVar(&cv_grfogcolor);
-	CV_RegisterVar(&cv_grsoftwarefog);
 #ifdef ALAM_LIGHTING
 	CV_RegisterVar(&cv_grstaticlighting);
 	CV_RegisterVar(&cv_grdynamiclighting);
@@ -1561,6 +1562,9 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_grmdls);
 	CV_RegisterVar(&cv_grfallbackplayermodel);
 	CV_RegisterVar(&cv_grspritebillboarding);
+	CV_RegisterVar(&cv_grfakecontrast);
+	CV_RegisterVar(&cv_grshearing);
+	CV_RegisterVar(&cv_grshaders);
 #endif
 
 #ifdef HWRENDER

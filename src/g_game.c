@@ -43,20 +43,22 @@
 #include "y_inter.h"
 #include "v_video.h"
 #include "dehacked.h" // get_number (for ghost thok)
+#include "lua_script.h"	// LUA_ArchiveDemo and LUA_UnArchiveDemo
 #include "lua_hook.h"
-#include "b_bot.h"
+#include "lua_libs.h"	// gL (Lua state)
+#include "k_bot.h"
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "k_kart.h" // SRB2kart
+#include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_color.h"
+#include "k_respawn.h"
+#include "k_grandprix.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
-
-boolean botingame;
-UINT8 botskin;
-UINT8 botcolor;
 
 JoyType_t Joystick;
 JoyType_t Joystick2;
@@ -80,11 +82,25 @@ static void G_DoStartVote(void);
 char   mapmusname[7]; // Music name
 UINT16 mapmusflags; // Track and reset bit
 UINT32 mapmusposition; // Position to jump to
+UINT32 mapmusresume;
 
 INT16 gamemap = 1;
 INT16 maptol;
+
 UINT8 globalweather = 0;
-INT32 curWeather = PRECIP_NONE;
+UINT8 curWeather = PRECIP_NONE;
+
+precipprops_t precipprops[MAXPRECIP] =
+{
+	{MT_NULL, 0}, // PRECIP_NONE
+	{MT_RAIN, 0}, // PRECIP_RAIN
+	{MT_SNOWFLAKE, 0}, // PRECIP_SNOW
+	{MT_BLIZZARDSNOW, 0}, // PRECIP_BLIZZARD
+	{MT_RAIN, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
+	{MT_NULL, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
+	{MT_RAIN, PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
+};
+
 INT32 cursaveslot = -1; // Auto-save 1p savegame slot
 INT16 lastmapsaved = 0; // Last map we auto-saved at
 boolean gamecomplete = false;
@@ -115,6 +131,7 @@ player_t players[MAXPLAYERS];
 
 INT32 consoleplayer; // player taking events and displaying
 INT32 displayplayers[MAXSPLITSCREENPLAYERS]; // view being displayed
+INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
@@ -154,6 +171,10 @@ struct quake quake;
 // Map Header Information
 mapheader_t* mapheaderinfo[NUMMAPS] = {NULL};
 
+// Kart cup definitions
+cupheader_t *kartcupheaders = NULL;
+UINT16 numkartcupheaders = 0;
+
 static boolean exitgame = false;
 static boolean retrying = false;
 
@@ -185,10 +206,6 @@ UINT32 bluescore, redscore; // CTF and Team Match team scores
 // ring count... for PERFECT!
 INT32 nummaprings = 0;
 
-// box respawning in battle mode
-INT32 nummapboxes = 0;
-INT32 numgotboxes = 0;
-
 // Elminates unnecessary searching.
 boolean CheckForBustableBlocks;
 boolean CheckForBouncySector;
@@ -215,12 +232,14 @@ INT32 hyudorotime = 7*TICRATE;
 INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;
+INT32 bubbletime = TICRATE/2;
 INT32 comebacktime = 10*TICRATE;
 INT32 bumptime = 6;
 INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
 INT32 wantedreduce = 5*TICRATE;
 INT32 wantedfrequency = 10*TICRATE;
+INT32 flameseg = TICRATE/4;
 
 INT32 gameovertics = 15*TICRATE;
 
@@ -235,7 +254,7 @@ mobj_t *hunt1;
 mobj_t *hunt2;
 mobj_t *hunt3;
 
-UINT32 countdown, countdown2; // for racing
+tic_t racecountdown, exitcountdown; // for racing
 
 fixed_t gravity;
 fixed_t mapobjectscale;
@@ -262,9 +281,6 @@ INT16 votelevels[5][2]; // Levels that were rolled by the host
 SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
 
-// Battle overtime system
-struct battleovertime battleovertime;
-
 // Server-sided, synched variables
 SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
@@ -275,6 +291,7 @@ boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
+tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
 boolean legitimateexit; // Did this client actually finish the match?
 boolean comebackshowninfo; // Have you already seen the "ATTACK OR PROTECT" message?
 tic_t curlap; // Current lap time
@@ -291,7 +308,8 @@ UINT32 timesBeatenWithEmeralds;
 //@TODO put these all in a struct for namespacing purposes?
 static char demoname[128];
 static UINT8 *demobuffer = NULL;
-static UINT8 *demo_p, *demotime_p, *demoinfo_p;
+static UINT8 *demotime_p, *demoinfo_p;
+UINT8 *demo_p;
 static UINT8 *demoend;
 static UINT8 demoflags;
 static boolean demosynced = true; // console warning message
@@ -516,6 +534,12 @@ consvar_t cv_fireaxis4 = {"joyaxis4_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NU
 consvar_t cv_driftaxis4 = {"joyaxis4_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_deadzone4 = {"joy4_deadzone", "0.5", CV_FLOAT|CV_SAVE, deadzone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_invincmusicfade = {"invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_growmusicfade = {"growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_resetspecialmusic = {"resetspecialmusic", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_resume = {"resume", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 #if MAXPLAYERS > 16
 #error "please update player_name table using the new value for MAXPLAYERS"
@@ -786,7 +810,7 @@ void G_SetGameModified(boolean silent, boolean major)
 	majormods = true;
 
 	if (!silent)
-		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to play record attack.\n"));
+		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to play Record Attack.\n"));
 
 	// If in record attack recording, cancel it.
 	if (modeattacking)
@@ -1230,7 +1254,6 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p)
 //
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
-boolean camspin[MAXSPLITSCREENPLAYERS];
 
 static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
 static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
@@ -1256,12 +1279,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (ssplayer == 1)
 		player = &players[consoleplayer];
 	else
-		player = &players[displayplayers[ssplayer-1]];
+		player = &players[g_localplayers[ssplayer-1]];
 
-	if (ssplayer == 2)
-		thiscam = (player->bot == 2 ? &camera[0] : &camera[ssplayer-1]);
-	else
-		thiscam = &camera[ssplayer-1];
+	thiscam = &camera[ssplayer-1];
 	lang = localangle[ssplayer-1];
 	laim = localaiming[ssplayer-1];
 	th = turnheld[ssplayer-1];
@@ -1292,6 +1312,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		cmd->angleturn = (INT16)(lang >> 16);
 		cmd->aiming = G_ClipAimingPitch(&laim);
+		return;
+	}
+
+	if (K_PlayerUsesBotMovement(player))
+	{
 		return;
 	}
 
@@ -1410,7 +1435,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
 		axis = JoyAxis(AXISMOVE, ssplayer);
-		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || EITHERSNEAKER(player))
+		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = forwardmove[1];	// 50
@@ -1454,6 +1479,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	axis = JoyAxis(AXISDRIFT, ssplayer);
 	if (InputDown(gc_drift, ssplayer) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_DRIFT;
+
+	// rear view with any button/key
+	axis = JoyAxis(AXISLOOKBACK, ssplayer);
+	if (InputDown(gc_lookback, ssplayer) || (usejoystick && axis > 0))
+		cmd->buttons |= BT_LOOKBACK;
 
 	// Lua scriptable buttons
 	if (InputDown(gc_custom1, ssplayer))
@@ -1561,7 +1591,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// SRB2kart - no additional angle if not moving
 	if ((player->mo && player->speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (player->kartstuff[k_respawn]) // Respawning
+		|| (player->respawn.state != RESPAWNST_NONE) // Respawning
 		|| (player->spectator || objectplacing)) // Not a physical player
 		lang += (cmd->angleturn<<16);
 
@@ -1575,7 +1605,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		keyboard_look[ssplayer-1] = kbl;
 		turnheld[ssplayer-1] = th;
 		resetdown[ssplayer-1] = rd;
-		camspin[ssplayer-1] = InputDown(gc_lookback, ssplayer);
 	}
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.
@@ -1595,9 +1624,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	//Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
-		&& displayplayers[0] != consoleplayer && ssplayer == 1)
+		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
 		displayplayers[0] = consoleplayer;
-
 }
 
 // User has designated that they want
@@ -1613,8 +1641,6 @@ static void UserAnalog_OnChange(void)
 
 static void UserAnalog2_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog2.value)
 		CV_SetValue(&cv_analog2, 1);
 	else
@@ -1623,8 +1649,6 @@ static void UserAnalog2_OnChange(void)
 
 static void UserAnalog3_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog3.value)
 		CV_SetValue(&cv_analog3, 1);
 	else
@@ -1633,8 +1657,6 @@ static void UserAnalog3_OnChange(void)
 
 static void UserAnalog4_OnChange(void)
 {
-	if (botingame)
-		return;
 	/*if (cv_useranalog4.value)
 		CV_SetValue(&cv_analog4, 1);
 	else
@@ -1660,7 +1682,7 @@ static void Analog_OnChange(void)
 
 static void Analog2_OnChange(void)
 {
-	if (!(splitscreen || botingame) || !cv_cam2_dist.string)
+	if (!splitscreen || !cv_cam2_dist.string)
 		return;
 
 	// cameras are not initialized at this point
@@ -1748,23 +1770,15 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (!resetplayer)
 		P_FindEmerald();
 
-	displayplayers[0] = consoleplayer; // view the guy you are playing
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		if (i > 0 && !(i == 1 && botingame) && splitscreen < i)
-			displayplayers[i] = consoleplayer;
-	}
-
 	gameaction = ga_nothing;
 #ifdef PARANOIA
 	Z_CheckHeap(-2);
 #endif
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (camera[i].chase)
-			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
+			P_ResetCamera(&players[g_localplayers[i]], &camera[i]);
 	}
 
 	// clear cmd building stuff
@@ -1781,6 +1795,8 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
+
+	server_lagless = cv_lagless.value;
 }
 
 static INT32 pausedelay = 0;
@@ -1874,8 +1890,8 @@ boolean G_Responder(event_t *ev)
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
 		&& (ev->data1 == KEY_F12 || ev->data1 == gamecontrol[gc_viewpoint][0] || ev->data1 == gamecontrol[gc_viewpoint][1]))
 	{
-		if (!demo.playback && (splitscreen || !netgame))
-			displayplayers[0] = consoleplayer;
+		if (!demo.playback && (r_splitscreen || !netgame))
+			g_localplayers[0] = consoleplayer;
 		else
 		{
 			G_AdjustView(1, 1, true);
@@ -1888,7 +1904,7 @@ boolean G_Responder(event_t *ev)
 		}
 	}
 
-	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback)
+	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
 		if (ev->data1 == gamecontrolbis[gc_viewpoint][0] || ev->data1 == gamecontrolbis[gc_viewpoint][1])
 		{
@@ -1932,11 +1948,8 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 
-		// Anything else opens the menu if not already open, except for a few keys...
-		if (!(
-			// Rankings
-			ev->data1 == gamecontrol[gc_scores][0] || ev->data1 == gamecontrol[gc_scores][1]
-		))
+		// open menu but only w/ esc
+		if (ev->data1 == 32)
 		{
 			M_StartControlPanel();
 
@@ -2139,7 +2152,7 @@ boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 	if (!(onlyactive ? G_CouldView(playernum) : (playeringame[playernum] && !players[playernum].spectator)))
 		return false;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 	if (viewnum > splits)
 		viewnum = splits;
 
@@ -2210,7 +2223,7 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	INT32 olddisplayplayer;
 	INT32 playersviewable;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 
 	/* Promote splits */
 	if (viewnum > splits)
@@ -2221,7 +2234,7 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 
 		if (viewnum > playersviewable)
 			viewnum = playersviewable;
-		splitscreen = viewnum-1;
+		r_splitscreen = viewnum-1;
 
 		/* Prepare extra views for G_FindView to pass. */
 		for (viewd = splits+1; viewd < viewnum; ++viewd)
@@ -2294,14 +2307,14 @@ void G_ResetViews(void)
 
 	INT32 playersviewable;
 
-	splits = splitscreen+1;
+	splits = r_splitscreen+1;
 
 	playersviewable = G_CountPlayersPotentiallyViewable(false);
 	/* Demote splits */
 	if (playersviewable < splits)
 	{
 		splits = playersviewable;
-		splitscreen = max(splits-1, 0);
+		r_splitscreen = max(splits-1, 0);
 		R_ExecuteSetViewSize();
 	}
 
@@ -2324,23 +2337,31 @@ void G_Ticker(boolean run)
 	UINT32 i;
 	INT32 buf;
 	ticcmd_t *cmd;
+	UINT32 ra_timeskip = (modeattacking && !demo.playback && leveltime < starttime - TICRATE*4) ? 0 : (starttime - TICRATE*4 - 1);
+	// starttime - TICRATE*4 is where we want RA to start when we PLAY IT, so we will loop the main thinker on RA start to get it to this point,
+	// the reason this is done is to ensure that ghosts won't look out of synch with other map elements (objects, moving platforms...)
+	// when we REPLAY, don't skip, let the camera spin, do its thing etc~
+
+	// also the -1 is to ensure that the thinker runs in the loop below.
 
 	P_MapStart();
 	// do player reborns if needed
 	if (gamestate == GS_LEVEL)
 	{
 		// Or, alternatively, retry.
-		if (!(netgame || multiplayer) && G_GetRetryFlag())
+		if (G_GetRetryFlag())
 		{
 			G_ClearRetryFlag();
 
-			// Costs a life to retry ... unless the player in question is dead already.
-			/*if (G_GametypeUsesLives() && players[consoleplayer].playerstate == PST_LIVE)
-				players[consoleplayer].lives -= 1;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i])
+				{
+					K_PlayerLoseLife(&players[i]);
+				}
+			}
 
-			G_DoReborn(consoleplayer);*/
-
-			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), true, 1, false, false);
+			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), false, 1, false, false);
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -2362,7 +2383,7 @@ void G_Ticker(boolean run)
 			default: I_Error("gameaction = %d\n", gameaction);
 		}
 
-	buf = gametic % BACKUPTICS;
+	buf = gametic % TICQUEUE;
 
 	if (!demo.playback)
 	// read/write demo and check turbo cheat
@@ -2373,8 +2394,18 @@ void G_Ticker(boolean run)
 		if (playeringame[i])
 		{
 			G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
+
 			// Use the leveltime sent in the player's ticcmd to determine control lag
-			cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
+			if (modeattacking || K_PlayerUsesBotMovement(&players[i]))
+			{
+				// Never has lag
+				cmd->latency = 0;
+			}
+			else
+			{
+				//@TODO add a cvar to allow setting this max
+				cmd->latency = min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1);
+			}
 		}
 	}
 
@@ -2382,12 +2413,16 @@ void G_Ticker(boolean run)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
-			if (demo.title)
-				F_TitleDemoTicker();
-			P_Ticker(run); // tic the game
-			ST_Ticker();
-			AM_Ticker();
-			HU_Ticker();
+
+			for (; ra_timeskip < starttime - TICRATE*4; ra_timeskip++)	// this looks weird but this is done to not break compability with older demos for now.
+			{
+				if (demo.title)
+					F_TitleDemoTicker();
+				P_Ticker(run); // tic the game
+				ST_Ticker();
+				AM_Ticker();
+				HU_Ticker();
+			}
 			break;
 
 		case GS_INTERMISSION:
@@ -2502,12 +2537,9 @@ static inline void G_PlayerFinishLevel(INT32 player)
 
 	p->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK); // cancel invisibility
 	P_FlashPal(p, 0, 0); // Resets
-	p->starpostangle = 0;
-	p->starposttime = 0;
-	p->starpostx = 0;
-	p->starposty = 0;
-	p->starpostz = 0;
+
 	p->starpostnum = 0;
+	memset(&p->respawn, 0, sizeof (p->respawn));
 
 	// SRB2kart: Increment the "matches played" counter.
 	if (player == consoleplayer)
@@ -2533,20 +2565,20 @@ void G_PlayerReborn(INT32 player)
 	player_t *p;
 	INT32 score, marescore;
 	INT32 lives;
+	boolean lostlife;
 	INT32 continues;
 	// SRB2kart
 	UINT8 kartspeed;
 	UINT8 kartweight;
+	boolean followerready;
+	INT32 followerskin;
+	UINT8 followercolor;
+	mobj_t *follower;	// old follower, will probably be removed by the time we're dead but you never know.
 	//
 	INT32 charflags;
 	INT32 pflags;
 	INT32 ctfteam;
-	INT32 starposttime;
-	INT16 starpostx;
-	INT16 starposty;
-	INT16 starpostz;
 	INT32 starpostnum;
-	INT32 starpostangle;
 	INT32 exiting;
 	INT16 numboxes;
 	INT16 totalring;
@@ -2557,11 +2589,15 @@ void G_PlayerReborn(INT32 player)
 	tic_t jointime;
 	UINT8 splitscreenindex;
 	boolean spectator;
-	INT16 bot;
+	boolean bot;
+	UINT8 botdifficulty;
+	UINT8 botdiffincrease;
+	boolean botrival;
 	SINT8 pity;
+	SINT8 xtralife;
 
 	// SRB2kart
-	INT32 starpostwp;
+	respawnvars_t respawn;
 	INT32 itemtype;
 	INT32 itemamount;
 	INT32 itemroulette;
@@ -2571,19 +2607,19 @@ void G_PlayerReborn(INT32 player)
 	INT32 comebackpoints;
 	INT32 wanted;
 	INT32 rings;
-	INT32 respawnflip;
 	boolean songcredit = false;
 
 	score = players[player].score;
 	marescore = players[player].marescore;
 	lives = players[player].lives;
+	lostlife = players[player].lostlife;
 	continues = players[player].continues;
 	ctfteam = players[player].ctfteam;
 	exiting = players[player].exiting;
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_ANALOGMODE|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
@@ -2598,20 +2634,22 @@ void G_PlayerReborn(INT32 player)
 	// SRB2kart
 	kartspeed = players[player].kartspeed;
 	kartweight = players[player].kartweight;
+	follower = players[player].follower;
+	followerready = players[player].followerready;
+	followercolor = players[player].followercolor;
+	followerskin = players[player].followerskin;
 	//
 	charflags = players[player].charflags;
 
-	starposttime = players[player].starposttime;
-	starpostx = players[player].starpostx;
-	starposty = players[player].starposty;
-	starpostz = players[player].starpostz;
 	starpostnum = players[player].starpostnum;
-	respawnflip = players[player].kartstuff[k_starpostflip];	//SRB2KART
-	starpostangle = players[player].starpostangle;
 
 	mare = players[player].mare;
 	bot = players[player].bot;
+	botdifficulty = players[player].botvars.difficulty;
+	botdiffincrease = players[player].botvars.diffincrease;
+	botrival = players[player].botvars.rival;
 	pity = players[player].pity;
+	xtralife = players[player].xtralife;
 
 	// SRB2kart
 	if (leveltime <= starttime)
@@ -2621,16 +2659,13 @@ void G_PlayerReborn(INT32 player)
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
-		bumper = (G_BattleGametype() ? cv_kartbumpers.value : 0);
+		bumper = (G_BattleGametype() ? K_StartingBumperCount() : 0);
 		rings = (G_BattleGametype() ? 0 : 5);
 		comebackpoints = 0;
 		wanted = 0;
-		starpostwp = 0;
 	}
 	else
 	{
-		starpostwp = players[player].kartstuff[k_starpostwp];
-
 		itemroulette = (players[player].kartstuff[k_itemroulette] > 0 ? 1 : 0);
 		roulettetype = players[player].kartstuff[k_roulettetype];
 
@@ -2657,12 +2692,18 @@ void G_PlayerReborn(INT32 player)
 		wanted = players[player].kartstuff[k_wanted];
 	}
 
+	// Obliterate follower from existence
+	P_SetTarget(&players[player].follower, NULL);
+
+	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
+
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
 
 	p->score = score;
 	p->marescore = marescore;
 	p->lives = lives;
+	p->lostlife = lostlife;
 	p->continues = continues;
 	p->pflags = pflags;
 	p->ctfteam = ctfteam;
@@ -2679,12 +2720,7 @@ void G_PlayerReborn(INT32 player)
 	//
 	p->charflags = charflags;
 
-	p->starposttime = starposttime;
-	p->starpostx = starpostx;
-	p->starposty = starposty;
-	p->starpostz = starpostz;
 	p->starpostnum = starpostnum;
-	p->starpostangle = starpostangle;
 	p->exiting = exiting;
 
 	p->numboxes = numboxes;
@@ -2692,12 +2728,14 @@ void G_PlayerReborn(INT32 player)
 	p->totalring = totalring;
 
 	p->mare = mare;
-	if (bot)
-		p->bot = 1; // reset to AI-controlled
+	p->bot = bot;
+	p->botvars.difficulty = botdifficulty;
+	p->botvars.diffincrease = botdiffincrease;
+	p->botvars.rival = botrival;
 	p->pity = pity;
+	p->xtralife = xtralife;
 
 	// SRB2kart
-	p->kartstuff[k_starpostwp] = starpostwp; // TODO: get these out of kartstuff, it causes desync (Does it...?)
 	p->kartstuff[k_itemroulette] = itemroulette;
 	p->kartstuff[k_roulettetype] = roulettetype;
 	p->kartstuff[k_itemtype] = itemtype;
@@ -2710,7 +2748,18 @@ void G_PlayerReborn(INT32 player)
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
 	p->kartstuff[k_lastdraft] = -1;
-	p->kartstuff[k_starpostflip] = respawnflip;
+
+	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
+
+	if (follower)
+		P_RemoveMobj(follower);
+
+	p->followerready = followerready;
+	p->followerskin = followerskin;
+	p->followercolor = followercolor;
+	//p->follower = NULL;	// respawn a new one with you, it looks better.
+	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
+
 
 	// Don't do anything immediately
 	p->pflags |= PF_USEDOWN;
@@ -2732,16 +2781,20 @@ void G_PlayerReborn(INT32 player)
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
+			mapmusresume = 0;
 			songcredit = true;
 		}
 	}
 
 	P_RestoreMusic(p);
+
 	if (songcredit)
 		S_ShowMusicCredit();
 
 	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
-		p->kartstuff[k_respawn] = 48; // Respawn effect
+	{
+		K_DoIngameRespawn(p);
+	}
 
 	if (gametype == GT_COOP)
 		P_FindEmerald(); // scan for emeralds to hunt for
@@ -2850,9 +2903,13 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost)
 		return;
 	}
 
+	// -- Record Attack --
+	if (modeattacking || battlecapsules)
+		spawnpoint = playerstarts[0];
+
 	// -- CTF --
 	// Order: CTF->DM->Coop
-	if (gametype == GT_CTF && players[playernum].ctfteam)
+	else if (gametype == GT_CTF && players[playernum].ctfteam)
 	{
 		if (!(spawnpoint = G_FindCTFStart(playernum)) // find a CTF start
 		&& !(spawnpoint = G_FindMatchStart(playernum))) // find a DM start
@@ -2884,18 +2941,18 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost)
 		if (nummapthings)
 		{
 			if (playernum == consoleplayer
-				|| (splitscreen && playernum == displayplayers[1])
-				|| (splitscreen > 1 && playernum == displayplayers[2])
-				|| (splitscreen > 2 && playernum == displayplayers[3]))
+				|| (splitscreen && playernum == g_localplayers[1])
+				|| (splitscreen > 1 && playernum == g_localplayers[2])
+				|| (splitscreen > 2 && playernum == g_localplayers[3]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the first mapthing!\n"));
 			spawnpoint = &mapthings[0];
 		}
 		else
 		{
 			if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == g_localplayers[1])
+			|| (splitscreen > 1 && playernum == g_localplayers[2])
+			|| (splitscreen > 2 && playernum == g_localplayers[3]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the origin!\n"));
 			//P_MovePlayerToSpawn handles this fine if the spawnpoint is NULL.
 		}
@@ -2990,17 +3047,17 @@ mapthing_t *G_FindMatchStart(INT32 playernum)
 				return deathmatchstarts[i];
 		}
 		if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == g_localplayers[1])
+			|| (splitscreen > 1 && playernum == g_localplayers[2])
+			|| (splitscreen > 2 && playernum == g_localplayers[3]))
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Deathmatch starts!\n"));
 		return NULL;
 	}
 
 	if (playernum == consoleplayer
-		|| (splitscreen && playernum == displayplayers[1])
-		|| (splitscreen > 1 && playernum == displayplayers[2])
-		|| (splitscreen > 2 && playernum == displayplayers[3]))
+		|| (splitscreen && playernum == g_localplayers[1])
+		|| (splitscreen > 1 && playernum == g_localplayers[2])
+		|| (splitscreen > 2 && playernum == g_localplayers[3]))
 		CONS_Alert(CONS_WARNING, M_GetText("No Deathmatch starts in this map!\n"));
 	return NULL;
 }
@@ -3088,17 +3145,17 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 		//return playerstarts[0];
 
 		if (playernum == consoleplayer
-			|| (splitscreen && playernum == displayplayers[1])
-			|| (splitscreen > 1 && playernum == displayplayers[2])
-			|| (splitscreen > 2 && playernum == displayplayers[3]))
+			|| (splitscreen && playernum == g_localplayers[1])
+			|| (splitscreen > 1 && playernum == g_localplayers[2])
+			|| (splitscreen > 2 && playernum == g_localplayers[3]))
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Race starts!\n"));
 		return NULL;
 	}
 
 	if (playernum == consoleplayer
-		|| (splitscreen && playernum == displayplayers[1])
-		|| (splitscreen > 1 && playernum == displayplayers[2])
-		|| (splitscreen > 2 && playernum == displayplayers[3]))
+		|| (splitscreen && playernum == g_localplayers[1])
+		|| (splitscreen > 1 && playernum == g_localplayers[2])
+		|| (splitscreen > 2 && playernum == g_localplayers[3]))
 		CONS_Alert(CONS_WARNING, M_GetText("No Race starts in this map!\n"));
 	return NULL;
 }
@@ -3139,101 +3196,15 @@ void G_DoReborn(INT32 playernum)
 	player_t *player = &players[playernum];
 	boolean starpost = false;
 
-	/*if (modeattacking) // Not needed for SRB2Kart.
-	{
-		M_EndModeAttackRun();
-		return;
-	}*/
-
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
 
-	if (player->bot && playernum != consoleplayer)
-	{ // Bots respawn next to their master.
-		mobj_t *oldmo = NULL;
-
-		// first dissasociate the corpse
-		if (player->mo)
-		{
-			oldmo = player->mo;
-			// Don't leave your carcass stuck 10-billion feet in the ground!
-			P_RemoveMobj(player->mo);
-		}
-
-		B_RespawnBot(playernum);
-		if (oldmo)
-			G_ChangePlayerReferences(oldmo, players[playernum].mo);
-	}
-	/*else if (countdowntimeup || (!multiplayer && !modeattacking))
-	{
-		// reload the level from scratch
-		if (countdowntimeup)
-		{
-			player->starpostangle = 0;
-			player->starposttime = 0;
-			player->starpostx = 0;
-			player->starposty = 0;
-			player->starpostz = 0;
-			player->starpostnum = 0;
-		}
-		if (!countdowntimeup && (mapheaderinfo[gamemap-1]->levelflags & LF_NORELOAD))
-		{
-			INT32 i;
-
-			player->playerstate = PST_REBORN;
-
-			P_LoadThingsOnly();
-
-			// Do a wipe
-			wipegamestate = -1;
-
-			if (player->starpostnum) // SRB2kart
-				starpost = true;
-
-			for (i = 0; i <= splitscreen; i++)
-			{
-				if (camera[i].chase)
-					P_ResetCamera(&players[displayplayers[i]], &camera[i]);
-			}
-
-			// clear cmd building stuff
-			memset(gamekeydown, 0, sizeof (gamekeydown));
-			for (i = 0;i < JOYAXISSET; i++)
-			{
-				joyxmove[i] = joyymove[i] = 0;
-				joy2xmove[i] = joy2ymove[i] = 0;
-				joy3xmove[i] = joy3ymove[i] = 0;
-				joy4xmove[i] = joy4ymove[i] = 0;
-			}
-			mousex = mousey = 0;
-			mouse2x = mouse2y = 0;
-
-			// clear hud messages remains (usually from game startup)
-			CON_ClearHUD();
-
-			// Starpost support
-			G_SpawnPlayer(playernum, starpost);
-
-			if (botingame)
-			{ // Bots respawn next to their master.
-				players[displayplayers[1]].playerstate = PST_REBORN;
-				G_SpawnPlayer(displayplayers[1], false);
-			}
-		}
-		else
-		{
-#ifdef HAVE_BLUA
-			LUAh_MapChange(gamemap);
-#endif
-			G_DoLoadLevel(true);
-		}
-	}*/
-	else
 	{
 		// respawn at the start
 		mobj_t *oldmo = NULL;
 
-		if (player->starpostnum || ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) && player->laps)) // SRB2kart
+		// Now only respawn at the start if you haven't crossed it at all
+		if (player->laps) // SRB2kart
 			starpost = true;
 
 		// first dissasociate the corpse
@@ -3257,13 +3228,54 @@ void G_AddPlayer(INT32 playernum)
 	p->jointime = 0;
 	p->playerstate = PST_REBORN;
 
-	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN; // Set everything
+	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
 }
 
 void G_ExitLevel(void)
 {
 	if (gamestate == GS_LEVEL)
 	{
+		if (grandprixinfo.gp == true && grandprixinfo.wonround != true)
+		{
+			UINT8 i;
+
+			// You didn't win...
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && !players[i].spectator && !players[i].bot)
+				{
+					if (players[i].lives > 0)
+					{
+						break;
+					}
+				}
+			}
+
+			if (i == MAXPLAYERS)
+			{
+				// GAME OVER, try again from the start!
+
+				if (netgame)
+				{
+					; // restart cup here if we do online GP
+				}
+				else
+				{
+					D_QuitNetGame();
+					CL_Reset();
+					D_StartTitle();
+				}
+			}
+			else
+			{
+				// Go redo this course.
+				G_SetRetryFlag();
+			}
+
+			return;
+		}
+
 		gameaction = ga_completed;
 		lastdraw = true;
 
@@ -3339,18 +3351,15 @@ boolean G_IsSpecialStage(INT32 mapnum)
 //
 boolean G_GametypeUsesLives(void)
 {
-	// SRB2kart NEEDS no lives
-#if 0
-	// Coop, Competitive
-	if ((gametype == GT_COOP || gametype == GT_COMPETITION)
-	 && !modeattacking // No lives in Time Attack
-	 //&& !G_IsSpecialStage(gamemap)
-	 && !(maptol & TOL_NIGHTS)) // No lives in NiGHTS
+	if ((grandprixinfo.gp == true) // In Grand Prix
+		&& (gametype == GT_RACE) // NOT in bonus round
+		&& !(modeattacking) // NOT in Record Attack
+		&& !G_IsSpecialStage(gamemap)) // NOT in special stage
+	{
 		return true;
+	}
+
 	return false;
-#else
-	return false;
-#endif
 }
 
 //
@@ -3686,8 +3695,7 @@ void G_AddMapToBuffer(INT16 map)
 static void G_DoCompleted(void)
 {
 	INT32 i, j = 0;
-	boolean gottoken = false;
-	SINT8 powertype = PWRLV_DISABLED;
+	SINT8 powertype = K_UsingPowerLevels();
 
 	tokenlist = 0; // Reset the list
 
@@ -3704,15 +3712,26 @@ static void G_DoCompleted(void)
 			// SRB2Kart: exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_TIMEOVER))
 			{
-				players[i].pflags |= PF_TIMEOVER;
-				if (P_IsLocalPlayer(&players[i]))
-					j++;
+				if (players[i].bot)
+				{
+					K_FakeBotResults(&players[i]);
+				}
+				else
+				{
+					players[i].pflags |= PF_TIMEOVER;
+
+					if (P_IsLocalPlayer(&players[i]))
+					{
+						j++;
+					}
+				}
 			}
+
 			G_PlayerFinishLevel(i); // take away cards and stuff
 		}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
-	if (G_RaceGametype() && ((multiplayer && demo.playback) || j == splitscreen+1) && (cv_inttime.value > 0))
+	if (G_RaceGametype() && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
 		S_ChangeMusicInternal("racent", true);
 
 	if (automapactive)
@@ -3727,11 +3746,33 @@ static void G_DoCompleted(void)
 	// go to next level
 	// nextmap is 0-based, unlike gamemap
 	if (nextmapoverride != 0)
+	{
 		nextmap = (INT16)(nextmapoverride-1);
-	else if (mapheaderinfo[gamemap-1]->nextlevel == 1101) // SRB2Kart: !!! WHENEVER WE GET GRAND PRIX, GO TO AWARDS MAP INSTEAD !!!
-		nextmap = (INT16)(mapheaderinfo[gamemap] ? gamemap : (spstage_start-1)); // (gamemap-1)+1 == gamemap :V
+	}
+	else if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.roundnum == 0 || grandprixinfo.cup == NULL) // Single session
+		{
+			nextmap = prevmap; // Same map
+		}
+		else
+		{
+			if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
+			{
+				nextmap = 1101; // ceremonymap
+			}
+			else
+			{
+				// Proceed to next map
+				nextmap = grandprixinfo.cup->levellist[grandprixinfo.roundnum];
+				grandprixinfo.roundnum++;
+			}
+		}
+	}
 	else
+	{
 		nextmap = (INT16)(mapheaderinfo[gamemap-1]->nextlevel-1);
+	}
 
 	// Remember last map for when you come out of the special stage.
 	if (!G_IsSpecialStage(gamemap))
@@ -3741,8 +3782,7 @@ static void G_DoCompleted(void)
 	// a map of the proper gametype -- skip levels that don't support
 	// the current gametype. (Helps avoid playing boss levels in Race,
 	// for instance).
-	if (!token && !G_IsSpecialStage(gamemap) && !modeattacking
-		&& (nextmap >= 0 && nextmap < NUMMAPS))
+	if (!modeattacking && grandprixinfo.gp == false && (nextmap >= 0 && nextmap < NUMMAPS))
 	{
 		register INT16 cm = nextmap;
 		INT16 tolflag = G_TOLFlag(gametype);
@@ -3786,44 +3826,18 @@ static void G_DoCompleted(void)
 	if (nextmap < 0 || (nextmap >= NUMMAPS && nextmap < 1100-1) || nextmap > 1102-1)
 		I_Error("Followed map %d to invalid map %d\n", prevmap + 1, nextmap + 1);
 
-	// wrap around in race
-	if (nextmap >= 1100-1 && nextmap <= 1102-1 && G_RaceGametype())
-		nextmap = (INT16)(spstage_start-1);
-
-	if (gametype == GT_COOP && token)
-	{
-		token--;
-		gottoken = true;
-
-		if (!(emeralds & EMERALD1))
-			nextmap = (INT16)(sstage_start - 1); // Special Stage 1
-		else if (!(emeralds & EMERALD2))
-			nextmap = (INT16)(sstage_start); // Special Stage 2
-		else if (!(emeralds & EMERALD3))
-			nextmap = (INT16)(sstage_start + 1); // Special Stage 3
-		else if (!(emeralds & EMERALD4))
-			nextmap = (INT16)(sstage_start + 2); // Special Stage 4
-		else if (!(emeralds & EMERALD5))
-			nextmap = (INT16)(sstage_start + 3); // Special Stage 5
-		else if (!(emeralds & EMERALD6))
-			nextmap = (INT16)(sstage_start + 4); // Special Stage 6
-		else if (!(emeralds & EMERALD7))
-			nextmap = (INT16)(sstage_start + 5); // Special Stage 7
-		else
-			gottoken = false;
-	}
-
-	if (G_IsSpecialStage(gamemap) && !gottoken)
-		nextmap = lastmap; // Exiting from a special stage? Go back to the game. Tails 08-11-2001
-
 	automapactive = false;
 
 	if (gametype != GT_COOP)
 	{
 		if (cv_advancemap.value == 0) // Stay on same map.
+		{
 			nextmap = prevmap;
+		}
 		else if (cv_advancemap.value == 2) // Go to random map.
+		{
 			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
+		}
 	}
 
 	// We are committed to this map now.
@@ -3833,14 +3847,6 @@ static void G_DoCompleted(void)
 		P_AllocMapHeader(nextmap);
 
 	// Set up power level gametype scrambles
-	if (netgame && cv_kartusepwrlv.value)
-	{
-		if (G_RaceGametype())
-			powertype = PWRLV_RACE;
-		else if (G_BattleGametype())
-			powertype = PWRLV_BATTLE;
-	}
-
 	K_SetPowerLevelScrambles(powertype);
 
 demointermission:
@@ -3900,7 +3906,7 @@ void G_NextLevel(void)
 {
 	if (gamestate != GS_VOTING)
 	{
-		if ((cv_advancemap.value == 3) && !modeattacking && !skipstats && (multiplayer || netgame))
+		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && !modeattacking && !skipstats && (multiplayer || netgame))
 		{
 			UINT8 i;
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -3997,7 +4003,7 @@ static void G_DoContinued(void)
 	token = 0;
 
 	// Reset # of lives
-	pl->lives = (ultimatemode) ? 1 : 3;
+	pl->lives = 3;
 
 	D_MapChange(gamemap, gametype, false, false, 0, false, false);
 
@@ -4566,7 +4572,7 @@ void G_SaveGame(UINT32 savegameslot)
 void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
 {
 	INT32 i;
-	UINT8 color = 0;
+	//UINT8 color = 0;
 	paused = false;
 
 	if (demo.playback)
@@ -4586,26 +4592,20 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 	// this leave the actual game if needed
 	SV_StartSinglePlayerServer();
 
-	if (savedata.lives > 0)
-	{
-		color = savedata.skincolor;
-		botskin = savedata.botskin;
-		botcolor = savedata.botcolor;
-		botingame = (botskin != 0);
-	}
-	else if (splitscreen != ssplayers)
+	if (splitscreen != ssplayers)
 	{
 		splitscreen = ssplayers;
 		SplitScreen_OnChange();
 	}
 
-	if (!color && !modeattacking)
-		color = skins[pickedchar].prefcolor;
+	//if (!color)
+		//color = skins[pickedchar].prefcolor;
+
 	SetPlayerSkinByNum(consoleplayer, pickedchar);
 	CV_StealthSet(&cv_skin, skins[pickedchar].name);
 
-	if (color)
-		CV_StealthSetValue(&cv_playercolor, color);
+	//if (color)
+		//CV_StealthSetValue(&cv_playercolor, color);
 
 	if (mapname)
 		D_MapChange(M_MapNumber(mapname[3], mapname[4]), gametype, pencoremode, true, 1, false, FLS);
@@ -4634,62 +4634,39 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	if (!demo.playback && !netgame) // Netgame sets random seed elsewhere, demo playback sets seed just before us!
 		P_SetRandSeed(M_RandomizedSeed()); // Use a more "Random" random seed
 
-	//SRB2Kart - Score is literally the only thing you SHOULDN'T reset at all times
-	//if (resetplayer)
+	// Clear a bunch of variables
+	tokenlist = token = sstimer = redscore = bluescore = lastmap = 0;
+	racecountdown = exitcountdown = mapreset = 0;
+
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		// Clear a bunch of variables
-		tokenlist = token = sstimer = redscore = bluescore = lastmap = 0;
-		countdown = countdown2 = mapreset = 0;
+		players[i].playerstate = PST_REBORN;
+		players[i].starpostnum = 0;
+		memset(&players[i].respawn, 0, sizeof (players[i].respawn));
 
-		for (i = 0; i < MAXPLAYERS; i++)
+		// The latter two should clear by themselves, but just in case
+		players[i].pflags &= ~(PF_TAGIT|PF_TAGGED|PF_FULLSTASIS);
+
+		// Clear cheatcodes too, just in case.
+		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);
+
+		players[i].marescore = 0;
+
+		if (resetplayer && !(multiplayer && demo.playback)) // SRB2Kart
 		{
-			players[i].playerstate = PST_REBORN;
-			players[i].starpostangle = players[i].starpostnum = players[i].starposttime = 0;
-			players[i].starpostx = players[i].starposty = players[i].starpostz = 0;
-
-#if 0
-			if (netgame || multiplayer)
-			{
-				players[i].lives = cv_startinglives.value;
-				players[i].continues = 0;
-			}
-			else if (pultmode)
-			{
-				players[i].lives = 1;
-				players[i].continues = 0;
-			}
-			else
-			{
-				players[i].lives = 3;
-				players[i].continues = 1;
-			}
-
+			players[i].lives = 3;
 			players[i].xtralife = 0;
-#else
-			players[i].lives = 1; // SRB2Kart
-#endif
-
-			// The latter two should clear by themselves, but just in case
-			players[i].pflags &= ~(PF_TAGIT|PF_TAGGED|PF_FULLSTASIS);
-
-			// Clear cheatcodes too, just in case.
-			players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);
-
-			players[i].marescore = 0;
-
-			if (resetplayer && !(multiplayer && demo.playback)) // SRB2Kart
-			{
-				players[i].score = 0;
-			}
+			players[i].totalring = 0;
+			players[i].score = 0;
 		}
-
-		// Reset unlockable triggers
-		unlocktriggers = 0;
-
-		// clear itemfinder, just in case
-		if (!dedicated)	// except in dedicated servers, where it is not registered and can actually I_Error debug builds
-			CV_StealthSetValue(&cv_itemfinder, 0);
 	}
+
+	// Reset unlockable triggers
+	unlocktriggers = 0;
+
+	// clear itemfinder, just in case
+	if (!dedicated)	// except in dedicated servers, where it is not registered and can actually I_Error debug builds
+		CV_StealthSetValue(&cv_itemfinder, 0);
 
 	// internal game map
 	// well this check is useless because it is done before (d_netcmd.c::command_map_f)
@@ -4790,9 +4767,14 @@ char *G_BuildMapTitle(INT32 mapnum)
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_GHOST        0x01 // This demo contains ghost data too!
-#define DF_RECORDATTACK 0x02 // This demo is from record attack and contains its final completion time!
-#define DF_NIGHTSATTACK 0x04 // This demo is from NiGHTS attack and contains its time left, score, and mares!
+#define DF_TIMEATTACK   0x02 // This demo is from Time Attack and contains its final completion time & best lap!
+#define DF_BREAKTHECAPSULES 0x04 // This demo is from Break the Capsules and contains its final completion time!
 #define DF_ATTACKMASK   0x06 // This demo is from ??? attack and contains ???
+
+#ifdef HAVE_BLUA
+#define DF_LUAVARS		0x20 // this demo contains extra lua vars; this is mostly used for backwards compability
+#endif
+
 #define DF_ATTACKSHIFT  1
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
@@ -4829,7 +4811,6 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 // Not used for Metal Sonic
 #define GZT_SPRITE 0x10 // Animation frame
 #define GZT_EXTRA  0x20
-#define GZT_NIGHTS 0x40 // NiGHTS Mode stuff!
 
 // GZT_EXTRA flags
 #define EZT_THOK   0x01 // Spawned a thok object
@@ -4913,6 +4894,16 @@ void G_ReadDemoExtraData(void)
 	INT32 p, extradata, i;
 	char name[17];
 
+	if (leveltime > starttime)
+	{
+		rewind_t *rewind = CL_SaveRewindPoint(demo_p - demobuffer);
+		if (rewind)
+		{
+			memcpy(rewind->oldcmd, oldcmd, sizeof (oldcmd));
+			memcpy(rewind->oldghost, oldghost, sizeof (oldghost));
+		}
+	}
+
 	memset(name, '\0', 17);
 
 	p = READUINT8(demo_p);
@@ -4924,7 +4915,10 @@ void G_ReadDemoExtraData(void)
 		if (extradata & DXD_RESPAWN)
 		{
 			if (players[p].mo)
-				P_DamageMobj(players[p].mo, NULL, NULL, 10000); // Is this how this should work..?
+			{
+				// Is this how this should work..?
+				K_DoIngameRespawn(&players[p]);
+			}
 		}
 		if (extradata & DXD_SKIN)
 		{
@@ -4963,6 +4957,25 @@ void G_ReadDemoExtraData(void)
 			// Name
 			M_Memcpy(player_names[p],demo_p,16);
 			demo_p += 16;
+		}
+		if (extradata & DXD_FOLLOWER)
+		{
+			// Set our follower
+			M_Memcpy(name, demo_p, 16);
+			demo_p += 16;
+			SetPlayerFollower(p, name);
+
+			// Follower's color
+			M_Memcpy(name, demo_p, 16);
+			demo_p += 16;
+			for (i = 0; i < MAXSKINCOLORS; i++)
+				if (!stricmp(KartColor_Names[i], name))				// SRB2kart
+				{
+					players[p].followercolor = i;
+					break;
+				}
+
+
 		}
 		if (extradata & DXD_PLAYSTATE)
 		{
@@ -5066,6 +5079,7 @@ void G_WriteDemoExtraData(void)
 
 				WRITEUINT8(demo_p, skins[players[i].skin].kartspeed);
 				WRITEUINT8(demo_p, skins[players[i].skin].kartweight);
+
 			}
 			if (demo_extradata[i] & DXD_COLOR)
 			{
@@ -5082,6 +5096,21 @@ void G_WriteDemoExtraData(void)
 				strncpy(name, player_names[i], 16);
 				M_Memcpy(demo_p,name,16);
 				demo_p += 16;
+			}
+			if (demo_extradata[i] & DXD_FOLLOWER)
+			{
+				// write follower
+				memset(name, 0, 16);
+				strncpy(name, followers[players[i].followerskin].skinname, 16);
+				M_Memcpy(demo_p, name, 16);
+				demo_p += 16;
+
+				// write follower color
+				memset(name, 0, 16);
+				strncpy(name, Followercolor_cons_t[players[i].followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+				M_Memcpy(demo_p,name,16);
+				demo_p += 16;
+
 			}
 			if (demo_extradata[i] & DXD_PLAYSTATE)
 			{
@@ -5150,10 +5179,10 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	// SRB2kart: Copy-pasted from ticcmd building, removes that crappy demo cam
 	if (((players[displayplayers[0]].mo && players[displayplayers[0]].speed > 0) // Moving
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (players[displayplayers[0]].kartstuff[k_respawn]) // Respawning
+		|| (players[displayplayers[0]].respawn.state != RESPAWNST_NONE) // Respawning
 		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
 		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
-		&& (players[displayplayers[0]].kartstuff[k_sneakertimer] || players[displayplayers[0]].kartstuff[k_levelbooster]))) // Spinning and boosting cancels out spinout
+		&& players[displayplayers[0]].kartstuff[k_sneakertimer])) // Spinning and boosting cancels out spinout
 		localangle[0] += (cmd->angleturn<<16);
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
@@ -5331,13 +5360,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		return;
 	if (!(demoflags & DF_GHOST))
 		return; // No ghost data to write.
-
-	if (ghost->player && ghost->player->pflags & PF_NIGHTSMODE && ghost->tracer)
-	{
-		// We're talking about the NiGHTS thing, not the normal platforming thing!
-		ziptic |= GZT_NIGHTS;
-		ghost = ghost->tracer;
-	}
 
 	ziptic_p = demo_p++; // the ziptic, written at the end of this function
 
@@ -5555,12 +5577,6 @@ void G_ConsGhostTic(INT32 playernum)
 		demo_p++;
 	if (ziptic & GZT_SPRITE)
 		demo_p++;
-	if(ziptic & GZT_NIGHTS) {
-		if (!testmo || !testmo->player || !(testmo->player->pflags & PF_NIGHTSMODE) || !testmo->tracer)
-			nightsfail = true;
-		else
-			testmo = testmo->tracer;
-	}
 
 	if (ziptic & GZT_EXTRA)
 	{ // But wait, there's more!
@@ -5696,6 +5712,8 @@ void G_GhostTicker(void)
 					g->p += 16; // Same tbh
 				if (ziptic & DXD_NAME)
 					g->p += 16; // yea
+				if (ziptic & DXD_FOLLOWER)
+					g->p += 32; // ok (32 because there's both the skin and the colour)
 				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
 					I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
 			}
@@ -5924,6 +5942,8 @@ static rewindinfo_t *rewindhead = NULL; // Reverse chronological order
 
 void G_InitDemoRewind(void)
 {
+	CL_ClearRewinds();
+
 	while (rewindhead)
 	{
 		rewindinfo_t *p = rewindhead->prev;
@@ -6045,19 +6065,35 @@ void G_ConfirmRewind(tic_t rewindtime)
 
 	CV_StealthSetValue(&cv_renderview, 0);
 
-	if (rewindtime > starttime)
+	if (rewindtime <= starttime)
 	{
-		sound_disabled = true; // Prevent sound spam
-		demo.rewinding = true;
+		demo.rewinding = false;
+		G_DoPlayDemo(NULL); // Restart the current demo
 	}
 	else
-		demo.rewinding = false;
+	{
+		rewind_t *rewind;
+		sound_disabled = true; // Prevent sound spam
+		demo.rewinding = true;
 
-	G_DoPlayDemo(NULL); // Restart the current demo
+		rewind = CL_RewindToTime(rewindtime);
+
+		if (rewind)
+		{
+			demo_p = demobuffer + rewind->demopos;
+			memcpy(oldcmd, rewind->oldcmd, sizeof (oldcmd));
+			memcpy(oldghost, rewind->oldghost, sizeof (oldghost));
+			paused = false;
+		}
+		else
+		{
+			demo.rewinding = true;
+			G_DoPlayDemo(NULL); // Restart the current demo
+		}
+	}
 
 	for (j = 0; j < rewindtime && leveltime < rewindtime; j++)
 	{
-		//TryRunTics(1);
 		G_Ticker((j % NEWTICRATERATIO) == 0);
 	}
 
@@ -6068,6 +6104,9 @@ void G_ConfirmRewind(tic_t rewindtime)
 	wipegamestate = gamestate; // No fading back in!
 
 	COM_BufInsertText("renderview on\n");
+
+	if (demo.freecam)
+		return;	// don't touch from there
 
 	splitscreen = oldss;
 	displayplayers[0] = olddp1;
@@ -6344,6 +6383,10 @@ void G_BeginRecording(void)
 	if (encoremode)
 		demoflags |= DF_ENCORE;
 
+#ifdef HAVE_BLUA
+	demoflags |= DF_LUAVARS;
+#endif
+
 	// Setup header.
 	M_Memcpy(demo_p, DEMOHEADER, 12); demo_p += 12;
 	WRITEUINT8(demo_p,VERSION);
@@ -6391,6 +6434,10 @@ void G_BeginRecording(void)
 			WRITEUINT32(demo_p,UINT32_MAX); // time
 			WRITEUINT32(demo_p,UINT32_MAX); // lap
 			break;
+		case ATTACKING_CAPSULES: // 2
+			demotime_p = demo_p;
+			WRITEUINT32(demo_p,UINT32_MAX); // time
+			break;
 		default: // 3
 			break;
 	}
@@ -6405,6 +6452,12 @@ void G_BeginRecording(void)
 	CV_SaveNetVars(&demo_p, true);
 
 	// Now store some info for each in-game player
+
+	// Lat' 12/05/19: Do note that for the first game you load, everything that gets saved here is total garbage;
+	// The name will always be Player <n>, the skin sonic, the color None and the follower 0. This is only correct on subsequent games.
+	// In the case of said first game, the skin and the likes are updated with Got_NameAndColor, which are then saved in extradata for the demo with DXD_SKIN in r_things.c for instance.
+
+
 	for (p = 0; p < MAXPLAYERS; p++) {
 		if (playeringame[p]) {
 			player = &players[p];
@@ -6429,6 +6482,25 @@ void G_BeginRecording(void)
 			M_Memcpy(demo_p,name,16);
 			demo_p += 16;
 
+			// Save follower's skin name
+			// PS: We must check for 'follower' to determine if the followerskin is valid. It's going to be 0 if we don't have a follower, but 0 is also absolutely a valid follower!
+			// Doesn't really matter if the follower mobj is valid so long as it exists in a way or another.
+
+			memset(name, 0, 16);
+			if (player->follower)
+				strncpy(name, followers[player->followerskin].skinname, 16);
+			else
+				strncpy(name, "None", 16);	// Say we don't have one, then.
+
+			M_Memcpy(demo_p,name,16);
+			demo_p += 16;
+
+			// Save follower's colour
+			memset(name, 0, 16);
+			strncpy(name, Followercolor_cons_t[player->followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+			M_Memcpy(demo_p, name, 16);
+			demo_p += 16;
+
 			// Score, since Kart uses this to determine where you start on the map
 			WRITEUINT32(demo_p, player->score);
 
@@ -6438,10 +6510,16 @@ void G_BeginRecording(void)
 			// Kart speed and weight
 			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
 			WRITEUINT8(demo_p, skins[player->skin].kartweight);
+
 		}
 	}
 
 	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
+
+#ifdef HAVE_BLUA
+	// player lua vars, always saved even if empty
+	LUA_ArchiveDemo();
+#endif
 
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
@@ -6533,11 +6611,16 @@ void G_SetDemoTime(UINT32 ptime, UINT32 plap)
 {
 	if (!demo.recording || !demotime_p)
 		return;
-
-	if (demoflags & DF_RECORDATTACK)
+	if (demoflags & DF_TIMEATTACK)
 	{
 		WRITEUINT32(demotime_p, ptime);
 		WRITEUINT32(demotime_p, plap);
+		demotime_p = NULL;
+	}
+	else if (demoflags & DF_BREAKTHECAPSULES)
+	{
+		WRITEUINT32(demotime_p, ptime);
+		(void)plap;
 		demotime_p = NULL;
 	}
 }
@@ -6589,7 +6672,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Too many files loaded to add anymore for demo playback\n"));
 				if (!CON_Ready())
-					M_StartMessage(M_GetText("There are too many files loaded to add this demo's add-ons.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
+					M_StartMessage(M_GetText("There are too many files loaded to add this demo's addons.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
 			}
 			else if (ncs != FS_FOUND)
 			{
@@ -6601,7 +6684,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 					CONS_Alert(CONS_NOTICE, M_GetText("Unknown error finding file %s\n"), filename);
 
 				if (!CON_Ready())
-					M_StartMessage(M_GetText("There were errors trying to add this demo's add-ons. Check the console for more information.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
+					M_StartMessage(M_GetText("There were errors trying to add this demo's addons. Check the console for more information.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
 			}
 			else
 			{
@@ -6715,6 +6798,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	UINT8 c;
 	UINT16 s ATTRUNUSED;
 	UINT8 aflags = 0;
+	boolean uselaps = false;
 
 	// load the new file
 	FIL_DefaultExtension(newname, ".lmp");
@@ -6741,20 +6825,17 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p++; // gametype
 	G_SkipDemoExtraFiles(&p);
 
-	aflags = flags & (DF_RECORDATTACK|DF_NIGHTSATTACK);
+	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
 	I_Assert(aflags);
-	if (flags & DF_RECORDATTACK)
-	{
-		newtime = READUINT32(p);
+
+	if (flags & DF_TIMEATTACK)
+		uselaps = true; // get around uninitalized error
+
+	newtime = READUINT32(p);
+	if (uselaps)
 		newlap = READUINT32(p);
-	}
-	/*else if (flags & DF_NIGHTSATTACK)
-	{
-		newtime = READUINT32(p);
-		newscore = READUINT32(p);
-	}*/
-	else // appease compiler
-		return 0;
+	else
+		newlap = UINT32_MAX;
 
 	Z_Free(buffer);
 
@@ -6806,28 +6887,32 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 		Z_Free(buffer);
 		return UINT8_MAX;
 	}
-	if (flags & DF_RECORDATTACK)
-	{
-		oldtime = READUINT32(p);
+
+	oldtime = READUINT32(p);
+	if (uselaps)
 		oldlap = READUINT32(p);
-	}
-	/*else if (flags & DF_NIGHTSATTACK)
-	{
-		oldtime = READUINT32(p);
-		oldscore = READUINT32(p);
-	}*/
-	else // appease compiler
-		return UINT8_MAX;
+	else
+		oldlap = 0;
 
 	Z_Free(buffer);
 
 	c = 0;
-	if (newtime < oldtime
-	|| (newtime == oldtime && (newlap < oldlap)))
-		c |= 1; // Better time
-	if (newlap < oldlap
-	|| (newlap == oldlap && newtime < oldtime))
-		c |= 1<<1; // Better lap time
+
+	if (uselaps)
+	{
+		if (newtime < oldtime
+		|| (newtime == oldtime && (newlap < oldlap)))
+			c |= 1; // Better time
+		if (newlap < oldlap
+		|| (newlap == oldlap && newtime < oldtime))
+			c |= 1<<1; // Better lap time
+	}
+	else
+	{
+		if (newtime < oldtime)
+			c |= 1; // Better time
+	}
+
 	return c;
 }
 
@@ -6946,7 +7031,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	(void)extrainfo_p;
 	sprintf(pdemo->winnername, "transrights420");
 	pdemo->winnerskin = 1;
-	pdemo->winnercolor = SKINCOLOR_MOONSLAM;
+	pdemo->winnercolor = SKINCOLOR_MOONSET;
 	pdemo->winnertime = 6666;*/
 
 	// Read standings!
@@ -7015,7 +7100,7 @@ void G_DoPlayDemo(char *defdemoname)
 {
 	UINT8 i, p;
 	lumpnum_t l;
-	char skin[17],color[17],*n,*pdemoname;
+	char skin[17],color[17],follower[17],*n,*pdemoname;
 	UINT8 version,subversion;
 	UINT32 randseed;
 	char msg[1024];
@@ -7029,6 +7114,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 	skin[16] = '\0';
 	color[16] = '\0';
+	follower[16] = '\0';
 
 	// No demo name means we're restarting the current demo
 	if (defdemoname == NULL)
@@ -7202,19 +7288,18 @@ void G_DoPlayDemo(char *defdemoname)
 
 	switch (modeattacking)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		hu_demotime  = READUINT32(demo_p);
-		hu_demolap  = READUINT32(demo_p);
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		hu_demotime  = READUINT32(demo_p);
-		hu_demoscore = READUINT32(demo_p);
-		break;*/
-	default: // 3
-		modeattacking = ATTACKING_NONE;
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			hu_demotime = READUINT32(demo_p);
+			hu_demolap = READUINT32(demo_p);
+			break;
+		case ATTACKING_CAPSULES: // 2
+			hu_demotime = READUINT32(demo_p);
+			break;
+		default: // 3
+			modeattacking = ATTACKING_NONE;
+			break;
 	}
 
 	// Random seed
@@ -7295,7 +7380,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 			if (modeattacking)
 			{
-				snprintf(msg, 1024, M_GetText("%s is a record attack replay with spectators, and is thus invalid.\n"), pdemoname);
+				snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with spectators, and is thus invalid.\n"), pdemoname);
 				CONS_Alert(CONS_ERROR, "%s", msg);
 				M_StartMessage(msg, NULL, MM_NOTHING);
 				Z_Free(pdemoname);
@@ -7309,7 +7394,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 		if (modeattacking && numslots > 1)
 		{
-			snprintf(msg, 1024, M_GetText("%s is a record attack replay with multiple players, and is thus invalid.\n"), pdemoname);
+			snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with multiple players, and is thus invalid.\n"), pdemoname);
 			CONS_Alert(CONS_ERROR, "%s", msg);
 			M_StartMessage(msg, NULL, MM_NOTHING);
 			Z_Free(pdemoname);
@@ -7344,6 +7429,23 @@ void G_DoPlayDemo(char *defdemoname)
 				break;
 			}
 
+		// Follower
+		M_Memcpy(follower, demo_p, 16);
+		demo_p += 16;
+		SetPlayerFollower(p, follower);
+
+		// Follower colour
+		M_Memcpy(color, demo_p, 16);
+		demo_p += 16;
+		for (i = 0; i < MAXSKINCOLORS +2; i++)	// +2 because of Match and Opposite
+		{
+				if (!stricmp(Followercolor_cons_t[i].strvalue, color))
+				{
+						players[p].followercolor = i;
+						break;
+				}
+		}
+
 		// Score, since Kart uses this to determine where you start on the map
 		players[p].score = READUINT32(demo_p);
 
@@ -7360,6 +7462,18 @@ void G_DoPlayDemo(char *defdemoname)
 		// Look for the next player
 		p = READUINT8(demo_p);
 	}
+
+// end of player read (the 0xFF marker)
+// so this is where we are to read our lua variables (if possible!)
+#ifdef HAVE_BLUA
+	if (demoflags & DF_LUAVARS)	// again, used for compability, lua shit will be saved to replays regardless of if it's even been loaded
+	{
+		if (!gL)	// No Lua state! ...I guess we'll just start one...
+			LUA_ClearState();
+
+		LUA_UnArchiveDemo();
+	}
+#endif
 
 	splitscreen = 0;
 
@@ -7509,16 +7623,16 @@ void G_AddGhost(char *defdemoname)
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
-	case ATTACKING_NONE: // 0
-		break;
-	case ATTACKING_RECORD: // 1
-		p += 8; // demo time, lap
-		break;
-	/*case ATTACKING_NIGHTS: // 2
-		p += 8; // demo time left, score
-		break;*/
-	default: // 3
-		break;
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_RECORD: // 1
+			p += 8; // demo time, lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			p += 4; // demo time
+			break;
+		default: // 3
+			break;
 	}
 
 	p += 4; // random seed
@@ -7560,6 +7674,9 @@ void G_AddGhost(char *defdemoname)
 	// Color
 	M_Memcpy(color, p, 16);
 	p += 16;
+
+	// Follower data was here, skip it, we don't care about it for ghosts.
+	p += 32;	// followerskin (16) + followercolor (16)
 
 	p += 4; // score
 	p += 2; // powerlevel
@@ -7625,7 +7742,7 @@ void G_AddGhost(char *defdemoname)
 		}
 		gh->mo->z = z;
 	}
-	gh->mo->state = states+S_KART_STND1; // SRB2kart - was S_PLAY_STND
+	gh->mo->state = states+S_KART_STILL1; // SRB2kart - was S_PLAY_STND
 	gh->mo->sprite = gh->mo->state->sprite;
 	gh->mo->frame = (gh->mo->state->frame & FF_FRAMEMASK) | tr_trans20<<FF_TRANSSHIFT;
 	gh->mo->tics = -1;
@@ -7709,6 +7826,9 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 			break;
 		case ATTACKING_RECORD: // 1
 			p += 8; // demo time, lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			p += 4; // demo time
 			break;
 		default: // 3
 			break;
@@ -7888,8 +8008,18 @@ void G_StopDemo(void)
 	demo.timing = false;
 	singletics = false;
 
+	demo.freecam = false;
+	// reset democam shit too:
+	democam.cam = NULL;
+	democam.soundmobj = NULL;
+	democam.localangle = 0;
+	democam.localaiming = 0;
+	democam.turnheld = false;
+	democam.keyboardlook = false;
+
 	CV_SetValue(&cv_playbackspeed, 1);
 	demo.rewinding = false;
+	CL_ClearRewinds();
 
 	if (gamestate == GS_LEVEL && rendermode != render_none)
 	{
@@ -8041,7 +8171,7 @@ void G_SaveDemo(void)
 	free(demobuffer);
 	demo.recording = false;
 
-	if (modeattacking != ATTACKING_RECORD)
+	if (!modeattacking)
 	{
 		if (demo.savemode == DSM_SAVED)
 			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);
@@ -8073,7 +8203,7 @@ boolean G_DemoTitleResponder(event_t *ev)
 		return true;
 	}
 
-	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && hu_font[ch-HU_FONTSTART])
+	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && fontv[HU_FONT].font[ch-HU_FONTSTART])
 	  || ch == ' ') // Allow spaces, of course
 	{
 		len = strlen(demo.titlename);

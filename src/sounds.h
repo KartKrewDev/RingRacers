@@ -14,6 +14,8 @@
 #ifndef __SOUNDS__
 #define __SOUNDS__
 
+#include "doomdef.h"
+
 // Customisable sounds for Skins
 typedef enum
 {
@@ -54,7 +56,7 @@ typedef enum
 } skinsound_t;
 
 // free sfx for S_AddSoundFx()
-#define NUMSFXFREESLOTS 800 // Matches SOC Editor.
+#define NUMSFXFREESLOTS 1600 // Matches SOC Editor.
 #define NUMSKINSFXSLOTS (MAXSKINS*NUMSKINSOUNDS)
 
 //
@@ -892,6 +894,7 @@ typedef enum
 	sfx_toada,
 	sfx_bhurry,
 	sfx_bsnipe,
+	sfx_sploss,
 	sfx_itfree,
 	sfx_dbgsal,
 

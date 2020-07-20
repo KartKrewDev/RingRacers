@@ -107,7 +107,23 @@ typedef struct camera_s
 
 	// SRB2Kart: camera pans while drifting
 	fixed_t pan;
+	// SRB2Kart: camera pitches on slopes
+	angle_t pitch;
 } camera_t;
+
+// demo freecam or something before i commit die
+struct demofreecam_s {
+
+	camera_t *cam;	// this is useful when the game is paused, notably
+	mobj_t *soundmobj;	// mobj to play sound from, used in s_sound
+	
+	angle_t localangle;	// keeps track of the cam angle for cmds
+	angle_t localaiming;	// ditto with aiming
+	boolean turnheld;	// holding turn button for gradual turn speed
+	boolean keyboardlook;	// keyboard look
+};
+
+extern struct demofreecam_s democam;
 
 extern camera_t camera[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_dist, cv_cam_still, cv_cam_height;
@@ -133,7 +149,9 @@ void P_AddPlayerScore(player_t *player, UINT32 amount);
 void P_ResetCamera(player_t *player, camera_t *thiscam);
 boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);
 void P_SlideCameraMove(camera_t *thiscam);
+void P_DemoCameraMovement(camera_t *cam);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
+void P_InitCameraCmd(void);
 boolean P_PlayerInPain(player_t *player);
 void P_DoPlayerPain(player_t *player, mobj_t *source, mobj_t *inflictor);
 void P_ResetPlayer(player_t *player);
@@ -180,7 +198,6 @@ boolean P_LookForEnemies(player_t *player);
 void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius);
 void P_HomingAttack(mobj_t *source, mobj_t *enemy); /// \todo doesn't belong in p_user
 //boolean P_SuperReady(player_t *player);
-boolean P_AnalogMove(player_t *player);
 /*boolean P_TransferToNextMare(player_t *player);
 UINT8 P_FindLowestMare(void);*/
 UINT8 P_FindLowestLap(void);
@@ -216,8 +233,6 @@ void P_RespawnSpecials(void);
 
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 
-mobj_t *P_SpawnShadowMobj(mobj_t * caster);
-
 void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
 
@@ -228,9 +243,6 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
 //void P_RunShields(void);
 void P_RunOverlays(void);
-fixed_t P_CalculateShadowFloor(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player);
-void P_RunShadows(void);
-void P_RunBattleOvertime(void);
 void P_MobjThinker(mobj_t *mobj);
 boolean P_RailThinker(mobj_t *mobj);
 void P_PushableThinker(mobj_t *mobj);
@@ -358,6 +370,12 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height);
 boolean PIT_PushableMoved(mobj_t *thing);
 
 boolean P_DoSpring(mobj_t *spring, mobj_t *object);
+
+fixed_t P_GetFOFTopZAt (ffloor_t *rover, fixed_t x, fixed_t y);
+fixed_t P_GetFOFBottomZAt (ffloor_t *rover, fixed_t x, fixed_t y);
+
+fixed_t P_VeryTopOfFOF (ffloor_t *rover);
+fixed_t P_VeryBottomOfFOF (ffloor_t *rover);
 
 //
 // P_SETUP

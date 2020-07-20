@@ -23,6 +23,8 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "k_battle.h"
+#include "k_waypoint.h"
 
 // Object place
 #include "m_cheat.h"
@@ -58,8 +60,6 @@ void Command_Numthinkers_f(void)
 		CONS_Printf(M_GetText("numthinkers <#>: Count number of thinkers\n"));
 		CONS_Printf(
 			"\t1: P_MobjThinker\n"
-			/*"\t2: P_RainThinker\n"
-			"\t3: P_SnowThinker\n"*/
 			"\t2: P_NullPrecipThinker\n"
 			"\t3: T_Friction\n"
 			"\t4: T_Pusher\n"
@@ -75,14 +75,6 @@ void Command_Numthinkers_f(void)
 			action = (actionf_p1)P_MobjThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_MobjThinker");
 			break;
-		/*case 2:
-			action = (actionf_p1)P_RainThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_RainThinker");
-			break;
-		case 3:
-			action = (actionf_p1)P_SnowThinker;
-			CONS_Printf(M_GetText("Number of %s: "), "P_SnowThinker");
-			break;*/
 		case 2:
 			action = (actionf_p1)P_NullPrecipThinker;
 			CONS_Printf(M_GetText("Number of %s: "), "P_NullPrecipThinker");
@@ -182,6 +174,7 @@ void P_InitThinkers(void)
 {
 	thinkercap.prev = thinkercap.next = &thinkercap;
 	waypointcap = NULL;
+	kitemcap = NULL;
 }
 
 //
@@ -597,11 +590,13 @@ void P_Ticker(boolean run)
 			leveltime = (leveltime-1) & ~3;
 			G_PreviewRewind(leveltime);
 		}
+		else if (demo.freecam && democam.cam)	// special case: allow freecam to MOVE during pause!
+			P_DemoCameraMovement(democam.cam);
 
 		return;
 	}
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	P_MapStart();
@@ -623,6 +618,17 @@ void P_Ticker(boolean run)
 					G_ReadDemoTiccmd(&players[i].cmd, i);
 		}
 
+		// First loop: Ensure all players' distance to the finish line are all accurate
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_UpdateDistanceFromFinishLine(&players[i]);
+
+		// Second loop: Ensure all player positions reflect everyone's distances
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_KartUpdatePosition(&players[i]);
+
+		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
@@ -638,16 +644,20 @@ void P_Ticker(boolean run)
 	if (runemeraldmanager)
 		P_EmeraldManager(); // Power stone mode*/
 
+	// formality so kitemcap gets updated properly each frame.
+	P_RunKartItems();
+
 	if (run)
 	{
 		P_RunThinkers();
-		if (G_BattleGametype() && battleovertime.enabled)
-			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
+
+		if (G_BattleGametype() && battleovertime.enabled)
+			K_RunBattleOvertime();
 
 #ifdef HAVE_BLUA
 		LUAh_ThinkFrame();
@@ -658,8 +668,6 @@ void P_Ticker(boolean run)
 	//P_RunShields();
 	P_RunOverlays();
 
-	P_RunShadows();
-
 	P_UpdateSpecials();
 	P_RespawnSpecials();
 
@@ -668,7 +676,10 @@ void P_Ticker(boolean run)
 
 	if (run)
 		leveltime++;
-	timeinmap++;
+
+	// as this is mostly used for HUD stuff, add the record attack specific hack to it as well!
+	if (!(modeattacking && !demo.playback) || leveltime >= starttime - TICRATE*4)
+		timeinmap++;
 
 	/*if (G_TagGametype())
 		P_DoTagStuff();
@@ -694,15 +705,15 @@ void P_Ticker(boolean run)
 			}
 		}
 
-		if (countdown > 1)
-			countdown--;
+		if (racecountdown > 1)
+			racecountdown--;
 
-		if (countdown2)
-			countdown2--;
+		if (exitcountdown > 1)
+			exitcountdown--;
 
-		if (indirectitemcooldown)
+		if (indirectitemcooldown > 1)
 			indirectitemcooldown--;
-		if (hyubgone)
+		if (hyubgone > 1)
 			hyubgone--;
 
 		if (G_BattleGametype())
@@ -710,6 +721,9 @@ void P_Ticker(boolean run)
 			if (wantedcalcdelay && --wantedcalcdelay <= 0)
 				K_CalculateBattleWanted();
 		}
+
+		if (bombflashtimer)
+			bombflashtimer--;	// Bomb seizure prevention
 
 		if (quake.time)
 		{
@@ -748,10 +762,15 @@ void P_Ticker(boolean run)
 			&& --mapreset <= 1
 			&& server) // Remember: server uses it for mapchange, but EVERYONE ticks down for the animation
 				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+
+		if (cv_kartdebugwaypoints.value != 0)
+		{
+			K_DebugWaypointsVisualise();
+		}
 	}
 
 	// Always move the camera.
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (camera[i].chase)
 			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
@@ -771,13 +790,24 @@ void P_PreTicker(INT32 frames)
 	INT32 i,framecnt;
 	ticcmd_t temptic;
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
 	for (framecnt = 0; framecnt < frames; ++framecnt)
 	{
 		P_MapStart();
 
+		// First loop: Ensure all players' distance to the finish line are all accurate
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_UpdateDistanceFromFinishLine(&players[i]);
+
+		// Second loop: Ensure all player positions reflect everyone's distances
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				K_KartUpdatePosition(&players[i]);
+
+		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 			{
@@ -795,13 +825,14 @@ void P_PreTicker(INT32 frames)
 			}
 
 		P_RunThinkers();
-		if (G_BattleGametype() && battleovertime.enabled)
-			P_RunBattleOvertime();
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
+
+		if (G_BattleGametype() && battleovertime.enabled)
+			K_RunBattleOvertime();
 
 #ifdef HAVE_BLUA
 		LUAh_ThinkFrame();

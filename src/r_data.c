@@ -22,7 +22,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "p_setup.h" // levelflats
-#include "v_video.h" // pLocalPalette
+#include "v_video.h" // pMasterPalette
 #include "dehacked.h"
 
 #if defined (_WIN32) || defined (_WIN32_WCE)
@@ -198,7 +198,7 @@ static UINT8 *R_GenerateTexture(size_t texnum)
 	int x, x1, x2, i;
 	size_t blocksize;
 	column_t *patchcol;
-	UINT32 *colofs;
+	UINT8 *colofs;
 
 	I_Assert(texnum <= (size_t)numtextures);
 	texture = textures[texnum];
@@ -219,10 +219,10 @@ static UINT8 *R_GenerateTexture(size_t texnum)
 		// Check the patch for holes.
 		if (texture->width > SHORT(realpatch->width) || texture->height > SHORT(realpatch->height))
 			holey = true;
-		colofs = (UINT32 *)realpatch->columnofs;
+		colofs = (UINT8 *)realpatch->columnofs;
 		for (x = 0; x < texture->width && !holey; x++)
 		{
-			column_t *col = (column_t *)((UINT8 *)realpatch + LONG(colofs[x]));
+			column_t *col = (column_t *)((UINT8 *)realpatch + LONG(*(UINT32 *)&colofs[x<<2]));
 			INT32 topdelta, prevdelta = -1, y = 0;
 			while (col->topdelta != 0xff)
 			{
@@ -250,11 +250,11 @@ static UINT8 *R_GenerateTexture(size_t texnum)
 			texturememory += blocksize;
 
 			// use the patch's column lookup
-			colofs = (UINT32 *)(void *)(block + 8);
-			texturecolumnofs[texnum] = colofs;
+			colofs = (block + 8);
+			texturecolumnofs[texnum] = (UINT32 *)colofs;
 			blocktex = block;
 			for (x = 0; x < texture->width; x++)
-				colofs[x] = LONG(LONG(colofs[x]) + 3);
+				*(UINT32 *)&colofs[x<<2] = LONG(LONG(*(UINT32 *)&colofs[x<<2]) + 3);
 			goto done;
 		}
 
@@ -270,8 +270,8 @@ static UINT8 *R_GenerateTexture(size_t texnum)
 	memset(block, 0xFF, blocksize+1); // TRANSPARENTPIXEL
 
 	// columns lookup table
-	colofs = (UINT32 *)(void *)block;
-	texturecolumnofs[texnum] = colofs;
+	colofs = block;
+	texturecolumnofs[texnum] = (UINT32 *)colofs;
 
 	// texture data after the lookup table
 	blocktex = block + (texture->width*4);
@@ -296,8 +296,8 @@ static UINT8 *R_GenerateTexture(size_t texnum)
 			patchcol = (column_t *)((UINT8 *)realpatch + LONG(realpatch->columnofs[x-x1]));
 
 			// generate column ofset lookup
-			colofs[x] = LONG((x * texture->height) + (texture->width*4));
-			R_DrawColumnInCache(patchcol, block + LONG(colofs[x]), patch->originy, texture->height);
+			*(UINT32 *)&colofs[x<<2] = LONG((x * texture->height) + (texture->width*4));
+			R_DrawColumnInCache(patchcol, block + LONG(*(UINT32 *)&colofs[x<<2]), patch->originy, texture->height);
 		}
 	}
 
@@ -1192,7 +1192,7 @@ void R_MakeInvertmap(void)
 INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 {
 	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb;
-	double maskamt = 0, othermask = 0;
+	double r, g, b, cbrightness, maskamt = 0, othermask = 0;
 	int mask, fog = 0;
 	size_t mapnum = num_extra_colormaps;
 	size_t i;
@@ -1300,6 +1300,32 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 
 	num_extra_colormaps++;
 
+	if (rendermode == render_soft)
+	{
+		for (i = 0; i < 256; i++)
+		{
+			r = pMasterPalette[i].s.red;
+			g = pMasterPalette[i].s.green;
+			b = pMasterPalette[i].s.blue;
+			cbrightness = sqrt((r*r) + (g*g) + (b*b));
+
+			map[i][0] = (cbrightness * cmaskr) + (r * othermask);
+			if (map[i][0] > 255.0l)
+				map[i][0] = 255.0l;
+			deltas[i][0] = (map[i][0] - cdestr) / (double)fadedist;
+
+			map[i][1] = (cbrightness * cmaskg) + (g * othermask);
+			if (map[i][1] > 255.0l)
+				map[i][1] = 255.0l;
+			deltas[i][1] = (map[i][1] - cdestg) / (double)fadedist;
+
+			map[i][2] = (cbrightness * cmaskb) + (b * othermask);
+			if (map[i][2] > 255.0l)
+				map[i][2] = 255.0l;
+			deltas[i][2] = (map[i][2] - cdestb) / (double)fadedist;
+		}
+	}
+
 	foundcolormaps[mapnum] = LUMPERROR;
 
 	// aligned on 8 bit for asm code
@@ -1313,7 +1339,6 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 
 	if (rendermode == render_soft)
 	{
-		double r, g, b, cbrightness;
 		int p;
 		lighttable_t *colormap_p;
 
@@ -1324,9 +1349,9 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 		//  map[i]'s values are decremented by after each use
 		for (i = 0; i < 256; i++)
 		{
-			r = pLocalPalette[i].s.red;
-			g = pLocalPalette[i].s.green;
-			b = pLocalPalette[i].s.blue;
+			r = pMasterPalette[i].s.red;
+			g = pMasterPalette[i].s.green;
+			b = pMasterPalette[i].s.blue;
 			cbrightness = sqrt((r*r) + (g*g) + (b*b));
 
 			map[i][0] = (cbrightness * cmaskr) + (r * othermask);
@@ -1402,16 +1427,20 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 
 // Thanks to quake2 source!
 // utils3/qdata/images.c
-UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b)
+UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette)
 {
 	int dr, dg, db;
 	int distortion, bestdistortion = 256 * 256 * 4, bestcolor = 0, i;
 
+	// Use master palette if none specified
+	if (palette == NULL)
+		palette = pMasterPalette;
+
 	for (i = 0; i < 256; i++)
 	{
-		dr = r - pLocalPalette[i].s.red;
-		dg = g - pLocalPalette[i].s.green;
-		db = b - pLocalPalette[i].s.blue;
+		dr = r - palette[i].s.red;
+		dg = g - palette[i].s.green;
+		db = b - palette[i].s.blue;
 		distortion = dr*dr + dg*dg + db*db;
 		if (distortion < bestdistortion)
 		{

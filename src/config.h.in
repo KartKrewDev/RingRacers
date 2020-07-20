@@ -29,7 +29,7 @@
 
 /* Manually defined asset hashes for non-CMake builds
  * Last updated 2019 / 01 / 18 - Kart v1.0.2 - Main assets
- * Last updated 2019 / 05 / 06 - Kart v1.1.0 - patch.kart
+ * Last updated 2020 / 05 / 09 - Kart v1.2 - patch.kart
  */
 
 #define ASSET_HASH_MAIN_KART     "00000000000000000000000000000000"

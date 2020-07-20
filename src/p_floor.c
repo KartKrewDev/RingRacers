@@ -1769,6 +1769,7 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 		case MT_SUPERSPARK:
 		case MT_RAIN:
 		case MT_SNOWFLAKE:
+		case MT_BLIZZARDSNOW:
 		case MT_SPLISH:
 		case MT_SMOKE:
 		case MT_SMALLBUBBLE:
@@ -2275,7 +2276,7 @@ void T_EachTimeThinker(levelspecthink_t *eachtime)
 					continue;
 
 				if (!(players[i].mo->subsector->sector == sec
-					|| P_PlayerTouchingSectorSpecial(&players[i], 2, (GETSECSPECIAL(sec->special, 2))) == sec))
+					|| P_MobjTouchingSectorSpecial(players[i].mo, 2, (GETSECSPECIAL(sec->special, 2)), false) == sec))
 					continue;
 
 				if (floortouch == true && P_IsObjectOnRealGround(players[i].mo, sec))
@@ -2536,9 +2537,9 @@ void T_CameraScanner(elevator_t *elevator)
 		lastleveltime = leveltime;
 	}
 
-	if (players[displayplayers[0]].mo)
+	if (players[g_localplayers[0]].mo)
 	{
-		if (players[displayplayers[0]].mo->subsector->sector == elevator->actionsector)
+		if (players[g_localplayers[0]].mo->subsector->sector == elevator->actionsector)
 		{
 			if (t_cam_dist == -42)
 				t_cam_dist = cv_cam_dist.value;
@@ -2564,9 +2565,9 @@ void T_CameraScanner(elevator_t *elevator)
 		}
 	}
 
-	if (splitscreen && players[displayplayers[1]].mo)
+	if (splitscreen && players[g_localplayers[1]].mo)
 	{
-		if (players[displayplayers[1]].mo->subsector->sector == elevator->actionsector)
+		if (players[g_localplayers[1]].mo->subsector->sector == elevator->actionsector)
 		{
 			if (t_cam2_rotate == -42)
 				t_cam2_dist = cv_cam2_dist.value;
@@ -2592,9 +2593,9 @@ void T_CameraScanner(elevator_t *elevator)
 		}
 	}
 
-	if (splitscreen > 1 && players[displayplayers[2]].mo)
+	if (splitscreen > 1 && players[g_localplayers[2]].mo)
 	{
-		if (players[displayplayers[2]].mo->subsector->sector == elevator->actionsector)
+		if (players[g_localplayers[2]].mo->subsector->sector == elevator->actionsector)
 		{
 			if (t_cam3_rotate == -42)
 				t_cam3_dist = cv_cam3_dist.value;
@@ -2620,9 +2621,9 @@ void T_CameraScanner(elevator_t *elevator)
 		}
 	}
 
-	if (splitscreen > 2 && players[displayplayers[3]].mo)
+	if (splitscreen > 2 && players[g_localplayers[3]].mo)
 	{
-		if (players[displayplayers[3]].mo->subsector->sector == elevator->actionsector)
+		if (players[g_localplayers[3]].mo->subsector->sector == elevator->actionsector)
 		{
 			if (t_cam4_rotate == -42)
 				t_cam4_dist = cv_cam4_dist.value;
@@ -2746,7 +2747,7 @@ INT32 EV_DoFloor(line_t *line, floor_e floortype)
 					dofloor->direction = -1; // down
 
 				// chained linedef executing ability
-				if (line->flags & ML_BLOCKMONSTERS)
+				if (line->flags & ML_BLOCKPLAYERS)
 				{
 					// Only set it on one of the moving sectors (the
 					// smallest numbered) and only if the front side

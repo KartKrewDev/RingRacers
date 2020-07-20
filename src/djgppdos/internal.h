@@ -1,6 +1,6 @@
-/*         ______   ___    ___ 
- *        /\  _  \ /\_ \  /\_ \ 
- *        \ \ \L\ \\//\ \ \//\ \      __     __   _ __   ___ 
+/*         ______   ___    ___
+ *        /\  _  \ /\_ \  /\_ \
+ *        \ \ \L\ \\//\ \ \//\ \      __     __   _ __   ___
  *         \ \  __ \ \ \ \  \ \ \   /'__`\ /'_ `\/\`'__\/ __`\
  *          \ \ \/\ \ \_\ \_ \_\ \_/\  __//\ \L\ \ \ \//\ \L\ \
  *           \ \_\ \_\/\____\/\____\ \____\ \____ \ \_\\ \____/
@@ -22,9 +22,9 @@
 
 #include "allegro.h"
 
-/*         ______   ___    ___ 
- *        /\  _  \ /\_ \  /\_ \ 
- *        \ \ \L\ \\//\ \ \//\ \      __     __   _ __   ___ 
+/*         ______   ___    ___
+ *        /\  _  \ /\_ \  /\_ \
+ *        \ \ \L\ \\//\ \ \//\ \      __     __   _ __   ___
  *         \ \  __ \ \ \ \  \ \ \   /'__`\ /'_ `\/\`'__\/ __`\
  *          \ \ \/\ \ \_\ \_ \_\ \_/\  __//\ \L\ \ \ \//\ \L\ \
  *           \ \_\ \_\/\____\/\____\ \____\ \____ \ \_\\ \____/
@@ -57,7 +57,7 @@
 #define FILE_CREATE(filename, handle)           handle = open(filename, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)
 #define FILE_CLOSE(handle)                      close(handle)
 #define FILE_READ(handle, buf, size, sz)        sz = read(handle, buf, size)
-#define FILE_WRITE(handle, buf, size, sz)       sz = write(handle, buf, size) 
+#define FILE_WRITE(handle, buf, size, sz)       sz = write(handle, buf, size)
 #define FILE_SEARCH_STRUCT                      struct ffblk
 #define FILE_FINDFIRST(filename, attrib, dta)   findfirst(filename, dta, attrib)
 #define FILE_FINDNEXT(dta)                      findnext(dta)
@@ -73,11 +73,11 @@
 #define ENABLE()    asm volatile ("sti")
 
 
-__INLINE__ void enter_critical(void) 
+__INLINE__ void enter_critical(void)
 {
    if (windows_version >= 3) {
       __dpmi_regs r;
-      r.x.ax = 0x1681; 
+      r.x.ax = 0x1681;
       __dpmi_int(0x2F, &r);
    }
 
@@ -85,11 +85,11 @@ __INLINE__ void enter_critical(void)
 }
 
 
-__INLINE__ void exit_critical(void) 
+__INLINE__ void exit_critical(void)
 {
    if (windows_version >= 3) {
       __dpmi_regs r;
-      r.x.ax = 0x1682; 
+      r.x.ax = 0x1682;
       __dpmi_int(0x2F, &r);
    }
 
@@ -176,9 +176,9 @@ extern int _fm_port;
 extern int _mpu_port;
 extern int _mpu_irq;
 extern int _sb_freq;
-extern int _sb_port; 
-extern int _sb_dma; 
-extern int _sb_irq; 
+extern int _sb_port;
+extern int _sb_dma;
+extern int _sb_irq;
 
 int _sb_read_dsp_version(void);
 int _sb_reset_dsp(int data);
@@ -238,8 +238,8 @@ extern volatile int _retrace_hpp_value;
 
 
 /* caches and tables for svga bank switching */
-extern int _last_bank_1, _last_bank_2; 
-extern int *_gfx_bank; 
+extern int _last_bank_1, _last_bank_2;
+extern int *_gfx_bank;
 
 
 /* bank switching routines */
@@ -282,7 +282,7 @@ extern int _crtc;
 __INLINE__ int _read_vga_register(int port, int index)
 {
    if (port==0x3C0)
-      inportb(_crtc+6); 
+      inportb(_crtc+6);
 
    outportb(port, index);
    return inportb(port+1);
@@ -292,7 +292,7 @@ __INLINE__ int _read_vga_register(int port, int index)
 /* _write_vga_register:
  *  Writes a byte to a VGA register.
  */
-__INLINE__ void _write_vga_register(int port, int index, int v) 
+__INLINE__ void _write_vga_register(int port, int index, int v)
 {
    if (port==0x3C0) {
       inportb(_crtc+6);
@@ -345,7 +345,7 @@ __INLINE__ void _vsync_out_v(void)
 __INLINE__ void _vsync_in(void)
 {
    if (_timer_use_retrace) {
-      int t = retrace_count; 
+      int t = retrace_count;
 
       do {
       } while (t == retrace_count);
@@ -555,7 +555,7 @@ typedef struct POLYGON_SEGMENT
 
 
 /* an active polygon edge */
-typedef struct POLYGON_EDGE 
+typedef struct POLYGON_EDGE
 {
    int top;                         /* top y position */
    int bottom;                      /* bottom y position */
@@ -673,7 +673,7 @@ void _poly_scanline_ptex_mask_lit32d(unsigned long addr, int w, POLYGON_SEGMENT 
 /* sound lib stuff */
 extern int _digi_volume;
 extern int _midi_volume;
-extern int _flip_pan; 
+extern int _flip_pan;
 extern int _sound_hq;
 
 extern int (*_midi_init)(void);

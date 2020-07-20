@@ -203,7 +203,7 @@ void ST_Ticker(void)
 }
 
 // 0 is default, any others are special palettes.
-static INT32 st_palette = 0;
+INT32 st_palette = 0;
 
 void ST_doPaletteStuff(void)
 {
@@ -230,7 +230,7 @@ void ST_doPaletteStuff(void)
 		if (rendermode != render_none)
 		{
 			//V_SetPaletteLump(GetPalette()); // Reset the palette -- is this needed?
-			if (!splitscreen)
+			if (!r_splitscreen)
 				V_SetPalette(palette);
 		}
 	}
@@ -515,9 +515,9 @@ static INT32 SCR(INT32 r)
 #define ST_DrawNumFromHud(h,n)        V_DrawTallNum(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, n)
 #define ST_DrawPadNumFromHud(h,n,q)   V_DrawPaddedTallNum(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, n, q)
 #define ST_DrawPatchFromHud(h,p)      V_DrawScaledPatch(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, p)
-#define ST_DrawNumFromHudWS(h,n)      V_DrawTallNum(SCX(hudinfo[h+!!splitscreen].x), SCY(hudinfo[h+!!splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n)
-#define ST_DrawPadNumFromHudWS(h,n,q) V_DrawPaddedTallNum(SCX(hudinfo[h+!!splitscreen].x), SCY(hudinfo[h+!!splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n, q)
-#define ST_DrawPatchFromHudWS(h,p)    V_DrawScaledPatch(SCX(hudinfo[h+!!splitscreen].x), SCY(hudinfo[h+!!splitscreen].y), V_NOSCALESTART|V_HUDTRANS, p)
+#define ST_DrawNumFromHudWS(h,n)      V_DrawTallNum(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n)
+#define ST_DrawPadNumFromHudWS(h,n,q) V_DrawPaddedTallNum(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n, q)
+#define ST_DrawPatchFromHudWS(h,p)    V_DrawScaledPatch(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, p)
 
 /*
 // Draw a number, scaled, over the view, maybe with set translucency
@@ -614,9 +614,7 @@ static void ST_drawDebugInfo(void)
 	}
 
 	if (cv_debug & DBG_MEMORY)
-	{
 		V_DrawRightAlignedString(320, height,     V_MONOSPACE, va("Heap used: %7sKB", sizeu1(Z_TagsUsage(0, INT32_MAX)>>10)));
-	}
 }
 
 /*
@@ -757,7 +755,7 @@ static void ST_drawLevelTitle(void)
 	INT32 dupcalc = (vid.width/vid.dupx);
 	UINT8 gtc = G_GetGametypeColor(gametype);
 	INT32 sub = 0;
-	INT32 bary = (splitscreen)
+	INT32 bary = (r_splitscreen)
 		? BASEVIDHEIGHT/2
 		: 163;
 	INT32 lvlw;
@@ -1272,7 +1270,7 @@ static void ST_drawNiGHTSHUD(void) // SRB2kart - unused.
 #endif
 	)
 	{
-		if (modeattacking == ATTACKING_NIGHTS)
+		if (modeattacking == ATTACKING_CAPSULES)
 		{
 			INT32 maretime = max(stplyr->realtime - stplyr->marebegunat, 0);
 			fixed_t cornerx = vid.width, cornery = vid.height-SCZ(20);
@@ -1514,7 +1512,7 @@ static inline void ST_drawRaceHUD(void) // SRB2kart - unused.
 		if (stplyr->exiting)
 			V_DrawString(hudinfo[HUD_LAP].x, STRINGY(hudinfo[HUD_LAP].y), V_YELLOWMAP, "FINISHED!");
 		else
-			V_DrawString(hudinfo[HUD_LAP].x, STRINGY(hudinfo[HUD_LAP].y), 0, va("Lap: %u/%d", stplyr->laps+1, cv_numlaps.value));
+			V_DrawString(hudinfo[HUD_LAP].x, STRINGY(hudinfo[HUD_LAP].y), 0, va("Lap: %u/%d", stplyr->laps, cv_numlaps.value));
 	}
 }
 */
@@ -1799,10 +1797,12 @@ static void ST_doItemFinderIconsAndSound(void) // SRB2kart - unused.
 //
 static void ST_overlayDrawer(void)
 {
-	/* SRB2kart doesn't need this stuff
 	//hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
 	{
+		K_drawKartHUD();
+
+	/* SRB2kart doesn't need this stuff
 		if (maptol & TOL_NIGHTS)
 			ST_drawNiGHTSHUD();
 		else
@@ -1826,15 +1826,15 @@ static void ST_overlayDrawer(void)
 			)
 				ST_drawLives();
 		}
-	}
 	*/
+	}
 
 	// GAME OVER pic
 	/*if (G_GametypeUsesLives() && stplyr->lives <= 0 && !(hu_showscores && (netgame || multiplayer)))
 	{
 		patch_t *p;
 
-		if (countdown == 1)
+		if (racecountdown == 1)
 			p = timeover;
 		else
 			p = sboover;
@@ -1846,8 +1846,6 @@ static void ST_overlayDrawer(void)
 	{
 		// Countdown timer for Race Mode
 		// ...moved to k_kart.c so we can take advantage of the LAPS_Y value
-
-		K_drawKartHUD();
 
 		/* SRB2kart doesn't need this stuff, I think
 		// If you are in overtime, put a big honkin' flashin' message on the screen.
@@ -1894,38 +1892,40 @@ static void ST_overlayDrawer(void)
 			V_DrawScaledPatch(hudinfo[HUD_GRAVBOOTSICO].x, STRINGY(hudinfo[HUD_GRAVBOOTSICO].y), V_SNAPTORIGHT, gravboots);
 		*/
 
-		if (!(multiplayer && demo.playback))
+		if (cv_showviewpointtext.value)
 		{
-			if(!P_IsLocalPlayer(stplyr))
+			if (!(multiplayer && demo.playback))
 			{
-				/*char name[MAXPLAYERNAME+1];
-				// shorten the name if its more than twelve characters.
-				strlcpy(name, player_names[stplyr-players], 13);*/
+				if(!P_IsLocalPlayer(stplyr))
+				{
+					/*char name[MAXPLAYERNAME+1];
+					// shorten the name if its more than twelve characters.
+					strlcpy(name, player_names[stplyr-players], 13);*/
 
-				// Show name of player being displayed
-				V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, 0, M_GetText("Viewpoint:"));
-				V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_ALLOWLOWERCASE, player_names[stplyr-players]);
+					// Show name of player being displayed
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, 0, M_GetText("VIEWPOINT:"));
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_ALLOWLOWERCASE, player_names[stplyr-players]);
+				}
 			}
-		}
-		else if (!demo.title)
-		{
+			else if (!demo.title)
+			{
+				if (!r_splitscreen)
+				{
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("VIEWPOINT:"));
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_HUDTRANSHALF|V_ALLOWLOWERCASE, player_names[stplyr-players]);
+				}
+				else if (r_splitscreen == 1)
+				{
+					char name[MAXPLAYERNAME+12];
 
-			if (!splitscreen)
-			{
-				V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("Viewpoint:"));
-				V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_HUDTRANSHALF|V_ALLOWLOWERCASE, player_names[stplyr-players]);
-			}
-			else if (splitscreen == 1)
-			{
-				char name[MAXPLAYERNAME+12];
-
-				INT32 y = (stplyr == &players[displayplayers[0]]) ? 4 : BASEVIDHEIGHT/2-12;
-				sprintf(name, "VIEWPOINT: %s", player_names[stplyr-players]);
-				V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT), name);
-			}
-			else if (splitscreen)
-			{
-				V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT), player_names[stplyr-players]);
+					INT32 y = (stplyr == &players[displayplayers[0]]) ? 4 : BASEVIDHEIGHT/2-12;
+					sprintf(name, "VIEWPOINT: %s", player_names[stplyr-players]);
+					V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT), name);
+				}
+				else if (r_splitscreen)
+				{
+					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT), player_names[stplyr-players]);
+				}
 			}
 		}
 
@@ -1954,7 +1954,7 @@ static void ST_overlayDrawer(void)
 
 	if (!hu_showscores && netgame && !mapreset)
 	{
-		/*if (G_GametypeUsesLives() && stplyr->lives <= 0 && countdown != 1)
+		/*if (G_GametypeUsesLives() && stplyr->lives <= 0 && racecountdown != 1)
 			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), 0, M_GetText("Press Viewpoint Key to watch a player."));
 		else if (gametype == GT_HIDEANDSEEK &&
 		 (!stplyr->spectator && !(stplyr->pflags & PF_TAGIT)) && (leveltime > hidetime * TICRATE))
@@ -1998,7 +1998,7 @@ static void ST_overlayDrawer(void)
 			}
 
 			// SRB2kart: changed positions & text
-			if (splitscreen)
+			if (r_splitscreen)
 			{
 				INT32 splitflags = K_calcSplitFlags(0);
 				V_DrawThinString(2, (BASEVIDHEIGHT/2)-20, V_YELLOWMAP|V_HUDTRANSHALF|splitflags, M_GetText("- SPECTATING -"));
@@ -2039,8 +2039,6 @@ static void ST_overlayDrawer(void)
 			break;
 		}
 	}
-
-	ST_drawDebugInfo();
 }
 
 void ST_DrawDemoTitleEntry(void)
@@ -2089,7 +2087,7 @@ void ST_Drawer(void)
 	UINT8 i;
 
 #ifdef SEENAMES
-	if (cv_seenames.value && cv_allowseenames.value && displayplayers[0] == consoleplayer && seenplayer && seenplayer->mo && !mapreset)
+	if (cv_seenames.value && cv_allowseenames.value && g_localplayers[0] == consoleplayer && seenplayer && seenplayer->mo && !mapreset)
 	{
 		if (cv_seenames.value == 1)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 + 15, V_HUDTRANSHALF, player_names[seenplayer-players]);
@@ -2123,7 +2121,7 @@ void ST_Drawer(void)
 	if (st_overlay)
 	{
 		// No deadview!
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			stplyr = &players[displayplayers[i]];
 			ST_overlayDrawer();
@@ -2137,4 +2135,6 @@ void ST_Drawer(void)
 	// Draw a fade on level opening
 	if (timeinmap < 16)
 		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 32-(timeinmap*2)); // Then gradually fade out from there
+
+	ST_drawDebugInfo();
 }

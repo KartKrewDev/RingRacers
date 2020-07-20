@@ -50,6 +50,8 @@ void R_SortVisSprites(void);
 //     (only sprites from namelist are added or replaced)
 void R_AddSpriteDefs(UINT16 wadnum);
 
+fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
+
 #ifdef DELFILE
 void R_DelSpriteDefs(UINT16 wadnum);
 #endif
@@ -65,6 +67,7 @@ void R_DrawMasked(void);
 // SKINS STUFF
 // -----------
 #define SKINNAMESIZE 16
+#define SKINRIVALS 3
 // should be all lowercase!! S_SKIN processing does a strlwr
 #define DEFAULTSKIN "sonic"
 #define DEFAULTSKIN2 "tails" // secondary player
@@ -93,11 +96,52 @@ typedef struct
 	UINT8 prefcolor;
 	fixed_t highresscale; // scale of highres, default is 0.5
 
+	char rivals[SKINRIVALS][SKINNAMESIZE+1]; // Your top 3 rivals for GP mode. Uses names so that you can reference skins that aren't added
+
 	// specific sounds per skin
 	sfxenum_t soundsid[NUMSKINSOUNDS]; // sound # in S_sfx table
 } skin_t;
 
 extern CV_PossibleValue_t Forceskin_cons_t[];
+//
+// for followers.
+//
+// We'll define these here because they're really just a mobj that'll follow some rules behind a player
+//
+typedef struct follower_s
+{
+	char skinname[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything.
+	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
+
+	UINT8 defaultcolor;		// default color for menus.
+
+	fixed_t scale;			// Scale relative to the player's.
+	fixed_t bubblescale;	// Bubble scale relative to the player scale. If not set, no bubble will spawn (default)
+
+	// some position shenanigans:
+	INT32 atangle;			// angle the object will be at around the player. The object itself will always face the same direction as the player.
+	INT32 dist;				// distance relative to the player. (In a circle)
+	INT32 height;			// height of the follower, this is mostly important for Z flipping.
+	INT32 zoffs;			// Z offset relative to the player's height. Cannot be negative.
+
+	// movement options
+
+	INT32 horzlag;			// Lag for X/Y displacement. Default is 2. Must be > 0 because we divide by this number.
+	INT32 vertlag;			// not Vert from Neptunia lagging, this is for Z displacement lag Default is 6. Must be > 0 because we divide by this number.
+	INT32 bobamp;			// Bob amplitude. Default is 4.
+	INT32 bobspeed;			// Arbitrary modifier for bobbing speed, default is TICRATE*2 (70).
+
+	// from there on out, everything is STATES to allow customization
+	// these are only set once when the action is performed and are then free to animate however they want.
+
+	INT32 idlestate;		// state when the player is at a standstill
+	INT32 followstate;		// state when the player is moving
+	INT32 hurtstate;		// state when the player is being hurt
+	INT32 winstate;			// state when the player has won
+	INT32 losestate;		// state when the player has lost
+	INT32 hitconfirmstate;	// state for hit confirm
+	INT32 hitconfirmtime;	// time to keep the above playing for
+} follower_t;
 
 // -----------
 // NOT SKINS STUFF !
@@ -114,7 +158,8 @@ typedef enum
 	SC_FULLBRIGHT = 1<<4,
 	SC_SEMIBRIGHT = 1<<5,
 	SC_VFLIP = 1<<6,
-	SC_ISSCALED = 1>>7,
+	SC_ISSCALED = 1<<7,
+	SC_SHADOW = 1<<8,
 	// masks
 	SC_CUTMASK = SC_TOP|SC_BOTTOM,
 	SC_FLAGMASK = ~SC_CUTMASK
@@ -139,7 +184,15 @@ typedef struct vissprite_s
 	fixed_t startfrac; // horizontal position of x1
 	fixed_t scale, sortscale; // sortscale only differs from scale for flat sprites
 	fixed_t scalestep; // only for flat sprites, 0 otherwise
+	fixed_t paperoffset, paperdistance; // for paper sprites, offset/dist relative to the angle
 	fixed_t xiscale; // negative if flipped
+
+	angle_t centerangle; // for paper sprites
+
+	struct {
+		fixed_t tan; // The amount to shear the sprite vertically per row
+		INT32 offset; // The center of the shearing location offset from x1
+	} shear;
 
 	fixed_t texturemid;
 	lumpnum_t patch;
@@ -185,11 +238,17 @@ typedef struct drawnode_s
 
 extern INT32 numskins;
 extern skin_t skins[MAXSKINS];
+extern INT32 numfollowers;
+extern follower_t followers[MAXSKINS];	// again, use the same rules as skins, no reason not to.
 
 boolean SetPlayerSkin(INT32 playernum,const char *skinname);
 void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
 INT32 R_SkinAvailable(const char *name);
 void R_AddSkins(UINT16 wadnum);
+
+INT32 R_FollowerAvailable(const char *name);
+boolean SetPlayerFollower(INT32 playernum,const char *skinname);
+void SetFollower(INT32 playernum,INT32 skinnum);
 
 #ifdef DELFILE
 void R_DelSkins(UINT16 wadnum);
@@ -208,7 +267,7 @@ char *GetPlayerFacePic(INT32 skinnum);
 // Future: [[ ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz!@ ]]
 FUNCMATH FUNCINLINE static ATTRINLINE char R_Frame2Char(UINT8 frame)
 {
-#if 1 // 2.1 compat
+#if 0 // 2.1 compat
 	return 'A' + frame;
 #else
 	if (frame < 26) return 'A' + frame;
@@ -222,7 +281,7 @@ FUNCMATH FUNCINLINE static ATTRINLINE char R_Frame2Char(UINT8 frame)
 
 FUNCMATH FUNCINLINE static ATTRINLINE UINT8 R_Char2Frame(char cn)
 {
-#if 1 // 2.1 compat
+#if 0 // 2.1 compat
 	if (cn == '+') return '\\' - 'A'; // PK3 can't use backslash, so use + instead
 	return cn - 'A';
 #else

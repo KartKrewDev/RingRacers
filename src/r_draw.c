@@ -25,7 +25,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "console.h" // Until buffering gets finished
-#include "k_kart.h" // SRB2kart
+#include "k_color.h" // SRB2kart
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -147,6 +147,7 @@ static UINT8** translationtablecache[TT_CACHE_SIZE] = {NULL};
 // SKINCOLOR DEFINITIONS HAVE BEEN MOVED TO K_KART.C
 
 CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
+CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
 /**	\brief The R_InitTranslationTables
 
@@ -299,7 +300,7 @@ void R_InitViewBuffer(INT32 width, INT32 height)
 	for (i = 0; i < height; i++)
 	{
 		ylookup[i] = ylookup1[i] = screens[0] + i*vid.width*bytesperpixel;
-		if (splitscreen == 1)
+		if (r_splitscreen == 1)
 			ylookup2[i] = screens[0] + (i+viewheight)*vid.width*bytesperpixel;
 		else
 			ylookup2[i] = screens[0] + i*vid.width*bytesperpixel + (viewwidth*bytesperpixel);

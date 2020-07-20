@@ -75,6 +75,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "fastcmp.h"
 #include "keys.h"
 #include "filesrch.h" // refreshdirmenu
+#include "k_grandprix.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -143,6 +144,8 @@ boolean advancedemo;
 INT32 debugload = 0;
 #endif
 
+char savegamename[256];
+
 #ifdef _arch_dreamcast
 char srb2home[256] = "/cd";
 char srb2path[256] = "/cd";
@@ -152,6 +155,7 @@ char srb2path[256] = ".";
 #endif
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
+static char addonsdir[MAX_WADPATH];
 
 //
 // EVENT HANDLING
@@ -180,39 +184,11 @@ void D_PostEvent_end(void) {};
 #endif
 
 // modifier keys
+// Now handled in I_OsPolling
 UINT8 shiftdown = 0; // 0x1 left, 0x2 right
 UINT8 ctrldown = 0; // 0x1 left, 0x2 right
 UINT8 altdown = 0; // 0x1 left, 0x2 right
 boolean capslock = 0;	// gee i wonder what this does.
-//
-// D_ModifierKeyResponder
-// Sets global shift/ctrl/alt variables, never actually eats events
-//
-static inline void D_ModifierKeyResponder(event_t *ev)
-{
-	if (ev->type == ev_keydown || ev->type == ev_console) switch (ev->data1)
-	{
-		case KEY_LSHIFT: shiftdown |= 0x1; return;
-		case KEY_RSHIFT: shiftdown |= 0x2; return;
-		case KEY_LCTRL: ctrldown |= 0x1; return;
-		case KEY_RCTRL: ctrldown |= 0x2; return;
-		case KEY_LALT: altdown |= 0x1; return;
-		case KEY_RALT: altdown |= 0x2; return;
-		case KEY_CAPSLOCK: capslock = !capslock; return;
-
-		default: return;
-	}
-	else if (ev->type == ev_keyup) switch (ev->data1)
-	{
-		case KEY_LSHIFT: shiftdown &= ~0x1; return;
-		case KEY_RSHIFT: shiftdown &= ~0x2; return;
-		case KEY_LCTRL: ctrldown &= ~0x1; return;
-		case KEY_RCTRL: ctrldown &= ~0x2; return;
-		case KEY_LALT: altdown &= ~0x1; return;
-		case KEY_RALT: altdown &= ~0x2; return;
-		default: return;
-	}
-}
 
 //
 // D_ProcessEvents
@@ -226,15 +202,9 @@ void D_ProcessEvents(void)
 	{
 		ev = &events[eventtail];
 
-		// Set global shift/ctrl/alt down variables
-		D_ModifierKeyResponder(ev); // never eats events
-
 		// Screenshots over everything so that they can be taken anywhere.
 		if (M_ScreenshotResponder(ev))
 			continue; // ate the event
-
-		if (CL_Responder(ev))
-			continue;
 
 		if (gameaction == ga_nothing && gamestate == GS_TITLESCREEN)
 		{
@@ -251,6 +221,11 @@ void D_ProcessEvents(void)
 		// Menu input
 		if (M_Responder(ev))
 			continue; // menu ate the event
+
+		// Demo input:
+		if (demo.playback)
+			if (M_DemoResponder(ev))
+				continue;	// demo ate the event
 
 		// console input
 		if (CON_Responder(ev))
@@ -276,29 +251,29 @@ static void D_Display(void)
 	INT32 wipedefindex = 0;
 	UINT8 i;
 
-	if (dedicated)
-		return;
-
-	if (nodrawers)
-		return; // for comparative timing/profiling
-
-	// check for change of screen size (video mode)
-	if (setmodeneeded && !wipe)
-		SCR_SetMode(); // change video mode
-
-	if (vid.recalc)
-		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
-
-	// change the view size if needed
-	if (setsizeneeded)
+	if (!dedicated)
 	{
-		R_ExecuteSetViewSize();
-		forcerefresh = true; // force background redraw
-	}
+		if (nodrawers)
+			return; // for comparative timing/profiling
 
-	// draw buffered stuff to screen
-	// Used only by linux GGI version
-	I_UpdateNoBlit();
+		// check for change of screen size (video mode)
+		if (setmodeneeded && !wipe)
+			SCR_SetMode(); // change video mode
+
+		if (vid.recalc)
+			SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
+
+		// change the view size if needed
+		if (setsizeneeded)
+		{
+			R_ExecuteSetViewSize();
+			forcerefresh = true; // force background redraw
+		}
+
+		// draw buffered stuff to screen
+		// Used only by linux GGI version
+		I_UpdateNoBlit();
+	}
 
 	// save the current screen if about to wipe
 	wipe = (gamestate != wipegamestate);
@@ -309,7 +284,7 @@ static void D_Display(void)
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
 			wipedefindex = wipe_timeattack_toblack;
 
-		if (rendermode != render_none)
+		if (!dedicated)
 		{
 			// Fade to black first
 			if (gamestate != GS_LEVEL // fades to black on its own timing, always
@@ -329,7 +304,15 @@ static void D_Display(void)
 
 			F_WipeStartScreen();
 		}
+		else //dedicated servers
+		{
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+			wipegamestate = gamestate;
+		}
 	}
+
+	if (dedicated) //bail out after wipe logic
+		return;
 
 	// do buffered drawing
 	switch (gamestate)
@@ -416,7 +399,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
-			for (i = 0; i <= splitscreen; i++)
+			for (i = 0; i <= r_splitscreen; i++)
 			{
 				if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)
 				{
@@ -443,7 +426,7 @@ static void D_Display(void)
 							switch (i)
 							{
 								case 1:
-									if (splitscreen > 1)
+									if (r_splitscreen > 1)
 									{
 										viewwindowx = viewwidth;
 										viewwindowy = 0;
@@ -468,7 +451,7 @@ static void D_Display(void)
 									break;
 							}
 
-							
+
 							topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
 						}
 
@@ -482,7 +465,7 @@ static void D_Display(void)
 
 			if (rendermode == render_soft)
 			{
-				for (i = 0; i <= splitscreen; i++)
+				for (i = 0; i <= r_splitscreen; i++)
 				{
 					if (postimgtype[i])
 						V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
@@ -525,7 +508,7 @@ static void D_Display(void)
 	}
 
 	if (demo.rewinding)
-		V_DrawFadeScreen(TC_RAINBOW, (leveltime & 0x20) ? SKINCOLOR_PASTEL : SKINCOLOR_MOONSLAM);
+		V_DrawFadeScreen(TC_RAINBOW, (leveltime & 0x20) ? SKINCOLOR_PASTEL : SKINCOLOR_MOONSET);
 
 	// vid size change is now finished if it was on...
 	vid.recalc = 0;
@@ -605,9 +588,6 @@ void D_SRB2Loop(void)
 		server = true;
 
 	// Pushing of + parameters is now done back in D_SRB2Main, not here.
-
-	CONS_Printf("I_StartupKeyboard()...\n");
-	I_StartupKeyboard();
 
 #ifdef _WINDOWS
 	CONS_Printf("I_StartupMouse()...\n");
@@ -766,8 +746,7 @@ void D_StartTitle(void)
 
 	splitscreen = 0;
 	SplitScreen_OnChange();
-	botingame = false;
-	botskin = 0;
+
 	cv_debug = 0;
 	emeralds = 0;
 
@@ -775,11 +754,15 @@ void D_StartTitle(void)
 	// reset modeattacking
 	modeattacking = ATTACKING_NONE;
 
+	// Reset GP
+	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
 
 	gameaction = ga_nothing;
 	memset(displayplayers, 0, sizeof(displayplayers));
+	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
 	//demosequence = -1;
 	gametype = GT_RACE; // SRB2kart
@@ -1081,7 +1064,10 @@ void D_SRB2Main(void)
 			// use user specific config file
 #ifdef DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
-			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
+#else
+			snprintf(srb2home, sizeof srb2home, "%s", userhome);
+#endif
+
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, srb2home);
 			else
@@ -1089,19 +1075,6 @@ void D_SRB2Main(void)
 
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
-
-			I_mkdir(srb2home, 0700);
-#else
-			snprintf(srb2home, sizeof srb2home, "%s", userhome);
-			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
-			if (dedicated)
-				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
-			else
-				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, userhome);
-
-			// can't use sprintf since there is %u in savegamename
-			strcatbf(savegamename, userhome, PATHSEP);
-#endif
 		}
 
 		configfile[sizeof configfile - 1] = '\0';
@@ -1110,6 +1083,14 @@ void D_SRB2Main(void)
 	strcpy(downloaddir, "/ram"); // the dreamcast's TMP
 #endif
 	}
+
+	// Create addons dir
+	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
+	I_mkdir(addonsdir, 0755);
+
+	/* and downloads in a subdirectory */
+	snprintf(downloaddir, sizeof downloaddir, "%s%s%s",
+			addonsdir, PATHSEP, "downloads");
 
 	// rand() needs seeded regardless of password
 	srand((unsigned int)time(NULL));
@@ -1155,7 +1136,24 @@ void D_SRB2Main(void)
 		else
 		{
 			if (!M_CheckParm("-server"))
+			{
 				G_SetGameModified(true, true);
+
+				// Start up a "minor" grand prix session
+				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+				grandprixinfo.encore = false;
+				grandprixinfo.masterbots = false;
+
+				grandprixinfo.gp = true;
+				grandprixinfo.roundnum = 0;
+				grandprixinfo.cup = NULL;
+				grandprixinfo.wonround = false;
+
+				grandprixinfo.initalize = true;
+			}
+
 			autostart = true;
 		}
 	}
@@ -1284,6 +1282,14 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		for (i = 0; i < numwadfiles; i++)
+			HWR_LoadShaders(i, (wadfiles[i]->type == RET_PK3));
+	}
+#endif
 
 	//--------------------------------------------------------- CONSOLE
 	// setup loading screen
@@ -1530,18 +1536,46 @@ void D_SRB2Main(void)
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
-			for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-				if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
+			const UINT8 master = KARTSPEED_HARD+1;
+			const char *masterstr = "Master";
+
+			if (!strcasecmp(masterstr, sskill))
+			{
+				newskill = master;
+			}
+			else
+			{
+				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
 				{
-					newskill = (INT16)kartspeed_cons_t[j].value;
-					break;
+					if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
+					{
+						newskill = (INT16)kartspeed_cons_t[j].value;
+						break;
+					}
 				}
 
-			if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+				{
+					j = atoi(sskill); // assume they gave us a skill number, which is okay too
+					if (j >= KARTSPEED_EASY && j <= master)
+						newskill = (INT16)j;
+				}
+			}
+
+			if (grandprixinfo.gp == true)
 			{
-				j = atoi(sskill); // assume they gave us a skill number, which is okay too
-				if (j >= KARTSPEED_EASY && j <= KARTSPEED_HARD)
-					newskill = (INT16)j;
+				if (newskill == master)
+				{
+					grandprixinfo.masterbots = true;
+					newskill = KARTSPEED_HARD;
+				}
+
+				grandprixinfo.gamespeed = newskill;
+			}
+			else if (newskill == master)
+			{
+				grandprixinfo.masterbots = true;
+				newskill = KARTSPEED_HARD;
 			}
 
 			if (newskill != -1)

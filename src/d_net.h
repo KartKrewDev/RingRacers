@@ -19,7 +19,7 @@
 #define __D_NET__
 
 // Max computers in a game
-#define MAXNETNODES (MAXPLAYERS+4)
+#define MAXNETNODES 64
 #define BROADCASTADDR MAXNETNODES
 #define NETSPLITSCREEN // Kart's splitscreen netgame feature
 
@@ -40,6 +40,8 @@ extern SINT8 nodetoplayer3[MAXNETNODES]; // Say the numplayer for this node if a
 extern SINT8 nodetoplayer4[MAXNETNODES]; // Say the numplayer for this node if any (splitscreen == 3)
 extern UINT8 playerpernode[MAXNETNODES]; // Used specially for splitscreen
 extern boolean nodeingame[MAXNETNODES]; // Set false as nodes leave game
+
+extern boolean serverrunning;
 
 INT32 Net_GetFreeAcks(boolean urgent);
 void Net_AckTicker(void);

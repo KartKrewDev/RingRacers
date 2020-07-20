@@ -29,6 +29,9 @@
 // as commands per game tick.
 #include "d_ticcmd.h"
 
+// the player struct stores a waypoint for racing
+#include "k_waypoint.h"
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
@@ -118,7 +121,7 @@ typedef enum
 
 	/*** misc ***/
 	PF_FORCESTRAFE       = 1<<29, // Turning inputs are translated into strafing inputs
-	PF_ANALOGMODE        = 1<<30, // Analog mode?
+	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
 
 	// free: 1<<30 and 1<<31
 } pflags_t;
@@ -197,27 +200,39 @@ typedef enum
 	NUMPOWERS
 } powertype_t;
 
+/*
+To use: #define FOREACH( name, number )
+Do with it whatever you want.
+Run this macro, then #undef FOREACH afterward
+*/
+#define KART_ITEM_ITERATOR \
+	FOREACH (SAD,           -1),\
+	FOREACH (NONE,           0),\
+	FOREACH (SNEAKER,        1),\
+	FOREACH (ROCKETSNEAKER,  2),\
+	FOREACH (INVINCIBILITY,  3),\
+	FOREACH (BANANA,         4),\
+	FOREACH (EGGMAN,         5),\
+	FOREACH (ORBINAUT,       6),\
+	FOREACH (JAWZ,           7),\
+	FOREACH (MINE,           8),\
+	FOREACH (BALLHOG,        9),\
+	FOREACH (SPB,           10),\
+	FOREACH (GROW,          11),\
+	FOREACH (SHRINK,        12),\
+	FOREACH (THUNDERSHIELD, 13),\
+	FOREACH (BUBBLESHIELD,  14),\
+	FOREACH (FLAMESHIELD,   15),\
+	FOREACH (HYUDORO,       16),\
+	FOREACH (POGOSPRING,    17),\
+	FOREACH (SUPERRING,     18),\
+	FOREACH (KITCHENSINK,   19)
+
 typedef enum
 {
-	KITEM_SAD = -1,
-	KITEM_NONE = 0,
-	KITEM_SNEAKER,
-	KITEM_ROCKETSNEAKER,
-	KITEM_INVINCIBILITY,
-	KITEM_BANANA,
-	KITEM_EGGMAN,
-	KITEM_ORBINAUT,
-	KITEM_JAWZ,
-	KITEM_MINE,
-	KITEM_BALLHOG,
-	KITEM_SPB,
-	KITEM_GROW,
-	KITEM_SHRINK,
-	KITEM_THUNDERSHIELD,
-	KITEM_HYUDORO,
-	KITEM_POGOSPRING,
-	KITEM_SUPERRING,
-	KITEM_KITCHENSINK,
+#define FOREACH( name, n ) KITEM_ ## name = n
+	KART_ITEM_ITERATOR,
+#undef  FOREACH
 
 	NUMKARTITEMS,
 
@@ -232,6 +247,15 @@ typedef enum
 	NUMKARTRESULTS
 } kartitems_t;
 
+typedef enum
+{
+	KSHIELD_NONE = 0,
+	KSHIELD_THUNDER = 1,
+	KSHIELD_BUBBLE = 2,
+	KSHIELD_FLAME = 3,
+	NUMKARTSHIELDS
+} kartshields_t;
+
 //{ SRB2kart - kartstuff
 typedef enum
 {
@@ -240,13 +264,6 @@ typedef enum
 	k_position,			// Used for Kart positions, mostly for deterministic stuff
 	k_oldposition,		// Used for taunting when you pass someone
 	k_positiondelay,	// Used for position number, so it can grow when passing/being passed
-	k_prevcheck,		// Previous checkpoint distance; for p_user.c (was "pw_pcd")
-	k_nextcheck,		// Next checkpoint distance; for p_user.c (was "pw_ncd")
-	k_waypoint,			// Waypoints.
-	k_starpostwp,		// Temporarily stores player waypoint for... some reason. Used when respawning and finishing.
-	k_starpostflip,		// the last starpost we hit requires flipping?
-	k_respawn,			// Timer for the DEZ laser respawn effect
-	k_dropdash,			// Charge up for respawn Drop Dash
 
 	k_throwdir, 		// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
 	k_instashield,		// Instashield no-damage animation timer
@@ -291,20 +308,25 @@ typedef enum
 	k_itemtype,		// KITEM_ constant for item number
 	k_itemamount,	// Amount of said item
 	k_itemheld,		// Are you holding an item?
+	k_holdready,	// Hold button-style item is ready to activate
 
 	// Some items use timers for their duration or effects
-	//k_thunderanim,			// Duration of Thunder Shield's use animation
 	k_curshield,			// 0 = no shield, 1 = thunder shield
 	k_hyudorotimer,			// Duration of the Hyudoro offroad effect itself
 	k_stealingtimer,		// You are stealing an item, this is your timer
 	k_stolentimer,			// You are being stolen from, this is your timer
 	k_superring,			// Spawn rings on top of you every tic!
-	k_sneakertimer,			// Duration of the Sneaker Boost itself
-	k_levelbooster,			// Duration of a level booster's boost (same as sneaker, but separated for )
+	k_sneakertimer,			// Duration of a Sneaker Boost (from Sneakers or level boosters)
+	k_numsneakers,			// Number of stacked sneaker effects
 	k_growshrinktimer,		// > 0 = Big, < 0 = small
 	k_squishedtimer,		// Squished frame timer
 	k_rocketsneakertimer,	// Rocket Sneaker duration timer
 	k_invincibilitytimer,	// Invincibility timer
+	k_bubblecool,			// Bubble Shield use cooldown
+	k_bubbleblowup,			// Bubble Shield usage blowup
+	k_flamedash,			// Flame Shield dash power
+	k_flamemeter,			// Flame Shield dash meter left
+	k_flamelength,			// Flame Shield dash meter, number of segments
 	k_eggmanheld,			// Eggman monitor held, separate from k_itemheld so it doesn't stop you from getting items
 	k_eggmanexplode,		// Fake item recieved, explode in a few seconds
 	k_eggmanblame,			// Fake item recieved, who set this fake
@@ -326,11 +348,11 @@ typedef enum
 	k_getsparks,		// Disable drift sparks at low speed, JUST enough to give acceleration the actual headstart above speed
 	k_jawztargetdelay,	// Delay for Jawz target switching, to make it less twitchy
 	k_spectatewait,		// How long have you been waiting as a spectator
-	k_growcancel,		// Hold the item button down to cancel Grow
 	k_tiregrease,		// Reduced friction timer after hitting a horizontal spring
 	k_springstars,		// Spawn stars around a player when they hit a spring
 	k_springcolor,		// Color of spring stars
 	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
+	k_wrongway, 		// Display WRONG WAY on screen
 
 	NUMKARTSTUFF
 } kartstufftype_t;
@@ -369,8 +391,8 @@ typedef enum
 	NUMKARTHUD
 } karthudtype_t;
 
-// QUICKLY GET EITHER SNEAKER OR LEVEL BOOSTER SINCE THEY ARE FUNCTIONALLY IDENTICAL
-#define EITHERSNEAKER(p) (p->kartstuff[k_sneakertimer] || p->kartstuff[k_levelbooster])
+// QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
+#define RINGTOTAL(p) (p->kartstuff[k_rings] + p->kartstuff[k_pickuprings])
 
 //}
 
@@ -391,6 +413,33 @@ typedef enum
 	RW_EXPLODE = 16,
 	RW_RAIL    = 32
 } ringweapons_t;
+
+// player_t struct for all respawn variables
+typedef struct respawnvars_s
+{
+	UINT8 state; // 0: not respawning, 1: heading towards respawn point, 2: about to drop
+	waypoint_t *wp; // Waypoint that we're going towards, NULL if the position isn't linked to one
+	fixed_t pointx; // Respawn position coords to go towards
+	fixed_t pointy;
+	fixed_t pointz;
+	boolean flip; // Flip upside down or not
+	tic_t timer; // Time left on respawn animation once you're there
+	UINT32 distanceleft; // How far along the course to respawn you
+	tic_t dropdash; // Drop Dash charge timer
+} respawnvars_t;
+
+// player_t struct for all bot variables
+typedef struct botvars_s
+{
+	UINT8 difficulty; // Bot's difficulty setting
+	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
+	boolean rival; // If true, they're the GP rival
+
+	tic_t itemdelay; // Delay before using item at all
+	tic_t itemconfirm; // When high enough, they will use their item
+
+	SINT8 turnconfirm; // Confirm turn direction
+} botvars_t;
 
 // ========================================================================
 //                          PLAYER STRUCTURE
@@ -436,6 +485,10 @@ typedef struct player_s
 	angle_t frameangle; // for the player add the ability to have the sprite only face other angles
 	INT16 lturn_max[MAXPREDICTTICS]; // What's the expected turn value for full-left for a number of frames back (to account for netgame latency)?
 	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
+	UINT32 distancetofinish;
+	waypoint_t *nextwaypoint;
+	respawnvars_t respawn; // Respawn info
+	tic_t airtime; // Keep track of how long you've been in the air
 
 	// Bit flags.
 	// See pflags_t, above.
@@ -460,17 +513,25 @@ typedef struct player_s
 	// SRB2kart
 	UINT8 kartspeed; // Kart speed stat between 1 and 9
 	UINT8 kartweight; // Kart weight stat between 1 and 9
+
+	INT32 followerskin;		// Kart: This player's follower "skin"
+	boolean followerready;	// Kart: Used to know when we can have a follower or not. (This is set on the first NameAndColor follower update)
+	UINT8 followercolor;	// Kart: Used to store the follower colour the player wishes to use
+	mobj_t *follower;		// Kart: This is the follower object we have. (If any)
+
 	//
 
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
 	                 // See SF_ flags
 	SINT8 lives;
+	boolean lostlife;
 	SINT8 continues; // continues that player has acquired
 
 	SINT8 xtralife; // Ring Extra Life counter
 	UINT8 gotcontinue; // Got continue from this stage?
 
 	fixed_t speed; // Player's speed (distance formula of MOMX and MOMY values)
+	fixed_t lastspeed;
 	UINT8 jumping; // Jump counter
 	UINT8 secondjump;
 
@@ -500,6 +561,7 @@ typedef struct player_s
 	INT16 totalring; // Total number of rings obtained for Race Mode
 	tic_t realtime; // integer replacement for leveltime
 	UINT8 laps; // Number of laps (optional)
+	INT32 starpostnum; // The number of the last starpost you hit
 
 	////////////////////
 	// CTF Mode Stuff //
@@ -509,14 +571,6 @@ typedef struct player_s
 
 	INT32 weapondelay; // Delay (if any) to fire the weapon again
 	INT32 tossdelay;   // Delay (if any) to toss a flag/emeralds again
-
-	// Starpost information
-	INT16 starpostx;
-	INT16 starposty;
-	INT16 starpostz;
-	INT32 starpostnum; // The number of the last starpost you hit
-	tic_t starposttime; // Your time when you hit the starpost
-	angle_t starpostangle; // Angle that the starpost is facing - you respawn facing this way
 
 	/////////////////
 	// NiGHTS Stuff//
@@ -563,7 +617,9 @@ typedef struct player_s
 	angle_t awayviewaiming; // Used for cut-away view
 
 	boolean spectator;
-	UINT8 bot;
+
+	boolean bot;
+	botvars_t botvars;
 
 	tic_t jointime; // Timer when player joins game to change skin/color
 

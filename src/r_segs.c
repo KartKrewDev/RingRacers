@@ -406,10 +406,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 			if (rlight->extra_colormap && rlight->extra_colormap->fog)
 				;
-			else if (curline->v1->y == curline->v2->y)
-				lightnum--;
-			else if (curline->v1->x == curline->v2->x)
-				lightnum++;
+			else
+				lightnum += curline->lightOffset;
 
 			rlight->lightnum = lightnum;
 		}
@@ -429,10 +427,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 		if (colfunc == R_DrawFogColumn_8
 			|| (frontsector->extra_colormap && frontsector->extra_colormap->fog))
 			;
-		else if (curline->v1->y == curline->v2->y)
-			lightnum--;
-		else if (curline->v1->x == curline->v2->x)
-			lightnum++;
+		else
+			lightnum += curline->lightOffset;
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
@@ -926,10 +922,8 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 
 			if (pfloor->flags & FF_FOG || rlight->flags & FF_FOG || (rlight->extra_colormap && rlight->extra_colormap->fog))
 				;
-			else if (curline->v1->y == curline->v2->y)
-				rlight->lightnum--;
-			else if (curline->v1->x == curline->v2->x)
-				rlight->lightnum++;
+			else
+				rlight->lightnum += curline->lightOffset;
 
 			p++;
 		}
@@ -949,11 +943,10 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			lightnum = R_FakeFlat(frontsector, &tempsec, &templight, &templight, false)
 				->lightlevel >> LIGHTSEGSHIFT;
 
-		if (pfloor->flags & FF_FOG || (frontsector->extra_colormap && frontsector->extra_colormap->fog));
-			else if (curline->v1->y == curline->v2->y)
-		lightnum--;
-		else if (curline->v1->x == curline->v2->x)
-			lightnum++;
+		if (pfloor->flags & FF_FOG || (frontsector->extra_colormap && frontsector->extra_colormap->fog))
+			;
+		else
+			lightnum += curline->lightOffset;
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
@@ -1486,10 +1479,8 @@ static void R_RenderSegLoop (void)
 
 				if (dc_lightlist[i].extra_colormap)
 					;
-				else if (curline->v1->y == curline->v2->y)
-					lightnum--;
-				else if (curline->v1->x == curline->v2->x)
-					lightnum++;
+				else
+					lightnum += curline->lightOffset;
 
 				if (lightnum < 0)
 					xwalllights = scalelight[0];
@@ -2633,10 +2624,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		// OPTIMIZE: get rid of LIGHTSEGSHIFT globally
 		lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
 
-		if (curline->v1->y == curline->v2->y)
-			lightnum--;
-		else if (curline->v1->x == curline->v2->x)
-			lightnum++;
+		lightnum += curline->lightOffset;
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
@@ -2681,7 +2669,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	worldbottomslope >>= 4;
 #endif
 
-	if (linedef->special == 41) { // HORIZON LINES
+	if (linedef->special == HORIZONSPECIAL) { // HORIZON LINES
 		topstep = bottomstep = 0;
 		topfrac = bottomfrac = (centeryfrac>>4);
 		topfrac++; // Prevent 1px HOM
@@ -2811,12 +2799,23 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			ffloor[i].f_pos >>= 4;
 #ifdef ESLOPE
 			ffloor[i].f_pos_slope >>= 4;
-			ffloor[i].f_frac = (centeryfrac>>4) - FixedMul(ffloor[i].f_pos, rw_scale);
-			ffloor[i].f_step = ((centeryfrac>>4) - FixedMul(ffloor[i].f_pos_slope, ds_p->scale2) - ffloor[i].f_frac)/(range);
-#else
-			ffloor[i].f_step = FixedMul(-rw_scalestep, ffloor[i].f_pos);
-			ffloor[i].f_frac = (centeryfrac>>4) - FixedMul(ffloor[i].f_pos, rw_scale);
 #endif
+			if (linedef->special == HORIZONSPECIAL) // Horizon lines extend FOFs in contact with them too.
+			{
+				ffloor[i].f_step = 0;
+				ffloor[i].f_frac = (centeryfrac>>4);
+				topfrac++; // Prevent 1px HOM
+			}
+			else
+			{
+#ifdef ESLOPE
+				ffloor[i].f_frac = (centeryfrac>>4) - FixedMul(ffloor[i].f_pos, rw_scale);
+				ffloor[i].f_step = ((centeryfrac>>4) - FixedMul(ffloor[i].f_pos_slope, ds_p->scale2) - ffloor[i].f_frac)/(range);
+#else
+				ffloor[i].f_step = FixedMul(-rw_scalestep, ffloor[i].f_pos);
+				ffloor[i].f_frac = (centeryfrac>>4) - FixedMul(ffloor[i].f_pos, rw_scale);
+#endif
+			}
 		}
 	}
 

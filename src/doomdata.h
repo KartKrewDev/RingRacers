@@ -46,6 +46,9 @@ enum
 	ML_BLOCKMAP,  // LUT, motion clipping, walls/grid element
 };
 
+// Extra flag for objects
+#define MTF_EXTRA 1
+
 // Reverse gravity flag for objects.
 #define MTF_OBJECTFLIP 2
 
@@ -94,10 +97,10 @@ typedef struct
 //
 
 // Solid, is an obstacle.
-#define ML_IMPASSIBLE           1
+#define ML_IMPASSABLE           1
 
-// Blocks monsters only.
-#define ML_BLOCKMONSTERS        2
+// SRB2Kart: Blocks players only; items can be thrown through these.
+#define ML_BLOCKPLAYERS         2
 
 // Backside will not be present at all if not two sided.
 #define ML_TWOSIDED             4

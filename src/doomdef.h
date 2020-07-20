@@ -138,7 +138,11 @@
 
 #ifdef LOGMESSAGES
 extern FILE *logstream;
+extern char logfilename[1024];
 #endif
+
+/* A mod name to further distinguish versions. */
+#define SRB2APPLICATION "SRB2Kart"
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
@@ -149,7 +153,7 @@ extern FILE *logstream;
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-#define VERSION    200 // Game version
+#define VERSION    2 // Game version
 #define SUBVERSION 0 // more precise version number
 #define VERSIONSTRING "v2.0"
 #define VERSIONSTRINGW L"v2.0"
@@ -242,6 +246,7 @@ extern FILE *logstream;
 // NOTE: it needs more than this to increase the number of players...
 
 #define MAXPLAYERS 16
+#define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 #define MAXSKINS 128
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
@@ -257,6 +262,7 @@ typedef enum
 	SKINCOLOR_GREY,
 	SKINCOLOR_NICKEL,
 	SKINCOLOR_BLACK,
+	SKINCOLOR_SKUNK,
 	SKINCOLOR_FAIRY,
 	SKINCOLOR_POPCORN,
 	SKINCOLOR_ARTICHOKE,
@@ -267,7 +273,6 @@ typedef enum
 	SKINCOLOR_PEACH,
 	SKINCOLOR_BROWN,
 	SKINCOLOR_LEATHER,
-	SKINCOLOR_SALMON,
 	SKINCOLOR_PINK,
 	SKINCOLOR_ROSE,
 	SKINCOLOR_CINNAMON,
@@ -280,7 +285,7 @@ typedef enum
 	SKINCOLOR_SCARLET,
 	SKINCOLOR_KETCHUP,
 	SKINCOLOR_DAWN,
-	SKINCOLOR_SUNSET,
+	SKINCOLOR_SUNSLAM,
 	SKINCOLOR_CREAMSICLE,
 	SKINCOLOR_ORANGE,
 	SKINCOLOR_ROSEWOOD,
@@ -305,7 +310,6 @@ typedef enum
 	SKINCOLOR_PISTACHIO,
 	SKINCOLOR_MOSS,
 	SKINCOLOR_CAMOUFLAGE,
-	SKINCOLOR_ROBOHOOD,
 	SKINCOLOR_MINT,
 	SKINCOLOR_GREEN,
 	SKINCOLOR_PINETREE,
@@ -315,11 +319,10 @@ typedef enum
 	SKINCOLOR_PLAGUE,
 	SKINCOLOR_EMERALD,
 	SKINCOLOR_ALGAE,
-	SKINCOLOR_CARIBBEAN,
-	SKINCOLOR_AZURE,
 	SKINCOLOR_AQUAMARINE,
 	SKINCOLOR_TURQUOISE,
 	SKINCOLOR_TEAL,
+	SKINCOLOR_ROBIN,
 	SKINCOLOR_CYAN,
 	SKINCOLOR_JAWZ, // Oni's torment
 	SKINCOLOR_CERULEAN,
@@ -336,13 +339,14 @@ typedef enum
 	SKINCOLOR_ULTRAMARINE,
 	SKINCOLOR_PERIWINKLE,
 	SKINCOLOR_BLUE,
+	SKINCOLOR_MIDNIGHT,
 	SKINCOLOR_BLUEBERRY,
 	SKINCOLOR_THISTLE,
 	SKINCOLOR_PURPLE,
 	SKINCOLOR_PASTEL,
-	SKINCOLOR_MOONSLAM,
+	SKINCOLOR_MOONSET,
 	SKINCOLOR_DUSK,
-	SKINCOLOR_BUBBLEGUM,
+	SKINCOLOR_VIOLET,
 	SKINCOLOR_MAGENTA,
 	SKINCOLOR_FUCHSIA,
 	SKINCOLOR_TOXIC,
@@ -351,6 +355,7 @@ typedef enum
 	SKINCOLOR_BYZANTIUM,
 	SKINCOLOR_POMEGRANATE,
 	SKINCOLOR_LILAC,
+	SKINCOLOR_BLOSSOM,
 	SKINCOLOR_TAFFY,
 
 	// "Careful! MAXSKINCOLORS cannot be greater than 0x40 -- Which it is now."
@@ -496,7 +501,7 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 
 // Things that used to be in dstrings.h
 #define SAVEGAMENAME "srb2sav"
-char savegamename[256];
+extern char savegamename[256];
 
 // m_misc.h
 #ifdef GETTEXT
@@ -541,6 +546,9 @@ extern INT32 cv_debug;
 // Modifier key variables, accessible anywhere
 extern UINT8 shiftdown, ctrldown, altdown;
 extern boolean capslock;
+
+// WARNING: a should be unsigned but to add with 2048, it isn't!
+#define AIMINGTODY(a) (FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)
 
 // if we ever make our alloc stuff...
 #define ZZ_Alloc(x) Z_Malloc(x, PU_STATIC, NULL)
@@ -628,11 +636,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 //#define SAVEGAME_OTHERVERSIONS
 
 #if !defined (_NDS) && !defined (_PSP)
-///	Shuffle's incomplete OpenGL sorting code.
-#define SHUFFLE // This has nothing to do with sorting, why was it disabled?
-#endif
-
-#if !defined (_NDS) && !defined (_PSP)
 ///	Allow the use of the SOC RESETINFO command.
 ///	\note	Builds that are tight on memory should disable this.
 ///	    	This stops the game from storing backups of the states, sprites, and mobjinfo tables.
@@ -668,6 +671,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// on the bright side it fixes some weird issues with translucent walls
 /// \note	SRB2CB port.
 ///      	SRB2CB itself ported this from PrBoom+
-#define NEWCLIP
+//#define NEWCLIP
+
+/// Hardware renderer: OpenGL
+#define GL_SHADERS
 
 #endif // __DOOMDEF__

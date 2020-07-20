@@ -34,6 +34,7 @@ extern INT16 gamemap;
 extern char mapmusname[7];
 extern UINT16 mapmusflags;
 extern UINT32 mapmusposition;
+extern UINT32 mapmusresume;
 #define MUSIC_TRACKMASK   0x0FFF // ----************
 #define MUSIC_RELOADRESET 0x8000 // *---------------
 #define MUSIC_FORCERESET  0x4000 // -*--------------
@@ -41,18 +42,36 @@ extern UINT32 mapmusposition;
 
 extern INT16 maptol;
 extern UINT8 globalweather;
-extern INT32 curWeather;
+extern UINT8 curWeather;
 extern INT32 cursaveslot;
 extern INT16 lastmapsaved;
 extern boolean gamecomplete;
 
-#define PRECIP_NONE  0
-#define PRECIP_STORM 1
-#define PRECIP_SNOW  2
-#define PRECIP_RAIN  3
-#define PRECIP_BLANK 4
-#define PRECIP_STORM_NORAIN 5
-#define PRECIP_STORM_NOSTRIKES 6
+typedef enum
+{
+	PRECIP_NONE = 0,
+	PRECIP_RAIN,
+	PRECIP_SNOW,
+	PRECIP_BLIZZARD,
+	PRECIP_STORM,
+	PRECIP_STORM_NORAIN,
+	PRECIP_STORM_NOSTRIKES,
+	MAXPRECIP
+} preciptype_t;
+
+typedef enum
+{
+	PRECIPFX_THUNDER = 1,
+	PRECIPFX_LIGHTNING = 1<<1
+} precipeffect_t;
+
+typedef struct
+{
+	mobjtype_t type;
+	precipeffect_t effects;
+} precipprops_t;
+
+extern precipprops_t precipprops[MAXPRECIP];
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -64,7 +83,7 @@ extern boolean metalrecording;
 
 #define ATTACKING_NONE   0
 #define ATTACKING_RECORD 1
-//#define ATTACKING_NIGHTS 2
+#define ATTACKING_CAPSULES 2
 extern UINT8 modeattacking;
 
 // menu demo things
@@ -80,8 +99,8 @@ extern boolean multiplayer;
 
 extern INT16 gametype;
 
-#define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 extern UINT8 splitscreen;
+extern int r_splitscreen;
 
 extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
@@ -122,6 +141,20 @@ extern boolean gamedataloaded;
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
+/* g_localplayers[0] = consoleplayer */
+extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
+
+/* spitscreen players sync */
+extern int splitscreen_original_party_size[MAXPLAYERS];
+extern int splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
+/* parties */
+extern int splitscreen_invitations[MAXPLAYERS];
+extern int splitscreen_party_size[MAXPLAYERS];
+extern int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+
+/* the only local one */
+extern boolean splitscreen_partied[MAXPLAYERS];
 
 // Maps of special importance
 extern INT16 spstage_start;
@@ -257,6 +290,7 @@ typedef struct
 	// SRB2kart
 	//boolean automap;    ///< Displays a level's white map outline in modified games
 	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
+	fixed_t default_waypoint_radius; ///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
 	// Music stuff.
 	UINT32 musinterfadeout;  ///< Fade out level music on intermission screen in milliseconds
@@ -290,6 +324,27 @@ typedef struct
 #define SAVE_ALWAYS   1
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
+
+// This could support more, but is that a good idea?
+// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory. 
+#define MAXLEVELLIST 5
+
+typedef struct cupheader_s
+{
+	UINT16 id;                     ///< Cup ID
+	char name[15];                 ///< Cup title (14 chars)
+	char icon[9];                  ///< Name of the icon patch
+	INT16 levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
+	UINT8 numlevels;               ///< Number of levels defined in levellist
+	INT16 bonusgame;               ///< Map number to use for bonus game
+	INT16 specialstage;            ///< Map number to use for special stage
+	UINT8 emeraldnum;              ///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+	SINT8 unlockrequired;          ///< An unlockable is required to select this cup. -1 for no unlocking required.
+	struct cupheader_s *next;      ///< Next cup in linked list
+} cupheader_t;
+
+extern cupheader_t *kartcupheaders; // Start of cup linked list
+extern UINT16 numkartcupheaders;
 
 enum TypeOfLevel
 {
@@ -353,7 +408,7 @@ extern UINT16 emeralds;
 #define EMERALD7 64
 #define ALL7EMERALDS(v) ((v & (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7)) == (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7))
 
-extern INT32 nummaprings, nummapboxes, numgotboxes; //keep track of spawned rings/coins/battle mode items
+extern INT32 nummaprings; // keep track of spawned rings/coins
 
 /** Time attack information, currently a very small structure.
   */
@@ -433,12 +488,14 @@ extern INT32 hyudorotime;
 extern INT32 stealtime;
 extern INT32 sneakertime;
 extern INT32 itemtime;
+extern INT32 bubbletime;
 extern INT32 comebacktime;
 extern INT32 bumptime;
 extern INT32 greasetics;
 extern INT32 wipeoutslowtime;
 extern INT32 wantedreduce;
 extern INT32 wantedfrequency;
+extern INT32 flameseg;
 
 extern UINT8 introtoplay;
 extern UINT8 creditscutscene;
@@ -449,7 +506,7 @@ extern UINT8 maxXtraLife; // Max extra lives from rings
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
 // For racing
-extern UINT32 countdown, countdown2;
+extern tic_t racecountdown, exitcountdown;
 
 extern fixed_t gravity;
 extern fixed_t mapobjectscale;
@@ -478,6 +535,7 @@ extern tic_t mapreset;
 extern boolean thwompsactive;
 extern SINT8 spbplace;
 
+extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
 extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;
@@ -485,15 +543,6 @@ extern tic_t curlap, bestlap;
 extern INT16 votelevels[5][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
-
-/** Battle overtime information
-  */
-extern struct battleovertime
-{
-	UINT16 enabled; ///< Has this been initalized yet?
-	fixed_t radius, minradius; ///< Radius of kill field
-	fixed_t x, y, z; ///< Position to center on
-} battleovertime;
 
 extern tic_t hidetime;
 
@@ -558,7 +607,7 @@ extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
 extern consvar_t cv_jointimeout;
 extern consvar_t cv_maxping;
-extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
+extern ticcmd_t netcmds[TICQUEUE][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];
 

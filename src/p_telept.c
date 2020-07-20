@@ -38,6 +38,9 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 	const INT32 takeflags2 = MF2_TWOD|MF2_OBJECTFLIP;
 	UINT8 i;
 
+	(void)starposttime;
+	(void)starpostangle;
+
 	// the move is ok,
 	// so link the thing into its new position
 	P_UnsetThingPosition(thing);
@@ -66,9 +69,9 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		// absolute angle position
 		if (thing == players[consoleplayer].mo)
 			localangle[0] = angle;
-		else if (splitscreen)
+		else if (r_splitscreen)
 		{
-			for (i = 1; i <= splitscreen; i++)
+			for (i = 1; i <= r_splitscreen; i++)
 			{
 				if (thing == players[displayplayers[i]].mo)
 				{
@@ -79,7 +82,7 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		}
 
 		// move chasecam at new player location
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (thing->player == &players[displayplayers[i]] && camera[i].chase)
 				P_ResetCamera(thing->player, &camera[i]);
@@ -92,15 +95,13 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 			thing->player->speed = 0;
 
 		// Starpost information
-		thing->player->starpostx = starpostx;
-		thing->player->starposty = starposty;
-		thing->player->starpostz = starpostz;
-		thing->player->starposttime = starposttime;
-		thing->player->starpostangle = starpostangle;
+		thing->player->respawn.pointx = starpostx;
+		thing->player->respawn.pointy = starposty;
+		thing->player->respawn.pointz = starpostz;
 		thing->player->starpostnum = starpostnum;
 
 		P_ResetPlayer(thing->player);
-		P_SetPlayerMobjState(thing, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+		P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 
 		P_FlashPal(thing->player, PAL_MIXUP, 10);
 	}
@@ -151,9 +152,9 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 		// absolute angle position
 		if (thing == players[consoleplayer].mo)
 			localangle[0] = angle;
-		else if (splitscreen)
+		else if (r_splitscreen)
 		{
-			for (i = 1; i <= splitscreen; i++)
+			for (i = 1; i <= r_splitscreen; i++)
 			{
 				if (thing == players[displayplayers[i]].mo)
 				{
@@ -164,7 +165,7 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 		}
 
 		// move chasecam at new player location
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (thing->player == &players[displayplayers[i]] && camera[i].chase)
 				P_ResetCamera(thing->player, &camera[i]);
@@ -185,7 +186,7 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 			thing->player->rmomx = thing->player->rmomy = 0;
 			thing->player->speed = 0;
 			P_ResetPlayer(thing->player);
-			P_SetPlayerMobjState(thing, S_KART_STND1); // SRB2kart - was S_PLAY_STND
+			P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 		}
 
 		if (flash)

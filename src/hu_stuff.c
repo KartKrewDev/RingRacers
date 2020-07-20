@@ -14,6 +14,7 @@
 #include "doomdef.h"
 #include "byteptr.h"
 #include "hu_stuff.h"
+#include "font.h"
 
 #include "m_menu.h" // gametype_cons_t
 #include "m_cond.h" // emblems
@@ -53,6 +54,7 @@
 
 #include "s_sound.h" // song credits
 #include "k_kart.h"
+#include "k_color.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -64,20 +66,11 @@
 //-------------------------------------------
 //              heads up font
 //-------------------------------------------
-patch_t *hu_font[HU_FONTSIZE];
-patch_t *kart_font[KART_FONTSIZE];	// SRB2kart
-patch_t *tny_font[HU_FONTSIZE];
-patch_t *tallnum[10]; // 0-9
-patch_t *nightsnum[10]; // 0-9
-
-// Level title and credits fonts
-patch_t *lt_font[LT_FONTSIZE];
-patch_t *cred_font[CRED_FONTSIZE];
 
 // ping font
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
-patch_t *pingnum[10];
 patch_t *pinggfx[5];	// small ping graphic
+patch_t *mping[5]; // smaller ping graphic
 
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
@@ -187,135 +180,53 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
-	char buffer[9];
-	INT32 i, j;
+	INT32 i;
 
 	if (dedicated)
 		return;
 
-	j = HU_FONTSTART;
-	for (i = 0; i < HU_FONTSIZE; i++, j++)
-	{
-		// cache the heads-up font for entire game execution
-		sprintf(buffer, "STCFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			hu_font[i] = NULL;
-		else
-			hu_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-
-		// tiny version of the heads-up font
-		sprintf(buffer, "TNYFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			tny_font[i] = NULL;
-		else
-			tny_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the level title font for entire game execution
-	lt_font[0] = (patch_t *)W_CachePatchName("LTFNT039", PU_HUDGFX); /// \note fake start hack
-
-	// Number support
-	lt_font[9] = (patch_t *)W_CachePatchName("LTFNT048", PU_HUDGFX);
-	lt_font[10] = (patch_t *)W_CachePatchName("LTFNT049", PU_HUDGFX);
-	lt_font[11] = (patch_t *)W_CachePatchName("LTFNT050", PU_HUDGFX);
-	lt_font[12] = (patch_t *)W_CachePatchName("LTFNT051", PU_HUDGFX);
-	lt_font[13] = (patch_t *)W_CachePatchName("LTFNT052", PU_HUDGFX);
-	lt_font[14] = (patch_t *)W_CachePatchName("LTFNT053", PU_HUDGFX);
-	lt_font[15] = (patch_t *)W_CachePatchName("LTFNT054", PU_HUDGFX);
-	lt_font[16] = (patch_t *)W_CachePatchName("LTFNT055", PU_HUDGFX);
-	lt_font[17] = (patch_t *)W_CachePatchName("LTFNT056", PU_HUDGFX);
-	lt_font[18] = (patch_t *)W_CachePatchName("LTFNT057", PU_HUDGFX);
-
-	// SRB2kart
-	j = KART_FONTSTART;
-	for (i = 0; i < KART_FONTSIZE; i++, j++)
-	{
-		// cache the heads-up font for entire game execution
-		sprintf(buffer, "MKFNT%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			kart_font[i] = NULL;
-		else
-			kart_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-	//
-
-	j = LT_FONTSTART;
-	for (i = 0; i < LT_FONTSIZE; i++)
-	{
-		sprintf(buffer, "LTFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			lt_font[i] = NULL;
-		else
-			lt_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the credits font for entire game execution (why not?)
-	j = CRED_FONTSTART;
-	for (i = 0; i < CRED_FONTSIZE; i++)
-	{
-		sprintf(buffer, "CRFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			cred_font[i] = NULL;
-		else
-			cred_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	//cache numbers too!
-	for (i = 0; i < 10; i++)
-	{
-		sprintf(buffer, "STTNUM%d", i);
-		tallnum[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "NGTNUM%d", i);
-		nightsnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "PINGN%d", i);
-		pingnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-	}
+	Font_Load();
 
 	// minus for negative tallnums
-	tallminus = (patch_t *)W_CachePatchName("STTMINUS", PU_HUDGFX);
+	tallminus          = HU_CachePatch("STTMINUS");
 
 	// cache the crosshairs, don't bother to know which one is being used,
 	// just cache all 3, they're so small anyway.
 	for (i = 0; i < HU_CROSSHAIRS; i++)
 	{
-		sprintf(buffer, "CROSHAI%c", '1'+i);
-		crosshair[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		crosshair[i]    = HU_CachePatch("CROSHAI%c", '1'+i);
 	}
 
-	emblemicon = W_CachePatchName("EMBLICON", PU_HUDGFX);
-	tokenicon = W_CachePatchName("TOKNICON", PU_HUDGFX);
+	emblemicon         = HU_CachePatch("EMBLICON");
+	tokenicon          = HU_CachePatch("TOKNICON");
 
-	emeraldpics[0] = W_CachePatchName("CHAOS1", PU_HUDGFX);
-	emeraldpics[1] = W_CachePatchName("CHAOS2", PU_HUDGFX);
-	emeraldpics[2] = W_CachePatchName("CHAOS3", PU_HUDGFX);
-	emeraldpics[3] = W_CachePatchName("CHAOS4", PU_HUDGFX);
-	emeraldpics[4] = W_CachePatchName("CHAOS5", PU_HUDGFX);
-	emeraldpics[5] = W_CachePatchName("CHAOS6", PU_HUDGFX);
-	emeraldpics[6] = W_CachePatchName("CHAOS7", PU_HUDGFX);
-	tinyemeraldpics[0] = W_CachePatchName("TEMER1", PU_HUDGFX);
-	tinyemeraldpics[1] = W_CachePatchName("TEMER2", PU_HUDGFX);
-	tinyemeraldpics[2] = W_CachePatchName("TEMER3", PU_HUDGFX);
-	tinyemeraldpics[3] = W_CachePatchName("TEMER4", PU_HUDGFX);
-	tinyemeraldpics[4] = W_CachePatchName("TEMER5", PU_HUDGFX);
-	tinyemeraldpics[5] = W_CachePatchName("TEMER6", PU_HUDGFX);
-	tinyemeraldpics[6] = W_CachePatchName("TEMER7", PU_HUDGFX);
+	emeraldpics[0]     = HU_CachePatch("CHAOS1");
+	emeraldpics[1]     = HU_CachePatch("CHAOS2");
+	emeraldpics[2]     = HU_CachePatch("CHAOS3");
+	emeraldpics[3]     = HU_CachePatch("CHAOS4");
+	emeraldpics[4]     = HU_CachePatch("CHAOS5");
+	emeraldpics[5]     = HU_CachePatch("CHAOS6");
+	emeraldpics[6]     = HU_CachePatch("CHAOS7");
+	tinyemeraldpics[0] = HU_CachePatch("TEMER1");
+	tinyemeraldpics[1] = HU_CachePatch("TEMER2");
+	tinyemeraldpics[2] = HU_CachePatch("TEMER3");
+	tinyemeraldpics[3] = HU_CachePatch("TEMER4");
+	tinyemeraldpics[4] = HU_CachePatch("TEMER5");
+	tinyemeraldpics[5] = HU_CachePatch("TEMER6");
+	tinyemeraldpics[6] = HU_CachePatch("TEMER7");
 
-	songcreditbg = W_CachePatchName("K_SONGCR", PU_HUDGFX);
+	songcreditbg       = HU_CachePatch("K_SONGCR");
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
 	{
-		sprintf(buffer, "PINGGFX%d", i+1);
-		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		pinggfx[i] = HU_CachePatch("PINGGFX%d", i+1);
+		mping[i] = HU_CachePatch("MPING%d", i+1);
 	}
 
 	// fps stuff
-	framecounter = W_CachePatchName("FRAMER", PU_HUDGFX);
-	frameslash  = W_CachePatchName("FRAMESL", PU_HUDGFX);;
+	framecounter       = HU_CachePatch("FRAMER");
+	frameslash         = HU_CachePatch("FRAMESL");;
 }
 
 // Initialise Heads up
@@ -323,6 +234,8 @@ void HU_LoadGraphics(void)
 //
 void HU_Init(void)
 {
+	font_t font;
+
 #ifndef NONET
 	COM_AddCommand("say", Command_Say_f);
 	COM_AddCommand("sayto", Command_Sayto_f);
@@ -334,7 +247,76 @@ void HU_Init(void)
 	// set shift translation table
 	shiftxform = english_shiftxform;
 
+	/*
+	Setup fonts
+	*/
+
+	if (!dedicated)
+	{
+#define  DIM( s, n ) ( font.start = s, font.size = n )
+#define ADIM( name )        DIM (name ## _FONTSTART, name ## _FONTSIZE)
+#define   PR( s )           strcpy(font.prefix, s)
+#define  DIG( n )           ( font.digits = n )
+#define  REG                Font_DumbRegister(&font)
+
+		DIG  (3);
+
+		ADIM (HU);
+
+		PR   ("STCFN");
+		REG;
+
+		PR   ("TNYFN");
+		REG;
+
+		ADIM (KART);
+		PR   ("MKFNT");
+		REG;
+
+		ADIM (LT);
+		PR   ("LTFNT");
+		REG;
+
+		ADIM (CRED);
+		PR   ("CRFNT");
+		REG;
+
+		DIG  (1);
+
+		DIM  (0, 10);
+
+		PR   ("STTNUM");
+		REG;
+
+		PR   ("NGTNUM");
+		REG;
+
+		PR   ("PINGN");
+		REG;
+
+#undef  REG
+#undef  DIG
+#undef  PR
+#undef  ADMIN
+#undef  DIM
+	}
+
 	HU_LoadGraphics();
+}
+
+patch_t *HU_CachePatch(const char *format, ...)
+{
+	va_list ap;
+	char buffer[9];
+
+	va_start (ap, format);
+	vsprintf(buffer, format, ap);
+	va_end   (ap);
+
+	if (W_CheckNumForName(buffer) == LUMPERROR)
+		return NULL;
+	else
+		return (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 }
 
 static inline void HU_Stop(void)
@@ -757,169 +739,30 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	{
 		const char *prefix = "", *cstart = "", *cend = "", *adminchar = "\x82~\x83", *remotechar = "\x82@\x83", *fmt2, *textcolor = "\x80";
 		char *tempchar = NULL;
+		char color_prefix[2];
 
-		// player is a spectator?
-        if (players[playernum].spectator)
+		if (players[playernum].spectator)
 		{
-			cstart = "\x86";    // grey name
-			textcolor = "\x86";
+			// grey text
+			cstart = textcolor = "\x86";
 		}
 		else if (target == -1) // say team
 		{
-			if (players[playernum].ctfteam == 1) // red
+			if (players[playernum].ctfteam == 1) 
 			{
-				cstart = "\x85";
-				textcolor = "\x85";
+				// red text
+				cstart = textcolor = "\x85";
 			}
-			else // blue
+			else
 			{
-				cstart = "\x84";
-				textcolor = "\x84";
+				// blue text
+				cstart = textcolor = "\x84";
 			}
 		}
 		else
 		{
-			const UINT8 color = players[playernum].skincolor;
-
-			cstart = "\x83";
-
-			switch (color)
-			{
-				case SKINCOLOR_WHITE:
-				case SKINCOLOR_SILVER:
-				case SKINCOLOR_SLATE:
-					cstart = "\x80"; // White
-					break;
-				case SKINCOLOR_GREY:
-				case SKINCOLOR_NICKEL:
-				case SKINCOLOR_BLACK:
-				case SKINCOLOR_PLATINUM:
-				case SKINCOLOR_JET:
-					cstart = "\x86"; // V_GRAYMAP
-					break;
-				case SKINCOLOR_SEPIA:
-				case SKINCOLOR_BEIGE:
-				case SKINCOLOR_CARAMEL:
-				case SKINCOLOR_PEACH:
-				case SKINCOLOR_BROWN:
-				case SKINCOLOR_LEATHER:
-				case SKINCOLOR_RUST:
-				case SKINCOLOR_WRISTWATCH:
-					cstart = "\x8e"; // V_BROWNMAP
-					break;
-				case SKINCOLOR_FAIRY:
-				case SKINCOLOR_SALMON:
-				case SKINCOLOR_PINK:
-				case SKINCOLOR_ROSE:
-				case SKINCOLOR_LEMONADE:
-				case SKINCOLOR_BUBBLEGUM:
-				case SKINCOLOR_LILAC:
-				case SKINCOLOR_TAFFY:
-					cstart = "\x8d"; // V_PINKMAP
-					break;
-				case SKINCOLOR_CINNAMON:
-				case SKINCOLOR_RUBY:
-				case SKINCOLOR_RASPBERRY:
-				case SKINCOLOR_RED:
-				case SKINCOLOR_CRIMSON:
-				case SKINCOLOR_MAROON:
-				case SKINCOLOR_SCARLET:
-				case SKINCOLOR_KETCHUP:
-					cstart = "\x85"; // V_REDMAP
-					break;
-				case SKINCOLOR_DAWN:
-				case SKINCOLOR_SUNSET:
-				case SKINCOLOR_CREAMSICLE:
-				case SKINCOLOR_ORANGE:
-				case SKINCOLOR_ROSEWOOD:
-				case SKINCOLOR_TANGERINE:
-					cstart = "\x87"; // V_ORANGEMAP
-					break;
-				case SKINCOLOR_TAN:
-				case SKINCOLOR_CREAM:
-					cstart = "\x8f"; // V_TANMAP
-					break;
-				case SKINCOLOR_GOLD:
-				case SKINCOLOR_ROYAL:
-				case SKINCOLOR_BRONZE:
-				case SKINCOLOR_COPPER:
-				case SKINCOLOR_THUNDER:
-					cstart = "\x8A"; // V_GOLDMAP
-					break;
-				case SKINCOLOR_POPCORN:
-				case SKINCOLOR_YELLOW:
-				case SKINCOLOR_MUSTARD:
-				case SKINCOLOR_BANANA:
-				case SKINCOLOR_OLIVE:
-				case SKINCOLOR_CROCODILE:
-					cstart = "\x82"; // V_YELLOWMAP
-					break;
-				case SKINCOLOR_ARTICHOKE:
-				case SKINCOLOR_PERIDOT:
-				case SKINCOLOR_VOMIT:
-				case SKINCOLOR_GARDEN:
-				case SKINCOLOR_LIME:
-				case SKINCOLOR_HANDHELD:
-				case SKINCOLOR_TEA:
-				case SKINCOLOR_PISTACHIO:
-				case SKINCOLOR_MOSS:
-				case SKINCOLOR_CAMOUFLAGE:
-				case SKINCOLOR_ROBOHOOD:
-				case SKINCOLOR_MINT:
-				case SKINCOLOR_GREEN:
-				case SKINCOLOR_PINETREE:
-				case SKINCOLOR_TURTLE:
-				case SKINCOLOR_SWAMP:
-				case SKINCOLOR_DREAM:
-				case SKINCOLOR_PLAGUE:
-				case SKINCOLOR_EMERALD:
-				case SKINCOLOR_ALGAE:
-					cstart = "\x83"; // V_GREENMAP
-					break;
-				case SKINCOLOR_CARIBBEAN:
-				case SKINCOLOR_AZURE:
-				case SKINCOLOR_AQUAMARINE:
-				case SKINCOLOR_TURQUOISE:
-				case SKINCOLOR_TEAL:
-					cstart = "\x8b"; // V_AQUAMAP
-					break;
-				case SKINCOLOR_PIGEON:
-				case SKINCOLOR_CYAN:
-				case SKINCOLOR_JAWZ:
-				case SKINCOLOR_CERULEAN:
-				case SKINCOLOR_NAVY:
-				case SKINCOLOR_SAPPHIRE:
-					cstart = "\x88"; // V_SKYMAP
-					break;
-				case SKINCOLOR_STEEL:
-				case SKINCOLOR_ULTRAMARINE:
-				case SKINCOLOR_PERIWINKLE:
-				case SKINCOLOR_BLUE:
-				case SKINCOLOR_BLUEBERRY:
-				case SKINCOLOR_NOVA:
-					cstart = "\x84"; // V_BLUEMAP
-					break;
-				case SKINCOLOR_THISTLE:
-				case SKINCOLOR_PURPLE:
-				case SKINCOLOR_PASTEL:
-					cstart = "\x81"; // V_PURPLEMAP
-					break;
-				case SKINCOLOR_MAGENTA:
-				case SKINCOLOR_FUCHSIA:
-				case SKINCOLOR_MOONSLAM:
-					cstart = "\x8c"; // V_MAGENTAMAP
-					break;
-				case SKINCOLOR_DUSK:
-				case SKINCOLOR_TOXIC:
-				case SKINCOLOR_MAUVE:
-				case SKINCOLOR_LAVENDER:
-				case SKINCOLOR_BYZANTIUM:
-				case SKINCOLOR_POMEGRANATE:
-					cstart = "\x89"; // V_LAVENDERMAP
-					break;
-				default:
-					break;
-			}
+			sprintf(color_prefix, "%c", '\x80' + (K_SkincolorToTextColor(players[playernum].skincolor) >> V_CHARCOLORSHIFT));
+			cstart = color_prefix;
 		}
 
 		prefix = cstart;
@@ -929,6 +772,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(adminchar) + 1, PU_STATIC, NULL);
 		else if (IsPlayerAdmin(playernum))
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(remotechar) + 1, PU_STATIC, NULL);
+
 		if (tempchar)
 		{
 			if (playernum == serverplayer)
@@ -996,7 +840,7 @@ static inline boolean HU_keyInChatString(char *s, char ch)
 {
 	size_t l;
 
-	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && hu_font[ch-HU_FONTSTART])
+	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && fontv[HU_FONT].font[ch-HU_FONTSTART])
 	  || ch == ' ') // Allow spaces, of course
 	{
 		l = strlen(s);
@@ -1430,7 +1274,7 @@ static char *CHAT_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 			c = toupper(c);
 		c -= HU_FONTSTART;
 
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+		if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
 		{
 			chw = spacewidth;
 			lastusablespace = i;
@@ -1477,12 +1321,12 @@ static void HU_drawMiniChat(void)
 	if (!chat_nummsg_min)
 		return; // needless to say it's useless to do anything if we don't have anything to draw.
 
-	if (splitscreen > 1)
+	if (r_splitscreen > 1)
 		boxw = max(64, boxw/2);
 
 	for (; i>0; i--)
 	{
-		const char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i-1]);
+		char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i-1]);
 		size_t j = 0;
 		INT32 linescount = 0;
 
@@ -1524,15 +1368,17 @@ static void HU_drawMiniChat(void)
 		dy = 0;
 		dx = 0;
 		msglines += linescount+1;
+		if (msg)
+			Z_Free(msg);
 	}
 
 	y = chaty - charheight*(msglines+1);
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
@@ -1550,7 +1396,7 @@ static void HU_drawMiniChat(void)
 		INT32 timer = ((cv_chattime.value*TICRATE)-chat_timers[i]) - cv_chattime.value*TICRATE+9; // see below...
 		INT32 transflag = (timer >= 0 && timer <= 9) ? (timer*V_10TRANS) : 0; // you can make bad jokes out of this one.
 		size_t j = 0;
-		const char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i]); // get the current message, and word wrap it.
+		char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i]); // get the current message, and word wrap it.
 		UINT8 *colormap = NULL;
 
 		while(msg[j]) // iterate through msg
@@ -1583,7 +1429,7 @@ static void HU_drawMiniChat(void)
 				if (cv_chatbacktint.value) // on request of wolfy
 					V_DrawFillConsoleMap(x + dx + 2, y+dy, charwidth, charheight, 159|V_SNAPTOBOTTOM|V_SNAPTOLEFT);
 
-				V_DrawChatCharacter(x + dx + 2, y+dy, msg[j++] |V_SNAPTOBOTTOM|V_SNAPTOLEFT|transflag, !cv_allcaps.value, colormap);
+				V_DrawChatCharacter(x + dx + 2, y+dy, msg[j++] |V_SNAPTOBOTTOM|V_SNAPTOLEFT|transflag, true, colormap);
 			}
 
 			dx += charwidth;
@@ -1596,6 +1442,8 @@ static void HU_drawMiniChat(void)
 		}
 		dy += charheight;
 		dx = 0;
+		if (msg)
+			Z_Free(msg);
 	}
 
 	// decrement addy and make that shit smooth:
@@ -1620,10 +1468,10 @@ static void HU_drawChatLog(INT32 offset)
 		chat_scroll = chat_maxscroll;
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		boxh = max(6, boxh/2);
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			boxw = max(64, boxw/2);
 	}
 #endif
@@ -1631,10 +1479,10 @@ static void HU_drawChatLog(INT32 offset)
 	y = chaty - offset*charheight - (chat_scroll*charheight) - boxh*charheight - 12;
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
@@ -1651,7 +1499,7 @@ static void HU_drawChatLog(INT32 offset)
 	{
 		INT32 clrflag = 0;
 		INT32 j = 0;
-		const char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_log[i]); // get the current message, and word wrap it.
+		char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_log[i]); // get the current message, and word wrap it.
 		UINT8 *colormap = NULL;
 		while(msg[j]) // iterate through msg
 		{
@@ -1677,7 +1525,7 @@ static void HU_drawChatLog(INT32 offset)
 			else
 			{
 				if ((y+dy+2 >= chat_topy) && (y+dy < (chat_bottomy)))
-					V_DrawChatCharacter(x + dx + 2, y+dy+2, msg[j++] |V_SNAPTOBOTTOM|V_SNAPTOLEFT, !cv_allcaps.value, colormap);
+					V_DrawChatCharacter(x + dx + 2, y+dy+2, msg[j++] |V_SNAPTOBOTTOM|V_SNAPTOLEFT, true, colormap);
 				else
 					j++; // don't forget to increment this or we'll get stuck in the limbo.
 			}
@@ -1691,6 +1539,8 @@ static void HU_drawChatLog(INT32 offset)
 		}
 		dy += charheight;
 		dx = 0;
+		if (msg)
+			Z_Free(msg);
 	}
 
 
@@ -1739,10 +1589,10 @@ static void HU_DrawChat(void)
 	const char *mute = "Chat has been muted.";
 
 #ifdef NETSPLITSCREEN
-	if (splitscreen)
+	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-		if (splitscreen > 1)
+		if (r_splitscreen > 1)
 		{
 			y += 16;
 			boxw = max(64, boxw/2);
@@ -1778,7 +1628,7 @@ static void HU_DrawChat(void)
 			++i;
 		else
 		{
-			V_DrawChatCharacter(chatx + c + 2, y, talk[i] |V_SNAPTOBOTTOM|V_SNAPTOLEFT|cflag, !cv_allcaps.value, V_GetStringColormap(talk[i]|cflag));
+			V_DrawChatCharacter(chatx + c + 2, y, talk[i] |V_SNAPTOBOTTOM|V_SNAPTOLEFT|cflag, true, V_GetStringColormap(talk[i]|cflag));
 			i++;
 		}
 
@@ -1796,7 +1646,7 @@ static void HU_DrawChat(void)
 	typelines = 1;
 
 	if ((strlen(w_chat) == 0 || c_input == 0) && hu_tick < 4)
-		V_DrawChatCharacter(chatx + 2 + c, y+1, '_' |V_SNAPTOBOTTOM|V_SNAPTOLEFT|t, !cv_allcaps.value, NULL);
+		V_DrawChatCharacter(chatx + 2 + c, y+1, '_' |V_SNAPTOBOTTOM|V_SNAPTOLEFT|t, true, NULL);
 
 	while (w_chat[i])
 	{
@@ -1806,7 +1656,7 @@ static void HU_DrawChat(void)
 			INT32 cursorx = (c+charwidth < boxw-charwidth) ? (chatx + 2 + c+charwidth) : (chatx+1); // we may have to go down.
 			INT32 cursory = (cursorx != chatx+1) ? (y) : (y+charheight);
 			if (hu_tick < 4)
-				V_DrawChatCharacter(cursorx, cursory+1, '_' |V_SNAPTOBOTTOM|V_SNAPTOLEFT|t, !cv_allcaps.value, NULL);
+				V_DrawChatCharacter(cursorx, cursory+1, '_' |V_SNAPTOBOTTOM|V_SNAPTOLEFT|t, true, NULL);
 
 			if (cursorx == chatx+1 && saylen == i) // a weirdo hack
 			{
@@ -1819,7 +1669,7 @@ static void HU_DrawChat(void)
 		if (w_chat[i] < HU_FONTSTART)
 			++i;
 		else
-			V_DrawChatCharacter(chatx + c + 2, y, w_chat[i++] | V_SNAPTOBOTTOM|V_SNAPTOLEFT | t, !cv_allcaps.value, NULL);
+			V_DrawChatCharacter(chatx + c + 2, y, w_chat[i++] | V_SNAPTOBOTTOM|V_SNAPTOLEFT | t, true, NULL);
 
 		c += charwidth;
 		if (c > boxw-(charwidth*2) && !skippedline)
@@ -1836,10 +1686,10 @@ static void HU_DrawChat(void)
 		INT32 count = 0;
 		INT32 p_dispy = chaty - charheight -1;
 #ifdef NETSPLITSCREEN
-		if (splitscreen)
+		if (r_splitscreen)
 		{
 			p_dispy -= BASEVIDHEIGHT/2;
-			if (splitscreen > 1)
+			if (r_splitscreen > 1)
 				p_dispy += 16;
 		}
 		else
@@ -1945,13 +1795,13 @@ static void HU_DrawChat_Old(void)
 		else
 		{
 			//charwidth = SHORT(hu_font[talk[i]-HU_FONTSTART]->width) * con_scalefactor;
-			V_DrawCharacter(HU_INPUTX + c, y, talk[i++] | cv_constextsize.value | V_NOSCALESTART, !cv_allcaps.value);
+			V_DrawCharacter(HU_INPUTX + c, y, talk[i++] | cv_constextsize.value | V_NOSCALESTART, true);
 		}
 		c += charwidth;
 	}
 
 	if ((strlen(w_chat) == 0 || c_input == 0) && hu_tick < 4)
-		V_DrawCharacter(HU_INPUTX+c, y+2*con_scalefactor, '_' |cv_constextsize.value | V_NOSCALESTART|t, !cv_allcaps.value);
+		V_DrawCharacter(HU_INPUTX+c, y+2*con_scalefactor, '_' |cv_constextsize.value | V_NOSCALESTART|t, true);
 
 	i = 0;
 	while (w_chat[i])
@@ -1961,7 +1811,7 @@ static void HU_DrawChat_Old(void)
 		{
 			INT32 cursorx = (HU_INPUTX+c+charwidth < vid.width) ? (HU_INPUTX + c + charwidth) : (HU_INPUTX); // we may have to go down.
 			INT32 cursory = (cursorx != HU_INPUTX) ? (y) : (y+charheight);
-			V_DrawCharacter(cursorx, cursory+2*con_scalefactor, '_' |cv_constextsize.value | V_NOSCALESTART|t, !cv_allcaps.value);
+			V_DrawCharacter(cursorx, cursory+2*con_scalefactor, '_' |cv_constextsize.value | V_NOSCALESTART|t, true);
 		}
 
 		//Hurdler: isn't it better like that?
@@ -1973,7 +1823,7 @@ static void HU_DrawChat_Old(void)
 		else
 		{
 			//charwidth = SHORT(hu_font[w_chat[i]-HU_FONTSTART]->width) * con_scalefactor;
-			V_DrawCharacter(HU_INPUTX + c, y, w_chat[i++] | cv_constextsize.value | V_NOSCALESTART | t, !cv_allcaps.value);
+			V_DrawCharacter(HU_INPUTX + c, y, w_chat[i++] | cv_constextsize.value | V_NOSCALESTART | t, true);
 		}
 
 		c += charwidth;
@@ -2250,7 +2100,7 @@ void HU_DrawSongCredits(void)
 {
 	char *str;
 	INT32 len, destx;
-	INT32 y = (splitscreen ? (BASEVIDHEIGHT/2)-4 : 32);
+	INT32 y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32);
 	INT32 bgt;
 
 	if (!cursongcredit.def) // No def
@@ -2480,28 +2330,49 @@ void HU_Erase(void)
 //                   IN-LEVEL MULTIPLAYER RANKINGS
 //======================================================================
 
+static int
+Ping_gfx_num (int ping)
+{
+	if (ping < 76)
+		return 0;
+	else if (ping < 137)
+		return 1;
+	else if (ping < 256)
+		return 2;
+	else if (ping < 500)
+		return 3;
+	else
+		return 4;
+}
+
 //
 // HU_drawPing
 //
 void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
-	INT32 gfxnum = 4;	// gfx to draw
-	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SALMON, GTC_CACHE);
+	INT32 gfxnum;	// gfx to draw
+	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
 
-	if (ping < 76)
-		gfxnum = 0;
-	else if (ping < 137)
-		gfxnum = 1;
-	else if (ping < 256)
-		gfxnum = 2;
-	else if (ping < 500)
-		gfxnum = 3;
+	gfxnum = Ping_gfx_num(ping);
 
 	V_DrawScaledPatch(x, y, flags, pinggfx[gfxnum]);
 	if (servermaxping && ping > servermaxping && hu_tick < 4)		// flash ping red if too high
 		V_DrawPingNum(x, y+9, flags, ping, colormap);
 	else
 		V_DrawPingNum(x, y+9, flags, ping, NULL);
+}
+
+void
+HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
+{
+	patch_t *patch;
+
+	patch = mping[Ping_gfx_num(ping)];
+
+	if (( flags & V_SNAPTORIGHT ))
+		x += ( BASEVIDWIDTH - SHORT (patch->width) );
+
+	V_DrawScaledPatch(x, y, flags, patch);
 }
 
 //
@@ -3022,7 +2893,7 @@ static void HU_DrawRankings(void)
 
 	// When you play, you quickly see your score because your name is displayed in white.
 	// When playing back a demo, you quickly see who's the view.
-	if (!splitscreen)
+	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	scorelines = 0;
@@ -3065,7 +2936,7 @@ static void HU_DrawRankings(void)
 		if (G_RaceGametype())
 		{
 			if (circuitmap)
-				tab[scorelines].count = players[i].laps+1;
+				tab[scorelines].count = players[i].laps;
 			else
 				tab[scorelines].count = players[i].realtime;
 		}

@@ -21,18 +21,23 @@
 extern consvar_t cv_playername;
 extern consvar_t cv_playercolor;
 extern consvar_t cv_skin;
+extern consvar_t cv_follower;
+extern consvar_t cv_showfollowers;
 // secondary splitscreen player
 extern consvar_t cv_playername2;
 extern consvar_t cv_playercolor2;
 extern consvar_t cv_skin2;
+extern consvar_t cv_follower2;
 // third splitscreen player
 extern consvar_t cv_playername3;
 extern consvar_t cv_playercolor3;
 extern consvar_t cv_skin3;
+extern consvar_t cv_follower3;
 // fourth splitscreen player
 extern consvar_t cv_playername4;
 extern consvar_t cv_playercolor4;
 extern consvar_t cv_skin4;
+extern consvar_t cv_follower4;
 // preferred number of players
 extern consvar_t cv_splitplayers;
 
@@ -59,10 +64,6 @@ extern consvar_t cv_usemouse2;
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)
 extern consvar_t cv_mouse2opt;
 #endif
-
-// normally in p_mobj but the .h is not read
-extern consvar_t cv_itemrespawntime;
-extern consvar_t cv_itemrespawn;
 
 extern consvar_t cv_flagtime;
 extern consvar_t cv_suddendeath;
@@ -104,7 +105,8 @@ extern consvar_t cv_recycler;*/
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
 extern consvar_t cv_eggmanmonitor, cv_orbinaut, cv_jawz, cv_mine;
 extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
-extern consvar_t cv_thundershield, cv_hyudoro, cv_pogospring, cv_kitchensink;
+extern consvar_t cv_thundershield, cv_bubbleshield, cv_flameshield;
+extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
 
 extern consvar_t cv_triplesneaker, cv_triplebanana, cv_decabanana;
 extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
@@ -120,13 +122,15 @@ extern consvar_t cv_kartencore;
 extern consvar_t cv_kartvoterulechanges;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
+extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
 
-extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
+extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
+extern consvar_t cv_kartdebugwaypoints;
 
 extern consvar_t cv_itemfinder;
 
@@ -144,8 +148,10 @@ extern consvar_t cv_ringslinger, cv_soundtest;
 extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionboxes;
 
 extern consvar_t cv_maxping;
+extern consvar_t cv_lagless;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
+extern consvar_t cv_showviewpointtext;
 
 extern consvar_t cv_skipmapcheck;
 
@@ -179,9 +185,15 @@ typedef enum
 	XD_PICKVOTE,    // 24
 	XD_REMOVEPLAYER,// 25
 	XD_POWERLEVEL,  // 26
+	XD_PARTYINVITE, // 27
+	XD_ACCEPTPARTYINVITE, // 28
+	XD_LEAVEPARTY, // 29
+	XD_CANCELPARTYINVITE, // 30
+	XD_GIVEITEM, // 31
+	XD_ADDBOT, // 32
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 27
-	XD_LUAVAR,      // 28
+	XD_LUACMD,      // 33
+	XD_LUAVAR,      // 34
 #endif
 	MAXNETXCMD
 } netxcmd_t;
@@ -237,7 +249,7 @@ void Command_Retry_f(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
 void D_MapChange(INT32 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pfromlevelselect);
 void D_SetupVote(void);
-void D_ModifyClientVote(SINT8 voted, UINT8 splitplayer);
+void D_ModifyClientVote(UINT8 player, SINT8 voted, UINT8 splitplayer);
 void D_PickVote(void);
 void ObjectPlace_OnChange(void);
 boolean IsPlayerAdmin(INT32 playernum);
@@ -246,14 +258,6 @@ void ClearAdminPlayers(void);
 void RemoveAdminPlayer(INT32 playernum);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
-
-extern consvar_t cv_dummyjoinpassword;
-extern boolean joinpasswordset;
-boolean D_IsJoinPasswordOn(void);
-void D_ComputeChallengeAnswer(UINT8 *question, const char *pw, UINT8 *answer);
-void D_SetJoinPassword(const char *pw);
-boolean D_VerifyJoinPasswordChallenge(UINT8 num, UINT8 *answer);
-void D_MakeJoinPasswordChallenge(UINT8 *num, UINT8 *question);
 
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);

@@ -60,6 +60,7 @@ extern INT16 color8to16[256]; // remap color index to highcolor
 extern INT16 *hicolormaps; // remap high colors to high colors..
 
 extern CV_PossibleValue_t Color_cons_t[];
+extern CV_PossibleValue_t Followercolor_cons_t[];	// follower colours table, not a duplicate because of the "Match" option.
 
 // Load TEXTURE1/TEXTURE2/PNAMES definitions, create lookup tables
 void R_LoadTextures(void);
@@ -93,11 +94,13 @@ void R_ReInitColormaps(UINT16 num, lumpnum_t newencoremap);
 void R_ClearColormaps(void);
 INT32 R_ColormapNumForName(char *name);
 INT32 R_CreateColormap(char *p1, char *p2, char *p3);
-UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b);
 #ifdef HASINVERT
 void R_MakeInvertmap(void);
 #endif
 const char *R_ColormapNameForNum(INT32 num);
+
+UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette);
+#define NearestColor(r, g, b) NearestPaletteColor(r, g, b, NULL)
 
 extern INT32 numtextures;
 
