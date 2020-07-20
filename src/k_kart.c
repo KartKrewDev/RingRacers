@@ -1648,6 +1648,35 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	sparks->flags2 |= MF2_DONTDRAW;
 }
 
+static fixed_t K_RandomFlip(fixed_t f)
+{
+	return ( ( leveltime & 1 ) ? f : -f );
+}
+
+void K_SpawnDriftBoostClip(player_t *player)
+{
+	mobj_t *clip;
+	fixed_t scale = 115*FRACUNIT/100;
+
+	clip = P_SpawnMobj(
+			player->mo->x,
+			player->mo->y,
+			player->mo->z + player->mo->height,
+			MT_DRIFTCLIP
+	);
+
+	P_SetTarget(&clip->target, player->mo);
+	P_SetScale(clip, ( clip->destscale = FixedMul(scale, player->mo->scale) ));
+	K_MatchGenericExtraFlags(clip, player->mo);
+
+	clip->fuse = 105;
+	clip->momz = 4 * clip->scale;
+
+	P_InstaThrust(clip, player->mo->angle +
+			K_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
+			FixedMul(scale, player->speed));
+}
+
 /**	\brief Handles the state changing for moving players, moved here to eliminate duplicate code
 
 	\param	player	player data

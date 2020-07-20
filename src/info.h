@@ -811,6 +811,9 @@ typedef enum sprite
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
+	SPR_DBCL, // Drift boost clip
+	SPR_DBNC, // Drift boost clip's sparks
+
 	SPR_FIRSTFREESLOT,
 	SPR_LASTFREESLOT = SPR_FIRSTFREESLOT + NUMSPRITEFREESLOTS - 1,
 	NUMSPRITES
@@ -3247,6 +3250,19 @@ typedef enum state
 	S_DRIFTEXPLODE3,
 	S_DRIFTEXPLODE4,
 
+	// Drift boost clip
+	S_DRIFTCLIP1,
+	S_DRIFTCLIP2,
+	S_DRIFTCLIP3,
+	S_DRIFTCLIP4,
+	S_DRIFTCLIP5,
+	S_DRIFTCLIP6,
+	S_DRIFTCLIP7,
+	S_DRIFTCLIP8,
+
+	// Drift boost clip sparks
+	S_DRIFTCLIPSPARK,
+
 	// Sneaker boost effect
 	S_BOOSTFLAME,
 	S_BOOSTSMOKESPAWNER,
@@ -4791,6 +4807,8 @@ typedef enum mobj_type
 	MT_FASTLINE,
 	MT_FASTDUST,
 	MT_DRIFTEXPLODE,
+	MT_DRIFTCLIP,
+	MT_DRIFTCLIPSPARK,
 	MT_BOOSTFLAME,
 	MT_BOOSTSMOKE,
 	MT_SNEAKERTRAIL,

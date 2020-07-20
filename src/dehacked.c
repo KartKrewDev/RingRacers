@@ -6586,6 +6586,19 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTEXPLODE3",
 	"S_DRIFTEXPLODE4",
 
+	// Drift boost clip
+	"S_DRIFTCLIP1",
+	"S_DRIFTCLIP2",
+	"S_DRIFTCLIP3",
+	"S_DRIFTCLIP4",
+	"S_DRIFTCLIP5",
+	"S_DRIFTCLIP6",
+	"S_DRIFTCLIP7",
+	"S_DRIFTCLIP8",
+
+	// Drift boost clip spark
+	"S_DRIFTCLIPSPARK",
+
 	// Sneaker boost effect
 	"S_BOOSTFLAME",
 	"S_BOOSTSMOKESPAWNER",
@@ -8093,6 +8106,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_FASTLINE",
 	"MT_FASTDUST",
 	"MT_DRIFTEXPLODE",
+	"MT_DRIFTCLIP",
+	"MT_DRIFTCLIPSPARK",
 	"MT_BOOSTFLAME",
 	"MT_BOOSTSMOKE",
 	"MT_SNEAKERTRAIL",

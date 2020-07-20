@@ -2457,6 +2457,18 @@ static boolean P_ZMovement(mobj_t *mo)
 			mom.z = P_MobjFlip(mo)*FixedMul(5*FRACUNIT, mo->scale);
 		else if (mo->type == MT_SPINFIRE) // elemental shield fire is another exception here
 			;
+		else if (mo->type == MT_DRIFTCLIP)
+		{
+			mom.z = -mom.z/2;
+			if (abs(mom.z) > 4 * mo->scale / 3)
+			{
+				mobj_t *spark = P_SpawnMobj(mo->x, mo->y, mo->z, MT_DRIFTCLIPSPARK);
+				spark->momx = mo->momx/2;
+				spark->momy = mo->momy/2;
+			}
+			else
+				mo->flags2 ^= MF2_DONTDRAW;
+		}
 		else if (mo->flags & MF_MISSILE)
 		{
 			if (!(mo->flags & MF_NOCLIP))
@@ -8337,6 +8349,9 @@ void P_MobjThinker(mobj_t *mobj)
 				mobj->color = SKINCOLOR_SAPPHIRE;
 			else if (mobj->fuse > 32)
 				mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+
+			if (mobj->fuse == 17 || mobj->fuse == 33)/* to red/blue */
+				K_SpawnDriftBoostClip(mobj->target->player);
 
 			{
 				player_t *p = NULL;
