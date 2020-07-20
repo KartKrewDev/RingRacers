@@ -9853,7 +9853,8 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 		{
 			*hud_y /= 2;
 
-			if (camnum > 1)
+			if ((r_splitscreen == 1 && camnum == 1)
+			|| (r_splitscreen > 1 && camnum > 1))
 			{
 				*hud_y += shhalffixed;
 			}
@@ -9967,6 +9968,30 @@ static void K_drawKartPlayerCheck(void)
 	}
 }
 
+static boolean K_ShowPlayerNametag(player_t *p)
+{
+	if (demo.playback == true && demo.freecam == true)
+	{
+		return true;
+	}
+
+	if (stplyr == p)
+	{
+		return false;
+	}
+
+	if (G_RaceGametype())
+	{
+		if ((p->kartstuff[k_position] < stplyr->kartstuff[k_position]-2)
+		|| (p->kartstuff[k_position] > stplyr->kartstuff[k_position]+2))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static void K_drawKartNameTags(void)
 {
 	const fixed_t maxdistance = 8192*mapobjectscale;
@@ -10012,7 +10037,6 @@ static void K_drawKartNameTags(void)
 		fixed_t y = -BASEVIDWIDTH * FRACUNIT;
 
 		vertex_t v;
-		UINT8 j;
 
 		if (!playeringame[i] || ntplayer->spectator)
 		{
@@ -10032,18 +10056,24 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		for (j = 0; j <= r_splitscreen; j++)
+		if (!(demo.playback == true && demo.freecam == true))
 		{
-			if (ntplayer == &players[displayplayers[j]])
-			{
-				break;
-			}
-		}
+			UINT8 j;
 
-		if (j <= r_splitscreen)
-		{
-			// Is a player that's being shown on this computer
-			continue;
+			for (j = 0; j <= r_splitscreen; j++)
+			{
+				if (ntplayer == &players[displayplayers[j]])
+				{
+					break;
+				}
+			}
+
+			if (j <= r_splitscreen)
+			{
+				// This is a player that's being shown on this computer
+				// (Remove whenever we get splitscreen ABCD indicators)
+				continue;
+			}
 		}
 
 		v.x = ntplayer->mo->x;
@@ -10079,10 +10109,9 @@ static void K_drawKartNameTags(void)
 				V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS, kp_rival[blink], NULL);
 			}
 		}
-		else if (netgame)
+		else if (netgame || demo.playback)
 		{
-			if ((ntplayer->kartstuff[k_position] >= stplyr->kartstuff[k_position]-2)
-			&& (ntplayer->kartstuff[k_position] <= stplyr->kartstuff[k_position]+2))
+			if (K_ShowPlayerNametag(ntplayer) == true)
 			{
 				INT32 namelen = V_ThinStringWidth(player_names[i], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
 				INT32 clr = K_SkincolorToTextColor(ntplayer->skincolor);
