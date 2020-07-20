@@ -813,6 +813,7 @@ typedef enum sprite
 
 	SPR_DBCL, // Drift boost clip
 	SPR_DBNC, // Drift boost clip's sparks
+	SPR_DBST, // Drift boost plume
 
 	SPR_FIRSTFREESLOT,
 	SPR_LASTFREESLOT = SPR_FIRSTFREESLOT + NUMSPRITEFREESLOTS - 1,
@@ -3249,6 +3250,10 @@ typedef enum state
 	S_DRIFTEXPLODE2,
 	S_DRIFTEXPLODE3,
 	S_DRIFTEXPLODE4,
+	S_DRIFTEXPLODE5,
+	S_DRIFTEXPLODE6,
+	S_DRIFTEXPLODE7,
+	S_DRIFTEXPLODE8,
 
 	// Drift boost clip
 	S_DRIFTCLIP1,

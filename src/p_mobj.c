@@ -8329,18 +8329,37 @@ void P_MobjThinker(mobj_t *mobj)
 			//mobj->angle = mobj->target->angle;
 			{
 				angle_t angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+				fixed_t nudge;
+
 				mobj->angle = angle;
-				P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, angle+ANGLE_180, 4*mobj->target->radius),
-						mobj->target->y + P_ReturnThrustY(mobj, angle+ANGLE_180, 4*mobj->target->radius), mobj->target->z);
+
+				if (( mobj->fuse & 1 ))
+				{
+					nudge = 4*mobj->target->radius;
+				}
+				else
+				{
+					nudge = 2*mobj->target->radius;
+					/* rotate the papersprite frames to see the flat angle */
+					mobj->angle += ANGLE_90;
+				}
+
+				P_TeleportMove(mobj,
+						mobj->target->x + P_ReturnThrustX(mobj, angle + ANGLE_180, nudge),
+						mobj->target->y + P_ReturnThrustY(mobj, angle + ANGLE_180, nudge),
+						mobj->target->z);
 			}
 			P_SetScale(mobj, mobj->target->scale);
-			mobj->flags2 ^= MF2_DONTDRAW;
 #ifdef HWRENDER
 			mobj->modeltilt = mobj->target->modeltilt;
 #endif
 
 			if (mobj->fuse <= 16)
+			{
 				mobj->color = SKINCOLOR_KETCHUP;
+				/* don't draw papersprite frames after blue boost */
+				mobj->flags2 ^= MF2_DONTDRAW;
+			}
 			else if (mobj->fuse <= 32)
 				mobj->color = SKINCOLOR_SAPPHIRE;
 			else if (mobj->fuse > 32)

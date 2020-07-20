@@ -6585,6 +6585,10 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTEXPLODE2",
 	"S_DRIFTEXPLODE3",
 	"S_DRIFTEXPLODE4",
+	"S_DRIFTEXPLODE5",
+	"S_DRIFTEXPLODE6",
+	"S_DRIFTEXPLODE7",
+	"S_DRIFTEXPLODE8",
 
 	// Drift boost clip
 	"S_DRIFTCLIP1",
