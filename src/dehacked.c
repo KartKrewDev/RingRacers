@@ -8459,7 +8459,7 @@ static const char *const MOBJFLAG2_LIST[] = {
 	"AXIS",			// It's a NiGHTS axis! (For faster checking)
 	"TWOD",			// Moves like it's in a 2D level
 	"DONTRESPAWN",	// Don't respawn this object!
-	"DONTDRAW",		// Don't generate a vissprite
+	"\x01",			// free: 1<<3 (name un-matchable)
 	"AUTOMATIC",	// Thrown ring has automatic properties
 	"RAILRING",		// Thrown ring has rail properties
 	"BOUNCERING",	// Thrown ring has bounce properties
@@ -8476,7 +8476,7 @@ static const char *const MOBJFLAG2_LIST[] = {
 	"JUSTATTACKED",	// can be pushed by other moving mobjs
 	"FIRING",		// turret fire
 	"SUPERFIRE",	// Firing something with Super Sonic-stopping properties. Or, if mobj has MF_MISSILE, this is the actual fire from it.
-	"SHADOW",		// Fuzzy draw, makes targeting harder.
+	"\x01",			// free: 1<<20 (name un-matchable)
 	"STRONGBOX",	// Flag used for "strong" random monitors.
 	"OBJECTFLIP",	// Flag for objects that always have flipped gravity.
 	"SKULLFLY",		// Special handling: skull in flight.
@@ -8499,10 +8499,6 @@ static const char *const MOBJEFLAG_LIST[] = {
 	"JUSTBOUNCEDWALL", // SRB2Kart: Mobj already bounced off a wall this tic
 	"SPRUNG", // Mobj was already sprung this tic
 	"APPLYPMOMZ", // Platform movement
-	"DRAWONLYFORP1", // SRB2Kart: Splitscreen sprite draw flags
-	"DRAWONLYFORP2",
-	"DRAWONLYFORP3",
-	"DRAWONLYFORP4",
 	NULL
 };
 
@@ -9436,6 +9432,29 @@ struct {
 	{"TC_ALLWHITE",TC_ALLWHITE},
 	{"TC_RAINBOW",TC_RAINBOW},
 	{"TC_BLINK",TC_BLINK},
+
+	// MFD_ draw flag enum
+	{"MFD_DONTDRAWP1",MFD_DONTDRAWP1},
+	{"MFD_DONTDRAWP2",MFD_DONTDRAWP2},
+	{"MFD_DONTDRAWP3",MFD_DONTDRAWP3},
+	{"MFD_DONTDRAWP4",MFD_DONTDRAWP4},
+	{"MFD_TRANS10",MFD_TRANS10},
+	{"MFD_TRANS20",MFD_TRANS20},
+	{"MFD_TRANS30",MFD_TRANS30},
+	{"MFD_TRANS40",MFD_TRANS40},
+	{"MFD_TRANS50",MFD_TRANS50},
+	{"MFD_TRANS60",MFD_TRANS60},
+	{"MFD_TRANS70",MFD_TRANS70},
+	{"MFD_TRANS80",MFD_TRANS80},
+	{"MFD_TRANS90",MFD_TRANS90},
+	{"MFD_TRANSMASK",MFD_TRANSMASK},
+	{"MFD_FULLBRIGHT",MFD_FULLBRIGHT},
+	{"MFD_SEMIBRIGHT",MFD_SEMIBRIGHT},
+	{"MFD_NOBRIGHT",MFD_NOBRIGHT},
+	{"MFD_BRIGHTMASK",MFD_BRIGHTMASK},
+	{"MFD_DONTDRAW",MFD_DONTDRAW},
+	{"MFD_SHADOW",MFD_SHADOW},
+	{"MFD_TRANSSHIFT",MFD_TRANSSHIFT},
 #endif
 
 	{NULL,0}

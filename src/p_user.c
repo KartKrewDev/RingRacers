@@ -654,7 +654,7 @@ static void P_DeNightserizePlayer(player_t *player)
 
 	player->mo->flags &= ~MF_NOGRAVITY;
 
-	player->mo->flags2 &= ~MF2_DONTDRAW;
+	player->mo->drawflags &= ~MFD_DONTDRAW;
 
 	// Restore aiming angle
 	if (player == &players[consoleplayer])
@@ -729,7 +729,7 @@ void P_NightserizePlayer(player_t *player, INT32 nighttime)
 
 	player->mo->flags |= MF_NOGRAVITY;
 
-	player->mo->flags2 |= MF2_DONTDRAW;
+	player->mo->drawflags |= MFD_DONTDRAW;
 
 	player->nightstime = player->startedtime = nighttime*TICRATE;
 	player->bonustime = false;
@@ -1623,7 +1623,7 @@ void P_SpawnShieldOrb(player_t *player)
 			if (shieldobj->info->painstate)
 				P_SetMobjState(shieldobj,shieldobj->info->painstate);
 			else
-				shieldobj->flags2 |= MF2_SHADOW;
+				shieldobj->drawflags |= MFD_SHADOW;
 		}
 	}
 }
@@ -1659,8 +1659,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprite = mobj->sprite;
 	ghost->frame = mobj->frame;
 	ghost->tics = -1;
-	ghost->frame &= ~FF_TRANSMASK;
-	ghost->frame |= tr_trans50<<FF_TRANSSHIFT;
+	ghost->drawflags |= tr_trans50 << MFD_TRANSSHIFT;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
@@ -3411,7 +3410,7 @@ static void P_DoFiring(player_t *player, ticcmd_t *cmd) // SRB2kart - unused.
 					return;
 				P_SetWeaponDelay(player, (3*TICRATE)/2);
 
-				mo = P_SpawnPlayerMissile(player->mo, MT_REDRING, MF2_RAILRING|MF2_DONTDRAW);
+				mo = P_SpawnPlayerMissile(player->mo, MT_REDRING, MF2_RAILRING);
 
 				// Rail has no unique thrown object, therefore its sound plays here.
 				S_StartSound(player->mo, sfx_rail1);
@@ -4326,7 +4325,7 @@ static void P_SpectatorMovement(player_t *player)
 	if (mo)
 	{
 		mo->flags2 |= MF2_RAILRING;
-		mo->flags2 |= MF2_DONTDRAW;
+		mo->drawflags |= MFD_DONTDRAW;
 		mo->flags |= MF_NOCLIPHEIGHT;
 		mo->flags |= MF_NOCLIP;
 		mo->flags &= ~MF_MISSILE;
@@ -5069,7 +5068,7 @@ static void P_NiGHTSMovement(player_t *player)
 	radius = player->mo->target->radius;
 
 	player->mo->flags |= MF_NOGRAVITY;
-	player->mo->flags2 |= MF2_DONTDRAW;
+	player->mo->drawflags |= MFD_DONTDRAW;
 	P_SetScale(player->mo->tracer, player->mo->scale);
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -7109,7 +7108,7 @@ static void P_DeathThink(player_t *player)
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->flags2 |= MF2_DONTDRAW;
+			player->mo->drawflags |= MFD_DONTDRAW;
 		}
 	}
 	else
@@ -7467,7 +7466,7 @@ void P_DemoCameraMovement(camera_t *cam)
 
 	awayviewmobj_hack = P_SpawnMobj(cam->x, cam->y, cam->z, MT_THOK);
 	awayviewmobj_hack->tics = 2;
-	awayviewmobj_hack->flags2 |= MF2_DONTDRAW;
+	awayviewmobj_hack->drawflags |= MFD_DONTDRAW;
 
 	democam.soundmobj = awayviewmobj_hack;
 
@@ -8581,13 +8580,13 @@ static void P_HandleFollower(player_t *player)
 		P_SetScale(player->follower, FixedMul(fl.scale, player->mo->scale));
 		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo);	// Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
 
-		// For comeback in battle.
-		player->follower->flags2 = (player->follower->flags2 & ~MF2_SHADOW)|(player->mo->flags2 & MF2_SHADOW);
+		// Match how the player is being drawn
+		player->follower->drawflags = player->mo->drawflags;
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
 		// Also make the follower invisible if we choose not to have it displayed because it isn't ours. (also quick hacky check for f12)
 		if (player->pflags & PF_TIMEOVER || (!cv_showfollowers.value && (!P_IsDisplayPlayer(player) || displayplayers[0] != consoleplayer) ))
-			player->follower->flags2 |= MF2_DONTDRAW;
+			player->follower->drawflags |= MFD_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
 			player->follower->angle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);
@@ -8608,7 +8607,7 @@ static void P_HandleFollower(player_t *player)
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
 			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
-			bmobj->flags2 = (player->follower->flags2 & ~MF2_SHADOW)|(player->mo->flags2 & MF2_SHADOW);
+			bmobj->drawflags = player->mo->drawflags;
 
 			if (player->follower->threshold)	// threshold means the follower was "despawned" with S_NULL (is actually just set to S_INVISIBLE)
 				P_SetMobjState(bmobj, S_INVISIBLE);	// sooooo... let's do the same!
@@ -8867,9 +8866,9 @@ void P_PlayerThink(player_t *player)
 	if (player->playerstate == PST_DEAD)
 	{
 		if (player->spectator)
-			player->mo->flags2 |= MF2_SHADOW;
+			player->mo->drawflags |= MFD_SHADOW;
 		else
-			player->mo->flags2 &= ~MF2_SHADOW;
+			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
 		P_DeathThink(player);
 
 		return;
@@ -9016,8 +9015,7 @@ void P_PlayerThink(player_t *player)
 		gmobj->fuse = 2;
 		if (leveltime & 1)
 		{
-			gmobj->frame &= ~FF_TRANSMASK;
-			gmobj->frame |= tr_trans70<<FF_TRANSSHIFT;
+			gmobj->drawflags |= tr_trans70 << MFD_TRANSSHIFT;
 		}
 
 		// Hide the mobj from our sights if we're the displayplayer and chasecam is off.
@@ -9027,7 +9025,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (player == &players[displayplayers[i]] && !camera[i].chase)
 			{
-				gmobj->flags2 |= MF2_DONTDRAW;
+				gmobj->drawflags |= MFD_DONTDRAW;
 				break;
 			}
 		}
@@ -9167,16 +9165,16 @@ void P_PlayerThink(player_t *player)
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)
 			&& (leveltime & 1))
-			player->mo->flags2 |= MF2_DONTDRAW;
+			player->mo->drawflags |= MFD_DONTDRAW;
 		else
-			player->mo->flags2 &= ~MF2_DONTDRAW;
+			player->mo->drawflags &= ~MFD_DONTDRAW;
 	}
 	/*else if (player->mo->tracer)
 	{
 		if (player->powers[pw_flashing] & 1)
-			player->mo->tracer->flags2 |= MF2_DONTDRAW;
+			player->mo->tracer->drawflags |= MFD_DONTDRAW;
 		else
-			player->mo->tracer->flags2 &= ~MF2_DONTDRAW;
+			player->mo->tracer->drawflags &= ~MFD_DONTDRAW;
 	}*/
 
 	player->pflags &= ~PF_SLIDING;
@@ -9554,7 +9552,7 @@ void P_PlayerAfterThink(player_t *player)
 	// spectator invisibility and nogravity.
 	if ((netgame || multiplayer) && player->spectator)
 	{
-		player->mo->flags2 |= MF2_DONTDRAW;
+		player->mo->drawflags |= MFD_DONTDRAW;
 		player->mo->flags |= MF_NOGRAVITY;
 	}
 
