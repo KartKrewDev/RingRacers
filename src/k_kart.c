@@ -40,22 +40,6 @@
 // indirectitemcooldown is timer before anyone's allowed another Shrink/SPB
 // mapreset is set when enough players fill an empty server
 
-UINT16 K_GetPlayerDontDrawFlag(player_t *player)
-{
-	UINT16 flag = 0;
-
-	if (player == &players[displayplayers[0]])
-		flag = MFD_DONTDRAWP1;
-	else if (r_splitscreen >= 1 && player == &players[displayplayers[1]])
-		flag = MFD_DONTDRAWP2;
-	else if (r_splitscreen >= 2 && player == &players[displayplayers[2]])
-		flag = MFD_DONTDRAWP3;
-	else if (r_splitscreen >= 3 && player == &players[displayplayers[3]])
-		flag = MFD_DONTDRAWP4;
-
-	return flag;
-}
-
 player_t *K_GetItemBoxPlayer(mobj_t *mobj)
 {
 	fixed_t closest = INT32_MAX;
@@ -1346,19 +1330,15 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 				cury + (P_RandomRange(-12,12)*mapobjectscale),
 				curz + (P_RandomRange(24,48)*mapobjectscale),
 				MT_SIGNSPARKLE);
-
 			P_SetMobjState(band, S_SIGNSPARK1 + (leveltime % 11));
 			P_SetScale(band, (band->destscale = (3*player->mo->scale)/2));
-
 			band->color = colors[c];
 			band->colorized = true;
-
 			band->fuse = 2;
-
 			if (transparent)
-				band->drawflags |= MFD_SHADOW;
-
-			band->drawflags |= MFD_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player) | K_GetPlayerDontDrawFlag(victim));
+				band->flags2 |= MF2_SHADOW;
+			if (!P_IsDisplayPlayer(player) && !P_IsDisplayPlayer(victim))
+				band->flags2 |= MF2_DONTDRAW;
 		}
 
 		curx += stepx;
@@ -1586,7 +1566,11 @@ void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master)
 	K_FlipFromObject(mo, master);
 
 	// visibility (usually for hyudoro)
-	mo->drawflags = (master->drawflags & MFD_DONTDRAW);
+	mo->flags2 = (mo->flags2 & ~MF2_DONTDRAW)|(master->flags2 & MF2_DONTDRAW);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP1)|(master->eflags & MFE_DRAWONLYFORP1);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP2)|(master->eflags & MFE_DRAWONLYFORP2);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP3)|(master->eflags & MFE_DRAWONLYFORP3);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP4)|(master->eflags & MFE_DRAWONLYFORP4);
 }
 
 // same as above, but does not adjust Z height when flipping
@@ -1597,7 +1581,11 @@ void K_GenericExtraFlagsNoZAdjust(mobj_t *mo, mobj_t *master)
 	mo->flags2 = (mo->flags2 & ~MF2_OBJECTFLIP)|(master->flags2 & MF2_OBJECTFLIP);
 
 	// visibility (usually for hyudoro)
-	mo->drawflags = (master->drawflags & MFD_DONTDRAW);
+	mo->flags2 = (mo->flags2 & ~MF2_DONTDRAW)|(master->flags2 & MF2_DONTDRAW);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP1)|(master->eflags & MFE_DRAWONLYFORP1);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP2)|(master->eflags & MFE_DRAWONLYFORP2);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP3)|(master->eflags & MFE_DRAWONLYFORP3);
+	mo->eflags = (mo->eflags & ~MFE_DRAWONLYFORP4)|(master->eflags & MFE_DRAWONLYFORP4);
 }
 
 
@@ -1657,7 +1645,7 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	P_SetTarget(&sparks->target, player->mo);
 	P_SetScale(sparks, (sparks->destscale = player->mo->scale));
 	K_MatchGenericExtraFlags(sparks, player->mo);
-	sparks->drawflags |= MFD_DONTDRAW;
+	sparks->flags2 |= MF2_DONTDRAW;
 }
 
 static fixed_t K_RandomFlip(fixed_t f)
@@ -3407,7 +3395,7 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
 	}
 
 	if (translucent)
-		dust->drawflags |= MFD_SHADOW;
+		dust->flags2 |= MF2_SHADOW;
 }
 
 void K_SpawnDraftDust(mobj_t *mo)
@@ -4883,9 +4871,9 @@ static void K_MoveHeldObjects(player_t *player)
 					cur->flags &= ~MF_NOCLIPTHING;
 
 					if (player->kartstuff[k_rocketsneakertimer] <= TICRATE && (leveltime & 1))
-						cur->drawflags |= MFD_DONTDRAW;
+						cur->flags2 |= MF2_DONTDRAW;
 					else
-						cur->drawflags &= ~MFD_DONTDRAW;
+						cur->flags2 &= ~MF2_DONTDRAW;
 
 					if (num & 1)
 						P_SetMobjStateNF(cur, (vibrate ? S_ROCKETSNEAKER_LVIBRATE : S_ROCKETSNEAKER_L));
@@ -5434,7 +5422,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				//ghost->momy = (3*player->mo->momy)/4;
 				//ghost->momz = (3*player->mo->momz)/4;
 				if (leveltime & 1)
-					ghost->drawflags |= MFD_DONTDRAW;
+					ghost->flags2 |= MF2_DONTDRAW;
 			}
 
 			if (P_IsObjectOnGround(player->mo))
@@ -5461,20 +5449,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 				player->mo->z + player->mo->momz + player->mo->height + (24*player->mo->scale), MT_THOK);
-
 			P_SetMobjState(debtflag, S_RINGDEBT);
 			P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
-
 			K_MatchGenericExtraFlags(debtflag, player->mo);
 			debtflag->frame += (leveltime % 4);
-
 			if ((leveltime/12) & 1)
 				debtflag->frame += 4;
-
 			debtflag->color = player->skincolor;
 			debtflag->fuse = 2;
-
-			debtflag->drawflags = K_GetPlayerDontDrawFlag(player);
+			if (P_IsDisplayPlayer(player))
+				debtflag->flags2 |= MF2_DONTDRAW;
 		}
 
 		if (player->kartstuff[k_springstars] && (leveltime & 1))
@@ -7442,35 +7426,61 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			if (G_RaceGametype())
 				hyu *= 2; // double in race
 
-			if (leveltime & 1)
+			if (r_splitscreen)
 			{
-				player->mo->drawflags |= MFD_DONTDRAW;
+				if (leveltime & 1)
+					player->mo->flags2 |= MF2_DONTDRAW;
+				else
+					player->mo->flags2 &= ~MF2_DONTDRAW;
+
+				if (player->kartstuff[k_hyudorotimer] >= (TICRATE/2) && player->kartstuff[k_hyudorotimer] <= hyu-(TICRATE/2))
+				{
+					if (player == &players[displayplayers[1]])
+						player->mo->eflags |= MFE_DRAWONLYFORP2;
+					else if (player == &players[displayplayers[2]] && r_splitscreen > 1)
+						player->mo->eflags |= MFE_DRAWONLYFORP3;
+					else if (player == &players[displayplayers[3]] && r_splitscreen > 2)
+						player->mo->eflags |= MFE_DRAWONLYFORP4;
+					else if (player == &players[displayplayers[0]])
+						player->mo->eflags |= MFE_DRAWONLYFORP1;
+					else
+						player->mo->flags2 |= MF2_DONTDRAW;
+				}
+				else
+					player->mo->eflags &= ~(MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
 			}
 			else
 			{
-				if (player->kartstuff[k_hyudorotimer] >= (TICRATE/2) && player->kartstuff[k_hyudorotimer] <= hyu-(TICRATE/2))
-					player->mo->drawflags &= ~K_GetPlayerDontDrawFlag(player);
+				if (P_IsDisplayPlayer(player)
+					|| (!P_IsDisplayPlayer(player) && (player->kartstuff[k_hyudorotimer] < (TICRATE/2) || player->kartstuff[k_hyudorotimer] > hyu-(TICRATE/2))))
+				{
+					if (leveltime & 1)
+						player->mo->flags2 |= MF2_DONTDRAW;
+					else
+						player->mo->flags2 &= ~MF2_DONTDRAW;
+				}
 				else
-					player->mo->drawflags &= ~MFD_DONTDRAW;
+					player->mo->flags2 |= MF2_DONTDRAW;
 			}
 
 			player->powers[pw_flashing] = player->kartstuff[k_hyudorotimer]; // We'll do this for now, let's people know about the invisible people through subtle hints
 		}
 		else if (player->kartstuff[k_hyudorotimer] == 0)
 		{
-			player->mo->drawflags &= ~MFD_DONTDRAW;
+			player->mo->flags2 &= ~MF2_DONTDRAW;
+			player->mo->eflags &= ~(MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
 		}
 
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0) // dead in match? you da bomb
 		{
 			K_DropItems(player); //K_StripItems(player);
 			K_StripOther(player);
-			player->mo->drawflags |= MFD_SHADOW;
+			player->mo->flags2 |= MF2_SHADOW;
 			player->powers[pw_flashing] = player->kartstuff[k_comebacktimer];
 		}
 		else if (G_RaceGametype() || player->kartstuff[k_bumper] > 0)
 		{
-			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
+			player->mo->flags2 &= ~MF2_SHADOW;
 		}
 	}
 
@@ -9853,7 +9863,8 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 		{
 			*hud_y /= 2;
 
-			if (camnum > 1)
+			if ((r_splitscreen == 1 && camnum == 1)
+			|| (r_splitscreen > 1 && camnum > 1))
 			{
 				*hud_y += shhalffixed;
 			}
@@ -9967,6 +9978,30 @@ static void K_drawKartPlayerCheck(void)
 	}
 }
 
+static boolean K_ShowPlayerNametag(player_t *p)
+{
+	if (demo.playback == true && demo.freecam == true)
+	{
+		return true;
+	}
+
+	if (stplyr == p)
+	{
+		return false;
+	}
+
+	if (G_RaceGametype())
+	{
+		if ((p->kartstuff[k_position] < stplyr->kartstuff[k_position]-2)
+		|| (p->kartstuff[k_position] > stplyr->kartstuff[k_position]+2))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static void K_drawKartNameTags(void)
 {
 	const fixed_t maxdistance = 8192*mapobjectscale;
@@ -10012,7 +10047,6 @@ static void K_drawKartNameTags(void)
 		fixed_t y = -BASEVIDWIDTH * FRACUNIT;
 
 		vertex_t v;
-		UINT8 j;
 
 		if (!playeringame[i] || ntplayer->spectator)
 		{
@@ -10032,18 +10066,24 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		for (j = 0; j <= r_splitscreen; j++)
+		if (!(demo.playback == true && demo.freecam == true))
 		{
-			if (ntplayer == &players[displayplayers[j]])
-			{
-				break;
-			}
-		}
+			UINT8 j;
 
-		if (j <= r_splitscreen)
-		{
-			// Is a player that's being shown on this computer
-			continue;
+			for (j = 0; j <= r_splitscreen; j++)
+			{
+				if (ntplayer == &players[displayplayers[j]])
+				{
+					break;
+				}
+			}
+
+			if (j <= r_splitscreen)
+			{
+				// This is a player that's being shown on this computer
+				// (Remove whenever we get splitscreen ABCD indicators)
+				continue;
+			}
 		}
 
 		v.x = ntplayer->mo->x;
@@ -10079,10 +10119,9 @@ static void K_drawKartNameTags(void)
 				V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS, kp_rival[blink], NULL);
 			}
 		}
-		else if (netgame)
+		else if (netgame || demo.playback)
 		{
-			if ((ntplayer->kartstuff[k_position] >= stplyr->kartstuff[k_position]-2)
-			&& (ntplayer->kartstuff[k_position] <= stplyr->kartstuff[k_position]+2))
+			if (K_ShowPlayerNametag(ntplayer) == true)
 			{
 				INT32 namelen = V_ThinStringWidth(player_names[i], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
 				INT32 clr = K_SkincolorToTextColor(ntplayer->skincolor);
@@ -10210,7 +10249,6 @@ static void K_drawKartMinimap(void)
 	UINT8 *colormap = NULL;
 	SINT8 localplayers[4];
 	SINT8 numlocalplayers = 0;
-	INT32 hyu = hyudorotime;
 	mobj_t *mobj, *next;	// for SPB drawing (or any other item(s) we may wanna draw, I dunno!)
 
 	// Draw the HUD only when playing in a level.
@@ -10283,9 +10321,6 @@ static void K_drawKartMinimap(void)
 	for (i = 0; i < 4; i++)
 		localplayers[i] = -1;
 
-	if (G_RaceGametype())
-		hyu *= 2; // double in race
-
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)
 	if (ghosts)
 	{
@@ -10331,8 +10366,8 @@ static void K_drawKartMinimap(void)
 
 				if (players[i].kartstuff[k_hyudorotimer] > 0)
 				{
-					if (!((players[i].kartstuff[k_hyudorotimer] < TICRATE/2
-						|| players[i].kartstuff[k_hyudorotimer] > hyu-(TICRATE/2))
+					if (!((players[i].kartstuff[k_hyudorotimer] < 1*TICRATE/2
+						|| players[i].kartstuff[k_hyudorotimer] > hyudorotime-(1*TICRATE/2))
 						&& !(leveltime & 1)))
 						continue;
 				}
@@ -10614,7 +10649,7 @@ static void K_drawKartFirstPerson(void)
 	UINT8 *colmap = NULL;
 	ticcmd_t *cmd = &stplyr->cmd;
 
-	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->drawflags & MFD_DONTDRAW))
+	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->flags2 & MF2_DONTDRAW))
 		return;
 
 	if (stplyr == &players[displayplayers[1]] && r_splitscreen)
@@ -10636,9 +10671,9 @@ static void K_drawKartFirstPerson(void)
 	{
 		if (stplyr->speed < (20*stplyr->mo->scale) && (leveltime & 1) && !r_splitscreen)
 			y++;
-
-		if (stplyr->mo->drawflags & MFD_TRANSMASK)
-			splitflags |= ((stplyr->mo->drawflags & MFD_TRANSMASK) >> MFD_TRANSSHIFT) << FF_TRANSSHIFT;
+		// the following isn't EXPLICITLY right, it just gets the result we want, but i'm too lazy to look up the right way to do it
+		if (stplyr->mo->flags2 & MF2_SHADOW)
+			splitflags |= FF_TRANS80;
 		else if (stplyr->mo->frame & FF_TRANSMASK)
 			splitflags |= (stplyr->mo->frame & FF_TRANSMASK);
 	}
