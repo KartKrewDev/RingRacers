@@ -2025,17 +2025,16 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
 }
 
-// GAME OVER
-// RETURN OF THE RECOVERY STAT FROM KARTZ
-#define RETURN_OF_RECOVERY
+// Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
+#define METABOLISM
 
 // sets k_boostpower, k_speedboost, and k_accelboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
-#ifdef RETURN_OF_RECOVERY
-	const fixed_t maxrecoveryincrease = FRACUNIT/2;
-	const fixed_t recovery = FRACUNIT - ((9-player->kartweight) * maxrecoveryincrease / 8);
-#endif // RETURN_OF_RECOVERY
+#ifdef METABOLISM
+	const fixed_t maxmetabolismincrease = FRACUNIT/2;
+	const fixed_t metabolism = FRACUNIT - ((9-player->kartweight) * maxmetabolismincrease / 8);
+#endif // METABOLISM
 
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0;
@@ -2054,12 +2053,12 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_bananadrag] > TICRATE)
 		boostpower = (4*boostpower)/5;
 
-#ifdef RETURN_OF_RECOVERY
+#ifdef METABOLISM
 
 #define ADDBOOST(s,a) { \
 	numboosts++; \
-	speedboost += FixedDiv(s, FRACUNIT + (recovery * numboosts-1)); \
-	accelboost += FixedDiv(a, FRACUNIT + (recovery * numboosts-1)); \
+	speedboost += FixedDiv(s, FRACUNIT + (metabolism * numboosts-1)); \
+	accelboost += FixedDiv(a, FRACUNIT + (metabolism * numboosts-1)); \
 }
 
 #else
@@ -2070,7 +2069,7 @@ static void K_GetKartBoostPower(player_t *player)
 	accelboost += a / numboosts; \
 }
 
-#endif // RETURN_OF_RECOVERY
+#endif // METABOLISM
 
 	if (player->kartstuff[k_sneakertimer]) // Sneaker
 	{
