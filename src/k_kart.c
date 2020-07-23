@@ -1685,6 +1685,9 @@ void K_SpawnDriftBoostClip(player_t *player)
 	clip->fuse = 105;
 	clip->momz = 7 * P_MobjFlip(clip) * clip->scale;
 
+	if (player->mo->momz > 0)
+		clip->momz += player->mo->momz;
+
 	P_InstaThrust(clip, player->mo->angle +
 			K_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
 			FixedMul(scale, player->speed));
@@ -3166,6 +3169,7 @@ static void K_SpawnDriftSparks(player_t *player)
 			{
 				// transition
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
+				S_StartSound(player->mo, sfx_cock);
 			}
 			else
 			{
@@ -6425,6 +6429,8 @@ static void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 			S_StartSound(player->mo, sfx_s3kc4l);
 			break;
 	}
+
+	overlay->extravalue1 = stage;
 }
 
 static void K_KartDrift(player_t *player, boolean onground)
