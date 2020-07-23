@@ -6829,17 +6829,17 @@ boolean K_PlayerEBrake(player_t *player)
 	&& leveltime > starttime;
 }
 
-tic_t K_GetSpindashChargeTime(player_t *player)
+static tic_t K_GetSpindashChargeTime(player_t *player)
 {
 	return (player->kartspeed + 4)*TICRATE/3; // more charge time for higher speed: Tails = 2s, Mighty = 3s, Fang = 4s
 }
 
-fixed_t K_GetSpindashChargeSpeed(player_t *player)
+static fixed_t K_GetSpindashChargeSpeed(player_t *player)
 {
 	return FixedMul(FRACUNIT + (player->kartweight - 5)*FRACUNIT/12, K_GetKartSpeed(player, false)); // more speed for higher weight: Tails = 75%, Fang = 100%, Mighty = 125%
 }
 
-void K_KartSpindash(player_t *player)
+static void K_KartSpindash(player_t *player)
 {
 	ticcmd_t *cmd = &player->cmd;
 

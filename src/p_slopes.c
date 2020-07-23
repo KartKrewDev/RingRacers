@@ -22,6 +22,7 @@
 #include "r_main.h"
 #include "p_maputl.h"
 #include "w_wad.h"
+#include "k_kart.h" // K_PlayerEBrake
 
 #ifdef ESLOPE
 
