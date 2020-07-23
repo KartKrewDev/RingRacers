@@ -1685,6 +1685,9 @@ void K_SpawnDriftBoostClip(player_t *player)
 	clip->fuse = 105;
 	clip->momz = 7 * P_MobjFlip(clip) * clip->scale;
 
+	if (player->mo->momz > 0)
+		clip->momz += player->mo->momz;
+
 	P_InstaThrust(clip, player->mo->angle +
 			K_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
 			FixedMul(scale, player->speed));
