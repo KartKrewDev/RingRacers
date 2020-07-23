@@ -2271,6 +2271,8 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->colorized = READUINT8(save_p);
 	if (diff2 & MD2_SHADOWSCALE)
 		mobj->shadowscale = READFIXED(save_p);
+	if (diff2 & MD2_DRAWFLAGS)
+		mobj->drawflags = READUINT16(save_p);
 
 	if (diff & MD_REDFLAG)
 	{
