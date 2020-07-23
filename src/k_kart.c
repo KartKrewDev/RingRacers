@@ -3169,6 +3169,7 @@ static void K_SpawnDriftSparks(player_t *player)
 			{
 				// transition
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
+				S_StartSound(player->mo, sfx_cock);
 			}
 			else
 			{
@@ -6428,6 +6429,8 @@ static void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 			S_StartSound(player->mo, sfx_s3kc4l);
 			break;
 	}
+
+	overlay->extravalue1 = stage;
 }
 
 static void K_KartDrift(player_t *player, boolean onground)

@@ -8347,8 +8347,22 @@ void P_MobjThinker(mobj_t *mobj)
 			else if (mobj->fuse > 32)
 				mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
 
-			if (mobj->fuse == 17 || mobj->fuse == 33)/* to red/blue */
-				K_SpawnDriftBoostClip(mobj->target->player);
+			switch (mobj->extravalue1)
+			{
+				case 3:/* rainbow boost */
+					/* every 20 tics, bang! */
+					if (( 120 - mobj->fuse ) % 10 == 0)
+					{
+						K_SpawnDriftBoostClip(mobj->target->player);
+						S_StartSound(mobj->target, sfx_s3k77);
+					}
+					break;
+
+				case 2:/* blue boost */
+					if (mobj->fuse == 16)/* to red*/
+						K_SpawnDriftBoostClip(mobj->target->player);
+					break;
+			}
 
 			{
 				player_t *p = NULL;
