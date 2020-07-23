@@ -57,10 +57,11 @@ typedef enum
 {
 //	RFLAGPOINT = 0x01,
 //	BFLAGPOINT = 0x02,
-	CAPSULE    = 0x04,
-	AWAYVIEW   = 0x08,
-	FIRSTAXIS  = 0x10,
-	SECONDAXIS = 0x20,
+	CAPSULE    = 4,
+	AWAYVIEW   = 8,
+	FIRSTAXIS  = 16,
+	SECONDAXIS = 32,
+	FOLLOWER   = 64,
 } player_saveflags;
 
 //
@@ -218,6 +219,9 @@ static void P_NetArchivePlayers(void)
 		if (players[i].axis2)
 			flags |= SECONDAXIS;
 
+		if (players[i].follower)
+			flags |= FOLLOWER;
+
 		WRITEINT16(save_p, players[i].lastsidehit);
 		WRITEINT16(save_p, players[i].lastlinehit);
 
@@ -249,6 +253,14 @@ static void P_NetArchivePlayers(void)
 		// SRB2kart
 		WRITEUINT8(save_p, players[i].kartspeed);
 		WRITEUINT8(save_p, players[i].kartweight);
+
+		WRITEUINT8(save_p, players[i].followerskin);
+		WRITEUINT8(save_p, players[i].followerready);	// booleans are really just numbers eh??
+		WRITEUINT8(save_p, players[i].followercolor);
+		if (flags & FOLLOWER)
+			WRITEUINT32(save_p, players[i].follower->mobjnum);
+
+
 		//
 
 		for (j = 0; j < NUMKARTSTUFF; j++)
@@ -435,6 +447,13 @@ static void P_NetUnArchivePlayers(void)
 		// SRB2kart
 		players[i].kartspeed = READUINT8(save_p);
 		players[i].kartweight = READUINT8(save_p);
+
+		players[i].followerskin = READUINT8(save_p);
+		players[i].followerready = READUINT8(save_p);
+		players[i].followercolor = READUINT8(save_p);
+		if (flags & FOLLOWER)
+			players[i].follower = (mobj_t *)(size_t)READUINT32(save_p);
+
 		//
 
 		for (j = 0; j < NUMKARTSTUFF; j++)
@@ -980,6 +999,7 @@ typedef enum
 	MD2_SLOPE       = 1<<13,
 #endif
 	MD2_SHADOWSCALE = 1<<14,
+	MD2_DRAWFLAGS   = 1<<15,
 } mobj_diff2_t;
 
 typedef enum
@@ -1178,6 +1198,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 #endif
 	if (mobj->shadowscale)
 		diff2 |= MD2_SHADOWSCALE;
+	if (mobj->drawflags)
+		diff2 |= MD2_DRAWFLAGS;
 	if (mobj->colorized)
 		diff2 |= MD2_COLORIZED;
 	if (mobj == waypointcap)
@@ -1309,6 +1331,17 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEUINT8(save_p, mobj->colorized);
 	if (diff2 & MD2_SHADOWSCALE)
 		WRITEFIXED(save_p, mobj->shadowscale);
+	if (diff2 & MD2_DRAWFLAGS)
+	{
+		UINT16 df = mobj->drawflags;
+
+		if ((mobj->drawflags & MFD_DONTDRAW) != MFD_DONTDRAW)
+		{
+			df = (mobj->drawflags & ~MFD_DONTDRAW);
+		}
+
+		WRITEUINT16(save_p, df);
+	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2238,6 +2271,8 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->colorized = READUINT8(save_p);
 	if (diff2 & MD2_SHADOWSCALE)
 		mobj->shadowscale = READFIXED(save_p);
+	if (diff2 & MD2_DRAWFLAGS)
+		mobj->drawflags = READUINT16(save_p);
 
 	if (diff & MD_REDFLAG)
 	{
@@ -3130,6 +3165,7 @@ static void P_RelinkPointers(void)
 				if (!(mobj->itnext = P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 			}
+
 			if (mobj->player)
 			{
 				if (mobj->player->capsule)
@@ -3159,6 +3195,13 @@ static void P_RelinkPointers(void)
 					mobj->player->awayviewmobj = NULL;
 					if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
 						CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
+				}
+				if (mobj->player->follower)
+				{
+					temp = (UINT32)(size_t)mobj->player->follower;
+					mobj->player->follower = NULL;
+					if (!P_SetTarget(&mobj->player->follower, P_FindNewPosition(temp)))
+						CONS_Debug(DBG_GAMELOGIC, "follower not found on %d\n", mobj->type);
 				}
 				if (mobj->player->nextwaypoint)
 				{

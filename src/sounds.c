@@ -820,6 +820,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"sploss", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR}, // Down to yellow sparks
   {"itfree", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR}, // :shitsfree:
   {"dbgsal", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR}, // Debug notification
+  {"cock",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR}, // Hammer cocks, bang bang
 
   // SRB2Kart - Engine sounds
   // Engine class A

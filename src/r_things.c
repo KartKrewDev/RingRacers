@@ -1132,13 +1132,6 @@ static void R_SplitSprite(vissprite_t *sprite)
 
 			newsprite->extra_colormap = sector->lightlist[i].extra_colormap;
 
-/*
-			if (thing->frame & FF_TRANSMASK)
-				;
-			else if (thing->flags2 & MF2_SHADOW)
-				;
-			else
-*/
 			if (!((newsprite->cut & SC_FULLBRIGHT)
 				&& (!newsprite->extra_colormap || !(newsprite->extra_colormap->fog & 1))))
 			{
@@ -1850,19 +1843,27 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->transmap = NULL;
 
 	// specific translucency
-	if (!cv_translucency.value)
-		; // no translucency
-	else if (thing->flags2 & MF2_SHADOW) // actually only the player should use this (temporary invisibility)
-		vis->transmap = transtables + ((tr_trans80-1)<<FF_TRANSSHIFT); // because now the translucency is set through FF_TRANSMASK
+	if (thing->drawflags & MFD_TRANSMASK) // Object is forcing transparency to a specific value
+		vis->transmap = transtables + ((((thing->drawflags & MFD_TRANSMASK) - MFD_TRANS10) >> MFD_TRANSSHIFT) << FF_TRANSSHIFT);
 	else if (thing->frame & FF_TRANSMASK)
-		vis->transmap = transtables + (thing->frame & FF_TRANSMASK) - 0x10000;
+		vis->transmap = transtables + ((thing->frame & FF_TRANSMASK) - FF_TRANS10);
 
-	if (thing->frame & FF_FULLBRIGHT || thing->flags2 & MF2_SHADOW)
-		vis->cut |= SC_FULLBRIGHT;
-	else if (thing->frame & FF_SEMIBRIGHT)
-		vis->cut |= SC_SEMIBRIGHT;
+	if (thing->drawflags & MFD_BRIGHTMASK)
+	{
+		if (thing->drawflags & MFD_FULLBRIGHT)
+			vis->cut |= SC_FULLBRIGHT;
+		else if (thing->drawflags & MFD_SEMIBRIGHT)
+			vis->cut |= SC_SEMIBRIGHT;
+	}
+	else
+	{
+		if (thing->frame & FF_FULLBRIGHT)
+			vis->cut |= SC_FULLBRIGHT;
+		else if (thing->frame & FF_SEMIBRIGHT)
+			vis->cut |= SC_SEMIBRIGHT;
+	}
 
-	if (vis->cut & SC_FULLBRIGHT
+	if ((vis->cut & SC_FULLBRIGHT)
 		&& (!vis->extra_colormap || !(vis->extra_colormap->fog & 1)))
 	{
 		// full bright: goggles
@@ -2054,8 +2055,9 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->patch = sprframe->lumppat[0];
 
 	// specific translucency
+	// (no draw flags)
 	if (thing->frame & FF_TRANSMASK)
-		vis->transmap = (thing->frame & FF_TRANSMASK) - 0x10000 + transtables;
+		vis->transmap = ((thing->frame & FF_TRANSMASK) - FF_TRANS10) + transtables;
 	else
 		vis->transmap = NULL;
 
@@ -2077,9 +2079,6 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	precipmobj_t *precipthing; // Tails 08-25-2002
 	INT32 lightnum;
 	fixed_t approx_dist, limit_dist;
-
-	INT32 splitflags;			// check if a mobj has spliscreen flags
-	boolean split_drawsprite;	// used for splitscreen flags
 
 	if (rendermode != render_soft)
 		return;
@@ -2114,35 +2113,13 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-			split_drawsprite = false;
-
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+			if (thing->sprite == SPR_NULL)
 				continue;
 
-			splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
-
-			if (r_splitscreen && splitflags)
-			{
-				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum == 0)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum == 1)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewssnum == 2)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewssnum == 3)
-						split_drawsprite = true;
-			}
-			else
-				split_drawsprite = true;
-
-			if (!split_drawsprite)
+			if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+			|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+			|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+			|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
 				continue;
 
 			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
@@ -2158,36 +2135,13 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 		// Draw everything in sector, no checks
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-
-			split_drawsprite = false;
-
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+			if (thing->sprite == SPR_NULL)
 				continue;
 
-			splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
-
-			if (r_splitscreen && splitflags)
-			{
-				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum == 0)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum == 1)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewssnum == 2)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewssnum == 3)
-						split_drawsprite = true;
-			}
-			else
-				split_drawsprite = true;
-
-			if (!split_drawsprite)
+			if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+			|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+			|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+			|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
 				continue;
 
 			R_ProjectSprite(thing);
@@ -2891,7 +2845,12 @@ void R_DrawMasked(void)
 //
 // ==========================================================================
 
+// We can assume those are tied to skins somewhat, hence why they're defined here.
 INT32 numskins = 0;
+follower_t followers[MAXSKINS];
+// default followers are defined in SOC_FLWR in followers.kart / gfx.kart (depending on what exe this is, at this point)
+
+
 skin_t skins[MAXSKINS];
 // FIXTHIS: don't work because it must be inistilised before the config load
 //#define SKINVALUES
@@ -2954,6 +2913,19 @@ INT32 R_SkinAvailable(const char *name)
 	return -1;
 }
 
+// same thing but for followers:
+INT32 R_FollowerAvailable(const char *name)
+{
+	INT32 i;
+
+	for (i = 0; i < numfollowers; i++)
+	{
+		if (stricmp(followers[i].skinname,name)==0)
+			return i;
+	}
+	return -1;
+}
+
 // network code calls this when a 'skin change' is received
 boolean SetPlayerSkin(INT32 playernum, const char *skinname)
 {
@@ -2979,13 +2951,37 @@ boolean SetPlayerSkin(INT32 playernum, const char *skinname)
 	return false;
 }
 
+// Again, same thing but for followers;
+boolean SetPlayerFollower(INT32 playernum, const char *skinname)
+{
+	INT32 i;
+	player_t *player = &players[playernum];
+
+	for (i = 0; i < numfollowers; i++)
+	{
+		// search in the skin list
+		if (stricmp(followers[i].skinname, skinname) == 0)
+		{
+			SetFollower(playernum, i);
+			return true;
+		}
+	}
+
+	if (P_IsLocalPlayer(player))
+		CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found.\n"), skinname);
+	else if(server || IsPlayerAdmin(consoleplayer))
+		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) follower '%s' not found\n"), playernum, player_names[playernum], skinname);
+
+	SetFollower(playernum, -1);	// reminder that -1 is nothing
+	return false;
+}
+
 // Same as SetPlayerSkin, but uses the skin #.
 // network code calls this when a 'skin change' is received
 void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
 	skin_t *skin = &skins[skinnum];
-
 	if (skinnum >= 0 && skinnum < numskins) // Make sure it exists!
 	{
 		player->skin = skinnum;
@@ -3016,6 +3012,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		if (player->mo)
 			P_SetScale(player->mo, player->mo->scale);
 
+		// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
 		demo_extradata[playernum] |= DXD_SKIN;
 
 		return;
@@ -3026,6 +3023,53 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);
 	SetPlayerSkinByNum(playernum, 0); // not found put the sonic skin
+}
+
+// you get the drill, now we do the same for followers:
+void SetFollower(INT32 playernum, INT32 skinnum)
+{
+	player_t *player = &players[playernum];
+	mobj_t *bub;
+	mobj_t *tmp;
+
+	player->followerready = true;	// we are ready to perform follower related actions in the player thinker, now.
+	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
+	{
+		/*
+			We don't spawn the follower here since it'll be easier to handle all of it in the Player thinker itself.
+			However, we will despawn it right here if there's any to make it easy for the player thinker to replace it or delete it.
+		*/
+		if (player->follower && skinnum != player->followerskin)	// this is also called when we change colour so don't respawn the follower unless we changed skins
+		{
+
+			// Remove follower's possible hnext list (bubble)
+			bub = player->follower->hnext;
+
+			while (bub && !P_MobjWasRemoved(bub))
+			{
+				tmp = bub->hnext;
+				P_RemoveMobj(bub);
+				bub = tmp;
+			}
+
+			P_RemoveMobj(player->follower);
+			P_SetTarget(&player->follower, NULL);
+		}
+
+		player->followerskin = skinnum;
+		//CONS_Printf("Updated player follower num\n");
+
+		// for replays: We have changed our follower mid-game; let the game know so it can do the same in the replay!
+		demo_extradata[playernum] |= DXD_FOLLOWER;
+
+		return;
+	}
+
+	if (P_IsLocalPlayer(player))
+		CONS_Alert(CONS_WARNING, M_GetText("Follower %d not found\n"), skinnum);
+	else if(server || IsPlayerAdmin(consoleplayer))
+		CONS_Alert(CONS_WARNING, "Player %d (%s) follower %d not found\n", playernum, player_names[playernum], skinnum);
+	SetFollower(playernum, -1); // Not found, then set -1 (nothing) as our follower.
 }
 
 //

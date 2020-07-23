@@ -1879,6 +1879,7 @@ void V_DrawStringScaled(
 
 	chw    <<= FRACBITS;
 	spacew <<= FRACBITS;
+	lfh    <<= FRACBITS;
 
 #define Mul( id, scale ) ( id = FixedMul (scale, id) )
 	Mul    (chw,      scale);

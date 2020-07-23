@@ -2973,6 +2973,7 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 	FUINT lightlevel;
 	FBITFIELD blend = 0;
 	UINT8 alpha;
+	UINT8 brightmode = 0;
 
 	INT32 i;
 	float realtop, realbot, top, bot;
@@ -3071,16 +3072,8 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 	// co-ordinates
 	memcpy(wallVerts, baseWallVerts, sizeof(baseWallVerts));
 
-	if (!cv_translucency.value) // translucency disabled
-	{
-		Surf.PolyColor.s.alpha = 0xFF;
-		blend = PF_Translucent|PF_Occlude;
-	}
-	else if (spr->mobj->flags2 & MF2_SHADOW)
-	{
-		Surf.PolyColor.s.alpha = 0x40;
-		blend = PF_Translucent;
-	}
+	if (spr->mobj->drawflags & MFD_TRANSMASK)
+		blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
 	else if (spr->mobj->frame & FF_TRANSMASK)
 		blend = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 	else
@@ -3097,15 +3090,30 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 
 	temp = FLOAT_TO_FIXED(realtop);
 
+	if (spr->mobj->drawflags & MFD_BRIGHTMASK)
+	{
+		if (spr->mobj->drawflags & MFD_FULLBRIGHT)
+			brightmode = 1;
+		else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
+			brightmode = 2;
+	}
+	else
+	{
+		if (spr->mobj->frame & FF_FULLBRIGHT)
+			brightmode = 1;
+		else if (spr->mobj->frame & FF_SEMIBRIGHT)
+			brightmode = 2;
+	}
+
 #ifdef ESLOPE
 	// Start with the lightlevel and colormap from the top of the sprite
 	lightlevel = 255;
 	colormap = list[sector->numlights - 1].extra_colormap;
 
-	if (!(spr->mobj->frame & FF_FULLBRIGHT))
+	if (brightmode != 1)
 	{
 		lightlevel = *list[sector->numlights - 1].lightlevel;
-		if (spr->mobj->frame & FF_SEMIBRIGHT)
+		if (brightmode == 2)
 			lightlevel = 128 + (lightlevel>>1);
 	}
 
@@ -3115,10 +3123,10 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 					: sector->lightlist[i].height;
 		if (h <= temp)
 		{
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			if (brightmode != 1)
 			{
 				lightlevel = *list[i-1].lightlevel;
-				if (spr->mobj->frame & FF_SEMIBRIGHT)
+				if (brightmode == 2)
 					lightlevel = 128 + (lightlevel>>1);
 			}
 			colormap = list[i-1].extra_colormap;
@@ -3127,10 +3135,10 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 	}
 #else
 	i = R_GetPlaneLight(sector, temp, false);
-	if (!(spr->mobj->frame & FF_FULLBRIGHT))
+	if (brightmode != 1)
 	{
 		lightlevel = *list[i].lightlevel;
-		if (spr->mobj->frame & FF_SEMIBRIGHT)
+		if (brightmode == 2)
 			lightlevel = 128 + (lightlevel>>1);
 	}
 	colormap = list[i].extra_colormap;
@@ -3147,10 +3155,10 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		// even if we aren't changing colormap or lightlevel, we still need to continue drawing down the sprite
 		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			if (brightmode != 1)
 			{
 				lightlevel = *list[i].lightlevel;
-				if (spr->mobj->frame & FF_SEMIBRIGHT)
+				if (brightmode == 2)
 					lightlevel = 128 + (lightlevel>>1);
 			}
 			colormap = list[i].extra_colormap;
@@ -3427,12 +3435,28 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
 		UINT8 lightlevel = 255;
+		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
 
-		if (!(spr->mobj->frame & FF_FULLBRIGHT))
+		if (spr->mobj->drawflags & MFD_BRIGHTMASK)
+		{
+			if (spr->mobj->drawflags & MFD_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
+				brightmode = 2;
+		}
+		else
+		{
+			if (spr->mobj->frame & FF_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->frame & FF_SEMIBRIGHT)
+				brightmode = 2;
+		}
+
+		if (brightmode != 1)
 		{
 			lightlevel = sector->lightlevel;
-			if (spr->mobj->frame & FF_SEMIBRIGHT)
+			if (brightmode == 2)
 				lightlevel = 128 + (lightlevel>>1);
 		}
 
@@ -3441,16 +3465,9 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 
 	{
 		FBITFIELD blend = 0;
-		if (!cv_translucency.value) // translucency disabled
-		{
-			Surf.PolyColor.s.alpha = 0xFF;
-			blend = PF_Translucent|PF_Occlude;
-		}
-		else if (spr->mobj->flags2 & MF2_SHADOW)
-		{
-			Surf.PolyColor.s.alpha = 0x40;
-			blend = PF_Translucent;
-		}
+
+		if (spr->mobj->drawflags & MFD_TRANSMASK)
+			blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
 		else if (spr->mobj->frame & FF_TRANSMASK)
 			blend = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 		else
@@ -3519,7 +3536,23 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
 		UINT8 lightlevel = 255;
+		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
+
+		if (spr->mobj->drawflags & MFD_BRIGHTMASK)
+		{
+			if (spr->mobj->drawflags & MFD_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
+				brightmode = 2;
+		}
+		else
+		{
+			if (spr->mobj->frame & FF_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->frame & FF_SEMIBRIGHT)
+				brightmode = 2;
+		}
 
 		if (sector->numlights)
 		{
@@ -3527,7 +3560,7 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			if (brightmode != 1)
 				lightlevel = *sector->lightlist[light].lightlevel;
 
 			if (sector->lightlist[light].extra_colormap)
@@ -3535,24 +3568,21 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 		}
 		else
 		{
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+			if (brightmode != 1)
 				lightlevel = sector->lightlevel;
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
 
-		if (spr->mobj->frame & FF_SEMIBRIGHT)
+		if (brightmode == 2)
 			lightlevel = 128 + (lightlevel>>1);
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
 
-	if (spr->mobj->flags2 & MF2_SHADOW)
-	{
-		Surf.PolyColor.s.alpha = 0x40;
-		blend = PF_Translucent;
-	}
+	if (spr->mobj->drawflags & MFD_TRANSMASK)
+		blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
 	else if (spr->mobj->frame & FF_TRANSMASK)
 		blend = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 	else
@@ -3587,8 +3617,14 @@ static int CompareVisSprites(const void *p1, const void *p2)
 	// make transparent sprites last
 	// "boolean to int"
 
-	int transparency1 = (spr1->mobj->flags2 & MF2_SHADOW) || (spr1->mobj->frame & FF_TRANSMASK);
-	int transparency2 = (spr2->mobj->flags2 & MF2_SHADOW) || (spr2->mobj->frame & FF_TRANSMASK);
+	int transparency1 = (spr1->mobj->drawflags & FF_TRANSMASK) ?
+		((spr1->mobj->drawflags & FF_TRANSMASK)>>MFD_TRANSSHIFT) :
+		((spr1->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT);
+
+	int transparency2 = (spr2->mobj->drawflags & FF_TRANSMASK) ?
+		((spr2->mobj->drawflags & FF_TRANSMASK)>>MFD_TRANSSHIFT) :
+		((spr2->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT);
+
 	idiff = transparency1 - transparency2;
 	if (idiff != 0) return idiff;
 
@@ -3962,9 +3998,6 @@ void HWR_AddSprites(sector_t *sec)
 	precipmobj_t *precipthing;
 	fixed_t approx_dist, limit_dist;
 
-	INT32 splitflags;
-	boolean split_drawsprite;	// drawing with splitscreen flags
-
 	// BSP is traversed by subsector.
 	// A sector might have been split into several
 	//  subsectors during BSP building.
@@ -3981,36 +4014,13 @@ void HWR_AddSprites(sector_t *sec)
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-
-			split_drawsprite = false;
-
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+			if (thing->sprite == SPR_NULL)
 				continue;
 
-			splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
-
-			if (r_splitscreen && splitflags)
-			{
-				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum == 0)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum == 1)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewssnum == 2)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewssnum == 3)
-						split_drawsprite = true;
-			}
-			else
-				split_drawsprite = true;
-
-			if (!split_drawsprite)
+			if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+			|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+			|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+			|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
 				continue;
 
 			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
@@ -4026,36 +4036,13 @@ void HWR_AddSprites(sector_t *sec)
 		// Draw everything in sector, no checks
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-
-			split_drawsprite = false;
-
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+			if (thing->sprite == SPR_NULL)
 				continue;
 
-			splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
-
-			if (r_splitscreen && splitflags)
-			{
-				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum == 0)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum == 1)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewssnum == 2)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewssnum == 3)
-						split_drawsprite = true;
-			}
-			else
-				split_drawsprite = true;
-
-			if (!split_drawsprite)
+			if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+			|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+			|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+			|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
 				continue;
 
 			HWR_ProjectSprite(thing);

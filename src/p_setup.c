@@ -1159,11 +1159,9 @@ static inline void P_SpawnEmblems(void)
 			emblemmobj->flags |= MF_NOCLIP;
 			emblemmobj->flags &= ~MF_SPECIAL;
 			emblemmobj->flags |= MF_NOBLOCKMAP;
-			emblemmobj->frame |= (tr_trans50<<FF_TRANSSHIFT);
+			emblemmobj->drawflags |= (tr_trans50 << MFD_TRANSSHIFT);
 			P_SetThingPosition(emblemmobj);
 		}
-		else
-			emblemmobj->frame &= ~FF_TRANSMASK;
 	}
 }
 
@@ -2460,6 +2458,9 @@ static void P_LevelInitStuff(void)
 
 		// and this stupid flag as a result
 		players[i].pflags &= ~PF_TRANSFERTOCLOSEST;
+
+		// Wipe follower from existence to avoid crashes
+		players[i].follower = NULL;
 	}
 
 	// SRB2Kart: map load variables
