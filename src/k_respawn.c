@@ -334,8 +334,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 				dest.x, dest.y
 			);
 
-			if ((player->respawn.distanceleft == 0)
-			&& (K_GetWaypointIsSpawnpoint(player->respawn.wp) == true))
+			if ((player->respawn.distanceleft == 0 && K_GetWaypointIsSpawnpoint(player->respawn.wp) == true)
+			|| (player->respawn.wp == K_GetFinishLineWaypoint()
+			|| player->respawn.wp->nextwaypoints[nwp] == K_GetFinishLineWaypoint())) // Try not to allow you to pass the finish line while respawning, because it's janky
 			{
 				// Alright buddy, that's the end of the ride.
 				player->respawn.state = RESPAWNST_DROP;
