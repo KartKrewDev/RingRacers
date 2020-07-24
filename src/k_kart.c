@@ -2028,6 +2028,16 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
 }
 
+static tic_t K_GetSpindashChargeTime(player_t *player)
+{
+	return (player->kartspeed + 4) * (TICRATE/3); // more charge time for higher speed: Tails = 2s, Mighty = 3s, Fang = 4s
+}
+
+static fixed_t K_GetSpindashChargeSpeed(player_t *player)
+{
+	return player->kartweight * (FRACUNIT/12); // more speed for higher weight: Tails = 116%, Fang = 142%, Mighty = 166%
+}
+
 // Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
 #define METABOLISM
 
@@ -2091,6 +2101,16 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
 	{
 		ADDBOOST(K_FlameShieldDashVar(player->kartstuff[k_flamedash]), 3*FRACUNIT); // + infinite top speed, + 300% acceleration
+	}
+
+	if (player->kartstuff[k_spindashboost]) // Spindash boost
+	{
+		const fixed_t MAXCHARGESPEED = K_GetSpindashChargeSpeed(player);
+
+		ADDBOOST(
+			FixedMul(player->kartstuff[k_spindashspeed], MAXCHARGESPEED),
+			(8*FRACUNIT) + (24*player->kartstuff[k_spindashspeed])
+		); // character & charge time dependent
 	}
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
@@ -2267,7 +2287,7 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 	//   0 with no gas, and
 	// -25 when only braking.
 
-	if (player->kartstuff[k_sneakertimer])
+	if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_spindashboost])
 		forwardmove = 50;
 
 	finalspeed *= forwardmove/25;
@@ -5701,6 +5721,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_startboost])
 		player->kartstuff[k_startboost]--;
 
+	if (player->kartstuff[k_spindashboost])
+	{
+		player->kartstuff[k_spindashboost]--;
+
+		if (player->kartstuff[k_spindashboost] <= 0)
+		{
+			player->kartstuff[k_spindashspeed] = FRACUNIT;
+			player->kartstuff[k_spindashboost] = 0;
+		}
+	}
+
 	if (player->kartstuff[k_invincibilitytimer])
 		player->kartstuff[k_invincibilitytimer]--;
 
@@ -6825,18 +6856,9 @@ boolean K_PlayerEBrake(player_t *player)
 	&& !player->kartstuff[k_spinouttimer]
 	&& !player->kartstuff[k_boostcharge]
 	&& !(player->kartstuff[k_spindash] < 0)
+	&& !player->kartstuff[k_spindashboost]
 	&& !player->powers[pw_nocontrol]
 	&& leveltime > starttime;
-}
-
-static tic_t K_GetSpindashChargeTime(player_t *player)
-{
-	return (player->kartspeed + 4)*TICRATE/3; // more charge time for higher speed: Tails = 2s, Mighty = 3s, Fang = 4s
-}
-
-static fixed_t K_GetSpindashChargeSpeed(player_t *player)
-{
-	return FixedMul(FRACUNIT + (player->kartweight - 5)*FRACUNIT/12, K_GetKartSpeed(player, false)); // more speed for higher weight: Tails = 75%, Fang = 100%, Mighty = 125%
 }
 
 static void K_KartSpindash(player_t *player)
@@ -6850,10 +6872,9 @@ static void K_KartSpindash(player_t *player)
 		return;
 	}
 
-	if (player->speed < 6*mapobjectscale)
+	if (player->speed < 6*mapobjectscale && player->powers[pw_flashing] == 0)
 	{
 		const tic_t MAXCHARGETIME = K_GetSpindashChargeTime(player);
-		const fixed_t MAXCHARGESPEED = K_GetSpindashChargeSpeed(player);
 
 		if (cmd->driftturn != 0 && leveltime % 8 == 0)
 			S_StartSound(player->mo, sfx_ruburn);
@@ -6885,7 +6906,24 @@ static void K_KartSpindash(player_t *player)
 		}
 		else if (player->kartstuff[k_spindash])
 		{
-			fixed_t speed = player->kartstuff[k_spindash]*MAXCHARGESPEED/MAXCHARGETIME;
+			player->kartstuff[k_spindashspeed] = (player->kartstuff[k_spindash] * FRACUNIT) / MAXCHARGETIME;
+			player->kartstuff[k_spindashboost] = TICRATE;
+
+			if (!player->kartstuff[k_tiregrease])
+			{
+				UINT8 i;
+				for (i = 0; i < 2; i++)
+				{
+					mobj_t *grease;
+					grease = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_TIREGREASE);
+					P_SetTarget(&grease->target, player->mo);
+					grease->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+					grease->extravalue1 = i;
+				}
+			}
+
+			player->kartstuff[k_tiregrease] = 2*TICRATE;
+
 			player->kartstuff[k_spindash] = 0;
 			S_StartSound(player->mo, sfx_s23c);
 		}
