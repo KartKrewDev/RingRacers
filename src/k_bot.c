@@ -700,11 +700,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	{
 		tic_t boosthold = starttime - TICRATE;
 
+		cmd->buttons |= BT_ACCELERATE|BT_BRAKE;
+
 		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty);
 
 		if (leveltime >= boosthold)
 		{
-			cmd->buttons |= BT_ACCELERATE;
+			cmd->buttons |= BT_DRIFT;
 		}
 
 		return;

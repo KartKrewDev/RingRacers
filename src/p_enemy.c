@@ -808,10 +808,10 @@ void A_Look(mobj_t *actor)
 		return;
 #endif
 
-	if (!P_LookForPlayers(actor, locvar1 & 65535, false , FixedMul((locvar1 >> 16)*FRACUNIT, actor->scale)))
+	if (leveltime < starttime) // SRB2kart - no looking before race starts
 		return;
 
-	if (leveltime < starttime) // SRB2kart - no looking before race starts
+	if (!P_LookForPlayers(actor, locvar1 & 65535, false , FixedMul((locvar1 >> 16)*FRACUNIT, actor->scale)))
 		return;
 
 	// go into chase state

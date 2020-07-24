@@ -27,6 +27,7 @@
 #include "f_finale.h"
 #include "lua_hud.h"	// For Lua hud checks
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
+#include "m_cheat.h"	// objectplacing
 
 #include "k_waypoint.h"
 #include "k_bot.h"
@@ -5145,8 +5146,10 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 #endif
 		return;
 
-	if ((leveltime >= starttime-(2*TICRATE) && leveltime <= starttime) || (player->respawn.state == RESPAWNST_DROP)) // Startup boosts
+	if (player->respawn.state == RESPAWNST_DROP) // Dropdashing
 		targetsnd = ((cmd->buttons & BT_ACCELERATE) ? 12 : 0);
+	else if (K_PlayerEBrake(player)) // Spindashing
+		targetsnd = ((cmd->buttons & BT_DRIFT) ? 12 : 0);
 	else
 		targetsnd = (((6*cmd->forwardmove)/25) + ((player->speed / mapobjectscale)/5))/2;
 
@@ -5733,8 +5736,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (player->kartstuff[k_spindashboost] <= 0)
 		{
-			player->kartstuff[k_spindashspeed] = FRACUNIT;
-			player->kartstuff[k_spindashboost] = 0;
+			player->kartstuff[k_spindashspeed] = player->kartstuff[k_spindashboost] = 0;
 		}
 	}
 
@@ -6385,14 +6387,36 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 {
-	fixed_t p_maxspeed = K_GetKartSpeed(player, false);
-	fixed_t p_speed = min(player->speed, (p_maxspeed * 2));
-	fixed_t weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
+	fixed_t p_maxspeed;
+	fixed_t p_speed;
+	fixed_t weightadjust;
 
-	if (player->spectator)
+	if ((player->mo == NULL || P_MobjWasRemoved(player->mo)))
+	{
+		return 0;
+	}
+
+	if (player->spectator || objectplacing)
 	{
 		return turnvalue;
 	}
+
+	if (leveltime < introtime)
+	{
+		return 0;
+	}
+
+	// SRB2kart - no additional angle if not moving
+	if ((player->speed <= 0) // Not moving
+	&& ((player->cmd.buttons & BT_EBRAKEMASK) != BT_EBRAKEMASK) // not e-braking
+	&& (player->respawn.state == RESPAWNST_NONE)) // Not respawning
+	{
+		return 0;
+	}
+
+	p_maxspeed = K_GetKartSpeed(player, false);
+	p_speed = min(player->speed, (p_maxspeed * 2));
+	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (K_PlayerUsesBotMovement(player))
 	{
@@ -6864,8 +6888,7 @@ boolean K_PlayerEBrake(player_t *player)
 	&& !player->kartstuff[k_boostcharge]
 	&& !(player->kartstuff[k_spindash] < 0)
 	&& !player->kartstuff[k_spindashboost]
-	&& !player->powers[pw_nocontrol]
-	&& leveltime > starttime;
+	&& !player->powers[pw_nocontrol];
 }
 
 static void K_KartSpindash(player_t *player)
@@ -6990,7 +7013,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	else if (cmd->buttons & BT_ATTACK)
 		player->pflags |= PF_ATTACKDOWN;
 
-	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > starttime
+	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > introtime
 		&& player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_squishedtimer] == 0 && (player->respawn.state == RESPAWNST_NONE))
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
@@ -7710,76 +7733,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			S_StartSound(NULL, sfx_s3kad);
 			S_StopMusic(); // The GO! sound stops the level start ambience
 		}
-	}
-
-	// Start charging once you're given the opportunity.
-	if (leveltime >= starttime-(2*TICRATE) && leveltime <= starttime)
-	{
-		if (cmd->buttons & BT_ACCELERATE)
-		{
-			if (player->kartstuff[k_boostcharge] == 0)
-				player->kartstuff[k_boostcharge] = cmd->latency;
-
-			player->kartstuff[k_boostcharge]++;
-		}
-		else
-			player->kartstuff[k_boostcharge] = 0;
-	}
-
-	// Increase your size while charging your engine.
-	if (leveltime < starttime+10)
-	{
-		player->mo->scalespeed = mapobjectscale/12;
-		player->mo->destscale = mapobjectscale + (player->kartstuff[k_boostcharge]*131);
-		if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
-			player->mo->destscale = (6*player->mo->destscale)/8;
-	}
-
-	// Determine the outcome of your charge.
-	if (leveltime > starttime && player->kartstuff[k_boostcharge])
-	{
-		// Not even trying?
-		if (player->kartstuff[k_boostcharge] < 35)
-		{
-			if (player->kartstuff[k_boostcharge] > 17)
-				S_StartSound(player->mo, sfx_cdfm00); // chosen instead of a conventional skid because it's more engine-like
-		}
-		// Get an instant boost!
-		else if (player->kartstuff[k_boostcharge] <= 50)
-		{
-			player->kartstuff[k_startboost] = (50-player->kartstuff[k_boostcharge])+20;
-
-			if (player->kartstuff[k_boostcharge] <= 36)
-			{
-				player->kartstuff[k_startboost] = 0;
-				K_DoSneaker(player, 0);
-				player->kartstuff[k_sneakertimer] = 70; // PERFECT BOOST!!
-
-				if (!player->kartstuff[k_floorboost] || player->kartstuff[k_floorboost] == 3) // Let everyone hear this one
-					S_StartSound(player->mo, sfx_s25f);
-			}
-			else
-			{
-				K_SpawnDashDustRelease(player); // already handled for perfect boosts by K_DoSneaker
-				if ((!player->kartstuff[k_floorboost] || player->kartstuff[k_floorboost] == 3) && P_IsDisplayPlayer(player))
-				{
-					if (player->kartstuff[k_boostcharge] <= 40)
-						S_StartSound(player->mo, sfx_cdfm01); // You were almost there!
-					else
-						S_StartSound(player->mo, sfx_s23c); // Nope, better luck next time.
-				}
-			}
-		}
-		// You overcharged your engine? Those things are expensive!!!
-		else if (player->kartstuff[k_boostcharge] > 50)
-		{
-			player->powers[pw_nocontrol] = 40;
-			//S_StartSound(player->mo, sfx_kc34);
-			S_StartSound(player->mo, sfx_s3k83);
-			player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
-		}
-
-		player->kartstuff[k_boostcharge] = 0;
 	}
 }
 

@@ -5784,18 +5784,10 @@ static void P_MovePlayer(player_t *player)
 		boolean add_delta = true;
 
 		// Kart: store the current turn range for later use
-		if ((player->mo && player->speed > 0) // Moving
-			|| (leveltime > starttime && (cmd->buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK) // Rubber-burn turn
-			|| (player->respawn.state != RESPAWNST_NONE) // Respawning
-			|| (player->spectator || objectplacing)) // Not a physical player
-		{
-			player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
-			player->rturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, -KART_FULLTURN)-1;
-		} else {
-			player->lturn_max[leveltime%MAXPREDICTTICS] = player->rturn_max[leveltime%MAXPREDICTTICS] = 0;
-		}
+		player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
+		player->rturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, -KART_FULLTURN)-1;
 
-		if (leveltime >= starttime)
+		if (leveltime >= introtime)
 		{
 			// KART: Don't directly apply angleturn! It may have been either A) forged by a malicious client, or B) not be a smooth turn due to a player dropping frames.
 			// Instead, turn the player only up to the amount they're supposed to turn accounting for latency. Allow exactly 1 extra turn unit to try to keep old replays synced.
@@ -7727,7 +7719,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (timeover)
 		angle = mo->angle + FixedAngle(camrotate*FRACUNIT);
-	else if (leveltime < starttime)
+	else if (leveltime < introtime)
 		angle = focusangle + FixedAngle(camrotate*FRACUNIT);
 	else if (camstill || resetcalled || player->playerstate == PST_DEAD)
 		angle = thiscam->angle;
@@ -7750,7 +7742,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		}
 	}
 
-	if (!resetcalled && (leveltime > starttime && timeover != 2)
+	if (!resetcalled && (leveltime >= introtime && timeover != 2)
 		&& ((thiscam == &camera[0] && t_cam_rotate != -42)
 		|| (thiscam == &camera[1] && t_cam2_rotate != -42)
 		|| (thiscam == &camera[2] && t_cam3_rotate != -42)
@@ -8067,7 +8059,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	else if (player->exiting || timeover == 2)
 		thiscam->momx = thiscam->momy = thiscam->momz = 0;
-	else if (leveltime < starttime)
+	else if (leveltime < introtime)
 	{
 		thiscam->momx = FixedMul(x - thiscam->x, camspeed);
 		thiscam->momy = FixedMul(y - thiscam->y, camspeed);
@@ -8871,7 +8863,7 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// SRB2kart 010217
-	if (leveltime < starttime)
+	if (leveltime < introtime)
 	{
 		player->powers[pw_nocontrol] = 2;
 	}

@@ -1588,12 +1588,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->angleturn *= realtics;
 
-	// SRB2kart - no additional angle if not moving
-	if ((player->mo && player->speed > 0) // Moving
-		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (player->respawn.state != RESPAWNST_NONE) // Respawning
-		|| (player->spectator || objectplacing)) // Not a physical player
-		lang += (cmd->angleturn<<16);
+	lang += (cmd->angleturn<<16);
 
 	cmd->angleturn = (INT16)(lang >> 16);
 	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
@@ -5176,14 +5171,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
 
-	// SRB2kart: Copy-pasted from ticcmd building, removes that crappy demo cam
-	if (((players[displayplayers[0]].mo && players[displayplayers[0]].speed > 0) // Moving
-		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (players[displayplayers[0]].respawn.state != RESPAWNST_NONE) // Respawning
-		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
-		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
-		&& players[displayplayers[0]].kartstuff[k_sneakertimer])) // Spinning and boosting cancels out spinout
-		localangle[0] += (cmd->angleturn<<16);
+	localangle[0] += (cmd->angleturn<<16);
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
 	{

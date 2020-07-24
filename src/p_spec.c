@@ -2184,6 +2184,14 @@ static void K_HandleLapIncrement(player_t *player)
 		{
 			S_StartSound(player->mo, sfx_s26d);
 		}
+
+		if (leveltime < starttime)
+		{
+			// LATER: replace with the rotatey knockback whenever we get around to it
+			player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
+			player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
+			S_StartSound(player->mo, sfx_s3k83);
+		}
 	}
 }
 
