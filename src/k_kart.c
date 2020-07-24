@@ -7856,6 +7856,7 @@ static patch_t *kp_splitkarmabomb;
 static patch_t *kp_timeoutsticker;
 
 static patch_t *kp_startcountdown[16];
+static patch_t *kp_racefault[6];
 static patch_t *kp_racefinish[6];
 
 static patch_t *kp_positionnum[NUMPOSNUMS][NUMPOSFRAMES];
@@ -7989,6 +7990,16 @@ void K_LoadKartHUDGraphics(void)
 	kp_startcountdown[13] = 	W_CachePatchName("K_SMC2B", PU_HUDGFX);
 	kp_startcountdown[14] = 	W_CachePatchName("K_SMC1B", PU_HUDGFX);
 	kp_startcountdown[15] = 	W_CachePatchName("K_SMCGOB", PU_HUDGFX);
+
+	// Fault
+	kp_racefault[0] = 			W_CachePatchName("K_FAULTA", PU_HUDGFX);
+	kp_racefault[1] = 			W_CachePatchName("K_FAULTB", PU_HUDGFX);
+	// Splitscreen
+	kp_racefault[2] = 			W_CachePatchName("K_SMFLTA", PU_HUDGFX);
+	kp_racefault[3] = 			W_CachePatchName("K_SMFLTB", PU_HUDGFX);
+	// 2P splitscreen
+	kp_racefault[4] = 			W_CachePatchName("K_2PFLTA", PU_HUDGFX);
+	kp_racefault[5] = 			W_CachePatchName("K_2PFLTB", PU_HUDGFX);
 
 	// Finish
 	kp_racefinish[0] = 			W_CachePatchName("K_FINA", PU_HUDGFX);
@@ -10551,18 +10562,38 @@ static void K_drawKartStartCountdown(void)
 {
 	INT32 pnum = 0, splitflags = K_calcSplitFlags(0); // 3
 
-	if (leveltime >= starttime-(2*TICRATE)) // 2
-		pnum++;
-	if (leveltime >= starttime-TICRATE) // 1
-		pnum++;
-	if (leveltime >= starttime) // GO!
-		pnum++;
-	if ((leveltime % (2*5)) / 5) // blink
-		pnum += 4;
-	if (r_splitscreen) // splitscreen
-		pnum += 8;
+	if (stplyr->karthud[khud_fault] != 0)
+	{
+		if (r_splitscreen > 1) // 3/4p, stationary FIN
+		{
+			pnum += 2;
+		}
+		else if (r_splitscreen == 1) // wide splitscreen
+		{
+			pnum += 4;
+		}
 
-	V_DrawScaledPatch(STCD_X - (SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (SHORT(kp_startcountdown[pnum]->height)/2), splitflags, kp_startcountdown[pnum]);
+		if ((leveltime % (2*5)) / 5) // blink
+			pnum += 1;
+
+		V_DrawScaledPatch(STCD_X - (SHORT(kp_racefault[pnum]->width)/2), STCD_Y - (SHORT(kp_racefault[pnum]->height)/2), splitflags, kp_racefault[pnum]);
+	}
+	else
+	{
+
+		if (leveltime >= starttime-(2*TICRATE)) // 2
+			pnum++;
+		if (leveltime >= starttime-TICRATE) // 1
+			pnum++;
+		if (leveltime >= starttime) // GO!
+			pnum++;
+		if ((leveltime % (2*5)) / 5) // blink
+			pnum += 4;
+		if (r_splitscreen) // splitscreen
+			pnum += 8;
+
+		V_DrawScaledPatch(STCD_X - (SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (SHORT(kp_startcountdown[pnum]->height)/2), splitflags, kp_startcountdown[pnum]);
+	}
 }
 
 static void K_drawKartFinish(void)

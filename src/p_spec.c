@@ -2191,6 +2191,8 @@ static void K_HandleLapIncrement(player_t *player)
 			player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
 			player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
 			S_StartSound(player->mo, sfx_s3k83);
+			player->karthud[khud_fault] = 1;
+			player->mo->momx = player->mo->momy = 0;
 		}
 	}
 }
