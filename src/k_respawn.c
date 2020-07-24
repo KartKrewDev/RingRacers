@@ -96,9 +96,18 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (leveltime <= starttime)
+	if (leveltime < introtime)
 	{
 		return;
+	}
+
+	if (leveltime < starttime)
+	{
+		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
+		player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
+		S_StartSound(player->mo, sfx_s3k83);
+		player->karthud[khud_fault] = 1;
+		player->mo->momx = player->mo->momy = 0;
 	}
 
 	player->kartstuff[k_ringboost] = 0;
@@ -108,7 +117,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->kartstuff[k_pogospring] = 0;
 
 	// Set up respawn position if invalid
-	if (player->respawn.wp != NULL)
+	if (player->respawn.wp != NULL && leveltime >= starttime)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
 		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
