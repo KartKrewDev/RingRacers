@@ -56,72 +56,70 @@ typedef enum
 //
 typedef enum
 {
-	// Flip camera angle with gravity flip prefrence.
-	PF_FLIPCAM = 1,
 
 	// Cheats
-	PF_GODMODE = 1<<1,
-	PF_NOCLIP  = 1<<2,
-	PF_INVIS   = 1<<3,
+	PF_GODMODE = 1,
+	PF_NOCLIP  = 1<<1,
+	PF_INVIS   = 1<<2,
 
 	// True if button down last tic.
-	PF_ATTACKDOWN = 1<<4,
-	PF_USEDOWN    = 1<<5,
-	PF_JUMPDOWN   = 1<<6,
-	PF_WPNDOWN    = 1<<7,
+	PF_ATTACKDOWN = 1<<3,
+	PF_USEDOWN    = 1<<4,
+	PF_JUMPDOWN   = 1<<5,
+	PF_WPNDOWN    = 1<<6,
 
 	// Unmoving states
-	PF_STASIS     = 1<<8, // Player is not allowed to move
-	PF_JUMPSTASIS = 1<<9, // and that includes jumping.
+	PF_STASIS     = 1<<7, // Player is not allowed to move
+	PF_JUMPSTASIS = 1<<8, // and that includes jumping.
 	PF_FULLSTASIS = PF_STASIS|PF_JUMPSTASIS,
 
 	// Did you get a time-over?
-	PF_TIMEOVER = 1<<10,
+	PF_TIMEOVER = 1<<9,
 
 	// SRB2Kart: Spectator that wants to join
-	PF_WANTSTOJOIN = 1<<11,
+	PF_WANTSTOJOIN = 1<<10,
 
 	// Character action status
-	PF_JUMPED    = 1<<12,
-	PF_SPINNING  = 1<<13,
-	PF_STARTDASH = 1<<14,
-	PF_THOKKED   = 1<<15,
+	PF_JUMPED    = 1<<11,
+	PF_SPINNING  = 1<<12,
+	PF_STARTDASH = 1<<13,
+	PF_THOKKED   = 1<<14,
 
 	// Are you gliding?
-	PF_GLIDING   = 1<<16,
+	PF_GLIDING   = 1<<15,
 
 	// Tails pickup!
-	PF_CARRIED   = 1<<17,
+	PF_CARRIED   = 1<<16,
 
 	// Sliding (usually in water) like Labyrinth/Oil Ocean
-	PF_SLIDING   = 1<<18,
+	PF_SLIDING   = 1<<17,
 
 	// Hanging on a rope
-	PF_ROPEHANG = 1<<19,
+	PF_ROPEHANG = 1<<18,
 
 	// Hanging on an item of some kind - zipline, chain, etc. (->tracer)
-	PF_ITEMHANG = 1<<20,
+	PF_ITEMHANG = 1<<19,
 
 	// On the mace chain spinning around (->tracer)
-	PF_MACESPIN = 1<<21,
+	PF_MACESPIN = 1<<20,
 
 	/*** NIGHTS STUFF ***/
 	// Is the player in NiGHTS mode?
-	PF_NIGHTSMODE        = 1<<22,
-	PF_TRANSFERTOCLOSEST = 1<<23,
+	PF_NIGHTSMODE        = 1<<21,
+	PF_TRANSFERTOCLOSEST = 1<<22,
 
 	// Spill rings after falling
-	PF_NIGHTSFALL        = 1<<24,
-	PF_DRILLING          = 1<<25,
-	PF_SKIDDOWN          = 1<<26,
+	PF_NIGHTSFALL        = 1<<23,
+	PF_DRILLING          = 1<<24,
+	PF_SKIDDOWN          = 1<<25,
 
 	/*** TAG STUFF ***/
-	PF_TAGGED            = 1<<27, // Player has been tagged and awaits the next round in hide and seek.
-	PF_TAGIT             = 1<<28, // The player is it! For Tag Mode
+	PF_TAGGED            = 1<<26, // Player has been tagged and awaits the next round in hide and seek.
+	PF_TAGIT             = 1<<27, // The player is it! For Tag Mode
 
 	/*** misc ***/
-	PF_FORCESTRAFE       = 1<<29, // Turning inputs are translated into strafing inputs
-	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
+	PF_FORCESTRAFE       = 1<<28, // Turning inputs are translated into strafing inputs
+	PF_HITFINISHLINE     = 1<<29, // Already hit the finish line this tic
 
 	// free: 1<<30 and 1<<31
 } pflags_t;

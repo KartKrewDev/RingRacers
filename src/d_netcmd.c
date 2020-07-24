@@ -65,7 +65,6 @@
 // ------
 
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
-static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
 static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
 static void Got_PartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_AcceptPartyInvite(UINT8 **cp, INT32 playernum);
@@ -221,11 +220,6 @@ static void Command_KartGiveItem_f(void);
 // =========================================================================
 //                           CLIENT VARIABLES
 // =========================================================================
-
-void SendWeaponPref(void);
-void SendWeaponPref2(void);
-void SendWeaponPref3(void);
-void SendWeaponPref4(void);
 
 static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
 #if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
@@ -630,7 +624,6 @@ void D_RegisterServerCommands(void)
 		Forceskin_cons_t[i].strvalue = NULL;
 	}
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
-	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
 	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
 	RegisterNetXCmd(XD_PARTYINVITE, Got_PartyInvite);
 	RegisterNetXCmd(XD_ACCEPTPARTYINVITE, Got_AcceptPartyInvite);
@@ -2100,55 +2093,6 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	SetFollower(playernum, follower);
 }
 
-void SendWeaponPref(void)
-{
-	XBOXSTATIC UINT8 buf[1];
-
-	buf[0] = 0;
-	if (cv_flipcam.value)
-		buf[0] |= 1;
-	SendNetXCmd(XD_WEAPONPREF, buf, 1);
-}
-
-void SendWeaponPref2(void)
-{
-	XBOXSTATIC UINT8 buf[1];
-
-	buf[0] = 0;
-	if (cv_flipcam2.value)
-		buf[0] |= 1;
-	SendNetXCmd2(XD_WEAPONPREF, buf, 1);
-}
-
-void SendWeaponPref3(void)
-{
-	XBOXSTATIC UINT8 buf[1];
-
-	buf[0] = 0;
-	if (cv_flipcam3.value)
-		buf[0] |= 1;
-	SendNetXCmd3(XD_WEAPONPREF, buf, 1);
-}
-
-void SendWeaponPref4(void)
-{
-	XBOXSTATIC UINT8 buf[1];
-
-	buf[0] = 0;
-	if (cv_flipcam4.value)
-		buf[0] |= 1;
-	SendNetXCmd4(XD_WEAPONPREF, buf, 1);
-}
-
-static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
-{
-	UINT8 prefs = READUINT8(*cp);
-
-	players[playernum].pflags &= ~(PF_FLIPCAM);
-	if (prefs & 1)
-		players[playernum].pflags |= PF_FLIPCAM;
-}
-
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
 {
 	UINT16 race = (UINT16)READUINT16(*cp);
@@ -2356,13 +2300,6 @@ void D_SendPlayerConfig(void)
 		SendNameAndColor3();
 	if (splitscreen > 2)
 		SendNameAndColor4();
-	SendWeaponPref();
-	if (splitscreen)
-		SendWeaponPref2();
-	if (splitscreen > 1)
-		SendWeaponPref3();
-	if (splitscreen > 2)
-		SendWeaponPref4();
 
 	{
 		UINT8 buf[4];

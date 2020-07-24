@@ -1506,10 +1506,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// spectator aiming shit, ahhhh...
 	{
 		INT32 player_invert = invertmouse ? -1 : 1;
-		INT32 screen_invert =
-			(player->mo && (player->mo->eflags & MFE_VERTICALFLIP)
-			 && (!thiscam->chase || player->pflags & PF_FLIPCAM)) //because chasecam's not inverted
-			 ? -1 : 1; // set to -1 or 1 to multiply
+		INT32 screen_invert = (player->mo && (player->mo->eflags & MFE_VERTICALFLIP)  && (!thiscam->chase)) ? -1 : 1; // set to -1 or 1 to multiply
 
 		// mouse look stuff (mouse look is not the same as mouse aim)
 		if (mouseaiming && player->spectator)
@@ -1677,7 +1674,7 @@ static void Analog_OnChange(void)
 	}
 	*/
 
-	SendWeaponPref();
+	//SendWeaponPref();
 }
 
 static void Analog2_OnChange(void)
@@ -1694,7 +1691,7 @@ static void Analog2_OnChange(void)
 	}
 	*/
 
-	SendWeaponPref2();
+	//SendWeaponPref2();
 }
 
 static void Analog3_OnChange(void)
@@ -1711,7 +1708,7 @@ static void Analog3_OnChange(void)
 	}
 	*/
 
-	SendWeaponPref3();
+	//SendWeaponPref3();
 }
 
 static void Analog4_OnChange(void)
@@ -1728,7 +1725,7 @@ static void Analog4_OnChange(void)
 	}
 	*/
 
-	SendWeaponPref4();
+	//SendWeaponPref4();
 }
 
 //
@@ -2619,7 +2616,7 @@ void G_PlayerReborn(INT32 player)
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))

@@ -8481,9 +8481,6 @@ static const char *const MAPTHINGFLAG_LIST[4] = {
 #endif
 
 static const char *const PLAYERFLAG_LIST[] = {
-	// Flip camera angle with gravity flip prefrence.
-	"FLIPCAM",
-
 	// Cheats
 	"GODMODE",
 	"NOCLIP",
