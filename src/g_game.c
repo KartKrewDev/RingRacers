@@ -224,8 +224,8 @@ UINT16 spacetimetics = 11*TICRATE + (TICRATE/2);
 UINT16 extralifetics = 4*TICRATE;
 
 // SRB2kart
-tic_t introtime = 108+5; // plus 5 for white fade
-tic_t starttime = 6*TICRATE + (3*TICRATE/4);
+tic_t introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+tic_t starttime = (6*TICRATE) + (2*TICRATE); // Start countdown time, + buffer time
 tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
 tic_t battleexittime = 8*TICRATE;
 INT32 hyudorotime = 7*TICRATE;
@@ -2332,7 +2332,7 @@ void G_Ticker(boolean run)
 	UINT32 i;
 	INT32 buf;
 	ticcmd_t *cmd;
-	UINT32 ra_timeskip = (modeattacking && !demo.playback && leveltime < starttime - TICRATE*4) ? 0 : (starttime - TICRATE*4 - 1);
+	UINT32 ra_timeskip = (modeattacking && !demo.playback && leveltime < introtime) ? 0 : (introtime - 1);
 	// starttime - TICRATE*4 is where we want RA to start when we PLAY IT, so we will loop the main thinker on RA start to get it to this point,
 	// the reason this is done is to ensure that ghosts won't look out of synch with other map elements (objects, moving platforms...)
 	// when we REPLAY, don't skip, let the camera spin, do its thing etc~
@@ -2409,7 +2409,7 @@ void G_Ticker(boolean run)
 	{
 		case GS_LEVEL:
 
-			for (; ra_timeskip < starttime - TICRATE*4; ra_timeskip++)	// this looks weird but this is done to not break compability with older demos for now.
+			for (; ra_timeskip < introtime; ra_timeskip++)	// this looks weird but this is done to not break compability with older demos for now.
 			{
 				if (demo.title)
 					F_TitleDemoTicker();
