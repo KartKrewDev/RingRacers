@@ -2909,12 +2909,9 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	y = source->y + source->momy + FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
 	z = source->z; // spawn on the ground please
 
-	if (P_MobjFlip(source) < 0)
-	{
-		z = source->z+source->height - mobjinfo[type].height;
-	}
-
 	th = P_SpawnMobj(x, y, z, type);
+
+	K_FlipFromObject(th, source);
 
 	th->flags2 |= flags2;
 	th->threshold = 10;
@@ -3654,8 +3651,8 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 			if (player->mo->eflags & MFE_VERTICALFLIP)
 			{
 				mo->z -= player->mo->height;
-				mo->flags2 |= MF2_OBJECTFLIP;
 				mo->eflags |= MFE_VERTICALFLIP;
+				mo->flags2 |= (player->mo->flags2 & MF2_OBJECTFLIP);
 			}
 
 			mo->threshold = 10;
@@ -3685,8 +3682,8 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 			if (player->mo->eflags & MFE_VERTICALFLIP)
 			{
 				throwmo->z -= player->mo->height;
-				throwmo->flags2 |= MF2_OBJECTFLIP;
 				throwmo->eflags |= MFE_VERTICALFLIP;
+				mo->flags2 |= (player->mo->flags2 & MF2_OBJECTFLIP);
 			}
 
 			throwmo->movecount = 0; // above player
@@ -4296,6 +4293,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 		dropwork->flags |= MF_NOCLIPTHING;
 		dropwork->flags2 = work->flags2;
+		dropwork->eflags = work->eflags;
 
 		dropwork->floorz = work->floorz;
 		dropwork->ceilingz = work->ceilingz;
@@ -4401,6 +4399,8 @@ void K_DropItems(player_t *player)
 
 		drop->threshold = player->kartstuff[k_itemtype];
 		drop->movecount = player->kartstuff[k_itemamount];
+
+		K_FlipFromObject(drop, player->mo);
 
 		drop->flags |= MF_NOCLIPTHING;
 	}
@@ -4746,6 +4746,9 @@ static void K_MoveHeldObjects(player_t *player)
 					}
 
 					cur->flags &= ~MF_NOCLIPTHING;
+
+					if ((player->mo->eflags & MFE_VERTICALFLIP) != (cur->eflags & MFE_VERTICALFLIP))
+						K_FlipFromObject(cur, player->mo);
 
 					if (!cur->health)
 					{
@@ -6956,6 +6959,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EGGMANITEM_SHIELD);
 								if (mo)
 								{
+									K_FlipFromObject(mo, player->mo);
 									mo->flags |= MF_NOCLIPTHING;
 									mo->threshold = 10;
 									mo->movecount = 1;
