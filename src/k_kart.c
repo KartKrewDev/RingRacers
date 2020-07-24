@@ -2030,12 +2030,17 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 
 static tic_t K_GetSpindashChargeTime(player_t *player)
 {
-	return (player->kartspeed + 4) * (TICRATE/3); // more charge time for higher speed: Tails = 2s, Mighty = 3s, Fang = 4s
+	// more charge time for higher speed
+	// Tails = 2s, Mighty = 3s, Fang = 4s, Metal = 4s
+	return (player->kartspeed + 4) * (TICRATE/3); 
 }
 
 static fixed_t K_GetSpindashChargeSpeed(player_t *player)
 {
-	return player->kartweight * (FRACUNIT/12); // more speed for higher weight: Tails = 116%, Fang = 142%, Mighty = 166%
+	// more speed for higher weight & speed
+	// Tails = +6.25%, Fang = +20.31%, Mighty = +20.31%, Metal = +25%
+	// (can be higher than this value when overcharged)
+	return (player->kartspeed + player->kartweight) * (FRACUNIT/64);
 }
 
 // Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
@@ -2070,8 +2075,8 @@ static void K_GetKartBoostPower(player_t *player)
 
 #define ADDBOOST(s,a) { \
 	numboosts++; \
-	speedboost += FixedDiv(s, FRACUNIT + (metabolism * numboosts-1)); \
-	accelboost += FixedDiv(a, FRACUNIT + (metabolism * numboosts-1)); \
+	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
+	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
 }
 
 #else
@@ -2107,10 +2112,11 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		const fixed_t MAXCHARGESPEED = K_GetSpindashChargeSpeed(player);
 
+		// character & charge dependent
 		ADDBOOST(
-			FixedMul(player->kartstuff[k_spindashspeed], MAXCHARGESPEED),
-			(8*FRACUNIT) + (24*player->kartstuff[k_spindashspeed])
-		); // character & charge time dependent
+			FixedMul(MAXCHARGESPEED, player->kartstuff[k_spindashspeed]), // + 0 to K_GetSpindashChargeSpeed()% top speed
+			(4*FRACUNIT) + (36*player->kartstuff[k_spindashspeed]) // + 400% to 4000% acceleration
+		);
 	}
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
@@ -6852,6 +6858,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 boolean K_PlayerEBrake(player_t *player)
 {
 	return (player->cmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK
+	&& P_IsObjectOnGround(player->mo)
 	&& !player->kartstuff[k_drift]
 	&& !player->kartstuff[k_spinouttimer]
 	&& !player->kartstuff[k_boostcharge]
@@ -6929,8 +6936,10 @@ static void K_KartSpindash(player_t *player)
 		}
 	}
 	else
+	{
 		if (leveltime % 4 == 0)
 			S_StartSound(player->mo, sfx_kc2b);
+	}
 }
 
 //
@@ -7677,9 +7686,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			player->mo->friction = K_BotFrictionRubberband(player, player->mo->friction);
 		}
-
-		K_KartSpindash(player);
 	}
+
+	K_KartSpindash(player);
 
 	// Squishing
 	// If a Grow player or a sector crushes you, get flattened instead of being killed.
