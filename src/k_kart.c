@@ -278,11 +278,11 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
 		 /*Invincibility*/ { 0, 0, 0, 0, 2, 4, 6, 9 }, // Invincibility
-				/*Banana*/ { 7, 3, 2, 0, 0, 0, 0, 0 }, // Banana
+				/*Banana*/ { 7, 3, 1, 0, 0, 0, 0, 0 }, // Banana
 		/*Eggman Monitor*/ { 3, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
-			  /*Orbinaut*/ { 7, 4, 3, 2, 0, 0, 0, 0 }, // Orbinaut
+			  /*Orbinaut*/ { 7, 4, 2, 2, 0, 0, 0, 0 }, // Orbinaut
 				  /*Jawz*/ { 0, 3, 2, 1, 1, 0, 0, 0 }, // Jawz
-				  /*Mine*/ { 0, 3, 2, 1, 0, 0, 0, 0 }, // Mine
+				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
 			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 1, 2, 3, 4, 2, 2, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
@@ -294,7 +294,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 		   /*Pogo Spring*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
 			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
-			/*Sneaker x2*/ { 0, 0, 1, 2, 1, 0, 0, 0 }, // Sneaker x2
+			/*Sneaker x2*/ { 0, 0, 2, 2, 1, 0, 0, 0 }, // Sneaker x2
 			/*Sneaker x3*/ { 0, 0, 0, 2, 6,10, 5, 0 }, // Sneaker x3
 			 /*Banana x3*/ { 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
 			/*Banana x10*/ { 0, 0, 0, 1, 0, 0, 0, 0 }, // Banana x10
