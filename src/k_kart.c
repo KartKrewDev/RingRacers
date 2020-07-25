@@ -160,6 +160,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_superring);
 	CV_RegisterVar(&cv_kitchensink);
 
+	CV_RegisterVar(&cv_dualsneaker);
 	CV_RegisterVar(&cv_triplesneaker);
 	CV_RegisterVar(&cv_triplebanana);
 	CV_RegisterVar(&cv_decabanana);
@@ -259,6 +260,7 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_pogospring,
 	&cv_superring,
 	&cv_kitchensink,
+	&cv_dualsneaker,
 	&cv_triplesneaker,
 	&cv_triplebanana,
 	&cv_decabanana,
@@ -275,23 +277,24 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 				//P-Odds	 0  1  2  3  4  5  6  7
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
-		 /*Invincibility*/ { 0, 0, 0, 0, 1, 4, 7, 9 }, // Invincibility
-				/*Banana*/ { 7, 3, 2, 0, 0, 0, 0, 0 }, // Banana
+		 /*Invincibility*/ { 0, 0, 0, 0, 2, 4, 6, 9 }, // Invincibility
+				/*Banana*/ { 7, 3, 1, 0, 0, 0, 0, 0 }, // Banana
 		/*Eggman Monitor*/ { 3, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
-			  /*Orbinaut*/ { 7, 4, 3, 2, 0, 0, 0, 0 }, // Orbinaut
+			  /*Orbinaut*/ { 7, 4, 2, 2, 0, 0, 0, 0 }, // Orbinaut
 				  /*Jawz*/ { 0, 3, 2, 1, 1, 0, 0, 0 }, // Jawz
-				  /*Mine*/ { 0, 2, 2, 1, 0, 0, 0, 0 }, // Mine
+				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
 			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 1, 2, 3, 4, 2, 2, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
 				/*Shrink*/ { 0, 0, 0, 0, 0, 0, 2, 0 }, // Shrink
 		/*Thunder Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Thunder Shield
-		 /*Bubble Shield*/ { 0, 2, 3, 3, 1, 0, 0, 0 }, // Bubble Shield
+		 /*Bubble Shield*/ { 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
-			   /*Hyudoro*/ { 0, 0, 0, 1, 2, 0, 0, 0 }, // Hyudoro
+			   /*Hyudoro*/ { 0, 0, 0, 1, 1, 0, 0, 0 }, // Hyudoro
 		   /*Pogo Spring*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
 			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
+			/*Sneaker x2*/ { 0, 0, 2, 2, 1, 0, 0, 0 }, // Sneaker x2
 			/*Sneaker x3*/ { 0, 0, 0, 2, 6,10, 5, 0 }, // Sneaker x3
 			 /*Banana x3*/ { 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
 			/*Banana x10*/ { 0, 0, 0, 1, 0, 0, 0, 0 }, // Banana x10
@@ -322,6 +325,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS-1][6] =
 		   /*Pogo Spring*/ { 1, 1, 0, 0, 0, 0 }, // Pogo Spring
 			/*Super Ring*/ { 0, 0, 0, 0, 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
+			/*Sneaker x2*/ { 0, 0, 0, 0, 0, 0 }, // Sneaker x2
 			/*Sneaker x3*/ { 0, 0, 0, 2, 4, 2 }, // Sneaker x3
 			 /*Banana x3*/ { 1, 2, 1, 0, 0, 0 }, // Banana x3
 			/*Banana x10*/ { 0, 0, 1, 1, 0, 2 }, // Banana x10
@@ -364,6 +368,10 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	switch (getitem)
 	{
 		// Special roulettes first, then the generic ones are handled by default
+		case KRITEM_DUALSNEAKER: // Sneaker x2
+			player->kartstuff[k_itemtype] = KITEM_SNEAKER;
+			player->kartstuff[k_itemamount] = 2;
+			break;
 		case KRITEM_TRIPLESNEAKER: // Sneaker x3
 			player->kartstuff[k_itemtype] = KITEM_SNEAKER;
 			player->kartstuff[k_itemamount] = 3;
@@ -523,6 +531,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			case KITEM_THUNDERSHIELD:
 			case KITEM_BUBBLESHIELD:
 			case KITEM_FLAMESHIELD:
+			case KRITEM_DUALSNEAKER:
 			case KRITEM_TRIPLESNEAKER:
 			case KRITEM_TRIPLEBANANA:
 			case KRITEM_TENFOLDBANANA:
@@ -8255,6 +8264,7 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 	switch (item)
 	{
 		case KITEM_SNEAKER:
+		case KRITEM_DUALSNEAKER:
 		case KRITEM_TRIPLESNEAKER:
 			return (tiny ? "K_ISSHOE" : "K_ITSHOE");
 		case KITEM_ROCKETSNEAKER:
