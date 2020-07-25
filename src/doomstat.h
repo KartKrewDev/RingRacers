@@ -534,6 +534,7 @@ extern tic_t hyubgone;
 extern tic_t mapreset;
 extern boolean thwompsactive;
 extern SINT8 spbplace;
+extern boolean rainbowstartavailable;
 
 extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
 extern boolean legitimateexit;

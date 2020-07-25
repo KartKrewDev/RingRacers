@@ -289,6 +289,7 @@ tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
 boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
+boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.

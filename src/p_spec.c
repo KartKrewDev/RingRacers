@@ -2194,6 +2194,13 @@ static void K_HandleLapIncrement(player_t *player)
 			player->karthud[khud_fault] = 1;
 			player->mo->momx = player->mo->momy = 0;
 		}
+		else if (rainbowstartavailable == true)
+		{
+			S_StartSound(player->mo, sfx_s23c);
+			player->kartstuff[k_driftboost] = 125;
+			K_SpawnDriftBoostExplosion(player, 3);
+			rainbowstartavailable = false;
+		}
 	}
 }
 

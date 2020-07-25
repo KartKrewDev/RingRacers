@@ -6488,7 +6488,7 @@ Stage 1: red sparks
 Stage 2: blue sparks
 Stage 3: big large rainbow sparks
 */
-static void K_SpawnDriftBoostExplosion(player_t *player, int stage)
+void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 {
 	mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DRIFTEXPLODE);
 

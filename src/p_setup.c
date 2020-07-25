@@ -2368,6 +2368,7 @@ lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 static void P_LevelInitStuff(void)
 {
 	INT32 i;
+	UINT8 p = 0;
 
 	leveltime = 0;
 
@@ -2414,6 +2415,9 @@ static void P_LevelInitStuff(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		if (playeringame[i] && !players[i].spectator)
+			p++;
+
 		if (grandprixinfo.gp == false)
 		{
 			players[i].lives = 3;
@@ -2463,6 +2467,11 @@ static void P_LevelInitStuff(void)
 		players[i].follower = NULL;
 	}
 
+	rainbowstartavailable = false;
+
+	if (p >= 2)
+		rainbowstartavailable = true;
+
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
 	{
@@ -2505,6 +2514,10 @@ static void P_LevelInitStuff(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
+
+	
+
+	
 }
 
 //
