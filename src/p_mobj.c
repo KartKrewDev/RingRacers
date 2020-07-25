@@ -11728,13 +11728,19 @@ void P_RespawnSpecials(void)
 		return;
 	else if (pcount > 1)
 	{
-		time = (180 - (pcount * 10))*TICRATE;
+		time = (120 - ((pcount-2) * 10))*TICRATE;
 
 		// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
 		// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
 		if ((mapheaderinfo[gamemap-1]->numlaps != 3)
 		&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
 			time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
+
+		if (time < 10*TICRATE)
+		{
+			// Ensure it doesn't go into absurdly low values
+			time = 10*TICRATE;
+		}
 	}
 
 	// nothing left to respawn?
