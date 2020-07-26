@@ -1508,7 +1508,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		INT32 player_invert = invertmouse ? -1 : 1;
 		INT32 screen_invert =
 			(player->mo && (player->mo->eflags & MFE_VERTICALFLIP)
-			 && (!thiscam->chase || player->pflags & PF_FLIPCAM)) //because chasecam's not inverted
+			 && (!thiscam->chase)) //because chasecam's not inverted
 			 ? -1 : 1; // set to -1 or 1 to multiply
 
 		// mouse look stuff (mouse look is not the same as mouse aim)
@@ -2619,7 +2619,7 @@ void G_PlayerReborn(INT32 player)
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
