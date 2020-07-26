@@ -564,10 +564,11 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/k_waypoint.o\
 		$(OBJDIR)/k_pathfind.o\
 		$(OBJDIR)/k_bheap.o  \
-		$(OBJDIR)/k_bot.o \
-		$(OBJDIR)/k_botitem.o \
-		$(OBJDIR)/k_botsearch.o \
+		$(OBJDIR)/k_bot.o    \
+		$(OBJDIR)/k_botitem.o\
+		$(OBJDIR)/k_botsearch.o\
 		$(OBJDIR)/k_grandprix.o\
+		$(OBJDIR)/k_hud.o    \
 		$(i_cdmus_o)    \
 		$(i_net_o)      \
 		$(i_system_o)   \

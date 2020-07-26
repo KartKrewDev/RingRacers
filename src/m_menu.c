@@ -56,7 +56,8 @@
 #include "byteptr.h"
 #include "st_stuff.h"
 #include "i_sound.h"
-#include "k_kart.h" // SRB2kart
+#include "k_hud.h" // SRB2kart
+#include "k_kart.h" // KartItemCVars
 #include "k_pwrlv.h"
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"

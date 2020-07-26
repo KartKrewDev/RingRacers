@@ -26,6 +26,8 @@
 #include "m_random.h"
 #include "doomstat.h"
 
+#include "k_hud.h"
+
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
@@ -608,12 +610,6 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 		y -= offsety;
 	}
 
-	if (scrn & V_SPLITSCREEN)
-		y += (BASEVIDHEIGHT/2)<<FRACBITS;
-
-	if (scrn & V_HORZSCREEN)
-		x += (BASEVIDWIDTH/2)<<FRACBITS;
-
 	desttop = screens[scrn&V_PARAMMASK];
 
 	if (!desttop)
@@ -637,38 +633,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 		// Center it if necessary
 		if (!(scrn & V_SCALEPATCHMASK))
 		{
-			// if it's meant to cover the whole screen, black out the rest
-			// BAD, BAD, BAD, FUCK OFF, STOP, EW, AAAAAAA
-			// This does NOT account for transparent pixels
-			/*if (x == 0 && FixedMul(SHORT(patch->width)<<FRACBITS, pscale)>>FRACBITS == BASEVIDWIDTH
-				&& y == 0 && FixedMul(SHORT(patch->height)<<FRACBITS, pscale)>>FRACBITS == BASEVIDHEIGHT)
-			{
-				column = (const column_t *)((const UINT8 *)(patch) + LONG(patch->columnofs[0]));
-				source = (const UINT8 *)(column) + 3;
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, (column->topdelta == 0xff ? 31 : source[0]));
-			}*/
-
-			if (vid.width != BASEVIDWIDTH * dupx)
-			{
-				// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
-				// so center this imaginary screen
-				if ((scrn & (V_HORZSCREEN|V_SNAPTOLEFT)) == (V_HORZSCREEN|V_SNAPTOLEFT))
-					x += (vid.width/2 - (BASEVIDWIDTH/2 * dupx));
-				else if (scrn & V_SNAPTORIGHT)
-					x += (vid.width - (BASEVIDWIDTH * dupx));
-				else if (!(scrn & V_SNAPTOLEFT))
-					x += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
-			}
-			if (vid.height != BASEVIDHEIGHT * dupy)
-			{
-				// same thing here
-				if ((scrn & (V_SPLITSCREEN|V_SNAPTOTOP)) == (V_SPLITSCREEN|V_SNAPTOTOP))
-					y += (vid.height/2 - (BASEVIDHEIGHT/2 * dupy));
-				else if (scrn & V_SNAPTOBOTTOM)
-					y += (vid.height - (BASEVIDHEIGHT * dupy));
-				else if (!(scrn & V_SNAPTOTOP))
-					y += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
-			}
+			K_AdjustXYWithSnap(&x, &y, scrn, dupx, dupy);
 		}
 
 		desttop += (y*vid.width) + x;
@@ -923,31 +888,12 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		h *= dupy;
 
 		// Center it if necessary
-		if (vid.width != BASEVIDWIDTH * dupx)
-		{
-			// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
-			// so center this imaginary screen
-			if (c & V_SNAPTORIGHT)
-				x += (vid.width - (BASEVIDWIDTH * dupx));
-			else if (!(c & V_SNAPTOLEFT))
-				x += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
-		}
-		if (vid.height != BASEVIDHEIGHT * dupy)
-		{
-			// same thing here
-			if (c & V_SNAPTOBOTTOM)
-				y += (vid.height - (BASEVIDHEIGHT * dupy));
-			else if (!(c & V_SNAPTOTOP))
-				y += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
-		}
-		if (c & V_SPLITSCREEN)
-			y += (BASEVIDHEIGHT * dupy)/2;
-		if (c & V_HORZSCREEN)
-			x += (BASEVIDWIDTH * dupx)/2;
+		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
 		return; // off the screen
+
 	if (x < 0)
 	{
 		w += x;
@@ -1151,27 +1097,7 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c)
 		wh *= dupx;
 
 		// Center it if necessary
-		if (vid.width != BASEVIDWIDTH * dupx)
-		{
-			// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
-			// so center this imaginary screen
-			if (c & V_SNAPTORIGHT)
-				x += (vid.width - (BASEVIDWIDTH * dupx));
-			else if (!(c & V_SNAPTOLEFT))
-				x += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
-		}
-		if (vid.height != BASEVIDHEIGHT * dupy)
-		{
-			// same thing here
-			if (c & V_SNAPTOBOTTOM)
-				y += (vid.height - (BASEVIDHEIGHT * dupy));
-			else if (!(c & V_SNAPTOTOP))
-				y += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
-		}
-		if (c & V_SPLITSCREEN)
-			y += (BASEVIDHEIGHT * dupy)/2;
-		if (c & V_HORZSCREEN)
-			x += (BASEVIDWIDTH * dupx)/2;
+		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
