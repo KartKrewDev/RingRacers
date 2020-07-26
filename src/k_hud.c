@@ -2128,7 +2128,7 @@ static void K_drawKartWanted(void)
 	}
 }
 
-static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, angle_t camang, angle_t camaim, UINT8 camnum, vertex_t *point)
+static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, angle_t camang, angle_t camaim, vertex_t *point)
 {
 	const INT32 swhalf = (BASEVIDWIDTH / 2);
 	const fixed_t swhalffixed = swhalf * FRACUNIT;
@@ -2136,11 +2136,28 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 	const INT32 shhalf = (BASEVIDHEIGHT / 2);
 	const fixed_t shhalffixed = shhalf * FRACUNIT;
 
-	INT32 anglediff = (signed)(camang - R_PointToAngle2(campos->x, campos->y, point->x, point->y));
+
+	const UINT8 precisionloss = 4;
+
+	fixed_t anglediff = (AngleFixed(camang) / precisionloss) - (AngleFixed(R_PointToAngle2(campos->x, campos->y, point->x, point->y)) / precisionloss);
+
 	fixed_t distance = R_PointToDist2(campos->x, campos->y, point->x, point->y);
 	fixed_t factor = INT32_MAX;
 
-	if (abs(anglediff) > ANGLE_90)
+	const fixed_t fov = cv_fov.value;
+	fixed_t intendedfov = 90*FRACUNIT;
+	fixed_t fovmul = FRACUNIT;
+
+	if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
+	{
+		intendedfov = 17 * intendedfov / 10;
+	}
+
+	fovmul = FixedDiv(fov, intendedfov);
+
+	anglediff = FixedMul(anglediff, fovmul) * precisionloss;
+
+	if (abs(anglediff) > 90*FRACUNIT)
 	{
 		if (hud_x != NULL)
 		{
@@ -2152,9 +2169,11 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 			*hud_y = -BASEVIDWIDTH * FRACUNIT;
 		}
 
-		//*hud_scale = FRACUNIT;
+		//*hud_scale = 0;
 		return;
 	}
+
+	anglediff = FixedAngle(anglediff);
 
 	factor = max(1, FINECOSINE(anglediff >> ANGLETOFINESHIFT));
 
@@ -2172,11 +2191,6 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 		if (r_splitscreen >= 2)
 		{
 			*hud_x /= 2;
-
-			if (camnum & 1)
-			{
-				*hud_x += swhalffixed;
-			}
 		}
 	}
 
@@ -2190,12 +2204,6 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 		if (r_splitscreen >= 1)
 		{
 			*hud_y /= 2;
-
-			if ((r_splitscreen == 1 && camnum == 1)
-			|| (r_splitscreen > 1 && camnum > 1))
-			{
-				*hud_y += shhalffixed;
-			}
 		}
 	}
 
@@ -2299,10 +2307,10 @@ static void K_drawKartPlayerCheck(void)
 			pnum += 2;
 		}
 
-		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, cnum, &v);
+		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, &v);
 
 		colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
-		V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|V_SLIDEIN|splitflags, kp_check[pnum], colormap);
+		V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
 	}
 }
 
@@ -2330,13 +2338,73 @@ static boolean K_ShowPlayerNametag(player_t *p)
 	return true;
 }
 
+static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
+{
+	UINT8 blink = ((leveltime / 7) & 1);
+	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_rival[blink], NULL);
+}
+
+static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 cnum)
+{
+	INT32 namelen = V_ThinStringWidth(player_names[p - players], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+	INT32 clr = K_SkincolorToTextColor(p->skincolor);
+	UINT8 *colormap = V_GetStringColormap(clr);
+	INT32 barx = 0, bary = 0, barw = 0;
+
+	// Since there's no "V_DrawFixedFill", and I don't feel like making it,
+	// fuck it, we're gonna just V_NOSCALESTART hack it
+	if (cnum & 1)
+	{
+		x += (BASEVIDWIDTH/2) * FRACUNIT;
+	}
+
+	if ((r_splitscreen == 1 && cnum == 1)
+	|| (r_splitscreen > 1 && cnum > 1))
+	{
+		y += (BASEVIDHEIGHT/2) * FRACUNIT;
+	}
+
+	barw = (namelen * vid.dupx);
+
+	barx = (x * vid.dupx) / FRACUNIT;
+	bary = (y * vid.dupy) / FRACUNIT;
+
+	barx += (6 * vid.dupx);
+	bary -= (16 * vid.dupx);
+
+	// Center it if necessary
+	if (vid.width != BASEVIDWIDTH * vid.dupx)
+	{
+		barx += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+	}
+
+	if (vid.height != BASEVIDHEIGHT * vid.dupy)
+	{
+		bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+	}
+
+	// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
+	V_DrawFill(barx, bary, barw, (3 * vid.dupy), (colormap ? colormap[31] : 31)|V_NOSCALESTART);
+	V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, (colormap ? colormap[0] : 0)|V_NOSCALESTART);
+	// END DRAWFILL DUMBNESS
+
+	// Draw the stem
+	V_DrawFixedPatch(x, y, FRACUNIT, 0, kp_nametagstem, colormap);
+
+	// Draw the name itself
+	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), V_6WIDTHSPACE|V_ALLOWLOWERCASE|clr, player_names[p - players]);
+}
+
 static void K_drawKartNameTags(void)
 {
 	const fixed_t maxdistance = 8192*mapobjectscale;
 	camera_t *thiscam;
 	vertex_t c;
 	UINT8 cnum = 0;
-	UINT8 i;
+	UINT8 tobesorted[MAXPLAYERS];
+	fixed_t sortdist[MAXPLAYERS];
+	UINT8 sortlen = 0;
+	UINT8 i, j;
 
 	if (stplyr == NULL || stplyr->mo == NULL || P_MobjWasRemoved(stplyr->mo))
 	{
@@ -2370,10 +2438,6 @@ static void K_drawKartNameTags(void)
 	{
 		player_t *ntplayer = &players[i];
 		fixed_t distance = maxdistance+1;
-
-		fixed_t x = -BASEVIDWIDTH * FRACUNIT;
-		fixed_t y = -BASEVIDWIDTH * FRACUNIT;
-
 		vertex_t v;
 
 		if (!playeringame[i] || ntplayer->spectator)
@@ -2396,8 +2460,6 @@ static void K_drawKartNameTags(void)
 
 		if (!(demo.playback == true && demo.freecam == true))
 		{
-			UINT8 j;
-
 			for (j = 0; j <= r_splitscreen; j++)
 			{
 				if (ntplayer == &players[displayplayers[j]])
@@ -2431,62 +2493,75 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		K_ObjectTracking(&x, &y, &c, thiscam->angle, thiscam->aiming, cnum, &v);
+		tobesorted[sortlen] = ntplayer - players;
+		sortdist[sortlen] = distance;
+		sortlen++;
+	}
 
-		if (x == -BASEVIDWIDTH * FRACUNIT)
-		{
-			// Off-screen
-			continue;
-		}
+	if (sortlen > 0)
+	{
+		UINT8 sortedplayers[sortlen];
 
-		if (ntplayer->bot)
+		for (i = 0; i < sortlen; i++)
 		{
-			if (ntplayer->botvars.rival == true)
+			UINT8 pos = 0;
+
+			for (j = 0; j < sortlen; j++)
 			{
-				UINT8 blink = ((leveltime / 7) & 1);
-				V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS, kp_rival[blink], NULL);
+				if (j == i)
+				{
+					continue;
+				}
+
+				if (sortdist[i] < sortdist[j]
+				|| (sortdist[i] == sortdist[j] && i > j))
+				{
+					pos++;
+				}
 			}
+
+			sortedplayers[pos] = tobesorted[i];
 		}
-		else if (netgame || demo.playback)
+
+		for (i = 0; i < sortlen; i++)
 		{
-			if (K_ShowPlayerNametag(ntplayer) == true)
+			player_t *ntplayer = &players[sortedplayers[i]];
+
+			fixed_t x = -BASEVIDWIDTH * FRACUNIT;
+			fixed_t y = -BASEVIDWIDTH * FRACUNIT;
+
+			vertex_t v;
+
+			v.x = ntplayer->mo->x;
+			v.y = ntplayer->mo->y;
+			v.z = ntplayer->mo->z;
+
+			if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
 			{
-				INT32 namelen = V_ThinStringWidth(player_names[i], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
-				INT32 clr = K_SkincolorToTextColor(ntplayer->skincolor);
-				UINT8 *colormap = V_GetStringColormap(clr);
-				INT32 barx = 0, bary = 0, barw = 0;
+				v.z += ntplayer->mo->height;
+			}
 
-				// Since there's no "V_DrawFixedFill", and I don't feel like making it,
-				// fuck it, we're gonna just V_NOSCALESTART hack it
-				barw = (namelen * vid.dupx);
+			K_ObjectTracking(&x, &y, &c, thiscam->angle, thiscam->aiming, &v);
 
-				barx = (x * vid.dupx) / FRACUNIT;
-				bary = (y * vid.dupy) / FRACUNIT;
+			if (x == -BASEVIDWIDTH * FRACUNIT)
+			{
+				// Off-screen
+				continue;
+			}
 
-				barx += (6 * vid.dupx);
-				bary -= (16 * vid.dupx);
-
-				// Center it if necessary
-				if (vid.width != BASEVIDWIDTH * vid.dupx)
+			if (ntplayer->bot)
+			{
+				if (ntplayer->botvars.rival == true)
 				{
-					barx += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+					K_DrawRivalTagForPlayer(x, y);
 				}
-
-				if (vid.height != BASEVIDHEIGHT * vid.dupy)
+			}
+			else if (netgame || demo.playback)
+			{
+				if (K_ShowPlayerNametag(ntplayer) == true)
 				{
-					bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+					K_DrawNameTagForPlayer(x, y, ntplayer, cnum);
 				}
-
-				// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
-				V_DrawFill(barx, bary, barw, (3 * vid.dupy), (colormap ? colormap[31] : 31)|V_NOSCALESTART);
-				V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, (colormap ? colormap[0] : 0)|V_NOSCALESTART);
-				// END DRAWFILL DUMBNESS
-
-				// Draw the stem
-				V_DrawFixedPatch(x, y, FRACUNIT, 0, kp_nametagstem, colormap);
-
-				// Draw the name itself
-				V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), V_6WIDTHSPACE|V_ALLOWLOWERCASE|clr, player_names[i]);
 			}
 		}
 	}
