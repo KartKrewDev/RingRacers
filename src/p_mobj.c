@@ -1168,6 +1168,26 @@ static void P_PlayerFlip(mobj_t *mo)
 		if (mo->tracer)
 			mo->tracer->eflags ^= MFE_VERTICALFLIP;
 	}
+	else if (mo->player->pflags & PF_FLIPCAM)
+	{
+		UINT8 i;
+
+		mo->player->aiming = InvAngle(mo->player->aiming);
+
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (mo->player-players == displayplayers[i])
+			{
+				localaiming[i] = mo->player->aiming;
+				if (camera[i].chase) {
+					camera[i].aiming = InvAngle(camera[i].aiming);
+					camera[i].z = mo->z - camera[i].z + mo->z;
+					if (mo->eflags & MFE_VERTICALFLIP)
+						camera[i].z += FixedMul(20*FRACUNIT, mo->scale);
+				}
+			}
+		}
+	}
 }
 
 //
@@ -3579,6 +3599,8 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 
 	if (encoremode)
 		postimg = postimg_mirror;
+	else if (player->pflags & PF_FLIPCAM && !(player->pflags & PF_NIGHTSMODE) && player->mo->eflags & MFE_VERTICALFLIP)
+		postimg = postimg_flip;
 	else if (player->awayviewtics && player->awayviewmobj && !P_MobjWasRemoved(player->awayviewmobj)) // Camera must obviously exist
 	{
 		camera_t dummycam;
@@ -7037,6 +7059,8 @@ void P_MobjThinker(mobj_t *mobj)
 				if (mobj->target->eflags & MFE_VERTICALFLIP)
 				{
 					mobj->z = mobj->target->z - FixedMul(16*FRACUNIT, mobj->target->scale) - mobj->height;
+					if (mobj->target->player->pflags & PF_FLIPCAM)
+						mobj->eflags |= MFE_VERTICALFLIP;
 				}
 				else
 					mobj->z = mobj->target->z + (mobj->target->height) + FixedMul(8*FRACUNIT, mobj->target->scale); // Adjust height for height changes
