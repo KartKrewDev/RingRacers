@@ -2514,10 +2514,6 @@ static void P_LevelInitStuff(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
-
-	
-
-	
 }
 
 //
