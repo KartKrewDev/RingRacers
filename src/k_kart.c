@@ -6896,6 +6896,7 @@ boolean K_PlayerEBrake(player_t *player)
 	&& !player->kartstuff[k_spinouttimer]
 	&& !player->kartstuff[k_boostcharge]
 	&& !(player->kartstuff[k_spindash] < 0)
+	&& !player->kartstuff[k_justbumped]
 	&& !player->kartstuff[k_spindashboost]
 	&& !player->powers[pw_nocontrol];
 }
