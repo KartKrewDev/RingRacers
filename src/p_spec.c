@@ -2197,7 +2197,7 @@ static void K_HandleLapIncrement(player_t *player)
 		else if (rainbowstartavailable == true)
 		{
 			S_StartSound(player->mo, sfx_s23c);
-			player->kartstuff[k_driftboost] = 125;
+			player->kartstuff[k_startboost] = 125;
 			K_SpawnDriftBoostExplosion(player, 3);
 			rainbowstartavailable = false;
 		}
