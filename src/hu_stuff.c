@@ -2366,11 +2366,17 @@ void
 HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
 	patch_t *patch;
+	INT32 w = BASEVIDWIDTH;
+
+	if (r_splitscreen > 1)
+	{
+		w /= 2;
+	}
 
 	patch = mping[Ping_gfx_num(ping)];
 
 	if (( flags & V_SNAPTORIGHT ))
-		x += ( BASEVIDWIDTH - SHORT (patch->width) );
+		x += ( w - SHORT (patch->width) );
 
 	V_DrawScaledPatch(x, y, flags, patch);
 }

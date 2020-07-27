@@ -595,16 +595,27 @@ INT32 POSI2_X, POSI2_Y;
 void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy)
 {
 	// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx
-	INT32 screenwidth = BASEVIDWIDTH * dupx;
-	INT32 screenheight = BASEVIDHEIGHT * dupy;
+	INT32 screenwidth = vid.width;
+	INT32 screenheight = vid.height;
+	INT32 basewidth = BASEVIDWIDTH * dupx;
+	INT32 baseheight = BASEVIDHEIGHT * dupy;
 	SINT8 player = -1;
 	UINT8 i;
 
-	if (r_splitscreen > 0)
-		screenheight /= 2;
+	if (options & V_SPLITSCREEN)
+	{
+		if (r_splitscreen > 0)
+		{
+			screenheight /= 2;
+			baseheight /= 2;
+		}
 
-	if (r_splitscreen > 1)
-		screenwidth /= 2;
+		if (r_splitscreen > 1)
+		{
+			screenwidth /= 2;
+			basewidth /= 2;
+		}
+	}
 
 	for (i = 0; i <= r_splitscreen; i++)
 	{
@@ -618,17 +629,17 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	if (vid.width != (BASEVIDWIDTH * dupx))
 	{
 		if (options & V_SNAPTORIGHT)
-			*x += (vid.width - screenwidth);
+			*x += (screenwidth - basewidth);
 		else if (!(options & V_SNAPTOLEFT))
-			*x += (vid.width - screenwidth) / 2;
+			*x += (screenwidth - basewidth) / 2;
 	}
 
 	if (vid.height != (BASEVIDHEIGHT * dupy))
 	{
 		if (options & V_SNAPTOBOTTOM)
-			*y += (vid.height - screenheight);
+			*y += (screenheight - baseheight);
 		else if (!(options & V_SNAPTOTOP))
-			*y += (vid.height - screenheight) / 2;
+			*y += (screenheight - baseheight) / 2;
 	}
 
 	if (options & V_SPLITSCREEN)
@@ -636,15 +647,15 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 		if (r_splitscreen == 1)
 		{
 			if (player == 1)
-				*y += vid.height / 2;
+				*y += screenheight;
 		}
 		else if (r_splitscreen > 1)
 		{
 			if (player == 1 || player == 3)
-				*x += vid.width / 2;
+				*x += screenwidth;
 
 			if (player == 2 || player == 3)
-				*y += vid.height / 2;
+				*y += screenheight;
 		}
 	}
 
@@ -654,7 +665,7 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 		if (leveltime < introtime + length)
 		{
-			INT32 offset = vid.width - (((leveltime - introtime) * vid.width) / length);
+			INT32 offset = screenwidth - (((leveltime - introtime) * screenwidth) / length);
 			boolean slidefromright = false;
 
 			if (r_splitscreen > 1)
@@ -3369,28 +3380,31 @@ void K_drawKartFreePlay(UINT32 flashtime)
 static void
 Draw_party_ping (int ss, INT32 snap)
 {
-	HU_drawMiniPing(0, 0, playerpingtable[displayplayers[ss]], V_HUDTRANS|V_SLIDEIN|V_SPLITSCREEN|snap);
+	HU_drawMiniPing(0, 0, playerpingtable[displayplayers[ss]], V_HUDTRANS|V_SPLITSCREEN|V_SNAPTOTOP|snap);
 }
 
 static void
 K_drawMiniPing (void)
 {
-	if (cv_showping.value)
+	UINT32 f = V_SNAPTORIGHT;
+	UINT8 i;
+
+	if (!cv_showping.value)
 	{
-		switch (r_splitscreen)
+		return;
+	}
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (stplyr == &players[displayplayers[i]])
 		{
-			case 3:
-				Draw_party_ping(3, V_SNAPTORIGHT);
-				/*FALLTHRU*/
-			case 2:
-				Draw_party_ping(2, 0);
-				Draw_party_ping(1, V_SNAPTORIGHT);
-				Draw_party_ping(0, 0);
-				break;
-			case 1:
-				Draw_party_ping(1, V_SNAPTORIGHT);
-				Draw_party_ping(0, V_SNAPTORIGHT);
-				break;
+			if (r_splitscreen > 1 && !(i & 1))
+			{
+				f = V_SNAPTOLEFT;
+			}
+
+			Draw_party_ping(i, f);
+			break;
 		}
 	}
 }
