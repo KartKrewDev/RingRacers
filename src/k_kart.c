@@ -1439,6 +1439,10 @@ static void K_UpdateDraft(player_t *player)
 			if (players[i].speed < 20*players[i].mo->scale)
 				continue;
 
+			// No tethering off of the guy who got the starting bonus :P
+			if (players[i].kartstuff[k_startboost] > 0)
+				continue;
+
 #ifndef EASYDRAFTTEST
 			yourangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
 			theirangle = R_PointToAngle2(0, 0, players[i].mo->momx, players[i].mo->momy);
