@@ -60,7 +60,6 @@ typedef enum
 typedef struct
 {
 	SINT8 forwardmove; // -MAXPLMOVE to MAXPLMOVE (50)
-	SINT8 sidemove; // -MAXPLMOVE to MAXPLMOVE (50)
 	INT16 angleturn; // <<16 for angle delta - saved as 1 byte into demos
 	INT16 aiming; // vertical aiming, see G_BuildTicCmd
 	UINT16 buttons;

@@ -1143,10 +1143,13 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 
 	{ // Normalize distance to the sum of the two objects' radii, since in a perfect world that would be the distance at the point of collision...
 		fixed_t dist = P_AproxDistance(distx, disty);
-		fixed_t nx = FixedDiv(distx, dist);
-		fixed_t ny = FixedDiv(disty, dist);
+		fixed_t nx, ny;
 
 		dist = dist ? dist : 1;
+
+		nx = FixedDiv(distx, dist);
+		ny = FixedDiv(disty, dist);
+
 		distx = FixedMul(mobj1->radius+mobj2->radius, nx);
 		disty = FixedMul(mobj1->radius+mobj2->radius, ny);
 
@@ -1222,6 +1225,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		mobj1->player->rmomx = mobj1->momx - mobj1->player->cmomx;
 		mobj1->player->rmomy = mobj1->momy - mobj1->player->cmomy;
 		mobj1->player->kartstuff[k_justbumped] = bumptime;
+		mobj1->player->kartstuff[k_spindash] = 0;
 
 		if (mobj1->player->kartstuff[k_spinouttimer])
 		{
@@ -1247,6 +1251,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		mobj2->player->rmomx = mobj2->momx - mobj2->player->cmomx;
 		mobj2->player->rmomy = mobj2->momy - mobj2->player->cmomy;
 		mobj2->player->kartstuff[k_justbumped] = bumptime;
+		mobj2->player->kartstuff[k_spindash] = 0;
 
 		if (mobj2->player->kartstuff[k_spinouttimer])
 		{
@@ -2042,14 +2047,14 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
 }
 
-static tic_t K_GetSpindashChargeTime(player_t *player)
+tic_t K_GetSpindashChargeTime(player_t *player)
 {
 	// more charge time for higher speed
 	// Tails = 2s, Mighty = 3s, Fang = 4s, Metal = 4s
 	return (player->kartspeed + 4) * (TICRATE/3); 
 }
 
-static fixed_t K_GetSpindashChargeSpeed(player_t *player)
+fixed_t K_GetSpindashChargeSpeed(player_t *player)
 {
 	// more speed for higher weight & speed
 	// Tails = +6.25%, Fang = +20.31%, Mighty = +20.31%, Metal = +25%
@@ -2266,13 +2271,32 @@ UINT16 K_GetKartFlashing(player_t *player)
 	return tics;
 }
 
-fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove)
+SINT8 K_GetForwardMove(player_t *player)
+{
+	SINT8 forwardmove = player->cmd.forwardmove;
+
+	if ((player->pflags & PF_STASIS) || (player->pflags & PF_SLIDING) || player->kartstuff[k_spinouttimer] || K_PlayerEBrake(player))
+	{
+		return 0;
+	}
+
+	if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_spindashboost])
+	{
+		return MAXPLMOVE;
+	}
+
+	return forwardmove;
+}
+
+fixed_t K_3dKartMovement(player_t *player, boolean onground)
 {
 	const fixed_t accelmax = 4000;
 	const fixed_t p_speed = K_GetKartSpeed(player, true);
 	const fixed_t p_accel = K_GetKartAccel(player);
 	fixed_t newspeed, oldspeed, finalspeed;
+	fixed_t movemul = FRACUNIT;
 	fixed_t orig = ORIG_FRICTION;
+	SINT8 forwardmove = K_GetForwardMove(player);
 
 	if (!onground) return 0; // If the player isn't on the ground, there is no change in speed
 
@@ -2301,25 +2325,20 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 	}
 
 	finalspeed = newspeed - oldspeed;
+	movemul = abs(forwardmove * FRACUNIT) / 50;
 
 	// forwardmove is:
 	//  50 while accelerating,
 	//   0 with no gas, and
 	// -25 when only braking.
-
-	if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_spindashboost])
-		forwardmove = 50;
-
-	finalspeed *= forwardmove/25;
-	finalspeed /= 2;
-
-	if (forwardmove < 0 && finalspeed > mapobjectscale*2)
-		return finalspeed/2;
-	else if (forwardmove < 0)
-		return -mapobjectscale/2;
-
-	if (finalspeed < 0)
-		finalspeed = 0;
+	if (forwardmove >= 0)
+	{
+		finalspeed = FixedMul(finalspeed, movemul);
+	}
+	else
+	{
+		finalspeed = FixedMul(-mapobjectscale/2, movemul);
+	}
 
 	return finalspeed;
 }
@@ -3579,7 +3598,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 			if (spawner->player->speed < 5*spawner->scale)
 				return;
 
-			if (spawner->player->cmd.forwardmove < 0)
+			if (K_GetForwardMove(spawner->player) < 0)
 				playerangle += ANGLE_180;
 
 			anglediff = abs((signed)(playerangle - R_PointToAngle2(0, 0, spawner->player->rmomx, spawner->player->rmomy)));
@@ -5161,10 +5180,10 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 
 	if (player->respawn.state == RESPAWNST_DROP) // Dropdashing
 		targetsnd = ((cmd->buttons & BT_ACCELERATE) ? 12 : 0);
-	else if (K_PlayerEBrake(player)) // Spindashing
+	else if (K_PlayerEBrake(player) == true) // Spindashing
 		targetsnd = ((cmd->buttons & BT_DRIFT) ? 12 : 0);
 	else
-		targetsnd = (((6*cmd->forwardmove)/25) + ((player->speed / mapobjectscale)/5))/2;
+		targetsnd = (((6*K_GetForwardMove(player))/25) + ((player->speed / mapobjectscale)/5))/2;
 
 	if (targetsnd < 0)
 		targetsnd = 0;
@@ -5809,7 +5828,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->kartstuff[k_justbumped])
+	if (player->kartstuff[k_justbumped] > 0)
 		player->kartstuff[k_justbumped]--;
 
 	if (player->kartstuff[k_tiregrease])
@@ -6895,31 +6914,52 @@ static INT32 K_FlameShieldMax(player_t *player)
 boolean K_PlayerEBrake(player_t *player)
 {
 	return (player->cmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK
-	&& P_IsObjectOnGround(player->mo)
-	&& !player->kartstuff[k_drift]
-	&& !player->kartstuff[k_spinouttimer]
-	&& !player->kartstuff[k_boostcharge]
-	&& !(player->kartstuff[k_spindash] < 0)
-	&& !player->kartstuff[k_justbumped]
-	&& !player->kartstuff[k_spindashboost]
-	&& !player->powers[pw_nocontrol];
+	&& P_IsObjectOnGround(player->mo) == true
+	&& player->kartstuff[k_drift] == 0
+	&& player->kartstuff[k_spinouttimer] == 0
+	&& player->kartstuff[k_justbumped] == 0
+	&& player->kartstuff[k_spindash] >= 0
+	&& player->kartstuff[k_spindashboost] == 0
+	&& player->powers[pw_nocontrol] == 0;
 }
 
 static void K_KartSpindash(player_t *player)
 {
+	const tic_t MAXCHARGETIME = K_GetSpindashChargeTime(player);
 	ticcmd_t *cmd = &player->cmd;
 
-	if (!(K_PlayerEBrake(player) || (player->kartstuff[k_spindash] && !(cmd->buttons & BT_BRAKE))))
+	if (player->kartstuff[k_spindash] > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE)) != (BT_DRIFT|BT_BRAKE))
 	{
-		if (player->kartstuff[k_spindash])
-			player->kartstuff[k_spindash] = 0;
+		player->kartstuff[k_spindashspeed] = (player->kartstuff[k_spindash] * FRACUNIT) / MAXCHARGETIME;
+		player->kartstuff[k_spindashboost] = TICRATE;
+
+		if (!player->kartstuff[k_tiregrease])
+		{
+			UINT8 i;
+			for (i = 0; i < 2; i++)
+			{
+				mobj_t *grease;
+				grease = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_TIREGREASE);
+				P_SetTarget(&grease->target, player->mo);
+				grease->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+				grease->extravalue1 = i;
+			}
+		}
+
+		player->kartstuff[k_tiregrease] = 2*TICRATE;
+
+		player->kartstuff[k_spindash] = 0;
+		S_StartSound(player->mo, sfx_s23c);
+	}
+
+	if (K_PlayerEBrake(player) == false)
+	{
+		player->kartstuff[k_spindash] = 0;
 		return;
 	}
 
 	if (player->speed < 6*mapobjectscale && player->powers[pw_flashing] == 0)
 	{
-		const tic_t MAXCHARGETIME = K_GetSpindashChargeTime(player);
-
 		if (cmd->driftturn != 0 && leveltime % 8 == 0)
 			S_StartSound(player->mo, sfx_ruburn);
 
@@ -6947,29 +6987,6 @@ static void K_KartSpindash(player_t *player)
 					K_FlameDashLeftoverSmoke(player->mo);
 				}
 			}
-		}
-		else if (player->kartstuff[k_spindash])
-		{
-			player->kartstuff[k_spindashspeed] = (player->kartstuff[k_spindash] * FRACUNIT) / MAXCHARGETIME;
-			player->kartstuff[k_spindashboost] = TICRATE;
-
-			if (!player->kartstuff[k_tiregrease])
-			{
-				UINT8 i;
-				for (i = 0; i < 2; i++)
-				{
-					mobj_t *grease;
-					grease = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_TIREGREASE);
-					P_SetTarget(&grease->target, player->mo);
-					grease->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-					grease->extravalue1 = i;
-				}
-			}
-
-			player->kartstuff[k_tiregrease] = 2*TICRATE;
-
-			player->kartstuff[k_spindash] = 0;
-			S_StartSound(player->mo, sfx_s23c);
 		}
 	}
 	else
@@ -7670,17 +7687,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->kartstuff[k_tiregrease])
 			player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->kartstuff[k_tiregrease];
 
-		// Friction
-		if (!player->kartstuff[k_offroad])
-		{
-			if (player->speed > 0 && cmd->forwardmove == 0 && !(cmd->buttons & BT_BRAKE) && player->mo->friction == 59392)
-				player->mo->friction += 4608;
-		}
-
-		if (K_PlayerEBrake(player))
-			player->mo->friction -= 3072;
-		else if (player->speed > 0 && cmd->forwardmove < 0)	// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
-			player->mo->friction -= 2048;
+		/*
+		if (K_PlayerEBrake(player) == true)
+			player->mo->friction -= 1024;
+		else if (player->speed > 0 && cmd->forwardmove < 0)
+			player->mo->friction -= 512;
+		*/
 
 		// Karma ice physics
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
@@ -7698,14 +7710,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->mo->friction -= 9824;
 		}
 
-		// Friction was changed, so we must recalculate a bunch of stuff
+		// Cap between intended values
+		if (player->mo->friction > FRACUNIT)
+			player->mo->friction = FRACUNIT;
+		if (player->mo->friction < 0)
+			player->mo->friction = 0;
+
+		// Friction was changed, so we must recalculate movefactor
 		if (player->mo->friction != prevfriction)
 		{
-			if (player->mo->friction > FRACUNIT)
-				player->mo->friction = FRACUNIT;
-			if (player->mo->friction < 0)
-				player->mo->friction = 0;
-
 			player->mo->movefactor = FixedDiv(ORIG_FRICTION, player->mo->friction);
 
 			if (player->mo->movefactor < FRACUNIT)

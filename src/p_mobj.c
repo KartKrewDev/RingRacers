@@ -1461,8 +1461,8 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 			mo->momy = FixedMul(mo->momy, ns);
 		}
 		else if (abs(player->rmomx) < FixedMul(STOPSPEED, mo->scale)
-		    && abs(player->rmomy) < FixedMul(STOPSPEED, mo->scale)
-		    && (!(player->cmd.forwardmove && !(twodlevel || mo->flags2 & MF2_TWOD)) && !player->cmd.sidemove && !(player->pflags & PF_SPINNING))
+			&& abs(player->rmomy) < FixedMul(STOPSPEED, mo->scale)
+			&& (!(K_GetForwardMove(player) && !(twodlevel || mo->flags2 & MF2_TWOD)) && !(player->pflags & PF_SPINNING))
 #ifdef ESLOPE
 			&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)))// && (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2))
 #endif
@@ -1476,16 +1476,8 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 		}
 		else
 		{
-			if (oldx == mo->x && oldy == mo->y) // didn't go anywhere
-			{
-				mo->momx = FixedMul(mo->momx, ORIG_FRICTION);
-				mo->momy = FixedMul(mo->momy, ORIG_FRICTION);
-			}
-			else
-			{
-				mo->momx = FixedMul(mo->momx, mo->friction);
-				mo->momy = FixedMul(mo->momy, mo->friction);
-			}
+			mo->momx = FixedMul(mo->momx, mo->friction);
+			mo->momy = FixedMul(mo->momy, mo->friction);
 
 			mo->friction = ORIG_FRICTION;
 		}
@@ -1961,7 +1953,7 @@ void P_XYMovement(mobj_t *mo)
 	if (mo->type == MT_FLINGRING || mo->type == MT_BALLHOG || mo->type == MT_BUBBLESHIELDTRAP)
 		return;
 
-	if (mo->player && (mo->player->kartstuff[k_spinouttimer] && !mo->player->kartstuff[k_wipeoutslow]) && mo->player->speed <= K_GetKartSpeed(mo->player, false)/2)
+	if (player && (player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow]) && player->speed <= FixedDiv(20*mapobjectscale, player->kartstuff[k_offroad] + FRACUNIT))
 		return;
 	//}
 

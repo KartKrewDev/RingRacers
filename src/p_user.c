@@ -4020,9 +4020,9 @@ static void P_2dMovement(player_t *player)
 static void P_3dMovement(player_t *player)
 {
 	ticcmd_t *cmd;
-	angle_t movepushangle, movepushsideangle; // Analog
+	angle_t movepushangle; // Analog
 	//INT32 topspeed, acceleration, thrustfactor;
-	fixed_t movepushforward = 0, movepushside = 0;
+	fixed_t movepushforward = 0;
 	angle_t dangle; // replaces old quadrants bits
 	//boolean dangleflip = false; // SRB2kart - toaster
 	//fixed_t normalspd = FixedMul(player->normalspeed, player->mo->scale);
@@ -4039,22 +4039,12 @@ static void P_3dMovement(player_t *player)
 
 	cmd = &player->cmd;
 
-	if (player->pflags & PF_STASIS || player->kartstuff[k_spinouttimer]) // pw_introcam?
-	{
-		cmd->forwardmove = cmd->sidemove = 0;
-	}
-
-	if (!(player->pflags & PF_FORCESTRAFE) && !player->kartstuff[k_pogospring])
-		cmd->sidemove = 0;
-
 	if (player->kartstuff[k_drift] != 0)
 		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
 	else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
 		movepushangle = (angle_t)player->kartstuff[k_boostangle];
 	else
 		movepushangle = player->mo->angle;
-
-	movepushsideangle = movepushangle-ANGLE_90;
 
 	// cmomx/cmomy stands for the conveyor belt speed.
 	if (player->onconveyor == 2) // Wind/Current
@@ -4108,10 +4098,6 @@ static void P_3dMovement(player_t *player)
 	*/
 	//}
 
-	// When sliding, don't allow forward/back
-	if (player->pflags & PF_SLIDING)
-		cmd->forwardmove = 0;
-
 	// Do not let the player control movement if not onground.
 	// SRB2Kart: pogo spring and speed bumps are supposed to control like you're on the ground
 	onground = (P_IsObjectOnGround(player->mo) || (player->kartstuff[k_pogospring]));
@@ -4121,7 +4107,7 @@ static void P_3dMovement(player_t *player)
 	// Forward movement
 	if (!(P_PlayerInPain(player) && !onground))
 	{
-		movepushforward = K_3dKartMovement(player, onground, cmd->forwardmove);
+		movepushforward = K_3dKartMovement(player, onground);
 
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
 			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
@@ -4132,18 +4118,6 @@ static void P_3dMovement(player_t *player)
 	else if (!(player->kartstuff[k_spinouttimer]))
 	{
 		K_MomentumToFacing(player);
-	}
-
-	// Sideways movement
-	if (cmd->sidemove != 0 && !((player->exiting || mapreset) || player->kartstuff[k_spinouttimer]))
-	{
-		if (cmd->sidemove > 0)
-			movepushside = (cmd->sidemove * FRACUNIT/128) + FixedDiv(player->speed, K_GetKartSpeed(player, true));
-		else
-			movepushside = (cmd->sidemove * FRACUNIT/128) - FixedDiv(player->speed, K_GetKartSpeed(player, true));
-
-		totalthrust.x += P_ReturnThrustX(player->mo, movepushsideangle, movepushside);
-		totalthrust.y += P_ReturnThrustY(player->mo, movepushsideangle, movepushside);
 	}
 
 	if ((totalthrust.x || totalthrust.y)
@@ -7223,8 +7197,7 @@ fixed_t t_cam4_rotate = -42;
 // we then throw that ticcmd garbage in the camera and make it move
 
 // redefine this
-static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
-static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
+static fixed_t forwardmove = MAXPLMOVE<<FRACBITS>>16;
 static fixed_t angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
 
 static ticcmd_t cameracmd;
@@ -7239,7 +7212,7 @@ void P_InitCameraCmd(void)
 
 static ticcmd_t *P_CameraCmd(camera_t *cam)
 {
-	INT32 laim, th, tspeed, forward, side, axis; //i
+	INT32 laim, th, tspeed, forward, axis; //i
 	const INT32 speed = 1;
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming;
@@ -7288,7 +7261,7 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 		turnright = turnright || (axis > 0);
 		turnleft = turnleft || (axis < 0);
 	}
-	forward = side = 0;
+	forward = 0;
 
 	// use two stage accelerative turning
 	// on the keyboard and joystick
@@ -7306,12 +7279,10 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	if (turnright && !(turnleft))
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed]));
-		side += sidemove[1];
 	}
 	else if (turnleft && !(turnright))
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed]));
-		side -= sidemove[1];
 	}
 
 	cmd->angleturn = (INT16)(cmd->angleturn - ((mousex*(encoremode ? -1 : 1)*8)));
@@ -7324,9 +7295,9 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 		cmd->buttons |= BT_BRAKE;
 	axis = JoyAxis(AXISAIM, 1);
 	if (InputDown(gc_aimforward, 1) || (usejoystick && axis < 0))
-		forward += forwardmove[1];
+		forward += forwardmove;
 	if (InputDown(gc_aimbackward, 1) || (usejoystick && axis > 0))
-		forward -= forwardmove[1];
+		forward -= forwardmove;
 
 	// fire with any button/key
 	axis = JoyAxis(AXISFIRE, 1);
@@ -7367,21 +7338,12 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 
 	mousex = mousey = mlooky = 0;
 
-	if (forward > MAXPLMOVE)
-		forward = MAXPLMOVE;
-	else if (forward < -MAXPLMOVE)
-		forward = -MAXPLMOVE;
+	cmd->forwardmove += (SINT8)forward;
 
-	if (side > MAXPLMOVE)
-		side = MAXPLMOVE;
-	else if (side < -MAXPLMOVE)
-		side = -MAXPLMOVE;
-
-	if (forward || side)
-	{
-		cmd->forwardmove = (SINT8)(cmd->forwardmove + forward);
-		cmd->sidemove = (SINT8)(cmd->sidemove + side);
-	}
+	if (cmd->forwardmove > MAXPLMOVE)
+		cmd->forwardmove = MAXPLMOVE;
+	else if (cmd->forwardmove < -MAXPLMOVE)
+		cmd->forwardmove = -MAXPLMOVE;
 
 	lang += (cmd->angleturn<<16);
 
@@ -7426,11 +7388,10 @@ void P_DemoCameraMovement(camera_t *cam)
 		cam->aiming = R_PointToAngle2(0, cam->z, R_PointToDist2(cam->x, cam->y, lastp->mo->x, lastp->mo->y), lastp->mo->z + lastp->mo->scale*128*P_MobjFlip(lastp->mo));	// This is still unholy. Aim a bit above their heads.
 	}
 
-
 	cam->momx = cam->momy = cam->momz = 0;
+
 	if (cmd->forwardmove != 0)
 	{
-
 		thrustangle = cam->angle >> ANGLETOFINESHIFT;
 
 		cam->x += FixedMul(cmd->forwardmove*mapobjectscale, FINECOSINE(thrustangle));
@@ -9493,8 +9454,8 @@ void P_PlayerAfterThink(player_t *player)
 		if (!(player->mo->tracer->target->flags & MF_SLIDEME) // Noclimb on chain parameters gives this
 		&& !(twodlevel || player->mo->flags2 & MF2_TWOD)) // why on earth would you want to turn them in 2D mode?
 		{
-			player->mo->tracer->target->health += cmd->sidemove;
-			player->mo->angle += cmd->sidemove<<ANGLETOFINESHIFT; // 2048 --> ANGLE_MAX
+			//player->mo->tracer->target->health += cmd->sidemove;
+			//player->mo->angle += cmd->sidemove<<ANGLETOFINESHIFT; // 2048 --> ANGLE_MAX
 
 			if (player == &players[consoleplayer])
 				localangle[0] = player->mo->angle; // Adjust the local control angle.
