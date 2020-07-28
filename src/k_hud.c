@@ -1377,7 +1377,7 @@ static void K_DrawKartPositionNum(INT32 num)
 		}
 		else	// if we're not p1, that means we're p2. display this at the bottom right, below the minimap.
 		{
-			fy = BASEVIDHEIGHT - 8;
+			fy = (BASEVIDHEIGHT/2) - 8;
 			fflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN;
 		}
 	}
