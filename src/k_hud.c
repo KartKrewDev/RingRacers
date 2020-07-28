@@ -119,6 +119,7 @@ static patch_t *kp_sadface[2];
 static patch_t *kp_check[6];
 
 static patch_t *kp_rival[2];
+static patch_t *kp_localtag[4][2];
 
 static patch_t *kp_eggnum[4];
 
@@ -422,6 +423,18 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[7] = '1'+i;
 		kp_rival[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
+	// Rival indicators
+	sprintf(buffer, "K_SSPLxx");
+	for (i = 0; i < 4; i++)
+	{
+		buffer[6] = 'A'+i;
+		for (j = 0; j < 2; j++)
+		{
+			buffer[7] = '1'+j;
+			kp_localtag[i][j] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		}
 	}
 
 	// Eggman warning numbers
@@ -2172,12 +2185,12 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 	{
 		if (hud_x != NULL)
 		{
-			*hud_x = -BASEVIDWIDTH * FRACUNIT;
+			*hud_x = -1000 * FRACUNIT;
 		}
 
 		if (hud_y != NULL)
 		{
-			*hud_y = -BASEVIDWIDTH * FRACUNIT;
+			*hud_y = -1000 * FRACUNIT;
 		}
 
 		//*hud_scale = 0;
@@ -2194,14 +2207,21 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 	{
 		*hud_x = FixedMul(NEWTAN(anglediff), swhalffixed) + swhalffixed;
 
-		if (encoremode)
+		if (*hud_x < -BASEVIDWIDTH * FRACUNIT || *hud_x > BASEVIDWIDTH * FRACUNIT)
 		{
-			*hud_x = (BASEVIDWIDTH * FRACUNIT) - *hud_x;
+			*hud_x = -1000 * FRACUNIT;
 		}
-
-		if (r_splitscreen >= 2)
+		else
 		{
-			*hud_x /= 2;
+			if (encoremode)
+			{
+				*hud_x = (BASEVIDWIDTH * FRACUNIT) - *hud_x;
+			}
+
+			if (r_splitscreen >= 2)
+			{
+				*hud_x /= 2;
+			}
 		}
 	}
 
@@ -2212,9 +2232,16 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 		*hud_y = (*hud_y * swhalf) + shhalffixed;
 		*hud_y = *hud_y + NEWTAN(camaim) * swhalf;
 
-		if (r_splitscreen >= 1)
+		if (*hud_y < -BASEVIDHEIGHT * FRACUNIT || *hud_y > BASEVIDHEIGHT * FRACUNIT)
 		{
-			*hud_y /= 2;
+			*hud_y = -1000 * FRACUNIT;
+		}
+		else
+		{
+			if (r_splitscreen >= 1)
+			{
+				*hud_y /= 2;
+			}
 		}
 	}
 
@@ -2349,6 +2376,13 @@ static boolean K_ShowPlayerNametag(player_t *p)
 	return true;
 }
 
+static void K_DrawLocalTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 id)
+{
+	UINT8 blink = ((leveltime / 7) & 1);
+	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, p->skincolor, GTC_CACHE);
+	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_localtag[id][blink], colormap);
+}
+
 static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
 {
 	UINT8 blink = ((leveltime / 7) & 1);
@@ -2469,24 +2503,6 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		if (!(demo.playback == true && demo.freecam == true))
-		{
-			for (j = 0; j <= r_splitscreen; j++)
-			{
-				if (ntplayer == &players[displayplayers[j]])
-				{
-					break;
-				}
-			}
-
-			if (j <= r_splitscreen)
-			{
-				// This is a player that's being shown on this computer
-				// (Remove whenever we get splitscreen ABCD indicators)
-				continue;
-			}
-		}
-
 		v.x = ntplayer->mo->x;
 		v.y = ntplayer->mo->y;
 		v.z = ntplayer->mo->z;
@@ -2541,6 +2557,7 @@ static void K_drawKartNameTags(void)
 			fixed_t x = -BASEVIDWIDTH * FRACUNIT;
 			fixed_t y = -BASEVIDWIDTH * FRACUNIT;
 
+			SINT8 localindicator = -1;
 			vertex_t v;
 
 			v.x = ntplayer->mo->x;
@@ -2554,13 +2571,36 @@ static void K_drawKartNameTags(void)
 
 			K_ObjectTracking(&x, &y, &c, thiscam->angle, thiscam->aiming, &v);
 
-			if (x == -BASEVIDWIDTH * FRACUNIT)
+			/*
+			if ((x < 0 || x > BASEVIDWIDTH * FRACUNIT)
+			|| (y < 0 || y > BASEVIDHEIGHT * FRACUNIT))
 			{
 				// Off-screen
 				continue;
 			}
+			*/
 
-			if (ntplayer->bot)
+			if (!(demo.playback == true && demo.freecam == true))
+			{
+				for (j = 0; j <= r_splitscreen; j++)
+				{
+					if (ntplayer == &players[displayplayers[j]])
+					{
+						break;
+					}
+				}
+
+				if (j <= r_splitscreen && j != cnum)
+				{
+					localindicator = j;
+				}
+			}
+
+			if (localindicator >= 0)
+			{
+				K_DrawLocalTagForPlayer(x, y, ntplayer, localindicator);
+			}
+			else if (ntplayer->bot)
 			{
 				if (ntplayer->botvars.rival == true)
 				{
