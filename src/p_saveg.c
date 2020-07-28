@@ -3474,6 +3474,9 @@ static void P_NetArchiveMisc(void)
 	WRITESINT8(save_p, spbplace);
 	WRITEUINT8(save_p, rainbowstartavailable);
 
+	WRITEUINT32(save_p, introtime);
+	WRITEUINT32(save_p, starttime);
+
 	// Is it paused?
 	if (paused)
 		WRITEUINT8(save_p, 0x2f);
@@ -3599,6 +3602,9 @@ static inline boolean P_NetUnArchiveMisc(void)
 	thwompsactive = (boolean)READUINT8(save_p);
 	spbplace = READSINT8(save_p);
 	rainbowstartavailable = (boolean)READUINT8(save_p);
+
+	introtime = READUINT32(save_p);
+	starttime = READUINT32(save_p);
 
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)

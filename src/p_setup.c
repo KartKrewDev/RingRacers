@@ -2472,6 +2472,17 @@ static void P_LevelInitStuff(void)
 	if (p >= 2)
 		rainbowstartavailable = true;
 
+	if (p <= 2)
+	{
+		introtime = 0; // No intro in Record Attack / 1v1
+	}
+	else
+	{
+		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+	}
+
+	starttime = introtime + (6*TICRATE) + (max(p-2, 0) * (TICRATE/2)); // Start countdown time, + buffer time
+
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
 	{
