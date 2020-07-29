@@ -7890,7 +7890,7 @@ static patch_t *kp_timeoutsticker;
 static patch_t *kp_prestartbulb[15];
 static patch_t *kp_prestartletters[7];
 
-static patch_t *kp_startcountdown[16];
+static patch_t *kp_startcountdown[20];
 static patch_t *kp_racefault[6];
 static patch_t *kp_racefinish[6];
 
@@ -8030,19 +8030,23 @@ void K_LoadKartHUDGraphics(void)
 	kp_startcountdown[1] = 		W_CachePatchName("K_CNT2A", PU_HUDGFX);
 	kp_startcountdown[2] = 		W_CachePatchName("K_CNT1A", PU_HUDGFX);
 	kp_startcountdown[3] = 		W_CachePatchName("K_CNTGOA", PU_HUDGFX);
-	kp_startcountdown[4] = 		W_CachePatchName("K_CNT3B", PU_HUDGFX);
-	kp_startcountdown[5] = 		W_CachePatchName("K_CNT2B", PU_HUDGFX);
-	kp_startcountdown[6] = 		W_CachePatchName("K_CNT1B", PU_HUDGFX);
-	kp_startcountdown[7] = 		W_CachePatchName("K_CNTGOB", PU_HUDGFX);
+	kp_startcountdown[4] = 		W_CachePatchName("K_DUEL1", PU_HUDGFX);
+	kp_startcountdown[5] = 		W_CachePatchName("K_CNT3B", PU_HUDGFX);
+	kp_startcountdown[6] = 		W_CachePatchName("K_CNT2B", PU_HUDGFX);
+	kp_startcountdown[7] = 		W_CachePatchName("K_CNT1B", PU_HUDGFX);
+	kp_startcountdown[8] = 		W_CachePatchName("K_CNTGOB", PU_HUDGFX);
+	kp_startcountdown[9] = 		W_CachePatchName("K_DUEL2", PU_HUDGFX);
 	// Splitscreen
-	kp_startcountdown[8] = 		W_CachePatchName("K_SMC3A", PU_HUDGFX);
-	kp_startcountdown[9] = 		W_CachePatchName("K_SMC2A", PU_HUDGFX);
-	kp_startcountdown[10] = 	W_CachePatchName("K_SMC1A", PU_HUDGFX);
-	kp_startcountdown[11] = 	W_CachePatchName("K_SMCGOA", PU_HUDGFX);
-	kp_startcountdown[12] = 	W_CachePatchName("K_SMC3B", PU_HUDGFX);
-	kp_startcountdown[13] = 	W_CachePatchName("K_SMC2B", PU_HUDGFX);
-	kp_startcountdown[14] = 	W_CachePatchName("K_SMC1B", PU_HUDGFX);
-	kp_startcountdown[15] = 	W_CachePatchName("K_SMCGOB", PU_HUDGFX);
+	kp_startcountdown[10] = 	W_CachePatchName("K_SMC3A", PU_HUDGFX);
+	kp_startcountdown[11] = 	W_CachePatchName("K_SMC2A", PU_HUDGFX);
+	kp_startcountdown[12] = 	W_CachePatchName("K_SMC1A", PU_HUDGFX);
+	kp_startcountdown[13] = 	W_CachePatchName("K_SMCGOA", PU_HUDGFX);
+	kp_startcountdown[14] = 	W_CachePatchName("K_SDUEL1", PU_HUDGFX);
+	kp_startcountdown[15] = 	W_CachePatchName("K_SMC3B", PU_HUDGFX);
+	kp_startcountdown[16] = 	W_CachePatchName("K_SMC2B", PU_HUDGFX);
+	kp_startcountdown[17] = 	W_CachePatchName("K_SMC1B", PU_HUDGFX);
+	kp_startcountdown[18] = 	W_CachePatchName("K_SMCGOB", PU_HUDGFX);
+	kp_startcountdown[19] = 	W_CachePatchName("K_SDUEL2", PU_HUDGFX);
 
 	// Fault
 	kp_racefault[0] = 			W_CachePatchName("K_FAULTA", PU_HUDGFX);
@@ -10783,12 +10787,33 @@ static void K_drawKartStartCountdown(void)
 			pnum++;
 		if (leveltime >= starttime-TICRATE) // 1
 			pnum++;
+
 		if (leveltime >= starttime) // GO!
+		{
+			UINT8 i;
+			UINT8 numplayers = 0;
+
 			pnum++;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && !players[i].spectator)
+					numplayers++;
+
+				if (numplayers > 2)
+					break;
+			}
+
+			if (numplayers == 2)
+			{
+				pnum++; // DUEL
+			}
+		}
+
 		if ((leveltime % (2*5)) / 5) // blink
-			pnum += 4;
+			pnum += 5;
 		if (r_splitscreen) // splitscreen
-			pnum += 8;
+			pnum += 10;
 
 		V_DrawScaledPatch(STCD_X - (SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (SHORT(kp_startcountdown[pnum]->height)/2), splitflags, kp_startcountdown[pnum]);
 	}
