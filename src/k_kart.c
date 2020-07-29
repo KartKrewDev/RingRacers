@@ -5293,6 +5293,11 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
 
+	if (!(player->pflags & PF_SKIDDOWN))
+		player->karthud[khud_fault] = 0;
+	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
+		player->karthud[khud_fault]++;
+
 	if (G_RaceGametype())
 	{
 		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
@@ -10737,6 +10742,8 @@ static void K_drawKartStartCountdown(void)
 
 	if (stplyr->karthud[khud_fault] != 0)
 	{
+		INT32 x, xval;
+
 		if (r_splitscreen > 1) // 3/4p, stationary FIN
 		{
 			pnum += 2;
@@ -10749,7 +10756,25 @@ static void K_drawKartStartCountdown(void)
 		if ((leveltime % (2*5)) / 5) // blink
 			pnum += 1;
 
-		V_DrawScaledPatch(STCD_X - (SHORT(kp_racefault[pnum]->width)/2), STCD_Y - (SHORT(kp_racefault[pnum]->height)/2), splitflags, kp_racefault[pnum]);
+		if (r_splitscreen == 0)
+		{
+			x = ((vid.width<<FRACBITS)/vid.dupx);
+			xval = (SHORT(kp_racefault[pnum]->width)<<FRACBITS);
+			x = ((TICRATE - stplyr->karthud[khud_fault])*(xval > x ? xval : x))/TICRATE;
+
+			V_DrawFixedPatch(x + (STCD_X<<FRACBITS) - (xval>>1),
+				(STCD_Y<<FRACBITS) - (SHORT(kp_racefault[pnum]->height)<<(FRACBITS-1)),
+				FRACUNIT,
+				splitflags, kp_racefault[pnum], NULL);
+		}
+		else
+		{
+			V_DrawScaledPatch(STCD_X - (SHORT(kp_racefault[pnum]->width)/2), STCD_Y - (SHORT(kp_racefault[pnum]->height)/2), splitflags, kp_racefault[pnum]);
+		}
+	}
+	else if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
+	{
+		K_drawKartStartBulbs();
 	}
 	else
 	{
@@ -11596,12 +11621,8 @@ void K_drawKartHUD(void)
 	}
 
 	// Draw the countdowns after everything else.
-	if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
-	{
-		K_drawKartStartBulbs();
-	}
-	else if (leveltime >= starttime-(3*TICRATE)
-		&& leveltime < starttime+TICRATE)
+	if (leveltime >= introtime
+	&& leveltime < starttime+TICRATE)
 	{
 		K_drawKartStartCountdown();
 	}

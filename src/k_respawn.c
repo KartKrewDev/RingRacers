@@ -101,13 +101,12 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (leveltime < starttime)
+	if (leveltime < starttime) // FAULT
 	{
 		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
 		player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
 		S_StartSound(player->mo, sfx_s3k83);
 		player->karthud[khud_fault] = 1;
-		player->mo->momx = player->mo->momy = 0;
 	}
 
 	player->kartstuff[k_ringboost] = 0;
@@ -288,7 +287,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 
 	player->powers[pw_flashing] = 2;
-	player->powers[pw_nocontrol] = 2;
+	player->powers[pw_nocontrol] = max(2, player->powers[pw_nocontrol]);
 
 	if (leveltime % 8 == 0 && !mapreset)
 	{
@@ -541,7 +540,8 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 --------------------------------------------------*/
 static void K_DropDashWait(player_t *player)
 {
-	player->respawn.timer--;
+	if (player->powers[pw_nocontrol] == 0)
+		player->respawn.timer--;
 
 	if (leveltime % 8 == 0)
 	{
