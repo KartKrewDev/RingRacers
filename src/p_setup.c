@@ -2481,7 +2481,14 @@ static void P_LevelInitStuff(void)
 		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
 	}
 
-	starttime = introtime + (6*TICRATE) + (max(p-2, 0) * (TICRATE/2)); // Start countdown time, + buffer time
+	numbulbs = 5;
+
+	if (p > 2)
+	{
+		numbulbs += (p-2);
+	}
+
+	starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
 
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)

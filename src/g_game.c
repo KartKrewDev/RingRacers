@@ -226,8 +226,13 @@ UINT16 extralifetics = 4*TICRATE;
 // SRB2kart
 tic_t introtime = 0;
 tic_t starttime = 0;
+
+const tic_t bulbtime = TICRATE/2;
+UINT8 numbulbs = 0;
+
 tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
 tic_t battleexittime = 8*TICRATE;
+
 INT32 hyudorotime = 7*TICRATE;
 INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);

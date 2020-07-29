@@ -482,8 +482,13 @@ extern UINT16 extralifetics;
 // SRB2kart
 extern tic_t introtime;
 extern tic_t starttime;
+
+extern const tic_t bulbtime;
+extern UINT8 numbulbs;
+
 extern tic_t raceexittime;
 extern tic_t battleexittime;
+
 extern INT32 hyudorotime;
 extern INT32 stealtime;
 extern INT32 sneakertime;
