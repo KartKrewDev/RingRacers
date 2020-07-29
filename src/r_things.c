@@ -1469,11 +1469,18 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t this_scale = thing->scale;
 
 	// hitlag vibrating
-	if (thing->hitlag > 0 && (leveltime & 1))
+	if (thing->hitlag > 0)
 	{
-		thingxpos += thing->momx;
-		thingypos += thing->momy;
-		thingzpos += thing->momz;
+		fixed_t mul = (thing->hitlag * FRACUNIT) / (TICRATE);
+
+		if (leveltime & 1)
+		{
+			mul = -mul;
+		}
+
+		thingxpos += FixedMul(thing->momx, mul);
+		thingypos += FixedMul(thing->momy, mul);
+		thingzpos += FixedMul(thing->momz, mul);
 	}
 
 	// transform the origin point
