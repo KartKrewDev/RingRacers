@@ -6748,7 +6748,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->kartstuff[k_driftend] = 0;
 	}
 
-	if ((!player->kartstuff[k_sneakertimer])
+	if ((player->kartstuff[k_handleboost] == 0)
 	|| (!player->cmd.driftturn)
 	|| (!player->kartstuff[k_aizdriftstrat])
 	|| (player->cmd.driftturn > 0) != (player->kartstuff[k_aizdriftstrat] > 0))
