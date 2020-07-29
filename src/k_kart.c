@@ -3349,6 +3349,9 @@ static void K_SpawnAIZDust(player_t *player)
 	if (!P_IsObjectOnGround(player->mo))
 		return;
 
+	if (player->speed <= K_GetKartSpeed(player, false))
+		return;
+
 	travelangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
 	//S_StartSound(player->mo, sfx_s3k47);
 
