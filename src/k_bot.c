@@ -474,6 +474,7 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 {
 	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
+	fixed_t newfrict;
 
 	if (rubberband <= 0)
 	{
@@ -481,8 +482,14 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 		return frict;
 	}
 
-	// 128 is a magic number that felt good in-game
-	return FixedDiv(frict, FRACUNIT + (rubberband / 2));
+	newfrict = FixedDiv(frict, FRACUNIT + (rubberband / 2));
+
+	if (newfrict < 0)
+		newfrict = 0;
+	if (newfrict > FRACUNIT)
+		newfrict = FRACUNIT;
+
+	return newfrict;
 }
 
 /*--------------------------------------------------
@@ -698,13 +705,16 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Start boost handler
 	if (leveltime <= starttime)
 	{
-		tic_t boosthold = starttime - TICRATE;
+		tic_t length = (TICRATE/6);
+		tic_t boosthold = starttime - K_GetSpindashChargeTime(player);
 
-		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty);
+		cmd->buttons |= BT_EBRAKEMASK;
+
+		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty) * length;
 
 		if (leveltime >= boosthold)
 		{
-			cmd->buttons |= BT_ACCELERATE;
+			cmd->buttons |= BT_DRIFT;
 		}
 
 		return;
@@ -741,7 +751,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		if (anglediff > 90)
 		{
 			// Wrong way!
-			cmd->forwardmove = -25;
+			cmd->forwardmove = -MAXPLMOVE;
 			cmd->buttons |= BT_BRAKE;
 		}
 		else
@@ -775,7 +785,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			cmd->buttons |= BT_ACCELERATE;
 
 			// Full speed ahead!
-			cmd->forwardmove = 50;
+			cmd->forwardmove = MAXPLMOVE;
 
 			if (dirdist <= rad)
 			{

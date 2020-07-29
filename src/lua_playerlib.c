@@ -767,8 +767,6 @@ static int ticcmd_get(lua_State *L)
 
 	if (fastcmp(field,"forwardmove"))
 		lua_pushinteger(L, cmd->forwardmove);
-	else if (fastcmp(field,"sidemove"))
-		lua_pushinteger(L, cmd->sidemove);
 	else if (fastcmp(field,"angleturn"))
 		lua_pushinteger(L, cmd->angleturn);
 	else if (fastcmp(field,"aiming"))
@@ -797,8 +795,6 @@ static int ticcmd_set(lua_State *L)
 
 	if (fastcmp(field,"forwardmove"))
 		cmd->forwardmove = (SINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"sidemove"))
-		cmd->sidemove = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"angleturn"))
 		cmd->angleturn = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aiming"))

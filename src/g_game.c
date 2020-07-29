@@ -224,10 +224,15 @@ UINT16 spacetimetics = 11*TICRATE + (TICRATE/2);
 UINT16 extralifetics = 4*TICRATE;
 
 // SRB2kart
-tic_t introtime = 108+5; // plus 5 for white fade
-tic_t starttime = 6*TICRATE + (3*TICRATE/4);
+tic_t introtime = 0;
+tic_t starttime = 0;
+
+const tic_t bulbtime = TICRATE/2;
+UINT8 numbulbs = 0;
+
 tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
 tic_t battleexittime = 8*TICRATE;
+
 INT32 hyudorotime = 7*TICRATE;
 INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
@@ -289,6 +294,7 @@ tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
 boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
+boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
@@ -1255,13 +1261,12 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p)
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
-static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
-static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
+static fixed_t forwardmove = MAXPLMOVE<<FRACBITS>>16;
 static fixed_t angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
-	INT32 laim, th, tspeed, forward, side, axis; //i
+	INT32 laim, th, tspeed, forward, axis; //i
 	const INT32 speed = 1;
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming, analogjoystickmove, gamepadjoystickmove;
@@ -1372,7 +1377,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		turnright = turnright || (axis > 0);
 		turnleft = turnleft || (axis < 0);
 	}
-	forward = side = 0;
+	forward = 0;
 
 	// use two stage accelerative turning
 	// on the keyboard and joystick
@@ -1393,13 +1398,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed]));
 		cmd->driftturn = (INT16)(cmd->driftturn - (angleturn[tspeed]));
-		side += sidemove[1];
 	}
 	else if (turnleft && !(turnright))
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed]));
 		cmd->driftturn = (INT16)(cmd->driftturn + (angleturn[tspeed]));
-		side -= sidemove[1];
 	}
 
 	if (analogjoystickmove && axis != 0)
@@ -1407,7 +1410,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		// JOYAXISRANGE should be 1023 (divide by 1024)
 		cmd->angleturn = (INT16)(cmd->angleturn - (((axis * angleturn[1]) >> 10))); // ANALOG!
 		cmd->driftturn = (INT16)(cmd->driftturn - (((axis * angleturn[1]) >> 10)));
-		side += ((axis * sidemove[0]) >> 10);
 	}
 
 	// Specator mouse turning
@@ -1427,9 +1429,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->buttons |= BT_BRAKE;
 		axis = JoyAxis(AXISAIM, ssplayer);
 		if (InputDown(gc_aimforward, ssplayer) || (usejoystick && axis < 0))
-			forward += forwardmove[1];
+			forward += forwardmove;
 		if (InputDown(gc_aimbackward, ssplayer) || (usejoystick && axis > 0))
-			forward -= forwardmove[1];
+			forward -= forwardmove;
 	}
 	else
 	{
@@ -1438,13 +1440,13 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
 		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward = forwardmove[1];	// 50
+			forward = forwardmove;	// 50
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			forward += ((axis * forwardmove[1]) >> 10)*2;
+			forward += ((axis * forwardmove) >> 10);
 		}
 
 		axis = JoyAxis(AXISBRAKE, ssplayer);
@@ -1452,14 +1454,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		{
 			cmd->buttons |= BT_BRAKE;
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= forwardmove[0];	// 25 - Halved value so clutching is possible
+				forward -= forwardmove;
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
 			cmd->buttons |= BT_BRAKE;
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= ((axis * forwardmove[0]) >> 10);
+				forward -= ((axis * forwardmove) >> 10);
 		}
 
 		// But forward/backward IS used for aiming.
@@ -1554,21 +1556,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	mousex = mousey = mlooky = 0;
 
-	if (forward > MAXPLMOVE)
-		forward = MAXPLMOVE;
-	else if (forward < -MAXPLMOVE)
-		forward = -MAXPLMOVE;
+	cmd->forwardmove += (SINT8)forward;
 
-	if (side > MAXPLMOVE)
-		side = MAXPLMOVE;
-	else if (side < -MAXPLMOVE)
-		side = -MAXPLMOVE;
-
-	if (forward || side)
-	{
-		cmd->forwardmove = (SINT8)(cmd->forwardmove + forward);
-		cmd->sidemove = (SINT8)(cmd->sidemove + side);
-	}
+	if (cmd->forwardmove > MAXPLMOVE)
+		cmd->forwardmove = MAXPLMOVE;
+	else if (cmd->forwardmove < -MAXPLMOVE)
+		cmd->forwardmove = -MAXPLMOVE;
 
 	//{ SRB2kart - Drift support
 	// Not grouped with the rest of turn stuff because it needs to know what buttons you're pressing for rubber-burn turn
@@ -1588,12 +1581,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->angleturn *= realtics;
 
-	// SRB2kart - no additional angle if not moving
-	if ((player->mo && player->speed > 0) // Moving
-		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (player->respawn.state != RESPAWNST_NONE) // Respawning
-		|| (player->spectator || objectplacing)) // Not a physical player
-		lang += (cmd->angleturn<<16);
+	lang += (cmd->angleturn<<16);
 
 	cmd->angleturn = (INT16)(lang >> 16);
 	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
@@ -1623,7 +1611,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 #endif
 
 	//Reset away view if a command is given.
-	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
+	if ((cmd->forwardmove || cmd->buttons)
 		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
 		displayplayers[0] = consoleplayer;
 }
@@ -2337,10 +2325,6 @@ void G_Ticker(boolean run)
 	UINT32 i;
 	INT32 buf;
 	ticcmd_t *cmd;
-	UINT32 ra_timeskip = (modeattacking && !demo.playback && leveltime < starttime - TICRATE*4) ? 0 : (starttime - TICRATE*4 - 1);
-	// starttime - TICRATE*4 is where we want RA to start when we PLAY IT, so we will loop the main thinker on RA start to get it to this point,
-	// the reason this is done is to ensure that ghosts won't look out of synch with other map elements (objects, moving platforms...)
-	// when we REPLAY, don't skip, let the camera spin, do its thing etc~
 
 	// also the -1 is to ensure that the thinker runs in the loop below.
 
@@ -2413,16 +2397,12 @@ void G_Ticker(boolean run)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
-
-			for (; ra_timeskip < starttime - TICRATE*4; ra_timeskip++)	// this looks weird but this is done to not break compability with older demos for now.
-			{
-				if (demo.title)
-					F_TitleDemoTicker();
-				P_Ticker(run); // tic the game
-				ST_Ticker();
-				AM_Ticker();
-				HU_Ticker();
-			}
+			if (demo.title)
+				F_TitleDemoTicker();
+			P_Ticker(run); // tic the game
+			ST_Ticker();
+			AM_Ticker();
+			HU_Ticker();
 			break;
 
 		case GS_INTERMISSION:
@@ -4783,13 +4763,12 @@ char *G_BuildMapTitle(INT32 mapnum)
 
 // For demos
 #define ZT_FWD     0x01
-#define ZT_SIDE    0x02
-#define ZT_ANGLE   0x04
-#define ZT_BUTTONS 0x08
-#define ZT_AIMING  0x10
-#define ZT_DRIFT   0x20
-#define ZT_LATENCY 0x40
-#define DEMOMARKER 0x80 // demoend
+#define ZT_ANGLE   0x02
+#define ZT_BUTTONS 0x04
+#define ZT_AIMING  0x08
+#define ZT_DRIFT   0x10
+#define ZT_LATENCY 0x20
+#define DEMOMARKER 0x40 // demoend
 
 UINT8 demo_extradata[MAXPLAYERS];
 UINT8 demo_writerng; // 0=no, 1=yes, 2=yes but on a timeout
@@ -4852,7 +4831,6 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	for (i = 0; i < n; i++)
 	{
 		dest[i].forwardmove = src[i].forwardmove;
-		dest[i].sidemove = src[i].sidemove;
 		dest[i].angleturn = SHORT(src[i].angleturn);
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
@@ -5161,8 +5139,6 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	if (ziptic & ZT_FWD)
 		oldcmd[playernum].forwardmove = READSINT8(demo_p);
-	if (ziptic & ZT_SIDE)
-		oldcmd[playernum].sidemove = READSINT8(demo_p);
 	if (ziptic & ZT_ANGLE)
 		oldcmd[playernum].angleturn = READINT16(demo_p);
 	if (ziptic & ZT_BUTTONS)
@@ -5176,14 +5152,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
 
-	// SRB2kart: Copy-pasted from ticcmd building, removes that crappy demo cam
-	if (((players[displayplayers[0]].mo && players[displayplayers[0]].speed > 0) // Moving
-		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (players[displayplayers[0]].respawn.state != RESPAWNST_NONE) // Respawning
-		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
-		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
-		&& players[displayplayers[0]].kartstuff[k_sneakertimer])) // Spinning and boosting cancels out spinout
-		localangle[0] += (cmd->angleturn<<16);
+	localangle[0] += (cmd->angleturn<<16);
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
 	{
@@ -5207,13 +5176,6 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		WRITEUINT8(demo_p,cmd->forwardmove);
 		oldcmd[playernum].forwardmove = cmd->forwardmove;
 		ziptic |= ZT_FWD;
-	}
-
-	if (cmd->sidemove != oldcmd[playernum].sidemove)
-	{
-		WRITEUINT8(demo_p,cmd->sidemove);
-		oldcmd[playernum].sidemove = cmd->sidemove;
-		ziptic |= ZT_SIDE;
 	}
 
 	if (cmd->angleturn != oldcmd[playernum].angleturn)
@@ -5728,8 +5690,6 @@ void G_GhostTicker(void)
 		ziptic = READUINT8(g->p); // Back to actual ziptic stuff
 
 		if (ziptic & ZT_FWD)
-			g->p++;
-		if (ziptic & ZT_SIDE)
 			g->p++;
 		if (ziptic & ZT_ANGLE)
 			g->p += 2;
