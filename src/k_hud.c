@@ -2262,7 +2262,7 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 	{
 		*hud_x = FixedMul(NEWTAN(anglediff), swhalffixed) + swhalffixed;
 
-		if (*hud_x < -BASEVIDWIDTH * FRACUNIT || *hud_x > BASEVIDWIDTH * FRACUNIT)
+		if (*hud_x < 0 || *hud_x > BASEVIDWIDTH * FRACUNIT)
 		{
 			*hud_x = -1000 * FRACUNIT;
 		}
@@ -2287,7 +2287,7 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, a
 		*hud_y = (*hud_y * swhalf) + shhalffixed;
 		*hud_y = *hud_y + NEWTAN(camaim) * swhalf;
 
-		if (*hud_y < -BASEVIDHEIGHT * FRACUNIT || *hud_y > BASEVIDHEIGHT * FRACUNIT)
+		if (*hud_y < 0 || *hud_y > BASEVIDHEIGHT * FRACUNIT)
 		{
 			*hud_y = -1000 * FRACUNIT;
 		}
