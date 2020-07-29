@@ -96,9 +96,17 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (leveltime <= starttime)
+	if (leveltime < introtime)
 	{
 		return;
+	}
+
+	if (leveltime < starttime) // FAULT
+	{
+		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
+		player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
+		S_StartSound(player->mo, sfx_s3k83);
+		player->karthud[khud_fault] = 1;
 	}
 
 	player->kartstuff[k_ringboost] = 0;
@@ -108,7 +116,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->kartstuff[k_pogospring] = 0;
 
 	// Set up respawn position if invalid
-	if (player->respawn.wp != NULL)
+	if (player->respawn.wp != NULL && leveltime >= starttime)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
 		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
@@ -279,7 +287,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 
 	player->powers[pw_flashing] = 2;
-	player->powers[pw_nocontrol] = 2;
+	player->powers[pw_nocontrol] = max(2, player->powers[pw_nocontrol]);
 
 	if (leveltime % 8 == 0 && !mapreset)
 	{
@@ -325,8 +333,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 				dest.x, dest.y
 			);
 
-			if ((player->respawn.distanceleft == 0)
-			&& (K_GetWaypointIsSpawnpoint(player->respawn.wp) == true))
+			if ((player->respawn.distanceleft == 0 && K_GetWaypointIsSpawnpoint(player->respawn.wp) == true)
+			|| (player->respawn.wp == K_GetFinishLineWaypoint()
+			|| player->respawn.wp->nextwaypoints[nwp] == K_GetFinishLineWaypoint())) // Try not to allow you to pass the finish line while respawning, because it's janky
 			{
 				// Alright buddy, that's the end of the ride.
 				player->respawn.state = RESPAWNST_DROP;
@@ -531,7 +540,8 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 --------------------------------------------------*/
 static void K_DropDashWait(player_t *player)
 {
-	player->respawn.timer--;
+	if (player->powers[pw_nocontrol] == 0)
+		player->respawn.timer--;
 
 	if (leveltime % 8 == 0)
 	{

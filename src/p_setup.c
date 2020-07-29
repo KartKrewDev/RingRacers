@@ -2368,6 +2368,7 @@ lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 static void P_LevelInitStuff(void)
 {
 	INT32 i;
+	UINT8 p = 0;
 
 	leveltime = 0;
 
@@ -2414,6 +2415,9 @@ static void P_LevelInitStuff(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		if (playeringame[i] && !players[i].spectator)
+			p++;
+
 		if (grandprixinfo.gp == false)
 		{
 			players[i].lives = 3;
@@ -2462,6 +2466,29 @@ static void P_LevelInitStuff(void)
 		// Wipe follower from existence to avoid crashes
 		players[i].follower = NULL;
 	}
+
+	rainbowstartavailable = false;
+
+	if (p >= 2)
+		rainbowstartavailable = true;
+
+	if (p <= 2)
+	{
+		introtime = 0; // No intro in Record Attack / 1v1
+	}
+	else
+	{
+		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+	}
+
+	numbulbs = 5;
+
+	if (p > 2)
+	{
+		numbulbs += (p-2);
+	}
+
+	starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
 
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)

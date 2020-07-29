@@ -27,6 +27,7 @@
 #include "f_finale.h"
 #include "lua_hud.h"	// For Lua hud checks
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
+#include "m_cheat.h"	// objectplacing
 
 #include "k_waypoint.h"
 #include "k_bot.h"
@@ -1143,10 +1144,13 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 
 	{ // Normalize distance to the sum of the two objects' radii, since in a perfect world that would be the distance at the point of collision...
 		fixed_t dist = P_AproxDistance(distx, disty);
-		fixed_t nx = FixedDiv(distx, dist);
-		fixed_t ny = FixedDiv(disty, dist);
+		fixed_t nx, ny;
 
 		dist = dist ? dist : 1;
+
+		nx = FixedDiv(distx, dist);
+		ny = FixedDiv(disty, dist);
+
 		distx = FixedMul(mobj1->radius+mobj2->radius, nx);
 		disty = FixedMul(mobj1->radius+mobj2->radius, ny);
 
@@ -1222,6 +1226,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		mobj1->player->rmomx = mobj1->momx - mobj1->player->cmomx;
 		mobj1->player->rmomy = mobj1->momy - mobj1->player->cmomy;
 		mobj1->player->kartstuff[k_justbumped] = bumptime;
+		mobj1->player->kartstuff[k_spindash] = 0;
 
 		if (mobj1->player->kartstuff[k_spinouttimer])
 		{
@@ -1247,6 +1252,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		mobj2->player->rmomx = mobj2->momx - mobj2->player->cmomx;
 		mobj2->player->rmomy = mobj2->momy - mobj2->player->cmomy;
 		mobj2->player->kartstuff[k_justbumped] = bumptime;
+		mobj2->player->kartstuff[k_spindash] = 0;
 
 		if (mobj2->player->kartstuff[k_spinouttimer])
 		{
@@ -1439,6 +1445,10 @@ static void K_UpdateDraft(player_t *player)
 			if (players[i].speed < 20*players[i].mo->scale)
 				continue;
 
+			// No tethering off of the guy who got the starting bonus :P
+			if (players[i].kartstuff[k_startboost] > 0)
+				continue;
+
 #ifndef EASYDRAFTTEST
 			yourangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
 			theirangle = R_PointToAngle2(0, 0, players[i].mo->momx, players[i].mo->momy);
@@ -1626,7 +1636,7 @@ void K_SpawnDashDustRelease(player_t *player)
 	if (!P_IsObjectOnGround(player->mo))
 		return;
 
-	if (!player->speed && !player->kartstuff[k_startboost])
+	if (!player->speed && !player->kartstuff[k_startboost] && !player->kartstuff[k_spindash])
 		return;
 
 	travelangle = player->mo->angle;
@@ -2038,6 +2048,21 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
 }
 
+tic_t K_GetSpindashChargeTime(player_t *player)
+{
+	// more charge time for higher speed
+	// Tails = 2s, Mighty = 3s, Fang = 4s, Metal = 4s
+	return (player->kartspeed + 4) * (TICRATE/3); 
+}
+
+fixed_t K_GetSpindashChargeSpeed(player_t *player)
+{
+	// more speed for higher weight & speed
+	// Tails = +6.25%, Fang = +20.31%, Mighty = +20.31%, Metal = +25%
+	// (can be higher than this value when overcharged)
+	return (player->kartspeed + player->kartweight) * (FRACUNIT/64);
+}
+
 // Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
 #define METABOLISM
 
@@ -2070,8 +2095,8 @@ static void K_GetKartBoostPower(player_t *player)
 
 #define ADDBOOST(s,a) { \
 	numboosts++; \
-	speedboost += FixedDiv(s, FRACUNIT + (metabolism * numboosts-1)); \
-	accelboost += FixedDiv(a, FRACUNIT + (metabolism * numboosts-1)); \
+	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
+	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
 }
 
 #else
@@ -2103,9 +2128,20 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(K_FlameShieldDashVar(player->kartstuff[k_flamedash]), 3*FRACUNIT); // + infinite top speed, + 300% acceleration
 	}
 
+	if (player->kartstuff[k_spindashboost]) // Spindash boost
+	{
+		const fixed_t MAXCHARGESPEED = K_GetSpindashChargeSpeed(player);
+
+		// character & charge dependent
+		ADDBOOST(
+			FixedMul(MAXCHARGESPEED, player->kartstuff[k_spindashspeed]), // + 0 to K_GetSpindashChargeSpeed()% top speed
+			(4*FRACUNIT) + (36*player->kartstuff[k_spindashspeed]) // + 400% to 4000% acceleration
+		);
+	}
+
 	if (player->kartstuff[k_startboost]) // Startup Boost
 	{
-		ADDBOOST(FRACUNIT/4, 6*FRACUNIT); // + 25% top speed, + 600% acceleration
+		ADDBOOST(FRACUNIT/2, 4*FRACUNIT); // + 50% top speed, + 400% acceleration
 	}
 
 	if (player->kartstuff[k_driftboost]) // Drift Boost
@@ -2236,13 +2272,32 @@ UINT16 K_GetKartFlashing(player_t *player)
 	return tics;
 }
 
-fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove)
+SINT8 K_GetForwardMove(player_t *player)
+{
+	SINT8 forwardmove = player->cmd.forwardmove;
+
+	if ((player->pflags & PF_STASIS) || (player->pflags & PF_SLIDING) || player->kartstuff[k_spinouttimer] || K_PlayerEBrake(player))
+	{
+		return 0;
+	}
+
+	if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_spindashboost])
+	{
+		return MAXPLMOVE;
+	}
+
+	return forwardmove;
+}
+
+fixed_t K_3dKartMovement(player_t *player, boolean onground)
 {
 	const fixed_t accelmax = 4000;
 	const fixed_t p_speed = K_GetKartSpeed(player, true);
 	const fixed_t p_accel = K_GetKartAccel(player);
 	fixed_t newspeed, oldspeed, finalspeed;
+	fixed_t movemul = FRACUNIT;
 	fixed_t orig = ORIG_FRICTION;
+	SINT8 forwardmove = K_GetForwardMove(player);
 
 	if (!onground) return 0; // If the player isn't on the ground, there is no change in speed
 
@@ -2271,26 +2326,20 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove
 	}
 
 	finalspeed = newspeed - oldspeed;
+	movemul = abs(forwardmove * FRACUNIT) / 50;
 
 	// forwardmove is:
 	//  50 while accelerating,
-	//  25 while clutching,
 	//   0 with no gas, and
 	// -25 when only braking.
-
-	if (player->kartstuff[k_sneakertimer])
-		forwardmove = 50;
-
-	finalspeed *= forwardmove/25;
-	finalspeed /= 2;
-
-	if (forwardmove < 0 && finalspeed > mapobjectscale*2)
-		return finalspeed/2;
-	else if (forwardmove < 0)
-		return -mapobjectscale/2;
-
-	if (finalspeed < 0)
-		finalspeed = 0;
+	if (forwardmove >= 0)
+	{
+		finalspeed = FixedMul(finalspeed, movemul);
+	}
+	else
+	{
+		finalspeed = FixedMul(-mapobjectscale/2, movemul);
+	}
 
 	return finalspeed;
 }
@@ -3550,7 +3599,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 			if (spawner->player->speed < 5*spawner->scale)
 				return;
 
-			if (spawner->player->cmd.forwardmove < 0)
+			if (K_GetForwardMove(spawner->player) < 0)
 				playerangle += ANGLE_180;
 
 			anglediff = abs((signed)(playerangle - R_PointToAngle2(0, 0, spawner->player->rmomx, spawner->player->rmomy)));
@@ -5130,10 +5179,12 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 #endif
 		return;
 
-	if ((leveltime >= starttime-(2*TICRATE) && leveltime <= starttime) || (player->respawn.state == RESPAWNST_DROP)) // Startup boosts
+	if (player->respawn.state == RESPAWNST_DROP) // Dropdashing
 		targetsnd = ((cmd->buttons & BT_ACCELERATE) ? 12 : 0);
+	else if (K_PlayerEBrake(player) == true) // Spindashing
+		targetsnd = ((cmd->buttons & BT_DRIFT) ? 12 : 0);
 	else
-		targetsnd = (((6*cmd->forwardmove)/25) + ((player->speed / mapobjectscale)/5))/2;
+		targetsnd = (((6*K_GetForwardMove(player))/25) + ((player->speed / mapobjectscale)/5))/2;
 
 	if (targetsnd < 0)
 		targetsnd = 0;
@@ -5239,6 +5290,11 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
+
+	if (!(player->pflags & PF_SKIDDOWN))
+		player->karthud[khud_fault] = 0;
+	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
+		player->karthud[khud_fault]++;
 
 	if (G_RaceGametype())
 	{
@@ -5709,6 +5765,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_startboost])
 		player->kartstuff[k_startboost]--;
 
+	if (player->kartstuff[k_spindashboost])
+	{
+		player->kartstuff[k_spindashboost]--;
+
+		if (player->kartstuff[k_spindashboost] <= 0)
+		{
+			player->kartstuff[k_spindashspeed] = player->kartstuff[k_spindashboost] = 0;
+		}
+	}
+
 	if (player->kartstuff[k_invincibilitytimer])
 		player->kartstuff[k_invincibilitytimer]--;
 
@@ -5765,7 +5831,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->kartstuff[k_justbumped])
+	if (player->kartstuff[k_justbumped] > 0)
 		player->kartstuff[k_justbumped]--;
 
 	if (player->kartstuff[k_tiregrease])
@@ -6356,14 +6422,36 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 {
-	fixed_t p_maxspeed = K_GetKartSpeed(player, false);
-	fixed_t p_speed = min(player->speed, (p_maxspeed * 2));
-	fixed_t weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
+	fixed_t p_maxspeed;
+	fixed_t p_speed;
+	fixed_t weightadjust;
 
-	if (player->spectator)
+	if ((player->mo == NULL || P_MobjWasRemoved(player->mo)))
+	{
+		return 0;
+	}
+
+	if (player->spectator || objectplacing)
 	{
 		return turnvalue;
 	}
+
+	if (leveltime < introtime)
+	{
+		return 0;
+	}
+
+	// SRB2kart - no additional angle if not moving
+	if ((player->speed <= 0) // Not moving
+	&& ((player->cmd.buttons & BT_EBRAKEMASK) != BT_EBRAKEMASK) // not e-braking
+	&& (player->respawn.state == RESPAWNST_NONE)) // Not respawning
+	{
+		return 0;
+	}
+
+	p_maxspeed = K_GetKartSpeed(player, false);
+	p_speed = min(player->speed, (p_maxspeed * 2));
+	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (K_PlayerUsesBotMovement(player))
 	{
@@ -6426,7 +6514,7 @@ Stage 1: red sparks
 Stage 2: blue sparks
 Stage 3: big large rainbow sparks
 */
-static void K_SpawnDriftBoostExplosion(player_t *player, int stage)
+void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 {
 	mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DRIFTEXPLODE);
 
@@ -6826,6 +6914,91 @@ static INT32 K_FlameShieldMax(player_t *player)
 	return min(16, 1 + (disttofinish / distv));
 }
 
+boolean K_PlayerEBrake(player_t *player)
+{
+	return (player->cmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK
+	&& P_IsObjectOnGround(player->mo) == true
+	&& player->kartstuff[k_drift] == 0
+	&& player->kartstuff[k_spinouttimer] == 0
+	&& player->kartstuff[k_justbumped] == 0
+	&& player->kartstuff[k_spindash] >= 0
+	&& player->kartstuff[k_spindashboost] == 0
+	&& player->powers[pw_nocontrol] == 0;
+}
+
+static void K_KartSpindash(player_t *player)
+{
+	const tic_t MAXCHARGETIME = K_GetSpindashChargeTime(player);
+	ticcmd_t *cmd = &player->cmd;
+
+	if (player->kartstuff[k_spindash] > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE)) != (BT_DRIFT|BT_BRAKE))
+	{
+		player->kartstuff[k_spindashspeed] = (player->kartstuff[k_spindash] * FRACUNIT) / MAXCHARGETIME;
+		player->kartstuff[k_spindashboost] = TICRATE;
+
+		if (!player->kartstuff[k_tiregrease])
+		{
+			UINT8 i;
+			for (i = 0; i < 2; i++)
+			{
+				mobj_t *grease;
+				grease = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_TIREGREASE);
+				P_SetTarget(&grease->target, player->mo);
+				grease->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+				grease->extravalue1 = i;
+			}
+		}
+
+		player->kartstuff[k_tiregrease] = 2*TICRATE;
+
+		player->kartstuff[k_spindash] = 0;
+		S_StartSound(player->mo, sfx_s23c);
+	}
+
+	if (K_PlayerEBrake(player) == false)
+	{
+		player->kartstuff[k_spindash] = 0;
+		return;
+	}
+
+	if (player->speed < 6*mapobjectscale && player->powers[pw_flashing] == 0)
+	{
+		if (cmd->driftturn != 0 && leveltime % 8 == 0)
+			S_StartSound(player->mo, sfx_ruburn);
+
+		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
+		{
+			INT16 chargetime = MAXCHARGETIME - ++player->kartstuff[k_spindash];
+			if (chargetime > 0)
+			{
+				UINT16 soundcharge = 0;
+				UINT8 add = 0;
+				while ((soundcharge += ++add) < chargetime);
+				if (soundcharge == chargetime)
+				{
+					K_SpawnDashDustRelease(player);
+					S_StartSound(player->mo, sfx_s3kab);
+				}
+			}
+			else if (chargetime < -TICRATE)
+				K_SpinPlayer(player, NULL, 0, NULL, false);
+			else
+			{
+				if (player->kartstuff[k_spindash] % 4 == 0)
+				{
+					K_SpawnDashDustRelease(player);
+					K_FlameDashLeftoverSmoke(player->mo);
+				}
+			}
+		}
+	}
+	else
+	{
+		if (leveltime % 4 == 0)
+			S_StartSound(player->mo, sfx_kc2b);
+	}
+}
+
 //
 // K_MoveKartPlayer
 //
@@ -6874,7 +7047,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	else if (cmd->buttons & BT_ATTACK)
 		player->pflags |= PF_ATTACKDOWN;
 
-	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > starttime
+	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > introtime
 		&& player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_squishedtimer] == 0 && (player->respawn.state == RESPAWNST_NONE))
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
@@ -7507,6 +7680,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
+	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
+
 	if (onground)
 	{
 		fixed_t prevfriction = player->mo->friction;
@@ -7515,16 +7690,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->kartstuff[k_tiregrease])
 			player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->kartstuff[k_tiregrease];
 
-		// Friction
-		if (!player->kartstuff[k_offroad])
-		{
-			if (player->speed > 0 && cmd->forwardmove == 0 && player->mo->friction == 59392)
-				player->mo->friction += 4608;
-		}
-
-		// change friction while braking no matter what, otherwise it's not any more effective than just letting go off accel
-		if (player->speed > 0 && cmd->forwardmove < 0)
-			player->mo->friction -= 2048;
+		/*
+		if (K_PlayerEBrake(player) == true)
+			player->mo->friction -= 1024;
+		else if (player->speed > 0 && cmd->forwardmove < 0)
+			player->mo->friction -= 512;
+		*/
 
 		// Karma ice physics
 		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
@@ -7542,14 +7713,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->mo->friction -= 9824;
 		}
 
-		// Friction was changed, so we must recalculate a bunch of stuff
+		// Cap between intended values
+		if (player->mo->friction > FRACUNIT)
+			player->mo->friction = FRACUNIT;
+		if (player->mo->friction < 0)
+			player->mo->friction = 0;
+
+		// Friction was changed, so we must recalculate movefactor
 		if (player->mo->friction != prevfriction)
 		{
-			if (player->mo->friction > FRACUNIT)
-				player->mo->friction = FRACUNIT;
-			if (player->mo->friction < 0)
-				player->mo->friction = 0;
-
 			player->mo->movefactor = FixedDiv(ORIG_FRICTION, player->mo->friction);
 
 			if (player->mo->movefactor < FRACUNIT)
@@ -7569,16 +7741,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
-	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
-
-	// Quick Turning
-	// You can't turn your kart when you're not moving.
-	// So now it's time to burn some rubber!
-	if (player->speed < 2 && leveltime > starttime && cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE && cmd->driftturn != 0)
-	{
-		if (leveltime % 8 == 0)
-			S_StartSound(player->mo, sfx_s224);
-	}
+	K_KartSpindash(player);
 
 	// Squishing
 	// If a Grow player or a sector crushes you, get flattened instead of being killed.
@@ -7600,76 +7763,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			S_StartSound(NULL, sfx_s3kad);
 			S_StopMusic(); // The GO! sound stops the level start ambience
 		}
-	}
-
-	// Start charging once you're given the opportunity.
-	if (leveltime >= starttime-(2*TICRATE) && leveltime <= starttime)
-	{
-		if (cmd->buttons & BT_ACCELERATE)
-		{
-			if (player->kartstuff[k_boostcharge] == 0)
-				player->kartstuff[k_boostcharge] = cmd->latency;
-
-			player->kartstuff[k_boostcharge]++;
-		}
-		else
-			player->kartstuff[k_boostcharge] = 0;
-	}
-
-	// Increase your size while charging your engine.
-	if (leveltime < starttime+10)
-	{
-		player->mo->scalespeed = mapobjectscale/12;
-		player->mo->destscale = mapobjectscale + (player->kartstuff[k_boostcharge]*131);
-		if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
-			player->mo->destscale = (6*player->mo->destscale)/8;
-	}
-
-	// Determine the outcome of your charge.
-	if (leveltime > starttime && player->kartstuff[k_boostcharge])
-	{
-		// Not even trying?
-		if (player->kartstuff[k_boostcharge] < 35)
-		{
-			if (player->kartstuff[k_boostcharge] > 17)
-				S_StartSound(player->mo, sfx_cdfm00); // chosen instead of a conventional skid because it's more engine-like
-		}
-		// Get an instant boost!
-		else if (player->kartstuff[k_boostcharge] <= 50)
-		{
-			player->kartstuff[k_startboost] = (50-player->kartstuff[k_boostcharge])+20;
-
-			if (player->kartstuff[k_boostcharge] <= 36)
-			{
-				player->kartstuff[k_startboost] = 0;
-				K_DoSneaker(player, 0);
-				player->kartstuff[k_sneakertimer] = 70; // PERFECT BOOST!!
-
-				if (!player->kartstuff[k_floorboost] || player->kartstuff[k_floorboost] == 3) // Let everyone hear this one
-					S_StartSound(player->mo, sfx_s25f);
-			}
-			else
-			{
-				K_SpawnDashDustRelease(player); // already handled for perfect boosts by K_DoSneaker
-				if ((!player->kartstuff[k_floorboost] || player->kartstuff[k_floorboost] == 3) && P_IsDisplayPlayer(player))
-				{
-					if (player->kartstuff[k_boostcharge] <= 40)
-						S_StartSound(player->mo, sfx_cdfm01); // You were almost there!
-					else
-						S_StartSound(player->mo, sfx_s23c); // Nope, better luck next time.
-				}
-			}
-		}
-		// You overcharged your engine? Those things are expensive!!!
-		else if (player->kartstuff[k_boostcharge] > 50)
-		{
-			player->powers[pw_nocontrol] = 40;
-			//S_StartSound(player->mo, sfx_kc34);
-			S_StartSound(player->mo, sfx_s3k83);
-			player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
-		}
-
-		player->kartstuff[k_boostcharge] = 0;
 	}
 }
 
