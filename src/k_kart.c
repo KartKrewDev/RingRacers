@@ -7890,6 +7890,9 @@ static patch_t *kp_timeoutsticker;
 static patch_t *kp_prestartbulb[15];
 static patch_t *kp_prestartletters[7];
 
+static patch_t *kp_prestartbulb_split[15];
+static patch_t *kp_prestartletters_split[7];
+
 static patch_t *kp_startcountdown[20];
 static patch_t *kp_racefault[6];
 static patch_t *kp_racefinish[6];
@@ -8016,6 +8019,14 @@ void K_LoadKartHUDGraphics(void)
 		kp_prestartbulb[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
+	sprintf(buffer, "K_SBLBxx");
+	for (i = 0; i < 15; i++)
+	{
+		buffer[6] = '0'+((i+1)/10);
+		buffer[7] = '0'+((i+1)%10);
+		kp_prestartbulb_split[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
 	// Pre-start position letters
 	kp_prestartletters[0] =		W_CachePatchName("K_PL_P", PU_HUDGFX);
 	kp_prestartletters[1] =		W_CachePatchName("K_PL_O", PU_HUDGFX);
@@ -8024,6 +8035,14 @@ void K_LoadKartHUDGraphics(void)
 	kp_prestartletters[4] =		W_CachePatchName("K_PL_T", PU_HUDGFX);
 	kp_prestartletters[5] =		W_CachePatchName("K_PL_N", PU_HUDGFX);
 	kp_prestartletters[6] =		W_CachePatchName("K_PL_EX", PU_HUDGFX);
+
+	kp_prestartletters_split[0] =		W_CachePatchName("K_SPL_P", PU_HUDGFX);
+	kp_prestartletters_split[1] =		W_CachePatchName("K_SPL_O", PU_HUDGFX);
+	kp_prestartletters_split[2] =		W_CachePatchName("K_SPL_S", PU_HUDGFX);
+	kp_prestartletters_split[3] =		W_CachePatchName("K_SPL_I", PU_HUDGFX);
+	kp_prestartletters_split[4] =		W_CachePatchName("K_SPL_T", PU_HUDGFX);
+	kp_prestartletters_split[5] =		W_CachePatchName("K_SPL_N", PU_HUDGFX);
+	kp_prestartletters_split[6] =		W_CachePatchName("K_SPL_EX", PU_HUDGFX);
 
 	// Starting countdown
 	kp_startcountdown[0] = 		W_CachePatchName("K_CNT3A", PU_HUDGFX);
@@ -10649,11 +10668,27 @@ static void K_drawKartStartBulbs(void)
 
 	fixed_t spacing = 24*FRACUNIT;
 
-	fixed_t startx = (BASEVIDWIDTH/2)*FRACUNIT + (spacing/2);
-	fixed_t x, y = 48*FRACUNIT;
+	fixed_t startx = (BASEVIDWIDTH/2)*FRACUNIT;
+	fixed_t starty = 48*FRACUNIT;
+	fixed_t x, y;
 
 	UINT8 numperrow = numbulbs/2;
 	UINT8 i;
+
+	UINT32 splitflag = K_calcSplitFlags(0);
+
+	if (r_splitscreen >= 1)
+	{
+		spacing /= 2;
+		starty /= 3;
+
+		if (r_splitscreen > 1)
+		{
+			startx /= 2;
+		}
+	}
+
+	startx += (spacing/2);
 
 	if (numbulbs <= 10)
 	{
@@ -10667,11 +10702,13 @@ static void K_drawKartStartBulbs(void)
 			numperrow++;
 		}
 
-		y -= (spacing/2);
+		starty -= (spacing/2);
 	}
 
 	startx -= (spacing/2) * numperrow;
+
 	x = startx;
+	y = starty;
 
 	for (i = 0; i < numbulbs; i++)
 	{
@@ -10708,17 +10745,28 @@ static void K_drawKartStartBulbs(void)
 			}
 		}
 
-		V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOTOP, kp_prestartbulb[patchnum], NULL);
+		V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOTOP|splitflag,
+			(r_splitscreen ? kp_prestartbulb_split[patchnum] : kp_prestartbulb[patchnum]), NULL);
 		x += spacing;
 	}
 
 	x = 70*FRACUNIT;
-	y = 48*FRACUNIT;
+	y = starty;
+
+	if (r_splitscreen == 1)
+	{
+		x = 106*FRACUNIT;
+	}
+	else if (r_splitscreen > 1)
+	{
+		x = 28*FRACUNIT;
+	}
 
 	for (i = 0; i < 10; i++)
 	{
 		UINT8 patchnum = letters_order[i];
 		INT32 transflag = letters_transparency[(leveltime - i) % 40];
+		patch_t *patch = (r_splitscreen ? kp_prestartletters_split[patchnum] : kp_prestartletters[patchnum]);
 
 		if (transflag >= 10)
 			;
@@ -10727,15 +10775,19 @@ static void K_drawKartStartBulbs(void)
 			if (transflag != 0)
 				transflag = transflag << FF_TRANSSHIFT;
 
-			V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOTOP|transflag, kp_prestartletters[patchnum], NULL);
+			V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOTOP|splitflag|transflag, patch, NULL);
 		}
 
 		if (i < 9)
 		{
-			x += (SHORT(kp_prestartletters[patchnum]->width)/2) * FRACUNIT;
+			x += (SHORT(patch->width)) * FRACUNIT/2;
 
 			patchnum = letters_order[i+1];
-			x += (SHORT(kp_prestartletters[patchnum]->width)/2) * FRACUNIT;
+			patch = (r_splitscreen ? kp_prestartletters_split[patchnum] : kp_prestartletters[patchnum]);
+			x += (SHORT(patch->width)) * FRACUNIT/2;
+
+			if (r_splitscreen)
+				x -= FRACUNIT;
 		}
 	}
 }
