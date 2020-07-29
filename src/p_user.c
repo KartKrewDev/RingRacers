@@ -8677,6 +8677,11 @@ void P_PlayerThink(player_t *player)
 	}
 #endif
 
+	if (player->mo->hitlag > 0)
+	{
+		return;
+	}
+
 	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
 	{
 		P_SetTarget(&player->awayviewmobj, NULL); // remove awayviewmobj asap if invalid

@@ -410,6 +410,8 @@ typedef struct mobj_s
 
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
 
+	INT32 hitlag;
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
 

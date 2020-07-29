@@ -48,6 +48,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 			P_DamageMobj(t2, t1, t1->target, 1);
 			K_KartBouncing(t2, t1, false, false);
 			S_StartSound(t2, sfx_s3k7b);
+			t2->hitlag = TICRATE;
 		}
 
 		damageitem = true;
@@ -98,6 +99,8 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 			t1->z -= t1->height;
 		else
 			t1->z += t1->height;
+
+		t1->hitlag = TICRATE;
 
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2);

@@ -2598,6 +2598,12 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	if (radius < mapobjectscale)
 		radius = mapobjectscale;
 
+	if (thing->hitlag > 0)
+	{
+		// Do not move during hitlag
+		return false;
+	}
+
 	do {
 		if (thing->flags & MF_NOCLIP) {
 			tryx = x;

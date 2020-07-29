@@ -87,6 +87,7 @@ enum mobj_e {
 	mobj_standingslope,
 #endif
 	mobj_colorized,
+	mobj_hitlag,
 	mobj_shadowscale,
 	mobj_whiteshadow,
 	mobj_sprxoff,
@@ -156,6 +157,7 @@ static const char *const mobj_opt[] = {
 	"standingslope",
 #endif
 	"colorized",
+	"hitlag",
 	"shadowscale",
 	"whiteshadow",
 	"sprxoff",
@@ -374,6 +376,9 @@ static int mobj_get(lua_State *L)
 #endif
 	case mobj_colorized:
 		lua_pushboolean(L, mo->colorized);
+		break;
+	case mobj_hitlag:
+		lua_pushinteger(L, mo->hitlag);
 		break;
 	case mobj_shadowscale:
 		lua_pushfixed(L, mo->shadowscale);
@@ -709,6 +714,9 @@ static int mobj_set(lua_State *L)
 #endif
 	case mobj_colorized:
 		mo->colorized = luaL_checkboolean(L, 3);
+		break;
+	case mobj_hitlag:
+		mo->hitlag = luaL_checkinteger(L, 3);
 		break;
 	case mobj_shadowscale:
 		mo->shadowscale = luaL_checkfixed(L, 3);

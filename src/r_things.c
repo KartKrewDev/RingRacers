@@ -1429,9 +1429,9 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 //
 static void R_ProjectSprite(mobj_t *thing)
 {
-	const fixed_t thingxpos = thing->x + thing->sprxoff;
-	const fixed_t thingypos = thing->y + thing->spryoff;
-	const fixed_t thingzpos = thing->z + thing->sprzoff;
+	fixed_t thingxpos = thing->x + thing->sprxoff;
+	fixed_t thingypos = thing->y + thing->spryoff;
+	fixed_t thingzpos = thing->z + thing->sprzoff;
 
 	fixed_t tr_x, tr_y;
 	fixed_t gxt, gyt;
@@ -1467,6 +1467,14 @@ static void R_ProjectSprite(mobj_t *thing)
 	INT32 heightsec, phs;
 	INT32 light = 0;
 	fixed_t this_scale = thing->scale;
+
+	// hitlag vibrating
+	if (thing->hitlag > 0 && (leveltime & 1))
+	{
+		thingxpos += thing->momx;
+		thingypos += thing->momy;
+		thingzpos += thing->momz;
+	}
 
 	// transform the origin point
 	tr_x = thingxpos - viewx;

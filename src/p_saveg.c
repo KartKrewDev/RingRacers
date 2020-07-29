@@ -1000,6 +1000,7 @@ typedef enum
 #endif
 	MD2_SHADOWSCALE = 1<<14,
 	MD2_DRAWFLAGS   = 1<<15,
+	MD2_HITLAG      = 1<<16
 } mobj_diff2_t;
 
 typedef enum
@@ -1196,12 +1197,14 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (mobj->standingslope)
 		diff2 |= MD2_SLOPE;
 #endif
+	if (mobj->colorized)
+		diff2 |= MD2_COLORIZED;
 	if (mobj->shadowscale)
 		diff2 |= MD2_SHADOWSCALE;
 	if (mobj->drawflags)
 		diff2 |= MD2_DRAWFLAGS;
-	if (mobj->colorized)
-		diff2 |= MD2_COLORIZED;
+	if (mobj->hitlag)
+		diff2 |= MD2_HITLAG;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
 	if (mobj == kitemcap)
@@ -1342,6 +1345,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 
 		WRITEUINT16(save_p, df);
 	}
+	if (diff2 & MD2_HITLAG)
+		WRITEINT32(save_p, mobj->hitlag);
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2273,6 +2278,8 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->shadowscale = READFIXED(save_p);
 	if (diff2 & MD2_DRAWFLAGS)
 		mobj->drawflags = READUINT16(save_p);
+	if (diff2 & MD2_HITLAG)
+		mobj->hitlag = READINT32(save_p);
 
 	if (diff & MD_REDFLAG)
 	{
