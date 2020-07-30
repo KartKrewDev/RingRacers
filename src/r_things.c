@@ -1295,8 +1295,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	yscale = FixedDiv(projectiony, tz);
 	shadowxscale = FixedMul(thing->radius*2, scalemul);
 	shadowyscale = FixedMul(FixedMul(thing->radius*2, scalemul), FixedDiv(abs(floorz - viewz), tz));
-	shadowyscale = min(shadowyscale, shadowxscale) / patch->height;
-	shadowxscale /= patch->width;
+	shadowyscale = min(shadowyscale, shadowxscale) / SHORT(patch->height);
+	shadowxscale /= SHORT(patch->width);
 	shadowskew = 0;
 
 	if (floorslope)
@@ -1311,24 +1311,24 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 		//CONS_Printf("Shadow is sloped by %d %d\n", xslope, zslope);
 
 		if (viewz < floorz)
-			shadowyscale += FixedMul(FixedMul(thing->radius*2 / patch->height, scalemul), zslope);
+			shadowyscale += FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scalemul), zslope);
 		else
-			shadowyscale -= FixedMul(FixedMul(thing->radius*2 / patch->height, scalemul), zslope);
+			shadowyscale -= FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scalemul), zslope);
 
 		shadowyscale = abs(shadowyscale);
 
 		shadowskew = xslope;
 	}
 
-	tx -= patch->width * shadowxscale/2;
+	tx -= SHORT(patch->width) * shadowxscale/2;
 	x1 = (centerxfrac + FixedMul(tx,xscale))>>FRACBITS;
 	if (x1 >= viewwidth) return;
 
-	tx += patch->width * shadowxscale;
+	tx += SHORT(patch->width) * shadowxscale;
 	x2 = ((centerxfrac + FixedMul(tx,xscale))>>FRACBITS); x2--;
 	if (x2 < 0 || x2 <= x1) return;
 
-	if (shadowyscale < FRACUNIT/patch->height) return; // fix some crashes?
+	if (shadowyscale < FRACUNIT/SHORT(patch->height)) return; // fix some crashes?
 
 	shadow = R_NewVisSprite();
 
@@ -1379,7 +1379,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 
 	shadow->startfrac = 0;
 	//shadow->xiscale = 0x7ffffff0 / (shadow->xscale/2);
-	shadow->xiscale = (patch->width<<FRACBITS)/(x2-x1+1); // fuck it
+	shadow->xiscale = (SHORT(patch->width)<<FRACBITS)/(x2-x1+1); // fuck it
 
 	if (shadow->x1 > x1)
 		shadow->startfrac += shadow->xiscale*(shadow->x1-x1);

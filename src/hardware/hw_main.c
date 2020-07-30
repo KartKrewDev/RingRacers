@@ -2860,7 +2860,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	HWR_GetPatch(gpatch);
 
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
-	scalemul = FixedMul(scalemul, (thing->radius*2) / gpatch->height);
+	scalemul = FixedMul(scalemul, (thing->radius*2) / SHORT(gpatch->height));
 
 	fscale = FIXED_TO_FLOAT(scalemul);
 	fx = FIXED_TO_FLOAT(thingxpos);
@@ -2872,9 +2872,9 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	//  0--1
 
 	if (thing && fabsf(fscale - 1.0f) > 1.0E-36f)
-		offset = (gpatch->height/2) * fscale;
+		offset = (SHORT(gpatch->height)/2) * fscale;
 	else
-		offset = (float)(gpatch->height/2);
+		offset = (float)(SHORT(gpatch->height)/2);
 
 	shadowVerts[2].x = shadowVerts[3].x = fx + offset;
 	shadowVerts[1].x = shadowVerts[0].x = fx - offset;
