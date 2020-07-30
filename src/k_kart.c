@@ -3137,6 +3137,170 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	return NULL;
 }
 
+// Spawns the finish line fault-indicator effect
+#define FINISHLINEBEAM_SPACING (48*mapobjectscale)
+static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *line, boolean reverse)
+{
+	const fixed_t linelength = P_AproxDistance(line->dx, line->dy);
+	const fixed_t xstep = FixedDiv(line->dx, linelength);
+	const fixed_t ystep = FixedDiv(line->dy, linelength);
+
+	fixed_t linex = line->v1->x;
+	fixed_t liney = line->v1->y;
+	angle_t lineangle = R_PointToAngle2(0, 0, line->dx, line->dy) + ANGLE_90;
+
+	fixed_t drawz = players[displayplayers[0]].mo->z;
+
+	if (line->flags & ML_NOCLIMB)
+	{
+		// Line is flipped
+		lineangle += ANGLE_180;
+	}
+
+	linex += FixedMul(offset, xstep);
+	liney += FixedMul(offset, ystep);
+
+	while (offset < linelength)
+	{
+#define COLORCYCLELEN 10
+		const UINT8 colorcycle[COLORCYCLELEN] = {
+			SKINCOLOR_PERIWINKLE,
+			SKINCOLOR_SLATE,
+			SKINCOLOR_BLOSSOM,
+			SKINCOLOR_RASPBERRY,
+			SKINCOLOR_ORANGE,
+			SKINCOLOR_YELLOW,
+			SKINCOLOR_LIME,
+			SKINCOLOR_TURTLE,
+			SKINCOLOR_ROBIN,
+			SKINCOLOR_JAWZ
+		};
+
+		const UINT8 numframes = 5;
+		const angle_t framethreshold = ANGLE_180 / (numframes-1);
+		const angle_t frameaim = aiming + (framethreshold / 2);
+
+		fixed_t x, y, z;
+		UINT8 spriteframe = 0;
+		mobj_t *beam;
+
+		x = linex + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINECOSINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
+		y = liney + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINESINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
+		z = drawz + FINISHLINEBEAM_SPACING + FixedMul(FINISHLINEBEAM_SPACING, FINESINE(aiming >> ANGLETOFINESHIFT));
+
+		if (frameaim > ANGLE_180)
+		{
+			spriteframe = (ANGLE_MAX - frameaim) / framethreshold;
+		}
+		else
+		{
+			spriteframe = frameaim / framethreshold;
+		}
+
+		beam = P_SpawnMobj(x, y, z, MT_THOK);
+		P_SetMobjState(beam, S_FINISHBEAM1 + spriteframe);
+
+		beam->colorized = true;
+
+		if (reverse)
+		{
+			beam->color = colorcycle[((leveltime / 4) + (COLORCYCLELEN/2)) % COLORCYCLELEN];
+		}
+		else
+		{
+			beam->color = colorcycle[(leveltime / 4) % COLORCYCLELEN];
+		}
+
+		offset += FINISHLINEBEAM_SPACING;
+		linex += FixedMul(FINISHLINEBEAM_SPACING, xstep);
+		liney += FixedMul(FINISHLINEBEAM_SPACING, ystep);
+
+		if (reverse)
+		{
+			aiming -= ANGLE_45;
+		}
+		else
+		{
+			aiming += ANGLE_45;
+		}
+	}
+}
+
+void K_RunFinishLineBeam(void)
+{
+	INT64 bounds[4];
+	angle_t angle = 0;
+	UINT32 flags = 0;
+	boolean valid = false;
+	UINT32 i;
+
+	// this does NOT support finish lines that curve.
+	// I wanted to! But I have a headache from trying to code it for like, 3 hours!
+	// so I'm not!
+
+	bounds[0] = INT32_MAX; // min x
+	bounds[1] = INT32_MIN; // max x
+	bounds[2] = INT32_MAX; // min y
+	bounds[3] = INT32_MIN; // max y
+
+	for (i = 0; i < numlines; i++)
+	{
+		if (lines[i].special == 2001)
+		{
+			bounds[0] = min(bounds[0], min(lines[i].v1->x, lines[i].v2->x)); // min x
+			bounds[1] = max(bounds[1], max(lines[i].v1->x, lines[i].v2->x)); // max x
+			bounds[2] = min(bounds[2], min(lines[i].v1->y, lines[i].v2->y)); // min y
+			bounds[3] = max(bounds[3], max(lines[i].v1->y, lines[i].v2->y)); // max y
+
+			if (valid == false)
+			{
+				angle = R_PointToAngle2(0, 0, lines[i].dx, lines[i].dy);
+				flags = lines[i].flags;
+			}
+
+			valid = true;
+		}
+	}
+
+	if (valid == true)
+	{
+		fixed_t span = P_AproxDistance(bounds[1] - bounds[0], bounds[3] - bounds[2]);
+
+		fixed_t cx = (bounds[0] + bounds[1]) / 2;
+		fixed_t cy = (bounds[2] + bounds[3]) / 2;
+
+		vertex_t v1, v2; // fake vertexes
+		line_t junk; // fake linedef
+
+		const angle_t angoffset = ANGLE_45;
+		const angle_t angadd = ANGLE_11hh;
+		const fixed_t speed = 6 * mapobjectscale;
+
+		fixed_t offseta = (leveltime * speed) % FINISHLINEBEAM_SPACING;
+		angle_t aiminga = (angoffset * -((leveltime * speed) / FINISHLINEBEAM_SPACING)) + (angadd * leveltime);
+
+		fixed_t offsetb = FINISHLINEBEAM_SPACING - offseta;
+		angle_t aimingb = (angoffset * -((leveltime * speed) / FINISHLINEBEAM_SPACING)) - (angadd * leveltime);
+
+		v1.x = cx - FixedMul(span, FINECOSINE(angle >> ANGLETOFINESHIFT));
+		v1.y = cy - FixedMul(span, FINESINE(angle >> ANGLETOFINESHIFT));
+
+		v2.x = cx + FixedMul(span, FINECOSINE(angle >> ANGLETOFINESHIFT));
+		v2.y = cy + FixedMul(span, FINESINE(angle >> ANGLETOFINESHIFT));
+
+		junk.v1 = &v1;
+		junk.v2 = &v2;
+		junk.dx = v2.x - v1.x;
+		junk.dy = v2.y - v1.y;
+		junk.flags = flags;
+
+		K_DrawFinishLineBeamForLine(offseta, aiminga, &junk, false);
+		K_DrawFinishLineBeamForLine(offsetb, aimingb, &junk, true);
+	}
+}
+
+#undef FINISHLINEBEAM_SPACING
+
 UINT8 K_DriftSparkColor(player_t *player, INT32 charge)
 {
 	INT32 ds = K_GetKartDriftSparkValue(player);

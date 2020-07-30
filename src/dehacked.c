@@ -7593,6 +7593,13 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_WATERTRAILUNDERLAY7",
 	"S_WATERTRAILUNDERLAY8",
 
+	// Finish line beam
+	"S_FINISHBEAM1",
+	"S_FINISHBEAM2",
+	"S_FINISHBEAM3",
+	"S_FINISHBEAM4",
+	"S_FINISHBEAM5",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif

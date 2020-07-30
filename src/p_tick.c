@@ -656,6 +656,9 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
+		if (G_RaceGametype())
+			K_RunFinishLineBeam();
+
 		if (G_BattleGametype() && battleovertime.enabled)
 			K_RunBattleOvertime();
 
@@ -830,6 +833,9 @@ void P_PreTicker(INT32 frames)
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
+
+		if (G_RaceGametype())
+			K_RunFinishLineBeam();
 
 		if (G_BattleGametype() && battleovertime.enabled)
 			K_RunBattleOvertime();
