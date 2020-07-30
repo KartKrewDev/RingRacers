@@ -3187,7 +3187,11 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 		y = liney + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINESINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
 		z = FINISHLINEBEAM_SPACING + FixedMul(FINISHLINEBEAM_SPACING, FINESINE(aiming >> ANGLETOFINESHIFT));
 
-		if (frameaim > ANGLE_180)
+		if (leveltime >= starttime)
+		{
+			spriteframe = 4; // Weakest sprite when passable
+		}
+		else if (frameaim > ANGLE_180)
 		{
 			spriteframe = (ANGLE_MAX - frameaim) / framethreshold;
 		}
@@ -3294,6 +3298,11 @@ void K_RunFinishLineBeam(void)
 	UINT32 flags = 0;
 	boolean valid = false;
 	UINT32 i;
+
+	if (!(leveltime < starttime || rainbowstartavailable == true))
+	{
+		return;
+	}
 
 	// this does NOT support finish lines that curve.
 	// I wanted to! But I have a headache from trying to code it for like, 3 hours!
