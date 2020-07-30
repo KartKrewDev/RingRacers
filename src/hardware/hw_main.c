@@ -2829,17 +2829,18 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	UINT8 lightlevel = 0;
 	extracolormap_t *colormap = NULL;
 	UINT8 i;
+	SINT8 flip = P_MobjFlip(thing);
 
 	INT32 light;
 	fixed_t scalemul;
 	UINT16 alpha;
 	fixed_t floordiff;
-	fixed_t floorz;
+	fixed_t groundz;
 	fixed_t slopez;
-	pslope_t *floorslope;
+	pslope_t *groundslope;
 
-	floorz = R_GetShadowZ(thing, &floorslope);
-	floordiff = abs(thingzpos - floorz);
+	groundz = R_GetShadowZ(thing, &groundslope);
+	floordiff = abs((flip < 0 ? thing->height : 0) + thingzpos - groundz);
 
 	alpha = floordiff / (4*FRACUNIT) + 75;
 	if (alpha >= 255) return;
@@ -2889,18 +2890,18 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 		shadowVerts[i].z = fy + ((oldx - fx) * gr_viewsin) + ((oldy - fy) * gr_viewcos);
 	}
 
-	if (floorslope)
+	if (groundslope)
 	{
 		for (i = 0; i < 4; i++)
 		{
-			slopez = P_GetZAt(floorslope, FLOAT_TO_FIXED(shadowVerts[i].x), FLOAT_TO_FIXED(shadowVerts[i].z));
-			shadowVerts[i].y = FIXED_TO_FLOAT(slopez) + 0.05f;
+			slopez = P_GetZAt(groundslope, FLOAT_TO_FIXED(shadowVerts[i].x), FLOAT_TO_FIXED(shadowVerts[i].z));
+			shadowVerts[i].y = FIXED_TO_FLOAT(slopez) + flip * 0.05f;
 		}
 	}
 	else
 	{
 		for (i = 0; i < 4; i++)
-			shadowVerts[i].y = FIXED_TO_FLOAT(floorz) + 0.05f;
+			shadowVerts[i].y = FIXED_TO_FLOAT(groundz) + flip * 0.05f;
 	}
 
 	shadowVerts[0].s = shadowVerts[3].s = 0;
@@ -2911,7 +2912,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 
 	if (thing->subsector->sector->numlights)
 	{
-		light = R_GetPlaneLight(thing->subsector->sector, floorz, false); // Always use the light at the top instead of whatever I was doing before
+		light = R_GetPlaneLight(thing->subsector->sector, groundz, false); // Always use the light at the top instead of whatever I was doing before
 
 		if (thing->subsector->sector->lightlist[light].extra_colormap)
 			colormap = thing->subsector->sector->lightlist[light].extra_colormap;
