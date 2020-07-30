@@ -3149,7 +3149,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 	fixed_t liney = line->v1->y;
 	angle_t lineangle = R_PointToAngle2(0, 0, line->dx, line->dy) + ANGLE_90;
 
-	fixed_t drawz = players[displayplayers[0]].mo->z;
+	UINT8 i;
 
 	if (line->flags & ML_NOCLIMB)
 	{
@@ -3182,11 +3182,10 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 
 		fixed_t x, y, z;
 		UINT8 spriteframe = 0;
-		mobj_t *beam;
 
 		x = linex + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINECOSINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
 		y = liney + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINESINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
-		z = drawz + FINISHLINEBEAM_SPACING + FixedMul(FINISHLINEBEAM_SPACING, FINESINE(aiming >> ANGLETOFINESHIFT));
+		z = FINISHLINEBEAM_SPACING + FixedMul(FINISHLINEBEAM_SPACING, FINESINE(aiming >> ANGLETOFINESHIFT));
 
 		if (frameaim > ANGLE_180)
 		{
@@ -3197,18 +3196,27 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 			spriteframe = frameaim / framethreshold;
 		}
 
-		beam = P_SpawnMobj(x, y, z, MT_THOK);
-		P_SetMobjState(beam, S_FINISHBEAM1 + spriteframe);
-
-		beam->colorized = true;
-
-		if (reverse)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
-			beam->color = colorcycle[((leveltime / 4) + (COLORCYCLELEN/2)) % COLORCYCLELEN];
-		}
-		else
-		{
-			beam->color = colorcycle[(leveltime / 4) % COLORCYCLELEN];
+			if (playeringame[displayplayers[i]] && players[displayplayers[i]].mo && !P_MobjWasRemoved(players[displayplayers[i]].mo))
+			{
+				mobj_t *beam;
+
+				beam = P_SpawnMobj(x, y, players[displayplayers[i]].mo->z + z, MT_THOK);
+				P_SetMobjState(beam, S_FINISHBEAM1 + spriteframe);
+
+				beam->colorized = true;
+				beam->drawflags = MFD_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
+
+				if (reverse)
+				{
+					beam->color = colorcycle[((leveltime / 4) + (COLORCYCLELEN/2)) % COLORCYCLELEN];
+				}
+				else
+				{
+					beam->color = colorcycle[(leveltime / 4) % COLORCYCLELEN];
+				}
+			}
 		}
 
 		offset += FINISHLINEBEAM_SPACING;
@@ -3222,6 +3230,59 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 		else
 		{
 			aiming += ANGLE_45;
+		}
+	}
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (playeringame[displayplayers[i]] && players[displayplayers[i]].mo && !P_MobjWasRemoved(players[displayplayers[i]].mo))
+		{
+			UINT8 j;
+			for (j = 0; j < 2; j++)
+			{
+				vertex_t *v = line->v1;
+				mobj_t *end1, *end2;
+				angle_t a = R_PointToAngle2(0, 0, line->dx, line->dy);
+				fixed_t sx;
+				fixed_t sy;
+
+				//if (line->flags & ML_NOCLIMB)
+				//{
+					//a += ANGLE_180;
+				//}
+
+				sx = FixedMul(3*mapobjectscale, FINECOSINE(a >> ANGLETOFINESHIFT));
+				sy = FixedMul(3*mapobjectscale, FINESINE(a >> ANGLETOFINESHIFT));
+
+				if (j == 1)
+				{
+					v = line->v2;
+					sx = -sx;
+					sy = -sy;
+				}
+
+				end1 = P_SpawnMobj(
+					v->x + sx,
+					v->y + sy,
+					players[displayplayers[i]].mo->z + FINISHLINEBEAM_SPACING,
+					MT_THOK
+				);
+
+				P_SetMobjState(end1, S_FINISHBEAMEND1);
+				end1->drawflags = MFD_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
+				end1->angle = lineangle;
+
+				end2 = P_SpawnMobj(
+					v->x + (8*sx),
+					v->y + (8*sy),
+					players[displayplayers[i]].mo->z + FINISHLINEBEAM_SPACING,
+					MT_THOK
+				);
+
+				P_SetMobjState(end2, S_FINISHBEAMEND2);
+				end2->drawflags = MFD_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
+				end2->angle = lineangle;
+			}
 		}
 	}
 }
@@ -3238,10 +3299,10 @@ void K_RunFinishLineBeam(void)
 	// I wanted to! But I have a headache from trying to code it for like, 3 hours!
 	// so I'm not!
 
-	bounds[0] = INT32_MAX; // min x
-	bounds[1] = INT32_MIN; // max x
-	bounds[2] = INT32_MAX; // min y
-	bounds[3] = INT32_MIN; // max y
+	bounds[0] = INT64_MAX; // min x
+	bounds[1] = INT64_MIN; // max x
+	bounds[2] = INT64_MAX; // min y
+	bounds[3] = INT64_MIN; // max y
 
 	for (i = 0; i < numlines; i++)
 	{
@@ -3264,7 +3325,7 @@ void K_RunFinishLineBeam(void)
 
 	if (valid == true)
 	{
-		fixed_t span = P_AproxDistance(bounds[1] - bounds[0], bounds[3] - bounds[2]);
+		fixed_t span = P_AproxDistance(bounds[1] - bounds[0], bounds[3] - bounds[2]) / 2;
 
 		fixed_t cx = (bounds[0] + bounds[1]) / 2;
 		fixed_t cy = (bounds[2] + bounds[3]) / 2;
