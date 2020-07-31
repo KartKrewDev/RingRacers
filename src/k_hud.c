@@ -729,7 +729,7 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 	if (options & V_SLIDEIN)
 	{
-		tic_t length = TICRATE/3;
+		tic_t length = TICRATE/2;
 
 		if (leveltime < introtime + length)
 		{
