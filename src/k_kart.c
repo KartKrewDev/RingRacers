@@ -2065,7 +2065,7 @@ fixed_t K_GetSpindashChargeSpeed(player_t *player)
 // Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
 #define METABOLISM
 
-// sets k_boostpower, k_speedboost, and k_accelboost to whatever we need it to be
+// sets k_boostpower, k_speedboost, k_accelboost, and k_handleboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
 #ifdef METABOLISM
@@ -2073,8 +2073,12 @@ static void K_GetKartBoostPower(player_t *player)
 	const fixed_t metabolism = FRACUNIT - ((9-player->kartweight) * maxmetabolismincrease / 8);
 #endif // METABOLISM
 
+	// v2 almost broke sliptiding when it fixed turning bugs!
+	// This value is fine-tuned to feel like v1 again without reverting any of those changes.
+	const fixed_t sliptidehandling = 7*FRACUNIT/10;
+
 	fixed_t boostpower = FRACUNIT;
-	fixed_t speedboost = 0, accelboost = 0;
+	fixed_t speedboost = 0, accelboost = 0, handleboost = 0;
 	UINT8 numboosts = 0;
 
 	if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow] == 1) // Slow down after you've been bumped
@@ -2092,18 +2096,20 @@ static void K_GetKartBoostPower(player_t *player)
 
 #ifdef METABOLISM
 
-#define ADDBOOST(s,a) { \
+#define ADDBOOST(s,a,h) { \
 	numboosts++; \
 	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
 	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
+	handleboost = max(h, handleboost); \
 }
 
 #else
 
-#define ADDBOOST(s,a) { \
+#define ADDBOOST(s,a,h) { \
 	numboosts++; \
 	speedboost += s / numboosts; \
 	accelboost += a / numboosts; \
+	handleboost = max(h, handleboost); \
 }
 
 #endif // METABOLISM
@@ -2113,18 +2119,28 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->kartstuff[k_numsneakers]; i++)
 		{
-			ADDBOOST(FRACUNIT/2, 8*FRACUNIT); // + 50% top speed, + 800% acceleration
+			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, sliptidehandling); // + 50% top speed, + 800% acceleration, +70% handling
 		}
 	}
 
 	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT); // + 37.5% top speed, + 300% acceleration
+		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT, sliptidehandling/3); // + 37.5% top speed, + 300% acceleration, +23% handling
+	}
+
+	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
+	{
+		ADDBOOST(0, 0, sliptidehandling/3); // + 0% top speed, + 0% acceleration, +23% handling
 	}
 
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
 	{
-		ADDBOOST(K_FlameShieldDashVar(player->kartstuff[k_flamedash]), 3*FRACUNIT); // + infinite top speed, + 300% acceleration
+		fixed_t dash = K_FlameShieldDashVar(player->kartstuff[k_flamedash]);
+		ADDBOOST(
+			dash, // + infinite top speed
+			3*FRACUNIT, // + 300% acceleration
+			FixedMul(FixedDiv(dash, FRACUNIT/2), sliptidehandling/3) // + infinite handling
+		);
 	}
 
 	if (player->kartstuff[k_spindashboost]) // Spindash boost
@@ -2134,28 +2150,29 @@ static void K_GetKartBoostPower(player_t *player)
 		// character & charge dependent
 		ADDBOOST(
 			FixedMul(MAXCHARGESPEED, player->kartstuff[k_spindashspeed]), // + 0 to K_GetSpindashChargeSpeed()% top speed
-			(4*FRACUNIT) + (36*player->kartstuff[k_spindashspeed]) // + 400% to 4000% acceleration
+			(4*FRACUNIT) + (36*player->kartstuff[k_spindashspeed]), // + 400% to 4000% acceleration
+			0 // + 0% handling
 		);
 	}
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
 	{
-		ADDBOOST(FRACUNIT/2, 4*FRACUNIT); // + 50% top speed, + 400% acceleration
+		ADDBOOST(FRACUNIT/2, 4*FRACUNIT, 0); // + 50% top speed, + 400% acceleration, +0% handling
 	}
 
 	if (player->kartstuff[k_driftboost]) // Drift Boost
 	{
-		ADDBOOST(FRACUNIT/4, 4*FRACUNIT); // + 25% top speed, + 400% acceleration
+		ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 25% top speed, + 400% acceleration, +0% handling
 	}
 
 	if (player->kartstuff[k_ringboost]) // Ring Boost
 	{
-		ADDBOOST(FRACUNIT/5, 4*FRACUNIT); // + 20% top speed, + 400% acceleration
+		ADDBOOST(FRACUNIT/5, 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
 	}
 
 	if (player->kartstuff[k_eggmanexplode]) // Ready-to-explode
 	{
-		ADDBOOST(3*FRACUNIT/20, FRACUNIT); // + 15% top speed, + 100% acceleration
+		ADDBOOST(3*FRACUNIT/20, FRACUNIT, 0); // + 15% top speed, + 100% acceleration, +0% handling
 	}
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
@@ -2178,6 +2195,8 @@ static void K_GetKartBoostPower(player_t *player)
 	}
 
 	player->kartstuff[k_accelboost] = accelboost;
+	player->kartstuff[k_handleboost] = handleboost;
+
 	player->kartstuff[k_numboosts] = numboosts;
 }
 
@@ -3336,6 +3355,9 @@ static void K_SpawnAIZDust(player_t *player)
 		return;
 
 	if (!P_IsObjectOnGround(player->mo))
+		return;
+
+	if (player->speed <= K_GetKartSpeed(player, false))
 		return;
 
 	travelangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
@@ -6416,7 +6438,7 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 
 	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
 	{
-		countersteer = 3*countersteer/2;
+		countersteer = FixedMul(countersteer, 3*FRACUNIT/2);
 	}
 
 	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
@@ -6427,6 +6449,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	fixed_t p_maxspeed;
 	fixed_t p_speed;
 	fixed_t weightadjust;
+	fixed_t turnfixed = turnvalue * FRACUNIT;
 
 	if ((player->mo == NULL || P_MobjWasRemoved(player->mo)))
 	{
@@ -6457,16 +6480,13 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 	if (K_PlayerUsesBotMovement(player))
 	{
-		turnvalue = 5*turnvalue/4; // Base increase to turning
-		turnvalue = FixedMul(
-			turnvalue * FRACUNIT,
-			K_BotRubberband(player)
-		) / FRACUNIT;
+		turnfixed = FixedMul(turnfixed, 5*FRACUNIT/4); // Base increase to turning
+		turnfixed = FixedMul(turnfixed, K_BotRubberband(player));
 	}
 
 	if (player->kartstuff[k_drift] != 0 && P_IsObjectOnGround(player->mo))
 	{
-		fixed_t countersteer = FixedDiv(turnvalue*FRACUNIT, KART_FULLTURN*FRACUNIT);
+		fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN*FRACUNIT);
 
 		// If we're drifting we have a completely different turning value
 
@@ -6475,32 +6495,23 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 			countersteer = FRACUNIT;
 		}
 
-		turnvalue = K_GetKartDriftValue(player, countersteer);
-
-		return turnvalue;
+		return K_GetKartDriftValue(player, countersteer);
 	}
 
-	if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_growshrinktimer] > 0)
+	if (player->kartstuff[k_handleboost] > 0)
 	{
-		turnvalue = 5*turnvalue/4;
-	}
-
-	if (player->kartstuff[k_flamedash] > 0)
-	{
-		fixed_t multiplier = K_FlameShieldDashVar(player->kartstuff[k_flamedash]);
-		multiplier = FRACUNIT + (FixedDiv(multiplier, FRACUNIT/2) / 4);
-		turnvalue = FixedMul(turnvalue * FRACUNIT, multiplier) / FRACUNIT;
+		turnfixed = FixedMul(turnfixed, FRACUNIT + player->kartstuff[k_handleboost]);
 	}
 
 	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
 	{
-		turnvalue = 3*turnvalue/2;
+		turnfixed = FixedMul(turnfixed, 3*FRACUNIT/2);
 	}
 
 	// Weight has a small effect on turning
-	turnvalue = FixedMul(turnvalue * FRACUNIT, weightadjust) / FRACUNIT;
+	turnfixed = FixedMul(turnfixed, weightadjust);
 
-	return turnvalue;
+	return (turnfixed / FRACUNIT);
 }
 
 INT32 K_GetKartDriftSparkValue(player_t *player)
@@ -6748,7 +6759,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->kartstuff[k_driftend] = 0;
 	}
 
-	if ((!player->kartstuff[k_sneakertimer])
+	if ((player->kartstuff[k_handleboost] == 0)
 	|| (!player->cmd.driftturn)
 	|| (!player->kartstuff[k_aizdriftstrat])
 	|| (player->cmd.driftturn > 0) != (player->kartstuff[k_aizdriftstrat] > 0))

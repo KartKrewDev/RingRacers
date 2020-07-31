@@ -297,6 +297,7 @@ typedef enum
 	k_boostpower,		// Base boost value, for offroad
 	k_speedboost,		// Boost value smoothing for max speed
 	k_accelboost,		// Boost value smoothing for acceleration
+	k_handleboost,		// Boost value smoothing for handling
 	k_draftpower,		// Drafting power (from 0 to FRACUNIT), doubles your top speed & acceleration at max
 	k_draftleeway,		// Leniency timer before removing draft power
 	k_lastdraft,		// Last player being drafted
