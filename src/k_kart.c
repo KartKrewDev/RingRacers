@@ -2073,6 +2073,10 @@ static void K_GetKartBoostPower(player_t *player)
 	const fixed_t metabolism = FRACUNIT - ((9-player->kartweight) * maxmetabolismincrease / 8);
 #endif // METABOLISM
 
+	// v2 almost broke sliptiding when it fixed turning bugs!
+	// This value is fine-tuned to feel like v1 again without reverting any of those changes.
+	const fixed_t sliptidehandling = 7*FRACUNIT/10;
+
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0, handleboost = 0;
 	UINT8 numboosts = 0;
@@ -2096,7 +2100,7 @@ static void K_GetKartBoostPower(player_t *player)
 	numboosts++; \
 	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
 	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
-	handleboost += FixedDiv(h, FRACUNIT + (metabolism * (numboosts-1))); \
+	handleboost = max(h, handleboost); \
 }
 
 #else
@@ -2105,7 +2109,7 @@ static void K_GetKartBoostPower(player_t *player)
 	numboosts++; \
 	speedboost += s / numboosts; \
 	accelboost += a / numboosts; \
-	handleboost += h / numboosts; \
+	handleboost = max(h, handleboost); \
 }
 
 #endif // METABOLISM
@@ -2115,24 +2119,28 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->kartstuff[k_numsneakers]; i++)
 		{
-			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, FRACUNIT/4); // + 50% top speed, + 800% acceleration, +25% handling
+			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, sliptidehandling); // + 50% top speed, + 800% acceleration, +70% handling
 		}
 	}
 
 	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT, FRACUNIT/4); // + 37.5% top speed, + 300% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT, sliptidehandling/3); // + 37.5% top speed, + 300% acceleration, +23% handling
 	}
 
 	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
 	{
-		ADDBOOST(0, 0, FRACUNIT/4); // + 0% top speed, + 0% acceleration, +25% handling
+		ADDBOOST(0, 0, sliptidehandling/3); // + 0% top speed, + 0% acceleration, +23% handling
 	}
 
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
 	{
 		fixed_t dash = K_FlameShieldDashVar(player->kartstuff[k_flamedash]);
-		ADDBOOST(dash, 3*FRACUNIT, FixedDiv(dash, FRACUNIT/2) / 4); // + infinite top speed, + 300% acceleration, + infinite handling
+		ADDBOOST(
+			dash, // + infinite top speed
+			3*FRACUNIT, // + 300% acceleration
+			FixedMul(FixedDiv(dash, FRACUNIT/2), sliptidehandling) // + infinite handling; when going at the same speed as Sneaker, you get the same handling boost as it
+		);
 	}
 
 	if (player->kartstuff[k_spindashboost]) // Spindash boost
