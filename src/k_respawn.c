@@ -46,10 +46,7 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip)
 	}
 	else
 	{
-
-		if (P_GetMobjGravity(player->mo) > 0)
-			player->mo->flags2 &= ~MF2_OBJECTFLIP;	// See comment above, ditto.
-
+		player->mo->flags2 &= ~MF2_OBJECTFLIP;
 		player->mo->eflags &= ~MFE_VERTICALFLIP;
 		z += (128 * mapobjectscale);
 	}
