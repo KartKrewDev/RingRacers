@@ -2139,7 +2139,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			dash, // + infinite top speed
 			3*FRACUNIT, // + 300% acceleration
-			FixedMul(FixedDiv(dash, FRACUNIT/2), sliptidehandling) // + infinite handling; when going at the same speed as Sneaker, you get the same handling boost as it
+			FixedMul(FixedDiv(dash, FRACUNIT/2), sliptidehandling/3) // + infinite handling
 		);
 	}
 
