@@ -41,6 +41,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
+			t2->hitlag += 3;
 		}
 		else
 		{
@@ -48,7 +49,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 			P_DamageMobj(t2, t1, t1->target, 1);
 			K_KartBouncing(t2, t1, false, false);
 			S_StartSound(t2, sfx_s3k7b);
-			t2->hitlag = TICRATE;
+			t2->hitlag += 10;
 		}
 
 		damageitem = true;
@@ -59,10 +60,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
-		if (t2->eflags & MFE_VERTICALFLIP)
-			t2->z -= t2->height;
-		else
-			t2->z += t2->height;
+		t2->hitlag += 10;
 
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1);
@@ -89,18 +87,14 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Shootable damage
 		P_DamageMobj(t2, t2, t1->target, 1);
+		t2->hitlag += 10;
 		damageitem = true;
 	}
 
 	if (damageitem)
 	{
 		// This Item Damage
-		if (t1->eflags & MFE_VERTICALFLIP)
-			t1->z -= t1->height;
-		else
-			t1->z += t1->height;
-
-		t1->hitlag = TICRATE;
+		t1->hitlag += 10;
 
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2);
@@ -147,11 +141,13 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
+			t2->hitlag += 3;
 		}
 		else
 		{
 			// Player Damage
 			K_SpinPlayer(t2->player, t1->target, 0, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
+			t2->hitlag += 5;
 		}
 
 		damageitem = true;
@@ -162,10 +158,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
-		if (t2->eflags & MFE_VERTICALFLIP)
-			t2->z -= t2->height;
-		else
-			t2->z += t2->height;
+		t2->hitlag += 10;
 
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1);
@@ -181,16 +174,14 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Shootable damage
 		P_DamageMobj(t2, t2, t1->target, 1);
+		t2->hitlag += 10;
 		damageitem = true;
 	}
 
 	if (damageitem)
 	{
 		// This Item Damage
-		if (t1->eflags & MFE_VERTICALFLIP)
-			t1->z -= t1->height;
-		else
-			t1->z += t1->height;
+		t1->hitlag += 10;
 
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2);
@@ -303,10 +294,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		P_KillMobj(t1, t2, t2);
 
 		// Other Item Damage
-		if (t2->eflags & MFE_VERTICALFLIP)
-			t2->z -= t2->height;
-		else
-			t2->z += t2->height;
+		t2->hitlag += 10;
 
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1);
@@ -333,9 +321,15 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 			return true;
 
 		if (t1->state == &states[S_MINEEXPLOSION1])
+		{
 			K_ExplodePlayer(t2->player, t1->target, t1);
+			t2->hitlag += 10;
+		}
 		else
+		{
 			K_SpinPlayer(t2->player, t1->target, 0, t1, false);
+			t2->hitlag += 5;
+		}
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
@@ -363,12 +357,16 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 		I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[t2->player-players]);
 		P_DamageMobj(t2, t1, t1->target, 10000);
 		P_KillMobj(t1, t2, t2);
+		t1->hitlag += 10;
+		t2->hitlag += 10;
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
 		P_KillMobj(t2, t2, t1->target);
-		// This item damage
+		t2->hitlag += 10;
+		// This Item Damage
+		t1->hitlag += 10;
 		P_KillMobj(t1, t2, t2);
 	}
 
