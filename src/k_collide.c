@@ -41,15 +41,14 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
-			t2->hitlag += 3;
 		}
 		else
 		{
 			// Player Damage
+			K_SetHitLagForObjects(t1, t2, 10);
 			P_DamageMobj(t2, t1, t1->target, 1);
 			K_KartBouncing(t2, t1, false, false);
 			S_StartSound(t2, sfx_s3k7b);
-			t2->hitlag += 10;
 		}
 
 		damageitem = true;
@@ -60,8 +59,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
-		t2->hitlag += 10;
-
+		K_SetHitLagForObjects(t1, t2, 10);
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1);
 
@@ -74,6 +72,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE)
 	{
+		K_SetHitLagForObjects(t1, t2, 10);
 		damageitem = true;
 		// Bomb death
 		P_KillMobj(t2, t1, t1);
@@ -85,17 +84,15 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
+		K_SetHitLagForObjects(t1, t2, 10);
 		// Shootable damage
 		P_DamageMobj(t2, t2, t1->target, 1);
-		t2->hitlag += 10;
 		damageitem = true;
 	}
 
 	if (damageitem)
 	{
 		// This Item Damage
-		t1->hitlag += 10;
-
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2);
 
@@ -141,13 +138,12 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
-			t2->hitlag += 3;
 		}
 		else
 		{
 			// Player Damage
+			K_SetHitLagForObjects(t1, t2, 2);
 			K_SpinPlayer(t2->player, t1->target, 0, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
-			t2->hitlag += 5;
 		}
 
 		damageitem = true;
@@ -158,7 +154,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
-		t2->hitlag += 10;
+		K_SetHitLagForObjects(t1, t2, 10);
 
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1);
@@ -173,15 +169,15 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
+		K_SetHitLagForObjects(t1, t2, 10);
 		P_DamageMobj(t2, t2, t1->target, 1);
-		t2->hitlag += 10;
 		damageitem = true;
 	}
 
 	if (damageitem)
 	{
 		// This Item Damage
-		t1->hitlag += 10;
+		K_SetHitLagForObjects(t1, t2, 10);
 
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2);
@@ -283,19 +279,25 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		// Bomb punting
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
 			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
+		{
+			K_SetHitLagForObjects(t1, t2, 10);
 			P_KillMobj(t1, t2, t2);
+		}
 		else
+		{
+			K_SetHitLagForObjects(t1, t2, 2);
 			K_PuntMine(t1, t2);
+		}
 	}
 	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
 	{
+		K_SetHitLagForObjects(t1, t2, 10);
+
 		// Bomb death
 		P_KillMobj(t1, t2, t2);
 
 		// Other Item Damage
-		t2->hitlag += 10;
-
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1);
 
@@ -304,6 +306,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
+		K_SetHitLagForObjects(t1, t2, 10);
 		// Bomb death
 		P_KillMobj(t1, t2, t2);
 		// Shootable damage
@@ -322,18 +325,19 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 
 		if (t1->state == &states[S_MINEEXPLOSION1])
 		{
+			K_SetHitLagForObjects(t1, t2, 10);
 			K_ExplodePlayer(t2->player, t1->target, t1);
-			t2->hitlag += 10;
 		}
 		else
 		{
+			K_SetHitLagForObjects(t1, t2, 2);
 			K_SpinPlayer(t2->player, t1->target, 0, t1, false);
-			t2->hitlag += 5;
 		}
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
+		K_SetHitLagForObjects(t1, t2, 10);
 		P_DamageMobj(t2, t2, t1->target, 1);
 	}
 
@@ -350,23 +354,24 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
+		K_SetHitLagForObjects(t1, t2, 10);
+
 		S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
+
 		HU_SetCEchoFlags(0);
 		HU_SetCEchoDuration(5);
 		HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[t2->player-players]));
 		I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[t2->player-players]);
+
 		P_DamageMobj(t2, t1, t1->target, 10000);
 		P_KillMobj(t1, t2, t2);
-		t1->hitlag += 10;
-		t2->hitlag += 10;
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
+		K_SetHitLagForObjects(t1, t2, 10);
 		// Shootable damage
 		P_KillMobj(t2, t2, t1->target);
-		t2->hitlag += 10;
 		// This Item Damage
-		t1->hitlag += 10;
 		P_KillMobj(t1, t2, t2);
 	}
 

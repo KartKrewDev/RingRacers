@@ -2343,6 +2343,65 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground)
 	return finalspeed;
 }
 
+angle_t K_MomentumAngle(mobj_t *mo)
+{
+	if (mo->momx || mo->momy)
+	{
+		return R_PointToAngle2(0, 0, mo->momx, mo->momy);
+	}
+	else
+	{
+		return mo->angle; // default to facing angle, rather than 0
+	}
+}
+
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
+{
+	const fixed_t ticaddfactor = mapobjectscale * 4;
+
+	const fixed_t mo1speed = P_AproxDistance(P_AproxDistance(mo1->momx, mo1->momy), mo1->momz);
+	const fixed_t mo2speed = P_AproxDistance(P_AproxDistance(mo2->momx, mo2->momy), mo2->momz);
+	const fixed_t speeddiff = abs(mo1speed - mo2speed);
+
+	//const angle_t mo1angle = K_MomentumAngle(mo1);
+	//const angle_t mo2angle = K_MomentumAngle(mo2);
+
+	//angle_t anglediff = mo1angle - mo2angle;
+	fixed_t anglemul = FRACUNIT;
+
+	INT32 tics1 = tics;
+	INT32 tics2 = tics;
+
+	//if (anglediff > ANGLE_180)
+	//{
+		//anglediff = InvAngle(anglediff);
+	//}
+
+	//anglemul = FRACUNIT/2 + (FixedAngle(ANGLE_180 - anglediff) / 90); // x0.5 at 0, x1.5 at 90, x2.5 at 180
+
+	tics1 += FixedMul(speeddiff, anglemul) / ticaddfactor; // FixedMul(ticaddfactor, max(1, FRACUNIT + (mo2->scale - mo1->scale)));
+	tics2 += FixedMul(speeddiff, anglemul) / ticaddfactor;
+
+	if (mo1->player && !mo2->player)
+	{
+		if (mo1->player->powers[pw_flashing] > 0
+		|| mo1->player->kartstuff[k_invincibilitytimer] > 0
+		|| mo1->player->kartstuff[k_growshrinktimer] > 0)
+			tics1 = 0;
+	}
+
+	if (mo2->player && !mo1->player)
+	{
+		if (mo2->player->powers[pw_flashing] > 0
+		|| mo2->player->kartstuff[k_invincibilitytimer] > 0
+		|| mo2->player->kartstuff[k_growshrinktimer] > 0)
+			tics2 = 0;
+	}
+
+	mo1->hitlag += tics1;
+	mo2->hitlag += tics2;
+}
+
 void K_DoInstashield(player_t *player)
 {
 	mobj_t *layera;

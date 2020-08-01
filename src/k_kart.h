@@ -37,6 +37,8 @@ void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
 void K_KartPlayerAfterThink(player_t *player);
+angle_t K_MomentumAngle(mobj_t *mo);
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics);
 void K_DoInstashield(player_t *player);
 void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflictor, boolean trapitem);
 void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor);
