@@ -129,9 +129,9 @@ extern UINT8 hudtrans;
 #define V_WRAPX              0x08000000 // Don't clamp texture on X (for HW mode)
 #define V_WRAPY              0x10000000 // Don't clamp texture on Y (for HW mode)
 
-#define V_NOSCALESTART       0x20000000  // don't scale x, y, start coords
-#define V_SPLITSCREEN        0x40000000
-#define V_HORZSCREEN         0x80000000
+#define V_NOSCALESTART       0x20000000 // don't scale x, y, start coords
+#define V_SPLITSCREEN        0x40000000 // Add half of screen width or height automatically depending on player number
+#define V_SLIDEIN            0x80000000 // Slide in from the sides on level load, depending on snap flags
 
 // defines for old functions
 #define V_DrawPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT, s|V_NOSCALESTART|V_NOSCALEPATCH, p, NULL)

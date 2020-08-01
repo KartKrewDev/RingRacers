@@ -2106,8 +2106,6 @@ void SendWeaponPref(void)
 	XBOXSTATIC UINT8 buf[1];
 
 	buf[0] = 0;
-	if (cv_flipcam.value)
-		buf[0] |= 1;
 	SendNetXCmd(XD_WEAPONPREF, buf, 1);
 }
 
@@ -2116,8 +2114,6 @@ void SendWeaponPref2(void)
 	XBOXSTATIC UINT8 buf[1];
 
 	buf[0] = 0;
-	if (cv_flipcam2.value)
-		buf[0] |= 1;
 	SendNetXCmd2(XD_WEAPONPREF, buf, 1);
 }
 
@@ -2126,8 +2122,6 @@ void SendWeaponPref3(void)
 	XBOXSTATIC UINT8 buf[1];
 
 	buf[0] = 0;
-	if (cv_flipcam3.value)
-		buf[0] |= 1;
 	SendNetXCmd3(XD_WEAPONPREF, buf, 1);
 }
 
@@ -2136,18 +2130,12 @@ void SendWeaponPref4(void)
 	XBOXSTATIC UINT8 buf[1];
 
 	buf[0] = 0;
-	if (cv_flipcam4.value)
-		buf[0] |= 1;
 	SendNetXCmd4(XD_WEAPONPREF, buf, 1);
 }
 
 static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
-	UINT8 prefs = READUINT8(*cp);
-
-	players[playernum].pflags &= ~(PF_FLIPCAM);
-	if (prefs & 1)
-		players[playernum].pflags |= PF_FLIPCAM;
+	/*UINT8 prefs = */READUINT8(*cp);	// Read it still to avoid instant desyncs in netgames.
 }
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
