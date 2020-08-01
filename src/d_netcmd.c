@@ -2135,6 +2135,7 @@ void SendWeaponPref4(void)
 
 static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
+	(void)playernum;
 	/*UINT8 prefs = */READUINT8(*cp);	// Read it still to avoid instant desyncs in netgames.
 }
 
