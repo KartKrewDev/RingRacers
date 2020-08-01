@@ -30,7 +30,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing]
+		if ((t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			&& !(t1->type == MT_ORBINAUT || t1->type == MT_JAWZ || t1->type == MT_JAWZ_DUD))
 			return true;
 
@@ -130,7 +130,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing])
+		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
 		// Banana snipe!
@@ -277,7 +277,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing])
+		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
 		// Bomb punting
@@ -317,7 +317,7 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing])
+		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
 		if (t1->state == &states[S_MINEEXPLOSION1])
@@ -347,7 +347,7 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing])
+		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
 		S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
