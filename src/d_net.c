@@ -801,17 +801,15 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"RESYNCHEND",
 	"RESYNCHGET",
 
-<<<<<<< HEAD
+	"SENDINGLUAFILE",
+	"ASKLUAFILE",
+	"HASLUAFILE",
+
 	"CLIENT3CMD",
 	"CLIENT3MIS",
 	"CLIENT4CMD",
 	"CLIENT4MIS",
 	"BASICKEEPALIVE",
-=======
-	"SENDINGLUAFILE",
-	"ASKLUAFILE",
-	"HASLUAFILE",
->>>>>>> srb2/next
 
 	"FILEFRAGMENT",
 	"TEXTCMD",
@@ -821,10 +819,9 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"CLIENTJOIN",
 	"NODETIMEOUT",
 	"RESYNCHING",
-<<<<<<< HEAD
-=======
+
 	"LOGIN",
->>>>>>> srb2/next
+
 	"PING"
 };
 
@@ -874,16 +871,11 @@ static void DebugPrintpacket(const char *header)
 		case PT_NODEKEEPALIVE:
 		case PT_NODEKEEPALIVEMIS:
 			fprintf(debugfile, "    tic %4u resendfrom %u\n",
-<<<<<<< HEAD
 				(UINT32)netbuffer->u.clientpak.client_tic,
 				(UINT32)netbuffer->u.clientpak.resendfrom);
 			break;
 		case PT_BASICKEEPALIVE:
 			fprintf(debugfile, "    keep alive\n");
-=======
-				(UINT32)ExpandTics(netbuffer->u.clientpak.client_tic, doomcom->remotenode),
-				(UINT32)ExpandTics (netbuffer->u.clientpak.resendfrom, doomcom->remotenode));
->>>>>>> srb2/next
 			break;
 		case PT_TEXTCMD:
 		case PT_TEXTCMD2:
