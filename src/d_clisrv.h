@@ -41,24 +41,9 @@ applications may follow different packet versions.
 //  one that defines the actual packets to
 //  be transmitted.
 
-// SOME numpty changed all the gametype constants and it fell out of sync with vanilla and now we have to pretend to be vanilla when talking to the master server...
-#define VANILLA_GT_RACE 2
-// Woah, what do these numbers mean? 200 refers to SRB2 2.0, 246 refers to
-// SRB2Riders. Both use the old 2.0 gametype numbers.
-#if VERSION == 200 || VERSION == 246
-#define VANILLA_GT_MATCH 1
-#else
-#define VANILLA_GT_MATCH 3
-#endif
-
 // Networking and tick handling related.
-<<<<<<< HEAD
 #define BACKUPTICS 32
 #define TICQUEUE 512 // more than enough for most timeouts....
-=======
-#define BACKUPTICS 96
-#define CLIENTBACKUPTICS 32
->>>>>>> srb2/next
 #define MAXTEXTCMD 256
 //
 // Packet structure
@@ -117,12 +102,10 @@ typedef enum
 	PT_RESYNCHING,    // Packet sent to resync players.
 	                  // Blocks game advance until synched.
 
-<<<<<<< HEAD
 	PT_TELLFILESNEEDED, // Client, to server: "what other files do I need starting from this number?"
 	PT_MOREFILESNEEDED, // Server, to client: "you need these (+ more on top of those)"
-=======
+
 	PT_LOGIN,         // Login attempt from the client.
->>>>>>> srb2/next
 
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
 	NUMPACKETTYPE
@@ -232,13 +215,6 @@ typedef struct
 	angle_t aiming;
 	INT32 currentweapon;
 	INT32 ringweapons;
-<<<<<<< HEAD
-
-=======
-	UINT16 ammoremoval;
-	tic_t ammoremovaltimer;
-	INT32 ammoremovalweapon;
->>>>>>> srb2/next
 	UINT16 powers[NUMPOWERS];
 
 	INT32 kartstuff[NUMKARTSTUFF]; // SRB2kart
@@ -258,34 +234,12 @@ typedef struct
 	UINT32 availabilities;
 	// Just in case Lua does something like
 	// modify these at runtime
-<<<<<<< HEAD
 	// SRB2kart
 	UINT8 kartspeed;
 	UINT8 kartweight;
 	//
 	UINT32 charflags;
-=======
-	fixed_t camerascale;
-	fixed_t shieldscale;
-	fixed_t normalspeed;
-	fixed_t runspeed;
-	UINT8 thrustfactor;
-	UINT8 accelstart;
-	UINT8 acceleration;
-	UINT8 charability;
-	UINT8 charability2;
-	UINT32 charflags;
-	UINT32 thokitem; // mobjtype_t
-	UINT32 spinitem; // mobjtype_t
-	UINT32 revitem; // mobjtype_t
 	UINT32 followitem; // mobjtype_t
-	fixed_t actionspd;
-	fixed_t mindash;
-	fixed_t maxdash;
-	fixed_t jumpfactor;
-	fixed_t playerheight;
-	fixed_t playerspinheight;
->>>>>>> srb2/next
 
 	fixed_t speed;
 	UINT8 secondjump;
@@ -556,25 +510,16 @@ typedef struct
 		UINT8 resynchgot;                   //
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
-<<<<<<< HEAD
-		clientconfig_pak clientcfg;         //         153 bytes
-=======
 		clientconfig_pak clientcfg;         //         136 bytes
 		UINT8 md5sum[16];
->>>>>>> srb2/next
 		serverinfo_pak serverinfo;          //        1024 bytes
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
 		askinfo_pak askinfo;                //          61 bytes
 		msaskinfo_pak msaskinfo;            //          22 bytes
-<<<<<<< HEAD
 		plrinfo playerinfo[MSCOMPAT_MAXPLAYERS];//         576 bytes(?)
 		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
 		INT32 filesneedednum;               //           4 bytes
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
-=======
-		plrinfo playerinfo[MAXPLAYERS];     //         576 bytes(?)
-		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
->>>>>>> srb2/next
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
@@ -596,11 +541,8 @@ extern INT32 mapchangepending;
 
 // Points inside doomcom
 extern doomdata_t *netbuffer;
-<<<<<<< HEAD
 extern consvar_t cv_httpsource;
-=======
 
->>>>>>> srb2/next
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
 
@@ -644,39 +586,29 @@ extern UINT16 pingmeasurecount;
 extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
-<<<<<<< HEAD
 
 extern boolean server_lagless;
 
-extern consvar_t
+extern consvar_t cv_allownewplayer, cv_maxplayers, cv_joindelay, cv_rejointimeout;
+extern consvar_t cv_resynchattempts, cv_blamecfail;
+extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
+extern consvar_t cv_netticbuffer;
+
 #ifdef VANILLAJOINNEXTROUND
-	cv_joinnextround,
+extern consvar_t cv_joinnextround;
 #endif
-	cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail, cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, tic_t basetic);
-=======
-
-extern consvar_t cv_allownewplayer, cv_joinnextround, cv_maxplayers, cv_joindelay, cv_rejointimeout;
-extern consvar_t cv_resynchattempts, cv_blamecfail;
-extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
-
-// Used in d_net, the only dependence
-tic_t ExpandTics(INT32 low, INT32 node);
->>>>>>> srb2/next
 void D_ClientServerInit(void);
 
 // Initialise the other field
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));
 void SendNetXCmd(netxcmd_t id, const void *param, size_t nparam);
 void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam); // splitsreen player
-<<<<<<< HEAD
 void SendNetXCmd3(netxcmd_t id, const void *param, size_t nparam); // splitsreen3 player
 void SendNetXCmd4(netxcmd_t id, const void *param, size_t nparam); // splitsreen4 player
-=======
 void SendKick(UINT8 playernum, UINT8 msg);
->>>>>>> srb2/next
 
 // Create any new ticcmds and broadcast to other players.
 void NetKeepAlive(void);
@@ -728,7 +660,6 @@ UINT8 GetFreeXCmdSize(void);
 void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *dest);
 
 extern UINT8 hu_resynching;
-<<<<<<< HEAD
 extern UINT8 hu_stopped; // kart, true when the game is stopped for players due to a disconnecting or connecting player
 
 typedef struct rewind_s {
@@ -745,9 +676,7 @@ typedef struct rewind_s {
 void CL_ClearRewinds(void);
 rewind_t *CL_SaveRewindPoint(size_t demopos);
 rewind_t *CL_RewindToTime(tic_t time);
-=======
 
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
->>>>>>> srb2/next
 #endif
