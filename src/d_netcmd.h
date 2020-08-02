@@ -25,7 +25,6 @@ extern consvar_t cv_skin;
 extern consvar_t cv_playername2;
 extern consvar_t cv_playercolor2;
 extern consvar_t cv_skin2;
-<<<<<<< HEAD
 // third splitscreen player
 extern consvar_t cv_playername3;
 extern consvar_t cv_playercolor3;
@@ -36,13 +35,6 @@ extern consvar_t cv_playercolor4;
 extern consvar_t cv_skin4;
 // preferred number of players
 extern consvar_t cv_splitplayers;
-=======
-// saved versions of the above six
-extern consvar_t cv_defaultplayercolor;
-extern consvar_t cv_defaultskin;
-extern consvar_t cv_defaultplayercolor2;
-extern consvar_t cv_defaultskin2;
->>>>>>> srb2/next
 
 #ifdef SEENAMES
 extern consvar_t cv_seenames, cv_allowseenames;
@@ -152,16 +144,10 @@ extern consvar_t cv_ringslinger, cv_soundtest;
 extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionboxes;
 
 extern consvar_t cv_maxping;
-<<<<<<< HEAD
 extern consvar_t cv_lagless;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
 extern consvar_t cv_showviewpointtext;
-=======
-extern consvar_t cv_pingtimeout;
-extern consvar_t cv_showping;
-
->>>>>>> srb2/next
 
 extern consvar_t cv_skipmapcheck;
 
