@@ -181,7 +181,6 @@ typedef enum
 	XD_SETMOTD,     // 19
 	XD_RESPAWN,     // 20
 	XD_DEMOTED,     // 21
-<<<<<<< HEAD
 	XD_SETUPVOTE,   // 22
 	XD_MODIFYVOTE,  // 23
 	XD_PICKVOTE,    // 24
@@ -193,15 +192,9 @@ typedef enum
 	XD_CANCELPARTYINVITE, // 30
 	XD_GIVEITEM, // 31
 	XD_ADDBOT, // 32
-#ifdef HAVE_BLUA
 	XD_LUACMD,      // 33
 	XD_LUAVAR,      // 34
-#endif
-=======
-	XD_LUACMD,      // 22
-	XD_LUAVAR,      // 23
-	XD_LUAFILE,     // 24
->>>>>>> srb2/next
+	XD_LUAFILE,     // 35
 	MAXNETXCMD
 } netxcmd_t;
 
