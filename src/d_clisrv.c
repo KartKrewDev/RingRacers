@@ -3760,11 +3760,7 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal remove player command received from %s\n"), player_names[playernum]);
 		if (server)
 		{
-			XBOXSTATIC UINT8 buf[2];
-
-			buf[0] = (UINT8)playernum;
-			buf[1] = KICK_MSG_CON_FAIL;
-			SendNetXCmd(XD_KICK, &buf, 2);
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 		}
 		return;
 	}
@@ -3789,11 +3785,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal add player command received from %s\n"), player_names[playernum]);
 		if (server)
 		{
-			XBOXSTATIC UINT8 buf[2];
-
-			buf[0] = (UINT8)playernum;
-			buf[1] = KICK_MSG_CON_FAIL;
-			SendNetXCmd(XD_KICK, &buf, 2);
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 		}
 		return;
 	}
@@ -4496,13 +4488,10 @@ static boolean CheckForSpeedHacks(UINT8 p)
 		|| netcmds[maketic%TICQUEUE][p].sidemove > MAXPLMOVE || netcmds[maketic%TICQUEUE][p].sidemove < -MAXPLMOVE
 		|| netcmds[maketic%TICQUEUE][p].driftturn > KART_FULLTURN || netcmds[maketic%TICQUEUE][p].driftturn < -KART_FULLTURN)
 	{
-		XBOXSTATIC char buf[2];
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), playernode[p]);
 		//D_Clearticcmd(k);
 
-		buf[0] = (char)p;
-		buf[1] = KICK_MSG_CON_FAIL;
-		SendNetXCmd(XD_KICK, &buf, 2);
+		SendKick(p, KICK_MSG_CON_FAIL);
 		return true;
 	}
 
@@ -4607,13 +4596,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 
 			// Check ticcmd for "speed hacks"
 			if (CheckForSpeedHacks((UINT8)netconsole))
-			{
-				CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), netconsole);
-				//D_Clearticcmd(k);
-
-				SendKick(netconsole, KICK_MSG_CON_FAIL);
 				break;
-			}
 
 			// Splitscreen cmd
 			if (((netbuffer->packettype == PT_CLIENT2CMD || netbuffer->packettype == PT_CLIENT2MIS)
@@ -4625,13 +4608,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					&netbuffer->u.client2pak.cmd2, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer2[node]))
-				{
-					CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), nodetoplayer2[node]);
-					//D_Clearticcmd(k);
-
-					SendKick((UINT8)nodetoplayer2[node], KICK_MSG_CON_FAIL);
 					break;
-				}
 			}
 
 			if (((netbuffer->packettype == PT_CLIENT3CMD || netbuffer->packettype == PT_CLIENT3MIS)
@@ -4642,13 +4619,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					&netbuffer->u.client3pak.cmd3, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer3[node]))
-				{
-					CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), nodetoplayer3[node]);
-					//D_Clearticcmd(k);
-
-					SendKick((UINT8)nodetoplayer3[node], KICK_MSG_CON_FAIL);
 					break;
-				}
 			}
 
 			if ((netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS)
@@ -4658,13 +4629,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					&netbuffer->u.client4pak.cmd4, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer4[node]))
-				{
-					CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), nodetoplayer4[node]);
-					//D_Clearticcmd(k);
-
-					SendKick((UINT8)nodetoplayer4[node], KICK_MSG_CON_FAIL);
 					break;
-				}
 			}
 
 			// A delay before we check resynching
@@ -4851,16 +4816,14 @@ static void HandlePacketFromPlayer(SINT8 node)
 				if (nodetoplayer3[node] != -1 && nodetoplayer3[node] >= 0
 					&& playeringame[(UINT8)nodetoplayer3[node]])
 				{
-					buf[0] = nodetoplayer3[node];
-					SendNetXCmd(XD_KICK, &buf, 2);
+					SendKick(nodetoplayer3[node], kickmsg);
 					nodetoplayer3[node] = -1;
 				}
 
 				if (nodetoplayer4[node] != -1 && nodetoplayer4[node] >= 0
 					&& playeringame[(UINT8)nodetoplayer4[node]])
 				{
-					buf[0] = nodetoplayer4[node];
-					SendNetXCmd(XD_KICK, &buf, 2);
+					SendKick(nodetoplayer4[node], kickmsg);
 					nodetoplayer4[node] = -1;
 				}
 				*/
