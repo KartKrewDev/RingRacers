@@ -16,12 +16,16 @@
 #ifdef __GNUC__
 #include <dirent.h>
 #endif
-#ifdef _WIN32
+#if defined (_WIN32) && !defined (_XBOX)
 //#define WIN32_LEAN_AND_MEAN
 #define RPC_NO_WINDOWS_H
 #include <windows.h>
 #endif
+#ifdef _WIN32_WCE
+#include "sdl12/SRB2CE/cehelp.h"
+#else
 #include <sys/stat.h>
+#endif
 #include <string.h>
 
 #include "filesrch.h"
@@ -30,7 +34,7 @@
 #include "z_zone.h"
 #include "m_menu.h" // Addons_option_Onchange
 
-#if defined (_WIN32) && defined (_MSC_VER)
+#if (defined (_WIN32) && !defined (_WIN32_WCE)) && defined (_MSC_VER) && !defined (_XBOX)
 
 #include <errno.h>
 #include <io.h>
@@ -338,7 +342,6 @@ UINT8 refreshdirmenu = 0;
 char *refreshdirname = NULL;
 
 
-<<<<<<< HEAD
 #if defined (_XBOX) && defined (_MSC_VER)
 filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *wantedmd5sum,
 	boolean completepath, int maxsearchdepth)
@@ -442,8 +445,6 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 
 #else
 
-=======
->>>>>>> srb2/next
 filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *wantedmd5sum, boolean completepath, int maxsearchdepth)
 {
 	filestatus_t retval = FS_NOTFOUND;
@@ -472,9 +473,9 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 		return FS_NOTFOUND;
 	}
 
-	if (searchpath[searchpathindex[depthleft]-2] != PATHSEP[0])
+	if (searchpath[searchpathindex[depthleft]-2] != '/')
 	{
-		searchpath[searchpathindex[depthleft]-1] = PATHSEP[0];
+		searchpath[searchpathindex[depthleft]-1] = '/';
 		searchpath[searchpathindex[depthleft]] = 0;
 	}
 	else
@@ -516,7 +517,7 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 					depthleft++;
 			}
 
-			searchpath[searchpathindex[depthleft]-1]=PATHSEP[0];
+			searchpath[searchpathindex[depthleft]-1]='/';
 			searchpath[searchpathindex[depthleft]]=0;
 		}
 		else if (!strcasecmp(searchname, dent->d_name))
@@ -865,20 +866,13 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 							ext |= EXT_LOADED;
 						}
 					}
-<<<<<<< HEAD
 					else if (ext == EXT_TXT)
 					{
-						if (!strncmp(dent->d_name, "log-", 4) || !strcmp(dent->d_name, "errorlog.txt"))
+						if (!strcmp(dent->d_name, "log.txt") || !strcmp(dent->d_name, "errorlog.txt"))
 							ext |= EXT_LOADED;
 					}
 
 					if (!strcmp(dent->d_name, configfile))
-=======
-				}
-				else if (ext == EXT_TXT)
-				{
-					if (!strncmp(dent->d_name, "log-", 4) || !strcmp(dent->d_name, "errorlog.txt"))
->>>>>>> srb2/next
 						ext |= EXT_LOADED;
 				}
 
@@ -927,3 +921,5 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 
 	return true;
 }
+
+#endif
