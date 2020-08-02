@@ -70,12 +70,8 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-<<<<<<< HEAD
-#include "filesrch.h" // refreshdirmenu
-=======
 #include "filesrch.h" // refreshdirmenu, mainwadstally
 #include "g_input.h" // tutorial mode control scheming
->>>>>>> srb2/next
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -111,33 +107,17 @@ boolean devparm = false; // started game with -devparm
 boolean singletics = false; // timedemo
 boolean lastdraw = false;
 
-<<<<<<< HEAD
-postimg_t postimgtype[MAXSPLITSCREENPLAYERS];
-INT32 postimgparam[MAXSPLITSCREENPLAYERS];
-=======
 static void D_CheckRendererState(void);
 
-postimg_t postimgtype = postimg_none;
-INT32 postimgparam;
-postimg_t postimgtype2 = postimg_none;
-INT32 postimgparam2;
->>>>>>> srb2/next
+postimg_t postimgtype[MAXSPLITSCREENPLAYERS];
+INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 
 // These variables are in effect
 // whether the respective sound system is disabled
 // or they're init'ed, but the player just toggled them
-<<<<<<< HEAD
-#ifdef _XBOX
+
 #ifndef NO_MIDI
 boolean midi_disabled = true;
-#endif
-boolean sound_disabled = true;
-boolean digital_disabled = true;
-#else
-#ifndef NO_MIDI
-=======
->>>>>>> srb2/next
-boolean midi_disabled = false;
 #endif
 boolean sound_disabled = false;
 boolean digital_disabled = false;
@@ -285,93 +265,62 @@ static void D_Display(void)
 	INT32 wipedefindex = 0;
 	UINT8 i;
 
-<<<<<<< HEAD
 	if (!dedicated)
-=======
-	if (dedicated)
-		return;
-
-	if (nodrawers)
-		return; // for comparative timing/profiling
-
-	// Lactozilla: Switching renderers works by checking
-	// if the game has to do it right when the frame
-	// needs to render. If so, five things will happen:
-	// 1. Interface functions will be called so
-	//    that switching to OpenGL creates a
-	//    GL context, and switching to Software
-	//    allocates screen buffers.
-	// 2. Software will set drawer functions,
-	//    and OpenGL will load textures and
-	//    create plane polygons, if necessary.
-	// 3. Functions related to switching video
-	//    modes (resolution) are called.
-	// 4. Patch data is freed from memory,
-	//    and recached if necessary.
-	// 5. The frame is ready to be drawn!
-
-	// stop movie if needs to change renderer
-	if (setrenderneeded && (moviemode == MM_APNG))
-		M_StopMovie();
-
-	// check for change of renderer or screen size (video mode)
-	if ((setrenderneeded || setmodeneeded) && !wipe)
-	{
-		if (setrenderneeded)
-		{
-			CONS_Debug(DBG_RENDER, "setrenderneeded set (%d)\n", setrenderneeded);
-			setrenderstillneeded = setrenderneeded;
-		}
-		SCR_SetMode(); // change video mode
-	}
-
-	if (vid.recalc || setrenderstillneeded)
-	{
-		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
-#ifdef HWRENDER
-		// Shoot! The screen texture was flushed!
-		if ((rendermode == render_opengl) && (gamestate == GS_INTERMISSION))
-			usebuffer = false;
-#endif
-	}
-
-	if (rendermode == render_soft && !splitscreen)
-		R_CheckViewMorph();
-
-	// change the view size if needed
-	if (setsizeneeded || setrenderstillneeded)
->>>>>>> srb2/next
 	{
 		if (nodrawers)
 			return; // for comparative timing/profiling
-		
-		// check for change of screen size (video mode)
-		if (setmodeneeded && !wipe)
-			SCR_SetMode(); // change video mode
 
-		if (vid.recalc)
-			SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
+		// Lactozilla: Switching renderers works by checking
+		// if the game has to do it right when the frame
+		// needs to render. If so, five things will happen:
+		// 1. Interface functions will be called so
+		//    that switching to OpenGL creates a
+		//    GL context, and switching to Software
+		//    allocates screen buffers.
+		// 2. Software will set drawer functions,
+		//    and OpenGL will load textures and
+		//    create plane polygons, if necessary.
+		// 3. Functions related to switching video
+		//    modes (resolution) are called.
+		// 4. Patch data is freed from memory,
+		//    and recached if necessary.
+		// 5. The frame is ready to be drawn!
 
-		// change the view size if needed
-		if (setsizeneeded)
+		// stop movie if needs to change renderer
+		if (setrenderneeded && (moviemode == MM_APNG))
+			M_StopMovie();
+
+		// check for change of renderer or screen size (video mode)
+		if ((setrenderneeded || setmodeneeded) && !wipe)
 		{
-			R_ExecuteSetViewSize();
-			forcerefresh = true; // force background redraw
+			if (setrenderneeded)
+			{
+				CONS_Debug(DBG_RENDER, "setrenderneeded set (%d)\n", setrenderneeded);
+				setrenderstillneeded = setrenderneeded;
+			}
+			SCR_SetMode(); // change video mode
 		}
 
-<<<<<<< HEAD
+		if (vid.recalc || setrenderstillneeded)
+		{
+			SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
+#ifdef HWRENDER
+			// Shoot! The screen texture was flushed!
+			if ((rendermode == render_opengl) && (gamestate == GS_INTERMISSION))
+				usebuffer = false;
+#endif
+		}
+
+		if (rendermode == render_soft && !splitscreen)
+			R_CheckViewMorph();
+
+		// Lactozilla: Renderer switching
+		D_CheckRendererState();
+
 		// draw buffered stuff to screen
 		// Used only by linux GGI version
 		I_UpdateNoBlit();
 	}
-=======
-	// Lactozilla: Renderer switching
-	D_CheckRendererState();
-
-	// draw buffered stuff to screen
-	// Used only by linux GGI version
-	I_UpdateNoBlit();
->>>>>>> srb2/next
 
 	// save the current screen if about to wipe
 	wipe = (gamestate != wipegamestate);
@@ -382,14 +331,10 @@ static void D_Display(void)
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
 			wipedefindex = wipe_timeattack_toblack;
 
-<<<<<<< HEAD
-		if (!dedicated)
-=======
 		if (wipetypepre < 0 || !F_WipeExists(wipetypepre))
 			wipetypepre = wipedefs[wipedefindex];
 
 		if (rendermode != render_none)
->>>>>>> srb2/next
 		{
 			// Fade to black first
 			if ((wipegamestate == (gamestate_t)FORCEWIPE ||
@@ -403,34 +348,25 @@ static void D_Display(void)
 				wipestyleflags = WSF_FADEOUT;
 				if (wipegamestate == (gamestate_t)FORCEWIPE)
 					F_WipeColorFill(31);
-				else if (F_TryColormapFade(31))
-					wipetypepost = -1; // Don't run the fade below this one
 				F_WipeEndScreen();
-<<<<<<< HEAD
-				F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+				F_RunWipe(wipetypepre, gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
 			{
 				V_SetPaletteLump("PLAYPAL"); // Reset the palette
 				R_ReInitColormaps(0, LUMPERROR);
-=======
-				F_RunWipe(wipetypepre, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
->>>>>>> srb2/next
 			}
 
 			F_WipeStartScreen();
 		}
-<<<<<<< HEAD
 		else //dedicated servers
 		{
 			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
 			wipegamestate = gamestate;
 		}
-=======
 
 		wipetypepre = -1;
->>>>>>> srb2/next
 	}
 	else
 		wipetypepre = -1;
@@ -510,15 +446,12 @@ static void D_Display(void)
 			HU_Drawer();
 			break;
 
-<<<<<<< HEAD
 		case GS_TITLESCREEN:
 			F_TitleScreenDrawer();
 			if (wipe)
 				wipedefindex = wipe_titlescreen_toblack;
 			break;
 
-=======
->>>>>>> srb2/next
 		case GS_WAITINGPLAYERS:
 			// The clientconnect drawer is independent...
 			if (netgame)
@@ -544,141 +477,88 @@ static void D_Display(void)
 		// see if the border needs to be initially drawn
 		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
 		{
-<<<<<<< HEAD
-			for (i = 0; i <= r_splitscreen; i++)
-			{
-				if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)
-				{
-					if (i == 0) // Initialize for P1
-					{
-						viewwindowy = 0;
-						viewwindowx = 0;
-
-						topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
-						objectsdrawn = 0;
-					}
-
-					viewssnum = i;
-
-#ifdef HWRENDER
-					if (rendermode != render_soft)
-						HWR_RenderPlayerView(i, &players[displayplayers[i]]);
-					else
-#endif
-					if (rendermode != render_none)
-					{
-						if (i > 0) // Splitscreen-specific
-						{
-							switch (i)
-							{
-								case 1:
-									if (r_splitscreen > 1)
-									{
-										viewwindowx = viewwidth;
-										viewwindowy = 0;
-									}
-									else
-									{
-										viewwindowx = 0;
-										viewwindowy = viewheight;
-									}
-									M_Memcpy(ylookup, ylookup2, viewheight*sizeof (ylookup[0]));
-									break;
-								case 2:
-									viewwindowx = 0;
-									viewwindowy = viewheight;
-									M_Memcpy(ylookup, ylookup3, viewheight*sizeof (ylookup[0]));
-									break;
-								case 3:
-									viewwindowx = viewwidth;
-									viewwindowy = viewheight;
-									M_Memcpy(ylookup, ylookup4, viewheight*sizeof (ylookup[0]));
-								default:
-									break;
-							}
-
-
-							topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
-						}
-
-						R_RenderPlayerView(&players[displayplayers[i]]);
-
-						if (i > 0)
-							M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
-					}
-				}
-			}
-
-			if (rendermode == render_soft)
-			{
-				for (i = 0; i <= r_splitscreen; i++)
-				{
-					if (postimgtype[i])
-						V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
-				}
-=======
-			// draw the view directly
-
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
-				if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
-				{
-					topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
-					objectsdrawn = 0;
-	#ifdef HWRENDER
-					if (rendermode != render_soft)
-						HWR_RenderPlayerView(0, &players[displayplayer]);
-					else
-	#endif
-					if (rendermode != render_none)
-						R_RenderPlayerView(&players[displayplayer]);
-				}
+				viewwindowy = 0;
+				viewwindowx = 0;
 
-				// render the second screen
-				if (splitscreen && players[secondarydisplayplayer].mo)
+				topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+				objectsdrawn = 0;
+
+				for (i = 0; i <= r_splitscreen; i++)
 				{
-	#ifdef HWRENDER
-					if (rendermode != render_soft)
-						HWR_RenderPlayerView(1, &players[secondarydisplayplayer]);
-					else
-	#endif
-					if (rendermode != render_none)
+					if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)
 					{
-						viewwindowy = vid.height / 2;
-						M_Memcpy(ylookup, ylookup2, viewheight*sizeof (ylookup[0]));
+						viewssnum = i;
 
-						topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+#ifdef HWRENDER
+						if (rendermode != render_soft)
+							HWR_RenderPlayerView(i, &players[displayplayers[i]]);
+						else
+#endif
+						if (rendermode != render_none)
+						{
+							if (i > 0) // Splitscreen-specific
+							{
+								switch (i)
+								{
+									case 1:
+										if (r_splitscreen > 1)
+										{
+											viewwindowx = viewwidth;
+											viewwindowy = 0;
+										}
+										else
+										{
+											viewwindowx = 0;
+											viewwindowy = viewheight;
+										}
+										M_Memcpy(ylookup, ylookup2, viewheight*sizeof (ylookup[0]));
+										break;
+									case 2:
+										viewwindowx = 0;
+										viewwindowy = viewheight;
+										M_Memcpy(ylookup, ylookup3, viewheight*sizeof (ylookup[0]));
+										break;
+									case 3:
+										viewwindowx = viewwidth;
+										viewwindowy = viewheight;
+										M_Memcpy(ylookup, ylookup4, viewheight*sizeof (ylookup[0]));
+									default:
+										break;
+								}
 
-						R_RenderPlayerView(&players[secondarydisplayplayer]);
 
-						viewwindowy = 0;
-						M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
+								topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+							}
+
+							R_RenderPlayerView(&players[displayplayers[i]]);
+
+							if (i > 0)
+								M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
+						}
 					}
 				}
 
-				// Image postprocessing effect
 				if (rendermode == render_soft)
 				{
-					if (!splitscreen)
-						R_ApplyViewMorph();
-
-					if (postimgtype)
-						V_DoPostProcessor(0, postimgtype, postimgparam);
-					if (postimgtype2)
-						V_DoPostProcessor(1, postimgtype2, postimgparam2);
+					for (i = 0; i <= r_splitscreen; i++)
+					{
+						if (postimgtype[i])
+							V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
+					}
 				}
-			}
 
-			if (lastdraw)
-			{
-				if (rendermode == render_soft)
+				if (lastdraw)
 				{
-					VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-					Y_ConsiderScreenBuffer();
-					usebuffer = true;
+					if (rendermode == render_soft)
+					{
+						VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
+						Y_ConsiderScreenBuffer();
+						usebuffer = true;
+					}
+					lastdraw = false;
 				}
-				lastdraw = false;
->>>>>>> srb2/next
 			}
 
 			if (gamestate == GS_LEVEL)
@@ -742,9 +622,6 @@ static void D_Display(void)
 		if (rendermode != render_none)
 		{
 			F_WipeEndScreen();
-<<<<<<< HEAD
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", true, false);
-=======
 
 			// Funny.
 			if (WipeStageTitle && st_overlay)
@@ -756,14 +633,7 @@ static void D_Display(void)
 				F_WipeStartScreen();
 			}
 
-			// Check for Mega Genesis fade
-			if (F_ShouldColormapFade())
-			{
-				wipestyleflags |= WSF_FADEIN;
-				wipestyleflags &= ~WSF_FADEOUT;
-			}
-
-			F_RunWipe(wipetypepost, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
 		}
 
 		// reset counters so timedemo doesn't count the wipe duration
@@ -771,7 +641,6 @@ static void D_Display(void)
 		{
 			framecount = 0;
 			demostarttime = I_GetTime();
->>>>>>> srb2/next
 		}
 
 		wipetypepost = -1;
@@ -876,11 +745,6 @@ void D_SRB2Loop(void)
 	// hack to start on a nice clear console screen.
 	COM_ImmedExecute("cls;version");
 
-<<<<<<< HEAD
-	if (rendermode == render_soft)
-		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, (patch_t *)W_CacheLumpNum(W_GetNumForName("KARTKREW"), PU_CACHE), NULL);
-=======
->>>>>>> srb2/next
 	I_FinishUpdate(); // page flip or blit buffer
 	/*
 	LMFAO this was showing garbage under OpenGL
@@ -888,7 +752,7 @@ void D_SRB2Loop(void)
 	*/
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
 	if (gamestate != GS_TITLESCREEN)
-		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(W_GetNumForName("CONSBACK"), PU_CACHE));
+		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, (patch_t *)W_CacheLumpNum(W_GetNumForName("KARTKREW"), PU_CACHE), NULL);
 
 	for (;;)
 	{
@@ -991,11 +855,7 @@ void D_StartTitle(void)
 
 	if (netgame)
 	{
-<<<<<<< HEAD
-		if (gametype == GT_RACE) // SRB2kart
-=======
 		if (gametyperules & GTR_CAMPAIGN)
->>>>>>> srb2/next
 		{
 			G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
 
@@ -1022,13 +882,12 @@ void D_StartTitle(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
 
-<<<<<<< HEAD
-	splitscreen = 0;
-=======
-	players[consoleplayer].availabilities = players[1].availabilities = R_GetSkinAvailabilities(); // players[1] is supposed to be for 2p
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		players[i].availabilities = R_GetSkinAvailabilities();
+	}
 
-	splitscreen = false;
->>>>>>> srb2/next
+	splitscreen = 0;
 	SplitScreen_OnChange();
 
 	cv_debug = 0;
@@ -1044,26 +903,16 @@ void D_StartTitle(void)
 	maptol = 0;
 
 	gameaction = ga_nothing;
-<<<<<<< HEAD
 	memset(displayplayers, 0, sizeof(displayplayers));
 	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
 	//demosequence = -1;
-	gametype = GT_RACE; // SRB2kart
-=======
-	displayplayer = consoleplayer = 0;
-	G_SetGametype(GT_COOP);
->>>>>>> srb2/next
+	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 	advancedemo = false;
 	F_InitMenuPresValues();
 	F_StartTitleScreen();
 
-<<<<<<< HEAD
-	// Reset the palette -- SRB2Kart: actually never mind let's do this in the middle of every fade
-	/*if (rendermode != render_none)
-		V_SetPaletteLump("PLAYPAL");*/
-=======
 	currentMenu = &MainDef; // reset the current menu ID
 
 	// Reset the palette
@@ -1081,8 +930,8 @@ void D_StartTitle(void)
 		M_StartMessage("Do you want to \x82save the recommended \x82movement controls?\x80\n\nPress 'Y' or 'Enter' to confirm\nPress 'N' or any key to keep \nyour current controls",
 			M_TutorialSaveControlResponse, MM_YESNO);
 	}
+
 	tutorialmode = false;
->>>>>>> srb2/next
 }
 
 //
@@ -1156,19 +1005,11 @@ static void ChangeDirForUrlHandler(void)
 
 static void IdentifyVersion(void)
 {
-<<<<<<< HEAD
 	char *mainresource;
 	const char *srb2waddir = NULL;
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	// change to the directory where 'main.kart' is found
-=======
-	char *srb2wad;
-	const char *srb2waddir = NULL;
-
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	// change to the directory where 'srb2.pk3' is found
->>>>>>> srb2/next
 	srb2waddir = I_LocateWad();
 #endif
 
@@ -1193,103 +1034,62 @@ static void IdentifyVersion(void)
 		srb2waddir = I_GetWadDir();
 #endif
 	// Commercial.
-<<<<<<< HEAD
 	mainresource = malloc(strlen(srb2waddir)+1+9+1);
 	if (mainresource == NULL)
 		I_Error("No more free memory to look in %s", srb2waddir);
-	if (mainresource != NULL)
-		sprintf(mainresource, pandf, srb2waddir, "main.kart");
-=======
-	srb2wad = malloc(strlen(srb2waddir)+1+8+1);
-	if (srb2wad == NULL)
-		I_Error("No more free memory to look in %s", srb2waddir);
 	else
-		sprintf(srb2wad, pandf, srb2waddir, "srb2.pk3");
->>>>>>> srb2/next
+		sprintf(srb2wad, pandf, srb2waddir, "main.kart");
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
 	configfile[sizeof configfile - 1] = '\0';
 
 	// Load the IWAD
-<<<<<<< HEAD
 	if (mainresource != NULL && FIL_ReadFileOK(mainresource))
-		D_AddFile(mainresource, startupwadfiles);
+		D_AddFile(mainresource);
 	else
-		I_Error("MAIN.KART not found! Expected in %s, ss file: %s \n", srb2waddir, mainresource);
+		I_Error("main.kart not found! Expected in %s, ss file: %s \n", srb2waddir, mainresource);
 
 	if (mainresource)
 		free(mainresource);
-=======
-	if (srb2wad != NULL && FIL_ReadFileOK(srb2wad))
-		D_AddFile(srb2wad);
-	else
-		I_Error("srb2.pk3 not found! Expected in %s, ss file: %s\n", srb2waddir, srb2wad);
-
-	if (srb2wad)
-		free(srb2wad);
->>>>>>> srb2/next
 
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-<<<<<<< HEAD
-	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"textures.pk3"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"chars.pk3"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"maps.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"));
+	D_AddFile(va(pandf,srb2waddir,"textures.pk3"));
+	D_AddFile(va(pandf,srb2waddir,"chars.pk3"));
+	D_AddFile(va(pandf,srb2waddir,"maps.pk3"));
 #ifdef USE_PATCH_FILE
-	D_AddFile(va(pandf,srb2waddir,"patch.pk3"), startupwadfiles);
-=======
-	// Add the maps
-	D_AddFile(va(pandf,srb2waddir,"zones.pk3"));
-
-	// Add the players
-	D_AddFile(va(pandf,srb2waddir, "player.dta"));
-
-#ifdef USE_PATCH_DTA
-	// Add our crappy patches to fix our bugs
 	D_AddFile(va(pandf,srb2waddir,"patch.pk3"));
->>>>>>> srb2/next
 #endif
 
 #if 0
 	// TODO: pk3 doesn't support music replacement IIRC
 	// music barely benefits from the compression anyway
 	// would be nice for the folders, though
-	D_AddFile(va(pandf,srb2waddir,"sounds.pk3"), startupwadfiles);
-	D_AddFile(va(pandf,srb2waddir,"music.pk3"), startupwadfiles);
+	D_AddFile(va(pandf,srb2waddir,"sounds.pk3"));
+	D_AddFile(va(pandf,srb2waddir,"music.pk3"));
+
 #else
+
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
+
 #define MUSICTEST(str) \
-<<<<<<< HEAD
 	{\
 		const char *musicpath = va(pandf,srb2waddir,str);\
 		int ms = W_VerifyNMUSlumps(musicpath); \
 		if (ms == 1) \
-			D_AddFile(musicpath, startupwadfiles); \
+			D_AddFile(musicpath); \
 		else if (ms == 0) \
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
-=======
-		{\
-			const char *musicpath = va(pandf,srb2waddir,str);\
-			int ms = W_VerifyNMUSlumps(musicpath); \
-			if (ms == 1) \
-				D_AddFile(musicpath); \
-			else if (ms == 0) \
-				I_Error("File "str" has been modified with non-music/sound lumps"); \
-		}
-
-		MUSICTEST("music.dta")
-		MUSICTEST("patch_music.pk3")
-#ifdef DEVELOP // remove when music_new.dta is merged into music.dta
-		MUSICTEST("music_new.dta")
-#endif
->>>>>>> srb2/next
 	}
+
 	MUSICTEST("sounds.wad")
 	MUSICTEST("music.wad")
+
 #undef MUSICTEST
+
 #endif
 #endif
 }
@@ -1357,29 +1157,15 @@ static inline void D_Titlebar(void)
 //
 void D_SRB2Main(void)
 {
-<<<<<<< HEAD
-	INT32 p, i;
-	char srb2[82]; // srb2 title banner
-	char title[82];
-	lumpinfo_t *lumpinfo;
-	UINT16 wadnum;
-	char *name;
-=======
 	INT32 p;
->>>>>>> srb2/next
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
-<<<<<<< HEAD
 	"\n\nSonic Robo Blast 2 Kart\n"
-	"Copyright (C) 1998-2018 by Kart Krew & STJr\n\n"
-=======
-	"\n\nSonic Robo Blast 2\n"
-	"Copyright (C) 1998-2020 by Sonic Team Junior\n\n"
->>>>>>> srb2/next
+	"Copyright (C) 1998-2020 by Kart Krew & STJr\n\n"
 	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
 	"This is free software, and you are welcome to redistribute it\n"
 	"and/or modify it under the terms of the GNU General Public License\n"
@@ -1429,25 +1215,8 @@ void D_SRB2Main(void)
 	dedicated = M_CheckParm("-dedicated") != 0;
 #endif
 
-<<<<<<< HEAD
-	strcpy(title, "SRB2Kart");
-	strcpy(srb2, "SRB2Kart");
-	D_MakeTitleString(srb2);
-
-#ifdef PC_DOS
-	D_Titlebar(srb2, title);
-#endif
-
-#if defined (__OS2__) && !defined (HAVE_SDL)
-	// set PM window title
-	snprintf(pmData->title, sizeof (pmData->title),
-		"SRB2Kart" VERSIONSTRING ": %s",
-		title);
-	pmData->title[sizeof (pmData->title) - 1] = '\0';
-=======
 #ifdef PC_DOS
 	D_Titlebar();
->>>>>>> srb2/next
 #endif
 
 	if (devparm)
@@ -1486,8 +1255,6 @@ void D_SRB2Main(void)
 
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
-<<<<<<< HEAD
-=======
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else // DEFAULTDIR
@@ -1503,7 +1270,6 @@ void D_SRB2Main(void)
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
 #endif // DEFAULTDIR
->>>>>>> srb2/next
 		}
 
 		configfile[sizeof configfile - 1] = '\0';
@@ -1513,13 +1279,10 @@ void D_SRB2Main(void)
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
 	I_mkdir(addonsdir, 0755);
 
-<<<<<<< HEAD
 	/* and downloads in a subdirectory */
 	snprintf(downloaddir, sizeof downloaddir, "%s%s%s",
 			addonsdir, PATHSEP, "downloads");
 
-=======
->>>>>>> srb2/next
 	// rand() needs seeded regardless of password
 	srand((unsigned int)time(NULL));
 
@@ -1559,32 +1322,6 @@ void D_SRB2Main(void)
 	if (M_CheckParm("-server") || dedicated)
 		netgame = server = true;
 
-<<<<<<< HEAD
-	if (M_CheckParm("-warp") && M_IsNextParm())
-	{
-		const char *word = M_GetNextParm();
-		char ch; // use this with sscanf to catch non-digits with
-		if (fastncmp(word, "MAP", 3)) // MAPxx name
-			pstartmap = M_MapNumber(word[3], word[4]);
-		else if (sscanf(word, "%d%c", &pstartmap, &ch) != 1) // a plain number
-			I_Error("Cannot warp to map %s (invalid map name)\n", word);
-		// Don't check if lump exists just yet because the wads haven't been loaded!
-		// Just do a basic range check here.
-		if (pstartmap < 1 || pstartmap > NUMMAPS)
-			I_Error("Cannot warp to map %d (out of range)\n", pstartmap);
-		else
-		{
-			if (!M_CheckParm("-server"))
-				G_SetGameModified(true, true);
-			autostart = true;
-		}
-	}
-
-	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
-	Z_Init();
-
-=======
->>>>>>> srb2/next
 	// adapt tables to SRB2's needs, including extra slots for dehacked file support
 	P_PatchInfoTables();
 
@@ -1608,15 +1345,9 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 3; // doesn't include music.dta
-#ifdef USE_PATCH_DTA
-	mainwads++;
-#endif
-
 	// load wad, including the main wad file
-<<<<<<< HEAD
 	CONS_Printf("W_InitMultipleFiles(): Adding main IWAD and PWADs.\n");
-	if (!W_InitMultipleFiles(startupwadfiles, false))
+	if (!W_InitMultipleFiles(startupwadfiles, mainwads))
 #ifdef _DEBUG
 		CONS_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #else
@@ -1648,6 +1379,8 @@ void D_SRB2Main(void)
 
 #endif //ifndef DEVELOP
 
+	mainwadstally = packetsizetally;
+
 	//
 	// search for maps
 	//
@@ -1675,9 +1408,9 @@ void D_SRB2Main(void)
 	}
 
 	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
-	if (!W_InitMultipleFiles(startuppwads, true))
+	if (!W_InitMultipleFiles(startuppwads, mainwads))
 		M_StartMessage(M_GetText("A PWAD file was not found or not valid.\nCheck log.txt to see which ones.\n\nPress ESC\n"), NULL, MM_NOTHING);
-	D_CleanFile(startuppwads);
+	D_CleanFile();
 
 	//
 	// search for maps... again.
@@ -1708,26 +1441,6 @@ void D_SRB2Main(void)
 			}
 		}
 	}
-=======
-	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
-	W_InitMultipleFiles(startupwadfiles, mainwads);
-	D_CleanFile();
-
-#ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
-
-	// Check MD5s of autoloaded files
-	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
-	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
-	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
-#ifdef USE_PATCH_DTA
-	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
-#endif
-	// don't check music.dta because people like to modify it, and it doesn't matter if they do
-	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
-#endif //ifndef DEVELOP
-
-	mainwadstally = packetsizetally; // technically not accurate atm, remember to port the two-stage -file process from kart in 2.2.x
->>>>>>> srb2/next
 
 	cht_Init();
 
@@ -1738,18 +1451,16 @@ void D_SRB2Main(void)
 	I_StartupGraphics();
 
 #ifdef HWRENDER
-<<<<<<< HEAD
+	// Lactozilla: Add every hardware mode CVAR and CCMD.
+	// Has to be done before the configuration file loads,
+	// but after the OpenGL library loads.
+	HWR_AddCommands();
+
 	if (rendermode == render_opengl)
 	{
 		for (i = 0; i < numwadfiles; i++)
 			HWR_LoadShaders(i, (wadfiles[i]->type == RET_PK3));
 	}
-=======
-	// Lactozilla: Add every hardware mode CVAR and CCMD.
-	// Has to be done before the configuration file loads,
-	// but after the OpenGL library loads.
-	HWR_AddCommands();
->>>>>>> srb2/next
 #endif
 
 	//--------------------------------------------------------- CONSOLE
@@ -1844,17 +1555,14 @@ void D_SRB2Main(void)
 		midi_disabled = true;
 #endif
 	}
+
 	if (M_CheckParm("-noaudio")) // combines -nosound and -nomusic
 	{
 		sound_disabled = true;
 		digital_disabled = true;
-<<<<<<< HEAD
 #ifndef NO_MIDI
 		midi_disabled = true;
 #endif
-=======
-		midi_disabled = true;
->>>>>>> srb2/next
 	}
 	else
 	{
@@ -1863,7 +1571,6 @@ void D_SRB2Main(void)
 		if (M_CheckParm("-nomusic")) // combines -nomidimusic and -nodigmusic
 		{
 			digital_disabled = true;
-<<<<<<< HEAD
 #ifndef NO_MIDI
 			midi_disabled = true;
 #endif
@@ -1874,29 +1581,6 @@ void D_SRB2Main(void)
 			if (M_CheckParm("-nomidimusic"))
 				midi_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
 #endif
-			if (M_CheckParm("-nodigmusic"))
-				digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
-		}
-	}
-	if (!( sound_disabled && digital_disabled
-#ifndef NO_MIDI
-				&& midi_disabled
-#endif
-	 ))
-	{
-		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
-		I_StartupSound();
-		I_InitMusic();
-		S_InitSfxChannels(cv_soundvolume.value);
-		S_InitMusicDefs();
-	}
-=======
-			midi_disabled = true;
-		}
-		else
-		{
-			if (M_CheckParm("-nomidimusic"))
-				midi_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
 			if (M_CheckParm("-nodigmusic"))
 				digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
 		}
@@ -1914,7 +1598,6 @@ void D_SRB2Main(void)
 	}
 
 	S_InitMusicDefs();
->>>>>>> srb2/next
 
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
@@ -2099,13 +1782,9 @@ void D_SRB2Main(void)
 			else if (!dedicated && M_MapLocked(pstartmap))
 				I_Error("You need to unlock this level before you can warp to it!\n");
 			else
-<<<<<<< HEAD
-				D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
-=======
 			{
-				D_MapChange(pstartmap, gametype, ultimatemode, true, 0, false, false);
+				D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
 			}
->>>>>>> srb2/next
 		}
 	}
 	else if (M_CheckParm("-skipintro"))
