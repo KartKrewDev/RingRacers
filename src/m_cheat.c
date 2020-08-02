@@ -95,19 +95,11 @@ static UINT8 cheatf_warp(void)
 		}
 	}
 
-<<<<<<< HEAD
 	if (success)
 	{
 		G_SaveGameData(true); //G_SetGameModified(false);
 		S_StartSound(0, sfx_kc42);
 	}
-=======
-	// Temporarily unlock stuff.
-	G_SetGameModified(false);
-	unlockables[31].unlocked = true; // credits
-	unlockables[30].unlocked = true; // sound test
-	unlockables[28].unlocked = true; // level select
->>>>>>> srb2/next
 
 	// Refresh secrets menu existing.
 	M_ClearMenus(true);
@@ -156,17 +148,12 @@ static UINT8 cheatf_devmode(void)
 
 static cheatseq_t cheat_warp = {
 	0, cheatf_warp,
-<<<<<<< HEAD
 	//{ SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE('x'), SCRAMBLE('v'), SCRAMBLE('i'), 0xff }
 	{ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
-=======
-	{ SCRAMBLE('c'), SCRAMBLE('a'), SCRAMBLE('s'), SCRAMBLE('h'), SCRAMBLE('r'), SCRAMBLE('i'), SCRAMBLE('d'), SCRAMBLE('a'), 0xff }
->>>>>>> srb2/next
 };
 
 static cheatseq_t cheat_warp_joy = {
 	0, cheatf_warp,
-<<<<<<< HEAD
 	/*{ SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
 	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW),
 	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
@@ -174,11 +161,6 @@ static cheatseq_t cheat_warp_joy = {
 	  { SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_RIGHTARROW),
 	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_LEFTARROW),
 	  SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_RIGHTARROW),
-=======
-	{ SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_DOWNARROW),
-	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_DOWNARROW),
-	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_DOWNARROW),
->>>>>>> srb2/next
 	  SCRAMBLE(KEY_ENTER), 0xff }
 };
 
@@ -1186,11 +1168,7 @@ void OP_NightsObjectplace(player_t *player)
 	if (player->pflags & PF_ATTACKDOWN)
 	{
 		// Are ANY objectplace buttons pressed?  If no, remove flag.
-<<<<<<< HEAD
 		if (!(cmd->buttons & (BT_ATTACK|BT_ACCELERATE|BT_BRAKE|BT_FORWARD|BT_BACKWARD)))
-=======
-		if (!(cmd->buttons & (BT_ATTACK|BT_TOSSFLAG|BT_USE|BT_WEAPONNEXT|BT_WEAPONPREV)))
->>>>>>> srb2/next
 			player->pflags &= ~PF_ATTACKDOWN;
 
 		// Do nothing.
@@ -1274,35 +1252,25 @@ void OP_NightsObjectplace(player_t *player)
 		P_SpawnMapThing(mt);
 	}*/
 
-<<<<<<< HEAD
 	// This places a ring!
 	if (cmd->buttons & BT_BACKWARD)
-=======
-	// This places a sphere!
-	if (cmd->buttons & BT_WEAPONNEXT)
->>>>>>> srb2/next
-	{
-		player->pflags |= PF_ATTACKDOWN;
-		if (!OP_HeightOkay(player, false))
-			return;
-
-		mt = OP_CreateNewMapThing(player, (UINT16)mobjinfo[MT_BLUESPHERE].doomednum, false);
-		P_SpawnMapThing(mt);
-	}
-
-<<<<<<< HEAD
-	// This places a wing item!
-	if (cmd->buttons & BT_FORWARD)
-=======
-	// This places a ring!
-	if (cmd->buttons & BT_WEAPONPREV)
->>>>>>> srb2/next
 	{
 		player->pflags |= PF_ATTACKDOWN;
 		if (!OP_HeightOkay(player, false))
 			return;
 
 		mt = OP_CreateNewMapThing(player, (UINT16)mobjinfo[MT_RING].doomednum, false);
+		P_SpawnMapThing(mt);
+	}
+
+	// This places a wing item
+	if (cmd->buttons & BT_FORWARD)
+	{
+		player->pflags |= PF_ATTACKDOWN;
+		if (!OP_HeightOkay(player, false))
+			return;
+
+		mt = OP_CreateNewMapThing(player, (UINT16)mobjinfo[MT_NIGHTSWING].doomednum, false);
 		P_SpawnMapThing(mt);
 	}
 
@@ -1389,13 +1357,8 @@ void OP_ObjectplaceMovement(player_t *player)
 		player->mo->eflags &= ~MFE_VERTICALFLIP;
 
 	// make sure viewz follows player if in 1st person mode
-<<<<<<< HEAD
 	//player->deltaviewheight = 0;
 	player->viewheight = FixedMul(32 << FRACBITS, player->mo->scale);
-=======
-	player->deltaviewheight = 0;
-	player->viewheight = FixedMul(41*player->height/48, player->mo->scale);
->>>>>>> srb2/next
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 		player->viewz = player->mo->z + player->mo->height - player->viewheight;
 	else
@@ -1420,35 +1383,23 @@ void OP_ObjectplaceMovement(player_t *player)
 		op_displayflags |= (UINT16)cv_opflags.value;
 	}
 
+
 	if (player->pflags & PF_ATTACKDOWN)
 	{
 		// Are ANY objectplace buttons pressed?  If no, remove flag.
-<<<<<<< HEAD
 		if (!(cmd->buttons & (BT_ATTACK|BT_DRIFT)))
-=======
-		if (!(cmd->buttons & (BT_ATTACK|BT_TOSSFLAG|BT_WEAPONNEXT|BT_WEAPONPREV)))
->>>>>>> srb2/next
 			player->pflags &= ~PF_ATTACKDOWN;
 
 		// Do nothing.
 		return;
 	}
 
-<<<<<<< HEAD
 	/*if (cmd->buttons & BT_FORWARD)
-=======
-	if (cmd->buttons & BT_WEAPONPREV)
->>>>>>> srb2/next
 	{
 		OP_CycleThings(-1);
 		player->pflags |= PF_ATTACKDOWN;
 	}
-<<<<<<< HEAD
 	else*/ if (cmd->buttons & BT_DRIFT)
-=======
-
-	if (cmd->buttons & BT_WEAPONNEXT)
->>>>>>> srb2/next
 	{
 		OP_CycleThings(1);
 		player->pflags |= PF_ATTACKDOWN;
@@ -1530,17 +1481,10 @@ void Command_ObjectPlace_f(void)
 			HU_DoCEcho(va(M_GetText(
 				"\\\\\\\\\\\\\\\\\\\\\\\\\x82"
 				"   Objectplace Controls:   \x80\\\\"
-<<<<<<< HEAD
 				"     Drift: Cycle mapthings\\"
 				"Accelerate: Float up       \\"
 				"     Brake: Float down     \\"
 				"      Item: Place object   \\")));
-=======
-				"Weapon Next/Prev: Cycle mapthings\\"
-				"            Jump: Float up       \\"
-				"            Spin: Float down     \\"
-				"       Fire Ring: Place object   \\")));
->>>>>>> srb2/next
 		}
 
 		// Save all the player's data.
