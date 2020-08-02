@@ -2375,39 +2375,63 @@ angle_t K_MomentumAngle(mobj_t *mo)
 	}
 }
 
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fixed)
 {
-	const fixed_t ticaddfactor = mapobjectscale * 4;
-
-	const fixed_t mo1speed = P_AproxDistance(P_AproxDistance(mo1->momx, mo1->momy), mo1->momz);
-	const fixed_t mo2speed = P_AproxDistance(P_AproxDistance(mo2->momx, mo2->momy), mo2->momz);
-	const fixed_t speeddiff = abs(mo1speed - mo2speed);
-
-	//const angle_t mo1angle = K_MomentumAngle(mo1);
-	//const angle_t mo2angle = K_MomentumAngle(mo2);
-
-	//angle_t anglediff = mo1angle - mo2angle;
-	fixed_t anglemul = FRACUNIT;
-
 	INT32 tics1 = tics;
 	INT32 tics2 = tics;
 
-	//if (anglediff > ANGLE_180)
-	//{
-		//anglediff = InvAngle(anglediff);
-	//}
+	if (fixed == false)
+	{
+		const fixed_t ticaddfactor = mapobjectscale * 8;
+		const INT32 mintics = tics;
 
-	//anglemul = FRACUNIT/2 + (FixedAngle(ANGLE_180 - anglediff) / 90); // x0.5 at 0, x1.5 at 90, x2.5 at 180
+		const fixed_t mo1speed = P_AproxDistance(P_AproxDistance(mo1->momx, mo1->momy), mo1->momz);
+		const fixed_t mo2speed = P_AproxDistance(P_AproxDistance(mo2->momx, mo2->momy), mo2->momz);
+		const fixed_t speeddiff = mo2speed - mo1speed;
 
-	tics1 += FixedMul(speeddiff, anglemul) / ticaddfactor; // FixedMul(ticaddfactor, max(1, FRACUNIT + (mo2->scale - mo1->scale)));
-	tics2 += FixedMul(speeddiff, anglemul) / ticaddfactor;
+		const fixed_t scalediff = mo2->scale - mo1->scale;
+
+		const angle_t mo1angle = K_MomentumAngle(mo1);
+		const angle_t mo2angle = K_MomentumAngle(mo2);
+
+		angle_t anglediff = mo1angle - mo2angle;
+		fixed_t anglemul = FRACUNIT;
+
+		if (anglediff > ANGLE_180)
+		{
+			anglediff = InvAngle(anglediff);
+		}
+
+		anglemul = FRACUNIT + (AngleFixed(anglediff) / 180); // x1.0 at 0, x1.5 at 90, x2.0 at 180
+
+		/*
+		CONS_Printf("anglemul: %f\n", FIXED_TO_FLOAT(anglemul));
+		CONS_Printf("speeddiff: %f\n", FIXED_TO_FLOAT(speeddiff));
+		CONS_Printf("scalediff: %f\n", FIXED_TO_FLOAT(scalediff));
+		*/
+
+		tics1 += FixedMul(speeddiff, FixedMul(anglemul, FRACUNIT + scalediff)) / ticaddfactor;
+		tics2 += FixedMul(-speeddiff, FixedMul(anglemul, FRACUNIT - scalediff)) / ticaddfactor;
+
+		if (tics1 < mintics)
+		{
+			tics1 = mintics;
+		}
+
+		if (tics2 < mintics)
+		{
+			tics2 = mintics;
+		}
+	}
 
 	if (mo1->player && !mo2->player)
 	{
 		if (mo1->player->powers[pw_flashing] > 0
 		|| mo1->player->kartstuff[k_invincibilitytimer] > 0
 		|| mo1->player->kartstuff[k_growshrinktimer] > 0)
+		{
 			tics1 = 0;
+		}
 	}
 
 	if (mo2->player && !mo1->player)
@@ -2415,8 +2439,12 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
 		if (mo2->player->powers[pw_flashing] > 0
 		|| mo2->player->kartstuff[k_invincibilitytimer] > 0
 		|| mo2->player->kartstuff[k_growshrinktimer] > 0)
+		{
 			tics2 = 0;
+		}
 	}
+
+	//CONS_Printf("tics1: %d, tics2: %d\n", tics1, tics2);
 
 	mo1->hitlag += tics1;
 	mo2->hitlag += tics2;

@@ -1487,7 +1487,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	// hitlag vibrating
 	if (thing->hitlag > 0)
 	{
-		fixed_t mul = (thing->hitlag * FRACUNIT) / 5;
+		fixed_t mul = thing->hitlag * (FRACUNIT / 20);
 
 		if (leveltime & 1)
 		{

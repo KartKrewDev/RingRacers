@@ -1307,34 +1307,34 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	{
 		if (tmthing->scale > thing->scale + (mapobjectscale/8)) // SRB2kart - Handle squishes first!
 		{
-			K_SetHitLagForObjects(tmthing, thing, 10);
+			K_SetHitLagForObjects(tmthing, thing, 10, false);
 			K_SquishPlayer(thing->player, tmthing, tmthing);
 		}
 		else if (thing->scale > tmthing->scale + (mapobjectscale/8))
 		{
-			K_SetHitLagForObjects(thing, tmthing, 10);
+			K_SetHitLagForObjects(thing, tmthing, 10, false);
 			K_SquishPlayer(tmthing->player, thing, tmthing);
 		}
 		else if (tmthing->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer]) // SRB2kart - Then invincibility!
 		{
-			K_SetHitLagForObjects(tmthing, thing, 10);
+			K_SetHitLagForObjects(tmthing, thing, 10, false);
 			P_DamageMobj(thing, tmthing, tmthing, 1);
 		}
 		else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
 		{
-			K_SetHitLagForObjects(thing, tmthing, 10);
+			K_SetHitLagForObjects(thing, tmthing, 10, false);
 			P_DamageMobj(tmthing, thing, thing, 1);
 		}
 		else if ((tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 			&& !(thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
 		{
-			K_SetHitLagForObjects(tmthing, thing, 10);
+			K_SetHitLagForObjects(tmthing, thing, 10, false);
 			P_DamageMobj(thing, tmthing, tmthing, 1);
 		}
 		else if ((thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 			&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
 		{
-			K_SetHitLagForObjects(tmthing, thing, 10);
+			K_SetHitLagForObjects(tmthing, thing, 10, false);
 			P_DamageMobj(tmthing, thing, thing, 1);
 		}
 
