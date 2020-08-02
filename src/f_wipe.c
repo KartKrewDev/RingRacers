@@ -16,18 +16,15 @@
 #include "i_video.h"
 #include "v_video.h"
 
-<<<<<<< HEAD
 #include "r_data.h" // NearestColor
 #include "r_draw.h" // transtable
 #include "p_pspr.h" // tr_transxxx
 
-=======
 #include "r_state.h" // fadecolormap
 #include "r_draw.h" // transtable
 #include "p_pspr.h" // tr_transxxx
 #include "p_local.h"
 #include "st_stuff.h"
->>>>>>> srb2/next
 #include "w_wad.h"
 #include "z_zone.h"
 
@@ -62,24 +59,16 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	99, // wipe_credits_intermediate (0)
 
 	0,  // wipe_level_toblack
-<<<<<<< HEAD
 	0,  // wipe_intermission_toblack
 	0,  // wipe_voting_toblack,
-=======
-	UINT8_MAX,  // wipe_intermission_toblack
->>>>>>> srb2/next
 	0,  // wipe_continuing_toblack
 	0,  // wipe_titlescreen_toblack
 	0,  // wipe_timeattack_toblack
 	99, // wipe_credits_toblack
 	0,  // wipe_evaluation_toblack
 	0,  // wipe_gameend_toblack
-<<<<<<< HEAD
-	UINT8_MAX, // wipe_intro_toblack (hardcoded)
-=======
 	99, // wipe_intro_toblack (hardcoded)
 	0,  // wipe_ending_toblack
->>>>>>> srb2/next
 	99, // wipe_cutscene_toblack (hardcoded)
 
 	72, // wipe_encore_toinvert
@@ -95,15 +84,11 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_evaluation_final
 	0,  // wipe_gameend_final
 	99, // wipe_intro_final (hardcoded)
-<<<<<<< HEAD
-	99  // wipe_cutscene_final (hardcoded)
-=======
 	0,  // wipe_ending_final
 	99, // wipe_cutscene_final (hardcoded)
 
 	0,  // wipe_specinter_final
 	0   // wipe_multinter_final
->>>>>>> srb2/next
 };
 
 //--------------------------------------------------------------------------
@@ -124,12 +109,9 @@ wipestyleflags_t wipestyleflags = WSF_CROSSFADE;
 static UINT8 *wipe_scr_start; //screen 3
 static UINT8 *wipe_scr_end; //screen 4
 static UINT8 *wipe_scr; //screen 0 (main drawing)
-<<<<<<< HEAD
+
 static UINT8 pallen;
-static fixed_t paldiv;
-=======
 static fixed_t paldiv = 0;
->>>>>>> srb2/next
 
 /** Create fademask_t from lump
   *
@@ -196,14 +178,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	{
 		// Determine pixel to use from fademask
 		pcolor = &pMasterPalette[*lump++];
-<<<<<<< HEAD
 		*mask++ = FixedDiv((pcolor->s.red+1)<<FRACBITS, paldiv)>>FRACBITS;
-=======
-		if (wipestyle == WIPESTYLE_COLORMAP)
-			*mask++ = pcolor->s.red / FADECOLORMAPDIV;
-		else
-			*mask++ = FixedDiv((pcolor->s.red+1)<<FRACBITS, paldiv)>>FRACBITS;
->>>>>>> srb2/next
 	}
 
 	fm.xscale = FixedDiv(vid.width<<FRACBITS, fm.width<<FRACBITS);
@@ -329,11 +304,7 @@ static void F_DoWipe(fademask_t *fademask, lighttable_t *fadecolormap, boolean r
 					relativepos += vid.width;
 				}
 			}
-<<<<<<< HEAD
 			else if (m >= (pallen-1))
-=======
-			else if (*mask >= 10)
->>>>>>> srb2/next
 			{
 				// shortcut - memcpy target to work
 				while (draw_linestogo--)
@@ -523,7 +494,6 @@ void F_WipeEndScreen(void)
 #endif
 }
 
-<<<<<<< HEAD
 /**	Wiggle post processor for encore wipes
   */
 static void F_DoEncoreWiggle(UINT8 time)
@@ -566,67 +536,6 @@ static void F_DoEncoreWiggle(UINT8 time)
 
 		disStart += (time*8); //the offset into the displacement map, increment each game loop
 		disStart &= FINEMASK; //clip it to FINEMASK
-=======
-/** Verifies every condition for a colormapped fade.
-  */
-boolean F_ShouldColormapFade(void)
-{
-#ifndef NOWIPE
-	if ((wipestyleflags & (WSF_FADEIN|WSF_FADEOUT)) // only if one of those wipestyleflags are actually set
-	&& !(wipestyleflags & WSF_CROSSFADE)) // and if not crossfading
-	{
-		// World
-		return (gamestate == GS_LEVEL
-		|| gamestate == GS_TITLESCREEN
-		// Finales
-		|| gamestate == GS_CONTINUING
-		|| gamestate == GS_CREDITS
-		|| gamestate == GS_EVALUATION
-		|| gamestate == GS_INTRO
-		|| gamestate == GS_ENDING
-		// Menus
-		|| gamestate == GS_TIMEATTACK);
-	}
-#endif
-	return false;
-}
-
-/** Decides what wipe style to use.
-  */
-#ifndef NOWIPE
-void F_DecideWipeStyle(void)
-{
-	// Set default wipe style
-	wipestyle = WIPESTYLE_NORMAL;
-
-	// Check for colormap wipe style
-	if (F_ShouldColormapFade())
-		wipestyle = WIPESTYLE_COLORMAP;
-}
-#endif
-
-/** Attempt to run a colormap fade,
-    provided all the conditionals were properly met.
-    Returns true if so.
-    I demand you call F_RunWipe after this function.
-  */
-boolean F_TryColormapFade(UINT8 wipecolor)
-{
-#ifndef NOWIPE
-	if (F_ShouldColormapFade())
-	{
-#ifdef HWRENDER
-		if (rendermode == render_opengl)
-			F_WipeColorFill(wipecolor);
-#endif
-		return true;
-	}
-	else
-#endif
-	{
-		F_WipeColorFill(wipecolor);
-		return false;
->>>>>>> srb2/next
 	}
 }
 
@@ -646,7 +555,6 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 	UINT8 wipeframe = 0;
 	fademask_t *fmask;
 
-<<<<<<< HEAD
 	lumpnum_t clump = LUMPERROR;
 	lighttable_t *fcolor = NULL;
 
@@ -666,10 +574,6 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 	}
 
 	paldiv = FixedDiv(257<<FRACBITS, pallen<<FRACBITS);
-=======
-	if (!paldiv)
-		paldiv = FixedDiv(257<<FRACBITS, 11<<FRACBITS);
->>>>>>> srb2/next
 
 	// Init the wipe
 	F_DecideWipeStyle();
@@ -721,7 +625,6 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 			}
 			else
 #endif
-<<<<<<< HEAD
 
 		if (rendermode != render_none) //this allows F_RunWipe to be called in dedicated servers
 		{
@@ -734,9 +637,6 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 #endif
 					F_DoEncoreWiggle(wipeframe);
 			}
-=======
-				F_DoWipe(fmask);
->>>>>>> srb2/next
 		}
 
 		I_OsPolling();
@@ -754,64 +654,11 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 	}
 
 	WipeInAction = false;
-<<<<<<< HEAD
 
 	if (fcolor)
 	{
 		Z_Free(fcolor);
 		fcolor = NULL;
 	}
-=======
-	WipeStageTitle = false;
-#endif
-}
-
-/** Returns tic length of wipe
-  * One lump equals one tic
-  */
-tic_t F_GetWipeLength(UINT8 wipetype)
-{
-#ifdef NOWIPE
-	(void)wipetype;
-	return 0;
-#else
-	static char lumpname[10] = "FADEmmss";
-	lumpnum_t lumpnum;
-	UINT8 wipeframe;
-
-	if (wipetype > 99)
-		return 0;
-
-	for (wipeframe = 0; wipeframe < 100; wipeframe++)
-	{
-		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT16)wipetype, (UINT16)wipeframe);
-
-		lumpnum = W_CheckNumForName(lumpname);
-		if (lumpnum == LUMPERROR)
-			return --wipeframe;
-	}
-	return --wipeframe;
-#endif
-}
-
-/** Does the specified wipe exist?
-  */
-boolean F_WipeExists(UINT8 wipetype)
-{
-#ifdef NOWIPE
-	(void)wipetype;
-	return false;
-#else
-	static char lumpname[10] = "FADEmm00";
-	lumpnum_t lumpnum;
-
-	if (wipetype > 99)
-		return false;
-
-	sprintf(&lumpname[4], "%.2hu00", (UINT16)wipetype);
-
-	lumpnum = W_CheckNumForName(lumpname);
-	return !(lumpnum == LUMPERROR);
->>>>>>> srb2/next
 #endif
 }
