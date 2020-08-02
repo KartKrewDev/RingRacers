@@ -8393,7 +8393,7 @@ void A_JawzChase(mobj_t *actor)
 
 	if (!actor->tracer)
 	{
-		actor->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
+		actor->angle = K_MomentumAngle(actor);
 	}
 
 	P_Thrust(actor, actor->angle, thrustamount);
@@ -8525,7 +8525,7 @@ static void SpawnSPBAIZDust(mobj_t *mo, INT32 dir)
 	if (mo->eflags & MFE_VERTICALFLIP)
 		sz = mo->ceilingz;
 
-	travelangle = R_PointToAngle2(0, 0, mo->momx, mo->momy);
+	travelangle = K_MomentumAngle(mo);
 	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*64)
 	{
 		newx = mo->x + P_ReturnThrustX(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
@@ -8555,7 +8555,7 @@ static void SpawnSPBSpeedLines(mobj_t *actor)
 		MT_FASTLINE);
 
 	P_SetTarget(&fast->target, actor);
-	fast->angle = R_PointToAngle2(0, 0, actor->momx, actor->momy);
+	fast->angle = K_MomentumAngle(actor);
 	fast->color = SKINCOLOR_RED;
 	fast->colorized = true;
 	K_MatchGenericExtraFlags(fast, actor);

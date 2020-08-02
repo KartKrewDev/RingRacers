@@ -344,7 +344,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 						mobj_t *grease;
 						grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
 						P_SetTarget(&grease->target, object);
-						grease->angle = R_PointToAngle2(0, 0, object->momx, object->momy);
+						grease->angle = K_MomentumAngle(object);
 						grease->extravalue1 = i;
 					}
 				}

@@ -4021,8 +4021,7 @@ DoneSection2:
 			{
 				const fixed_t hscale = mapobjectscale + (mapobjectscale - player->mo->scale);
 				const fixed_t minspeed = 24*hscale;
-				angle_t pushangle = FixedHypot(player->mo->momx, player->mo->momy) ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle;
-				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
+				angle_t pushangle = K_MomentumAngle(player->mo);
 
 				if (player->mo->eflags & MFE_SPRUNG)
 					break;
@@ -4044,8 +4043,7 @@ DoneSection2:
 				const fixed_t hscale = mapobjectscale + (mapobjectscale - player->mo->scale);
 				const fixed_t minspeed = 24*hscale;
 				const fixed_t maxspeed = 28*hscale;
-				angle_t pushangle = FixedHypot(player->mo->momx, player->mo->momy) ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle;
-				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
+				angle_t pushangle = K_MomentumAngle(player->mo);
 
 				if (player->mo->eflags & MFE_SPRUNG)
 					break;
@@ -4087,7 +4085,7 @@ DoneSection2:
 				}
 
 				lineangle = K_ReflectAngle(
-					R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy), lineangle,
+					K_MomentumAngle(player->mo), lineangle,
 					playerspeed, linespeed
 				);
 

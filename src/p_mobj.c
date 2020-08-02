@@ -8001,7 +8001,7 @@ void P_MobjThinker(mobj_t *mobj)
 					frictionsafety = FRACUNIT;
 				}
 
-				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
+				mobj->angle = K_MomentumAngle(mobj);
 				if (mobj->health <= 5)
 				{
 					INT32 i;
@@ -8103,7 +8103,7 @@ void P_MobjThinker(mobj_t *mobj)
 					thrustamount = beatfriction + FixedDiv(mobj->movefactor - currentspeed, frictionsafety);
 				}
 
-				mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
+				mobj->angle = K_MomentumAngle(mobj);
 				P_Thrust(mobj, mobj->angle, thrustamount);
 
 				if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
@@ -8266,7 +8266,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 			//mobj->angle = mobj->target->angle;
 			{
-				angle_t angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+				angle_t angle = K_MomentumAngle(mobj->target);
 				fixed_t nudge;
 
 				mobj->angle = angle;
@@ -8545,7 +8545,7 @@ void P_MobjThinker(mobj_t *mobj)
 					z += mobj->target->height;
 
 				if (mobj->target->momx || mobj->target->momy)
-					ang = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+					ang = K_MomentumAngle(mobj->target);
 
 				if (mobj->extravalue1)
 					ang = (signed)(ang - off);
@@ -8841,10 +8841,7 @@ void P_MobjThinker(mobj_t *mobj)
 			}
 
 			P_TeleportMove(mobj, destx, desty, mobj->target->z);
-			if (mobj->target->momx || mobj->target->momy)
-				mobj->angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
-			else
-				mobj->angle = mobj->target->angle;
+			mobj->angle = K_MomentumAngle(mobj->target);
 
 			if (underlayst != S_NULL)
 			{
