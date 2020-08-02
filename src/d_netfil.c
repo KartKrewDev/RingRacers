@@ -104,7 +104,6 @@ char downloaddir[512] = "DOWNLOAD";
 INT32 lastfilenum = -1;
 #endif
 
-<<<<<<< HEAD
 #ifdef HAVE_CURL
 static CURL *http_handle;
 static CURLM *multi_handle;
@@ -120,12 +119,10 @@ static UINT32 curl_origtotalfilesize;
 static char *curl_realname = NULL;
 fileneeded_t *curl_curfile = NULL;
 #endif
-=======
+
 luafiletransfer_t *luafiletransfers = NULL;
 boolean waitingforluafiletransfer = false;
 char luafiledir[256 + 16] = "luafiles";
-
->>>>>>> srb2/next
 
 /** Fills a serverinfo packet with information about wad files loaded.
   *
@@ -387,10 +384,7 @@ INT32 CL_CheckFiles(void)
 //		return 1;
 
 	// the first is the iwad (the main wad file)
-<<<<<<< HEAD
-=======
-	// we don't care if it's called srb2.pk3 or not.
->>>>>>> srb2/next
+	// we don't care what it's called.
 	// Never download the IWAD, just assume it's there and identical
 	// ...No! Why were we sending the base wads to begin with??
 	//fileneeded[0].status = FS_OPEN;
@@ -980,22 +974,17 @@ void SV_FileSendTicker(void)
 			size = f->size-transfer[i].position;
 		if (ram)
 			M_Memcpy(p->data, &f->id.ram[transfer[i].position], size);
-<<<<<<< HEAD
-		else if (fread(p->data, 1, size, transfer[i].currentfile) != size)
-			I_Error("SV_FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(size), f->id.filename, transfer[i].position, M_FileError(transfer[i].currentfile));
-=======
 		else
 		{
 			size_t n = fread(p->data, 1, size, transfer[i].currentfile);
 			if (n != size) // Either an error or Windows turning CR-LF into LF
 			{
 				if (f->textmode && feof(transfer[i].currentfile))
-                    size = n;
+					size = n;
 				else if (fread(p->data, 1, size, transfer[i].currentfile) != size)
 					I_Error("SV_FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(size), f->id.filename, transfer[i].position, M_FileError(transfer[i].currentfile));
 			}
 		}
->>>>>>> srb2/next
 		p->position = LONG(transfer[i].position);
 		// Put flag so receiver knows the total size
 		if (transfer[i].position + size == f->size || (f->textmode && feof(transfer[i].currentfile)))
@@ -1027,7 +1016,9 @@ void Got_Filetxpak(void)
 	char *filename;
 	static INT32 filetime = 0;
 
-<<<<<<< HEAD
+	filename = va("%s", file->filename);
+	nameonly(filename);
+
 	if (!(strcmp(filename, "main.kart")
 		&& strcmp(filename, "gfx.pk3")
 		&& strcmp(filename, "textures.pk3")
@@ -1036,16 +1027,6 @@ void Got_Filetxpak(void)
 		&& strcmp(filename, "patch.pk3")
 		&& strcmp(filename, "sounds.wad")
 		&& strcmp(filename, "music.wad")
-=======
-	filename = va("%s", file->filename);
-	nameonly(filename);
-
-	if (!(strcmp(filename, "srb2.pk3")
-		&& strcmp(filename, "zones.pk3")
-		&& strcmp(filename, "player.dta")
-		&& strcmp(filename, "patch.pk3")
-		&& strcmp(filename, "music.dta")
->>>>>>> srb2/next
 		))
 		I_Error("Tried to download \"%s\"", filename);
 
@@ -1083,11 +1064,7 @@ void Got_Filetxpak(void)
 		}
 		// We can receive packet in the wrong order, anyway all os support gaped file
 		fseek(file->file, pos, SEEK_SET);
-<<<<<<< HEAD
-		if (fwrite(netbuffer->u.filetxpak.data,size,1,file->file) != 1)
-=======
 		if (size && fwrite(netbuffer->u.filetxpak.data,size,1,file->file) != 1)
->>>>>>> srb2/next
 			I_Error("Can't write to %s: %s\n",filename, M_FileError(file->file));
 		file->currentsize += size;
 
