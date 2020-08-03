@@ -272,7 +272,6 @@ static void P_NetArchivePlayers(void)
 		if (flags & AWAYVIEW)
 			WRITEUINT32(save_p, players[i].awayviewmobj->mobjnum);
 
-<<<<<<< HEAD
 		WRITEUINT32(save_p, players[i].charflags);
 		// SRB2kart
 		WRITEUINT8(save_p, players[i].kartspeed);
@@ -292,35 +291,11 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
-=======
 		if (flags & FOLLOW)
 			WRITEUINT32(save_p, players[i].followmobj->mobjnum);
 
 		if (flags & DRONE)
 			WRITEUINT32(save_p, players[i].drone->mobjnum);
-
-		WRITEFIXED(save_p, players[i].camerascale);
-		WRITEFIXED(save_p, players[i].shieldscale);
-
-		WRITEUINT8(save_p, players[i].charability);
-		WRITEUINT8(save_p, players[i].charability2);
-		WRITEUINT32(save_p, players[i].charflags);
-		WRITEUINT32(save_p, (UINT32)players[i].thokitem);
-		WRITEUINT32(save_p, (UINT32)players[i].spinitem);
-		WRITEUINT32(save_p, (UINT32)players[i].revitem);
-		WRITEUINT32(save_p, (UINT32)players[i].followitem);
-		WRITEFIXED(save_p, players[i].actionspd);
-		WRITEFIXED(save_p, players[i].mindash);
-		WRITEFIXED(save_p, players[i].maxdash);
-		WRITEFIXED(save_p, players[i].normalspeed);
-		WRITEFIXED(save_p, players[i].runspeed);
-		WRITEUINT8(save_p, players[i].thrustfactor);
-		WRITEUINT8(save_p, players[i].accelstart);
-		WRITEUINT8(save_p, players[i].acceleration);
-		WRITEFIXED(save_p, players[i].jumpfactor);
-		WRITEFIXED(save_p, players[i].height);
-		WRITEFIXED(save_p, players[i].spinheight);
->>>>>>> srb2/next
 	}
 }
 
@@ -490,22 +465,17 @@ static void P_NetUnArchivePlayers(void)
 		if (flags & AWAYVIEW)
 			players[i].awayviewmobj = (mobj_t *)(size_t)READUINT32(save_p);
 
-<<<<<<< HEAD
 		players[i].viewheight = 32<<FRACBITS;
-=======
+
 		if (flags & FOLLOW)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save_p);
 
 		if (flags & DRONE)
 			players[i].drone = (mobj_t *)(size_t)READUINT32(save_p);
 
-		players[i].camerascale = READFIXED(save_p);
-		players[i].shieldscale = READFIXED(save_p);
->>>>>>> srb2/next
-
 		//SetPlayerSkinByNum(i, players[i].skin);
 		players[i].charflags = READUINT32(save_p);
-<<<<<<< HEAD
+
 		// SRB2kart
 		players[i].kartspeed = READUINT8(save_p);
 		players[i].kartweight = READUINT8(save_p);
@@ -1122,22 +1092,11 @@ static void ArchiveLines(void)
 			if (si->textureoffset != spawnsi->textureoffset)
 				diff |= LD_S1TEXOFF;
 			//SoM: 4/1/2000: Some textures are colormaps. Don't worry about invalid textures.
-<<<<<<< HEAD
-			if (R_CheckTextureNumForName(msd[li->sidenum[0]].toptexture) != -1
-					&& si->toptexture != R_TextureNumForName(msd[li->sidenum[0]].toptexture))
-				diff |= LD_S1TOPTEX;
-			if (R_CheckTextureNumForName(msd[li->sidenum[0]].bottomtexture) != -1
-					&& si->bottomtexture != R_TextureNumForName(msd[li->sidenum[0]].bottomtexture))
-				diff |= LD_S1BOTTEX;
-			if (R_CheckTextureNumForName(msd[li->sidenum[0]].midtexture) != -1
-					&& si->midtexture != R_TextureNumForName(msd[li->sidenum[0]].midtexture))
-=======
 			if (si->toptexture != spawnsi->toptexture)
 				diff |= LD_S1TOPTEX;
 			if (si->bottomtexture != spawnsi->bottomtexture)
 				diff |= LD_S1BOTTEX;
 			if (si->midtexture != spawnsi->midtexture)
->>>>>>> srb2/next
 				diff |= LD_S1MIDTEX;
 		}
 		if (li->sidenum[1] != 0xffff)
@@ -1146,22 +1105,11 @@ static void ArchiveLines(void)
 			spawnsi = &spawnsides[li->sidenum[1]];
 			if (si->textureoffset != spawnsi->textureoffset)
 				diff2 |= LD_S2TEXOFF;
-<<<<<<< HEAD
-			if (R_CheckTextureNumForName(msd[li->sidenum[1]].toptexture) != -1
-					&& si->toptexture != R_TextureNumForName(msd[li->sidenum[1]].toptexture))
-				diff2 |= LD_S2TOPTEX;
-			if (R_CheckTextureNumForName(msd[li->sidenum[1]].bottomtexture) != -1
-					&& si->bottomtexture != R_TextureNumForName(msd[li->sidenum[1]].bottomtexture))
-				diff2 |= LD_S2BOTTEX;
-			if (R_CheckTextureNumForName(msd[li->sidenum[1]].midtexture) != -1
-					&& si->midtexture != R_TextureNumForName(msd[li->sidenum[1]].midtexture))
-=======
 			if (si->toptexture != spawnsi->toptexture)
 				diff2 |= LD_S2TOPTEX;
 			if (si->bottomtexture != spawnsi->bottomtexture)
 				diff2 |= LD_S2BOTTEX;
 			if (si->midtexture != spawnsi->midtexture)
->>>>>>> srb2/next
 				diff2 |= LD_S2MIDTEX;
 			if (diff2)
 				diff |= LD_DIFF2;
@@ -1342,22 +1290,15 @@ typedef enum
 	MD2_EXTVAL2     = 1<<6,
 	MD2_HNEXT       = 1<<7,
 	MD2_HPREV       = 1<<8,
-<<<<<<< HEAD
 	MD2_COLORIZED   = 1<<9,
 	MD2_WAYPOINTCAP = 1<<10,
 	MD2_KITEMCAP	= 1<<11,
-	MD2_ITNEXT		= 1<<12
-#ifdef ESLOPE
-	, MD2_SLOPE       = 1<<13
-#endif
-=======
-	MD2_FLOORROVER  = 1<<9,
-	MD2_CEILINGROVER = 1<<10,
-	MD2_SLOPE        = 1<<11,
-	MD2_COLORIZED    = 1<<12,
-	MD2_ROLLANGLE    = 1<<13,
-	MD2_SHADOWSCALE  = 1<<14,
->>>>>>> srb2/next
+	MD2_ITNEXT		= 1<<12,
+	MD2_SLOPE       = 1<<13,
+	MD2_FLOORROVER  = 1<<14,
+	MD2_CEILINGROVER = 1<<15,
+	MD2_ROLLANGLE    = 1<<16,
+	MD2_SHADOWSCALE  = 1<<17
 } mobj_diff2_t;
 
 typedef enum
@@ -1518,11 +1459,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff |= MD_TRACER;
 	if (mobj->friction != ORIG_FRICTION)
 		diff |= MD_FRICTION;
-<<<<<<< HEAD
 	if (mobj->movefactor != FRACUNIT) //if (mobj->movefactor != ORIG_FRICTION_FACTOR)
-=======
-	if (mobj->movefactor != FRACUNIT)
->>>>>>> srb2/next
 		diff |= MD_MOVEFACTOR;
 	if (mobj->fuse)
 		diff |= MD_FUSE;
@@ -1558,33 +1495,24 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_HNEXT;
 	if (mobj->hprev)
 		diff2 |= MD2_HPREV;
-<<<<<<< HEAD
 	if (mobj->itnext)
 		diff2 |= MD2_ITNEXT;
-#ifdef ESLOPE
 	if (mobj->standingslope)
 		diff2 |= MD2_SLOPE;
-#endif
 	if (mobj->colorized)
 		diff2 |= MD2_COLORIZED;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
 	if (mobj == kitemcap)
 		diff2 |= MD2_KITEMCAP;
-=======
 	if (mobj->floorrover)
 		diff2 |= MD2_FLOORROVER;
 	if (mobj->ceilingrover)
 		diff2 |= MD2_CEILINGROVER;
-	if (mobj->standingslope)
-		diff2 |= MD2_SLOPE;
-	if (mobj->colorized)
-		diff2 |= MD2_COLORIZED;
 	if (mobj->rollangle)
 		diff2 |= MD2_ROLLANGLE;
 	if (mobj->shadowscale)
 		diff2 |= MD2_SHADOWSCALE;
->>>>>>> srb2/next
 	if (diff2 != 0)
 		diff |= MD_MORE;
 
@@ -1715,25 +1643,18 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEUINT32(save_p, mobj->hnext->mobjnum);
 	if (diff2 & MD2_HPREV)
 		WRITEUINT32(save_p, mobj->hprev->mobjnum);
-<<<<<<< HEAD
 	if (diff2 & MD2_ITNEXT)
 		WRITEUINT32(save_p, mobj->itnext->mobjnum);
-#ifdef ESLOPE
-	if (diff2 & MD2_SLOPE)
-		WRITEUINT16(save_p, mobj->standingslope->id);
-#endif
-	if (diff2 & MD2_COLORIZED)
-		WRITEUINT8(save_p, mobj->colorized);
-=======
 	if (diff2 & MD2_SLOPE)
 		WRITEUINT16(save_p, mobj->standingslope->id);
 	if (diff2 & MD2_COLORIZED)
 		WRITEUINT8(save_p, mobj->colorized);
+	if (diff2 & MD2_SLOPE)
+		WRITEUINT16(save_p, mobj->standingslope->id);;
 	if (diff2 & MD2_ROLLANGLE)
 		WRITEANGLE(save_p, mobj->rollangle);
 	if (diff2 & MD2_SHADOWSCALE)
 		WRITEFIXED(save_p, mobj->shadowscale);
->>>>>>> srb2/next
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2745,11 +2666,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff & MD_MOVEFACTOR)
 		mobj->movefactor = READFIXED(save_p);
 	else
-<<<<<<< HEAD
 		mobj->movefactor = FRACUNIT; //mobj->movefactor = ORIG_FRICTION_FACTOR;
-=======
-		mobj->movefactor = FRACUNIT;
->>>>>>> srb2/next
 	if (diff & MD_FUSE)
 		mobj->fuse = READINT32(save_p);
 	if (diff & MD_WATERTOP)
@@ -2784,16 +2701,11 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->hnext = (mobj_t *)(size_t)READUINT32(save_p);
 	if (diff2 & MD2_HPREV)
 		mobj->hprev = (mobj_t *)(size_t)READUINT32(save_p);
-<<<<<<< HEAD
 	if (diff2 & MD2_ITNEXT)
 		mobj->itnext = (mobj_t *)(size_t)READUINT32(save_p);
-#ifdef ESLOPE
-=======
->>>>>>> srb2/next
 	if (diff2 & MD2_SLOPE)
 	{
 		mobj->standingslope = P_SlopeById(READUINT16(save_p));
-<<<<<<< HEAD
 #ifdef HWRENDER
 		mobj->modeltilt = mobj->standingslope;
 #endif
@@ -2801,14 +2713,10 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 #endif
 	if (diff2 & MD2_COLORIZED)
 		mobj->colorized = READUINT8(save_p);
-=======
-	if (diff2 & MD2_COLORIZED)
-		mobj->colorized = READUINT8(save_p);
 	if (diff2 & MD2_ROLLANGLE)
 		mobj->rollangle = READANGLE(save_p);
 	if (diff2 & MD2_SHADOWSCALE)
 		mobj->shadowscale = READFIXED(save_p);
->>>>>>> srb2/next
 
 	if (diff & MD_REDFLAG)
 	{
@@ -2834,7 +2742,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 			mobj->player->viewz = mobj->player->mo->z + mobj->player->viewheight;
 	}
 
-<<<<<<< HEAD
 	P_AddThinker(&mobj->thinker);
 
 	if (diff2 & MD2_WAYPOINTCAP)
@@ -2843,8 +2750,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_KITEMCAP)
 		P_SetTarget(&kitemcap, mobj);
 
-=======
->>>>>>> srb2/next
 	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
 
 	return &mobj->thinker;
@@ -3801,80 +3706,6 @@ static void P_RelinkPointers(void)
 
 		mobj = (mobj_t *)currentthinker;
 
-<<<<<<< HEAD
-			if (mobj->tracer)
-			{
-				temp = (UINT32)(size_t)mobj->tracer;
-				mobj->tracer = NULL;
-				if (!P_SetTarget(&mobj->tracer, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "tracer not found on %d\n", mobj->type);
-			}
-			if (mobj->target)
-			{
-				temp = (UINT32)(size_t)mobj->target;
-				mobj->target = NULL;
-				if (!P_SetTarget(&mobj->target, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "target not found on %d\n", mobj->type);
-			}
-			if (mobj->hnext)
-			{
-				temp = (UINT32)(size_t)mobj->hnext;
-				mobj->hnext = NULL;
-				if (!(mobj->hnext = P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "hnext not found on %d\n", mobj->type);
-			}
-			if (mobj->hprev)
-			{
-				temp = (UINT32)(size_t)mobj->hprev;
-				mobj->hprev = NULL;
-				if (!(mobj->hprev = P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
-			}
-			if (mobj->itnext)
-			{
-				temp = (UINT32)(size_t)mobj->itnext;
-				mobj->itnext = NULL;
-				if (!(mobj->itnext = P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->capsule)
-			{
-				temp = (UINT32)(size_t)mobj->player->capsule;
-				mobj->player->capsule = NULL;
-				if (!P_SetTarget(&mobj->player->capsule, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "capsule not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->axis1)
-			{
-				temp = (UINT32)(size_t)mobj->player->axis1;
-				mobj->player->axis1 = NULL;
-				if (!P_SetTarget(&mobj->player->axis1, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "axis1 not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->axis2)
-			{
-				temp = (UINT32)(size_t)mobj->player->axis2;
-				mobj->player->axis2 = NULL;
-				if (!P_SetTarget(&mobj->player->axis2, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "axis2 not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->awayviewmobj)
-			{
-				temp = (UINT32)(size_t)mobj->player->awayviewmobj;
-				mobj->player->awayviewmobj = NULL;
-				if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
-			}
-			if (mobj->player && mobj->player->nextwaypoint)
-			{
-				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
-				mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
-				if (mobj->player->nextwaypoint == NULL)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
-				}
-			}
-=======
 		if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
 			continue;
 
@@ -3906,6 +3737,13 @@ static void P_RelinkPointers(void)
 			if (!(mobj->hprev = P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 		}
+		if (mobj->itnext)
+		{
+			temp = (UINT32)(size_t)mobj->itnext;
+			mobj->itnext = NULL;
+			if (!(mobj->itnext = P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
+		}
 		if (mobj->player && mobj->player->capsule)
 		{
 			temp = (UINT32)(size_t)mobj->player->capsule;
@@ -3934,6 +3772,15 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
 		}
+		if (mobj->player && mobj->player->nextwaypoint)
+		{
+			temp = (UINT32)(size_t)mobj->player->nextwaypoint;
+			mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
+			if (mobj->player->nextwaypoint == NULL)
+			{
+				CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
+			}
+		}
 		if (mobj->player && mobj->player->followmobj)
 		{
 			temp = (UINT32)(size_t)mobj->player->followmobj;
@@ -3947,7 +3794,6 @@ static void P_RelinkPointers(void)
 			mobj->player->drone = NULL;
 			if (!P_SetTarget(&mobj->player->drone, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "drone not found on %d\n", mobj->type);
->>>>>>> srb2/next
 		}
 	}
 }
@@ -4243,13 +4089,9 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	tokenlist = READUINT32(save_p);
 
-<<<<<<< HEAD
 	encoremode = (boolean)READUINT8(save_p);
 
-	if (!P_SetupLevel(true))
-=======
 	if (!P_LoadLevel(true))
->>>>>>> srb2/next
 		return false;
 
 	// get the time
@@ -4404,30 +4246,18 @@ void P_SaveNetGame(void)
 	P_NetArchiveMisc();
 
 	// Assign the mobjnumber for pointer tracking
-<<<<<<< HEAD
 	if (gamestate == GS_LEVEL)
 	{
-		for (th = thinkercap.next; th != &thinkercap; th = th->next)
+		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 		{
-			if (th->function.acp1 == (actionf_p1)P_MobjThinker)
-			{
-				mobj = (mobj_t *)th;
-				if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
-					continue;
-				mobj->mobjnum = i++;
-			}
-		}
-=======
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
+			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+				continue;
 
-		mobj = (mobj_t *)th;
-		if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
-			continue;
-		mobj->mobjnum = i++;
->>>>>>> srb2/next
+			mobj = (mobj_t *)th;
+			if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
+				continue;
+			mobj->mobjnum = i++;
+		}
 	}
 
 	P_NetArchivePlayers();
@@ -4437,11 +4267,8 @@ void P_SaveNetGame(void)
 		P_ArchivePolyObjects();
 		P_NetArchiveThinkers();
 		P_NetArchiveSpecials();
-<<<<<<< HEAD
 		P_NetArchiveWaypoints();
-=======
 		P_NetArchiveColormaps();
->>>>>>> srb2/next
 	}
 	LUA_Archive();
 
@@ -4481,11 +4308,7 @@ boolean P_LoadNetGame(void)
 		P_UnArchivePolyObjects();
 		P_NetUnArchiveThinkers();
 		P_NetUnArchiveSpecials();
-<<<<<<< HEAD
-		P_NetUnArchiveWaypoints();
-=======
 		P_NetUnArchiveColormaps();
->>>>>>> srb2/next
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}
