@@ -131,11 +131,7 @@ extern char logfilename[1024];
 #endif
 
 /* A mod name to further distinguish versions. */
-<<<<<<< HEAD
 #define SRB2APPLICATION "SRB2Kart"
-=======
-#define SRB2APPLICATION "SRB2"
->>>>>>> srb2/next
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
@@ -146,7 +142,6 @@ extern char logfilename[1024];
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-<<<<<<< HEAD
 #define VERSION    2 // Game version
 #define SUBVERSION 0 // more precise version number
 #define VERSIONSTRING "v2.0"
@@ -154,18 +149,10 @@ extern char logfilename[1024];
 // Hey! If you change this, add 1 to the MODVERSION below! Otherwise we can't force updates!
 // And change CMakeLists.txt, for CMake users!
 // AND appveyor.yml, for the build bots!
-=======
-#define VERSION    202 // Game version
-#define SUBVERSION 4  // more precise version number
-#define VERSIONSTRING "v2.2.4"
-#define VERSIONSTRINGW L"v2.2.4"
-// Hey! If you change this, add 1 to the MODVERSION below!
-// Otherwise we can't force updates!
->>>>>>> srb2/next
 #endif
 
 /* A custom URL protocol for server links. */
-#define SERVER_URL_PROTOCOL "srb2://"
+#define SERVER_URL_PROTOCOL "srb2kart://"
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
@@ -220,25 +207,15 @@ extern char logfilename[1024];
 
 // The Modification ID; must be obtained from Rob ( https://mb.srb2.org/private.php?do=newpm&u=546 ).
 // DO NOT try to set this otherwise, or your modification will be unplayable through the Master Server.
-<<<<<<< HEAD
 // "12" is the default mod ID for version 2.1
 // "17" is the 2.1 Kart's mod ID
 #define MODID 17
-=======
-// "18" is the default mod ID for version 2.2
-#define MODID 18
->>>>>>> srb2/next
 
 // The Modification Version, starting from 1. Do not follow your version string for this,
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
-<<<<<<< HEAD
 // Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
 #define MODVERSION 6
-=======
-// Note that we use this to help keep internal testing in check; this is why v2.2.0 is not version "1".
-#define MODVERSION 44
->>>>>>> srb2/next
 
 // Filter consvars by version
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
@@ -266,18 +243,12 @@ extern char logfilename[1024];
 #define MAXSKINS 128
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
-
-// Master Server compatibility ONLY
-#define MSCOMPAT_MAXPLAYERS (32)
-=======
-#define MAXPLAYERS 32
-#define MAXSKINS 32
-#define PLAYERSMASK (MAXPLAYERS-1)
-#define MAXPLAYERNAME 21
-
 #define COLORRAMPSIZE 16
 #define MAXCOLORNAME 32
 #define NUMCOLORFREESLOTS 1024
+
+// Master Server compatibility ONLY
+#define MSCOMPAT_MAXPLAYERS (32)
 
 typedef struct skincolor_s
 {
