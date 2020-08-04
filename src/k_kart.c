@@ -2295,7 +2295,7 @@ SINT8 K_GetForwardMove(player_t *player)
 {
 	SINT8 forwardmove = player->cmd.forwardmove;
 
-	if ((player->pflags & PF_STASIS) || (player->pflags & PF_SLIDING) || player->kartstuff[k_spinouttimer] || K_PlayerEBrake(player))
+	if ((player->pflags & PF_STASIS) || (player->pflags & PF_SLIDING))
 	{
 		return 0;
 	}
@@ -2303,6 +2303,11 @@ SINT8 K_GetForwardMove(player_t *player)
 	if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_spindashboost])
 	{
 		return MAXPLMOVE;
+	}
+
+	if (player->kartstuff[k_spinouttimer] || K_PlayerEBrake(player))
+	{
+		return 0;
 	}
 
 	return forwardmove;
