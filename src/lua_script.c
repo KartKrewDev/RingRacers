@@ -1889,39 +1889,25 @@ void LUA_Archive(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-<<<<<<< HEAD
 		if (!playeringame[i] && i > 0)	// NEVER skip player 0, this is for dedi servs.
-=======
-		if (!playeringame[i] && i > 0) // dedicated servers...
->>>>>>> srb2/next
 			continue;
 		// all players in game will be archived, even if they just add a 0.
 		ArchiveExtVars(&players[i], "player");
 	}
 
-<<<<<<< HEAD
 	if (gamestate == GS_LEVEL)
 	{
-		for (th = thinkercap.next; th != &thinkercap; th = th->next)
-			if (th->function.acp1 == (actionf_p1)P_MobjThinker)
-			{
-				// archive function will determine when to skip mobjs,
-				// and write mobjnum in otherwise.
-				ArchiveExtVars(th, "mobj");
-			}
-	}
-=======
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
+		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+		{
+			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+				continue;
 
-		// archive function will determine when to skip mobjs,
-		// and write mobjnum in otherwise.
-		ArchiveExtVars(th, "mobj");
+			// archive function will determine when to skip mobjs,
+			// and write mobjnum in otherwise.
+			ArchiveExtVars(th, "mobj");
+		}
 	}
-
->>>>>>> srb2/next
+	
 	WRITEUINT32(save_p, UINT32_MAX); // end of mobjs marker, replaces mobjnum.
 
 	LUAh_NetArchiveHook(NetArchive); // call the NetArchive hook in archive mode
@@ -1942,11 +1928,7 @@ void LUA_UnArchive(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-<<<<<<< HEAD
 		if (!playeringame[i] && i > 0)	// same here, this is to synch dediservs properly.
-=======
-		if (!playeringame[i] && i > 0) // dedicated servers...
->>>>>>> srb2/next
 			continue;
 		UnArchiveExtVars(&players[i]);
 	}
