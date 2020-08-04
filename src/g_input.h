@@ -79,14 +79,7 @@ typedef enum
 	gc_drift,
 	gc_brake,
 	gc_fire,
-<<<<<<< HEAD
 	gc_lookback,
-=======
-	gc_firenormal,
-	gc_tossflag,
-	gc_use,
-	gc_camtoggle,
->>>>>>> srb2/next
 	gc_camreset,
 	gc_camtoggle,
 	gc_spectate,
@@ -111,8 +104,7 @@ typedef enum
 typedef enum
 {
 	gcs_custom,
-	gcs_fps,
-	gcs_platform,
+	gcs_kart, // Kart doesn't really need this code, like, at all? But I don't feel like removing it.
 	num_gamecontrolschemes
 } gamecontrolschemes_e;
 
@@ -132,42 +124,23 @@ extern INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], 
 extern UINT8 gamekeydown[NUMINPUTS];
 
 // two key codes (or virtual key) per game control
-extern INT32 gamecontrol[num_gamecontrols][2];
-extern INT32 gamecontrolbis[num_gamecontrols][2]; // secondary splitscreen player
-<<<<<<< HEAD
-extern INT32 gamecontrol3[num_gamecontrols][2];
-extern INT32 gamecontrol4[num_gamecontrols][2];
-#define PLAYER1INPUTDOWN(gc) (gamekeydown[gamecontrol[gc][0]] || gamekeydown[gamecontrol[gc][1]])
-#define PLAYER2INPUTDOWN(gc) (gamekeydown[gamecontrolbis[gc][0]] || gamekeydown[gamecontrolbis[gc][1]])
-#define PLAYER3INPUTDOWN(gc) (gamekeydown[gamecontrol3[gc][0]] || gamekeydown[gamecontrol3[gc][1]])
-#define PLAYER4INPUTDOWN(gc) (gamekeydown[gamecontrol4[gc][0]] || gamekeydown[gamecontrol4[gc][1]])
-=======
-extern INT32 gamecontroldefault[num_gamecontrolschemes][num_gamecontrols][2]; // default control storage, use 0 (gcs_custom) for memory retention
-extern INT32 gamecontrolbisdefault[num_gamecontrolschemes][num_gamecontrols][2];
-#define PLAYER1INPUTDOWN(gc) (gamekeydown[gamecontrol[gc][0]] || gamekeydown[gamecontrol[gc][1]])
-#define PLAYER2INPUTDOWN(gc) (gamekeydown[gamecontrolbis[gc][0]] || gamekeydown[gamecontrolbis[gc][1]])
-#define PLAYERINPUTDOWN(p, gc) ((p) == 2 ? PLAYER2INPUTDOWN(gc) : PLAYER1INPUTDOWN(gc))
+extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][2];
+extern INT32 gamecontroldefault[MAXSPLITSCREENPLAYERS][num_gamecontrolschemes][num_gamecontrols][2]; // default control storage, use 0 (gcs_custom) for memory retention
+#define PLAYERINPUTDOWN(p, gc) (gamekeydown[p-1][gamecontrol[gc][0]] || gamekeydown[p-1][gamecontrol[gc][1]])
 
-#define num_gcl_tutorial_check 6
-#define num_gcl_tutorial_used 8
-#define num_gcl_tutorial_full 13
-#define num_gcl_movement 4
-#define num_gcl_camera 2
-#define num_gcl_movement_camera 6
-#define num_gcl_jump 1
-#define num_gcl_use 1
-#define num_gcl_jump_use 2
+#define num_gcl_accelerate 1
+#define num_gcl_brake 1
+#define num_gcl_spindash 3
+#define num_gcl_movement 5
+#define num_gcl_item 3
+#define num_gcl_full 9
 
-extern const INT32 gcl_tutorial_check[num_gcl_tutorial_check];
-extern const INT32 gcl_tutorial_used[num_gcl_tutorial_used];
-extern const INT32 gcl_tutorial_full[num_gcl_tutorial_full];
+extern const INT32 gcl_accelerate[num_gcl_accelerate];
+extern const INT32 gcl_brake[num_gcl_brake];
+extern const INT32 gcl_spindash[num_gcl_spindash];
 extern const INT32 gcl_movement[num_gcl_movement];
-extern const INT32 gcl_camera[num_gcl_camera];
-extern const INT32 gcl_movement_camera[num_gcl_movement_camera];
-extern const INT32 gcl_jump[num_gcl_jump];
-extern const INT32 gcl_use[num_gcl_use];
-extern const INT32 gcl_jump_use[num_gcl_jump_use];
->>>>>>> srb2/next
+extern const INT32 gcl_item[num_gcl_item];
+extern const INT32 gcl_full[num_gcl_full];
 
 // peace to my little coder fingers!
 // check a gamecontrol being active or not
@@ -184,17 +157,12 @@ void G_ClearControlKeys(INT32 (*setupcontrols)[2], INT32 control);
 void G_ClearAllControlKeys(void);
 void Command_Setcontrol_f(void);
 void Command_Setcontrol2_f(void);
-<<<<<<< HEAD
 void Command_Setcontrol3_f(void);
 void Command_Setcontrol4_f(void);
-void G_Controldefault(UINT8 player);
-void G_SaveKeySetting(FILE *f);
-=======
 void G_DefineDefaultControls(void);
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
 void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
 void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2], INT32 (*fromcontrolsbis)[2]);
->>>>>>> srb2/next
 INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify);
 
 #endif

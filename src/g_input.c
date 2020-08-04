@@ -44,55 +44,33 @@ joy3xmove[JOYAXISSET], joy3ymove[JOYAXISSET], joy4xmove[JOYAXISSET], joy4ymove[J
 UINT8 gamekeydown[NUMINPUTS];
 
 // two key codes (or virtual key) per game control
-INT32 gamecontrol[num_gamecontrols][2];
-INT32 gamecontrolbis[num_gamecontrols][2]; // secondary splitscreen player
-<<<<<<< HEAD
-INT32 gamecontrol3[num_gamecontrols][2]; // tertiary splitscreen player
-INT32 gamecontrol4[num_gamecontrols][2]; // quarternary splitscreen player
-=======
-INT32 gamecontroldefault[num_gamecontrolschemes][num_gamecontrols][2]; // default control storage, use 0 (gcs_custom) for memory retention
-INT32 gamecontrolbisdefault[num_gamecontrolschemes][num_gamecontrols][2];
+INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][2];
+INT32 gamecontroldefault[MAXSPLITSCREENPLAYERS][num_gamecontrolschemes][num_gamecontrols][2]; // default control storage, use 0 (gcs_custom) for memory retention
 
 // lists of GC codes for selective operation
-const INT32 gcl_tutorial_check[num_gcl_tutorial_check] = {
-	gc_forward, gc_backward, gc_strafeleft, gc_straferight,
-	gc_turnleft, gc_turnright
-};
+const INT32 gcl_accelerate[num_gcl_accelerate] = { gc_accelerate };
 
-const INT32 gcl_tutorial_used[num_gcl_tutorial_used] = {
-	gc_forward, gc_backward, gc_strafeleft, gc_straferight,
-	gc_turnleft, gc_turnright,
-	gc_jump, gc_use
-};
+const INT32 gcl_brake[num_gcl_brake] = { gc_brake };
 
-const INT32 gcl_tutorial_full[num_gcl_tutorial_full] = {
-	gc_forward, gc_backward, gc_strafeleft, gc_straferight,
-	gc_lookup, gc_lookdown, gc_turnleft, gc_turnright, gc_centerview,
-	gc_jump, gc_use,
-	gc_fire, gc_firenormal
+const INT32 gcl_drift[num_gcl_drift] = { gc_drift };
+
+const INT32 gcl_spindash[num_gcl_spindash] = {
+	gc_accelerate, gc_drift, gc_brake
 };
 
 const INT32 gcl_movement[num_gcl_movement] = {
-	gc_forward, gc_backward, gc_strafeleft, gc_straferight
+	gc_accelerate, gc_drift, gc_brake, gc_turnleft, gc_turnright
 };
 
-const INT32 gcl_camera[num_gcl_camera] = {
-	gc_turnleft, gc_turnright
+const INT32 gcl_item[num_gcl_item] = {
+	gc_fire, gc_aimforward, gc_aimbackward
 };
 
-const INT32 gcl_movement_camera[num_gcl_movement_camera] = {
-	gc_forward, gc_backward, gc_strafeleft, gc_straferight,
-	gc_turnleft, gc_turnright
+const INT32 gcl_full[num_gcl_full] = {
+	gc_accelerate, gc_drift, gc_brake, gc_turnleft, gc_turnright,
+	gc_fire, gc_aimforward, gc_aimbackward,
+	gc_lookback
 };
-
-const INT32 gcl_jump[num_gcl_jump] = { gc_jump };
-
-const INT32 gcl_use[num_gcl_use] = { gc_use };
-
-const INT32 gcl_jump_use[num_gcl_jump_use] = {
-	gc_jump, gc_use
-};
->>>>>>> srb2/next
 
 typedef struct
 {
@@ -807,14 +785,7 @@ static const char *gamecontrolname[num_gamecontrols] =
 	"drift",
 	"brake",
 	"fire",
-<<<<<<< HEAD
 	"lookback",
-=======
-	"firenormal",
-	"tossflag",
-	"use",
-	"camtoggle",
->>>>>>> srb2/next
 	"camreset",
 	"camtoggle",
 	"spectate",
@@ -909,174 +880,68 @@ INT32 G_KeyStringtoNum(const char *keystr)
 	return 0;
 }
 
-<<<<<<< HEAD
-// SRB2Kart
-void G_Controldefault(UINT8 player)
-{
-	if (player == 0 || player == 1)
-	{
-		// Main controls
-		gamecontrol[gc_aimforward ][0] = KEY_UPARROW;
-		gamecontrol[gc_aimbackward][0] = KEY_DOWNARROW;
-		gamecontrol[gc_turnleft   ][0] = KEY_LEFTARROW;
-		gamecontrol[gc_turnright  ][0] = KEY_RIGHTARROW;
-		gamecontrol[gc_accelerate ][0] = 'a';
-		gamecontrol[gc_drift      ][0] = 's';
-		gamecontrol[gc_brake      ][0] = 'd';
-		gamecontrol[gc_fire       ][0] = KEY_SPACE;
-		gamecontrol[gc_lookback   ][0] = KEY_LSHIFT;
-
-		gamecontrol[gc_accelerate ][1] = KEY_JOY1+0; // A
-		gamecontrol[gc_lookback   ][1] = KEY_JOY1+2; // X
-		gamecontrol[gc_brake      ][1] = KEY_JOY1+1; // B
-		gamecontrol[gc_fire       ][1] = KEY_JOY1+4; // LB
-		gamecontrol[gc_drift      ][1] = KEY_JOY1+5; // RB
-
-		// Extra controls
-		gamecontrol[gc_pause      ][0] = KEY_PAUSE;
-		gamecontrol[gc_console    ][0] = KEY_CONSOLE;
-		gamecontrol[gc_screenshot ][0] = KEY_F8;
-		gamecontrol[gc_recordgif  ][0] = KEY_F9;
-		gamecontrol[gc_viewpoint  ][0] = KEY_F12;
-		gamecontrol[gc_talkkey    ][0] = 't';
-		//gamecontrol[gc_teamkey    ][0] = 'y';
-		gamecontrol[gc_scores     ][0] = KEY_TAB;
-		gamecontrol[gc_spectate   ][0] = '\'';
-		gamecontrol[gc_lookup     ][0] = KEY_PGUP;
-		gamecontrol[gc_lookdown   ][0] = KEY_PGDN;
-		gamecontrol[gc_centerview ][0] = KEY_END;
-		gamecontrol[gc_camreset   ][0] = KEY_HOME;
-		gamecontrol[gc_camtoggle  ][0] = KEY_BACKSPACE;
-
-		gamecontrol[gc_viewpoint  ][1] = KEY_JOY1+3; // Y
-		gamecontrol[gc_pause      ][1] = KEY_JOY1+6; // Back
-		gamecontrol[gc_systemmenu ][0] = KEY_JOY1+7; // Start
-		//gamecontrol[gc_camtoggle  ][1] = KEY_HAT1+0; // D-Pad Up
-		//gamecontrol[gc_screenshot ][1] = KEY_HAT1+1; // D-Pad Down // absolutely fucking NOT
-		gamecontrol[gc_talkkey    ][1] = KEY_HAT1+1; // D-Pad Down
-		gamecontrol[gc_scores     ][1] = KEY_HAT1+0; // D-Pad Up
-	}
-
-	if (player == 0 || player == 2)
-	{
-		// Player 2 controls
-		gamecontrolbis[gc_accelerate ][0] = KEY_2JOY1+0; // A
-		gamecontrolbis[gc_lookback   ][0] = KEY_2JOY1+2; // X
-		gamecontrolbis[gc_brake      ][0] = KEY_2JOY1+1; // B
-		gamecontrolbis[gc_fire       ][0] = KEY_2JOY1+4; // LB
-		gamecontrolbis[gc_drift      ][0] = KEY_2JOY1+5; // RB
-	}
-
-	if (player == 0 || player == 3)
-	{
-		// Player 3 controls
-		gamecontrol3[gc_accelerate ][0] = KEY_3JOY1+0; // A
-		gamecontrol3[gc_lookback   ][0] = KEY_3JOY1+2; // X
-		gamecontrol3[gc_brake      ][0] = KEY_3JOY1+1; // B
-		gamecontrol3[gc_fire       ][0] = KEY_3JOY1+4; // LB
-		gamecontrol3[gc_drift      ][0] = KEY_3JOY1+5; // RB
-	}
-
-	if (player == 0 || player == 4)
-	{
-		// Player 4 controls
-		gamecontrol4[gc_accelerate ][0] = KEY_4JOY1+0; // A
-		gamecontrol4[gc_lookback   ][0] = KEY_4JOY1+2; // X
-		gamecontrol4[gc_brake      ][0] = KEY_4JOY1+1; // B
-		gamecontrol4[gc_fire       ][0] = KEY_4JOY1+4; // LB
-		gamecontrol4[gc_drift      ][0] = KEY_4JOY1+5; // RB
-=======
 void G_DefineDefaultControls(void)
 {
-	INT32 i;
+	INT32 i, j;
 
-	// FPS game controls (WASD)
-	gamecontroldefault[gcs_fps][gc_forward    ][0] = 'w';
-	gamecontroldefault[gcs_fps][gc_backward   ][0] = 's';
-	gamecontroldefault[gcs_fps][gc_strafeleft ][0] = 'a';
-	gamecontroldefault[gcs_fps][gc_straferight][0] = 'd';
-	gamecontroldefault[gcs_fps][gc_lookup     ][0] = KEY_UPARROW;
-	gamecontroldefault[gcs_fps][gc_lookdown   ][0] = KEY_DOWNARROW;
-	gamecontroldefault[gcs_fps][gc_turnleft   ][0] = KEY_LEFTARROW;
-	gamecontroldefault[gcs_fps][gc_turnright  ][0] = KEY_RIGHTARROW;
-	gamecontroldefault[gcs_fps][gc_centerview ][0] = KEY_END;
-	gamecontroldefault[gcs_fps][gc_jump       ][0] = KEY_SPACE;
-	gamecontroldefault[gcs_fps][gc_use        ][0] = KEY_LSHIFT;
-	gamecontroldefault[gcs_fps][gc_fire       ][0] = KEY_RCTRL;
-	gamecontroldefault[gcs_fps][gc_fire       ][1] = KEY_MOUSE1+0;
-	gamecontroldefault[gcs_fps][gc_firenormal ][0] = 'c';
+	// Keyboard controls
+	gamecontrol[0][gcs_kart][gc_aimforward ][0] = KEY_UPARROW;
+	gamecontrol[0][gcs_kart][gc_aimbackward][0] = KEY_DOWNARROW;
+	gamecontrol[0][gcs_kart][gc_turnleft   ][0] = KEY_LEFTARROW;
+	gamecontrol[0][gcs_kart][gc_turnright  ][0] = KEY_RIGHTARROW;
+	gamecontrol[0][gcs_kart][gc_accelerate ][0] = 'a';
+	gamecontrol[0][gcs_kart][gc_drift      ][0] = 's';
+	gamecontrol[0][gcs_kart][gc_brake      ][0] = 'd';
+	gamecontrol[0][gcs_kart][gc_fire       ][0] = KEY_SPACE;
+	gamecontrol[0][gcs_kart][gc_lookback   ][0] = KEY_LSHIFT;
 
-	// Platform game controls (arrow keys)
-	gamecontroldefault[gcs_platform][gc_forward    ][0] = KEY_UPARROW;
-	gamecontroldefault[gcs_platform][gc_backward   ][0] = KEY_DOWNARROW;
-	gamecontroldefault[gcs_platform][gc_strafeleft ][0] = 'a';
-	gamecontroldefault[gcs_platform][gc_straferight][0] = 'd';
-	gamecontroldefault[gcs_platform][gc_lookup     ][0] = KEY_PGUP;
-	gamecontroldefault[gcs_platform][gc_lookdown   ][0] = KEY_PGDN;
-	gamecontroldefault[gcs_platform][gc_turnleft   ][0] = KEY_LEFTARROW;
-	gamecontroldefault[gcs_platform][gc_turnright  ][0] = KEY_RIGHTARROW;
-	gamecontroldefault[gcs_platform][gc_centerview ][0] = KEY_END;
-	gamecontroldefault[gcs_platform][gc_jump       ][0] = KEY_SPACE;
-	gamecontroldefault[gcs_platform][gc_use        ][0] = KEY_LSHIFT;
-	gamecontroldefault[gcs_platform][gc_fire       ][0] = 's';
-	gamecontroldefault[gcs_platform][gc_fire       ][1] = KEY_MOUSE1+0;
-	gamecontroldefault[gcs_platform][gc_firenormal ][0] = 'w';
+	gamecontrol[0][gcs_kart][gc_pause      ][0] = KEY_PAUSE;
+	gamecontrol[0][gcs_kart][gc_console    ][0] = KEY_CONSOLE;
+	gamecontrol[0][gcs_kart][gc_screenshot ][0] = KEY_F8;
+	gamecontrol[0][gcs_kart][gc_recordgif  ][0] = KEY_F9;
+	gamecontrol[0][gcs_kart][gc_viewpoint  ][0] = KEY_F12;
+	gamecontrol[0][gcs_kart][gc_talkkey    ][0] = 't';
+	//gamecontrol[0][gcs_kart][gc_teamkey    ][0] = 'y';
+	gamecontrol[0][gcs_kart][gc_scores     ][0] = KEY_TAB;
+	gamecontrol[0][gcs_kart][gc_spectate   ][0] = '\'';
+	gamecontrol[0][gcs_kart][gc_lookup     ][0] = KEY_PGUP;
+	gamecontrol[0][gcs_kart][gc_lookdown   ][0] = KEY_PGDN;
+	gamecontrol[0][gcs_kart][gc_centerview ][0] = KEY_END;
+	gamecontrol[0][gcs_kart][gc_camreset   ][0] = KEY_HOME;
+	gamecontrol[0][gcs_kart][gc_camtoggle  ][0] = KEY_BACKSPACE;
 
-	for (i = 1; i < num_gamecontrolschemes; i++) // skip gcs_custom (0)
+	for (i = gcs_custom+1; i < num_gamecontrolschemes; i++) // skip gcs_custom
 	{
-		gamecontroldefault[i][gc_weaponnext ][0] = KEY_MOUSEWHEELUP+0;
-		gamecontroldefault[i][gc_weaponprev ][0] = KEY_MOUSEWHEELDOWN+0;
-		gamecontroldefault[i][gc_wepslot1   ][0] = '1';
-		gamecontroldefault[i][gc_wepslot2   ][0] = '2';
-		gamecontroldefault[i][gc_wepslot3   ][0] = '3';
-		gamecontroldefault[i][gc_wepslot4   ][0] = '4';
-		gamecontroldefault[i][gc_wepslot5   ][0] = '5';
-		gamecontroldefault[i][gc_wepslot6   ][0] = '6';
-		gamecontroldefault[i][gc_wepslot7   ][0] = '7';
-		gamecontroldefault[i][gc_wepslot8   ][0] = '8';
-		gamecontroldefault[i][gc_wepslot9   ][0] = '9';
-		gamecontroldefault[i][gc_wepslot10  ][0] = '0';
-		gamecontroldefault[i][gc_tossflag   ][0] = '\'';
-		gamecontroldefault[i][gc_camtoggle  ][0] = 'v';
-		gamecontroldefault[i][gc_camreset   ][0] = 'r';
-		gamecontroldefault[i][gc_talkkey    ][0] = 't';
-		gamecontroldefault[i][gc_teamkey    ][0] = 'y';
-		gamecontroldefault[i][gc_scores     ][0] = KEY_TAB;
-		gamecontroldefault[i][gc_console    ][0] = KEY_CONSOLE;
-		gamecontroldefault[i][gc_pause      ][0] = 'p';
-		gamecontroldefault[i][gc_screenshot ][0] = KEY_F8;
-		gamecontroldefault[i][gc_recordgif  ][0] = KEY_F9;
-		gamecontroldefault[i][gc_viewpoint  ][0] = KEY_F12;
+		// Gamepad controls -- same for all schemes
+		gamecontrol[0][j][gc_accelerate ][1] = KEY_JOY1+0; // A
+		gamecontrol[0][j][gc_lookback   ][1] = KEY_JOY1+2; // X
+		gamecontrol[0][j][gc_brake      ][1] = KEY_JOY1+1; // B
+		gamecontrol[0][j][gc_fire       ][1] = KEY_JOY1+4; // LB
+		gamecontrol[0][j][gc_drift      ][1] = KEY_JOY1+5; // RB
 
-		// Gamepad controls -- same for both schemes
-		gamecontroldefault[i][gc_weaponnext ][1] = KEY_JOY1+1; // B
-		gamecontroldefault[i][gc_weaponprev ][1] = KEY_JOY1+2; // X
-		gamecontroldefault[i][gc_tossflag   ][1] = KEY_JOY1+0; // A
-		gamecontroldefault[i][gc_use        ][1] = KEY_JOY1+4; // LB
-		gamecontroldefault[i][gc_camtoggle  ][1] = KEY_HAT1+0; // D-Pad Up
-		gamecontroldefault[i][gc_camreset   ][1] = KEY_JOY1+3; // Y
-		gamecontroldefault[i][gc_centerview ][1] = KEY_JOY1+9; // Right Stick
-		gamecontroldefault[i][gc_talkkey    ][1] = KEY_HAT1+2; // D-Pad Left
-		gamecontroldefault[i][gc_scores     ][1] = KEY_HAT1+3; // D-Pad Right
-		gamecontroldefault[i][gc_jump       ][1] = KEY_JOY1+5; // RB
-		gamecontroldefault[i][gc_pause      ][1] = KEY_JOY1+6; // Back
-		gamecontroldefault[i][gc_screenshot ][1] = KEY_HAT1+1; // D-Pad Down
-		gamecontroldefault[i][gc_systemmenu ][0] = KEY_JOY1+7; // Start
+		gamecontrol[0][j][gc_viewpoint  ][1] = KEY_JOY1+3; // Y
+		gamecontrol[0][j][gc_pause      ][1] = KEY_JOY1+6; // Back
+		gamecontrol[0][j][gc_systemmenu ][0] = KEY_JOY1+7; // Start
+		gamecontrol[0][j][gc_talkkey    ][1] = KEY_HAT1+1; // D-Pad Down
+		gamecontrol[0][j][gc_scores     ][1] = KEY_HAT1+0; // D-Pad Up
 
-		// Second player controls only have joypad defaults
-		gamecontrolbisdefault[i][gc_weaponnext][0] = KEY_2JOY1+1; // B
-		gamecontrolbisdefault[i][gc_weaponprev][0] = KEY_2JOY1+2; // X
-		gamecontrolbisdefault[i][gc_tossflag  ][0] = KEY_2JOY1+0; // A
-		gamecontrolbisdefault[i][gc_use       ][0] = KEY_2JOY1+4; // LB
-		gamecontrolbisdefault[i][gc_camreset  ][0] = KEY_2JOY1+3; // Y
-		gamecontrolbisdefault[i][gc_centerview][0] = KEY_2JOY1+9; // Right Stick
-		gamecontrolbisdefault[i][gc_jump      ][0] = KEY_2JOY1+5; // RB
-		//gamecontrolbisdefault[i][gc_pause     ][0] = KEY_2JOY1+6; // Back
-		//gamecontrolbisdefault[i][gc_systemmenu][0] = KEY_2JOY1+7; // Start
-		gamecontrolbisdefault[i][gc_camtoggle ][0] = KEY_2HAT1+0; // D-Pad Up
-		gamecontrolbisdefault[i][gc_screenshot][0] = KEY_2HAT1+1; // D-Pad Down
-		//gamecontrolbisdefault[i][gc_talkkey   ][0] = KEY_2HAT1+2; // D-Pad Left
-		//gamecontrolbisdefault[i][gc_scores    ][0] = KEY_2HAT1+3; // D-Pad Right
+		gamecontrol[1][i][gc_accelerate ][0] = KEY_2JOY1+0; // A
+		gamecontrol[1][i][gc_lookback   ][0] = KEY_2JOY1+2; // X
+		gamecontrol[1][i][gc_brake      ][0] = KEY_2JOY1+1; // B
+		gamecontrol[1][i][gc_fire       ][0] = KEY_2JOY1+4; // LB
+		gamecontrol[1][i][gc_drift      ][0] = KEY_2JOY1+5; // RB
+
+		gamecontrol[2][i][gc_accelerate ][0] = KEY_3JOY1+0; // A
+		gamecontrol[2][i][gc_lookback   ][0] = KEY_3JOY1+2; // X
+		gamecontrol[2][i][gc_brake      ][0] = KEY_3JOY1+1; // B
+		gamecontrol[2][i][gc_fire       ][0] = KEY_3JOY1+4; // LB
+		gamecontrol[2][i][gc_drift      ][0] = KEY_3JOY1+5; // RB
+
+		gamecontrol[3][i][gc_accelerate ][0] = KEY_3JOY1+0; // A
+		gamecontrol[3][i][gc_lookback   ][0] = KEY_3JOY1+2; // X
+		gamecontrol[3][i][gc_brake      ][0] = KEY_3JOY1+1; // B
+		gamecontrol[3][i][gc_fire       ][0] = KEY_3JOY1+4; // LB
+		gamecontrol[3][i][gc_drift      ][0] = KEY_3JOY1+5; // RB
 	}
 }
 
@@ -1116,7 +981,6 @@ void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const I
 		gc = (gclist && gclen) ? gclist[i] : i;
 		setupcontrols[gc][0] = fromcontrols[gc][0];
 		setupcontrols[gc][1] = fromcontrols[gc][1];
->>>>>>> srb2/next
 	}
 }
 
@@ -1174,27 +1038,19 @@ INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify)
 	INT32 result = gc_null;
 	if (cv_controlperkey.value == 1)
 	{
-		INT32 i, j;
+		INT32 i, j, k;
 		for (i = 0; i < num_gamecontrols; i++)
 		{
 			for (j = 0; j < 2; j++)
 			{
-				if (gamecontrol[i][j] == keynum) {
-					result = i;
-					if (modify) gamecontrol[i][j] = KEY_NULL;
+				for (k = 0; k < MAXSPLITSCREENPLAYERS; k++)
+				{
+					if (gamecontrol[k][i][j] == keynum) {
+						result = i;
+						if (modify) gamecontrol[k][i][j] = KEY_NULL;
+					}
 				}
-				if (gamecontrolbis[i][j] == keynum) {
-					result = i;
-					if (modify) gamecontrolbis[i][j] = KEY_NULL;
-				}
-				if (gamecontrol3[i][j] == keynum) {
-					result = i;
-					if (modify) gamecontrol3[i][j] = KEY_NULL;
-				}
-				if (gamecontrol4[i][j] == keynum) {
-					result = i;
-					if (modify) gamecontrol4[i][j] = KEY_NULL;
-				}
+
 				if (result && !modify)
 					return result;
 			}
@@ -1219,16 +1075,12 @@ static INT32 G_FilterKeyByVersion(INT32 numctrl, INT32 keyidx, INT32 player, INT
 	else if (keyidx == 1 && *keynum2 == KEY_PAUSE)
 		return -1; // skip setting control
 
-<<<<<<< HEAD
 #if 1
 	// We don't have changed control defaults yet
 	(void)numctrl;
 	(void)player;
 	(void)nestedoverride;
 #else
-#if !defined (DC) && !defined (_PSP) && !defined (GP2X) && !defined (_NDS) && !defined(WMINPUT) && !defined(_WII)
-=======
->>>>>>> srb2/next
 	if (GETMAJOREXECVERSION(cv_execversion.value) < 27 && ( // v2.1.22
 		numctrl == gc_weaponnext || numctrl == gc_weaponprev || numctrl == gc_tossflag ||
 		numctrl == gc_use || numctrl == gc_camreset || numctrl == gc_jump ||
@@ -1321,11 +1173,7 @@ static INT32 G_FilterKeyByVersion(INT32 numctrl, INT32 keyidx, INT32 player, INT
 		else
 			return 0;
 	}
-<<<<<<< HEAD
 #endif
-#endif
-=======
->>>>>>> srb2/next
 
 	// All's good, so pass the keynum as-is
 	if (keyidx == 1)
