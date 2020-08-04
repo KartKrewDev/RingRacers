@@ -85,21 +85,13 @@ enum mobj_e {
 	mobj_extravalue2,
 	mobj_cusval,
 	mobj_cvmem,
-<<<<<<< HEAD
-#ifdef ESLOPE
 	mobj_standingslope,
-#endif
 	mobj_colorized,
 	mobj_shadowscale,
 	mobj_whiteshadow,
 	mobj_sprxoff,
 	mobj_spryoff,
 	mobj_sprzoff
-=======
-	mobj_standingslope,
-	mobj_colorized,
-	mobj_shadowscale
->>>>>>> srb2/next
 };
 
 static const char *const mobj_opt[] = {
@@ -164,18 +156,12 @@ static const char *const mobj_opt[] = {
 	"cusval",
 	"cvmem",
 	"standingslope",
-<<<<<<< HEAD
-#endif
 	"colorized",
 	"shadowscale",
 	"whiteshadow",
 	"sprxoff",
 	"spryoff",
 	"sprzoff",
-=======
-	"colorized",
-	"shadowscale",
->>>>>>> srb2/next
 	NULL};
 
 #define UNIMPLEMENTED luaL_error(L, LUA_QL("mobj_t") " field " LUA_QS " is not implemented for Lua and cannot be accessed.", mobj_opt[field])
@@ -405,17 +391,12 @@ static int mobj_get(lua_State *L)
 	case mobj_standingslope:
 		LUA_PushUserdata(L, mo->standingslope, META_SLOPE);
 		break;
-<<<<<<< HEAD
-#endif
-=======
->>>>>>> srb2/next
 	case mobj_colorized:
 		lua_pushboolean(L, mo->colorized);
 		break;
 	case mobj_shadowscale:
 		lua_pushfixed(L, mo->shadowscale);
 		break;
-<<<<<<< HEAD
 	case mobj_whiteshadow:
 		lua_pushboolean(L, mo->whiteshadow);
 		break;
@@ -428,8 +409,6 @@ static int mobj_get(lua_State *L)
 	case mobj_sprzoff:
 		lua_pushfixed(L, mo->sprzoff);
 		break;
-=======
->>>>>>> srb2/next
 	default: // extra custom variables in Lua memory
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -761,17 +740,12 @@ static int mobj_set(lua_State *L)
 		break;
 	case mobj_standingslope:
 		return NOSET;
-<<<<<<< HEAD
-#endif
-=======
->>>>>>> srb2/next
 	case mobj_colorized:
 		mo->colorized = luaL_checkboolean(L, 3);
 		break;
 	case mobj_shadowscale:
 		mo->shadowscale = luaL_checkfixed(L, 3);
 		break;
-<<<<<<< HEAD
 	case mobj_whiteshadow:
 		mo->whiteshadow = luaL_checkboolean(L, 3);
 		break;
@@ -784,8 +758,6 @@ static int mobj_set(lua_State *L)
 	case mobj_sprzoff:
 		mo->sprzoff = luaL_checkfixed(L, 3);
 		break;
-=======
->>>>>>> srb2/next
 	default:
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
