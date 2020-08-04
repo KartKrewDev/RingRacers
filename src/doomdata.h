@@ -46,11 +46,7 @@ enum
 	ML_BLOCKMAP,  // LUT, motion clipping, walls/grid element
 };
 
-<<<<<<< HEAD
-// Extra flag for objects
-=======
 // Extra flag for objects.
->>>>>>> srb2/next
 #define MTF_EXTRA 1
 
 // Reverse gravity flag for objects.
@@ -212,12 +208,9 @@ typedef struct
 
 #define ZSHIFT 4
 
-<<<<<<< HEAD
 //extern const char *Color_Names[MAXSKINCOLORS];
 //extern const UINT8 Color_Opposite[MAXSKINCOLORS*2];
 
-=======
->>>>>>> srb2/next
 #define NUMMAPS 1035
 
 #endif // __DOOMDATA__
