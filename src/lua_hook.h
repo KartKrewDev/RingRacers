@@ -52,7 +52,6 @@ enum hook {
 	hook_FollowMobj,
 	hook_PlayerCanDamage,
 	hook_PlayerQuit,
-<<<<<<< HEAD
 	hook_MusicChange,
 	hook_ShouldSpin,	//SRB2KART
 	hook_ShouldExplode,	//SRB2KART
@@ -63,14 +62,11 @@ enum hook {
 	hook_PlayerCmd,		//SRB2KART
 	hook_IntermissionThinker, //SRB2KART
 	hook_VoteThinker, //SRB2KART
-=======
-	hook_IntermissionThinker,
 	hook_TeamSwitch,
 	hook_ViewpointSwitch,
 	hook_SeenPlayer,
 	hook_PlayerThink,
 	hook_ShouldJingleContinue,
->>>>>>> srb2/next
 
 	hook_MAX // last hook
 };
@@ -109,7 +105,6 @@ boolean LUAh_BotTiccmd(player_t *bot, ticcmd_t *cmd); // Hook for B_BuildTiccmd
 boolean LUAh_BotAI(mobj_t *sonic, mobj_t *tails, ticcmd_t *cmd); // Hook for B_BuildTailsTiccmd by skin name
 boolean LUAh_BotRespawn(mobj_t *sonic, mobj_t *tails); // Hook for B_CheckRespawn
 boolean LUAh_LinedefExecute(line_t *line, mobj_t *mo, sector_t *sector); // Hook for linedef executors
-<<<<<<< HEAD
 boolean LUAh_PlayerMsg(int source, int target, int flags, char *msg, int mute); // Hook for chat messages
 boolean LUAh_HurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source); // Hook for hurt messages
 #define LUAh_PlayerSpawn(player) LUAh_PlayerHook(player, hook_PlayerSpawn) // Hook for G_SpawnPlayer
@@ -130,23 +125,16 @@ boolean LUAh_PlayerCmd(player_t *player, ticcmd_t *cmd);	// Allows to write to p
 void LUAh_IntermissionThinker(void); // Hook for Y_Ticker
 void LUAh_VoteThinker(void);	// Hook for Y_VoteTicker
 
-=======
-boolean LUAh_PlayerMsg(int source, int target, int flags, char *msg); // Hook for chat messages
-boolean LUAh_HurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 damagetype); // Hook for hurt messages
-#define LUAh_PlayerSpawn(player) LUAh_PlayerHook(player, hook_PlayerSpawn) // Hook for G_SpawnPlayer
 #define LUAh_ShieldSpawn(player) LUAh_PlayerHook(player, hook_ShieldSpawn) // Hook for P_SpawnShieldOrb
 #define LUAh_ShieldSpecial(player) LUAh_PlayerHook(player, hook_ShieldSpecial) // Hook for shield abilities
 #define LUAh_MobjMoveBlocked(mo) LUAh_MobjHook(mo, hook_MobjMoveBlocked) // Hook for P_XYMovement (when movement is blocked)
 boolean LUAh_MapThingSpawn(mobj_t *mo, mapthing_t *mthing); // Hook for P_SpawnMapThing by mobj type
 boolean LUAh_FollowMobj(player_t *player, mobj_t *mobj); // Hook for P_PlayerAfterThink Smiles mobj-following
 UINT8 LUAh_PlayerCanDamage(player_t *player, mobj_t *mobj); // Hook for P_PlayerCanDamage
-void LUAh_PlayerQuit(player_t *plr, kickreason_t reason); // Hook for player quitting
-void LUAh_IntermissionThinker(void); // Hook for Y_Ticker
 boolean LUAh_TeamSwitch(player_t *player, int newteam, boolean fromspectators, boolean tryingautobalance, boolean tryingscramble); // Hook for team switching in... uh....
 UINT8 LUAh_ViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced); // Hook for spy mode
 #ifdef SEENAMES
 boolean LUAh_SeenPlayer(player_t *player, player_t *seenfriend); // Hook for MT_NAMECHECK
->>>>>>> srb2/next
 #endif
 #define LUAh_PlayerThink(player) LUAh_PlayerHook(player, hook_PlayerThink) // Hook for P_PlayerThink
 boolean LUAh_ShouldJingleContinue(player_t *player, const char *musname); // Hook for whether a jingle of the given music should continue playing
