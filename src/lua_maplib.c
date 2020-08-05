@@ -2089,12 +2089,8 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->levelflags);
 	else if (fastcmp(field,"menuflags"))
 		lua_pushinteger(L, header->menuflags);
-<<<<<<< HEAD
-	/*else if (fastcmp(field,"automap"))
-		lua_pushboolean(L, header->automap);*/
 	else if (fastcmp(field,"mobj_scale"))
 		lua_pushfixed(L, header->mobj_scale);
-=======
 	else if (fastcmp(field,"startrings"))
 		lua_pushinteger(L, header->startrings);
 	else if (fastcmp(field, "sstimer"))
@@ -2103,7 +2099,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->ssspheres);
 	else if (fastcmp(field, "gravity"))
 		lua_pushfixed(L, header->gravity);
->>>>>>> srb2/next
 	// TODO add support for reading numGradedMares and grades
 	else {
 		// Read custom vars now
