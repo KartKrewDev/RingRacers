@@ -8513,7 +8513,7 @@ static const char *const MAPTHINGFLAG_LIST[4] = {
 
 static const char *const PLAYERFLAG_LIST[] = {
 	// Flip camera angle with gravity flip prefrence.
-	"FLIPCAM",
+	"FAULT",
 
 	// Cheats
 	"GODMODE",

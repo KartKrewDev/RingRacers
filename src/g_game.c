@@ -2599,7 +2599,7 @@ void G_PlayerReborn(INT32 player)
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN|PF_FAULT));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
@@ -2771,11 +2771,6 @@ void G_PlayerReborn(INT32 player)
 	if (songcredit)
 		S_ShowMusicCredit();
 
-	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
-	{
-		K_DoIngameRespawn(p);
-	}
-
 	if (gametype == GT_COOP)
 		P_FindEmerald(); // scan for emeralds to hunt for
 
@@ -2874,7 +2869,7 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost)
 
 	P_SpawnPlayer(playernum);
 
-	if (starpost) //Don't even bother with looking for a place to spawn.
+	if (starpost || ( players[playernum].pflags & PF_FAULT )) //Don't even bother with looking for a place to spawn.
 	{
 		P_MovePlayerToStarpost(playernum);
 #ifdef HAVE_BLUA
@@ -4625,7 +4620,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		memset(&players[i].respawn, 0, sizeof (players[i].respawn));
 
 		// The latter two should clear by themselves, but just in case
-		players[i].pflags &= ~(PF_TAGIT|PF_TAGGED|PF_FULLSTASIS);
+		players[i].pflags &= ~(PF_FAULT|PF_TAGIT|PF_TAGGED|PF_FULLSTASIS);
 
 		// Clear cheatcodes too, just in case.
 		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);

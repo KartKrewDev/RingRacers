@@ -57,7 +57,7 @@ typedef enum
 typedef enum
 {
 	// Flip camera angle with gravity flip prefrence.
-	PF_FLIPCAM = 1,
+	PF_FAULT = 1,
 
 	// Cheats
 	PF_GODMODE = 1<<1,
