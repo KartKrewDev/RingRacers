@@ -105,11 +105,6 @@ void R_DrawColumn_8(void)
 	}
 }
 
-<<<<<<< HEAD
-#define TRANSPARENTPIXEL 255
-
-=======
->>>>>>> srb2/next
 void R_Draw2sMultiPatchColumn_8(void)
 {
 	INT32 count;

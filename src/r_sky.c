@@ -76,12 +76,5 @@ void R_SetupSkyDraw(void)
 void R_SetSkyScale(void)
 {
 	fixed_t difference = vid.fdupx-(vid.dupx<<FRACBITS);
-<<<<<<< HEAD
-	fixed_t scr = FRACUNIT;
-	if (r_splitscreen > 1)
-		scr *= 2;
-	skyscale = FixedDiv(scr, vid.fdupx+difference);
-=======
 	skyscale = FixedDiv(fovtan, vid.fdupx+difference);
->>>>>>> srb2/next
 }

@@ -100,15 +100,12 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		thing->player->starpostscale = starpostscale;
 		thing->player->starpostnum = starpostnum;
 
-<<<<<<< HEAD
-=======
 		thing->player->drawangle = drawangle;
 
 		// Reset map starposts for the player's new info.
 		P_ResetStarposts();
 		P_ClearStarPost(starpostnum);
 
->>>>>>> srb2/next
 		P_ResetPlayer(thing->player);
 		P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
 
@@ -153,34 +150,6 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 		else
 			thing->player->viewz = thing->z + thing->player->viewheight;
 
-<<<<<<< HEAD
-		if (!dontstopmove)
-			thing->reactiontime = TICRATE/2; // don't move for about half a second
-
-		// absolute angle position
-		if (thing == players[consoleplayer].mo)
-			localangle[0] = angle;
-		else if (r_splitscreen)
-		{
-			for (i = 1; i <= r_splitscreen; i++)
-			{
-				if (thing == players[displayplayers[i]].mo)
-				{
-					localangle[i] = angle;
-					break;
-				}
-			}
-		}
-
-		// move chasecam at new player location
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (thing->player == &players[displayplayers[i]] && camera[i].chase)
-				P_ResetCamera(thing->player, &camera[i]);
-		}
-
-=======
->>>>>>> srb2/next
 		// don't run in place after a teleport
 		if (!dontstopmove)
 		{
@@ -197,29 +166,30 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 			thing->player->rmomx = thing->player->rmomy = 0;
 			thing->player->speed = 0;
 			P_ResetPlayer(thing->player);
-<<<<<<< HEAD
 			P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
-=======
-			P_SetPlayerMobjState(thing, S_PLAY_STND);
 
 			thing->reactiontime = TICRATE/2; // don't move for about half a second
 			thing->player->drawangle = angle;
->>>>>>> srb2/next
 		}
 		else
 			thing->player->drawangle += (angle - thing->angle);
 
-		// absolute angle position
-		if (thing->player == &players[consoleplayer])
-			localangle = angle;
-		if (thing->player == &players[secondarydisplayplayer])
-			localangle2 = angle;
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (thing == players[displayplayers[i]].mo)
+			{
+				// absolute angle position
+				localangle[i] = angle;
 
-		// move chasecam at new player location
-		if (splitscreen && camera2.chase && thing->player == &players[secondarydisplayplayer])
-			P_ResetCamera(thing->player, &camera2);
-		else if (camera.chase && thing->player == &players[displayplayer])
-			P_ResetCamera(thing->player, &camera);
+				if (camera[i].chase)
+				{
+					// move chasecam at new player location
+					P_ResetCamera(thing->player, &camera[i]);
+				}
+
+				break;
+			}
+		}
 
 		if (flash)
 			P_FlashPal(thing->player, PAL_MIXUP, 10);

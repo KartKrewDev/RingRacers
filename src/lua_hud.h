@@ -15,7 +15,6 @@ enum hud {
 	hud_textspectator,
 
 	hud_time,
-<<<<<<< HEAD
 	hud_gametypeinfo,
 	hud_minimap,
 	hud_item,
@@ -30,29 +29,9 @@ enum hud {
 	hud_freeplay,
 	hud_rankings,		// Tab rankings
 
-=======
-	hud_rings,
-	hud_lives,
-	// Match / CTF / Tag / Ringslinger
-	hud_weaponrings,
-	hud_powerstones,
-	hud_teamscores,
-	// NiGHTS mode
-	hud_nightslink,
-	hud_nightsdrill,
-	hud_nightsspheres,
-	hud_nightsscore,
-	hud_nightstime,
-	hud_nightsrecords,
-	// TAB scores overlays
-	hud_rankings,
-	hud_coopemeralds,
-	hud_tokens,
-	hud_tabemblems,
 	// Intermission
 	hud_intermissiontally,
 	hud_intermissionmessages,
->>>>>>> srb2/next
 	hud_MAX
 };
 

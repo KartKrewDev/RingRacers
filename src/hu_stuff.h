@@ -124,18 +124,11 @@ void HU_Drawer(void);
 char HU_dequeueChatChar(void);
 void HU_Erase(void);
 void HU_clearChatChars(void);
-<<<<<<< HEAD
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);	// Lat': Ping drawer for scoreboard.
+void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags);	// Lat': Ping drawer for scoreboard.
 void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);
+void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer);
 //void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer);
 //void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer);
-void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol);
-=======
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags);	// Lat': Ping drawer for scoreboard.
-void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer);
-void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer);
-void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer);
->>>>>>> srb2/next
 void HU_DrawEmeralds(INT32 x, INT32 y, INT32 pemeralds);
 
 INT32 HU_CreateTeamScoresTbl(playersort_t *tab, UINT32 dmtotals[]);

@@ -40,17 +40,7 @@ void M_SaveFrame(void);
 void M_StopMovie(void);
 
 // the file where game vars and settings are saved
-<<<<<<< HEAD
-#ifdef DC
-#define CONFIGFILENAME "srb2dc.cfg"
-#elif defined (PSP)
-#define CONFIGFILENAME "srb2psp.cfg"
-#else
 #define CONFIGFILENAME "kartconfig.cfg"
-#endif
-=======
-#define CONFIGFILENAME "config.cfg"
->>>>>>> srb2/next
 
 INT32 M_MapNumber(char first, char second);
 
@@ -111,8 +101,6 @@ boolean M_IsPathAbsolute (const char *path);
 void    M_MkdirEach      (const char *path, int start, int mode);
 void    M_MkdirEachUntil (const char *path, int start, int end, int mode);
 
-<<<<<<< HEAD
-=======
 /* Return offset to the first word in a string. */
 /* E.g. cursor += M_JumpWord(line + cursor); */
 int M_JumpWord (const char *s);
@@ -127,7 +115,6 @@ trailing zeros, or "" if the fractional part is zero.
 */
 const char * M_Ftrim (double);
 
->>>>>>> srb2/next
 // counting bits, for weapon ammo code, usually
 FUNCMATH UINT8 M_CountBits(UINT32 num, UINT8 size);
 
