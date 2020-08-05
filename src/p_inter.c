@@ -557,7 +557,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				P_RemoveMobj(special);
 			}
 			else
-				K_SpinPlayer(player, special->target, 0, special, false);
+				K_SpinPlayer(player, special->target, KSPIN_SPINOUT, special, false);
 			return;
 		/*case MT_EERIEFOG:
 			special->frame &= ~FF_TRANS80;
@@ -3234,14 +3234,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				player->kartstuff[k_sneakertimer] = 0;
 				player->kartstuff[k_numsneakers] = 0;
 
-				K_SpinPlayer(player, source, 1, inflictor, false);
+				K_SpinPlayer(player, source, KSPIN_WIPEOUT, inflictor, false);
 				K_KartPainEnergyFling(player);
 
 				if (P_IsDisplayPlayer(player))
 					P_StartQuake(32<<FRACBITS, 5);
 			}
 			else
-				K_SpinPlayer(player, source, 0, inflictor, false);
+				K_SpinPlayer(player, source, KSPIN_SPINOUT, inflictor, false);
 
 			return true;
 		}

@@ -785,7 +785,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 
 			// Player Damage
-			K_SpinPlayer(tmthing->player, thing, 0, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), false);
+			K_SpinPlayer(tmthing->player, thing, KSPIN_SPINOUT, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), false);
 			S_StartSound(thing, sfx_s3k44);
 		}
 		else
@@ -843,7 +843,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 
 			// Player Damage
-			K_SpinPlayer(thing->player, tmthing, 0, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), false);
+			K_SpinPlayer(thing->player, tmthing, KSPIN_SPINOUT, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), false);
 			S_StartSound(tmthing, sfx_s3k44);
 		}
 		else
@@ -1437,7 +1437,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					if (G_BattleGametype() && tmthing->player->kartstuff[k_pogospring])
 					{
 						K_StealBumper(tmthing->player, thing->player, false);
-						K_SpinPlayer(thing->player, tmthing, 0, tmthing, false);
+						K_SpinPlayer(thing->player, tmthing, KSPIN_SPINOUT, tmthing, false);
 					}
 				}
 				else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
@@ -1447,7 +1447,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					if (G_BattleGametype() && thing->player->kartstuff[k_pogospring])
 					{
 						K_StealBumper(thing->player, tmthing->player, false);
-						K_SpinPlayer(tmthing->player, thing, 0, thing, false);
+						K_SpinPlayer(tmthing->player, thing, KSPIN_SPINOUT, thing, false);
 					}
 				}
 
@@ -1456,12 +1456,12 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
 					{
 						K_StealBumper(thing->player, tmthing->player, false);
-						K_SpinPlayer(tmthing->player, thing, 0, tmthing, false);
+						K_SpinPlayer(tmthing->player, thing, KSPIN_SPINOUT, tmthing, false);
 					}
 					else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
 					{
 						K_StealBumper(tmthing->player, thing->player, false);
-						K_SpinPlayer(thing->player, tmthing, 0, thing, false);
+						K_SpinPlayer(thing->player, tmthing, KSPIN_SPINOUT, thing, false);
 					}
 				}
 
