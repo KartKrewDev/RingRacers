@@ -35,14 +35,12 @@ static UINT8 hud_enabled[(hud_MAX/8)+1];
 
 static UINT8 hudAvailable; // hud hooks field
 
-<<<<<<< HEAD
 static UINT8 camnum = 1;
-=======
+
 #ifdef LUA_PATCH_SAFETY
 static patchinfo_t *patchinfo, *patchinfohead;
 static int numluapatches;
 #endif
->>>>>>> srb2/next
 
 // must match enum hud in lua_hud.h
 static const char *const hud_disable_options[] = {
@@ -50,7 +48,6 @@ static const char *const hud_disable_options[] = {
 	"textspectator",
 
 	"time",
-<<<<<<< HEAD
 	"gametypeinfo",	// Bumpers / Karma / Laps depending on gametype
 	"minimap",
 	"item",
@@ -64,29 +61,9 @@ static const char *const hud_disable_options[] = {
 	"speedometer",
 	"freeplay",
 	"rankings",
-=======
-	"rings",
-	"lives",
-
-	"weaponrings",
-	"powerstones",
-	"teamscores",
-
-	"nightslink",
-	"nightsdrill",
-	"nightsrings",
-	"nightsscore",
-	"nightstime",
-	"nightsrecords",
-
-	"rankings",
-	"coopemeralds",
-	"tokens",
-	"tabemblems",
 
 	"intermissiontally",
 	"intermissionmessages",
->>>>>>> srb2/next
 	NULL};
 
 enum hudinfo {
@@ -745,7 +722,33 @@ static int libd_drawScaled(lua_State *L)
 	return 0;
 }
 
-<<<<<<< HEAD
+static int libd_drawStretched(lua_State *L)
+{
+	fixed_t x, y, hscale, vscale;
+	INT32 flags;
+	patch_t *patch;
+	const UINT8 *colormap = NULL;
+
+	HUDONLY
+	x = luaL_checkinteger(L, 1);
+	y = luaL_checkinteger(L, 2);
+	hscale = luaL_checkinteger(L, 3);
+	if (hscale < 0)
+		return luaL_error(L, "negative horizontal scale");
+	vscale = luaL_checkinteger(L, 4);
+	if (vscale < 0)
+		return luaL_error(L, "negative vertical scale");
+	patch = *((patch_t **)luaL_checkudata(L, 5, META_PATCH));
+	flags = luaL_optinteger(L, 6, 0);
+	if (!lua_isnoneornil(L, 7))
+		colormap = *((UINT8 **)luaL_checkudata(L, 7, META_COLORMAP));
+
+	flags &= ~V_PARAMMASK; // Don't let crashes happen.
+
+	V_DrawStretchyFixedPatch(x, y, hscale, vscale, flags, patch, colormap);
+	return 0;
+}
+
 // KART: draw patch on minimap from x, y coordinates on the map
 static int libd_drawOnMinimap(lua_State *L)
 {
@@ -916,32 +919,6 @@ static int libd_drawOnMinimap(lua_State *L)
 
 	// and NOW we can FINALLY DRAW OUR GOD DAMN PATCH :V
 	V_DrawFixedPatch(amxpos, amypos, scale, splitflags, patch, colormap);
-=======
-static int libd_drawStretched(lua_State *L)
-{
-	fixed_t x, y, hscale, vscale;
-	INT32 flags;
-	patch_t *patch;
-	const UINT8 *colormap = NULL;
-
-	HUDONLY
-	x = luaL_checkinteger(L, 1);
-	y = luaL_checkinteger(L, 2);
-	hscale = luaL_checkinteger(L, 3);
-	if (hscale < 0)
-		return luaL_error(L, "negative horizontal scale");
-	vscale = luaL_checkinteger(L, 4);
-	if (vscale < 0)
-		return luaL_error(L, "negative vertical scale");
-	patch = *((patch_t **)luaL_checkudata(L, 5, META_PATCH));
-	flags = luaL_optinteger(L, 6, 0);
-	if (!lua_isnoneornil(L, 7))
-		colormap = *((UINT8 **)luaL_checkudata(L, 7, META_COLORMAP));
-
-	flags &= ~V_PARAMMASK; // Don't let crashes happen.
-
-	V_DrawStretchyFixedPatch(x, y, hscale, vscale, flags, patch, colormap);
->>>>>>> srb2/next
 	return 0;
 }
 
@@ -973,7 +950,6 @@ static int libd_drawPaddedNum(lua_State *L)
 	V_DrawPaddedTallNum(x, y, flags, num, digits);
 	return 0;
 }
-
 
 static int libd_drawPingNum(lua_State *L)
 {
@@ -1121,19 +1097,6 @@ static int libd_drawString(lua_State *L)
 	return 0;
 }
 
-<<<<<<< HEAD
-static int libd_drawKartString(lua_State *L)
-{
-	fixed_t x = luaL_checkinteger(L, 1);
-	fixed_t y = luaL_checkinteger(L, 2);
-	const char *str = luaL_checkstring(L, 3);
-	INT32 flags = luaL_optinteger(L, 4, V_ALLOWLOWERCASE);
-
-	flags &= ~V_PARAMMASK; // Don't let crashes happen.
-
-	HUDONLY
-	V_DrawKartString(x, y, flags, str);
-=======
 static int libd_drawNameTag(lua_State *L)
 {
 	INT32 x;
@@ -1193,7 +1156,20 @@ static int libd_drawScaledNameTag(lua_State *L)
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 	V_DrawNameTag(FixedInt(x), FixedInt(y), flags, scale, basecolormap, outlinecolormap, str);
->>>>>>> srb2/next
+	return 0;
+}
+
+static int libd_drawKartString(lua_State *L)
+{
+	fixed_t x = luaL_checkinteger(L, 1);
+	fixed_t y = luaL_checkinteger(L, 2);
+	const char *str = luaL_checkstring(L, 3);
+	INT32 flags = luaL_optinteger(L, 4, V_ALLOWLOWERCASE);
+
+	flags &= ~V_PARAMMASK; // Don't let crashes happen.
+
+	HUDONLY
+	V_DrawKartString(x, y, flags, str);
 	return 0;
 }
 
@@ -1415,14 +1391,11 @@ static luaL_Reg lib_draw[] = {
 	{"drawFill", libd_drawFill},
 	{"fadeScreen", libd_fadeScreen},
 	{"drawString", libd_drawString},
-<<<<<<< HEAD
-	{"drawKartString", libd_drawKartString},
-=======
 	{"drawNameTag", libd_drawNameTag},
 	{"drawScaledNameTag", libd_drawScaledNameTag},
 	{"fadeScreen", libd_fadeScreen},
+	{"drawKartString", libd_drawKartString},
 	// misc
->>>>>>> srb2/next
 	{"stringWidth", libd_stringWidth},
 	{"nameTagWidth", libd_nameTagWidth},
 	// m_random
@@ -1439,11 +1412,8 @@ static luaL_Reg lib_draw[] = {
 	{"dupy", libd_dupy},
 	{"renderer", libd_renderer},
 	{"localTransFlag", libd_getlocaltransflag},
-<<<<<<< HEAD
 	{"drawOnMinimap", libd_drawOnMinimap},
-=======
 	{"userTransFlag", libd_getusertransflag},
->>>>>>> srb2/next
 	{NULL, NULL}
 };
 
