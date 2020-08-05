@@ -37,13 +37,11 @@
 #include "lua_hud.h" // hud_running errors
 #include "lua_hook.h" // hook_cmd_running
 
-<<<<<<< HEAD
-#define NOHUD if (hud_running) return luaL_error(L, "HUD rendering code should not call this function!"); else if (hook_cmd_running) return luaL_error(L, "CMD Building code should not call this function!");
+#define NOHUD if (hud_running) \
+	return luaL_error(L, "HUD rendering code should not call this function!"); \
+else if (hook_cmd_running) \
+	return luaL_error(L, "CMD Building code should not call this function!");
 // Yes technically cmd hook isn't a hud but whatever, this avoids having 2 defines for virtually the same thing.
-=======
-#define NOHUD if (hud_running)\
-return luaL_error(L, "HUD rendering code should not call this function!");
->>>>>>> srb2/next
 
 boolean luaL_checkboolean(lua_State *L, int narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);
@@ -350,20 +348,7 @@ static int lib_pRandomRange(lua_State *L)
 	return 1;
 }
 
-<<<<<<< HEAD
-// Deprecated, macros, etc.
-static int lib_pRandom(lua_State *L)
-{
-	NOHUD
-	LUA_Deprecated(L, "P_Random", "P_RandomByte");
-	lua_pushinteger(L, P_RandomByte());
-	demo_writerng = 2;
-	return 1;
-}
-
-=======
 // Macros.
->>>>>>> srb2/next
 static int lib_pSignedRandom(lua_State *L)
 {
 	NOHUD
@@ -903,22 +888,6 @@ static int lib_pCheckSolidLava(lua_State *L)
 	return 1;
 }
 
-<<<<<<< HEAD
-=======
-static int lib_pCanRunOnWater(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	ffloor_t *rover = *((ffloor_t **)luaL_checkudata(L, 2, META_FFLOOR));
-	//HUDSAFE
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	if (!rover)
-		return LUA_ErrInvalid(L, "ffloor_t");
-	lua_pushboolean(L, P_CanRunOnWater(player, rover));
-	return 1;
-}
-
 static int lib_pMaceRotate(lua_State *L)
 {
 	mobj_t *center = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -932,7 +901,6 @@ static int lib_pMaceRotate(lua_State *L)
 	return 0;
 }
 
->>>>>>> srb2/next
 // P_USER
 ////////////
 
@@ -958,20 +926,6 @@ static int lib_pGetPlayerSpinHeight(lua_State *L)
 	return 1;
 }
 
-<<<<<<< HEAD
-=======
-static int lib_pGetPlayerControlDirection(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	//HUDSAFE
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	lua_pushinteger(L, P_GetPlayerControlDirection(player));
-	return 1;
-}
-
->>>>>>> srb2/next
 static int lib_pAddPlayerScore(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1169,17 +1123,12 @@ static int lib_pPlayJingleMusic(lua_State *L)
 static int lib_pRestoreMusic(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-<<<<<<< HEAD
-	NOHUD
-	if (!player || P_IsLocalPlayer(player))
-	{
-=======
 	//NOHUD
 	//INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	if (P_IsLocalPlayer(player))
->>>>>>> srb2/next
+	{
 		P_RestoreMusic(player);
 		lua_pushboolean(L, true);
 	}
@@ -1401,58 +1350,6 @@ static int lib_pHomingAttack(lua_State *L)
 	lua_pushboolean(L, P_HomingAttack(source, enemy));
 	return 1;
 }
-
-/*static int lib_pSuperReady(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	//HUDSAFE
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	lua_pushboolean(L, P_SuperReady(player));
-	return 1;
-<<<<<<< HEAD
-}*/
-=======
-}
-
-static int lib_pDoJump(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean soundandstate = (boolean)lua_opttrueboolean(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_DoJump(player, soundandstate);
-	return 0;
-}
-
-static int lib_pSpawnThokMobj(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_SpawnThokMobj(player);
-	return 0;
-}
-
-static int lib_pSpawnSpinMobj(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	mobjtype_t type = luaL_checkinteger(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	if (type >= NUMMOBJTYPES)
-		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
-	P_SpawnSpinMobj(player, type);
-	return 0;
-}
->>>>>>> srb2/next
 
 static int lib_pTelekinesis(lua_State *L)
 {
@@ -1699,54 +1596,6 @@ static int lib_pPlayerRingBurst(lua_State *L)
 	return 0;
 }
 
-<<<<<<< HEAD
-=======
-static int lib_pPlayerWeaponPanelBurst(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_PlayerWeaponPanelBurst(player);
-	return 0;
-}
-
-static int lib_pPlayerWeaponAmmoBurst(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_PlayerWeaponAmmoBurst(player);
-	return 0;
-}
-
-static int lib_pPlayerWeaponPanelOrAmmoBurst(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_PlayerWeaponPanelOrAmmoBurst(player);
-	return 0;
-}
-
-static int lib_pPlayerEmeraldBurst(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean toss = lua_optboolean(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_PlayerEmeraldBurst(player, toss);
-	return 0;
-}
-
->>>>>>> srb2/next
 static int lib_pPlayerFlagBurst(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1927,16 +1776,10 @@ static int lib_pMobjTouchingSectorSpecial(lua_State *L)
 	INT32 number = (INT32)luaL_checkinteger(L, 3);
 	boolean touchground = lua_optboolean(L, 4);
 	//HUDSAFE
-<<<<<<< HEAD
-	if (!mo)
-		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number, touchground), META_SECTOR);
-=======
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	LUA_PushUserdata(L, P_PlayerTouchingSectorSpecial(player, section, number), META_SECTOR);
->>>>>>> srb2/next
 	return 1;
 }
 
@@ -2566,27 +2409,6 @@ static int lib_sStopSoundByID(lua_State *L)
 {
 	void *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	sfxenum_t sound_id = luaL_checkinteger(L, 2);
-<<<<<<< HEAD
-	NOHUD
-	if (!origin)
-		return LUA_ErrInvalid(L, "mobj_t");
-	S_StopSoundByID(origin, sound_id);
-	return 0;
-}
-
-static int lib_sShowMusicCredit(lua_State *L)
-{
-	player_t *player = NULL;
-	//HUDSAFE
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-		S_ShowMusicCredit();
-=======
 	//NOHUD
 	if (!origin)
 		return LUA_ErrInvalid(L, "mobj_t");
@@ -2594,7 +2416,6 @@ static int lib_sShowMusicCredit(lua_State *L)
 		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
 
 	S_StopSoundByID(origin, sound_id);
->>>>>>> srb2/next
 	return 0;
 }
 
@@ -2707,13 +2528,8 @@ static int lib_sMusicType(lua_State *L)
 static int lib_sMusicPlaying(lua_State *L)
 {
 	player_t *player = NULL;
-<<<<<<< HEAD
-	NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-=======
 	//NOHUD
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
->>>>>>> srb2/next
 	{
 		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 		if (!player)
@@ -2746,13 +2562,8 @@ static int lib_sMusicPaused(lua_State *L)
 static int lib_sMusicName(lua_State *L)
 {
 	player_t *player = NULL;
-<<<<<<< HEAD
-	NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-=======
 	//NOHUD
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
->>>>>>> srb2/next
 	{
 		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 		if (!player)
@@ -2817,33 +2628,7 @@ static int lib_sMusicExists(lua_State *L)
 		music_compat_name[6] = 0;
 		music_name = (const char *)&music_compat_name;
 	}
-<<<<<<< HEAD
-	else
-	{
-		music_num = 0;
-		music_name = luaL_checkstring(L, 1);
-	}
-#else
-	const char *music_name = luaL_checkstring(L, 1);
-#endif
-	NOHUD
-	lua_pushboolean(L, S_MusicExists(music_name, checkMIDI, checkDigi));
-	return 1;
-}
 
-static int lib_sGetMusicLength(lua_State *L)
-{
-	player_t *player = NULL;
-	NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-=======
-
->>>>>>> srb2/next
 	if (!player || P_IsLocalPlayer(player))
 		lua_pushinteger(L, (int)S_GetMusicLength());
 	else
@@ -2869,76 +2654,9 @@ static int lib_sSetMusicLoopPoint(lua_State *L)
 	return 1;
 }
 
-<<<<<<< HEAD
-static int lib_sGetMusicLoopPoint(lua_State *L)
-{
-	player_t *player = NULL;
-	NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, (int)S_GetMusicLoopPoint());
-	else
-		lua_pushnil(L);
-=======
 static int lib_sGetMusicLength(lua_State *L)
 {
 	lua_pushinteger(L, S_GetMusicLength());
-	return 1;
-}
-
-static int lib_sGetMusicPosition(lua_State *L)
-{
-	lua_pushinteger(L, S_GetMusicPosition());
-	return 1;
-}
-
-static int lib_sSetMusicPosition(lua_State *L)
-{
-	UINT32 pos = (UINT32)luaL_checkinteger(L, 1);
-	lua_pushboolean(L, S_SetMusicPosition(pos));
-	return 1;
-}
-
-static int lib_sOriginPlaying(lua_State *L)
-{
-	void *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	//NOHUD
-	INLEVEL
-	if (!origin)
-		return LUA_ErrInvalid(L, "mobj_t");
-	lua_pushboolean(L, S_OriginPlaying(origin));
->>>>>>> srb2/next
-	return 1;
-}
-
-static int lib_sSetMusicPosition(lua_State *L)
-{
-<<<<<<< HEAD
-	UINT32 position = (UINT32)luaL_checkinteger(L, 1);
-	player_t *player = NULL;
-	NOHUD
-	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
-	{
-		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-		lua_pushboolean(L, S_SetMusicPosition(position));
-	else
-		lua_pushnil(L);
-=======
-	sfxenum_t id = luaL_checkinteger(L, 1);
-	//NOHUD
-	if (id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", id, NUMSFX-1);
-	lua_pushboolean(L, S_IdPlaying(id));
->>>>>>> srb2/next
 	return 1;
 }
 
@@ -2956,6 +2674,13 @@ static int lib_sGetMusicPosition(lua_State *L)
 		lua_pushinteger(L, (int)S_GetMusicPosition());
 	else
 		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sSetMusicPosition(lua_State *L)
+{
+	UINT32 pos = (UINT32)luaL_checkinteger(L, 1);
+	lua_pushboolean(L, S_SetMusicPosition(pos));
 	return 1;
 }
 
@@ -3126,7 +2851,8 @@ static int lib_sFadeOutStopMusic(lua_State *L)
 static int lib_sOriginPlaying(lua_State *L)
 {
 	void *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	NOHUD
+	//NOHUD
+	INLEVEL
 	if (!origin)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, S_OriginPlaying(origin));
@@ -3136,7 +2862,7 @@ static int lib_sOriginPlaying(lua_State *L)
 static int lib_sIdPlaying(lua_State *L)
 {
 	sfxenum_t id = luaL_checkinteger(L, 1);
-	NOHUD
+	//NOHUD
 	if (id >= NUMSFX)
 		return luaL_error(L, "sfx %d out of range (0 - %d)", id, NUMSFX-1);
 	lua_pushboolean(L, S_IdPlaying(id));
@@ -3147,8 +2873,8 @@ static int lib_sSoundPlaying(lua_State *L)
 {
 	void *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	sfxenum_t id = luaL_checkinteger(L, 2);
-<<<<<<< HEAD
-	NOHUD
+	//NOHUD
+	INLEVEL
 	if (!origin)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (id >= NUMSFX)
@@ -3157,21 +2883,348 @@ static int lib_sSoundPlaying(lua_State *L)
 	return 1;
 }
 
+// This doesn't really exist, but we're providing it as a handy netgame-safe wrapper for stuff that should be locally handled.
+
+static int lib_sStartMusicCaption(lua_State *L)
+{
+	player_t *player = NULL;
+	const char *caption = luaL_checkstring(L, 1);
+	UINT16 lifespan = (UINT16)luaL_checkinteger(L, 2);
+	//HUDSAFE
+	//INLEVEL
+
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (lifespan && (!player || P_IsLocalPlayer(player)))
+	{
+		strlcpy(S_sfx[sfx_None].caption, caption, sizeof(S_sfx[sfx_None].caption));
+		S_StartCaption(sfx_None, -1, lifespan);
+	}
+	return 0;
+}
+
+static int lib_sShowMusicCredit(lua_State *L)
+{
+	player_t *player = NULL;
+	//HUDSAFE
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		S_ShowMusicCredit();
+	return 0;
+}
+
 // G_GAME
 ////////////
 
+// Copypasted from lib_cvRegisterVar :]
+static int lib_gAddGametype(lua_State *L)
+{
+	const char *k;
+	lua_Integer i;
+
+	const char *gtname = NULL;
+	const char *gtconst = NULL;
+	const char *gtdescription = NULL;
+	INT16 newgtidx = 0;
+	UINT32 newgtrules = 0;
+	UINT32 newgttol = 0;
+	INT32 newgtpointlimit = 0;
+	INT32 newgttimelimit = 0;
+	UINT8 newgtleftcolor = 0;
+	UINT8 newgtrightcolor = 0;
+	INT16 newgtrankingstype = -1;
+	int newgtinttype = 0;
+
+	luaL_checktype(L, 1, LUA_TTABLE);
+	lua_settop(L, 1); // Clear out all other possible arguments, leaving only the first one.
+
+	if (!lua_lumploading)
+		return luaL_error(L, "This function cannot be called from within a hook or coroutine!");
+
+	// Ran out of gametype slots
+	if (gametypecount == NUMGAMETYPEFREESLOTS)
+		return luaL_error(L, "Ran out of free gametype slots!");
+
+#define FIELDERROR(f, e) luaL_error(L, "bad value for " LUA_QL(f) " in table passed to " LUA_QL("G_AddGametype") " (%s)", e);
+#define TYPEERROR(f, t) FIELDERROR(f, va("%s expected, got %s", lua_typename(L, t), luaL_typename(L, -1)))
+
+	lua_pushnil(L);
+	while (lua_next(L, 1)) {
+		// stack: gametype table, key/index, value
+		//               1            2        3
+		i = 0;
+		k = NULL;
+		if (lua_isnumber(L, 2))
+			i = lua_tointeger(L, 2);
+		else if (lua_isstring(L, 2))
+			k = lua_tostring(L, 2);
+
+		// Sorry, no gametype rules as key names.
+		if (i == 1 || (k && fasticmp(k, "name"))) {
+			if (!lua_isstring(L, 3))
+				TYPEERROR("name", LUA_TSTRING)
+			gtname = Z_StrDup(lua_tostring(L, 3));
+		} else if (i == 2 || (k && fasticmp(k, "identifier"))) {
+			if (!lua_isstring(L, 3))
+				TYPEERROR("identifier", LUA_TSTRING)
+			gtconst = Z_StrDup(lua_tostring(L, 3));
+		} else if (i == 3 || (k && fasticmp(k, "rules"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("rules", LUA_TNUMBER)
+			newgtrules = (UINT32)lua_tointeger(L, 3);
+		} else if (i == 4 || (k && fasticmp(k, "typeoflevel"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("typeoflevel", LUA_TNUMBER)
+			newgttol = (UINT32)lua_tointeger(L, 3);
+		} else if (i == 5 || (k && fasticmp(k, "rankingtype"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("rankingtype", LUA_TNUMBER)
+			newgtrankingstype = (INT16)lua_tointeger(L, 3);
+		} else if (i == 6 || (k && fasticmp(k, "intermissiontype"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("intermissiontype", LUA_TNUMBER)
+			newgtinttype = (int)lua_tointeger(L, 3);
+		} else if (i == 7 || (k && fasticmp(k, "defaultpointlimit"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("defaultpointlimit", LUA_TNUMBER)
+			newgtpointlimit = (INT32)lua_tointeger(L, 3);
+		} else if (i == 8 || (k && fasticmp(k, "defaulttimelimit"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("defaulttimelimit", LUA_TNUMBER)
+			newgttimelimit = (INT32)lua_tointeger(L, 3);
+		} else if (i == 9 || (k && fasticmp(k, "description"))) {
+			if (!lua_isstring(L, 3))
+				TYPEERROR("description", LUA_TSTRING)
+			gtdescription = Z_StrDup(lua_tostring(L, 3));
+		} else if (i == 10 || (k && fasticmp(k, "headerleftcolor"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("headerleftcolor", LUA_TNUMBER)
+			newgtleftcolor = (UINT8)lua_tointeger(L, 3);
+		} else if (i == 11 || (k && fasticmp(k, "headerrightcolor"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("headerrightcolor", LUA_TNUMBER)
+			newgtrightcolor = (UINT8)lua_tointeger(L, 3);
+		// Key name specified
+		} else if ((!i) && (k && fasticmp(k, "headercolor"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("headercolor", LUA_TNUMBER)
+			newgtleftcolor = newgtrightcolor = (UINT8)lua_tointeger(L, 3);
+		}
+		lua_pop(L, 1);
+	}
+
+#undef FIELDERROR
+#undef TYPEERROR
+
+	// pop gametype table
+	lua_pop(L, 1);
+
+	// Set defaults
+	if (gtname == NULL)
+		gtname = Z_StrDup("Unnamed gametype");
+	if (gtdescription == NULL)
+		gtdescription = Z_StrDup("???");
+
+	// Add the new gametype
+	newgtidx = G_AddGametype(newgtrules);
+	G_AddGametypeTOL(newgtidx, newgttol);
+	G_SetGametypeDescription(newgtidx, NULL, newgtleftcolor, newgtrightcolor);
+	strncpy(gametypedesc[newgtidx].notes, gtdescription, 441);
+
+	// Not covered by G_AddGametype alone.
+	if (newgtrankingstype == -1)
+		newgtrankingstype = newgtidx;
+	gametyperankings[newgtidx] = newgtrankingstype;
+	intermissiontypes[newgtidx] = newgtinttype;
+	pointlimits[newgtidx] = newgtpointlimit;
+	timelimits[newgtidx] = newgttimelimit;
+
+	// Write the new gametype name.
+	Gametype_Names[newgtidx] = gtname;
+
+	// Write the constant name.
+	if (gtconst == NULL)
+		gtconst = gtname;
+	G_AddGametypeConstant(newgtidx, gtconst);
+
+	// Update gametype_cons_t accordingly.
+	G_UpdateGametypeSelections();
+
+	// done
+	CONS_Printf("Added gametype %s\n", Gametype_Names[newgtidx]);
+	return 0;
+}
+
+static int Lcheckmapnumber (lua_State *L, int idx, const char *fun)
+{
+	if (ISINLEVEL)
+		return luaL_optinteger(L, idx, gamemap);
+	else
+	{
+		if (lua_isnoneornil(L, idx))
+		{
+			return luaL_error(L,
+					"%s can only be used without a parameter while in a level.",
+					fun
+			);
+		}
+		else
+			return luaL_checkinteger(L, idx);
+	}
+}
+
 static int lib_gBuildMapName(lua_State *L)
 {
-	INT32 map = luaL_optinteger(L, 1, gamemap);
+	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapName");
 	//HUDSAFE
 	lua_pushstring(L, G_BuildMapName(map));
 	return 1;
+}
+
+static int lib_gBuildMapTitle(lua_State *L)
+{
+	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapTitle");
+	char *name;
+	if (map < 1 || map > NUMMAPS)
+	{
+		return luaL_error(L,
+				"map number %d out of range (1 - %d)",
+				map,
+				NUMMAPS
+		);
+	}
+	name = G_BuildMapTitle(map);
+	lua_pushstring(L, name);
+	Z_Free(name);
+	return 1;
+}
+
+static void
+Lpushdim (lua_State *L, int c, struct searchdim *v)
+{
+	int i;
+	lua_createtable(L, c, 0);/* I guess narr is numeric indices??? */
+	for (i = 0; i < c; ++i)
+	{
+		lua_createtable(L, 0, 2);/* and hashed indices (field)... */
+			lua_pushnumber(L, v[i].pos);
+			lua_setfield(L, -2, "pos");
+
+			lua_pushnumber(L, v[i].siz);
+			lua_setfield(L, -2, "siz");
+		lua_rawseti(L, -2, 1 + i);
+	}
+}
+
+/*
+I decided to make this return a table because userdata
+is scary and tables let the user set their own fields.
+*/
+/*
+Returns:
+
+[1] => map number
+[2] => map title
+[3] => search frequency table
+
+The frequency table is unsorted. It has the following format:
+
+{
+	['mapnum'],
+
+	['matchd'] => matches in map title string
+	['keywhd'] => matches in map keywords
+
+	The above two tables have the following format:
+
+	{
+		['pos'] => offset from start of string
+		['siz'] => length of match
+	}...
+
+	['total'] => the total matches
+}...
+*/
+static int lib_gFindMap(lua_State *L)
+{
+	const char *query = luaL_checkstring(L, 1);
+
+	INT32 map;
+	char *realname;
+	INT32 frc;
+	mapsearchfreq_t *frv;
+
+	INT32 i;
+
+	map = G_FindMap(query, &realname, &frv, &frc);
+
+	lua_settop(L, 0);
+
+	lua_pushnumber(L, map);
+	lua_pushstring(L, realname);
+
+	lua_createtable(L, frc, 0);
+	for (i = 0; i < frc; ++i)
+	{
+		lua_createtable(L, 0, 4);
+			lua_pushnumber(L, frv[i].mapnum);
+			lua_setfield(L, -2, "mapnum");
+
+			Lpushdim(L, frv[i].matchc, frv[i].matchd);
+			lua_setfield(L, -2, "matchd");
+
+			Lpushdim(L, frv[i].keywhc, frv[i].keywhd);
+			lua_setfield(L, -2, "keywhd");
+
+			lua_pushnumber(L, frv[i].total);
+			lua_setfield(L, -2, "total");
+		lua_rawseti(L, -2, 1 + i);
+	}
+
+	G_FreeMapSearch(frv, frc);
+	Z_Free(realname);
+
+	return 3;
+}
+
+/*
+Returns:
+
+[1] => map number
+[2] => map title
+*/
+static int lib_gFindMapByNameOrCode(lua_State *L)
+{
+	const char *query = luaL_checkstring(L, 1);
+	INT32 map;
+	char *realname;
+	map = G_FindMapByNameOrCode(query, &realname);
+	lua_pushnumber(L, map);
+	if (map)
+	{
+		lua_pushstring(L, realname);
+		Z_Free(realname);
+		return 2;
+	}
+	else
+		return 1;
 }
 
 static int lib_gDoReborn(lua_State *L)
 {
 	INT32 playernum = luaL_checkinteger(L, 1);
 	NOHUD
+	INLEVEL
 	if (playernum >= MAXPLAYERS)
 		return luaL_error(L, "playernum %d out of range (0 - %d)", playernum, MAXPLAYERS-1);
 	G_DoReborn(playernum);
@@ -3184,30 +3237,32 @@ static int lib_gSetCustomExitVars(lua_State *L)
 {
 	int n = lua_gettop(L); // Num arguments
 	NOHUD
+	INLEVEL
 
 	// LUA EXTENSION: Custom exit like support
 	// Supported:
 	//	G_SetCustomExitVars();			[reset to defaults]
 	//	G_SetCustomExitVars(int)		[nextmap override only]
-	//	G_SetCustomExitVars(bool)		[skipstats only]
-	//	G_SetCustomExitVars(int, bool)	[both of the above]
+	//	G_SetCustomExitVars(nil, int)	[skipstats only]
+	//	G_SetCustomExitVars(int, int)	[both of the above]
+
+	nextmapoverride = 0;
+	skipstats = 0;
+
 	if (n >= 1)
 	{
-		if (lua_isnumber(L, 1) || n >= 2)
-		{
-			nextmapoverride = (INT16)luaL_checknumber(L, 1);
-			lua_remove(L, 1); // remove nextmapoverride; skipstats now 1 if available
-		}
-		skipstats = lua_optboolean(L, 1);
+		nextmapoverride = (INT16)luaL_optinteger(L, 1, 0);
+		skipstats = (INT16)luaL_optinteger(L, 2, 0);
 	}
-	else
-	{
-		nextmapoverride = 0;
-		skipstats = false;
-	}
-	// ---
 
 	return 0;
+}
+
+static int lib_gEnoughPlayersFinished(lua_State *L)
+{
+	INLEVEL
+	lua_pushboolean(L, G_EnoughPlayersFinished());
+	return 1;
 }
 
 static int lib_gExitLevel(lua_State *L)
@@ -3225,6 +3280,7 @@ static int lib_gIsSpecialStage(lua_State *L)
 {
 	INT32 mapnum = luaL_optinteger(L, 1, gamemap);
 	//HUDSAFE
+	INLEVEL
 	lua_pushboolean(L, G_IsSpecialStage(mapnum));
 	return 1;
 }
@@ -3232,13 +3288,31 @@ static int lib_gIsSpecialStage(lua_State *L)
 static int lib_gGametypeUsesLives(lua_State *L)
 {
 	//HUDSAFE
+	INLEVEL
 	lua_pushboolean(L, G_GametypeUsesLives());
+	return 1;
+}
+
+static int lib_gGametypeUsesCoopLives(lua_State *L)
+{
+	//HUDSAFE
+	INLEVEL
+	lua_pushboolean(L, G_GametypeUsesCoopLives());
+	return 1;
+}
+
+static int lib_gGametypeUsesCoopStarposts(lua_State *L)
+{
+	//HUDSAFE
+	INLEVEL
+	lua_pushboolean(L, G_GametypeUsesCoopStarposts());
 	return 1;
 }
 
 static int lib_gGametypeHasTeams(lua_State *L)
 {
 	//HUDSAFE
+	INLEVEL
 	lua_pushboolean(L, G_GametypeHasTeams());
 	return 1;
 }
@@ -3246,6 +3320,7 @@ static int lib_gGametypeHasTeams(lua_State *L)
 static int lib_gGametypeHasSpectators(lua_State *L)
 {
 	//HUDSAFE
+	INLEVEL
 	lua_pushboolean(L, G_GametypeHasSpectators());
 	return 1;
 }
@@ -3253,6 +3328,7 @@ static int lib_gGametypeHasSpectators(lua_State *L)
 static int lib_gBattleGametype(lua_State *L)
 {
 	//HUDSAFE
+	INLEVEL
 	lua_pushboolean(L, G_BattleGametype());
 	return 1;
 }
@@ -3260,14 +3336,8 @@ static int lib_gBattleGametype(lua_State *L)
 static int lib_gRaceGametype(lua_State *L)
 {
 	//HUDSAFE
+	INLEVEL
 	lua_pushboolean(L, G_RaceGametype());
-	return 1;
-}
-
-static int lib_gTagGametype(lua_State *L)
-{
-	//HUDSAFE
-	lua_pushboolean(L, G_TagGametype());
 	return 1;
 }
 
@@ -3560,17 +3630,11 @@ static int lib_kSpawnMineExplosion(lua_State *L)
 	UINT8 color = (UINT8)luaL_optinteger(L, 2, SKINCOLOR_KETCHUP);
 	NOHUD
 	if (!source)
-=======
-	//NOHUD
-	INLEVEL
-	if (!origin)
->>>>>>> srb2/next
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_SpawnMineExplosion(source, color);
 	return 0;
 }
 
-<<<<<<< HEAD
 static int lib_kSpawnBoostTrail(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -3592,234 +3656,13 @@ static int lib_kSpawnSparkleTrail(lua_State *L)
 }
 
 static int lib_kSpawnWipeoutTrail(lua_State *L)
-=======
-// This doesn't really exist, but we're providing it as a handy netgame-safe wrapper for stuff that should be locally handled.
-
-static int lib_sStartMusicCaption(lua_State *L)
-{
-	player_t *player = NULL;
-	const char *caption = luaL_checkstring(L, 1);
-	UINT16 lifespan = (UINT16)luaL_checkinteger(L, 2);
-	//HUDSAFE
-	//INLEVEL
-
-	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
-	{
-		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-
-	if (lifespan && (!player || P_IsLocalPlayer(player)))
-	{
-		strlcpy(S_sfx[sfx_None].caption, caption, sizeof(S_sfx[sfx_None].caption));
-		S_StartCaption(sfx_None, -1, lifespan);
-	}
-	return 0;
-}
-
-// G_GAME
-////////////
-
-// Copypasted from lib_cvRegisterVar :]
-static int lib_gAddGametype(lua_State *L)
-{
-	const char *k;
-	lua_Integer i;
-
-	const char *gtname = NULL;
-	const char *gtconst = NULL;
-	const char *gtdescription = NULL;
-	INT16 newgtidx = 0;
-	UINT32 newgtrules = 0;
-	UINT32 newgttol = 0;
-	INT32 newgtpointlimit = 0;
-	INT32 newgttimelimit = 0;
-	UINT8 newgtleftcolor = 0;
-	UINT8 newgtrightcolor = 0;
-	INT16 newgtrankingstype = -1;
-	int newgtinttype = 0;
-
-	luaL_checktype(L, 1, LUA_TTABLE);
-	lua_settop(L, 1); // Clear out all other possible arguments, leaving only the first one.
-
-	if (!lua_lumploading)
-		return luaL_error(L, "This function cannot be called from within a hook or coroutine!");
-
-	// Ran out of gametype slots
-	if (gametypecount == NUMGAMETYPEFREESLOTS)
-		return luaL_error(L, "Ran out of free gametype slots!");
-
-#define FIELDERROR(f, e) luaL_error(L, "bad value for " LUA_QL(f) " in table passed to " LUA_QL("G_AddGametype") " (%s)", e);
-#define TYPEERROR(f, t) FIELDERROR(f, va("%s expected, got %s", lua_typename(L, t), luaL_typename(L, -1)))
-
-	lua_pushnil(L);
-	while (lua_next(L, 1)) {
-		// stack: gametype table, key/index, value
-		//               1            2        3
-		i = 0;
-		k = NULL;
-		if (lua_isnumber(L, 2))
-			i = lua_tointeger(L, 2);
-		else if (lua_isstring(L, 2))
-			k = lua_tostring(L, 2);
-
-		// Sorry, no gametype rules as key names.
-		if (i == 1 || (k && fasticmp(k, "name"))) {
-			if (!lua_isstring(L, 3))
-				TYPEERROR("name", LUA_TSTRING)
-			gtname = Z_StrDup(lua_tostring(L, 3));
-		} else if (i == 2 || (k && fasticmp(k, "identifier"))) {
-			if (!lua_isstring(L, 3))
-				TYPEERROR("identifier", LUA_TSTRING)
-			gtconst = Z_StrDup(lua_tostring(L, 3));
-		} else if (i == 3 || (k && fasticmp(k, "rules"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("rules", LUA_TNUMBER)
-			newgtrules = (UINT32)lua_tointeger(L, 3);
-		} else if (i == 4 || (k && fasticmp(k, "typeoflevel"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("typeoflevel", LUA_TNUMBER)
-			newgttol = (UINT32)lua_tointeger(L, 3);
-		} else if (i == 5 || (k && fasticmp(k, "rankingtype"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("rankingtype", LUA_TNUMBER)
-			newgtrankingstype = (INT16)lua_tointeger(L, 3);
-		} else if (i == 6 || (k && fasticmp(k, "intermissiontype"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("intermissiontype", LUA_TNUMBER)
-			newgtinttype = (int)lua_tointeger(L, 3);
-		} else if (i == 7 || (k && fasticmp(k, "defaultpointlimit"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("defaultpointlimit", LUA_TNUMBER)
-			newgtpointlimit = (INT32)lua_tointeger(L, 3);
-		} else if (i == 8 || (k && fasticmp(k, "defaulttimelimit"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("defaulttimelimit", LUA_TNUMBER)
-			newgttimelimit = (INT32)lua_tointeger(L, 3);
-		} else if (i == 9 || (k && fasticmp(k, "description"))) {
-			if (!lua_isstring(L, 3))
-				TYPEERROR("description", LUA_TSTRING)
-			gtdescription = Z_StrDup(lua_tostring(L, 3));
-		} else if (i == 10 || (k && fasticmp(k, "headerleftcolor"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("headerleftcolor", LUA_TNUMBER)
-			newgtleftcolor = (UINT8)lua_tointeger(L, 3);
-		} else if (i == 11 || (k && fasticmp(k, "headerrightcolor"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("headerrightcolor", LUA_TNUMBER)
-			newgtrightcolor = (UINT8)lua_tointeger(L, 3);
-		// Key name specified
-		} else if ((!i) && (k && fasticmp(k, "headercolor"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("headercolor", LUA_TNUMBER)
-			newgtleftcolor = newgtrightcolor = (UINT8)lua_tointeger(L, 3);
-		}
-		lua_pop(L, 1);
-	}
-
-#undef FIELDERROR
-#undef TYPEERROR
-
-	// pop gametype table
-	lua_pop(L, 1);
-
-	// Set defaults
-	if (gtname == NULL)
-		gtname = Z_StrDup("Unnamed gametype");
-	if (gtdescription == NULL)
-		gtdescription = Z_StrDup("???");
-
-	// Add the new gametype
-	newgtidx = G_AddGametype(newgtrules);
-	G_AddGametypeTOL(newgtidx, newgttol);
-	G_SetGametypeDescription(newgtidx, NULL, newgtleftcolor, newgtrightcolor);
-	strncpy(gametypedesc[newgtidx].notes, gtdescription, 441);
-
-	// Not covered by G_AddGametype alone.
-	if (newgtrankingstype == -1)
-		newgtrankingstype = newgtidx;
-	gametyperankings[newgtidx] = newgtrankingstype;
-	intermissiontypes[newgtidx] = newgtinttype;
-	pointlimits[newgtidx] = newgtpointlimit;
-	timelimits[newgtidx] = newgttimelimit;
-
-	// Write the new gametype name.
-	Gametype_Names[newgtidx] = gtname;
-
-	// Write the constant name.
-	if (gtconst == NULL)
-		gtconst = gtname;
-	G_AddGametypeConstant(newgtidx, gtconst);
-
-	// Update gametype_cons_t accordingly.
-	G_UpdateGametypeSelections();
-
-	// done
-	CONS_Printf("Added gametype %s\n", Gametype_Names[newgtidx]);
-	return 0;
-}
-
-static int Lcheckmapnumber (lua_State *L, int idx, const char *fun)
-{
-	if (ISINLEVEL)
-		return luaL_optinteger(L, idx, gamemap);
-	else
-	{
-		if (lua_isnoneornil(L, idx))
-		{
-			return luaL_error(L,
-					"%s can only be used without a parameter while in a level.",
-					fun
-			);
-		}
-		else
-			return luaL_checkinteger(L, idx);
-	}
-}
-
-static int lib_gBuildMapName(lua_State *L)
-{
-	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapName");
-	//HUDSAFE
-	lua_pushstring(L, G_BuildMapName(map));
-	return 1;
-}
-
-static int lib_gBuildMapTitle(lua_State *L)
-{
-	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapTitle");
-	char *name;
-	if (map < 1 || map > NUMMAPS)
-	{
-		return luaL_error(L,
-				"map number %d out of range (1 - %d)",
-				map,
-				NUMMAPS
-		);
-	}
-	name = G_BuildMapTitle(map);
-	lua_pushstring(L, name);
-	Z_Free(name);
-	return 1;
-}
-
-static int lib_gDoReborn(lua_State *L)
->>>>>>> srb2/next
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	boolean translucent = lua_optboolean(L, 2);
 	NOHUD
-<<<<<<< HEAD
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_SpawnWipeoutTrail(mo, translucent);
-=======
-	INLEVEL
-	if (playernum >= MAXPLAYERS)
-		return luaL_error(L, "playernum %d out of range (0 - %d)", playernum, MAXPLAYERS-1);
-	G_DoReborn(playernum);
->>>>>>> srb2/next
 	return 0;
 }
 
@@ -3827,7 +3670,6 @@ static int lib_kDriftDustHandling(lua_State *L)
 {
 	mobj_t *spawner = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	NOHUD
-<<<<<<< HEAD
 	if (!spawner)
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_DriftDustHandling(spawner);
@@ -3844,25 +3686,6 @@ static int lib_kDoSneaker(lua_State *L)
 	K_DoSneaker(player, type);
 	return 0;
 }
-=======
-	INLEVEL
-
-	// LUA EXTENSION: Custom exit like support
-	// Supported:
-	//	G_SetCustomExitVars();			[reset to defaults]
-	//	G_SetCustomExitVars(int)		[nextmap override only]
-	//	G_SetCustomExitVars(nil, int)	[skipstats only]
-	//	G_SetCustomExitVars(int, int)	[both of the above]
-
-	nextmapoverride = 0;
-	skipstats = 0;
-
-	if (n >= 1)
-	{
-		nextmapoverride = (INT16)luaL_optinteger(L, 1, 0);
-		skipstats = (INT16)luaL_optinteger(L, 2, 0);
-	}
->>>>>>> srb2/next
 
 static int lib_kDoPogoSpring(lua_State *L)
 {
@@ -3876,18 +3699,7 @@ static int lib_kDoPogoSpring(lua_State *L)
 	return 0;
 }
 
-<<<<<<< HEAD
 static int lib_kKillBananaChain(lua_State *L)
-=======
-static int lib_gEnoughPlayersFinished(lua_State *L)
-{
-	INLEVEL
-	lua_pushboolean(L, G_EnoughPlayersFinished());
-	return 1;
-}
-
-static int lib_gExitLevel(lua_State *L)
->>>>>>> srb2/next
 {
 	mobj_t *banana = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	mobj_t *inflictor = NULL;
@@ -3905,20 +3717,12 @@ static int lib_gExitLevel(lua_State *L)
 
 static int lib_kRepairOrbitChain(lua_State *L)
 {
-<<<<<<< HEAD
 	mobj_t *orbit = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	NOHUD
 	if (!orbit)
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_RepairOrbitChain(orbit);
 	return 0;
-=======
-	INT32 mapnum = luaL_optinteger(L, 1, gamemap);
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_IsSpecialStage(mapnum));
-	return 1;
->>>>>>> srb2/next
 }
 
 static int lib_kFindJawzTarget(lua_State *L)
@@ -3926,7 +3730,6 @@ static int lib_kFindJawzTarget(lua_State *L)
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	player_t *source = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
 	//HUDSAFE
-<<<<<<< HEAD
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (!source)
@@ -3936,98 +3739,47 @@ static int lib_kFindJawzTarget(lua_State *L)
 }
 
 static int lib_kGetKartDriftSparkValue(lua_State *L)
-=======
-	INLEVEL
-	lua_pushboolean(L, G_GametypeUsesLives());
-	return 1;
-}
-
-static int lib_gGametypeUsesCoopLives(lua_State *L)
-{
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_GametypeUsesCoopLives());
-	return 1;
-}
-
-static int lib_gGametypeUsesCoopStarposts(lua_State *L)
-{
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_GametypeUsesCoopStarposts());
-	return 1;
-}
-
-static int lib_gGametypeHasTeams(lua_State *L)
->>>>>>> srb2/next
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	//HUDSAFE
-<<<<<<< HEAD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	lua_pushinteger(L, K_GetKartDriftSparkValue(player));
-=======
-	INLEVEL
-	lua_pushboolean(L, G_GametypeHasTeams());
->>>>>>> srb2/next
 	return 1;
 }
 
 static int lib_kKartUpdatePosition(lua_State *L)
 {
-<<<<<<< HEAD
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	K_KartUpdatePosition(player);
 	return 0;
-=======
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_GametypeHasSpectators());
-	return 1;
->>>>>>> srb2/next
 }
 
 static int lib_kDropItems(lua_State *L)
 {
-<<<<<<< HEAD
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	K_DropItems(player);
 	return 0;
-=======
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_RingSlingerGametype());
-	return 1;
->>>>>>> srb2/next
 }
 
 static int lib_kStripItems(lua_State *L)
 {
-<<<<<<< HEAD
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	K_StripItems(player);
 	return 0;
-=======
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_PlatformGametype());
-	return 1;
->>>>>>> srb2/next
 }
 
 static int lib_kStripOther(lua_State *L)
 {
-<<<<<<< HEAD
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	NOHUD
 	if (!player)
@@ -4037,23 +3789,6 @@ static int lib_kStripOther(lua_State *L)
 }
 
 static int lib_kMomentumToFacing(lua_State *L)
-=======
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_TagGametype());
-	return 1;
-}
-
-static int lib_gCompetitionGametype(lua_State *L)
-{
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_CompetitionGametype());
-	return 1;
-}
-
-static int lib_gTicsToHours(lua_State *L)
->>>>>>> srb2/next
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	NOHUD
@@ -4200,11 +3935,7 @@ static luaL_Reg lib[] = {
 	{"P_InsideANonSolidFFloor",lib_pInsideANonSolidFFloor},
 	{"P_CheckDeathPitCollide",lib_pCheckDeathPitCollide},
 	{"P_CheckSolidLava",lib_pCheckSolidLava},
-<<<<<<< HEAD
-=======
-	{"P_CanRunOnWater",lib_pCanRunOnWater},
 	{"P_MaceRotate",lib_pMaceRotate},
->>>>>>> srb2/next
 
 	// p_user
 	{"P_GetPlayerHeight",lib_pGetPlayerHeight},
@@ -4264,13 +3995,6 @@ static luaL_Reg lib[] = {
 	{"P_DamageMobj",lib_pDamageMobj},
 	{"P_KillMobj",lib_pKillMobj},
 	{"P_PlayerRingBurst",lib_pPlayerRingBurst},
-<<<<<<< HEAD
-=======
-	{"P_PlayerWeaponPanelBurst",lib_pPlayerWeaponPanelBurst},
-	{"P_PlayerWeaponAmmoBurst",lib_pPlayerWeaponAmmoBurst},
-	{"P_PlayerWeaponPanelOrAmmoBurst", lib_pPlayerWeaponPanelOrAmmoBurst},
-	{"P_PlayerEmeraldBurst",lib_pPlayerEmeraldBurst},
->>>>>>> srb2/next
 	{"P_PlayerFlagBurst",lib_pPlayerFlagBurst},
 	{"P_PlayRinglossSound",lib_pPlayRinglossSound},
 	{"P_PlayDeathSound",lib_pPlayDeathSound},
@@ -4285,17 +4009,13 @@ static luaL_Reg lib[] = {
 	{"P_SetMobjStateNF",lib_pSetMobjStateNF},
 	{"P_DoSuperTransformation",lib_pDoSuperTransformation},
 	{"P_ExplodeMissile",lib_pExplodeMissile},
-<<<<<<< HEAD
 	{"P_MobjTouchingSectorSpecial",lib_pMobjTouchingSectorSpecial},
-=======
-	{"P_PlayerTouchingSectorSpecial",lib_pPlayerTouchingSectorSpecial},
 	{"P_FindLowestFloorSurrounding",lib_pFindLowestFloorSurrounding},
 	{"P_FindHighestFloorSurrounding",lib_pFindHighestFloorSurrounding},
 	{"P_FindNextHighestFloor",lib_pFindNextHighestFloor},
 	{"P_FindNextLowestFloor",lib_pFindNextLowestFloor},
 	{"P_FindLowestCeilingSurrounding",lib_pFindLowestCeilingSurrounding},
 	{"P_FindHighestCeilingSurrounding",lib_pFindHighestCeilingSurrounding},
->>>>>>> srb2/next
 	{"P_FindSpecialLineFromTag",lib_pFindSpecialLineFromTag},
 	{"P_SwitchWeather",lib_pSwitchWeather},
 	{"P_LinedefExecute",lib_pLinedefExecute},
@@ -4339,10 +4059,6 @@ static luaL_Reg lib[] = {
 	{"S_StartSoundAtVolume",lib_sStartSoundAtVolume},
 	{"S_StopSound",lib_sStopSound},
 	{"S_StopSoundByID",lib_sStopSoundByID},
-<<<<<<< HEAD
-	{"S_ShowMusicCredit",lib_sShowMusicCredit},
-=======
->>>>>>> srb2/next
 	{"S_ChangeMusic",lib_sChangeMusic},
 	{"S_SpeedMusic",lib_sSpeedMusic},
 	{"S_MusicType",lib_sMusicType},
@@ -4370,6 +4086,7 @@ static luaL_Reg lib[] = {
 	{"S_IdPlaying",lib_sIdPlaying},
 	{"S_SoundPlaying",lib_sSoundPlaying},
 	{"S_StartMusicCaption", lib_sStartMusicCaption},
+	{"S_ShowMusicCredit",lib_sShowMusicCredit},
 
 	// g_game
 	{"G_AddGametype", lib_gAddGametype},
