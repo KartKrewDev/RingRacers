@@ -14,13 +14,8 @@
 #include "doomstat.h"
 #include "p_mobj.h"
 #include "g_game.h"
-<<<<<<< HEAD
-#include "r_things.h"
-#include "k_bot.h"
-=======
 #include "r_skins.h"
-#include "b_bot.h"
->>>>>>> srb2/next
+#include "k_bot.h"
 #include "z_zone.h"
 
 #include "lua_script.h"
@@ -69,7 +64,6 @@ const char *const hookNames[hook_MAX+1] = {
 	"FollowMobj",
 	"PlayerCanDamage",
 	"PlayerQuit",
-<<<<<<< HEAD
 	"MusicChange",
 	"ShouldSpin",
 	"ShouldExplode",
@@ -80,14 +74,11 @@ const char *const hookNames[hook_MAX+1] = {
 	"PlayerCmd",
 	"IntermissionThinker",
 	"VoteThinker",
-=======
-	"IntermissionThinker",
 	"TeamSwitch",
 	"ViewpointSwitch",
 	"SeenPlayer",
 	"PlayerThink",
 	"ShouldJingleContinue",
->>>>>>> srb2/next
 	NULL
 };
 
@@ -1331,7 +1322,6 @@ boolean LUAh_PlayerMsg(int source, int target, int flags, char *msg, int mute)
 
 		if (lua_gettop(gL) == 0)
 		{
-<<<<<<< HEAD
 			if (lua_gettop(gL) == 0)
 			{
 				LUA_PushUserdata(gL, &players[source], META_PLAYER); // Source player
@@ -1370,33 +1360,6 @@ boolean LUAh_PlayerMsg(int source, int target, int flags, char *msg, int mute)
 			}
 			if (lua_toboolean(gL, -1))
 				hooked = true;
-=======
-			LUA_PushUserdata(gL, &players[source], META_PLAYER); // Source player
-			if (flags & 2 /*HU_CSAY*/) { // csay TODO: make HU_CSAY accessible outside hu_stuff.c
-				lua_pushinteger(gL, 3); // type
-				lua_pushnil(gL); // target
-			} else if (target == -1) { // sayteam
-				lua_pushinteger(gL, 1); // type
-				lua_pushnil(gL); // target
-			} else if (target == 0) { // say
-				lua_pushinteger(gL, 0); // type
-				lua_pushnil(gL); // target
-			} else { // sayto
-				lua_pushinteger(gL, 2); // type
-				LUA_PushUserdata(gL, &players[target-1], META_PLAYER); // target
-			}
-			lua_pushstring(gL, msg); // msg
-		}
-		lua_pushfstring(gL, FMT_HOOKID, hookp->id);
-		lua_gettable(gL, LUA_REGISTRYINDEX);
-		lua_pushvalue(gL, -5);
-		lua_pushvalue(gL, -5);
-		lua_pushvalue(gL, -5);
-		lua_pushvalue(gL, -5);
-		if (lua_pcall(gL, 4, 1, 0)) {
-			if (!hookp->error || cv_debug & DBG_LUA)
-				CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
->>>>>>> srb2/next
 			lua_pop(gL, 1);
 			hookp->error = true;
 			continue;
@@ -1897,7 +1860,9 @@ boolean LUAh_ShouldJingleContinue(player_t *player, const char *musname)
 	lua_settop(gL, 0);
 	hud_running = false;
 
-<<<<<<< HEAD
+	return keepplaying;
+}
+
 // Hook for music changes
 boolean LUAh_MusicChange(const char *oldname, char *newname, UINT16 *mflags, boolean *looping,
 	UINT32 *position, UINT32 *prefadems, UINT32 *fadeinms)
@@ -2220,9 +2185,3 @@ boolean LUAh_PlayerExplode(player_t *player, mobj_t *inflictor, mobj_t *source)
 	lua_settop(gL, 0);
 	return hooked;
 }
-
-#endif
-=======
-	return keepplaying;
-}
->>>>>>> srb2/next
