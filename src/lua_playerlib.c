@@ -203,16 +203,8 @@ static int player_get(lua_State *L)
 		lua_pushfixed(L, plr->viewz);
 	else if (fastcmp(field,"viewheight"))
 		lua_pushfixed(L, plr->viewheight);
-	/*else if (fastcmp(field,"deltaviewheight"))
-		lua_pushfixed(L, plr->deltaviewheight);
-	else if (fastcmp(field,"bob"))
-<<<<<<< HEAD
-		lua_pushfixed(L, plr->bob);*/
-=======
-		lua_pushfixed(L, plr->bob);
 	else if (fastcmp(field,"viewrollangle"))
 		lua_pushangle(L, plr->viewrollangle);
->>>>>>> srb2/next
 	else if (fastcmp(field,"aiming"))
 		lua_pushangle(L, plr->aiming);
 	else if (fastcmp(field,"drawangle"))
@@ -253,7 +245,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->score);
 	else if (fastcmp(field,"dashspeed"))
 		lua_pushfixed(L, plr->dashspeed);
-<<<<<<< HEAD
 	else if (fastcmp(field,"dashtime"))
 		lua_pushinteger(L, plr->dashtime);
 	// SRB2kart
@@ -264,46 +255,10 @@ static int player_get(lua_State *L)
 	//
 	else if (fastcmp(field,"charflags"))
 		lua_pushinteger(L, plr->charflags);
-=======
-	else if (fastcmp(field,"normalspeed"))
-		lua_pushfixed(L, plr->normalspeed);
-	else if (fastcmp(field,"runspeed"))
-		lua_pushfixed(L, plr->runspeed);
-	else if (fastcmp(field,"thrustfactor"))
-		lua_pushinteger(L, plr->thrustfactor);
-	else if (fastcmp(field,"accelstart"))
-		lua_pushinteger(L, plr->accelstart);
-	else if (fastcmp(field,"acceleration"))
-		lua_pushinteger(L, plr->acceleration);
-	else if (fastcmp(field,"charability"))
-		lua_pushinteger(L, plr->charability);
-	else if (fastcmp(field,"charability2"))
-		lua_pushinteger(L, plr->charability2);
-	else if (fastcmp(field,"charflags"))
-		lua_pushinteger(L, plr->charflags);
-	else if (fastcmp(field,"thokitem"))
-		lua_pushinteger(L, plr->thokitem);
-	else if (fastcmp(field,"spinitem"))
-		lua_pushinteger(L, plr->spinitem);
-	else if (fastcmp(field,"revitem"))
-		lua_pushinteger(L, plr->revitem);
 	else if (fastcmp(field,"followitem"))
 		lua_pushinteger(L, plr->followitem);
 	else if (fastcmp(field,"followmobj"))
 		LUA_PushUserdata(L, plr->followmobj, META_MOBJ);
-	else if (fastcmp(field,"actionspd"))
-		lua_pushfixed(L, plr->actionspd);
-	else if (fastcmp(field,"mindash"))
-		lua_pushfixed(L, plr->mindash);
-	else if (fastcmp(field,"maxdash"))
-		lua_pushfixed(L, plr->maxdash);
-	else if (fastcmp(field,"jumpfactor"))
-		lua_pushfixed(L, plr->jumpfactor);
-	else if (fastcmp(field,"height"))
-		lua_pushfixed(L, plr->height);
-	else if (fastcmp(field,"spinheight"))
-		lua_pushfixed(L, plr->spinheight);
->>>>>>> srb2/next
 	else if (fastcmp(field,"lives"))
 		lua_pushinteger(L, plr->lives);
 	else if (fastcmp(field,"continues"))
@@ -472,13 +427,10 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->bot);
 	else if (fastcmp(field,"jointime"))
 		lua_pushinteger(L, plr->jointime);
-<<<<<<< HEAD
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
-=======
 	else if (fastcmp(field,"quittime"))
 		lua_pushinteger(L, plr->quittime);
->>>>>>> srb2/next
 #ifdef HWRENDER
 	else if (fastcmp(field,"fovadd"))
 		lua_pushfixed(L, plr->fovadd);
@@ -513,14 +465,10 @@ static int player_set(lua_State *L)
 	if (hud_running)
 		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
 
-<<<<<<< HEAD
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter player_t in BuildCMD code!");
 
-	if (fastcmp(field,"mo")) {
-=======
 	if (fastcmp(field,"mo") || fastcmp(field,"realmo")) {
->>>>>>> srb2/next
 		mobj_t *newmo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 		plr->mo->player = NULL; // remove player pointer from old mobj
 		(newmo->player = plr)->mo = newmo; // set player pointer for new mobj, and set new mobj as the player's mobj
@@ -537,16 +485,8 @@ static int player_set(lua_State *L)
 		plr->viewz = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"viewheight"))
 		plr->viewheight = luaL_checkfixed(L, 3);
-	/*else if (fastcmp(field,"deltaviewheight"))
-		plr->deltaviewheight = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"bob"))
-<<<<<<< HEAD
-		plr->bob = luaL_checkfixed(L, 3);*/
-=======
-		plr->bob = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"viewrollangle"))
 		plr->viewrollangle = luaL_checkangle(L, 3);
->>>>>>> srb2/next
 	else if (fastcmp(field,"aiming")) {
 		plr->aiming = luaL_checkangle(L, 3);
 		if (plr == &players[consoleplayer])
@@ -597,7 +537,6 @@ static int player_set(lua_State *L)
 		plr->score = (UINT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"dashspeed"))
 		plr->dashspeed = luaL_checkfixed(L, 3);
-<<<<<<< HEAD
 	else if (fastcmp(field,"dashtime"))
 		plr->dashtime = (INT32)luaL_checkinteger(L, 3);
 	// SRB2kart
@@ -612,29 +551,6 @@ static int player_set(lua_State *L)
 	//
 	else if (fastcmp(field,"charflags"))
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
-=======
-	else if (fastcmp(field,"normalspeed"))
-		plr->normalspeed = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"runspeed"))
-		plr->runspeed = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"thrustfactor"))
-		plr->thrustfactor = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"accelstart"))
-		plr->accelstart = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"acceleration"))
-		plr->acceleration = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"charability"))
-		plr->charability = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"charability2"))
-		plr->charability2 = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"charflags"))
-		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"thokitem"))
-		plr->thokitem = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"spinitem"))
-		plr->spinitem = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"revitem"))
-		plr->revitem = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"followitem"))
 		plr->followitem = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"followmobj"))
@@ -644,19 +560,6 @@ static int player_set(lua_State *L)
 			mo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 		P_SetTarget(&plr->followmobj, mo);
 	}
-	else if (fastcmp(field,"actionspd"))
-		plr->actionspd = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"mindash"))
-		plr->mindash = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"maxdash"))
-		plr->maxdash = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"jumpfactor"))
-		plr->jumpfactor = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"height"))
-		plr->height = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"spinheight"))
-		plr->spinheight = luaL_checkfixed(L, 3);
->>>>>>> srb2/next
 	else if (fastcmp(field,"lives"))
 		plr->lives = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"continues"))
@@ -854,13 +757,8 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"jointime"))
 		plr->jointime = (tic_t)luaL_checkinteger(L, 3);
-<<<<<<< HEAD
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
-=======
-	else if (fastcmp(field,"quittime"))
-		plr->quittime = (tic_t)luaL_checkinteger(L, 3);
->>>>>>> srb2/next
 #ifdef HWRENDER
 	else if (fastcmp(field,"fovadd"))
 		plr->fovadd = luaL_checkfixed(L, 3);
