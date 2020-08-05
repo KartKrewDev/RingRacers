@@ -93,8 +93,10 @@ deny:
 void COM_Lua_f(void)
 {
 	char *buf, *p;
-	UINT8 i, flags;
+	UINT8 i;
 	UINT16 len;
+	UINT16 flags;
+	UINT8 lpn = 0;
 	INT32 playernum = consoleplayer;
 
 	I_Assert(gL != NULL);
@@ -113,21 +115,20 @@ void COM_Lua_f(void)
 	if (lua_isboolean(gL, -1))
 		flags = (lua_toboolean(gL, -1) ? COM_ADMIN : 0);
 	else
-		flags = (UINT8)lua_tointeger(gL, -1);
+		flags = (UINT16)lua_tointeger(gL, -1);
 	lua_pop(gL, 1); // pop flags
 
-<<<<<<< HEAD
-	if (flags & 2) // flag 2: splitscreen player command. TODO: support 4P
-=======
-	if (flags & COM_SPLITSCREEN) // flag 2: splitscreen player command.
->>>>>>> srb2/next
+	if (flags & COM_SPLITSCREEN) // splitscreen player command.
 	{
-		if (!splitscreen)
+		lpn = (flags & COM_SPLITSCREEN) >> COM_SSSHIFT;
+
+		if (splitscreen < lpn)
 		{
 			lua_pop(gL, 1); // pop command info table
-			return; // can't execute splitscreen command without player 2!
+			return; // can't execute splitscreen command without the player being in-game!
 		}
-		playernum = g_localplayers[1];
+
+		playernum = g_localplayers[lpn];
 	}
 
 	if (netgame && !( flags & COM_LOCAL ))/* don't send local commands */
@@ -135,7 +136,7 @@ void COM_Lua_f(void)
 		UINT8 argc;
 		lua_pop(gL, 1); // pop command info table
 
-		if (flags & COM_ADMIN && !server && !IsPlayerAdmin(playernum)) // flag 1: only server/admin can use this command.
+		if ((flags & COM_ADMIN) && !server && !IsPlayerAdmin(playernum)) // only server/admin can use this command.
 		{
 			CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
 			return;
@@ -155,10 +156,24 @@ void COM_Lua_f(void)
 		WRITEUINT8(p, argc);
 		for (i = 0; i < argc; i++)
 			WRITESTRINGN(p, COM_Argv(i), 255);
-		if (flags & COM_SPLITSCREEN)
-			SendNetXCmd2(XD_LUACMD, buf, p-buf);
-		else
-			SendNetXCmd(XD_LUACMD, buf, p-buf);
+
+		switch (lpn)
+		{
+			case 3:
+				SendNetXCmd4(XD_LUACMD, buf, p-buf);
+				break;
+			case 2:
+				SendNetXCmd3(XD_LUACMD, buf, p-buf);
+				break;
+			case 1:
+				SendNetXCmd2(XD_LUACMD, buf, p-buf);
+				break;
+			default:
+			case 0:
+				SendNetXCmd(XD_LUACMD, buf, p-buf);
+				break;
+		}
+
 		free(buf);
 		return;
 	}
@@ -432,7 +447,6 @@ static int lib_cvRegisterVar(lua_State *L)
 	return 1;
 }
 
-<<<<<<< HEAD
 // For some reason I couldn't cherry pick this.
 // Credits for this function go to james. All hail birb.		-Lat'
 
@@ -456,15 +470,6 @@ static int lib_cvFindVar(lua_State *L)
 		return 0;
 }
 
-
-=======
-static int lib_cvFindVar(lua_State *L)
-{
-	LUA_PushLightUserdata(L, CV_FindVar(luaL_checkstring(L,1)), META_CVAR);
-	return 1;
-}
-
->>>>>>> srb2/next
 // CONS_Printf for a single player
 // Use 'print' in baselib for a global message.
 static int lib_consPrintf(lua_State *L)

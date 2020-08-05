@@ -23,9 +23,13 @@
 /* Lua command registration flags. */
 enum
 {
-	COM_ADMIN       = 1,
-	COM_SPLITSCREEN = 2,
-	COM_LOCAL       = 4,
+	COM_ADMIN       = 0x01,
+	COM_LOCAL       = 0x02,
+	COM_PLAYER2     = 0x10,
+	COM_PLAYER3     = 0x20,
+	COM_PLAYER4     = 0x30,
+	COM_SPLITSCREEN = COM_PLAYER2|COM_PLAYER3|COM_PLAYER4,
+	COM_SSSHIFT     = 4
 };
 
 /* Command buffer flags. */
