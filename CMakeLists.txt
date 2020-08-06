@@ -2,11 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 # DO NOT CHANGE THIS SRB2 STRING! Some variable names depend on this string.
 # Version change is fine.
 project(SRB2
-<<<<<<< HEAD
 	VERSION 2.0
-=======
-	VERSION 2.2.4
->>>>>>> srb2/next
 	LANGUAGES C)
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
@@ -98,12 +94,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # Set EXE names so the assets CMakeLists can refer to its target
-<<<<<<< HEAD
 set(SRB2_SDL2_EXE_NAME srb2kart CACHE STRING "Executable binary output name")
-set(SRB2_WIN_EXE_NAME srb2kartdd CACHE STRING "Executable binary output name for DirectDraw build")
-=======
-set(SRB2_SDL2_EXE_NAME srb2 CACHE STRING "Executable binary output name")
->>>>>>> srb2/next
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 

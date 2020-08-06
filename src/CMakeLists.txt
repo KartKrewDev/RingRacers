@@ -245,13 +245,10 @@ set(SRB2_CONFIG_HAVE_ZLIB ON CACHE BOOL
 	"Enable zlib support.")
 set(SRB2_CONFIG_HAVE_GME ON CACHE BOOL
 	"Enable GME support.")
-<<<<<<< HEAD
 set(SRB2_CONFIG_HAVE_CURL ON CACHE BOOL
-	"Enable curl support, used for downloading files via HTTP.")
-=======
+	"Enable cURL support, used for downloading files via HTTP.")
 set(SRB2_CONFIG_HAVE_OPENMPT ON CACHE BOOL
 	"Enable OpenMPT support.")
->>>>>>> srb2/next
 set(SRB2_CONFIG_HWRENDER ON CACHE BOOL
 	"Enable hardware rendering through OpenGL.")
 set(SRB2_CONFIG_USEASM OFF CACHE BOOL
@@ -264,7 +261,7 @@ set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
 ### use internal libraries?
 if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
 	set(SRB2_CONFIG_USE_INTERNAL_LIBRARIES OFF CACHE BOOL
-	"Use SRB2's internal copies of required dependencies (SDL2, PNG, zlib, GME, OpenMPT).")
+	"Use SRB2Kart's internal copies of required dependencies (SDL2, PNG, zlib, GME, OpenMPT, cURL).")
 endif()
 
 set(SRB2_LUA_SOURCES
@@ -563,15 +560,10 @@ add_definitions(-DCMAKECONFIG)
 
 add_subdirectory(sdl)
 
-<<<<<<< HEAD
 if(${CMAKE_SYSTEM} MATCHES Windows)
 	add_subdirectory(win32)
 endif()
 
-if(NOT ${SRB2_SDL2_AVAILABLE} AND NOT ${SRB2_WIN32_AVAILABLE})
-	message(FATAL_ERROR "There are no targets available to build an SRB2Kart executable. :(")
-=======
 if(NOT ${SRB2_SDL2_AVAILABLE})
-	message(FATAL_ERROR "There are no targets available to build an SRB2 executable. :(")
->>>>>>> srb2/next
+	message(FATAL_ERROR "There are no targets available to build an SRB2Kart executable. :(")
 endif()
