@@ -207,10 +207,6 @@ static inline void W_LoadDehackedLumpsPK3(UINT16 wadnum, boolean mainfile)
 		for (; posStart < posEnd; posStart++)
 			LUA_LoadLump(wadnum, posStart);
 	}
-<<<<<<< HEAD
-#endif
-=======
->>>>>>> srb2/next
 
 	posStart = W_CheckNumForFolderStartPK3("SOC/", wadnum, 0);
 	if (posStart != INT16_MAX)
@@ -714,11 +710,8 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	UINT16 numlumps = 0;
 #ifndef NOMD5
 	size_t i;
-<<<<<<< HEAD
-=======
 #endif
 	size_t packetsize;
->>>>>>> srb2/next
 	UINT8 md5sum[16];
 	boolean important;
 
@@ -749,29 +742,8 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	// open wad file
 	if ((handle = W_OpenWadFile(&filename, true)) == NULL)
 		return W_InitFileError(filename, startup);
-
-<<<<<<< HEAD
+	
 	important = !W_VerifyNMUSlumps(filename);
-=======
-	// Check if wad files will overflow fileneededbuffer. Only the filename part
-	// is send in the packet; cf.
-	// see PutFileNeeded in d_netfil.c
-	if ((important = !W_VerifyNMUSlumps(filename)))
-	{
-		packetsize = packetsizetally + nameonlylength(filename) + 22;
-
-		if (packetsize > MAXFILENEEDED*sizeof(UINT8))
-		{
-			CONS_Alert(CONS_ERROR, M_GetText("Maximum wad files reached\n"));
-			refreshdirmenu |= REFRESHDIR_MAX;
-			if (handle)
-				fclose(handle);
-			return W_InitFileError(filename, startup);
-		}
-
-		packetsizetally = packetsize;
-	}
->>>>>>> srb2/next
 
 #ifndef NOMD5
 	//
@@ -894,16 +866,12 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
   *
   * \param filenames A null-terminated list of files to use.
   */
-<<<<<<< HEAD
 INT32 W_InitMultipleFiles(char **filenames, boolean addons)
 {
 	INT32 rc = 1;
-=======
-void W_InitMultipleFiles(char **filenames, UINT16 mainfiles)
-{
+
 	// open all the files, load headers, and count lumps
 	numwadfiles = 0;
->>>>>>> srb2/next
 
 	// will be realloced as lumps are added
 	for (; *filenames; filenames++)
@@ -912,8 +880,13 @@ void W_InitMultipleFiles(char **filenames, UINT16 mainfiles)
 			G_SetGameModified(true, false);
 
 		//CONS_Debug(DBG_SETUP, "Loading %s\n", *filenames);
-		W_InitFile(*filenames, numwadfiles < mainfiles, true);
+		rc &= (W_InitFile(*filenames, numwadfiles < mainfiles, true) != INT16_MAX) ? 1 : 0;
 	}
+
+	if (!numwadfiles)
+		I_Error("W_InitMultipleFiles: no files found");
+
+	return rc;
 }
 
 /** Make sure a lump number is valid.
@@ -1818,8 +1791,6 @@ void *W_CachePatchName(const char *name, INT32 tag)
 	return W_CachePatchNum(num, tag);
 }
 
-<<<<<<< HEAD
-=======
 void *W_CachePatchLongName(const char *name, INT32 tag)
 {
 	lumpnum_t num;
@@ -1830,7 +1801,7 @@ void *W_CachePatchLongName(const char *name, INT32 tag)
 		return W_CachePatchNum(W_GetNumForLongName("MISSING"), tag);
 	return W_CachePatchNum(num, tag);
 }
->>>>>>> srb2/next
+
 #ifndef NOMD5
 
 /**
@@ -2120,13 +2091,9 @@ int W_VerifyNMUSlumps(const char *filename)
 		{"STT", 3}, // Acceptable HUD changes (Score Time Rings)
 		{"YB_", 3}, // Intermission graphics, goes with the above
 		{"M_", 2}, // As does menu stuff
-<<<<<<< HEAD
 		{"MKFNT", 5}, // Kart font changes
 		{"K_", 2}, // Kart graphic changes
 		{"MUSICDEF", 8}, // Kart song definitions
-=======
-		{"MUSICDEF", 8}, // Song definitions (thanks kart)
->>>>>>> srb2/next
 
 #ifdef HWRENDER
 		{"SHADERS", 7},
