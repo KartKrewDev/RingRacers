@@ -551,7 +551,6 @@ typedef struct seg_s
 	r_lightlist_t *rlights;
 	polyobj_t *polyseg;
 	boolean dontrenderme;
-<<<<<<< HEAD
 #endif
 
 	// Fake contrast calculated on level load
@@ -559,9 +558,7 @@ typedef struct seg_s
 #ifdef HWRENDER
 	INT16 hwLightOffset;
 #endif
-=======
 	boolean glseg;
->>>>>>> srb2/next
 } seg_t;
 
 //
