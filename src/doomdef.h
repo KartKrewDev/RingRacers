@@ -585,12 +585,9 @@ INT32 I_GetKey(void);
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
-<<<<<<< HEAD
-=======
 // Max gamepad/joysticks that can be detected/used.
 #define MAX_JOYSTICKS 4
 
->>>>>>> srb2/next
 #ifndef M_PIl
 #define M_PIl 3.1415926535897932384626433832795029L
 #endif
@@ -637,14 +634,8 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 ///	Dumps the contents of a network save game upon consistency failure for debugging.
 //#define DUMPCONSISTENCY
 
-<<<<<<< HEAD
-///	Polyobject fake flat code
-#define POLYOBJECTS_PLANES
-
-=======
->>>>>>> srb2/next
 ///	See name of player in your crosshair
-#define SEENAMES
+//#define SEENAMES // Disabled for Kart
 
 ///	Who put weights on my recycler?  ... Inuyasha did.
 ///	\note	XMOD port.
@@ -655,13 +646,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 ///	    	Most modifications should probably enable this.
 //#define SAVEGAME_OTHERVERSIONS
 
-<<<<<<< HEAD
-#if !defined (_NDS) && !defined (_PSP)
-=======
 ///	Shuffle's incomplete OpenGL sorting code.
 #define SHUFFLE // This has nothing to do with sorting, why was it disabled?
 
->>>>>>> srb2/next
 ///	Allow the use of the SOC RESETINFO command.
 ///	\note	Builds that are tight on memory should disable this.
 ///	    	This stops the game from storing backups of the states, sprites, and mobjinfo tables.
@@ -694,15 +681,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Handle touching sector specials in P_PlayerAfterThink instead of P_PlayerThink.
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
 #define SECTORSPECIALSAFTERTHINK
-<<<<<<< HEAD
-
-/// SRB2Kart: Camera always has noclip.
-#define NOCLIPCAM
-
-/// SRB2Kart: MIDI support is shitty and busted and we don't want it, lets throw it behind a define
-#define NO_MIDI
-=======
->>>>>>> srb2/next
 
 /// FINALLY some real clipping that doesn't make walls dissappear AND speeds the game up
 /// (that was the original comment from SRB2CB, sadly it is a lie and actually slows game down)
@@ -729,5 +707,12 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 /// Render flats on walls
 #define WALLFLATS
+
+/// - SRB2Kart options -
+/// Camera always has noclip.
+#define NOCLIPCAM
+
+/// MIDI support is really shitty -- we don't use it anyway, so lets throw it behind a define
+#define NO_MIDI
 
 #endif // __DOOMDEF__
