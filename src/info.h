@@ -64,11 +64,6 @@ void A_ThrownRing(); // Sparkle trail for red ring
 void A_GrenadeRing(); // SRB2kart
 void A_SetSolidSteam();
 void A_UnsetSolidSteam();
-<<<<<<< HEAD
-=======
-void A_SignSpin();
-void A_SignPlayer();
->>>>>>> srb2/next
 void A_OverlayThink();
 void A_JetChase();
 void A_JetbThink(); // Jetty-Syn Bomber Thinker
@@ -656,7 +651,10 @@ typedef enum sprite
 	SPR_FS02, // Bat
 
 	// Springs
-<<<<<<< HEAD
+	SPR_FANS, // Fan
+	SPR_STEM, // Steam riser
+	SPR_BUMP, // Bumpers
+	SPR_BLON, // Balloons
 	SPR_SPVY, // Yellow Vertical Spring
 	SPR_SPVR, // Red Vertical Spring
 	SPR_SPVB, // Blue Vertical Spring
@@ -669,23 +667,8 @@ typedef enum sprite
 	SPR_SPHR, // Red Horizontal Spring
 	SPR_SPHB, // Blue Horizontal Spring
 	SPR_SPHG, // Grey Horizontal Spring
-=======
-	SPR_FANS, // Fan
-	SPR_STEM, // Steam riser
-	SPR_BUMP, // Bumpers
-	SPR_BLON, // Balloons
-	SPR_SPRY, // Yellow spring
-	SPR_SPRR, // Red spring
-	SPR_SPRB, // Blue spring
-	SPR_YSPR, // Yellow Diagonal Spring
-	SPR_RSPR, // Red Diagonal Spring
-	SPR_BSPR, // Blue Diagonal Spring
-	SPR_SSWY, // Yellow Side Spring
-	SPR_SSWR, // Red Side Spring
-	SPR_SSWB, // Blue Side Spring
 	SPR_BSTY, // Yellow Booster
 	SPR_BSTR, // Red Booster
->>>>>>> srb2/next
 
 	// Environmental Effects
 	SPR_RAIN, // Rain
@@ -815,25 +798,7 @@ typedef enum sprite
 	SPR_GWLG,
 	SPR_GWLR,
 
-<<<<<<< HEAD
-	// SRB1 Sprites
-	SPR_SRBA,
-	SPR_SRBB,
-	SPR_SRBC,
-	SPR_SRBD,
-	SPR_SRBE,
-	SPR_SRBF,
-	SPR_SRBG,
-	SPR_SRBH,
-	SPR_SRBI,
-	SPR_SRBJ,
-	SPR_SRBK,
-	SPR_SRBL,
-	SPR_SRBM,
-	SPR_SRBN,
-	SPR_SRBO,
-
-	// Springs
+	// SRB2Kart
 	SPR_RNDM, // Random Item Box
 	SPR_RPOP, // Random Item Box Pop
 	SPR_SGNS, // Signpost sparkle
@@ -1042,8 +1007,6 @@ typedef enum sprite
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
-=======
->>>>>>> srb2/next
 	SPR_FIRSTFREESLOT,
 	SPR_LASTFREESLOT = SPR_FIRSTFREESLOT + NUMSPRITEFREESLOTS - 1,
 	NUMSPRITES
@@ -1054,91 +1017,18 @@ typedef enum sprite
 // Since this is zero-based, there can be at most 128 different SPR2_'s without changing that.
 typedef enum playersprite
 {
-	SPR2_STND = 0,
-	SPR2_WAIT,
-	SPR2_WALK,
-	SPR2_SKID,
-	SPR2_RUN ,
-	SPR2_DASH,
-	SPR2_PAIN,
-	SPR2_STUN,
-	SPR2_DEAD,
-	SPR2_DRWN, // drown
-	SPR2_ROLL,
-	SPR2_GASP,
-	SPR2_JUMP,
-	SPR2_SPNG, // spring
-	SPR2_FALL,
-	SPR2_EDGE,
-	SPR2_RIDE,
-
-	SPR2_SPIN, // spindash
-
-	SPR2_FLY ,
-	SPR2_SWIM,
-	SPR2_TIRE, // tired
-
-	SPR2_GLID, // glide
-	SPR2_LAND, // landing after glide/bounce
-	SPR2_CLNG, // cling
-	SPR2_CLMB, // climb
-
-	SPR2_FLT , // float
-	SPR2_FRUN, // float run
-
-	SPR2_BNCE, // bounce
-
-	SPR2_FIRE, // fire
-
-	SPR2_TWIN, // twinspin
-
-	SPR2_MLEE, // melee
-	SPR2_MLEL, // melee land
-
-	SPR2_TRNS, // transformation
-
-	SPR2_NSTD, // NiGHTS stand
-	SPR2_NFLT, // NiGHTS float
-	SPR2_NFLY, // NiGHTS fly
-	SPR2_NDRL, // NiGHTS drill
-	SPR2_NSTN, // NiGHTS stun
-	SPR2_NPUL, // NiGHTS pull
-	SPR2_NATK, // NiGHTS attack
-
-	// c:
-	SPR2_TAL0,
-	SPR2_TAL1,
-	SPR2_TAL2,
-	SPR2_TAL3,
-	SPR2_TAL4,
-	SPR2_TAL5,
-	SPR2_TAL6,
-	SPR2_TAL7,
-	SPR2_TAL8,
-	SPR2_TAL9,
-	SPR2_TALA,
-	SPR2_TALB,
-
-	SPR2_CNT1, // continue disappointment
-	SPR2_CNT2, // continue lift
-	SPR2_CNT3, // continue spin
-	SPR2_CNT4, // continue "soooooooniiic!" tugging
-
-	SPR2_SIGN, // end sign head
-	SPR2_LIFE, // life monitor icon
-
-	SPR2_XTRA, // stuff that isn't in-map - "would this ever need an md2 or variable length animation?"
-
+	SPR2_STIN = 0, SPR2_STIL, SPR2_STIR,
+	SPR2_SLWN, SPR2_SLWL, SPR2_SLWR,
+	SPR2_FSTN, SPR2_FSTL, SPR2_FSTR,
+	SPR2_DRLN, SPR2_DRLO, SPR2_DRLI,
+	SPR2_DRRN, SPR2_DRRO, SPR2_DRRI,
+	SPR2_SPIN,
+	SPR2_SQSH,
+	SPR2_SIGN,
 	SPR2_FIRSTFREESLOT,
 	SPR2_LASTFREESLOT = 0x7f,
 	NUMPLAYERSPRITES
 } playersprite_t;
-
-// SPR2_XTRA
-#define XTRA_LIFEPIC    0                 // Life icon patch
-#define XTRA_CHARSEL    1                 // Character select picture
-#define XTRA_CONTINUE   2                 // Continue icon
-#define XTRA_ENDING     3                 // Ending finale patches
 
 typedef enum state
 {
@@ -1157,161 +1047,27 @@ typedef enum state
 	// Thok
 	S_THOK,
 
-<<<<<<< HEAD
-	// SRB2kart Frames
-	S_KART_STILL1,
-	S_KART_STILL2,
-	S_KART_STILL1_L,
-	S_KART_STILL2_L,
-	S_KART_STILL1_R,
-	S_KART_STILL2_R,
-
-	S_KART_SLOW1,
-	S_KART_SLOW2,
-	S_KART_SLOW1_L,
-	S_KART_SLOW2_L,
-	S_KART_SLOW1_R,
-	S_KART_SLOW2_R,
-
-	S_KART_FAST1,
-	S_KART_FAST2,
-	S_KART_FAST1_L,
-	S_KART_FAST2_L,
-	S_KART_FAST1_R,
-	S_KART_FAST2_R,
-
-	S_KART_DRIFT1_L,
-	S_KART_DRIFT2_L,
-
-	S_KART_DRIFT1_L_OUT,
-	S_KART_DRIFT2_L_OUT,
-
-	S_KART_DRIFT1_L_IN,
-	S_KART_DRIFT2_L_IN,
-	S_KART_DRIFT3_L_IN,
-	S_KART_DRIFT4_L_IN,
-
-	S_KART_DRIFT1_R,
-	S_KART_DRIFT2_R,
-
-	S_KART_DRIFT1_R_OUT,
-	S_KART_DRIFT2_R_OUT,
-
-	S_KART_DRIFT1_R_IN,
-	S_KART_DRIFT2_R_IN,
-	S_KART_DRIFT3_R_IN,
-	S_KART_DRIFT4_R_IN,
-
-	S_KART_SPIN,
-	S_KART_PAIN,
+	S_KART_STILL,
+	S_KART_STILL_L,
+	S_KART_STILL_R,
+	S_KART_SLOW,
+	S_KART_SLOW_L,
+	S_KART_SLOW_R,
+	S_KART_FAST,
+	S_KART_FAST_L,
+	S_KART_FAST_R,
+	S_KART_DRIFT_L,
+	S_KART_DRIFT_L_OUT,
+	S_KART_DRIFT_L_IN,
+	S_KART_DRIFT_R,
+	S_KART_DRIFT_R_OUT,
+	S_KART_DRIFT_R_IN,
+	S_KART_SPINOUT,
 	S_KART_SQUISH,
-=======
-	// Player
-	S_PLAY_STND,
-	S_PLAY_WAIT,
-	S_PLAY_WALK,
-	S_PLAY_SKID,
-	S_PLAY_RUN,
-	S_PLAY_DASH,
-	S_PLAY_PAIN,
-	S_PLAY_STUN,
-	S_PLAY_DEAD,
-	S_PLAY_DRWN,
-	S_PLAY_ROLL,
-	S_PLAY_GASP,
-	S_PLAY_JUMP,
-	S_PLAY_SPRING,
-	S_PLAY_FALL,
-	S_PLAY_EDGE,
-	S_PLAY_RIDE,
-
-	// CA2_SPINDASH
-	S_PLAY_SPINDASH,
-
-	// CA_FLY/SWIM
-	S_PLAY_FLY,
-	S_PLAY_SWIM,
-	S_PLAY_FLY_TIRED,
-
-	// CA_GLIDEANDCLIMB
-	S_PLAY_GLIDE,
-	S_PLAY_GLIDE_LANDING,
-	S_PLAY_CLING,
-	S_PLAY_CLIMB,
-
-	// CA_FLOAT/CA_SLOWFALL
-	S_PLAY_FLOAT,
-	S_PLAY_FLOAT_RUN,
-
-	// CA_BOUNCE
-	S_PLAY_BOUNCE,
-	S_PLAY_BOUNCE_LANDING,
-
-	// CA2_GUNSLINGER
-	S_PLAY_FIRE,
-	S_PLAY_FIRE_FINISH,
-
-	// CA_TWINSPIN
-	S_PLAY_TWINSPIN,
-
-	// CA2_MELEE
-	S_PLAY_MELEE,
-	S_PLAY_MELEE_FINISH,
-	S_PLAY_MELEE_LANDING,
-
-	// SF_SUPER
-	S_PLAY_SUPER_TRANS1,
-	S_PLAY_SUPER_TRANS2,
-	S_PLAY_SUPER_TRANS3,
-	S_PLAY_SUPER_TRANS4,
-	S_PLAY_SUPER_TRANS5,
-	S_PLAY_SUPER_TRANS6,
->>>>>>> srb2/next
+	S_KART_SIGN,
 
 	// technically the player goes here but it's an infinite tic state
 	S_OBJPLACE_DUMMY,
-
-	// 1-Up Box Sprites overlay (uses player sprite)
-	S_PLAY_BOX1,
-	S_PLAY_BOX2,
-	S_PLAY_ICON1,
-	S_PLAY_ICON2,
-	S_PLAY_ICON3,
-
-	// Level end sign overlay (uses player sprite)
-	S_PLAY_SIGN,
-
-	// NiGHTS character (uses player sprite)
-	S_PLAY_NIGHTS_TRANS1,
-	S_PLAY_NIGHTS_TRANS2,
-	S_PLAY_NIGHTS_TRANS3,
-	S_PLAY_NIGHTS_TRANS4,
-	S_PLAY_NIGHTS_TRANS5,
-	S_PLAY_NIGHTS_TRANS6,
-	S_PLAY_NIGHTS_STAND,
-	S_PLAY_NIGHTS_FLOAT,
-	S_PLAY_NIGHTS_FLY,
-	S_PLAY_NIGHTS_DRILL,
-	S_PLAY_NIGHTS_STUN,
-	S_PLAY_NIGHTS_PULL,
-	S_PLAY_NIGHTS_ATTACK,
-
-	// c:
-	S_TAILSOVERLAY_STAND,
-	S_TAILSOVERLAY_0DEGREES,
-	S_TAILSOVERLAY_PLUS30DEGREES,
-	S_TAILSOVERLAY_PLUS60DEGREES,
-	S_TAILSOVERLAY_MINUS30DEGREES,
-	S_TAILSOVERLAY_MINUS60DEGREES,
-	S_TAILSOVERLAY_RUN,
-	S_TAILSOVERLAY_FLY,
-	S_TAILSOVERLAY_TIRE,
-	S_TAILSOVERLAY_PAIN,
-	S_TAILSOVERLAY_GASP,
-	S_TAILSOVERLAY_EDGE,
-
-	// [:
-	S_JETFUMEFLASH,
 
 	// Blue Crawla
 	S_POSS_STND,
@@ -2341,36 +2097,10 @@ typedef enum state
 	S_BUBBLES4,
 
 	// Level End Sign
-<<<<<<< HEAD
 	S_SIGN_POLE,
 	S_SIGN_BACK,
 	S_SIGN_SIDE,
 	S_SIGN_FACE,
-
-	// Steam Riser
-	S_STEAM1,
-	S_STEAM2,
-	S_STEAM3,
-	S_STEAM4,
-	S_STEAM5,
-	S_STEAM6,
-	S_STEAM7,
-	S_STEAM8,
-=======
-	S_SIGN,
-	S_SIGNSPIN1,
-	S_SIGNSPIN2,
-	S_SIGNSPIN3,
-	S_SIGNSPIN4,
-	S_SIGNSPIN5,
-	S_SIGNSPIN6,
-	S_SIGNPLAYER,
-	S_SIGNSLOW,
-	S_SIGNSTOP,
-	S_SIGNBOARD,
-	S_EGGMANSIGN,
-	S_CLEARSIGN,
->>>>>>> srb2/next
 
 	// Spike Ball
 	S_SPIKEBALL1,
@@ -3033,13 +2763,6 @@ typedef enum state
 	// Xmas-specific stuff
 	S_XMASPOLE,
 	S_CANDYCANE,
-<<<<<<< HEAD
-	S_SNOWMAN,
-	S_SNOWMANHAT,
-	S_LAMPPOST1,
-	S_LAMPPOST2,
-	S_HANGSTAR,
-=======
 	S_SNOWMAN,    // normal
 	S_SNOWMANHAT, // with hat + scarf
 	S_LAMPPOST1,  // normal
@@ -3108,7 +2831,6 @@ typedef enum state
 	S_HHZTENT2,
 	S_HHZSTALAGMITE_TALL,
 	S_HHZSTALAGMITE_SHORT,
->>>>>>> srb2/next
 
 	// Botanic Serenity's loads of scenery states
 	S_BSZTALLFLOWER_RED,
@@ -3621,10 +3343,6 @@ typedef enum state
 	S_STEAM7,
 	S_STEAM8,
 
-<<<<<<< HEAD
-	// Yellow Spring
-	S_YELLOWSPRING1,
-=======
 	// Bumpers
 	S_BUMPER,
 	S_BUMPERHIT,
@@ -3639,28 +3357,19 @@ typedef enum state
 	S_BALLOONPOP6,
 
 	// Yellow Spring
-	S_YELLOWSPRING,
->>>>>>> srb2/next
+	S_YELLOWSPRING1,
 	S_YELLOWSPRING2,
 	S_YELLOWSPRING3,
 	S_YELLOWSPRING4,
 
 	// Red Spring
-<<<<<<< HEAD
 	S_REDSPRING1,
-=======
-	S_REDSPRING,
->>>>>>> srb2/next
 	S_REDSPRING2,
 	S_REDSPRING3,
 	S_REDSPRING4,
 
 	// Blue Spring
-<<<<<<< HEAD
 	S_BLUESPRING1,
-=======
-	S_BLUESPRING,
->>>>>>> srb2/next
 	S_BLUESPRING2,
 	S_BLUESPRING3,
 	S_BLUESPRING4,
@@ -5612,8 +5321,10 @@ typedef enum mobj_type
 
 	// Springs and others
 	MT_FAN,
-<<<<<<< HEAD
-	MT_STEAM, // Steam riser
+	MT_STEAM,
+	MT_BUMPER,
+	MT_BALLOON,
+
 	MT_YELLOWSPRING,
 	MT_REDSPRING,
 	MT_BLUESPRING,
@@ -5626,26 +5337,11 @@ typedef enum mobj_type
 	MT_REDHORIZ, // Red Horizontal Spring
 	MT_BLUEHORIZ, // Blue Horizontal Spring
 	MT_GREYHORIZ, // Grey Horizontal Spring
-=======
-	MT_STEAM,
-	MT_BUMPER,
-	MT_BALLOON,
-
-	MT_YELLOWSPRING,
-	MT_REDSPRING,
-	MT_BLUESPRING,
-	MT_YELLOWDIAG,
-	MT_REDDIAG,
-	MT_BLUEDIAG,
-	MT_YELLOWHORIZ,
-	MT_REDHORIZ,
-	MT_BLUEHORIZ,
 
 	MT_BOOSTERSEG,
 	MT_BOOSTERROLLER,
 	MT_YELLOWBOOSTER,
 	MT_REDBOOSTER,
->>>>>>> srb2/next
 
 	// Interactive Objects
 	MT_BUBBLES, // Bubble source
@@ -5794,12 +5490,8 @@ typedef enum mobj_type
 
 	// Castle Eggman Scenery
 	MT_CHAIN, // CEZ Chain
-<<<<<<< HEAD
-	MT_FLAME, // Flame
-=======
 	MT_FLAME, // Flame (has corona)
 	MT_FLAMEPARTICLE,
->>>>>>> srb2/next
 	MT_EGGSTATUE, // Eggman Statue
 	MT_MACEPOINT, // Mace rotation point
 	MT_CHAINMACEPOINT, // Combination of chains and maces point
@@ -5931,13 +5623,6 @@ typedef enum mobj_type
 	// Christmas Scenery
 	MT_XMASPOLE,
 	MT_CANDYCANE,
-<<<<<<< HEAD
-	MT_SNOWMAN,
-	MT_SNOWMANHAT,
-	MT_LAMPPOST1,
-	MT_LAMPPOST2,
-	MT_HANGSTAR,
-=======
 	MT_SNOWMAN,    // normal
 	MT_SNOWMANHAT, // with hat + scarf
 	MT_LAMPPOST1,  // normal
@@ -5969,7 +5654,6 @@ typedef enum mobj_type
 	MT_HHZTENTACLE2,
 	MT_HHZSTALAGMITE_TALL,
 	MT_HHZSTALAGMITE_SHORT,
->>>>>>> srb2/next
 
 	// Botanic Serenity scenery
 	MT_BSZTALLFLOWER_RED,
@@ -6254,23 +5938,10 @@ typedef enum mobj_type
 	MT_ROCKCRUMBLE15,
 	MT_ROCKCRUMBLE16,
 
-<<<<<<< HEAD
-	MT_SRB1_CRAWLA,
-	MT_SRB1_BAT,
-	MT_SRB1_ROBOFISH,
-	MT_SRB1_VOLCANOGUY,
-	MT_SRB1_HOPPY,
-	MT_SRB1_HOPPYWATER,
-	MT_SRB1_HOPPYSKYLAB,
-	MT_SRB1_MMZFLYING,
-	MT_SRB1_UFO,
-	MT_SRB1_GRAYBOT,
-	MT_SRB1_ROBOTOPOLIS,
-	MT_SRB1_RBZBUZZ,
-	MT_SRB1_RBZSPIKES,
-	MT_SRB1_METALSONIC,
-	MT_SRB1_GOLDBOT,
-	MT_SRB1_GENREX,
+	// Level debris
+	MT_GFZDEBRIS,
+	MT_BRICKDEBRIS,
+	MT_WOODDEBRIS,
 
 	// SRB2kart
 	MT_RANDOMITEM,
@@ -6560,12 +6231,6 @@ typedef enum mobj_type
 
 	MT_BATTLECAPSULE,
 	MT_BATTLECAPSULE_PIECE,
-=======
-	// Level debris
-	MT_GFZDEBRIS,
-	MT_BRICKDEBRIS,
-	MT_WOODDEBRIS,
->>>>>>> srb2/next
 
 #ifdef SEENAMES
 	MT_NAMECHECK,
