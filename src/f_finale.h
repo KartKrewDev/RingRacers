@@ -185,15 +185,11 @@ extern INT32 lastwipetic;
 
 void F_WipeStartScreen(void);
 void F_WipeEndScreen(void);
-<<<<<<< HEAD
 void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle);
-=======
-void F_RunWipe(UINT8 wipetype, boolean drawMenu);
 void F_WipeStageTitle(void);
 #define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
 tic_t F_GetWipeLength(UINT8 wipetype);
 boolean F_WipeExists(UINT8 wipetype);
->>>>>>> srb2/next
 
 enum
 {
@@ -231,12 +227,6 @@ enum
 	wipe_ending_final,
 	wipe_cutscene_final,
 
-<<<<<<< HEAD
-	NUMWIPEDEFS,
-	WIPEFINALSHIFT = wipe_level_final - wipe_level_toblack
-};
-
-=======
 	// custom intermissions
 	wipe_specinter_final,
 	wipe_multinter_final,
@@ -244,7 +234,7 @@ enum
 	NUMWIPEDEFS,
 	WIPEFINALSHIFT = (wipe_level_final-wipe_level_toblack)
 };
->>>>>>> srb2/next
+
 extern UINT8 wipedefs[NUMWIPEDEFS];
 
 #endif
