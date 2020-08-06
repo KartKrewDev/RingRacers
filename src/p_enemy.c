@@ -131,11 +131,6 @@ void A_ThrownRing(mobj_t *actor);
 void A_GrenadeRing(mobj_t *actor);
 void A_SetSolidSteam(mobj_t *actor);
 void A_UnsetSolidSteam(mobj_t *actor);
-<<<<<<< HEAD
-=======
-void A_SignSpin(mobj_t *actor);
-void A_SignPlayer(mobj_t *actor);
->>>>>>> srb2/next
 void A_OverlayThink(mobj_t *actor);
 void A_JetChase(mobj_t *actor);
 void A_JetbThink(mobj_t *actor);
@@ -801,68 +796,6 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed
 	//return false;
 }
 
-<<<<<<< HEAD
-=======
-/** Looks for a player with a ring shield.
-  * Used by rings.
-  *
-  * \param actor Ring looking for a shield to be attracted to.
-  * \return True if a player with ring shield is found, otherwise false.
-  * \sa A_AttractChase
-  */
-static boolean P_LookForShield(mobj_t *actor)
-{
-	INT32 c = 0, stop;
-	player_t *player;
-
-	// BP: first time init, this allow minimum lastlook changes
-	if (actor->lastlook < 0)
-		actor->lastlook = P_RandomByte();
-
-	actor->lastlook %= MAXPLAYERS;
-
-	stop = (actor->lastlook - 1) & PLAYERSMASK;
-
-	for (; ; actor->lastlook = ((actor->lastlook + 1) & PLAYERSMASK))
-	{
-		// done looking
-		if (actor->lastlook == stop)
-			return false;
-
-		if (!playeringame[actor->lastlook])
-			continue;
-
-		if (c++ == 2)
-			return false;
-
-		player = &players[actor->lastlook];
-
-		if (!player->mo || player->mo->health <= 0)
-			continue; // dead
-
-		//When in CTF, don't pull rings that you cannot pick up.
-		if ((actor->type == MT_REDTEAMRING && player->ctfteam != 1) ||
-			(actor->type == MT_BLUETEAMRING && player->ctfteam != 2))
-			continue;
-
-		if ((player->powers[pw_shield] & SH_PROTECTELECTRIC)
-			&& (P_AproxDistance(P_AproxDistance(actor->x-player->mo->x, actor->y-player->mo->y), actor->z-player->mo->z) < FixedMul(RING_DIST, player->mo->scale)))
-		{
-			P_SetTarget(&actor->tracer, player->mo);
-
-			if (actor->hnext)
-				P_SetTarget(&actor->hnext->hprev, actor->hprev);
-			if (actor->hprev)
-				P_SetTarget(&actor->hprev->hnext, actor->hnext);
-
-			return true;
-		}
-	}
-
-	//return false;
-}
-
->>>>>>> srb2/next
 #ifdef WEIGHTEDRECYCLER
 // Compares players to see who currently has the "best" items, etc.
 static int P_RecycleCompare(const void *p1, const void *p2)
@@ -3678,11 +3611,7 @@ void A_1upThinker(mobj_t *actor)
 void A_MonitorPop(mobj_t *actor)
 {
 	mobjtype_t item = 0;
-<<<<<<< HEAD
-	//mobjtype_t newbox;
-=======
 	mobj_t *newmobj;
->>>>>>> srb2/next
 
 	if (LUA_CallAction("A_MonitorPop", actor))
 		return;
@@ -3724,15 +3653,8 @@ void A_MonitorPop(mobj_t *actor)
 
 	if (item == MT_1UP_ICON)
 	{
-<<<<<<< HEAD
-		/*case MT_QUESTIONBOX: // Random!
-		{
-			mobjtype_t spawnchance[256];
-			INT32 numchoices = 0, i = 0;
-=======
 		if (actor->tracer) // Remove the old lives icon.
 			P_RemoveMobj(actor->tracer);
->>>>>>> srb2/next
 
 		if (!newmobj->target
 		 || !newmobj->target->player
@@ -3772,15 +3694,6 @@ void A_GoldMonitorPop(mobj_t *actor)
 	mobjtype_t item = 0;
 	mobj_t *newmobj;
 
-<<<<<<< HEAD
-			remains->flags2 &= ~MF2_AMBUSH;
-			break;
-		}*/
-		default:
-			item = actor->info->damage;
-			break;
-	}
-=======
 	if (LUA_CallAction("A_GoldMonitorPop", actor))
 		return;
 
@@ -3794,7 +3707,6 @@ void A_GoldMonitorPop(mobj_t *actor)
 	P_UnsetThingPosition(actor);
 	actor->flags  &= ~(MF_MONITOR|MF_SHOOTABLE);
 	P_SetThingPosition(actor);
->>>>>>> srb2/next
 
 	// Don't count this box in statistics. Sorry.
 	if (actor->target && actor->target->player)
@@ -4295,74 +4207,6 @@ void A_GiveWeapon(mobj_t *actor)
 		S_StartSound(player->mo, actor->info->seesound);
 }
 
-<<<<<<< HEAD
-// Function: A_JumpShield
-//
-// Description: Awards the player a jump shield.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_JumpShield(mobj_t *actor)
-{
-	player_t *player;
-
-#ifdef HAVE_BLUA
-	if (LUA_CallAction("A_JumpShield", actor))
-		return;
-#endif
-	if (!actor->target || !actor->target->player)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Powerup has no target.\n");
-		return;
-	}
-
-	player = actor->target->player;
-
-	if ((player->powers[pw_shield] & SH_NOSTACK) != SH_JUMP)
-	{
-		player->powers[pw_shield] = SH_JUMP|(player->powers[pw_shield] & SH_STACK);
-		P_SpawnShieldOrb(player);
-	}
-
-	S_StartSound(player->mo, actor->info->seesound);
-}
-
-// Function: A_RingShield
-//
-// Description: Awards the player a ring shield.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_RingShield(mobj_t *actor)
-{
-	player_t *player;
-
-#ifdef HAVE_BLUA
-	if (LUA_CallAction("A_RingShield", actor))
-		return;
-#endif
-	if (!actor->target || !actor->target->player)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Powerup has no target.\n");
-		return;
-	}
-
-	player = actor->target->player;
-
-	if ((player->powers[pw_shield] & SH_NOSTACK) != SH_ATTRACT)
-	{
-		player->powers[pw_shield] = SH_ATTRACT|(player->powers[pw_shield] & SH_STACK);
-		P_SpawnShieldOrb(player);
-	}
-
-	if (!player->exiting) // SRB2kart
-		S_StartSound(player->mo, actor->info->seesound);
-}
-
-=======
->>>>>>> srb2/next
 // Function: A_RingBox
 //
 // Description: Awards the player 10 rings.
@@ -4416,15 +4260,10 @@ void A_Invincibility(mobj_t *actor)
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
 		if (mariomode)
-<<<<<<< HEAD
-			G_GhostAddColor((INT32) (player - players), GHC_INVINCIBLE);
-		S_ChangeMusicInternal((mariomode) ? "minvnc" : "invinc", false);
-=======
-			G_GhostAddColor(GHC_INVINCIBLE);
+			G_GhostAddColor(INT32) (player - players), GHC_INVINCIBLE);
 		P_PlayJingle(player, (mariomode) ? JT_MINV : JT_INV);
 		strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
 		S_StartCaption(sfx_None, -1, player->powers[pw_invulnerability]);
->>>>>>> srb2/next
 	}
 }
 
@@ -4524,31 +4363,7 @@ void A_ExtraLife(mobj_t *actor)
 		return;
 	}
 
-<<<<<<< HEAD
-	player = actor->target->player;
-
-	if ((player->powers[pw_shield] & SH_NOSTACK) != SH_ELEMENTAL)
-	{
-		player->powers[pw_shield] = SH_ELEMENTAL|(player->powers[pw_shield] & SH_STACK);
-		P_SpawnShieldOrb(player);
-	}
-
-	/* // SRB2kart - Can't drown.
-	if (player->powers[pw_underwater] && player->powers[pw_underwater] <= 12*TICRATE + 1)
-		P_RestoreMusic(player);
-	*/
-
-	player->powers[pw_underwater] = 0;
-
-	if (player->powers[pw_spacetime] > 1)
-	{
-		player->powers[pw_spacetime] = 0;
-		P_RestoreMusic(player);
-	}
-	S_StartSound(player->mo, actor->info->seesound);
-=======
 	P_GiveCoopLives(player, 1, true);
->>>>>>> srb2/next
 }
 
 // Function: A_GiveShield
@@ -4621,48 +4436,6 @@ void A_ScoreRise(mobj_t *actor)
 	P_SetObjectMomZ(actor, actor->info->speed, false);
 }
 
-<<<<<<< HEAD
-// Function: A_ParticleSpawn
-//
-// Description: Spawns a particle at a specified interval
-//
-// var1 = type (if 0, defaults to MT_PARTICLE)
-// var2 = unused
-//
-void A_ParticleSpawn(mobj_t *actor)
-{
-	INT32 locvar1 = var1;
-	fixed_t speed;
-	mobjtype_t type;
-	mobj_t *spawn;
-
-#ifdef HAVE_BLUA
-	if (LUA_CallAction("A_ParticleSpawn", actor))
-		return;
-#endif
-	if (!actor->spawnpoint)
-	{
-		P_RemoveMobj(actor);
-		return;
-	}
-
-	if (locvar1)
-		type = (mobjtype_t)locvar1;
-	else
-		type = MT_PARTICLE;
-
-	speed = FixedMul((actor->spawnpoint->angle >> 12)<<FRACBITS, actor->scale);
-
-	spawn = P_SpawnMobj(actor->x, actor->y, actor->z, type);
-	P_SetScale(spawn, actor->scale);
-	spawn->momz = speed;
-	spawn->destscale = FixedDiv(spawn->scale<<FRACBITS, 100<<FRACBITS);
-	spawn->scalespeed = FixedDiv(((actor->spawnpoint->angle >> 8) & 63) * actor->scale, 100<<FRACBITS);
-	actor->tics = actor->spawnpoint->extrainfo + 1;
-}
-
-=======
->>>>>>> srb2/next
 // Function: A_BunnyHop
 //
 // Description: Makes object hop like a bunny.
@@ -4854,27 +4627,11 @@ void A_AttractChase(mobj_t *actor)
 {
 	if (LUA_CallAction("A_AttractChase", actor))
 		return;
-<<<<<<< HEAD
-#endif
-=======
->>>>>>> srb2/next
 
 	if (actor->flags2 & MF2_NIGHTSPULL || !actor->health)
 		return;
 
-<<<<<<< HEAD
 	if (actor->extravalue1) // SRB2Kart
-=======
-	// spilled rings flicker before disappearing
-	if (leveltime & 1 && actor->type == (mobjtype_t)actor->info->reactiontime && actor->fuse && actor->fuse < 2*TICRATE)
-		actor->flags2 |= MF2_DONTDRAW;
-	else
-		actor->flags2 &= ~MF2_DONTDRAW;
-
-	// Turn flingrings back into regular rings if attracted.
-	if (actor->tracer && actor->tracer->player
-		&& !(actor->tracer->player->powers[pw_shield] & SH_PROTECTELECTRIC) && actor->info->reactiontime && actor->type != (mobjtype_t)actor->info->reactiontime)
->>>>>>> srb2/next
 	{
 		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
 		{
@@ -5210,26 +4967,15 @@ void A_ThrownRing(mobj_t *actor)
 		// A non-homing ring getting attracted by a
 		// magnetic player. If he gets too far away, make
 		// sure to stop the attraction!
-<<<<<<< HEAD
-		if ((!actor->tracer->health) // || (actor->tracer->player && (actor->tracer->player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT
-		    || P_AproxDistance(P_AproxDistance(actor->tracer->x-actor->x,
-		    actor->tracer->y-actor->y), actor->tracer->z-actor->z) > FixedMul(RING_DIST, actor->tracer->scale)) // SRB2kart
-=======
 		if ((!actor->tracer->health) || (actor->tracer->player && (actor->tracer->player->powers[pw_shield] & SH_PROTECTELECTRIC)
 		    && P_AproxDistance(P_AproxDistance(actor->tracer->x-actor->x,
 		    actor->tracer->y-actor->y), actor->tracer->z-actor->z) > FixedMul(RING_DIST/4, actor->tracer->scale)))
->>>>>>> srb2/next
 		{
 			P_SetTarget(&actor->tracer, NULL);
 		}
 
-<<<<<<< HEAD
-		if (actor->tracer && (actor->tracer->health)) // SRB2kart - jawz always follow
-			//&& (actor->tracer->player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT)// Already found someone to follow.
-=======
 		if (actor->tracer && (actor->tracer->health)
 			&& (actor->tracer->player->powers[pw_shield] & SH_PROTECTELECTRIC))// Already found someone to follow.
->>>>>>> srb2/next
 		{
 			const INT32 temp = actor->threshold;
 			actor->threshold = 32000;
@@ -5301,12 +5047,7 @@ void A_ThrownRing(mobj_t *actor)
 		if (!P_CheckSight(actor, player->mo))
 			continue; // out of sight
 
-<<<<<<< HEAD
-		if (dist < FixedMul(2048*FRACUNIT, player->mo->scale)) // SRB2kart  // (player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT &&
-=======
-		if ((player->powers[pw_shield] & SH_PROTECTELECTRIC)
-			&& dist < FixedMul(RING_DIST/4, player->mo->scale))
->>>>>>> srb2/next
+		if (dist < FixedMul(2048*FRACUNIT, player->mo->scale))
 			P_SetTarget(&actor->tracer, player->mo);
 		return;
 	}
@@ -5493,12 +5234,8 @@ void A_SetSolidSteam(mobj_t *actor)
 
 	actor->flags &= ~MF_NOCLIP;
 	actor->flags |= MF_SOLID;
-<<<<<<< HEAD
 
-	if (!(actor->flags2 & MF2_AMBUSH)) // Don't be so obnoxious.
-=======
 	if (!(actor->flags2 & MF2_AMBUSH))
->>>>>>> srb2/next
 	{
 		if (P_RandomChance(FRACUNIT/8))
 		{
@@ -5531,199 +5268,6 @@ void A_UnsetSolidSteam(mobj_t *actor)
 	actor->flags |= MF_NOCLIP;
 }
 
-<<<<<<< HEAD
-=======
-// Function: A_SignSpin
-//
-// Description: Spins a signpost until it hits the ground and reaches its mapthing's angle.
-//
-// var1 = degrees to rotate object (must be positive, because I'm lazy)
-// var2 = unused
-//
-void A_SignSpin(mobj_t *actor)
-{
-	INT32 locvar1 = var1;
-	INT16 i;
-	angle_t rotateangle = FixedAngle(locvar1 << FRACBITS);
-
-	if (LUA_CallAction("A_SignSpin", actor))
-		return;
-
-	if (P_IsObjectOnGround(actor) && P_MobjFlip(actor) * actor->momz <= 0)
-	{
-		if (actor->flags2 & MF2_BOSSFLEE)
-		{
-			S_StartSound(actor, actor->info->deathsound);
-			actor->flags2 &= ~MF2_BOSSFLEE;
-		}
-		if (actor->spawnpoint)
-		{
-			angle_t mapangle = FixedAngle(actor->spawnpoint->angle << FRACBITS);
-			angle_t diff = mapangle - actor->angle;
-			if (diff < ANG2)
-			{
-				actor->angle = mapangle;
-				P_SetMobjState(actor, actor->info->deathstate);
-				return;
-			}
-			if ((statenum_t)(actor->state-states) != actor->info->painstate)
-				P_SetMobjState(actor, actor->info->painstate);
-			actor->movedir = min((mapangle - actor->angle) >> 2, actor->movedir);
-		}
-		else // no mapthing? just finish in your current angle
-		{
-			P_SetMobjState(actor, actor->info->deathstate);
-			return;
-		}
-	}
-	else
-	{
-		if (!(actor->flags2 & MF2_BOSSFLEE))
-		{
-			S_StartSound(actor, actor->info->painsound);
-			actor->flags2 |= MF2_BOSSFLEE;
-		}
-		actor->movedir = rotateangle;
-	}
-
-	actor->angle += actor->movedir;
-	if (actor->tracer == NULL || P_MobjWasRemoved(actor->tracer)) return;
-	for (i = -1; i < 2; i += 2)
-	{
-		P_SpawnMobjFromMobj(actor,
-			P_ReturnThrustX(actor, actor->tracer->angle, i * actor->radius),
-			P_ReturnThrustY(actor, actor->tracer->angle, i * actor->radius),
-			(actor->eflags & MFE_VERTICALFLIP) ? 0 : actor->height,
-			actor->info->painchance)->destscale >>= 1;
-	}
-}
-
-// Function: A_SignPlayer
-//
-// Description: Changes the state of a level end sign to reflect the player that hit it.
-//              Also used to display Eggman or the skin roulette whilst spinning.
-//
-// var1 = number of skin to display (e.g. 2 = Knuckles; special cases: -1 = target's skin, -2 = skin roulette, -3 = Eggman)
-// var2 = custom sign color, if desired.
-//
-void A_SignPlayer(mobj_t *actor)
-{
-	INT32 locvar1 = var1;
-	INT32 locvar2 = var2;
-	skin_t *skin = NULL;
-	mobj_t *ov;
-	UINT16 facecolor, signcolor = (UINT16)locvar2;
-	UINT32 signframe = states[actor->info->raisestate].frame;
-
-	if (LUA_CallAction("A_SignPlayer", actor))
-		return;
-
-	if (actor->tracer == NULL || locvar1 < -3 || locvar1 >= numskins || signcolor >= numskincolors)
-		return;
-
-	// if no face overlay, spawn one
-	if (actor->tracer->tracer == NULL || P_MobjWasRemoved(actor->tracer->tracer))
-	{
-		ov = P_SpawnMobj(actor->x, actor->y, actor->z, MT_OVERLAY);
-		P_SetTarget(&ov->target, actor->tracer);
-		P_SetTarget(&actor->tracer->tracer, ov);
-	}
-	else
-		ov = actor->tracer->tracer;
-
-	if (locvar1 == -1) // set to target's skin
-	{
-		if (!actor->target)
-			return;
-
-		if (!actor->target->player)
-			return;
-
-		skin = &skins[actor->target->player->skin];
-		facecolor = actor->target->player->skincolor;
-
-		if (signcolor)
-			;
-		else if (!skin->sprites[SPR2_SIGN].numframes)
-			signcolor = facecolor;
-		else if ((actor->target->player->skincolor == skin->prefcolor) && (skin->prefoppositecolor)) // Set it as the skin's preferred oppositecolor?
-			signcolor = skin->prefoppositecolor;
-		else if (actor->target->player->skincolor) // Set the sign to be an appropriate background color for this player's skincolor.
-			signcolor = skincolors[actor->target->player->skincolor].invcolor;
-		else
-			signcolor = SKINCOLOR_NONE;
-	}
-	else if (locvar1 != -3) // set to a defined skin
-	{
-		// I turned this function into a fucking mess. I'm so sorry. -Lach
-		if (locvar1 == -2) // random skin
-		{
-#define skincheck(num) (player ? !R_SkinUsable(player-players, num) : skins[num].availability > 0)
-			player_t *player = actor->target ? actor->target->player : NULL;
-			UINT8 skinnum;
-			UINT8 skincount = 0;
-			for (skinnum = 0; skinnum < numskins; skinnum++)
-				if (!skincheck(skinnum))
-					skincount++;
-			skinnum = P_RandomKey(skincount);
-			for (skincount = 0; skincount < numskins; skincount++)
-			{
-				if (skincount > skinnum)
-					break;
-				if (skincheck(skincount))
-					skinnum++;
-			}
-			skin = &skins[skinnum];
-#undef skincheck
-		}
-		else // specific skin
-			skin = &skins[locvar1];
-
-		facecolor = skin->prefcolor;
-		if (signcolor)
-			;
-		else if (!skin->sprites[SPR2_SIGN].numframes)
-			signcolor = facecolor;
-		else if (skin->prefoppositecolor)
-			signcolor = skin->prefoppositecolor;
-		else if (facecolor)
-			signcolor = skincolors[facecolor].invcolor;
-	}
-
-	if (skin)
-	{
-		if (skin->sprites[SPR2_SIGN].numframes) // player face
-		{
-			ov->color = facecolor;
-			ov->skin = skin;
-			if ((statenum_t)(ov->state-states) != actor->info->seestate)
-				P_SetMobjState(ov, actor->info->seestate); // S_PLAY_SIGN
-		}
-		else // CLEAR! sign
-		{
-			ov->color = SKINCOLOR_NONE;
-			ov->skin = NULL; // needs to be NULL in the case of SF_HIRES characters
-			if ((statenum_t)(ov->state-states) != actor->info->missilestate)
-				P_SetMobjState(ov, actor->info->missilestate); // S_CLEARSIGN
-		}
-	}
-	else // Eggman face
-	{
-		ov->color = SKINCOLOR_NONE;
-		ov->skin = NULL;
-		if ((statenum_t)(ov->state-states) != actor->info->meleestate)
-			P_SetMobjState(ov, actor->info->meleestate); // S_EGGMANSIGN
-		if (!signcolor)
-			signcolor = SKINCOLOR_CARBON;
-	}
-
-	actor->tracer->color = signcolor;
-	if (signcolor && signcolor < numskincolors)
-		signframe += (15 - skincolors[signcolor].invshade);
-	actor->tracer->frame = signframe;
-}
-
->>>>>>> srb2/next
 // Function: A_OverlayThink
 //
 // Description: Moves the overlay to the position of its target.
@@ -9892,73 +9436,21 @@ void A_ToggleFlameJet(mobj_t* actor)
 	}
 }
 
-<<<<<<< HEAD
 //{ SRB2kart Actions
 void A_ItemPop(mobj_t *actor)
 {
 	mobj_t *remains;
 	mobjtype_t explode;
-#ifdef HAVE_BLUA
-	if (LUA_CallAction("A_ItemPop", actor))
-=======
-// Function: A_OrbitNights
-//
-// Description: Used by Chaos Emeralds to orbit around Nights (aka Super Sonic.)
-//
-// var1 = Angle adjustment (aka orbit speed)
-// var2:
-//        Bits 1-10: height offset, max 1023
-//        Bits 11-16: X radius factor (max 63, default 20)
-//        Bit 17: set if object is Nightopian Helper
-//        Bit 18: set to define X/Y/Z rotation factor
-//        Bits 19-20: Unused
-//        Bits 21-26: Y radius factor (max 63, default 32)
-//        Bits 27-32: Z radius factor (max 63, default 32)
-//
-// If MF_GRENADEBOUNCE is flagged on mobj, use actor->threshold to define X/Y/Z radius factor, max 1023 each:
-//        Bits 1-10: X factor
-//        Bits 11-20: Y factor
-//        Bits 21-30: Z factor
-void A_OrbitNights(mobj_t* actor)
-{
-	INT32 ofs = (var2 & 0x3FF);
-	boolean ishelper = (var2 & 0x10000);
-	boolean donotrescale = (var2 & 0x40000);
-	INT32 xfactor = 32, yfactor = 32, zfactor = 20;
 
-	if (LUA_CallAction("A_OrbitNights", actor))
->>>>>>> srb2/next
+	if (LUA_CallAction("A_ItemPop", actor))
 		return;
 
-<<<<<<< HEAD
 	if (!(actor->target && actor->target->player))
-=======
-	if (actor->flags & MF_GRENADEBOUNCE)
-	{
-		xfactor = (actor->threshold & 0x3FF);
-		yfactor = (actor->threshold & 0xFFC00) >> 10;
-		zfactor = (actor->threshold & 0x3FF00000) >> 20;
-	}
-	else if (var2 & 0x20000)
-	{
-		xfactor = (var2 & 0xFC00) >> 10;
-		yfactor = (var2 & 0x3F00000) >> 20;
-		zfactor = (var2 & 0xFC000000) >> 26;
-	}
-
-	if (!actor->target
-	|| (actor->target->player &&
-		// if NiGHTS special stage and not NiGHTSmode.
-	    (((maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap) && !(actor->target->player->powers[pw_carry] == CR_NIGHTSMODE))
-	    // Also remove this object if they no longer have a NiGHTS helper
-		|| (ishelper && !actor->target->player->powers[pw_nights_helper]))))
->>>>>>> srb2/next
 	{
 		if (cv_debug && !(actor->target && actor->target->player))
 			CONS_Printf("ERROR: Powerup has no target!\n");
 		return;
 	}
-<<<<<<< HEAD
 
 	// de-solidify
 	P_UnsetThingPosition(actor);
@@ -11215,41 +10707,53 @@ void A_FlameShieldPaper(mobj_t *actor)
 // Description: Used by Chaos Emeralds to orbit around Nights (aka Super Sonic.)
 //
 // var1 = Angle adjustment (aka orbit speed)
-// var2 = Lower four bits: height offset, Upper 4 bits = set if object is Nightopian Helper
+// var2:
+//        Bits 1-10: height offset, max 1023
+//        Bits 11-16: X radius factor (max 63, default 20)
+//        Bit 17: set if object is Nightopian Helper
+//        Bit 18: set to define X/Y/Z rotation factor
+//        Bits 19-20: Unused
+//        Bits 21-26: Y radius factor (max 63, default 32)
+//        Bits 27-32: Z radius factor (max 63, default 32)
 //
+// If MF_GRENADEBOUNCE is flagged on mobj, use actor->threshold to define X/Y/Z radius factor, max 1023 each:
+//        Bits 1-10: X factor
+//        Bits 11-20: Y factor
+//        Bits 21-30: Z factor
 void A_OrbitNights(mobj_t* actor)
 {
-	INT32 ofs = (var2 & 0xFFFF);
-	boolean ishelper = (var2 & 0xFFFF0000);
-#ifdef HAVE_BLUA
+	INT32 ofs = (var2 & 0x3FF);
+	boolean ishelper = (var2 & 0x10000);
+	boolean donotrescale = (var2 & 0x40000);
+	INT32 xfactor = 32, yfactor = 32, zfactor = 20;
+
 	if (LUA_CallAction("A_OrbitNights", actor))
 		return;
-#endif
 
-	if (!actor->target || !actor->target->player ||
-	    !actor->target->tracer || !actor->target->player->nightstime
-	    // Also remove this object if they no longer have a NiGHTS helper
-		|| (ishelper && !actor->target->player->powers[pw_nights_helper]))
+	if (actor->flags & MF_GRENADEBOUNCE)
 	{
-		P_RemoveMobj(actor);
+		xfactor = (actor->threshold & 0x3FF);
+		yfactor = (actor->threshold & 0xFFC00) >> 10;
+		zfactor = (actor->threshold & 0x3FF00000) >> 20;
+	}
+	else if (var2 & 0x20000)
+	{
+		xfactor = (var2 & 0xFC00) >> 10;
+		yfactor = (var2 & 0x3F00000) >> 20;
+		zfactor = (var2 & 0xFC000000) >> 26;
+	}
+
+	if (!actor->target
+	|| (actor->target->player &&
+		// if NiGHTS special stage and not NiGHTSmode.
+	    (((maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap) && !(actor->target->player->powers[pw_carry] == CR_NIGHTSMODE))
+	    // Also remove this object if they no longer have a NiGHTS helper
+		|| (ishelper && !actor->target->player->powers[pw_nights_helper]))))
+	{
+		if (cv_debug && !(actor->target && actor->target->player))
+			CONS_Printf("ERROR: Powerup has no target!\n");
 		return;
 	}
-	else
-	{
-		actor->extravalue1 += var1;
-		P_UnsetThingPosition(actor);
-		{
-			const angle_t fa  = (angle_t)actor->extravalue1 >> ANGLETOFINESHIFT;
-			const angle_t ofa = ((angle_t)actor->extravalue1 + (ofs*ANG1)) >> ANGLETOFINESHIFT;
-
-			const fixed_t fc = FixedMul(FINECOSINE(fa),FixedMul(32*FRACUNIT, actor->scale));
-			const fixed_t fh = FixedMul(FINECOSINE(ofa),FixedMul(20*FRACUNIT, actor->scale));
-			const fixed_t fs = FixedMul(FINESINE(fa),FixedMul(32*FRACUNIT, actor->scale));
-
-			actor->x = actor->target->tracer->x + fc;
-			actor->y = actor->target->tracer->y + fs;
-			actor->z = actor->target->tracer->z + fh + FixedMul(16*FRACUNIT, actor->scale);
-=======
 	else
 	{
 		actor->extravalue1 += var1;
@@ -11265,7 +10769,6 @@ void A_OrbitNights(mobj_t* actor)
 			actor->x = actor->target->x + fc;
 			actor->y = actor->target->y + fs;
 			actor->z = actor->target->z + fh + FixedMul(16*FRACUNIT, actor->scale);
->>>>>>> srb2/next
 
 			// Semi-lazy hack
 			actor->angle = (angle_t)actor->extravalue1 + ANGLE_90;
@@ -12568,13 +12071,8 @@ void A_RemoteDamage(mobj_t *actor)
 
 	if (locvar2 == 1) // Kill mobj!
 	{
-<<<<<<< HEAD
 		if (target->player)
 			K_DoIngameRespawn(target->player);
-=======
-		if (target->player) // players die using P_DamageMobj instead for some reason
-			P_DamageMobj(target, source, source, 1, DMG_INSTAKILL);
->>>>>>> srb2/next
 		else
 			P_KillMobj(target, source, source, 0);
 	}
