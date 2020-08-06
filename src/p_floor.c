@@ -140,33 +140,6 @@ result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest, boolean crus
 				}
 				else
 				{
-<<<<<<< HEAD
-					case MT_GOOP: // Egg Slimer's goop objects
-					case MT_SPINFIRE: // Elemental Shield flame balls
-					case MT_SNEAKERTRAIL:
-					case MT_SPIKE: // Floor Spike
-						// Is the object hang from the ceiling?
-						// In that case, swap the planes used.
-						// verticalflip inverts
-						if (!!(mo->flags & MF_SPAWNCEILING) ^ !!(mo->eflags & MFE_VERTICALFLIP))
-						{
-							if (sectorisffloor && !sectorisquicksand)
-								mo->z = mo->ceilingz - mo->height;
-							else
-								mo->z = mo->ceilingz = mo->subsector->sector->ceilingheight - mo->height;
-						}
-						else
-						{
-							if (sectorisffloor && !sectorisquicksand)
-								mo->z = mo->floorz;
-							else
-								mo->z = mo->floorz = mo->subsector->sector->floorheight;
-						}
-						break;
-					// Kill warnings...
-					default:
-						break;
-=======
 					// crushing is possible
 					sector->floorheight += speed;
 					if (P_CheckSector(sector, crush))
@@ -175,7 +148,6 @@ result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest, boolean crus
 						P_CheckSector(sector, crush);
 						return crushed;
 					}
->>>>>>> srb2/next
 				}
 				break;
 		}
@@ -1098,13 +1070,9 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 			break;
 		}
 		// Ignore popped monitors, too.
-<<<<<<< HEAD
-		if ((node->m_thing->flags & MF_MONITOR || node->m_thing->type == MT_RANDOMITEM)
-			&& node->m_thing->threshold == 68)
-=======
 		if (node->m_thing->health == 0 // this only really applies for monitors
-		|| (!(node->m_thing->flags & MF_MONITOR) && (mobjinfo[node->m_thing->type].flags & MF_MONITOR))) // gold monitor support
->>>>>>> srb2/next
+		|| (!(node->m_thing->flags & MF_MONITOR) && (mobjinfo[node->m_thing->type].flags & MF_MONITOR)) // gold monitor support
+		|| (node->m_thing->type == MT_RANDOMITEM))
 			continue;
 		// Okay, we found something valid.
 		if (!thing // take either the first thing
@@ -1169,14 +1137,7 @@ void T_ThwompSector(thwomp_t *thwomp)
 		thwomp->direction = 0;
 
 	// If you just crashed down, wait a second before coming back up.
-<<<<<<< HEAD
-	if (--thwomp->distance > 0)
-	{
-		sides[thwomp->sourceline->sidenum[0]].midtexture = sides[thwomp->sourceline->sidenum[0]].toptexture;
-		//sides[thwomp->sourceline->sidenum[0]].midtexture = sides[thwomp->sourceline->sidenum[0]].bottomtexture;
-=======
 	if (--thwomp->delay > 0)
->>>>>>> srb2/next
 		return;
 
 	// Just find the first sector with the tag.
@@ -1201,28 +1162,9 @@ void T_ThwompSector(thwomp_t *thwomp)
 	thwompx = actionsector->soundorg.x;
 	thwompy = actionsector->soundorg.y;
 
-	if (thwomp->direction == 0) // Not going anywhere, so look for players.
+	if (thwomp->direction == 0) // Not going anywhere, so go back up.
 	{
-		if (rover->flags & FF_EXISTS)
-		{
-			UINT8 i;
-			// scan the players to find victims!
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!P_IsPlayerValid(i))
-					continue;
-
-				if (players[i].mo->z > thwomp->sector->ceilingheight)
-					continue;
-
-				if (P_AproxDistance(thwompx - players[i].mo->x, thwompy - players[i].mo->y) > 96*FRACUNIT)
-					continue;
-
-				thwomp->direction = -1;
-				break;
-			}
-		}
-
+		thwomp->direction = -1;
 		thwomp->sector->ceilspeed = 0;
 		thwomp->sector->floorspeed = 0;
 	}
@@ -1307,35 +1249,6 @@ void T_ThwompSector(thwomp_t *thwomp)
 		thwomp->sector->ceilspeed = 42;
 		thwomp->sector->floorspeed = speed*thwomp->direction;
 	}
-<<<<<<< HEAD
-	else // Not going anywhere, so look for players.
-	{
-		//thinker_t *th;
-		//mobj_t *mo;
-
-		thwomp->direction = -1;
-
-		/* // SRB2kart 170217 - Thwomps are automatic.
-		// scan the thinkers to find players!
-		if (!rover || (rover->flags & FF_EXISTS))
-		{
-			// scan the thinkers to find players!
-			for (th = thinkercap.next; th != &thinkercap; th = th->next)
-			{
-				if (th->function.acp1 != (actionf_p1)P_MobjThinker)
-					continue;
-
-				mo = (mobj_t *)th;
-				if (mo->type == MT_PLAYER && mo->health && mo->player && !mo->player->spectator
-				    && mo->z <= thwomp->sector->ceilingheight
-					&& P_AproxDistance(thwompx - mo->x, thwompy - mo->y) <= 96*FRACUNIT)
-				{
-					thwomp->direction = -1;
-					break;
-				}
-			}
-		}*/
-=======
 
 	P_RecalcPrecipInSector(actionsector);
 }
@@ -1347,7 +1260,6 @@ static boolean T_SectorHasEnemies(sector_t *sec)
 	while (node)
 	{
 		mo = node->m_thing;
->>>>>>> srb2/next
 
 		if ((mo->flags & (MF_ENEMY|MF_BOSS))
 			&& mo->health > 0
@@ -1408,42 +1320,7 @@ void T_NoEnemiesSector(noenemies_t *nobaddies)
 	P_RemoveThinker(&nobaddies->thinker);
 }
 
-//
-<<<<<<< HEAD
-// P_HavePlayersEnteredArea
-//
-// Helper function for T_EachTimeThinker
-//
-static INT32 P_HavePlayersEnteredArea(boolean *curPlayers, boolean *oldPlayers, boolean inAndOut)
-=======
-// P_IsObjectOnRealGround
-//
-// Helper function for T_EachTimeThinker
-// Like P_IsObjectOnGroundIn, except ONLY THE REAL GROUND IS CONSIDERED, NOT FOFS
-// I'll consider whether to make this a more globally accessible function or whatever in future
-// -- Monster Iestyn
-//
-static boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec)
-{
-	// Is the object in reverse gravity?
-	if (mo->eflags & MFE_VERTICALFLIP)
-	{
-		// Detect if the player is on the ceiling.
-		if (mo->z+mo->height >= P_GetSpecialTopZ(mo, sec, sec))
-			return true;
-	}
-	// Nope!
-	else
-	{
-		// Detect if the player is on the floor.
-		if (mo->z <= P_GetSpecialBottomZ(mo, sec, sec))
-			return true;
-	}
-	return false;
-}
-
 static boolean P_IsMobjTouchingSector(mobj_t *mo, sector_t *sec)
->>>>>>> srb2/next
 {
 	msecnode_t *node;
 
@@ -2285,22 +2162,6 @@ void EV_DoElevator(line_t *line, elevator_e elevtype, boolean customspeed)
 
 void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 {
-<<<<<<< HEAD
-	size_t i;
-	size_t leftmostvertex = 0, rightmostvertex = 0;
-	size_t topmostvertex = 0, bottommostvertex = 0;
-	fixed_t leftx, rightx;
-	fixed_t topy, bottomy;
-	fixed_t topz;
-	fixed_t a, b, c;
-	mobjtype_t type = MT_ROCKCRUMBLE1;
-	const fixed_t spacing = 48*mapobjectscale;
-
-	// If the control sector has a special
-	// of Section3:7-15, use the custom debris.
-	if (GETSECSPECIAL(rover->master->frontsector->special, 3) >= 8)
-		type = MT_ROCKCRUMBLE1+(GETSECSPECIAL(rover->master->frontsector->special, 3)-7);
-=======
 	size_t i, leftmostvertex, rightmostvertex, topmostvertex, bottommostvertex;
 	fixed_t leftx, rightx, topy, bottomy, topz, bottomz, widthfactor, heightfactor, a, b, c, spacing;
 	mobjtype_t type;
@@ -2357,7 +2218,6 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 	}
 
 #undef controlsec
->>>>>>> srb2/next
 
 	// soundorg z height never gets set normally, so MEH.
 	sec->soundorg.z = sec->floorheight;
@@ -2384,10 +2244,6 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 	rightx = sec->lines[rightmostvertex]->v1->x;
 	topy = sec->lines[topmostvertex]->v1->y-(spacing>>1);
 	bottomy = sec->lines[bottommostvertex]->v1->y;
-<<<<<<< HEAD
-	topz = *rover->topheight-(spacing/2);
-
-=======
 
 	topz = *rover->topheight-(spacing>>1);
 	bottomz = *rover->bottomheight;
@@ -2398,7 +2254,6 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 		heightfactor = (topz - *rover->bottomheight)>>2;
 	}
 
->>>>>>> srb2/next
 	for (a = leftx; a < rightx; a += spacing)
 	{
 		for (b = topy; b > bottomy; b -= spacing)
@@ -2406,16 +2261,13 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 			if (R_PointInSubsector(a, b)->sector == sec)
 			{
 				mobj_t *spawned = NULL;
-<<<<<<< HEAD
-				for (c = topz; c > *rover->bottomheight; c -= spacing)
-=======
+
 				if (*rover->t_slope)
 					topz = P_GetSlopeZAt(*rover->t_slope, a, b) - (spacing>>1);
 				if (*rover->b_slope)
 					bottomz = P_GetSlopeZAt(*rover->b_slope, a, b);
 
 				for (c = topz; c > bottomz; c -= spacing)
->>>>>>> srb2/next
 				{
 					spawned = P_SpawnMobj(a, b, c, type);
 					spawned->angle += P_RandomKey(36)*ANG10; // irrelevant for default objects but might make sense for some custom ones
@@ -2599,13 +2451,8 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 		thing->momz = FixedMul(6*FRACUNIT, thing->scale);
 		P_SetThingPosition(thing);
 		if (thing->flags & MF_SHOOTABLE)
-<<<<<<< HEAD
-			P_DamageMobj(thing, puncher, puncher, 1);
-		else if (thing->type == MT_RING || thing->type == MT_COIN || thing->type == MT_RANDOMITEM)
-=======
 			P_DamageMobj(thing, puncher, puncher, 1, 0);
-		else if (thing->type == MT_RING || thing->type == MT_COIN || thing->type == MT_TOKEN)
->>>>>>> srb2/next
+		else if (thing->type == MT_RING || thing->type == MT_COIN || thing->type == MT_RANDOMITEM)
 		{
 			thing->momz = FixedMul(3*FRACUNIT, thing->scale);
 			P_TouchSpecialThing(thing, puncher, false);
