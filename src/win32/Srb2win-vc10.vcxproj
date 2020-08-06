@@ -223,8 +223,6 @@
     <ClCompile Include="..\f_wipe.c" />
     <ClCompile Include="..\g_game.c" />
     <ClCompile Include="..\g_input.c" />
-<<<<<<< HEAD
-=======
     <ClCompile Include="..\hardware\hw3sound.c" />
     <ClCompile Include="..\hardware\hw_bsp.c" />
     <ClCompile Include="..\hardware\hw_cache.c" />
@@ -238,7 +236,6 @@
     <ClCompile Include="..\hardware\hw_model.c" />
     <ClCompile Include="..\hardware\hw_trick.c" />
     <ClCompile Include="..\hardware\u_list.c" />
->>>>>>> srb2/next
     <ClCompile Include="..\hu_stuff.c" />
     <ClCompile Include="..\info.c" />
     <ClCompile Include="..\i_addrinfo.c">
@@ -397,8 +394,6 @@
     <ClInclude Include="..\hardware\hw3dsdrv.h" />
     <ClInclude Include="..\hardware\hw3sound.h" />
     <ClInclude Include="..\hardware\hws_data.h" />
-<<<<<<< HEAD
-=======
     <ClInclude Include="..\hardware\hw_clip.h" />
     <ClInclude Include="..\hardware\hw_data.h" />
     <ClInclude Include="..\hardware\hw_defs.h" />
@@ -413,7 +408,6 @@
     <ClInclude Include="..\hardware\hw_md3load.h" />
     <ClInclude Include="..\hardware\hw_model.h" />
     <ClInclude Include="..\hardware\u_list.h" />
->>>>>>> srb2/next
     <ClInclude Include="..\hu_stuff.h" />
     <ClInclude Include="..\info.h" />
     <ClInclude Include="..\i_addrinfo.h" />
