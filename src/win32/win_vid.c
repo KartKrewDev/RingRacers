@@ -298,15 +298,10 @@ static inline boolean I_SkipFrame(void)
 		case GS_LEVEL:
 			if (!paused)
 				return false;
-<<<<<<< HEAD
-			/* FALLTHRU */
-=======
+		/* FALLTHRU */
 		//case GS_TIMEATTACK: -- sorry optimisation but now we have a cool level platter and that being laggardly looks terrible
->>>>>>> srb2/next
-#ifndef CLIENT_LOADINGSCREEN
 		/* FALLTHRU */
 		case GS_WAITINGPLAYERS:
-#endif
 			return skip; // Skip odd frames
 		default:
 			return false;
