@@ -40,14 +40,10 @@ void R_PortalClearClipSegs(INT32 start, INT32 end);
 void R_ClearDrawSegs(void);
 void R_RenderBSPNode(INT32 bspnum);
 
-<<<<<<< HEAD
 // determines when a given sector shouldn't abide by the encoremap's palette.
 // no longer a static since this is used for encore in hw_main.c as well now:
 boolean R_NoEncore(sector_t *sector, boolean ceiling);
 
-#ifdef POLYOBJECTS
-=======
->>>>>>> srb2/next
 void R_SortPolyObjects(subsector_t *sub);
 
 extern size_t numpolys;        // number of polyobjects in current subsector
