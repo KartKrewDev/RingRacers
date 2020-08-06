@@ -39,14 +39,7 @@ extern INT32 msg_id;
 #include "fastcmp.h"
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
-
-<<<<<<< HEAD
-#ifdef HAVE_BLUA
-=======
-#ifdef HAVE_LUA_MUSICPLUS
->>>>>>> srb2/next
 #include "lua_hook.h" // MusicChange hook
-#endif
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -67,10 +60,9 @@ static void GameMIDIMusic_OnChange(void);
 static void GameSounds_OnChange(void);
 static void GameDigiMusic_OnChange(void);
 
-<<<<<<< HEAD
 static void PlayMusicIfUnfocused_OnChange(void);
 static void PlaySoundIfUnfocused_OnChange(void);
-=======
+
 #ifdef HAVE_OPENMPT
 static void ModFilter_OnChange(void);
 #endif
@@ -78,7 +70,6 @@ static void ModFilter_OnChange(void);
 static lumpnum_t S_GetMusicLumpNum(const char *mname);
 
 static boolean S_CheckQueue(void);
->>>>>>> srb2/next
 
 // commands for music and sound servers
 #ifdef MUSSERV
@@ -109,20 +100,16 @@ static consvar_t precachesound = {"precachesound", "Off", CV_SAVE, CV_OnOff, NUL
 // actual general (maximum) sound & music volume, saved into the config
 consvar_t cv_soundvolume = {"soundvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_digmusicvolume = {"digmusicvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 #ifndef NO_MIDI
 consvar_t cv_midimusicvolume = {"midimusicvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-<<<<<<< HEAD
 #endif
+
 // number of channels available
-#if defined (_WIN32_WCE) || defined (DC) || defined (PSP) || defined(GP2X)
-consvar_t cv_numChannels = {"snd_channels", "8", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum, 0, NULL, NULL, 0, 0, NULL};
-#else
 consvar_t cv_numChannels = {"snd_channels", "64", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum, 0, NULL, NULL, 0, 0, NULL};
 #endif
 
 consvar_t surround = {"surround", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-//consvar_t cv_resetmusic = {"resetmusic", "No", CV_SAVE|CV_NOSHOWHELP, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
-=======
 
 static void Captioning_OnChange(void)
 {
@@ -138,17 +125,6 @@ consvar_t cv_numChannels = {"snd_channels", "32", CV_SAVE|CV_CALL, CV_Unsigned, 
 
 static consvar_t surround = {"surround", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_resetmusic = {"resetmusic", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_resetmusicbyheader = {"resetmusicbyheader", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
-
-static CV_PossibleValue_t cons_1upsound_t[] = {
-	{0, "Jingle"},
-	{1, "Sound"},
-	{0, NULL}
-};
-consvar_t cv_1upsound = {"1upsound", "Jingle", CV_SAVE, cons_1upsound_t, NULL, 0, NULL, NULL, 0, 0, NULL};
->>>>>>> srb2/next
-
 // Sound system toggles, saved into the config
 consvar_t cv_gamedigimusic = {"digimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange, 0, NULL, NULL, 0, 0, NULL};
 #ifndef NO_MIDI
@@ -156,30 +132,26 @@ consvar_t cv_gamemidimusic = {"midimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_O
 #endif
 consvar_t cv_gamesounds = {"sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-<<<<<<< HEAD
-consvar_t cv_playmusicifunfocused = {"playmusicifunfocused",  "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlayMusicIfUnfocused_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_playsoundifunfocused = {"playsoundsifunfocused", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlaySoundIfUnfocused_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
 static CV_PossibleValue_t music_resync_threshold_cons_t[] = {
 	{0,    "MIN"},
 	{1000, "MAX"},
-
-	{0}
+	{0, NULL}
 };
-consvar_t cv_music_resync_threshold = {"music_resync_threshold", "100", CV_SAVE|CV_CALL, music_resync_threshold_cons_t, I_UpdateSongLagThreshold, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_music_resync_threshold = {"music_resync_threshold", "100", CV_SAVE|CV_CALL, music_resync_threshold_cons_t, I_UpdateSongLagThreshold, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_music_resync_powerups_only = {"music_resync_powerups_only", "No", CV_SAVE|CV_CALL, CV_YesNo, I_UpdateSongLagConditions, 0, NULL, NULL, 0, 0, NULL};
-=======
+
 // Window focus sound sytem toggles
 consvar_t cv_playmusicifunfocused = {"playmusicifunfocused", "No", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_playsoundsifunfocused = {"playsoundsifunfocused", "No", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 #ifdef HAVE_OPENMPT
 openmpt_module *openmpt_mhandle = NULL;
+
 static CV_PossibleValue_t interpolationfilter_cons_t[] = {{0, "Default"}, {1, "None"}, {2, "Linear"}, {4, "Cubic"}, {8, "Windowed sinc"}, {0, NULL}};
 consvar_t cv_modfilter = {"modfilter", "0", CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
 #endif
->>>>>>> srb2/next
 
 #define S_MAX_VOLUME 127
 
@@ -335,28 +307,20 @@ void S_RegisterSoundStuff(void)
 #endif
 	CV_RegisterVar(&surround);
 	CV_RegisterVar(&cv_samplerate);
-<<<<<<< HEAD
-	//CV_RegisterVar(&cv_resetmusic);
-=======
 	CV_RegisterVar(&cv_resetmusic);
 	CV_RegisterVar(&cv_resetmusicbyheader);
 	CV_RegisterVar(&cv_1upsound);
 	CV_RegisterVar(&cv_playsoundsifunfocused);
 	CV_RegisterVar(&cv_playmusicifunfocused);
->>>>>>> srb2/next
 	CV_RegisterVar(&cv_gamesounds);
 	CV_RegisterVar(&cv_gamedigimusic);
 #ifndef NO_MIDI
 	CV_RegisterVar(&cv_gamemidimusic);
-<<<<<<< HEAD
 #endif
-
-	CV_RegisterVar(&cv_playmusicifunfocused);
-	CV_RegisterVar(&cv_playsoundifunfocused);
 
 	CV_RegisterVar(&cv_music_resync_threshold);
 	CV_RegisterVar(&cv_music_resync_powerups_only);
-=======
+
 #ifdef HAVE_OPENMPT
 	CV_RegisterVar(&cv_modfilter);
 #endif
@@ -365,7 +329,6 @@ void S_RegisterSoundStuff(void)
 	CV_RegisterVar(&cv_midisoundfontpath);
 	CV_RegisterVar(&cv_miditimiditypath);
 #endif
->>>>>>> srb2/next
 
 	COM_AddCommand("tunes", Command_Tunes_f);
 	COM_AddCommand("restartaudio", Command_RestartAudio_f);
@@ -2631,13 +2594,6 @@ void S_RetainMusic(const char *mname, UINT16 mflags, boolean looping, UINT32 pos
 	}
 	else if (status == JT_MASTER) // enforce only one JT_MASTER
 	{
-<<<<<<< HEAD
-#ifdef NO_MIDI
-		CONS_Alert(CONS_ERROR, "A MIDI music lump %.6s was found,\nbut SRB2Kart does not support MIDI output.\nWe apologise for the inconvenience.\n", mname);
-#else
-		CONS_Alert(CONS_NOTICE, "MIDI music is disabled!\n");
-#endif
-=======
 		for (mst = music_stacks; mst; mst = mst->next)
 		{
 			if (mst->status == JT_MASTER)
@@ -2779,6 +2735,14 @@ static boolean S_LoadMusic(const char *mname)
 
 	mlumpnum = S_GetMusicLumpNum(mname);
 
+	if (S_MIDIMusicDisabled() && S_MIDIExists(mname))
+	{
+#ifdef NO_MIDI
+		CONS_Alert(CONS_ERROR, "A MIDI music lump %.6s was found,\nbut SRB2Kart does not support MIDI output.\nWe apologise for the inconvenience.\n", mname);
+#endif
+		return false;
+	}
+
 	if (mlumpnum == LUMPERROR)
 	{
 		CONS_Alert(CONS_ERROR, "Music %.6s could not be loaded: lump not found!\n", mname);
@@ -2861,13 +2825,8 @@ static boolean S_PlayMusic(boolean looping, UINT32 fadeinms)
 
 	S_InitMusicVolume(); // switch between digi and sequence volume
 
-<<<<<<< HEAD
-	if (window_notinfocus && !cv_playmusicifunfocused.value)
-		I_PauseSong();
-=======
 	if (S_MusicNotInFocus())
 		S_PauseAudio();
->>>>>>> srb2/next
 
 	return true;
 }
@@ -2901,28 +2860,16 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 {
 	char newmusic[7];
 
-<<<<<<< HEAD
-#if defined (DC) || defined (_WIN32_WCE) || defined (PSP) || defined(GP2X)
-	S_ClearSfx();
-#endif
-
 	if (S_MusicDisabled()
 		|| demo.rewinding // Don't mess with music while rewinding!
 		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
 		return;
 
 	strncpy(newmusic, mmusic, 7);
-#ifdef HAVE_BLUA
-=======
-	if (S_MusicDisabled())
-		return;
 
-	strncpy(newmusic, mmusic, 7);
-#ifdef HAVE_LUA_MUSICPLUS
->>>>>>> srb2/next
 	if(LUAh_MusicChange(music_name, newmusic, &mflags, &looping, &position, &prefadems, &fadeinms))
 		return;
-#endif
+
 	newmusic[6] = 0;
 
  	// No Music (empty string)
@@ -2975,8 +2922,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	}
 }
 
-void
-S_ChangeMusicSpecial (const char *mmusic)
+void S_ChangeMusicSpecial (const char *mmusic)
 {
 	if (cv_resetspecialmusic.value)
 		S_ChangeMusic(mmusic, MUSIC_FORCERESET, true);
@@ -3190,15 +3136,12 @@ void S_StartEx(boolean reset)
 		mapmusresume = 0;
 	}
 
-<<<<<<< HEAD
-	//if (cv_resetmusic.value) // Starting ambience should always be restarted
-		S_StopMusic();
+	S_StopMusic(); // Starting ambience should always be restarted, if playing.
 
 	if (leveltime < (starttime + (TICRATE/2))) // SRB2Kart
 		S_ChangeMusicEx((encoremode ? "estart" : "kstart"), 0, false, mapmusposition, 0, 0);
 	else
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-=======
 	if (RESETMUSIC || reset)
 		S_StopMusic();
 	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
@@ -3207,7 +3150,6 @@ void S_StartEx(boolean reset)
 	music_stack_noposition = false;
 	music_stack_fadeout = 0;
 	music_stack_fadein = JINGLEPOSTFADE;
->>>>>>> srb2/next
 }
 
 static void Command_Tunes_f(void)
@@ -3321,18 +3263,16 @@ void GameSounds_OnChange(void)
 
 	if (sound_disabled)
 	{
-<<<<<<< HEAD
-		if (!( cv_playsoundifunfocused.value && window_notinfocus ))
-			S_EnableSound();
-=======
 		sound_disabled = false;
 		I_StartupSound(); // will return early if initialised
 		S_InitSfxChannels(cv_soundvolume.value);
 		S_StartSound(NULL, sfx_strpst);
->>>>>>> srb2/next
 	}
 	else
-		S_DisableSound();
+	{
+		sound_disabled = true;
+		S_StopSounds();
+	}
 }
 
 void GameDigiMusic_OnChange(void)
@@ -3347,20 +3287,16 @@ void GameDigiMusic_OnChange(void)
 		digital_disabled = false;
 		I_StartupSound(); // will return early if initialised
 		I_InitMusic();
-		S_StopMusic();
+
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
 		else
-<<<<<<< HEAD
 			S_ChangeMusicInternal("titles", looptitle);
-=======
-			S_ChangeMusicInternal("_clear", false);
->>>>>>> srb2/next
 	}
 	else
 	{
 		digital_disabled = true;
-		if (S_MusicType() != MU_MID)
+		if (S_MusicType() != MU_MID && S_MusicType() != MU_MID_EX)
 		{
 			if (midi_disabled)
 				S_StopMusic();
@@ -3395,40 +3331,28 @@ void GameMIDIMusic_OnChange(void)
 		midi_disabled = false;
 		I_StartupSound(); // will return early if initialised
 		I_InitMusic();
+
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else
-<<<<<<< HEAD
-			S_ChangeMusicInternal("titles", looptitle);
-=======
+		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear"))
 			S_ChangeMusicInternal("_clear", false);
->>>>>>> srb2/next
 	}
 	else
 	{
 		midi_disabled = true;
 		if (S_MusicType() == MU_MID || S_MusicType() == MU_MID_EX)
 		{
-			if (digital_disabled)
-				S_StopMusic();
-			else
+			S_StopMusic();
+			if (!digital_disabled)
 			{
-				char mmusic[7];
-				UINT16 mflags;
-				boolean looping;
-
-				if (S_MusicInfo(mmusic, &mflags, &looping) && S_DigExists(mmusic))
-				{
-					S_StopMusic();
-					S_ChangeMusic(mmusic, mflags, looping);
-				}
+				if (Playing())
+					P_RestoreMusic(&players[consoleplayer]);
 				else
-					S_StopMusic();
+					S_ChangeMusicInternal("_clear", false);
 			}
 		}
 	}
 }
-<<<<<<< HEAD
 #endif
 
 static void PlayMusicIfUnfocused_OnChange(void)
