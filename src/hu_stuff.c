@@ -217,22 +217,6 @@ void HU_LoadGraphics(void)
 			tny_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 	}
 
-<<<<<<< HEAD
-	// cache the level title font for entire game execution
-	lt_font[0] = (patch_t *)W_CachePatchName("LTFNT039", PU_HUDGFX); /// \note fake start hack
-
-	// Number support
-	lt_font[9] = (patch_t *)W_CachePatchName("LTFNT048", PU_HUDGFX);
-	lt_font[10] = (patch_t *)W_CachePatchName("LTFNT049", PU_HUDGFX);
-	lt_font[11] = (patch_t *)W_CachePatchName("LTFNT050", PU_HUDGFX);
-	lt_font[12] = (patch_t *)W_CachePatchName("LTFNT051", PU_HUDGFX);
-	lt_font[13] = (patch_t *)W_CachePatchName("LTFNT052", PU_HUDGFX);
-	lt_font[14] = (patch_t *)W_CachePatchName("LTFNT053", PU_HUDGFX);
-	lt_font[15] = (patch_t *)W_CachePatchName("LTFNT054", PU_HUDGFX);
-	lt_font[16] = (patch_t *)W_CachePatchName("LTFNT055", PU_HUDGFX);
-	lt_font[17] = (patch_t *)W_CachePatchName("LTFNT056", PU_HUDGFX);
-	lt_font[18] = (patch_t *)W_CachePatchName("LTFNT057", PU_HUDGFX);
-
 	// SRB2kart
 	j = KART_FONTSTART;
 	for (i = 0; i < KART_FONTSIZE; i++, j++)
@@ -246,8 +230,6 @@ void HU_LoadGraphics(void)
 	}
 	//
 
-=======
->>>>>>> srb2/next
 	j = LT_FONTSTART;
 	for (i = 0; i < LT_FONTSIZE; i++)
 	{
@@ -331,38 +313,7 @@ void HU_LoadGraphics(void)
 
 	emblemicon = W_CachePatchName("EMBLICON", PU_HUDGFX);
 	tokenicon = W_CachePatchName("TOKNICON", PU_HUDGFX);
-<<<<<<< HEAD
 
-	emeraldpics[0] = W_CachePatchName("CHAOS1", PU_HUDGFX);
-	emeraldpics[1] = W_CachePatchName("CHAOS2", PU_HUDGFX);
-	emeraldpics[2] = W_CachePatchName("CHAOS3", PU_HUDGFX);
-	emeraldpics[3] = W_CachePatchName("CHAOS4", PU_HUDGFX);
-	emeraldpics[4] = W_CachePatchName("CHAOS5", PU_HUDGFX);
-	emeraldpics[5] = W_CachePatchName("CHAOS6", PU_HUDGFX);
-	emeraldpics[6] = W_CachePatchName("CHAOS7", PU_HUDGFX);
-	tinyemeraldpics[0] = W_CachePatchName("TEMER1", PU_HUDGFX);
-	tinyemeraldpics[1] = W_CachePatchName("TEMER2", PU_HUDGFX);
-	tinyemeraldpics[2] = W_CachePatchName("TEMER3", PU_HUDGFX);
-	tinyemeraldpics[3] = W_CachePatchName("TEMER4", PU_HUDGFX);
-	tinyemeraldpics[4] = W_CachePatchName("TEMER5", PU_HUDGFX);
-	tinyemeraldpics[5] = W_CachePatchName("TEMER6", PU_HUDGFX);
-	tinyemeraldpics[6] = W_CachePatchName("TEMER7", PU_HUDGFX);
-
-	songcreditbg = W_CachePatchName("K_SONGCR", PU_HUDGFX);
-
-	// cache ping gfx:
-	for (i = 0; i < 5; i++)
-	{
-		sprintf(buffer, "PINGGFX%d", i+1);
-		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "MPING%d", i+1);
-		mping[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// fps stuff
-	framecounter = W_CachePatchName("FRAMER", PU_HUDGFX);
-	frameslash  = W_CachePatchName("FRAMESL", PU_HUDGFX);;
-=======
 	exiticon = W_CachePatchName("EXITICON", PU_HUDGFX);
 
 	emeraldpics[0][0] = W_CachePatchName("CHAOS1", PU_HUDGFX);
@@ -391,7 +342,21 @@ void HU_LoadGraphics(void)
 	emeraldpics[2][5] = W_CachePatchName("EMBOX6", PU_HUDGFX);
 	emeraldpics[2][6] = W_CachePatchName("EMBOX7", PU_HUDGFX);
 	//emeraldpics[2][7] = W_CachePatchName("EMBOX8", PU_HUDGFX); -- unused
->>>>>>> srb2/next
+
+	songcreditbg = W_CachePatchName("K_SONGCR", PU_HUDGFX);
+
+	// cache ping gfx:
+	for (i = 0; i < 5; i++)
+	{
+		sprintf(buffer, "PINGGFX%d", i+1);
+		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		sprintf(buffer, "MPING%d", i+1);
+		mping[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
+	// fps stuff
+	framecounter = W_CachePatchName("FRAMER", PU_HUDGFX);
+	frameslash  = W_CachePatchName("FRAMESL", PU_HUDGFX);;
 }
 
 // Initialise Heads up
@@ -578,16 +543,11 @@ static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 		// what we're gonna do now is check if the player exists
 		// with that logic, characters 4 and 5 are our numbers:
 		const char *newmsg;
-<<<<<<< HEAD
-		INT32 spc = 1; // used if nodenum[1] is a space.
-		char *nodenum = (char*) malloc(3);
-		strncpy(nodenum, msg+3, 3);
-=======
 		char playernum[3];
 		INT32 spc = 1; // used if playernum[1] is a space.
 
 		strncpy(playernum, msg+3, 3);
->>>>>>> srb2/next
+
 		// check for undesirable characters in our "number"
 		if (((playernum[0] < '0') || (playernum[0] > '9')) || ((playernum[1] < '0') || (playernum[1] > '9')))
 		{
@@ -773,12 +733,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 	// run the lua hook even if we were supposed to eat the msg, netgame consistency goes first.
 
-<<<<<<< HEAD
-#ifdef HAVE_BLUA
 	if (LUAh_PlayerMsg(playernum, target, flags, msg, spam_eatmsg))
-=======
-	if (LUAh_PlayerMsg(playernum, target, flags, msg))
->>>>>>> srb2/next
 		return;
 
 	if (spam_eatmsg)
@@ -846,156 +801,10 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			}
 		}
 		else
-<<<<<<< HEAD
 		{
-			const UINT8 color = players[playernum].skincolor;
-
-			cstart = "\x83";
-
-			switch (color)
-			{
-				case SKINCOLOR_WHITE:
-				case SKINCOLOR_SILVER:
-				case SKINCOLOR_SLATE:
-					cstart = "\x80"; // White
-					break;
-				case SKINCOLOR_GREY:
-				case SKINCOLOR_NICKEL:
-				case SKINCOLOR_BLACK:
-				case SKINCOLOR_SKUNK:
-				case SKINCOLOR_PLATINUM:
-				case SKINCOLOR_JET:
-					cstart = "\x86"; // V_GRAYMAP
-					break;
-				case SKINCOLOR_SEPIA:
-				case SKINCOLOR_BEIGE:
-				case SKINCOLOR_CARAMEL:
-				case SKINCOLOR_PEACH:
-				case SKINCOLOR_BROWN:
-				case SKINCOLOR_LEATHER:
-				case SKINCOLOR_RUST:
-				case SKINCOLOR_WRISTWATCH:
-					cstart = "\x8e"; // V_BROWNMAP
-					break;
-				case SKINCOLOR_FAIRY:
-				case SKINCOLOR_PINK:
-				case SKINCOLOR_ROSE:
-				case SKINCOLOR_LEMONADE:
-				case SKINCOLOR_LILAC:
-				case SKINCOLOR_BLOSSOM:
-				case SKINCOLOR_TAFFY:
-					cstart = "\x8d"; // V_PINKMAP
-					break;
-				case SKINCOLOR_CINNAMON:
-				case SKINCOLOR_RUBY:
-				case SKINCOLOR_RASPBERRY:
-				case SKINCOLOR_RED:
-				case SKINCOLOR_CRIMSON:
-				case SKINCOLOR_MAROON:
-				case SKINCOLOR_SCARLET:
-				case SKINCOLOR_KETCHUP:
-					cstart = "\x85"; // V_REDMAP
-					break;
-				case SKINCOLOR_DAWN:
-				case SKINCOLOR_SUNSLAM:
-				case SKINCOLOR_CREAMSICLE:
-				case SKINCOLOR_ORANGE:
-				case SKINCOLOR_ROSEWOOD:
-				case SKINCOLOR_TANGERINE:
-					cstart = "\x87"; // V_ORANGEMAP
-					break;
-				case SKINCOLOR_TAN:
-				case SKINCOLOR_CREAM:
-					cstart = "\x8f"; // V_TANMAP
-					break;
-				case SKINCOLOR_GOLD:
-				case SKINCOLOR_ROYAL:
-				case SKINCOLOR_BRONZE:
-				case SKINCOLOR_COPPER:
-				case SKINCOLOR_THUNDER:
-					cstart = "\x8A"; // V_GOLDMAP
-					break;
-				case SKINCOLOR_POPCORN:
-				case SKINCOLOR_YELLOW:
-				case SKINCOLOR_MUSTARD:
-				case SKINCOLOR_BANANA:
-				case SKINCOLOR_OLIVE:
-				case SKINCOLOR_CROCODILE:
-					cstart = "\x82"; // V_YELLOWMAP
-					break;
-				case SKINCOLOR_ARTICHOKE:
-				case SKINCOLOR_PERIDOT:
-				case SKINCOLOR_VOMIT:
-				case SKINCOLOR_GARDEN:
-				case SKINCOLOR_LIME:
-				case SKINCOLOR_HANDHELD:
-				case SKINCOLOR_TEA:
-				case SKINCOLOR_PISTACHIO:
-				case SKINCOLOR_MOSS:
-				case SKINCOLOR_CAMOUFLAGE:
-				case SKINCOLOR_MINT:
-				case SKINCOLOR_GREEN:
-				case SKINCOLOR_PINETREE:
-				case SKINCOLOR_TURTLE:
-				case SKINCOLOR_SWAMP:
-				case SKINCOLOR_DREAM:
-				case SKINCOLOR_PLAGUE:
-				case SKINCOLOR_EMERALD:
-				case SKINCOLOR_ALGAE:
-					cstart = "\x83"; // V_GREENMAP
-					break;
-				case SKINCOLOR_AQUAMARINE:
-				case SKINCOLOR_TURQUOISE:
-				case SKINCOLOR_TEAL:
-					cstart = "\x8b"; // V_AQUAMAP
-					break;
-				case SKINCOLOR_PIGEON:
-				case SKINCOLOR_ROBIN:
-				case SKINCOLOR_CYAN:
-				case SKINCOLOR_JAWZ:
-				case SKINCOLOR_CERULEAN:
-				case SKINCOLOR_NAVY:
-				case SKINCOLOR_SAPPHIRE:
-					cstart = "\x88"; // V_SKYMAP
-					break;
-				case SKINCOLOR_STEEL:
-				case SKINCOLOR_ULTRAMARINE:
-				case SKINCOLOR_PERIWINKLE:
-				case SKINCOLOR_BLUE:
-				case SKINCOLOR_MIDNIGHT:
-				case SKINCOLOR_BLUEBERRY:
-				case SKINCOLOR_NOVA:
-					cstart = "\x84"; // V_BLUEMAP
-					break;
-				case SKINCOLOR_THISTLE:
-				case SKINCOLOR_PURPLE:
-				case SKINCOLOR_PASTEL:
-					cstart = "\x81"; // V_PURPLEMAP
-					break;
-				case SKINCOLOR_MAGENTA:
-				case SKINCOLOR_FUCHSIA:
-				case SKINCOLOR_MOONSET:
-				case SKINCOLOR_VIOLET:
-					cstart = "\x8c"; // V_MAGENTAMAP
-					break;
-				case SKINCOLOR_DUSK:
-				case SKINCOLOR_TOXIC:
-				case SKINCOLOR_MAUVE:
-				case SKINCOLOR_LAVENDER:
-				case SKINCOLOR_BYZANTIUM:
-				case SKINCOLOR_POMEGRANATE:
-					cstart = "\x89"; // V_LAVENDERMAP
-					break;
-				default:
-					break;
-			}
-		}
-
-=======
-        {
 			UINT16 chatcolor = skincolors[players[playernum].skincolor].chatcolor;
 
-			if (!chatcolor || chatcolor%0x1000 || chatcolor>V_INVERTMAP)
+			if (!chatcolor || chatcolor%0x1000 || chatcolor>V_TANMAP)
 				cstart = "\x80";
 			else if (chatcolor == V_MAGENTAMAP)
 				cstart = "\x81";
@@ -1013,22 +822,21 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				cstart = "\x87";
 			else if (chatcolor == V_SKYMAP)
 				cstart = "\x88";
-			else if (chatcolor == V_PURPLEMAP)
+			else if (chatcolor == V_LAVENDERMAP)
 				cstart = "\x89";
-			else if (chatcolor == V_AQUAMAP)
+			else if (chatcolor == V_GOLDMAP)
 				cstart = "\x8a";
-			else if (chatcolor == V_PERIDOTMAP)
+			else if (chatcolor == V_AQUAMAP)
 				cstart = "\x8b";
-			else if (chatcolor == V_AZUREMAP)
+			else if (chatcolor == V_PURPLEMAP)
 				cstart = "\x8c";
-			else if (chatcolor == V_BROWNMAP)
+			else if (chatcolor == V_PINKMAP)
 				cstart = "\x8d";
-			else if (chatcolor == V_ROSYMAP)
+			else if (chatcolor == V_BROWNMAP)
 				cstart = "\x8e";
-			else if (chatcolor == V_INVERTMAP)
+			else if (chatcolor == V_TANMAP)
 				cstart = "\x8f";
-        }
->>>>>>> srb2/next
+		}
 		prefix = cstart;
 
 		// Give admins and remote admins their symbols.
@@ -1260,12 +1068,8 @@ static void HU_queueChatChar(INT32 c)
 				return;
 			}
 
-<<<<<<< HEAD
-			strncpy(nodenum, msg+3, 3);
-
-=======
 			strncpy(playernum, msg+3, 3);
->>>>>>> srb2/next
+
 			// check for undesirable characters in our "number"
 			if (((playernum[0] < '0') || (playernum[0] > '9')) || ((playernum[1] < '0') || (playernum[1] > '9')))
 			{
@@ -1643,10 +1447,7 @@ static void HU_drawMiniChat(void)
 		dy = 0;
 		dx = 0;
 		msglines += linescount+1;
-<<<<<<< HEAD
-=======
 
->>>>>>> srb2/next
 		if (msg)
 			Z_Free(msg);
 	}
@@ -1659,14 +1460,12 @@ static void HU_drawMiniChat(void)
 		y -= BASEVIDHEIGHT/2;
 		if (r_splitscreen > 1)
 			y += 16;
-<<<<<<< HEAD
 	}
 	else
 #endif
+	{
 		y -= (cv_kartspeedometer.value ? 16 : 0);
-=======
-	}*/
->>>>>>> srb2/next
+	}
 
 	dx = 0;
 	dy = 0;
@@ -1725,10 +1524,7 @@ static void HU_drawMiniChat(void)
 		}
 		dy += charheight;
 		dx = 0;
-<<<<<<< HEAD
-=======
 
->>>>>>> srb2/next
 		if (msg)
 			Z_Free(msg);
 	}
@@ -1769,21 +1565,15 @@ static void HU_drawChatLog(INT32 offset)
 	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
-<<<<<<< HEAD
+
 		if (r_splitscreen > 1)
 			y += 16;
-=======
-		//if (splitscreen > 1)
-			//y += 16;
->>>>>>> srb2/next
 	}
 	else
 #endif
-<<<<<<< HEAD
+	{
 		y -= (cv_kartspeedometer.value ? 16 : 0);
-
-=======
->>>>>>> srb2/next
+	}
 
 	chat_topy = y + chat_scroll*charheight;
 	chat_bottomy = chat_topy + boxh*charheight;
@@ -1834,10 +1624,7 @@ static void HU_drawChatLog(INT32 offset)
 		}
 		dy += charheight;
 		dx = 0;
-<<<<<<< HEAD
-=======
 
->>>>>>> srb2/next
 		if (msg)
 			Z_Free(msg);
 	}
@@ -1849,18 +1636,9 @@ static void HU_drawChatLog(INT32 offset)
 	}
 	chat_scrollmedown = false;
 
-<<<<<<< HEAD
-	// getmaxscroll through a lazy hack. We do all these loops, so let's not do more loops that are gonna lag the game more. :P
-	chat_maxscroll = (dy/charheight); // welcome to C, we don't know what min() and max() are.
-	if (chat_maxscroll <= (UINT32)boxh)
-		chat_maxscroll = 0;
-	else
-		chat_maxscroll -= boxh;
-=======
 	// getmaxscroll through a lazy hack. We do all these loops,
 	// so let's not do more loops that are gonna lag the game more. :P
 	chat_maxscroll = max(dy / charheight - cv_chatheight.value, 0);
->>>>>>> srb2/next
 
 	// if we're not bound by the time, autoscroll for next frame:
 	if (atbottom)
@@ -1869,15 +1647,9 @@ static void HU_drawChatLog(INT32 offset)
 	// draw arrows to indicate that we can (or not) scroll.
 	// account for Y = -1 offset in tinyfont
 	if (chat_scroll > 0)
-<<<<<<< HEAD
 		V_DrawCharacter(chatx-9, ((justscrolledup) ? (chat_topy-1) : (chat_topy)), V_SNAPTOBOTTOM | V_SNAPTOLEFT | highlight | '\x1A', false); // up arrow
 	if (chat_scroll < chat_maxscroll)
 		V_DrawCharacter(chatx-9, chat_bottomy-((justscrolleddown) ? 5 : 6), V_SNAPTOBOTTOM | V_SNAPTOLEFT | highlight | '\x1B', false); // down arrow
-=======
-		V_DrawThinString(chatx-8, ((justscrolledup) ? (chat_topy-1) : (chat_topy)) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | V_YELLOWMAP, "\x1A"); // up arrow
-	if (chat_scroll < chat_maxscroll)
-		V_DrawThinString(chatx-8, chat_bottomy-((justscrolleddown) ? 5 : 6) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | V_YELLOWMAP, "\x1B"); // down arrow
->>>>>>> srb2/next
 
 	justscrolleddown = false;
 	justscrolledup = false;
@@ -1912,10 +1684,9 @@ static void HU_DrawChat(void)
 	}
 	else
 #endif
-<<<<<<< HEAD
+	{
 		y -= (cv_kartspeedometer.value ? 16 : 0);
-=======
->>>>>>> srb2/next
+	}
 
 	if (teamtalk)
 	{
@@ -2009,10 +1780,9 @@ static void HU_DrawChat(void)
 		}
 		else
 #endif
-<<<<<<< HEAD
+		{
 			p_dispy -= (cv_kartspeedometer.value ? 16 : 0);
-=======
->>>>>>> srb2/next
+		}
 
 		i = 0;
 		for(i=0; (i<MAXPLAYERS); i++)
@@ -2375,8 +2145,6 @@ static void HU_DrawCEcho(void)
 	--cechotimer;
 }
 
-<<<<<<< HEAD
-=======
 static void HU_drawGametype(void)
 {
 	const char *strvalue = NULL;
@@ -2392,7 +2160,6 @@ static void HU_drawGametype(void)
 		V_DrawString(4, 192, 0, strvalue);
 }
 
->>>>>>> srb2/next
 //
 // demo info stuff
 //
@@ -2401,7 +2168,6 @@ UINT32 hu_demolap;
 
 static void HU_DrawDemoInfo(void)
 {
-<<<<<<< HEAD
 	if (!multiplayer)/* netreplay */
 	{
 		V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, 0, M_GetText("Replay:"));
@@ -2417,26 +2183,10 @@ static void HU_DrawDemoInfo(void)
 		V_DrawRightAlignedString((BASEVIDWIDTH/2)-4, BASEVIDHEIGHT-24, V_YELLOWMAP|V_MONOSPACE, "BEST TIME:");
 		if (hu_demotime != UINT32_MAX)
 			V_DrawString((BASEVIDWIDTH/2)+4, BASEVIDHEIGHT-24, V_MONOSPACE, va("%i'%02i\"%02i",
-=======
-	INT32 h = 188;
-	if (modeattacking == ATTACKING_NIGHTS)
-		h -= 12;
-
-	V_DrawString(4, h-24, V_YELLOWMAP|V_ALLOWLOWERCASE, va(M_GetText("%s's replay"), player_names[0]));
-	if (modeattacking)
-	{
-		V_DrawString(4, h-16, V_YELLOWMAP|V_MONOSPACE, "SCORE:");
-		V_DrawRightAlignedString(120, h-16, V_MONOSPACE, va("%d", hu_demoscore));
-
-		V_DrawString(4, h-8, V_YELLOWMAP|V_MONOSPACE, "TIME:");
-		if (hu_demotime != UINT32_MAX)
-			V_DrawRightAlignedString(120, h-8, V_MONOSPACE, va("%i:%02i.%02i",
->>>>>>> srb2/next
 				G_TicsToMinutes(hu_demotime,true),
 				G_TicsToSeconds(hu_demotime),
 				G_TicsToCentiseconds(hu_demotime)));
 		else
-<<<<<<< HEAD
 			V_DrawString((BASEVIDWIDTH/2)+4, BASEVIDHEIGHT-24, V_MONOSPACE, "--'--\"--");
 
 		V_DrawRightAlignedString((BASEVIDWIDTH/2)-4, BASEVIDHEIGHT-16, V_YELLOWMAP|V_MONOSPACE, "BEST LAP:");
@@ -2477,15 +2227,6 @@ void HU_DrawSongCredits(void)
 		if (cursongcredit.x > destx)
 			cursongcredit.x = destx;
 		cursongcredit.anim--;
-=======
-			V_DrawRightAlignedString(120, h-8, V_MONOSPACE, "--:--.--");
-
-		if (modeattacking == ATTACKING_RECORD)
-		{
-			V_DrawString(4, h, V_YELLOWMAP|V_MONOSPACE, "RINGS:");
-			V_DrawRightAlignedString(120, h, V_MONOSPACE, va("%d", hu_demorings));
-		}
->>>>>>> srb2/next
 	}
 	else
 	{
@@ -2509,13 +2250,11 @@ void HU_DrawSongCredits(void)
 //
 void HU_Drawer(void)
 {
-<<<<<<< HEAD
-	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
-		V_DrawVhsEffect(demo.rewinding);
-=======
 	if (needpatchrecache)
 		R_ReloadHUDGraphics();
->>>>>>> srb2/next
+
+	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
+		V_DrawVhsEffect(demo.rewinding);
 
 #ifndef NONET
 	// draw chat string plus cursor
@@ -2527,7 +2266,7 @@ void HU_Drawer(void)
 		if (!OLDCHAT)
 			HU_DrawChat();
 		else
-			HU_DrawChat_Old(); // why the fuck.........................
+			HU_DrawChat_Old();
 	}
 	else
 	{
@@ -2565,12 +2304,8 @@ void HU_Drawer(void)
 	if (!( Playing() || demo.playback )
 	 || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE
 	 || gamestate == GS_CREDITS      || gamestate == GS_EVALUATION
-<<<<<<< HEAD
-	 || gamestate == GS_GAMEEND
+	 || gamestate == GS_ENDING       || gamestate == GS_GAMEEND
 	 || gamestate == GS_VOTING || gamestate == GS_WAITINGPLAYERS) // SRB2kart
-=======
-	 || gamestate == GS_ENDING       || gamestate == GS_GAMEEND)
->>>>>>> srb2/next
 		return;
 
 	// draw multiplayer rankings
@@ -2579,62 +2314,22 @@ void HU_Drawer(void)
 		if (netgame || multiplayer)
 		{
 			if (LUA_HudEnabled(hud_rankings))
-<<<<<<< HEAD
-#endif
 				HU_DrawRankings();
-#ifdef HAVE_BLUA
-		LUAh_ScoresHUD();
-#endif
+			LUAh_ScoresHUD();
 		}
+
 		if (demo.playback)
 		{
 			HU_DrawDemoInfo();
 		}
-=======
-				HU_DrawRankings();
-			if (gametype == GT_COOP)
-				HU_DrawNetplayCoopOverlay();
-		}
-		else
-			HU_DrawCoopOverlay();
-		LUAh_ScoresHUD();
->>>>>>> srb2/next
 	}
 
 	if (gamestate != GS_LEVEL)
 		return;
 
-	// draw the crosshair, not when viewing demos nor with chasecam
-<<<<<<< HEAD
-	/*if (!automapactive && !demo.playback)
-	{
-		if (cv_crosshair.value && !camera[0].chase && !players[displayplayers[0]].spectator)
-			HU_DrawCrosshair();
-
-		if (cv_crosshair2.value && !camera[1].chase && !players[displayplayers[1]].spectator)
-			HU_DrawCrosshair2();
-
-		if (cv_crosshair3.value && !camera[2].chase && !players[displayplayers[2]].spectator)
-			HU_DrawCrosshair3();
-
-		if (cv_crosshair4.value && !camera[3].chase && !players[displayplayers[3]].spectator)
-			HU_DrawCrosshair4();
-	}*/
-
 	// draw song credits
 	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
 		HU_DrawSongCredits();
-=======
-	if (!automapactive && cv_crosshair.value && !demoplayback &&
-		(!camera.chase || ticcmd_ztargetfocus[0])
-	&& !players[displayplayer].spectator)
-		HU_DrawCrosshair();
-
-	if (!automapactive && cv_crosshair2.value && !demoplayback &&
-		(!camera2.chase || ticcmd_ztargetfocus[1])
-	&& !players[secondarydisplayplayer].spectator)
-		HU_DrawCrosshair2();
->>>>>>> srb2/next
 
 	// draw desynch text
 	if (hu_resynching)
@@ -2752,7 +2447,6 @@ void HU_Erase(void)
 //                   IN-LEVEL MULTIPLAYER RANKINGS
 //======================================================================
 
-<<<<<<< HEAD
 static int
 Ping_gfx_num (int ping)
 {
@@ -2766,45 +2460,6 @@ Ping_gfx_num (int ping)
 		return 3;
 	else
 		return 4;
-=======
-#define supercheckdef ((players[tab[i].num].powers[pw_super] && players[tab[i].num].mo && (players[tab[i].num].mo->state < &states[S_PLAY_SUPER_TRANS1] || players[tab[i].num].mo->state >= &states[S_PLAY_SUPER_TRANS6])) || (players[tab[i].num].powers[pw_carry] == CR_NIGHTSMODE && skins[players[tab[i].num].skin].flags & SF_SUPER))
-#define greycheckdef (players[tab[i].num].spectator || players[tab[i].num].playerstate == PST_DEAD || (G_IsSpecialStage(gamemap) && players[tab[i].num].exiting))
-
-//
-// HU_drawPing
-//
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags)
-{
-	UINT8 numbars = 1; // how many ping bars do we draw?
-	UINT8 barcolor = 35; // color we use for the bars (green, yellow or red)
-	SINT8 i = 0;
-	SINT8 yoffset = 6;
-	INT32 dx = x+1 - (V_SmallStringWidth(va("%dms", ping),
-				V_ALLOWLOWERCASE|flags)/2);
-
-	if (ping < 128)
-	{
-		numbars = 3;
-		barcolor = 112;
-	}
-	else if (ping < 256)
-	{
-		numbars = 2; // Apparently ternaries w/ multiple statements don't look good in C so I decided against it.
-		barcolor = 73;
-	}
-
-	if (!notext || vid.width >= 640) // how sad, we're using a shit resolution.
-		V_DrawSmallString(dx, y+4, V_ALLOWLOWERCASE|flags, va("%dms", ping));
-
-	for (i=0; (i<3); i++) // Draw the ping bar
-	{
-		V_DrawFill(x+2 *(i-1), y+yoffset-4, 2, 8-yoffset, 31|flags);
-		if (i < numbars)
-			V_DrawFill(x+2 *(i-1), y+yoffset-3, 1, 8-yoffset-1, barcolor|flags);
-
-		yoffset -= 2;
-	}
->>>>>>> srb2/next
 }
 
 //
@@ -2812,7 +2467,6 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags)
 //
 void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
-<<<<<<< HEAD
 	INT32 gfxnum;	// gfx to draw
 	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
 
@@ -2823,118 +2477,11 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
 		V_DrawPingNum(x, y+9, flags, ping, colormap);
 	else
 		V_DrawPingNum(x, y+9, flags, ping, NULL);
-=======
-	INT32 i;
-	const UINT8 *colormap;
-	boolean greycheck, supercheck;
-
-	//this function is designed for 9 or less score lines only
-	I_Assert(scorelines <= 9);
-
-	V_DrawFill(1, 26, 318, 1, 0); //Draw a horizontal line because it looks nice!
-
-	for (i = 0; i < scorelines; i++)
-	{
-		if (players[tab[i].num].spectator && gametyperankings[gametype] != GT_COOP)
-			continue; //ignore them.
-
-		greycheck = greycheckdef;
-		supercheck = supercheckdef;
-
-		if (!splitscreen) // don't draw it on splitscreen,
-		{
-			if (!(tab[i].num == serverplayer || players[tab[i].num].quittime))
-				HU_drawPing(x+ 253, y, playerpingtable[tab[i].num], false, 0);
-			//else
-			//	V_DrawSmallString(x+ 246, y+4, V_YELLOWMAP, "SERVER");
-		}
-
-		V_DrawString(x + 20, y,
-		             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		             | (greycheck ? V_60TRANS : 0)
-		             | V_ALLOWLOWERCASE, tab[i].name);
-
-		// Draw emeralds
-		if (players[tab[i].num].powers[pw_invulnerability] && (players[tab[i].num].powers[pw_invulnerability] == players[tab[i].num].powers[pw_sneakers]) && ((leveltime/7) & 1))
-			HU_DrawEmeralds(x-12,y+2,255);
-		else if (!players[tab[i].num].powers[pw_super]
-			|| ((leveltime/7) & 1))
-		{
-			HU_DrawEmeralds(x-12,y+2,tab[i].emeralds);
-		}
-
-		if (greycheck)
-			V_DrawSmallTranslucentPatch (x, y-4, V_80TRANS, livesback);
-		else
-			V_DrawSmallScaledPatch (x, y-4, 0, livesback);
-
-		if (tab[i].color == 0)
-		{
-			colormap = colormaps;
-			if (supercheck)
-				V_DrawSmallScaledPatch(x, y-4, 0, superprefix[players[tab[i].num].skin]);
-			else
-			{
-				if (greycheck)
-					V_DrawSmallTranslucentPatch(x, y-4, V_80TRANS, faceprefix[players[tab[i].num].skin]);
-				else
-					V_DrawSmallScaledPatch(x, y-4, 0, faceprefix[players[tab[i].num].skin]);
-			}
-		}
-		else
-		{
-			if (supercheck)
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo->color, GTC_CACHE);
-				V_DrawSmallMappedPatch (x, y-4, 0, superprefix[players[tab[i].num].skin], colormap);
-			}
-			else
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-				if (greycheck)
-					V_DrawSmallTranslucentMappedPatch (x, y-4, V_80TRANS, faceprefix[players[tab[i].num].skin], colormap);
-				else
-					V_DrawSmallMappedPatch (x, y-4, 0, faceprefix[players[tab[i].num].skin], colormap);
-			}
-		}
-
-		if (G_GametypeUsesLives() && !(G_GametypeUsesCoopLives() && (cv_cooplives.value == 0 || cv_cooplives.value == 3)) && (players[tab[i].num].lives != INFLIVES)) //show lives
-			V_DrawRightAlignedString(x, y+4, V_ALLOWLOWERCASE|(greycheck ? V_60TRANS : 0), va("%dx", players[tab[i].num].lives));
-		else if (G_TagGametype() && players[tab[i].num].pflags & PF_TAGIT)
-		{
-			if (greycheck)
-				V_DrawSmallTranslucentPatch(x-32, y-4, V_60TRANS, tagico);
-			else
-				V_DrawSmallScaledPatch(x-32, y-4, 0, tagico);
-		}
-
-		if (players[tab[i].num].exiting || (players[tab[i].num].pflags & PF_FINISHED))
-			V_DrawSmallScaledPatch(x - SHORT(exiticon->width)/2 - 1, y-3, 0, exiticon);
-
-		if (gametyperankings[gametype] == GT_RACE)
-		{
-			if (circuitmap)
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedString(x+240, y, 0, va("%i:%02i.%02i", G_TicsToMinutes(players[tab[i].num].realtime,true), G_TicsToSeconds(players[tab[i].num].realtime), G_TicsToCentiseconds(players[tab[i].num].realtime)));
-				else
-					V_DrawRightAlignedString(x+240, y, (greycheck ? V_60TRANS : 0), va("%u", tab[i].count));
-			}
-			else
-				V_DrawRightAlignedString(x+240, y, (greycheck ? V_60TRANS : 0), va("%i:%02i.%02i", G_TicsToMinutes(tab[i].count,true), G_TicsToSeconds(tab[i].count), G_TicsToCentiseconds(tab[i].count)));
-		}
-		else
-			V_DrawRightAlignedString(x+240, y, (greycheck ? V_60TRANS : 0), va("%u", tab[i].count));
-
-		y += 16;
-	}
->>>>>>> srb2/next
 }
 
 void
 HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
-<<<<<<< HEAD
 	patch_t *patch;
 
 	patch = mping[Ping_gfx_num(ping)];
@@ -2943,527 +2490,7 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 		x += ( BASEVIDWIDTH - SHORT (patch->width) );
 
 	V_DrawScaledPatch(x, y, flags, patch);
-=======
-	//Draw the emeralds, in the CORRECT order, using tiny emerald sprites.
-	if (pemeralds & EMERALD1)
-		V_DrawSmallScaledPatch(x  , y, 0, emeraldpics[1][0]);
-
-	if (pemeralds & EMERALD2)
-		V_DrawSmallScaledPatch(x+4, y, 0, emeraldpics[1][1]);
-
-	if (pemeralds & EMERALD3)
-		V_DrawSmallScaledPatch(x+8, y, 0, emeraldpics[1][2]);
-
-	if (pemeralds & EMERALD4)
-		V_DrawSmallScaledPatch(x+12  , y, 0, emeraldpics[1][3]);
-
-	if (pemeralds & EMERALD5)
-		V_DrawSmallScaledPatch(x+16, y, 0, emeraldpics[1][4]);
-
-	if (pemeralds & EMERALD6)
-		V_DrawSmallScaledPatch(x+20, y, 0, emeraldpics[1][5]);
-
-	if (pemeralds & EMERALD7)
-		V_DrawSmallScaledPatch(x+24,   y,   0, emeraldpics[1][6]);
->>>>>>> srb2/next
 }
-
-//
-// HU_DrawTabRankings -- moved to k_kart.c
-//
-<<<<<<< HEAD
-=======
-static void HU_Draw32TeamTabRankings(playersort_t *tab, INT32 whiteplayer)
-{
-	INT32 i,x,y;
-	INT32 redplayers = 0, blueplayers = 0;
-	const UINT8 *colormap;
-	char name[MAXPLAYERNAME+1];
-	boolean greycheck, supercheck;
-
-	V_DrawFill(160, 26, 1, 154, 0); //Draw a vertical line to separate the two teams.
-	V_DrawFill(1, 26, 318, 1, 0); //And a horizontal line to make a T.
-	V_DrawFill(1, 180, 318, 1, 0); //And a horizontal line near the bottom.
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (players[tab[i].num].spectator)
-			continue; //ignore them.
-
-		greycheck = greycheckdef;
-		supercheck = supercheckdef;
-
-		if (tab[i].color == skincolor_redteam) //red
-		{
-			redplayers++;
-			x = 14 + (BASEVIDWIDTH/2);
-			y = (redplayers * 9) + 20;
-		}
-		else if (tab[i].color == skincolor_blueteam) //blue
-		{
-			blueplayers++;
-			x = 14;
-			y = (blueplayers * 9) + 20;
-		}
-		else //er?  not on red or blue, so ignore them
-			continue;
-
-		greycheck = greycheckdef;
-		supercheck = supercheckdef;
-
-		strlcpy(name, tab[i].name, 8);
-		V_DrawString(x + 10, y,
-		             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		             | (greycheck ? 0 : V_TRANSLUCENT)
-		             | V_ALLOWLOWERCASE, name);
-
-		if (gametyperules & GTR_TEAMFLAGS)
-		{
-			if (players[tab[i].num].gotflag & GF_REDFLAG) // Red
-				V_DrawFixedPatch((x-10)*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, rflagico, 0);
-			else if (players[tab[i].num].gotflag & GF_BLUEFLAG) // Blue
-				V_DrawFixedPatch((x-10)*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, bflagico, 0);
-		}
-
-		// Draw emeralds
-		if (players[tab[i].num].powers[pw_invulnerability] && (players[tab[i].num].powers[pw_invulnerability] == players[tab[i].num].powers[pw_sneakers]) && ((leveltime/7) & 1))
-		{
-			HU_Draw32Emeralds(x+60, y+2, 255);
-			//HU_DrawEmeralds(x-12,y+2,255);
-		}
-		else if (!players[tab[i].num].powers[pw_super]
-			|| ((leveltime/7) & 1))
-		{
-			HU_Draw32Emeralds(x+60, y+2, tab[i].emeralds);
-			//HU_DrawEmeralds(x-12,y+2,tab[i].emeralds);
-		}
-
-		if (supercheck)
-		{
-			colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/4, 0, superprefix[players[tab[i].num].skin], colormap);
-		}
-		else
-		{
-			colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-			if (players[tab[i].num].spectator || players[tab[i].num].playerstate == PST_DEAD)
-				V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/4, V_HUDTRANSHALF, faceprefix[players[tab[i].num].skin], colormap);
-			else
-				V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/4, 0, faceprefix[players[tab[i].num].skin], colormap);
-		}
-		V_DrawRightAlignedThinString(x+128, y, ((players[tab[i].num].spectator || players[tab[i].num].playerstate == PST_DEAD) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-		if (!splitscreen)
-		{
-			if (!(tab[i].num == serverplayer || players[tab[i].num].quittime))
-				HU_drawPing(x+ 135, y+1, playerpingtable[tab[i].num], true, 0);
-		//else
-			//V_DrawSmallString(x+ 129, y+4, V_YELLOWMAP, "HOST");
-		}
-	}
-}
->>>>>>> srb2/next
-
-//
-// HU_DrawTeamTabRankings
-//
-/*void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer)
-{
-	INT32 i,x,y;
-	INT32 redplayers = 0, blueplayers = 0;
-	boolean smol = false;
-	const UINT8 *colormap;
-	char name[MAXPLAYERNAME+1];
-	boolean greycheck, supercheck;
-
-	// before we draw, we must count how many players are in each team. It makes an additional loop, but we need to know if we have to draw a big or a small ranking.
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (players[tab[i].num].spectator)
-			continue; //ignore them.
-
-		if (tab[i].color == skincolor_redteam) //red
-		{
-			if (redplayers++ > 8)
-			{
-				smol = true;
-				break; // don't make more loops than we need to.
-			}
-		}
-		else if (tab[i].color == skincolor_blueteam) //blue
-		{
-			if (blueplayers++ > 8)
-			{
-				smol = true;
-				break;
-			}
-		}
-		else //er?  not on red or blue, so ignore them
-			continue;
-
-	}
-
-	// I'll be blunt with you, this may add more lines, but I'm not adding weird cases for this, so we're executing a separate function.
-	if (smol == true || cv_compactscoreboard.value)
-	{
-		HU_Draw32TeamTabRankings(tab, whiteplayer);
-		return;
-	}
-
-	V_DrawFill(160, 26, 1, 154, 0); //Draw a vertical line to separate the two teams.
-	V_DrawFill(1, 26, 318, 1, 0); //And a horizontal line to make a T.
-	V_DrawFill(1, 180, 318, 1, 0); //And a horizontal line near the bottom.
-
-	i=0, redplayers=0, blueplayers=0;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (players[tab[i].num].spectator)
-			continue; //ignore them.
-
-		if (tab[i].color == skincolor_redteam) //red
-		{
-			if (redplayers++ > 8)
-				continue;
-			x = 32 + (BASEVIDWIDTH/2);
-			y = (redplayers * 16) + 16;
-		}
-		else if (tab[i].color == skincolor_blueteam) //blue
-		{
-			if (blueplayers++ > 8)
-				continue;
-			x = 32;
-			y = (blueplayers * 16) + 16;
-		}
-		else //er?  not on red or blue, so ignore them
-			continue;
-
-		greycheck = greycheckdef;
-		supercheck = supercheckdef;
-
-		strlcpy(name, tab[i].name, 7);
-		V_DrawString(x + 20, y,
-		             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		             | (greycheck ? V_TRANSLUCENT : 0)
-		             | V_ALLOWLOWERCASE, name);
-
-		if (gametyperules & GTR_TEAMFLAGS)
-		{
-			if (players[tab[i].num].gotflag & GF_REDFLAG) // Red
-				V_DrawSmallScaledPatch(x-28, y-4, 0, rflagico);
-			else if (players[tab[i].num].gotflag & GF_BLUEFLAG) // Blue
-				V_DrawSmallScaledPatch(x-28, y-4, 0, bflagico);
-		}
-
-		// Draw emeralds
-		if (players[tab[i].num].powers[pw_invulnerability] && (players[tab[i].num].powers[pw_invulnerability] == players[tab[i].num].powers[pw_sneakers]) && ((leveltime/7) & 1))
-			HU_DrawEmeralds(x-12,y+2,255);
-		else if (!players[tab[i].num].powers[pw_super]
-			|| ((leveltime/7) & 1))
-		{
-			HU_DrawEmeralds(x-12,y+2,tab[i].emeralds);
-		}
-
-		if (supercheck)
-		{
-			colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-			V_DrawSmallMappedPatch (x, y-4, 0, facewantprefix[players[tab[i].num].skin], colormap);
-		}
-		else
-		{
-			colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-<<<<<<< HEAD
-			if (players[tab[i].num].health <= 0)
-				V_DrawSmallTranslucentMappedPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-=======
-			if (greycheck)
-				V_DrawSmallTranslucentMappedPatch (x, y-4, V_80TRANS, faceprefix[players[tab[i].num].skin], colormap);
->>>>>>> srb2/next
-			else
-				V_DrawSmallMappedPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-		}
-		V_DrawRightAlignedThinString(x+120, y-1, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-		if (!splitscreen)
-		{
-			if (!(tab[i].num == serverplayer))
-				HU_drawPing(x+ 113, y+2, playerpingtable[tab[i].num], false);
-		}
-		V_DrawRightAlignedThinString(x+100, y, (greycheck ? V_TRANSLUCENT : 0), va("%u", tab[i].count));
-		if (!splitscreen)
-		{
-			if (!(tab[i].num == serverplayer || players[tab[i].num].quittime))
-				HU_drawPing(x+ 113, y, playerpingtable[tab[i].num], false, 0);
-		//else
-		//	V_DrawSmallString(x+ 94, y+4, V_YELLOWMAP, "SERVER");
-		}
-	}
-}
-
-//
-// HU_DrawDualTabRankings
-//
-void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer)
-{
-	INT32 i;
-	const UINT8 *colormap;
-	char name[MAXPLAYERNAME+1];
-	boolean greycheck, supercheck;
-
-	V_DrawFill(160, 26, 1, 154, 0); //Draw a vertical line to separate the two sides.
-	V_DrawFill(1, 26, 318, 1, 0); //And a horizontal line to make a T.
-	V_DrawFill(1, 180, 318, 1, 0); //And a horizontal line near the bottom.
-
-	for (i = 0; i < scorelines; i++)
-	{
-		if (players[tab[i].num].spectator && gametyperankings[gametype] != GT_COOP)
-			continue; //ignore them.
-
-		greycheck = greycheckdef;
-		supercheck = supercheckdef;
-
-		strlcpy(name, tab[i].name, 7);
-		if (!(tab[i].num == serverplayer || players[tab[i].num].quittime))
-			HU_drawPing(x+ 113, y, playerpingtable[tab[i].num], false, 0);
-		//else
-		//	V_DrawSmallString(x+ 94, y+4, V_YELLOWMAP, "SERVER");
-
-		V_DrawString(x + 20, y,
-		             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		             | (greycheck ? V_TRANSLUCENT : 0)
-		             | V_ALLOWLOWERCASE, name);
-
-		if (G_GametypeUsesLives() && !(G_GametypeUsesCoopLives() && (cv_cooplives.value == 0 || cv_cooplives.value == 3)) && (players[tab[i].num].lives != INFLIVES)) //show lives
-			V_DrawRightAlignedString(x, y+4, V_ALLOWLOWERCASE, va("%dx", players[tab[i].num].lives));
-		else if (G_TagGametype() && players[tab[i].num].pflags & PF_TAGIT)
-			V_DrawSmallScaledPatch(x-28, y-4, 0, tagico);
-
-		if (players[tab[i].num].exiting || (players[tab[i].num].pflags & PF_FINISHED))
-			V_DrawSmallScaledPatch(x - SHORT(exiticon->width)/2 - 1, y-3, 0, exiticon);
-
-		// Draw emeralds
-		if (players[tab[i].num].powers[pw_invulnerability] && (players[tab[i].num].powers[pw_invulnerability] == players[tab[i].num].powers[pw_sneakers]) && ((leveltime/7) & 1))
-			HU_DrawEmeralds(x-12,y+2,255);
-		else if (!players[tab[i].num].powers[pw_super]
-			|| ((leveltime/7) & 1))
-		{
-			HU_DrawEmeralds(x-12,y+2,tab[i].emeralds);
-		}
-
-		//V_DrawSmallScaledPatch (x, y-4, 0, livesback);
-		if (tab[i].color == 0)
-		{
-			colormap = colormaps;
-<<<<<<< HEAD
-			if (players[tab[i].num].powers[pw_super])
-				V_DrawSmallScaledPatch (x, y-4, 0, facewantprefix[players[tab[i].num].skin]);
-			else
-			{
-				if (players[tab[i].num].health <= 0)
-					V_DrawSmallTranslucentPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin]);
-=======
-			if (supercheck)
-				V_DrawSmallScaledPatch (x, y-4, 0, superprefix[players[tab[i].num].skin]);
-			else
-			{
-				if (greycheck)
-					V_DrawSmallTranslucentPatch (x, y-4, V_80TRANS, faceprefix[players[tab[i].num].skin]);
->>>>>>> srb2/next
-				else
-					V_DrawSmallScaledPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin]);
-			}
-		}
-		else
-		{
-			if (supercheck)
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-				V_DrawSmallMappedPatch (x, y-4, 0, facewantprefix[players[tab[i].num].skin], colormap);
-			}
-			else
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-<<<<<<< HEAD
-				if (players[tab[i].num].health <= 0)
-					V_DrawSmallTranslucentMappedPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-=======
-				if (greycheck)
-					V_DrawSmallTranslucentMappedPatch (x, y-4, V_80TRANS, faceprefix[players[tab[i].num].skin], colormap);
->>>>>>> srb2/next
-				else
-					V_DrawSmallMappedPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-			}
-		}
-
-		// All data drawn with thin string for space.
-<<<<<<< HEAD
-		if (G_RaceGametype())
-=======
-		if (gametyperankings[gametype] == GT_RACE)
->>>>>>> srb2/next
-		{
-			if (circuitmap)
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedThinString(x+146, y, 0, va("%i:%02i.%02i", G_TicsToMinutes(players[tab[i].num].realtime,true), G_TicsToSeconds(players[tab[i].num].realtime), G_TicsToCentiseconds(players[tab[i].num].realtime)));
-				else
-					V_DrawRightAlignedThinString(x+146, y, (greycheck ? V_TRANSLUCENT : 0), va("%u", tab[i].count));
-			}
-			else
-				V_DrawRightAlignedThinString(x+146, y, (greycheck ? V_TRANSLUCENT : 0), va("%i:%02i.%02i", G_TicsToMinutes(tab[i].count,true), G_TicsToSeconds(tab[i].count), G_TicsToCentiseconds(tab[i].count)));
-		}
-		else
-			V_DrawRightAlignedThinString(x+100, y, (greycheck ? V_TRANSLUCENT : 0), va("%u", tab[i].count));
-
-		y += 16;
-		if (y > 160)
-		{
-			y = 32;
-			x += BASEVIDWIDTH/2;
-		}
-	}
-}
-
-//
-// HU_Draw32TabRankings
-//
-static void HU_Draw32TabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer)
-{
-	INT32 i;
-	const UINT8 *colormap;
-	char name[MAXPLAYERNAME+1];
-	boolean greycheck, supercheck;
-
-	V_DrawFill(160, 26, 1, 154, 0); //Draw a vertical line to separate the two sides.
-	V_DrawFill(1, 26, 318, 1, 0); //And a horizontal line to make a T.
-	V_DrawFill(1, 180, 318, 1, 0); //And a horizontal line near the bottom.
-
-	for (i = 0; i < scorelines; i++)
-	{
-		if (players[tab[i].num].spectator && gametyperankings[gametype] != GT_COOP)
-			continue; //ignore them.
-
-		greycheck = greycheckdef;
-		supercheck = supercheckdef;
-
-		strlcpy(name, tab[i].name, 7);
-		if (!splitscreen) // don't draw it on splitscreen,
-		{
-			if (!(tab[i].num == serverplayer || players[tab[i].num].quittime))
-				HU_drawPing(x+ 135, y+1, playerpingtable[tab[i].num], true, 0);
-		//else
-		//	V_DrawSmallString(x+ 129, y+4, V_YELLOWMAP, "HOST");
-		}
-
-		V_DrawString(x + 10, y,
-		             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		             | (greycheck ? 0 : V_TRANSLUCENT)
-		             | V_ALLOWLOWERCASE, name);
-
-		if (G_GametypeUsesLives()) //show lives
-			V_DrawRightAlignedThinString(x-1, y, V_ALLOWLOWERCASE, va("%d", players[tab[i].num].lives));
-		else if (G_TagGametype() && players[tab[i].num].pflags & PF_TAGIT)
-			V_DrawFixedPatch((x-10)*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, tagico, 0);
-
-		// Draw emeralds
-		if (players[tab[i].num].powers[pw_invulnerability] && (players[tab[i].num].powers[pw_invulnerability] == players[tab[i].num].powers[pw_sneakers]) && ((leveltime/7) & 1))
-		{
-			HU_Draw32Emeralds(x+60, y+2, 255);
-			//HU_DrawEmeralds(x-12,y+2,255);
-		}
-		else if (!players[tab[i].num].powers[pw_super]
-			|| ((leveltime/7) & 1))
-		{
-			HU_Draw32Emeralds(x+60, y+2, tab[i].emeralds);
-			//HU_DrawEmeralds(x-12,y+2,tab[i].emeralds);
-		}
-
-		//V_DrawSmallScaledPatch (x, y-4, 0, livesback);
-		if (tab[i].color == 0)
-		{
-			colormap = colormaps;
-			if (players[tab[i].num].powers[pw_super])
-				V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/4, 0, superprefix[players[tab[i].num].skin], 0);
-			else
-			{
-				if (greycheck)
-					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, V_HUDTRANSHALF, faceprefix[players[tab[i].num].skin], 0);
-				else
-					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, faceprefix[players[tab[i].num].skin], 0);
-			}
-		}
-		else
-		{
-			if (supercheck)
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-				V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/4, 0, superprefix[players[tab[i].num].skin], colormap);
-			}
-			else
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-				if (greycheck)
-					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, V_HUDTRANSHALF, faceprefix[players[tab[i].num].skin], colormap);
-				else
-					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, faceprefix[players[tab[i].num].skin], colormap);
-			}
-		}
-
-		// All data drawn with thin string for space.
-		if (gametyperankings[gametype] == GT_RACE)
-		{
-			if (circuitmap)
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedThinString(x+128, y, 0, va("%i:%02i.%02i", G_TicsToMinutes(players[tab[i].num].realtime,true), G_TicsToSeconds(players[tab[i].num].realtime), G_TicsToCentiseconds(players[tab[i].num].realtime)));
-				else
-					V_DrawRightAlignedThinString(x+128, y, (greycheck ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-			}
-			else
-				V_DrawRightAlignedThinString(x+128, y, (greycheck ? 0 : V_TRANSLUCENT), va("%i:%02i.%02i", G_TicsToMinutes(tab[i].count,true), G_TicsToSeconds(tab[i].count), G_TicsToCentiseconds(tab[i].count)));
-		}
-		else
-			V_DrawRightAlignedThinString(x+128, y, (greycheck ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-
-		y += 9;
-		if (i == 16)
-		{
-			y = 32;
-			x += BASEVIDWIDTH/2;
-		}
-	}
-}
-
-//
-// HU_DrawEmeralds
-//
-void HU_DrawEmeralds(INT32 x, INT32 y, INT32 pemeralds)
-{
-	//Draw the emeralds, in the CORRECT order, using tiny emerald sprites.
-	if (pemeralds & EMERALD1)
-		V_DrawSmallScaledPatch(x  , y-6, 0, emeraldpics[1][0]);
-
-	if (pemeralds & EMERALD2)
-		V_DrawSmallScaledPatch(x+4, y-3, 0, emeraldpics[1][1]);
-
-	if (pemeralds & EMERALD3)
-		V_DrawSmallScaledPatch(x+4, y+3, 0, emeraldpics[1][2]);
-
-	if (pemeralds & EMERALD4)
-		V_DrawSmallScaledPatch(x  , y+6, 0, emeraldpics[1][3]);
-
-	if (pemeralds & EMERALD5)
-		V_DrawSmallScaledPatch(x-4, y+3, 0, emeraldpics[1][4]);
-
-	if (pemeralds & EMERALD6)
-		V_DrawSmallScaledPatch(x-4, y-3, 0, emeraldpics[1][5]);
-
-	if (pemeralds & EMERALD7)
-<<<<<<< HEAD
-		V_DrawSmallScaledPatch(x,   y,   0, tinyemeraldpics[6]);
-}*/
-=======
-		V_DrawSmallScaledPatch(x,   y,   0, emeraldpics[1][6]);
-}
->>>>>>> srb2/next
 
 //
 // HU_DrawSpectatorTicker
@@ -3521,11 +2548,7 @@ static inline void HU_DrawSpectatorTicker(void)
 					templength = length;
 				}
 
-<<<<<<< HEAD
 				V_DrawString(templength - duptweak, height, V_TRANSLUCENT|V_ALLOWLOWERCASE, current);
-=======
-				V_DrawString(templength, height + 8, V_TRANSLUCENT|V_ALLOWLOWERCASE, current);
->>>>>>> srb2/next
 			}
 
 			if ((length += len) >= dupadjust+8)
@@ -3558,7 +2581,6 @@ static void HU_DrawRankings(void)
 	else
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametype_cons_t[gametype].strvalue);
 
-<<<<<<< HEAD
 	if (G_GametypeHasTeams())
 	{
 		if (gametype == GT_CTF)
@@ -3578,14 +2600,10 @@ static void HU_DrawRankings(void)
 		V_DrawCenteredString(192, 16, 0, va("%u", redscore));
 	}
 
-	if (!G_RaceGametype())
-=======
 	if (gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT))
->>>>>>> srb2/next
 	{
 		if ((gametyperules & GTR_TIMELIMIT) && cv_timelimit.value && timelimitintics > 0)
 		{
-<<<<<<< HEAD
 			UINT32 timeval = (timelimitintics + starttime + 1 - leveltime);
 			if (timeval > timelimitintics+1)
 				timeval = timelimitintics;
@@ -3603,10 +2621,6 @@ static void HU_DrawRankings(void)
 				V_DrawCenteredString(64, 8, 0, "TIME LEFT");
 				V_DrawCenteredString(64, 16, hilicol, "OVERTIME");
 			}
-=======
-			V_DrawCenteredString(64, 8, 0, "TIME");
-			V_DrawCenteredString(64, 16, 0, va("%i:%02i", G_TicsToMinutes(stplyr->realtime, true), G_TicsToSeconds(stplyr->realtime)));
->>>>>>> srb2/next
 		}
 
 		if ((gametyperules & GTR_POINTLIMIT) && cv_pointlimit.value > 0)
@@ -3615,22 +2629,6 @@ static void HU_DrawRankings(void)
 			V_DrawCenteredString(256, 16, hilicol, va("%d", cv_pointlimit.value));
 		}
 	}
-<<<<<<< HEAD
-	/*else if (gametype == GT_COOP)
-=======
-	else if (gametyperankings[gametype] == GT_COOP)
->>>>>>> srb2/next
-	{
-		INT32 totalscore = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i])
-				totalscore += players[i].score;
-		}
-
-		V_DrawCenteredString(256, 8, 0, "TOTAL SCORE");
-		V_DrawCenteredString(256, 16, 0, va("%u", totalscore));
-	}*/
 	else
 	{
 		if (circuitmap)
@@ -3658,20 +2656,14 @@ static void HU_DrawRankings(void)
 		tab[i].name = NULL;
 		tab[i].count = INT32_MAX;
 
-<<<<<<< HEAD
 		if (!playeringame[i] || players[i].spectator || !players[i].mo)
 			continue;
 
 		numplayersingame++;
-=======
-		if (gametyperankings[gametype] == GT_RACE && !circuitmap)
-			tab[i].count = INT32_MAX;
->>>>>>> srb2/next
 	}
 
 	for (j = 0; j < numplayersingame; j++)
 	{
-<<<<<<< HEAD
 		UINT8 lowestposition = MAXPLAYERS+1;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -3680,92 +2672,11 @@ static void HU_DrawRankings(void)
 
 			if (players[i].kartstuff[k_position] >= lowestposition)
 				continue;
-=======
-		if (!playeringame[j])
-			continue;
-
-		if (!G_PlatformGametype() && players[j].spectator)
-			continue;
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i])
-				continue;
-
-			if (!G_PlatformGametype() && players[i].spectator)
-				continue;
-
-			if (gametyperankings[gametype] == GT_RACE)
-			{
-				if (circuitmap)
-				{
-					if ((unsigned)players[i].laps+1 >= tab[scorelines].count && completed[i] == false)
-					{
-						tab[scorelines].count = players[i].laps+1;
-						tab[scorelines].num = i;
-						tab[scorelines].color = players[i].skincolor;
-						tab[scorelines].name = player_names[i];
-					}
-				}
-				else
-				{
-					if (players[i].realtime <= tab[scorelines].count && completed[i] == false)
-					{
-						tab[scorelines].count = players[i].realtime;
-						tab[scorelines].num = i;
-						tab[scorelines].color = players[i].skincolor;
-						tab[scorelines].name = player_names[i];
-					}
-				}
-			}
-			else if (gametyperankings[gametype] == GT_COMPETITION)
-			{
-				// todo put something more fitting for the gametype here, such as current
-				// number of categories led
-				if (players[i].score >= tab[scorelines].count && completed[i] == false)
-				{
-					tab[scorelines].count = players[i].score;
-					tab[scorelines].num = i;
-					tab[scorelines].color = players[i].skincolor;
-					tab[scorelines].name = player_names[i];
-					tab[scorelines].emeralds = players[i].powers[pw_emeralds];
-				}
-			}
-			else
-			{
-				if (players[i].score >= tab[scorelines].count && completed[i] == false)
-				{
-					tab[scorelines].count = players[i].score;
-					tab[scorelines].num = i;
-					tab[scorelines].color = players[i].skincolor;
-					tab[scorelines].name = player_names[i];
-					tab[scorelines].emeralds = players[i].powers[pw_emeralds];
-				}
-			}
-		}
-		completed[tab[scorelines].num] = true;
-		scorelines++;
-	}
-
-	//if (scorelines > 20)
-	//	scorelines = 20; //dont draw past bottom of screen, show the best only
-	// shush, we'll do it anyway.
-
-	if (G_GametypeHasTeams())
-		HU_DrawTeamTabRankings(tab, whiteplayer);
-	else if (scorelines <= 9 && !cv_compactscoreboard.value)
-		HU_DrawTabRankings(40, 32, tab, scorelines, whiteplayer);
-	else if (scorelines <= 20 && !cv_compactscoreboard.value)
-		HU_DrawDualTabRankings(32, 32, tab, scorelines, whiteplayer);
-	else
-		HU_Draw32TabRankings(14, 28, tab, scorelines, whiteplayer);
->>>>>>> srb2/next
 
 			tab[scorelines].num = i;
 			lowestposition = players[i].kartstuff[k_position];
 		}
 
-<<<<<<< HEAD
 		i = tab[scorelines].num;
 
 		completed[i] = true;
@@ -3781,71 +2692,16 @@ static void HU_DrawRankings(void)
 		}
 		else
 			tab[scorelines].count = players[i].marescore;
-=======
-static void HU_DrawCoopOverlay(void)
-{
-	if (token && LUA_HudEnabled(hud_tokens))
-	{
-		V_DrawString(168, 176, 0, va("- %d", token));
-		V_DrawSmallScaledPatch(148, 172, 0, tokenicon);
-	}
-
-	if (LUA_HudEnabled(hud_tabemblems) && (!modifiedgame || savemoddata))
-	{
-		V_DrawString(160, 144, 0, va("- %d/%d", M_CountEmblems(), numemblems+numextraemblems));
-		V_DrawScaledPatch(128, 144 - SHORT(emblemicon->height)/4, 0, emblemicon);
-	}
-
-	if (!LUA_HudEnabled(hud_coopemeralds))
-		return;
-
-	if (emeralds & EMERALD1)
-		V_DrawScaledPatch((BASEVIDWIDTH/2)-8   , (BASEVIDHEIGHT/3)-32, 0, emeraldpics[0][0]);
-	if (emeralds & EMERALD2)
-		V_DrawScaledPatch((BASEVIDWIDTH/2)-8+24, (BASEVIDHEIGHT/3)-16, 0, emeraldpics[0][1]);
-	if (emeralds & EMERALD3)
-		V_DrawScaledPatch((BASEVIDWIDTH/2)-8+24, (BASEVIDHEIGHT/3)+16, 0, emeraldpics[0][2]);
-	if (emeralds & EMERALD4)
-		V_DrawScaledPatch((BASEVIDWIDTH/2)-8   , (BASEVIDHEIGHT/3)+32, 0, emeraldpics[0][3]);
-	if (emeralds & EMERALD5)
-		V_DrawScaledPatch((BASEVIDWIDTH/2)-8-24, (BASEVIDHEIGHT/3)+16, 0, emeraldpics[0][4]);
-	if (emeralds & EMERALD6)
-		V_DrawScaledPatch((BASEVIDWIDTH/2)-8-24, (BASEVIDHEIGHT/3)-16, 0, emeraldpics[0][5]);
-	if (emeralds & EMERALD7)
-		V_DrawScaledPatch((BASEVIDWIDTH/2)-8   , (BASEVIDHEIGHT/3)   , 0, emeraldpics[0][6]);
-}
->>>>>>> srb2/next
 
 		scorelines++;
 
-<<<<<<< HEAD
 #if MAXPLAYERS > 16
 	if (scorelines > 16)
 		break; //dont draw past bottom of screen, show the best only
 #endif
-=======
-	if (token && LUA_HudEnabled(hud_tokens))
-	{
-		V_DrawString(168, 10, 0, va("- %d", token));
-		V_DrawSmallScaledPatch(148, 6, 0, tokenicon);
 	}
 
-	if (!LUA_HudEnabled(hud_coopemeralds))
-		return;
-
-	for (i = 0; i < 7; ++i)
-	{
-		if (emeralds & (1 << i))
-			V_DrawScaledPatch(20 + (i * 10), 9, 0, emeraldpics[1][i]);
->>>>>>> srb2/next
-	}
-
-	/*if (G_GametypeHasTeams())
-		HU_DrawTeamTabRankings(tab, whiteplayer); //separate function for Spazzo's silly request -- gotta fix this up later
-	else if (scorelines > 10)*/
 	HU_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
-	/*else
-		HU_DrawDualTabRankings(32, 32, tab, scorelines, whiteplayer);*/
 
 	// draw spectators in a ticker across the bottom
 	if (netgame && G_GametypeHasSpectators())
