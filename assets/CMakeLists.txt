@@ -17,17 +17,11 @@ set(SRB2_ASSET_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/installer"
 ####################
 
 set(SRB2_ASSET_HASHED
-<<<<<<< HEAD
 "main.kart;\
 gfx.pk3;\
 textures.pk3;\
 chars.pk3;\
 maps.pk3;\
-=======
-"srb2.pk3;\
-player.dta;\
-zones.pk3;\
->>>>>>> srb2/next
 patch.pk3"
 	CACHE STRING "Asset filenames to apply MD5 checks. No spaces between entries!"
 )
