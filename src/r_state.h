@@ -39,14 +39,11 @@ typedef struct
 extern sprcache_t *spritecachedinfo;
 
 extern lighttable_t *colormaps;
-<<<<<<< HEAD
 extern UINT8 *encoremap;
 #ifdef HASINVERT
 extern UINT8 invertmap[256];
 #endif
-=======
 extern lighttable_t *fadecolormap;
->>>>>>> srb2/next
 
 // Boom colormaps.
 extern extracolormap_t *extra_colormaps;
@@ -92,12 +89,9 @@ extern side_t *spawnsides;
 //
 extern fixed_t viewx, viewy, viewz;
 extern angle_t viewangle, aimingangle;
-<<<<<<< HEAD
 extern UINT8 viewssnum; // splitscreen view number
 extern boolean viewsky, skyVisible;
 extern boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible of each splitscreen player
-=======
->>>>>>> srb2/next
 extern sector_t *viewsector;
 extern player_t *viewplayer;
 extern mobj_t *r_viewmobj;
