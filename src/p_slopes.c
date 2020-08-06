@@ -29,13 +29,8 @@ UINT16 slopecount = 0;
 // Calculate line normal
 void P_CalculateSlopeNormal(pslope_t *slope) {
 	slope->normal.z = FINECOSINE(slope->zangle>>ANGLETOFINESHIFT);
-<<<<<<< HEAD
-	slope->normal.x = -FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), -slope->d.x);
-	slope->normal.y = -FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), -slope->d.y);
-=======
 	slope->normal.x = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.x);
 	slope->normal.y = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.y);
->>>>>>> srb2/next
 }
 
 /// Setup slope via 3 vertexes.
@@ -43,52 +38,6 @@ static void ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const v
 {
 	vector3_t vec1, vec2;
 
-<<<<<<< HEAD
-	// Set slope normal
-	vec1.x = (slope->vertices[1]->x - slope->vertices[0]->x) << FRACBITS;
-	vec1.y = (slope->vertices[1]->y - slope->vertices[0]->y) << FRACBITS;
-	vec1.z = (slope->vertices[1]->z - slope->vertices[0]->z) << FRACBITS;
-
-	vec2.x = (slope->vertices[2]->x - slope->vertices[0]->x) << FRACBITS;
-	vec2.y = (slope->vertices[2]->y - slope->vertices[0]->y) << FRACBITS;
-	vec2.z = (slope->vertices[2]->z - slope->vertices[0]->z) << FRACBITS;
-
-	// ugggggggh fixed-point maaaaaaath
-	slope->extent = max(
-		max(max(abs(vec1.x), abs(vec1.y)), abs(vec1.z)),
-		max(max(abs(vec2.x), abs(vec2.y)), abs(vec2.z))
-	) >> (FRACBITS+5);
-
-	if (slope->extent == 0)
-	{
-		// Prevent divide by zero
-		slope->extent = 1;
-	}
-
-	vec1.x /= slope->extent;
-	vec1.y /= slope->extent;
-	vec1.z /= slope->extent;
-	vec2.x /= slope->extent;
-	vec2.y /= slope->extent;
-	vec2.z /= slope->extent;
-
-	FV3_Cross(&vec1, &vec2, &slope->normal);
-
-	slope->extent = R_PointToDist2(0, 0, R_PointToDist2(0, 0, slope->normal.x, slope->normal.y), slope->normal.z);
-	if (slope->normal.z < 0)
-		slope->extent = -slope->extent;
-
-	slope->normal.x = FixedDiv(slope->normal.x, slope->extent);
-	slope->normal.y = FixedDiv(slope->normal.y, slope->extent);
-	slope->normal.z = FixedDiv(slope->normal.z, slope->extent);
-
-	// Set origin
-	slope->o.x = slope->vertices[0]->x << FRACBITS;
-	slope->o.y = slope->vertices[0]->y << FRACBITS;
-	slope->o.z = slope->vertices[0]->z << FRACBITS;
-
-	if (slope->normal.x == 0 && slope->normal.y == 0) { // Set some defaults for a non-sloped "slope"
-=======
 	// Set origin.
 	FV3_Copy(&slope->o, &v1);
 
@@ -99,7 +48,6 @@ static void ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const v
 	// Set some defaults for a non-sloped "slope"
 	if (vec1.z == 0 && vec2.z == 0)
 	{
->>>>>>> srb2/next
 		slope->zangle = slope->xydirection = 0;
 		slope->zdelta = slope->d.x = slope->d.y = 0;
 		slope->normal.x = slope->normal.y = 0;
@@ -311,15 +259,8 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 	UINT8 flags = 0; // Slope flags
 	if (line->flags & ML_NETONLY)
 		flags |= SL_NOPHYSICS;
-<<<<<<< HEAD
-	if (!(line->flags & ML_NOTAILS))
-		flags |= SL_NODYNAMIC;
-	if (line->flags & ML_NOKNUX)
-		flags |= SL_ANCHORVERTEX;
-=======
 	if (line->flags & ML_NONET)
 		flags |= SL_DYNAMIC;
->>>>>>> srb2/next
 
 	if(!frontfloor && !backfloor && !frontceil && !backceil)
 	{
@@ -664,12 +605,9 @@ void P_SpawnSlopes(const boolean fromsave) {
 	slopelist = NULL;
 	slopecount = 0;
 
-<<<<<<< HEAD
-=======
 	/// Generates vertex slopes.
 	SpawnVertexSlopes();
 
->>>>>>> srb2/next
 	/// Generates line special-defined slopes.
 	for (i = 0; i < numlines; i++)
 	{
@@ -877,14 +815,11 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 		if (P_MobjFlip(thing)*(thing->momz) < 0) // falling, land on slope
 		{
 			thing->standingslope = slope;
-<<<<<<< HEAD
 #ifdef HWRENDER
 			thing->modeltilt = thing->standingslope;
 #endif
-=======
 			if (!thing->player || !(thing->player->pflags & PF_BOUNCING))
 				thing->momz = -P_MobjFlip(thing);
->>>>>>> srb2/next
 		}
 		return;
 	}
@@ -899,14 +834,11 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 		thing->momx = mom.x;
 		thing->momy = mom.y;
 		thing->standingslope = slope;
-<<<<<<< HEAD
 #ifdef HWRENDER
 		thing->modeltilt = thing->standingslope;
 #endif
-=======
 		if (!thing->player || !(thing->player->pflags & PF_BOUNCING))
 			thing->momz = -P_MobjFlip(thing);
->>>>>>> srb2/next
 	}
 }
 
