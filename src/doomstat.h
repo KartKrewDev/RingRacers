@@ -48,7 +48,10 @@ extern INT32 cursaveslot;
 extern INT16 lastmaploaded;
 extern boolean gamecomplete;
 
-<<<<<<< HEAD
+#define maxgameovers 13
+extern UINT8 numgameovers;
+extern SINT8 startinglivesbalance[maxgameovers+1];
+
 typedef enum
 {
 	PRECIP_NONE = 0,
@@ -74,19 +77,6 @@ typedef struct
 } precipprops_t;
 
 extern precipprops_t precipprops[MAXPRECIP];
-=======
-#define maxgameovers 13
-extern UINT8 numgameovers;
-extern SINT8 startinglivesbalance[maxgameovers+1];
-
-#define PRECIP_NONE  0
-#define PRECIP_STORM 1
-#define PRECIP_SNOW  2
-#define PRECIP_RAIN  3
-#define PRECIP_BLANK 4
-#define PRECIP_STORM_NORAIN 5
-#define PRECIP_STORM_NOSTRIKES 6
->>>>>>> srb2/next
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -113,17 +103,13 @@ extern boolean addedtogame; // true after the server has added you
 extern boolean multiplayer;
 
 extern INT16 gametype;
-<<<<<<< HEAD
+
+extern UINT32 gametyperules;
+extern INT16 gametypecount;
 
 extern UINT8 splitscreen;
 extern int r_splitscreen;
 
-=======
-extern UINT32 gametyperules;
-extern INT16 gametypecount;
-
-extern boolean splitscreen;
->>>>>>> srb2/next
 extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
 extern boolean forceresetplayers, deferencoremode;
@@ -338,14 +324,9 @@ typedef struct
 	// The original eight, plus one.
 	char lvlttl[22];       ///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
 	char subttl[33];       ///< Subtitle for level
-<<<<<<< HEAD
 	char zonttl[22];       ///< "ZONE" replacement name
-	char actnum[3];        ///< SRB2Kart: Now a 2 character long string.
-	UINT16 typeoflevel;    ///< Combination of typeoflevel flags.
-=======
 	UINT8 actnum;          ///< Act number or 0 for none.
 	UINT32 typeoflevel;    ///< Combination of typeoflevel flags.
->>>>>>> srb2/next
 	INT16 nextlevel;       ///< Map number of next level, or 1100-1102 to end.
 	char keywords[33];     ///< Keywords separated by space to search for. 32 characters.
 	char musname[7];       ///< Music track to play. "" for no music.
@@ -396,7 +377,6 @@ typedef struct
 	nightsgrades_t *grades; ///< NiGHTS grades. Allocated dynamically for space reasons. Be careful.
 
 	// SRB2kart
-	//boolean automap;    ///< Displays a level's white map outline in modified games
 	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
 	fixed_t default_waypoint_radius; ///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
@@ -418,20 +398,12 @@ typedef struct
 } mapheader_t;
 
 // level flags
-<<<<<<< HEAD
-#define LF_SCRIPTISFILE   1 ///< True if the script is a file, not a lump.
-#define LF_SPEEDMUSIC     2 ///< Speed up act music for super sneakers
-#define LF_NOSSMUSIC      4 ///< Disable Super Sonic music
-#define LF_NORELOAD       8 ///< Don't reload level on death
-#define LF_NOZONE        16 ///< Don't include "ZONE" on level title
-#define LF_SECTIONRACE   32 ///< Section race level
-=======
 #define LF_SCRIPTISFILE       (1<<0) ///< True if the script is a file, not a lump.
 #define LF_SPEEDMUSIC         (1<<1) ///< Speed up act music for super sneakers
 #define LF_NOSSMUSIC          (1<<2) ///< Disable Super Sonic music
 #define LF_NORELOAD           (1<<3) ///< Don't reload level on death
 #define LF_NOZONE             (1<<4) ///< Don't include "ZONE" on level title
-#define LF_SAVEGAME           (1<<5) ///< Save the game upon loading this level
+#define LF_SECTIONRACE        (1<<5) ///< Section race level
 #define LF_MIXNIGHTSCOUNTDOWN (1<<6) ///< Play sfx_timeup instead of music change for NiGHTS countdown
 #define LF_WARNINGTITLE       (1<<7) ///< WARNING! WARNING! WARNING! WARNING!
 
@@ -439,24 +411,14 @@ typedef struct
 #define LF_NOTITLECARDRESPAWN      (1<<9)
 #define LF_NOTITLECARDRECORDATTACK (1<<10)
 #define LF_NOTITLECARD  (LF_NOTITLECARDFIRST|LF_NOTITLECARDRESPAWN|LF_NOTITLECARDRECORDATTACK) ///< Don't start the title card at all
->>>>>>> srb2/next
 
-#define LF2_HIDEINMENU     1 ///< Hide in the multiplayer menu
-#define LF2_HIDEINSTATS    2 ///< Hide in the statistics screen
-#define LF2_RECORDATTACK   4 ///< Show this map in Time Attack
-#define LF2_NIGHTSATTACK   8 ///< Show this map in NiGHTS mode menu
-#define LF2_NOVISITNEEDED 16 ///< Available in time attack/nights mode without visiting the level
-<<<<<<< HEAD
-
-#define LF2_EXISTSHACK   128 ///< Map lump exists; as noted, a single-bit hack that can be freely movable to other variables without concern.
-
-// Save override
-#define SAVE_NEVER   -1
-#define SAVE_DEFAULT  0
-#define SAVE_ALWAYS   1
-=======
-#define LF2_WIDEICON      32 ///< If you're in a circumstance where it fits, use a wide map icon
->>>>>>> srb2/next
+#define LF2_HIDEINMENU    (1<<0) ///< Hide in the multiplayer menu
+#define LF2_HIDEINSTATS   (1<<1) ///< Hide in the statistics screen
+#define LF2_RECORDATTACK  (1<<2) ///< Show this map in Time Attack
+#define LF2_NIGHTSATTACK  (1<<3) ///< Show this map in NiGHTS mode menu
+#define LF2_NOVISITNEEDED (1<<4) ///< Available in time attack/nights mode without visiting the level
+#define LF2_WIDEICON      (1<<5) ///< If you're in a circumstance where it fits, use a wide map icon
+#define LF2_EXISTSHACK    (1<<6) ///< Map lump exists; as noted, a single-bit hack that can be freely movable to other variables without concern.
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 
@@ -464,17 +426,8 @@ extern mapheader_t* mapheaderinfo[NUMMAPS];
 #define NUMGAMETYPEFREESLOTS 128
 enum GameType
 {
-	GT_COOP = 0, // also used in single player
-	GT_COMPETITION, // Classic "Race"
-	GT_RACE,
-
-	GT_MATCH,
-	GT_TEAMMATCH,
-
-	GT_TAG,
-	GT_HIDEANDSEEK,
-
-	GT_CTF, // capture the flag
+	GT_RACE = 0,
+	GT_BATTLE,
 
 	GT_FIRSTFREESLOT,
 	GT_LASTFREESLOT = GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1,
@@ -530,56 +483,17 @@ extern INT32 timelimits[NUMGAMETYPES];
 // TypeOfLevel things
 enum TypeOfLevel
 {
-	TOL_SP          = 0x01, ///< Single Player
-	TOL_COOP        = 0x02, ///< Cooperative
-	TOL_COMPETITION = 0x04, ///< Competition
-	TOL_RACE        = 0x08, ///< Race
-// Single Player default = 15
+	// Gametypes
+	TOL_RACE   = 0x0001, ///< Race
+	TOL_BATTLE = 0x0002, ///< Battle
 
-	TOL_MATCH       = 0x10, ///< Match
-	TOL_TAG         = 0x20, ///< Tag
-// Match/Tag default = 48
-
-	TOL_CTF         = 0x40, ///< Capture the Flag
-// CTF default = 64
-
-	// 0x80 was here
-
-	TOL_2D     = 0x0100, ///< 2D
-	TOL_MARIO  = 0x0200, ///< Mario
-	TOL_NIGHTS = 0x0400, ///< NiGHTS
-<<<<<<< HEAD
-	TOL_TV     = 0x0800, ///< Midnight Channel specific: draw TV like overlay on HUD
-	TOL_XMAS   = 0x1000 ///< Christmas NiGHTS
-	//TOL_KART   = 0x4000  ///< Kart 32768
-};
-
-// Gametypes
-enum GameType // SRB2Kart
-{
-	GT_RACE = 0, // also used in record attack
-	GT_MATCH, // battle, but renaming would be silly
-	NUMGAMETYPES,
-
-	// TODO: This is *horrid*. Remove this hack ASAP.
-	// the following have been left in on account of just not wanting to deal with removing all the checks for them
-	GT_COOP,
-	GT_COMPETITION,
-	GT_TEAMMATCH,
-	GT_TAG,
-	GT_HIDEANDSEEK,
-	GT_CTF
-};
-// If you alter this list, update dehacked.c, and Gametype_Names in g_game.c
-=======
-	TOL_ERZ3   = 0x0800, ///< ERZ3
-	TOL_XMAS   = 0x1000, ///< Christmas NiGHTS
+	// Modifiers
+	TOL_TV     = 0x0100, ///< Midnight Channel specific: draw TV like overlay on HUD
 };
 
 #define MAXTOL             (1<<31)
-#define NUMBASETOLNAMES    (19)
+#define NUMBASETOLNAMES    (3)
 #define NUMTOLNAMES        (NUMBASETOLNAMES + NUMGAMETYPEFREESLOTS)
->>>>>>> srb2/next
 
 typedef struct
 {
@@ -605,14 +519,10 @@ extern UINT16 emeralds;
 #define EMERALD7 64
 #define ALL7EMERALDS(v) ((v & (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7)) == (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7))
 
-<<<<<<< HEAD
-extern INT32 nummaprings; // keep track of spawned rings/coins
-=======
 #define NUM_LUABANKS 16 // please only make this number go up between versions, never down. you'll break saves otherwise. also, must fit in UINT8
 extern INT32 luabanks[NUM_LUABANKS];
 
 extern INT32 nummaprings; //keep track of spawned rings/coins
->>>>>>> srb2/next
 
 /** Time attack information, currently a very small structure.
   */
@@ -648,31 +558,12 @@ typedef struct
 extern recorddata_t *mainrecords[NUMMAPS];
 
 // mapvisited is now a set of flags that says what we've done in the map.
-<<<<<<< HEAD
-#define MV_VISITED     1
-#define MV_BEATEN      2
-#define MV_ALLEMERALDS 4
-//#define MV_ULTIMATE     8
-//#define MV_PERFECT     16
-#define MV_MAX         7 // used in gamedata check
+#define MV_VISITED (1)
+#define MV_BEATEN  (1<<1)
+#define MV_ENCORE  (1<<2)
+#define MV_MAX     (MV_VISITED|MV_BEATEN|MV_ENCORE)
+#define MV_MP      ((MV_MAX+1)<<1)
 extern UINT8 mapvisited[NUMMAPS];
-
-// Temporary holding place for nights data for the current map
-//nightsdata_t ntemprecords;
-=======
-#define MV_VISITED      1
-#define MV_BEATEN       2
-#define MV_ALLEMERALDS  4
-#define MV_ULTIMATE     8
-#define MV_PERFECT     16
-#define MV_PERFECTRA   32
-#define MV_MAX         63 // used in gamedata check, update whenever MV's are added
-#define MV_MP         128
-extern UINT8 mapvisited[NUMMAPS];
-
-// Temporary holding place for nights data for the current map
-extern nightsdata_t ntemprecords;
->>>>>>> srb2/next
 
 extern UINT32 token; ///< Number of tokens collected in a level
 extern UINT32 tokenlist; ///< List of tokens collected
