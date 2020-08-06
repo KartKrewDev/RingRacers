@@ -4152,19 +4152,14 @@ boolean P_AddWadFile(const char *wadfilename)
 				}
 				else if (name[1] == '_')
 				{
-					CONS_Debug(DBG_SETUP, "Music %.8s replaced\n", name);
+					CONS_Debug(DBG_SETUP, "Music %.8s ignored\n", name);
 					mreplaces++;
 				}
 			}
 			else if (name[0] == 'O' && name[1] == '_')
 			{
-<<<<<<< HEAD
-				CONS_Debug(DBG_SETUP, "Music %.8s ignored\n", name);
-				mreplaces++;
-=======
 				CONS_Debug(DBG_SETUP, "Music %.8s replaced\n", name);
 				digmreplaces++;
->>>>>>> srb2/next
 			}
 		}
 		break;
