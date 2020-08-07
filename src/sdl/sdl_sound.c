@@ -195,7 +195,7 @@ static void Snd_LockAudio(void) //Alam: Lock audio data and uninstall audio call
 {
 	if (Snd_Mutex) SDL_LockMutex(Snd_Mutex);
 	else if (sound_disabled) return;
-	else if (midi_disabled && digital_disabled
+	else if (digital_disabled
 #ifdef HW3SOUND
 	         && hws_mode == HWS_DEFAULT_MODE
 #endif
@@ -209,7 +209,7 @@ static void Snd_UnlockAudio(void) //Alam: Unlock audio data and reinstall audio 
 {
 	if (Snd_Mutex) SDL_UnlockMutex(Snd_Mutex);
 	else if (sound_disabled) return;
-	else if (midi_disabled && digital_disabled
+	else if (digital_disabled
 #ifdef HW3SOUND
 	         && hws_mode == HWS_DEFAULT_MODE
 #endif
@@ -1153,7 +1153,7 @@ void I_ShutdownSound(void)
 	}
 #endif
 
-	if (midi_disabled && digital_disabled)
+	if (digital_disabled)
 		SDL_CloseAudio();
 	CONS_Printf("%s", M_GetText("shut down\n"));
 	sound_started = false;

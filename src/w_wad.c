@@ -1707,7 +1707,6 @@ int W_VerifyNMUSlumps(const char *filename)
 {
 	lumpchecklist_t NMUSlist[] =
 	{
-		{"D_", 2}, // MIDI music
 		{"O_", 2}, // Digital music
 		{"DS", 2}, // Sound effects
 

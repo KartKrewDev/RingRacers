@@ -118,16 +118,14 @@ void S_StopSound(void *origin);
 //
 
 boolean S_DigMusicDisabled(void);
-boolean S_MIDIMusicDisabled(void);
 boolean S_MusicDisabled(void);
 boolean S_MusicPlaying(void);
 boolean S_MusicPaused(void);
 musictype_t S_MusicType(void);
 const char *S_MusicName(void);
 boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping);
-boolean S_MusicExists(const char *mname, boolean checkMIDI, boolean checkDigi);
-#define S_DigExists(a) S_MusicExists(a, false, true)
-#define S_MIDIExists(a) S_MusicExists(a, true, false)
+boolean S_MusicExists(const char *mname);
+#define S_DigExists S_MusicExists
 
 //
 // Music Effects

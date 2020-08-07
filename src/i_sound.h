@@ -24,7 +24,6 @@ typedef enum {
 	MU_CMD,
 	MU_WAV,
 	MU_MOD,
-	MU_MID,
 	MU_OGG,
 	MU_MP3,
 	MU_MP3_MAD_UNUSED, // use MU_MP3 instead

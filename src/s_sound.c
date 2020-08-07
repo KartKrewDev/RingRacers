@@ -1771,7 +1771,7 @@ boolean S_DigMusicDisabled(void)
 
 boolean S_MusicDisabled(void)
 {
-	return (midi_disabled && digital_disabled);
+	return digital_disabled;
 }
 
 boolean S_MusicPlaying(void)
@@ -1807,12 +1807,9 @@ boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping)
 	return (boolean)mname[0];
 }
 
-boolean S_MusicExists(const char *mname, boolean checkMIDI, boolean checkDigi)
+boolean S_MusicExists(const char *mname)
 {
-	return (
-		(checkDigi ? W_CheckNumForName(va("O_%s", mname)) != LUMPERROR : false)
-		|| (checkMIDI ? W_CheckNumForName(va("D_%s", mname)) != LUMPERROR : false)
-	);
+	return W_CheckNumForName(va("O_%s", mname)) != LUMPERROR;
 }
 
 /// ------------------------
@@ -1867,8 +1864,6 @@ static boolean S_LoadMusic(const char *mname)
 
 	if (!S_DigMusicDisabled() && S_DigExists(mname))
 		mlumpnum = W_GetNumForName(va("o_%s", mname));
-	else if (!S_MIDIMusicDisabled() && S_MIDIExists(mname))
-		mlumpnum = W_GetNumForName(va("d_%s", mname));
 	else if (S_DigMusicDisabled() && S_DigExists(mname))
 	{
 		CONS_Alert(CONS_NOTICE, "Digital music is disabled!\n");
@@ -2356,25 +2351,7 @@ void GameDigiMusic_OnChange(void)
 	else
 	{
 		digital_disabled = true;
-		if (S_MusicType() != MU_MID)
-		{
-			if (midi_disabled)
-				S_StopMusic();
-			else
-			{
-				char mmusic[7];
-				UINT16 mflags;
-				boolean looping;
-
-				if (S_MusicInfo(mmusic, &mflags, &looping) && S_MIDIExists(mmusic))
-				{
-					S_StopMusic();
-					S_ChangeMusic(mmusic, mflags, looping);
-				}
-				else
-					S_StopMusic();
-			}
-		}
+		S_StopMusic();
 	}
 }
 
