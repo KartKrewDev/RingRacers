@@ -493,7 +493,8 @@ void I_FreeSfx(sfxinfo_t *sfx)
 
 INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priority, INT32 channel)
 {
-	UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
+	//UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
+	int volume = ( vol + 1 ) / 8;/* reduce to 1/4, 256 / 8 = 128 / 4 = 32 */
 	INT32 handle = Mix_PlayChannel(channel, S_sfx[id].data, 0);
 	Mix_Volume(handle, volume);
 	Mix_SetPanning(handle, min((UINT16)(0xff-sep)<<1, 0xff), min((UINT16)(sep)<<1, 0xff));
@@ -531,6 +532,7 @@ void I_SetSfxVolume(UINT8 volume)
 
 static UINT32 get_real_volume(UINT8 volume)
 {
+	(void)volume;
 #ifdef _WIN32
 	if (I_SongType() == MU_MID)
 		// HACK: Until we stop using native MIDI,
@@ -540,7 +542,8 @@ static UINT32 get_real_volume(UINT8 volume)
 #endif
 		// convert volume to mixer's 128 scale
 		// then apply internal_volume as a percentage
-		return ((UINT32)volume*128/31) * (UINT32)internal_volume / 100;
+		//return ((UINT32)volume*128/31) * (UINT32)internal_volume / 100;
+		return MIX_MAX_VOLUME * musicdef_volume / 100 * internal_volume / 100;
 }
 
 static UINT32 get_adjusted_position(UINT32 position)

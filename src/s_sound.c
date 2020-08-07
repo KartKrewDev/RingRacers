@@ -1578,6 +1578,7 @@ static UINT32    queue_fadeinms;
 
 musicdef_t *musicdefstart = NULL; // First music definition
 struct cursongcredit cursongcredit; // Currently displayed song credit info
+int musicdef_volume;
 
 //
 // search for music definition in wad
@@ -1686,6 +1687,8 @@ void S_LoadMusicDefs(UINT16 wadnum)
 				}
 			}
 
+			def->volume = DEFAULT_MUSICDEF_VOLUME;
+
 skip_lump:
 			stoken = strtok(NULL, "\r\n ");
 			line++;
@@ -1720,6 +1723,8 @@ skip_lump:
 				for (value = def->source; *value; value++)
 					if (*value == '_') *value = ' '; // turn _ into spaces.
 				//CONS_Printf("S_LoadMusicDefs: Set source to '%s'\n", def->source);
+			} else if (!stricmp(stoken, "volume")) {
+				def->volume = atoi(value);
 			} else {
 				CONS_Alert(CONS_WARNING, "MUSICDEF: Invalid field '%s'. (file %s, line %d)\n", stoken, wadfiles[wadnum]->filename, line);
 			}
@@ -2046,6 +2051,19 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 
 		music_flags = mflags;
 		music_looping = looping;
+
+		musicdef_volume = DEFAULT_MUSICDEF_VOLUME;
+
+		{
+			musicdef_t *def;
+			for (def = musicdefstart; def; def = def->next)
+			{
+				if (strcasecmp(def->name, music_name) == 0)
+				{
+					musicdef_volume = def->volume;
+				}
+			}
+		}
 
 		if (!S_PlayMusic(looping, fadeinms))
  		{

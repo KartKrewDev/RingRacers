@@ -139,6 +139,7 @@ typedef struct musicdef_s
 	char name[7];
 	//char usage[256];
 	char source[256];
+	int volume;
 	struct musicdef_s *next;
 } musicdef_t;
 
@@ -151,6 +152,7 @@ extern struct cursongcredit
 } cursongcredit;
 
 extern musicdef_t *musicdefstart;
+extern int musicdef_volume;
 
 void S_LoadMusicDefs(UINT16 wadnum);
 void S_InitMusicDefs(void);
