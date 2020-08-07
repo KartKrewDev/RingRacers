@@ -676,8 +676,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Hardware renderer: OpenGL
 #define GL_SHADERS
 
-/// Default volume for songs that don't have "volume" set via musicdef
-/// TODO: Remove this once all songs are ported
-#define DEFAULT_MUSICDEF_VOLUME 25
+/// Divide volume of music and sounds by this much (loudest sounds on earth)
+#define VOLUME_DIVIDER 4
 
 #endif // __DOOMDEF__

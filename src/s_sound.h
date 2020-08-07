@@ -23,6 +23,12 @@
 // mask used to indicate sound origin is player item pickup
 #define PICKUP_SOUND 0x8000
 
+//
+#define SOUND_VOLUME_RANGE 256
+#define MAX_SOUND_VOLUME 255
+
+#define DEFAULT_MUSICDEF_VOLUME ( 100 / VOLUME_DIVIDER )
+
 extern consvar_t stereoreverse;
 extern consvar_t cv_soundvolume, cv_digmusicvolume;//, cv_midimusicvolume;
 extern consvar_t cv_numChannels;
