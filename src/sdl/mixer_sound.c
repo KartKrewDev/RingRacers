@@ -200,6 +200,15 @@ void I_UpdateSound(void)
 /// SFX
 /// ------------------------
 
+static int
+get_real_sfx_volume (int vol)
+{
+	const int scale   = SOUND_VOLUME_RANGE / MIX_MAX_VOLUME;
+	const int divider = VOLUME_DIVIDER * scale;
+	const int volume  = ( vol + 1 ) / divider * sfx_volume / 100;
+	return volume;
+}
+
 // this is as fast as I can possibly make it.
 // sorry. more asm needed.
 static Mix_Chunk *ds2chunk(void *stream)
@@ -496,9 +505,7 @@ void I_FreeSfx(sfxinfo_t *sfx)
 INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priority, INT32 channel)
 {
 	//UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
-	const int scale   = SOUND_VOLUME_RANGE / MIX_MAX_VOLUME;
-	const int divider = VOLUME_DIVIDER * scale;
-	const int volume  = ( vol + 1 ) / divider * sfx_volume / 100;
+	UINT8 volume = get_real_sfx_volume(vol);
 	INT32 handle = Mix_PlayChannel(channel, S_sfx[id].data, 0);
 	Mix_Volume(handle, volume);
 	Mix_SetPanning(handle, min((UINT16)(0xff-sep)<<1, 0xff), min((UINT16)(sep)<<1, 0xff));
@@ -519,7 +526,8 @@ boolean I_SoundIsPlaying(INT32 handle)
 
 void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch)
 {
-	UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
+	//UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
+	UINT8 volume = get_real_sfx_volume(vol);
 	Mix_Volume(handle, volume);
 	Mix_SetPanning(handle, min((UINT16)(0xff-sep)<<1, 0xff), min((UINT16)(sep)<<1, 0xff));
 	(void)pitch;
