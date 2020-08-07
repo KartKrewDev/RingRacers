@@ -55,9 +55,6 @@ static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
 
 // Sound system toggles
-#ifndef NO_MIDI
-static void GameMIDIMusic_OnChange(void);
-#endif
 static void GameSounds_OnChange(void);
 static void GameDigiMusic_OnChange(void);
 
@@ -97,9 +94,6 @@ static consvar_t precachesound = {"precachesound", "Off", CV_SAVE, CV_OnOff, NUL
 // actual general (maximum) sound & music volume, saved into the config
 consvar_t cv_soundvolume = {"soundvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_digmusicvolume = {"digmusicvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#ifndef NO_MIDI
-consvar_t cv_midimusicvolume = {"midimusicvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
 // number of channels available
 #if defined (_WIN32_WCE) || defined (DC) || defined (PSP) || defined(GP2X)
 consvar_t cv_numChannels = {"snd_channels", "8", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum, 0, NULL, NULL, 0, 0, NULL};
@@ -112,9 +106,6 @@ consvar_t surround = {"surround", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL,
 
 // Sound system toggles, saved into the config
 consvar_t cv_gamedigimusic = {"digimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange, 0, NULL, NULL, 0, 0, NULL};
-#ifndef NO_MIDI
-consvar_t cv_gamemidimusic = {"midimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameMIDIMusic_OnChange, 0, NULL, NULL, 0, 0, NULL};
-#endif
 consvar_t cv_gamesounds = {"sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_playmusicifunfocused = {"playmusicifunfocused",  "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlayMusicIfUnfocused_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -286,9 +277,6 @@ void S_RegisterSoundStuff(void)
 	//CV_RegisterVar(&cv_resetmusic);
 	CV_RegisterVar(&cv_gamesounds);
 	CV_RegisterVar(&cv_gamedigimusic);
-#ifndef NO_MIDI
-	CV_RegisterVar(&cv_gamemidimusic);
-#endif
 
 	CV_RegisterVar(&cv_playmusicifunfocused);
 	CV_RegisterVar(&cv_playsoundifunfocused);
@@ -902,9 +890,6 @@ void S_StopSound(void *origin)
 //
 static INT32 actualsfxvolume; // check for change through console
 static INT32 actualdigmusicvolume;
-#ifndef NO_MIDI
-static INT32 actualmidimusicvolume;
-#endif
 
 void S_UpdateSounds(void)
 {
@@ -931,10 +916,6 @@ void S_UpdateSounds(void)
 		S_SetSfxVolume (cv_soundvolume.value);
 	if (actualdigmusicvolume != cv_digmusicvolume.value)
 		S_SetDigMusicVolume (cv_digmusicvolume.value);
-#ifndef NO_MIDI
-	if (actualmidimusicvolume != cv_midimusicvolume.value)
-		S_SetMIDIMusicVolume (cv_midimusicvolume.value);
-#endif
 
 	// We're done now, if we're not in a level.
 	if (gamestate != GS_LEVEL)
@@ -1790,11 +1771,6 @@ boolean S_DigMusicDisabled(void)
 	return digital_disabled;
 }
 
-boolean S_MIDIMusicDisabled(void)
-{
-	return midi_disabled; // SRB2Kart: defined as "true" w/ NO_MIDI
-}
-
 boolean S_MusicDisabled(void)
 {
 	return (midi_disabled && digital_disabled);
@@ -1898,15 +1874,6 @@ static boolean S_LoadMusic(const char *mname)
 	else if (S_DigMusicDisabled() && S_DigExists(mname))
 	{
 		CONS_Alert(CONS_NOTICE, "Digital music is disabled!\n");
-		return false;
-	}
-	else if (S_MIDIMusicDisabled() && S_MIDIExists(mname))
-	{
-#ifdef NO_MIDI
-		CONS_Alert(CONS_ERROR, "A MIDI music lump %.6s was found,\nbut SRB2Kart does not support MIDI output.\nWe apologise for the inconvenience.\n", mname);
-#else
-		CONS_Alert(CONS_NOTICE, "MIDI music is disabled!\n");
-#endif
 		return false;
 	}
 	else
@@ -2158,50 +2125,19 @@ void S_EnableSound(void)
 	}
 }
 
-void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume)
+void S_SetMusicVolume(INT32 digvolume)
 {
 	if (digvolume < 0)
 		digvolume = cv_digmusicvolume.value;
 
-#ifdef NO_MIDI
-	(void)seqvolume;
-#else
-	if (seqvolume < 0)
-		seqvolume = cv_midimusicvolume.value;
-#endif
-
-	if (digvolume < 0 || digvolume > 31)
-		CONS_Alert(CONS_WARNING, "digmusicvolume should be between 0-31\n");
-	CV_SetValue(&cv_digmusicvolume, digvolume&31);
+	CV_SetValue(&cv_digmusicvolume, digvolume);
 	actualdigmusicvolume = cv_digmusicvolume.value;   //check for change of var
-
-#ifndef NO_MIDI
-	if (seqvolume < 0 || seqvolume > 31)
-		CONS_Alert(CONS_WARNING, "midimusicvolume should be between 0-31\n");
-	CV_SetValue(&cv_midimusicvolume, seqvolume&31);
-	actualmidimusicvolume = cv_midimusicvolume.value;   //check for change of var
-#endif
 
 #ifdef DJGPPDOS
 	digvolume = 31;
-#ifndef NO_MIDI
-	seqvolume = 31;
-#endif
 #endif
 
-	switch(I_SongType())
-	{
-#ifndef NO_MIDI
-		case MU_MID:
-		//case MU_MOD:
-		//case MU_GME:
-			I_SetMusicVolume(seqvolume&31);
-			break;
-#endif
-		default:
-			I_SetMusicVolume(digvolume&31);
-			break;
-	}
+	I_SetMusicVolume(digvolume);
 }
 
 void
@@ -2378,11 +2314,7 @@ static void Command_RestartAudio_f(void)
 // These must be called or no sound and music until manually set.
 
 	I_SetSfxVolume(cv_soundvolume.value);
-#ifdef NO_MIDI
-	S_SetMusicVolume(cv_digmusicvolume.value, -1);
-#else
-	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
-#endif
+	S_SetMusicVolume(cv_digmusicvolume.value);
 
 	S_StartSound(NULL, sfx_strpst);
 
@@ -2447,49 +2379,6 @@ void GameDigiMusic_OnChange(void)
 		}
 	}
 }
-
-#ifndef NO_MIDI
-void GameMIDIMusic_OnChange(void)
-{
-	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio"))
-		return;
-	else if (M_CheckParm("-nomidimusic"))
-		return;
-
-	if (midi_disabled)
-	{
-		midi_disabled = false;
-		I_InitMusic();
-		if (Playing())
-			P_RestoreMusic(&players[consoleplayer]);
-		else
-			S_ChangeMusicInternal("titles", looptitle);
-	}
-	else
-	{
-		midi_disabled = true;
-		if (S_MusicType() == MU_MID)
-		{
-			if (digital_disabled)
-				S_StopMusic();
-			else
-			{
-				char mmusic[7];
-				UINT16 mflags;
-				boolean looping;
-
-				if (S_MusicInfo(mmusic, &mflags, &looping) && S_DigExists(mmusic))
-				{
-					S_StopMusic();
-					S_ChangeMusic(mmusic, mflags, looping);
-				}
-				else
-					S_StopMusic();
-			}
-		}
-	}
-}
-#endif
 
 static void PlayMusicIfUnfocused_OnChange(void)
 {

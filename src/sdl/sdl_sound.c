@@ -1173,9 +1173,6 @@ void I_StartupSound(void)
 	const char *sdrv_name = NULL;
 #endif
 #ifndef HAVE_MIXER
-#ifndef NO_MIDI
-	midi_disabled = 
-#endif
 	digital_disabled = true;
 #endif
 

@@ -1098,9 +1098,6 @@ void D_RegisterClientCommands(void)
 	// s_sound.c
 	CV_RegisterVar(&cv_soundvolume);
 	CV_RegisterVar(&cv_digmusicvolume);
-#ifndef NO_MIDI
-	CV_RegisterVar(&cv_midimusicvolume);
-#endif
 	CV_RegisterVar(&cv_numChannels);
 
 	// i_cdmus.c

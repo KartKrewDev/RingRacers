@@ -35,9 +35,6 @@ extern consvar_t cv_numChannels;
 extern consvar_t surround;
 //extern consvar_t cv_resetmusic;
 extern consvar_t cv_gamedigimusic;
-#ifndef NO_MIDI
-extern consvar_t cv_gamemidimusic;
-#endif
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
 extern consvar_t cv_playsoundifunfocused;
@@ -240,10 +237,9 @@ void S_UpdateSounds(void);
 FUNCMATH fixed_t S_CalculateSoundDistance(fixed_t px1, fixed_t py1, fixed_t pz1, fixed_t px2, fixed_t py2, fixed_t pz2);
 
 void S_SetSfxVolume(INT32 volume);
-void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume);
-#define S_SetDigMusicVolume(a) S_SetMusicVolume(a,-1)
-#define S_SetMIDIMusicVolume(a) S_SetMusicVolume(-1,a)
-#define S_InitMusicVolume() S_SetMusicVolume(-1,-1)
+void S_SetMusicVolume(INT32 digvolume);
+#define S_SetDigMusicVolume S_SetMusicVolume
+#define S_InitMusicVolume() S_SetMusicVolume(-1)
 
 INT32 S_OriginPlaying(void *origin);
 INT32 S_IdPlaying(sfxenum_t id);
