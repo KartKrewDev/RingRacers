@@ -1148,17 +1148,14 @@ void S_UpdateSounds(void)
 
 void S_SetSfxVolume(INT32 volume)
 {
-	if (volume < 0 || volume > 31)
-		CONS_Alert(CONS_WARNING, "sfxvolume should be between 0-31\n");
-
-	CV_SetValue(&cv_soundvolume, volume&0x1F);
+	CV_SetValue(&cv_soundvolume, volume);
 	actualsfxvolume = cv_soundvolume.value; // check for change of var
 
 #ifdef HW3SOUND
 	hws_mode == HWS_DEFAULT_MODE ? I_SetSfxVolume(volume&0x1F) : HW3S_SetSfxVolume(volume&0x1F);
 #else
 	// now hardware volume
-	I_SetSfxVolume(volume&0x1F);
+	I_SetSfxVolume(volume);
 #endif
 }
 
