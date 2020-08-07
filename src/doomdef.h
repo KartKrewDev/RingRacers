@@ -675,5 +675,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 /// Divide volume of music and sounds by this much (loudest sounds on earth)
 #define VOLUME_DIVIDER 4
+#define MAX_VOLUME ( 100 * VOLUME_DIVIDER )
 
 #endif // __DOOMDEF__
