@@ -5859,7 +5859,7 @@ static void P_MovePlayer(player_t *player)
 		else
 			player->frameangle -= (ANGLE_11hh * speed);
 	}
-	else if (player->powers[pw_nocontrol] && player->pflags & PF_SKIDDOWN)
+	else if (player->powers[pw_nocontrol] && player->pflags & PF_FAULT)
 	{
 		if (player->mo->state != &states[S_KART_SPIN])
 			P_SetPlayerMobjState(player->mo, S_KART_SPIN);
@@ -9047,7 +9047,7 @@ void P_PlayerThink(player_t *player)
 	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)
 	{
 		if (!(--player->powers[pw_nocontrol]))
-			player->pflags &= ~PF_SKIDDOWN;
+			player->pflags &= ~PF_FAULT;
 	}
 	else
 		player->powers[pw_nocontrol] = 0;

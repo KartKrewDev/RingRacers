@@ -111,7 +111,7 @@ void K_DoIngameRespawn(player_t *player)
 	if (leveltime < starttime) // FAULT
 	{
 		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
-		player->pflags |= PF_SKIDDOWN|PF_FAULT; // cheeky pflag reuse
+		player->pflags |= PF_FAULT;
 		S_StartSound(player->mo, sfx_s3k83);
 		player->karthud[khud_fault] = 1;
 	}
