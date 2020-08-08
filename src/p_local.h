@@ -26,11 +26,8 @@
 
 #define FLOATSPEED (FRACUNIT*4)
 
-<<<<<<< HEAD
 //#define VIEWHEIGHTS "41"
 
-=======
->>>>>>> srb2/next
 // Maximum player score.
 #define MAXSCORE 99999990 // 999999990
 
@@ -158,10 +155,8 @@ extern fixed_t t_cam2_dist, t_cam2_height, t_cam2_rotate;
 extern fixed_t t_cam3_dist, t_cam3_height, t_cam3_rotate;
 extern fixed_t t_cam4_dist, t_cam4_height, t_cam4_rotate;
 
-<<<<<<< HEAD
 fixed_t P_GetPlayerHeight(player_t *player);
 fixed_t P_GetPlayerSpinHeight(player_t *player);
-=======
 INT32 P_GetPlayerControlDirection(player_t *player);
 >>>>>>> srb2/next
 void P_AddPlayerScore(player_t *player, UINT32 amount);
@@ -171,11 +166,9 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);
 void P_SlideCameraMove(camera_t *thiscam);
 void P_DemoCameraMovement(camera_t *cam);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
-<<<<<<< HEAD
 void P_InitCameraCmd(void);
-=======
+
 pflags_t P_GetJumpFlags(player_t *player);
->>>>>>> srb2/next
 boolean P_PlayerInPain(player_t *player);
 void P_DoPlayerPain(player_t *player, mobj_t *source, mobj_t *inflictor);
 void P_ResetPlayer(player_t *player);
@@ -236,21 +229,15 @@ mobj_t *P_LookForFocusTarget(player_t *player, mobj_t *exclude, SINT8 direction,
 
 mobj_t *P_LookForEnemies(player_t *player, boolean nonenemies, boolean bullet);
 void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius);
-<<<<<<< HEAD
 void P_HomingAttack(mobj_t *source, mobj_t *enemy); /// \todo doesn't belong in p_user
 //boolean P_SuperReady(player_t *player);
 /*boolean P_TransferToNextMare(player_t *player);
 UINT8 P_FindLowestMare(void);*/
 UINT8 P_FindLowestLap(void);
 UINT8 P_FindHighestLap(void);
-=======
-boolean P_HomingAttack(mobj_t *source, mobj_t *enemy); /// \todo doesn't belong in p_user
-boolean P_SuperReady(player_t *player);
 void P_DoJump(player_t *player, boolean soundandstate);
 #define P_AnalogMove(player) (P_ControlStyle(player) == CS_LMAOGALOG)
 boolean P_TransferToNextMare(player_t *player);
-UINT8 P_FindLowestMare(void);
->>>>>>> srb2/next
 void P_FindEmerald(void);
 //void P_TransferToAxis(player_t *player, INT32 axisnum);
 boolean P_PlayerMoving(INT32 pnum);
@@ -319,11 +306,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 extern mapthing_t *itemrespawnque[ITEMQUESIZE];
 extern tic_t itemrespawntime[ITEMQUESIZE];
 extern size_t iquehead, iquetail;
-<<<<<<< HEAD
-extern consvar_t cv_gravity/*, cv_viewheight*/;
-=======
 extern consvar_t cv_gravity, cv_movebob;
->>>>>>> srb2/next
 
 void P_RespawnBattleBoxes(void);
 void P_RespawnSpecials(void);
@@ -390,13 +373,10 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 void P_Attract(mobj_t *source, mobj_t *enemy, boolean nightsgrab);
 mobj_t *P_GetClosestAxis(mobj_t *source);
 
-<<<<<<< HEAD
-=======
 boolean P_CanRunOnWater(player_t *player, ffloor_t *rover);
 
 void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot);
 
->>>>>>> srb2/next
 void P_FlashPal(player_t *pl, UINT16 type, UINT16 duration);
 #define PAL_WHITE    1
 #define PAL_MIXUP    2
@@ -547,13 +527,6 @@ void P_SpecialStageDamage(player_t *player, mobj_t *inflictor, mobj_t *source);
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
 void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
 void P_PlayerRingBurst(player_t *player, INT32 num_rings); /// \todo better fit in p_user.c
-<<<<<<< HEAD
-=======
-void P_PlayerWeaponPanelBurst(player_t *player);
-void P_PlayerWeaponAmmoBurst(player_t *player);
-void P_PlayerWeaponPanelOrAmmoBurst(player_t *player);
-void P_PlayerEmeraldBurst(player_t *player, boolean toss);
->>>>>>> srb2/next
 
 void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck);
 void P_TouchStarPost(mobj_t *starpost, player_t *player, boolean snaptopost);
