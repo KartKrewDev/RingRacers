@@ -35,62 +35,11 @@
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
-<<<<<<< HEAD
-	SF_HIRES = 1, // Draw the sprite 2x as small?
-} skinflags_t;
-
-=======
-	SF_SUPER            = 1,    // Can turn super in singleplayer/co-op mode?
-	SF_NOSUPERSPIN      = 1<<1, // Should spin frames be played while super?
-	SF_NOSPINDASHDUST   = 1<<2, // Spawn dust particles when charging a spindash?
-	SF_HIRES            = 1<<3, // Draw the sprite at different size?
-	SF_NOSKID           = 1<<4, // No skid particles etc
-	SF_NOSPEEDADJUST    = 1<<5, // Skin-specific version of disablespeedadjust
-	SF_RUNONWATER       = 1<<6, // Run on top of water FOFs?
-	SF_NOJUMPSPIN       = 1<<7, // SPR2_JUMP defaults to SPR2_SPRG instead of SPR2_ROLL, falling states used, and player height is full when jumping?
-	SF_NOJUMPDAMAGE     = 1<<8, // Don't damage enemies, etc whilst jumping?
-	SF_STOMPDAMAGE      = 1<<9, // Always damage enemies, etc by landing on them, no matter your vunerability?
-	SF_MARIODAMAGE      = SF_NOJUMPDAMAGE|SF_STOMPDAMAGE, // The Mario method of being able to damage enemies, etc.
-	SF_MACHINE          = 1<<10, // Beep boop. Are you a robot?
-	SF_DASHMODE         = 1<<11, // Sonic Advance 2 style top speed increase?
-	SF_FASTEDGE         = 1<<12, // Faster edge teeter?
-	SF_MULTIABILITY     = 1<<13, // Revenge of Final Demo.
-	SF_NONIGHTSROTATION = 1<<14, // Disable sprite rotation for NiGHTS
-	SF_NONIGHTSSUPER    = 1<<15, // Disable super colors for NiGHTS (if you have SF_SUPER)
+	SF_HIRES            = 1, // Draw the sprite at different size?
+	SF_MACHINE          = 1<<1, // Beep boop. Are you a robot?
 	// free up to and including 1<<31
 } skinflags_t;
 
-//Primary and secondary skin abilities
-typedef enum
-{
-	CA_NONE=0,
-	CA_THOK,
-	CA_FLY,
-	CA_GLIDEANDCLIMB,
-	CA_HOMINGTHOK,
-	CA_SWIM,
-	CA_DOUBLEJUMP,
-	CA_FLOAT,
-	CA_SLOWFALL,
-	CA_TELEKINESIS,
-	CA_FALLSWITCH,
-	CA_JUMPBOOST,
-	CA_AIRDRILL,
-	CA_JUMPTHOK,
-	CA_BOUNCE,
-	CA_TWINSPIN
-} charability_t;
-
-//Secondary skin abilities
-typedef enum
-{
-	CA2_NONE=0,
-	CA2_SPINDASH,
-	CA2_GUNSLINGER,
-	CA2_MELEE
-} charability2_t;
-
->>>>>>> srb2/next
 //
 // Player states.
 //
@@ -131,16 +80,8 @@ typedef enum
 	PF_JUMPSTASIS = 1<<12, // and that includes jumping.
 	PF_FULLSTASIS = PF_STASIS|PF_JUMPSTASIS,
 
-<<<<<<< HEAD
-	// Did you get a time-over?
-	PF_TIMEOVER = 1<<10,
-
 	// SRB2Kart: Spectator that wants to join
-	PF_WANTSTOJOIN = 1<<11,
-=======
-	// Applying autobrake?
-	PF_APPLYAUTOBRAKE = 1<<13,
->>>>>>> srb2/next
+	PF_WANTSTOJOIN = 1<<13,
 
 	// Character action status
 	PF_STARTJUMP     = 1<<14,
@@ -167,14 +108,9 @@ typedef enum
 	PF_TAGIT        = 1<<27, // The player is it! For Tag Mode
 
 	/*** misc ***/
-<<<<<<< HEAD
-	PF_FORCESTRAFE       = 1<<29, // Turning inputs are translated into strafing inputs
-	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
-=======
 	PF_FORCESTRAFE = 1<<28, // Turning inputs are translated into strafing inputs
 	PF_CANCARRY    = 1<<29, // Can carry another player?
-	PF_FINISHED    = 1<<30, // The player finished the level. NOT the same as exiting
->>>>>>> srb2/next
+	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
 
 	// up to 1<<31 is free
 } pflags_t;
@@ -625,40 +561,19 @@ typedef struct player_s
 
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
 	                 // See SF_ flags
-<<<<<<< HEAD
-	SINT8 lives;
-=======
 
-	mobjtype_t thokitem; // Object # to spawn for the thok
-	mobjtype_t spinitem; // Object # to spawn for spindash/spinning
-	mobjtype_t revitem; // Object # to spawn for spindash/spinning
 	mobjtype_t followitem; // Object # to spawn for Smiles
 	mobj_t *followmobj; // Smiles all around
 
-	fixed_t actionspd; // Speed of thok/glide/fly
-	fixed_t mindash; // Minimum spindash speed
-	fixed_t maxdash; // Maximum spindash speed
-
-	fixed_t jumpfactor; // How high can the player jump?
-
-	fixed_t height; // Bounding box changes.
-	fixed_t spinheight;
-
-	SINT8 lives; // number of lives - if == INFLIVES, the player has infinite lives
->>>>>>> srb2/next
+	SINT8 lives; // number of lives
 	SINT8 continues; // continues that player has acquired
 
 	SINT8 xtralife; // Ring Extra Life counter
 	UINT8 gotcontinue; // Got continue from this stage?
 
 	fixed_t speed; // Player's speed (distance formula of MOMX and MOMY values)
-<<<<<<< HEAD
 	fixed_t lastspeed;
-	UINT8 jumping; // Jump counter
-	UINT8 secondjump;
-=======
 	UINT8 secondjump; // Jump counter
->>>>>>> srb2/next
 
 	UINT8 fly1; // Tails flying
 	UINT8 scoreadd; // Used for multiple enemy attack bonus
@@ -735,16 +650,11 @@ typedef struct player_s
 	tic_t marebegunat; // Leveltime when mare begun
 	tic_t startedtime; // Time which you started this mare with.
 	tic_t finishedtime; // Time it took you to finish the mare (used for display)
-<<<<<<< HEAD
-	INT16 finishedrings; // The rings you had left upon finishing the mare
-	UINT32 marescore; // SRB2Kart: Battle score
-=======
 	tic_t lapbegunat; // Leveltime when lap begun
 	tic_t lapstartedtime; // Time which you started this lap with.
 	INT16 finishedspheres; // The spheres you had left upon finishing the mare
 	INT16 finishedrings; // The rings/stars you had left upon finishing the mare
 	UINT32 marescore; // score for this nights stage
->>>>>>> srb2/next
 	UINT32 lastmarescore; // score for the last mare
 	UINT32 totalmarescore; // score for all mares
 	UINT8 lastmare; // previous mare
@@ -768,21 +678,15 @@ typedef struct player_s
 	angle_t awayviewaiming; // Used for cut-away view
 
 	boolean spectator;
-<<<<<<< HEAD
 
 	boolean bot;
 	botvars_t botvars;
 
-	tic_t jointime; // Timer when player joins game to change skin/color
-
 	UINT8 splitscreenindex;
-=======
-	boolean outofcoop;
-	UINT8 bot;
 
 	tic_t jointime; // Timer when player joins game to change skin/color
 	tic_t quittime; // Time elapsed since user disconnected, zero if connected
->>>>>>> srb2/next
+
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
