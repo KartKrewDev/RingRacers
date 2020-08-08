@@ -888,18 +888,10 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			lightnum = R_FakeFlat(frontsector, &tempsec, &templight, &templight, false)
 				->lightlevel >> LIGHTSEGSHIFT;
 
-<<<<<<< HEAD
-		if (pfloor->flags & FF_FOG || (frontsector->extra_colormap && frontsector->extra_colormap->fog))
+		if (pfloor->flags & FF_FOG || (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
 			;
 		else
 			lightnum += curline->lightOffset;
-=======
-		if (pfloor->flags & FF_FOG || (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)));
-			else if (curline->v1->y == curline->v2->y)
-		lightnum--;
-		else if (curline->v1->x == curline->v2->x)
-			lightnum++;
->>>>>>> srb2/next
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
@@ -1276,13 +1268,6 @@ static void R_RenderSegLoop (void)
 			if (bottom >= floorclip[rw_x])
 				bottom = floorclip[rw_x]-1;
 
-<<<<<<< HEAD
-			if (top <= bottom && ceilingplane)
-			{
-				ceilingplane->top[rw_x] = (INT16)top;
-				ceilingplane->bottom[rw_x] = (INT16)bottom;
-			}
-=======
 			if (top <= bottom)
 #else
 			bottom = yl > floorclip[rw_x] ? floorclip[rw_x] : yl;
@@ -1290,7 +1275,6 @@ static void R_RenderSegLoop (void)
 			if (top <= --bottom && ceilingplane)
 #endif
 				R_ExpandPlaneY(ceilingplane, rw_x, top, bottom);
->>>>>>> srb2/next
 		}
 
 
@@ -1951,15 +1935,6 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			}
 		}
 
-<<<<<<< HEAD
-		if (viewsector != frontsector && viewsector != backsector)
-		{
-#ifdef ESLOPE
-			if (worldhigh <= worldbottom && worldhighslope <= worldbottomslope)
-#else
-			if (worldhigh <= worldbottom)
-#endif
-=======
 		if (!bothceilingssky && !bothfloorssky)
 		{
 			if (worldhigh <= worldbottom && worldhighslope <= worldbottomslope)
@@ -1983,24 +1958,14 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		if (!bothceilingssky && !bothfloorssky)
 		{
 			if (doorclosed || (worldhigh <= worldbottom && worldhighslope <= worldbottomslope))
->>>>>>> srb2/next
 			{
 				ds_p->sprbottomclip = negonearray;
 				ds_p->bsilheight = INT32_MAX;
 				ds_p->silhouette |= SIL_BOTTOM;
 			}
-<<<<<<< HEAD
 
-#ifdef ESLOPE
-			if (worldlow >= worldtop && worldlowslope >= worldtopslope)
-#else
-			if (worldlow >= worldtop)
-#endif
-			{
-=======
 			if (doorclosed || (worldlow >= worldtop && worldlowslope >= worldtopslope))
 			{                   // killough 1/17/98, 2/8/98
->>>>>>> srb2/next
 				ds_p->sprtopclip = screenheightarray;
 				ds_p->tsilheight = INT32_MIN;
 				ds_p->silhouette |= SIL_TOP;
@@ -2500,10 +2465,6 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		bottomstep = -FixedMul (rw_scalestep,worldbottom);
 		bottomfrac = (centeryfrac>>4) - FixedMul (worldbottom, rw_scale);
 
-<<<<<<< HEAD
-#ifdef ESLOPE
-=======
->>>>>>> srb2/next
 		if (frontsector->c_slope) {
 			fixed_t topfracend = (centeryfrac>>4) - FixedMul (worldtopslope, ds_p->scale2);
 			topstep = (topfracend-topfrac)/(range);
@@ -2512,10 +2473,6 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			fixed_t bottomfracend = (centeryfrac>>4) - FixedMul (worldbottomslope, ds_p->scale2);
 			bottomstep = (bottomfracend-bottomfrac)/(range);
 		}
-<<<<<<< HEAD
-#endif
-=======
->>>>>>> srb2/next
 	}
 
 	dc_numlights = 0;
@@ -2598,10 +2555,6 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		{
 			ffloor[i].f_pos >>= 4;
 			ffloor[i].f_pos_slope >>= 4;
-<<<<<<< HEAD
-#endif
-=======
->>>>>>> srb2/next
 			if (linedef->special == HORIZONSPECIAL) // Horizon lines extend FOFs in contact with them too.
 			{
 				ffloor[i].f_step = 0;
@@ -2610,18 +2563,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			}
 			else
 			{
-<<<<<<< HEAD
-#ifdef ESLOPE
 				ffloor[i].f_frac = (centeryfrac>>4) - FixedMul(ffloor[i].f_pos, rw_scale);
 				ffloor[i].f_step = ((centeryfrac>>4) - FixedMul(ffloor[i].f_pos_slope, ds_p->scale2) - ffloor[i].f_frac)/(range);
-#else
-				ffloor[i].f_step = FixedMul(-rw_scalestep, ffloor[i].f_pos);
-				ffloor[i].f_frac = (centeryfrac>>4) - FixedMul(ffloor[i].f_pos, rw_scale);
-#endif
-=======
-				ffloor[i].f_frac = (centeryfrac>>4) - FixedMul(ffloor[i].f_pos, rw_scale);
-				ffloor[i].f_step = ((centeryfrac>>4) - FixedMul(ffloor[i].f_pos_slope, ds_p->scale2) - ffloor[i].f_frac)/(range);
->>>>>>> srb2/next
 			}
 		}
 	}
