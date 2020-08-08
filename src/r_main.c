@@ -32,11 +32,8 @@
 #include "p_setup.h"
 #include "z_zone.h"
 #include "m_random.h" // quake camera shake
-<<<<<<< HEAD
-#include "doomstat.h" // MAXSPLITSCREENPLAYERS
-=======
 #include "r_portal.h"
->>>>>>> srb2/next
+#include "doomstat.h" // MAXSPLITSCREENPLAYERS
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -74,11 +71,9 @@ fixed_t viewx, viewy, viewz;
 angle_t viewangle, aimingangle;
 UINT8 viewssnum;
 fixed_t viewcos, viewsin;
-<<<<<<< HEAD
-boolean viewsky, skyVisible;
-boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible for each splitscreen player
 sector_t *viewsector;
 player_t *viewplayer;
+mobj_t *r_viewmobj;
 
 int r_splitscreen;
 
@@ -107,11 +102,6 @@ typedef struct portal_pair
 portal_pair *portal_base, *portal_cap;
 line_t *portalclipline;
 INT32 portalclipstart, portalclipend;
-=======
-sector_t *viewsector;
-player_t *viewplayer;
-mobj_t *r_viewmobj;
->>>>>>> srb2/next
 
 //
 // precalculated math tables
@@ -143,20 +133,12 @@ static CV_PossibleValue_t drawdist_cons_t[] = {
 	{3072, "3072"},	{4096, "4096"},	{6144, "6144"},
 	{8192, "8192"},	{0, "Infinite"},	{0, NULL}};
 
-//static CV_PossibleValue_t precipdensity_cons_t[] = {{0, "None"}, {1, "Light"}, {2, "Moderate"}, {4, "Heavy"}, {6, "Thick"}, {8, "V.Thick"}, {0, NULL}};
-
 static CV_PossibleValue_t drawdist_precip_cons_t[] = {
 	{256, "256"},	{512, "512"},	{768, "768"},
 	{1024, "1024"},	{1536, "1536"},	{2048, "2048"},
 	{0, "None"},	{0, NULL}};
 
-<<<<<<< HEAD
-static CV_PossibleValue_t fov_cons_t[] = {{5*FRACUNIT, "MIN"}, {178*FRACUNIT, "MAX"}, {0, NULL}};
-
-//static CV_PossibleValue_t precipdensity_cons_t[] = {{0, "None"}, {1, "Light"}, {2, "Moderate"}, {4, "Heavy"}, {6, "Thick"}, {8, "V.Thick"}, {0, NULL}};
-=======
 static CV_PossibleValue_t fov_cons_t[] = {{60*FRACUNIT, "MIN"}, {179*FRACUNIT, "MAX"}, {0, NULL}};
->>>>>>> srb2/next
 static CV_PossibleValue_t translucenthud_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t maxportals_cons_t[] = {{0, "MIN"}, {12, "MAX"}, {0, NULL}}; // lmao rendering 32 portals, you're a card
 static CV_PossibleValue_t homremoval_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Flash"}, {0, NULL}};
@@ -187,30 +169,15 @@ consvar_t cv_flipcam4 = {"flipcam4", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, 
 
 consvar_t cv_shadow = {"shadow", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_skybox = {"skybox", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-<<<<<<< HEAD
-consvar_t cv_soniccd = {"soniccd", "Off", CV_NETVAR|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-=======
->>>>>>> srb2/next
 consvar_t cv_allowmlook = {"allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_showhud = {"showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_translucenthud = {"translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_translucency = {"translucency", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-<<<<<<< HEAD
-consvar_t cv_drawdist = {"drawdist", "8192", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-//consvar_t cv_drawdist_nights = {"drawdist_nights", "2048", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_drawdist_precip = {"drawdist_precip", "1024", CV_SAVE, drawdist_precip_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-//consvar_t cv_precipdensity = {"precipdensity", "Moderate", CV_SAVE, precipdensity_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-// cap fov, fov too high tears software apart.
-consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
-=======
-consvar_t cv_drawdist = {"drawdist", "Infinite", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_drawdist_nights = {"drawdist_nights", "2048", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_drawdist = {"drawdist", "8192", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_drawdist_precip = {"drawdist_precip", "1024", CV_SAVE, drawdist_precip_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-//consvar_t cv_precipdensity = {"precipdensity", "Moderate", CV_SAVE, precipdensity_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
->>>>>>> srb2/next
 
 // Okay, whoever said homremoval causes a performance hit should be shot.
 consvar_t cv_homremoval = {"homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -279,50 +246,22 @@ static void Fov_OnChange(void)
 
 static void ChaseCam_OnChange(void)
 {
-<<<<<<< HEAD
-	/*if (!cv_chasecam.value || !cv_useranalog.value)
-		CV_SetValue(&cv_analog, 0);
-	else
-		CV_SetValue(&cv_analog, 1);*/
-=======
-	if (!cv_chasecam.value || !cv_useranalog[0].value)
-		CV_SetValue(&cv_analog[0], 0);
-	else
-		CV_SetValue(&cv_analog[0], 1);
->>>>>>> srb2/next
+	;
 }
 
 static void ChaseCam2_OnChange(void)
 {
-<<<<<<< HEAD
-	/*if (!cv_chasecam2.value || !cv_useranalog2.value)
-		CV_SetValue(&cv_analog2, 0);
-	else
-		CV_SetValue(&cv_analog2, 1);*/
+	;
 }
 
 static void ChaseCam3_OnChange(void)
 {
-	/*if (!cv_chasecam3.value || !cv_useranalog3.value)
-		CV_SetValue(&cv_analog3, 0);
-	else
-		CV_SetValue(&cv_analog3, 1);*/
+	;
 }
 
 static void ChaseCam4_OnChange(void)
 {
-	/*if (!cv_chasecam4.value || !cv_useranalog4.value)
-		CV_SetValue(&cv_analog4, 0);
-	else
-		CV_SetValue(&cv_analog4, 1);*/
-=======
-	if (botingame)
-		return;
-	if (!cv_chasecam2.value || !cv_useranalog[1].value)
-		CV_SetValue(&cv_analog[1], 0);
-	else
-		CV_SetValue(&cv_analog[1], 1);
->>>>>>> srb2/next
+	;
 }
 
 static void FlipCam_OnChange(void)
@@ -581,11 +520,7 @@ static void R_InitTextureMapping(void)
 	// Calc focallength
 	//  so FIELDOFVIEW angles covers SCREENWIDTH.
 	focallength = FixedDiv(projection,
-<<<<<<< HEAD
-		FINETANGENT(FINEANGLES/4+/*cv_fov.value*/ FIELDOFVIEW/2));
-=======
 		FINETANGENT(FINEANGLES/4+FIELDOFVIEW/2));
->>>>>>> srb2/next
 
 	focallengthf = FIXED_TO_FLOAT(focallength);
 
@@ -1024,13 +959,8 @@ void R_ExecuteSetViewSize(void)
 	centeryfrac = centery<<FRACBITS;
 
 	fov = FixedAngle(cv_fov.value/2) + ANGLE_90;
-<<<<<<< HEAD
-	fovtan = FINETANGENT(fov >> ANGLETOFINESHIFT);
-	if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
-=======
 	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
 	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
->>>>>>> srb2/next
 		fovtan = 17*fovtan/10;
 
 	projection = projectiony = FixedDiv(centerxfrac, fovtan);
@@ -1172,13 +1102,6 @@ subsector_t *R_PointInSubsectorOrNull(fixed_t x, fixed_t y)
 // R_SetupFrame
 //
 
-<<<<<<< HEAD
-static mobj_t *viewmobj;
-=======
-// WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) ((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)/fovtan)
->>>>>>> srb2/next
-
 // recalc necessary stuff for mouseaiming
 // slopes are already calculated for the full possible view (which is 4*viewheight).
 // 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
@@ -1204,23 +1127,33 @@ static void R_SetupFreelook(void)
 	centeryfrac = centery<<FRACBITS;
 }
 
-<<<<<<< HEAD
-void R_SkyboxFrame(player_t *player)
-=======
 #undef AIMINGTODY
 
 void R_SetupFrame(player_t *player)
->>>>>>> srb2/next
 {
 	camera_t *thiscam = &camera[0];
-	UINT8 i;
+	boolean chasecam = false;
+	UINT8 i = 0;
 
-<<<<<<< HEAD
 	if (r_splitscreen)
 	{
 		for (i = 1; i <= r_splitscreen; i++)
-=======
-	if (player->climbing || (player->powers[pw_carry] == CR_NIGHTSMODE) || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN || tutorialmode)
+		{
+			if (player == &players[displayplayers[i]])
+			{
+				thiscam = &camera[i];
+				chasecam = (cv_chasecam[i].value != 0);
+				break;
+			}
+		}
+
+		if (i > r_splitscreen)
+		{
+			i = 0;
+		}
+	}
+
+	if (player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN || tutorialmode)
 		chasecam = true; // force chasecam on
 	else if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off
@@ -1261,18 +1194,12 @@ void R_SetupFrame(player_t *player)
 		aimingangle = player->aiming;
 		viewangle = r_viewmobj->angle;
 
-		if (!demoplayback && player->playerstate != PST_DEAD)
->>>>>>> srb2/next
+		if (!demo.playback && player->playerstate != PST_DEAD)
 		{
-			if (player == &players[displayplayers[i]])
-			{
-				thiscam = &camera[i];
-				break;
-			}
+			viewangle = localangle[i]; // WARNING: camera uses this
+			aimingangle = localaiming[i];
 		}
 	}
-<<<<<<< HEAD
-=======
 	viewz += quake.z;
 
 	viewplayer = player;
@@ -1310,14 +1237,25 @@ void R_SetupFrame(player_t *player)
 
 void R_SkyboxFrame(player_t *player)
 {
-	camera_t *thiscam;
+	camera_t *thiscam = &camera[0];
+	UINT8 i = 0;
 
-	if (splitscreen && player == &players[secondarydisplayplayer]
-	&& player != &players[consoleplayer])
-		thiscam = &camera2;
-	else
-		thiscam = &camera;
->>>>>>> srb2/next
+	if (r_splitscreen)
+	{
+		for (i = 1; i <= r_splitscreen; i++)
+		{
+			if (player == &players[displayplayers[i]])
+			{
+				thiscam = &camera[i];
+				break;
+			}
+		}
+
+		if (i > r_splitscreen)
+		{
+			i = 0;
+		}
+	}
 
 	// cut-away view stuff
 	r_viewmobj = skyboxmo[0];
@@ -1344,23 +1282,8 @@ void R_SkyboxFrame(player_t *player)
 		viewangle = player->mo->angle;
 		if (/*!demo.playback && */player->playerstate != PST_DEAD)
 		{
-			if (player == &players[consoleplayer])
-			{
-				viewangle = localangle[0]; // WARNING: camera uses this
-				aimingangle = localaiming[0];
-			}
-			else if (splitscreen)
-			{
-				for (i = 1; i <= splitscreen; i++)
-				{
-					if (player == &players[g_localplayers[i]])
-					{
-						viewangle = localangle[i];
-						aimingangle = localaiming[i];
-						break;
-					}
-				}
-			}
+			viewangle = localangle[i];
+			aimingangle = localaiming[i];
 		}
 	}
 	viewangle += r_viewmobj->angle;
@@ -1453,138 +1376,7 @@ void R_SkyboxFrame(player_t *player)
 	R_SetupFreelook();
 }
 
-<<<<<<< HEAD
-void R_SetupFrame(player_t *player, boolean skybox)
-{
-	camera_t *thiscam;
-	boolean chasecam = false;
-
-	if (r_splitscreen > 2 && player == &players[displayplayers[3]])
-	{
-		thiscam = &camera[3];
-		chasecam = (cv_chasecam4.value != 0);
-	}
-	else if (r_splitscreen > 1 && player == &players[displayplayers[2]])
-	{
-		thiscam = &camera[2];
-		chasecam = (cv_chasecam3.value != 0);
-	}
-	else if (r_splitscreen && player == &players[displayplayers[1]])
-	{
-		thiscam = &camera[1];
-		chasecam = (cv_chasecam2.value != 0);
-	}
-	else
-	{
-		thiscam = &camera[0];
-		chasecam = (cv_chasecam.value != 0);
-	}
-
-	if (player->spectator) // no spectator chasecam
-		chasecam = false; // force chasecam off
-	else if (player->playerstate == PST_DEAD || player->exiting)
-		chasecam = true; // force chasecam on
-
-	if (chasecam && !thiscam->chase)
-	{
-		P_ResetCamera(player, thiscam);
-		thiscam->chase = true;
-	}
-	else if (!chasecam)
-		thiscam->chase = false;
-
-	viewsky = !skybox;
-	if (player->awayviewtics)
-	{
-		// cut-away view stuff
-		viewmobj = player->awayviewmobj; // should be a MT_ALTVIEWMAN
-		I_Assert(viewmobj != NULL);
-		viewz = viewmobj->z + 20*FRACUNIT;
-		aimingangle = player->awayviewaiming;
-		viewangle = viewmobj->angle;
-	}
-	else if (!player->spectator && chasecam)
-	// use outside cam view
-	{
-		viewmobj = NULL;
-		viewz = thiscam->z + (thiscam->height>>1);
-		aimingangle = thiscam->aiming;
-		viewangle = thiscam->angle;
-	}
-	else
-	// use the player's eyes view
-	{
-		viewz = player->viewz;
-
-		viewmobj = player->mo;
-		I_Assert(viewmobj != NULL);
-
-		aimingangle = player->aiming;
-		viewangle = viewmobj->angle;
-
-		if (!demo.playback && player->playerstate != PST_DEAD)
-		{
-			if (player == &players[consoleplayer])
-			{
-				viewangle = localangle[0]; // WARNING: camera uses this
-				aimingangle = localaiming[0];
-			}
-			else if (splitscreen)
-			{
-				UINT8 i;
-				for (i = 1; i <= splitscreen; i++)
-				{
-					if (player == &players[g_localplayers[i]])
-					{
-						viewangle = localangle[i];
-						aimingangle = localaiming[i];
-						break;
-					}
-				}
-			}
-		}
-	}
-	viewz += quake.z;
-
-	viewplayer = player;
-
-	if (chasecam && !player->awayviewtics && !player->spectator)
-	{
-		viewx = thiscam->x;
-		viewy = thiscam->y;
-		viewx += quake.x;
-		viewy += quake.y;
-
-		if (thiscam->subsector && thiscam->subsector->sector)
-			viewsector = thiscam->subsector->sector;
-		else
-			viewsector = R_PointInSubsector(viewx, viewy)->sector;
-	}
-	else
-	{
-		viewx = viewmobj->x;
-		viewy = viewmobj->y;
-		viewx += quake.x;
-		viewy += quake.y;
-
-		if (viewmobj->subsector && thiscam->subsector->sector)
-			viewsector = viewmobj->subsector->sector;
-		else
-			viewsector = R_PointInSubsector(viewx, viewy)->sector;
-	}
-
-	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
-	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
-
-	R_SetupFreelook();
-}
-
-#define ANGLED_PORTALS
-
-static void R_PortalFrame(line_t *start, line_t *dest, portal_pair *portal)
-=======
 static void R_PortalFrame(portal_t *portal)
->>>>>>> srb2/next
 {
 	viewx = portal->viewx;
 	viewy = portal->viewy;
@@ -1639,14 +1431,8 @@ static void Mask_Post (maskcount_t* m)
 
 void R_RenderPlayerView(player_t *player)
 {
-<<<<<<< HEAD
-	portal_pair *portal;
-	const boolean skybox = (skyboxmo[0] && cv_skybox.value);
-	UINT8 i;
-=======
 	UINT8			nummasks	= 1;
 	maskcount_t*	masks		= malloc(sizeof(maskcount_t));
->>>>>>> srb2/next
 
 	// if this is display player 1
 	if (cv_homremoval.value && player == &players[displayplayers[0]])
@@ -1655,69 +1441,14 @@ void R_RenderPlayerView(player_t *player)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // No HOM effect!
 		else //'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 32+(timeinmap&15));
-<<<<<<< HEAD
 	}
-	// Draw over the fourth screen so you don't have to stare at a HOM :V
 	else if (r_splitscreen == 2 && player == &players[displayplayers[2]])
-#if 1
 	{
-		// V_DrawPatchFill, but for the fourth screen only
-		patch_t *pat = W_CachePatchName("SRB2BACK", PU_CACHE);
-		INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
-		INT32 x, y, pw = SHORT(pat->width) * dupz, ph = SHORT(pat->height) * dupz;
-
-		for (x = vid.width>>1; x < vid.width; x += pw)
-		{
-			for (y = vid.height>>1; y < vid.height; y += ph)
-				V_DrawScaledPatch(x, y, V_NOSCALESTART, pat);
-		}
-=======
->>>>>>> srb2/next
-	}
-#else
-	V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
-#endif
-
-<<<<<<< HEAD
-	// load previous saved value of skyVisible for the player
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			skyVisible = skyVisiblePerPlayer[i];
-			break;
-		}
+		// Draw over the fourth screen so you don't have to stare at a HOM :V
+		V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
 	}
 
-	portalrender = 0;
-	portal_base = portal_cap = NULL;
-
-	if (skybox && skyVisible)
-	{
-		R_SkyboxFrame(player);
-
-		R_ClearClipSegs();
-		R_ClearDrawSegs();
-		R_ClearPlanes();
-		R_ClearSprites();
-#ifdef FLOORSPLATS
-		R_ClearVisibleFloorSplats();
-#endif
-
-		R_RenderBSPNode((INT32)numnodes - 1);
-		R_ClipSprites();
-		R_DrawPlanes();
-#ifdef FLOORSPLATS
-		R_DrawVisibleFloorSplats();
-#endif
-		R_DrawMasked();
-	}
-
-	R_SetupFrame(player, skybox);
-	skyVisible = false;
-=======
 	R_SetupFrame(player);
->>>>>>> srb2/next
 	framecount++;
 	validcount++;
 
@@ -1826,18 +1557,6 @@ void R_RenderPlayerView(player_t *player)
 	free(masks);
 }
 
-<<<<<<< HEAD
-	// save value to skyVisiblePerPlayer
-	// this is so that P1 can't affect whether P2 can see a skybox or not, or vice versa
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			skyVisiblePerPlayer[i] = skyVisible;
-			break;
-		}
-	}
-=======
 // Lactozilla: Renderer switching
 #ifdef HWRENDER
 void R_InitHardwareMode(void)
@@ -1856,7 +1575,6 @@ void R_ReloadHUDGraphics(void)
 	ST_LoadGraphics();
 	HU_LoadGraphics();
 	ST_ReloadSkinFaceGraphics();
->>>>>>> srb2/next
 }
 
 // =========================================================================
@@ -1865,6 +1583,8 @@ void R_ReloadHUDGraphics(void)
 
 void R_RegisterEngineStuff(void)
 {
+	UINT8 i;
+
 	CV_RegisterVar(&cv_gravity);
 	CV_RegisterVar(&cv_tailspickup);
 	CV_RegisterVar(&cv_allowmlook);
@@ -1878,106 +1598,29 @@ void R_RegisterEngineStuff(void)
 	if (dedicated)
 		return;
 
-<<<<<<< HEAD
-	//CV_RegisterVar(&cv_precipdensity);
-=======
->>>>>>> srb2/next
 	CV_RegisterVar(&cv_translucency);
 	CV_RegisterVar(&cv_drawdist);
-	//CV_RegisterVar(&cv_drawdist_nights);
 	CV_RegisterVar(&cv_drawdist_precip);
 	CV_RegisterVar(&cv_fov);
 
-	CV_RegisterVar(&cv_chasecam);
-	CV_RegisterVar(&cv_chasecam2);
-<<<<<<< HEAD
-	CV_RegisterVar(&cv_chasecam3);
-	CV_RegisterVar(&cv_chasecam4);
-=======
-
->>>>>>> srb2/next
 	CV_RegisterVar(&cv_shadow);
 	CV_RegisterVar(&cv_skybox);
 
-	CV_RegisterVar(&cv_cam_dist);
-	CV_RegisterVar(&cv_cam_still);
-	CV_RegisterVar(&cv_cam_height);
-	CV_RegisterVar(&cv_cam_speed);
-	CV_RegisterVar(&cv_cam_rotate);
-	CV_RegisterVar(&cv_cam_rotspeed);
-	CV_RegisterVar(&cv_cam_turnmultiplier);
-	CV_RegisterVar(&cv_cam_orbit);
-	CV_RegisterVar(&cv_cam_adjust);
-
-	CV_RegisterVar(&cv_cam2_dist);
-	CV_RegisterVar(&cv_cam2_still);
-	CV_RegisterVar(&cv_cam2_height);
-	CV_RegisterVar(&cv_cam2_speed);
-	CV_RegisterVar(&cv_cam2_rotate);
-	CV_RegisterVar(&cv_cam2_rotspeed);
-	CV_RegisterVar(&cv_cam2_turnmultiplier);
-	CV_RegisterVar(&cv_cam2_orbit);
-	CV_RegisterVar(&cv_cam2_adjust);
-
-	CV_RegisterVar(&cv_cam_savedist[0][0]);
-	CV_RegisterVar(&cv_cam_savedist[0][1]);
-	CV_RegisterVar(&cv_cam_savedist[1][0]);
-	CV_RegisterVar(&cv_cam_savedist[1][1]);
-
-	CV_RegisterVar(&cv_cam_saveheight[0][0]);
-	CV_RegisterVar(&cv_cam_saveheight[0][1]);
-	CV_RegisterVar(&cv_cam_saveheight[1][0]);
-	CV_RegisterVar(&cv_cam_saveheight[1][1]);
-
-	CV_RegisterVar(&cv_cam3_dist);
-	CV_RegisterVar(&cv_cam3_still);
-	CV_RegisterVar(&cv_cam3_height);
-	CV_RegisterVar(&cv_cam3_speed);
-	CV_RegisterVar(&cv_cam3_rotate);
-	CV_RegisterVar(&cv_cam3_rotspeed);
-
-	CV_RegisterVar(&cv_cam4_dist);
-	CV_RegisterVar(&cv_cam4_still);
-	CV_RegisterVar(&cv_cam4_height);
-	CV_RegisterVar(&cv_cam4_speed);
-	CV_RegisterVar(&cv_cam4_rotate);
-	CV_RegisterVar(&cv_cam4_rotspeed);
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		CV_RegisterVar(&cv_chasecam[i]);
+		CV_RegisterVar(&cv_cam_dist[i]);
+		CV_RegisterVar(&cv_cam_still[i]);
+		CV_RegisterVar(&cv_cam_height[i]);
+		CV_RegisterVar(&cv_cam_speed[i]);
+		CV_RegisterVar(&cv_cam_rotate[i]);
+		CV_RegisterVar(&cv_cam_rotspeed[i]);
+	}
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);
 
 	CV_RegisterVar(&cv_maxportals);
 
-<<<<<<< HEAD
-	// Default viewheight is changeable,
-	// initialized to standard viewheight
-	//CV_RegisterVar(&cv_viewheight);
-
-#ifdef HWRENDER
-	// GL-specific Commands
-	CV_RegisterVar(&cv_grgammablue);
-	CV_RegisterVar(&cv_grgammagreen);
-	CV_RegisterVar(&cv_grgammared);
-	CV_RegisterVar(&cv_grfovchange);
-#ifdef ALAM_LIGHTING
-	CV_RegisterVar(&cv_grstaticlighting);
-	CV_RegisterVar(&cv_grdynamiclighting);
-	CV_RegisterVar(&cv_grcoronas);
-	CV_RegisterVar(&cv_grcoronasize);
-#endif
-	CV_RegisterVar(&cv_grmdls);
-	CV_RegisterVar(&cv_grfallbackplayermodel);
-	CV_RegisterVar(&cv_grspritebillboarding);
-	CV_RegisterVar(&cv_grfakecontrast);
-	CV_RegisterVar(&cv_grshearing);
-	CV_RegisterVar(&cv_grshaders);
-#endif
-
-#ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
-		HWR_AddCommands();
-#endif
-=======
 	CV_RegisterVar(&cv_movebob);
->>>>>>> srb2/next
 }
