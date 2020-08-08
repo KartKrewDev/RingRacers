@@ -182,15 +182,11 @@ void Command_CountMobjs_f(void)
 //
 void P_InitThinkers(void)
 {
-<<<<<<< HEAD
-	thinkercap.prev = thinkercap.next = &thinkercap;
+	UINT8 i;
 	waypointcap = NULL;
 	kitemcap = NULL;
-=======
-	UINT8 i;
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 		thlist[i].prev = thlist[i].next = &thlist[i];
->>>>>>> srb2/next
 }
 
 // Adds a new thinker at the end of the list.
@@ -470,7 +466,6 @@ static inline void P_DoSpecialStageStuff(void)
 
 	if (sstimer && !objectplacing)
 	{
-<<<<<<< HEAD
 		sstimer = 0;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -492,10 +487,7 @@ static inline void P_DoSpecialStageStuff(void)
 
 	if (sstimer > 1) // As long as time isn't up...
 	{
-		UINT32 ssrings = 0;
-=======
 		UINT16 countspheres = 0;
->>>>>>> srb2/next
 		// Count up the rings of all the players and see if
 		// they've collected the required amount.
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -518,16 +510,11 @@ static inline void P_DoSpecialStageStuff(void)
 				}
 				else if (!players[i].exiting)
 				{
-<<<<<<< HEAD
-					players[i].mo->momx = players[i].mo->momy = 0;
-					players[i].exiting = raceexittime+1;
-=======
 					players[i].exiting = (14*TICRATE)/5 + 1;
 					players[i].pflags &= ~(PF_GLIDING|PF_BOUNCING);
 					players[i].nightstime = 0;
 					if (P_IsLocalPlayer(&players[i]))
 						S_StartSound(NULL, sfx_s3k66);
->>>>>>> srb2/next
 				}
 			}
 
@@ -653,7 +640,6 @@ void P_Ticker(boolean run)
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())
 	{
-<<<<<<< HEAD
 		if (demo.rewinding && leveltime > 0)
 		{
 			leveltime = (leveltime-1) & ~3;
@@ -661,17 +647,12 @@ void P_Ticker(boolean run)
 		}
 		else if (demo.freecam && democam.cam)	// special case: allow freecam to MOVE during pause!
 			P_DemoCameraMovement(democam.cam);
-
-		return;
-	}
-=======
 		S_SetStackAdjustmentStart();
 		return;
 	}
 
 	if (!S_MusicPaused())
 		S_AdjustMusicStackTics();
->>>>>>> srb2/next
 
 	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
@@ -695,7 +676,6 @@ void P_Ticker(boolean run)
 					G_ReadDemoTiccmd(&players[i].cmd, i);
 		}
 
-<<<<<<< HEAD
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
@@ -707,10 +687,8 @@ void P_Ticker(boolean run)
 				K_KartUpdatePosition(&players[i]);
 
 		// OK! Now that we got all of that sorted, players can think!
-=======
 		LUAh_PreThinkFrame();
 
->>>>>>> srb2/next
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
@@ -720,11 +698,7 @@ void P_Ticker(boolean run)
 	if (!demo.playback) // Don't increment if a demo is playing.
 		totalplaytime++;
 
-<<<<<<< HEAD
-	/*if (!useNightsSS && G_IsSpecialStage(gamemap))
-=======
-	if (!(maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap))
->>>>>>> srb2/next
+	/*if (!(maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap))
 		P_DoSpecialStageStuff();
 
 	if (runemeraldmanager)
@@ -742,13 +716,9 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-<<<<<<< HEAD
 		if (G_BattleGametype() && battleovertime.enabled)
 			K_RunBattleOvertime();
 
-#ifdef HAVE_BLUA
-=======
->>>>>>> srb2/next
 		LUAh_ThinkFrame();
 	}
 
@@ -848,7 +818,6 @@ void P_Ticker(boolean run)
 		if (modeattacking)
 			G_GhostTicker();
 
-<<<<<<< HEAD
 		if (mapreset > 1
 			&& --mapreset <= 1
 			&& server) // Remember: server uses it for mapchange, but EVERYONE ticks down for the animation
@@ -865,9 +834,7 @@ void P_Ticker(boolean run)
 	{
 		if (camera[i].chase)
 			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
-=======
 		LUAh_PostThinkFrame();
->>>>>>> srb2/next
 	}
 
 	P_MapEnd();
@@ -891,7 +858,6 @@ void P_PreTicker(INT32 frames)
 	{
 		P_MapStart();
 
-<<<<<<< HEAD
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
@@ -903,10 +869,8 @@ void P_PreTicker(INT32 frames)
 				K_KartUpdatePosition(&players[i]);
 
 		// OK! Now that we got all of that sorted, players can think!
-=======
 		LUAh_PreThinkFrame();
 
->>>>>>> srb2/next
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 			{
@@ -930,13 +894,9 @@ void P_PreTicker(INT32 frames)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-<<<<<<< HEAD
 		if (G_BattleGametype() && battleovertime.enabled)
 			K_RunBattleOvertime();
 
-#ifdef HAVE_BLUA
-=======
->>>>>>> srb2/next
 		LUAh_ThinkFrame();
 
 		// Run shield positioning
