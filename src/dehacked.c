@@ -5069,52 +5069,24 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_THOK",
 
 	// SRB2kart Frames
-	"S_KART_STILL1",
-	"S_KART_STILL2",
-	"S_KART_STILL1_L",
-	"S_KART_STILL2_L",
-	"S_KART_STILL1_R",
-	"S_KART_STILL2_R",
-
-	"S_KART_SLOW1",
-	"S_KART_SLOW2",
-	"S_KART_SLOW1_L",
-	"S_KART_SLOW2_L",
-	"S_KART_SLOW1_R",
-	"S_KART_SLOW2_R",
-
-	"S_KART_FAST1",
-	"S_KART_FAST2",
-	"S_KART_FAST1_L",
-	"S_KART_FAST2_L",
-	"S_KART_FAST1_R",
-	"S_KART_FAST2_R",
-
-	"S_KART_DRIFT1_L",
-	"S_KART_DRIFT2_L",
-
-	"S_KART_DRIFT1_L_OUT",
-	"S_KART_DRIFT2_L_OUT",
-
-	"S_KART_DRIFT1_L_IN",
-	"S_KART_DRIFT2_L_IN",
-	"S_KART_DRIFT3_L_IN",
-	"S_KART_DRIFT4_L_IN",
-
-	"S_KART_DRIFT1_R",
-	"S_KART_DRIFT2_R",
-
-	"S_KART_DRIFT1_R_OUT",
-	"S_KART_DRIFT2_R_OUT",
-
-	"S_KART_DRIFT1_R_IN",
-	"S_KART_DRIFT2_R_IN",
-	"S_KART_DRIFT3_R_IN",
-	"S_KART_DRIFT4_R_IN",
-
-	"S_KART_SPIN",
-	"S_KART_PAIN",
+	"S_KART_STILL",
+	"S_KART_STILL_L",
+	"S_KART_STILL_R",
+	"S_KART_SLOW",
+	"S_KART_SLOW_L",
+	"S_KART_SLOW_R",
+	"S_KART_FAST",
+	"S_KART_FAST_L",
+	"S_KART_FAST_R",
+	"S_KART_DRIFT_L",
+	"S_KART_DRIFT_L_OUT",
+	"S_KART_DRIFT_L_IN",
+	"S_KART_DRIFT_R",
+	"S_KART_DRIFT_R_OUT",
+	"S_KART_DRIFT_R_IN",
+	"S_KART_SPINOUT",
 	"S_KART_SQUISH",
+	"S_KART_SIGN",
 
 	// technically the player goes here but it's an infinite tic state
 	"S_OBJPLACE_DUMMY",

@@ -235,31 +235,24 @@ typedef enum
 	MFE_VERTICALFLIP      = 1<<5,
 	// Goo water
 	MFE_GOOWATER          = 1<<6,
-<<<<<<< HEAD
-	// SRB2Kart: The mobj just hit & bounced off a wall, this is cleared on next frame
-	MFE_JUSTBOUNCEDWALL   = 1<<7,
-=======
 	// The mobj is touching a lava block
 	MFE_TOUCHLAVA         = 1<<7,
 	// Mobj was already pushed this tic
 	MFE_PUSHED            = 1<<8,
->>>>>>> srb2/next
 	// Mobj was already sprung this tic
 	MFE_SPRUNG            = 1<<9,
 	// Platform movement
-<<<<<<< HEAD
-	MFE_APPLYPMOMZ        = 1<<9,
-	// SRB2Kart: Splitscreen sprite display; very wasteful but I couldn't think of another way to do it...
-	MFE_DRAWONLYFORP1     = 1<<10,
-	MFE_DRAWONLYFORP2     = 1<<11,
-	MFE_DRAWONLYFORP3     = 1<<12,
-	MFE_DRAWONLYFORP4     = 1<<13,
-=======
 	MFE_APPLYPMOMZ        = 1<<10,
 	// Compute and trigger on mobj angle relative to tracer
 	// See Linedef Exec 457 (Track mobj angle to point)
 	MFE_TRACERANGLE       = 1<<11,
->>>>>>> srb2/next
+	// SRB2Kart: The mobj just hit & bounced off a wall, this is cleared on next frame
+	MFE_JUSTBOUNCEDWALL   = 1<<12,
+	// SRB2Kart: Splitscreen sprite display; very wasteful but I couldn't think of another way to do it...
+	MFE_DRAWONLYFORP1     = 1<<13,
+	MFE_DRAWONLYFORP2     = 1<<14,
+	MFE_DRAWONLYFORP3     = 1<<15,
+	MFE_DRAWONLYFORP4     = 1<<15, // WELP, just merge drawflags later so this isn't a problem :V
 	// free: to and including 1<<15
 } mobjeflag_t;
 
@@ -385,10 +378,8 @@ typedef struct mobj_s
 	INT32 cvmem;
 
 	struct pslope_s *standingslope; // The slope that the object is standing on (shouldn't need synced in savegames, right?)
-<<<<<<< HEAD
 #ifdef HWRENDER
 	struct pslope_s *modeltilt; // Slope used for model tilting. Also is not synched, this is totally visual.
-#endif
 #endif
 
 	boolean colorized; // Whether the mobj uses the rainbow colormap
@@ -397,11 +388,6 @@ typedef struct mobj_s
 	boolean whiteshadow; // Use white shadow, set to true by default for fullbright objects
 
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
-=======
-
-	boolean colorized; // Whether the mobj uses the rainbow colormap
-	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
->>>>>>> srb2/next
 
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
