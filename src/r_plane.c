@@ -44,12 +44,6 @@
 // Quincunx antialiasing of flats!
 //#define QUINCUNX
 
-<<<<<<< HEAD
-// good night sweet prince
-//#define SHITPLANESPARENCY
-
-=======
->>>>>>> srb2/next
 //SoM: 3/23/2000: Use Boom visplane hashing.
 
 visplane_t *visplanes[MAXVISPLANES];
@@ -234,14 +228,10 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 	if (currentplane->slope)
 		ds_colormap = colormaps;
 	else
-<<<<<<< HEAD
-#endif
-	ds_colormap = planezlight[pindex];
+		ds_colormap = planezlight[pindex];
+
 	if (encoremap && !currentplane->noencore)
 		ds_colormap += (256*32);
-=======
-		ds_colormap = planezlight[pindex];
->>>>>>> srb2/next
 
 	if (currentplane->extra_colormap)
 		ds_colormap = currentplane->extra_colormap->colormap + (ds_colormap - colormaps);
@@ -350,29 +340,12 @@ static visplane_t *new_visplane(unsigned hash)
 //
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	fixed_t xoff, fixed_t yoff, angle_t plangle, extracolormap_t *planecolormap,
-<<<<<<< HEAD
-	ffloor_t *pfloor
-#ifdef POLYOBJECTS_PLANES
-			, polyobj_t *polyobj
-#endif
-#ifdef ESLOPE
-			, pslope_t *slope
-#endif
-			, boolean noencore)
-=======
-	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope)
->>>>>>> srb2/next
+	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore)
 {
 	visplane_t *check;
 	unsigned hash;
 
-<<<<<<< HEAD
-#ifdef ESLOPE
-	if (slope); else // Don't mess with this right now if a slope is involved
-#endif
-=======
 	if (!slope) // Don't mess with this right now if a slope is involved
->>>>>>> srb2/next
 	{
 		xoff += viewx;
 		yoff -= viewy;
@@ -385,8 +358,6 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 			xoff = FixedMul(xoff,cosinecomponent)+FixedMul(yoff,sinecomponent);
 			yoff = -FixedMul(oldxoff,sinecomponent)+FixedMul(yoff,cosinecomponent);
 		}
-<<<<<<< HEAD
-=======
 	}
 
 	if (polyobj)
@@ -402,25 +373,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 			xoff -= polyobj->centerPt.x;
 			yoff += polyobj->centerPt.y;
 		}
->>>>>>> srb2/next
 	}
-
-#ifdef POLYOBJECTS_PLANES
-	if (polyobj)
-	{
-		if (polyobj->angle != 0)
-		{
-			angle_t fineshift = polyobj->angle >> ANGLETOFINESHIFT;
-			xoff -= FixedMul(FINECOSINE(fineshift), polyobj->centerPt.x)+FixedMul(FINESINE(fineshift), polyobj->centerPt.y);
-			yoff -= FixedMul(FINESINE(fineshift), polyobj->centerPt.x)-FixedMul(FINECOSINE(fineshift), polyobj->centerPt.y);
-		}
-		else
-		{
-			xoff -= polyobj->centerPt.x;
-			yoff += polyobj->centerPt.y;
-		}
-	}
-#endif
 
 	// This appears to fix the Nimbus Ruins sky bug.
 	if (picnum == skyflatnum && pfloor)
@@ -446,14 +399,8 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 			&& check->viewx == viewx && check->viewy == viewy && check->viewz == viewz
 			&& check->viewangle == viewangle
 			&& check->plangle == plangle
-<<<<<<< HEAD
-#ifdef ESLOPE
 			&& check->slope == slope
-#endif
 			&& check->noencore == noencore)
-=======
-			&& check->slope == slope)
->>>>>>> srb2/next
 		{
 			return check;
 		}
@@ -477,11 +424,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	check->plangle = plangle;
 	check->polyobj = polyobj;
 	check->slope = slope;
-<<<<<<< HEAD
-#endif
 	check->noencore = noencore;
-=======
->>>>>>> srb2/next
 
 	memset(check->top, 0xff, sizeof (check->top));
 	memset(check->bottom, 0x00, sizeof (check->bottom));
@@ -550,11 +493,7 @@ visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop)
 		new_pl->plangle = pl->plangle;
 		new_pl->polyobj = pl->polyobj;
 		new_pl->slope = pl->slope;
-<<<<<<< HEAD
-#endif
 		new_pl->noencore = pl->noencore;
-=======
->>>>>>> srb2/next
 		pl = new_pl;
 		pl->minx = start;
 		pl->maxx = stop;
@@ -656,56 +595,7 @@ void R_DrawPlanes(void)
 	{
 		for (pl = visplanes[i]; pl; pl = pl->next)
 		{
-<<<<<<< HEAD
-			// sky flat
-			if (pl->picnum == skyflatnum)
-			{
-				if (!viewsky)
-				{
-					skyVisible = true;
-					continue;
-				}
-
-				// use correct aspect ratio scale
-				dc_iscale = skyscale;
-
-				// Sky is always drawn full bright,
-				//  i.e. colormaps[0] is used.
-				// Because of this hack, sky is not affected
-				//  by INVUL inverse mapping.
-				dc_colormap = colormaps;
-				if (encoremap)
-					dc_colormap += (256*32);
-				dc_texturemid = skytexturemid;
-				dc_texheight = textureheight[skytexture]
-					>>FRACBITS;
-				for (x = pl->minx; x <= pl->maxx; x++)
-				{
-					dc_yl = pl->top[x];
-					dc_yh = pl->bottom[x];
-
-					if (dc_yl <= dc_yh)
-					{
-						angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
-						dc_iscale = FixedMul(skyscale, FINECOSINE(xtoviewangle[x]>>ANGLETOFINESHIFT));
-						dc_x = x;
-						dc_source =
-							R_GetColumn(texturetranslation[skytexture],
-								-angle); // Negative because skies were being drawn horizontally flipped
-						wallcolfunc();
-					}
-				}
-				continue;
-			}
-
-			if (pl->ffloor != NULL
-#ifdef POLYOBJECTS_PLANES
-			|| pl->polyobj != NULL
-#endif
-			)
-=======
 			if (pl->ffloor != NULL || pl->polyobj != NULL)
->>>>>>> srb2/next
 				continue;
 
 			R_DrawSinglePlane(pl);
@@ -757,56 +647,6 @@ static void R_DrawSkyPlane(visplane_t *pl)
 					-angle); // get negative of angle for each column to display sky correct way round! --Monster Iestyn 27/01/18
 			colfunc();
 		}
-<<<<<<< HEAD
-		else if (pl->ffloor->flags & FF_FOG)
-		{
-			spanfunc = R_DrawFogSpan_8;
-			light = (pl->lightlevel >> LIGHTSEGSHIFT);
-		}
-		else light = (pl->lightlevel >> LIGHTSEGSHIFT);
-
-#ifndef NOWATER
-		if (pl->ffloor->flags & FF_RIPPLE
-#ifdef ESLOPE
-				&& !pl->slope
-#endif
-			)
-		{
-			INT32 top, bottom;
-			UINT8 *scr;
-
-			itswater = true;
-			if (spanfunc == R_DrawTranslucentSpan_8)
-			{
-				spanfunc = R_DrawTranslucentWaterSpan_8;
-
-				// Copy the current scene, ugh
-				top = pl->high-8;
-				bottom = pl->low+8;
-
-				if (top < 0)
-					top = 0;
-				if (bottom > vid.height)
-					bottom = vid.height;
-
-				if (r_splitscreen > 2 && viewplayer == &players[displayplayers[3]]) // Only copy the part of the screen we need
-					scr = (screens[0] + (top+(viewheight))*vid.width + viewwidth);
-				else if ((r_splitscreen == 1 && viewplayer == &players[displayplayers[1]])
-					|| (r_splitscreen > 1 && viewplayer == &players[displayplayers[2]]))
-					scr = (screens[0] + (top+(viewheight))*vid.width);
-				else if (r_splitscreen > 1 && viewplayer == &players[displayplayers[1]])
-					scr = (screens[0] + ((top)*vid.width) + viewwidth);
-				else
-					scr = (screens[0] + ((top)*vid.width));
-
-				VID_BlitLinearScreen(scr, screens[1]+((top)*vid.width),
-				                     vid.width, bottom-top,
-				                     vid.width, vid.width);
-			}
-		}
-#endif
-=======
->>>>>>> srb2/next
 	}
 }
 
@@ -985,109 +825,8 @@ static UINT8 *R_GetTextureFlat(levelflat_t *levelflat, boolean leveltexture, boo
 		ds_flatheight = levelflat->height;
 	}
 
-<<<<<<< HEAD
-#ifdef ESLOPE
-	if (pl->slope) {
-		// Potentially override other stuff for now cus we're mean. :< But draw a slope plane!
-		// I copied ZDoom's code and adapted it to SRB2... -fickle
-		floatv3_t p, m, n;
-		float ang;
-		float vx, vy, vz;
-		// compiler complains when P_GetZAt is used in FLOAT_TO_FIXED directly
-		// use this as a temp var to store P_GetZAt's return value each time
-		fixed_t temp;
-		// Okay, look, don't ask me why this works, but without this setup there's a disgusting-looking misalignment with the textures. -fickle
-		const float fudge = ((1<<nflatshiftup)+1.0f)/(1<<nflatshiftup);
-
-		angle_t hack = (pl->plangle & (ANGLE_90-1));
-
-		if (hack)
-		{
-			/*
-			Essentially: We can't & the components along the regular axes when the plane is rotated.
-			This is because the distance on each regular axis in order to loop is different.
-			We rotate them, & the components, add them together, & them again, and then rotate them back.
-			These three seperate & operations are done per axis in order to prevent overflows.
-			toast 10/04/17
-			---
-			...of coooourse, this still isn't perfect. but it looks... merely kind of grody, rather than
-			completely wrong? idk. i'm just backporting this to kart right now. if anyone else wants to
-			ever try dig around: it's drifting towards 0,0, and no, multiplying by fudge doesn't fix it.
-			toast 27/09/18
-			*/
-
-			const fixed_t cosinecomponent = FINECOSINE(hack>>ANGLETOFINESHIFT);
-			const fixed_t sinecomponent = FINESINE(hack>>ANGLETOFINESHIFT);
-
-			const fixed_t modmask = ((1 << (32-nflatshiftup)) - 1);
-
-			fixed_t ox = (FixedMul(pl->slope->o.x,cosinecomponent) & modmask) - (FixedMul(pl->slope->o.y,sinecomponent) & modmask);
-			fixed_t oy = (-FixedMul(pl->slope->o.x,sinecomponent) & modmask) - (FixedMul(pl->slope->o.y,cosinecomponent) & modmask);
-
-			temp = ox & modmask;
-			oy &= modmask;
-			ox = FixedMul(temp,cosinecomponent)+FixedMul(oy,-sinecomponent); // negative sine for opposite direction
-			oy = -FixedMul(temp,-sinecomponent)+FixedMul(oy,cosinecomponent);
-
-			temp = xoffs;
-			xoffs = (FixedMul(temp,cosinecomponent) & modmask) + (FixedMul(yoffs,sinecomponent) & modmask);
-			yoffs = (-FixedMul(temp,sinecomponent) & modmask) + (FixedMul(yoffs,cosinecomponent) & modmask);
-
-			temp = xoffs & modmask;
-			yoffs &= modmask;
-			xoffs = FixedMul(temp,cosinecomponent)+FixedMul(yoffs,-sinecomponent); // ditto
-			yoffs = -FixedMul(temp,-sinecomponent)+FixedMul(yoffs,cosinecomponent);
-
-			xoffs -= (pl->slope->o.x - ox);
-			yoffs += (pl->slope->o.y + oy);
-		}
-		else
-		{
-			xoffs &= ((1 << (32-nflatshiftup))-1);
-			yoffs &= ((1 << (32-nflatshiftup))-1);
-			xoffs -= (pl->slope->o.x + (1 << (31-nflatshiftup))) & ~((1 << (32-nflatshiftup))-1);
-			yoffs += (pl->slope->o.y + (1 << (31-nflatshiftup))) & ~((1 << (32-nflatshiftup))-1);
-		}
-
-		xoffs = (fixed_t)(xoffs*fudge);
-		yoffs = (fixed_t)(yoffs/fudge);
-
-		vx = FIXED_TO_FLOAT(pl->viewx+xoffs);
-		vy = FIXED_TO_FLOAT(pl->viewy-yoffs);
-		vz = FIXED_TO_FLOAT(pl->viewz);
-
-		temp = P_GetZAt(pl->slope, pl->viewx, pl->viewy);
-		zeroheight = FIXED_TO_FLOAT(temp);
-
-#define ANG2RAD(angle) ((float)((angle)*M_PIl)/ANGLE_180)
-
-		// p is the texture origin in view space
-		// Don't add in the offsets at this stage, because doing so can result in
-		// errors if the flat is rotated.
-		ang = ANG2RAD(ANGLE_270 - pl->viewangle);
-		p.x = vx * cos(ang) - vy * sin(ang);
-		p.z = vx * sin(ang) + vy * cos(ang);
-		temp = P_GetZAt(pl->slope, -xoffs, yoffs);
-		p.y = FIXED_TO_FLOAT(temp) - vz;
-
-		// m is the v direction vector in view space
-		ang = ANG2RAD(ANGLE_180 - (pl->viewangle + pl->plangle));
-		m.x = cos(ang);
-		m.z = sin(ang);
-
-		// n is the u direction vector in view space
-		n.x = sin(ang);
-		n.z = -cos(ang);
-
-		ang = ANG2RAD(pl->plangle);
-		temp = P_GetZAt(pl->slope, pl->viewx + FLOAT_TO_FIXED(sin(ang)), pl->viewy + FLOAT_TO_FIXED(cos(ang)));
-		m.y = FIXED_TO_FLOAT(temp) - zeroheight;
-		temp = P_GetZAt(pl->slope, pl->viewx + FLOAT_TO_FIXED(cos(ang)), pl->viewy - FLOAT_TO_FIXED(sin(ang)));
-		n.y = FIXED_TO_FLOAT(temp) - zeroheight;
-=======
 	xoffs += levelflat->leftoffset;
 	yoffs += levelflat->topoffset;
->>>>>>> srb2/next
 
 	levelflat->u.texture.lastnum = levelflat->u.texture.num;
 	return flat;
