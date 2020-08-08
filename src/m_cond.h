@@ -20,8 +20,8 @@
 // [required] <optional>
 typedef enum
 {
-	UC_PLAYTIME,        // PLAYTIME [tics]
-	UC_MATCHESPLAYED,   // SRB2Kart: MATCHESPLAYED [x played]
+	UC_PLAYTIME,		// PLAYTIME [tics]
+	UC_MATCHESPLAYED,	// SRB2Kart: MATCHESPLAYED [x played]
 	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
 	UC_ALLEMERALDS,		// ALLEMERALDS <x times>
@@ -60,11 +60,11 @@ typedef struct
 #define ET_GLOBAL  0 // Emblem with a position in space
 #define ET_MAP     1 // Beat the map
 #define ET_TIME    2 // Get the time
-//#define ET_DEVTIME 3 // Time, but 
+//#define ET_DEVTIME 3 // Time, but the value is tied to a Time Trial demo, not pre-defined
 
 // Global emblem flags
 // (N/A to Kart yet)
-//#define GE_NIGHTSPULL 1
+//#define GE_OH 1
 
 // Map emblem flags
 #define ME_ENCORE 1
@@ -109,21 +109,23 @@ typedef struct
 #define SECRET_NONE			 0 // Does nil.  Use with levels locked by UnlockRequired
 #define SECRET_HEADER		 1 // Does nothing on its own, just serves as a header for the menu
 
-#define SECRET_LEVELSELECT	 2 // Selectable level select
+#define SECRET_SKIN			 2 // Allow this character to be selected
 #define SECRET_WARP			 3 // Selectable warp
-#define SECRET_TIMEATTACK	 4 // Enables Time Attack on the main menu
-#define SECRET_BREAKTHECAPSULES	5 // Enables Break the Capsules on the main menu
-#define SECRET_SOUNDTEST	 6 // Sound Test
-#define SECRET_CREDITS		 7 // Enables Credits
+#define SECRET_LEVELSELECT	 4 // Selectable level select
 
-#define SECRET_ITEMFINDER	 8 // Enables Item Finder/Emblem Radar
-#define SECRET_EMBLEMHINTS	 9 // Enables Emblem Hints
+#define SECRET_TIMEATTACK	 5 // Enables Time Attack on the main menu
+#define SECRET_BREAKTHECAPSULES	6 // Enables Break the Capsules on the main menu
+#define SECRET_SOUNDTEST	 7 // Sound Test
+#define SECRET_CREDITS		 8 // Enables Credits
 
-#define SECRET_ENCORE		10 // Enables Encore mode cvar
-#define SECRET_HARDSPEED	11 // Enables Hard gamespeed
-#define SECRET_HELLATTACK	12 // Map Hell in record attack
+#define SECRET_ITEMFINDER	 9 // Enables Item Finder/Emblem Radar
+#define SECRET_EMBLEMHINTS	10 // Enables Emblem Hints
 
-#define SECRET_PANDORA		13 // Enables Pandora's Box
+#define SECRET_ENCORE		11 // Enables Encore mode cvar
+#define SECRET_HARDSPEED	12 // Enables Hard gamespeed
+#define SECRET_HELLATTACK	13 // Map Hell in record attack
+
+#define SECRET_PANDORA		14 // Enables Pandora's Box
 
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.
@@ -174,8 +176,6 @@ const char *M_GetExtraEmblemPatch(extraemblem_t *em, boolean big);
 // They stop checking upon reaching the target number so they
 // should be (theoretically?) slightly faster.
 UINT8 M_GotEnoughEmblems(INT32 number);
-//UINT8 M_GotHighEnoughScore(INT32 tscore);
 UINT8 M_GotLowEnoughTime(INT32 tictime);
-//UINT8 M_GotHighEnoughRings(INT32 trings);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || conditionSets[a].achieved)

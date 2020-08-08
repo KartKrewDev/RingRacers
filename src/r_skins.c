@@ -46,6 +46,11 @@ skin_t skins[MAXSKINS];
 CV_PossibleValue_t skin_cons_t[MAXSKINS+1];
 #endif
 
+CV_PossibleValue_t Forceskin_cons_t[MAXSKINS+2];
+
+// SRB2Kart followers
+follower_t followers[MAXSKINS];
+
 //
 // P_GetSkinSprite2
 // For non-super players, tries each sprite2's immediate predecessor until it finds one with a number of frames or ends up at standing.
@@ -125,36 +130,12 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	skin->supercolor = SKINCOLOR_SUPERGOLD1;
 	skin->prefoppositecolor = 0; // use tables
 
-	skin->normalspeed = 36<<FRACBITS;
-	skin->runspeed = 28<<FRACBITS;
-	skin->thrustfactor = 5;
-	skin->accelstart = 96;
-	skin->acceleration = 40;
+	skin->kartspeed = 5;
+	skin->kartweight = 5;
 
-	skin->ability = CA_NONE;
-	skin->ability2 = CA2_SPINDASH;
-	skin->jumpfactor = FRACUNIT;
-	skin->actionspd = 30<<FRACBITS;
-	skin->mindash = 15<<FRACBITS;
-	skin->maxdash = 70<<FRACBITS;
-
-	skin->radius = mobjinfo[MT_PLAYER].radius;
-	skin->height = mobjinfo[MT_PLAYER].height;
-	skin->spinheight = FixedMul(skin->height, 2*FRACUNIT/3);
-
-	skin->shieldscale = FRACUNIT;
-	skin->camerascale = FRACUNIT;
-
-	skin->thokitem = -1;
-	skin->spinitem = -1;
-	skin->revitem = -1;
 	skin->followitem = 0;
 
 	skin->highresscale = FRACUNIT;
-	skin->contspeed = 17;
-	skin->contangle = 0;
-
-	skin->availability = 0;
 
 	for (i = 0; i < sfx_skinsoundslot0; i++)
 		if (S_sfx[i].skinsound != -1)
@@ -182,14 +163,18 @@ void R_InitSkins(void)
 
 UINT32 R_GetSkinAvailabilities(void)
 {
-	INT32 s;
+	UINT8 i;
 	UINT32 response = 0;
 
-	for (s = 0; s < MAXSKINS; s++)
+	for (i = 0; i < MAXUNLOCKABLES; s++)
 	{
-		if (skins[s].availability && unlockables[skins[s].availability - 1].unlocked)
+		if (unlockables[i].type == SECRET_SKIN && unlockables[i].unlocked)
+		{
+			UINT8 s = min(unlockables[i].variable, MAXSKINS);
 			response |= (1 << s);
+		}
 	}
+
 	return response;
 }
 
@@ -197,14 +182,70 @@ UINT32 R_GetSkinAvailabilities(void)
 // warning don't use with an invalid skinnum other than -1 which always returns true
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum)
 {
-	return ((skinnum == -1) // Simplifies things elsewhere, since there's already plenty of checks for less-than-0...
-		|| (!skins[skinnum].availability)
-		|| (((netgame || multiplayer) && playernum != -1) ? (players[playernum].availabilities & (1 << skinnum)) : (unlockables[skins[skinnum].availability - 1].unlocked))
-		|| (modeattacking) // If you have someone else's run you might as well take a look
-		|| (Playing() && (R_SkinAvailable(mapheaderinfo[gamemap-1]->forcecharacter) == skinnum)) // Force 1.
-		|| (netgame && (cv_forceskin.value == skinnum)) // Force 2.
-		|| (metalrecording && skinnum == 5) // Force 3.
-		);
+	boolean needsunlocked = false;
+	UINT8 i;
+
+	if (skinnum == -1)
+	{
+		// Simplifies things elsewhere, since there's already plenty of checks for less-than-0...
+		return true;
+	}
+
+	if (modeattacking)
+	{
+		// If you have someone else's run, you should be able to take a look
+		return true;
+	}
+
+	if (Playing() && (R_SkinAvailable(mapheaderinfo[gamemap-1]->forcecharacter) == skinnum))
+	{
+		// Being forced to play as this character by the level
+		return true;
+	}
+
+	if (netgame && (cv_forceskin.value == skinnum))
+	{
+		// Being forced to play as this character by the server
+		return true;
+	}
+
+	if (metalrecording)
+	{
+		// Recording a Metal Sonic race
+		const INT32 metalskin = R_SkinAvailable("metalsonic");
+		return (skinnum == metalskin);
+	}
+
+	// Determine if this character is supposed to be unlockable or not
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (unlockables[i].type == SECRET_SKIN && unlockables[i].variable == skinnum)
+		{
+			// i is now the unlockable index, we can use this later
+			needsunlocked = true;
+			break;
+		}
+	}
+
+	if (needsunlocked == true)
+	{
+		// You can use this character IF you have it unlocked.
+		if ((netgame || multiplayer) && playernum != -1)
+		{
+			// Use the netgame synchronized unlocks.
+			return (boolean)(!(players[playernum].availabilities & (1 << skinnum)));
+		}
+		else
+		{
+			// Use the unlockables table directly
+			return (boolean)(unlockables[i].unlocked);
+		}
+	}
+	else
+	{
+		// Didn't trip anything, so we can use this character.
+		return true;
+	}
 }
 
 // returns true if the skin name is found (loaded from pwad)
@@ -249,50 +290,33 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	player_t *player = &players[playernum];
 	skin_t *skin = &skins[skinnum];
 	UINT16 newcolor = 0;
+	UINT8 i;
 
 	if (skinnum >= 0 && skinnum < numskins && R_SkinUsable(playernum, skinnum)) // Make sure it exists!
 	{
 		player->skin = skinnum;
 
-		player->camerascale = skin->camerascale;
-		player->shieldscale = skin->shieldscale;
-
-		player->charability = (UINT8)skin->ability;
-		player->charability2 = (UINT8)skin->ability2;
-
 		player->charflags = (UINT32)skin->flags;
 
-		player->thokitem = skin->thokitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].painchance : (UINT32)skin->thokitem;
-		player->spinitem = skin->spinitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].damage : (UINT32)skin->spinitem;
-		player->revitem = skin->revitem < 0 ? (mobjtype_t)mobjinfo[MT_PLAYER].raisestate : (UINT32)skin->revitem;
 		player->followitem = skin->followitem;
 
-		if (((player->powers[pw_shield] & SH_NOSTACK) == SH_PINK) && (player->revitem == MT_LHRT || player->spinitem == MT_LHRT || player->thokitem == MT_LHRT)) // Healers can't keep their buff.
-			player->powers[pw_shield] &= SH_STACK;
+		player->kartspeed = skin->kartspeed;
+		player->kartweight = skin->kartweight;
 
-		player->actionspd = skin->actionspd;
-		player->mindash = skin->mindash;
-		player->maxdash = skin->maxdash;
-
-		player->normalspeed = skin->normalspeed;
-		player->runspeed = skin->runspeed;
-		player->thrustfactor = skin->thrustfactor;
-		player->accelstart = skin->accelstart;
-		player->acceleration = skin->acceleration;
-
-		player->jumpfactor = skin->jumpfactor;
-
-		player->height = skin->height;
-		player->spinheight = skin->spinheight;
-
-		if (!(cv_debug || devparm) && !(netgame || multiplayer || demoplayback))
+#if 0
+		if (!(cv_debug || devparm) && !(netgame || multiplayer || demo.playback))
 		{
-			if (playernum == consoleplayer)
-				CV_StealthSetValue(&cv_playercolor, skin->prefcolor);
-			else if (playernum == secondarydisplayplayer)
-				CV_StealthSetValue(&cv_playercolor2, skin->prefcolor);
+			for (i = 0; i <= r_splitscreen; i++)
+			{
+				if (playernum == g_localplayers[i])
+				{
+					CV_StealthSetValue(&cv_playercolor[i], skin->prefcolor);
+				}
+			}
+
 			player->skincolor = newcolor = skin->prefcolor;
 		}
+#endif
 
 		if (player->followmobj)
 		{
@@ -302,22 +326,20 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 
 		if (player->mo)
 		{
-			fixed_t radius = FixedMul(skin->radius, player->mo->scale);
-			if ((player->powers[pw_carry] == CR_NIGHTSMODE) && (skin->sprites[SPR2_NFLY].numframes == 0)) // If you don't have a sprite for flying horizontally, use the default NiGHTS skin.
-			{
-				skin = &skins[DEFAULTNIGHTSSKIN];
-				player->followitem = skin->followitem;
-				if (!(cv_debug || devparm) && !(netgame || multiplayer || demoplayback))
-					newcolor = skin->prefcolor; // will be updated in thinker to flashing
-			}
 			player->mo->skin = skin;
-			if (newcolor)
-				player->mo->color = newcolor;
-			P_SetScale(player->mo, player->mo->scale);
-			player->mo->radius = radius;
 
+			if (newcolor)
+			{
+				player->mo->color = newcolor;
+			}
+
+			P_SetScale(player->mo, player->mo->scale);
 			P_SetPlayerMobjState(player->mo, player->mo->state-states); // Prevent visual errors when switching between skins with differing number of frames
 		}
+
+		// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
+		demo_extradata[playernum] |= DXD_SKIN;
+
 		return;
 	}
 
@@ -325,7 +347,8 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		CONS_Alert(CONS_WARNING, M_GetText("Requested skin %d not found\n"), skinnum);
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);
-	SetPlayerSkinByNum(playernum, 0); // not found put the sonic skin
+
+	SetPlayerSkinByNum(playernum, 0); // not found, put in the default skin
 }
 
 //
@@ -434,35 +457,8 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 #define FULLPROCESS(field) else if (!stricmp(stoken, #field)) skin->field = get_number(value);
 	// character type identification
 	FULLPROCESS(flags)
-	FULLPROCESS(ability)
-	FULLPROCESS(ability2)
-
-	FULLPROCESS(thokitem)
-	FULLPROCESS(spinitem)
-	FULLPROCESS(revitem)
 	FULLPROCESS(followitem)
 #undef FULLPROCESS
-
-#define GETFRACBITS(field) else if (!stricmp(stoken, #field)) skin->field = atoi(value)<<FRACBITS;
-	GETFRACBITS(normalspeed)
-	GETFRACBITS(runspeed)
-
-	GETFRACBITS(mindash)
-	GETFRACBITS(maxdash)
-	GETFRACBITS(actionspd)
-
-	GETFRACBITS(radius)
-	GETFRACBITS(height)
-	GETFRACBITS(spinheight)
-#undef GETFRACBITS
-
-#define GETINT(field) else if (!stricmp(stoken, #field)) skin->field = atoi(value);
-	GETINT(thrustfactor)
-	GETINT(accelstart)
-	GETINT(acceleration)
-	GETINT(contspeed)
-	GETINT(contangle)
-#undef GETINT
 
 #define GETSKINCOLOR(field) else if (!stricmp(stoken, #field)) skin->field = R_GetColorByName(value);
 	GETSKINCOLOR(prefcolor)
@@ -472,11 +468,20 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 		skin->supercolor = R_GetSuperColorByName(value);
 
 #define GETFLOAT(field) else if (!stricmp(stoken, #field)) skin->field = FLOAT_TO_FIXED(atof(value));
-	GETFLOAT(jumpfactor)
 	GETFLOAT(highresscale)
-	GETFLOAT(shieldscale)
-	GETFLOAT(camerascale)
 #undef GETFLOAT
+
+#define GETKARTSTAT(field) \
+	else if (!stricmp(stoken, #field)) \
+	{ \
+		skin->field = atoi(value); \
+		if (skin->field < 1) skin->field = 1; \
+		if (skin->field > 9) skin->field = 9; \
+	}
+	GETKARTSTAT(kartspeed)
+	GETKARTSTAT(kartweight)
+#undef GETKARTSTAT
+
 
 #define GETFLAG(field) else if (!stricmp(stoken, #field)) { \
 	strupr(value); \
@@ -488,23 +493,8 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	// parameters for individual character flags
 	// these are uppercase so they can be concatenated with SF_
 	// 1, true, yes are all valid values
-	GETFLAG(SUPER)
-	GETFLAG(NOSUPERSPIN)
-	GETFLAG(NOSPINDASHDUST)
 	GETFLAG(HIRES)
-	GETFLAG(NOSKID)
-	GETFLAG(NOSPEEDADJUST)
-	GETFLAG(RUNONWATER)
-	GETFLAG(NOJUMPSPIN)
-	GETFLAG(NOJUMPDAMAGE)
-	GETFLAG(STOMPDAMAGE)
-	GETFLAG(MARIODAMAGE)
 	GETFLAG(MACHINE)
-	GETFLAG(DASHMODE)
-	GETFLAG(FASTEDGE)
-	GETFLAG(MULTIABILITY)
-	GETFLAG(NONIGHTSROTATION)
-	GETFLAG(NONIGHTSSUPER)
 #undef GETFLAG
 
 	else // let's check if it's a sound, otherwise error out
@@ -557,7 +547,7 @@ void R_AddSkins(UINT16 wadnum)
 	char *value;
 	size_t size;
 	skin_t *skin;
-	boolean hudname, realname;
+	boolean realname;
 
 	//
 	// search for all skin markers in pwad
@@ -587,7 +577,7 @@ void R_AddSkins(UINT16 wadnum)
 		skin = &skins[numskins];
 		Sk_SetDefaultValue(skin);
 		skin->wadnum = wadnum;
-		hudname = realname = false;
+		realname = false;
 		// parse
 		stoken = strtok (buf2, "\r\n= ");
 		while (stoken)
@@ -640,34 +630,51 @@ void R_AddSkins(UINT16 wadnum)
 						else if (*value == '.') *value = '\x1E'; // turn . into katana dot.
 					}
 				}
-				if (!hudname)
-				{
-					HUDNAMEWRITE(skin->name);
-					strupr(skin->hudname);
-					SYMBOLCONVERT(skin->hudname)
-				}
 			}
 			else if (!stricmp(stoken, "realname"))
 			{ // Display name (eg. "Knuckles")
 				realname = true;
 				STRBUFCPY(skin->realname, value);
 				SYMBOLCONVERT(skin->realname)
-				if (!hudname)
-					HUDNAMEWRITE(skin->realname);
 			}
-			else if (!stricmp(stoken, "hudname"))
-			{ // Life icon name (eg. "K.T.E")
-				hudname = true;
-				HUDNAMEWRITE(value);
-				SYMBOLCONVERT(skin->hudname)
-				if (!realname)
-					STRBUFCPY(skin->realname, skin->hudname);
-			}
-			else if (!stricmp(stoken, "availability"))
+			else if (!stricmp(stoken, "rivals"))
 			{
-				skin->availability = atoi(value);
-				if (skin->availability >= MAXUNLOCKABLES)
-					skin->availability = 0;
+				size_t len = strlen(value);
+				size_t i;
+				char rivalname[SKINNAMESIZE] = "";
+				UINT8 pos = 0;
+				UINT8 numrivals = 0;
+
+				// Can't use strtok, because this function's already using it.
+				// Using it causes it to upset the saved pointer,
+				// corrupting the reading for the rest of the file.
+
+				// So instead we get to crawl through the value, character by character,
+				// and write it down as we go, until we hit a comma or the end of the string.
+				// Yaaay.
+
+				for (i = 0; i <= len; i++)
+				{
+					if (numrivals >= SKINRIVALS)
+					{
+						break;
+					}
+
+					if (value[i] == ',' || i == len)
+					{
+						STRBUFCPY(skin->rivals[numrivals], rivalname);
+						strlwr(skin->rivals[numrivals]);
+						numrivals++;
+
+						memset(rivalname, 0, sizeof (rivalname));
+						pos = 0;
+
+						continue;
+					}
+
+					rivalname[pos] = value[i];
+					pos++;
+				}
 			}
 			else if (!R_ProcessPatchableFields(skin, stoken, value))
 				CONS_Debug(DBG_SETUP, "R_AddSkins: Unknown keyword '%s' in S_SKIN lump #%d (WAD %s)\n", stoken, lump, wadfiles[wadnum]->filename);
@@ -689,6 +696,10 @@ next_token:
 		skin_cons_t[numskins].value = numskins;
 		skin_cons_t[numskins].strvalue = skin->name;
 #endif
+
+		// Update the forceskin possiblevalues
+		Forceskin_cons_t[numskins+1].value = numskins;
+		Forceskin_cons_t[numskins+1].strvalue = skins[numskins].name;
 
 #ifdef HWRENDER
 		if (rendermode == render_opengl)
@@ -712,7 +723,7 @@ void R_PatchSkins(UINT16 wadnum)
 	char *value;
 	size_t size;
 	skin_t *skin;
-	boolean noskincomplain, realname, hudname;
+	boolean noskincomplain, realname;
 
 	//
 	// search for all skin patch markers in pwad
@@ -736,7 +747,7 @@ void R_PatchSkins(UINT16 wadnum)
 		buf2[size] = '\0';
 
 		skin = NULL;
-		noskincomplain = realname = hudname = false;
+		noskincomplain = realname = false;
 
 		/*
 		Parse. Has more phases than the parser in R_AddSkins because it needs to have the patching name first (no default skin name is acceptible for patching, unlike skin creation)
@@ -780,16 +791,45 @@ void R_PatchSkins(UINT16 wadnum)
 					realname = true;
 					STRBUFCPY(skin->realname, value);
 					SYMBOLCONVERT(skin->realname)
-					if (!hudname)
-						HUDNAMEWRITE(skin->realname);
 				}
-				else if (!stricmp(stoken, "hudname"))
-				{ // Life icon name (eg. "K.T.E")
-					hudname = true;
-					HUDNAMEWRITE(value);
-					SYMBOLCONVERT(skin->hudname)
-					if (!realname)
-						STRBUFCPY(skin->realname, skin->hudname);
+				else if (!stricmp(stoken, "rivals"))
+				{
+					size_t len = strlen(value);
+					size_t i;
+					char rivalname[SKINNAMESIZE] = "";
+					UINT8 pos = 0;
+					UINT8 numrivals = 0;
+
+					// Can't use strtok, because this function's already using it.
+					// Using it causes it to upset the saved pointer,
+					// corrupting the reading for the rest of the file.
+
+					// So instead we get to crawl through the value, character by character,
+					// and write it down as we go, until we hit a comma or the end of the string.
+					// Yaaay.
+
+					for (i = 0; i <= len; i++)
+					{
+						if (numrivals >= SKINRIVALS)
+						{
+							break;
+						}
+
+						if (value[i] == ',' || i == len)
+						{
+							STRBUFCPY(skin->rivals[numrivals], rivalname);
+							strlwr(skin->rivals[numrivals]);
+							numrivals++;
+
+							memset(rivalname, 0, sizeof (rivalname));
+							pos = 0;
+
+							continue;
+						}
+
+						rivalname[pos] = value[i];
+						pos++;
+					}
 				}
 				else if (!R_ProcessPatchableFields(skin, stoken, value))
 					CONS_Debug(DBG_SETUP, "R_PatchSkins: Unknown keyword '%s' in P_SKIN lump #%d (WAD %s)\n", stoken, lump, wadfiles[wadnum]->filename);
@@ -824,3 +864,92 @@ next_token:
 
 #undef HUDNAMEWRITE
 #undef SYMBOLCONVERT
+
+// SRB2Kart: Followers!
+// TODO: put this stuff in its own file?
+
+// same thing as R_SkinAvailable, but for followers
+INT32 R_FollowerAvailable(const char *name)
+{
+	INT32 i;
+
+	for (i = 0; i < numfollowers; i++)
+	{
+		if (stricmp(followers[i].skinname,name)==0)
+			return i;
+	}
+	return -1;
+}
+
+// same thing as SetPlayerSkin, but for followers
+boolean SetPlayerFollower(INT32 playernum, const char *skinname)
+{
+	INT32 i;
+	player_t *player = &players[playernum];
+
+	for (i = 0; i < numfollowers; i++)
+	{
+		// search in the skin list
+		if (stricmp(followers[i].skinname, skinname) == 0)
+		{
+			SetFollower(playernum, i);
+			return true;
+		}
+	}
+
+	if (P_IsLocalPlayer(player))
+		CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found.\n"), skinname);
+	else if(server || IsPlayerAdmin(consoleplayer))
+		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) follower '%s' not found\n"), playernum, player_names[playernum], skinname);
+
+	SetFollower(playernum, -1);	// reminder that -1 is nothing
+	return false;
+}
+
+// SetPlayerSkinByNum, for followers
+void SetFollower(INT32 playernum, INT32 skinnum)
+{
+	player_t *player = &players[playernum];
+	mobj_t *bub;
+	mobj_t *tmp;
+
+	player->followerready = true; // we are ready to perform follower related actions in the player thinker, now.
+
+	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
+	{
+		/*
+			We don't spawn the follower here since it'll be easier to handle all of it in the Player thinker itself.
+			However, we will despawn it right here if there's any to make it easy for the player thinker to replace it or delete it.
+		*/
+
+		if (player->follower && skinnum != player->followerskin)	// this is also called when we change colour so don't respawn the follower unless we changed skins
+		{
+			// Remove follower's possible hnext list (bubble)
+			bub = player->follower->hnext;
+
+			while (bub && !P_MobjWasRemoved(bub))
+			{
+				tmp = bub->hnext;
+				P_RemoveMobj(bub);
+				bub = tmp;
+			}
+
+			P_RemoveMobj(player->follower);
+			P_SetTarget(&player->follower, NULL);
+		}
+
+		player->followerskin = skinnum;
+
+		// for replays: We have changed our follower mid-game; let the game know so it can do the same in the replay!
+		demo_extradata[playernum] |= DXD_FOLLOWER;
+
+		return;
+	}
+
+	if (P_IsLocalPlayer(player))
+		CONS_Alert(CONS_WARNING, M_GetText("Follower %d not found\n"), skinnum);
+	else if(server || IsPlayerAdmin(consoleplayer))
+		CONS_Alert(CONS_WARNING, "Player %d (%s) follower %d not found\n", playernum, player_names[playernum], skinnum);
+
+	SetFollower(playernum, -1); // Not found, then set -1 (nothing) as our follower.
+}

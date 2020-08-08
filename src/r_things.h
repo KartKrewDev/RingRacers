@@ -53,20 +53,12 @@ void R_DrawFlippedMaskedColumn(column_t *column);
 // SPRITE RENDERING
 // ----------------
 
-<<<<<<< HEAD
-fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
-
-#ifdef DELFILE
-void R_DelSpriteDefs(UINT16 wadnum);
-#endif
-=======
 // Constant arrays used for psprite clipping
 //  and initializing clipping.
 extern INT16 negonearray[MAXVIDWIDTH];
 extern INT16 screenheightarray[MAXVIDWIDTH];
 
 fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
->>>>>>> srb2/next
 
 //SoM: 6/5/2000: Light sprites correctly!
 void R_AddSprites(sector_t *sec, INT32 lightlevel);
@@ -74,19 +66,7 @@ void R_InitSprites(void);
 void R_ClearSprites(void);
 void R_ClipSprites(drawseg_t* dsstart, portal_t* portal);
 
-<<<<<<< HEAD
-// -----------
-// SKINS STUFF
-// -----------
-#define SKINNAMESIZE 16
-// should be all lowercase!! S_SKIN processing does a strlwr
-#define DEFAULTSKIN "sonic"
-#define DEFAULTSKIN2 "tails" // secondary player
-#define DEFAULTSKIN3 "knuckles" // third player
-#define DEFAULTSKIN4 "eggman" // fourth player
-=======
 boolean R_ThingVisible (mobj_t *thing);
->>>>>>> srb2/next
 
 boolean R_ThingVisibleWithinDist (mobj_t *thing,
 		fixed_t        draw_dist,
@@ -104,37 +84,6 @@ boolean R_PrecipThingVisible (precipmobj_t *precipthing,
  */
 typedef struct
 {
-<<<<<<< HEAD
-	char name[SKINNAMESIZE+1]; // INT16 descriptive name of the skin
-	spritedef_t spritedef;
-	UINT16 wadnum;
-	char sprite[4]; // Sprite name, if seperated from S_SKIN.
-	skinflags_t flags;
-
-	char realname[SKINNAMESIZE+1]; // Display name for level completion.
-	char hudname[SKINNAMESIZE+1]; // HUD name to display (officially exactly 5 characters long)
-	char facerank[9], facewant[9], facemmap[9]; // Arbitrarily named patch lumps
-
-	// SRB2kart
-	UINT8 kartspeed;
-	UINT8 kartweight;
-	//
-
-	// Definable color translation table
-	UINT8 starttranscolor;
-	UINT8 prefcolor;
-	fixed_t highresscale; // scale of highres, default is 0.5
-
-	// specific sounds per skin
-	sfxenum_t soundsid[NUMSKINSOUNDS]; // sound # in S_sfx table
-} skin_t;
-
-extern CV_PossibleValue_t Forceskin_cons_t[];
-
-// -----------
-// NOT SKINS STUFF !
-// -----------
-=======
 	size_t drawsegs[2];
 	size_t vissprites[2];
 	fixed_t viewx, viewy, viewz;			/**< View z stored at the time of the BSP traversal for the view/portal. Masked sorting/drawing needs it. */
@@ -155,7 +104,6 @@ void R_DrawMasked(maskcount_t* masks, UINT8 nummasks);
 #define VISSPRITESPERCHUNK (1 << VISSPRITECHUNKBITS)
 #define VISSPRITEINDEXMASK (VISSPRITESPERCHUNK - 1)
 
->>>>>>> srb2/next
 typedef enum
 {
 	// actual cuts
@@ -164,20 +112,12 @@ typedef enum
 	SC_BOTTOM = 1<<1,
 	// other flags
 	SC_PRECIP = 1<<2,
-<<<<<<< HEAD
-	//SC_LINKDRAW = 1<<3, --  2.2 compat
+	SC_LINKDRAW = 1<<3,
 	SC_FULLBRIGHT = 1<<4,
 	SC_SEMIBRIGHT = 1<<5,
 	SC_VFLIP = 1<<6,
 	SC_ISSCALED = 1<<7,
 	SC_SHADOW = 1<<8,
-=======
-	SC_LINKDRAW = 1<<3,
-	SC_FULLBRIGHT = 1<<4,
-	SC_VFLIP = 1<<5,
-	SC_ISSCALED = 1<<6,
-	SC_SHADOW = 1<<7,
->>>>>>> srb2/next
 	// masks
 	SC_CUTMASK = SC_TOP|SC_BOTTOM,
 	SC_FLAGMASK = ~SC_CUTMASK
@@ -203,13 +143,8 @@ typedef struct vissprite_s
 	fixed_t pz, pzt; // physical bottom/top for sorting with 3D floors
 
 	fixed_t startfrac; // horizontal position of x1
-<<<<<<< HEAD
-	fixed_t scale, sortscale; // sortscale only differs from scale for flat sprites
-	fixed_t scalestep; // only for flat sprites, 0 otherwise
-=======
 	fixed_t scale, sortscale; // sortscale only differs from scale for paper sprites and MF2_LINKDRAW
 	fixed_t scalestep; // only for paper sprites, 0 otherwise
->>>>>>> srb2/next
 	fixed_t paperoffset, paperdistance; // for paper sprites, offset/dist relative to the angle
 	fixed_t xiscale; // negative if flipped
 
@@ -268,21 +203,6 @@ typedef struct drawnode_s
 	struct drawnode_s *prev;
 } drawnode_t;
 
-<<<<<<< HEAD
-extern INT32 numskins;
-extern skin_t skins[MAXSKINS];
-
-boolean SetPlayerSkin(INT32 playernum,const char *skinname);
-void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
-INT32 R_SkinAvailable(const char *name);
-void R_AddSkins(UINT16 wadnum);
-
-#ifdef DELFILE
-void R_DelSkins(UINT16 wadnum);
-#endif
-
-=======
->>>>>>> srb2/next
 void R_InitDrawNodes(void);
 
 // -----------------------
