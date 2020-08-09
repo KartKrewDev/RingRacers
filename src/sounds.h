@@ -229,10 +229,7 @@ typedef enum
 	sfx_drown,
 	sfx_fizzle,
 	sfx_gbeep,
-<<<<<<< HEAD
-=======
 	sfx_wepfir,
->>>>>>> srb2/next
 	sfx_ghit,
 	sfx_gloop,
 	sfx_gspray,
@@ -500,7 +497,6 @@ typedef enum
 	sfx_s25e,
 	sfx_s25f,
 	sfx_s260,
-<<<<<<< HEAD
 	sfx_s261,
 	sfx_s262,
 	sfx_s263,
@@ -517,8 +513,6 @@ typedef enum
 	sfx_s26e,
 	sfx_s26f,
 	sfx_s270,
-=======
->>>>>>> srb2/next
 
 	// S3&K sounds
 	sfx_s3k2b,
@@ -907,7 +901,6 @@ typedef enum
 	sfx_kc6d,
 	sfx_kc6e,
 
-<<<<<<< HEAD
 	// SRB2kart
 	sfx_slip,
 	sfx_screec,
@@ -1103,8 +1096,6 @@ typedef enum
 	sfx_khitem,
 	sfx_kgloat,
 
-=======
->>>>>>> srb2/next
 	// free slots for S_AddSoundFx() at run-time --------------------
 	sfx_freeslot0,
 	//
