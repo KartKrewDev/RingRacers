@@ -572,27 +572,6 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	}
 }
 
-void G_GhostAddThok(INT32 playernum)
-{
-	if (!metalrecording && (!demo.recording || !(demoflags & DF_GHOST)))
-		return;
-	ghostext[playernum].flags = (ghostext[playernum].flags & ~EZT_THOKMASK) | EZT_THOK;
-}
-
-void G_GhostAddSpin(INT32 playernum)
-{
-	if (!metalrecording && (!demo.recording || !(demoflags & DF_GHOST)))
-		return;
-	ghostext[playernum].flags = (ghostext[playernum].flags & ~EZT_THOKMASK) | EZT_SPIN;
-}
-
-void G_GhostAddRev(INT32 playernum)
-{
-	if (!metalrecording && (!demo.recording || !(demoflags & DF_GHOST)))
-		return;
-	ghostext[playernum].flags = (ghostext[playernum].flags & ~EZT_THOKMASK) | EZT_REV;
-}
-
 void G_GhostAddFlip(INT32 playernum)
 {
 	if (!metalrecording && (!demo.recording || !(demoflags & DF_GHOST)))
@@ -1636,66 +1615,8 @@ void G_ReadMetalTic(mobj_t *metal)
 			if (metal->destscale != metal->scale)
 				P_SetScale(metal, metal->destscale);
 		}
-		if (xziptic & EZT_THOKMASK)
-		{ // Let's only spawn ONE of these per frame, thanks.
-			mobj_t *mobj;
-			INT32 type = -1;
-			if (metal->skin)
-			{
-				skin_t *skin = (skin_t *)metal->skin;
-				switch (xziptic & EZT_THOKMASK)
-				{
-				case EZT_THOK:
-					type = skin->thokitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].painchance : (UINT32)skin->thokitem;
-					break;
-				case EZT_SPIN:
-					type = skin->spinitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].damage : (UINT32)skin->spinitem;
-					break;
-				case EZT_REV:
-					type = skin->revitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].raisestate : (UINT32)skin->revitem;
-					break;
-				}
-			}
-			if (type != MT_NULL)
-			{
-				if (type == MT_GHOST)
-				{
-					mobj = P_SpawnGhostMobj(metal); // does a large portion of the work for us
-				}
-				else
-				{
-					mobj = P_SpawnMobjFromMobj(metal, 0, 0, -FixedDiv(FixedMul(metal->info->height, metal->scale) - metal->height,3*FRACUNIT), MT_THOK);
-					mobj->sprite = states[mobjinfo[type].spawnstate].sprite;
-					mobj->frame = states[mobjinfo[type].spawnstate].frame;
-					mobj->angle = metal->angle;
-					mobj->color = metal->color;
-					mobj->skin = metal->skin;
-					P_SetScale(mobj, (mobj->destscale = metal->scale));
-
-					if (type == MT_THOK) // spintrail-specific modification for MT_THOK
-					{
-						mobj->frame = FF_TRANS70;
-						mobj->fuse = mobj->tics;
-					}
-					mobj->tics = -1; // nope.
-				}
-				mobj->floorz = mobj->z;
-				mobj->ceilingz = mobj->z+mobj->height;
-				P_UnsetThingPosition(mobj);
-				mobj->flags = MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY; // make an ATTEMPT to curb crazy SOCs fucking stuff up...
-				P_SetThingPosition(mobj);
-				if (!mobj->fuse)
-					mobj->fuse = 8;
-				P_SetTarget(&mobj->target, metal);
-			}
-		}
 		if (xziptic & EZT_SPRITE)
 			metal->sprite = READUINT16(metal_p);
-		if (xziptic & EZT_HEIGHT)
-		{
-			fixed_t temp = READINT16(metal_p)<<FRACBITS;
-			metal->height = FixedMul(temp, metal->scale);
-		}
 	}
 
 #define follow metal->tracer
@@ -1859,12 +1780,6 @@ void G_WriteMetalTic(mobj_t *metal)
 		ghostext.flags |= EZT_SPRITE;
 	}
 
-	if ((height = FixedDiv(metal->height, metal->scale)) != oldmetal.height)
-	{
-		oldmetal.height = height;
-		ghostext.flags |= EZT_HEIGHT;
-	}
-
 	if (ghostext.flags & ~(EZT_COLOR|EZT_HIT)) // these two aren't handled by metal ever
 	{
 		ziptic |= GZT_EXTRA;
@@ -1880,11 +1795,6 @@ void G_WriteMetalTic(mobj_t *metal)
 		}
 		if (ghostext.flags & EZT_SPRITE)
 			WRITEUINT16(demo_p,oldmetal.sprite);
-		if (ghostext.flags & EZT_HEIGHT)
-		{
-			height >>= FRACBITS;
-			WRITEINT16(demo_p, height);
-		}
 		ghostext.flags = 0;
 	}
 
