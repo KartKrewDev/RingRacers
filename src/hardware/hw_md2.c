@@ -39,10 +39,9 @@
 #include "../r_things.h"
 #include "../r_draw.h"
 #include "../p_tick.h"
-<<<<<<< HEAD
+
 #include "../k_color.h" // colortranslations
-=======
->>>>>>> srb2/next
+
 #include "hw_model.h"
 
 #include "hw_main.h"
@@ -89,10 +88,6 @@ static void md2_freeModel (model_t *model)
 	UnloadModel(model);
 }
 #endif
-<<<<<<< HEAD
-=======
-
->>>>>>> srb2/next
 
 //
 // load model
@@ -101,15 +96,13 @@ static void md2_freeModel (model_t *model)
 static model_t *md2_readModel(const char *filename)
 {
 	//Filename checking fixed ~Monster Iestyn and Golden
-<<<<<<< HEAD
 	if (FIL_FileExists(va("%s"PATHSEP"%s", srb2home, filename)))
 		return LoadModel(va("%s"PATHSEP"%s", srb2home, filename), PU_STATIC);
-	else if (FIL_FileExists(va("%s"PATHSEP"%s", srb2path, filename)))
+
+	if (FIL_FileExists(va("%s"PATHSEP"%s", srb2path, filename)))
 		return LoadModel(va("%s"PATHSEP"%s", srb2path, filename), PU_STATIC);
+
 	return NULL;
-=======
-	return LoadModel(va("%s"PATHSEP"%s", srb2home, filename), PU_STATIC);
->>>>>>> srb2/next
 }
 
 static inline void md2_printModelInfo (model_t *model)
@@ -171,11 +164,7 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 #endif
 	volatile png_FILE_p png_FILE;
 	//Filename checking fixed ~Monster Iestyn and Golden
-<<<<<<< HEAD
-	char *pngfilename = va("%s"PATHSEP"mdls"PATHSEP"%s", srb2home, filename);
-=======
 	char *pngfilename = va("%s"PATHSEP"models"PATHSEP"%s", srb2home, filename);
->>>>>>> srb2/next
 
 	FIL_ForceExtension(pngfilename, ".png");
 	png_FILE = fopen(pngfilename, "rb");
@@ -257,11 +246,7 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 
 	{
 		png_uint_32 i, pitch = png_get_rowbytes(png_ptr, png_info_ptr);
-<<<<<<< HEAD
-		png_bytep PNG_image = Z_Malloc(pitch*height, PU_HWRCACHE, &grpatch->mipmap->grInfo.data);
-=======
 		png_bytep PNG_image = Z_Malloc(pitch*height, PU_HWRMODELTEXTURE, &grpatch->mipmap->grInfo.data);
->>>>>>> srb2/next
 		png_bytepp row_pointers = png_malloc(png_ptr, height * sizeof (png_bytep));
 		for (i = 0; i < height; i++)
 			row_pointers[i] = PNG_image + i*pitch;
@@ -312,17 +297,13 @@ static GLTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
 	INT32 ch, rep;
 	FILE *file;
 	//Filename checking fixed ~Monster Iestyn and Golden
-<<<<<<< HEAD
-	char *pcxfilename = va("%s"PATHSEP"mdls"PATHSEP"%s", srb2home, filename);
-=======
 	char *pcxfilename = va("%s"PATHSEP"models"PATHSEP"%s", srb2home, filename);
->>>>>>> srb2/next
 
 	FIL_ForceExtension(pcxfilename, ".pcx");
 	file = fopen(pcxfilename, "rb");
 	if (!file)
 	{
-		pcxfilename = va("%s"PATHSEP"mdls"PATHSEP"%s", srb2path, filename);
+		pcxfilename = va("%s"PATHSEP"models"PATHSEP"%s", srb2path, filename);
 		FIL_ForceExtension(pcxfilename, ".pcx");
 		file = fopen(pcxfilename, "rb");
 		if (!file)
@@ -345,11 +326,7 @@ static GLTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
 
 	pw = *w = header.xmax - header.xmin + 1;
 	ph = *h = header.ymax - header.ymin + 1;
-<<<<<<< HEAD
-	image = Z_Malloc(pw*ph*4, PU_HWRCACHE, &grpatch->mipmap->grInfo.data);
-=======
 	image = Z_Malloc(pw*ph*4, PU_HWRMODELTEXTURE, &grpatch->mipmap->grInfo.data);
->>>>>>> srb2/next
 
 	if (fread(palette, sizeof (UINT8), PALSIZE, file) != PALSIZE)
 	{
@@ -418,13 +395,7 @@ static void md2_loadTexture(md2_t *model)
 #endif
 		grpatch->mipmap->grInfo.format = PCX_Load(filename, &w, &h, grpatch);
 		if (grpatch->mipmap->grInfo.format == 0)
-<<<<<<< HEAD
-		{
-			grpatch->notfound = true;// mark it so its not searched for again repeatedly
-=======
->>>>>>> srb2/next
 			return;
-		}
 
 		grpatch->mipmap->downloaded = 0;
 		grpatch->mipmap->flags = 0;
@@ -433,8 +404,6 @@ static void md2_loadTexture(md2_t *model)
 		grpatch->height = (INT16)h;
 		grpatch->mipmap->width = (UINT16)w;
 		grpatch->mipmap->height = (UINT16)h;
-<<<<<<< HEAD
-=======
 
 		// Lactozilla: Apply colour cube
 		image = grpatch->mipmap->grInfo.data;
@@ -444,22 +413,16 @@ static void md2_loadTexture(md2_t *model)
 			V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
 			image++;
 		}
->>>>>>> srb2/next
 
 #ifdef GLIDE_API_COMPATIBILITY
 		// not correct!
 		grpatch->mipmap->grInfo.smallLodLog2 = GR_LOD_LOG2_256;
 		grpatch->mipmap->grInfo.largeLodLog2 = GR_LOD_LOG2_256;
 		grpatch->mipmap->grInfo.aspectRatioLog2 = GR_ASPECT_LOG2_1x1;
-<<<<<<< HEAD
 	}
+
 	HWD.pfnSetTexture(grpatch->mipmap);
 	HWR_UnlockCachedPatch(grpatch);
-=======
-#endif
-	}
-	HWD.pfnSetTexture(grpatch->mipmap);
->>>>>>> srb2/next
 }
 
 // -----------------+
@@ -513,15 +476,10 @@ static void md2_loadBlendTexture(md2_t *model)
 		grpatch->mipmap->grInfo.smallLodLog2 = GR_LOD_LOG2_256;
 		grpatch->mipmap->grInfo.largeLodLog2 = GR_LOD_LOG2_256;
 		grpatch->mipmap->grInfo.aspectRatioLog2 = GR_ASPECT_LOG2_1x1;
-<<<<<<< HEAD
 	}
+
 	HWD.pfnSetTexture(grpatch->mipmap); // We do need to do this so that it can be cleared and knows to recreate it when necessary
 	HWR_UnlockCachedPatch(grpatch);
-=======
-#endif
-	}
-	HWD.pfnSetTexture(grpatch->mipmap); // We do need to do this so that it can be cleared and knows to recreate it when necessary
->>>>>>> srb2/next
 
 	Z_Free(filename);
 }
@@ -558,31 +516,19 @@ void HWR_InitModels(void)
 		md2_models[i].error = false;
 	}
 
-<<<<<<< HEAD
-	// read the mdls.dat file
-	//Filename checking fixed ~Monster Iestyn and Golden
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "mdls.dat"), "rt");
-
-	if (!f)
-	{
-		f = fopen(va("%s"PATHSEP"%s", srb2path, "mdls.dat"), "rt");
-		if (!f)
-		{
-			CONS_Printf("%s %s\n", M_GetText("Error while loading mdls.dat:"), strerror(errno));
-			nomd2s = true;
-			return;
-		}
-=======
 	// read the models.dat file
 	//Filename checking fixed ~Monster Iestyn and Golden
 	f = fopen(va("%s"PATHSEP"%s", srb2home, "models.dat"), "rt");
 
 	if (!f)
 	{
-		CONS_Printf("%s %s\n", M_GetText("Error while loading models.dat:"), strerror(errno));
-		nomd2s = true;
-		return;
->>>>>>> srb2/next
+		f = fopen(va("%s"PATHSEP"%s", srb2path, "models.dat"), "rt");
+		if (!f)
+		{
+			CONS_Printf("%s %s\n", M_GetText("Error while loading models.dat:"), strerror(errno));
+			nomd2s = true;
+			return;
+		}
 	}
 
 	// length of the player model prefix
@@ -590,14 +536,6 @@ void HWR_InitModels(void)
 
 	while (fscanf(f, "%25s %31s %f %f", name, filename, &scale, &offset) == 4)
 	{
-<<<<<<< HEAD
-		/*if (stricmp(name, "PLAY") == 0)
-		{
-			CONS_Printf("MD2 for sprite PLAY detected in mdls.dat, use a player skin instead!\n");
-			continue;
-		}*/
-		// 8/1/19: Allow PLAY to load for default MD2.
-=======
 		char *skinname = name;
 		size_t len = strlen(name);
 
@@ -607,7 +545,6 @@ void HWR_InitModels(void)
 			skinname += prefixlen;
 			goto addskinmodel;
 		}
->>>>>>> srb2/next
 
 		// add sprite model
 		if (len == 4) // must be 4 characters long exactly. otherwise it's not a sprite name.
@@ -639,14 +576,11 @@ addskinmodel:
 				goto modelfound;
 			}
 		}
-<<<<<<< HEAD
+
 		// no sprite/player skin name found?!?D
-		CONS_Printf("Unknown sprite/player skin %s detected in mdls.dat\n", name);
-md2found:
-=======
+		CONS_Printf("Unknown sprite/player skin %s detected in models.dat\n", name);
 
 modelfound:
->>>>>>> srb2/next
 		// move on to next line...
 		continue;
 	}
@@ -665,17 +599,16 @@ void HWR_AddPlayerModel(int skin) // For skins that were added after startup
 
 	//CONS_Printf("HWR_AddPlayerModel()...\n");
 
-<<<<<<< HEAD
-	// read the mdls.dat file
+	// read the models.dat file
 	//Filename checking fixed ~Monster Iestyn and Golden
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "mdls.dat"), "rt");
+	f = fopen(va("%s"PATHSEP"%s", srb2home, "models.dat"), "rt");
 
 	if (!f)
 	{
-		f = fopen(va("%s"PATHSEP"%s", srb2path, "mdls.dat"), "rt");
+		f = fopen(va("%s"PATHSEP"%s", srb2path, "models.dat"), "rt");
 		if (!f)
 		{
-			CONS_Printf("%s %s\n", M_GetText("Error while loading mdls.dat:"), strerror(errno));
+			CONS_Printf("%s %s\n", M_GetText("Error while loading models.dat:"), strerror(errno));
 			nomd2s = true;
 			return;
 		}
@@ -683,24 +616,12 @@ void HWR_AddPlayerModel(int skin) // For skins that were added after startup
 
 	// Check for any MD2s that match the names of sprite names!
 	while (fscanf(f, "%19s %31s %f %f", name, filename, &scale, &offset) == 4)
-=======
-	// read the models.dat file
-	//Filename checking fixed ~Monster Iestyn and Golden
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "models.dat"), "rt");
-
-	if (!f)
-	{
-		CONS_Printf("Error while loading models.dat\n");
-		nomd2s = true;
-		return;
-	}
 
 	// length of the player model prefix
 	prefixlen = strlen(PLAYERMODELPREFIX);
 
 	// Check for any models that match the names of player skins!
 	while (fscanf(f, "%25s %31s %f %f", name, filename, &scale, &offset) == 4)
->>>>>>> srb2/next
 	{
 		char *skinname = name;
 		size_t len = strlen(name);
@@ -728,11 +649,7 @@ playermodelfound:
 void HWR_AddSpriteModel(size_t spritenum) // For sprites that were added after startup
 {
 	FILE *f;
-<<<<<<< HEAD
-	// name[18] is used to check for names in the mdls.dat file that match with sprites or player skins
-=======
 	// name[24] is used to check for names in the models.dat file that match with sprites or player skins
->>>>>>> srb2/next
 	// sprite names are always 4 characters long, and names is for player skins can be up to 19 characters long
 	// PLAYERMODELPREFIX is 6 characters long
 	char name[24], filename[32];
@@ -746,35 +663,21 @@ void HWR_AddSpriteModel(size_t spritenum) // For sprites that were added after s
 
 	// Read the models.dat file
 	//Filename checking fixed ~Monster Iestyn and Golden
-<<<<<<< HEAD
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "mdls.dat"), "rt");
+	f = fopen(va("%s"PATHSEP"%s", srb2home, "models.dat"), "rt");
 
 	if (!f)
 	{
-		f = fopen(va("%s"PATHSEP"%s", srb2path, "mdls.dat"), "rt");
+		f = fopen(va("%s"PATHSEP"%s", srb2path, "models.dat"), "rt");
 		if (!f)
 		{
-			CONS_Printf("%s %s\n", M_GetText("Error while loading mdls.dat:"), strerror(errno));
+			CONS_Printf("%s %s\n", M_GetText("Error while loading models.dat:"), strerror(errno));
 			nomd2s = true;
 			return;
 		}
 	}
 
-	// Check for any MD2s that match the names of sprite names!
-	while (fscanf(f, "%19s %31s %f %f", name, filename, &scale, &offset) == 4)
-=======
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "models.dat"), "rt");
-
-	if (!f)
-	{
-		CONS_Printf("Error while loading models.dat\n");
-		nomd2s = true;
-		return;
-	}
-
 	// Check for any models that match the names of sprite names!
 	while (fscanf(f, "%25s %31s %f %f", name, filename, &scale, &offset) == 4)
->>>>>>> srb2/next
 	{
 		// length of the sprite name
 		size_t len = strlen(name);
@@ -800,36 +703,15 @@ spritemodelfound:
 	fclose(f);
 }
 
-<<<<<<< HEAD
-static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, INT32 skinnum, skincolors_t color)
-=======
-// Define for getting accurate color brightness readings according to how the human eye sees them.
-// https://en.wikipedia.org/wiki/Relative_luminance
-// 0.2126 to red
-// 0.7152 to green
-// 0.0722 to blue
-#define SETBRIGHTNESS(brightness,r,g,b) \
-	brightness = (UINT8)(((1063*(UINT16)(r))/5000) + ((3576*(UINT16)(g))/5000) + ((361*(UINT16)(b))/5000))
-
 static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, INT32 skinnum, skincolornum_t color)
->>>>>>> srb2/next
 {
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
-<<<<<<< HEAD
-	UINT8 translation[16]; // First the color index
-	UINT8 cutoff[16]; // Brightness cutoff before using the next color
-	UINT8 translen = 0;
-	UINT8 i;
-	UINT8 colorbrightnesses[16];
-	UINT8 color_match_lookup[256]; // optimization attempt
-=======
 	UINT16 translation[16]; // First the color index
 	UINT8 cutoff[16]; // Brightness cutoff before using the next color
 	UINT8 translen = 0;
 	UINT8 i;
->>>>>>> srb2/next
 
 	blendcolor = V_GetColor(0); // initialize
 	memset(translation, 0, sizeof(translation));
@@ -857,79 +739,6 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 	image = gpatch->mipmap->grInfo.data;
 	blendimage = blendgpatch->mipmap->grInfo.data;
-<<<<<<< HEAD
-
-	// TC_METALSONIC includes an actual skincolor translation, on top of its flashing.
-	if (skinnum == TC_METALSONIC)
-		color = SKINCOLOR_BLUEBERRY;
-
-	if (color != SKINCOLOR_NONE)
-	{
-		UINT8 numdupes = 1;
-		UINT8 prevdupes = numdupes;
-
-		translation[translen] = colortranslations[color][0];
-		cutoff[translen] = 255;
-
-		for (i = 1; i < 16; i++)
-		{
-			if (translation[translen] == colortranslations[color][i])
-			{
-				numdupes++;
-				continue;
-			}
-
-			if (translen > 0)
-			{
-				INT16 newcutoff = cutoff[translen-1] - (255 / (16 / prevdupes));
-
-				if (newcutoff < 0)
-					newcutoff = 0;
-
-				cutoff[translen] = (UINT8)newcutoff;
-			}
-
-			prevdupes = numdupes;
-			numdupes = 1;
-			translen++;
-
-			translation[translen] = (UINT8)colortranslations[color][i];
-		}
-
-		translen++;
-	}
-
-	if (skinnum == TC_RAINBOW && translen > 0)
-	{
-		UINT16 b;
-		INT32 compare;
-
-		for (i = 0; i < translen; i++) // moved from inside the loop to here
-		{
-			RGBA_t tempc = V_GetColor(translation[i]);
-			colorbrightnesses[i] = K_ColorRelativeLuminance(tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
-		}
-		// generate lookup table for color brightness matching
-		for (b = 0; b < 256; b++)
-		{
-			UINT16 brightdif = 256;
-
-			color_match_lookup[i] = 0;
-			for (i = 0; i < translen; i++)
-			{
-				if (b > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
-					continue;
-
-				compare = abs((INT16)(colorbrightnesses[i]) - (INT16)(b));
-
-				if (compare < brightdif)
-				{
-					brightdif = (UINT16)compare;
-					color_match_lookup[b] = i; // best matching color that's equal brightness or darker
-				}
-			}
-		}
-=======
 
 	// TC_METALSONIC includes an actual skincolor translation, on top of its flashing.
 	if (skinnum == TC_METALSONIC)
@@ -962,7 +771,6 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 		}
 
 		translen++;
->>>>>>> srb2/next
 	}
 
 	while (size--)
@@ -992,12 +800,6 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 		}
 		else
 		{
-<<<<<<< HEAD
-			// All settings that use skincolors!
-			UINT16 brightness;
-
-=======
->>>>>>> srb2/next
 			// Everything below requires a blend image
 			if (blendimage == NULL)
 			{
@@ -1005,31 +807,6 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 				goto skippixel;
 			}
 
-<<<<<<< HEAD
-			if (translen <= 0)
-			{
-				cur->rgba = image->rgba;
-				goto skippixel;
-			}
-
-			// Don't bother with blending the pixel if the alpha of the blend pixel is 0
-			if (skinnum == TC_RAINBOW)
-			{
-				if (image->s.alpha == 0 && blendimage->s.alpha == 0)
-				{
-					cur->rgba = image->rgba;
-					goto skippixel;
-				}
-				else
-				{
-					UINT16 imagebright, blendbright;
-
-					imagebright = K_ColorRelativeLuminance(image->s.red, image->s.green, image->s.blue);
-					blendbright = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
-
-					// slightly dumb average between the blend image color and base image colour, usually one or the other will be fully opaque anyway
-					brightness = (imagebright*(255-blendimage->s.alpha))/255 + (blendbright*blendimage->s.alpha)/255;
-=======
 			// Metal Sonic dash mode
 			if (skinnum == TC_DASHMODE)
 			{
@@ -1062,185 +839,10 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 					cur->s.green = (ialpha * icolor.s.green + balpha * bcolor.s.green)/255;
 					cur->s.blue = (ialpha * icolor.s.blue + balpha * bcolor.s.blue)/255;
 					cur->s.alpha = image->s.alpha;
->>>>>>> srb2/next
 				}
 			}
 			else
 			{
-<<<<<<< HEAD
-				if (blendimage->s.alpha == 0)
-				{
-					cur->rgba = image->rgba;
-					goto skippixel; // for metal sonic blend
-				}
-				else
-				{
-					brightness = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
-				}
-			}
-
-			// Calculate a sort of "gradient" for the skincolor
-			// (Me splitting this into a function didn't work, so I had to ruin this entire function's groove...)
-			{
-				RGBA_t nextcolor;
-				UINT8 firsti, secondi, mul, mulmax;
-				INT32 r, g, b;
-
-				// Rainbow needs to find the closest match to the textures themselves, instead of matching brightnesses to other colors.
-				// Ensue horrible mess.
-				if (skinnum == TC_RAINBOW)
-				{
-					//UINT16 brightdif = 256;
-					INT32 /*compare,*/ m, d;
-
-					// Ignore pure white & pitch black
-					if (brightness > 253 || brightness < 2)
-					{
-						cur->rgba = image->rgba;
-						cur++; image++; blendimage++;
-						continue;
-					}
-
-					firsti = 0;
-					mul = 0;
-					mulmax = 1;
-
-					/*for (i = 0; i < translen; i++)
-					{
-						if (brightness > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
-							continue;
-
-						compare = abs((INT16)(colorbrightnesses[i]) - (INT16)(brightness));
-
-						if (compare < brightdif)
-						{
-							brightdif = (UINT16)compare;
-							firsti = i; // best matching color that's equal brightness or darker
-						}
-					}*/
-					firsti = color_match_lookup[brightness];
-
-					secondi = firsti+1; // next color in line
-
-					m = (INT16)brightness - (INT16)colorbrightnesses[secondi];
-					d = (INT16)colorbrightnesses[firsti] - (INT16)colorbrightnesses[secondi];
-
-					if (m >= d)
-						m = d-1;
-
-					mulmax = 16;
-
-					// calculate the "gradient" multiplier based on how close this color is to the one next in line
-					if (m <= 0 || d <= 0)
-						mul = 0;
-					else
-						mul = (mulmax-1) - ((m * mulmax) / d);
-				}
-				else
-				{
-					// Just convert brightness to a skincolor value, use distance to next position to find the gradient multipler
-					firsti = 0;
-
-					for (i = 1; i < translen; i++)
-					{
-						if (brightness >= cutoff[i])
-							break;
-						firsti = i;
-					}
-
-					secondi = firsti+1;
-
-					mulmax = cutoff[firsti] - cutoff[secondi];
-					mul = cutoff[firsti] - brightness;
-				}
-
-				blendcolor = V_GetColor(translation[firsti]);
-
-				if (mul > 0) // If it's 0, then we only need the first color.
-				{
-					nextcolor = V_GetColor(translation[secondi]);
-
-					// Find difference between points
-					r = (INT32)(nextcolor.s.red - blendcolor.s.red);
-					g = (INT32)(nextcolor.s.green - blendcolor.s.green);
-					b = (INT32)(nextcolor.s.blue - blendcolor.s.blue);
-
-					// Find the gradient of the two points
-					r = ((mul * r) / mulmax);
-					g = ((mul * g) / mulmax);
-					b = ((mul * b) / mulmax);
-
-					// Add gradient value to color
-					blendcolor.s.red += r;
-					blendcolor.s.green += g;
-					blendcolor.s.blue += b;
-				}
-			}
-
-			if (skinnum == TC_RAINBOW)
-			{
-				UINT32 tempcolor;
-				UINT16 colorbright;
-
-				colorbright = K_ColorRelativeLuminance(blendcolor.s.red, blendcolor.s.green, blendcolor.s.blue);
-
-				if (colorbright == 0)
-				{
-					colorbright = 1; // no dividing by 0 please
-				}
-
-				tempcolor = (brightness * blendcolor.s.red) / colorbright;
-				tempcolor = min(255, tempcolor);
-				cur->s.red = (UINT8)tempcolor;
-
-				tempcolor = (brightness * blendcolor.s.green) / colorbright;
-				tempcolor = min(255, tempcolor);
-				cur->s.green = (UINT8)tempcolor;
-
-				tempcolor = (brightness * blendcolor.s.blue) / colorbright;
-				tempcolor = min(255, tempcolor);
-				cur->s.blue = (UINT8)tempcolor;
-				cur->s.alpha = image->s.alpha;
-			}
-			else
-			{
-				// Color strength depends on image alpha
-				INT32 tempcolor;
-
-				tempcolor = ((image->s.red * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.red * blendimage->s.alpha) / 255);
-				tempcolor = min(255, tempcolor);
-				cur->s.red = (UINT8)tempcolor;
-
-				tempcolor = ((image->s.green * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.green * blendimage->s.alpha) / 255);
-				tempcolor = min(255, tempcolor);
-				cur->s.green = (UINT8)tempcolor;
-
-				tempcolor = ((image->s.blue * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.blue * blendimage->s.alpha) / 255);
-				tempcolor = min(255, tempcolor);
-				cur->s.blue = (UINT8)tempcolor;
-				cur->s.alpha = image->s.alpha;
-			}
-
-skippixel:
-
-			// *Now* we can do Metal Sonic's flashing
-			if (skinnum == TC_METALSONIC)
-			{
-				// Blend dark blue into white
-				if (cur->s.alpha > 0 && cur->s.red == 0 && cur->s.green == 0 && cur->s.blue < 255 && cur->s.blue > 31)
-				{
-					// Sal: Invert non-blue
-					cur->s.red = cur->s.green = (255 - cur->s.blue);
-					cur->s.blue = 255;
-				}
-
-				cur->s.alpha = image->s.alpha;
-			}
-		}
-
-		cur++; image++;
-
-=======
 				// All settings that use skincolors!
 				UINT16 brightness;
 
@@ -1458,7 +1060,6 @@ skippixel:
 
 		cur++; image++;
 
->>>>>>> srb2/next
 		if (blendimage != NULL)
 			blendimage++;
 	}
@@ -1466,13 +1067,7 @@ skippixel:
 	return;
 }
 
-<<<<<<< HEAD
-static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT32 skinnum, const UINT8 *colormap, skincolors_t color)
-=======
-#undef SETBRIGHTNESS
-
 static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT32 skinnum, const UINT8 *colormap, skincolornum_t color)
->>>>>>> srb2/next
 {
 	// mostly copied from HWR_GetMappedPatch, hence the similarities and comment
 	GLMipmap_t *grmip, *newmip;
@@ -1526,19 +1121,6 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT
 	HWD.pfnSetTexture(newmip);
 	Z_ChangeTag(newmip->grInfo.data, PU_HWRMODELTEXTURE_UNLOCKED);
 }
-
-<<<<<<< HEAD
-
-// -----------------+
-// HWR_DrawMD2      : Draw MD2
-//                  :
-// Returns          :
-// -----------------+
-
-void HWR_DrawMD2(gr_vissprite_t *spr)
-=======
-#define NORMALFOG 0x00000000
-#define FADEFOG 0x19000000
 
 static boolean HWR_AllowModel(mobj_t *mobj)
 {
@@ -1626,27 +1208,18 @@ static UINT8 HWR_GetModelSprite2(md2_t *md2, skin_t *skin, UINT8 spr2, player_t 
 //
 
 boolean HWR_DrawModel(gr_vissprite_t *spr)
->>>>>>> srb2/next
 {
 	md2_t *md2;
 
 	char filename[64];
 	INT32 frame = 0;
 	INT32 nextFrame = -1;
-<<<<<<< HEAD
-=======
 	UINT8 spr2 = 0;
->>>>>>> srb2/next
 	FTransform p;
 	FSurfaceInfo Surf;
 
-<<<<<<< HEAD
-	if (!cv_grmdls.value)
-		return;
-=======
 	if (!cv_grmodels.value)
 		return false;
->>>>>>> srb2/next
 
 	if (spr->precip)
 		return false;
@@ -1658,13 +1231,8 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 	if (spr->mobj->subsector)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-<<<<<<< HEAD
-		extracolormap_t *colormap = sector->extra_colormap;
-		UINT8 lightlevel = 255;
-=======
 		UINT8 lightlevel = 255;
 		extracolormap_t *colormap = NULL;
->>>>>>> srb2/next
 
 		if (sector->numlights)
 		{
@@ -1706,12 +1274,8 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 		INT32 durs = spr->mobj->state->tics;
 		INT32 tics = spr->mobj->tics;
 		//mdlframe_t *next = NULL;
-<<<<<<< HEAD
-		const UINT8 flip = (UINT8)((spr->mobj->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP);
-=======
 		const boolean papersprite = (spr->mobj->frame & FF_PAPERSPRITE);
 		const UINT8 flip = (UINT8)(!(spr->mobj->eflags & MFE_VERTICALFLIP) != !(spr->mobj->frame & FF_VERTICALFLIP));
->>>>>>> srb2/next
 		spritedef_t *sprdef;
 		spriteframe_t *sprframe;
 		spriteinfo_t *sprinfo;
@@ -1741,12 +1305,8 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 			md2->skin = (skin_t*)spr->mobj->skin-skins;
 			sprinfo = &((skin_t *)spr->mobj->skin)->sprinfo[spr->mobj->sprite2];
 		}
-<<<<<<< HEAD
-		else	// if we can't find the player md2, use SPR_PLAY's MD2.
-=======
 		else
 		{
->>>>>>> srb2/next
 			md2 = &md2_models[spr->mobj->sprite];
 			sprinfo = &spriteinfo[spr->mobj->sprite];
 		}
@@ -1755,13 +1315,8 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 			return false; // we already failed loading this before :(
 		if (!md2->model)
 		{
-<<<<<<< HEAD
-			CONS_Debug(DBG_RENDER, "Loading model... (%s, %s)", sprnames[spr->mobj->sprite], md2->filename);
-			sprintf(filename, "mdls/%s", md2->filename);
-=======
 			//CONS_Debug(DBG_RENDER, "Loading model... (%s)", sprnames[spr->mobj->sprite]);
 			sprintf(filename, "models/%s", md2->filename);
->>>>>>> srb2/next
 			md2->model = md2_readModel(filename);
 
 			if (md2->model)
@@ -1776,12 +1331,6 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 				return false;
 			}
 		}
-<<<<<<< HEAD
-		finalscale = md2->scale;
-		//Hurdler: arf, I don't like that implementation at all... too much crappy
-		gpatch = md2->grpatch;
-		if (!gpatch || ((!gpatch->mipmap->grInfo.format || !gpatch->mipmap->downloaded) && !gpatch->notfound))
-=======
 
 		// Lactozilla: Disallow certain models from rendering
 		if (!HWR_AllowModel(spr->mobj))
@@ -1792,52 +1341,15 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 		//Hurdler: arf, I don't like that implementation at all... too much crappy
 		gpatch = md2->grpatch;
 		if (!gpatch || !gpatch->mipmap->grInfo.format || !gpatch->mipmap->downloaded)
->>>>>>> srb2/next
 			md2_loadTexture(md2);
 		gpatch = md2->grpatch; // Load it again, because it isn't being loaded into gpatch after md2_loadtexture...
 
 		if ((gpatch && gpatch->mipmap->grInfo.format) // don't load the blend texture if the base texture isn't available
-<<<<<<< HEAD
-			&& (!md2->blendgrpatch
-			|| ((!((GLPatch_t *)md2->blendgrpatch)->mipmap->grInfo.format || !((GLPatch_t *)md2->blendgrpatch)->mipmap->downloaded)
-			&& !((GLPatch_t *)md2->blendgrpatch)->notfound)))
-=======
 			&& (!md2->blendgrpatch || !((GLPatch_t *)md2->blendgrpatch)->mipmap->grInfo.format || !((GLPatch_t *)md2->blendgrpatch)->mipmap->downloaded))
->>>>>>> srb2/next
 			md2_loadBlendTexture(md2);
 
 		if (gpatch && gpatch->mipmap->grInfo.format) // else if meant that if a texture couldn't be loaded, it would just end up using something else's texture
 		{
-<<<<<<< HEAD
-			if ((skincolors_t)spr->mobj->color != SKINCOLOR_NONE &&
-				md2->blendgrpatch && ((GLPatch_t *)md2->blendgrpatch)->mipmap->grInfo.format
-				&& gpatch->width == ((GLPatch_t *)md2->blendgrpatch)->width && gpatch->height == ((GLPatch_t *)md2->blendgrpatch)->height)
-			{
-				INT32 skinnum = TC_DEFAULT;
-				if ((spr->mobj->flags & MF_BOSS) && (spr->mobj->flags2 & MF2_FRET) && (leveltime & 1)) // Bosses "flash"
-				{
-					if (spr->mobj->type == MT_CYBRAKDEMON)
-						skinnum = TC_ALLWHITE;
-					else if (spr->mobj->type == MT_METALSONIC_BATTLE)
-						skinnum = TC_METALSONIC;
-					else
-						skinnum = TC_BOSS;
-				}
-				else if (spr->mobj->color)
-				{
-					if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
-					{
-						if (spr->mobj->colorized)
-							skinnum = TC_RAINBOW;
-						else
-						{
-							skinnum = (INT32)((skin_t*)spr->mobj->skin-skins);
-						}
-					}
-					else skinnum = TC_DEFAULT;
-				}
-				HWR_GetBlendedTexture(gpatch, (GLPatch_t *)md2->blendgrpatch, skinnum, spr->colormap, (skincolors_t)spr->mobj->color);
-=======
 			INT32 skinnum = TC_DEFAULT;
 
 			if ((spr->mobj->flags & (MF_ENEMY|MF_BOSS)) && (spr->mobj->flags2 & MF2_FRET) && !(spr->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
@@ -1848,14 +1360,9 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 					skinnum = TC_METALSONIC;
 				else
 					skinnum = TC_BOSS;
->>>>>>> srb2/next
 			}
 			else if ((skincolornum_t)spr->mobj->color != SKINCOLOR_NONE)
 			{
-<<<<<<< HEAD
-				// This is safe, since we know the texture has been downloaded
-				HWD.pfnSetTexture(gpatch->mipmap);
-=======
 				if (spr->mobj->colorized)
 					skinnum = TC_RAINBOW;
 				else if (spr->mobj->player && spr->mobj->player->dashmode >= DASHMODE_THRESHOLD
@@ -1871,7 +1378,6 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 					skinnum = (INT32)((skin_t*)spr->mobj->skin-skins);
 				else
 					skinnum = TC_DEFAULT;
->>>>>>> srb2/next
 			}
 
 			// Translation or skin number found
@@ -1891,13 +1397,6 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 			tics = spr->mobj->anim_duration;
 		}
 
-<<<<<<< HEAD
-		//FIXME: this is not yet correct
-		frame = (spr->mobj->frame & FF_FRAMEMASK) % md2->model->meshes[0].numFrames;
-
-#ifdef USE_MODEL_NEXTFRAME
-		if (cv_grmdls.value == 1 && tics <= durs)
-=======
 		frame = (spr->mobj->frame & FF_FRAMEMASK);
 		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY && md2->model->spr2frames)
 		{
@@ -1912,7 +1411,6 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 			frame = md2->model->spr2frames[spr2].frames[frame%mod];
 		}
 		else
->>>>>>> srb2/next
 		{
 			mod = md2->model->meshes[0].numFrames;
 			if (!mod)
@@ -1928,13 +1426,6 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 
 			if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY && md2->model->spr2frames)
 			{
-<<<<<<< HEAD
-				nextFrame = (spr->mobj->frame & FF_FRAMEMASK) + 1;
-				if (nextFrame >= spr->mobj->state->var1)
-					nextFrame = (spr->mobj->state->frame & FF_FRAMEMASK);
-				nextFrame %= md2->model->meshes[0].numFrames;
-				//next = &md2->model->meshes[0].frames[nextFrame];
-=======
 				if (HWR_CanInterpolateSprite2(&md2->model->spr2frames[spr2])
 					&& (spr->mobj->frame & FF_ANIMATE
 					|| (spr->mobj->state->nextstate != S_NULL
@@ -1949,7 +1440,6 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 					else
 						nextFrame = -1;
 				}
->>>>>>> srb2/next
 			}
 			else if (HWR_CanInterpolateModel(spr->mobj, md2->model))
 			{
@@ -1962,13 +1452,6 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 				}
 				else
 				{
-<<<<<<< HEAD
-					nextFrame = (states[spr->mobj->state->nextstate].frame & FF_FRAMEMASK) % md2->model->meshes[0].numFrames;
-					//next = &md2->model->meshes[0].frames[nextFrame];
-				}
-			}
-		}
-=======
 					if (spr->mobj->state->nextstate != S_NULL && states[spr->mobj->state->nextstate].sprite != SPR_NULL
 					&& !(spr->mobj->player && (spr->mobj->state->nextstate == S_PLAY_WAIT) && spr->mobj->state == &states[S_PLAY_STND]))
 						nextFrame = (states[spr->mobj->state->nextstate].frame & FF_FRAMEMASK) % mod;
@@ -1976,20 +1459,14 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 			}
 		}
 #undef INTERPOLERATION_LIMIT
->>>>>>> srb2/next
 #endif
 
 		//Hurdler: it seems there is still a small problem with mobj angle
 		p.x = FIXED_TO_FLOAT(thingxpos);
 		p.y = FIXED_TO_FLOAT(thingypos) + md2->offset;
 
-<<<<<<< HEAD
-		if (spr->mobj->eflags & MFE_VERTICALFLIP)
-			p.z = FIXED_TO_FLOAT(thingzpos + spr->mobj->height);
-=======
 		if (flip)
 			p.z = FIXED_TO_FLOAT(spr->mobj->z + spr->mobj->height);
->>>>>>> srb2/next
 		else
 			p.z = FIXED_TO_FLOAT(thingzpos);
 
@@ -2002,19 +1479,11 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 
 		if (sprframe->rotate || papersprite)
 		{
-<<<<<<< HEAD
-			fixed_t anglef;
-			if (spr->mobj->player)
-				anglef = AngleFixed(spr->mobj->player->frameangle);
-			else
-				anglef = AngleFixed(spr->mobj->angle);
-=======
 			fixed_t anglef = AngleFixed(spr->mobj->angle);
 
 			if (spr->mobj->player)
 				anglef = AngleFixed(spr->mobj->player->drawangle);
 
->>>>>>> srb2/next
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 		else
@@ -2052,16 +1521,6 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 		}
 
 		p.anglex = 0.0f;
-<<<<<<< HEAD
-#ifdef USE_FTRANSFORM_ANGLEZ
-		// Slope rotation from Kart
-		p.anglez = 0.0f;
-		if (spr->mobj->modeltilt)
-		{
-			fixed_t tempz = spr->mobj->modeltilt->normal.z;
-			fixed_t tempy = spr->mobj->modeltilt->normal.y;
-			fixed_t tempx = spr->mobj->modeltilt->normal.x;
-=======
 
 #ifdef USE_FTRANSFORM_ANGLEZ
 		// Slope rotation from Kart
@@ -2071,21 +1530,17 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 			fixed_t tempz = spr->mobj->standingslope->normal.z;
 			fixed_t tempy = spr->mobj->standingslope->normal.y;
 			fixed_t tempx = spr->mobj->standingslope->normal.x;
->>>>>>> srb2/next
 			fixed_t tempangle = AngleFixed(R_PointToAngle2(0, 0, FixedSqrt(FixedMul(tempy, tempy) + FixedMul(tempz, tempz)), tempx));
 			p.anglez = FIXED_TO_FLOAT(tempangle);
 			tempangle = -AngleFixed(R_PointToAngle2(0, 0, tempz, tempy));
 			p.anglex = FIXED_TO_FLOAT(tempangle);
 		}
 #endif
-<<<<<<< HEAD
-=======
 
 		color[0] = Surf.FlatColor.s.red;
 		color[1] = Surf.FlatColor.s.green;
 		color[2] = Surf.FlatColor.s.blue;
 		color[3] = Surf.FlatColor.s.alpha;
->>>>>>> srb2/next
 
 		// SRB2CBTODO: MD2 scaling support
 		finalscale *= FIXED_TO_FLOAT(spr->mobj->scale);
@@ -2095,12 +1550,8 @@ boolean HWR_DrawModel(gr_vissprite_t *spr)
 		p.mirror = atransform.mirror; // from Kart
 #endif
 
-<<<<<<< HEAD
 		HWD.pfnSetShader(4);	// model shader
-		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, &Surf);
-=======
 		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, color);
->>>>>>> srb2/next
 	}
 
 	return true;
