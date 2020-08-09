@@ -31,21 +31,12 @@ extern consvar_t cv_ticrate, cv_constextsize,\
 cv_globalgamma, cv_globalsaturation, \
 cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue,\
 cv_rgamma, cv_ygamma, cv_ggamma, cv_cgamma, cv_bgamma, cv_mgamma, \
-<<<<<<< HEAD
 cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, cv_msaturation;
-=======
-cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, cv_msaturation,\
-cv_allcaps;
->>>>>>> srb2/next
 
 // Allocates buffer screens, call before R_Init.
 void V_Init(void);
 
 // Color look-up table
-<<<<<<< HEAD
-
-=======
->>>>>>> srb2/next
 #define COLORBITS 6
 #define SHIFTCOLORBITS (8-COLORBITS)
 #define CLUTSIZE (1<<COLORBITS)
@@ -65,11 +56,7 @@ const char *GetPalette(void);
 extern RGBA_t *pLocalPalette;
 extern RGBA_t *pMasterPalette;
 
-<<<<<<< HEAD
-extern UINT8 hudtrans;
-=======
 void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
->>>>>>> srb2/next
 
 // Retrieve the ARGB value from a palette color index
 #define V_GetColor(color) (pLocalPalette[color&0xFF])
@@ -104,7 +91,6 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_GRAYMAP            0x00006000
 #define V_ORANGEMAP          0x00007000
 #define V_SKYMAP             0x00008000
-<<<<<<< HEAD
 #define V_LAVENDERMAP        0x00009000
 #define V_GOLDMAP            0x0000A000
 #define V_AQUAMAP            0x0000B000
@@ -112,15 +98,6 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_PINKMAP            0x0000D000
 #define V_BROWNMAP           0x0000E000
 #define V_TANMAP             0x0000F000
-=======
-#define V_PURPLEMAP          0x00009000
-#define V_AQUAMAP            0x0000A000
-#define V_PERIDOTMAP         0x0000B000
-#define V_AZUREMAP           0x0000C000
-#define V_BROWNMAP           0x0000D000
-#define V_ROSYMAP            0x0000E000
-#define V_INVERTMAP          0x0000F000
->>>>>>> srb2/next
 
 // use bits 17-20 for alpha transparency
 #define V_ALPHASHIFT         16
@@ -137,14 +114,6 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_90TRANS            0x00090000
 #define V_HUDTRANSHALF       0x000D0000
 #define V_HUDTRANS           0x000E0000 // draw the hud translucent
-<<<<<<< HEAD
-
-#define V_AUTOFADEOUT        0x000F0000 // used by CECHOs, automatic fade out when almost over
-#define V_RETURN8            0x00100000 // 8 pixel return instead of 12
-#define V_OFFSET             0x00200000 // account for offsets in patches
-#define V_ALLOWLOWERCASE     0x00400000 // (strings only) allow fonts that have lowercase letters to use them
-#define V_FLIP               0x00400000 // (patches only) Horizontal flip
-=======
 #define V_HUDTRANSDOUBLE     0x000F0000
 // Macros follow
 #define V_USERHUDTRANSHALF   ((10-(cv_translucenthud.value/2))<<V_ALPHASHIFT)
@@ -157,7 +126,6 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_ALLOWLOWERCASE     0x00800000 // (strings only) allow fonts that have lowercase letters to use them
 #define V_FLIP               0x00800000 // (patches only) Horizontal flip
 #define V_CENTERNAMETAG      0x00800000 // (nametag only) center nametag lines
->>>>>>> srb2/next
 
 #define V_SNAPTOTOP          0x00800000 // for centering
 #define V_SNAPTOBOTTOM       0x01000000 // for centering
@@ -167,14 +135,9 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_WRAPX              0x08000000 // Don't clamp texture on X (for HW mode)
 #define V_WRAPY              0x10000000 // Don't clamp texture on Y (for HW mode)
 
-<<<<<<< HEAD
 #define V_NOSCALESTART       0x20000000  // don't scale x, y, start coords
 #define V_SPLITSCREEN        0x40000000
 #define V_HORZSCREEN         0x80000000
-=======
-#define V_NOSCALESTART       0x40000000 // don't scale x, y, start coords
-#define V_PERPLAYER          0x80000000 // automatically adjust coordinates/scaling for splitscreen mode
->>>>>>> srb2/next
 
 // defines for old functions
 #define V_DrawPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT, s|V_NOSCALESTART|V_NOSCALEPATCH, p, NULL)
@@ -208,25 +171,21 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c);
 // fill a box with a flat as a pattern
 void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum);
 
-<<<<<<< HEAD
+
 // draw wobbly VHS pause stuff
 void V_DrawVhsEffect(boolean rewind);
-=======
+
 // fade down the screen buffer before drawing the menu over
 void V_DrawFadeScreen(UINT16 color, UINT8 strength);
 // available to lua over my dead body, which will probably happen in this heat
 void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, UINT8 strength);
->>>>>>> srb2/next
 
-// fade down the screen buffer before drawing the menu over
-void V_DrawFadeScreen(UINT16 color, UINT8 strength);
 void V_DrawCustomFadeScreen(const char *lump, UINT8 strength);
 void V_DrawFadeConsBack(INT32 plines);
-<<<<<<< HEAD
+
 void V_EncoreInvertScreen(void);
-=======
+
 void V_DrawPromptBack(INT32 boxheight, INT32 color);
->>>>>>> srb2/next
 
 // draw a single character
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);
