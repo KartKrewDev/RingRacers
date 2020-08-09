@@ -11216,14 +11216,9 @@ struct {
 
 	// Intermission types
 	{"int_none",int_none},
-	{"int_coop",int_coop},
-	{"int_match",int_match},
-	{"int_teammatch",int_teammatch},
-	//{"int_tag",int_tag},
-	{"int_ctf",int_ctf},
-	{"int_spec",int_spec},
 	{"int_race",int_race},
-	{"int_comp",int_comp},
+	{"int_battle",int_battle},
+	{"int_timeattack",int_timeattack},
 
 	// Jingles (jingletype_t)
 	{"JT_NONE",JT_NONE},

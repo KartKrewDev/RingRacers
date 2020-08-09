@@ -27,27 +27,10 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level);
 typedef enum
 {
 	int_none,
-<<<<<<< HEAD
-	int_timeattack,  // Time Attack
-	int_match,       // Match
-	int_teammatch,   // Team Match
-//	int_tag,         // Tag
-	int_ctf,         // CTF
-	int_spec,        // Special Stage
-	int_nights,      // NiGHTS into Dreams
-	int_nightsspec,  // NiGHTS special stage
-	int_race,        // Race
-	int_classicrace, // Competition
-=======
-	int_coop,     // Single Player/Cooperative
-	int_match,    // Match
-	int_teammatch,// Team Match
-//	int_tag,      // Tag
-	int_ctf,      // CTF
-	int_spec,     // Special Stage
-	int_race,     // Race
-	int_comp,     // Competition
->>>>>>> srb2/next
+	int_race,		// Race
+	int_battle,		// Battle
+	int_timeattack,	// Time Attack
 } intertype_t;
+
 extern intertype_t intertype;
 extern intertype_t intermissiontypes[NUMGAMETYPES];
