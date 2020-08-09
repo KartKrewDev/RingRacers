@@ -1583,153 +1583,6 @@ static void P_AddExecutorDelay(line_t *line, mobj_t *mobj, sector_t *sector)
 	P_AddThinker(THINK_MAIN, &e->thinker);
 }
 
-/** Used by P_RunTriggerLinedef to check a NiGHTS trigger linedef's conditions
-  *
-  * \param triggerline Trigger linedef to check conditions for; should NEVER be NULL.
-  * \param actor Object initiating the action; should not be NULL.
-  * \sa P_RunTriggerLinedef
-  */
-static boolean P_CheckNightsTriggerLine(line_t *triggerline, mobj_t *actor)
-{
-	INT16 specialtype = triggerline->special;
-	size_t i;
-
-	UINT8 inputmare = max(0, min(255, sides[triggerline->sidenum[0]].textureoffset>>FRACBITS));
-	UINT8 inputlap = max(0, min(255, sides[triggerline->sidenum[0]].rowoffset>>FRACBITS));
-
-	boolean ltemare = triggerline->flags & ML_NOCLIMB;
-	boolean gtemare = triggerline->flags & ML_BLOCKMONSTERS;
-	boolean ltelap = triggerline->flags & ML_EFFECT1;
-	boolean gtelap = triggerline->flags & ML_EFFECT2;
-
-	boolean lapfrombonustime = triggerline->flags & ML_EFFECT3;
-	boolean perglobalinverse = triggerline->flags & ML_DONTPEGBOTTOM;
-	boolean perglobal = !(triggerline->flags & ML_EFFECT4) && !perglobalinverse;
-
-	boolean donomares = triggerline->flags & ML_BOUNCY; // nightserize: run at end of level (no mares)
-	boolean fromnonights = triggerline->flags & ML_TFERLINE; // nightserize: from non-nights // denightserize: all players no nights
-	boolean fromnights = triggerline->flags & ML_DONTPEGTOP; // nightserize: from nights // denightserize: >0 players are nights
-
-	UINT8 currentmare = UINT8_MAX;
-	UINT8 currentlap = UINT8_MAX;
-
-	// Do early returns for Nightserize
-	if (specialtype >= 323 && specialtype <= 324)
-	{
-		// run only when no mares are found
-		if (donomares && P_FindLowestMare() != UINT8_MAX)
-			return false;
-
-		// run only if there is a mare present
-		if (!donomares && P_FindLowestMare() == UINT8_MAX)
-			return false;
-
-		// run only if player is nightserizing from non-nights
-		if (fromnonights)
-		{
-			if (!actor->player)
-				return false;
-<<<<<<< HEAD
-		}
-		else if (triggerline->flags & ML_BLOCKPLAYERS)
-		{
-			if (rings < dist)
-=======
-			else if (actor->player->powers[pw_carry] == CR_NIGHTSMODE)
->>>>>>> srb2/next
-				return false;
-		}
-		// run only if player is nightserizing from nights
-		else if (fromnights)
-		{
-			if (!actor->player)
-				return false;
-			else if (actor->player->powers[pw_carry] != CR_NIGHTSMODE)
-				return false;
-		}
-	}
-
-	// Get current mare and lap (and check early return for DeNightserize)
-	if (perglobal || perglobalinverse
-		|| (specialtype >= 325 && specialtype <= 326 && (fromnonights || fromnights)))
-	{
-		UINT8 playersarenights = 0;
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			UINT8 lap;
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-
-			// denightserize: run only if all players are not nights
-			if (specialtype >= 325 && specialtype <= 326 && fromnonights
-				&& players[i].powers[pw_carry] == CR_NIGHTSMODE)
-				return false;
-
-			// count number of nights players for denightserize return
-			if (specialtype >= 325 && specialtype <= 326 && fromnights
-				&& players[i].powers[pw_carry] == CR_NIGHTSMODE)
-				playersarenights++;
-
-			lap = lapfrombonustime ? players[i].marebonuslap : players[i].marelap;
-
-			// get highest mare/lap of players
-			if (perglobal)
-			{
-				if (players[i].mare > currentmare || currentmare == UINT8_MAX)
-				{
-					currentmare = players[i].mare;
-					currentlap = UINT8_MAX;
-				}
-				if (players[i].mare == currentmare
-					&& (lap > currentlap || currentlap == UINT8_MAX))
-					currentlap = lap;
-			}
-			// get lowest mare/lap of players
-			else if (perglobalinverse)
-			{
-				if (players[i].mare < currentmare || currentmare == UINT8_MAX)
-				{
-					currentmare = players[i].mare;
-					currentlap = UINT8_MAX;
-				}
-				if (players[i].mare == currentmare
-					&& (lap < currentlap || currentlap == UINT8_MAX))
-					currentlap = lap;
-			}
-		}
-
-		// denightserize: run only if >0 players are nights
-		if (specialtype >= 325 && specialtype <= 326 && fromnights
-			&& playersarenights < 1)
-			return false;
-	}
-	// get current mare/lap from triggering player
-	else if (!perglobal && !perglobalinverse)
-	{
-		if (!actor->player)
-			return false;
-		currentmare = actor->player->mare;
-		currentlap = lapfrombonustime ? actor->player->marebonuslap : actor->player->marelap;
-	}
-
-	if (lapfrombonustime && !currentlap)
-		return false; // special case: player->marebonuslap is 0 until passing through on bonus time. Don't trigger lines looking for inputlap 0.
-
-	// Compare current mare/lap to input mare/lap based on rules
-	if (!(specialtype >= 323 && specialtype <= 324 && donomares) // don't return false if donomares and we got this far
-		&& ((ltemare && currentmare > inputmare)
-		|| (gtemare && currentmare < inputmare)
-		|| (!ltemare && !gtemare && currentmare != inputmare)
-		|| (ltelap && currentlap > inputlap)
-		|| (gtelap && currentlap < inputlap)
-		|| (!ltelap && !gtelap && currentlap != inputlap))
-		)
-		return false;
-
-	return true;
-}
-
 /** Used by P_LinedefExecute to check a trigger linedef's conditions
   * The linedef executor specials in the trigger linedef's sector are run if all conditions are met.
   * Return false cancels P_LinedefExecute, this happens if a condition is not met.
@@ -2064,20 +1917,6 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	else
 	// These special types work only once
 	if (specialtype == 302  // Once
-<<<<<<< HEAD
-		|| specialtype == 304  // Ring count - Once
-		|| specialtype == 307  // Character ability - Once
-		|| specialtype == 308  // Race only - Once
-		|| specialtype == 315  // No of pushables - Once
-		|| specialtype == 318  // Unlockable trigger - Once
-		|| specialtype == 320  // Unlockable - Once
-		|| specialtype == 321 || specialtype == 322 // Trigger on X calls - Continuous + Each Time
-		|| specialtype == 323  // Record attack only - Once
-		|| specialtype == 328 // Encore Load
-		|| specialtype == 399 // Level Load
-		|| specialtype == 2002 // SRB2Kart Race Lap
-	)
-=======
 	 || specialtype == 304  // Ring count - Once
 	 || specialtype == 307  // Character ability - Once
 	 || specialtype == 308  // Race only - Once
@@ -2092,8 +1931,10 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	 || specialtype == 330 // Nights Bonus Time - Once
 	 || specialtype == 333 // Skin - Once
 	 || specialtype == 336 // Dye - Once
-	 || specialtype == 399) // Level Load
->>>>>>> srb2/next
+	 || specialtype == 399 // Level Load
+	 || specialtype == 328 // SRB2Kart Encore Load
+	 || specialtype == 2002 // SRB2Kart Race Lap
+	)
 		triggerline->special = 0; // Clear it out
 
 	return true;
@@ -2784,26 +2625,10 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				}
 				else
 				{
-<<<<<<< HEAD
-					// play the sound from nowhere, but only if display player triggered it
-					if (mo && mo->player && P_IsDisplayPlayer(mo->player))
-						S_StartSound(NULL, sfxnum);
-				}
-				else if (line->flags & ML_EFFECT4)
-				{
-					// play the sound from nowhere
-					S_StartSound(NULL, sfxnum);
-				}
-				else if (line->flags & ML_BLOCKPLAYERS)
-				{
-					// play the sound from calling sector's soundorg
-					if (callsec)
-						S_StartSound(&callsec->soundorg, sfxnum);
-=======
 					if (line->flags & ML_NOCLIMB)
 					{
 						// play the sound from nowhere, but only if display player triggered it
-						if (mo && mo->player && (mo->player == &players[displayplayer] || mo->player == &players[secondarydisplayplayer]))
+						if (mo && mo->player && P_IsDisplayPlayer(mo->player))
 							S_StartSound(NULL, sfxnum);
 					}
 					else if (line->flags & ML_EFFECT4)
@@ -2811,7 +2636,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						// play the sound from nowhere
 						S_StartSound(NULL, sfxnum);
 					}
-					else if (line->flags & ML_BLOCKMONSTERS)
+					else if (line->flags & ML_BLOCKPLAYERS)
 					{
 						// play the sound from calling sector's soundorg
 						if (callsec)
@@ -2819,7 +2644,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						else if (mo)
 							S_StartSound(&mo->subsector->sector->soundorg, sfxnum);
 					}
->>>>>>> srb2/next
 					else if (mo)
 					{
 						// play the sound from mobj that triggered it
@@ -3302,13 +3126,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					// Unlocked something?
 					if (M_UpdateUnlockablesAndExtraEmblems(false))
 					{
-<<<<<<< HEAD
-						S_StartSound(NULL, sfx_ncitem);
-						G_SaveGameData(false); // only save if unlocked something
-=======
 						S_StartSound(NULL, sfx_s3k68);
 						G_SaveGameData(); // only save if unlocked something
->>>>>>> srb2/next
 					}
 				}
 			}
@@ -4224,16 +4043,7 @@ void P_SetupSignExit(player_t *player)
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
-<<<<<<< HEAD
 		P_SetupSignObject(thing, player->mo);
-=======
-		P_SetTarget(&thing->target, player->mo);
-		P_SetObjectMomZ(thing, 12*FRACUNIT, false);
-		P_SetMobjState(thing, S_SIGNSPIN1);
-		if (thing->info->seesound)
-			S_StartSound(thing, thing->info->seesound);
->>>>>>> srb2/next
-
 		++numfound;
 	}
 
@@ -4259,16 +4069,7 @@ void P_SetupSignExit(player_t *player)
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
-<<<<<<< HEAD
 		P_SetupSignObject(thing, player->mo);
-=======
-		P_SetTarget(&thing->target, player->mo);
-		P_SetObjectMomZ(thing, 12*FRACUNIT, false);
-		P_SetMobjState(thing, S_SIGNSPIN1);
-		if (thing->info->seesound)
-			S_StartSound(thing, thing->info->seesound);
-
->>>>>>> srb2/next
 		++numfound;
 	}
 
@@ -4399,35 +4200,13 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 			boolean floorallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR) && ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || !(player->mo->eflags & MFE_VERTICALFLIP)) && (player->mo->z == topheight));
 			boolean ceilingallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING) && ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || (player->mo->eflags & MFE_VERTICALFLIP)) && (player->mo->z + player->mo->height == bottomheight));
 			// Thing must be on top of the floor to be affected...
-<<<<<<< HEAD
-			if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR)
-				&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING))
-			{
-				if ((mo->eflags & MFE_VERTICALFLIP) || mo->z != topheight)
-					continue;
-			}
-			else if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING)
-				&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR))
-			{
-				if (!(mo->eflags & MFE_VERTICALFLIP)
-					|| mo->z + mo->height != bottomheight)
-					continue;
-			}
-			else if (rover->master->frontsector->flags & SF_FLIPSPECIAL_BOTH)
-			{
-				if (!((mo->eflags & MFE_VERTICALFLIP && mo->z + mo->height == bottomheight)
-					|| (!(mo->eflags & MFE_VERTICALFLIP) && mo->z == topheight)))
-					continue;
-			}
-=======
+
 			if (!(floorallowed || ceilingallowed))
 				continue;
->>>>>>> srb2/next
 		}
 		else
 		{
 			// Water and DEATH FOG!!! heh
-<<<<<<< HEAD
 			if (mo->z > topheight || (mo->z + mo->height) < bottomheight)
 				continue;
 		}
@@ -4436,7 +4215,6 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 		return rover->master->frontsector;
 	}
 
-#ifdef POLYOBJECTS
 	// Allow sector specials to be applied to polyobjects!
 	if (mo->subsector->polyList)
 	{
@@ -4521,16 +4299,10 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 					continue;
 				}
 			}
-=======
-			if (player->mo->z > topheight || (player->mo->z + player->mo->height) < bottomheight)
-				continue;
-		}
->>>>>>> srb2/next
 
 			return polysec;
 		}
 	}
-#endif
 
 	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
@@ -4585,29 +4357,9 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 				boolean floorallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR) && ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || !(player->mo->eflags & MFE_VERTICALFLIP)) && (player->mo->z == topheight));
 				boolean ceilingallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING) && ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || (player->mo->eflags & MFE_VERTICALFLIP)) && (player->mo->z + player->mo->height == bottomheight));
 				// Thing must be on top of the floor to be affected...
-<<<<<<< HEAD
-				if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR)
-					&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING))
-				{
-					if ((mo->eflags & MFE_VERTICALFLIP) || mo->z != topheight)
-						continue;
-				}
-				else if ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING)
-					&& !(rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR))
-				{
-					if (!(mo->eflags & MFE_VERTICALFLIP) || mo->z + mo->height != bottomheight)
-						continue;
-				}
-				else if (rover->master->frontsector->flags & SF_FLIPSPECIAL_BOTH)
-				{
-					if (!((mo->eflags & MFE_VERTICALFLIP && mo->z + mo->height == bottomheight)
-						|| (!(mo->eflags & MFE_VERTICALFLIP) && mo->z == topheight)))
-						continue;
-				}
-=======
+
 				if (!(floorallowed || ceilingallowed))
 					continue;
->>>>>>> srb2/next
 			}
 			else
 			{
@@ -4733,23 +4485,9 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 				P_DamageMobj(player->mo, NULL, NULL, 1, 0);
 			break;
-<<<<<<< HEAD
 		case 2: // Damage (Water) // SRB2kart - These three damage types are now offroad sectors
 		case 3: // Damage (Fire)
 		case 4: // Damage (Electrical)
-=======
-		case 2: // Damage (Water)
-			if ((roversector || P_MobjReadyToTrigger(player->mo, sector)) && (player->powers[pw_underwater] || player->powers[pw_carry] == CR_NIGHTSMODE))
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_WATER);
-			break;
-		case 3: // Damage (Fire)
-			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_FIRE);
-			break;
-		case 4: // Damage (Electrical)
-			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_ELECTRIC);
->>>>>>> srb2/next
 			break;
 		case 5: // Spikes
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
@@ -4758,23 +4496,6 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 6: // Death Pit (Camera Mod)
 		case 7: // Death Pit (No Camera Mod)
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-<<<<<<< HEAD
-				K_DoIngameRespawn(player);
-			break;
-		case 8: // Instant Kill
-			K_DoIngameRespawn(player);
-			break;
-		case 9: // Ring Drainer (Floor Touch)
-		case 10: // Ring Drainer (No Floor Touch)
-			if (leveltime % (TICRATE/2) == 0 && player->kartstuff[k_rings] > 0)
-			{
-				player->kartstuff[k_rings]--;
-				S_StartSound(player->mo, sfx_itemup);
-			}
-			break;
-		case 11: // Special Stage Damage - Kind of like a mini-P_DamageMobj()
-			if (player->powers[pw_invulnerability] || player->powers[pw_flashing] || player->powers[pw_super] || player->exiting)
-=======
 			{
 				if (player->quittime)
 					G_MovePlayerToSpawnOrStarpost(player - players);
@@ -4798,7 +4519,6 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			break;
 		case 11: // Special Stage Damage
 			if (player->exiting || player->bot) // Don't do anything for bots or players who have just finished
->>>>>>> srb2/next
 				break;
 
 			if (!(player->powers[pw_shield] || player->spheres > 0)) // Don't do anything if no shield or spheres anyway
@@ -4806,14 +4526,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 
 			P_SpecialStageDamage(player, NULL, NULL);
 			break;
-<<<<<<< HEAD
 		case 12: // Wall Sector (Don't step-up/down)
-=======
-		case 12: // Space Countdown
-			if (!(player->powers[pw_shield] & SH_PROTECTWATER) && !player->powers[pw_spacetime])
-				player->powers[pw_spacetime] = spacetimetics + 1;
-			break;
->>>>>>> srb2/next
 		case 13: // Ramp Sector (Increase step-up/down)
 		case 14: // Non-Ramp Sector (Don't step-down)
 		case 15: // Bouncy Sector (FOF Control Only)
@@ -4831,9 +4544,6 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 3: // Linedef executor requires all players present
 			/// \todo check continues for proper splitscreen support?
 			for (i = 0; i < MAXPLAYERS; i++)
-<<<<<<< HEAD
-				if (playeringame[i] && players[i].mo && (gametype != GT_COOP || players[i].lives > 0))
-=======
 			{
 				if (!playeringame[i])
 					continue;
@@ -4843,10 +4553,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 					continue;
 				if (players[i].bot)
 					continue;
-				if (gametype == GT_COOP && players[i].lives <= 0)
-					continue;
 				if (roversector)
->>>>>>> srb2/next
 				{
 					if (sector->flags & SF_TRIGGERSPECIAL_TOUCH)
 					{
@@ -4952,7 +4659,6 @@ DoneSection2:
 	// Process Section 3
 	switch (special)
 	{
-<<<<<<< HEAD
 		case 1: // SRB2kart: Spring Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
@@ -5000,19 +4706,8 @@ DoneSection2:
 		case 4: // Conveyor Belt
 			break;
 
-		case 5: // Speed pad w/o spin
-		case 6: // Speed pad w/ spin
-			if (player->kartstuff[k_dashpadcooldown] != 0)
-=======
-		case 1: // Unused
-		case 2: // Wind/Current
-		case 3: // Unused
-		case 4: // Conveyor Belt
-			break;
-
 		case 5: // Speed pad
-			if (player->powers[pw_flashing] != 0 && player->powers[pw_flashing] < TICRATE/2)
->>>>>>> srb2/next
+			if (player->kartstuff[k_dashpadcooldown] != 0)
 				break;
 
 			i = P_FindSpecialLineFromTag(4, sector->tag, -1);
@@ -5032,22 +4727,10 @@ DoneSection2:
 					break;
 				}
 
-<<<<<<< HEAD
 				// SRB2Kart: Scale the speed you get from them!
 				// This is scaled differently from other horizontal speed boosts from stuff like springs, because of how this is used for some ramp jumps.
 				if (player->mo->scale > mapobjectscale)
 					linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
-=======
-				player->mo->angle = player->drawangle = lineangle;
-
-				if (!demoplayback || P_ControlStyle(player) == CS_LMAOGALOG)
-				{
-					if (player == &players[consoleplayer])
-						localangle = player->mo->angle;
-					else if (player == &players[secondarydisplayplayer])
-						localangle2 = player->mo->angle;
-				}
->>>>>>> srb2/next
 
 				if (!(lines[i].flags & ML_EFFECT4))
 				{
@@ -5067,7 +4750,6 @@ DoneSection2:
 
 				P_InstaThrust(player->mo, lineangle, linespeed);
 
-<<<<<<< HEAD
 				player->kartstuff[k_dashpadcooldown] = TICRATE/3;
 				player->kartstuff[k_pogospring] = 0;
 				S_StartSound(player->mo, sfx_spdpad);
@@ -5078,24 +4760,6 @@ DoneSection2:
 						S_StartSound(player->mo, sfx_kbost1+pick);
 					//K_TauntVoiceTimers(player);
 				}
-=======
-				if ((lines[i].flags & ML_EFFECT5) && (player->charability2 == CA2_SPINDASH)) // Roll!
-				{
-					if (!(player->pflags & PF_SPINNING))
-						player->pflags |= PF_SPINNING;
-
-					P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
-				}
-
-				player->powers[pw_flashing] = TICRATE/3;
-
-				sfxnum = sides[lines[i].sidenum[0]].toptexture;
-
-				if (!sfxnum)
-					sfxnum = sfx_spdpad;
-
-				S_StartSound(player->mo, sfxnum);
->>>>>>> srb2/next
 			}
 			break;
 
@@ -5129,18 +4793,8 @@ DoneSection2:
 		}
 
 		case 2: // Special stage GOAL sector / Exit Sector / CTF Flag Return
-<<<<<<< HEAD
-			if (!useNightsSS && G_IsSpecialStage(gamemap) && sstimer > 6)
-				sstimer = 6; // Just let P_Ticker take care of the rest.
-=======
-			if (player->bot || !(gametyperules & GTR_ALLOWEXIT))
+			if (!(gametyperules & GTR_ALLOWEXIT))
 				break;
-			if (!(maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap) && player->nightstime > 6)
-			{
-				player->nightstime = 6; // Just let P_Ticker take care of the rest.
-				return;
-			}
->>>>>>> srb2/next
 
 			// Exit (for FOF exits; others are handled in P_PlayerThink in p_user.c)
 			{
@@ -5241,33 +4895,16 @@ DoneSection2:
 				player->mo->momz = mobjinfo[MT_FAN].mass;
 
 			P_ResetPlayer(player);
-<<<<<<< HEAD
-			//if (player->panim != PA_FALL) 					// SRB2kart
-			//	P_SetPlayerMobjState(player->mo, S_PLAY_FALL1);
-=======
-			if (player->panim != PA_FALL)
-				P_SetPlayerMobjState(player->mo, S_PLAY_FALL);
->>>>>>> srb2/next
 			break;
 
 		case 6: // SRB2kart 190117 - Sneaker Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
-<<<<<<< HEAD
 				if (!player->kartstuff[k_floorboost])
 					player->kartstuff[k_floorboost] = 3;
 				else
 					player->kartstuff[k_floorboost] = 2;
 				K_DoSneaker(player, 0);
-=======
-				player->pflags |= PF_SPINNING;
-				P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
-				S_StartAttackSound(player->mo, sfx_spin);
-
-				if (abs(player->rmomx) < FixedMul(5*FRACUNIT, player->mo->scale)
-				&& abs(player->rmomy) < FixedMul(5*FRACUNIT, player->mo->scale))
-					P_InstaThrust(player->mo, player->mo->angle, FixedMul(10*FRACUNIT, player->mo->scale));
->>>>>>> srb2/next
 			}
 			break;
 
@@ -5324,21 +4961,7 @@ DoneSection2:
 				P_SetTarget(&player->mo->tracer, waypoint);
 				player->powers[pw_carry] = CR_ZOOMTUBE;
 				player->speed = speed;
-<<<<<<< HEAD
-				player->pflags &= ~PF_SPINNING; // SRB2kart 200117
-				player->pflags &= ~PF_JUMPED;
-				player->pflags &= ~PF_GLIDING;
-				player->climbing = 0;
 
-				if (!(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
-					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
-
-				//if (!(player->mo->state >= &states[S_PLAY_ATK1] && player->mo->state <= &states[S_PLAY_ATK4])) // SRB2kart
-				//{
-				//	P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
-				//	S_StartSound(player->mo, sfx_spin);
-				//}
-=======
 				player->pflags |= PF_SPINNING;
 				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
 				player->climbing = 0;
@@ -5348,7 +4971,6 @@ DoneSection2:
 					P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
 					S_StartSound(player->mo, sfx_spin);
 				}
->>>>>>> srb2/next
 			}
 			break;
 
@@ -5402,255 +5024,11 @@ DoneSection2:
 				P_SetTarget(&player->mo->tracer, waypoint);
 				player->powers[pw_carry] = CR_ZOOMTUBE;
 				player->speed = speed;
-<<<<<<< HEAD
-				player->pflags &= ~PF_SPINNING; // SRB2kart 200117
-				player->pflags &= ~PF_JUMPED;
-
-				if (!(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
-					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
-
-				//if (!(player->mo->state >= &states[S_PLAY_ATK1] && player->mo->state <= &states[S_PLAY_ATK4])) // SRB2kart
-				//{
-				//	P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
-				//	S_StartSound(player->mo, sfx_spin);
-				//}
 			}
 			break;
 
-		case 10: // Finish Line (Unused)
-			// SRB2Kart 20190616 - Is now a linedef type that activates by crossing over it
-=======
-				player->pflags |= PF_SPINNING;
-				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
-				player->climbing = 0;
-
-				if (player->mo->state-states != S_PLAY_ROLL)
-				{
-					P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
-					S_StartSound(player->mo, sfx_spin);
-				}
-			}
-			break;
-
-		case 10: // Finish Line
-			if (gametype == GT_RACE && !player->exiting)
-			{
-				if (player->starpostnum == numstarposts) // Must have touched all the starposts
-				{
-					player->laps++;
-
-					if (player->powers[pw_carry] == CR_NIGHTSMODE)
-						player->drillmeter += 48*20;
-
-					if (player->laps >= (UINT8)cv_numlaps.value)
-						CONS_Printf(M_GetText("%s has finished the race.\n"), player_names[player-players]);
-					else
-						CONS_Printf(M_GetText("%s started lap %u\n"), player_names[player-players], (UINT32)player->laps+1);
-
-					// Reset starposts (checkpoints) info
-					player->starpostscale = player->starpostangle = player->starposttime = player->starpostnum = 0;
-					player->starpostx = player->starposty = player->starpostz = 0;
-					P_ResetStarposts();
-
-					// Play the starpost sound for 'consistency'
-					S_StartSound(player->mo, sfx_strpst);
-				}
-				else if (player->starpostnum)
-				{
-					// blatant reuse of a variable that's normally unused in circuit
-					if (!player->tossdelay)
-						S_StartSound(player->mo, sfx_lose);
-					player->tossdelay = 3;
-				}
-
-				if (player->laps >= (unsigned)cv_numlaps.value)
-				{
-					if (P_IsLocalPlayer(player))
-					{
-						HU_SetCEchoFlags(0);
-						HU_SetCEchoDuration(5);
-						HU_DoCEcho("FINISHED!");
-					}
-
-					P_DoPlayerExit(player);
-				}
-			}
->>>>>>> srb2/next
-			break;
-
-		case 11: // Rope hang
-			{
-				INT32 sequence;
-				fixed_t speed;
-				INT32 lineindex;
-				mobj_t *waypointmid = NULL;
-				mobj_t *waypointhigh = NULL;
-				mobj_t *waypointlow = NULL;
-				mobj_t *closest = NULL;
-				vector3_t p, line[2], resulthigh, resultlow;
-
-				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ROPEHANG)
-					break;
-
-				if (player->mo->momz > 0)
-					break;
-
-				if (player->cmd.buttons & BT_BRAKE)
-					break;
-
-				if (!(player->pflags & PF_SLIDING) && player->mo->state == &states[player->mo->info->painstate])
-					break;
-
-				if (player->exiting)
-					break;
-
-				//initialize resulthigh and resultlow with 0
-				memset(&resultlow, 0x00, sizeof(resultlow));
-				memset(&resulthigh, 0x00, sizeof(resulthigh));
-
-				// Find line #11 tagged to this sector
-				lineindex = P_FindSpecialLineFromTag(11, sector->tag, -1);
-
-				if (lineindex == -1)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "ERROR: Sector special %d missing line special #11.\n", sector->special);
-					break;
-				}
-
-				// Grab speed and sequence values
-				speed = abs(sides[lines[lineindex].sidenum[0]].textureoffset)/8;
-				sequence = abs(sides[lines[lineindex].sidenum[0]].rowoffset)>>FRACBITS;
-
-				if (speed == 0)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "ERROR: Waypoint sequence %d at zero speed.\n", sequence);
-					break;
-				}
-
-				// Find the closest waypoint
-				// Find the preceding waypoint
-				// Find the proceeding waypoint
-				// Determine the closest spot on the line between the three waypoints
-				// Put player at that location.
-
-				waypointmid = P_GetClosestWaypoint(sequence, player->mo);
-
-				if (!waypointmid)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "ERROR: WAYPOINT(S) IN SEQUENCE %d NOT FOUND.\n", sequence);
-					break;
-				}
-
-				waypointlow = P_GetPreviousWaypoint(waypointmid, true);
-				waypointhigh = P_GetNextWaypoint(waypointmid, true);
-
-				CONS_Debug(DBG_GAMELOGIC, "WaypointMid: %d; WaypointLow: %d; WaypointHigh: %d\n",
-								waypointmid->health, waypointlow ? waypointlow->health : -1, waypointhigh ? waypointhigh->health : -1);
-
-				// Now we have three waypoints... the closest one we're near, and the one that comes before, and after.
-				// Next, we need to find the closest point on the line between each set, and determine which one we're
-				// closest to.
-
-				p.x = player->mo->x;
-				p.y = player->mo->y;
-				p.z = player->mo->z;
-
-				// Waypointmid and Waypointlow:
-				if (waypointlow)
-				{
-					line[0].x = waypointmid->x;
-					line[0].y = waypointmid->y;
-					line[0].z = waypointmid->z;
-					line[1].x = waypointlow->x;
-					line[1].y = waypointlow->y;
-					line[1].z = waypointlow->z;
-
-					P_ClosestPointOnLine3D(&p, line, &resultlow);
-				}
-
-				// Waypointmid and Waypointhigh:
-				if (waypointhigh)
-				{
-					line[0].x = waypointmid->x;
-					line[0].y = waypointmid->y;
-					line[0].z = waypointmid->z;
-					line[1].x = waypointhigh->x;
-					line[1].y = waypointhigh->y;
-					line[1].z = waypointhigh->z;
-
-					P_ClosestPointOnLine3D(&p, line, &resulthigh);
-				}
-
-				// 3D support now available. Disregard the previous notice here. -Red
-
-				P_UnsetThingPosition(player->mo);
-				P_ResetPlayer(player);
-				player->mo->momx = player->mo->momy = player->mo->momz = 0;
-
-				if (lines[lineindex].flags & ML_EFFECT1) // Don't wrap
-				{
-					mobj_t *highest = P_GetLastWaypoint(sequence);
-					highest->flags |= MF_SLIDEME;
-				}
-
-				// Changing the conditions on these ifs to fix issues with snapping to the wrong spot -Red
-				if ((lines[lineindex].flags & ML_EFFECT1) && waypointmid->health == 0)
-				{
-					closest = waypointhigh;
-					player->mo->x = resulthigh.x;
-					player->mo->y = resulthigh.y;
-					player->mo->z = resulthigh.z - P_GetPlayerHeight(player);
-				}
-				else if ((lines[lineindex].flags & ML_EFFECT1) && waypointmid->health == numwaypoints[sequence] - 1)
-				{
-					closest = waypointmid;
-					player->mo->x = resultlow.x;
-					player->mo->y = resultlow.y;
-					player->mo->z = resultlow.z - P_GetPlayerHeight(player);
-				}
-				else
-				{
-					if (P_AproxDistance(P_AproxDistance(player->mo->x-resultlow.x, player->mo->y-resultlow.y),
-							player->mo->z-resultlow.z) < P_AproxDistance(P_AproxDistance(player->mo->x-resulthigh.x,
-								player->mo->y-resulthigh.y), player->mo->z-resulthigh.z))
-					{
-						// Line between Mid and Low is closer
-						closest = waypointmid;
-						player->mo->x = resultlow.x;
-						player->mo->y = resultlow.y;
-						player->mo->z = resultlow.z - P_GetPlayerHeight(player);
-					}
-					else
-					{
-						// Line between Mid and High is closer
-						closest = waypointhigh;
-						player->mo->x = resulthigh.x;
-						player->mo->y = resulthigh.y;
-						player->mo->z = resulthigh.z - P_GetPlayerHeight(player);
-					}
-				}
-
-				P_SetTarget(&player->mo->tracer, closest);
-				player->powers[pw_carry] = CR_ROPEHANG;
-
-				// Option for static ropes.
-				if (lines[lineindex].flags & ML_NOCLIMB)
-					player->speed = 0;
-				else
-					player->speed = speed;
-
-				S_StartSound(player->mo, sfx_s3k4a);
-
-				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
-				player->climbing = 0;
-				P_SetThingPosition(player->mo);
-<<<<<<< HEAD
-				//P_SetPlayerMobjState(player->mo, S_PLAY_CARRY); // SRB2kart
-=======
-				P_SetPlayerMobjState(player->mo, S_PLAY_RIDE);
->>>>>>> srb2/next
-			}
-			break;
+		case 10: // Unused
+		case 11: // Unused
 		case 12: // Camera noclip
 		case 13: // Unused
 		case 14: // Unused
@@ -6449,16 +5827,7 @@ static void P_AddRaiseThinker(sector_t *sec, INT16 tag, fixed_t speed, fixed_t c
 
 	raise->thinker.function.acp1 = (actionf_p1)T_RaiseSector;
 
-<<<<<<< HEAD
-	if (sourceline->flags & ML_BLOCKPLAYERS)
-		raise->vars[0] = 1;
-	else
-		raise->vars[0] = 0;
-
-	// set up the fields
-=======
 	raise->tag = tag;
->>>>>>> srb2/next
 	raise->sector = sec;
 
 	raise->ceilingtop = ceilingtop;
@@ -6484,32 +5853,8 @@ static void P_AddAirbob(sector_t *sec, INT16 tag, fixed_t dist, boolean raise, b
 	airbob->tag = tag;
 	airbob->sector = sec;
 
-<<<<<<< HEAD
-	// Require a spindash to activate
-	if (sourceline->flags & ML_NOCLIMB)
-		airbob->vars[1] = 1;
-	else
-		airbob->vars[1] = 0;
-
-	airbob->vars[2] = FRACUNIT;
-
-	if (noadjust)
-		airbob->vars[7] = airbob->sector->ceilingheight-16*FRACUNIT;
-	else
-		airbob->vars[7] = airbob->sector->ceilingheight - P_AproxDistance(sourceline->dx, sourceline->dy);
-	airbob->vars[6] = airbob->vars[7]
-		- (sec->ceilingheight - sec->floorheight);
-
-	airbob->vars[3] = airbob->vars[2];
-
-	if (sourceline->flags & ML_BLOCKPLAYERS)
-		airbob->vars[0] = 1;
-	else
-		airbob->vars[0] = 0;
-=======
 	airbob->ceilingtop = sec->ceilingheight;
 	airbob->ceilingbottom = sec->ceilingheight - dist;
->>>>>>> srb2/next
 
 	airbob->basespeed = FRACUNIT;
 
@@ -6728,11 +6073,7 @@ static void P_RunLevelLoadExecutors(void)
 }
 
 /** Before things are loaded, initialises certain stuff in case they're needed
-<<<<<<< HEAD
-  * by P_ResetDynamicSlopes or P_LoadThings. This was split off from
-=======
   * by P_SpawnSlopes or P_LoadThings. This was split off from
->>>>>>> srb2/next
   * P_SpawnSpecials, in case you couldn't tell.
   *
   * \sa P_SpawnSpecials, P_InitTagLists
@@ -6740,24 +6081,9 @@ static void P_RunLevelLoadExecutors(void)
   */
 void P_InitSpecials(void)
 {
-<<<<<<< HEAD
 	// Set the map object scale
 	mapobjectscale = mapheaderinfo[gamemap-1]->mobj_scale;
 
-	// Set the default gravity. Custom gravity overrides this setting.
-	gravity = (FRACUNIT*8)/10;
-
-	// Defaults in case levels don't have them set.
-	sstimer = 90*TICRATE + 6;
-	totalrings = 1;
-
-	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
-
-	// Set weather
-	curWeather = globalweather = mapheaderinfo[gamemap-1]->weather;
-
-	P_InitTagLists(); // Create xref tables for tags
-=======
 	// Set the default gravity. Custom gravity overrides this setting.
 	gravity = mapheaderinfo[gamemap-1]->gravity;
 
@@ -6767,23 +6093,8 @@ void P_InitSpecials(void)
 
 	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
-	// Set curWeather
-	switch (mapheaderinfo[gamemap-1]->weather)
-	{
-		case PRECIP_SNOW: // snow
-		case PRECIP_RAIN: // rain
-		case PRECIP_STORM: // storm
-		case PRECIP_STORM_NORAIN: // storm w/o rain
-		case PRECIP_STORM_NOSTRIKES: // storm w/o lightning
-			curWeather = mapheaderinfo[gamemap-1]->weather;
-			break;
-		default: // blank/none
-			curWeather = PRECIP_NONE;
-			break;
-	}
-
-	// Set globalweather
-	globalweather = mapheaderinfo[gamemap-1]->weather;
+	// Set weather
+	curWeather = globalweather = mapheaderinfo[gamemap-1]->weather;
 
 	P_InitTagLists();   // Create xref tables for tags
 }
@@ -6803,8 +6114,6 @@ static void P_ApplyFlatAlignment(line_t *master, sector_t *sector, angle_t flata
 		sector->ceiling_xoffs += xoffs;
 		sector->ceiling_yoffs += yoffs;
 	}
-
->>>>>>> srb2/next
 }
 
 /** After the map has loaded, scans for specials that spawn 3Dfloors and
@@ -6827,13 +6136,10 @@ void P_SpawnSpecials(boolean fromnetsave)
 	// but currently isn't.
 	(void)fromnetsave;
 
-<<<<<<< HEAD
-=======
 	// yep, we do this here - "bossdisabled" is considered an apparatus of specials.
 	bossdisabled = 0;
 	stoppedclock = false;
 
->>>>>>> srb2/next
 	// Init special SECTORs.
 	sector = sectors;
 	for (i = 0; i < numsectors; i++, sector++)
@@ -6884,11 +6190,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 		}
 	}
 
-<<<<<<< HEAD
-	P_SearchForDisableLinedefs(); // Disable linedefs are now allowed to disable *any* line
-
-=======
->>>>>>> srb2/next
 	P_SpawnScrollers(); // Add generalized scrollers
 	P_SpawnFriction();  // Friction model using linedefs
 	P_SpawnPushers();   // Pusher model using linedefs
@@ -6932,21 +6233,10 @@ void P_SpawnSpecials(boolean fromnetsave)
 	// Init line EFFECTs
 	for (i = 0; i < numlines; i++)
 	{
-<<<<<<< HEAD
-		if (lines[i].special != 7) // This is a hack. I can at least hope nobody wants to prevent flat alignment with arbitrary skin setups...
-		{
-			// set line specials to 0 here too, same reason as above
-			if (netgame || multiplayer)
-			{
-				// future: nonet flag?
-			}
-			else if ((lines[i].flags & ML_NETONLY) == ML_NETONLY)
-=======
 		if (lines[i].special != 7) // This is a hack. I can at least hope nobody wants to prevent flat alignment in netgames...
 		{
 			// set line specials to 0 here too, same reason as above
 			if (netgame || multiplayer)
->>>>>>> srb2/next
 			{
 				if (lines[i].flags & ML_NONET)
 				{
@@ -6954,20 +6244,11 @@ void P_SpawnSpecials(boolean fromnetsave)
 					continue;
 				}
 			}
-<<<<<<< HEAD
-			/*else -- commented out because irrelevant to kart. keeping here because we can use these flags for something else now
-=======
 			else if (lines[i].flags & ML_NETONLY)
->>>>>>> srb2/next
 			{
-				if ((players[consoleplayer].charability == CA_THOK && (lines[i].flags & ML_NOSONIC))
-				|| (players[consoleplayer].charability == CA_FLY && (lines[i].flags & ML_NOTAILS))
-				|| (players[consoleplayer].charability == CA_GLIDEANDCLIMB && (lines[i].flags & ML_NOKNUX)))
-				{
-					lines[i].special = 0;
-					continue;
-				}
-			}*/
+				lines[i].special = 0;
+				continue;
+			}
 		}
 
 		switch (lines[i].special)
@@ -7006,57 +6287,13 @@ void P_SpawnSpecials(boolean fromnetsave)
 					P_AddCameraScanner(&sectors[sec], &sectors[s], R_PointToAngle2(lines[i].v2->x, lines[i].v2->y, lines[i].v1->x, lines[i].v1->y));
 				break;
 
-<<<<<<< HEAD
-#ifdef PARANOIA
-			case 6: // Disable tags if level not cleared
-				I_Error("Failed to catch a disable linedef");
-				break;
-#endif
-			case 7: // Flat alignment - redone by toast
-				if ((lines[i].flags & (ML_NOSONIC|ML_NOTAILS)) != (ML_NOSONIC|ML_NOTAILS)) // If you can do something...
-=======
 			case 7: // Flat alignment - redone by toast
 				if ((lines[i].flags & (ML_NETONLY|ML_NONET)) != (ML_NETONLY|ML_NONET)) // If you can do something...
->>>>>>> srb2/next
 				{
 					angle_t flatangle = InvAngle(R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y));
 					fixed_t xoffs;
 					fixed_t yoffs;
 
-<<<<<<< HEAD
-					if (lines[i].flags & ML_NOKNUX) // Set offset through x and y texture offsets if NOKNUX flag is set
-					{
-						xoffs = sides[lines[i].sidenum[0]].textureoffset;
-						yoffs = sides[lines[i].sidenum[0]].rowoffset;
-					}
-					else // Otherwise, set calculated offsets such that line's v1 is the apparent origin
-					{
-						xoffs = -lines[i].v1->x;
-						yoffs = lines[i].v1->y;
-					}
-
-					for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
-					{
-						if (!(lines[i].flags & ML_NOSONIC)) // Modify floor flat alignment unless NOSONIC flag is set
-						{
-							sectors[s].spawn_flrpic_angle = sectors[s].floorpic_angle = flatangle;
-							sectors[s].floor_xoffs += xoffs;
-							sectors[s].floor_yoffs += yoffs;
-							// saved for netgames
-							sectors[s].spawn_flr_xoffs = sectors[s].floor_xoffs;
-							sectors[s].spawn_flr_yoffs = sectors[s].floor_yoffs;
-						}
-
-						if (!(lines[i].flags & ML_NOTAILS)) // Modify ceiling flat alignment unless NOTAILS flag is set
-						{
-							sectors[s].spawn_ceilpic_angle = sectors[s].ceilingpic_angle = flatangle;
-							sectors[s].ceiling_xoffs += xoffs;
-							sectors[s].ceiling_yoffs += yoffs;
-							// saved for netgames
-							sectors[s].spawn_ceil_xoffs = sectors[s].ceiling_xoffs;
-							sectors[s].spawn_ceil_yoffs = sectors[s].ceiling_yoffs;
-						}
-=======
 					if (lines[i].flags & ML_EFFECT6) // Set offset through x and y texture offsets if ML_EFFECT6 flag is set
 					{
 						xoffs = sides[lines[i].sidenum[0]].textureoffset;
@@ -7075,7 +6312,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 					{
 						for (s = -1; (s = P_FindSectorFromTag(lines[i].tag, s)) >= 0;)
 							P_ApplyFlatAlignment(lines + i, sectors + s, flatangle, xoffs, yoffs);
->>>>>>> srb2/next
 					}
 				}
 				else // Otherwise, print a helpful warning. Can I do no less?
@@ -7179,13 +6415,8 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 
 			case 64: // Appearing/Disappearing FOF option
-<<<<<<< HEAD
 				if (lines[i].flags & ML_BLOCKPLAYERS) { // Find FOFs by control sector tag
-					for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
-=======
-				if (lines[i].flags & ML_BLOCKMONSTERS) { // Find FOFs by control sector tag
 					for (s = -1; (s = P_FindSectorFromTag(lines[i].tag, s)) >= 0 ;)
->>>>>>> srb2/next
 						for (j = 0; (unsigned)j < sectors[s].linecount; j++)
 							if (sectors[s].lines[j]->special >= 100 && sectors[s].lines[j]->special < 300)
 								Add_MasterDisappearer(abs(lines[i].dx>>FRACBITS), abs(lines[i].dy>>FRACBITS), abs(sides[lines[i].sidenum[0]].sector->floorheight>>FRACBITS), (INT32)(sectors[s].lines[j]-lines), (INT32)i);
@@ -7405,12 +6636,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 			{
 				fixed_t dist = (lines[i].special == 150) ? 16*FRACUNIT : P_AproxDistance(lines[i].dx, lines[i].dy);
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL, secthinkers);
-<<<<<<< HEAD
-				lines[i].flags |= ML_BLOCKPLAYERS;
-				P_AddOldAirbob(lines[i].frontsector, lines + i, (lines[i].special != 151));
-=======
 				P_AddAirbob(lines[i].frontsector, lines[i].tag, dist, false, !!(lines[i].flags & ML_NOCLIMB), false);
->>>>>>> srb2/next
 				break;
 			}
 			case 152: // Adjustable air bobbing platform in reverse
@@ -7469,23 +6695,13 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 			case 176: // Air bobbing platform that will crumble and bob on the water when it falls and hits
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_FLOATBOB|FF_CRUMBLE, secthinkers);
-<<<<<<< HEAD
-				lines[i].flags |= ML_BLOCKPLAYERS;
-				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
-=======
 				P_AddAirbob(lines[i].frontsector, lines[i].tag, 16*FRACUNIT, false, !!(lines[i].flags & ML_NOCLIMB), false);
->>>>>>> srb2/next
 				break;
 
 			case 177: // Air bobbing platform that will crumble and bob on
 				// the water when it falls and hits, then never return
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL|FF_FLOATBOB|FF_CRUMBLE|FF_NORETURN, secthinkers);
-<<<<<<< HEAD
-				lines[i].flags |= ML_BLOCKPLAYERS;
-				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
-=======
 				P_AddAirbob(lines[i].frontsector, lines[i].tag, 16*FRACUNIT, false, !!(lines[i].flags & ML_NOCLIMB), false);
->>>>>>> srb2/next
 				break;
 
 			case 178: // Crumbling platform that will float when it hits water
@@ -7498,12 +6714,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 			case 180: // Air bobbing platform that will crumble
 				P_AddFakeFloorsByLine(i, FF_EXISTS|FF_SOLID|FF_RENDERALL|FF_CUTLEVEL|FF_CRUMBLE, secthinkers);
-<<<<<<< HEAD
-				lines[i].flags |= ML_BLOCKPLAYERS;
-				P_AddOldAirbob(lines[i].frontsector, lines + i, true);
-=======
 				P_AddAirbob(lines[i].frontsector, lines[i].tag, 16*FRACUNIT, false, !!(lines[i].flags & ML_NOCLIMB), false);
->>>>>>> srb2/next
 				break;
 
 			case 190: // Rising Platform FOF (solid, opaque, shadows)
@@ -7659,11 +6870,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 
 			case 308: // Race-only linedef executor. Triggers once.
-<<<<<<< HEAD
-				if (!G_RaceGametype())
-=======
 				if (!(gametyperules & GTR_RACE))
->>>>>>> srb2/next
 					lines[i].special = 0;
 				break;
 
@@ -7878,9 +7085,8 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 
 			case 606: // HACK! Copy colormaps. Just plain colormaps.
-<<<<<<< HEAD
-				for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
-					sectors[s].midmap = lines[i].frontsector->midmap;
+				for (s = -1; (s = P_FindSectorFromTag(lines[i].tag, s)) >= 0 ;)
+					sectors[s].extra_colormap = sectors[s].spawn_extra_colormap = sides[lines[i].sidenum[0]].colormap_data;
 				break;
 
 			// SRB2Kart
@@ -7892,12 +7098,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 			case 2002: // Linedef Trigger: Race Lap
 				break;
-=======
-				for (s = -1; (s = P_FindSectorFromTag(lines[i].tag, s)) >= 0 ;)
-					sectors[s].extra_colormap = sectors[s].spawn_extra_colormap = sides[lines[i].sidenum[0]].colormap_data;
-				break;
 
->>>>>>> srb2/next
 			default:
 				break;
 		}
@@ -9158,29 +8359,10 @@ void T_Friction(friction_t *f)
 
 	sec = sectors + f->affectee;
 
-<<<<<<< HEAD
-	// Get FOF control sector   (was "Make sure the sector type hasn't changed")
-	if (f->roverfriction)
-	//{
-		referrer = sectors + f->referrer;
-
-	/*	if (!(GETSECSPECIAL(referrer->special, 3) == 1
-			|| GETSECSPECIAL(referrer->special, 3) == 3))
-			return;
-	}
-	else
-	{
-		if (!(GETSECSPECIAL(sec->special, 3) == 1
-			|| GETSECSPECIAL(sec->special, 3) == 3))
-			return;
-	}*/
-
-=======
 	// Get FOF control sector
 	if (f->roverfriction)
 		referrer = sectors + f->referrer;
 
->>>>>>> srb2/next
 	// Assign the friction value to players on the floor, non-floating,
 	// and clipped. Normally the object's friction value is kept at
 	// ORIG_FRICTION and this thinker changes it for icy or muddy floors.
@@ -9235,31 +8417,18 @@ static void P_SpawnFriction(void)
 	size_t i;
 	line_t *l = lines;
 	register INT32 s;
-<<<<<<< HEAD
-	fixed_t strength; // frontside texture offset controls magnitude   //fixed_t length; // line length controls magnitude
-=======
 	fixed_t strength; // frontside texture offset controls magnitude
->>>>>>> srb2/next
 	fixed_t friction; // friction value to be applied during movement
 	INT32 movefactor; // applied to each player move to simulate inertia
 
 	for (i = 0; i < numlines; i++, l++)
 		if (l->special == 540)
 		{
-<<<<<<< HEAD
-			//length = P_AproxDistance(l->dx, l->dy)>>FRACBITS;
-			//friction = (0x1EB8*length)/0x80 + 0xD000;
-=======
->>>>>>> srb2/next
 			strength = sides[l->sidenum[0]].textureoffset>>FRACBITS;
 			if (strength > 0) // sludge
 				strength = strength*2; // otherwise, the maximum sludginess value is +967...
 
-<<<<<<< HEAD
-			// The following check might seem odd. At the time of movement,
-=======
 			// The following might seem odd. At the time of movement,
->>>>>>> srb2/next
 			// the move distance is multiplied by 'friction/0x10000', so a
 			// higher friction value actually means 'less friction'.
 			friction = ORIG_FRICTION - (0x1EB8*strength)/0x80; // ORIG_FRICTION is 0xE800
@@ -9269,21 +8438,11 @@ static void P_SpawnFriction(void)
 			if (friction < 0)
 				friction = 0;
 
-<<<<<<< HEAD
-			//if (friction > ORIG_FRICTION) // ice
-			//	movefactor = ((0x10092 - friction)*(0x70))/0x158;
 			movefactor = FixedDiv(ORIG_FRICTION, friction);
 			if (movefactor < FRACUNIT)
 				movefactor = 19*movefactor - 18*FRACUNIT;
 			else
-				movefactor = FRACUNIT; //movefactor = ((friction - 0xDB34)*(0xA))/0x80;
-=======
-			movefactor = FixedDiv(ORIG_FRICTION, friction);
-			if (movefactor < FRACUNIT)
-				movefactor = 8*movefactor - 7*FRACUNIT;
-			else
 				movefactor = FRACUNIT;
->>>>>>> srb2/next
 
 			for (s = -1; (s = P_FindSectorFromTag(l->tag, s)) >= 0 ;)
 				Add_Friction(friction, movefactor, s, -1);
@@ -9533,23 +8692,12 @@ void T_Pusher(pusher_t *p)
 	{
 		referrer = &sectors[p->referrer];
 
-<<<<<<< HEAD
-		//if (!(GETSECSPECIAL(referrer->special, 3) == 2
-		//	|| GETSECSPECIAL(referrer->special, 3) == 3))
-		if (GETSECSPECIAL(referrer->special, 3) != 2)
-			return;
-	}
-	//else if (!(GETSECSPECIAL(sec->special, 3) == 2
-	//		|| GETSECSPECIAL(sec->special, 3) == 3))
-	else if (GETSECSPECIAL(sec->special, 3) != 2)
-=======
 		if (GETSECSPECIAL(referrer->special, 3) != 2)
 			return;
 	}
 	else if (GETSECSPECIAL(sec->special, 3) != 2)
 		return;
 
->>>>>>> srb2/next
 	// For constant pushers (wind/current) there are 3 situations:
 	//
 	// 1) Affected Thing is above the floor.
@@ -9758,11 +8906,7 @@ void T_Pusher(pusher_t *p)
 				thing->player->pflags |= PF_SLIDING;
 				thing->angle = R_PointToAngle2 (0, 0, xspeed<<(FRACBITS-PUSH_FACTOR), yspeed<<(FRACBITS-PUSH_FACTOR));
 
-<<<<<<< HEAD
 				if (!demo.playback)
-=======
-				if (!demoplayback || P_ControlStyle(thing->player) == CS_LMAOGALOG)
->>>>>>> srb2/next
 				{
 					if (thing->player == &players[consoleplayer])
 					{
@@ -9792,14 +8936,6 @@ void T_Pusher(pusher_t *p)
 						else
 							localangle[3] += (thing->angle - localangle[3]) / 8;
 					}
-					/*if (thing->player == &players[consoleplayer])
-						localangle[0] = thing->angle;
-					else if (thing->player == &players[displayplayers[1]])
-						localangle[1] = thing->angle;
-					else if (thing->player == &players[displayplayers[2]])
-						localangle[2] = thing->angle;
-					else if (thing->player == &players[displayplayers[3]])
-						localangle[3] = thing->angle;*/
 				}
 			}
 
@@ -9888,51 +9024,3 @@ static void P_SpawnPushers(void)
 				break;
 		}
 }
-<<<<<<< HEAD
-
-static void P_SearchForDisableLinedefs(void)
-{
-	size_t i;
-	INT32 j;
-
-	// Look for disable linedefs
-	for (i = 0; i < numlines; i++)
-	{
-		if (lines[i].special == 6)
-		{
-			// Remove special
-			// Do *not* remove tag. That would mess with the tag lists
-			// that P_InitTagLists literally just created!
-			lines[i].special = 0;
-
-			// Ability flags can disable disable linedefs now, lol
-			if (netgame || multiplayer)
-			{
-				// future: nonet flag?
-			}
-			else if ((lines[i].flags & ML_NETONLY) == ML_NETONLY)
-				continue; // Net-only never triggers in single player
-			// commented out because irrelevant to kart. keeping here because we can use these flags for something else now
-			/*else if (players[consoleplayer].charability == CA_THOK && (lines[i].flags & ML_NOSONIC))
-				continue;
-			else if (players[consoleplayer].charability == CA_FLY && (lines[i].flags & ML_NOTAILS))
-				continue;
-			else if (players[consoleplayer].charability == CA_GLIDEANDCLIMB && (lines[i].flags & ML_NOKNUX))
-				continue;*/
-
-			// Disable any linedef specials with our tag.
-			for (j = -1; (j = P_FindLineFromLineTag(&lines[i], j)) >= 0;)
-				lines[j].special = 0;
-		}
-	}
-}
-
-// Rudimentary function to start a earthquake.
-// epicenter and radius are not yet used.
-void P_StartQuake(fixed_t intensity, tic_t time)
-{
-	quake.intensity = intensity;
-	quake.time = time;
-}
-=======
->>>>>>> srb2/next
