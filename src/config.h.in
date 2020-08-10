@@ -28,25 +28,9 @@
 #else
 
 /* Manually defined asset hashes for non-CMake builds
-<<<<<<< HEAD
  * Last updated 2019 / 01 / 18 - Kart v1.0.2 - Main assets
  * Last updated 2020 / 05 / 09 - Kart v1.2 - patch.kart
  */
-=======
- * Last updated 2020 / 02 / 15 - v2.2.1 - main assets
- * Last updated 2020 / 02 / 22 - v2.2.2 - patch.pk3
- * Last updated 2020 / 05 / 10 - v2.2.3 - player.dta & patch.pk3
- * Last updated 2020 / 05 / 11 - v2.2.4 - patch.pk3
- * Last updated 2020 / 07 / 07 - v2.2.5 - player.dta & patch.pk3
- * Last updated 2020 / 07 / 10 - v2.2.6 - player.dta & patch.pk3
- */
-#define ASSET_HASH_SRB2_PK3   "0277c9416756627004e83cbb5b2e3e28"
-#define ASSET_HASH_ZONES_PK3  "f7e88afb6af7996a834c7d663144bead"
-#define ASSET_HASH_PLAYER_DTA "49dad7b24634c89728cc3e0b689e12bb"
-#ifdef USE_PATCH_DTA
-#define ASSET_HASH_PATCH_PK3  "ecf00060f03c76b3e49c6ae3925b627f"
-#endif
->>>>>>> srb2/next
 
 #define ASSET_HASH_MAIN_KART     "00000000000000000000000000000000"
 #define ASSET_HASH_GFX_PK3       "00000000000000000000000000000000"
