@@ -87,8 +87,6 @@
     <ClCompile Include="win_vid.c">
       <Filter>Win32app</Filter>
     </ClCompile>
-<<<<<<< HEAD
-=======
     <ClCompile Include="..\hardware\hw_bsp.c">
       <Filter>Hw_Hardware</Filter>
     </ClCompile>
@@ -110,7 +108,6 @@
     <ClCompile Include="..\hardware\hw_md2.c">
       <Filter>Hw_Hardware</Filter>
     </ClCompile>
->>>>>>> srb2/next
     <ClCompile Include="..\hardware\hw3sound.c">
       <Filter>Hw_Hardware</Filter>
     </ClCompile>
@@ -456,12 +453,10 @@
     <ClCompile Include="..\string.c">
       <Filter>M_Misc</Filter>
     </ClCompile>
-<<<<<<< HEAD
     <ClCompile Include="..\hardware\hw_md2load.c" />
     <ClCompile Include="..\hardware\hw_md3load.c" />
     <ClCompile Include="..\hardware\hw_model.c" />
     <ClCompile Include="..\hardware\u_list.c" />
-=======
     <ClCompile Include="..\hardware\hw_md2load.c">
       <Filter>Hw_Hardware</Filter>
     </ClCompile>
@@ -484,7 +479,6 @@
     <ClCompile Include="..\r_portal.c">
       <Filter>R_Rend</Filter>
     </ClCompile>
->>>>>>> srb2/next
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="afxres.h">
@@ -508,8 +502,6 @@
     <ClInclude Include="win_main.h">
       <Filter>Win32app</Filter>
     </ClInclude>
-<<<<<<< HEAD
-=======
     <ClInclude Include="..\hardware\hw_clip.h">
       <Filter>Hw_Hardware</Filter>
     </ClInclude>
@@ -546,7 +538,6 @@
     <ClInclude Include="..\hardware\hw_model.h">
       <Filter>Hw_Hardware</Filter>
     </ClInclude>
->>>>>>> srb2/next
     <ClInclude Include="..\hardware\hw3dsdrv.h">
       <Filter>Hw_Hardware</Filter>
     </ClInclude>
