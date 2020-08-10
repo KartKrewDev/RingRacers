@@ -173,17 +173,15 @@ boolean P_PlayerInPain(player_t *player);
 void P_DoPlayerPain(player_t *player, mobj_t *source, mobj_t *inflictor);
 void P_ResetPlayer(player_t *player);
 boolean P_PlayerCanDamage(player_t *player, mobj_t *thing);
+
 boolean P_IsLocalPlayer(player_t *player);
-<<<<<<< HEAD
 boolean P_IsDisplayPlayer(player_t *player);
-boolean P_SpectatorJoinGame(player_t *player);
-=======
+
 void P_SetPlayerAngle(player_t *player, angle_t angle);
 angle_t P_GetLocalAngle(player_t *player);
 void P_SetLocalAngle(player_t *player, angle_t angle);
 void P_ForceLocalAngle(player_t *player, angle_t angle);
 boolean P_PlayerFullbright(player_t *player);
->>>>>>> srb2/next
 
 boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
@@ -221,18 +219,12 @@ void P_BlackOw(player_t *player);
 void P_ElementalFire(player_t *player, boolean cropcircle);
 void P_SpawnSkidDust(player_t *player, fixed_t radius, boolean sound);
 
-<<<<<<< HEAD
-//void P_DoPityCheck(player_t *player);
-=======
 void P_MovePlayer(player_t *player);
-void P_DoPityCheck(player_t *player);
->>>>>>> srb2/next
 void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);
 void P_DoPlayerFinish(player_t *player);
 void P_DoPlayerExit(player_t *player);
 void P_DoTimeOver(player_t *player);
-//void P_NightserizePlayer(player_t *player, INT32 ptime);
 
 void P_InstaThrust(mobj_t *mo, angle_t angle, fixed_t move);
 fixed_t P_ReturnThrustX(mobj_t *mo, angle_t angle, fixed_t move);
@@ -243,25 +235,11 @@ mobj_t *P_LookForFocusTarget(player_t *player, mobj_t *exclude, SINT8 direction,
 
 mobj_t *P_LookForEnemies(player_t *player, boolean nonenemies, boolean bullet);
 void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius);
-<<<<<<< HEAD
-void P_HomingAttack(mobj_t *source, mobj_t *enemy); /// \todo doesn't belong in p_user
-//boolean P_SuperReady(player_t *player);
-/*boolean P_TransferToNextMare(player_t *player);
-UINT8 P_FindLowestMare(void);*/
+
 UINT8 P_FindLowestLap(void);
 UINT8 P_FindHighestLap(void);
-=======
-void P_Earthquake(mobj_t *inflictor, mobj_t *source, fixed_t radius);
-boolean P_HomingAttack(mobj_t *source, mobj_t *enemy); /// \todo doesn't belong in p_user
-boolean P_SuperReady(player_t *player);
->>>>>>> srb2/next
-void P_DoJump(player_t *player, boolean soundandstate);
-#define P_AnalogMove(player) (P_ControlStyle(player) == CS_LMAOGALOG)
-boolean P_TransferToNextMare(player_t *player);
-void P_FindEmerald(void);
-//void P_TransferToAxis(player_t *player, INT32 axisnum);
+
 boolean P_PlayerMoving(INT32 pnum);
-void P_Telekinesis(player_t *player, fixed_t thrust, fixed_t range);
 
 void P_PlayLivesJingle(player_t *player);
 void P_PlayRinglossSound(mobj_t *source);
