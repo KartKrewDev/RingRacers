@@ -330,13 +330,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s1a8",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"s1a9",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"s1aa",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-<<<<<<< HEAD
   {"s1ab",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Monty Mole twitch
   {"s1ac",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Misc. obstacle destroyed
-=======
-  {"s1ab",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Chomp"},
-  {"s1ac",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
->>>>>>> srb2/next
   {"s1ad",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"s1ae",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"s1af",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
