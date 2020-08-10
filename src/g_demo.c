@@ -48,7 +48,6 @@ consvar_t cv_recordmultiplayerdemos = {"netdemo_record", "Manual Save", CV_SAVE,
 static CV_PossibleValue_t netdemosyncquality_cons_t[] = {{1, "MIN"}, {35, "MAX"}, {0, NULL}};
 consvar_t cv_netdemosyncquality = {"netdemo_syncquality", "1", CV_SAVE, netdemosyncquality_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-boolean timingdemo; // if true, exit with report on completion
 boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
 tic_t demostarttime; // for comparative timing purposes
@@ -3579,7 +3578,7 @@ static void G_StopTimingDemo(void)
 	if (!demotime)
 		return;
 	G_StopDemo();
-	timingdemo = false;
+	demo.timing = false;
 	f1 = (double)demotime;
 	f2 = (double)framecount*TICRATE;
 

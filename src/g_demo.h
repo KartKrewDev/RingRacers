@@ -24,8 +24,9 @@ extern UINT8 *demo_p;
 // DEMO playback/recording related stuff.
 // ======================================
 
-// demoplaying back and demo recording
 extern consvar_t cv_recordmultiplayerdemos, cv_netdemosyncquality;
+
+extern tic_t demostarttime;
 
 // Publicly-accessible demo vars
 struct demovars_s {

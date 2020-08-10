@@ -125,10 +125,6 @@ UINT8  numDemos      = 0;
 UINT32 demoDelayTime = 15*TICRATE;
 UINT32 demoIdleTime  = 3*TICRATE;
 
-boolean nodrawers; // for comparative timing purposes
-boolean noblit; // for comparative timing purposes
-static tic_t demostarttime; // for comparative timing purposes
-
 boolean netgame; // only true if packets are broadcast
 boolean multiplayer;
 boolean playeringame[MAXPLAYERS];

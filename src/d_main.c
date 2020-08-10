@@ -666,7 +666,7 @@ static void D_Display(void)
 		}
 
 		// reset counters so timedemo doesn't count the wipe duration
-		if (timingdemo)
+		if (demo.timing)
 		{
 			framecount = 0;
 			demostarttime = I_GetTime();
