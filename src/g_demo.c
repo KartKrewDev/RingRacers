@@ -498,12 +498,8 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	if (ziptic & ZT_LATENCY)
 		oldcmd[playernum].latency = READUINT8(demo_p);
 
-<<<<<<< HEAD
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
-=======
-	G_CopyTiccmd(cmd, &oldcmd, 1);
 	players[playernum].angleturn = cmd->angleturn;
->>>>>>> srb2/next
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
 	{
@@ -1188,62 +1184,6 @@ void G_GhostTicker(void)
 				if (g->mo->destscale != g->mo->scale)
 					P_SetScale(g->mo, g->mo->destscale);
 			}
-<<<<<<< HEAD
-=======
-			if (xziptic & EZT_THOKMASK)
-			{ // Let's only spawn ONE of these per frame, thanks.
-				mobj_t *mobj;
-				UINT32 type = MT_NULL;
-				if (g->mo->skin)
-				{
-					skin_t *skin = (skin_t *)g->mo->skin;
-					switch (xziptic & EZT_THOKMASK)
-					{
-					case EZT_THOK:
-						type = skin->thokitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].painchance : (UINT32)skin->thokitem;
-						break;
-					case EZT_SPIN:
-						type = skin->spinitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].damage : (UINT32)skin->spinitem;
-						break;
-					case EZT_REV:
-						type = skin->revitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].raisestate : (UINT32)skin->revitem;
-						break;
-					}
-				}
-				if (type != MT_NULL)
-				{
-					if (type == MT_GHOST)
-					{
-						mobj = P_SpawnGhostMobj(g->mo); // does a large portion of the work for us
-						mobj->frame = (mobj->frame & ~FF_FRAMEMASK)|tr_trans60<<FF_TRANSSHIFT; // P_SpawnGhostMobj sets trans50, we want trans60
-					}
-					else
-					{
-						mobj = P_SpawnMobjFromMobj(g->mo, 0, 0, -FixedDiv(FixedMul(g->mo->info->height, g->mo->scale) - g->mo->height,3*FRACUNIT), MT_THOK);
-						mobj->sprite = states[mobjinfo[type].spawnstate].sprite;
-						mobj->frame = (states[mobjinfo[type].spawnstate].frame & FF_FRAMEMASK) | tr_trans60<<FF_TRANSSHIFT;
-						mobj->color = g->mo->color;
-						mobj->skin = g->mo->skin;
-						P_SetScale(mobj, (mobj->destscale = g->mo->scale));
-
-						if (type == MT_THOK) // spintrail-specific modification for MT_THOK
-						{
-							mobj->frame = FF_TRANS80;
-							mobj->fuse = mobj->tics;
-						}
-						mobj->tics = -1; // nope.
-					}
-					mobj->floorz = mobj->z;
-					mobj->ceilingz = mobj->z+mobj->height;
-					P_UnsetThingPosition(mobj);
-					mobj->flags = MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY; // make an ATTEMPT to curb crazy SOCs fucking stuff up...
-					P_SetThingPosition(mobj);
-					if (!mobj->fuse)
-						mobj->fuse = 8;
-					P_SetTarget(&mobj->target, g->mo);
-				}
-			}
->>>>>>> srb2/next
 			if (xziptic & EZT_HIT)
 			{ // Spawn hit poofs for killing things!
 				UINT16 i, count = READUINT16(g->p), health;
@@ -1679,62 +1619,6 @@ void G_ReadMetalTic(mobj_t *metal)
 			if (metal->destscale != metal->scale)
 				P_SetScale(metal, metal->destscale);
 		}
-<<<<<<< HEAD
-=======
-		if (xziptic & EZT_THOKMASK)
-		{ // Let's only spawn ONE of these per frame, thanks.
-			mobj_t *mobj;
-			UINT32 type = MT_NULL;
-			if (metal->skin)
-			{
-				skin_t *skin = (skin_t *)metal->skin;
-				switch (xziptic & EZT_THOKMASK)
-				{
-				case EZT_THOK:
-					type = skin->thokitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].painchance : (UINT32)skin->thokitem;
-					break;
-				case EZT_SPIN:
-					type = skin->spinitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].damage : (UINT32)skin->spinitem;
-					break;
-				case EZT_REV:
-					type = skin->revitem < 0 ? (UINT32)mobjinfo[MT_PLAYER].raisestate : (UINT32)skin->revitem;
-					break;
-				}
-			}
-			if (type != MT_NULL)
-			{
-				if (type == MT_GHOST)
-				{
-					mobj = P_SpawnGhostMobj(metal); // does a large portion of the work for us
-				}
-				else
-				{
-					mobj = P_SpawnMobjFromMobj(metal, 0, 0, -FixedDiv(FixedMul(metal->info->height, metal->scale) - metal->height,3*FRACUNIT), MT_THOK);
-					mobj->sprite = states[mobjinfo[type].spawnstate].sprite;
-					mobj->frame = states[mobjinfo[type].spawnstate].frame;
-					mobj->angle = metal->angle;
-					mobj->color = metal->color;
-					mobj->skin = metal->skin;
-					P_SetScale(mobj, (mobj->destscale = metal->scale));
-
-					if (type == MT_THOK) // spintrail-specific modification for MT_THOK
-					{
-						mobj->frame = FF_TRANS70;
-						mobj->fuse = mobj->tics;
-					}
-					mobj->tics = -1; // nope.
-				}
-				mobj->floorz = mobj->z;
-				mobj->ceilingz = mobj->z+mobj->height;
-				P_UnsetThingPosition(mobj);
-				mobj->flags = MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY; // make an ATTEMPT to curb crazy SOCs fucking stuff up...
-				P_SetThingPosition(mobj);
-				if (!mobj->fuse)
-					mobj->fuse = 8;
-				P_SetTarget(&mobj->target, metal);
-			}
-		}
->>>>>>> srb2/next
 		if (xziptic & EZT_SPRITE)
 			metal->sprite = READUINT16(metal_p);
 	}
@@ -2091,8 +1975,8 @@ void G_BeginRecording(void)
 	demoinfo_p = demo_p;
 	WRITEUINT32(demo_p, 0);
 
-	// Save netvars
-	CV_SaveNetVars(&demo_p, true);
+	// Save netvar data
+	CV_SaveDemoVars(&demo_p);
 
 	// Now store some info for each in-game player
 
@@ -2159,17 +2043,12 @@ void G_BeginRecording(void)
 		}
 	}
 
-<<<<<<< HEAD
 	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
 
 	// player lua vars, always saved even if empty
 	LUA_ArchiveDemo();
 
 	WRITEUINT32(demo_p,P_GetInitSeed());
-=======
-	// Save netvar data
-	CV_SaveDemoVars(&demo_p);
->>>>>>> srb2/next
 
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
@@ -2762,19 +2641,16 @@ void G_DoPlayDemo(char *defdemoname)
 	pflags_t pflags;
 	UINT32 randseed, followitem;
 	char msg[1024];
-<<<<<<< HEAD
 	boolean spectator;
 	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], numslots = 0;
 #if defined(SKIPERRORS) && !defined(DEVELOP)
 	boolean skiperrors = false;
 #endif
-
-	G_InitDemoRewind();
-=======
 #ifdef OLD22DEMOCOMPAT
 	boolean use_old_demo_vars = false;
 #endif
->>>>>>> srb2/next
+
+	G_InitDemoRewind();
 
 	skin[16] = '\0';
 	follower[16] = '\0';

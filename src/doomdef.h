@@ -685,7 +685,4 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// MIDI support is really shitty -- we don't use it anyway, so lets throw it behind a define
 #define NO_MIDI
 
-/// Maintain compatibility with older 2.2 demos
-//#define OLD22DEMOCOMPAT
-
 #endif // __DOOMDEF__
