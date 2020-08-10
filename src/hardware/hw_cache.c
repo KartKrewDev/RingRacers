@@ -850,7 +850,7 @@ void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 	Z_ChangeTag(grmip->data, PU_HWRCACHE_UNLOCKED);
 }
 
-void HWR_GetLevelFlat(levelflat_t *levelflat)
+void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap)
 {
 	// Who knows?
 	if (levelflat == NULL)
