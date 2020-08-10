@@ -480,28 +480,12 @@ dontdrawbg:
 	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
-<<<<<<< HEAD
 	if (cons_menuhighlight.value)
 		hilicol = cons_menuhighlight.value;
 	else if (modeattacking)
 		hilicol = V_ORANGEMAP;
 	else
 		hilicol = ((intertype == int_race) ? V_SKYMAP : V_REDMAP);
-=======
-		if (!splitscreen)  // there's not enough room in splitscreen, don't even bother trying!
-		{
-			// draw score
-			ST_DrawPatchFromHud(HUD_SCORE, sboscore);
-			ST_DrawNumFromHud(HUD_SCORENUM, data.coop.score);
-
-			// draw time
-			ST_DrawPatchFromHud(HUD_TIME, sbotime);
-			if (cv_timetic.value == 3)
-				ST_DrawNumFromHud(HUD_SECONDS, data.coop.tics);
-			else
-			{
-				INT32 seconds, minutes, tictrn;
->>>>>>> srb2/next
 
 	if (sorttic != -1 && intertic > sorttic && !demo.playback)
 	{
@@ -532,18 +516,8 @@ dontdrawbg:
 		V_DrawCenteredString(-4 + x + BASEVIDWIDTH/2, 12, 0, data.match.levelstring);
 		V_DrawFill((x-3) - duptweak, 34, dupadjust-2, 1, 0);
 
-<<<<<<< HEAD
 		if (data.match.encore)
 			V_DrawCenteredString(-4 + x + BASEVIDWIDTH/2, 12-8, hilicol, "ENCORE MODE");
-=======
-				if (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking || marathonmode)
-				{
-					ST_DrawPatchFromHud(HUD_TIMETICCOLON, sboperiod); // Period
-					ST_DrawPadNumFromHud(HUD_TICS, tictrn, 2); // Tics
-				}
-			}
-		}
->>>>>>> srb2/next
 
 		if (data.match.numplayers > NUMFORNEWCOLUMN)
 		{
@@ -801,16 +775,7 @@ void Y_Ticker(void)
 
 	if (intertype == int_race || intertype == int_battle)
 	{
-<<<<<<< HEAD
 		if (netgame || multiplayer)
-=======
-		INT32 i;
-		UINT32 oldscore = data.coop.score;
-		boolean skip = (marathonmode) ? true : false;
-		boolean anybonuses = false;
-
-		if (!intertic) // first time only
->>>>>>> srb2/next
 		{
 			if (sorttic == -1)
 				sorttic = intertic + max((cv_inttime.value/2)-2, 2)*TICRATE; // 8 second pause after match results
@@ -892,14 +857,8 @@ void Y_Ticker(void)
 	}
 	else if (intertype == int_battle || intertype == int_ctf || intertype == int_teammatch) // match
 	{
-<<<<<<< HEAD
 		if (!intertic) // first time only
 			S_ChangeMusicInternal("_inter", true); // loop it
-=======
-		INT32 i;
-		UINT32 oldscore = data.spec.score;
-		boolean skip = (marathonmode) ? true : false, super = false, anybonuses = false;
->>>>>>> srb2/next
 
 		// If a player has left or joined, recalculate scores.
 		if (data.match.numplayers != D_NumPlayers())
@@ -1178,20 +1137,12 @@ void Y_DetermineIntermissionType(void)
 
 	if (intermissiontypes[gametype] != int_none)
 		intertype = intermissiontypes[gametype];
-	else if (gametype == GT_COOP)
-		intertype = (G_IsSpecialStage(gamemap)) ? int_spec : int_coop;
-	else if (gametype == GT_TEAMMATCH)
-		intertype = int_teammatch;
-	else if (gametype == GT_MATCH
-	 || gametype == GT_TAG
-	 || gametype == GT_HIDEANDSEEK)
-		intertype = int_match;
+	else if (modeattacking)
+		intertype = int_timeattack;
 	else if (gametype == GT_RACE)
 		intertype = int_race;
-	else if (gametype == GT_COMPETITION)
-		intertype = int_comp;
-	else if (gametype == GT_CTF)
-		intertype = int_ctf;
+	else if (gametype == GT_BATTLE)
+		intertype = int_battle;
 }
 
 //
@@ -1222,7 +1173,6 @@ void Y_StartIntermission(void)
 	if (!multiplayer)
 	{
 		timer = 0;
-<<<<<<< HEAD
 
 		if (!majormods && !multiplayer && !demo.playback) // move this once we have a proper time attack screen
 		{
@@ -1238,9 +1188,6 @@ void Y_StartIntermission(void)
 			if (modeattacking)
 				Y_UpdateRecordReplays();
 		}
-=======
-		intertype = (G_IsSpecialStage(gamemap)) ? int_spec : int_coop;
->>>>>>> srb2/next
 	}
 	else
 	{
@@ -1276,29 +1223,8 @@ void Y_StartIntermission(void)
 	{
 		case int_battle:
 		{
-<<<<<<< HEAD
 			// Calculate who won
 			if (battlecapsules)
-=======
-			// award time and ring bonuses
-			Y_AwardCoopBonuses();
-
-			// setup time data
-			data.coop.tics = players[consoleplayer].realtime;
-
-			for (i = 0; i < 4; ++i)
-				data.coop.bonuspatches[i] = W_CachePatchName(data.coop.bonuses[i].patch, PU_PATCH);
-			data.coop.ptotal = W_CachePatchName("YB_TOTAL", PU_PATCH);
-
-			// get act number
-			data.coop.actnum = mapheaderinfo[gamemap-1]->actnum;
-
-			// get background patches
-			bgpatch = W_CachePatchName("INTERSCR", PU_PATCH);
-
-			// grab an interscreen if appropriate
-			if (mapheaderinfo[gamemap-1]->interscreen[0] != '#')
->>>>>>> srb2/next
 			{
 				Y_CalculateMatchData(0, Y_CompareTime);
 			}
@@ -2044,7 +1970,6 @@ static void Y_UnloadVoteData(void)
 	if (rendermode != render_soft)
 		return;
 
-<<<<<<< HEAD
 	UNLOAD(widebgpatch);
 	UNLOAD(bgpatch);
 	UNLOAD(cursor);
@@ -2061,12 +1986,6 @@ static void Y_UnloadVoteData(void)
 	UNLOAD(levelinfo[1].pic);
 	UNLOAD(levelinfo[0].pic);
 }
-=======
-	// unload the background patches
-	UNLOAD(bgpatch);
-	UNLOAD(bgtile);
-	UNLOAD(interpic);
->>>>>>> srb2/next
 
 //
 // Y_SetupVoteFinish

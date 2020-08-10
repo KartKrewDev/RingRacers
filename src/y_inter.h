@@ -20,15 +20,13 @@ void Y_EndIntermission(void);
 void Y_ConsiderScreenBuffer(void);
 void Y_CleanupScreenBuffer(void);
 
-<<<<<<< HEAD
+void Y_DetermineIntermissionType(void);
+
 void Y_VoteDrawer(void);
 void Y_VoteTicker(void);
 void Y_StartVote(void);
 void Y_EndVote(void);
 void Y_SetupVoteFinish(SINT8 pick, SINT8 level);
-=======
-void Y_DetermineIntermissionType(void);
->>>>>>> srb2/next
 
 typedef enum
 {
