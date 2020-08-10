@@ -332,6 +332,13 @@ static void D_Display(void)
 		if (rendermode == render_soft && !splitscreen)
 			R_CheckViewMorph();
 
+		// change the view size if needed
+		if (setsizeneeded || setrenderstillneeded)
+		{
+			R_ExecuteSetViewSize();
+			forcerefresh = true; // force background redraw
+		}
+
 		// Lactozilla: Renderer switching
 		D_CheckRendererState();
 
@@ -462,12 +469,6 @@ static void D_Display(void)
 			F_CreditDrawer();
 			HU_Erase();
 			HU_Drawer();
-			break;
-
-		case GS_TITLESCREEN:
-			F_TitleScreenDrawer();
-			if (wipe)
-				wipedefindex = wipe_titlescreen_toblack;
 			break;
 
 		case GS_WAITINGPLAYERS:
