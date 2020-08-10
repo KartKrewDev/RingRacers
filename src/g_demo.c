@@ -2646,9 +2646,6 @@ void G_DoPlayDemo(char *defdemoname)
 #if defined(SKIPERRORS) && !defined(DEVELOP)
 	boolean skiperrors = false;
 #endif
-#ifdef OLD22DEMOCOMPAT
-	boolean use_old_demo_vars = false;
-#endif
 
 	G_InitDemoRewind();
 
@@ -2728,16 +2725,6 @@ void G_DoPlayDemo(char *defdemoname)
 	switch(demo.version)
 	{
 	case DEMOVERSION: // latest always supported
-<<<<<<< HEAD
-=======
-		cnamelen = MAXCOLORNAME;
-		break;
-#ifdef OLD22DEMOCOMPAT
-	// all that changed between then and now was longer color name
-	case 0x000c:
-		cnamelen = 16;
-		use_old_demo_vars = true;
->>>>>>> srb2/next
 		break;
 #endif
 	// too old, cannot support.
@@ -2874,13 +2861,7 @@ void G_DoPlayDemo(char *defdemoname)
 	}
 
 	// net var data
-#ifdef OLD22DEMOCOMPAT
-	if (use_old_demo_vars)
-		CV_LoadOldDemoVars(&demo_p);
-	else
-#else
-		CV_LoadDemoVars(&demo_p);
-#endif
+	CV_LoadDemoVars(&demo_p);
 
 	// Sigh ... it's an empty demo.
 	if (*demo_p == DEMOMARKER)
