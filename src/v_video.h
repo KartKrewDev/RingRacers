@@ -83,7 +83,7 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_CHARCOLORSHIFT     12
 #define V_CHARCOLORMASK      0x0000F000
 // for simplicity's sake, shortcuts to specific colors
-#define V_MAGENTAMAP         0x00001000
+#define V_PURPLEMAP          0x00001000
 #define V_YELLOWMAP          0x00002000
 #define V_GREENMAP           0x00003000
 #define V_BLUEMAP            0x00004000

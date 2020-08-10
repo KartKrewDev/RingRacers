@@ -806,7 +806,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 			if (!chatcolor || chatcolor%0x1000 || chatcolor>V_TANMAP)
 				cstart = "\x80";
-			else if (chatcolor == V_MAGENTAMAP)
+			else if (chatcolor == V_PURPLEMAP)
 				cstart = "\x81";
 			else if (chatcolor == V_YELLOWMAP)
 				cstart = "\x82";
@@ -828,7 +828,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				cstart = "\x8a";
 			else if (chatcolor == V_AQUAMAP)
 				cstart = "\x8b";
-			else if (chatcolor == V_PURPLEMAP)
+			else if (chatcolor == V_MAGENTAMAP)
 				cstart = "\x8c";
 			else if (chatcolor == V_PINKMAP)
 				cstart = "\x8d";
