@@ -2755,11 +2755,16 @@ static int lib_sMusicExists(lua_State *L)
 		music_compat_name[6] = 0;
 		music_name = (const char *)&music_compat_name;
 	}
-
-	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, (int)S_GetMusicLength());
 	else
-		lua_pushnil(L);
+	{
+		music_num = 0;
+		music_name = luaL_checkstring(L, 1);
+	}
+#else
+	const char *music_name = luaL_checkstring(L, 1);
+#endif
+	NOHUD
+	lua_pushboolean(L, S_MusicExists(music_name, checkMIDI, checkDigi));
 	return 1;
 }
 

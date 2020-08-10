@@ -887,6 +887,7 @@ void ST_Drawer(void)
 
 		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 + 15, V_HUDTRANSHALF|c, player_names[seenplayer-players]);
 	}
+#endif
 
 	// Doom's status bar only updated if necessary.
 	// However, ours updates every frame regardless, so the "refresh" param was removed

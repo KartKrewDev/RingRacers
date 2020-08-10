@@ -88,7 +88,6 @@ consvar_t cv_midimusicvolume = {"midimusicvolume", "18", CV_SAVE, soundvolume_co
 
 // number of channels available
 consvar_t cv_numChannels = {"snd_channels", "64", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum, 0, NULL, NULL, 0, 0, NULL};
-#endif
 
 consvar_t surround = {"surround", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 

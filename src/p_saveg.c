@@ -2840,7 +2840,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->modeltilt = mobj->standingslope;
 #endif
 	}
-#endif
 	if (diff2 & MD2_COLORIZED)
 		mobj->colorized = READUINT8(save_p);
 	if (diff2 & MD2_MIRRORED)
