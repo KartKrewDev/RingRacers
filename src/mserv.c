@@ -50,17 +50,11 @@ static void Command_Listserv_f(void);
 #endif
 static void MasterServer_OnChange(void);
 
-<<<<<<< HEAD
-#define DEF_PORT "28900"
-consvar_t cv_masterserver = {"masterserver", "ms.srb2.org:"DEF_PORT, CV_SAVE, NULL, MasterServer_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_servername = {"servername", "SRB2Kart server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, ServerName_OnChange, 0, NULL, NULL, 0, 0, NULL};
-=======
 static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{2,  "MIN"},
 	{60, "MAX"},
 	{0}
 };
->>>>>>> srb2/next
 
 consvar_t cv_masterserver = {"masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_servername = {"servername", "SRB2Kart server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters, 0, NULL, NULL, 0, 0, NULL};
@@ -333,111 +327,15 @@ New_server_id (void)
 static void
 Register_server_thread (int *id)
 {
-<<<<<<< HEAD
-#ifdef NONET
-	(void)firstadd;
-#else
-	static INT32 retry = 0;
-	int i, res;
-	socklen_t j;
-	msg_t msg;
-	msg_server_t *info = (msg_server_t *)msg.buffer;
-	INT32 room = -1;
-	fd_set tset;
-	time_t timestamp = time(NULL);
-	UINT32 signature, tmp;
-	const char *insname;
-
-	M_Memcpy(&tset, &wset, sizeof (tset));
-	res = select(255, NULL, &tset, NULL, &select_timeout);
-	if (res != ERRSOCKET && !res)
-	{
-		if (retry++ > 30) // an about 30 second timeout
-		{
-			retry = 0;
-			CONS_Alert(CONS_ERROR, M_GetText("Master Server timed out\n"));
-			MSLastPing = timestamp;
-			return ConnectionFailed();
-		}
-		return MS_CONNECT_ERROR;
-	}
-	retry = 0;
-	/*
-	Somehow we can still select our old socket despite it being closed(?).
-	Atleast, that's what I THINK is happening. Anyway, we have to check that we
-	haven't open a socket, and actually open it!
-	*/
-	/*if (res == ERRSOCKET)*//* wtf? no! */
-	if (socket_fd == (SOCKET_TYPE)ERRSOCKET)
-	{
-		if (MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0))
-		{
-			CONS_Alert(CONS_ERROR, M_GetText("Master Server socket error #%u: %s\n"), errno, strerror(errno));
-			MSLastPing = timestamp;
-			return ConnectionFailed();
-		}
-	}
-
-	// so, the socket is writable, but what does that mean, that the connection is
-	// ok, or bad... let see that!
-	j = (socklen_t)sizeof (i);
-	getsockopt(socket_fd, SOL_SOCKET, SO_ERROR, (char *)&i, &j);
-	/*
-	This is also wrong. If getsockopt fails, i doesn't have to be set. Plus, if
-	it is set (which it appearantly is on linux), we check errno anyway. And in
-	the case that i is returned as normal, we don't even report the correct
-	value! So we accomplish NOTHING, except returning due to dumb luck.
-	If you care, fix this--I don't. -James (R.)
-	*/
-	if (i) // it was bad
-=======
 	int same;
 
 	Lock_state();
->>>>>>> srb2/next
 	{
 		/* wait for previous unlist to finish */
 		while (*id == MSId && MSRegistered)
 			I_hold_cond(&MSCond, MSMutex);
 
-<<<<<<< HEAD
-#ifdef PARANOIA
-	if (ms_RoomId <= 0)
-		I_Error("Attmepted to host in room \"All\"!\n");
-#endif
-	room = ms_RoomId;
-
-	for(signature = 0, insname = cv_servername.string; *insname; signature += *insname++);
-	tmp = (UINT32)(signature * (size_t)&MSLastPing);
-	signature *= tmp;
-	signature &= 0xAAAAAAAA;
-	M_Memcpy(&info->header.signature, &signature, sizeof (UINT32));
-
-	strcpy(info->ip, "");
-	strcpy(info->port, int2str(current_port));
-	strcpy(info->name, cv_servername.string);
-	M_Memcpy(&info->room, & room, sizeof (INT32));
-#if VERSION > 0 || SUBVERSION > 0
-	sprintf(info->version, "%d.%d", VERSION, SUBVERSION);
-#else // Trunk build, send revision info
-	strcpy(info->version, GetRevisionString());
-#endif
-	strcpy(registered_server.name, cv_servername.string);
-
-	if(firstadd)
-		msg.type = ADD_SERVER_MSG;
-	else
-		msg.type = PING_SERVER_MSG;
-
-	msg.length = (UINT32)sizeof (msg_server_t);
-	msg.room = 0;
-	if (MS_Write(&msg) < 0)
-	{
-		MSLastPing = timestamp;
-		return ConnectionFailed();
-=======
 		same = ( *id == MSId );/* it could have been a while */
->>>>>>> srb2/next
 	}
 	Unlock_state();
 
@@ -450,27 +348,7 @@ Register_server_thread (int *id)
 static void
 Update_server_thread (int *id)
 {
-<<<<<<< HEAD
-	msg_t msg;
-	msg_server_t *info = (msg_server_t *)msg.buffer;
-
-	strcpy(info->header.buffer, "");
-	strcpy(info->ip, "");
-	strcpy(info->port, int2str(current_port));
-	strcpy(info->name, registered_server.name);
-	sprintf(info->version, "%d.%d", VERSION, SUBVERSION);
-
-	msg.type = REMOVE_SERVER_MSG;
-	msg.length = (UINT32)sizeof (msg_server_t);
-	msg.room = 0;
-	if (MS_Write(&msg) < 0)
-		return MS_WRITE_ERROR;
-
-	return MS_NO_ERROR;
-}
-=======
 	int same;
->>>>>>> srb2/next
 
 	Lock_state();
 	{
