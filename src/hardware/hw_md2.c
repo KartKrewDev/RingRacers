@@ -1,13 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-// Copyright (C) 1993-1996 by id Software, Inc.
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2019 by Sonic Team Junior.
-=======
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2020 by Sonic Team Junior.
->>>>>>> srb2/next
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -420,15 +414,6 @@ static void md2_loadTexture(md2_t *model)
 			V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
 			image++;
 		}
-<<<<<<< HEAD
-
-#ifdef GLIDE_API_COMPATIBILITY
-		// not correct!
-		grpatch->mipmap->grInfo.smallLodLog2 = GR_LOD_LOG2_256;
-		grpatch->mipmap->grInfo.largeLodLog2 = GR_LOD_LOG2_256;
-		grpatch->mipmap->grInfo.aspectRatioLog2 = GR_ASPECT_LOG2_1x1;
-=======
->>>>>>> srb2/next
 	}
 
 	HWD.pfnSetTexture(grpatch->mipmap);
@@ -468,11 +453,7 @@ static void md2_loadBlendTexture(md2_t *model)
 		grpatch->mipmap->format = PCX_Load(filename, &w, &h, grpatch);
 		if (grpatch->mipmap->format == 0)
 		{
-<<<<<<< HEAD
-			grpatch->notfound = true;// mark it so its not searched for again repeatedly
-=======
 			model->noblendfile = true; // mark it so its not searched for again repeatedly
->>>>>>> srb2/next
 			Z_Free(filename);
 			return;
 		}
@@ -484,15 +465,6 @@ static void md2_loadBlendTexture(md2_t *model)
 		grpatch->height = (INT16)h;
 		grpatch->mipmap->width = (UINT16)w;
 		grpatch->mipmap->height = (UINT16)h;
-<<<<<<< HEAD
-
-#ifdef GLIDE_API_COMPATIBILITY
-		// not correct!
-		grpatch->mipmap->grInfo.smallLodLog2 = GR_LOD_LOG2_256;
-		grpatch->mipmap->grInfo.largeLodLog2 = GR_LOD_LOG2_256;
-		grpatch->mipmap->grInfo.aspectRatioLog2 = GR_ASPECT_LOG2_1x1;
-=======
->>>>>>> srb2/next
 	}
 
 	HWD.pfnSetTexture(grpatch->mipmap); // We do need to do this so that it can be cleared and knows to recreate it when necessary
@@ -1313,13 +1285,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		}
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
-<<<<<<< HEAD
-	}
-	else
-	{
-		Surf.PolyColor.rgba = 0xFFFFFFFF;
-=======
->>>>>>> srb2/next
 	}
 	else
 		Surf.PolyColor.rgba = 0xFFFFFFFF;
@@ -1616,11 +1581,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 #endif
 
 		HWD.pfnSetShader(4);	// model shader
-<<<<<<< HEAD
-		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, color);
-=======
 		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
->>>>>>> srb2/next
 	}
 
 	return true;

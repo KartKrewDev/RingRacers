@@ -94,11 +94,8 @@ static GLuint finalScreenTexture = 0;
 // Lactozilla: Set shader programs and uniforms
 static void *Shader_Load(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade);
 static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade);
-<<<<<<< HEAD
-=======
 
 static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
->>>>>>> srb2/next
 
 // shortcut for ((float)1/i)
 static const GLfloat byte2float[256] = {
@@ -154,19 +151,11 @@ FUNCPRINTF void GL_DBG_Printf(const char *format, ...)
 
 	if (!gllogstream)
 		gllogstream = fopen("ogllog.txt", "w");
-<<<<<<< HEAD
 
 	va_start(arglist, format);
 	vsnprintf(str, 4096, format, arglist);
 	va_end(arglist);
 
-=======
-
-	va_start(arglist, format);
-	vsnprintf(str, 4096, format, arglist);
-	va_end(arglist);
-
->>>>>>> srb2/next
 	fwrite(str, strlen(str), 1, gllogstream);
 #else
 	(void)format;
@@ -521,7 +510,6 @@ boolean SetupGLfunc(void)
 	GETOPENGLFUNC(pglLightModelfv, glLightModelfv)
 	GETOPENGLFUNC(pglMaterialfv, glMaterialfv)
 	GETOPENGLFUNC(pglMateriali, glMateriali)
-<<<<<<< HEAD
 
 	GETOPENGLFUNC(pglPixelStorei, glPixelStorei)
 	GETOPENGLFUNC(pglReadPixels, glReadPixels)
@@ -535,21 +523,6 @@ boolean SetupGLfunc(void)
 	GETOPENGLFUNC(pglDeleteTextures, glDeleteTextures)
 	GETOPENGLFUNC(pglBindTexture, glBindTexture)
 
-=======
-
-	GETOPENGLFUNC(pglPixelStorei, glPixelStorei)
-	GETOPENGLFUNC(pglReadPixels, glReadPixels)
-
-	GETOPENGLFUNC(pglTexEnvi, glTexEnvi)
-	GETOPENGLFUNC(pglTexParameteri, glTexParameteri)
-	GETOPENGLFUNC(pglTexImage2D, glTexImage2D)
-	GETOPENGLFUNC(pglTexSubImage2D, glTexSubImage2D)
-
-	GETOPENGLFUNC(pglGenTextures, glGenTextures)
-	GETOPENGLFUNC(pglDeleteTextures, glDeleteTextures)
-	GETOPENGLFUNC(pglBindTexture, glBindTexture)
-
->>>>>>> srb2/next
 	GETOPENGLFUNC(pglCopyTexImage2D, glCopyTexImage2D)
 	GETOPENGLFUNC(pglCopyTexSubImage2D, glCopyTexSubImage2D)
 
@@ -799,8 +772,6 @@ static INT32 shader_leveltime = 0;
 		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st) * poly_color;\n" \
 	"}\0"
 
-<<<<<<< HEAD
-=======
 //
 // Sky fragment shader
 // Modulates poly_color with gl_Color
@@ -813,7 +784,6 @@ static INT32 shader_leveltime = 0;
 		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st) * gl_Color * poly_color;\n" \
 	"}\0"
 
->>>>>>> srb2/next
 static const char *fragment_shaders[] = {
 	// Default fragment shader
 	GLSL_DEFAULT_FRAGMENT_SHADER,
@@ -837,14 +807,7 @@ static const char *fragment_shaders[] = {
 	GLSL_FOG_FRAGMENT_SHADER,
 
 	// Sky fragment shader
-<<<<<<< HEAD
-	"uniform sampler2D tex;\n"
-	"void main(void) {\n"
-		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st);\n"
-	"}\0",
-=======
 	GLSL_SKY_FRAGMENT_SHADER,
->>>>>>> srb2/next
 
 	// Model fragment shader + diffuse lighting from above
 	GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER,
@@ -1963,51 +1926,9 @@ EXPORT void HWRAPI(SetTexture) (FTextureInfo *pTexInfo)
 		}
 		else // initialization of the linked list
 			gl_cachetail = gl_cachehead =  pTexInfo;
-<<<<<<< HEAD
 	}
 }
 
-static void *Shader_Load(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade)
-{
-#ifdef GL_SHADERS
-	if (gl_shadersenabled && pglUseProgram)
-	{
-		gl_shaderprogram_t *shader = &gl_shaderprograms[gl_currentshaderprogram];
-		if (shader->program)
-		{
-			if (gl_shaderprogramchanged)
-			{
-				pglUseProgram(gl_shaderprograms[gl_currentshaderprogram].program);
-				gl_shaderprogramchanged = false;
-			}
-			Shader_SetUniforms(Surface, poly, tint, fade);
-			return shader;
-		}
-		else
-			pglUseProgram(0);
-=======
->>>>>>> srb2/next
-	}
-#else
-	(void)Surface;
-	(void)poly;
-	(void)tint;
-	(void)fade;
-#endif
-	return NULL;
-}
-
-<<<<<<< HEAD
-static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade)
-{
-#ifdef GL_SHADERS
-	if (gl_shadersenabled)
-	{
-		gl_shaderprogram_t *shader = &gl_shaderprograms[gl_currentshaderprogram];
-		if (!shader->program)
-			return;
-
-=======
 static void *Shader_Load(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade)
 {
 #ifdef GL_SHADERS
@@ -2053,7 +1974,6 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 		if (fade == NULL)
 			fade = &shader_defaultcolor;
 
->>>>>>> srb2/next
 		#define UNIFORM_1(uniform, a, function) \
 			if (uniform != -1) \
 				function (uniform, a);
@@ -2074,20 +1994,12 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 		UNIFORM_4(shader->uniforms[gluniform_poly_color], poly->red, poly->green, poly->blue, poly->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_tint_color], tint->red, tint->green, tint->blue, tint->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_fade_color], fade->red, fade->green, fade->blue, fade->alpha, pglUniform4f);
-<<<<<<< HEAD
-=======
-
->>>>>>> srb2/next
 		if (Surface != NULL)
 		{
 			UNIFORM_1(shader->uniforms[gluniform_lighting], Surface->LightInfo.light_level, pglUniform1f);
 			UNIFORM_1(shader->uniforms[gluniform_fade_start], Surface->LightInfo.fade_start, pglUniform1f);
 			UNIFORM_1(shader->uniforms[gluniform_fade_end], Surface->LightInfo.fade_end, pglUniform1f);
 		}
-<<<<<<< HEAD
-=======
-
->>>>>>> srb2/next
 		UNIFORM_1(shader->uniforms[gluniform_leveltime], ((float)shader_leveltime) / TICRATE, pglUniform1f);
 
 		#undef UNIFORM_1
@@ -2232,35 +2144,6 @@ EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUI
 }
 
 EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, UINT32 *IndexArray)
-<<<<<<< HEAD
-{
-	PreparePolygon(pSurf, pOutVerts, PolyFlags);
-
-	pglVertexPointer(3, GL_FLOAT, sizeof(FOutVector), &pOutVerts[0].x);
-	pglTexCoordPointer(2, GL_FLOAT, sizeof(FOutVector), &pOutVerts[0].s);
-	pglDrawElements(GL_TRIANGLES, iNumPts, GL_UNSIGNED_INT, IndexArray);
-
-	// the DrawPolygon variant of this has some code about polyflags and wrapping here but havent noticed any problems from omitting it?
-}
-
-typedef struct vbo_vertex_s
-{
-	float x, y, z;
-	float u, v;
-	unsigned char r, g, b, a;
-} vbo_vertex_t;
-
-typedef struct
-{
-	int mode;
-	int vertexcount;
-	int vertexindex;
-	int use_texture;
-} GLSkyLoopDef;
-
-typedef struct
-=======
->>>>>>> srb2/next
 {
 	PreparePolygon(pSurf, pOutVerts, PolyFlags);
 

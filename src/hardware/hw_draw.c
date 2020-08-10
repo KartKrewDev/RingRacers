@@ -1,13 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-// Copyright (C) 1993-1996 by id Software, Inc.
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2019 by Sonic Team Junior.
-=======
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2020 by Sonic Team Junior.
->>>>>>> srb2/next
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -550,8 +544,6 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 		HWD.pfnDrawPolygon(NULL, v, 4, flags);
 }
 
-<<<<<<< HEAD
-=======
 void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)
 {
 	FOutVector      v[4];
@@ -587,7 +579,6 @@ void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)
 	HWD.pfnDrawPolygon(NULL, v, 4, PF_Translucent | PF_NoDepthTest | PF_Clip | PF_NoZClip);
 }
 
->>>>>>> srb2/next
 // ==========================================================================
 //                                                            V_VIDEO.C STUFF
 // ==========================================================================
@@ -958,17 +949,10 @@ void HWR_DrawViewBorder(INT32 clearlines)
 		clearlines = BASEVIDHEIGHT; // refresh all
 
 	// calc view size based on original game resolution
-<<<<<<< HEAD
-	baseviewwidth =  FixedInt(FixedDiv(FLOAT_TO_FIXED(gr_viewwidth), vid.fdupx)); //(cv_viewsize.value * BASEVIDWIDTH/10)&~7;
-	baseviewheight = FixedInt(FixedDiv(FLOAT_TO_FIXED(gr_viewheight), vid.fdupy));
-	top = FixedInt(FixedDiv(FLOAT_TO_FIXED(gr_baseviewwindowy), vid.fdupy));
-	side = FixedInt(FixedDiv(FLOAT_TO_FIXED(gr_baseviewwindowx), vid.fdupx));
-=======
 	baseviewwidth =  FixedInt(FixedDiv(FLOAT_TO_FIXED(gl_viewwidth), vid.fdupx)); //(cv_viewsize.value * BASEVIDWIDTH/10)&~7;
 	baseviewheight = FixedInt(FixedDiv(FLOAT_TO_FIXED(gl_viewheight), vid.fdupy));
 	top = FixedInt(FixedDiv(FLOAT_TO_FIXED(gl_baseviewwindowy), vid.fdupy));
 	side = FixedInt(FixedDiv(FLOAT_TO_FIXED(gl_viewwindowx), vid.fdupx));
->>>>>>> srb2/next
 
 	// top
 	HWR_DrawFlatFill(0, 0,
