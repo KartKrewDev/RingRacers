@@ -64,23 +64,7 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 			thing->reactiontime = TICRATE/2; // don't move for about half a second
 
 		// absolute angle position
-<<<<<<< HEAD
-		if (thing == players[consoleplayer].mo)
-			localangle[0] = angle;
-		else if (r_splitscreen)
-		{
-			for (i = 1; i <= r_splitscreen; i++)
-			{
-				if (thing == players[displayplayers[i]].mo)
-				{
-					localangle[i] = angle;
-					break;
-				}
-			}
-		}
-=======
 		P_SetPlayerAngle(thing->player, angle);
->>>>>>> srb2/next
 
 		// move chasecam at new player location
 		for (i = 0; i <= r_splitscreen; i++)
@@ -178,18 +162,13 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 		else
 			thing->player->drawangle += (angle - thing->angle);
 
-<<<<<<< HEAD
+		// absolute angle position
+		P_SetPlayerAngle(thing->player, angle);
+
 		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (thing == players[displayplayers[i]].mo)
 			{
-				// absolute angle position
-				localangle[i] = angle;
-=======
-		// absolute angle position
-		P_SetPlayerAngle(thing->player, angle);
->>>>>>> srb2/next
-
 				if (camera[i].chase)
 				{
 					// move chasecam at new player location
