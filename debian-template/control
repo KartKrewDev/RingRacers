@@ -10,11 +10,8 @@ Build-Depends: debhelper (>= 7.0.50~),
  libpng-dev | libpng16-dev | libpng12-dev (>= 1.2.7),
  zlib1g-dev,
  libgme-dev,
-<<<<<<< HEAD
  libcurl4-openssl-dev,
-=======
  libopenmpt-dev,
->>>>>>> srb2/next
  libglu1-dev | libglu-dev,
  libosmesa6-dev | libgl-dev,
  nasm [i386]
@@ -29,11 +26,8 @@ Depends: ${SHLIBS_DEPENDS}, ${MISC_DEPENDS},
  libsdl2-mixer-2.0-0,
  zlib1g,
  libgme0,
-<<<<<<< HEAD
  libcurl4,
-=======
  libopenmpt | libopenmpt0,
->>>>>>> srb2/next
  libpng | libpng16-16 | libpng12-0
 Description: A cross-platform 3D Sonic fangame
  Sonic Robo Blast 2 is a 3D open-source Sonic the Hedgehog
