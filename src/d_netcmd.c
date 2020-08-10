@@ -694,11 +694,9 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("archivetest", Command_Archivetest_f);
 #endif
 
-<<<<<<< HEAD
-	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
-=======
 	COM_AddCommand("downloads", Command_Downloads_f);
->>>>>>> srb2/next
+
+	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
 
 	// for master server connection
 	AddMServCommands();
@@ -2794,43 +2792,16 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	static char *buf_p = buf;
 	// The supplied data are assumed to be good.
 	I_Assert(delay >= 0 && delay <= 2);
-<<<<<<< HEAD
 
-	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d encoremode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
-	           mapnum, newgametype, pencoremode, resetplayers, delay, skipprecutscene);
-
-	if (netgame || multiplayer)
-=======
 	if (mapnum != -1)
 	{
 		CV_SetValue(&cv_nextmap, mapnum);
-		// Kick bot from special stages
-		if (botskin)
-		{
-			if (G_IsSpecialStage(mapnum) || (mapheaderinfo[mapnum-1] && (mapheaderinfo[mapnum-1]->typeoflevel & TOL_NIGHTS)))
-			{
-				if (botingame)
-				{
-					//CL_RemoveSplitscreenPlayer();
-					botingame = false;
-					playeringame[1] = false;
-				}
-			}
-			else if (!botingame)
-			{
-				//CL_AddSplitscreenPlayer();
-				botingame = true;
-				secondarydisplayplayer = 1;
-				playeringame[1] = true;
-				players[1].bot = 1;
-				SendNameAndColor2();
-			}
-		}
 	}
-	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d ultmode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
-	           mapnum, newgametype, pultmode, resetplayers, delay, skipprecutscene);
+
+	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d pencoremode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
+	           mapnum, newgametype, pencoremode, resetplayers, delay, skipprecutscene);
+
 	if ((netgame || multiplayer) && !((gametype == newgametype) && (gametypedefaultrules[newgametype] & GTR_CAMPAIGN)))
->>>>>>> srb2/next
 		FLS = false;
 
 	if (delay != 2)
@@ -4874,11 +4845,7 @@ static void Command_Version_f(void)
 #ifdef DEVELOP
 	CONS_Printf("SRB2Kart %s-%s (%s %s)\n", compbranch, comprevision, compdate, comptime);
 #else
-<<<<<<< HEAD
-	CONS_Printf("SRB2Kart %s (%s %s %s)\n", VERSIONSTRING, compdate, comptime, comprevision);
-=======
-	CONS_Printf("Sonic Robo Blast 2 %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
->>>>>>> srb2/next
+	CONS_Printf("SRB2Kart %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
 #endif
 
 	// Base library
@@ -5042,12 +5009,8 @@ static void NumLaps_OnChange(void)
 		CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
 
 	// Just don't be verbose
-<<<<<<< HEAD
-	CONS_Printf(M_GetText("Number of laps set to %d\n"), cv_numlaps.value);
-=======
-	if ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)
+	if (gametyperules & GTR_RACE)
 		CONS_Printf(M_GetText("Number of laps set to %d\n"), cv_numlaps.value);
->>>>>>> srb2/next
 }
 
 static void NetTimeout_OnChange(void)
@@ -6330,11 +6293,7 @@ static void Command_ShowTime_f(void)
 // SRB2Kart: On change messages
 static void BaseNumLaps_OnChange(void)
 {
-<<<<<<< HEAD
-	if (gamestate == GS_LEVEL)
-=======
-	if ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)
->>>>>>> srb2/next
+	if (gametyperules & GTR_RACE && gamestate == GS_LEVEL)
 	{
 		if (cv_basenumlaps.value)
 			CONS_Printf(M_GetText("Number of laps will be changed to %d next round.\n"), cv_basenumlaps.value);
