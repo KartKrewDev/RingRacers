@@ -96,7 +96,6 @@ typedef struct
 {
 	char name[64];
 	char objective[64];
-	UINT8 showconditionset;
 	UINT8 conditionset;
 	UINT8 showconditionset;
 	INT16 type;
