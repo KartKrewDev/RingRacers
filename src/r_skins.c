@@ -454,36 +454,11 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	FULLPROCESS(followitem)
 #undef FULLPROCESS
 
-<<<<<<< HEAD
-#define GETSKINCOLOR(field) else if (!stricmp(stoken, #field)) skin->field = R_GetColorByName(value);
-=======
-#define GETFRACBITS(field) else if (!stricmp(stoken, #field)) skin->field = atoi(value)<<FRACBITS;
-	GETFRACBITS(normalspeed)
-	GETFRACBITS(runspeed)
-
-	GETFRACBITS(mindash)
-	GETFRACBITS(maxdash)
-	GETFRACBITS(actionspd)
-
-	GETFRACBITS(radius)
-	GETFRACBITS(height)
-	GETFRACBITS(spinheight)
-#undef GETFRACBITS
-
-#define GETINT(field) else if (!stricmp(stoken, #field)) skin->field = atoi(value);
-	GETINT(thrustfactor)
-	GETINT(accelstart)
-	GETINT(acceleration)
-	GETINT(contspeed)
-	GETINT(contangle)
-#undef GETINT
-
 #define GETSKINCOLOR(field) else if (!stricmp(stoken, #field)) \
 { \
 	UINT16 color = R_GetColorByName(value); \
 	skin->field = (color ? color : SKINCOLOR_GREEN); \
 }
->>>>>>> srb2/next
 	GETSKINCOLOR(prefcolor)
 	GETSKINCOLOR(prefoppositecolor)
 #undef GETSKINCOLOR
