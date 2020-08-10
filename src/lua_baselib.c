@@ -3482,23 +3482,19 @@ static int lib_gBattleGametype(lua_State *L)
 	return 1;
 }
 
-<<<<<<< HEAD
 static int lib_gRaceGametype(lua_State *L)
-=======
-static int lib_gCoopGametype(lua_State *L)
-{
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_CoopGametype());
-	return 1;
-}
-
-static int lib_gTagGametype(lua_State *L)
->>>>>>> srb2/next
 {
 	//HUDSAFE
 	INLEVEL
 	lua_pushboolean(L, G_RaceGametype());
+	return 1;
+}
+
+static int lib_gTagGametype(lua_State *L)
+{
+	//HUDSAFE
+	INLEVEL
+	lua_pushboolean(L, G_TagGametype());
 	return 1;
 }
 
@@ -4278,16 +4274,9 @@ static luaL_Reg lib[] = {
 	{"G_GametypeUsesCoopStarposts",lib_gGametypeUsesCoopStarposts},
 	{"G_GametypeHasTeams",lib_gGametypeHasTeams},
 	{"G_GametypeHasSpectators",lib_gGametypeHasSpectators},
-<<<<<<< HEAD
 	{"G_BattleGametype",lib_gBattleGametype},
 	{"G_RaceGametype",lib_gRaceGametype},
-=======
-	{"G_RingSlingerGametype",lib_gRingSlingerGametype},
-	{"G_PlatformGametype",lib_gPlatformGametype},
-	{"G_CoopGametype",lib_gCoopGametype},
->>>>>>> srb2/next
 	{"G_TagGametype",lib_gTagGametype},
-	{"G_CompetitionGametype",lib_gCompetitionGametype},
 	{"G_TicsToHours",lib_gTicsToHours},
 	{"G_TicsToMinutes",lib_gTicsToMinutes},
 	{"G_TicsToSeconds",lib_gTicsToSeconds},
