@@ -33,12 +33,9 @@
 #include "z_zone.h"
 #include "m_random.h" // quake camera shake
 #include "r_portal.h"
-<<<<<<< HEAD
-#include "doomstat.h" // MAXSPLITSCREENPLAYERS
-=======
 #include "r_main.h"
 #include "i_system.h" // I_GetTimeMicros
->>>>>>> srb2/next
+#include "doomstat.h" // MAXSPLITSCREENPLAYERS
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -1154,16 +1151,6 @@ static void R_SetupFreelook(void)
 	// (lmps, network and use F12...)
 	if (rendermode == render_soft
 #ifdef HWRENDER
-<<<<<<< HEAD
-		|| cv_grshearing.value
-#endif
-	)
-		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
-
-	if (rendermode == render_soft)
-	{
-		dy = (AIMINGTODY(aimingangle)/fovtan) * viewwidth/BASEVIDWIDTH;
-=======
 		|| cv_glshearing.value
 #endif
 		)
@@ -1174,7 +1161,6 @@ static void R_SetupFreelook(void)
 	if (rendermode == render_soft)
 	{
 		dy = (AIMINGTODY(aimingangle)>>FRACBITS) * viewwidth/BASEVIDWIDTH;
->>>>>>> srb2/next
 		yslope = &yslopetab[viewheight*8 - (viewheight/2 + dy)];
 	}
 
