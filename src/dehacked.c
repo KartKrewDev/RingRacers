@@ -4338,18 +4338,15 @@ static void readmaincfg(MYFILE *f)
 				titlescrollyspeed = get_number(word2);
 				titlechanged = true;
 			}
-<<<<<<< HEAD
 			else if (fastcmp(word, "CREDITSCUTSCENE"))
 			{
 				creditscutscene = (UINT8)get_number(word2);
 				// range check, you morons.
 				if (creditscutscene > 128)
 					creditscutscene = 128;
-=======
 			else if (fastcmp(word, "DISABLESPEEDADJUST"))
 			{
 				disableSpeedAdjust = (value || word2[0] == 'T' || word2[0] == 'Y');
->>>>>>> srb2/next
 			}
 			else if (fastcmp(word, "NUMDEMOS"))
 			{
