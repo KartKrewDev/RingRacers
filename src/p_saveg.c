@@ -1408,34 +1408,25 @@ typedef enum
 
 typedef enum
 {
-	MD2_CUSVAL      = 1,
-	MD2_CVMEM       = 1<<1,
-	MD2_SKIN        = 1<<2,
-	MD2_COLOR       = 1<<3,
-	MD2_SCALESPEED  = 1<<4,
-	MD2_EXTVAL1     = 1<<5,
-	MD2_EXTVAL2     = 1<<6,
-	MD2_HNEXT       = 1<<7,
-	MD2_HPREV       = 1<<8,
-<<<<<<< HEAD
-	MD2_COLORIZED   = 1<<9,
-	MD2_WAYPOINTCAP = 1<<10,
-	MD2_KITEMCAP	= 1<<11,
-	MD2_ITNEXT		= 1<<12,
-	MD2_SLOPE       = 1<<13,
-	MD2_FLOORROVER  = 1<<14,
-	MD2_CEILINGROVER = 1<<15,
-	MD2_ROLLANGLE    = 1<<16,
-	MD2_SHADOWSCALE  = 1<<17
-=======
-	MD2_FLOORROVER  = 1<<9,
+	MD2_CUSVAL       = 1,
+	MD2_CVMEM        = 1<<1,
+	MD2_SKIN         = 1<<2,
+	MD2_COLOR        = 1<<3,
+	MD2_SCALESPEED   = 1<<4,
+	MD2_EXTVAL1      = 1<<5,
+	MD2_EXTVAL2      = 1<<6,
+	MD2_HNEXT        = 1<<7,
+	MD2_HPREV        = 1<<8,
+	MD2_FLOORROVER   = 1<<9,
 	MD2_CEILINGROVER = 1<<10,
 	MD2_SLOPE        = 1<<11,
 	MD2_COLORIZED    = 1<<12,
 	MD2_MIRRORED     = 1<<13,
 	MD2_ROLLANGLE    = 1<<14,
 	MD2_SHADOWSCALE  = 1<<15,
->>>>>>> srb2/next
+	MD2_WAYPOINTCAP  = 1<<16,
+	MD2_KITEMCAP     = 1<<17,
+	MD2_ITNEXT       = 1<<18,
 } mobj_diff2_t;
 
 typedef enum
@@ -1634,29 +1625,26 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_HNEXT;
 	if (mobj->hprev)
 		diff2 |= MD2_HPREV;
-	if (mobj->itnext)
-		diff2 |= MD2_ITNEXT;
 	if (mobj->standingslope)
 		diff2 |= MD2_SLOPE;
 	if (mobj->colorized)
 		diff2 |= MD2_COLORIZED;
-<<<<<<< HEAD
-	if (mobj == waypointcap)
-		diff2 |= MD2_WAYPOINTCAP;
-	if (mobj == kitemcap)
-		diff2 |= MD2_KITEMCAP;
 	if (mobj->floorrover)
 		diff2 |= MD2_FLOORROVER;
 	if (mobj->ceilingrover)
 		diff2 |= MD2_CEILINGROVER;
-=======
 	if (mobj->mirrored)
 		diff2 |= MD2_MIRRORED;
->>>>>>> srb2/next
 	if (mobj->rollangle)
 		diff2 |= MD2_ROLLANGLE;
 	if (mobj->shadowscale)
 		diff2 |= MD2_SHADOWSCALE;
+	if (mobj == waypointcap)
+		diff2 |= MD2_WAYPOINTCAP;
+	if (mobj == kitemcap)
+		diff2 |= MD2_KITEMCAP;
+	if (mobj->itnext)
+		diff2 |= MD2_ITNEXT;
 	if (diff2 != 0)
 		diff |= MD_MORE;
 
@@ -1795,13 +1783,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEUINT16(save_p, mobj->standingslope->id);
 	if (diff2 & MD2_COLORIZED)
 		WRITEUINT8(save_p, mobj->colorized);
-<<<<<<< HEAD
-	if (diff2 & MD2_SLOPE)
-		WRITEUINT16(save_p, mobj->standingslope->id);;
-=======
 	if (diff2 & MD2_MIRRORED)
 		WRITEUINT8(save_p, mobj->mirrored);
->>>>>>> srb2/next
 	if (diff2 & MD2_ROLLANGLE)
 		WRITEANGLE(save_p, mobj->rollangle);
 	if (diff2 & MD2_SHADOWSCALE)
@@ -2791,18 +2774,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		i = READUINT8(save_p);
 		mobj->player = &players[i];
 		mobj->player->mo = mobj;
-<<<<<<< HEAD
-		// added for angle prediction
-		if (consoleplayer == i)
-			localangle[0] = mobj->angle;
-		if (displayplayers[1] == i)
-			localangle[1] = mobj->angle;
-		if (displayplayers[2] == i)
-			localangle[2] = mobj->angle;
-		if (displayplayers[3] == i)
-			localangle[3] = mobj->angle;
-=======
->>>>>>> srb2/next
 	}
 	if (diff & MD_MOVEDIR)
 		mobj->movedir = READANGLE(save_p);
