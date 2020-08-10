@@ -12,7 +12,6 @@ Build-Depends: debhelper (>= 7.0.50~),
  libgme-dev,
  libcurl4-openssl-dev,
  libopenmpt-dev,
- libcurl4-openssl-dev,
  libglu1-dev | libglu-dev,
  libosmesa6-dev | libgl-dev,
  nasm [i386]
