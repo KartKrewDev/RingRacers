@@ -57,17 +57,19 @@
 #undef DEBUG_TO_FILE            // maybe defined in previous *.h
 #define DEBUG_TO_FILE           // output debugging msgs to ogllog.txt
 
+// todo: find some way of getting SDL to log to ogllog.txt, without
+// interfering with r_opengl.dll
+#ifdef HAVE_SDL
+#undef DEBUG_TO_FILE
+#endif
+//#if defined(HAVE_SDL) && !defined(_DEBUG)
+//#undef DEBUG_TO_FILE
+//#endif
+
 #ifdef DEBUG_TO_FILE
 extern FILE             *gllogstream;
 #endif
 
-<<<<<<< HEAD
-=======
-#ifndef DRIVER_STRING
-#define DRIVER_STRING "HWRAPI Init(): SRB2 OpenGL renderer" // Tails
-#endif
-
->>>>>>> srb2/next
 // ==========================================================================
 //                                                                     PROTOS
 // ==========================================================================
@@ -80,14 +82,6 @@ void Flush(void);
 INT32 isExtAvailable(const char *extension, const GLubyte *start);
 void SetModelView(GLint w, GLint h);
 void SetStates(void);
-<<<<<<< HEAD
-#ifdef USE_PALETTED_TEXTURE
-extern PFNGLCOLORTABLEEXTPROC glColorTableEXT;
-extern GLubyte                palette_tex[256*3];
-#endif
-=======
-FUNCMATH float byteasfloat(UINT8 fbyte);
->>>>>>> srb2/next
 
 #ifndef GL_EXT_texture_filter_anisotropic
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT     0x84FE
