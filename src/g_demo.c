@@ -2726,7 +2726,6 @@ void G_DoPlayDemo(char *defdemoname)
 	{
 	case DEMOVERSION: // latest always supported
 		break;
-#endif
 	// too old, cannot support.
 	default:
 		snprintf(msg, 1024, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemoname);

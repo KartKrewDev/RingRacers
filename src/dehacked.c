@@ -11636,7 +11636,6 @@ struct {
 	{"KSHIELD_FLAME",KSHIELD_FLAME},
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
 
-#endif
 	{NULL,0}
 };
 
@@ -12133,7 +12132,6 @@ void DEH_Check(void)
 
 	if (dehcolors != SKINCOLOR_FIRSTFREESLOT)
 		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", SKINCOLOR_FIRSTFREESLOT, sizeu1(dehcolors));
-#endif
 }
 
 #include "lua_script.h"

@@ -1303,10 +1303,6 @@ void D_SRB2Main(void)
 			// use user specific config file
 #ifdef DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
-#else
-			snprintf(srb2home, sizeof srb2home, "%s", userhome);
-#endif
-
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, srb2home);
 			else
@@ -1319,7 +1315,6 @@ void D_SRB2Main(void)
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else // DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
-			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
 			else
@@ -1335,6 +1330,7 @@ void D_SRB2Main(void)
 
 		configfile[sizeof configfile - 1] = '\0';
 	}
+
 
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
