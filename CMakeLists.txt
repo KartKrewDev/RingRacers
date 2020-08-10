@@ -18,11 +18,7 @@ string(REGEX MATCH "[0-9]+\\.[0-9.]+" SRB2_VERSION ${SRB2_VERSION})
 # DO NOT CHANGE THIS SRB2 STRING! Some variable names depend on this string.
 # Version change is fine.
 project(SRB2
-<<<<<<< HEAD
-	VERSION 2.0
-=======
 	VERSION ${SRB2_VERSION}
->>>>>>> srb2/next
 	LANGUAGES C)
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
@@ -149,14 +145,9 @@ if("${SRB2_CPACK_GENERATOR}" STREQUAL "")
 	endif()
 endif()
 
-<<<<<<< HEAD
+set(CPACK_GENERATOR ${SRB2_CPACK_GENERATOR})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Sonic Robo Blast 2 Kart" CACHE STRING "Program name for display purposes")
 set(CPACK_PACKAGE_VENDOR "Kart Krew" CACHE STRING "Vendor name for display purposes")
-=======
-set(CPACK_GENERATOR ${SRB2_CPACK_GENERATOR})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Sonic Robo Blast 2" CACHE STRING "Program name for display purposes")
-set(CPACK_PACKAGE_VENDOR "Sonic Team Jr." CACHE STRING "Vendor name for display purposes")
->>>>>>> srb2/next
 #set(CPACK_PACKAGE_DESCRIPTION_FILE )
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_VERSION_MAJOR ${SRB2_VERSION_MAJOR})
