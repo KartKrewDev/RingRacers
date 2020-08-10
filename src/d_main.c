@@ -573,16 +573,15 @@ static void D_Display(void)
 				rs_rendercalltime = I_GetTimeMicros() - rs_rendercalltime;
 			}
 
-				if (lastdraw)
+			if (lastdraw)
+			{
+				if (rendermode == render_soft)
 				{
-					if (rendermode == render_soft)
-					{
-						VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-						Y_ConsiderScreenBuffer();
-						usebuffer = true;
-					}
-					lastdraw = false;
+					VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
+					Y_ConsiderScreenBuffer();
+					usebuffer = true;
 				}
+				lastdraw = false;
 			}
 
 			if (gamestate == GS_LEVEL)
