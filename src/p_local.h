@@ -61,9 +61,6 @@
 
 #define mariomode (maptol & TOL_MARIO)
 
-#define P_GetPlayerHeight(player) FixedMul(mobjinfo[MT_PLAYER].height, player->mo->scale)
-#define P_GetPlayerSpinHeight(player) FixedMul(mobjinfo[MT_PLAYER].height, player->mo->scale)
-
 typedef enum
 {
 	THINK_POLYOBJ,
@@ -134,31 +131,11 @@ struct demofreecam_s {
 extern struct demofreecam_s democam;
 
 extern camera_t camera[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_cam_dist, cv_cam_still, cv_cam_height;
-extern consvar_t cv_cam_speed, cv_cam_rotate, cv_cam_rotspeed, cv_cam_turnmultiplier, cv_cam_orbit, cv_cam_adjust;
+extern consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS], cv_cam_still[MAXSPLITSCREENPLAYERS], cv_cam_height[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS], cv_cam_rotate[MAXSPLITSCREENPLAYERS];
 
-extern consvar_t cv_cam2_dist, cv_cam2_still, cv_cam2_height;
-extern consvar_t cv_cam2_speed, cv_cam2_rotate, cv_cam2_rotspeed, cv_cam2_turnmultiplier, cv_cam2_orbit, cv_cam2_adjust;
+extern fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS], t_cam_height[MAXSPLITSCREENPLAYERS], t_cam_rotate[MAXSPLITSCREENPLAYERS];
 
-extern consvar_t cv_cam_savedist[2][2], cv_cam_saveheight[2][2];
-void CV_UpdateCamDist(void);
-void CV_UpdateCam2Dist(void);
-
-extern consvar_t cv_cam3_dist, cv_cam3_still, cv_cam3_height;
-extern consvar_t cv_cam3_speed, cv_cam3_rotate, cv_cam3_rotspeed;
-
-extern consvar_t cv_cam4_dist, cv_cam4_still, cv_cam4_height;
-extern consvar_t cv_cam4_speed, cv_cam4_rotate, cv_cam4_rotspeed;
-
-extern fixed_t t_cam_dist, t_cam_height, t_cam_rotate;
-extern fixed_t t_cam2_dist, t_cam2_height, t_cam2_rotate;
-extern fixed_t t_cam3_dist, t_cam3_height, t_cam3_rotate;
-extern fixed_t t_cam4_dist, t_cam4_height, t_cam4_rotate;
-
-fixed_t P_GetPlayerHeight(player_t *player);
-fixed_t P_GetPlayerSpinHeight(player_t *player);
-INT32 P_GetPlayerControlDirection(player_t *player);
->>>>>>> srb2/next
 void P_AddPlayerScore(player_t *player, UINT32 amount);
 void P_StealPlayerScore(player_t *player, UINT32 amount);
 void P_ResetCamera(player_t *player, camera_t *thiscam);

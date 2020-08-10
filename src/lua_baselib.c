@@ -997,28 +997,6 @@ static int lib_pPlayerZMovement(lua_State *L)
 // P_USER
 ////////////
 
-static int lib_pGetPlayerHeight(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	//HUDSAFE
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	lua_pushfixed(L, P_GetPlayerHeight(player));
-	return 1;
-}
-
-static int lib_pGetPlayerSpinHeight(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	//HUDSAFE
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	lua_pushfixed(L, P_GetPlayerSpinHeight(player));
-	return 1;
-}
-
 static int lib_pAddPlayerScore(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4103,8 +4081,6 @@ static luaL_Reg lib[] = {
 	{"P_PlayerZMovement",lib_pPlayerZMovement},
 
 	// p_user
-	{"P_GetPlayerHeight",lib_pGetPlayerHeight},
-	{"P_GetPlayerSpinHeight",lib_pGetPlayerSpinHeight},
 	{"P_AddPlayerScore",lib_pAddPlayerScore},
 	{"P_StealPlayerScore",lib_pStealPlayerScore},
 	{"P_GetJumpFlags",lib_pGetJumpFlags},

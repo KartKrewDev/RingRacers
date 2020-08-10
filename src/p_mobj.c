@@ -2996,7 +2996,7 @@ void P_MobjCheckWater(mobj_t *mobj)
 	sector_t *sector = mobj->subsector->sector;
 	ffloor_t *rover;
 	player_t *p = mobj->player; // Will just be null if not a player.
-	fixed_t height = (p ? P_GetPlayerHeight(p) : mobj->height); // for players, calculation height does not necessarily match actual height for gameplay reasons (spin, etc)
+	fixed_t height = mobj->height;
 	boolean wasgroundpounding = (p && ((p->powers[pw_shield] & SH_NOSTACK) == SH_ELEMENTAL || (p->powers[pw_shield] & SH_NOSTACK) == SH_BUBBLEWRAP) && (p->pflags & PF_SHIELDABILITY));
 
 	// Default if no water exists.
@@ -6522,9 +6522,9 @@ static boolean P_ShieldLook(mobj_t *thing, shieldtype_t shield)
 	thing->x = thing->target->x;
 	thing->y = thing->target->y;
 	if (thing->eflags & MFE_VERTICALFLIP)
-		thing->z = thing->target->z + (thing->target->height - thing->height + FixedDiv(P_GetPlayerHeight(thing->target->player) - thing->target->height, 3*FRACUNIT)) - FixedMul(2*FRACUNIT, thing->target->scale);
+		thing->z = thing->target->z + (thing->target->height - thing->height - FixedMul(2*FRACUNIT, thing->target->scale);
 	else
-		thing->z = thing->target->z - (FixedDiv(P_GetPlayerHeight(thing->target->player) - thing->target->height, 3*FRACUNIT)) + FixedMul(2*FRACUNIT, thing->target->scale);
+		thing->z = thing->target->z + FixedMul(2*FRACUNIT, thing->target->scale);
 	P_SetThingPosition(thing);
 	P_CheckPosition(thing, thing->x, thing->y);
 
@@ -7967,12 +7967,12 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 			if (!(mobj->target->eflags & MFE_VERTICALFLIP))
 			{
-				mobj->z = mobj->target->z + P_GetPlayerHeight(mobj->target->player) + (16*mobj->target->scale);
+				mobj->z = mobj->target->z + mobj->target->height + (16*mobj->target->scale);
 				mobj->eflags &= ~MFE_VERTICALFLIP;
 			}
 			else
 			{
-				mobj->z = mobj->target->z - P_GetPlayerHeight(mobj->target->player) - (16*mobj->target->scale);
+				mobj->z = mobj->target->z - mobj->target->height - (16*mobj->target->scale);
 				mobj->eflags |= MFE_VERTICALFLIP;
 			}
 			P_SetThingPosition(mobj);
@@ -8164,12 +8164,12 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 			if (!(mobj->target->eflags & MFE_VERTICALFLIP))
 			{
-				mobj->z = mobj->target->z + (P_GetPlayerHeight(mobj->target->player)) + (16*mobj->target->scale) + (64*scale);
+				mobj->z = mobj->target->z + mobj->target->height + (16*mobj->target->scale) + (64*scale);
 				mobj->eflags &= ~MFE_VERTICALFLIP;
 			}
 			else
 			{
-				mobj->z = mobj->target->z - (P_GetPlayerHeight(mobj->target->player)) - (16*mobj->target->scale) - (64*scale);
+				mobj->z = mobj->target->z - mobj->target->height - (16*mobj->target->scale) - (64*scale);
 				mobj->eflags |= MFE_VERTICALFLIP;
 			}
 			P_SetThingPosition(mobj);
@@ -12384,12 +12384,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (!(mobj->target->eflags & MFE_VERTICALFLIP))
 			{
-				mobj->z = mobj->target->z + P_GetPlayerHeight(mobj->target->player) + (16*mobj->target->scale);
+				mobj->z = mobj->target->z + mobj->target->height + (16*mobj->target->scale);
 				mobj->eflags &= ~MFE_VERTICALFLIP;
 			}
 			else
 			{
-				mobj->z = mobj->target->z - P_GetPlayerHeight(mobj->target->player) - (16*mobj->target->scale);
+				mobj->z = mobj->target->z - mobj->target->height - (16*mobj->target->scale);
 				mobj->eflags |= MFE_VERTICALFLIP;
 			}
 			P_SetThingPosition(mobj);
@@ -12581,12 +12581,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (!(mobj->target->eflags & MFE_VERTICALFLIP))
 			{
-				mobj->z = mobj->target->z + (P_GetPlayerHeight(mobj->target->player)) + (16*mobj->target->scale) + (64*scale);
+				mobj->z = mobj->target->z + mobj->target->height + (16*mobj->target->scale) + (64*scale);
 				mobj->eflags &= ~MFE_VERTICALFLIP;
 			}
 			else
 			{
-				mobj->z = mobj->target->z - (P_GetPlayerHeight(mobj->target->player)) - (16*mobj->target->scale) - (64*scale);
+				mobj->z = mobj->target->z - mobj->target->height - (16*mobj->target->scale) - (64*scale);
 				mobj->eflags |= MFE_VERTICALFLIP;
 			}
 			P_SetThingPosition(mobj);
@@ -14761,10 +14761,6 @@ void P_SpawnPlayer(INT32 playernum)
 	P_SetScale(mobj, mobj->destscale);
 	P_FlashPal(p, 0, 0); // Resets
 
-	// Set bounds accurately.
-	mobj->radius = FixedMul(skins[p->skin].radius, mobj->scale);
-	mobj->height = P_GetPlayerHeight(p);
-
 	if (!leveltime && !p->spectator && ((maptol & TOL_NIGHTS) == TOL_NIGHTS) != (G_IsSpecialStage(gamemap))) // non-special NiGHTS stage or special non-NiGHTS stage
 	{
 		if (maptol & TOL_NIGHTS)
@@ -14790,7 +14786,7 @@ void P_SpawnPlayer(INT32 playernum)
 
 	if (G_BattleGametype()) // SRB2kart
 	{
-		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + P_GetPlayerHeight(p)+16*FRACUNIT, MT_PLAYERARROW);
+		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);
 		P_SetTarget(&overheadarrow->target, mobj);
 		overheadarrow->flags2 |= MF2_DONTDRAW;
 		P_SetScale(overheadarrow, mobj->destscale);
