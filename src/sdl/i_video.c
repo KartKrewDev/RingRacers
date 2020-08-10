@@ -360,10 +360,6 @@ static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 		case SDL_SCANCODE_RGUI:   return KEY_RIGHTWIN;
 		default:                  break;
 	}
-<<<<<<< HEAD
-=======
-
->>>>>>> srb2/next
 	return 0;
 }
 
@@ -1422,7 +1418,6 @@ void I_FinishUpdate(void)
 	if (I_SkipFrame())
 		return;
 
-<<<<<<< HEAD
 	if (st_overlay)
 	{
 		if (cv_ticrate.value)
@@ -1434,10 +1429,9 @@ void I_FinishUpdate(void)
 			SCR_DisplayLocalPing();
 		}
 	}
-=======
+
 	if (marathonmode)
 		SCR_DisplayMarathonInfo();
->>>>>>> srb2/next
 
 	// draw captions if enabled
 	if (cv_closedcaptioning.value)
