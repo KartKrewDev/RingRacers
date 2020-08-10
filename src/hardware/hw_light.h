@@ -1,13 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-// Copyright (C) 1993-1996 by id Software, Inc.
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2019 by Sonic Team Junior.
-=======
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2020 by Sonic Team Junior.
->>>>>>> srb2/next
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -22,8 +16,6 @@
 #include "hw_glob.h"
 #include "hw_defs.h"
 
-<<<<<<< HEAD
-=======
 #define NUMLIGHTFREESLOTS 32 // Free light slots (for SOCs)
 
 #ifdef ALAM_LIGHTING

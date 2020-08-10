@@ -86,9 +86,6 @@ static VOID UnloadDLL (HMODULE* pModule)
 // ==========================================================================
 
 // note : the 3D driver loading should be put somewhere else..
-<<<<<<< HEAD
-=======
-
 #ifdef HWRENDER
 static HMODULE hwdModule = NULL;
 
@@ -173,7 +170,6 @@ VOID Shutdown3DDriver (VOID)
 }
 #endif
 
->>>>>>> srb2/next
 #ifdef HW3SOUND
 static HMODULE hwsModule = NULL;
 

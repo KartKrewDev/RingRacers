@@ -104,29 +104,15 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(MakeScreenFinalTexture);
 	GETFUNC(DrawScreenFinalTexture);
 
-<<<<<<< HEAD
-	GETFUNC(RenderSkyDome);
-
-=======
->>>>>>> srb2/next
 	GETFUNC(LoadShaders);
 	GETFUNC(KillShaders);
 	GETFUNC(SetShader);
 	GETFUNC(UnSetShader);
 
-<<<<<<< HEAD
-	GETFUNC(LoadCustomShader);
-	GETFUNC(InitCustomShaders);
-
-	GETFUNC(StartBatching);
-	GETFUNC(RenderBatches);
-
-=======
 	GETFUNC(SetShaderInfo);
 	GETFUNC(LoadCustomShader);
 	GETFUNC(InitCustomShaders);
 
->>>>>>> srb2/next
 #else //HWRENDER
 	if (0 == strcmp("FinishUpdate", funcName))
 		return funcPointer; //&FinishUpdate;
