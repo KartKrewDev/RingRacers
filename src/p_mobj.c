@@ -213,43 +213,11 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		I_Error("P_SetPlayerMobjState used for non-player mobj. Use P_SetMobjState instead!\n(Mobj type: %d, State: %d)", mobj->type, state);
 #endif
 
-<<<<<<< HEAD
-=======
-	// Catch falling for nojumpspin
-	if ((state == S_PLAY_JUMP) && (player->charflags & SF_NOJUMPSPIN) && (P_MobjFlip(mobj)*mobj->momz < 0))
-		return P_SetPlayerMobjState(mobj, S_PLAY_FALL);
-
-	// Catch swimming versus flying
-	if ((state == S_PLAY_FLY || (state == S_PLAY_GLIDE && skins[player->skin].sprites[SPR2_SWIM].numframes))
-	&& player->mo->eflags & MFE_UNDERWATER && !player->skidtime)
-		return P_SetPlayerMobjState(player->mo, S_PLAY_SWIM);
-	else if (state == S_PLAY_SWIM && !(player->mo->eflags & MFE_UNDERWATER))
-	{
-		if (player->charability == CA_GLIDEANDCLIMB)
-			return P_SetPlayerMobjState(player->mo, S_PLAY_GLIDE);
-		else
-			return P_SetPlayerMobjState(player->mo, S_PLAY_FLY);
-	}
-
-	// Catch SF_NOSUPERSPIN jumps for Supers
-	if (player->powers[pw_super] && (player->charflags & SF_NOSUPERSPIN))
-	{
-		if (state == S_PLAY_JUMP)
-		{
-			if (player->mo->state-states == S_PLAY_WALK)
-				return P_SetPlayerMobjState(mobj, S_PLAY_FLOAT);
-			return true;
-		}
-		else if (player->mo->state-states == S_PLAY_FLOAT && state == S_PLAY_STND)
-			return true;
-	}
->>>>>>> srb2/next
 	// You were in pain state after taking a hit, and you're moving out of pain state now?
 	if (mobj->state == &states[mobj->info->painstate] && player->powers[pw_flashing] == K_GetKartFlashing(player) && state != mobj->info->painstate)
 	{
 		// Start flashing, since you've landed.
 		player->powers[pw_flashing] = K_GetKartFlashing(player)-1;
-		//P_DoPityCheck(player);
 	}
 
 	// Set animation state
@@ -594,39 +562,6 @@ void P_ExplodeMissile(mobj_t *mo)
 	if (mo->flags & MF_NOCLIPTHING)
 		return;
 
-<<<<<<< HEAD
-=======
-	if (mo->type == MT_DETON)
-	{
-		P_RadiusAttack(mo, mo, 96*FRACUNIT, 0, true);
-
-		explodemo = P_SpawnMobj(mo->x, mo->y, mo->z, MT_EXPLODE);
-		P_SetScale(explodemo, mo->scale);
-		explodemo->destscale = mo->destscale;
-		explodemo->momx += (P_RandomByte() % 32) * FixedMul(FRACUNIT/8, explodemo->scale);
-		explodemo->momy += (P_RandomByte() % 32) * FixedMul(FRACUNIT/8, explodemo->scale);
-		S_StartSound(explodemo, sfx_pop);
-		explodemo = P_SpawnMobj(mo->x, mo->y, mo->z, MT_EXPLODE);
-		P_SetScale(explodemo, mo->scale);
-		explodemo->destscale = mo->destscale;
-		explodemo->momx += (P_RandomByte() % 64) * FixedMul(FRACUNIT/8, explodemo->scale);
-		explodemo->momy -= (P_RandomByte() % 64) * FixedMul(FRACUNIT/8, explodemo->scale);
-		S_StartSound(explodemo, sfx_dmpain);
-		explodemo = P_SpawnMobj(mo->x, mo->y, mo->z, MT_EXPLODE);
-		P_SetScale(explodemo, mo->scale);
-		explodemo->destscale = mo->destscale;
-		explodemo->momx -= (P_RandomByte() % 128) * FixedMul(FRACUNIT/8, explodemo->scale);
-		explodemo->momy += (P_RandomByte() % 128) * FixedMul(FRACUNIT/8, explodemo->scale);
-		S_StartSound(explodemo, sfx_pop);
-		explodemo = P_SpawnMobj(mo->x, mo->y, mo->z, MT_EXPLODE);
-		P_SetScale(explodemo, mo->scale);
-		explodemo->destscale = mo->destscale;
-		explodemo->momx -= (P_RandomByte() % 96) * FixedMul(FRACUNIT/8, explodemo->scale);
-		explodemo->momy -= (P_RandomByte() % 96) * FixedMul(FRACUNIT/8, explodemo->scale);
-		S_StartSound(explodemo, sfx_cybdth);
-	}
-
->>>>>>> srb2/next
 	mo->flags &= ~MF_MISSILE;
 
 	mo->flags |= MF_NOGRAVITY; // Dead missiles don't need to sink anymore.
@@ -2814,80 +2749,9 @@ void P_PlayerZMovement(mobj_t *mo)
 
 			mo->pmomz = 0; // We're on a new floor, don't keep doing platform movement.
 
-			// Squat down. Decrease viewheight for a moment after hitting the ground (hard),
-			/*if (P_MobjFlip(mo)*mo->momz < -FixedMul(8*FRACUNIT, mo->scale))
-				mo->player->deltaviewheight = (P_MobjFlip(mo)*mo->momz)>>3; // make sure momz is negative
-			*/
-
 			mo->eflags |= MFE_JUSTHITFLOOR; // Spin Attack
 
-<<<<<<< HEAD
-			{
-				// Check if we're on a polyobject
-				// that triggers a linedef executor.
-				msecnode_t *node;
-
-				for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
-				{
-					sector_t *sec = node->m_sector;
-					subsector_t *newsubsec;
-					size_t i;
-
-					for (i = 0; i < numsubsectors; i++)
-					{
-						newsubsec = &subsectors[i];
-
-						if (newsubsec->sector != sec)
-							continue;
-
-						if (newsubsec->polyList)
-						{
-							polyobj_t *po = newsubsec->polyList;
-							sector_t *polysec;
-
-							while(po)
-							{
-								if (!P_MobjInsidePolyobj(po, mo) || !(po->flags & POF_SOLID))
-								{
-									po = (polyobj_t *)(po->link.next);
-									continue;
-								}
-
-								// We're inside it! Yess...
-								polysec = po->lines[0]->backsector;
-
-								if (!(po->flags & POF_LDEXEC))
-								{
-									po = (polyobj_t *)(po->link.next);
-									continue;
-								}
-
-								if (mo->z == polysec->ceilingheight)
-								{
-									// We're landing on a PO, so check for
-									// a linedef executor.
-									// Trigger tags are 32000 + the PO's ID number.
-									P_LinedefExecute((INT16)(32000 + po->id), mo, NULL);
-								}
-
-								po = (polyobj_t *)(po->link.next);
-							}
-						}
-					}
-=======
 			clipmomz = P_PlayerHitFloor(mo->player, true);
-
-			if (!P_PlayerPolyObjectZMovement(mo))
-			{
-				// Cut momentum in half when you hit the ground and
-				// aren't pressing any controls.
-				if (!(mo->player->cmd.forwardmove || mo->player->cmd.sidemove) && !mo->player->cmomx && !mo->player->cmomy && !(mo->player->pflags & PF_SPINNING))
-				{
-					mo->momx >>= 1;
-					mo->momy >>= 1;
->>>>>>> srb2/next
-				}
-			}
 
 			if (!(mo->player->pflags & PF_SPINNING) && mo->player->powers[pw_carry] != CR_NIGHTSMODE)
 				mo->player->pflags &= ~PF_STARTDASH;
@@ -14785,16 +14649,7 @@ void P_SpawnPlayer(INT32 playernum)
 	// spawn as spectator determination
 	if (multiplayer && demo.playback)
 	{
-<<<<<<< HEAD
 		; // Don't mess with spectator values since the demo setup handles them already.
-=======
-		p->spectator = p->outofcoop =
-		(((multiplayer || netgame) && G_CoopGametype()) // only question status in coop
-		&& ((leveltime > 0
-		&& ((G_IsSpecialStage(gamemap)) // late join special stage
-		|| (cv_coopstarposts.value == 2 && (p->jointime < 1 || p->outofcoop)))) // late join or die in new coop
-		|| (!P_GetLives(p) && p->lives <= 0))); // game over and can't redistribute lives
->>>>>>> srb2/next
 	}
 	else if (!G_GametypeHasSpectators())
 	{
@@ -14986,23 +14841,7 @@ void P_AfterPlayerSpawn(INT32 playernum)
 	mobj_t *mobj = p->mo;
 	UINT8 i;
 
-<<<<<<< HEAD
-	if (playernum == consoleplayer)
-		localangle[0] = mobj->angle;
-	else if (r_splitscreen)
-	{
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (playernum == displayplayers[i])
-			{
-				localangle[i] = mobj->angle;
-				break;
-			}
-		}
-	}
-=======
 	P_SetPlayerAngle(p, mobj->angle);
->>>>>>> srb2/next
 
 	p->viewheight = 41*p->height/48;
 
