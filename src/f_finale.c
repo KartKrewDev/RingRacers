@@ -593,7 +593,6 @@ static const char *credits[] = {
 	"Ehab \"wolfs\" Saeed",
 	"\"ZarroTsu\"",
 	"",
-<<<<<<< HEAD
 	"\1Support Programming",
 	"Colette \"fickleheart\" Bordelon",
 	"James R.",
@@ -603,40 +602,6 @@ static const char *credits[] = {
 	"\"SteelT\"",
 	"",
 	"\1Lead Artists",
-=======
-	"\1Programming",
-	"\1Assistance",
-	"Colette \"fickleheart\" Bordelon",
-	"\"chi.miru\"", // helped port slope drawing code from ZDoom
-	"Andrew \"orospakr\" Clunis",
-	"Sally \"TehRealSalt\" Cochenour",
-	"Gregor \"Oogaland\" Dick",
-	"Julio \"Chaos Zero 64\" Guir",
-	"\"Hannu_Hanhi\"", // For many OpenGL performance improvements!
-	"\"Kalaron\"", // Coded some of Sryder13's collection of OpenGL fixes, especially fog
-	"\"Lat'\"", // SRB2-CHAT, the chat window from Kart
-	"Matthew \"Shuffle\" Marsalko",
-	"Steven \"StroggOnMeth\" McGranahan",
-	"\"Morph\"", // For SRB2Morphed stuff
-	"Colin \"Sonict\" Pfaff",
-	"Sean \"Sryder13\" Ryder",
-	"Tasos \"tatokis\" Sahanidis", // Corrected C FixedMul, making 64-bit builds netplay compatible
-	"Wessel \"sphere\" Smit",
-	"Ben \"Cue\" Woodford",
-	"\"VelocitOni\"", // Wrote the original dashmode script
-	"Ikaro \"Tatsuru\" Vinhas",
-	// Git contributors with 5+ approved merges of substantive quality,
-	// or contributors with at least one groundbreaking merge, may be named.
-	// Everyone else is acknowledged under "Special Thanks > SRB2 Community Contributors".
-	"",
-	"\1Art",
-	"Victor \"VAdaPEGA\" Ara\x1Fjo", // Araújo -- sorry for our limited font! D:
-	"Ryan \"Blaze Hedgehog\" Bloom",
-	"\"ChrispyPixels\"",
-	"Paul \"Boinciel\" Clempson",
-	"Sally \"TehRealSalt\" Cochenour",
-	"\"Dave Lite\"",
->>>>>>> srb2/next
 	"Desmond \"Blade\" DesJardins",
 	"\"VelocitOni\"",
 	"",
@@ -682,16 +647,8 @@ static const char *credits[] = {
 	"Wesley \"Charyb\" Gillebaard",
 	"James \"SeventhSentinel\" Hall",
 	"",
-<<<<<<< HEAD
 	"\1Lead Level Design",
 	"\"Blitz-T\"",
-=======
-	"\1Level Design",
-	"Colette \"fickleheart\" Bordelon",
-	"Hank \"FuriousFox\" Brannock",
-	"Matthew \"Fawfulfan\" Chapman",
-	"Paul \"Boinciel\" Clempson",
->>>>>>> srb2/next
 	"Sally \"TehRealSalt\" Cochenour",
 	"Desmond \"Blade\" DesJardins",
 	"Jeffery \"Chromatian\" Scott",
@@ -719,22 +676,10 @@ static const char *credits[] = {
 	"\"ZarroTsu\"",
 	"",
 	"\1Testing",
-<<<<<<< HEAD
 	"\"CyberIF\"",
 	"\"Dani\"",
 	"Karol \"Fooruman\" D""\x1E""browski", // Dąbrowski, <Sryder> accents in srb2 :ytho:
 	"\"VirtAnderson\"",
-=======
-	"Discord Community Testers",
-	"Hank \"FuriousFox\" Brannock",
-	"Cody \"SRB2 Playah\" Koester",
-	"Skye \"OmegaVelocity\" Meredith",
-	"Stephen \"HEDGESMFG\" Moellering",
-	"Rosalie \"ST218\" Molina",
-	"Samuel \"Prime 2.0\" Peters",
-	"Colin \"Sonict\" Pfaff",
-	"Bill \"Tets\" Reed",
->>>>>>> srb2/next
 	"",
 	"\1Special Thanks",
 	"SEGA",
