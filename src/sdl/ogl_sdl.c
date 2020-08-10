@@ -221,7 +221,7 @@ void OglSdlFinishUpdate(boolean waitvbl)
 	HWR_DrawScreenFinalTexture(realwidth, realheight);
 }
 
-EXPORT void HWRAPI( OglSdlSetPalette) (RGBA_t *palette)
+EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette)
 {
 	size_t palsize = (sizeof(RGBA_t) * 256);
 	// on a palette change, you have to reload all of the textures

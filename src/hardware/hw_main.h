@@ -1,20 +1,13 @@
-// Emacs style mode select   -*- C++ -*-
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-//
 // Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
+/// \file hw_main.h
 /// \brief 3D render mode functions
 
 #define GLENCORE
@@ -53,6 +46,14 @@ void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color);
 void HWR_drawAMline(const fline_t *fl, INT32 color);
 void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength);
 void HWR_DrawConsoleBack(UINT32 color, INT32 height);
+<<<<<<< HEAD
+=======
+void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight);
+void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player);
+void HWR_RenderPlayerView(INT32 viewnumber, player_t *player);
+void HWR_ClearSkyDome(void);
+void HWR_BuildSkyDome(void);
+>>>>>>> srb2/next
 void HWR_DrawViewBorder(INT32 clearlines);
 void HWR_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum);
 
@@ -65,6 +66,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player);
 void HWR_LoadShaders(UINT16 wadnum, boolean PK3);
 void HWR_SetViewSize(void);
 void HWR_AddCommands(void);
+<<<<<<< HEAD
 
 // My original intention was to split hw_main.c
 // into files like hw_bsp.c, hw_sprites.c...
@@ -73,6 +75,10 @@ void HWR_AddCommands(void);
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
+=======
+void HWR_AddSessionCommands(void);
+void transform(float *cx, float *cy, float *cz);
+>>>>>>> srb2/next
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
 
 // hw_main.c: Post-rendering
@@ -85,9 +91,18 @@ void HWR_DoTintedWipe(UINT8 wipenum, UINT8 scrnnum);
 void HWR_MakeScreenFinalTexture(void);
 void HWR_DrawScreenFinalTexture(int width, int height);
 
+<<<<<<< HEAD
 // hw_main.c: Planes
 void HWR_RenderPlane(extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight, FBITFIELD PolyFlags, INT32 lightlevel, lumpnum_t lumpnum, sector_t *FOFsector, UINT8 alpha, extracolormap_t *planecolormap);
 void HWR_AddTransparentFloor(lumpnum_t lumpnum, extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight, INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, boolean fogplane, extracolormap_t *planecolormap);
+=======
+// This stuff is put here so MD2's can use them
+void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
+UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
+
+void HWR_ReadShaders(UINT16 wadnum, boolean PK3);
+boolean HWR_LoadShaders(void);
+>>>>>>> srb2/next
 
 #ifdef POLYOBJECTS
 #ifdef POLYOBJECTS_PLANES
@@ -97,6 +112,7 @@ void HWR_AddTransparentPolyobjectFloor(lumpnum_t lumpnum, polyobj_t *polysector,
 #endif
 #endif
 
+<<<<<<< HEAD
 // hw_main.c: Segs
 void HWR_ProcessSeg(void); // Sort of like GLWall::Process in GZDoom
 void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend, boolean fogwall, INT32 lightlevel, extracolormap_t *wallcolormap);
@@ -152,5 +168,57 @@ extern consvar_t cv_grfakecontrast;
 extern consvar_t cv_grfallbackplayermodel;
 
 extern CV_PossibleValue_t granisotropicmode_cons_t[];
+=======
+#ifdef ALAM_LIGHTING
+extern consvar_t cv_gldynamiclighting;
+extern consvar_t cv_glstaticlighting;
+extern consvar_t cv_glcoronas;
+extern consvar_t cv_glcoronasize;
+#endif
+
+extern consvar_t cv_glshaders;
+extern consvar_t cv_glmodels;
+extern consvar_t cv_glmodelinterpolation;
+extern consvar_t cv_glmodellighting;
+extern consvar_t cv_glfiltermode;
+extern consvar_t cv_glanisotropicmode;
+extern consvar_t cv_fovchange;
+extern consvar_t cv_glsolvetjoin;
+extern consvar_t cv_glshearing;
+extern consvar_t cv_glspritebillboarding;
+extern consvar_t cv_glskydome;
+extern consvar_t cv_glfakecontrast;
+extern consvar_t cv_glslopecontrast;
+
+extern consvar_t cv_glbatching;
+
+extern float gl_viewwidth, gl_viewheight, gl_baseviewwindowy;
+
+extern float gl_viewwindowx, gl_basewindowcentery;
+
+// BP: big hack for a test in lighting ref : 1249753487AB
+extern fixed_t *hwbbox;
+extern FTransform atransform;
+>>>>>>> srb2/next
+
+
+// Render stats
+extern int rs_hw_nodesorttime;
+extern int rs_hw_nodedrawtime;
+extern int rs_hw_spritesorttime;
+extern int rs_hw_spritedrawtime;
+
+// Render stats for batching
+extern int rs_hw_numpolys;
+extern int rs_hw_numverts;
+extern int rs_hw_numcalls;
+extern int rs_hw_numshaders;
+extern int rs_hw_numtextures;
+extern int rs_hw_numpolyflags;
+extern int rs_hw_numcolors;
+extern int rs_hw_batchsorttime;
+extern int rs_hw_batchdrawtime;
+
+extern boolean gl_shadersavailable;
 
 #endif

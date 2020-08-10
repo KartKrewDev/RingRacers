@@ -1,6 +1,9 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
+<<<<<<< HEAD
 // Copyright (C) 1993-1996 by id Software, Inc.
+=======
+>>>>>>> srb2/next
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2019 by Sonic Team Junior.
 //
@@ -8,7 +11,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
+/// \file hw_bsp.c
 /// \brief convert SRB2 map
 
 #include "../doomdef.h"
@@ -56,12 +59,82 @@ static INT32 totalsubsecpolys = 0;
 // --------------------------------------------------------------------------
 // Polygon fast alloc / free
 // --------------------------------------------------------------------------
+<<<<<<< HEAD
+=======
+//hurdler: quick fix for those who wants to play with larger wad
+
+#define ZPLANALLOC
+#ifndef ZPLANALLOC
+//#define POLYPOOLSIZE 1024000 // may be much over what is needed
+/// \todo check out how much is used
+static size_t POLYPOOLSIZE = 1024000;
+
+static UINT8 *gl_polypool = NULL;
+static UINT8 *gl_ppcurrent;
+static size_t gl_ppfree;
+#endif
+
+// only between levels, clear poly pool
+static void HWR_ClearPolys(void)
+{
+#ifndef ZPLANALLOC
+	gl_ppcurrent = gl_polypool;
+	gl_ppfree = POLYPOOLSIZE;
+#endif
+}
+
+// allocate  pool for fast alloc of polys
+void HWR_InitPolyPool(void)
+{
+#ifndef ZPLANALLOC
+	INT32 pnum;
+
+	//hurdler: quick fix for those who wants to play with larger wad
+	if ((pnum = M_CheckParm("-polypoolsize")))
+		POLYPOOLSIZE = atoi(myargv[pnum+1])*1024; // (in kb)
+
+	CONS_Debug(DBG_RENDER, "HWR_InitPolyPool(): allocating %d bytes\n", POLYPOOLSIZE);
+	gl_polypool = malloc(POLYPOOLSIZE);
+	if (!gl_polypool)
+		I_Error("HWR_InitPolyPool(): couldn't malloc polypool\n");
+	HWR_ClearPolys();
+#endif
+}
+
+void HWR_FreePolyPool(void)
+{
+#ifndef ZPLANALLOC
+	if (gl_polypool)
+		free(gl_polypool);
+	gl_polypool = NULL;
+#endif
+}
+>>>>>>> srb2/next
 
 static poly_t *HWR_AllocPoly(INT32 numpts)
 {
 	poly_t *p;
 	size_t size = sizeof (poly_t) + sizeof (polyvertex_t) * numpts;
 	p = Z_Malloc(size, PU_HWRPLANE, NULL);
+<<<<<<< HEAD
+=======
+#else
+#ifdef PARANOIA
+	if (!gl_polypool)
+		I_Error("Used gl_polypool without init!\n");
+	if (!gl_ppcurrent)
+		I_Error("gl_ppcurrent == NULL!\n");
+#endif
+
+	if (gl_ppfree < size)
+		I_Error("HWR_AllocPoly(): no more memory %u bytes left, %u bytes needed\n\n%s\n",
+		        gl_ppfree, size, "You can try the param -polypoolsize 2048 (or higher if needed)");
+
+	p = (poly_t *)gl_ppcurrent;
+	gl_ppcurrent += size;
+	gl_ppfree -= size;
+#endif
+>>>>>>> srb2/next
 	p->numpts = numpts;
 	return p;
 }
@@ -71,6 +144,18 @@ static polyvertex_t *HWR_AllocVertex(void)
 	polyvertex_t *p;
 	size_t size = sizeof (polyvertex_t);
 	p = Z_Malloc(size, PU_HWRPLANE, NULL);
+<<<<<<< HEAD
+=======
+#else
+	if (gl_ppfree < size)
+		I_Error("HWR_AllocVertex(): no more memory %u bytes left, %u bytes needed\n\n%s\n",
+		        gl_ppfree, size, "You can try the param -polypoolsize 2048 (or higher if needed)");
+
+	p = (polyvertex_t *)gl_ppcurrent;
+	gl_ppcurrent += size;
+	gl_ppfree -= size;
+#endif
+>>>>>>> srb2/next
 	return p;
 }
 
@@ -750,7 +835,7 @@ static INT32 SolveTProblem(void)
 	INT32 i;
 	size_t l;
 
-	if (cv_grsolvetjoin.value == 0)
+	if (cv_glsolvetjoin.value == 0)
 		return 0;
 
 	CONS_Debug(DBG_RENDER, "Solving T-joins. This may take a while. Please wait...\n");
@@ -904,9 +989,9 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 		I_Error("couldn't malloc extrasubsectors totsubsectors %s\n", sizeu1(totsubsectors));
 
 	// allocate table for back to front drawing of subsectors
-	/*gr_drawsubsectors = (INT16 *)malloc(sizeof (*gr_drawsubsectors) * totsubsectors);
-	if (!gr_drawsubsectors)
-		I_Error("couldn't malloc gr_drawsubsectors\n");*/
+	/*gl_drawsubsectors = (INT16 *)malloc(sizeof (*gl_drawsubsectors) * totsubsectors);
+	if (!gl_drawsubsectors)
+		I_Error("couldn't malloc gl_drawsubsectors\n");*/
 
 	// number of the first new subsector that might be added
 	addsubsector = numsubsectors;

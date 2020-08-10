@@ -25,6 +25,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "i_system.h"
+#include "i_threads.h"
 #include "m_menu.h"
 #include "dehacked.h"
 #include "g_input.h"
@@ -466,7 +467,13 @@ void F_IntroDrawer(void)
 
 					I_OsPolling();
 					I_UpdateNoBlit();
+#ifdef HAVE_THREADS
+					I_lock_mutex(&m_menu_mutex);
+#endif
 					M_Drawer(); // menu is drawn even on top of wipes
+#ifdef HAVE_THREADS
+					I_unlock_mutex(m_menu_mutex);
+#endif
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
 					if (moviemode) // make sure we save frames for the white hold too
@@ -586,6 +593,7 @@ static const char *credits[] = {
 	"Ehab \"wolfs\" Saeed",
 	"\"ZarroTsu\"",
 	"",
+<<<<<<< HEAD
 	"\1Support Programming",
 	"Colette \"fickleheart\" Bordelon",
 	"James R.",
@@ -595,6 +603,40 @@ static const char *credits[] = {
 	"\"SteelT\"",
 	"",
 	"\1Lead Artists",
+=======
+	"\1Programming",
+	"\1Assistance",
+	"Colette \"fickleheart\" Bordelon",
+	"\"chi.miru\"", // helped port slope drawing code from ZDoom
+	"Andrew \"orospakr\" Clunis",
+	"Sally \"TehRealSalt\" Cochenour",
+	"Gregor \"Oogaland\" Dick",
+	"Julio \"Chaos Zero 64\" Guir",
+	"\"Hannu_Hanhi\"", // For many OpenGL performance improvements!
+	"\"Kalaron\"", // Coded some of Sryder13's collection of OpenGL fixes, especially fog
+	"\"Lat'\"", // SRB2-CHAT, the chat window from Kart
+	"Matthew \"Shuffle\" Marsalko",
+	"Steven \"StroggOnMeth\" McGranahan",
+	"\"Morph\"", // For SRB2Morphed stuff
+	"Colin \"Sonict\" Pfaff",
+	"Sean \"Sryder13\" Ryder",
+	"Tasos \"tatokis\" Sahanidis", // Corrected C FixedMul, making 64-bit builds netplay compatible
+	"Wessel \"sphere\" Smit",
+	"Ben \"Cue\" Woodford",
+	"\"VelocitOni\"", // Wrote the original dashmode script
+	"Ikaro \"Tatsuru\" Vinhas",
+	// Git contributors with 5+ approved merges of substantive quality,
+	// or contributors with at least one groundbreaking merge, may be named.
+	// Everyone else is acknowledged under "Special Thanks > SRB2 Community Contributors".
+	"",
+	"\1Art",
+	"Victor \"VAdaPEGA\" Ara\x1Fjo", // Araújo -- sorry for our limited font! D:
+	"Ryan \"Blaze Hedgehog\" Bloom",
+	"\"ChrispyPixels\"",
+	"Paul \"Boinciel\" Clempson",
+	"Sally \"TehRealSalt\" Cochenour",
+	"\"Dave Lite\"",
+>>>>>>> srb2/next
 	"Desmond \"Blade\" DesJardins",
 	"\"VelocitOni\"",
 	"",
@@ -640,8 +682,16 @@ static const char *credits[] = {
 	"Wesley \"Charyb\" Gillebaard",
 	"James \"SeventhSentinel\" Hall",
 	"",
+<<<<<<< HEAD
 	"\1Lead Level Design",
 	"\"Blitz-T\"",
+=======
+	"\1Level Design",
+	"Colette \"fickleheart\" Bordelon",
+	"Hank \"FuriousFox\" Brannock",
+	"Matthew \"Fawfulfan\" Chapman",
+	"Paul \"Boinciel\" Clempson",
+>>>>>>> srb2/next
 	"Sally \"TehRealSalt\" Cochenour",
 	"Desmond \"Blade\" DesJardins",
 	"Jeffery \"Chromatian\" Scott",
@@ -669,10 +719,22 @@ static const char *credits[] = {
 	"\"ZarroTsu\"",
 	"",
 	"\1Testing",
+<<<<<<< HEAD
 	"\"CyberIF\"",
 	"\"Dani\"",
 	"Karol \"Fooruman\" D""\x1E""browski", // Dąbrowski, <Sryder> accents in srb2 :ytho:
 	"\"VirtAnderson\"",
+=======
+	"Discord Community Testers",
+	"Hank \"FuriousFox\" Brannock",
+	"Cody \"SRB2 Playah\" Koester",
+	"Skye \"OmegaVelocity\" Meredith",
+	"Stephen \"HEDGESMFG\" Moellering",
+	"Rosalie \"ST218\" Molina",
+	"Samuel \"Prime 2.0\" Peters",
+	"Colin \"Sonict\" Pfaff",
+	"Bill \"Tets\" Reed",
+>>>>>>> srb2/next
 	"",
 	"\1Special Thanks",
 	"SEGA",
@@ -737,10 +799,6 @@ void F_StartCredits(void)
 
 	// Just in case they're open ... somehow
 	M_ClearMenus(true);
-
-	// Save the second we enter the credits
-	if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && cursaveslot > 0)
-		G_SaveGame((UINT32)cursaveslot);
 
 	if (creditscutscene)
 	{
@@ -955,12 +1013,6 @@ void F_StartGameEvaluation(void)
 	// Just in case they're open ... somehow
 	M_ClearMenus(true);
 
-	// Save the second we enter the evaluation
-	// We need to do this again!  Remember, it's possible a mod designed skipped
-	// the credits sequence!
-	if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && cursaveslot > 0)
-		G_SaveGame((UINT32)cursaveslot);
-
 	goodending = (ALL7EMERALDS(emeralds));
 
 	gameaction = ga_nothing;
@@ -977,13 +1029,20 @@ void F_GameEvaluationDrawer(void)
 	angle_t fa;
 	INT32 eemeralds_cur;
 	char patchname[7] = "CEMGx0";
-	const char* endingtext = (goodending ? "CONGRATULATIONS!" : "TRY AGAIN...");
+	const char* endingtext;
+
+	if (marathonmode)
+		endingtext = "THANKS FOR THE RUN!";
+	else if (goodending)
+		endingtext = "CONGRATULATIONS!";
+	else
+		endingtext = "TRY AGAIN...";
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	// Draw all the good crap here.
 
-	if (finalecount > 0)
+	if (finalecount > 0 && useBlackRock)
 	{
 		INT32 scale = FRACUNIT;
 		patch_t *rockpat;
@@ -1100,6 +1159,18 @@ void F_GameEvaluationDrawer(void)
 			V_DrawString(8, 96, V_YELLOWMAP, "Modified games\ncan't unlock\nextras!");
 	}
 #endif
+
+	if (marathonmode)
+	{
+		const char *rtatext, *cuttext;
+		rtatext = (marathonmode & MA_INGAME) ? "In-game timer" : "RTA timer";
+		cuttext = (marathonmode & MA_NOCUTSCENES) ? "" : " w/ cutscenes";
+		if (botskin)
+			endingtext = va("%s & %s, %s%s", skins[players[consoleplayer].skin].realname, skins[botskin-1].realname, rtatext, cuttext);
+		else
+			endingtext = va("%s, %s%s", skins[players[consoleplayer].skin].realname, rtatext, cuttext);
+		V_DrawCenteredString(BASEVIDWIDTH/2, 182, V_SNAPTOBOTTOM|(ultimatemode ? V_REDMAP : V_YELLOWMAP), endingtext);
+	}
 }
 
 void F_GameEvaluationTicker(void)
@@ -1110,7 +1181,9 @@ void F_GameEvaluationTicker(void)
 		return;
 	}
 
-	if (!goodending)
+	if (!useBlackRock)
+		;
+	else if (!goodending)
 	{
 		if (sparklloop)
 			sparklloop--;
@@ -1266,10 +1339,6 @@ void F_StartEnding(void)
 
 	// Just in case they're open ... somehow
 	M_ClearMenus(true);
-
-	// Save before the credits sequence.
-	if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && cursaveslot > 0)
-		G_SaveGame((UINT32)cursaveslot);
 
 	gameaction = ga_nothing;
 	paused = false;
@@ -3516,6 +3585,7 @@ static void F_AdvanceToNextScene(void)
 	animtimer = pictime = cutscenes[cutnum]->scene[scenenum].picduration[picnum];
 }
 
+// See also G_AfterIntermission, the only other place which handles intra-map/ending transitions
 void F_EndCutScene(void)
 {
 	cutsceneover = true; // do this first, just in case G_EndGame or something wants to turn it back false later

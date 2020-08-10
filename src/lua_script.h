@@ -37,11 +37,16 @@
 void LUA_ClearExtVars(void);
 #endif
 
+<<<<<<< HEAD
 void LUA_ClearState(void);
 
 extern boolean lua_lumploading; // is LUA_LoadLump being called?
+=======
+extern INT32 lua_lumploading; // is LUA_LoadLump being called?
+>>>>>>> srb2/next
 
-void LUA_LoadLump(UINT16 wad, UINT16 lump);
+int LUA_GetErrorMessage(lua_State *L);
+void LUA_LoadLump(UINT16 wad, UINT16 lump, boolean noresults);
 #ifdef LUA_ALLOW_BYTECODE
 void LUA_DumpFile(const char *filename);
 #endif

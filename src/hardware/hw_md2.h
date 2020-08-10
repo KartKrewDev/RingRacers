@@ -1,15 +1,20 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
+<<<<<<< HEAD
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2019 by Sonic Team Junior.
+=======
+// Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
+>>>>>>> srb2/next
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
-/// \brief MD2 Handling
+/// \file hw_md2.h
+/// \brief 3D Model Handling
 ///	Inspired from md2.h by Mete Ciragan (mete@swissquake.ch)
 
 #ifndef _HW_MD2_H_
@@ -29,7 +34,9 @@ typedef struct
 	float       offset;
 	model_t     *model;
 	void        *grpatch;
+	boolean     notexturefile; // true if texture file was not found
 	void        *blendgrpatch;
+	boolean     noblendfile; // true if blend texture file was not found
 	boolean     notfound;
 	INT32       skin;
 	boolean     error;
@@ -41,7 +48,7 @@ extern md2_t md2_playermodels[MAXSKINS];
 void HWR_InitModels(void);
 void HWR_AddPlayerModel(INT32 skin);
 void HWR_AddSpriteModel(size_t spritenum);
-boolean HWR_DrawModel(gr_vissprite_t *spr);
+boolean HWR_DrawModel(gl_vissprite_t *spr);
 
 #define PLAYERMODELPREFIX "PLAYER"
 

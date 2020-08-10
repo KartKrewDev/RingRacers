@@ -183,6 +183,11 @@ static const struct {
 
 	{META_SECTORLINES,  "sector_t.lines"},
 	{META_SIDENUM,      "line_t.sidenum"},
+	{META_LINEARGS,     "line_t.args"},
+	{META_LINESTRINGARGS, "line_t.stringargs"},
+
+	{META_THINGARGS,     "mapthing.args"},
+	{META_THINGSTRINGARGS, "mapthing.stringargs"},
 #ifdef HAVE_LUA_SEGS
 	{META_NODEBBOX,     "node_t.bbox"},
 	{META_NODECHILDREN, "node_t.children"},
@@ -901,6 +906,94 @@ static int lib_pMaceRotate(lua_State *L)
 	return 0;
 }
 
+static int lib_pRailThinker(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushboolean(L, P_RailThinker(mobj));
+	return 1;
+}
+
+static int lib_pXYMovement(lua_State *L)
+{
+	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!actor)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_XYMovement(actor);
+	return 0;
+}
+
+static int lib_pRingXYMovement(lua_State *L)
+{
+	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!actor)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_RingXYMovement(actor);
+	return 0;
+}
+
+static int lib_pSceneryXYMovement(lua_State *L)
+{
+	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!actor)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_SceneryXYMovement(actor);
+	return 0;
+}
+
+static int lib_pZMovement(lua_State *L)
+{
+	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!actor)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushboolean(L, P_ZMovement(actor));
+	return 1;
+}
+
+static int lib_pRingZMovement(lua_State *L)
+{
+	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!actor)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_RingZMovement(actor);
+	return 0;
+}
+
+static int lib_pSceneryZMovement(lua_State *L)
+{
+	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!actor)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushboolean(L, P_SceneryZMovement(actor));
+	return 1;
+}
+
+static int lib_pPlayerZMovement(lua_State *L)
+{
+	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!actor)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_PlayerZMovement(actor);
+	return 0;
+}
+
 // P_USER
 ////////////
 
@@ -1010,6 +1103,16 @@ static int lib_pPlayerCanDamage(lua_State *L)
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_PlayerCanDamage(player, thing));
+	return 1;
+}
+
+static int lib_pPlayerFullbright(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, P_PlayerFullbright(player));
 	return 1;
 }
 
@@ -1252,6 +1355,30 @@ static int lib_pElementalFire(lua_State *L)
 	return 0;
 }
 
+static int lib_pSpawnSkidDust(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t radius = luaL_checkfixed(L, 2);
+	boolean sound = lua_optboolean(L, 3);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	P_SpawnSkidDust(player, radius, sound);
+	return 0;
+}
+
+static int lib_pMovePlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	P_MovePlayer(player);
+	return 0;
+}
+
 static int lib_pDoPlayerFinish(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1336,6 +1463,19 @@ static int lib_pNukeEnemies(lua_State *L)
 	if (!inflictor || !source)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_NukeEnemies(inflictor, source, radius);
+	return 0;
+}
+
+static int lib_pEarthquake(lua_State *L)
+{
+	mobj_t *inflictor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	fixed_t radius = luaL_checkfixed(L, 3);
+	NOHUD
+	INLEVEL
+	if (!inflictor || !source)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_Earthquake(inflictor, source, radius);
 	return 0;
 }
 
@@ -1500,11 +1640,12 @@ static int lib_pRadiusAttack(lua_State *L)
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	fixed_t damagedist = luaL_checkfixed(L, 3);
 	UINT8 damagetype = luaL_optinteger(L, 4, 0);
+	boolean sightcheck = lua_opttrueboolean(L, 5);
 	NOHUD
 	INLEVEL
 	if (!spot || !source)
 		return LUA_ErrInvalid(L, "mobj_t");
-	P_RadiusAttack(spot, source, damagedist, damagetype);
+	P_RadiusAttack(spot, source, damagedist, damagetype, sightcheck);
 	return 0;
 }
 
@@ -2322,6 +2463,14 @@ static int lib_rGetColorByName(lua_State *L)
 	const char* colorname = luaL_checkstring(L, 1);
 	//HUDSAFE
 	lua_pushinteger(L, R_GetColorByName(colorname));
+	return 1;
+}
+
+static int lib_rGetSuperColorByName(lua_State *L)
+{
+	const char* colorname = luaL_checkstring(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, R_GetSuperColorByName(colorname));
 	return 1;
 }
 
@@ -3333,7 +3482,19 @@ static int lib_gBattleGametype(lua_State *L)
 	return 1;
 }
 
+<<<<<<< HEAD
 static int lib_gRaceGametype(lua_State *L)
+=======
+static int lib_gCoopGametype(lua_State *L)
+{
+	//HUDSAFE
+	INLEVEL
+	lua_pushboolean(L, G_CoopGametype());
+	return 1;
+}
+
+static int lib_gTagGametype(lua_State *L)
+>>>>>>> srb2/next
 {
 	//HUDSAFE
 	INLEVEL
@@ -3936,6 +4097,14 @@ static luaL_Reg lib[] = {
 	{"P_CheckDeathPitCollide",lib_pCheckDeathPitCollide},
 	{"P_CheckSolidLava",lib_pCheckSolidLava},
 	{"P_MaceRotate",lib_pMaceRotate},
+	{"P_RailThinker",lib_pRailThinker},
+	{"P_XYMovement",lib_pXYMovement},
+	{"P_RingXYMovement",lib_pRingXYMovement},
+	{"P_SceneryXYMovement",lib_pSceneryXYMovement},
+	{"P_ZMovement",lib_pZMovement},
+	{"P_RingZMovement",lib_pRingZMovement},
+	{"P_SceneryZMovement",lib_pSceneryZMovement},
+	{"P_PlayerZMovement",lib_pPlayerZMovement},
 
 	// p_user
 	{"P_GetPlayerHeight",lib_pGetPlayerHeight},
@@ -3947,6 +4116,7 @@ static luaL_Reg lib[] = {
 	{"P_DoPlayerPain",lib_pDoPlayerPain},
 	{"P_ResetPlayer",lib_pResetPlayer},
 	{"P_PlayerCanDamage",lib_pPlayerCanDamage},
+	{"P_PlayerFullbright",lib_pPlayerFullbright},
 	{"P_IsObjectInGoop",lib_pIsObjectInGoop},
 	{"P_IsObjectOnGround",lib_pIsObjectOnGround},
 	{"P_InSpaceSector",lib_pInSpaceSector},
@@ -3965,6 +4135,8 @@ static luaL_Reg lib[] = {
 	{"P_DoBubbleBounce",lib_pDoBubbleBounce},
 	{"P_BlackOw",lib_pBlackOw},
 	{"P_ElementalFire",lib_pElementalFire},
+	{"P_SpawnSkidDust", lib_pSpawnSkidDust},
+	{"P_MovePlayer",lib_pMovePlayer},
 	{"P_DoPlayerFinish",lib_pDoPlayerFinish},
 	{"P_DoPlayerExit",lib_pDoPlayerExit},
 	{"P_InstaThrust",lib_pInstaThrust},
@@ -3972,6 +4144,7 @@ static luaL_Reg lib[] = {
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_LookForEnemies",lib_pLookForEnemies},
 	{"P_NukeEnemies",lib_pNukeEnemies},
+	{"P_Earthquake",lib_pEarthquake},
 	{"P_HomingAttack",lib_pHomingAttack},
 	//{"P_SuperReady",lib_pSuperReady},
 	{"P_Telekinesis",lib_pTelekinesis},
@@ -4052,6 +4225,7 @@ static luaL_Reg lib[] = {
 
 	// r_draw
 	{"R_GetColorByName", lib_rGetColorByName},
+	{"R_GetSuperColorByName", lib_rGetSuperColorByName},
 	{"R_GetNameByColor", lib_rGetNameByColor},
 
 	// s_sound
@@ -4092,6 +4266,8 @@ static luaL_Reg lib[] = {
 	{"G_AddGametype", lib_gAddGametype},
 	{"G_BuildMapName",lib_gBuildMapName},
 	{"G_BuildMapTitle",lib_gBuildMapTitle},
+	{"G_FindMap",lib_gFindMap},
+	{"G_FindMapByNameOrCode",lib_gFindMapByNameOrCode},
 	{"G_DoReborn",lib_gDoReborn},
 	{"G_SetCustomExitVars",lib_gSetCustomExitVars},
 	{"G_EnoughPlayersFinished",lib_gEnoughPlayersFinished},
@@ -4102,8 +4278,14 @@ static luaL_Reg lib[] = {
 	{"G_GametypeUsesCoopStarposts",lib_gGametypeUsesCoopStarposts},
 	{"G_GametypeHasTeams",lib_gGametypeHasTeams},
 	{"G_GametypeHasSpectators",lib_gGametypeHasSpectators},
+<<<<<<< HEAD
 	{"G_BattleGametype",lib_gBattleGametype},
 	{"G_RaceGametype",lib_gRaceGametype},
+=======
+	{"G_RingSlingerGametype",lib_gRingSlingerGametype},
+	{"G_PlatformGametype",lib_gPlatformGametype},
+	{"G_CoopGametype",lib_gCoopGametype},
+>>>>>>> srb2/next
 	{"G_TagGametype",lib_gTagGametype},
 	{"G_CompetitionGametype",lib_gCompetitionGametype},
 	{"G_TicsToHours",lib_gTicsToHours},

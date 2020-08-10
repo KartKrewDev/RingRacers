@@ -812,6 +812,9 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"BASICKEEPALIVE",
 
 	"FILEFRAGMENT",
+	"FILEACK",
+	"FILERECEIVED",
+
 	"TEXTCMD",
 	"TEXTCMD2",
 	"TEXTCMD3",

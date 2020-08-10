@@ -1,19 +1,13 @@
-// Emacs style mode select   -*- C++ -*-
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-//
 // Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
+/// \file hw_defs.h
 /// \brief 3D hardware renderer definitions
 
 #ifndef _HWR_DEFS_
@@ -91,6 +85,7 @@ typedef struct
 // a vertex of a Doom 'plane' polygon
 typedef struct
 {
+<<<<<<< HEAD
 	float x;
 	float y;
 	float z;
@@ -144,6 +139,20 @@ typedef struct gr_vissprite_s
 
 // Vanilla features
 //#define USE_MODEL_NEXTFRAME
+=======
+	FLOAT x,y,z;
+} FVector;
+
+// ======================
+//      wallVert3D
+// ----------------------
+// :crab: IS GONE! :crab:
+// ======================
+
+// -----------
+// structures
+// -----------
+>>>>>>> srb2/next
 
 //Hurdler: Transform (coords + angles)
 //BP: transform order : scale(rotation_x(rotation_y(translation(v))))
@@ -177,15 +186,59 @@ typedef struct
 #ifdef USE_FTRANSFORM_MIRROR
 	boolean     mirror;          // SRB2Kart: Encore Mode
 #endif
+	boolean     shearing;        // 14042019
+	float       viewaiming;      // 17052019
 } FTransform;
 
 // Transformed vector, as passed to HWR API
 typedef struct
 {
 	FLOAT       x,y,z;
+<<<<<<< HEAD
 	FLOAT       s,t;
 } FOutVector;
 
+=======
+	FLOAT       s;            // s texture ordinate (s over w)
+	FLOAT       t;            // t texture ordinate (t over w)
+} FOutVector;
+
+typedef struct vbo_vertex_s
+{
+	float x, y, z;
+	float u, v;
+	unsigned char r, g, b, a;
+} gl_skyvertex_t;
+
+typedef enum gl_skyloopmode_e
+{
+	HWD_SKYLOOP_FAN,
+	HWD_SKYLOOP_STRIP
+} gl_skyloopmode_t;
+
+typedef struct
+{
+	gl_skyloopmode_t mode;
+	int vertexcount;
+	int vertexindex;
+	boolean use_texture;
+} gl_skyloopdef_t;
+
+typedef struct
+{
+	unsigned int vbo;
+	int rows, columns;
+	int loopcount;
+
+	int detail, vertex_count;
+	int texture, width, height;
+	boolean rebuild; // VBO needs to be rebuilt
+
+	gl_skyloopdef_t *loops;
+	gl_skyvertex_t *data;
+} gl_sky_t;
+
+>>>>>>> srb2/next
 // ==========================================================================
 //                                                               RENDER MODES
 // ==========================================================================
@@ -213,17 +266,29 @@ enum EPolyFlags
 	PF_Invisible        = 0x00000400,   // Disable write to color buffer
 	PF_Decal            = 0x00000800,   // Enable polygon offset
 	PF_Modulated        = 0x00001000,   // Modulation (multiply output with constant ARGB)
-	                                    // When set, pass the color constant into the FSurfaceInfo -> FlatColor
+	                                    // When set, pass the color constant into the FSurfaceInfo -> PolyColor
 	PF_NoTexture        = 0x00002000,   // Use the small white texture
 	PF_Corona           = 0x00004000,   // Tell the rendrer we are drawing a corona
-	PF_Unused           = 0x00008000,   // Unused
+	PF_Ripple           = 0x00008000,   // Water shader effect
 	PF_RemoveYWrap      = 0x00010000,   // Force clamp texture on Y
 	PF_ForceWrapX       = 0x00020000,   // Force repeat texture on X
 	PF_ForceWrapY       = 0x00040000,   // Force repeat texture on Y
+<<<<<<< HEAD
 	//                    0x20000000
 	//                    0x40000000
 	//                    0x80000000
 
+=======
+	PF_Clip             = 0x40000000,   // clip to frustum and nearz plane (glide only, automatic in opengl)
+	PF_NoZClip          = 0x20000000,   // in conjonction with PF_Clip
+	PF_Debug            = 0x80000000    // print debug message in driver :)
+};
+
+
+enum ESurfFlags
+{
+	SF_DYNLIGHT         = 0x00000001,
+>>>>>>> srb2/next
 };
 
 enum ETextureFlags
@@ -257,6 +322,7 @@ struct FSurfaceInfo
 };
 typedef struct FSurfaceInfo FSurfaceInfo;
 
+<<<<<<< HEAD
 enum hwdsetspecialstate
 {
 	HWD_SET_SHADERS = 1,
@@ -264,6 +330,16 @@ enum hwdsetspecialstate
 	HWD_SET_FOG_MODE,
 	HWD_SET_FOG_COLOR,
 	HWD_SET_FOG_DENSITY,
+=======
+#define GL_DEFAULTMIX 0x00000000
+#define GL_DEFAULTFOG 0xFF000000
+
+//Hurdler: added for backward compatibility
+enum hwdsetspecialstate
+{
+	HWD_SET_MODEL_LIGHTING = 1,
+	HWD_SET_SHADERS,
+>>>>>>> srb2/next
 	HWD_SET_TEXTUREFILTERMODE,
 	HWD_SET_TEXTUREANISOTROPICMODE,
 
@@ -271,8 +347,19 @@ enum hwdsetspecialstate
 };
 typedef enum hwdsetspecialstate hwdspecialstate_t;
 
+<<<<<<< HEAD
 #define GL_DEFAULTMIX 0x00000000
 #define GL_DEFAULTFOG 0xFF000000
+=======
+// Lactozilla: Shader info
+// Generally set at the start of the frame.
+enum hwdshaderinfo
+{
+	HWD_SHADERINFO_LEVELTIME = 1,
+};
+
+typedef enum hwdshaderinfo hwdshaderinfo_t;
+>>>>>>> srb2/next
 
 enum hwdfiltermode
 {

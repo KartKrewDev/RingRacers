@@ -82,6 +82,12 @@ extern consvar_t cv_resume;
 // build an internal map name MAPxx from map number
 const char *G_BuildMapName(INT32 map);
 
+<<<<<<< HEAD
+=======
+extern INT16 ticcmd_oldangleturn[2];
+extern boolean ticcmd_centerviewdown[2]; // For simple controls, lock the camera behind the player
+extern mobj_t *ticcmd_ztargetfocus[2]; // Locking onto an object?
+>>>>>>> srb2/next
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 // copy ticcmd_t to and fro the normal way
@@ -155,7 +161,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride);
 
 void G_SaveGameData(boolean force);
 
-void G_SaveGame(UINT32 slot);
+void G_SaveGame(UINT32 slot, INT16 mapnum);
 
 void G_SaveGameOver(UINT32 slot, boolean modifylives);
 
@@ -178,10 +184,16 @@ boolean G_GametypeUsesCoopLives(void);
 boolean G_GametypeUsesCoopStarposts(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
+<<<<<<< HEAD
 boolean G_BattleGametype(void);
 INT16 G_SometimesGetDifferentGametype(void);
 UINT8 G_GetGametypeColor(INT16 gt);
 boolean G_RaceGametype(void);
+=======
+boolean G_RingSlingerGametype(void);
+boolean G_PlatformGametype(void);
+boolean G_CoopGametype(void);
+>>>>>>> srb2/next
 boolean G_TagGametype(void);
 boolean G_CompetitionGametype(void);
 boolean G_EnoughPlayersFinished(void);

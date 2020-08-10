@@ -62,6 +62,7 @@
 
 /// \brief Frame flags: frame always appears full bright (mutually exclusive with below, currently takes priority)
 #define FF_FULLBRIGHT 0x00100000
+<<<<<<< HEAD
 /// \brief Frame flags: frame appears with moderate brightness (mutually exclusive with above)
 #define FF_SEMIBRIGHT 0x00200000
 
@@ -69,6 +70,14 @@
 #define FF_PAPERSPRITE 0x00400000
 /// \brief Frame flags: Flip sprite vertically (relative to what it should be for its gravity)
 #define FF_VERTICALFLIP 0x00800000
+=======
+/// \brief Frame flags: Flip sprite vertically (relative to what it should be for its gravity)
+#define FF_VERTICALFLIP 0x00200000
+/// \brief Frame flags: Flip sprite horizontally
+#define FF_HORIZONTALFLIP 0x00400000
+/// \brief Frame flags: Thin, paper-like sprite (for collision equivalent, see MF_PAPERCOLLISION)
+#define FF_PAPERSPRITE 0x00800000
+>>>>>>> srb2/next
 
 /// \brief Frame flags - Animate: Simple stateless animation
 #define FF_ANIMATE 0x01000000

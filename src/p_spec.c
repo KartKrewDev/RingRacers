@@ -1502,30 +1502,6 @@ void P_RunNightsCapsuleTouchExecutors(mobj_t *actor, boolean entering, boolean e
 	}
 }
 
-/** Hashes the sector tags across the sectors and linedefs.
-  *
-  * \sa P_FindSectorFromTag, P_ChangeSectorTag
-  * \author Lee Killough
-  */
-static inline void P_InitTagLists(void)
-{
-	register size_t i;
-
-	for (i = numsectors - 1; i != (size_t)-1; i--)
-	{
-		size_t j = (unsigned)sectors[i].tag % numsectors;
-		sectors[i].nexttag = sectors[j].firsttag;
-		sectors[j].firsttag = (INT32)i;
-	}
-
-	for (i = numlines - 1; i != (size_t)-1; i--)
-	{
-		size_t j = (unsigned)lines[i].tag % numlines;
-		lines[i].nexttag = lines[j].firsttag;
-		lines[j].firsttag = (INT32)i;
-	}
-}
-
 /** Finds minimum light from an adjacent sector.
   *
   * \param sector Sector to start in.
@@ -1569,16 +1545,24 @@ void T_ExecutorDelay(executor_t *e)
 static void P_AddExecutorDelay(line_t *line, mobj_t *mobj, sector_t *sector)
 {
 	executor_t *e;
+	INT32 delay;
 
-	if (!line->backsector)
-		I_Error("P_AddExecutorDelay: Line has no backsector!\n");
+	if (udmf)
+		delay = line->executordelay;
+	else
+	{
+		if (!line->backsector)
+			I_Error("P_AddExecutorDelay: Line has no backsector!\n");
+
+		delay = (line->backsector->ceilingheight >> FRACBITS) + (line->backsector->floorheight >> FRACBITS);
+	}
 
 	e = Z_Calloc(sizeof (*e), PU_LEVSPEC, NULL);
 
 	e->thinker.function.acp1 = (actionf_p1)T_ExecutorDelay;
 	e->line = line;
 	e->sector = sector;
-	e->timer = (line->backsector->ceilingheight>>FRACBITS)+(line->backsector->floorheight>>FRACBITS);
+	e->timer = delay;
 	P_SetTarget(&e->caller, mobj); // Use P_SetTarget to make sure the mobj doesn't get freed while we're delaying.
 	P_AddThinker(THINK_MAIN, &e->thinker);
 }
@@ -1815,7 +1799,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (ctlsector->lines[i]->special >= 400
 				&& ctlsector->lines[i]->special < 500)
 			{
-				if (ctlsector->lines[i]->flags & ML_DONTPEGTOP)
+				if (ctlsector->lines[i]->executordelay)
 					P_AddExecutorDelay(ctlsector->lines[i], actor, caller);
 				else
 					P_ProcessLineSpecial(ctlsector->lines[i], actor, caller);
@@ -1903,7 +1887,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (ctlsector->lines[i]->special >= 400
 				&& ctlsector->lines[i]->special < 500)
 			{
-				if (ctlsector->lines[i]->flags & ML_DONTPEGTOP)
+				if (ctlsector->lines[i]->executordelay)
 					P_AddExecutorDelay(ctlsector->lines[i], actor, caller);
 				else
 					P_ProcessLineSpecial(ctlsector->lines[i], actor, caller);
@@ -2866,30 +2850,35 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				// If titlemap, set the camera ref for title's thinker
 				// This is not revoked until overwritten; awayviewtics is ignored
 				if (titlemapinaction)
-				{
 					titlemapcameraref = altview;
-					return;
+				else
+				{
+					P_SetTarget(&mo->player->awayviewmobj, altview);
+					mo->player->awayviewtics = P_AproxDistance(line->dx, line->dy)>>FRACBITS;
 				}
 
-				P_SetTarget(&mo->player->awayviewmobj, altview);
-				mo->player->awayviewtics = P_AproxDistance(line->dx, line->dy)>>FRACBITS;
 
 				if (line->flags & ML_NOCLIMB) // lets you specify a vertical angle
 				{
 					INT32 aim;
 
 					aim = sides[line->sidenum[0]].textureoffset>>FRACBITS;
-					while (aim < 0)
-						aim += 360;
-					while (aim >= 360)
-						aim -= 360;
+					aim = (aim + 360) % 360;
 					aim *= (ANGLE_90>>8);
 					aim /= 90;
 					aim <<= 8;
-					mo->player->awayviewaiming = (angle_t)aim;
+					if (titlemapinaction)
+						titlemapcameraref->cusval = (angle_t)aim;
+					else
+						mo->player->awayviewaiming = (angle_t)aim;
 				}
 				else
-					mo->player->awayviewaiming = 0; // straight ahead
+				{
+					// straight ahead
+					if (!titlemapinaction)
+						mo->player->awayviewaiming = 0;
+					// don't do cusval cause that's annoying
+				}
 			}
 			break;
 
@@ -3175,10 +3164,10 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 		}
 
 		case 443: // Calls a named Lua function
-			if (line->text)
+			if (line->stringargs[0])
 				LUAh_LinedefExecute(line, mo, callsec);
 			else
-				CONS_Alert(CONS_WARNING, "Linedef %s is missing the hook name of the Lua function to call! (This should be given in the front texture fields)\n", sizeu1(line-lines));
+				CONS_Alert(CONS_WARNING, "Linedef %s is missing the hook name of the Lua function to call! (This should be given in arg0str)\n", sizeu1(line-lines));
 			break;
 
 		case 444: // Earthquake camera
@@ -3301,46 +3290,53 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			// Except it is activated by linedef executor, not level load
 			// This could even override existing colormaps I believe
 			// -- Monster Iestyn 14/06/18
-			for (secnum = -1; (secnum = P_FindSectorFromTag(line->tag, secnum)) >= 0 ;)
+		{
+			extracolormap_t *source;
+			if (!udmf)
+				source = sides[line->sidenum[0]].colormap_data;
+			else
 			{
+				if (!line->args[1])
+					source = line->frontsector->extra_colormap;
+				else
+				{
+					INT32 sourcesec = P_FindSectorFromTag(line->args[1], -1);
+					if (sourcesec == -1)
+					{
+						CONS_Debug(DBG_GAMELOGIC, "Line type 447 Executor: Can't find sector with source colormap (tag %d)!\n", line->args[1]);
+						return;
+					}
+					source = sectors[sourcesec].extra_colormap;
+				}
+			}
+
+			for (secnum = -1; (secnum = P_FindSectorFromTag(line->args[0], secnum)) >= 0;)
+			{
+				if (sectors[secnum].colormap_protected)
+					continue;
+
 				P_ResetColormapFader(&sectors[secnum]);
 
-				if (line->flags & ML_EFFECT3) // relative calc
+				if (line->args[2] & TMCF_RELATIVE)
 				{
-					extracolormap_t *exc = R_AddColormaps(
-						(line->flags & ML_TFERLINE) && line->sidenum[1] != 0xFFFF ?
-							sides[line->sidenum[1]].colormap_data : sectors[secnum].extra_colormap, // use back colormap instead of target sector
-						sides[line->sidenum[0]].colormap_data,
-						line->flags & ML_EFFECT1,  // subtract R
-						line->flags & ML_NOCLIMB,  // subtract G
-						line->flags & ML_EFFECT2,  // subtract B
-						false,                     // subtract A (no flag for this, just pass negative alpha)
-						line->flags & ML_EFFECT1,  // subtract FadeR
-						line->flags & ML_NOCLIMB,  // subtract FadeG
-						line->flags & ML_EFFECT2,  // subtract FadeB
-						false,                     // subtract FadeA (no flag for this, just pass negative alpha)
-						false,                     // subtract FadeStart (we ran out of flags)
-						false,                     // subtract FadeEnd (we ran out of flags)
-						false,                     // ignore Flags (we ran out of flags)
-						line->flags & ML_DONTPEGBOTTOM,
-						(line->flags & ML_DONTPEGBOTTOM) ? (sides[line->sidenum[0]].textureoffset >> FRACBITS) : 0,
-						(line->flags & ML_DONTPEGBOTTOM) ? (sides[line->sidenum[0]].rowoffset >> FRACBITS) : 0,
-						false);
+					extracolormap_t *target = (!udmf && (line->flags & ML_TFERLINE) && line->sidenum[1] != 0xFFFF) ?
+						sides[line->sidenum[1]].colormap_data : sectors[secnum].extra_colormap; // use back colormap instead of target sector
 
-					if (!(sectors[secnum].extra_colormap = R_GetColormapFromList(exc)))
-					{
-						exc->colormap = R_CreateLightTable(exc);
-						R_AddColormapToList(exc);
-						sectors[secnum].extra_colormap = exc;
-					}
-					else
-						Z_Free(exc);
-				}
-				else if (line->flags & ML_DONTPEGBOTTOM) // alternate alpha (by texture offsets)
-				{
-					extracolormap_t *exc = R_CopyColormap(sides[line->sidenum[0]].colormap_data, false);
-					exc->rgba = R_GetRgbaRGB(exc->rgba) + R_PutRgbaA(max(min(sides[line->sidenum[0]].textureoffset >> FRACBITS, 25), 0));
-					exc->fadergba = R_GetRgbaRGB(exc->fadergba) + R_PutRgbaA(max(min(sides[line->sidenum[0]].rowoffset >> FRACBITS, 25), 0));
+						extracolormap_t *exc = R_AddColormaps(
+							target,
+							source,
+							line->args[2] & TMCF_SUBLIGHTR,
+							line->args[2] & TMCF_SUBLIGHTG,
+							line->args[2] & TMCF_SUBLIGHTB,
+							line->args[2] & TMCF_SUBLIGHTA,
+							line->args[2] & TMCF_SUBFADER,
+							line->args[2] & TMCF_SUBFADEG,
+							line->args[2] & TMCF_SUBFADEB,
+							line->args[2] & TMCF_SUBFADEA,
+							line->args[2] & TMCF_SUBFADESTART,
+							line->args[2] & TMCF_SUBFADEEND,
+							line->args[2] & TMCF_IGNOREFLAGS,
+							false);
 
 					if (!(sectors[secnum].extra_colormap = R_GetColormapFromList(exc)))
 					{
@@ -3352,10 +3348,10 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						Z_Free(exc);
 				}
 				else
-					sectors[secnum].extra_colormap = sides[line->sidenum[0]].colormap_data;
+					sectors[secnum].extra_colormap = source;
 			}
 			break;
-
+		}
 		case 448: // Change skybox viewpoint/centerpoint
 			if ((mo && mo->player && P_IsLocalPlayer(mo->player)) || (line->flags & ML_NOCLIMB))
 			{
@@ -3629,15 +3625,35 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 		}
 
 		case 455: // Fade colormap
-			for (secnum = -1; (secnum = P_FindSectorFromTag(line->tag, secnum)) >= 0 ;)
+		{
+			extracolormap_t *dest;
+			if (!udmf)
+				dest = sides[line->sidenum[0]].colormap_data;
+			else
+			{
+				if (!line->args[1])
+					dest = line->frontsector->extra_colormap;
+				else
+				{
+					INT32 destsec = P_FindSectorFromTag(line->args[1], -1);
+					if (destsec == -1)
+					{
+						CONS_Debug(DBG_GAMELOGIC, "Line type 455 Executor: Can't find sector with destination colormap (tag %d)!\n", line->args[1]);
+						return;
+					}
+					dest = sectors[destsec].extra_colormap;
+				}
+			}
+
+			for (secnum = -1; (secnum = P_FindSectorFromTag(line->args[0], secnum)) >= 0;)
 			{
 				extracolormap_t *source_exc, *dest_exc, *exc;
-				INT32 speed = (INT32)((line->flags & ML_DONTPEGBOTTOM) || !sides[line->sidenum[0]].rowoffset) && line->sidenum[1] != 0xFFFF ?
-					abs(sides[line->sidenum[1]].rowoffset >> FRACBITS)
-					: abs(sides[line->sidenum[0]].rowoffset >> FRACBITS);
 
-				// Prevent continuous execs from interfering on an existing fade
-				if (!(line->flags & ML_EFFECT5)
+				if (sectors[secnum].colormap_protected)
+					continue;
+
+				// Don't interrupt ongoing fade
+				if (!(line->args[3] & TMCF_OVERRIDE)
 					&& sectors[secnum].fadecolormapdata)
 					//&& ((fadecolormap_t*)sectors[secnum].fadecolormapdata)->timer > (ticbased ? 2 : speed*2))
 				{
@@ -3645,19 +3661,19 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					continue;
 				}
 
-				if (line->flags & ML_TFERLINE) // use back colormap instead of target sector
+				if (!udmf && (line->flags & ML_TFERLINE)) // use back colormap instead of target sector
 					sectors[secnum].extra_colormap = (line->sidenum[1] != 0xFFFF) ?
-						sides[line->sidenum[1]].colormap_data : NULL;
+					sides[line->sidenum[1]].colormap_data : NULL;
 
 				exc = sectors[secnum].extra_colormap;
 
-				if (!(line->flags & ML_BOUNCY) // BOUNCY: Do not override fade from default rgba
-					&& !R_CheckDefaultColormap(sides[line->sidenum[0]].colormap_data, true, false, false)
+				if (!(line->args[3] & TMCF_FROMBLACK) // Override fade from default rgba
+					&& !R_CheckDefaultColormap(dest, true, false, false)
 					&& R_CheckDefaultColormap(exc, true, false, false))
 				{
 					exc = R_CopyColormap(exc, false);
-					exc->rgba = R_GetRgbaRGB(sides[line->sidenum[0]].colormap_data->rgba) + R_PutRgbaA(R_GetRgbaA(exc->rgba));
-					//exc->fadergba = R_GetRgbaRGB(sides[line->sidenum[0]].colormap_data->rgba) + R_PutRgbaA(R_GetRgbaA(exc->fadergba));
+					exc->rgba = R_GetRgbaRGB(dest->rgba) + R_PutRgbaA(R_GetRgbaA(exc->rgba));
+					//exc->fadergba = R_GetRgbaRGB(dest->rgba) + R_PutRgbaA(R_GetRgbaA(exc->fadergba));
 
 					if (!(source_exc = R_GetColormapFromList(exc)))
 					{
@@ -3673,35 +3689,26 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				else
 					source_exc = exc ? exc : R_GetDefaultColormap();
 
-				if (line->flags & ML_EFFECT3) // relative calc
+				if (line->args[3] & TMCF_RELATIVE)
 				{
 					exc = R_AddColormaps(
 						source_exc,
-						sides[line->sidenum[0]].colormap_data,
-						line->flags & ML_EFFECT1,  // subtract R
-						line->flags & ML_NOCLIMB,  // subtract G
-						line->flags & ML_EFFECT2,  // subtract B
-						false,                     // subtract A (no flag for this, just pass negative alpha)
-						line->flags & ML_EFFECT1,  // subtract FadeR
-						line->flags & ML_NOCLIMB,  // subtract FadeG
-						line->flags & ML_EFFECT2,  // subtract FadeB
-						false,                     // subtract FadeA (no flag for this, just pass negative alpha)
-						false,                     // subtract FadeStart (we ran out of flags)
-						false,                     // subtract FadeEnd (we ran out of flags)
-						false,                     // ignore Flags (we ran out of flags)
-						line->flags & ML_DONTPEGBOTTOM,
-						(line->flags & ML_DONTPEGBOTTOM) ? (sides[line->sidenum[0]].textureoffset >> FRACBITS) : 0,
-						(line->flags & ML_DONTPEGBOTTOM) ? (sides[line->sidenum[0]].rowoffset >> FRACBITS) : 0,
+						dest,
+						line->args[3] & TMCF_SUBLIGHTR,
+						line->args[3] & TMCF_SUBLIGHTG,
+						line->args[3] & TMCF_SUBLIGHTB,
+						line->args[3] & TMCF_SUBLIGHTA,
+						line->args[3] & TMCF_SUBFADER,
+						line->args[3] & TMCF_SUBFADEG,
+						line->args[3] & TMCF_SUBFADEB,
+						line->args[3] & TMCF_SUBFADEA,
+						line->args[3] & TMCF_SUBFADESTART,
+						line->args[3] & TMCF_SUBFADEEND,
+						line->args[3] & TMCF_IGNOREFLAGS,
 						false);
 				}
-				else if (line->flags & ML_DONTPEGBOTTOM) // alternate alpha (by texture offsets)
-				{
-					exc = R_CopyColormap(sides[line->sidenum[0]].colormap_data, false);
-					exc->rgba = R_GetRgbaRGB(exc->rgba) + R_PutRgbaA(max(min(sides[line->sidenum[0]].textureoffset >> FRACBITS, 25), 0));
-					exc->fadergba = R_GetRgbaRGB(exc->fadergba) + R_PutRgbaA(max(min(sides[line->sidenum[0]].rowoffset >> FRACBITS, 25), 0));
-				}
 				else
-					exc = R_CopyColormap(sides[line->sidenum[0]].colormap_data, false);
+					exc = R_CopyColormap(dest, false);
 
 				if (!(dest_exc = R_GetColormapFromList(exc)))
 				{
@@ -3712,13 +3719,13 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				else
 					Z_Free(exc);
 
-				Add_ColormapFader(&sectors[secnum], source_exc, dest_exc, (line->flags & ML_EFFECT4), // tic-based timing
-					speed);
+				Add_ColormapFader(&sectors[secnum], source_exc, dest_exc, true, // tic-based timing
+					line->args[2]);
 			}
 			break;
-
+		}
 		case 456: // Stop fade colormap
-			for (secnum = -1; (secnum = P_FindSectorFromTag(line->tag, secnum)) >= 0 ;)
+			for (secnum = -1; (secnum = P_FindSectorFromTag(line->args[0], secnum)) >= 0 ;)
 				P_ResetColormapFader(&sectors[secnum]);
 			break;
 
@@ -3908,6 +3915,23 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			}
 			break;
 
+		case 465: // Set linedef executor delay
+			{
+				INT32 linenum;
+
+				if (!udmf)
+					break;
+
+				for (linenum = -1; (linenum = P_FindLineFromTag(line->args[0], linenum)) >= 0 ;)
+				{
+					if (line->args[2])
+						lines[linenum].executordelay += line->args[1];
+					else
+						lines[linenum].executordelay = line->args[1];
+				}
+			}
+			break;
+
 		case 480: // Polyobj_DoorSlide
 		case 481: // Polyobj_DoorSwing
 			PolyDoor(line);
@@ -4037,7 +4061,7 @@ void P_SetupSignExit(player_t *player)
 
 		if (!numfound
 			&& !(player->mo->target && player->mo->target->type == MT_SIGN)
-			&& !(gametype == GT_COOP && (netgame || multiplayer) && cv_exitmove.value))
+			&& !((gametyperules & GTR_FRIENDLY) && (netgame || multiplayer) && cv_exitmove.value))
 				P_SetTarget(&player->mo->target, thing);
 
 		if (thing->state != &states[thing->info->spawnstate])
@@ -4063,7 +4087,7 @@ void P_SetupSignExit(player_t *player)
 
 		if (!numfound
 			&& !(player->mo->target && player->mo->target->type == MT_SIGN)
-			&& !(gametype == GT_COOP && (netgame || multiplayer) && cv_exitmove.value))
+			&& !((gametyperules & GTR_FRIENDLY) && (netgame || multiplayer) && cv_exitmove.value))
 				P_SetTarget(&player->mo->target, thing);
 
 		if (thing->state != &states[thing->info->spawnstate])
@@ -4553,6 +4577,11 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 					continue;
 				if (players[i].bot)
 					continue;
+<<<<<<< HEAD
+=======
+				if (G_CoopGametype() && players[i].lives <= 0)
+					continue;
+>>>>>>> srb2/next
 				if (roversector)
 				{
 					if (sector->flags & SF_TRIGGERSPECIAL_TOUCH)
@@ -4727,10 +4756,17 @@ DoneSection2:
 					break;
 				}
 
+<<<<<<< HEAD
 				// SRB2Kart: Scale the speed you get from them!
 				// This is scaled differently from other horizontal speed boosts from stuff like springs, because of how this is used for some ramp jumps.
 				if (player->mo->scale > mapobjectscale)
 					linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
+=======
+				player->mo->angle = player->drawangle = lineangle;
+
+				if (!demoplayback || P_ControlStyle(player) == CS_LMAOGALOG)
+					P_SetPlayerAngle(player, player->mo->angle);
+>>>>>>> srb2/next
 
 				if (!(lines[i].flags & ML_EFFECT4))
 				{
@@ -4808,7 +4844,7 @@ DoneSection2:
 				// FOF custom exits not to work.
 				lineindex = P_FindSpecialLineFromTag(2, sector->tag, -1);
 
-				if (gametype == GT_COOP && lineindex != -1) // Custom exit!
+				if (G_CoopGametype() && lineindex != -1) // Custom exit!
 				{
 					// Special goodies with the block monsters flag depending on emeralds collected
 					if ((lines[lineindex].flags & ML_BLOCKPLAYERS) && ALL7EMERALDS(emeralds))
@@ -4922,6 +4958,9 @@ DoneSection2:
 				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ZOOMTUBE)
 					break;
 
+				if (player->powers[pw_ignorelatch] & (1<<15))
+					break;
+
 				// Find line #3 tagged to this sector
 				lineindex = P_FindSpecialLineFromTag(3, sector->tag, -1);
 
@@ -4985,6 +5024,9 @@ DoneSection2:
 				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ZOOMTUBE)
 					break;
 
+				if (player->powers[pw_ignorelatch] & (1<<15))
+					break;
+
 				// Find line #3 tagged to this sector
 				lineindex = P_FindSpecialLineFromTag(3, sector->tag, -1);
 
@@ -5024,11 +5066,243 @@ DoneSection2:
 				P_SetTarget(&player->mo->tracer, waypoint);
 				player->powers[pw_carry] = CR_ZOOMTUBE;
 				player->speed = speed;
+<<<<<<< HEAD
 			}
 			break;
 
 		case 10: // Unused
 		case 11: // Unused
+=======
+				player->pflags |= PF_SPINNING;
+				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
+				player->climbing = 0;
+
+				if (player->mo->state-states != S_PLAY_ROLL)
+				{
+					P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
+					S_StartSound(player->mo, sfx_spin);
+				}
+			}
+			break;
+
+		case 10: // Finish Line
+			if (((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE) && !player->exiting)
+			{
+				if (player->starpostnum == numstarposts) // Must have touched all the starposts
+				{
+					player->laps++;
+
+					if (player->powers[pw_carry] == CR_NIGHTSMODE)
+						player->drillmeter += 48*20;
+
+					if (player->laps >= (UINT8)cv_numlaps.value)
+						CONS_Printf(M_GetText("%s has finished the race.\n"), player_names[player-players]);
+					else
+						CONS_Printf(M_GetText("%s started lap %u\n"), player_names[player-players], (UINT32)player->laps+1);
+
+					// Reset starposts (checkpoints) info
+					player->starpostscale = player->starpostangle = player->starposttime = player->starpostnum = 0;
+					player->starpostx = player->starposty = player->starpostz = 0;
+					P_ResetStarposts();
+
+					// Play the starpost sound for 'consistency'
+					S_StartSound(player->mo, sfx_strpst);
+				}
+				else if (player->starpostnum)
+				{
+					// blatant reuse of a variable that's normally unused in circuit
+					if (!player->tossdelay)
+						S_StartSound(player->mo, sfx_lose);
+					player->tossdelay = 3;
+				}
+
+				if (player->laps >= (unsigned)cv_numlaps.value)
+				{
+					if (P_IsLocalPlayer(player))
+					{
+						HU_SetCEchoFlags(0);
+						HU_SetCEchoDuration(5);
+						HU_DoCEcho("FINISHED!");
+					}
+
+					P_DoPlayerExit(player);
+				}
+			}
+			break;
+
+		case 11: // Rope hang
+			{
+				INT32 sequence;
+				fixed_t speed;
+				INT32 lineindex;
+				mobj_t *waypointmid = NULL;
+				mobj_t *waypointhigh = NULL;
+				mobj_t *waypointlow = NULL;
+				mobj_t *closest = NULL;
+				vector3_t p, line[2], resulthigh, resultlow;
+
+				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ROPEHANG)
+					break;
+
+				if (player->powers[pw_ignorelatch] & (1<<15))
+					break;
+
+				if (player->mo->momz > 0)
+					break;
+
+				if (player->cmd.buttons & BT_USE)
+					break;
+
+				if (!(player->pflags & PF_SLIDING) && player->mo->state == &states[player->mo->info->painstate])
+					break;
+
+				if (player->exiting)
+					break;
+
+				//initialize resulthigh and resultlow with 0
+				memset(&resultlow, 0x00, sizeof(resultlow));
+				memset(&resulthigh, 0x00, sizeof(resulthigh));
+
+				// Find line #11 tagged to this sector
+				lineindex = P_FindSpecialLineFromTag(11, sector->tag, -1);
+
+				if (lineindex == -1)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: Sector special %d missing line special #11.\n", sector->special);
+					break;
+				}
+
+				// Grab speed and sequence values
+				speed = abs(sides[lines[lineindex].sidenum[0]].textureoffset)/8;
+				sequence = abs(sides[lines[lineindex].sidenum[0]].rowoffset)>>FRACBITS;
+
+				if (speed == 0)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: Waypoint sequence %d at zero speed.\n", sequence);
+					break;
+				}
+
+				// Find the closest waypoint
+				// Find the preceding waypoint
+				// Find the proceeding waypoint
+				// Determine the closest spot on the line between the three waypoints
+				// Put player at that location.
+
+				waypointmid = P_GetClosestWaypoint(sequence, player->mo);
+
+				if (!waypointmid)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: WAYPOINT(S) IN SEQUENCE %d NOT FOUND.\n", sequence);
+					break;
+				}
+
+				waypointlow = P_GetPreviousWaypoint(waypointmid, true);
+				waypointhigh = P_GetNextWaypoint(waypointmid, true);
+
+				CONS_Debug(DBG_GAMELOGIC, "WaypointMid: %d; WaypointLow: %d; WaypointHigh: %d\n",
+								waypointmid->health, waypointlow ? waypointlow->health : -1, waypointhigh ? waypointhigh->health : -1);
+
+				// Now we have three waypoints... the closest one we're near, and the one that comes before, and after.
+				// Next, we need to find the closest point on the line between each set, and determine which one we're
+				// closest to.
+
+				p.x = player->mo->x;
+				p.y = player->mo->y;
+				p.z = player->mo->z;
+
+				// Waypointmid and Waypointlow:
+				if (waypointlow)
+				{
+					line[0].x = waypointmid->x;
+					line[0].y = waypointmid->y;
+					line[0].z = waypointmid->z;
+					line[1].x = waypointlow->x;
+					line[1].y = waypointlow->y;
+					line[1].z = waypointlow->z;
+
+					P_ClosestPointOnLine3D(&p, line, &resultlow);
+				}
+
+				// Waypointmid and Waypointhigh:
+				if (waypointhigh)
+				{
+					line[0].x = waypointmid->x;
+					line[0].y = waypointmid->y;
+					line[0].z = waypointmid->z;
+					line[1].x = waypointhigh->x;
+					line[1].y = waypointhigh->y;
+					line[1].z = waypointhigh->z;
+
+					P_ClosestPointOnLine3D(&p, line, &resulthigh);
+				}
+
+				// 3D support now available. Disregard the previous notice here. -Red
+
+				P_UnsetThingPosition(player->mo);
+				P_ResetPlayer(player);
+				player->mo->momx = player->mo->momy = player->mo->momz = 0;
+
+				if (lines[lineindex].flags & ML_EFFECT1) // Don't wrap
+				{
+					mobj_t *highest = P_GetLastWaypoint(sequence);
+					highest->flags |= MF_SLIDEME;
+				}
+
+				// Changing the conditions on these ifs to fix issues with snapping to the wrong spot -Red
+				if ((lines[lineindex].flags & ML_EFFECT1) && waypointmid->health == 0)
+				{
+					closest = waypointhigh;
+					player->mo->x = resulthigh.x;
+					player->mo->y = resulthigh.y;
+					player->mo->z = resulthigh.z - P_GetPlayerHeight(player);
+				}
+				else if ((lines[lineindex].flags & ML_EFFECT1) && waypointmid->health == numwaypoints[sequence] - 1)
+				{
+					closest = waypointmid;
+					player->mo->x = resultlow.x;
+					player->mo->y = resultlow.y;
+					player->mo->z = resultlow.z - P_GetPlayerHeight(player);
+				}
+				else
+				{
+					if (P_AproxDistance(P_AproxDistance(player->mo->x-resultlow.x, player->mo->y-resultlow.y),
+							player->mo->z-resultlow.z) < P_AproxDistance(P_AproxDistance(player->mo->x-resulthigh.x,
+								player->mo->y-resulthigh.y), player->mo->z-resulthigh.z))
+					{
+						// Line between Mid and Low is closer
+						closest = waypointmid;
+						player->mo->x = resultlow.x;
+						player->mo->y = resultlow.y;
+						player->mo->z = resultlow.z - P_GetPlayerHeight(player);
+					}
+					else
+					{
+						// Line between Mid and High is closer
+						closest = waypointhigh;
+						player->mo->x = resulthigh.x;
+						player->mo->y = resulthigh.y;
+						player->mo->z = resulthigh.z - P_GetPlayerHeight(player);
+					}
+				}
+
+				P_SetTarget(&player->mo->tracer, closest);
+				player->powers[pw_carry] = CR_ROPEHANG;
+
+				// Option for static ropes.
+				if (lines[lineindex].flags & ML_NOCLIMB)
+					player->speed = 0;
+				else
+					player->speed = speed;
+
+				S_StartSound(player->mo, sfx_s3k4a);
+
+				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
+				player->climbing = 0;
+				P_SetThingPosition(player->mo);
+				P_SetPlayerMobjState(player->mo, S_PLAY_RIDE);
+			}
+			break;
+>>>>>>> srb2/next
 		case 12: // Camera noclip
 		case 13: // Unused
 		case 14: // Unused
@@ -5833,7 +6107,7 @@ static void P_AddRaiseThinker(sector_t *sec, INT16 tag, fixed_t speed, fixed_t c
 	raise->ceilingtop = ceilingtop;
 	raise->ceilingbottom = ceilingbottom;
 
-	raise->basespeed =  speed;
+	raise->basespeed = speed;
 
 	if (lower)
 		raise->flags |= RF_REVERSE;
@@ -6076,7 +6350,7 @@ static void P_RunLevelLoadExecutors(void)
   * by P_SpawnSlopes or P_LoadThings. This was split off from
   * P_SpawnSpecials, in case you couldn't tell.
   *
-  * \sa P_SpawnSpecials, P_InitTagLists
+  * \sa P_SpawnSpecials
   * \author Monster Iestyn
   */
 void P_InitSpecials(void)
@@ -6093,10 +6367,30 @@ void P_InitSpecials(void)
 
 	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
+<<<<<<< HEAD
 	// Set weather
 	curWeather = globalweather = mapheaderinfo[gamemap-1]->weather;
 
 	P_InitTagLists();   // Create xref tables for tags
+=======
+	// Set curWeather
+	switch (mapheaderinfo[gamemap-1]->weather)
+	{
+		case PRECIP_SNOW: // snow
+		case PRECIP_RAIN: // rain
+		case PRECIP_STORM: // storm
+		case PRECIP_STORM_NORAIN: // storm w/o rain
+		case PRECIP_STORM_NOSTRIKES: // storm w/o lightning
+			curWeather = mapheaderinfo[gamemap-1]->weather;
+			break;
+		default: // blank/none
+			curWeather = PRECIP_NONE;
+			break;
+	}
+
+	// Set globalweather
+	globalweather = mapheaderinfo[gamemap-1]->weather;
+>>>>>>> srb2/next
 }
 
 static void P_ApplyFlatAlignment(line_t *master, sector_t *sector, angle_t flatangle, fixed_t xoffs, fixed_t yoffs)
@@ -6183,9 +6477,15 @@ void P_SpawnSpecials(boolean fromnetsave)
 		// Process Section 4
 		switch(GETSECSPECIAL(sector->special, 4))
 		{
+<<<<<<< HEAD
 			case 10: // Circuit finish line (Unused)
 				// Remove before release
 				CONS_Alert(CONS_WARNING, "Finish line sector type is deprecated.\n");
+=======
+			case 10: // Circuit finish line
+				if ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)
+					circuitmap = true;
+>>>>>>> srb2/next
 				break;
 		}
 	}
@@ -7085,8 +7385,32 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 
 			case 606: // HACK! Copy colormaps. Just plain colormaps.
-				for (s = -1; (s = P_FindSectorFromTag(lines[i].tag, s)) >= 0 ;)
-					sectors[s].extra_colormap = sectors[s].spawn_extra_colormap = sides[lines[i].sidenum[0]].colormap_data;
+				for (s = -1; (s = P_FindSectorFromTag(lines[i].args[0], s)) >= 0;)
+				{
+					extracolormap_t *exc;
+
+					if (sectors[s].colormap_protected)
+						continue;
+
+					if (!udmf)
+						exc = sides[lines[i].sidenum[0]].colormap_data;
+					else
+					{
+						if (!lines[i].args[1])
+							exc = lines[i].frontsector->extra_colormap;
+						else
+						{
+							INT32 sourcesec = P_FindSectorFromTag(lines[i].args[1], -1);
+							if (sourcesec == -1)
+							{
+								CONS_Debug(DBG_GAMELOGIC, "Line type 606: Can't find sector with source colormap (tag %d)!\n", lines[i].args[1]);
+								return;
+							}
+							exc = sectors[sourcesec].extra_colormap;
+						}
+					}
+					sectors[s].extra_colormap = sectors[s].spawn_extra_colormap = exc;
+				}
 				break;
 
 			// SRB2Kart
@@ -8107,7 +8431,7 @@ static void P_AddFakeFloorFader(ffloor_t *rover, size_t sectornum, size_t ffloor
 		d->destlightlevel = -1;
 
 	// Set a separate thinker for colormap fading
-	if (docolormap && !(rover->flags & FF_NOSHADE) && sectors[rover->secnum].spawn_extra_colormap)
+	if (docolormap && !(rover->flags & FF_NOSHADE) && sectors[rover->secnum].spawn_extra_colormap && !sectors[rover->secnum].colormap_protected)
 	{
 		extracolormap_t *dest_exc,
 			*source_exc = sectors[rover->secnum].extra_colormap ? sectors[rover->secnum].extra_colormap : R_GetDefaultColormap();
@@ -8908,6 +9232,7 @@ void T_Pusher(pusher_t *p)
 
 				if (!demo.playback)
 				{
+<<<<<<< HEAD
 					if (thing->player == &players[consoleplayer])
 					{
 						if (thing->angle - localangle[0] > ANGLE_180)
@@ -8936,6 +9261,14 @@ void T_Pusher(pusher_t *p)
 						else
 							localangle[3] += (thing->angle - localangle[3]) / 8;
 					}
+=======
+					angle_t angle = thing->player->angleturn << 16;
+					if (thing->angle - angle > ANGLE_180)
+						P_SetPlayerAngle(thing->player, angle - (angle - thing->angle) / 8);
+					else
+						P_SetPlayerAngle(thing->player, angle + (thing->angle - angle) / 8);
+					//P_SetPlayerAngle(thing->player, thing->angle);
+>>>>>>> srb2/next
 				}
 			}
 

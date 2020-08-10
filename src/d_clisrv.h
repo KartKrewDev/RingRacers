@@ -19,6 +19,7 @@
 #include "d_net.h"
 #include "tables.h"
 #include "d_player.h"
+<<<<<<< HEAD
 #include "k_pwrlv.h" // PWRLV_NUMTYPES
 
 /*
@@ -27,6 +28,9 @@ This version is independent of VERSION and SUBVERSION. Different
 applications may follow different packet versions.
 */
 #define PACKETVERSION 0
+=======
+#include "mserv.h"
+>>>>>>> srb2/next
 
 /*
 The 'packet version' is used to distinguish packet formats.
@@ -42,8 +46,13 @@ applications may follow different packet versions.
 //  be transmitted.
 
 // Networking and tick handling related.
+<<<<<<< HEAD
 #define BACKUPTICS 32
 #define TICQUEUE 512 // more than enough for most timeouts....
+=======
+#define BACKUPTICS 1024
+#define CLIENTBACKUPTICS 32
+>>>>>>> srb2/next
 #define MAXTEXTCMD 256
 //
 // Packet structure
@@ -92,6 +101,8 @@ typedef enum
 	                  // In addition, this packet can't occupy all the available slots.
 
 	PT_FILEFRAGMENT = PT_CANFAIL, // A part of a file.
+	PT_FILEACK,
+	PT_FILERECEIVED,
 
 	PT_TEXTCMD,       // Extra text commands from the client.
 	PT_TEXTCMD2,      // Splitscreen text commands.
@@ -211,6 +222,9 @@ typedef struct
 	UINT8 playerstate; // playerstate_t
 	UINT32 pflags; // pflags_t
 	UINT8 panim; // panim_t
+
+	INT16 angleturn;
+	INT16 oldrelangleturn;
 
 	angle_t aiming;
 	INT32 currentweapon;
@@ -368,12 +382,29 @@ typedef struct
 	UINT8 varlengthinputs[0]; // Playernames and netvars
 } ATTRPACK serverconfig_pak;
 
-typedef struct {
+typedef struct
+{
 	UINT8 fileid;
+	UINT32 filesize;
+	UINT8 iteration;
 	UINT32 position;
 	UINT16 size;
 	UINT8 data[0]; // Size is variable using hardware_MAXPACKETLENGTH
 } ATTRPACK filetx_pak;
+
+typedef struct
+{
+	UINT32 start;
+	UINT32 acks;
+} ATTRPACK fileacksegment_t;
+
+typedef struct
+{
+	UINT8 fileid;
+	UINT8 iteration;
+	UINT8 numsegments;
+	fileacksegment_t segments[0];
+} ATTRPACK fileack_pak;
 
 #ifdef _MSC_VER
 #pragma warning(default : 4200)
@@ -510,6 +541,8 @@ typedef struct
 		UINT8 resynchgot;                   //
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
+		fileack_pak fileack;
+		UINT8 filereceived;
 		clientconfig_pak clientcfg;         //         136 bytes
 		UINT8 md5sum[16];
 		serverinfo_pak serverinfo;          //        1024 bytes
@@ -572,6 +605,7 @@ typedef enum
 } kickreason_t;
 
 extern boolean server;
+extern boolean serverrunning;
 #define client (!server)
 extern boolean dedicated; // For dedicated server
 extern UINT16 software_MAXPACKETLENGTH;
@@ -587,9 +621,13 @@ extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
 
+<<<<<<< HEAD
 extern boolean server_lagless;
 
 extern consvar_t cv_allownewplayer, cv_maxplayers, cv_joindelay, cv_rejointimeout;
+=======
+extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxplayers, cv_joindelay, cv_rejointimeout;
+>>>>>>> srb2/next
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 extern consvar_t cv_netticbuffer;
@@ -616,14 +654,17 @@ void NetUpdate(void);
 
 void SV_StartSinglePlayerServer(void);
 boolean SV_SpawnServer(void);
-void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle);
 void SV_StopServer(void);
 void SV_ResetServer(void);
 void CL_AddSplitscreenPlayer(void);
 void CL_RemoveSplitscreenPlayer(UINT8 p);
 void CL_Reset(void);
 void CL_ClearPlayer(INT32 playernum);
+<<<<<<< HEAD
 void CL_RemovePlayer(INT32 playernum, INT32 reason);
+=======
+void CL_QueryServerList(msg_server_t *list);
+>>>>>>> srb2/next
 void CL_UpdateServerList(boolean internetsearch, INT32 room);
 // Is there a game running
 boolean Playing(void);

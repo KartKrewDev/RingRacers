@@ -1940,10 +1940,14 @@ static void HU_DrawChat_Old(void)
 
 #ifdef HWRENDER
 	if (rendermode != render_soft)
+<<<<<<< HEAD
 	{
 		x = (INT32)gr_basewindowcenterx;
 		y = (INT32)gr_basewindowcentery;
 	}
+=======
+		y = (INT32)gl_basewindowcentery;
+>>>>>>> srb2/next
 	else
 #endif
 	{
@@ -1967,10 +1971,14 @@ static inline void HU_DrawCrosshair2(void)
 
 #ifdef HWRENDER
 	if (rendermode != render_soft)
+<<<<<<< HEAD
 	{
 		x = (INT32)gr_basewindowcenterx;
 		y = (INT32)gr_basewindowcentery;
 	}
+=======
+		y = (INT32)gl_basewindowcentery;
+>>>>>>> srb2/next
 	else
 #endif
 	{
@@ -2029,7 +2037,7 @@ static inline void HU_DrawCrosshair3(void)
 	{
 #ifdef HWRENDER
 		if (rendermode != render_soft)
-			y += (INT32)gr_viewheight;
+			y += (INT32)gl_viewheight;
 		else
 #endif
 			y += viewheight;
@@ -2315,12 +2323,17 @@ void HU_Drawer(void)
 		{
 			if (LUA_HudEnabled(hud_rankings))
 				HU_DrawRankings();
+<<<<<<< HEAD
 			LUAh_ScoresHUD();
 		}
 
 		if (demo.playback)
 		{
 			HU_DrawDemoInfo();
+=======
+			if (gametyperules & GTR_CAMPAIGN)
+				HU_DrawNetplayCoopOverlay();
+>>>>>>> srb2/next
 		}
 	}
 
@@ -2447,6 +2460,7 @@ void HU_Erase(void)
 //                   IN-LEVEL MULTIPLAYER RANKINGS
 //======================================================================
 
+<<<<<<< HEAD
 static int
 Ping_gfx_num (int ping)
 {
@@ -2461,6 +2475,10 @@ Ping_gfx_num (int ping)
 	else
 		return 4;
 }
+=======
+#define supercheckdef (!(players[tab[i].num].charflags & SF_NOSUPERSPRITES) && ((players[tab[i].num].powers[pw_super] && players[tab[i].num].mo && (players[tab[i].num].mo->state < &states[S_PLAY_SUPER_TRANS1] || players[tab[i].num].mo->state >= &states[S_PLAY_SUPER_TRANS6])) || (players[tab[i].num].powers[pw_carry] == CR_NIGHTSMODE && skins[players[tab[i].num].skin].flags & SF_SUPER)))
+#define greycheckdef (players[tab[i].num].spectator || players[tab[i].num].playerstate == PST_DEAD || (G_IsSpecialStage(gamemap) && players[tab[i].num].exiting))
+>>>>>>> srb2/next
 
 //
 // HU_drawPing
@@ -2609,7 +2627,27 @@ static void HU_DrawRankings(void)
 				timeval = timelimitintics;
 			timeval /= TICRATE;
 
+<<<<<<< HEAD
 			if (leveltime <= (timelimitintics + starttime))
+=======
+		//V_DrawSmallScaledPatch (x, y-4, 0, livesback);
+		if (tab[i].color == 0)
+		{
+			colormap = colormaps;
+			if (players[tab[i].num].powers[pw_super] && !(players[tab[i].num].charflags & SF_NOSUPERSPRITES))
+				V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/4, 0, superprefix[players[tab[i].num].skin], 0);
+			else
+			{
+				if (greycheck)
+					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, V_HUDTRANSHALF, faceprefix[players[tab[i].num].skin], 0);
+				else
+					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, faceprefix[players[tab[i].num].skin], 0);
+			}
+		}
+		else
+		{
+			if (supercheck)
+>>>>>>> srb2/next
 			{
 				V_DrawCenteredString(64, 8, 0, "TIME LEFT");
 				V_DrawCenteredString(64, 16, hilicol, va("%u", timeval));
