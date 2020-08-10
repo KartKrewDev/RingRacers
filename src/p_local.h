@@ -61,8 +61,8 @@
 
 #define mariomode (maptol & TOL_MARIO)
 
-#define P_GetPlayerHeight(player) FixedMul(player->height, player->mo->scale)
-#define P_GetPlayerSpinHeight(player) FixedMul(player->spinheight, player->mo->scale)
+#define P_GetPlayerHeight(player) FixedMul(mobjinfo[MT_PLAYER].height, player->mo->scale)
+#define P_GetPlayerSpinHeight(player) FixedMul(mobjinfo[MT_PLAYER].height, player->mo->scale)
 
 typedef enum
 {
