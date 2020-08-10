@@ -3995,7 +3995,7 @@ static void P_InitGametype(void)
 
 	if (G_TagGametype())
 		P_InitTagGametype();
-	else if (gametype == GT_RACE && server)
+	else if ((gametyperules & GTR_RACE) && server)
 	{
 		if ((netgame || multiplayer) && cv_basenumlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
@@ -4020,18 +4020,8 @@ static void P_InitGametype(void)
 		path = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online", srb2home);
 		M_MkdirEach(path, M_PathParts(path) - 4, 0755);
 
-<<<<<<< HEAD
 		G_RecordDemo(buf);
 	}
-=======
-	if (G_TagGametype())
-		P_InitTagGametype();
-	else if (((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE) && server)
-		CV_StealthSetValue(&cv_numlaps,
-		(cv_basenumlaps.value)
-			? cv_basenumlaps.value
-			: mapheaderinfo[gamemap - 1]->numlaps);
->>>>>>> srb2/next
 }
 
 /** Loads a level from a lump or external wad.
