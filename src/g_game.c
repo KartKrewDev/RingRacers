@@ -631,107 +631,7 @@ void G_SetGameModified(boolean silent, boolean major)
 	if ((majormods && modifiedgame) || !mainwads || (refreshdirmenu & REFRESHDIR_GAMEDATA)) // new gamedata amnesty?
 		return;
 
-<<<<<<< HEAD
 	modifiedgame = true;
-=======
-	// Set overall
-	{
-		UINT8 totalrank = 0, realrank = 0;
-
-		for (i = 1; i <= ntemprecords.nummares; ++i)
-		{
-			totalscore += ntemprecords.score[i];
-			totalrank += ntemprecords.grade[i];
-			totaltime += ntemprecords.time[i];
-		}
-
-		// Determine overall grade
-		realrank = (UINT8)((FixedDiv((fixed_t)totalrank << FRACBITS, ntemprecords.nummares << FRACBITS) + (FRACUNIT/2)) >> FRACBITS);
-
-		// You need ALL rainbow As to get a rainbow A overall
-		if (realrank == GRADE_S && (totalrank / ntemprecords.nummares) != GRADE_S)
-			realrank = GRADE_A;
-
-		ntemprecords.score[0] = totalscore;
-		ntemprecords.grade[0] = realrank;
-		ntemprecords.time[0] = totaltime;
-	}
-
-	// Now take all temp records and put them in the actual records
-	{
-		nightsdata_t *maprecords;
-
-		if (!nightsrecords[gamemap-1])
-			G_AllocNightsRecordData(gamemap-1);
-		maprecords = nightsrecords[gamemap-1];
-
-		if (maprecords->nummares != ntemprecords.nummares)
-			maprecords->nummares = ntemprecords.nummares;
-
-		for (i = 0; i < ntemprecords.nummares + 1; ++i)
-		{
-			if (maprecords->score[i] < ntemprecords.score[i])
-				maprecords->score[i] = ntemprecords.score[i];
-			if (maprecords->grade[i] < ntemprecords.grade[i])
-				maprecords->grade[i] = ntemprecords.grade[i];
-			if (!maprecords->time[i] || maprecords->time[i] > ntemprecords.time[i])
-				maprecords->time[i] = ntemprecords.time[i];
-		}
-	}
-
-	memset(&ntemprecords, 0, sizeof(nightsdata_t));
-
-	// Save demo!
-	bestdemo[255] = '\0';
-	lastdemo[255] = '\0';
-	G_SetDemoTime(totaltime, totalscore, 0);
-	G_CheckDemoStatus();
-
-	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
-	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
-
-	if ((gpath = malloc(glen)) == NULL)
-		I_Error("Out of memory for replay filepath\n");
-
-	sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
-	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, skins[cv_chooseskin.value-1].name);
-
-	if (FIL_FileExists(lastdemo))
-	{
-		UINT8 *buf;
-		size_t len = FIL_ReadFile(lastdemo, &buf);
-
-		snprintf(bestdemo, 255, "%s-%s-time-best.lmp", gpath, skins[cv_chooseskin.value-1].name);;
-		if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & 1)
-		{ // Better time, save this demo.
-			if (FIL_FileExists(bestdemo))
-				remove(bestdemo);
-			FIL_WriteFile(bestdemo, buf, len);
-			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
-		}
-
-		snprintf(bestdemo, 255, "%s-%s-score-best.lmp", gpath, skins[cv_chooseskin.value-1].name);
-		if (!FIL_FileExists(bestdemo) || (G_CmpDemoTime(bestdemo, lastdemo) & (1<<1)))
-		{ // Better score, save this demo.
-			if (FIL_FileExists(bestdemo))
-				remove(bestdemo);
-			FIL_WriteFile(bestdemo, buf, len);
-			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW HIGH SCORE!"), M_GetText("Saved replay as"), bestdemo);
-		}
-
-		//CONS_Printf("%s '%s'\n", M_GetText("Saved replay as"), lastdemo);
-
-		Z_Free(buf);
-	}
-	free(gpath);
-
-	if ((earnedEmblems = M_CheckLevelEmblems()))
-		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for NiGHTS records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
-
-	// If the mare count changed, this will update the score display
-	Nextmap_OnChange();
-}
->>>>>>> srb2/next
 
 	if (!major)
 		return;
@@ -824,7 +724,7 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-static INT32 JoyAxis(axis_input_e axissel, UINT8 player)
+static INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel)
 {
 	INT32 retaxis;
 	INT32 axisval;
@@ -834,25 +734,25 @@ static INT32 JoyAxis(axis_input_e axissel, UINT8 player)
 	switch (axissel)
 	{
 		case AXISTURN:
-			axisval = cv_turnaxis[player].value;
+			axisval = cv_turnaxis[player-1].value;
 			break;
 		case AXISMOVE:
-			axisval = cv_moveaxis[player].value;
+			axisval = cv_moveaxis[player-1].value;
 			break;
 		case AXISBRAKE:
-			axisval = cv_brakeaxis[player].value;
+			axisval = cv_brakeaxis[player-1].value;
 			break;
 		case AXISAIM:
-			axisval = cv_aimaxis[player].value;
+			axisval = cv_aimaxis[player-1].value;
 			break;
 		case AXISLOOK:
-			axisval = cv_lookaxis[player].value;
+			axisval = cv_lookaxis[player-1].value;
 			break;
 		case AXISFIRE:
-			axisval = cv_fireaxis[player].value;
+			axisval = cv_fireaxis[player-1].value;
 			break;
 		case AXISDRIFT:
-			axisval = cv_driftaxis[player].value;
+			axisval = cv_driftaxis[player-1].value;
 			break;
 		default:
 			return 0;
@@ -869,13 +769,13 @@ static INT32 JoyAxis(axis_input_e axissel, UINT8 player)
 	if (axisval%2)
 	{
 		axisval /= 2;
-		retaxis = joyxmove[player][axisval];
+		retaxis = joyxmove[player-1][axisval];
 	}
 	else
 	{
 		axisval--;
 		axisval /= 2;
-		retaxis = joyymove[player][axisval];
+		retaxis = joyymove[player-1][axisval];
 	}
 
 	if (retaxis < (-JOYAXISRANGE))
@@ -883,9 +783,9 @@ static INT32 JoyAxis(axis_input_e axissel, UINT8 player)
 	if (retaxis > (+JOYAXISRANGE))
 		retaxis = +JOYAXISRANGE;
 
-	if (!Joystick.bGamepadStyle && axissel >= AXISDIGITAL)
+	if (!Joystick[player-1].bGamepadStyle && axissel >= AXISDIGITAL)
 	{
-		const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_digitaldeadzone[player].value) >> FRACBITS;
+		const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_digitaldeadzone[player-1].value) >> FRACBITS;
 		if (-jdeadzone < retaxis && retaxis < jdeadzone)
 			return 0;
 	}
@@ -967,41 +867,41 @@ static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
 static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
 static fixed_t angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
 
-<<<<<<< HEAD
-=======
-INT16 ticcmd_oldangleturn[2];
-boolean ticcmd_centerviewdown[2]; // For simple controls, lock the camera behind the player
-mobj_t *ticcmd_ztargetfocus[2]; // Locking onto an object?
->>>>>>> srb2/next
+INT16 ticcmd_oldangleturn[MAXSPLITSCREENPLAYERS];
+
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
-	INT32 laim, th, tspeed, forward, side, axis; //i
+	const UINT8 forplayer = ssplayer-1;
 	const INT32 speed = 1;
-	// these ones used for multiple conditions
-	boolean turnleft, turnright, mouseaiming, analogjoystickmove, gamepadjoystickmove;
-	boolean invertmouse, lookaxis, usejoystick, kbl, rd;
-	player_t *player;
-	camera_t *thiscam;
-	angle_t lang;
+
+	const INT32 lookaxis = cv_lookaxis[forplayer].value;
+	const boolean mouseaiming = player->spectator;
+	const boolean invertmouse = cv_invertmouse.value;
+	const boolean analogjoystickmove = cv_usejoystick[forplayer].value && !Joystick[forplayer].bGamepadStyle;
+	const boolean gamepadjoystickmove = cv_usejoystick[forplayer].value && Joystick[forplayer].bGamepadStyle;
+	const boolean usejoystick = (analogjoystickmove || gamepadjoystickmove);
 
 	static INT32 turnheld[MAXSPLITSCREENPLAYERS]; // for accelerative turning
 	static boolean keyboard_look[MAXSPLITSCREENPLAYERS]; // true if lookup/down using keyboard
 	static boolean resetdown[MAXSPLITSCREENPLAYERS]; // don't cam reset every frame
 
+	INT32 tspeed, forward, axis, i;
+
+	joystickvector2_t joystickvector;
+
+	boolean turnleft, turnright;
+
+	player_t *player = &player = &players[g_localplayers[forplayer]];
+	camera_t *thiscam = &camera[forplayer];
+	angle_t *lang = &localangle[forplayer];
+	angle_t *laim = &localaiming[forplayer];
+	INT32 *th = turnheld[forplayer];
+	INT32 *kbl = keyboard_look[forplayer];
+	INT32 *rd = resetdown[forplayer];
+
 	if (demo.playback) return;
 
-	if (ssplayer == 1)
-		player = &players[consoleplayer];
-	else
-		player = &players[g_localplayers[ssplayer-1]];
-
-	thiscam = &camera[ssplayer-1];
-	lang = localangle[ssplayer-1];
-	laim = localaiming[ssplayer-1];
-	th = turnheld[ssplayer-1];
-	kbl = keyboard_look[ssplayer-1];
-	rd = resetdown[ssplayer-1];
-
+	// Is there any reason this can't just be I_BaseTiccmd?
 	switch (ssplayer)
 	{
 		case 2:
@@ -1021,90 +921,50 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
-<<<<<<< HEAD
 	// Kart, don't build a ticcmd if someone is resynching or the server is stopped too so we don't fly off course in bad conditions
 	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN) || hu_resynching)
 	{
-		cmd->angleturn = (INT16)(lang >> 16);
-		cmd->aiming = G_ClipAimingPitch(&laim);
-=======
-	// ...OR if we're blindfolded. No looking into the floor.
-	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && (player->playerstate == PST_REBORN || ((gametyperules & GTR_TAG)
-	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT)))))
-	{//@TODO splitscreen player
 		cmd->angleturn = ticcmd_oldangleturn[forplayer];
-		cmd->aiming = G_ClipAimingPitch(myaiming);
->>>>>>> srb2/next
+		cmd->aiming = G_ClipAimingPitch(&laim);
 		return;
 	}
 
 	if (K_PlayerUsesBotMovement(player))
 	{
+		// Bot ticcmd is generated by K_BuildBotTiccmd
 		return;
 	}
 
-	switch (ssplayer)
-	{
-		case 2:
-			mouseaiming = player->spectator; //(PLAYER2INPUTDOWN(gc_mouseaiming)) ^ cv_alwaysfreelook2.value;
-			invertmouse = cv_invertmouse2.value;
-			lookaxis = cv_lookaxis2.value;
-			analogjoystickmove = cv_usejoystick2.value && !Joystick2.bGamepadStyle;
-			gamepadjoystickmove = cv_usejoystick2.value && Joystick2.bGamepadStyle;
-			break;
-		case 3:
-			mouseaiming = false;
-			invertmouse = false;
-			lookaxis = cv_lookaxis3.value;
-			analogjoystickmove = cv_usejoystick3.value && !Joystick3.bGamepadStyle;
-			gamepadjoystickmove = cv_usejoystick3.value && Joystick3.bGamepadStyle;
-			break;
-		case 4:
-			mouseaiming = false;
-			invertmouse = false;
-			lookaxis = cv_lookaxis4.value;
-			analogjoystickmove = cv_usejoystick4.value && !Joystick4.bGamepadStyle;
-			gamepadjoystickmove = cv_usejoystick4.value && Joystick4.bGamepadStyle;
-			break;
-		case 1:
-		default:
-			mouseaiming = player->spectator; //(PLAYER1INPUTDOWN(gc_mouseaiming)) ^ cv_alwaysfreelook.value;
-			invertmouse = cv_invertmouse.value;
-			lookaxis = cv_lookaxis.value;
-			analogjoystickmove = cv_usejoystick.value && !Joystick.bGamepadStyle;
-			gamepadjoystickmove = cv_usejoystick.value && Joystick.bGamepadStyle;
-			break;
-	}
+	turnright = PLAYERINPUTDOWN(ssplayer, gc_turnright);
+	turnleft = PLAYERINPUTDOWN(ssplayer, gc_turnleft);
 
-	usejoystick = (analogjoystickmove || gamepadjoystickmove);
-	turnright = InputDown(gc_turnright, ssplayer);
-	turnleft = InputDown(gc_turnleft, ssplayer);
-
-	axis = JoyAxis(AXISTURN, ssplayer);
+	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
+	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
+	G_HandleAxisDeadZone(forplayer, &joystickvector);
 
 	if (encoremode)
 	{
 		turnright ^= turnleft; // swap these using three XORs
 		turnleft ^= turnright;
 		turnright ^= turnleft;
-		axis = -axis;
+		joystickvector.xaxis = -joystickvector.xaxis;
 	}
 
 	if (gamepadjoystickmove && axis != 0)
 	{
-		turnright = turnright || (lookjoystickvector.xaxis > 0);
-		turnleft = turnleft || (lookjoystickvector.xaxis < 0);
+		turnright = turnright || (joystickvector.xaxis > 0);
+		turnleft = turnleft || (joystickvector.xaxis < 0);
 	}
-	forward = side = 0;
+	forward = 0;
 
 	// use two stage accelerative turning
 	// on the keyboard and joystick
 	if (turnleft || turnright)
-		turnheld[forplayer] += realtics;
+		*th += realtics;
 	else
-		turnheld[forplayer] = 0;
+		*th = 0;
 
-	if (turnheld[forplayer] < SLOWTURNTICS)
+	if (*th < SLOWTURNTICS)
 		tspeed = 2; // slow turn
 	else
 		tspeed = speed;
@@ -1116,21 +976,18 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed]));
 		cmd->driftturn = (INT16)(cmd->driftturn - (angleturn[tspeed]));
-		side += sidemove[1];
 	}
 	else if (turnleft && !(turnright))
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed]));
 		cmd->driftturn = (INT16)(cmd->driftturn + (angleturn[tspeed]));
-		side -= sidemove[1];
 	}
 
-	if (analogjoystickmove && axis != 0)
+	if (analogjoystickmove && joystickvector.xaxis != 0)
 	{
 		// JOYAXISRANGE should be 1023 (divide by 1024)
-		cmd->angleturn = (INT16)(cmd->angleturn - (((axis * angleturn[1]) >> 10))); // ANALOG!
-		cmd->driftturn = (INT16)(cmd->driftturn - (((axis * angleturn[1]) >> 10)));
-		side += ((axis * sidemove[0]) >> 10);
+		cmd->angleturn = (INT16)(cmd->angleturn - (((joystickvector.xaxis * angleturn[1]) >> 10))); // ANALOG!
+		cmd->driftturn = (INT16)(cmd->driftturn - (((joystickvector.xaxis * angleturn[1]) >> 10)));
 	}
 
 	// Specator mouse turning
@@ -1173,18 +1030,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		axis = JoyAxis(AXISBRAKE, ssplayer);
 		if (InputDown(gc_brake, ssplayer) || (gamepadjoystickmove && axis > 0))
 		{
-<<<<<<< HEAD
 			cmd->buttons |= BT_BRAKE;
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
 				forward -= forwardmove[0];	// 25 - Halved value so clutching is possible
-=======
-			CV_SetValue(&cv_directionchar[forplayer], 2);
-			cmd->angleturn = (INT16)((player->mo->angle - *myangle) >> 16);
-			*myaiming = 0;
-
-			if (cv_cam_lockonboss[forplayer].value)
-				P_SetTarget(&ticcmd_ztargetfocus[forplayer], P_LookForFocusTarget(player, NULL, 0, cv_cam_lockonboss[forplayer].value));
->>>>>>> srb2/next
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
@@ -1195,10 +1043,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		}
 
 		// But forward/backward IS used for aiming.
-		axis = JoyAxis(AXISAIM, ssplayer);
-		if (InputDown(gc_aimforward, ssplayer) || (usejoystick && axis < 0))
+		if (InputDown(gc_aimforward, ssplayer) || (joystickvector.yaxis < 0))
 			cmd->buttons |= BT_FORWARD;
-		if (InputDown(gc_aimbackward, ssplayer) || (usejoystick && axis > 0))
+		if (InputDown(gc_aimbackward, ssplayer) || (joystickvector.yaxis > 0))
 			cmd->buttons |= BT_BACKWARD;
 	}
 
@@ -1212,17 +1059,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (InputDown(gc_drift, ssplayer) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_DRIFT;
 
-<<<<<<< HEAD
 	// rear view with any button/key
 	axis = JoyAxis(AXISLOOKBACK, ssplayer);
 	if (InputDown(gc_lookback, ssplayer) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_LOOKBACK;
-=======
-				cmd->angleturn = (INT16)(cmd->angleturn + (anglediff >> 16));
-			}
-		}
-	}
->>>>>>> srb2/next
 
 	// Lua scriptable buttons
 	if (InputDown(gc_custom1, ssplayer))
@@ -1235,12 +1075,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// Reset camera
 	if (InputDown(gc_camreset, ssplayer))
 	{
-		if (thiscam->chase && !rd)
+		if (thiscam->chase && *rd == false)
 			P_ResetCamera(player, thiscam);
-		rd = true;
+		*rd = true;
 	}
 	else
-		rd = false;
+		*rd = false;
 
 	// spectator aiming shit, ahhhh...
 	{
@@ -1254,40 +1094,40 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		// mouse look stuff (mouse look is not the same as mouse aim)
 		if (mouseaiming && player->spectator)
 		{
-			kbl = false;
+			*kbl = false;
 
 			// looking up/down
-			laim += (mlooky<<19)*player_invert*screen_invert;
+			*laim += (mlooky<<19)*player_invert*screen_invert;
 		}
 
 		axis = JoyAxis(AXISLOOK, ssplayer);
 		if (analogjoystickmove && axis != 0 && lookaxis && player->spectator)
-			laim += (axis<<16) * screen_invert;
+			*laim += (axis<<16) * screen_invert;
 
 		// spring back if not using keyboard neither mouselookin'
-		if (!kbl && !lookaxis && !mouseaiming)
-			laim = 0;
+		if (*kbl == false && !lookaxis && !mouseaiming)
+			*laim = 0;
 
 		if (player->spectator)
 		{
 			if (InputDown(gc_lookup, ssplayer) || (gamepadjoystickmove && axis < 0))
 			{
-				laim += KB_LOOKSPEED * screen_invert;
-				kbl = true;
+				*laim += KB_LOOKSPEED * screen_invert;
+				*kbl = true;
 			}
 			else if (InputDown(gc_lookdown, ssplayer) || (gamepadjoystickmove && axis > 0))
 			{
-				laim -= KB_LOOKSPEED * screen_invert;
-				kbl = true;
+				*laim -= KB_LOOKSPEED * screen_invert;
+				*kbl = true;
 			}
 		}
 
 		if (InputDown(gc_centerview, ssplayer)) // No need to put a spectator limit on this one though :V
-			laim = 0;
+			*laim = 0;
 
 		// accept no mlook for network games
 		if (!cv_allowmlook.value)
-			laim = 0;
+			*laim = 0;
 
 		cmd->aiming = G_ClipAimingPitch(&laim);
 	}
@@ -1299,15 +1139,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else if (forward < -MAXPLMOVE)
 		forward = -MAXPLMOVE;
 
-	if (side > MAXPLMOVE)
-		side = MAXPLMOVE;
-	else if (side < -MAXPLMOVE)
-		side = -MAXPLMOVE;
-
-	if (forward || side)
+	if (forward != 0)
 	{
 		cmd->forwardmove = (SINT8)(cmd->forwardmove + forward);
-		cmd->sidemove = (SINT8)(cmd->sidemove + side);
 	}
 
 	//{ SRB2kart - Drift support
@@ -1323,7 +1157,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else if (cmd->driftturn < (-angleturn[1]))
 		cmd->driftturn = (-angleturn[1]);
 
-<<<<<<< HEAD
 	if (player->mo)
 		cmd->angleturn = K_GetKartTurnValue(player, cmd->angleturn);
 
@@ -1334,125 +1167,17 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
 		|| (player->kartstuff[k_respawn]) // Respawning
 		|| (player->spectator || objectplacing)) // Not a physical player
-		lang += (cmd->angleturn<<16);
-=======
-	if (player->bot == 1) { // Tailsbot for P2
-		if (!player->powers[pw_tailsfly] && (cmd->forwardmove || cmd->sidemove || cmd->buttons))
-		{
-			player->bot = 2; // A player-controlled bot. Returns to AI when it respawns.
-			CV_SetValue(&cv_analog[1], true);
-		}
-		else
-		{
-			G_CopyTiccmd(cmd,  I_BaseTiccmd2(), 1); // empty, or external driver
-			B_BuildTiccmd(player, cmd);
-		}
-		B_HandleFlightIndicator(player);
-	}
-	else if (player->bot == 2)
-		// Fix offset angle for P2-controlled Tailsbot when P2's controls are set to non-Legacy
-		cmd->angleturn = (INT16)((localangle - *myangle) >> 16);
-
-	*myangle += (cmd->angleturn<<16);
-
-	if (controlstyle == CS_LMAOGALOG) {
-		angle_t angle;
-
-		if (player->awayviewtics)
-			angle = player->awayviewmobj->angle;
-		else
-			angle = thiscam->angle;
-
-		cmd->angleturn = (INT16)((angle - (ticcmd_oldangleturn[forplayer] << 16)) >> 16);
-	}
-	else
 	{
-		// Adjust camera angle by player input
-		if (controlstyle == CS_SIMPLE && !forcestrafe && thiscam->chase && !turnheld[forplayer] && !ticcmd_centerviewdown[forplayer] && !player->climbing && player->powers[pw_carry] != CR_MINECART)
-		{
-			fixed_t camadjustfactor = cv_cam_turnfacinginput[forplayer].value;
+		*lang += (cmd->angleturn<<16);
+	}
 
-			if (camadjustfactor)
-			{
-				fixed_t sine = FINESINE((R_PointToAngle2(0, 0, player->rmomx, player->rmomy) - localangle)>>ANGLETOFINESHIFT);
-				fixed_t factor;
-				INT16 camadjust;
-
-				if ((sine > 0) == (cmd->sidemove > 0))
-					sine = 0; // Prevent jerking right when braking from going left, or vice versa
-
-				factor = min(40, FixedMul(player->speed, abs(sine))*2 / FRACUNIT);
-
-				camadjust = (cmd->sidemove * factor * camadjustfactor) >> 16;
-
-				*myangle -= camadjust << 16;
-				cmd->angleturn = (INT16)(cmd->angleturn - camadjust);
-			}
->>>>>>> srb2/next
-
-	cmd->angleturn = (INT16)(lang >> 16);
+	cmd->angleturn = (INT16)(*lang >> 16);
 	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
-
-<<<<<<< HEAD
-	if (!hu_stopped)
-	{
-		localangle[ssplayer-1] = lang;
-		localaiming[ssplayer-1] = laim;
-		keyboard_look[ssplayer-1] = kbl;
-		turnheld[ssplayer-1] = th;
-		resetdown[ssplayer-1] = rd;
-	}
-=======
-		// Adjust camera angle to face player direction, depending on circumstances
-		// Nothing happens if cam left/right are held, so you can hold both to lock the camera in one direction
-		if (controlstyle == CS_SIMPLE && !forcestrafe && thiscam->chase && !turnheld[forplayer] && !ticcmd_centerviewdown[forplayer] && player->powers[pw_carry] != CR_MINECART)
-		{
-			fixed_t camadjustfactor;
-			boolean alt = false; // Reduce intensity on diagonals and prevent backwards movement from turning the camera
-
-			if (player->pflags & PF_GLIDING)
-				camadjustfactor = cv_cam_turnfacingability[forplayer].value/4;
-			else if (player->pflags & PF_STARTDASH)
-				camadjustfactor = cv_cam_turnfacingspindash[forplayer].value/4;
-			else
-			{
-				alt = true;
-				camadjustfactor = cv_cam_turnfacing[forplayer].value/8;
-			}
-
-			camadjustfactor = FixedMul(camadjustfactor, max(FRACUNIT - player->speed, min(player->speed/18, FRACUNIT)));
-
-			camadjustfactor = FixedMul(camadjustfactor, tta_factor[forplayer]);
-
-			if (tta_factor[forplayer] < FRACUNIT && (cmd->forwardmove || cmd->sidemove || tta_factor[forplayer] >= FRACUNIT/3))
-				tta_factor[forplayer] += FRACUNIT>>5;
-			else if (tta_factor[forplayer] && tta_factor[forplayer] < FRACUNIT/3)
-				tta_factor[forplayer] -= FRACUNIT>>5;
-
-			if (camadjustfactor)
-			{
-				angle_t controlangle;
-				INT32 anglediff;
-				INT16 camadjust;
-
-				if ((cmd->forwardmove || cmd->sidemove) && !(player->pflags & PF_SPINNING))
-					controlangle = *myangle + R_PointToAngle2(0, 0, cmd->forwardmove << FRACBITS, -cmd->sidemove << FRACBITS);
-				else
-					controlangle = player->drawangle + drawangleoffset;
-
-				anglediff = controlangle - *myangle;
-
-				if (alt)
-				{
-					fixed_t sine = FINESINE((angle_t) (anglediff)>>ANGLETOFINESHIFT);
-					sine = abs(sine);
->>>>>>> srb2/next
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.
 		We check if we're actually in a level because for some reason this Hook would run in menus and on the titlescreen otherwise.
 		Be aware that within this hook, nothing but this player's cmd can be edited (otherwise we'd run in some pretty bad synching problems since this is clientsided, or something)
 
-<<<<<<< HEAD
 		Possible usages for this are:
 			-Forcing the player to perform an action, which could otherwise require terrible, terrible hacking to replicate.
 			-Preventing the player to perform an action, which would ALSO require some weirdo hacks.
@@ -1461,18 +1186,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	*/
 	if (gamestate == GS_LEVEL)
 		LUAh_PlayerCmd(player, cmd);
-=======
-					anglediff = FixedMul(anglediff, sine);
-				}
-
-				camadjust = FixedMul(anglediff, camadjustfactor) >> 16;
-
-				*myangle += camadjust << 16;
-				cmd->angleturn = (INT16)(cmd->angleturn + camadjust);
-			}
-		}
-	}
->>>>>>> srb2/next
 
 	//Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
@@ -1796,39 +1509,11 @@ boolean G_Responder(event_t *ev)
 		if (ev->data1 == gamecontrolbis[gc_viewpoint][0] || ev->data1 == gamecontrolbis[gc_viewpoint][1])
 		{
 			G_AdjustView(2, 1, true);
-
-<<<<<<< HEAD
 			return true;
 		}
 		else if (ev->data1 == gamecontrol3[gc_viewpoint][0] || ev->data1 == gamecontrol3[gc_viewpoint][1])
 		{
 			G_AdjustView(3, 1, true);
-=======
-				if (G_GametypeHasTeams())
-				{
-					if (players[consoleplayer].ctfteam
-					 && players[displayplayer].ctfteam != players[consoleplayer].ctfteam)
-						continue;
-				}
-				else if (gametyperules & GTR_HIDEFROZEN)
-				{
-					if (players[consoleplayer].pflags & PF_TAGIT)
-						continue;
-				}
-				// Other Tag-based gametypes?
-				else if (G_TagGametype())
-				{
-					if (!players[consoleplayer].spectator
-					 && (players[consoleplayer].pflags & PF_TAGIT) != (players[displayplayer].pflags & PF_TAGIT))
-						continue;
-				}
-				else if (G_GametypeHasSpectators() && G_RingSlingerGametype())
-				{
-					if (!players[consoleplayer].spectator)
-						continue;
-				}
->>>>>>> srb2/next
-
 			return true;
 		}
 		else if (ev->data1 == gamecontrol4[gc_viewpoint][0] || ev->data1 == gamecontrol4[gc_viewpoint][1])
@@ -2263,39 +1948,30 @@ void G_Ticker(boolean run)
 
 	buf = gametic % TICQUEUE;
 
-<<<<<<< HEAD
 	if (!demo.playback)
-	// read/write demo and check turbo cheat
-=======
->>>>>>> srb2/next
-	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		cmd = &players[i].cmd;
-
-		if (playeringame[i])
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-<<<<<<< HEAD
-			if (K_PlayerUsesBotMovement(&players[i]))
-			{
-				K_BuildBotTiccmd(&players[i], cmd);
-				cmd->latency = 0;
-			}
-			else
-			{
-				G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
-				// Use the leveltime sent in the player's ticcmd to determine control lag
-				cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
-			}
-=======
-			G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
+			cmd = &players[i].cmd;
 
-			players[i].angleturn += players[i].cmd.angleturn - players[i].oldrelangleturn;
-			players[i].oldrelangleturn = players[i].cmd.angleturn;
-			if (P_ControlStyle(&players[i]) == CS_LMAOGALOG)
-				P_ForceLocalAngle(&players[i], players[i].angleturn << 16);
-			else
+			if (playeringame[i])
+			{
+				if (K_PlayerUsesBotMovement(&players[i]))
+				{
+					K_BuildBotTiccmd(&players[i], cmd);
+					cmd->latency = 0;
+				}
+				else
+				{
+					G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
+					// Use the leveltime sent in the player's ticcmd to determine control lag
+					cmd->latency = modeattacking ? 0 : min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1); //@TODO add a cvar to allow setting this max
+				}
+
+				players[i].angleturn += players[i].cmd.angleturn - players[i].oldrelangleturn;
+				players[i].oldrelangleturn = players[i].cmd.angleturn;
 				players[i].cmd.angleturn = players[i].angleturn;
->>>>>>> srb2/next
+			}
 		}
 	}
 
@@ -2529,15 +2205,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-<<<<<<< HEAD
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER));
-=======
-	outofcoop = players[player].outofcoop;
-	pflags = (players[player].pflags & (PF_FLIPCAM|PF_ANALOGMODE|PF_DIRECTIONCHAR|PF_AUTOBRAKE|PF_TAGIT|PF_GAMETYPEOVER));
+
 	playerangleturn = players[player].angleturn;
 	oldrelangleturn = players[player].oldrelangleturn;
->>>>>>> srb2/next
 
 	if (!betweenmaps)
 		pflags |= (players[player].pflags & PF_FINISHED);
@@ -2733,12 +2405,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 	}
 
-<<<<<<< HEAD
 	P_RestoreMusic(p);
-=======
-	if (gametyperules & GTR_EMERALDHUNT)
-		P_FindEmerald(); // scan for emeralds to hunt for
->>>>>>> srb2/next
 
 	if (songcredit)
 		S_ShowMusicCredit();
@@ -3071,157 +2738,6 @@ void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo)
 {
 	thinker_t *th;
 	mobj_t *mo2;
-<<<<<<< HEAD
-=======
-
-	I_Assert((oldmo != NULL) && (newmo != NULL));
-
-	// scan all thinkers
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
-
-		mo2 = (mobj_t *)th;
-
-		if (!(mo2->flags & MF_MISSILE))
-			continue;
-
-		if (mo2->target == oldmo)
-		{
-			P_SetTarget(&mo2->target, newmo);
-			mo2->flags2 |= MF2_BEYONDTHEGRAVE; // this mobj belongs to a player who has reborn
-		}
-	}
-}
-
-//
-// G_DoReborn
-//
-void G_DoReborn(INT32 playernum)
-{
-	player_t *player = &players[playernum];
-	boolean resetlevel = false;
-	INT32 i;
-
-	if (modeattacking)
-	{
-		M_EndModeAttackRun();
-		return;
-	}
-
-	// Make sure objectplace is OFF when you first start the level!
-	OP_ResetObjectplace();
-
-	if (player->bot && playernum != consoleplayer)
-	{ // Bots respawn next to their master.
-		mobj_t *oldmo = NULL;
-
-		// first dissasociate the corpse
-		if (player->mo)
-		{
-			oldmo = player->mo;
-			// Don't leave your carcass stuck 10-billion feet in the ground!
-			P_RemoveMobj(player->mo);
-		}
-
-		B_RespawnBot(playernum);
-		if (oldmo)
-			G_ChangePlayerReferences(oldmo, players[playernum].mo);
-
-		return;
-	}
-
-	if (countdowntimeup || (!(netgame || multiplayer) && (gametyperules & GTR_CAMPAIGN)))
-		resetlevel = true;
-	else if ((G_GametypeUsesCoopLives() || G_GametypeUsesCoopStarposts()) && (netgame || multiplayer) && !G_IsSpecialStage(gamemap))
-	{
-		boolean notgameover = true;
-
-		if (G_GametypeUsesCoopLives() && (cv_cooplives.value != 0 && player->lives <= 0)) // consider game over first
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i])
-					continue;
-				if (players[i].exiting || players[i].lives > 0)
-					break;
-			}
-
-			if (i == MAXPLAYERS)
-			{
-				notgameover = false;
-				if (!countdown2)
-				{
-					// They're dead, Jim.
-					//nextmapoverride = spstage_start;
-					nextmapoverride = gamemap;
-					countdown2 = TICRATE;
-					skipstats = 2;
-
-					for (i = 0; i < MAXPLAYERS; i++)
-					{
-						if (playeringame[i])
-							players[i].score = 0;
-					}
-
-					//emeralds = 0;
-					tokenbits = 0;
-					tokenlist = 0;
-					token = 0;
-				}
-			}
-		}
-
-		if (G_GametypeUsesCoopStarposts() && (notgameover && cv_coopstarposts.value == 2))
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i])
-					continue;
-
-				if (players[i].playerstate != PST_DEAD && !players[i].spectator && players[i].mo && players[i].mo->health)
-					break;
-			}
-			if (i == MAXPLAYERS)
-				resetlevel = true;
-		}
-	}
-
-	if (resetlevel)
-	{
-		// reload the level from scratch
-		if (countdowntimeup)
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i])
-					continue;
-				players[i].starpostscale = 0;
-				players[i].starpostangle = 0;
-				players[i].starposttime = 0;
-				players[i].starpostx = 0;
-				players[i].starposty = 0;
-				players[i].starpostz = 0;
-				players[i].starpostnum = 0;
-			}
-		}
-		if (!countdowntimeup && (mapheaderinfo[gamemap-1]->levelflags & LF_NORELOAD) && !(marathonmode & MA_INIT))
-		{
-			P_RespawnThings();
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i])
-					continue;
-				players[i].playerstate = PST_REBORN;
-				P_ClearStarPost(players[i].starpostnum);
-			}
-
-			// Do a wipe
-			wipegamestate = -1;
-			wipestyleflags = WSF_CROSSFADE;
->>>>>>> srb2/next
 
 	I_Assert((oldmo != NULL) && (newmo != NULL));
 
@@ -3311,13 +2827,8 @@ void G_AddPlayer(INT32 playernum)
 
 	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN; // Set everything
 
-<<<<<<< HEAD
 	if (G_GametypeUsesLives())
 		p->lives = 3;
-=======
-	if (G_GametypeUsesLives() || ((netgame || multiplayer) && (gametyperules & GTR_FRIENDLY)))
-		p->lives = cv_startinglives.value;
->>>>>>> srb2/next
 
 	if ((countplayers && !notexiting) || G_IsSpecialStage(gamemap))
 		P_DoPlayerExit(p);
@@ -3365,13 +2876,8 @@ void G_ExitLevel(void)
 				CV_SetValue(&cv_teamscramble, cv_scrambleonchange.value);
 		}
 
-<<<<<<< HEAD
-		if (!(gametyperules & GTR_CAMPAIGN))
-			CON_LogMessage(M_GetText("The round has ended.\n"));
-=======
 		if (!(gametyperules & (GTR_FRIENDLY|GTR_CAMPAIGN)))
 			CONS_Printf(M_GetText("The round has ended.\n"));
->>>>>>> srb2/next
 
 		// Remove CEcho text on round end.
 		HU_ClearCEcho();
@@ -3407,24 +2913,8 @@ UINT32 gametypedefaultrules[NUMGAMETYPES] =
 {
 	// Race
 	GTR_RACE|GTR_SPAWNENEMIES|GTR_SPAWNINVUL|GTR_ALLOWEXIT,
-<<<<<<< HEAD
 	// Battle
 	GTR_RINGSLINGER|GTR_FIRSTPERSON|GTR_SPECTATORS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_POWERSTONES|GTR_DEATHMATCHSTARTS|GTR_SPAWNINVUL|GTR_RESPAWNDELAY|GTR_PITYSHIELD|GTR_DEATHPENALTY
-=======
-
-	// Match
-	GTR_RINGSLINGER|GTR_FIRSTPERSON|GTR_SPECTATORS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_POWERSTONES|GTR_DEATHMATCHSTARTS|GTR_SPAWNINVUL|GTR_RESPAWNDELAY|GTR_PITYSHIELD|GTR_DEATHPENALTY,
-	// Team Match
-	GTR_RINGSLINGER|GTR_FIRSTPERSON|GTR_SPECTATORS|GTR_TEAMS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_DEATHMATCHSTARTS|GTR_SPAWNINVUL|GTR_RESPAWNDELAY|GTR_PITYSHIELD,
-
-	// Tag
-	GTR_RINGSLINGER|GTR_FIRSTPERSON|GTR_TAG|GTR_SPECTATORS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_STARTCOUNTDOWN|GTR_BLINDFOLDED|GTR_DEATHMATCHSTARTS|GTR_SPAWNINVUL|GTR_RESPAWNDELAY,
-	// Hide and Seek
-	GTR_RINGSLINGER|GTR_FIRSTPERSON|GTR_TAG|GTR_SPECTATORS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_STARTCOUNTDOWN|GTR_HIDEFROZEN|GTR_BLINDFOLDED|GTR_DEATHMATCHSTARTS|GTR_SPAWNINVUL|GTR_RESPAWNDELAY,
-
-	// CTF
-	GTR_RINGSLINGER|GTR_FIRSTPERSON|GTR_SPECTATORS|GTR_TEAMS|GTR_TEAMFLAGS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_POWERSTONES|GTR_DEATHMATCHSTARTS|GTR_SPAWNINVUL|GTR_RESPAWNDELAY|GTR_PITYSHIELD,
->>>>>>> srb2/next
 };
 
 //
@@ -4209,13 +3699,10 @@ static void G_DoCompleted(void)
 	// nextmap is 0-based, unlike gamemap
 	if (nextmapoverride != 0)
 		nextmap = (INT16)(nextmapoverride-1);
-<<<<<<< HEAD
-	else if (mapheaderinfo[gamemap-1]->nextlevel == 1101) // SRB2Kart: !!! WHENEVER WE GET GRAND PRIX, GO TO AWARDS MAP INSTEAD !!!
-		nextmap = (INT16)(mapheaderinfo[gamemap] ? gamemap : (spstage_start-1)); // (gamemap-1)+1 == gamemap :V
-=======
 	else if (marathonmode && mapheaderinfo[gamemap-1]->marathonnext)
 		nextmap = (INT16)(mapheaderinfo[gamemap-1]->marathonnext-1);
->>>>>>> srb2/next
+	else if (mapheaderinfo[gamemap-1]->nextlevel == 1101) // SRB2Kart: !!! WHENEVER WE GET GRAND PRIX, GO TO AWARDS MAP INSTEAD !!!
+		nextmap = (INT16)(mapheaderinfo[gamemap] ? gamemap : (spstage_start-1)); // (gamemap-1)+1 == gamemap :V
 	else
 	{
 		nextmap = (INT16)(mapheaderinfo[gamemap-1]->nextlevel-1);
@@ -4227,12 +3714,7 @@ static void G_DoCompleted(void)
 	// a map of the proper gametype -- skip levels that don't support
 	// the current gametype. (Helps avoid playing boss levels in Race,
 	// for instance).
-<<<<<<< HEAD
-	if (!token && !spec && !modeattacking
-		&& (nextmap >= 0 && nextmap < NUMMAPS))
-=======
 	if (!spec)
->>>>>>> srb2/next
 	{
 		if (nextmap >= 0 && nextmap < NUMMAPS)
 		{
@@ -4324,7 +3806,6 @@ static void G_DoCompleted(void)
 	if (nextmap < NUMMAPS && !mapheaderinfo[nextmap])
 		P_AllocMapHeader(nextmap);
 
-<<<<<<< HEAD
 	// Set up power level gametype scrambles
 	if (netgame && cv_kartusepwrlv.value)
 	{
@@ -4338,13 +3819,10 @@ static void G_DoCompleted(void)
 
 demointermission:
 
-	if ((skipstats && !modeattacking) || (spec && modeattacking && stagefailed))
-=======
 	// If the current gametype has no intermission screen set, then don't start it.
 	Y_DetermineIntermissionType();
 
 	if ((skipstats && !modeattacking) || (spec && modeattacking && stagefailed) || (intertype == int_none))
->>>>>>> srb2/next
 	{
 		G_UpdateVisited();
 		G_HandleSaveLevel();
@@ -4441,7 +3919,6 @@ static void G_DoWorldDone(void)
 {
 	if (server)
 	{
-<<<<<<< HEAD
 		// SRB2Kart
 		D_MapChange(nextmap+1,
 			gametype,
@@ -4450,14 +3927,6 @@ static void G_DoWorldDone(void)
 			0,
 			false,
 			false);
-=======
-		if (gametyperules & GTR_CAMPAIGN)
-			// don't reset player between maps
-			D_MapChange(nextmap+1, gametype, ultimatemode, false, 0, false, false);
-		else
-			// resetplayer in match/chaos/tag/CTF/race for more equality
-			D_MapChange(nextmap+1, gametype, ultimatemode, true, 0, false, false);
->>>>>>> srb2/next
 	}
 
 	gameaction = ga_nothing;
