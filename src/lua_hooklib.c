@@ -1364,15 +1364,13 @@ boolean LUAh_PlayerMsg(int source, int target, int flags, char *msg, int mute)
 				else
 					lua_pushboolean(gL, false);
 			}
-<<<<<<< HEAD
-			lua_pushfstring(gL, FMT_HOOKID, hookp->id);
-			lua_gettable(gL, LUA_REGISTRYINDEX);
+			PushHook(gL, hookp);
 			lua_pushvalue(gL, -6);
 			lua_pushvalue(gL, -6);
 			lua_pushvalue(gL, -6);
 			lua_pushvalue(gL, -6);
 			lua_pushvalue(gL, -6);
-			if (lua_pcall(gL, 5, 1, 0)) {
+			if (lua_pcall(gL, 4, 1, 1)) {
 				if (!hookp->error || cv_debug & DBG_LUA)
 					CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
 				lua_pop(gL, 1);
@@ -1381,29 +1379,12 @@ boolean LUAh_PlayerMsg(int source, int target, int flags, char *msg, int mute)
 			}
 			if (lua_toboolean(gL, -1))
 				hooked = true;
-=======
-			lua_pushstring(gL, msg); // msg
-		}
-		PushHook(gL, hookp);
-		lua_pushvalue(gL, -5);
-		lua_pushvalue(gL, -5);
-		lua_pushvalue(gL, -5);
-		lua_pushvalue(gL, -5);
-		if (lua_pcall(gL, 4, 1, 1)) {
-			if (!hookp->error || cv_debug & DBG_LUA)
-				CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
->>>>>>> srb2/next
 			lua_pop(gL, 1);
-			hookp->error = true;
-			continue;
 		}
-		if (lua_toboolean(gL, -1))
-			hooked = true;
-		lua_pop(gL, 1);
-	}
 
-	lua_settop(gL, 0);
-	return hooked;
+		lua_settop(gL, 0);
+		return hooked;
+	}
 }
 
 // Hook for hurt messages
@@ -1911,7 +1892,6 @@ boolean LUAh_ShouldJingleContinue(player_t *player, const char *musname)
 	return keepplaying;
 }
 
-<<<<<<< HEAD
 // Hook for music changes
 boolean LUAh_MusicChange(const char *oldname, char *newname, UINT16 *mflags, boolean *looping,
 	UINT32 *position, UINT32 *prefadems, UINT32 *fadeinms)
@@ -1923,12 +1903,12 @@ boolean LUAh_MusicChange(const char *oldname, char *newname, UINT16 *mflags, boo
 		return false;
 
 	lua_settop(gL, 0);
+	lua_pushcfunction(gL, LUA_GetErrorMessage);
 
 	for (hookp = roothook; hookp; hookp = hookp->next)
 		if (hookp->type == hook_MusicChange)
 		{
-			lua_pushfstring(gL, FMT_HOOKID, hookp->id);
-			lua_gettable(gL, LUA_REGISTRYINDEX);
+			PushHook(gL, hookp);
 			lua_pushstring(gL, oldname);
 			lua_pushstring(gL, newname);
 			lua_pushinteger(gL, *mflags);
@@ -1936,7 +1916,7 @@ boolean LUAh_MusicChange(const char *oldname, char *newname, UINT16 *mflags, boo
 			lua_pushinteger(gL, *position);
 			lua_pushinteger(gL, *prefadems);
 			lua_pushinteger(gL, *fadeinms);
-			if (lua_pcall(gL, 7, 6, 0)) {
+			if (lua_pcall(gL, 7, 6, 1)) {
 				CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL,-1));
 				lua_pop(gL, 1);
 				continue;
@@ -1963,7 +1943,7 @@ boolean LUAh_MusicChange(const char *oldname, char *newname, UINT16 *mflags, boo
 			if (lua_isboolean(gL, -1))
 				*fadeinms = lua_tonumber(gL, -1);
 
-			lua_pop(gL, 6);
+			lua_pop(gL, 7);  // Pop returned values and error handler
 		}
 
 	lua_settop(gL, 0);
