@@ -180,4 +180,6 @@ boolean G_CheckDemoStatus(void);
 void G_LoadDemoInfo(menudemo_t *pdemo);
 void G_DeferedPlayDemo(const char *demo);
 
+boolean G_DemoTitleResponder(event_t *ev);
+
 #endif // __G_DEMO__
