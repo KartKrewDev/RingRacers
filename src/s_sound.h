@@ -43,12 +43,8 @@ extern consvar_t cv_gamedigimusic;
 
 #ifndef NO_MIDI
 extern consvar_t cv_gamemidimusic;
-<<<<<<< HEAD
-#endif
-=======
-extern consvar_t cv_gamesounds;
 extern consvar_t cv_musicpref;
->>>>>>> srb2/next
+#endif
 
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;

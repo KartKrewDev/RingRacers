@@ -113,7 +113,16 @@ consvar_t cv_gamemidimusic = {"midimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_O
 #endif
 consvar_t cv_gamesounds = {"sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-<<<<<<< HEAD
+#ifndef NO_MIDI
+// Music preference
+static CV_PossibleValue_t cons_musicpref_t[] = {
+	{0, "Digital"},
+	{1, "MIDI"},
+	{0, NULL}
+};
+consvar_t cv_musicpref = {"musicpref", "Digital", CV_SAVE|CV_CALL|CV_NOINIT, cons_musicpref_t, MusicPref_OnChange, 0, NULL, NULL, 0, 0, NULL};
+#endif
+
 static CV_PossibleValue_t music_resync_threshold_cons_t[] = {
 	{0,    "MIN"},
 	{1000, "MAX"},
@@ -122,15 +131,6 @@ static CV_PossibleValue_t music_resync_threshold_cons_t[] = {
 
 consvar_t cv_music_resync_threshold = {"music_resync_threshold", "100", CV_SAVE|CV_CALL, music_resync_threshold_cons_t, I_UpdateSongLagThreshold, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_music_resync_powerups_only = {"music_resync_powerups_only", "No", CV_SAVE|CV_CALL, CV_YesNo, I_UpdateSongLagConditions, 0, NULL, NULL, 0, 0, NULL};
-=======
-// Music preference
-static CV_PossibleValue_t cons_musicpref_t[] = {
-	{0, "Digital"},
-	{1, "MIDI"},
-	{0, NULL}
-};
-consvar_t cv_musicpref = {"musicpref", "Digital", CV_SAVE|CV_CALL|CV_NOINIT, cons_musicpref_t, MusicPref_OnChange, 0, NULL, NULL, 0, 0, NULL};
->>>>>>> srb2/next
 
 // Window focus sound sytem toggles
 consvar_t cv_playmusicifunfocused = {"playmusicifunfocused", "No", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -299,15 +299,12 @@ void S_RegisterSoundStuff(void)
 	CV_RegisterVar(&cv_gamedigimusic);
 #ifndef NO_MIDI
 	CV_RegisterVar(&cv_gamemidimusic);
-<<<<<<< HEAD
+	CV_RegisterVar(&cv_musicpref);
 #endif
 
 	CV_RegisterVar(&cv_music_resync_threshold);
 	CV_RegisterVar(&cv_music_resync_powerups_only);
 
-=======
-	CV_RegisterVar(&cv_musicpref);
->>>>>>> srb2/next
 #ifdef HAVE_OPENMPT
 	CV_RegisterVar(&cv_modfilter);
 #endif
@@ -2978,16 +2975,6 @@ void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume)
 	actualmidimusicvolume = cv_midimusicvolume.value;   //check for change of var
 #endif
 
-<<<<<<< HEAD
-#ifdef DJGPPDOS
-	digvolume = 31;
-#ifndef NO_MIDI
-	seqvolume = 31;
-#endif
-#endif
-
-=======
->>>>>>> srb2/next
 	switch(I_SongType())
 	{
 #ifndef NO_MIDI
@@ -3232,14 +3219,17 @@ void GameDigiMusic_OnChange(void)
 		I_InitMusic();
 
 		if (Playing())
+		{
 			P_RestoreMusic(&players[consoleplayer]);
-<<<<<<< HEAD
-		else
-			S_ChangeMusicInternal("titles", looptitle);
-=======
-		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear"))
-			S_ChangeMusicInternal("_clear", false);
->>>>>>> srb2/next
+		}
+		else if (
+#ifndef NO_MIDI
+			(!cv_musicpref.value || midi_disabled) &&
+#endif
+			S_DigExists("_title"))
+		{
+			S_ChangeMusicInternal("_title", looptitle);
+		}
 	}
 	else
 	{
