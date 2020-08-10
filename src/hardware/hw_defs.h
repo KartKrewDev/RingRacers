@@ -85,61 +85,6 @@ typedef struct
 // a vertex of a Doom 'plane' polygon
 typedef struct
 {
-<<<<<<< HEAD
-	float x;
-	float y;
-	float z;
-} polyvertex_t;
-
-#ifdef _MSC_VER
-#pragma warning(disable :  4200)
-#endif
-
-// a convex 'plane' polygon, clockwise order
-typedef struct
-{
-	INT32 numpts;
-	polyvertex_t pts[0];
-} poly_t;
-
-#ifdef _MSC_VER
-#pragma warning(default :  4200)
-#endif
-
-// holds extra info for 3D render, for each subsector in subsectors[]
-typedef struct
-{
-	poly_t *planepoly;  // the generated convex polygon
-} extrasubsector_t;
-
-// needed for sprite rendering
-// equivalent of the software renderer's vissprites
-typedef struct gr_vissprite_s
-{
-	// Doubly linked list
-	struct gr_vissprite_s *prev;
-	struct gr_vissprite_s *next;
-	float x1, x2;
-	float z1, z2;
-	float tz, ty;
-	lumpnum_t patchlumpnum;
-	boolean flip;
-	UINT8 translucency;       //alpha level 0-255
-	mobj_t *mobj;
-	boolean precip; // Tails 08-25-2002
-	boolean vflip;
-   //Hurdler: 25/04/2000: now support colormap in hardware mode
-	UINT8 *colormap;
-	INT32 dispoffset; // copy of info->dispoffset, affects ordering but not drawing
-} gr_vissprite_t;
-
-// Kart features
-#define USE_FTRANSFORM_ANGLEZ
-#define USE_FTRANSFORM_MIRROR
-
-// Vanilla features
-//#define USE_MODEL_NEXTFRAME
-=======
 	FLOAT x,y,z;
 } FVector;
 
@@ -152,7 +97,6 @@ typedef struct gr_vissprite_s
 // -----------
 // structures
 // -----------
->>>>>>> srb2/next
 
 //Hurdler: Transform (coords + angles)
 //BP: transform order : scale(rotation_x(rotation_y(translation(v))))
@@ -194,11 +138,6 @@ typedef struct
 typedef struct
 {
 	FLOAT       x,y,z;
-<<<<<<< HEAD
-	FLOAT       s,t;
-} FOutVector;
-
-=======
 	FLOAT       s;            // s texture ordinate (s over w)
 	FLOAT       t;            // t texture ordinate (t over w)
 } FOutVector;
@@ -238,7 +177,6 @@ typedef struct
 	gl_skyvertex_t *data;
 } gl_sky_t;
 
->>>>>>> srb2/next
 // ==========================================================================
 //                                                               RENDER MODES
 // ==========================================================================
@@ -273,12 +211,6 @@ enum EPolyFlags
 	PF_RemoveYWrap      = 0x00010000,   // Force clamp texture on Y
 	PF_ForceWrapX       = 0x00020000,   // Force repeat texture on X
 	PF_ForceWrapY       = 0x00040000,   // Force repeat texture on Y
-<<<<<<< HEAD
-	//                    0x20000000
-	//                    0x40000000
-	//                    0x80000000
-
-=======
 	PF_Clip             = 0x40000000,   // clip to frustum and nearz plane (glide only, automatic in opengl)
 	PF_NoZClip          = 0x20000000,   // in conjonction with PF_Clip
 	PF_Debug            = 0x80000000    // print debug message in driver :)
@@ -288,7 +220,6 @@ enum EPolyFlags
 enum ESurfFlags
 {
 	SF_DYNLIGHT         = 0x00000001,
->>>>>>> srb2/next
 };
 
 enum ETextureFlags
@@ -322,15 +253,6 @@ struct FSurfaceInfo
 };
 typedef struct FSurfaceInfo FSurfaceInfo;
 
-<<<<<<< HEAD
-enum hwdsetspecialstate
-{
-	HWD_SET_SHADERS = 1,
-	HWD_SET_MODEL_LIGHTING,
-	HWD_SET_FOG_MODE,
-	HWD_SET_FOG_COLOR,
-	HWD_SET_FOG_DENSITY,
-=======
 #define GL_DEFAULTMIX 0x00000000
 #define GL_DEFAULTFOG 0xFF000000
 
@@ -339,7 +261,6 @@ enum hwdsetspecialstate
 {
 	HWD_SET_MODEL_LIGHTING = 1,
 	HWD_SET_SHADERS,
->>>>>>> srb2/next
 	HWD_SET_TEXTUREFILTERMODE,
 	HWD_SET_TEXTUREANISOTROPICMODE,
 
@@ -347,10 +268,6 @@ enum hwdsetspecialstate
 };
 typedef enum hwdsetspecialstate hwdspecialstate_t;
 
-<<<<<<< HEAD
-#define GL_DEFAULTMIX 0x00000000
-#define GL_DEFAULTFOG 0xFF000000
-=======
 // Lactozilla: Shader info
 // Generally set at the start of the frame.
 enum hwdshaderinfo
@@ -359,7 +276,6 @@ enum hwdshaderinfo
 };
 
 typedef enum hwdshaderinfo hwdshaderinfo_t;
->>>>>>> srb2/next
 
 enum hwdfiltermode
 {

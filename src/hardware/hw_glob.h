@@ -1,13 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-// Copyright (C) 1993-1996 by id Software, Inc.
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2019 by Sonic Team Junior.
-=======
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2020 by Sonic Team Junior.
->>>>>>> srb2/next
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -98,13 +92,8 @@ void HWR_FreeMipmapCache(void);
 void HWR_FreeExtraSubsectors(void);
 
 void HWR_GetLevelFlat(levelflat_t *levelflat);
-<<<<<<< HEAD
 void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum, boolean noencoremap);
-GLTexture_t *HWR_GetTexture(INT32 tex);
-=======
-void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum);
 GLMapTexture_t *HWR_GetTexture(INT32 tex);
->>>>>>> srb2/next
 void HWR_GetPatch(GLPatch_t *gpatch);
 void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap);
 void HWR_MakePatch(patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap);
@@ -117,11 +106,6 @@ void HWR_GetFadeMask(lumpnum_t fademasklumpnum);
 // --------
 // hw_draw.c
 // --------
-<<<<<<< HEAD
-extern consvar_t cv_grrounddown; // on/off
-
-=======
->>>>>>> srb2/next
 extern INT32 patchformat;
 extern INT32 textureformat;
 

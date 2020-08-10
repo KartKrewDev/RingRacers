@@ -1,13 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-// Copyright (C) 1993-1996 by id Software, Inc.
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2019 by Sonic Team Junior.
-=======
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2020 by Sonic Team Junior.
->>>>>>> srb2/next
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -422,140 +416,6 @@ static void HWR_DrawTexturePatchInCache(GLMipmap_t *mipmap,
 	}
 }
 
-<<<<<<< HEAD
-
-// resize the patch
-// set : blocksize = blockwidth * blockheight  (no bpp used)
-//       blockwidth
-//       blockheight
-//note :  8bit (1 byte per pixel) palettized format
-static void HWR_ResizeBlock(INT32 originalwidth, INT32 originalheight,
-	GLTexInfo *grInfo)
-{
-#ifdef GLIDE_API_COMPATIBILITY
-	//   Build the full textures from patches.
-	static const GLlod_t gr_lods[9] =
-	{
-		GR_LOD_LOG2_256,
-		GR_LOD_LOG2_128,
-		GR_LOD_LOG2_64,
-		GR_LOD_LOG2_32,
-		GR_LOD_LOG2_16,
-		GR_LOD_LOG2_8,
-		GR_LOD_LOG2_4,
-		GR_LOD_LOG2_2,
-		GR_LOD_LOG2_1
-	};
-
-	typedef struct
-	{
-		GLAspectRatio_t aspect;
-		float           max_s;
-		float           max_t;
-	} booring_aspect_t;
-
-	static const booring_aspect_t gr_aspects[8] =
-	{
-		{GR_ASPECT_LOG2_1x1, 255, 255},
-		{GR_ASPECT_LOG2_2x1, 255, 127},
-		{GR_ASPECT_LOG2_4x1, 255,  63},
-		{GR_ASPECT_LOG2_8x1, 255,  31},
-
-		{GR_ASPECT_LOG2_1x1, 255, 255},
-		{GR_ASPECT_LOG2_1x2, 127, 255},
-		{GR_ASPECT_LOG2_1x4,  63, 255},
-		{GR_ASPECT_LOG2_1x8,  31, 255}
-	};
-
-	INT32     j,k;
-	INT32     max,min;
-#else
-	(void)grInfo;
-#endif
-
-	// find a power of 2 width/height
-	if (cv_grrounddown.value)
-	{
-		blockwidth = 256;
-		while (originalwidth < blockwidth)
-			blockwidth >>= 1;
-		if (blockwidth < 1)
-			I_Error("3D GenerateTexture : too small");
-
-		blockheight = 256;
-		while (originalheight < blockheight)
-			blockheight >>= 1;
-		if (blockheight < 1)
-			I_Error("3D GenerateTexture : too small");
-	}
-	else
-	{
-#ifdef GLIDE_API_COMPATIBILITY
-		//size up to nearest power of 2
-		blockwidth = 1;
-		while (blockwidth < originalwidth)
-			blockwidth <<= 1;
-		// scale down the original graphics to fit in 256
-		if (blockwidth > 2048)
-			blockwidth = 2048;
-			//I_Error("3D GenerateTexture : too big");
-
-		//size up to nearest power of 2
-		blockheight = 1;
-		while (blockheight < originalheight)
-			blockheight <<= 1;
-		// scale down the original graphics to fit in 256
-		if (blockheight > 2048)
-			blockheight = 2048;
-			//I_Error("3D GenerateTexture : too big");
-#else
-		blockwidth = originalwidth;
-		blockheight = originalheight;
-#endif
-	}
-
-	// do the boring LOD stuff.. blech!
-#ifdef GLIDE_API_COMPATIBILITY
-	if (blockwidth >= blockheight)
-	{
-		max = blockwidth;
-		min = blockheight;
-	}
-	else
-	{
-		max = blockheight;
-		min = blockwidth;
-	}
-
-	for (k = 2048, j = 0; k > max; j++)
-		k>>=1;
-	grInfo->smallLodLog2 = gr_lods[j];
-	grInfo->largeLodLog2 = gr_lods[j];
-
-	for (k = max, j = 0; k > min && j < 4; j++)
-		k>>=1;
-	// aspect ratio too small for 3Dfx (eg: 8x128 is 1x16 : use 1x8)
-	if (j == 4)
-	{
-		j = 3;
-		//CONS_Debug(DBG_RENDER, "HWR_ResizeBlock : bad aspect ratio %dx%d\n", blockwidth,blockheight);
-		if (blockwidth < blockheight)
-			blockwidth = max>>3;
-		else
-			blockheight = max>>3;
-	}
-	if (blockwidth < blockheight)
-		j += 4;
-	grInfo->aspectRatioLog2 = gr_aspects[j].aspect;
-#endif
-
-	blocksize = blockwidth * blockheight;
-
-	//CONS_Debug(DBG_RENDER, "Width is %d, Height is %d\n", blockwidth, blockheight);
-}
-
-=======
->>>>>>> srb2/next
 static UINT8 *MakeBlock(GLMipmap_t *grMipmap)
 {
 	UINT8 *block;
@@ -617,7 +477,6 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 	grtex->mipmap.height = (UINT16)texture->height;
 	grtex->mipmap.format = textureformat;
 
-<<<<<<< HEAD
 	grtex->mipmap.colormap = colormaps;
 
 #ifdef GLENCORE
@@ -625,11 +484,9 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 		grtex->mipmap.colormap += (256*32);
 #endif
 
-=======
 	blockwidth = texture->width;
 	blockheight = texture->height;
 	blocksize = (blockwidth * blockheight);
->>>>>>> srb2/next
 	block = MakeBlock(&grtex->mipmap);
 
 	if (skyspecial) //Hurdler: not efficient, but better than holes in the sky (and it's done only at level loading)
@@ -716,16 +573,9 @@ void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, bo
 		grPatch->leftoffset = SHORT(patch->leftoffset);
 		grPatch->topoffset = SHORT(patch->topoffset);
 
-<<<<<<< HEAD
-		// resize patch
-		HWR_ResizeBlock(SHORT(patch->width), SHORT(patch->height), &grMipmap->grInfo);
-		grMipmap->width = (UINT16)blockwidth;
-		grMipmap->height = (UINT16)blockheight;
-=======
 		grMipmap->width = grMipmap->height = 1;
 		while (grMipmap->width < grPatch->width) grMipmap->width <<= 1;
 		while (grMipmap->height < grPatch->height) grMipmap->height <<= 1;
->>>>>>> srb2/next
 
 		// no wrap around, no chroma key
 		grMipmap->flags = 0;
@@ -943,18 +793,7 @@ static void HWR_CacheFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
 
 	// the flat raw data needn't be converted with palettized textures
 	W_ReadLump(flatlumpnum, Z_Malloc(W_LumpLength(flatlumpnum),
-<<<<<<< HEAD
-		PU_HWRCACHE, &grMipmap->grInfo.data));
-
-#ifdef GLENCORE
-	flat = grMipmap->grInfo.data;
-	for (steppy = 0; steppy < size; steppy++)
-		if (flat[steppy] != HWR_PATCHES_CHROMAKEY_COLORINDEX)
-			flat[steppy] = grMipmap->colormap[flat[steppy]];
-#endif
-=======
 		PU_HWRCACHE, &grMipmap->data));
->>>>>>> srb2/next
 }
 
 static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum)
@@ -982,7 +821,6 @@ void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 		return;
 
 	grmip = HWR_GetCachedGLPatch(flatlumpnum)->mipmap;
-<<<<<<< HEAD
 
 	grmip->colormap = colormaps;
 
@@ -999,10 +837,7 @@ void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 #endif
 
 	grmip = HWR_GetCachedGLPatch(flatlumpnum)->mipmap;
-	if (!grmip->downloaded && !grmip->grInfo.data)
-=======
 	if (!grmip->downloaded && !grmip->data)
->>>>>>> srb2/next
 		HWR_CacheFlat(grmip, flatlumpnum);
 
 	// If hardware does not have the texture, then call pfnSetTexture to upload it

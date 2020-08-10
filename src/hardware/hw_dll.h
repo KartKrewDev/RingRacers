@@ -55,10 +55,6 @@
 #define DEGREE (0.017453292519943295769236907684883l) // 2*PI/360
 
 void GL_DBG_Printf(const char *format, ...) /*FUNCPRINTF*/;
-<<<<<<< HEAD
-#define DBG_Printf GL_DBG_Printf
-=======
->>>>>>> srb2/next
 
 #ifdef _WINDOWS
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);
