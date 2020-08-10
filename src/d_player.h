@@ -35,30 +35,8 @@
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
-<<<<<<< HEAD
 	SF_HIRES            = 1, // Draw the sprite at different size?
 	SF_MACHINE          = 1<<1, // Beep boop. Are you a robot?
-=======
-	SF_SUPER            = 1,    // Can turn super in singleplayer/co-op mode?
-	SF_NOSUPERSPIN      = 1<<1, // Should spin frames be played while super?
-	SF_NOSPINDASHDUST   = 1<<2, // Spawn dust particles when charging a spindash?
-	SF_HIRES            = 1<<3, // Draw the sprite at different size?
-	SF_NOSKID           = 1<<4, // No skid particles etc
-	SF_NOSPEEDADJUST    = 1<<5, // Skin-specific version of disablespeedadjust
-	SF_RUNONWATER       = 1<<6, // Run on top of water FOFs?
-	SF_NOJUMPSPIN       = 1<<7, // SPR2_JUMP defaults to SPR2_SPRG instead of SPR2_ROLL, falling states used, and player height is full when jumping?
-	SF_NOJUMPDAMAGE     = 1<<8, // Don't damage enemies, etc whilst jumping?
-	SF_STOMPDAMAGE      = 1<<9, // Always damage enemies, etc by landing on them, no matter your vunerability?
-	SF_MARIODAMAGE      = SF_NOJUMPDAMAGE|SF_STOMPDAMAGE, // The Mario method of being able to damage enemies, etc.
-	SF_MACHINE          = 1<<10, // Beep boop. Are you a robot?
-	SF_DASHMODE         = 1<<11, // Sonic Advance 2 style top speed increase?
-	SF_FASTEDGE         = 1<<12, // Faster edge teeter?
-	SF_MULTIABILITY     = 1<<13, // Revenge of Final Demo.
-	SF_NONIGHTSROTATION = 1<<14, // Disable sprite rotation for NiGHTS
-	SF_NONIGHTSSUPER    = 1<<15, // Disable super colors for NiGHTS (if you have SF_SUPER)
-	SF_NOSUPERSPRITES   = 1<<16, // Don't use super sprites while super
-	SF_NOSUPERJUMPBOOST = 1<<17, // Disable the jump boost given while super (i.e. Knuckles)
->>>>>>> srb2/next
 	// free up to and including 1<<31
 } skinflags_t;
 
