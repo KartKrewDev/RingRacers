@@ -403,23 +403,6 @@ consvar_t cv_resetspecialmusic = {"resetspecialmusic", "Yes", CV_SAVE, CV_YesNo,
 
 consvar_t cv_resume = {"resume", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-typedef enum
-{
-	AXISNONE = 0,
-
-	AXISTURN,
-	AXISMOVE,
-	AXISBRAKE,
-	AXISAIM,
-	AXISLOOK,
-
-	AXISDIGITAL, // axes below this use digital deadzone
-
-	AXISFIRE = AXISDIGITAL,
-	AXISDRIFT,
-	AXISLOOKBACK,
-} axis_input_e;
-
 consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
 	{"joyaxis_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
 	{"joyaxis2_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
