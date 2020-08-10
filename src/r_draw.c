@@ -144,12 +144,8 @@ UINT32 nflatxshift, nflatyshift, nflatshiftup, nflatmask;
 #define DEFAULT_STARTTRANSCOLOR 96
 #define NUM_PALETTE_ENTRIES 256
 
-<<<<<<< HEAD
 static UINT8** translationtablecache[TT_CACHE_SIZE] = {NULL};
-=======
-static UINT8** translationtablecache[MAXSKINS + 7] = {NULL};
 UINT8 skincolor_modified[MAXSKINCOLORS];
->>>>>>> srb2/next
 
 CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
 
