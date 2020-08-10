@@ -45,22 +45,10 @@ void ST_UnloadGraphics(void);
 void ST_LoadGraphics(void);
 
 // face load graphics, called when skin changes
-<<<<<<< HEAD
 void ST_LoadFaceGraphics(char *rankstr, char *wantstr, char *mmapstr, INT32 playernum);
-=======
-void ST_LoadFaceGraphics(INT32 playernum);
->>>>>>> srb2/next
 void ST_ReloadSkinFaceGraphics(void);
 
 void ST_doPaletteStuff(void);
-
-// title card
-void ST_startTitleCard(void);
-void ST_runTitleCard(void);
-void ST_drawTitleCard(void);
-void ST_preDrawTitleCard(void);
-void ST_preLevelTitleCardDrawer(void);
-void ST_drawWipeTitleCard(void);
 
 extern tic_t lt_ticker, lt_lasttic;
 extern tic_t lt_exitticker, lt_endtime;
