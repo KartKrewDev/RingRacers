@@ -126,7 +126,7 @@ extern UINT8 gamekeydown[NUMINPUTS];
 // two key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][2];
 extern INT32 gamecontroldefault[MAXSPLITSCREENPLAYERS][num_gamecontrolschemes][num_gamecontrols][2]; // default control storage, use 0 (gcs_custom) for memory retention
-#define PLAYERINPUTDOWN(p, gc) (gamekeydown[p-1][gamecontrol[gc][0]] || gamekeydown[p-1][gamecontrol[gc][1]])
+#define PlayerInputDown(p, gc) (gamekeydown[p-1][gamecontrol[gc][0]] || gamekeydown[p-1][gamecontrol[gc][1]])
 
 #define num_gcl_accelerate 1
 #define num_gcl_brake 1

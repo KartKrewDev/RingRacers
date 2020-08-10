@@ -724,7 +724,7 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-static INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel)
+INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel)
 {
 	INT32 retaxis;
 	INT32 axisval;
@@ -935,8 +935,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		return;
 	}
 
-	turnright = PLAYERINPUTDOWN(ssplayer, gc_turnright);
-	turnleft = PLAYERINPUTDOWN(ssplayer, gc_turnleft);
+	turnright = PlayerInputDown(ssplayer, gc_turnright);
+	turnleft = PlayerInputDown(ssplayer, gc_turnleft);
 
 	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
 	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
@@ -999,23 +999,23 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
 	{
-		axis = JoyAxis(AXISMOVE, ssplayer);
-		if (InputDown(gc_accelerate, ssplayer) || (usejoystick && axis > 0))
+		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
+		if (PlayerInputDown(ssplayer, gc_accelerate) || (usejoystick && axis > 0))
 			cmd->buttons |= BT_ACCELERATE;
-		axis = JoyAxis(AXISBRAKE, ssplayer);
-		if (InputDown(gc_brake, ssplayer) || (usejoystick && axis > 0))
+		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
+		if (PlayerInputDown(ssplayer, gc_brake) || (usejoystick && axis > 0))
 			cmd->buttons |= BT_BRAKE;
-		axis = JoyAxis(AXISAIM, ssplayer);
-		if (InputDown(gc_aimforward, ssplayer) || (usejoystick && axis < 0))
+		axis = PlayerJoyAxis(ssplayer, AXISAIM);
+		if (PlayerInputDown(ssplayer, gc_aimforward) || (usejoystick && axis < 0))
 			forward += forwardmove[1];
-		if (InputDown(gc_aimbackward, ssplayer) || (usejoystick && axis > 0))
+		if (PlayerInputDown(ssplayer, gc_aimbackward) || (usejoystick && axis > 0))
 			forward -= forwardmove[1];
 	}
 	else
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		axis = JoyAxis(AXISMOVE, ssplayer);
-		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || EITHERSNEAKER(player))
+		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
+		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0) || EITHERSNEAKER(player))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = forwardmove[1];	// 50
@@ -1027,8 +1027,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			forward += ((axis * forwardmove[1]) >> 10)*2;
 		}
 
-		axis = JoyAxis(AXISBRAKE, ssplayer);
-		if (InputDown(gc_brake, ssplayer) || (gamepadjoystickmove && axis > 0))
+		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
+		if (PlayerInputDown(ssplayer, gc_brake) || (gamepadjoystickmove && axis > 0))
 		{
 			cmd->buttons |= BT_BRAKE;
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
@@ -1043,37 +1043,37 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		}
 
 		// But forward/backward IS used for aiming.
-		if (InputDown(gc_aimforward, ssplayer) || (joystickvector.yaxis < 0))
+		if (PlayerInputDown(ssplayer, gc_aimforward) || (joystickvector.yaxis < 0))
 			cmd->buttons |= BT_FORWARD;
-		if (InputDown(gc_aimbackward, ssplayer) || (joystickvector.yaxis > 0))
+		if (PlayerInputDown(ssplayer, gc_aimbackward) || (joystickvector.yaxis > 0))
 			cmd->buttons |= BT_BACKWARD;
 	}
 
 	// fire with any button/key
-	axis = JoyAxis(AXISFIRE, ssplayer);
-	if (InputDown(gc_fire, ssplayer) || (usejoystick && axis > 0))
+	axis = PlayerJoyAxis(ssplayer, AXISFIRE);
+	if (PlayerInputDown(ssplayer, gc_fire) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_ATTACK;
 
 	// drift with any button/key
-	axis = JoyAxis(AXISDRIFT, ssplayer);
-	if (InputDown(gc_drift, ssplayer) || (usejoystick && axis > 0))
+	axis = PlayerJoyAxis(ssplayer, AXISDRIFT);
+	if (PlayerInputDown(ssplayer, gc_drift) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_DRIFT;
 
 	// rear view with any button/key
-	axis = JoyAxis(AXISLOOKBACK, ssplayer);
-	if (InputDown(gc_lookback, ssplayer) || (usejoystick && axis > 0))
+	axis = PlayerJoyAxis(ssplayer, AXISLOOKBACK);
+	if (PlayerInputDown(ssplayer, gc_lookback) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_LOOKBACK;
 
 	// Lua scriptable buttons
-	if (InputDown(gc_custom1, ssplayer))
+	if (PlayerInputDown(ssplayer, gc_custom1))
 		cmd->buttons |= BT_CUSTOM1;
-	if (InputDown(gc_custom2, ssplayer))
+	if (PlayerInputDown(ssplayer, gc_custom2))
 		cmd->buttons |= BT_CUSTOM2;
-	if (InputDown(gc_custom3, ssplayer))
+	if (PlayerInputDown(ssplayer, gc_custom3))
 		cmd->buttons |= BT_CUSTOM3;
 
 	// Reset camera
-	if (InputDown(gc_camreset, ssplayer))
+	if (PlayerInputDown(ssplayer, gc_camreset))
 	{
 		if (thiscam->chase && *rd == false)
 			P_ResetCamera(player, thiscam);
@@ -1100,7 +1100,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			*laim += (mlooky<<19)*player_invert*screen_invert;
 		}
 
-		axis = JoyAxis(AXISLOOK, ssplayer);
+		axis = PlayerJoyAxis(ssplayer, AXISLOOK);
 		if (analogjoystickmove && axis != 0 && lookaxis && player->spectator)
 			*laim += (axis<<16) * screen_invert;
 
@@ -1110,19 +1110,19 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 		if (player->spectator)
 		{
-			if (InputDown(gc_lookup, ssplayer) || (gamepadjoystickmove && axis < 0))
+			if (PlayerInputDown(ssplayer, gc_lookup) || (gamepadjoystickmove && axis < 0))
 			{
 				*laim += KB_LOOKSPEED * screen_invert;
 				*kbl = true;
 			}
-			else if (InputDown(gc_lookdown, ssplayer) || (gamepadjoystickmove && axis > 0))
+			else if (PlayerInputDown(ssplayer, gc_lookdown) || (gamepadjoystickmove && axis > 0))
 			{
 				*laim -= KB_LOOKSPEED * screen_invert;
 				*kbl = true;
 			}
 		}
 
-		if (InputDown(gc_centerview, ssplayer)) // No need to put a spectator limit on this one though :V
+		if (PlayerInputDown(ssplayer, gc_centerview)) // No need to put a spectator limit on this one though :V
 			*laim = 0;
 
 		// accept no mlook for network games

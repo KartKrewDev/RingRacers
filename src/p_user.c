@@ -3010,10 +3010,10 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	lookaxis = cv_lookaxis.value;
 
 	usejoystick = true;
-	turnright = InputDown(gc_turnright, 1);
-	turnleft = InputDown(gc_turnleft, 1);
+	turnright = PlayerInputDown(1, gc_turnright);
+	turnleft = PlayerInputDown(1, gc_turnleft);
 
-	axis = JoyAxis(AXISTURN, 1);
+	axis = PlayerJoyAxis(1, AXISTURN);
 
 	if (encoremode)
 	{
@@ -3056,21 +3056,21 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 
 	cmd->angleturn = (INT16)(cmd->angleturn - ((mousex*(encoremode ? -1 : 1)*8)));
 
-	axis = JoyAxis(AXISMOVE, 1);
-	if (InputDown(gc_accelerate, 1) || (usejoystick && axis > 0))
+	axis = PlayerJoyAxis(1, AXISMOVE);
+	if (PlayerInputDown(1, gc_accelerate) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_ACCELERATE;
-	axis = JoyAxis(AXISBRAKE, 1);
-	if (InputDown(gc_brake, 1) || (usejoystick && axis > 0))
+	axis = PlayerJoyAxis(1, AXISBRAKE);
+	if (PlayerInputDown(1, gc_brake) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_BRAKE;
-	axis = JoyAxis(AXISAIM, 1);
-	if (InputDown(gc_aimforward, 1) || (usejoystick && axis < 0))
+	axis = PlayerJoyAxis(1, AXISAIM);
+	if (PlayerInputDown(1, gc_aimforward) || (usejoystick && axis < 0))
 		forward += forwardmove[1];
-	if (InputDown(gc_aimbackward, 1) || (usejoystick && axis > 0))
+	if (PlayerInputDown(1, gc_aimbackward) || (usejoystick && axis > 0))
 		forward -= forwardmove[1];
 
 	// fire with any button/key
-	axis = JoyAxis(AXISFIRE, 1);
-	if (InputDown(gc_fire, 1) || (usejoystick && axis > 0))
+	axis = PlayerJoyAxis(1, AXISFIRE);
+	if (PlayerInputDown(1, gc_fire) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_ATTACK;
 
 	// spectator aiming shit, ahhhh...
@@ -3083,24 +3083,24 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	// looking up/down
 	laim += (mlooky<<19)*player_invert*screen_invert;
 
-	axis = JoyAxis(AXISLOOK, 1);
+	axis = PlayerJoyAxis(1, AXISLOOK);
 
 	// spring back if not using keyboard neither mouselookin'
 	if (!kbl && !lookaxis && !mouseaiming)
 		laim = 0;
 
-	if (InputDown(gc_lookup, 1) || (axis < 0))
+	if (PlayerInputDown(1, gc_lookup) || (axis < 0))
 	{
 		laim += KB_LOOKSPEED * screen_invert;
 		kbl = true;
 	}
-	else if (InputDown(gc_lookdown, 1) || (axis > 0))
+	else if (PlayerInputDown(1, gc_lookdown) || (axis > 0))
 	{
 		laim -= KB_LOOKSPEED * screen_invert;
 		kbl = true;
 	}
 
-	if (InputDown(gc_centerview, 1)) // No need to put a spectator limit on this one though :V
+	if (PlayerInputDown(1, gc_centerview)) // No need to put a spectator limit on this one though :V
 		laim = 0;
 
 	cmd->aiming = G_ClipAimingPitch(&laim);

@@ -727,7 +727,7 @@ void Y_Ticker(void)
 
 	if (demo.recording)
 	{
-		if (demo.savemode == DSM_NOTSAVING && InputDown(gc_lookback, 1))
+		if (demo.savemode == DSM_NOTSAVING && PlayerInputDown(1, gc_lookback))
 			demo.savemode = DSM_TITLEENTRY;
 
 		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
@@ -1768,13 +1768,13 @@ void Y_VoteTicker(void)
 						&& !voteclient.playerinfo[i].delay
 						&& pickedvote == -1 && votes[p] == -1)
 				{
-					if (InputDown(gc_aimforward, i+1) || JoyAxis(AXISAIM, i+1) < 0)
+					if (PlayerInputDown(i+1, gc_aimforward) || PlayerJoyAxis(i+1. AXISAIM) < 0)
 					{
 						voteclient.playerinfo[i].selection--;
 						pressed = true;
 					}
 
-					if ((InputDown(gc_aimbackward, i+1) || JoyAxis(AXISAIM, i+1) > 0) && !pressed)
+					if ((PlayerInputDown(i+1, gc_aimbackward) || PlayerJoyAxis(i+1, AXISAIM) > 0) && !pressed)
 					{
 						voteclient.playerinfo[i].selection++;
 						pressed = true;
@@ -1785,7 +1785,7 @@ void Y_VoteTicker(void)
 					if (voteclient.playerinfo[i].selection > 3)
 						voteclient.playerinfo[i].selection = 0;
 
-					if ((InputDown(gc_accelerate, i+1) || JoyAxis(AXISMOVE, i+1) > 0) && !pressed)
+					if ((PlayerInputDown(i+1, gc_accelerate) || PlayerJoyAxis(i+1, AXISMOVE) > 0) && !pressed)
 					{
 						D_ModifyClientVote(consoleplayer, voteclient.playerinfo[i].selection, i);
 						pressed = true;
