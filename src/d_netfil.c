@@ -1074,21 +1074,10 @@ void FileSendTicker(void)
 			M_Memcpy(p->data, &f->id.ram[transfer[i].position], fragmentsize);
 		else
 		{
-<<<<<<< HEAD
-			size_t n = fread(p->data, 1, size, transfer[i].currentfile);
-			if (n != size) // Either an error or Windows turning CR-LF into LF
-			{
-				if (f->textmode && feof(transfer[i].currentfile))
-					size = n;
-				else if (fread(p->data, 1, size, transfer[i].currentfile) != size)
-					I_Error("SV_FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(size), f->id.filename, transfer[i].position, M_FileError(transfer[i].currentfile));
-			}
-=======
 			fseek(transfer[i].currentfile, transfer[i].position, SEEK_SET);
 
 			if (fread(p->data, 1, fragmentsize, transfer[i].currentfile) != fragmentsize)
 				I_Error("FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(fragmentsize), f->id.filename, transfer[i].position, M_FileError(transfer[i].currentfile));
->>>>>>> srb2/next
 		}
 		p->iteration = transfer[i].iteration;
 		p->position = LONG(transfer[i].position);
