@@ -19,7 +19,8 @@
 #include "d_net.h"
 #include "tables.h"
 #include "d_player.h"
-<<<<<<< HEAD
+#include "mserv.h"
+
 #include "k_pwrlv.h" // PWRLV_NUMTYPES
 
 /*
@@ -28,16 +29,6 @@ This version is independent of VERSION and SUBVERSION. Different
 applications may follow different packet versions.
 */
 #define PACKETVERSION 0
-=======
-#include "mserv.h"
->>>>>>> srb2/next
-
-/*
-The 'packet version' is used to distinguish packet formats.
-This version is independent of VERSION and SUBVERSION. Different
-applications may follow different packet versions.
-*/
-#define PACKETVERSION 3
 
 // Network play related stuff.
 // There is a data struct that stores network
@@ -46,13 +37,8 @@ applications may follow different packet versions.
 //  be transmitted.
 
 // Networking and tick handling related.
-<<<<<<< HEAD
 #define BACKUPTICS 32
 #define TICQUEUE 512 // more than enough for most timeouts....
-=======
-#define BACKUPTICS 1024
-#define CLIENTBACKUPTICS 32
->>>>>>> srb2/next
 #define MAXTEXTCMD 256
 //
 // Packet structure
@@ -621,16 +607,11 @@ extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
 
-<<<<<<< HEAD
 extern boolean server_lagless;
 
-extern consvar_t cv_allownewplayer, cv_maxplayers, cv_joindelay, cv_rejointimeout;
-=======
-extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxplayers, cv_joindelay, cv_rejointimeout;
->>>>>>> srb2/next
+extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_joindelay, cv_rejointimeout;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
-extern consvar_t cv_netticbuffer;
 
 #ifdef VANILLAJOINNEXTROUND
 extern consvar_t cv_joinnextround;
