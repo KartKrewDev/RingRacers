@@ -497,27 +497,13 @@ static void D_Display(void)
 		{
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
-<<<<<<< HEAD
 				viewwindowy = 0;
 				viewwindowx = 0;
 
 				topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
 				objectsdrawn = 0;
-=======
+
 				rs_rendercalltime = I_GetTimeMicros();
-				if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
-				{
-					topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
-					objectsdrawn = 0;
-	#ifdef HWRENDER
-					if (rendermode != render_soft)
-						HWR_RenderPlayerView(0, &players[displayplayer]);
-					else
-	#endif
-					if (rendermode != render_none)
-						R_RenderPlayerView(&players[displayplayer]);
-				}
->>>>>>> srb2/next
 
 				for (i = 0; i <= r_splitscreen; i++)
 				{
@@ -582,11 +568,9 @@ static void D_Display(void)
 							V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
 					}
 				}
-<<<<<<< HEAD
-=======
+
 				rs_rendercalltime = I_GetTimeMicros() - rs_rendercalltime;
 			}
->>>>>>> srb2/next
 
 				if (lastdraw)
 				{
@@ -707,6 +691,9 @@ static void D_Display(void)
 	//
 	if (!wipe)
 	{
+		if (cv_shittyscreen.value)
+			V_DrawVhsEffect(cv_shittyscreen.value == 2);
+
 		if (cv_netstat.value)
 		{
 			char s[50];
@@ -724,11 +711,6 @@ static void D_Display(void)
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
 		}
 
-<<<<<<< HEAD
-		if (cv_shittyscreen.value)
-			V_DrawVhsEffect(cv_shittyscreen.value == 2);
-
-=======
 		if (cv_renderstats.value)
 		{
 			char s[50];
@@ -801,7 +783,6 @@ static void D_Display(void)
 		}
 
 		rs_swaptime = I_GetTimeMicros();
->>>>>>> srb2/next
 		I_FinishUpdate(); // page flip or blit buffer
 		rs_swaptime = I_GetTimeMicros() - rs_swaptime;
 	}
