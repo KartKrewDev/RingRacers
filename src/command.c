@@ -1677,11 +1677,7 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 		Setvalue(cvar, svalue, stealth);
 }
 
-<<<<<<< HEAD
-void CV_SaveNetVars(UINT8 **p, boolean isdemorecording)
-=======
 void CV_SaveVars(UINT8 **p, boolean in_demo)
->>>>>>> srb2/next
 {
 	consvar_t *cvar;
 	UINT8 *count_p = *p;
@@ -1691,13 +1687,15 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 	// the client will reset all netvars to default before loading
 	WRITEUINT16(*p, 0x0000);
 	for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		if (((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar)) || (isdemorecording && cvar->netid == cv_numlaps.netid))
+		if (((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar)) || (in_demo && cvar->netid == cv_numlaps.netid))
 		{
-<<<<<<< HEAD
-			WRITEUINT16(*p, cvar->netid);
+			if (in_demo)
+				WRITESTRING(*p, cvar->name);
+			else
+				WRITEUINT16(*p, cvar->netid);
 
 			// UGLY HACK: Save proper lap count in net replays
-			if (isdemorecording && cvar->netid == cv_numlaps.netid)
+			if (in_demo && cvar->netid == cv_numlaps.netid)
 			{
 				if (cv_basenumlaps.value &&
 					(!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
@@ -1718,13 +1716,6 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 				WRITESTRING(*p, cvar->string);
 			}
 
-=======
-			if (in_demo)
-				WRITESTRING(*p, cvar->name);
-			else
-				WRITEUINT16(*p, cvar->netid);
-			WRITESTRING(*p, cvar->string);
->>>>>>> srb2/next
 			WRITEUINT8(*p, false);
 			++count;
 		}
