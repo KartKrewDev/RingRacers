@@ -300,11 +300,6 @@ static inline boolean I_SkipFrame(void)
 				return false;
 		/* FALLTHRU */
 		//case GS_TIMEATTACK: -- sorry optimisation but now we have a cool level platter and that being laggardly looks terrible
-<<<<<<< HEAD
-=======
-#ifndef NONET
->>>>>>> srb2/next
-		/* FALLTHRU */
 		case GS_WAITINGPLAYERS:
 			return skip; // Skip odd frames
 		default:
