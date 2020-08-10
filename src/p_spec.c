@@ -4577,11 +4577,6 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 					continue;
 				if (players[i].bot)
 					continue;
-<<<<<<< HEAD
-=======
-				if (G_CoopGametype() && players[i].lives <= 0)
-					continue;
->>>>>>> srb2/next
 				if (roversector)
 				{
 					if (sector->flags & SF_TRIGGERSPECIAL_TOUCH)
@@ -4756,17 +4751,10 @@ DoneSection2:
 					break;
 				}
 
-<<<<<<< HEAD
 				// SRB2Kart: Scale the speed you get from them!
 				// This is scaled differently from other horizontal speed boosts from stuff like springs, because of how this is used for some ramp jumps.
 				if (player->mo->scale > mapobjectscale)
 					linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
-=======
-				player->mo->angle = player->drawangle = lineangle;
-
-				if (!demoplayback || P_ControlStyle(player) == CS_LMAOGALOG)
-					P_SetPlayerAngle(player, player->mo->angle);
->>>>>>> srb2/next
 
 				if (!(lines[i].flags & ML_EFFECT4))
 				{
@@ -5066,243 +5054,11 @@ DoneSection2:
 				P_SetTarget(&player->mo->tracer, waypoint);
 				player->powers[pw_carry] = CR_ZOOMTUBE;
 				player->speed = speed;
-<<<<<<< HEAD
 			}
 			break;
 
 		case 10: // Unused
 		case 11: // Unused
-=======
-				player->pflags |= PF_SPINNING;
-				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
-				player->climbing = 0;
-
-				if (player->mo->state-states != S_PLAY_ROLL)
-				{
-					P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
-					S_StartSound(player->mo, sfx_spin);
-				}
-			}
-			break;
-
-		case 10: // Finish Line
-			if (((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE) && !player->exiting)
-			{
-				if (player->starpostnum == numstarposts) // Must have touched all the starposts
-				{
-					player->laps++;
-
-					if (player->powers[pw_carry] == CR_NIGHTSMODE)
-						player->drillmeter += 48*20;
-
-					if (player->laps >= (UINT8)cv_numlaps.value)
-						CONS_Printf(M_GetText("%s has finished the race.\n"), player_names[player-players]);
-					else
-						CONS_Printf(M_GetText("%s started lap %u\n"), player_names[player-players], (UINT32)player->laps+1);
-
-					// Reset starposts (checkpoints) info
-					player->starpostscale = player->starpostangle = player->starposttime = player->starpostnum = 0;
-					player->starpostx = player->starposty = player->starpostz = 0;
-					P_ResetStarposts();
-
-					// Play the starpost sound for 'consistency'
-					S_StartSound(player->mo, sfx_strpst);
-				}
-				else if (player->starpostnum)
-				{
-					// blatant reuse of a variable that's normally unused in circuit
-					if (!player->tossdelay)
-						S_StartSound(player->mo, sfx_lose);
-					player->tossdelay = 3;
-				}
-
-				if (player->laps >= (unsigned)cv_numlaps.value)
-				{
-					if (P_IsLocalPlayer(player))
-					{
-						HU_SetCEchoFlags(0);
-						HU_SetCEchoDuration(5);
-						HU_DoCEcho("FINISHED!");
-					}
-
-					P_DoPlayerExit(player);
-				}
-			}
-			break;
-
-		case 11: // Rope hang
-			{
-				INT32 sequence;
-				fixed_t speed;
-				INT32 lineindex;
-				mobj_t *waypointmid = NULL;
-				mobj_t *waypointhigh = NULL;
-				mobj_t *waypointlow = NULL;
-				mobj_t *closest = NULL;
-				vector3_t p, line[2], resulthigh, resultlow;
-
-				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ROPEHANG)
-					break;
-
-				if (player->powers[pw_ignorelatch] & (1<<15))
-					break;
-
-				if (player->mo->momz > 0)
-					break;
-
-				if (player->cmd.buttons & BT_USE)
-					break;
-
-				if (!(player->pflags & PF_SLIDING) && player->mo->state == &states[player->mo->info->painstate])
-					break;
-
-				if (player->exiting)
-					break;
-
-				//initialize resulthigh and resultlow with 0
-				memset(&resultlow, 0x00, sizeof(resultlow));
-				memset(&resulthigh, 0x00, sizeof(resulthigh));
-
-				// Find line #11 tagged to this sector
-				lineindex = P_FindSpecialLineFromTag(11, sector->tag, -1);
-
-				if (lineindex == -1)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "ERROR: Sector special %d missing line special #11.\n", sector->special);
-					break;
-				}
-
-				// Grab speed and sequence values
-				speed = abs(sides[lines[lineindex].sidenum[0]].textureoffset)/8;
-				sequence = abs(sides[lines[lineindex].sidenum[0]].rowoffset)>>FRACBITS;
-
-				if (speed == 0)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "ERROR: Waypoint sequence %d at zero speed.\n", sequence);
-					break;
-				}
-
-				// Find the closest waypoint
-				// Find the preceding waypoint
-				// Find the proceeding waypoint
-				// Determine the closest spot on the line between the three waypoints
-				// Put player at that location.
-
-				waypointmid = P_GetClosestWaypoint(sequence, player->mo);
-
-				if (!waypointmid)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "ERROR: WAYPOINT(S) IN SEQUENCE %d NOT FOUND.\n", sequence);
-					break;
-				}
-
-				waypointlow = P_GetPreviousWaypoint(waypointmid, true);
-				waypointhigh = P_GetNextWaypoint(waypointmid, true);
-
-				CONS_Debug(DBG_GAMELOGIC, "WaypointMid: %d; WaypointLow: %d; WaypointHigh: %d\n",
-								waypointmid->health, waypointlow ? waypointlow->health : -1, waypointhigh ? waypointhigh->health : -1);
-
-				// Now we have three waypoints... the closest one we're near, and the one that comes before, and after.
-				// Next, we need to find the closest point on the line between each set, and determine which one we're
-				// closest to.
-
-				p.x = player->mo->x;
-				p.y = player->mo->y;
-				p.z = player->mo->z;
-
-				// Waypointmid and Waypointlow:
-				if (waypointlow)
-				{
-					line[0].x = waypointmid->x;
-					line[0].y = waypointmid->y;
-					line[0].z = waypointmid->z;
-					line[1].x = waypointlow->x;
-					line[1].y = waypointlow->y;
-					line[1].z = waypointlow->z;
-
-					P_ClosestPointOnLine3D(&p, line, &resultlow);
-				}
-
-				// Waypointmid and Waypointhigh:
-				if (waypointhigh)
-				{
-					line[0].x = waypointmid->x;
-					line[0].y = waypointmid->y;
-					line[0].z = waypointmid->z;
-					line[1].x = waypointhigh->x;
-					line[1].y = waypointhigh->y;
-					line[1].z = waypointhigh->z;
-
-					P_ClosestPointOnLine3D(&p, line, &resulthigh);
-				}
-
-				// 3D support now available. Disregard the previous notice here. -Red
-
-				P_UnsetThingPosition(player->mo);
-				P_ResetPlayer(player);
-				player->mo->momx = player->mo->momy = player->mo->momz = 0;
-
-				if (lines[lineindex].flags & ML_EFFECT1) // Don't wrap
-				{
-					mobj_t *highest = P_GetLastWaypoint(sequence);
-					highest->flags |= MF_SLIDEME;
-				}
-
-				// Changing the conditions on these ifs to fix issues with snapping to the wrong spot -Red
-				if ((lines[lineindex].flags & ML_EFFECT1) && waypointmid->health == 0)
-				{
-					closest = waypointhigh;
-					player->mo->x = resulthigh.x;
-					player->mo->y = resulthigh.y;
-					player->mo->z = resulthigh.z - P_GetPlayerHeight(player);
-				}
-				else if ((lines[lineindex].flags & ML_EFFECT1) && waypointmid->health == numwaypoints[sequence] - 1)
-				{
-					closest = waypointmid;
-					player->mo->x = resultlow.x;
-					player->mo->y = resultlow.y;
-					player->mo->z = resultlow.z - P_GetPlayerHeight(player);
-				}
-				else
-				{
-					if (P_AproxDistance(P_AproxDistance(player->mo->x-resultlow.x, player->mo->y-resultlow.y),
-							player->mo->z-resultlow.z) < P_AproxDistance(P_AproxDistance(player->mo->x-resulthigh.x,
-								player->mo->y-resulthigh.y), player->mo->z-resulthigh.z))
-					{
-						// Line between Mid and Low is closer
-						closest = waypointmid;
-						player->mo->x = resultlow.x;
-						player->mo->y = resultlow.y;
-						player->mo->z = resultlow.z - P_GetPlayerHeight(player);
-					}
-					else
-					{
-						// Line between Mid and High is closer
-						closest = waypointhigh;
-						player->mo->x = resulthigh.x;
-						player->mo->y = resulthigh.y;
-						player->mo->z = resulthigh.z - P_GetPlayerHeight(player);
-					}
-				}
-
-				P_SetTarget(&player->mo->tracer, closest);
-				player->powers[pw_carry] = CR_ROPEHANG;
-
-				// Option for static ropes.
-				if (lines[lineindex].flags & ML_NOCLIMB)
-					player->speed = 0;
-				else
-					player->speed = speed;
-
-				S_StartSound(player->mo, sfx_s3k4a);
-
-				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
-				player->climbing = 0;
-				P_SetThingPosition(player->mo);
-				P_SetPlayerMobjState(player->mo, S_PLAY_RIDE);
-			}
-			break;
->>>>>>> srb2/next
 		case 12: // Camera noclip
 		case 13: // Unused
 		case 14: // Unused
@@ -6367,30 +6123,8 @@ void P_InitSpecials(void)
 
 	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
-<<<<<<< HEAD
 	// Set weather
 	curWeather = globalweather = mapheaderinfo[gamemap-1]->weather;
-
-	P_InitTagLists();   // Create xref tables for tags
-=======
-	// Set curWeather
-	switch (mapheaderinfo[gamemap-1]->weather)
-	{
-		case PRECIP_SNOW: // snow
-		case PRECIP_RAIN: // rain
-		case PRECIP_STORM: // storm
-		case PRECIP_STORM_NORAIN: // storm w/o rain
-		case PRECIP_STORM_NOSTRIKES: // storm w/o lightning
-			curWeather = mapheaderinfo[gamemap-1]->weather;
-			break;
-		default: // blank/none
-			curWeather = PRECIP_NONE;
-			break;
-	}
-
-	// Set globalweather
-	globalweather = mapheaderinfo[gamemap-1]->weather;
->>>>>>> srb2/next
 }
 
 static void P_ApplyFlatAlignment(line_t *master, sector_t *sector, angle_t flatangle, fixed_t xoffs, fixed_t yoffs)
@@ -6477,15 +6211,9 @@ void P_SpawnSpecials(boolean fromnetsave)
 		// Process Section 4
 		switch(GETSECSPECIAL(sector->special, 4))
 		{
-<<<<<<< HEAD
 			case 10: // Circuit finish line (Unused)
 				// Remove before release
 				CONS_Alert(CONS_WARNING, "Finish line sector type is deprecated.\n");
-=======
-			case 10: // Circuit finish line
-				if ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)
-					circuitmap = true;
->>>>>>> srb2/next
 				break;
 		}
 	}
@@ -9232,43 +8960,12 @@ void T_Pusher(pusher_t *p)
 
 				if (!demo.playback)
 				{
-<<<<<<< HEAD
-					if (thing->player == &players[consoleplayer])
-					{
-						if (thing->angle - localangle[0] > ANGLE_180)
-							localangle[0] -= (localangle[0] - thing->angle) / 8;
-						else
-							localangle[0] += (thing->angle - localangle[0]) / 8;
-					}
-					else if (thing->player == &players[displayplayers[1]])
-					{
-						if (thing->angle - localangle[1] > ANGLE_180)
-							localangle[1] -= (localangle[1] - thing->angle) / 8;
-						else
-							localangle[1] += (thing->angle - localangle[1]) / 8;
-					}
-					else if (thing->player == &players[displayplayers[2]])
-					{
-						if (thing->angle - localangle[2] > ANGLE_180)
-							localangle[2] -= (localangle[2] - thing->angle) / 8;
-						else
-							localangle[2] += (thing->angle - localangle[2]) / 8;
-					}
-					else if (thing->player == &players[displayplayers[3]])
-					{
-						if (thing->angle - localangle[3] > ANGLE_180)
-							localangle[3] -= (localangle[3] - thing->angle) / 8;
-						else
-							localangle[3] += (thing->angle - localangle[3]) / 8;
-					}
-=======
 					angle_t angle = thing->player->angleturn << 16;
 					if (thing->angle - angle > ANGLE_180)
 						P_SetPlayerAngle(thing->player, angle - (angle - thing->angle) / 8);
 					else
 						P_SetPlayerAngle(thing->player, angle + (thing->angle - angle) / 8);
 					//P_SetPlayerAngle(thing->player, thing->angle);
->>>>>>> srb2/next
 				}
 			}
 
