@@ -89,16 +89,12 @@ enum mobj_e {
 	mobj_cvmem,
 	mobj_standingslope,
 	mobj_colorized,
-<<<<<<< HEAD
+	mobj_mirrored,
 	mobj_shadowscale,
 	mobj_whiteshadow,
 	mobj_sprxoff,
 	mobj_spryoff,
 	mobj_sprzoff
-=======
-	mobj_mirrored,
-	mobj_shadowscale
->>>>>>> srb2/next
 };
 
 static const char *const mobj_opt[] = {
@@ -493,16 +489,6 @@ static int mobj_set(lua_State *L)
 		return UNIMPLEMENTED;
 	case mobj_angle:
 		mo->angle = luaL_checkangle(L, 3);
-<<<<<<< HEAD
-		if (mo->player == &players[consoleplayer])
-			localangle[0] = mo->angle;
-		else if (mo->player == &players[displayplayers[1]])
-			localangle[1] = mo->angle;
-		else if (mo->player == &players[displayplayers[2]])
-			localangle[2] = mo->angle;
-		else if (mo->player == &players[displayplayers[3]])
-			localangle[3] = mo->angle;
-=======
 		if (mo->player)
 			P_SetPlayerAngle(mo->player, mo->angle);
 		break;
@@ -511,7 +497,6 @@ static int mobj_set(lua_State *L)
 		break;
 	case mobj_roll:
 		mo->roll = luaL_checkangle(L, 3);
->>>>>>> srb2/next
 		break;
 	case mobj_rollangle:
 		mo->rollangle = luaL_checkangle(L, 3);
