@@ -1,11 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-// Copyright (C) 1993-1996 by id Software, Inc.
-=======
->>>>>>> srb2/next
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2019 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -17,7 +12,6 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 #ifdef HWRENDER
-#include "hw_main.h"
 #include "hw_glob.h"
 #include "../r_local.h"
 #include "../z_zone.h"
@@ -59,8 +53,6 @@ static INT32 totalsubsecpolys = 0;
 // --------------------------------------------------------------------------
 // Polygon fast alloc / free
 // --------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
 //hurdler: quick fix for those who wants to play with larger wad
 
 #define ZPLANALLOC
@@ -109,15 +101,13 @@ void HWR_FreePolyPool(void)
 	gl_polypool = NULL;
 #endif
 }
->>>>>>> srb2/next
 
 static poly_t *HWR_AllocPoly(INT32 numpts)
 {
 	poly_t *p;
 	size_t size = sizeof (poly_t) + sizeof (polyvertex_t) * numpts;
+#ifdef ZPLANALLOC
 	p = Z_Malloc(size, PU_HWRPLANE, NULL);
-<<<<<<< HEAD
-=======
 #else
 #ifdef PARANOIA
 	if (!gl_polypool)
@@ -134,7 +124,6 @@ static poly_t *HWR_AllocPoly(INT32 numpts)
 	gl_ppcurrent += size;
 	gl_ppfree -= size;
 #endif
->>>>>>> srb2/next
 	p->numpts = numpts;
 	return p;
 }
@@ -143,9 +132,8 @@ static polyvertex_t *HWR_AllocVertex(void)
 {
 	polyvertex_t *p;
 	size_t size = sizeof (polyvertex_t);
+#ifdef ZPLANALLOC
 	p = Z_Malloc(size, PU_HWRPLANE, NULL);
-<<<<<<< HEAD
-=======
 #else
 	if (gl_ppfree < size)
 		I_Error("HWR_AllocVertex(): no more memory %u bytes left, %u bytes needed\n\n%s\n",
@@ -155,7 +143,6 @@ static polyvertex_t *HWR_AllocVertex(void)
 	gl_ppcurrent += size;
 	gl_ppfree -= size;
 #endif
->>>>>>> srb2/next
 	return p;
 }
 
@@ -163,8 +150,15 @@ static polyvertex_t *HWR_AllocVertex(void)
 /// for now don't free because it doesn't free in reverse order
 static void HWR_FreePoly(poly_t *poly)
 {
+#ifdef ZPLANALLOC
 	Z_Free(poly);
+#else
+	const size_t size = sizeof (poly_t) + sizeof (polyvertex_t) * poly->numpts;
+	memset(poly, 0x00, size);
+	//mempoly -= polysize;
+#endif
 }
+
 
 // Return interception along bsp line,
 // with the polygon segment
@@ -580,8 +574,8 @@ static inline void SearchDivline(node_t *bsp, fdivline_t *divline)
 	divline->dy = FIXED_TO_FLOAT(bsp->dy);
 }
 
-//Hurdler: implement a loading status
 #ifdef HWR_LOADING_SCREEN
+//Hurdler: implement a loading status
 static size_t ls_count = 0;
 static UINT8 ls_percent = 0;
 
