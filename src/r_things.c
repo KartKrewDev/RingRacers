@@ -1518,15 +1518,11 @@ static void R_ProjectSprite(mobj_t *thing)
 #endif
 
 	if (sprframe->rotate != SRF_SINGLE || papersprite)
-<<<<<<< HEAD
-		ang = R_PointToAngle (thingxpos, thingypos) - (thing->player ? thing->player->drawangle : thing->angle);
-=======
 	{
-		ang = R_PointToAngle (thing->x, thing->y) - (thing->player ? thing->player->drawangle : thing->angle);
+		ang = R_PointToAngle (thingxpos, thingypos) - (thing->player ? thing->player->drawangle : thing->angle);
 		if (mirrored)
 			ang = InvAngle(ang);
 	}
->>>>>>> srb2/next
 
 	if (sprframe->rotate == SRF_SINGLE)
 	{
@@ -2813,11 +2809,11 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 /* Check if thing may be drawn from our current view. */
 boolean R_ThingVisible (mobj_t *thing)
 {
-<<<<<<< HEAD
 	boolean split_drawsprite = true;
 	UINT16 splitflags = 0;
 
-	if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW || thing == r_viewmobj)
+	if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW
+	|| (r_viewmobj && (thing == r_viewmobj || (r_viewmobj->player && r_viewmobj->player->followmobj == thing))))
 		return false;
 
 	splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
@@ -2844,13 +2840,6 @@ boolean R_ThingVisible (mobj_t *thing)
 	}
 
 	return split_drawsprite;
-=======
-	return (!(
-				thing->sprite == SPR_NULL ||
-				( thing->flags2 & (MF2_DONTDRAW) ) ||
-				(r_viewmobj && (thing == r_viewmobj || (r_viewmobj->player && r_viewmobj->player->followmobj == thing)))
-	));
->>>>>>> srb2/next
 }
 
 boolean R_ThingVisibleWithinDist (mobj_t *thing,
