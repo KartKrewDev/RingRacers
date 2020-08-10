@@ -136,19 +136,9 @@ extern char logfilename[1024];
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-<<<<<<< HEAD
-#define VERSION    2 // Game version
-#define SUBVERSION 0 // more precise version number
-#define VERSIONSTRING "v2.0"
-#define VERSIONSTRINGW L"v2.0"
-// Hey! If you change this, add 1 to the MODVERSION below! Otherwise we can't force updates!
-// And change CMakeLists.txt, for CMake users!
-// AND appveyor.yml, for the build bots!
-=======
 #define VERSIONSTRING "v"SRB2VERSION
 // Hey! If you change this, add 1 to the MODVERSION below!
 // Otherwise we can't force updates!
->>>>>>> srb2/next
 #endif
 
 #define VERSIONSTRINGW WSTRING (VERSIONSTRING)
@@ -207,22 +197,6 @@ extern char logfilename[1024];
 // Will always resemble the versionstring, 205 = 2.0.5, 210 = 2.1, etc.
 #define CODEBASE 220
 
-<<<<<<< HEAD
-// The Modification ID; must be obtained from Rob ( https://mb.srb2.org/private.php?do=newpm&u=546 ).
-// DO NOT try to set this otherwise, or your modification will be unplayable through the Master Server.
-// "12" is the default mod ID for version 2.1
-// "17" is the 2.1 Kart's mod ID
-#define MODID 17
-
-// The Modification Version, starting from 1. Do not follow your version string for this,
-// it's only for detection of the version the player is using so the MS can alert them of an update.
-// Only set it higher, not lower, obviously.
-// Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
-#define MODVERSION 6
-
-// Filter consvars by version
-=======
->>>>>>> srb2/next
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
 // Increment MINOREXECVERSION whenever a config change is needed that does not correspond
 // to an increment in MODVERSION. This might never happen in practice.
@@ -688,19 +662,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
 #define SECTORSPECIALSAFTERTHINK
 
-<<<<<<< HEAD
-/// FINALLY some real clipping that doesn't make walls dissappear AND speeds the game up
-/// (that was the original comment from SRB2CB, sadly it is a lie and actually slows game down)
-/// on the bright side it fixes some weird issues with translucent walls
-/// \note	SRB2CB port.
-///      	SRB2CB itself ported this from PrBoom+
-//#define NEWCLIP
-
-/// Hardware renderer: OpenGL
-#define GL_SHADERS
-
-=======
->>>>>>> srb2/next
 /// Cache patches in Lua in a way that renderer switching will work flawlessly.
 //#define LUA_PATCH_SAFETY
 
@@ -717,16 +678,14 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Render flats on walls
 #define WALLFLATS
 
-<<<<<<< HEAD
 /// - SRB2Kart options -
 /// Camera always has noclip.
 #define NOCLIPCAM
 
 /// MIDI support is really shitty -- we don't use it anyway, so lets throw it behind a define
 #define NO_MIDI
-=======
+
 /// Maintain compatibility with older 2.2 demos
-#define OLD22DEMOCOMPAT
->>>>>>> srb2/next
+//#define OLD22DEMOCOMPAT
 
 #endif // __DOOMDEF__
