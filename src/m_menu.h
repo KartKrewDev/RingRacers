@@ -448,14 +448,10 @@ void Screenshot_option_Onchange(void);
 // Addons menu updating
 void Addons_option_Onchange(void);
 
-<<<<<<< HEAD
 void M_ReplayHut(INT32 choice);
 void M_SetPlaybackMenuPointer(void);
 
 INT32 HU_GetHighlightColor(void);
-=======
-// Moviemode menu updating
-void Moviemode_option_Onchange(void);
 
 // Player Setup menu colors linked list
 typedef struct menucolor_s {
@@ -473,7 +469,6 @@ UINT16 M_GetColorBefore(UINT16 color);
 UINT16 M_GetColorAfter(UINT16 color);
 void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
->>>>>>> srb2/next
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(id, header, source, prev, x, y)\
@@ -535,13 +530,8 @@ void M_FreePlayerSetupColors(void);
 	sizeof (source)/sizeof (menuitem_t),\
 	&MainDef,\
 	source,\
-<<<<<<< HEAD
 	M_DrawServerMenu,\
 	24,40,\
-=======
-	M_DrawLevelPlatterMenu,\
-	0,0,\
->>>>>>> srb2/next
 	0,\
 	NULL\
 }
