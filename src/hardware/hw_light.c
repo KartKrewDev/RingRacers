@@ -1,25 +1,15 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-// Copyright (C) 1993-1996 by id Software, Inc.
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2019 by Sonic Team Junior.
-=======
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2020 by Sonic Team Junior.
->>>>>>> srb2/next
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
-/// \file
-=======
 /// \file hw_light.c
 /// \brief Corona/Dynamic/Static lighting add on by Hurdler
-///	!!! Under construction !!!
->>>>>>> srb2/next
+///	!!! Under construction !!!\
 
 #include "../doomdef.h"
 
@@ -35,8 +25,6 @@
 #include "../r_main.h"
 #include "../p_local.h"
 
-<<<<<<< HEAD
-=======
 //=============================================================================
 //                                                                      DEFINES
 //=============================================================================
