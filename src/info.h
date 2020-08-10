@@ -329,7 +329,7 @@ typedef enum sprite
 	SPR_TRET, // Industrial Turret
 	SPR_TURR, // Pop-Up Turret
 	SPR_SHRP, // Sharp
-	SPR_CRAB, // Crushstacean
+	//SPR_CRAB, // Crushstacean
 	SPR_CR2B, // Banpyura
 	SPR_CSPR, // Banpyura spring
 	SPR_JJAW, // Jet Jaw
@@ -417,7 +417,7 @@ typedef enum sprite
 	SPR_TOKE, // Special Stage Token
 	SPR_RFLG, // Red CTF Flag
 	SPR_BFLG, // Blue CTF Flag
-	SPR_SPHR, // Sphere
+	//SPR_SPHR, // Sphere
 	SPR_NCHP, // NiGHTS chip
 	SPR_NSTR, // NiGHTS star
 	SPR_EMBM, // Emblem
@@ -622,7 +622,7 @@ typedef enum sprite
 	SPR_FORC, // Force Shield Orb
 	SPR_PITY, // Pity Shield Orb
 	SPR_FIRS, // Flame Shield Orb
-	SPR_BUBS, // Bubble Shield Orb
+	//SPR_BUBS, // Bubble Shield Orb
 	SPR_ZAPS, // Thunder Shield Orb
 	SPR_IVSP, // invincibility sparkles
 	SPR_SSPK, // Super Sonic Spark
@@ -653,7 +653,7 @@ typedef enum sprite
 	// Springs
 	SPR_FANS, // Fan
 	SPR_STEM, // Steam riser
-	SPR_BUMP, // Bumpers
+	SPR_BMPR, // Bumpers
 	SPR_BLON, // Balloons
 	SPR_SPVY, // Yellow Vertical Spring
 	SPR_SPVR, // Red Vertical Spring
@@ -815,7 +815,6 @@ typedef enum sprite
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
-	SPR_DUST, // Drift Dust
 	SPR_DRWS, // Drift dust sparks
 
 	// Kart Items
@@ -888,7 +887,6 @@ typedef enum sprite
 
 	SPR_FZSM, // F-Zero NO CONTEST explosion
 	SPR_FZBM,
-	SPR_FPRT,
 
 	// Various plants
 	SPR_SBUS,
@@ -897,8 +895,6 @@ typedef enum sprite
 	SPR_FUFO, // CD Special Stage UFO (don't ask me why it begins with an F)
 
 	SPR_RUST, // Rusty Rig sprites
-
-	SPR_BLON, // D2 Balloon Panic
 
 	SPR_VAPE, // Volcanic Valley
 
@@ -933,7 +929,7 @@ typedef enum sprite
 	SPR_CDBU,
 
 	// Daytona Speedway
-	SPR_PINE,
+	SPR_DPIN,
 
 	// Egg Zeppelin
 	SPR_PPLR,
@@ -963,7 +959,7 @@ typedef enum sprite
 	SPR_ICEB,
 
 	// Ezo's maps - many single-use sprites!
-	SPR_CNDL,
+	SPR_ECND,
 	SPR_DOCH,
 	SPR_DUCK,
 	SPR_GTRE,
@@ -1002,10 +998,6 @@ typedef enum sprite
 	SPR_OTFG,
 
 	SPR_DBOS, // Drift boost flame
-
-	// Xmas-specific sprites that don't fit aboxe
-	SPR_XMS4,
-	SPR_XMS5,
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
@@ -3434,46 +3426,6 @@ typedef enum state
 	S_GHORIZ3,
 	S_GHORIZ4,
 
-	// Blue Diagonal Spring
-	S_BDIAG1,
-	S_BDIAG2,
-	S_BDIAG3,
-	S_BDIAG4,
-	S_BDIAG5,
-	S_BDIAG6,
-	S_BDIAG7,
-	S_BDIAG8,
-
-	// Yellow Side Spring
-	S_YHORIZ1,
-	S_YHORIZ2,
-	S_YHORIZ3,
-	S_YHORIZ4,
-	S_YHORIZ5,
-	S_YHORIZ6,
-	S_YHORIZ7,
-	S_YHORIZ8,
-
-	// Red Side Spring
-	S_RHORIZ1,
-	S_RHORIZ2,
-	S_RHORIZ3,
-	S_RHORIZ4,
-	S_RHORIZ5,
-	S_RHORIZ6,
-	S_RHORIZ7,
-	S_RHORIZ8,
-
-	// Blue Side Spring
-	S_BHORIZ1,
-	S_BHORIZ2,
-	S_BHORIZ3,
-	S_BHORIZ4,
-	S_BHORIZ5,
-	S_BHORIZ6,
-	S_BHORIZ7,
-	S_BHORIZ8,
-
 	// Booster
 	S_BOOSTERSOUND,
 	S_YELLOWBOOSTERROLLER,
@@ -4869,7 +4821,7 @@ typedef enum state
 	S_SONICBUSH,
 
 	// Marble Zone
-	S_FLAMEPARTICLE,
+	S_MARBLEFLAMEPARTICLE,
 	S_MARBLETORCH,
 	S_MARBLELIGHT,
 	S_MARBLEBURNER,
@@ -4881,12 +4833,6 @@ typedef enum state
 	// Rusty Rig
 	S_RUSTYLAMP_ORANGE,
 	S_RUSTYCHAIN,
-
-	// D2 Balloon Panic
-	S_BALLOON,
-	S_BALLOONPOP1,
-	S_BALLOONPOP2,
-	S_BALLOONPOP3,
 
 	// Smokin' & Vapin' (Don't try this at home, kids!)
 	S_PETSMOKE0,
@@ -4951,8 +4897,8 @@ typedef enum state
 	S_CDTREEBSP,
 
 	// Daytona Speedway
-	S_PINETREE,
-	S_PINETREE_SIDE,
+	S_DAYTONAPINETREE,
+	S_DAYTONAPINETREE_SIDE,
 
 	// Egg Zeppelin
 	S_EZZPROPELLER,
@@ -6099,7 +6045,7 @@ typedef enum mobj_type
 	MT_SONICBUSH,
 
 	// Marble Zone
-	MT_FLAMEPARTICLE,
+	MT_MARBLEFLAMEPARTICLE,
 	MT_MARBLETORCH,
 	MT_MARBLELIGHT,
 	MT_MARBLEBURNER,
@@ -6110,9 +6056,6 @@ typedef enum mobj_type
 	// Rusty Rig
 	MT_RUSTYLAMP_ORANGE,
 	MT_RUSTYCHAIN,
-
-	// D2 Balloon Panic
-	MT_BALLOON,
 
 	// Smokin' & Vapin' (Don't try this at home, kids!)
 	MT_PETSMOKER,
@@ -6155,8 +6098,8 @@ typedef enum mobj_type
 	MT_CDTREEB,
 
 	// Daytona Speedway
-	MT_PINETREE,
-	MT_PINETREE_SIDE,
+	MT_DAYTONAPINETREE,
+	MT_DAYTONAPINETREE_SIDE,
 
 	// Egg Zeppelin
 	MT_EZZPROPELLER,

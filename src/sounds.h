@@ -280,7 +280,7 @@ typedef enum
 	sfx_vwre,
 	sfx_bowl,
 	sfx_chuchu,
-	sfx_bsnipe,
+	//sfx_bsnipe,
 	sfx_sprong,
 	sfx_lvfal1,
 	sfx_pscree,
