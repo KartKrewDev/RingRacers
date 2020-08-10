@@ -94,8 +94,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
 INT16 G_ClipAimingPitch(INT32 *aiming);
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming);
 
-boolean InputDown(INT32 gc, UINT8 p);
-INT32 JoyAxis(axis_input_e axissel, UINT8 p);
+INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel);
 
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
