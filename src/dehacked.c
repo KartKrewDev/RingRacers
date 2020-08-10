@@ -4344,9 +4344,6 @@ static void readmaincfg(MYFILE *f)
 				// range check, you morons.
 				if (creditscutscene > 128)
 					creditscutscene = 128;
-			else if (fastcmp(word, "DISABLESPEEDADJUST"))
-			{
-				disableSpeedAdjust = (value || word2[0] == 'T' || word2[0] == 'Y');
 			}
 			else if (fastcmp(word, "NUMDEMOS"))
 			{
@@ -4402,13 +4399,10 @@ static void readmaincfg(MYFILE *f)
 				// can't use sprintf since there is %u in savegamename
 				strcatbf(savegamename, srb2home, PATHSEP);
 
-<<<<<<< HEAD
-				refreshdirmenu |= REFRESHDIR_GAMEDATA;
-=======
 				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
 				strcatbf(liveeventbackup, srb2home, PATHSEP);
 
->>>>>>> srb2/next
+				refreshdirmenu |= REFRESHDIR_GAMEDATA;
 				gamedataadded = true;
 				titlechanged = true;
 			}
@@ -11246,24 +11240,7 @@ struct {
 
 	// Character flags (skinflags_t)
 	{"SF_HIRES",SF_HIRES},
-<<<<<<< HEAD
-=======
-	{"SF_NOSKID",SF_NOSKID},
-	{"SF_NOSPEEDADJUST",SF_NOSPEEDADJUST},
-	{"SF_RUNONWATER",SF_RUNONWATER},
-	{"SF_NOJUMPSPIN",SF_NOJUMPSPIN},
-	{"SF_NOJUMPDAMAGE",SF_NOJUMPDAMAGE},
-	{"SF_STOMPDAMAGE",SF_STOMPDAMAGE},
-	{"SF_MARIODAMAGE",SF_MARIODAMAGE},
 	{"SF_MACHINE",SF_MACHINE},
-	{"SF_DASHMODE",SF_DASHMODE},
-	{"SF_FASTEDGE",SF_FASTEDGE},
-	{"SF_MULTIABILITY",SF_MULTIABILITY},
-	{"SF_NONIGHTSROTATION",SF_NONIGHTSROTATION},
-	{"SF_NONIGHTSSUPER",SF_NONIGHTSSUPER},
-	{"SF_NOSUPERSPRITES",SF_NOSUPERSPRITES},
-	{"SF_NOSUPERJUMPBOOST",SF_NOSUPERJUMPBOOST},
->>>>>>> srb2/next
 
 	// Dashmode constants
 	{"DASHMODE_THRESHOLD",DASHMODE_THRESHOLD},
@@ -11632,7 +11609,12 @@ struct {
 	{"TC_BLINK",TC_BLINK},
 	{"TC_DASHMODE",TC_DASHMODE},
 
-<<<<<<< HEAD
+	// marathonmode flags
+	{"MA_INIT",MA_INIT},
+	{"MA_RUNNING",MA_RUNNING},
+	{"MA_NOCUTSCENES",MA_NOCUTSCENES},
+	{"MA_INGAME",MA_INGAME},
+
 	// SRB2Kart
 	// kartitems_t
 #define FOREACH( name, n ) { #name, KITEM_ ## name }
@@ -11655,14 +11637,6 @@ struct {
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
 
 #endif
-=======
-	// marathonmode flags
-	{"MA_INIT",MA_INIT},
-	{"MA_RUNNING",MA_RUNNING},
-	{"MA_NOCUTSCENES",MA_NOCUTSCENES},
-	{"MA_INGAME",MA_INGAME},
->>>>>>> srb2/next
-
 	{NULL,0}
 };
 
@@ -12244,12 +12218,8 @@ static inline int lib_freeslot(lua_State *L)
 					CONS_Printf("State S_%s allocated.\n",word);
 					FREE_STATES[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 					strcpy(FREE_STATES[i],word);
-<<<<<<< HEAD
 					freeslotusage[0][0]++;
-					lua_pushinteger(L, i);
-=======
 					lua_pushinteger(L, S_FIRSTFREESLOT + i);
->>>>>>> srb2/next
 					r++;
 					break;
 				}
@@ -12264,12 +12234,8 @@ static inline int lib_freeslot(lua_State *L)
 					CONS_Printf("MobjType MT_%s allocated.\n",word);
 					FREE_MOBJS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 					strcpy(FREE_MOBJS[i],word);
-<<<<<<< HEAD
 					freeslotusage[1][0]++;
-					lua_pushinteger(L, i);
-=======
 					lua_pushinteger(L, MT_FIRSTFREESLOT + i);
->>>>>>> srb2/next
 					r++;
 					break;
 				}
