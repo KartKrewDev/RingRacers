@@ -36,11 +36,7 @@ enum skin {
 	skin_followitem,
 	skin_starttranscolor,
 	skin_prefcolor,
-	skin_supercolor,
-	skin_prefoppositecolor,
-	skin_highresscale,
-	skin_contspeed,
-	skin_contangle,
+    skin_highresscale,
 	skin_soundsid,
 	skin_availability
 };
@@ -62,11 +58,7 @@ static const char *const skin_opt[] = {
 	"followitem",
 	"starttranscolor",
 	"prefcolor",
-	"supercolor",
-	"prefoppositecolor",
 	"highresscale",
-	"contspeed",
-	"contangle",
 	"soundsid",
 	"availability",
 	NULL};
@@ -77,6 +69,7 @@ static int skin_get(lua_State *L)
 {
 	skin_t *skin = *((skin_t **)luaL_checkudata(L, 1, META_SKIN));
 	enum skin field = luaL_checkoption(L, 2, NULL, skin_opt);
+	INT32 i;
 
 	// skins are always valid, only added, never removed
 	I_Assert(skin != NULL);
@@ -128,7 +121,7 @@ static int skin_get(lua_State *L)
 	case skin_kartweight:
 		lua_pushinteger(L, skin->kartweight);
 		break;
-	//
+	// 
 	case skin_followitem:
 		lua_pushinteger(L, skin->followitem);
 		break;
@@ -138,20 +131,8 @@ static int skin_get(lua_State *L)
 	case skin_prefcolor:
 		lua_pushinteger(L, skin->prefcolor);
 		break;
-	case skin_supercolor:
-		lua_pushinteger(L, skin->supercolor);
-		break;
-	case skin_prefoppositecolor:
-		lua_pushinteger(L, skin->prefoppositecolor);
-		break;
 	case skin_highresscale:
 		lua_pushinteger(L, skin->highresscale);
-		break;
-	case skin_contspeed:
-		lua_pushinteger(L, skin->contspeed);
-		break;
-	case skin_contangle:
-		lua_pushinteger(L, skin->contangle);
 		break;
 	case skin_soundsid:
 		LUA_PushUserdata(L, skin->soundsid, META_SOUNDSID);

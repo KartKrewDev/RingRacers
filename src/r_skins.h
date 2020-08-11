@@ -37,18 +37,19 @@ typedef struct
 	skinflags_t flags;
 
 	char realname[SKINNAMESIZE+1]; // Display name for level completion.
+	char hudname[SKINNAMESIZE+1]; // HUD name to display (officially exactly 5 characters long)
+	char facerank[9], facewant[9], facemmap[9]; // Arbitrarily named patch lumps
 
+	// SRB2kart
 	UINT8 kartspeed;
 	UINT8 kartweight;
+	//
 
 	INT32 followitem;
 
 	// Definable color translation table
 	UINT8 starttranscolor;
 	UINT16 prefcolor;
-	UINT16 supercolor;
-	UINT16 prefoppositecolor; // if 0 use tables instead
-
 	fixed_t highresscale; // scale of highres, default is 0.5
 
 	// specific sounds per skin
@@ -59,6 +60,8 @@ typedef struct
 	spriteinfo_t sprinfo[NUMPLAYERSPRITES*2];
 
 	char rivals[SKINRIVALS][SKINNAMESIZE+1]; // Your top 3 rivals for GP mode. Uses names so that you can reference skins that aren't added
+
+	UINT8 availability; // lock?
 } skin_t;
 
 /// Externs
