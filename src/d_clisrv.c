@@ -1464,7 +1464,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 			if (snprintf(netbuffer->u.serverinfo.maptitle,
 				sizeof netbuffer->u.serverinfo.maptitle,
 				"%s",
-				mapheaderinfo[gamemap-1]->lvlttl) < 0);
+				mapheaderinfo[gamemap-1]->lvlttl) < 0)
 			{
 				// If there's an encoding error, send UNKNOWN, we accept that the above may be truncated
 				strncpy(netbuffer->u.serverinfo.maptitle, "UNKNOWN", sizeof netbuffer->u.serverinfo.maptitle);
@@ -1520,7 +1520,7 @@ static void SV_SendPlayerInfo(INT32 node)
 	{
 		if (i >= MAXPLAYERS)
 		{
-			netbuffer->u.playerinfo[i].node = 255;
+			netbuffer->u.playerinfo[i].num = 255; // Master Server compat
 			continue;
 		}
 
@@ -1644,7 +1644,7 @@ static boolean SV_SendServerConfig(INT32 node)
 	op = p = netbuffer->u.servercfg.varlengthinputs;
 
 	CV_SavePlayerNames(&p);
-	CV_SaveNetVars(&p, false);
+	CV_SaveNetVars(&p);
 	{
 		const size_t len = sizeof (serverconfig_pak) + (size_t)(p - op);
 
@@ -1840,8 +1840,8 @@ static void CL_LoadReceivedSavegame(void)
 				CON_LogMessage(va(" %s", mapheaderinfo[gamemap-1]->zonttl));
 			else if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
 				CON_LogMessage(M_GetText(" ZONE"));
-			if (strlen(mapheaderinfo[gamemap-1]->actnum) > 0)
-				CON_LogMessage(va(" %s", mapheaderinfo[gamemap-1]->actnum));
+			if (mapheaderinfo[gamemap-1]->actnum > 0)
+				CON_LogMessage(va(" %d", mapheaderinfo[gamemap-1]->actnum));
 		}
 
 		CON_LogMessage("\"\n");
