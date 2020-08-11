@@ -3107,7 +3107,7 @@ static void HWR_Subsector(size_t num)
 				}
 				else
 				{
-					HWR_GetLevelFlat(&levelflats[*rover->bottompic], R_NoEncore(gr_frontsector, false));
+					HWR_GetLevelFlat(&levelflats[*rover->bottompic], R_NoEncore(gl_frontsector, false));
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 					HWR_RenderPlane(sub, &extrasubsectors[num], false, *rover->bottomheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->bottompic],
 					                rover->master->frontsector, 255, *gl_frontsector->lightlist[light].extra_colormap);
@@ -3152,7 +3152,7 @@ static void HWR_Subsector(size_t num)
 				}
 				else
 				{
-					HWR_GetLevelFlat(&levelflats[*rover->toppic], R_NoEncore(gr_frontsector, true));
+					HWR_GetLevelFlat(&levelflats[*rover->toppic], R_NoEncore(gl_frontsector, true));
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 					HWR_RenderPlane(sub, &extrasubsectors[num], true, *rover->topheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->toppic],
 					                  rover->master->frontsector, 255, *gl_frontsector->lightlist[light].extra_colormap);

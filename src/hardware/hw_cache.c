@@ -857,7 +857,7 @@ void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap)
 		return;
 
 	if (levelflat->type == LEVELFLAT_FLAT)
-		HWR_LiterallyGetFlat(levelflat->u.flat.lumpnum);
+		HWR_LiterallyGetFlat(levelflat->u.flat.lumpnum, noencoremap);
 	else if (levelflat->type == LEVELFLAT_TEXTURE)
 	{
 		GLMapTexture_t *grtex;

@@ -14,6 +14,7 @@
 #define _HWR_GLOB_H_
 
 #include "hw_defs.h"
+#include "hw_main.h"
 #include "../m_misc.h"
 #include "../r_defs.h"
 #include "../p_setup.h"
@@ -91,7 +92,7 @@ void HWR_FreeTextureCache(void);
 void HWR_FreeMipmapCache(void);
 void HWR_FreeExtraSubsectors(void);
 
-void HWR_GetLevelFlat(levelflat_t *levelflat);
+void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap);
 void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum, boolean noencoremap);
 GLMapTexture_t *HWR_GetTexture(INT32 tex);
 void HWR_GetPatch(GLPatch_t *gpatch);

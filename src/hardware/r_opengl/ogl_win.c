@@ -566,20 +566,6 @@ EXPORT void HWRAPI(FinishUpdate) (INT32 waitvbl)
 // -----------------+
 EXPORT void HWRAPI(SetPalette) (RGBA_t *pal)
 {
-<<<<<<< HEAD
-	INT32 i;
-
-	for (i = 0; i < 256; i++)
-	{
-		myPaletteData[i].s.red   = (UINT8)MIN((pal[i].s.red*gamma->s.red)/127,     255);
-		myPaletteData[i].s.green = (UINT8)MIN((pal[i].s.green*gamma->s.green)/127, 255);
-		myPaletteData[i].s.blue  = (UINT8)MIN((pal[i].s.blue*gamma->s.blue)/127,   255);
-		myPaletteData[i].s.alpha = pal[i].s.alpha;
-	}
-
-	// on a palette change, you have to reload all of the textures
-	Flush();
-=======
 	size_t palsize = (sizeof(RGBA_t) * 256);
 	// on a palette change, you have to reload all of the textures
 	if (memcmp(&myPaletteData, pal, palsize))
@@ -587,7 +573,6 @@ EXPORT void HWRAPI(SetPalette) (RGBA_t *pal)
 		memcpy(&myPaletteData, pal, palsize);
 		Flush();
 	}
->>>>>>> srb2/next
 }
 
 #endif
