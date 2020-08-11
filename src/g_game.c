@@ -2074,9 +2074,9 @@ static inline void G_PlayerFinishLevel(INT32 player)
 		if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
 		{
 			matchesplayed++;
-			if (M_UpdateUnlockablesAndExtraEmblems(true))
+			if (M_UpdateUnlockablesAndExtraEmblems())
 				S_StartSound(NULL, sfx_ncitem);
-			G_SaveGameData(true);
+			G_SaveGameData();
 		}
 
 		legitimateexit = false;
@@ -3424,20 +3424,8 @@ static void G_UpdateVisited(void)
 
 static boolean CanSaveLevel(INT32 mapnum)
 {
-	// You can never save in a special stage.
-	if (G_IsSpecialStage(mapnum))
-		return false;
-
-	// If the game is complete for this save slot, then any level can save!
-	if (gamecomplete)
-		return true;
-
-	// Be kind with Marathon Mode live event backups.
-	if (marathonmode)
-		return true;
-
-	// Any levels that have the savegame flag can save normally.
-	return (mapheaderinfo[mapnum-1] && (mapheaderinfo[mapnum-1]->levelflags & LF_SAVEGAME));
+	// SRB2Kart:
+	return false;
 }
 
 static void G_HandleSaveLevel(void)
@@ -4042,8 +4030,6 @@ void G_SaveGameData(boolean force)
 	INT32 i, j;
 	UINT8 btemp;
 
-	//INT32 curmare;
-
 	if (!gamedataloaded)
 		return; // If never loaded (-nodata), don't save
 
@@ -4051,13 +4037,6 @@ void G_SaveGameData(boolean force)
 	if (!save_p)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for saving game data\n"));
-		return;
-	}
-
-	if (majormods && !force)
-	{
-		free(savebuffer);
-		save_p = savebuffer = NULL;
 		return;
 	}
 
@@ -4113,7 +4092,6 @@ void G_SaveGameData(boolean force)
 
 	WRITEUINT32(save_p, timesBeaten);
 	WRITEUINT32(save_p, timesBeatenWithEmeralds);
-	//WRITEUINT32(save_p, timesBeatenUltimate);
 
 	// Main records
 	for (i = 0; i < NUMMAPS; i++)
@@ -4122,8 +4100,6 @@ void G_SaveGameData(boolean force)
 		{
 			WRITEUINT32(save_p, mainrecords[i]->time);
 			WRITEUINT32(save_p, mainrecords[i]->lap);
-			//WRITEUINT32(save_p, mainrecords[i]->score);
-			//WRITEUINT16(save_p, mainrecords[i]->rings);
 		}
 		else
 		{
@@ -4132,25 +4108,6 @@ void G_SaveGameData(boolean force)
 		}
 		WRITEUINT8(save_p, 0); // compat
 	}
-
-	// NiGHTS records
-	/*for (i = 0; i < NUMMAPS; i++)
-	{
-		if (!nightsrecords[i] || !nightsrecords[i]->nummares)
-		{
-			WRITEUINT8(save_p, 0);
-			continue;
-		}
-
-		WRITEUINT8(save_p, nightsrecords[i]->nummares);
-
-		for (curmare = 0; curmare < (nightsrecords[i]->nummares + 1); ++curmare)
-		{
-			WRITEUINT32(save_p, nightsrecords[i]->score[curmare]);
-			WRITEUINT8(save_p, nightsrecords[i]->grade[curmare]);
-			WRITEUINT32(save_p, nightsrecords[i]->time[curmare]);
-		}
-	}*/
 
 	length = save_p - savebuffer;
 

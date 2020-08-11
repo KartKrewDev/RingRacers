@@ -1459,7 +1459,7 @@ void D_SRB2Main(void)
 				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
 				if (num <= NUMMAPS && mapheaderinfo[num - 1])
 				{
-					mapheaderinfo[num - 1]->menuflags |= LF2_EXISTSHACK;
+					mapheaderinfo[num - 1]->alreadyExists = true;
 				}
 			}
 		}
@@ -1490,9 +1490,12 @@ void D_SRB2Main(void)
 				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
 				if (num <= NUMMAPS && mapheaderinfo[num - 1])
 				{
-					if (mapheaderinfo[num - 1]->menuflags & LF2_EXISTSHACK)
+					if (mapheaderinfo[num - 1]->alreadyExists != false)
+					{
 						G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-					mapheaderinfo[num - 1]->menuflags |= LF2_EXISTSHACK;
+					}
+
+					mapheaderinfo[num - 1]->alreadyExists = true;
 				}
 
 				CONS_Printf("%s\n", name);

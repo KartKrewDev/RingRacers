@@ -12229,7 +12229,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->flags2 |= MF2_INVERTAIMABLE;
 			break;
 		case MT_FLICKY_08:
-			mobj->color = (P_RandomChance(FRACUNIT/2) ? SKINCOLOR_RED : SKINCOLOR_AQUA);
+			mobj->color = (P_RandomChance(FRACUNIT/2) ? SKINCOLOR_RED : SKINCOLOR_AQUAMARINE);
 			break;
 		case MT_BALLOON:
 			mobj->color = SKINCOLOR_RED;

@@ -962,11 +962,11 @@ static void Y_UpdateRecordReplays(void)
 	if ((earnedEmblems = M_CheckLevelEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
-	if (M_UpdateUnlockablesAndExtraEmblems(false))
+	if (M_UpdateUnlockablesAndExtraEmblems())
 		S_StartSound(NULL, sfx_ncitem);
 
 	// SRB2Kart - save here so you NEVER lose your earned times/medals.
-	G_SaveGameData(false);
+	G_SaveGameData();
 
 	// Update timeattack menu's replay availability.
 	CV_AddValue(&cv_nextmap, 1);
@@ -1117,9 +1117,9 @@ static void K_UpdatePowerLevels(void)
 		{
 			CONS_Debug(DBG_GAMELOGIC, "Player %d is you! Saving...\n", i);
 			vspowerlevel[powertype] = clientpowerlevels[i][powertype];
-			if (M_UpdateUnlockablesAndExtraEmblems(true))
+			if (M_UpdateUnlockablesAndExtraEmblems())
 				S_StartSound(NULL, sfx_ncitem);
-			G_SaveGameData(true);
+			G_SaveGameData();
 		}
 	}
 }

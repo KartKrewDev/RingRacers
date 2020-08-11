@@ -3113,7 +3113,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					unlocktriggers |= 1 << trigid;
 
 					// Unlocked something?
-					if (M_UpdateUnlockablesAndExtraEmblems(false))
+					if (M_UpdateUnlockablesAndExtraEmblems())
 					{
 						S_StartSound(NULL, sfx_s3k68);
 						G_SaveGameData(); // only save if unlocked something

@@ -578,10 +578,10 @@ static int libd_getSprite2Patch(lua_State *L)
 
 	lua_remove(L, 1); // remove skin now
 
-	if (lua_isnumber(L, 1)) // sprite number given, e.g. SPR2_STND
+	if (lua_isnumber(L, 1)) // sprite number given, e.g. SPR2_STIL
 	{
 		j = lua_tonumber(L, 1);
-		if (j & FF_SPR2SUPER) // e.g. SPR2_STND|FF_SPR2SUPER
+		if (j & FF_SPR2SUPER) // e.g. SPR2_STIL|FF_SPR2SUPER
 		{
 			super = true;
 			j &= ~FF_SPR2SUPER; // remove flag so the next check doesn't fail

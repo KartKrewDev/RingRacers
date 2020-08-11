@@ -1162,7 +1162,7 @@ static UINT8 HWR_GetModelSprite2(md2_t *md2, skin_t *skin, UINT8 spr2, player_t 
 		return 0;
 
 	while (!md2->model->spr2frames[spr2].numframes
-		&& spr2 != SPR2_STND
+		&& spr2 != SPR2_STIL
 		&& ++i != 32) // recursion limiter
 	{
 		if (spr2 & FF_SPR2SUPER)

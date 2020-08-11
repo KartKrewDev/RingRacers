@@ -180,14 +180,11 @@ void M_CheckUnlockConditions(void)
 	}
 }
 
-UINT8 M_UpdateUnlockablesAndExtraEmblems(boolean force)
+UINT8 M_UpdateUnlockablesAndExtraEmblems(void)
 {
 	INT32 i;
 	char cechoText[992] = "";
 	UINT8 cechoLines = 0;
-
-	if (majormods && !force) // SRB2Kart: for enabling unlocks online in modified servers
-		return false;
 
 	M_CheckUnlockConditions();
 
@@ -425,24 +422,6 @@ UINT8 M_GotEnoughEmblems(INT32 number)
 	return false;
 }
 
-/*UINT8 M_GotHighEnoughScore(INT32 tscore)
-{
-	INT32 mscore = 0;
-	INT32 i;
-
-	for (i = 0; i < NUMMAPS; ++i)
-	{
-		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
-			continue;
-		if (!mainrecords[i])
-			continue;
-
-		if ((mscore += mainrecords[i]->score) > tscore)
-			return true;
-	}
-	return false;
-}*/
-
 UINT8 M_GotLowEnoughTime(INT32 tictime)
 {
 	INT32 curtics = 0;
@@ -450,7 +429,7 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 
 	for (i = 0; i < NUMMAPS; ++i)
 	{
-		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
+		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_TIMEATTACK))
 			continue;
 
 		if (!mainrecords[i] || !mainrecords[i]->time)
@@ -460,24 +439,6 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 	}
 	return true;
 }
-
-/*UINT8 M_GotHighEnoughRings(INT32 trings)
-{
-	INT32 mrings = 0;
-	INT32 i;
-
-	for (i = 0; i < NUMMAPS; ++i)
-	{
-		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
-			continue;
-		if (!mainrecords[i])
-			continue;
-
-		if ((mrings += mainrecords[i]->rings) > trings)
-			return true;
-	}
-	return false;
-}*/
 
 // ----------------
 // Misc Emblem shit

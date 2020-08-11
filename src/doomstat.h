@@ -404,6 +404,9 @@ typedef struct
 
 	SINT8 musforcereset; ///< Force resetmusic (-1 for default; 0 for force off; 1 for force on)
 
+	// SRB2Kart: Keeps track of if a map lump exists, so we can tell when a map is being replaced.
+	boolean alreadyExists;
+
 	// Lua stuff.
 	// (This is not ifdeffed so the map header structure can stay identical, just in case.)
 	UINT8 numCustomOptions;     ///< Internal. For Lua custom value support.
@@ -412,26 +415,13 @@ typedef struct
 
 // level flags
 #define LF_SCRIPTISFILE       (1<<0) ///< True if the script is a file, not a lump.
-#define LF_SPEEDMUSIC         (1<<1) ///< Speed up act music for super sneakers
-#define LF_NOSSMUSIC          (1<<2) ///< Disable Super Sonic music
-#define LF_NORELOAD           (1<<3) ///< Don't reload level on death
-#define LF_NOZONE             (1<<4) ///< Don't include "ZONE" on level title
-#define LF_SECTIONRACE        (1<<5) ///< Section race level
-#define LF_MIXNIGHTSCOUNTDOWN (1<<6) ///< Play sfx_timeup instead of music change for NiGHTS countdown
-#define LF_WARNINGTITLE       (1<<7) ///< WARNING! WARNING! WARNING! WARNING!
-
-#define LF_NOTITLECARDFIRST        (1<<8)
-#define LF_NOTITLECARDRESPAWN      (1<<9)
-#define LF_NOTITLECARDRECORDATTACK (1<<10)
-#define LF_NOTITLECARD  (LF_NOTITLECARDFIRST|LF_NOTITLECARDRESPAWN|LF_NOTITLECARDRECORDATTACK) ///< Don't start the title card at all
+#define LF_NOZONE             (1<<1) ///< Don't include "ZONE" on level title
+#define LF_SECTIONRACE        (1<<2) ///< Section race level
 
 #define LF2_HIDEINMENU    (1<<0) ///< Hide in the multiplayer menu
 #define LF2_HIDEINSTATS   (1<<1) ///< Hide in the statistics screen
-#define LF2_RECORDATTACK  (1<<2) ///< Show this map in Time Attack
-#define LF2_NIGHTSATTACK  (1<<3) ///< Show this map in NiGHTS mode menu
-#define LF2_NOVISITNEEDED (1<<4) ///< Available in time attack/nights mode without visiting the level
-#define LF2_WIDEICON      (1<<5) ///< If you're in a circumstance where it fits, use a wide map icon
-#define LF2_EXISTSHACK    (1<<6) ///< Map lump exists; as noted, a single-bit hack that can be freely movable to other variables without concern.
+#define LF2_TIMEATTACK    (1<<2) ///< Show this map in Time Attack modes
+#define LF2_VISITNEEDED   (1<<3) ///< Not available in Time Attack modes until you visit the level
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 
@@ -667,7 +657,6 @@ extern SINT8 pickedvote;
 
 extern UINT32 timesBeaten; // # of times the game has been beaten.
 extern UINT32 timesBeatenWithEmeralds;
-//extern UINT32 timesBeatenUltimate;
 
 // ===========================
 // Internal parameters, fixed.

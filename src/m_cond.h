@@ -153,7 +153,7 @@ void M_ClearSecrets(void);
 // Updating conditions and unlockables
 void M_CheckUnlockConditions(void);
 UINT8 M_CheckCondition(condition_t *cn);
-UINT8 M_UpdateUnlockablesAndExtraEmblems(boolean force);
+UINT8 M_UpdateUnlockablesAndExtraEmblems(void);
 void M_SilentUpdateUnlockablesAndEmblems(void);
 UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);

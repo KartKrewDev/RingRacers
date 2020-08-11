@@ -97,7 +97,7 @@ static UINT8 cheatf_warp(void)
 
 	if (success)
 	{
-		G_SaveGameData(true); //G_SetGameModified(false);
+		G_SaveGameData(); //G_SetGameModified(false);
 		S_StartSound(0, sfx_kc42);
 	}
 

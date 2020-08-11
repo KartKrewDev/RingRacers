@@ -62,7 +62,7 @@ UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player)
 		return 0;
 
 	while (!skin->sprites[spr2].numframes
-		&& spr2 != SPR2_STND
+		&& spr2 != SPR2_STIL
 		&& ++i < 32) // recursion limiter
 	{
 		if (spr2 & FF_SPR2SUPER)

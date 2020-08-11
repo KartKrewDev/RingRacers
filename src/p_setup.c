@@ -343,7 +343,8 @@ void P_DeleteFlickies(INT16 i)
 static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
-	INT32 exists = (mapheaderinfo[num]->menuflags & LF2_EXISTSHACK);
+
+	boolean exists = (mapheaderinfo[gamemap-1]->alreadyExists == true);
 
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->selectheading[0] = '\0';
@@ -393,7 +394,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->bonustype = 0;
 	mapheaderinfo[num]->maxbonuslives = -1;
 	mapheaderinfo[num]->levelflags = 0;
-	mapheaderinfo[num]->menuflags = exists; // see p_setup.c - prevents replacing maps in addons with easier versions
+	mapheaderinfo[num]->menuflags = 0;
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
 #if 1 // equivalent to "FlickyList = DEMO"
@@ -402,6 +403,10 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	P_DeleteFlickies(num);
 #endif
 	P_DeleteGrades(num);
+
+	// see p_setup.c - prevents replacing maps in addons with different versions
+	mapheaderinfo[num]->alreadyExists = exists;
+
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
 }
@@ -4546,9 +4551,12 @@ boolean P_AddWadFile(const char *wadfilename)
 			// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
 			if (num <= NUMMAPS && mapheaderinfo[num-1])
 			{
-				if (mapheaderinfo[num-1]->menuflags & LF2_EXISTSHACK)
+				if (mapheaderinfo[num - 1]->alreadyExists != false)
+				{
 					G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-				mapheaderinfo[num-1]->menuflags |= LF2_EXISTSHACK;
+				}
+
+				mapheaderinfo[num - 1]->alreadyExists = true;
 			}
 
 			//If you replaced the map you're on, end the level when done.

@@ -327,8 +327,8 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	if (playernum == consoleplayer)
 	{
 		vspowerlevel[powertype] = clientpowerlevels[playernum][powertype];
-		if (M_UpdateUnlockablesAndExtraEmblems(true))
+		if (M_UpdateUnlockablesAndExtraEmblems())
 			S_StartSound(NULL, sfx_ncitem);
-		G_SaveGameData(true); // save your punishment!
+		G_SaveGameData(); // save your punishment!
 	}
 }

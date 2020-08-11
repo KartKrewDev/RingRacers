@@ -705,7 +705,7 @@ static const char *credits[] = {
 #define CREDITS_RIGHT ((BASEVIDWIDTH) - 8)
 
 static struct {
-	UINT32 x;
+	UINT32 x, y;
 	const char *patch;
 	UINT8 colorize;
 } credits_pics[] = {
@@ -768,7 +768,6 @@ void F_StartCredits(void)
 void F_CreditDrawer(void)
 {
 	UINT16 i;
-	INT16 zagpos = (timetonext - finalecount - animtimer) % 32;
 	fixed_t y = (80<<FRACBITS) - (animtimer<<FRACBITS>>1);
 
 	//V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -1031,7 +1030,7 @@ void F_GameEvaluationDrawer(void)
 		V_DrawFixedPatch(x, y, scale, 0, rockpat, colormap[0]);
 		if (trans < 10)
 		{
-			colormap[1] = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_AQUA, GTC_CACHE);
+			colormap[1] = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_AQUAMARINE, GTC_CACHE);
 			V_DrawFixedPatch(x, y, scale, trans<<V_ALPHASHIFT, rockpat, colormap[1]);
 		}
 		if (goodending)
@@ -1046,7 +1045,9 @@ void F_GameEvaluationDrawer(void)
 					// if j == 0 - alternate between 0 and 1
 					//         1 -                   1 and 2
 					//         2 -                   2 and not rendered
-					V_DrawFixedPatch(x+sparkloffs[j-1][0], y+sparkloffs[j-1][1], FRACUNIT, 0, W_CachePatchName(va("ENDSPKL%.1d", (j - ((sparklloop & 1) ? 0 : 1))), PU_PATCH), R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_AQUA, GTC_CACHE));
+					V_DrawFixedPatch(x+sparkloffs[j-1][0], y+sparkloffs[j-1][1], FRACUNIT, 0,
+						W_CachePatchName(va("ENDSPKL%.1d", (j - ((sparklloop & 1) ? 0 : 1))), PU_PATCH),
+						R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_AQUAMARINE, GTC_CACHE));
 				}
 				j--;
 			}
@@ -1110,10 +1111,7 @@ void F_GameEvaluationDrawer(void)
 		const char *rtatext, *cuttext;
 		rtatext = (marathonmode & MA_INGAME) ? "In-game timer" : "RTA timer";
 		cuttext = (marathonmode & MA_NOCUTSCENES) ? "" : " w/ cutscenes";
-		if (botskin)
-			endingtext = va("%s & %s, %s%s", skins[players[consoleplayer].skin].realname, skins[botskin-1].realname, rtatext, cuttext);
-		else
-			endingtext = va("%s, %s%s", skins[players[consoleplayer].skin].realname, rtatext, cuttext);
+		endingtext = va("%s, %s%s", skins[players[consoleplayer].skin].realname, rtatext, cuttext);
 		V_DrawCenteredString(BASEVIDWIDTH/2, 182, V_SNAPTOBOTTOM|(ultimatemode ? V_REDMAP : V_YELLOWMAP), endingtext);
 	}
 }
@@ -1171,9 +1169,6 @@ void F_GameEvaluationTicker(void)
 
 			if (ALL7EMERALDS(emeralds))
 				++timesBeatenWithEmeralds;
-
-			if (ultimatemode)
-				++timesBeatenUltimate;
 
 			if (M_UpdateUnlockablesAndExtraEmblems())
 				S_StartSound(NULL, sfx_s3k68);
@@ -1521,7 +1516,7 @@ void F_EndingDrawer(void)
 					trans = -trans;
 				if (trans < 10)
 					V_DrawFixedPatch(x, y, scale, trans<<V_ALPHASHIFT, rockpat,
-						R_GetTranslationColormap(TC_BLINK, SKINCOLOR_AQUA, GTC_CACHE));
+						R_GetTranslationColormap(TC_BLINK, SKINCOLOR_AQUAMARINE, GTC_CACHE));
 			}
 
 			if (goodending && finalecount > INFLECTIONPOINT)

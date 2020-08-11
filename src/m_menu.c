@@ -4326,8 +4326,8 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 			return true;*/
 		case LLM_TIMEATTACK:
 		case LLM_BREAKTHECAPSULES:
-			/*if (!(mapheaderinfo[mapnum]->menuflags & LF2_RECORDATTACK))
-				return false;*/
+			if (!(mapheaderinfo[mapnum]->menuflags & LF2_TIMEATTACK))
+				return false;
 
 			if ((levellistmode == LLM_TIMEATTACK && !(mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
 			|| (levellistmode == LLM_BREAKTHECAPSULES && !(mapheaderinfo[mapnum]->typeoflevel & TOL_BATTLE)))
@@ -4342,11 +4342,8 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 			if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
 				return false; // map hell
 
-			/*if (mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
-				return true;
-
-			if (!mapvisited[mapnum])
-				return false;*/
+			if ((mapheaderinfo[mapnum]->menuflags & LF2_VISITNEEDED) && !mapvisited[mapnum])
+				return false;
 
 			return true;
 		default:

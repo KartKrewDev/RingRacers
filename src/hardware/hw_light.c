@@ -9,7 +9,7 @@
 //-----------------------------------------------------------------------------
 /// \file hw_light.c
 /// \brief Corona/Dynamic/Static lighting add on by Hurdler
-///	!!! Under construction !!!\
+///	!!! Under construction !!!
 
 #include "../doomdef.h"
 
