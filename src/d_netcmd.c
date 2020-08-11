@@ -3067,7 +3067,7 @@ static void Command_Map_f(void)
 
 	if (mustmodifygame && option_force)
 	{
-		G_SetGameModified(false);
+		G_SetGameModified(multiplayer, true);
 	}
 
 	// new gametype value

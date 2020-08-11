@@ -1211,9 +1211,12 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
-	INT32 p;
-
+	INT32 i;
 	UINT16 wadnum;
+	lumpinfo_t *lumpinfo;
+	char *name;
+
+	INT32 p;
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
@@ -1465,7 +1468,7 @@ void D_SRB2Main(void)
 	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
 	if (!W_InitMultipleFiles(startuppwads, mainwads))
 		M_StartMessage(M_GetText("A PWAD file was not found or not valid.\nCheck log.txt to see which ones.\n\nPress ESC\n"), NULL, MM_NOTHING);
-	D_CleanFile();
+	D_CleanFile(startuppwads);
 
 	//
 	// search for maps... again.
@@ -1510,12 +1513,6 @@ void D_SRB2Main(void)
 	// Has to be done before the configuration file loads,
 	// but after the OpenGL library loads.
 	HWR_AddCommands();
-
-	if (rendermode == render_opengl)
-	{
-		for (i = 0; i < numwadfiles; i++)
-			HWR_LoadShaders(i, (wadfiles[i]->type == RET_PK3));
-	}
 #endif
 
 	//--------------------------------------------------------- CONSOLE
@@ -1583,7 +1580,7 @@ void D_SRB2Main(void)
 		else
 		{
 			if (!M_CheckParm("-server"))
-				G_SetGameModified(true);
+				G_SetGameModified(multiplayer, true);
 			autostart = true;
 		}
 	}
