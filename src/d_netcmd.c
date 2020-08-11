@@ -4658,8 +4658,7 @@ static void Command_Addfile(void)
 
 	// check total packet size and no of files currently loaded
 	// See W_LoadWadFile in w_wad.c
-	if ((numwadfiles >= MAX_WADFILES)
-	|| ((packetsizetally + nameonlylength(fn) + 22) > MAXFILENEEDED*sizeof(UINT8)))
+	if (numwadfiles >= MAX_WADFILES)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
 		return;

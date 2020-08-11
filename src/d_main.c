@@ -98,7 +98,7 @@ UINT8 window_notinfocus = false;
 //
 // DEMO LOOP
 //
-static char *startupwadfiles[MAX_WADFILES];
+static char *startupiwads[MAX_WADFILES];
 static char *startuppwads[MAX_WADFILES];
 
 boolean devparm = false; // started game with -devparm
@@ -1135,7 +1135,7 @@ static void IdentifyVersion(void)
 	if (mainresource == NULL)
 		I_Error("No more free memory to look in %s", srb2waddir);
 	else
-		sprintf(srb2wad, pandf, srb2waddir, "main.kart");
+		sprintf(mainresource, pandf, srb2waddir, "main.kart");
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
@@ -1143,7 +1143,7 @@ static void IdentifyVersion(void)
 
 	// Load the IWAD
 	if (mainresource != NULL && FIL_ReadFileOK(mainresource))
-		D_AddFile(mainresource);
+		D_AddFile(mainresource, startupiwads);
 	else
 		I_Error("main.kart not found! Expected in %s, ss file: %s \n", srb2waddir, mainresource);
 
@@ -1153,20 +1153,20 @@ static void IdentifyVersion(void)
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"));
-	D_AddFile(va(pandf,srb2waddir,"textures.pk3"));
-	D_AddFile(va(pandf,srb2waddir,"chars.pk3"));
-	D_AddFile(va(pandf,srb2waddir,"maps.pk3"));
+	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"), startupiwads);
+	D_AddFile(va(pandf,srb2waddir,"textures.pk3"), startupiwads);
+	D_AddFile(va(pandf,srb2waddir,"chars.pk3"), startupiwads);
+	D_AddFile(va(pandf,srb2waddir,"maps.pk3"), startupiwads);
 #ifdef USE_PATCH_FILE
-	D_AddFile(va(pandf,srb2waddir,"patch.pk3"));
+	D_AddFile(va(pandf,srb2waddir,"patch.pk3"), startupiwads);
 #endif
 
 #if 0
 	// TODO: pk3 doesn't support music replacement IIRC
 	// music barely benefits from the compression anyway
 	// would be nice for the folders, though
-	D_AddFile(va(pandf,srb2waddir,"sounds.pk3"));
-	D_AddFile(va(pandf,srb2waddir,"music.pk3"));
+	D_AddFile(va(pandf,srb2waddir,"sounds.pk3"), startupiwads);
+	D_AddFile(va(pandf,srb2waddir,"music.pk3"), startupiwads);
 
 #else
 
@@ -1177,7 +1177,7 @@ static void IdentifyVersion(void)
 		const char *musicpath = va(pandf,srb2waddir,str);\
 		int ms = W_VerifyNMUSlumps(musicpath); \
 		if (ms == 1) \
-			D_AddFile(musicpath); \
+			D_AddFile(musicpath, startupiwads); \
 		else if (ms == 0) \
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
 	}
@@ -1212,6 +1212,8 @@ D_ConvertVersionNumbers (void)
 void D_SRB2Main(void)
 {
 	INT32 p;
+
+	UINT16 wadnum;
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
@@ -1402,13 +1404,13 @@ void D_SRB2Main(void)
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding main IWAD and PWADs.\n");
-	if (!W_InitMultipleFiles(startupwadfiles, mainwads))
+	if (!W_InitMultipleFiles(startupiwads, mainwads))
 #ifdef _DEBUG
 		CONS_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #else
 		I_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #endif
-	D_CleanFile(startupwadfiles);
+	D_CleanFile(startupiwads);
 
 	mainwads = 0;
 
@@ -1433,8 +1435,6 @@ void D_SRB2Main(void)
 #endif
 
 #endif //ifndef DEVELOP
-
-	mainwadstally = packetsizetally;
 
 	//
 	// search for maps
