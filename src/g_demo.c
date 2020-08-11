@@ -1878,7 +1878,7 @@ void G_RecordDemo(const char *name)
 	demobuffer = malloc(maxsize);
 	demoend = demobuffer + maxsize;
 
-	demorecording = true;
+	demo.recording = true;
 }
 
 void G_RecordMetal(void)
@@ -2712,8 +2712,8 @@ void G_DoPlayDemo(char *defdemoname)
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
-		demoplayback = false;
-		titledemo = false;
+		demo.playback = false;
+		demo.title = false;
 		return;
 	}
 	demo_p += 12; // DEMOHEADER
@@ -2732,8 +2732,8 @@ void G_DoPlayDemo(char *defdemoname)
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
-		demoplayback = false;
-		titledemo = false;
+		demo.playback = false;
+		demo.title = false;
 		return;
 	}
 
@@ -3530,7 +3530,7 @@ static void G_StopDemoRecording(void)
 		saved = FIL_WriteFile(va(pandf, srb2home, demoname), demobuffer, demo_p - demobuffer); // finally output the file.
 	}
 	free(demobuffer);
-	demorecording = false;
+	demo.recording = false;
 
 	if (modeattacking != ATTACKING_RECORD)
 	{

@@ -52,7 +52,7 @@
 #include "k_pwrlv.h"
 #include "k_bot.h"
 
-#if (defined(CLIENT_LOADINGSCREEN) && !defined(NONET))
+#ifndef NONET
 // cl loading screen
 #include "v_video.h"
 #include "f_finale.h"
@@ -138,18 +138,12 @@ UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
 
 // Client specific
-static ticcmd_t localcmds;
-static ticcmd_t localcmds2;
-static ticcmd_t localcmds3;
-static ticcmd_t localcmds4;
+static ticcmd_t localcmds[MAXSPLITSCREENPLAYERS];
 static boolean cl_packetmissed;
 // here it is for the secondary local player (splitscreen)
 static UINT8 mynode; // my address pointofview server
 
-static UINT8 localtextcmd[MAXTEXTCMD];
-static UINT8 localtextcmd2[MAXTEXTCMD]; // splitscreen
-static UINT8 localtextcmd3[MAXTEXTCMD]; // splitscreen == 2
-static UINT8 localtextcmd4[MAXTEXTCMD]; // splitscreen == 3
+static UINT8 localtextcmd[MAXSPLITSCREENPLAYERS][MAXTEXTCMD];
 static tic_t neededtic;
 SINT8 servernode = 0; // the number of the server node
 char connectedservername[MAXSERVERNAME];
@@ -258,76 +252,27 @@ void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum))
 	listnetxcmd[id] = cmd_f;
 }
 
-void SendNetXCmd(netxcmd_t id, const void *param, size_t nparam)
+void SendNetXCmdForPlayer(UINT8 playerid, netxcmd_t id, const void *param, size_t nparam)
 {
-	if (localtextcmd[0]+2+nparam > MAXTEXTCMD)
+	if (localtextcmd[playerid][0]+2+nparam > MAXTEXTCMD)
 	{
 		// for future reference: if (cv_debug) != debug disabled.
-		CONS_Alert(CONS_ERROR, M_GetText("NetXCmd buffer full, cannot add netcmd %d! (size: %d, needed: %s)\n"), id, localtextcmd[0], sizeu1(nparam));
+		CONS_Alert(CONS_ERROR, M_GetText("NetXCmd buffer full, cannot add netcmd %d! (size: %d, needed: %s)\n"), id, localtextcmd[0][0], sizeu1(nparam));
 		return;
 	}
-	localtextcmd[0]++;
-	localtextcmd[localtextcmd[0]] = (UINT8)id;
+	localtextcmd[playerid][0]++;
+	localtextcmd[playerid][localtextcmd[playerid][0]] = (UINT8)id;
 	if (param && nparam)
 	{
-		M_Memcpy(&localtextcmd[localtextcmd[0]+1], param, nparam);
-		localtextcmd[0] = (UINT8)(localtextcmd[0] + (UINT8)nparam);
-	}
-}
-
-// splitscreen player
-void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam)
-{
-	if (localtextcmd2[0]+2+nparam > MAXTEXTCMD)
-	{
-		I_Error("No more place in the buffer for netcmd %d\n",id);
-		return;
-	}
-	localtextcmd2[0]++;
-	localtextcmd2[localtextcmd2[0]] = (UINT8)id;
-	if (param && nparam)
-	{
-		M_Memcpy(&localtextcmd2[localtextcmd2[0]+1], param, nparam);
-		localtextcmd2[0] = (UINT8)(localtextcmd2[0] + (UINT8)nparam);
-	}
-}
-
-void SendNetXCmd3(netxcmd_t id, const void *param, size_t nparam)
-{
-	if (localtextcmd3[0]+2+nparam > MAXTEXTCMD)
-	{
-		I_Error("No more place in the buffer for netcmd %d\n",id);
-		return;
-	}
-	localtextcmd3[0]++;
-	localtextcmd3[localtextcmd3[0]] = (UINT8)id;
-	if (param && nparam)
-	{
-		M_Memcpy(&localtextcmd3[localtextcmd3[0]+1], param, nparam);
-		localtextcmd3[0] = (UINT8)(localtextcmd3[0] + (UINT8)nparam);
-	}
-}
-
-void SendNetXCmd4(netxcmd_t id, const void *param, size_t nparam)
-{
-	if (localtextcmd4[0]+2+nparam > MAXTEXTCMD)
-	{
-		I_Error("No more place in the buffer for netcmd %d\n",id);
-		return;
-	}
-	localtextcmd4[0]++;
-	localtextcmd4[localtextcmd4[0]] = (UINT8)id;
-	if (param && nparam)
-	{
-		M_Memcpy(&localtextcmd4[localtextcmd4[0]+1], param, nparam);
-		localtextcmd4[0] = (UINT8)(localtextcmd4[0] + (UINT8)nparam);
+		M_Memcpy(&localtextcmd[playerid][localtextcmd[playerid][0]+1], param, nparam);
+		localtextcmd[playerid][0] = (UINT8)(localtextcmd[playerid][0] + (UINT8)nparam);
 	}
 }
 
 UINT8 GetFreeXCmdSize(void)
 {
 	// -1 for the size and another -1 for the ID.
-	return (UINT8)(localtextcmd[0] - 2);
+	return (UINT8)(localtextcmd[0][0] - 2);
 }
 
 // Frees all textcmd memory for the specified tic
@@ -488,10 +433,8 @@ void D_ResetTiccmds(void)
 {
 	INT32 i;
 
-	memset(&localcmds, 0, sizeof(ticcmd_t));
-	memset(&localcmds2, 0, sizeof(ticcmd_t));
-	memset(&localcmds3, 0, sizeof(ticcmd_t));
-	memset(&localcmds4, 0, sizeof(ticcmd_t));
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		memset(&localcmds[i], 0, sizeof(ticcmd_t));
 
 	// Reset the net command list
 	for (i = 0; i < TEXTCMD_HASH_SIZE; i++)
@@ -1197,7 +1140,7 @@ static void CV_LoadPlayerNames(UINT8 **p)
 	}
 }
 
-#if (defined(CLIENT_LOADINGSCREEN) && !defined(NONET))
+#ifndef NONET
 
 //
 // CL_DrawConnectionStatus
@@ -1344,6 +1287,8 @@ static boolean CL_AskFileList(INT32 firstfile)
 static boolean CL_SendJoin(void)
 {
 	UINT8 localplayers = 1;
+	UINT8 i;
+
 	if (netgame)
 		CONS_Printf(M_GetText("Sending join request...\n"));
 	netbuffer->packettype = PT_CLIENTJOIN;
@@ -1359,12 +1304,11 @@ static boolean CL_SendJoin(void)
 	strncpy(netbuffer->u.clientcfg.application, SRB2APPLICATION,
 			sizeof netbuffer->u.clientcfg.application);
 
-	CleanupPlayerName(consoleplayer, cv_playername.zstring);
-	if (splitscreen)
-		CleanupPlayerName(1, cv_playername2.zstring);/* 1 is a HACK? oh no */
+	for (i = 0; i <= splitscreen; i++)
+		CleanupPlayerName(g_localplayers[i], cv_playername[i].zstring);
 
-	strncpy(netbuffer->u.clientcfg.names[0], cv_playername.zstring, MAXPLAYERNAME);
-	strncpy(netbuffer->u.clientcfg.names[1], cv_playername2.zstring, MAXPLAYERNAME);
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		strncpy(netbuffer->u.clientcfg.names[i], cv_playername[i].zstring, MAXPLAYERNAME);
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
@@ -2808,7 +2752,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 	if (!playeringame[playernum])
 		return;
 
-	if (server && !demoplayback && playernode[playernum] != UINT8_MAX && !players[playernum].bot)
+	if (server && !demo.playback && playernode[playernum] != UINT8_MAX && !players[playernum].bot)
 	{
 		INT32 node = playernode[playernum];
 		//playerpernode[node] = 0; // It'd be better to remove them all at once, but ghosting happened, so continue to let CL_RemovePlayer do it one-by-one
@@ -2832,12 +2776,12 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 	LUAh_PlayerQuit(&players[playernum], reason); // Lua hook for player quitting
 
 	// don't look through someone's view who isn't there
-	if (playernum == displayplayer)
+	if (playernum == displayplayers[0])
 	{
 		// Call ViewpointSwitch hooks here.
 		// The viewpoint was forcibly changed.
 		LUAh_ViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
-		displayplayer = consoleplayer;
+		displayplayers[0] = consoleplayer;
 	}
 
 	G_RemovePartyMember(playernum);
@@ -3724,7 +3668,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		{
 			if (newplayer->mo)
 			{
-				newplayer->viewheight = 41*newplayer->height/48;
+				newplayer->viewheight = P_GetPlayerViewHeight(newplayer);
 
 				if (newplayer->mo->eflags & MFE_VERTICALFLIP)
 					newplayer->viewz = newplayer->mo->z + newplayer->mo->height - newplayer->viewheight;
@@ -3919,22 +3863,22 @@ static boolean SV_AddWaitingPlayers(const char *name, const char *name2, const c
 			if (playerpernode[node] < 1)
 			{
 				nodetoplayer[node] = newplayernum;
-				WRITESTRINGN(p, name, MAXPLAYERNAME);
+				WRITESTRINGN(buf_p, name, MAXPLAYERNAME);
 			}
 			else if (playerpernode[node] < 2)
 			{
 				nodetoplayer2[node] = newplayernum;
-				WRITESTRINGN(p, name2, MAXPLAYERNAME);
+				WRITESTRINGN(buf_p, name2, MAXPLAYERNAME);
 			}
 			else if (playerpernode[node] < 3)
 			{
 				nodetoplayer3[node] = newplayernum;
-				WRITESTRINGN(p, name3, MAXPLAYERNAME);
+				WRITESTRINGN(buf_p, name3, MAXPLAYERNAME);
 			}
 			else if (playerpernode[node] < 4)
 			{
 				nodetoplayer4[node] = newplayernum;
-				WRITESTRINGN(p, name4, MAXPLAYERNAME);
+				WRITESTRINGN(buf_p, name4, MAXPLAYERNAME);
 			}
 
 			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
@@ -4001,7 +3945,7 @@ boolean SV_SpawnServer(void)
 		else doomcom->numslots = 1;
 	}
 
-	return SV_AddWaitingPlayers(cv_playername.zstring, cv_playername2.zstring, cv_playername3.zstring, cv_playername4.zstring);
+	return SV_AddWaitingPlayers(cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
 #endif
 }
 
@@ -4015,10 +3959,10 @@ void SV_StopServer(void)
 		Y_EndVote();
 	gamestate = wipegamestate = GS_NULL;
 
-	localtextcmd[0] = 0;
-	localtextcmd2[0] = 0;
-	localtextcmd3[0] = 0;
-	localtextcmd4[0] = 0;
+	localtextcmd[0][0] = 0;
+	localtextcmd[1][0] = 0;
+	localtextcmd[2][0] = 0;
+	localtextcmd[3][0] = 0;
 
 	for (i = firstticstosend; i < firstticstosend + TICQUEUE; i++)
 		D_Clearticcmd(i);
@@ -4039,7 +3983,7 @@ void SV_StartSinglePlayerServer(void)
 
 	if (modeattacking == ATTACKING_CAPSULES)
 	{
-		G_SetGametype(GT_MATCH);
+		G_SetGametype(BT_BATTLE);
 	}
 	else
 	{
@@ -4181,7 +4125,7 @@ static void HandleConnect(SINT8 node)
 				SV_SendSaveGame(node); // send a complete game state
 				DEBFILE("send savegame\n");
 			}
-			SV_AddWaitingPlayers(names[0], names[1]);
+			SV_AddWaitingPlayers(names[0], names[1], names[2], names[3]);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}
@@ -5282,26 +5226,26 @@ static void CL_SendClientCmd(void)
 	else if (gamestate != GS_NULL && (addedtogame || dedicated))
 	{
 		packetsize = sizeof (clientcmd_pak);
-		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds, 1);
+		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds[0], 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%TICQUEUE]);
 
 		if (splitscreen) // Send a special packet with 2 cmd for splitscreen
 		{
 			netbuffer->packettype = (mis ? PT_CLIENT2MIS : PT_CLIENT2CMD);
 			packetsize = sizeof (client2cmd_pak);
-			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds2, 1);
+			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds[1], 1);
 
 			if (splitscreen > 1)
 			{
 				netbuffer->packettype = (mis ? PT_CLIENT3MIS : PT_CLIENT3CMD);
 				packetsize = sizeof (client3cmd_pak);
-				G_MoveTiccmd(&netbuffer->u.client3pak.cmd3, &localcmds3, 1);
+				G_MoveTiccmd(&netbuffer->u.client3pak.cmd3, &localcmds[2], 1);
 
 				if (splitscreen > 2)
 				{
 					netbuffer->packettype = (mis ? PT_CLIENT4MIS : PT_CLIENT4CMD);
 					packetsize = sizeof (client4cmd_pak);
-					G_MoveTiccmd(&netbuffer->u.client4pak.cmd4, &localcmds4, 1);
+					G_MoveTiccmd(&netbuffer->u.client4pak.cmd4, &localcmds[3], 1);
 				}
 			}
 		}
@@ -5312,43 +5256,43 @@ static void CL_SendClientCmd(void)
 	if (cl_mode == CL_CONNECTED || dedicated)
 	{
 		// Send extra data if needed
-		if (localtextcmd[0])
+		if (localtextcmd[0][0])
 		{
 			netbuffer->packettype = PT_TEXTCMD;
-			M_Memcpy(netbuffer->u.textcmd,localtextcmd, localtextcmd[0]+1);
+			M_Memcpy(netbuffer->u.textcmd,localtextcmd[0], localtextcmd[0][0]+1);
 			// All extra data have been sent
-			if (HSendPacket(servernode, true, 0, localtextcmd[0]+1)) // Send can fail...
-				localtextcmd[0] = 0;
+			if (HSendPacket(servernode, true, 0, localtextcmd[0][0]+1)) // Send can fail...
+				localtextcmd[0][0] = 0;
 		}
 
 		// Send extra data if needed for player 2 (splitscreen == 1)
-		if (localtextcmd2[0])
+		if (localtextcmd[1][0])
 		{
 			netbuffer->packettype = PT_TEXTCMD2;
-			M_Memcpy(netbuffer->u.textcmd, localtextcmd2, localtextcmd2[0]+1);
+			M_Memcpy(netbuffer->u.textcmd, localtextcmd[1], localtextcmd[1][0]+1);
 			// All extra data have been sent
-			if (HSendPacket(servernode, true, 0, localtextcmd2[0]+1)) // Send can fail...
-				localtextcmd2[0] = 0;
+			if (HSendPacket(servernode, true, 0, localtextcmd[1][0]+1)) // Send can fail...
+				localtextcmd[1][0] = 0;
 		}
 
 		// Send extra data if needed for player 3 (splitscreen == 2)
-		if (localtextcmd3[0])
+		if (localtextcmd[2][0])
 		{
 			netbuffer->packettype = PT_TEXTCMD3;
-			M_Memcpy(netbuffer->u.textcmd, localtextcmd3, localtextcmd3[0]+1);
+			M_Memcpy(netbuffer->u.textcmd, localtextcmd[2], localtextcmd[2][0]+1);
 			// All extra data have been sent
-			if (HSendPacket(servernode, true, 0, localtextcmd3[0]+1)) // Send can fail...
-				localtextcmd3[0] = 0;
+			if (HSendPacket(servernode, true, 0, localtextcmd[2][0]+1)) // Send can fail...
+				localtextcmd[2][0] = 0;
 		}
 
 		// Send extra data if needed for player 4 (splitscreen == 3)
-		if (localtextcmd4[0])
+		if (localtextcmd[3][0])
 		{
 			netbuffer->packettype = PT_TEXTCMD4;
-			M_Memcpy(netbuffer->u.textcmd, localtextcmd4, localtextcmd4[0]+1);
+			M_Memcpy(netbuffer->u.textcmd, localtextcmd[3], localtextcmd[3][0]+1);
 			// All extra data have been sent
-			if (HSendPacket(servernode, true, 0, localtextcmd4[0]+1)) // Send can fail...
-				localtextcmd4[0] = 0;
+			if (HSendPacket(servernode, true, 0, localtextcmd[3][0]+1)) // Send can fail...
+				localtextcmd[3][0] = 0;
 		}
 	}
 }
@@ -5485,23 +5429,23 @@ static void Local_Maketic(INT32 realtics)
 	if (!dedicated) rendergametic = gametic;
 
 	// translate inputs (keyboard/mouse/joystick) into game controls
-	G_BuildTiccmd(&localcmds, realtics, 1);
-	localcmds.angleturn |= TICCMD_RECEIVED;
+	G_BuildTiccmd(&localcmds[0], realtics, 1);
+	localcmds[0].angleturn |= TICCMD_RECEIVED;
 
 	if (splitscreen)
 	{
-		G_BuildTiccmd(&localcmds2, realtics, 2);
-		localcmds2.angleturn |= TICCMD_RECEIVED;
+		G_BuildTiccmd(&localcmds[1], realtics, 2);
+		localcmds[1].angleturn |= TICCMD_RECEIVED;
 
 		if (splitscreen > 1)
 		{
-			G_BuildTiccmd(&localcmds3, realtics, 3);
-			localcmds3.angleturn |= TICCMD_RECEIVED;
+			G_BuildTiccmd(&localcmds[2], realtics, 3);
+			localcmds[2].angleturn |= TICCMD_RECEIVED;
 
 			if (splitscreen > 2)
 			{
-				G_BuildTiccmd(&localcmds4, realtics, 4);
-				localcmds4.angleturn |= TICCMD_RECEIVED;
+				G_BuildTiccmd(&localcmds[3], realtics, 4);
+				localcmds[3].angleturn |= TICCMD_RECEIVED;
 			}
 		}
 	}

@@ -618,10 +618,8 @@ void D_ClientServerInit(void);
 
 // Initialise the other field
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));
-void SendNetXCmd(netxcmd_t id, const void *param, size_t nparam);
-void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam); // splitsreen player
-void SendNetXCmd3(netxcmd_t id, const void *param, size_t nparam); // splitsreen3 player
-void SendNetXCmd4(netxcmd_t id, const void *param, size_t nparam); // splitsreen4 player
+void SendNetXCmdForPlayer(UINT8 playerid, netxcmd_t id, const void *param, size_t nparam);
+#define SendNetXCmd(id, param, nparam) SendNetXCmdForPlayer(0, id, param, nparam) // Shortcut for P1
 void SendKick(UINT8 playernum, UINT8 msg);
 
 // Create any new ticcmds and broadcast to other players.
@@ -636,7 +634,7 @@ void CL_AddSplitscreenPlayer(void);
 void CL_RemoveSplitscreenPlayer(UINT8 p);
 void CL_Reset(void);
 void CL_ClearPlayer(INT32 playernum);
-void CL_RemovePlayer(INT32 playernum, INT32 reason);
+void CL_RemovePlayer(INT32 playernum, kickreason_t reason);
 void CL_QueryServerList(msg_server_t *list);
 void CL_UpdateServerList(boolean internetsearch, INT32 room);
 // Is there a game running

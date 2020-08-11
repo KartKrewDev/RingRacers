@@ -841,9 +841,9 @@ static menuitem_t SP_GrandPrixPlaceholderMenu[] =
 // Single Player Time Attack
 static menuitem_t SP_TimeAttackMenu[] =
 {
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Name",       &cv_playername,        0},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Name",       &cv_playername[0],        0},
 	{IT_STRING|IT_CVAR,              NULL, "Character",  &cv_chooseskin,       13},
-	{IT_STRING|IT_CVAR,              NULL, "Color",      &cv_playercolor,      26},
+	{IT_STRING|IT_CVAR,              NULL, "Color",      &cv_playercolor[0],      26},
 	{IT_STRING|IT_CVAR,              NULL, "Level",      &cv_nextmap,          78},
 
 	{IT_DISABLED,                                NULL, "Guest...",      &SP_GuestReplayDef,    98},
@@ -9815,14 +9815,14 @@ static void M_SetupMultiPlayer(INT32 choice)
 	multi_state = &states[mobjinfo[MT_PLAYER].seestate];
 	multi_tics = multi_state->tics;
 
-	strcpy(setupm_name, cv_playername.string);
+	strcpy(setupm_name, cv_playername[0].string);
 
 	// set for player 1
 	setupm_player = &players[consoleplayer];
-	setupm_cvskin = &cv_skin;
-	setupm_cvcolor = &cv_playercolor;
-	setupm_cvname = &cv_playername;
-	setupm_cvfollower = &cv_follower;
+	setupm_cvskin = &cv_skin[0];
+	setupm_cvcolor = &cv_playercolor[0];
+	setupm_cvname = &cv_playername[0];
+	setupm_cvfollower = &cv_follower[0];
 
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
@@ -9855,14 +9855,14 @@ static void M_SetupMultiPlayer2(INT32 choice)
 
 	multi_state = &states[mobjinfo[MT_PLAYER].seestate];
 	multi_tics = multi_state->tics;
-	strcpy (setupm_name, cv_playername2.string);
+	strcpy (setupm_name, cv_playername[1].string);
 
 	// set for splitscreen secondary player
 	setupm_player = &players[g_localplayers[1]];
-	setupm_cvskin = &cv_skin2;
-	setupm_cvcolor = &cv_playercolor2;
-	setupm_cvname = &cv_playername2;
-	setupm_cvfollower = &cv_follower2;
+	setupm_cvskin = &cv_skin[1];
+	setupm_cvcolor = &cv_playercolor[1];
+	setupm_cvname = &cv_playername[1];
+	setupm_cvfollower = &cv_follower[1];
 
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
@@ -9895,14 +9895,14 @@ static void M_SetupMultiPlayer3(INT32 choice)
 
 	multi_state = &states[mobjinfo[MT_PLAYER].seestate];
 	multi_tics = multi_state->tics;
-	strcpy(setupm_name, cv_playername3.string);
+	strcpy(setupm_name, cv_playername[2].string);
 
 	// set for splitscreen third player
 	setupm_player = &players[g_localplayers[2]];
-	setupm_cvskin = &cv_skin3;
-	setupm_cvcolor = &cv_playercolor3;
-	setupm_cvname = &cv_playername3;
-	setupm_cvfollower = &cv_follower3;
+	setupm_cvskin = &cv_skin[2];
+	setupm_cvcolor = &cv_playercolor[2];
+	setupm_cvname = &cv_playername[2];
+	setupm_cvfollower = &cv_follower[2];
 
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
@@ -9935,14 +9935,14 @@ static void M_SetupMultiPlayer4(INT32 choice)
 
 	multi_state = &states[mobjinfo[MT_PLAYER].seestate];
 	multi_tics = multi_state->tics;
-	strcpy(setupm_name, cv_playername4.string);
+	strcpy(setupm_name, cv_playername[3].string);
 
 	// set for splitscreen fourth player
 	setupm_player = &players[g_localplayers[3]];
-	setupm_cvskin = &cv_skin4;
-	setupm_cvcolor = &cv_playercolor4;
-	setupm_cvname = &cv_playername4;
-	setupm_cvfollower = &cv_follower4;
+	setupm_cvskin = &cv_skin[3];
+	setupm_cvcolor = &cv_playercolor[3];
+	setupm_cvname = &cv_playername[3];
+	setupm_cvfollower = &cv_follower[3];
 
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 

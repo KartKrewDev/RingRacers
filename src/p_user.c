@@ -248,7 +248,7 @@ void P_CalcHeight(player_t *player)
 	}
 
 	// move viewheight
-	pviewheight = FixedMul(41*player->height/48, mo->scale); // default eye view height
+	pviewheight = P_GetPlayerViewHeight(player); // default eye view height
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 		player->viewz = mo->z + mo->height - player->viewheight - bob;
@@ -3191,9 +3191,9 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	x = player->mo->x - P_ReturnThrustX(player->mo, thiscam->angle, player->mo->radius);
 	y = player->mo->y - P_ReturnThrustY(player->mo, thiscam->angle, player->mo->radius);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
-		z = player->mo->z + player->mo->height - (41*player->height/48) - 16*FRACUNIT;
+		z = player->mo->z + player->mo->height - P_GetPlayerViewHeight(player) - 16*FRACUNIT;
 	else
-		z = player->mo->z + (41*player->height/48);
+		z = player->mo->z + P_GetPlayerViewHeight(player);
 
 	// set bits for the camera
 	thiscam->x = x;
@@ -4683,7 +4683,7 @@ void P_PlayerAfterThink(player_t *player)
 		{
 			// defaults to make sure 1st person cam doesn't do anything weird on startup
 			player->deltaviewheight = 0;
-			player->viewheight = FixedMul(41*player->height/48, player->mo->scale);
+			player->viewheight = P_GetPlayerViewHeight(player);
 
 			if (player->mo->eflags & MFE_VERTICALFLIP)
 				player->viewz = player->mo->z + player->mo->height - player->viewheight;

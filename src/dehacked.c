@@ -11269,7 +11269,7 @@ struct {
 
 	// Gametypes, for use with global var "gametype"
 	{"GT_RACE",GT_RACE},
-	{"GT_MATCH",GT_MATCH},
+	{"GT_BATTLE",GT_BATTLE},
 
 	// for P_DamageMobj
 	//// Damage types

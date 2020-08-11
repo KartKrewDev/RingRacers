@@ -3849,45 +3849,12 @@ static void P_InitCamera(void)
 {
 	if (!dedicated)
 	{
+		UINT8 i;
+
 		P_SetupCamera();
 
-		// Salt: CV_ClearChangedFlags() messes with your settings :(
-		/*if (!cv_cam_height.changed)
-			CV_Set(&cv_cam_height, cv_cam_height.defaultvalue);
-		if (!cv_cam2_height.changed)
-			CV_Set(&cv_cam2_height, cv_cam2_height.defaultvalue);
-
-		if (!cv_cam_dist.changed)
-			CV_Set(&cv_cam_dist, cv_cam_dist.defaultvalue);
-		if (!cv_cam2_dist.changed)
-			CV_Set(&cv_cam2_dist, cv_cam2_dist.defaultvalue);*/
-
-			// Though, I don't think anyone would care about cam_rotate being reset back to the only value that makes sense :P
-		if (!cv_cam_rotate.changed)
-			CV_Set(&cv_cam_rotate, cv_cam_rotate.defaultvalue);
-		if (!cv_cam2_rotate.changed)
-			CV_Set(&cv_cam2_rotate, cv_cam2_rotate.defaultvalue);
-
-		if (!cv_analog[0].changed)
-			CV_SetValue(&cv_analog[0], 0);
-		if (!cv_analog[1].changed)
-			CV_SetValue(&cv_analog[1], 0);
-
-		displayplayer = consoleplayer; // Start with your OWN view, please!
-	}
-
-	if (twodlevel)
-	{
-		CV_SetValue(&cv_analog[0], false);
-		CV_SetValue(&cv_analog[1], false);
-	}
-	else
-	{
-		if (cv_useranalog[0].value)
-			CV_SetValue(&cv_analog[0], true);
-
-		if ((splitscreen && cv_useranalog[1].value) || botingame)
-			CV_SetValue(&cv_analog[1], true);
+		for (i = 0; i <= splitscreen; i++)
+			displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
 	}
 }
 
@@ -4346,7 +4313,7 @@ boolean P_LoadLevel(boolean fromnetsave)
 		if (!lastmaploaded) // Start a new game?
 		{
 			// I'd love to do this in the menu code instead of here, but everything's a mess and I can't guarantee saving proper player struct info before the first act's started. You could probably refactor it, but it'd be a lot of effort. Easier to just work off known good code. ~toast 22/06/2020
-			if (!(ultimatemode || netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking || marathonmode)
+			if (!(ultimatemode || netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking || marathonmode)
 			&& (!modifiedgame || savemoddata) && cursaveslot > 0)
 				G_SaveGame((UINT32)cursaveslot, gamemap);
 			// If you're looking for saving sp file progression (distinct from G_SaveGameOver), check G_DoCompleted.

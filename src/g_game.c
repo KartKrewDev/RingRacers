@@ -1543,7 +1543,7 @@ boolean G_Responder(event_t *ev)
 				|| ev->data1 == gamecontrol[0][gc_pause][1]
 				|| ev->data1 == KEY_PAUSE)
 			{
-				if (modeattacking && !demoplayback && (gamestate == GS_LEVEL))
+				if (modeattacking && !demo.playback && (gamestate == GS_LEVEL))
 				{
 					pausebreakkey = (ev->data1 == KEY_PAUSE);
 					if (menuactive || pausedelay < 0 || leveltime < 2)
@@ -3028,60 +3028,20 @@ void G_SetGametypeDescription(INT16 gtype, char *descriptiontext, UINT8 leftcolo
 // Gametype rankings
 INT16 gametyperankings[NUMGAMETYPES] =
 {
-	GT_COOP,
-	GT_COMPETITION,
 	GT_RACE,
-
-	GT_MATCH,
-	GT_TEAMMATCH,
-
-	GT_TAG,
-	GT_HIDEANDSEEK,
-
-	GT_CTF,
+	GT_BATTLE,
 };
 
 // Gametype to TOL (Type Of Level)
 UINT32 gametypetol[NUMGAMETYPES] =
 {
-	TOL_COOP, // Co-op
-	TOL_COMPETITION, // Competition
 	TOL_RACE, // Race
-
-	TOL_MATCH, // Match
-	TOL_MATCH, // Team Match
-
-	TOL_TAG, // Tag
-	TOL_TAG, // Hide and Seek
-
-	TOL_CTF, // CTF
+	TOL_BATTLE, // Battle
 };
 
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
-	{"SOLO",TOL_SP},
-	{"SP",TOL_SP},
-	{"SINGLEPLAYER",TOL_SP},
-	{"SINGLE",TOL_SP},
-
-	{"COOP",TOL_COOP},
-	{"CO-OP",TOL_COOP},
-
-	{"COMPETITION",TOL_COMPETITION},
 	{"RACE",TOL_RACE},
-
-	{"MATCH",TOL_MATCH},
-	{"TAG",TOL_TAG},
-	{"CTF",TOL_CTF},
-
-	{"2D",TOL_2D},
-	{"MARIO",TOL_MARIO},
-	{"NIGHTS",TOL_NIGHTS},
-	{"OLDBRAK",TOL_ERZ3},
-
-	{"XMAS",TOL_XMAS},
-	{"CHRISTMAS",TOL_XMAS},
-	{"WINTER",TOL_XMAS},
-
+	{"BATTLE",TOL_BATTLE},
 	{NULL, 0}
 };
 
@@ -3537,11 +3497,10 @@ void G_AddMapToBuffer(INT16 map)
 //
 static void G_UpdateVisited(void)
 {
-	
 	boolean spec = G_IsSpecialStage(gamemap);
 	// Update visitation flags?
 	if ((!modifiedgame || savemoddata) // Not modified
-		&& !multiplayer && !demoplayback && (gametype == GT_COOP) // SP/RA/NiGHTS mode
+		&& !multiplayer && !demo.playback && (gametype == GT_COOP) // SP/RA/NiGHTS mode
 		&& !(spec && stagefailed)) // Not failed the special stage
 	{
 		UINT8 earnedEmblems;
@@ -3609,12 +3568,12 @@ static void G_HandleSaveLevel(void)
 					remove(liveeventbackup);
 				cursaveslot = 0;
 			}
-			else if ((!modifiedgame || savemoddata) && !(netgame || multiplayer || ultimatemode || demorecording || metalrecording || modeattacking))
+			else if ((!modifiedgame || savemoddata) && !(netgame || multiplayer || ultimatemode || demo.recording || metalrecording || modeattacking))
 				G_SaveGame((UINT32)cursaveslot, spstage_start);
 		}
 	}
 	// and doing THIS here means you don't lose your progress if you close the game mid-intermission
-	else if (!(ultimatemode || netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking)
+	else if (!(ultimatemode || netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking)
 		&& (!modifiedgame || savemoddata) && cursaveslot > 0 && CanSaveLevel(lastmap+1))
 		G_SaveGame((UINT32)cursaveslot, lastmap+1); // not nextmap+1 to route around special stages
 }
@@ -3964,7 +3923,7 @@ static void G_DoContinued(void)
 	tokenlist = 0;
 	token = 0;
 
-	if (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && (!modifiedgame || savemoddata) && cursaveslot > 0)
+	if (!(netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking) && (!modifiedgame || savemoddata) && cursaveslot > 0)
 		G_SaveGameOver((UINT32)cursaveslot, true);
 
 	// Reset # of lives

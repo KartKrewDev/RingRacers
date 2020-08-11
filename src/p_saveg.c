@@ -480,24 +480,10 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
-=======
-		players[i].thokitem = (mobjtype_t)READUINT32(save_p);
-		players[i].spinitem = (mobjtype_t)READUINT32(save_p);
-		players[i].revitem = (mobjtype_t)READUINT32(save_p);
-		players[i].followitem = (mobjtype_t)READUINT32(save_p);
-		players[i].actionspd = READFIXED(save_p);
-		players[i].mindash = READFIXED(save_p);
-		players[i].maxdash = READFIXED(save_p);
-		players[i].normalspeed = READFIXED(save_p);
-		players[i].runspeed = READFIXED(save_p);
-		players[i].thrustfactor = READUINT8(save_p);
-		players[i].accelstart = READUINT8(save_p);
-		players[i].acceleration = READUINT8(save_p);
-		players[i].jumpfactor = READFIXED(save_p);
-		players[i].height = READFIXED(save_p);
-		players[i].spinheight = READFIXED(save_p);
 
-		players[i].viewheight = 41*players[i].height/48; // scale cannot be factored in at this point
+		players[i].followitem = (mobjtype_t)READUINT32(save_p);
+
+		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}
 }
 

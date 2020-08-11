@@ -783,7 +783,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
 	char titletxt[] = "SRB2Kart " VERSIONSTRING;
-	png_charp playertxt =  cv_playername.zstring;
+	png_charp playertxt =  cv_playername[0].zstring;
 	char desctxt[] = "SRB2Kart Screenshot";
 	char Movietxt[] = "SRB2Kart Movie";
 	size_t i;

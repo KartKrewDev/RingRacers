@@ -2624,7 +2624,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->player->viewheight -= mo->floorz - mo->z;
 
 		mo->player->deltaviewheight =
-			(FixedMul(41*mo->player->height/48, mo->scale) - mo->player->viewheight)>>3;
+			(P_GetPlayerViewHeight(mo->player) - mo->player->viewheight)>>3;
 	}
 
 	// adjust height
@@ -13426,7 +13426,7 @@ void P_AfterPlayerSpawn(INT32 playernum)
 
 	P_SetPlayerAngle(p, mobj->angle);
 
-	p->viewheight = 41*p->height/48;
+	p->viewheight = P_GetPlayerViewHeight(p);
 
 	if (p->mo->eflags & MFE_VERTICALFLIP)
 		p->viewz = p->mo->z + p->mo->height - p->viewheight;

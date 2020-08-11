@@ -157,23 +157,7 @@ void COM_Lua_f(void)
 		for (i = 0; i < argc; i++)
 			WRITESTRINGN(p, COM_Argv(i), 255);
 
-		switch (lpn)
-		{
-			case 3:
-				SendNetXCmd4(XD_LUACMD, buf, p-buf);
-				break;
-			case 2:
-				SendNetXCmd3(XD_LUACMD, buf, p-buf);
-				break;
-			case 1:
-				SendNetXCmd2(XD_LUACMD, buf, p-buf);
-				break;
-			default:
-			case 0:
-				SendNetXCmd(XD_LUACMD, buf, p-buf);
-				break;
-		}
-
+		SendNetXCmdForPlayer(lpn, XD_LUACMD, buf, p-buf);
 		free(buf);
 		return;
 	}

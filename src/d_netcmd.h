@@ -18,21 +18,9 @@
 #include "command.h"
 
 // console vars
-extern consvar_t cv_playername;
-extern consvar_t cv_playercolor;
-extern consvar_t cv_skin;
-// secondary splitscreen player
-extern consvar_t cv_playername2;
-extern consvar_t cv_playercolor2;
-extern consvar_t cv_skin2;
-// third splitscreen player
-extern consvar_t cv_playername3;
-extern consvar_t cv_playercolor3;
-extern consvar_t cv_skin3;
-// fourth splitscreen player
-extern consvar_t cv_playername4;
-extern consvar_t cv_playercolor4;
-extern consvar_t cv_skin4;
+extern consvar_t cv_playername[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_skin[MAXSPLITSCREENPLAYERS];
 // preferred number of players
 extern consvar_t cv_splitplayers;
 

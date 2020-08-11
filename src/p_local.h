@@ -61,6 +61,8 @@
 
 #define mariomode (maptol & TOL_MARIO)
 
+#define P_GetPlayerViewHeight(player) (41*player->mo->height/48)
+
 typedef enum
 {
 	THINK_POLYOBJ,

@@ -1327,7 +1327,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					S_ChangeMusicEx("_gover", 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds
 					//P_PlayJingle(target->player, JT_GOVER); // can't be used because incompatible with track fadeout
 
-				if (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && numgameovers < maxgameovers)
+				if (!(netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking) && numgameovers < maxgameovers)
 				{
 					numgameovers++;
 					if ((!modifiedgame || savemoddata) && cursaveslot > 0)

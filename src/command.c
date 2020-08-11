@@ -1826,9 +1826,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 	if (!increment)
 		return;
 
-	/*if (var == &cv_pointlimit && (gametype == GT_MATCH))
-		increment *= 50;*/
-
 	if (var == &cv_forceskin) // Special handling.
 	{
 		INT32 oldvalue = var->value;
@@ -1914,13 +1911,8 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 					if (newindice >= max || newindice <= MAXVAL)
 					{
-						/*if (var == &cv_pointlimit && (gametype == GT_MATCH) && increment > 0)
-							CV_SetValue(var, 50);
-						else*/
-						{
-							newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
-							CV_SetValue(var, newvalue);
-						}
+						newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
+						CV_SetValue(var, newvalue);
 					}
 					else
 						CV_Set(var, var->PossibleValue[newindice].strvalue);
