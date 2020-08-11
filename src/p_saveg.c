@@ -712,7 +712,6 @@ static void P_NetUnArchiveColormaps(void)
 			exc->colormap = existing_exc->colormap; // all our dummies are default values
 			R_AddColormapToList(exc);
 		}
->>>>>>> srb2/next
 	}
 
 	// Don't need these anymore
@@ -4112,8 +4111,6 @@ static void P_NetArchiveMisc(void)
 	WRITEUINT32(save_p, countdowntimer);
 	WRITEUINT8(save_p, countdowntimeup);
 
-	WRITEUINT32(save_p, hidetime);
-
 	// SRB2kart
 	WRITEINT32(save_p, numgotboxes);
 	WRITEUINT8(save_p, numtargets);
@@ -4243,8 +4240,6 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	countdowntimer = (tic_t)READUINT32(save_p);
 	countdowntimeup = (boolean)READUINT8(save_p);
-
-	hidetime = READUINT32(save_p);
 
 	// SRB2kart
 	numgotboxes = READINT32(save_p);

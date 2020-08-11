@@ -404,7 +404,7 @@ UINT8 P_FindLowestLap(void)
 	INT32 i;
 	UINT8 lowest = UINT8_MAX;
 
-	if (gametyperules & GTR_RACE)
+	if (gametyperules & GTR_CIRCUIT)
 		return 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -431,7 +431,7 @@ UINT8 P_FindHighestLap(void)
 	INT32 i;
 	UINT8 highest = 0;
 
-	if (!G_RaceGametype())
+	if (!(gametyperules & GTR_CIRCUIT))
 		return 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -489,7 +489,7 @@ void P_GivePlayerRings(player_t *player, INT32 num_rings)
 	if (!player->mo)
 		return;
 
-	if (G_BattleGametype()) // No rings in Battle Mode
+	if ((gametyperules & GTR_BUMPERS)) // No rings in Battle Mode
 		return;
 
 	player->kartstuff[k_rings] += num_rings;
@@ -501,64 +501,12 @@ void P_GivePlayerRings(player_t *player, INT32 num_rings)
 		player->rings = -20; // Chaotix ring debt!
 }
 
-//
-// P_GivePlayerLives
-//
-// Gives the player an extra life.
-// Call this function when you want to add lives to the player.
-//
-void P_GivePlayerLives(player_t *player, INT32 numlives)
-{
-	UINT8 prevlives = player->lives;
-	if (!player)
-		return;
-
-	if (player->bot)
-		player = &players[consoleplayer];
-
-	if (gamestate == GS_LEVEL)
-	{
-		if (player->lives == INFLIVES || !(gametyperules & GTR_LIVES))
-		{
-			P_GivePlayerRings(player, 100*numlives);
-			return;
-		}
-
-		if ((netgame || multiplayer) && G_GametypeUsesCoopLives() && cv_cooplives.value == 0)
-		{
-			P_GivePlayerRings(player, 100*numlives);
-			if (player->lives - prevlives >= numlives)
-				goto docooprespawn;
-
-			numlives = (numlives + prevlives - player->lives);
-		}
-	}
-	else if (player->lives == INFLIVES)
-		return;
-
-	player->lives += numlives;
-
-	if (player->lives > 99)
-		player->lives = 99;
-	else if (player->lives < 1)
-		player->lives = 1;
-
-docooprespawn:
-	if (cv_coopstarposts.value)
-		return;
-	if (prevlives > 0)
-		return;
-	if (!player->spectator)
-		return;
-	P_SpectatorJoinGame(player);
-}
-
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, UINT32 amount)
 {
 	//UINT32 oldscore;
 
-	if (!(G_BattleGametype()))
+	if (!((gametyperules & GTR_BUMPERS)))
 		return;
 
 	if (player->exiting) // srb2kart
@@ -782,7 +730,7 @@ boolean P_EndingMusic(player_t *player)
 		bestlocalpos = ((player->pflags & PF_TIMEOVER) ? MAXPLAYERS+1 : player->kartstuff[k_position]);
 	}
 
-	if (G_RaceGametype() && bestlocalpos == MAXPLAYERS+1)
+	if ((gametyperules & GTR_CIRCUIT) && bestlocalpos == MAXPLAYERS+1)
 		sprintf(buffer, "k*fail"); // F-Zero death results theme
 	else
 	{
@@ -796,9 +744,9 @@ boolean P_EndingMusic(player_t *player)
 
 	S_SpeedMusic(1.0f);
 
-	if (G_RaceGametype())
+	if ((gametyperules & GTR_CIRCUIT))
 		buffer[1] = 'r';
-	else if (G_BattleGametype())
+	else if ((gametyperules & GTR_BUMPERS))
 	{
 		buffer[1] = 'b';
 		looping = false;
@@ -891,7 +839,7 @@ void P_RestoreMusic(player_t *player)
 #if 0
 			// Event - Final Lap
 			// Still works for GME, but disabled for consistency
-			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value))
+			if ((gametyperules & GTR_CIRCUIT) && player->laps >= (UINT8)(cv_numlaps.value))
 				S_SpeedMusic(1.2f);
 #endif
 			if (mapmusresume && cv_resume.value)
@@ -1376,7 +1324,7 @@ void P_DoPlayerExit(player_t *player)
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 		legitimateexit = true;
 
-	if (G_RaceGametype()) // If in Race Mode, allow
+	if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 	{
 		player->exiting = raceexittime+2;
 		K_KartUpdatePosition(player);
@@ -1411,7 +1359,7 @@ void P_DoPlayerExit(player_t *player)
 		if (P_CheckRacers())
 			player->exiting = raceexittime+1;
 	}
-	else if (G_BattleGametype()) // Battle Mode exiting
+	else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
 	{
 		player->exiting = battleexittime+1;
 		P_EndingMusic(player);
@@ -2792,7 +2740,7 @@ static void P_DeathThink(player_t *player)
 	if (player->bot) // don't allow bots to do any of the below, B_CheckRespawn does all they need for respawning already
 		goto notrealplayer;
 
-	if ((player->pflags & PF_TIMEOVER) && G_RaceGametype())
+	if ((player->pflags & PF_TIMEOVER) && (gametyperules & GTR_CIRCUIT))
 	{
 		player->karthud[khud_timeovercam]++;
 
@@ -3264,7 +3212,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		|| (leveltime < introtime)); // Kart intro cam
 #endif
 
-	if ((player->pflags & PF_TIMEOVER) && G_RaceGametype()) // 1 for momentum keep, 2 for turnaround
+	if ((player->pflags & PF_TIMEOVER) && (gametyperules & GTR_CIRCUIT)) // 1 for momentum keep, 2 for turnaround
 		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
 	else
 		timeover = 0;
@@ -4194,8 +4142,7 @@ void P_PlayerThink(player_t *player)
 	{
 		seenplayer = NULL;
 
-		if (cv_seenames.value && cv_allowseenames.value &&
-			!(G_TagGametype() && (player->pflags & PF_TAGIT)))
+		if (cv_seenames.value && cv_allowseenames.value)
 		{
 			mobj_t *mo = P_SpawnNameFinder(player->mo, MT_NAMECHECK);
 
@@ -4251,7 +4198,7 @@ void P_PlayerThink(player_t *player)
 
 	if (!mapreset)
 	{
-		if (gametyperules & GTR_RACE)
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			INT32 i;
 
@@ -4293,7 +4240,7 @@ void P_PlayerThink(player_t *player)
 
 		// If it is set, start subtracting
 		// Don't allow it to go back to 0
-		if (player->exiting > 1 && (player->exiting < raceexittime+2 || !G_RaceGametype())) // SRB2kart - "&& player->exiting > 1"
+		if (player->exiting > 1 && (player->exiting < raceexittime+2 || !(gametyperules & GTR_CIRCUIT))) // SRB2kart - "&& player->exiting > 1"
 			player->exiting--;
 
 		if (player->exiting && exitcountdown)
@@ -4302,39 +4249,8 @@ void P_PlayerThink(player_t *player)
 
 	if (player->exiting == 2 || countdown2 == 2)
 	{
-		UINT8 numneeded = (G_IsSpecialStage(gamemap) ? 4 : cv_playersforexit.value);
-		if (numneeded) // Count to be sure everyone's exited
-		{
-			INT32 i, total = 0, exiting = 0;
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i] || players[i].spectator || players[i].bot)
-					continue;
-				if (players[i].quittime > 30 * TICRATE)
-					continue;
-				if (players[i].lives <= 0)
-					continue;
-
-				total++;
-				if (players[i].exiting && players[i].exiting < 4)
-					exiting++;
-			}
-
-			if (!total || ((4*exiting)/total) >= numneeded)
-			{
-				if (server)
-					SendNetXCmd(XD_EXITLEVEL, NULL, 0);
-			}
-		}
-	}
-
-	if (player->pflags & PF_FINISHED)
-	{
-		if (((gametyperules & GTR_FRIENDLY) && cv_exitmove.value) && !G_EnoughPlayersFinished())
-			player->exiting = 0;
-		else
-			P_DoPlayerExit(player);
+		if (server)
+			SendNetXCmd(XD_EXITLEVEL, NULL, 0);
 	}
 
 	// check water content, set stuff in mobj
@@ -4351,8 +4267,8 @@ void P_PlayerThink(player_t *player)
 #else
 	if (player->spectator &&
 #endif
-	G_GametypeUsesCoopStarposts() && (netgame || multiplayer) && cv_coopstarposts.value == 2)
-		P_ConsiderAllGone();
+		(gametyperules & GTR_LIVES))
+		/*P_ConsiderAllGone()*/;
 
 	if (player->playerstate == PST_DEAD)
 	{
@@ -4391,7 +4307,7 @@ void P_PlayerThink(player_t *player)
 	// Synchronizes the "real" amount of time spent in the level.
 	if (!player->exiting && !stoppedclock)
 	{
-		if (gametyperules & GTR_RACE)
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			player->realtime = leveltime - starttime;
 			if (player == &players[consoleplayer])
@@ -4535,8 +4451,7 @@ void P_PlayerThink(player_t *player)
 		player->pflags &= ~PF_USEDOWN;
 
 	// IF PLAYER NOT HERE THEN FLASH END IF
-	if (player->quittime && player->powers[pw_flashing] < flashingtics - 1
-	&& !(G_TagGametype() && !(player->pflags & PF_TAGIT)) && !player->gotflag)
+	if (player->quittime && player->powers[pw_flashing] < flashingtics - 1 && !player->gotflag)
 		player->powers[pw_flashing] = flashingtics - 1;
 
 	// Counters, time dependent power ups.
@@ -4572,7 +4487,7 @@ void P_PlayerThink(player_t *player)
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| player->kartstuff[k_respawn] // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_TIMEOVER) // NO CONTEST explosion
-		|| (G_BattleGametype() && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
+		|| ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
 		|| leveltime < starttime)) // Level intro
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)

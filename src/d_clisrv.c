@@ -1013,8 +1013,6 @@ static void SV_SendResynch(INT32 node)
 		netbuffer->packettype = PT_RESYNCHEND;
 
 		netbuffer->u.resynchend.randomseed = P_GetRandSeed();
-		if (gametyperules & GTR_TEAMFLAGS)
-			resynch_write_ctf(&netbuffer->u.resynchend);
 		resynch_write_others(&netbuffer->u.resynchend);
 
 		HSendPacket(node, true, 0, (sizeof(resynchend_pak)));
@@ -2770,9 +2768,6 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 	if (K_IsPlayerWanted(&players[playernum]))
 		K_CalculateBattleWanted();
 
-	if (gametyperules & GTR_TEAMFLAGS)
-		P_PlayerFlagBurst(&players[playernum], false); // Don't take the flag with you!
-
 	LUAh_PlayerQuit(&players[playernum], reason); // Lua hook for player quitting
 
 	// don't look through someone's view who isn't there
@@ -2808,10 +2803,8 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 
 	LUA_InvalidatePlayer(&players[playernum]);
 
-	if (G_BattleGametype()) // SRB2Kart
-		K_CheckBumpers();
-	else if (gametyperules & GTR_RACE)
-		P_CheckRacers();
+	K_CheckBumpers();
+	P_CheckRacers();
 }
 
 void CL_Reset(void)
@@ -3793,9 +3786,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
 	}
 
-#ifdef HAVE_BLUA
 	LUAh_PlayerJoin(newplayernum);
-#endif
 }
 
 static boolean SV_AddWaitingPlayers(const char *name, const char *name2, const char *name3, const char *name4)
@@ -4835,8 +4826,6 @@ static void HandlePacketFromPlayer(SINT8 node)
 
 			P_SetRandSeed(netbuffer->u.resynchend.randomseed);
 
-			if (gametyperules & GTR_TEAMFLAGS)
-				resynch_read_ctf(&netbuffer->u.resynchend);
 			resynch_read_others(&netbuffer->u.resynchend);
 
 			break;

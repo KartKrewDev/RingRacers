@@ -1471,5 +1471,4 @@ void HWR_CreateStaticLightmaps(int bspnum)
   - finalement virer le hack splitscreen, il n'est plus necessaire !
 */
 #endif
->>>>>>> srb2/next
 #endif // HWRENDER

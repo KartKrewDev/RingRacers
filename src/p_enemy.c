@@ -804,7 +804,7 @@ static int P_RecycleCompare(const void *p1, const void *p2)
 	player_t *player2 = &players[*(const UINT8 *)p2];
 
 	// Non-shooting gametypes
-	if (!G_RaceGametype())
+	if (!(gametyperules & GTR_CIRCUIT))
 	{
 		// Invincibility.
 		if (player1->powers[pw_invulnerability] > player2->powers[pw_invulnerability]) return -1;
@@ -5083,7 +5083,7 @@ static inline boolean PIT_GrenadeRing(mobj_t *thing)
 		return true;
 
 	if (thing->player && (thing->player->kartstuff[k_hyudorotimer]
-		|| (G_BattleGametype() && thing->player && thing->player->kartstuff[k_bumper] <= 0 && thing->player->kartstuff[k_comebacktimer])))
+		|| ((gametyperules & GTR_BUMPERS) && thing->player && thing->player->kartstuff[k_bumper] <= 0 && thing->player->kartstuff[k_comebacktimer])))
 		return true;
 
 	if ((gametype == GT_CTF || gametype == GT_TEAMMATCH)
@@ -5110,10 +5110,9 @@ void A_GrenadeRing(mobj_t *actor)
 {
 	INT32 bx, by, xl, xh, yl, yh;
 	explodedist = FixedMul(actor->info->painchance, mapobjectscale);
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_GrenadeRing", actor))
 		return;
-#endif
 
 	if (actor->flags2 & MF2_DEBRIS)
 		return;
@@ -5154,7 +5153,7 @@ static inline boolean PIT_MineExplode(mobj_t *thing)
 	if (netgame && thing->player && thing->player->spectator)
 		return true;
 
-	if (G_BattleGametype() && grenade->target && grenade->target->player && grenade->target->player->kartstuff[k_bumper] <= 0 && thing == grenade->target)
+	if ((gametyperules & GTR_BUMPERS) && grenade->target && grenade->target->player && grenade->target->player->kartstuff[k_bumper] <= 0 && thing == grenade->target)
 		return true;
 
 	// see if it went over / under
@@ -5182,10 +5181,9 @@ void A_MineExplode(mobj_t *actor)
 	INT32 locvar1 = var1;
 	mobjtype_t type;
 	explodedist = FixedMul((3*actor->info->painchance)/2, mapobjectscale);
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_MineExplode", actor))
 		return;
-#endif
 
 	if (actor->flags2 & MF2_DEBRIS)
 		return;
@@ -6629,9 +6627,8 @@ void A_MixUp(mobj_t *actor)
 	if (!multiplayer)
 		return;
 
-	// No mix-up monitors in hide and seek or time only race.
 	// The random factor is okay for other game modes, but in these, it is cripplingly unfair.
-	if (gametype == GT_HIDEANDSEEK || gametype == GT_RACE)
+	if (gametyperules & GTR_CIRCUIT)
 	{
 		S_StartSound(actor, sfx_lose);
 		return;
@@ -9494,12 +9491,12 @@ void A_ItemPop(mobj_t *actor)
 	if (actor->info->deathsound)
 		S_StartSound(remains, actor->info->deathsound);
 
-	if (!(G_BattleGametype() && actor->target->player->kartstuff[k_bumper] <= 0))
+	if (!((gametyperules & GTR_BUMPERS) && actor->target->player->kartstuff[k_bumper] <= 0))
 		actor->target->player->kartstuff[k_itemroulette] = 1;
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
-	if (G_BattleGametype() && (actor->threshold != 69 && actor->threshold != 70))
+	if ((gametyperules & GTR_BUMPERS) && (actor->threshold != 69 && actor->threshold != 70))
 		numgotboxes++;
 
 	P_RemoveMobj(actor);
@@ -9512,14 +9509,13 @@ void A_JawzChase(mobj_t *actor)
 	fixed_t thrustamount = 0;
 	fixed_t frictionsafety = (actor->friction == 0) ? 1 : actor->friction;
 	fixed_t topspeed = actor->movefactor;
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_JawzChase", actor))
 		return;
-#endif
 
 	if (actor->tracer)
 	{
-		/*if (G_RaceGametype()) // Stop looking after first target in race
+		/*if ((gametyperules & GTR_CIRCUIT)) // Stop looking after first target in race
 			actor->extravalue1 = 1;*/
 
 		if (actor->tracer->health)
@@ -9529,7 +9525,7 @@ void A_JawzChase(mobj_t *actor)
 			angle_t angledelta = actor->angle - targetangle;
 			boolean turnclockwise = true;
 
-			if (G_RaceGametype())
+			if ((gametyperules & GTR_CIRCUIT))
 			{
 				const fixed_t distbarrier = FixedMul(512*mapobjectscale, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
 				const fixed_t distaway = P_AproxDistance(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
@@ -9636,10 +9632,8 @@ void A_JawzExplode(mobj_t *actor)
 	INT32 shrapnel = 2;
 	mobj_t *truc;
 
-#ifdef HAVE_BLUA
 	if (LUA_CallAction("A_JawzExplode", actor))
 		return;
-#endif
 
 	truc = P_SpawnMobj(actor->x, actor->y, actor->z, MT_BOOMEXPLODE);
 	truc->scale = actor->scale*2;
@@ -9791,10 +9785,8 @@ void A_SPBChase(mobj_t *actor)
 	fixed_t pdist = 1536<<FRACBITS;	// best player distance when seeking
 	angle_t pangle;		// angle between us and the player
 
-#ifdef HAVE_BLUA
 	if (LUA_CallAction("A_SPBChase", actor))
 		return;
-#endif
 
 	// Default speed
 	wspeed = FixedMul(mapobjectscale, K_GetKartSpeedFromStat(5)*2);	// Go at twice the average speed a player would be going at!
@@ -10178,10 +10170,9 @@ void A_SPBChase(mobj_t *actor)
 void A_BallhogExplode(mobj_t *actor)
 {
 	mobj_t *mo2;
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_BallhogExplode", actor))
 		return;
-#endif
 
 	mo2 = P_SpawnMobj(actor->x, actor->y, actor->z, MT_BALLHOGBOOM);
 	P_SetScale(mo2, actor->scale*2);
@@ -10195,10 +10186,10 @@ void A_BallhogExplode(mobj_t *actor)
 void A_LightningFollowPlayer(mobj_t *actor)
 {
 	fixed_t sx, sy;
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_LightningFollowPlayer", actor))
 		return;
-#endif
+
 	if (!actor->target)
 		return;
 
@@ -10224,10 +10215,10 @@ void A_LightningFollowPlayer(mobj_t *actor)
 void A_FZBoomFlash(mobj_t *actor)
 {
 	UINT8 i;
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_FZBoomFlash", actor))
 		return;
-#endif
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		fixed_t dist;
@@ -10247,10 +10238,10 @@ void A_FZBoomSmoke(mobj_t *actor)
 {
 	INT32 i;
 	INT32 rad = 47+(23*var1);
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_FZBoomSmoke", actor))
 		return;
-#endif
+
 	for (i = 0; i < 8+(4*var1); i++)
 	{
 		mobj_t *smoke = P_SpawnMobj(actor->x + (P_RandomRange(-rad, rad)*actor->scale), actor->y + (P_RandomRange(-rad, rad)*actor->scale),
@@ -10269,10 +10260,9 @@ void A_RandomShadowFrame(mobj_t *actor)
 {
 	mobj_t *fire;
 	mobj_t *fake;
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_RandomShadowFrame", (actor)))
 		return;
-#endif
 
 	if (!actor->extravalue1)	// Hack that spawns thoks that look like random shadows. Otherwise the state would overwrite our frame and that's a pain.
 	{
@@ -10318,10 +10308,9 @@ void A_RoamingShadowThinker(mobj_t *actor)
 {
 	mobj_t *wind;
 
-#ifdef HAVE_BLUA
 	if (LUA_CallAction("A_RoamingShadowThinker", (actor)))
 		return;
-#endif
+
 	// extravalue1 replaces "movetimer"
 	// extravalue2 replaces "stoptimer"
 
@@ -10376,10 +10365,9 @@ void A_MayonakaArrow(mobj_t *actor)
 {
 	INT32 flip = 0;
 	INT32 iswarning;
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_MayonakaArrow", (actor)))
 		return;
-#endif
 
 	iswarning = actor->spawnpoint->options & MTF_OBJECTSPECIAL;	// is our object a warning sign?
 	// "animtimer" is replaced by "extravalue1" here.
@@ -10418,10 +10406,8 @@ void A_MementosTPParticles(mobj_t *actor)
 	int i = 0;
 	thinker_t *th;
 
-#ifdef HAVE_BLUA
 	if (LUA_CallAction("A_MementosTPParticles", (actor)))
 		return;
-#endif
 
 	for (; i<4; i++)
 	{
@@ -10469,11 +10455,8 @@ void A_ReaperThinker(mobj_t *actor)
 	player_t *player;	// used as a shortcut in a loop.
 	mobj_t *targetplayermo = NULL;	// the player mo we can eventually target, or whatever.
 
-
-#ifdef HAVE_BLUA
 	if (LUA_CallAction("A_ReaperThinker", (actor)))
 		return;
-#endif
 
 	// We don't have custom variables or whatever so we'll do with whatever the fuck we have left.
 
@@ -10642,10 +10625,9 @@ void A_FlameParticle(mobj_t *actor)
 {
 	fixed_t rad = actor->radius>>FRACBITS, hei = actor->radius>>FRACBITS;
 	mobj_t *par;
-#ifdef HAVE_BLUA
+
 	if (LUA_CallAction("A_FlameParticle", actor))
 		return;
-#endif
 
 	par = P_SpawnMobj(
 		actor->x + (P_RandomRange(-rad, rad)<<FRACBITS),
@@ -10663,10 +10645,8 @@ void A_FlameShieldPaper(mobj_t *actor)
 	INT32 locvar2 = var2;
 	UINT8 i;
 
-#ifdef HAVE_BLUA
 	if (LUA_CallAction("A_FlameShieldPaper", actor))
 		return;
-#endif
 
 	framea = (locvar1 & FF_FRAMEMASK);
 	frameb = (locvar2 & FF_FRAMEMASK);

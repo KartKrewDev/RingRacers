@@ -268,8 +268,8 @@ void G_ReadDemoExtraData(void)
 			// Color
 			M_Memcpy(name, demo_p, 16);
 			demo_p += 16;
-			for (i = 0; i < MAXSKINCOLORS; i++)
-				if (!stricmp(KartColor_Names[i], name))				// SRB2kart
+			for (i = 0; i < numskincolors; i++)
+				if (!stricmp(skincolors[i].name, name))				// SRB2kart
 				{
 					players[p].skincolor = i;
 					if (players[p].mo)
@@ -293,14 +293,12 @@ void G_ReadDemoExtraData(void)
 			// Follower's color
 			M_Memcpy(name, demo_p, 16);
 			demo_p += 16;
-			for (i = 0; i < MAXSKINCOLORS; i++)
-				if (!stricmp(KartColor_Names[i], name))				// SRB2kart
+			for (i = 0; i < numskincolors; i++)
+				if (!stricmp(skincolors[i].name, name))				// SRB2kart
 				{
 					players[p].followercolor = i;
 					break;
 				}
-
-
 		}
 		if (extradata & DXD_PLAYSTATE)
 		{
@@ -342,10 +340,8 @@ void G_ReadDemoExtraData(void)
 			G_ResetViews();
 
 			// maybe these are necessary?
-			if (G_BattleGametype())
-				K_CheckBumpers(); // SRB2Kart
-			else if (G_RaceGametype())
-				P_CheckRacers(); // also SRB2Kart
+			K_CheckBumpers();
+			P_CheckRacers();
 		}
 
 
@@ -410,7 +406,7 @@ void G_WriteDemoExtraData(void)
 			{
 				// Color
 				memset(name, 0, 16);
-				strncpy(name, KartColor_Names[players[i].skincolor], 16);
+				strncpy(name, skincolors[players[i].skincolor].name, 16);
 				M_Memcpy(demo_p,name,16);
 				demo_p += 16;
 			}
@@ -2004,7 +2000,7 @@ void G_BeginRecording(void)
 
 			// Color
 			memset(name, 0, 16);
-			strncpy(name, KartColor_Names[player->skincolor], 16);
+			strncpy(name, skincolors[player->skincolor].name, 16);
 			M_Memcpy(demo_p,name,16);
 			demo_p += 16;
 
@@ -2031,7 +2027,7 @@ void G_BeginRecording(void)
 			WRITEUINT32(demo_p, player->score);
 
 			// Power Levels
-			WRITEUINT16(demo_p, clientpowerlevels[p][G_BattleGametype() ? PWRLV_BATTLE : PWRLV_RACE]);
+			WRITEUINT16(demo_p, clientpowerlevels[p][gametype == GT_BATTLE ? PWRLV_BATTLE : PWRLV_RACE]);
 
 			// Kart speed and weight
 			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
@@ -2132,7 +2128,7 @@ void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT8 color, UINT
 
 	// Color
 	memset(temp, 0, 16);
-	strncpy(temp, KartColor_Names[color], 16);
+	strncpy(temp, skincolors[color].name, 16);
 	M_Memcpy(demo_p,temp,16);
 	demo_p += 16;
 
@@ -2595,8 +2591,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		// Color
 		M_Memcpy(temp,extrainfo_p,16);
 		extrainfo_p += 16;
-		for (i = 0; i < MAXSKINCOLORS; i++)
-			if (!stricmp(KartColor_Names[i],temp))				// SRB2kart
+		for (i = 0; i < numskincolors; i++)
+			if (!stricmp(skincolors[i].name,temp))				// SRB2kart
 			{
 				pdemo->standings[count].color = i;
 				break;
@@ -2958,8 +2954,8 @@ void G_DoPlayDemo(char *defdemoname)
 		// Color
 		M_Memcpy(color,demo_p,16);
 		demo_p += 16;
-		for (i = 0; i < MAXSKINCOLORS; i++)
-			if (!stricmp(KartColor_Names[i],color))				// SRB2kart
+		for (i = 0; i < numskincolors; i++)
+			if (!stricmp(skincolors[i].name,color))				// SRB2kart
 			{
 				players[p].skincolor = i;
 				break;
@@ -2973,7 +2969,7 @@ void G_DoPlayDemo(char *defdemoname)
 		// Follower colour
 		M_Memcpy(color, demo_p, 16);
 		demo_p += 16;
-		for (i = 0; i < MAXSKINCOLORS +2; i++)	// +2 because of Match and Opposite
+		for (i = 0; i < numskincolors +2; i++)	// +2 because of Match and Opposite
 		{
 				if (!stricmp(Followercolor_cons_t[i].strvalue, color))
 				{
@@ -2986,7 +2982,7 @@ void G_DoPlayDemo(char *defdemoname)
 		players[p].score = READUINT32(demo_p);
 
 		// Power Levels
-		clientpowerlevels[p][G_BattleGametype() ? PWRLV_BATTLE : PWRLV_RACE] = READUINT16(demo_p);
+		clientpowerlevels[p][gametype == GT_BATTLE ? PWRLV_BATTLE : PWRLV_RACE] = READUINT16(demo_p);
 
 		// Kart stats, temporarily
 		kartspeed[p] = READUINT8(demo_p);

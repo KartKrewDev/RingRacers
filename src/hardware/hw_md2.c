@@ -38,8 +38,6 @@
 #include "../r_draw.h"
 #include "../p_tick.h"
 
-#include "../k_color.h" // colortranslations
-
 #include "hw_model.h"
 
 #include "hw_main.h"

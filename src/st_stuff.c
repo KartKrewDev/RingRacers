@@ -173,22 +173,23 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 
 boolean ST_SameTeam(player_t *a, player_t *b)
 {
-	// Just pipe team messages to everyone in co-op or race.
-	if (!G_BattleGametype())
-		return true;
-
 	// Spectator chat.
 	if (a->spectator && b->spectator)
+	{
 		return true;
+	}
 
 	// Team chat.
-	if (G_GametypeHasTeams())
-		return a->ctfteam == b->ctfteam;
-
-	if (G_TagGametype())
-		return ((a->pflags & PF_TAGIT) == (b->pflags & PF_TAGIT));
-
-	return false;
+	if (G_GametypeHasTeams() == true)
+	{
+		// You get team messages if you're on the same team.
+		return (a->ctfteam == b->ctfteam);
+	}
+	else
+	{
+		// Not that everyone's not on the same team, but team messages go to normal chat if everyone's not in the same team.
+		return true;
+	}
 }
 
 static boolean st_stopped = true;
@@ -736,10 +737,10 @@ void ST_drawTitleCard(void)
 	UINT8 colornum;
 	const UINT8 *colormap;
 
-	if (players[consoleplayer].skincolor)
-		colornum = players[consoleplayer].skincolor;
+	if (players[g_localplayers[0]].skincolor)
+		colornum = players[g_localplayers[0]].skincolor;
 	else
-		colornum = cv_playercolor.value;
+		colornum = cv_playercolor[0].value;
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, colornum, GTC_CACHE);
 
@@ -901,9 +902,7 @@ static void ST_overlayDrawer(void)
 
 	// draw level title Tails
 	if (*mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer) && !mapreset)
-#ifdef HAVE_BLUA
-	&& LUA_HudEnabled(hud_stagetitle)
-#endif
+		&& LUA_HudEnabled(hud_stagetitle)
 	)
 		ST_drawLevelTitle();
 
@@ -955,15 +954,15 @@ static void ST_overlayDrawer(void)
 		switch (demo.savemode)
 		{
 		case DSM_NOTSAVING:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|(G_BattleGametype() ? V_REDMAP : V_SKYMAP), "Look Backward: Save replay");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Look Backward: Save replay");
 			break;
 
 		case DSM_WILLAUTOSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|(G_BattleGametype() ? V_REDMAP : V_SKYMAP), "Replay will be saved. (Look Backward: Change title)");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved. (Look Backward: Change title)");
 			break;
 
 		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|(G_BattleGametype() ? V_REDMAP : V_SKYMAP), "Replay will be saved.");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved.");
 			break;
 
 		case DSM_TITLEENTRY:
@@ -1023,7 +1022,7 @@ void ST_Drawer(void)
 		R_ReloadHUDGraphics();
 
 #ifdef SEENAMES
-	if (cv_seenames.value && cv_allowseenames.value && displayplayer == consoleplayer && seenplayer && seenplayer->mo)
+	if (cv_seenames.value && cv_allowseenames.value && displayplayers[0] == consoleplayer && seenplayer && seenplayer->mo)
 	{
 		INT32 c = 0;
 		switch (cv_seenames.value)
@@ -1064,22 +1063,6 @@ void ST_Drawer(void)
 	if (rendermode == render_soft)
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
-
-	// Blindfold!
-	if ((gametyperules & GTR_BLINDFOLDED)
-	&& (leveltime < hidetime * TICRATE))
-	{
-		if (players[displayplayer].pflags & PF_TAGIT)
-		{
-			stplyr = &players[displayplayer];
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31|V_PERPLAYER);
-		}
-		else if (splitscreen && players[secondarydisplayplayer].pflags & PF_TAGIT)
-		{
-			stplyr = &players[secondarydisplayplayer];
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31|V_PERPLAYER);
-		}
-	}
 
 	st_translucency = cv_translucenthud.value;
 

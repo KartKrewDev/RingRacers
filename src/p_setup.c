@@ -715,9 +715,7 @@ void P_ReloadRings(void)
 			}
 			continue;
 		}
-		if (!(mo->type == MT_RING || mo->type == MT_COIN
-			|| mo->type == MT_BLUESPHERE || mo->type == MT_BOMBSPHERE
-			|| mo->type == MT_NIGHTSCHIP || mo->type == MT_NIGHTSSTAR))
+		if (mo->type != MT_RING)
 			continue;
 
 		// Don't auto-disintegrate things being pulled to us
@@ -731,12 +729,10 @@ void P_ReloadRings(void)
 	for (i = 0; i < nummapthings; i++, mt++)
 	{
 		// Notice an omission? We handle hoops differently.
-		if (mt->type == mobjinfo[MT_RING].doomednum || mt->type == mobjinfo[MT_COIN].doomednum
-			|| mt->type == mobjinfo[MT_REDTEAMRING].doomednum || mt->type == mobjinfo[MT_BLUETEAMRING].doomednum
-			|| mt->type == mobjinfo[MT_BLUESPHERE].doomednum || mt->type == mobjinfo[MT_BOMBSPHERE].doomednum)
+		if (mt->type == mobjinfo[MT_RING].doomednum)
 		{
 			mt->mobj = NULL;
-			P_SetBonusTime(P_SpawnMapThing(mt));
+			P_SpawnMapThing(mt);
 		}
 		else if (mt->type >= 600 && mt->type <= 609) // Item patterns
 		{
@@ -747,30 +743,6 @@ void P_ReloadRings(void)
 	for (i = 0; i < numHoops; i++)
 	{
 		P_SpawnHoop(hoopsToRespawn[i]);
-	}
-}
-
-void P_SwitchSpheresBonusMode(boolean bonustime)
-{
-	mobj_t *mo;
-	thinker_t *th;
-
-	// scan the thinkers to find spheres to switch
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
-
-		mo = (mobj_t *)th;
-
-		if (mo->type != MT_BLUESPHERE && mo->type != MT_NIGHTSCHIP
-			&& mo->type != MT_FLINGBLUESPHERE && mo->type != MT_FLINGNIGHTSCHIP)
-			continue;
-
-		if (!mo->health)
-			continue;
-
-		P_SetMobjState(mo, ((bonustime) ? mo->info->raisestate : mo->info->spawnstate));
 	}
 }
 
@@ -799,35 +771,37 @@ void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum)
 		type = READUINT16(data) & 4095;
 		data += sizeof (INT16); // skip options
 
-		switch (type)
+		if (mt->type == mobjinfo[MT_RANDOMITEM].doomednum)
 		{
-		case 300: // MT_RING
-		case 1800: // MT_COIN
-		case 308: // red team ring
-		case 309: // blue team ring
+			nummapboxes++;
+		}
+		else if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
+		{
+			maptargets++;
+		}
+		else if (mt->type == mobjinfo[MT_RING].doomednum)
+		{
 			maprings++;
-			break;
-		case 400: // MT_SUPERRINGBOX
-		case 414: // red ring box
-		case 415: // blue ring box
-		case 603: // 10 diagonal rings
-			maprings += 10;
-			break;
-		case 600: // 5 vertical rings
-		case 601: // 5 vertical rings
-		case 602: // 5 diagonal rings
-			maprings += 5;
-			break;
-		case 604: // 8 circle rings
-		case 609: // 16 circle rings & wings
-			maprings += 8;
-			break;
-		case 605: // 16 circle rings
-			maprings += 16;
-			break;
-		case 608: // 8 circle rings & wings
-			maprings += 4;
-			break;
+		}
+		else
+		{
+			switch (type)
+			{
+			case 603: // 10 diagonal rings
+				maprings += 10;
+				break;
+			case 600: // 5 vertical rings
+			case 601: // 5 vertical rings
+			case 602: // 5 diagonal rings
+				maprings += 5;
+				break;
+			case 604: // 8 circle rings
+				maprings += 8;
+				break;
+			case 605: // 16 circle rings
+				maprings += 16;
+				break;
+			}
 		}
 	}
 	Z_Free(datastart);
@@ -837,37 +811,12 @@ void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum)
 }
 #endif
 
-static void P_SpawnEmeraldHunt(void)
-{
-	INT32 emer[3], num[MAXHUNTEMERALDS], i, randomkey;
-	fixed_t x, y, z;
-
-	for (i = 0; i < numhuntemeralds; i++)
-		num[i] = i;
-
-	for (i = 0; i < 3; i++)
-	{
-		// generate random index, shuffle afterwards
-		randomkey = P_RandomKey(numhuntemeralds--);
-		emer[i] = num[randomkey];
-		num[randomkey] = num[numhuntemeralds];
-		num[numhuntemeralds] = emer[i];
-
-		// spawn emerald
-		x = huntemeralds[emer[i]]->x<<FRACBITS;
-		y = huntemeralds[emer[i]]->y<<FRACBITS;
-		z = P_GetMapThingSpawnHeight(MT_EMERHUNT, huntemeralds[emer[i]], x, y);
-		P_SetMobjStateNF(P_SpawnMobj(x, y, z, MT_EMERHUNT),
-			mobjinfo[MT_EMERHUNT].spawnstate+i);
-	}
-}
-
 static void P_SpawnMapThings(boolean spawnemblems)
 {
 	size_t i;
 	mapthing_t *mt;
 
-        // Spawn axis points first so they are at the front of the list for fast searching.
+	// Spawn axis points first so they are at the front of the list for fast searching.
 	for (i = 0, mt = mapthings; i < nummapthings; i++, mt++)
 	{
 		switch (mt->type)
@@ -883,8 +832,6 @@ static void P_SpawnMapThings(boolean spawnemblems)
 		}
 	}
 
-	numhuntemeralds = 0;
-
 	for (i = 0, mt = mapthings; i < nummapthings; i++, mt++)
 	{
 		if (mt->type == 1700 // MT_AXIS
@@ -892,18 +839,8 @@ static void P_SpawnMapThings(boolean spawnemblems)
 			|| mt->type == 1702) // MT_AXISTRANSFERLINE
 			continue; // These were already spawned
 
-		/* MOVE TO P_SPAWNMAPTHING
-
-		if (mt->type == mobjinfo[MT_RANDOMITEM].doomednum)
-			nummapboxes++;
-
 		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
-		{
-			maptargets++;
-			continue; // These should not be spawned *yet*
-		}
-
-		*/
+			continue; // This will spawn later
 
 		if (!spawnemblems && mt->type == mobjinfo[MT_EMBLEM].doomednum)
 			continue;
@@ -917,10 +854,6 @@ static void P_SpawnMapThings(boolean spawnemblems)
 		else // Everything else
 			P_SpawnMapThing(mt);
 	}
-
-	// random emeralds for hunt
-	if (numhuntemeralds)
-		P_SpawnEmeraldHunt();
 }
 
 // Experimental groovy write function!
@@ -3425,7 +3358,6 @@ static void P_InitLevelSettings(void)
 		players[i].gotcontinue = false;
 
 		players[i].xtralife = players[i].deadtimer = players[i].numboxes = players[i].totalring = players[i].laps = 0;
-		players[i].health = 1;
 		players[i].aiming = 0;
 		players[i].pflags &= ~PF_TIMEOVER;
 	}
@@ -3462,7 +3394,7 @@ static void P_InitLevelSettings(void)
 	}
 	else
 	{
-		if (G_BattleGametype())
+		if ((gametyperules & GTR_BUMPERS))
 			gamespeed = KARTSPEED_EASY;
 		else
 		{
@@ -3556,15 +3488,15 @@ static void P_ForceCharacter(const char *forcecharskin)
 		if (splitscreen)
 		{
 			sprintf(skincmd, "skin2 %s\n", forcecharskin);
-			CV_Set(&cv_skin2, forcecharskin);
+			CV_Set(&cv_skin[1], forcecharskin);
 			if (splitscreen > 1)
 			{
 				sprintf(skincmd, "skin3 %s\n", forcecharskin);
-				CV_Set(&cv_skin3, forcecharskin);
+				CV_Set(&cv_skin[2], forcecharskin);
 				if (splitscreen > 2)
 				{
 					sprintf(skincmd, "skin4 %s\n", forcecharskin);
-					CV_Set(&cv_skin4, forcecharskin);
+					CV_Set(&cv_skin[3], forcecharskin);
 				}
 			}
 		}
@@ -3574,42 +3506,18 @@ static void P_ForceCharacter(const char *forcecharskin)
 	}
 	else
 	{
-		if (splitscreen)
+		UINT8 i;
+
+		for (i = 0; i <= splitscreen; i++)
 		{
-			SetPlayerSkin(g_localplayers[1], forcecharskin);
-			if ((unsigned)cv_playercolor2.value != skins[players[g_localplayers[1]].skin].prefcolor && !modeattacking)
+			SetPlayerSkin(g_localplayers[i], forcecharskin);
+
+			// normal player colors in single player
+			if ((unsigned)cv_playercolor[i].value != skins[players[g_localplayers[i]].skin].prefcolor && !modeattacking)
 			{
-				CV_StealthSetValue(&cv_playercolor2, skins[players[g_localplayers[1]].skin].prefcolor);
-				players[g_localplayers[1]].skincolor = skins[players[g_localplayers[1]].skin].prefcolor;
+				CV_StealthSetValue(&cv_playercolor[i], skins[players[g_localplayers[i]].skin].prefcolor);
+				players[g_localplayers[i]].skincolor = skins[players[g_localplayers[i]].skin].prefcolor;
 			}
-
-			if (splitscreen > 1)
-			{
-				SetPlayerSkin(g_localplayers[2], forcecharskin);
-				if ((unsigned)cv_playercolor3.value != skins[players[g_localplayers[2]].skin].prefcolor && !modeattacking)
-				{
-					CV_StealthSetValue(&cv_playercolor3, skins[players[g_localplayers[2]].skin].prefcolor);
-					players[g_localplayers[2]].skincolor = skins[players[g_localplayers[2]].skin].prefcolor;
-				}
-
-				if (splitscreen > 2)
-				{
-					SetPlayerSkin(g_localplayers[3], forcecharskin);
-					if ((unsigned)cv_playercolor4.value != skins[players[g_localplayers[3]].skin].prefcolor && !modeattacking)
-					{
-						CV_StealthSetValue(&cv_playercolor4, skins[players[g_localplayers[3]].skin].prefcolor);
-						players[g_localplayers[3]].skincolor = skins[players[g_localplayers[3]].skin].prefcolor;
-					}
-				}
-			}
-		}
-
-		SetPlayerSkin(consoleplayer, forcecharskin);
-		// normal player colors in single player
-		if ((unsigned)cv_playercolor.value != skins[players[consoleplayer].skin].prefcolor && !modeattacking)
-		{
-			CV_StealthSetValue(&cv_playercolor, skins[players[consoleplayer].skin].prefcolor);
-			players[consoleplayer].skincolor = skins[players[consoleplayer].skin].prefcolor;
 		}
 	}
 }
@@ -3935,11 +3843,11 @@ static void P_InitPlayers(void)
 
 		players[i].mo = NULL;
 
-		if (!G_RaceGametype())
+		if (!(gametyperules & GTR_CIRCUIT))
 		{
 			G_DoReborn(i);
 		}
-		else // gametype is GT_COOP or GT_RACE
+		else // gametype is race
 		{
 			G_SpawnPlayer(i);
 			if (players[i].starposttime)
@@ -3957,9 +3865,7 @@ static void P_InitGametype(void)
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
-	if (G_TagGametype())
-		P_InitTagGametype();
-	else if ((gametyperules & GTR_RACE) && server)
+	if ((gametyperules & GTR_CIRCUIT) && server)
 	{
 		if ((netgame || multiplayer) && cv_basenumlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
@@ -4241,7 +4147,7 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// The waypoint data that's in PU_LEVEL needs to be reset back to 0/NULL now since PU_LEVEL was cleared
 	K_ClearWaypoints();
 	// Load the waypoints please!
-	if (G_RaceGametype())
+	if ((gametyperules & GTR_CIRCUIT))
 	{
 		if (K_SetupWaypointList() == false)
 		{

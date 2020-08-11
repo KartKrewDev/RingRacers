@@ -2223,7 +2223,7 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 		{
 			case 2001: // Finish Line
 			{
-				if (G_RaceGametype() && !(player->exiting) && !(player->pflags & PF_HITFINISHLINE))
+				if ((gametyperules & GTR_CIRCUIT) && !(player->exiting) && !(player->pflags & PF_HITFINISHLINE))
 				{
 					if (((line->flags & (ML_NOCLIMB)) && (side == 0))
 						|| (!(line->flags & (ML_NOCLIMB)) && (side == 1))) // crossed from behind to infront
@@ -4059,11 +4059,6 @@ void P_SetupSignExit(player_t *player)
 		if (thing->type != MT_SIGN)
 			continue;
 
-		if (!numfound
-			&& !(player->mo->target && player->mo->target->type == MT_SIGN)
-			&& !((gametyperules & GTR_FRIENDLY) && (netgame || multiplayer) && cv_exitmove.value))
-				P_SetTarget(&player->mo->target, thing);
-
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
@@ -4084,11 +4079,6 @@ void P_SetupSignExit(player_t *player)
 		thing = (mobj_t *)think;
 		if (thing->type != MT_SIGN)
 			continue;
-
-		if (!numfound
-			&& !(player->mo->target && player->mo->target->type == MT_SIGN)
-			&& !((gametyperules & GTR_FRIENDLY) && (netgame || multiplayer) && cv_exitmove.value))
-				P_SetTarget(&player->mo->target, thing);
 
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
@@ -4838,70 +4828,8 @@ DoneSection2:
 			}
 			break;
 
-		case 3: // Red Team's Base
-			if ((gametyperules & GTR_TEAMFLAGS) && P_IsObjectOnGround(player->mo))
-			{
-				if (player->ctfteam == 1 && (player->gotflag & GF_BLUEFLAG))
-				{
-					mobj_t *mo;
-
-					// Make sure the red team still has their own
-					// flag at their base so they can score.
-					if (!P_IsFlagAtBase(MT_REDFLAG))
-						break;
-
-					HU_SetCEchoFlags(V_AUTOFADEOUT|V_ALLOWLOWERCASE);
-					HU_SetCEchoDuration(5);
-					HU_DoCEcho(va(M_GetText("%s%s%s\\CAPTURED THE %sBLUE FLAG%s.\\\\\\\\"), "\x85", player_names[player-players], "\x80", "\x84", "\x80"));
-
-					if (splitscreen || players[consoleplayer].ctfteam == 1)
-						S_StartSound(NULL, sfx_flgcap);
-					else if (players[consoleplayer].ctfteam == 2)
-						S_StartSound(NULL, sfx_lose);
-
-					mo = P_SpawnMobj(player->mo->x,player->mo->y,player->mo->z,MT_BLUEFLAG);
-					player->gotflag &= ~GF_BLUEFLAG;
-					mo->flags &= ~MF_SPECIAL;
-					mo->fuse = TICRATE;
-					mo->spawnpoint = bflagpoint;
-					mo->flags2 |= MF2_JUSTATTACKED;
-					redscore += 1;
-					P_AddPlayerScore(player, 5);
-				}
-			}
-			break;
-
-		case 4: // Blue Team's Base
-			if ((gametyperules & GTR_TEAMFLAGS) && P_IsObjectOnGround(player->mo))
-			{
-				if (player->ctfteam == 2 && (player->gotflag & GF_REDFLAG))
-				{
-					mobj_t *mo;
-
-					// Make sure the blue team still has their own
-					// flag at their base so they can score.
-					if (!P_IsFlagAtBase(MT_BLUEFLAG))
-						break;
-
-					HU_SetCEchoFlags(V_AUTOFADEOUT|V_ALLOWLOWERCASE);
-					HU_SetCEchoDuration(5);
-					HU_DoCEcho(va(M_GetText("%s%s%s\\CAPTURED THE %sRED FLAG%s.\\\\\\\\"), "\x84", player_names[player-players], "\x80", "\x85", "\x80"));
-
-					if (splitscreen || players[consoleplayer].ctfteam == 2)
-						S_StartSound(NULL, sfx_flgcap);
-					else if (players[consoleplayer].ctfteam == 1)
-						S_StartSound(NULL, sfx_lose);
-
-					mo = P_SpawnMobj(player->mo->x,player->mo->y,player->mo->z,MT_REDFLAG);
-					player->gotflag &= ~GF_REDFLAG;
-					mo->flags &= ~MF_SPECIAL;
-					mo->fuse = TICRATE;
-					mo->spawnpoint = rflagpoint;
-					mo->flags2 |= MF2_JUSTATTACKED;
-					bluescore += 1;
-					P_AddPlayerScore(player, 5);
-				}
-			}
+		case 3: // Red Team's goal
+		case 4: // Blue Team's goal
 			break;
 
 		case 5: // Fan sector
@@ -6890,14 +6818,14 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 
 			case 308: // Race-only linedef executor. Triggers once.
-				if (!(gametyperules & GTR_RACE))
+				if (!(gametyperules & GTR_CIRCUIT))
 					lines[i].special = 0;
 				break;
 
 			// Linedef executor triggers for CTF teams.
 			case 309:
 			case 311:
-				if (!(gametyperules & GTR_TEAMFLAGS))
+				if (!(gametyperules & GTR_TEAMS))
 					lines[i].special = 0;
 				break;
 
@@ -7137,7 +7065,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 			case 2000: // Waypoint Parameters
 				break;
 			case 2001: // Finish Line
-				if (G_RaceGametype())
+				if ((gametyperules & GTR_CIRCUIT))
 					circuitmap = true;
 				break;
 			case 2002: // Linedef Trigger: Race Lap

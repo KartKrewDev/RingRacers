@@ -108,7 +108,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (player->exiting || mapreset)
 		return false;
 
-	/*if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0) // No bumpers in Match
+	/*if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0) // No bumpers in Match
 		return false;*/
 
 	if (weapon)
@@ -237,7 +237,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!P_CanPickupItem(player, 3) || (player->kartstuff[k_itemamount] && player->kartstuff[k_itemtype] != special->threshold))
 				return;
 
-			if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
+			if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0)
 				return;
 
 			player->kartstuff[k_itemtype] = special->threshold;
@@ -258,7 +258,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!P_CanPickupItem(player, 1))
 				return;
 
-			if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
+			if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0)
 			{
 				if (player->kartstuff[k_comebackmode] || player->kartstuff[k_comebacktimer])
 					return;
@@ -476,7 +476,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			S_StartSound(special, sfx_s1a2);
 			return;
 		case MT_CDUFO: // SRB2kart
-			if (special->fuse || !P_CanPickupItem(player, 1) || (G_BattleGametype() && player->kartstuff[k_bumper] <= 0))
+			if (special->fuse || !P_CanPickupItem(player, 1) || ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0))
 				return;
 
 			player->kartstuff[k_itemroulette] = 1;
@@ -730,208 +730,6 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 	//S_StartSound(toucher, post->info->painsound);
 
 	P_ClearStarPost(post->health);
-}
-
-/** Prints death messages relating to a dying or hit player.
-  *
-  * \param player    Affected player.
-  * \param inflictor The attack weapon used, can be NULL.
-  * \param source    The attacker, can be NULL.
-  * \param damagetype The type of damage dealt to the player. If bit 7 (0x80) is set, this was an instant-kill.
-  */
-static void P_HitDeathMessages(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 damagetype)
-{
-	const char *str = NULL;
-	boolean deathonly = false;
-	boolean deadsource = false;
-	boolean deadtarget = false;
-	// player names complete with control codes
-	char targetname[MAXPLAYERNAME+4];
-	char sourcename[MAXPLAYERNAME+4];
-
-	if (!(gametyperules & (GTR_RINGSLINGER|GTR_HURTMESSAGES)))
-		return; // Not in coop, etc.
-
-	if (!player)
-		return; // Impossible!
-
-	if (!player->mo)
-		return; // Also impossible!
-
-	if (player->spectator)
-		return; // No messages for dying (crushed) spectators.
-
-	if (!netgame)
-		return; // Presumably it's obvious what's happening in splitscreen.
-
-	if (LUAh_HurtMsg(player, inflictor, source, damagetype))
-		return;
-
-	deadtarget = (player->mo->health <= 0);
-
-	// Don't log every hazard hit if they don't want us to.
-	if (!deadtarget && !cv_hazardlog.value)
-		return;
-
-	// Target's name
-	snprintf(targetname, sizeof(targetname), "%s%s%s",
-	         CTFTEAMCODE(player),
-	         player_names[player - players],
-	         CTFTEAMENDCODE(player));
-
-	if (source)
-	{
-		// inflictor shouldn't be NULL if source isn't
-		I_Assert(inflictor != NULL);
-
-		if (source->player)
-		{
-			// Source's name (now that we know there is one)
-			snprintf(sourcename, sizeof(sourcename), "%s%s%s",
-					 CTFTEAMCODE(source->player),
-					 player_names[source->player - players],
-					 CTFTEAMENDCODE(source->player));
-
-			// We don't care if it's us.
-			// "Player 1's [redacted] killed Player 1."
-			if (source->player->playerstate == PST_DEAD && source->player != player &&
-			 (inflictor->flags2 & MF2_BEYONDTHEGRAVE))
-				deadsource = true;
-
-			if (inflictor->flags & MF_PUSHABLE)
-			{
-				str = M_GetText("%s%s's playtime with heavy objects %s %s.\n");
-			}
-			else switch (inflictor->type)
-			{
-				case MT_PLAYER:
-					if (damagetype == DMG_NUKE) // SH_ARMAGEDDON, armageddon shield
-						str = M_GetText("%s%s's armageddon blast %s %s.\n");
-					else if ((inflictor->player->powers[pw_shield] & SH_NOSTACK) == SH_ELEMENTAL && (inflictor->player->pflags & PF_SHIELDABILITY))
-						str = M_GetText("%s%s's elemental stomp %s %s.\n");
-					else if (inflictor->player->powers[pw_invulnerability])
-						str = M_GetText("%s%s's invincibility aura %s %s.\n");
-					else if (inflictor->player->powers[pw_super])
-						str = M_GetText("%s%s's super aura %s %s.\n");
-					else
-						str = M_GetText("%s%s's tagging hand %s %s.\n");
-					break;
-				case MT_SPINFIRE:
-					str = M_GetText("%s%s's elemental fire trail %s %s.\n");
-					break;
-				case MT_THROWNBOUNCE:
-					str = M_GetText("%s%s's bounce ring %s %s.\n");
-					break;
-				case MT_THROWNINFINITY:
-					str = M_GetText("%s%s's infinity ring %s %s.\n");
-					break;
-				case MT_THROWNAUTOMATIC:
-					str = M_GetText("%s%s's automatic ring %s %s.\n");
-					break;
-				case MT_THROWNSCATTER:
-					str = M_GetText("%s%s's scatter ring %s %s.\n");
-					break;
-				// TODO: For next two, figure out how to determine if it was a direct hit or splash damage. -SH
-				case MT_THROWNEXPLOSION:
-					str = M_GetText("%s%s's explosion ring %s %s.\n");
-					break;
-				case MT_THROWNGRENADE:
-					str = M_GetText("%s%s's grenade ring %s %s.\n");
-					break;
-				case MT_REDRING:
-					if (inflictor->flags2 & MF2_RAILRING)
-						str = M_GetText("%s%s's rail ring %s %s.\n");
-					else
-						str = M_GetText("%s%s's thrown ring %s %s.\n");
-					break;
-				default:
-					str = M_GetText("%s%s %s %s.\n");
-					break;
-			}
-
-			CONS_Printf(str,
-				deadsource ? M_GetText("The late ") : "",
-				sourcename,
-				deadtarget ? M_GetText("killed") : M_GetText("hit"),
-				targetname);
-			return;
-		}
-		else switch (source->type)
-		{
-			case MT_EGGMAN_ICON:
-				str = M_GetText("%s was %s by Eggman's nefarious TV magic.\n");
-				break;
-			case MT_SPIKE:
-			case MT_WALLSPIKE:
-				str = M_GetText("%s was %s by spikes.\n");
-				break;
-			default:
-				str = M_GetText("%s was %s by an environmental hazard.\n");
-				break;
-		}
-	}
-	else
-	{
-		// null source, environment kills
-		switch (damagetype)
-		{
-			case DMG_WATER:
-				str = M_GetText("%s was %s by dangerous water.\n");
-				break;
-			case DMG_FIRE:
-				str = M_GetText("%s was %s by molten lava.\n");
-				break;
-			case DMG_ELECTRIC:
-				str = M_GetText("%s was %s by electricity.\n");
-				break;
-			case DMG_SPIKE:
-				str = M_GetText("%s was %s by spikes.\n");
-				break;
-			case DMG_DROWNED:
-				deathonly = true;
-				str = M_GetText("%s drowned.\n");
-				break;
-			case DMG_CRUSHED:
-				deathonly = true;
-				str = M_GetText("%s was crushed.\n");
-				break;
-			case DMG_DEATHPIT:
-				if (deadtarget)
-				{
-					deathonly = true;
-					str = M_GetText("%s fell into a bottomless pit.\n");
-				}
-				break;
-			case DMG_SPACEDROWN:
-				if (deadtarget)
-				{
-					deathonly = true;
-					str = M_GetText("%s asphyxiated in space.\n");
-				}
-				break;
-			default:
-				if (deadtarget)
-				{
-					deathonly = true;
-					str = M_GetText("%s died.\n");
-				}
-				break;
-		}
-		if (!str)
-			str = M_GetText("%s was %s by an environmental hazard.\n");
-	}
-
-	if (!str) // Should not happen! Unless we missed catching something above.
-		return;
-
-	if (deathonly)
-	{
-		if (!deadtarget)
-			return;
-		CONS_Printf(str, targetname);
-	}
-	else
-		CONS_Printf(str, targetname, deadtarget ? M_GetText("killed") : M_GetText("hit"));
 }
 
 // Easily make it so that overtime works offline
@@ -1353,7 +1151,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		if (target->player == &players[displayplayers[2]]) localaiming[2] = 0;
 		if (target->player == &players[displayplayers[3]]) localaiming[3] = 0;
 
-		if (G_BattleGametype())
+		if ((gametyperules & GTR_BUMPERS))
 			K_CheckBumpers();
 
 		target->player->kartstuff[k_pogospring] = 0;
@@ -1828,7 +1626,7 @@ static void P_KillPlayer(player_t *player, mobj_t *source, INT32 damage)
 		P_SetTarget(&boom->target, player->mo);
 	}
 
-	if (G_BattleGametype())
+	if ((gametyperules & GTR_BUMPERS))
 	{
 		if (player->kartstuff[k_bumper] > 0)
 		{
@@ -2047,7 +1845,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
 
 	// Rings shouldn't be in Battle!
-	if (G_BattleGametype())
+	if ((gametyperules & GTR_BUMPERS))
 		return;
 
 	// Better safe than sorry.

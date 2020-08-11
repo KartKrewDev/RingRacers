@@ -365,7 +365,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 	if (!KartItemCVars[item-1]->value && !modeattacking)
 		return 0;
 
-	if (G_BattleGametype())
+	if (gametype == GT_BATTLE)
 	{
 		I_Assert(pos < 6); // DO NOT allow positions past the bounds of the table
 		newodds = K_KartItemOddsBattle[item-1][pos];
@@ -386,7 +386,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 		if (!playeringame[i] || players[i].spectator)
 			continue;
 
-		if (!G_BattleGametype() || players[i].kartstuff[k_bumper])
+		if (!(gametyperules & GTR_BUMPERS) || players[i].kartstuff[k_bumper])
 			pingame++;
 
 		if (players[i].exiting)
@@ -398,7 +398,7 @@ static INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean sp
 			return 0;
 		}
 
-		if (players[i].mo && G_RaceGametype())
+		if (players[i].mo && gametype == GT_RACE)
 		{
 			if (players[i].kartstuff[k_position] == 1 && first == -1)
 				first = i;
@@ -559,7 +559,7 @@ static UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 
 		UINT8 j;
 		boolean available = false;
 
-		if (G_BattleGametype() && i > 5)
+		if (gametype == GT_BATTLE && i > 5)
 		{
 			oddsvalid[i] = false;
 			break;
@@ -583,7 +583,7 @@ static UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 
 			disttable[distlen++] = odds; \
 	totallen += num;
 
-	if (G_BattleGametype()) // Battle Mode
+	if (gametype == GT_BATTLE) // Battle Mode
 	{
 		SETUPDISTTABLE(0,1);
 		SETUPDISTTABLE(1,1);
@@ -772,7 +772,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	// Record Attack / alone mashing behavior
 	if (modeattacking || pingame == 1)
 	{
-		if (G_RaceGametype())
+		if (gametype == GT_RACE)
 		{
 			if (mashed && (modeattacking || cv_superring.value)) // ANY mashed value? You get rings.
 			{
@@ -792,7 +792,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 					S_StartSound(NULL, sfx_itrolf);
 			}
 		}
-		else if (G_BattleGametype())
+		else if (gametype == GT_BATTLE)
 		{
 			if (mashed && (modeattacking || cv_banana.value)) // ANY mashed value? You get a banana.
 			{
@@ -819,41 +819,38 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (G_RaceGametype())
+	// SPECIAL CASE No. 4:
+	// Being in ring debt occasionally forces Super Ring on you if you mashed
+	if ((gametyperules & GTR_RINGS) && mashed && player->kartstuff[k_rings] < 0 && cv_superring.value)
 	{
-		// SPECIAL CASE No. 4:
-		// Being in ring debt occasionally forces Super Ring on you if you mashed
-		if (mashed && player->kartstuff[k_rings] < 0 && cv_superring.value)
+		INT32 debtamount = min(20, abs(player->kartstuff[k_rings]));
+		if (P_RandomChance((debtamount*FRACUNIT)/20))
 		{
-			INT32 debtamount = min(20, abs(player->kartstuff[k_rings]));
-			if (P_RandomChance((debtamount*FRACUNIT)/20))
-			{
-				K_KartGetItemResult(player, KITEM_SUPERRING);
-				player->karthud[khud_itemblink] = TICRATE;
-				player->karthud[khud_itemblinkmode] = 1;
-				player->kartstuff[k_itemroulette] = 0;
-				player->kartstuff[k_roulettetype] = 0;
-				if (P_IsDisplayPlayer(player))
-					S_StartSound(NULL, sfx_itrolm);
-				return;
-			}
-		}
-
-		// SPECIAL CASE No. 5:
-		// Force SPB onto 2nd if they get too far behind
-		if (player->kartstuff[k_position] == 2 && pdis > (DISTVAR*8)
-			&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
-			&& cv_selfpropelledbomb.value)
-		{
-			K_KartGetItemResult(player, KITEM_SPB);
+			K_KartGetItemResult(player, KITEM_SUPERRING);
 			player->karthud[khud_itemblink] = TICRATE;
-			player->karthud[khud_itemblinkmode] = (mashed ? 1 : 0);
+			player->karthud[khud_itemblinkmode] = 1;
 			player->kartstuff[k_itemroulette] = 0;
 			player->kartstuff[k_roulettetype] = 0;
 			if (P_IsDisplayPlayer(player))
-				S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
+				S_StartSound(NULL, sfx_itrolm);
 			return;
 		}
+	}
+
+	// SPECIAL CASE No. 5:
+	// Force SPB onto 2nd if they get too far behind
+	if ((gametyperules & GTR_CIRCUIT) && player->kartstuff[k_position] == 2 && pdis > (DISTVAR*8)
+		&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
+		&& cv_selfpropelledbomb.value)
+	{
+		K_KartGetItemResult(player, KITEM_SPB);
+		player->karthud[khud_itemblink] = TICRATE;
+		player->karthud[khud_itemblinkmode] = (mashed ? 1 : 0);
+		player->kartstuff[k_itemroulette] = 0;
+		player->kartstuff[k_roulettetype] = 0;
+		if (P_IsDisplayPlayer(player))
+			S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
+		return;
 	}
 
 	// NOW that we're done with all of those specialized cases, we can move onto the REAL item roulette tables.
@@ -971,7 +968,7 @@ static void K_DebtStingPlayer(player_t *player, INT32 length)
 
 	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0
 		|| player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
-		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
+		|| ((gametyperules & GTR_BUMPERS) && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 		return;
 
 	player->kartstuff[k_ringboost] = 0;
@@ -1602,17 +1599,38 @@ void K_DoIngameRespawn(player_t *player)
 		UINT32 bestdist = UINT32_MAX;
 		mapthing_t *beststart = NULL;
 		UINT8 numstarts = 0;
+		UINT8 starttype = 0;
 
-		if (G_RaceGametype())
+		if (gametyperules & GTR_TEAMSTARTS)
 		{
-			numstarts = numcoopstarts;
+			if (player->ctfteam == 1)
+			{
+				starttype = 3;
+				numstarts = numredctfstarts;
+			}
+			else if (player->ctfteam == 2)
+			{
+				starttype = 4;
+				numstarts = numbluectfstarts;
+			}
+			else
+			{
+				starttype = 2;
+				numstarts = numdmstarts;
+			}
 		}
-		else if (G_BattleGametype())
+		else if (gametyperules & GTR_BATTLESTARTS)
 		{
+			starttype = 2;
 			numstarts = numdmstarts;
 		}
+		else
+		{
+			starttype = 1;
+			numstarts = numcoopstarts;
+		}
 
-		if (numstarts > 0)
+		if (starttype > 0 && numstarts > 0)
 		{
 			UINT8 i = 0;
 
@@ -1621,18 +1639,23 @@ void K_DoIngameRespawn(player_t *player)
 				UINT32 dist = UINT32_MAX;
 				mapthing_t *checkstart = NULL;
 
-				if (G_RaceGametype())
+				switch (starttype)
 				{
-					checkstart = playerstarts[i];
+					case 4:
+						checkstart = bluectfstarts[i];
+						break;
+					case 3:
+						checkstart = redctfstarts[i];
+						break;
+					case 2:
+						checkstart = deathmatchstarts[i];
+						break;
+					case 1:
+						checkstart = playerstarts[i];
+						break;
 				}
-				else if (G_BattleGametype())
-				{
-					checkstart = deathmatchstarts[i];
-				}
-				else
-				{
-					break;
-				}
+
+				I_Assert(checkstart != NULL);
 
 				dist = (UINT32)P_AproxDistance((player->mo->x >> FRACBITS) - checkstart->x,
 					(player->mo->y >> FRACBITS) - checkstart->y);
@@ -1902,7 +1925,7 @@ void K_RespawnChecker(player_t *player)
 			//P_PlayRinglossSound(player->mo);
 			P_PlayerRingBurst(player, 3);
 
-			if (G_BattleGametype())
+			if (gametyperules & GTR_BUMPERS)
 			{
 				if (player->kartstuff[k_bumper] > 0)
 				{
@@ -2175,7 +2198,7 @@ void K_PlayOvertakeSound(mobj_t *source)
 {
 	boolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
 
-	if (!G_RaceGametype()) // Only in race
+	if (!gametype == GT_RACE) // Only in race
 		return;
 
 	// 4 seconds from before race begins, 10 seconds afterwards
@@ -2338,7 +2361,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 	fixed_t finalspeed;
 	UINT8 kartspeed = player->kartspeed;
 
-	if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
+	if ((gametyperules & (GTR_BUMPERS|GTR_KARMA)) == (GTR_BUMPERS|GTR_KARMA) && player->kartstuff[k_bumper] <= 0)
 		kartspeed = 1;
 
 	finalspeed = K_GetKartSpeedFromStat(kartspeed);
@@ -2371,7 +2394,7 @@ fixed_t K_GetKartAccel(player_t *player)
 	fixed_t k_accel = 32; // 36;
 	UINT8 kartspeed = player->kartspeed;
 
-	if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
+	if ((gametyperules & (GTR_BUMPERS|GTR_KARMA)) == (GTR_BUMPERS|GTR_KARMA) && player->kartstuff[k_bumper] <= 0)
 		kartspeed = 1;
 
 	//k_accel += 3 * (9 - kartspeed); // 36 - 60
@@ -2392,7 +2415,7 @@ UINT16 K_GetKartFlashing(player_t *player)
 	if (!player)
 		return tics;
 
-	if (G_BattleGametype())
+	if (gametyperules & GTR_BUMPERS)
 		tics *= 2;
 
 	tics += (flashingtics/8) * (player->kartspeed);
@@ -2475,7 +2498,6 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 {
 	UINT8 scoremultiply = 1;
 	// PS: Inflictor is unused for all purposes here and is actually only ever relevant to Lua. It may be nil too.
-#ifdef HAVE_BLUA
 	boolean force = false;	// Used to check if Lua ShouldSpin should get us damaged reguardless of flashtics or heck knows what.
 	UINT8 shouldForce = LUAh_ShouldSpin(player, inflictor, source);
 	if (P_MobjWasRemoved(player->mo))
@@ -2484,16 +2506,12 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 		force = true;
 	else if (shouldForce == 2)
 		return;
-#else
-	static const boolean force = false;
-	(void)inflictor;	// in case some weirdo doesn't want Lua.
-#endif
 
-	if (!trapitem && G_BattleGametype())
+	if ((gametyperules & GTR_POINTLIMIT) && !trapitem)
 	{
 		if (K_IsPlayerWanted(player))
 			scoremultiply = 3;
-		else if (player->kartstuff[k_bumper] == 1)
+		else if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] == 1)
 			scoremultiply = 2;
 	}
 
@@ -2502,7 +2520,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 
 	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)
 		|| player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
-		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
+		|| ((gametyperules & GTR_BUMPERS) && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 	{
 		if (!force)	// if shoulddamage force, we go THROUGH that.
 		{
@@ -2511,10 +2529,8 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 		}
 	}
 
-#ifdef HAVE_BLUA
 	if (LUAh_PlayerSpin(player, inflictor, source))	// Let Lua do its thing or overwrite if it wants to. Make sure to let any possible instashield happen because we didn't get "damaged" in this case.
 		return;
-#endif
 
 	if (source && source != player->mo && source->player)
 		K_PlayHitEmSound(source);
@@ -2528,7 +2544,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 	player->kartstuff[k_driftcharge] = 0;
 	player->kartstuff[k_pogospring] = 0;
 
-	if (G_BattleGametype())
+	if (gametyperules & GTR_BUMPERS)
 	{
 		if (source && source->player && player != source->player)
 		{
@@ -2625,7 +2641,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 {
 	UINT8 scoremultiply = 1;
 	// PS: Inflictor is unused for all purposes here and is actually only ever relevant to Lua. It may be nil too.
-#ifdef HAVE_BLUA
+
 	boolean force = false;	// Used to check if Lua ShouldSquish should get us damaged reguardless of flashtics or heck knows what.
 	UINT8 shouldForce = LUAh_ShouldSquish(player, inflictor, source);
 	if (P_MobjWasRemoved(player->mo))
@@ -2634,16 +2650,12 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 		force = true;
 	else if (shouldForce == 2)
 		return;
-#else
-	static const boolean force = false;
-	(void)inflictor;	// Please stop forgetting to put inflictor in yer functions thank -Lat'
-#endif
 
-	if (G_BattleGametype())
+	if (gametyperules & GTR_POINTLIMIT)
 	{
 		if (K_IsPlayerWanted(player))
 			scoremultiply = 3;
-		else if (player->kartstuff[k_bumper] == 1)
+		else if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] == 1)
 			scoremultiply = 2;
 	}
 
@@ -2652,7 +2664,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 
 	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_invincibilitytimer] > 0
 		|| player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
-		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
+		|| ((gametyperules & GTR_BUMPERS) && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 	{
 		if (!force)	// You know the drill by now.
 		{
@@ -2661,10 +2673,8 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 		}
 	}
 
-#ifdef HAVE_BLUA
 	if (LUAh_PlayerSquish(player, inflictor, source))	// Let Lua do its thing or overwrite if it wants to. Make sure to let any possible instashield happen because we didn't get "damaged" in this case.
 		return;
-#endif
 
 	player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_levelbooster] = 0;
@@ -2675,7 +2685,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 	player->kartstuff[k_driftcharge] = 0;
 	player->kartstuff[k_pogospring] = 0;
 
-	if (G_BattleGametype())
+	if (gametyperules & GTR_BUMPERS)
 	{
 		if (source && source->player && player != source->player)
 		{
@@ -2746,7 +2756,6 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
 {
 	UINT8 scoremultiply = 1;
-#ifdef HAVE_BLUA
 	boolean force = false;	// Used to check if Lua ShouldExplode should get us damaged reguardless of flashtics or heck knows what.
 	UINT8 shouldForce = LUAh_ShouldExplode(player, inflictor, source);
 
@@ -2757,11 +2766,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	else if (shouldForce == 2)
 		return;
 
-#else
-	static const boolean force = false;
-#endif
-
-	if (G_BattleGametype())
+	if (gametyperules & GTR_BUMPERS)
 	{
 		if (K_IsPlayerWanted(player))
 			scoremultiply = 3;
@@ -2773,7 +2778,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 		return;
 
 	if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0 // Do not check spinout, because SPB and Eggman should combo
-		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
+		|| ((gametyperules & GTR_BUMPERS) && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 	{
 		if (!force)	// ShouldDamage can bypass that, again.
 		{
@@ -2782,10 +2787,8 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 		}
 	}
 
-#ifdef HAVE_BLUA
 	if (LUAh_PlayerExplode(player, inflictor, source))	// Same thing. Also make sure to let Instashield happen blah blah
 		return;
-#endif
 
 	if (source && source != player->mo && source->player)
 		K_PlayHitEmSound(source);
@@ -2803,7 +2806,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	player->kartstuff[k_pogospring] = 0;
 
 	// This is the only part that SHOULDN'T combo :VVVVV
-	if (G_BattleGametype() && !(player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)))
+	if ((gametyperules & GTR_BUMPERS) && !(player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)))
 	{
 		if (source && source->player && player != source->player)
 		{
@@ -2879,7 +2882,7 @@ void K_StealBumper(player_t *player, player_t *victim, boolean force)
 	fixed_t newx, newy;
 	mobj_t *newmo;
 
-	if (!G_BattleGametype())
+	if (!(gametyperules & GTR_BUMPERS))
 		return;
 
 	if (player->health <= 0 || victim->health <= 0)
@@ -3247,10 +3250,10 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	return NULL;
 }
 
-UINT8 K_DriftSparkColor(player_t *player, INT32 charge)
+UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 {
 	INT32 ds = K_GetKartDriftSparkValue(player);
-	UINT8 color = SKINCOLOR_NONE;
+	UINT16 color = SKINCOLOR_NONE;
 
 	if (charge < 0)
 	{
@@ -3267,7 +3270,7 @@ UINT8 K_DriftSparkColor(player_t *player, INT32 charge)
 		}
 		else
 		{
-			color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+			color = K_RainbowColor(leveltime);
 		}
 	}
 	else if (charge >= ds*2)
@@ -3481,7 +3484,7 @@ void K_SpawnBoostTrail(player_t *player)
 
 	if (!P_IsObjectOnGround(player->mo)
 		|| player->kartstuff[k_hyudorotimer] != 0
-		|| (G_BattleGametype() && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]))
+		|| ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]))
 		return;
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -4143,7 +4146,7 @@ static void K_DoHyudoroSteal(player_t *player)
 	boolean sink = P_RandomChance(FRACUNIT/64);
 	INT32 hyu = hyudorotime;
 
-	if (G_RaceGametype())
+	if (gametype == GT_RACE)
 		hyu *= 2; // double in race
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -4152,8 +4155,8 @@ static void K_DoHyudoroSteal(player_t *player)
 			&& player != &players[i] && !players[i].exiting && !players[i].spectator // Player in-game
 
 			// Can steal from this player
-			&& (G_RaceGametype() //&& players[i].kartstuff[k_position] < player->kartstuff[k_position])
-			|| (G_BattleGametype() && players[i].kartstuff[k_bumper] > 0))
+			&& (gametype == GT_RACE //&& players[i].kartstuff[k_position] < player->kartstuff[k_position])
+			|| ((gametyperules & GTR_BUMPERS) && players[i].kartstuff[k_bumper] > 0))
 
 			// Has an item
 			&& (players[i].kartstuff[k_itemtype]
@@ -4179,7 +4182,7 @@ static void K_DoHyudoroSteal(player_t *player)
 		player->kartstuff[k_itemheld] = 0;
 		return;
 	}
-	else if ((G_RaceGametype() && player->kartstuff[k_position] == 1) || numplayers == 0) // No-one can be stolen from? Oh well...
+	else if ((gametype == GT_RACE && player->kartstuff[k_position] == 1) || numplayers == 0) // No-one can be stolen from? Oh well...
 	{
 		player->kartstuff[k_hyudorotimer] = hyu;
 		player->kartstuff[k_stealingtimer] = stealtime;
@@ -5185,7 +5188,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source)
 			thisang = InvAngle(thisang);
 
 		// Jawz only go after the person directly ahead of you in race... sort of literally now!
-		if (G_RaceGametype())
+		if (gametype == GT_RACE)
 		{
 			// Don't go for people who are behind you
 			if (thisang > ANGLE_67h)
@@ -5385,7 +5388,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
 
-	if (G_RaceGametype())
+	if (gametype == GT_RACE)
 	{
 		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
 		if (player->kartstuff[k_ringboost] >= 30)
@@ -5438,7 +5441,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			player->karthud[khud_ringspblock] = (leveltime % 14); // reset to normal anim next time
 	}
 
-	if (G_BattleGametype() && (player->exiting || player->kartstuff[k_comebacktimer]))
+	if ((gametyperules & GTR_BUMPERS) && (player->exiting || player->kartstuff[k_comebacktimer]))
 	{
 		if (player->exiting)
 		{
@@ -5462,7 +5465,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 		if (player->karthud[khud_cardanimation] < 0)
 			player->karthud[khud_cardanimation] = 0;
 	}
-	else if (G_RaceGametype() && player->exiting)
+	else if (gametype == GT_RACE && player->exiting)
 	{
 		if (player->karthud[khud_cardanimation] < 2*TICRATE)
 			player->karthud[khud_cardanimation]++;
@@ -5633,7 +5636,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			}
 		}
 
-		if (G_RaceGametype() && player->kartstuff[k_rings] <= 0) // spawn ring debt indicator
+		if (gametype == GT_RACE && player->kartstuff[k_rings] <= 0) // spawn ring debt indicator
 		{
 			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 				player->mo->z + player->mo->momz + player->mo->height + (24*player->mo->scale), MT_THOK);
@@ -5917,7 +5920,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_KartPlayerHUDUpdate(player);
 
-	if (G_BattleGametype() && player->kartstuff[k_bumper] > 0
+	if (gametype == GT_BATTLE && player->kartstuff[k_bumper] > 0
 		&& !player->kartstuff[k_spinouttimer] && !player->kartstuff[k_squishedtimer]
 		&& !player->kartstuff[k_respawn] && !player->powers[pw_flashing])
 	{
@@ -5948,7 +5951,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->kartstuff[k_eggmanexplode])
 	{
-		if (player->spectator || (G_BattleGametype() && !player->kartstuff[k_bumper]))
+		if (player->spectator || (gametype == GT_BATTLE && !player->kartstuff[k_bumper]))
 			player->kartstuff[k_eggmanexplode] = 0;
 		else
 		{
@@ -6569,7 +6572,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 INT32 K_GetKartDriftSparkValue(player_t *player)
 {
-	UINT8 kartspeed = (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
+	UINT8 kartspeed = (gametype == GT_BATTLE && player->kartstuff[k_bumper] <= 0)
 		? 1
 		: player->kartspeed;
 	return (26*4 + kartspeed*2 + (9 - player->kartweight))*8;
@@ -6830,7 +6833,7 @@ void K_KartUpdatePosition(player_t *player)
 		if (!playeringame[i] || players[i].spectator || !players[i].mo)
 			continue;
 
-		if (G_RaceGametype())
+		if (gametype == GT_RACE)
 		{
 			if (player->exiting) // End of match standings
 			{
@@ -6849,7 +6852,7 @@ void K_KartUpdatePosition(player_t *player)
 				}
 			}
 		}
-		else if (G_BattleGametype())
+		else if (gametype == GT_BATTLE)
 		{
 			if (player->exiting) // End of match standings
 			{
@@ -7597,7 +7600,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			INT32 hyu = hyudorotime;
 
-			if (G_RaceGametype())
+			if (gametype == GT_RACE)
 				hyu *= 2; // double in race
 
 			if (r_splitscreen)
@@ -7645,14 +7648,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->mo->eflags &= ~(MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
 		}
 
-		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0) // dead in match? you da bomb
+		if (gametype == GT_BATTLE && player->kartstuff[k_bumper] <= 0) // dead in match? you da bomb
 		{
 			K_DropItems(player); //K_StripItems(player);
 			K_StripOther(player);
 			player->mo->flags2 |= MF2_SHADOW;
 			player->powers[pw_flashing] = player->kartstuff[k_comebacktimer];
 		}
-		else if (G_RaceGametype() || player->kartstuff[k_bumper] > 0)
+		else if (gametype == GT_RACE || player->kartstuff[k_bumper] > 0)
 		{
 			player->mo->flags2 &= ~MF2_SHADOW;
 		}
@@ -7677,7 +7680,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->mo->friction -= 2048;
 
 		// Karma ice physics
-		if (G_BattleGametype() && player->kartstuff[k_bumper] <= 0)
+		if (gametype == GT_BATTLE && player->kartstuff[k_bumper] <= 0)
 			player->mo->friction += 1228;
 
 		if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
@@ -7855,7 +7858,7 @@ void K_CheckSpectateStatus(void)
 				continue;
 			if (leveltime > (starttime + 20*TICRATE)) // DON'T allow if the match is 20 seconds in
 				return;
-			if (G_RaceGametype() && players[i].laps >= 2) // DON'T allow if the race is at 2 laps
+			if (gametype == GT_RACE && players[i].laps >= 2) // DON'T allow if the race is at 2 laps
 				return;
 			continue;
 		}
@@ -8632,7 +8635,7 @@ static void K_drawKartItem(void)
 	INT32 itembar = 0;
 	INT32 maxl = 0; // itembar's normal highest value
 	const INT32 barlength = (r_splitscreen > 1 ? 12 : 26);
-	UINT8 localcolor = SKINCOLOR_NONE;
+	UINT16 localcolor = SKINCOLOR_NONE;
 	SINT8 colormode = TC_RAINBOW;
 	UINT8 *colmap = NULL;
 	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
@@ -8845,7 +8848,7 @@ static void K_drawKartItem(void)
 			switch (stplyr->karthud[khud_itemblinkmode])
 			{
 				case 2:
-					localcolor = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+					localcolor = K_RainbowColor(leveltime);
 					break;
 				case 1:
 					localcolor = SKINCOLOR_RED;
@@ -9278,10 +9281,8 @@ static boolean K_drawKartPositionFaces(void)
 	if (numplayersingame <= 1)
 		return true;
 
-#ifdef HAVE_BLUA
 	if (!LUA_HudEnabled(hud_minirankings))
 		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
-#endif
 
 	for (j = 0; j < numplayersingame; j++)
 	{
@@ -9316,7 +9317,7 @@ static boolean K_drawKartPositionFaces(void)
 	else
 		Y -= (9*5);
 
-	if (G_BattleGametype() || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
+	if (gametype == GT_BATTLE || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
 	{
 		i = 0;
 		if (ranklines > 5) // could be both...
@@ -9352,11 +9353,9 @@ static boolean K_drawKartPositionFaces(void)
 
 			V_DrawMappedPatch(FACE_X, Y, V_HUDTRANS|V_SNAPTOLEFT, facerankprefix[players[rankplayer[i]].skin], colormap);
 
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_battlebumpers))
 			{
-#endif
-				if (G_BattleGametype() && players[rankplayer[i]].kartstuff[k_bumper] > 0)
+				if (gametype == GT_BATTLE && players[rankplayer[i]].kartstuff[k_bumper] > 0)
 				{
 					V_DrawMappedPatch(bumperx-2, Y, V_HUDTRANS|V_SNAPTOLEFT, kp_tinybumper[0], colormap);
 					for (j = 1; j < players[rankplayer[i]].kartstuff[k_bumper]; j++)
@@ -9365,15 +9364,13 @@ static boolean K_drawKartPositionFaces(void)
 						V_DrawMappedPatch(bumperx, Y, V_HUDTRANS|V_SNAPTOLEFT, kp_tinybumper[1], colormap);
 					}
 				}
-#ifdef HAVE_BLUA
-			}	// A new level of stupidity: checking if lua is enabled to close a bracket. :Fascinating:
-#endif
+			}
 		}
 
 		if (i == strank)
 			V_DrawScaledPatch(FACE_X, Y, V_HUDTRANS|V_SNAPTOLEFT, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if (G_BattleGametype() && players[rankplayer[i]].kartstuff[k_bumper] <= 0)
+		if (gametype == GT_BATTLE && players[rankplayer[i]].kartstuff[k_bumper] <= 0)
 			V_DrawScaledPatch(FACE_X-4, Y-3, V_HUDTRANS|V_SNAPTOLEFT, kp_ranknobumpers);
 		else
 		{
@@ -9471,7 +9468,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo->color, GTC_CACHE);
 
 			V_DrawMappedPatch(x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-			/*if (G_BattleGametype() && players[tab[i].num].kartstuff[k_bumper] > 0) -- not enough space for this
+			/*if (gametype == GT_BATTLE && players[tab[i].num].kartstuff[k_bumper] > 0) -- not enough space for this
 			{
 				INT32 bumperx = x+19;
 				V_DrawMappedPatch(bumperx-2, y-4, 0, kp_tinybumper[0], colormap);
@@ -9486,7 +9483,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 		if (tab[i].num == whiteplayer)
 			V_DrawScaledPatch(x, y-4, 0, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if (G_BattleGametype() && players[tab[i].num].kartstuff[k_bumper] <= 0)
+		if (gametype == GT_BATTLE && players[tab[i].num].kartstuff[k_bumper] <= 0)
 			V_DrawScaledPatch(x-4, y-7, 0, kp_ranknobumpers);
 		else
 		{
@@ -9497,7 +9494,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 			V_DrawScaledPatch(x-5, y+6, 0, kp_facenum[pos]);
 		}
 
-		if (G_RaceGametype())
+		if (gametype == GT_RACE)
 		{
 #define timestring(time) va("%i'%02i\"%02i", G_TicsToMinutes(time, true), G_TicsToSeconds(time), G_TicsToCentiseconds(time))
 			if (scorelines > 8)
@@ -9736,7 +9733,7 @@ static void K_drawKartSpeedometer(void)
 	numbers[1] = ((convSpeed / 10) % 10);
 	numbers[2] = (convSpeed % 10);
 
-	if (G_BattleGametype())
+	if (gametype == GT_BATTLE)
 		battleoffset = 8;
 
 	V_DrawScaledPatch(LAPS_X, LAPS_Y-25 + battleoffset, V_HUDTRANS|splitflags, kp_speedometersticker);
@@ -10165,14 +10162,14 @@ static void K_drawKartMinimap(void)
 	y -= SHORT(AutomapPic->topoffset);
 
 	// Draw the super item in Battle
-	if (G_BattleGametype() && battleovertime.enabled)
+	if (gametype == GT_BATTLE && battleovertime.enabled)
 	{
 		if (battleovertime.enabled >= 10*TICRATE || (battleovertime.enabled & 1))
 		{
 			const INT32 prevsplitflags = splitflags;
 			splitflags &= ~V_HUDTRANSHALF;
 			splitflags |= V_HUDTRANS;
-			colormap = R_GetTranslationColormap(TC_RAINBOW, (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1))), GTC_CACHE);
+			colormap = R_GetTranslationColormap(TC_RAINBOW, K_RainbowColor(leveltime), GTC_CACHE);
 			K_drawKartMinimapIcon(battleovertime.x, battleovertime.y, x, y, splitflags, kp_itemminimap, colormap, AutomapPic);
 			splitflags = prevsplitflags;
 		}
@@ -10222,7 +10219,7 @@ static void K_drawKartMinimap(void)
 
 			if (i != displayplayers[0] || r_splitscreen)
 			{
-				if (G_BattleGametype() && players[i].kartstuff[k_bumper] <= 0)
+				if (gametype == GT_BATTLE && players[i].kartstuff[k_bumper] <= 0)
 					continue;
 
 				if (players[i].kartstuff[k_hyudorotimer] > 0)
@@ -10259,8 +10256,8 @@ static void K_drawKartMinimap(void)
 
 			K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
 			// Target reticule
-			if ((G_RaceGametype() && players[i].kartstuff[k_position] == spbplace)
-			|| (G_BattleGametype() && K_IsPlayerWanted(&players[i])))
+			if ((gametype == GT_RACE && players[i].kartstuff[k_position] == spbplace)
+			|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
 				K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 		}
 	}
@@ -10312,8 +10309,8 @@ static void K_drawKartMinimap(void)
 		K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, facemmapprefix[skin], colormap, AutomapPic);
 
 		// Target reticule
-		if ((G_RaceGametype() && players[localplayers[i]].kartstuff[k_position] == spbplace)
-		|| (G_BattleGametype() && K_IsPlayerWanted(&players[localplayers[i]])))
+		if ((gametype == GT_RACE && players[localplayers[i]].kartstuff[k_position] == spbplace)
+		|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[localplayers[i]])))
 			K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 	}
 }
@@ -10381,10 +10378,9 @@ static void K_drawBattleFullscreen(void)
 	INT32 splitflags = V_SNAPTOTOP; // I don't feel like properly supporting non-green resolutions, so you can have a misuse of SNAPTO instead
 	fixed_t scale = FRACUNIT;
 	boolean drawcomebacktimer = true;	// lazy hack because it's cleaner in the long run.
-#ifdef HAVE_BLUA
+
 	if (!LUA_HudEnabled(hud_battlecomebacktimer))
 		drawcomebacktimer = false;
-#endif
 
 	if (r_splitscreen)
 	{
@@ -10493,9 +10489,7 @@ static void K_drawBattleFullscreen(void)
 				return;
 		}
 
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_freeplay))
-#endif
 			K_drawKartFreePlay(leveltime);
 	}
 }
@@ -10645,8 +10639,8 @@ static void K_drawInput(void)
 	static INT32 pn = 0;
 	INT32 target = 0, splitflags = (V_SNAPTOBOTTOM|V_SNAPTORIGHT);
 	INT32 x = BASEVIDWIDTH - 32, y = BASEVIDHEIGHT-24, offs, col;
-	const INT32 accent1 = splitflags|colortranslations[stplyr->skincolor][5];
-	const INT32 accent2 = splitflags|colortranslations[stplyr->skincolor][9];
+	const INT32 accent1 = splitflags|skincolors[stplyr->skincolor].ramp[5];
+	const INT32 accent2 = splitflags|skincolors[stplyr->skincolor].ramp[9];
 	ticcmd_t *cmd = &stplyr->cmd;
 
 	if (timeinmap <= 105)
@@ -11012,7 +11006,7 @@ void K_drawKartHUD(void)
 		return;
 	}
 
-	battlefullscreen = ((G_BattleGametype())
+	battlefullscreen = ((gametype == GT_BATTLE)
 		&& (stplyr->exiting
 		|| (stplyr->kartstuff[k_bumper] <= 0
 		&& stplyr->kartstuff[k_comebacktimer]
@@ -11022,52 +11016,40 @@ void K_drawKartHUD(void)
 	if (!demo.title && (!battlefullscreen || r_splitscreen))
 	{
 		// Draw the CHECK indicator before the other items, so it's overlapped by everything else
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_check))	// delete lua when?
-#endif
 			if (cv_kartcheck.value && !splitscreen && !players[displayplayers[0]].exiting && !freecam)
 				K_drawKartPlayerCheck();
 
 		// Draw WANTED status
-		if (G_BattleGametype())
+		if (gametype == GT_BATTLE)
 		{
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_wanted))
-#endif
 				K_drawKartWanted();
 		}
 
 		if (cv_kartminimap.value)
 		{
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_minimap))
-#endif
 				K_drawKartMinimap();
 		}
 	}
 
 	if (battlefullscreen && !freecam)
 	{
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_battlefullscreen))
-#endif
 			K_drawBattleFullscreen();
 		return;
 	}
 
 	// Draw the item window
-#ifdef HAVE_BLUA
 	if (LUA_HudEnabled(hud_item) && !freecam)
-#endif
 		K_drawKartItem();
 
 	// If not splitscreen, draw...
 	if (!r_splitscreen && !demo.title)
 	{
 		// Draw the timestamp
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_time))
-#endif
 			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y, gamemap, 0);
 
 		if (!modeattacking)
@@ -11085,9 +11067,7 @@ void K_drawKartHUD(void)
 		// Draw the speedometer
 		if (cv_kartspeedometer.value && !r_splitscreen)
 		{
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_speedometer))
-#endif
 				K_drawKartSpeedometer();
 		}
 
@@ -11113,12 +11093,10 @@ void K_drawKartHUD(void)
 			V_DrawTinyScaledPatch(x-54, y, 0, W_CachePatchName("TTKBANNR", PU_CACHE));
 			V_DrawTinyScaledPatch(x-54, y+25, 0, W_CachePatchName("TTKART", PU_CACHE));
 		}
-		else if (G_RaceGametype()) // Race-only elements
+		else if (gametype == GT_RACE) // Race-only elements
 		{
 			// Draw the lap counter
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_gametypeinfo))
-#endif
 				K_drawKartLapsAndRings();
 
 			if (isfreeplay)
@@ -11126,26 +11104,20 @@ void K_drawKartHUD(void)
 			else if (!modeattacking)
 			{
 				// Draw the numerical position
-#ifdef HAVE_BLUA
 				if (LUA_HudEnabled(hud_position))
-#endif
 					K_DrawKartPositionNum(stplyr->kartstuff[k_position]);
 			}
 			else //if (!(demo.playback && hu_showscores))
 			{
 				// Draw the input UI
-#ifdef HAVE_BLUA
 				if (LUA_HudEnabled(hud_position))
-#endif
 					K_drawInput();
 			}
 		}
-		else if (G_BattleGametype()) // Battle-only
+		else if (gametype == GT_BATTLE) // Battle-only
 		{
 			// Draw the hits left!
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_gametypeinfo))
-#endif
 				K_drawKartBumpersOrKarma();
 		}
 	}
@@ -11168,7 +11140,7 @@ void K_drawKartHUD(void)
 	}
 
 	// Race overlays
-	if (G_RaceGametype() && !freecam)
+	if (gametype == GT_RACE && !freecam)
 	{
 		if (stplyr->exiting)
 			K_drawKartFinish();
@@ -11179,15 +11151,13 @@ void K_drawKartHUD(void)
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
 
-	if (G_BattleGametype() && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
+	if (gametype == GT_BATTLE && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
 	if (isfreeplay && !stplyr->spectator && timeinmap > 113)
 	{
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_freeplay))
-#endif
 			K_drawKartFreePlay(leveltime);
 	}
 
@@ -11219,7 +11189,7 @@ void K_drawKartHUD(void)
 		INT32 x = 0, y = 0;
 		UINT8 c;
 
-		for (c = 1; c < MAXSKINCOLORS; c++)
+		for (c = 1; c < numskincolors; c++)
 		{
 			UINT8 *cm = R_GetTranslationColormap(TC_RAINBOW, c, GTC_CACHE);
 			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT>>1, 0, facewantprefix[stplyr->skin], cm);

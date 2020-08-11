@@ -651,11 +651,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-#ifdef HAVE_BLUA
 	// Complete override of all ticcmd functionality
 	if (LUAh_BotTiccmd(player, cmd))
 		return;
-#endif
 
 	// Start boost handler
 	if (leveltime <= starttime)

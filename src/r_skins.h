@@ -37,7 +37,6 @@ typedef struct
 	skinflags_t flags;
 
 	char realname[SKINNAMESIZE+1]; // Display name for level completion.
-	char hudname[SKINNAMESIZE+1]; // HUD name to display (officially exactly 5 characters long)
 	char facerank[9], facewant[9], facemmap[9]; // Arbitrarily named patch lumps
 
 	// SRB2kart
@@ -50,7 +49,12 @@ typedef struct
 	// Definable color translation table
 	UINT8 starttranscolor;
 	UINT16 prefcolor;
+	UINT16 supercolor;
+	UINT16 prefoppositecolor; // if 0 use tables instead
+
 	fixed_t highresscale; // scale of highres, default is 0.5
+
+	char rivals[SKINRIVALS][SKINNAMESIZE+1]; // Your top 3 rivals for GP mode. Uses names so that you can reference skins that aren't added
 
 	// specific sounds per skin
 	sfxenum_t soundsid[NUMSKINSOUNDS]; // sound # in S_sfx table
@@ -58,10 +62,6 @@ typedef struct
 	// contains super versions too
 	spritedef_t sprites[NUMPLAYERSPRITES*2];
 	spriteinfo_t sprinfo[NUMPLAYERSPRITES*2];
-
-	char rivals[SKINRIVALS][SKINNAMESIZE+1]; // Your top 3 rivals for GP mode. Uses names so that you can reference skins that aren't added
-
-	UINT8 availability; // lock?
 } skin_t;
 
 /// Externs
@@ -124,7 +124,7 @@ typedef struct follower_s
 } follower_t;
 
 extern INT32 numfollowers;
-extern follower_t followers[MAXSKINS];	// again, use the same rules as skins, no reason not to.
+extern follower_t followers[MAXSKINS]; // again, use the same rules as skins, no reason not to.
 
 INT32 R_FollowerAvailable(const char *name);
 boolean SetPlayerFollower(INT32 playernum,const char *skinname);

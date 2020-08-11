@@ -804,21 +804,6 @@ void Command_CauseCfail_f(void)
 	players[consoleplayer].rings = 1337;
 	players[consoleplayer].mo->destscale = 25;
 	P_SetThingPosition(players[consoleplayer].mo);
-
-	// CTF consistency test
-	if (gametyperules & GTR_TEAMFLAGS)
-	{
-		if (blueflag) {
-			P_RemoveMobj(blueflag);
-			blueflag = NULL;
-		}
-		if (redflag)
-		{
-			redflag->x = 423423;
-			redflag->y = 666;
-			redflag->z = 123311;
-		}
-	}
 }
 #endif
 

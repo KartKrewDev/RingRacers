@@ -2213,7 +2213,8 @@ boolean LUAh_PlayerExplode(player_t *player, mobj_t *inflictor, mobj_t *source)
 		}
 	lua_settop(gL, 0);
 	return hooked;
-=======
+}
+
 // Hook for game quitting
 void LUAh_GameQuit(void)
 {
@@ -2238,5 +2239,4 @@ void LUAh_GameQuit(void)
 	}
 	
 	lua_pop(gL, 1); // Pop error handler
->>>>>>> srb2/next
 }

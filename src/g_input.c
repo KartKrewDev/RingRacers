@@ -34,11 +34,8 @@ consvar_t cv_controlperkey = {"controlperkey", "One", CV_SAVE, onecontrolperkey_
 INT32 mousex, mousey;
 INT32 mlooky; // like mousey but with a custom sensitivity for mlook
 
-INT32 mouse2x, mouse2y, mlook2y;
-
 // joystick values are repeated
-INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymove[JOYAXISSET],
-joy3xmove[JOYAXISSET], joy3ymove[JOYAXISSET], joy4xmove[JOYAXISSET], joy4ymove[JOYAXISSET];
+INT32 joyxmove[MAXSPLITSCREENPLAYERS][JOYAXISSET], joyymove[MAXSPLITSCREENPLAYERS][JOYAXISSET];
 
 // current state of the keys: true if pushed
 UINT8 gamekeydown[NUMINPUTS];
@@ -79,11 +76,7 @@ typedef struct
 	UINT8 clicks;
 } dclick_t;
 static dclick_t mousedclicks[MOUSEBUTTONS];
-static dclick_t joydclicks[JOYBUTTONS + JOYHATS*4];
-static dclick_t mouse2dclicks[MOUSEBUTTONS];
-static dclick_t joy2dclicks[JOYBUTTONS + JOYHATS*4];
-static dclick_t joy3dclicks[JOYBUTTONS + JOYHATS*4];
-static dclick_t joy4dclicks[JOYBUTTONS + JOYHATS*4];
+static dclick_t joydclicks[MAXSPLITSCREENPLAYERS][JOYBUTTONS + JOYHATS*4];
 
 // protos
 static UINT8 G_CheckDoubleClick(UINT8 state, dclick_t *dt);
@@ -137,40 +130,32 @@ void G_MapEventsToControls(event_t *ev)
 			i = ev->data1;
 			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on)
 				break;
-			if (ev->data2 != INT32_MAX) joyxmove[i] = ev->data2;
-			if (ev->data3 != INT32_MAX) joyymove[i] = ev->data3;
+			if (ev->data2 != INT32_MAX) joyxmove[0][i] = ev->data2;
+			if (ev->data3 != INT32_MAX) joyymove[0][i] = ev->data3;
 			break;
 
 		case ev_joystick2: // buttons are virtual keys
 			i = ev->data1;
 			if (i >= JOYAXISSET || menuactive)
 				break;
-			if (ev->data2 != INT32_MAX) joy2xmove[i] = ev->data2;
-			if (ev->data3 != INT32_MAX) joy2ymove[i] = ev->data3;
+			if (ev->data2 != INT32_MAX) joyxmove[1][i] = ev->data2;
+			if (ev->data3 != INT32_MAX) joyymove[1][i] = ev->data3;
 			break;
 
 		case ev_joystick3:
 			i = ev->data1;
 			if (i >= JOYAXISSET)
 				break;
-			if (ev->data2 != INT32_MAX) joy3xmove[i] = ev->data2;
-			if (ev->data3 != INT32_MAX) joy3ymove[i] = ev->data3;
+			if (ev->data2 != INT32_MAX) joyxmove[2][i] = ev->data2;
+			if (ev->data3 != INT32_MAX) joyymove[2][i] = ev->data3;
 			break;
 
 		case ev_joystick4:
 			i = ev->data1;
 			if (i >= JOYAXISSET)
 				break;
-			if (ev->data2 != INT32_MAX) joy4xmove[i] = ev->data2;
-			if (ev->data3 != INT32_MAX) joy4ymove[i] = ev->data3;
-			break;
-
-		case ev_mouse2: // buttons are virtual keys
-			if (menuactive || CON_Ready() || chat_on)
-				break;
-			mouse2x = (INT32)(ev->data2*((cv_mousesens2.value*cv_mousesens2.value)/110.0f + 0.1f));
-			mouse2y = (INT32)(ev->data3*((cv_mousesens2.value*cv_mousesens2.value)/110.0f + 0.1f));
-			mlook2y = (INT32)(ev->data3*((cv_mouseysens2.value*cv_mousesens2.value)/110.0f + 0.1f));
+			if (ev->data2 != INT32_MAX) joyxmove[3][i] = ev->data2;
+			if (ev->data3 != INT32_MAX) joyymove[3][i] = ev->data3;
 			break;
 
 		default:
@@ -186,31 +171,25 @@ void G_MapEventsToControls(event_t *ev)
 
 	for (i = 0; i < JOYBUTTONS + JOYHATS*4; i++)
 	{
-		flag = G_CheckDoubleClick(gamekeydown[KEY_JOY1+i], &joydclicks[i]);
+		flag = G_CheckDoubleClick(gamekeydown[KEY_JOY1+i], &joydclicks[0][i]);
 		gamekeydown[KEY_DBLJOY1+i] = flag;
-	}
-
-	for (i = 0; i < MOUSEBUTTONS; i++)
-	{
-		flag = G_CheckDoubleClick(gamekeydown[KEY_2MOUSE1+i], &mouse2dclicks[i]);
-		gamekeydown[KEY_DBL2MOUSE1+i] = flag;
 	}
 
 	for (i = 0; i < JOYBUTTONS + JOYHATS*4; i++)
 	{
-		flag = G_CheckDoubleClick(gamekeydown[KEY_2JOY1+i], &joy2dclicks[i]);
+		flag = G_CheckDoubleClick(gamekeydown[KEY_2JOY1+i], &joydclicks[1][i]);
 		gamekeydown[KEY_DBL2JOY1+i] = flag;
 	}
 
 	for (i = 0; i < JOYBUTTONS + JOYHATS*4; i++)
 	{
-		flag = G_CheckDoubleClick(gamekeydown[KEY_3JOY1+i], &joy3dclicks[i]);
+		flag = G_CheckDoubleClick(gamekeydown[KEY_3JOY1+i], &joydclicks[2][i]);
 		gamekeydown[KEY_DBL3JOY1+i] = flag;
 	}
 
 	for (i = 0; i < JOYBUTTONS + JOYHATS*4; i++)
 	{
-		flag = G_CheckDoubleClick(gamekeydown[KEY_4JOY1+i], &joy4dclicks[i]);
+		flag = G_CheckDoubleClick(gamekeydown[KEY_4JOY1+i], &joydclicks[3][i]);
 		gamekeydown[KEY_DBL4JOY1+i] = flag;
 	}
 }
@@ -333,14 +312,6 @@ static keyname_t keynames[] =
 	{KEY_MOUSE1+5,"MOUSE6"},
 	{KEY_MOUSE1+6,"MOUSE7"},
 	{KEY_MOUSE1+7,"MOUSE8"},
-	{KEY_2MOUSE1+0,"SEC_MOUSE2"}, // BP: sorry my mouse handler swap button 1 and 2
-	{KEY_2MOUSE1+1,"SEC_MOUSE1"},
-	{KEY_2MOUSE1+2,"SEC_MOUSE3"},
-	{KEY_2MOUSE1+3,"SEC_MOUSE4"},
-	{KEY_2MOUSE1+4,"SEC_MOUSE5"},
-	{KEY_2MOUSE1+5,"SEC_MOUSE6"},
-	{KEY_2MOUSE1+6,"SEC_MOUSE7"},
-	{KEY_2MOUSE1+7,"SEC_MOUSE8"},
 	{KEY_MOUSEWHEELUP, "Wheel 1 UP"},
 	{KEY_MOUSEWHEELDOWN, "Wheel 1 Down"},
 	{KEY_2MOUSEWHEELUP, "Wheel 2 UP"},
@@ -407,14 +378,6 @@ static keyname_t keynames[] =
 	{KEY_DBLMOUSE1+5, "DBLMOUSE6"},
 	{KEY_DBLMOUSE1+6, "DBLMOUSE7"},
 	{KEY_DBLMOUSE1+7, "DBLMOUSE8"},
-	{KEY_DBL2MOUSE1+0, "DBLSEC_MOUSE2"}, // BP: sorry my mouse handler swap button 1 and 2
-	{KEY_DBL2MOUSE1+1, "DBLSEC_MOUSE1"},
-	{KEY_DBL2MOUSE1+2, "DBLSEC_MOUSE3"},
-	{KEY_DBL2MOUSE1+3, "DBLSEC_MOUSE4"},
-	{KEY_DBL2MOUSE1+4, "DBLSEC_MOUSE5"},
-	{KEY_DBL2MOUSE1+5, "DBLSEC_MOUSE6"},
-	{KEY_DBL2MOUSE1+6, "DBLSEC_MOUSE7"},
-	{KEY_DBL2MOUSE1+7, "DBLSEC_MOUSE8"},
 
 	{KEY_DBLJOY1+0, "DBLJOY1"},
 	{KEY_DBLJOY1+1, "DBLJOY2"},

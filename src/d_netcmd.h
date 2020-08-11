@@ -28,36 +28,16 @@ extern consvar_t cv_splitplayers;
 extern consvar_t cv_seenames, cv_allowseenames;
 #endif
 extern consvar_t cv_usemouse;
-extern consvar_t cv_usejoystick;
-extern consvar_t cv_usejoystick2;
-extern consvar_t cv_usejoystick3;
-extern consvar_t cv_usejoystick4;
+extern consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
 #ifdef LJOYSTICK
-extern consvar_t cv_joyport;
-extern consvar_t cv_joyport2;
-#endif
-extern consvar_t cv_joyscale;
-extern consvar_t cv_joyscale2;
-extern consvar_t cv_joyscale3;
-extern consvar_t cv_joyscale4;
-
-// splitscreen with second mouse
-extern consvar_t cv_mouse2port;
-extern consvar_t cv_usemouse2;
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)
-extern consvar_t cv_mouse2opt;
+extern consvar_t cv_joyport[MAXSPLITSCREENPLAYERS];
 #endif
 
 // normally in p_mobj but the .h is not read
 extern consvar_t cv_itemrespawntime;
 extern consvar_t cv_itemrespawn;
 
-extern consvar_t cv_flagtime;
-
-extern consvar_t cv_touchtag;
-extern consvar_t cv_hidetime;
-
-extern consvar_t cv_friendlyfire;
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
 extern consvar_t cv_numlaps;
@@ -81,11 +61,6 @@ extern consvar_t cv_killingdead;
 extern consvar_t cv_pause;
 
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_ingamecap, cv_respawntime;
-
-/*extern consvar_t cv_teleporters, cv_superring, cv_supersneakers, cv_invincibility;
-extern consvar_t cv_jumpshield, cv_watershield, cv_ringshield, cv_forceshield, cv_bombshield;
-extern consvar_t cv_1up, cv_eggmanbox;
-extern consvar_t cv_recycler;*/
 
 // SRB2kart items
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
@@ -120,16 +95,14 @@ extern consvar_t cv_kartdebugwaypoints;
 
 extern consvar_t cv_itemfinder;
 
-extern consvar_t cv_inttime, cv_coopstarposts, cv_cooplives, cv_advancemap, cv_playersforexit, cv_exitmove;
+extern consvar_t cv_inttime, cv_advancemap;
 extern consvar_t cv_overtime;
 extern consvar_t cv_startinglives;
 
 // for F_finale.c
 extern consvar_t cv_rollingdemos;
 
-extern consvar_t cv_ringslinger, cv_soundtest;
-
-extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionboxes;
+extern consvar_t cv_soundtest;
 
 extern consvar_t cv_maxping;
 extern consvar_t cv_lagless;

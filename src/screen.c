@@ -593,11 +593,6 @@ void SCR_ClosedCaptions(void)
 			basey -= 42;
 		else if (splitscreen)
 			basey -= 8;
-		else if ((modeattacking == ATTACKING_NIGHTS)
-		|| (!(maptol & TOL_NIGHTS)
-		&& ((cv_powerupdisplay.value == 2) // "Always"
-		 || (cv_powerupdisplay.value == 1 && !camera.chase)))) // "First-person only"
-			basey -= 16;
 	}
 
 	for (i = 0; i < NUMCAPTIONS; i++)
@@ -632,7 +627,6 @@ void SCR_ClosedCaptions(void)
 
 		V_DrawRightAlignedString(BASEVIDWIDTH - 20, y, flags,
 			va("%c [%s]", dot, (closedcaptions[i].s->caption[0] ? closedcaptions[i].s->caption : closedcaptions[i].s->name)));
->>>>>>> srb2/next
 	}
 }
 

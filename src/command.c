@@ -1959,13 +1959,13 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				var->func();
 				return;
 			}
-			else if (var == &cv_playercolor)
+			else if (var == &cv_playercolor[0] || var == &cv_playercolor[1] || var == &cv_playercolor[2] || var == &cv_playercolor[3])
 			{
 				// Special case for the playercolor variable, used only directly from the menu
 				if (increment > 0) // Going up!
 				{
 					newvalue = var->value + 1;
-					if (newvalue > MAXSKINCOLORS-1)
+					if (newvalue > numskincolors-1)
 						newvalue = 1;
 					var->value = newvalue;
 					var->string = var->PossibleValue[var->value].strvalue;
@@ -1976,7 +1976,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				{
 					newvalue = var->value - 1;
 					if (newvalue < 1)
-						newvalue = MAXSKINCOLORS-1;
+						newvalue = numskincolors-1;
 					var->value = newvalue;
 					var->string = var->PossibleValue[var->value].strvalue;
 					var->func();
@@ -2077,13 +2077,13 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 				switch (i)
 				{
 					default:
-						COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis.name, cv_turnaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis.name, cv_moveaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_brakeaxis.name, cv_brakeaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_aimaxis.name, cv_aimaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis.name, cv_lookaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis.name, cv_fireaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_driftaxis.name, cv_driftaxis.defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis[0].name, cv_turnaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis[0].name, cv_moveaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_brakeaxis[0].name, cv_brakeaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_aimaxis[0].name, cv_aimaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis[0].name, cv_lookaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis[0].name, cv_fireaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_driftaxis[0].name, cv_driftaxis[0].defaultvalue));
 						break;
 				}
 				joyaxis_count[i]++;

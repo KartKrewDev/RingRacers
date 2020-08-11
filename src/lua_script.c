@@ -320,14 +320,14 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		LUA_PushUserdata(L, &players[consoleplayer], META_PLAYER);
 		return 1;
 	} else if (fastcmp(word,"displayplayer")) { // player visible on screen (aka display player 1)
-		if (displayplayer < 0 || !playeringame[displayplayer])
+		if (displayplayers[0] < 0 || !playeringame[displayplayers[0]])
 			return 0;
-		LUA_PushUserdata(L, &players[displayplayer], META_PLAYER);
+		LUA_PushUserdata(L, &players[displayplayers[0]], META_PLAYER);
 		return 1;
 	} else if (fastcmp(word,"secondarydisplayplayer")) { // local/display player 2, for splitscreen
-		if (!splitscreen || secondarydisplayplayer < 0 || !playeringame[secondarydisplayplayer])
+		if (splitscreen < 1 || displayplayers[1] < 0 || !playeringame[displayplayers[1]])
 			return 0;
-		LUA_PushUserdata(L, &players[secondarydisplayplayer], META_PLAYER);
+		LUA_PushUserdata(L, &players[displayplayers[1]], META_PLAYER);
 		return 1;
 	} else if (fastcmp(word,"isserver")) {
 		lua_pushboolean(L, server);

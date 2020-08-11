@@ -272,7 +272,7 @@ static void M_SetupMultiHandler(INT32 choice);
 // Split into multiple parts due to size
 // Controls
 menu_t OP_ControlsDef, OP_AllControlsDef;
-menu_t OP_MouseOptionsDef, OP_Mouse2OptionsDef;
+menu_t OP_MouseOptionsDef;
 menu_t OP_Joystick1Def, OP_Joystick2Def, OP_Joystick3Def, OP_Joystick4Def;
 static void M_VideoModeMenu(INT32 choice);
 static void M_Setup1PControlsMenu(INT32 choice);
@@ -390,6 +390,9 @@ static void M_HandleMonitorToggles(INT32 choice);
 // Consvar onchange functions
 static void Nextmap_OnChange(void);
 static void Newgametype_OnChange(void);
+#ifdef HWRENDER
+static void Newrenderer_OnChange(void);
+#endif
 static void Dummymenuplayer_OnChange(void);
 //static void Dummymares_OnChange(void);
 static void Dummystaff_OnChange(void);
@@ -732,6 +735,7 @@ static menuitem_t MISC_HelpMenu[] =
 // Pause Menu Pandora's Box Options
 static menuitem_t SR_PandorasBox[] =
 {
+	/*
 	{IT_STRING | IT_CVAR, NULL, "Rings",              &cv_dummyrings,      20},
 	{IT_STRING | IT_CVAR, NULL, "Lives",              &cv_dummylives,      30},
 	{IT_STRING | IT_CVAR, NULL, "Continues",          &cv_dummycontinues,  40},
@@ -743,6 +747,7 @@ static menuitem_t SR_PandorasBox[] =
 	{IT_STRING | IT_CALL, NULL, "Destroy All Robots", M_DestroyRobots,    100},
 
 	{IT_STRING | IT_CALL, NULL, "Ultimate Cheat",     M_UltimateCheat,    130},
+	*/
 };
 
 // Sky Room Custom Unlocks
@@ -829,7 +834,7 @@ enum
 static menuitem_t SP_GrandPrixPlaceholderMenu[] =
 {
 	{IT_STRING|IT_CVAR,	NULL, "Character",		&cv_chooseskin,			 10},
-	{IT_STRING|IT_CVAR,	NULL, "Color",			&cv_playercolor,		 20},
+	{IT_STRING|IT_CVAR,	NULL, "Color",			&cv_playercolor[0],		 20},
 
 	{IT_STRING|IT_CVAR,	NULL, "Difficulty",		&cv_dummygpdifficulty,	 40},
 	{IT_STRING|IT_CVAR,	NULL, "Encore Mode",	&cv_dummygpencore,		 50},
@@ -1168,49 +1173,49 @@ static menuitem_t OP_AllControlsMenu[] =
 static menuitem_t OP_Joystick1Menu[] =
 {
 	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , M_Setup1PJoystickMenu, 10},
-	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis          , 30},
-	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis         , 40},
-	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis         , 50},
-	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis        , 60},
-	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis        , 70},
-	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis         , 80},
-	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis         , 90},
+	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis[0]       , 30},
+	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis[0]      , 40},
+	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis[0]      , 50},
+	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis[0]     , 60},
+	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis[0]     , 70},
+	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis[0]      , 80},
+	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis[0]      , 90},
 };
 
 static menuitem_t OP_Joystick2Menu[] =
 {
 	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , M_Setup2PJoystickMenu, 10},
-	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis2         , 30},
-	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis2        , 40},
-	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis2        , 50},
-	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis2       , 60},
-	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis2       , 70},
-	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis2        , 80},
-	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis2        , 90},
+	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis[1]       , 30},
+	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis[1]      , 40},
+	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis[1]      , 50},
+	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis[1]     , 60},
+	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis[1]     , 70},
+	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis[1]      , 80},
+	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis[1]      , 90},
 };
 
 static menuitem_t OP_Joystick3Menu[] =
 {
 	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , M_Setup3PJoystickMenu, 10},
-	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis3         , 30},
-	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis3        , 40},
-	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis3        , 50},
-	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis3       , 60},
-	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis3       , 70},
-	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis3        , 80},
-	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis3        , 90},
+	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis[2]       , 30},
+	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis[2]      , 40},
+	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis[2]      , 50},
+	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis[2]     , 60},
+	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis[2]     , 70},
+	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis[2]      , 80},
+	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis[2]      , 90},
 };
 
 static menuitem_t OP_Joystick4Menu[] =
 {
 	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , M_Setup4PJoystickMenu, 10},
-	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis4         , 30},
-	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis4        , 40},
-	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis4        , 50},
-	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis4       , 60},
-	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis4       , 70},
-	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis4        , 80},
-	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis4        , 90},
+	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis[3]       , 30},
+	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis[3]      , 40},
+	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis[3]      , 50},
+	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis[3]     , 60},
+	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis[3]     , 70},
+	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis[3]      , 80},
+	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis[3]      , 90},
 };
 
 static menuitem_t OP_JoystickSetMenu[] =
@@ -1225,7 +1230,8 @@ static menuitem_t OP_JoystickSetMenu[] =
 	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, (LINEHEIGHT*8)+5},
 };
 
-/*static menuitem_t OP_MouseOptionsMenu[] =
+/*
+static menuitem_t OP_MouseOptionsMenu[] =
 {
 	{IT_STRING | IT_CVAR, NULL, "Use Mouse",        &cv_usemouse,         10},
 
@@ -1239,21 +1245,7 @@ static menuitem_t OP_JoystickSetMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 	                      NULL, "Mouse Y Speed",    &cv_mouseysens,        80},
 };
-
-static menuitem_t OP_Mouse2OptionsMenu[] =
-{
-	{IT_STRING | IT_CVAR, NULL, "Use Mouse 2",      &cv_usemouse2,        10},
-	{IT_STRING | IT_CVAR, NULL, "Second Mouse Serial Port",
-	                                                &cv_mouse2port,       20},
-	{IT_STRING | IT_CVAR, NULL, "First-Person MouseLook", &cv_alwaysfreelook2,  30},
-	{IT_STRING | IT_CVAR, NULL, "Third-Person MouseLook", &cv_chasefreelook2,  40},
-	{IT_STRING | IT_CVAR, NULL, "Mouse Move",       &cv_mousemove2,       50},
-	{IT_STRING | IT_CVAR, NULL, "Invert Mouse",     &cv_invertmouse2,     60},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse X Speed",    &cv_mousesens2,       70},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse Y Speed",    &cv_mouseysens2,      80},
-};*/
+*/
 
 static menuitem_t OP_VideoOptionsMenu[] =
 {
@@ -2230,50 +2222,60 @@ static void Dummystaff_OnChange(void)
 // Newgametype.  Used for gametype changes.
 static void Newgametype_OnChange(void)
 {
-	if (cv_nextmap.value && menuactive)
+	if (menuactive && cv_nextmap.value)
 	{
-		if (!mapheaderinfo[cv_nextmap.value-1])
+		if(!mapheaderinfo[cv_nextmap.value-1])
 			P_AllocMapHeader((INT16)(cv_nextmap.value-1));
 
-		if ((cv_newgametype.value == GT_RACE && !(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & TOL_RACE)) || // SRB2kart
-			//(cv_newgametype.value == GT_COMPETITION && !(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & TOL_COMPETITION)) ||
-			//(cv_newgametype.value == GT_RACE && !(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & TOL_RACE)) ||
-			((cv_newgametype.value == GT_MATCH || cv_newgametype.value == GT_TEAMMATCH) && !(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & TOL_MATCH))) // ||
-			//((cv_newgametype.value == GT_TAG || cv_newgametype.value == GT_HIDEANDSEEK) && !(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & TOL_TAG)) ||
-			//(cv_newgametype.value == GT_CTF && !(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & TOL_CTF)))
-		{
-			INT32 value = 0;
-
-			switch (cv_newgametype.value)
-			{
-				case GT_COOP:
-					value = TOL_RACE; // SRB2kart
-					break;
-				case GT_COMPETITION:
-					value = TOL_COMPETITION;
-					break;
-				case GT_RACE:
-					value = TOL_RACE;
-					break;
-				case GT_MATCH:
-				case GT_TEAMMATCH:
-					value = TOL_MATCH;
-					break;
-				case GT_TAG:
-				case GT_HIDEANDSEEK:
-					value = TOL_TAG;
-					break;
-				case GT_CTF:
-					value = TOL_CTF;
-					break;
-			}
-
-			CV_SetValue(&cv_nextmap, M_FindFirstMap(value));
-			//CV_AddValue(&cv_nextmap, -1);
-			//CV_AddValue(&cv_nextmap, 1);
-		}
+		if (!(mapheaderinfo[cv_nextmap.value-1]->typeoflevel & gametypetol[cv_newgametype.value]))
+			CV_SetValue(&cv_nextmap, M_GetFirstLevelInList(cv_newgametype.value));
 	}
 }
+
+#ifdef HWRENDER
+static void Newrenderer_AREYOUSURE(INT32 c)
+{
+	int n;
+	switch (c)
+	{
+		case 'y':
+		case KEY_ENTER:
+			n = cv_newrenderer.value;
+			newrenderer_set |= n;
+			CV_SetValue(&cv_renderer, n);
+			break;
+		default:
+			CV_StealthSetValue(&cv_newrenderer, cv_renderer.value);
+	}
+}
+
+static void Newrenderer_OnChange(void)
+{
+#if 0
+	/* Well this works for now because there's only two options. */
+	int n;
+	n = cv_newrenderer.value;
+	newrenderer_set |= cv_renderer.value;
+	if (( newrenderer_set & n ))
+		CV_SetValue(&cv_renderer, n);
+	else
+	{
+		M_StartMessage(
+				"The OpenGL renderer is incomplete.\n"
+				"Some visuals may fail to appear, or\n"
+				"appear incorrectly.\n"
+				"Do you still want to switch to it?\n"
+				"\n"
+				"(Press 'y' or 'n')",
+				Newrenderer_AREYOUSURE, MM_YESNO
+		);
+	}
+#else
+	// SRB2Kart: don't want the warning
+	CV_SetValue(&cv_renderer, n);
+#endif
+}
+#endif/*HWRENDER*/
 
 void Screenshot_option_Onchange(void)
 {
@@ -2327,7 +2329,7 @@ static void M_ChangeCvar(INT32 choice)
 
 	if (choice == -1)
 	{
-		if (cv == &cv_playercolor)
+		if (cv == &cv_playercolor[0])
 		{
 			SINT8 skinno = R_SkinAvailable(cv_chooseskin.string);
 			if (skinno != -1)
@@ -2513,7 +2515,7 @@ boolean M_Responder(event_t *ev)
 	{
 		if (ev->type == ev_joystick  && ev->data1 == 0 && joywait < I_GetTime())
 		{
-			const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_deadzone.value) >> FRACBITS;
+			const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_deadzone[0].value) >> FRACBITS;
 			if (ev->data3 != INT32_MAX)
 			{
 				if (Joystick.bGamepadStyle || abs(ev->data3) > jdeadzone)
@@ -2699,8 +2701,11 @@ boolean M_Responder(event_t *ev)
 		else
 		{
 			// dirty hack: for customising controls, I want only buttons/keys, not moves
-			if (ev->type == ev_mouse || ev->type == ev_mouse2 || ev->type == ev_joystick
-				|| ev->type == ev_joystick2 || ev->type == ev_joystick3 || ev->type == ev_joystick4)
+			if (ev->type == ev_mouse
+				|| ev->type == ev_joystick
+				|| ev->type == ev_joystick2
+				|| ev->type == ev_joystick3
+				|| ev->type == ev_joystick4)
 				return true;
 			if (routine)
 			{
@@ -4229,7 +4234,7 @@ static void M_PatchSkinNameTable(void)
 		}
 	}
 
-	j = R_SkinAvailable(cv_skin.string);
+	j = R_SkinAvailable(cv_skin[0].string);
 	if (j == -1)
 		j = 0;
 
@@ -4306,22 +4311,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 			if (M_MapLocked(mapnum+1))
 				return false; // not unlocked
 
-			/*if (gt == GT_COOP && (mapheaderinfo[mapnum]->typeoflevel & TOL_COOP))
-				return true;
-
-			if (gt == GT_COMPETITION && (mapheaderinfo[mapnum]->typeoflevel & TOL_COMPETITION))
-				return true;
-
-			if (gt == GT_CTF && (mapheaderinfo[mapnum]->typeoflevel & TOL_CTF))
-				return true;
-
-			if ((gt == GT_TAG || gt == GT_HIDEANDSEEK) && (mapheaderinfo[mapnum]->typeoflevel & TOL_TAG))
-				return true;*/
-
-			if ((gt == GT_MATCH || gt == GT_TEAMMATCH) && (mapheaderinfo[mapnum]->typeoflevel & TOL_MATCH))
-				return true;
-
-			if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
+			if (mapheaderinfo[mapnum]->typeoflevel & gametypetol[gt])
 				return true;
 
 			return false;
@@ -4340,7 +4330,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 				return false;*/
 
 			if ((levellistmode == LLM_TIMEATTACK && !(mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
-			|| (levellistmode == LLM_BREAKTHECAPSULES && !(mapheaderinfo[mapnum]->typeoflevel & TOL_MATCH)))
+			|| (levellistmode == LLM_BREAKTHECAPSULES && !(mapheaderinfo[mapnum]->typeoflevel & TOL_BATTLE)))
 				return false;
 
 			if (M_MapLocked(mapnum+1))
@@ -7706,7 +7696,7 @@ void M_DrawTimeAttackMenu(void)
 	// Character face!
 	if (W_CheckNumForName(skins[cv_chooseskin.value-1].facewant) != LUMPERROR)
 	{
-		UINT8 *colormap = R_GetTranslationColormap(cv_chooseskin.value-1, cv_playercolor.value, GTC_MENUCACHE);
+		UINT8 *colormap = R_GetTranslationColormap(cv_chooseskin.value-1, cv_playercolor[0].value, GTC_MENUCACHE);
 		V_DrawMappedPatch(BASEVIDWIDTH-x - SHORT(facewantprefix[cv_chooseskin.value-1]->width), y, 0, facewantprefix[cv_chooseskin.value-1], colormap);
 	}
 
@@ -9088,25 +9078,8 @@ Update the maxplayers label...
 
 		while (++i <= 4)
 		{
-			switch (i)
-			{
-				default:
-					pskin = R_SkinAvailable(cv_skin.string);
-					pcol = cv_playercolor.value;
-					break;
-				case 2:
-					pskin = R_SkinAvailable(cv_skin2.string);
-					pcol = cv_playercolor2.value;
-					break;
-				case 3:
-					pskin = R_SkinAvailable(cv_skin3.string);
-					pcol = cv_playercolor3.value;
-					break;
-				case 4:
-					pskin = R_SkinAvailable(cv_skin4.string);
-					pcol = cv_playercolor4.value;
-					break;
-			}
+			pskin = R_SkinAvailable(cv_skin[i-1].string);
+			pcol = cv_playercolor[i-1].value;
 
 			if (pskin >= MAXSKINS)
 				pskin = 0;
@@ -9411,8 +9384,8 @@ static void M_DrawSetupMultiPlayerMenu(void)
 
 	// draw the name of the color you have chosen
 	// Just so people don't go thinking that "Default" is Green.
-	st = V_StringWidth(KartColor_Names[setupm_fakecolor], 0);
-	V_DrawString(BASEVIDWIDTH - mx - st, my + 152, highlightflags|V_ALLOWLOWERCASE, KartColor_Names[setupm_fakecolor]);	// SRB2kart
+	st = V_StringWidth(skincolors[setupm_fakecolor].name, 0);
+	V_DrawString(BASEVIDWIDTH - mx - st, my + 152, highlightflags|V_ALLOWLOWERCASE, skincolors[setupm_fakecolor].name);	// SRB2kart
 	if (itemOn == 3)
 	{
 		V_DrawCharacter(BASEVIDWIDTH - mx - 10 - st - (skullAnimCounter/5), my + 152,
@@ -9468,7 +9441,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		UINT8 h;
 
 		while (col < 1)
-			col += MAXSKINCOLORS-1;
+			col += numskincolors-1;
 		while (j <= colwidth)
 		{
 			if (!(j++))
@@ -9476,9 +9449,9 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			else
 				w = indexwidth;
 			for (h = 0; h < 16; h++)
-				V_DrawFill(x, my+162+h, w, 1, colortranslations[col][h]);
-			if (++col >= MAXSKINCOLORS)
-				col -= MAXSKINCOLORS-1;
+				V_DrawFill(x, my+162+h, w, 1, skincolors[col].ramp[h]);
+			if (++col >= numskincolors)
+				col -= numskincolors-1;
 			x += w;
 		}
 	}
@@ -9794,8 +9767,8 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 
 	// check color
 	if (setupm_fakecolor < 1)
-		setupm_fakecolor = MAXSKINCOLORS-1;
-	if (setupm_fakecolor > MAXSKINCOLORS-1)
+		setupm_fakecolor = numskincolors-1;
+	if (setupm_fakecolor > numskincolors-1)
 		setupm_fakecolor = 1;
 
 	if (exitmenu)
@@ -10052,7 +10025,8 @@ static void M_ScreenshotOptions(INT32 choice)
 
 static void M_DrawJoystick(void)
 {
-	INT32 i, compareval4, compareval3, compareval2, compareval;
+	INT32 i;
+	INT32 compareval[MAXSPLITSCREENPLAYERS];
 
 	M_DrawGenericMenu();
 
@@ -10062,47 +10036,24 @@ static void M_DrawJoystick(void)
 		//M_DrawSaveLoadBorder(OP_JoystickSetDef.x, OP_JoystickSetDef.y+LINEHEIGHT*i);
 
 #ifdef JOYSTICK_HOTPLUG
-		if (atoi(cv_usejoystick4.string) > I_NumJoys())
-			compareval4 = atoi(cv_usejoystick4.string);
+		if (atoi(cv_usejoystick[setupcontrolplayer-1].string) > I_NumJoys())
+			compareval = atoi(cv_usejoystick[setupcontrolplayer-1].string);
 		else
-			compareval4 = cv_usejoystick4.value;
-
-		if (atoi(cv_usejoystick3.string) > I_NumJoys())
-			compareval3 = atoi(cv_usejoystick3.string);
-		else
-			compareval3 = cv_usejoystick3.value;
-
-		if (atoi(cv_usejoystick2.string) > I_NumJoys())
-			compareval2 = atoi(cv_usejoystick2.string);
-		else
-			compareval2 = cv_usejoystick2.value;
-
-		if (atoi(cv_usejoystick.string) > I_NumJoys())
-			compareval = atoi(cv_usejoystick.string);
-		else
-			compareval = cv_usejoystick.value;
-#else
-		compareval4 = cv_usejoystick4.value;
-		compareval3 = cv_usejoystick3.value;
-		compareval2 = cv_usejoystick2.value;
-		compareval = cv_usejoystick.value
 #endif
+			compareval = cv_usejoystick[setupcontrolplayer-1].value;
 
-		if ((setupcontrolplayer == 4 && (i == compareval4))
-			|| (setupcontrolplayer == 3 && (i == compareval3))
-			|| (setupcontrolplayer == 2 && (i == compareval2))
-			|| (setupcontrolplayer == 1 && (i == compareval)))
-			V_DrawString(OP_JoystickSetDef.x, OP_JoystickSetDef.y+LINEHEIGHT*i-4,V_GREENMAP,joystickInfo[i]);
-		else
-			V_DrawString(OP_JoystickSetDef.x, OP_JoystickSetDef.y+LINEHEIGHT*i-4,0,joystickInfo[i]);
+		V_DrawString(OP_JoystickSetDef.x, OP_JoystickSetDef.y+LINEHEIGHT*i-4, (i == compareval) ? V_GREENMAP : 0, joystickInfo[i]);
 	}
 }
 
 void M_SetupJoystickMenu(INT32 choice)
 {
-	INT32 i = 0;
 	const char *joyNA = "Unavailable";
-	INT32 n = I_NumJoys();
+	const INT32 n = I_NumJoys();
+
+	INT32 i = 0;
+	INT32 j;
+
 	(void)choice;
 
 	strcpy(joystickInfo[i], "None");
@@ -10123,14 +10074,11 @@ void M_SetupJoystickMenu(INT32 choice)
 		//
 		// Update cv_usejoystick.string here so that the user can
 		// properly change this value.
-		if (i == cv_usejoystick.value)
-			CV_SetValue(&cv_usejoystick, i);
-		if (i == cv_usejoystick2.value)
-			CV_SetValue(&cv_usejoystick2, i);
-		if (i == cv_usejoystick3.value)
-			CV_SetValue(&cv_usejoystick3, i);
-		if (i == cv_usejoystick4.value)
-			CV_SetValue(&cv_usejoystick4, i);
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+		{
+			if (i == cv_usejoystick[j].value)
+				CV_SetValue(&cv_usejoystick[j], i);
+		}
 #endif
 	}
 
@@ -10167,139 +10115,41 @@ static void M_Setup4PJoystickMenu(INT32 choice)
 
 static void M_AssignJoystick(INT32 choice)
 {
+	const UINT8 p = setupcontrolplayer-1;
+
 #ifdef JOYSTICK_HOTPLUG
 	INT32 oldchoice, oldstringchoice;
 	INT32 numjoys = I_NumJoys();
 
-	if (setupcontrolplayer == 4)
+	oldchoice = oldstringchoice = atoi(cv_usejoystick[p].string) > numjoys ? atoi(cv_usejoystick[p].string) : cv_usejoystick[p].value;
+	CV_SetValue(&cv_usejoystick[p], choice);
+
+	// Just in case last-minute changes were made to cv_usejoystick.value,
+	// update the string too
+	// But don't do this if we're intentionally setting higher than numjoys
+	if (choice <= numjoys)
 	{
-		oldchoice = oldstringchoice = atoi(cv_usejoystick4.string) > numjoys ? atoi(cv_usejoystick4.string) : cv_usejoystick4.value;
-		CV_SetValue(&cv_usejoystick4, choice);
+		CV_SetValue(&cv_usejoystick[p], cv_usejoystick[p].value);
 
-		// Just in case last-minute changes were made to cv_usejoystick.value,
-		// update the string too
-		// But don't do this if we're intentionally setting higher than numjoys
-		if (choice <= numjoys)
+		// reset this so the comparison is valid
+		if (oldchoice > numjoys)
+			oldchoice = cv_usejoystick[p].value;
+
+		if (oldchoice != choice)
 		{
-			CV_SetValue(&cv_usejoystick4, cv_usejoystick4.value);
+			if (choice && oldstringchoice > numjoys) // if we did not select "None", we likely selected a used device
+				CV_SetValue(&cv_usejoystick[p], (oldstringchoice > numjoys ? oldstringchoice : oldchoice));
 
-			// reset this so the comparison is valid
-			if (oldchoice > numjoys)
-				oldchoice = cv_usejoystick4.value;
-
-			if (oldchoice != choice)
-			{
-				if (choice && oldstringchoice > numjoys) // if we did not select "None", we likely selected a used device
-					CV_SetValue(&cv_usejoystick4, (oldstringchoice > numjoys ? oldstringchoice : oldchoice));
-
-				if (oldstringchoice ==
-					(atoi(cv_usejoystick4.string) > numjoys ? atoi(cv_usejoystick4.string) : cv_usejoystick4.value))
-					M_StartMessage("This joystick is used by another\n"
-								   "player. Reset the joystick\n"
-								   "for that player first.\n\n"
-								   "(Press a key)\n", NULL, MM_NOTHING);
-			}
-		}
-	}
-	else if (setupcontrolplayer == 3)
-	{
-		oldchoice = oldstringchoice = atoi(cv_usejoystick3.string) > numjoys ? atoi(cv_usejoystick3.string) : cv_usejoystick3.value;
-		CV_SetValue(&cv_usejoystick3, choice);
-
-		// Just in case last-minute changes were made to cv_usejoystick.value,
-		// update the string too
-		// But don't do this if we're intentionally setting higher than numjoys
-		if (choice <= numjoys)
-		{
-			CV_SetValue(&cv_usejoystick3, cv_usejoystick3.value);
-
-			// reset this so the comparison is valid
-			if (oldchoice > numjoys)
-				oldchoice = cv_usejoystick3.value;
-
-			if (oldchoice != choice)
-			{
-				if (choice && oldstringchoice > numjoys) // if we did not select "None", we likely selected a used device
-					CV_SetValue(&cv_usejoystick3, (oldstringchoice > numjoys ? oldstringchoice : oldchoice));
-
-				if (oldstringchoice ==
-					(atoi(cv_usejoystick3.string) > numjoys ? atoi(cv_usejoystick3.string) : cv_usejoystick3.value))
-					M_StartMessage("This joystick is used by another\n"
-								   "player. Reset the joystick\n"
-								   "for that player first.\n\n"
-								   "(Press a key)\n", NULL, MM_NOTHING);
-			}
-		}
-	}
-	else if (setupcontrolplayer == 2)
-	{
-		oldchoice = oldstringchoice = atoi(cv_usejoystick2.string) > numjoys ? atoi(cv_usejoystick2.string) : cv_usejoystick2.value;
-		CV_SetValue(&cv_usejoystick2, choice);
-
-		// Just in case last-minute changes were made to cv_usejoystick.value,
-		// update the string too
-		// But don't do this if we're intentionally setting higher than numjoys
-		if (choice <= numjoys)
-		{
-			CV_SetValue(&cv_usejoystick2, cv_usejoystick2.value);
-
-			// reset this so the comparison is valid
-			if (oldchoice > numjoys)
-				oldchoice = cv_usejoystick2.value;
-
-			if (oldchoice != choice)
-			{
-				if (choice && oldstringchoice > numjoys) // if we did not select "None", we likely selected a used device
-					CV_SetValue(&cv_usejoystick2, (oldstringchoice > numjoys ? oldstringchoice : oldchoice));
-
-				if (oldstringchoice ==
-					(atoi(cv_usejoystick2.string) > numjoys ? atoi(cv_usejoystick2.string) : cv_usejoystick2.value))
-					M_StartMessage("This joystick is used by another\n"
-					               "player. Reset the joystick\n"
-					               "for that player first.\n\n"
-					               "(Press a key)\n", NULL, MM_NOTHING);
-			}
-		}
-	}
-	else if (setupcontrolplayer == 1)
-	{
-		oldchoice = oldstringchoice = atoi(cv_usejoystick.string) > numjoys ? atoi(cv_usejoystick.string) : cv_usejoystick.value;
-		CV_SetValue(&cv_usejoystick, choice);
-
-		// Just in case last-minute changes were made to cv_usejoystick.value,
-		// update the string too
-		// But don't do this if we're intentionally setting higher than numjoys
-		if (choice <= numjoys)
-		{
-			CV_SetValue(&cv_usejoystick, cv_usejoystick.value);
-
-			// reset this so the comparison is valid
-			if (oldchoice > numjoys)
-				oldchoice = cv_usejoystick.value;
-
-			if (oldchoice != choice)
-			{
-				if (choice && oldstringchoice > numjoys) // if we did not select "None", we likely selected a used device
-					CV_SetValue(&cv_usejoystick, (oldstringchoice > numjoys ? oldstringchoice : oldchoice));
-
-				if (oldstringchoice ==
-					(atoi(cv_usejoystick.string) > numjoys ? atoi(cv_usejoystick.string) : cv_usejoystick.value))
-					M_StartMessage("This joystick is used by another\n"
-					               "player. Reset the joystick\n"
-					               "for that player first.\n\n"
-					               "(Press a key)\n", NULL, MM_NOTHING);
-			}
+			if (oldstringchoice ==
+				(atoi(cv_usejoystick[p].string) > numjoys ? atoi(cv_usejoystick[p].string) : cv_usejoystick[p].value))
+				M_StartMessage("This joystick is used by another\n"
+							   "player. Reset the joystick\n"
+							   "for that player first.\n\n"
+							   "(Press a key)\n", NULL, MM_NOTHING);
 		}
 	}
 #else
-	if (setupcontrolplayer == 4)
-		CV_SetValue(&cv_usejoystick4, choice);
-	else if (setupcontrolplayer == 3)
-		CV_SetValue(&cv_usejoystick3, choice);
-	else if (setupcontrolplayer == 2)
-		CV_SetValue(&cv_usejoystick2, choice);
-	else if (setupcontrolplayer == 1)
-		CV_SetValue(&cv_usejoystick, choice);
+	CV_SetValue(&cv_usejoystick[p], choice);
 #endif
 }
 
@@ -10568,7 +10418,6 @@ static void M_ChangecontrolResponse(event_t *ev)
 		{
 			// ignore mouse/joy movements, just get buttons
 			case ev_mouse:
-			case ev_mouse2:
 			case ev_joystick:
 			case ev_joystick2:
 			case ev_joystick3:
@@ -10669,6 +10518,7 @@ static void M_ChangeControl(INT32 choice)
 
 static void M_ResetControlsResponse(INT32 ch)
 {
+	const UINT8 p = setupcontrolplayer-1;
 	INT32 i;
 
 	if (ch != 'y' && ch != KEY_ENTER)
@@ -10677,72 +10527,21 @@ static void M_ResetControlsResponse(INT32 ch)
 	// clear all controls
 	for (i = 0; i < num_gamecontrols; i++)
 	{
-		switch (setupcontrolplayer)
-		{
-			case 4:
-				G_ClearControlKeys(gamecontrol[3], i);
-				break;
-			case 3:
-				G_ClearControlKeys(gamecontrol[2], i);
-				break;
-			case 2:
-				G_ClearControlKeys(gamecontrol[1], i);
-				break;
-			case 1:
-			default:
-				G_ClearControlKeys(gamecontrol[0], i);
-				break;
-		}
+		G_ClearControlKeys(gamecontrol[p], i);
 	}
 
 	// Setup original defaults
 	G_Controldefault(setupcontrolplayer);
 
 	// Setup gamepad option defaults (yucky)
-	switch (setupcontrolplayer)
-	{
-		case 4:
-			CV_StealthSet(&cv_usejoystick4, cv_usejoystick4.defaultvalue);
-			CV_StealthSet(&cv_turnaxis4, cv_turnaxis4.defaultvalue);
-			CV_StealthSet(&cv_moveaxis4, cv_moveaxis4.defaultvalue);
-			CV_StealthSet(&cv_brakeaxis4, cv_brakeaxis4.defaultvalue);
-			CV_StealthSet(&cv_aimaxis4, cv_aimaxis4.defaultvalue);
-			CV_StealthSet(&cv_lookaxis4, cv_lookaxis4.defaultvalue);
-			CV_StealthSet(&cv_fireaxis4, cv_fireaxis4.defaultvalue);
-			CV_StealthSet(&cv_driftaxis4, cv_driftaxis4.defaultvalue);
-			break;
-		case 3:
-			CV_StealthSet(&cv_usejoystick3, cv_usejoystick3.defaultvalue);
-			CV_StealthSet(&cv_turnaxis3, cv_turnaxis3.defaultvalue);
-			CV_StealthSet(&cv_moveaxis3, cv_moveaxis3.defaultvalue);
-			CV_StealthSet(&cv_brakeaxis3, cv_brakeaxis3.defaultvalue);
-			CV_StealthSet(&cv_aimaxis3, cv_aimaxis3.defaultvalue);
-			CV_StealthSet(&cv_lookaxis3, cv_lookaxis3.defaultvalue);
-			CV_StealthSet(&cv_fireaxis3, cv_fireaxis3.defaultvalue);
-			CV_StealthSet(&cv_driftaxis3, cv_driftaxis3.defaultvalue);
-			break;
-		case 2:
-			CV_StealthSet(&cv_usejoystick2, cv_usejoystick2.defaultvalue);
-			CV_StealthSet(&cv_turnaxis2, cv_turnaxis2.defaultvalue);
-			CV_StealthSet(&cv_moveaxis2, cv_moveaxis2.defaultvalue);
-			CV_StealthSet(&cv_brakeaxis2, cv_brakeaxis2.defaultvalue);
-			CV_StealthSet(&cv_aimaxis2, cv_aimaxis2.defaultvalue);
-			CV_StealthSet(&cv_lookaxis2, cv_lookaxis2.defaultvalue);
-			CV_StealthSet(&cv_fireaxis2, cv_fireaxis2.defaultvalue);
-			CV_StealthSet(&cv_driftaxis2, cv_driftaxis2.defaultvalue);
-			break;
-		case 1:
-		default:
-			CV_StealthSet(&cv_usejoystick, cv_usejoystick.defaultvalue);
-			CV_StealthSet(&cv_turnaxis, cv_turnaxis.defaultvalue);
-			CV_StealthSet(&cv_moveaxis, cv_moveaxis.defaultvalue);
-			CV_StealthSet(&cv_brakeaxis, cv_brakeaxis.defaultvalue);
-			CV_StealthSet(&cv_aimaxis, cv_aimaxis.defaultvalue);
-			CV_StealthSet(&cv_lookaxis, cv_lookaxis.defaultvalue);
-			CV_StealthSet(&cv_fireaxis, cv_fireaxis.defaultvalue);
-			CV_StealthSet(&cv_driftaxis, cv_driftaxis.defaultvalue);
-			break;
-	}
+	CV_StealthSet(&cv_usejoystick[p], cv_usejoystick[p].defaultvalue);
+	CV_StealthSet(&cv_turnaxis[p], cv_turnaxis[p].defaultvalue);
+	CV_StealthSet(&cv_moveaxis[p], cv_moveaxis[p].defaultvalue);
+	CV_StealthSet(&cv_brakeaxis[p], cv_brakeaxis[p].defaultvalue);
+	CV_StealthSet(&cv_aimaxis[p], cv_aimaxis[p].defaultvalue);
+	CV_StealthSet(&cv_lookaxis[p], cv_lookaxis[p].defaultvalue);
+	CV_StealthSet(&cv_fireaxis[p], cv_fireaxis[p].defaultvalue);
+	CV_StealthSet(&cv_driftaxis[p], cv_driftaxis[p].defaultvalue);
 
 	S_StartSound(NULL, sfx_s224);
 }

@@ -33,6 +33,17 @@ UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 }
 
 /*--------------------------------------------------
+	UINT16 K_RainbowColor(tic_t time)
+
+		See header file for description.
+--------------------------------------------------*/
+
+UINT16 K_RainbowColor(tic_t time)
+{
+	return (UINT16)(SKINCOLOR_PINK + (time % (numskincolors - SKINCOLOR_PINK)));
+}
+
+/*--------------------------------------------------
 	void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 
 		See header file for description.
@@ -51,7 +62,7 @@ void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 	// first generate the brightness of all the colours of that skincolour
 	for (i = 0; i < 16; i++)
 	{
-		color = V_GetColor(colortranslations[skincolor][i]);
+		color = V_GetColor(skincolors[skincolor].ramp[i]);
 		colorbrightnesses[i] = K_ColorRelativeLuminance(color.s.red, color.s.green, color.s.blue);
 	}
 
@@ -75,7 +86,7 @@ void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 			if (temp < brightdif)
 			{
 				brightdif = (UINT16)temp;
-				dest_colormap[i] = colortranslations[skincolor][j];
+				dest_colormap[i] = skincolors[skincolor].ramp[j];
 			}
 		}
 	}
@@ -106,7 +117,7 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 			if (skinnum == TC_ALLWHITE)
 				dest_colormap[i] = 0;
 			else if (skinnum == TC_BLINK)
-				dest_colormap[i] = colortranslations[color][3];
+				dest_colormap[i] = skincolors[color].ramp[3];
 			else
 				dest_colormap[i] = (UINT8)i;
 		}
@@ -138,25 +149,8 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 	for (i = 0; i < SKIN_RAMP_LENGTH; i++)
 	{
 		// Sryder 2017-10-26: What was here before was most definitely not particularly readable, check above for new color translation table
-		dest_colormap[starttranscolor + i] = colortranslations[color][i];
+		dest_colormap[starttranscolor + i] = skincolors[color].ramp[i];
 	}
-}
-
-/**	\brief	Pulls kart color by name, to replace R_GetColorByName in r_draw.c
-
-	\param	name	color name
-
-	\return	0
-*/
-UINT8 K_GetKartColorByName(const char *name)
-{
-	UINT8 color = (UINT8)atoi(name);
-	if (color > 0 && color < MAXSKINCOLORS)
-		return color;
-	for (color = 1; color < MAXSKINCOLORS; color++)
-		if (!stricmp(KartColor_Names[color], name))
-			return color;
-	return 0;
 }
 
 //}

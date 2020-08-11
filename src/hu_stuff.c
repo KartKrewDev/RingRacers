@@ -2415,18 +2415,12 @@ static void HU_DrawRankings(void)
 
 	if (G_GametypeHasTeams())
 	{
-		if (gametype == GT_CTF)
-			p = bflagico;
-		else
-			p = bmatcico;
+		p = bmatcico;
 
 		V_DrawSmallScaledPatch(128 - SHORT(p->width)/4, 4, 0, p);
 		V_DrawCenteredString(128, 16, 0, va("%u", bluescore));
 
-		if (gametype == GT_CTF)
-			p = rflagico;
-		else
-			p = rmatcico;
+		p = rmatcico;
 
 		V_DrawSmallScaledPatch(192 - SHORT(p->width)/4, 4, 0, p);
 		V_DrawCenteredString(192, 16, 0, va("%u", redscore));
@@ -2515,7 +2509,7 @@ static void HU_DrawRankings(void)
 
 		tab[scorelines].name = player_names[i];
 
-		if (G_RaceGametype())
+		if ((gametyperules & GTR_CIRCUIT))
 		{
 			if (circuitmap)
 				tab[scorelines].count = players[i].laps;

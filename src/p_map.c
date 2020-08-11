@@ -1373,7 +1373,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 			}
 
-			if (G_BattleGametype()
+			if ((gametyperules & GTR_BUMPERS)
 				&& ((thing->player->kartstuff[k_bumper] && !tmthing->player->kartstuff[k_bumper])
 				|| (tmthing->player->kartstuff[k_bumper] && !thing->player->kartstuff[k_bumper])))
 			{
@@ -1392,7 +1392,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					mo1 = thing;
 					mo2 = tmthing;
 
-					if (G_BattleGametype() && tmthing->player->kartstuff[k_pogospring])
+					if ((gametyperules & GTR_BUMPERS) && tmthing->player->kartstuff[k_pogospring])
 					{
 						K_StealBumper(tmthing->player, thing->player, false);
 						K_SpinPlayer(thing->player, tmthing, 0, tmthing, false);
@@ -1402,14 +1402,14 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				{
 					zbounce = true;
 
-					if (G_BattleGametype() && thing->player->kartstuff[k_pogospring])
+					if ((gametyperules & GTR_BUMPERS) && thing->player->kartstuff[k_pogospring])
 					{
 						K_StealBumper(thing->player, tmthing->player, false);
 						K_SpinPlayer(tmthing->player, thing, 0, thing, false);
 					}
 				}
 
-				if (G_BattleGametype())
+				if ((gametyperules & GTR_BUMPERS))
 				{
 					if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
 					{

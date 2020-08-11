@@ -984,7 +984,7 @@ void D_StartTitle(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		players[i].availabilities = R_GetSkinAvailabilities();
+		players[g_localplayers[i]].availabilities = R_GetSkinAvailabilities();
 	}
 
 	splitscreen = 0;

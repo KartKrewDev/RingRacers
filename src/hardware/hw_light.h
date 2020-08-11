@@ -91,5 +91,4 @@ typedef enum
 
 extern light_t lspr[NUMLIGHTS];
 extern light_t *t_lspr[NUMSPRITES];
->>>>>>> srb2/next
 #endif

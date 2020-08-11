@@ -451,38 +451,31 @@ enum GameType
 // Gametype rules
 enum GameTypeRules
 {
-	GTR_CAMPAIGN         = 1,     // Linear Co-op map progression, don't allow random maps
-	GTR_RINGSLINGER      = 1<<1,  // Outside of Co-op, Competition, and Race (overriden by cv_ringslinger)
-	GTR_SPECTATORS       = 1<<2,  // Outside of Co-op, Competition, and Race
-	GTR_LIVES            = 1<<3,  // Co-op and Competition
-	GTR_TEAMS            = 1<<4,  // Team Match, CTF
-	GTR_FIRSTPERSON      = 1<<5,  // First person camera
-	GTR_POWERSTONES      = 1<<6,  // Power stones (Match and CTF)
-	GTR_TEAMFLAGS        = 1<<7,  // Gametype has team flags (CTF)
-	GTR_FRIENDLY         = 1<<8,  // Co-op
-	GTR_SPECIALSTAGES    = 1<<9,  // Allow special stages
-	GTR_EMERALDTOKENS    = 1<<10, // Spawn emerald tokens
-	GTR_EMERALDHUNT      = 1<<11, // Emerald Hunt
-	GTR_RACE             = 1<<12, // Race and Competition
-	GTR_TAG              = 1<<13, // Tag and Hide and Seek
-	GTR_POINTLIMIT       = 1<<14, // Ringslinger point limit
-	GTR_TIMELIMIT        = 1<<15, // Ringslinger time limit
-	GTR_OVERTIME         = 1<<16, // Allow overtime
-	GTR_HURTMESSAGES     = 1<<17, // Hit and death messages
-	GTR_FRIENDLYFIRE     = 1<<18, // Always allow friendly fire
-	GTR_STARTCOUNTDOWN   = 1<<19, // Hide time countdown (Tag and Hide and Seek)
-	GTR_HIDEFROZEN       = 1<<20, // Frozen after hide time (Hide and Seek, but not Tag)
-	GTR_BLINDFOLDED      = 1<<21, // Blindfolded view (Tag and Hide and Seek)
-	GTR_RESPAWNDELAY     = 1<<22, // Respawn delay
-	GTR_PITYSHIELD       = 1<<23, // Award pity shield
-	GTR_DEATHPENALTY     = 1<<24, // Death score penalty
-	GTR_NOSPECTATORSPAWN = 1<<25, // Use with GTR_SPECTATORS, spawn in the map instead of with the spectators
-	GTR_DEATHMATCHSTARTS = 1<<26, // Use deathmatch starts
-	GTR_SPAWNINVUL       = 1<<27, // Babysitting deterrent
-	GTR_SPAWNENEMIES     = 1<<28, // Spawn enemies
-	GTR_ALLOWEXIT        = 1<<29, // Allow exit sectors
-	GTR_NOTITLECARD      = 1<<30, // Don't show the title card
-	GTR_CUTSCENES        = 1<<31, // Play cutscenes, ending, credits, and evaluation
+	// Race rules
+	GTR_CIRCUIT				= 1,     // Enables the finish line, laps, and the waypoint system.
+	GTR_RINGS				= 1<<1,  // Rings will be spawned in this mode. (Don't get too cheeky, ring sting is still enabled :])
+	GTR_BOTS				= 1<<2,  // Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
+
+	// Battle gametype rules
+	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
+	GTR_KARMA				= 1<<4,  // Enables the Karma system if you're out of bumpers
+	GTR_ITEMARROWS			= 1<<5,  // Show item box arrows above players
+	GTR_BATTLESTARTS		= 1<<6,  // Use Battle Mode start positions.
+	GTR_POINTLIMIT			= 1<<7,  // Reaching point limit ends the round
+	GTR_TIMELIMIT			= 1<<8,  // Reaching time limit ends the round
+	GTR_OVERTIME			= 1<<9,  // Allow overtime behavior
+
+	// Custom gametype rules
+	GTR_TEAMS				= 1<<10, // Teams are forced on
+	GTR_NOTEAMS				= 1<<11, // Teams are forced off
+	GTR_TEAMSTARTS			= 1<<12, // Use team-based start positions
+
+	// Grand Prix rules
+	GTR_CAMPAIGN			= 1<<13, // Handles cup-based progression
+	GTR_LIVES				= 1<<14, // Lives system, players are forced to spectate during Game Over.
+	GTR_SPECIALBOTS			= 1<<15, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
+
+	// free: to and including 1<<31
 };
 
 // String names for gametypes
@@ -671,8 +664,6 @@ extern tic_t curlap, bestlap;
 extern INT16 votelevels[5][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
-
-extern tic_t hidetime;
 
 extern UINT32 timesBeaten; // # of times the game has been beaten.
 extern UINT32 timesBeatenWithEmeralds;

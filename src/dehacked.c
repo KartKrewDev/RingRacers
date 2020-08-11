@@ -10810,7 +10810,6 @@ static const char *const POWERS_LIST[] = {
 	"IGNORELATCH"
 };
 
-#ifdef HAVE_BLUA
 static const char *const KARTSTUFF_LIST[] = {
 	"POSITION",
 	"OLDPOSITION",
@@ -10904,7 +10903,6 @@ static const char *const KARTSTUFF_LIST[] = {
 	"KILLFIELD",
 	"WRONGWAY"
 };
-#endif
 
 static const char *const HUDITEMS_LIST[] = {
 	"LIVES",
@@ -11133,20 +11131,9 @@ struct {
 	{"NUMTRANSMAPS",NUMTRANSMAPS},
 
 	// Type of levels
-	{"TOL_SP",TOL_SP},
-	{"TOL_COOP",TOL_COOP},
-	{"TOL_COMPETITION",TOL_COMPETITION},
 	{"TOL_RACE",TOL_RACE},
-	{"TOL_MATCH",TOL_MATCH},
-	{"TOL_TAG",TOL_TAG},
-	{"TOL_CTF",TOL_CTF},
-	{"TOL_CUSTOM",TOL_CUSTOM},
-	{"TOL_2D",TOL_2D},
-	{"TOL_MARIO",TOL_MARIO},
-	{"TOL_NIGHTS",TOL_NIGHTS},
+	{"TOL_BATTLE",TOL_BATTLE},
 	{"TOL_TV",TOL_TV},
-	{"TOL_XMAS",TOL_XMAS},
-	//{"TOL_KART",TOL_KART},
 
 	// Level flags
 	{"LF_SCRIPTISFILE",LF_SCRIPTISFILE},
@@ -11800,7 +11787,8 @@ static menutype_t get_menutype(const char *word)
 	return MN_NONE;
 }
 
-/*static INT16 get_gametype(const char *word)
+/*
+static INT16 get_gametype(const char *word)
 { // Returns the value of GT_ enumerations
 	INT16 i;
 	if (*word >= '0' && *word <= '9')
@@ -11826,7 +11814,8 @@ static powertype_t get_power(const char *word)
 			return i;
 	deh_warning("Couldn't find power named 'pw_%s'",word);
 	return pw_invulnerability;
-}*/
+}
+*/
 
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.
 static fixed_t op_mul(fixed_t a, fixed_t b) { return a*b; }
@@ -11854,7 +11843,8 @@ struct {
 };
 
 // Returns the full word, cut at the first symbol or whitespace
-/*static char *read_word(const char *line)
+/*
+static char *read_word(const char *line)
 {
 	// Part 1: You got the start of the word, now find the end.
   const char *p;
@@ -12078,7 +12068,8 @@ static fixed_t find_const(const char **rword)
 	const_warning("constant",word);
 	free(word);
 	return 0;
-}*/
+}
+*/
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)

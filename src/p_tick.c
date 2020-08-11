@@ -489,9 +489,6 @@ void P_Ticker(boolean run)
 			{
 				players[i].quittime++;
 
-				if (players[i].quittime == 30 * TICRATE && G_TagGametype())
-					P_CheckSurvivors();
-
 				if (server && players[i].quittime >= (tic_t)FixedMul(cv_rejointimeout.value, 60 * TICRATE)
 				&& !(players[i].quittime % TICRATE))
 					SendKick(i, KICK_MSG_PLAYER_QUIT);
@@ -590,7 +587,7 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		if (G_BattleGametype() && battleovertime.enabled)
+		if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
 			K_RunBattleOvertime();
 
 		LUAh_ThinkFrame();
@@ -613,11 +610,10 @@ void P_Ticker(boolean run)
 	if (!(modeattacking && !demo.playback) || leveltime >= starttime - TICRATE*4)
 		timeinmap++;
 
-	/*if (G_TagGametype())
-		P_DoTagStuff();
-
+	/*
 	if (G_GametypeHasTeams())
-		P_DoCTFStuff();*/
+		P_DoCTFStuff();
+	*/
 
 	if (run)
 	{
@@ -650,7 +646,7 @@ void P_Ticker(boolean run)
 		if (hyubgone > 1)
 			hyubgone--;
 
-		if (G_BattleGametype())
+		if ((gametyperules & GTR_BUMPERS))
 		{
 			if (wantedcalcdelay && --wantedcalcdelay <= 0)
 				K_CalculateBattleWanted();
@@ -773,7 +769,7 @@ void P_PreTicker(INT32 frames)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		if (G_BattleGametype() && battleovertime.enabled)
+		if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
 			K_RunBattleOvertime();
 
 		LUAh_ThinkFrame();

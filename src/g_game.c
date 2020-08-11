@@ -315,8 +315,6 @@ tic_t curlap; // Current lap time
 tic_t bestlap; // Best lap time
 static INT16 randmapbuffer[NUMMAPS+1]; // Buffer for maps RandMap is allowed to roll
 
-tic_t hidetime;
-
 // Grading
 UINT32 timesBeaten;
 UINT32 timesBeatenWithEmeralds;
@@ -1204,7 +1202,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 //
 void G_DoLoadLevel(boolean resetplayer)
 {
-	INT32 i;
+	INT32 i, j;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -1277,13 +1275,10 @@ void G_DoLoadLevel(boolean resetplayer)
 	memset(gamekeydown, 0, sizeof (gamekeydown));
 	for (i = 0;i < JOYAXISSET; i++)
 	{
-		joyxmove[i] = joyymove[i] = 0;
-		joy2xmove[i] = joy2ymove[i] = 0;
-		joy3xmove[i] = joy3ymove[i] = 0;
-		joy4xmove[i] = joy4ymove[i] = 0;
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+			joyxmove[j][i] = joyymove[j][i] = 0;
 	}
 	mousex = mousey = 0;
-	mouse2x = mouse2y = 0;
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
@@ -1637,36 +1632,18 @@ boolean G_CouldView(INT32 playernum)
 		return false;
 
 	// I don't know if we want this actually, but I'll humor the suggestion anyway
-	if (G_BattleGametype() && !demo.playback)
+	if ((gametyperules & GTR_BUMPERS) && !demo.playback)
 	{
 		if (player->kartstuff[k_bumper] <= 0)
 			return false;
 	}
 
 	// SRB2Kart: we have no team-based modes, YET...
-	/*if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams())
 	{
-		if (players[consoleplayer].ctfteam
-		 && player->ctfteam != players[consoleplayer].ctfteam)
+		if (players[consoleplayer].ctfteam && player->ctfteam != players[consoleplayer].ctfteam)
 			return false;
 	}
-	else if (gametype == GT_HIDEANDSEEK)
-	{
-		if (players[consoleplayer].pflags & PF_TAGIT)
-			return false;
-	}
-	// Other Tag-based gametypes?
-	else if (G_TagGametype())
-	{
-		if (!players[consoleplayer].spectator
-		 && (players[consoleplayer].pflags & PF_TAGIT) != (player->pflags & PF_TAGIT))
-			return false;
-	}
-	else if (G_GametypeHasSpectators() && G_BattleGametype())
-	{
-		if (!players[consoleplayer].spectator)
-			return false;
-	}*/
 
 	return true;
 }
@@ -2234,8 +2211,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
-		bumper = (G_BattleGametype() ? K_StartingBumperCount() : 0);
-		rings = (G_BattleGametype() ? 0 : 5);
+		bumper = ((gametyperules & GTR_BUMPERS) ? K_StartingBumperCount() : 0);
+		rings = ((gametyperules & GTR_RINGS) ? 5 : 0);
 		comebackpoints = 0;
 		wanted = 0;
 	}
@@ -2342,17 +2319,19 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		if (p->ctfteam == 1 && p->skincolor != skincolor_redteam)
 		{
-			if (p == &players[consoleplayer])
-				CV_SetValue(&cv_playercolor, skincolor_redteam);
-			else if (p == &players[secondarydisplayplayer])
-				CV_SetValue(&cv_playercolor2, skincolor_redteam);
+			for (i = 0; i <= splitscreen; i++)
+			{
+				if (p == &players[g_localplayers[i]])
+					CV_SetValue(&cv_playercolor[i], skincolor_redteam);
+			}
 		}
 		else if (p->ctfteam == 2 && p->skincolor != skincolor_blueteam)
 		{
-			if (p == &players[consoleplayer])
-				CV_SetValue(&cv_playercolor, skincolor_blueteam);
-			else if (p == &players[secondarydisplayplayer])
-				CV_SetValue(&cv_playercolor2, skincolor_blueteam);
+			for (i = 0; i <= splitscreen; i++)
+			{
+				if (p == &players[g_localplayers[i]])
+					CV_SetValue(&cv_playercolor[i], skincolor_blueteam);
+			}
 		}
 	}
 
@@ -2384,9 +2363,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
 		p->kartstuff[k_respawn] = 48; // Respawn effect
-
-	if (gametype == GT_COOP)
-		P_FindEmerald(); // scan for emeralds to hunt for
 }
 
 //
@@ -2454,14 +2430,14 @@ void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
 }
 
-mapthing_t *G_FindCTFStart(INT32 playernum)
+mapthing_t *G_FindTeamStart(INT32 playernum)
 {
 	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
 	INT32 i,j;
 
 	if (!numredctfstarts && !numbluectfstarts) //why even bother, eh?
 	{
-		if ((gametyperules & GTR_TEAMFLAGS) && doprints))
+		if ((gametyperules & GTR_TEAMSTARTS) && doprints))
 			CONS_Alert(CONS_WARNING, M_GetText("No CTF starts in this map!\n"));
 		return NULL;
 	}
@@ -2509,7 +2485,7 @@ mapthing_t *G_FindCTFStart(INT32 playernum)
 	return NULL;
 }
 
-mapthing_t *G_FindMatchStart(INT32 playernum)
+mapthing_t *G_FindBattleStart(INT32 playernum)
 {
 	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
 	INT32 i, j;
@@ -2627,22 +2603,31 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 }
 
 // Find a Co-op start, or fallback into other types of starts.
-static inline mapthing_t *G_FindCoopStartOrFallback(INT32 playernum)
+static inline mapthing_t *G_FindRaceStartOrFallback(INT32 playernum)
 {
 	mapthing_t *spawnpoint = NULL;
-	if (!(spawnpoint = G_FindCoopStart(playernum)) // find a Co-op start
-	&& !(spawnpoint = G_FindMatchStart(playernum))) // find a DM start
-		spawnpoint = G_FindCTFStart(playernum); // fallback
+	if (!(spawnpoint = G_FindRaceStart(playernum)) // find a Race start
+	&& !(spawnpoint = G_FindBattleStart(playernum))) // find a DM start
+		spawnpoint = G_FindTeamStart(playernum); // fallback
 	return spawnpoint;
 }
 
 // Find a Match start, or fallback into other types of starts.
-static inline mapthing_t *G_FindMatchStartOrFallback(INT32 playernum)
+static inline mapthing_t *G_FindBattleStartOrFallback(INT32 playernum)
 {
 	mapthing_t *spawnpoint = NULL;
-	if (!(spawnpoint = G_FindMatchStart(playernum)) // find a DM start
-	&& !(spawnpoint = G_FindCTFStart(playernum))) // find a CTF start
-		spawnpoint = G_FindCoopStart(playernum); // fallback
+	if (!(spawnpoint = G_FindBattleStart(playernum)) // find a DM start
+	&& !(spawnpoint = G_FindTeamStart(playernum))) // find a CTF start
+		spawnpoint = G_FindRaceStart(playernum); // fallback
+	return spawnpoint;
+}
+
+static inline mapthing_t *G_FindTeamStartOrFallback(INT32 playernum)
+{
+	mapthing_t *spawnpoint = NULL;
+	if (!(spawnpoint = G_FindTeamStart(playernum)) // find a CTF start
+	&& !(spawnpoint = G_FindBattleStart(playernum))) // find a DM start
+		spawnpoint = G_FindRaceStart(playernum); // fallback
 	return spawnpoint;
 }
 
@@ -2654,49 +2639,45 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 		return NULL;
 
 	// -- Spectators --
-	// Order in platform gametypes: Coop->DM->CTF
-	// And, with deathmatch starts: DM->CTF->Coop
+	// Order in platform gametypes: Race->DM->CTF
+	// And, with deathmatch starts: DM->CTF->Race
 	if (players[playernum].spectator)
 	{
 		// In platform gametypes, spawn in Co-op starts first
-		// Overriden by GTR_DEATHMATCHSTARTS.
-		if (G_PlatformGametype() && !(gametyperules & GTR_DEATHMATCHSTARTS))
-			spawnpoint = G_FindCoopStartOrFallback(playernum);
-		else
+		// Overriden by GTR_BATTLESTARTS.
+		if (gametyperules & GTR_BATTLESTARTS)
 			spawnpoint = G_FindMatchStartOrFallback(playernum);
+		else
+			spawnpoint = G_FindRaceStartOrFallback(playernum);
 	}
 
 	// -- CTF --
-	// Order: CTF->DM->Coop
-	else if ((gametyperules & (GTR_TEAMFLAGS|GTR_TEAMS)) && players[playernum].ctfteam)
-	{
-		if (!(spawnpoint = G_FindCTFStart(playernum)) // find a CTF start
-		&& !(spawnpoint = G_FindMatchStart(playernum))) // find a DM start
-			spawnpoint = G_FindCoopStart(playernum); // fallback
-	}
+	// Order: CTF->DM->Race
+	else if ((gametyperules & GTR_TEAMSTARTS) && players[playernum].ctfteam)
+		spawnpoint = G_FindTeamStartOrFallback(playernum);
 
 	// -- DM/Tag/CTF-spectator/etc --
-	// Order: DM->CTF->Coop
-	else if (G_TagGametype() ? (!(players[playernum].pflags & PF_TAGIT)) : (gametyperules & GTR_DEATHMATCHSTARTS))
-		spawnpoint = G_FindMatchStartOrFallback(playernum);
+	// Order: DM->CTF->Race
+	else if (gametyperules & GTR_BATTLESTARTS)
+		spawnpoint = G_FindBattleStartOrFallback(playernum);
 
 	// -- Other game modes --
-	// Order: Coop->DM->CTF
+	// Order: Race->DM->CTF
 	else
-		spawnpoint = G_FindCoopStartOrFallback(playernum);
+		spawnpoint = G_FindRaceStartOrFallback(playernum);
 
 	//No spawns found. ANYWHERE.
 	if (!spawnpoint)
 	{
 		if (nummapthings)
 		{
-			if (playernum == consoleplayer || (splitscreen && playernum == secondarydisplayplayer))
+			if (P_IsLocalPlayer(&players[playernum]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the first mapthing!\n"));
 			spawnpoint = &mapthings[0];
 		}
 		else
 		{
-			if (playernum == consoleplayer || (splitscreen && playernum == secondarydisplayplayer))
+			if (P_IsLocalPlayer(&players[playernum]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the origin!\n"));
 		}
 	}
@@ -2806,33 +2787,6 @@ void G_AddPlayer(INT32 playernum)
 		P_DoPlayerExit(p);
 }
 
-boolean G_EnoughPlayersFinished(void)
-{
-	UINT8 numneeded = (G_IsSpecialStage(gamemap) ? 4 : cv_playersforexit.value);
-	INT32 total = 0;
-	INT32 exiting = 0;
-	INT32 i;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator || players[i].bot)
-			continue;
-		if (players[i].quittime > 30 * TICRATE)
-			continue;
-		if (players[i].lives <= 0)
-			continue;
-
-		total++;
-		if ((players[i].pflags & PF_FINISHED) || players[i].exiting)
-			exiting++;
-	}
-
-	if (exiting)
-		return exiting * 4 / total >= numneeded;
-	else
-		return false;
-}
-
 void G_ExitLevel(void)
 {
 	if (gamestate == GS_LEVEL)
@@ -2848,8 +2802,7 @@ void G_ExitLevel(void)
 				CV_SetValue(&cv_teamscramble, cv_scrambleonchange.value);
 		}
 
-		if (!(gametyperules & (GTR_FRIENDLY|GTR_CAMPAIGN)))
-			CONS_Printf(M_GetText("The round has ended.\n"));
+		CON_LogMessage(M_GetText("The round has ended.\n"));
 
 		// Remove CEcho text on round end.
 		HU_ClearCEcho();
@@ -2884,9 +2837,9 @@ const char *Gametype_ConstantNames[NUMGAMETYPES] =
 UINT32 gametypedefaultrules[NUMGAMETYPES] =
 {
 	// Race
-	GTR_RACE|GTR_SPAWNENEMIES|GTR_SPAWNINVUL|GTR_ALLOWEXIT,
+	GTR_CIRCUIT|GTR_RINGS|GTR_BOTS,
 	// Battle
-	GTR_RINGSLINGER|GTR_FIRSTPERSON|GTR_SPECTATORS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_POWERSTONES|GTR_DEATHMATCHSTARTS|GTR_SPAWNINVUL|GTR_RESPAWNDELAY|GTR_PITYSHIELD|GTR_DEATHPENALTY
+	GTR_BUMPERS|GTR_KARMA|GTR_ITEMARROWS|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
 };
 
 //
@@ -3037,15 +2990,17 @@ UINT32 gametypetol[NUMGAMETYPES] =
 {
 	TOL_RACE, // Race
 	TOL_BATTLE, // Battle
+	TOL_TV, // Midnight Channel effect
 };
 
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},
+	{"TV",TOL_TV},
 	{NULL, 0}
 };
 
-UINT32 lastcustomtol = (TOL_XMAS<<1);
+UINT32 lastcustomtol = (TOL_TV<<1);
 
 //
 // G_AddTOL
@@ -3099,7 +3054,7 @@ boolean G_IsSpecialStage(INT32 mapnum)
 #if 1
 	(void)mapnum;
 #else
-	if (gametype != GT_COOP || modeattacking == ATTACKING_RECORD)
+	if (modeattacking == ATTACKING_RECORD)
 		return false;
 	if (mapnum >= sstage_start && mapnum <= sstage_end)
 		return true;
@@ -3118,39 +3073,13 @@ boolean G_IsSpecialStage(INT32 mapnum)
 //
 boolean G_GametypeUsesLives(void)
 {
-	// SRB2kart NEEDS no lives
-#if 0
-	// Coop, Competitive
 	if ((gametyperules & GTR_LIVES)
 	 && !(modeattacking || metalrecording) // No lives in Time Attack
-	 && !G_IsSpecialStage(gamemap)
-	 && !(maptol & TOL_NIGHTS)) // No lives in NiGHTS
+	 && !battlecapsules // No lives in bonus game
+	 && !G_IsSpecialStage(gamemap)) // No lives in special stage
 		return true;
-#endif
 
 	return false;
-}
-
-//
-// G_GametypeUsesCoopLives
-//
-// Returns true if the current gametype uses
-// the cooplives CVAR.  False otherwise.
-//
-boolean G_GametypeUsesCoopLives(void)
-{
-	return (gametyperules & (GTR_LIVES|GTR_FRIENDLY)) == (GTR_LIVES|GTR_FRIENDLY);
-}
-
-//
-// G_GametypeUsesCoopStarposts
-//
-// Returns true if the current gametype uses
-// the coopstarposts CVAR.  False otherwise.
-//
-boolean G_GametypeUsesCoopStarposts(void)
-{
-	return (gametyperules & GTR_FRIENDLY);
 }
 
 //
@@ -3161,7 +3090,19 @@ boolean G_GametypeUsesCoopStarposts(void)
 //
 boolean G_GametypeHasTeams(void)
 {
-	return (gametyperules & GTR_TEAMS);
+	if (gametyperules & GTR_TEAMS)
+	{
+		// Teams forced on by this gametype
+		return true;
+	}
+	else if (gametyperules & GTR_NOTEAMS)
+	{
+		// Teams forced off by this gametype
+		return false;
+	}
+
+	// Teams are determined by the "teamplay" modifier!
+	return false; // teamplay
 }
 
 //
@@ -3172,12 +3113,7 @@ boolean G_GametypeHasTeams(void)
 //
 boolean G_GametypeHasSpectators(void)
 {
-	// SRB2Kart: We don't have any exceptions to not being able to spectate yet. Maybe when SP & bots roll around.
-#if 0
-	return (gametyperules & GTR_SPECTATORS);
-#else
-	return (netgame || (multiplayer && demo.playback)); //true
-#endif
+	return (netgame || (multiplayer && demo.playback));
 }
 
 //
@@ -3187,7 +3123,7 @@ boolean G_GametypeHasSpectators(void)
 //
 INT16 G_SometimesGetDifferentGametype(void)
 {
-	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1) && G_RaceGametype());
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1) && (gametyperules & GTR_CIRCUIT));
 
 	if (!cv_kartvoterulechanges.value // never
 		&& encorescramble != 1) // destroying the code for this one instance
@@ -3240,9 +3176,9 @@ INT16 G_SometimesGetDifferentGametype(void)
 			break;
 	}
 
-	if (gametype == GT_MATCH)
+	if (gametype == GT_BATTLE)
 		return GT_RACE;
-	return GT_MATCH;
+	return GT_BATTLE;
 }
 
 //
@@ -3256,62 +3192,14 @@ UINT8 G_GetGametypeColor(INT16 gt)
 	if (modeattacking // == ATTACKING_RECORD
 	|| gamestate == GS_TIMEATTACK)
 		return orangemap[0];
+
 	if (gt == GT_MATCH)
 		return redmap[0];
+
 	if (gt == GT_RACE)
 		return skymap[0];
+
 	return 255; // FALLBACK
-}
-
-//
-// G_RaceGametype
-//
-// Returns true in Race gamemodes, previously was G_PlatformGametype.
-//
-boolean G_RaceGametype(void)
-{
-	return (gametype == GT_RACE);
-}
-
-//
-// G_BattleGametype
-//
-// Returns true in Battle gamemodes, previously was G_RingslingerGametype.
-//
-boolean G_BattleGametype(void)
-{
-	return (gametype == GT_BATTLE);
-}
-
-//
-// G_CoopGametype
-//
-// Returns true if a gametype is a Co-op gametype.
-//
-boolean G_CoopGametype(void)
-{
-	return ((gametyperules & (GTR_FRIENDLY|GTR_CAMPAIGN)) == (GTR_FRIENDLY|GTR_CAMPAIGN));
-}
-
-//
-// G_TagGametype
-//
-// For Jazz's Tag/HnS modes that have a lot of special cases...
-// SRB2Kart: do we actually want to add Kart tag later? :V
-//
-boolean G_TagGametype(void)
-{
-	return (gametyperules & GTR_TAG);
-}
-
-//
-// G_CompetitionGametype
-//
-// For gametypes that are race gametypes, and have lives.
-//
-boolean G_CompetitionGametype(void)
-{
-	return ((gametyperules & GTR_RACE) && (gametyperules & GTR_LIVES));
 }
 
 /** Get the typeoflevel flag needed to indicate support of a gametype.
@@ -3500,7 +3388,7 @@ static void G_UpdateVisited(void)
 	boolean spec = G_IsSpecialStage(gamemap);
 	// Update visitation flags?
 	if ((!modifiedgame || savemoddata) // Not modified
-		&& !multiplayer && !demo.playback && (gametype == GT_COOP) // SP/RA/NiGHTS mode
+		&& !multiplayer && !demo.playback // SP/RA/NiGHTS mode
 		&& !(spec && stagefailed)) // Not failed the special stage
 	{
 		UINT8 earnedEmblems;
@@ -3614,7 +3502,7 @@ static void G_DoCompleted(void)
 		}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
-	if (G_RaceGametype() && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
+	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
 		S_ChangeMusicInternal("racent", true);
 
 	if (automapactive)
@@ -3740,9 +3628,9 @@ static void G_DoCompleted(void)
 	// Set up power level gametype scrambles
 	if (netgame && cv_kartusepwrlv.value)
 	{
-		if (G_RaceGametype())
+		if ((gametyperules & GTR_CIRCUIT))
 			powertype = PWRLV_RACE;
-		else if (G_BattleGametype())
+		else if ((gametyperules & GTR_BUMPERS))
 			powertype = PWRLV_BATTLE;
 	}
 
@@ -4571,7 +4459,7 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 
 	if (color != SKINCOLOR_NONE)
 	{
-		CV_StealthSetValue(&cv_playercolor, color);
+		CV_StealthSetValue(&cv_playercolor[0], color);
 	}
 
 	if (mapname)

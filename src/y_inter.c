@@ -41,7 +41,6 @@
 
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PLAYER1INPUTDOWN
-#include "k_color.h" // colortranslations
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "console.h" // cons_menuhighlight
@@ -1039,7 +1038,7 @@ static void K_UpdatePowerLevels(void)
 
 			CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
 
-			if (G_RaceGametype())
+			if ((gametyperules & GTR_CIRCUIT))
 			{
 				if (data.match.val[i] < data.match.val[j])
 					won = true;
@@ -1164,9 +1163,9 @@ void Y_StartIntermission(void)
 
 	if (netgame && cv_kartusepwrlv.value)
 	{
-		if (G_RaceGametype())
+		if ((gametyperules & GTR_CIRCUIT))
 			powertype = PWRLV_RACE;
-		else if (G_BattleGametype())
+		else if ((gametyperules & GTR_BUMPERS))
 			powertype = PWRLV_BATTLE;
 	}
 
@@ -1453,7 +1452,7 @@ void Y_VoteDrawer(void)
 							break;
 					}
 
-					color = colortranslations[players[p].skincolor][7];
+					color = skincolors[players[p].skincolor].ramp[7];
 					colormap = R_GetTranslationColormap(TC_DEFAULT, players[p].skincolor, GTC_CACHE);
 				}
 
@@ -1633,9 +1632,7 @@ void Y_VoteTicker(void)
 	if (paused || P_AutoPause() || !voteclient.loaded)
 		return;
 
-#ifdef HAVE_BLUA
 	LUAh_VoteThinker();
-#endif
 
 	votetic++;
 

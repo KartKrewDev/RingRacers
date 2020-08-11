@@ -42,8 +42,10 @@ INT32 K_StartingBumperCount(void)
 boolean K_IsPlayerWanted(player_t *player)
 {
 	UINT8 i;
-	if (!(G_BattleGametype()))
+
+	if (!(gametyperules & GTR_WANTED))
 		return false;
+
 	for (i = 0; i < 4; i++)
 	{
 		if (battlewanted[i] == -1)
@@ -63,7 +65,7 @@ void K_CalculateBattleWanted(void)
 	boolean setbumper = false;
 	UINT8 i, j;
 
-	if (!G_BattleGametype())
+	if (!(gametyperules & GTR_WANTED))
 	{
 		for (i = 0; i < 4; i++)
 			battlewanted[i] = -1;
@@ -211,7 +213,7 @@ void K_CheckBumpers(void)
 	INT32 winnerscoreadd = 0;
 	boolean nobumpers = false;
 
-	if (!G_BattleGametype())
+	if (!(gametyperules & GTR_BUMPERS))
 		return;
 
 	if (gameaction == ga_completed)
@@ -560,7 +562,7 @@ void K_SpawnBattleCapsules(void)
 	if (battlecapsules)
 		return;
 
-	if (!G_BattleGametype())
+	if (!(gametyperules & GTR_CAPSULES))
 		return;
 
 	if (modeattacking != ATTACKING_CAPSULES)

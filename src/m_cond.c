@@ -271,7 +271,10 @@ void M_SilentUpdateUnlockablesAndEmblems(void)
 		unlockables[i].unlocked = M_Achieved(unlockables[i].conditionset - 1);
 	}
 
-	players[consoleplayer].availabilities = players[1].availabilities = R_GetSkinAvailabilities(); // players[1] is supposed to be for 2p
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		players[g_localplayers[i]].availabilities = R_GetSkinAvailabilities();
+	}
 }
 
 // Emblem unlocking shit

@@ -220,13 +220,9 @@ const char *I_GetJoyName(INT32 joyindex);
 void I_UpdateMumble(const mobj_t *mobj, const listener_t listener);
 #endif
 
-/**	\brief Startup the first mouse
+/**	\brief Startup the mouse
 */
 void I_StartupMouse(void);
-
-/**	\brief Startup the second mouse
-*/
-void I_StartupMouse2(void);
 
 /**	\brief  setup timer irq and user timer routine.
 */

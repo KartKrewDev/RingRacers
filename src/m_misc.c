@@ -106,7 +106,6 @@ consvar_t cv_screenshot_option = {"screenshot_option", "Default", CV_SAVE|CV_CAL
 consvar_t cv_screenshot_folder = {"screenshot_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_screenshot_colorprofile = {"screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
->>>>>>> srb2/next
 
 static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
 consvar_t cv_moviemode = {"moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange, 0, NULL, NULL, 0, 0, NULL};
@@ -572,10 +571,11 @@ void M_FirstLoadConfig(void)
 	gameconfig_loaded = true;
 
 	// reset to default player stuff
-	COM_BufAddText (va("%s \"%s\"\n",cv_skin.name,cv_defaultskin.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_playercolor.name,cv_defaultplayercolor.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_skin2.name,cv_defaultskin2.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_playercolor2.name,cv_defaultplayercolor2.string));
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin[i].name,cv_skin[i].defaultvalue));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor[i].name,cv_skin[i].defaultvalue));
+	}
 }
 
 /** Saves the game configuration.

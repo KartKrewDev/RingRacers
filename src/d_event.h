@@ -25,7 +25,6 @@ typedef enum
 	ev_console,
 	ev_mouse,
 	ev_joystick,
-	ev_mouse2,
 	ev_joystick2,
 	ev_joystick3,
 	ev_joystick4,

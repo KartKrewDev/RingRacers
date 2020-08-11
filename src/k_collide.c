@@ -219,7 +219,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (!P_CanPickupItem(t2->player, 2))
 			return true;
 
-		if (G_BattleGametype() && t2->player->kartstuff[k_bumper] <= 0)
+		if ((gametyperules & GTR_BUMPERS) && t2->player->kartstuff[k_bumper] <= 0)
 		{
 			if (t2->player->kartstuff[k_comebackmode] || t2->player->kartstuff[k_comebacktimer])
 				return true;
@@ -253,7 +253,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 
 			if (t1->target && t1->target->player)
 			{
-				if (G_RaceGametype() || t1->target->player->kartstuff[k_bumper] > 0)
+				if ((gametyperules & GTR_CIRCUIT) || t1->target->player->kartstuff[k_bumper] > 0)
 					t2->player->kartstuff[k_eggmanblame] = t1->target->player-players;
 				else
 					t2->player->kartstuff[k_eggmanblame] = t2->player-players;

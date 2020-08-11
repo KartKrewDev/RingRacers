@@ -2617,7 +2617,6 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	else if (!entry->status)
 	{
 		Z_Free(entry);
->>>>>>> srb2/next
 		return false;
 	}
 
@@ -3308,8 +3307,8 @@ static void PlaySoundIfUnfocused_OnChange(void)
 			S_EnableSound();
 	}
 }
-=======
 
+#ifndef NO_MIDI
 void MusicPref_OnChange(void)
 {
 	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio") ||
@@ -3321,6 +3320,7 @@ void MusicPref_OnChange(void)
 	else if (S_PrefAvailable(cv_musicpref.value, "_clear"))
 		S_ChangeMusicInternal("_clear", false);
 }
+#endif
 
 #ifdef HAVE_OPENMPT
 void ModFilter_OnChange(void)
@@ -3329,4 +3329,3 @@ void ModFilter_OnChange(void)
 		openmpt_module_set_render_param(openmpt_mhandle, OPENMPT_MODULE_RENDER_INTERPOLATIONFILTER_LENGTH, cv_modfilter.value);
 }
 #endif
->>>>>>> srb2/next

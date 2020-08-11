@@ -25,7 +25,6 @@ enum skin {
 	skin_wadnum,
 	skin_flags,
 	skin_realname,
-	skin_hudname,
 	skin_facerank,
 	skin_facewant,
 	skin_facemmap,
@@ -36,9 +35,11 @@ enum skin {
 	skin_followitem,
 	skin_starttranscolor,
 	skin_prefcolor,
-    skin_highresscale,
-	skin_soundsid,
-	skin_availability
+	skin_supercolor,
+	skin_prefoppositecolor,
+	skin_highresscale,
+	skin_rivals,
+	skin_soundsid
 };
 static const char *const skin_opt[] = {
 	"valid",
@@ -47,20 +48,19 @@ static const char *const skin_opt[] = {
 	"wadnum",
 	"flags",
 	"realname",
-	"hudname",
 	"facerank",
 	"facewant",
 	"facemmap",
-	// SRB2kart
 	"kartspeed",
 	"kartweight",
-	//
 	"followitem",
 	"starttranscolor",
 	"prefcolor",
+	"supercolor",
+	"prefoppositecolor",
 	"highresscale",
+	"rivals",
 	"soundsid",
-	"availability",
 	NULL};
 
 #define UNIMPLEMENTED luaL_error(L, LUA_QL("skin_t") " field " LUA_QS " is not implemented for Lua and cannot be accessed.", skin_opt[field])
@@ -92,9 +92,6 @@ static int skin_get(lua_State *L)
 		break;
 	case skin_realname:
 		lua_pushstring(L, skin->realname);
-		break;
-	case skin_hudname:
-		lua_pushstring(L, skin->hudname);
 		break;
 	case skin_facerank:
 		for (i = 0; i < 8; i++)
@@ -131,14 +128,20 @@ static int skin_get(lua_State *L)
 	case skin_prefcolor:
 		lua_pushinteger(L, skin->prefcolor);
 		break;
+	case skin_supercolor:
+		lua_pushinteger(L, skin->supercolor);
+		break;
+	case skin_prefoppositecolor:
+		lua_pushinteger(L, skin->prefoppositecolor);
+		break;
 	case skin_highresscale:
 		lua_pushinteger(L, skin->highresscale);
 		break;
+	case skin_rivals:
+		// This would be pretty cool to push
+		return UNIMPLEMENTED;
 	case skin_soundsid:
 		LUA_PushUserdata(L, skin->soundsid, META_SOUNDSID);
-		break;
-	case skin_availability:
-		lua_pushinteger(L, skin->availability);
 		break;
 	}
 	return 1;

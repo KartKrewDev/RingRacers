@@ -19,10 +19,6 @@
 #define DEFAULT_STARTTRANSCOLOR 96
 #define NUM_PALETTE_ENTRIES 256
 
-extern UINT8 colortranslations[MAXTRANSLATIONS][16];
-extern const char *KartColor_Names[MAXSKINCOLORS];
-extern const UINT8 KartColor_Opposite[MAXSKINCOLORS*2];
-
 /*--------------------------------------------------
 	UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b);
 

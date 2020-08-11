@@ -424,7 +424,6 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
 	{
 		working[0][q] = dolerp(working[0][q], working[1][q]);
 		working[1][q] = dolerp(working[2][q], working[3][q]);
->>>>>>> srb2/next
 	}
 	linear = (*blue/255.0);
 	for (q = 0; q < 3; q++)
