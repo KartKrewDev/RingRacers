@@ -2136,7 +2136,7 @@ static boolean CL_FinishedFileList(void)
 				return false;
 			}
 
-			if (CL_SendRequestFile())
+			if (CL_SendFileRequest())
 				cl_mode = CL_DOWNLOADFILES;
 		}
 #ifdef HAVE_CURL
@@ -2316,7 +2316,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 					break;
 
 				CONS_Printf("One or more files failed to download, falling back to internal downloader\n");
-				if (CL_SendRequestFile())
+				if (CL_SendFileRequest())
 				{
 					cl_mode = CL_DOWNLOADFILES;
 					break;
