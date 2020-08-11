@@ -3983,7 +3983,7 @@ void SV_StartSinglePlayerServer(void)
 
 	if (modeattacking == ATTACKING_CAPSULES)
 	{
-		G_SetGametype(BT_BATTLE);
+		G_SetGametype(GT_BATTLE);
 	}
 	else
 	{
@@ -5763,10 +5763,7 @@ void NetKeepAlive(void)
 
 	UpdatePingTable();
 
-// Sryder: What is FILESTAMP???
-FILESTAMP
 	GetPackets();
-FILESTAMP
 
 	MasterClient_Ticker();
 
@@ -5785,7 +5782,7 @@ FILESTAMP
 
 	Net_AckTicker();
 	HandleNodeTimeouts();
-	SV_FileSendTicker();
+	FileSendTicker();
 }
 
 void NetUpdate(void)
