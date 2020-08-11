@@ -2070,7 +2070,7 @@ static int mapheaderinfo_get(lua_State *L)
 	else if (fastcmp(field,"zonttl"))
 		lua_pushstring(L, header->zonttl);
 	else if (fastcmp(field,"actnum"))
-		lua_pushstring(L, header->actnum);
+		lua_pushinteger(L, header->actnum);
 	else if (fastcmp(field,"typeoflevel"))
 		lua_pushinteger(L, header->typeoflevel);
 	else if (fastcmp(field,"nextlevel"))

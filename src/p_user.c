@@ -333,8 +333,7 @@ void P_GiveEmerald(boolean spawnObj)
 			P_SetMobjState(emmo, mobjinfo[MT_GOTEMERALD].meleestate + em);
 
 			// Make sure we're not being carried before our tracer is changed
-			if (players[i].powers[pw_carry] != CR_NIGHTSMODE)
-				players[i].powers[pw_carry] = CR_NONE;
+			players[i].powers[pw_carry] = CR_NONE;
 
 			P_SetTarget(&players[i].mo->tracer, emmo);
 
@@ -473,29 +472,9 @@ boolean P_PlayerInPain(player_t *player)
 // Useful when you want to kill everything the player is doing.
 void P_ResetPlayer(player_t *player)
 {
-	player->pflags &= ~(PF_SPINNING|PF_STARTDASH|PF_STARTJUMP|PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_THOKKED|PF_CANCARRY|PF_SHIELDABILITY|PF_BOUNCING);
-
-	if (player->powers[pw_carry] == CR_ROLLOUT)
-	{
-		if (player->mo->tracer && !P_MobjWasRemoved(player->mo->tracer))
-		{
-			player->mo->tracer->flags |= MF_PUSHABLE;
-			P_SetTarget(&player->mo->tracer->tracer, NULL);
-		}
-		P_SetTarget(&player->mo->tracer, NULL);
-		player->powers[pw_carry] = CR_NONE;
-	}
-
-	if (!(player->powers[pw_carry] == CR_NIGHTSMODE || player->powers[pw_carry] == CR_NIGHTSFALL || player->powers[pw_carry] == CR_BRAKGOOP || player->powers[pw_carry] == CR_MINECART))
-		player->powers[pw_carry] = CR_NONE;
-
-	player->secondjump = 0;
-	player->glidetime = 0;
-	player->homing = 0;
-	player->climbing = 0;
-	player->powers[pw_tailsfly] = 0;
+	//player->pflags &= ~(PF_);
+	player->powers[pw_carry] = CR_NONE;
 	player->onconveyor = 0;
-	player->skidtime = 0;
 }
 
 //
@@ -1999,7 +1978,7 @@ static void P_DoBubbleBreath(player_t *player)
 	fixed_t z = player->mo->z;
 	mobj_t *bubble = NULL;
 
-	if (!(player->mo->eflags & MFE_UNDERWATER) || ((player->powers[pw_shield] & SH_PROTECTWATER) && !(player->powers[pw_carry] == CR_NIGHTSMODE)) || player->spectator)
+	if (!(player->mo->eflags & MFE_UNDERWATER) || (player->powers[pw_shield] & SH_PROTECTWATER) || player->spectator)
 		return;
 
 	if (player->charflags & SF_MACHINE)
@@ -4440,8 +4419,7 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// Even if not NiGHTS, pull in nearby objects when walking around as John Q. Elliot.
-	if (!objectplacing && !((netgame || multiplayer) && player->spectator)
-	&& maptol & TOL_NIGHTS && (player->powers[pw_carry] != CR_NIGHTSMODE || player->powers[pw_nights_helper]))
+	if (!objectplacing && !((netgame || multiplayer) && player->spectator))
 	{
 		thinker_t *th;
 		mobj_t *mo2;
@@ -4551,13 +4529,10 @@ void P_PlayerThink(player_t *player)
 #endif
 
 	// check for use
-	if (player->powers[pw_carry] != CR_NIGHTSMODE)
-	{
-		if (cmd->buttons & BT_BRAKE)
-			player->pflags |= PF_USEDOWN;
-		else
-			player->pflags &= ~PF_USEDOWN;
-	}
+	if (cmd->buttons & BT_BRAKE)
+		player->pflags |= PF_USEDOWN;
+	else
+		player->pflags &= ~PF_USEDOWN;
 
 	// IF PLAYER NOT HERE THEN FLASH END IF
 	if (player->quittime && player->powers[pw_flashing] < flashingtics - 1
@@ -4566,12 +4541,6 @@ void P_PlayerThink(player_t *player)
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings
-
-	if (player->ammoremovaltimer)
-	{
-		if (--player->ammoremovaltimer == 0)
-			player->ammoremoval = 0;
-	}
 
 	// Strength counts up to diminish fade.
 	if (player->powers[pw_flashing] && player->powers[pw_flashing] < UINT16_MAX &&
@@ -4698,12 +4667,6 @@ void P_PlayerAfterThink(player_t *player)
 			P_SetTarget(&player->followmobj, NULL);
 		}
 		return;
-	}
-
-	if (player->powers[pw_carry] == CR_NIGHTSMODE)
-	{
-		player->powers[pw_gravityboots] = 0;
-		//player->mo->eflags &= ~MFE_VERTICALFLIP;
 	}
 
 	if (player->pflags & PF_SLIDING)

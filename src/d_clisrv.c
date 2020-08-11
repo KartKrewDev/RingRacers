@@ -586,12 +586,6 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->oldrelangleturn = (INT16)SHORT(players[i].oldrelangleturn);
 
 	rsp->aiming = (angle_t)LONG(players[i].aiming);
-	rsp->currentweapon = LONG(players[i].currentweapon);
-	rsp->ringweapons = LONG(players[i].ringweapons);
-
-	rsp->ammoremoval = (UINT16)SHORT(players[i].ammoremoval);
-	rsp->ammoremovaltimer = (tic_t)LONG(players[i].ammoremovaltimer);
-	rsp->ammoremovalweapon = LONG(players[i].ammoremovalweapon);
 
 	for (j = 0; j < NUMPOWERS; ++j)
 		rsp->powers[j] = (UINT16)SHORT(players[i].powers[j]);
@@ -602,12 +596,10 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	// Score is resynched in the rspfirm resync packet
 	rsp->rings = SHORT(players[i].rings);
-	rsp->spheres = SHORT(players[i].spheres);
 	rsp->lives = players[i].lives;
 	rsp->continues = players[i].continues;
 	rsp->scoreadd = players[i].scoreadd;
 	rsp->xtralife = players[i].xtralife;
-	rsp->pity = players[i].pity;
 
 	rsp->skincolor = players[i].skincolor;
 	rsp->skin = LONG(players[i].skin);
@@ -730,12 +722,6 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].oldrelangleturn = (INT16)SHORT(rsp->oldrelangleturn);
 
 	players[i].aiming = (angle_t)LONG(rsp->aiming);
-	players[i].currentweapon = LONG(rsp->currentweapon);
-	players[i].ringweapons = LONG(rsp->ringweapons);
-
-	players[i].ammoremoval = (UINT16)SHORT(rsp->ammoremoval);
-	players[i].ammoremovaltimer = (tic_t)LONG(rsp->ammoremovaltimer);
-	players[i].ammoremovalweapon = LONG(rsp->ammoremovalweapon);
 
 	for (j = 0; j < NUMPOWERS; ++j)
 		players[i].powers[j] = (UINT16)SHORT(rsp->powers[j]);
@@ -746,12 +732,10 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	// Score is resynched in the rspfirm resync packet
 	players[i].rings = SHORT(rsp->rings);
-	players[i].spheres = SHORT(rsp->spheres);
 	players[i].lives = rsp->lives;
 	players[i].continues = rsp->continues;
 	players[i].scoreadd = rsp->scoreadd;
 	players[i].xtralife = rsp->xtralife;
-	players[i].pity = rsp->pity;
 
 	players[i].skincolor = rsp->skincolor;
 	players[i].skin = LONG(rsp->skin);
@@ -876,16 +860,8 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].mo->scalespeed = (fixed_t)LONG(rsp->scalespeed);
 
 	// And finally, SET THE MOBJ SKIN damn it.
-	if ((players[i].powers[pw_carry] == CR_NIGHTSMODE) && (skins[players[i].skin].sprites[SPR2_NFLY].numframes == 0))
-	{
-		players[i].mo->skin = &skins[DEFAULTNIGHTSSKIN];
-		players[i].mo->color = skins[DEFAULTNIGHTSSKIN].prefcolor; // this will be corrected by thinker to super flash
-	}
-	else
-	{
-		players[i].mo->skin = &skins[players[i].skin];
-		players[i].mo->color = players[i].skincolor; // this will be corrected by thinker to super flash/mario star
-	}
+	players[i].mo->skin = &skins[players[i].skin];
+	players[i].mo->color = players[i].skincolor; // this will be corrected by thinker to super flash/mario star
 
 	P_SetThingPosition(players[i].mo);
 }
@@ -999,7 +975,6 @@ static inline void resynch_write_others(resynchend_pak *rst)
 	UINT8 i;
 
 	rst->ingame = 0;
-	rst->outofcoop = 0;
 
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
@@ -1015,8 +990,6 @@ static inline void resynch_write_others(resynchend_pak *rst)
 
 		if (!players[i].spectator)
 			rst->ingame |= (1<<i);
-		if (players[i].outofcoop)
-			rst->outofcoop |= (1<<i);
 		rst->ctfteam[i] = (INT32)LONG(players[i].ctfteam);
 		rst->score[i] = (UINT32)LONG(players[i].score);
 		rst->marescore[i] = (UINT32)LONG(players[i].marescore);
@@ -1032,13 +1005,11 @@ static inline void resynch_read_others(resynchend_pak *p)
 {
 	UINT8 i;
 	UINT32 loc_ingame = (UINT32)LONG(p->ingame);
-	UINT32 loc_outofcoop = (UINT32)LONG(p->outofcoop);
 
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
 		// We don't care if they're in the game or not, just write all the data.
 		players[i].spectator = !(loc_ingame & (1<<i));
-		players[i].outofcoop = (loc_outofcoop & (1<<i));
 		players[i].ctfteam = (INT32)LONG(p->ctfteam[i]); // no, 0 does not mean spectator, at least not in Match
 		players[i].score = (UINT32)LONG(p->score[i]);
 		players[i].marescore = (UINT32)LONG(p->marescore[i]);
@@ -1490,47 +1461,31 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 		// set up the levelstring
 		if (netbuffer->u.serverinfo.iszone || (mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
 		{
-			if (mapheaderinfo[gamemap-1]->actnum[0])
-				snprintf(netbuffer->u.serverinfo.maptitle,
-					sizeof netbuffer->u.serverinfo.maptitle,
-					"%s %s",
-					mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->actnum);
-			else
-				snprintf(netbuffer->u.serverinfo.maptitle,
-					sizeof netbuffer->u.serverinfo.maptitle,
-					"%s",
-					mapheaderinfo[gamemap-1]->lvlttl);
+			if (snprintf(netbuffer->u.serverinfo.maptitle,
+				sizeof netbuffer->u.serverinfo.maptitle,
+				"%s",
+				mapheaderinfo[gamemap-1]->lvlttl) < 0);
+			{
+				// If there's an encoding error, send UNKNOWN, we accept that the above may be truncated
+				strncpy(netbuffer->u.serverinfo.maptitle, "UNKNOWN", sizeof netbuffer->u.serverinfo.maptitle);
+			}
 		}
 		else
 		{
-			if (mapheaderinfo[gamemap-1]->actnum[0])
+			if (snprintf(netbuffer->u.serverinfo.maptitle,
+				sizeof netbuffer->u.serverinfo.maptitle,
+				"%s %s",
+				mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl) < 0)
 			{
-				if (snprintf(netbuffer->u.serverinfo.maptitle,
-					sizeof netbuffer->u.serverinfo.maptitle,
-					"%s %s %s",
-					mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl, mapheaderinfo[gamemap-1]->actnum) < 0)
-				{
-					// If there's an encoding error, send UNKNOWN, we accept that the above may be truncated
-					strncpy(netbuffer->u.serverinfo.maptitle, "UNKNOWN", sizeof netbuffer->u.serverinfo.maptitle);
-				}
-			}
-			else
-			{
-				if (snprintf(netbuffer->u.serverinfo.maptitle,
-					sizeof netbuffer->u.serverinfo.maptitle,
-					"%s %s",
-					mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl) < 0)
-				{
-					// If there's an encoding error, send UNKNOWN, we accept that the above may be truncated
-					strncpy(netbuffer->u.serverinfo.maptitle, "UNKNOWN", sizeof netbuffer->u.serverinfo.maptitle);
-				}
+				// If there's an encoding error, send UNKNOWN, we accept that the above may be truncated
+				strncpy(netbuffer->u.serverinfo.maptitle, "UNKNOWN", sizeof netbuffer->u.serverinfo.maptitle);
 			}
 		}
 	}
 	else
 		strncpy(netbuffer->u.serverinfo.maptitle, "UNKNOWN", sizeof netbuffer->u.serverinfo.maptitle);
 
-	netbuffer->u.serverinfo.actnum = 0; //mapheaderinfo[gamemap-1]->actnum
+	netbuffer->u.serverinfo.actnum = mapheaderinfo[gamemap-1]->actnum;
 
 	memset(netbuffer->u.serverinfo.httpsource, 0, MAX_MIRROR_LENGTH);
 

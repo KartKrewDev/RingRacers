@@ -1147,9 +1147,6 @@ boolean OP_FreezeObjectplace(void)
 	if (!objectplacing)
 		return false;
 
-	if ((maptol & TOL_NIGHTS) && (players[consoleplayer].powers[pw_carry] == CR_NIGHTSMODE))
-		return false;
-
 	return true;
 }
 
@@ -1476,9 +1473,6 @@ void Command_ObjectPlace_f(void)
 	{
 		objectplacing = true;
 
-		if (players[0].powers[pw_carry] == CR_NIGHTSMODE)
-			return;
-
 		if (!COM_CheckParm("-silent"))
 		{
 			HU_SetCEchoFlags(V_RETURN8|V_MONOSPACE|V_AUTOFADEOUT);
@@ -1545,9 +1539,8 @@ void Command_ObjectPlace_f(void)
 	{
 		objectplacing = false;
 
-		// Don't touch the NiGHTS Objectplace stuff.
-		// ... or if the mo mysteriously vanished.
-		if (!players[0].mo || (players[0].powers[pw_carry] == CR_NIGHTSMODE))
+		// Don't touch if the mo mysteriously vanished.
+		if (!players[0].mo)
 			return;
 
 		// If still in dummy state, get out of it.

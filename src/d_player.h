@@ -182,23 +182,8 @@ typedef enum
 typedef enum
 {
 	CR_NONE = 0,
-	// The generic case is suitable for most objects.
-	CR_GENERIC,
-	// Tails carry.
-	CR_PLAYER,
-	// NiGHTS mode. Not technically a CARRYING, but doesn't stack with any of the others, so might as well go here.
-	CR_NIGHTSMODE,
-	CR_NIGHTSFALL,
-	// Old Brak sucks hard, but this gimmick could be used for something better, so we might as well continue supporting it.
-	CR_BRAKGOOP,
 	// Specific level gimmicks.
 	CR_ZOOMTUBE,
-	CR_ROPEHANG,
-	CR_MACESPIN,
-	CR_MINECART,
-	CR_ROLLOUT,
-	CR_PTERABYTE,
-	CR_DUSTDEVIL
 } carrytype_t; // pw_carry
 
 // Player powers. (don't edit this comment)
@@ -517,15 +502,6 @@ typedef struct player_s
 
 	// player's ring count
 	INT16 rings;
-	INT16 spheres;
-
-	SINT8 pity; // i pity the fool.
-	INT32 currentweapon; // current weapon selected.
-	INT32 ringweapons; // weapons currently obtained.
-
-	UINT16 ammoremoval; // amount of ammo removed for the current weapon.
-	tic_t  ammoremovaltimer; // flashing counter for ammo used.
-	INT32  ammoremovalweapon; // weapon from which the ammo was removed.
 
 	// Power ups. invinc and invis are tic counters.
 	UINT16 powers[NUMPOWERS];

@@ -2152,9 +2152,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	boolean bot;
 	UINT8 botdifficulty;
 
-	SINT8 pity;
 	INT16 rings;
-	INT16 spheres;
 	INT16 playerangleturn;
 	INT16 oldrelangleturn;
 
@@ -2227,7 +2225,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	mare = players[player].mare;
 	bot = players[player].bot;
 	botdifficulty = players[player].botvars.difficulty;
-	pity = players[player].pity;
 
 	// SRB2kart
 	if (betweenmaps || leveltime < starttime)
@@ -2283,7 +2280,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->quittime = quittime;
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
-	p->outofcoop = outofcoop;
 	p->angleturn = playerangleturn;
 	p->oldrelangleturn = oldrelangleturn;
 
@@ -2316,9 +2312,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->mare = mare;
 	p->bot = bot;
 	p->botvars.difficulty = botdifficulty;
-	p->pity = pity;
 	p->rings = rings;
-	p->spheres = spheres;
 
 	// SRB2kart
 	p->kartstuff[k_itemroulette] = itemroulette;
@@ -4784,17 +4778,15 @@ char *G_BuildMapTitle(INT32 mapnum)
 			zonetext = M_GetText("Zone");
 			len += strlen(zonetext) + 1;	// ' ' + zonetext
 		}
-		if (strlen(mapheaderinfo[mapnum-1]->actnum) > 0)
-		{
-			actnum = M_GetText(mapheaderinfo[mapnum-1]->actnum);
-			len += strlen(actnum) + 1;	// ' ' + actnum
-		}
+
+		if (actnum > 0)
+			len += 1 + 11;					// ' ' + INT32
 
 		title = Z_Malloc(len, PU_STATIC, NULL);
 
 		sprintf(title, "%s", mapheaderinfo[mapnum-1]->lvlttl);
 		if (zonetext) sprintf(title + strlen(title), " %s", zonetext);
-		if (actnum) sprintf(title + strlen(title), " %s", actnum);
+		if (actnum) sprintf(title + strlen(title), " %d", actnum);
 	}
 
 	return title;

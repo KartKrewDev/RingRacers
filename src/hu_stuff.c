@@ -2194,16 +2194,6 @@ void HU_Drawer(void)
 		INT32 strength = ((pausedelay - 1 - NEWTICRATE/2)*10)/(NEWTICRATE/3);
 		INT32 y = hudinfo[HUD_LIVES].y - 13;
 
-		if (players[consoleplayer].powers[pw_carry] == CR_NIGHTSMODE)
-			y -= 16;
-		else
-		{
-			if (players[consoleplayer].pflags & PF_AUTOBRAKE)
-				y -= 8;
-			if (players[consoleplayer].pflags & PF_ANALOGMODE)
-				y -= 8;
-		}
-
 		V_DrawThinString(hudinfo[HUD_LIVES].x-2, y,
 			hudinfo[HUD_LIVES].f|((leveltime & 4) ? V_SKYMAP : V_BLUEMAP),
 			"HOLD TO RETRY...");

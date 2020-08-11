@@ -1965,9 +1965,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			if (player->pflags & PF_GODMODE)
 				return false;
-
-			if ((maptol & TOL_NIGHTS) && target->player->powers[pw_carry] != CR_NIGHTSMODE && target->player->powers[pw_carry] != CR_NIGHTSFALL)
-				return false;
 		}
 
 		// Player hits another player

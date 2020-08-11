@@ -211,20 +211,6 @@ static int player_get(lua_State *L)
 		lua_pushangle(L, plr->drawangle);
 	else if (fastcmp(field,"rings"))
 		lua_pushinteger(L, plr->rings);
-	else if (fastcmp(field,"spheres"))
-		lua_pushinteger(L, plr->spheres);
-	else if (fastcmp(field,"pity"))
-		lua_pushinteger(L, plr->pity);
-	else if (fastcmp(field,"currentweapon"))
-		lua_pushinteger(L, plr->currentweapon);
-	else if (fastcmp(field,"ringweapons"))
-		lua_pushinteger(L, plr->ringweapons);
-	else if (fastcmp(field,"ammoremoval"))
-		lua_pushinteger(L, plr->ammoremoval);
-	else if (fastcmp(field,"ammoremovaltimer"))
-		lua_pushinteger(L, plr->ammoremovaltimer);
-	else if (fastcmp(field,"ammoremovalweapon"))
-		lua_pushinteger(L, plr->ammoremovalweapon);
 	else if (fastcmp(field,"powers"))
 		LUA_PushUserdata(L, plr->powers, META_POWERS);
 	else if (fastcmp(field,"kartstuff"))
@@ -421,8 +407,6 @@ static int player_get(lua_State *L)
 		lua_pushangle(L, plr->awayviewaiming);
 	else if (fastcmp(field,"spectator"))
 		lua_pushboolean(L, plr->spectator);
-	else if (fastcmp(field,"outofcoop"))
-		lua_pushboolean(L, plr->outofcoop);
 	else if (fastcmp(field,"bot"))
 		lua_pushboolean(L, plr->bot);
 	else if (fastcmp(field,"jointime"))
@@ -502,20 +486,6 @@ static int player_set(lua_State *L)
 		plr->drawangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"rings"))
 		plr->rings = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"spheres"))
-		plr->spheres = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"pity"))
-		plr->pity = (SINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"currentweapon"))
-		plr->currentweapon = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"ringweapons"))
-		plr->ringweapons = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"ammoremoval"))
-		plr->ammoremoval = (UINT16)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"ammoremovaltimer"))
-		plr->ammoremovaltimer = (tic_t)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"ammoremovalweapon"))
-		plr->ammoremovalweapon = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"powers"))
 		return NOSET;
 	else if (fastcmp(field,"pflags"))
@@ -751,8 +721,6 @@ static int player_set(lua_State *L)
 		plr->awayviewaiming = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"spectator"))
 		plr->spectator = lua_toboolean(L, 3);
-	else if (fastcmp(field,"outofcoop"))
-		plr->outofcoop = lua_toboolean(L, 3);
 	else if (fastcmp(field,"bot"))
 		return NOSET;
 	else if (fastcmp(field,"jointime"))

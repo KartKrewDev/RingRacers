@@ -576,11 +576,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	if ((thing->flags & MF_NOCLIPTHING) || !(thing->flags & (MF_SOLID|MF_SPECIAL|MF_PAIN|MF_SHOOTABLE|MF_SPRING)))
 		return true;
 
-	// Don't collide with your buddies while NiGHTS-flying.
-	if (tmthing->player && thing->player && (maptol & TOL_NIGHTS)
-		&& ((tmthing->player->powers[pw_carry] == CR_NIGHTSMODE) || (thing->player->powers[pw_carry] == CR_NIGHTSMODE)))
-		return true;
-
 	blockdist = thing->radius + tmthing->radius;
 
 	if (abs(thing->x - tmx) >= blockdist || abs(thing->y - tmy) >= blockdist)

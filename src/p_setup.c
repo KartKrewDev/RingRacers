@@ -3966,9 +3966,6 @@ static void P_InitPlayers(void)
 		if (!playeringame[i])
 			continue;
 
-		// Start players with pity shields if possible
-		players[i].pity = -1;
-
 		players[i].mo = NULL;
 
 		if (!G_RaceGametype())

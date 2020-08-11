@@ -188,7 +188,6 @@ typedef struct
 	fixed_t flagz[2];
 
 	UINT32 ingame;  // Spectator bit for each player
-	UINT32 outofcoop;  // outofcoop bit for each player
 	INT32 ctfteam[MAXPLAYERS]; // Which team? (can't be 1 bit, since in regular Match there are no teams)
 
 	// Resynch game scores and the like all at once
@@ -213,8 +212,6 @@ typedef struct
 	INT16 oldrelangleturn;
 
 	angle_t aiming;
-	INT32 currentweapon;
-	INT32 ringweapons;
 	UINT16 powers[NUMPOWERS];
 
 	INT32 kartstuff[NUMKARTSTUFF]; // SRB2kart
@@ -222,12 +219,10 @@ typedef struct
 
 	// Score is resynched in the confirm resync packet
 	INT16 rings;
-	INT16 spheres;
 	SINT8 lives;
 	SINT8 continues;
 	UINT8 scoreadd;
 	SINT8 xtralife;
-	SINT8 pity;
 
 	UINT16 skincolor;
 	INT32 skin;

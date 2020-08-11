@@ -1602,10 +1602,10 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 				if (!playeringame[i] || players[i].spectator)
 					continue;
 
-				if (!players[i].mo || ((maptol & TOL_NIGHTS) ? players[i].spheres : players[i].rings) <= 0)
+				if (!players[i].mo || players[i].rings <= 0)
 					continue;
 
-				rings += (maptol & TOL_NIGHTS) ? players[i].spheres : players[i].rings;
+				rings += players[i].rings;
 			}
 		}
 		else
@@ -1613,7 +1613,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (!(actor && actor->player))
 				return false; // no player to count rings from here, sorry
 
-			rings = (maptol & TOL_NIGHTS) ? actor->player->spheres : actor->player->rings;
+			rings = actor->player->rings;
 		}
 
 		if (triggerline->flags & ML_NOCLIMB)
@@ -4541,15 +4541,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 				S_StartSound(player->mo, sfx_itemup);
 			}
 			break;
-		case 11: // Special Stage Damage
-			if (player->exiting || player->bot) // Don't do anything for bots or players who have just finished
-				break;
-
-			if (!(player->powers[pw_shield] || player->spheres > 0)) // Don't do anything if no shield or spheres anyway
-				break;
-
-			P_SpecialStageDamage(player, NULL, NULL);
-			break;
+		case 11: // Unused
 		case 12: // Wall Sector (Don't step-up/down)
 		case 13: // Ramp Sector (Increase step-up/down)
 		case 14: // Non-Ramp Sector (Don't step-down)
@@ -8586,7 +8578,7 @@ static inline boolean PIT_PushThing(mobj_t *thing)
 		return false;
 
 	// Allow this to affect pushable objects at some point?
-	if (thing->player && (!(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)) || thing->player->powers[pw_carry] == CR_NIGHTSMODE))
+	if (thing->player && !(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)))
 	{
 		INT32 dist;
 		INT32 speed;
@@ -8617,75 +8609,14 @@ static inline boolean PIT_PushThing(mobj_t *thing)
 		// Written with bits and pieces of P_HomingAttack
 		if ((speed > 0) && (P_CheckSight(thing, tmpusher->source)))
 		{
-			if (thing->player->powers[pw_carry] != CR_NIGHTSMODE)
+			// only push wrt Z if health & 1 (mapthing has ambush flag)
+			if (tmpusher->source->health & 1)
 			{
-				// only push wrt Z if health & 1 (mapthing has ambush flag)
-				if (tmpusher->source->health & 1)
-				{
-					fixed_t tmpmomx, tmpmomy, tmpmomz;
-
-					tmpmomx = FixedMul(FixedDiv(sx - thing->x, dist), speed);
-					tmpmomy = FixedMul(FixedDiv(sy - thing->y, dist), speed);
-					tmpmomz = FixedMul(FixedDiv(sz - thing->z, dist), speed);
-					if (tmpusher->source->type == MT_PUSH) // away!
-					{
-						tmpmomx *= -1;
-						tmpmomy *= -1;
-						tmpmomz *= -1;
-					}
-
-					thing->momx += tmpmomx;
-					thing->momy += tmpmomy;
-					thing->momz += tmpmomz;
-
-					if (thing->player)
-					{
-						thing->player->cmomx += tmpmomx;
-						thing->player->cmomy += tmpmomy;
-						thing->player->cmomx = FixedMul(thing->player->cmomx, ORIG_FRICTION);
-						thing->player->cmomy = FixedMul(thing->player->cmomy, ORIG_FRICTION);
-					}
-				}
-				else
-				{
-					angle_t pushangle;
-
-					pushangle = R_PointToAngle2(thing->x, thing->y, sx, sy);
-					if (tmpusher->source->type == MT_PUSH)
-						pushangle += ANGLE_180; // away
-					pushangle >>= ANGLETOFINESHIFT;
-					thing->momx += FixedMul(speed, FINECOSINE(pushangle));
-					thing->momy += FixedMul(speed, FINESINE(pushangle));
-
-					if (thing->player)
-					{
-						thing->player->cmomx += FixedMul(speed, FINECOSINE(pushangle));
-						thing->player->cmomy += FixedMul(speed, FINESINE(pushangle));
-						thing->player->cmomx = FixedMul(thing->player->cmomx, ORIG_FRICTION);
-						thing->player->cmomy = FixedMul(thing->player->cmomy, ORIG_FRICTION);
-					}
-				}
-			}
-			else
-			{
-				//NiGHTS-specific handling.
-				//By default, pushes and pulls only affect the Z-axis.
-				//By having the ambush flag, it affects the X-axis.
-				//By having the object special flag, it affects the Y-axis.
 				fixed_t tmpmomx, tmpmomy, tmpmomz;
 
-				if (tmpusher->source->health & 1)
-					tmpmomx = FixedMul(FixedDiv(sx - thing->x, dist), speed);
-				else
-					tmpmomx = 0;
-
-				if (tmpusher->source->health & 2)
-					tmpmomy = FixedMul(FixedDiv(sy - thing->y, dist), speed);
-				else
-					tmpmomy = 0;
-
+				tmpmomx = FixedMul(FixedDiv(sx - thing->x, dist), speed);
+				tmpmomy = FixedMul(FixedDiv(sy - thing->y, dist), speed);
 				tmpmomz = FixedMul(FixedDiv(sz - thing->z, dist), speed);
-
 				if (tmpusher->source->type == MT_PUSH) // away!
 				{
 					tmpmomx *= -1;
@@ -8701,6 +8632,25 @@ static inline boolean PIT_PushThing(mobj_t *thing)
 				{
 					thing->player->cmomx += tmpmomx;
 					thing->player->cmomy += tmpmomy;
+					thing->player->cmomx = FixedMul(thing->player->cmomx, ORIG_FRICTION);
+					thing->player->cmomy = FixedMul(thing->player->cmomy, ORIG_FRICTION);
+				}
+			}
+			else
+			{
+				angle_t pushangle;
+
+				pushangle = R_PointToAngle2(thing->x, thing->y, sx, sy);
+				if (tmpusher->source->type == MT_PUSH)
+					pushangle += ANGLE_180; // away
+				pushangle >>= ANGLETOFINESHIFT;
+				thing->momx += FixedMul(speed, FINECOSINE(pushangle));
+				thing->momy += FixedMul(speed, FINESINE(pushangle));
+
+				if (thing->player)
+				{
+					thing->player->cmomx += FixedMul(speed, FINECOSINE(pushangle));
+					thing->player->cmomy += FixedMul(speed, FINESINE(pushangle));
 					thing->player->cmomx = FixedMul(thing->player->cmomx, ORIG_FRICTION);
 					thing->player->cmomy = FixedMul(thing->player->cmomy, ORIG_FRICTION);
 				}

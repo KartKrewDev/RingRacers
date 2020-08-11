@@ -328,12 +328,14 @@ static inline void P_RunThinkers(void)
 
 }
 
+/*
+
 //
 // P_DoAutobalanceTeams()
 //
 // Determine if the teams are unbalanced, and if so, move a player to the other team.
 //
-/*static void P_DoAutobalanceTeams(void)
+static void P_DoAutobalanceTeams(void)
 {
 	changeteam_union NetPacket;
 	UINT16 usvalue;
@@ -447,136 +449,6 @@ void P_DoTeamscrambling(void)
 		CV_SetValue(&cv_teamscramble, 0);
 }
 
-static inline void P_DoSpecialStageStuff(void)
-{
-	boolean stillalive = false;
-	INT32 i;
-
-	// Can't drown in a special stage
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-			continue;
-
-		players[i].powers[pw_underwater] = players[i].powers[pw_spacetime] = 0;
-	}
-
-	//if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
-		//S_SpeedMusic(1.4f);
-
-	if (sstimer && !objectplacing)
-	{
-		sstimer = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i])
-			{
-				players[i].exiting = raceexittime+1;
-				players[i].pflags &= ~PF_GLIDING;
-			}
-
-			if (i == consoleplayer)
-				S_StartSound(NULL, sfx_lose);
-		}
-
-		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
-			S_SpeedMusic(1.0f);
-
-		stagefailed = true;
-	}
-
-	if (sstimer > 1) // As long as time isn't up...
-	{
-		UINT16 countspheres = 0;
-		// Count up the rings of all the players and see if
-		// they've collected the required amount.
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i])
-			{
-				tic_t oldnightstime = players[i].nightstime;
-				countspheres += players[i].spheres;
-
-				if (!oldnightstime)
-					continue;
-
-				// If in water, deplete timer 6x as fast.
-				if (players[i].mo->eflags & (MFE_TOUCHWATER|MFE_UNDERWATER) && !(players[i].powers[pw_shield] & SH_PROTECTWATER))
-					players[i].nightstime -= 5;
-				if (--players[i].nightstime > 6)
-				{
-					if (P_IsLocalPlayer(&players[i]) && oldnightstime > 10*TICRATE && players[i].nightstime <= 10*TICRATE)
-						S_ChangeMusicInternal("_drown", false);
-					stillalive = true;
-				}
-				else if (!players[i].exiting)
-				{
-					players[i].exiting = (14*TICRATE)/5 + 1;
-					players[i].pflags &= ~(PF_GLIDING|PF_BOUNCING);
-					players[i].nightstime = 0;
-					if (P_IsLocalPlayer(&players[i]))
-						S_StartSound(NULL, sfx_s3k66);
-				}
-			}
-
-		if (stillalive)
-		{
-			if (countspheres >= ssspheres)
-			{
-				// Halt all the players
-				for (i = 0; i < MAXPLAYERS; i++)
-					if (playeringame[i] && !players[i].exiting)
-					{
-						players[i].mo->momx = players[i].mo->momy = 0;
-						players[i].exiting = (14*TICRATE)/5 + 1;
-					}
-				sstimer = 0;
-				P_GiveEmerald(true);
-				P_RestoreMusic(&players[consoleplayer]);
-			}
-		}
-		else
-			sstimer = 0;
-	}
-}
-
-static inline void P_DoTagStuff(void)
-{
-	INT32 i;
-
-	// tell the netgame who the initial IT person is.
-	if (leveltime == TICRATE)
-	{
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (players[i].pflags & PF_TAGIT)
-			{
-				CONS_Printf(M_GetText("%s is now IT!\n"), player_names[i]); // Tell everyone who is it!
-				break;
-			}
-		}
-	}
-
-	//increment survivor scores
-	if (leveltime % TICRATE == 0 && leveltime > (hidetime * TICRATE))
-	{
-		INT32 participants = 0;
-
-		for (i=0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && !players[i].spectator)
-				participants++;
-		}
-
-		for (i=0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && !players[i].spectator && players[i].playerstate == PST_LIVE
-			&& !(players[i].pflags & (PF_TAGIT|PF_GAMETYPEOVER)))
-				//points given is the number of participating players divided by two.
-				P_AddPlayerScore(&players[i], participants/2);
-		}
-	}
-}
-
 static inline void P_DoCTFStuff(void)
 {
 	// Automatic team balance for CTF and team match
@@ -596,7 +468,9 @@ static inline void P_DoCTFStuff(void)
 		if (cv_teamscramble.value && server)
 			P_DoTeamscrambling();
 	}
-}*/
+}
+
+*/
 
 //
 // P_Ticker

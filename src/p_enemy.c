@@ -6643,8 +6643,7 @@ void A_MixUp(mobj_t *actor)
 	// Count the number of players in the game
 	// and grab their xyz coords
 	for (i = 0; i < MAXPLAYERS; i++)
-		if (playeringame[i] && players[i].mo && players[i].mo->health > 0 && players[i].playerstate == PST_LIVE
-			&& !players[i].exiting && !players[i].powers[pw_super] && players[i].powers[pw_carry] != CR_NIGHTSMODE)
+		if (playeringame[i] && players[i].mo && players[i].mo->health > 0 && players[i].playerstate == PST_LIVE && !players[i].exiting)
 		{
 			if ((netgame || multiplayer) && players[i].spectator) // Ignore spectators
 				continue;
@@ -6774,7 +6773,7 @@ void A_MixUp(mobj_t *actor)
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i] && players[i].playerstate == PST_LIVE
-				&& players[i].mo && players[i].mo->health > 0 && !players[i].exiting && !players[i].powers[pw_super] && players[i].powers[pw_carry] != CR_NIGHTSMODE)
+				&& players[i].mo && players[i].mo->health > 0 && !players[i].exiting)
 			{
 				if ((netgame || multiplayer) && players[i].spectator)// Ignore spectators
 					continue;
@@ -6826,7 +6825,7 @@ void A_MixUp(mobj_t *actor)
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i] && players[i].playerstate == PST_LIVE
-				&& players[i].mo && players[i].mo->health > 0 && !players[i].exiting && !players[i].powers[pw_super] && players[i].powers[pw_carry] != CR_NIGHTSMODE)
+				&& players[i].mo && players[i].mo->health > 0 && !players[i].exiting)
 			{
 				if ((netgame || multiplayer) && players[i].spectator)// Ignore spectators
 					continue;
@@ -6858,7 +6857,7 @@ void A_MixUp(mobj_t *actor)
 		if (teleported[i])
 		{
 			if (playeringame[i] && players[i].playerstate == PST_LIVE
-				&& players[i].mo && players[i].mo->health > 0 && !players[i].exiting && !players[i].powers[pw_super] && players[i].powers[pw_carry] != CR_NIGHTSMODE)
+				&& players[i].mo && players[i].mo->health > 0 && !players[i].exiting)
 			{
 				if ((netgame || multiplayer) && players[i].spectator)// Ignore spectators
 					continue;
@@ -10729,6 +10728,8 @@ void A_OrbitNights(mobj_t* actor)
 	boolean donotrescale = (var2 & 0x40000);
 	INT32 xfactor = 32, yfactor = 32, zfactor = 20;
 
+	(void)ishelper;
+
 	if (LUA_CallAction("A_OrbitNights", actor))
 		return;
 
@@ -10745,12 +10746,7 @@ void A_OrbitNights(mobj_t* actor)
 		zfactor = (var2 & 0xFC000000) >> 26;
 	}
 
-	if (!actor->target
-	|| (actor->target->player &&
-		// if NiGHTS special stage and not NiGHTSmode.
-	    (((maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap) && !(actor->target->player->powers[pw_carry] == CR_NIGHTSMODE))
-	    // Also remove this object if they no longer have a NiGHTS helper
-		|| (ishelper && !actor->target->player->powers[pw_nights_helper]))))
+	if (!actor->target)
 	{
 		if (cv_debug && !(actor->target && actor->target->player))
 			CONS_Printf("ERROR: Powerup has no target!\n");
@@ -10776,15 +10772,6 @@ void A_OrbitNights(mobj_t* actor)
 			actor->angle = (angle_t)actor->extravalue1 + ANGLE_90;
 		}
 		P_SetThingPosition(actor);
-
-		if (ishelper && actor->target->player) // Flash a helper that's about to be removed.
-		{
-			if ((actor->target->player->powers[pw_nights_helper] < TICRATE)
-			&& (actor->target->player->powers[pw_nights_helper] & 1))
-				actor->flags2 |= MF2_DONTDRAW;
-			else
-				actor->flags2 &= ~MF2_DONTDRAW;
-		}
 
 		if (!donotrescale && actor->destscale != actor->target->destscale)
 			actor->destscale = actor->target->destscale;

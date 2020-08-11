@@ -3917,15 +3917,15 @@ static void M_DrawPauseMenu(void)
 
 		if (strlen(mapheaderinfo[gamemap-1]->zonttl) > 0)
 		{
-			if (strlen(mapheaderinfo[gamemap-1]->actnum) > 0)
-				V_DrawString(40, 28, highlightflags, va("%s %s %s", mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl, mapheaderinfo[gamemap-1]->actnum));
+			if (mapheaderinfo[gamemap-1]->actnum > 0)
+				V_DrawString(40, 28, highlightflags, va("%s %s %d", mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl, mapheaderinfo[gamemap-1]->actnum));
 			else
 				V_DrawString(40, 28, highlightflags, va("%s %s", mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl));
 		}
 		else
 		{
-			if (strlen(mapheaderinfo[gamemap-1]->actnum) > 0)
-				V_DrawString(40, 28, highlightflags, va("%s %s", mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->actnum));
+			if (mapheaderinfo[gamemap-1]->actnum > 0)
+				V_DrawString(40, 28, highlightflags, va("%s %d", mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->actnum));
 			else
 				V_DrawString(40, 28, highlightflags, mapheaderinfo[gamemap-1]->lvlttl);
 		}
@@ -7445,11 +7445,11 @@ static void M_DrawStatsMaps(int location)
 		M_DrawMapEmblems(mnum+1, 295, y);
 
 		if (mapheaderinfo[mnum]->levelflags & LF_NOZONE)
-			V_DrawString(20, y, 0, va("%s %s",
+			V_DrawString(20, y, 0, va("%s %d",
 				mapheaderinfo[mnum]->lvlttl,
 				mapheaderinfo[mnum]->actnum));
 		else
-			V_DrawString(20, y, 0, va("%s %s %s",
+			V_DrawString(20, y, 0, va("%s %s %d",
 				mapheaderinfo[mnum]->lvlttl,
 				(mapheaderinfo[mnum]->zonttl[0] ? mapheaderinfo[mnum]->zonttl : "ZONE"),
 				mapheaderinfo[mnum]->actnum));
