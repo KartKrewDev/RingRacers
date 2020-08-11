@@ -597,80 +597,239 @@ static void ST_drawDebugInfo(void)
 		V_DrawRightAlignedString(320, height,     V_MONOSPACE, va("Heap used: %7sKB", sizeu1(Z_TagsUsage(0, INT32_MAX)>>10)));
 }
 
-static void ST_drawLevelTitle(void)
+static patch_t *lt_patches[3];
+static INT32 lt_scroll = 0;
+static INT32 lt_mom = 0;
+static INT32 lt_zigzag = 0;
+
+tic_t lt_ticker = 0, lt_lasttic = 0;
+tic_t lt_exitticker = 0, lt_endtime = 0;
+
+//
+// Load the graphics for the title card.
+// Don't let LJ see this
+//
+static void ST_cacheLevelTitle(void)
+{
+#define SETPATCH(default, warning, custom, idx) \
+{ \
+	lumpnum_t patlumpnum = LUMPERROR; \
+	if (mapheaderinfo[gamemap-1]->custom[0] != '\0') \
+	{ \
+		patlumpnum = W_CheckNumForName(mapheaderinfo[gamemap-1]->custom); \
+		if (patlumpnum != LUMPERROR) \
+			lt_patches[idx] = (patch_t *)W_CachePatchNum(patlumpnum, PU_HUDGFX); \
+	} \
+	if (patlumpnum == LUMPERROR) \
+	{ \
+		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE)) \
+			lt_patches[idx] = (patch_t *)W_CachePatchName(default, PU_HUDGFX); \
+		else \
+			lt_patches[idx] = (patch_t *)W_CachePatchName(warning, PU_HUDGFX); \
+	} \
+}
+
+	SETPATCH("LTACTBLU", "LTACTRED", ltactdiamond, 0)
+	SETPATCH("LTZIGZAG", "LTZIGRED", ltzzpatch, 1)
+	SETPATCH("LTZZTEXT", "LTZZWARN", ltzztext, 2)
+
+#undef SETPATCH
+}
+
+//
+// Start the title card.
+//
+void ST_startTitleCard(void)
+{
+	// cache every HUD patch used
+	ST_cacheLevelTitle();
+
+	// initialize HUD variables
+	lt_ticker = lt_exitticker = lt_lasttic = 0;
+	lt_endtime = 2*TICRATE + (10*NEWTICRATERATIO);
+	lt_scroll = BASEVIDWIDTH * FRACUNIT;
+	lt_zigzag = -((lt_patches[1])->width * FRACUNIT);
+	lt_mom = 0;
+}
+
+//
+// What happens before drawing the title card.
+// Which is just setting the HUD translucency.
+//
+void ST_preDrawTitleCard(void)
+{
+	if (!G_IsTitleCardAvailable())
+		return;
+
+	if (lt_ticker >= (lt_endtime + TICRATE))
+		return;
+
+	if (!lt_exitticker)
+		st_translucency = 0;
+	else
+		st_translucency = max(0, min((INT32)lt_exitticker-4, cv_translucenthud.value));
+}
+
+//
+// Run the title card.
+// Called from ST_Ticker.
+//
+void ST_runTitleCard(void)
+{
+	boolean run = !(paused || P_AutoPause());
+
+	if (!G_IsTitleCardAvailable())
+		return;
+
+	if (lt_ticker >= (lt_endtime + TICRATE))
+		return;
+
+	if (run || (lt_ticker < PRELEVELTIME))
+	{
+		// tick
+		lt_ticker++;
+		if (lt_ticker >= lt_endtime)
+			lt_exitticker++;
+
+		// scroll to screen (level title)
+		if (!lt_exitticker)
+		{
+			if (abs(lt_scroll) > FRACUNIT)
+				lt_scroll -= (lt_scroll>>2);
+			else
+				lt_scroll = 0;
+		}
+		// scroll away from screen (level title)
+		else
+		{
+			lt_mom -= FRACUNIT*6;
+			lt_scroll += lt_mom;
+		}
+
+		// scroll to screen (zigzag)
+		if (!lt_exitticker)
+		{
+			if (abs(lt_zigzag) > FRACUNIT)
+				lt_zigzag -= (lt_zigzag>>2);
+			else
+				lt_zigzag = 0;
+		}
+		// scroll away from screen (zigzag)
+		else
+			lt_zigzag += lt_mom;
+	}
+}
+
+//
+// Draw the title card itself.
+//
+void ST_drawTitleCard(void)
 {
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *subttl = mapheaderinfo[gamemap-1]->subttl;
-	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
-	char *actnum = mapheaderinfo[gamemap-1]->actnum;
-	INT32 lvlttlxpos;
-	INT32 ttlnumxpos;
-	INT32 zonexpos;
-	INT32 dupcalc = (vid.width/vid.dupx);
-	UINT8 gtc = G_GetGametypeColor(gametype);
-	INT32 sub = 0;
-	INT32 bary = (r_splitscreen)
-		? BASEVIDHEIGHT/2
-		: 163;
-	INT32 lvlw;
+	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
+	INT32 lvlttlxpos, ttlnumxpos, zonexpos;
+	INT32 subttlxpos = BASEVIDWIDTH/2;
+	INT32 ttlscroll = FixedInt(lt_scroll);
+	INT32 zzticker;
+	patch_t *actpat, *zigzag, *zztext;
+	UINT8 colornum;
+	const UINT8 *colormap;
 
-	if (timeinmap > 113)
+	if (players[consoleplayer].skincolor)
+		colornum = players[consoleplayer].skincolor;
+	else
+		colornum = cv_playercolor.value;
+
+	colormap = R_GetTranslationColormap(TC_DEFAULT, colornum, GTC_CACHE);
+
+	if (!G_IsTitleCardAvailable())
 		return;
 
-	lvlw = V_LevelNameWidth(lvlttl);
+	if (!LUA_HudEnabled(hud_stagetitle))
+		goto luahook;
 
-	if (actnum[0])
-		lvlttlxpos = ((BASEVIDWIDTH/2) - (lvlw/2)) - V_LevelNameWidth(actnum);
-	else
-		lvlttlxpos = ((BASEVIDWIDTH/2) - (lvlw/2));
+	if (lt_ticker >= (lt_endtime + TICRATE))
+		goto luahook;
 
-	zonexpos = ttlnumxpos = lvlttlxpos + lvlw;
-	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-	{
-		if (zonttl[0])
-			zonexpos -= V_LevelNameWidth(zonttl); // SRB2kart
-		else
-			zonexpos -= V_LevelNameWidth(M_GetText("ZONE"));
-	}
+	if ((lt_ticker-lt_lasttic) > 1)
+		lt_ticker = lt_lasttic+1;
+
+	ST_cacheLevelTitle();
+	actpat = lt_patches[0];
+	zigzag = lt_patches[1];
+	zztext = lt_patches[2];
+
+	lvlttlxpos = ((BASEVIDWIDTH/2) - (V_LevelNameWidth(lvlttl)/2));
+
+	if (actnum > 0)
+		lvlttlxpos -= V_LevelActNumWidth(actnum);
+
+	ttlnumxpos = lvlttlxpos + V_LevelNameWidth(lvlttl);
+	zonexpos = ttlnumxpos - V_LevelNameWidth(M_GetText("Zone"));
+	ttlnumxpos++;
 
 	if (lvlttlxpos < 0)
 		lvlttlxpos = 0;
 
-	if (timeinmap > 105)
+	if (!splitscreen || (splitscreen && stplyr == &players[displayplayer]))
 	{
-		INT32 count = (113 - (INT32)(timeinmap));
-		sub = dupcalc;
-		while (count-- > 0)
-			sub >>= 1;
-		sub = -sub;
+		zzticker = lt_ticker;
+		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
+		V_DrawMappedPatch(FixedInt(lt_zigzag), (zigzag->height-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
+		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zigzag->height+zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
+		V_DrawMappedPatch(FixedInt(lt_zigzag), (zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
 	}
 
+	if (actnum)
 	{
-		dupcalc = (dupcalc - BASEVIDWIDTH)>>1;
-		V_DrawFill(sub - dupcalc, bary+9, ttlnumxpos+dupcalc + 1, 2, 31);
-		V_DrawDiag(sub + ttlnumxpos + 1, bary, 11, 31);
-		V_DrawFill(sub - dupcalc, bary, ttlnumxpos+dupcalc, 10, gtc);
-		V_DrawDiag(sub + ttlnumxpos, bary, 10, gtc);
-
-		if (subttl[0])
-			V_DrawRightAlignedString(sub + zonexpos - 8, bary+1, V_ALLOWLOWERCASE, subttl);
-		//else
-			//V_DrawRightAlignedString(sub + zonexpos - 8, bary+1, V_ALLOWLOWERCASE, va("%s Mode", gametype_cons_t[gametype].strvalue));
+		if (!splitscreen)
+		{
+			if (actnum > 9) // slightly offset the act diamond for two-digit act numbers
+				V_DrawMappedPatch(ttlnumxpos + (V_LevelActNumWidth(actnum)/4) + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
+			else
+				V_DrawMappedPatch(ttlnumxpos + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
+		}
+		V_DrawLevelActNum(ttlnumxpos + ttlscroll, 104, V_PERPLAYER, actnum);
 	}
 
-	ttlnumxpos += sub;
-	lvlttlxpos += sub;
-	zonexpos += sub;
+	V_DrawLevelTitle(lvlttlxpos - ttlscroll, 80, V_PERPLAYER, lvlttl);
+	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
+		V_DrawLevelTitle(zonexpos + ttlscroll, 104, V_PERPLAYER, M_GetText("Zone"));
+	V_DrawCenteredString(subttlxpos - ttlscroll, 135, V_PERPLAYER|V_ALLOWLOWERCASE, subttl);
 
-	V_DrawLevelTitle(lvlttlxpos, bary-18, 0, lvlttl);
+	lt_lasttic = lt_ticker;
 
-	if (strlen(zonttl) > 0)
-		V_DrawLevelTitle(zonexpos, bary+6, 0, zonttl);
-	else if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-		V_DrawLevelTitle(zonexpos, bary+6, 0, M_GetText("ZONE"));
+luahook:
+	LUAh_TitleCardHUD(stplyr);
+}
 
-	if (actnum[0])
-		V_DrawLevelTitle(ttlnumxpos+12, bary+6, 0, actnum);
+//
+// Drawer for G_PreLevelTitleCard.
+//
+void ST_preLevelTitleCardDrawer(void)
+{
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
+	ST_drawWipeTitleCard();
+	I_OsPolling();
+	I_UpdateNoBlit();
+}
+
+//
+// Draw the title card while on a wipe.
+// Also used in G_PreLevelTitleCard.
+//
+void ST_drawWipeTitleCard(void)
+{
+	stplyr = &players[consoleplayer];
+	ST_preDrawTitleCard();
+	ST_drawTitleCard();
+	if (splitscreen)
+	{
+		stplyr = &players[secondarydisplayplayer];
+		ST_preDrawTitleCard();
+		ST_drawTitleCard();
+	}
 }
 
 //
