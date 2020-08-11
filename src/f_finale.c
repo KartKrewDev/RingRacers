@@ -3982,39 +3982,26 @@ static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 	if (!tag || !tag[0] || !tutorialmode)
 		return false;
 
-	if (!strncmp(tag, "TAM", 3)) // Movement
-		gcs = G_GetControlScheme(gamecontrol, gcl_movement, num_gcl_movement);
-	else if (!strncmp(tag, "TAC", 3)) // Camera
-	{
-		// Check for gcl_movement so we can differentiate between FPS and Platform schemes.
-		gcs = G_GetControlScheme(gamecontrol, gcl_movement, num_gcl_movement);
-		if (gcs == gcs_custom) // try again, maybe we'll get a match
-			gcs = G_GetControlScheme(gamecontrol, gcl_camera, num_gcl_camera);
-		if (gcs == gcs_fps && !cv_usemouse.value)
-			gcs = gcs_platform; // Platform (arrow) scheme is stand-in for no mouse
-	}
-	else if (!strncmp(tag, "TAD", 3)) // Movement and Camera
-		gcs = G_GetControlScheme(gamecontrol, gcl_movement_camera, num_gcl_movement_camera);
-	else if (!strncmp(tag, "TAJ", 3)) // Jump
-		gcs = G_GetControlScheme(gamecontrol, gcl_jump, num_gcl_jump);
-	else if (!strncmp(tag, "TAS", 3)) // Spin
-		gcs = G_GetControlScheme(gamecontrol, gcl_use, num_gcl_use);
-	else if (!strncmp(tag, "TAA", 3)) // Char ability
-		gcs = G_GetControlScheme(gamecontrol, gcl_jump, num_gcl_jump);
-	else if (!strncmp(tag, "TAW", 3)) // Shield ability
-		gcs = G_GetControlScheme(gamecontrol, gcl_jump_use, num_gcl_jump_use);
+	if (!strncmp(tag, "TAA", 3)) // Accelerate
+		gcs = G_GetControlScheme(gamecontrol[0], gcl_accelerate, num_gcl_accelerate);
+	else if (!strncmp(tag, "TAB", 3)) // Brake
+		gcs = G_GetControlScheme(gamecontrol[0], gcl_brake, num_gcl_brake);
+	else if (!strncmp(tag, "TAD", 3)) // Drift
+		gcs = G_GetControlScheme(gamecontrol[0], gcl_drift, num_gcl_drift);
+	else if (!strncmp(tag, "TAS", 3)) // Spindash
+		gcs = G_GetControlScheme(gamecontrol[0], gcl_spindash, num_gcl_spindash);
+	else if (!strncmp(tag, "TAM", 3)) // Movement
+		gcs = G_GetControlScheme(gamecontrol[0], gcl_movement, num_gcl_movement);
+	else if (!strncmp(tag, "TAI", 3)) // Item usage
+		gcs = G_GetControlScheme(gamecontrol[0], gcl_item, num_gcl_item);
 	else
-		gcs = G_GetControlScheme(gamecontrol, gcl_tutorial_used, num_gcl_tutorial_used);
+		gcs = G_GetControlScheme(gamecontrol[0], gcl_full, num_gcl_full);
 
 	switch (gcs)
 	{
-		case gcs_fps:
-			// strncat(tag, "FPS", length);
+		case gcs_kart:
+			// strncat(tag, "KART", length);
 			suffixed = false;
-			break;
-
-		case gcs_platform:
-			strncat(tag, "PLATFORM", length);
 			break;
 
 		default:

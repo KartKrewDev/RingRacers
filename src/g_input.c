@@ -819,13 +819,11 @@ void G_ClearControlKeys(INT32 (*setupcontrols)[2], INT32 control)
 
 void G_ClearAllControlKeys(void)
 {
-	INT32 i;
+	INT32 i, j;
 	for (i = 0; i < num_gamecontrols; i++)
 	{
-		G_ClearControlKeys(gamecontrol, i);
-		G_ClearControlKeys(gamecontrolbis, i);
-		G_ClearControlKeys(gamecontrol3, i);
-		G_ClearControlKeys(gamecontrol4, i);
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+			G_ClearControlKeys(gamecontrol[j], i);
 	}
 }
 
@@ -885,63 +883,63 @@ void G_DefineDefaultControls(void)
 	INT32 i, j;
 
 	// Keyboard controls
-	gamecontrol[0][gcs_kart][gc_aimforward ][0] = KEY_UPARROW;
-	gamecontrol[0][gcs_kart][gc_aimbackward][0] = KEY_DOWNARROW;
-	gamecontrol[0][gcs_kart][gc_turnleft   ][0] = KEY_LEFTARROW;
-	gamecontrol[0][gcs_kart][gc_turnright  ][0] = KEY_RIGHTARROW;
-	gamecontrol[0][gcs_kart][gc_accelerate ][0] = 'a';
-	gamecontrol[0][gcs_kart][gc_drift      ][0] = 's';
-	gamecontrol[0][gcs_kart][gc_brake      ][0] = 'd';
-	gamecontrol[0][gcs_kart][gc_fire       ][0] = KEY_SPACE;
-	gamecontrol[0][gcs_kart][gc_lookback   ][0] = KEY_LSHIFT;
+	gamecontroldefault[0][gcs_kart][gc_aimforward ][0] = KEY_UPARROW;
+	gamecontroldefault[0][gcs_kart][gc_aimbackward][0] = KEY_DOWNARROW;
+	gamecontroldefault[0][gcs_kart][gc_turnleft   ][0] = KEY_LEFTARROW;
+	gamecontroldefault[0][gcs_kart][gc_turnright  ][0] = KEY_RIGHTARROW;
+	gamecontroldefault[0][gcs_kart][gc_accelerate ][0] = 'a';
+	gamecontroldefault[0][gcs_kart][gc_drift      ][0] = 's';
+	gamecontroldefault[0][gcs_kart][gc_brake      ][0] = 'd';
+	gamecontroldefault[0][gcs_kart][gc_fire       ][0] = KEY_SPACE;
+	gamecontroldefault[0][gcs_kart][gc_lookback   ][0] = KEY_LSHIFT;
 
-	gamecontrol[0][gcs_kart][gc_pause      ][0] = KEY_PAUSE;
-	gamecontrol[0][gcs_kart][gc_console    ][0] = KEY_CONSOLE;
-	gamecontrol[0][gcs_kart][gc_screenshot ][0] = KEY_F8;
-	gamecontrol[0][gcs_kart][gc_recordgif  ][0] = KEY_F9;
-	gamecontrol[0][gcs_kart][gc_viewpoint  ][0] = KEY_F12;
-	gamecontrol[0][gcs_kart][gc_talkkey    ][0] = 't';
-	//gamecontrol[0][gcs_kart][gc_teamkey    ][0] = 'y';
-	gamecontrol[0][gcs_kart][gc_scores     ][0] = KEY_TAB;
-	gamecontrol[0][gcs_kart][gc_spectate   ][0] = '\'';
-	gamecontrol[0][gcs_kart][gc_lookup     ][0] = KEY_PGUP;
-	gamecontrol[0][gcs_kart][gc_lookdown   ][0] = KEY_PGDN;
-	gamecontrol[0][gcs_kart][gc_centerview ][0] = KEY_END;
-	gamecontrol[0][gcs_kart][gc_camreset   ][0] = KEY_HOME;
-	gamecontrol[0][gcs_kart][gc_camtoggle  ][0] = KEY_BACKSPACE;
+	gamecontroldefault[0][gcs_kart][gc_pause      ][0] = KEY_PAUSE;
+	gamecontroldefault[0][gcs_kart][gc_console    ][0] = KEY_CONSOLE;
+	gamecontroldefault[0][gcs_kart][gc_screenshot ][0] = KEY_F8;
+	gamecontroldefault[0][gcs_kart][gc_recordgif  ][0] = KEY_F9;
+	gamecontroldefault[0][gcs_kart][gc_viewpoint  ][0] = KEY_F12;
+	gamecontroldefault[0][gcs_kart][gc_talkkey    ][0] = 't';
+	//gamecontroldefault[0][gcs_kart][gc_teamkey    ][0] = 'y';
+	gamecontroldefault[0][gcs_kart][gc_scores     ][0] = KEY_TAB;
+	gamecontroldefault[0][gcs_kart][gc_spectate   ][0] = '\'';
+	gamecontroldefault[0][gcs_kart][gc_lookup     ][0] = KEY_PGUP;
+	gamecontroldefault[0][gcs_kart][gc_lookdown   ][0] = KEY_PGDN;
+	gamecontroldefault[0][gcs_kart][gc_centerview ][0] = KEY_END;
+	gamecontroldefault[0][gcs_kart][gc_camreset   ][0] = KEY_HOME;
+	gamecontroldefault[0][gcs_kart][gc_camtoggle  ][0] = KEY_BACKSPACE;
 
 	for (i = gcs_custom+1; i < num_gamecontrolschemes; i++) // skip gcs_custom
 	{
 		// Gamepad controls -- same for all schemes
-		gamecontrol[0][j][gc_accelerate ][1] = KEY_JOY1+0; // A
-		gamecontrol[0][j][gc_lookback   ][1] = KEY_JOY1+2; // X
-		gamecontrol[0][j][gc_brake      ][1] = KEY_JOY1+1; // B
-		gamecontrol[0][j][gc_fire       ][1] = KEY_JOY1+4; // LB
-		gamecontrol[0][j][gc_drift      ][1] = KEY_JOY1+5; // RB
+		gamecontroldefault[0][j][gc_accelerate ][1] = KEY_JOY1+0; // A
+		gamecontroldefault[0][j][gc_lookback   ][1] = KEY_JOY1+2; // X
+		gamecontroldefault[0][j][gc_brake      ][1] = KEY_JOY1+1; // B
+		gamecontroldefault[0][j][gc_fire       ][1] = KEY_JOY1+4; // LB
+		gamecontroldefault[0][j][gc_drift      ][1] = KEY_JOY1+5; // RB
 
-		gamecontrol[0][j][gc_viewpoint  ][1] = KEY_JOY1+3; // Y
-		gamecontrol[0][j][gc_pause      ][1] = KEY_JOY1+6; // Back
-		gamecontrol[0][j][gc_systemmenu ][0] = KEY_JOY1+7; // Start
-		gamecontrol[0][j][gc_talkkey    ][1] = KEY_HAT1+1; // D-Pad Down
-		gamecontrol[0][j][gc_scores     ][1] = KEY_HAT1+0; // D-Pad Up
+		gamecontroldefault[0][j][gc_viewpoint  ][1] = KEY_JOY1+3; // Y
+		gamecontroldefault[0][j][gc_pause      ][1] = KEY_JOY1+6; // Back
+		gamecontroldefault[0][j][gc_systemmenu ][0] = KEY_JOY1+7; // Start
+		gamecontroldefault[0][j][gc_talkkey    ][1] = KEY_HAT1+1; // D-Pad Down
+		gamecontroldefault[0][j][gc_scores     ][1] = KEY_HAT1+0; // D-Pad Up
 
-		gamecontrol[1][i][gc_accelerate ][0] = KEY_2JOY1+0; // A
-		gamecontrol[1][i][gc_lookback   ][0] = KEY_2JOY1+2; // X
-		gamecontrol[1][i][gc_brake      ][0] = KEY_2JOY1+1; // B
-		gamecontrol[1][i][gc_fire       ][0] = KEY_2JOY1+4; // LB
-		gamecontrol[1][i][gc_drift      ][0] = KEY_2JOY1+5; // RB
+		gamecontroldefault[1][i][gc_accelerate ][0] = KEY_2JOY1+0; // A
+		gamecontroldefault[1][i][gc_lookback   ][0] = KEY_2JOY1+2; // X
+		gamecontroldefault[1][i][gc_brake      ][0] = KEY_2JOY1+1; // B
+		gamecontroldefault[1][i][gc_fire       ][0] = KEY_2JOY1+4; // LB
+		gamecontroldefault[1][i][gc_drift      ][0] = KEY_2JOY1+5; // RB
 
-		gamecontrol[2][i][gc_accelerate ][0] = KEY_3JOY1+0; // A
-		gamecontrol[2][i][gc_lookback   ][0] = KEY_3JOY1+2; // X
-		gamecontrol[2][i][gc_brake      ][0] = KEY_3JOY1+1; // B
-		gamecontrol[2][i][gc_fire       ][0] = KEY_3JOY1+4; // LB
-		gamecontrol[2][i][gc_drift      ][0] = KEY_3JOY1+5; // RB
+		gamecontroldefault[2][i][gc_accelerate ][0] = KEY_3JOY1+0; // A
+		gamecontroldefault[2][i][gc_lookback   ][0] = KEY_3JOY1+2; // X
+		gamecontroldefault[2][i][gc_brake      ][0] = KEY_3JOY1+1; // B
+		gamecontroldefault[2][i][gc_fire       ][0] = KEY_3JOY1+4; // LB
+		gamecontroldefault[2][i][gc_drift      ][0] = KEY_3JOY1+5; // RB
 
-		gamecontrol[3][i][gc_accelerate ][0] = KEY_3JOY1+0; // A
-		gamecontrol[3][i][gc_lookback   ][0] = KEY_3JOY1+2; // X
-		gamecontrol[3][i][gc_brake      ][0] = KEY_3JOY1+1; // B
-		gamecontrol[3][i][gc_fire       ][0] = KEY_3JOY1+4; // LB
-		gamecontrol[3][i][gc_drift      ][0] = KEY_3JOY1+5; // RB
+		gamecontroldefault[3][i][gc_accelerate ][0] = KEY_3JOY1+0; // A
+		gamecontroldefault[3][i][gc_lookback   ][0] = KEY_3JOY1+2; // X
+		gamecontroldefault[3][i][gc_brake      ][0] = KEY_3JOY1+1; // B
+		gamecontroldefault[3][i][gc_fire       ][0] = KEY_3JOY1+4; // LB
+		gamecontroldefault[3][i][gc_drift      ][0] = KEY_3JOY1+5; // RB
 	}
 }
 
@@ -956,10 +954,10 @@ INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gc
 		for (j = 0; j < (gclist && gclen ? gclen : num_gamecontrols); j++)
 		{
 			gc = (gclist && gclen) ? gclist[j] : j;
-			if (((fromcontrols[gc][0] && gamecontroldefault[i][gc][0]) ? fromcontrols[gc][0] != gamecontroldefault[i][gc][0] : true) &&
-				((fromcontrols[gc][0] && gamecontroldefault[i][gc][1]) ? fromcontrols[gc][0] != gamecontroldefault[i][gc][1] : true) &&
-				((fromcontrols[gc][1] && gamecontroldefault[i][gc][0]) ? fromcontrols[gc][1] != gamecontroldefault[i][gc][0] : true) &&
-				((fromcontrols[gc][1] && gamecontroldefault[i][gc][1]) ? fromcontrols[gc][1] != gamecontroldefault[i][gc][1] : true))
+			if (((fromcontrols[gc][0] && gamecontroldefault[0][i][gc][0]) ? fromcontrols[gc][0] != gamecontroldefault[0][i][gc][0] : true) &&
+				((fromcontrols[gc][0] && gamecontroldefault[0][i][gc][1]) ? fromcontrols[gc][0] != gamecontroldefault[0][i][gc][1] : true) &&
+				((fromcontrols[gc][1] && gamecontroldefault[0][i][gc][0]) ? fromcontrols[gc][1] != gamecontroldefault[0][i][gc][0] : true) &&
+				((fromcontrols[gc][1] && gamecontroldefault[0][i][gc][1]) ? fromcontrols[gc][1] != gamecontroldefault[0][i][gc][1] : true))
 			{
 				skipscheme = true;
 				break;
@@ -984,17 +982,17 @@ void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const I
 	}
 }
 
-void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2], INT32 (*fromcontrolsbis)[2])
+void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2])
 {
 	INT32 i;
 
 	for (i = 1; i < num_gamecontrols; i++)
 	{
 		fprintf(f, "setcontrol \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(fromcontrols[i][0]));
+			G_KeynumToString(fromcontrols[0][i][0]));
 
-		if (fromcontrols[i][1])
-			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[i][1]));
+		if (fromcontrols[0][i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[0][i][1]));
 		else
 			fprintf(f, "\n");
 	}
@@ -1002,10 +1000,10 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2], INT32 (*fromcontrolsbis
 	for (i = 1; i < num_gamecontrols; i++)
 	{
 		fprintf(f, "setcontrol2 \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(fromcontrolsbis[i][0]));
+			G_KeynumToString(fromcontrols[1][i][0]));
 
-		if (fromcontrolsbis[i][1])
-			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrolsbis[i][1]));
+		if (fromcontrols[1][i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[1][i][1]));
 		else
 			fprintf(f, "\n");
 	}
@@ -1013,10 +1011,10 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2], INT32 (*fromcontrolsbis
 	for (i = 1; i < num_gamecontrols; i++)
 	{
 		fprintf(f, "setcontrol3 \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(gamecontrol3[i][0]));
+			G_KeynumToString(fromcontrols[2][i][0]));
 
-		if (gamecontrol3[i][1])
-			fprintf(f, " \"%s\"\n", G_KeynumToString(gamecontrol3[i][1]));
+		if (fromcontrols[2][i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[2][i][1]));
 		else
 			fprintf(f, "\n");
 	}
@@ -1024,10 +1022,10 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2], INT32 (*fromcontrolsbis
 	for (i = 1; i < num_gamecontrols; i++)
 	{
 		fprintf(f, "setcontrol4 \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(gamecontrol4[i][0]));
+			G_KeynumToString(fromcontrols[3][i][0]));
 
-		if (gamecontrol4[i][1])
-			fprintf(f, " \"%s\"\n", G_KeynumToString(gamecontrol4[i][1]));
+		if (fromcontrols[3][i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[3][i][1]));
 		else
 			fprintf(f, "\n");
 	}
@@ -1094,13 +1092,10 @@ static INT32 G_FilterKeyByVersion(INT32 numctrl, INT32 keyidx, INT32 player, INT
 		boolean defaultoverride = false;
 
 		// get the default gamecontrol
-		if (player == 0 && numctrl == gc_systemmenu)
-			defaultkey = gamecontrol[numctrl][0];
-		else
-			defaultkey = (player == 1 ? gamecontrolbis[numctrl][0] : gamecontrol[numctrl][1]);
+		defaultkey = gamecontrol[player][numctrl][0];
 
 		// Assign joypad button defaults if there is an open slot.
-		// At this point, gamecontrol/bis should have the default controls
+		// At this point, gamecontrol should have the default controls
 		// (unless LOADCONFIG is being run)
 		//
 		// If the player runs SETCONTROL in-game, this block should not be reached
@@ -1190,11 +1185,11 @@ static void setcontrol(INT32 (*gc)[2])
 	INT32 player;
 	boolean nestedoverride = false;
 
-	if ((void*)gc == (void*)&gamecontrol4)
+	if ((void*)gc == (void*)&gamecontrol[3])
 		player = 3;
-	else if ((void*)gc == (void*)&gamecontrol3)
+	else if ((void*)gc == (void*)&gamecontrol[2])
 		player = 2;
-	else if ((void*)gc == (void*)&gamecontrolbis)
+	else if ((void*)gc == (void*)&gamecontrol[1])
 		player = 1;
 	else
 		player = 0;
@@ -1257,7 +1252,7 @@ void Command_Setcontrol_f(void)
 		return;
 	}
 
-	setcontrol(gamecontrol);
+	setcontrol(gamecontrol[0]);
 }
 
 void Command_Setcontrol2_f(void)
@@ -1272,7 +1267,7 @@ void Command_Setcontrol2_f(void)
 		return;
 	}
 
-	setcontrol(gamecontrolbis);
+	setcontrol(gamecontrol[1]);
 }
 
 void Command_Setcontrol3_f(void)
@@ -1287,7 +1282,7 @@ void Command_Setcontrol3_f(void)
 		return;
 	}
 
-	setcontrol(gamecontrol3);
+	setcontrol(gamecontrol[2]);
 }
 
 void Command_Setcontrol4_f(void)
@@ -1302,5 +1297,5 @@ void Command_Setcontrol4_f(void)
 		return;
 	}
 
-	setcontrol(gamecontrol4);
+	setcontrol(gamecontrol[3]);
 }

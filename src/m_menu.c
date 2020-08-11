@@ -2588,9 +2588,9 @@ boolean M_Responder(event_t *ev)
 
 	if (ch == -1)
 		return false;
-	else if (ch == gamecontrol[gc_systemmenu][0] || ch == gamecontrol[gc_systemmenu][1]) // allow remappable ESC key
+	else if (ch == gamecontrol[0][gc_systemmenu][0] || ch == gamecontrol[0][gc_systemmenu][1]) // allow remappable ESC key
 		ch = KEY_ESCAPE;
-	else if ((ch == gamecontrol[gc_accelerate][0] || ch == gamecontrol[gc_accelerate][1])  && ch >= KEY_MOUSE1)
+	else if ((ch == gamecontrol[0][gc_accelerate][0] || ch == gamecontrol[0][gc_accelerate][1])  && ch >= KEY_MOUSE1)
 		ch = KEY_ENTER;
 
 	// F-Keys
@@ -2668,7 +2668,7 @@ boolean M_Responder(event_t *ev)
 		return false;
 	}
 
-	if ((ch == gamecontrol[gc_brake][0] || ch == gamecontrol[gc_brake][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
+	if ((ch == gamecontrol[0][gc_brake][0] || ch == gamecontrol[0][gc_brake][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
 		ch = KEY_ESCAPE;
 
 	routine = currentMenu->menuitems[itemOn].itemaction;
@@ -9670,7 +9670,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 	size_t   l;
 	boolean  exitmenu = false;  // exit to previous menu and send name change
 
-	if ((choice == gamecontrol[gc_fire][0] || choice == gamecontrol[gc_fire][1]) && itemOn == 2)
+	if ((choice == gamecontrol[0][gc_fire][0] || choice == gamecontrol[0][gc_fire][1]) && itemOn == 2)
 		choice = KEY_BACKSPACE; // Hack to allow resetting prefcolor on controllers
 
 	switch (choice)
@@ -10311,7 +10311,7 @@ static void M_Setup1PControlsMenu(INT32 choice)
 {
 	(void)choice;
 	setupcontrolplayer = 1;
-	setupcontrols = gamecontrol;        // was called from main Options (for console player, then)
+	setupcontrols = gamecontrol[0];        // was called from main Options (for console player, then)
 	currentMenu->lastOn = itemOn;
 
 	// Set proper gamepad options
@@ -10343,7 +10343,7 @@ static void M_Setup2PControlsMenu(INT32 choice)
 {
 	(void)choice;
 	setupcontrolplayer = 2;
-	setupcontrols = gamecontrolbis;
+	setupcontrols = gamecontrol[1];
 	currentMenu->lastOn = itemOn;
 
 	// Set proper gamepad options
@@ -10375,7 +10375,7 @@ static void M_Setup3PControlsMenu(INT32 choice)
 {
 	(void)choice;
 	setupcontrolplayer = 3;
-	setupcontrols = gamecontrol3;
+	setupcontrols = gamecontrol[2];
 	currentMenu->lastOn = itemOn;
 
 	// Set proper gamepad options
@@ -10407,7 +10407,7 @@ static void M_Setup4PControlsMenu(INT32 choice)
 {
 	(void)choice;
 	setupcontrolplayer = 4;
-	setupcontrols = gamecontrol4;
+	setupcontrols = gamecontrol[3];
 	currentMenu->lastOn = itemOn;
 
 	// Set proper gamepad options
@@ -10680,17 +10680,17 @@ static void M_ResetControlsResponse(INT32 ch)
 		switch (setupcontrolplayer)
 		{
 			case 4:
-				G_ClearControlKeys(gamecontrol4, i);
+				G_ClearControlKeys(gamecontrol[3], i);
 				break;
 			case 3:
-				G_ClearControlKeys(gamecontrol3, i);
+				G_ClearControlKeys(gamecontrol[2], i);
 				break;
 			case 2:
-				G_ClearControlKeys(gamecontrolbis, i);
+				G_ClearControlKeys(gamecontrol[1], i);
 				break;
 			case 1:
 			default:
-				G_ClearControlKeys(gamecontrol, i);
+				G_ClearControlKeys(gamecontrol[0], i);
 				break;
 		}
 	}

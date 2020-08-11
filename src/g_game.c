@@ -1467,7 +1467,7 @@ boolean G_Responder(event_t *ev)
 
 	// allow spy mode changes even during the demo
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
-		&& (ev->data1 == KEY_F12 || ev->data1 == gamecontrol[gc_viewpoint][0] || ev->data1 == gamecontrol[gc_viewpoint][1]))
+		&& (ev->data1 == KEY_F12 || ev->data1 == gamecontrol[0][gc_viewpoint][0] || ev->data1 == gamecontrol[0][gc_viewpoint][1]))
 	{
 		if (!demo.playback && (r_splitscreen || !netgame))
 			g_localplayers[0] = consoleplayer;
@@ -1485,27 +1485,26 @@ boolean G_Responder(event_t *ev)
 
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
-		if (ev->data1 == gamecontrolbis[gc_viewpoint][0] || ev->data1 == gamecontrolbis[gc_viewpoint][1])
+		if (ev->data1 == gamecontrol[1][gc_viewpoint][0] || ev->data1 == gamecontrol[1][gc_viewpoint][1])
 		{
 			G_AdjustView(2, 1, true);
 			return true;
 		}
-		else if (ev->data1 == gamecontrol3[gc_viewpoint][0] || ev->data1 == gamecontrol3[gc_viewpoint][1])
+		else if (ev->data1 == gamecontrol[2][gc_viewpoint][0] || ev->data1 == gamecontrol[2][gc_viewpoint][1])
 		{
 			G_AdjustView(3, 1, true);
 			return true;
 		}
-		else if (ev->data1 == gamecontrol4[gc_viewpoint][0] || ev->data1 == gamecontrol4[gc_viewpoint][1])
+		else if (ev->data1 == gamecontrol[3][gc_viewpoint][0] || ev->data1 == gamecontrol[3][gc_viewpoint][1])
 		{
 			G_AdjustView(4, 1, true);
-
 			return true;
 		}
 
 		// Allow pausing
 		if (
-			ev->data1 == gamecontrol[gc_pause][0]
-			|| ev->data1 == gamecontrol[gc_pause][1]
+			ev->data1 == gamecontrol[0][gc_pause][0]
+			|| ev->data1 == gamecontrol[0][gc_pause][1]
 			|| ev->data1 == KEY_PAUSE
 		)
 		{
@@ -1540,8 +1539,8 @@ boolean G_Responder(event_t *ev)
 	switch (ev->type)
 	{
 		case ev_keydown:
-			if (ev->data1 == gamecontrol[gc_pause][0]
-				|| ev->data1 == gamecontrol[gc_pause][1]
+			if (ev->data1 == gamecontrol[0][gc_pause][0]
+				|| ev->data1 == gamecontrol[0][gc_pause][1]
 				|| ev->data1 == KEY_PAUSE)
 			{
 				if (modeattacking && !demoplayback && (gamestate == GS_LEVEL))

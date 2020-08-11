@@ -3168,11 +3168,7 @@ static void Command_Map_f(void)
 
 	if (tutorialmode && tutorialgcs)
 	{
-		G_CopyControls(gamecontrol, gamecontroldefault[gcs_custom], gcl_tutorial_full, num_gcl_tutorial_full); // using gcs_custom as temp storage
-		CV_SetValue(&cv_usemouse, tutorialusemouse);
-		CV_SetValue(&cv_alwaysfreelook, tutorialfreelook);
-		CV_SetValue(&cv_mousemove, tutorialmousemove);
-		CV_SetValue(&cv_analog[0], tutorialanalog);
+		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
 	}
 	tutorialmode = false; // warping takes us out of tutorial mode
 
