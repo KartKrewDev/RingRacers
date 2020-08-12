@@ -45,7 +45,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			// Player Damage
-			P_DamageMobj(t2, t1, t1->target, 1);
+			P_DamageMobj(t2, t1, t1->target, 1, 0);
 			K_KartBouncing(t2, t1, false, false);
 			S_StartSound(t2, sfx_s3k7b);
 		}
@@ -87,7 +87,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
-		P_DamageMobj(t2, t2, t1->target, 1);
+		P_DamageMobj(t2, t1, t1->target, 1, 0);
 		damageitem = true;
 	}
 
@@ -177,7 +177,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
-		P_DamageMobj(t2, t2, t1->target, 1);
+		P_DamageMobj(t2, t1, t1->target, 1, 0);
 		damageitem = true;
 	}
 
@@ -316,7 +316,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		// Bomb death
 		P_KillMobj(t1, t2, t2);
 		// Shootable damage
-		P_DamageMobj(t2, t2, t1->target, 1);
+		P_DamageMobj(t2, t1, t1->target, 1, 0);
 	}
 
 	return true;
@@ -337,7 +337,7 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
-		P_DamageMobj(t2, t2, t1->target, 1);
+		P_DamageMobj(t2, t1, t1->target, 1, 0);
 	}
 
 	return true;
@@ -358,7 +358,7 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 		HU_SetCEchoDuration(5);
 		HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[t2->player-players]));
 		I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[t2->player-players]);
-		P_DamageMobj(t2, t1, t1->target, 10000);
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_INSTAKILL);
 		P_KillMobj(t1, t2, t2);
 	}
 	else if (t2->flags & MF_SHOOTABLE)

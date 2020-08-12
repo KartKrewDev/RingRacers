@@ -39,8 +39,11 @@
 #include "lua_hook.h"
 #include "md5.h" // demo checksums
 
-#include "dehacked.h" // get_number (for ghost thok)
+// SRB2Kart
 #include "lua_script.h" // LUA_ArchiveDemo and LUA_UnArchiveDemo
+
+#include "k_kart.h"
+#include "k_battle.h"
 
 static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}, {0, NULL}};
 consvar_t cv_recordmultiplayerdemos = {"netdemo_record", "Manual Save", CV_SAVE, recordmultiplayerdemos_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -54,7 +57,8 @@ tic_t demostarttime; // for comparative timing purposes
 
 static char demoname[128];
 static UINT8 *demobuffer = NULL;
-static UINT8 *demo_p, *demotime_p;
+static UINT8 *demotime_p, *demoinfo_p;
+UINT8 *demo_p;
 static UINT8 *demoend;
 static UINT8 demoflags;
 boolean demosynced = true; // console warning message
@@ -89,14 +93,6 @@ static struct {
 
 // Your naming conventions are stupid and useless.
 // There is no conflict here.
-typedef struct demoghost {
-	UINT8 checksum[16];
-	UINT8 *buffer, *p, fadein;
-	UINT16 color;
-	UINT16 version;
-	mobj_t oldmo, *mo;
-	struct demoghost *next;
-} demoghost;
 demoghost *ghosts = NULL;
 
 //
@@ -170,7 +166,7 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 #define FZT_SCALE 0x10 // different scale to object
 // spare FZT slots 0x20 to 0x80
 
-static mobj_t oldmetal, oldghost;
+static mobj_t oldmetal, oldghost[MAXPLAYERS];
 
 void G_SaveMetal(UINT8 **buffer)
 {
@@ -326,7 +322,7 @@ void G_ReadDemoExtraData(void)
 				{
 					players[p].spectator = true;
 					if (players[p].mo)
-						P_DamageMobj(players[p].mo, NULL, NULL, 10000);
+						P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_INSTAKILL);
 					else
 						players[p].playerstate = PST_REBORN;
 				}
