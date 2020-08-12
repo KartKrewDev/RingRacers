@@ -86,8 +86,8 @@ typedef enum
 {
 	TTMODE_NONE = 0,
 	TTMODE_OLD,
-	TTMODE_ALACROIX,
-	TTMODE_USER
+	TTMODE_USER,
+	//TTMODE_RINGRACERS
 } ttmode_enum;
 
 #define TTMAX_ALACROIX 30 // max frames for SONIC typeface, plus one for NULL terminating entry

@@ -5726,7 +5726,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
 		viewangle = localaiming;
-	else if (splitscreen && player == &players[secondarydisplayplayer])
+	else if (splitscreen && player == &players[displayplayers[1]])
 		viewangle = localaiming2;
 
 	// Handle stuff when you are looking farther up or down.
@@ -5948,7 +5948,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
 		viewangle = localaiming;
-	else if (splitscreen && player == &players[secondarydisplayplayer])
+	else if (splitscreen && player == &players[displayplayers[1]])
 		viewangle = localaiming2;
 
 	// Handle stuff when you are looking farther up or down.

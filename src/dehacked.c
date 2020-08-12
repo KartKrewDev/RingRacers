@@ -2553,8 +2553,6 @@ static void readmenu(MYFILE *f, INT32 num)
 			{
 				if (fastcmp(word2, "USER"))
 					menupres[num].ttmode = TTMODE_USER;
-				else if (fastcmp(word2, "ALACROIX"))
-					menupres[num].ttmode = TTMODE_ALACROIX;
 				else if (fastcmp(word2, "HIDE") || fastcmp(word2, "HIDDEN") || fastcmp(word2, "NONE"))
 				{
 					menupres[num].ttmode = TTMODE_USER;
@@ -4067,8 +4065,6 @@ static void readmaincfg(MYFILE *f)
 			{
 				if (fastcmp(word2, "USER"))
 					ttmode = TTMODE_USER;
-				else if (fastcmp(word2, "ALACROIX"))
-					ttmode = TTMODE_ALACROIX;
 				else if (fastcmp(word2, "HIDE") || fastcmp(word2, "HIDDEN") || fastcmp(word2, "NONE"))
 				{
 					ttmode = TTMODE_USER;

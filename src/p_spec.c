@@ -2571,12 +2571,14 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					else
 					{
 						UINT8 i = 0;
-						mobj_t* camobj = players[displayplayer].mo;
+						mobj_t* camobj;
 						ffloor_t *rover;
 						boolean foundit = false;
 
-						for (i = 0; i < 2; camobj = players[secondarydisplayplayer].mo, i++)
+						for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 						{
+							camobj = players[displayplayers[i]].mo;
+
 							if (!camobj)
 								continue;
 

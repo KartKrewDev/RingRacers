@@ -216,7 +216,7 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 			float adjustx = ((option & V_NOSCALESTART) ? vid.width : BASEVIDWIDTH)/2.0f;
 			fscalew /= 2;
 			cx /= 2;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -224,7 +224,7 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 					perplayershuffle |= 4;
 				option &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -233,7 +233,7 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 				cx += adjustx;
 				option &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -242,7 +242,7 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 				cy += adjusty;
 				option &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -257,13 +257,13 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 #endif
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle = 1;
 				option &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle = 2;
@@ -719,7 +719,7 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 			fixed_t adjustx = ((color & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)/2.0f;
 			w >>= 1;
 			x >>= 1;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -727,7 +727,7 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 					perplayershuffle |= 4;
 				color &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -736,7 +736,7 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 				x += adjustx;
 				color &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -745,7 +745,7 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 				y += adjusty;
 				color &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else //if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -760,13 +760,13 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 #endif
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
 				color &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1198,7 +1198,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 			fixed_t adjustx = ((color & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)/2.0f;
 			w >>= 1;
 			x >>= 1;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1206,7 +1206,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 					perplayershuffle |= 4;
 				color &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1215,7 +1215,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 				x += adjustx;
 				color &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1224,7 +1224,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 				y += adjusty;
 				color &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else //if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1239,13 +1239,13 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 #endif
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
 				color &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1369,7 +1369,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 			fixed_t adjustx = ((color & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)/2.0f;
 			w >>= 1;
 			x >>= 1;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1377,7 +1377,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 					perplayershuffle |= 4;
 				color &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1386,7 +1386,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 				x += adjustx;
 				color &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1395,7 +1395,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 				y += adjusty;
 				color &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else //if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1410,13 +1410,13 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 #endif
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
 				color &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(color & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;

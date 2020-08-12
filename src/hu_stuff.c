@@ -1972,12 +1972,6 @@ static void HU_DrawCEcho(void)
 		*line = '\0';
 
 		V_DrawCenteredString(BASEVIDWIDTH/2, y, realflags, echoptr);
-		if (splitscreen)
-		{
-			stplyr = ((stplyr == &players[displayplayer]) ? &players[secondarydisplayplayer] : &players[displayplayer]);
-			V_DrawCenteredString(BASEVIDWIDTH/2, y, realflags, echoptr);
-			stplyr = ((stplyr == &players[displayplayer]) ? &players[secondarydisplayplayer] : &players[displayplayer]);
-		}
 		y += ((realflags & V_RETURN8) ? 8 : 12);
 
 		echoptr = line;

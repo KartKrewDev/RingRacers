@@ -304,14 +304,14 @@ void P_CameraLineOpening(line_t *linedef)
 	if (front->camsec >= 0)
 	{
 		// SRB2CBTODO: ESLOPE (sectors[front->heightsec].f_slope)
-		frontfloor   = P_GetSectorFloorZAt  (&sectors[front->camsec], camera.x, camera.y);
-		frontceiling = P_GetSectorCeilingZAt(&sectors[front->camsec], camera.x, camera.y);
+		frontfloor   = P_GetSectorFloorZAt  (&sectors[front->camsec], camera[0].x, camera[0].y);
+		frontceiling = P_GetSectorCeilingZAt(&sectors[front->camsec], camera[0].x, camera[0].y);
 	}
 	else if (front->heightsec >= 0)
 	{
 		// SRB2CBTODO: ESLOPE (sectors[front->heightsec].f_slope)
-		frontfloor   = P_GetSectorFloorZAt  (&sectors[front->heightsec], camera.x, camera.y);
-		frontceiling = P_GetSectorCeilingZAt(&sectors[front->heightsec], camera.x, camera.y);
+		frontfloor   = P_GetSectorFloorZAt  (&sectors[front->heightsec], camera[0].x, camera[0].y);
+		frontceiling = P_GetSectorCeilingZAt(&sectors[front->heightsec], camera[0].x, camera[0].y);
 	}
 	else
 	{
@@ -322,14 +322,14 @@ void P_CameraLineOpening(line_t *linedef)
 	if (back->camsec >= 0)
 	{
 		// SRB2CBTODO: ESLOPE (sectors[back->heightsec].f_slope)
-		backfloor   = P_GetSectorFloorZAt  (&sectors[back->camsec], camera.x, camera.y);
-		backceiling = P_GetSectorCeilingZAt(&sectors[back->camsec], camera.x, camera.y);
+		backfloor   = P_GetSectorFloorZAt  (&sectors[back->camsec], camera[0].x, camera[0].y);
+		backceiling = P_GetSectorCeilingZAt(&sectors[back->camsec], camera[0].x, camera[0].y);
 	}
 	else if (back->heightsec >= 0)
 	{
 		// SRB2CBTODO: ESLOPE (sectors[back->heightsec].f_slope)
-		backfloor   = P_GetSectorFloorZAt  (&sectors[back->heightsec], camera.x, camera.y);
-		backceiling = P_GetSectorCeilingZAt(&sectors[back->heightsec], camera.x, camera.y);
+		backfloor   = P_GetSectorFloorZAt  (&sectors[back->heightsec], camera[0].x, camera[0].y);
+		backceiling = P_GetSectorCeilingZAt(&sectors[back->heightsec], camera[0].x, camera[0].y);
 	}
 	else
 	{

@@ -783,18 +783,18 @@ static void HW3S_UpdateListener(mobj_t *listener)
 	if (!listener || !listener->player)
 		return;
 
-	if (camera.chase)
+	if (camera[0].chase)
 	{
-		data.x = FIXED_TO_FLOAT(camera.x);
-		data.y = FIXED_TO_FLOAT(camera.y);
-		data.z = FIXED_TO_FLOAT(camera.z + camera.height - (5 * FRACUNIT));
+		data.x = FIXED_TO_FLOAT(camera[0].x);
+		data.y = FIXED_TO_FLOAT(camera[0].y);
+		data.z = FIXED_TO_FLOAT(camera[0].z + camera[0].height - (5 * FRACUNIT));
 
-		data.f_angle = ANGLE2DEG(camera.angle);
-		data.h_angle = ANGLE2DEG(camera.aiming);
+		data.f_angle = ANGLE2DEG(camera[0].angle);
+		data.h_angle = ANGLE2DEG(camera[0].aiming);
 
-		data.momx = TPS(FIXED_TO_FLOAT(camera.momx));
-		data.momy = TPS(FIXED_TO_FLOAT(camera.momy));
-		data.momz = TPS(FIXED_TO_FLOAT(camera.momz));
+		data.momx = TPS(FIXED_TO_FLOAT(camera[0].momx));
+		data.momy = TPS(FIXED_TO_FLOAT(camera[0].momy));
+		data.momz = TPS(FIXED_TO_FLOAT(camera[0].momz));
 	}
 	else
 	{

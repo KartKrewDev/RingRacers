@@ -3880,11 +3880,6 @@ void G_LoadGameData(void)
 	//For records
 	tic_t rectime;
 	tic_t reclap;
-	//UINT32 recscore;
-	//UINT16 recrings;
-
-	//UINT8 recmares;
-	//INT32 curmare;
 
 	// Clear things so previously read gamedata doesn't transfer
 	// to new gamedata
@@ -4049,8 +4044,7 @@ void G_SaveGameData(boolean force)
 	for (i = 0; i < PWRLV_NUMTYPES; i++)
 		WRITEUINT16(save_p, vspowerlevel[i]);
 
-	btemp = (UINT8)(savemoddata); // what used to be here was profoundly dunderheaded
-	WRITEUINT8(save_p, btemp);
+	WRITEUINT8(save_p, (UINT8)savemoddata);
 
 	// TODO put another cipher on these things? meh, I don't care...
 	for (i = 0; i < NUMMAPS; i++)

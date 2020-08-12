@@ -3742,18 +3742,18 @@ static void P_SetupCamera(UINT8 pnum, camera_t *cam)
 	{
 		mapthing_t *thing;
 
-		if (gametyperules & GTR_DEATHMATCHSTARTS)
+		if (gametyperules & GTR_BATTLESTARTS)
 			thing = deathmatchstarts[0];
 		else
 			thing = playerstarts[0];
 
 		if (thing)
 		{
-			camera.x = thing->x;
-			camera.y = thing->y;
-			camera.z = thing->z;
-			camera.angle = FixedAngle((fixed_t)thing->angle << FRACBITS);
-			camera.subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
+			camera[0].x = thing->x;
+			camera[0].y = thing->y;
+			camera[0].z = thing->z;
+			camera[0].angle = FixedAngle((fixed_t)thing->angle << FRACBITS);
+			camera[0].subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 		}
 	}
 }

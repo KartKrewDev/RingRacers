@@ -694,7 +694,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 			fdup >>= 1;
 			colfrac <<= 1;
 			x >>= 1;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -702,7 +702,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 					perplayershuffle |= 4;
 				scrn &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -711,7 +711,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 				x += adjustx;
 				scrn &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -720,7 +720,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 				y += adjusty;
 				scrn &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else //if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -735,13 +735,13 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 #endif
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle = 1;
 				scrn &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle = 2;
@@ -927,7 +927,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 			x >>= 1;
 			sx >>= 1;
 			w >>= 1;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -935,7 +935,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 					perplayershuffle |= 4;
 				scrn &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -945,7 +945,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 				sx += adjustx;
 				scrn &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -955,7 +955,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 				sy += adjusty;
 				scrn &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else //if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -972,13 +972,13 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 #endif
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
 				scrn &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1157,7 +1157,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 			fixed_t adjustx = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
 			w >>= 1;
 			x >>= 1;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1165,7 +1165,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 					perplayershuffle |= 4;
 				c &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1174,7 +1174,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 				x += adjustx;
 				c &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1183,7 +1183,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 				y += adjusty;
 				c &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else //if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1197,13 +1197,13 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		else
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
 				c &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1370,7 +1370,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 			fixed_t adjustx = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
 			w >>= 1;
 			x >>= 1;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1378,7 +1378,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 					perplayershuffle |= 4;
 				c &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1387,7 +1387,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 				x += adjustx;
 				c &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1396,7 +1396,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 				y += adjusty;
 				c &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else //if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1411,13 +1411,13 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 #endif
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
 				c &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1655,7 +1655,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 			fixed_t adjustx = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
 			w >>= 1;
 			x >>= 1;
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1663,7 +1663,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 					perplayershuffle |= 4;
 				c &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 			}
-			else if (stplyr == &players[secondarydisplayplayer])
+			else if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
@@ -1672,7 +1672,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 				x += adjustx;
 				c &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
 			}
-			else if (stplyr == &players[thirddisplayplayer])
+			else if (stplyr == &players[displayplayers[2]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1681,7 +1681,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 				y += adjusty;
 				c &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
 			}
-			else //if (stplyr == &players[fourthdisplayplayer])
+			else //if (stplyr == &players[displayplayers[3]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;
@@ -1696,13 +1696,13 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 #endif
 		// 2 players
 		{
-			if (stplyr == &players[displayplayer])
+			if (stplyr == &players[displayplayers[0]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 1;
 				c &= ~V_SNAPTOBOTTOM;
 			}
-			else //if (stplyr == &players[secondarydisplayplayer])
+			else //if (stplyr == &players[displayplayers[1]])
 			{
 				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
 					perplayershuffle |= 2;

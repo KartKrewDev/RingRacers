@@ -773,7 +773,7 @@ void ST_drawTitleCard(void)
 	if (lvlttlxpos < 0)
 		lvlttlxpos = 0;
 
-	if (!splitscreen || (splitscreen && stplyr == &players[displayplayer]))
+	if (!splitscreen || (splitscreen && stplyr == &players[displayplayers[0]]))
 	{
 		zzticker = lt_ticker;
 		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
@@ -822,12 +822,11 @@ void ST_preLevelTitleCardDrawer(void)
 //
 void ST_drawWipeTitleCard(void)
 {
-	stplyr = &players[consoleplayer];
-	ST_preDrawTitleCard();
-	ST_drawTitleCard();
-	if (splitscreen)
+	UINT8 i;
+
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		stplyr = &players[secondarydisplayplayer];
+		stplyr = &players[displayplayers[i]];
 		ST_preDrawTitleCard();
 		ST_drawTitleCard();
 	}

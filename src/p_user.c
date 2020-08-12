@@ -4675,33 +4675,50 @@ void P_SetPlayerAngle(player_t *player, angle_t angle)
 void P_SetLocalAngle(player_t *player, angle_t angle)
 {
 	INT16 delta = (INT16)((angle - P_GetLocalAngle(player)) >> 16);
+	UINT8 i;
 
 	P_ForceLocalAngle(player, P_GetLocalAngle(player) + (angle_t)(delta << 16));
 
-	if (player == &players[consoleplayer])
-		ticcmd_oldangleturn[0] += delta;
-	else if (player == &players[secondarydisplayplayer])
-		ticcmd_oldangleturn[1] += delta;
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (player == &players[g_localplayers[i]])
+		{
+			ticcmd_oldangleturn[i] += delta;
+			break;
+		}
+	}
 }
 
 angle_t P_GetLocalAngle(player_t *player)
 {
-	if (player == &players[consoleplayer])
-		return localangle;
-	else if (player == &players[secondarydisplayplayer])
-		return localangle2;
-	else
-		return 0;
+	// this function is from vanilla srb2. can you tell?
+	// (hint: they have separate variables for all of this shit instead of arrays)
+
+	UINT8 i;
+
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (player == &players[g_localplayers[i]])
+			return localangle[i];
+	}
+
+	return 0;
 }
 
 void P_ForceLocalAngle(player_t *player, angle_t angle)
 {
+	UINT8 i;
+
 	angle = angle & ~UINT16_MAX;
 
-	if (player == &players[consoleplayer])
-		localangle = angle;
-	else if (player == &players[secondarydisplayplayer])
-		localangle2 = angle;
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (player == &players[g_localplayers[i]])
+		{
+			localangle[i] = angle;
+			break;
+		}
+	}
 }
 
 boolean P_PlayerFullbright(player_t *player)
