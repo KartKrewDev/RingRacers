@@ -119,7 +119,6 @@ sprcache_t *spritecachedinfo;
 
 lighttable_t *colormaps;
 UINT8 *encoremap;
-lighttable_t *fadecolormap;
 
 // for debugging/info purposes
 size_t flatmemory, spritememory, texturememory;

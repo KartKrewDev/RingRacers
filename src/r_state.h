@@ -43,7 +43,6 @@ extern UINT8 *encoremap;
 #ifdef HASINVERT
 extern UINT8 invertmap[256];
 #endif
-extern lighttable_t *fadecolormap;
 
 // Boom colormaps.
 extern extracolormap_t *extra_colormaps;

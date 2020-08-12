@@ -2,8 +2,8 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 2013-2016 by Matthew "Kaito Sinclaire" Walsh.
-// Copyright (C) 1999-2020 by Sonic Team Junior.
+// Copyright (C) 2013-2016 by Matthew "Inuyasha" Walsh.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,26 +20,15 @@
 #include "r_draw.h" // transtable
 #include "p_pspr.h" // tr_transxxx
 
-#include "r_state.h" // fadecolormap
-#include "r_draw.h" // transtable
-#include "p_pspr.h" // tr_transxxx
-#include "p_local.h"
-#include "st_stuff.h"
 #include "w_wad.h"
 #include "z_zone.h"
 
 #include "i_system.h"
-#include "i_threads.h"
 #include "m_menu.h"
 #include "console.h"
 #include "d_main.h"
-#include "g_game.h"
 #include "m_misc.h" // movie mode
 #include "d_clisrv.h" // So the network state can be updated during the wipe
-
-#include "doomstat.h"
-
-#include "lua_hud.h" // level title
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -68,8 +57,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	99, // wipe_credits_toblack
 	0,  // wipe_evaluation_toblack
 	0,  // wipe_gameend_toblack
-	99, // wipe_intro_toblack (hardcoded)
-	0,  // wipe_ending_toblack
+	UINT8_MAX, // wipe_intro_toblack (hardcoded)
 	99, // wipe_cutscene_toblack (hardcoded)
 
 	72, // wipe_encore_toinvert
@@ -85,11 +73,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_evaluation_final
 	0,  // wipe_gameend_final
 	99, // wipe_intro_final (hardcoded)
-	0,  // wipe_ending_final
-	99, // wipe_cutscene_final (hardcoded)
-
-	0,  // wipe_specinter_final
-	0   // wipe_multinter_final
+	99  // wipe_cutscene_final (hardcoded)
 };
 
 //--------------------------------------------------------------------------
@@ -97,11 +81,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 //--------------------------------------------------------------------------
 
 boolean WipeInAction = false;
-boolean WipeStageTitle = false;
 INT32 lastwipetic = 0;
-
-wipestyle_t wipestyle = WIPESTYLE_NORMAL;
-wipestyleflags_t wipestyleflags = WSF_CROSSFADE;
 
 #ifndef NOWIPE
 
@@ -110,9 +90,8 @@ wipestyleflags_t wipestyleflags = WSF_CROSSFADE;
 static UINT8 *wipe_scr_start; //screen 3
 static UINT8 *wipe_scr_end; //screen 4
 static UINT8 *wipe_scr; //screen 0 (main drawing)
-
 static UINT8 pallen;
-static fixed_t paldiv = 0;
+static fixed_t paldiv;
 
 /** Create fademask_t from lump
   *
@@ -198,20 +177,6 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	}
 
 	return NULL;
-}
-
-/** Draw the stage title.
-  */
-void F_WipeStageTitle(void)
-{
-	// draw level title
-	if ((WipeStageTitle && st_overlay)
-	&& (wipestyle == WIPESTYLE_COLORMAP)
-	&& G_IsTitleCardAvailable())
-	{
-		ST_runTitleCard();
-		ST_drawWipeTitleCard();
-	}
 }
 
 /**	Wipe ticker
@@ -353,111 +318,6 @@ static void F_DoWipe(fademask_t *fademask, lighttable_t *fadecolormap, boolean r
 		free(scrypos);
 	}
 }
-
-static void F_DoColormapWipe(fademask_t *fademask, UINT8 *colormap)
-{
-	// Lactozilla: F_DoWipe for WIPESTYLE_COLORMAP
-	{
-		// wipe screen, start, end
-		UINT8       *w = wipe_scr;
-		const UINT8 *s = wipe_scr_start;
-		const UINT8 *e = wipe_scr_end;
-
-		// first pixel for each screen
-		UINT8       *w_base = w;
-		const UINT8 *s_base = s;
-		const UINT8 *e_base = e;
-
-		// mask data, end
-		UINT8       *transtbl;
-		const UINT8 *mask    = fademask->mask;
-		const UINT8 *maskend = mask + fademask->size;
-
-		// rectangle draw hints
-		UINT32 draw_linestart, draw_rowstart;
-		UINT32 draw_lineend,   draw_rowend;
-		UINT32 draw_linestogo, draw_rowstogo;
-
-		// rectangle coordinates, etc.
-		UINT16* scrxpos = (UINT16*)malloc((fademask->width + 1)  * sizeof(UINT16));
-		UINT16* scrypos = (UINT16*)malloc((fademask->height + 1) * sizeof(UINT16));
-		UINT16 maskx, masky;
-		UINT32 relativepos;
-
-		// ---
-		// Screw it, we do the fixed point math ourselves up front.
-		scrxpos[0] = 0;
-		for (relativepos = 0, maskx = 1; maskx < fademask->width; ++maskx)
-			scrxpos[maskx] = (relativepos += fademask->xscale)>>FRACBITS;
-		scrxpos[fademask->width] = vid.width;
-
-		scrypos[0] = 0;
-		for (relativepos = 0, masky = 1; masky < fademask->height; ++masky)
-			scrypos[masky] = (relativepos += fademask->yscale)>>FRACBITS;
-		scrypos[fademask->height] = vid.height;
-		// ---
-
-		maskx = masky = 0;
-		do
-		{
-			draw_rowstart = scrxpos[maskx];
-			draw_rowend   = scrxpos[maskx + 1];
-			draw_linestart = scrypos[masky];
-			draw_lineend   = scrypos[masky + 1];
-
-			relativepos = (draw_linestart * vid.width) + draw_rowstart;
-			draw_linestogo = draw_lineend - draw_linestart;
-
-			if (*mask == 0)
-			{
-				// shortcut - memcpy source to work
-				while (draw_linestogo--)
-				{
-					M_Memcpy(w_base+relativepos, s_base+relativepos, draw_rowend-draw_rowstart);
-					relativepos += vid.width;
-				}
-			}
-			else if (*mask >= FADECOLORMAPROWS)
-			{
-				// shortcut - memcpy target to work
-				while (draw_linestogo--)
-				{
-					M_Memcpy(w_base+relativepos, e_base+relativepos, draw_rowend-draw_rowstart);
-					relativepos += vid.width;
-				}
-			}
-			else
-			{
-				int nmask = *mask;
-				if (wipestyleflags & WSF_FADEIN)
-					nmask = (FADECOLORMAPROWS-1) - nmask;
-
-				transtbl = colormap + (nmask * 256);
-
-				// DRAWING LOOP
-				while (draw_linestogo--)
-				{
-					w = w_base + relativepos;
-					s = s_base + relativepos;
-					e = e_base + relativepos;
-					draw_rowstogo = draw_rowend - draw_rowstart;
-
-					while (draw_rowstogo--)
-						*w++ = transtbl[*e++];
-
-					relativepos += vid.width;
-				}
-				// END DRAWING LOOP
-			}
-
-			if (++maskx >= fademask->width)
-				++masky, maskx = 0;
-		} while (++mask < maskend);
-
-		free(scrxpos);
-		free(scrypos);
-	}
-}
 #endif
 
 /** Save the "before" screen of a wipe.
@@ -577,7 +437,6 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 	paldiv = FixedDiv(257<<FRACBITS, pallen<<FRACBITS);
 
 	// Init the wipe
-	F_DecideWipeStyle();
 	WipeInAction = true;
 	wipe_scr = screens[0];
 
@@ -595,36 +454,10 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 			I_Sleep();
 		lastwipetic = nowtime;
 
-		// Wipe styles
-		if (wipestyle == WIPESTYLE_COLORMAP)
-		{
 #ifdef HWRENDER
-			if (rendermode == render_opengl)
-			{
-				// send in the wipe type and wipe frame because we need to cache the graphic
-				HWR_DoTintedWipe(wipetype, wipeframe-1);
-			}
-			else
-#endif
-			{
-				UINT8 *colormap = fadecolormap;
-				if (wipestyleflags & WSF_TOWHITE)
-					colormap += (FADECOLORMAPROWS * 256);
-				F_DoColormapWipe(fmask, colormap);
-			}
-
-			// Draw the title card above the wipe
-			F_WipeStageTitle();
-		}
+		if (rendermode == render_opengl)
+			HWR_DoWipe(wipetype, wipeframe-1); // send in the wipe type and wipeframe because we need to cache the graphic
 		else
-		{
-#ifdef HWRENDER
-			if (rendermode == render_opengl)
-			{
-				// send in the wipe type and wipe frame because we need to cache the graphic
-				HWR_DoWipe(wipetype, wipeframe-1);
-			}
-			else
 #endif
 
 		if (rendermode != render_none) //this allows F_RunWipe to be called in dedicated servers
@@ -644,15 +477,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		I_UpdateNoBlit();
 
 		if (drawMenu)
-		{
-#ifdef HAVE_THREADS
-			I_lock_mutex(&m_menu_mutex);
-#endif
 			M_Drawer(); // menu is drawn even on top of wipes
-#ifdef HAVE_THREADS
-			I_unlock_mutex(m_menu_mutex);
-#endif
-		}
 
 		I_FinishUpdate(); // page flip or blit buffer
 
