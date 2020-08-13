@@ -54,14 +54,9 @@ UINT8 *save_p;
 // than an UINT16
 typedef enum
 {
-//	RFLAGPOINT = 0x01,
-//	BFLAGPOINT = 0x02,
-	CAPSULE    = 0x04,
-	AWAYVIEW   = 0x08,
-	FIRSTAXIS  = 0x10,
-	SECONDAXIS = 0x20,
-	FOLLOW     = 0x40,
-	DRONE      = 0x80,
+	AWAYVIEW   = 0x01,
+	FOLLOWITEM = 0x02,
+	FOLLOWER   = 0x04,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -119,10 +114,6 @@ static void P_NetArchivePlayers(void)
 
 		for (j = 0; j < NUMPOWERS; j++)
 			WRITEUINT16(save_p, players[i].powers[j]);
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			WRITEINT32(save_p, players[i].kartstuff[j]);
-
-		WRITEANGLE(save_p, players[i].frameangle);
 
 		WRITEUINT8(save_p, players[i].playerstate);
 		WRITEUINT32(save_p, players[i].pflags);
@@ -135,6 +126,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].score);
 		WRITEFIXED(save_p, players[i].dashspeed);
 		WRITESINT8(save_p, players[i].lives);
+		WRITEUINT8(save_p, players[i].lostlife);
 		WRITESINT8(save_p, players[i].continues);
 		WRITESINT8(save_p, players[i].xtralife);
 		WRITEUINT8(save_p, players[i].gotcontinue);
@@ -165,23 +157,13 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].totalring);
 		WRITEUINT32(save_p, players[i].realtime);
 		WRITEUINT8(save_p, players[i].laps);
+		WRITEINT32(save_p, players[i].starpostnum);
 
 		////////////////////
 		// CTF Mode Stuff //
 		////////////////////
 		WRITEINT32(save_p, players[i].ctfteam);
 		WRITEUINT16(save_p, players[i].gotflag);
-
-		WRITEINT32(save_p, players[i].weapondelay);
-		WRITEINT32(save_p, players[i].tossdelay);
-
-		WRITEUINT32(save_p, players[i].starposttime);
-		WRITEINT16(save_p, players[i].starpostx);
-		WRITEINT16(save_p, players[i].starposty);
-		WRITEINT16(save_p, players[i].starpostz);
-		WRITEINT32(save_p, players[i].starpostnum);
-		WRITEANGLE(save_p, players[i].starpostangle);
-		WRITEFIXED(save_p, players[i].starpostscale);
 
 		WRITEANGLE(save_p, players[i].angle_pos);
 		WRITEANGLE(save_p, players[i].old_angle_pos);
@@ -219,23 +201,14 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].texttimer);
 		WRITEUINT8(save_p, players[i].textvar);
 
-		if (players[i].capsule)
-			flags |= CAPSULE;
-
 		if (players[i].awayviewmobj)
 			flags |= AWAYVIEW;
 
-		if (players[i].axis1)
-			flags |= FIRSTAXIS;
-
-		if (players[i].axis2)
-			flags |= SECONDAXIS;
-
 		if (players[i].followmobj)
-			flags |= FOLLOW;
+			flags |= FOLLOWITEM;
 
-		if (players[i].drone)
-			flags |= DRONE;
+		if (players[i].follower)
+			flags |= FOLLOWER;
 
 		WRITEINT16(save_p, players[i].lastsidehit);
 		WRITEINT16(save_p, players[i].lastlinehit);
@@ -269,7 +242,18 @@ static void P_NetArchivePlayers(void)
 		// SRB2kart
 		WRITEUINT8(save_p, players[i].kartspeed);
 		WRITEUINT8(save_p, players[i].kartweight);
+
+		WRITEUINT8(save_p, players[i].followerskin);
+		WRITEUINT8(save_p, players[i].followerready);	// booleans are really just numbers eh??
+		WRITEUINT8(save_p, players[i].followercolor);
+		if (flags & FOLLOWER)
+			WRITEUINT32(save_p, players[i].follower->mobjnum);
+
+
 		//
+
+		for (j = 0; j < NUMKARTSTUFF; j++)
+			WRITEINT32(save_p, players[i].kartstuff[j]);
 
 		for (j = 0; j < MAXPREDICTTICS; j++)
 		{
@@ -277,10 +261,26 @@ static void P_NetArchivePlayers(void)
 			WRITEINT16(save_p, players[i].rturn_max[j]);
 		}
 
+		WRITEANGLE(save_p, players[i].frameangle);
 		WRITEUINT32(save_p, players[i].distancetofinish);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
+		WRITEUINT32(save_p, players[i].airtime);
 
+		// respawnvars_t
+		WRITEUINT8(save_p, players[i].respawn.state);
+		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].respawn.wp));
+		WRITEFIXED(save_p, players[i].respawn.pointx);
+		WRITEFIXED(save_p, players[i].respawn.pointy);
+		WRITEFIXED(save_p, players[i].respawn.pointz);
+		WRITEUINT8(save_p, players[i].respawn.flip);
+		WRITEUINT32(save_p, players[i].respawn.timer);
+		WRITEUINT32(save_p, players[i].respawn.distanceleft);
+		WRITEUINT32(save_p, players[i].respawn.dropdash);
+
+		// botvars_t
 		WRITEUINT8(save_p, players[i].botvars.difficulty);
+		WRITEUINT8(save_p, players[i].botvars.diffincrease);
+		WRITEUINT8(save_p, players[i].botvars.rival);
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
@@ -323,10 +323,6 @@ static void P_NetUnArchivePlayers(void)
 
 		for (j = 0; j < NUMPOWERS; j++)
 			players[i].powers[j] = READUINT16(save_p);
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			players[i].kartstuff[j] = READINT32(save_p);
-
-		players[i].frameangle = READANGLE(save_p);
 
 		players[i].playerstate = READUINT8(save_p);
 		players[i].pflags = READUINT32(save_p);
@@ -339,6 +335,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].score = READUINT32(save_p);
 		players[i].dashspeed = READFIXED(save_p); // dashing speed
 		players[i].lives = READSINT8(save_p);
+		players[i].lostlife = (boolean)READUINT8(save_p);
 		players[i].continues = READSINT8(save_p); // continues that player has acquired
 		players[i].xtralife = READSINT8(save_p); // Ring Extra Life counter
 		players[i].gotcontinue = READUINT8(save_p); // got continue from stage
@@ -369,6 +366,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].totalring = READINT16(save_p); // Total number of rings obtained for Race Mode
 		players[i].realtime = READUINT32(save_p); // integer replacement for leveltime
 		players[i].laps = READUINT8(save_p); // Number of laps (optional)
+		players[i].starpostnum = READINT32(save_p);
 
 		////////////////////
 		// CTF Mode Stuff //
@@ -378,14 +376,6 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].weapondelay = READINT32(save_p);
 		players[i].tossdelay = READINT32(save_p);
-
-		players[i].starposttime = READUINT32(save_p);
-		players[i].starpostx = READINT16(save_p);
-		players[i].starposty = READINT16(save_p);
-		players[i].starpostz = READINT16(save_p);
-		players[i].starpostnum = READINT32(save_p);
-		players[i].starpostangle = READANGLE(save_p);
-		players[i].starpostscale = READFIXED(save_p);
 
 		players[i].angle_pos = READANGLE(save_p);
 		players[i].old_angle_pos = READANGLE(save_p);
@@ -465,7 +455,17 @@ static void P_NetUnArchivePlayers(void)
 		// SRB2kart
 		players[i].kartspeed = READUINT8(save_p);
 		players[i].kartweight = READUINT8(save_p);
+
+		players[i].followerskin = READUINT8(save_p);
+		players[i].followerready = READUINT8(save_p);
+		players[i].followercolor = READUINT8(save_p);
+		if (flags & FOLLOWER)
+			players[i].follower = (mobj_t *)(size_t)READUINT32(save_p);
+
 		//
+
+		for (j = 0; j < NUMKARTSTUFF; j++)
+			players[i].kartstuff[j] = READINT32(save_p);
 
 		for (j = 0; j < MAXPREDICTTICS; j++)
 		{
@@ -473,10 +473,26 @@ static void P_NetUnArchivePlayers(void)
 			players[i].rturn_max[j] = READINT16(save_p);
 		}
 
+		players[i].frameangle = READANGLE(save_p);
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
+		players[i].airtime = READUINT32(save_p);
 
+		// respawnvars_t
+		players[i].respawn.state = READUINT8(save_p);
+		players[i].respawn.wp = (waypoint_t *)(size_t)READUINT32(save_p);
+		players[i].respawn.pointx = READFIXED(save_p);
+		players[i].respawn.pointy = READFIXED(save_p);
+		players[i].respawn.pointz = READFIXED(save_p);
+		players[i].respawn.flip = (boolean)READUINT8(save_p);
+		players[i].respawn.timer = READUINT32(save_p);
+		players[i].respawn.distanceleft = READUINT32(save_p);
+		players[i].respawn.dropdash = READUINT32(save_p);
+
+		// botvars_t
 		players[i].botvars.difficulty = READUINT8(save_p);
+		players[i].botvars.diffincrease = READUINT8(save_p);
+		players[i].botvars.rival = (boolean)READUINT8(save_p);
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
@@ -1391,9 +1407,10 @@ typedef enum
 	MD2_MIRRORED     = 1<<13,
 	MD2_ROLLANGLE    = 1<<14,
 	MD2_SHADOWSCALE  = 1<<15,
-	MD2_WAYPOINTCAP  = 1<<16,
-	MD2_KITEMCAP     = 1<<17,
-	MD2_ITNEXT       = 1<<18,
+	MD2_DRAWFLAGS    = 1<<16,
+	MD2_WAYPOINTCAP  = 1<<17,
+	MD2_KITEMCAP     = 1<<18,
+	MD2_ITNEXT       = 1<<19,
 } mobj_diff2_t;
 
 typedef enum
@@ -1606,6 +1623,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_ROLLANGLE;
 	if (mobj->shadowscale)
 		diff2 |= MD2_SHADOWSCALE;
+	if (mobj->drawflags)
+		diff2 |= MD2_DRAWFLAGS;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
 	if (mobj == kitemcap)
@@ -1755,7 +1774,21 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_ROLLANGLE)
 		WRITEANGLE(save_p, mobj->rollangle);
 	if (diff2 & MD2_SHADOWSCALE)
+	{
 		WRITEFIXED(save_p, mobj->shadowscale);
+		WRITEUINT8(save_p, mobj->whiteshadow);
+	}
+	if (diff2 & MD2_DRAWFLAGS)
+	{
+		UINT16 df = mobj->drawflags;
+
+		if ((mobj->drawflags & MFD_DONTDRAW) != MFD_DONTDRAW)
+		{
+			df = (mobj->drawflags & ~MFD_DONTDRAW);
+		}
+
+		WRITEUINT16(save_p, df);
+	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2814,7 +2847,12 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_ROLLANGLE)
 		mobj->rollangle = READANGLE(save_p);
 	if (diff2 & MD2_SHADOWSCALE)
+	{
 		mobj->shadowscale = READFIXED(save_p);
+		mobj->whiteshadow = READUINT8(save_p);
+	}
+	if (diff2 & MD2_DRAWFLAGS)
+		mobj->drawflags = READUINT16(save_p);
 
 	if (diff & MD_REDFLAG)
 	{
@@ -3843,56 +3881,47 @@ static void P_RelinkPointers(void)
 			if (!(mobj->itnext = P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
-		if (mobj->player && mobj->player->capsule)
+		if (mobj->player)
 		{
-			temp = (UINT32)(size_t)mobj->player->capsule;
-			mobj->player->capsule = NULL;
-			if (!P_SetTarget(&mobj->player->capsule, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "capsule not found on %d\n", mobj->type);
-		}
-		if (mobj->player && mobj->player->axis1)
-		{
-			temp = (UINT32)(size_t)mobj->player->axis1;
-			mobj->player->axis1 = NULL;
-			if (!P_SetTarget(&mobj->player->axis1, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "axis1 not found on %d\n", mobj->type);
-		}
-		if (mobj->player && mobj->player->axis2)
-		{
-			temp = (UINT32)(size_t)mobj->player->axis2;
-			mobj->player->axis2 = NULL;
-			if (!P_SetTarget(&mobj->player->axis2, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "axis2 not found on %d\n", mobj->type);
-		}
-		if (mobj->player && mobj->player->awayviewmobj)
-		{
-			temp = (UINT32)(size_t)mobj->player->awayviewmobj;
-			mobj->player->awayviewmobj = NULL;
-			if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
-		}
-		if (mobj->player && mobj->player->nextwaypoint)
-		{
-			temp = (UINT32)(size_t)mobj->player->nextwaypoint;
-			mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
-			if (mobj->player->nextwaypoint == NULL)
+			if ( mobj->player->awayviewmobj)
 			{
-				CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
+				temp = (UINT32)(size_t)mobj->player->awayviewmobj;
+				mobj->player->awayviewmobj = NULL;
+				if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
 			}
-		}
-		if (mobj->player && mobj->player->followmobj)
-		{
-			temp = (UINT32)(size_t)mobj->player->followmobj;
-			mobj->player->followmobj = NULL;
-			if (!P_SetTarget(&mobj->player->followmobj, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "followmobj not found on %d\n", mobj->type);
-		}
-		if (mobj->player && mobj->player->drone)
-		{
-			temp = (UINT32)(size_t)mobj->player->drone;
-			mobj->player->drone = NULL;
-			if (!P_SetTarget(&mobj->player->drone, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "drone not found on %d\n", mobj->type);
+			if (mobj->player->followmobj)
+			{
+				temp = (UINT32)(size_t)mobj->player->followmobj;
+				mobj->player->followmobj = NULL;
+				if (!P_SetTarget(&mobj->player->followmobj, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "followmobj not found on %d\n", mobj->type);
+			}
+			if (mobj->player->follower)
+			{
+				temp = (UINT32)(size_t)mobj->player->follower;
+				mobj->player->follower = NULL;
+				if (!P_SetTarget(&mobj->player->follower, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "follower not found on %d\n", mobj->type);
+			}
+			if (mobj->player->nextwaypoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
+				mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
+				if (mobj->player->nextwaypoint == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
+				}
+			}
+			if (mobj->player->respawn.wp)
+			{
+				temp = (UINT32)(size_t)mobj->player->respawn.wp;
+				mobj->player->respawn.wp = K_GetWaypointFromIndex(temp);
+				if (mobj->player->respawn.wp == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "respawn.wp not found on %d\n", mobj->type);
+				}
+			}
 		}
 	}
 }
@@ -4144,6 +4173,10 @@ static void P_NetArchiveMisc(void)
 
 	WRITEUINT8(save_p, thwompsactive);
 	WRITESINT8(save_p, spbplace);
+	WRITEUINT8(save_p, rainbowstartavailable);
+
+	WRITEUINT32(save_p, introtime);
+	WRITEUINT32(save_p, starttime);
 
 	// Is it paused?
 	if (paused)
@@ -4274,6 +4307,10 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	thwompsactive = (boolean)READUINT8(save_p);
 	spbplace = READSINT8(save_p);
+	rainbowstartavailable = (boolean)READUINT8(save_p);
+
+	introtime = READUINT32(save_p);
+	starttime = READUINT32(save_p);
 
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)

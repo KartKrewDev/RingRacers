@@ -31,7 +31,7 @@
 #include "m_misc.h" // moviemode
 #include "m_anigif.h" // cv_gif_downscale
 #include "p_setup.h" // NiGHTS grading
-#include "k_kart.h" // SRB2kart
+#include "k_hud.h" // SRB2kart
 
 //random index
 #include "m_random.h"
@@ -884,11 +884,11 @@ static void ST_overlayDrawer(void)
 
 					INT32 y = (stplyr == &players[displayplayers[0]]) ? 4 : BASEVIDHEIGHT/2-12;
 					sprintf(name, "VIEWPOINT: %s", player_names[stplyr-players]);
-					V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT), name);
+					V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_ALLOWLOWERCASE|V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, name);
 				}
 				else if (r_splitscreen)
 				{
-					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_ALLOWLOWERCASE|K_calcSplitFlags(V_SNAPTOBOTTOM|V_SNAPTOLEFT), player_names[stplyr-players]);
+					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, player_names[stplyr-players]);
 				}
 			}
 		}
@@ -933,16 +933,15 @@ static void ST_overlayDrawer(void)
 			// SRB2kart: changed positions & text
 			if (r_splitscreen)
 			{
-				INT32 splitflags = K_calcSplitFlags(0);
-				V_DrawThinString(2, (BASEVIDHEIGHT/2)-20, V_YELLOWMAP|V_HUDTRANSHALF|splitflags, M_GetText("- SPECTATING -"));
-				V_DrawThinString(2, (BASEVIDHEIGHT/2)-10, V_HUDTRANSHALF|splitflags, itemtxt);
+				V_DrawThinString(2, (BASEVIDHEIGHT/2)-20, V_YELLOWMAP|V_HUDTRANSHALF|V_SPLITSCREEN, M_GetText("- SPECTATING -"));
+				V_DrawThinString(2, (BASEVIDHEIGHT/2)-10, V_HUDTRANSHALF|V_SPLITSCREEN, itemtxt);
 			}
 			else
 			{
-				V_DrawString(2, BASEVIDHEIGHT-40, V_HUDTRANSHALF|V_YELLOWMAP, M_GetText("- SPECTATING -"));
-				V_DrawString(2, BASEVIDHEIGHT-30, V_HUDTRANSHALF, itemtxt);
-				V_DrawString(2, BASEVIDHEIGHT-20, V_HUDTRANSHALF, M_GetText("Accelerate - Float"));
-				V_DrawString(2, BASEVIDHEIGHT-10, V_HUDTRANSHALF, M_GetText("Brake - Sink"));
+				V_DrawString(2, BASEVIDHEIGHT-40, V_HUDTRANSHALF|V_SPLITSCREEN|V_YELLOWMAP, M_GetText("- SPECTATING -"));
+				V_DrawString(2, BASEVIDHEIGHT-30, V_HUDTRANSHALF|V_SPLITSCREEN, itemtxt);
+				V_DrawString(2, BASEVIDHEIGHT-20, V_HUDTRANSHALF|V_SPLITSCREEN, M_GetText("Accelerate - Float"));
+				V_DrawString(2, BASEVIDHEIGHT-10, V_HUDTRANSHALF|V_SPLITSCREEN, M_GetText("Brake - Sink"));
 			}
 		}
 	}

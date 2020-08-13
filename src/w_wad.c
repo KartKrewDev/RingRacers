@@ -1473,7 +1473,6 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 					size = 0;
 					zerr(zErr);
 				}
-
 				(void)inflateEnd(&strm);
 			}
 			else

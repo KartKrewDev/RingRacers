@@ -30,6 +30,7 @@
 #include "../st_stuff.h"
 #include "../p_local.h" // stplyr
 #include "../g_game.h" // players
+#include "../k_hud.h"
 
 #include <fcntl.h>
 #include "../i_video.h"  // for rendermode != render_glide
@@ -199,80 +200,6 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 		cy -= offsety;
 	}
 
-	if (option & V_SPLITSCREEN)
-		cy += FIXED_TO_FLOAT((BASEVIDHEIGHT/2)<<FRACBITS);
-
-	if (option & V_HORZSCREEN)
-		cx += FIXED_TO_FLOAT((BASEVIDWIDTH/2)<<FRACBITS);
-
-	if (splitscreen && (option & V_PERPLAYER))
-	{
-		float adjusty = ((option & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)/2.0f;
-		fscaleh /= 2;
-		cy /= 2;
-#ifdef QUADS
-		if (splitscreen > 1) // 3 or 4 players
-		{
-			float adjustx = ((option & V_NOSCALESTART) ? vid.width : BASEVIDWIDTH)/2.0f;
-			fscalew /= 2;
-			cx /= 2;
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(option & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				option &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
-			}
-			else if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(option & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				cx += adjustx;
-				option &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
-			}
-			else if (stplyr == &players[displayplayers[2]])
-			{
-				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(option & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				cy += adjusty;
-				option &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
-			}
-			else //if (stplyr == &players[displayplayers[3]])
-			{
-				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(option & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				cx += adjustx;
-				cy += adjusty;
-				option &= ~V_SNAPTOTOP|V_SNAPTOLEFT;
-			}
-		}
-		else
-#endif
-		// 2 players
-		{
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle = 1;
-				option &= ~V_SNAPTOBOTTOM;
-			}
-			else //if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(option & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle = 2;
-				cy += adjusty;
-				option &= ~V_SNAPTOTOP;
-			}
-		}
-	}
-
 	if (!(option & V_NOSCALESTART))
 	{
 		cx = cx * dupx;
@@ -280,44 +207,12 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 
 		if (!(option & V_SCALEPATCHMASK))
 		{
-			// if it's meant to cover the whole screen, black out the rest (ONLY IF TOP LEFT ISN'T TRANSPARENT)
-			// cx and cy are possibly *slightly* off from float maths
-			// This is done before here compared to software because we directly alter cx and cy to centre
-			if (cx >= -0.1f && cx <= 0.1f && SHORT(gpatch->width) == BASEVIDWIDTH && cy >= -0.1f && cy <= 0.1f && SHORT(gpatch->height) == BASEVIDHEIGHT)
-			{
-				// Need to temporarily cache the real patch to get the colour of the top left pixel
-				patch_t *realpatch = W_CacheSoftwarePatchNumPwad(gpatch->wadnum, gpatch->lumpnum, PU_STATIC);
-				const column_t *column = (const column_t *)((const UINT8 *)(realpatch) + LONG((realpatch)->columnofs[0]));
-				if (!column->topdelta)
-				{
-					const UINT8 *source = (const UINT8 *)(column) + 3;
-					HWR_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, (column->topdelta == 0xff ? 31 : source[0]));
-				}
-				Z_Free(realpatch);
-			}
-			// centre screen
-			if (fabsf((float)vid.width - (float)BASEVIDWIDTH * dupx) > 1.0E-36f)
-			{
-				if (option & V_SNAPTORIGHT)
-					cx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx));
-				else if (!(option & V_SNAPTOLEFT))
-					cx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx))/2;
-				if (perplayershuffle & 4)
-					cx -= ((float)vid.width - ((float)BASEVIDWIDTH * dupx))/4;
-				else if (perplayershuffle & 8)
-					cx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx))/4;
-			}
-			if (fabsf((float)vid.height - (float)BASEVIDHEIGHT * dupy) > 1.0E-36f)
-			{
-				if (option & V_SNAPTOBOTTOM)
-					cy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy));
-				else if (!(option & V_SNAPTOTOP))
-					cy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy))/2;
-				if (perplayershuffle & 1)
-					cy -= ((float)vid.height - ((float)BASEVIDHEIGHT * dupy))/4;
-				else if (perplayershuffle & 2)
-					cy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy))/4;
-			}
+			INT32 intx, inty;
+			intx = (INT32)cx;
+			inty = (INT32)cy;
+			K_AdjustXYWithSnap(&intx, &inty, option, dupx, dupy);
+			cx = (float)intx;
+			cy = (float)inty;
 		}
 	}
 
@@ -1263,40 +1158,18 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 	if (!(color & V_NOSCALESTART))
 	{
 		float dupx = (float)vid.dupx, dupy = (float)vid.dupy;
+		INT32 intx, inty;
 
 		fx *= dupx;
 		fy *= dupy;
 		fw *= dupx;
 		fh *= dupy;
 
-		if (fabsf((float)vid.width - (float)BASEVIDWIDTH * dupx) > 1.0E-36f)
-		{
-			if (color & V_SNAPTORIGHT)
-				fx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx));
-			else if (!(color & V_SNAPTOLEFT))
-				fx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx)) / 2;
-			if (perplayershuffle & 4)
-				fx -= ((float)vid.width - ((float)BASEVIDWIDTH * dupx)) / 4;
-			else if (perplayershuffle & 8)
-				fx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx)) / 4;
-		}
-		if (fabsf((float)vid.height - (float)BASEVIDHEIGHT * dupy) > 1.0E-36f)
-		{
-			// same thing here
-			if (color & V_SNAPTOBOTTOM)
-				fy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy));
-			else if (!(color & V_SNAPTOTOP))
-				fy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy)) / 2;
-			if (perplayershuffle & 1)
-				fy -= ((float)vid.height - ((float)BASEVIDHEIGHT * dupy)) / 4;
-			else if (perplayershuffle & 2)
-				fy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy)) / 4;
-		}
-		if (options & V_SPLITSCREEN)
-			fy += ((float)BASEVIDHEIGHT * dupy)/2;
-		if (options & V_HORZSCREEN)
-			fx += ((float)BASEVIDWIDTH * dupx)/2;
-
+		intx = (INT32)fx;
+		inty = (INT32)fy;
+		K_AdjustXYWithSnap(&intx, &inty, options, dupx, dupy);
+		fx = (float)intx;
+		fy = (float)inty;
 	}
 
 	if (fx >= vid.width || fy >= vid.height)
@@ -1434,6 +1307,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 	if (!(color & V_NOSCALESTART))
 	{
 		float dupx = (float)vid.dupx, dupy = (float)vid.dupy;
+		INT32 intx, inty;
 
 		if (x == 0 && y == 0 && w == BASEVIDWIDTH && h == BASEVIDHEIGHT)
 		{
@@ -1452,34 +1326,11 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 		fw *= dupx;
 		fh *= dupy;
 
-		if (fabsf((float)vid.width - (float)BASEVIDWIDTH * dupx) > 1.0E-36f)
-		{
-			if (color & V_SNAPTORIGHT)
-				fx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx));
-			else if (!(color & V_SNAPTOLEFT))
-				fx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx)) / 2;
-			if (perplayershuffle & 4)
-				fx -= ((float)vid.width - ((float)BASEVIDWIDTH * dupx)) / 4;
-			else if (perplayershuffle & 8)
-				fx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx)) / 4;
-		}
-		if (fabsf((float)vid.height - (float)BASEVIDHEIGHT * dupy) > 1.0E-36f)
-		{
-			// same thing here
-			if (color & V_SNAPTOBOTTOM)
-				fy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy));
-			else if (!(color & V_SNAPTOTOP))
-				fy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy)) / 2;
-			if (perplayershuffle & 1)
-				fy -= ((float)vid.height - ((float)BASEVIDHEIGHT * dupy)) / 4;
-			else if (perplayershuffle & 2)
-				fy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy)) / 4;
-		}
-		if (color & V_SPLITSCREEN)
-			fy += ((float)BASEVIDHEIGHT * dupy)/2;
-		if (color & V_HORZSCREEN)
-			fx += ((float)BASEVIDWIDTH * dupx)/2;
-
+		intx = (INT32)fx;
+		inty = (INT32)fy;
+		K_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
+		fx = (float)intx;
+		fy = (float)inty;
 	}
 
 	if (fx >= vid.width || fy >= vid.height)

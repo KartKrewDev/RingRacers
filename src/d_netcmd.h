@@ -21,8 +21,13 @@
 extern consvar_t cv_playername[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_skin[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_follower[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
+
 // preferred number of players
 extern consvar_t cv_splitplayers;
+
+extern consvar_t cv_showfollowers;
 
 #ifdef SEENAMES
 extern consvar_t cv_seenames, cv_allowseenames;
@@ -69,7 +74,7 @@ extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
 extern consvar_t cv_thundershield, cv_bubbleshield, cv_flameshield;
 extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
 
-extern consvar_t cv_triplesneaker, cv_triplebanana, cv_decabanana;
+extern consvar_t cv_dualsneaker, cv_triplesneaker, cv_triplebanana, cv_decabanana;
 extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
 
 extern consvar_t cv_kartminimap;

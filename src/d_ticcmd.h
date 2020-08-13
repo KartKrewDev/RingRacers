@@ -34,6 +34,8 @@ typedef enum
 	BT_BACKWARD		= 1<<6,		// Aim Item Backward
 	BT_LOOKBACK		= 1<<7,		// Look Backward
 
+	BT_EBRAKEMASK	= (BT_ACCELERATE|BT_BRAKE),
+
 	// free: 1<<8 to 1<<12
 
 	// Lua garbage
@@ -58,7 +60,6 @@ typedef enum
 typedef struct
 {
 	SINT8 forwardmove; // -MAXPLMOVE to MAXPLMOVE (50)
-	SINT8 sidemove; // -MAXPLMOVE to MAXPLMOVE (50)
 	INT16 angleturn; // <<16 for angle delta - saved as 1 byte into demos
 	INT16 aiming; // vertical aiming, see G_BuildTicCmd
 	UINT16 buttons;

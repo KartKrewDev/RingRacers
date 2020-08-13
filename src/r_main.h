@@ -101,7 +101,6 @@ extern consvar_t cv_chasecam[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_flipcam[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_shadow;
-extern consvar_t cv_translucency;
 extern consvar_t cv_drawdist, v_drawdist_precip;
 extern consvar_t cv_fov;
 extern consvar_t cv_skybox;

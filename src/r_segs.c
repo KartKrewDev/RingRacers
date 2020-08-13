@@ -176,14 +176,8 @@ static void R_DrawWallSplats(void)
 				colfunc = colfuncs[BASEDRAWFUNC];
 				break;
 			case SPLATDRAWMODE_TRANS:
-				if (!cv_translucency.value)
-					colfunc = colfuncs[BASEDRAWFUNC];
-				else
-				{
-					dc_transmap = transtables + ((tr_trans50 - 1)<<FF_TRANSSHIFT);
-					colfunc = colfuncs[COLDRAWFUNC_FUZZY];
-				}
-
+				dc_transmap = transtables + ((tr_trans50 - 1)<<FF_TRANSSHIFT);
+				colfunc = fuzzcolfunc;
 				break;
 			case SPLATDRAWMODE_SHADE:
 				colfunc = colfuncs[COLDRAWFUNC_SHADE];

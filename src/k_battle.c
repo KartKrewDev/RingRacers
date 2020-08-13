@@ -256,7 +256,6 @@ void K_CheckBumpers(void)
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
 					players[i].pflags |= PF_TIMEOVER;
-					//players[i].lives = 0;
 					P_DoPlayerExit(&players[i]);
 				}
 			}
@@ -397,7 +396,7 @@ static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjty
 				//mo->destscale = mo->scale/4;
 				mo->frame += ((leveltime/4) % 8);
 				/*if (battleovertime.enabled < 10*TICRATE)
-					mo->flags2 |= MF2_SHADOW;*/
+					mo->drawflags |= MFD_SHADOW;*/
 				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
 				mo->z += P_RandomRange(0,48) * mo->scale;
 				break;

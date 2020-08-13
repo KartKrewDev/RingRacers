@@ -1,5 +1,6 @@
 // SONIC ROBO BLAST 2 KART
 //-----------------------------------------------------------------------------
+// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour
 // Copyright (C) 2018-2020 by Kart Krew
 //
 // This program is free software distributed under the
@@ -295,10 +296,16 @@ boolean K_BotCanTakeCut(player_t *player)
 --------------------------------------------------*/
 static UINT32 K_BotRubberbandDistance(player_t *player)
 {
-	const UINT32 spacing = 2048;
+	const UINT32 spacing = FixedDiv(512 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
 	UINT8 pos = 0;
 	UINT8 i;
+
+	if (player->botvars.rival)
+	{
+		// The rival should always try to be the front runner for the race.
+		return 0;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -312,15 +319,15 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 			// First check difficulty levels, then score, then settle it with port priority!
 			if (player->botvars.difficulty < players[i].botvars.difficulty)
 			{
-				pos++;
+				pos += 3;
 			}
 			else if (player->score < players[i].score)
 			{
-				pos++;
+				pos += 2;
 			}
 			else if (i < portpriority)
 			{
-				pos++;
+				pos += 1;
 			}
 		}
 	}
@@ -336,11 +343,13 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 fixed_t K_BotRubberband(player_t *player)
 {
 	fixed_t rubberband = FRACUNIT;
+	fixed_t max, min;
 	player_t *firstplace = NULL;
 	UINT8 i;
 
 	if (player->exiting)
 	{
+		// You're done, we don't need to rubberband anymore.
 		return FRACUNIT;
 	}
 
@@ -372,8 +381,8 @@ fixed_t K_BotRubberband(player_t *player)
 
 		if (wanteddist > player->distancetofinish)
 		{
-			// Whoa, you're too far ahead!
-			rubberband += (MAXBOTDIFFICULTY - player->botvars.difficulty) * distdiff;
+			// Whoa, you're too far ahead! Slow back down a little.
+			rubberband += (MAXBOTDIFFICULTY - player->botvars.difficulty) * (distdiff / 3);
 		}
 		else
 		{
@@ -382,13 +391,23 @@ fixed_t K_BotRubberband(player_t *player)
 		}
 	}
 
-	if (rubberband > 2*FRACUNIT)
+	// Lv. 1: x1.0 max
+	// Lv. 5: x1.5 max
+	// Lv. 9: x2.0 max
+	max = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / (MAXBOTDIFFICULTY - 1));
+
+	// Lv. 1: x0.75 min
+	// Lv. 5: x0.875 min
+	// Lv. 9: x1.0 min
+	min = FRACUNIT - (((FRACUNIT/4) * (MAXBOTDIFFICULTY - player->botvars.difficulty)) / (MAXBOTDIFFICULTY - 1));
+
+	if (rubberband > max)
 	{
-		rubberband = 2*FRACUNIT;
+		rubberband = max;
 	}
-	else if (rubberband < 7*FRACUNIT/8)
+	else if (rubberband < min)
 	{
-		rubberband = 7*FRACUNIT/8;
+		rubberband = min;
 	}
 
 	return rubberband;
@@ -445,6 +464,32 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 	}
 
 	return rubberband;
+}
+
+/*--------------------------------------------------
+	fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
+{
+	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
+	fixed_t newfrict;
+
+	if (rubberband <= 0)
+	{
+		// Never get stronger than normal friction
+		return frict;
+	}
+
+	newfrict = FixedDiv(frict, FRACUNIT + (rubberband / 2));
+
+	if (newfrict < 0)
+		newfrict = 0;
+	if (newfrict > FRACUNIT)
+		newfrict = FRACUNIT;
+
+	return newfrict;
 }
 
 /*--------------------------------------------------
@@ -637,7 +682,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
-	cmd->angleturn = (player->mo->angle >> 16) | TICCMD_RECEIVED;
+	cmd->angleturn = (player->mo->angle >> 16);
 
 	if (gamestate != GS_LEVEL)
 	{
@@ -658,13 +703,16 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Start boost handler
 	if (leveltime <= starttime)
 	{
-		tic_t boosthold = starttime - TICRATE;
+		tic_t length = (TICRATE/6);
+		tic_t boosthold = starttime - K_GetSpindashChargeTime(player);
 
-		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty);
+		cmd->buttons |= BT_EBRAKEMASK;
+
+		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty) * length;
 
 		if (leveltime >= boosthold)
 		{
-			cmd->buttons |= BT_ACCELERATE;
+			cmd->buttons |= BT_DRIFT;
 		}
 
 		return;
@@ -701,7 +749,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		if (anglediff > 90)
 		{
 			// Wrong way!
-			cmd->forwardmove = -25;
+			cmd->forwardmove = -MAXPLMOVE;
 			cmd->buttons |= BT_BRAKE;
 		}
 		else
@@ -735,7 +783,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			cmd->buttons |= BT_ACCELERATE;
 
 			// Full speed ahead!
-			cmd->forwardmove = 50;
+			cmd->forwardmove = MAXPLMOVE;
 
 			if (dirdist <= rad)
 			{

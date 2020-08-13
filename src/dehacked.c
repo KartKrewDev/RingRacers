@@ -38,6 +38,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "d_clisrv.h"
+#include "r_things.h"	// for followers
 
 #include "m_cond.h"
 
@@ -631,6 +632,271 @@ static void readfreeslots(MYFILE *f)
 		}
 	} while (!myfeof(f)); // finish when the line is empty
 
+	Z_Free(s);
+}
+
+// This here is our current only way to make followers.
+INT32 numfollowers = 0;
+
+static void readfollower(MYFILE *f)
+{
+	char *s;
+	char *word, *word2, dname[SKINNAMESIZE+1];
+	char *tmp;
+	char testname[SKINNAMESIZE];
+
+	boolean nameset;
+	INT32 fallbackstate = 0;
+	INT32 res;
+	INT32 i;
+
+	if (numfollowers > MAXSKINS)
+	{
+		deh_warning("Error: Too many followers, cannot add anymore.\n");
+		return;
+	}
+
+	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+
+	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
+	followers[numfollowers].scale = FRACUNIT;
+	followers[numfollowers].bubblescale = 0;	// No bubble by default
+	followers[numfollowers].atangle = 230;
+	followers[numfollowers].dist = 32;		// changed from 16 to 32 to better account for ogl models
+	followers[numfollowers].height = 16;
+	followers[numfollowers].zoffs = 32;
+	followers[numfollowers].horzlag = 2;
+	followers[numfollowers].vertlag = 6;
+	followers[numfollowers].bobspeed = TICRATE*2;
+	followers[numfollowers].bobamp = 4;
+	followers[numfollowers].hitconfirmtime = TICRATE;
+	followers[numfollowers].defaultcolor = 1;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			word = strtok(s, " ");
+			if (word)
+				strupr(word);
+			else
+				break;
+
+			word2 = strtok(NULL, " = ");
+
+			if (!word2)
+				break;
+
+			if (word2[strlen(word2)-1] == '\n')
+				word2[strlen(word2)-1] = '\0';
+
+			if (fastcmp(word, "NAME"))
+			{
+				DEH_WriteUndoline(word, va("%s", followers[numfollowers].name), UNDO_NONE);
+				strcpy(followers[numfollowers].name, word2);
+				nameset = true;
+			}
+			else if (fastcmp(word, "DEFAULTCOLOR"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].defaultcolor), UNDO_NONE);
+				followers[numfollowers].defaultcolor = (UINT8)get_number(word2);
+			}
+
+			else if (fastcmp(word, "SCALE"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].scale), UNDO_NONE);
+				followers[numfollowers].scale = get_number(word2);
+			}
+			else if (fastcmp(word, "BUBBLESCALE"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].bubblescale), UNDO_NONE);
+				followers[numfollowers].bubblescale = get_number(word2);
+			}
+			else if (fastcmp(word, "ATANGLE"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].atangle), UNDO_NONE);
+				followers[numfollowers].atangle = (INT32)atoi(word2);
+			}
+			else if (fastcmp(word, "HORZLAG"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].horzlag), UNDO_NONE);
+				followers[numfollowers].horzlag = (INT32)atoi(word2);
+			}
+			else if (fastcmp(word, "VERTLAG"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].vertlag), UNDO_NONE);
+				followers[numfollowers].vertlag = (INT32)atoi(word2);
+			}
+			else if (fastcmp(word, "BOBSPEED"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].bobspeed), UNDO_NONE);
+				followers[numfollowers].bobspeed = (INT32)atoi(word2);
+			}
+			else if (fastcmp(word, "BOBAMP"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].bobamp), UNDO_NONE);
+				followers[numfollowers].bobamp = (INT32)atoi(word2);
+			}
+			else if (fastcmp(word, "ZOFFSET") || (fastcmp(word, "ZOFFS")))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].zoffs), UNDO_NONE);
+				followers[numfollowers].zoffs = (INT32)atoi(word2);
+			}
+			else if (fastcmp(word, "DISTANCE") || (fastcmp(word, "DIST")))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].dist), UNDO_NONE);
+				followers[numfollowers].dist = (INT32)atoi(word2);
+			}
+			else if (fastcmp(word, "HEIGHT"))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].height), UNDO_NONE);
+				followers[numfollowers].height = (INT32)atoi(word2);
+			}
+			else if (fastcmp(word, "IDLESTATE"))
+			{
+				if (word2)
+					strupr(word2);
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].idlestate), UNDO_NONE);
+				followers[numfollowers].idlestate = get_number(word2);
+				fallbackstate = followers[numfollowers].idlestate;
+			}
+			else if (fastcmp(word, "FOLLOWSTATE"))
+			{
+				if (word2)
+					strupr(word2);
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].followstate), UNDO_NONE);
+				followers[numfollowers].followstate = get_number(word2);
+			}
+			else if (fastcmp(word, "HURTSTATE"))
+			{
+				if (word2)
+					strupr(word2);
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].hurtstate), UNDO_NONE);
+				followers[numfollowers].hurtstate = get_number(word2);
+			}
+			else if (fastcmp(word, "LOSESTATE"))
+			{
+				if (word2)
+					strupr(word2);
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].losestate), UNDO_NONE);
+				followers[numfollowers].losestate = get_number(word2);
+			}
+			else if (fastcmp(word, "WINSTATE"))
+			{
+				if (word2)
+					strupr(word2);
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].winstate), UNDO_NONE);
+				followers[numfollowers].winstate = get_number(word2);
+			}
+			else if (fastcmp(word, "HITSTATE") || (fastcmp(word, "HITCONFIRMSTATE")))
+			{
+				if (word2)
+					strupr(word2);
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].hitconfirmstate), UNDO_NONE);
+				followers[numfollowers].hitconfirmstate = get_number(word2);
+			}
+			else if (fastcmp(word, "HITTIME") || (fastcmp(word, "HITCONFIRMTIME")))
+			{
+				DEH_WriteUndoline(word, va("%d", followers[numfollowers].hitconfirmtime), UNDO_NONE);
+				followers[numfollowers].hitconfirmtime = (INT32)atoi(word2);
+			}
+			else
+				deh_warning("Follower %d: unknown word '%s'", numfollowers, word);
+		}
+	} while (!myfeof(f)); // finish when the line is empty
+
+	if (!nameset)	// well this is problematic.
+	{
+		strcpy(followers[numfollowers].name, va("Follower%d", numfollowers));	// this is lazy, so what
+	}
+
+	// set skin name (this is just the follower's name in lowercases):
+	// but before we do, let's... actually check if another follower isn't doing the same shit...
+
+	strcpy(testname, followers[numfollowers].name);
+
+	// lower testname for skin checks...
+	strlwr(testname);
+	res = R_FollowerAvailable(testname);
+	if (res > -1)	// yikes, someone else has stolen our name already
+	{
+		INT32 startlen = strlen(testname);
+		char cpy[2];
+		//deh_warning("There was already a follower with the same name. (%s)", testname);	This warning probably isn't necessary anymore?
+		sprintf(cpy, "%d", numfollowers);
+		memcpy(&testname[startlen], cpy, 2);
+		// in that case, we'll be very lazy and copy numfollowers to the end of our skin name.
+	}
+
+	strcpy(followers[numfollowers].skinname, testname);
+	strcpy(dname, followers[numfollowers].skinname);	// display name, just used for printing succesful stuff or errors later down the line.
+
+	// now that the skin name is ready, post process the actual name to turn the underscores into spaces!
+	for (i = 0; followers[numfollowers].name[i]; i++)
+	{
+		if (followers[numfollowers].name[i] == '_')
+			followers[numfollowers].name[i] = ' ';
+	}
+
+	// fallbacks for variables
+	// Print a warning if the variable is on a weird value and set it back to the minimum available if that's the case.
+#define FALLBACK(field, field2, threshold, set) \
+if (followers[numfollowers].field < threshold) \
+{ \
+	followers[numfollowers].field = set; \
+	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, set, set); \
+} \
+
+	FALLBACK(dist, "DIST", 0, 0);
+	FALLBACK(height, "HEIGHT", 1, 1);
+	FALLBACK(zoffs, "ZOFFS", 0, 0);
+	FALLBACK(horzlag, "HORZLAG", 1, 1);
+	FALLBACK(vertlag, "VERTLAG", 1, 1);
+	FALLBACK(bobamp, "BOBAMP", 0, 0);
+	FALLBACK(bobspeed, "BOBSPEED", 0, 0);
+	FALLBACK(hitconfirmtime, "HITCONFIRMTIME", 1, 1);
+	FALLBACK(scale, "SCALE", 1, 1);				// No null/negative scale
+	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
+
+	// Special case for color I suppose
+	if (followers[numfollowers].defaultcolor > MAXSKINCOLORS-1)
+	{
+		followers[numfollowers].defaultcolor = 1;
+		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, MAXSKINCOLORS-1);
+	}
+
+#undef FALLBACK
+
+	// also check if we forgot states. If we did, we will set any missing state to the follower's idlestate.
+	// Print a warning in case we don't have a fallback and set the state to S_INVISIBLE (rather than S_NULL) if unavailable.
+
+#define NOSTATE(field, field2) \
+if (!followers[numfollowers].field) \
+{ \
+	followers[numfollowers].field = fallbackstate ? fallbackstate : S_INVISIBLE; \
+	if (!fallbackstate) \
+		deh_warning("Follower '%s' is missing state definition for '%s', no idlestate fallback was found", dname, field2); \
+} \
+
+	NOSTATE(idlestate, "IDLESTATE");
+	NOSTATE(followstate, "FOLLOWSTATE");
+	NOSTATE(hurtstate, "HURTSTATE");
+	NOSTATE(losestate, "LOSESTATE");
+	NOSTATE(winstate, "WINSTATE");
+	NOSTATE(hitconfirmstate, "HITCONFIRMSTATE");
+#undef NOSTATE
+
+	CONS_Printf("Added follower '%s'\n", dname);
+	numfollowers++;	// add 1 follower
 	Z_Free(s);
 }
 
@@ -1874,6 +2140,113 @@ static void readlevelheader(MYFILE *f, INT32 num)
 }
 
 #undef MAXFLICKIES
+
+static void readcupheader(MYFILE *f, cupheader_t *cup)
+{
+	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+	char *word;
+	char *word2;
+	char *tmp;
+	INT32 i;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			// First remove trailing newline, if there is one
+			tmp = strchr(s, '\n');
+			if (tmp)
+				*tmp = '\0';
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			// Set / reset word, because some things (Lua.) move it
+			word = s;
+
+			// Get the part before the " = "
+			tmp = strchr(s, '=');
+			if (tmp)
+				*(tmp-1) = '\0';
+			else
+				break;
+			strupr(word);
+
+			// Now get the part after
+			word2 = tmp += 2;
+			i = atoi(word2); // used for numerical settings
+			strupr(word2);
+
+			if (fastcmp(word, "ICON"))
+			{
+				deh_strlcpy(cup->icon, word2,
+					sizeof(cup->icon), va("%s Cup: icon", cup->name));
+			}
+			else if (fastcmp(word, "LEVELLIST"))
+			{
+				cup->numlevels = 0;
+
+				tmp = strtok(word2,",");
+				do {
+					INT32 map = atoi(tmp);
+
+					if (tmp[0] >= 'A' && tmp[0] <= 'Z' && tmp[2] == '\0')
+						map = M_MapNumber(tmp[0], tmp[1]);
+
+					if (!map)
+						break;
+
+					if (cup->numlevels >= MAXLEVELLIST)
+					{
+						deh_warning("%s Cup: reached max levellist (%d)\n", cup->name, MAXLEVELLIST);
+						break;
+					}
+
+					cup->levellist[cup->numlevels] = map - 1;
+					cup->numlevels++;
+				} while((tmp = strtok(NULL,",")) != NULL);
+			}
+			else if (fastcmp(word, "BONUSGAME"))
+			{
+				// Convert to map number
+				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
+					i = M_MapNumber(word2[0], word2[1]);
+				cup->bonusgame = (INT16)i - 1;
+			}
+			else if (fastcmp(word, "SPECIALSTAGE"))
+			{
+				// Convert to map number
+				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
+					i = M_MapNumber(word2[0], word2[1]);
+				cup->specialstage = (INT16)i - 1;
+			}
+			else if (fastcmp(word, "EMERALDNUM"))
+			{
+				if (i >= 0 && i <= 14)
+					cup->emeraldnum = (UINT8)i;
+				else
+					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
+			}
+			else if (fastcmp(word, "UNLOCKABLE"))
+			{
+				if (i >= 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
+					cup->unlockrequired = (SINT8)i - 1;
+				else
+					deh_warning("%s Cup: invalid unlockable number %d", cup->name, i);
+			}
+			else
+				deh_warning("%s Cup: unknown word '%s'", cup->name, word);
+		}
+	} while (!myfeof(f)); // finish when the line is empty
+
+	Z_Free(s);
+}
 
 static void readcutscenescene(MYFILE *f, INT32 num, INT32 scenenum)
 {
@@ -4484,6 +4857,13 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				readwipes(f);
 				continue;
 			}
+			else if (fastcmp(word, "FOLLOWER"))
+			{
+				readfollower(f);	// at the same time this will be our only way to ADD followers for now. Yikes.
+				DEH_WriteUndoline(word, "", UNDO_HEADER);
+				// This is not a major mod either.
+				continue;	// continue so that we don't error.
+			}
 			word2 = strtok(NULL, " ");
 			if (word2) {
 				strupr(word2);
@@ -4681,6 +5061,42 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 							break;
 						}
 					}
+				}
+				else if (fastcmp(word, "CUP"))
+				{
+					cupheader_t *cup = kartcupheaders;
+					cupheader_t *prev = NULL;
+
+					while (cup)
+					{
+						if (fastcmp(cup->name, word2))
+						{
+							// mark as a major mod if it replaces an already-existing cup
+							G_SetGameModified(multiplayer, true);
+							break;
+						}
+
+						prev = cup;
+						cup = cup->next;
+					}
+
+					// Nothing found, add to the end.
+					if (!cup)
+					{
+						cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
+						cup->id = numkartcupheaders;
+						deh_strlcpy(cup->name, word2,
+							sizeof(cup->name), va("Cup header %s: name", word2));
+						if (prev != NULL)
+							prev->next = cup;
+						if (kartcupheaders == NULL)
+							kartcupheaders = cup;
+						numkartcupheaders++;
+						CONS_Printf("Added cup %d ('%s')\n", cup->id, cup->name);
+					}
+
+					readcupheader(f, cup);
+					DEH_WriteUndoline(word, word2, UNDO_HEADER);
 				}
 				else if (fastcmp(word, "CUTSCENE"))
 				{
@@ -8143,6 +8559,39 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_DRIFTEXPLODE2",
 	"S_DRIFTEXPLODE3",
 	"S_DRIFTEXPLODE4",
+	"S_DRIFTEXPLODE5",
+	"S_DRIFTEXPLODE6",
+	"S_DRIFTEXPLODE7",
+	"S_DRIFTEXPLODE8",
+
+	// Drift boost clip
+	"S_DRIFTCLIPA1",
+	"S_DRIFTCLIPA2",
+	"S_DRIFTCLIPA3",
+	"S_DRIFTCLIPA4",
+	"S_DRIFTCLIPA5",
+	"S_DRIFTCLIPA6",
+	"S_DRIFTCLIPA7",
+	"S_DRIFTCLIPA8",
+	"S_DRIFTCLIPA9",
+	"S_DRIFTCLIPA10",
+	"S_DRIFTCLIPA11",
+	"S_DRIFTCLIPA12",
+	"S_DRIFTCLIPA13",
+	"S_DRIFTCLIPA14",
+	"S_DRIFTCLIPA15",
+	"S_DRIFTCLIPA16",
+	"S_DRIFTCLIPB1",
+	"S_DRIFTCLIPB2",
+	"S_DRIFTCLIPB3",
+	"S_DRIFTCLIPB4",
+	"S_DRIFTCLIPB5",
+	"S_DRIFTCLIPB6",
+	"S_DRIFTCLIPB7",
+	"S_DRIFTCLIPB8",
+
+	// Drift boost clip spark
+	"S_DRIFTCLIPSPARK",
 
 	// Sneaker boost effect
 	"S_BOOSTFLAME",
@@ -9038,6 +9487,31 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_OPAQUESMOKE4",
 	"S_OPAQUESMOKE5",
 
+	"S_FOLLOWERBUBBLE_FRONT",
+	"S_FOLLOWERBUBBLE_BACK",
+
+	"S_GCHAOIDLE",
+	"S_GCHAOFLY",
+	"S_GCHAOSAD1",
+	"S_GCHAOSAD2",
+	"S_GCHAOSAD3",
+	"S_GCHAOSAD4",
+	"S_GCHAOHAPPY1",
+	"S_GCHAOHAPPY2",
+	"S_GCHAOHAPPY3",
+	"S_GCHAOHAPPY4",
+
+	"S_CHEESEIDLE",
+	"S_CHEESEFLY",
+	"S_CHEESESAD1",
+	"S_CHEESESAD2",
+	"S_CHEESESAD3",
+	"S_CHEESESAD4",
+	"S_CHEESEHAPPY1",
+	"S_CHEESEHAPPY2",
+	"S_CHEESEHAPPY3",
+	"S_CHEESEHAPPY4",
+
 	"S_RINGDEBT",
 	"S_RINGSPARKS1",
 	"S_RINGSPARKS2",
@@ -9073,6 +9547,25 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_BATTLECAPSULE_BUTTON",
 	"S_BATTLECAPSULE_SUPPORT",
 	"S_BATTLECAPSULE_SUPPORTFLY",
+
+	"S_EGOORB",
+
+	"S_WATERTRAIL1",
+	"S_WATERTRAIL2",
+	"S_WATERTRAIL3",
+	"S_WATERTRAIL4",
+	"S_WATERTRAIL5",
+	"S_WATERTRAIL6",
+	"S_WATERTRAIL7",
+	"S_WATERTRAIL8",
+	"S_WATERTRAILUNDERLAY1",
+	"S_WATERTRAILUNDERLAY2",
+	"S_WATERTRAILUNDERLAY3",
+	"S_WATERTRAILUNDERLAY4",
+	"S_WATERTRAILUNDERLAY5",
+	"S_WATERTRAILUNDERLAY6",
+	"S_WATERTRAILUNDERLAY7",
+	"S_WATERTRAILUNDERLAY8",
 
 #ifdef SEENAMES
 	"S_NAMECHECK",
@@ -9888,6 +10381,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_FASTLINE",
 	"MT_FASTDUST",
 	"MT_DRIFTEXPLODE",
+	"MT_DRIFTCLIP",
+	"MT_DRIFTCLIPSPARK",
 	"MT_BOOSTFLAME",
 	"MT_BOOSTSMOKE",
 	"MT_SNEAKERTRAIL",
@@ -10167,6 +10662,13 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_BATTLECAPSULE",
 	"MT_BATTLECAPSULE_PIECE",
 
+	"MT_FOLLOWER",
+	"MT_FOLLOWERBUBBLE_FRONT",
+	"MT_FOLLOWERBUBBLE_BACK",
+
+	"MT_WATERTRAIL",
+	"MT_WATERTRAILUNDERLAY",
+
 #ifdef SEENAMES
 	"MT_NAMECHECK",
 #endif
@@ -10212,7 +10714,7 @@ static const char *const MOBJFLAG2_LIST[] = {
 	"AXIS",			  // It's a NiGHTS axis! (For faster checking)
 	"TWOD",			  // Moves like it's in a 2D level
 	"DONTRESPAWN",	  // Don't respawn this object!
-	"DONTDRAW",		  // Don't generate a vissprite
+	"\x01",			  // free: 1<<3 (name un-matchable)
 	"AUTOMATIC",	  // Thrown ring has automatic properties
 	"RAILRING",		  // Thrown ring has rail properties
 	"BOUNCERING",	  // Thrown ring has bounce properties
@@ -10228,7 +10730,7 @@ static const char *const MOBJFLAG2_LIST[] = {
 	"JUSTATTACKED",	  // can be pushed by other moving mobjs
 	"FIRING",		  // turret fire
 	"SUPERFIRE",	  // Firing something with Super Sonic-stopping properties. Or, if mobj has MF_MISSILE, this is the actual fire from it.
-	"SHADOW",		  // Fuzzy draw, makes targeting harder.
+	"\x01",			  // free: 1<<20 (name un-matchable)
 	"STRONGBOX",	  // Flag used for "strong" random monitors.
 	"OBJECTFLIP",	  // Flag for objects that always have flipped gravity.
 	"SKULLFLY",		  // Special handling: skull in flight.
@@ -10256,10 +10758,6 @@ static const char *const MOBJEFLAG_LIST[] = {
 	"APPLYPMOMZ", // Platform movement
 	"TRACERANGLE", // Compute and trigger on mobj angle relative to tracer
 	"JUSTBOUNCEDWALL",
-	"DRAWONLYFORP1", // SRB2Kart: Splitscreen sprite draw flags
-	"DRAWONLYFORP2",
-	"DRAWONLYFORP3",
-	"DRAWONLYFORP4",
 	NULL
 };
 
@@ -10607,9 +11105,6 @@ static const char *const KARTSTUFF_LIST[] = {
 	"POSITION",
 	"OLDPOSITION",
 	"POSITIONDELAY",
-	"STARPOSTFLIP",
-	"RESPAWN",
-	"DROPDASH",
 
 	"THROWDIR",
 	"INSTASHIELD",
@@ -10633,13 +11128,16 @@ static const char *const KARTSTUFF_LIST[] = {
 	"JMP",
 	"OFFROAD",
 	"POGOSPRING",
-	"BRAKESTOP",
+	"SPINDASH",
+	"SPINDASHSPEED",
+	"SPINDASHBOOST",
 	"WATERSKIP",
 	"DASHPADCOOLDOWN",
 	"NUMBOOSTS",
 	"BOOSTPOWER",
 	"SPEEDBOOST",
 	"ACCELBOOST",
+	"HANDLEBOOST",
 	"DRAFTPOWER",
 	"DRAFTLEEWAY",
 	"LASTDRAFT",
@@ -10661,7 +11159,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"STOLENTIMER",
 	"SUPERRING",
 	"SNEAKERTIMER",
-	"LEVELBOOSTER",
+	"NUMSNEAKERS",
 	"GROWSHRINKTIMER",
 	"SQUISHEDTIMER",
 	"ROCKETSNEAKERTIMER",
@@ -11248,7 +11746,6 @@ struct {
 	{"DI_SOUTHEAST",DI_SOUTHEAST},
 	{"NUMDIRS",NUMDIRS},
 
-	
 	// Sprite rotation axis (rotaxis_t)
 	{"ROTAXIS_X",ROTAXIS_X},
 	{"ROTAXIS_Y",ROTAXIS_Y},
@@ -11340,7 +11837,7 @@ struct {
 	{"V_WRAPY",V_WRAPY},
 	{"V_NOSCALESTART",V_NOSCALESTART},
 	{"V_SPLITSCREEN",V_SPLITSCREEN},
-	{"V_HORZSCREEN",V_HORZSCREEN},
+	{"V_SLIDEIN",V_SLIDEIN},
 
 	{"V_PARAMMASK",V_PARAMMASK},
 	{"V_SCALEPATCHMASK",V_SCALEPATCHMASK},
@@ -11380,7 +11877,8 @@ struct {
 	KART_ITEM_ITERATOR, // Actual items (can be set for k_itemtype)
 #undef  FOREACH
 	{"NUMKARTITEMS",NUMKARTITEMS},
-	{"KRITEM_TRIPLESNEAKER",KRITEM_TRIPLESNEAKER}, // Additional roulette IDs (not usable for much in Lua besides K_GetItemPatch)
+	{"KRITEM_DUALSNEAKER",KRITEM_DUALSNEAKER}, // Additional roulette IDs (not usable for much in Lua besides K_GetItemPatch)
+	{"KRITEM_TRIPLESNEAKER",KRITEM_TRIPLESNEAKER},
 	{"KRITEM_TRIPLEBANANA",KRITEM_TRIPLEBANANA},
 	{"KRITEM_TENFOLDBANANA",KRITEM_TENFOLDBANANA},
 	{"KRITEM_TRIPLEORBINAUT",KRITEM_TRIPLEORBINAUT},
@@ -11394,6 +11892,37 @@ struct {
 	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
 	{"KSHIELD_FLAME",KSHIELD_FLAME},
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
+
+	// translation colormaps
+	{"TC_DEFAULT",TC_DEFAULT},
+	{"TC_BOSS",TC_BOSS},
+	{"TC_METALSONIC",TC_METALSONIC},
+	{"TC_ALLWHITE",TC_ALLWHITE},
+	{"TC_RAINBOW",TC_RAINBOW},
+	{"TC_BLINK",TC_BLINK},
+
+	// MFD_ draw flag enum
+	{"MFD_DONTDRAWP1",MFD_DONTDRAWP1},
+	{"MFD_DONTDRAWP2",MFD_DONTDRAWP2},
+	{"MFD_DONTDRAWP3",MFD_DONTDRAWP3},
+	{"MFD_DONTDRAWP4",MFD_DONTDRAWP4},
+	{"MFD_TRANS10",MFD_TRANS10},
+	{"MFD_TRANS20",MFD_TRANS20},
+	{"MFD_TRANS30",MFD_TRANS30},
+	{"MFD_TRANS40",MFD_TRANS40},
+	{"MFD_TRANS50",MFD_TRANS50},
+	{"MFD_TRANS60",MFD_TRANS60},
+	{"MFD_TRANS70",MFD_TRANS70},
+	{"MFD_TRANS80",MFD_TRANS80},
+	{"MFD_TRANS90",MFD_TRANS90},
+	{"MFD_TRANSMASK",MFD_TRANSMASK},
+	{"MFD_FULLBRIGHT",MFD_FULLBRIGHT},
+	{"MFD_SEMIBRIGHT",MFD_SEMIBRIGHT},
+	{"MFD_NOBRIGHT",MFD_NOBRIGHT},
+	{"MFD_BRIGHTMASK",MFD_BRIGHTMASK},
+	{"MFD_DONTDRAW",MFD_DONTDRAW},
+	{"MFD_SHADOW",MFD_SHADOW},
+	{"MFD_TRANSSHIFT",MFD_TRANSSHIFT},
 
 	{NULL,0}
 };

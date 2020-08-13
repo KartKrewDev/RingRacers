@@ -38,6 +38,7 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_color.h"
+#include "k_respawn.h"
 #include "k_bot.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
@@ -1278,8 +1279,8 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 	player = mo->player;
 	if (player) // valid only if player avatar
 	{
-		if (FixedHypot(player->rmomx, player->rmomy) < FixedMul(STOPSPEED, mo->scale) && player->cmd.forwardmove == 0
-			&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) && (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2)))
+		if (FixedHypot(player->rmomx, player->rmomy) < FixedMul(STOPSPEED, mo->scale) && K_GetForwardMove(player) == 0
+			&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) /*&& (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2)*/))
 		{
 			// if in a walking frame, stop moving
 			if (player->panim == PA_WALK)
@@ -1292,16 +1293,8 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 		}
 		else if (!(mo->eflags & MFE_SPRUNG))
 		{
-			if (oldx == mo->x && oldy == mo->y) // didn't go anywhere
-			{
-				mo->momx = FixedMul(mo->momx, ORIG_FRICTION);
-				mo->momy = FixedMul(mo->momy, ORIG_FRICTION);
-			}
-			else
-			{
-				mo->momx = FixedMul(mo->momx, mo->friction);
-				mo->momy = FixedMul(mo->momy, mo->friction);
-			}
+			mo->momx = FixedMul(mo->momx, mo->friction);
+			mo->momy = FixedMul(mo->momy, mo->friction);
 
 			mo->friction = ORIG_FRICTION;
 		}
@@ -1785,7 +1778,7 @@ void P_XYMovement(mobj_t *mo)
 	if (mo->type == MT_FLINGRING || mo->type == MT_BALLHOG || mo->type == MT_BUBBLESHIELDTRAP)
 		return;
 
-	if (mo->player && (mo->player->kartstuff[k_spinouttimer] && !mo->player->kartstuff[k_wipeoutslow]) && mo->player->speed <= K_GetKartSpeed(mo->player, false)/2)
+	if (player && (player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow]) && player->speed <= FixedDiv(20*mapobjectscale, player->kartstuff[k_offroad] + FRACUNIT))
 		return;
 	//}
 
@@ -2293,6 +2286,17 @@ boolean P_ZMovement(mobj_t *mo)
 			mom.z = P_MobjFlip(mo)*FixedMul(5*FRACUNIT, mo->scale);
 		else if (mo->type == MT_SPINFIRE) // elemental shield fire is another exception here
 			;
+		else if (mo->type == MT_DRIFTCLIP)
+		{
+			mom.z = -mom.z/2;
+			if (abs(mom.z) > 4 * mo->scale / 3)
+			{
+				K_SpawnDriftBoostClipSpark(mo);
+				S_StartSound(mo, sfx_tink);
+			}
+			else
+				mo->flags2 ^= MFD_DONTDRAW;
+		}
 		else if (mo->flags & MF_MISSILE)
 		{
 			if (!(mo->flags & MF_NOCLIP))
@@ -2673,7 +2677,6 @@ void P_PlayerZMovement(mobj_t *mo)
 			boolean clipmomz = !(P_CheckDeathPitCollide(mo));
 
 			mo->pmomz = 0; // We're on a new floor, don't keep doing platform movement.
-
 			mo->eflags |= MFE_JUSTHITFLOOR; // Spin Attack
 
 			clipmomz = P_PlayerHitFloor(mo->player, true);
@@ -3503,26 +3506,17 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	// momentum movement
 	mobj->eflags &= ~MFE_JUSTSTEPPEDDOWN;
 
-	if (mobj->state-states == S_PLAY_BOUNCE_LANDING)
-		goto animonly; // no need for checkposition - doesn't move at ALL
-
 	// Zoom tube
-	if (mobj->tracer)
+	if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
 	{
-		if (mobj->player->powers[pw_carry] == CR_ZOOMTUBE || mobj->player->powers[pw_carry] == CR_ROPEHANG)
+		if (mobj->player->powers[pw_carry] == CR_ZOOMTUBE || mobj->player->respawn.state == RESPAWNST_MOVE)
 		{
+			P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
 			P_UnsetThingPosition(mobj);
 			mobj->x += mobj->momx;
 			mobj->y += mobj->momy;
 			mobj->z += mobj->momz;
 			P_SetThingPosition(mobj);
-			P_CheckPosition(mobj, mobj->x, mobj->y);
-			mobj->floorz = tmfloorz;
-			mobj->ceilingz = tmceilingz;
-			goto animonly;
-		}
-		else if (mobj->player->powers[pw_carry] == CR_MACESPIN)
-		{
 			P_CheckPosition(mobj, mobj->x, mobj->y);
 			mobj->floorz = tmfloorz;
 			mobj->ceilingz = tmceilingz;
@@ -3703,16 +3697,16 @@ static void P_RingThinker(mobj_t *mobj)
 		if (mobj->fuse < TICRATE*3)
 		{
 			if (leveltime & 1)
-				mobj->flags2 |= MF2_DONTDRAW;
+				mobj->drawflags |= MFD_DONTDRAW;
 			else
-				mobj->flags2 &= ~MF2_DONTDRAW;
+				mobj->drawflags &= ~MFD_DONTDRAW;
 		}
 
 		if (!mobj->fuse)
 		{
 			if (!LUAh_MobjFuse(mobj))
 			{
-				mobj->flags2 &= ~MF2_DONTDRAW;
+				mobj->drawflags &= ~MFD_DONTDRAW;
 				spark = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_SIGNSPARKLE);	// Spawn a fancy sparkle
 				K_MatchGenericExtraFlags(spark, mobj);
 				spark->colorized = true;
@@ -7606,6 +7600,26 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		if (mobj->tics > 0)
 			mobj->flags2 ^= MF2_DONTDRAW;
 		break;
+	case MT_FOLLOWER:
+		// small thinker for follower:
+		// We cleanse ourselves from existence if our target player doesn't exist for whatever reason. (generally players leaving)
+		if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->player || mobj->target->player->spectator || mobj->target->player->followerskin < 0)
+		{
+			// Remove possible hnext list (bubble)
+			mobj_t *bub = mobj->hnext;
+			mobj_t *tmp;
+
+			while (bub && !P_MobjWasRemoved(bub))
+			{
+				tmp = bub->hnext;
+				P_RemoveMobj(bub);
+				bub = tmp;
+			}
+
+			P_RemoveMobj(mobj);
+		}
+
+		return;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -11425,13 +11439,13 @@ void P_SceneryThinker(mobj_t *mobj)
 		&& mobj->extravalue1 > 0 && mobj->extravalue2 >= 2)
 	{
 		if (mobj->extravalue2 == 2) // I don't know why the normal logic doesn't work for this.
-			mobj->flags2 ^= MF2_DONTDRAW;
+			mobj->drawflags ^= MFD_DONTDRAW;
 		else
 		{
 			if (mobj->fuse == mobj->extravalue2)
-				mobj->flags2 &= ~MF2_DONTDRAW;
+				mobj->drawflags &= ~MFD_DONTDRAW;
 			else
-				mobj->flags2 |= MF2_DONTDRAW;
+				mobj->drawflags |= MFD_DONTDRAW;
 		}
 	}
 
@@ -11563,6 +11577,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_RING:
 		case MT_FLOATINGITEM:
 			thing->shadowscale = FRACUNIT/2;
+			break;
+		case MT_DRIFTCLIP:
+			thing->shadowscale = FRACUNIT/3;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
@@ -12633,18 +12650,20 @@ void P_RespawnSpecials(void)
 		return;
 	else if (pcount > 1)
 	{
-		time = (180 - (pcount * 10))*TICRATE;
+		time = (120 - ((pcount-2) * 10))*TICRATE;
 
 		// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
 		// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
 		if ((mapheaderinfo[gamemap-1]->numlaps != 3)
 		&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
 			time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
-	}
 
-	// only respawn items when cv_itemrespawn is on
-	//if (!cv_itemrespawn.value) // TODO: remove this cvar
-		//return;
+		if (time < 10*TICRATE)
+		{
+			// Ensure it doesn't go into absurdly low values
+			time = 10*TICRATE;
+		}
+	}
 
 	// nothing left to respawn?
 	if (iquehead == iquetail)
@@ -12801,6 +12820,8 @@ void P_SpawnPlayer(INT32 playernum)
 	p->awayviewmobj = NULL;
 	p->awayviewtics = 0;
 
+	P_SetTarget(&p->follower, NULL);	// cleanse follower from existence
+
 	// set the scale to the mobj's destscale so settings get correctly set.  if we don't, they sometimes don't.
 	if (cv_kartdebugshrink.value && !modeattacking && !p->bot)
 		mobj->destscale = 6*mobj->destscale/8;
@@ -12824,14 +12845,11 @@ void P_SpawnPlayer(INT32 playernum)
 			p->nightstime = sstimer;
 	}
 
-	if (p->kartstuff[k_respawn] != 0)
-		p->mo->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY;
-
 	if ((gametyperules & GTR_BUMPERS)) // SRB2kart
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);
 		P_SetTarget(&overheadarrow->target, mobj);
-		overheadarrow->flags2 |= MF2_DONTDRAW;
+		overheadarrow->drawflags |= MFD_DONTDRAW;
 		P_SetScale(overheadarrow, mobj->destscale);
 
 		if (p->spectator && pcount > 1) // HEY! No being cheap...
@@ -12857,10 +12875,10 @@ void P_SpawnPlayer(INT32 playernum)
 					P_SetTarget(&mo->target, mobj);
 					mo->angle = (diff * (i-1));
 					mo->color = mobj->color;
-					if (mobj->flags2 & MF2_DONTDRAW)
-						mo->flags2 |= MF2_DONTDRAW;
+					if (mobj->drawflags & MFD_DONTDRAW)
+						mo->drawflags |= MFD_DONTDRAW;
 					else
-						mo->flags2 &= ~MF2_DONTDRAW;
+						mo->drawflags &= ~MFD_DONTDRAW;
 				}
 			}
 		}
@@ -12970,6 +12988,11 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	else
 		z = floor;
 
+	if (p->respawn.state != RESPAWNST_NONE)
+	{
+		z += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP));
+	}
+
 	if (z < floor)
 		z = floor;
 	else if (z > ceilingspawn)
@@ -13007,18 +13030,18 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj_t *mobj = p->mo;
 	I_Assert(mobj != NULL);
 
+	K_DoIngameRespawn(p);
+
 	P_UnsetThingPosition(mobj);
-	mobj->x = p->starpostx << FRACBITS;
-	mobj->y = p->starposty << FRACBITS;
+	mobj->x = p->respawn.pointx;
+	mobj->y = p->respawn.pointy;
 	P_SetThingPosition(mobj);
 	sector = R_PointInSubsector(mobj->x, mobj->y)->sector;
 
 	floor   = P_GetSectorFloorZAt  (sector, mobj->x, mobj->y);
 	ceiling = P_GetSectorCeilingZAt(sector, mobj->x, mobj->y);
 
-	z = p->starpostz << FRACBITS;
-
-	P_SetScale(mobj, (mobj->destscale = abs(p->starpostscale)));
+	z = p->respawn.pointz;
 
 	if (p->starpostscale < 0)
 	{
@@ -13041,12 +13064,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 
 	mobj->z = z;
 
-	mobj->angle = p->starpostangle;
-
 	P_AfterPlayerSpawn(playernum);
-
-	if (!(netgame || multiplayer))
-		leveltime = p->starposttime;
 }
 
 fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const fixed_t y, const fixed_t dz, const fixed_t offset, const boolean flip, const fixed_t scale)

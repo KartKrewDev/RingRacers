@@ -45,6 +45,7 @@
 #include "k_pwrlv.h"
 #include "console.h" // cons_menuhighlight
 #include "lua_hook.h" // IntermissionThinker hook
+#include "k_grandprix.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -197,7 +198,12 @@ static void Y_CompareScore(INT32 i)
 static void Y_CompareRank(INT32 i)
 {
 	INT16 increase = ((data.match.increase[i] == INT16_MIN) ? 0 : data.match.increase[i]);
-	UINT32 score = (powertype != -1 ? clientpowerlevels[i][powertype] : players[i].score);
+	UINT32 score = players[i].score;
+
+	if (powertype != PWRLV_DISABLED)
+	{
+		score = clientpowerlevels[i][powertype];
+	}
 
 	if (!(data.match.val[data.match.numplayers] == UINT32_MAX || (score - increase) > data.match.val[data.match.numplayers]))
 		return;
@@ -301,18 +307,26 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		data.match.name[data.match.numplayers] = player_names[i];
 
 		if (data.match.numplayers && (data.match.val[data.match.numplayers] == data.match.val[data.match.numplayers-1]))
-			data.match.pos[data.match.numplayers] = data.match.pos[data.match.numplayers-1];
-		else
-			data.match.pos[data.match.numplayers] = data.match.numplayers+1;
-
-		if ((!rankingsmode && powertype == -1) // Single player rankings (grand prix). Online rank is handled below.
-			&& !(players[i].pflags & PF_TIMEOVER) && (data.match.pos[data.match.numplayers] < (numplayersingame + numgriefers)))
 		{
-			data.match.increase[i] = (numplayersingame + numgriefers) - data.match.pos[data.match.numplayers];
+			data.match.pos[data.match.numplayers] = data.match.pos[data.match.numplayers-1];
+		}
+		else
+		{
+			data.match.pos[data.match.numplayers] = data.match.numplayers+1;
+		}
+
+		if ((powertype == PWRLV_DISABLED)
+			&& (!rankingsmode)
+			&& !(players[i].pflags & PF_TIMEOVER)
+			&& (data.match.pos[data.match.numplayers] < (numplayersingame + numgriefers)))
+		{
+			// Online rank is handled further below in this file.
+			data.match.increase[i] = K_CalculateGPRankPoints(data.match.pos[data.match.numplayers], numplayersingame + numgriefers);
 			players[i].score += data.match.increase[i];
 		}
 
 		if (demo.recording && !rankingsmode)
+		{
 			G_WriteStanding(
 				data.match.pos[data.match.numplayers],
 				data.match.name[data.match.numplayers],
@@ -320,6 +334,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				*data.match.color[data.match.numplayers],
 				data.match.val[data.match.numplayers]
 			);
+		}
 
 		data.match.numplayers++;
 	}
@@ -507,9 +522,36 @@ dontdrawbg:
 		int y2;
 
 		if (data.match.rankingsmode)
-			timeheader = (powertype != -1 ? "PWR.LV" : "RANK");
+		{
+			if (powertype == PWRLV_DISABLED)
+			{
+				timeheader = "RANK";
+			}
+			else
+			{
+				timeheader = "PWR.LV";
+			}
+		}
 		else
-			timeheader = ((intertype == int_race || (intertype == int_battle && battlecapsules)) ? "TIME" : "SCORE");
+		{
+			switch (intertype)
+			{
+				default:
+				case int_race:
+					timeheader = "TIME";
+					break;
+				case int_battle:
+					if (battlecapsules)
+					{
+						timeheader = "TIME";
+					}
+					else
+					{
+						timeheader = "SCORE";
+					}
+					break;
+			}
+		}
 
 		// draw the level name
 		V_DrawCenteredString(-4 + x + BASEVIDWIDTH/2, 12, 0, data.match.levelstring);
@@ -600,8 +642,11 @@ dontdrawbg:
 
 				if (data.match.rankingsmode)
 				{
-					if (powertype != -1 && !clientpowerlevels[data.match.num[i]][powertype]) // No power level (splitscreen guests)
+					if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.match.num[i]][powertype])
+					{
+						// No power level (splitscreen guests)
 						STRBUFCPY(strtime, "----");
+					}
 					else
 					{
 						if (data.match.increase[data.match.num[i]] != INT16_MIN)
@@ -670,7 +715,7 @@ skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
-	if (timer)
+	if (timer && grandprixinfo.gp == false)
 	{
 		char *string;
 		INT32 tickdown = (timer+1)/TICRATE;
@@ -774,74 +819,73 @@ void Y_Ticker(void)
 
 	if (intertype == int_race || intertype == int_battle)
 	{
-		if (netgame || multiplayer)
+		if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
 		{
-			if (sorttic == -1)
-				sorttic = intertic + max((cv_inttime.value/2)-2, 2)*TICRATE; // 8 second pause after match results
-			else if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
+			if (!data.match.rankingsmode && (intertic >= sorttic + 8))
 			{
-				if (!data.match.rankingsmode && (intertic >= sorttic + 8))
-					Y_CalculateMatchData(1, Y_CompareRank);
+				Y_CalculateMatchData(1, Y_CompareRank);
+			}
 
-				if (data.match.rankingsmode && intertic > sorttic+16+(2*TICRATE))
+			if (data.match.rankingsmode && intertic > sorttic+16+(2*TICRATE))
+			{
+				INT32 q=0,r=0;
+				boolean kaching = true;
+
+				for (q = 0; q < data.match.numplayers; q++)
 				{
-					INT32 q=0,r=0;
-					boolean kaching = true;
-
-					for (q = 0; q < data.match.numplayers; q++)
-					{
-						if (data.match.num[q] == MAXPLAYERS
+					if (data.match.num[q] == MAXPLAYERS
 						|| !data.match.increase[data.match.num[q]]
 						|| data.match.increase[data.match.num[q]] == INT16_MIN)
-							continue;
+					{
+						continue;
+					}
 
-						r++;
-						data.match.jitter[data.match.num[q]] = 1;
+					r++;
+					data.match.jitter[data.match.num[q]] = 1;
 
-						if (powertype != -1)
+					if (powertype != PWRLV_DISABLED)
+					{
+						// Power Levels
+						if (abs(data.match.increase[data.match.num[q]]) < 10)
 						{
-							// Power Levels
-							if (abs(data.match.increase[data.match.num[q]]) < 10)
-							{
-								// Not a lot of point increase left, just set to 0 instantly
-								data.match.increase[data.match.num[q]] = 0;
-							}
-							else
-							{
-								SINT8 remove = 0; // default (should not happen)
-
-								if (data.match.increase[data.match.num[q]] < 0)
-									remove = -10;
-								else if (data.match.increase[data.match.num[q]] > 0)
-									remove = 10;
-
-								// Remove 10 points at a time
-								data.match.increase[data.match.num[q]] -= remove;
-
-								// Still not zero, no kaching yet
-								if (data.match.increase[data.match.num[q]] != 0)
-									kaching = false;
-							}
+							// Not a lot of point increase left, just set to 0 instantly
+							data.match.increase[data.match.num[q]] = 0;
 						}
 						else
 						{
-							// Basic bitch points
-							if (data.match.increase[data.match.num[q]])
-							{
-								if (--data.match.increase[data.match.num[q]])
-									kaching = false;
-							}
+							SINT8 remove = 0; // default (should not happen)
+
+							if (data.match.increase[data.match.num[q]] < 0)
+								remove = -10;
+							else if (data.match.increase[data.match.num[q]] > 0)
+								remove = 10;
+
+							// Remove 10 points at a time
+							data.match.increase[data.match.num[q]] -= remove;
+
+							// Still not zero, no kaching yet
+							if (data.match.increase[data.match.num[q]] != 0)
+								kaching = false;
 						}
 					}
-
-					if (r)
-					{
-						S_StartSound(NULL, (kaching ? sfx_chchng : sfx_ptally));
-						Y_CalculateMatchData(2, Y_CompareRank);
-					}
 					else
-						endtic = intertic + 3*TICRATE; // 3 second pause after end of tally
+					{
+						// Basic bitch points
+						if (data.match.increase[data.match.num[q]])
+						{
+							if (--data.match.increase[data.match.num[q]])
+								kaching = false;
+						}
+					}
 				}
+
+				if (r)
+				{
+					S_StartSound(NULL, (kaching ? sfx_chchng : sfx_ptally));
+					Y_CalculateMatchData(2, Y_CompareRank);
+				}
+				else
+					endtic = intertic + 3*TICRATE; // 3 second pause after end of tally
 			}
 		}
 		else if (!(intertic & 1))
@@ -1159,19 +1203,11 @@ void Y_StartIntermission(void)
 #endif
 
 	// set player Power Level type
-	powertype = PWRLV_DISABLED;
-
-	if (netgame && cv_kartusepwrlv.value)
-	{
-		if ((gametyperules & GTR_CIRCUIT))
-			powertype = PWRLV_RACE;
-		else if ((gametyperules & GTR_BUMPERS))
-			powertype = PWRLV_BATTLE;
-	}
+	powertype = K_UsingPowerLevels();
 
 	if (!multiplayer)
 	{
-		timer = 0;
+		timer = 20*TICRATE;
 
 		if (!majormods && !multiplayer && !demo.playback) // move this once we have a proper time attack screen
 		{
@@ -1190,7 +1226,7 @@ void Y_StartIntermission(void)
 	}
 	else
 	{
-		if (cv_inttime.value == 0 && ((intertype == int_coop) || (intertype == int_spec)))
+		if (cv_inttime.value == 0)
 			timer = 0;
 		else if (demo.playback) // Override inttime (which is pulled from the replay anyway
 			timer = 10*TICRATE;
@@ -1205,10 +1241,8 @@ void Y_StartIntermission(void)
 	
 	if (intermissiontypes[gametype] != int_none)
 		intertype = intermissiontypes[gametype];
-	else if (gametype == GT_RACE)
-		intertype = int_race;
-	else if (gametype == GT_BATTLE)
-		intertype = int_battle;
+
+	sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE); // 8 second pause after match results
 
 	// We couldn't display the intermission even if we wanted to.
 	// But we still need to give the players their score bonuses, dummy.
@@ -1250,7 +1284,9 @@ void Y_StartIntermission(void)
 	}
 
 	if (powertype != PWRLV_DISABLED)
+	{
 		K_UpdatePowerLevels();
+	}
 
 	//if (intertype == int_race || intertype == int_battle)
 	{

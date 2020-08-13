@@ -87,6 +87,7 @@
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
 #include "k_bot.h"
+#include "k_grandprix.h"
 
 //
 // Map MD5, calculated on level load.
@@ -3294,7 +3295,7 @@ lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 static void P_InitLevelSettings(void)
 {
 	INT32 i;
-	boolean canresetlives = true;
+	UINT8 p = 0;
 
 	leveltime = 0;
 
@@ -3355,14 +3356,24 @@ static void P_InitLevelSettings(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		players[i].lives = 1; // SRB2Kart
+		if (playeringame[i] && !players[i].spectator)
+			p++;
+
+		if (grandprixinfo.gp == false)
+		{
+			players[i].lives = 3;
+			players[i].xtralife = 0;
+			players[i].totalring = 0;
+		}
 
 		players[i].realtime = racecountdown = exitcountdown = 0;
 		curlap = bestlap = 0; // SRB2Kart
 
+		players[i].lostlife = false;
 		players[i].gotcontinue = false;
 
-		players[i].xtralife = players[i].deadtimer = players[i].numboxes = players[i].totalring = players[i].laps = 0;
+		players[i].deadtimer = players[i].numboxes = players[i].laps = 0;
+		players[i].health = 1;
 		players[i].aiming = 0;
 		players[i].pflags &= ~PF_TIMEOVER;
 	}
@@ -3388,11 +3399,52 @@ static void P_InitLevelSettings(void)
 
 		// hit these too
 		players[i].pflags &= ~(PF_GAMETYPEOVER);
+
+		// Wipe follower from existence to avoid crashes
+		players[i].follower = NULL;
 	}
 
-	// SRB2Kart: map load variables
-	if (modeattacking) // Just play it safe and set everything
+	rainbowstartavailable = false;
+
+	if (p >= 2)
+		rainbowstartavailable = true;
+
+	if (p <= 2)
 	{
+		introtime = 0; // No intro in Record Attack / 1v1
+	}
+	else
+	{
+		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+	}
+
+	numbulbs = 5;
+
+	if (p > 2)
+	{
+		numbulbs += (p-2);
+	}
+
+	starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
+
+	// SRB2Kart: map load variables
+	if (grandprixinfo.gp == true)
+	{
+		if (G_BattleGametype())
+		{
+			gamespeed = KARTSPEED_EASY;
+		}
+		else
+		{
+			gamespeed = grandprixinfo.gamespeed;
+		}
+
+		franticitems = false;
+		comeback = true;
+	}
+	else if (modeattacking)
+	{
+		// Just play it safe and set everything
 		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
 		comeback = true;
@@ -3417,11 +3469,6 @@ static void P_InitLevelSettings(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
-
-	if (!modeattacking)
-	{
-		K_UpdateMatchRaceBots();
-	}
 }
 
 // Respawns all the mapthings and mobjs in the map from the already loaded map data.
@@ -4195,6 +4242,17 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// clear special respawning que
 	iquehead = iquetail = 0;
 
+	// Fab : 19-07-98 : start cd music for this level (note: can be remapped)
+	I_PlayCD((UINT8)(gamemap), false);
+
+	// preload graphics
+#ifdef HWRENDER // not win32 only 19990829 by Kin
+	if (rendermode != render_soft && rendermode != render_none)
+	{
+		HWR_PrepLevelCache(numtextures);
+	}
+#endif
+
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
@@ -4246,6 +4304,25 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_SpawnBattleCapsules();
+
+	if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.initalize == true)
+		{
+			K_InitGrandPrixBots();
+			grandprixinfo.initalize = false;
+		}
+		else if (grandprixinfo.wonround == true)
+		{
+			K_UpdateGrandPrixBots();
+			grandprixinfo.wonround = false;
+		}
+	}
+	else if (!modeattacking)
+	{
+		// We're in a Match Race, use simplistic randomized bots.
+		K_UpdateMatchRaceBots();
+	}
 
 	// No render mode, stop here.
 	if (rendermode == render_none)

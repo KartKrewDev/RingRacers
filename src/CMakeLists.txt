@@ -3,7 +3,6 @@
 # Core sources
 set(SRB2_CORE_SOURCES
 	am_map.c
-	b_bot.c
 	command.c
 	comptime.c
 	console.c
@@ -20,6 +19,7 @@ set(SRB2_CORE_SOURCES
 	g_game.c
 	g_input.c
 	g_splitscreen.c
+	font.c
 	hu_stuff.c
 	i_tcp.c
 	info.c
@@ -37,6 +37,7 @@ set(SRB2_CORE_SOURCES
 	m_random.c
 	md5.c
 	mserv.c
+	http-mserv.c
 	s_sound.c
 	screen.c
 	sounds.c
@@ -51,7 +52,6 @@ set(SRB2_CORE_SOURCES
 
 set(SRB2_CORE_HEADERS
 	am_map.h
-	b_bot.h
 	byteptr.h
 	command.h
 	console.h
@@ -77,6 +77,7 @@ set(SRB2_CORE_HEADERS
 	g_game.h
 	g_input.h
 	g_state.h
+	font.h
 	hu_stuff.h
 	i_joy.h
 	i_net.h
@@ -102,6 +103,7 @@ set(SRB2_CORE_HEADERS
 	m_swap.h
 	md5.h
 	mserv.h
+	http-mserv.h
 	p5prof.h
 	s_sound.h
 	screen.h
@@ -176,6 +178,9 @@ set(SRB2_CORE_GAME_SOURCES
 	k_bot.c
 	k_botitem.c
 	k_botsearch.c
+	k_respawn.c
+	k_grandprix.c
+	k_hud.c
 
 	p_local.h
 	p_maputl.h
@@ -196,6 +201,9 @@ set(SRB2_CORE_GAME_SOURCES
 	k_waypoint.h
 	k_color.h
 	k_bot.h
+	k_respawn.h
+	k_grandprix.h
+	k_hud.h
 )
 
 if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))

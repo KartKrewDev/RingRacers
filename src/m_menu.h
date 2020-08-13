@@ -21,7 +21,7 @@
 #include "f_finale.h" // for ttmode_enum
 #include "i_threads.h"
 #include "mserv.h"
-#include "r_things.h" // for SKINNAMESIZE
+#include "r_skins.h" // for SKINNAMESIZE
 
 // Compatibility with old-style named NiGHTS replay files.
 #define OLDNREPLAYNAME
@@ -335,6 +335,9 @@ typedef struct menuitem_s
 	// hotkey in menu or y of the item
 	UINT8 alphaKey;
 } menuitem_t;
+
+extern menuitem_t MP_RoomMenu[];
+extern UINT32     roomIds[NUM_LIST_ROOMS];
 
 extern menuitem_t MP_RoomMenu[];
 extern UINT32     roomIds[NUM_LIST_ROOMS];

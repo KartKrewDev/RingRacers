@@ -3571,8 +3571,6 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
-	//if (abs(groundz - gl_viewz) / tz > 4) return; // Prevent stretchy shadows and possible crashes
-
 	floordiff = abs((flip < 0 ? thing->height : 0) + thingzpos - groundz);
 
 	alpha = floordiff / (4*FRACUNIT) + 75;
@@ -3700,6 +3698,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	FBITFIELD occlusion;
 	boolean use_linkdraw_hack = false;
 	UINT8 alpha;
+	UINT8 brightmode = 0;
 
 	INT32 i;
 	float realtop, realbot, top, bot;
@@ -3799,17 +3798,8 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	else
 		occlusion = PF_Occlude;
 
-	if (!cv_translucency.value) // translucency disabled
-	{
-		Surf.PolyColor.s.alpha = 0xFF;
-		blend = PF_Translucent|occlusion;
-		if (!occlusion) use_linkdraw_hack = true;
-	}
-	else if (spr->mobj->flags2 & MF2_SHADOW)
-	{
-		Surf.PolyColor.s.alpha = 0x40;
-		blend = PF_Translucent;
-	}
+	if (spr->mobj->drawflags & MFD_TRANSMASK)
+		blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
 	else if (spr->mobj->frame & FF_TRANSMASK)
 		blend = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 	else
@@ -3825,30 +3815,43 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	alpha = Surf.PolyColor.s.alpha;
 
+	if (spr->mobj->drawflags & MFD_BRIGHTMASK)
+	{
+		if (spr->mobj->drawflags & MFD_FULLBRIGHT)
+			brightmode = 1;
+		else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
+			brightmode = 2;
+	}
+	else
+	{
+		if (spr->mobj->frame & FF_FULLBRIGHT)
+			brightmode = 1;
+		else if (spr->mobj->frame & FF_SEMIBRIGHT)
+			brightmode = 2;
+	}
+
 	// Start with the lightlevel and colormap from the top of the sprite
-	lightlevel = *list[sector->numlights - 1].lightlevel;
 	colormap = *list[sector->numlights - 1].extra_colormap;
 	i = 0;
 	temp = FLOAT_TO_FIXED(realtop);
 
-	if (spr->mobj->frame & FF_FULLBRIGHT)
-		lightlevel = 255;
+	if (brightmode != 1)
+		lightlevel = *list[sector->numlights - 1].lightlevel;
 
 	for (i = 1; i < sector->numlights; i++)
 	{
 		fixed_t h = P_GetLightZAt(&sector->lightlist[i], spr->mobj->x, spr->mobj->y);
 		if (h <= temp)
 		{
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = *list[i-1].lightlevel > 255 ? 255 : *list[i-1].lightlevel;
-
-			if (spr->mobj->frame & FF_SEMIBRIGHT)
-				lightlevel = 128 + (lightlevel>>1);
-
+			if (brightmode != 1)
+				lightlevel = *list[i-1].lightlevel;
 			colormap = *list[i-1].extra_colormap;
 			break;
 		}
 	}
+
+	if (brightmode == 2)
+		lightlevel = 128 + (lightlevel>>1);
 
 	for (i = 0; i < sector->numlights; i++)
 	{
@@ -3858,13 +3861,13 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		// even if we aren't changing colormap or lightlevel, we still need to continue drawing down the sprite
 		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = *list[i].lightlevel > 255 ? 255 : *list[i].lightlevel;
-
-			if (spr->mobj->frame & FF_SEMIBRIGHT)
-				lightlevel = 128 + (lightlevel>>1);
-
-			colormap = *list[i].extra_colormap;
+			if (brightmode != 1)
+			{
+				lightlevel = *list[i].lightlevel;
+				if (brightmode == 2)
+					lightlevel = 128 + (lightlevel>>1);
+			}
+			colormap = list[i].extra_colormap;
 		}
 
 		if (i + 1 < sector->numlights)
@@ -4076,12 +4079,28 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
 		UINT8 lightlevel = 255;
+		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
 
-		if (!(spr->mobj->frame & FF_FULLBRIGHT))
-			lightlevel = sector->lightlevel > 255 ? 255 : sector->lightlevel;
+		if (spr->mobj->drawflags & MFD_BRIGHTMASK)
+		{
+			if (spr->mobj->drawflags & MFD_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
+				brightmode = 2;
+		}
+		else
+		{
+			if (spr->mobj->frame & FF_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->frame & FF_SEMIBRIGHT)
+				brightmode = 2;
+		}
 
-		if (spr->mobj->frame & FF_SEMIBRIGHT)
+		if (brightmode != 1)
+			lightlevel = sector->lightlevel;
+
+		if (brightmode == 2)
 			lightlevel = 128 + (lightlevel>>1);
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
@@ -4099,17 +4118,8 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 		else
 			occlusion = PF_Occlude;
 
-		if (!cv_translucency.value) // translucency disabled
-		{
-			Surf.PolyColor.s.alpha = 0xFF;
-			blend = PF_Translucent|occlusion;
-			if (!occlusion) use_linkdraw_hack = true;
-		}
-		else if (spr->mobj->flags2 & MF2_SHADOW)
-		{
-			Surf.PolyColor.s.alpha = 0x40;
-			blend = PF_Translucent;
-		}
+		if (spr->mobj->drawflags & MFD_TRANSMASK)
+			blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
 		else if (spr->mobj->frame & FF_TRANSMASK)
 			blend = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 		else
@@ -4182,7 +4192,23 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
 		UINT8 lightlevel = 255;
+		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
+
+		if (spr->mobj->drawflags & MFD_BRIGHTMASK)
+		{
+			if (spr->mobj->drawflags & MFD_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
+				brightmode = 2;
+		}
+		else
+		{
+			if (spr->mobj->frame & FF_FULLBRIGHT)
+				brightmode = 1;
+			else if (spr->mobj->frame & FF_SEMIBRIGHT)
+				brightmode = 2;
+		}
 
 		if (sector->numlights)
 		{
@@ -4190,35 +4216,29 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
-
-			if (spr->mobj->frame & FF_SEMIBRIGHT)
-				lightlevel = 128 + (lightlevel>>1);
+			if (brightmode != 1)
+				lightlevel = *sector->lightlist[light].lightlevel;
 
 			if (*sector->lightlist[light].extra_colormap)
 				colormap = *sector->lightlist[light].extra_colormap;
 		}
 		else
 		{
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = sector->lightlevel > 255 ? 255 : sector->lightlevel;
-
-			if (spr->mobj->frame & FF_SEMIBRIGHT)
-				lightlevel = 128 + (lightlevel>>1);
+			if (brightmode != 1)
+				lightlevel = sector->lightlevel;
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
 
+		if (brightmode == 2)
+			lightlevel = 128 + (lightlevel>>1);
+
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
 
-	if (spr->mobj->flags2 & MF2_SHADOW)
-	{
-		Surf.PolyColor.s.alpha = 0x40;
-		blend = PF_Translucent;
-	}
+	if (spr->mobj->drawflags & MFD_TRANSMASK)
+		blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
 	else if (spr->mobj->frame & FF_TRANSMASK)
 		blend = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 	else
@@ -4259,6 +4279,12 @@ static int CompareVisSprites(const void *p1, const void *p2)
 	int transparency1;
 	int transparency2;
 
+	int drawflags1;
+	int drawflags2;
+
+	int frame1;
+	int frame2;
+
 	// check for precip first, because then sprX->mobj is actually a precipmobj_t and does not have flags2 or tracer
 	int linkdraw1 = !spr1->precip && (spr1->mobj->flags2 & MF2_LINKDRAW) && spr1->mobj->tracer;
 	int linkdraw2 = !spr2->precip && (spr2->mobj->flags2 & MF2_LINKDRAW) && spr2->mobj->tracer;
@@ -4271,33 +4297,47 @@ static int CompareVisSprites(const void *p1, const void *p2)
 		if (linkdraw1)
 		{
 			tz1 = spr1->tracertz;
-			transparency1 = (spr1->mobj->tracer->flags2 & MF2_SHADOW) || (spr1->mobj->tracer->frame & FF_TRANSMASK);
+			drawflags1 = spr1->mobj->tracer->drawflags;
+			frame1 = spr1->mobj->tracer->frame;
 		}
 		else
 		{
 			tz1 = spr1->tz;
-			transparency1 = (!spr1->precip && (spr1->mobj->flags2 & MF2_SHADOW)) || (spr1->mobj->frame & FF_TRANSMASK);
+			drawflags1 = (spr1->precip ? 0 : spr1->mobj->drawflags);
+			frame1 = spr1->mobj->frame;
 		}
 		if (linkdraw2)
 		{
 			tz2 = spr2->tracertz;
-			transparency2 = (spr2->mobj->tracer->flags2 & MF2_SHADOW) || (spr2->mobj->tracer->frame & FF_TRANSMASK);
+			drawflags2 = spr2->mobj->tracer->drawflags;
+			frame2 = spr2->mobj->tracer->frame;
 		}
 		else
 		{
 			tz2 = spr2->tz;
-			transparency2 = (!spr2->precip && (spr2->mobj->flags2 & MF2_SHADOW)) || (spr2->mobj->frame & FF_TRANSMASK);
+			drawflags2 = (spr2->precip ? 0 : spr2->mobj->drawflags);
+			frame2 = spr2->mobj->frame;
 		}
 	}
 	else
 	{
 		tz1 = spr1->tz;
-		transparency1 = (!spr1->precip && (spr1->mobj->flags2 & MF2_SHADOW)) || (spr1->mobj->frame & FF_TRANSMASK);
+		drawflags1 = (spr1->precip ? 0 : spr1->mobj->drawflags);
+		frame1 = spr1->mobj->frame;
 		tz2 = spr2->tz;
-		transparency2 = (!spr2->precip && (spr2->mobj->flags2 & MF2_SHADOW)) || (spr2->mobj->frame & FF_TRANSMASK);
+		drawflags2 = (spr2->precip ? 0 : spr2->mobj->drawflags);
+		frame2 = spr2->mobj->frame;
 	}
 
 	// first compare transparency flags, then compare tz, then compare dispoffset
+
+	transparency1 = (drawflags1 & FF_TRANSMASK) ?
+		((drawflags1 & FF_TRANSMASK)>>MFD_TRANSSHIFT) :
+		((frame1 & FF_TRANSMASK)>>FF_TRANSSHIFT);
+
+	transparency2 = (drawflags2 & FF_TRANSMASK) ?
+		((drawflags2 & FF_TRANSMASK)>>MFD_TRANSSHIFT) :
+		((frame2 & FF_TRANSMASK)>>FF_TRANSSHIFT);
 
 	idiff = transparency1 - transparency2;
 	if (idiff != 0) return idiff;

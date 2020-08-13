@@ -51,6 +51,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_bot.h"
+#include "k_grandprix.h"
 
 #ifndef NONET
 // cl loading screen
@@ -532,14 +533,11 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	for (j = 0; j < NUMPOWERS; ++j)
 		rsp->powers[j] = (UINT16)SHORT(players[i].powers[j]);
-	for (j = 0; j < NUMKARTSTUFF; ++j)
-		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]); // SRB2kart
-
-	rsp->frameangle = (angle_t)LONG(players[i].frameangle); // SRB2kart
 
 	// Score is resynched in the rspfirm resync packet
 	rsp->rings = SHORT(players[i].rings);
 	rsp->lives = players[i].lives;
+	rsp->lostlife = players[i].lostlife;
 	rsp->continues = players[i].continues;
 	rsp->scoreadd = players[i].scoreadd;
 	rsp->xtralife = players[i].xtralife;
@@ -574,13 +572,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->weapondelay = LONG(players[i].weapondelay);
 	rsp->tossdelay = LONG(players[i].tossdelay);
 
-	rsp->starpostx = SHORT(players[i].starpostx);
-	rsp->starposty = SHORT(players[i].starposty);
-	rsp->starpostz = SHORT(players[i].starpostz);
 	rsp->starpostnum = LONG(players[i].starpostnum);
-	rsp->starposttime = (tic_t)LONG(players[i].starposttime);
-	rsp->starpostangle = (angle_t)LONG(players[i].starpostangle);
-	rsp->starpostscale = (fixed_t)LONG(players[i].starpostscale);
 
 	rsp->maxlink = LONG(players[i].maxlink);
 	rsp->dashspeed = (fixed_t)LONG(players[i].dashspeed);
@@ -608,8 +600,28 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	rsp->splitscreenindex = players[i].splitscreenindex;
 
+	// SRB2kart
+	for (j = 0; j < NUMKARTSTUFF; ++j)
+		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]);
+
+	rsp->frameangle = (angle_t)LONG(players[i].frameangle);
+	rsp->airtime = (tic_t)LONG(players[i].airtime);
+
+	// respawnvars_t
+	rsp->respawn_state = players[i].respawn.state;
+	rsp->respawn_pointx = (fixed_t)LONG(players[i].respawn.pointx);
+	rsp->respawn_pointy = (fixed_t)LONG(players[i].respawn.pointy);
+	rsp->respawn_pointz = (fixed_t)LONG(players[i].respawn.pointz);
+	rsp->respawn_flip = players[i].respawn.flip;
+	rsp->respawn_timer = (tic_t)LONG(players[i].respawn.timer);
+	rsp->respawn_distanceleft = (UINT32)LONG(players[i].respawn.distanceleft);
+	rsp->respawn_dropdash = (tic_t)LONG(players[i].respawn.dropdash);
+
+	// botvars_t
 	rsp->bot = players[i].bot;
 	rsp->bot_difficulty = players[i].botvars.difficulty;
+	rsp->bot_diffincrease = players[i].botvars.diffincrease;
+	rsp->bot_rival = players[i].botvars.rival;
 	rsp->bot_itemdelay = players[i].botvars.itemdelay;
 	rsp->bot_itemconfirm = players[i].botvars.itemconfirm;
 	rsp->bot_turnconfirm = players[i].botvars.turnconfirm;
@@ -668,14 +680,11 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	for (j = 0; j < NUMPOWERS; ++j)
 		players[i].powers[j] = (UINT16)SHORT(rsp->powers[j]);
-	for (j = 0; j < NUMKARTSTUFF; ++j)
-		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]); // SRB2kart
-
-	players[i].frameangle = (angle_t)LONG(rsp->frameangle); // SRB2kart
 
 	// Score is resynched in the rspfirm resync packet
 	players[i].rings = SHORT(rsp->rings);
 	players[i].lives = rsp->lives;
+	players[i].lostlife = rsp->lostlife;
 	players[i].continues = rsp->continues;
 	players[i].scoreadd = rsp->scoreadd;
 	players[i].xtralife = rsp->xtralife;
@@ -709,13 +718,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].weapondelay = LONG(rsp->weapondelay);
 	players[i].tossdelay = LONG(rsp->tossdelay);
 
-	players[i].starpostx = SHORT(rsp->starpostx);
-	players[i].starposty = SHORT(rsp->starposty);
-	players[i].starpostz = SHORT(rsp->starpostz);
 	players[i].starpostnum = LONG(rsp->starpostnum);
-	players[i].starposttime = (tic_t)LONG(rsp->starposttime);
-	players[i].starpostangle = (angle_t)LONG(rsp->starpostangle);
-	players[i].starpostscale = (fixed_t)LONG(rsp->starpostscale);
 
 	players[i].maxlink = LONG(rsp->maxlink);
 	players[i].dashspeed = (fixed_t)LONG(rsp->dashspeed);
@@ -743,8 +746,28 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	players[i].splitscreenindex = rsp->splitscreenindex;
 
+	// SRB2kart
+	for (j = 0; j < NUMKARTSTUFF; ++j)
+		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
+
+	players[i].frameangle = (angle_t)LONG(rsp->frameangle);
+	players[i].airtime = (tic_t)LONG(rsp->airtime);
+
+	// respawnvars_t
+	players[i].respawn.state = rsp->respawn_state;
+	players[i].respawn.pointx = (fixed_t)LONG(rsp->respawn_pointx);
+	players[i].respawn.pointy = (fixed_t)LONG(rsp->respawn_pointy);
+	players[i].respawn.pointz = (fixed_t)LONG(rsp->respawn_pointz);
+	players[i].respawn.flip = (boolean)rsp->respawn_flip;
+	players[i].respawn.timer = (tic_t)LONG(rsp->respawn_timer);
+	players[i].respawn.distanceleft = (UINT32)LONG(rsp->respawn_distanceleft);
+	players[i].respawn.dropdash = (tic_t)LONG(rsp->respawn_dropdash);
+
+	// botvars_t
 	players[i].bot = rsp->bot;
 	players[i].botvars.difficulty = rsp->bot_difficulty;
+	players[i].botvars.diffincrease = rsp->bot_diffincrease;
+	players[i].botvars.rival = rsp->bot_rival;
 	players[i].botvars.itemdelay = rsp->bot_itemdelay;
 	players[i].botvars.itemconfirm = rsp->bot_itemconfirm;
 	players[i].botvars.turnconfirm = rsp->bot_turnconfirm;
@@ -1269,7 +1292,7 @@ static boolean CL_AskFileList(INT32 firstfile)
 	netbuffer->packettype = PT_TELLFILESNEEDED;
 	netbuffer->u.filesneedednum = firstfile;
 
-	return HSendPacket(servernode, true, 0, sizeof (INT32));
+	return HSendPacket(servernode, false, 0, sizeof (INT32));
 }
 
 /** Sends a special packet to declare how many players in local
@@ -2043,11 +2066,11 @@ static boolean CL_FinishedFileList(void)
 		CL_Reset();
 		D_StartTitle();
 		M_StartMessage(M_GetText(
-			"You have WAD files loaded or have\n"
-			"modified the game in some way, and\n"
-			"your file list does not match\n"
-			"the server's file list.\n"
-			"Please restart SRB2Kart before connecting.\n\n"
+			"You have the wrong addons loaded.\n\n"
+			"To play on this server, restart\n"
+			"the game and don't load any addons.\n"
+			"SRB2Kart will automatically add\n"
+			"everything you need when you join.\n\n"
 			"Press ESC\n"
 		), NULL, MM_NOTHING);
 		return false;
@@ -2068,11 +2091,12 @@ static boolean CL_FinishedFileList(void)
 				CL_Reset();
 				D_StartTitle();
 				M_StartMessage(M_GetText(
-					"You cannot connect to this server\n"
-					"because you cannot download the files\n"
-					"that you are missing from the server.\n\n"
-					"See the console or log file for\n"
-					"more details.\n\n"
+					"An error occured when trying to\n"
+					"download missing addons.\n"
+					"(This is almost always a problem\n"
+					"with the server, not your game.)\n\n"
+					"See the console or log file\n"
+					"for additional details.\n\n"
 					"Press ESC\n"
 				), NULL, MM_NOTHING);
 				return false;
@@ -2798,8 +2822,8 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 	}
 
-	if (playernum == g_localplayers[0] && !demo.playback)
-		g_localplayers[0] = consoleplayer; // don't look through someone's view who isn't there
+	if (playernum == displayplayers[0] && !demo.playback)
+		displayplayers[0] = consoleplayer; // don't look through someone's view who isn't there
 
 	LUA_InvalidatePlayer(&players[playernum]);
 
@@ -4458,7 +4482,6 @@ static void HandlePacketFromAwayNode(SINT8 node)
 static boolean CheckForSpeedHacks(UINT8 p)
 {
 	if (netcmds[maketic%TICQUEUE][p].forwardmove > MAXPLMOVE || netcmds[maketic%TICQUEUE][p].forwardmove < -MAXPLMOVE
-		|| netcmds[maketic%TICQUEUE][p].sidemove > MAXPLMOVE || netcmds[maketic%TICQUEUE][p].sidemove < -MAXPLMOVE
 		|| netcmds[maketic%TICQUEUE][p].driftturn > KART_FULLTURN || netcmds[maketic%TICQUEUE][p].driftturn < -KART_FULLTURN)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), playernode[p]);
@@ -5450,6 +5473,12 @@ static void SV_Maketic(void)
 		if (!playeringame[i])
 			continue;
 
+		if (K_PlayerUsesBotMovement(&players[i]))
+		{
+			K_BuildBotTiccmd(&players[i], &netcmds[maketic%TICQUEUE][i]);
+			continue;
+		}
+
 		// We didn't receive this tic
 		if ((netcmds[maketic % TICQUEUE][i].angleturn & TICCMD_RECEIVED) == 0)
 		{
@@ -5907,6 +5936,18 @@ INT32 D_NumPlayers(void)
 	}
 
 	return num;
+}
+
+/** Return whether a player is a real person (not a CPU) and not spectating.
+  */
+boolean D_IsPlayerHumanAndGaming (INT32 player_number)
+{
+	player_t * player = &players[player_number];
+	return (
+			playeringame[player_number] &&
+			! player->spectator &&
+			! player->bot
+	);
 }
 
 tic_t GetLag(INT32 node)

@@ -877,8 +877,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"bfare",  false, 128,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Pleasure Castle fanfare
   {"merry",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Pleasure Castle merry-go-round ambient
   {"bowlh",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Pleasure Castle pins
-  {"tppop",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},// Pleasure Castle bombs
-  {"hsdoor", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},// Red Barrage Area door
+  {"tppop",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Pleasure Castle bombs
+  {"hsdoor", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Red Barrage Area door
   {"hstrn",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Red Barrage Area train
   {"aspkb",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Red Barrage Area spikeballs
   {"wind1",  false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Midnight Channel monsters
@@ -891,6 +891,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"sploss", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Down to yellow sparks
   {"itfree", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // :shitsfree:
   {"dbgsal", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Debug notification
+  {"cock",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Hammer cocks, bang bang
 
   // SRB2Kart - Engine sounds
   // Engine class A

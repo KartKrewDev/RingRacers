@@ -1150,6 +1150,7 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 					continue;
 
 				z = isflipped ? P_GetFFloorBottomZAt(rover, thing->x, thing->y) : P_GetFFloorTopZAt(rover, thing->x, thing->y);
+
 				if CHECKZ
 				{
 					groundz = z;
@@ -1227,8 +1228,9 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 	if (shadowslope != NULL)
 		*shadowslope = groundslope;
 
-	return groundz;
 #undef CHECKZ
+
+	return groundz;
 }
 
 static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
@@ -1865,19 +1867,27 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->transmap = NULL;
 
 	// specific translucency
-	if (!cv_translucency.value)
-		; // no translucency
-	else if (oldthing->flags2 & MF2_SHADOW || thing->flags2 & MF2_SHADOW) // actually only the player should use this (temporary invisibility)
-		vis->transmap = transtables + ((tr_trans80-1)<<FF_TRANSSHIFT); // because now the translucency is set through FF_TRANSMASK
-	else if (oldthing->frame & FF_TRANSMASK)
-		vis->transmap = transtables + (oldthing->frame & FF_TRANSMASK) - 0x10000;
+	if (thing->drawflags & MFD_TRANSMASK) // Object is forcing transparency to a specific value
+		vis->transmap = transtables + ((((thing->drawflags & MFD_TRANSMASK) - MFD_TRANS10) >> MFD_TRANSSHIFT) << FF_TRANSSHIFT);
+	else if (thing->frame & FF_TRANSMASK)
+		vis->transmap = transtables + ((thing->frame & FF_TRANSMASK) - FF_TRANS10);
 
-	if (oldthing->frame & FF_FULLBRIGHT || oldthing->flags2 & MF2_SHADOW || thing->flags2 & MF2_SHADOW)
-		vis->cut |= SC_FULLBRIGHT;
-	else if (oldthing->frame & FF_SEMIBRIGHT)
-		vis->cut |= SC_SEMIBRIGHT;
+	if (thing->drawflags & MFD_BRIGHTMASK)
+	{
+		if (thing->drawflags & MFD_FULLBRIGHT)
+			vis->cut |= SC_FULLBRIGHT;
+		else if (thing->drawflags & MFD_SEMIBRIGHT)
+			vis->cut |= SC_SEMIBRIGHT;
+	}
+	else
+	{
+		if (thing->frame & FF_FULLBRIGHT)
+			vis->cut |= SC_FULLBRIGHT;
+		else if (thing->frame & FF_SEMIBRIGHT)
+			vis->cut |= SC_SEMIBRIGHT;
+	}
 
-	if (vis->cut & SC_FULLBRIGHT
+	if ((vis->cut & SC_FULLBRIGHT)
 		&& (!vis->extra_colormap || !(vis->extra_colormap->flags & CMF_FADEFULLBRIGHTSPRITES)))
 	{
 		// full bright: goggles
@@ -2047,8 +2057,9 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
 
 	// specific translucency
+	// (no draw flags)
 	if (thing->frame & FF_TRANSMASK)
-		vis->transmap = (thing->frame & FF_TRANSMASK) - 0x10000 + transtables;
+		vis->transmap = ((thing->frame & FF_TRANSMASK) - FF_TRANS10) + transtables;
 	else
 		vis->transmap = NULL;
 
@@ -2078,7 +2089,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	mobj_t *thing;
 	precipmobj_t *precipthing; // Tails 08-25-2002
 	INT32 lightnum;
-	fixed_t limit_dist, hoop_limit_dist;
+	fixed_t limit_dist;
 
 	if (rendermode != render_soft)
 		return;
@@ -2809,37 +2820,19 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 /* Check if thing may be drawn from our current view. */
 boolean R_ThingVisible (mobj_t *thing)
 {
-	boolean split_drawsprite = true;
-	UINT16 splitflags = 0;
-
-	if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW
-	|| (r_viewmobj && (thing == r_viewmobj || (r_viewmobj->player && r_viewmobj->player->followmobj == thing))))
+	if (thing->sprite == SPR_NULL)
 		return false;
 
-	splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
+	if (r_viewmobj && (thing == r_viewmobj || (r_viewmobj->player && r_viewmobj->player->followmobj == thing)))
+		return false;
 
-	if (r_splitscreen && splitflags)
-	{
-		split_drawsprite = false;
+	if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+	|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+	|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+	|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
+		return false;
 
-		if (thing->eflags & MFE_DRAWONLYFORP1)
-			if (viewssnum == 0)
-				split_drawsprite = true;
-
-		if (thing->eflags & MFE_DRAWONLYFORP2)
-			if (viewssnum == 1)
-				split_drawsprite = true;
-
-		if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-			if (viewssnum == 2)
-				split_drawsprite = true;
-
-		if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-			if (viewssnum == 3)
-				split_drawsprite = true;
-	}
-
-	return split_drawsprite;
+	return true;
 }
 
 boolean R_ThingVisibleWithinDist (mobj_t *thing,

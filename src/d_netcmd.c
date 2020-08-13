@@ -54,6 +54,8 @@
 #include "k_pwrlv.h"
 #include "y_inter.h"
 #include "k_color.h"
+#include "k_respawn.h"
+#include "k_grandprix.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -112,6 +114,16 @@ static void Skin_OnChange(void);
 static void Skin2_OnChange(void);
 static void Skin3_OnChange(void);
 static void Skin4_OnChange(void);
+
+static void Follower_OnChange(void);
+static void Follower2_OnChange(void);
+static void Follower3_OnChange(void);
+static void Follower4_OnChange(void);
+static void Followercolor_OnChange(void);
+static void Followercolor2_OnChange(void);
+static void Followercolor3_OnChange(void);
+static void Followercolor4_OnChange(void);
+
 static void Color_OnChange(void);
 static void Color2_OnChange(void);
 static void Color3_OnChange(void);
@@ -270,6 +282,23 @@ consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
 	{"skin4", DEFAULTSKIN4, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 
+// player's followers. Also saved.
+consvar_t cv_follower = {"follower", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_follower2 = {"follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_follower3 = {"follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_follower4 = {"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+// player's follower colors... Also saved...
+consvar_t cv_followercolor = {"followercolor", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_followercolor2 = {"followercolor2", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_followercolor3 = {"followercolor3", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_followercolor4 = {"followercolor4", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+
+// Follower toggle
+static CV_PossibleValue_t followers_cons_t[] = {{0, "Yours only"}, {1, "Everyone's"}, {0, NULL}};
+consvar_t cv_showfollowers = {"showfollowers", "Everyone's", CV_SAVE, followers_cons_t, 0, 0, NULL, NULL, 0, 0, NULL};
+
 consvar_t cv_skipmapcheck = {"skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 INT32 cv_debug;
@@ -330,6 +359,7 @@ consvar_t cv_hyudoro = 				{"hyudoro", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NU
 consvar_t cv_pogospring = 			{"pogospring", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_kitchensink = 			{"kitchensink", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_dualsneaker = 			{"dualsneaker", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_triplesneaker = 		{"triplesneaker", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_triplebanana = 		{"triplebanana", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_decabanana = 			{"decabanana", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -732,16 +762,22 @@ void D_RegisterClientCommands(void)
 
 	for (i = 0; i < numskincolors; i++)
 	{
-		Color_cons_t[i].value = i;
-		Color_cons_t[i].strvalue = skincolors[i].name;
+		Color_cons_t[i].value = Followercolor_cons_t[i].value = i;
+		Color_cons_t[i].strvalue = Followercolor_cons_t[i].strvalue = skincolors[i].name;
 	}
-	Color_cons_t[numskincolors].value = 0;
-	Color_cons_t[numskincolors].strvalue = NULL;
+	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
+	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
+
+	Followercolor_cons_t[MAXSKINCOLORS].value = MAXSKINCOLORS;
+	Followercolor_cons_t[MAXSKINCOLORS].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
+
+	Followercolor_cons_t[MAXSKINCOLORS+1].value = MAXSKINCOLORS+1;
+	Followercolor_cons_t[MAXSKINCOLORS+1].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
 
 	// Set default player names
 	// Monster Iestyn (12/08/19): not sure where else I could have actually put this, but oh well
 	for (i = 0; i < MAXPLAYERS; i++)
-		sprintf(player_names[i], "Player %d", 1 + i);
+		sprintf(player_names[i], "Player %c", 'A' + i); // SRB2Kart: Letters like Sonic 3!
 
 	if (dedicated)
 		return;
@@ -816,10 +852,15 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_playername[i]);
 		CV_RegisterVar(&cv_playercolor[i]);
 		CV_RegisterVar(&cv_skin[i]);
+		CV_RegisterVar(&cv_follower[i]);
+		CV_RegisterVar(&cv_followercolor[i]);
 	}
 
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);
+
+	// Display other players' followers
+	CV_RegisterVar(&cv_showfollowers);
 
 #ifdef SEENAMES
 	CV_RegisterVar(&cv_seenames);
@@ -1326,7 +1367,7 @@ static void SendNameAndColor(UINT8 n)
 	const INT32 playernum = g_localplayers[n];
 	player_t *player = &players[playernum];
 
-	char buf[MAXPLAYERNAME+6];
+	char buf[MAXPLAYERNAME+9];
 	char *p;
 
 	if (splitscreen < playernum)
@@ -1353,6 +1394,14 @@ static void SendNameAndColor(UINT8 n)
 		}
 	}
 
+	// ditto for follower colour:
+	if (!cv_followercolor[n].value)
+		CV_StealthSet(&cv_followercolor[n], "Match"); // set it to "Match". I don't care about your stupidity!
+
+	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
+	if (cv_follower[n].value > numfollowers-1 || cv_follower[n].value < -1)
+		CV_StealthSet(&cv_follower[n], "-1");
+
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
 		&& cv_playercolor[n].value == player->skincolor
 		&& !strcmp(cv_skin[n].string, skins[player->skin].name))
@@ -1376,6 +1425,10 @@ static void SendNameAndColor(UINT8 n)
 
 		if (player->mo && !player->powers[pw_dye])
 			player->mo->color = player->skincolor;
+
+		// Update follower for local games:
+		if (cv_follower[n].value >= -1 && cv_follower[n].value != player->followerskin)
+			SetFollower(playernum, cv_follower[n].value);
 
 		if (metalrecording && n == 0)
 		{ // Starring Metal Sonic as themselves, obviously.
@@ -1425,6 +1478,8 @@ static void SendNameAndColor(UINT8 n)
 	WRITEUINT32(p, (UINT32)player->availabilities);
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
+	WRITESINT8(p, (UINT8)cv_follower[n].value);
+	WRITESINT8(p, (UINT8)cv_followercolor[n].value);
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
 
@@ -2259,6 +2314,12 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	if ((netgame || multiplayer) && !((gametype == newgametype) && (gametypedefaultrules[newgametype] & GTR_CAMPAIGN)))
 		FLS = false;
 
+	if (grandprixinfo.gp == true)
+	{
+		// Too lazy to change the input value for every instance of this function.......
+		pencoremode = grandprixinfo.encore;
+	}
+
 	if (delay != 2)
 	{
 		UINT8 flags = 0;
@@ -2297,6 +2358,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 		}
 
 		chmappending++;
+
 		if (netgame)
 			WRITEUINT32(buf_p, M_RandomizedSeed()); // random seed
 		SendNetXCmd(XD_MAP, buf, buf_p - buf);
@@ -2469,7 +2531,7 @@ static void Command_Map_f(void)
 
 	mustmodifygame = !(netgame || multiplayer) && !majormods;
 
-	if (mustmodifygame && !option_force)
+	if (mustmodifygame)
 	{
 		/* May want to be more descriptive? */
 		CONS_Printf(M_GetText("Sorry, level change disabled in single player.\n"));
@@ -2526,6 +2588,7 @@ static void Command_Map_f(void)
 	if (mustmodifygame && option_force)
 	{
 		G_SetGameModified(multiplayer, true);
+		startgp = true;
 	}
 
 	// new gametype value
@@ -2578,6 +2641,69 @@ static void Command_Map_f(void)
 			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
 		}
+	}
+
+	if (startgp)
+	{
+		i = COM_CheckParm("-skill");
+
+		grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
+		grandprixinfo.masterbots = false;
+
+		if (i)
+		{
+			const UINT8 master = KARTSPEED_HARD+1;
+			const char *masterstr = "Master";
+			const char *skillname = COM_Argv(i+1);
+			INT32 newskill = -1;
+			INT32 j;
+
+			if (!strcasecmp(masterstr, skillname))
+			{
+				newskill = master;
+			}
+			else
+			{
+				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
+				{
+					if (!strcasecmp(kartspeed_cons_t[j].strvalue, skillname))
+					{
+						newskill = (INT16)kartspeed_cons_t[j].value;
+						break;
+					}
+				}
+
+				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+				{
+					j = atoi(COM_Argv(i+1)); // assume they gave us a skill number, which is okay too
+					if (j >= KARTSPEED_EASY && j <= master)
+						newskill = (INT16)j;
+				}
+			}
+
+			if (newskill != -1)
+			{
+				if (newskill == master)
+				{
+					grandprixinfo.gamespeed = KARTSPEED_HARD;
+					grandprixinfo.masterbots = true;
+				}
+				else
+				{
+					grandprixinfo.gamespeed = newskill;
+					grandprixinfo.masterbots = false;
+				}
+			}
+		}
+
+		grandprixinfo.encore = newencoremode;
+
+		grandprixinfo.gp = true;
+		grandprixinfo.roundnum = 0;
+		grandprixinfo.cup = NULL;
+		grandprixinfo.wonround = false;
+
+		grandprixinfo.initalize = true;
 	}
 
 	if (!option_force && newgametype == gametype) // SRB2Kart
@@ -4087,14 +4213,16 @@ static void PointLimit_OnChange(void)
 
 static void NumLaps_OnChange(void)
 {
-	if (!(gametyperules & GTR_CIRCUIT) || (modeattacking || demo.playback))
+	if (K_CanChangeRules() == false)
+	{
 		return;
+	}
 
-	if (server && Playing()
-		&& (netgame || multiplayer)
-		&& (mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-		&& (cv_numlaps.value > mapheaderinfo[gamemap - 1]->numlaps))
+	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
+	&& (cv_numlaps.value > mapheaderinfo[gamemap - 1]->numlaps))
+	{
 		CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
+	}
 
 	// Just don't be verbose
 	if (gametyperules & GTR_CIRCUIT)
@@ -4636,14 +4764,14 @@ void Command_ExitGame_f(void)
 
 void Command_Retry_f(void)
 {
-	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING))
+	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION))
+	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
-	else if (netgame || multiplayer)
-		CONS_Printf(M_GetText("This only works in single player.\n"));
-	/*else if (!&players[consoleplayer] || players[consoleplayer].lives <= 1)
-		CONS_Printf(M_GetText("You can't retry without any lives remaining!\n"));
-	else if (G_IsSpecialStage(gamemap))
-		CONS_Printf(M_GetText("You can't retry special stages!\n"));*/
+	}
+	else if (grandprixinfo.gp == false)
+	{
+		CONS_Printf(M_GetText("This only works in Grand Prix.\n"));
+	}
 	else
 	{
 		M_ClearMenus(true);
@@ -4896,6 +5024,198 @@ static void Name4_OnChange(void)
 	}
 	else
 		SendNameAndColor(3);
+}
+
+// sends the follower change for players
+static void Follower_OnChange(void)
+{
+	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
+	INT32 num;
+	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
+
+	// there is a slight chance that we will actually use a string instead so...
+	// let's investigate the string...
+	strcpy(str, cv_follower.string);
+	strcpy(cpy, cv_follower.string);
+	strlwr(str);
+	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
+	{
+		if (stricmp(cpy, "None") == 0)
+		{
+			CV_StealthSet(&cv_follower, "-1");
+
+			if (!Playing())
+				return; // don't send anything there.
+
+			SendNameAndColor();
+			return;
+		}
+
+		num = R_FollowerAvailable(str);
+
+		if (num == -1) // that's an error.
+			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+
+		sprintf(set, "%d", num);
+		CV_StealthSet(&cv_follower, set);	// set it to a number. It's easier for us to send later :)
+	}
+
+	if (!Playing())
+		return; // don't send anything there.
+
+	SendNameAndColor();
+}
+
+// About the same as Color_OnChange but for followers.
+static void Followercolor_OnChange(void)
+{
+
+	if (!Playing())
+		return; // do whatever you want if you aren't in the game or don't have a follower.
+
+	if (!P_PlayerMoving(consoleplayer))
+	{
+		// Color change menu scrolling fix is no longer necessary
+		SendNameAndColor();
+	}
+}
+
+// repeat for the 3 other players
+
+static void Follower2_OnChange(void)
+{
+	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
+	if (!Playing() || !splitscreen)
+		return; // do whatever you want
+
+	strcpy(str, cv_follower2.string);
+	strcpy(cpy, cv_follower2.string);
+	strlwr(str);
+	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
+	{
+
+		if (stricmp(cpy, "None") == 0)
+		{
+			CV_StealthSet(&cv_follower2, "-1");
+			SendNameAndColor2();
+			return;
+		}
+
+
+		{
+			INT32 num = R_FollowerAvailable(str);
+			char set[10];
+			if (num == -1) // that's an error.
+				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+
+			sprintf(set, "%d", num);
+			CV_StealthSet(&cv_follower2, set);	// set it to a number. It's easier for us to send later :)
+		}
+	}
+	SendNameAndColor2();
+}
+
+static void Followercolor2_OnChange(void)
+{
+
+	if (!Playing())
+		return; // do whatever you want if you aren't in the game or don't have a follower.
+
+	if (!P_PlayerMoving(g_localplayers[1]))
+	{
+		// Color change menu scrolling fix is no longer necessary
+		SendNameAndColor2();
+	}
+}
+
+static void Follower3_OnChange(void)
+{
+	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
+	if (!Playing() || !splitscreen)
+		return; // do whatever you want
+
+	strcpy(str, cv_follower3.string);
+	strcpy(cpy, cv_follower3.string);
+	strlwr(str);
+	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
+	{
+
+		if (stricmp(cpy, "None") == 0)
+		{
+			CV_StealthSet(&cv_follower3, "-1");
+			SendNameAndColor3();
+			return;
+		}
+
+		{
+			INT32 num = R_FollowerAvailable(str);
+			char set[10];
+			if (num == -1) // that's an error.
+				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+
+			sprintf(set, "%d", num);
+			CV_StealthSet(&cv_follower3, set);	// set it to a number. It's easier for us to send later :)
+		}
+	}
+	SendNameAndColor3();
+}
+
+static void Followercolor3_OnChange(void)
+{
+
+	if (!Playing())
+		return; // do whatever you want if you aren't in the game or don't have a follower.
+
+	if (!P_PlayerMoving(g_localplayers[2]))
+	{
+		// Color change menu scrolling fix is no longer necessary
+		SendNameAndColor3();
+	}
+}
+
+static void Follower4_OnChange(void)
+{
+	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
+	if (!Playing() || !splitscreen)
+		return; // do whatever you want
+
+	strcpy(str, cv_follower4.string);
+	strcpy(cpy, cv_follower4.string);
+	strlwr(str);
+	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
+	{
+
+		if (stricmp(cpy, "None") == 0)
+		{
+			CV_StealthSet(&cv_follower4, "-1");
+			SendNameAndColor4();
+			return;
+		}
+
+		{
+			INT32 num = R_FollowerAvailable(str);
+			char set[10];
+			if (num == -1) // that's an error.
+				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+
+			sprintf(set, "%d", num);
+			CV_StealthSet(&cv_follower4, set);	// set it to a number. It's easier for us to send later :)
+		}
+	}
+	SendNameAndColor4();
+}
+
+static void Followercolor4_OnChange(void)
+{
+
+	if (!Playing())
+		return; // do whatever you want if you aren't in the game or don't have a follower.
+
+	if (!P_PlayerMoving(g_localplayers[3]))
+	{
+		// Color change menu scrolling fix is no longer necessary
+		SendNameAndColor4();
+	}
 }
 
 /** Sends a skin change for the console player, unless that player is moving.
@@ -5156,24 +5476,35 @@ static void Command_ShowTime_f(void)
 // SRB2Kart: On change messages
 static void BaseNumLaps_OnChange(void)
 {
-	if (gametyperules & GTR_CIRCUIT && gamestate == GS_LEVEL)
+	if (K_CanChangeRules() == true)
 	{
-		if (cv_basenumlaps.value)
-			CONS_Printf(M_GetText("Number of laps will be changed to %d next round.\n"), cv_basenumlaps.value);
-		else
-			CONS_Printf(M_GetText("Number of laps will be changed to map defaults next round.\n"));
+		const char *str = va("%d", cv_basenumlaps.value);
+
+		if (cv_basenumlaps.value == 0)
+		{
+			str = "map defaults";
+		}
+
+		CONS_Printf(M_GetText("Number of laps will be changed to %s next round.\n"), str);
 	}
 }
 
 
 static void KartFrantic_OnChange(void)
 {
-	if ((boolean)cv_kartfrantic.value != franticitems && gamestate == GS_LEVEL && leveltime > starttime)
-		CONS_Printf(M_GetText("Frantic items will be turned %s next round.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
+	if (K_CanChangeRules() == false)
+	{
+		return;
+	}
+
+	if (leveltime < starttime)
+	{
+		CONS_Printf(M_GetText("Frantic items has been set to %s.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
+		franticitems = (boolean)cv_kartfrantic.value;
+	}
 	else
 	{
-		CONS_Printf(M_GetText("Frantic items has been turned %s.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
-		franticitems = (boolean)cv_kartfrantic.value;
+		CONS_Printf(M_GetText("Frantic items will be turned %s next round.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
 	}
 }
 
@@ -5186,47 +5517,56 @@ static void KartSpeed_OnChange(void)
 		return;
 	}
 
-	if ((gametyperules & GTR_CIRCUIT))
+	if (K_CanChangeRules() == false)
 	{
-		if ((gamestate == GS_LEVEL && leveltime < starttime) && (cv_kartspeed.value != KARTSPEED_AUTO))
-		{
-			CONS_Printf(M_GetText("Game speed has been changed to \"%s\".\n"), cv_kartspeed.string);
-			gamespeed = (UINT8)cv_kartspeed.value;
-		}
-		else if (cv_kartspeed.value != (signed)gamespeed)
-		{
-			CONS_Printf(M_GetText("Game speed will be changed to \"%s\" next round.\n"), cv_kartspeed.string);
-		}
+		return;
+	}
+
+	if (leveltime < starttime && cv_kartspeed.value != KARTSPEED_AUTO)
+	{
+		CONS_Printf(M_GetText("Game speed has been changed to \"%s\".\n"), cv_kartspeed.string);
+		gamespeed = (UINT8)cv_kartspeed.value;
+	}
+	else
+	{
+		CONS_Printf(M_GetText("Game speed will be changed to \"%s\" next round.\n"), cv_kartspeed.string);
 	}
 }
 
 static void KartEncore_OnChange(void)
 {
-	if ((gametyperules & GTR_CIRCUIT))
+	if (K_CanChangeRules() == false)
 	{
-		if ((cv_kartencore.value == 1) != encoremode && gamestate == GS_LEVEL /*&& leveltime > starttime*/)
-			CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
-		else
-			CONS_Printf(M_GetText("Encore Mode has been set to %s.\n"), cv_kartencore.string);
+		return;
 	}
+
+	CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
 }
 
 static void KartComeback_OnChange(void)
 {
-	if (gametyperules & GTR_KARMA)
+	if (K_CanChangeRules() == false)
 	{
-		if ((boolean)cv_kartcomeback.value != comeback && gamestate == GS_LEVEL && leveltime > starttime)
-			CONS_Printf(M_GetText("Karma Comeback will be turned %s next round.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
-		else
-		{
-			CONS_Printf(M_GetText("Karma Comeback has been turned %s.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
-			comeback = (boolean)cv_kartcomeback.value;
-		}
+		return;
+	}
+
+	if (leveltime < starttime)
+	{
+		CONS_Printf(M_GetText("Karma Comeback has been turned %s.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
+		comeback = (boolean)cv_kartcomeback.value;
+	}
+	else
+	{
+		CONS_Printf(M_GetText("Karma Comeback will be turned %s next round.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
 	}
 }
 
 static void KartEliminateLast_OnChange(void)
 {
-	if ((gametyperules & GTR_CIRCUIT) && cv_karteliminatelast.value)
-		P_CheckRacers();
+	if (K_CanChangeRules() == false)
+	{
+		CV_StealthSet(&cv_karteliminatelast, cv_karteliminatelast.defaultvalue);
+	}
+
+	P_CheckRacers();
 }

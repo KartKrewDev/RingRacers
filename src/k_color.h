@@ -20,6 +20,21 @@
 #define NUM_PALETTE_ENTRIES 256
 
 /*--------------------------------------------------
+	INT32 K_SkincolorToTextColor(UINT8 skincolor);
+
+		Gives you the "text" color (V_ constants) from a skincolor (SKINCOLOR_ constants).
+		Used primarily by the chat system.
+
+	Input Arguments:-
+		skincolor - SKINCOLOR_ constant
+
+	Return:-
+		V_ constant for font coloring
+--------------------------------------------------*/
+INT32 K_SkincolorToTextColor(UINT8 skincolor);
+
+
+/*--------------------------------------------------
 	UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b);
 
 		Gives you the brightness value of the provided RGB value, based on how the human eye interprets it.

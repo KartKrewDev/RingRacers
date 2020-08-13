@@ -22,7 +22,6 @@
 
 		See header file for description.
 --------------------------------------------------*/
-
 UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 {
 	UINT32 redweight = 1063 * r;
@@ -48,7 +47,6 @@ UINT16 K_RainbowColor(tic_t time)
 
 		See header file for description.
 --------------------------------------------------*/
-
 void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 {
 	INT32 i;
@@ -92,14 +90,11 @@ void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 	}
 }
 
-/**	\brief	Generates a translation colormap for Kart, to replace R_GenerateTranslationColormap in r_draw.c
+/*--------------------------------------------------
+	void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 
-	\param	dest_colormap	colormap to populate
-	\param	skinnum			number of skin, TC_DEFAULT or TC_BOSS
-	\param	color			translation color
-
-	\return	void
-*/
+		See header file for description.
+--------------------------------------------------*/
 void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 {
 	INT32 i;

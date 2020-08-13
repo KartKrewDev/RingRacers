@@ -28,6 +28,7 @@
 #include "k_kart.h" // SRB2kart
 #include "k_waypoint.h"
 #include "k_battle.h"
+#include "k_respawn.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -943,10 +944,10 @@ void A_Look(mobj_t *actor)
 	if (LUA_CallAction("A_Look", actor))
 		return;
 
-	if (!P_LookForPlayers(actor, locvar1 & 65535, false , FixedMul((locvar1 >> 16)*FRACUNIT, actor->scale)))
+	if (leveltime < starttime) // SRB2kart - no looking before race starts
 		return;
 
-	if (leveltime < starttime) // SRB2kart - no looking before race starts
+	if (!P_LookForPlayers(actor, locvar1 & 65535, false , FixedMul((locvar1 >> 16)*FRACUNIT, actor->scale)))
 		return;
 
 	// go into chase state
@@ -4478,10 +4479,10 @@ void A_BubbleSpawn(mobj_t *actor)
 	if (!(actor->eflags & MFE_UNDERWATER))
 	{
 		// Don't draw or spawn bubbles above water
-		actor->flags2 |= MF2_DONTDRAW;
+		actor->drawflags |= MFD_DONTDRAW;
 		return;
 	}
-	actor->flags2 &= ~MF2_DONTDRAW;
+	actor->drawflags &= ~MFD_DONTDRAW;
 
 	if (!(actor->flags2 & MF2_AMBUSH))
 	{
@@ -4611,9 +4612,9 @@ void A_BubbleCheck(mobj_t *actor)
 		return;
 
 	if (actor->eflags & MFE_UNDERWATER)
-		actor->flags2 &= ~MF2_DONTDRAW; // underwater so draw
+		actor->drawflags &= ~MFD_DONTDRAW; // underwater so draw
 	else
-		actor->flags2 |= MF2_DONTDRAW; // above water so don't draw
+		actor->drawflags |= MFD_DONTDRAW; // above water so don't draw
 }
 
 // Function: A_AttractChase
@@ -4716,9 +4717,9 @@ void A_AttractChase(mobj_t *actor)
 
 		// Rings flicker before disappearing
 		if (actor->fuse && actor->fuse < 5*TICRATE && (leveltime & 1))
-			actor->flags2 |= MF2_DONTDRAW;
+			actor->drawflags |= MFD_DONTDRAW;
 		else
-			actor->flags2 &= ~MF2_DONTDRAW;
+			actor->drawflags &= ~MFD_DONTDRAW;
 
 		// spilled rings have ghost trails and get capped to a certain speed
 		if (actor->type == (mobjtype_t)actor->info->reactiontime)
@@ -4952,9 +4953,9 @@ void A_ThrownRing(mobj_t *actor)
 	// spilled rings (and thrown bounce) flicker before disappearing
 	if (leveltime & 1 && actor->fuse > 0 && actor->fuse < 2*TICRATE
 		&& actor->type != MT_THROWNGRENADE)
-		actor->flags2 |= MF2_DONTDRAW;
+		actor->drawflags |= MFD_DONTDRAW;
 	else
-		actor->flags2 &= ~MF2_DONTDRAW;
+		actor->drawflags &= ~MFD_DONTDRAW;
 
 	if (actor->tracer && actor->tracer->health <= 0)
 		P_SetTarget(&actor->tracer, NULL);
@@ -6665,11 +6666,8 @@ void A_MixUp(mobj_t *actor)
 		INT32 transspeed;         //player speed
 
 		// Starpost stuff
-		INT16 starpostx, starposty, starpostz;
+		fixed_t starpostx, starposty, starpostz;
 		INT32 starpostnum;
-		tic_t starposttime;
-		angle_t starpostangle;
-		fixed_t starpostscale;
 
 		INT32 mflags2;
 
@@ -6713,24 +6711,21 @@ void A_MixUp(mobj_t *actor)
 		angle = players[one].mo->angle;
 		drawangle = players[one].drawangle;
 
-		starpostx = players[one].starpostx;
-		starposty = players[one].starposty;
-		starpostz = players[one].starpostz;
-		starpostangle = players[one].starpostangle;
-		starpostscale = players[one].starpostscale;
+		starpostx = players[one].respawn.pointx;
+		starposty = players[one].respawn.pointy;
+		starpostz = players[one].respawn.pointz;
 		starpostnum = players[one].starpostnum;
-		starposttime = players[one].starposttime;
 
 		mflags2 = players[one].mo->flags2;
 
 		P_MixUp(players[one].mo, players[two].mo->x, players[two].mo->y, players[two].mo->z, players[two].mo->angle,
-				players[two].starpostx, players[two].starposty, players[two].starpostz,
-				players[two].starpostnum, players[two].starposttime, players[two].starpostangle,
-				players[two].starpostscale, players[two].drawangle, players[two].mo->flags2);
+				players[two].respawn.pointx, players[two].respawn.pointy, players[two].respawn.pointz,
+				players[two].starpostnum, 0, 0,
+				FRACUNIT, players[two].drawangle, players[two].mo->flags2);
 
 		P_MixUp(players[two].mo, x, y, z, angle, starpostx, starposty, starpostz,
-				starpostnum, starposttime, starpostangle,
-				starpostscale, drawangle, mflags2);
+				starpostnum, 0, 0,
+				FRACUNIT, drawangle, mflags2);
 
 		//carry set after mixup.  Stupid P_ResetPlayer() takes away some of the stuff we look for...
 		//but not all of it!  So we need to make sure they aren't set wrong or anything.
@@ -6753,11 +6748,8 @@ void A_MixUp(mobj_t *actor)
 		INT32 transspeed[MAXPLAYERS];     //player speed
 
 		// Star post stuff
-		INT16 spposition[MAXPLAYERS][3];
+		fixed_t spposition[MAXPLAYERS][3];
 		INT32 starpostnum[MAXPLAYERS];
-		tic_t starposttime[MAXPLAYERS];
-		angle_t starpostangle[MAXPLAYERS];
-		fixed_t starpostscale[MAXPLAYERS];
 
 		INT32 flags2[MAXPLAYERS];
 
@@ -6789,13 +6781,10 @@ void A_MixUp(mobj_t *actor)
 				transspeed[counter] = players[i].speed;
 				transtracer[counter] = players[i].mo->tracer;
 
-				spposition[counter][0] = players[i].starpostx;
-				spposition[counter][1] = players[i].starposty;
-				spposition[counter][2] = players[i].starpostz;
+				spposition[counter][0] = players[i].respawn.pointx;
+				spposition[counter][1] = players[i].respawn.pointy;
+				spposition[counter][2] = players[i].respawn.pointz;
 				starpostnum[counter] = players[i].starpostnum;
-				starposttime[counter] = players[i].starposttime;
-				starpostangle[counter] = players[i].starpostangle;
-				starpostscale[counter] = players[i].starpostscale;
 
 				flags2[counter] = players[i].mo->flags2;
 
@@ -6835,8 +6824,8 @@ void A_MixUp(mobj_t *actor)
 
 				P_MixUp(players[i].mo, position[teleportfrom][0], position[teleportfrom][1], position[teleportfrom][2], anglepos[teleportfrom][0],
 					spposition[teleportfrom][0], spposition[teleportfrom][1], spposition[teleportfrom][2],
-					starpostnum[teleportfrom], starposttime[teleportfrom], starpostangle[teleportfrom],
-					starpostscale[teleportfrom], anglepos[teleportfrom][1], flags2[teleportfrom]);
+					starpostnum[teleportfrom], 0, 0,
+					FRACUNIT, anglepos[teleportfrom][1], flags2[teleportfrom]);
 
 				//...carry after.  same reasoning.
 				players[i].powers[pw_carry] = transcarry[teleportfrom];
@@ -9812,7 +9801,7 @@ void A_SPBChase(mobj_t *actor)
 		if (players[i].mo->health <= 0)
 			continue; // dead
 
-		if (players[i].kartstuff[k_respawn])
+		if (players[i].respawn.state != RESPAWNST_NONE)
 			continue;*/ // respawning
 
 		if (players[i].kartstuff[k_position] < bestrank)
@@ -9989,7 +9978,7 @@ void A_SPBChase(mobj_t *actor)
 
 		actor->lastlook = -1; // Just make sure this is reset
 
-		if (!player || !player->mo || player->mo->health <= 0 || player->kartstuff[k_respawn])
+		if (!player || !player->mo || player->mo->health <= 0 || (player->respawn.state != RESPAWNST_NONE))
 		{
 			// No one there? Completely STOP.
 			actor->momx = actor->momy = actor->momz = 0;
@@ -10274,7 +10263,7 @@ void A_RandomShadowFrame(mobj_t *actor)
 		fake->destscale = FRACUNIT*3/2;
 		fake->angle = actor->angle;
 		fake->tics = -1;
-		actor->flags2 |= MF2_DONTDRAW;
+		actor->drawflags |= MFD_DONTDRAW;
 		actor->extravalue1 = 1;
 	}
 

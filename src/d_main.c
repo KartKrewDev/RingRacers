@@ -65,8 +65,11 @@
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu, mainwadstally
+#include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
+
+// SRB2Kart
+#include "k_grandprix.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -166,35 +169,6 @@ UINT8 shiftdown = 0; // 0x1 left, 0x2 right
 UINT8 ctrldown = 0; // 0x1 left, 0x2 right
 UINT8 altdown = 0; // 0x1 left, 0x2 right
 boolean capslock = 0;	// gee i wonder what this does.
-//
-// D_ModifierKeyResponder
-// Sets global shift/ctrl/alt variables, never actually eats events
-//
-static inline void D_ModifierKeyResponder(event_t *ev)
-{
-	if (ev->type == ev_keydown || ev->type == ev_console) switch (ev->data1)
-	{
-		case KEY_LSHIFT: shiftdown |= 0x1; return;
-		case KEY_RSHIFT: shiftdown |= 0x2; return;
-		case KEY_LCTRL: ctrldown |= 0x1; return;
-		case KEY_RCTRL: ctrldown |= 0x2; return;
-		case KEY_LALT: altdown |= 0x1; return;
-		case KEY_RALT: altdown |= 0x2; return;
-		case KEY_CAPSLOCK: capslock = !capslock; return;
-
-		default: return;
-	}
-	else if (ev->type == ev_keyup) switch (ev->data1)
-	{
-		case KEY_LSHIFT: shiftdown &= ~0x1; return;
-		case KEY_RSHIFT: shiftdown &= ~0x2; return;
-		case KEY_LCTRL: ctrldown &= ~0x1; return;
-		case KEY_RCTRL: ctrldown &= ~0x2; return;
-		case KEY_LALT: altdown &= ~0x1; return;
-		case KEY_RALT: altdown &= ~0x2; return;
-		default: return;
-	}
-}
 
 //
 // D_ProcessEvents
@@ -1000,6 +974,9 @@ void D_StartTitle(void)
 	modeattacking = ATTACKING_NONE;
 	marathonmode = 0;
 
+	// Reset GP
+	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
 
@@ -1381,6 +1358,43 @@ void D_SRB2Main(void)
 
 	if (M_CheckParm("-server") || dedicated)
 		netgame = server = true;
+
+	if (M_CheckParm("-warp") && M_IsNextParm())
+	{
+		const char *word = M_GetNextParm();
+		char ch; // use this with sscanf to catch non-digits with
+		if (fastncmp(word, "MAP", 3)) // MAPxx name
+			pstartmap = M_MapNumber(word[3], word[4]);
+		else if (sscanf(word, "%d%c", &pstartmap, &ch) != 1) // a plain number
+			I_Error("Cannot warp to map %s (invalid map name)\n", word);
+		// Don't check if lump exists just yet because the wads haven't been loaded!
+		// Just do a basic range check here.
+		if (pstartmap < 1 || pstartmap > NUMMAPS)
+			I_Error("Cannot warp to map %d (out of range)\n", pstartmap);
+		else
+		{
+			if (!M_CheckParm("-server"))
+			{
+				G_SetGameModified(true, true);
+
+				// Start up a "minor" grand prix session
+				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+				grandprixinfo.encore = false;
+				grandprixinfo.masterbots = false;
+
+				grandprixinfo.gp = true;
+				grandprixinfo.roundnum = 0;
+				grandprixinfo.cup = NULL;
+				grandprixinfo.wonround = false;
+
+				grandprixinfo.initalize = true;
+			}
+
+			autostart = true;
+		}
+	}
 
 	// adapt tables to SRB2's needs, including extra slots for dehacked file support
 	P_PatchInfoTables();
@@ -1803,18 +1817,46 @@ void D_SRB2Main(void)
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
-			for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-				if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
+			const UINT8 master = KARTSPEED_HARD+1;
+			const char *masterstr = "Master";
+
+			if (!strcasecmp(masterstr, sskill))
+			{
+				newskill = master;
+			}
+			else
+			{
+				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
 				{
-					newskill = (INT16)kartspeed_cons_t[j].value;
-					break;
+					if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
+					{
+						newskill = (INT16)kartspeed_cons_t[j].value;
+						break;
+					}
 				}
 
-			if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+				{
+					j = atoi(sskill); // assume they gave us a skill number, which is okay too
+					if (j >= KARTSPEED_EASY && j <= master)
+						newskill = (INT16)j;
+				}
+			}
+
+			if (grandprixinfo.gp == true)
 			{
-				j = atoi(sskill); // assume they gave us a skill number, which is okay too
-				if (j >= KARTSPEED_EASY && j <= KARTSPEED_HARD)
-					newskill = (INT16)j;
+				if (newskill == master)
+				{
+					grandprixinfo.masterbots = true;
+					newskill = KARTSPEED_HARD;
+				}
+
+				grandprixinfo.gamespeed = newskill;
+			}
+			else if (newskill == master)
+			{
+				grandprixinfo.masterbots = true;
+				newskill = KARTSPEED_HARD;
 			}
 
 			if (newskill != -1)

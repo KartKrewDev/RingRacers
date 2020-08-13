@@ -13,22 +13,28 @@
 #define KART_FULLTURN 800
 
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
+angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
 void K_RegisterKartStuff(void);
 
+UINT16 K_GetPlayerDontDrawFlag(player_t *player);
 boolean K_IsPlayerLosing(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
 extern consvar_t *KartItemCVars[NUMKARTRESULTS-1];
 
+UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper, boolean spbrush);
+INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, boolean bot, boolean rival);
 INT32 K_GetShieldFromItem(INT32 item);
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
 void K_KartPainEnergyFling(player_t *player);
 void K_FlipFromObject(mobj_t *mo, mobj_t *master);
 void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master);
-void K_DoIngameRespawn(player_t *player);
-void K_RespawnChecker(player_t *player);
+void K_GenericExtraFlagsNoZAdjust(mobj_t *mo, mobj_t *master);
+void K_SpawnDashDustRelease(player_t *player);
+void K_SpawnDriftBoostClip(player_t *player);
+void K_SpawnDriftBoostClipSpark(mobj_t *clip);
 void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
@@ -59,17 +65,23 @@ void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
 INT32 K_GetKartDriftSparkValue(player_t *player);
+void K_SpawnDriftBoostExplosion(player_t *player, int stage);
 void K_KartUpdatePosition(player_t *player);
 void K_DropItems(player_t *player);
+void K_DropRocketSneaker(player_t *player);
 void K_StripItems(player_t *player);
 void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
 boolean K_ApplyOffroad(player_t *player);
+tic_t K_GetSpindashChargeTime(player_t *player);
+fixed_t K_GetSpindashChargeSpeed(player_t *player);
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower);
 fixed_t K_GetKartAccel(player_t *player);
 UINT16 K_GetKartFlashing(player_t *player);
-fixed_t K_3dKartMovement(player_t *player, boolean onground, fixed_t forwardmove);
+SINT8 K_GetForwardMove(player_t *player);
+fixed_t K_3dKartMovement(player_t *player, boolean onground);
+boolean K_PlayerEBrake(player_t *player);
 void K_MoveKartPlayer(player_t *player, boolean onground);
 void K_CheckSpectateStatus(void);
 
@@ -80,13 +92,6 @@ void K_PlayOvertakeSound(mobj_t *source);
 void K_PlayPainSound(mobj_t *source);
 void K_PlayHitEmSound(mobj_t *source);
 void K_PlayPowerGloatSound(mobj_t *source);
-
-const char *K_GetItemPatch(UINT8 item, boolean tiny);
-INT32 K_calcSplitFlags(INT32 snapflags);
-void K_LoadKartHUDGraphics(void);
-void K_drawKartHUD(void);
-void K_drawKartFreePlay(UINT32 flashtime);
-void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UINT8 mode);
 
 // =========================================================================
 #endif  // __K_KART__

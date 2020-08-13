@@ -1472,6 +1472,8 @@ void CONS_Printf(const char *fmt, ...)
 
 	Lock_state();
 
+	Lock_state();
+
 	// make sure new text is visible
 	con_scrollup = 0;
 	startup = con_startup;

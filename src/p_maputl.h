@@ -53,6 +53,7 @@ void P_UnsetPrecipThingPosition(precipmobj_t *thing);
 void P_SetPrecipitationThingPosition(precipmobj_t *thing);
 void P_CreatePrecipSecNodeList(precipmobj_t *thing, fixed_t x,fixed_t y);
 boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y);
+void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_t momy);
 
 extern fixed_t opentop, openbottom, openrange, lowfloor, highceiling;
 extern pslope_t *opentopslope, *openbottomslope;

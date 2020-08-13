@@ -425,8 +425,30 @@ typedef struct
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 
+// This could support more, but is that a good idea?
+// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory. 
+#define MAXLEVELLIST 5
+
+typedef struct cupheader_s
+{
+	UINT16 id;                     ///< Cup ID
+	char name[15];                 ///< Cup title (14 chars)
+	char icon[9];                  ///< Name of the icon patch
+	INT16 levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
+	UINT8 numlevels;               ///< Number of levels defined in levellist
+	INT16 bonusgame;               ///< Map number to use for bonus game
+	INT16 specialstage;            ///< Map number to use for special stage
+	UINT8 emeraldnum;              ///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+	SINT8 unlockrequired;          ///< An unlockable is required to select this cup. -1 for no unlocking required.
+	struct cupheader_s *next;      ///< Next cup in linked list
+} cupheader_t;
+
+extern cupheader_t *kartcupheaders; // Start of cup linked list
+extern UINT16 numkartcupheaders;
+
 // Gametypes
 #define NUMGAMETYPEFREESLOTS 128
+
 enum GameType
 {
 	GT_RACE = 0,
@@ -590,8 +612,13 @@ extern UINT16 nightslinktics;
 // SRB2kart
 extern tic_t introtime;
 extern tic_t starttime;
+
+extern const tic_t bulbtime;
+extern UINT8 numbulbs;
+
 extern tic_t raceexittime;
 extern tic_t battleexittime;
+
 extern INT32 hyudorotime;
 extern INT32 stealtime;
 extern INT32 sneakertime;
@@ -645,6 +672,7 @@ extern tic_t hyubgone;
 extern tic_t mapreset;
 extern boolean thwompsactive;
 extern SINT8 spbplace;
+extern boolean rainbowstartavailable;
 
 extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
 extern boolean legitimateexit;

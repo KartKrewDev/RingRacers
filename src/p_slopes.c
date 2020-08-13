@@ -22,6 +22,7 @@
 #include "r_main.h"
 #include "p_maputl.h"
 #include "w_wad.h"
+#include "k_kart.h" // K_PlayerEBrake
 
 pslope_t *slopelist = NULL;
 UINT16 slopecount = 0;
@@ -883,6 +884,10 @@ void P_ButteredSlope(mobj_t *mo)
 		return; // don't slide down slopes if you can't touch them or you're not affected by gravity
 
 	if (mo->player) {
+		// SRB2Kart - spindash negates slopes
+		if (K_PlayerEBrake(mo->player))
+			return;
+
 		// Changed in kart to only not apply physics on very slight slopes (I think about 4 degree angles)
 		if (abs(mo->standingslope->zdelta) < FRACUNIT/21 && !(mo->player->pflags & PF_SPINNING))
 			return; // Don't slide on non-steep slopes unless spinning

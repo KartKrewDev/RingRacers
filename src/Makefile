@@ -446,17 +446,10 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/am_map.o   \
 		$(OBJDIR)/command.o  \
 		$(OBJDIR)/console.o  \
+		$(OBJDIR)/font.o     \
 		$(OBJDIR)/hu_stuff.o \
 		$(OBJDIR)/y_inter.o  \
 		$(OBJDIR)/st_stuff.o \
-		$(OBJDIR)/k_kart.o   \
-		$(OBJDIR)/k_collide.o\
-		$(OBJDIR)/k_color.o  \
-		$(OBJDIR)/k_battle.o \
-		$(OBJDIR)/k_pwrlv.o  \
-		$(OBJDIR)/k_waypoint.o\
-		$(OBJDIR)/k_pathfind.o\
-		$(OBJDIR)/k_bheap.o  \
 		$(OBJDIR)/m_aatree.o \
 		$(OBJDIR)/m_anigif.o \
 		$(OBJDIR)/m_argv.o   \
@@ -510,9 +503,20 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/i_tcp.o    \
 		$(OBJDIR)/lzf.o	     \
 		$(OBJDIR)/vid_copy.o \
-		$(OBJDIR)/k_bot.o \
-		$(OBJDIR)/k_botitem.o \
-		$(OBJDIR)/k_botsearch.o \
+		$(OBJDIR)/k_kart.o   \
+		$(OBJDIR)/k_respawn.o\
+		$(OBJDIR)/k_collide.o\
+		$(OBJDIR)/k_color.o  \
+		$(OBJDIR)/k_battle.o \
+		$(OBJDIR)/k_pwrlv.o  \
+		$(OBJDIR)/k_waypoint.o\
+		$(OBJDIR)/k_pathfind.o\
+		$(OBJDIR)/k_bheap.o  \
+		$(OBJDIR)/k_bot.o    \
+		$(OBJDIR)/k_botitem.o\
+		$(OBJDIR)/k_botsearch.o\
+		$(OBJDIR)/k_grandprix.o\
+		$(OBJDIR)/k_hud.o    \
 		$(i_cdmus_o)    \
 		$(i_net_o)      \
 		$(i_system_o)   \

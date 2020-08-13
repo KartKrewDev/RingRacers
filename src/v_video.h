@@ -135,9 +135,9 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_WRAPX              0x08000000 // Don't clamp texture on X (for HW mode)
 #define V_WRAPY              0x10000000 // Don't clamp texture on Y (for HW mode)
 
-#define V_NOSCALESTART       0x20000000  // don't scale x, y, start coords
-#define V_SPLITSCREEN        0x40000000
-#define V_HORZSCREEN         0x80000000
+#define V_NOSCALESTART       0x20000000 // don't scale x, y, start coords
+#define V_SPLITSCREEN        0x40000000 // Add half of screen width or height automatically depending on player number
+#define V_SLIDEIN            0x80000000 // Slide in from the sides on level load, depending on snap flags
 
 // defines for old functions
 #define V_DrawPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT, s|V_NOSCALESTART|V_NOSCALEPATCH, p, NULL)
@@ -187,6 +187,12 @@ void V_EncoreInvertScreen(void);
 
 void V_DrawPromptBack(INT32 boxheight, INT32 color);
 
+/* Convenience macros for leagacy string function macros. */
+#define V__DrawOneScaleString( x,y,scale,option,font,string ) \
+	V_DrawStringScaled(x,y,scale,FRACUNIT,FRACUNIT,option,font,string)
+#define V__DrawDupxString( x,y,scale,option,font,string )\
+	V__DrawOneScaleString ((x)<<FRACBITS,(y)<<FRACBITS,scale,option,font,string)
+
 // draw a single character
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);
 // draw a single character, but for the chat
@@ -194,51 +200,48 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UI
 
 UINT8 *V_GetStringColormap(INT32 colorflags);
 
-void V_DrawLevelTitle(INT32 x, INT32 y, INT32 option, const char *string);
+#define V_DrawLevelTitle( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,LT_FONT,string)
 
 // wordwrap a string using the hu_font
 char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string);
 
+// draw a string using a font
+void V_DrawStringScaled(
+		fixed_t     x,
+		fixed_t     y,
+		fixed_t           scale,
+		fixed_t     space_scale,
+		fixed_t  linefeed_scale,
+		INT32       flags,
+		int         font,
+		const char *text);
+
 // draw a string using the hu_font
-void V_DrawString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawKartString(INT32 x, INT32 y, INT32 option, const char *string);	// SRB2kart
+#define V_DrawString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,HU_FONT,string)
+#define V_DrawKartString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,KART_FONT,string)
 void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the hu_font, 0.5x scale
-void V_DrawSmallString(INT32 x, INT32 y, INT32 option, const char *string);
+#define V_DrawSmallString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT>>1,option,HU_FONT,string)
 void V_DrawCenteredSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the tny_font
-void V_DrawThinString(INT32 x, INT32 y, INT32 option, const char *string);
+#define V_DrawThinString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,TINY_FONT,string)
 void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *string);
 
-// draw a string using the tny_font, 0.5x scale
-void V_DrawSmallThinString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawCenteredSmallThinString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedSmallThinString(INT32 x, INT32 y, INT32 option, const char *string);
+#define V_DrawStringAtFixed( x,y,option,string ) \
+	V__DrawOneScaleString (x,y,FRACUNIT,option,HU_FONT,string)
 
-// draw a string using the hu_font at fixed_t coordinates
-void V_DrawStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawCenteredStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawRightAlignedStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-
-// draw a string using the hu_font at fixed_t coordinates, 0.5x scale
-void V_DrawSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawCenteredSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawRightAlignedSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-
-// draw a string using the tny_font at fixed_t coordinates
-void V_DrawThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-
-// draw a string using the tny_font at fixed_t coordinates, 0.5x scale
-void V_DrawSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawCenteredSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawRightAlignedSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+#define V_DrawThinStringAtFixed( x,y,option,string ) \
+	V__DrawOneScaleString (x,y,FRACUNIT,option,TINY_FONT,string)
 
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
@@ -254,7 +257,8 @@ INT32 V_LevelNameWidth(const char *string);
 INT32 V_LevelNameHeight(const char *string);
 INT16 V_LevelActNumWidth(UINT8 num); // act number width
 
-void V_DrawCreditString(fixed_t x, fixed_t y, INT32 option, const char *string);
+#define V_DrawCreditString( x,y,option,string ) \
+	V__DrawOneScaleString (x,y,FRACUNIT,option,CRED_FONT,string)
 INT32 V_CreditStringWidth(const char *string);
 
 // Draw a string using the nt_font

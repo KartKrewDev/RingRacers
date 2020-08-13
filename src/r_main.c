@@ -166,10 +166,6 @@ static void ChaseCam_OnChange(void);
 static void ChaseCam2_OnChange(void);
 static void ChaseCam3_OnChange(void);
 static void ChaseCam4_OnChange(void);
-static void FlipCam_OnChange(void);
-static void FlipCam2_OnChange(void);
-static void FlipCam3_OnChange(void);
-static void FlipCam4_OnChange(void);
 void SendWeaponPref(void);
 void SendWeaponPref2(void);
 void SendWeaponPref3(void);
@@ -180,18 +176,12 @@ consvar_t cv_chasecam = {"chasecam", "On", CV_CALL, CV_OnOff, ChaseCam_OnChange,
 consvar_t cv_chasecam2 = {"chasecam2", "On", CV_CALL, CV_OnOff, ChaseCam2_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_chasecam3 = {"chasecam3", "On", CV_CALL, CV_OnOff, ChaseCam3_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_chasecam4 = {"chasecam4", "On", CV_CALL, CV_OnOff, ChaseCam4_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_flipcam = {"flipcam", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_flipcam2 = {"flipcam2", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam2_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_flipcam3 = {"flipcam3", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam3_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_flipcam4 = {"flipcam4", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam4_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_shadow = {"shadow", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_skybox = {"skybox", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_allowmlook = {"allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_showhud = {"showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_translucenthud = {"translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-
-consvar_t cv_translucency = {"translucency", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_drawdist = {"drawdist", "8192", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_drawdist_precip = {"drawdist_precip", "1024", CV_SAVE, drawdist_precip_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -282,26 +272,6 @@ static void ChaseCam3_OnChange(void)
 static void ChaseCam4_OnChange(void)
 {
 	;
-}
-
-static void FlipCam_OnChange(void)
-{
-	SendWeaponPref();
-}
-
-static void FlipCam2_OnChange(void)
-{
-	SendWeaponPref2();
-}
-
-static void FlipCam3_OnChange(void)
-{
-	SendWeaponPref3();
-}
-
-static void FlipCam4_OnChange(void)
-{
-	SendWeaponPref4();
 }
 
 //
@@ -1675,16 +1645,10 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_tailspickup);
 	CV_RegisterVar(&cv_allowmlook);
 	CV_RegisterVar(&cv_homremoval);
-	CV_RegisterVar(&cv_flipcam);
-	CV_RegisterVar(&cv_flipcam2);
-	CV_RegisterVar(&cv_flipcam3);
-	CV_RegisterVar(&cv_flipcam4);
-
 	// Enough for dedicated server
 	if (dedicated)
 		return;
 
-	CV_RegisterVar(&cv_translucency);
 	CV_RegisterVar(&cv_drawdist);
 	CV_RegisterVar(&cv_drawdist_precip);
 	CV_RegisterVar(&cv_fov);

@@ -14,6 +14,7 @@
 #include "doomdef.h"
 #include "byteptr.h"
 #include "hu_stuff.h"
+#include "font.h"
 
 #include "m_menu.h" // gametype_cons_t
 #include "m_cond.h" // emblems
@@ -52,6 +53,7 @@
 
 #include "s_sound.h" // song credits
 #include "k_kart.h"
+#include "k_color.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -63,24 +65,9 @@
 //-------------------------------------------
 //              heads up font
 //-------------------------------------------
-patch_t *hu_font[HU_FONTSIZE];
-patch_t *kart_font[KART_FONTSIZE];	// SRB2kart
-patch_t *tny_font[HU_FONTSIZE];
-patch_t *tallnum[10]; // 0-9
-patch_t *nightsnum[10]; // 0-9
-
-// Level title and credits fonts
-patch_t *lt_font[LT_FONTSIZE];
-patch_t *cred_font[CRED_FONTSIZE];
-patch_t *ttlnum[10]; // act numbers (0-9)
-
-// Name tag fonts
-patch_t *ntb_font[NT_FONTSIZE];
-patch_t *nto_font[NT_FONTSIZE];
 
 // ping font
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
-patch_t *pingnum[10];
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
 
@@ -193,128 +180,25 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
-	char buffer[9];
-	INT32 i, j;
+	INT32 i;
 
 	if (dedicated)
 		return;
 
-	j = HU_FONTSTART;
-	for (i = 0; i < HU_FONTSIZE; i++, j++)
-	{
-		// cache the heads-up font for entire game execution
-		sprintf(buffer, "STCFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			hu_font[i] = NULL;
-		else
-			hu_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-
-		// tiny version of the heads-up font
-		sprintf(buffer, "TNYFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			tny_font[i] = NULL;
-		else
-			tny_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// SRB2kart
-	j = KART_FONTSTART;
-	for (i = 0; i < KART_FONTSIZE; i++, j++)
-	{
-		// cache the heads-up font for entire game execution
-		sprintf(buffer, "MKFNT%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			kart_font[i] = NULL;
-		else
-			kart_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-	//
-
-	j = LT_FONTSTART;
-	for (i = 0; i < LT_FONTSIZE; i++)
-	{
-		sprintf(buffer, "LTFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			lt_font[i] = NULL;
-		else
-			lt_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the credits font for entire game execution (why not?)
-	j = CRED_FONTSTART;
-	for (i = 0; i < CRED_FONTSIZE; i++)
-	{
-		sprintf(buffer, "CRFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			cred_font[i] = NULL;
-		else
-			cred_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	//cache numbers too!
-	for (i = 0; i < 10; i++)
-	{
-		sprintf(buffer, "STTNUM%d", i);
-		tallnum[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "NGTNUM%d", i);
-		nightsnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "PINGN%d", i);
-		pingnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-	}
+	Font_Load();
 
 	// minus for negative tallnums
-	tallminus = (patch_t *)W_CachePatchName("STTMINUS", PU_HUDGFX);
-	tallinfin = (patch_t *)W_CachePatchName("STTINFIN", PU_HUDGFX);
-
-	// cache act numbers for level titles
-	for (i = 0; i < 10; i++)
-	{
-		sprintf(buffer, "TTL%.2d", i);
-		ttlnum[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the base name tag font for entire game execution
-	j = NT_FONTSTART;
-	for (i = 0; i < NT_FONTSIZE; i++)
-	{
-		sprintf(buffer, "NTFNT%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			ntb_font[i] = NULL;
-		else
-			ntb_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
-
-	// cache the outline name tag font for entire game execution
-	j = NT_FONTSTART;
-	for (i = 0; i < NT_FONTSIZE; i++)
-	{
-		sprintf(buffer, "NTFNO%.3d", j);
-		j++;
-
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			nto_font[i] = NULL;
-		else
-			nto_font[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
+	tallminus          = HU_CachePatch("STTMINUS");
 
 	// cache the crosshairs, don't bother to know which one is being used,
 	// just cache all 3, they're so small anyway.
 	for (i = 0; i < HU_CROSSHAIRS; i++)
 	{
-		sprintf(buffer, "CROSHAI%c", '1'+i);
-		crosshair[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		crosshair[i]    = HU_CachePatch("CROSHAI%c", '1'+i);
 	}
 
-	emblemicon = W_CachePatchName("EMBLICON", PU_HUDGFX);
-	tokenicon = W_CachePatchName("TOKNICON", PU_HUDGFX);
-
-	exiticon = W_CachePatchName("EXITICON", PU_HUDGFX);
+	emblemicon         = HU_CachePatch("EMBLICON");
+	tokenicon          = HU_CachePatch("TOKNICON");
 
 	emeraldpics[0][0] = W_CachePatchName("CHAOS1", PU_HUDGFX);
 	emeraldpics[0][1] = W_CachePatchName("CHAOS2", PU_HUDGFX);
@@ -343,20 +227,18 @@ void HU_LoadGraphics(void)
 	emeraldpics[2][6] = W_CachePatchName("EMBOX7", PU_HUDGFX);
 	//emeraldpics[2][7] = W_CachePatchName("EMBOX8", PU_HUDGFX); -- unused
 
-	songcreditbg = W_CachePatchName("K_SONGCR", PU_HUDGFX);
+	songcreditbg       = HU_CachePatch("K_SONGCR");
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
 	{
-		sprintf(buffer, "PINGGFX%d", i+1);
-		pinggfx[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-		sprintf(buffer, "MPING%d", i+1);
-		mping[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+		pinggfx[i] = HU_CachePatch("PINGGFX%d", i+1);
+		mping[i] = HU_CachePatch("MPING%d", i+1);
 	}
 
 	// fps stuff
-	framecounter = W_CachePatchName("FRAMER", PU_HUDGFX);
-	frameslash  = W_CachePatchName("FRAMESL", PU_HUDGFX);;
+	framecounter       = HU_CachePatch("FRAMER");
+	frameslash         = HU_CachePatch("FRAMESL");;
 }
 
 // Initialise Heads up
@@ -364,6 +246,8 @@ void HU_LoadGraphics(void)
 //
 void HU_Init(void)
 {
+	font_t font;
+
 #ifndef NONET
 	COM_AddCommand("say", Command_Say_f);
 	COM_AddCommand("sayto", Command_Sayto_f);
@@ -375,7 +259,76 @@ void HU_Init(void)
 	// set shift translation table
 	shiftxform = english_shiftxform;
 
+	/*
+	Setup fonts
+	*/
+
+	if (!dedicated)
+	{
+#define  DIM( s, n ) ( font.start = s, font.size = n )
+#define ADIM( name )        DIM (name ## _FONTSTART, name ## _FONTSIZE)
+#define   PR( s )           strcpy(font.prefix, s)
+#define  DIG( n )           ( font.digits = n )
+#define  REG                Font_DumbRegister(&font)
+
+		DIG  (3);
+
+		ADIM (HU);
+
+		PR   ("STCFN");
+		REG;
+
+		PR   ("TNYFN");
+		REG;
+
+		ADIM (KART);
+		PR   ("MKFNT");
+		REG;
+
+		ADIM (LT);
+		PR   ("LTFNT");
+		REG;
+
+		ADIM (CRED);
+		PR   ("CRFNT");
+		REG;
+
+		DIG  (1);
+
+		DIM  (0, 10);
+
+		PR   ("STTNUM");
+		REG;
+
+		PR   ("NGTNUM");
+		REG;
+
+		PR   ("PINGN");
+		REG;
+
+#undef  REG
+#undef  DIG
+#undef  PR
+#undef  ADMIN
+#undef  DIM
+	}
+
 	HU_LoadGraphics();
+}
+
+patch_t *HU_CachePatch(const char *format, ...)
+{
+	va_list ap;
+	char buffer[9];
+
+	va_start (ap, format);
+	vsprintf(buffer, format, ap);
+	va_end   (ap);
+
+	if (W_CheckNumForName(buffer) == LUMPERROR)
+		return NULL;
+	else
+		return (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
 }
 
 static inline void HU_Stop(void)
@@ -780,62 +733,40 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	{
 		const char *prefix = "", *cstart = "", *cend = "", *adminchar = "\x82~\x83", *remotechar = "\x82@\x83", *fmt2, *textcolor = "\x80";
 		char *tempchar = NULL;
+		char color_prefix[2];
 
-		// player is a spectator?
-        if (players[playernum].spectator)
+		if (players[playernum].spectator)
 		{
-			cstart = "\x86";    // grey name
-			textcolor = "\x86";
+			// grey text
+			cstart = textcolor = "\x86";
 		}
 		else if (target == -1) // say team
 		{
-			if (players[playernum].ctfteam == 1) // red
+			if (players[playernum].ctfteam == 1) 
 			{
-				cstart = "\x85";
-				textcolor = "\x85";
+				// red text
+				cstart = textcolor = "\x85";
 			}
-			else // blue
+			else
 			{
-				cstart = "\x84";
-				textcolor = "\x84";
+				// blue text
+				cstart = textcolor = "\x84";
 			}
 		}
 		else
 		{
 			UINT16 chatcolor = skincolors[players[playernum].skincolor].chatcolor;
 
-			if (!chatcolor || chatcolor%0x1000 || chatcolor>V_TANMAP)
-				cstart = "\x80";
-			else if (chatcolor == V_PURPLEMAP)
-				cstart = "\x81";
-			else if (chatcolor == V_YELLOWMAP)
-				cstart = "\x82";
-			else if (chatcolor == V_GREENMAP)
-				cstart = "\x83";
-			else if (chatcolor == V_BLUEMAP)
-				cstart = "\x84";
-			else if (chatcolor == V_REDMAP)
-				cstart = "\x85";
-			else if (chatcolor == V_GRAYMAP)
-				cstart = "\x86";
-			else if (chatcolor == V_ORANGEMAP)
-				cstart = "\x87";
-			else if (chatcolor == V_SKYMAP)
-				cstart = "\x88";
-			else if (chatcolor == V_LAVENDERMAP)
-				cstart = "\x89";
-			else if (chatcolor == V_GOLDMAP)
-				cstart = "\x8a";
-			else if (chatcolor == V_AQUAMAP)
-				cstart = "\x8b";
-			else if (chatcolor == V_MAGENTAMAP)
-				cstart = "\x8c";
-			else if (chatcolor == V_PINKMAP)
-				cstart = "\x8d";
-			else if (chatcolor == V_BROWNMAP)
-				cstart = "\x8e";
-			else if (chatcolor == V_TANMAP)
-				cstart = "\x8f";
+			if (chatcolor > V_TANMAP)
+			{
+				sprintf(color_prefix, "%c", '\x80');
+			}
+			else
+			{
+				sprintf(color_prefix, "%c", '\x80' + (chatcolor >> V_CHARCOLORSHIFT));
+			}
+
+			cstart = color_prefix;
 		}
 		prefix = cstart;
 
@@ -844,6 +775,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(adminchar) + 1, PU_STATIC, NULL);
 		else if (IsPlayerAdmin(playernum))
 			tempchar = (char *)Z_Calloc(strlen(cstart) + strlen(remotechar) + 1, PU_STATIC, NULL);
+
 		if (tempchar)
 		{
 			if (playernum == serverplayer)
@@ -911,7 +843,7 @@ static inline boolean HU_keyInChatString(char *s, char ch)
 {
 	size_t l;
 
-	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && hu_font[ch-HU_FONTSTART])
+	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && fontv[HU_FONT].font[ch-HU_FONTSTART])
 	  || ch == ' ') // Allow spaces, of course
 	{
 		l = strlen(s);
@@ -1353,7 +1285,7 @@ static char *CHAT_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 			c = toupper(c);
 		c -= HU_FONTSTART;
 
-		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+		if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
 		{
 			chw = spacewidth;
 			lastusablespace = i;
@@ -2309,11 +2241,17 @@ void
 HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
 	patch_t *patch;
+	INT32 w = BASEVIDWIDTH;
+
+	if (r_splitscreen > 1)
+	{
+		w /= 2;
+	}
 
 	patch = mping[Ping_gfx_num(ping)];
 
 	if (( flags & V_SNAPTORIGHT ))
-		x += ( BASEVIDWIDTH - SHORT (patch->width) );
+		x += ( w - SHORT (patch->width) );
 
 	V_DrawScaledPatch(x, y, flags, patch);
 }

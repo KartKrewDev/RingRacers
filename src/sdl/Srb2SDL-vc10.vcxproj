@@ -234,6 +234,7 @@
     <ClInclude Include="..\hardware\hw_md3load.h" />
     <ClInclude Include="..\hardware\hw_model.h" />
     <ClInclude Include="..\hardware\u_list.h" />
+    <ClInclude Include="..\font.h" />
     <ClInclude Include="..\hu_stuff.h" />
     <ClInclude Include="..\info.h" />
     <ClInclude Include="..\i_addrinfo.h" />
@@ -252,6 +253,7 @@
     <ClInclude Include="..\lzf.h" />
     <ClInclude Include="..\md5.h" />
     <ClInclude Include="..\mserv.h" />
+    <ClInclude Include="..\http-mserv.h" />
     <ClInclude Include="..\m_aatree.h" />
     <ClInclude Include="..\m_anigif.h" />
     <ClInclude Include="..\m_argv.h" />
@@ -384,6 +386,7 @@
     <ClCompile Include="..\hardware\hw_model.c" />
     <ClCompile Include="..\hardware\r_opengl\r_opengl.c" />
     <ClCompile Include="..\hardware\u_list.c" />
+    <ClCompile Include="..\font.c" />
     <ClCompile Include="..\hu_stuff.c" />
     <ClCompile Include="..\info.c" />
     <ClCompile Include="..\i_addrinfo.c">
@@ -407,6 +410,7 @@
     <ClCompile Include="..\lzf.c" />
     <ClCompile Include="..\md5.c" />
     <ClCompile Include="..\mserv.c" />
+    <ClCompile Include="..\http-mserv.c" />
     <ClCompile Include="..\m_aatree.c" />
     <ClCompile Include="..\m_anigif.c" />
     <ClCompile Include="..\m_argv.c" />

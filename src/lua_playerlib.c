@@ -118,7 +118,7 @@ static int lib_iterateDisplayplayers(lua_State *L)
 
 	for (i++; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		if (!playeringame[displayplayers[i]] || i > splitscreen)
+		if (i > splitscreen || !playeringame[displayplayers[i]])
 			return 0;	// Stop! There are no more players for us to go through. There will never be a player gap in displayplayers.
 
 		if (!players[displayplayers[i]].mo)
@@ -139,6 +139,8 @@ static int lib_getDisplayplayers(lua_State *L)
 		lua_Integer i = luaL_checkinteger(L, 2);
 		if (i < 0 || i >= MAXSPLITSCREENPLAYERS)
 			return luaL_error(L, "displayplayers[] index %d out of range (0 - %d)", i, MAXSPLITSCREENPLAYERS-1);
+		if (i > splitscreen)
+			return 0;
 		if (!playeringame[displayplayers[i]])
 			return 0;
 		if (!players[displayplayers[i]].mo)
@@ -217,6 +219,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->kartstuff, META_KARTSTUFF);
 	else if (fastcmp(field,"frameangle"))
 		lua_pushangle(L, plr->frameangle);
+	else if (fastcmp(field,"airtime"))
+		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"pflags"))
 		lua_pushinteger(L, plr->pflags);
 	else if (fastcmp(field,"panim"))
@@ -238,6 +242,14 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->kartspeed);
 	else if (fastcmp(field,"kartweight"))
 		lua_pushinteger(L, plr->kartweight);
+	else if (fastcmp(field,"followerskin"))
+		lua_pushinteger(L, plr->followerskin);
+	else if (fastcmp(field,"followerready"))
+		lua_pushboolean(L, plr->followerready);
+	else if (fastcmp(field,"followercolor"))
+		lua_pushinteger(L, plr->followercolor);
+	else if (fastcmp(field,"follower"))
+		LUA_PushUserdata(L, plr->follower, META_MOBJ);
 	//
 	else if (fastcmp(field,"charflags"))
 		lua_pushinteger(L, plr->charflags);
@@ -247,6 +259,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->followmobj, META_MOBJ);
 	else if (fastcmp(field,"lives"))
 		lua_pushinteger(L, plr->lives);
+	else if (fastcmp(field,"lostlife"))
+		lua_pushboolean(L, plr->lostlife);
 	else if (fastcmp(field,"continues"))
 		lua_pushinteger(L, plr->continues);
 	else if (fastcmp(field,"xtralife"))
@@ -299,20 +313,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->weapondelay);
 	else if (fastcmp(field,"tossdelay"))
 		lua_pushinteger(L, plr->tossdelay);
-	else if (fastcmp(field,"starpostx"))
-		lua_pushinteger(L, plr->starpostx);
-	else if (fastcmp(field,"starposty"))
-		lua_pushinteger(L, plr->starposty);
-	else if (fastcmp(field,"starpostz"))
-		lua_pushinteger(L, plr->starpostz);
 	else if (fastcmp(field,"starpostnum"))
 		lua_pushinteger(L, plr->starpostnum);
-	else if (fastcmp(field,"starposttime"))
-		lua_pushinteger(L, plr->starposttime);
-	else if (fastcmp(field,"starpostangle"))
-		lua_pushangle(L, plr->starpostangle);
-	else if (fastcmp(field,"starpostscale"))
-		lua_pushfixed(L, plr->starpostscale);
 	else if (fastcmp(field,"angle_pos"))
 		lua_pushangle(L, plr->angle_pos);
 	else if (fastcmp(field,"old_angle_pos"))
@@ -405,6 +407,7 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->awayviewtics);
 	else if (fastcmp(field,"awayviewaiming"))
 		lua_pushangle(L, plr->awayviewaiming);
+
 	else if (fastcmp(field,"spectator"))
 		lua_pushboolean(L, plr->spectator);
 	else if (fastcmp(field,"bot"))
@@ -514,10 +517,20 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"frameangle"))
 		plr->frameangle = luaL_checkangle(L, 3);
+	else if (fastcmp(field,"airtime"))
+		plr->airtime = (tic_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartspeed"))
 		plr->kartspeed = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartweight"))
 		plr->kartweight = (UINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"followerskin"))
+		plr->followerskin = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"followercolor"))
+		plr->followercolor = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"followerready"))
+		plr->followerready = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"follower"))	// it's probably best we don't allow the follower mobj to change.
+		return NOSET;
 	//
 	else if (fastcmp(field,"charflags"))
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
@@ -532,6 +545,8 @@ static int player_set(lua_State *L)
 	}
 	else if (fastcmp(field,"lives"))
 		plr->lives = (SINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lostlife"))
+		plr->lostlife = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"continues"))
 		plr->continues = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"xtralife"))
@@ -584,20 +599,8 @@ static int player_set(lua_State *L)
 		plr->weapondelay = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tossdelay"))
 		plr->tossdelay = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostx"))
-		plr->starpostx = (INT16)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starposty"))
-		plr->starposty = (INT16)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostz"))
-		plr->starpostz = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"starpostnum"))
 		plr->starpostnum = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starposttime"))
-		plr->starposttime = (tic_t)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"starpostangle"))
-		plr->starpostangle = luaL_checkangle(L, 3);
-	else if (fastcmp(field,"starpostscale"))
-		plr->starpostscale = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"angle_pos"))
 		plr->angle_pos = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"old_angle_pos"))
@@ -843,8 +846,6 @@ static int ticcmd_get(lua_State *L)
 
 	if (fastcmp(field,"forwardmove"))
 		lua_pushinteger(L, cmd->forwardmove);
-	else if (fastcmp(field,"sidemove"))
-		lua_pushinteger(L, cmd->sidemove);
 	else if (fastcmp(field,"angleturn"))
 		lua_pushinteger(L, cmd->angleturn);
 	else if (fastcmp(field,"aiming"))
@@ -873,8 +874,6 @@ static int ticcmd_set(lua_State *L)
 
 	if (fastcmp(field,"forwardmove"))
 		cmd->forwardmove = (SINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"sidemove"))
-		cmd->sidemove = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"angleturn"))
 		cmd->angleturn = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aiming"))
