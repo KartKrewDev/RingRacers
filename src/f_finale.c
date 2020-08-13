@@ -1101,9 +1101,6 @@ void F_GameEvaluationTicker(void)
 		{
 			++timesBeaten;
 
-			if (ALL7EMERALDS(emeralds))
-				++timesBeatenWithEmeralds;
-
 			if (M_UpdateUnlockablesAndExtraEmblems())
 				S_StartSound(NULL, sfx_s3k68);
 

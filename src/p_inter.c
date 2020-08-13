@@ -715,22 +715,7 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 	if (player->starpostnum >= post->health)
 		return; // Already hit this post
 
-	// Save the player's time and position.
-	player->starposttime = leveltime;
-	player->starpostx = checkbase->x>>FRACBITS;
-	player->starposty = checkbase->y>>FRACBITS;
-	player->starpostz = post->z>>FRACBITS;
-	player->starpostangle = post->angle;
-	player->starpostscale = player->mo->destscale;
-	if (post->flags2 & MF2_OBJECTFLIP)
-	{
-		player->starpostscale *= -1;
-		player->starpostz += post->height>>FRACBITS;
-	}
 	player->starpostnum = post->health;
-	//S_StartSound(toucher, post->info->painsound);
-
-	P_ClearStarPost(post->health);
 }
 
 // Easily make it so that overtime works offline
@@ -927,7 +912,7 @@ boolean P_CheckRacers(void)
 
 		numplayersingame++;
 
-		if (players[i].exiting || (players[i].pflags & PF_TIMEOVER))
+		if (players[i].exiting || (players[i].pflags & PF_GAMETYPEOVER))
 		{
 			numexiting++;
 		}
@@ -987,7 +972,7 @@ boolean P_CheckRacers(void)
 				continue;
 			}
 
-			if (players[i].exiting || (players[i].pflags & PF_TIMEOVER))
+			if (players[i].exiting || (players[i].pflags & PF_GAMETYPEOVER))
 			{
 				// You're done, you're free to go.
 				continue;
@@ -1367,7 +1352,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				target->fuse = TICRATE*3; // timer before mobj disappears from view (even if not an actual player)
 				target->momx = target->momy = target->momz = 0;
 
-				if (target->player && target->player->pflags & PF_TIMEOVER)
+				if (target->player && target->player->pflags & PF_GAMETYPEOVER)
 					break;
 
 				if (damagetype == DMG_DROWNED) // drowned

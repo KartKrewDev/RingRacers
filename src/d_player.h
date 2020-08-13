@@ -436,24 +436,6 @@ typedef enum
 
 //}
 
-#define WEP_AUTO    1
-#define WEP_BOUNCE  2
-#define WEP_SCATTER 3
-#define WEP_GRENADE 4
-#define WEP_EXPLODE 5
-#define WEP_RAIL    6
-#define NUM_WEAPONS 7
-
-typedef enum
-{
-	RW_AUTO    =  1,
-	RW_BOUNCE  =  2,
-	RW_SCATTER =  4,
-	RW_GRENADE =  8,
-	RW_EXPLODE = 16,
-	RW_RAIL    = 32
-} ringweapons_t;
-
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
 {

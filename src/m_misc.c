@@ -647,9 +647,9 @@ void M_SaveConfig(const char *filename)
 	if (!dedicated)
 	{
 		if (tutorialmode && tutorialgcs)
-			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom], gamecontrol[1]); // using gcs_custom as temp storage
+			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom]); // using gcs_custom as temp storage
 		else
-			G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1]);
+			G_SaveKeySetting(f, gamecontrol);
 	}
 
 	fclose(f);

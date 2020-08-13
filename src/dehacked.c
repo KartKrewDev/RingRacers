@@ -11469,15 +11469,6 @@ struct {
 	{"CR_NONE",CR_NONE},
 	{"CR_ZOOMTUBE",CR_ZOOMTUBE},
 
-	// Ring weapons (ringweapons_t)
-	// Useful for A_GiveWeapon
-	{"RW_AUTO",RW_AUTO},
-	{"RW_BOUNCE",RW_BOUNCE},
-	{"RW_SCATTER",RW_SCATTER},
-	{"RW_GRENADE",RW_GRENADE},
-	{"RW_EXPLODE",RW_EXPLODE},
-	{"RW_RAIL",RW_RAIL},
-
 	// Character flags (skinflags_t)
 	{"SF_HIRES",SF_HIRES},
 	{"SF_MACHINE",SF_MACHINE},
@@ -11579,15 +11570,6 @@ struct {
 	{"PA_ABILITY",PA_ABILITY},
 	{"PA_ABILITY2",PA_ABILITY2},
 	{"PA_RIDE",PA_RIDE},
-
-	// Current weapon
-	{"WEP_AUTO",WEP_AUTO},
-	{"WEP_BOUNCE",WEP_BOUNCE},
-	{"WEP_SCATTER",WEP_SCATTER},
-	{"WEP_GRENADE",WEP_GRENADE},
-	{"WEP_EXPLODE",WEP_EXPLODE},
-	{"WEP_RAIL",WEP_RAIL},
-	{"NUM_WEAPONS",NUM_WEAPONS},
 
 	// Value for infinite lives
 	{"INFLIVES",INFLIVES},

@@ -124,7 +124,7 @@ extern UINT8 gamekeydown[NUMINPUTS];
 // two key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][2];
 extern INT32 gamecontroldefault[MAXSPLITSCREENPLAYERS][num_gamecontrolschemes][num_gamecontrols][2]; // default control storage, use 0 (gcs_custom) for memory retention
-#define PlayerInputDown(p, gc) (gamekeydown[p-1][gamecontrol[gc][0]] || gamekeydown[p-1][gamecontrol[gc][1]])
+#define PlayerInputDown(p, gc) (gamekeydown[gamecontrol[p-1][gc][0]] || gamekeydown[gamecontrol[p-1][gc][1]])
 
 #define num_gcl_accelerate 1
 #define num_gcl_brake 1
@@ -162,7 +162,7 @@ void Command_Setcontrol4_f(void);
 void G_DefineDefaultControls(void);
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
 void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
-void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2], INT32 (*fromcontrolsbis)[2]);
+void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[2], INT32 (*fromcontrolsb)[2], INT32 (*fromcontrolsc)[2], INT32 (*fromcontrolsd)[2]);
 INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify);
 
 #endif

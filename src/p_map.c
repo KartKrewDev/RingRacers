@@ -2329,7 +2329,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 #ifndef NOCLIPCAM
 			if ((thiscam == &camera[i] && (players[displayplayers[i]].pflags & PF_NOCLIP)) || (leveltime < introtime)) // Noclipping player camera noclips too!!
 #else
-			if (thiscam == &camera[i] && !(players[displayplayers[i]].pflags & PF_TIMEOVER)) // Time Over should not clip through walls
+			if (thiscam == &camera[i] && !(players[displayplayers[i]].pflags & PF_GAMETYPEOVER)) // Time Over should not clip through walls
 #endif
 			{
 				floatok = true;

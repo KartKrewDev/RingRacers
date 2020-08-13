@@ -1715,7 +1715,7 @@ inline static void M_GetGametypeColor(void)
 	warningflags = V_REDMAP;
 	recommendedflags = V_GREENMAP;
 
-	if (modeattacking // == ATTACKING_RECORD
+	if (modeattacking // == ATTACKING_TIME
 		|| gamestate == GS_TIMEATTACK)
 	{
 		highlightflags = V_ORANGEMAP;
@@ -1732,7 +1732,7 @@ inline static void M_GetGametypeColor(void)
 	else
 		gt = gametype;
 
-	if (gt == GT_MATCH)
+	if (gt == GT_BATTLE)
 	{
 		highlightflags = V_REDMAP;
 		warningflags = V_ORANGEMAP;
@@ -7426,8 +7426,7 @@ static void M_Statistics(INT32 choice)
 		if (!mapheaderinfo[i] || mapheaderinfo[i]->lvlttl[0] == '\0')
 			continue;
 
-		if (!(mapheaderinfo[i]->typeoflevel & TOL_RACE) // TOL_SP
-			|| (mapheaderinfo[i]->menuflags & (LF2_HIDEINSTATS|LF2_HIDEINMENU)))
+		if (mapheaderinfo[i]->menuflags & (LF2_HIDEINSTATS|LF2_HIDEINMENU))
 			continue;
 
 		if (M_MapLocked(i+1)) // !mapvisited[i]
@@ -8137,7 +8136,7 @@ static void M_ChooseTimeAttack(INT32 choice)
 	(void)choice;
 	emeralds = 0;
 	M_ClearMenus(true);
-	modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_RECORD);
+	modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_TIME);
 
 	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
 			srb2home, timeattackfolder);
@@ -8188,7 +8187,7 @@ static void M_HandleStaffReplay(INT32 choice)
 			if (l == LUMPERROR)
 				break;
 			M_ClearMenus(true);
-			modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_RECORD);
+			modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_TIME);
 			demo.loadfiles = false; demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 			G_DoPlayDemo(va("%sS%02u",G_BuildMapName(cv_nextmap.value),cv_dummystaff.value));
 			break;
@@ -8209,7 +8208,7 @@ static void M_ReplayTimeAttack(INT32 choice)
 {
 	const char *which;
 	M_ClearMenus(true);
-	modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_RECORD); // set modeattacking before G_DoPlayDemo so the map loader knows
+	modeattacking = (levellistmode == LLM_BREAKTHECAPSULES ? ATTACKING_CAPSULES : ATTACKING_TIME); // set modeattacking before G_DoPlayDemo so the map loader knows
 	demo.loadfiles = false; demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 
 	if (currentMenu == &SP_ReplayDef)

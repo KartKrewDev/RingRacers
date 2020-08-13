@@ -91,7 +91,7 @@ void M_ClearSecrets(void)
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 		conditionSets[i].achieved = false;
 
-	timesBeaten = timesBeatenWithEmeralds = 0;
+	timesBeaten = 0;
 
 	// Re-unlock any always unlocked things
 	M_SilentUpdateUnlockablesAndEmblems();
@@ -112,8 +112,6 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return (vspowerlevel[cn->extrainfo1] >= (unsigned)cn->requirement);
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			return (timesBeaten >= (unsigned)cn->requirement);
-		case UC_ALLEMERALDS: // Requires game beaten with all 7 emeralds >= x times
-			return (timesBeatenWithEmeralds >= (unsigned)cn->requirement);
 		case UC_OVERALLTIME: // Requires overall time <= x
 			return (M_GotLowEnoughTime(cn->requirement));
 		case UC_MAPVISITED: // Requires map x to be visited

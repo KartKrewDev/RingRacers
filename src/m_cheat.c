@@ -279,9 +279,6 @@ boolean cht_Responder(event_t *ev)
 #define REQUIRE_SINGLEPLAYER if (netgame || multiplayer)\
 { CONS_Printf(M_GetText("This only works in single player.\n")); return; }
 
-#define REQUIRE_NOULTIMATE if (ultimatemode)\
-{ CONS_Printf(M_GetText("You're too good to be cheating!\n")); return; }
-
 // command that can be typed at the console!
 void Command_CheatNoClip_f(void)
 {
@@ -289,7 +286,6 @@ void Command_CheatNoClip_f(void)
 
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_NOULTIMATE;
 
 	plyr = &players[consoleplayer];
 
@@ -313,7 +309,6 @@ void Command_CheatGod_f(void)
 
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_NOULTIMATE;
 
 	plyr = &players[consoleplayer];
 	plyr->pflags ^= PF_GODMODE;
@@ -328,7 +323,6 @@ void Command_CheatNoTarget_f(void)
 
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_NOULTIMATE;
 
 	plyr = &players[consoleplayer];
 	plyr->pflags ^= PF_INVIS;
@@ -844,7 +838,6 @@ void Command_Savecheckpoint_f(void)
 /*void Command_Getallemeralds_f(void)
 {
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_NOULTIMATE;
 	REQUIRE_PANDORA;
 
 	emeralds = ((EMERALD7)*2)-1;
@@ -855,7 +848,6 @@ void Command_Savecheckpoint_f(void)
 void Command_Resetemeralds_f(void)
 {
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_PANDORA;
 
 	emeralds = 0;
 
@@ -867,7 +859,6 @@ void Command_Devmode_f(void)
 #ifndef _DEBUG
 	REQUIRE_SINGLEPLAYER;
 #endif
-	REQUIRE_NOULTIMATE;
 
 	if (COM_Argc() > 1)
 	{
@@ -888,30 +879,20 @@ void Command_Devmode_f(void)
 	G_SetGameModified(multiplayer, true);
 }
 
-/*void Command_Setrings_f(void)
+void Command_Setrings_f(void)
 {
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_NOULTIMATE;
 	REQUIRE_PANDORA;
 
 	if (COM_Argc() > 1)
 	{
-		if (!(maptol & TOL_NIGHTS))
-		{
-			// P_GivePlayerRings does value clamping
-			players[consoleplayer].rings = 0;
-			P_GivePlayerRings(&players[consoleplayer], atoi(COM_Argv(1)));
-			players[consoleplayer].totalring -= atoi(COM_Argv(1)); //undo totalring addition done in P_GivePlayerRings
-		}
-		else
-		{
-			players[consoleplayer].spheres = 0;
-			P_GivePlayerSpheres(&players[consoleplayer], atoi(COM_Argv(1)));
-			// no totalsphere addition to revert
-		}
+		// P_GivePlayerRings does value clamping
+		players[consoleplayer].rings = 0;
+		P_GivePlayerRings(&players[consoleplayer], atoi(COM_Argv(1)));
+		players[consoleplayer].totalring -= atoi(COM_Argv(1)); //undo totalring addition done in P_GivePlayerRings
 
-		G_SetGameModified(multiplayer);
+		G_SetGameModified(multiplayer, true);
 	}
 }
 
@@ -919,14 +900,15 @@ void Command_Setlives_f(void)
 {
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_NOULTIMATE;
 	REQUIRE_PANDORA;
 
 	if (COM_Argc() > 1)
 	{
 		SINT8 lives = atoi(COM_Argv(1));
 		if (lives == -1)
+		{
 			players[consoleplayer].lives = INFLIVES; // infinity!
+		}
 		else
 		{
 			// P_GivePlayerLives does value clamping
@@ -934,36 +916,9 @@ void Command_Setlives_f(void)
 			P_GivePlayerLives(&players[consoleplayer], atoi(COM_Argv(1)));
 		}
 
-		G_SetGameModified(multiplayer);
+		G_SetGameModified(multiplayer, true);
 	}
 }
-
-void Command_Setcontinues_f(void)
-{
-	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-	REQUIRE_NOULTIMATE;
-	REQUIRE_PANDORA;
-
-	if (!continuesInSession)
-	{
-		CONS_Printf(M_GetText("This session does not use continues.\n"));
-		return;
-	}
-
-	if (COM_Argc() > 1)
-	{
-		INT32 numcontinues = atoi(COM_Argv(1));
-		if (numcontinues > 99)
-			numcontinues = 99;
-		else if (numcontinues < 0)
-			numcontinues = 0;
-
-		players[consoleplayer].continues = numcontinues;
-
-		G_SetGameModified(multiplayer);
-	}
-}*/
 
 //
 // OBJECTPLACE (and related variables)
@@ -1441,7 +1396,6 @@ void Command_ObjectPlace_f(void)
 {
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_NOULTIMATE;
 
 	G_SetGameModified(multiplayer, true);
 

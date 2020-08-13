@@ -53,6 +53,6 @@ typedef struct JoyType_s JoyType_t;
 	for palyer[sic] 1-4's joystick/gamepad
 */
 
-extern JoyType_t Joystick, Joystick2, Joystick3, Joystick4;
+extern JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
 #endif // __I_JOY_H__

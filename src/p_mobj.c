@@ -3340,7 +3340,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 			dummy.z = thiscam->z;
 			dummy.height = thiscam->height;
 
-			if ((player->pflags & PF_TIMEOVER) && (gametyperules & GTR_CIRCUIT))
+			if ((player->pflags & PF_GAMETYPEOVER) && (gametyperules & GTR_CIRCUIT))
 			{
 				player->karthud[khud_timeovercam] = (2*TICRATE)+1;
 			}
@@ -11495,7 +11495,7 @@ void P_SceneryThinker(mobj_t *mobj)
 			if (!playeringame[mobj->threshold] || players[mobj->threshold].spectator) // focused on a valid player?
 				return;
 
-			if (!(players[mobj->threshold].exiting) && !(players[mobj->threshold].pflags & PF_TIMEOVER)) // not finished yet?
+			if (!(players[mobj->threshold].exiting) && !(players[mobj->threshold].pflags & PF_GAMETYPEOVER)) // not finished yet?
 				return;
 
 			if (K_IsPlayerLosing(&players[mobj->threshold]))
@@ -12928,9 +12928,6 @@ void P_AfterPlayerSpawn(INT32 playernum)
 
 	if (CheckForReverseGravity)
 		P_CheckGravity(mobj, false);
-
-	if (p->pflags & PF_FINISHED)
-		P_GiveFinishFlags(p);
 }
 
 // spawn it at a playerspawn mapthing

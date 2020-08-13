@@ -762,8 +762,6 @@ void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum)
 	UINT32 flags;
 
 	tol = mapheaderinfo[mapnum-1]->typeoflevel;
-	if (!(tol & TOL_SP))
-		return;
 	flags = mapheaderinfo[mapnum-1]->levelflags;
 
 	n = W_LumpLengthPwad(wadnum, lumpnum) / (5 * sizeof (INT16));
@@ -3375,7 +3373,7 @@ static void P_InitLevelSettings(void)
 		players[i].deadtimer = players[i].numboxes = players[i].laps = 0;
 		players[i].health = 1;
 		players[i].aiming = 0;
-		players[i].pflags &= ~PF_TIMEOVER;
+		players[i].pflags &= ~PF_GAMETYPEOVER;
 	}
 
 	racecountdown = exitcountdown = exitfadestarted = 0;
@@ -3537,23 +3535,18 @@ static void P_ForceCharacter(const char *forcecharskin)
 	if (netgame)
 	{
 		char skincmd[33];
-		if (splitscreen)
+
+		for (i = 0; i <= splitscreen; i++)
 		{
-			sprintf(skincmd, "skin2 %s\n", forcecharskin);
-			CV_Set(&cv_skin[1], forcecharskin);
-			if (splitscreen > 1)
-			{
-				sprintf(skincmd, "skin3 %s\n", forcecharskin);
-				CV_Set(&cv_skin[2], forcecharskin);
-				if (splitscreen > 2)
-				{
-					sprintf(skincmd, "skin4 %s\n", forcecharskin);
-					CV_Set(&cv_skin[3], forcecharskin);
-				}
-			}
+			const char *num = "";
+
+			if (i > 0)
+				num = va("%d", i+1);
+
+			sprintf(skincmd, "skin%s %s\n", num, forcecharskin);
+			CV_Set(&cv_skin[i], forcecharskin);
 		}
 
-		sprintf(skincmd, "skin %s\n", forcecharskin);
 		COM_BufAddText(skincmd);
 	}
 	else
@@ -3902,8 +3895,6 @@ static void P_InitPlayers(void)
 		else // gametype is race
 		{
 			G_SpawnPlayer(i);
-			if (players[i].starposttime)
-				P_ClearStarPost(players[i].starpostnum);
 		}
 	}
 }

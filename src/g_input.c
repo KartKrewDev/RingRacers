@@ -843,7 +843,7 @@ INT32 G_KeyStringtoNum(const char *keystr)
 
 void G_DefineDefaultControls(void)
 {
-	INT32 i, j;
+	INT32 i;
 
 	// Keyboard controls
 	gamecontroldefault[0][gcs_kart][gc_aimforward ][0] = KEY_UPARROW;
@@ -874,17 +874,17 @@ void G_DefineDefaultControls(void)
 	for (i = gcs_custom+1; i < num_gamecontrolschemes; i++) // skip gcs_custom
 	{
 		// Gamepad controls -- same for all schemes
-		gamecontroldefault[0][j][gc_accelerate ][1] = KEY_JOY1+0; // A
-		gamecontroldefault[0][j][gc_lookback   ][1] = KEY_JOY1+2; // X
-		gamecontroldefault[0][j][gc_brake      ][1] = KEY_JOY1+1; // B
-		gamecontroldefault[0][j][gc_fire       ][1] = KEY_JOY1+4; // LB
-		gamecontroldefault[0][j][gc_drift      ][1] = KEY_JOY1+5; // RB
+		gamecontroldefault[0][i][gc_accelerate ][1] = KEY_JOY1+0; // A
+		gamecontroldefault[0][i][gc_lookback   ][1] = KEY_JOY1+2; // X
+		gamecontroldefault[0][i][gc_brake      ][1] = KEY_JOY1+1; // B
+		gamecontroldefault[0][i][gc_fire       ][1] = KEY_JOY1+4; // LB
+		gamecontroldefault[0][i][gc_drift      ][1] = KEY_JOY1+5; // RB
 
-		gamecontroldefault[0][j][gc_viewpoint  ][1] = KEY_JOY1+3; // Y
-		gamecontroldefault[0][j][gc_pause      ][1] = KEY_JOY1+6; // Back
-		gamecontroldefault[0][j][gc_systemmenu ][0] = KEY_JOY1+7; // Start
-		gamecontroldefault[0][j][gc_talkkey    ][1] = KEY_HAT1+1; // D-Pad Down
-		gamecontroldefault[0][j][gc_scores     ][1] = KEY_HAT1+0; // D-Pad Up
+		gamecontroldefault[0][i][gc_viewpoint  ][1] = KEY_JOY1+3; // Y
+		gamecontroldefault[0][i][gc_pause      ][1] = KEY_JOY1+6; // Back
+		gamecontroldefault[0][i][gc_systemmenu ][0] = KEY_JOY1+7; // Start
+		gamecontroldefault[0][i][gc_talkkey    ][1] = KEY_HAT1+1; // D-Pad Down
+		gamecontroldefault[0][i][gc_scores     ][1] = KEY_HAT1+0; // D-Pad Up
 
 		gamecontroldefault[1][i][gc_accelerate ][0] = KEY_2JOY1+0; // A
 		gamecontroldefault[1][i][gc_lookback   ][0] = KEY_2JOY1+2; // X
@@ -945,17 +945,17 @@ void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const I
 	}
 }
 
-void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2])
+void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[2], INT32 (*fromcontrolsb)[2], INT32 (*fromcontrolsc)[2], INT32 (*fromcontrolsd)[2])
 {
 	INT32 i;
 
 	for (i = 1; i < num_gamecontrols; i++)
 	{
 		fprintf(f, "setcontrol \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(fromcontrols[0][i][0]));
+			G_KeynumToString(fromcontrolsa[i][0]));
 
-		if (fromcontrols[0][i][1])
-			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[0][i][1]));
+		if (fromcontrolsa[i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrolsa[i][1]));
 		else
 			fprintf(f, "\n");
 	}
@@ -963,10 +963,10 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2])
 	for (i = 1; i < num_gamecontrols; i++)
 	{
 		fprintf(f, "setcontrol2 \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(fromcontrols[1][i][0]));
+			G_KeynumToString(fromcontrolsb[i][0]));
 
-		if (fromcontrols[1][i][1])
-			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[1][i][1]));
+		if (fromcontrolsb[i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrolsb[i][1]));
 		else
 			fprintf(f, "\n");
 	}
@@ -974,10 +974,10 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2])
 	for (i = 1; i < num_gamecontrols; i++)
 	{
 		fprintf(f, "setcontrol3 \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(fromcontrols[2][i][0]));
+			G_KeynumToString(fromcontrolsc[i][0]));
 
-		if (fromcontrols[2][i][1])
-			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[2][i][1]));
+		if (fromcontrolsc[i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrolsc[i][1]));
 		else
 			fprintf(f, "\n");
 	}
@@ -985,10 +985,10 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2])
 	for (i = 1; i < num_gamecontrols; i++)
 	{
 		fprintf(f, "setcontrol4 \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(fromcontrols[3][i][0]));
+			G_KeynumToString(fromcontrolsd[i][0]));
 
-		if (fromcontrols[3][i][1])
-			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrols[3][i][1]));
+		if (fromcontrolsd[i][1])
+			fprintf(f, " \"%s\"\n", G_KeynumToString(fromcontrolsd[i][1]));
 		else
 			fprintf(f, "\n");
 	}

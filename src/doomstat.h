@@ -98,8 +98,8 @@ extern boolean savemoddata; // This mod saves time/emblem data.
 extern boolean imcontinuing; // Temporary flag while continuing
 extern boolean metalrecording;
 
-#define ATTACKING_NONE   0
-#define ATTACKING_RECORD 1
+#define ATTACKING_NONE     0
+#define ATTACKING_TIME     1
 #define ATTACKING_CAPSULES 2
 extern UINT8 modeattacking;
 
@@ -684,7 +684,6 @@ extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
 
 extern UINT32 timesBeaten; // # of times the game has been beaten.
-extern UINT32 timesBeatenWithEmeralds;
 
 // ===========================
 // Internal parameters, fixed.

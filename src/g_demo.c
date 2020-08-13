@@ -1952,7 +1952,7 @@ void G_BeginRecording(void)
 	{
 		case ATTACKING_NONE: // 0
 			break;
-		case ATTACKING_RECORD: // 1
+		case ATTACKING_TIME: // 1
 			demotime_p = demo_p;
 			WRITEUINT32(demo_p,UINT32_MAX); // time
 			WRITEUINT32(demo_p,UINT32_MAX); // lap
@@ -2824,7 +2824,7 @@ void G_DoPlayDemo(char *defdemoname)
 	{
 		case ATTACKING_NONE: // 0
 			break;
-		case ATTACKING_RECORD: // 1
+		case ATTACKING_TIME: // 1
 			hu_demotime = READUINT32(demo_p);
 			hu_demolap = READUINT32(demo_p);
 			break;
@@ -3157,7 +3157,7 @@ void G_AddGhost(char *defdemoname)
 	{
 		case ATTACKING_NONE: // 0
 			break;
-		case ATTACKING_RECORD: // 1
+		case ATTACKING_TIME: // 1
 			p += 8; // demo time, lap
 			break;
 		case ATTACKING_CAPSULES: // 2
@@ -3370,7 +3370,7 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	{
 		case ATTACKING_NONE: // 0
 			break;
-		case ATTACKING_RECORD: // 1
+		case ATTACKING_TIME: // 1
 			p += 8; // demo time, lap
 			break;
 		case ATTACKING_CAPSULES: // 2

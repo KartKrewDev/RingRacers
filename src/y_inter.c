@@ -172,7 +172,7 @@ static void Y_UnloadVoteData(void);
 //
 static void Y_CompareTime(INT32 i)
 {
-	UINT32 val = ((players[i].pflags & PF_TIMEOVER || players[i].realtime == UINT32_MAX)
+	UINT32 val = ((players[i].pflags & PF_GAMETYPEOVER || players[i].realtime == UINT32_MAX)
 		? (UINT32_MAX-1) : players[i].realtime);
 
 	if (!(val < data.match.val[data.match.numplayers]))
@@ -184,11 +184,11 @@ static void Y_CompareTime(INT32 i)
 
 static void Y_CompareScore(INT32 i)
 {
-	UINT32 val = ((players[i].pflags & PF_TIMEOVER)
+	UINT32 val = ((players[i].pflags & PF_GAMETYPEOVER)
 			? (UINT32_MAX-1) : players[i].marescore);
 
 	if (!(data.match.val[data.match.numplayers] == UINT32_MAX
-	|| (!(players[i].pflags & PF_TIMEOVER) && val > data.match.val[data.match.numplayers])))
+	|| (!(players[i].pflags & PF_GAMETYPEOVER) && val > data.match.val[data.match.numplayers])))
 		return;
 
 	data.match.val[data.match.numplayers] = val;
@@ -317,7 +317,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		if ((powertype == PWRLV_DISABLED)
 			&& (!rankingsmode)
-			&& !(players[i].pflags & PF_TIMEOVER)
+			&& !(players[i].pflags & PF_GAMETYPEOVER)
 			&& (data.match.pos[data.match.numplayers] < (numplayersingame + numgriefers)))
 		{
 			// Online rank is handled further below in this file.
@@ -914,107 +914,6 @@ void Y_Ticker(void)
 
 		// Don't bother recalcing for race. It doesn't make as much sense.
 	}
-}
-
-//
-// Y_UpdateRecordReplays
-//
-// Update replay files/data, etc. for Record Attack
-// See G_SetNightsRecords for NiGHTS Attack.
-//
-static void Y_UpdateRecordReplays(void)
-{
-	const size_t glen = strlen(srb2home)+1+strlen("media")+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
-	char *gpath;
-	char lastdemo[256], bestdemo[256];
-	UINT8 earnedEmblems;
-
-	// Record new best time
-	if (!mainrecords[gamemap-1])
-		G_AllocMainRecordData(gamemap-1);
-
-	if (players[consoleplayer].pflags & PF_TIMEOVER)
-	{
-		players[consoleplayer].realtime = UINT32_MAX;
-	}
-
-	if (((mainrecords[gamemap-1]->time == 0) || (players[consoleplayer].realtime < mainrecords[gamemap-1]->time))
-		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
-	{
-		mainrecords[gamemap-1]->time = players[consoleplayer].realtime;
-	}
-
-	if (modeattacking == ATTACKING_RECORD)
-	{
-		if ((mainrecords[gamemap-1]->lap == 0) || (bestlap < mainrecords[gamemap-1]->lap))
-			mainrecords[gamemap-1]->lap = bestlap;
-	}
-	else
-	{
-		mainrecords[gamemap-1]->lap = 0;
-	}
-
-	// Save demo!
-	bestdemo[255] = '\0';
-	lastdemo[255] = '\0';
-	G_SetDemoTime(players[consoleplayer].realtime, bestlap);
-	G_CheckDemoStatus();
-
-	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
-			srb2home, timeattackfolder);
-	M_MkdirEach(gpath, M_PathParts(gpath) - 3, 0755);
-
-	if ((gpath = malloc(glen)) == NULL)
-		I_Error("Out of memory for replay filepath\n");
-
-	sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
-	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_chooseskin.string);
-
-	if (FIL_FileExists(lastdemo))
-	{
-		UINT8 *buf;
-		size_t len = FIL_ReadFile(lastdemo, &buf);
-
-		snprintf(bestdemo, 255, "%s-%s-time-best.lmp", gpath, cv_chooseskin.string);
-		if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & 1)
-		{ // Better time, save this demo.
-			if (FIL_FileExists(bestdemo))
-				remove(bestdemo);
-			FIL_WriteFile(bestdemo, buf, len);
-			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
-		}
-
-		if (modeattacking == ATTACKING_RECORD)
-		{
-			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
-			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
-			{ // Better lap time, save this demo.
-				if (FIL_FileExists(bestdemo))
-					remove(bestdemo);
-				FIL_WriteFile(bestdemo, buf, len);
-				CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD LAP!"), M_GetText("Saved replay as"), bestdemo);
-			}
-		}
-
-		//CONS_Printf("%s '%s'\n", M_GetText("Saved replay as"), lastdemo);
-
-		Z_Free(buf);
-	}
-	free(gpath);
-
-	// Check emblems when level data is updated
-	if ((earnedEmblems = M_CheckLevelEmblems()))
-		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
-
-	if (M_UpdateUnlockablesAndExtraEmblems())
-		S_StartSound(NULL, sfx_ncitem);
-
-	// SRB2Kart - save here so you NEVER lose your earned times/medals.
-	G_SaveGameData();
-
-	// Update timeattack menu's replay availability.
-	CV_AddValue(&cv_nextmap, 1);
-	CV_AddValue(&cv_nextmap, -1);
 }
 
 static void K_UpdatePowerLevels(void)
@@ -1618,7 +1517,7 @@ void Y_VoteDrawer(void)
 			hilicol = cons_menuhighlight.value;
 		else if (gametype == GT_RACE)
 			hilicol = V_SKYMAP;
-		else //if (gametype == GT_MATCH)
+		else //if (gametype == GT_BATTLE)
 			hilicol = V_REDMAP;
 		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol,
 			va("Vote ends in %d", tickdown));

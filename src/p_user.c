@@ -703,19 +703,19 @@ boolean P_EndingMusic(player_t *player)
 	// Check for if this is valid or not
 	if (r_splitscreen)
 	{
-		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_TIMEOVER))
-			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_TIMEOVER))
-			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_TIMEOVER)))
-			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_TIMEOVER)))))
+		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_GAMETYPEOVER))
+			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_GAMETYPEOVER))
+			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_GAMETYPEOVER)))
+			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_GAMETYPEOVER)))))
 			return false;
 
 		bestlocalplayer = &players[displayplayers[0]];
-		bestlocalpos = ((players[displayplayers[0]].pflags & PF_TIMEOVER) ? MAXPLAYERS+1 : players[displayplayers[0]].kartstuff[k_position]);
+		bestlocalpos = ((players[displayplayers[0]].pflags & PF_GAMETYPEOVER) ? MAXPLAYERS+1 : players[displayplayers[0]].kartstuff[k_position]);
 #define setbests(p) \
-	if (((players[p].pflags & PF_TIMEOVER) ? MAXPLAYERS+1 : players[p].kartstuff[k_position]) < bestlocalpos) \
+	if (((players[p].pflags & PF_GAMETYPEOVER) ? MAXPLAYERS+1 : players[p].kartstuff[k_position]) < bestlocalpos) \
 	{ \
 		bestlocalplayer = &players[p]; \
-		bestlocalpos = ((players[p].pflags & PF_TIMEOVER) ? MAXPLAYERS+1 : players[p].kartstuff[k_position]); \
+		bestlocalpos = ((players[p].pflags & PF_GAMETYPEOVER) ? MAXPLAYERS+1 : players[p].kartstuff[k_position]); \
 	}
 		setbests(displayplayers[1]);
 		if (r_splitscreen > 1)
@@ -726,11 +726,11 @@ boolean P_EndingMusic(player_t *player)
 	}
 	else
 	{
-		if (!(player->exiting || (player->pflags & PF_TIMEOVER)))
+		if (!(player->exiting || (player->pflags & PF_GAMETYPEOVER)))
 			return false;
 
 		bestlocalplayer = player;
-		bestlocalpos = ((player->pflags & PF_TIMEOVER) ? MAXPLAYERS+1 : player->kartstuff[k_position]);
+		bestlocalpos = ((player->pflags & PF_GAMETYPEOVER) ? MAXPLAYERS+1 : player->kartstuff[k_position]);
 	}
 
 	if ((gametyperules & GTR_CIRCUIT) && bestlocalpos == MAXPLAYERS+1)
@@ -1817,110 +1817,6 @@ static void P_CheckQuicksand(player_t *player)
 }
 
 //
-// P_CheckSneakerAndLivesTimer
-//
-// Restores music from sneaker and life fanfares
-//
-/* // SRB2kart - Can't drown.
-static void P_CheckSneakerAndLivesTimer(player_t *player)
-{
-	if (player->powers[pw_extralife] == 1) // Extra Life!
-		P_RestoreMusic(player);
-
-	//if (player->powers[pw_sneakers] == 1) // SRB2kart
-	//	P_RestoreMusic(player);
-}
-*/
-
-//
-// P_CheckUnderwaterAndSpaceTimer
-//
-// Restores music from underwater and space warnings, and handles number generation
-//
-/* // SRB2kart - Can't drown.
-static void P_CheckUnderwaterAndSpaceTimer(player_t *player)
-{
-	tic_t timeleft = (player->powers[pw_spacetime]) ? player->powers[pw_spacetime] : player->powers[pw_underwater];
-
-	if (player->exiting || (player->pflags & PF_FINISHED))
-		player->powers[pw_underwater] = player->powers[pw_spacetime] = 0;
-
-	timeleft--; // The original code was all n*TICRATE + 1, so let's remove 1 tic for simplicity
-
-	if ((timeleft == 11*TICRATE) // 5
-	 || (timeleft ==  9*TICRATE) // 4
-	 || (timeleft ==  7*TICRATE) // 3
-	 || (timeleft ==  5*TICRATE) // 2
-	 || (timeleft ==  3*TICRATE) // 1
-	 || (timeleft ==  1*TICRATE) // 0
-	) {
-		fixed_t height = (player->mo->eflags & MFE_VERTICALFLIP)
-		? player->mo->z - FixedMul(8*FRACUNIT + mobjinfo[MT_DROWNNUMBERS].height, FixedMul(player->mo->scale, player->shieldscale))
-		: player->mo->z + player->mo->height + FixedMul(8*FRACUNIT, FixedMul(player->mo->scale, player->shieldscale));
-
-		mobj_t *numbermobj = P_SpawnMobj(player->mo->x, player->mo->y, height, MT_DROWNNUMBERS);
-
-		timeleft /= (2*TICRATE); // To be strictly accurate it'd need to be ((timeleft/TICRATE) - 1)/2, but integer division rounds down for us
-
-		if (player->charflags & SF_MACHINE)
-		{
-			S_StartSound(player->mo, sfx_buzz1);
-			timeleft += 6;
-		}
-		else
-			S_StartSound(player->mo, sfx_dwnind);
-
-		if (timeleft) // Don't waste time setting the state if the time is 0.
-			P_SetMobjState(numbermobj, numbermobj->info->spawnstate+timeleft);
-
-		P_SetTarget(&numbermobj->target, player->mo);
-		numbermobj->threshold = 40;
-		numbermobj->destscale = player->mo->scale;
-		P_SetScale(numbermobj, player->mo->scale);
-	}
-	// Underwater timer runs out
-	else if (timeleft == 1)
-	{
-		if ((netgame || multiplayer) && P_IsLocalPlayer(player))
-			S_ChangeMusic(mapmusname, mapmusflags, true);
-
-		if (player->powers[pw_spacetime] == 1)
-			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_SPACEDROWN);
-		else
-			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_DROWNED);
-	}
-
-	if (!(player->mo->eflags & MFE_UNDERWATER) && player->powers[pw_underwater])
-	{
-		if (player->powers[pw_underwater] <= 12*TICRATE + 1)
-		{
-			player->powers[pw_underwater] = 0;
-			P_RestoreMusic(player);
-		}
-		else
-			player->powers[pw_underwater] = 0;
-	}
-
-	if (player->powers[pw_spacetime] > 1 && !P_InSpaceSector(player->mo))
-		player->powers[pw_spacetime] = 0;
-
-	// Underwater audio cues
-	if (P_IsLocalPlayer(player))
-	{
-		if ((player->powers[pw_underwater] == 25*TICRATE + 1)
-		|| (player->powers[pw_underwater] == 20*TICRATE + 1)
-		|| (player->powers[pw_underwater] == 15*TICRATE + 1))
-			S_StartSound(NULL, sfx_wtrdng);
-
-		if (player->powers[pw_underwater] == 11*TICRATE + 1
-		&& player == &players[consoleplayer])
-		{
-			P_PlayJingle(player, JT_DROWN);
-		}
-	}
-}*/
-
-//
 // P_CheckInvincibilityTimer
 //
 // Restores music from invincibility, and handles invincibility sparkles
@@ -2804,7 +2700,7 @@ static void P_DeathThink(player_t *player)
 	if (player->bot) // don't allow bots to do any of the below, B_CheckRespawn does all they need for respawning already
 		goto notrealplayer;
 
-	if ((player->pflags & PF_TIMEOVER) && (gametyperules & GTR_CIRCUIT))
+	if ((player->pflags & PF_GAMETYPEOVER) && (gametyperules & GTR_CIRCUIT))
 	{
 		player->karthud[khud_timeovercam]++;
 
@@ -2819,13 +2715,13 @@ static void P_DeathThink(player_t *player)
 
 	K_KartPlayerHUDUpdate(player);
 
-	if (player->lives > 0 && !(player->pflags & PF_TIMEOVER) && player->deadtimer > TICRATE)
+	if (player->lives > 0 && !(player->pflags & PF_GAMETYPEOVER) && player->deadtimer > TICRATE)
 	{
 		player->playerstate = PST_REBORN;
 	}
 
 	// Keep time rolling
-	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_TIMEOVER))
+	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_GAMETYPEOVER))
 	{
 		if (leveltime >= starttime)
 		{
@@ -3258,7 +3154,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		|| (leveltime < introtime)); // Kart intro cam
 #endif
 
-	if ((player->pflags & PF_TIMEOVER) && (gametyperules & GTR_CIRCUIT)) // 1 for momentum keep, 2 for turnaround
+	if ((player->pflags & PF_GAMETYPEOVER) && (gametyperules & GTR_CIRCUIT)) // 1 for momentum keep, 2 for turnaround
 		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
 	else
 		timeover = 0;
@@ -4053,7 +3949,7 @@ static void P_CalcPostImg(player_t *player)
 
 void P_DoTimeOver(player_t *player)
 {
-	if (player->pflags & PF_TIMEOVER)
+	if (player->pflags & PF_GAMETYPEOVER)
 	{
 		// NO! Don't do this!
 		return;
@@ -4069,7 +3965,7 @@ void P_DoTimeOver(player_t *player)
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
 	}
 
-	player->pflags |= PF_TIMEOVER;
+	player->pflags |= PF_GAMETYPEOVER;
 
 	if (G_GametypeUsesLives())
 	{
@@ -4353,7 +4249,7 @@ static void P_HandleFollower(player_t *player)
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
 		// Also make the follower invisible if we choose not to have it displayed because it isn't ours. (also quick hacky check for f12)
-		if (player->pflags & PF_TIMEOVER || (!cv_showfollowers.value && (!P_IsDisplayPlayer(player) || displayplayers[0] != consoleplayer) ))
+		if (player->pflags & PF_GAMETYPEOVER || (!cv_showfollowers.value && (!P_IsDisplayPlayer(player) || displayplayers[0] != consoleplayer) ))
 			player->follower->drawflags |= MFD_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
@@ -4562,7 +4458,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (playeringame[i] && !players[i].spectator)
 				{
-					if (!players[i].exiting && !(players[i].pflags & PF_TIMEOVER) && players[i].lives > 0)
+					if (!players[i].exiting && !(players[i].pflags & PF_GAMETYPEOVER) && players[i].lives > 0)
 						break;
 				}
 			}
@@ -4583,7 +4479,7 @@ void P_PlayerThink(player_t *player)
 
 			// If you've hit the countdown and you haven't made
 			//  it to the exit, you're a goner!
-			if (racecountdown == 1 && !player->spectator && !player->exiting && !(player->pflags & PF_TIMEOVER) && player->lives > 0)
+			if (racecountdown == 1 && !player->spectator && !player->exiting && !(player->pflags & PF_GAMETYPEOVER) && player->lives > 0)
 			{
 				P_DoTimeOver(player);
 
@@ -4767,12 +4663,8 @@ void P_PlayerThink(player_t *player)
 	else if (player->onconveyor == 3)
 		player->cmomy = player->cmomx = 0;
 
-	//P_DoSuperStuff(player);
-	//P_CheckSneakerAndLivesTimer(player);
 	P_DoBubbleBreath(player); // Spawn Sonic's bubbles
-	//P_CheckUnderwaterAndSpaceTimer(player); // Display the countdown drown numbers!
 	P_CheckInvincibilityTimer(player); // Spawn Invincibility Sparkles
-	P_DoPlayerHeadSigns(player); // Spawn Tag/CTF signs over player's head
 
 #if 1
 	// "Blur" a bit when you have speed shoes and are going fast enough
@@ -4852,7 +4744,7 @@ void P_PlayerThink(player_t *player)
 		player->kartstuff[k_hyudorotimer] // SRB2kart - fixes Hyudoro not flashing when it should.
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
-		|| (player->pflags & PF_TIMEOVER) // NO CONTEST explosion
+		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
 		|| ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
 		|| leveltime < starttime)) // Level intro
 	{
