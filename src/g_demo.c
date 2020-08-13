@@ -40,10 +40,15 @@
 #include "md5.h" // demo checksums
 
 // SRB2Kart
+#include "d_netfil.h" // nameonly
+
 #include "lua_script.h" // LUA_ArchiveDemo and LUA_UnArchiveDemo
+#include "lua_libs.h" // gL (Lua state)
 
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_respawn.h"
+#include "k_bot.h"
 
 static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}, {0, NULL}};
 consvar_t cv_recordmultiplayerdemos = {"netdemo_record", "Manual Save", CV_SAVE, recordmultiplayerdemos_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -633,7 +638,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	char ziptic = 0;
 	UINT8 *ziptic_p;
 	UINT32 i;
-	fixed_t height;
 
 	if (!demo_p)
 		return;
@@ -646,8 +650,8 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 
 	// GZT_XYZ is only useful if you've moved 256 FRACUNITS or more in a single tic.
 	if (abs(ghost->x-oldghost[playernum].x) > MAXMOM
-	|| abs(ghost->y-oldghost.y) > MAXMOM
-	|| abs(ghost->z-oldghost.z) > MAXMOM
+	|| abs(ghost->y-oldghost[playernum].y) > MAXMOM
+	|| abs(ghost->z-oldghost[playernum].z) > MAXMOM
 	|| ((UINT8)(leveltime & 255) > 0 && (UINT8)(leveltime & 255) <= (UINT8)cv_netdemosyncquality.value)) // Hack to enable slightly nicer resyncing
 	{
 		oldghost[playernum].x = ghost->x;
@@ -681,7 +685,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 			WRITEINT16(demo_p,momx);
 		}
 
-		// This SHOULD set oldghost.x/y/z to match ghost->x/y/z
+		// This SHOULD set oldghost[playernum].x/y/z to match ghost->x/y/z
 		// but it keeps the fractional loss of one byte,
 		// so it will hopefully be made up for in future tics.
 		oldghost[playernum].x += oldghost[playernum].momx<<8;
@@ -790,7 +794,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		ghostext[playernum].flags = 0;
 	}
 
-	if (ghost->player && ghost->player->followmobj && !(ghost->player->followmobj->sprite == SPR_NULL || (ghost->player->followmobj->flags2 & MF2_DONTDRAW))) // bloats tails runs but what can ya do
+	if (ghost->player && ghost->player->followmobj&& !(ghost->player->followmobj->sprite == SPR_NULL || (ghost->player->followmobj->drawflags & MFD_DONTDRAW) == MFD_DONTDRAW)) // bloats tails runs but what can ya do
 	{
 		INT16 temp;
 		UINT8 *followtic_p = demo_p++;
@@ -996,9 +1000,9 @@ void G_ConsGhostTic(INT32 playernum)
 		px = testmo->x;
 		py = testmo->y;
 		pz = testmo->z;
-		gx = oldghost.x;
-		gy = oldghost.y;
-		gz = oldghost.z;
+		gx = oldghost[playernum].x;
+		gy = oldghost[playernum].y;
+		gz = oldghost[playernum].z;
 
 		if (abs(px-gx) > syncleeway || abs(py-gy) > syncleeway || abs(pz-gz) > syncleeway)
 		{
@@ -1139,7 +1143,7 @@ void G_GhostTicker(void)
 		if (g->fadein)
 		{
 			g->mo->frame += (((--g->fadein)/6)<<FF_TRANSSHIFT); // this calc never exceeds 9 unless g->fadein is bad, and it's only set once, so...
-			g->mo->flags2 &= ~MF2_DONTDRAW;
+			g->mo->drawflags &= ~MFD_DONTDRAW;
 		}
 		g->mo->sprite2 = g->oldmo.sprite2;
 
@@ -1686,7 +1690,6 @@ void G_WriteMetalTic(mobj_t *metal)
 {
 	UINT8 ziptic = 0;
 	UINT8 *ziptic_p;
-	fixed_t height;
 
 	if (!demo_p) // demo_p will be NULL until the race start linedef executor is activated!
 		return;
@@ -1772,28 +1775,28 @@ void G_WriteMetalTic(mobj_t *metal)
 	if (metal->sprite != oldmetal.sprite)
 	{
 		oldmetal.sprite = metal->sprite;
-		ghostext.flags |= EZT_SPRITE;
+		ghostext[0].flags |= EZT_SPRITE;
 	}
 
-	if (ghostext.flags & ~(EZT_COLOR|EZT_HIT)) // these two aren't handled by metal ever
+	if (ghostext[0].flags & ~(EZT_COLOR|EZT_HIT)) // these two aren't handled by metal ever
 	{
 		ziptic |= GZT_EXTRA;
 
-		if (ghostext.scale == ghostext.lastscale)
-			ghostext.flags &= ~EZT_SCALE;
+		if (ghostext[0].scale == ghostext[0].lastscale)
+			ghostext[0].flags &= ~EZT_SCALE;
 
-		WRITEUINT8(demo_p,ghostext.flags);
-		if (ghostext.flags & EZT_SCALE)
+		WRITEUINT8(demo_p,ghostext[0].flags);
+		if (ghostext[0].flags & EZT_SCALE)
 		{
-			WRITEFIXED(demo_p,ghostext.scale);
-			ghostext.lastscale = ghostext.scale;
+			WRITEFIXED(demo_p,ghostext[0].scale);
+			ghostext[0].lastscale = ghostext[0].scale;
 		}
-		if (ghostext.flags & EZT_SPRITE)
+		if (ghostext[0].flags & EZT_SPRITE)
 			WRITEUINT16(demo_p,oldmetal.sprite);
-		ghostext.flags = 0;
+		ghostext[0].flags = 0;
 	}
 
-	if (metal->player && metal->player->followmobj && !(metal->player->followmobj->sprite == SPR_NULL || (metal->player->followmobj->flags2 & MF2_DONTDRAW)))
+	if (metal->player && metal->player->followmobj && !(metal->player->followmobj->sprite == SPR_NULL || (metal->player->followmobj->drawflags & MFD_DONTDRAW) == MFD_DONTDRAW))
 	{
 		INT16 temp;
 		UINT8 *followtic_p = demo_p++;
@@ -2087,7 +2090,7 @@ void G_BeginMetal(void)
 	M_Memcpy(demo_p, "METL", 4); demo_p += 4;
 
 	memset(&ghostext,0,sizeof(ghostext));
-	ghostext.lastscale = ghostext.scale = FRACUNIT;
+	ghostext[0].lastscale = ghostext[0].scale = FRACUNIT;
 
 	// Set up our memory.
 	memset(&oldmetal,0,sizeof(oldmetal));
@@ -2350,7 +2353,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p++; // gametype
 	G_SkipDemoExtraFiles(&p);
 
-	aflags = flags & (DF_RECORDATTACK|DF_NIGHTSATTACK);
+	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
 	I_Assert(aflags);
 
 	if (flags & DF_TIMEATTACK)
@@ -2625,15 +2628,16 @@ void G_DeferedPlayDemo(const char *name)
 
 void G_DoPlayDemo(char *defdemoname)
 {
-	UINT8 i;
+	UINT8 i, p;
 	lumpnum_t l;
 	char skin[17],color[MAXCOLORNAME+1],follower[17],*n,*pdemoname;
 	UINT8 version,subversion;
-	pflags_t pflags;
-	UINT32 randseed, followitem;
+	UINT32 randseed;
 	char msg[1024];
+
 	boolean spectator;
 	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], numslots = 0;
+
 #if defined(SKIPERRORS) && !defined(DEVELOP)
 	boolean skiperrors = false;
 #endif
@@ -2742,8 +2746,8 @@ void G_DoPlayDemo(char *defdemoname)
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
-		demoplayback = false;
-		titledemo = false;
+		demo.playback = false;
+		demo.title = false;
 		return;
 	}
 	demo_p += 4; // "PLAY"
@@ -2987,6 +2991,9 @@ void G_DoPlayDemo(char *defdemoname)
 		if (stricmp(skins[players[p].skin].name, skin) != 0)
 			FindClosestSkinForStats(p, kartspeed[p], kartweight[p]);
 
+		// Followitem
+		players[p].followitem = READUINT32(demo_p);
+
 		// Look for the next player
 		p = READUINT8(demo_p);
 	}
@@ -2995,9 +3002,10 @@ void G_DoPlayDemo(char *defdemoname)
 	// so this is where we are to read our lua variables (if possible!)
 	if (demoflags & DF_LUAVARS)	// again, used for compability, lua shit will be saved to replays regardless of if it's even been loaded
 	{
-		if (!gL)	// No Lua state! ...I guess we'll just start one...
+		if (!gL) // No Lua state! ...I guess we'll just start one...
 			LUA_ClearState();
 
+		// No modeattacking check, DF_LUAVARS won't be present here.
 		LUA_UnArchiveDemo();
 	}
 
@@ -3015,7 +3023,7 @@ void G_DoPlayDemo(char *defdemoname)
 	R_ExecuteSetViewSize();
 
 	P_SetRandSeed(randseed);
-	G_InitNew(demoflags & DF_ENCORE, G_BuildMapName(gamemap), true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
+	G_InitNew(demoflags & DF_ENCORE, G_BuildMapName(gamemap), true, true, false); // Doesn't matter whether you reset or not here, given changes to resetplayer.
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -3273,7 +3281,7 @@ void G_AddGhost(char *defdemoname)
 	gh->mo->sprite = gh->mo->state->sprite;
 	gh->mo->sprite2 = (gh->mo->state->frame & FF_FRAMEMASK);
 	//gh->mo->frame = tr_trans30<<FF_TRANSSHIFT;
-	gh->mo->flags2 |= MF2_DONTDRAW;
+	gh->mo->drawflags |= MFD_DONTDRAW;
 	gh->fadein = (9-3)*6; // fade from invisible to trans30 over as close to 35 tics as possible
 	gh->mo->tics = -1;
 
@@ -3511,28 +3519,6 @@ static void WriteDemoChecksum(void)
 #endif
 }
 
-// Stops recording a demo.
-static void G_StopDemoRecording(void)
-{
-	boolean saved = false;
-	if (demo_p)
-	{
-		WRITEUINT8(demo_p, DEMOMARKER); // add the demo end marker
-		WriteDemoChecksum();
-		saved = FIL_WriteFile(va(pandf, srb2home, demoname), demobuffer, demo_p - demobuffer); // finally output the file.
-	}
-	free(demobuffer);
-	demo.recording = false;
-
-	if (modeattacking != ATTACKING_RECORD)
-	{
-		if (saved)
-			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);
-		else
-			CONS_Alert(CONS_WARNING, M_GetText("Demo %s not saved\n"), demoname);
-	}
-}
-
 // Stops metal sonic's demo. Separate from other functions because metal + replays can coexist
 void G_StopMetalDemo(void)
 {
@@ -3549,7 +3535,6 @@ ATTRNORETURN void FUNCNORETURN G_StopMetalRecording(boolean kill)
 	boolean saved = false;
 	if (demo_p)
 	{
-		UINT8 *p = demobuffer+16; // checksum position
 		WRITEUINT8(demo_p, (kill) ? METALDEATH : DEMOMARKER); // add the demo end (or metal death) marker
 		WriteDemoChecksum();
 		saved = FIL_WriteFile(va("%sMS.LMP", G_BuildMapName(gamemap)), demobuffer, demo_p - demobuffer); // finally output the file.
@@ -3666,7 +3651,7 @@ boolean G_CheckDemoStatus(void)
 
 	if (demo.playback)
 	{
-		f (demo.quitafterplaying)
+		if (demo.quitafterplaying)
 			I_Quit();
 
 		if (multiplayer && !demo.title)
@@ -3754,6 +3739,8 @@ void G_SaveDemo(void)
 
 	length = *(UINT32 *)demoinfo_p;
 	WRITEUINT32(demoinfo_p, length);
+
+	// Doesn't seem like I can use WriteDemoChecksum here, correct me if I'm wrong -Sal
 #ifdef NOMD5
 	for (i = 0; i < 16; i++, p++)
 		*p = M_RandomByte(); // This MD5 was chosen by fair dice roll and most likely < 50% correct.
@@ -3761,7 +3748,6 @@ void G_SaveDemo(void)
 	// Make a checksum of everything after the checksum in the file up to the end of the standard data. Extrainfo is freely modifiable.
 	md5_buffer((char *)p+16, (demobuffer + length) - (p+16), p);
 #endif
-
 
 	if (FIL_WriteFile(va(pandf, srb2home, demoname), demobuffer, demo_p - demobuffer)) // finally output the file.
 		demo.savemode = DSM_SAVED;

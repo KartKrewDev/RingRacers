@@ -53,21 +53,23 @@ enum hook {
 	hook_PlayerCanDamage,
 	hook_PlayerQuit,
 	hook_MusicChange,
-	hook_ShouldSpin,	//SRB2KART
-	hook_ShouldExplode,	//SRB2KART
-	hook_ShouldSquish,	//SRB2KART
-	hook_PlayerSpin,	//SRB2KART
-	hook_PlayerExplode,	//SRB2KART
-	hook_PlayerSquish,	//SRB2KART
-	hook_PlayerCmd,		//SRB2KART
-	hook_IntermissionThinker, //SRB2KART
-	hook_VoteThinker, //SRB2KART
 	hook_TeamSwitch,
 	hook_ViewpointSwitch,
 	hook_SeenPlayer,
 	hook_PlayerThink,
 	hook_ShouldJingleContinue,
 	hook_GameQuit,
+
+	// SRB2Kart
+	hook_ShouldSpin,
+	hook_ShouldExplode,
+	hook_ShouldSquish,
+	hook_PlayerSpin,
+	hook_PlayerExplode,
+	hook_PlayerSquish,
+	hook_PlayerCmd, 
+	hook_IntermissionThinker,
+	hook_VoteThinker,
 
 	hook_MAX // last hook
 };

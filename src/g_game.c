@@ -4481,6 +4481,8 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 {
 	INT32 i;
 
+	(void)FLS;
+
 	Y_CleanupScreenBuffer();
 
 	if (paused)

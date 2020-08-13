@@ -65,6 +65,14 @@ const char *const hookNames[hook_MAX+1] = {
 	"PlayerCanDamage",
 	"PlayerQuit",
 	"MusicChange",
+	"TeamSwitch",
+	"ViewpointSwitch",
+	"SeenPlayer",
+	"PlayerThink",
+	"ShouldJingleContinue",
+	"GameQuit",
+
+	// SRB2Kart
 	"ShouldSpin",
 	"ShouldExplode",
 	"ShouldSquish",
@@ -74,12 +82,7 @@ const char *const hookNames[hook_MAX+1] = {
 	"PlayerCmd",
 	"IntermissionThinker",
 	"VoteThinker",
-	"TeamSwitch",
-	"ViewpointSwitch",
-	"SeenPlayer",
-	"PlayerThink",
-	"ShouldJingleContinue",
-	"GameQuit",
+
 	NULL
 };
 

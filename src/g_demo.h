@@ -151,6 +151,7 @@ void G_LoadMetal(UINT8 **buffer);
 typedef struct demoghost {
 	UINT8 checksum[16];
 	UINT8 *buffer, *p, color;
+	UINT8 fadein;
 	UINT16 version;
 	mobj_t oldmo, *mo;
 	struct demoghost *next;
@@ -181,6 +182,8 @@ boolean G_CheckDemoStatus(void);
 
 void G_LoadDemoInfo(menudemo_t *pdemo);
 void G_DeferedPlayDemo(const char *demo);
+
+void G_SaveDemo(void);
 
 boolean G_DemoTitleResponder(event_t *ev);
 
