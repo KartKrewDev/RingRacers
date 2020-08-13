@@ -283,16 +283,20 @@ consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
 };
 
 // player's followers. Also saved.
-consvar_t cv_follower = {"follower", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_follower2 = {"follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_follower3 = {"follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_follower4 = {"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_follower[MAXSPLITSCREENPLAYERS] = {
+	{"follower", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+};
 
 // player's follower colors... Also saved...
-consvar_t cv_followercolor = {"followercolor", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_followercolor2 = {"followercolor2", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_followercolor3 = {"followercolor3", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_followercolor4 = {"followercolor4", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS] = {
+	{"followercolor", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"followercolor2", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"followercolor3", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"followercolor4", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+};
 
 
 // Follower toggle
@@ -2503,6 +2507,7 @@ static void Command_Map_f(void)
 	size_t option_force;
 	size_t option_gametype;
 	size_t option_encore;
+	size_t option_skill;
 	const char *gametypename;
 	boolean newresetplayers;
 
@@ -2515,6 +2520,7 @@ static void Command_Map_f(void)
 
 	INT32 newgametype = gametype;
 	boolean newencoremode = (cv_kartencore.value == 1);
+	boolean startgp = false;
 
 	INT32 d;
 
@@ -2527,6 +2533,7 @@ static void Command_Map_f(void)
 	option_force    =   COM_CheckPartialParm("-f");
 	option_gametype =   COM_CheckPartialParm("-g");
 	option_encore   =   COM_CheckPartialParm("-e");
+	option_skill    =   COM_CheckPartialParm("-s");
 	newresetplayers = ! COM_CheckParm("-noresetplayers");
 
 	mustmodifygame = !(netgame || multiplayer) && !majormods;
@@ -2645,22 +2652,19 @@ static void Command_Map_f(void)
 
 	if (startgp)
 	{
-		i = COM_CheckParm("-skill");
-
 		grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
 		grandprixinfo.masterbots = false;
 
-		if (i)
+		if (option_skill)
 		{
-			const UINT8 master = KARTSPEED_HARD+1;
 			const char *masterstr = "Master";
-			const char *skillname = COM_Argv(i+1);
+			const char *skillname = COM_Argv(option_skill + 1);
 			INT32 newskill = -1;
 			INT32 j;
 
 			if (!strcasecmp(masterstr, skillname))
 			{
-				newskill = master;
+				newskill = KARTGP_MASTER;
 			}
 			else
 			{
@@ -2675,15 +2679,15 @@ static void Command_Map_f(void)
 
 				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
 				{
-					j = atoi(COM_Argv(i+1)); // assume they gave us a skill number, which is okay too
-					if (j >= KARTSPEED_EASY && j <= master)
-						newskill = (INT16)j;
+					INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
+					if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
+						newskill = (INT16)num;
 				}
 			}
 
 			if (newskill != -1)
 			{
-				if (newskill == master)
+				if (newskill == KARTGP_MASTER)
 				{
 					grandprixinfo.gamespeed = KARTSPEED_HARD;
 					grandprixinfo.masterbots = true;
@@ -5035,19 +5039,19 @@ static void Follower_OnChange(void)
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
-	strcpy(str, cv_follower.string);
-	strcpy(cpy, cv_follower.string);
+	strcpy(str, cv_follower[0].string);
+	strcpy(cpy, cv_follower[0].string);
 	strlwr(str);
 	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
 	{
 		if (stricmp(cpy, "None") == 0)
 		{
-			CV_StealthSet(&cv_follower, "-1");
+			CV_StealthSet(&cv_follower[0], "-1");
 
 			if (!Playing())
 				return; // don't send anything there.
 
-			SendNameAndColor();
+			SendNameAndColor(0);
 			return;
 		}
 
@@ -5057,26 +5061,25 @@ static void Follower_OnChange(void)
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
 		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower, set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[0], set);	// set it to a number. It's easier for us to send later :)
 	}
 
 	if (!Playing())
 		return; // don't send anything there.
 
-	SendNameAndColor();
+	SendNameAndColor(0);
 }
 
 // About the same as Color_OnChange but for followers.
 static void Followercolor_OnChange(void)
 {
-
 	if (!Playing())
 		return; // do whatever you want if you aren't in the game or don't have a follower.
 
 	if (!P_PlayerMoving(consoleplayer))
 	{
 		// Color change menu scrolling fix is no longer necessary
-		SendNameAndColor();
+		SendNameAndColor(0);
 	}
 }
 
@@ -5085,136 +5088,153 @@ static void Followercolor_OnChange(void)
 static void Follower2_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
-	if (!Playing() || !splitscreen)
-		return; // do whatever you want
+	INT32 num;
+	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
-	strcpy(str, cv_follower2.string);
-	strcpy(cpy, cv_follower2.string);
+	// there is a slight chance that we will actually use a string instead so...
+	// let's investigate the string...
+	strcpy(str, cv_follower[1].string);
+	strcpy(cpy, cv_follower[1].string);
 	strlwr(str);
 	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
 	{
-
 		if (stricmp(cpy, "None") == 0)
 		{
-			CV_StealthSet(&cv_follower2, "-1");
-			SendNameAndColor2();
+			CV_StealthSet(&cv_follower[1], "-1");
+
+			if (!Playing())
+				return; // don't send anything there.
+
+			SendNameAndColor(1);
 			return;
 		}
 
+		num = R_FollowerAvailable(str);
 
-		{
-			INT32 num = R_FollowerAvailable(str);
-			char set[10];
-			if (num == -1) // that's an error.
-				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+		if (num == -1) // that's an error.
+			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-			sprintf(set, "%d", num);
-			CV_StealthSet(&cv_follower2, set);	// set it to a number. It's easier for us to send later :)
-		}
+		sprintf(set, "%d", num);
+		CV_StealthSet(&cv_follower[1], set);	// set it to a number. It's easier for us to send later :)
 	}
-	SendNameAndColor2();
+
+	if (!Playing())
+		return; // don't send anything there.
+
+	SendNameAndColor(1);
 }
 
 static void Followercolor2_OnChange(void)
 {
-
 	if (!Playing())
 		return; // do whatever you want if you aren't in the game or don't have a follower.
 
 	if (!P_PlayerMoving(g_localplayers[1]))
 	{
 		// Color change menu scrolling fix is no longer necessary
-		SendNameAndColor2();
+		SendNameAndColor(1);
 	}
 }
 
 static void Follower3_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
-	if (!Playing() || !splitscreen)
-		return; // do whatever you want
+	INT32 num;
+	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
-	strcpy(str, cv_follower3.string);
-	strcpy(cpy, cv_follower3.string);
+	// there is a slight chance that we will actually use a string instead so...
+	// let's investigate the string...
+	strcpy(str, cv_follower[2].string);
+	strcpy(cpy, cv_follower[2].string);
 	strlwr(str);
 	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
 	{
-
 		if (stricmp(cpy, "None") == 0)
 		{
-			CV_StealthSet(&cv_follower3, "-1");
-			SendNameAndColor3();
+			CV_StealthSet(&cv_follower[2], "-1");
+
+			if (!Playing())
+				return; // don't send anything there.
+
+			SendNameAndColor(2);
 			return;
 		}
 
-		{
-			INT32 num = R_FollowerAvailable(str);
-			char set[10];
-			if (num == -1) // that's an error.
-				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+		num = R_FollowerAvailable(str);
 
-			sprintf(set, "%d", num);
-			CV_StealthSet(&cv_follower3, set);	// set it to a number. It's easier for us to send later :)
-		}
+		if (num == -1) // that's an error.
+			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+
+		sprintf(set, "%d", num);
+		CV_StealthSet(&cv_follower[2], set);	// set it to a number. It's easier for us to send later :)
 	}
-	SendNameAndColor3();
+
+	if (!Playing())
+		return; // don't send anything there.
+
+	SendNameAndColor(2);
 }
 
 static void Followercolor3_OnChange(void)
 {
-
 	if (!Playing())
 		return; // do whatever you want if you aren't in the game or don't have a follower.
 
 	if (!P_PlayerMoving(g_localplayers[2]))
 	{
 		// Color change menu scrolling fix is no longer necessary
-		SendNameAndColor3();
+		SendNameAndColor(2);
 	}
 }
 
 static void Follower4_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
-	if (!Playing() || !splitscreen)
-		return; // do whatever you want
+	INT32 num;
+	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
-	strcpy(str, cv_follower4.string);
-	strcpy(cpy, cv_follower4.string);
+	// there is a slight chance that we will actually use a string instead so...
+	// let's investigate the string...
+	strcpy(str, cv_follower[3].string);
+	strcpy(cpy, cv_follower[3].string);
 	strlwr(str);
 	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
 	{
-
 		if (stricmp(cpy, "None") == 0)
 		{
-			CV_StealthSet(&cv_follower4, "-1");
-			SendNameAndColor4();
+			CV_StealthSet(&cv_follower[3], "-1");
+
+			if (!Playing())
+				return; // don't send anything there.
+
+			SendNameAndColor(3);
 			return;
 		}
 
-		{
-			INT32 num = R_FollowerAvailable(str);
-			char set[10];
-			if (num == -1) // that's an error.
-				CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+		num = R_FollowerAvailable(str);
 
-			sprintf(set, "%d", num);
-			CV_StealthSet(&cv_follower4, set);	// set it to a number. It's easier for us to send later :)
-		}
+		if (num == -1) // that's an error.
+			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
+
+		sprintf(set, "%d", num);
+		CV_StealthSet(&cv_follower[3], set);	// set it to a number. It's easier for us to send later :)
 	}
-	SendNameAndColor4();
+
+	if (!Playing())
+		return; // don't send anything there.
+
+	SendNameAndColor(3);
 }
 
 static void Followercolor4_OnChange(void)
 {
-
 	if (!Playing())
 		return; // do whatever you want if you aren't in the game or don't have a follower.
 
 	if (!P_PlayerMoving(g_localplayers[3]))
 	{
 		// Color change menu scrolling fix is no longer necessary
-		SendNameAndColor4();
+		SendNameAndColor(3);
 	}
 }
 

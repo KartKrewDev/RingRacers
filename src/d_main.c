@@ -1817,12 +1817,11 @@ void D_SRB2Main(void)
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
-			const UINT8 master = KARTSPEED_HARD+1;
 			const char *masterstr = "Master";
 
 			if (!strcasecmp(masterstr, sskill))
 			{
-				newskill = master;
+				newskill = KARTGP_MASTER;
 			}
 			else
 			{
@@ -1838,14 +1837,14 @@ void D_SRB2Main(void)
 				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
 				{
 					j = atoi(sskill); // assume they gave us a skill number, which is okay too
-					if (j >= KARTSPEED_EASY && j <= master)
+					if (j >= KARTSPEED_EASY && j <= KARTGP_MASTER)
 						newskill = (INT16)j;
 				}
 			}
 
 			if (grandprixinfo.gp == true)
 			{
-				if (newskill == master)
+				if (newskill == KARTGP_MASTER)
 				{
 					grandprixinfo.masterbots = true;
 					newskill = KARTSPEED_HARD;
@@ -1853,9 +1852,8 @@ void D_SRB2Main(void)
 
 				grandprixinfo.gamespeed = newskill;
 			}
-			else if (newskill == master)
+			else if (newskill == KARTGP_MASTER)
 			{
-				grandprixinfo.masterbots = true;
 				newskill = KARTSPEED_HARD;
 			}
 

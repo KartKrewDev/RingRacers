@@ -1003,9 +1003,8 @@ typedef enum sprite
 
 	SPR_WTRL, // Water Trail
 
-	SPR_FBUB,	// follower bubble
-	SPR_GCHA,	// follower: generic chao
-	SPR_CHEZ,	// follower: cheese
+	SPR_GCHA, // follower: generic chao
+	SPR_CHEZ, // follower: cheese
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,

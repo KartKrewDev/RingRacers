@@ -670,7 +670,7 @@ static void readfollower(MYFILE *f)
 	followers[numfollowers].bobspeed = TICRATE*2;
 	followers[numfollowers].bobamp = 4;
 	followers[numfollowers].hitconfirmtime = TICRATE;
-	followers[numfollowers].defaultcolor = 1;
+	followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
 
 	do
 	{
@@ -701,71 +701,58 @@ static void readfollower(MYFILE *f)
 
 			if (fastcmp(word, "NAME"))
 			{
-				DEH_WriteUndoline(word, va("%s", followers[numfollowers].name), UNDO_NONE);
 				strcpy(followers[numfollowers].name, word2);
 				nameset = true;
 			}
 			else if (fastcmp(word, "DEFAULTCOLOR"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].defaultcolor), UNDO_NONE);
-				followers[numfollowers].defaultcolor = (UINT8)get_number(word2);
+				followers[numfollowers].defaultcolor = (UINT16)get_number(word2);
 			}
 
 			else if (fastcmp(word, "SCALE"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].scale), UNDO_NONE);
 				followers[numfollowers].scale = get_number(word2);
 			}
 			else if (fastcmp(word, "BUBBLESCALE"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].bubblescale), UNDO_NONE);
 				followers[numfollowers].bubblescale = get_number(word2);
 			}
 			else if (fastcmp(word, "ATANGLE"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].atangle), UNDO_NONE);
 				followers[numfollowers].atangle = (INT32)atoi(word2);
 			}
 			else if (fastcmp(word, "HORZLAG"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].horzlag), UNDO_NONE);
 				followers[numfollowers].horzlag = (INT32)atoi(word2);
 			}
 			else if (fastcmp(word, "VERTLAG"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].vertlag), UNDO_NONE);
 				followers[numfollowers].vertlag = (INT32)atoi(word2);
 			}
 			else if (fastcmp(word, "BOBSPEED"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].bobspeed), UNDO_NONE);
 				followers[numfollowers].bobspeed = (INT32)atoi(word2);
 			}
 			else if (fastcmp(word, "BOBAMP"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].bobamp), UNDO_NONE);
 				followers[numfollowers].bobamp = (INT32)atoi(word2);
 			}
 			else if (fastcmp(word, "ZOFFSET") || (fastcmp(word, "ZOFFS")))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].zoffs), UNDO_NONE);
 				followers[numfollowers].zoffs = (INT32)atoi(word2);
 			}
 			else if (fastcmp(word, "DISTANCE") || (fastcmp(word, "DIST")))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].dist), UNDO_NONE);
 				followers[numfollowers].dist = (INT32)atoi(word2);
 			}
 			else if (fastcmp(word, "HEIGHT"))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].height), UNDO_NONE);
 				followers[numfollowers].height = (INT32)atoi(word2);
 			}
 			else if (fastcmp(word, "IDLESTATE"))
 			{
 				if (word2)
 					strupr(word2);
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].idlestate), UNDO_NONE);
 				followers[numfollowers].idlestate = get_number(word2);
 				fallbackstate = followers[numfollowers].idlestate;
 			}
@@ -773,40 +760,34 @@ static void readfollower(MYFILE *f)
 			{
 				if (word2)
 					strupr(word2);
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].followstate), UNDO_NONE);
 				followers[numfollowers].followstate = get_number(word2);
 			}
 			else if (fastcmp(word, "HURTSTATE"))
 			{
 				if (word2)
 					strupr(word2);
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].hurtstate), UNDO_NONE);
 				followers[numfollowers].hurtstate = get_number(word2);
 			}
 			else if (fastcmp(word, "LOSESTATE"))
 			{
 				if (word2)
 					strupr(word2);
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].losestate), UNDO_NONE);
 				followers[numfollowers].losestate = get_number(word2);
 			}
 			else if (fastcmp(word, "WINSTATE"))
 			{
 				if (word2)
 					strupr(word2);
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].winstate), UNDO_NONE);
 				followers[numfollowers].winstate = get_number(word2);
 			}
 			else if (fastcmp(word, "HITSTATE") || (fastcmp(word, "HITCONFIRMSTATE")))
 			{
 				if (word2)
 					strupr(word2);
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].hitconfirmstate), UNDO_NONE);
 				followers[numfollowers].hitconfirmstate = get_number(word2);
 			}
 			else if (fastcmp(word, "HITTIME") || (fastcmp(word, "HITCONFIRMTIME")))
 			{
-				DEH_WriteUndoline(word, va("%d", followers[numfollowers].hitconfirmtime), UNDO_NONE);
 				followers[numfollowers].hitconfirmtime = (INT32)atoi(word2);
 			}
 			else
@@ -868,10 +849,10 @@ if (followers[numfollowers].field < threshold) \
 	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
 
 	// Special case for color I suppose
-	if (followers[numfollowers].defaultcolor > MAXSKINCOLORS-1)
+	if (followers[numfollowers].defaultcolor > numskincolors-1)
 	{
-		followers[numfollowers].defaultcolor = 1;
-		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, MAXSKINCOLORS-1);
+		followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
+		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, numskincolors-1);
 	}
 
 #undef FALLBACK
@@ -4860,7 +4841,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			else if (fastcmp(word, "FOLLOWER"))
 			{
 				readfollower(f);	// at the same time this will be our only way to ADD followers for now. Yikes.
-				DEH_WriteUndoline(word, "", UNDO_HEADER);
 				// This is not a major mod either.
 				continue;	// continue so that we don't error.
 			}
@@ -5096,7 +5076,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					}
 
 					readcupheader(f, cup);
-					DEH_WriteUndoline(word, word2, UNDO_HEADER);
 				}
 				else if (fastcmp(word, "CUTSCENE"))
 				{

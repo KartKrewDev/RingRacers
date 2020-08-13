@@ -7664,21 +7664,19 @@ static void M_StartGrandPrix(INT32 choice)
 
 	switch (cv_dummygpdifficulty.value)
 	{
-		case 0:
-			grandprixinfo.gamespeed = KARTSPEED_EASY;
+		case KARTSPEED_EASY:
+		case KARTSPEED_NORMAL:
+		case KARTSPEED_HARD:
+			grandprixinfo.gamespeed = cv_dummygpdifficulty.value;
 			break;
-		case 1:
-		default:
-			grandprixinfo.gamespeed = KARTSPEED_NORMAL;
-			break;
-		case 2:
-			grandprixinfo.gamespeed = KARTSPEED_HARD;
-			break;
-		case 3:
+		case KARTGP_MASTER:
 			grandprixinfo.gamespeed = KARTSPEED_HARD;
 			grandprixinfo.masterbots = true;
 			break;
-
+		default:
+			CONS_Alert(CONS_WARNING, "Invalid GP difficulty\n");
+			grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+			break;
 	}
 
 	grandprixinfo.encore = (boolean)(cv_dummygpencore.value);

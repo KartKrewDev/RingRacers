@@ -93,7 +93,7 @@ typedef struct follower_s
 	char skinname[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything.
 	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
 
-	UINT8 defaultcolor;		// default color for menus.
+	UINT16 defaultcolor;	// default color for menus.
 
 	fixed_t scale;			// Scale relative to the player's.
 	fixed_t bubblescale;	// Bubble scale relative to the player scale. If not set, no bubble will spawn (default)
@@ -106,8 +106,8 @@ typedef struct follower_s
 
 	// movement options
 
-	INT32 horzlag;			// Lag for X/Y displacement. Default is 2. Must be > 0 because we divide by this number.
-	INT32 vertlag;			// not Vert from Neptunia lagging, this is for Z displacement lag Default is 6. Must be > 0 because we divide by this number.
+	UINT32 horzlag;			// Lag for X/Y displacement. Default is 2. Must be > 0 because we divide by this number.
+	UINT32 vertlag;			// not Vert from Neptunia lagging, this is for Z displacement lag Default is 6. Must be > 0 because we divide by this number.
 	INT32 bobamp;			// Bob amplitude. Default is 4.
 	INT32 bobspeed;			// Arbitrary modifier for bobbing speed, default is TICRATE*2 (70).
 
@@ -120,7 +120,7 @@ typedef struct follower_s
 	INT32 winstate;			// state when the player has won
 	INT32 losestate;		// state when the player has lost
 	INT32 hitconfirmstate;	// state for hit confirm
-	INT32 hitconfirmtime;	// time to keep the above playing for
+	UINT32 hitconfirmtime;	// time to keep the above playing for
 } follower_t;
 
 extern INT32 numfollowers;
