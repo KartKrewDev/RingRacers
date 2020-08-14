@@ -532,6 +532,8 @@ void Command_ChangeConfig_f(void)
   */
 void M_FirstLoadConfig(void)
 {
+	UINT8 i;
+
 	// configfile is initialised by d_main when searching for the wad?
 
 	// check for a custom config file
@@ -647,9 +649,14 @@ void M_SaveConfig(const char *filename)
 	if (!dedicated)
 	{
 		if (tutorialmode && tutorialgcs)
-			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom]); // using gcs_custom as temp storage
+		{
+			// using gcs_custom as temp storage
+			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
+		}
 		else
-			G_SaveKeySetting(f, gamecontrol);
+		{
+			G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
+		}
 	}
 
 	fclose(f);
