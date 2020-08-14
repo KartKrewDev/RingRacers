@@ -878,8 +878,6 @@ void D_RegisterClientCommands(void)
 #endif
 
 	// HUD
-	CV_RegisterVar(&cv_timetic);
-	CV_RegisterVar(&cv_powerupdisplay);
 	CV_RegisterVar(&cv_itemfinder);
 	CV_RegisterVar(&cv_showinputjoy);
 
@@ -1018,11 +1016,8 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
 	COM_AddCommand("god", Command_CheatGod_f);
 	COM_AddCommand("notarget", Command_CheatNoTarget_f);
-	/*COM_AddCommand("getallemeralds", Command_Getallemeralds_f);
-	COM_AddCommand("resetemeralds", Command_Resetemeralds_f);
 	COM_AddCommand("setrings", Command_Setrings_f);
 	COM_AddCommand("setlives", Command_Setlives_f);
-	COM_AddCommand("setcontinues", Command_Setcontinues_f);*/
 	COM_AddCommand("devmode", Command_Devmode_f);
 	COM_AddCommand("savecheckpoint", Command_Savecheckpoint_f);
 	COM_AddCommand("scale", Command_Scale_f);

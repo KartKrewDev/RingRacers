@@ -3957,7 +3957,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
 	}
-	else if ((offset=0) || fastcmp(params[0], "POWERLEVEL"))
+	else if (fastcmp(params[0], "POWERLEVEL"))
 	{
 		PARAMCHECK(2);
 		ty = UC_POWERLEVEL;
@@ -3970,26 +3970,19 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if ((offset=0) || fastcmp(params[0], "GAMECLEAR")
-	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
-	//||        (++offset && fastcmp(params[0], "ULTIMATECLEAR")))
+	else if (fastcmp(params[0], "GAMECLEAR"))
 	{
-		ty = UC_GAMECLEAR + offset;
+		ty = UC_GAMECLEAR;
 		re = (params[1]) ? atoi(params[1]) : 1;
 	}
-	else if ((offset=0) || fastcmp(params[0], "OVERALLTIME"))
-	//||        (++offset && fastcmp(params[0], "OVERALLSCORE"))
-	//||        (++offset && fastcmp(params[0], "OVERALLRINGS")))
+	else if (fastcmp(params[0], "OVERALLTIME"))
 	{
 		PARAMCHECK(1);
-		ty = UC_OVERALLTIME + offset;
+		ty = UC_OVERALLTIME;
 		re = atoi(params[1]);
 	}
 	else if ((offset=0) || fastcmp(params[0], "MAPVISITED")
-	||        (++offset && fastcmp(params[0], "MAPBEATEN"))
-	||        (++offset && fastcmp(params[0], "MAPALLEMERALDS")))
-	//||        (++offset && fastcmp(params[0], "MAPULTIMATE"))
-	//||        (++offset && fastcmp(params[0], "MAPPERFECT")))
+	||        (++offset && fastcmp(params[0], "MAPBEATEN")))
 	{
 		PARAMCHECK(1);
 		ty = UC_MAPVISITED + offset;
@@ -4006,12 +3999,10 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if ((offset=0) || fastcmp(params[0], "MAPTIME"))
-	//||        (++offset && fastcmp(params[0], "MAPSCORE"))
-	//||        (++offset && fastcmp(params[0], "MAPRINGS")))
+	else if (fastcmp(params[0], "MAPTIME"))
 	{
 		PARAMCHECK(2);
-		ty = UC_MAPTIME + offset;
+		ty = UC_MAPTIME;
 		re = atoi(params[2]);
 
 		// Convert to map number if it appears to be one
@@ -4026,48 +4017,6 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	/*else if ((offset=0) || fastcmp(params[0], "NIGHTSSCORE")
-	||        (++offset && fastcmp(params[0], "NIGHTSTIME"))
-	||        (++offset && fastcmp(params[0], "NIGHTSGRADE")))
-	{
-		PARAMCHECK(2); // one optional one
-
-		ty = UC_NIGHTSSCORE + offset;
-		i = (params[3] ? 3 : 2);
-		if (fastncmp("GRADE_",params[i],6))
-		{
-			char *p = params[i]+6;
-			for (re = 0; NIGHTSGRADE_LIST[re]; re++)
-				if (*p == NIGHTSGRADE_LIST[re])
-					break;
-			if (!NIGHTSGRADE_LIST[re])
-			{
-				deh_warning("Invalid NiGHTS grade %s\n", params[i]);
-				return;
-			}
-		}
-		else
-			re = atoi(params[i]);
-
-		// Convert to map number if it appears to be one
-		if (params[1][0] >= 'A' && params[1][0] <= 'Z')
-			x1 = (INT16)M_MapNumber(params[1][0], params[1][1]);
-		else
-			x1 = (INT16)atoi(params[1]);
-
-		if (x1 < 0 || x1 >= NUMMAPS)
-		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
-			return;
-		}
-
-		// Mare number (0 for overall)
-		if (params[3]) // Only if we actually got 3 params (so the second one == mare and not requirement)
-			x2 = (INT16)atoi(params[2]);
-		else
-			x2 = 0;
-
-	}*/
 	else if (fastcmp(params[0], "TRIGGER"))
 	{
 		PARAMCHECK(1);

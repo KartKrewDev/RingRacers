@@ -6368,13 +6368,8 @@ static char *M_GetConditionString(condition_t cond)
 				return va("Beat game %d times", cond.requirement);
 			else
 				return va("Beat the game");
-		case UC_ALLEMERALDS:
-			if (cond.requirement > 1)
-				return va("Beat game w/ all emeralds %d times", cond.requirement);
-			else
-				return va("Beat game w/ all emeralds");
 		case UC_OVERALLTIME:
-			return va("Get overall time of %i:%02i:%02i",
+			return va("Get overall Time Attack of %i:%02i:%02i",
 				G_TicsToHours(cond.requirement),
 				G_TicsToMinutes(cond.requirement, false),
 				G_TicsToSeconds(cond.requirement));
@@ -6382,8 +6377,8 @@ static char *M_GetConditionString(condition_t cond)
 			return va("Visit %s", G_BuildMapTitle(cond.requirement-1));
 		case UC_MAPBEATEN:
 			return va("Beat %s", G_BuildMapTitle(cond.requirement-1));
-		case UC_MAPALLEMERALDS:
-			return va("Beat %s w/ all emeralds", G_BuildMapTitle(cond.requirement-1));
+		case UC_MAPENCORE:
+			return va("Beat %s in Encore Mode", G_BuildMapTitle(cond.requirement-1));
 		case UC_MAPTIME:
 			return va("Beat %s in %i:%02i.%02i", G_BuildMapTitle(cond.extrainfo1-1),
 				G_TicsToMinutes(cond.requirement, true),

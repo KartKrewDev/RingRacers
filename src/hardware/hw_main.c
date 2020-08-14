@@ -5643,6 +5643,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 		if (player == &players[displayplayers[i]])
 		{
 			type = &postimgtype[i];
+			// i is now splitscreen player num
 			break;
 		}
 	}
@@ -5764,10 +5765,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 
 #ifndef NEWCLIP
 	// Make a viewangle int so we can render things based on mouselook
-	if (player == &players[consoleplayer])
-		viewangle = localaiming;
-	else if (splitscreen && player == &players[displayplayers[1]])
-		viewangle = localaiming2;
+	viewangle = localaiming[i];
 
 	// Handle stuff when you are looking farther up or down.
 	if ((gl_aimingangle || cv_fov.value+player->fovadd > 90*FRACUNIT))
@@ -5846,6 +5844,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 		if (player == &players[displayplayers[i]])
 		{
 			type = &postimgtype[i];
+			// i is now splitscreen player num
 			break;
 		}
 	}
@@ -5986,10 +5985,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 
 #ifndef NEWCLIP
 	// Make a viewangle int so we can render things based on mouselook
-	if (player == &players[consoleplayer])
-		viewangle = localaiming;
-	else if (splitscreen && player == &players[displayplayers[1]])
-		viewangle = localaiming2;
+	viewangle = localaiming[i];
 
 	// Handle stuff when you are looking farther up or down.
 	if ((gl_aimingangle || cv_fov.value+player->fovadd > 90*FRACUNIT))

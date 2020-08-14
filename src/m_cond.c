@@ -118,8 +118,8 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return ((mapvisited[cn->requirement - 1] & MV_VISITED) == MV_VISITED);
 		case UC_MAPBEATEN: // Requires map x to be beaten
 			return ((mapvisited[cn->requirement - 1] & MV_BEATEN) == MV_BEATEN);
-		case UC_MAPALLEMERALDS: // Requires map x to be beaten with all emeralds in possession
-			return ((mapvisited[cn->requirement - 1] & MV_ALLEMERALDS) == MV_ALLEMERALDS);
+		case UC_MAPENCORE: // Requires map x to be beaten in encore
+			return ((mapvisited[cn->requirement - 1] & MV_ENCORE) == MV_ENCORE);
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
 		case UC_TRIGGER: // requires map trigger set
@@ -284,7 +284,7 @@ UINT8 M_CheckLevelEmblems(void)
 	// Update Score, Time, Rings emblems
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (emblemlocations[i].type <= ET_SKIN || emblemlocations[i].type == ET_MAP || emblemlocations[i].collected)
+		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
 			continue;
 
 		levelnum = emblemlocations[i].level;
@@ -324,14 +324,8 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 		embtype = emblemlocations[i].var;
 		flags = MV_BEATEN;
 
-		if (embtype & ME_ALLEMERALDS)
-			flags |= MV_ALLEMERALDS;
-
-		if (embtype & ME_ULTIMATE)
-			flags |= MV_ULTIMATE;
-
-		if (embtype & ME_PERFECT)
-			flags |= MV_PERFECT;
+		if (embtype & ME_ENCORE)
+			flags |= MV_ENCORE;
 
 		res = ((mapvisited[levelnum - 1] & flags) == flags);
 

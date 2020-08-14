@@ -111,13 +111,6 @@ static int lib_fixeddiv(lua_State *L)
 	return 1;
 }
 
-static int lib_fixedrem(lua_State *L)
-{
-	LUA_Deprecated(L, "FixedRem(a, b)", "a % b");
-	lua_pushfixed(L, luaL_checkfixed(L, 1) % luaL_checkfixed(L, 2));
-	return 1;
-}
-
 static int lib_fixedsqrt(lua_State *L)
 {
 	fixed_t i = luaL_checkfixed(L, 1);
@@ -197,7 +190,6 @@ static luaL_Reg lib[] = {
 	{"FixedMul", lib_fixedmul},
 	{"FixedInt", lib_fixedint},
 	{"FixedDiv", lib_fixeddiv},
-	{"FixedRem", lib_fixedrem},
 	{"FixedSqrt", lib_fixedsqrt},
 	{"FixedHypot", lib_fixedhypot},
 	{"FixedFloor", lib_fixedfloor},

@@ -712,7 +712,7 @@ void Command_Teleport_f(void)
 				CONS_Alert(CONS_NOTICE, M_GetText("Not a valid aiming angle (between +/-90).\n"));
 				return;
 			}
-			localaiming = p->aiming = aim;
+			localaiming[0] = p->aiming = aim;
 		}
 
 		CONS_Printf(M_GetText("Teleporting to %d, %d, %d...\n"), FixedInt(intx), FixedInt(inty), FixedInt(intz));
@@ -1089,164 +1089,6 @@ void OP_ResetObjectplace(void)
 }
 
 //
-// Main meat of objectplace: handling functions
-//
-void OP_NightsObjectplace(player_t *player)
-{
-	ticcmd_t *cmd = &player->cmd;
-	mapthing_t *mt;
-
-	player->nightstime = 3*TICRATE;
-	player->drillmeter = TICRATE;
-
-	if (player->pflags & PF_ATTACKDOWN)
-	{
-		// Are ANY objectplace buttons pressed?  If no, remove flag.
-		if (!(cmd->buttons & (BT_ATTACK|BT_ACCELERATE|BT_BRAKE|BT_FORWARD|BT_BACKWARD)))
-			player->pflags &= ~PF_ATTACKDOWN;
-
-		// Do nothing.
-		return;
-	}
-
-	// This places a hoop!
-	if (cmd->buttons & BT_ATTACK)
-	{
-		UINT16 angle = (UINT16)(player->anotherflyangle % 360);
-		INT16 temp = (INT16)FixedInt(AngleFixed(player->mo->angle)); // Traditional 2D Angle
-
-		player->pflags |= PF_ATTACKDOWN;
-
-		mt = OP_CreateNewMapThing(player, 1713, false);
-
-		// Tilt
-		mt->angle = (INT16)FixedInt(FixedDiv(angle*FRACUNIT, 360*(FRACUNIT/256)));
-
-		if (player->anotherflyangle < 90 || player->anotherflyangle > 270)
-			temp -= 90;
-		else
-			temp += 90;
-		temp %= 360;
-
-		mt->options = (mt->options & ~(UINT16)cv_opflags.value) | (UINT16)cv_ophoopflags.value;
-		mt->angle = (INT16)(mt->angle+(INT16)((FixedInt(FixedDiv(temp*FRACUNIT, 360*(FRACUNIT/256))))<<8));
-
-		P_SpawnHoop(mt);
-	}
-
-	// This places a bumper!
-	/*if (cmd->buttons & BT_SPECTATE)
-	{
-		UINT16 vertangle = (UINT16)(player->anotherflyangle % 360);
-		UINT16 newflags;
-
-		player->pflags |= PF_ATTACKDOWN;
-		if (!OP_HeightOkay(player, false))
-			return;
-
-		mt = OP_CreateNewMapThing(player, (UINT16)mobjinfo[MT_NIGHTSBUMPER].doomednum, false);
-		mt->z = min(mt->z - (mobjinfo[MT_NIGHTSBUMPER].height/4), 0);
-			// height offset: from P_TouchSpecialThing case MT_NIGHTSBUMPER
-
-		// clockwise
-		if (vertangle >= 75 && vertangle < 105) // up
-			newflags = 3;
-		else if (vertangle >= 105 && vertangle < 135) // 60 upward tilt
-			newflags = 2;
-		else if (vertangle >= 135 && vertangle < 165) // 30 upward tilt
-			newflags = 1;
-		//else if (vertangle >= 165 && vertangle < 195) // forward, see else case
-		//	newflags = 0;
-		else if (vertangle >= 195 && vertangle < 225) // 30 downward tilt
-			newflags = 11;
-		else if (vertangle >= 225 && vertangle < 255) // 60 downward tilt
-			newflags = 10;
-		else if (vertangle >= 255 && vertangle < 285) // down
-			newflags = 9;
-		else if (vertangle >= 285 && vertangle < 315) // 60 downward tilt backwards
-			newflags = 8;
-		else if (vertangle >= 315 && vertangle < 345) // 30 downward tilt backwards
-			newflags = 7;
-		else if (vertangle >= 345 || vertangle < 15) // backwards
-			newflags = 6;
-		else if (vertangle >= 15 && vertangle < 45) // 30 upward tilt backwards
-			newflags = 5;
-		else if (vertangle >= 45 && vertangle < 75) // 60 upward tilt backwards
-			newflags = 4;
-		else // forward
-			newflags = 0;
-
-		mt->options = (mt->z << ZSHIFT) | newflags;
-
-		// if NiGHTS is facing backwards, orient the Thing angle forwards so that the sprite angle
-		// displays correctly. Backwards movement via the Thing flags is unaffected.
-		if (vertangle < 90 || vertangle > 270)
-			mt->angle = (mt->angle + 180) % 360;
-
-		P_SpawnMapThing(mt);
-	}*/
-
-	// This places a ring!
-	if (cmd->buttons & BT_BACKWARD)
-	{
-		player->pflags |= PF_ATTACKDOWN;
-		if (!OP_HeightOkay(player, false))
-			return;
-
-		mt = OP_CreateNewMapThing(player, (UINT16)mobjinfo[MT_RING].doomednum, false);
-		P_SpawnMapThing(mt);
-	}
-
-	// This places a wing item
-	if (cmd->buttons & BT_FORWARD)
-	{
-		player->pflags |= PF_ATTACKDOWN;
-		if (!OP_HeightOkay(player, false))
-			return;
-
-		mt = OP_CreateNewMapThing(player, (UINT16)mobjinfo[MT_NIGHTSWING].doomednum, false);
-		P_SpawnMapThing(mt);
-	}
-
-	// This places a custom object as defined in the console cv_mapthingnum.
-	if (cmd->buttons & BT_BRAKE)
-	{
-		UINT16 angle;
-
-		player->pflags |= PF_ATTACKDOWN;
-		if (!cv_mapthingnum.value)
-		{
-			CONS_Alert(CONS_WARNING, "Set op_mapthingnum first!\n");
-			return;
-		}
-		if (!OP_HeightOkay(player, false))
-			return;
-
-		if (player->mo->target->flags2 & MF2_AMBUSH)
-			angle = (UINT16)player->anotherflyangle;
-		else
-		{
-			angle = (UINT16)((360-player->anotherflyangle) % 360);
-			if (angle > 90 && angle < 270)
-			{
-				angle += 180;
-				angle %= 360;
-			}
-		}
-
-		mt = OP_CreateNewMapThing(player, (UINT16)cv_mapthingnum.value, false);
-		mt->angle = angle;
-
-		if (mt->type >= 600 && mt->type <= 609) // Placement patterns
-			P_SpawnItemPattern(mt, false);
-		else if (mt->type == 1705 || mt->type == 1713) // NiGHTS Hoops
-			P_SpawnHoop(mt);
-		else
-			P_SpawnMapThing(mt);
-	}
-}
-
-//
 // OP_ObjectplaceMovement
 //
 // Control code for Objectplace mode
@@ -1255,8 +1097,7 @@ void OP_ObjectplaceMovement(player_t *player)
 {
 	ticcmd_t *cmd = &player->cmd;
 
-	if (!player->climbing && (netgame || !cv_analog[0].value || (player->pflags & PF_SPINNING)))
-		player->drawangle = player->mo->angle = (cmd->angleturn<<16 /* not FRACBITS */);
+	player->drawangle = player->mo->angle = (cmd->angleturn<<16 /* not FRACBITS */);
 
 	ticruned++;
 	if (!(cmd->angleturn & TICCMD_RECEIVED))
@@ -1273,12 +1114,6 @@ void OP_ObjectplaceMovement(player_t *player)
 		P_TeleportMove(player->mo, player->mo->x+player->mo->momx, player->mo->y+player->mo->momy, player->mo->z);
 		player->mo->momx = player->mo->momy = 0;
 	}
-	/*if (cmd->sidemove != 0) -- was disabled in practice anyways, since sidemove was suppressed
-	{
-		P_Thrust(player->mo, player->mo->angle-ANGLE_90, (cmd->sidemove*FRACUNIT/MAXPLMOVE)*cv_speed.value);
-		P_TeleportMove(player->mo, player->mo->x+player->mo->momx, player->mo->y+player->mo->momy, player->mo->z);
-		player->mo->momx = player->mo->momy = 0;
-	}*/
 
 	if (player->mo->z > player->mo->ceilingz - player->mo->height)
 		player->mo->z = player->mo->ceilingz - player->mo->height;

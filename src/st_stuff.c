@@ -612,29 +612,9 @@ tic_t lt_exitticker = 0, lt_endtime = 0;
 //
 static void ST_cacheLevelTitle(void)
 {
-#define SETPATCH(default, warning, custom, idx) \
-{ \
-	lumpnum_t patlumpnum = LUMPERROR; \
-	if (mapheaderinfo[gamemap-1]->custom[0] != '\0') \
-	{ \
-		patlumpnum = W_CheckNumForName(mapheaderinfo[gamemap-1]->custom); \
-		if (patlumpnum != LUMPERROR) \
-			lt_patches[idx] = (patch_t *)W_CachePatchNum(patlumpnum, PU_HUDGFX); \
-	} \
-	if (patlumpnum == LUMPERROR) \
-	{ \
-		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE)) \
-			lt_patches[idx] = (patch_t *)W_CachePatchName(default, PU_HUDGFX); \
-		else \
-			lt_patches[idx] = (patch_t *)W_CachePatchName(warning, PU_HUDGFX); \
-	} \
-}
-
-	SETPATCH("LTACTBLU", "LTACTRED", ltactdiamond, 0)
-	SETPATCH("LTZIGZAG", "LTZIGRED", ltzzpatch, 1)
-	SETPATCH("LTZZTEXT", "LTZZWARN", ltzztext, 2)
-
-#undef SETPATCH
+	lt_patches[0] = (patch_t *)W_CachePatchName("LTACTBLU", PU_HUDGFX);
+	lt_patches[1] = (patch_t *)W_CachePatchName("LTZIGZAG", PU_HUDGFX);
+	lt_patches[2] = (patch_t *)W_CachePatchName("LTZZTEXT", PU_HUDGFX);
 }
 
 //
@@ -893,17 +873,13 @@ static void ST_overlayDrawer(void)
 			}
 		}
 	}
-	else if (!(netgame || multiplayer) && cv_powerupdisplay.value == 2)
-		ST_drawPowerupHUD(); // same as it ever was...
 
 	if (!(netgame || multiplayer) || !hu_showscores)
 		LUAh_GameHUD(stplyr);
 
 	// draw level title Tails
-	if (*mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer) && !mapreset)
-		&& LUA_HudEnabled(hud_stagetitle)
-	)
-		ST_drawLevelTitle();
+	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))
+		ST_drawTitleCard();
 
 	if (!hu_showscores && netgame && !mapreset)
 	{
@@ -1066,6 +1042,7 @@ void ST_Drawer(void)
 
 	if (st_overlay)
 	{
+		UINT8 i;
 		// No deadview!
 		for (i = 0; i <= r_splitscreen; i++)
 		{

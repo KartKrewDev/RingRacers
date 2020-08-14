@@ -24,10 +24,10 @@ typedef enum
 	UC_MATCHESPLAYED,	// SRB2Kart: MATCHESPLAYED [x played]
 	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
-	UC_ALLEMERALDS,		// ALLEMERALDS <x times>
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
 	UC_MAPVISITED,		// MAPVISITED [map number]
 	UC_MAPBEATEN,		// MAPBEATEN [map number]
+	UC_MAPENCORE,		// MAPENCORE [map number]
 	UC_MAPTIME,			// MAPTIME [map number] [time to beat, tics]
 	UC_TRIGGER,			// TRIGGER [trigger number]
 	UC_TOTALEMBLEMS,	// TOTALEMBLEMS [number of emblems]

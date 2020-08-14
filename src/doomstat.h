@@ -187,10 +187,6 @@ extern INT16 bootmap; //bootmap for loading a map on startup
 extern INT16 tutorialmap; // map to load for tutorial
 extern boolean tutorialmode; // are we in a tutorial right now?
 extern INT32 tutorialgcs; // which control scheme is loaded?
-extern INT32 tutorialusemouse; // store cv_usemouse user value
-extern INT32 tutorialfreelook; // store cv_alwaysfreelook user value
-extern INT32 tutorialmousemove; // store cv_mousemove user value
-extern INT32 tutorialanalog; // store cv_analog[0] user value
 
 extern boolean looptitle;
 
@@ -751,8 +747,6 @@ extern boolean singletics;
 
 #include "d_clisrv.h"
 
-extern consvar_t cv_timetic; // display high resolution timer
-extern consvar_t cv_powerupdisplay; // display powerups
 extern consvar_t cv_showinputjoy; // display joystick in time attack
 extern consvar_t cv_forceskin; // force clients to use the server's skin
 extern consvar_t cv_downloading; // allow clients to downloading WADs.

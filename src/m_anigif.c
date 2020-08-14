@@ -494,32 +494,6 @@ const UINT8 gifframe_gchead[4] = {0x21,0xF9,0x04,0x04}; // GCE, bytes, packed by
 static UINT8 *gifframe_data = NULL;
 static size_t gifframe_size = 8192;
 
-#ifdef HWRENDER
-static void hwrconvert(void)
-{
-	UINT8 *linear = HWR_GetScreenshot();
-	UINT8 *dest = screens[2];
-	UINT8 r, g, b;
-	INT32 x, y;
-	size_t i = 0;
-
-	InitColorLUT(gif_framepalette);
-
-	for (y = 0; y < vid.height; y++)
-	{
-		for (x = 0; x < vid.width; x++, i += 3)
-		{
-			r = (UINT8)linear[i];
-			g = (UINT8)linear[i + 1];
-			b = (UINT8)linear[i + 2];
-			dest[(y * vid.width) + x] = colorlookup[r >> SHIFTCOLORBITS][g >> SHIFTCOLORBITS][b >> SHIFTCOLORBITS];
-		}
-	}
-
-	free(linear);
-}
-#endif
-
 //
 // GIF_rgbconvert
 // converts an RGB frame to a frame with a palette.

@@ -504,6 +504,22 @@ void P_GivePlayerRings(player_t *player, INT32 num_rings)
 		player->rings = -20; // Chaotix ring debt!
 }
 
+//
+// P_GivePlayerLives
+//
+// Gives the player an extra life.
+// Call this function when you want to add lives to the player.
+//
+void P_GivePlayerLives(player_t *player, INT32 numlives)
+{
+	player->lives += numlives;
+
+	if (player->lives > 9)
+		player->lives = 9;
+	else if (player->lives < 1)
+		player->lives = 1;
+}
+
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, UINT32 amount)
 {

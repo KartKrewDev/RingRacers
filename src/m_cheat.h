@@ -38,7 +38,6 @@ extern UINT32 op_displayflags;
 
 boolean OP_FreezeObjectplace(void);
 void OP_ResetObjectplace(void);
-void OP_NightsObjectplace(player_t *player);
 void OP_ObjectplaceMovement(player_t *player);
 
 //
@@ -48,11 +47,8 @@ void Command_CheatNoClip_f(void);
 void Command_CheatGod_f(void);
 void Command_CheatNoTarget_f(void);
 void Command_Savecheckpoint_f(void);
-/*void Command_Getallemeralds_f(void);
-void Command_Resetemeralds_f(void);
 void Command_Setrings_f(void);
 void Command_Setlives_f(void);
-void Command_Setcontinues_f(void);*/
 void Command_Devmode_f(void);
 void Command_Scale_f(void);
 void Command_Gravflip_f(void);
