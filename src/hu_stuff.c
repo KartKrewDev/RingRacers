@@ -54,6 +54,7 @@
 #include "s_sound.h" // song credits
 #include "k_kart.h"
 #include "k_color.h"
+#include "k_hud.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -94,17 +95,12 @@ patch_t *tallinfin;
 //              coop hud
 //-------------------------------------------
 
-patch_t *emeraldpics[3][8]; // 0 = normal, 1 = tiny, 2 = coinbox
 static patch_t *emblemicon;
-patch_t *tokenicon;
-static patch_t *exiticon;
 
 //-------------------------------------------
 //              misc vars
 //-------------------------------------------
 
-// crosshair 0 = off, 1 = cross, 2 = angle, 3 = point, see m_menu.c
-static patch_t *crosshair[HU_CROSSHAIRS]; // 3 precached crosshair graphics
 // song credits
 static patch_t *songcreditbg;
 
@@ -190,43 +186,7 @@ void HU_LoadGraphics(void)
 	// minus for negative tallnums
 	tallminus          = HU_CachePatch("STTMINUS");
 
-	// cache the crosshairs, don't bother to know which one is being used,
-	// just cache all 3, they're so small anyway.
-	for (i = 0; i < HU_CROSSHAIRS; i++)
-	{
-		crosshair[i]    = HU_CachePatch("CROSHAI%c", '1'+i);
-	}
-
 	emblemicon         = HU_CachePatch("EMBLICON");
-	tokenicon          = HU_CachePatch("TOKNICON");
-
-	emeraldpics[0][0] = W_CachePatchName("CHAOS1", PU_HUDGFX);
-	emeraldpics[0][1] = W_CachePatchName("CHAOS2", PU_HUDGFX);
-	emeraldpics[0][2] = W_CachePatchName("CHAOS3", PU_HUDGFX);
-	emeraldpics[0][3] = W_CachePatchName("CHAOS4", PU_HUDGFX);
-	emeraldpics[0][4] = W_CachePatchName("CHAOS5", PU_HUDGFX);
-	emeraldpics[0][5] = W_CachePatchName("CHAOS6", PU_HUDGFX);
-	emeraldpics[0][6] = W_CachePatchName("CHAOS7", PU_HUDGFX);
-	emeraldpics[0][7] = W_CachePatchName("CHAOS8", PU_HUDGFX);
-
-	emeraldpics[1][0] = W_CachePatchName("TEMER1", PU_HUDGFX);
-	emeraldpics[1][1] = W_CachePatchName("TEMER2", PU_HUDGFX);
-	emeraldpics[1][2] = W_CachePatchName("TEMER3", PU_HUDGFX);
-	emeraldpics[1][3] = W_CachePatchName("TEMER4", PU_HUDGFX);
-	emeraldpics[1][4] = W_CachePatchName("TEMER5", PU_HUDGFX);
-	emeraldpics[1][5] = W_CachePatchName("TEMER6", PU_HUDGFX);
-	emeraldpics[1][6] = W_CachePatchName("TEMER7", PU_HUDGFX);
-	//emeraldpics[1][7] = W_CachePatchName("TEMER8", PU_HUDGFX); -- unused
-
-	emeraldpics[2][0] = W_CachePatchName("EMBOX1", PU_HUDGFX);
-	emeraldpics[2][1] = W_CachePatchName("EMBOX2", PU_HUDGFX);
-	emeraldpics[2][2] = W_CachePatchName("EMBOX3", PU_HUDGFX);
-	emeraldpics[2][3] = W_CachePatchName("EMBOX4", PU_HUDGFX);
-	emeraldpics[2][4] = W_CachePatchName("EMBOX5", PU_HUDGFX);
-	emeraldpics[2][5] = W_CachePatchName("EMBOX6", PU_HUDGFX);
-	emeraldpics[2][6] = W_CachePatchName("EMBOX7", PU_HUDGFX);
-	//emeraldpics[2][7] = W_CachePatchName("EMBOX8", PU_HUDGFX); -- unused
-
 	songcreditbg       = HU_CachePatch("K_SONGCR");
 
 	// cache ping gfx:
@@ -914,7 +874,7 @@ void HU_Ticker(void)
 	hu_tick++;
 	hu_tick &= 7; // currently only to blink chat input cursor
 
-	if (PLAYER1INPUTDOWN(gc_scores))
+	if (PlayerInputDown(1, gc_scores))
 		hu_showscores = !chat_on;
 	else
 		hu_showscores = false;
@@ -1861,7 +1821,7 @@ static void HU_DrawCEcho(void)
 	INT32 y = (BASEVIDHEIGHT/2)-4;
 	INT32 pnumlines = 0;
 
-	UINT32 realflags = cechoflags|V_PERPLAYER; // requested as part of splitscreen's stuff
+	UINT32 realflags = cechoflags|V_SPLITSCREEN; // requested as part of splitscreen's stuff
 	INT32 realalpha = (INT32)((cechoflags & V_ALPHAMASK) >> V_ALPHASHIFT);
 
 	char *line;
@@ -1911,21 +1871,6 @@ static void HU_DrawCEcho(void)
 	}
 
 	--cechotimer;
-}
-
-static void HU_drawGametype(void)
-{
-	const char *strvalue = NULL;
-
-	if (gametype < 0 || gametype >= gametypecount)
-		return; // not a valid gametype???
-
-	strvalue = Gametype_Names[gametype];
-
-	if (splitscreen)
-		V_DrawString(4, 184, 0, strvalue);
-	else
-		V_DrawString(4, 192, 0, strvalue);
 }
 
 //
@@ -2345,19 +2290,6 @@ static void HU_DrawRankings(void)
 	else
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametype_cons_t[gametype].strvalue);
 
-	if (G_GametypeHasTeams())
-	{
-		p = bmatcico;
-
-		V_DrawSmallScaledPatch(128 - SHORT(p->width)/4, 4, 0, p);
-		V_DrawCenteredString(128, 16, 0, va("%u", bluescore));
-
-		p = rmatcico;
-
-		V_DrawSmallScaledPatch(192 - SHORT(p->width)/4, 4, 0, p);
-		V_DrawCenteredString(192, 16, 0, va("%u", redscore));
-	}
-
 	if (gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT))
 	{
 		if ((gametyperules & GTR_TIMELIMIT) && cv_timelimit.value && timelimitintics > 0)
@@ -2459,7 +2391,7 @@ static void HU_DrawRankings(void)
 #endif
 	}
 
-	HU_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
+	K_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
 
 	// draw spectators in a ticker across the bottom
 	if (netgame && G_GametypeHasSpectators())

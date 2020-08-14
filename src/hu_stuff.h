@@ -60,8 +60,6 @@ enum
 };
 #undef  X
 
-#define HU_CROSSHAIRS 3 // maximum of 9 - see HU_Init();
-
 extern char *shiftxform; // english translation shift table
 extern char english_shiftxform[];
 
@@ -107,7 +105,6 @@ extern patch_t *bmatcico;
 extern patch_t *tagico;
 extern patch_t *tallminus;
 extern patch_t *tallinfin;
-extern patch_t *tokenicon;
 
 // set true whenever the tab rankings are being shown for any reason
 extern boolean hu_showscores;
@@ -130,10 +127,8 @@ void HU_Drawer(void);
 char HU_dequeueChatChar(void);
 void HU_Erase(void);
 void HU_clearChatChars(void);
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags); // Lat': Ping drawer for scoreboard.
+void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags); // Lat': Ping drawer for scoreboard.
 void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);
-void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer);
-void HU_DrawEmeralds(INT32 x, INT32 y, INT32 pemeralds);
 
 INT32 HU_CreateTeamScoresTbl(playersort_t *tab, UINT32 dmtotals[]);
 

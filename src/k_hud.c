@@ -1653,7 +1653,7 @@ static boolean K_drawKartPositionFaces(void)
 //
 // HU_DrawTabRankings -- moved here to take advantage of kart stuff!
 //
-void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol)
+void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol)
 {
 	static tic_t alagles_timer = 9;
 	INT32 i, rightoffset = 240;

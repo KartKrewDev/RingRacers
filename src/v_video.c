@@ -825,7 +825,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 	y -= FixedMul(SHORT(patch->topoffset)<<FRACBITS, pscale);
 	x -= FixedMul(SHORT(patch->leftoffset)<<FRACBITS, pscale);
 
-	if (splitscreen && (scrn & V_PERPLAYER))
+	if (splitscreen && (scrn & V_SPLITSCREEN))
 	{
 		fixed_t adjusty = ((scrn & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)<<(FRACBITS-1);
 		fdup >>= 1;
@@ -1060,7 +1060,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	}
 #endif
 
-	if (splitscreen && (c & V_PERPLAYER))
+	if (splitscreen && (c & V_SPLITSCREEN))
 	{
 		fixed_t adjusty = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
 		h >>= 1;
@@ -1246,7 +1246,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 			return; // invis
 	}
 
-	if (splitscreen && (c & V_PERPLAYER))
+	if (splitscreen && (c & V_SPLITSCREEN))
 	{
 		fixed_t adjusty = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
 		h >>= 1;
@@ -1511,7 +1511,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 	}
 #endif
 
-	if (splitscreen && (c & V_PERPLAYER))
+	if (splitscreen && (c & V_SPLITSCREEN))
 	{
 		fixed_t adjusty = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
 		h >>= 1;

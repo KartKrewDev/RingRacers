@@ -791,13 +791,13 @@ void ST_drawTitleCard(void)
 			else
 				V_DrawMappedPatch(ttlnumxpos + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
 		}
-		V_DrawLevelActNum(ttlnumxpos + ttlscroll, 104, V_PERPLAYER, actnum);
+		V_DrawLevelActNum(ttlnumxpos + ttlscroll, 104, V_SPLITSCREEN, actnum);
 	}
 
-	V_DrawLevelTitle(lvlttlxpos - ttlscroll, 80, V_PERPLAYER, lvlttl);
+	V_DrawLevelTitle(lvlttlxpos - ttlscroll, 80, V_SPLITSCREEN, lvlttl);
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-		V_DrawLevelTitle(zonexpos + ttlscroll, 104, V_PERPLAYER, M_GetText("Zone"));
-	V_DrawCenteredString(subttlxpos - ttlscroll, 135, V_PERPLAYER|V_ALLOWLOWERCASE, subttl);
+		V_DrawLevelTitle(zonexpos + ttlscroll, 104, V_SPLITSCREEN, M_GetText("Zone"));
+	V_DrawCenteredString(subttlxpos - ttlscroll, 135, V_SPLITSCREEN|V_ALLOWLOWERCASE, subttl);
 
 	lt_lasttic = lt_ticker;
 

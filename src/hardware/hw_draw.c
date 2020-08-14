@@ -216,7 +216,7 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 		}
 	}
 
-	if (pscale != FRACUNIT || (splitscreen && option & V_PERPLAYER))
+	if (pscale != FRACUNIT || (splitscreen && option & V_SPLITSCREEN))
 	{
 		fwidth = (float)SHORT(gpatch->width) * fscalew * dupx;
 		fheight = (float)SHORT(gpatch->height) * fscaleh * dupy;
@@ -322,7 +322,7 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 	dupx = dupy = (dupx < dupy ? dupx : dupy);
 	fscale = FIXED_TO_FLOAT(pscale);
 
-	// fuck it, no GL support for croppedpatch v_perplayer right now. it's not like it's accessible to Lua or anything, and we only use it for menus...
+	// fuck it, no GL support for croppedpatch V_SPLITSCREEN right now. it's not like it's accessible to Lua or anything, and we only use it for menus...
 
 	cy -= (float)SHORT(gpatch->topoffset) * fscale;
 	cx -= (float)SHORT(gpatch->leftoffset) * fscale;
@@ -603,7 +603,7 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 //  |/ |
 //  0--1
 
-	if (splitscreen && (color & V_PERPLAYER))
+	if (splitscreen && (color & V_SPLITSCREEN))
 	{
 		fixed_t adjusty = ((color & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)/2.0f;
 		h >>= 1;
@@ -1082,7 +1082,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 //  |/ |
 //  0--1
 
-	if (splitscreen && (color & V_PERPLAYER))
+	if (splitscreen && (color & V_SPLITSCREEN))
 	{
 		fixed_t adjusty = ((color & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)/2.0f;
 		h >>= 1;
@@ -1231,7 +1231,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 //  |/ |
 //  0--1
 
-	if (splitscreen && (color & V_PERPLAYER))
+	if (splitscreen && (color & V_SPLITSCREEN))
 	{
 		fixed_t adjusty = ((color & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)/2.0f;
 		h >>= 1;
