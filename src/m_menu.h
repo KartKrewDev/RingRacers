@@ -481,6 +481,9 @@ void M_SetPlaybackMenuPointer(void);
 
 INT32 HU_GetHighlightColor(void);
 
+// Moviemode menu updating
+void Moviemode_option_Onchange(void);
+
 // Player Setup menu colors linked list
 typedef struct menucolor_s {
 	struct menucolor_s *next;
@@ -551,12 +554,12 @@ void M_FreePlayerSetupColors(void);
 	NULL\
 }
 
-#define MAPPLATTERMENUSTYLE(id, header, source)\
+#define MAPICONMENUSTYLE(header, source, prev)\
 {\
-	id,\
+	MN_NONE,\
 	header,\
 	sizeof (source)/sizeof (menuitem_t),\
-	&MainDef,\
+	prev,\
 	source,\
 	M_DrawServerMenu,\
 	24,40,\
