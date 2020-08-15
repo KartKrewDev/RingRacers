@@ -47,7 +47,7 @@ extern consvar_t cv_musicpref;
 
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
-extern consvar_t cv_playsoundsifunfocused;
+extern consvar_t cv_playsoundifunfocused;
 
 extern consvar_t cv_music_resync_threshold;
 extern consvar_t cv_music_resync_powerups_only;
@@ -166,9 +166,14 @@ boolean S_MusicExists(const char *mname, boolean checkMIDI, boolean checkDigi);
 
 // Returns whether the preferred format a (true = MIDI, false = Digital)
 // exists and is enabled for musicname b
+#ifdef NO_MIDI
+
 #define S_PrefAvailable(a, b) (a ? \
 	(!S_MIDIMusicDisabled() && S_MIDIExists(b)) : \
 	(!S_DigMusicDisabled() && S_DigExists(b)))
+
+#endif
+
 
 //
 // Music Effects
