@@ -1614,7 +1614,7 @@ void T_PolyObjWaypoint(polywaypoint_t *th)
 	if (!po->thinker)
 		po->thinker = &th->thinker;
 
-	target = waypoints[th->sequence][th->pointnum];
+	target = tubewaypoints[th->sequence][th->pointnum];
 
 	if (!target)
 	{
@@ -1663,7 +1663,7 @@ void T_PolyObjWaypoint(polywaypoint_t *th)
 			if (!th->stophere)
 			{
 				CONS_Debug(DBG_POLYOBJ, "Looking for next waypoint...\n");
-				waypoint = (th->direction == -1) ? P_GetPreviousWaypoint(target, false) : P_GetNextWaypoint(target, false);
+				waypoint = (th->direction == -1) ? P_GetPreviousTubeWaypoint(target, false) : P_GetNextTubeWaypoint(target, false);
 
 				if (!waypoint && th->returnbehavior == PWR_WRAP) // If specified, wrap waypoints
 				{
@@ -1673,7 +1673,7 @@ void T_PolyObjWaypoint(polywaypoint_t *th)
 						th->stophere = true;
 					}
 
-					waypoint = (th->direction == -1) ? P_GetLastWaypoint(th->sequence) : P_GetFirstWaypoint(th->sequence);
+					waypoint = (th->direction == -1) ? P_GetLastTubeWaypoint(th->sequence) : P_GetFirstTubeWaypoint(th->sequence);
 				}
 				else if (!waypoint && th->returnbehavior == PWR_COMEBACK) // Come back to the start
 				{
@@ -1682,7 +1682,7 @@ void T_PolyObjWaypoint(polywaypoint_t *th)
 					if (!th->continuous)
 						th->returnbehavior = PWR_STOP;
 
-					waypoint = (th->direction == -1) ? P_GetPreviousWaypoint(target, false) : P_GetNextWaypoint(target, false);
+					waypoint = (th->direction == -1) ? P_GetPreviousTubeWaypoint(target, false) : P_GetNextTubeWaypoint(target, false);
 				}
 			}
 
@@ -2159,7 +2159,7 @@ boolean EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
 	th->stophere = false;
 
 	// Find the first waypoint we need to use
-	first = (th->direction == -1) ? P_GetLastWaypoint(th->sequence) : P_GetFirstWaypoint(th->sequence);
+	first = (th->direction == -1) ? P_GetLastTubeWaypoint(th->sequence) : P_GetFirstTubeWaypoint(th->sequence);
 
 	if (!first)
 	{
@@ -2171,7 +2171,7 @@ boolean EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
 
 	// Sanity check: If all waypoints are in the same location,
 	// don't allow the movement to be continuous so we don't get stuck in an infinite loop.
-	if (th->continuous && P_IsDegeneratedWaypointSequence(th->sequence))
+	if (th->continuous && P_IsDegeneratedTubeWaypointSequence(th->sequence))
 	{
 		CONS_Debug(DBG_POLYOBJ, "EV_DoPolyObjWaypoint: All waypoints are in the same location!\n");
 		th->continuous = false;

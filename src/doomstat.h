@@ -696,18 +696,18 @@ extern mapthing_t *playerstarts[MAXPLAYERS]; // Cooperative
 extern mapthing_t *bluectfstarts[MAXPLAYERS]; // CTF
 extern mapthing_t *redctfstarts[MAXPLAYERS]; // CTF
 
-#define WAYPOINTSEQUENCESIZE 256
-#define NUMWAYPOINTSEQUENCES 256
-extern mobj_t *waypoints[NUMWAYPOINTSEQUENCES][WAYPOINTSEQUENCESIZE];
-extern UINT16 numwaypoints[NUMWAYPOINTSEQUENCES];
+#define TUBEWAYPOINTSEQUENCESIZE 256
+#define NUMTUBEWAYPOINTSEQUENCES 256
+extern mobj_t *tubewaypoints[NUMTUBEWAYPOINTSEQUENCES][TUBEWAYPOINTSEQUENCESIZE];
+extern UINT16 numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
 
-void P_AddWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint);
-mobj_t *P_GetFirstWaypoint(UINT8 sequence);
-mobj_t *P_GetLastWaypoint(UINT8 sequence);
-mobj_t *P_GetPreviousWaypoint(mobj_t *current, boolean wrap);
-mobj_t *P_GetNextWaypoint(mobj_t *current, boolean wrap);
-mobj_t *P_GetClosestWaypoint(UINT8 sequence, mobj_t *mo);
-boolean P_IsDegeneratedWaypointSequence(UINT8 sequence);
+void P_AddTubeWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint);
+mobj_t *P_GetFirstTubeWaypoint(UINT8 sequence);
+mobj_t *P_GetLastTubeWaypoint(UINT8 sequence);
+mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, boolean wrap);
+mobj_t *P_GetNextTubeWaypoint(mobj_t *current, boolean wrap);
+mobj_t *P_GetClosestTubeWaypoint(UINT8 sequence, mobj_t *mo);
+boolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence);
 
 // =====================================
 // Internal parameters, used for engine.

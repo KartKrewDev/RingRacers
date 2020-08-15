@@ -35,7 +35,6 @@ extern consvar_t cv_soundvolume, cv_closedcaptioning, cv_digmusicvolume;
 extern consvar_t cv_midimusicvolume;
 #endif
 
-extern consvar_t cv_numChannels;
 extern consvar_t surround;
 extern consvar_t cv_numChannels;
 
@@ -48,7 +47,7 @@ extern consvar_t cv_musicpref;
 
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
-extern consvar_t cv_playsoundifunfocused;
+extern consvar_t cv_playsoundsifunfocused;
 
 extern consvar_t cv_music_resync_threshold;
 extern consvar_t cv_music_resync_powerups_only;

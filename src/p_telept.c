@@ -40,6 +40,7 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 
 	(void)starposttime;
 	(void)starpostangle;
+	(void)starpostscale;
 
 	// the move is ok,
 	// so link the thing into its new position
@@ -89,9 +90,6 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		thing->player->starpostnum = starpostnum;
 
 		thing->player->drawangle = drawangle;
-
-		// Reset map starposts for the player's new info.
-		P_ResetStarposts();
 
 		P_ResetPlayer(thing->player);
 		P_SetPlayerMobjState(thing, S_KART_STILL); // SRB2kart - was S_PLAY_STND

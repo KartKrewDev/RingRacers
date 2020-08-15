@@ -1442,67 +1442,6 @@ void P_ChangeSectorTag(UINT32 sector, INT16 newtag)
 	}
 }
 
-//
-// P_RunNightserizeExecutors
-//
-void P_RunNightserizeExecutors(mobj_t *actor)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; i++)
-	{
-		if (lines[i].special == 323 || lines[i].special == 324)
-			P_RunTriggerLinedef(&lines[i], actor, NULL);
-	}
-}
-
-//
-// P_RunDeNightserizeExecutors
-//
-void P_RunDeNightserizeExecutors(mobj_t *actor)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; i++)
-	{
-		if (lines[i].special == 325 || lines[i].special == 326)
-			P_RunTriggerLinedef(&lines[i], actor, NULL);
-	}
-}
-
-//
-// P_RunNightsLapExecutors
-//
-void P_RunNightsLapExecutors(mobj_t *actor)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; i++)
-	{
-		if (lines[i].special == 327 || lines[i].special == 328)
-			P_RunTriggerLinedef(&lines[i], actor, NULL);
-	}
-}
-
-//
-// P_RunNightsCapsuleTouchExecutors
-//
-void P_RunNightsCapsuleTouchExecutors(mobj_t *actor, boolean entering, boolean enoughspheres)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; i++)
-	{
-		if ((lines[i].special == 329 || lines[i].special == 330)
-			&& ((entering && (lines[i].flags & ML_TFERLINE))
-				|| (!entering && !(lines[i].flags & ML_TFERLINE)))
-			&& ((lines[i].flags & ML_DONTPEGTOP)
-				|| (enoughspheres && !(lines[i].flags & ML_NOTBOUNCY))
-				|| (!enoughspheres && (lines[i].flags & ML_NOTBOUNCY))))
-			P_RunTriggerLinedef(&lines[i], actor, NULL);
-	}
-}
-
 /** Finds minimum light from an adjacent sector.
   *
   * \param sector Sector to start in.
@@ -1748,17 +1687,6 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 					return false;
 			}
 			break;
-		case 323: // nightserize - each time
-		case 324: // nightserize - once
-		case 325: // denightserize - each time
-		case 326: // denightserize - once
-		case 327: // nights lap - each time
-		case 328: // nights lap - once
-		case 329: // nights egg capsule touch - each time
-		case 330: // nights egg capsule touch - once
-			if (!P_CheckNightsTriggerLine(triggerline, actor))
-				return false;
-			break;
 		case 331: // continuous
 		case 332: // each time
 		case 333: // once
@@ -1904,10 +1832,6 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	 || specialtype == 318  // Unlockable trigger - Once
 	 || specialtype == 320  // Unlockable - Once
 	 || specialtype == 321 || specialtype == 322 // Trigger on X calls - Continuous + Each Time
-	 || specialtype == 324 // Nightserize - Once
-	 || specialtype == 326 // DeNightserize - Once
-	 || specialtype == 328 // Nights lap - Once
-	 || specialtype == 330 // Nights Bonus Time - Once
 	 || specialtype == 333 // Skin - Once
 	 || specialtype == 336 // Dye - Once
 	 || specialtype == 399 // Level Load
@@ -3775,7 +3699,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 459: // Control Text Prompt
 			// console player only unless NOCLIMB is set
-			if (mo && mo->player && P_IsLocalPlayer(mo->player) && (!bot || bot != mo))
+			if (mo && mo->player && P_IsLocalPlayer(mo->player))
 			{
 				INT32 promptnum = max(0, (sides[line->sidenum[0]].textureoffset>>FRACBITS)-1);
 				INT32 pagenum = max(0, (sides[line->sidenum[0]].rowoffset>>FRACBITS)-1);
@@ -3850,19 +3774,16 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 462: // Stop clock (and end level in record attack)
-			if (G_PlatformGametype())
+			stoppedclock = true;
+			CONS_Debug(DBG_GAMELOGIC, "Clock stopped!\n");
+			if (modeattacking)
 			{
-				stoppedclock = true;
-				CONS_Debug(DBG_GAMELOGIC, "Clock stopped!\n");
-				if (modeattacking)
+				UINT8 i;
+				for (i = 0; i < MAXPLAYERS; i++)
 				{
-					UINT8 i;
-					for (i = 0; i < MAXPLAYERS; i++)
-					{
-						if (!playeringame[i])
-							continue;
-						P_DoPlayerExit(&players[i]);
-					}
+					if (!playeringame[i])
+						continue;
+					P_DoPlayerExit(&players[i]);
 				}
 			}
 			break;
@@ -4220,8 +4141,13 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 		if (((rover->flags & FF_BLOCKPLAYER) && mo->player)
 			|| ((rover->flags & FF_BLOCKOTHERS) && !mo->player))
 		{
-			boolean floorallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR) && ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || !(player->mo->eflags & MFE_VERTICALFLIP)) && (player->mo->z == topheight));
-			boolean ceilingallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING) && ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || (player->mo->eflags & MFE_VERTICALFLIP)) && (player->mo->z + player->mo->height == bottomheight));
+			boolean floorallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR)
+				&& ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP)
+				|| !(mo->eflags & MFE_VERTICALFLIP)) && (mo->z == topheight));
+
+			boolean ceilingallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING)
+				&& ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP)
+				|| (mo->eflags & MFE_VERTICALFLIP)) && (mo->z + mo->height == bottomheight));
 			// Thing must be on top of the floor to be affected...
 
 			if (!(floorallowed || ceilingallowed))
@@ -4377,8 +4303,13 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 			if (((rover->flags & FF_BLOCKPLAYER) && mo->player)
 				|| ((rover->flags & FF_BLOCKOTHERS) && !mo->player))
 			{
-				boolean floorallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR) && ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || !(player->mo->eflags & MFE_VERTICALFLIP)) && (player->mo->z == topheight));
-				boolean ceilingallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING) && ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || (player->mo->eflags & MFE_VERTICALFLIP)) && (player->mo->z + player->mo->height == bottomheight));
+				boolean floorallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_FLOOR)
+					&& ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP)
+					|| !(mo->eflags & MFE_VERTICALFLIP)) && (mo->z == topheight));
+
+				boolean ceilingallowed = ((rover->master->frontsector->flags & SF_FLIPSPECIAL_CEILING)
+					&& ((rover->master->frontsector->flags & SF_TRIGGERSPECIAL_HEADBUMP)
+					|| (mo->eflags & MFE_VERTICALFLIP)) && (mo->z + mo->height == bottomheight));
 				// Thing must be on top of the floor to be affected...
 
 				if (!(floorallowed || ceilingallowed))
@@ -4793,9 +4724,6 @@ DoneSection2:
 		}
 
 		case 2: // Special stage GOAL sector / Exit Sector / CTF Flag Return
-			if (!(gametyperules & GTR_ALLOWEXIT))
-				break;
-
 			// Exit (for FOF exits; others are handled in P_PlayerThink in p_user.c)
 			{
 				INT32 lineindex;
@@ -4808,13 +4736,9 @@ DoneSection2:
 				// FOF custom exits not to work.
 				lineindex = P_FindSpecialLineFromTag(2, sector->tag, -1);
 
-				if (G_CoopGametype() && lineindex != -1) // Custom exit!
+				if (lineindex != -1) // Custom exit!
 				{
-					// Special goodies with the block monsters flag depending on emeralds collected
-					if ((lines[lineindex].flags & ML_BLOCKPLAYERS) && ALL7EMERALDS(emeralds))
-						nextmapoverride = (INT16)(lines[lineindex].frontsector->ceilingheight>>FRACBITS);
-					else
-						nextmapoverride = (INT16)(lines[lineindex].frontsector->floorheight>>FRACBITS);
+					nextmapoverride = (INT16)(lines[lineindex].frontsector->floorheight>>FRACBITS);
 
 					if (lines[lineindex].flags & ML_NOCLIMB)
 						skipstats = 1;
@@ -4882,7 +4806,7 @@ DoneSection2:
 					break;
 				}
 
-				waypoint = P_GetFirstWaypoint(sequence);
+				waypoint = P_GetFirstTubeWaypoint(sequence);
 
 				if (!waypoint)
 				{
@@ -4940,7 +4864,7 @@ DoneSection2:
 					break;
 				}
 
-				waypoint = P_GetLastWaypoint(sequence);
+				waypoint = P_GetLastTubeWaypoint(sequence);
 
 				if (!waypoint)
 				{
@@ -6841,17 +6765,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 					P_AddEachTimeThinker(&lines[i]);
 				break;
 
-			// NiGHTS trigger executors
-			case 323:
-			case 324:
-			case 325:
-			case 326:
-			case 327:
-			case 328:
-			case 329:
-			case 330:
-				break;
-
 			// Skin trigger executors
 			case 331:
 			case 333:
@@ -7572,8 +7485,8 @@ static void P_SpawnScrollers(void)
 					CONS_Debug(DBG_GAMELOGIC, "Line special 508 (line #%s) missing back side!\n", sizeu1(i));
 				break;
 
-			case 507: // scroll front and backside of tagged lines
-				for (s = -1; (s = P_FindLineFromLineTag(l, s)) >= 0 ;)
+			case 509: // scroll front and backside of tagged lines
+				for (s = -1; (s = P_FindLineFromTag(l->tag, s)) >= 0 ;)
 				{
 					if (s != (INT32)i)
 					{
@@ -8475,9 +8388,6 @@ static inline boolean PIT_PushThing(mobj_t *thing)
 	if (thing->eflags & MFE_PUSHED)
 		return false;
 
-	if (thing->player && thing->player->powers[pw_carry] == CR_ROPEHANG)
-		return false;
-
 	// Allow this to affect pushable objects at some point?
 	if (thing->player && !(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)))
 	{
@@ -8663,9 +8573,6 @@ void T_Pusher(pusher_t *p)
 			continue;
 
 		if (thing->eflags & MFE_PUSHED)
-			continue;
-
-		if (thing->player && thing->player->powers[pw_carry] == CR_ROPEHANG)
 			continue;
 
 		if (thing->player && (thing->state == &states[thing->info->painstate])

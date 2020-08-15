@@ -62,7 +62,7 @@ typedef enum
 static inline void P_ArchivePlayer(void)
 {
 	const player_t *player = &players[consoleplayer];
-	INT16 skininfo = player->skin + (botskin<<5);
+	INT16 skininfo = player->skin;
 	SINT8 pllives = player->lives;
 	if (pllives < startinglivesbalance[numgameovers]) // Bump up to 3 lives if the player
 		pllives = startinglivesbalance[numgameovers]; // has less than that.
@@ -77,8 +77,7 @@ static inline void P_ArchivePlayer(void)
 static inline void P_UnArchivePlayer(void)
 {
 	INT16 skininfo = READUINT16(save_p);
-	savedata.skin = skininfo & ((1<<5) - 1);
-	savedata.botskin = skininfo >> 5;
+	savedata.skin = skininfo;
 
 	savedata.numgameovers = READUINT8(save_p);
 	savedata.lives = READSINT8(save_p);
@@ -201,15 +200,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].texttimer);
 		WRITEUINT8(save_p, players[i].textvar);
 
-		if (players[i].awayviewmobj)
-			flags |= AWAYVIEW;
-
-		if (players[i].followmobj)
-			flags |= FOLLOWITEM;
-
-		if (players[i].follower)
-			flags |= FOLLOWER;
-
 		WRITEINT16(save_p, players[i].lastsidehit);
 		WRITEINT16(save_p, players[i].lastlinehit);
 
@@ -224,21 +214,26 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].splitscreenindex);
 
+		if (players[i].awayviewmobj)
+			flags |= AWAYVIEW;
+
+		if (players[i].followmobj)
+			flags |= FOLLOWITEM;
+
+		if (players[i].follower)
+			flags |= FOLLOWER;
+
 		WRITEUINT16(save_p, flags);
-
-		if (flags & CAPSULE)
-			WRITEUINT32(save_p, players[i].capsule->mobjnum);
-
-		if (flags & FIRSTAXIS)
-			WRITEUINT32(save_p, players[i].axis1->mobjnum);
-
-		if (flags & SECONDAXIS)
-			WRITEUINT32(save_p, players[i].axis2->mobjnum);
 
 		if (flags & AWAYVIEW)
 			WRITEUINT32(save_p, players[i].awayviewmobj->mobjnum);
 
+		if (flags & FOLLOWITEM)
+			WRITEUINT32(save_p, players[i].followmobj->mobjnum);
+		WRITEUINT32(save_p, (UINT32)players[i].followitem);
+
 		WRITEUINT32(save_p, players[i].charflags);
+
 		// SRB2kart
 		WRITEUINT8(save_p, players[i].kartspeed);
 		WRITEUINT8(save_p, players[i].kartweight);
@@ -248,9 +243,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].followercolor);
 		if (flags & FOLLOWER)
 			WRITEUINT32(save_p, players[i].follower->mobjnum);
-
-
-		//
 
 		for (j = 0; j < NUMKARTSTUFF; j++)
 			WRITEINT32(save_p, players[i].kartstuff[j]);
@@ -284,11 +276,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
-		if (flags & FOLLOW)
-			WRITEUINT32(save_p, players[i].followmobj->mobjnum);
-
-		if (flags & DRONE)
-			WRITEUINT32(save_p, players[i].drone->mobjnum);
 	}
 }
 
@@ -429,25 +416,12 @@ static void P_NetUnArchivePlayers(void)
 
 		flags = READUINT16(save_p);
 
-		if (flags & CAPSULE)
-			players[i].capsule = (mobj_t *)(size_t)READUINT32(save_p);
-
-		if (flags & FIRSTAXIS)
-			players[i].axis1 = (mobj_t *)(size_t)READUINT32(save_p);
-
-		if (flags & SECONDAXIS)
-			players[i].axis2 = (mobj_t *)(size_t)READUINT32(save_p);
-
 		if (flags & AWAYVIEW)
 			players[i].awayviewmobj = (mobj_t *)(size_t)READUINT32(save_p);
 
-		players[i].viewheight = 32<<FRACBITS;
-
-		if (flags & FOLLOW)
+		if (flags & FOLLOWITEM)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save_p);
-
-		if (flags & DRONE)
-			players[i].drone = (mobj_t *)(size_t)READUINT32(save_p);
+		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
 		players[i].charflags = READUINT32(save_p);
@@ -496,8 +470,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
-
-		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}
@@ -736,30 +708,30 @@ static void P_NetUnArchiveColormaps(void)
 	net_colormaps = NULL;
 }
 
-static void P_NetArchiveWaypoints(void)
+static void P_NetArchiveTubeWaypoints(void)
 {
 	INT32 i, j;
 
-	for (i = 0; i < NUMWAYPOINTSEQUENCES; i++)
+	for (i = 0; i < NUMTUBEWAYPOINTSEQUENCES; i++)
 	{
-		WRITEUINT16(save_p, numwaypoints[i]);
-		for (j = 0; j < numwaypoints[i]; j++)
-			WRITEUINT32(save_p, waypoints[i][j] ? waypoints[i][j]->mobjnum : 0);
+		WRITEUINT16(save_p, numtubewaypoints[i]);
+		for (j = 0; j < numtubewaypoints[i]; j++)
+			WRITEUINT32(save_p, tubewaypoints[i][j] ? tubewaypoints[i][j]->mobjnum : 0);
 	}
 }
 
-static void P_NetUnArchiveWaypoints(void)
+static void P_NetUnArchiveTubeWaypoints(void)
 {
 	INT32 i, j;
 	UINT32 mobjnum;
 
-	for (i = 0; i < NUMWAYPOINTSEQUENCES; i++)
+	for (i = 0; i < NUMTUBEWAYPOINTSEQUENCES; i++)
 	{
-		numwaypoints[i] = READUINT16(save_p);
-		for (j = 0; j < numwaypoints[i]; j++)
+		numtubewaypoints[i] = READUINT16(save_p);
+		for (j = 0; j < numtubewaypoints[i]; j++)
 		{
 			mobjnum = READUINT32(save_p);
-			waypoints[i][j] = (mobjnum == 0) ? NULL : P_FindNewPosition(mobjnum);
+			tubewaypoints[i][j] = (mobjnum == 0) ? NULL : P_FindNewPosition(mobjnum);
 		}
 	}
 }
@@ -2878,8 +2850,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 			mobj->player->viewz = mobj->player->mo->z + mobj->player->viewheight;
 	}
 
-	P_AddThinker(&mobj->thinker);
-
 	if (diff2 & MD2_WAYPOINTCAP)
 		P_SetTarget(&waypointcap, mobj);
 
@@ -4398,8 +4368,8 @@ void P_SaveNetGame(void)
 		P_ArchivePolyObjects();
 		P_NetArchiveThinkers();
 		P_NetArchiveSpecials();
-		P_NetArchiveWaypoints();
 		P_NetArchiveColormaps();
+		P_NetArchiveTubeWaypoints();
 		P_NetArchiveWaypoints();
 	}
 	LUA_Archive();
@@ -4441,6 +4411,7 @@ boolean P_LoadNetGame(void)
 		P_NetUnArchiveThinkers();
 		P_NetUnArchiveSpecials();
 		P_NetUnArchiveColormaps();
+		P_NetUnArchiveTubeWaypoints();
 		P_NetUnArchiveWaypoints();
 		P_RelinkPointers();
 		P_FinishMobjs();

@@ -289,9 +289,6 @@ void S_RegisterSoundStuff(void)
 
 	CV_RegisterVar(&surround);
 	CV_RegisterVar(&cv_samplerate);
-	CV_RegisterVar(&cv_resetmusic);
-	CV_RegisterVar(&cv_resetmusicbyheader);
-	CV_RegisterVar(&cv_1upsound);
 	CV_RegisterVar(&cv_playsoundsifunfocused);
 	CV_RegisterVar(&cv_playmusicifunfocused);
 	CV_RegisterVar(&cv_gamesounds);
@@ -3009,9 +3006,6 @@ void S_StartEx(boolean reset)
 		S_ChangeMusicEx((encoremode ? "estart" : "kstart"), 0, false, mapmusposition, 0, 0);
 	else
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-	if (RESETMUSIC || reset)
-		S_StopMusic();
-	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 
 	S_ResetMusicStack();
 	music_stack_noposition = false;

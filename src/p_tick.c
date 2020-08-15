@@ -611,24 +611,6 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
-		if (countdowntimer && G_PlatformGametype() && ((gametyperules & GTR_CAMPAIGN) || leveltime >= 4*TICRATE) && !stoppedclock && --countdowntimer <= 0)
-		{
-			countdowntimer = 0;
-			countdowntimeup = true;
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i] || players[i].spectator)
-					continue;
-
-				if (!players[i].mo)
-					continue;
-
-				if (multiplayer || netgame)
-					players[i].exiting = 0;
-				P_DamageMobj(players[i].mo, NULL, NULL, 1, DMG_INSTAKILL);
-			}
-		}
-
 		if (racecountdown > 1)
 			racecountdown--;
 

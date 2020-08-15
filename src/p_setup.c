@@ -21,7 +21,6 @@
 #include "p_spec.h"
 #include "p_saveg.h"
 
-#include "i_sound.h" // for I_PlayCD()..
 #include "i_video.h" // for I_FinishUpdate()..
 #include "r_sky.h"
 #include "i_system.h"
@@ -89,6 +88,11 @@
 #include "k_bot.h"
 #include "k_grandprix.h"
 
+// Replay names have time
+#if !defined (UNDER_CE)
+#include <time.h>
+#endif
+
 //
 // Map MD5, calculated on level load.
 // Sent to clients in PT_SERVERINFO.
@@ -153,40 +157,41 @@ mapthing_t *playerstarts[MAXPLAYERS];
 mapthing_t *bluectfstarts[MAXPLAYERS];
 mapthing_t *redctfstarts[MAXPLAYERS];
 
-// Maintain waypoints
-mobj_t *waypoints[NUMWAYPOINTSEQUENCES][WAYPOINTSEQUENCESIZE];
-UINT16 numwaypoints[NUMWAYPOINTSEQUENCES];
+// Maintain *ZOOM TUBE* waypoints
+// Renamed because SRB2Kart owns real waypoints.
+mobj_t *tubewaypoints[NUMTUBEWAYPOINTSEQUENCES][TUBEWAYPOINTSEQUENCESIZE];
+UINT16 numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
 
-void P_AddWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint)
+void P_AddTubeWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint)
 {
-	waypoints[sequence][id] = waypoint;
-	if (id >= numwaypoints[sequence])
-		numwaypoints[sequence] = id + 1;
+	tubewaypoints[sequence][id] = waypoint;
+	if (id >= numtubewaypoints[sequence])
+		numtubewaypoints[sequence] = id + 1;
 }
 
-static void P_ResetWaypoints(void)
+static void P_ResetTubeWaypoints(void)
 {
 	UINT16 sequence, id;
-	for (sequence = 0; sequence < NUMWAYPOINTSEQUENCES; sequence++)
+	for (sequence = 0; sequence < NUMTUBEWAYPOINTSEQUENCES; sequence++)
 	{
-		for (id = 0; id < numwaypoints[sequence]; id++)
-			waypoints[sequence][id] = NULL;
+		for (id = 0; id < numtubewaypoints[sequence]; id++)
+			tubewaypoints[sequence][id] = NULL;
 
-		numwaypoints[sequence] = 0;
+		numtubewaypoints[sequence] = 0;
 	}
 }
 
-mobj_t *P_GetFirstWaypoint(UINT8 sequence)
+mobj_t *P_GetFirstTubeWaypoint(UINT8 sequence)
 {
-	return waypoints[sequence][0];
+	return tubewaypoints[sequence][0];
 }
 
-mobj_t *P_GetLastWaypoint(UINT8 sequence)
+mobj_t *P_GetLastTubeWaypoint(UINT8 sequence)
 {
-	return waypoints[sequence][numwaypoints[sequence] - 1];
+	return tubewaypoints[sequence][numtubewaypoints[sequence] - 1];
 }
 
-mobj_t *P_GetPreviousWaypoint(mobj_t *current, boolean wrap)
+mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, boolean wrap)
 {
 	UINT8 sequence = current->threshold;
 	UINT8 id = current->health;
@@ -196,20 +201,20 @@ mobj_t *P_GetPreviousWaypoint(mobj_t *current, boolean wrap)
 		if (!wrap)
 			return NULL;
 
-		id = numwaypoints[sequence] - 1;
+		id = numtubewaypoints[sequence] - 1;
 	}
 	else
 		id--;
 
-	return waypoints[sequence][id];
+	return tubewaypoints[sequence][id];
 }
 
-mobj_t *P_GetNextWaypoint(mobj_t *current, boolean wrap)
+mobj_t *P_GetNextTubeWaypoint(mobj_t *current, boolean wrap)
 {
 	UINT8 sequence = current->threshold;
 	UINT8 id = current->health;
 
-	if (id == numwaypoints[sequence] - 1)
+	if (id == numtubewaypoints[sequence] - 1)
 	{
 		if (!wrap)
 			return NULL;
@@ -219,19 +224,19 @@ mobj_t *P_GetNextWaypoint(mobj_t *current, boolean wrap)
 	else
 		id++;
 
-	return waypoints[sequence][id];
+	return tubewaypoints[sequence][id];
 }
 
-mobj_t *P_GetClosestWaypoint(UINT8 sequence, mobj_t *mo)
+mobj_t *P_GetClosestTubeWaypoint(UINT8 sequence, mobj_t *mo)
 {
 	UINT8 wp;
 	mobj_t *mo2, *result = NULL;
 	fixed_t bestdist = 0;
 	fixed_t curdist;
 
-	for (wp = 0; wp < numwaypoints[sequence]; wp++)
+	for (wp = 0; wp < numtubewaypoints[sequence]; wp++)
 	{
-		mo2 = waypoints[sequence][wp];
+		mo2 = tubewaypoints[sequence][wp];
 
 		if (!mo2)
 			continue;
@@ -249,19 +254,19 @@ mobj_t *P_GetClosestWaypoint(UINT8 sequence, mobj_t *mo)
 }
 
 // Return true if all waypoints are in the same location
-boolean P_IsDegeneratedWaypointSequence(UINT8 sequence)
+boolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence)
 {
 	mobj_t *first, *waypoint;
 	UINT8 wp;
 
-	if (numwaypoints[sequence] <= 1)
+	if (numtubewaypoints[sequence] <= 1)
 		return true;
 
-	first = waypoints[sequence][0];
+	first = tubewaypoints[sequence][0];
 
-	for (wp = 1; wp < numwaypoints[sequence]; wp++)
+	for (wp = 1; wp < numtubewaypoints[sequence]; wp++)
 	{
-		waypoint = waypoints[sequence][wp];
+		waypoint = tubewaypoints[sequence][wp];
 
 		if (!waypoint)
 			continue;
@@ -376,7 +381,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->musforcereset = -1;
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
 	mapheaderinfo[num]->weather = 0;
-	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1", G_BuildMapName(i));
+	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1");
 	mapheaderinfo[num]->skytexture[4] = 0;
 	mapheaderinfo[num]->skybox_scalex = 16;
 	mapheaderinfo[num]->skybox_scaley = 16;
@@ -1593,7 +1598,7 @@ static void ParseTextmapLinedefParameter(UINT32 i, char *param, char *val)
 	// Flags
 	else if (fastcmp(param, "blocking") && fastcmp("true", val))
 		lines[i].flags |= ML_IMPASSABLE;
-	else if ((fastcmp(param, "blockplayers") && fastcmp("true", val))
+	else if (fastcmp(param, "blockplayers") && fastcmp("true", val))
 		lines[i].flags |= ML_BLOCKPLAYERS;
 	else if (fastcmp(param, "twosided") && fastcmp("true", val))
 		lines[i].flags |= ML_TWOSIDED;
@@ -2155,11 +2160,10 @@ static void P_InitializeSeg(seg_t *seg)
 
 	seg->numlights = 0;
 	seg->rlights = NULL;
-
-	P_UpdateSegLightOffset(seg);
-
 	seg->polyseg = NULL;
 	seg->dontrenderme = false;
+
+	P_UpdateSegLightOffset(seg);
 }
 
 static void P_LoadSegs(UINT8 *data)
@@ -3316,16 +3320,7 @@ static void P_InitLevelSettings(void)
 	// map time limit
 	if (mapheaderinfo[gamemap-1]->countdown)
 	{
-		tic_t maxtime = 0;
 		countdowntimer = mapheaderinfo[gamemap-1]->countdown * TICRATE;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i])
-				continue;
-			if (players[i].starposttime > maxtime)
-				maxtime = players[i].starposttime;
-		}
-		countdowntimer -= maxtime;
 	}
 	else
 		countdowntimer = 0;
@@ -3371,7 +3366,6 @@ static void P_InitLevelSettings(void)
 		players[i].gotcontinue = false;
 
 		players[i].deadtimer = players[i].numboxes = players[i].laps = 0;
-		players[i].health = 1;
 		players[i].aiming = 0;
 		players[i].pflags &= ~PF_GAMETYPEOVER;
 	}
@@ -3381,12 +3375,6 @@ static void P_InitLevelSettings(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		G_PlayerReborn(i, true);
-
-		if (canresetlives && (netgame || multiplayer) && playeringame[i] && (G_CompetitionGametype() || players[i].lives <= 0))
-		{
-			// In Co-Op, replenish a user's lives if they are depleted.
-			players[i].lives = cv_startinglives.value;
-		}
 
 		// obliteration station...
 		players[i].numboxes = players[i].totalring =\
@@ -3532,6 +3520,8 @@ static void P_RunLevelScript(const char *scriptname)
 
 static void P_ForceCharacter(const char *forcecharskin)
 {
+	UINT8 i;
+
 	if (netgame)
 	{
 		char skincmd[33];
@@ -3551,8 +3541,6 @@ static void P_ForceCharacter(const char *forcecharskin)
 	}
 	else
 	{
-		UINT8 i;
-
 		for (i = 0; i <= splitscreen; i++)
 		{
 			SetPlayerSkin(g_localplayers[i], forcecharskin);
@@ -3660,114 +3648,6 @@ static void P_LoadRecordGhosts(void)
 	free(gpath);
 }
 
-/*static void P_LoadNightsGhosts(void)
-{
-	const size_t glen = strlen(srb2home)+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
-	char *gpath = malloc(glen);
-	INT32 i;
-
-	if (!gpath)
-		return;
-
-	sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
-
-	// Best Score ghost
-	if (cv_ghost_bestscore.value)
-	{
-		for (i = 0; i < numskins; ++i)
-		{
-			if (cv_ghost_bestscore.value == 1 && players[consoleplayer].skin != i)
-				continue;
-
-			if (FIL_FileExists(va("%s-%s-score-best.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-score-best.lmp", gpath, skins[i].name));
-		}
-	}
-
-	// Best Time ghost
-	if (cv_ghost_besttime.value)
-	{
-		for (i = 0; i < numskins; ++i)
-		{
-			if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
-				continue;
-
-			if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
-		}
-	}
-
-	// Last ghost
-	if (cv_ghost_last.value)
-	{
-		for (i = 0; i < numskins; ++i)
-		{
-			if (cv_ghost_last.value == 1 && players[consoleplayer].skin != i)
-				continue;
-
-			if (FIL_FileExists(va("%s-%s-last.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-last.lmp", gpath, skins[i].name));
-		}
-	}
-
-	// Guest ghost
-	if (cv_ghost_guest.value && FIL_FileExists(va("%s-guest.lmp", gpath)))
-		G_AddGhost(va("%s-guest.lmp", gpath));
-
-	// Staff Attack ghosts
-	if (cv_ghost_staff.value)
-	{
-		lumpnum_t l;
-		UINT8 i = 1;
-		while (i <= 99 && (l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(gamemap),i))) != LUMPERROR)
-		{
-			G_AddGhost(va("%sS%02u",G_BuildMapName(gamemap),i));
-			i++;
-		}
-	}
-
-	free(gpath);
-}*/
-
-static void P_InitTagGametype(void)
-{
-	UINT8 i;
-	INT32 realnumplayers = 0;
-	INT32 playersactive[MAXPLAYERS];
-
-	//I just realized how problematic this code can be.
-	//D_NumPlayers() will not always cover the scope of the netgame.
-	//What if one player is node 0 and the other node 31?
-	//The solution? Make a temp array of all players that are currently playing and pick from them.
-	//Future todo? When a player leaves, shift all nodes down so D_NumPlayers() can be used as intended?
-	//Also, you'd never have to loop through all 32 players slots to find anything ever again.
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !(players[i].spectator || players[i].quittime))
-		{
-			playersactive[realnumplayers] = i; //stores the player's node in the array.
-			realnumplayers++;
-		}
-	}
-
-	if (!realnumplayers) //this should also fix the dedicated crash bug. You only pick a player if one exists to be picked.
-	{
-		CONS_Printf(M_GetText("No player currently available to become IT. Awaiting available players.\n"));
-		return;
-	}
-
-	i = P_RandomKey(realnumplayers);
-	players[playersactive[i]].pflags |= PF_TAGIT; //choose our initial tagger before map starts.
-
-	// Taken and modified from G_DoReborn()
-	// Remove the player so he can respawn elsewhere.
-	// first disassociate the corpse
-	if (players[playersactive[i]].mo)
-		P_RemoveMobj(players[playersactive[i]].mo);
-
-	G_SpawnPlayer(playersactive[i]); //respawn the lucky player in his dedicated spawn location.
-}
-
 static void P_SetupCamera(UINT8 pnum, camera_t *cam)
 {
 	if (players[pnum].mo && (server || addedtogame))
@@ -3789,11 +3669,11 @@ static void P_SetupCamera(UINT8 pnum, camera_t *cam)
 
 		if (thing)
 		{
-			camera[0].x = thing->x;
-			camera[0].y = thing->y;
-			camera[0].z = thing->z;
-			camera[0].angle = FixedAngle((fixed_t)thing->angle << FRACBITS);
-			camera[0].subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
+			cam->x = thing->x;
+			cam->y = thing->y;
+			cam->z = thing->z;
+			cam->angle = FixedAngle((fixed_t)thing->angle << FRACBITS);
+			cam->subsector = R_PointInSubsector(cam->x, cam->y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 		}
 	}
 }
@@ -3804,77 +3684,12 @@ static void P_InitCamera(void)
 	{
 		UINT8 i;
 
-		P_SetupCamera();
-
 		for (i = 0; i <= splitscreen; i++)
+		{
+			P_SetupCamera(i, &camera[i]);
 			displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
+		}
 	}
-}
-
-static void P_RunSpecialStageWipe(void)
-{
-	tic_t starttime = I_GetTime();
-	tic_t endtime = starttime + (3*TICRATE)/2;
-	tic_t nowtime;
-
-	S_StartSound(NULL, sfx_s3kaf);
-
-	// Fade music! Time it to S3KAF: 0.25 seconds is snappy.
-	if (RESETMUSIC ||
-		strnicmp(S_MusicName(),
-		(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap - 1]->musname : mapmusname, 7))
-		S_FadeOutStopMusic(MUSICRATE/4); //FixedMul(FixedDiv(F_GetWipeLength(wipedefs[wipe_speclevel_towhite])*NEWTICRATERATIO, NEWTICRATE), MUSICRATE)
-
-	F_WipeStartScreen();
-	wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
-
-#ifdef HWRENDER
-	// uh..........
-	if (rendermode == render_opengl)
-		F_WipeColorFill(0);
-#endif
-
-	F_WipeEndScreen();
-	F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
-
-	I_OsPolling();
-	I_FinishUpdate(); // page flip or blit buffer
-	if (moviemode)
-		M_SaveFrame();
-
-	nowtime = lastwipetic;
-
-	// Hold on white for extra effect.
-	while (nowtime < endtime)
-	{
-		// wait loop
-		while (!((nowtime = I_GetTime()) - lastwipetic))
-			I_Sleep();
-		lastwipetic = nowtime;
-		if (moviemode) // make sure we save frames for the white hold too
-			M_SaveFrame();
-	}
-}
-
-static void P_RunLevelWipe(void)
-{
-	F_WipeStartScreen();
-	wipestyleflags |= WSF_FADEOUT;
-
-#ifdef HWRENDER
-	// uh..........
-	if (rendermode == render_opengl)
-		F_WipeColorFill(31);
-#endif
-
-	F_WipeEndScreen();
-	// for titlemap: run a specific wipe if specified
-	// needed for exiting time attack
-	if (wipetypepre != INT16_MAX)
-		F_RunWipe(
-		(wipetypepre >= 0 && F_WipeExists(wipetypepre)) ? wipetypepre : wipedefs[wipe_level_toblack],
-			false);
-	wipetypepre = -1;
 }
 
 static void P_InitPlayers(void)
@@ -3901,8 +3716,6 @@ static void P_InitPlayers(void)
 
 static void P_InitGametype(void)
 {
-	UINT8 i;
-
 	P_InitPlayers();
 
 	if (modeattacking && !demo.playback)
@@ -3988,12 +3801,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0')
 		P_ForceCharacter(mapheaderinfo[gamemap-1]->forcecharacter);
 
-	if (!dedicated)
-	{
-		CV_UpdateCamDist();
-		CV_UpdateCam2Dist();
-	}
-
 	// Initial height of PointOfView
 	// will be set by player think.
 	players[consoleplayer].viewz = 1;
@@ -4078,20 +3885,13 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 	// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
-	if (!titlemapinaction && (RESETMUSIC ||
-		strnicmp(S_MusicName(),
-			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7)))
+	if (!titlemapinaction)
 		S_FadeMusic(0, FixedMul(
 			FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 
 	// Reset the palette now all fades have been done
 	if (rendermode != render_none)
 		V_SetPaletteLump(GetPalette()); // Set the level palette
-
-	// Let's fade to black here
-	// But only if we didn't do the special stage wipe
-	if (!demo.rewinding)
-		P_RunLevelWipe();
 
 	if (!titlemapinaction)
 	{
@@ -4108,6 +3908,21 @@ boolean P_LoadLevel(boolean fromnetsave)
 	}
 
 	levelfadecol = (encoremode ? 0 : 31);
+
+	// Let's fade to white here
+	// But only if we didn't do the encore startup wipe
+	if (!demo.rewinding)
+	{
+		if (rendermode != render_none)
+		{
+			F_WipeStartScreen();
+
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
+			F_WipeEndScreen();
+		}
+
+		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+	}
 
 	// Close text prompt before freeing the old level
 	F_EndTextPrompt(false, true);
@@ -4139,8 +3954,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 		players[consoleplayer].continues = savedata.continues;
 		players[consoleplayer].lives = savedata.lives;
 		players[consoleplayer].score = savedata.score;
-		if ((botingame = ((botskin = savedata.botskin) != 0)))
-			botcolor = skins[botskin-1].prefcolor;
 		emeralds = savedata.emeralds;
 		savedata.lives = 0;
 	}
@@ -4160,7 +3973,7 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	P_ResetSpawnpoints();
 
-	P_ResetWaypoints();
+	P_ResetTubeWaypoints();
 
 	P_MapStart();
 
@@ -4232,17 +4045,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	// clear special respawning que
 	iquehead = iquetail = 0;
-
-	// Fab : 19-07-98 : start cd music for this level (note: can be remapped)
-	I_PlayCD((UINT8)(gamemap), false);
-
-	// preload graphics
-#ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode != render_soft && rendermode != render_none)
-	{
-		HWR_PrepLevelCache(numtextures);
-	}
-#endif
 
 	P_MapEnd();
 
