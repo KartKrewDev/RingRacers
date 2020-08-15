@@ -156,26 +156,11 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 {
 	INT32 cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
 	static boolean first_init = false;
-	const char *gllogdir = NULL;
 
 	oglflags = 0;
 
 	if (!first_init)
 	{
-		if (!gllogstream) 
-		{
-			gllogdir = D_Home();
-
-#ifdef DEBUG_TO_FILE
-#ifdef DEFAULTDIR
-			if (gllogdir)
-				gllogstream = fopen(va("%s/"DEFAULTDIR"/ogllog.txt",gllogdir), "wt");
-			else
-#endif
-				gllogstream = fopen("./ogllog.txt", "wt");
-#endif
-		}
-			
 		gl_version = pglGetString(GL_VERSION);
 		gl_renderer = pglGetString(GL_RENDERER);
 		gl_extensions = pglGetString(GL_EXTENSIONS);

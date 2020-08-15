@@ -23,6 +23,7 @@ extern SDL_bool consolevent;
 extern SDL_bool framebuffer;
 
 #include "../m_fixed.h"
+#include "../doomdef.h"
 
 // SDL2 stub macro
 #ifdef _MSC_VER
@@ -57,40 +58,26 @@ typedef struct SDLJoyInfo_s
 
 } SDLJoyInfo_t;
 
-/**	\brief SDL info about joystick 1
+/**	\brief SDL info about joysticks
 */
-extern SDLJoyInfo_t JoyInfo;
+extern SDLJoyInfo_t JoyInfo[MAXSPLITSCREENPLAYERS];
 
 /**	\brief joystick axis deadzone
 */
 #define SDL_JDEADZONE 153
 #undef SDL_JDEADZONE
 
-/**	\brief SDL inof about joystick 2
-*/
-extern SDLJoyInfo_t JoyInfo2;
-
-/**	\brief SDL inof about joystick 3
-*/
-extern SDLJoyInfo_t JoyInfo3;
-
-/**	\brief SDL inof about joystick 4
-*/
-extern SDLJoyInfo_t JoyInfo4;
-
 void I_GetConsoleEvents(void);
 
 // So we can call this from i_video event loop
-void I_ShutdownJoystick(void);
-void I_ShutdownJoystick2(void);
-void I_ShutdownJoystick3(void);
-void I_ShutdownJoystick4(void);
+void I_ShutdownJoystick(UINT8 index);
 
 // Cheat to get the device index for a joystick handle
 INT32 I_GetJoystickDeviceIndex(SDL_Joystick *dev);
 
 // Quick thing to make SDL_JOYDEVICEADDED events less of an abomination
-void I_UpdateJoystickDeviceIndices(INT32 player);
+void I_UpdateJoystickDeviceIndex(UINT8 player);
+void I_UpdateJoystickDeviceIndices(UINT8 excludePlayer);
 
 void I_GetConsoleEvents(void);
 
