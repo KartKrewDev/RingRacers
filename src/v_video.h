@@ -246,7 +246,6 @@ void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *st
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
 void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits);
-void V_DrawLevelActNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
 
 // Draw ping numbers. Used by the scoreboard and that one ping option. :P
 // This is a separate function because IMO lua should have access to it as well.
@@ -260,11 +259,6 @@ INT16 V_LevelActNumWidth(UINT8 num); // act number width
 #define V_DrawCreditString( x,y,option,string ) \
 	V__DrawOneScaleString (x,y,FRACUNIT,option,CRED_FONT,string)
 INT32 V_CreditStringWidth(const char *string);
-
-// Draw a string using the nt_font
-void V_DrawNameTag(INT32 x, INT32 y, INT32 option, fixed_t scale, UINT8 *basecolormap, UINT8 *outlinecolormap, const char *string);
-INT32 V_CountNameTagLines(const char *string);
-INT32 V_NameTagWidth(const char *string);
 
 // Find string width from hu_font chars
 INT32 V_StringWidth(const char *string, INT32 option);

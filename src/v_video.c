@@ -30,11 +30,12 @@
 #include "m_random.h"
 #include "doomstat.h"
 
-#include "k_hud.h"
-
 #ifdef HWRENDER
-#include "hardware/hw_main.h"
+#include "hardware/hw_glob.h"
 #endif
+
+// SRB2Kart
+#include "k_hud.h"
 
 // Each screen is [vid.width*vid.height];
 UINT8 *screens[5];
@@ -45,30 +46,6 @@ UINT8 *screens[5];
 // screens[4] = fade screen end, postimage tempoarary buffer
 
 consvar_t cv_ticrate = {"showfps", "No", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
-
-#define huecoloursteps 4
-
-static CV_PossibleValue_t hue_cons_t[] = {{0, "MIN"}, {(huecoloursteps*6)-1, "MAX"}, {0, NULL}};
-consvar_t cv_rhue = {"rhue",  "0", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_yhue = {"yhue",  "4", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghue = {"ghue",  "8", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_chue = {"chue", "12", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_bhue = {"bhue", "16", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_mhue = {"mhue", "20", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
-consvar_t cv_rgamma = {"rgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ygamma = {"ygamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ggamma = {"ggamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cgamma = {"cgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_bgamma = {"bgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_mgamma = {"mgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
-consvar_t cv_rsaturation = {"rsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ysaturation = {"ysaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_gsaturation = {"gsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_csaturation = {"csaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_bsaturation = {"bsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_msaturation = {"msaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 static void CV_palette_OnChange(void);
 
@@ -550,8 +527,6 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	fixed_t pwidth; // patch width
 	fixed_t offx = 0; // x offset
 
-	UINT8 perplayershuffle = 0;
-
 	if (rendermode == render_none)
 		return;
 
@@ -745,8 +720,6 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 	UINT8 *desttop, *dest;
 	const UINT8 *source, *deststop;
 
-	UINT8 perplayershuffle = 0;
-
 	if (rendermode == render_none)
 		return;
 
@@ -790,84 +763,6 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 	y -= FixedMul(SHORT(patch->topoffset)<<FRACBITS, pscale);
 	x -= FixedMul(SHORT(patch->leftoffset)<<FRACBITS, pscale);
 
-	if (splitscreen && (scrn & V_SPLITSCREEN))
-	{
-		fixed_t adjusty = ((scrn & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)<<(FRACBITS-1);
-		fdup >>= 1;
-		rowfrac <<= 1;
-		y >>= 1;
-		sy >>= 1;
-		h >>= 1;
-#ifdef QUADS
-		if (splitscreen > 1) // 3 or 4 players
-		{
-			fixed_t adjustx = ((scrn & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)<<(FRACBITS-1));
-			colfrac <<= 1;
-			x >>= 1;
-			sx >>= 1;
-			w >>= 1;
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(scrn & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				scrn &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
-			}
-			else if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(scrn & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				x += adjustx;
-				sx += adjustx;
-				scrn &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
-			}
-			else if (stplyr == &players[displayplayers[2]])
-			{
-				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(scrn & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				y += adjusty;
-				sy += adjusty;
-				scrn &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
-			}
-			else //if (stplyr == &players[displayplayers[3]])
-			{
-				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(scrn & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				x += adjustx;
-				sx += adjustx;
-				y += adjusty;
-				sy += adjusty;
-				scrn &= ~V_SNAPTOTOP|V_SNAPTOLEFT;
-			}
-		}
-		else
-#endif
-		// 2 players
-		{
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				scrn &= ~V_SNAPTOBOTTOM;
-			}
-			else //if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				y += adjusty;
-				sy += adjusty;
-				scrn &= ~V_SNAPTOTOP;
-			}
-		}
-	}
-
 	desttop = screens[scrn&V_PARAMMASK];
 
 	if (!desttop)
@@ -888,34 +783,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 		y >>= FRACBITS;
 
 		// Center it if necessary
-		if (!(scrn & V_SCALEPATCHMASK))
-		{
-			if (vid.width != BASEVIDWIDTH * dupx)
-			{
-				// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
-				// so center this imaginary screen
-				if (scrn & V_SNAPTORIGHT)
-					x += (vid.width - (BASEVIDWIDTH * dupx));
-				else if (!(scrn & V_SNAPTOLEFT))
-					x += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
-				if (perplayershuffle & 4)
-					x -= (vid.width - (BASEVIDWIDTH * dupx)) / 4;
-				else if (perplayershuffle & 8)
-					x += (vid.width - (BASEVIDWIDTH * dupx)) / 4;
-			}
-			if (vid.height != BASEVIDHEIGHT * dupy)
-			{
-				// same thing here
-				if (scrn & V_SNAPTOBOTTOM)
-					y += (vid.height - (BASEVIDHEIGHT * dupy));
-				else if (!(scrn & V_SNAPTOTOP))
-					y += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
-				if (perplayershuffle & 1)
-					y -= (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
-				else if (perplayershuffle & 2)
-					y += (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
-			}
-		}
+		// adjustxy
 
 		desttop += (y*vid.width) + x;
 	}
@@ -962,17 +830,9 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 //
 void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor)
 {
-	if (skinnum >= 0 && skinnum < numskins && skins[skinnum].sprites[SPR2_XTRA].numframes > XTRA_CONTINUE)
-	{
-		spritedef_t *sprdef = &skins[skinnum].sprites[SPR2_XTRA];
-		spriteframe_t *sprframe = &sprdef->spriteframes[XTRA_CONTINUE];
-		patch_t *patch = W_CachePatchNum(sprframe->lumppat[0], PU_PATCH);
-		const UINT8 *colormap = R_GetTranslationColormap(skinnum, skincolor, GTC_CACHE);
-
-		V_DrawMappedPatch(x, y, flags, patch, colormap);
-	}
-	else
-		V_DrawScaledPatch(x - 10, y - 14, flags, W_CachePatchName("CONTINS", PU_PATCH));
+	(void)skinnum;
+	(void)skincolor;
+	V_DrawScaledPatch(x - 10, y - 14, flags, W_CachePatchName("CONTINS", PU_PATCH));
 }
 
 //
@@ -1011,8 +871,6 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	UINT8 *dest;
 	const UINT8 *deststop;
 
-	UINT8 perplayershuffle = 0;
-
 	if (rendermode == render_none)
 		return;
 
@@ -1024,73 +882,6 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		return;
 	}
 #endif
-
-	if (splitscreen && (c & V_SPLITSCREEN))
-	{
-		fixed_t adjusty = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
-		h >>= 1;
-		y >>= 1;
-
-		if (splitscreen > 1) // 3 or 4 players
-		{
-			fixed_t adjustx = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
-			w >>= 1;
-			x >>= 1;
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				c &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
-			}
-			else if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				x += adjustx;
-				c &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
-			}
-			else if (stplyr == &players[displayplayers[2]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
-			}
-			else //if (stplyr == &players[displayplayers[3]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				x += adjustx;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP|V_SNAPTOLEFT;
-			}
-		}
-		else
-		// 2 players
-		{
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				c &= ~V_SNAPTOBOTTOM;
-			}
-			else //if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP;
-			}
-		}
-	}
 
 	if (!(c & V_NOSCALESTART))
 	{
@@ -1184,7 +975,6 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	INT32 u;
 	UINT8 *fadetable;
 	UINT32 alphalevel = 0;
-	UINT8 perplayershuffle = 0;
 
 	if (rendermode == render_none)
 		return;
@@ -1211,74 +1001,6 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 			return; // invis
 	}
 
-	if (splitscreen && (c & V_SPLITSCREEN))
-	{
-		fixed_t adjusty = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
-		h >>= 1;
-		y >>= 1;
-#ifdef QUADS
-		if (splitscreen > 1) // 3 or 4 players
-		{
-			fixed_t adjustx = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
-			w >>= 1;
-			x >>= 1;
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				c &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
-			}
-			else if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				x += adjustx;
-				c &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
-			}
-			else if (stplyr == &players[displayplayers[2]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
-			}
-			else //if (stplyr == &players[displayplayers[3]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				x += adjustx;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP|V_SNAPTOLEFT;
-			}
-		}
-		else
-#endif
-		// 2 players
-		{
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				c &= ~V_SNAPTOBOTTOM;
-			}
-			else //if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP;
-			}
-		}
-	}
-
 	if (!(c & V_NOSCALESTART))
 	{
 		INT32 dupx = vid.dupx, dupy = vid.dupy;
@@ -1288,32 +1010,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		w *= dupx;
 		h *= dupy;
 
-		// Center it if necessary
-		if (vid.width != BASEVIDWIDTH * dupx)
-		{
-			// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
-			// so center this imaginary screen
-			if (c & V_SNAPTORIGHT)
-				x += (vid.width - (BASEVIDWIDTH * dupx));
-			else if (!(c & V_SNAPTOLEFT))
-				x += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
-			if (perplayershuffle & 4)
-				x -= (vid.width - (BASEVIDWIDTH * dupx)) / 4;
-			else if (perplayershuffle & 8)
-				x += (vid.width - (BASEVIDWIDTH * dupx)) / 4;
-		}
-		if (vid.height != BASEVIDHEIGHT * dupy)
-		{
-			// same thing here
-			if (c & V_SNAPTOBOTTOM)
-				y += (vid.height - (BASEVIDHEIGHT * dupy));
-			else if (!(c & V_SNAPTOTOP))
-				y += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
-			if (perplayershuffle & 1)
-				y -= (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
-			else if (perplayershuffle & 2)
-				y += (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
-		}
+		// adjustxy
 	}
 
 	if (x >= vid.width || y >= vid.height)
@@ -1462,7 +1159,6 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 	const UINT8 *deststop;
 	INT32 u;
 	UINT8 *fadetable;
-	UINT8 perplayershuffle = 0;
 
 	if (rendermode == render_none)
 		return;
@@ -1476,74 +1172,6 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 	}
 #endif
 
-	if (splitscreen && (c & V_SPLITSCREEN))
-	{
-		fixed_t adjusty = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
-		h >>= 1;
-		y >>= 1;
-#ifdef QUADS
-		if (splitscreen > 1) // 3 or 4 players
-		{
-			fixed_t adjustx = ((c & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)>>1;
-			w >>= 1;
-			x >>= 1;
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				c &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
-			}
-			else if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				x += adjustx;
-				c &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
-			}
-			else if (stplyr == &players[displayplayers[2]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 4;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
-			}
-			else //if (stplyr == &players[displayplayers[3]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				if (!(c & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
-					perplayershuffle |= 8;
-				x += adjustx;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP|V_SNAPTOLEFT;
-			}
-		}
-		else
-#endif
-		// 2 players
-		{
-			if (stplyr == &players[displayplayers[0]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 1;
-				c &= ~V_SNAPTOBOTTOM;
-			}
-			else //if (stplyr == &players[displayplayers[1]])
-			{
-				if (!(c & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
-					perplayershuffle |= 2;
-				y += adjusty;
-				c &= ~V_SNAPTOTOP;
-			}
-		}
-	}
-
 	if (!(c & V_NOSCALESTART))
 	{
 		INT32 dupx = vid.dupx, dupy = vid.dupy;
@@ -1554,31 +1182,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 		h *= dupy;
 
 		// Center it if necessary
-		if (vid.width != BASEVIDWIDTH * dupx)
-		{
-			// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
-			// so center this imaginary screen
-			if (c & V_SNAPTORIGHT)
-				x += (vid.width - (BASEVIDWIDTH * dupx));
-			else if (!(c & V_SNAPTOLEFT))
-				x += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
-			if (perplayershuffle & 4)
-				x -= (vid.width - (BASEVIDWIDTH * dupx)) / 4;
-			else if (perplayershuffle & 8)
-				x += (vid.width - (BASEVIDWIDTH * dupx)) / 4;
-		}
-		if (vid.height != BASEVIDHEIGHT * dupy)
-		{
-			// same thing here
-			if (c & V_SNAPTOBOTTOM)
-				y += (vid.height - (BASEVIDHEIGHT * dupy));
-			else if (!(c & V_SNAPTOTOP))
-				y += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
-			if (perplayershuffle & 1)
-				y -= (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
-			else if (perplayershuffle & 2)
-				y += (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
-		}
+		// adjustxy
 	}
 
 	if (x >= vid.width || y >= vid.height)
@@ -2510,7 +2114,7 @@ void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colorm
 // Draws a tallnum.  Replaces two functions in y_inter and st_stuff
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 {
-	INT32 w = SHORT(tallnum[0]->width);
+	INT32 w = SHORT(fontv[TALLNUM_FONT].font[0]->width);
 	boolean neg;
 
 	if (flags & V_NOSCALESTART)
@@ -2523,7 +2127,7 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 	do
 	{
 		x -= w;
-		V_DrawScaledPatch(x, y, flags, tallnum[num % 10]);
+		V_DrawScaledPatch(x, y, flags, fontv[TALLNUM_FONT].font[num % 10]);
 		num /= 10;
 	} while (num);
 
@@ -2536,7 +2140,7 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 // Does not handle negative numbers in a special way, don't try to feed it any.
 void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 {
-	INT32 w = SHORT(tallnum[0]->width);
+	INT32 w = SHORT(fontv[TALLNUM_FONT].font[0]->width);
 
 	if (flags & V_NOSCALESTART)
 		w *= vid.dupx;
@@ -2548,75 +2152,9 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 	do
 	{
 		x -= w;
-		V_DrawScaledPatch(x, y, flags, tallnum[num % 10]);
+		V_DrawScaledPatch(x, y, flags, fontv[TALLNUM_FONT].font[num % 10]);
 		num /= 10;
 	} while (--digits);
-}
-
-// Write a string using the level title font
-// NOTE: the text is centered for screens larger than the base width
-//
-void V_DrawLevelTitle(INT32 x, INT32 y, INT32 option, const char *string)
-{
-	INT32 w, c, cx = x, cy = y, dupx, dupy, scrwidth, left = 0;
-	const char *ch = string;
-	INT32 charflags = (option & V_CHARCOLORMASK);
-	const UINT8 *colormap = NULL;
-
-	if (option & V_NOSCALESTART)
-	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
-		scrwidth = vid.width;
-	}
-	else
-	{
-		dupx = dupy = 1;
-		scrwidth = vid.width/vid.dupx;
-		left = (scrwidth - BASEVIDWIDTH)/2;
-		scrwidth -= left;
-	}
-
-	for (;;ch++)
-	{
-		if (!*ch)
-			break;
-		if (*ch & 0x80) //color parsing -x 2.16.09
-		{
-			// manually set flags override color codes
-			if (!(option & V_CHARCOLORMASK))
-				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
-			continue;
-		}
-		if (*ch == '\n')
-		{
-			cx = x;
-			cy += 12*dupy;
-			continue;
-		}
-
-		c = *ch - LT_FONTSTART;
-		if (c < 0 || c >= LT_FONTSIZE || !lt_font[c])
-		{
-			cx += 12*dupx;
-			continue;
-		}
-
-		w = SHORT(lt_font[c]->width) * dupx;
-
-		if (cx > scrwidth)
-			continue;
-		if (cx+left + w < 0) //left boundary check
-		{
-			cx += w;
-			continue;
-		}
-
-		colormap = V_GetStringColormap(charflags);
-		V_DrawFixedPatch(cx<<FRACBITS, cy<<FRACBITS, FRACUNIT, option, lt_font[c], colormap);
-
-		cx += w;
-	}
 }
 
 // Find string width from lt_font chars
@@ -2631,7 +2169,7 @@ INT32 V_LevelNameWidth(const char *string)
 		if (string[i] & 0x80)
 			continue;
 		c = string[i] - LT_FONTSTART;
-		if (c < 0 || c >= LT_FONTSIZE || !lt_font[c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[LT_FONT].font[c])
 			w += 12;
 		else
 			w += SHORT(fontv[LT_FONT].font[c]->width);
@@ -2650,7 +2188,7 @@ INT32 V_LevelNameHeight(const char *string)
 	for (i = 0; i < strlen(string); i++)
 	{
 		c = string[i] - LT_FONTSTART;
-		if (c < 0 || c >= LT_FONTSIZE || !lt_font[c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[LT_FONT].font[c])
 			continue;
 
 		if (SHORT(fontv[LT_FONT].font[c]->height) > w)
@@ -2658,24 +2196,6 @@ INT32 V_LevelNameHeight(const char *string)
 	}
 
 	return w;
-}
-
-// For ST_drawTitleCard
-// Returns the width of the act num patch(es)
-INT16 V_LevelActNumWidth(UINT8 num)
-{
-	INT16 result = 0;
-
-	if (num == 0)
-		result = SHORT(ttlnum[num]->width);
-
-	while (num > 0 && num <= 99)
-	{
-		result = result + SHORT(ttlnum[num%10]->width);
-		num = num/10;
-	}
-
-	return result;
 }
 
 //
@@ -2745,7 +2265,8 @@ INT32 V_SmallStringWidth(const char *string, INT32 option)
 
 	for (i = 0; i < strlen(string); i++)
 	{
-		if (string[i] & 0x80)
+		c = string[i];
+		if ((UINT8)c & 0x80) //color parsing! -Inuyasha 2.16.09
 			continue;
 
 		c = toupper(c) - HU_FONTSTART;
@@ -2785,7 +2306,8 @@ INT32 V_ThinStringWidth(const char *string, INT32 option)
 
 	for (i = 0; i < strlen(string); i++)
 	{
-		if (string[i] & 0x80)
+		c = string[i];
+		if ((UINT8)c & 0x80) //color parsing! -Inuyasha 2.16.09
 			continue;
 
 		if (!lowercase || !fontv[TINY_FONT].font[c-HU_FONTSTART])

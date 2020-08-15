@@ -527,11 +527,7 @@ void SCR_DisplayTicRate(void)
 	tic_t i;
 	tic_t ontic = I_GetTime();
 	tic_t totaltics = 0;
-	INT32 ticcntcolor = 0;
-	const INT32 h = vid.height-(8*vid.dupy);
-
-	if (gamestate == GS_NULL)
-		return;
+	const UINT8 *ticcntcolor = NULL;
 
 	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
 		fpsgraph[i % TICRATE] = false;
@@ -545,24 +541,18 @@ void SCR_DisplayTicRate(void)
 	if (totaltics <= TICRATE/2) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
 	else if (totaltics == TICRATE) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
 
-	if (cv_ticrate.value == 2) // compact counter
-		V_DrawString(vid.width-(16*vid.dupx), h,
-			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
-	else if (cv_ticrate.value == 1) // full counter
-	{
-		// draw "FPS"
-		V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_USERHUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
-		// draw total frame:
-		V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_USERHUDTRANS, TICRATE, ticcntcolor);
-		// draw "/"
-		V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_USERHUDTRANS, frameslash, ticcntcolor);
-		// draw our actual framerate
-		V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_USERHUDTRANS, totaltics, ticcntcolor);
-	}
+	// draw "FPS"
+	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
+	// draw total frame:
+	V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, TICRATE, ticcntcolor);
+	// draw "/"
+	V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
+	// draw our actual framerate
+	V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, totaltics, ticcntcolor);
+
 
 	lasttic = ontic;
 }
-
 
 // SCR_DisplayLocalPing
 // Used to draw the user's local ping next to the framerate for a quick check without having to hold TAB for instance. By default, it only shows up if your ping is too high and risks getting you kicked.

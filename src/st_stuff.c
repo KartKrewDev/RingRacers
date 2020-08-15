@@ -31,7 +31,6 @@
 #include "m_misc.h" // moviemode
 #include "m_anigif.h" // cv_gif_downscale
 #include "p_setup.h" // NiGHTS grading
-#include "k_hud.h" // SRB2kart
 
 //random index
 #include "m_random.h"
@@ -44,6 +43,10 @@
 #endif
 
 #include "lua_hud.h"
+
+// SRB2Kart
+#include "k_hud.h" // SRB2kart
+#include "v_video.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -81,7 +84,6 @@ static patch_t *race1;
 static patch_t *race2;
 static patch_t *race3;
 static patch_t *racego;
-//static patch_t *ttlnum;
 static patch_t *nightslink;
 static patch_t *curweapon;
 static patch_t *normring;
@@ -744,7 +746,7 @@ void ST_drawTitleCard(void)
 	lvlttlxpos = ((BASEVIDWIDTH/2) - (V_LevelNameWidth(lvlttl)/2));
 
 	if (actnum > 0)
-		lvlttlxpos -= V_LevelActNumWidth(actnum);
+		lvlttlxpos -= V_LevelNameWidth(va("%d", actnum));
 
 	ttlnumxpos = lvlttlxpos + V_LevelNameWidth(lvlttl);
 	zonexpos = ttlnumxpos - V_LevelNameWidth(M_GetText("Zone"));
@@ -767,11 +769,11 @@ void ST_drawTitleCard(void)
 		if (!splitscreen)
 		{
 			if (actnum > 9) // slightly offset the act diamond for two-digit act numbers
-				V_DrawMappedPatch(ttlnumxpos + (V_LevelActNumWidth(actnum)/4) + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
+				V_DrawMappedPatch(ttlnumxpos + (V_LevelNameWidth(va("%d", actnum))/4) + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
 			else
 				V_DrawMappedPatch(ttlnumxpos + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
 		}
-		V_DrawLevelActNum(ttlnumxpos + ttlscroll, 104, V_SPLITSCREEN, actnum);
+		V_DrawLevelTitle(ttlnumxpos + ttlscroll, 104, V_SPLITSCREEN, va("%d", actnum));
 	}
 
 	V_DrawLevelTitle(lvlttlxpos - ttlscroll, 80, V_SPLITSCREEN, lvlttl);
