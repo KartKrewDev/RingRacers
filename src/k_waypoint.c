@@ -1999,23 +1999,23 @@ void K_AdjustWaypointsParameters (void)
 	}
 
 	for (
-			th = thinkercap.next;
-			th != &thinkercap;
-			th = th->next
+		th = thlist[THINK_MOBJ].next;
+		th != &thlist[THINK_MOBJ];
+		th = th->next
 	){
-		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
-		{
-			anchor = (const mobj_t *)th;
+		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+			continue;
 
-			if (anchor->type == MT_WAYPOINT_ANCHOR)
-			{
-				for (
-						waypointmobj = waypointcap;
-						waypointmobj;
-						waypointmobj = waypointmobj->tracer
-				){
-					K_AnchorWaypointRadius(waypointmobj, anchor);
-				}
+		anchor = (const mobj_t *)th;
+
+		if (anchor->type == MT_WAYPOINT_ANCHOR)
+		{
+			for (
+					waypointmobj = waypointcap;
+					waypointmobj;
+					waypointmobj = waypointmobj->tracer
+			){
+				K_AnchorWaypointRadius(waypointmobj, anchor);
 			}
 		}
 	}

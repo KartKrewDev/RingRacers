@@ -27,10 +27,6 @@
 void A_Explode();
 void A_Pain();
 void A_Fall();
-void A_MonitorPop();
-void A_GoldMonitorPop();
-void A_GoldMonitorRestore();
-void A_GoldMonitorSparkle();
 void A_Look();
 void A_Chase();
 void A_FaceStabChase();
@@ -60,7 +56,6 @@ void A_ScoreRise(); // Rise the score logo
 void A_AttractChase(); // Ring Chase
 void A_DropMine(); // Drop Mine from Skim or Jetty-Syn Bomber
 void A_FishJump(); // Fish Jump
-void A_ThrownRing(); // Sparkle trail for red ring
 void A_GrenadeRing(); // SRB2kart
 void A_SetSolidSteam();
 void A_UnsetSolidSteam();
@@ -143,7 +138,6 @@ void A_LinedefExecute();
 void A_PlaySeeSound();
 void A_PlayAttackSound();
 void A_PlayActiveSound();
-void A_1upThinker();
 void A_BossZoom(); //Unused
 void A_Boss1Chase();
 void A_Boss2Chase();
@@ -181,7 +175,7 @@ void A_ItemPop(); // SRB2kart
 void A_JawzChase(); // SRB2kart
 void A_JawzExplode(); // SRB2kart
 void A_SPBChase(); // SRB2kart
-void A_MineExplode(); // SRB2kart
+void A_SSMineExplode(); // SRB2kart
 void A_BallhogExplode(); // SRB2kart
 void A_LightningFollowPlayer();	// SRB2kart: Lightning shield effect player chasing
 void A_FZBoomFlash(); // SRB2kart
@@ -191,7 +185,6 @@ void A_RoamingShadowThinker();	// SRB2kart: Roaming Shadow moving + attacking pl
 void A_MayonakaArrow();	//SRB2kart: midnight channel arrow sign
 void A_ReaperThinker();	//SRB2kart: mementos reaper
 void A_MementosTPParticles();	//SRB2kart: mementos teleporter particles. Man that's a lot of actions for my shite.
-void A_FlameParticle(); // SRB2kart
 void A_FlameShieldPaper();
 void A_OrbitNights();
 void A_GhostMe();
@@ -276,7 +269,6 @@ void A_Boss5MakeItRain();
 void A_Boss5MakeJunk();
 void A_LookForBetter();
 void A_Boss5BombExplode();
-void A_DustDevilThink();
 void A_TNTExplode();
 void A_DebrisRandom();
 void A_TrainCameo();

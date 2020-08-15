@@ -499,9 +499,9 @@ static void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 	thinker_t *th;
 
 	// Find the inital target
-	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 	{
-		if (th->function.acp1 != (actionf_p1)P_MobjThinker) // Not a mobj thinker
+		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 			continue;
 
 		mo2 = (mobj_t *)th;

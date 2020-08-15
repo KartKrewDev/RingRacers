@@ -103,11 +103,6 @@ void A_BossZoom(mobj_t *actor);
 void A_BossScream(mobj_t *actor);
 void A_Scream(mobj_t *actor);
 void A_Pain(mobj_t *actor);
-void A_1upThinker(mobj_t *actor);
-void A_MonitorPop(mobj_t *actor);
-void A_GoldMonitorPop(mobj_t *actor);
-void A_GoldMonitorRestore(mobj_t *actor);
-void A_GoldMonitorSparkle(mobj_t *actor);
 void A_Explode(mobj_t *actor);
 void A_BossDeath(mobj_t *actor);
 void A_CustomPower(mobj_t *actor);
@@ -128,7 +123,6 @@ void A_BubbleCheck(mobj_t *actor);
 void A_AttractChase(mobj_t *actor);
 void A_DropMine(mobj_t *actor);
 void A_FishJump(mobj_t *actor);
-void A_ThrownRing(mobj_t *actor);
 void A_GrenadeRing(mobj_t *actor);
 void A_SetSolidSteam(mobj_t *actor);
 void A_UnsetSolidSteam(mobj_t *actor);
@@ -209,7 +203,7 @@ void A_ItemPop(mobj_t *actor); // SRB2kart
 void A_JawzChase(mobj_t *actor); // SRB2kart
 void A_JawzExplode(mobj_t *actor); // SRB2kart
 void A_SPBChase(mobj_t *actor); // SRB2kart
-void A_MineExplode(mobj_t *actor); // SRB2kart
+void A_SSMineExplode(mobj_t *actor); // SRB2kart
 void A_BallhogExplode(mobj_t *actor); // SRB2kart
 void A_LightningFollowPlayer(mobj_t *actor); // SRB2kart
 void A_FZBoomFlash(mobj_t *actor); // SRB2kart
@@ -219,7 +213,6 @@ void A_RoamingShadowThinker(mobj_t *actor);	//SRB2kart
 void A_MayonakaArrow(mobj_t *actor);	//SRB2kart
 void A_ReaperThinker(mobj_t *actor);	//SRB2kart
 void A_MementosTPParticles(mobj_t *actor);	//SRB2kart
-void A_FlameParticle(mobj_t *actor); // SRB2kart
 void A_FlameShieldPaper(mobj_t *actor); // SRB2kart
 void A_OrbitNights(mobj_t *actor);
 void A_GhostMe(mobj_t *actor);
@@ -308,7 +301,6 @@ void A_Boss5MakeItRain(mobj_t *actor);
 void A_Boss5MakeJunk(mobj_t *actor);
 void A_LookForBetter(mobj_t *actor);
 void A_Boss5BombExplode(mobj_t *actor);
-void A_DustDevilThink(mobj_t *actor);
 void A_TNTExplode(mobj_t *actor);
 void A_DebrisRandom(mobj_t *actor);
 void A_TrainCameo(mobj_t *actor);
@@ -540,10 +532,7 @@ boolean P_Move(mobj_t *actor, fixed_t speed)
 	I_Assert(movedir < NUMDIRS);
 
 	tryx = actor->x + FixedMul(speed*xspeed[movedir], actor->scale);
-	if (twodlevel || actor->flags2 & MF2_TWOD)
-		tryy = actor->y;
-	else
-		tryy = actor->y + FixedMul(speed*yspeed[movedir], actor->scale);
+	tryy = actor->y + FixedMul(speed*yspeed[movedir], actor->scale);
 
 	if (actor->type == MT_SKIM && !P_WaterInSector(actor, tryx, tryy)) // bail out if sector lacks water
 		return false;
@@ -617,8 +606,6 @@ void P_NewChaseDir(mobj_t *actor)
 	else
 		d[1] = DI_NODIR;
 
-	if (twodlevel || actor->flags2 & MF2_TWOD)
-		d[2] = DI_NODIR;
 	if (deltay < -FixedMul(10*FRACUNIT, actor->scale))
 		d[2] = DI_SOUTH;
 	else if (deltay > FixedMul(10*FRACUNIT, actor->scale))
@@ -2833,10 +2820,10 @@ void A_Boss1Laser(mobj_t *actor)
 		SKINCOLOR_SUPERRED3,
 		SKINCOLOR_SUPERRED4,
 		SKINCOLOR_SUPERRED5,
-		SKINCOLOR_FLAME,
+		SKINCOLOR_KETCHUP,
 		SKINCOLOR_RED,
 		SKINCOLOR_RED,
-		SKINCOLOR_FLAME,
+		SKINCOLOR_KETCHUP,
 		SKINCOLOR_SUPERRED5,
 		SKINCOLOR_SUPERRED4,
 		SKINCOLOR_SUPERRED3,
@@ -3406,281 +3393,6 @@ void A_Fall(mobj_t *actor)
 		actor->extravalue2 = locvar1;
 }
 
-#define LIVESBOXDISPLAYPLAYER // Use displayplayer instead of closest player
-
-// Function: A_1upThinker
-//
-// Description: Used by the 1up box to show the player's face.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_1upThinker(mobj_t *actor)
-{
-	INT32 i;
-	fixed_t dist = INT32_MAX;
-	fixed_t temp;
-	INT32 closestplayer = -1;
-
-	if (LUA_CallAction("A_1upThinker", actor))
-		return;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].bot || players[i].spectator)
-			continue;
-
-		if (!players[i].mo)
-			continue;
-
-		if ((netgame || multiplayer) && players[i].playerstate != PST_LIVE)
-			continue;
-
-		temp = P_AproxDistance(players[i].mo->x-actor->x, players[i].mo->y-actor->y);
-
-		if (temp < dist)
-		{
-			closestplayer = i;
-			dist = temp;
-		}
-	}
-
-	if (closestplayer == -1 || skins[players[closestplayer].skin].sprites[SPR2_LIFE].numframes == 0)
-	{ // Closest player not found (no players in game?? may be empty dedicated server!), or does not have correct sprite.
-		if (actor->tracer)
-		{
-			mobj_t *tracer = actor->tracer;
-			P_SetTarget(&actor->tracer, NULL);
-			P_RemoveMobj(tracer);
-		}
-		return;
-	}
-
-	// We're using the overlay, so use the overlay 1up box (no text)
-	actor->sprite = SPR_TV1P;
-
-	if (!actor->tracer)
-	{
-		P_SetTarget(&actor->tracer, P_SpawnMobj(actor->x, actor->y, actor->z, MT_OVERLAY));
-		P_SetTarget(&actor->tracer->target, actor);
-		actor->tracer->skin = &skins[players[closestplayer].skin]; // required here to prevent spr2 default showing stand for a single frame
-		P_SetMobjState(actor->tracer, actor->info->seestate);
-
-		// The overlay is going to be one tic early turning off and on
-		// because it's going to get its thinker run the frame we spawned it.
-		// So make it take one tic longer if it just spawned.
-		++actor->tracer->tics;
-	}
-
-	actor->tracer->color = players[closestplayer].mo->color;
-	actor->tracer->skin = &skins[players[closestplayer].skin];
-}
-
-// Function: A_MonitorPop
-//
-// Description: Used by monitors when they explode.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_MonitorPop(mobj_t *actor)
-{
-	mobjtype_t item = 0;
-	mobj_t *newmobj;
-
-	if (LUA_CallAction("A_MonitorPop", actor))
-		return;
-
-	// Spawn the "pop" explosion.
-	if (actor->info->deathsound)
-		S_StartSound(actor, actor->info->deathsound);
-	P_SpawnMobjFromMobj(actor, 0, 0, actor->height/4, MT_EXPLODE);
-
-	// We're dead now. De-solidify.
-	actor->health = 0;
-	P_UnsetThingPosition(actor);
-	actor->flags &= ~MF_SOLID;
-	actor->flags |= MF_NOCLIP;
-	P_SetThingPosition(actor);
-
-	if (actor->info->damage == MT_UNKNOWN)
-	{
-		// MT_UNKNOWN is random. Because it's unknown to us... get it?
-		item = P_DoRandomBoxChances();
-
-		if (item == MT_NULL)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("All monitors turned off.\n"));
-			return;
-		}
-	}
-	else
-		item = actor->info->damage;
-
-	if (item == 0)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Powerup item not defined in 'damage' field for A_MonitorPop\n");
-		return;
-	}
-
-	newmobj = P_SpawnMobjFromMobj(actor, 0, 0, 13*FRACUNIT, item);
-	P_SetTarget(&newmobj->target, actor->target); // Transfer target
-
-	if (item == MT_1UP_ICON)
-	{
-		if (actor->tracer) // Remove the old lives icon.
-			P_RemoveMobj(actor->tracer);
-
-		if (!newmobj->target
-		 || !newmobj->target->player
-		 || !newmobj->target->skin
-		 || ((skin_t *)newmobj->target->skin)->sprites[SPR2_LIFE].numframes == 0)
-			{} // No lives icon for this player, use the default.
-		else
-		{ // Spawn the lives icon.
-			mobj_t *livesico = P_SpawnMobjFromMobj(newmobj, 0, 0, 0, MT_OVERLAY);
-			P_SetTarget(&livesico->target, newmobj);
-			P_SetTarget(&newmobj->tracer, livesico);
-
-			livesico->color = newmobj->target->player->mo->color;
-			livesico->skin = &skins[newmobj->target->player->skin];
-			P_SetMobjState(livesico, newmobj->info->seestate);
-
-			// We're using the overlay, so use the overlay 1up sprite (no text)
-			newmobj->sprite = SPR_TV1P;
-		}
-	}
-
-	// Run a linedef executor immediately upon popping
-	// You may want to delay your effects by 18 tics to sync with the reward giving
-	if (actor->spawnpoint && actor->lastlook)
-		P_LinedefExecute(actor->lastlook, actor->target, NULL);
-}
-
-// Function: A_GoldMonitorPop
-//
-// Description: Used by repeating monitors when they turn off. They don't really pop, but, you know...
-//
-// var1 = unused
-// var2 = unused
-//
-void A_GoldMonitorPop(mobj_t *actor)
-{
-	mobjtype_t item = 0;
-	mobj_t *newmobj;
-
-	if (LUA_CallAction("A_GoldMonitorPop", actor))
-		return;
-
-	// Don't spawn the "pop" explosion, because the monitor isn't broken.
-	if (actor->info->deathsound)
-		S_StartSound(actor, actor->info->deathsound);
-	//P_SpawnMobjFromMobj(actor, 0, 0, actor.height/4, MT_EXPLODE);
-
-	// Remove our flags for a bit.
-	// Players can now stand on top of us.
-	P_UnsetThingPosition(actor);
-	actor->flags  &= ~(MF_MONITOR|MF_SHOOTABLE);
-	P_SetThingPosition(actor);
-
-	// Don't count this box in statistics. Sorry.
-	if (actor->target && actor->target->player)
-		--actor->target->player->numboxes;
-	actor->fuse = 0; // Don't let the monitor code screw us up.
-
-	if (actor->info->damage == MT_UNKNOWN)
-	{
-		// MT_UNKNOWN is random. Because it's unknown to us... get it?
-		item = P_DoRandomBoxChances();
-
-		if (item == MT_NULL)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("All monitors turned off.\n"));
-			return;
-		}
-	}
-	else
-		item = actor->info->damage;
-
-	if (item == 0)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Powerup item not defined in 'damage' field for A_GoldMonitorPop\n");
-		return;
-	}
-
-	// Note: the icon spawns 1 fracunit higher
-	newmobj = P_SpawnMobjFromMobj(actor, 0, 0, 14*FRACUNIT, item);
-	P_SetTarget(&newmobj->target, actor->target); // Transfer target
-
-	if (item == MT_1UP_ICON)
-	{
-		if (actor->tracer) // Remove the old lives icon.
-			P_RemoveMobj(actor->tracer);
-
-		if (!newmobj->target
-		 || !newmobj->target->player
-		 || !newmobj->target->skin
-		 || ((skin_t *)newmobj->target->skin)->sprites[SPR2_LIFE].numframes == 0)
-			{} // No lives icon for this player, use the default.
-		else
-		{ // Spawn the lives icon.
-			mobj_t *livesico = P_SpawnMobjFromMobj(newmobj, 0, 0, 0, MT_OVERLAY);
-			P_SetTarget(&livesico->target, newmobj);
-			P_SetTarget(&newmobj->tracer, livesico);
-
-			livesico->color = newmobj->target->player->mo->color;
-			livesico->skin = &skins[newmobj->target->player->skin];
-			P_SetMobjState(livesico, newmobj->info->seestate);
-
-			// We're using the overlay, so use the overlay 1up sprite (no text)
-			newmobj->sprite = SPR_TV1P;
-		}
-	}
-
-	// Run a linedef executor immediately upon popping
-	// You may want to delay your effects by 18 tics to sync with the reward giving
-	if (actor->spawnpoint && actor->lastlook)
-		P_LinedefExecute(actor->lastlook, actor->target, NULL);
-}
-
-// Function: A_GoldMonitorRestore
-//
-// Description: A repeating monitor is coming back to life. Reset monitor flags, etc.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_GoldMonitorRestore(mobj_t *actor)
-{
-	if (LUA_CallAction("A_GoldMonitorRestore", actor))
-		return;
-
-	actor->flags |= MF_MONITOR|MF_SHOOTABLE;
-	actor->health = 1; // Just in case.
-}
-
-// Function: A_GoldMonitorSparkle
-//
-// Description: Spawns the little sparkly effect around big monitors. Looks pretty, doesn't it?
-//
-// var1 = unused
-// var2 = unused
-//
-void A_GoldMonitorSparkle(mobj_t *actor)
-{
-	fixed_t i, ngangle, xofs, yofs;
-
-	if (LUA_CallAction("A_GoldMonitorSparkle", actor))
-		return;
-
-	ngangle = FixedAngle(((leveltime * 21) % 360) << FRACBITS);
-	xofs = FINESINE((ngangle>>ANGLETOFINESHIFT) & FINEMASK)   * (actor->radius>>FRACBITS);
-	yofs = FINECOSINE((ngangle>>ANGLETOFINESHIFT) & FINEMASK) * (actor->radius>>FRACBITS);
-
-	for (i = FRACUNIT*2; i <= FRACUNIT*3; i += FRACUNIT/2)
-		P_SetObjectMomZ(P_SpawnMobjFromMobj(actor, xofs, yofs, 0, MT_BOXSPARKLE), i, false);
-}
-
 // Function: A_Explode
 //
 // Description: Explodes an object, doing damage to any objects nearby. The target is used as the cause of the explosion. Damage value is used as explosion range.
@@ -4100,9 +3812,7 @@ void A_Invincibility(mobj_t *actor)
 
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (mariomode)
-			G_GhostAddColor(INT32) (player - players), GHC_INVINCIBLE);
-		P_PlayJingle(player, (mariomode) ? JT_MINV : JT_INV);
+		P_PlayJingle(player, JT_INV);
 		strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
 		S_StartCaption(sfx_None, -1, player->powers[pw_invulnerability]);
 	}
@@ -4134,10 +3844,8 @@ void A_SuperSneakers(mobj_t *actor)
 
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (S_SpeedMusic(0.0f) && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
+		if (S_SpeedMusic(0.0f))
 			S_SpeedMusic(1.4f);
-		else
-			P_PlayJingle(player, JT_SHOES);
 		strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 	}
@@ -4499,7 +4207,7 @@ void A_AttractChase(mobj_t *actor)
 				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->kartstuff[k_sparkleanim]);
 				actor->target->player->kartstuff[k_sparkleanim] = (actor->target->player->kartstuff[k_sparkleanim]+1) % 20;
 
-				P_KillMobj(actor, actor->target, actor->target);
+				P_KillMobj(actor, actor->target, actor->target, 0);
 				return;
 			}
 			else
@@ -4732,170 +4440,6 @@ void A_FishJump(mobj_t *actor)
 		P_SetMobjStateNF(actor, actor->info->meleestate);
 }
 
-// Function:A_ThrownRing
-//
-// Description: Thinker for thrown rings/sparkle trail
-//
-// var1 = unused
-// var2 = unused
-//
-void A_ThrownRing(mobj_t *actor)
-{
-	INT32 c = 0;
-	INT32 stop;
-	player_t *player;
-	fixed_t dist;
-
-	if (LUA_CallAction("A_ThrownRing", actor))
-		return;
-
-	if (leveltime % (TICRATE/7) == 0)
-	{
-		mobj_t *ring = NULL;
-
-		if (actor->flags2 & MF2_EXPLOSION)
-		{
-			if (actor->momx != 0 || actor->momy != 0)
-				ring = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOKE);
-			// Else spawn nothing because it's totally stationary and constantly smoking would be weird -SH
-		}
-		else if (actor->flags2 & MF2_AUTOMATIC)
-			ring = P_SpawnGhostMobj(actor);
-		else if (!(actor->flags2 & MF2_RAILRING))
-			ring = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SPARK);
-
-		if (ring)
-		{
-			/*
-			P_SetTarget(&ring->target, actor);
-			ring->color = actor->color; //copy color
-			*/
-			ring->destscale = actor->scale;
-			P_SetScale(ring, actor->scale);
-		}
-	}
-
-	// A_GrenadeRing beeping lives once moooooore -SH
-	if (actor->type == MT_THROWNGRENADE && actor->fuse % TICRATE == 0)
-		S_StartSound(actor, actor->info->attacksound);
-
-	// decrement bounce ring time
-	if (actor->flags2 & MF2_BOUNCERING)
-	{
-		if (actor->fuse)
-			actor->fuse--;
-		else {
-			P_RemoveMobj(actor);
-			return;
-		}
-	}
-
-	// spilled rings (and thrown bounce) flicker before disappearing
-	if (leveltime & 1 && actor->fuse > 0 && actor->fuse < 2*TICRATE
-		&& actor->type != MT_THROWNGRENADE)
-		actor->drawflags |= MFD_DONTDRAW;
-	else
-		actor->drawflags &= ~MFD_DONTDRAW;
-
-	if (actor->tracer && actor->tracer->health <= 0)
-		P_SetTarget(&actor->tracer, NULL);
-
-	// Updated homing ring special capability
-	// If you have a ring shield, all rings thrown
-	// at you become homing (except rail)!
-	if (actor->tracer)
-	{
-		// A non-homing ring getting attracted by a
-		// magnetic player. If he gets too far away, make
-		// sure to stop the attraction!
-		if ((!actor->tracer->health) || (actor->tracer->player && (actor->tracer->player->powers[pw_shield] & SH_PROTECTELECTRIC)
-		    && P_AproxDistance(P_AproxDistance(actor->tracer->x-actor->x,
-		    actor->tracer->y-actor->y), actor->tracer->z-actor->z) > FixedMul(RING_DIST/4, actor->tracer->scale)))
-		{
-			P_SetTarget(&actor->tracer, NULL);
-		}
-
-		if (actor->tracer && (actor->tracer->health)
-			&& (actor->tracer->player->powers[pw_shield] & SH_PROTECTELECTRIC))// Already found someone to follow.
-		{
-			const INT32 temp = actor->threshold;
-			actor->threshold = 32000;
-			P_HomingAttack(actor, actor->tracer);
-			actor->threshold = temp;
-			return;
-		}
-	}
-
-	// first time init, this allow minimum lastlook changes
-	if (actor->lastlook < 0)
-		actor->lastlook = P_RandomByte();
-
-	actor->lastlook %= MAXPLAYERS;
-
-	stop = (actor->lastlook - 1) & PLAYERSMASK;
-
-	for (; ; actor->lastlook = (actor->lastlook + 1) & PLAYERSMASK)
-	{
-		// done looking
-		if (actor->lastlook == stop)
-			return;
-
-		if (!playeringame[actor->lastlook])
-			continue;
-
-		if (c++ == 2)
-			return;
-
-		player = &players[actor->lastlook];
-
-		if (!player->mo)
-			continue;
-
-		if (player->mo->health <= 0)
-			continue; // dead
-
-		if ((netgame || multiplayer) && player->spectator)
-			continue; // spectator
-
-		if (actor->target && actor->target->player)
-		{
-			if (player->mo == actor->target)
-				continue;
-
-			// Don't home in on teammates.
-			if ((gametyperules & GTR_TEAMS)
-				&& actor->target->player->ctfteam == player->ctfteam)
-				continue;
-
-			if (actor->target->player->kartstuff[k_position] < player->kartstuff[k_position]) // SRB2kart - Jawz only go after people ahead of you
-				continue;
-
-		}
-
-		dist = P_AproxDistance(P_AproxDistance(player->mo->x-actor->x,
-			player->mo->y-actor->y), player->mo->z-actor->z);
-
-		// check distance
-		if (actor->flags2 & MF2_RAILRING)
-		{
-			if (dist > FixedMul(RING_DIST/2, player->mo->scale))
-				continue;
-		}
-		else if (dist > FixedMul(RING_DIST, player->mo->scale))
-			continue;
-
-		// do this after distance check because it's more computationally expensive
-		if (!P_CheckSight(actor, player->mo))
-			continue; // out of sight
-
-		if (dist < FixedMul(2048*FRACUNIT, player->mo->scale))
-			P_SetTarget(&actor->tracer, player->mo);
-		return;
-	}
-
-	return;
-}
-
 //{ SRB2kart - A_GRENADERING
 static mobj_t *grenade;
 static fixed_t explodedist;
@@ -4925,11 +4469,6 @@ static inline boolean PIT_GrenadeRing(mobj_t *thing)
 
 	if (thing->player && (thing->player->kartstuff[k_hyudorotimer]
 		|| ((gametyperules & GTR_BUMPERS) && thing->player && thing->player->kartstuff[k_bumper] <= 0 && thing->player->kartstuff[k_comebacktimer])))
-		return true;
-
-	if ((gametype == GT_CTF || gametype == GT_TEAMMATCH)
-		&& !cv_friendlyfire.value && grenade->target->player && thing->player
-		&& grenade->target->player->ctfteam == thing->player->ctfteam) // Don't blow up at your teammates, unless friendlyfire is on
 		return true;
 
 	// see if it went over / under
@@ -5010,12 +4549,12 @@ static inline boolean PIT_MineExplode(mobj_t *thing)
 	if (thing->player) // Looks like we're going to have to need a seperate function for this too
 		K_ExplodePlayer(thing->player, grenade->target, grenade);
 	else
-		P_DamageMobj(thing, grenade, grenade->target, 1);
+		P_DamageMobj(thing, grenade, grenade->target, 1, 0);
 
 	return true;
 }
 
-void A_MineExplode(mobj_t *actor)
+void A_SSMineExplode(mobj_t *actor)
 {
 	INT32 bx, by, xl, xh, yl, yh;
 	INT32 d;
@@ -5023,7 +4562,7 @@ void A_MineExplode(mobj_t *actor)
 	mobjtype_t type;
 	explodedist = FixedMul((3*actor->info->painchance)/2, mapobjectscale);
 
-	if (LUA_CallAction("A_MineExplode", actor))
+	if (LUA_CallAction("A_SSMineExplode", actor))
 		return;
 
 	if (actor->flags2 & MF2_DEBRIS)
@@ -5669,12 +5208,7 @@ void A_MouseThink(mobj_t *actor)
 		|| (actor->eflags & MFE_VERTICALFLIP && actor->z + actor->height == actor->ceilingz))
 		&& !actor->reactiontime)
 	{
-		if (twodlevel || actor->flags2 & MF2_TWOD)
-		{
-			if (P_RandomChance(FRACUNIT/2))
-				actor->angle += ANGLE_180;
-		}
-		else if (P_RandomChance(FRACUNIT/2))
+		if (P_RandomChance(FRACUNIT/2))
 			actor->angle += ANGLE_90;
 		else
 			actor->angle -= ANGLE_90;
@@ -6528,10 +6062,6 @@ void A_MixUp(mobj_t *actor)
 			}
 
 		//get this done first!
-		if (players[one].powers[pw_carry] == CR_MINECART && players[one].mo->tracer && !(P_MobjWasRemoved(players[one].mo->tracer)))
-			P_SetTarget(&players[one].mo->tracer->target, players[two].mo);
-		if (players[two].powers[pw_carry] == CR_MINECART && players[two].mo->tracer && !(P_MobjWasRemoved(players[two].mo->tracer)))
-			P_SetTarget(&players[two].mo->tracer->target, players[one].mo);
 		tempthing = players[one].mo->tracer;
 		P_SetTarget(&players[one].mo->tracer, players[two].mo->tracer);
 		P_SetTarget(&players[two].mo->tracer, tempthing);
@@ -6542,8 +6072,8 @@ void A_MixUp(mobj_t *actor)
 		players[two].speed = transspeed;
 
 		//set flags variables now but DON'T set them.
-		carry1 = (players[one].powers[pw_carry] == CR_PLAYER ? CR_NONE : players[one].powers[pw_carry]);
-		carry2 = (players[two].powers[pw_carry] == CR_PLAYER ? CR_NONE : players[two].powers[pw_carry]);
+		carry1 = players[one].powers[pw_carry];
+		carry2 = players[two].powers[pw_carry];
 
 		x = players[one].mo->x;
 		y = players[one].mo->y;
@@ -6617,7 +6147,7 @@ void A_MixUp(mobj_t *actor)
 					players[i].rmomx = players[i].rmomy = 1;
 				players[i].cmomx = players[i].cmomy = 0;
 
-				transcarry[counter] = (players[i].powers[pw_carry] == CR_PLAYER ? CR_NONE : players[i].powers[pw_carry]);
+				transcarry[counter] = players[i].powers[pw_carry];
 				transspeed[counter] = players[i].speed;
 				transtracer[counter] = players[i].mo->tracer;
 
@@ -6669,8 +6199,6 @@ void A_MixUp(mobj_t *actor)
 
 				//...carry after.  same reasoning.
 				players[i].powers[pw_carry] = transcarry[teleportfrom];
-				if (transcarry[teleportfrom] == CR_MINECART && transtracer[teleportfrom] && !(P_MobjWasRemoved(transtracer[teleportfrom])))
-					P_SetTarget(&transtracer[teleportfrom]->target, players[i].mo);
 
 				teleported[i] = true;
 				counter++;
@@ -7089,17 +6617,6 @@ void A_Boss7Chase(mobj_t *actor)
 			S_StartSound(0, sfx_begrnd); // warning sound
 			return;
 		}
-	}
-
-	if (actor->health <= actor->info->damage
-		&& actor->target
-		&& actor->target->player
-		&& (actor->target->player->powers[pw_carry] == CR_GENERIC))
-	{
-		A_FaceTarget(actor);
-		P_SetMobjState(actor, S_BLACKEGG_SHOOT1);
-		actor->movecount = TICRATE + P_RandomByte()/2;
-		return;
 	}
 
 	if (actor->reactiontime)
@@ -8893,7 +8410,7 @@ void A_BossJetFume(mobj_t *actor)
 		P_SetScale(filler, (filler->destscale = actor->scale/3));
 		if (actor->eflags & MFE_VERTICALFLIP)
 			filler->flags2 |= MF2_OBJECTFLIP;
-		filler->color = SKINCOLOR_ICY;
+		filler->color = SKINCOLOR_CYAN;
 		filler->colorized = true;
 	}
 	else if (locvar1 == 3) // Boss 4 jet flame
@@ -9978,7 +9495,7 @@ void A_RandomShadowFrame(mobj_t *actor)
 		&& P_IsObjectOnGround(actor->target)
 		&& actor->z == actor->target->z)
 		{
-			P_DamageMobj(actor->target, actor, actor, 1);
+			P_DamageMobj(actor->target, actor, actor, 1, 0);
 			P_InstaThrust(actor->target, actor->angle, 16<<FRACBITS);
 			fire = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_THOK);
 			P_SetMobjStateNF(fire, S_QUICKBOOM1);
@@ -10023,7 +9540,7 @@ void A_RoamingShadowThinker(mobj_t *actor)
 			{
 				// send them flying and spawn the WIND!
 				P_InstaThrust(actor->target, 0, 0);
-				P_DamageMobj(actor->target, actor, actor, 1);
+				P_DamageMobj(actor->target, actor, actor, 1, 0);
 				P_SetObjectMomZ(actor->target, 16<<FRACBITS, false);
 				S_StartSound(actor->target, sfx_wind1);
 
@@ -10103,16 +9620,16 @@ void A_MementosTPParticles(mobj_t *actor)
 		particle->frame = 0;
 		particle->color = ((i%2) ? (SKINCOLOR_RED) : (SKINCOLOR_BLACK));
 		particle->destscale = 1;
-		P_HomingAttack(particle, actor);
+		//P_HomingAttack(particle, actor); // Really now, Lat...
 	}
 
 	// Although this is mostly used to spawn particles, we will also save the OTHER teleport inside actor->target. That way teleporting doesn't require a thinker iteration.
 	// Doesn't seem like much given the small amount of mobjs this map has but heh.
 	if (!actor->target)
 	{
-		for (th = thinkercap.next; th != &thinkercap; th = th->next)
+		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 		{
-			if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 				continue;
 
 			mo2 = (mobj_t *)th;
@@ -10209,9 +9726,9 @@ void A_ReaperThinker(mobj_t *actor)
 		}
 
 		// We have no target and oughta find one, so let's scan through thinkers for a waypoint of angle 0, or something.
-		for (th = thinkercap.next; th != &thinkercap; th = th->next)
+		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 		{
-			if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 				continue;
 
 			mo2 = (mobj_t *)th;
@@ -10269,15 +9786,14 @@ void A_ReaperThinker(mobj_t *actor)
 		// Waypoint behavior.
 		if (actor->target->type == MT_REAPERWAYPOINT)
 		{
-
 			if (R_PointToDist2(actor->x, actor->y, actor->target->x, actor->target->y) < 22<<FRACBITS)
 			{
 				P_SetTarget(&actor->target, NULL);	// remove target so we can default back to first waypoint if things go ham.
 
 				// If we reach close to a waypoint, then we should go to the NEXT one.
-				for (th = thinkercap.next; th != &thinkercap; th = th->next)
+				for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 				{
-					if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+					if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 						continue;
 
 					mo2 = (mobj_t *)th;
@@ -10307,22 +9823,6 @@ void A_ReaperThinker(mobj_t *actor)
 				P_SetTarget(&actor->target, actor->hnext);
 		}
 	}
-}
-
-void A_FlameParticle(mobj_t *actor)
-{
-	fixed_t rad = actor->radius>>FRACBITS, hei = actor->radius>>FRACBITS;
-	mobj_t *par;
-
-	if (LUA_CallAction("A_FlameParticle", actor))
-		return;
-
-	par = P_SpawnMobj(
-		actor->x + (P_RandomRange(-rad, rad)<<FRACBITS),
-		actor->y + (P_RandomRange(-rad, rad)<<FRACBITS),
-		actor->z + (P_RandomRange(hei/2, hei)<<FRACBITS),
-		actor->info->painchance);
-	par->momz = actor->scale<<1;
 }
 
 void A_FlameShieldPaper(mobj_t *actor)
@@ -12601,16 +12101,16 @@ void P_InternalFlickySetColor(mobj_t *actor, UINT8 extrainfo)
 		SKINCOLOR_RED,
 		SKINCOLOR_CYAN,
 		SKINCOLOR_BLUE,
-		SKINCOLOR_VAPOR,
+		SKINCOLOR_PASTEL,
 		SKINCOLOR_PURPLE,
-		SKINCOLOR_BUBBLEGUM,
-		SKINCOLOR_NEON,
+		SKINCOLOR_VIOLET,
+		SKINCOLOR_FUCHSIA,
 		SKINCOLOR_BLACK,
 		SKINCOLOR_BEIGE,
 		SKINCOLOR_LAVENDER,
 		SKINCOLOR_RUBY,
-		SKINCOLOR_SALMON,
-		SKINCOLOR_SUNSET,
+		SKINCOLOR_BLOSSOM,
+		SKINCOLOR_SUNSLAM,
 		SKINCOLOR_ORANGE,
 		SKINCOLOR_YELLOW,
 	};
@@ -14308,155 +13808,6 @@ void A_Boss5BombExplode(mobj_t *actor)
 	quake.radius = 20*actor->radius;
 }
 
-static mobj_t *dustdevil;
-
-static boolean PIT_DustDevilLaunch(mobj_t *thing)
-{
-	player_t *player = thing->player;
-
-	if (!player)
-		return true;
-
-	if (player->powers[pw_carry] != CR_DUSTDEVIL && (player->powers[pw_ignorelatch] & (1<<15)))
-		return true;
-
-	if (abs(thing->x - dustdevil->x) > dustdevil->radius || abs(thing->y - dustdevil->y) > dustdevil->radius)
-		return true;
-
-	if (thing->z + thing->height >= dustdevil->z && dustdevil->z + dustdevil->height >= thing->z) {
-		fixed_t pos = thing->z - dustdevil->z;
-		fixed_t thrust = max(FixedDiv(pos, dustdevil->height) * 20, 8 * FRACUNIT);
-		angle_t fa = R_PointToAngle2(thing->x, thing->y, dustdevil->x, dustdevil->y) >> ANGLETOFINESHIFT;
-		fixed_t c = FINECOSINE(fa);
-		fixed_t s = FINESINE(fa);
-		fixed_t thresh = dustdevil->scale * 20;
-
-		//Player in the swirl part.
-		if (dustdevil->height - pos > thresh)
-		{
-			fixed_t dist = FixedHypot(thing->x - dustdevil->x, thing->y - dustdevil->y);
-			fixed_t dragamount = player->speed;
-			fixed_t x, y;
-
-			if (player->powers[pw_nocontrol] == 0)
-			{
-				P_ResetPlayer(player);
-				A_PlayActiveSound(dustdevil);
-			}
-			player->powers[pw_carry] = CR_DUSTDEVIL;
-			player->powers[pw_nocontrol] = 2;
-			P_SetTarget(&thing->tracer, dustdevil);
-			P_SetPlayerMobjState(thing, S_PLAY_PAIN);
-
-			if (dist > dragamount)
-			{
-				x = thing->x + FixedMul(c, dragamount);
-				y = thing->y + FixedMul(s, dragamount);
-			}
-			else
-			{
-				x = dustdevil->x;
-				y = dustdevil->y;
-			}
-			P_TryMove(thing, x - thing->momx, y - thing->momy, true);
-		}
-		else
-		{ //Player on the top of the tornado.
-			P_ResetPlayer(player);
-			thing->z = dustdevil->z + dustdevil->height;
-			thrust = 20 * FRACUNIT;
-			player->powers[pw_carry] = CR_NONE;
-			player->powers[pw_nocontrol] = 0;
-			P_SetTarget(&thing->tracer, NULL);
-			S_StartSound(thing, sfx_wdjump);
-			P_SetPlayerMobjState(thing, S_PLAY_FALL);
-		}
-
-		thing->momz = thrust;
-	}
-
-	return true;
-}
-
-// Function: A_DustDevilThink
-//
-// Description: Thinker for the dust devil.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_DustDevilThink(mobj_t *actor)
-{
-	fixed_t scale = actor->scale;
-	mobj_t *layer = actor->tracer;
-	INT32 bx, by, xl, xh, yl, yh;
-	fixed_t radius = actor->radius;
-
-	if (LUA_CallAction("A_DustDevilThink", actor))
-		return;
-
-	//Chained thinker for the spiralling dust column.
-	while (layer && !P_MobjWasRemoved(layer)) {
-		angle_t fa = layer->angle >> ANGLETOFINESHIFT;
-		P_TeleportMove(layer, layer->x + 5 * FixedMul(scale, FINECOSINE(fa)), layer->y + 5 * FixedMul(scale, FINESINE(fa)), layer->z);
-		layer->scale = scale;
-		layer->angle += ANG10 / 2;
-		layer->momx = actor->momx;
-		layer->momy = actor->momy;
-		layer = layer->tracer;
-	}
-
-	//Spawn random dust around the column on the base.
-	if (P_IsObjectOnGround(actor)) {
-		angle_t dustang = ((P_RandomRange(0, 7)*ANGLE_45)>>ANGLETOFINESHIFT) & FINEMASK;
-		mobj_t *dust = P_SpawnMobj(actor->x + 96 * FixedMul(scale, FINECOSINE(dustang)), actor->y + 96 * FixedMul(scale, FINESINE(dustang)), actor->z, MT_ARIDDUST);
-		P_SetMobjState(dust, dust->info->spawnstate + P_RandomRange(0, 2));
-		dust->destscale = scale * 3;
-		P_SetScale(dust, dust->destscale);
-	}
-
-	actor->extravalue1++;
-	if (actor->extravalue1 == 12) {
-		size_t i = 0;
-		actor->extravalue1 = 0;
-
-		//Create a set of items for the rising dust column
-		for (; i <= 3; i++) {
-			fixed_t fa = (ANGLE_90*i) >> ANGLETOFINESHIFT;
-			fixed_t px = actor->x + 70 * FixedMul(scale, FINECOSINE(fa));
-			fixed_t py = actor->y + 70 * FixedMul(scale, FINESINE(fa));
-			fixed_t pz = actor->z;
-
-			layer = P_SpawnMobj(px, py, pz, MT_DUSTLAYER);
-			layer->momz = 5 * scale;
-			layer->angle = ANGLE_90 + ANGLE_90*i;
-			layer->extravalue1 = TICRATE * 3;
-
-			//Chain them
-			P_SetTarget(&layer->tracer, actor->tracer);
-			P_SetTarget(&actor->tracer, layer);
-		}
-	}
-
-	//The physics are handled here.
-	yh = (unsigned)(actor->y + radius - bmaporgy) >> MAPBLOCKSHIFT;
-	yl = (unsigned)(actor->y - radius - bmaporgy) >> MAPBLOCKSHIFT;
-	xh = (unsigned)(actor->x + radius - bmaporgx) >> MAPBLOCKSHIFT;
-	xl = (unsigned)(actor->x - radius - bmaporgx) >> MAPBLOCKSHIFT;
-
-	BMBOUNDFIX(xl, xh, yl, yh);
-
-	dustdevil = actor;
-
-	for (bx = xl; bx <= xh; bx++)
-		for (by = yl; by <= yh; by++)
-			P_BlockThingsIterator(bx, by, PIT_DustDevilLaunch);
-
-	//Whirlwind sound effect.
-	if (leveltime % 70 == 0)
-		S_StartSound(actor, sfx_s3kcel);
-}
-
 // stuff used by A_TNTExplode
 static mobj_t *barrel;
 static fixed_t exploderadius;
@@ -15338,7 +14689,7 @@ void A_RolloutRock(mobj_t *actor)
 	if (!(actor->flags & MF_PUSHABLE) || (actor->movecount != 1)) // if being ridden or haven't moved, don't disappear
 		actor->fuse = actor->info->painchance;
 	else if (actor->fuse < 2*TICRATE)
-		actor->flags2 ^= MF2_DONTDRAW;
+		actor->drawflags ^= MFD_DONTDRAW;
 
 }
 

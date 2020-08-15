@@ -4011,7 +4011,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
 	cur->hnext = P_SpawnMobj(sign->x, sign->y, sign->z, MT_SIGN_PIECE);
 	P_SetTarget(&cur->hnext->target, sign);
 	cur->hnext->skin = pmo->skin;
-	P_SetMobjState(cur->hnext, S_PLAY_SIGN);
+	P_SetMobjState(cur->hnext, S_KART_SIGN);
 	cur->hnext->extravalue1 = 7;
 	cur->hnext->extravalue2 = 0;
 
@@ -4909,15 +4909,7 @@ DoneSection2:
 				player->powers[pw_carry] = CR_ZOOMTUBE;
 				player->speed = speed;
 
-				player->pflags |= PF_SPINNING;
-				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
-				player->climbing = 0;
-
-				if (player->mo->state-states != S_PLAY_ROLL)
-				{
-					P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
-					S_StartSound(player->mo, sfx_spin);
-				}
+				player->pflags &= ~(PF_SLIDING);
 			}
 			break;
 

@@ -621,7 +621,7 @@ static int lib_pSpawnLockOn(lua_State *L)
 	{
 		mobj_t *visual = P_SpawnMobj(lockon->x, lockon->y, lockon->z, MT_LOCKON); // positioning, flip handled in P_SceneryThinker
 		P_SetTarget(&visual->target, lockon);
-		visual->flags2 |= MF2_DONTDRAW;
+		visual->drawflags |= MFD_DONTDRAW;
 		P_SetMobjStateNF(visual, state);
 	}
 	return 0;
@@ -1455,31 +1455,6 @@ static int lib_pEarthquake(lua_State *L)
 	if (!inflictor || !source)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_Earthquake(inflictor, source, radius);
-	return 0;
-}
-
-static int lib_pHomingAttack(lua_State *L)
-{
-	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *enemy = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	NOHUD
-	INLEVEL
-	if (!source || !enemy)
-		return LUA_ErrInvalid(L, "mobj_t");
-	lua_pushboolean(L, P_HomingAttack(source, enemy));
-	return 1;
-}
-
-static int lib_pTelekinesis(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	fixed_t thrust = luaL_checkfixed(L, 2);
-	fixed_t range = luaL_checkfixed(L, 3);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_Telekinesis(player, thrust, range);
 	return 0;
 }
 
@@ -4083,9 +4058,6 @@ static luaL_Reg lib[] = {
 	{"P_LookForEnemies",lib_pLookForEnemies},
 	{"P_NukeEnemies",lib_pNukeEnemies},
 	{"P_Earthquake",lib_pEarthquake},
-	{"P_HomingAttack",lib_pHomingAttack},
-	//{"P_SuperReady",lib_pSuperReady},
-	{"P_Telekinesis",lib_pTelekinesis},
 	{"P_SwitchShield",lib_pSwitchShield},
 
 	// p_map

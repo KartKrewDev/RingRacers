@@ -3125,10 +3125,6 @@ static actionpointer_t actionpointers[] =
 	{{A_Explode},                "A_EXPLODE"},
 	{{A_Pain},                   "A_PAIN"},
 	{{A_Fall},                   "A_FALL"},
-	{{A_MonitorPop},             "A_MONITORPOP"},
-	{{A_GoldMonitorPop},         "A_GOLDMONITORPOP"},
-	{{A_GoldMonitorRestore},     "A_GOLDMONITORRESTORE"},
-	{{A_GoldMonitorSparkle},     "A_GOLDMONITORSPARKLE"},
 	{{A_Look},                   "A_LOOK"},
 	{{A_Chase},                  "A_CHASE"},
 	{{A_FaceStabChase},          "A_FACESTABCHASE"},
@@ -3158,7 +3154,6 @@ static actionpointer_t actionpointers[] =
 	{{A_AttractChase},           "A_ATTRACTCHASE"},
 	{{A_DropMine},               "A_DROPMINE"},
 	{{A_FishJump},               "A_FISHJUMP"},
-	{{A_ThrownRing},             "A_THROWNRING"},
 	{{A_SetSolidSteam},          "A_SETSOLIDSTEAM"},
 	{{A_UnsetSolidSteam},        "A_UNSETSOLIDSTEAM"},
 	{{A_OverlayThink},           "A_OVERLAYTHINK"},
@@ -3223,7 +3218,6 @@ static actionpointer_t actionpointers[] =
 	{{A_VultureBlast},           "A_VULTUREBLAST"},
 	{{A_VultureFly},             "A_VULTUREFLY"},
 	{{A_SkimChase},              "A_SKIMCHASE"},
-	{{A_1upThinker},             "A_1UPTHINKER"},
 	{{A_SkullAttack},            "A_SKULLATTACK"},
 	{{A_LobShot},                "A_LOBSHOT"},
 	{{A_FireShot},               "A_FIRESHOT"},
@@ -3357,7 +3351,6 @@ static actionpointer_t actionpointers[] =
 	{{A_Boss5MakeJunk},          "A_BOSS5MAKEJUNK"},
 	{{A_LookForBetter},          "A_LOOKFORBETTER"},
 	{{A_Boss5BombExplode},       "A_BOSS5BOMBEXPLODE"},
-	{{A_DustDevilThink},         "A_DUSTDEVILTHINK"},
 	{{A_TNTExplode},             "A_TNTEXPLODE"},
 	{{A_DebrisRandom},           "A_DEBRISRANDOM"},
 	{{A_TrainCameo},             "A_TRAINCAMEO"},
@@ -5305,48 +5298,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	// technically the player goes here but it's an infinite tic state
 	"S_OBJPLACE_DUMMY",
-
-	// 1-Up Box Sprites overlay (uses player sprite)
-	"S_PLAY_BOX1",
-	"S_PLAY_BOX2",
-	"S_PLAY_ICON1",
-	"S_PLAY_ICON2",
-	"S_PLAY_ICON3",
-
-	// Level end sign overlay (uses player sprite)
-	"S_PLAY_SIGN",
-
-	// NiGHTS character (uses player sprite)
-	"S_PLAY_NIGHTS_TRANS1",
-	"S_PLAY_NIGHTS_TRANS2",
-	"S_PLAY_NIGHTS_TRANS3",
-	"S_PLAY_NIGHTS_TRANS4",
-	"S_PLAY_NIGHTS_TRANS5",
-	"S_PLAY_NIGHTS_TRANS6",
-	"S_PLAY_NIGHTS_STAND",
-	"S_PLAY_NIGHTS_FLOAT",
-	"S_PLAY_NIGHTS_FLY",
-	"S_PLAY_NIGHTS_DRILL",
-	"S_PLAY_NIGHTS_STUN",
-	"S_PLAY_NIGHTS_PULL",
-	"S_PLAY_NIGHTS_ATTACK",
-
-	// c:
-	"S_TAILSOVERLAY_STAND",
-	"S_TAILSOVERLAY_0DEGREES",
-	"S_TAILSOVERLAY_PLUS30DEGREES",
-	"S_TAILSOVERLAY_PLUS60DEGREES",
-	"S_TAILSOVERLAY_MINUS30DEGREES",
-	"S_TAILSOVERLAY_MINUS60DEGREES",
-	"S_TAILSOVERLAY_RUN",
-	"S_TAILSOVERLAY_FLY",
-	"S_TAILSOVERLAY_TIRE",
-	"S_TAILSOVERLAY_PAIN",
-	"S_TAILSOVERLAY_GASP",
-	"S_TAILSOVERLAY_EDGE",
-
-	// [:
-	"S_JETFUMEFLASH",
 
 	// Blue Crawla
 	"S_POSS_STND",
@@ -10502,8 +10453,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_CDTREEB",
 
 	// Daytona Speedway
-	"MT_PINETREE",
-	"MT_PINETREE_SIDE",
+	"MT_DAYTONAPINETREE",
+	"MT_DAYTONAPINETREE_SIDE",
 
 	// Egg Zeppelin
 	"MT_EZZPROPELLER",

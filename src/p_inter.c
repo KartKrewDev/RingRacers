@@ -268,7 +268,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
-			P_KillMobj(special, toucher, toucher);
+			P_KillMobj(special, toucher, toucher, 0);
 			break;
 		case MT_KARMAHITBOX:
 			if (!special->target->player)
@@ -463,7 +463,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				|| player->kartstuff[k_growshrinktimer] > 0
 				|| player->kartstuff[k_flamedash] > 0)
 			{
-				P_KillMobj(special, toucher, toucher);
+				P_KillMobj(special, toucher, toucher, 0);
 				return;
 			}
 
@@ -772,10 +772,10 @@ void P_CheckTimeLimit(void)
 					P_RespawnBattleBoxes(); // FORCE THESE TO BE RESPAWNED FOR THIS!!!!!!!
 
 					// Find us an item box to center on.
-					for (th = thinkercap.next; th != &thinkercap; th = th->next)
+					for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 					{
 						mobj_t *thismo;
-						if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+						if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 							continue;
 						thismo = (mobj_t *)th;
 
@@ -1457,7 +1457,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		mobj_t *cur = target->hnext;
 		while (cur && !P_MobjWasRemoved(cur))
 		{
-			P_KillMobj(cur, inflictor, source);
+			P_KillMobj(cur, inflictor, source, 0);
 			cur = cur->hnext;
 		}
 	}
@@ -1651,7 +1651,7 @@ static void P_KillPlayer(player_t *player, mobj_t *source, INT32 damage)
 	P_ResetPlayer(player);
 
 	if (!player->spectator)
-		player->mo->flags2 &= ~MF2_DONTDRAW;
+		player->mo->drawflags &= ~MFD_DONTDRAW;
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
@@ -1708,7 +1708,7 @@ void P_RemoveShield(player_t *player)
 	}
 	else
 	{ // Second layer shields
-		if (((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER) && !(player->powers[pw_super] || (mariomode && player->powers[pw_invulnerability])))
+		if (((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER) && !player->powers[pw_super])
 		{
 			player->mo->color = player->skincolor;
 			G_GhostAddColor((INT32) (player - players), GHC_NORMAL);

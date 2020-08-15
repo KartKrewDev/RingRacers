@@ -4667,7 +4667,13 @@ static void HWR_DrawSprites(void)
 {
 	UINT32 i;
 	boolean skipshadow = false; // skip shadow if it was drawn already for a linkdraw sprite encountered earlier in the list
+
+#ifdef BAD_MODEL_OPTIONS
 	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_glmodellighting.value);
+#else
+	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, false);
+#endif
+
 	for (i = 0; i < gl_visspritecount; i++)
 	{
 		gl_vissprite_t *spr = gl_vsprorder[i];
@@ -6088,8 +6094,11 @@ consvar_t cv_glcoronasize = {"gr_coronasize", "1", CV_SAVE|CV_FLOAT, 0, NULL, 0,
 #endif
 
 consvar_t cv_glmodels = {"gr_models", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+#ifdef BAD_MODEL_OPTIONS
 consvar_t cv_glmodelinterpolation = {"gr_modelinterpolation", "Sometimes", CV_SAVE, grmodelinterpolation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_glmodellighting = {"gr_modellighting", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+#endif
 
 consvar_t cv_glshearing = {"gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_glspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -6130,8 +6139,11 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_glcoronas);
 #endif
 
+#ifdef BAD_MODEL_OPTIONS
 	CV_RegisterVar(&cv_glmodellighting);
 	CV_RegisterVar(&cv_glmodelinterpolation);
+#endif
+
 	CV_RegisterVar(&cv_glmodels);
 
 	CV_RegisterVar(&cv_glskydome);

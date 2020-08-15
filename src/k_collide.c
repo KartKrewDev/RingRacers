@@ -64,7 +64,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 			t2->z += t2->height;
 
 		S_StartSound(t2, t2->info->deathsound);
-		P_KillMobj(t2, t1, t1);
+		P_KillMobj(t2, t1, t1, 0);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
 		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
@@ -77,7 +77,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	{
 		damageitem = true;
 		// Bomb death
-		P_KillMobj(t2, t1, t1);
+		P_KillMobj(t2, t1, t1, 0);
 	}
 	else if (t2->flags & MF_SPRING && (t1->type != MT_ORBINAUT_SHIELD && t1->type != MT_JAWZ_SHIELD))
 	{
@@ -100,7 +100,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 			t1->z += t1->height;
 
 		S_StartSound(t1, t1->info->deathsound);
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, 0);
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
 		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
@@ -165,7 +165,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 			t2->z += t2->height;
 
 		S_StartSound(t2, t2->info->deathsound);
-		P_KillMobj(t2, t1, t1);
+		P_KillMobj(t2, t1, t1, 0);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
 		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
@@ -190,7 +190,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 			t1->z += t1->height;
 
 		S_StartSound(t1, t1->info->deathsound);
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, 0);
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
 		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
@@ -237,7 +237,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
-			P_KillMobj(t1, t2, t2);
+			P_KillMobj(t1, t2, t2, 0);
 			return true;
 		}
 		else
@@ -289,7 +289,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		// Bomb punting
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
 			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
-			P_KillMobj(t1, t2, t2);
+			P_KillMobj(t1, t2, t2, 0);
 		else
 			K_PuntMine(t1, t2);
 	}
@@ -297,7 +297,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
 	{
 		// Bomb death
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, 0);
 
 		// Other Item Damage
 		if (t2->eflags & MFE_VERTICALFLIP)
@@ -306,7 +306,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 			t2->z += t2->height;
 
 		S_StartSound(t2, t2->info->deathsound);
-		P_KillMobj(t2, t1, t1);
+		P_KillMobj(t2, t1, t1, 0);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
 		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
@@ -314,7 +314,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Bomb death
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, 0);
 		// Shootable damage
 		P_DamageMobj(t2, t1, t1->target, 1, 0);
 	}
@@ -359,14 +359,14 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 		HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[t2->player-players]));
 		I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[t2->player-players]);
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_INSTAKILL);
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, 0);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
-		P_KillMobj(t2, t2, t1->target);
+		P_KillMobj(t2, t2, t1->target, 0);
 		// This item damage
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, 0);
 	}
 
 	return true;
@@ -394,7 +394,7 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 		return false;
 
 	if (t1->health)
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, 0);
 
 	/*if (t2->player && (t2->player->kartstuff[k_invincibilitytimer] > 0
 		|| t2->player->kartstuff[k_growshrinktimer] > 0))

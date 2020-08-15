@@ -57,10 +57,6 @@
 
 #define AIMINGTOSLOPE(aiming) FINESINE((aiming>>ANGLETOFINESHIFT) & FINEMASK)
 
-#define twodlevel (maptol & TOL_2D)
-
-#define mariomode (maptol & TOL_MARIO)
-
 #define P_GetPlayerViewHeight(player) (41*player->mo->height/48)
 
 typedef enum
@@ -208,7 +204,6 @@ void P_DoTimeOver(player_t *player);
 void P_InstaThrust(mobj_t *mo, angle_t angle, fixed_t move);
 fixed_t P_ReturnThrustX(mobj_t *mo, angle_t angle, fixed_t move);
 fixed_t P_ReturnThrustY(mobj_t *mo, angle_t angle, fixed_t move);
-void P_InstaThrustEvenIn2D(mobj_t *mo, angle_t angle, fixed_t move);
 
 mobj_t *P_LookForFocusTarget(player_t *player, mobj_t *exclude, SINT8 direction, UINT8 lockonflags);
 

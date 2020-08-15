@@ -142,15 +142,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"maptol")) {
 		lua_pushinteger(L, maptol);
 		return 1;
-	} else if (fastcmp(word,"ultimatemode")) {
-		lua_pushboolean(L, ultimatemode != 0);
-		return 1;
-	} else if (fastcmp(word,"mariomode")) {
-		lua_pushboolean(L, mariomode != 0);
-		return 1;
-	} else if (fastcmp(word,"twodlevel")) {
-		lua_pushboolean(L, twodlevel != 0);
-		return 1;
 	} else if (fastcmp(word,"circuitmap")) {
 		lua_pushboolean(L, circuitmap);
 		return 1;

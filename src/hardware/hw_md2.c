@@ -1124,7 +1124,7 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT
 static boolean HWR_AllowModel(mobj_t *mobj)
 {
 	// Signpost overlay. Not needed.
-	if (mobj->state-states == S_PLAY_SIGN)
+	if (mobj->state-states == S_KART_SIGN)
 		return false;
 
 	// Otherwise, render the model.
@@ -1133,15 +1133,20 @@ static boolean HWR_AllowModel(mobj_t *mobj)
 
 static boolean HWR_CanInterpolateModel(mobj_t *mobj, model_t *model)
 {
+	// SRB2Kart: Interpoleration should ALWAYS be up to the modeler.
+#ifdef BAD_MODEL_OPTIONS
 	if (cv_glmodelinterpolation.value == 2) // Always interpolate
 		return true;
+#endif
 	return model->interpolate[(mobj->frame & FF_FRAMEMASK)];
 }
 
 static boolean HWR_CanInterpolateSprite2(modelspr2frames_t *spr2frame)
 {
+#ifdef BAD_MODEL_OPTIONS
 	if (cv_glmodelinterpolation.value == 2) // Always interpolate
 		return true;
+#endif
 	return spr2frame->interpolate;
 }
 
@@ -1472,7 +1477,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 #ifdef USE_MODEL_NEXTFRAME
 #define INTERPOLERATION_LIMIT TICRATE/4
-		if (cv_glmodelinterpolation.value && tics <= durs && tics <= INTERPOLERATION_LIMIT)
+		if (
+#ifdef BAD_MODEL_OPTIONS
+			cv_glmodelinterpolation.value &&
+#endif
+			tics <= durs && tics <= INTERPOLERATION_LIMIT)
 		{
 			if (durs > INTERPOLERATION_LIMIT)
 				durs = INTERPOLERATION_LIMIT;
@@ -1505,8 +1514,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				}
 				else
 				{
-					if (spr->mobj->state->nextstate != S_NULL && states[spr->mobj->state->nextstate].sprite != SPR_NULL
-					&& !(spr->mobj->player && (spr->mobj->state->nextstate == S_PLAY_WAIT) && spr->mobj->state == &states[S_PLAY_STND]))
+					if (spr->mobj->state->nextstate != S_NULL && states[spr->mobj->state->nextstate].sprite != SPR_NULL)
 						nextFrame = (states[spr->mobj->state->nextstate].frame & FF_FRAMEMASK) % mod;
 				}
 			}

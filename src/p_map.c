@@ -362,7 +362,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		// Horizontal speed is used as a minimum thrust, not a direct replacement
 		finalSpeed = max(objectSpeed, finalSpeed);
 
-		P_InstaThrustEvenIn2D(object, finalAngle, finalSpeed);
+		P_InstaThrust(object, finalAngle, finalSpeed);
 	}
 
 	// Re-solidify
@@ -425,15 +425,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			// limit the speed if too high
 			if (flipval*object->momz > FixedMul(speed, spring->scale))
 				object->momz = flipval*FixedMul(speed, spring->scale);
-
-			/* // SRB2kart - don't need state change
-			if (p && !p->powers[pw_tailsfly]) // doesn't reset anim for Tails' flight
-			{
-				P_ResetPlayer(p);
-				if (p->panim != PA_FALL)
-					P_SetPlayerMobjState(object, S_PLAY_FALL);
-			}
-			*/
 			break;
 		case MT_STEAM: // Steam
 			if (zdist > FixedMul(16*FRACUNIT, spring->scale))
@@ -452,15 +443,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			}
 			else
 				object->momz = flipval*FixedMul(speed, FixedSqrt(FixedMul(spring->scale, object->scale))); // scale the speed with both objects' scales, just like with springs!
-
-			/* // SRB2kart - don't need state change
-			if (p)
-			{
-				P_ResetPlayer(p);
-				if (p->panim != PA_FALL)
-					P_SetPlayerMobjState(object, S_PLAY_FALL);
-			}
-			*/
 			break;
 		default:
 			break;
@@ -1321,7 +1303,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 		if (thing->type == MT_FAN || thing->type == MT_STEAM)
 			P_DoFanAndGasJet(thing, tmthing);
-		else if (thing->flags & MF_SPRING && tmthing->player->powers[pw_carry] != CR_MINECART)
+		else if (thing->flags & MF_SPRING)
 		{
 			if ( thing->z <= tmthing->z + tmthing->height
 			&& tmthing->z <= thing->z + thing->height)
@@ -1415,9 +1397,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
 			{
 				if (thing->type == MT_BLUEROBRA_JOINT)
-					P_KillMobj(thing->target, tmthing, tmthing);
+					P_KillMobj(thing->target, tmthing, tmthing, 0);
 				else
-					P_KillMobj(thing, tmthing, tmthing);
+					P_KillMobj(thing, tmthing, tmthing, 0);
 				return true;
 			}
 			else
@@ -1440,7 +1422,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->player->kartstuff[k_invincibilitytimer] > 0
 				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
 			{
-				P_KillMobj(thing, tmthing, tmthing);
+				P_KillMobj(thing, tmthing, tmthing, 0);
 				return true; // kill
 			}
 
@@ -1471,7 +1453,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->player->kartstuff[k_invincibilitytimer] > 0
 				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
 			{
-				P_KillMobj(thing, tmthing, tmthing);
+				P_KillMobj(thing, tmthing, tmthing, 0);
 				return true;
 			}
 
@@ -2299,47 +2281,38 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 {
 	subsector_t *s = R_PointInSubsector(x, y);
 	boolean retval = true;
-	boolean itsatwodlevel = false;
+	
 	UINT8 i;
 
 	floatok = false;
 
-	if (twodlevel)
-		itsatwodlevel = true;
-	else
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		for (i = 0; i <= r_splitscreen; i++)
+		if (thiscam == &camera[i])
 		{
-			if (thiscam == &camera[i] && players[displayplayers[i]].mo
-				&& (players[displayplayers[i]].mo->flags2 & MF2_TWOD))
-			{
-				itsatwodlevel = true;
-				break;
-			}
+			// i is now splitscreen cam num
+			break;
 		}
 	}
 
-	if (!itsatwodlevel && players[displayplayers[0]].mo)
+	if (players[displayplayers[i]].mo)
 	{
 		fixed_t tryx = thiscam->x;
 		fixed_t tryy = thiscam->y;
 
-		for (i = 0; i <= r_splitscreen; i++)
-		{
 #ifndef NOCLIPCAM
-			if ((thiscam == &camera[i] && (players[displayplayers[i]].pflags & PF_NOCLIP)) || (leveltime < introtime)) // Noclipping player camera noclips too!!
+		if ((players[displayplayers[i]].pflags & PF_NOCLIP) || (leveltime < introtime)) // Noclipping player camera noclips too!!
 #else
-			if (thiscam == &camera[i] && !(players[displayplayers[i]].pflags & PF_GAMETYPEOVER)) // Time Over should not clip through walls
+		if (!(players[displayplayers[i]].pflags & PF_GAMETYPEOVER)) // Time Over should not clip through walls
 #endif
-			{
-				floatok = true;
-				thiscam->floorz = thiscam->z;
-				thiscam->ceilingz = thiscam->z + thiscam->height;
-				thiscam->x = x;
-				thiscam->y = y;
-				thiscam->subsector = s;
-				return true;
-			}
+		{
+			floatok = true;
+			thiscam->floorz = thiscam->z;
+			thiscam->ceilingz = thiscam->z + thiscam->height;
+			thiscam->x = x;
+			thiscam->y = y;
+			thiscam->subsector = s;
+			return true;
 		}
 
 		do {
@@ -2907,7 +2880,6 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 	ffloor_t *oldceilingrover = thing->ceilingrover;
 	boolean onfloor = P_IsObjectOnGround(thing);//(thing->z <= thing->floorz);
 	ffloor_t *rover = NULL;
-	boolean bouncing;
 	boolean hitfloor = false;
 
 	if (thing->flags & MF_NOCLIPHEIGHT)
@@ -2931,9 +2903,7 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 	if (tmfloorz > oldfloorz+thing->height)
 		return true;
 
-	bouncing = thing->player && thing->state-states == S_PLAY_BOUNCE_LANDING && P_IsObjectOnGround(thing);
-
-	if ((onfloor || bouncing) && !(thing->flags & MF_NOGRAVITY) && floormoved)
+	if (onfloor && !(thing->flags & MF_NOGRAVITY) && floormoved)
 	{
 		rover = (thing->eflags & MFE_VERTICALFLIP) ? oldceilingrover : oldfloorrover;
 
@@ -2941,7 +2911,7 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 		// If ~FF_EXISTS, don't set mobj Z.
 		if (!rover || ((rover->flags & FF_EXISTS) && (rover->flags & FF_SOLID)))
 		{
-			hitfloor = bouncing;
+			hitfloor = false;
 			if (thing->eflags & MFE_VERTICALFLIP)
 				thing->pmomz = thing->ceilingz - (thing->z + thing->height);
 			else
@@ -3646,16 +3616,8 @@ stairstep:
 
 	P_HitSlideLine(bestslideline); // clip the moves
 
-	if ((twodlevel || (mo->flags2 & MF2_TWOD)) && mo->player)
-	{
-		mo->momx = tmxmove;
-		tmymove = 0;
-	}
-	else
-	{
-		mo->momx = tmxmove;
-		mo->momy = tmymove;
-	}
+	mo->momx = tmxmove;
+	mo->momy = tmymove;
 
 	do {
 		if (tmxmove > mo->radius) {
@@ -3943,14 +3905,8 @@ static boolean PIT_RadiusAttack(mobj_t *thing)
 	if (thing == bombspot) // ignore the bomb itself (Deton fix)
 		return true;
 
-	if (bombsource && thing->type == bombsource->type && !(bombdamagetype & DMG_CANHURTSELF)) // ignore the type of guys who dropped the bomb (Jetty-Syn Bomber or Skim can bomb eachother, but not themselves.)
+	if (bombsource && thing->type == bombsource->type && (bombdamagetype & DMG_CANTHURTSELF)) // ignore the type of guys who dropped the bomb (Jetty-Syn Bomber or Skim can bomb eachother, but not themselves.)
 		return true;
-
-	if (thing->type == MT_MINUS && !(thing->flags & (MF_SPECIAL|MF_SHOOTABLE)) && !bombsightcheck)
-		thing->flags = (thing->flags & ~MF_NOCLIPTHING)|MF_SPECIAL|MF_SHOOTABLE;
-
-	if (thing->type == MT_EGGGUARD && thing->tracer) //nuke Egg Guard's shield!
-		P_KillMobj(thing->tracer, bombspot, bombsource, bombdamagetype);
 
 	if ((thing->flags & (MF_MONITOR|MF_SHOOTABLE)) != MF_SHOOTABLE)
 		return true;

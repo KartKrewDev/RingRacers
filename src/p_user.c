@@ -108,20 +108,10 @@ void P_Thrust(mobj_t *mo, angle_t angle, fixed_t move)
 	angle >>= ANGLETOFINESHIFT;
 
 	mo->momx += FixedMul(move, FINECOSINE(angle));
-
-	if (!(twodlevel || (mo->flags2 & MF2_TWOD)))
-		mo->momy += FixedMul(move, FINESINE(angle));
-}
-
-#if 0
-static inline void P_ThrustEvenIn2D(mobj_t *mo, angle_t angle, fixed_t move)
-{
-	angle >>= ANGLETOFINESHIFT;
-
-	mo->momx += FixedMul(move, FINECOSINE(angle));
 	mo->momy += FixedMul(move, FINESINE(angle));
 }
 
+#if 0
 static inline void P_VectorInstaThrust(fixed_t xa, fixed_t xb, fixed_t xc, fixed_t ya, fixed_t yb, fixed_t yc,
 	fixed_t za, fixed_t zb, fixed_t zc, fixed_t momentum, mobj_t *mo)
 {
@@ -165,17 +155,7 @@ void P_InstaThrust(mobj_t *mo, angle_t angle, fixed_t move)
 	angle >>= ANGLETOFINESHIFT;
 
 	mo->momx = FixedMul(move, FINECOSINE(angle));
-
-	if (!(twodlevel || (mo->flags2 & MF2_TWOD)))
-		mo->momy = FixedMul(move,FINESINE(angle));
-}
-
-void P_InstaThrustEvenIn2D(mobj_t *mo, angle_t angle, fixed_t move)
-{
-	angle >>= ANGLETOFINESHIFT;
-
-	mo->momx = FixedMul(move, FINECOSINE(angle));
-	mo->momy = FixedMul(move, FINESINE(angle));
+	mo->momy = FixedMul(move,FINESINE(angle));
 }
 
 // Returns a location (hard to explain - go see how it is used)
@@ -349,7 +329,7 @@ void P_GiveEmerald(boolean spawnObj)
 			if (i == pnum)
 				continue;
 
-			emmo->flags2 |= MF2_DONTDRAW;
+			emmo->flags2 |= MFD_DONTDRAW;
 		}
 	}
 }
@@ -463,7 +443,7 @@ boolean P_PlayerInPain(player_t *player)
 	if (!(player->pflags & PF_SLIDING) && player->mo->state == &states[player->mo->info->painstate] && player->powers[pw_flashing])
 		return true;
 
-	if (player->mo->state == &states[S_PLAY_STUN])
+	if (player->mo->state == &states[S_KART_SQUISH])
 		return true;
 
 	return false;
@@ -559,8 +539,6 @@ void P_PlayLivesJingle(player_t *player)
 
 	if (use1upSound || cv_1upsound.value)
 		S_StartSound(NULL, sfx_oneup);
-	else if (mariomode)
-		S_StartSound(NULL, sfx_marioa);
 	else
 	{
 		P_PlayJingle(player, JT_1UP);
@@ -2434,28 +2412,18 @@ void P_MovePlayer(player_t *player)
 	K_DriftDustHandling(player->mo);
 
 	// Crush test...
-	if ((player->mo->ceilingz - player->mo->floorz < player->mo->height)
-		&& !(player->mo->flags & MF_NOCLIP))
+	if ((player->mo->ceilingz - player->mo->floorz < player->mo->height) && !(player->mo->flags & MF_NOCLIP))
 	{
-		/* // SRB2kart - no, we're not making the playerspin
-		if ((player->charability2 == CA2_SPINDASH) && !(player->pflags & PF_SPINNING))
+		if ((netgame || multiplayer) && player->spectator)
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_SPECTATOR); // Respawn crushed spectators
+		else
 		{
-			player->pflags |= PF_SPINNING;
-			P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
+			K_SquishPlayer(player, NULL, NULL); // SRB2kart - we don't kill when squished, we squish when squished.
+			// P_DamageMobj(player->mo, NULL, NULL, 1, DMG_CRUSHED);
 		}
-		else */if (player->mo->ceilingz - player->mo->floorz < player->mo->height)
-		{
-			if ((netgame || multiplayer) && player->spectator)
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_SPECTATOR); // Respawn crushed spectators
-			else
-			{
-				K_SquishPlayer(player, NULL, NULL); // SRB2kart - we don't kill when squished, we squish when squished.
-				// P_DamageMobj(player->mo, NULL, NULL, 1, DMG_CRUSHED);
-			}
 
-			if (player->playerstate == PST_DEAD)
-				return;
-		}
+		if (player->playerstate == PST_DEAD)
+			return;
 	}
 
 #ifdef FLOORSPLATS
@@ -3728,7 +3696,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (player->playerstate != PST_DEAD && !((player->pflags & PF_NIGHTSMODE) && player->exiting))
 		angle += (focusaiming < ANGLE_180 ? focusaiming/2 : InvAngle(InvAngle(focusaiming)/2)); // overcomplicated version of '((signed)focusaiming)/2;'
 
-	if (twodlevel || (mo->flags2 & MF2_TWOD) || (!camstill && !timeover)) // Keep the view still...
+	if (!camstill && !timeover) // Keep the view still...
 	{
 		G_ClipAimingPitch((INT32 *)&angle);
 
@@ -4750,9 +4718,7 @@ void P_PlayerThink(player_t *player)
 		player->powers[pw_ignorelatch] = 0;
 
 	//pw_super acts as a timer now
-	if (player->powers[pw_super]
-	&& (player->mo->state < &states[S_PLAY_SUPER_TRANS1]
-	|| player->mo->state > &states[S_PLAY_SUPER_TRANS6]))
+	if (player->powers[pw_super])
 		player->powers[pw_super]++;
 
 	// Flash player after being hit.
@@ -4884,7 +4850,7 @@ void P_PlayerAfterThink(player_t *player)
 	// spectator invisibility and nogravity.
 	if ((netgame || multiplayer) && player->spectator)
 	{
-		player->mo->flags2 |= MF2_DONTDRAW;
+		player->mo->drawflags |= MFD_DONTDRAW;
 		player->mo->flags |= MF_NOGRAVITY;
 	}
 

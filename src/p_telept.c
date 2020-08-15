@@ -140,20 +140,11 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 		// don't run in place after a teleport
 		if (!dontstopmove)
 		{
-			INT32 p;
-			// Search for any players you might be carrying, so you can get them off before they end up being taken with you!
-			for (p = 0; p < MAXPLAYERS; p++)
-				if (playeringame[p] && players[p].mo && players[p].powers[pw_carry] == CR_PLAYER && players[p].mo->tracer == thing)
-				{
-					players[p].powers[pw_carry] = CR_NONE;
-					P_SetTarget(&players[p].mo->tracer, NULL);
-					break;
-				}
 			thing->player->cmomx = thing->player->cmomy = 0;
 			thing->player->rmomx = thing->player->rmomy = 0;
 			thing->player->speed = 0;
 			P_ResetPlayer(thing->player);
-			P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
+			P_SetPlayerMobjState(thing, S_KART_STILL); // SRB2kart - was S_PLAY_STND
 
 			thing->reactiontime = TICRATE/2; // don't move for about half a second
 			thing->player->drawangle = angle;

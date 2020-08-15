@@ -4331,7 +4331,7 @@ killnext:
 			banana->z += banana->height;
 
 		S_StartSound(banana, banana->info->deathsound);
-		P_KillMobj(banana, inflictor, source);
+		P_KillMobj(banana, inflictor, source, 0);
 
 		P_SetObjectMomZ(banana, 8*FRACUNIT, false);
 		if (inflictor)
@@ -4578,7 +4578,7 @@ void K_DropRocketSneaker(player_t *player)
 		if (shoe->type != MT_ROCKETSNEAKER)
 			return; //woah, not a rocketsneaker, bail! safeguard in case this gets used when you're holding non-rocketsneakers
 
-		shoe->flags2 &= ~MF2_DONTDRAW;
+		shoe->drawflags &= ~MFD_DONTDRAW;
 		shoe->flags &= ~MF_NOGRAVITY;
 		shoe->angle += ANGLE_45;
 
@@ -4615,7 +4615,7 @@ void K_DropKitchenSink(player_t *player)
 	if (player->mo->hnext->type != MT_SINK_SHIELD)
 		return; //so we can just call this function regardless of what is being held
 
-	P_KillMobj(player->mo->hnext, NULL, NULL);
+	P_KillMobj(player->mo->hnext, NULL, NULL, 0);
 
 	P_SetTarget(&player->mo->hnext, NULL);
 }
