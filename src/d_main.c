@@ -1167,13 +1167,7 @@ D_ConvertVersionNumbers (void)
 {
 	/* leave at defaults (0) under DEVELOP */
 #ifndef DEVELOP
-	int major;
-	int minor;
-
-	sscanf(SRB2VERSION, "%d.%d.%d", &major, &minor, &SUBVERSION);
-
-	/* this is stupid */
-	VERSION = ( major * 100 ) + minor;
+	sscanf(SRB2VERSION, "%d.%d", &VERSION, &SUBVERSION);
 #endif
 }
 
