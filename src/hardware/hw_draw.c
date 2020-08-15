@@ -1003,7 +1003,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 
 		intx = (INT32)fx;
 		inty = (INT32)fy;
-		K_AdjustXYWithSnap(&intx, &inty, options, dupx, dupy);
+		K_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
 	}

@@ -25,6 +25,9 @@
 // Uncomment this to enable the OpenGL loading screen
 //#define HWR_LOADING_SCREEN
 
+// SRB2Kart
+#define GLENCORE
+
 // -----------
 // structures
 // -----------
@@ -84,6 +87,9 @@ typedef struct gl_vissprite_s
 extern extrasubsector_t *extrasubsectors;
 extern size_t addsubsector;
 
+void HWR_InitPolyPool(void);
+void HWR_FreePolyPool(void);
+
 // --------
 // hw_cache.c
 // --------
@@ -99,6 +105,7 @@ void HWR_GetPatch(GLPatch_t *gpatch);
 void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap);
 void HWR_MakePatch(patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap);
 void HWR_UnlockCachedPatch(GLPatch_t *gpatch);
+GLPatch_t *HWR_GetPic(lumpnum_t lumpnum);
 void HWR_SetPalette(RGBA_t *palette);
 GLPatch_t *HWR_GetCachedGLPatchPwad(UINT16 wad, UINT16 lump);
 GLPatch_t *HWR_GetCachedGLPatch(lumpnum_t lumpnum);

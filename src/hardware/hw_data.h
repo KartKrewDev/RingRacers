@@ -51,9 +51,11 @@ struct GLMipmap_s
 	UINT16          width;
 	UINT32          downloaded;     // the dll driver have it in there cache ?
 
-	struct	GLMipmap_s		*nextmipmap;
-	struct	GLMipmap_s 		*nextcolormap;
-	const 	UINT8 			*colormap;
+	struct GLMipmap_s    *nextcolormap;
+	const UINT8          *colormap;
+
+	// opengl
+	struct GLMipmap_s *nextmipmap; // opengl : liste of all texture in opengl driver
 };
 typedef struct GLMipmap_s GLMipmap_t;
 

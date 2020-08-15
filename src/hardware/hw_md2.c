@@ -42,6 +42,10 @@
 
 #include "hw_main.h"
 #include "../v_video.h"
+
+// SRB2Kart
+#include "../k_color.h"
+
 #ifdef HAVE_PNG
 
 #ifndef _MSC_VER
@@ -733,7 +737,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 	// TC_METALSONIC includes an actual skincolor translation, on top of its flashing.
 	if (skinnum == TC_METALSONIC)
-		color = SKINCOLOR_COBALT;
+		color = SKINCOLOR_MIDNIGHT;
 
 	if (color != SKINCOLOR_NONE && color < numskincolors)
 	{
@@ -835,7 +839,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			else
 			{
 				// All settings that use skincolors!
-				UINT16 brightness;
+				UINT8 brightness;
 
 				if (translen <= 0)
 				{
@@ -853,9 +857,8 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 					}
 					else
 					{
-						UINT16 imagebright, blendbright;
-						SETBRIGHTNESS(imagebright,image->s.red,image->s.green,image->s.blue);
-						SETBRIGHTNESS(blendbright,blendimage->s.red,blendimage->s.green,blendimage->s.blue);
+						UINT8 imagebright = K_ColorRelativeLuminance(image->s.red, image->s.green, image->s.blue);
+						UINT8 blendbright = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
 						// slightly dumb average between the blend image color and base image colour, usually one or the other will be fully opaque anyway
 						brightness = (imagebright*(255-blendimage->s.alpha))/255 + (blendbright*blendimage->s.alpha)/255;
 					}
@@ -869,7 +872,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 					}
 					else
 					{
-						SETBRIGHTNESS(brightness,blendimage->s.red,blendimage->s.green,blendimage->s.blue);
+						brightness = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
 					}
 				}
 
@@ -903,7 +906,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 						for (i = 0; i < translen; i++)
 						{
 							RGBA_t tempc = V_GetColor(translation[i]);
-							SETBRIGHTNESS(colorbrightnesses[i], tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
+							colorbrightnesses[i] = K_ColorRelativeLuminance(tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
 						}
 
 						for (i = 0; i < translen; i++)
@@ -1001,9 +1004,8 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 				if (skinnum == TC_RAINBOW)
 				{
 					UINT32 tempcolor;
-					UINT16 colorbright;
+					UINT8 colorbright = K_ColorRelativeLuminance(blendcolor.s.red, blendcolor.s.green, blendcolor.s.blue);
 
-					SETBRIGHTNESS(colorbright,blendcolor.s.red,blendcolor.s.green,blendcolor.s.blue);
 					if (colorbright == 0)
 						colorbright = 1; // no dividing by 0 please
 
@@ -1159,6 +1161,8 @@ static boolean HWR_CanInterpolateSprite2(modelspr2frames_t *spr2frame)
 static UINT8 HWR_GetModelSprite2(md2_t *md2, skin_t *skin, UINT8 spr2, player_t *player)
 {
 	UINT8 super = 0, i = 0;
+
+	(void)player;
 
 	if (!md2 || !md2->model || !md2->model->spr2frames || !skin)
 		return 0;
@@ -1413,15 +1417,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			{
 				if (spr->mobj->colorized)
 					skinnum = TC_RAINBOW;
-				else if (spr->mobj->player && spr->mobj->player->dashmode >= DASHMODE_THRESHOLD
-					&& (spr->mobj->player->charflags & SF_DASHMODE)
-					&& ((leveltime/2) & 1))
-				{
-					if (spr->mobj->player->charflags & SF_MACHINE)
-						skinnum = TC_DASHMODE;
-					else
-						skinnum = TC_RAINBOW;
-				}
 				else if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 					skinnum = (INT32)((skin_t*)spr->mobj->skin-skins);
 				else

@@ -1528,8 +1528,6 @@ static void P_CheckBustableBlocks(player_t *player)
 
 					// If it's not an FF_STRONGBUST, you can break if you are spinning (and not jumping)
 					// or you are super
-					// or you are in dashmode with SF_DASHMODE
-					// or you are drilling in NiGHTS
 					// or you are recording for Metal Sonic
 					if (!((player->pflags & PF_SPINNING) && !(player->pflags & PF_JUMPED))
 						&& !(player->powers[pw_super])

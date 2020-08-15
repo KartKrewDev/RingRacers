@@ -3693,7 +3693,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	FSurfaceInfo Surf;
 	const boolean hires = (spr->mobj && spr->mobj->skin && ((skin_t *)spr->mobj->skin)->flags & SF_HIRES);
 	extracolormap_t *colormap;
-	FUINT lightlevel;
+	FUINT lightlevel = 255;
 	FBITFIELD blend = 0;
 	FBITFIELD occlusion;
 	boolean use_linkdraw_hack = false;
@@ -3867,7 +3867,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 				if (brightmode == 2)
 					lightlevel = 128 + (lightlevel>>1);
 			}
-			colormap = list[i].extra_colormap;
+			colormap = *list[i].extra_colormap;
 		}
 
 		if (i + 1 < sector->numlights)
@@ -4078,7 +4078,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	// colormap test
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 255;
+		FUINT lightlevel = 255;
 		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
 
@@ -5406,10 +5406,10 @@ static void HWR_DrawSkyBackground(player_t *player)
 	{
 		FTransform dometransform;
 		const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
-		postimg_t *type;
-		UINT8 i;
+		postimg_t *type = &postimgtype[0];
+		SINT8 i;
 
-		for (i = r_splitscreen; i > 0; i--)
+		for (i = r_splitscreen; i >= 0; i--)
 		{
 			if (player == &players[displayplayers[i]])
 			{
@@ -5636,10 +5636,10 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 {
 	const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
-	postimg_t *type;
-	UINT8 i;
+	postimg_t *type = &postimgtype[0];
+	SINT8 i;
 
-	for (i = r_splitscreen; i > 0; i--)
+	for (i = r_splitscreen; i >= 0; i--)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -5833,14 +5833,14 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 {
 	const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
-	postimg_t *type;
-	UINT8 i;
+	postimg_t *type = &postimgtype[0];
+	SINT8 i;
 
 	const boolean skybox = (skyboxmo[0] && cv_skybox.value); // True if there's a skybox object and skyboxes are on
 
 	FRGBAFloat ClearColor;
 
-	for (i = r_splitscreen; i > 0; i--)
+	for (i = r_splitscreen; i >= 0; i--)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -6063,7 +6063,9 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 //                                                         3D ENGINE COMMANDS
 // ==========================================================================
 
+#ifdef BAD_MODEL_OPTIONS
 static CV_PossibleValue_t grmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
+#endif
 static CV_PossibleValue_t grfakecontrast_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Smooth"}, {0, NULL}};
 static CV_PossibleValue_t grshearing_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Third-person"}, {0, NULL}};
 
@@ -6313,12 +6315,12 @@ INT32 HWR_GetTextureUsed(void)
 
 void HWR_DoPostProcessor(player_t *player)
 {
-	postimg_t *type;
-	UINT8 i;
+	postimg_t *type = &postimgtype[0];
+	SINT8 i;
 
 	HWD.pfnUnSetShader();
 
-	for (i = r_splitscreen; i > 0; i--)
+	for (i = r_splitscreen; i >= 0; i--)
 	{
 		if (player == &players[displayplayers[i]])
 		{
