@@ -1672,94 +1672,6 @@ static void R_InitSpriteLumps(void)
 }
 
 //
-// R_CreateFadeColormaps
-//
-
-static void R_CreateFadeColormaps(void)
-{
-	UINT8 px, fade;
-	RGBA_t rgba;
-	INT32 r, g, b;
-	size_t len, i;
-
-	len = (256 * FADECOLORMAPROWS);
-	fadecolormap = Z_MallocAlign(len*2, PU_STATIC, NULL, 8);
-	for (i = 0; i < len*2; i++)
-		fadecolormap[i] = (i%256);
-
-	// Load in the light tables, now 64k aligned for smokie...
-	{
-		lumpnum_t lump = W_CheckNumForName("FADECMAP");
-		lumpnum_t wlump = W_CheckNumForName("FADEWMAP");
-
-		// to black
-		if (lump != LUMPERROR)
-			W_ReadLumpHeader(lump, fadecolormap, len, 0U);
-		// to white
-		if (wlump != LUMPERROR)
-			W_ReadLumpHeader(wlump, fadecolormap+len, len, 0U);
-
-		// missing "to white" colormap lump
-		if (lump != LUMPERROR && wlump == LUMPERROR)
-			goto makewhite;
-		// missing "to black" colormap lump
-		else if (lump == LUMPERROR && wlump != LUMPERROR)
-			goto makeblack;
-		// both lumps found
-		else if (lump != LUMPERROR && wlump != LUMPERROR)
-			return;
-	}
-
-#define GETCOLOR \
-	px = colormaps[i%256]; \
-	fade = (i/256) * (256 / FADECOLORMAPROWS); \
-	rgba = V_GetMasterColor(px);
-
-	// to black
-	makeblack:
-	for (i = 0; i < len; i++)
-	{
-		// find pixel and fade amount
-		GETCOLOR;
-
-		// subtractive color blending
-		r = rgba.s.red - FADEREDFACTOR*fade/10;
-		g = rgba.s.green - FADEGREENFACTOR*fade/10;
-		b = rgba.s.blue - FADEBLUEFACTOR*fade/10;
-
-		// clamp values
-		if (r < 0) r = 0;
-		if (g < 0) g = 0;
-		if (b < 0) b = 0;
-
-		// find nearest color in palette
-		fadecolormap[i] = NearestColor(r,g,b);
-	}
-
-	// to white
-	makewhite:
-	for (i = len; i < len*2; i++)
-	{
-		// find pixel and fade amount
-		GETCOLOR;
-
-		// additive color blending
-		r = rgba.s.red + FADEREDFACTOR*fade/10;
-		g = rgba.s.green + FADEGREENFACTOR*fade/10;
-		b = rgba.s.blue + FADEBLUEFACTOR*fade/10;
-
-		// clamp values
-		if (r > 255) r = 255;
-		if (g > 255) g = 255;
-		if (b > 255) b = 255;
-
-		// find nearest color in palette
-		fadecolormap[i] = NearestColor(r,g,b);
-	}
-#undef GETCOLOR
-}
-
-//
 // R_InitColormaps
 //
 static void R_InitColormaps(void)
@@ -1773,9 +1685,6 @@ static void R_InitColormaps(void)
 	colormaps = Z_MallocAlign(len * 2, PU_STATIC, NULL, 8); // * 2 for encore
 	W_ReadLump(lump, colormaps);
 	// no need to init encoremap at this stage
-
-	// Make colormap for fades
-	R_CreateFadeColormaps();
 
 	// Init Boom colormaps.
 	R_ClearColormaps();
@@ -1806,9 +1715,6 @@ void R_ReInitColormaps(UINT16 num, lumpnum_t newencoremap)
 	}
 
 	W_ReadLumpHeader(lump, colormaps, W_LumpLength(basecolormaplump), 0U);
-	if (fadecolormap)
-		Z_Free(fadecolormap);
-	R_CreateFadeColormaps();
 
 	// Encore mode.
 	if (newencoremap != LUMPERROR)
@@ -2171,6 +2077,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 	// This code creates the colormap array used by software renderer
 	/////////////////////
 	{
+		double r, g, b, cbrightness;
 		int p;
 		lighttable_t *colormap_p;
 
@@ -2241,7 +2148,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 
 		if (encoremap)
 		{
-			lighttable_t *colormap_p2 = extra_colormaps[mapnum].colormap;
+			lighttable_t *colormap_p2 = lighttable;
 
 			for (p = 0; p < 32; p++)
 			{

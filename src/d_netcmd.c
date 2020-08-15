@@ -4503,7 +4503,12 @@ retryscramble:
 				newteam = (INT16)((M_RandomByte() % 2) + 1);
 				repick = false;
 			}
-			else if (i != 2) // Mystic's secret sauce - ABBA is better than ABAB, so team B doesn't get worse players all around
+			// (i != 2) means it does ABBABABA, instead of ABABABAB.
+			// Team A gets 1st, 4th, 6th, 8th.
+			// Team B gets 2nd, 3rd, 5th, 7th.
+			// So 1st on one team, 2nd/3rd on the other, then alternates afterwards.
+			// Sounds strange on paper, but works really well in practice!
+			else if (i != 2) 
 			{
 				// We will only randomly pick the team for the first guy.
 				// Otherwise, just alternate back and forth, distributing players.

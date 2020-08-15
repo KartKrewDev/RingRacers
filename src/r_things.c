@@ -791,16 +791,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		colfunc = colfuncs[COLDRAWFUNC_TRANSTRANS];
 		dc_transmap = vis->transmap;
 		if (!(vis->cut & SC_PRECIP) && vis->mobj->colorized)
-			dc_translation = R_GetTranslationColormap(TC_RAINBOW, vis->mobj->color, GTC_CACHE);
-		else if (!(vis->cut & SC_PRECIP)
-			&& vis->mobj->player && vis->mobj->player->dashmode >= DASHMODE_THRESHOLD
-			&& (vis->mobj->player->charflags & SF_DASHMODE)
-			&& ((leveltime/2) & 1))
 		{
-			if (vis->mobj->player->charflags & SF_MACHINE)
-				dc_translation = R_GetTranslationColormap(TC_DASHMODE, 0, GTC_CACHE);
-			else
-				dc_translation = R_GetTranslationColormap(TC_RAINBOW, vis->mobj->color, GTC_CACHE);
+			dc_translation = R_GetTranslationColormap(TC_RAINBOW, vis->mobj->color, GTC_CACHE);
 		}
 		else if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // MT_GHOST LOOKS LIKE A PLAYER SO USE THE PLAYER TRANSLATION TABLES. >_>
 		{
@@ -808,7 +800,9 @@ static void R_DrawVisSprite(vissprite_t *vis)
 			dc_translation = R_GetTranslationColormap((INT32)skinnum, vis->mobj->color, GTC_CACHE);
 		}
 		else // Use the defaults
+		{
 			dc_translation = R_GetTranslationColormap(TC_DEFAULT, vis->mobj->color, GTC_CACHE);
+		}
 	}
 	else if (vis->transmap)
 	{
@@ -822,16 +816,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 		// New colormap stuff for skins Tails 06-07-2002
 		if (!(vis->cut & SC_PRECIP) && vis->mobj->colorized)
-			dc_translation = R_GetTranslationColormap(TC_RAINBOW, vis->mobj->color, GTC_CACHE);
-		else if (!(vis->cut & SC_PRECIP)
-			&& vis->mobj->player && vis->mobj->player->dashmode >= DASHMODE_THRESHOLD
-			&& (vis->mobj->player->charflags & SF_DASHMODE)
-			&& ((leveltime/2) & 1))
 		{
-			if (vis->mobj->player->charflags & SF_MACHINE)
-				dc_translation = R_GetTranslationColormap(TC_DASHMODE, 0, GTC_CACHE);
-			else
-				dc_translation = R_GetTranslationColormap(TC_RAINBOW, vis->mobj->color, GTC_CACHE);
+			dc_translation = R_GetTranslationColormap(TC_RAINBOW, vis->mobj->color, GTC_CACHE);
 		}
 		else if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // This thing is a player!
 		{
@@ -839,7 +825,9 @@ static void R_DrawVisSprite(vissprite_t *vis)
 			dc_translation = R_GetTranslationColormap((INT32)skinnum, vis->mobj->color, GTC_CACHE);
 		}
 		else // Use the defaults
+		{
 			dc_translation = R_GetTranslationColormap(TC_DEFAULT, vis->mobj->color, GTC_CACHE);
+		}
 	}
 	else if (vis->mobj->sprite == SPR_PLAY) // Looks like a player, but doesn't have a color? Get rid of green sonic syndrome.
 	{
@@ -1388,8 +1376,8 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	mobj_t *oldthing = thing;
 
-	const fixed_t oldthingxpos = oldthing->x + oldthing->sprxoff;
-	const fixed_t oldthingypos = oldthing->y + oldthing->spryoff;
+	//const fixed_t oldthingxpos = oldthing->x + oldthing->sprxoff;
+	//const fixed_t oldthingypos = oldthing->y + oldthing->spryoff;
 	const fixed_t oldthingzpos = oldthing->z + oldthing->sprzoff;
 
 	fixed_t tr_x, tr_y;

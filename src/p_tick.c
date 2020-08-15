@@ -328,8 +328,6 @@ static inline void P_RunThinkers(void)
 
 }
 
-/*
-
 //
 // P_DoAutobalanceTeams()
 //
@@ -449,7 +447,7 @@ void P_DoTeamscrambling(void)
 		CV_SetValue(&cv_teamscramble, 0);
 }
 
-static inline void P_DoCTFStuff(void)
+static inline void P_DoTeamStuff(void)
 {
 	// Automatic team balance for CTF and team match
 	if (leveltime % (TICRATE * 5) == 0) //only check once per five seconds for the sake of CPU conservation.
@@ -469,8 +467,6 @@ static inline void P_DoCTFStuff(void)
 			P_DoTeamscrambling();
 	}
 }
-
-*/
 
 //
 // P_Ticker
@@ -604,10 +600,8 @@ void P_Ticker(boolean run)
 	if (!(modeattacking && !demo.playback) || leveltime >= starttime - TICRATE*4)
 		timeinmap++;
 
-	/*
 	if (G_GametypeHasTeams())
-		P_DoCTFStuff();
-	*/
+		P_DoTeamStuff();
 
 	if (run)
 	{

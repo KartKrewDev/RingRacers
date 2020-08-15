@@ -1058,8 +1058,7 @@ static void K_DebtStingPlayer(player_t *player, INT32 length)
 	player->kartstuff[k_spinouttimer] = length;
 	player->kartstuff[k_wipeoutslow] = min(length-1, wipeoutslowtime+1);
 
-	if (player->mo->state != &states[S_KART_SPIN])
-		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
+	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 	K_DropHnextList(player, false);
 	return;
@@ -2475,8 +2474,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 	P_PlayerRingBurst(player, 5);
 	K_PlayPainSound(player->mo);
 
-	if (player->mo->state != &states[S_KART_SPIN])
-		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
+	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 	player->kartstuff[k_instashield] = 15;
 	if (cv_kartdebughuddrop.value && !modeattacking)
@@ -2725,8 +2723,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	if (player->mo->eflags & MFE_UNDERWATER)
 		player->mo->momz = (117 * player->mo->momz) / 200;
 
-	if (player->mo->state != &states[S_KART_SPIN])
-		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
+	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 	P_PlayRinglossSound(player->mo);
 	P_PlayerRingBurst(player, 5);
@@ -3561,7 +3558,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 
 	if (spawner->player)
 	{
-		if (spawner->player->pflags & PF_SKIDDOWN)
+		if (spawner->player->pflags & PF_WPNDOWN)
 		{
 			anglediff = abs((signed)(spawner->angle - spawner->player->frameangle));
 			if (leveltime % 6 == 0)
@@ -5343,7 +5340,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
 
-	if (!(player->pflags & PF_SKIDDOWN))
+	if (!(player->pflags & PF_WPNDOWN))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;

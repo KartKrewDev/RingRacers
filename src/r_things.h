@@ -69,8 +69,7 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal);
 boolean R_ThingVisible (mobj_t *thing);
 
 boolean R_ThingVisibleWithinDist (mobj_t *thing,
-		fixed_t        draw_dist,
-		fixed_t nights_draw_dist);
+		fixed_t        draw_dist);
 
 boolean R_PrecipThingVisible (precipmobj_t *precipthing,
 		fixed_t precip_draw_dist);

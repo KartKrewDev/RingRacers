@@ -2070,7 +2070,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	boolean followerready;
 	INT32 followerskin;
-	UINT8 followercolor;
+	UINT16 followercolor;
 	mobj_t *follower; // old follower, will probably be removed by the time we're dead but you never know.
 
 	INT32 charflags;

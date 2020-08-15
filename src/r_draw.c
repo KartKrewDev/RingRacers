@@ -215,7 +215,7 @@ UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags
 		{
 			for (i = 0; i < (INT32)(sizeof(translationtablecache) / sizeof(translationtablecache[0])); i++)
 				if (translationtablecache[i] && translationtablecache[i][color])
-					R_GenerateTranslationColormap(translationtablecache[i][color], i>=MAXSKINS ? MAXSKINS-i-1 : i, color);
+					K_GenerateKartColormap(translationtablecache[i][color], i>=MAXSKINS ? MAXSKINS-i-1 : i, color);
 			skincolor_modified[color] = false;
 		}
 	}
@@ -225,7 +225,7 @@ UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags
 	if (!ret)
 	{
 		ret = Z_MallocAlign(NUM_PALETTE_ENTRIES, (flags & GTC_CACHE) ? PU_LEVEL : PU_STATIC, NULL, 8);
-		K_GenerateKartColormap(ret, skinnum, color); //R_GenerateTranslationColormap(ret, skinnum, color);		// SRB2kart
+		K_GenerateKartColormap(ret, skinnum, color); //R_GenerateTranslationColormap(ret, skinnum, color); // SRB2kart
 
 		// Cache the colormap if desired
 		if (flags & GTC_CACHE)

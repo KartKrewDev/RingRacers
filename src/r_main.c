@@ -79,32 +79,6 @@ mobj_t *r_viewmobj;
 
 int r_splitscreen;
 
-// PORTALS!
-// You can thank and/or curse JTE for these.
-UINT8 portalrender;
-sector_t *portalcullsector;
-typedef struct portal_pair
-{
-	INT32 line1;
-	INT32 line2;
-	UINT8 pass;
-	struct portal_pair *next;
-
-	fixed_t viewx;
-	fixed_t viewy;
-	fixed_t viewz;
-	angle_t viewangle;
-
-	INT32 start;
-	INT32 end;
-	INT16 *ceilingclip;
-	INT16 *floorclip;
-	fixed_t *frontscale;
-} portal_pair;
-portal_pair *portal_base, *portal_cap;
-line_t *portalclipline;
-INT32 portalclipstart, portalclipend;
-
 //
 // precalculated math tables
 //
@@ -172,10 +146,12 @@ void SendWeaponPref3(void);
 void SendWeaponPref4(void);
 
 consvar_t cv_tailspickup = {"tailspickup", "On", CV_NETVAR|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_chasecam = {"chasecam", "On", CV_CALL, CV_OnOff, ChaseCam_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_chasecam2 = {"chasecam2", "On", CV_CALL, CV_OnOff, ChaseCam2_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_chasecam3 = {"chasecam3", "On", CV_CALL, CV_OnOff, ChaseCam3_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_chasecam4 = {"chasecam4", "On", CV_CALL, CV_OnOff, ChaseCam4_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t  cv_chasecam[MAXSPLITSCREENPLAYERS] = {
+	{"chasecam", "On", CV_CALL, CV_OnOff, ChaseCam_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"chasecam2", "On", CV_CALL, CV_OnOff, ChaseCam2_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"chasecam3", "On", CV_CALL, CV_OnOff, ChaseCam3_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"chasecam4", "On", CV_CALL, CV_OnOff, ChaseCam4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+};
 
 consvar_t cv_shadow = {"shadow", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_skybox = {"skybox", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -1664,7 +1640,6 @@ void R_RegisterEngineStuff(void)
 		CV_RegisterVar(&cv_cam_height[i]);
 		CV_RegisterVar(&cv_cam_speed[i]);
 		CV_RegisterVar(&cv_cam_rotate[i]);
-		CV_RegisterVar(&cv_cam_rotspeed[i]);
 	}
 
 	CV_RegisterVar(&cv_showhud);

@@ -974,7 +974,7 @@ static void R_Subsector(size_t num)
 				&& ((viewz < heightcheck && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES)))
 				|| (viewz > heightcheck && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
 			{
-				UINT8 newlightlevel;
+				INT32 newlightlevel;
 
 				light = R_GetPlaneLight(frontsector, planecenterz,
 					viewz < heightcheck);
@@ -1010,7 +1010,7 @@ static void R_Subsector(size_t num)
 				&& ((viewz > heightcheck && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES)))
 				|| (viewz < heightcheck && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
 			{
-				UINT8 newlightlevel;
+				INT32 newlightlevel;
 
 				light = R_GetPlaneLight(frontsector, planecenterz, viewz < heightcheck);
 
@@ -1059,12 +1059,12 @@ static void R_Subsector(size_t num)
 				&& polysec->floorheight >= floorcenterz
 				&& (viewz < polysec->floorheight))
 			{
-				UINT8 newlightlevel;
+				INT32 newlightlevel;
 
 				light = R_GetPlaneLight(frontsector, polysec->floorheight, viewz < polysec->floorheight);
 
 				newlightlevel = (light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel);
-				R_PlaneLightOverride(polysec, false, newlightlevel);
+				R_PlaneLightOverride(polysec, false, &newlightlevel);
 
 				ffloor[numffloors].plane = R_FindPlane(polysec->floorheight, polysec->floorpic,
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->floor_xoffs, polysec->floor_yoffs,
@@ -1090,12 +1090,12 @@ static void R_Subsector(size_t num)
 				&& polysec->ceilingheight <= ceilingcenterz
 				&& (viewz > polysec->ceilingheight))
 			{
-				UINT8 newlightlevel;
+				INT32 newlightlevel;
 
 				light = R_GetPlaneLight(frontsector, polysec->floorheight, viewz < polysec->floorheight);
 
 				newlightlevel = (light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel);
-				R_PlaneLightOverride(polysec, true, newlightlevel);
+				R_PlaneLightOverride(polysec, true, &newlightlevel);
 
 				ffloor[numffloors].plane = R_FindPlane(polysec->ceilingheight, polysec->ceilingpic,
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->ceiling_xoffs, polysec->ceiling_yoffs, polysec->ceilingpic_angle-po->angle,

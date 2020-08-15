@@ -1028,7 +1028,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 			}
 			else light = (pl->lightlevel >> LIGHTSEGSHIFT);
 
-	#ifndef NOWATER
+#ifndef NOWATER
 			if (pl->ffloor->flags & FF_RIPPLE)
 			{
 				INT32 top, bottom;
@@ -1036,6 +1036,8 @@ void R_DrawSinglePlane(visplane_t *pl)
 				itswater = true;
 				if (spanfunctype == SPANDRAWFUNC_TRANS)
 				{
+					UINT8 i;
+
 					spanfunctype = SPANDRAWFUNC_WATER;
 
 					// Copy the current scene, ugh
@@ -1048,12 +1050,45 @@ void R_DrawSinglePlane(visplane_t *pl)
 						bottom = vid.height;
 
 					// Only copy the part of the screen we need
-					VID_BlitLinearScreen((splitscreen && viewplayer == &players[secondarydisplayplayer]) ? screens[0] + (top+(vid.height>>1))*vid.width : screens[0]+((top)*vid.width), screens[1]+((top)*vid.width),
-										 vid.width, bottom-top,
-										 vid.width, vid.width);
+					for (i = 0; i <= r_splitscreen; i++)
+					{
+						if (viewplayer == &players[displayplayers[i]])
+						{
+							INT32 scrx = 0;
+							INT32 scry = top;
+							INT32 offset;
+
+							if (r_splitscreen == 1)
+							{
+								if (i & 1)
+								{
+									scry += viewheight;
+								}
+							}
+							else
+							{
+								if (i & 1)
+								{
+									scrx += viewwidth;
+								}
+
+								if (i / 2)
+								{
+									scry += viewheight;
+								}
+							}
+
+							offset = (scry*vid.width) + scrx;
+
+							// No idea if this works
+							VID_BlitLinearScreen(screens[0] + offset, screens[1] + offset,
+												 viewwidth, bottom-top,
+												 vid.width, vid.width);
+						}
+					}
 				}
 			}
-	#endif
+#endif
 		}
 		else
 			light = (pl->lightlevel >> LIGHTSEGSHIFT);

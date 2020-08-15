@@ -55,6 +55,8 @@ UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player)
 {
 	UINT8 super = 0, i = 0;
 
+	(void)player;
+
 	if (!skin)
 		return 0;
 
@@ -74,13 +76,13 @@ UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player)
 
 		switch(spr2)
 		{
-		// Normal special cases.
-		// (none in kart)
+			// Normal special cases.
+			// (none in kart)
 
-		// Use the handy list, that's what it's there for!
-		default:
-			spr2 = spr2defaults[spr2];
-			break;
+			// Use the handy list, that's what it's there for!
+			default:
+				spr2 = spr2defaults[spr2];
+				break;
 		}
 
 		spr2 |= super;
@@ -107,7 +109,6 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	skin->flags = 0;
 
 	strcpy(skin->realname, "Someone");
-	strcpy(skin->hudname, "???");
 
 	skin->starttranscolor = 96;
 	skin->prefcolor = SKINCOLOR_GREEN;
@@ -150,7 +151,7 @@ UINT32 R_GetSkinAvailabilities(void)
 	UINT8 i;
 	UINT32 response = 0;
 
-	for (i = 0; i < MAXUNLOCKABLES; s++)
+	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
 		if (unlockables[i].type == SECRET_SKIN && unlockables[i].unlocked)
 		{
@@ -274,7 +275,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	player_t *player = &players[playernum];
 	skin_t *skin = &skins[skinnum];
 	UINT16 newcolor = 0;
-	UINT8 i;
+	//UINT8 i;
 
 	if (skinnum >= 0 && skinnum < numskins && R_SkinUsable(playernum, skinnum)) // Make sure it exists!
 	{
@@ -359,8 +360,6 @@ static UINT16 W_CheckForSkinMarkerInPwad(UINT16 wadid, UINT16 startlump)
 	}
 	return INT16_MAX; // not found
 }
-
-#define HUDNAMEWRITE(value) STRBUFCPY(skin->hudname, value)
 
 // turn _ into spaces and . into katana dot
 #define SYMBOLCONVERT(name) for (value = name; *value; value++)\
@@ -681,8 +680,8 @@ next_token:
 
 		R_FlushTranslationColormapCache();
 
-		if (!skin->availability) // Safe to print...
-			CONS_Printf(M_GetText("Added skin '%s'\n"), skin->name);
+		CONS_Printf(M_GetText("Added skin '%s'\n"), skin->name);
+
 #ifdef SKINVALUES
 		skin_cons_t[numskins].value = numskins;
 		skin_cons_t[numskins].strvalue = skin->name;
@@ -847,13 +846,11 @@ next_token:
 
 		R_FlushTranslationColormapCache();
 
-		if (!skin->availability) // Safe to print...
-			CONS_Printf(M_GetText("Patched skin '%s'\n"), skin->name);
+		CONS_Printf(M_GetText("Patched skin '%s'\n"), skin->name);
 	}
 	return;
 }
 
-#undef HUDNAMEWRITE
 #undef SYMBOLCONVERT
 
 // SRB2Kart: Followers!

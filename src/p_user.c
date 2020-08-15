@@ -48,7 +48,6 @@
 // SRB2kart
 #include "m_cond.h" // M_UpdateUnlockablesAndExtraEmblems
 #include "k_kart.h"
-#include "k_color.h"	// KartColor_Opposite
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
 #include "k_bot.h"
@@ -232,6 +231,31 @@ void P_CalcHeight(player_t *player)
 
 	// move viewheight
 	pviewheight = P_GetPlayerViewHeight(player); // default eye view height
+
+	if (player->playerstate == PST_LIVE)
+	{
+		player->viewheight += player->deltaviewheight;
+
+		if (player->viewheight > pviewheight)
+		{
+			player->viewheight = pviewheight;
+			player->deltaviewheight = 0;
+		}
+
+		if (player->viewheight < pviewheight/2)
+		{
+			player->viewheight = pviewheight/2;
+			if (player->deltaviewheight <= 0)
+				player->deltaviewheight = 1;
+		}
+
+		if (player->deltaviewheight)
+		{
+			player->deltaviewheight += FixedMul(FRACUNIT/4, mo->scale);
+			if (!player->deltaviewheight)
+				player->deltaviewheight = 1;
+		}
+	}
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 		player->viewz = mo->z + mo->height - player->viewheight - bob;
@@ -518,15 +542,6 @@ void P_AddPlayerScore(player_t *player, UINT32 amount)
 		player->marescore += amount;
 	else
 		player->marescore = MAXSCORE;
-
-	// In team match, all awarded points are incremented to the team's running score.
-	if (gametype == GT_TEAMMATCH)
-	{
-		if (player->ctfteam == 1)
-			redscore += amount;
-		else if (player->ctfteam == 2)
-			bluescore += amount;
-	}
 }
 
 //
@@ -537,7 +552,7 @@ void P_PlayLivesJingle(player_t *player)
 	if (player && !P_IsLocalPlayer(player))
 		return;
 
-	if (use1upSound || cv_1upsound.value)
+	if (use1upSound)
 		S_StartSound(NULL, sfx_oneup);
 	else
 	{
@@ -625,7 +640,7 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 				break;
 
 			case JT_SUPER:  // Super Sonic
-				result = (players[i].powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC));
+				result = (players[i].powers[pw_super]);
 				break;
 
 			case JT_GOVER: // Game Over
@@ -1416,6 +1431,8 @@ boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff)
 {
 	boolean clipmomz;
 
+	(void)dorollstuff;
+
 	I_Assert(player->mo != NULL);
 
 	clipmomz = !(P_CheckDeathPitCollide(player->mo));
@@ -1516,8 +1533,6 @@ static void P_CheckBustableBlocks(player_t *player)
 					// or you are recording for Metal Sonic
 					if (!((player->pflags & PF_SPINNING) && !(player->pflags & PF_JUMPED))
 						&& !(player->powers[pw_super])
-						&& !(((player->charflags & (SF_DASHMODE|SF_MACHINE)) == (SF_DASHMODE|SF_MACHINE)) && (player->dashmode >= DASHMODE_THRESHOLD))
-						&& !(player->pflags & PF_DRILLING)
 						&& !metalrecording)
 						continue;
 
@@ -1873,12 +1888,10 @@ static void P_3dMovement(player_t *player)
 	fixed_t movepushforward = 0;
 	angle_t dangle; // replaces old quadrants bits
 	fixed_t oldMagnitude, newMagnitude;
-#ifdef ESLOPE
 	vector3_t totalthrust;
 
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
-#endif // ESLOPE
 
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
@@ -1921,13 +1934,12 @@ static void P_3dMovement(player_t *player)
 	if (dangle > ANGLE_180) //flip to keep to one side
 	{
 		dangle = InvAngle(dangle);
-		//dangleflip = true;
 	}
 
 	// anything else will leave both at 0, so no need to do anything else
 
 	//{ SRB2kart 220217 - Toaster Code for misplaced thrust
-	/*
+#if 0
 	if (!player->kartstuff[k_drift]) // Not Drifting
 	{
 		angle_t difference = dangle/2;
@@ -1941,7 +1953,7 @@ static void P_3dMovement(player_t *player)
 
 		P_InstaThrust(player->mo, player->mo->angle + difference, player->speed);
 	}
-	*/
+#endif
 	//}
 
 	// Do not let the player control movement if not onground.
@@ -2192,31 +2204,27 @@ void P_MovePlayer(player_t *player)
 	// Kart frames
 	if (player->kartstuff[k_squishedtimer] > 0)
 	{
-		if (player->mo->state != &states[S_KART_SQUISH])
-			P_SetPlayerMobjState(player->mo, S_KART_SQUISH);
+		P_SetPlayerMobjState(player->mo, S_KART_SQUISH);
 	}
 	else if (player->pflags & PF_SLIDING)
 	{
-		if (player->mo->state != &states[S_KART_SPIN])
-			P_SetPlayerMobjState(player->mo, S_KART_SPIN);
+		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 		player->frameangle -= ANGLE_22h;
 	}
 	else if (player->kartstuff[k_spinouttimer] > 0)
 	{
 		INT32 speed = max(1, min(8, player->kartstuff[k_spinouttimer]/8));
 
-		if (player->mo->state != &states[S_KART_SPIN])
-			P_SetPlayerMobjState(player->mo, S_KART_SPIN);
+		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 		if (speed == 1 && abs((signed)(player->mo->angle - player->frameangle)) < ANGLE_22h)
 			player->frameangle = player->mo->angle; // Face forward at the end of the animation
 		else
 			player->frameangle -= (ANGLE_11hh * speed);
 	}
-	else if (player->powers[pw_nocontrol] && player->pflags & PF_SKIDDOWN)
+	else if (player->powers[pw_nocontrol] && player->pflags & PF_WPNDOWN)
 	{
-		if (player->mo->state != &states[S_KART_SPIN])
-			P_SetPlayerMobjState(player->mo, S_KART_SPIN);
+		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 		if (((player->powers[pw_nocontrol] + 5) % 20) < 10)
 			player->frameangle += ANGLE_11hh;
@@ -2514,8 +2522,7 @@ static void P_DoZoomTube(player_t *player)
 		P_SetPlayerAngle(player, player->mo->angle);
 	}
 
-	if (player->mo->state != &states[S_KART_SPIN])
-		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
+	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 	player->frameangle -= ANGLE_22h;
 }
 
@@ -2655,8 +2662,6 @@ static void P_ConsiderAllGone(void)
 //
 static void P_DeathThink(player_t *player)
 {
-	INT32 j = MAXPLAYERS;
-	ticcmd_t *cmd = &player->cmd;
 	player->deltaviewheight = 0;
 
 	if (player->deadtimer < INT32_MAX)
@@ -2726,40 +2731,38 @@ camera_t camera[MAXSPLITSCREENPLAYERS]; // Four cameras, three for splitscreen
 
 static void CV_CamRotate_OnChange(void)
 {
-	if (cv_cam_rotate.value < 0)
-		CV_SetValue(&cv_cam_rotate, cv_cam_rotate.value + 360);
-	else if (cv_cam_rotate.value > 359)
-		CV_SetValue(&cv_cam_rotate, cv_cam_rotate.value % 360);
+	if (cv_cam_rotate[0].value < 0)
+		CV_SetValue(&cv_cam_rotate[0], cv_cam_rotate[0].value + 360);
+	else if (cv_cam_rotate[0].value > 359)
+		CV_SetValue(&cv_cam_rotate[0], cv_cam_rotate[0].value % 360);
 }
 
 static void CV_CamRotate2_OnChange(void)
 {
-	if (cv_cam2_rotate.value < 0)
-		CV_SetValue(&cv_cam2_rotate, cv_cam2_rotate.value + 360);
-	else if (cv_cam2_rotate.value > 359)
-		CV_SetValue(&cv_cam2_rotate, cv_cam2_rotate.value % 360);
+	if (cv_cam_rotate[1].value < 0)
+		CV_SetValue(&cv_cam_rotate[1], cv_cam_rotate[1].value + 360);
+	else if (cv_cam_rotate[1].value > 359)
+		CV_SetValue(&cv_cam_rotate[1], cv_cam_rotate[1].value % 360);
 }
 
 static void CV_CamRotate3_OnChange(void)
 {
-	if (cv_cam3_rotate.value < 0)
-		CV_SetValue(&cv_cam3_rotate, cv_cam3_rotate.value + 360);
-	else if (cv_cam3_rotate.value > 359)
-		CV_SetValue(&cv_cam3_rotate, cv_cam3_rotate.value % 360);
+	if (cv_cam_rotate[2].value < 0)
+		CV_SetValue(&cv_cam_rotate[2], cv_cam_rotate[2].value + 360);
+	else if (cv_cam_rotate[2].value > 359)
+		CV_SetValue(&cv_cam_rotate[2], cv_cam_rotate[2].value % 360);
 }
 
 static void CV_CamRotate4_OnChange(void)
 {
-	if (cv_cam4_rotate.value < 0)
-		CV_SetValue(&cv_cam4_rotate, cv_cam4_rotate.value + 360);
-	else if (cv_cam4_rotate.value > 359)
-		CV_SetValue(&cv_cam4_rotate, cv_cam4_rotate.value % 360);
+	if (cv_cam_rotate[3].value < 0)
+		CV_SetValue(&cv_cam_rotate[3], cv_cam_rotate[3].value + 360);
+	else if (cv_cam_rotate[3].value > 359)
+		CV_SetValue(&cv_cam_rotate[3], cv_cam_rotate[3].value % 360);
 }
 
 static CV_PossibleValue_t CV_CamSpeed[] = {{0, "MIN"}, {1*FRACUNIT, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t rotation_cons_t[] = {{1, "MIN"}, {25, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t CV_CamRotate[] = {{-720, "MIN"}, {720, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t multiplier_cons_t[] = {{0, "MIN"}, {3*FRACUNIT, "MAX"}, {0, NULL}};
 
 consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS] = {
 	{"cam_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL},
@@ -2791,21 +2794,14 @@ consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS] = {
 
 consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
 	{"cam_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"cam2_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"cam3_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange, 0, NULL, NULL, 0, 0, NULL}
+	{"cam2_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate2_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"cam3_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate3_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 
-consvar_t cv_cam_rotspeed[MAXSPLITSCREENPLAYERS] = {
-	{"cam_rotspeed", "10", CV_SAVE, rotation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam2_rotspeed", "10", CV_SAVE, rotation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam3_rotspeed", "10", CV_SAVE, rotation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam4_rotspeed", "10", CV_SAVE, rotation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL}
-};
-
-fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = -42;
-fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = -42;
-fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = -42;
+fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
+fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
+fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
 // Heavily simplified version of G_BuildTicCmd that only takes the local first player's control input and converts it to readable ticcmd_t
 // we then throw that ticcmd garbage in the camera and make it move
@@ -2853,7 +2849,7 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 
 	mouseaiming = true;
 	invertmouse = cv_invertmouse.value;
-	lookaxis = cv_lookaxis.value;
+	lookaxis = cv_lookaxis[0].value;
 
 	usejoystick = true;
 	turnright = PlayerInputDown(1, gc_turnright);
@@ -3055,11 +3051,8 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	thiscam->y = y;
 	thiscam->z = z;
 
-	if (!cv_cam_still[num].value)
-	{
-		thiscam->angle = player->mo->angle;
-		thiscam->aiming = 0;
-	}
+	thiscam->angle = player->mo->angle;
+	thiscam->aiming = 0;
 	thiscam->relativex = 0;
 
 	thiscam->subsector = R_PointInSubsector(thiscam->x,thiscam->y);
@@ -3090,9 +3083,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 #endif
 
 	democam.soundmobj = NULL;	// reset this each frame, we don't want the game crashing for stupid reasons now do we
-
-	static fixed_t camsideshift[2] = {0, 0};
-	fixed_t shiftx = 0, shifty = 0;
 
 	// We probably shouldn't move the camera if there is no player or player mobj somehow
 	if (!player || !player->mo)
@@ -3128,7 +3118,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	mo = player->mo;
 
 #ifndef NOCLIPCAM
-	cameranoclip = ((player->pflags & (PF_NOCLIP|PF_NIGHTSMODE))
+	cameranoclip = ((player->pflags & PF_NOCLIP)
 		|| (mo->flags & (MF_NOCLIP|MF_NOCLIPHEIGHT)) // Noclipping player camera noclips too!!
 		|| (leveltime < introtime)); // Kart intro cam
 #endif
@@ -3290,11 +3280,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	pitch = thiscam->pitch + (angle_t)FixedMul(pitch - thiscam->pitch, camspeed/4);
 
-	if (rendermode == render_opengl
-#ifdef GL_SHADERS/* just so we can't possibly forget about it */
-			&& !cv_grshearing.value
-#endif
-	)
+	if (rendermode == render_opengl && !cv_glshearing.value)
 		distxy = FixedMul(dist, FINECOSINE((pitch>>ANGLETOFINESHIFT) & FINEMASK));
 	else
 		distxy = dist;
@@ -3600,7 +3586,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 			angle -= (angle - thiscam->pitch)/2;
 	}
 
-	if (player->playerstate != PST_DEAD && !((player->pflags & PF_NIGHTSMODE) && player->exiting))
+	if (player->playerstate != PST_DEAD)
 		angle += (focusaiming < ANGLE_180 ? focusaiming/2 : InvAngle(InvAngle(focusaiming)/2)); // overcomplicated version of '((signed)focusaiming)/2;'
 
 	if (!camstill && !timeover) // Keep the view still...
@@ -3866,7 +3852,7 @@ void P_DoTimeOver(player_t *player)
 	if (player->mo)
 	{
 		S_StopSound(player->mo);
-		P_DamageMobj(player->mo, NULL, NULL, 10000);
+		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 	}
 
 	P_EndingMusic(player);
@@ -3874,6 +3860,9 @@ void P_DoTimeOver(player_t *player)
 	if (!exitcountdown)
 		exitcountdown = 5*TICRATE;
 }
+
+// SRB2Kart: These are useful functions, but we aren't using them yet.
+#if 0
 
 // Get an axis of a certain ID number
 static mobj_t *P_GetAxis(INT32 num)
@@ -3962,6 +3951,8 @@ static void P_ParabolicMove(mobj_t *mo, fixed_t x, fixed_t y, fixed_t z, fixed_t
 	mo->momz = FixedDiv(dh, 2*fixConst) + FixedDiv(dz, FixedDiv(dh, fixConst/2));
 }
 
+#endif
+
 /* 	set follower state with our weird hacks
 	the reason we do this is to avoid followers ever using actions (majormods, yikes!)
 	without having to touch p_mobj.c.
@@ -4006,7 +3997,7 @@ static void P_HandleFollower(player_t *player)
 	angle_t an;
 	fixed_t zoffs;
 	fixed_t sx, sy, sz;
-	UINT8 color;
+	UINT16 color;
 
 	fixed_t bubble;	// bubble scale (0 if no bubble)
 	mobj_t *bmobj;	// temp bubble mobj
@@ -4056,17 +4047,17 @@ static void P_HandleFollower(player_t *player)
 
 	switch (player->followercolor)
 	{
-		case MAXSKINCOLORS:		// "Match"
+		case MAXSKINCOLORS: // "Match"
 			color = player->skincolor;
 			break;
-		case MAXSKINCOLORS+1:	// "Opposite"
-			color = KartColor_Opposite[player->skincolor*2];
+		case MAXSKINCOLORS+1: // "Opposite"
+			color = skincolors[player->skincolor].invcolor;
 			break;
 		default:
 
 			color = player->followercolor;
-			if (!color || color > MAXSKINCOLORS+2)	// Make sure this isn't garbage
-				color = player->skincolor;	// "Match" as fallback.
+			if (!color || color > MAXSKINCOLORS+2) // Make sure this isn't garbage
+				color = player->skincolor; // "Match" as fallback.
 
 			break;
 	}
@@ -4179,7 +4170,7 @@ static void P_HandleFollower(player_t *player)
 
 		// handle follower animations. Could probably be better...
 		// hurt or dead
-		if (player->kartstuff[k_spinouttimer] || player->mo->state == &states[S_KART_SPIN] || player->mo->health <= 0)
+		if (player->kartstuff[k_spinouttimer] || player->mo->state == &states[S_KART_SPINOUT] || player->mo->health <= 0)
 		{
 			player->follower->movecount = 0;	// cancel hit confirm.
 			player->follower->angle = player->frameangle;	// spin out
@@ -4413,7 +4404,9 @@ void P_PlayerThink(player_t *player)
 	if (player->spectator &&
 #endif
 		(gametyperules & GTR_LIVES))
+	{
 		/*P_ConsiderAllGone()*/;
+	}
 
 	if (player->playerstate == PST_DEAD)
 	{
@@ -4614,7 +4607,7 @@ void P_PlayerThink(player_t *player)
 	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)
 	{
 		if (!(--player->powers[pw_nocontrol]))
-			player->pflags &= ~PF_SKIDDOWN;
+			player->pflags &= ~PF_WPNDOWN;
 	}
 	else
 		player->powers[pw_nocontrol] = 0;
@@ -4629,8 +4622,7 @@ void P_PlayerThink(player_t *player)
 		player->powers[pw_super]++;
 
 	// Flash player after being hit.
-	if (!(//player->pflags & PF_NIGHTSMODE ||
-		player->kartstuff[k_hyudorotimer] // SRB2kart - fixes Hyudoro not flashing when it should.
+	if (!(player->kartstuff[k_hyudorotimer] // SRB2kart - fixes Hyudoro not flashing when it should.
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
@@ -4651,36 +4643,6 @@ void P_PlayerThink(player_t *player)
 	LUAh_PlayerThink(player);
 }
 
-// Checks if the mobj is above lava. Used by Pterabyte.
-static boolean P_MobjAboveLava(mobj_t *mobj)
-{
-	sector_t *sector = mobj->subsector->sector;
-
-	if (sector->ffloors)
-	{
-		ffloor_t *rover;
-
-		for (rover = sector->ffloors; rover; rover = rover->next)
-		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE) || GETSECSPECIAL(rover->master->frontsector->special, 1) != 3)
-				continue;
-
-			if (mobj->eflags & MFE_VERTICALFLIP)
-			{
-				if (*rover->bottomheight <= mobj->ceilingz && *rover->bottomheight >= mobj->z)
-					return true;
-			}
-			else
-			{
-				if (*rover->topheight >= mobj->floorz && *rover->topheight <= mobj->z)
-					return true;
-			}
-		}
-	}
-
-	return false;
-}
-
 //
 // P_PlayerAfterThink
 //
@@ -4688,8 +4650,6 @@ static boolean P_MobjAboveLava(mobj_t *mobj)
 //
 void P_PlayerAfterThink(player_t *player)
 {
-	ticcmd_t *cmd;
-	//INT32 oldweapon = player->currentweapon; // SRB2kart - unused
 	camera_t *thiscam = NULL; // if not one of the displayed players, just don't bother
 	UINT8 i;
 
@@ -4700,8 +4660,6 @@ void P_PlayerAfterThink(player_t *player)
 		I_Error("P_PlayerAfterThink: players[%s].mo == NULL", sizeu1(playeri));
 	}
 #endif
-
-	cmd = &player->cmd;
 
 #ifdef SECTORSPECIALSAFTERTHINK
 	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
