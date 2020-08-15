@@ -1430,8 +1430,7 @@ boolean G_Responder(event_t *ev)
 	}
 	else if (gamestate == GS_CONTINUING)
 	{
-		if (F_ContinueResponder(ev))
-			return true;
+		return true;
 	}
 	// Demo End
 	else if (gamestate == GS_GAMEEND)
@@ -1961,8 +1960,6 @@ void G_Ticker(boolean run)
 			break;
 
 		case GS_CONTINUING:
-			if (run)
-				F_ContinueTicker();
 			break;
 
 		case GS_CREDITS:
@@ -2961,20 +2958,6 @@ void G_UpdateGametypeSelections(void)
 	gametype_cons_t[NUMGAMETYPES].strvalue = NULL;
 }
 
-//
-// G_SetGametypeDescription
-//
-// Set a description for the specified gametype.
-// (Level platter)
-//
-void G_SetGametypeDescription(INT16 gtype, char *descriptiontext, UINT8 leftcolor, UINT8 rightcolor)
-{
-	if (descriptiontext != NULL)
-		strncpy(gametypedesc[gtype].notes, descriptiontext, 441);
-	gametypedesc[gtype].col[0] = leftcolor;
-	gametypedesc[gtype].col[1] = rightcolor;
-}
-
 // Gametype rankings
 INT16 gametyperankings[NUMGAMETYPES] =
 {
@@ -3760,7 +3743,7 @@ static void G_DoStartContinue(void)
 	legitimateexit = false;
 	G_PlayerFinishLevel(consoleplayer); // take away cards and stuff
 
-	F_StartContinue();
+	//F_StartContinue();
 	gameaction = ga_nothing;
 }
 

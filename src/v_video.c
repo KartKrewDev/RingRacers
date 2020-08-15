@@ -2111,6 +2111,29 @@ void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colorm
 	} while (num);
 }
 
+// Find string width from cred_font chars
+//
+INT32 V_CreditStringWidth(const char *string)
+{
+	INT32 c, w = 0;
+	size_t i;
+
+	// It's possible for string to be a null pointer
+	if (!string)
+		return 0;
+
+	for (i = 0; i < strlen(string); i++)
+	{
+		c = toupper(string[i]) - CRED_FONTSTART;
+		if (c < 0 || c >= CRED_FONTSIZE)
+			w += 16;
+		else
+			w += SHORT(fontv[CRED_FONT].font[c]->width);
+	}
+
+	return w;
+}
+
 // Draws a tallnum.  Replaces two functions in y_inter and st_stuff
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 {

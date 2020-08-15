@@ -73,11 +73,6 @@ void F_StartTitleScreen(void);
 void F_StartEnding(void);
 void F_StartCredits(void);
 
-boolean F_ContinueResponder(event_t *event);
-void F_StartContinue(void);
-void F_ContinueTicker(void);
-void F_ContinueDrawer(void);
-
 extern INT32 finalecount;
 extern INT32 titlescrollxspeed;
 extern INT32 titlescrollyspeed;

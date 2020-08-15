@@ -1205,8 +1205,6 @@ void I_OsPolling(void)
 			I_GetJoystickEvents(i);
 	}
 
-	I_GetMouseEvents();
-
 	I_GetEvent();
 
 	mod = SDL_GetModState();

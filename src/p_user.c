@@ -1225,10 +1225,6 @@ void P_SwitchShield(player_t *player, UINT16 shieldtype)
 {
 	boolean donthavealready;
 
-	// If you already have a bomb shield, use it!
-	if ((shieldtype == SH_ARMAGEDDON) && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)
-		P_BlackOw(player);
-
 	donthavealready = (shieldtype & SH_FORCE)
 		? (!(player->powers[pw_shield] & SH_FORCE) || (player->powers[pw_shield] & SH_FORCEHP) < (shieldtype & ~SH_FORCE))
 		: ((player->powers[pw_shield] & SH_NOSTACK) != shieldtype);
@@ -1709,31 +1705,11 @@ static void P_CheckBouncySectors(player_t *player)
 						player->mo->momx = momentum.x;
 						player->mo->momy = momentum.y;
 						player->mo->momz = momentum.z/2;
-
-						if (player->pflags & PF_SPINNING)
-						{
-							player->pflags &= ~PF_SPINNING;
-							player->pflags |= P_GetJumpFlags(player);
-							player->pflags |= PF_THOKKED;
-						}
 					}
 					else
 					{
 						player->mo->momx = -FixedMul(player->mo->momx,linedist);
 						player->mo->momy = -FixedMul(player->mo->momy,linedist);
-
-						if (player->pflags & PF_SPINNING)
-						{
-							player->pflags &= ~PF_SPINNING;
-							player->pflags |= P_GetJumpFlags(player);
-							player->pflags |= PF_THOKKED;
-						}
-					}
-
-					if ((player->pflags & PF_SPINNING) && player->speed < FixedMul(1<<FRACBITS, player->mo->scale) && player->mo->momz)
-					{
-						player->pflags &= ~PF_SPINNING;
-						player->pflags |= P_GetJumpFlags(player);
 					}
 
 					goto bouncydone;

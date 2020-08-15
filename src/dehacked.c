@@ -1511,15 +1511,11 @@ static void readgametype(MYFILE *f, char *gtname)
 	UINT32 newgttol = 0;
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
-	UINT8 newgtleftcolor = 0;
-	UINT8 newgtrightcolor = 0;
 	INT16 newgtrankingstype = -1;
 	int newgtinttype = 0;
-	char gtdescription[441];
 	char gtconst[MAXLINELEN];
 
 	// Empty strings.
-	gtdescription[0] = '\0';
 	gtconst[0] = '\0';
 
 	do
@@ -1534,44 +1530,6 @@ static void readgametype(MYFILE *f, char *gtname)
 				strupr(word);
 			else
 				break;
-
-			if (fastcmp(word, "DESCRIPTION"))
-			{
-				char *descr = NULL;
-
-				for (i = 0; i < MAXLINELEN-3; i++)
-				{
-					if (s[i] == '=')
-					{
-						descr = &s[i+2];
-						break;
-					}
-				}
-				if (descr)
-				{
-					strcpy(gtdescription, descr);
-					strcat(gtdescription, myhashfgets(descr, sizeof (gtdescription), f));
-				}
-				else
-					strcpy(gtdescription, "");
-
-				// For some reason, cutting the string did not work above. Most likely due to strcpy or strcat...
-				// It works down here, though.
-				{
-					INT32 numline = 0;
-					for (i = 0; (size_t)i < sizeof(gtdescription)-1; i++)
-					{
-						if (numline < 20 && gtdescription[i] == '\n')
-							numline++;
-
-						if (numline >= 20 || gtdescription[i] == '\0' || gtdescription[i] == '#')
-							break;
-					}
-				}
-				gtdescription[strlen(gtdescription)-1] = '\0';
-				gtdescription[i] = '\0';
-				continue;
-			}
 
 			word2 = strtok(NULL, " = ");
 			if (word2)
@@ -1605,13 +1563,6 @@ static void readgametype(MYFILE *f, char *gtname)
 				newgtpointlimit = (INT32)i;
 			else if (fastcmp(word, "DEFAULTTIMELIMIT"))
 				newgttimelimit = (INT32)i;
-			// Level platter
-			else if (fastcmp(word, "HEADERCOLOR") || fastcmp(word, "HEADERCOLOUR"))
-				newgtleftcolor = newgtrightcolor = (UINT8)get_number(word2);
-			else if (fastcmp(word, "HEADERLEFTCOLOR") || fastcmp(word, "HEADERLEFTCOLOUR"))
-				newgtleftcolor = (UINT8)get_number(word2);
-			else if (fastcmp(word, "HEADERRIGHTCOLOR") || fastcmp(word, "HEADERRIGHTCOLOUR"))
-				newgtrightcolor = (UINT8)get_number(word2);
 			// Rankings type
 			else if (fastcmp(word, "RANKINGTYPE"))
 			{
@@ -1679,7 +1630,6 @@ static void readgametype(MYFILE *f, char *gtname)
 	// Add the new gametype
 	newgtidx = G_AddGametype(newgtrules);
 	G_AddGametypeTOL(newgtidx, newgttol);
-	G_SetGametypeDescription(newgtidx, gtdescription, newgtleftcolor, newgtrightcolor);
 
 	// Not covered by G_AddGametype alone.
 	if (newgtrankingstype == -1)
@@ -4368,32 +4318,6 @@ static void readmaincfg(MYFILE *f)
 				}
 				else // if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
 					ttmode = TTMODE_OLD;
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSSCALE"))
-			{
-				ttscale = max(1, min(8, (UINT8)get_number(word2)));
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSSCALESAVAILABLE"))
-			{
-				// SPECIAL CASE for Alacroix: Comma-separated list of resolutions that are available
-				// for gfx loading.
-				ttavailable[0] = ttavailable[1] = ttavailable[2] = ttavailable[3] =\
-					ttavailable[4] = ttavailable[5] = false;
-
-				if (strstr(word2, "1") != NULL)
-					ttavailable[0] = true;
-				if (strstr(word2, "2") != NULL)
-					ttavailable[1] = true;
-				if (strstr(word2, "3") != NULL)
-					ttavailable[2] = true;
-				if (strstr(word2, "4") != NULL)
-					ttavailable[3] = true;
-				if (strstr(word2, "5") != NULL)
-					ttavailable[4] = true;
-				if (strstr(word2, "6") != NULL)
-					ttavailable[5] = true;
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLEPICSNAME"))

@@ -28,6 +28,7 @@
 #include "lua_hud.h"	// For Lua hud checks
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
 #include "m_cheat.h"	// objectplacing
+#include "p_spec.h"
 
 #include "k_waypoint.h"
 #include "k_bot.h"

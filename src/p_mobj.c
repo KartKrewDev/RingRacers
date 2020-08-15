@@ -3585,6 +3585,17 @@ void P_RecalcPrecipInSector(sector_t *sector)
 		CalculatePrecipFloor(psecnode->m_thing);
 }
 
+//
+// P_NullPrecipThinker
+//
+// For "Blank" precipitation
+//
+void P_NullPrecipThinker(precipmobj_t *mobj)
+{
+	//(void)mobj;
+	mobj->precipflags &= ~PCF_THUNK;
+}
+
 void P_PrecipThinker(precipmobj_t *mobj)
 {
 	P_CycleStateAnimation((mobj_t *)mobj);
@@ -8621,7 +8632,6 @@ void P_MobjThinker(mobj_t *mobj)
 		|| mobj->type == MT_FLINGCOIN
 		|| mobj->type == MT_FLINGBLUESPHERE
 		|| mobj->type == MT_FLINGNIGHTSCHIP
-		|| P_WeaponOrPanel(mobj->type)
 		|| mobj->type == MT_FLINGEMERALD
 		|| mobj->type == MT_BIGTUMBLEWEED
 		|| mobj->type == MT_LITTLETUMBLEWEED
@@ -9603,8 +9613,7 @@ void P_RemoveMobj(mobj_t *mobj)
 		|| mobj->type == MT_COIN
 		|| mobj->type == MT_NIGHTSSTAR
 		|| mobj->type == MT_REDTEAMRING
-		|| mobj->type == MT_BLUETEAMRING
-		|| P_WeaponOrPanel(mobj->type))
+		|| mobj->type == MT_BLUETEAMRING)
 		&& !(mobj->flags2 & MF2_DONTRESPAWN))
 	{
 		itemrespawnque[iquehead] = mobj->spawnpoint;
@@ -11802,6 +11811,8 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t* itemtypes, UINT8 numi
 	angle_t angle = FixedAngle(fixedangle << FRACBITS);
 	angle_t fineangle = (angle >> ANGLETOFINESHIFT) & FINEMASK;
 
+	(void)bonustime;
+
 	for (r = 0; r < numitemtypes; r++)
 	{
 		dummything = *mthing;
@@ -11837,8 +11848,6 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t* itemtypes, UINT8 numi
 			continue;
 
 		mobj->spawnpoint = NULL;
-		if (bonustime)
-			P_SetBonusTime(mobj);
 	}
 }
 
@@ -11859,6 +11868,8 @@ static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 n
 	angle_t fa;
 	INT32 i;
 	TVector v, *res;
+
+	(void)bonustime;
 
 	for (i = 0; i < numitemtypes; i++)
 	{
@@ -11901,8 +11912,6 @@ static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 n
 
 		mobj->z -= mobj->height/2;
 		mobj->spawnpoint = NULL;
-		if (bonustime)
-			P_SetBonusTime(mobj);
 	}
 }
 

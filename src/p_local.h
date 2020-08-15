@@ -135,7 +135,6 @@ extern consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS], cv_cam_rotate[MAXSPLITSCRE
 extern fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS], t_cam_height[MAXSPLITSCREENPLAYERS], t_cam_rotate[MAXSPLITSCREENPLAYERS];
 
 void P_AddPlayerScore(player_t *player, UINT32 amount);
-void P_StealPlayerScore(player_t *player, UINT32 amount);
 void P_ResetCamera(player_t *player, camera_t *thiscam);
 boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);
 void P_SlideCameraMove(camera_t *thiscam);
@@ -143,9 +142,7 @@ void P_DemoCameraMovement(camera_t *cam);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
 void P_InitCameraCmd(void);
 
-pflags_t P_GetJumpFlags(player_t *player);
 boolean P_PlayerInPain(player_t *player);
-void P_DoPlayerPain(player_t *player, mobj_t *source, mobj_t *inflictor);
 void P_ResetPlayer(player_t *player);
 boolean P_PlayerCanDamage(player_t *player, mobj_t *thing);
 
@@ -162,7 +159,6 @@ boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
 boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
-boolean P_InSpaceSector(mobj_t *mo);
 boolean P_InQuicksand(mobj_t *mo);
 boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff);
 
@@ -200,7 +196,6 @@ fixed_t P_ReturnThrustY(mobj_t *mo, angle_t angle, fixed_t move);
 
 mobj_t *P_LookForFocusTarget(player_t *player, mobj_t *exclude, SINT8 direction, UINT8 lockonflags);
 
-mobj_t *P_LookForEnemies(player_t *player, boolean nonenemies, boolean bullet);
 void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius);
 
 UINT8 P_FindLowestLap(void);
@@ -330,7 +325,6 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle, UINT8 aimtype
 void P_ColorTeamMissile(mobj_t *missile, player_t *source);
 SINT8 P_MobjFlip(mobj_t *mobj);
 fixed_t P_GetMobjGravity(mobj_t *mo);
-FUNCMATH boolean P_WeaponOrPanel(mobjtype_t type);
 
 void P_CalcChasePostImg(player_t *player, camera_t *thiscam);
 boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled);

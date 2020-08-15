@@ -34,6 +34,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
+#include "p_spec.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -1721,7 +1722,6 @@ void P_RemoveShield(player_t *player)
 	{ // First layer shields
 		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON) // Give them what's coming to them!
 		{
-			P_BlackOw(player); // BAM!
 			player->pflags |= PF_JUMPDOWN;
 		}
 		else

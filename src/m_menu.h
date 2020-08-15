@@ -178,11 +178,11 @@ extern UINT32 prevMenuId;
 extern UINT32 activeMenuId;
 
 void M_InitMenuPresTables(void);
-UINT8 M_GetYoungestChildMenu(void);
-void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping);
-void M_SetMenuCurBackground(const char *defaultname);
-void M_SetMenuCurFadeValue(UINT8 defaultvalue);
-void M_SetMenuCurTitlePics(void);
+//UINT8 M_GetYoungestChildMenu(void);
+//void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping);
+//void M_SetMenuCurBackground(const char *defaultname);
+//void M_SetMenuCurFadeValue(UINT8 defaultvalue);
+//void M_SetMenuCurTitlePics(void);
 
 // Called by main loop,
 // saves config file and calls I_Quit when user exits.
@@ -412,12 +412,12 @@ typedef struct
 // experimental level select end
 
 // descriptions for gametype select screen
-typedef struct
+/*typedef struct
 {
 	UINT8 col[2];
 	char notes[441];
 } gtdesc_t;
-extern gtdesc_t gametypedesc[NUMGAMETYPES];
+extern gtdesc_t gametypedesc[NUMGAMETYPES];*/
 
 // mode descriptions for video mode menu
 typedef struct
@@ -457,7 +457,7 @@ extern INT16 char_on, startchar;
 
 #define BwehHehHe() S_StartSound(NULL, sfx_bewar1+M_RandomKey(4)) // Bweh heh he
 
-void M_TutorialSaveControlResponse(INT32 ch);
+//void M_TutorialSaveControlResponse(INT32 ch);
 
 void M_ForceSaveSlotSelected(INT32 sslot);
 

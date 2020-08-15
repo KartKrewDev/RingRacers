@@ -1702,9 +1702,9 @@ void F_InitMenuPresValues(void)
 	curtttics = tttics;
 
 	// Find current presentation values
-	M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
-	M_SetMenuCurFadeValue(16);
-	M_SetMenuCurTitlePics();
+	//M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
+	//M_SetMenuCurFadeValue(16);
+	//M_SetMenuCurTitlePics();
 }
 
 //

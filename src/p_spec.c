@@ -38,7 +38,8 @@
 #include "f_finale.h" // control text prompt
 #include "r_skins.h" // skins
 
-#include "k_kart.h" // SRB2kart
+// SRB2kart
+#include "k_kart.h"
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
 
@@ -8787,4 +8788,12 @@ static void P_SpawnPushers(void)
 					Add_Pusher(p_downwind, l->dx, l->dy, NULL, s, -1, l->flags & ML_NOCLIMB, l->flags & ML_EFFECT4);
 				break;
 		}
+}
+
+// Rudimentary function to start a earthquake.
+// epicenter and radius are not yet used.
+void P_StartQuake(fixed_t intensity, tic_t time)
+{
+	quake.intensity = intensity;
+	quake.time = time;
 }

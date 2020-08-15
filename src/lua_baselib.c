@@ -769,16 +769,6 @@ static int lib_pGetMobjGravity(lua_State *L)
 	return 1;
 }
 
-static int lib_pWeaponOrPanel(lua_State *L)
-{
-	mobjtype_t type = luaL_checkinteger(L, 1);
-	//HUDSAFE
-	if (type >= NUMMOBJTYPES)
-		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
-	lua_pushboolean(L, P_WeaponOrPanel(type));
-	return 1;
-}
-
 static int lib_pFlashPal(lua_State *L)
 {
 	player_t *pl = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1013,29 +1003,6 @@ static int lib_pAddPlayerScore(lua_State *L)
 	return 0;
 }
 
-static int lib_pStealPlayerScore(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT32 amount = (UINT32)luaL_checkinteger(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_StealPlayerScore(player, amount);
-	return 0;
-}
-
-static int lib_pGetJumpFlags(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	lua_pushinteger(L, P_GetJumpFlags(player));
-	return 1;
-}
-
 static int lib_pPlayerInPain(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1047,22 +1014,6 @@ static int lib_pPlayerInPain(lua_State *L)
 	return 1;
 }
 
-static int lib_pDoPlayerPain(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	mobj_t *source = NULL, *inflictor = NULL;
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
-		source = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
-		inflictor = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
-	P_DoPlayerPain(player, source, inflictor);
-	return 0;
-}
-
 static int lib_pResetPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1072,20 +1023,6 @@ static int lib_pResetPlayer(lua_State *L)
 		return LUA_ErrInvalid(L, "player_t");
 	P_ResetPlayer(player);
 	return 0;
-}
-
-static int lib_pPlayerCanDamage(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	NOHUD // was hud safe but then i added a lua hook
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	if (!thing)
-		return LUA_ErrInvalid(L, "mobj_t");
-	lua_pushboolean(L, P_PlayerCanDamage(player, thing));
-	return 1;
 }
 
 static int lib_pPlayerFullbright(lua_State *L)
@@ -1118,17 +1055,6 @@ static int lib_pIsObjectOnGround(lua_State *L)
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_IsObjectOnGround(mo));
-	return 1;
-}
-
-static int lib_pInSpaceSector(lua_State *L)
-{
-	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	//HUDSAFE
-	INLEVEL
-	if (!mo)
-		return LUA_ErrInvalid(L, "mobj_t");
-	lua_pushboolean(L, P_InSpaceSector(mo));
 	return 1;
 }
 
@@ -1279,31 +1205,6 @@ static int lib_pResetScore(lua_State *L)
 	return 0;
 }
 
-static int lib_pElementalFire(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean cropcircle = lua_optboolean(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_ElementalFire(player, cropcircle);
-	return 0;
-}
-
-static int lib_pSpawnSkidDust(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	fixed_t radius = luaL_checkfixed(L, 2);
-	boolean sound = lua_optboolean(L, 3);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_SpawnSkidDust(player, radius, sound);
-	return 0;
-}
-
 static int lib_pMovePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1362,19 +1263,6 @@ static int lib_pReturnThrustY(lua_State *L)
 	move = luaL_checkfixed(L, 2);
 	//HUDSAFE
 	lua_pushfixed(L, P_ReturnThrustY(NULL, angle, move));
-	return 1;
-}
-
-static int lib_pLookForEnemies(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean nonenemies = lua_opttrueboolean(L, 2);
-	boolean bullet = lua_optboolean(L, 3);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	LUA_PushUserdata(L, P_LookForEnemies(player, nonenemies, bullet), META_MOBJ);
 	return 1;
 }
 
@@ -2905,14 +2793,11 @@ static int lib_gAddGametype(lua_State *L)
 
 	const char *gtname = NULL;
 	const char *gtconst = NULL;
-	const char *gtdescription = NULL;
 	INT16 newgtidx = 0;
 	UINT32 newgtrules = 0;
 	UINT32 newgttol = 0;
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
-	UINT8 newgtleftcolor = 0;
-	UINT8 newgtrightcolor = 0;
 	INT16 newgtrankingstype = -1;
 	int newgtinttype = 0;
 
@@ -2973,23 +2858,6 @@ static int lib_gAddGametype(lua_State *L)
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("defaulttimelimit", LUA_TNUMBER)
 			newgttimelimit = (INT32)lua_tointeger(L, 3);
-		} else if (i == 9 || (k && fasticmp(k, "description"))) {
-			if (!lua_isstring(L, 3))
-				TYPEERROR("description", LUA_TSTRING)
-			gtdescription = Z_StrDup(lua_tostring(L, 3));
-		} else if (i == 10 || (k && fasticmp(k, "headerleftcolor"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("headerleftcolor", LUA_TNUMBER)
-			newgtleftcolor = (UINT8)lua_tointeger(L, 3);
-		} else if (i == 11 || (k && fasticmp(k, "headerrightcolor"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("headerrightcolor", LUA_TNUMBER)
-			newgtrightcolor = (UINT8)lua_tointeger(L, 3);
-		// Key name specified
-		} else if ((!i) && (k && fasticmp(k, "headercolor"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("headercolor", LUA_TNUMBER)
-			newgtleftcolor = newgtrightcolor = (UINT8)lua_tointeger(L, 3);
 		}
 		lua_pop(L, 1);
 	}
@@ -3003,14 +2871,10 @@ static int lib_gAddGametype(lua_State *L)
 	// Set defaults
 	if (gtname == NULL)
 		gtname = Z_StrDup("Unnamed gametype");
-	if (gtdescription == NULL)
-		gtdescription = Z_StrDup("???");
 
 	// Add the new gametype
 	newgtidx = G_AddGametype(newgtrules);
 	G_AddGametypeTOL(newgtidx, newgttol);
-	G_SetGametypeDescription(newgtidx, NULL, newgtleftcolor, newgtrightcolor);
-	strncpy(gametypedesc[newgtidx].notes, gtdescription, 441);
 
 	// Not covered by G_AddGametype alone.
 	if (newgtrankingstype == -1)
@@ -3227,13 +3091,6 @@ static int lib_gSetCustomExitVars(lua_State *L)
 	}
 
 	return 0;
-}
-
-static int lib_gEnoughPlayersFinished(lua_State *L)
-{
-	INLEVEL
-	lua_pushboolean(L, G_EnoughPlayersFinished());
-	return 1;
 }
 
 static int lib_gExitLevel(lua_State *L)
@@ -3856,7 +3713,6 @@ static luaL_Reg lib[] = {
 	{"P_SpawnPlayerMissile",lib_pSpawnPlayerMissile},
 	{"P_MobjFlip",lib_pMobjFlip},
 	{"P_GetMobjGravity",lib_pGetMobjGravity},
-	{"P_WeaponOrPanel",lib_pWeaponOrPanel},
 	{"P_FlashPal",lib_pFlashPal},
 	{"P_GetClosestAxis",lib_pGetClosestAxis},
 	{"P_SpawnParaloop",lib_pSpawnParaloop},
@@ -3878,16 +3734,11 @@ static luaL_Reg lib[] = {
 
 	// p_user
 	{"P_AddPlayerScore",lib_pAddPlayerScore},
-	{"P_StealPlayerScore",lib_pStealPlayerScore},
-	{"P_GetJumpFlags",lib_pGetJumpFlags},
 	{"P_PlayerInPain",lib_pPlayerInPain},
-	{"P_DoPlayerPain",lib_pDoPlayerPain},
 	{"P_ResetPlayer",lib_pResetPlayer},
-	{"P_PlayerCanDamage",lib_pPlayerCanDamage},
 	{"P_PlayerFullbright",lib_pPlayerFullbright},
 	{"P_IsObjectInGoop",lib_pIsObjectInGoop},
 	{"P_IsObjectOnGround",lib_pIsObjectOnGround},
-	{"P_InSpaceSector",lib_pInSpaceSector},
 	{"P_InQuicksand",lib_pInQuicksand},
 	{"P_SetObjectMomZ",lib_pSetObjectMomZ},
 	{"P_PlayJingle",lib_pPlayJingle},
@@ -3898,14 +3749,11 @@ static luaL_Reg lib[] = {
 	{"P_GivePlayerRings",lib_pGivePlayerRings},
 	{"P_GivePlayerLives",lib_pGivePlayerLives},
 	{"P_ResetScore",lib_pResetScore},
-	{"P_ElementalFire",lib_pElementalFire},
-	{"P_SpawnSkidDust", lib_pSpawnSkidDust},
 	{"P_MovePlayer",lib_pMovePlayer},
 	{"P_DoPlayerExit",lib_pDoPlayerExit},
 	{"P_InstaThrust",lib_pInstaThrust},
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
-	{"P_LookForEnemies",lib_pLookForEnemies},
 	{"P_NukeEnemies",lib_pNukeEnemies},
 	{"P_SwitchShield",lib_pSwitchShield},
 
@@ -4024,7 +3872,6 @@ static luaL_Reg lib[] = {
 	{"G_FindMapByNameOrCode",lib_gFindMapByNameOrCode},
 	{"G_DoReborn",lib_gDoReborn},
 	{"G_SetCustomExitVars",lib_gSetCustomExitVars},
-	{"G_EnoughPlayersFinished",lib_gEnoughPlayersFinished},
 	{"G_ExitLevel",lib_gExitLevel},
 	{"G_IsSpecialStage",lib_gIsSpecialStage},
 	{"G_GametypeUsesLives",lib_gGametypeUsesLives},

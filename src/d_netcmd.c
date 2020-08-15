@@ -524,7 +524,9 @@ INT16 gametype = GT_RACE;
 UINT32 gametyperules = 0;
 INT16 gametypecount = GT_FIRSTFREESLOT;
 
+boolean forceresetplayers = false;
 boolean deferencoremode = false;
+UINT8 splitscreen = 0;
 boolean circuitmap = false;
 INT32 adminplayers[MAXPLAYERS];
 

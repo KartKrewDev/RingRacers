@@ -324,10 +324,6 @@ const char *I_LocateWad(void);
 */
 void I_GetJoystickEvents(UINT8 index);
 
-/**	\brief Mouses events
-*/
-void I_GetMouseEvents(void);
-
 /**	\brief Checks if the mouse needs to be grabbed
 */
 void I_UpdateMouseGrab(void);
