@@ -1541,12 +1541,11 @@ static int lib_pTeleportMove(lua_State *L)
 static int lib_pSlideMove(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	boolean forceslide = luaL_checkboolean(L, 2);
 	NOHUD
 	INLEVEL
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	P_SlideMove(mo, forceslide);
+	P_SlideMove(mo);
 	return 0;
 }
 

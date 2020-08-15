@@ -286,7 +286,7 @@ static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjty
 	boolean flip[MAXPLANESPERSECTOR];
 	UINT8 numflats = 0;
 	mobj_t *mo;
-	subsector_t *ss = R_IsPointInSubsector(x, y);
+	subsector_t *ss = R_PointInSubsectorOrNull(x, y);
 	sector_t *sec;
 
 	if (!ss)

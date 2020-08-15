@@ -1619,8 +1619,8 @@ static void ParseTextmapLinedefParameter(UINT32 i, char *param, char *val)
 		lines[i].flags |= ML_NONET;
 	else if (fastcmp(param, "netonly") && fastcmp("true", val))
 		lines[i].flags |= ML_NETONLY;
-	else if (fastcmp(param, "bouncy") && fastcmp("true", val))
-		lines[i].flags |= ML_BOUNCY;
+	else if (fastcmp(param, "notbouncy") && fastcmp("true", val))
+		lines[i].flags |= ML_NOTBOUNCY;
 	else if (fastcmp(param, "transfer") && fastcmp("true", val))
 		lines[i].flags |= ML_TFERLINE;
 }
@@ -3019,7 +3019,7 @@ static void P_ConvertBinaryMap(void)
 				lines[i].args[3] |= TMCF_SUBLIGHTG|TMCF_SUBFADEG;
 			if (lines[i].flags & ML_EFFECT2)
 				lines[i].args[3] |= TMCF_SUBLIGHTB|TMCF_SUBFADEB;
-			if (lines[i].flags & ML_BOUNCY)
+			if (lines[i].flags & ML_NOTBOUNCY)
 				lines[i].args[3] |= TMCF_FROMBLACK;
 			if (lines[i].flags & ML_EFFECT5)
 				lines[i].args[3] |= TMCF_OVERRIDE;
@@ -3428,7 +3428,7 @@ static void P_InitLevelSettings(void)
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
 	{
-		if (G_BattleGametype())
+		if (gametype == GT_BATTLE)
 		{
 			gamespeed = KARTSPEED_EASY;
 		}

@@ -197,10 +197,6 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, &plr->cmd, META_TICCMD);
 	else if (fastcmp(field,"playerstate"))
 		lua_pushinteger(L, plr->playerstate);
-	else if (fastcmp(field,"camerascale"))
-		lua_pushfixed(L, plr->camerascale);
-	else if (fastcmp(field,"shieldscale"))
-		lua_pushfixed(L, plr->shieldscale);
 	else if (fastcmp(field,"viewz"))
 		lua_pushfixed(L, plr->viewz);
 	else if (fastcmp(field,"viewheight"))
@@ -464,10 +460,6 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"playerstate"))
 		plr->playerstate = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"camerascale"))
-		plr->camerascale = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"shieldscale"))
-		plr->shieldscale = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"viewz"))
 		plr->viewz = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"viewheight"))

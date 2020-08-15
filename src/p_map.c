@@ -3357,7 +3357,7 @@ static void P_CheckLavaWall(mobj_t *mo, sector_t *sec)
 //
 // This is a kludgy mess.
 //
-void P_SlideMove(mobj_t *mo, boolean forceslide)
+void P_SlideMove(mobj_t *mo)
 {
 	fixed_t leadx, leady, trailx, traily, newx, newy;
 	INT16 hitcount = 0;
@@ -3541,13 +3541,6 @@ retry:
 		P_CheckLavaWall(mo, sec);
 	}
 
-	// Some walls are bouncy even if you're not
-	if (!forceslide && bestslideline && !(bestslideline->flags & ML_BOUNCY)) // SRB2kart - All walls are bouncy unless specified otherwise
-	{
-		P_BounceMove(mo);
-		return;
-	}
-
 papercollision:
 	// move up to the wall
 	if (bestslidefrac == FRACUNIT+1)
@@ -3637,7 +3630,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 
 	if (mo->player->spectator)
 	{
-		P_SlideMove(mo, true);
+		P_SlideMove(mo);
 		return;
 	}
 
@@ -3743,7 +3736,7 @@ void P_BounceMove(mobj_t *mo)
 
 	if (mo->eflags & MFE_JUSTBOUNCEDWALL)
 	{
-		P_SlideMove(mo, true);
+		P_SlideMove(mo);
 		return;
 	}
 
@@ -3842,6 +3835,14 @@ bounceback:
 	{
 		tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
 		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
+	}
+
+	// Some walls aren't bouncy even if you are
+	if (bestslideline && (bestslideline->flags & ML_NOTBOUNCY))
+	{
+		// SRB2Kart: Non-bouncy line!
+		P_SlideMove(mo);
+		return;
 	}
 
 	P_HitBounceLine(bestslideline); // clip the moves

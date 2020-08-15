@@ -1062,8 +1062,8 @@ void OP_ObjectplaceMovement(player_t *player)
 		player->mo->eflags &= ~MFE_VERTICALFLIP;
 
 	// make sure viewz follows player if in 1st person mode
-	//player->deltaviewheight = 0;
-	player->viewheight = FixedMul(32 << FRACBITS, player->mo->scale);
+	player->deltaviewheight = 0;
+	player->viewheight = P_GetPlayerViewHeight(player);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 		player->viewz = player->mo->z + player->mo->height - player->viewheight;
 	else

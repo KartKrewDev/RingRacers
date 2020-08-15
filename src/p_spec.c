@@ -1262,7 +1262,7 @@ static boolean PolyFade(line_t *line)
 	if (po->translucency == pfd.destvalue)
 		return 1;
 
-	pfd.docollision = !(line->flags & ML_BOUNCY);         // do not handle collision flags
+	pfd.docollision = !(line->flags & ML_NOTBOUNCY);         // do not handle collision flags
 	pfd.doghostfade = (line->flags & ML_EFFECT1);         // do ghost fade (no collision flags during fade)
 	pfd.ticbased = (line->flags & ML_EFFECT4);            // Speed = Tic Duration
 
@@ -1497,8 +1497,8 @@ void P_RunNightsCapsuleTouchExecutors(mobj_t *actor, boolean entering, boolean e
 			&& ((entering && (lines[i].flags & ML_TFERLINE))
 				|| (!entering && !(lines[i].flags & ML_TFERLINE)))
 			&& ((lines[i].flags & ML_DONTPEGTOP)
-				|| (enoughspheres && !(lines[i].flags & ML_BOUNCY))
-				|| (!enoughspheres && (lines[i].flags & ML_BOUNCY))))
+				|| (enoughspheres && !(lines[i].flags & ML_NOTBOUNCY))
+				|| (!enoughspheres && (lines[i].flags & ML_NOTBOUNCY))))
 			P_RunTriggerLinedef(&lines[i], actor, NULL);
 	}
 }
@@ -2521,7 +2521,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					mapmusflags = tracknum & MUSIC_TRACKMASK;
 					if (!(line->flags & ML_BLOCKPLAYERS))
 						mapmusflags |= MUSIC_RELOADRESET;
-					if (line->flags & ML_BOUNCY)
+					if (line->flags & ML_NOTBOUNCY)
 						mapmusflags |= MUSIC_FORCERESET;
 
 					mapmusposition = position;
@@ -2932,7 +2932,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				mo->player->rmomx = mo->player->rmomy = 1;
 				mo->player->cmomx = mo->player->cmomy = 0;
 				P_ResetPlayer(mo->player);
-				P_SetPlayerMobjState(mo, S_KART_STILL1);
+				P_SetPlayerMobjState(mo, S_KART_STILL);
 			}
 			break;
 
@@ -3553,7 +3553,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 								!(line->flags & ML_NOCLIMB),        // do not handle FF_TRANSLUCENT
 								!(line->flags & ML_EFFECT2),        // do not handle lighting
 								!(line->flags & ML_EFFECT2),        // do not handle colormap (ran out of flags)
-								!(line->flags & ML_BOUNCY),         // do not handle collision
+								!(line->flags & ML_NOTBOUNCY),         // do not handle collision
 								(line->flags & ML_EFFECT1),         // do ghost fade (no collision during fade)
 								(line->flags & ML_TFERLINE));       // use exact alpha values (for opengl)
 						else
@@ -3578,7 +3578,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 								!(line->flags & ML_NOCLIMB),        // do not handle FF_TRANSLUCENT
 								!(line->flags & ML_EFFECT2),        // do not handle lighting
 								!(line->flags & ML_EFFECT2),        // do not handle colormap (ran out of flags)
-								!(line->flags & ML_BOUNCY),         // do not handle collision
+								!(line->flags & ML_NOTBOUNCY),         // do not handle collision
 								(line->flags & ML_EFFECT1),         // do ghost fade (no collision during fade)
 								(line->flags & ML_TFERLINE));       // use exact alpha values (for opengl)
 						}
@@ -5872,7 +5872,7 @@ static void P_AddEachTimeThinker(line_t *sourceline)
 	eachtime->thinker.function.acp1 = (actionf_p1)T_EachTimeThinker;
 
 	eachtime->sourceline = sourceline;
-	eachtime->triggerOnExit = !!(sourceline->flags & ML_BOUNCY);
+	eachtime->triggerOnExit = !!(sourceline->flags & ML_NOTBOUNCY);
 }
 
 /** Adds a camera scanner.

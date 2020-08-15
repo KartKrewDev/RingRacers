@@ -35,11 +35,11 @@ SINT8 K_UsingPowerLevels(void)
 		return PWRLV_DISABLED;
 	}
 
-	if (G_RaceGametype())
+	if (gametype == GT_RACE)
 	{
 		pt = PWRLV_RACE;
 	}
-	else if (G_BattleGametype())
+	else if (gametype == GT_BATTLE)
 	{
 		pt = PWRLV_BATTLE;
 	}

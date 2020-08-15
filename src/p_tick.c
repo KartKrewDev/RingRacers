@@ -588,7 +588,7 @@ void P_Ticker(boolean run)
 	}
 
 	// Run shield positioning
-	//P_RunShields();
+	P_RunShields();
 	P_RunOverlays();
 
 	P_UpdateSpecials();
@@ -769,7 +769,7 @@ void P_PreTicker(INT32 frames)
 		LUAh_ThinkFrame();
 
 		// Run shield positioning
-		//P_RunShields();
+		P_RunShields();
 		P_RunOverlays();
 
 		P_UpdateSpecials();

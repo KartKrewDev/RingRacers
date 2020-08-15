@@ -136,8 +136,8 @@ typedef struct
 #define ML_NONET             4096 // Apply  effect only in single player games
 #define ML_EFFECT6           8192
 
-// Bounce off walls!
-#define ML_BOUNCY           16384
+// Don't bounce off this wall!
+#define ML_NOTBOUNCY        16384
 
 #define ML_TFERLINE         32768
 

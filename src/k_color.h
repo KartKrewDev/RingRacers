@@ -37,6 +37,20 @@
 UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b);
 
 /*--------------------------------------------------
+	UINT16 K_RainbowColor(tic_t time)
+
+		Gives you a color to use for rainbow effects (like invincibility).
+
+	Input Arguments:-
+		time - Time offset, usually is leveltime.
+
+	Return:-
+		Skincolor value.
+--------------------------------------------------*/
+
+UINT16 K_RainbowColor(tic_t time);
+
+/*--------------------------------------------------
 	void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
 
 		Generates a colormap to "colorize" all palette indicies

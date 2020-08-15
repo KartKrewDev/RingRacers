@@ -1672,7 +1672,7 @@ static void P_CheckBouncySectors(player_t *player)
 							goto bouncydone;
 						}
 
-						if (!(rover->master->flags & ML_BOUNCY))
+						if (!(rover->master->flags & ML_NOTBOUNCY))
 						{
 							if (newmom > 0)
 							{
@@ -1870,11 +1870,8 @@ static void P_3dMovement(player_t *player)
 {
 	ticcmd_t *cmd;
 	angle_t movepushangle; // Analog
-	//INT32 topspeed, acceleration, thrustfactor;
 	fixed_t movepushforward = 0;
 	angle_t dangle; // replaces old quadrants bits
-	//boolean dangleflip = false; // SRB2kart - toaster
-	//fixed_t normalspd = FixedMul(player->normalspeed, player->mo->scale);
 	fixed_t oldMagnitude, newMagnitude;
 #ifdef ESLOPE
 	vector3_t totalthrust;
@@ -4433,8 +4430,8 @@ void P_PlayerThink(player_t *player)
 	if (player->spectator)
 	{
 		//player->score = 0;
+		player->rings = 0;
 		player->mo->health = 1;
-		player->health = 1;
 	}
 
 	// SRB2kart 010217

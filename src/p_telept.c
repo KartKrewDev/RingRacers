@@ -94,7 +94,7 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		P_ResetStarposts();
 
 		P_ResetPlayer(thing->player);
-		P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
+		P_SetPlayerMobjState(thing, S_KART_STILL); // SRB2kart - was S_PLAY_STND
 
 		P_FlashPal(thing->player, PAL_MIXUP, 10);
 	}

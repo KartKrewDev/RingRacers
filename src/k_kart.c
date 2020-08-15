@@ -1043,9 +1043,6 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 // This kind of wipeout happens with no rings -- doesn't remove a bumper, has no invulnerability, and is much shorter.
 static void K_DebtStingPlayer(player_t *player, INT32 length)
 {
-	if (player->health <= 0)
-		return;
-
 	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0
 		|| player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
 		|| ((gametyperules & GTR_BUMPERS) && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
@@ -2271,7 +2268,7 @@ UINT16 K_GetKartFlashing(player_t *player)
 
 	tics += (tics/8) * (player->kartspeed);
 
-	if (G_BattleGametype())
+	if (gametype == GT_BATTLE)
 		tics *= 2;
 
 	return tics;
@@ -2392,9 +2389,6 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 		else if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] == 1)
 			scoremultiply = 2;
 	}
-
-	if (player->health <= 0)
-		return;
 
 	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)
 		|| player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
@@ -2537,9 +2531,6 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 			scoremultiply = 2;
 	}
 
-	if (player->health <= 0)
-		return;
-
 	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_invincibilitytimer] > 0
 		|| player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
 		|| ((gametyperules & GTR_BUMPERS) && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
@@ -2652,9 +2643,6 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 			scoremultiply = 2;
 	}
 
-	if (player->health <= 0)
-		return;
-
 	if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0 // Do not check spinout, because SPB and Eggman should combo
 		|| ((gametyperules & GTR_BUMPERS) && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 	{
@@ -2761,9 +2749,6 @@ void K_StealBumper(player_t *player, player_t *victim, boolean force)
 	mobj_t *newmo;
 
 	if (!(gametyperules & GTR_BUMPERS))
-		return;
-
-	if (player->health <= 0 || victim->health <= 0)
 		return;
 
 	if (!force)
@@ -4895,8 +4880,10 @@ static void K_MoveHeldObjects(player_t *player)
 					cur->momx = FixedMul(FINECOSINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
 					cur->momy = FixedMul(FINESINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
 					cur->flags &= ~MF_NOCLIPTHING;
+
 					if (!P_TryMove(cur, player->mo->x + cur->momx, player->mo->y + cur->momy, true))
-						P_SlideMove(cur, true);
+						P_SlideMove(cur);
+
 					if (P_IsObjectOnGround(player->mo))
 					{
 						if (P_MobjFlip(cur) > 0)
@@ -5361,7 +5348,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;
 
-	if (G_RaceGametype())
+	if (gametype == GT_RACE)
 	{
 		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
 		if (player->kartstuff[k_ringboost] >= 30)

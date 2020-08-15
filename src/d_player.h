@@ -475,17 +475,14 @@ typedef struct player_s
 
 	playerstate_t playerstate;
 
-	// Determine POV, including viewpoint bobbing during movement.
-	fixed_t camerascale;
-	fixed_t shieldscale;
 	// Focal origin above r.z
 	fixed_t viewz;
 	// Base height above floor for viewz.
 	fixed_t viewheight;
 	// Bob/squat speed.
-	//fixed_t deltaviewheight;
+	fixed_t deltaviewheight;
 	// bounded/scaled total momentum.
-	//fixed_t bob;
+	fixed_t bob;
 
 	angle_t viewrollangle;
 
