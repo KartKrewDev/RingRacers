@@ -1752,43 +1752,45 @@ void K_KartMoveAnimation(player_t *player)
 		turndir = 1;
 	}
 
+#define SetState(sn) \
+	if (player->mo->state != &states[sn]) \
+		P_SetPlayerMobjState(player->mo, sn)
+
 	if (!onground)
 	{
 		// Only use certain frames in the air, to make it look like your tires are spinning fruitlessly!
 
 		if (player->kartstuff[k_drift] > 0)
 		{
-			if (!spinningwheels || !(player->mo->state >= &states[S_KART_DRIFT1_L] && player->mo->state <= &states[S_KART_DRIFT2_L]))
-			{
-				// Neutral drift
-				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L);
-			}
+			// Neutral drift
+			SetState(S_KART_DRIFT_L);
 		}
 		else if (player->kartstuff[k_drift] > 0)
 		{
-			if (!spinningwheels || !(player->mo->state >= &states[S_KART_DRIFT1_R] && player->mo->state <= &states[S_KART_DRIFT2_R]))
-			{
-				// Neutral drift
-				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R);
-			}
+			// Neutral drift
+			SetState(S_KART_DRIFT_R);
 		}
 		else
 		{
-			if ((turndir == -1)
-			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1_R] && player->mo->state <= &states[S_KART_FAST2_R])))
+			if (turndir == -1)
 			{
-				P_SetPlayerMobjState(player->mo, S_KART_FAST2_R);
+				SetState(S_KART_FAST_R);
 			}
-			else if ((turndir == 1)
-			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1_L] && player->mo->state <= &states[S_KART_FAST2_L])))
+			else if (turndir == 1)
 			{
-				P_SetPlayerMobjState(player->mo, S_KART_FAST2_L);
+				SetState(S_KART_FAST_L);
 			}
-			else if ((turndir == 0)
-			&& (!spinningwheels || !(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2])))
+			else if (turndir == 0)
 			{
-				P_SetPlayerMobjState(player->mo, S_KART_FAST2);
+				SetState(S_KART_FAST);
 			}
+		}
+
+		if (!spinningwheels)
+		{
+			// TODO: These should prooobably be different SPR2s
+			// Just a quick hack to prevent needing to do this :V
+			player->mo->frame = (player->mo->frames & ~FF_FRAMEMASK);
 		}
 	}
 	else
@@ -1797,46 +1799,40 @@ void K_KartMoveAnimation(player_t *player)
 		{
 			// Drifting LEFT!
 
-			if ((turndir == -1)
-			&& !(player->mo->state >= &states[S_KART_DRIFT1_L_OUT] && player->mo->state <= &states[S_KART_DRIFT2_L_OUT]))
+			if (turndir == -1)
 			{
 				// Right -- outwards drift
-				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L_OUT);
+				SetState(S_KART_DRIFT_L_OUT);
 			}
-			else if ((turndir == 1)
-			&& !(player->mo->state >= &states[S_KART_DRIFT1_L_IN] && player->mo->state <= &states[S_KART_DRIFT4_L_IN]))
+			else if (turndir == 1)
 			{
 				// Left -- inwards drift
-				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L_IN);
+				SetState(S_KART_DRIFT_L_IN);
 			}
-			else if ((turndir == 0)
-			&& !(player->mo->state >= &states[S_KART_DRIFT1_L] && player->mo->state <= &states[S_KART_DRIFT2_L]))
+			else
 			{
 				// Neutral drift
-				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_L);
+				SetState(S_KART_DRIFT_L);
 			}
 		}
 		else if (player->kartstuff[k_drift] < 0)
 		{
 			// Drifting RIGHT!
 
-			if ((turndir == -1)
-			&& !(player->mo->state >= &states[S_KART_DRIFT1_R_IN] && player->mo->state <= &states[S_KART_DRIFT4_R_IN]))
+			if (turndir == -1)
 			{
 				// Right -- inwards drift
-				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R_IN);
+				SetState(S_KART_DRIFT_R_IN);
 			}
-			else if ((turndir == 1)
-			&& !(player->mo->state >= &states[S_KART_DRIFT1_R_OUT] && player->mo->state <= &states[S_KART_DRIFT2_R_OUT]))
+			else if (turndir == 1)
 			{
 				// Left -- outwards drift
-				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R_OUT);
+				SetState(S_KART_DRIFT_R_OUT);
 			}
-			else if ((turndir == 0)
-			&& !(player->mo->state >= &states[S_KART_DRIFT1_R] && player->mo->state <= &states[S_KART_DRIFT2_R]))
+			else
 			{
 				// Neutral drift
-				P_SetPlayerMobjState(player->mo, S_KART_DRIFT1_R);
+				SetState(S_KART_DRIFT_R);
 			}
 		}
 		else
@@ -1845,20 +1841,17 @@ void K_KartMoveAnimation(player_t *player)
 			{
 				// Going REAL fast!
 
-				if ((turndir == -1)
-				&& !(player->mo->state >= &states[S_KART_FAST1_R] && player->mo->state <= &states[S_KART_FAST2_R]))
+				if (turndir == -1)
 				{
-					P_SetPlayerMobjState(player->mo, S_KART_FAST1_R);
+					SetState(S_KART_FAST_R);
 				}
-				else if ((turndir == 1)
-				&& !(player->mo->state >= &states[S_KART_FAST1_L] && player->mo->state <= &states[S_KART_FAST2_L]))
+				else if (turndir == 1)
 				{
-					P_SetPlayerMobjState(player->mo, S_KART_FAST1_L);
+					SetState(S_KART_FAST_L);
 				}
-				else if ((turndir == 0)
-				&& !(player->mo->state >= &states[S_KART_FAST1] && player->mo->state <= &states[S_KART_FAST2]))
+				else
 				{
-					P_SetPlayerMobjState(player->mo, S_KART_FAST1);
+					SetState(S_KART_FAST);
 				}
 			}
 			else
@@ -1867,45 +1860,41 @@ void K_KartMoveAnimation(player_t *player)
 				{
 					// Drivin' slow.
 
-					if ((turndir == -1)
-					&& !(player->mo->state >= &states[S_KART_SLOW1_R] && player->mo->state <= &states[S_KART_SLOW2_R]))
+					if (turndir == -1)
 					{
-						P_SetPlayerMobjState(player->mo, S_KART_SLOW1_R);
+						SetState(S_KART_SLOW_R);
 					}
-					else if ((turndir == 1)
-					&& !(player->mo->state >= &states[S_KART_SLOW1_L] && player->mo->state <= &states[S_KART_SLOW2_L]))
+					else if (turndir == 1)
 					{
-						P_SetPlayerMobjState(player->mo, S_KART_SLOW1_L);
+						SetState(S_KART_SLOW_L);
 					}
-					else if ((turndir == 0)
-					&& !(player->mo->state >= &states[S_KART_SLOW1] && player->mo->state <= &states[S_KART_SLOW2]))
+					else
 					{
-						P_SetPlayerMobjState(player->mo, S_KART_SLOW1);
+						SetState(S_KART_SLOW);
 					}
 				}
 				else
 				{
 					// Completely still.
 
-					if ((turndir == -1)
-					&& !(player->mo->state >= &states[S_KART_STILL1_R] && player->mo->state <= &states[S_KART_STILL2_R]))
+					if (turndir == -1)
 					{
-						P_SetPlayerMobjState(player->mo, S_KART_STILL1_R);
+						SetState(S_KART_STILL_R);
 					}
-					else if ((turndir == 1)
-					&& !(player->mo->state >= &states[S_KART_STILL1_L] && player->mo->state <= &states[S_KART_STILL2_L]))
+					else if (turndir == 1)
 					{
-						P_SetPlayerMobjState(player->mo, S_KART_STILL1_L);
+						SetState(S_KART_STILL_L);
 					}
-					else if ((turndir == 0)
-					&& !(player->mo->state >= &states[S_KART_STILL1] && player->mo->state <= &states[S_KART_STILL2]))
+					else
 					{
-						P_SetPlayerMobjState(player->mo, S_KART_STILL1);
+						SetState(S_KART_STILL);
 					}
 				}
 			}
 		}
 	}
+
+#undef SetState
 
 	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
 	player->lastspeed = player->speed;
