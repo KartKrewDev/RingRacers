@@ -109,9 +109,9 @@ boolean LUAh_BotAI(mobj_t *sonic, mobj_t *tails, ticcmd_t *cmd); // Hook for B_B
 boolean LUAh_BotRespawn(mobj_t *sonic, mobj_t *tails); // Hook for B_CheckRespawn
 boolean LUAh_LinedefExecute(line_t *line, mobj_t *mo, sector_t *sector); // Hook for linedef executors
 boolean LUAh_PlayerMsg(int source, int target, int flags, char *msg, int mute); // Hook for chat messages
-boolean LUAh_HurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source); // Hook for hurt messages
+boolean LUAh_HurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 damagetype); // Hook for hurt messages
 #define LUAh_PlayerSpawn(player) LUAh_PlayerHook(player, hook_PlayerSpawn) // Hook for G_SpawnPlayer
-void LUAh_PlayerQuit(player_t *plr, int reason); // Hook for player quitting
+void LUAh_PlayerQuit(player_t *plr, kickreason_t reason); // Hook for player quitting
 boolean LUAh_MusicChange(const char *oldname, char *newname, UINT16 *mflags, boolean *looping,
 	UINT32 *position, UINT32 *prefadems, UINT32 *fadeinms); // Hook for music changes
 

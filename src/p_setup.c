@@ -3805,10 +3805,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// will be set by player think.
 	players[consoleplayer].viewz = 1;
 
-	// Cancel all d_main.c fadeouts (keep fade in though).
-	wipegamestate = FORCEWIPEOFF;
-	wipestyleflags = 0;
-
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
 	if (encoremode && !prevencoremode && !demo.rewinding)
@@ -3874,8 +3870,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	if (G_GetModeAttackRetryFlag())
 	{
-		if (modeattacking)
-			wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
 		G_ClearModeAttackRetryFlag();
 	}
 

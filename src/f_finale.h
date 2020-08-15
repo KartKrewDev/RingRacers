@@ -140,42 +140,9 @@ void F_MenuPresTicker(boolean run);
 //
 // WIPE
 //
-// HACK for menu fading while titlemapinaction; skips the level check
-#define FORCEWIPE -3
-#define FORCEWIPEOFF -2
 
 extern boolean WipeInAction;
 extern boolean WipeStageTitle;
-
-typedef enum
-{
-	WIPESTYLE_NORMAL,
-	WIPESTYLE_COLORMAP
-} wipestyle_t;
-extern wipestyle_t wipestyle;
-
-typedef enum
-{
-	WSF_FADEOUT   = 1,
-	WSF_FADEIN    = 1<<1,
-	WSF_TOWHITE   = 1<<2,
-	WSF_CROSSFADE = 1<<3,
-} wipestyleflags_t;
-extern wipestyleflags_t wipestyleflags;
-
-// Even my function names are borderline
-boolean F_ShouldColormapFade(void);
-boolean F_TryColormapFade(UINT8 wipecolor);
-#ifndef NOWIPE
-void F_DecideWipeStyle(void);
-#endif
-
-#define FADECOLORMAPDIV 8
-#define FADECOLORMAPROWS (256/FADECOLORMAPDIV)
-
-#define FADEREDFACTOR   15
-#define FADEGREENFACTOR 15
-#define FADEBLUEFACTOR  10
 
 extern INT32 lastwipetic;
 

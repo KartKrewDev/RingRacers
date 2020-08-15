@@ -33,6 +33,9 @@
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "m_menu.h" // Player Setup menu color stuff
 
+// SRB2Kart
+#include "p_spec.h" // P_StartQuake
+
 #include "lua_script.h"
 #include "lua_libs.h"
 #include "lua_hud.h" // hud_running errors
@@ -1265,19 +1268,6 @@ static int lib_pGivePlayerLives(lua_State *L)
 	return 0;
 }
 
-static int lib_pGiveCoopLives(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 numlives = (INT32)luaL_checkinteger(L, 2);
-	boolean sound = (boolean)lua_opttrueboolean(L, 3);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_GiveCoopLives(player, numlives, sound);
-	return 0;
-}
-
 static int lib_pResetScore(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1286,39 +1276,6 @@ static int lib_pResetScore(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	P_ResetScore(player);
-	return 0;
-}
-
-static int lib_pDoJumpShield(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_DoJumpShield(player);
-	return 0;
-}
-
-static int lib_pDoBubbleBounce(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_DoBubbleBounce(player);
-	return 0;
-}
-
-static int lib_pBlackOw(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_BlackOw(player);
 	return 0;
 }
 
@@ -1355,17 +1312,6 @@ static int lib_pMovePlayer(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	P_MovePlayer(player);
-	return 0;
-}
-
-static int lib_pDoPlayerFinish(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_DoPlayerFinish(player);
 	return 0;
 }
 
@@ -1442,19 +1388,6 @@ static int lib_pNukeEnemies(lua_State *L)
 	if (!inflictor || !source)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_NukeEnemies(inflictor, source, radius);
-	return 0;
-}
-
-static int lib_pEarthquake(lua_State *L)
-{
-	mobj_t *inflictor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	fixed_t radius = luaL_checkfixed(L, 3);
-	NOHUD
-	INLEVEL
-	if (!inflictor || !source)
-		return LUA_ErrInvalid(L, "mobj_t");
-	P_Earthquake(inflictor, source, radius);
 	return 0;
 }
 
@@ -1690,18 +1623,6 @@ static int lib_pPlayerRingBurst(lua_State *L)
 	return 0;
 }
 
-static int lib_pPlayerFlagBurst(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean toss = lua_optboolean(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_PlayerFlagBurst(player, toss);
-	return 0;
-}
-
 static int lib_pPlayRinglossSound(lua_State *L)
 {
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -1786,28 +1707,6 @@ static int lib_pCanPickupItem(lua_State *L)
 	return 1;
 }
 
-static int lib_pDoNightsScore(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_DoNightsScore(player);
-	return 0;
-}
-
-static int lib_pDoMatchSuper(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_DoMatchSuper(player);
-	return 0;
-}
-
 // P_SPEC
 ////////////
 
@@ -1840,18 +1739,6 @@ static int lib_pSetMobjStateNF(lua_State *L)
 	return 1;
 }
 
-static int lib_pDoSuperTransformation(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean giverings = lua_optboolean(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_DoSuperTransformation(player, giverings);
-	return 0;
-}
-
 static int lib_pExplodeMissile(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -1871,9 +1758,9 @@ static int lib_pMobjTouchingSectorSpecial(lua_State *L)
 	boolean touchground = lua_optboolean(L, 4);
 	//HUDSAFE
 	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	LUA_PushUserdata(L, P_PlayerTouchingSectorSpecial(player, section, number), META_SECTOR);
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number, touchground), META_SECTOR);
 	return 1;
 }
 
@@ -2678,35 +2565,6 @@ static int lib_sMusicName(lua_State *L)
 	return 1;
 }
 
-static int lib_sMusicInfo(lua_State *L)
-{
-	player_t *player = NULL;
-	NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-	{
-		char mname[7];
-		UINT16 mflags;
-		boolean looping;
-		if (S_MusicInfo(mname, &mflags, &looping))
-		{
-			lua_pushstring(L, mname);
-			lua_pushinteger(L, mflags);
-			lua_pushboolean(L, looping);
-		}
-		else
-			lua_pushboolean(L, false);
-	}
-	else
-		lua_pushnil(L);
-	return 1;
-}
-
 static int lib_sMusicExists(lua_State *L)
 {
 	boolean checkMIDI = lua_opttrueboolean(L, 2);
@@ -2758,6 +2616,12 @@ static int lib_sSetMusicLoopPoint(lua_State *L)
 		lua_pushboolean(L, S_SetMusicLoopPoint(looppoint));
 	else
 		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sGetMusicLoopPoint(lua_State *L)
+{
+	lua_pushinteger(L, S_GetMusicLoopPoint());
 	return 1;
 }
 
@@ -3536,14 +3400,6 @@ static int lib_kLossSound(lua_State *L)
 
 // Note: Pain, Death and Victory are already exposed.
 
-static int lib_kGetKartColorByName(lua_State *L)
-{
-	const char *name = luaL_checkstring(L, 1);
-	//HUDSAFE
-	lua_pushinteger(L, K_GetKartColorByName(name));
-	return 1;
-}
-
 static int lib_kIsPlayerLosing(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4041,22 +3897,16 @@ static luaL_Reg lib[] = {
 	{"P_SpawnGhostMobj",lib_pSpawnGhostMobj},
 	{"P_GivePlayerRings",lib_pGivePlayerRings},
 	{"P_GivePlayerLives",lib_pGivePlayerLives},
-	{"P_GiveCoopLives",lib_pGiveCoopLives},
 	{"P_ResetScore",lib_pResetScore},
-	{"P_DoJumpShield",lib_pDoJumpShield},
-	{"P_DoBubbleBounce",lib_pDoBubbleBounce},
-	{"P_BlackOw",lib_pBlackOw},
 	{"P_ElementalFire",lib_pElementalFire},
 	{"P_SpawnSkidDust", lib_pSpawnSkidDust},
 	{"P_MovePlayer",lib_pMovePlayer},
-	{"P_DoPlayerFinish",lib_pDoPlayerFinish},
 	{"P_DoPlayerExit",lib_pDoPlayerExit},
 	{"P_InstaThrust",lib_pInstaThrust},
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_LookForEnemies",lib_pLookForEnemies},
 	{"P_NukeEnemies",lib_pNukeEnemies},
-	{"P_Earthquake",lib_pEarthquake},
 	{"P_SwitchShield",lib_pSwitchShield},
 
 	// p_map
@@ -4077,19 +3927,15 @@ static luaL_Reg lib[] = {
 	{"P_DamageMobj",lib_pDamageMobj},
 	{"P_KillMobj",lib_pKillMobj},
 	{"P_PlayerRingBurst",lib_pPlayerRingBurst},
-	{"P_PlayerFlagBurst",lib_pPlayerFlagBurst},
 	{"P_PlayRinglossSound",lib_pPlayRinglossSound},
 	{"P_PlayDeathSound",lib_pPlayDeathSound},
 	{"P_PlayVictorySound",lib_pPlayVictorySound},
 	{"P_PlayLivesJingle",lib_pPlayLivesJingle},
 	{"P_CanPickupItem",lib_pCanPickupItem},
-	{"P_DoNightsScore",lib_pDoNightsScore},
-	{"P_DoMatchSuper",lib_pDoMatchSuper},
 
 	// p_spec
 	{"P_Thrust",lib_pThrust},
 	{"P_SetMobjStateNF",lib_pSetMobjStateNF},
-	{"P_DoSuperTransformation",lib_pDoSuperTransformation},
 	{"P_ExplodeMissile",lib_pExplodeMissile},
 	{"P_MobjTouchingSectorSpecial",lib_pMobjTouchingSectorSpecial},
 	{"P_FindLowestFloorSurrounding",lib_pFindLowestFloorSurrounding},
@@ -4148,7 +3994,6 @@ static luaL_Reg lib[] = {
 	{"S_MusicPlaying",lib_sMusicPlaying},
 	{"S_MusicPaused",lib_sMusicPaused},
 	{"S_MusicName",lib_sMusicName},
-	{"S_MusicInfo",lib_sMusicInfo},
 	{"S_MusicExists",lib_sMusicExists},
 	{"S_GetMusicLength",lib_sGetMusicLength},
 	{"S_SetMusicLoopPoint",lib_sSetMusicLoopPoint},
@@ -4199,7 +4044,6 @@ static luaL_Reg lib[] = {
 	{"K_PlayLossSound", lib_kLossSound},
 	{"K_PlayPainSound", lib_kPainSound},
 	{"K_PlayHitEmSound", lib_kHitEmSound},
-	{"K_GetKartColorByName",lib_kGetKartColorByName},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
 	{"K_KartBouncing",lib_kKartBouncing},

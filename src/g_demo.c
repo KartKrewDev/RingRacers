@@ -2040,7 +2040,7 @@ void G_BeginRecording(void)
 	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
 
 	// player lua vars, always saved even if empty
-	LUA_ArchiveDemo();
+	LUA_Archive(demo_p);
 
 	WRITEUINT32(demo_p,P_GetInitSeed());
 
@@ -3006,7 +3006,7 @@ void G_DoPlayDemo(char *defdemoname)
 			LUA_ClearState();
 
 		// No modeattacking check, DF_LUAVARS won't be present here.
-		LUA_UnArchiveDemo();
+		LUA_UnArchive(demo_p);
 	}
 
 	splitscreen = 0;

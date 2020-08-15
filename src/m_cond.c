@@ -20,7 +20,6 @@
 #include "g_game.h" // record info
 #include "r_skins.h" // numskins
 #include "r_draw.h" // R_GetColorByName
-#include "k_color.h" // K_GetKartColorByName
 #include "k_pwrlv.h"
 
 // Map triggers for linedef executors

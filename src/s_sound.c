@@ -1654,6 +1654,7 @@ enum
 };
 
 musicdef_t *musicdefstart = NULL;
+struct cursongcredit cursongcredit; // Currently displayed song credit info
 
 //
 // search for music definition in wad

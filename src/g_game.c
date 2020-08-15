@@ -56,7 +56,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
-
+#include "doomstat.h"
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -1334,8 +1334,6 @@ void G_PreLevelTitleCard(void)
 		if (takescreenshot) // Only take screenshots after drawing.
 			M_DoScreenShot();
 	}
-	if (!cv_showhud.value)
-		wipestyleflags = WSF_CROSSFADE;
 #endif
 }
 

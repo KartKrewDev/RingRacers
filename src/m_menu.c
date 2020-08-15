@@ -2338,6 +2338,64 @@ void Moviemode_option_Onchange(void)
 menu_t *currentMenu = &MainDef;
 
 // =========================================================================
+// MENU PRESENTATION PARAMETER HANDLING (BACKGROUNDS)
+// =========================================================================
+
+// menu IDs are equal to current/prevMenu in most cases, except MN_SPECIAL when we don't want to operate on Message, Pause, etc.
+UINT32 prevMenuId = 0;
+UINT32 activeMenuId = 0;
+
+menupres_t menupres[NUMMENUTYPES];
+
+void M_InitMenuPresTables(void)
+{
+	INT32 i;
+
+	// Called in d_main before SOC can get to the tables
+	// Set menupres defaults
+	for (i = 0; i < NUMMENUTYPES; i++)
+	{
+		// so-called "undefined"
+		menupres[i].fadestrength = -1;
+		menupres[i].hidetitlepics = -1; // inherits global hidetitlepics
+		menupres[i].ttmode = TTMODE_NONE;
+		menupres[i].ttscale = UINT8_MAX;
+		menupres[i].ttname[0] = 0;
+		menupres[i].ttx = INT16_MAX;
+		menupres[i].tty = INT16_MAX;
+		menupres[i].ttloop = INT16_MAX;
+		menupres[i].tttics = UINT16_MAX;
+		menupres[i].enterwipe = -1;
+		menupres[i].exitwipe = -1;
+		menupres[i].bgcolor = -1;
+		menupres[i].titlescrollxspeed = INT32_MAX;
+		menupres[i].titlescrollyspeed = INT32_MAX;
+		menupres[i].bghide = true;
+		// default true
+		menupres[i].enterbubble = true;
+		menupres[i].exitbubble = true;
+
+		if (i != MN_MAIN)
+		{
+			menupres[i].muslooping = true;
+		}
+		if (i == MN_SP_TIMEATTACK)
+			strncpy(menupres[i].musname, "_recat", 7);
+		else if (i == MN_SP_NIGHTSATTACK)
+			strncpy(menupres[i].musname, "_nitat", 7);
+		else if (i == MN_SP_MARATHON)
+			strncpy(menupres[i].musname, "spec8", 6);
+		else if (i == MN_SP_PLAYER || i == MN_SR_PLAYER)
+			strncpy(menupres[i].musname, "_chsel", 7);
+		else if (i == MN_SR_SOUNDTEST)
+		{
+			*menupres[i].musname = '\0';
+			menupres[i].musstop = true;
+		}
+	}
+}
+
+// =========================================================================
 // BASIC MENU HANDLING
 // =========================================================================
 
@@ -3313,6 +3371,7 @@ void M_ClearMenus(boolean callexitmenufunc)
 	if (currentMenu == &MessageDef) // Oh sod off!
 		currentMenu = &MainDef; // Not like it matters
 	menuactive = false;
+	hidetitlemap = false;
 }
 
 //
@@ -3372,6 +3431,14 @@ void M_SetupNextMenu(menu_t *menudef)
 			}
 		}
 	}
+
+	hidetitlemap = false;
+}
+
+// Guess I'll put this here, idk
+boolean M_MouseNeeded(void)
+{
+	return false;
 }
 
 //
@@ -5309,6 +5376,7 @@ void M_ReplayHut(INT32 choice)
 	menuactive = true;
 	M_SetupNextMenu(&MISC_ReplayHutDef);
 	G_SetGamestate(GS_TIMEATTACK);
+	titlemapinaction = TITLEMAP_OFF; // Nope don't give us HOMs please
 
 	demo.rewinding = false;
 	CL_ClearRewinds();
@@ -7921,6 +7989,7 @@ static void M_TimeAttack(INT32 choice)
 	M_SetupNextMenu(&SP_TimeAttackDef);
 
 	G_SetGamestate(GS_TIMEATTACK);
+	titlemapinaction = TITLEMAP_OFF; // Nope don't give us HOMs please
 
 	if (cv_nextmap.value)
 		Nextmap_OnChange();
@@ -7953,6 +8022,7 @@ static void M_BreakTheCapsules(INT32 choice)
 	M_SetupNextMenu(&SP_TimeAttackDef);
 
 	G_SetGamestate(GS_TIMEATTACK);
+	titlemapinaction = TITLEMAP_OFF; // Nope don't give us HOMs please
 
 	if (cv_nextmap.value)
 		Nextmap_OnChange();
@@ -7970,161 +8040,6 @@ static boolean M_QuitTimeAttackMenu(void)
 	COM_BufAddText(va("skin \"%s\"\n", cv_chooseskin.string));
 	return true;
 }
-
-// Drawing function for Nights Attack
-/*void M_DrawNightsAttackMenu(void)
-{
-	patch_t *PictureOfLevel;
-	lumpnum_t lumpnum;
-	char beststr[40];
-
-	S_ChangeMusicInternal("racent", true); // Eww, but needed for when user hits escape during demo playback
-
-	V_DrawPatchFill(W_CachePatchName("SRB2BACK", PU_CACHE));
-
-	// draw menu (everything else goes on top of it)
-	M_DrawGenericMenu();
-
-	//  A 160x100 image of the level as entry MAPxxP
-	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cv_nextmap.value)));
-
-	if (lumpnum != LUMPERROR)
-		PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-	else
-		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
-
-	V_DrawSmallScaledPatch(90, 28, 0, PictureOfLevel);
-
-	// Level record list
-	if (cv_nextmap.value)
-	{
-		emblem_t *em;
-		INT32 yHeight;
-
-		UINT8 bestoverall	= G_GetBestNightsGrade(cv_nextmap.value, 0);
-		UINT8 bestgrade		= G_GetBestNightsGrade(cv_nextmap.value, cv_dummymares.value);
-		UINT32 bestscore	= G_GetBestNightsScore(cv_nextmap.value, cv_dummymares.value);
-		tic_t besttime		= G_GetBestNightsTime(cv_nextmap.value, cv_dummymares.value);
-
-		if (P_HasGrades(cv_nextmap.value, 0))
-			V_DrawScaledPatch(200, 28 + 8, 0, ngradeletters[bestoverall]);
-
-		if (currentMenu == &SP_NightsAttackDef)
-		{
-			if (P_HasGrades(cv_nextmap.value, cv_dummymares.value))
-			{
-				V_DrawString(160-88, 112, highlightflags, "BEST GRADE:");
-				V_DrawSmallScaledPatch(160 + 86 - (ngradeletters[bestgrade]->width/2),
-					112 + 8 - (ngradeletters[bestgrade]->height/2),
-					0, ngradeletters[bestgrade]);
-			}
-
-			if (!bestscore)
-				sprintf(beststr, "(none)");
-			else
-				sprintf(beststr, "%u", bestscore);
-
-			V_DrawString(160 - 88, 122, highlightflags, "BEST SCORE:");
-			V_DrawRightAlignedString(160 + 88, 122, V_ALLOWLOWERCASE, beststr);
-
-			if (besttime == UINT32_MAX)
-				sprintf(beststr, "(none)");
-			else
-				sprintf(beststr, "%i:%02i.%02i", G_TicsToMinutes(besttime, true),
-																				 G_TicsToSeconds(besttime),
-																				 G_TicsToCentiseconds(besttime));
-
-			V_DrawString(160-88, 132, highlightflags, "BEST TIME:");
-			V_DrawRightAlignedString(160+88, 132, V_ALLOWLOWERCASE, beststr);
-
-			if (cv_dummymares.value == 0) {
-				// Draw record emblems.
-				em = M_GetLevelEmblems(cv_nextmap.value);
-				while (em)
-				{
-					switch (em->type)
-					{
-						case ET_NGRADE: yHeight = 112; break;
-						case ET_NTIME:  yHeight = 132; break;
-						default:
-							goto skipThisOne;
-					}
-
-					if (em->collected)
-						V_DrawSmallMappedPatch(160+88, yHeight, 0, W_CachePatchName(M_GetEmblemPatch(em, false), PU_CACHE),
-																	 R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(em), GTC_MENUCACHE));
-					else
-						V_DrawSmallScaledPatch(160+88, yHeight, 0, W_CachePatchName("NEEDIT", PU_CACHE));
-
-					skipThisOne:
-					em = M_GetLevelEmblems(-1);
-				}
-			}
-		}
-		// ALWAYS DRAW level name even when not on this menu!
-		else
-		{
-			consvar_t *ncv;
-			INT32 x = SP_NightsAttackDef.x;
-			INT32 y = SP_NightsAttackDef.y;
-
-			ncv = (consvar_t *)SP_NightsAttackMenu[0].itemaction;
-			V_DrawString(x, y + SP_NightsAttackMenu[0].alphaKey, V_TRANSLUCENT, SP_NightsAttackMenu[0].text);
-			V_DrawString(BASEVIDWIDTH - x - V_StringWidth(ncv->string, 0),
-									 y + SP_NightsAttackMenu[0].alphaKey, highlightflags|V_TRANSLUCENT, ncv->string);
-		}
-	}
-}*/
-
-// Going to Nights Attack menu...
-/*static void M_BreakTheCapsules(INT32 choice)
-{
-	(void)choice;
-
-	memset(skins_cons_t, 0, sizeof (skins_cons_t));
-
-	levellistmode = LLM_BREAKTHECAPSULES; // Don't be dependent on cv_newgametype
-
-	if (M_CountLevelsToShowInList() == 0)
-	{
-		M_StartMessage(M_GetText("No NiGHTS-attackable levels found.\n"),NULL,MM_NOTHING);
-		return;
-	}
-
-	// This is really just to make sure Sonic is the played character, just in case
-	M_PatchSkinNameTable();
-
-	M_PrepareLevelSelect();
-	M_SetupNextMenu(&SP_NightsAttackDef);
-	Nextmap_OnChange();
-
-	itemOn = nastart; // "Start" is selected.
-
-	G_SetGamestate(GS_TIMEATTACK);
-	S_ChangeMusicInternal("racent", true);
-}*/
-
-// Player has selected the "START" from the nights attack screen
-/*static void M_ChooseNightsAttack(INT32 choice)
-{
-	char nameofdemo[256];
-	(void)choice;
-	emeralds = 0;
-	M_ClearMenus(true);
-	modeattacking = ATTACKING_CAPSULES;
-
-	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
-	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
-
-	snprintf(nameofdemo, sizeof nameofdemo, "replay"PATHSEP"%s"PATHSEP"%s-last", timeattackfolder, G_BuildMapName(cv_nextmap.value));
-
-	if (!cv_autorecord.value)
-		remove(va("%s"PATHSEP"%s.lmp", srb2home, nameofdemo));
-	else
-		G_RecordDemo(nameofdemo);
-
-	G_DeferedInitNew(false, G_BuildMapName(cv_nextmap.value), 0, 0, false);
-}*/
 
 // Player has selected the "START" from the time attack screen
 static void M_ChooseTimeAttack(INT32 choice)

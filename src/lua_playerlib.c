@@ -229,10 +229,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->skincolor);
 	else if (fastcmp(field,"score"))
 		lua_pushinteger(L, plr->score);
-	else if (fastcmp(field,"dashspeed"))
-		lua_pushfixed(L, plr->dashspeed);
-	else if (fastcmp(field,"dashtime"))
-		lua_pushinteger(L, plr->dashtime);
 	// SRB2kart
 	else if (fastcmp(field,"kartspeed"))
 		lua_pushinteger(L, plr->kartspeed);
@@ -500,10 +496,6 @@ static int player_set(lua_State *L)
 	}
 	else if (fastcmp(field,"score"))
 		plr->score = (UINT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"dashspeed"))
-		plr->dashspeed = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"dashtime"))
-		plr->dashtime = (INT32)luaL_checkinteger(L, 3);
 	// SRB2kart
 	else if (fastcmp(field,"kartstuff"))
 		return NOSET;

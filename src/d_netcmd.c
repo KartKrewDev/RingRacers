@@ -56,6 +56,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "doomstat.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -310,7 +311,7 @@ INT32 cv_debug;
 consvar_t cv_usemouse = {"use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS] = {
-	{"use_gamepad", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick, 0, NULL, NULL, 0, 0, NULL},
+	{"use_gamepad", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1, 0, NULL, NULL, 0, 0, NULL},
 	{"use_gamepad2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2, 0, NULL, NULL, 0, 0, NULL},
 	{"use_joystick3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3, 0, NULL, NULL, 0, 0, NULL},
 	{"use_joystick4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4, 0, NULL, NULL, 0, 0, NULL}
@@ -4865,7 +4866,7 @@ static void Command_Archivetest_f(void)
 
 	// test archive
 	CONS_Printf("LUA_Archive...\n");
-	LUA_Archive();
+	LUA_Archive(save_p);
 	WRITEUINT8(save_p, 0x7F);
 	wrote = (UINT32)(save_p-buf);
 
@@ -4876,7 +4877,7 @@ static void Command_Archivetest_f(void)
 	// test unarchive
 	save_p = buf;
 	CONS_Printf("LUA_UnArchive...\n");
-	LUA_UnArchive();
+	LUA_UnArchive(save_p);
 	i = READUINT8(save_p);
 	if (i != 0x7F || wrote != (UINT32)(save_p-buf))
 		CONS_Printf("Savegame corrupted. (write %u, read %u)\n", wrote, (UINT32)(save_p-buf));

@@ -175,7 +175,6 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 void P_GivePlayerRings(player_t *player, INT32 num_rings);
 void P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
 void P_GivePlayerLives(player_t *player, INT32 numlives);
-void P_GiveCoopLives(player_t *player, INT32 numlives, boolean sound);
 UINT8 P_GetNextEmerald(void);
 void P_GiveEmerald(boolean spawnObj);
 void P_GiveFinishFlags(player_t *player);
@@ -186,18 +185,12 @@ void P_ResetScore(player_t *player);
 #endif
 boolean P_AutoPause(void);
 
-void P_DoJumpShield(player_t *player);
-void P_DoBubbleBounce(player_t *player);
-void P_DoAbilityBounce(player_t *player, boolean changemomz);
-void P_TwinSpinRejuvenate(player_t *player, mobjtype_t type);
-void P_BlackOw(player_t *player);
 void P_ElementalFire(player_t *player, boolean cropcircle);
 void P_SpawnSkidDust(player_t *player, fixed_t radius, boolean sound);
 
 void P_MovePlayer(player_t *player);
 void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);
-void P_DoPlayerFinish(player_t *player);
 void P_DoPlayerExit(player_t *player);
 void P_DoTimeOver(player_t *player);
 
@@ -502,15 +495,11 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings); /// \todo better fit 
 
 void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck);
 void P_TouchStarPost(mobj_t *starpost, player_t *player, boolean snaptopost);
-void P_PlayerFlagBurst(player_t *player, boolean toss);
 void P_CheckTimeLimit(void);
 void P_CheckPointLimit(void);
-//void P_CheckSurvivors(void);
 boolean P_CheckRacers(void);
 
 boolean P_CanPickupItem(player_t *player, UINT8 weapon);
-void P_DoNightsScore(player_t *player);
-void P_DoMatchSuper(player_t *player);
 
 //
 // P_SPEC
@@ -531,7 +520,6 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 boolean P_SetMobjStateNF(mobj_t *mobj, statenum_t state);
 boolean P_CheckMissileSpawn(mobj_t *th);
 void P_Thrust(mobj_t *mo, angle_t angle, fixed_t move);
-void P_DoSuperTransformation(player_t *player, boolean giverings);
 void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 

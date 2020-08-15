@@ -382,9 +382,8 @@ void F_IntroDrawer(void)
 		{
 			if (rendermode != render_none)
 			{
-				wipestyleflags = WSF_FADEOUT;
 				F_WipeStartScreen();
-				F_TryColormapFade(31);
+				F_WipeColorFill(31);
 				F_WipeEndScreen();
 				F_RunWipe(99, true, "FADEMAP0", false, false);
 			}
@@ -430,7 +429,6 @@ void F_IntroDrawer(void)
 
 		F_WipeStartScreen();
 		wipegamestate = -1;
-		wipestyleflags = WSF_CROSSFADE;
 		animtimer = stoptimer = 0;
 	}
 

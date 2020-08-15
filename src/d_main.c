@@ -70,6 +70,7 @@
 
 // SRB2Kart
 #include "k_grandprix.h"
+#include "doomstat.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -336,17 +337,11 @@ static void D_Display(void)
 		if (rendermode != render_none)
 		{
 			// Fade to black first
-			if ((wipegamestate == (gamestate_t)FORCEWIPE ||
-			        (wipegamestate != (gamestate_t)FORCEWIPEOFF
-						&& !(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
-					) // fades to black on its own timing, always
+			if (!(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)) // fades to black on its own timing, always
 			 && wipetypepre != UINT8_MAX)
 			{
 				F_WipeStartScreen();
-				// Check for Mega Genesis fade
-				wipestyleflags = WSF_FADEOUT;
-				if (wipegamestate == (gamestate_t)FORCEWIPE)
-					F_WipeColorFill(31);
+				F_WipeColorFill(31);
 				F_WipeEndScreen();
 				F_RunWipe(wipetypepre, gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
 			}
@@ -460,9 +455,6 @@ static void D_Display(void)
 	}
 
 	// STUPID race condition...
-	if (wipegamestate == GS_INTRO && gamestate == GS_TITLESCREEN)
-		wipegamestate = FORCEWIPEOFF;
-	else
 	{
 		wipegamestate = gamestate;
 

@@ -114,25 +114,10 @@ enum align {
 	align_left = 0,
 	align_center,
 	align_right,
-	align_fixed,
-	align_fixedcenter,
-	align_fixedright,
 	align_small,
-	align_smallfixed,
-	align_smallfixedcenter,
-	align_smallfixedright,
 	align_smallcenter,
 	align_smallright,
-	align_smallthin,
-	align_smallthincenter,
-	align_smallthinright,
-	align_smallthinfixed,
-	align_smallthinfixedcenter,
-	align_smallthinfixedright,
 	align_thin,
-	align_thinfixed,
-	align_thinfixedcenter,
-	align_thinfixedright,
 	align_thincenter,
 	align_thinright
 };
@@ -140,25 +125,10 @@ static const char *const align_opt[] = {
 	"left",
 	"center",
 	"right",
-	"fixed",
-	"fixed-center",
-	"fixed-right",
 	"small",
-	"small-fixed",
-	"small-fixed-center",
-	"small-fixed-right",
 	"small-center",
 	"small-right",
-	"small-thin",
-	"small-thin-center",
-	"small-thin-right",
-	"small-thin-fixed",
-	"small-thin-fixed-center",
-	"small-thin-fixed-right",
 	"thin",
-	"thin-fixed",
-	"thin-fixed-center",
-	"thin-fixed-right",
 	"thin-center",
 	"thin-right",
 	NULL};
@@ -1029,51 +999,15 @@ static int libd_drawString(lua_State *L)
 	case align_right:
 		V_DrawRightAlignedString(x, y, flags, str);
 		break;
-	case align_fixed:
-		V_DrawStringAtFixed(x, y, flags, str);
-		break;
-	case align_fixedcenter:
-		V_DrawCenteredStringAtFixed(x, y, flags, str);
-		break;
-	case align_fixedright:
-		V_DrawRightAlignedStringAtFixed(x, y, flags, str);
-		break;
 	// hu_font, 0.5x scale
 	case align_small:
 		V_DrawSmallString(x, y, flags, str);
-		break;
-	case align_smallfixed:
-		V_DrawSmallStringAtFixed(x, y, flags, str);
-		break;
-	case align_smallfixedcenter:
-		V_DrawCenteredSmallStringAtFixed(x, y, flags, str);
-		break;
-	case align_smallfixedright:
-		V_DrawRightAlignedSmallStringAtFixed(x, y, flags, str);
 		break;
 	case align_smallcenter:
 		V_DrawCenteredSmallString(x, y, flags, str);
 		break;
 	case align_smallright:
 		V_DrawRightAlignedSmallString(x, y, flags, str);
-		break;
-	case align_smallthin:
-		V_DrawSmallThinString(x, y, flags, str);
-		break;
-	case align_smallthincenter:
-		V_DrawCenteredSmallThinString(x, y, flags, str);
-		break;
-	case align_smallthinright:
-		V_DrawRightAlignedSmallThinString(x, y, flags, str);
-		break;
-	case align_smallthinfixed:
-		V_DrawSmallThinStringAtFixed(x, y, flags, str);
-		break;
-	case align_smallthinfixedcenter:
-		V_DrawCenteredSmallThinStringAtFixed(x, y, flags, str);
-		break;
-	case align_smallthinfixedright:
-		V_DrawRightAlignedSmallThinStringAtFixed(x, y, flags, str);
 		break;
 	// tny_font
 	case align_thin:
@@ -1085,78 +1019,7 @@ static int libd_drawString(lua_State *L)
 	case align_thinright:
 		V_DrawRightAlignedThinString(x, y, flags, str);
 		break;
-	case align_thinfixed:
-		V_DrawThinStringAtFixed(x, y, flags, str);
-		break;
-	case align_thinfixedcenter:
-		V_DrawCenteredThinStringAtFixed(x, y, flags, str);
-		break;
-	case align_thinfixedright:
-		V_DrawRightAlignedThinStringAtFixed(x, y, flags, str);
-		break;
 	}
-	return 0;
-}
-
-static int libd_drawNameTag(lua_State *L)
-{
-	INT32 x;
-	INT32 y;
-	const char *str;
-	INT32 flags;
-	UINT16 basecolor;
-	UINT16 outlinecolor;
-	UINT8 *basecolormap = NULL;
-	UINT8 *outlinecolormap = NULL;
-
-	HUDONLY
-
-	x = luaL_checkinteger(L, 1);
-	y = luaL_checkinteger(L, 2);
-	str = luaL_checkstring(L, 3);
-	flags = luaL_optinteger(L, 4, 0);
-	basecolor = luaL_optinteger(L, 5, SKINCOLOR_BLUE);
-	outlinecolor = luaL_optinteger(L, 6, SKINCOLOR_ORANGE);
-	if (basecolor != SKINCOLOR_NONE)
-		basecolormap = R_GetTranslationColormap(TC_DEFAULT, basecolor, GTC_CACHE);
-	if (outlinecolor != SKINCOLOR_NONE)
-		outlinecolormap = R_GetTranslationColormap(TC_DEFAULT, outlinecolor, GTC_CACHE);
-
-	flags &= ~V_PARAMMASK; // Don't let crashes happen.
-	V_DrawNameTag(x, y, flags, FRACUNIT, basecolormap, outlinecolormap, str);
-	return 0;
-}
-
-static int libd_drawScaledNameTag(lua_State *L)
-{
-	fixed_t x;
-	fixed_t y;
-	const char *str;
-	INT32 flags;
-	fixed_t scale;
-	UINT16 basecolor;
-	UINT16 outlinecolor;
-	UINT8 *basecolormap = NULL;
-	UINT8 *outlinecolormap = NULL;
-
-	HUDONLY
-
-	x = luaL_checkfixed(L, 1);
-	y = luaL_checkfixed(L, 2);
-	str = luaL_checkstring(L, 3);
-	flags = luaL_optinteger(L, 4, 0);
-	scale = luaL_optinteger(L, 5, FRACUNIT);
-	if (scale < 0)
-		return luaL_error(L, "negative scale");
-	basecolor = luaL_optinteger(L, 6, SKINCOLOR_BLUE);
-	outlinecolor = luaL_optinteger(L, 7, SKINCOLOR_ORANGE);
-	if (basecolor != SKINCOLOR_NONE)
-		basecolormap = R_GetTranslationColormap(TC_DEFAULT, basecolor, GTC_CACHE);
-	if (outlinecolor != SKINCOLOR_NONE)
-		outlinecolormap = R_GetTranslationColormap(TC_DEFAULT, outlinecolor, GTC_CACHE);
-
-	flags &= ~V_PARAMMASK; // Don't let crashes happen.
-	V_DrawNameTag(FixedInt(x), FixedInt(y), flags, scale, basecolormap, outlinecolormap, str);
 	return 0;
 }
 
@@ -1193,13 +1056,6 @@ static int libd_stringWidth(lua_State *L)
 		lua_pushinteger(L, V_ThinStringWidth(str, flags));
 		break;
 	}
-	return 1;
-}
-
-static int libd_nameTagWidth(lua_State *L)
-{
-	HUDONLY
-	lua_pushinteger(L, V_NameTagWidth(luaL_checkstring(L, 1)));
 	return 1;
 }
 
@@ -1368,12 +1224,9 @@ static luaL_Reg lib_draw[] = {
 	{"drawFill", libd_drawFill},
 	{"fadeScreen", libd_fadeScreen},
 	{"drawString", libd_drawString},
-	{"drawNameTag", libd_drawNameTag},
-	{"drawScaledNameTag", libd_drawScaledNameTag},
 	{"drawKartString", libd_drawKartString},
 	// misc
 	{"stringWidth", libd_stringWidth},
-	{"nameTagWidth", libd_nameTagWidth},
 	// m_random
 	{"RandomFixed",libd_RandomFixed},
 	{"RandomByte",libd_RandomByte},

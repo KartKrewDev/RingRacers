@@ -5441,7 +5441,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 			dometransform.rollangle = FIXED_TO_FLOAT(rol);
 			dometransform.roll = true;
 		}
-		dometransform.splitscreen = splitscreen;
+		dometransform.splitscreen = r_splitscreen;
 
 		HWR_GetTexture(texturetranslation[skytexture]);
 
@@ -5673,7 +5673,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	gl_centery = gl_basecentery;
 	gl_viewwindowy = gl_baseviewwindowy;
 	gl_windowcentery = gl_basewindowcentery;
-	if (splitscreen && viewnumber == 1)
+	if (r_splitscreen && viewnumber == 1)
 	{
 		gl_viewwindowy += (vid.height/2);
 		gl_windowcentery += (vid.height/2);
@@ -5729,7 +5729,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 		HWR_DrawSkyBackground(player);
 
 	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = splitscreen;
+	drawsky = r_splitscreen;
 
 	HWR_ClearSprites();
 
@@ -5934,7 +5934,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 		atransform.rollangle = FIXED_TO_FLOAT(rol);
 		atransform.roll = true;
 	}
-	atransform.splitscreen = splitscreen;
+	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
 
@@ -5945,7 +5945,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 		HWR_DrawSkyBackground(player);
 
 	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = splitscreen;
+	drawsky = r_splitscreen;
 
 	HWR_ClearSprites();
 

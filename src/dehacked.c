@@ -21,7 +21,6 @@
 #include "w_wad.h"
 #include "m_menu.h"
 #include "m_misc.h"
-#include "filesrch.h" // for refreshdirmenu
 #include "f_finale.h"
 #include "y_inter.h"
 #include "dehacked.h"
@@ -38,7 +37,6 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "d_clisrv.h"
-#include "r_things.h"	// for followers
 
 #include "m_cond.h"
 
@@ -47,6 +45,10 @@
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
 #endif
+
+// SRB2Kart
+#include "filesrch.h" // for refreshdirmenu
+#include "r_skins.h" // for followers
 
 // Free slot names
 // The crazy word-reading stuff uses these.
@@ -3137,7 +3139,6 @@ static actionpointer_t actionpointers[] =
 	{{A_Scream},                 "A_SCREAM"},
 	{{A_BossDeath},              "A_BOSSDEATH"},
 	{{A_CustomPower},            "A_CUSTOMPOWER"},
-	{{A_GiveWeapon},             "A_GIVEWEAPON"},
 	{{A_RingBox},                "A_RINGBOX"},
 	{{A_Invincibility},          "A_INVINCIBILITY"},
 	{{A_SuperSneakers},          "A_SUPERSNEAKERS"},
@@ -3147,7 +3148,6 @@ static actionpointer_t actionpointers[] =
 	{{A_BubbleRise},             "A_BUBBLERISE"},
 	{{A_BubbleCheck},            "A_BUBBLECHECK"},
 	{{A_AwardScore},             "A_AWARDSCORE"},
-	{{A_ExtraLife},              "A_EXTRALIFE"},
 	{{A_GiveShield},             "A_GIVESHIELD"},
 	{{A_GravityBox},             "A_GRAVITYBOX"},
 	{{A_ScoreRise},              "A_SCORERISE"},
@@ -3179,7 +3179,6 @@ static actionpointer_t actionpointers[] =
 	{{A_RingExplode},            "A_RINGEXPLODE"},
 	{{A_OldRingExplode},         "A_OLDRINGEXPLODE"},
 	{{A_MixUp},                  "A_MIXUP"},
-	{{A_RecyclePowers},          "A_RECYCLEPOWERS"},
 	{{A_Boss1Chase},             "A_BOSS1CHASE"},
 	{{A_FocusTarget},            "A_FOCUSTARGET"},
 	{{A_Boss2Chase},             "A_BOSS2CHASE"},

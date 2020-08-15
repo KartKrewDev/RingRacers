@@ -106,12 +106,10 @@ void A_Pain(mobj_t *actor);
 void A_Explode(mobj_t *actor);
 void A_BossDeath(mobj_t *actor);
 void A_CustomPower(mobj_t *actor);
-void A_GiveWeapon(mobj_t *actor);
 void A_RingBox(mobj_t *actor);
 void A_Invincibility(mobj_t *actor);
 void A_SuperSneakers(mobj_t *actor);
 void A_AwardScore(mobj_t *actor);
-void A_ExtraLife(mobj_t *actor);
 void A_GiveShield(mobj_t *actor);
 void A_GravityBox(mobj_t *actor);
 void A_ScoreRise(mobj_t *actor);
@@ -148,7 +146,6 @@ void A_CrawlaCommanderThink(mobj_t *actor);
 void A_RingExplode(mobj_t *actor);
 void A_OldRingExplode(mobj_t *actor);
 void A_MixUp(mobj_t *actor);
-void A_RecyclePowers(mobj_t *actor);
 void A_Boss2TakeDamage(mobj_t *actor);
 void A_Boss7Chase(mobj_t *actor);
 void A_GoopSplat(mobj_t *actor);
@@ -3876,43 +3873,6 @@ void A_AwardScore(mobj_t *actor)
 	P_AddPlayerScore(player, actor->info->reactiontime);
 	if (actor->info->seesound)
 		S_StartSound(player->mo, actor->info->seesound);
-}
-
-// Function: A_ExtraLife
-//
-// Description: Awards the player an extra life.
-//
-// var1 = unused
-// var2 = unused
-//
-void A_ExtraLife(mobj_t *actor)
-{
-	player_t *player;
-
-	if (LUA_CallAction("A_ExtraLife", actor))
-		return;
-
-	if (!actor->target || !actor->target->player)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "Powerup has no target.\n");
-		return;
-	}
-
-	player = actor->target->player;
-
-	if (actor->type == MT_1UP_ICON && actor->tracer)
-	{
-		// We're using the overlay, so use the overlay 1up sprite (no text)
-		actor->sprite = SPR_TV1P;
-	}
-
-	if (ultimatemode) //I don't THINK so!
-	{
-		S_StartSound(player->mo, sfx_lose);
-		return;
-	}
-
-	P_GiveCoopLives(player, 1, true);
 }
 
 // Function: A_GiveShield

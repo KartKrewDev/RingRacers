@@ -52,6 +52,7 @@
 #include "k_pwrlv.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "doomstat.h"
 
 #ifndef NONET
 // cl loading screen

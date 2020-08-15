@@ -51,6 +51,7 @@
 #include "lua_hud.h"
 #include "lua_hook.h"
 
+// SRB2Kart
 #include "s_sound.h" // song credits
 #include "k_kart.h"
 #include "k_color.h"

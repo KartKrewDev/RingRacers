@@ -39,7 +39,6 @@ void A_FaceTracer();
 void A_Scream();
 void A_BossDeath();
 void A_CustomPower(); // Use this for a custom power
-void A_GiveWeapon(); // Gives the player weapon(s)
 void A_RingBox(); // Obtained Ring Box Tails
 void A_Invincibility(); // Obtained Invincibility Box
 void A_SuperSneakers(); // Obtained Super Sneakers Box
@@ -49,7 +48,6 @@ void A_FanBubbleSpawn();
 void A_BubbleRise(); // Bubbles float to surface
 void A_BubbleCheck(); // Don't draw if not underwater
 void A_AwardScore();
-void A_ExtraLife(); // Extra Life
 void A_GiveShield(); // Obtained Shield
 void A_GravityBox();
 void A_ScoreRise(); // Rise the score logo
@@ -82,7 +80,6 @@ void A_SmokeTrailer();
 void A_RingExplode();
 void A_OldRingExplode();
 void A_MixUp();
-void A_RecyclePowers();
 void A_BossScream();
 void A_Boss2TakeDamage();
 void A_GoopSplat();
