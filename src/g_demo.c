@@ -875,7 +875,7 @@ void G_ConsAllGhostTics(void)
 void G_ConsGhostTic(INT32 playernum)
 {
 	UINT8 ziptic;
-	UINT32 px,py,pz,gx,gy,gz;
+	INT32 px,py,pz,gx,gy,gz;
 	mobj_t *testmo;
 	UINT32 syncleeway;
 
