@@ -5529,7 +5529,7 @@ static void DrawReplayHutReplayInfo(void)
 
 	case MD_OUTDATED:
 		V_DrawThinString(17, 64, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT|highlightflags, "Recorded on an outdated version.");
-		/*fallthru*/
+		/* FALLTHRU */
 	default:
 		// Draw level stuff
 		x = 15; y = 15;

@@ -5813,7 +5813,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
-		// fallthru
+		/* FALLTHRU */
 	case MT_ORBINAUT_SHIELD:
 	case MT_BANANA_SHIELD:
 	case MT_EGGMANITEM_SHIELD:
@@ -5823,7 +5823,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	case MT_JAWZ_DUD:
 		if (P_IsObjectOnGround(mobj))
 			P_SetMobjState(mobj, mobj->info->xdeathstate);
-		// fallthru
+		/* FALLTHRU */
 	case MT_JAWZ_SHIELD:
 		mobj->drawflags ^= MFD_DONTDRAW;
 		break;
@@ -8191,6 +8191,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				cur = cur->hnext;
 			}
 		}
+		break;
 	case MT_RANDOMITEM:
 		if (gametype == GT_BATTLE && mobj->threshold == 70)
 		{
