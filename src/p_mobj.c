@@ -2351,23 +2351,12 @@ boolean P_ZMovement(mobj_t *mo)
 
 			if (mo->flags2 & MF2_SKULLFLY) // the skull slammed into something
 				mom.z = -mom.z;
-			else
-			// Flingrings bounce
-			if (/*mo->type == MT_FLINGRING
-				|| mo->type == MT_FLINGCOIN
-				|| mo->type == MT_FLINGBLUESPHERE
-				|| mo->type == MT_FLINGNIGHTSCHIP
-				|| P_WeaponOrPanel(mo->type)
-				|| mo->type == MT_FLINGEMERALD
-				||*/ mo->type == MT_BIGTUMBLEWEED
+			else if (mo->type == MT_BIGTUMBLEWEED
 				|| mo->type == MT_LITTLETUMBLEWEED
 				|| mo->type == MT_CANNONBALLDECOR
 				|| mo->type == MT_FALLINGROCK)
 			{
-				if (maptol & TOL_NIGHTS)
-					mom.z = -FixedDiv(mom.z, 10*FRACUNIT);
-				else
-					mom.z = -FixedMul(mom.z, FixedDiv(17*FRACUNIT,20*FRACUNIT));
+				mom.z = -FixedMul(mom.z, FixedDiv(17*FRACUNIT,20*FRACUNIT));
 
 				if (mo->type == MT_BIGTUMBLEWEED || mo->type == MT_LITTLETUMBLEWEED)
 				{
@@ -2502,10 +2491,7 @@ boolean P_ZMovement(mobj_t *mo)
 			// Flags bounce
 			if (mo->type == MT_REDFLAG || mo->type == MT_BLUEFLAG)
 			{
-				if (maptol & TOL_NIGHTS)
-					mo->momz = -FixedDiv(mo->momz, 10*FRACUNIT);
-				else
-					mo->momz = -FixedMul(mo->momz, FixedDiv(17*FRACUNIT,20*FRACUNIT));
+				mo->momz = -FixedMul(mo->momz, FixedDiv(17*FRACUNIT,20*FRACUNIT));
 			}
 			else
 				mo->momz = 0;
@@ -12310,8 +12296,7 @@ void P_SpawnPlayer(INT32 playernum)
 			p->skincolor = skincolor_blueteam;
 	}
 
-	if ((netgame || multiplayer) && ((gametyperules & GTR_SPAWNINVUL) || leveltime) && !p->spectator && !(maptol & TOL_NIGHTS))
-		p->powers[pw_flashing] = flashingtics-1; // Babysitting deterrent
+	p->powers[pw_flashing] = flashingtics-1; // Babysitting deterrent
 
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);
 	(mobj->player = p)->mo = mobj;
@@ -12353,23 +12338,6 @@ void P_SpawnPlayer(INT32 playernum)
 		mobj->destscale = 6*mobj->destscale/8;
 	P_SetScale(mobj, mobj->destscale);
 	P_FlashPal(p, 0, 0); // Resets
-
-	if (!leveltime && !p->spectator && ((maptol & TOL_NIGHTS) == TOL_NIGHTS) != (G_IsSpecialStage(gamemap))) // non-special NiGHTS stage or special non-NiGHTS stage
-	{
-		if (maptol & TOL_NIGHTS)
-		{
-			if (p == players) // this is totally the wrong place to do this aaargh.
-			{
-				mobj_t *idya = P_SpawnMobjFromMobj(mobj, 0, 0, mobj->height, MT_GOTEMERALD);
-				idya->health = 0; // for identification
-				P_SetTarget(&idya->target, mobj);
-				P_SetMobjState(idya, mobjinfo[MT_GOTEMERALD].missilestate);
-				P_SetTarget(&mobj->tracer, idya);
-			}
-		}
-		else if (sstimer)
-			p->nightstime = sstimer;
-	}
 
 	if ((gametyperules & GTR_BUMPERS)) // SRB2kart
 	{
@@ -14500,8 +14468,6 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle, UINT8 allowai
 	P_SetTarget(&th->target, source);
 
 	speed = th->info->speed;
-	if (source->player && source->player->charability == CA_FLY)
-		speed = FixedMul(speed, 3*FRACUNIT/2);
 
 	th->angle = an;
 	th->momx = FixedMul(speed, FINECOSINE(an>>ANGLETOFINESHIFT));

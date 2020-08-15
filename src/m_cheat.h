@@ -53,9 +53,6 @@ void Command_Devmode_f(void);
 void Command_Scale_f(void);
 void Command_Gravflip_f(void);
 void Command_Hurtme_f(void);
-/*void Command_JumpToAxis_f(void);
-void Command_Charability_f(void);
-void Command_Charspeed_f(void);*/
 void Command_Teleport_f(void);
 void Command_RTeleport_f(void);
 void Command_Skynum_f(void);

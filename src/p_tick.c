@@ -569,12 +569,6 @@ void P_Ticker(boolean run)
 	if (!demo.playback) // Don't increment if a demo is playing.
 		totalplaytime++;
 
-	/*if (!(maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap))
-		P_DoSpecialStageStuff();
-
-	if (runemeraldmanager)
-		P_EmeraldManager(); // Power stone mode*/
-
 	// formality so kitemcap gets updated properly each frame.
 	P_RunKartItems();
 

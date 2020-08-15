@@ -688,9 +688,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
   */
 void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 {
-	size_t i;
 	mobj_t *toucher = player->mo;
-	mobj_t *checkbase = snaptopost ? post : toucher;
+
+	(void)snaptopost;
 
 	if (player->bot)
 		return;
@@ -1047,7 +1047,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	//if (inflictor && (inflictor->type == MT_SHELL || inflictor->type == MT_FIREBALL))
 	//	P_SetTarget(&target->tracer, inflictor);
 
-	if (!(maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap) && target->player && target->player->nightstime > 6)
+	if (G_IsSpecialStage(gamemap) && target->player && target->player->nightstime > 6)
 		target->player->nightstime = 6; // Just let P_Ticker take care of the rest.
 
 	if (target->flags & (MF_ENEMY|MF_BOSS))
@@ -1449,7 +1449,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	if (target->type == MT_FROGGER)
 	{
 		if (target->tracer && !P_MobjWasRemoved(target->tracer))
-			P_KillMobj(target->tracer, inflictor, source);
+			P_KillMobj(target->tracer, inflictor, source, 0);
 	}
 
 	if (target->type == MT_FROGGER || target->type == MT_ROBRA_HEAD || target->type == MT_BLUEROBRA_HEAD) // clean hnext list
@@ -1479,6 +1479,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			P_InstaThrust(target, R_PointToAngle2(inflictor->x, inflictor->y, target->x, target->y)+ANGLE_90, 16<<FRACBITS);
 	}
 
+	// Final state setting - do something instead of P_SetMobjState;
 	// Final state setting - do something instead of P_SetMobjState;
 	if (target->type == MT_SPIKE && target->info->deathstate != S_NULL)
 	{
@@ -1514,6 +1515,26 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 #undef makechunk
 		}
+
+		momz = 7*scale;
+		if (flip)
+			momz *= -1;
+
+		chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_SPIKE);
+		P_SetMobjState(chunk, target->info->deathstate);
+		chunk->health = 0;
+		chunk->angle = ang + ANGLE_180;
+		P_UnsetThingPosition(chunk);
+		chunk->flags = MF_NOCLIP;
+		chunk->x -= xoffs;
+		chunk->y -= yoffs;
+		if (flip)
+			chunk->z -= 12*scale;
+		else
+			chunk->z += 12*scale;
+		P_SetThingPosition(chunk);
+		P_InstaThrust(chunk, chunk->angle, 2*scale);
+		chunk->momz = momz;
 
 		P_SetMobjState(target, target->info->deathstate);
 		target->health = 0;
@@ -1603,10 +1624,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	}
 	else if (target->player)
 	{
-		if (damagetype == DMG_DROWNED || damagetype == DMG_SPACEDROWN)
-			P_SetPlayerMobjState(target, target->info->xdeathstate);
-		else
-			P_SetPlayerMobjState(target, target->info->deathstate);
+		P_SetPlayerMobjState(target, target->info->deathstate);
 	}
 	else
 #ifdef DEBUG_NULL_DEATHSTATE
@@ -1622,7 +1640,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
-	player_t *player = target->player;
+	(void)inflictor;
+	(void)damage;
 
 	// SRB2Kart: We want to hurt ourselves
 	if (damagetype & DMG_CANTHURTSELF)
@@ -1637,6 +1656,8 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 
 static void P_KillPlayer(player_t *player, mobj_t *source, INT32 damage)
 {
+	(void)source;
+
 	player->pflags &= ~PF_SLIDING;
 
 	player->powers[pw_carry] = CR_NONE;
@@ -1880,13 +1901,13 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 {
 	INT32 i;
 	mobj_t *mo;
-	angle_t fa, va;
+	angle_t fa;
 	fixed_t ns;
 	fixed_t z;
 	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
 
 	// Rings shouldn't be in Battle!
-	if ((gametyperules & GTR_BUMPERS))
+	if (!(gametyperules & GTR_RINGS))
 		return;
 
 	// Better safe than sorry.

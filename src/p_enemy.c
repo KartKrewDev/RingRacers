@@ -12791,7 +12791,7 @@ void A_MineExplode(mobj_t *actor)
 	quake.intensity = 8*FRACUNIT;
 	quake.time = TICRATE/3;
 
-	P_RadiusAttack(actor, actor->tracer, 192*FRACUNIT, DMG_CANHURTSELF, true);
+	P_RadiusAttack(actor, actor->tracer, 192*FRACUNIT, 0, true);
 	P_MobjCheckWater(actor);
 
 	{

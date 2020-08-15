@@ -1506,15 +1506,6 @@ static void P_CheckBustableBlocks(player_t *player)
 							|| (player->pflags & PF_JUMPED && !(player->pflags & PF_NOJUMPDAMAGE))))
 						goto bust;
 
-					// You can always break it if you have CA_GLIDEANDCLIMB
-					// or if you are bouncing on it
-					// or you are using CA_TWINSPIN/CA2_MELEE.
-					if (player->charability == CA_GLIDEANDCLIMB
-						|| (player->pflags & PF_BOUNCING)
-						|| ((player->charability == CA_TWINSPIN) && (player->panim == PA_ABILITY))
-						|| (player->charability2 == CA2_MELEE && player->panim == PA_ABILITY2))
-						goto bust;
-
 					if (rover->flags & FF_STRONGBUST)
 						continue;
 
@@ -1533,13 +1524,6 @@ static void P_CheckBustableBlocks(player_t *player)
 				bust:
 					topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
 					bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-
-					if (((player->charability == CA_TWINSPIN) && (player->panim == PA_ABILITY))
-					|| ((P_MobjFlip(player->mo)*player->mo->momz < 0) && (player->pflags & PF_BOUNCING || ((player->charability2 == CA2_MELEE) && (player->panim == PA_ABILITY2)))))
-					{
-						topheight -= player->mo->momz;
-						bottomheight -= player->mo->momz;
-					}
 
 					// Height checks
 					if (rover->flags & FF_SHATTERBOTTOM)
@@ -3074,10 +3058,7 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	thiscam->y = y;
 	thiscam->z = z;
 
-	if (!(thiscam == &camera[0] && (cv_cam_still[0].value)
-		&& !(thiscam == &camera[1] && cv_cam_still[1].value)
-		&& !(thiscam == &camera[2] && cv_cam_still[2].value)
-		&& !(thiscam == &camera[3] && cv_cam_still[3].value))
+	if (!cv_cam_still[num].value)
 	{
 		thiscam->angle = player->mo->angle;
 		thiscam->aiming = 0;
@@ -3130,6 +3111,23 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		return true;
 	}
 
+	if (thiscam == &camera[1]) // Camera 2
+	{
+		num = 1;
+	}
+	else if (thiscam == &camera[2]) // Camera 3
+	{
+		num = 2;
+	}
+	else if (thiscam == &camera[3]) // Camera 4
+	{
+		num = 3;
+	}
+	else // Camera 1
+	{
+		num = 0;
+	}
+
 	mo = player->mo;
 
 #ifndef NOCLIPCAM
@@ -3148,42 +3146,14 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		if (player->spectator) // force cam off for spectators
 			return true;
 
-		if (!cv_chasecam.value && thiscam == &camera[0])
-			return true;
-
-		if (!cv_chasecam2.value && thiscam == &camera[1])
-			return true;
-
-		if (!cv_chasecam3.value && thiscam == &camera[2])
-			return true;
-
-		if (!cv_chasecam4.value && thiscam == &camera[3])
+		if (!cv_chasecam[num].value && thiscam == &camera[num])
 			return true;
 	}
 
 	if (!thiscam->chase && !resetcalled)
 	{
-		if (player == &players[consoleplayer])
-			focusangle = localangle[0];
-		else if (player == &players[displayplayers[1]])
-			focusangle = localangle[1];
-		else if (player == &players[displayplayers[2]])
-			focusangle = localangle[2];
-		else if (player == &players[displayplayers[3]])
-			focusangle = localangle[3];
-		else
-			focusangle = mo->angle;
-
-		if (thiscam == &camera[0])
-			camrotate = cv_cam_rotate.value;
-		else if (thiscam == &camera[1])
-			camrotate = cv_cam2_rotate.value;
-		else if (thiscam == &camera[2])
-			camrotate = cv_cam3_rotate.value;
-		else if (thiscam == &camera[3])
-			camrotate = cv_cam4_rotate.value;
-		else
-			camrotate = 0;
+		focusangle = localangle[num];
+		camrotate = cv_cam_rotate[num].value;
 
 		if (leveltime < introtime) // Whoooshy camera!
 		{
@@ -3209,35 +3179,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		focusangle = mo->angle;
 		focusaiming = 0;
 	}
-	else if (sign)
-	{
-		focusangle = FixedAngle(sign->spawnpoint->angle << FRACBITS) + ANGLE_180;
-		focusaiming = 0;
-	}
-	else if (player == &players[consoleplayer])
-	{
-		focusangle = localangle[0];
-		focusaiming = localaiming[0];
-	}
-	else if (player == &players[g_localplayers[1]])
-	{
-		focusangle = localangle[1];
-		focusaiming = localaiming[1];
-	}
-	else if (player == &players[g_localplayers[2]])
-	{
-		focusangle = localangle[2];
-		focusaiming = localaiming[2];
-	}
-	else if (player == &players[g_localplayers[3]])
-	{
-		focusangle = localangle[3];
-		focusaiming = localaiming[3];
-	}
 	else
 	{
-		focusangle = player->cmd.angleturn << 16;
-		focusaiming = player->aiming;
+		focusangle = localangle[num];
+		focusaiming = localaiming[num];
 	}
 
 	if (P_CameraThinker(player, thiscam, resetcalled))
@@ -3245,43 +3190,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	lookback = ( player->cmd.buttons & BT_LOOKBACK );
 
-	if (thiscam == &camera[1]) // Camera 2
-	{
-		num = 1;
-		camspeed = cv_cam2_speed.value;
-		camstill = cv_cam2_still.value;
-		camrotate = cv_cam2_rotate.value;
-		camdist = FixedMul(cv_cam2_dist.value, mapobjectscale);
-		camheight = FixedMul(cv_cam2_height.value, mapobjectscale);
-	}
-	else if (thiscam == &camera[2]) // Camera 3
-	{
-		num = 2;
-		camspeed = cv_cam3_speed.value;
-		camstill = cv_cam3_still.value;
-		camrotate = cv_cam3_rotate.value;
-		camdist = FixedMul(cv_cam3_dist.value, mapobjectscale);
-		camheight = FixedMul(cv_cam3_height.value, mapobjectscale);
-	}
-	else if (thiscam == &camera[3]) // Camera 4
-	{
-		num = 3;
-		camspeed = cv_cam4_speed.value;
-		camstill = cv_cam4_still.value;
-		camrotate = cv_cam4_rotate.value;
-		camdist = FixedMul(cv_cam4_dist.value, mapobjectscale);
-		camheight = FixedMul(cv_cam4_height.value, mapobjectscale);
-	}
-	else // Camera 1
-	{
-		num = 0;
-		camspeed = cv_cam_speed.value;
-		camstill = cv_cam_still.value;
-		camorbit = cv_cam_orbit.value;
-		camrotate = cv_cam_rotate.value;
-		camdist = FixedMul(cv_cam_dist.value, mapobjectscale);
-		camheight = FixedMul(cv_cam_height.value, mapobjectscale);
-	}
+	camspeed = cv_cam_speed[num].value;
+	camstill = cv_cam_still[num].value;
+	camrotate = cv_cam_rotate[num].value;
+	camdist = FixedMul(cv_cam_dist[num].value, mapobjectscale);
+	camheight = FixedMul(cv_cam_height[num].value, mapobjectscale);
 
 	if (timeover)
 	{
@@ -3345,10 +3258,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 
 	if (!resetcalled && (leveltime >= introtime && timeover != 2)
-		&& ((thiscam == &camera[0] && t_cam_rotate[0] != -42)
-		|| (thiscam == &camera[1] && t_cam_rotate[1] != -42)
-		|| (thiscam == &camera[2] && t_cam_rotate[2] != -42)
-		|| (thiscam == &camera[3] && t_cam_rotate[3] != -42)))
+		&& (t_cam_rotate[num] != -42))
 	{
 		angle = FixedAngle(camrotate*FRACUNIT);
 		thiscam->angle = angle;

@@ -488,7 +488,7 @@ typedef struct BasicFF_s
 #define DMG_CRUSHED    0x80+4
 #define DMG_SPECTATOR  0x80+5
 // Masks
-#define DMG_CANHURTSELF 0x40 // Flag - can hurt self/team indirectly, such as through mines
+#define DMG_CANTHURTSELF 0x40 // Flag - cannot hurt your self or your team
 #define DMG_DEATHMASK  DMG_INSTAKILL // if bit 7 is set, this is a death type instead of a damage type
 
 void P_ForceFeed(const player_t *player, INT32 attack, INT32 fade, tic_t duration, INT32 period);

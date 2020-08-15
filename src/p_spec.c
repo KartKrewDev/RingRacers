@@ -1622,7 +1622,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			if (rings > dist)
 				return false;
 		}
-		else if (triggerline->flags & ML_BLOCKMONSTERS)
+		else if (triggerline->flags & ML_BLOCKPLAYERS)
 		{
 			if (rings < dist)
 				return false;
@@ -1695,12 +1695,6 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 
 	switch (specialtype)
 	{
-		/*case 305: // continuous
-		case 306: // each time
-		case 307: // once
-			if (!(actor && actor->player && actor->player->charability == dist/10))
-				return false;
-			break;*/
 		case 309: // continuous
 		case 310: // each time
 			// Only red team members can activate this.
@@ -3284,7 +3278,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						{
 							foundrover = true;
 
-							if (line->flags & ML_BLOCKMONSTERS) // FOF flags determine respawn ability instead?
+							if (line->flags & ML_BLOCKPLAYERS) // FOF flags determine respawn ability instead?
 								respawn = !(rover->flags & FF_NORETURN) ^ !!(line->flags & ML_NOCLIMB); // no climb inverts
 
 							EV_StartCrumble(rover->master->frontsector, rover, (rover->flags & FF_FLOATBOB), player, rover->alpha, respawn);
@@ -3373,7 +3367,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				INT32 viewid = sides[line->sidenum[0]].textureoffset>>FRACBITS;
 				INT32 centerid = sides[line->sidenum[0]].rowoffset>>FRACBITS;
 
-				if ((line->flags & (ML_EFFECT4|ML_BLOCKMONSTERS)) == ML_EFFECT4) // Solid Midtexture is on but Block Enemies is off?
+				if ((line->flags & (ML_EFFECT4|ML_BLOCKPLAYERS)) == ML_EFFECT4) // Solid Midtexture is on but Block Enemies is off?
 				{
 					CONS_Alert(CONS_WARNING,
 					M_GetText("Skybox switch linedef (tag %d) doesn't have anything to do.\nConsider changing the linedef's flag configuration or removing it entirely.\n"),
@@ -3391,7 +3385,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					}
 
 					// set centerpoint mobj
-					if (line->flags & ML_BLOCKMONSTERS) // Block Enemies turns ON centerpoint setting
+					if (line->flags & ML_BLOCKPLAYERS) // Block Enemies turns ON centerpoint setting
 					{
 						if (centerid >= 0 && centerid < 16)
 							skyboxmo[1] = skyboxcenterpnts[centerid];
@@ -3404,7 +3398,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						viewid,
 						centerid,
 						((line->flags & ML_EFFECT4) ? "no" : "yes"),
-						((line->flags & ML_BLOCKMONSTERS) ? "yes" : "no"));
+						((line->flags & ML_BLOCKPLAYERS) ? "yes" : "no"));
 			}
 			break;
 
@@ -3555,7 +3549,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 								speed,
 								(line->flags & ML_EFFECT4),         // tic-based logic
 								(line->flags & ML_EFFECT3),         // Relative destvalue
-								!(line->flags & ML_BLOCKMONSTERS),  // do not handle FF_EXISTS
+								!(line->flags & ML_BLOCKPLAYERS),  // do not handle FF_EXISTS
 								!(line->flags & ML_NOCLIMB),        // do not handle FF_TRANSLUCENT
 								!(line->flags & ML_EFFECT2),        // do not handle lighting
 								!(line->flags & ML_EFFECT2),        // do not handle colormap (ran out of flags)
@@ -3580,7 +3574,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 								max(1, min(256, (line->flags & ML_EFFECT3) ? rover->alpha + destvalue : destvalue)),
 								0,                                  // set alpha immediately
 								false, NULL,                        // tic-based logic
-								!(line->flags & ML_BLOCKMONSTERS),  // do not handle FF_EXISTS
+								!(line->flags & ML_BLOCKPLAYERS),  // do not handle FF_EXISTS
 								!(line->flags & ML_NOCLIMB),        // do not handle FF_TRANSLUCENT
 								!(line->flags & ML_EFFECT2),        // do not handle lighting
 								!(line->flags & ML_EFFECT2),        // do not handle colormap (ran out of flags)
@@ -3626,7 +3620,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						foundrover = true;
 
 						P_ResetFakeFloorFader(rover, NULL,
-							!(line->flags & ML_BLOCKMONSTERS)); // do not finalize collision flags
+							!(line->flags & ML_BLOCKPLAYERS)); // do not finalize collision flags
 					}
 				}
 
@@ -3787,7 +3781,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				INT32 pagenum = max(0, (sides[line->sidenum[0]].rowoffset>>FRACBITS)-1);
 				INT32 postexectag = abs((line->sidenum[1] != 0xFFFF) ? sides[line->sidenum[1]].textureoffset>>FRACBITS : line->tag);
 
-				boolean closetextprompt = (line->flags & ML_BLOCKMONSTERS);
+				boolean closetextprompt = (line->flags & ML_BLOCKPLAYERS);
 				//boolean allplayers = (line->flags & ML_NOCLIMB);
 				boolean runpostexec = (line->flags & ML_EFFECT1);
 				boolean blockcontrols = !(line->flags & ML_EFFECT2);
@@ -5200,16 +5194,8 @@ static void P_RunSpecialSectorCheck(player_t *player, sector_t *sector)
 	// Check Section 4
 	switch(GETSECSPECIAL(sector->special, 4))
 	{
-		case 2: // Level Exit / GOAL Sector / Flag Return
-			if (!(maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap))
-			{
-				// Special stage GOAL sector
-				// requires touching floor.
-				break;
-			}
-			/* FALLTHRU */
-
 		case 1: // Starpost activator
+		case 2: // Level Exit / GOAL Sector / Flag Return
 		case 5: // Fan sector
 		case 6: // Super Sonic Transform
 		case 8: // Zoom Tube Start
@@ -6681,7 +6667,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 					ffloorflags |= FF_NOSHADE;
 				P_AddFakeFloorsByLine(i, ffloorflags, secthinkers);
 
-				P_AddRaiseThinker(lines[i].frontsector, lines[i].tag, speed, ceilingtop, ceilingbottom, !!(lines[i].flags & ML_BLOCKMONSTERS), !!(lines[i].flags & ML_NOCLIMB));
+				P_AddRaiseThinker(lines[i].frontsector, lines[i].tag, speed, ceilingtop, ceilingbottom, !!(lines[i].flags & ML_BLOCKPLAYERS), !!(lines[i].flags & ML_NOCLIMB));
 				break;
 			}
 
@@ -6803,11 +6789,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 			case 302:
 			case 303:
 			case 304:
-
-			// Charability linedef executors
-			case 305:
-			case 307:
-				break;
 
 			case 308: // Race-only linedef executor. Triggers once.
 				if (!(gametyperules & GTR_CIRCUIT))

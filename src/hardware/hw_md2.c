@@ -1180,18 +1180,8 @@ static UINT8 HWR_GetModelSprite2(md2_t *md2, skin_t *skin, UINT8 spr2, player_t 
 		switch(spr2)
 		{
 		// Normal special cases.
-		case SPR2_JUMP:
-			spr2 = ((player
-					? player->charflags
-					: skin->flags)
-					& SF_NOJUMPSPIN) ? SPR2_SPNG : SPR2_ROLL;
-			break;
-		case SPR2_TIRE:
-			spr2 = ((player
-					? player->charability
-					: skin->ability)
-					== CA_SWIM) ? SPR2_SWIM : SPR2_FLY;
-			break;
+		// (none in kart)
+
 		// Use the handy list, that's what it's there for!
 		default:
 			spr2 = spr2defaults[spr2];

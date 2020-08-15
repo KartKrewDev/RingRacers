@@ -1023,9 +1023,6 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("scale", Command_Scale_f);
 	COM_AddCommand("gravflip", Command_Gravflip_f);
 	COM_AddCommand("hurtme", Command_Hurtme_f);
-	/*COM_AddCommand("jumptoaxis", Command_JumpToAxis_f);
-	COM_AddCommand("charability", Command_Charability_f);
-	COM_AddCommand("charspeed", Command_Charspeed_f);*/
 	COM_AddCommand("teleport", Command_Teleport_f);
 	COM_AddCommand("rteleport", Command_RTeleport_f);
 	COM_AddCommand("skynum", Command_Skynum_f);

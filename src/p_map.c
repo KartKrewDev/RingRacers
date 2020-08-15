@@ -239,7 +239,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
-	UINT8 starcolor = (spring->info->painchance % MAXTRANSLATIONS);
+	UINT16 starcolor = (spring->info->painchance % numskincolors);
 	fixed_t savemomx = 0;
 	fixed_t savemomy = 0;
 
@@ -447,33 +447,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 		default:
 			break;
 	}
-}
-
-static void P_PlayerBarrelCollide(mobj_t *toucher, mobj_t *barrel)
-{
-	if (toucher->momz < 0)
-	{
-		if (toucher->z + toucher->momz > barrel->z + barrel->height)
-			return;
-	}
-	else
-	{
-		if (toucher->z > barrel->z + barrel->height)
-			return;
-	}
-
-	if (toucher->momz > 0)
-	{
-		if (toucher->z + toucher->height + toucher->momz < barrel->z)
-			return;
-	}
-	else
-	{
-		if (toucher->z + toucher->height < barrel->z)
-			return;
-	}
-
-	P_DamageMobj(barrel, toucher, toucher, 1, 0);
 }
 
 //
@@ -1135,13 +1108,11 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->eflags & MFE_VERTICALFLIP)
 		{
 			if (thing->z + thing->height <= tmthing->z + FixedMul(FRACUNIT, tmthing->scale)
-			&& thing->z + thing->height + thing->momz  >= tmthing->z + FixedMul(FRACUNIT, tmthing->scale) + tmthing->momz
-			&& !(thing->player->charability == CA_BOUNCE && thing->player->panim == PA_ABILITY && thing->eflags & MFE_VERTICALFLIP))
+			&& thing->z + thing->height + thing->momz  >= tmthing->z + FixedMul(FRACUNIT, tmthing->scale) + tmthing->momz)
 				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SPIKE);
 		}
 		else if (thing->z >= tmthing->z + tmthing->height - FixedMul(FRACUNIT, tmthing->scale)
-		&& thing->z + thing->momz <= tmthing->z + tmthing->height - FixedMul(FRACUNIT, tmthing->scale) + tmthing->momz
-		&& !(thing->player->charability == CA_BOUNCE && thing->player->panim == PA_ABILITY && !(thing->eflags & MFE_VERTICALFLIP)))
+		&& thing->z + thing->momz <= tmthing->z + tmthing->height - FixedMul(FRACUNIT, tmthing->scale) + tmthing->momz)
 			P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SPIKE);
 	}
 	else if (thing->type == MT_SPIKE && thing->flags & MF_SOLID && tmthing->player) // unfortunate player falls into spike?!
@@ -1149,13 +1120,11 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (thing->eflags & MFE_VERTICALFLIP)
 		{
 			if (tmthing->z + tmthing->height <= thing->z - FixedMul(FRACUNIT, thing->scale)
-			&& tmthing->z + tmthing->height + tmthing->momz >= thing->z - FixedMul(FRACUNIT, thing->scale)
-			&& !(tmthing->player->charability == CA_BOUNCE && tmthing->player->panim == PA_ABILITY && tmthing->eflags & MFE_VERTICALFLIP))
+			&& tmthing->z + tmthing->height + tmthing->momz >= thing->z - FixedMul(FRACUNIT, thing->scale))
 				P_DamageMobj(tmthing, thing, thing, 1, DMG_SPIKE);
 		}
 		else if (tmthing->z >= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale)
-		&& tmthing->z + tmthing->momz <= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale)
-		&& !(tmthing->player->charability == CA_BOUNCE && tmthing->player->panim == PA_ABILITY && !(tmthing->eflags & MFE_VERTICALFLIP)))
+		&& tmthing->z + tmthing->momz <= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale))
 			P_DamageMobj(tmthing, thing, thing, 1, DMG_SPIKE);
 	}
 
@@ -1251,15 +1220,15 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			else if (thing->scale > tmthing->scale + (mapobjectscale/8))
 				K_SquishPlayer(tmthing->player, thing, tmthing);
 			else if (tmthing->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer]) // SRB2kart - Then invincibility!
-				P_DamageMobj(thing, tmthing, tmthing, 1);
+				P_DamageMobj(thing, tmthing, tmthing, 1, 0);
 			else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
-				P_DamageMobj(tmthing, thing, thing, 1);
+				P_DamageMobj(tmthing, thing, thing, 1, 0);
 			else if ((tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 				&& !(thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
-				P_DamageMobj(thing, tmthing, tmthing, 1);
+				P_DamageMobj(thing, tmthing, tmthing, 1, 0);
 			else if ((thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 				&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
-				P_DamageMobj(tmthing, thing, thing, 1);
+				P_DamageMobj(tmthing, thing, thing, 1, 0);
 		}
 	}
 
@@ -1476,7 +1445,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			else
 			{
 				if (thing->flags2 & MF2_AMBUSH)
-					P_DamageMobj(tmthing, thing, thing, 1);
+					P_DamageMobj(tmthing, thing, thing, 1, 0);
 				K_KartBouncing(tmthing, thing, false, true);
 			}
 
@@ -3179,10 +3148,10 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	if (!(slidemo->flags & MF_MISSILE))
 	{
 		if (li->flags & ML_IMPASSABLE)
-			goto isblocking;
+			return true;
 
 		if (slidemo->player && !slidemo->player->spectator && li->flags & ML_BLOCKPLAYERS)
-			goto isblocking;
+			return true;
 	}
 
 	// set openrange, opentop, openbottom
@@ -3195,7 +3164,7 @@ static boolean PTR_LineIsBlocking(line_t *li)
 		return true; // mobj is too high
 
 	if (openbottom - slidemo->z > FixedMul(MAXSTEPMOVE, mapobjectscale))
-		goto isblocking; // too big a step up
+		return true; // too big a step up
 
 	return false;
 }
@@ -3345,7 +3314,7 @@ static void P_CheckLavaWall(mobj_t *mo, sector_t *sec)
 		if (GETSECSPECIAL(rover->master->frontsector->special, 1) != 3)
 			continue;
 
-		if (rover->master->flags & ML_BLOCKMONSTERS)
+		if (rover->master->flags & ML_BLOCKPLAYERS)
 			continue;
 
 		topheight = P_GetFFloorTopZAt(rover, mo->x, mo->y);
