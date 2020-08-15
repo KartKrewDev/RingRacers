@@ -19,6 +19,7 @@
 #include "r_local.h"
 #include "z_zone.h"
 #include "g_game.h"
+#include "p_slopes.h"
 
 // The number of sparkles per waypoint connection in the waypoint visualisation
 static const UINT32 SPARKLES_PER_CONNECTION = 16U;
@@ -425,10 +426,10 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 	fixed_t x, y, z;
 	UINT32 waypointdist;
 	INT32 n;
-	skincolors_t linkcolour = SKINCOLOR_GREEN;
+	UINT16 linkcolour = SKINCOLOR_GREEN;
 
 	// This array is used to choose which colour should be on this connection
-	const skincolors_t linkcolours[] = {
+	const UINT16 linkcolours[] = {
 		SKINCOLOR_RED,
 		SKINCOLOR_BLUE,
 		SKINCOLOR_ORANGE,
@@ -437,7 +438,7 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 		SKINCOLOR_CYAN,
 		SKINCOLOR_WHITE,
 	};
-	const size_t linkcolourssize = sizeof(linkcolours) / sizeof(skincolors_t);
+	const size_t linkcolourssize = sizeof(linkcolours) / sizeof(UINT16);
 
 	// Error conditions
 	I_Assert(waypoint1 != NULL);
@@ -1908,14 +1909,14 @@ static boolean K_RaiseWaypoint(
 			){
 				if (descending)
 				{
-					z = P_GetFOFBottomZAt(rover, x, y);
+					z = P_GetZAt(*rover->b_slope, x, y, *rover->bottomheight);
 
 					if (z > riser->z && z < sort)
 						sort = z;
 				}
 				else
 				{
-					z = P_GetFOFTopZAt(rover, x, y);
+					z = P_GetZAt(*rover->t_slope, x, y, *rover->topheight);
 
 					if (z < riser->z && z > sort)
 						sort = z;

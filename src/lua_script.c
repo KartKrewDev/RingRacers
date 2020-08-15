@@ -1341,7 +1341,6 @@ static UINT8 ArchiveValueDemo(int TABLESINDEX, int myindex)
 			}
 			break;
 		}
-#ifdef ESLOPE
 		case ARCH_SLOPE:
 		{
 			pslope_t *slope = *((pslope_t **)lua_touserdata(gL, myindex));
@@ -1353,7 +1352,6 @@ static UINT8 ArchiveValueDemo(int TABLESINDEX, int myindex)
 			}
 			break;
 		}
-#endif
 		case ARCH_MAPHEADER:
 		{
 			mapheader_t *header = *((mapheader_t **)lua_touserdata(gL, myindex));
@@ -1795,11 +1793,9 @@ static UINT8 UnArchiveValueDemo(int TABLESINDEX, char field[1024])
 	case ARCH_SECTOR:
 		LUA_PushUserdata(gL, &sectors[READUINT16(demo_p)], META_SECTOR);
 		break;
-#ifdef ESLOPE
 	case ARCH_SLOPE:
 		LUA_PushUserdata(gL, P_SlopeById(READUINT16(demo_p)), META_SLOPE);
 		break;
-#endif
 	case ARCH_MAPHEADER:
 		LUA_PushUserdata(gL, mapheaderinfo[READUINT16(demo_p)], META_MAPHEADER);
 		break;

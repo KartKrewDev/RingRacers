@@ -1967,21 +1967,13 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			// frontsector->ceiling and backsector->floor to see if a door was closed.
 			// Without the following code, sprites get displayed behind closed doors.
 			{
-#ifdef ESLOPE
 				if (doorclosed || (worldhigh <= worldbottom && worldhighslope <= worldbottomslope))
-#else
-				if (doorclosed || backsector->ceilingheight <= frontsector->floorheight)
-#endif
 				{
 					ds_p->sprbottomclip = negonearray;
 					ds_p->bsilheight = INT32_MAX;
 					ds_p->silhouette |= SIL_BOTTOM;
 				}
-#ifdef ESLOPE
 				if (doorclosed || (worldlow >= worldtop && worldlowslope >= worldtopslope))
-#else
-				if (doorclosed || backsector->floorheight >= frontsector->ceilingheight)
-#endif
 				{                   // killough 1/17/98, 2/8/98
 					ds_p->sprtopclip = screenheightarray;
 					ds_p->tsilheight = INT32_MIN;

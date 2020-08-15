@@ -2738,7 +2738,6 @@ boolean P_SceneryZMovement(mobj_t *mo)
 				// set standingslope
 				P_TryMove(mo, mo->x, mo->y, true);
 				mo->momz = -mo->momz;
-#ifdef ESLOPE
 				if (mo->standingslope)
 				{
 					if (mo->flags & MF_NOCLIPHEIGHT)
@@ -2746,7 +2745,6 @@ boolean P_SceneryZMovement(mobj_t *mo)
 					else if (!P_IsObjectOnGround(mo))
 						P_SlopeLaunch(mo);
 				}
-#endif
 				S_StartSound(mo, mo->info->activesound);
 			}
 			break;
@@ -11160,7 +11158,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		UINT8 id = mthing->angle & 255;
 		mobj->health = id;
 		mobj->threshold = sequence;
-		P_AddWaypoint(sequence, id, mobj);
+		P_AddTubeWaypoint(sequence, id, mobj);
 		break;
 	}
 	case MT_DSZSTALAGMITE:

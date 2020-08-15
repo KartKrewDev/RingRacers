@@ -1785,8 +1785,8 @@ void K_KartMoveAnimation(player_t *player)
 		if (!spinningwheels)
 		{
 			// TODO: These should prooobably be different SPR2s
-			// Just a quick hack to prevent needing to do this :V
-			player->mo->frame = (player->mo->frames & ~FF_FRAMEMASK);
+			// Just a quick hack to prevent needing to do that :V
+			player->mo->frame = (player->mo->frame & ~FF_FRAMEMASK);
 		}
 	}
 	else
@@ -3332,8 +3332,7 @@ static void K_SpawnAIZDust(player_t *player)
 
 void K_SpawnBoostTrail(player_t *player)
 {
-	fixed_t newx;
-	fixed_t newy;
+	fixed_t newx, newy, newz;
 	fixed_t ground;
 	mobj_t *flame;
 	angle_t travelangle;
@@ -3349,7 +3348,7 @@ void K_SpawnBoostTrail(player_t *player)
 		return;
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
-		ground = player->mo->ceilingz - FixedMul(mobjinfo[MT_SNEAKERTRAIL].height, player->mo->scale);
+		ground = player->mo->ceilingz;
 	else
 		ground = player->mo->floorz;
 
@@ -3362,14 +3361,13 @@ void K_SpawnBoostTrail(player_t *player)
 	{
 		newx = player->mo->x + P_ReturnThrustX(player->mo, travelangle + ((i&1) ? -1 : 1)*ANGLE_135, FixedMul(24*FRACUNIT, player->mo->scale));
 		newy = player->mo->y + P_ReturnThrustY(player->mo, travelangle + ((i&1) ? -1 : 1)*ANGLE_135, FixedMul(24*FRACUNIT, player->mo->scale));
-#ifdef ESLOPE
-		if (player->mo->standingslope)
+		newz = P_GetZAt(player->mo->standingslope, newx, newy, ground);
+
+		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
-			ground = P_GetZAt(player->mo->standingslope, newx, newy);
-			if (player->mo->eflags & MFE_VERTICALFLIP)
-				ground -= FixedMul(mobjinfo[MT_SNEAKERTRAIL].height, player->mo->scale);
+			newz -= FixedMul(mobjinfo[MT_SNEAKERTRAIL].height, player->mo->scale);
 		}
-#endif
+
 		flame = P_SpawnMobj(newx, newy, ground, MT_SNEAKERTRAIL);
 
 		P_SetTarget(&flame->target, player->mo);
@@ -4238,9 +4236,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 	if (mo->eflags & MFE_SPRUNG)
 		return;
 
-#ifdef ESLOPE
 	mo->standingslope = NULL;
-#endif
 
 	mo->eflags |= MFE_SPRUNG;
 
@@ -4633,7 +4629,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 }
 
 // Simplified version of a code bit in P_MobjFloorZ
-static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t radius, boolean ceiling)
+static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, boolean ceiling)
 {
 	fixed_t testx, testy;
 
@@ -4656,42 +4652,26 @@ static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t rad
 	testx += x;
 	testy += y;
 
-	return P_GetZAt(slope, testx, testy);
+	return P_GetZAt(slope, testx, testy, z);
 }
 
 static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player)
 {
 	fixed_t newz;
 	sector_t *sec;
-#ifdef ESLOPE
 	pslope_t *slope = NULL;
-#endif
 
 	sec = R_PointInSubsector(x, y)->sector;
 
 	if (flip)
 	{
-#ifdef ESLOPE
-		if (sec->c_slope)
-		{
-			slope = sec->c_slope;
-			newz = K_BananaSlopeZ(slope, x, y, radius, true);
-		}
-		else
-#endif
-			newz = sec->ceilingheight;
+		slope = sec->c_slope ? sec->c_slope : NULL;
+		newz = K_BananaSlopeZ(slope, x, y, sec->ceilingheight, radius, true);
 	}
 	else
 	{
-#ifdef ESLOPE
-		if (sec->f_slope)
-		{
-			slope = sec->f_slope;
-			newz = K_BananaSlopeZ(slope, x, y, radius, false);
-		}
-		else
-#endif
-			newz = sec->floorheight;
+		slope = sec->f_slope ? sec->f_slope : NULL;
+		newz = K_BananaSlopeZ(slope, x, y, sec->floorheight, radius, true);
 	}
 
 	// Check FOFs for a better suited slope
@@ -4713,19 +4693,8 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 				|| (rover->flags & FF_SWIMMABLE)))
 				continue;
 
-#ifdef ESLOPE
-			if (*rover->t_slope)
-				top = K_BananaSlopeZ(*rover->t_slope, x, y, radius, false);
-			else
-#endif
-				top = *rover->topheight;
-
-#ifdef ESLOPE
-			if (*rover->b_slope)
-				bottom = K_BananaSlopeZ(*rover->b_slope, x, y, radius, true);
-			else
-#endif
-				bottom = *rover->bottomheight;
+			top = K_BananaSlopeZ(*rover->t_slope, x, y, *rover->topheight, radius, false);
+			bottom = K_BananaSlopeZ(*rover->b_slope, x, y, *rover->bottomheight, radius, true);
 
 			if (flip)
 			{
@@ -4748,10 +4717,7 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 				if (bottom < newz && abs(d1) < abs(d2))
 				{
 					newz = bottom;
-#ifdef ESLOPE
-					if (*rover->b_slope)
-						slope = *rover->b_slope;
-#endif
+					slope = *rover->b_slope ? *rover->b_slope : NULL;
 				}
 			}
 			else
@@ -4775,18 +4741,13 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 				if (top > newz && abs(d1) < abs(d2))
 				{
 					newz = top;
-#ifdef ESLOPE
-					if (*rover->t_slope)
-						slope = *rover->t_slope;
-#endif
+					slope = *rover->t_slope ? *rover->t_slope : NULL;
 				}
 			}
 		}
 	}
 
-#if 0
-	mobj->standingslope = slope;
-#endif
+	//mobj->standingslope = slope;
 
 #ifdef HWRENDER
 	mobj->modeltilt = slope;
@@ -4988,13 +4949,11 @@ static void K_MoveHeldObjects(player_t *player)
 					if (R_PointToDist2(cur->x, cur->y, targx, targy) > 768*FRACUNIT)
 						P_TeleportMove(cur, targx, targy, cur->z);
 
-#ifdef ESLOPE
 					if (P_IsObjectOnGround(cur))
 					{
 						K_CalculateBananaSlope(cur, cur->x, cur->y, cur->z,
 							cur->radius, cur->height, (cur->eflags & MFE_VERTICALFLIP), false);
 					}
-#endif
 
 					cur = cur->hnext;
 				}

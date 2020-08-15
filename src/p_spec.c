@@ -5512,30 +5512,6 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, f
 	return fflr;
 }
 
-static fixed_t
-Floor_height (sector_t *s, fixed_t x, fixed_t y)
-{
-#ifdef ESLOPE
-	return s->f_slope ? P_GetZAt(s->f_slope, x, y) : s->floorheight;
-#else
-	(void)x;
-	(void)y;
-	return s->floorheight;
-#endif
-}
-
-static fixed_t
-Ceiling_height (sector_t *s, fixed_t x, fixed_t y)
-{
-#ifdef ESLOPE
-	return s->c_slope ? P_GetZAt(s->c_slope, x, y) : s->ceilingheight;
-#else
-	(void)x;
-	(void)y;
-	return s->ceilingheight;
-#endif
-}
-
 static void
 P_RaiseTaggedThingsToFakeFloor (
 		UINT16    type,
@@ -5566,12 +5542,12 @@ P_RaiseTaggedThingsToFakeFloor (
 				if (( mo->flags2 & MF2_OBJECTFLIP ))
 				{
 					offset = ( mo->ceilingz - mo->info->height ) - mo->z;
-					mo->z = ( Floor_height(control, mo->x, mo->y) - mo->info->height ) - offset;
+					mo->z = ( P_GetZAt(control->f_slope, mo->x, mo->y, control->floorheight) - mo->info->height ) - offset;
 				}
 				else
 				{
 					offset = mo->z - mo->floorz;
-					mo->z = Ceiling_height(control, mo->x, mo->y) + offset;
+					mo->z = P_GetZAt(control->c_slope, mo->x, mo->y, control->ceilingheight) + offset;
 				}
 			}
 		}

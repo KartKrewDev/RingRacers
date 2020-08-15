@@ -110,7 +110,7 @@ void K_DoIngameRespawn(player_t *player)
 	if (leveltime < starttime) // FAULT
 	{
 		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
-		player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
+		player->pflags |= PF_WPNDOWN; // cheeky pflag reuse
 		S_StartSound(player->mo, sfx_s3k83);
 		player->karthud[khud_fault] = 1;
 	}
@@ -134,11 +134,11 @@ void K_DoIngameRespawn(player_t *player)
 		mapthing_t *beststart = NULL;
 		UINT8 numstarts = 0;
 
-		if (G_RaceGametype())
+		if (gametype == GT_RACE)
 		{
 			numstarts = numcoopstarts;
 		}
-		else if (G_BattleGametype())
+		else if (gametype == GT_BATTLE)
 		{
 			numstarts = numdmstarts;
 		}
@@ -152,11 +152,11 @@ void K_DoIngameRespawn(player_t *player)
 				UINT32 dist = UINT32_MAX;
 				mapthing_t *checkstart = NULL;
 
-				if (G_RaceGametype())
+				if (gametype == GT_RACE)
 				{
 					checkstart = playerstarts[i];
 				}
-				else if (G_BattleGametype())
+				else if (gametype == GT_BATTLE)
 				{
 					checkstart = deathmatchstarts[i];
 				}
@@ -281,7 +281,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	const fixed_t realstepamt = (64 * mapobjectscale);
 	fixed_t stepamt = realstepamt;
 
-	vertex_t dest, step, laser;
+	vector3_t dest, step, laser;
 	angle_t stepha, stepva;
 	fixed_t dist, fulldist;
 
@@ -563,7 +563,7 @@ static void K_DropDashWait(player_t *player)
 		for (i = 0; i < ns; i++)
 		{
 			const angle_t newangle = sidediff * i;
-			vertex_t spawn;
+			vector3_t spawn;
 			mobj_t *laser;
 
 			spawn.x = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31 * player->mo->scale);
@@ -674,7 +674,7 @@ static void K_HandleDropDash(player_t *player)
 		//P_PlayRinglossSound(player->mo);
 		P_PlayerRingBurst(player, 3);
 
-		if (G_BattleGametype())
+		if (gametype == GT_BATTLE)
 		{
 			if (player->kartstuff[k_bumper] > 0)
 			{

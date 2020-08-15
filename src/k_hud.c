@@ -870,11 +870,6 @@ static void K_initKartHUD(void)
 			}
 		}
 	}
-
-	if (timeinmap > 105)
-		hudtrans = cv_translucenthud.value;
-	else
-		hudtrans = 0;
 }
 
 static void K_drawKartItem(void)
@@ -1167,7 +1162,7 @@ static void K_drawKartItem(void)
 		V_DrawFixedPatch(fx<<FRACBITS, fy<<FRACBITS, FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags, localpatch, colmap);
 
 	// Extensible meter, currently only used for rocket sneaker...
-	if (itembar && hudtrans)
+	if (itembar)
 	{
 		const INT32 fill = ((itembar*barlength)/maxl);
 		const INT32 length = min(barlength, fill);
@@ -1334,7 +1329,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 
 						if (emblem->collected)
 						{
-							emblempic[curemb] = W_CachePatchName(M_GetEmblemPatch(emblem), PU_CACHE);
+							emblempic[curemb] = W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE);
 							emblemcol[curemb] = R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE);
 							if (++curemb == 3)
 								break;
@@ -1538,10 +1533,8 @@ static boolean K_drawKartPositionFaces(void)
 	if (numplayersingame <= 1)
 		return true;
 
-#ifdef HAVE_BLUA
 	if (!LUA_HudEnabled(hud_minirankings))
 		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
-#endif
 
 	for (j = 0; j < numplayersingame; j++)
 	{
@@ -1612,10 +1605,8 @@ static boolean K_drawKartPositionFaces(void)
 
 			V_DrawMappedPatch(FACE_X, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, facerankprefix[players[rankplayer[i]].skin], colormap);
 
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_battlebumpers))
 			{
-#endif
 				if (gametype == GT_BATTLE && players[rankplayer[i]].kartstuff[k_bumper] > 0)
 				{
 					V_DrawMappedPatch(bumperx-2, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_tinybumper[0], colormap);
@@ -1625,9 +1616,7 @@ static boolean K_drawKartPositionFaces(void)
 						V_DrawMappedPatch(bumperx, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_tinybumper[1], colormap);
 					}
 				}
-#ifdef HAVE_BLUA
 			}	// A new level of stupidity: checking if lua is enabled to close a bracket. :Fascinating:
-#endif
 		}
 
 		if (i == strank)
@@ -1764,7 +1753,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			{
 				if (players[tab[i].num].exiting)
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, hilicol|V_6WIDTHSPACE, timestring(players[tab[i].num].realtime));
-				else if (players[tab[i].num].pflags & PF_TIMEOVER)
+				else if (players[tab[i].num].pflags & PF_GAMETYPEOVER)
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, V_6WIDTHSPACE, "NO CONTEST.");
 				else if (circuitmap)
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, V_6WIDTHSPACE, va("Lap %d", tab[i].count));
@@ -1773,7 +1762,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			{
 				if (players[tab[i].num].exiting)
 					V_DrawRightAlignedString(x+rightoffset, y, hilicol, timestring(players[tab[i].num].realtime));
-				else if (players[tab[i].num].pflags & PF_TIMEOVER)
+				else if (players[tab[i].num].pflags & PF_GAMETYPEOVER)
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, 0, "NO CONTEST.");
 				else if (circuitmap)
 					V_DrawRightAlignedString(x+rightoffset, y, 0, va("Lap %d", tab[i].count));
@@ -2207,7 +2196,7 @@ static void K_drawKartWanted(void)
 	}
 }
 
-static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vertex_t *campos, angle_t camang, angle_t camaim, vertex_t *point)
+static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vector3_t *campos, angle_t camang, angle_t camaim, vector3_t *point)
 {
 	const INT32 swhalf = (BASEVIDWIDTH / 2);
 	const fixed_t swhalffixed = swhalf * FRACUNIT;
@@ -2309,7 +2298,7 @@ static void K_drawKartPlayerCheck(void)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	camera_t *thiscam;
-	vertex_t c;
+	vector3_t c;
 	UINT8 cnum = 0;
 	UINT8 i;
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
@@ -2354,7 +2343,7 @@ static void K_drawKartPlayerCheck(void)
 		UINT8 *colormap = NULL;
 		UINT8 pnum = 0;
 		fixed_t x = 0;
-		vertex_t v;
+		vector3_t v;
 
 		if (!playeringame[i] || checkplayer->spectator)
 		{
@@ -2446,8 +2435,9 @@ static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
 
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 cnum)
 {
-	INT32 namelen = V_ThinStringWidth(player_names[p - players], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
-	INT32 clr = K_SkincolorToTextColor(p->skincolor);
+	const INT32 clr = skincolors[p->skincolor].chatcolor;
+	const INT32 namelen = V_ThinStringWidth(player_names[p - players], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+
 	UINT8 *colormap = V_GetStringColormap(clr);
 	INT32 barx = 0, bary = 0, barw = 0;
 
@@ -2499,7 +2489,7 @@ static void K_drawKartNameTags(void)
 {
 	const fixed_t maxdistance = 8192*mapobjectscale;
 	camera_t *thiscam;
-	vertex_t c;
+	vector3_t c;
 	UINT8 cnum = 0;
 	UINT8 tobesorted[MAXPLAYERS];
 	fixed_t sortdist[MAXPLAYERS];
@@ -2538,7 +2528,7 @@ static void K_drawKartNameTags(void)
 	{
 		player_t *ntplayer = &players[i];
 		fixed_t distance = maxdistance+1;
-		vertex_t v;
+		vector3_t v;
 
 		if (!playeringame[i] || ntplayer->spectator)
 		{
@@ -2613,7 +2603,7 @@ static void K_drawKartNameTags(void)
 			fixed_t y = -BASEVIDWIDTH * FRACUNIT;
 
 			SINT8 localindicator = -1;
-			vertex_t v;
+			vector3_t v;
 
 			v.x = ntplayer->mo->x;
 			v.y = ntplayer->mo->y;
@@ -3249,10 +3239,9 @@ static void K_drawBattleFullscreen(void)
 	INT32 splitflags = V_SNAPTOTOP; // I don't feel like properly supporting non-green resolutions, so you can have a misuse of SNAPTO instead
 	fixed_t scale = FRACUNIT;
 	boolean drawcomebacktimer = true;	// lazy hack because it's cleaner in the long run.
-#ifdef HAVE_BLUA
+
 	if (!LUA_HudEnabled(hud_battlecomebacktimer))
 		drawcomebacktimer = false;
-#endif
 
 	if (r_splitscreen)
 	{
@@ -3361,9 +3350,7 @@ static void K_drawBattleFullscreen(void)
 				return;
 		}
 
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_freeplay))
-#endif
 			K_drawKartFreePlay(leveltime);
 	}
 }
@@ -3513,8 +3500,8 @@ static void K_drawInput(void)
 	static INT32 pn = 0;
 	INT32 target = 0, splitflags = (V_SNAPTOBOTTOM|V_SNAPTORIGHT);
 	INT32 x = BASEVIDWIDTH - 32, y = BASEVIDHEIGHT-24, offs, col;
-	const INT32 accent1 = splitflags|colortranslations[stplyr->skincolor][5];
-	const INT32 accent2 = splitflags|colortranslations[stplyr->skincolor][9];
+	const INT32 accent1 = splitflags | skincolors[stplyr->skincolor].ramp[5];
+	const INT32 accent2 = splitflags | skincolors[stplyr->skincolor].ramp[9];
 	ticcmd_t *cmd = &stplyr->cmd;
 
 	if (timeinmap <= 105)
@@ -3899,66 +3886,50 @@ void K_drawKartHUD(void)
 	if (!demo.title && (!battlefullscreen || r_splitscreen))
 	{
 		// Draw the CHECK indicator before the other items, so it's overlapped by everything else
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_check))	// delete lua when?
-#endif
 			if (cv_kartcheck.value && !splitscreen && !players[displayplayers[0]].exiting && !freecam)
 				K_drawKartPlayerCheck();
 
 		// nametags
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_names))
-#endif
 			K_drawKartNameTags();
 
 		// Draw WANTED status
 		if (gametype == GT_BATTLE)
 		{
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_wanted))
-#endif
 				K_drawKartWanted();
 		}
 
 		if (cv_kartminimap.value)
 		{
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_minimap))
-#endif
 				K_drawKartMinimap();
 		}
 	}
 
 	if (battlefullscreen && !freecam)
 	{
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_battlefullscreen))
-#endif
 			K_drawBattleFullscreen();
 		return;
 	}
 
 	// Draw the item window
-#ifdef HAVE_BLUA
 	if (LUA_HudEnabled(hud_item) && !freecam)
-#endif
 		K_drawKartItem();
 
 	// If not splitscreen, draw...
 	if (!r_splitscreen && !demo.title)
 	{
 		// Draw the timestamp
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_time))
-#endif
 			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y, gamemap, 0);
 
 		if (!modeattacking)
 		{
 			// The top-four faces on the left
-			/*#ifdef HAVE_BLUA
-			if (LUA_HudEnabled(hud_minirankings))
-			#endif*/
+			//if (LUA_HudEnabled(hud_minirankings))
 				isfreeplay = K_drawKartPositionFaces();
 		}
 	}
@@ -3968,9 +3939,7 @@ void K_drawKartHUD(void)
 		// Draw the speedometer
 		if (cv_kartspeedometer.value && !r_splitscreen)
 		{
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_speedometer))
-#endif
 				K_drawKartSpeedometer();
 		}
 
@@ -3999,9 +3968,7 @@ void K_drawKartHUD(void)
 		else if (gametype == GT_RACE) // Race-only elements
 		{
 			// Draw the lap counter
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_gametypeinfo))
-#endif
 				K_drawKartLapsAndRings();
 
 			if (isfreeplay)
@@ -4009,26 +3976,20 @@ void K_drawKartHUD(void)
 			else if (!modeattacking)
 			{
 				// Draw the numerical position
-#ifdef HAVE_BLUA
 				if (LUA_HudEnabled(hud_position))
-#endif
 					K_DrawKartPositionNum(stplyr->kartstuff[k_position]);
 			}
 			else //if (!(demo.playback && hu_showscores))
 			{
 				// Draw the input UI
-#ifdef HAVE_BLUA
 				if (LUA_HudEnabled(hud_position))
-#endif
 					K_drawInput();
 			}
 		}
 		else if (gametype == GT_BATTLE) // Battle-only
 		{
 			// Draw the hits left!
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_gametypeinfo))
-#endif
 				K_drawKartBumpersOrKarma();
 		}
 	}
@@ -4070,9 +4031,7 @@ void K_drawKartHUD(void)
 	// Draw FREE PLAY.
 	if (isfreeplay && !stplyr->spectator && timeinmap > 113)
 	{
-#ifdef HAVE_BLUA
 		if (LUA_HudEnabled(hud_freeplay))
-#endif
 			K_drawKartFreePlay(leveltime);
 	}
 
@@ -4102,7 +4061,7 @@ void K_drawKartHUD(void)
 	if (cv_kartdebugcolorize.value && stplyr->mo && stplyr->mo->skin)
 	{
 		INT32 x = 0, y = 0;
-		UINT8 c;
+		UINT16 c;
 
 		for (c = 1; c < MAXSKINCOLORS; c++)
 		{

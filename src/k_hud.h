@@ -11,6 +11,7 @@
 
 #include "doomtype.h"
 #include "doomstat.h"
+#include "hu_stuff.h"
 
 #ifndef __K_HUD__
 #define __K_HUD__

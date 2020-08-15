@@ -34,6 +34,43 @@ void P_CalculateSlopeNormal(pslope_t *slope) {
 	slope->normal.y = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.y);
 }
 
+// Calculate slope's high & low z
+static void P_CalculateLineSlopeHighLow(pslope_t *slope, line_t *line, boolean ceiling, boolean back)
+{
+	// To find the real highz/lowz of a slope, you need to check all the vertexes
+	// in the slope's sector with P_GetZAt to get the REAL lowz & highz
+	// Although these slopes are set by floorheights the ANGLE is what a slope is,
+	// so technically any slope can extend on forever (they are just bound by sectors)
+	// *You can use sourceline as a reference to see if two slopes really are the same
+
+	size_t l;
+
+	sector_t *checksector = back ? line->backsector : line->frontsector;
+
+	// Default points for high and low
+	fixed_t highest = INT32_MIN;
+	fixed_t lowest = INT32_MAX;
+
+	// Now check to see what the REAL high and low points of the slope inside the sector
+	// TODO: Is this really needed outside of FOFs? -Red
+
+	for (l = 0; l < checksector->linecount; l++)
+	{
+		pslope_t *checkslope = ceiling ? checksector->c_slope : checksector->f_slope;
+		fixed_t height = P_GetSlopeZAt(checkslope, checksector->lines[l]->v1->x, checksector->lines[l]->v1->y);
+
+		if (height > highest)
+			highest = height;
+
+		if (height < lowest)
+			lowest = height;
+	}
+
+	// Sets extra clipping data for the slope
+	slope->highz = highest;
+	slope->lowz = lowest;
+}
+
 /// Setup slope via 3 vertexes.
 static void ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector3_t v2, const vector3_t v3)
 {
@@ -316,12 +353,14 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 			// In P_SpawnSlopeLine the origin is the centerpoint of the sourcelinedef
 
 			fslope = line->frontsector->f_slope =
-            MakeViaVectors(&point, &direction, dz, flags);
+			MakeViaVectors(&point, &direction, dz, flags);
 
 			// Now remember that f_slope IS a vector
 			// fslope->o = origin      3D point 1 of the vector
 			// fslope->d = destination 3D point 2 of the vector
 			// fslope->normal is a 3D line perpendicular to the 3D vector
+
+			P_CalculateLineSlopeHighLow(fslope, line, false, false);
 
 			fslope->zangle = R_PointToAngle2(0, origin.z, extent, point.z);
 			fslope->xydirection = R_PointToAngle2(origin.x, origin.y, point.x, point.y);
@@ -338,7 +377,9 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 			dz = FixedDiv(origin.z - point.z, extent);
 
 			cslope = line->frontsector->c_slope =
-            MakeViaVectors(&point, &direction, dz, flags);
+			MakeViaVectors(&point, &direction, dz, flags);
+
+			P_CalculateLineSlopeHighLow(cslope, line, true, false);
 
 			cslope->zangle = R_PointToAngle2(0, origin.z, extent, point.z);
 			cslope->xydirection = R_PointToAngle2(origin.x, origin.y, point.x, point.y);
@@ -378,7 +419,9 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 			dz = FixedDiv(origin.z - point.z, extent);
 
 			fslope = line->backsector->f_slope =
-            MakeViaVectors(&point, &direction, dz, flags);
+			MakeViaVectors(&point, &direction, dz, flags);
+
+			P_CalculateLineSlopeHighLow(fslope, line, false, true);
 
 			fslope->zangle = R_PointToAngle2(0, origin.z, extent, point.z);
 			fslope->xydirection = R_PointToAngle2(origin.x, origin.y, point.x, point.y);
@@ -395,7 +438,9 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 			dz = FixedDiv(origin.z - point.z, extent);
 
 			cslope = line->backsector->c_slope =
-            MakeViaVectors(&point, &direction, dz, flags);
+			MakeViaVectors(&point, &direction, dz, flags);
+
+			P_CalculateLineSlopeHighLow(cslope, line, true, true);
 
 			cslope->zangle = R_PointToAngle2(0, origin.z, extent, point.z);
 			cslope->xydirection = R_PointToAngle2(origin.x, origin.y, point.x, point.y);

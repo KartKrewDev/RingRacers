@@ -466,22 +466,25 @@ enum GameTypeRules
 
 	// Battle gametype rules
 	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
-	GTR_KARMA				= 1<<4,  // Enables the Karma system if you're out of bumpers
-	GTR_ITEMARROWS			= 1<<5,  // Show item box arrows above players
-	GTR_BATTLESTARTS		= 1<<6,  // Use Battle Mode start positions.
-	GTR_POINTLIMIT			= 1<<7,  // Reaching point limit ends the round
-	GTR_TIMELIMIT			= 1<<8,  // Reaching time limit ends the round
-	GTR_OVERTIME			= 1<<9,  // Allow overtime behavior
+	GTR_WANTED				= 1<<4,  // Enables the wanted anti-camping system
+	GTR_KARMA				= 1<<5,  // Enables the Karma system if you're out of bumpers
+	GTR_ITEMARROWS			= 1<<6,  // Show item box arrows above players
+	GTR_CAPSULES			= 1<<7,  // Enables the wanted anti-camping system
+	GTR_BATTLESTARTS		= 1<<8,  // Use Battle Mode start positions.
+
+	GTR_POINTLIMIT			= 1<<9,  // Reaching point limit ends the round
+	GTR_TIMELIMIT			= 1<<10, // Reaching time limit ends the round
+	GTR_OVERTIME			= 1<<11, // Allow overtime behavior
 
 	// Custom gametype rules
-	GTR_TEAMS				= 1<<10, // Teams are forced on
-	GTR_NOTEAMS				= 1<<11, // Teams are forced off
-	GTR_TEAMSTARTS			= 1<<12, // Use team-based start positions
+	GTR_TEAMS				= 1<<12, // Teams are forced on
+	GTR_NOTEAMS				= 1<<13, // Teams are forced off
+	GTR_TEAMSTARTS			= 1<<14, // Use team-based start positions
 
 	// Grand Prix rules
-	GTR_CAMPAIGN			= 1<<13, // Handles cup-based progression
-	GTR_LIVES				= 1<<14, // Lives system, players are forced to spectate during Game Over.
-	GTR_SPECIALBOTS			= 1<<15, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
+	GTR_CAMPAIGN			= 1<<15, // Handles cup-based progression
+	GTR_LIVES				= 1<<16, // Lives system, players are forced to spectate during Game Over.
+	GTR_SPECIALBOTS			= 1<<17, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
 
 	// free: to and including 1<<31
 };

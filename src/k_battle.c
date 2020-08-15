@@ -300,20 +300,12 @@ static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjty
 
 	if (sec->floorpic != skyflatnum)
 	{
-#ifdef ESLOPE
-		flatz[numflats] = (sec->f_slope ? P_GetZAt(sec->f_slope, x, y) : sec->floorheight);
-#else
-		flatz[numflats] = (sec->floorheight);
-#endif
+		flatz[numflats] = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
 		numflats++;
 	}
 	if (sec->ceilingpic != skyflatnum && ceiling)
 	{
-#ifdef ESLOPE
-		flatz[numflats] = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
-#else
-		flatz[numflats] = (sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
-#endif
+		flatz[numflats] = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
 		flip[numflats] = true;
 		numflats++;
 	}
@@ -327,20 +319,12 @@ static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjty
 				continue;
 			if (*rover->toppic != skyflatnum)
 			{
-#ifdef ESLOPE
-				flatz[numflats] = (*rover->t_slope ? P_GetZAt(*rover->t_slope, x, y) : *rover->topheight);
-#else
-				flatz[numflats] = (*rover->topheight);
-#endif
+				flatz[numflats] = P_GetZAt(*rover->t_slope, x, y, *rover->topheight);
 				numflats++;
 			}
 			if (*rover->bottompic != skyflatnum && ceiling)
 			{
-#ifdef ESLOPE
-				flatz[numflats] = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
-#else
-				flatz[numflats] = (*rover->bottomheight) - FixedMul(mobjinfo[type].height, scale);
-#endif
+				flatz[numflats] = P_GetZAt(*rover->b_slope, x, y, *rover->bottomheight);
 				flip[numflats] = true;
 				numflats++;
 			}
@@ -598,11 +582,7 @@ void K_SpawnBattleCapsules(void)
 			mt->mobj = NULL;
 
 			mtsector = R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
-			mt->z = (INT16)(
-#ifdef ESLOPE
-				mtsector->f_slope ? P_GetZAt(mtsector->f_slope, mt->x << FRACBITS, mt->y << FRACBITS) :
-#endif
-				mtsector->floorheight)>>FRACBITS;
+			mt->z = (INT16)(P_GetZAt(mtsector->f_slope, mt->x << FRACBITS, mt->y << FRACBITS, mtsector->floorheight) / FRACUNIT);
 
 			x = mt->x << FRACBITS;
 			y = mt->y << FRACBITS;
@@ -611,11 +591,7 @@ void K_SpawnBattleCapsules(void)
 
 			if (mt->options & MTF_OBJECTFLIP)
 			{
-				z = (
-#ifdef ESLOPE
-					sec->c_slope ? P_GetZAt(sec->c_slope, x, y) :
-#endif
-					sec->ceilingheight) - mobjinfo[MT_BATTLECAPSULE].height;
+				z = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight) - mobjinfo[MT_BATTLECAPSULE].height;
 
 				floorheights[0] = z;
 
@@ -624,11 +600,7 @@ void K_SpawnBattleCapsules(void)
 			}
 			else
 			{
-				z =
-#ifdef ESLOPE
-					sec->f_slope ? P_GetZAt(sec->f_slope, x, y) :
-#endif
-					sec->floorheight;
+				z = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
 
 				floorheights[0] = z;
 
@@ -646,19 +618,11 @@ void K_SpawnBattleCapsules(void)
 					{
 						if (mt->options & MTF_OBJECTFLIP)
 						{
-							floorheights[numfloors] = (
-#ifdef ESLOPE
-								*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) :
-#endif
-								*rover->bottomheight) - mobjinfo[MT_BATTLECAPSULE].height;
+							floorheights[numfloors] = P_GetZAt(*rover->b_slope, x, y, *rover->bottomheight) - mobjinfo[MT_BATTLECAPSULE].height;
 						}
 						else
 						{
-							floorheights[numfloors] = (
-#ifdef ESLOPE
-								*rover->t_slope ? P_GetZAt(*rover->t_slope, x, y) :
-#endif
-								*rover->topheight);
+							floorheights[numfloors] = P_GetZAt(*rover->t_slope, x, y, *rover->topheight);
 						}
 
 						numfloors++;

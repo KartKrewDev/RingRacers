@@ -244,6 +244,10 @@ typedef struct pslope_s
 	angle_t xydirection;/// Precomputed angle of the normal's projection on the XY plane.
 
 	UINT8 flags; // Slope options
+
+	// SRB2Kart: For P_VeryTopOfFOF & P_VeryBottomOfFOF
+	fixed_t lowz;
+	fixed_t highz;
 } pslope_t;
 
 typedef enum
