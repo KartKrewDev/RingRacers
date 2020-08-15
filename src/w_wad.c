@@ -713,7 +713,6 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 #ifndef NOMD5
 	size_t i;
 #endif
-	size_t packetsize;
 	UINT8 md5sum[16];
 	boolean important;
 
@@ -886,7 +885,7 @@ INT32 W_InitMultipleFiles(char **filenames, boolean addons)
 			G_SetGameModified(true, false);
 
 		//CONS_Debug(DBG_SETUP, "Loading %s\n", *filenames);
-		rc &= (W_InitFile(*filenames, numwadfiles < mainfiles, true) != INT16_MAX) ? 1 : 0;
+		rc &= (W_InitFile(*filenames, !addons, true) != INT16_MAX) ? 1 : 0;
 	}
 
 	if (!numwadfiles)

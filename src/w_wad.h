@@ -153,7 +153,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup);
 // W_InitMultipleFiles returns 1 if all is okay, 0 otherwise,
 // so that it stops with a message if a file was not found, but not if all is okay.
 // W_InitMultipleFiles exits if a file was not found, but not if all is okay.
-INT32 W_InitMultipleFiles(char **filenames, UINT16 mainfiles);
+INT32 W_InitMultipleFiles(char **filenames, boolean addons);
 
 const char *W_CheckNameForNumPwad(UINT16 wad, UINT16 lump);
 const char *W_CheckNameForNum(lumpnum_t lumpnum);

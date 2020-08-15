@@ -5195,8 +5195,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			deh_warning("No word in this line: %s", s);
 	} // end while
 
-	/*if (gamedataadded) -- REFRESHDIR_GAMEDATA murdered this
-		G_LoadGameData();*/
+	/* REFRESHDIR_GAMEDATA murdered this
+	if (gamedataadded)
+		G_LoadGameData();
+	*/
 
 	if (gamestate == GS_TITLESCREEN)
 	{
