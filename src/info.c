@@ -530,14 +530,14 @@ char sprnames[NUMSPRITES + 1][5] =
 	"HIT3","RETI","AIDU","KSPK","LZI1","LZI2","KLIT","FZSM","FZBM","FPRT",
 	"SBUS","MARB","FUFO","RUST","BLON","VAPE","HTZA","HTZB","SGVA","SGVB",
 	"SGVC","PGTR","PGF1","PGF2","PGF3","PGBH","DPLR","SPTL","ENM1","GARU",
-	"MARR","REAP","JITB","CDMO","CDBU","PINE","PPLR","DPPT","AATR","COCO",
+	"MARR","REAP","JITB","CDMO","CDBU","DPIN","PPLR","DPPT","AATR","COCO",
 	"BDST","FROG","CBRA","HOLE","BBRA","EGFG","SMKP","MTYM","THWP","SNOB",
-	"ICEB","CNDL","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
+	"ICEB","ECND","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
 	"ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH",
 	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
 
-	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","EGOO","WTRL","XMS4",
-	"XMS5","FBUB","GCHA","CHEZ","VIEW","DBCL","DBNC","DBST",
+	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","EGOO","WTRL",
+	"FBUB","GCHA","CHEZ","VIEW","DBCL","DBNC","DBST",
 };
 
 char spr2names[NUMPLAYERSPRITES][5] =
@@ -4500,7 +4500,7 @@ state_t states[NUMSTATES] =
 	{SPR_SBUS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SONICBUSH
 
 	// Marble Zone
-	{SPR_MARB, FF_FULLBRIGHT|FF_ANIMATE|5, TICRATE, {NULL}, 3, 3, S_NULL}, // S_FLAMEPARTICLE
+	{SPR_MARB, FF_FULLBRIGHT|FF_ANIMATE|5, TICRATE, {NULL}, 3, 3, S_NULL}, // S_MARBLEFLAMEPARTICLE
 	{SPR_MARB, FF_FULLBRIGHT|FF_ANIMATE, 8*3, {A_FlameParticle}, 3, 3, S_MARBLETORCH}, // S_MARBLETORCH
 	{SPR_MARB, FF_FULLBRIGHT|FF_TRANS80|4, -1, {NULL}, 1, 29, S_NULL}, // S_MARBLELIGHT
 	{SPR_MARB, 9, -1, {NULL}, 0, 0, S_NULL}, // S_MARBLEBURNER
@@ -4512,12 +4512,6 @@ state_t states[NUMSTATES] =
 	// Rusty Rig
 	{SPR_RUST, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_RUSTYLAMP_ORANGE
 	{SPR_RUST, 1,             -1, {NULL}, 0, 0, S_NULL}, // S_RUSTYCHAIN
-
-	// D2 Balloon Panic
-	{SPR_BLON, FF_ANIMATE,   -1,         {NULL},             2, 5, S_BALLOON},     // S_BALLOON
-	{SPR_BLON, FF_ANIMATE|3, 2,          {NULL},             1, 1, S_BALLOONPOP2}, // S_BALLOONPOP1
-	{SPR_NULL, 0,            15*TICRATE, {NULL},             0, 0, S_BALLOONPOP3}, // S_BALLOONPOP2
-	{SPR_NULL, 0,            0,          {A_SpawnFreshCopy}, 0, 0, S_NULL},        // S_BALLOONPOP3
 
 	// Smokin' & Vapin' (Don't try this at home, kids!)
 	{SPR_SMOK, 0,  1, {A_SetScale},   FRACUNIT/2, 0,     S_PETSMOKE1}, // S_PETSMOKE0
@@ -8346,7 +8340,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		20*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPRING|MF_NOGRAVITY, // flags
+		MF_NOGRAVITY,   // flags
 		S_BALLOONPOP1   // raisestate
 	},
 
@@ -25539,9 +25533,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_FLAMEPARTICLE
+	{           // MT_MARBLEFLAMEPARTICLE
 		-1,             // doomednum
-		S_FLAMEPARTICLE,// spawnstate
+		S_MARBLEFLAMEPARTICLE,// spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -25575,7 +25569,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		MT_FLAMEPARTICLE,// painchance
+		MT_MARBLEFLAMEPARTICLE,// painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -25725,33 +25719,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SCENERY|MF_NOBLOCKMAP, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_BALLOON
-		462,            // doomednum
-		S_BALLOON,      // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_BALLOONPOP1,  // deathstate
-		S_NULL,         // xdeathstate
-		sfx_s3k77,      // deathsound
-		0,              // speed
-		32*FRACUNIT,    // radius
-		64*FRACUNIT,    // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOGRAVITY|MF_SCENERY, // flags
 		S_NULL          // raisestate
 	},
 

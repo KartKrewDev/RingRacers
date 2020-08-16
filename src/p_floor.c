@@ -1026,7 +1026,6 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 		{
 		case MT_NULL:
 		case MT_UNKNOWN:
-		case MT_TAILSOVERLAY:
 		case MT_THOK:
 		case MT_GHOST:
 		case MT_OVERLAY:

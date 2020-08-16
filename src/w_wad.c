@@ -875,9 +875,6 @@ INT32 W_InitMultipleFiles(char **filenames, boolean addons)
 {
 	INT32 rc = 1;
 
-	// open all the files, load headers, and count lumps
-	numwadfiles = 0;
-
 	// will be realloced as lumps are added
 	for (; *filenames; filenames++)
 	{

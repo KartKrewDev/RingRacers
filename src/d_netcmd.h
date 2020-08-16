@@ -138,29 +138,30 @@ typedef enum
 	XD_ADDPLAYER,   // 10
 	XD_TEAMCHANGE,  // 11
 	XD_CLEARSCORES, // 12
-	// UNUSED          13 (Because I don't want to change these comments)
-	XD_VERIFIED = 14,//14
-	XD_RANDOMSEED,  // 15
-	XD_RUNSOC,      // 16
-	XD_REQADDFILE,  // 17
-	XD_DELFILE,     // 18 - replace next time we add an XD
-	XD_SETMOTD,     // 19
-	XD_RESPAWN,     // 20
-	XD_DEMOTED,     // 21
-	XD_SETUPVOTE,   // 22
-	XD_MODIFYVOTE,  // 23
-	XD_PICKVOTE,    // 24
-	XD_REMOVEPLAYER,// 25
-	XD_POWERLEVEL,  // 26
-	XD_PARTYINVITE, // 27
-	XD_ACCEPTPARTYINVITE, // 28
-	XD_LEAVEPARTY, // 29
-	XD_CANCELPARTYINVITE, // 30
-	XD_GIVEITEM, // 31
-	XD_ADDBOT, // 32
-	XD_LUACMD,      // 33
-	XD_LUAVAR,      // 34
-	XD_LUAFILE,     // 35
+	XD_VERIFIED,    // 13
+	XD_RANDOMSEED,  // 14
+	XD_RUNSOC,      // 15
+	XD_REQADDFILE,  // 16
+	XD_SETMOTD,     // 17
+	XD_RESPAWN,     // 18
+	XD_DEMOTED,     // 19
+	XD_LUACMD,      // 20
+	XD_LUAVAR,      // 21
+	XD_LUAFILE,     // 22
+
+	// SRB2Kart
+	XD_SETUPVOTE,   // 23
+	XD_MODIFYVOTE,  // 24
+	XD_PICKVOTE,    // 25
+	XD_REMOVEPLAYER,// 26
+	XD_POWERLEVEL,  // 27
+	XD_PARTYINVITE, // 28
+	XD_ACCEPTPARTYINVITE, // 29
+	XD_LEAVEPARTY,  // 30
+	XD_CANCELPARTYINVITE, // 31
+	XD_GIVEITEM,    // 32
+	XD_ADDBOT,      // 33
+
 	MAXNETXCMD
 } netxcmd_t;
 

@@ -6260,16 +6260,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SIGN_SIDE",
 	"S_SIGN_FACE",
 
-	// Steam Riser
-	"S_STEAM1",
-	"S_STEAM2",
-	"S_STEAM3",
-	"S_STEAM4",
-	"S_STEAM5",
-	"S_STEAM6",
-	"S_STEAM7",
-	"S_STEAM8",
-
 	// Spike Ball
 	"S_SPIKEBALL1",
 	"S_SPIKEBALL2",
@@ -7595,46 +7585,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_GHORIZ2",
 	"S_GHORIZ3",
 	"S_GHORIZ4",
-
-	// Blue Diagonal Spring
-	"S_BDIAG1",
-	"S_BDIAG2",
-	"S_BDIAG3",
-	"S_BDIAG4",
-	"S_BDIAG5",
-	"S_BDIAG6",
-	"S_BDIAG7",
-	"S_BDIAG8",
-
-	// Yellow Side Spring
-	"S_YHORIZ1",
-	"S_YHORIZ2",
-	"S_YHORIZ3",
-	"S_YHORIZ4",
-	"S_YHORIZ5",
-	"S_YHORIZ6",
-	"S_YHORIZ7",
-	"S_YHORIZ8",
-
-	// Red Side Spring
-	"S_RHORIZ1",
-	"S_RHORIZ2",
-	"S_RHORIZ3",
-	"S_RHORIZ4",
-	"S_RHORIZ5",
-	"S_RHORIZ6",
-	"S_RHORIZ7",
-	"S_RHORIZ8",
-
-	// Blue Side Spring
-	"S_BHORIZ1",
-	"S_BHORIZ2",
-	"S_BHORIZ3",
-	"S_BHORIZ4",
-	"S_BHORIZ5",
-	"S_BHORIZ6",
-	"S_BHORIZ7",
-	"S_BHORIZ8",
 
 	// Booster
 	"S_BOOSTERSOUND",
@@ -9064,7 +9014,7 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SONICBUSH",
 
 	// Marble Zone
-	"S_FLAMEPARTICLE",
+	"S_MARBLEFLAMEPARTICLE",
 	"S_MARBLETORCH",
 	"S_MARBLELIGHT",
 	"S_MARBLEBURNER",
@@ -9076,12 +9026,6 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	// Rusty Rig
 	"S_RUSTYLAMP_ORANGE",
 	"S_RUSTYCHAIN",
-
-	// D2 Balloon Panic
-	"S_BALLOON",
-	"S_BALLOONPOP1",
-	"S_BALLOONPOP2",
-	"S_BALLOONPOP3",
 
 	// Smokin' & Vapin' (Don't try this at home, kids!)
 	"S_PETSMOKE0",
@@ -9385,8 +9329,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_THOK", // Thok! mobj
 	"MT_PLAYER",
-	"MT_TAILSOVERLAY", // c:
-	"MT_METALJETFUME",
 
 	// Enemies
 	"MT_BLUECRAWLA", // Crawla (Blue)
@@ -10150,23 +10092,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_ROCKCRUMBLE15",
 	"MT_ROCKCRUMBLE16",
 
-	"MT_SRB1_CRAWLA",
-	"MT_SRB1_BAT",
-	"MT_SRB1_ROBOFISH",
-	"MT_SRB1_VOLCANOGUY",
-	"MT_SRB1_HOPPY",
-	"MT_SRB1_HOPPYWATER",
-	"MT_SRB1_HOPPYSKYLAB",
-	"MT_SRB1_MMZFLYING",
-	"MT_SRB1_UFO",
-	"MT_SRB1_GRAYBOT",
-	"MT_SRB1_ROBOTOPOLIS",
-	"MT_SRB1_RBZBUZZ",
-	"MT_SRB1_RBZSPIKES",
-	"MT_SRB1_METALSONIC",
-	"MT_SRB1_GOLDBOT",
-	"MT_SRB1_GENREX",
-
 	// Level debris
 	"MT_GFZDEBRIS",
 	"MT_BRICKDEBRIS",
@@ -10322,7 +10247,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_SONICBUSH",
 
 	// Marble Zone
-	"MT_FLAMEPARTICLE",
+	"MT_MARBLEFLAMEPARTICLE",
 	"MT_MARBLETORCH",
 	"MT_MARBLELIGHT",
 	"MT_MARBLEBURNER",
@@ -10333,9 +10258,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Rusty Rig
 	"MT_RUSTYLAMP_ORANGE",
 	"MT_RUSTYCHAIN",
-
-	// D2 Balloon Panic
-	"MT_BALLOON",
 
 	// Smokin' & Vapin' (Don't try this at home, kids!)
 	"MT_PETSMOKER",

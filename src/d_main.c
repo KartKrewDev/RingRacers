@@ -1409,7 +1409,7 @@ void D_SRB2Main(void)
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding main IWAD and PWADs.\n");
-	if (!W_InitMultipleFiles(startupiwads, mainwads))
+	if (!W_InitMultipleFiles(startupiwads, false))
 #ifdef _DEBUG
 		CONS_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
 #else
@@ -1468,7 +1468,7 @@ void D_SRB2Main(void)
 	}
 
 	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
-	if (!W_InitMultipleFiles(startuppwads, mainwads))
+	if (!W_InitMultipleFiles(startuppwads, true))
 		M_StartMessage(M_GetText("A PWAD file was not found or not valid.\nCheck log.txt to see which ones.\n\nPress ESC\n"), NULL, MM_NOTHING);
 	D_CleanFile(startuppwads);
 

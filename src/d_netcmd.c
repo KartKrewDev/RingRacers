@@ -265,22 +265,22 @@ consvar_t cv_playername[MAXSPLITSCREENPLAYERS] = {
 	{"name", "Sonic", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"name2", "Tails", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name2_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"name3", "Knuckles", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"name4", "Dr. Eggman", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+	{"name4", "Dr. Eggman", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name4_OnChange, 0, NULL, NULL, 0, 0, NULL},
 };
 // player colors
 UINT16 lastgoodcolor[MAXSPLITSCREENPLAYERS] = {SKINCOLOR_BLUE, SKINCOLOR_BLUE, SKINCOLOR_BLUE, SKINCOLOR_BLUE};
 consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS] = {
-	{"color", "Blue", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"color", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"color2", "Orange", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color2_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"color3", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"color4", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+	{"color3", "Blue", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color3_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"color4", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange, 0, NULL, NULL, 0, 0, NULL},
 };
 // player's skin, saved for commodity, when using a favorite skins wad..
 consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
 	{"skin", DEFAULTSKIN, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"skin2", DEFAULTSKIN2, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin2_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"skin3", DEFAULTSKIN3, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"skin4", DEFAULTSKIN4, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+	{"skin4", DEFAULTSKIN4, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin4_OnChange, 0, NULL, NULL, 0, 0, NULL},
 };
 
 // player's followers. Also saved.
@@ -288,15 +288,15 @@ consvar_t cv_follower[MAXSPLITSCREENPLAYERS] = {
 	{"follower", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+	{"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL},
 };
 
 // player's follower colors... Also saved...
 consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS] = {
-	{"followercolor", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"followercolor2", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"followercolor3", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"followercolor4", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+	{"followercolor", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"followercolor2", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"followercolor3", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"followercolor4", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange, 0, NULL, NULL, 0, 0, NULL},
 };
 
 
@@ -543,17 +543,20 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"ADDFILE",
 	"PAUSE",
 	"ADDPLAYER",
-	"TEAMCHANGE",
+	"TEAMCHANGE"
 	"CLEARSCORES",
-	"LOGIN",
 	"VERIFIED",
 	"RANDOMSEED",
 	"RUNSOC",
 	"REQADDFILE",
-	"DELFILE", // replace next time we add an XD
 	"SETMOTD",
 	"RESPAWN",
 	"DEMOTED",
+	"LUACMD",
+	"LUAVAR",
+	"LUAFILE",
+
+	// SRB2Kart
 	"SETUPVOTE",
 	"MODIFYVOTE",
 	"PICKVOTE",
@@ -564,10 +567,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"LEAVEPARTY",
 	"CANCELPARTYINVITE",
 	"GIVEITEM",
-	"ADDBOT",
-	"LUACMD",
-	"LUAVAR",
-	"LUAFILE"
+	"ADDBOT"
 };
 
 // =========================================================================
@@ -767,19 +767,20 @@ void D_RegisterClientCommands(void)
 {
 	INT32 i;
 
-	for (i = 0; i < numskincolors; i++)
+	for (i = 0; i < MAXSKINCOLORS; i++)
 	{
 		Color_cons_t[i].value = Followercolor_cons_t[i].value = i;
 		Color_cons_t[i].strvalue = Followercolor_cons_t[i].strvalue = skincolors[i].name;
 	}
-	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
-	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
 
 	Followercolor_cons_t[MAXSKINCOLORS].value = MAXSKINCOLORS;
 	Followercolor_cons_t[MAXSKINCOLORS].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
 
 	Followercolor_cons_t[MAXSKINCOLORS+1].value = MAXSKINCOLORS+1;
 	Followercolor_cons_t[MAXSKINCOLORS+1].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
+
+	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
+	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
 
 	// Set default player names
 	// Monster Iestyn (12/08/19): not sure where else I could have actually put this, but oh well
