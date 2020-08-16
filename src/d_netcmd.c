@@ -1479,7 +1479,7 @@ static void SendNameAndColor(UINT8 n)
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
 	WRITESINT8(p, (UINT8)cv_follower[n].value);
-	WRITESINT8(p, (UINT8)cv_followercolor[n].value);
+	WRITEUINT16(p, (UINT8)cv_followercolor[n].value);
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
 
