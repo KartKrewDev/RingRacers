@@ -334,7 +334,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 			}
 
 			// Set angle, regardless of if we're done or not
-			player->frameangle = R_PointToAngle2(
+			player->drawangle = R_PointToAngle2(
 				player->mo->x, player->mo->y,
 				dest.x, dest.y
 			);
@@ -383,7 +383,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	);
 
 	// Move toward the respawn point
-	player->frameangle = stepha;
+	player->drawangle = stepha;
 
 	step.x = FixedMul(FixedMul(FINECOSINE(stepha >> ANGLETOFINESHIFT), stepamt), FINECOSINE(stepva >> ANGLETOFINESHIFT));
 	step.y = FixedMul(FixedMul(FINESINE(stepha >> ANGLETOFINESHIFT), stepamt), FINECOSINE(stepva >> ANGLETOFINESHIFT));

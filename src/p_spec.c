@@ -31,7 +31,7 @@
 #include "p_polyobj.h"
 #include "p_slopes.h"
 #include "hu_stuff.h"
-#include "v_video.h" // V_AUTOFADEOUT|V_ALLOWLOWERCASE
+#include "v_video.h" // V_ALLOWLOWERCASE
 #include "m_misc.h"
 #include "m_cond.h" //unlock triggers
 #include "lua_hook.h" // LUAh_LinedefExecute
@@ -169,6 +169,11 @@ void P_InitPicAnims(void)
 	INT32 w; // WAD
 	size_t i;
 
+#if 1
+	// SRB2Kart: NO ONE GETS ANIMATED TEXTURES UNTIL THE SHITTY BUG GETS FIXED.
+	(void)w;
+	(void)i;
+#else
 	I_Assert(animdefs == NULL);
 
 	maxanims = 0;
@@ -240,6 +245,7 @@ void P_InitPicAnims(void)
 	// We'll only be using anims from now on.
 	Z_Free(animdefs);
 	animdefs = NULL;
+#endif
 }
 
 void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum)
@@ -516,11 +522,15 @@ static inline void P_FindAnimatedFlat(INT32 animnum)
   */
 void P_SetupLevelFlatAnims(void)
 {
+#if 1
+	// SRB2Kart: NO ONE GETS ANIMATED TEXTURES UNTIL THE SHITTY BUG GETS FIXED.
+	return;
+#else
 	INT32 i;
-
 	// the original game flat anim sequences
 	for (i = 0; anims[i].istexture != -1; i++)
 		P_FindAnimatedFlat(i);
+#endif
 }
 
 //

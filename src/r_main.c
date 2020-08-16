@@ -1118,25 +1118,20 @@ void R_SetupFrame(player_t *player)
 {
 	camera_t *thiscam = &camera[0];
 	boolean chasecam = false;
-	UINT8 i = 0;
+	UINT8 i;
 
-	if (r_splitscreen)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		for (i = 1; i <= r_splitscreen; i++)
+		if (player == &players[displayplayers[i]])
 		{
-			if (player == &players[displayplayers[i]])
-			{
-				thiscam = &camera[i];
-				chasecam = (cv_chasecam[i].value != 0);
-				break;
-			}
-		}
-
-		if (i > r_splitscreen)
-		{
-			i = 0;
+			thiscam = &camera[i];
+			chasecam = (cv_chasecam[i].value != 0);
+			break;
 		}
 	}
+	
+	if (i > r_splitscreen)
+		return; // shouldn't be possible, but just in case
 
 	if (player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN || tutorialmode)
 		chasecam = true; // force chasecam on

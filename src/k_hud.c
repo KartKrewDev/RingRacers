@@ -3442,7 +3442,7 @@ static void K_drawKartFirstPerson(void)
 	if (stplyr->mo)
 	{
 		UINT8 driftcolor = K_DriftSparkColor(stplyr, stplyr->kartstuff[k_driftcharge]);
-		const angle_t ang = R_PointToAngle2(0, 0, stplyr->rmomx, stplyr->rmomy) - stplyr->frameangle;
+		const angle_t ang = R_PointToAngle2(0, 0, stplyr->rmomx, stplyr->rmomy) - stplyr->drawangle;
 		// yes, the following is correct. no, you do not need to swap the x and y.
 		fixed_t xoffs = -P_ReturnThrustY(stplyr->mo, ang, (BASEVIDWIDTH<<(FRACBITS-2))/2);
 		fixed_t yoffs = -(P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT) - 4*FRACUNIT);
@@ -3453,7 +3453,7 @@ static void K_drawKartFirstPerson(void)
 		xoffs -= (tn)*scale;
 		xoffs -= (dr)*scale;
 
-		if (stplyr->frameangle == stplyr->mo->angle)
+		if (stplyr->drawangle == stplyr->mo->angle)
 		{
 			const fixed_t mag = FixedDiv(stplyr->speed, 10*stplyr->mo->scale);
 

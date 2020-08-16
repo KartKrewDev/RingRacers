@@ -1440,7 +1440,7 @@ void G_PreviewRewind(tic_t previewtime)
 #undef TWEEN
 		P_SetThingPosition(players[i].mo);
 
-		players[i].frameangle = info->playerinfo[i].player.frameangle + FixedMul((INT32) (next_info->playerinfo[i].player.frameangle - info->playerinfo[i].player.frameangle), tweenvalue);
+		players[i].drawangle = info->playerinfo[i].player.drawangle + FixedMul((INT32) (next_info->playerinfo[i].player.drawangle - info->playerinfo[i].player.drawangle), tweenvalue);
 
 		players[i].mo->sprite = info->playerinfo[i].mobj.sprite;
 		players[i].mo->frame = info->playerinfo[i].mobj.frame;

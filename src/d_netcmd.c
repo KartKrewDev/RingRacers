@@ -1795,7 +1795,7 @@ void D_SendPlayerConfig(void)
 	for (i = 0; i <= splitscreen; i++)
 	{
 		UINT8 buf[4];
-		UINT8 *buf_p = buf;
+		UINT8 *p = buf;
 
 		SendNameAndColor(i);
 		SendWeaponPref(i);
@@ -1803,17 +1803,17 @@ void D_SendPlayerConfig(void)
 		if (i > 0)
 		{
 			// Splitscreen players have invalid powerlevel
-			WRITEUINT16(buf_p, 0);
-			WRITEUINT16(buf_p, 0);
+			WRITEUINT16(p, 0);
+			WRITEUINT16(p, 0);
 		}
 		else
 		{
 			// Send it over
-			WRITEUINT16(buf_p, vspowerlevel[PWRLV_RACE]);
-			WRITEUINT16(buf_p, vspowerlevel[PWRLV_BATTLE]);
+			WRITEUINT16(p, vspowerlevel[PWRLV_RACE]);
+			WRITEUINT16(p, vspowerlevel[PWRLV_BATTLE]);
 		}
 
-		SendNetXCmdForPlayer(i, XD_POWERLEVEL, buf, 4);
+		SendNetXCmdForPlayer(i, XD_POWERLEVEL, buf, p-buf);
 	}
 }
 

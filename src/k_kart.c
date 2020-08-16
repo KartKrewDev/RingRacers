@@ -3434,7 +3434,7 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
 	I_Assert(!P_MobjWasRemoved(mo));
 
 	if (mo->player)
-		aoff = (mo->player->frameangle + ANGLE_180);
+		aoff = (mo->player->drawangle + ANGLE_180);
 	else
 		aoff = (mo->angle + ANGLE_180);
 
@@ -3483,7 +3483,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 		{
 			UINT8 leniency = (3*TICRATE)/4 + ((mo->player->kartweight-1) * (TICRATE/4));
 
-			ang = mo->player->frameangle;
+			ang = mo->player->drawangle;
 
 			if (mo->player->kartstuff[k_drift] != 0)
 			{
@@ -3559,7 +3559,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 	{
 		if (spawner->player->pflags & PF_WPNDOWN)
 		{
-			anglediff = abs((signed)(spawner->angle - spawner->player->frameangle));
+			anglediff = abs((signed)(spawner->angle - spawner->player->drawangle));
 			if (leveltime % 6 == 0)
 				S_StartSound(spawner, sfx_screec); // repeated here because it doesn't always happen to be within the range when this is the case
 		}
@@ -5001,7 +5001,7 @@ static void K_MoveHeldObjects(player_t *player)
 
 #if 1
 					{
-						angle_t input = player->frameangle - cur->angle;
+						angle_t input = player->drawangle - cur->angle;
 						boolean invert = (input > ANGLE_180);
 						if (invert)
 							input = InvAngle(input);
@@ -5013,7 +5013,7 @@ static void K_MoveHeldObjects(player_t *player)
 						cur->angle = cur->angle + input;
 					}
 #else
-					cur->angle = player->frameangle;
+					cur->angle = player->drawangle;
 #endif
 
 					angoffset = ANGLE_90 + (ANGLE_180 * num);

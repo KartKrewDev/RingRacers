@@ -1177,7 +1177,7 @@ void Command_ObjectPlace_f(void)
 
 		if (!COM_CheckParm("-silent"))
 		{
-			HU_SetCEchoFlags(V_RETURN8|V_MONOSPACE|V_AUTOFADEOUT);
+			HU_SetCEchoFlags(V_RETURN8|V_MONOSPACE);
 			HU_SetCEchoDuration(10);
 			HU_DoCEcho(va(M_GetText(
 				"\\\\\\\\\\\\\\\\\\\\\\\\\x82"
