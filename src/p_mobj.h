@@ -133,35 +133,33 @@ typedef enum
 	MF_MISSILE          = 1<<15,
 	// Item is a spring.
 	MF_SPRING           = 1<<16,
-	// Bounce off walls and things.
-	MF_BOUNCE           = 1<<17,
 	// Item box
-	MF_MONITOR          = 1<<18,
+	MF_MONITOR          = 1<<17,
 	// Don't run the thinker for this object.
-	MF_NOTHINK          = 1<<19,
+	MF_NOTHINK          = 1<<18,
 	// Fire object. Doesn't harm if you have fire shield.
-	MF_FIRE             = 1<<20,
+	MF_FIRE             = 1<<19,
 	// Don't adjust z if below or above floorz/ceilingz
-	MF_NOCLIPHEIGHT     = 1<<21,
+	MF_NOCLIPHEIGHT     = 1<<20,
 	// This mobj is an enemy!
-	MF_ENEMY            = 1<<22,
+	MF_ENEMY            = 1<<21,
 	// Scenery (uses scenery thinker).
-	MF_SCENERY          = 1<<23,
+	MF_SCENERY          = 1<<22,
 	// Painful (shit hurts).
-	MF_PAIN             = 1<<24,
+	MF_PAIN             = 1<<23,
 	// This mobj will stick to any surface or solid object it touches.
-	MF_STICKY           = 1<<25,
+	MF_STICKY           = 1<<24,
 	// NiGHTS hidden item. Goes to seestate and turns MF_SPECIAL when paralooped.
-	MF_NIGHTSITEM       = 1<<26,
+	MF_NIGHTSITEM       = 1<<25,
 	// for chase camera, don't be blocked by things (partial clipping)
-	MF_NOCLIPTHING      = 1<<27,
+	MF_NOCLIPTHING      = 1<<26,
 	// Missile bounces like a grenade.
-	MF_GRENADEBOUNCE    = 1<<28,
+	MF_GRENADEBOUNCE    = 1<<27,
 	// Run the action thinker on spawn.
-	MF_RUNSPAWNFUNC     = 1<<29,
+	MF_RUNSPAWNFUNC     = 1<<28,
 	// Don't remap in Encore mode. (Not a drawflag so that it's settable by mobjinfo.)
-	MF_DONTENCOREMAP    = 1<<30,
-	// free: 1<<31
+	MF_DONTENCOREMAP    = 1<<29,
+	// free: to and including 1<<31
 } mobjflag_t;
 
 typedef enum

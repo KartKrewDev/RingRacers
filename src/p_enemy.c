@@ -14045,7 +14045,7 @@ void A_KillSegments(mobj_t *actor)
 		mobj_t *kseg = seg;
 		seg = seg->tracer;
 
-		kseg->flags = MF_NOBLOCKMAP|MF_BOUNCE;
+		kseg->flags = MF_NOBLOCKMAP;
 		kseg->flags2 = 0;
 		kseg->fuse = fuse;
 		P_Thrust(kseg, R_PointToAngle2(actor->x, actor->y, kseg->x, kseg->y), 3*actor->scale);

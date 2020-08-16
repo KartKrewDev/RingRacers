@@ -1527,136 +1527,6 @@ void P_XYMovement(mobj_t *mo)
 			}
 		}
 		//}
-		else if (mo->flags & MF_BOUNCE)
-		{
-			P_BounceMove(mo);
-			xmove = ymove = 0;
-			S_StartSound(mo, mo->info->activesound);
-
-			//{ SRB2kart - Orbinaut, Ballhog
-			// Bump sparks
-			if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG)
-			{
-				mobj_t *fx;
-				fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
-				if (mo->eflags & MFE_VERTICALFLIP)
-					fx->eflags |= MFE_VERTICALFLIP;
-				else
-					fx->eflags &= ~MFE_VERTICALFLIP;
-				fx->scale = mo->scale;
-			}
-
-			if (mo->type == MT_ORBINAUT) // Orbinaut speed decreasing
-			{
-				if (mo->health > 1)
-				{
-					S_StartSound(mo, mo->info->attacksound);
-					mo->health--;
-					mo->threshold = 0;
-				}
-				else if (mo->health == 1)
-				{
-					// This Item Damage
-					S_StartSound(mo, mo->info->deathsound);
-					P_KillMobj(mo, NULL, NULL, 0);
-
-					P_SetObjectMomZ(mo, 8*FRACUNIT, false);
-					P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
-				}
-			}
-
-			// Bubble bounce
-			if (mo->type == MT_BUBBLESHIELDTRAP)
-				S_StartSound(mo, sfx_s3k44);
-			//}
-
-			// Bounce ring algorithm
-			if (mo->type == MT_THROWNBOUNCE)
-			{
-				mo->threshold++;
-
-				// Gain lower amounts of time on each bounce.
-				if (mo->fuse && mo->threshold < 5)
-					mo->fuse += ((5 - mo->threshold) * TICRATE);
-
-				// Check for hit against sky here
-				if (P_CheckSkyHit(mo))
-				{
-					// Hack to prevent missiles exploding
-					// against the sky.
-					// Does not handle sky floors.
-					// Check frontsector as well.
-
-					P_RemoveMobj(mo);
-					return;
-				}
-			}
-		}
-		else if (mo->flags & MF_STICKY)
-		{
-			S_StartSound(mo, mo->info->activesound);
-			mo->momx = mo->momy = mo->momz = 0; //Full stop!
-			mo->flags |= MF_NOGRAVITY; //Stay there!
-			mo->flags &= ~MF_STICKY; //Don't check again!
-
-			// Check for hit against sky here
-			if (P_CheckSkyHit(mo))
-			{
-				// Hack to prevent missiles exploding
-				// against the sky.
-				// Does not handle sky floors.
-				// Check frontsector as well.
-
-				P_RemoveMobj(mo);
-				return;
-			}
-		}
-		else if (player || mo->flags & (MF_SLIDEME|MF_PUSHABLE))
-		{ // try to slide along it
-			// Wall transfer part 1.
-			pslope_t *transferslope = NULL;
-			fixed_t transfermomz = 0;
-			if (oldslope && (P_MobjFlip(mo)*(predictedz - mo->z) > 0)) // Only for moving up (relative to gravity), otherwise there's a failed launch when going down slopes and hitting walls
-			{
-				transferslope = ((mo->standingslope) ? mo->standingslope : oldslope);
-				if (((transferslope->zangle < ANGLE_180) ? transferslope->zangle : InvAngle(transferslope->zangle)) >= ANGLE_45) // Prevent some weird stuff going on on shallow slopes.
-					transfermomz = P_GetWallTransferMomZ(mo, transferslope);
-			}
-
-			P_SlideMove(mo);
-
-			if (player)
-				player->powers[pw_pushing] = 3;
-			xmove = ymove = 0;
-
-			// Wall transfer part 2.
-			if (transfermomz && transferslope) // Are we "transferring onto the wall" (really just a disguised vertical launch)?
-			{
-				angle_t relation; // Scale transfer momentum based on how head-on it is to the slope.
-				if (mo->momx || mo->momy) // "Guess" the angle of the wall you hit using new momentum
-					relation = transferslope->xydirection - R_PointToAngle2(0, 0, mo->momx, mo->momy);
-				else // Give it for free, I guess.
-					relation = ANGLE_90;
-				transfermomz = FixedMul(transfermomz,
-					abs(FINESINE((relation >> ANGLETOFINESHIFT) & FINEMASK)));
-				if (P_MobjFlip(mo)*(transfermomz - mo->momz) > 2*FRACUNIT) // Do the actual launch!
-				{
-					mo->momz = transfermomz;
-					mo->standingslope = NULL;
-					if (player)
-					{
-						player->powers[pw_justlaunched] = 2;
-						if (player->pflags & PF_SPINNING)
-							player->pflags |= PF_THOKKED;
-					}
-				}
-			}
-		}
-		else if (mo->type == MT_SPINFIRE)
-		{
-			P_RemoveMobj(mo);
-			return;
-		}
 		else if (mo->flags & MF_MISSILE)
 		{
 			// explode a missile
@@ -1697,8 +1567,125 @@ void P_XYMovement(mobj_t *mo)
 			P_ExplodeMissile(mo);
 			return;
 		}
+		else if (mo->flags & MF_STICKY)
+		{
+			S_StartSound(mo, mo->info->activesound);
+			mo->momx = mo->momy = mo->momz = 0; //Full stop!
+			mo->flags |= MF_NOGRAVITY; //Stay there!
+			mo->flags &= ~MF_STICKY; //Don't check again!
+
+			// Check for hit against sky here
+			if (P_CheckSkyHit(mo))
+			{
+				// Hack to prevent missiles exploding
+				// against the sky.
+				// Does not handle sky floors.
+				// Check frontsector as well.
+
+				P_RemoveMobj(mo);
+				return;
+			}
+		}
 		else
-			mo->momx = mo->momy = 0;
+		{
+			boolean walltransferred = false;
+
+			if (player || mo->flags & MF_SLIDEME)
+			{ // try to slide along it
+				// Wall transfer part 1.
+				pslope_t *transferslope = NULL;
+				fixed_t transfermomz = 0;
+				if (oldslope && (P_MobjFlip(mo)*(predictedz - mo->z) > 0)) // Only for moving up (relative to gravity), otherwise there's a failed launch when going down slopes and hitting walls
+				{
+					transferslope = ((mo->standingslope) ? mo->standingslope : oldslope);
+					if (((transferslope->zangle < ANGLE_180) ? transferslope->zangle : InvAngle(transferslope->zangle)) >= ANGLE_45) // Prevent some weird stuff going on on shallow slopes.
+						transfermomz = P_GetWallTransferMomZ(mo, transferslope);
+				}
+
+				// Wall transfer part 2.
+				if (transfermomz && transferslope) // Are we "transferring onto the wall" (really just a disguised vertical launch)?
+				{
+					angle_t relation; // Scale transfer momentum based on how head-on it is to the slope.
+
+					walltransferred = true;
+
+					P_SlideMove(mo);
+
+					if (player)
+						player->powers[pw_pushing] = 3;
+					xmove = ymove = 0;
+
+					if (mo->momx || mo->momy) // "Guess" the angle of the wall you hit using new momentum
+						relation = transferslope->xydirection - R_PointToAngle2(0, 0, mo->momx, mo->momy);
+					else // Give it for free, I guess.
+						relation = ANGLE_90;
+					transfermomz = FixedMul(transfermomz,
+						abs(FINESINE((relation >> ANGLETOFINESHIFT) & FINEMASK)));
+					if (P_MobjFlip(mo)*(transfermomz - mo->momz) > 2*FRACUNIT) // Do the actual launch!
+					{
+						mo->momz = transfermomz;
+						mo->standingslope = NULL;
+						if (player)
+						{
+							player->powers[pw_justlaunched] = 2;
+							if (player->pflags & PF_SPINNING)
+								player->pflags |= PF_THOKKED;
+						}
+					}
+				}
+			}
+
+			if (walltransferred == false)
+			{
+				if (mo->flags & MF_SLIDEME)
+				{
+					P_SlideMove(mo);
+					xmove = ymove = 0;
+				}
+				else
+				{
+					P_BounceMove(mo);
+					xmove = ymove = 0;
+					S_StartSound(mo, mo->info->activesound);
+
+					//{ SRB2kart - Orbinaut, Ballhog
+					// Bump sparks
+					if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG)
+					{
+						mobj_t *fx;
+						fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
+						if (mo->eflags & MFE_VERTICALFLIP)
+							fx->eflags |= MFE_VERTICALFLIP;
+						else
+							fx->eflags &= ~MFE_VERTICALFLIP;
+						fx->scale = mo->scale;
+					}
+
+					if (mo->type == MT_ORBINAUT) // Orbinaut speed decreasing
+					{
+						if (mo->health > 1)
+						{
+							S_StartSound(mo, mo->info->attacksound);
+							mo->health--;
+							mo->threshold = 0;
+						}
+						else if (mo->health == 1)
+						{
+							// This Item Damage
+							S_StartSound(mo, mo->info->deathsound);
+							P_KillMobj(mo, NULL, NULL, 0);
+
+							P_SetObjectMomZ(mo, 8*FRACUNIT, false);
+							P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
+						}
+					}
+
+					// Bubble bounce
+					if (mo->type == MT_BUBBLESHIELDTRAP)
+						S_StartSound(mo, sfx_s3k44);
+				}
+			}
+		}
 	}
 	else
 		moved = true;
@@ -2057,20 +2044,6 @@ boolean P_ZMovement(mobj_t *mo)
 
 	switch (mo->type)
 	{
-		case MT_THROWNBOUNCE:
-			if ((mo->flags & MF_BOUNCE) && (mo->z <= mo->floorz || mo->z+mo->height >= mo->ceilingz))
-			{
-				mo->momz = -mo->momz;
-				mo->z += mo->momz;
-				S_StartSound(mo, mo->info->activesound);
-				mo->threshold++;
-
-				// Be sure to change the XY one too if you change this.
-				// Gain lower amounts of time on each bounce.
-				if (mo->fuse && mo->threshold < 5)
-					mo->fuse += ((5 - mo->threshold) * TICRATE);
-			}
-			break;
 		case MT_SKIM:
 			// skims don't bounce
 			if (mo->z > mo->watertop && mo->z - mo->momz <= mo->watertop)
@@ -2179,7 +2152,7 @@ boolean P_ZMovement(mobj_t *mo)
 			break;
 		case MT_FLAMEJET:
 		case MT_VERTICALFLAMEJET:
-			if (!(mo->flags & MF_BOUNCE))
+			if (mo->flags & MF_SLIDEME)
 				return true;
 			break;
 		case MT_SPIKE:
@@ -2733,7 +2706,7 @@ boolean P_SceneryZMovement(mobj_t *mo)
 	{
 		case MT_BOOMEXPLODE:
 		case MT_BOOMPARTICLE:
-			if ((mo->flags & MF_BOUNCE) && (mo->z <= mo->floorz || mo->z+mo->height >= mo->ceilingz))
+			if (!(mo->flags & MF_SLIDEME) && (mo->z <= mo->floorz || mo->z+mo->height >= mo->ceilingz))
 			{
 				// set standingslope
 				P_TryMove(mo, mo->x, mo->y, true);
@@ -11577,7 +11550,7 @@ static void P_SetObjectSpecial(mobj_t *mobj)
 	if (mobj->flags & MF_PUSHABLE)
 	{
 		mobj->flags2 |= MF2_SLIDEPUSH;
-		mobj->flags |= MF_BOUNCE;
+		mobj->flags &= ~MF_SLIDEME;
 	}
 }
 
