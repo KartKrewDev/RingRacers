@@ -519,25 +519,216 @@ char sprnames[NUMSPRITES + 1][5] =
 	"GWLR",
 
 	//SRB2kart Sprites (sort later)
-	"RNDM","RPOP","SGNS","FAST","DSHR","BOST","BOSM","KFRE","KINV","KINF",
-	"WIPD","DRIF","BDRF","DUST","DRWS","RSHE","FITM","BANA","ORBN","JAWZ","SSMN",
-	"KRBM","BHOG","BHBM","SPBM","THNS","BUBS","BWVE",
-	"FLMS","FLMD","FLMP","FLML","FLMF",
-	"SINK","SITR",
-	"KBLN","DEZL","POKE","AUDI","DECO","DOOD","SNES","GBAS","SPRS","BUZB",
-	"CHOM","SACO","CRAB","BRNG","BUMP","FLEN","CLAS","PSHW","ISTA",
-	"ISTB","ARRO","ITEM","ITMO","ITMI","ITMN","WANT","PBOM","HIT1","HIT2",
-	"HIT3","RETI","AIDU","KSPK","LZI1","LZI2","KLIT","FZSM","FZBM","FPRT",
-	"SBUS","MARB","FUFO","RUST","BLON","VAPE","HTZA","HTZB","SGVA","SGVB",
-	"SGVC","PGTR","PGF1","PGF2","PGF3","PGBH","DPLR","SPTL","ENM1","GARU",
-	"MARR","REAP","JITB","CDMO","CDBU","DPIN","PPLR","DPPT","AATR","COCO",
-	"BDST","FROG","CBRA","HOLE","BBRA","EGFG","SMKP","MTYM","THWP","SNOB",
-	"ICEB","ECND","DOCH","DUCK","GTRE","CHES","CHIM","DRGN","LZMN","PGSS",
-	"ZTCH","MKMA","MKMP","RTCH","BOWL","BOWH","BRRL","BRRR","HRSE","TOAH",
-	"BFRT","OFRT","RFRT","PFRT","ASPK","HBST","HBSO","HBSF","WBLZ","WBLN",
+	"RNDM", // Random Item Box
+	"RPOP", // Random Item Box Pop
+	"SGNS", // Signpost sparkle
+	"FAST", // Speed boost trail
+	"DSHR", // Speed boost dust release
+	"BOST", // Sneaker booster flame
+	"BOSM", // Sneaker booster smoke
+	"KFRE", // Sneaker fire trail
+	"KINV", // Invincibility sparkle trail
+	"KINF", // Invincibility flash
+	"WIPD", // Wipeout dust trail
+	"DRIF", // Drift Sparks
+	"BDRF", // Brake drift sparks
+	"DRWS", // Drift dust sparks
 
-	"FWRK","MXCL","RGSP","DRAF","GRES","OTFG","DBOS","EGOO","WTRL",
-	"FBUB","GCHA","CHEZ","VIEW","DBCL","DBNC","DBST",
+	// Kart Items
+	"RSHE", // Rocket sneaker
+	"FITM", // Eggman Monitor
+	"BANA", // Banana Peel
+	"ORBN", // Orbinaut
+	"JAWZ", // Jawz
+	"SSMN", // SS Mine
+	"KRBM", // SS Mine BOOM
+	"BHOG", // Ballhog
+	"BHBM", // Ballhog BOOM
+	"SPBM", // Self-Propelled Bomb
+	"THNS", // Thunder Shield
+	"BUBS", // Bubble Shield (not Bubs)
+	"BWVE", // Bubble Shield waves
+	"FLMS", // Flame Shield
+	"FLMD", // Flame Shield dash
+	"FLMP", // Flame Shield paper sprites
+	"FLML", // Flame Shield speed lines
+	"FLMF", // Flame Shield flash
+	"SINK", // Kitchen Sink
+	"SITR", // Kitchen Sink Trail
+	"KBLN", // Battle Mode Bumper
+
+	"DEZL", // DEZ Laser respawn
+
+	// Additional Kart Objects
+	"POKE", // Pokey
+	"AUDI", // Audience members
+	"DECO", // Old 1.0 Kart Decoratives + New misc ones
+	"DOOD", // All the old D00Dkart objects
+	"SNES", // Sprites for SNES remake maps
+	"GBAS", // Sprites for GBA remake maps
+	"SPRS", // Sapphire Coast Spring Shell
+	"BUZB", // Sapphire Coast Buzz Mk3
+	"CHOM", // Sapphire Coast Chomper
+	"SACO", // Sapphire Coast Fauna
+	"CRAB", // Crystal Abyss mobs
+	"BRNG", // Chaotix Big Ring
+
+	"BUMP", // Player/shell bump
+	"FLEN", // Shell hit graphics stuff
+	"CLAS", // items clash
+	"PSHW", // thrown indicator
+	"ISTA", // instashield layer A
+	"ISTB", // instashield layer B
+
+	"ARRO", // player arrows
+	"ITEM",
+	"ITMO",
+	"ITMI",
+	"ITMN",
+	"WANT",
+
+	"PBOM", // player bomb
+
+	"HIT1", // battle points
+	"HIT2", // battle points
+	"HIT3", // battle points
+
+	"RETI", // player reticule
+
+	"AIDU",
+
+	"KSPK", // Spark radius for the lightning shield
+	"LZI1", // Lightning that falls on the player for lightning shield
+	"LZI2", // ditto
+	"KLIT", // You have a twisted mind. But this actually is for the diagonal lightning.
+
+	"FZSM", // F-Zero NO CONTEST explosion
+	"FZBM",
+
+	// Various plants
+	"SBUS",
+
+	"MARB", // Marble Zone sprites
+	"FUFO", // CD Special Stage UFO (don't ask me why it begins with an F)
+
+	"RUST", // Rusty Rig sprites
+
+	"VAPE", // Volcanic Valley
+
+	// Hill Top Zone
+	"HTZA",
+	"HTZB",
+
+	// Ports of gardens
+	"SGVA",
+	"SGVB",
+	"SGVC",
+	"PGTR",
+	"PGF1",
+	"PGF2",
+	"PGF3",
+	"PGBH",
+	"DPLR",
+
+	// Midnight Channel stuff:
+	"SPTL",	// Spotlight
+	"ENM1",	// Shadows (Roaming and static)
+	"GARU",	// Wind attack roaming shadows use.
+	"MARR",	// Mayonaka Arrow
+
+	//Mementos stuff:
+	"REAP",
+
+	"JITB",	// Jack In The Box
+
+	// Color Drive stuff:
+	"CDMO",
+	"CDBU",
+
+	// Daytona Speedway
+	"DPIN",
+
+	// Egg Zeppelin
+	"PPLR",
+
+	// Desert Palace
+	"DPPT",
+
+	// Aurora Atoll
+	"AATR",
+	"COCO",
+
+	// Barren Badlands
+	"BDST",
+	"FROG",
+	"CBRA",
+	"HOLE",
+	"BBRA",
+
+	// Eerie Grove
+	"EGFG",
+
+	// SMK ports
+	"SMKP",
+	"MTYM",
+	"THWP",
+	"SNOB",
+	"ICEB",
+
+	// Ezo's maps - many single-use sprites!
+	"ECND",
+	"DOCH",
+	"DUCK",
+	"GTRE",
+	"CHES",
+	"CHIM",
+	"DRGN",
+	"LZMN",
+	"PGSS",
+	"ZTCH",
+	"MKMA",
+	"MKMP",
+	"RTCH",
+	"BOWL",
+	"BOWH",
+	"BRRL",
+	"BRRR",
+	"HRSE",
+	"TOAH",
+	"BFRT",
+	"OFRT",
+	"RFRT",
+	"PFRT",
+	"ASPK",
+	"HBST",
+	"HBSO",
+	"HBSF",
+	"WBLZ",
+	"WBLN",
+
+	"FWRK",
+	"MXCL",
+	"RGSP",
+	"DRAF",
+	"GRES",
+
+	"OTFG",
+
+	"DBOS", // Drift boost flame
+
+	"EGOO",
+
+	"WTRL", // Water Trail
+
+	"GCHA", // follower: generic chao
+	"CHEZ", // follower: cheese
+
+	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
+	"VIEW",
+
+	"DBCL", // Drift boost clip
+	"DBNC", // Drift boost clip's sparks
+	"DBST", // Drift boost plume
 };
 
 char spr2names[NUMPLAYERSPRITES][5] =

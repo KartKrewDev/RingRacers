@@ -1823,7 +1823,6 @@ static void HU_DrawCEcho(void)
 	INT32 pnumlines = 0;
 
 	UINT32 realflags = cechoflags|V_SPLITSCREEN; // requested as part of splitscreen's stuff
-	INT32 realalpha = (INT32)((cechoflags & V_ALPHAMASK) >> V_ALPHASHIFT);
 
 	char *line;
 	char *echoptr;
@@ -1841,15 +1840,6 @@ static void HU_DrawCEcho(void)
 		CONS_Alert(CONS_WARNING, "CEcho contained too many lines, not displaying\n");
 		cechotimer = 0;
 		return;
-	}
-
-	// Automatic fadeout
-	if (realflags & V_AUTOFADEOUT)
-	{
-		UINT32 tempalpha = (UINT32)max((INT32)(10 - cechotimer), realalpha);
-
-		realflags &= ~V_ALPHASHIFT;
-		realflags |= (tempalpha << V_ALPHASHIFT);
 	}
 
 	strcpy(temp, cechotext);

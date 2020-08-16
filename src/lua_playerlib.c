@@ -213,8 +213,6 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->powers, META_POWERS);
 	else if (fastcmp(field,"kartstuff"))
 		LUA_PushUserdata(L, plr->kartstuff, META_KARTSTUFF);
-	else if (fastcmp(field,"frameangle"))
-		lua_pushangle(L, plr->frameangle);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"pflags"))
@@ -499,8 +497,6 @@ static int player_set(lua_State *L)
 	// SRB2kart
 	else if (fastcmp(field,"kartstuff"))
 		return NOSET;
-	else if (fastcmp(field,"frameangle"))
-		plr->frameangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"airtime"))
 		plr->airtime = (tic_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartspeed"))

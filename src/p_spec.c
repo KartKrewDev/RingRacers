@@ -31,7 +31,7 @@
 #include "p_polyobj.h"
 #include "p_slopes.h"
 #include "hu_stuff.h"
-#include "v_video.h" // V_AUTOFADEOUT|V_ALLOWLOWERCASE
+#include "v_video.h" // V_ALLOWLOWERCASE
 #include "m_misc.h"
 #include "m_cond.h" //unlock triggers
 #include "lua_hook.h" // LUAh_LinedefExecute

@@ -881,7 +881,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	player_t *player = &players[g_localplayers[forplayer]];
 	camera_t *thiscam = &camera[forplayer];
-	angle_t *lang = &localangle[forplayer];
+	angle_t *myangle = &localangle[forplayer];
 	INT32 *laim = &localaiming[forplayer];
 	INT32 *th = &turnheld[forplayer];
 	INT32 *kbl = &keyboard_look[forplayer];
@@ -1147,17 +1147,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->angleturn *= realtics;
 
-	*lang += (cmd->angleturn<<16);
-
-	cmd->angleturn = (INT16)(*lang >> 16);
-	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
-
 	if (!hu_stopped)
 	{
-		*lang += (cmd->angleturn<<16);
+		*myangle += (cmd->angleturn<<16);
 	}
 
-	cmd->angleturn = (INT16)(*lang >> 16);
 	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.
@@ -4544,7 +4538,7 @@ char *G_BuildMapTitle(INT32 mapnum)
 
 		sprintf(title, "%s", mapheaderinfo[mapnum-1]->lvlttl);
 		if (zonetext) sprintf(title + strlen(title), " %s", zonetext);
-		if (actnum) sprintf(title + strlen(title), " %d", actnum);
+		if (actnum > 0) sprintf(title + strlen(title), " %d", actnum);
 	}
 
 	return title;

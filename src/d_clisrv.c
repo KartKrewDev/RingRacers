@@ -605,7 +605,6 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	for (j = 0; j < NUMKARTSTUFF; ++j)
 		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]);
 
-	rsp->frameangle = (angle_t)LONG(players[i].frameangle);
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
 
 	// respawnvars_t
@@ -751,7 +750,6 @@ static void resynch_read_player(resynch_pak *rsp)
 	for (j = 0; j < NUMKARTSTUFF; ++j)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
 
-	players[i].frameangle = (angle_t)LONG(rsp->frameangle);
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
 
 	// respawnvars_t

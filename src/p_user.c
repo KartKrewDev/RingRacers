@@ -2183,7 +2183,7 @@ void P_MovePlayer(player_t *player)
 	else if (player->pflags & PF_SLIDING)
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-		player->frameangle -= ANGLE_22h;
+		player->drawangle -= ANGLE_22h;
 	}
 	else if (player->kartstuff[k_spinouttimer] > 0)
 	{
@@ -2191,19 +2191,19 @@ void P_MovePlayer(player_t *player)
 
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
-		if (speed == 1 && abs((signed)(player->mo->angle - player->frameangle)) < ANGLE_22h)
-			player->frameangle = player->mo->angle; // Face forward at the end of the animation
+		if (speed == 1 && abs((signed)(player->mo->angle - player->drawangle)) < ANGLE_22h)
+			player->drawangle = player->mo->angle; // Face forward at the end of the animation
 		else
-			player->frameangle -= (ANGLE_11hh * speed);
+			player->drawangle -= (ANGLE_11hh * speed);
 	}
 	else if (player->powers[pw_nocontrol] && player->pflags & PF_WPNDOWN)
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 		if (((player->powers[pw_nocontrol] + 5) % 20) < 10)
-			player->frameangle += ANGLE_11hh;
+			player->drawangle += ANGLE_11hh;
 		else
-			player->frameangle -= ANGLE_11hh;
+			player->drawangle -= ANGLE_11hh;
 	}
 	else
 	{
@@ -2211,16 +2211,16 @@ void P_MovePlayer(player_t *player)
 
 		if (player->kartstuff[k_pogospring])
 		{
-			player->frameangle += ANGLE_22h;
+			player->drawangle += ANGLE_22h;
 		}
 		else
 		{
-			player->frameangle = player->mo->angle;
+			player->drawangle = player->mo->angle;
 
 			if (player->kartstuff[k_drift] != 0)
 			{
 				INT32 a = (ANGLE_45 / 5) * player->kartstuff[k_drift];
-				player->frameangle += a;
+				player->drawangle += a;
 			}
 		}
 	}
@@ -2497,7 +2497,7 @@ static void P_DoZoomTube(player_t *player)
 	}
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-	player->frameangle -= ANGLE_22h;
+	player->drawangle -= ANGLE_22h;
 }
 
 #if 0
@@ -4147,7 +4147,7 @@ static void P_HandleFollower(player_t *player)
 		if (player->kartstuff[k_spinouttimer] || player->mo->state == &states[S_KART_SPINOUT] || player->mo->health <= 0)
 		{
 			player->follower->movecount = 0;	// cancel hit confirm.
-			player->follower->angle = player->frameangle;	// spin out
+			player->follower->angle = player->drawangle;	// spin out
 			if (player->follower->extravalue1 != 2)
 			{
 				player->follower->extravalue1 = 2;
