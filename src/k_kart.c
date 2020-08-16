@@ -902,9 +902,9 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	// SPECIAL CASE No. 4:
 	// Being in ring debt occasionally forces Super Ring on you if you mashed
-	if ((gametyperules & GTR_RINGS) && mashed && player->kartstuff[k_rings] < 0 && cv_superring.value)
+	if ((gametyperules & GTR_RINGS) && mashed && player->rings < 0 && cv_superring.value)
 	{
-		INT32 debtamount = min(20, abs(player->kartstuff[k_rings]));
+		INT32 debtamount = min(20, abs(player->rings));
 		if (P_RandomChance((debtamount*FRACUNIT)/20))
 		{
 			K_KartGetItemResult(player, KITEM_SUPERRING);

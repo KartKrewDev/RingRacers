@@ -917,7 +917,7 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 		saferingsval -= 5;
 	}
 
-	if (player->kartstuff[k_rings] > saferingsval)
+	if (player->rings > saferingsval)
 	{
 		cmd->buttons |= BT_ATTACK;
 	}
@@ -944,7 +944,7 @@ static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (player->kartstuff[k_rings] < 0 && cv_superring.value)
+	if (player->rings < 0 && cv_superring.value)
 	{
 		// Uh oh, we need a loan!
 		// It'll be better in the long run for bots to lose an item set for 10 free rings.

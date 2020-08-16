@@ -47,7 +47,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TRET", // Industrial Turret
 	"TURR", // Pop-Up Turret
 	"SHRP", // Sharp
-	"CRAB", // Crushstacean
+	//"CRAB", // Crushstacean
 	"CR2B", // Banpyura
 	"CSPR", // Banpyura spring
 	"JJAW", // Jet Jaw
@@ -97,8 +97,8 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	// Boss 5 (Arid Canyon)
 	"FANG", // replaces EGGQ
-	"BRKN", // broken robot chunk
-	"WHAT", // alart
+	"BRKN",
+	"WHAT",
 	"VWRE",
 	"PROJ", // projector light
 	"FBOM",
@@ -117,7 +117,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Boss 8 (Egg Rock)
 	"EGGT",
 
-	// Cy-Brak-Demon; uses "BRAK" as well, but has some extras
+	// Cy-Brak-Demon; uses "BRAK as well", but has some extras
 	"RCKT", // Rockets!
 	"ELEC", // Electricity!
 	"TARG", // Targeting reticules!
@@ -135,12 +135,12 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TOKE", // Special Stage Token
 	"RFLG", // Red CTF Flag
 	"BFLG", // Blue CTF Flag
-	"SPHR", // Sphere
+	//"SPHR", // Sphere
 	"NCHP", // NiGHTS chip
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
 	"CEMG", // Chaos Emeralds
-	"SHRD", // Emerald hunt shards
+	"SHRD", // Emerald Hunt
 
 	// Interactive Objects
 	"BBLS", // water bubble source
@@ -177,8 +177,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TVMY", // MYstery
 	"TVGV", // GraVity boots
 	"TVRC", // ReCycler
-	"TV1K", // 1,000 points  (1 K)
-	"TVTK", // 10,000 points (Ten K)
+	"TV1K", // 1",000 points  (1 K)
+	"TVTK", // 10",000 points (Ten K)
 	"TVFL", // FLame shield
 	"TVBB", // BuBble shield
 	"TVZP", // Thunder shield (ZaP)
@@ -246,7 +246,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"RSPB", // Red spring on a ball
 	"SFBR", // Small Firebar
 	"BFBR", // Big Firebar
-	"BANR", // Banner
+	"BANR", // Banner/pole
 	"PINE", // Pine Tree
 	"CEZB", // Bush
 	"CNDL", // Candle/pricket
@@ -296,7 +296,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"XMS4", // Lamppost
 	"XMS5", // Hanging Star
 	"XMS6", // Mistletoe
-	"FHZI", // FHZ ice
+	"FHZI", // FHZ Ice
 	"ROSY",
 
 	// Halloween Scenery
@@ -332,15 +332,15 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	// Powerup Indicators
 	"ARMA", // Armageddon Shield Orb
-	"ARMF", // Armageddon Shield Ring, Front
-	"ARMB", // Armageddon Shield Ring, Back
+	"ARMF", // Armageddon Shield Ring", Front
+	"ARMB", // Armageddon Shield Ring", Back
 	"WIND", // Whirlwind Shield Orb
 	"MAGN", // Attract Shield Orb
-	"ELEM", // Elemental Shield Orb and Fire
+	"ELEM", // Elemental Shield Orb
 	"FORC", // Force Shield Orb
 	"PITY", // Pity Shield Orb
 	"FIRS", // Flame Shield Orb
-	"BUBS", // Bubble Shield Orb
+	//"BUBS", // Bubble Shield Orb
 	"ZAPS", // Thunder Shield Orb
 	"IVSP", // invincibility sparkles
 	"SSPK", // Super Sonic Spark
@@ -371,7 +371,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Springs
 	"FANS", // Fan
 	"STEM", // Steam riser
-	"BUMP", // Bumpers
+	"BMPR", // Bumpers
 	"BLON", // Balloons
 	"SPVY", // Yellow Vertical Spring
 	"SPVR", // Red Vertical Spring
@@ -391,6 +391,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Environmental Effects
 	"RAIN", // Rain
 	"SNO1", // Snowflake
+	"SNO2", // Blizzard Snowball
 	"SPLH", // Water Splish
 	"LSPL", // Lava Splish
 	"SPLA", // Water Splash
@@ -401,12 +402,12 @@ char sprnames[NUMSPRITES + 1][5] =
 	"FPRT", // Spindash dust (flame)
 	"TFOG", // Teleport Fog
 	"SEED", // Sonic CD flower seed
-	"PRTL", // Particle (for fans, etc.)
+	"PRTL", // Particle (for fans", etc.)
 
 	// Game Indicators
 	"SCOR", // Score logo
 	"DRWN", // Drowning Timer
-	"FLII", // Flight indicator
+	"FLII", // AI flight indicator
 	"LCKN", // Target
 	"TTAG", // Tag Sign
 	"GFLG", // Got Flag sign
@@ -465,7 +466,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"NTPN", // Nightopian
 	"SHLP", // Shleep
 
-	// Secret badniks and hazards, shhhh
+	// Secret badniks and hazards", shhhh
 	"PENG",
 	"POPH",
 	"HIVE",
@@ -511,8 +512,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BRIC", // Bricks
 	"WDDB", // Wood Debris
 	"BRIR", // CEZ3 colored bricks
-	"BRIB", // CEZ3 colored bricks
-	"BRIY", // CEZ3 colored bricks
+	"BRIB",
+	"BRIY",
 
 	// Gravity Well Objects
 	"GWLG",
@@ -15664,7 +15665,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_JACKO1
-		2006,           // doomednum
+		3006,           // doomednum
 		S_JACKO1,       // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15691,7 +15692,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_JACKO2
-		2007,           // doomednum
+		3007,           // doomednum
 		S_JACKO2,       // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15718,7 +15719,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_JACKO3
-		2008,           // doomednum
+		3008,           // doomednum
 		S_JACKO3,       // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15745,7 +15746,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HHZTREE_TOP
-		2010,           // doomednum
+		3010,           // doomednum
 		S_HHZTREE_TOP,  // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15799,7 +15800,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HHZSHROOM
-		2009,           // doomednum
+		3009,           // doomednum
 		S_HHZSHROOM_1,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15826,7 +15827,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HHZGRASS
-		2001,           // doomednum
+		3001,           // doomednum
 		S_HHZGRASS,     // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15853,7 +15854,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HHZTENTACLE1
-		2002,           // doomednum
+		3002,           // doomednum
 		S_HHZTENT1,     // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15880,7 +15881,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HHZTENTACLE2
-		2003,           // doomednum
+		3003,           // doomednum
 		S_HHZTENT2,     // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15907,7 +15908,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HHZSTALAGMITE_TALL
-		2004,           // doomednum
+		3004,           // doomednum
 		S_HHZSTALAGMITE_TALL, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -15934,7 +15935,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HHZSTALAGMITE_SHORT
-		2005,           // doomednum
+		3005,           // doomednum
 		S_HHZSTALAGMITE_SHORT, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -21536,7 +21537,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_SMASHINGSPIKEBALL
-		2000,           // doomednum
+		3000,           // doomednum
 		S_SMASHSPIKE_FLOAT, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate

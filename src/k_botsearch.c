@@ -694,8 +694,8 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 				)
 				// Ring Sting
 				else PlayerAttackSteer(
-					thing->player->kartstuff[k_rings] <= 0,
-					globalsmuggle.botmo->player->kartstuff[k_rings] <= 0
+					thing->player->rings <= 0,
+					globalsmuggle.botmo->player->rings <= 0
 				)
 				else
 				{

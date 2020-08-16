@@ -2202,7 +2202,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 			growshrinktimer = 0;
 
 		bumper = players[player].kartstuff[k_bumper];
-		rings = players[player].kartstuff[k_rings];
+		rings = players[player].rings;
 		comebackpoints = players[player].kartstuff[k_comebackpoints];
 		wanted = players[player].kartstuff[k_wanted];
 	}
@@ -2263,7 +2263,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->kartstuff[k_itemamount] = itemamount;
 	p->kartstuff[k_growshrinktimer] = growshrinktimer;
 	p->kartstuff[k_bumper] = bumper;
-	p->kartstuff[k_rings] = rings;
 	p->kartstuff[k_comebackpoints] = comebackpoints;
 	p->kartstuff[k_comebacktimer] = comebacktime;
 	p->kartstuff[k_wanted] = wanted;
