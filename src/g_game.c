@@ -884,8 +884,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	angle_t *lang = &localangle[forplayer];
 	INT32 *laim = &localaiming[forplayer];
 	INT32 *th = &turnheld[forplayer];
-	INT32 *kbl = &keyboard_look[forplayer];
-	INT32 *rd = &resetdown[forplayer];
+	boolean *kbl = &keyboard_look[forplayer];
+	boolean *rd = &resetdown[forplayer];
 	const boolean mouseaiming = player->spectator;
 
 	if (demo.playback) return;
@@ -3341,7 +3341,7 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = max(0, TOLMaps(G_TOLFlag(gametype))-3);
+	INT16 bufx, refreshnum = max(0, (INT32)TOLMaps(G_TOLFlag(gametype))-3);
 
 	// Add the map to the buffer.
 	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
