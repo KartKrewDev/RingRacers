@@ -432,7 +432,7 @@ typedef enum
 } karthudtype_t;
 
 // QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
-#define RINGTOTAL(p) (p->kartstuff[k_rings] + p->kartstuff[k_pickuprings])
+#define RINGTOTAL(p) (p->rings + p->kartstuff[k_pickuprings])
 
 //}
 

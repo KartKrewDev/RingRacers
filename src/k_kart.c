@@ -1231,7 +1231,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		else if (mobj2->player // Player VS player bumping only
 			&& (K_GetShieldFromItem(mobj1->player->kartstuff[k_itemtype]) == KSHIELD_NONE)) // Ignore for shields
 		{
-			if (mobj1->player->kartstuff[k_rings] <= 0)
+			if (mobj1->player->rings <= 0)
 			{
 				K_DebtStingPlayer(mobj1->player, TICRATE + (4 * (mobj2->player->kartweight - mobj1->player->kartweight)));
 				K_KartPainEnergyFling(mobj1->player);
@@ -1257,7 +1257,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		else if (mobj1->player // Player VS player bumping only
 			&& (K_GetShieldFromItem(mobj2->player->kartstuff[k_itemtype]) == KSHIELD_NONE)) // Ignore for shields
 		{
-			if (mobj2->player->kartstuff[k_rings] <= 0)
+			if (mobj2->player->rings <= 0)
 			{
 				K_DebtStingPlayer(mobj2->player, TICRATE + (4 * (mobj1->player->kartweight - mobj2->player->kartweight)));
 				K_KartPainEnergyFling(mobj2->player);
@@ -5339,7 +5339,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 			if (player->karthud[khud_ringspblock] >= 14) // debt animation
 			{
-				if ((player->kartstuff[k_rings] > 0) // Get out of 0 ring animation
+				if ((player->rings > 0) // Get out of 0 ring animation
 					&& (normalanim == 3 || normalanim == 10)) // on these transition frames.
 					player->karthud[khud_ringspblock] = normalanim;
 				else
@@ -5347,7 +5347,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			}
 			else // normal animation
 			{
-				if ((player->kartstuff[k_rings] <= 0) // Go into 0 ring animation
+				if ((player->rings <= 0) // Go into 0 ring animation
 					&& (player->karthud[khud_ringspblock] == 1 || player->karthud[khud_ringspblock] == 8)) // on these transition frames.
 					player->karthud[khud_ringspblock] = debtanim;
 				else
@@ -5553,7 +5553,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			}
 		}
 
-		if (gametype == GT_RACE && player->kartstuff[k_rings] <= 0) // spawn ring debt indicator
+		if (gametype == GT_RACE && player->rings <= 0) // spawn ring debt indicator
 		{
 			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 				player->mo->z + player->mo->momz + player->mo->height + (24*player->mo->scale), MT_THOK);
@@ -5736,10 +5736,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->kartstuff[k_rings] > 20)
-		player->kartstuff[k_rings] = 20;
-	else if (player->kartstuff[k_rings] < -20)
-		player->kartstuff[k_rings] = -20;
+	if (player->rings > 20)
+		player->rings = 20;
+	else if (player->rings < -20)
+		player->rings = -20;
 
 	if (player->kartstuff[k_ringdelay])
 		player->kartstuff[k_ringdelay]--;
@@ -7086,7 +7086,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->kartstuff[k_userings])
 			{
-				if ((player->pflags & PF_ATTACKDOWN) && !player->kartstuff[k_ringdelay] && player->kartstuff[k_rings] > 0)
+				if ((player->pflags & PF_ATTACKDOWN) && !player->kartstuff[k_ringdelay] && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					P_SetMobjState(ring, S_FASTRING1);
@@ -7094,7 +7094,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					ring->extravalue2 = 1; // Ring use animation flag
 					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
-					player->kartstuff[k_rings]--;
+					player->rings--;
 					player->kartstuff[k_ringdelay] = 3;
 				}
 			}

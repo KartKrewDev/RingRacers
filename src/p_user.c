@@ -499,7 +499,7 @@ void P_GivePlayerRings(player_t *player, INT32 num_rings)
 	if ((gametyperules & GTR_BUMPERS)) // No rings in Battle Mode
 		return;
 
-	player->kartstuff[k_rings] += num_rings;
+	player->rings += num_rings;
 	//player->totalring += num_rings; // Used for GP lives later
 
 	if (player->rings > 20)
@@ -673,7 +673,7 @@ void P_PlayRinglossSound(mobj_t *source)
 {
 	if (source->player && K_GetShieldFromItem(source->player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		S_StartSound(source, sfx_s1a3); // Shield hit (no ring loss)
-	else if (source->player && source->player->kartstuff[k_rings] <= 0)
+	else if (source->player && source->player->rings <= 0)
 		S_StartSound(source, sfx_s1a6); // Ring debt (lessened ring loss)
 	else
 		S_StartSound(source, sfx_s1c6); // Normal ring loss sound
@@ -4435,43 +4435,6 @@ void P_PlayerThink(player_t *player)
 		player->powers[pw_flashing] = TICRATE/2 + 1;
 		/*if (P_SpectatorJoinGame(player))
 			return; // player->mo was removed.*/
-	}
-
-	// Even if not NiGHTS, pull in nearby objects when walking around as John Q. Elliot.
-	if (!objectplacing && !((netgame || multiplayer) && player->spectator))
-	{
-		thinker_t *th;
-		mobj_t *mo2;
-		fixed_t x = player->mo->x;
-		fixed_t y = player->mo->y;
-		fixed_t z = player->mo->z;
-
-		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-		{
-			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-				continue;
-
-			mo2 = (mobj_t *)th;
-
-			if (!(mo2->type == MT_RING || mo2->type == MT_COIN
-				|| mo2->type == MT_BLUESPHERE || mo2->type == MT_BOMBSPHERE
-				|| mo2->type == MT_NIGHTSCHIP || mo2->type == MT_NIGHTSSTAR))
-				continue;
-
-			if (mo2->flags2 & MF2_NIGHTSPULL)
-				continue;
-
-			if (P_AproxDistance(P_AproxDistance(mo2->x - x, mo2->y - y), mo2->z - z) > FixedMul(128*FRACUNIT, player->mo->scale))
-				continue;
-
-			// Yay! The thing's in reach! Pull it in!
-			mo2->flags |= MF_NOCLIP|MF_NOCLIPHEIGHT;
-			mo2->flags2 |= MF2_NIGHTSPULL;
-			// New NiGHTS attract speed dummied out because the older behavior
-			// is exploited as a mechanic. Uncomment to enable.
-			mo2->movefactor = 0; // 40*FRACUNIT; // initialize the NightsItemChase timer
-			P_SetTarget(&mo2->tracer, player->mo);
-		}
 	}
 
 	if (player->linktimer && !player->powers[pw_nights_linkfreeze])
