@@ -589,7 +589,7 @@ dontdrawbg:
 				if (data.color[i])
 				{
 					UINT8 *colormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
-					V_DrawMappedPatch(x+16, y-4, 0, facerankprefix[*data.character[i]], colormap);
+					V_DrawMappedPatch(x+16, y-4, 0, faceprefix[*data.character[i]][FACE_RANK], colormap);
 				}
 
 				if (data.num[i] == whiteplayer)
@@ -1431,7 +1431,7 @@ void Y_VoteDrawer(void)
 			if (players[i].skincolor)
 			{
 				UINT8 *colormap = R_GetTranslationColormap(players[i].skin, players[i].skincolor, GTC_CACHE);
-				V_DrawMappedPatch(x+24, y+9, V_SNAPTOLEFT, facerankprefix[players[i].skin], colormap);
+				V_DrawMappedPatch(x+24, y+9, V_SNAPTOLEFT, faceprefix[players[i].skin][FACE_RANK], colormap);
 			}
 
 			if (!splitscreen && i == consoleplayer)

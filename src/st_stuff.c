@@ -47,6 +47,7 @@
 // SRB2Kart
 #include "k_hud.h" // SRB2kart
 #include "v_video.h"
+#include "r_skins.h" // NUMFACES
 
 UINT16 objectsdrawn = 0;
 
@@ -54,9 +55,7 @@ UINT16 objectsdrawn = 0;
 // STATUS BAR DATA
 //
 
-patch_t *facerankprefix[MAXSKINS]; // ranking
-patch_t *facewantprefix[MAXSKINS]; // wanted
-patch_t *facemmapprefix[MAXSKINS]; // minimap
+patch_t *faceprefix[MAXSKINS][NUMFACES];
 
 // ------------------------------------------
 //             status bar overlay
@@ -369,9 +368,9 @@ void ST_LoadGraphics(void)
 // made separate so that skins code can reload custom face graphics
 void ST_LoadFaceGraphics(char *rankstr, char *wantstr, char *mmapstr, INT32 skinnum)
 {
-	facerankprefix[skinnum] = W_CachePatchName(rankstr, PU_HUDGFX);
-	facewantprefix[skinnum] = W_CachePatchName(wantstr, PU_HUDGFX);
-	facemmapprefix[skinnum] = W_CachePatchName(mmapstr, PU_HUDGFX);
+	faceprefix[skinnum][FACE_RANK] = W_CachePatchName(rankstr, PU_HUDGFX);
+	faceprefix[skinnum][FACE_WANTED] = W_CachePatchName(wantstr, PU_HUDGFX);
+	faceprefix[skinnum][FACE_MINIMAP] = W_CachePatchName(mmapstr, PU_HUDGFX);
 }
 
 void ST_ReloadSkinFaceGraphics(void)

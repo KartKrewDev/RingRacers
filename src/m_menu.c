@@ -5606,7 +5606,7 @@ static void DrawReplayHutReplayInfo(void)
 
 		if (demolist[dir_on[menudepthleft]].standings[0].skin != 0xFF && W_CheckNumForName(skins[demolist[dir_on[menudepthleft]].standings[0].skin].facewant) != LUMPERROR)
 		{
-			patch = facewantprefix[demolist[dir_on[menudepthleft]].standings[0].skin];
+			patch = faceprefix[demolist[dir_on[menudepthleft]].standings[0].skin][FACE_WANTED];
 			colormap = R_GetTranslationColormap(
 				demolist[dir_on[menudepthleft]].standings[0].skin,
 				demolist[dir_on[menudepthleft]].standings[0].color,
@@ -5808,7 +5808,7 @@ static void M_DrawReplayStartMenu(void)
 
 		if (demolist[dir_on[menudepthleft]].standings[i].skin != 0xFF && W_CheckNumForName(skins[demolist[dir_on[menudepthleft]].standings[i].skin].facerank) != LUMPERROR)
 		{
-			patch = facerankprefix[demolist[dir_on[menudepthleft]].standings[i].skin];
+			patch = faceprefix[demolist[dir_on[menudepthleft]].standings[i].skin][FACE_RANK];
 			colormap = R_GetTranslationColormap(
 				demolist[dir_on[menudepthleft]].standings[i].skin,
 				demolist[dir_on[menudepthleft]].standings[i].color,
@@ -5982,7 +5982,7 @@ static void M_DrawPlaybackMenu(void)
 			{
 				INT32 ply = displayplayers[i - playback_view1];
 
-				icon = facerankprefix[players[ply].skin];
+				icon = faceprefix[players[ply].skin][FACE_RANK];
 				if (i != itemOn)
 					inactivemap = R_GetTranslationColormap(players[ply].skin, players[ply].skincolor, GTC_MENUCACHE);
 			}
@@ -7801,7 +7801,7 @@ void M_DrawTimeAttackMenu(void)
 	if (W_CheckNumForName(skins[cv_chooseskin.value-1].facewant) != LUMPERROR)
 	{
 		UINT8 *colormap = R_GetTranslationColormap(cv_chooseskin.value-1, cv_playercolor[0].value, GTC_MENUCACHE);
-		V_DrawMappedPatch(BASEVIDWIDTH-x - SHORT(facewantprefix[cv_chooseskin.value-1]->width), y, 0, facewantprefix[cv_chooseskin.value-1], colormap);
+		V_DrawMappedPatch(BASEVIDWIDTH-x - SHORT(faceprefix[cv_chooseskin.value-1][FACE_WANTED]->width), y, 0, faceprefix[cv_chooseskin.value-1][FACE_WANTED], colormap);
 	}
 
 	for (i = 0; i < currentMenu->numitems; ++i)
@@ -9169,7 +9169,7 @@ Update the maxplayers label...
 
 			colmap = R_GetTranslationColormap(pskin, pcol, GTC_MENUCACHE);
 
-			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, trans, facewantprefix[pskin], colmap);
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, trans, faceprefix[pskin][FACE_WANTED], colmap);
 
 			if (itemOn == 2 && i == setupm_pselect)
 			{
@@ -9580,14 +9580,14 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			if (!(k++))
 			{
 				scale = FRACUNIT;
-				//face = facewantprefix[col];
+				//face = faceprefix[col][FACE_WANTED];
 				offx = 12;
 				offy = 0;
 			}
 			else
 			{
 				scale = FRACUNIT/2;
-				//face = facerankprefix[col];
+				//face = faceprefix[col][FACE_RANK];
 				offx = 8;
 				offy = 8;
 			}

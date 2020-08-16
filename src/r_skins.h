@@ -64,6 +64,13 @@ typedef struct
 	spriteinfo_t sprinfo[NUMPLAYERSPRITES*2];
 } skin_t;
 
+enum facepatches {
+	FACE_RANK = 0,
+	FACE_WANTED,
+	FACE_MINIMAP,
+	NUMFACES
+};
+
 /// Externs
 extern INT32 numskins;
 extern skin_t skins[MAXSKINS];

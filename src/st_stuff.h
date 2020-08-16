@@ -19,6 +19,9 @@
 #include "d_player.h"
 #include "r_defs.h"
 
+// SRB2Kart
+#include "r_skins.h" // NUMFACES
+
 //
 // STATUS BAR
 //
@@ -78,9 +81,7 @@ extern patch_t *sboscore;
 extern patch_t *sbotime;
 extern patch_t *sbocolon;
 extern patch_t *sboperiod;
-extern patch_t *facerankprefix[MAXSKINS]; // ranking
-extern patch_t *facewantprefix[MAXSKINS]; // wanted
-extern patch_t *facemmapprefix[MAXSKINS]; // minimap
+extern patch_t *faceprefix[MAXSKINS][NUMFACES];
 extern patch_t *livesback;
 extern patch_t *stlivex;
 extern patch_t *ngradeletters[7];
