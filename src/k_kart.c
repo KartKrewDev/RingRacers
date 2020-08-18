@@ -4634,24 +4634,32 @@ static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t z, 
 {
 	fixed_t testx, testy;
 
-	if (slope->d.x < 0)
-		testx = radius;
-	else
-		testx = -radius;
-
-	if (slope->d.y < 0)
-		testy = radius;
-	else
-		testy = -radius;
-
-	if ((slope->zdelta > 0) ^ !!(ceiling))
+	if (slope == NULL)
 	{
-		testx = -testx;
-		testy = -testy;
+		testx = x;
+		testy = y;
 	}
+	else
+	{
+		if (slope->d.x < 0)
+			testx = radius;
+		else
+			testx = -radius;
 
-	testx += x;
-	testy += y;
+		if (slope->d.y < 0)
+			testy = radius;
+		else
+			testy = -radius;
+
+		if ((slope->zdelta > 0) ^ !!(ceiling))
+		{
+			testx = -testx;
+			testy = -testy;
+		}
+
+		testx += x;
+		testy += y;
+	}
 
 	return P_GetZAt(slope, testx, testy, z);
 }
@@ -4666,12 +4674,12 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 
 	if (flip)
 	{
-		slope = sec->c_slope ? sec->c_slope : NULL;
+		slope = sec->c_slope;
 		newz = K_BananaSlopeZ(slope, x, y, sec->ceilingheight, radius, true);
 	}
 	else
 	{
-		slope = sec->f_slope ? sec->f_slope : NULL;
+		slope = sec->f_slope;
 		newz = K_BananaSlopeZ(slope, x, y, sec->floorheight, radius, true);
 	}
 
@@ -4718,7 +4726,7 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 				if (bottom < newz && abs(d1) < abs(d2))
 				{
 					newz = bottom;
-					slope = *rover->b_slope ? *rover->b_slope : NULL;
+					slope = *rover->b_slope;
 				}
 			}
 			else
@@ -4742,7 +4750,7 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 				if (top > newz && abs(d1) < abs(d2))
 				{
 					newz = top;
-					slope = *rover->t_slope ? *rover->t_slope : NULL;
+					slope = *rover->t_slope;
 				}
 			}
 		}
