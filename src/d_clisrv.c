@@ -3612,10 +3612,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	node = (UINT8)READUINT8(*p);
 	newplayernum = (UINT8)READUINT8(*p);
-	console = (UINT8)READUINT8(*p);
-	splitscreenplayer = (UINT8)READUINT8(*p);
 
-	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d %d\n", node, newplayernum, splitscreenplayer);
+	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d\n", node, newplayernum);
 
 	rejoined = playeringame[newplayernum];
 
@@ -3650,6 +3648,9 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	newplayer->quittime = 0;
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
+
+	console = (UINT8)READUINT8(*p);
+	splitscreenplayer = (UINT8)READUINT8(*p);
 
 	// the server is creating my player
 	if (node == mynode)
