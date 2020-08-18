@@ -1487,8 +1487,9 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 {
 	player_t *p = &players[playernum];
 	char name[MAXPLAYERNAME+1];
-	UINT16 color;
+	UINT16 color, followercolor;
 	UINT8 skin;
+	SINT8 follower;
 	UINT8 i;
 
 #ifdef PARANOIA
@@ -1516,6 +1517,8 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	p->availabilities = READUINT32(*cp);
 	color = READUINT16(*cp);
 	skin = READUINT8(*cp);
+	follower = READSINT8(*cp);
+	followercolor = READUINT16(*cp);
 
 	// set name
 	if (strcasecmp(player_names[playernum], name) != 0)
@@ -1591,6 +1594,13 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	}
 	else
 		SetPlayerSkinByNum(playernum, skin);
+
+	// set follower colour:
+	// Don't bother doing garbage and kicking if we receive None, this is both silly and a waste of time, this will be handled properly in P_HandleFollower.
+	p->followercolor = followercolor;
+
+	// set follower
+	SetFollower(playernum, follower);
 }
 
 void SendWeaponPref(UINT8 n)
