@@ -28,6 +28,8 @@
 #include "r_things.h" // numskins
 
 
+static INT16 bot_oldangleturn[MAXPLAYERS];
+
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
 
@@ -682,7 +684,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
-	cmd->angleturn = (player->mo->angle >> 16);
 
 	if (gamestate != GS_LEVEL)
 	{
@@ -873,5 +874,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	{
 		Z_Free(predict);
 	}
+
+	cmd->angleturn = (INT16)(cmd->angleturn + bot_oldangleturn[player - players]);
+	bot_oldangleturn[player - players] = cmd->angleturn;
 }
 
