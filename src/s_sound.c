@@ -2335,12 +2335,12 @@ static lumpnum_t S_GetMusicLumpNum(const char *mname)
 		return W_GetNumForName(va(midipref ? "d_%s":"o_%s", mname));
 	else if (S_PrefAvailable(!midipref, mname))
 		return W_GetNumForName(va(midipref ? "o_%s":"d_%s", mname));
+#else
+	if (S_DigExists(mname))
+		return W_GetNumForName(va("o_%s", mname));
+#endif
 	else
 		return LUMPERROR;
-#else
-	return W_GetNumForName(va("o_%s", mname));
-#endif
-
 }
 
 static boolean S_LoadMusic(const char *mname)
@@ -2353,15 +2353,14 @@ static boolean S_LoadMusic(const char *mname)
 
 	mlumpnum = S_GetMusicLumpNum(mname);
 
-	if (S_MIDIMusicDisabled() && S_MIDIExists(mname))
+	if (!S_DigExists(mname) && S_MIDIExists(mname))
 	{
 #ifdef NO_MIDI
 		CONS_Alert(CONS_ERROR, "A MIDI music lump %.6s was found,\nbut SRB2Kart does not support MIDI output.\nWe apologise for the inconvenience.\n", mname);
-#endif
 		return false;
+#endif		
 	}
-
-	if (mlumpnum == LUMPERROR)
+	else if (mlumpnum == LUMPERROR)
 	{
 		CONS_Alert(CONS_ERROR, "Music %.6s could not be loaded: lump not found!\n", mname);
 		return false;
