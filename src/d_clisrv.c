@@ -2277,7 +2277,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 			if (curl_failedwebdownload && !curl_transfers)
 			{
-				if (!CL_FinishedFileList()) 
+				if (!CL_FinishedFileList())
 					break;
 
 				CONS_Printf("One or more files failed to download, falling back to internal downloader\n");
@@ -5075,107 +5075,106 @@ static INT16 Consistancy(void)
 		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 			continue;
 
-			mo = (mobj_t *)th;
+		mo = (mobj_t *)th;
 
-			if (mo->flags & (MF_SPECIAL | MF_SOLID | MF_PUSHABLE | MF_BOSS | MF_MISSILE | MF_SPRING | MF_MONITOR | MF_FIRE | MF_ENEMY | MF_PAIN | MF_STICKY))
+		if (mo->flags & (MF_SPECIAL | MF_SOLID | MF_PUSHABLE | MF_BOSS | MF_MISSILE | MF_SPRING | MF_MONITOR | MF_FIRE | MF_ENEMY | MF_PAIN | MF_STICKY))
+		{
+			ret -= mo->type;
+			ret += mo->x;
+			ret -= mo->y;
+			ret += mo->z;
+			ret -= mo->momx;
+			ret += mo->momy;
+			ret -= mo->momz;
+			ret += mo->angle;
+			ret -= mo->flags;
+			ret += mo->flags2;
+			ret -= mo->eflags;
+			if (mo->target)
 			{
-				ret -= mo->type;
-				ret += mo->x;
-				ret -= mo->y;
-				ret += mo->z;
-				ret -= mo->momx;
-				ret += mo->momy;
-				ret -= mo->momz;
-				ret += mo->angle;
-				ret -= mo->flags;
-				ret += mo->flags2;
-				ret -= mo->eflags;
-				if (mo->target)
-				{
-					ret += mo->target->type;
-					ret -= mo->target->x;
-					ret += mo->target->y;
-					ret -= mo->target->z;
-					ret += mo->target->momx;
-					ret -= mo->target->momy;
-					ret += mo->target->momz;
-					ret -= mo->target->angle;
-					ret += mo->target->flags;
-					ret -= mo->target->flags2;
-					ret += mo->target->eflags;
-					ret -= mo->target->state - states;
-					ret += mo->target->tics;
-					ret -= mo->target->sprite;
-					ret += mo->target->frame;
-				}
-				else
-					ret ^= 0x3333;
-				if (mo->tracer && mo->tracer->type != MT_OVERLAY)
-				{
-					ret += mo->tracer->type;
-					ret -= mo->tracer->x;
-					ret += mo->tracer->y;
-					ret -= mo->tracer->z;
-					ret += mo->tracer->momx;
-					ret -= mo->tracer->momy;
-					ret += mo->tracer->momz;
-					ret -= mo->tracer->angle;
-					ret += mo->tracer->flags;
-					ret -= mo->tracer->flags2;
-					ret += mo->tracer->eflags;
-					ret -= mo->tracer->state - states;
-					ret += mo->tracer->tics;
-					ret -= mo->tracer->sprite;
-					ret += mo->tracer->frame;
-				}
-				else
-					ret ^= 0xAAAA;
-				// SRB2Kart: We use hnext & hprev very extensively
-				if (mo->hnext)
-				{
-					ret += mo->hnext->type;
-					ret -= mo->hnext->x;
-					ret += mo->hnext->y;
-					ret -= mo->hnext->z;
-					ret += mo->hnext->momx;
-					ret -= mo->hnext->momy;
-					ret += mo->hnext->momz;
-					ret -= mo->hnext->angle;
-					ret += mo->hnext->flags;
-					ret -= mo->hnext->flags2;
-					ret += mo->hnext->eflags;
-					ret -= mo->hnext->state - states;
-					ret += mo->hnext->tics;
-					ret -= mo->hnext->sprite;
-					ret += mo->hnext->frame;
-				}
-				else
-					ret ^= 0x5555;
-				if (mo->hprev)
-				{
-					ret += mo->hprev->type;
-					ret -= mo->hprev->x;
-					ret += mo->hprev->y;
-					ret -= mo->hprev->z;
-					ret += mo->hprev->momx;
-					ret -= mo->hprev->momy;
-					ret += mo->hprev->momz;
-					ret -= mo->hprev->angle;
-					ret += mo->hprev->flags;
-					ret -= mo->hprev->flags2;
-					ret += mo->hprev->eflags;
-					ret -= mo->hprev->state - states;
-					ret += mo->hprev->tics;
-					ret -= mo->hprev->sprite;
-					ret += mo->hprev->frame;
-				}
-				else
-					ret ^= 0xCCCC;
-				ret -= mo->state - states;
-				ret += mo->tics;
-				ret -= mo->sprite;
-				ret += mo->frame;
+				ret += mo->target->type;
+				ret -= mo->target->x;
+				ret += mo->target->y;
+				ret -= mo->target->z;
+				ret += mo->target->momx;
+				ret -= mo->target->momy;
+				ret += mo->target->momz;
+				ret -= mo->target->angle;
+				ret += mo->target->flags;
+				ret -= mo->target->flags2;
+				ret += mo->target->eflags;
+				ret -= mo->target->state - states;
+				ret += mo->target->tics;
+				ret -= mo->target->sprite;
+				ret += mo->target->frame;
 			}
+			else
+				ret ^= 0x3333;
+			if (mo->tracer && mo->tracer->type != MT_OVERLAY)
+			{
+				ret += mo->tracer->type;
+				ret -= mo->tracer->x;
+				ret += mo->tracer->y;
+				ret -= mo->tracer->z;
+				ret += mo->tracer->momx;
+				ret -= mo->tracer->momy;
+				ret += mo->tracer->momz;
+				ret -= mo->tracer->angle;
+				ret += mo->tracer->flags;
+				ret -= mo->tracer->flags2;
+				ret += mo->tracer->eflags;
+				ret -= mo->tracer->state - states;
+				ret += mo->tracer->tics;
+				ret -= mo->tracer->sprite;
+				ret += mo->tracer->frame;
+			}
+			else
+				ret ^= 0xAAAA;
+			// SRB2Kart: We use hnext & hprev very extensively
+			if (mo->hnext)
+			{
+				ret += mo->hnext->type;
+				ret -= mo->hnext->x;
+				ret += mo->hnext->y;
+				ret -= mo->hnext->z;
+				ret += mo->hnext->momx;
+				ret -= mo->hnext->momy;
+				ret += mo->hnext->momz;
+				ret -= mo->hnext->angle;
+				ret += mo->hnext->flags;
+				ret -= mo->hnext->flags2;
+				ret += mo->hnext->eflags;
+				ret -= mo->hnext->state - states;
+				ret += mo->hnext->tics;
+				ret -= mo->hnext->sprite;
+				ret += mo->hnext->frame;
+			}
+			else
+				ret ^= 0x5555;
+			if (mo->hprev)
+			{
+				ret += mo->hprev->type;
+				ret -= mo->hprev->x;
+				ret += mo->hprev->y;
+				ret -= mo->hprev->z;
+				ret += mo->hprev->momx;
+				ret -= mo->hprev->momy;
+				ret += mo->hprev->momz;
+				ret -= mo->hprev->angle;
+				ret += mo->hprev->flags;
+				ret -= mo->hprev->flags2;
+				ret += mo->hprev->eflags;
+				ret -= mo->hprev->state - states;
+				ret += mo->hprev->tics;
+				ret -= mo->hprev->sprite;
+				ret += mo->hprev->frame;
+			}
+			else
+				ret ^= 0xCCCC;
+			ret -= mo->state - states;
+			ret += mo->tics;
+			ret -= mo->sprite;
+			ret += mo->frame;
 		}
 	}
 #endif
@@ -5197,7 +5196,7 @@ static void CL_SendClientKeepAlive(void)
 static void SV_SendServerKeepAlive(void)
 {
 	INT32 n;
-	
+
 	for (n = 1; n < MAXNETNODES; n++)
 	{
 		if (nodeingame[n])
@@ -5795,7 +5794,7 @@ void NetKeepAlive(void)
 	{
 		SV_SendServerKeepAlive();
 	}
-	
+
 	// No else because no tics are being run and we can't resynch during this
 
 	Net_AckTicker();
