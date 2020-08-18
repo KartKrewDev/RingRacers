@@ -10419,7 +10419,6 @@ static const char *const MOBJFLAG_LIST[] = {
 	"BOXICON",
 	"MISSILE",
 	"SPRING",
-	"BOUNCE",
 	"MONITOR",
 	"NOTHINK",
 	"FIRE",
