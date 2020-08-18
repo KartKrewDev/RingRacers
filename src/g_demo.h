@@ -94,7 +94,7 @@ void G_BeginRecording(void);
 void G_BeginMetal(void);
 
 // Only called by shutdown code.
-void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT8 color, UINT32 val);
+void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val);
 void G_SetDemoTime(UINT32 ptime, UINT32 plap);
 UINT8 G_CmpDemoTime(char *oldname, char *newname);
 

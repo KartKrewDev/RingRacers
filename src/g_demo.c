@@ -2100,7 +2100,7 @@ void G_BeginMetal(void)
 	oldmetal.angle = mo->angle>>24;
 }
 
-void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT8 color, UINT32 val)
+void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val)
 {
 	char temp[16];
 

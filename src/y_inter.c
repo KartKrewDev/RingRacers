@@ -57,7 +57,7 @@ typedef struct
 	UINT8 display;
 } y_bonus_t;
 
-typedef union
+typedef struct
 {
 	INT32 *character[MAXPLAYERS]; // Winner's character #
 	UINT16 *color[MAXPLAYERS]; // Winner's color #
