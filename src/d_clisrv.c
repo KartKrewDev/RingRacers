@@ -3598,19 +3598,15 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	UINT8 console;
 	UINT8 splitscreenplayer = 0;
 	UINT8 i;
+	boolean rejoined;
+	player_t *newplayer;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
 		// protect against hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal add player command received from %s\n"), player_names[playernum]);
 		if (server)
-		{
-			UINT8 buf[2];
-
-			buf[0] = (UINT8)playernum;
-			buf[1] = KICK_MSG_CON_FAIL;
-			SendNetXCmd(XD_KICK, &buf, 2);
-		}
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 		return;
 	}
 
@@ -3621,13 +3617,39 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d %d\n", node, newplayernum, splitscreenplayer);
 
-	// Clear player before joining, lest some things get set incorrectly
-	CL_ClearPlayer(newplayernum);
+	rejoined = playeringame[newplayernum];
 
-	playeringame[newplayernum] = true;
-	G_AddPlayer(newplayernum);
-	if (newplayernum+1 > doomcom->numslots)
-		doomcom->numslots = (INT16)(newplayernum+1);
+	if (!rejoined)
+	{
+		// Clear player before joining, lest some things get set incorrectly
+		CL_ClearPlayer(newplayernum);
+
+		playeringame[newplayernum] = true;
+		G_AddPlayer(newplayernum);
+
+		if (newplayernum+1 > doomcom->numslots)
+			doomcom->numslots = (INT16)(newplayernum+1);
+
+		if (server && I_GetNodeAddress)
+		{
+			const char *address = I_GetNodeAddress(node);
+			char *port = NULL;
+			if (address) // MI: fix msvcrt.dll!_mbscat crash?
+			{
+				strcpy(playeraddress[newplayernum], address);
+				port = strchr(playeraddress[newplayernum], ':');
+				if (port)
+					*port = '\0';
+			}
+		}
+	}
+
+	newplayer = &players[newplayernum];
+
+	newplayer->jointime = 0;
+	newplayer->quittime = 0;
+
+	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
 
 	// the server is creating my player
 	if (node == mynode)
@@ -3652,11 +3674,32 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 			DEBFILE("spawning me\n");
 		}
 
-		ticcmd_oldangleturn[splitscreenplayer] = players[newplayernum].oldrelangleturn;
-		P_ForceLocalAngle(&players[newplayernum], (angle_t)(players[newplayernum].angleturn << 16));
+		ticcmd_oldangleturn[splitscreenplayer] = newplayer->oldrelangleturn;
+		P_ForceLocalAngle(newplayer, (angle_t)(newplayer->angleturn << 16));
 
-		//D_SendPlayerConfig();
+		D_SendPlayerConfig();
 		addedtogame = true;
+
+		if (rejoined)
+		{
+			if (newplayer->mo)
+			{
+				newplayer->viewheight = P_GetPlayerViewHeight(newplayer);
+
+				if (newplayer->mo->eflags & MFE_VERTICALFLIP)
+					newplayer->viewz = newplayer->mo->z + newplayer->mo->height - newplayer->viewheight;
+				else
+					newplayer->viewz = newplayer->mo->z + newplayer->viewheight;
+			}
+
+			// wake up the status bar
+			ST_Start();
+			// wake up the heads up text
+			HU_Start();
+
+			if (camera[splitscreenplayer].chase)
+				P_ResetCamera(newplayer, &camera[splitscreenplayer]);
+		}
 	}
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
@@ -3670,20 +3713,30 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	if (netgame)
 	{
-		if (server && cv_showjoinaddress.value)
-		{
-			const char *address;
-			if (I_GetNodeAddress && (address = I_GetNodeAddress(node)) != NULL)
-				HU_AddChatText(va("\x82*Player %d has joined the game (node %d) (%s)", newplayernum+1, node, address), false);	// merge join notification + IP to avoid clogging console/chat.
-		}
+		char joinmsg[256];
+
+		if (rejoined)
+			strcpy(joinmsg, M_GetText("\x82*%s has rejoined the game (player %d)"));
 		else
-			HU_AddChatText(va("\x82*Player %d has joined the game (node %d)", newplayernum+1, node), false);	// if you don't wanna see the join address.
+			strcpy(joinmsg, M_GetText("\x82*%s has joined the game (player %d)"));
+		strcpy(joinmsg, va(joinmsg, player_names[newplayernum], newplayernum));
+
+		// Merge join notification + IP to avoid clogging console/chat
+		if (server && cv_showjoinaddress.value && I_GetNodeAddress)
+		{
+			const char *address = I_GetNodeAddress(node);
+			if (address)
+				strcat(joinmsg, va(" (%s)", address));
+		}
+
+		HU_AddChatText(joinmsg, false);
 	}
 
 	if (server && multiplayer && motd[0] != '\0')
 		COM_BufAddText(va("sayto %d %s\n", newplayernum, motd));
 
-	LUAh_PlayerJoin(newplayernum);
+	if (!rejoined)
+		LUAh_PlayerJoin(newplayernum);
 }
 
 // Xcmd XD_REMOVEPLAYER
@@ -3759,54 +3812,57 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	LUAh_PlayerJoin(newplayernum);
 }
 
-static boolean SV_AddWaitingPlayers(void)
+static boolean SV_AddWaitingPlayers(const char *name, const char *name2, const char *name3, const char *name4)
 {
 	INT32 node, n, newplayer = false;
-	UINT8 newplayernum = 0;
-
-	// What is the reason for this? Why can't newplayernum always be 0?
-	// Sal: Because the dedicated player is stupidly forced into players[0].....
-	if (dedicated)
-		newplayernum = 1;
+	UINT8 buf[4 + MAXPLAYERNAME];
+	UINT8 *buf_p = buf;
+	INT32 newplayernum;
 
 	for (node = 0; node < MAXNETNODES; node++)
 	{
 		// splitscreen can allow 2+ players in one node
 		for (; nodewaiting[node] > 0; nodewaiting[node]--)
 		{
-			UINT8 buf[4];
-			UINT8 *buf_p = buf;
-			UINT8 nobotoverwrite;
-
 			newplayer = true;
 
-			// search for a free playernum
-			// we can't use playeringame since it is not updated here
-			for (; newplayernum < MAXPLAYERS; newplayernum++)
+			newplayernum = FindRejoinerNum(node);
+			if (newplayernum == -1)
 			{
-				for (n = 0; n < MAXNETNODES; n++)
-					if (nodetoplayer[n] == newplayernum
-					|| nodetoplayer2[n] == newplayernum
-					|| nodetoplayer3[n] == newplayernum
-					|| nodetoplayer4[n] == newplayernum)
+				UINT8 nobotoverwrite;
+
+				// search for a free playernum
+				// we can't use playeringame since it is not updated here
+				for (newplayernum = dedicated ? 1 : 0; newplayernum < MAXPLAYERS; newplayernum++)
+				{
+					if (playeringame[newplayernum])
+						continue;
+
+					for (n = 0; n < MAXNETNODES; n++)
+						if (nodetoplayer[n] == newplayernum
+						|| nodetoplayer2[n] == newplayernum
+						|| nodetoplayer3[n] == newplayernum
+						|| nodetoplayer4[n] == newplayernum)
+							break;
+
+					if (n == MAXNETNODES)
 						break;
-				if (n == MAXNETNODES)
-					break;
-			}
+				}
 
-			nobotoverwrite = newplayernum;
+				nobotoverwrite = newplayernum;
 
-			while (playeringame[nobotoverwrite]
-			&& players[nobotoverwrite].bot
-			&& nobotoverwrite < MAXPLAYERS)
-			{
-				// Only overwrite bots if there are NO other slots available.
-				nobotoverwrite++;
-			}
+				while (playeringame[nobotoverwrite]
+				&& players[nobotoverwrite].bot
+				&& nobotoverwrite < MAXPLAYERS)
+				{
+					// Overwrite bots if there are NO other slots available.
+					nobotoverwrite++;
+				}
 
-			if (nobotoverwrite < MAXPLAYERS)
-			{
-				newplayernum = nobotoverwrite;
+				if (nobotoverwrite < MAXPLAYERS)
+				{
+					newplayernum = nobotoverwrite;
+				}
 			}
 
 			// should never happen since we check the playernum
@@ -3819,13 +3875,25 @@ static boolean SV_AddWaitingPlayers(void)
 			WRITEUINT8(buf_p, newplayernum);
 
 			if (playerpernode[node] < 1)
+			{
 				nodetoplayer[node] = newplayernum;
+				WRITESTRINGN(buf_p, name, MAXPLAYERNAME);
+			}
 			else if (playerpernode[node] < 2)
+			{
 				nodetoplayer2[node] = newplayernum;
+				WRITESTRINGN(buf_p, name2, MAXPLAYERNAME);
+			}
 			else if (playerpernode[node] < 3)
+			{
 				nodetoplayer3[node] = newplayernum;
+				WRITESTRINGN(buf_p, name3, MAXPLAYERNAME);
+			}
 			else if (playerpernode[node] < 4)
+			{
 				nodetoplayer4[node] = newplayernum;
+				WRITESTRINGN(buf_p, name4, MAXPLAYERNAME);
+			}
 
 			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
 			WRITEUINT8(buf_p, playerpernode[node]); // splitscreen num
@@ -3833,10 +3901,7 @@ static boolean SV_AddWaitingPlayers(void)
 			playerpernode[node]++;
 
 			SendNetXCmd(XD_ADDPLAYER, buf, buf_p - buf);
-
 			DEBFILE(va("Server added player %d node %d\n", newplayernum, node));
-			// use the next free slot (we can't put playeringame[newplayernum] = true here)
-			newplayernum++;
 		}
 	}
 
@@ -3894,7 +3959,7 @@ boolean SV_SpawnServer(void)
 		else doomcom->numslots = 1;
 	}
 
-	return SV_AddWaitingPlayers(); // cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring
+	return SV_AddWaitingPlayers(cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
 #endif
 }
 
@@ -4074,7 +4139,7 @@ static void HandleConnect(SINT8 node)
 				SV_SendSaveGame(node); // send a complete game state
 				DEBFILE("send savegame\n");
 			}
-			SV_AddWaitingPlayers(); // names[0], names[1], names[2], names[3]
+			SV_AddWaitingPlayers(names[0], names[1], names[2], names[3]);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}

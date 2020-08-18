@@ -120,22 +120,24 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_USERHUDTRANS       ((10-cv_translucenthud.value)<<V_ALPHASHIFT)
 #define V_USERHUDTRANSDOUBLE ((10-min(cv_translucenthud.value*2, 10))<<V_ALPHASHIFT)
 
-#define V_RETURN8            0x00100000 // 8 pixel return instead of 12
-#define V_OFFSET             0x00200000 // account for offsets in patches
-#define V_ALLOWLOWERCASE     0x00400000 // (strings only) allow fonts that have lowercase letters to use them
-#define V_FLIP               0x00400000 // (patches only) Horizontal flip
-#define V_SLIDEIN            0x00800000 // Slide in from the sides on level load, depending on snap flags
+#define V_AUTOFADEOUT        0x00100000 // used by CECHOs, automatic fade out when almost over
+#define V_RETURN8            0x00200000 // 8 pixel return instead of 12
+#define V_OFFSET             0x00400000 // account for offsets in patches
+#define V_ALLOWLOWERCASE     0x00800000 // (strings only) allow fonts that have lowercase letters to use them
+#define V_FLIP               0x00800000 // (patches only) Horizontal flip
+#define V_CENTERNAMETAG      0x00800000 // (nametag only) center nametag lines
 
-#define V_SNAPTOTOP          0x01000000 // for centering
-#define V_SNAPTOBOTTOM       0x02000000 // for centering
-#define V_SNAPTOLEFT         0x04000000 // for centering
-#define V_SNAPTORIGHT        0x08000000 // for centering
+#define V_SNAPTOTOP          0x00800000 // for centering
+#define V_SNAPTOBOTTOM       0x01000000 // for centering
+#define V_SNAPTOLEFT         0x02000000 // for centering
+#define V_SNAPTORIGHT        0x04000000 // for centering
 
-#define V_WRAPX              0x10000000 // Don't clamp texture on X (for HW mode)
-#define V_WRAPY              0x20000000 // Don't clamp texture on Y (for HW mode)
+#define V_WRAPX              0x08000000 // Don't clamp texture on X (for HW mode)
+#define V_WRAPY              0x10000000 // Don't clamp texture on Y (for HW mode)
 
-#define V_NOSCALESTART       0x40000000 // don't scale x, y, start coords
-#define V_SPLITSCREEN        0x80000000 // Add half of screen width or height automatically depending on player number
+#define V_NOSCALESTART       0x20000000 // don't scale x, y, start coords
+#define V_SPLITSCREEN        0x40000000 // Add half of screen width or height automatically depending on player number
+#define V_SLIDEIN            0x80000000 // Slide in from the sides on level load, depending on snap flags
 
 // defines for old functions
 #define V_DrawPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT, s|V_NOSCALESTART|V_NOSCALEPATCH, p, NULL)
