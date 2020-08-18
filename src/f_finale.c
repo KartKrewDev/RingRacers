@@ -1819,11 +1819,6 @@ static void F_CacheTitleScreen(void)
 
 void F_StartTitleScreen(void)
 {
-	if (menupres[MN_MAIN].musname[0])
-		S_ChangeMusic(menupres[MN_MAIN].musname, menupres[MN_MAIN].mustrack, menupres[MN_MAIN].muslooping);
-	else
-		S_ChangeMusicInternal("_title", looptitle);
-
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 	{
 		ttuser_count = 0;
@@ -2027,7 +2022,10 @@ void F_TitleScreenTicker(boolean run)
 		else if (finalecount == 50)
 		{
 			// Now start the music
-			S_ChangeMusicInternal("titles", looptitle);
+			if (menupres[MN_MAIN].musname[0])
+				S_ChangeMusic(menupres[MN_MAIN].musname, menupres[MN_MAIN].mustrack, menupres[MN_MAIN].muslooping);
+			else
+				S_ChangeMusicInternal("_title", looptitle);
 			S_StartSound(NULL, sfx_s23c);
 		}
 	}
