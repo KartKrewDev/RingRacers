@@ -4601,7 +4601,7 @@ void K_DropRocketSneaker(player_t *player)
 		if (shoe->type != MT_ROCKETSNEAKER)
 			return; //woah, not a rocketsneaker, bail! safeguard in case this gets used when you're holding non-rocketsneakers
 
-		shoe->flags2 &= ~MF2_DONTDRAW;
+		shoe->drawflags &= ~MFD_DONTDRAW;
 		shoe->flags &= ~MF_NOGRAVITY;
 		shoe->angle += ANGLE_45;
 
