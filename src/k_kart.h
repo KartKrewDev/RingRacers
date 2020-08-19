@@ -69,6 +69,7 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage);
 void K_KartUpdatePosition(player_t *player);
 void K_DropItems(player_t *player);
 void K_DropRocketSneaker(player_t *player);
+void K_DropKitchenSink(player_t *player);
 void K_StripItems(player_t *player);
 void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
