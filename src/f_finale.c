@@ -1687,7 +1687,7 @@ void F_InitMenuPresValues(void)
 	// Set defaults for presentation values
 	strncpy(curbgname, "TITLESKY", 9);
 	curfadevalue = 16;
-	curbgcolor = -1;
+	curbgcolor = 31;
 	curbgxspeed = (gamestate == GS_TIMEATTACK) ? 0 : titlescrollxspeed;
 	curbgyspeed = (gamestate == GS_TIMEATTACK) ? 22 : titlescrollyspeed;
 	curbghide = (gamestate == GS_TIMEATTACK) ? false : true;
