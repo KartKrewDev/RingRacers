@@ -627,8 +627,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->flags & MF_SHOOTABLE && thing->health > 0)
 		{
 			UINT32 damagetype = (thing->info->mass & 0xFF);
-			if (!damagetype && thing->flags & MF_FIRE) // BURN!
-				damagetype = DMG_FIRE;
+
 			if (P_DamageMobj(tmthing, thing, thing, 1, damagetype) && (damagetype = (thing->info->mass>>8)))
 				S_StartSound(thing, damagetype);
 		}
@@ -644,8 +643,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (thing->flags & MF_SHOOTABLE && tmthing->health > 0)
 		{
 			UINT32 damagetype = (tmthing->info->mass & 0xFF);
-			if (!damagetype && tmthing->flags & MF_FIRE) // BURN!
-				damagetype = DMG_FIRE;
+
 			if (P_DamageMobj(thing, tmthing, tmthing, 1, damagetype) && (damagetype = (tmthing->info->mass>>8)))
 				S_StartSound(tmthing, damagetype);
 		}
@@ -738,13 +736,13 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			thing = oldthing;
 			P_SetTarget(&tmthing, oldtmthing);*/
 
-			if (tmthing->player->kartstuff[k_spinouttimer] || tmthing->player->kartstuff[k_squishedtimer]
+			if (P_PlayerInPain(tmthing->player)
 				|| tmthing->player->powers[pw_flashing] || tmthing->player->kartstuff[k_hyudorotimer]
 				|| tmthing->player->kartstuff[k_justbumped] || tmthing->scale > thing->scale + (mapobjectscale/8))
 				return true;
 
 			// Player Damage
-			K_SpinPlayer(tmthing->player, thing, 0, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), false);
+			P_DamageMobj(tmthing, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), thing, 1, DMG_NORMAL);
 			S_StartSound(thing, sfx_s3k44);
 		}
 		else
@@ -796,13 +794,13 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			thing = oldthing;
 			P_SetTarget(&tmthing, oldtmthing);*/
 
-			if (thing->player->kartstuff[k_spinouttimer] || thing->player->kartstuff[k_squishedtimer]
+			if (P_PlayerInPain(thing->player)
 				|| thing->player->powers[pw_flashing] || thing->player->kartstuff[k_hyudorotimer]
 				|| thing->player->kartstuff[k_justbumped] || thing->scale > tmthing->scale + (mapobjectscale/8))
 				return true;
 
 			// Player Damage
-			K_SpinPlayer(thing->player, tmthing, 0, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), false);
+			P_DamageMobj(thing, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), tmthing, 1, DMG_NORMAL);
 			S_StartSound(tmthing, sfx_s3k44);
 		}
 		else
@@ -987,6 +985,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	// missiles can hit other things
 	if (tmthing->flags & MF_MISSILE)
 	{
+		UINT8 damagetype = tmthing->info->mass;
+
 		// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
 			return true; // overhead
@@ -1014,15 +1014,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		}
 
 		// damage / explode
-		if (tmthing->flags & MF_ENEMY) // An actual ENEMY! (Like the deton, for example)
-		{
-			P_DamageMobj(thing, tmthing, tmthing, 1, 0);
-		}
-		else
-		{
-			UINT8 damagetype = tmthing->info->mass;
-			P_DamageMobj(thing, tmthing, tmthing->target, 1, damagetype);
-		}
+		P_DamageMobj(thing, tmthing, tmthing->target, 1, damagetype);
 
 		// don't traverse any more
 		return false;
@@ -1109,11 +1101,11 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		{
 			if (thing->z + thing->height <= tmthing->z + FixedMul(FRACUNIT, tmthing->scale)
 			&& thing->z + thing->height + thing->momz  >= tmthing->z + FixedMul(FRACUNIT, tmthing->scale) + tmthing->momz)
-				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SPIKE);
+				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_NORMAL);
 		}
 		else if (thing->z >= tmthing->z + tmthing->height - FixedMul(FRACUNIT, tmthing->scale)
 		&& thing->z + thing->momz <= tmthing->z + tmthing->height - FixedMul(FRACUNIT, tmthing->scale) + tmthing->momz)
-			P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SPIKE);
+			P_DamageMobj(thing, tmthing, tmthing, 1, DMG_NORMAL);
 	}
 	else if (thing->type == MT_SPIKE && thing->flags & MF_SOLID && tmthing->player) // unfortunate player falls into spike?!
 	{
@@ -1121,11 +1113,11 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		{
 			if (tmthing->z + tmthing->height <= thing->z - FixedMul(FRACUNIT, thing->scale)
 			&& tmthing->z + tmthing->height + tmthing->momz >= thing->z - FixedMul(FRACUNIT, thing->scale))
-				P_DamageMobj(tmthing, thing, thing, 1, DMG_SPIKE);
+				P_DamageMobj(tmthing, thing, thing, 1, DMG_NORMAL);
 		}
 		else if (tmthing->z >= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale)
 		&& tmthing->z + tmthing->momz <= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale))
-			P_DamageMobj(tmthing, thing, thing, 1, DMG_SPIKE);
+			P_DamageMobj(tmthing, thing, thing, 1, DMG_NORMAL);
 	}
 
 	if (tmthing->type == MT_WALLSPIKE && tmthing->flags & MF_SOLID && thing->player) // wall spike impales player
@@ -1141,7 +1133,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (thing->z + thing->height > bottomz // above bottom
 		&&  thing->z < topz) // below top
 		// don't check angle, the player was clearly in the way in this case
-			P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SPIKE);
+			P_DamageMobj(thing, tmthing, tmthing, 1, DMG_NORMAL);
 	}
 	else if (thing->type == MT_WALLSPIKE && thing->flags & MF_SOLID && tmthing->player)
 	{
@@ -1173,7 +1165,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (touchangle > ANGLE_180)
 				touchangle = InvAngle(touchangle);
 			if (touchangle <= ANGLE_22h) // if you touched it at this close an angle, you get poked!
-				P_DamageMobj(tmthing, thing, thing, 1, DMG_SPIKE);
+				P_DamageMobj(tmthing, thing, thing, 1, DMG_NORMAL);
 		}
 	}
 
@@ -1216,19 +1208,19 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam)
 		{
 			if (tmthing->scale > thing->scale + (mapobjectscale/8)) // SRB2kart - Handle squishes first!
-				K_SquishPlayer(thing->player, tmthing, tmthing);
+				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SQUISH);
 			else if (thing->scale > tmthing->scale + (mapobjectscale/8))
-				K_SquishPlayer(tmthing->player, thing, tmthing);
+				P_DamageMobj(tmthing, thing, thing, 1, DMG_SQUISH);
 			else if (tmthing->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer]) // SRB2kart - Then invincibility!
-				P_DamageMobj(thing, tmthing, tmthing, 1, 0);
+				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
 			else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
-				P_DamageMobj(tmthing, thing, thing, 1, 0);
+				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
 			else if ((tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 				&& !(thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
-				P_DamageMobj(thing, tmthing, tmthing, 1, 0);
+				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
 			else if ((thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
-				&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
-				P_DamageMobj(tmthing, thing, thing, 1, 0);
+				&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD))
+				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
 		}
 	}
 
@@ -1315,34 +1307,26 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					mo1 = thing;
 					mo2 = tmthing;
 
-					if ((gametyperules & GTR_BUMPERS) && tmthing->player->kartstuff[k_pogospring])
-					{
-						K_StealBumper(tmthing->player, thing->player, false);
-						K_SpinPlayer(thing->player, tmthing, 0, tmthing, false);
-					}
+					if (tmthing->player->kartstuff[k_pogospring])
+						P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 				else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
 				{
 					zbounce = true;
 
-					if ((gametyperules & GTR_BUMPERS) && thing->player->kartstuff[k_pogospring])
-					{
-						K_StealBumper(thing->player, tmthing->player, false);
-						K_SpinPlayer(tmthing->player, thing, 0, thing, false);
-					}
+					if (thing->player->kartstuff[k_pogospring])
+						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 
 				if ((gametyperules & GTR_BUMPERS))
 				{
 					if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
 					{
-						K_StealBumper(thing->player, tmthing->player, false);
-						K_SpinPlayer(tmthing->player, thing, 0, tmthing, false);
+						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
 					}
 					else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
 					{
-						K_StealBumper(tmthing->player, thing->player, false);
-						K_SpinPlayer(thing->player, tmthing, 0, thing, false);
+						P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
 					}
 				}
 
@@ -1366,9 +1350,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
 			{
 				if (thing->type == MT_BLUEROBRA_JOINT)
-					P_KillMobj(thing->target, tmthing, tmthing, 0);
+					P_KillMobj(thing->target, tmthing, tmthing, DMG_NORMAL);
 				else
-					P_KillMobj(thing, tmthing, tmthing, 0);
+					P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return true;
 			}
 			else
@@ -1391,7 +1375,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->player->kartstuff[k_invincibilitytimer] > 0
 				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
 			{
-				P_KillMobj(thing, tmthing, tmthing, 0);
+				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return true; // kill
 			}
 
@@ -1422,7 +1406,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->player->kartstuff[k_invincibilitytimer] > 0
 				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
 			{
-				P_KillMobj(thing, tmthing, tmthing, 0);
+				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return true;
 			}
 
@@ -1445,7 +1429,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			else
 			{
 				if (thing->flags2 & MF2_AMBUSH)
-					P_DamageMobj(tmthing, thing, thing, 1, 0);
+					P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
 				K_KartBouncing(tmthing, thing, false, true);
 			}
 
@@ -3343,7 +3327,7 @@ static void P_CheckLavaWall(mobj_t *mo, sector_t *sec)
 				continue;
 		}
 
-		P_DamageMobj(mo, NULL, NULL, 1, DMG_FIRE);
+		P_DamageMobj(mo, NULL, NULL, 1, DMG_NORMAL);
 		return;
 	}
 }
@@ -3875,7 +3859,7 @@ static boolean PIT_RadiusAttack(mobj_t *thing)
 	if (thing == bombspot) // ignore the bomb itself (Deton fix)
 		return true;
 
-	if (bombsource && thing->type == bombsource->type && (bombdamagetype & DMG_CANTHURTSELF)) // ignore the type of guys who dropped the bomb (Jetty-Syn Bomber or Skim can bomb eachother, but not themselves.)
+	if ((bombdamagetype & DMG_CANTHURTSELF) && bombsource && thing->type == bombsource->type) // ignore the type of guys who dropped the bomb (Jetty-Syn Bomber or Skim can bomb eachother, but not themselves.)
 		return true;
 
 	if ((thing->flags & (MF_MONITOR|MF_SHOOTABLE)) != MF_SHOOTABLE)
@@ -4053,7 +4037,7 @@ static boolean PIT_ChangeSector(mobj_t *thing, boolean realcrush)
 	}
 
 	if (realcrush && crushchange)
-		P_DamageMobj(thing, NULL, NULL, 1, 0);
+		P_DamageMobj(thing, NULL, NULL, 1, DMG_NORMAL);
 
 	// keep checking (crush other things)
 	return true;

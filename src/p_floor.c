@@ -2370,7 +2370,7 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 		thing->momz = FixedMul(6*FRACUNIT, thing->scale);
 		P_SetThingPosition(thing);
 		if (thing->flags & MF_SHOOTABLE)
-			P_DamageMobj(thing, puncher, puncher, 1, 0);
+			P_DamageMobj(thing, puncher, puncher, 1, DMG_NORMAL);
 		else if (thing->type == MT_RING || thing->type == MT_COIN || thing->type == MT_RANDOMITEM)
 		{
 			thing->momz = FixedMul(3*FRACUNIT, thing->scale);

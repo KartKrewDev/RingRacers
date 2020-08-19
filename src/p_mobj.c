@@ -1520,7 +1520,7 @@ void P_XYMovement(mobj_t *mo)
 			{
 				// This Item Damage
 				S_StartSound(mo, mo->info->deathsound);
-				P_KillMobj(mo, NULL, NULL, 0);
+				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
 
 				P_SetObjectMomZ(mo, 8*FRACUNIT, false);
 				P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
@@ -1673,7 +1673,7 @@ void P_XYMovement(mobj_t *mo)
 						{
 							// This Item Damage
 							S_StartSound(mo, mo->info->deathsound);
-							P_KillMobj(mo, NULL, NULL, 0);
+							P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
 
 							P_SetObjectMomZ(mo, 8*FRACUNIT, false);
 							P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
@@ -2184,7 +2184,7 @@ boolean P_ZMovement(mobj_t *mo)
 					// Kill enemies, bosses and minecarts that fall into death pits.
 					if (mo->health)
 					{
-						P_KillMobj(mo, NULL, NULL, 0);
+						P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
 					}
 					return false;
 				}
@@ -3220,7 +3220,7 @@ void P_DestroyRobots(void)
 			continue;
 
 		// Found a target enemy
-		P_KillMobj(mo, players[consoleplayer].mo, players[consoleplayer].mo, 0);
+		P_KillMobj(mo, players[consoleplayer].mo, players[consoleplayer].mo, DMG_NORMAL);
 	}
 }
 
@@ -5565,7 +5565,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		else if (mobj->health > 0)
 		{
-			P_KillMobj(mobj, NULL, NULL, 0);
+			P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 			return;
 		}
 		break;
@@ -5616,7 +5616,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		else if (mobj->health > 0)
 		{
-			P_KillMobj(mobj, NULL, NULL, 0);
+			P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 			return;
 		}
 		break;
@@ -5672,15 +5672,6 @@ static boolean P_MobjPushableThink(mobj_t *mobj)
 {
 	P_MobjCheckWater(mobj);
 	P_PushableThinker(mobj);
-
-	// Extinguish fire objects in water. (Yes, it's extraordinarily rare to have a pushable flame object, but Brak uses such a case.)
-	if (mobj->flags & MF_FIRE && mobj->type != MT_PUMA && mobj->type != MT_FIREBALL
-		&& (mobj->eflags & (MFE_UNDERWATER | MFE_TOUCHWATER)))
-	{
-		P_KillMobj(mobj, NULL, NULL, 0);
-		return false;
-	}
-
 	return true;
 }
 
@@ -5756,10 +5747,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 					MT_SONIC3KBOSSEXPLODE);
 				S_StartSound(explosion, sfx_s3kb4);
 			}
-			if (mobj->movedir == DMG_DROWNED)
-				P_SetObjectMomZ(mobj, -FRACUNIT/2, true); // slower fall from drowning
-			else
-				P_SetObjectMomZ(mobj, -2*FRACUNIT/3, true);
+			P_SetObjectMomZ(mobj, -2*FRACUNIT/3, true);
 		}
 		break;
 	case MT_METALSONIC_RACE:
@@ -6399,7 +6387,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_MINEEXPLOSION:
 		if ((mobj->z < mobj->floorz - mobj->height) || (mobj->z > mobj->ceilingz + mobj->height))
 		{
-			P_KillMobj(mobj, NULL, NULL, 0);
+			P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 			break;
 		}
 
@@ -7670,7 +7658,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (mobj->movecount > 8*TICRATE)
 			{
-				P_KillMobj(mobj, mobj->target, mobj->target, 0);
+				P_KillMobj(mobj, mobj->target, mobj->target, DMG_NORMAL);
 				break;
 			}
 
@@ -7697,7 +7685,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else if (mobj->extravalue1) // lost your player somehow, DIE
 		{
-			P_KillMobj(mobj, NULL, NULL, 0);
+			P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 			break;
 		}
 		else
@@ -7826,7 +7814,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			{
 				S_StartSound(mobj->tracer, sfx_s3k77);
 				mobj->tracer->flags &= ~MF_NOGRAVITY;
-				P_KillMobj(mobj, mobj->tracer, mobj->tracer, 0);
+				P_KillMobj(mobj, mobj->tracer, mobj->tracer, DMG_NORMAL);
 				break;
 			}
 
@@ -7853,7 +7841,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else if (mobj->extravalue1) // lost your player somehow, DIE
 		{
-			P_KillMobj(mobj, NULL, NULL, 0);
+			P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 			break;
 		}
 		else
@@ -8210,14 +8198,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
-
-		// Extinguish fire objects in water
-		if (mobj->flags & MF_FIRE && mobj->type != MT_PUMA && mobj->type != MT_FIREBALL
-			&& (mobj->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER)))
-		{
-			P_KillMobj(mobj, NULL, NULL, 0);
-			return false;
-		}
 		break;
 	}
 	return true;
@@ -8537,7 +8517,7 @@ void P_MobjThinker(mobj_t *mobj)
 			|| mobj->type == MT_BALLHOG)
 			{
 				S_StartSound(mobj, mobj->info->deathsound);
-				P_KillMobj(mobj, NULL, NULL, 0);
+				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 			}
 			else
 			{
@@ -8548,7 +8528,7 @@ void P_MobjThinker(mobj_t *mobj)
 					mobj->z += mobj->height;
 
 				S_StartSound(mobj, mobj->info->deathsound);
-				P_KillMobj(mobj, NULL, NULL, 0);
+				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 
 				P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
 				P_InstaThrust(mobj, R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_90, 16*FRACUNIT);

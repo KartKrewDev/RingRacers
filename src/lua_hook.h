@@ -61,12 +61,6 @@ enum hook {
 	hook_GameQuit,
 
 	// SRB2Kart
-	hook_ShouldSpin,
-	hook_ShouldExplode,
-	hook_ShouldSquish,
-	hook_PlayerSpin,
-	hook_PlayerExplode,
-	hook_PlayerSquish,
 	hook_PlayerCmd, 
 	hook_IntermissionThinker,
 	hook_VoteThinker,
@@ -114,14 +108,6 @@ boolean LUAh_HurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 
 void LUAh_PlayerQuit(player_t *plr, kickreason_t reason); // Hook for player quitting
 boolean LUAh_MusicChange(const char *oldname, char *newname, UINT16 *mflags, boolean *looping,
 	UINT32 *position, UINT32 *prefadems, UINT32 *fadeinms); // Hook for music changes
-
-UINT8 LUAh_ShouldSpin(player_t *player, mobj_t *inflictor, mobj_t *source); // SRB2KART: Should player be spun out?
-UINT8 LUAh_ShouldExplode(player_t *player, mobj_t *inflictor, mobj_t *source); // SRB2KART: Should player be exploded?
-UINT8 LUAh_ShouldSquish(player_t *player, mobj_t *inflictor, mobj_t *source); // SRB2KART: Should player be squished?
-
-boolean LUAh_PlayerSpin(player_t *player, mobj_t *inflictor, mobj_t *source); // SRB2KART: Hook for K_SpinPlayer. Allows Lua to execute code and/or overwrite its behavior.
-boolean LUAh_PlayerExplode(player_t *player, mobj_t *inflictor, mobj_t *source); // SRB2KART: Hook for K_ExplodePlayer. Allows Lua to execute code and/or overwrite its behavior.
-boolean LUAh_PlayerSquish(player_t *player, mobj_t *inflictor, mobj_t *source); // SRB2KART: Hook for K_SquishPlayer. Allows Lua to execute code and/or overwrite its behavior.
 
 boolean LUAh_PlayerCmd(player_t *player, ticcmd_t *cmd);	// Allows to write to player cmd before the game does anything with them.
 

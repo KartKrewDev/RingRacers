@@ -376,7 +376,7 @@ void Command_Hurtme_f(void)
 		return;
 	}
 
-	P_DamageMobj(players[consoleplayer].mo, NULL, NULL, atoi(COM_Argv(1)), 0);
+	P_DamageMobj(players[consoleplayer].mo, NULL, NULL, atoi(COM_Argv(1)), DMG_NORMAL);
 }
 
 void Command_RTeleport_f(void)

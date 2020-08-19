@@ -4167,7 +4167,7 @@ void A_AttractChase(mobj_t *actor)
 				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->kartstuff[k_sparkleanim]);
 				actor->target->player->kartstuff[k_sparkleanim] = (actor->target->player->kartstuff[k_sparkleanim]+1) % 20;
 
-				P_KillMobj(actor, actor->target, actor->target, 0);
+				P_KillMobj(actor, actor->target, actor->target, DMG_NORMAL);
 				return;
 			}
 			else
@@ -4506,11 +4506,7 @@ static inline boolean PIT_MineExplode(mobj_t *thing)
 		thing->z - grenade->z) > explodedist)
 		return true; // Too far away
 
-	if (thing->player) // Looks like we're going to have to need a seperate function for this too
-		K_ExplodePlayer(thing->player, grenade->target, grenade);
-	else
-		P_DamageMobj(thing, grenade, grenade->target, 1, 0);
-
+	P_DamageMobj(thing, grenade, grenade->target, 1, DMG_EXPLODE);
 	return true;
 }
 
@@ -5029,7 +5025,7 @@ void A_MinusPopup(mobj_t *actor)
 	}
 	P_RadiusAttack(actor, actor, 2*actor->radius, 0, true);
 	if (actor->tracer)
-		P_DamageMobj(actor->tracer, actor, actor, 1, 0);
+		P_DamageMobj(actor->tracer, actor, actor, 1, DMG_NORMAL);
 
 	actor->flags = (actor->flags & ~MF_NOCLIPTHING)|MF_SPECIAL|MF_SHOOTABLE;
 }
@@ -5500,7 +5496,7 @@ void A_UnidusBall(mobj_t *actor)
 		boolean skull = (actor->target->flags2 & MF2_SKULLFLY) == MF2_SKULLFLY;
 		if (actor->target->state == &states[actor->target->info->painstate])
 		{
-			P_KillMobj(actor, NULL, NULL, 0);
+			P_KillMobj(actor, NULL, NULL, DMG_NORMAL);
 			return;
 		}
 		switch(actor->extravalue2)
@@ -5859,7 +5855,7 @@ void A_RingExplode(mobj_t *actor)
 		if (mo2->flags & MF_SHOOTABLE)
 		{
 			actor->flags2 |= MF2_DEBRIS;
-			P_DamageMobj(mo2, actor, actor->target, 1, 0);
+			P_DamageMobj(mo2, actor, actor->target, 1, DMG_NORMAL);
 			continue;
 		}
 	}
@@ -6801,7 +6797,7 @@ void A_EggmanBox(mobj_t *actor)
 		return;
 	}
 
-	P_DamageMobj(actor->target, actor, actor, 1, 0); // Ow!
+	P_DamageMobj(actor->target, actor, actor, 1, DMG_NORMAL); // Ow!
 }
 
 // Function: A_TurretFire
@@ -9455,7 +9451,7 @@ void A_RandomShadowFrame(mobj_t *actor)
 		&& P_IsObjectOnGround(actor->target)
 		&& actor->z == actor->target->z)
 		{
-			P_DamageMobj(actor->target, actor, actor, 1, 0);
+			P_DamageMobj(actor->target, actor, actor, 1, DMG_NORMAL);
 			P_InstaThrust(actor->target, actor->angle, 16<<FRACBITS);
 			fire = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_THOK);
 			P_SetMobjStateNF(fire, S_QUICKBOOM1);
@@ -9500,7 +9496,7 @@ void A_RoamingShadowThinker(mobj_t *actor)
 			{
 				// send them flying and spawn the WIND!
 				P_InstaThrust(actor->target, 0, 0);
-				P_DamageMobj(actor->target, actor, actor, 1, 0);
+				P_DamageMobj(actor->target, actor, actor, 1, DMG_NORMAL);
 				P_SetObjectMomZ(actor->target, 16<<FRACBITS, false);
 				S_StartSound(actor->target, sfx_wind1);
 
@@ -11191,7 +11187,7 @@ void A_RemoteDamage(mobj_t *actor)
 		if (target->player)
 			K_DoIngameRespawn(target->player);
 		else
-			P_KillMobj(target, source, source, 0);
+			P_KillMobj(target, source, source, DMG_NORMAL);
 	}
 	else if (locvar2 == 2) // Remove mobj!
 	{
@@ -11201,7 +11197,7 @@ void A_RemoteDamage(mobj_t *actor)
 		P_RemoveMobj(target);
 	}
 	else // default: Damage mobj!
-		P_DamageMobj(target, source, source, 1, 0);
+		P_DamageMobj(target, source, source, 1, DMG_NORMAL);
 }
 
 // Function: A_HomingChase
@@ -11447,7 +11443,7 @@ void A_VileAttack(mobj_t *actor)
 			return;
 
 		S_StartSound(actor, soundtoplay);
-		P_DamageMobj(actor->target, actor, actor, 1, 0);
+		P_DamageMobj(actor->target, actor, actor, 1, DMG_NORMAL);
 		//actor->target->momz = 1000*FRACUNIT/actor->target->info->mass; // How id did it
 		actor->target->momz += FixedMul(10*FRACUNIT, actor->scale)*P_MobjFlip(actor->target); // How we're doing it
 		if (explosionType != MT_NULL)
@@ -11488,7 +11484,7 @@ void A_VileAttack(mobj_t *actor)
 				continue;
 
 			S_StartSound(actor, soundtoplay);
-			P_DamageMobj(players[i].mo, actor, actor, 1, 0);
+			P_DamageMobj(players[i].mo, actor, actor, 1, DMG_NORMAL);
 			//actor->target->momz = 1000*FRACUNIT/actor->target->info->mass; // How id did it
 			players[i].mo->momz += FixedMul(10*FRACUNIT, actor->scale)*P_MobjFlip(players[i].mo); // How we're doing it
 			if (explosionType != MT_NULL)
@@ -13266,7 +13262,7 @@ void A_Boss5FindWaypoint(mobj_t *actor)
 nowaypoints:
 	// no waypoints at all, guess the mobj has to disappear
 	if (actor->health)
-		P_KillMobj(actor, NULL, NULL, 0);
+		P_KillMobj(actor, NULL, NULL, DMG_NORMAL);
 	else
 		P_RemoveMobj(actor);
 	return;
@@ -13815,7 +13811,7 @@ static boolean PIT_TNTExplode(mobj_t *nearby)
 		{
 			mobj_t *tar = barrel->target; // temporarily store barrel's target
 			P_SetTarget(&barrel->target, NULL);
-			P_DamageMobj(nearby, barrel, NULL, 1, 0);
+			P_DamageMobj(nearby, barrel, NULL, 1, DMG_NORMAL);
 			if (!P_MobjWasRemoved(barrel))
 				P_SetTarget(&barrel->target, tar);
 		}
@@ -13824,7 +13820,7 @@ static boolean PIT_TNTExplode(mobj_t *nearby)
 			P_DamageMobj(nearby,
 				(barrel->target) ? barrel->target : barrel,
 				(barrel->target) ? barrel->target : barrel,
-				1, 0);
+				1, DMG_NORMAL);
 		}
 	}
 

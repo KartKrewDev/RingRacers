@@ -212,12 +212,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		/////ENEMIES & BOSSES!!/////////////////////////////////
 		////////////////////////////////////////////////////////
 
-		P_DamageMobj(toucher, special, special, 1, 0);
-		return;
-	}
-	else if (special->flags & MF_FIRE)
-	{
-		P_DamageMobj(toucher, special, special, 1, DMG_FIRE);
+		P_DamageMobj(toucher, special, special, 1, DMG_NORMAL);
 		return;
 	}
 	else
@@ -269,7 +264,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
-			P_KillMobj(special, toucher, toucher, 0);
+			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
 		case MT_KARMAHITBOX:
 			if (!special->target->player)
@@ -281,15 +276,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->target->player->exiting || player->exiting)
 				return;
 
-			if (special->target->player->kartstuff[k_comebacktimer]
-				|| special->target->player->kartstuff[k_spinouttimer]
-				|| special->target->player->kartstuff[k_squishedtimer])
+			if (P_PlayerInPain(special->target->player))
 				return;
 
 			if (!special->target->player->kartstuff[k_comebackmode])
 			{
 				if (player->kartstuff[k_growshrinktimer] || player->kartstuff[k_squishedtimer]
-					|| player->kartstuff[k_hyudorotimer] || player->kartstuff[k_spinouttimer]
+					|| player->kartstuff[k_hyudorotimer] || P_PlayerInPain(player)
 					|| player->kartstuff[k_invincibilitytimer] || player->powers[pw_flashing])
 					return;
 				else
@@ -327,11 +320,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						special->target->player->karthud[khud_yougotem] = 2*TICRATE;
 
 					if (special->target->player->kartstuff[k_comebackpoints] >= 2)
-						K_StealBumper(special->target->player, player, true);
+						K_StealBumper(special->target->player, player);
 
 					special->target->player->kartstuff[k_comebacktimer] = comebacktime;
 
-					K_ExplodePlayer(player, special->target, special);
+					P_DamageMobj(toucher, special, special->target, 1, DMG_EXPLODE);
 				}
 			}
 			else if (special->target->player->kartstuff[k_comebackmode] == 1 && P_CanPickupItem(player, 1))
@@ -355,7 +348,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				special->target->player->kartstuff[k_comebackpoints]++;
 
 				if (special->target->player->kartstuff[k_comebackpoints] >= 2)
-					K_StealBumper(special->target->player, player, true);
+					K_StealBumper(special->target->player, player);
 				special->target->player->kartstuff[k_comebacktimer] = comebacktime;
 
 				player->kartstuff[k_itemroulette] = 1;
@@ -390,7 +383,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					special->target->player->karthud[khud_yougotem] = 2*TICRATE;
 
 				if (special->target->player->kartstuff[k_comebackpoints] >= 2)
-					K_StealBumper(special->target->player, player, true);
+					K_StealBumper(special->target->player, player);
 
 				special->target->player->kartstuff[k_comebacktimer] = comebacktime;
 
@@ -443,7 +436,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				P_RemoveMobj(special);
 			}
 			else
-				K_SpinPlayer(player, special->target, 0, special, false);
+			{
+				P_DamageMobj(player->mo, special, special->target, 1, DMG_NORMAL);
+			}
 			return;
 		/*case MT_EERIEFOG:
 			special->frame &= ~FF_TRANS80;
@@ -464,13 +459,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				|| player->kartstuff[k_growshrinktimer] > 0
 				|| player->kartstuff[k_flamedash] > 0)
 			{
-				P_KillMobj(special, toucher, toucher, 0);
+				P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 				return;
 			}
 
 			// no interaction
 			if (player->powers[pw_flashing] > 0 || player->kartstuff[k_hyudorotimer] > 0
-				|| player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0)
+				|| player->kartstuff[k_squishedtimer] > 0 || P_PlayerInPain(player))
 				return;
 
 			// attach to player!
@@ -538,9 +533,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// Don't immediately pick up spilled rings
-			if (special->threshold > 0
-			|| player->kartstuff[k_squishedtimer]
-			|| player->kartstuff[k_spinouttimer])
+			if (special->threshold > 0 || P_PlayerInPain(player))
 				return;
 
 			if (!(P_CanPickupItem(player, 0)))
@@ -677,7 +670,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 	}
 
 	S_StartSound(toucher, special->info->deathsound); // was NULL, but changed to player so you could hear others pick up rings
-	P_KillMobj(special, NULL, toucher, 0);
+	P_KillMobj(special, NULL, toucher, DMG_NORMAL);
 	special->shadowscale = 0;
 }
 
@@ -1269,7 +1262,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				mobj_t *segment = target;
 				while (segment->tracer != NULL)
 				{
-					P_KillMobj(segment->tracer, NULL, NULL, 0);
+					P_KillMobj(segment->tracer, NULL, NULL, DMG_NORMAL);
 					segment = segment->tracer;
 				}
 				break;
@@ -1345,7 +1338,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			A_Scream(target);
 			target->momx = target->momy = target->momz = 0;
 			if (target->target && target->target->health)
-				P_KillMobj(target->target, target, source, 0);
+				P_KillMobj(target->target, target, source, DMG_NORMAL);
 			break;
 
 		case MT_PLAYER:
@@ -1356,23 +1349,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				if (target->player && target->player->pflags & PF_GAMETYPEOVER)
 					break;
 
-				if (damagetype == DMG_DROWNED) // drowned
-				{
-					target->movedir = damagetype; // we're MOVING the Damage Into anotheR function... Okay, this is a bit of a hack.
-					if (target->player->charflags & SF_MACHINE)
-						S_StartSound(target, sfx_fizzle);
-					else
-						S_StartSound(target, sfx_drown);
-					// Don't jump up when drowning
-				}
-				else
-				{
-					P_SetObjectMomZ(target, 14*FRACUNIT, false);
-					if (damagetype == DMG_SPIKE) // Spikes
-						S_StartSound(target, sfx_spkdth);
-					else
-						P_PlayDeathSound(target);
-				}
+				P_SetObjectMomZ(target, 14*FRACUNIT, false);
+				P_PlayDeathSound(target);
 			}
 			break;
 
@@ -1450,7 +1428,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	if (target->type == MT_FROGGER)
 	{
 		if (target->tracer && !P_MobjWasRemoved(target->tracer))
-			P_KillMobj(target->tracer, inflictor, source, 0);
+			P_KillMobj(target->tracer, inflictor, source, DMG_NORMAL);
 	}
 
 	if (target->type == MT_FROGGER || target->type == MT_ROBRA_HEAD || target->type == MT_BLUEROBRA_HEAD) // clean hnext list
@@ -1458,7 +1436,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		mobj_t *cur = target->hnext;
 		while (cur && !P_MobjWasRemoved(cur))
 		{
-			P_KillMobj(cur, inflictor, source, 0);
+			P_KillMobj(cur, inflictor, source, DMG_NORMAL);
 			cur = cur->hnext;
 		}
 	}
@@ -1644,12 +1622,19 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 	(void)inflictor;
 	(void)damage;
 
-	// SRB2Kart: We want to hurt ourselves
+	// SRB2Kart: We want to hurt ourselves, so it's now DMG_CANTHURTSELF
 	if (damagetype & DMG_CANTHURTSELF)
 	{
 		// You can't kill yourself, idiot...
 		if (source == target)
 			return false;
+
+		if (G_GametypeHasTeams())
+		{
+			// Don't hurt your team, either!
+			if (source->player->ctfteam == target->player->ctfteam)
+				return false;
+		}
 	}
 
 	return true;
@@ -1817,20 +1802,24 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
+		const UINT8 type = (damagetype & DMG_TYPEMASK);
+		const boolean combo = (type == DMG_EXPLODE); // This damage type can be comboed from other damage
+		INT16 ringburst = 5;
+
+		if (player->pflags & PF_GODMODE)
+			return false;
+
 		if (!force)
 		{
 			if (player->exiting)
 				return false;
 
-			if (player->pflags & PF_GODMODE)
-				return false;
-		}
-
-		// Player hits another player
-		if (!force && source && source->player)
-		{
-			if (!P_PlayerHitsPlayer(target, inflictor, source, damage, damagetype))
-				return false;
+			// Player hits another player
+			if (source && source->player)
+			{
+				if (!P_PlayerHitsPlayer(target, inflictor, source, damage, damagetype))
+					return false;
+			}
 		}
 
 		// Instant-Death
@@ -1839,25 +1828,117 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		else if (LUAh_MobjDamage(target, inflictor, source, damage, damagetype))
 			return true;
 
-		if (inflictor && (inflictor->type == MT_ORBINAUT || inflictor->type == MT_ORBINAUT_SHIELD
-			|| inflictor->type == MT_JAWZ || inflictor->type == MT_JAWZ_SHIELD || inflictor->type == MT_JAWZ_DUD
-			|| inflictor->type == MT_SMK_THWOMP || inflictor->player))
+		// Check if the player is allowed to be damaged!
+		// If not, then spawn the instashield effect instead.
+		if (!force)
 		{
-			player->kartstuff[k_sneakertimer] = 0;
-			player->kartstuff[k_numsneakers] = 0;
+			if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
+			{
+				// Full invulnerability
+				K_DoInstashield(player);
+				return false;
+			}
 
-			K_SpinPlayer(player, source, 1, inflictor, false);
-			K_KartPainEnergyFling(player);
+			if (combo == false)
+			{
+				if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2))
+				{
+					// Post-hit invincibility
+					K_DoInstashield(player);
+					return false;
+				}
+			}
 
-			if (P_IsDisplayPlayer(player))
-				P_StartQuake(32<<FRACBITS, 5);
+			if (gametyperules & GTR_BUMPERS)
+			{
+				if ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)
+				{
+					// No bumpers, can't be hurt
+					K_DoInstashield(player);
+					return false;
+				}
+			}
+			else
+			{
+				if (damagetype & DMG_STEAL)
+				{
+					// Gametype does not have bumpers, steal damage is intended to not do anything
+					// (No instashield is intentional)
+					return false;
+				}
+			}
+		}
+
+		// We successfully hit 'em!
+		if (type != DMG_STING)
+		{
+			if (source && source != player->mo && source->player)
+			{
+				K_PlayHitEmSound(source);
+
+				if (damagetype & DMG_STEAL)
+				{
+					K_StealBumper(source->player, player);
+				}
+			}
+
+			K_RemoveBumper(player, inflictor, source);
+		}
+
+		player->kartstuff[k_sneakertimer] = player->kartstuff[k_numsneakers] = 0;
+		player->kartstuff[k_driftboost] = 0;
+		player->kartstuff[k_ringboost] = 0;
+
+		player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
+		player->kartstuff[k_pogospring] = 0;
+
+		switch (type)
+		{
+			case DMG_STING:
+				K_DebtStingPlayer(player, source);
+				K_KartPainEnergyFling(player);
+				ringburst = 0;
+				break;
+			case DMG_EXPLODE:
+				K_ExplodePlayer(player, inflictor, source);
+				break;
+			case DMG_WIPEOUT:
+				if (P_IsDisplayPlayer(player))
+					P_StartQuake(32<<FRACBITS, 5);
+
+				K_SpinPlayer(player, inflictor, source, 1);
+				K_KartPainEnergyFling(player);
+				break;
+			case DMG_NORMAL:
+			default:
+				K_SpinPlayer(player, inflictor, source, 0);
+				break;
+		}
+
+		if (type != DMG_STING)
+			player->powers[pw_flashing] = K_GetKartFlashing(player);
+
+		P_PlayRinglossSound(player->mo);
+		P_PlayerRingBurst(player, ringburst);
+		K_PlayPainSound(player->mo);
+
+		if ((type == DMG_EXPLODE) || (cv_kartdebughuddrop.value && !modeattacking))
+		{
+			K_DropItems(player);
 		}
 		else
 		{
-			K_SpinPlayer(player, source, 0, inflictor, false);
+			K_DropHnextList(player, false);
 		}
 
+		player->kartstuff[k_instashield] = 15;
 		return true;
+	}
+
+	if (damagetype & DMG_STEAL)
+	{
+		// Not a player, steal damage is intended to not do anything
+		return false;
 	}
 
 	// do the damage

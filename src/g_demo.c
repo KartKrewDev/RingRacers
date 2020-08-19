@@ -959,7 +959,7 @@ void G_ConsGhostTic(INT32 playernum)
 					if (demosynced)
 						CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
 					demosynced = false;
-					P_DamageMobj(mobj, players[0].mo, players[0].mo, 1, 0);
+					P_DamageMobj(mobj, players[0].mo, players[0].mo, 1, DMG_NORMAL);
 				}
 			}
 		}
@@ -1543,7 +1543,7 @@ void G_ReadMetalTic(mobj_t *metal)
 		case METALDEATH:
 			if (metal->tracer)
 				P_RemoveMobj(metal->tracer);
-			P_KillMobj(metal, NULL, NULL, 0);
+			P_KillMobj(metal, NULL, NULL, DMG_NORMAL);
 			/* FALLTHRU */
 		case DEMOMARKER:
 		default:

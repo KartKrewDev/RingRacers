@@ -739,7 +739,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			}
 			break;
 		default:
-			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE|MF_FIRE))
+			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE))
 			{
 				K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
 			}

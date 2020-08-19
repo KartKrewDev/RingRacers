@@ -3828,7 +3828,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					if (mo2->spawnpoint->angle != line->tag)
 						continue;
 
-					P_KillMobj(mo2, NULL, mo, 0);
+					P_KillMobj(mo2, NULL, mo, DMG_NORMAL);
 				}
 
 				if (!(line->flags & ML_NOCLIMB))
@@ -4438,7 +4438,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 	{
 		case 1: // Damage (Generic)
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-				P_DamageMobj(player->mo, NULL, NULL, 1, 0);
+				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_NORMAL);
 			break;
 		case 2: // Damage (Water) // SRB2kart - These three damage types are now offroad sectors
 		case 3: // Damage (Fire)
@@ -4446,7 +4446,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			break;
 		case 5: // Spikes
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_SPIKE);
+				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_NORMAL);
 			break;
 		case 6: // Death Pit (Camera Mod)
 		case 7: // Death Pit (No Camera Mod)
@@ -4565,7 +4565,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 				mo2 = (mobj_t *)th;
 				if (mo2->type != MT_EGGTRAP)
 					continue;
-				P_KillMobj(mo2, NULL, player->mo, 0);
+				P_KillMobj(mo2, NULL, player->mo, DMG_NORMAL);
 			}
 
 			// clear the special so you can't push the button twice.
@@ -5862,9 +5862,9 @@ void T_LaserFlash(laserthink_t *flash)
 					continue;
 
 				if (thing->flags & MF_SHOOTABLE)
-					P_DamageMobj(thing, NULL, NULL, 1, 0);
+					P_DamageMobj(thing, NULL, NULL, 1, DMG_NORMAL);
 				else if (thing->type == MT_EGGSHIELD)
-					P_KillMobj(thing, NULL, NULL, 0);
+					P_KillMobj(thing, NULL, NULL, DMG_NORMAL);
 			}
 
 			break;

@@ -463,12 +463,14 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	// no silly, sliding isn't pain
-	if (!(player->pflags & PF_SLIDING) && player->mo->state == &states[player->mo->info->painstate] && player->powers[pw_flashing])
+	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer] || player->respawn.state != RESPAWNST_NONE)
 		return true;
 
-	if (player->mo->state == &states[S_KART_SQUISH])
-		return true;
+	if (gametyperules & GTR_KARMA)
+	{
+		if (player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
+			return true;
+	}
 
 	return false;
 }
@@ -1937,19 +1939,22 @@ static void P_3dMovement(player_t *player)
 	player->aiming = cmd->aiming<<FRACBITS;
 
 	// Forward movement
-	if (!(P_PlayerInPain(player) && !onground))
+	if (!P_PlayerInPain(player))
 	{
-		movepushforward = K_3dKartMovement(player, onground);
+		if (onground)
+		{
+			movepushforward = K_3dKartMovement(player, onground);
 
-		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
-			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
+			if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
+				movepushforward = FixedMul(movepushforward, player->mo->movefactor);
 
-		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
-		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
-	}
-	else if (!(player->kartstuff[k_spinouttimer]))
-	{
-		K_MomentumToFacing(player);
+			totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
+			totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
+		}
+		else
+		{
+			K_MomentumToFacing(player);
+		}
 	}
 
 	if ((totalthrust.x || totalthrust.y)
@@ -2525,7 +2530,7 @@ static void P_NukeAllPlayers(player_t *player)
 		if (players[i].mo->health <= 0)
 			continue;
 
-		P_DamageMobj(players[i].mo, player->mo, player->mo, 1, 0);
+		P_DamageMobj(players[i].mo, player->mo, player->mo, 1, DMG_NORMAL);
 	}
 
 	CONS_Printf(M_GetText("%s caused a world of pain.\n"), player_names[player-players]);
@@ -2540,24 +2545,10 @@ static void P_NukeAllPlayers(player_t *player)
 //
 void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 {
-	const fixed_t ns = 60 * mapobjectscale;
 	mobj_t *mo;
-	angle_t fa;
 	thinker_t *think;
-	INT32 i;
 
 	radius = FixedMul(radius, mapobjectscale);
-
-	for (i = 0; i < 16; i++)
-	{
-		fa = (i*(FINEANGLES/16));
-		mo = P_SpawnMobj(inflictor->x, inflictor->y, inflictor->z, MT_SUPERSPARK);
-		if (!P_MobjWasRemoved(mo))
-		{
-			mo->momx = FixedMul(FINESINE(fa),ns);
-			mo->momy = FixedMul(FINECOSINE(fa),ns);
-		}
-	}
 
 	for (think = thlist[THINK_MOBJ].next; think != &thlist[THINK_MOBJ]; think = think->next)
 	{
@@ -2579,9 +2570,9 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 			continue;
 
 		if (mo->flags & MF_BOSS || mo->type == MT_PLAYER) //don't OHKO bosses nor players!
-			P_DamageMobj(mo, inflictor, source, 1, DMG_NUKE);
+			P_DamageMobj(mo, inflictor, source, 1, DMG_NORMAL|DMG_CANTHURTSELF);
 		else
-			P_DamageMobj(mo, inflictor, source, 1000, DMG_NUKE);
+			P_DamageMobj(mo, inflictor, source, 1000, DMG_NORMAL|DMG_CANTHURTSELF);
 	}
 }
 
@@ -4538,7 +4529,7 @@ void P_PlayerThink(player_t *player)
 
 	// Strength counts up to diminish fade.
 	if (player->powers[pw_flashing] && player->powers[pw_flashing] < UINT16_MAX &&
-		(player->spectator || player->powers[pw_flashing] < K_GetKartFlashing(player)))
+		(player->spectator || !P_PlayerInPain(player)))
 		player->powers[pw_flashing]--;
 
 	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)

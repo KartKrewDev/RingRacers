@@ -4063,16 +4063,19 @@ void K_drawKartHUD(void)
 		INT32 x = 0, y = 0;
 		UINT16 c;
 
-		for (c = 1; c < MAXSKINCOLORS; c++)
+		for (c = 0; c < numskincolors; c++)
 		{
-			UINT8 *cm = R_GetTranslationColormap(TC_RAINBOW, c, GTC_CACHE);
-			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT>>1, 0, faceprefix[stplyr->skin][FACE_WANTED], cm);
-
-			x += 16;
-			if (x > BASEVIDWIDTH-16)
+			if (skincolors[c].accessible)
 			{
-				x = 0;
-				y += 16;
+				UINT8 *cm = R_GetTranslationColormap(TC_RAINBOW, c, GTC_CACHE);
+				V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT>>1, 0, faceprefix[stplyr->skin][FACE_WANTED], cm);
+
+				x += 16;
+				if (x > BASEVIDWIDTH-16)
+				{
+					x = 0;
+					y += 16;
+				}
 			}
 		}
 	}

@@ -460,23 +460,21 @@ typedef struct BasicFF_s
 
 /* Damage/death types, for P_DamageMobj and related */
 //// Damage types
-//#define DMG_NORMAL 0 (unneeded?)
-#define DMG_WATER     1
-#define DMG_FIRE      2
-#define DMG_ELECTRIC  3
-#define DMG_SPIKE     4
-#define DMG_NUKE      5 // bomb shield
-//#define DMG_SPECIALSTAGE 6
+#define DMG_NORMAL  0x00
+#define DMG_WIPEOUT 0x01 // Normal, but with extra flashy effects
+#define DMG_EXPLODE 0x02
+#define DMG_SQUISH  0x03
+#define DMG_STING   0x04
 //// Death types - cannot be combined with damage types
 #define DMG_INSTAKILL  0x80
-#define DMG_DROWNED    0x80+1
-#define DMG_SPACEDROWN 0x80+2
-#define DMG_DEATHPIT   0x80+3
-#define DMG_CRUSHED    0x80+4
-#define DMG_SPECTATOR  0x80+5
+#define DMG_DEATHPIT   0x81
+#define DMG_CRUSHED    0x82
+#define DMG_SPECTATOR  0x83
 // Masks
+#define DMG_STEAL        0x20 // Flag - can steal bumpers, will only deal damage to players, and will not deal damage outside Battle Mode.
 #define DMG_CANTHURTSELF 0x40 // Flag - cannot hurt your self or your team
-#define DMG_DEATHMASK  DMG_INSTAKILL // if bit 7 is set, this is a death type instead of a damage type
+#define DMG_DEATHMASK    DMG_INSTAKILL // if bit 7 is set, this is a death type instead of a damage type
+#define DMG_TYPEMASK     0x0F // Get type without any flags
 
 void P_ForceFeed(const player_t *player, INT32 attack, INT32 fade, tic_t duration, INT32 period);
 void P_ForceConstant(const BasicFF_t *FFInfo);
