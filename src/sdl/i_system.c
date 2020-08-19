@@ -1489,8 +1489,6 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 #undef WINMUMBLE
 #endif // NOMUMBLE
 
-#endif // HAVE_SDL
-
 //
 // I_Tactile
 //
@@ -1940,13 +1938,15 @@ void I_Error(const char *error, ...)
 #endif
 	G_SaveGameData(); // Tails 12-08-2002
 
+	// Shutdown. Here might be other errors.
+
 	/* Prevent segmentation fault if testers go to Record Attack... */
 #ifndef TESTERS
-	// Shutdown. Here might be other errors.
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording(false);
+#endif
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
@@ -2677,4 +2677,5 @@ const CPUInfoFlags *I_CPUInfo(void)
 
 // note CPUAFFINITY code used to reside here
 void I_RegisterSysCommands(void) {}
-#endif
+
+#endif // HAVE_SDL
