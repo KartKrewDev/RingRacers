@@ -164,6 +164,9 @@ static void P_NetArchivePlayers(void)
 		WRITEINT32(save_p, players[i].ctfteam);
 		WRITEUINT16(save_p, players[i].gotflag);
 
+		WRITEINT32(save_p, players[i].weapondelay);
+		WRITEINT32(save_p, players[i].tossdelay);
+
 		WRITEANGLE(save_p, players[i].angle_pos);
 		WRITEANGLE(save_p, players[i].old_angle_pos);
 
@@ -200,6 +203,15 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].texttimer);
 		WRITEUINT8(save_p, players[i].textvar);
 
+		if (players[i].awayviewmobj)
+			flags |= AWAYVIEW;
+
+		if (players[i].followmobj)
+			flags |= FOLLOWITEM;
+
+		if (players[i].follower)
+			flags |= FOLLOWER;
+
 		WRITEINT16(save_p, players[i].lastsidehit);
 		WRITEINT16(save_p, players[i].lastlinehit);
 
@@ -214,15 +226,6 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].splitscreenindex);
 
-		if (players[i].awayviewmobj)
-			flags |= AWAYVIEW;
-
-		if (players[i].followmobj)
-			flags |= FOLLOWITEM;
-
-		if (players[i].follower)
-			flags |= FOLLOWER;
-
 		WRITEUINT16(save_p, flags);
 
 		if (flags & AWAYVIEW)
@@ -230,6 +233,7 @@ static void P_NetArchivePlayers(void)
 
 		if (flags & FOLLOWITEM)
 			WRITEUINT32(save_p, players[i].followmobj->mobjnum);
+		
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
 		WRITEUINT32(save_p, players[i].charflags);
@@ -420,6 +424,7 @@ static void P_NetUnArchivePlayers(void)
 
 		if (flags & FOLLOWITEM)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save_p);
+		
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
@@ -434,8 +439,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].followercolor = READUINT8(save_p);
 		if (flags & FOLLOWER)
 			players[i].follower = (mobj_t *)(size_t)READUINT32(save_p);
-
-		//
 
 		for (j = 0; j < NUMKARTSTUFF; j++)
 			players[i].kartstuff[j] = READINT32(save_p);
