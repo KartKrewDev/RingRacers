@@ -436,7 +436,7 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].followerskin = READUINT8(save_p);
 		players[i].followerready = READUINT8(save_p);
-		players[i].followercolor = READUINT8(save_p);
+		players[i].followercolor = READUINT16(save_p);
 		if (flags & FOLLOWER)
 			players[i].follower = (mobj_t *)(size_t)READUINT32(save_p);
 
