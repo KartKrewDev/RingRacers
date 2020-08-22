@@ -4880,7 +4880,7 @@ static void Command_Archivetest_f(void)
 
 	// test archive
 	CONS_Printf("LUA_Archive...\n");
-	LUA_Archive(save_p);
+	LUA_Archive(&save_p);
 	WRITEUINT8(save_p, 0x7F);
 	wrote = (UINT32)(save_p-buf);
 
@@ -4891,7 +4891,7 @@ static void Command_Archivetest_f(void)
 	// test unarchive
 	save_p = buf;
 	CONS_Printf("LUA_UnArchive...\n");
-	LUA_UnArchive(save_p);
+	LUA_UnArchive(&save_p);
 	i = READUINT8(save_p);
 	if (i != 0x7F || wrote != (UINT32)(save_p-buf))
 		CONS_Printf("Savegame corrupted. (write %u, read %u)\n", wrote, (UINT32)(save_p-buf));

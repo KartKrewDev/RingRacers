@@ -4373,7 +4373,7 @@ void P_SaveNetGame(void)
 		P_NetArchiveTubeWaypoints();
 		P_NetArchiveWaypoints();
 	}
-	LUA_Archive(save_p);
+	LUA_Archive(&save_p);
 
 	P_ArchiveLuabanksAndConsistency();
 }
@@ -4417,7 +4417,7 @@ boolean P_LoadNetGame(void)
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}
-	LUA_UnArchive(save_p);
+	LUA_UnArchive(&save_p);
 
 	// This is stupid and hacky, but maybe it'll work!
 	P_SetRandSeed(P_GetInitSeed());

@@ -54,8 +54,8 @@ void LUA_InvalidateLevel(void);
 void LUA_InvalidateMapthings(void);
 void LUA_InvalidatePlayer(player_t *player);
 void LUA_Step(void);
-void LUA_Archive(UINT8 *p);
-void LUA_UnArchive(UINT8 *p);
+void LUA_Archive(UINT8 **p);
+void LUA_UnArchive(UINT8 **p);
 
 int LUA_PushGlobals(lua_State *L, const char *word);
 int LUA_WriteGlobals(lua_State *L, const char *word);
