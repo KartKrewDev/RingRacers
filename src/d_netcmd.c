@@ -262,10 +262,10 @@ consvar_t cv_allowseenames = {"allowseenames", "No", CV_NETVAR, CV_YesNo, NULL, 
 
 // names
 consvar_t cv_playername[MAXSPLITSCREENPLAYERS] = {
-	{"name", "Sonic", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"name", "Dr. Eggman", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"name2", "Tails", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name2_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"name3", "Knuckles", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"name4", "Dr. Eggman", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name4_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"name3", "Sonic", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name3_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"name4", "Knuckles", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 // player colors
 UINT16 lastgoodcolor[MAXSPLITSCREENPLAYERS] = {SKINCOLOR_BLUE, SKINCOLOR_BLUE, SKINCOLOR_BLUE, SKINCOLOR_BLUE};
@@ -273,14 +273,14 @@ consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS] = {
 	{"color", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"color2", "Orange", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color2_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"color3", "Blue", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"color4", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"color4", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 // player's skin, saved for commodity, when using a favorite skins wad..
 consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
 	{"skin", DEFAULTSKIN, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"skin2", DEFAULTSKIN2, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin2_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"skin3", DEFAULTSKIN3, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"skin4", DEFAULTSKIN4, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin4_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"skin4", DEFAULTSKIN4, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 
 // player's followers. Also saved.
@@ -288,7 +288,7 @@ consvar_t cv_follower[MAXSPLITSCREENPLAYERS] = {
 	{"follower", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 
 // player's follower colors... Also saved...
@@ -296,7 +296,7 @@ consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS] = {
 	{"followercolor", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"followercolor2", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange, 0, NULL, NULL, 0, 0, NULL},
 	{"followercolor3", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"followercolor4", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"followercolor4", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 
 
@@ -543,7 +543,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"ADDFILE",
 	"PAUSE",
 	"ADDPLAYER",
-	"TEAMCHANGE"
+	"TEAMCHANGE",
 	"CLEARSCORES",
 	"VERIFIED",
 	"RANDOMSEED",
@@ -1478,8 +1478,9 @@ static void SendNameAndColor(UINT8 n)
 	WRITEUINT32(p, (UINT32)player->availabilities);
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
-	WRITESINT8(p, (UINT8)cv_follower[n].value);
+	WRITESINT8(p, (SINT8)cv_follower[n].value);
 	WRITEUINT16(p, (UINT8)cv_followercolor[n].value);
+
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
 
@@ -1511,6 +1512,13 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 			// i is now player screen id
 			break;
 		}
+	}
+
+	if (i > splitscreen)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal color change received from %s (team: %d), color: %d)\n"), player_names[playernum], p->ctfteam, p->skincolor);
+		SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+		return;
 	}
 
 	READSTRINGN(*cp, name, MAXPLAYERNAME);
@@ -1810,17 +1818,17 @@ void D_SendPlayerConfig(void)
 		SendNameAndColor(i);
 		SendWeaponPref(i);
 
-		if (i > 0)
-		{
-			// Splitscreen players have invalid powerlevel
-			WRITEUINT16(p, 0);
-			WRITEUINT16(p, 0);
-		}
-		else
+		if (i == 0)
 		{
 			// Send it over
 			WRITEUINT16(p, vspowerlevel[PWRLV_RACE]);
 			WRITEUINT16(p, vspowerlevel[PWRLV_BATTLE]);
+		}
+		else
+		{
+			// Splitscreen players have invalid powerlevel
+			WRITEUINT16(p, 0);
+			WRITEUINT16(p, 0);
 		}
 
 		SendNetXCmdForPlayer(i, XD_POWERLEVEL, buf, p-buf);
@@ -3668,7 +3676,7 @@ static void Command_RemoveAdmin_f(void)
 
 static void Got_Removal(UINT8 **cp, INT32 playernum)
 {
-	INT16 num = READUINT8(*cp);
+	UINT8 num = READUINT8(*cp);
 
 	if (playernum != serverplayer) // it's not from the server (hacker or bug)
 	{
