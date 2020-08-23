@@ -9511,7 +9511,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 #define charw 72
 #define indexwidth 8
 	{
-		const INT32 numcolors = (282-charw)/(2*indexwidth); // Number of colors per side
+		const INT32 numcolors = (250-charw)/(2*indexwidth); // Number of colors per side
 		INT32 x = mx;
 		INT32 w = indexwidth; // Width of a singular color block
 		menucolor_t *mc = setupm_fakecolor->prev; // Last accessed color
@@ -10078,6 +10078,11 @@ static boolean M_QuitMultiPlayerMenu(void)
 
 void M_AddMenuColor(UINT16 color) {
 	menucolor_t *c;
+
+	// SRB2Kart: I do not understand vanilla doesn't need this but WE do???!?!??!
+	if (!skincolors[color].accessible) {
+		return;
+	}
 
 	if (color >= numskincolors) {
 		CONS_Printf("M_AddMenuColor: color %d does not exist.",color);
