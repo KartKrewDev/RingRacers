@@ -2047,7 +2047,7 @@ void G_BeginRecording(void)
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
 	memset(&ghostext,0,sizeof(ghostext));
-	
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		ghostext[i].lastcolor = ghostext[i].color = GHC_NORMAL;
@@ -2526,7 +2526,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
 	info_p += 4; // RNG seed
 
-	extrainfo_p = infobuffer + READUINT32(info_p);
+	extrainfo_p = infobuffer;
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
 	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
