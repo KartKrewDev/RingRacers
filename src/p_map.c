@@ -2248,6 +2248,12 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 		}
 	}
 
+	if (i > r_splitscreen)
+	{
+		// Shouldn't happen
+		return;
+	}
+
 	if (players[displayplayers[i]].mo)
 	{
 		fixed_t tryx = thiscam->x;
