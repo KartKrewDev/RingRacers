@@ -3872,6 +3872,9 @@ static boolean SV_AddWaitingPlayers(const char *name, const char *name2, const c
 
 			playernode[newplayernum] = (UINT8)node;
 
+			// Reset the buffer to the start for multiple joiners
+			buf_p = buf;
+
 			WRITEUINT8(buf_p, (UINT8)node);
 			WRITEUINT8(buf_p, newplayernum);
 
