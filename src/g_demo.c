@@ -1965,6 +1965,8 @@ void G_BeginRecording(void)
 			break;
 	}
 
+	WRITEUINT32(demo_p,P_GetInitSeed());
+
 	// Reserved for extrainfo location from start of file
 	demoinfo_p = demo_p;
 	WRITEUINT32(demo_p, 0);
@@ -2526,7 +2528,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
 	info_p += 4; // RNG seed
 
-	extrainfo_p = infobuffer;
+	extrainfo_p = infobuffer + READUINT32(info_p); // The extra UINT32 read is for a blank 4 bytes?
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
 	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
