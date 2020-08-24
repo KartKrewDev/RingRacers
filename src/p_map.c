@@ -725,7 +725,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
 		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
-		|| tmthing->type == MT_SSMINE || tmthing->type == MT_SINK
+		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
 		|| (tmthing->type == MT_PLAYER && thing->target != tmthing)))
 	{
 		// see if it went over / under
@@ -783,7 +783,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		|| (tmthing->player && tmthing->player->kartstuff[k_bubbleblowup]))
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| (thing->type == MT_PLAYER && tmthing->target != thing)))
 	{
 		// see if it went over / under
@@ -926,6 +926,27 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return true; // underneath
 
 		return K_MineExplosionCollide(thing, tmthing);
+	}
+
+	if (tmthing->type == MT_LANDMINE)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		return K_LandMineCollide(tmthing, thing);
+	}
+	else if (thing->type == MT_LANDMINE)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		return K_LandMineCollide(thing, tmthing);
 	}
 
 	if (tmthing->type == MT_SINK)

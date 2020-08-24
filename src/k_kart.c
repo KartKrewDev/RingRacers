@@ -151,6 +151,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_orbinaut);
 	CV_RegisterVar(&cv_jawz);
 	CV_RegisterVar(&cv_mine);
+	CV_RegisterVar(&cv_landmine);
 	CV_RegisterVar(&cv_ballhog);
 	CV_RegisterVar(&cv_selfpropelledbomb);
 	CV_RegisterVar(&cv_grow);
@@ -252,6 +253,7 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_orbinaut,
 	&cv_jawz,
 	&cv_mine,
+	&cv_landmine,
 	&cv_ballhog,
 	&cv_selfpropelledbomb,
 	&cv_grow,
@@ -281,11 +283,12 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
 		 /*Invincibility*/ { 0, 0, 0, 0, 2, 4, 6, 9 }, // Invincibility
-				/*Banana*/ { 7, 3, 1, 0, 0, 0, 0, 0 }, // Banana
-		/*Eggman Monitor*/ { 3, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
+				/*Banana*/ { 6, 3, 1, 0, 0, 0, 0, 0 }, // Banana
+		/*Eggman Monitor*/ { 2, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
 			  /*Orbinaut*/ { 7, 4, 2, 2, 0, 0, 0, 0 }, // Orbinaut
 				  /*Jawz*/ { 0, 3, 2, 1, 1, 0, 0, 0 }, // Jawz
 				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
+			 /*Land Mine*/ { 2, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
 			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 1, 2, 3, 4, 2, 2, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
@@ -317,6 +320,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 			  /*Orbinaut*/ { 8, 0 }, // Orbinaut
 				  /*Jawz*/ { 8, 1 }, // Jawz
 				  /*Mine*/ { 4, 1 }, // Mine
+			 /*Land Mine*/ { 0, 0 }, // Land Mine
 			   /*Ballhog*/ { 2, 1 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 2, 1 }, // Grow
@@ -525,6 +529,7 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 			case KITEM_ORBINAUT:
 			case KITEM_JAWZ:
 			case KITEM_MINE:
+			case KITEM_LANDMINE:
 			case KITEM_BALLHOG:
 			case KITEM_SPB:
 			case KITEM_GROW:
@@ -553,6 +558,7 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 	{
 		case KITEM_ROCKETSNEAKER:
 		case KITEM_JAWZ:
+		case KITEM_LANDMINE:
 		case KITEM_BALLHOG:
 		case KRITEM_TRIPLESNEAKER:
 		case KRITEM_TRIPLEBANANA:
@@ -4201,6 +4207,40 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		S_StartSound(mo, (sound == 1 ? sfx_kc2f : sfx_kpogos));
 }
 
+static void K_ThrowLandMine(player_t *player)
+{
+	mobj_t *landMine;
+	mobj_t *throwmo;
+
+	landMine = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_LANDMINE);
+	K_FlipFromObject(landMine, player->mo);
+	landMine->threshold = 10;
+
+	if (landMine->info->seesound)
+		S_StartSound(player->mo, landMine->info->seesound);
+
+	P_SetTarget(&landMine->target, player->mo);
+
+	P_SetScale(landMine, player->mo->scale);
+	landMine->destscale = player->mo->destscale;
+
+	landMine->angle = player->mo->angle;
+
+	landMine->momz = (30 * mapobjectscale * P_MobjFlip(player->mo)) + player->mo->momz;
+	landMine->color = player->skincolor;
+
+	throwmo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_FIREDITEM);
+	P_SetTarget(&throwmo->target, player->mo);
+	// Ditto:
+	if (player->mo->eflags & MFE_VERTICALFLIP)
+	{
+		throwmo->z -= player->mo->height;
+		throwmo->eflags |= MFE_VERTICALFLIP;
+	}
+
+	throwmo->movecount = 0; // above player
+}
+
 void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source)
 {
 	mobj_t *cachenext;
@@ -7467,6 +7507,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								player->kartstuff[k_itemamount]--;
 								player->kartstuff[k_itemheld] = 0;
 								K_UpdateHnextList(player, true);
+							}
+							break;
+						case KITEM_LANDMINE:
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							{
+								player->kartstuff[k_itemamount]--;
+								K_ThrowLandMine(player);
+								K_PlayAttackTaunt(player->mo);
 							}
 							break;
 						case KITEM_BALLHOG:

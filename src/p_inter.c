@@ -1821,7 +1821,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (player) // Player is the target
 	{
 		const UINT8 type = (damagetype & DMG_TYPEMASK);
-		const boolean combo = (type == DMG_EXPLODE); // This damage type can be comboed from other damage
+		const boolean combo = (type == DMG_EXPLODE || type == DMG_TUMBLE); // This damage type can be comboed from other damage
 		INT16 ringburst = 5;
 
 		if (player->pflags & PF_GODMODE)
@@ -1943,7 +1943,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				P_PlayerRingBurst(player, ringburst);
 			K_PlayPainSound(player->mo);
 
-			if ((type == DMG_EXPLODE) || (cv_kartdebughuddrop.value && !modeattacking))
+			if ((combo == true) || (cv_kartdebughuddrop.value && !modeattacking))
 			{
 				K_DropItems(player);
 			}

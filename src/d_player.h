@@ -245,17 +245,18 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (ORBINAUT,       6),\
 	FOREACH (JAWZ,           7),\
 	FOREACH (MINE,           8),\
-	FOREACH (BALLHOG,        9),\
-	FOREACH (SPB,           10),\
-	FOREACH (GROW,          11),\
-	FOREACH (SHRINK,        12),\
-	FOREACH (THUNDERSHIELD, 13),\
-	FOREACH (BUBBLESHIELD,  14),\
-	FOREACH (FLAMESHIELD,   15),\
-	FOREACH (HYUDORO,       16),\
-	FOREACH (POGOSPRING,    17),\
-	FOREACH (SUPERRING,     18),\
-	FOREACH (KITCHENSINK,   19)
+	FOREACH (LANDMINE,       9),\
+	FOREACH (BALLHOG,       10),\
+	FOREACH (SPB,           11),\
+	FOREACH (GROW,          12),\
+	FOREACH (SHRINK,        13),\
+	FOREACH (THUNDERSHIELD, 14),\
+	FOREACH (BUBBLESHIELD,  15),\
+	FOREACH (FLAMESHIELD,   16),\
+	FOREACH (HYUDORO,       17),\
+	FOREACH (POGOSPRING,    18),\
+	FOREACH (SUPERRING,     19),\
+	FOREACH (KITCHENSINK,   20)
 
 typedef enum
 {

@@ -68,7 +68,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 
 		damageitem = true;
 	}
-	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE)
+	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
 	{
 		damageitem = true;
 		// Bomb death
@@ -157,6 +157,12 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
 		damageitem = true;
+	}
+	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
+	{
+		damageitem = true;
+		// Bomb death
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
@@ -320,6 +326,73 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Shootable damage
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+	}
+
+	return true;
+}
+
+boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
+{
+	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+		return true;
+
+	if (t1->health <= 0 || t2->health <= 0)
+		return true;
+
+	if (t2->player)
+	{
+		if (t2->player->powers[pw_flashing])
+			return true;
+
+		// Banana snipe!
+		if (t1->health > 1)
+			S_StartSound(t2, sfx_bsnipe);
+
+		if (t2->player->kartstuff[k_flamedash] && t2->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+		{
+			// Melt item
+			S_StartSound(t2, sfx_s3k43);
+		}
+		else
+		{
+			// Player Damage
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_TUMBLE);
+		}
+
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
+	}
+	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
+		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
+		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD || t2->type == MT_JAWZ_SHIELD
+		|| t2->type == MT_BALLHOG)
+	{
+		// Other Item Damage
+		if (t2->eflags & MFE_VERTICALFLIP)
+			t2->z -= t2->height;
+		else
+			t2->z += t2->height;
+
+		S_StartSound(t2, t2->info->deathsound);
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
+
+		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
+		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+
+		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
+
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
+	}
+	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
+	{
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
+		// Bomb death
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
+	}
+	else if (t2->flags & MF_SHOOTABLE)
+	{
+		// Shootable damage
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 
 	return true;

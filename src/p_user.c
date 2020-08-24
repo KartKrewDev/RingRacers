@@ -2169,6 +2169,9 @@ void P_MovePlayer(player_t *player)
 
 		UINT8 rollSpeed = max(1, min(8, player->tumbleHeight / 10));
 
+		if (player->tumbleLastBounce == true)
+			spinSpeed = 2;
+
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 		player->drawangle -= (ANGLE_11hh * spinSpeed);
 
@@ -2176,6 +2179,9 @@ void P_MovePlayer(player_t *player)
 
 		if (player->tumbleLastBounce == true)
 		{
+			if (abs((signed)(player->mo->angle - player->drawangle)) < ANGLE_22h)
+				player->drawangle = player->mo->angle;
+
 			if (abs((signed)player->mo->rollangle) < ANGLE_22h)
 				player->mo->rollangle = 0;
 		}
