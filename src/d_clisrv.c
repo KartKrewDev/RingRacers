@@ -616,6 +616,10 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
 
+	rsp->tumbleBounces = players[i].tumbleBounces;
+	rsp->tumbleHeight = SHORT(players[i].tumbleHeight);
+	rsp->tumbleLastBounce = players[i].tumbleLastBounce;
+
 	// respawnvars_t
 	rsp->respawn_state = players[i].respawn.state;
 	rsp->respawn_pointx = (fixed_t)LONG(players[i].respawn.pointx);
@@ -758,6 +762,10 @@ static void resynch_read_player(resynch_pak *rsp)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
 
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
+
+	players[i].tumbleBounces = rsp->tumbleBounces;
+	players[i].tumbleHeight = SHORT(rsp->tumbleHeight);
+	players[i].tumbleLastBounce = (boolean)rsp->tumbleLastBounce;
 
 	// respawnvars_t
 	players[i].respawn.state = rsp->respawn_state;

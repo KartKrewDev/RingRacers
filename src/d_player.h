@@ -553,6 +553,10 @@ typedef struct player_s
 	UINT16 followercolor;	// Kart: Used to store the follower colour the player wishes to use
 	mobj_t *follower;		// Kart: This is the follower object we have. (If any)
 
+	UINT8 tumbleBounces;
+	UINT16 tumbleHeight;
+	boolean tumbleLastBounce;
+
 	//
 
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)

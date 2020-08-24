@@ -281,6 +281,10 @@ typedef struct
 	INT32 kartstuff[NUMKARTSTUFF];
 	tic_t airtime;
 
+	UINT8 tumbleBounces;
+	UINT16 tumbleHeight;
+	boolean tumbleLastBounce;
+
 	// respawnvars_t
 	UINT8 respawn_state;
 	fixed_t respawn_pointx;

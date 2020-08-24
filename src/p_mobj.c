@@ -1105,6 +1105,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		{
 			gravityadd = (4*gravityadd)/3;
 		}
+
+		if (mo->player->tumbleBounces > 0)
+		{
+			gravityadd = (5*gravityadd)/2;
+		}
 	}
 	else
 	{
@@ -2605,7 +2610,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->z = mo->floorz;
 
 		// Get up if you fell.
-		if (mo->player->panim == PA_PAIN && mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->kartstuff[k_squishedtimer] == 0)
+		if (mo->player->panim == PA_PAIN && mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->tumbleBounces == 0)
 			P_SetPlayerMobjState(mo, S_KART_STILL);
 
 		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope)) {

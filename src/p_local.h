@@ -465,7 +465,7 @@ typedef struct BasicFF_s
 #define DMG_NORMAL  0x00
 #define DMG_WIPEOUT 0x01 // Normal, but with extra flashy effects
 #define DMG_EXPLODE 0x02
-#define DMG_SQUISH  0x03
+#define DMG_TUMBLE  0x03
 #define DMG_STING   0x04
 //// Death types - cannot be combined with damage types
 #define DMG_INSTAKILL  0x80

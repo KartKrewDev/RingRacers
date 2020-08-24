@@ -282,7 +282,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			if (!special->target->player->kartstuff[k_comebackmode])
 			{
-				if (player->kartstuff[k_growshrinktimer] || player->kartstuff[k_squishedtimer]
+				if (player->kartstuff[k_growshrinktimer]
 					|| player->kartstuff[k_hyudorotimer] || P_PlayerInPain(player)
 					|| player->kartstuff[k_invincibilitytimer] || player->powers[pw_flashing])
 					return;
@@ -465,8 +465,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 
 			// no interaction
-			if (player->powers[pw_flashing] > 0 || player->kartstuff[k_hyudorotimer] > 0
-				|| player->kartstuff[k_squishedtimer] > 0 || P_PlayerInPain(player))
+			if (player->powers[pw_flashing] > 0 || player->kartstuff[k_hyudorotimer] > 0 || P_PlayerInPain(player))
 				return;
 
 			// attach to player!
@@ -1918,13 +1917,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_KartPainEnergyFling(player);
 					ringburst = 0;
 					break;
+				case DMG_TUMBLE:
+					K_TumblePlayer(player, inflictor, source);
+					break;
 				case DMG_EXPLODE:
 					K_ExplodePlayer(player, inflictor, source);
 					break;
 				case DMG_WIPEOUT:
 					if (P_IsDisplayPlayer(player))
 						P_StartQuake(32<<FRACBITS, 5);
-
 					K_SpinPlayer(player, inflictor, source, KSPIN_WIPEOUT);
 					K_KartPainEnergyFling(player);
 					break;

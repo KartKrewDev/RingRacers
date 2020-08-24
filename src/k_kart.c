@@ -976,7 +976,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		return weight;
 
 	if (against && !P_MobjWasRemoved(against) && against->player
-		&& ((!against->player->kartstuff[k_spinouttimer] && mobj->player->kartstuff[k_spinouttimer]) // You're in spinout
+		&& ((!P_PlayerInPain(against->player) && P_PlayerInPain(mobj->player)) // You're hurt
 		|| (against->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD && mobj->player->kartstuff[k_itemtype] != KITEM_BUBBLESHIELD))) // They have a Bubble Shield
 	{
 		weight = 0; // This player does not cause any bump action
@@ -1056,24 +1056,21 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		|| (mobj2->player && mobj2->player->respawn.state != RESPAWNST_NONE))
 		return;
 
-	{ // Don't bump if you're flashing
-		INT32 flash;
+	// Don't bump if you're flashing
+	if (mobj1->player && mobj1->player->powers[pw_flashing] > 0 && !P_PlayerInPain(mobj1->player))
+	{
+		INT32 flash = K_GetKartFlashing(mobj1->player);
+		if (mobj1->player->powers[pw_flashing] < flash)
+			mobj1->player->powers[pw_flashing]++;
+		return;
+	}
 
-		flash = K_GetKartFlashing(mobj1->player);
-		if (mobj1->player && mobj1->player->powers[pw_flashing] > 0 && mobj1->player->powers[pw_flashing] < flash)
-		{
-			if (mobj1->player->powers[pw_flashing] < flash-1)
-				mobj1->player->powers[pw_flashing]++;
-			return;
-		}
-
-		flash = K_GetKartFlashing(mobj2->player);
-		if (mobj2->player && mobj2->player->powers[pw_flashing] > 0 && mobj2->player->powers[pw_flashing] < flash)
-		{
-			if (mobj2->player->powers[pw_flashing] < flash-1)
-				mobj2->player->powers[pw_flashing]++;
-			return;
-		}
+	if (mobj2->player && mobj2->player->powers[pw_flashing] > 0 && !P_PlayerInPain(mobj2->player))
+	{
+		INT32 flash = K_GetKartFlashing(mobj2->player);
+		if (mobj2->player->powers[pw_flashing] < flash)
+			mobj2->player->powers[pw_flashing]++;
+		return;
 	}
 
 	// Don't bump if you've recently bumped
@@ -1199,15 +1196,6 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 			mobj1->player->kartstuff[k_spinouttimer] = max(wipeoutslowtime+1, mobj1->player->kartstuff[k_spinouttimer]);
 			//mobj1->player->kartstuff[k_spinouttype] = KSPIN_WIPEOUT; // Enforce type
 		}
-		else if (mobj2->player // Player VS player bumping only
-			&& (K_GetShieldFromItem(mobj1->player->kartstuff[k_itemtype]) == KSHIELD_NONE)) // Ignore for shields
-		{
-			if (mobj1->player->rings <= 0)
-			{
-				P_DamageMobj(mobj1, mobj2, mobj2, 1, DMG_STING);
-			}
-			P_PlayerRingBurst(mobj1->player, 1);
-		}
 	}
 
 	if (mobj2->player)
@@ -1222,15 +1210,6 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 			mobj2->player->kartstuff[k_wipeoutslow] = wipeoutslowtime+1;
 			mobj2->player->kartstuff[k_spinouttimer] = max(wipeoutslowtime+1, mobj2->player->kartstuff[k_spinouttimer]);
 			//mobj2->player->kartstuff[k_spinouttype] = KSPIN_WIPEOUT; // Enforce type
-		}
-		else if (mobj1->player // Player VS player bumping only
-			&& (K_GetShieldFromItem(mobj2->player->kartstuff[k_itemtype]) == KSHIELD_NONE)) // Ignore for shields
-		{
-			if (mobj2->player->rings <= 0)
-			{
-				P_DamageMobj(mobj2, mobj1, mobj1, 1, DMG_STING);
-			}
-			P_PlayerRingBurst(mobj2->player, 1);
 		}
 	}
 }
@@ -2583,25 +2562,64 @@ static void K_RemoveGrowShrink(player_t *player)
 	P_RestoreMusic(player);
 }
 
-void K_SquishPlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
+void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 {
-	(void)inflictor;
 	(void)source;
 
-	player->kartstuff[k_squishedtimer] = TICRATE;
+	player->tumbleBounces = 1;
 
-	// Reduce Shrink timer
-	if (player->kartstuff[k_growshrinktimer] < 0)
+	player->mo->momx = 2 * player->mo->momx / 3;
+	player->mo->momy = 2 * player->mo->momy / 3;
+
+	player->tumbleHeight = 30;
+
+	if (inflictor && !P_MobjWasRemoved(inflictor))
 	{
-		player->kartstuff[k_growshrinktimer] += TICRATE;
-		if (player->kartstuff[k_growshrinktimer] >= 0)
-			K_RemoveGrowShrink(player);
+		const fixed_t infSpeed = P_AproxDistance(inflictor->momx, inflictor->momy) / 2;
+		player->tumbleHeight += (infSpeed / player->mo->scale);
 	}
 
-	player->mo->flags |= MF_NOCLIP;
+	player->mo->momz = player->tumbleHeight * player->mo->scale * P_MobjFlip(player->mo);
 
-	if (player->mo->state != &states[S_KART_SQUISH]) // Squash
-		P_SetPlayerMobjState(player->mo, S_KART_SQUISH);
+	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+
+	if (P_IsDisplayPlayer(player))
+		P_StartQuake(64<<FRACBITS, 5);
+}
+
+static void K_HandleTumbleBounce(player_t *player)
+{
+	player->tumbleBounces++;
+	player->tumbleHeight = (player->tumbleHeight * 4) / 5;
+
+	if (player->tumbleHeight < 10)
+	{
+		// 10 minimum bounce height
+		player->tumbleHeight = 10;
+	}
+
+	if (player->tumbleBounces > 4 && player->tumbleHeight < 30)
+	{
+		// Leave tumble state when below 30 height, and have bounced off the ground enough
+
+		if (player->tumbleLastBounce == true)
+		{
+			// End tumble state
+			player->tumbleBounces = 0;
+			return;
+		}
+		else
+		{
+			// One last bounce at the minimum height, to reset the animation
+			player->tumbleHeight = 10;
+			player->tumbleLastBounce = true;
+		}
+	}
+
+	player->mo->momx = player->mo->momx / 2;
+	player->mo->momy = player->mo->momy / 2;
+
+	player->mo->momz = player->tumbleHeight * player->mo->scale * P_MobjFlip(player->mo);
 }
 
 void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
@@ -2630,8 +2648,6 @@ void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A b
 
 	if (P_IsDisplayPlayer(player))
 		P_StartQuake(64<<FRACBITS, 5);
-
-	K_DropItems(player);
 }
 
 // This kind of wipeout happens with no rings -- doesn't remove a bumper, has no invulnerability, and is much shorter.
@@ -5649,9 +5665,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->powers[pw_flashing] = 0;
 	}
 	// Make ABSOLUTELY SURE that your flashing tics don't get set WHILE you're still in hit animations.
-	else if (player->kartstuff[k_spinouttimer] != 0
-		|| player->kartstuff[k_wipeoutslow] != 0
-		|| player->kartstuff[k_squishedtimer] != 0)
+	else if (player->kartstuff[k_spinouttimer] != 0 || player->kartstuff[k_wipeoutslow] != 0)
 	{
 		player->powers[pw_flashing] = K_GetKartFlashing(player);
 	}
@@ -5776,21 +5790,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_stolentimer])
 		player->kartstuff[k_stolentimer]--;
 
-	if (player->kartstuff[k_squishedtimer])
-	{
-		player->kartstuff[k_squishedtimer]--;
-
-		if ((player->kartstuff[k_squishedtimer] == 0) && !(player->pflags & PF_NOCLIP))
-		{
-			player->mo->flags &= ~MF_NOCLIP;
-		}
-	}
-
 	if (player->kartstuff[k_justbumped] > 0)
 		player->kartstuff[k_justbumped]--;
 
 	if (player->kartstuff[k_tiregrease])
 		player->kartstuff[k_tiregrease]--;
+
+	if (player->tumbleBounces > 0)
+	{
+		if (P_IsObjectOnGround(player->mo) && player->mo->momz * P_MobjFlip(player->mo) <= 0)
+			K_HandleTumbleBounce(player);
+	}
 
 	// This doesn't go in HUD update because it has potential gameplay ramifications
 	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
@@ -7773,16 +7783,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
 	K_KartSpindash(player);
-
-	// Squishing
-	// If a Grow player or a sector crushes you, get flattened instead of being killed.
-
-	if (player->kartstuff[k_squishedtimer] > 0)
-	{
-		//player->mo->flags |= MF_NOCLIP;
-		player->mo->momx = 0;
-		player->mo->momy = 0;
-	}
 
 	// Play the starting countdown sounds
 	if (player == &players[g_localplayers[0]]) // Don't play louder in splitscreen

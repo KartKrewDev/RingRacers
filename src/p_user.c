@@ -461,7 +461,10 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer] || player->respawn.state != RESPAWNST_NONE)
+	if (player->respawn.state != RESPAWNST_NONE)
+		return true;
+
+	if (player->kartstuff[k_spinouttimer] || player->tumbleBounces > 0)
 		return true;
 
 	if (gametyperules & GTR_KARMA)
@@ -2157,18 +2160,35 @@ void P_MovePlayer(player_t *player)
 	P_3dMovement(player);
 
 	// Kart frames
-	if (player->kartstuff[k_squishedtimer] > 0)
+	if (player->tumbleBounces > 0)
 	{
-		P_SetPlayerMobjState(player->mo, S_KART_SQUISH);
+		fixed_t playerSpeed = P_AproxDistance(player->mo->momx, player->mo->momy); // maybe momz too?
+
+		const UINT8 minSpinSpeed = 4;
+		UINT8 spinSpeed = max(minSpinSpeed, min(8 + minSpinSpeed, (playerSpeed / player->mo->scale) * 2));
+
+		UINT8 rollSpeed = max(1, min(8, player->tumbleHeight / 10));
+
+		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+		player->drawangle -= (ANGLE_11hh * spinSpeed);
+
+		player->mo->rollangle -= (ANGLE_11hh * rollSpeed);
+
+		if (player->tumbleLastBounce == true)
+		{
+			if (abs((signed)player->mo->rollangle) < ANGLE_22h)
+				player->mo->rollangle = 0;
+		}
 	}
 	else if (player->pflags & PF_SLIDING)
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 		player->drawangle -= ANGLE_22h;
+		player->mo->rollangle = 0;
 	}
 	else if (player->kartstuff[k_spinouttimer] > 0)
 	{
-		INT32 speed = max(1, min(8, player->kartstuff[k_spinouttimer]/8));
+		UINT8 speed = max(1, min(8, player->kartstuff[k_spinouttimer]/8));
 
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2176,6 +2196,8 @@ void P_MovePlayer(player_t *player)
 			player->drawangle = player->mo->angle; // Face forward at the end of the animation
 		else
 			player->drawangle -= (ANGLE_11hh * speed);
+
+		player->mo->rollangle = 0;
 	}
 	else if (player->pflags & PF_FAULT)
 	{
@@ -2185,6 +2207,8 @@ void P_MovePlayer(player_t *player)
 			player->drawangle += ANGLE_11hh;
 		else
 			player->drawangle -= ANGLE_11hh;
+
+		player->mo->rollangle = 0;
 	}
 	else
 	{
@@ -2204,6 +2228,8 @@ void P_MovePlayer(player_t *player)
 				player->drawangle += a;
 			}
 		}
+
+		player->mo->rollangle = 0;
 	}
 
 	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
@@ -2358,7 +2384,7 @@ void P_MovePlayer(player_t *player)
 	// Crush test...
 	if ((player->mo->ceilingz - player->mo->floorz < player->mo->height) && !(player->mo->flags & MF_NOCLIP))
 	{
-		if ((netgame || multiplayer) && player->spectator)
+		if (player->spectator)
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_SPECTATOR); // Respawn crushed spectators
 		else
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_CRUSHED);
@@ -4240,7 +4266,8 @@ void P_PlayerThink(player_t *player)
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo))
 	{
-		player->airtime = 0;
+		if (!P_PlayerInPain(player))
+			player->airtime = 0;
 	}
 	else
 	{
@@ -4502,10 +4529,6 @@ void P_PlayerThink(player_t *player)
 	else
 		player->pflags &= ~PF_SPINDOWN;
 
-	// IF PLAYER NOT HERE THEN FLASH END IF
-	if (player->quittime && player->powers[pw_flashing] < K_GetKartFlashing(player) && !player->gotflag)
-		player->powers[pw_flashing] = K_GetKartFlashing(player);
-
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings
 
@@ -4523,11 +4546,6 @@ void P_PlayerThink(player_t *player)
 	}
 	else
 		player->powers[pw_nocontrol] = 0;
-
-	if (player->powers[pw_ignorelatch] & ((1<<15)-1) && player->powers[pw_ignorelatch] < UINT16_MAX)
-		player->powers[pw_ignorelatch]--;
-	else
-		player->powers[pw_ignorelatch] = 0;
 
 	//pw_super acts as a timer now
 	if (player->powers[pw_super])
