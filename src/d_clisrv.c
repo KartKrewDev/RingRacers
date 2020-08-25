@@ -4802,9 +4802,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 				kickmsg |= KICK_MSG_KEEP_BODY;
 
 				SendKick(netconsole, kickmsg);
-				nodetoplayer[node] = -1;
 
 				/*
+				nodetoplayer[node] = -1;
+
 				if (nodetoplayer2[node] != -1 && nodetoplayer2[node] >= 0
 					&& playeringame[(UINT8)nodetoplayer2[node]])
 				{
