@@ -18,6 +18,7 @@
 #include "d_netcmd.h"
 #include "tables.h"
 #include "d_player.h"
+#include "mserv.h"
 #include "k_pwrlv.h" // PWRLV_NUMTYPES
 
 /*
@@ -564,6 +565,7 @@ typedef enum
 } kickreason_t;
 
 extern boolean server;
+extern boolean serverrunning;
 #define client (!server)
 extern boolean dedicated; // For dedicated server
 extern UINT16 software_MAXPACKETLENGTH;
@@ -612,6 +614,7 @@ void CL_RemoveSplitscreenPlayer(UINT8 p);
 void CL_Reset(void);
 void CL_ClearPlayer(INT32 playernum);
 void CL_RemovePlayer(INT32 playernum, INT32 reason);
+void CL_QueryServerList(msg_server_t *list);
 void CL_UpdateServerList(boolean internetsearch, INT32 room);
 // Is there a game running
 boolean Playing(void);

@@ -34,9 +34,15 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip)
 
 	if (flip == true)
 	{
-		player->mo->flags2 |= MF2_OBJECTFLIP;
+		// Lat 24/7/20: Okay so before we even think about applying this flag, check if the sector we're in doesn't already have reverse gravity for that.
+		// Otherwise, we would reverse the reverse gravity and cancel it out. Yes, this is absolutely fucking dumb.
+		// I'm honestly not sure if this flag is even necessary anymore but we'll keep it just in case.
+
+		if (P_GetMobjGravity(player->mo) < 0)
+			player->mo->flags2 |= MF2_OBJECTFLIP;
+
 		player->mo->eflags |= MFE_VERTICALFLIP;
-		z -= (128 * mapobjectscale) - (player->mo->height);
+		z -= ((128 * mapobjectscale) + (player->mo->height));
 	}
 	else
 	{
@@ -75,7 +81,7 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 	player->respawn.pointx = waypoint->mobj->x;
 	player->respawn.pointy = waypoint->mobj->y;
 	player->respawn.pointz = waypoint->mobj->z;
-	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP);
+	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false;	// K_RespawnOffset wants a boolean!
 	player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
 }
 
@@ -309,7 +315,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		// Reduce by the amount we needed to get to this waypoint
 		stepamt -= dist;
 
-		// We've reached the destination point, 
+		// We've reached the destination point,
 		P_UnsetThingPosition(player->mo);
 		player->mo->x = dest.x;
 		player->mo->y = dest.y;

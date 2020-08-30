@@ -36,6 +36,7 @@ set(SRB2_CORE_SOURCES
 	m_random.c
 	md5.c
 	mserv.c
+	http-mserv.c
 	s_sound.c
 	screen.c
 	sounds.c
@@ -170,6 +171,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_botsearch.c
 	k_respawn.c
 	k_grandprix.c
+	k_hud.c
 
 	p_local.h
 	p_maputl.h
@@ -192,6 +194,7 @@ set(SRB2_CORE_GAME_SOURCES
 	k_bot.h
 	k_respawn.h
 	k_grandprix.h
+	k_hud.h
 )
 
 if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))

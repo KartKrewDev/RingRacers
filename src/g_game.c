@@ -1510,7 +1510,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		INT32 player_invert = invertmouse ? -1 : 1;
 		INT32 screen_invert =
 			(player->mo && (player->mo->eflags & MFE_VERTICALFLIP)
-			 && (!thiscam->chase || player->pflags & PF_FLIPCAM)) //because chasecam's not inverted
+			 && (!thiscam->chase)) //because chasecam's not inverted
 			 ? -1 : 1; // set to -1 or 1 to multiply
 
 		// mouse look stuff (mouse look is not the same as mouse aim)
@@ -2599,7 +2599,7 @@ void G_PlayerReborn(INT32 player)
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
@@ -6344,7 +6344,9 @@ void G_BeginRecording(void)
 		demoflags |= DF_ENCORE;
 
 #ifdef HAVE_BLUA
-	demoflags |= DF_LUAVARS;
+	if (!modeattacking)	// Ghosts don't read luavars, and you shouldn't ever need to save Lua in replays, you doof!
+						// SERIOUSLY THOUGH WHY WOULD YOU LOAD HOSTMOD AND RECORD A GHOST WITH IT !????
+		demoflags |= DF_LUAVARS;
 #endif
 
 	// Setup header.
@@ -6477,8 +6479,9 @@ void G_BeginRecording(void)
 	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
 
 #ifdef HAVE_BLUA
-	// player lua vars, always saved even if empty
-	LUA_ArchiveDemo();
+	// player lua vars, always saved even if empty... Unless it's record attack.
+	if (!modeattacking)
+		LUA_ArchiveDemo();
 #endif
 
 	memset(&oldcmd,0,sizeof(oldcmd));
@@ -7431,6 +7434,7 @@ void G_DoPlayDemo(char *defdemoname)
 		if (!gL)	// No Lua state! ...I guess we'll just start one...
 			LUA_ClearState();
 
+		// No modeattacking check, DF_LUAVARS won't be present here.
 		LUA_UnArchiveDemo();
 	}
 #endif

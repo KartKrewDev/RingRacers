@@ -23,6 +23,8 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
 extern consvar_t *KartItemCVars[NUMKARTRESULTS-1];
 
+UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper, boolean spbrush);
+INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, boolean bot, boolean rival);
 INT32 K_GetShieldFromItem(INT32 item);
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
@@ -67,6 +69,8 @@ INT32 K_GetKartDriftSparkValue(player_t *player);
 void K_SpawnDriftBoostExplosion(player_t *player, int stage);
 void K_KartUpdatePosition(player_t *player);
 void K_DropItems(player_t *player);
+void K_DropRocketSneaker(player_t *player);
+void K_DropKitchenSink(player_t *player);
 void K_StripItems(player_t *player);
 void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
@@ -90,13 +94,6 @@ void K_PlayOvertakeSound(mobj_t *source);
 void K_PlayPainSound(mobj_t *source);
 void K_PlayHitEmSound(mobj_t *source);
 void K_PlayPowerGloatSound(mobj_t *source);
-
-const char *K_GetItemPatch(UINT8 item, boolean tiny);
-INT32 K_calcSplitFlags(INT32 snapflags);
-void K_LoadKartHUDGraphics(void);
-void K_drawKartHUD(void);
-void K_drawKartFreePlay(UINT32 flashtime);
-void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UINT8 mode);
 
 // =========================================================================
 #endif  // __K_KART__
