@@ -1132,13 +1132,6 @@ static void R_SplitSprite(vissprite_t *sprite)
 
 			newsprite->extra_colormap = sector->lightlist[i].extra_colormap;
 
-/*
-			if (thing->frame & FF_TRANSMASK)
-				;
-			else if (thing->flags2 & MF2_SHADOW)
-				;
-			else
-*/
 			if (!((newsprite->cut & SC_FULLBRIGHT)
 				&& (!newsprite->extra_colormap || !(newsprite->extra_colormap->fog & 1))))
 			{
@@ -1164,25 +1157,34 @@ static void R_SplitSprite(vissprite_t *sprite)
 //
 fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 {
-	fixed_t z, floorz = INT32_MIN;
-	pslope_t *slope, *floorslope = NULL;
+	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
+	fixed_t z, groundz = isflipped ? INT32_MAX : INT32_MIN;
+	pslope_t *slope, *groundslope = NULL;
 	msecnode_t *node;
 	sector_t *sector;
 	ffloor_t *rover;
+#define CHECKZ (isflipped ? z > thing->z+thing->height/2 && z < groundz : z < thing->z+thing->height/2 && z > groundz)
 
 	for (node = thing->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
 		sector = node->m_sector;
 
-		slope = (sector->heightsec != -1) ? NULL : sector->f_slope;
-		z = slope ? P_GetZAt(slope, thing->x, thing->y) : (
-			(sector->heightsec != -1) ? sectors[sector->heightsec].floorheight : sector->floorheight
-		);
+		slope = sector->heightsec != -1 ? NULL : (isflipped ? sector->c_slope : sector->f_slope);
 
-		if (z < thing->z+thing->height/2 && z > floorz)
+		if (sector->heightsec != -1)
+			z = isflipped ? sectors[sector->heightsec].ceilingheight : sectors[sector->heightsec].floorheight;
+		else
 		{
-			floorz = z;
-			floorslope = slope;
+			if (isflipped)
+				z = sector->c_slope ? P_GetZAt(sector->c_slope, thing->x, thing->y) : sector->ceilingheight; // P_GetSectorCeilingZAt
+			else
+				z = sector->f_slope ? P_GetZAt(sector->f_slope, thing->x, thing->y) : sector->floorheight; // P_GetSectorFloorZAt
+		}
+
+		if CHECKZ
+		{
+			groundz = z;
+			groundslope = slope;
 		}
 
 		if (sector->ffloors)
@@ -1191,24 +1193,30 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 				if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES) || (rover->alpha < 90 && !(rover->flags & FF_SWIMMABLE)))
 					continue;
 
-				z = *rover->t_slope ? P_GetZAt(*rover->t_slope, thing->x, thing->y) : *rover->topheight;
-				if (z < thing->z+thing->height/2 && z > floorz)
+				if (isflipped)
+					z = *rover->b_slope ? P_GetZAt(*rover->b_slope, thing->x, thing->y) : *rover->bottomheight; // P_GetFFloorBottomZAt
+				else
+					z = *rover->t_slope ? P_GetZAt(*rover->t_slope, thing->x, thing->y) : *rover->topheight; // P_GetFFloorTopZAt
+
+				if CHECKZ
 				{
-					floorz = z;
-					floorslope = *rover->t_slope;
+					groundz = z;
+					groundslope = isflipped ? *rover->b_slope : *rover->t_slope;
 				}
 			}
 	}
 
-	if (thing->floorz > floorz + (!floorslope ? 0 : FixedMul(abs(floorslope->zdelta), thing->radius*3/2)))
+	if (isflipped ? (thing->ceilingz < groundz - (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2)))
+		: (thing->floorz > groundz + (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2))))
 	{
-		floorz = thing->floorz;
-		floorslope = NULL;
+		groundz = isflipped ? thing->ceilingz : thing->floorz;
+		groundslope = NULL;
 	}
 
 #if 0 // Unfortunately, this drops CEZ2 down to sub-17 FPS on my i7.
 //#ifdef POLYOBJECTS
-	// Check polyobjects and see if floorz needs to be altered, for rings only because they don't update floorz
+	// NOTE: this section was not updated to reflect reverse gravity support
+	// Check polyobjects and see if groundz needs to be altered, for rings only because they don't update floorz
 	if (thing->type == MT_RING)
 	{
 		INT32 xl, xh, yl, yh, bx, by;
@@ -1253,10 +1261,10 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 						// We're inside it! Yess...
 						z = po->lines[0]->backsector->ceilingheight;
 
-						if (z < thing->z+thing->height/2 && z > floorz)
+						if (z < thing->z+thing->height/2 && z > groundz)
 						{
-							floorz = z;
-							floorslope = NULL;
+							groundz = z;
+							groundslope = NULL;
 						}
 					}
 					plink = (polymaplink_t *)(plink->link.next);
@@ -1266,9 +1274,9 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 #endif
 
 	if (shadowslope != NULL)
-		*shadowslope = floorslope;
+		*shadowslope = groundslope;
 
-	return floorz;
+	return groundz;
 }
 
 static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
@@ -1279,14 +1287,15 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	INT32 light = 0;
 	fixed_t scalemul; UINT8 trans;
 	fixed_t floordiff;
-	fixed_t floorz;
-	pslope_t *floorslope;
+	fixed_t groundz;
+	pslope_t *groundslope;
+	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
 
-	floorz = R_GetShadowZ(thing, &floorslope);
+	groundz = R_GetShadowZ(thing, &groundslope);
 
-	if (abs(floorz-viewz)/tz > 4) return; // Prevent stretchy shadows and possible crashes
+	if (abs(groundz-viewz)/tz > 4) return; // Prevent stretchy shadows and possible crashes
 
-	floordiff = abs(thing->z - floorz);
+	floordiff = abs((isflipped ? thing->height : 0) + thing->z - groundz);
 
 	trans = floordiff / (100*FRACUNIT) + 3;
 	if (trans >= 9) return;
@@ -1301,41 +1310,41 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	xscale = FixedDiv(projection, tz);
 	yscale = FixedDiv(projectiony, tz);
 	shadowxscale = FixedMul(thing->radius*2, scalemul);
-	shadowyscale = FixedMul(FixedMul(thing->radius*2, scalemul), FixedDiv(abs(floorz - viewz), tz));
-	shadowyscale = min(shadowyscale, shadowxscale) / patch->height;
-	shadowxscale /= patch->width;
+	shadowyscale = FixedMul(FixedMul(thing->radius*2, scalemul), FixedDiv(abs(groundz - viewz), tz));
+	shadowyscale = min(shadowyscale, shadowxscale) / SHORT(patch->height);
+	shadowxscale /= SHORT(patch->width);
 	shadowskew = 0;
 
-	if (floorslope)
+	if (groundslope)
 	{
 		// haha let's try some dumb stuff
 		fixed_t xslope, zslope;
-		angle_t sloperelang = (R_PointToAngle(thing->x, thing->y) - floorslope->xydirection) >> ANGLETOFINESHIFT;
+		angle_t sloperelang = (R_PointToAngle(thing->x, thing->y) - groundslope->xydirection) >> ANGLETOFINESHIFT;
 
-		xslope = FixedMul(FINESINE(sloperelang), floorslope->zdelta);
-		zslope = FixedMul(FINECOSINE(sloperelang), floorslope->zdelta);
+		xslope = FixedMul(FINESINE(sloperelang), groundslope->zdelta);
+		zslope = FixedMul(FINECOSINE(sloperelang), groundslope->zdelta);
 
 		//CONS_Printf("Shadow is sloped by %d %d\n", xslope, zslope);
 
-		if (viewz < floorz)
-			shadowyscale += FixedMul(FixedMul(thing->radius*2 / patch->height, scalemul), zslope);
+		if (viewz < groundz)
+			shadowyscale += FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scalemul), zslope);
 		else
-			shadowyscale -= FixedMul(FixedMul(thing->radius*2 / patch->height, scalemul), zslope);
+			shadowyscale -= FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scalemul), zslope);
 
 		shadowyscale = abs(shadowyscale);
 
 		shadowskew = xslope;
 	}
 
-	tx -= patch->width * shadowxscale/2;
+	tx -= SHORT(patch->width) * shadowxscale/2;
 	x1 = (centerxfrac + FixedMul(tx,xscale))>>FRACBITS;
 	if (x1 >= viewwidth) return;
 
-	tx += patch->width * shadowxscale;
+	tx += SHORT(patch->width) * shadowxscale;
 	x2 = ((centerxfrac + FixedMul(tx,xscale))>>FRACBITS); x2--;
 	if (x2 < 0 || x2 <= x1) return;
 
-	if (shadowyscale < FRACUNIT/patch->height) return; // fix some crashes?
+	if (shadowyscale < FRACUNIT/SHORT(patch->height)) return; // fix some crashes?
 
 	shadow = R_NewVisSprite();
 
@@ -1347,7 +1356,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->heightsec = vis->heightsec;
 
 	shadow->thingheight = FRACUNIT;
-	shadow->pz = floorz;
+	shadow->pz = groundz + (isflipped ? -shadow->thingheight : 0);
 	shadow->pzt = shadow->pz + shadow->thingheight;
 
 	shadow->mobjflags = 0;
@@ -1355,8 +1364,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->dispoffset = vis->dispoffset - 5;
 	shadow->gx = thing->x;
 	shadow->gy = thing->y;
-	shadow->gzt = shadow->pz + patch->height * shadowyscale / 2;
-	shadow->gz = shadow->gzt - patch->height * shadowyscale;
+	shadow->gzt = (isflipped ? shadow->pzt : shadow->pz) + SHORT(patch->height) * shadowyscale / 2;
+	shadow->gz = shadow->gzt - SHORT(patch->height) * shadowyscale;
 	shadow->texturemid = FixedMul(thing->scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
 	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
 		shadow->texturemid = FixedMul(shadow->texturemid, ((skin_t *)thing->skin)->highresscale);
@@ -1386,7 +1395,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 
 	shadow->startfrac = 0;
 	//shadow->xiscale = 0x7ffffff0 / (shadow->xscale/2);
-	shadow->xiscale = (patch->width<<FRACBITS)/(x2-x1+1); // fuck it
+	shadow->xiscale = (SHORT(patch->width)<<FRACBITS)/(x2-x1+1); // fuck it
 
 	if (shadow->x1 > x1)
 		shadow->startfrac += shadow->xiscale*(shadow->x1-x1);
@@ -1850,19 +1859,27 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->transmap = NULL;
 
 	// specific translucency
-	if (!cv_translucency.value)
-		; // no translucency
-	else if (thing->flags2 & MF2_SHADOW) // actually only the player should use this (temporary invisibility)
-		vis->transmap = transtables + ((tr_trans80-1)<<FF_TRANSSHIFT); // because now the translucency is set through FF_TRANSMASK
+	if (thing->drawflags & MFD_TRANSMASK) // Object is forcing transparency to a specific value
+		vis->transmap = transtables + ((((thing->drawflags & MFD_TRANSMASK) - MFD_TRANS10) >> MFD_TRANSSHIFT) << FF_TRANSSHIFT);
 	else if (thing->frame & FF_TRANSMASK)
-		vis->transmap = transtables + (thing->frame & FF_TRANSMASK) - 0x10000;
+		vis->transmap = transtables + ((thing->frame & FF_TRANSMASK) - FF_TRANS10);
 
-	if (thing->frame & FF_FULLBRIGHT || thing->flags2 & MF2_SHADOW)
-		vis->cut |= SC_FULLBRIGHT;
-	else if (thing->frame & FF_SEMIBRIGHT)
-		vis->cut |= SC_SEMIBRIGHT;
+	if (thing->drawflags & MFD_BRIGHTMASK)
+	{
+		if (thing->drawflags & MFD_FULLBRIGHT)
+			vis->cut |= SC_FULLBRIGHT;
+		else if (thing->drawflags & MFD_SEMIBRIGHT)
+			vis->cut |= SC_SEMIBRIGHT;
+	}
+	else
+	{
+		if (thing->frame & FF_FULLBRIGHT)
+			vis->cut |= SC_FULLBRIGHT;
+		else if (thing->frame & FF_SEMIBRIGHT)
+			vis->cut |= SC_SEMIBRIGHT;
+	}
 
-	if (vis->cut & SC_FULLBRIGHT
+	if ((vis->cut & SC_FULLBRIGHT)
 		&& (!vis->extra_colormap || !(vis->extra_colormap->fog & 1)))
 	{
 		// full bright: goggles
@@ -2054,8 +2071,9 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->patch = sprframe->lumppat[0];
 
 	// specific translucency
+	// (no draw flags)
 	if (thing->frame & FF_TRANSMASK)
-		vis->transmap = (thing->frame & FF_TRANSMASK) - 0x10000 + transtables;
+		vis->transmap = ((thing->frame & FF_TRANSMASK) - FF_TRANS10) + transtables;
 	else
 		vis->transmap = NULL;
 
@@ -2077,9 +2095,6 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	precipmobj_t *precipthing; // Tails 08-25-2002
 	INT32 lightnum;
 	fixed_t approx_dist, limit_dist;
-
-	INT32 splitflags;			// check if a mobj has spliscreen flags
-	boolean split_drawsprite;	// used for splitscreen flags
 
 	if (rendermode != render_soft)
 		return;
@@ -2114,35 +2129,13 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-			split_drawsprite = false;
-
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+			if (thing->sprite == SPR_NULL)
 				continue;
 
-			splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
-
-			if (r_splitscreen && splitflags)
-			{
-				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum == 0)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum == 1)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewssnum == 2)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewssnum == 3)
-						split_drawsprite = true;
-			}
-			else
-				split_drawsprite = true;
-
-			if (!split_drawsprite)
+			if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+			|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+			|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+			|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
 				continue;
 
 			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
@@ -2158,36 +2151,13 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 		// Draw everything in sector, no checks
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-
-			split_drawsprite = false;
-
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+			if (thing->sprite == SPR_NULL)
 				continue;
 
-			splitflags = thing->eflags & (MFE_DRAWONLYFORP1|MFE_DRAWONLYFORP2|MFE_DRAWONLYFORP3|MFE_DRAWONLYFORP4);
-
-			if (r_splitscreen && splitflags)
-			{
-				if (thing->eflags & MFE_DRAWONLYFORP1)
-					if (viewssnum == 0)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP2)
-					if (viewssnum == 1)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP3 && splitscreen > 1)
-					if (viewssnum == 2)
-						split_drawsprite = true;
-
-				if (thing->eflags & MFE_DRAWONLYFORP4 && splitscreen > 2)
-					if (viewssnum == 3)
-						split_drawsprite = true;
-			}
-			else
-				split_drawsprite = true;
-
-			if (!split_drawsprite)
+			if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
+			|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
+			|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
+			|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
 				continue;
 
 			R_ProjectSprite(thing);
@@ -2891,7 +2861,12 @@ void R_DrawMasked(void)
 //
 // ==========================================================================
 
+// We can assume those are tied to skins somewhat, hence why they're defined here.
 INT32 numskins = 0;
+follower_t followers[MAXSKINS];
+// default followers are defined in SOC_FLWR in followers.kart / gfx.kart (depending on what exe this is, at this point)
+
+
 skin_t skins[MAXSKINS];
 // FIXTHIS: don't work because it must be inistilised before the config load
 //#define SKINVALUES
@@ -2954,6 +2929,19 @@ INT32 R_SkinAvailable(const char *name)
 	return -1;
 }
 
+// same thing but for followers:
+INT32 R_FollowerAvailable(const char *name)
+{
+	INT32 i;
+
+	for (i = 0; i < numfollowers; i++)
+	{
+		if (stricmp(followers[i].skinname,name)==0)
+			return i;
+	}
+	return -1;
+}
+
 // network code calls this when a 'skin change' is received
 boolean SetPlayerSkin(INT32 playernum, const char *skinname)
 {
@@ -2979,13 +2967,37 @@ boolean SetPlayerSkin(INT32 playernum, const char *skinname)
 	return false;
 }
 
+// Again, same thing but for followers;
+boolean SetPlayerFollower(INT32 playernum, const char *skinname)
+{
+	INT32 i;
+	player_t *player = &players[playernum];
+
+	for (i = 0; i < numfollowers; i++)
+	{
+		// search in the skin list
+		if (stricmp(followers[i].skinname, skinname) == 0)
+		{
+			SetFollower(playernum, i);
+			return true;
+		}
+	}
+
+	if (P_IsLocalPlayer(player))
+		CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found.\n"), skinname);
+	else if(server || IsPlayerAdmin(consoleplayer))
+		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) follower '%s' not found\n"), playernum, player_names[playernum], skinname);
+
+	SetFollower(playernum, -1);	// reminder that -1 is nothing
+	return false;
+}
+
 // Same as SetPlayerSkin, but uses the skin #.
 // network code calls this when a 'skin change' is received
 void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
 	skin_t *skin = &skins[skinnum];
-
 	if (skinnum >= 0 && skinnum < numskins) // Make sure it exists!
 	{
 		player->skin = skinnum;
@@ -3016,6 +3028,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		if (player->mo)
 			P_SetScale(player->mo, player->mo->scale);
 
+		// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
 		demo_extradata[playernum] |= DXD_SKIN;
 
 		return;
@@ -3026,6 +3039,53 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);
 	SetPlayerSkinByNum(playernum, 0); // not found put the sonic skin
+}
+
+// you get the drill, now we do the same for followers:
+void SetFollower(INT32 playernum, INT32 skinnum)
+{
+	player_t *player = &players[playernum];
+	mobj_t *bub;
+	mobj_t *tmp;
+
+	player->followerready = true;	// we are ready to perform follower related actions in the player thinker, now.
+	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
+	{
+		/*
+			We don't spawn the follower here since it'll be easier to handle all of it in the Player thinker itself.
+			However, we will despawn it right here if there's any to make it easy for the player thinker to replace it or delete it.
+		*/
+		if (player->follower && skinnum != player->followerskin)	// this is also called when we change colour so don't respawn the follower unless we changed skins
+		{
+
+			// Remove follower's possible hnext list (bubble)
+			bub = player->follower->hnext;
+
+			while (bub && !P_MobjWasRemoved(bub))
+			{
+				tmp = bub->hnext;
+				P_RemoveMobj(bub);
+				bub = tmp;
+			}
+
+			P_RemoveMobj(player->follower);
+			P_SetTarget(&player->follower, NULL);
+		}
+
+		player->followerskin = skinnum;
+		//CONS_Printf("Updated player follower num\n");
+
+		// for replays: We have changed our follower mid-game; let the game know so it can do the same in the replay!
+		demo_extradata[playernum] |= DXD_FOLLOWER;
+
+		return;
+	}
+
+	if (P_IsLocalPlayer(player))
+		CONS_Alert(CONS_WARNING, M_GetText("Follower %d not found\n"), skinnum);
+	else if(server || IsPlayerAdmin(consoleplayer))
+		CONS_Alert(CONS_WARNING, "Player %d (%s) follower %d not found\n", playernum, player_names[playernum], skinnum);
+	SetFollower(playernum, -1); // Not found, then set -1 (nothing) as our follower.
 }
 
 //

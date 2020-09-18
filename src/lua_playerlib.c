@@ -119,7 +119,7 @@ static int lib_iterateDisplayplayers(lua_State *L)
 
 	for (i++; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		if (!playeringame[displayplayers[i]] || i > splitscreen)
+		if (i > splitscreen || !playeringame[displayplayers[i]])
 			return 0;	// Stop! There are no more players for us to go through. There will never be a player gap in displayplayers.
 
 		if (!players[displayplayers[i]].mo)
@@ -140,6 +140,8 @@ static int lib_getDisplayplayers(lua_State *L)
 		lua_Integer i = luaL_checkinteger(L, 2);
 		if (i < 0 || i >= MAXSPLITSCREENPLAYERS)
 			return luaL_error(L, "displayplayers[] index %d out of range (0 - %d)", i, MAXSPLITSCREENPLAYERS-1);
+		if (i > splitscreen)
+			return 0;
 		if (!playeringame[displayplayers[i]])
 			return 0;
 		if (!players[displayplayers[i]].mo)
@@ -243,6 +245,14 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->kartspeed);
 	else if (fastcmp(field,"kartweight"))
 		lua_pushinteger(L, plr->kartweight);
+	else if (fastcmp(field,"followerskin"))
+		lua_pushinteger(L, plr->followerskin);
+	else if (fastcmp(field,"followerready"))
+		lua_pushboolean(L, plr->followerready);
+	else if (fastcmp(field,"followercolor"))
+		lua_pushinteger(L, plr->followercolor);
+	else if (fastcmp(field,"follower"))
+		LUA_PushUserdata(L, plr->follower, META_MOBJ);
 	//
 	else if (fastcmp(field,"charflags"))
 		lua_pushinteger(L, plr->charflags);
@@ -372,6 +382,7 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->awayviewtics);
 	else if (fastcmp(field,"awayviewaiming"))
 		lua_pushangle(L, plr->awayviewaiming);
+
 	else if (fastcmp(field,"spectator"))
 		lua_pushboolean(L, plr->spectator);
 	else if (fastcmp(field,"bot"))
@@ -491,6 +502,14 @@ static int player_set(lua_State *L)
 		plr->kartspeed = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartweight"))
 		plr->kartweight = (UINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"followerskin"))
+		plr->followerskin = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"followercolor"))
+		plr->followercolor = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"followerready"))
+		plr->followerready = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"follower"))	// it's probably best we don't allow the follower mobj to change.
+		return NOSET;
 	//
 	else if (fastcmp(field,"charflags"))
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
@@ -758,8 +777,6 @@ static int ticcmd_get(lua_State *L)
 
 	if (fastcmp(field,"forwardmove"))
 		lua_pushinteger(L, cmd->forwardmove);
-	else if (fastcmp(field,"sidemove"))
-		lua_pushinteger(L, cmd->sidemove);
 	else if (fastcmp(field,"angleturn"))
 		lua_pushinteger(L, cmd->angleturn);
 	else if (fastcmp(field,"aiming"))
@@ -788,8 +805,6 @@ static int ticcmd_set(lua_State *L)
 
 	if (fastcmp(field,"forwardmove"))
 		cmd->forwardmove = (SINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"sidemove"))
-		cmd->sidemove = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"angleturn"))
 		cmd->angleturn = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aiming"))

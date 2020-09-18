@@ -45,6 +45,7 @@
 // SRB2kart
 #include "m_cond.h" // M_UpdateUnlockablesAndExtraEmblems
 #include "k_kart.h"
+#include "k_color.h"	// KartColor_Opposite
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
 #include "k_bot.h"
@@ -653,7 +654,7 @@ static void P_DeNightserizePlayer(player_t *player)
 
 	player->mo->flags &= ~MF_NOGRAVITY;
 
-	player->mo->flags2 &= ~MF2_DONTDRAW;
+	player->mo->drawflags &= ~MFD_DONTDRAW;
 
 	// Restore aiming angle
 	if (player == &players[consoleplayer])
@@ -728,7 +729,7 @@ void P_NightserizePlayer(player_t *player, INT32 nighttime)
 
 	player->mo->flags |= MF_NOGRAVITY;
 
-	player->mo->flags2 |= MF2_DONTDRAW;
+	player->mo->drawflags |= MFD_DONTDRAW;
 
 	player->nightstime = player->startedtime = nighttime*TICRATE;
 	player->bonustime = false;
@@ -1622,7 +1623,7 @@ void P_SpawnShieldOrb(player_t *player)
 			if (shieldobj->info->painstate)
 				P_SetMobjState(shieldobj,shieldobj->info->painstate);
 			else
-				shieldobj->flags2 |= MF2_SHADOW;
+				shieldobj->drawflags |= MFD_SHADOW;
 		}
 	}
 }
@@ -1658,8 +1659,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprite = mobj->sprite;
 	ghost->frame = mobj->frame;
 	ghost->tics = -1;
-	ghost->frame &= ~FF_TRANSMASK;
-	ghost->frame |= tr_trans50<<FF_TRANSSHIFT;
+	ghost->drawflags |= tr_trans50 << MFD_TRANSSHIFT;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
@@ -3410,7 +3410,7 @@ static void P_DoFiring(player_t *player, ticcmd_t *cmd) // SRB2kart - unused.
 					return;
 				P_SetWeaponDelay(player, (3*TICRATE)/2);
 
-				mo = P_SpawnPlayerMissile(player->mo, MT_REDRING, MF2_RAILRING|MF2_DONTDRAW);
+				mo = P_SpawnPlayerMissile(player->mo, MT_REDRING, MF2_RAILRING);
 
 				// Rail has no unique thrown object, therefore its sound plays here.
 				S_StartSound(player->mo, sfx_rail1);
@@ -4020,9 +4020,9 @@ static void P_2dMovement(player_t *player)
 static void P_3dMovement(player_t *player)
 {
 	ticcmd_t *cmd;
-	angle_t movepushangle, movepushsideangle; // Analog
+	angle_t movepushangle; // Analog
 	//INT32 topspeed, acceleration, thrustfactor;
-	fixed_t movepushforward = 0, movepushside = 0;
+	fixed_t movepushforward = 0;
 	angle_t dangle; // replaces old quadrants bits
 	//boolean dangleflip = false; // SRB2kart - toaster
 	//fixed_t normalspd = FixedMul(player->normalspeed, player->mo->scale);
@@ -4039,21 +4039,12 @@ static void P_3dMovement(player_t *player)
 
 	cmd = &player->cmd;
 
-	if (player->pflags & PF_STASIS || player->kartstuff[k_spinouttimer]) // pw_introcam?
-	{
-		cmd->forwardmove = cmd->sidemove = 0;
-	}
-
-	cmd->sidemove = 0; // TODO: Remove sidemove entirely
-
 	if (player->kartstuff[k_drift] != 0)
 		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
 	else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
 		movepushangle = (angle_t)player->kartstuff[k_boostangle];
 	else
 		movepushangle = player->mo->angle;
-
-	movepushsideangle = movepushangle-ANGLE_90;
 
 	// cmomx/cmomy stands for the conveyor belt speed.
 	if (player->onconveyor == 2) // Wind/Current
@@ -4107,10 +4098,6 @@ static void P_3dMovement(player_t *player)
 	*/
 	//}
 
-	// When sliding, don't allow forward/back
-	if (player->pflags & PF_SLIDING)
-		cmd->forwardmove = 0;
-
 	// Do not let the player control movement if not onground.
 	onground = P_IsObjectOnGround(player->mo);
 
@@ -4119,22 +4106,10 @@ static void P_3dMovement(player_t *player)
 	// Forward movement
 	if (!(P_PlayerInPain(player) && !onground))
 	{
-		movepushforward = K_3dKartMovement(player, onground, cmd->forwardmove);
+		movepushforward = K_3dKartMovement(player, onground);
 
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
 			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
-
-		if (cmd->buttons & BT_BRAKE && !cmd->forwardmove) // SRB2kart - braking isn't instant
-			movepushforward /= 64;
-
-		if (cmd->forwardmove > 0)
-			player->kartstuff[k_brakestop] = 0;
-		else if (player->kartstuff[k_brakestop] < 6) // Don't start reversing with brakes until you've made a stop first
-		{
-			if (player->speed < 8*FRACUNIT)
-				player->kartstuff[k_brakestop]++;
-			movepushforward = 0;
-		}
 
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
@@ -4142,18 +4117,6 @@ static void P_3dMovement(player_t *player)
 	else if (!(player->kartstuff[k_spinouttimer]))
 	{
 		K_MomentumToFacing(player);
-	}
-
-	// Sideways movement
-	if (cmd->sidemove != 0 && !((player->exiting || mapreset) || player->kartstuff[k_spinouttimer]))
-	{
-		if (cmd->sidemove > 0)
-			movepushside = (cmd->sidemove * FRACUNIT/128) + FixedDiv(player->speed, K_GetKartSpeed(player, true));
-		else
-			movepushside = (cmd->sidemove * FRACUNIT/128) - FixedDiv(player->speed, K_GetKartSpeed(player, true));
-
-		totalthrust.x += P_ReturnThrustX(player->mo, movepushsideangle, movepushside);
-		totalthrust.y += P_ReturnThrustY(player->mo, movepushsideangle, movepushside);
 	}
 
 	if ((totalthrust.x || totalthrust.y)
@@ -4323,7 +4286,7 @@ static void P_SpectatorMovement(player_t *player)
 	if (mo)
 	{
 		mo->flags2 |= MF2_RAILRING;
-		mo->flags2 |= MF2_DONTDRAW;
+		mo->drawflags |= MFD_DONTDRAW;
 		mo->flags |= MF_NOCLIPHEIGHT;
 		mo->flags |= MF_NOCLIP;
 		mo->flags &= ~MF_MISSILE;
@@ -5066,7 +5029,7 @@ static void P_NiGHTSMovement(player_t *player)
 	radius = player->mo->target->radius;
 
 	player->mo->flags |= MF_NOGRAVITY;
-	player->mo->flags2 |= MF2_DONTDRAW;
+	player->mo->drawflags |= MFD_DONTDRAW;
 	P_SetScale(player->mo->tracer, player->mo->scale);
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -5794,18 +5757,10 @@ static void P_MovePlayer(player_t *player)
 		boolean add_delta = true;
 
 		// Kart: store the current turn range for later use
-		if ((player->mo && player->speed > 0) // Moving
-			|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-			|| (player->respawn.state != RESPAWNST_NONE) // Respawning
-			|| (player->spectator || objectplacing)) // Not a physical player
-		{
-			player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
-			player->rturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, -KART_FULLTURN)-1;
-		} else {
-			player->lturn_max[leveltime%MAXPREDICTTICS] = player->rturn_max[leveltime%MAXPREDICTTICS] = 0;
-		}
+		player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
+		player->rturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, -KART_FULLTURN)-1;
 
-		if (leveltime >= starttime)
+		if (leveltime >= introtime)
 		{
 			// KART: Don't directly apply angleturn! It may have been either A) forged by a malicious client, or B) not be a smooth turn due to a player dropping frames.
 			// Instead, turn the player only up to the amount they're supposed to turn accounting for latency. Allow exactly 1 extra turn unit to try to keep old replays synced.
@@ -7110,7 +7065,7 @@ static void P_DeathThink(player_t *player)
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->flags2 |= MF2_DONTDRAW;
+			player->mo->drawflags |= MFD_DONTDRAW;
 		}
 	}
 	else
@@ -7245,8 +7200,7 @@ fixed_t t_cam4_rotate = -42;
 // we then throw that ticcmd garbage in the camera and make it move
 
 // redefine this
-static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
-static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
+static fixed_t forwardmove = MAXPLMOVE<<FRACBITS>>16;
 static fixed_t angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
 
 static ticcmd_t cameracmd;
@@ -7261,7 +7215,7 @@ void P_InitCameraCmd(void)
 
 static ticcmd_t *P_CameraCmd(camera_t *cam)
 {
-	INT32 laim, th, tspeed, forward, side, axis; //i
+	INT32 laim, th, tspeed, forward, axis; //i
 	const INT32 speed = 1;
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming;
@@ -7310,7 +7264,7 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 		turnright = turnright || (axis > 0);
 		turnleft = turnleft || (axis < 0);
 	}
-	forward = side = 0;
+	forward = 0;
 
 	// use two stage accelerative turning
 	// on the keyboard and joystick
@@ -7328,12 +7282,10 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	if (turnright && !(turnleft))
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed]));
-		side += sidemove[1];
 	}
 	else if (turnleft && !(turnright))
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed]));
-		side -= sidemove[1];
 	}
 
 	cmd->angleturn = (INT16)(cmd->angleturn - ((mousex*(encoremode ? -1 : 1)*8)));
@@ -7346,9 +7298,9 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 		cmd->buttons |= BT_BRAKE;
 	axis = JoyAxis(AXISAIM, 1);
 	if (InputDown(gc_aimforward, 1) || (usejoystick && axis < 0))
-		forward += forwardmove[1];
+		forward += forwardmove;
 	if (InputDown(gc_aimbackward, 1) || (usejoystick && axis > 0))
-		forward -= forwardmove[1];
+		forward -= forwardmove;
 
 	// fire with any button/key
 	axis = JoyAxis(AXISFIRE, 1);
@@ -7389,21 +7341,12 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 
 	mousex = mousey = mlooky = 0;
 
-	if (forward > MAXPLMOVE)
-		forward = MAXPLMOVE;
-	else if (forward < -MAXPLMOVE)
-		forward = -MAXPLMOVE;
+	cmd->forwardmove += (SINT8)forward;
 
-	if (side > MAXPLMOVE)
-		side = MAXPLMOVE;
-	else if (side < -MAXPLMOVE)
-		side = -MAXPLMOVE;
-
-	if (forward || side)
-	{
-		cmd->forwardmove = (SINT8)(cmd->forwardmove + forward);
-		cmd->sidemove = (SINT8)(cmd->sidemove + side);
-	}
+	if (cmd->forwardmove > MAXPLMOVE)
+		cmd->forwardmove = MAXPLMOVE;
+	else if (cmd->forwardmove < -MAXPLMOVE)
+		cmd->forwardmove = -MAXPLMOVE;
 
 	lang += (cmd->angleturn<<16);
 
@@ -7448,11 +7391,10 @@ void P_DemoCameraMovement(camera_t *cam)
 		cam->aiming = R_PointToAngle2(0, cam->z, R_PointToDist2(cam->x, cam->y, lastp->mo->x, lastp->mo->y), lastp->mo->z + lastp->mo->scale*128*P_MobjFlip(lastp->mo));	// This is still unholy. Aim a bit above their heads.
 	}
 
-
 	cam->momx = cam->momy = cam->momz = 0;
+
 	if (cmd->forwardmove != 0)
 	{
-
 		thrustangle = cam->angle >> ANGLETOFINESHIFT;
 
 		cam->x += FixedMul(cmd->forwardmove*mapobjectscale, FINECOSINE(thrustangle));
@@ -7468,7 +7410,7 @@ void P_DemoCameraMovement(camera_t *cam)
 
 	awayviewmobj_hack = P_SpawnMobj(cam->x, cam->y, cam->z, MT_THOK);
 	awayviewmobj_hack->tics = 2;
-	awayviewmobj_hack->flags2 |= MF2_DONTDRAW;
+	awayviewmobj_hack->drawflags |= MFD_DONTDRAW;
 
 	democam.soundmobj = awayviewmobj_hack;
 
@@ -7741,7 +7683,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (timeover)
 		angle = mo->angle + FixedAngle(camrotate*FRACUNIT);
-	else if (leveltime < starttime)
+	else if (leveltime < introtime)
 		angle = focusangle + FixedAngle(camrotate*FRACUNIT);
 	else if (camstill || resetcalled || player->playerstate == PST_DEAD)
 		angle = thiscam->angle;
@@ -7764,7 +7706,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		}
 	}
 
-	if (!resetcalled && (leveltime > starttime && timeover != 2)
+	if (!resetcalled && (leveltime >= introtime && timeover != 2)
 		&& ((thiscam == &camera[0] && t_cam_rotate != -42)
 		|| (thiscam == &camera[1] && t_cam2_rotate != -42)
 		|| (thiscam == &camera[2] && t_cam3_rotate != -42)
@@ -8081,7 +8023,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	else if (player->exiting || timeover == 2)
 		thiscam->momx = thiscam->momy = thiscam->momz = 0;
-	else if (leveltime < starttime)
+	else if (leveltime < introtime)
 	{
 		thiscam->momx = FixedMul(x - thiscam->x, camspeed);
 		thiscam->momy = FixedMul(y - thiscam->y, camspeed);
@@ -8409,6 +8351,287 @@ void P_DoTimeOver(player_t *player)
 		exitcountdown = 5*TICRATE;
 }
 
+/* 	set follower state with our weird hacks
+	the reason we do this is to avoid followers ever using actions (majormods, yikes!)
+	without having to touch p_mobj.c.
+	so we give it 1more tic and change the state when tic == 1 instead of 0
+	cool beans?
+	cool beans.
+*/
+static void P_SetFollowerState(mobj_t *f, INT32 state)
+{
+
+	if (!f || P_MobjWasRemoved(f))
+		return;		// safety net
+
+	// No, do NOT set the follower to S_NULL. Set it to S_INVISIBLE.
+	if (state == S_NULL)
+	{
+		state = S_INVISIBLE;
+		f->threshold = 1;	// Threshold = 1 means stop doing anything related to setting states, so that we don't get out of S_INVISIBLE
+	}
+
+	// extravalue2 stores the last "first state" we used.
+	// because states default to idlestates, if we use an animation that uses an "ongoing" state line, don't reset it!
+	// this prevents it from looking very dumb
+	if (state == f->extravalue2)
+		return;
+
+	// we will save the state into extravalue2.
+	f->extravalue2 = state;
+
+	P_SetMobjStateNF(f, state);
+	if (f->state->tics > 0)
+		f->tics++;
+}
+
+//
+//P_HandleFollower
+//
+//Handle the follower's spawning and moving along with the player. Do note that some of the stuff like the removal if a player doesn't exist anymore is handled in MT_FOLLOWER's thinker.
+static void P_HandleFollower(player_t *player)
+{
+	follower_t fl;
+	angle_t an;
+	fixed_t zoffs;
+	fixed_t sx, sy, sz;
+	UINT8 color;
+
+	fixed_t bubble;	// bubble scale (0 if no bubble)
+	mobj_t *bmobj;	// temp bubble mobj
+
+
+	if (!player->followerready)
+		return;	// we aren't ready to perform anything follower related yet.
+
+	// How about making sure our follower exists and is added before trying to spawn it n' all?
+	if (player->followerskin > numfollowers-1 || player->followerskin < -1)
+	{
+		//CONS_Printf("Follower skin invlaid. Setting to -1.\n");
+		player->followerskin = -1;
+		return;
+	}
+
+	// don't do anything if we can't have a follower to begin with. (It gets removed under those conditions)
+	if (player->spectator)
+		return;
+	if (player->followerskin < 0)
+		return;
+	// Before we do anything, let's be sure of where we're supposed to be
+	fl = followers[player->followerskin];
+
+	an = player->mo->angle + (fl.atangle)*ANG1;		// it's aproximative but it really doesn't matter in the grand scheme of things...
+	zoffs = (fl.zoffs)*FRACUNIT;
+	bubble = fl.bubblescale;	// 0 if no bubble to spawn.
+
+	// do you like angle maths? I certainly don't...
+	sx = player->mo->x + FixedMul((player->mo->scale*fl.dist), FINECOSINE((an)>>ANGLETOFINESHIFT));
+	sy = player->mo->y + FixedMul((player->mo->scale*fl.dist), FINESINE((an)>>ANGLETOFINESHIFT));
+
+	// for the z coordinate, don't be a doof like Steel and forget that MFE_VERTICALFLIP exists :P
+	sz = player->mo->z + FixedMul(player->mo->scale, zoffs)*P_MobjFlip(player->mo);
+	if (player->mo->eflags & MFE_VERTICALFLIP)
+		sz += fl.height*player->mo->scale;
+
+	// finally, add a cool floating effect to the z height.
+	// not stolen from k_kart I swear!!
+	{
+		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
+		fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * leveltime)>>ANGLETOFINESHIFT) & FINEMASK);
+		sz += FixedMul(player->mo->scale, sine)*P_MobjFlip(player->mo);
+	}
+
+	// Set follower colour
+
+	switch (player->followercolor)
+	{
+		case MAXSKINCOLORS:		// "Match"
+			color = player->skincolor;
+			break;
+		case MAXSKINCOLORS+1:	// "Opposite"
+			color = KartColor_Opposite[player->skincolor*2];
+			break;
+		default:
+
+			color = player->followercolor;
+			if (!color || color > MAXSKINCOLORS+2)	// Make sure this isn't garbage
+				color = player->skincolor;	// "Match" as fallback.
+
+			break;
+	}
+
+
+
+	if (!player->follower)	// follower doesn't exist / isn't valid
+	{
+		//CONS_Printf("Spawning follower...\n");
+		// so let's spawn one!
+		P_SetTarget(&player->follower, P_SpawnMobj(sx, sy, sz, MT_FOLLOWER));
+		P_SetFollowerState(player->follower, fl.idlestate);
+		P_SetTarget(&player->follower->target, player->mo);	// we need that to know when we need to disappear
+		player->follower->angle = player->mo->angle;
+
+		// This is safe to only spawn it here, the follower is removed then respawned when switched.
+		if (bubble)
+		{
+			bmobj = P_SpawnMobj(player->follower->x, player->follower->y, player->follower->z, MT_FOLLOWERBUBBLE_FRONT);
+			P_SetTarget(&player->follower->hnext, bmobj);
+			P_SetTarget(&bmobj->target, player->follower);	// Used to know if we have to despawn at some point.
+
+			bmobj = P_SpawnMobj(player->follower->x, player->follower->y, player->follower->z, MT_FOLLOWERBUBBLE_BACK);
+			P_SetTarget(&player->follower->hnext->hnext, bmobj);	// this seems absolutely stupid, I know, but this will make updating the momentums/flags of these a bit easier.
+			P_SetTarget(&bmobj->target, player->follower);	// Ditto
+		}
+
+		player->follower->extravalue1 = 0;	// extravalue1 is used to know what "state set" to use.
+		/*
+			0 = idle
+			1 = forwards
+			2 = hurt
+			3 = win
+			4 = lose
+			5 = hitconfirm (< this one uses ->movecount as timer to know when to end, and goes back to normal states afterwards, unless hurt)
+		*/
+	}
+	else	// follower exists, woo!
+	{
+
+		// Safety net (2)
+
+		if (P_MobjWasRemoved(player->follower))
+		{
+			P_SetTarget(&player->follower, NULL);	// Remove this and respawn one, don't crash the game if Lua decides to P_RemoveMobj this thing.
+			return;
+		}
+
+		// first of all, handle states following the same model as above:
+		if (player->follower->tics == 1)
+			P_SetFollowerState(player->follower, player->follower->state->nextstate);
+
+		// move the follower next to us (yes, this is really basic maths but it looks pretty damn clean in practice)!
+		player->follower->momx = (sx - player->follower->x)/fl.horzlag;
+		player->follower->momy = (sy - player->follower->y)/fl.horzlag;
+		player->follower->momz = (sz - player->follower->z)/fl.vertlag;
+		player->follower->angle = player->mo->angle;
+
+		if (player->mo->colorized)
+			player->follower->color = player->mo->color;
+		else
+			player->follower->color = color;
+
+		player->follower->colorized = player->mo->colorized;
+
+		P_SetScale(player->follower, FixedMul(fl.scale, player->mo->scale));
+		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo);	// Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
+
+		// Match how the player is being drawn
+		player->follower->drawflags = player->mo->drawflags;
+
+		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
+		// Also make the follower invisible if we choose not to have it displayed because it isn't ours. (also quick hacky check for f12)
+		if (player->pflags & PF_TIMEOVER || (!cv_showfollowers.value && (!P_IsDisplayPlayer(player) || displayplayers[0] != consoleplayer) ))
+			player->follower->drawflags |= MFD_DONTDRAW;
+
+		if (player->speed && (player->follower->momx || player->follower->momy))
+			player->follower->angle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);
+			// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
+			// Make sure the follower itself is also moving however, otherwise we'll be facing angle 0
+
+		// Finally, if the follower has bubbles, move them, set their scale, etc....
+		// This is what I meant earlier by it being easier, now we can just use this weird lil loop to get the job done!
+
+		bmobj = player->follower->hnext;	// will be NULL if there's no bubble
+
+		while (bmobj && !P_MobjWasRemoved(bmobj))
+		{
+			// match follower's momentums and (e)flags(2).
+			bmobj->momx = player->follower->momx;
+			bmobj->momy = player->follower->momy;
+			bmobj->momz = player->follower->momz;
+
+			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
+			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
+			bmobj->drawflags = player->mo->drawflags;
+
+			if (player->follower->threshold)	// threshold means the follower was "despawned" with S_NULL (is actually just set to S_INVISIBLE)
+				P_SetMobjState(bmobj, S_INVISIBLE);	// sooooo... let's do the same!
+
+			bmobj = bmobj->hnext;	// switch to other bubble layer or exit
+		}
+
+
+		if (player->follower->threshold)
+			return;	// Threshold means the follower was "despanwed" with S_NULL.
+
+		// However with how the code is factored, this is just a special case of S_INVISBLE to avoid having to add other player variables.
+
+
+		// handle follower animations. Could probably be better...
+		// hurt or dead
+		if (player->kartstuff[k_spinouttimer] || player->mo->state == &states[S_KART_SPIN] || player->mo->health <= 0)
+		{
+			player->follower->movecount = 0;	// cancel hit confirm.
+			player->follower->angle = player->frameangle;	// spin out
+			if (player->follower->extravalue1 != 2)
+			{
+				player->follower->extravalue1 = 2;
+				P_SetFollowerState(player->follower, fl.hurtstate);
+			}
+			if (player->mo->health <= 0)	// if dead, follow the player's z momentum exactly so they both look like they die at the same speed.
+				player->follower->momz = player->mo->momz;
+		}
+		else if (player->follower->movecount)
+		{
+			if (player->follower->extravalue1 != 5)
+			{
+				player->follower->extravalue1 = 5;
+				P_SetFollowerState(player->follower, fl.hitconfirmstate);
+			}
+			player->follower->movecount--;
+		}
+		else if (player->speed > 10*player->mo->scale)	// animation for moving fast enough
+		{
+
+			if (player->follower->extravalue1 != 1)
+			{
+				player->follower->extravalue1 = 1;
+				P_SetFollowerState(player->follower, fl.followstate);
+			}
+		}
+		else	// animations when nearly still. This includes winning and losing.
+		{
+			if (player->follower->extravalue1 != 0)
+			{
+
+				if (player->exiting)	// win/ loss animations
+				{
+					if (K_IsPlayerLosing(player))	// L
+					{
+						if (player->follower->extravalue1 != 4)
+						{
+							player->follower->extravalue1 = 4;
+							P_SetFollowerState(player->follower, fl.losestate);
+						}
+					}
+					else	// W
+					{
+						if (player->follower->extravalue1 != 3)
+						{
+							player->follower->extravalue1 = 3;
+							P_SetFollowerState(player->follower, fl.winstate);
+						}
+					}
+				}
+				else	// normal standstill
+				{
+					player->follower->extravalue1 = 0;
+					P_SetFollowerState(player->follower, fl.idlestate);
+				}
+			}
+		}
+	}
+}
+
 //
 // P_PlayerThink
 //
@@ -8462,6 +8685,9 @@ void P_PlayerThink(player_t *player)
 		P_SetTarget(&player->awayviewmobj, NULL); // remove awayviewmobj asap if invalid
 		player->awayviewtics = 0; // reset to zero
 	}
+
+	// Run followes here. We need them to run even when we're dead to follow through what we're doing.
+	P_HandleFollower(player);
 
 	if (player->flashcount)
 		player->flashcount--;
@@ -8584,9 +8810,9 @@ void P_PlayerThink(player_t *player)
 	if (player->playerstate == PST_DEAD)
 	{
 		if (player->spectator)
-			player->mo->flags2 |= MF2_SHADOW;
+			player->mo->drawflags |= MFD_SHADOW;
 		else
-			player->mo->flags2 &= ~MF2_SHADOW;
+			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
 		P_DeathThink(player);
 
 		return;
@@ -8601,7 +8827,7 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// SRB2kart 010217
-	if (leveltime < starttime)
+	if (leveltime < introtime)
 	{
 		player->powers[pw_nocontrol] = 2;
 	}
@@ -8733,8 +8959,7 @@ void P_PlayerThink(player_t *player)
 		gmobj->fuse = 2;
 		if (leveltime & 1)
 		{
-			gmobj->frame &= ~FF_TRANSMASK;
-			gmobj->frame |= tr_trans70<<FF_TRANSSHIFT;
+			gmobj->drawflags |= tr_trans70 << MFD_TRANSSHIFT;
 		}
 
 		// Hide the mobj from our sights if we're the displayplayer and chasecam is off.
@@ -8744,7 +8969,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (player == &players[displayplayers[i]] && !camera[i].chase)
 			{
-				gmobj->flags2 |= MF2_DONTDRAW;
+				gmobj->drawflags |= MFD_DONTDRAW;
 				break;
 			}
 		}
@@ -8884,16 +9109,16 @@ void P_PlayerThink(player_t *player)
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)
 			&& (leveltime & 1))
-			player->mo->flags2 |= MF2_DONTDRAW;
+			player->mo->drawflags |= MFD_DONTDRAW;
 		else
-			player->mo->flags2 &= ~MF2_DONTDRAW;
+			player->mo->drawflags &= ~MFD_DONTDRAW;
 	}
 	/*else if (player->mo->tracer)
 	{
 		if (player->powers[pw_flashing] & 1)
-			player->mo->tracer->flags2 |= MF2_DONTDRAW;
+			player->mo->tracer->drawflags |= MFD_DONTDRAW;
 		else
-			player->mo->tracer->flags2 &= ~MF2_DONTDRAW;
+			player->mo->tracer->drawflags &= ~MFD_DONTDRAW;
 	}*/
 
 	player->pflags &= ~PF_SLIDING;
@@ -9232,8 +9457,8 @@ void P_PlayerAfterThink(player_t *player)
 		if (!(player->mo->tracer->target->flags & MF_SLIDEME) // Noclimb on chain parameters gives this
 		&& !(twodlevel || player->mo->flags2 & MF2_TWOD)) // why on earth would you want to turn them in 2D mode?
 		{
-			player->mo->tracer->target->health += cmd->sidemove;
-			player->mo->angle += cmd->sidemove<<ANGLETOFINESHIFT; // 2048 --> ANGLE_MAX
+			//player->mo->tracer->target->health += cmd->sidemove;
+			//player->mo->angle += cmd->sidemove<<ANGLETOFINESHIFT; // 2048 --> ANGLE_MAX
 
 			if (player == &players[consoleplayer])
 				localangle[0] = player->mo->angle; // Adjust the local control angle.
@@ -9271,7 +9496,7 @@ void P_PlayerAfterThink(player_t *player)
 	// spectator invisibility and nogravity.
 	if ((netgame || multiplayer) && player->spectator)
 	{
-		player->mo->flags2 |= MF2_DONTDRAW;
+		player->mo->drawflags |= MFD_DONTDRAW;
 		player->mo->flags |= MF_NOGRAVITY;
 	}
 

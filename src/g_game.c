@@ -224,10 +224,15 @@ UINT16 spacetimetics = 11*TICRATE + (TICRATE/2);
 UINT16 extralifetics = 4*TICRATE;
 
 // SRB2kart
-tic_t introtime = 108+5; // plus 5 for white fade
-tic_t starttime = 6*TICRATE + (3*TICRATE/4);
+tic_t introtime = 0;
+tic_t starttime = 0;
+
+const tic_t bulbtime = TICRATE/2;
+UINT8 numbulbs = 0;
+
 tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
 tic_t battleexittime = 8*TICRATE;
+
 INT32 hyudorotime = 7*TICRATE;
 INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
@@ -289,6 +294,7 @@ tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
 boolean thwompsactive; // Thwomps activate on lap 2
 SINT8 spbplace; // SPB exists, give the person behind better items
+boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
@@ -1255,13 +1261,12 @@ INT32 JoyAxis(axis_input_e axissel, UINT8 p)
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
-static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
-static fixed_t sidemove[2] = {2<<FRACBITS>>16, 4<<FRACBITS>>16};
+static fixed_t forwardmove = MAXPLMOVE<<FRACBITS>>16;
 static fixed_t angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
-	INT32 laim, th, tspeed, forward, side, axis; //i
+	INT32 laim, th, tspeed, forward, axis; //i
 	const INT32 speed = 1;
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming, analogjoystickmove, gamepadjoystickmove;
@@ -1372,7 +1377,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		turnright = turnright || (axis > 0);
 		turnleft = turnleft || (axis < 0);
 	}
-	forward = side = 0;
+	forward = 0;
 
 	// use two stage accelerative turning
 	// on the keyboard and joystick
@@ -1393,13 +1398,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed]));
 		cmd->driftturn = (INT16)(cmd->driftturn - (angleturn[tspeed]));
-		side += sidemove[1];
 	}
 	else if (turnleft && !(turnright))
 	{
 		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed]));
 		cmd->driftturn = (INT16)(cmd->driftturn + (angleturn[tspeed]));
-		side -= sidemove[1];
 	}
 
 	if (analogjoystickmove && axis != 0)
@@ -1407,7 +1410,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		// JOYAXISRANGE should be 1023 (divide by 1024)
 		cmd->angleturn = (INT16)(cmd->angleturn - (((axis * angleturn[1]) >> 10))); // ANALOG!
 		cmd->driftturn = (INT16)(cmd->driftturn - (((axis * angleturn[1]) >> 10)));
-		side += ((axis * sidemove[0]) >> 10);
 	}
 
 	// Specator mouse turning
@@ -1427,9 +1429,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->buttons |= BT_BRAKE;
 		axis = JoyAxis(AXISAIM, ssplayer);
 		if (InputDown(gc_aimforward, ssplayer) || (usejoystick && axis < 0))
-			forward += forwardmove[1];
+			forward += forwardmove;
 		if (InputDown(gc_aimbackward, ssplayer) || (usejoystick && axis > 0))
-			forward -= forwardmove[1];
+			forward -= forwardmove;
 	}
 	else
 	{
@@ -1438,13 +1440,13 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (InputDown(gc_accelerate, ssplayer) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
 		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward = forwardmove[1];	// 50
+			forward = forwardmove;	// 50
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			forward += ((axis * forwardmove[1]) >> 10)*2;
+			forward += ((axis * forwardmove) >> 10);
 		}
 
 		axis = JoyAxis(AXISBRAKE, ssplayer);
@@ -1452,14 +1454,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		{
 			cmd->buttons |= BT_BRAKE;
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= forwardmove[0];	// 25 - Halved value so clutching is possible
+				forward -= forwardmove;
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
 			cmd->buttons |= BT_BRAKE;
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= ((axis * forwardmove[0]) >> 10);
+				forward -= ((axis * forwardmove) >> 10);
 		}
 
 		// But forward/backward IS used for aiming.
@@ -1508,7 +1510,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		INT32 player_invert = invertmouse ? -1 : 1;
 		INT32 screen_invert =
 			(player->mo && (player->mo->eflags & MFE_VERTICALFLIP)
-			 && (!thiscam->chase || player->pflags & PF_FLIPCAM)) //because chasecam's not inverted
+			 && (!thiscam->chase)) //because chasecam's not inverted
 			 ? -1 : 1; // set to -1 or 1 to multiply
 
 		// mouse look stuff (mouse look is not the same as mouse aim)
@@ -1554,21 +1556,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	mousex = mousey = mlooky = 0;
 
-	if (forward > MAXPLMOVE)
-		forward = MAXPLMOVE;
-	else if (forward < -MAXPLMOVE)
-		forward = -MAXPLMOVE;
+	cmd->forwardmove += (SINT8)forward;
 
-	if (side > MAXPLMOVE)
-		side = MAXPLMOVE;
-	else if (side < -MAXPLMOVE)
-		side = -MAXPLMOVE;
-
-	if (forward || side)
-	{
-		cmd->forwardmove = (SINT8)(cmd->forwardmove + forward);
-		cmd->sidemove = (SINT8)(cmd->sidemove + side);
-	}
+	if (cmd->forwardmove > MAXPLMOVE)
+		cmd->forwardmove = MAXPLMOVE;
+	else if (cmd->forwardmove < -MAXPLMOVE)
+		cmd->forwardmove = -MAXPLMOVE;
 
 	//{ SRB2kart - Drift support
 	// Not grouped with the rest of turn stuff because it needs to know what buttons you're pressing for rubber-burn turn
@@ -1588,12 +1581,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->angleturn *= realtics;
 
-	// SRB2kart - no additional angle if not moving
-	if ((player->mo && player->speed > 0) // Moving
-		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (player->respawn.state != RESPAWNST_NONE) // Respawning
-		|| (player->spectator || objectplacing)) // Not a physical player
-		lang += (cmd->angleturn<<16);
+	lang += (cmd->angleturn<<16);
 
 	cmd->angleturn = (INT16)(lang >> 16);
 	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
@@ -1623,7 +1611,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 #endif
 
 	//Reset away view if a command is given.
-	if ((cmd->forwardmove || cmd->sidemove || cmd->buttons)
+	if ((cmd->forwardmove || cmd->buttons)
 		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
 		displayplayers[0] = consoleplayer;
 }
@@ -2337,10 +2325,6 @@ void G_Ticker(boolean run)
 	UINT32 i;
 	INT32 buf;
 	ticcmd_t *cmd;
-	UINT32 ra_timeskip = (modeattacking && !demo.playback && leveltime < starttime - TICRATE*4) ? 0 : (starttime - TICRATE*4 - 1);
-	// starttime - TICRATE*4 is where we want RA to start when we PLAY IT, so we will loop the main thinker on RA start to get it to this point,
-	// the reason this is done is to ensure that ghosts won't look out of synch with other map elements (objects, moving platforms...)
-	// when we REPLAY, don't skip, let the camera spin, do its thing etc~
 
 	// also the -1 is to ensure that the thinker runs in the loop below.
 
@@ -2413,16 +2397,12 @@ void G_Ticker(boolean run)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
-
-			for (; ra_timeskip < starttime - TICRATE*4; ra_timeskip++)	// this looks weird but this is done to not break compability with older demos for now.
-			{
-				if (demo.title)
-					F_TitleDemoTicker();
-				P_Ticker(run); // tic the game
-				ST_Ticker();
-				AM_Ticker();
-				HU_Ticker();
-			}
+			if (demo.title)
+				F_TitleDemoTicker();
+			P_Ticker(run); // tic the game
+			ST_Ticker();
+			AM_Ticker();
+			HU_Ticker();
 			break;
 
 		case GS_INTERMISSION:
@@ -2535,7 +2515,7 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	memset(p->kartstuff, 0, sizeof (p->kartstuff)); // SRB2kart
 	p->ringweapons = 0;
 
-	p->mo->flags2 &= ~MF2_SHADOW; // cancel invisibility
+	p->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK); // cancel invisibility
 	P_FlashPal(p, 0, 0); // Resets
 
 	p->starpostnum = 0;
@@ -2570,6 +2550,10 @@ void G_PlayerReborn(INT32 player)
 	// SRB2kart
 	UINT8 kartspeed;
 	UINT8 kartweight;
+	boolean followerready;
+	INT32 followerskin;
+	UINT8 followercolor;
+	mobj_t *follower;	// old follower, will probably be removed by the time we're dead but you never know.
 	//
 	INT32 charflags;
 	INT32 pflags;
@@ -2615,7 +2599,7 @@ void G_PlayerReborn(INT32 player)
 	jointime = players[player].jointime;
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
-	pflags = (players[player].pflags & (PF_TIMEOVER|PF_FLIPCAM|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
+	pflags = (players[player].pflags & (PF_TIMEOVER|PF_TAGIT|PF_TAGGED|PF_WANTSTOJOIN));
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
@@ -2630,6 +2614,10 @@ void G_PlayerReborn(INT32 player)
 	// SRB2kart
 	kartspeed = players[player].kartspeed;
 	kartweight = players[player].kartweight;
+	follower = players[player].follower;
+	followerready = players[player].followerready;
+	followercolor = players[player].followercolor;
+	followerskin = players[player].followerskin;
 	//
 	charflags = players[player].charflags;
 
@@ -2683,6 +2671,9 @@ void G_PlayerReborn(INT32 player)
 		comebackpoints = players[player].kartstuff[k_comebackpoints];
 		wanted = players[player].kartstuff[k_wanted];
 	}
+
+	// Obliterate follower from existence
+	P_SetTarget(&players[player].follower, NULL);
 
 	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
 
@@ -2739,6 +2730,16 @@ void G_PlayerReborn(INT32 player)
 	p->kartstuff[k_lastdraft] = -1;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
+
+	if (follower)
+		P_RemoveMobj(follower);
+
+	p->followerready = followerready;
+	p->followerskin = followerskin;
+	p->followercolor = followercolor;
+	//p->follower = NULL;	// respawn a new one with you, it looks better.
+	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
+
 
 	// Don't do anything immediately
 	p->pflags |= PF_USEDOWN;
@@ -3207,7 +3208,7 @@ void G_AddPlayer(INT32 playernum)
 	p->jointime = 0;
 	p->playerstate = PST_REBORN;
 
-	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN; // Set everything
+	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
 }
 
 void G_ExitLevel(void)
@@ -4762,13 +4763,12 @@ char *G_BuildMapTitle(INT32 mapnum)
 
 // For demos
 #define ZT_FWD     0x01
-#define ZT_SIDE    0x02
-#define ZT_ANGLE   0x04
-#define ZT_BUTTONS 0x08
-#define ZT_AIMING  0x10
-#define ZT_DRIFT   0x20
-#define ZT_LATENCY 0x40
-#define DEMOMARKER 0x80 // demoend
+#define ZT_ANGLE   0x02
+#define ZT_BUTTONS 0x04
+#define ZT_AIMING  0x08
+#define ZT_DRIFT   0x10
+#define ZT_LATENCY 0x20
+#define DEMOMARKER 0x40 // demoend
 
 UINT8 demo_extradata[MAXPLAYERS];
 UINT8 demo_writerng; // 0=no, 1=yes, 2=yes but on a timeout
@@ -4831,7 +4831,6 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	for (i = 0; i < n; i++)
 	{
 		dest[i].forwardmove = src[i].forwardmove;
-		dest[i].sidemove = src[i].sidemove;
 		dest[i].angleturn = SHORT(src[i].angleturn);
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
@@ -4937,6 +4936,25 @@ void G_ReadDemoExtraData(void)
 			M_Memcpy(player_names[p],demo_p,16);
 			demo_p += 16;
 		}
+		if (extradata & DXD_FOLLOWER)
+		{
+			// Set our follower
+			M_Memcpy(name, demo_p, 16);
+			demo_p += 16;
+			SetPlayerFollower(p, name);
+
+			// Follower's color
+			M_Memcpy(name, demo_p, 16);
+			demo_p += 16;
+			for (i = 0; i < MAXSKINCOLORS; i++)
+				if (!stricmp(KartColor_Names[i], name))				// SRB2kart
+				{
+					players[p].followercolor = i;
+					break;
+				}
+
+
+		}
 		if (extradata & DXD_PLAYSTATE)
 		{
 			extradata = READUINT8(demo_p);
@@ -5039,6 +5057,7 @@ void G_WriteDemoExtraData(void)
 
 				WRITEUINT8(demo_p, skins[players[i].skin].kartspeed);
 				WRITEUINT8(demo_p, skins[players[i].skin].kartweight);
+
 			}
 			if (demo_extradata[i] & DXD_COLOR)
 			{
@@ -5055,6 +5074,21 @@ void G_WriteDemoExtraData(void)
 				strncpy(name, player_names[i], 16);
 				M_Memcpy(demo_p,name,16);
 				demo_p += 16;
+			}
+			if (demo_extradata[i] & DXD_FOLLOWER)
+			{
+				// write follower
+				memset(name, 0, 16);
+				strncpy(name, followers[players[i].followerskin].skinname, 16);
+				M_Memcpy(demo_p, name, 16);
+				demo_p += 16;
+
+				// write follower color
+				memset(name, 0, 16);
+				strncpy(name, Followercolor_cons_t[players[i].followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+				M_Memcpy(demo_p,name,16);
+				demo_p += 16;
+
 			}
 			if (demo_extradata[i] & DXD_PLAYSTATE)
 			{
@@ -5105,8 +5139,6 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	if (ziptic & ZT_FWD)
 		oldcmd[playernum].forwardmove = READSINT8(demo_p);
-	if (ziptic & ZT_SIDE)
-		oldcmd[playernum].sidemove = READSINT8(demo_p);
 	if (ziptic & ZT_ANGLE)
 		oldcmd[playernum].angleturn = READINT16(demo_p);
 	if (ziptic & ZT_BUTTONS)
@@ -5120,14 +5152,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
 
-	// SRB2kart: Copy-pasted from ticcmd building, removes that crappy demo cam
-	if (((players[displayplayers[0]].mo && players[displayplayers[0]].speed > 0) // Moving
-		|| (leveltime > starttime && (cmd->buttons & BT_ACCELERATE && cmd->buttons & BT_BRAKE)) // Rubber-burn turn
-		|| (players[displayplayers[0]].respawn.state != RESPAWNST_NONE) // Respawning
-		|| (players[displayplayers[0]].spectator || objectplacing)) // Not a physical player
-		&& !(players[displayplayers[0]].kartstuff[k_spinouttimer]
-		&& players[displayplayers[0]].kartstuff[k_sneakertimer])) // Spinning and boosting cancels out spinout
-		localangle[0] += (cmd->angleturn<<16);
+	localangle[0] += (cmd->angleturn<<16);
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
 	{
@@ -5151,13 +5176,6 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		WRITEUINT8(demo_p,cmd->forwardmove);
 		oldcmd[playernum].forwardmove = cmd->forwardmove;
 		ziptic |= ZT_FWD;
-	}
-
-	if (cmd->sidemove != oldcmd[playernum].sidemove)
-	{
-		WRITEUINT8(demo_p,cmd->sidemove);
-		oldcmd[playernum].sidemove = cmd->sidemove;
-		ziptic |= ZT_SIDE;
 	}
 
 	if (cmd->angleturn != oldcmd[playernum].angleturn)
@@ -5656,6 +5674,8 @@ void G_GhostTicker(void)
 					g->p += 16; // Same tbh
 				if (ziptic & DXD_NAME)
 					g->p += 16; // yea
+				if (ziptic & DXD_FOLLOWER)
+					g->p += 32; // ok (32 because there's both the skin and the colour)
 				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
 					I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
 			}
@@ -5670,8 +5690,6 @@ void G_GhostTicker(void)
 		ziptic = READUINT8(g->p); // Back to actual ziptic stuff
 
 		if (ziptic & ZT_FWD)
-			g->p++;
-		if (ziptic & ZT_SIDE)
 			g->p++;
 		if (ziptic & ZT_ANGLE)
 			g->p += 2;
@@ -5961,7 +5979,7 @@ void G_PreviewRewind(tic_t previewtime)
 		if (!info->playerinfo[i].ingame || !info->playerinfo[i].player.mo)
 		{
 			if (players[i].mo)
-				players[i].mo->flags2 |= MF2_DONTDRAW;
+				players[i].mo->drawflags |= MFD_DONTDRAW;
 
 			continue;
 		}
@@ -5969,7 +5987,7 @@ void G_PreviewRewind(tic_t previewtime)
 		if (!players[i].mo)
 			continue; //@TODO spawn temp object to act as a player display
 
-		players[i].mo->flags2 &= ~MF2_DONTDRAW;
+		players[i].mo->drawflags &= ~MFD_DONTDRAW;
 
 		P_UnsetThingPosition(players[i].mo);
 #define TWEEN(pr) info->playerinfo[i].mobj.pr + FixedMul((INT32) (next_info->playerinfo[i].mobj.pr - info->playerinfo[i].mobj.pr), tweenvalue)
@@ -6326,7 +6344,9 @@ void G_BeginRecording(void)
 		demoflags |= DF_ENCORE;
 
 #ifdef HAVE_BLUA
-	demoflags |= DF_LUAVARS;
+	if (!modeattacking)	// Ghosts don't read luavars, and you shouldn't ever need to save Lua in replays, you doof!
+						// SERIOUSLY THOUGH WHY WOULD YOU LOAD HOSTMOD AND RECORD A GHOST WITH IT !????
+		demoflags |= DF_LUAVARS;
 #endif
 
 	// Setup header.
@@ -6394,6 +6414,12 @@ void G_BeginRecording(void)
 	CV_SaveNetVars(&demo_p, true);
 
 	// Now store some info for each in-game player
+
+	// Lat' 12/05/19: Do note that for the first game you load, everything that gets saved here is total garbage;
+	// The name will always be Player <n>, the skin sonic, the color None and the follower 0. This is only correct on subsequent games.
+	// In the case of said first game, the skin and the likes are updated with Got_NameAndColor, which are then saved in extradata for the demo with DXD_SKIN in r_things.c for instance.
+
+
 	for (p = 0; p < MAXPLAYERS; p++) {
 		if (playeringame[p]) {
 			player = &players[p];
@@ -6418,6 +6444,25 @@ void G_BeginRecording(void)
 			M_Memcpy(demo_p,name,16);
 			demo_p += 16;
 
+			// Save follower's skin name
+			// PS: We must check for 'follower' to determine if the followerskin is valid. It's going to be 0 if we don't have a follower, but 0 is also absolutely a valid follower!
+			// Doesn't really matter if the follower mobj is valid so long as it exists in a way or another.
+
+			memset(name, 0, 16);
+			if (player->follower)
+				strncpy(name, followers[player->followerskin].skinname, 16);
+			else
+				strncpy(name, "None", 16);	// Say we don't have one, then.
+
+			M_Memcpy(demo_p,name,16);
+			demo_p += 16;
+
+			// Save follower's colour
+			memset(name, 0, 16);
+			strncpy(name, Followercolor_cons_t[player->followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+			M_Memcpy(demo_p, name, 16);
+			demo_p += 16;
+
 			// Score, since Kart uses this to determine where you start on the map
 			WRITEUINT32(demo_p, player->score);
 
@@ -6434,8 +6479,9 @@ void G_BeginRecording(void)
 	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
 
 #ifdef HAVE_BLUA
-	// player lua vars, always saved even if empty
-	LUA_ArchiveDemo();
+	// player lua vars, always saved even if empty... Unless it's record attack.
+	if (!modeattacking)
+		LUA_ArchiveDemo();
 #endif
 
 	memset(&oldcmd,0,sizeof(oldcmd));
@@ -7017,7 +7063,7 @@ void G_DoPlayDemo(char *defdemoname)
 {
 	UINT8 i, p;
 	lumpnum_t l;
-	char skin[17],color[17],*n,*pdemoname;
+	char skin[17],color[17],follower[17],*n,*pdemoname;
 	UINT8 version,subversion;
 	UINT32 randseed;
 	char msg[1024];
@@ -7031,6 +7077,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 	skin[16] = '\0';
 	color[16] = '\0';
+	follower[16] = '\0';
 
 	// No demo name means we're restarting the current demo
 	if (defdemoname == NULL)
@@ -7345,6 +7392,23 @@ void G_DoPlayDemo(char *defdemoname)
 				break;
 			}
 
+		// Follower
+		M_Memcpy(follower, demo_p, 16);
+		demo_p += 16;
+		SetPlayerFollower(p, follower);
+
+		// Follower colour
+		M_Memcpy(color, demo_p, 16);
+		demo_p += 16;
+		for (i = 0; i < MAXSKINCOLORS +2; i++)	// +2 because of Match and Opposite
+		{
+				if (!stricmp(Followercolor_cons_t[i].strvalue, color))
+				{
+						players[p].followercolor = i;
+						break;
+				}
+		}
+
 		// Score, since Kart uses this to determine where you start on the map
 		players[p].score = READUINT32(demo_p);
 
@@ -7370,6 +7434,7 @@ void G_DoPlayDemo(char *defdemoname)
 		if (!gL)	// No Lua state! ...I guess we'll just start one...
 			LUA_ClearState();
 
+		// No modeattacking check, DF_LUAVARS won't be present here.
 		LUA_UnArchiveDemo();
 	}
 #endif
@@ -7573,6 +7638,9 @@ void G_AddGhost(char *defdemoname)
 	// Color
 	M_Memcpy(color, p, 16);
 	p += 16;
+
+	// Follower data was here, skip it, we don't care about it for ghosts.
+	p += 32;	// followerskin (16) + followercolor (16)
 
 	p += 4; // score
 	p += 2; // powerlevel

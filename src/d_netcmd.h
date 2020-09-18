@@ -21,18 +21,23 @@
 extern consvar_t cv_playername;
 extern consvar_t cv_playercolor;
 extern consvar_t cv_skin;
+extern consvar_t cv_follower;
+extern consvar_t cv_showfollowers;
 // secondary splitscreen player
 extern consvar_t cv_playername2;
 extern consvar_t cv_playercolor2;
 extern consvar_t cv_skin2;
+extern consvar_t cv_follower2;
 // third splitscreen player
 extern consvar_t cv_playername3;
 extern consvar_t cv_playercolor3;
 extern consvar_t cv_skin3;
+extern consvar_t cv_follower3;
 // fourth splitscreen player
 extern consvar_t cv_playername4;
 extern consvar_t cv_playercolor4;
 extern consvar_t cv_skin4;
+extern consvar_t cv_follower4;
 // preferred number of players
 extern consvar_t cv_splitplayers;
 
@@ -103,7 +108,7 @@ extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
 extern consvar_t cv_thundershield, cv_bubbleshield, cv_flameshield;
 extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
 
-extern consvar_t cv_triplesneaker, cv_triplebanana, cv_decabanana;
+extern consvar_t cv_dualsneaker, cv_triplesneaker, cv_triplebanana, cv_decabanana;
 extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
 
 extern consvar_t cv_kartminimap;

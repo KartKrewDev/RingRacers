@@ -32,6 +32,7 @@
 #include "sounds.h"
 #include "s_sound.h"
 #include "i_system.h"
+#include "i_threads.h"
 
 // Addfile
 #include "filesrch.h"
@@ -56,7 +57,8 @@
 #include "byteptr.h"
 #include "st_stuff.h"
 #include "i_sound.h"
-#include "k_kart.h" // SRB2kart
+#include "k_hud.h" // SRB2kart
+#include "k_kart.h" // KartItemCVars
 #include "k_pwrlv.h"
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"
@@ -125,6 +127,12 @@ typedef enum
 	NUM_QUITMESSAGES
 } text_enum;
 
+#ifdef HAVE_THREADS
+I_mutex m_menu_mutex;
+#endif
+
+M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
+
 const char *quitmsg[NUM_QUITMESSAGES];
 
 // Stuff for customizing the player select screen Tails 09-22-2003
@@ -158,6 +166,7 @@ INT16 startmap; // Mario, NiGHTS, or just a plain old normal game?
 
 static INT16 itemOn = 1; // menu item skull is on, Hack by Tails 09-18-2002
 static INT16 skullAnimCounter = 10; // skull animation counter
+static tic_t followertimer = 0;		// Used for smooth follower floating
 
 static  UINT8 setupcontrolplayer;
 static  INT32   (*setupcontrols)[2];  // pointer to the gamecontrols of the player being edited
@@ -1032,6 +1041,7 @@ static menuitem_t MP_PlayerSetupMenu[] =
 {
 	{IT_KEYHANDLER | IT_STRING,   NULL, "Name",      M_HandleSetupMultiPlayer,   0},
 	{IT_KEYHANDLER | IT_STRING,   NULL, "Character", M_HandleSetupMultiPlayer,  16}, // Tails 01-18-2001
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Follower",  M_HandleSetupMultiPlayer,  26},
 	{IT_KEYHANDLER | IT_STRING,   NULL, "Color",     M_HandleSetupMultiPlayer, 152},
 };
 
@@ -1065,7 +1075,7 @@ enum
 	FIRSTSERVERLINE
 };
 
-static menuitem_t MP_RoomMenu[] =
+menuitem_t MP_RoomMenu[] =
 {
 	{IT_STRING | IT_CALL, NULL, "<Offline Mode>", M_ChooseRoom,   9},
 	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  18},
@@ -1430,24 +1440,27 @@ enum
 
 static menuitem_t OP_HUDOptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Show HUD (F3)",			&cv_showhud,			 10},
+
+	{IT_STRING | IT_CVAR, NULL, "Show Followers",			&cv_showfollowers,		 10},
+
+	{IT_STRING | IT_CVAR, NULL, "Show HUD (F3)",			&cv_showhud,			 20},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "HUD Visibility",			&cv_translucenthud,		 20},
+	                      NULL, "HUD Visibility",			&cv_translucenthud,		 30},
 
-	{IT_STRING | IT_SUBMENU, NULL, "Online HUD options...",&OP_ChatOptionsDef, 	 35},
-	{IT_STRING | IT_CVAR, NULL, "Background Glass",			&cons_backcolor,		 45},
+	{IT_STRING | IT_SUBMENU, NULL, "Online HUD options...",&OP_ChatOptionsDef, 	 	 45},
+	{IT_STRING | IT_CVAR, NULL, "Background Glass",			&cons_backcolor,		 55},
 
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-						  NULL, "Minimap Visibility",		&cv_kartminimap,		 60},
-	{IT_STRING | IT_CVAR, NULL, "Speedometer Display",		&cv_kartspeedometer,	 70},
-	{IT_STRING | IT_CVAR, NULL, "Show \"CHECK\"",			&cv_kartcheck,			 80},
+						  NULL, "Minimap Visibility",		&cv_kartminimap,		 70},
+	{IT_STRING | IT_CVAR, NULL, "Speedometer Display",		&cv_kartspeedometer,	 80},
+	{IT_STRING | IT_CVAR, NULL, "Show \"CHECK\"",			&cv_kartcheck,			 90},
 
-	{IT_STRING | IT_CVAR, NULL,	"Menu Highlights",			&cons_menuhighlight,     95},
+	{IT_STRING | IT_CVAR, NULL,	"Menu Highlights",			&cons_menuhighlight,     105},
 	// highlight info - (GOOD HIGHLIGHT, WARNING HIGHLIGHT) - 105 (see M_DrawHUDOptions)
 
-	{IT_STRING | IT_CVAR, NULL,	"Console Text Size",		&cv_constextsize,		120},
+	{IT_STRING | IT_CVAR, NULL,	"Console Text Size",		&cv_constextsize,		130},
 
-	{IT_STRING | IT_CVAR, NULL,   "Show \"FOCUS LOST\"",  &cv_showfocuslost,   135},
+	{IT_STRING | IT_CVAR, NULL,   "Show \"FOCUS LOST\"",  &cv_showfocuslost,   145},
 };
 
 // Ok it's still called chatoptions but we'll put ping display in here to be clean
@@ -2882,7 +2895,6 @@ boolean M_Responder(event_t *ev)
 				//make sure the game doesn't still think we're in a netgame.
 				if (!Playing() && netgame && multiplayer)
 				{
-					MSCloseUDPSocket();		// Clean up so we can re-open the connection later.
 					netgame = false;
 					multiplayer = false;
 				}
@@ -3294,6 +3306,30 @@ void M_SetupNextMenu(menu_t *menudef)
 {
 	INT16 i;
 
+#ifdef HAVE_THREADS
+	if (currentMenu == &MP_RoomDef || currentMenu == &MP_ConnectDef)
+	{
+		I_lock_mutex(&ms_QueryId_mutex);
+		{
+			ms_QueryId++;
+		}
+		I_unlock_mutex(ms_QueryId_mutex);
+	}
+
+	if (currentMenu == &MP_ConnectDef)
+	{
+		I_lock_mutex(&ms_ServerList_mutex);
+		{
+			if (ms_ServerList)
+			{
+				free(ms_ServerList);
+				ms_ServerList = NULL;
+			}
+		}
+		I_unlock_mutex(ms_ServerList_mutex);
+	}
+#endif/*HAVE_THREADS*/
+
 	if (currentMenu->quitroutine)
 	{
 		// If you're going from a menu to itself, why are you running the quitroutine? You're not quitting it! -SH
@@ -3336,6 +3372,8 @@ void M_Ticker(void)
 	if (--skullAnimCounter <= 0)
 		skullAnimCounter = 8;
 
+	followertimer++;
+
 	if (currentMenu == &PlaybackMenuDef)
 	{
 		if (playback_enterheld > 0)
@@ -3351,6 +3389,19 @@ void M_Ticker(void)
 		if (--vidm_testingmode == 0)
 			setmodeneeded = vidm_previousmode + 1;
 	}
+
+#ifdef HAVE_THREADS
+	I_lock_mutex(&ms_ServerList_mutex);
+	{
+		if (ms_ServerList)
+		{
+			CL_QueryServerList(ms_ServerList);
+			free(ms_ServerList);
+			ms_ServerList = NULL;
+		}
+	}
+	I_unlock_mutex(ms_ServerList_mutex);
+#endif
 }
 
 //
@@ -4849,7 +4900,7 @@ static boolean M_AddonsRefresh(void)
 		else if (majormods && !prevmajormods)
 		{
 			S_StartSound(NULL, sfx_s221);
-			message = va("%c%s\x80\nGameplay has now been modified.\nIf you wish to play Record Attack mode, restart the game to clear existing addons.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+			message = va("%c%s\x80\nYou've loaded a gameplay-modifying addon.\n\nRecord Attack has been disabled, but you\ncan still play alone in local Multiplayer.\n\nIf you wish to play Record Attack mode, restart the game to disable loaded addons.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			prevmajormods = majormods;
 		}
 
@@ -5693,7 +5744,7 @@ static void M_DrawReplayStartMenu(void)
 		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
 		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
 
-		if (demolist[dir_on[menudepthleft]].standings[0].skin != 0xFF && W_CheckNumForName(skins[demolist[dir_on[menudepthleft]].standings[i].skin].facerank) != LUMPERROR)
+		if (demolist[dir_on[menudepthleft]].standings[i].skin != 0xFF && W_CheckNumForName(skins[demolist[dir_on[menudepthleft]].standings[i].skin].facerank) != LUMPERROR)
 		{
 			patch = facerankprefix[demolist[dir_on[menudepthleft]].standings[i].skin];
 			colormap = R_GetTranslationColormap(
@@ -8460,22 +8511,65 @@ static INT32 menuRoomIndex = 0;
 
 static void M_DrawRoomMenu(void)
 {
+	static int frame = -12;
+	int dot_frame;
+	char text[4];
+
 	const char *rmotd;
+	const char *waiting_message;
+
+	int dots;
+
+	if (m_waiting_mode)
+	{
+		dot_frame = frame / 4;
+		dots = dot_frame + 3;
+
+		strcpy(text, "   ");
+
+		if (dots > 0)
+		{
+			if (dot_frame < 0)
+				dot_frame = 0;
+
+			strncpy(&text[dot_frame], "...", min(dots, 3 - dot_frame));
+		}
+
+		if (++frame == 12)
+			frame = -12;
+
+		currentMenu->menuitems[0].text = text;
+	}
 
 	// use generic drawer for cursor, items and title
 	M_DrawGenericMenu();
 
 	V_DrawString(currentMenu->x - 16, currentMenu->y, highlightflags, M_GetText("Select a room"));
 
-	M_DrawTextBox(144, 24, 20, 20);
+	if (m_waiting_mode == M_NOT_WAITING)
+	{
+		M_DrawTextBox(144, 24, 20, 20);
 
-	if (itemOn == 0)
-		rmotd = M_GetText("Don't connect to the Master Server.");
-	else
-		rmotd = room_list[itemOn-1].motd;
+		if (itemOn == 0)
+			rmotd = M_GetText("Don't connect to the Master Server.");
+		else
+			rmotd = room_list[itemOn-1].motd;
 
-	rmotd = V_WordWrap(0, 20*8, 0, rmotd);
-	V_DrawString(144+8, 32, V_ALLOWLOWERCASE|V_RETURN8, rmotd);
+		rmotd = V_WordWrap(0, 20*8, 0, rmotd);
+		V_DrawString(144+8, 32, V_ALLOWLOWERCASE|V_RETURN8, rmotd);
+	}
+
+	if (m_waiting_mode)
+	{
+		// Display a little "please wait" message.
+		M_DrawTextBox(52, BASEVIDHEIGHT/2-10, 25, 3);
+		if (m_waiting_mode == M_WAITING_VERSION)
+			waiting_message = "Checking for updates...";
+		else
+			waiting_message = "Fetching room info...";
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, waiting_message);
+		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2)+12, 0, "Please wait.");
+	}
 }
 
 static void M_DrawConnectMenu(void)
@@ -8555,6 +8649,14 @@ static void M_DrawConnectMenu(void)
 	localservercount = serverlistcount;
 
 	M_DrawGenericMenu();
+
+	if (m_waiting_mode)
+	{
+		// Display a little "please wait" message.
+		M_DrawTextBox(52, BASEVIDHEIGHT/2-10, 25, 3);
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, "Searching for servers...");
+		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2)+12, 0, "Please wait.");
+	}
 }
 
 static boolean M_CancelConnect(void)
@@ -8636,10 +8738,10 @@ void M_SortServerList(void)
 
 #ifndef NONET
 #ifdef UPDATE_ALERT
-static boolean M_CheckMODVersion(void)
+static boolean M_CheckMODVersion(int id)
 {
 	char updatestring[500];
-	const char *updatecheck = GetMODVersion();
+	const char *updatecheck = GetMODVersion(id);
 	if(updatecheck)
 	{
 		sprintf(updatestring, UPDATE_ALERT_STRING, VERSIONSTRING, updatecheck);
@@ -8648,7 +8750,62 @@ static boolean M_CheckMODVersion(void)
 	} else
 		return true;
 }
-#endif
+
+#ifdef HAVE_THREADS
+static void
+Check_new_version_thread (int *id)
+{
+	int hosting;
+	int okay;
+
+	okay = 0;
+
+	if (M_CheckMODVersion(*id))
+	{
+		I_lock_mutex(&ms_QueryId_mutex);
+		{
+			okay = ( *id == ms_QueryId );
+		}
+		I_unlock_mutex(ms_QueryId_mutex);
+
+		if (okay)
+		{
+			I_lock_mutex(&m_menu_mutex);
+			{
+				m_waiting_mode = M_WAITING_ROOMS;
+				hosting = ( currentMenu->prevMenu == &MP_ServerDef );
+			}
+			I_unlock_mutex(m_menu_mutex);
+
+			GetRoomsList(hosting, *id);
+		}
+	}
+	else
+	{
+		I_lock_mutex(&ms_QueryId_mutex);
+		{
+			okay = ( *id == ms_QueryId );
+		}
+		I_unlock_mutex(ms_QueryId_mutex);
+	}
+
+	if (okay)
+	{
+		I_lock_mutex(&m_menu_mutex);
+		{
+			if (m_waiting_mode)
+			{
+				m_waiting_mode = M_NOT_WAITING;
+				MP_RoomMenu[0].text = "<Offline Mode>";
+			}
+		}
+		I_unlock_mutex(m_menu_mutex);
+	}
+
+	free(id);
+}
+#endif/*HAVE_THREADS*/
+#endif/*UPDATE_ALERT*/
 
 static void M_ConnectMenu(INT32 choice)
 {
@@ -8677,18 +8834,21 @@ static void M_ConnectMenuModChecks(INT32 choice)
 
 	if (modifiedgame)
 	{
-		M_StartMessage(M_GetText("Addons are currently loaded.\n\nYou will only be able to join a server if\nit has the same ones loaded in the same order, which may be unlikely.\n\nIf you wish to play on other servers,\nrestart the game to clear existing addons.\n\n(Press a key)\n"),M_ConnectMenu,MM_EVENTHANDLER);
+		M_StartMessage(M_GetText("You have addons loaded.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any addons.\nSRB2Kart will automatically add\neverything you need when you join.\n\n(Press a key)\n"),M_ConnectMenu,MM_EVENTHANDLER);
 		return;
 	}
 
 	M_ConnectMenu(-1);
 }
 
-static UINT32 roomIds[NUM_LIST_ROOMS];
+UINT32 roomIds[NUM_LIST_ROOMS];
 
 static void M_RoomMenu(INT32 choice)
 {
 	INT32 i;
+#ifdef HAVE_THREADS
+	int *id;
+#endif
 
 	(void)choice;
 
@@ -8701,34 +8861,47 @@ static void M_RoomMenu(INT32 choice)
 	if (rendermode == render_soft)
 		I_FinishUpdate(); // page flip or blit buffer
 
-	if (GetRoomsList(currentMenu == &MP_ServerDef) < 0)
-		return;
-
-#ifdef UPDATE_ALERT
-	if (!M_CheckMODVersion())
-		return;
-#endif
-
 	for (i = 1; i < NUM_LIST_ROOMS+1; ++i)
 		MP_RoomMenu[i].status = IT_DISABLED;
 	memset(roomIds, 0, sizeof(roomIds));
 
-	for (i = 0; room_list[i].header.buffer[0]; i++)
-	{
-		if(*room_list[i].name != '\0')
-		{
-			MP_RoomMenu[i+1].text = room_list[i].name;
-			roomIds[i] = room_list[i].id;
-			MP_RoomMenu[i+1].status = IT_STRING|IT_CALL;
-		}
-	}
-
 	MP_RoomDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MP_RoomDef);
+
+#ifdef UPDATE_ALERT
+#ifdef HAVE_THREADS
+	m_waiting_mode = M_WAITING_VERSION;
+	MP_RoomMenu[0].text = "";
+
+	id = malloc(sizeof *id);
+
+	I_lock_mutex(&ms_QueryId_mutex);
+	{
+		*id = ms_QueryId;
+	}
+	I_unlock_mutex(ms_QueryId_mutex);
+
+	I_spawn_thread("check-new-version",
+			(I_thread_fn)Check_new_version_thread, id);
+#else/*HAVE_THREADS*/
+	if (M_CheckMODVersion(0))
+	{
+		GetRoomsList(currentMenu->prevMenu == &MP_ServerDef, 0);
+	}
+#endif/*HAVE_THREADS*/
+#endif/*UPDATE_ALERT*/
 }
 
 static void M_ChooseRoom(INT32 choice)
 {
+#ifdef HAVE_THREADS
+	I_lock_mutex(&ms_QueryId_mutex);
+	{
+		ms_QueryId++;
+	}
+	I_unlock_mutex(ms_QueryId_mutex);
+#endif
+
 	if (choice == 0)
 		ms_RoomId = -1;
 	else
@@ -9312,8 +9485,14 @@ static void M_HandleConnectIP(INT32 choice)
 // ========================
 // Tails 03-02-2002
 
+// used for skin display on player setup menu
 static INT32      multi_tics;
 static state_t   *multi_state;
+
+// used for follower display on player setup menu
+static INT32 follower_tics;
+static UINT32 follower_frame;	// used for FF_ANIMATE garbo
+static state_t *follower_state;
 
 // this is set before entering the MultiPlayer setup menu,
 // for either player 1 or 2
@@ -9322,8 +9501,10 @@ static player_t  *setupm_player;
 static consvar_t *setupm_cvskin;
 static consvar_t *setupm_cvcolor;
 static consvar_t *setupm_cvname;
+static consvar_t *setupm_cvfollower;
 static INT32      setupm_fakeskin;
 static INT32      setupm_fakecolor;
+static INT32	  setupm_fakefollower;	// -1 is for none, our followers start at 0
 
 static void M_DrawSetupMultiPlayerMenu(void)
 {
@@ -9341,6 +9522,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	UINT8 i;
 	const UINT8 *flashcol = V_GetStringColormap(highlightflags);
 	INT32 statx, staty;
+	char *fname;
 
 	mx = MP_PlayerSetupDef.x;
 	my = MP_PlayerSetupDef.y;
@@ -9372,11 +9554,31 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			'\x1D' | highlightflags, false); // right arrow
 	}
 
+	// draw follower string
+	fname = malloc(SKINNAMESIZE+1);
+
+	if (setupm_fakefollower == -1)
+		strcpy(fname, "None");
+	else
+		strcpy(fname, followers[setupm_fakefollower].name);
+
+	st = V_StringWidth(fname, 0);
+	V_DrawString(BASEVIDWIDTH - mx - st, my + 26,
+	             ((MP_PlayerSetupMenu[2].status & IT_TYPE) == IT_SPACE ? V_TRANSLUCENT : 0)|highlightflags|V_ALLOWLOWERCASE,
+	             fname);
+	if (itemOn == 2)
+	{
+		V_DrawCharacter(BASEVIDWIDTH - mx - 10 - st - (skullAnimCounter/5), my + 26,
+			'\x1C' | highlightflags, false); // left arrow
+		V_DrawCharacter(BASEVIDWIDTH - mx + 2 + (skullAnimCounter/5), my + 26,
+			'\x1D' | highlightflags, false); // right arrow
+	}
+
 	// draw the name of the color you have chosen
 	// Just so people don't go thinking that "Default" is Green.
 	st = V_StringWidth(KartColor_Names[setupm_fakecolor], 0);
 	V_DrawString(BASEVIDWIDTH - mx - st, my + 152, highlightflags|V_ALLOWLOWERCASE, KartColor_Names[setupm_fakecolor]);	// SRB2kart
-	if (itemOn == 2)
+	if (itemOn == 3)
 	{
 		V_DrawCharacter(BASEVIDWIDTH - mx - 10 - st - (skullAnimCounter/5), my + 152,
 			'\x1C' | highlightflags, false); // left arrow
@@ -9524,7 +9726,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 
 	sprframe = &sprdef->spriteframes[frame];
 	patch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
-	if (sprframe->flip & 1) // Only for first sprite
+	if (sprframe->flip & 2) // Only for first sprite
 		flags |= V_FLIP; // This sprite is left/right flipped!
 
 	// draw box around guy
@@ -9545,7 +9747,86 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		else
 			V_DrawMappedPatch(mx+43, my+131, flags, patch, colormap);
 	}
+
+	// draw their follower if there is one
+	if (setupm_fakefollower > -1 && setupm_fakefollower < numfollowers)
+	{
+		// animate the follower
+
+		if (--follower_tics <= 0)
+		{
+
+			// FF_ANIMATE; cycle through FRAMES and get back afterwards. This will be prominent amongst followers hence why it's being supported here.
+			if (follower_state->frame & FF_ANIMATE)
+			{
+				follower_frame++;
+				follower_tics = follower_state->var2;
+				if (follower_frame > (follower_state->frame & FF_FRAMEMASK) + follower_state->var1)	// that's how it works, right?
+					follower_frame = follower_state->frame & FF_FRAMEMASK;
+			}
+			else
+			{
+				st = follower_state->nextstate;
+				if (st != S_NULL)
+					follower_state = &states[st];
+				follower_tics = follower_state->tics;
+				if (follower_tics == -1)
+					follower_tics = 15;	// er, what?
+						// get spritedef:
+				follower_frame = follower_state->frame & FF_FRAMEMASK;
+			}
+		}
+		sprdef = &sprites[follower_state->sprite];
+
+		// draw the follower
+
+		if (follower_frame >= sprdef->numframes)
+			follower_frame = 0;	// frame doesn't exist, we went beyond it... what?
+		sprframe = &sprdef->spriteframes[follower_frame];
+		patch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
+		if (sprframe->flip & 2) // Only for first sprite
+			flags |= V_FLIP; // This sprite is left/right flipped!
+
+		// @TODO: Reminder that followers on the menu right now do NOT support the 'followercolor' command, considering this whole menu is getting remade anyway, I see no point in incorporating it in right now.
+
+		// draw follower sprite
+		if (setupm_fakecolor) // inverse should never happen
+		{
+
+			// Fake the follower's in game appearance by now also applying some of its variables! coolio, eh?
+			follower_t fl = followers[setupm_fakefollower];	// shortcut for our sanity
+			// smooth floating, totally not stolen from rocket sneakers.
+			const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
+			fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * followertimer)>>ANGLETOFINESHIFT) & FINEMASK);
+
+			UINT8 *colormap = R_GetTranslationColormap(-1, setupm_fakecolor, 0);
+			V_DrawFixedPatch((mx+65)*FRACUNIT, (my+131-fl.zoffs)*FRACUNIT+sine, fl.scale, flags, patch, colormap);
+			Z_Free(colormap);
+		}
+	}
+
 #undef charw
+}
+
+// follower state update. This is its own function so that it's at least somewhat clean
+static void M_GetFollowerState(void)
+{
+
+	if (setupm_fakefollower <= -1 || setupm_fakefollower > numfollowers-1)	// yikes, there's none!
+		return;
+	// ^ we don't actually need to set anything since it won't be displayed anyway.
+
+	//followertimer = 0;	// reset timer. not like it'll overflow anytime soon but whatever.
+
+	// set follower state
+	follower_state = &states[followers[setupm_fakefollower].followstate];
+
+	if (follower_state->frame & FF_ANIMATE)
+		follower_tics = follower_state->var2;	// support for FF_ANIMATE
+	else
+		follower_tics = follower_state->tics;
+
+	follower_frame = follower_state->frame & FF_FRAMEMASK;
 }
 
 // Handle 1P/2P MP Setup
@@ -9575,7 +9856,13 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 				S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_fakeskin--;
 			}
-			else if (itemOn == 2) // player color
+			else if (itemOn == 2) // follower
+			{
+				S_StartSound(NULL,sfx_menu1);
+				setupm_fakefollower--;
+				M_GetFollowerState();	// update follower state
+			}
+			else if (itemOn == 3) // player color
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_fakecolor--;
@@ -9587,8 +9874,15 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_fakeskin++;
+				M_GetFollowerState();	// update follower state
 			}
-			else if (itemOn == 2) // player color
+			else if (itemOn == 2) // follower
+			{
+				S_StartSound(NULL,sfx_menu1);
+				setupm_fakefollower++;
+				M_GetFollowerState();
+			}
+			else if (itemOn == 3) // player color
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_fakecolor++;
@@ -9608,7 +9902,12 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 					setupm_name[l-1] =0;
 				}
 			}
-			else if (itemOn == 2)
+			else if (itemOn == 2) // follower
+			{
+				S_StartSound(NULL,sfx_menu1);
+				setupm_fakefollower = -1;
+			}
+			else if (itemOn == 3)
 			{
 				UINT8 col = skins[setupm_fakeskin].prefcolor;
 				if (setupm_fakecolor != col)
@@ -9646,6 +9945,18 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 	if (setupm_fakeskin > numskins-1)
 		setupm_fakeskin = 0;
 
+	// check followers:
+	if (setupm_fakefollower < -1)
+	{
+		setupm_fakefollower = numfollowers-1;
+		M_GetFollowerState();	// update follower state
+	}
+	if (setupm_fakefollower > numfollowers-1)
+	{
+		setupm_fakefollower = -1;
+		M_GetFollowerState();	// update follower state
+	}
+
 	// check color
 	if (setupm_fakecolor < 1)
 		setupm_fakecolor = MAXSKINCOLORS-1;
@@ -9668,6 +9979,7 @@ static void M_SetupMultiPlayer(INT32 choice)
 
 	multi_state = &states[mobjinfo[MT_PLAYER].seestate];
 	multi_tics = multi_state->tics;
+
 	strcpy(setupm_name, cv_playername.string);
 
 	// set for player 1
@@ -9675,6 +9987,15 @@ static void M_SetupMultiPlayer(INT32 choice)
 	setupm_cvskin = &cv_skin;
 	setupm_cvcolor = &cv_playercolor;
 	setupm_cvname = &cv_playername;
+	setupm_cvfollower = &cv_follower;
+
+	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
+
+	// yikes, we don't want none of that...
+	if (setupm_fakefollower > numfollowers-1)
+		setupm_fakefollower = -1;
+
+	M_GetFollowerState();	// update follower state
 
 	// For whatever reason this doesn't work right if you just use ->value
 	setupm_fakeskin = R_SkinAvailable(setupm_cvskin->string);
@@ -9706,6 +10027,15 @@ static void M_SetupMultiPlayer2(INT32 choice)
 	setupm_cvskin = &cv_skin2;
 	setupm_cvcolor = &cv_playercolor2;
 	setupm_cvname = &cv_playername2;
+	setupm_cvfollower = &cv_follower2;
+
+	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
+
+	// yikes, we don't want none of that...
+	if (setupm_fakefollower > numfollowers-1)
+		setupm_fakefollower = -1;
+
+	M_GetFollowerState();	// update follower state
 
 	// For whatever reason this doesn't work right if you just use ->value
 	setupm_fakeskin = R_SkinAvailable(setupm_cvskin->string);
@@ -9737,6 +10067,15 @@ static void M_SetupMultiPlayer3(INT32 choice)
 	setupm_cvskin = &cv_skin3;
 	setupm_cvcolor = &cv_playercolor3;
 	setupm_cvname = &cv_playername3;
+	setupm_cvfollower = &cv_follower3;
+
+	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
+
+	// yikes, we don't want none of that...
+	if (setupm_fakefollower > numfollowers-1)
+		setupm_fakefollower = -1;
+
+	M_GetFollowerState();	// update follower state
 
 	// For whatever reason this doesn't work right if you just use ->value
 	setupm_fakeskin = R_SkinAvailable(setupm_cvskin->string);
@@ -9768,6 +10107,15 @@ static void M_SetupMultiPlayer4(INT32 choice)
 	setupm_cvskin = &cv_skin4;
 	setupm_cvcolor = &cv_playercolor4;
 	setupm_cvname = &cv_playername4;
+	setupm_cvfollower = &cv_follower4;
+
+	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
+
+	// yikes, we don't want none of that...
+	if (setupm_fakefollower > numfollowers-1)
+		setupm_fakefollower = -1;
+
+	M_GetFollowerState();	// update follower state
 
 	// For whatever reason this doesn't work right if you just use ->value
 	setupm_fakeskin = R_SkinAvailable(setupm_cvskin->string);
@@ -9800,6 +10148,7 @@ static boolean M_QuitMultiPlayerMenu(void)
 	// you know what? always putting these in the buffer won't hurt anything.
 	COM_BufAddText (va("%s \"%s\"\n",setupm_cvskin->name,skins[setupm_fakeskin].name));
 	COM_BufAddText (va("%s %d\n",setupm_cvcolor->name,setupm_fakecolor));
+	COM_BufAddText (va("%s %d\n",setupm_cvfollower->name,setupm_fakefollower));
 	return true;
 }
 
@@ -10683,7 +11032,7 @@ static void M_DrawHUDOptions(void)
 	const char *str1 = " Warning highlight";
 	const char *str2 = ",";
 	const char *str3 = "Good highlight";
-	INT32 x = BASEVIDWIDTH - currentMenu->x + 2, y = currentMenu->y + 105;
+	INT32 x = BASEVIDWIDTH - currentMenu->x + 2, y = currentMenu->y + 115;
 	INT32 w0 = V_StringWidth(str0, 0), w1 = V_StringWidth(str1, 0), w2 = V_StringWidth(str2, 0), w3 = V_StringWidth(str3, 0);
 
 	M_DrawGenericMenu();
@@ -10920,6 +11269,7 @@ static void M_DrawMonitorToggles(void)
 
 			switch (currentMenu->menuitems[thisitem].alphaKey)
 			{
+				case KRITEM_DUALSNEAKER:
 				case KRITEM_DUALJAWZ:
 					drawnum = 2;
 					break;
@@ -10989,6 +11339,7 @@ static void M_DrawMonitorToggles(void)
 
 			switch (currentMenu->menuitems[itemOn].alphaKey)
 			{
+				case KRITEM_DUALSNEAKER:
 				case KRITEM_DUALJAWZ:
 					drawnum = 2;
 					break;

@@ -237,7 +237,8 @@ typedef enum
 	NUMKARTITEMS,
 
 	// Additional roulette numbers, only used for K_KartGetItemResult
-	KRITEM_TRIPLESNEAKER = NUMKARTITEMS,
+	KRITEM_DUALSNEAKER = NUMKARTITEMS,
+	KRITEM_TRIPLESNEAKER,
 	KRITEM_TRIPLEBANANA,
 	KRITEM_TENFOLDBANANA,
 	KRITEM_TRIPLEORBINAUT,
@@ -287,12 +288,16 @@ typedef enum
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
+	k_spindash,			// Spindash charge timer
+	k_spindashspeed,	// Spindash release speed
+	k_spindashboost,	// Spindash release boost timer
 	k_waterskip,		// Water skipping counter
 	k_dashpadcooldown,	// Separate the vanilla SA-style dash pads from using pw_flashing
 	k_numboosts,		// Count of how many boosts are being stacked, for after image spawning
 	k_boostpower,		// Base boost value, for offroad
 	k_speedboost,		// Boost value smoothing for max speed
 	k_accelboost,		// Boost value smoothing for acceleration
+	k_handleboost,		// Boost value smoothing for handling
 	k_draftpower,		// Drafting power (from 0 to FRACUNIT), doubles your top speed & acceleration at max
 	k_draftleeway,		// Leniency timer before removing draft power
 	k_lastdraft,		// Last player being drafted
@@ -372,6 +377,9 @@ typedef enum
 	// Lap finish
 	khud_lapanimation,	// Used to show the lap start wing logo animation
 	khud_laphand,		// Lap hand gfx to use; 0 = none, 1 = :ok_hand:, 2 = :thumbs_up:, 3 = :thumps_down:
+
+	// Start
+	khud_fault,			// Set when faulting during the starting countdown
 
 	// Camera
 	khud_boostcam,		// Camera push forward on boost
@@ -514,6 +522,12 @@ typedef struct player_s
 	// SRB2kart
 	UINT8 kartspeed; // Kart speed stat between 1 and 9
 	UINT8 kartweight; // Kart weight stat between 1 and 9
+
+	INT32 followerskin;		// Kart: This player's follower "skin"
+	boolean followerready;	// Kart: Used to know when we can have a follower or not. (This is set on the first NameAndColor follower update)
+	UINT8 followercolor;	// Kart: Used to store the follower colour the player wishes to use
+	mobj_t *follower;		// Kart: This is the follower object we have. (If any)
+
 	//
 
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)

@@ -1159,11 +1159,9 @@ static inline void P_SpawnEmblems(void)
 			emblemmobj->flags |= MF_NOCLIP;
 			emblemmobj->flags &= ~MF_SPECIAL;
 			emblemmobj->flags |= MF_NOBLOCKMAP;
-			emblemmobj->frame |= (tr_trans50<<FF_TRANSSHIFT);
+			emblemmobj->drawflags |= (tr_trans50 << MFD_TRANSSHIFT);
 			P_SetThingPosition(emblemmobj);
 		}
-		else
-			emblemmobj->frame &= ~FF_TRANSMASK;
 	}
 }
 
@@ -1452,7 +1450,7 @@ static void P_LoadRawSideDefs2(void *data)
 	UINT16 i;
 	INT32 num;
 	size_t j;
-	UINT32 cr, cg, cb;
+	RGBA_t color;
 
 	for (i = 0; i < numsides; i++)
 	{
@@ -1534,23 +1532,21 @@ static void P_LoadRawSideDefs2(void *data)
 							// encore mode colormaps!
 							// do it like software by aproximating a color to a palette index, and then convert it to its encore variant and then back to a color code.
 							// do this for both the start and fade colormaps.
-
-							cr = (HEX2INT(col[1]) << 4) + (HEX2INT(col[2]) << 0);
-							cg = (HEX2INT(col[3]) << 12) + (HEX2INT(col[4]) << 8);
-							cb = (HEX2INT(col[5]) << 20) + (HEX2INT(col[6]) << 16);
+							
+							color.s.red = (HEX2INT(col[1]) << 4) + HEX2INT(col[2]);
+							color.s.green = (HEX2INT(col[3]) << 4) + HEX2INT(col[4]);
+							color.s.blue = (HEX2INT(col[5]) << 4) + HEX2INT(col[6]);
 
 #ifdef GLENCORE
 							if (encoremap)
 							{
-								j = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
+								j = encoremap[NearestColor(color.s.red, color.s.green, color.s.blue)];
 								//CONS_Printf("R_CreateColormap: encoremap[%d] = %d\n", j, encoremap[j]); -- moved encoremap upwards for optimisation
-								cr = pLocalPalette[j].s.red;
-								cg = pLocalPalette[j].s.green;
-								cb = pLocalPalette[j].s.blue;
+								color = pLocalPalette[j]; // note: this sets alpha to 255, we will reset it below
 							}
 #endif
-
-							sec->extra_colormap->rgba = cr + cg + cb;
+							color.s.alpha = 0; // reset/init the alpha, so the addition below will work correctly
+							sec->extra_colormap->rgba = color.rgba;
 
 							// alpha
 							if (msd->toptexture[7])
@@ -1577,23 +1573,21 @@ static void P_LoadRawSideDefs2(void *data)
 							col = msd->bottomtexture;
 
 							// do the exact same thing as above here.
-
-							cr = (HEX2INT(col[1]) << 4) + (HEX2INT(col[2]) << 0);
-							cg = (HEX2INT(col[3]) << 12) + (HEX2INT(col[4]) << 8);
-							cb = (HEX2INT(col[5]) << 20) + (HEX2INT(col[6]) << 16);
+							
+							color.s.red = (HEX2INT(col[1]) << 4) + HEX2INT(col[2]);
+							color.s.green = (HEX2INT(col[3]) << 4) + HEX2INT(col[4]);
+							color.s.blue = (HEX2INT(col[5]) << 4) + HEX2INT(col[6]);
 
 #ifdef GLENCORE
 							if (encoremap)
 							{
-								j = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
+								j = encoremap[NearestColor(color.s.red, color.s.green, color.s.blue)];
 								//CONS_Printf("R_CreateColormap: encoremap[%d] = %d\n", j, encoremap[j]); -- moved encoremap upwards for optimisation
-								cr = pLocalPalette[j].s.red;
-								cg = pLocalPalette[j].s.green;
-								cb = pLocalPalette[j].s.blue;
+								color = pLocalPalette[j]; // note: this sets alpha to 255, we will reset it below
 							}
 #endif
-
-							sec->extra_colormap->fadergba = cr + cg + cb;
+							color.s.alpha = 0; // reset/init the alpha, so the addition below will work correctly
+							sec->extra_colormap->fadergba = color.rgba;
 
 							// alpha
 							if (msd->bottomtexture[7])
@@ -2370,6 +2364,7 @@ lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 static void P_LevelInitStuff(void)
 {
 	INT32 i;
+	UINT8 p = 0;
 
 	leveltime = 0;
 
@@ -2416,6 +2411,9 @@ static void P_LevelInitStuff(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		if (playeringame[i] && !players[i].spectator)
+			p++;
+
 		if (grandprixinfo.gp == false)
 		{
 			players[i].lives = 3;
@@ -2460,7 +2458,33 @@ static void P_LevelInitStuff(void)
 
 		// and this stupid flag as a result
 		players[i].pflags &= ~PF_TRANSFERTOCLOSEST;
+
+		// Wipe follower from existence to avoid crashes
+		players[i].follower = NULL;
 	}
+
+	rainbowstartavailable = false;
+
+	if (p >= 2)
+		rainbowstartavailable = true;
+
+	if (p <= 2)
+	{
+		introtime = 0; // No intro in Record Attack / 1v1
+	}
+	else
+	{
+		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+	}
+
+	numbulbs = 5;
+
+	if (p > 2)
+	{
+		numbulbs += (p-2);
+	}
+
+	starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
 
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
