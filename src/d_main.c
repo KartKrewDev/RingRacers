@@ -851,7 +851,7 @@ static inline void D_CleanFile(char **filearray)
 
 static boolean AddIWAD(void)
 {
-	char * path = va(pandf,srb2path,"srb2.srb");
+	char * path = va(pandf,srb2path,"main.kart");
 
 	if (FIL_ReadFileOK(path))
 	{

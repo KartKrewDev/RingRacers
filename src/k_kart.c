@@ -619,7 +619,6 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper, boolean spbrush)
 {
 	UINT8 i;
-	UINT8 n = 0;
 	UINT8 useodds = 0;
 	UINT8 disttable[14];
 	UINT8 distlen = 0;
@@ -1346,18 +1345,13 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 */
 static void K_UpdateOffroad(player_t *player)
 {
-	fixed_t offroad;
-	UINT8 offroadstrength = K_CheckOffroadCollide(player->mo);
+	fixed_t offroadstrength = (K_CheckOffroadCollide(player->mo) << FRACBITS);
 
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
 	{
-		if (/*K_CheckOffroadCollide(player->mo) &&*/ player->kartstuff[k_offroad] == 0)	// With the way offroad is detected now that first check is no longer necessary. -Lat'
-			player->kartstuff[k_offroad] = (TICRATE/2);
-
-		if (player->kartstuff[k_offroad] > 0)
-		{
-			offroad = (offroadstrength << FRACBITS) / (TICRATE/2);
+		if (player->kartstuff[k_offroad] < offroadstrength)
+			player->kartstuff[k_offroad] += offroadstrength / TICRATE;
 
 		if (player->kartstuff[k_offroad] > offroadstrength)
 			player->kartstuff[k_offroad] = offroadstrength;
