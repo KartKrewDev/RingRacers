@@ -5312,7 +5312,7 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	if (leveltime < 8 || player->spectator)
 	{
 		// Silence the engines, and reset sound number while we're at it.
-		player->kartstuff[k_enginesnd] = 0;
+		player->kartstuff[khud_enginesnd] = 0;
 		return;
 	}
 
@@ -5345,11 +5345,11 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	if (targetsnd < 0) { targetsnd = 0; }
 	if (targetsnd > 12) { targetsnd = 12; }
 
-	if (player->kartstuff[k_enginesnd] < targetsnd) { player->kartstuff[k_enginesnd]++; }
-	if (player->kartstuff[k_enginesnd] > targetsnd) { player->kartstuff[k_enginesnd]--; }
+	if (player->kartstuff[khud_enginesnd] < targetsnd) { player->kartstuff[khud_enginesnd]++; }
+	if (player->kartstuff[khud_enginesnd] > targetsnd) { player->kartstuff[khud_enginesnd]--; }
 
-	if (player->kartstuff[k_enginesnd] < 0) { player->kartstuff[k_enginesnd] = 0; }
-	if (player->kartstuff[k_enginesnd] > 12) { player->kartstuff[k_enginesnd] = 12; }
+	if (player->kartstuff[khud_enginesnd] < 0) { player->kartstuff[khud_enginesnd] = 0; }
+	if (player->kartstuff[khud_enginesnd] > 12) { player->kartstuff[khud_enginesnd] = 12; }
 
 	// This code calculates how many players (and thus, how many engine sounds) are within ear shot,
 	// and rebalances the volume of your engine sound based on how far away they are.
@@ -5419,7 +5419,7 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	S_StartSoundAtVolume(player->mo, (sfx_krta00 + player->kartstuff[k_enginesnd]) + (class * numsnds), volume);
+	S_StartSoundAtVolume(player->mo, (sfx_krta00 + player->kartstuff[khud_enginesnd]) + (class * numsnds), volume);
 }
 
 static void K_UpdateInvincibilitySounds(player_t *player)
