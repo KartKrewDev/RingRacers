@@ -1243,7 +1243,6 @@ INT32 P_FindSpecialLineFromTag(INT16 special, INT16 tag, INT32 start)
 }
 
 // haleyjd: temporary define
-#ifdef POLYOBJECTS
 
 //
 // PolyDoor
@@ -1452,7 +1451,6 @@ static boolean PolyDisplace(line_t *line)
 	return EV_DoPolyObjDisplace(&pdd);
 }
 
-#endif // ifdef POLYOBJECTS
 
 /** Changes a sector's tag.
   * Used by the linedef executor tag changer and by crumblers.
@@ -3217,7 +3215,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 		}
 
-#ifdef POLYOBJECTS
 		case 480: // Polyobj_DoorSlide
 		case 481: // Polyobj_DoorSwing
 			PolyDoor(line);
@@ -3244,7 +3241,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 		case 491:
 			PolyTranslucency(line);
 			break;
-#endif
 
 		default:
 			break;
@@ -5046,10 +5042,8 @@ void P_UpdateSpecials(void)
 	// POINT LIMIT
 	P_CheckPointLimit();
 
-#ifdef ESLOPE
 	// Dynamic slopeness
 	P_RunDynamicSlopes();
-#endif
 
 	// ANIMATE TEXTURES
 	for (anim = anims; anim < lastanim; anim++)
@@ -5194,11 +5188,9 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, f
 	ffloor->topyoffs = &sec2->ceiling_yoffs;
 	ffloor->topangle = &sec2->ceilingpic_angle;
 
-#ifdef ESLOPE
 	// Add slopes
 	ffloor->t_slope = &sec2->c_slope;
 	ffloor->b_slope = &sec2->f_slope;
-#endif
 
 	if ((flags & FF_SOLID) && (master->flags & ML_EFFECT1)) // Block player only
 		flags &= ~FF_BLOCKOTHERS;
@@ -5711,15 +5703,11 @@ void T_LaserFlash(laserthink_t *flash)
 
 	sourcesec = ffloor->master->frontsector; // Less to type!
 
-#ifdef ESLOPE
 	top = (*ffloor->t_slope) ? P_GetZAt(*ffloor->t_slope, sector->soundorg.x, sector->soundorg.y)
 			: *ffloor->topheight;
 	bottom = (*ffloor->b_slope) ? P_GetZAt(*ffloor->b_slope, sector->soundorg.x, sector->soundorg.y)
 			: *ffloor->bottomheight;
 	sector->soundorg.z = (top + bottom)/2;
-#else
-	sector->soundorg.z = (*ffloor->topheight + *ffloor->bottomheight)/2;
-#endif
 	S_StartSound(&sector->soundorg, sfx_laser);
 
 	// Seek out objects to DESTROY! MUAHAHHAHAHAA!!!*cough*
@@ -6857,7 +6845,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 
 	Z_Free(secthinkers);
 
-#ifdef POLYOBJECTS
 	// haleyjd 02/20/06: spawn polyobjects
 	Polyobj_InitLevel();
 
@@ -6874,7 +6861,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 		}
 	}
-#endif
 
 	P_RunLevelLoadExecutors();
 }
@@ -7427,11 +7413,9 @@ void T_Disappear(disappear_t *d)
 
 					if (!(lines[d->sourceline].flags & ML_NOCLIMB))
 					{
-#ifdef ESLOPE
 						if (*rover->t_slope)
 							sectors[s].soundorg.z = P_GetZAt(*rover->t_slope, sectors[s].soundorg.x, sectors[s].soundorg.y);
 						else
-#endif
 						sectors[s].soundorg.z = *rover->topheight;
 						S_StartSound(&sectors[s].soundorg, sfx_appear);
 					}

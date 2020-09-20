@@ -66,6 +66,10 @@ char logfilename[1024];
 #endif
 
 #if defined (_WIN32)
+#include "exchndl.h"
+#endif
+
+#if defined (_WIN32)
 #include "../win32/win_dbg.h"
 typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
 #endif
@@ -104,6 +108,20 @@ static inline VOID MakeCodeWritable(VOID)
 #endif
 
 
+#ifdef _WIN32
+static void
+ChDirToExe (void)
+{
+	CHAR path[MAX_PATH];
+	if (GetModuleFileNameA(NULL, path, MAX_PATH) > 0)
+	{
+		strrchr(path, '\\')[0] = '\0';
+		SetCurrentDirectoryA(path);
+	}
+}
+#endif
+
+
 /**	\brief	The main function
 
 	\param	argc	number of arg
@@ -131,6 +149,10 @@ int main(int argc, char **argv)
 #else
 	I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO, SDL_SWSURFACE);
 #endif
+#endif
+
+#ifdef _WIN32
+	ChDirToExe();
 #endif
 
 #ifdef LOGMESSAGES
@@ -231,7 +253,7 @@ int main(int argc, char **argv)
 			)
 #endif
 		{
-			LoadLibraryA("exchndl.dll");
+			ExcHndlInit();
 		}
 	}
 #ifndef __MINGW32__

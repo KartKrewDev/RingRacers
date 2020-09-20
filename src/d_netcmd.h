@@ -191,9 +191,10 @@ typedef enum
 	XD_CANCELPARTYINVITE, // 30
 	XD_GIVEITEM, // 31
 	XD_ADDBOT, // 32
+	XD_DISCORD,     // 33
 #ifdef HAVE_BLUA
-	XD_LUACMD,      // 33
-	XD_LUAVAR,      // 34
+	XD_LUACMD,      // 34
+	XD_LUAVAR,      // 35
 #endif
 	MAXNETXCMD
 } netxcmd_t;

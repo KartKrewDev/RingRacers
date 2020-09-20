@@ -396,11 +396,9 @@ typedef struct mobj_s
 	INT32 cusval;
 	INT32 cvmem;
 
-#ifdef ESLOPE
 	struct pslope_s *standingslope; // The slope that the object is standing on (shouldn't need synced in savegames, right?)
 #ifdef HWRENDER
 	struct pslope_s *modeltilt; // Slope used for model tilting. Also is not synched, this is totally visual.
-#endif
 #endif
 
 	boolean colorized; // Whether the mobj uses the rainbow colormap
