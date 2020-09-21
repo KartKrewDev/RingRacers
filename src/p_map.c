@@ -271,6 +271,9 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 	object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
 
+	object->eflags |= MFE_SPRUNG; // apply this flag asap!
+	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
+
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
 
