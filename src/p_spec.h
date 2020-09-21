@@ -461,4 +461,12 @@ void P_CalcHeight(player_t *player);
 
 sector_t *P_ThingOnSpecial3DFloor(mobj_t *mo);
 
+/* line specials */
+enum
+{
+	LT_SLOPE_ANCHORS_FLOOR   = 777,
+	LT_SLOPE_ANCHORS_CEILING = 778,
+	LT_SLOPE_ANCHORS         = 779,
+};
+
 #endif
