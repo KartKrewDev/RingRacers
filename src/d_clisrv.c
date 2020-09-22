@@ -5484,18 +5484,6 @@ static void SV_Maketic(void)
 				// Copy the input from the previous tic
 				*ticcmd = *prevticcmd;
 				ticcmd->flags &= ~TICCMD_RECEIVED;
-
-#if 1
-				CONS_Printf(
-					"[PLAYER %d] move: %d, turn: %d, buttons: %d, latency: %d, flags: %d\n",
-					i,
-					ticcmd->forwardmove,
-					ticcmd->turning,
-					ticcmd->buttons,
-					ticcmd->latency,
-					ticcmd->flags
-				);
-#endif
 			}
 		}
 	}
