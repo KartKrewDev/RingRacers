@@ -5469,8 +5469,8 @@ static void SV_Maketic(void)
 		// We didn't receive this tic
 		if ((netcmds[maketic % TICQUEUE][i].flags & TICCMD_RECEIVED) == 0)
 		{
-			ticcmd_t *    ticcmd = &netcmds[(maketic    ) % BACKUPTICS][i];
-			ticcmd_t *prevticcmd = &netcmds[(maketic - 1) % BACKUPTICS][i];
+			ticcmd_t *    ticcmd = &netcmds[(maketic    ) % TICQUEUE][i];
+			ticcmd_t *prevticcmd = &netcmds[(maketic - 1) % TICQUEUE][i];
 
 			if (players[i].quittime)
 			{
