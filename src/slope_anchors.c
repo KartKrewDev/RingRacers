@@ -63,6 +63,28 @@ static void allocate_anchors (void) {
 	make_new_anchor_list(&ceiling_anchors);
 }
 
+static void
+compare_vertex_distance
+(
+		const vertex_t ** nearest,
+		fixed_t         * nearest_distance,
+		const fixed_t     origin_x,
+		const fixed_t     origin_y,
+		const vertex_t  * v
+){
+	const fixed_t distance = abs(P_AproxDistance
+			(
+				origin_x - v->x,
+				origin_y - v->y
+			));
+
+	if (distance < (*nearest_distance))
+	{
+		(*nearest) = v;
+		(*nearest_distance) = distance;
+	}
+}
+
 static const vertex_t *
 nearest_point
 (
@@ -74,33 +96,15 @@ nearest_point
 
 	const UINT16 lastline = sub->firstline + sub->numlines;
 
-	vertex_t * nearest = NULL;/* shut compiler up, but should never be NULL */
-	fixed_t    nearest_distance = INT32_MAX;
-
-	vertex_t * v = NULL;
-
-	fixed_t distance;
+	const vertex_t * nearest = NULL;/* shut compiler up, should never be NULL */
+	fixed_t          nearest_distance = INT32_MAX;
 
 	UINT16 i;
 
 	for (i = sub->firstline; i < lastline; ++i)
 	{
-		if (segs[i].v1 != v)
-		{
-			v = segs[i].v1;
-		}
-		else
-		{
-			v = segs[i].v2;
-		}
-
-		distance = abs(P_AproxDistance(( x - v->x ), ( y - v->y )));
-
-		if (distance < nearest_distance)
-		{
-			nearest = v;
-			nearest_distance = distance;
-		}
+		compare_vertex_distance(&nearest, &nearest_distance, x, y, segs[i].v1);
+		compare_vertex_distance(&nearest, &nearest_distance, x, y, segs[i].v2);
 	}
 
 	return nearest;
@@ -179,20 +183,57 @@ static void build_anchors (void) {
 	}
 }
 
+static int
+get_anchor
+(
+		const vertex_t            * points[3],
+		mapthing_t               **      anchors,
+		int                       * last_anchor,
+		const struct anchor_list  * list,
+		const vertex_t            * v
+){
+	size_t i;
+
+	if (
+			v != points[0] &&
+			v != points[1] &&
+			v != points[2]
+	){
+		for (i = 0; i < list->count; ++i)
+		{
+			if (list->points[i] == v)
+			{
+				points [*last_anchor] = v;
+				anchors[*last_anchor] = list->anchors[i];
+
+				if (++(*last_anchor) == 3)
+				{
+					return 1;
+				}
+				else
+				{
+					return 0;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 static mapthing_t **
 find_closest_anchors
 (
 		const sector_t           * sector,
 		const struct anchor_list * list
 ){
+	const vertex_t * points[3] = {0};
+
 	mapthing_t ** anchors;
 
 	size_t i;
-	size_t a;
 
-	vertex_t * v = NULL;
-
-	int next_anchor = 0;
+	int last = 0;
 
 	if (list->count < 3)
 	{
@@ -203,26 +244,14 @@ find_closest_anchors
 
 	for (i = 0; i < sector->linecount; ++i)
 	{
-		if (sector->lines[i]->v1 != v)
+		if (get_anchor(points, anchors, &last, list, sector->lines[i]->v1) != 0)
 		{
-			v = sector->lines[i]->v1;
-		}
-		else
-		{
-			v = sector->lines[i]->v2;
+			return anchors;
 		}
 
-		for (a = 0; a < list->count; ++a)
+		if (get_anchor(points, anchors, &last, list, sector->lines[i]->v2) != 0)
 		{
-			if (list->points[a] == v)
-			{
-				anchors[next_anchor] = list->anchors[a];
-
-				if (++next_anchor == 3)
-				{
-					return anchors;
-				}
-			}
+			return anchors;
 		}
 	}
 
@@ -231,7 +260,7 @@ find_closest_anchors
 			" Slope requires anchors near 3 of its vertices (%d found)",
 
 			sizeu1 (sector - sectors),
-			next_anchor
+			last
 	);
 }
 
@@ -250,7 +279,7 @@ new_vertex_slope
 		slope->flags |= SL_NOPHYSICS;
 	}
 
-	if (flags & ML_NOTAILS)
+	if (( flags & ML_NOTAILS ) == 0)
 	{
 		slope->flags |= SL_NODYNAMIC;
 	}
