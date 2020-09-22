@@ -3085,6 +3085,9 @@ static void K_drawKartStartBulbs(void)
 		x = 28*FRACUNIT;
 	}
 
+	if (timeinmap < 16)
+		return; // temporary for current map start behaviour
+
 	for (i = 0; i < 10; i++)
 	{
 		UINT8 patchnum = letters_order[i];
