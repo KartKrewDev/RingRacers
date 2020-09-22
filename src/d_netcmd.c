@@ -1370,7 +1370,7 @@ static void SendNameAndColor(UINT8 n)
 	char buf[MAXPLAYERNAME+9];
 	char *p;
 
-	if (splitscreen < playernum)
+	if (splitscreen < n)
 		return; // can happen if skin4/color4/name4 changed
 
 	if (playernum == -1)
@@ -1512,13 +1512,6 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 			// i is now player screen id
 			break;
 		}
-	}
-
-	if (i > splitscreen)
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal color change received from %s (team: %d), color: %d)\n"), player_names[playernum], p->ctfteam, p->skincolor);
-		SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
-		return;
 	}
 
 	READSTRINGN(*cp, name, MAXPLAYERNAME);
