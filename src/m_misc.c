@@ -573,11 +573,13 @@ void M_FirstLoadConfig(void)
 	gameconfig_loaded = true;
 
 	// reset to default player stuff
+#if 0
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		COM_BufAddText (va("%s \"%s\"\n",cv_skin[i].name,cv_skin[i].defaultvalue));
-		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor[i].name,cv_skin[i].defaultvalue));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor[i].name,cv_playercolor[i].defaultvalue));
 	}
+#endif
 }
 
 /** Saves the game configuration.
