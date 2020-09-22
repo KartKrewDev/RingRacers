@@ -7222,7 +7222,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					if (newcolor != SKINCOLOR_NONE)
 					{
 						cur->color = skincolors[newcolor].invcolor;
-						cur->frame = skincolors[newcolor].invshade;
+						cur->frame = cur->state->frame + skincolors[newcolor].invshade;
 					}
 				}
 				else if (cur->state == &states[S_KART_SIGN])
