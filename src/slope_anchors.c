@@ -89,22 +89,20 @@ static const vertex_t *
 nearest_point
 (
 		mapthing_t        * a,
-		const subsector_t * sub
+		const sector_t    * sector
 ){
 	const fixed_t x = a->x << FRACBITS;
 	const fixed_t y = a->y << FRACBITS;
 
-	const UINT16 lastline = sub->firstline + sub->numlines;
-
 	const vertex_t * nearest = NULL;/* shut compiler up, should never be NULL */
 	fixed_t          nearest_distance = INT32_MAX;
 
-	UINT16 i;
+	size_t i;
 
-	for (i = sub->firstline; i < lastline; ++i)
+	for (i = 0; i < sector->linecount; ++i)
 	{
-		compare_vertex_distance(&nearest, &nearest_distance, x, y, segs[i].v1);
-		compare_vertex_distance(&nearest, &nearest_distance, x, y, segs[i].v2);
+		compare_vertex_distance(&nearest, &nearest_distance, x, y, sector->lines[i]->v1);
+		compare_vertex_distance(&nearest, &nearest_distance, x, y, sector->lines[i]->v2);
 	}
 
 	return nearest;
@@ -151,7 +149,7 @@ set_anchor
 
 	a->z = anchor_height(a, sub->sector);
 
-	v = nearest_point(a, sub);
+	v = nearest_point(a, sub->sector);
 
 	a->x = ( v->x >> FRACBITS );
 	a->y = ( v->y >> FRACBITS );
