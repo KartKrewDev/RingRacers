@@ -3457,21 +3457,19 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	mobj->eflags &= ~MFE_JUSTSTEPPEDDOWN;
 
 	// Zoom tube
-	if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+	if ((mobj->player->powers[pw_carry] == CR_ZOOMTUBE && mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+		|| mobj->player->respawn.state == RESPAWNST_MOVE)
 	{
-		if (mobj->player->powers[pw_carry] == CR_ZOOMTUBE || mobj->player->respawn.state == RESPAWNST_MOVE)
-		{
-			P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
-			P_UnsetThingPosition(mobj);
-			mobj->x += mobj->momx;
-			mobj->y += mobj->momy;
-			mobj->z += mobj->momz;
-			P_SetThingPosition(mobj);
-			P_CheckPosition(mobj, mobj->x, mobj->y);
-			mobj->floorz = tmfloorz;
-			mobj->ceilingz = tmceilingz;
-			goto animonly;
-		}
+		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
+		P_UnsetThingPosition(mobj);
+		mobj->x += mobj->momx;
+		mobj->y += mobj->momy;
+		mobj->z += mobj->momz;
+		P_SetThingPosition(mobj);
+		P_CheckPosition(mobj, mobj->x, mobj->y);
+		mobj->floorz = tmfloorz;
+		mobj->ceilingz = tmceilingz;
+		goto animonly;
 	}
 
 	// Needed for gravity boots
