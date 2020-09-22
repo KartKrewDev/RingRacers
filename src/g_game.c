@@ -1268,7 +1268,7 @@ void G_StartTitleCard(void)
 	ST_startTitleCard();
 
 	// start the title card
-	WipeStageTitle = (!titlemapinaction);
+	WipeStageTitle = false; //(!titlemapinaction); -- temporary until titlecards are reworked
 }
 
 //

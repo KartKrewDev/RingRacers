@@ -705,14 +705,17 @@ void ST_runTitleCard(void)
 //
 // Draw the title card itself.
 //
+
 void ST_drawTitleCard(void)
 {
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *subttl = mapheaderinfo[gamemap-1]->subttl;
+	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
 	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
 	INT32 lvlttlxpos, ttlnumxpos, zonexpos;
 	INT32 subttlxpos = BASEVIDWIDTH/2;
 	INT32 ttlscroll = FixedInt(lt_scroll);
+#ifdef TITLEPATCHES
 	INT32 zzticker;
 	patch_t *actpat, *zigzag, *zztext;
 	UINT8 colornum;
@@ -724,6 +727,7 @@ void ST_drawTitleCard(void)
 		colornum = cv_playercolor[0].value;
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, colornum, GTC_CACHE);
+#endif
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -738,22 +742,30 @@ void ST_drawTitleCard(void)
 		lt_ticker = lt_lasttic+1;
 
 	ST_cacheLevelTitle();
+
+#ifdef TITLEPATCHES
 	actpat = lt_patches[0];
 	zigzag = lt_patches[1];
 	zztext = lt_patches[2];
+#endif
 
 	lvlttlxpos = ((BASEVIDWIDTH/2) - (V_LevelNameWidth(lvlttl)/2));
 
 	if (actnum > 0)
 		lvlttlxpos -= V_LevelNameWidth(va("%d", actnum));
 
-	ttlnumxpos = lvlttlxpos + V_LevelNameWidth(lvlttl);
-	zonexpos = ttlnumxpos - V_LevelNameWidth(M_GetText("Zone"));
+	zonexpos = ttlnumxpos = lvlttlxpos + V_LevelNameWidth(lvlttl);
+	if (zonttl[0])
+		zonexpos -= V_LevelNameWidth(zonttl); // SRB2kart
+	else
+		zonexpos -= V_LevelNameWidth(M_GetText("Zone"));
+
 	ttlnumxpos++;
 
 	if (lvlttlxpos < 0)
 		lvlttlxpos = 0;
 
+#ifdef TITLEPATCHES
 	if (!splitscreen || (splitscreen && stplyr == &players[displayplayers[0]]))
 	{
 		zzticker = lt_ticker;
@@ -762,9 +774,11 @@ void ST_drawTitleCard(void)
 		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zigzag->height+zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
 		V_DrawMappedPatch(FixedInt(lt_zigzag), (zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
 	}
+#endif
 
 	if (actnum)
 	{
+#ifdef TITLEPATCHES
 		if (!splitscreen)
 		{
 			if (actnum > 9) // slightly offset the act diamond for two-digit act numbers
@@ -772,13 +786,16 @@ void ST_drawTitleCard(void)
 			else
 				V_DrawMappedPatch(ttlnumxpos + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
 		}
-		V_DrawLevelTitle(ttlnumxpos + ttlscroll, 104, V_SPLITSCREEN, va("%d", actnum));
+#endif
+		V_DrawLevelTitle(ttlnumxpos + ttlscroll, 104, 0, va("%d", actnum));
 	}
 
-	V_DrawLevelTitle(lvlttlxpos - ttlscroll, 80, V_SPLITSCREEN, lvlttl);
-	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-		V_DrawLevelTitle(zonexpos + ttlscroll, 104, V_SPLITSCREEN, M_GetText("Zone"));
-	V_DrawCenteredString(subttlxpos - ttlscroll, 135, V_SPLITSCREEN|V_ALLOWLOWERCASE, subttl);
+	V_DrawLevelTitle(lvlttlxpos - ttlscroll, 80, 0, lvlttl);
+	if (zonttl[0])
+		V_DrawLevelTitle(zonexpos + ttlscroll, 104, 0, zonttl);
+	else if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
+		V_DrawLevelTitle(zonexpos + ttlscroll, 104, 0, M_GetText("Zone"));
+	V_DrawCenteredString(subttlxpos - ttlscroll, 135, 0|V_ALLOWLOWERCASE, subttl);
 
 	lt_lasttic = lt_ticker;
 
@@ -819,18 +836,6 @@ void ST_drawWipeTitleCard(void)
 //
 static void ST_overlayDrawer(void)
 {
-	// Decide whether to draw the stage title or not
-	boolean stagetitle = false;
-
-	// Check for a valid level title
-	// If the HUD is enabled
-	// And, if Lua is running, if the HUD library has the stage title enabled
-	if (G_IsTitleCardAvailable() && *mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer)))
-	{
-		stagetitle = true;
-		ST_preDrawTitleCard();
-	}
-
 	// hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
 		K_drawKartHUD();
@@ -877,10 +882,6 @@ static void ST_overlayDrawer(void)
 
 	if (!(netgame || multiplayer) || !hu_showscores)
 		LUAh_GameHUD(stplyr);
-
-	// draw level title Tails
-	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))
-		ST_drawTitleCard();
 
 	if (!hu_showscores && netgame && !mapreset)
 	{
@@ -993,6 +994,8 @@ static void ST_MayonakaStatic(void)
 
 void ST_Drawer(void)
 {
+	boolean stagetitle = false; // Decide whether to draw the stage title or not
+
 	if (needpatchrecache)
 		R_ReloadHUDGraphics();
 
@@ -1041,6 +1044,12 @@ void ST_Drawer(void)
 
 	st_translucency = cv_translucenthud.value;
 
+	// Check for a valid level title
+	// If the HUD is enabled
+	// And, if Lua is running, if the HUD library has the stage title enabled
+	if ((stagetitle = (G_IsTitleCardAvailable() && *mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer)))))
+		ST_preDrawTitleCard();
+
 	if (st_overlay)
 	{
 		UINT8 i;
@@ -1058,7 +1067,10 @@ void ST_Drawer(void)
 
 	// Draw a fade on level opening
 	if (timeinmap < 16)
-		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 32-(timeinmap*2)); // Then gradually fade out from there
+		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(timeinmap*2)); // Then gradually fade out from there
+
+	if (stagetitle)
+		ST_drawTitleCard();
 
 	ST_drawDebugInfo();
 }

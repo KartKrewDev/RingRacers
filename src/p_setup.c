@@ -3821,6 +3821,7 @@ boolean P_LoadLevel(boolean fromnetsave)
 			V_EncoreInvertScreen();
 			F_WipeEndScreen();
 
+			S_StartSound(NULL, sfx_ruby1);
 			F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
 
 			// Hold on invert for extra effect.
@@ -3917,6 +3918,8 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
+	if (!titlemapinaction)
+		wipegamestate = GS_LEVEL;
 
 	// Close text prompt before freeing the old level
 	F_EndTextPrompt(false, true);
