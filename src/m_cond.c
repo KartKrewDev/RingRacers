@@ -358,12 +358,20 @@ UINT8 M_SecretUnlocked(INT32 type)
 		return true;
 #endif
 
+#ifdef DEVELOP
+#define CHADYES true
+#else
+#define CHADYES false
+#endif
+
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].type == type && unlockables[i].unlocked)
-			return true;
+		if (unlockables[i].type == type && unlockables[i].unlocked != CHADYES)
+			return !CHADYES;
 	}
-	return false;
+	return CHADYES;
+
+#undef CHADYES
 }
 
 UINT8 M_MapLocked(INT32 mapnum)
