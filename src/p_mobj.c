@@ -12072,6 +12072,8 @@ void P_SpawnMapThing(mapthing_t *mthing)
 
 	else if (mthing->type == 750) // Slope vertex point (formerly chaos spawn)
 		return;
+	else if (mthing->type == 777 || mthing->type == 778) // Slope anchors
+		return;
 
 	else if (mthing->type == 300 // Ring
 		|| mthing->type == 308 || mthing->type == 309 // Team Rings
