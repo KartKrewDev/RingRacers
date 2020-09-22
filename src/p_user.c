@@ -2617,7 +2617,7 @@ static void P_DeathThink(player_t *player)
 	}
 
 	// Keep time rolling
-	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_GAMETYPEOVER))
+	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_GAMETYPEOVER) && !stoppedclock)
 	{
 		if (leveltime >= starttime)
 		{
@@ -4366,9 +4366,9 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// Synchronizes the "real" amount of time spent in the level.
-	if (!player->exiting && !stoppedclock)
+	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_GAMETYPEOVER) && !stoppedclock)
 	{
-		if (gametyperules & GTR_CIRCUIT)
+		if (leveltime >= starttime)
 		{
 			player->realtime = leveltime - starttime;
 			if (player == &players[consoleplayer])
