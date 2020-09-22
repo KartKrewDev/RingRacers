@@ -4451,18 +4451,10 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 6: // Death Pit (Camera Mod)
 		case 7: // Death Pit (No Camera Mod)
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-			{
-				if (player->quittime)
-					G_MovePlayerToSpawnOrStarpost(player - players);
-				else
-					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_DEATHPIT);
-			}
+				K_DoIngameRespawn(player); // DMG_DEATHPIT eventually
 			break;
 		case 8: // Instant Kill
-			if (player->quittime)
-				G_MovePlayerToSpawnOrStarpost(player - players);
-			else
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
+			K_DoIngameRespawn(player); // DMG_INSTAKILL eventually
 			break;
 		case 9: // Ring Drainer (Floor Touch)
 		case 10: // Ring Drainer (No Floor Touch)
