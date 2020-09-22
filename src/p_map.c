@@ -371,6 +371,8 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	// Re-solidify
 	spring->flags |= (spring->info->flags & (MF_SPRING|MF_SPECIAL));
 
+	P_SetMobjState(spring, spring->info->raisestate);
+
 	if (object->player)
 	{
 		if (spring->flags & MF_ENEMY) // Spring shells
