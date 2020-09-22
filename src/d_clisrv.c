@@ -259,22 +259,24 @@ void SendNetXCmdForPlayer(UINT8 playerid, netxcmd_t id, const void *param, size_
 	if (localtextcmd[playerid][0]+2+nparam > MAXTEXTCMD)
 	{
 		// for future reference: if (cv_debug) != debug disabled.
-		CONS_Alert(CONS_ERROR, M_GetText("NetXCmd buffer full, cannot add netcmd %d! (size: %d, needed: %s)\n"), id, localtextcmd[0][0], sizeu1(nparam));
+		CONS_Alert(CONS_ERROR, M_GetText("NetXCmd buffer full, cannot add netcmd %d! (size: %d, needed: %s)\n"), id, localtextcmd[playerid][0], sizeu1(nparam));
 		return;
 	}
+
 	localtextcmd[playerid][0]++;
 	localtextcmd[playerid][localtextcmd[playerid][0]] = (UINT8)id;
+
 	if (param && nparam)
 	{
-		M_Memcpy(&localtextcmd[playerid][localtextcmd[playerid][0]+1], param, nparam);
+		M_Memcpy(&localtextcmd[playerid][localtextcmd[playerid][0] + 1], param, nparam);
 		localtextcmd[playerid][0] = (UINT8)(localtextcmd[playerid][0] + (UINT8)nparam);
 	}
 }
 
-UINT8 GetFreeXCmdSize(void)
+UINT8 GetFreeXCmdSize(UINT8 playerid)
 {
 	// -1 for the size and another -1 for the ID.
-	return (UINT8)(localtextcmd[0][0] - 2);
+	return (UINT8)(localtextcmd[playerid][0] - 2);
 }
 
 // Frees all textcmd memory for the specified tic
@@ -3972,10 +3974,8 @@ void SV_StopServer(void)
 		Y_EndVote();
 	gamestate = wipegamestate = GS_NULL;
 
-	localtextcmd[0][0] = 0;
-	localtextcmd[1][0] = 0;
-	localtextcmd[2][0] = 0;
-	localtextcmd[3][0] = 0;
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		localtextcmd[i][0] = 0;
 
 	for (i = firstticstosend; i < firstticstosend + TICQUEUE; i++)
 		D_Clearticcmd(i);
@@ -5265,44 +5265,33 @@ static void CL_SendClientCmd(void)
 
 	if (cl_mode == CL_CONNECTED || dedicated)
 	{
+		UINT8 i;
 		// Send extra data if needed
-		if (localtextcmd[0][0])
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		{
-			netbuffer->packettype = PT_TEXTCMD;
-			M_Memcpy(netbuffer->u.textcmd,localtextcmd[0], localtextcmd[0][0]+1);
-			// All extra data have been sent
-			if (HSendPacket(servernode, true, 0, localtextcmd[0][0]+1)) // Send can fail...
-				localtextcmd[0][0] = 0;
-		}
+			if (localtextcmd[i][0])
+			{
+				switch (i)
+				{
+					case 3:
+						netbuffer->packettype = PT_TEXTCMD4;
+						break;
+					case 2:
+						netbuffer->packettype = PT_TEXTCMD3;
+						break;
+					case 1:
+						netbuffer->packettype = PT_TEXTCMD2;
+						break;
+					default:
+						netbuffer->packettype = PT_TEXTCMD;
+						break;
+				}
 
-		// Send extra data if needed for player 2 (splitscreen == 1)
-		if (localtextcmd[1][0])
-		{
-			netbuffer->packettype = PT_TEXTCMD2;
-			M_Memcpy(netbuffer->u.textcmd, localtextcmd[1], localtextcmd[1][0]+1);
-			// All extra data have been sent
-			if (HSendPacket(servernode, true, 0, localtextcmd[1][0]+1)) // Send can fail...
-				localtextcmd[1][0] = 0;
-		}
-
-		// Send extra data if needed for player 3 (splitscreen == 2)
-		if (localtextcmd[2][0])
-		{
-			netbuffer->packettype = PT_TEXTCMD3;
-			M_Memcpy(netbuffer->u.textcmd, localtextcmd[2], localtextcmd[2][0]+1);
-			// All extra data have been sent
-			if (HSendPacket(servernode, true, 0, localtextcmd[2][0]+1)) // Send can fail...
-				localtextcmd[2][0] = 0;
-		}
-
-		// Send extra data if needed for player 4 (splitscreen == 3)
-		if (localtextcmd[3][0])
-		{
-			netbuffer->packettype = PT_TEXTCMD4;
-			M_Memcpy(netbuffer->u.textcmd, localtextcmd[3], localtextcmd[3][0]+1);
-			// All extra data have been sent
-			if (HSendPacket(servernode, true, 0, localtextcmd[3][0]+1)) // Send can fail...
-				localtextcmd[3][0] = 0;
+				M_Memcpy(netbuffer->u.textcmd, localtextcmd[i], localtextcmd[i][0]+1);
+				// All extra data have been sent
+				if (HSendPacket(servernode, true, 0, localtextcmd[i][0]+1)) // Send can fail...
+					localtextcmd[i][0] = 0;
+			}
 		}
 	}
 }
@@ -5487,7 +5476,7 @@ static void SV_Maketic(void)
 			{
 				// empty inputs but consider recieved
 				memset(ticcmd, 0, sizeof(netcmds[0][0]));
-				ticcmd->flags = prevticcmd->flags | TICCMD_RECEIVED;
+				ticcmd->flags |= TICCMD_RECEIVED;
 			}
 			else
 			{
@@ -5495,6 +5484,18 @@ static void SV_Maketic(void)
 				// Copy the input from the previous tic
 				*ticcmd = *prevticcmd;
 				ticcmd->flags &= ~TICCMD_RECEIVED;
+
+#if 1
+				CONS_Printf(
+					"[PLAYER %d] move: %d, turn: %d, buttons: %d, latency: %d, flags: %d\n",
+					i,
+					ticcmd->forwardmove,
+					ticcmd->turning,
+					ticcmd->buttons,
+					ticcmd->latency,
+					ticcmd->flags
+				);
+#endif
 			}
 		}
 	}

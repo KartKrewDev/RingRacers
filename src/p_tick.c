@@ -349,7 +349,7 @@ static void P_DoAutobalanceTeams(void)
 
 	// Only do it if we have enough room in the net buffer to send it.
 	// Otherwise, come back next time and try again.
-	if (sizeof(usvalue) > GetFreeXCmdSize())
+	if (sizeof(usvalue) > GetFreeXCmdSize(0))
 		return;
 
 	//We have to store the players in an array with the rest of their team.
@@ -425,7 +425,7 @@ void P_DoTeamscrambling(void)
 
 	// Only do it if we have enough room in the net buffer to send it.
 	// Otherwise, come back next time and try again.
-	if (sizeof(usvalue) > GetFreeXCmdSize())
+	if (sizeof(usvalue) > GetFreeXCmdSize(0))
 		return;
 
 	if (scramblecount < scrambletotal)

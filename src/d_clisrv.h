@@ -675,7 +675,7 @@ boolean D_IsPlayerHumanAndGaming(INT32 player_number);
 void D_ResetTiccmds(void);
 
 tic_t GetLag(INT32 node);
-UINT8 GetFreeXCmdSize(void);
+UINT8 GetFreeXCmdSize(UINT8 playerid);
 
 void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *dest);
 
