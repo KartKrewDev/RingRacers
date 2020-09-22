@@ -123,11 +123,11 @@ demoghost *ghosts = NULL;
 // For demos
 #define ZT_FWD     0x01
 #define ZT_SIDE    0x02
-#define ZT_ANGLE   0x04
+#define ZT_TURNING 0x04
 #define ZT_BUTTONS 0x08
 #define ZT_AIMING  0x10
-#define ZT_DRIFT   0x20
-#define ZT_LATENCY 0x40
+#define ZT_LATENCY 0x20
+#define ZT_FLAGS   0x40
 #define DEMOMARKER 0x80 // demoend
 
 UINT8 demo_extradata[MAXPLAYERS];
@@ -483,19 +483,18 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	if (ziptic & ZT_FWD)
 		oldcmd[playernum].forwardmove = READSINT8(demo_p);
-	if (ziptic & ZT_ANGLE)
-		oldcmd[playernum].angleturn = READINT16(demo_p);
+	if (ziptic & ZT_TURNING)
+		oldcmd[playernum].turning = READINT16(demo_p);
 	if (ziptic & ZT_BUTTONS)
 		oldcmd[playernum].buttons = READUINT16(demo_p);
 	if (ziptic & ZT_AIMING)
 		oldcmd[playernum].aiming = READINT16(demo_p);
-	if (ziptic & ZT_DRIFT)
-		oldcmd[playernum].driftturn = READINT16(demo_p);
 	if (ziptic & ZT_LATENCY)
+		oldcmd[playernum].latency = READUINT8(demo_p);
+	if (ziptic & ZT_FLAGS)
 		oldcmd[playernum].latency = READUINT8(demo_p);
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
-	players[playernum].angleturn = cmd->angleturn;
 
 	if (!(demoflags & DF_GHOST) && *demo_p == DEMOMARKER)
 	{
@@ -522,11 +521,11 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		ziptic |= ZT_FWD;
 	}
 
-	if (cmd->angleturn != oldcmd[playernum].angleturn)
+	if (cmd->turning != oldcmd[playernum].turning)
 	{
-		WRITEINT16(demo_p,cmd->angleturn);
-		oldcmd[playernum].angleturn = cmd->angleturn;
-		ziptic |= ZT_ANGLE;
+		WRITEINT16(demo_p,cmd->turning);
+		oldcmd[playernum].turning = cmd->turning;
+		ziptic |= ZT_TURNING;
 	}
 
 	if (cmd->buttons != oldcmd[playernum].buttons)
@@ -543,18 +542,18 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		ziptic |= ZT_AIMING;
 	}
 
-	if (cmd->driftturn != oldcmd[playernum].driftturn)
-	{
-		WRITEINT16(demo_p,cmd->driftturn);
-		oldcmd[playernum].driftturn = cmd->driftturn;
-		ziptic |= ZT_DRIFT;
-	}
-
 	if (cmd->latency != oldcmd[playernum].latency)
 	{
 		WRITEUINT8(demo_p,cmd->latency);
 		oldcmd[playernum].latency = cmd->latency;
 		ziptic |= ZT_LATENCY;
+	}
+
+	if (cmd->flags != oldcmd[playernum].flags)
+	{
+		WRITEUINT8(demo_p,cmd->flags);
+		oldcmd[playernum].flags = cmd->flags;
+		ziptic |= ZT_FLAGS;
 	}
 
 	*ziptic_p = ziptic;
@@ -1086,15 +1085,15 @@ void G_GhostTicker(void)
 
 		if (ziptic & ZT_FWD)
 			g->p++;
-		if (ziptic & ZT_ANGLE)
+		if (ziptic & ZT_TURNING)
 			g->p += 2;
 		if (ziptic & ZT_BUTTONS)
 			g->p += 2;
 		if (ziptic & ZT_AIMING)
 			g->p += 2;
-		if (ziptic & ZT_DRIFT)
-			g->p += 2;
 		if (ziptic & ZT_LATENCY)
+			g->p += 1;
+		if (ziptic & ZT_FLAGS)
 			g->p += 1;
 
 		// Grab ghost data.

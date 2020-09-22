@@ -722,10 +722,6 @@ void P_PreTicker(INT32 frames)
 				// (and disrupt demo recording and other things !!)
 				memcpy(&temptic, &players[i].cmd, sizeof(ticcmd_t));
 				memset(&players[i].cmd, 0, sizeof(ticcmd_t));
-				// correct angle on spawn...
-				players[i].angleturn += temptic.angleturn - players[i].oldrelangleturn;
-				players[i].oldrelangleturn = temptic.angleturn;
-				players[i].cmd.angleturn = players[i].angleturn;
 
 				P_PlayerThink(&players[i]);
 

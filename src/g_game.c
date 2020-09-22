@@ -853,15 +853,11 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
-static INT32 forwardmove = 50<<FRACBITS>>16;
-static INT32 angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
-
-INT16 ticcmd_oldangleturn[MAXSPLITSCREENPLAYERS];
+static INT32 angleturn[2] = {KART_FULLTURN, KART_FULLTURN / 4}; // + slow turn
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
-	const INT32 speed = 1;
 
 	const INT32 lookaxis = cv_lookaxis[forplayer].value;
 	const boolean invertmouse = cv_invertmouse.value;
@@ -881,7 +877,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	player_t *player = &players[g_localplayers[forplayer]];
 	camera_t *thiscam = &camera[forplayer];
-	angle_t *myangle = &localangle[forplayer];
 	INT32 *laim = &localaiming[forplayer];
 	INT32 *th = &turnheld[forplayer];
 	boolean *kbl = &keyboard_look[forplayer];
@@ -913,7 +908,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// Kart, don't build a ticcmd if someone is resynching or the server is stopped too so we don't fly off course in bad conditions
 	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN) || hu_resynching)
 	{
-		cmd->angleturn = ticcmd_oldangleturn[forplayer];
 		cmd->aiming = G_ClipAimingPitch(laim);
 		return;
 	}
@@ -954,36 +948,31 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		*th = 0;
 
 	if (*th < SLOWTURNTICS)
-		tspeed = 2; // slow turn
+		tspeed = 1; // slow turn
 	else
-		tspeed = speed;
+		tspeed = 0;
 
-	cmd->driftturn = 0;
+	cmd->turning = 0;
 
 	// let movement keys cancel each other out
 	if (turnright && !(turnleft))
 	{
-		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed]));
-		cmd->driftturn = (INT16)(cmd->driftturn - (angleturn[tspeed]));
+		cmd->turning = (INT16)(cmd->turning - (angleturn[tspeed]));
 	}
 	else if (turnleft && !(turnright))
 	{
-		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed]));
-		cmd->driftturn = (INT16)(cmd->driftturn + (angleturn[tspeed]));
+		cmd->turning = (INT16)(cmd->turning + (angleturn[tspeed]));
 	}
 
 	if (analogjoystickmove && joystickvector.xaxis != 0)
 	{
-		// JOYAXISRANGE should be 1023 (divide by 1024)
-		cmd->angleturn = (INT16)(cmd->angleturn - (((joystickvector.xaxis * angleturn[1]) >> 10))); // ANALOG!
-		cmd->driftturn = (INT16)(cmd->driftturn - (((joystickvector.xaxis * angleturn[1]) >> 10)));
+		cmd->turning = (INT16)(cmd->turning - (((joystickvector.xaxis * angleturn[0]) >> 10)));
 	}
 
 	// Specator mouse turning
 	if (player->spectator)
 	{
-		cmd->angleturn = (INT16)(cmd->angleturn - ((mousex*(encoremode ? -1 : 1)*8)));
-		cmd->driftturn = (INT16)(cmd->driftturn - ((mousex*(encoremode ? -1 : 1)*8)));
+		cmd->turning = (INT16)(cmd->turning - ((mousex*(encoremode ? -1 : 1)*8)));
 	}
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
@@ -996,9 +985,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->buttons |= BT_BRAKE;
 		axis = PlayerJoyAxis(ssplayer, AXISAIM);
 		if (PlayerInputDown(ssplayer, gc_aimforward) || (usejoystick && axis < 0))
-			forward += forwardmove;
+			forward += MAXPLMOVE;
 		if (PlayerInputDown(ssplayer, gc_aimbackward) || (usejoystick && axis > 0))
-			forward -= forwardmove;
+			forward -= MAXPLMOVE;
 	}
 	else
 	{
@@ -1007,13 +996,13 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
 		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward = forwardmove;	// 50
+			forward = MAXPLMOVE; // 50
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			forward += ((axis * forwardmove) >> 10);
+			forward += ((axis * MAXPLMOVE) >> 10);
 		}
 
 		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
@@ -1021,14 +1010,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		{
 			cmd->buttons |= BT_BRAKE;
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= forwardmove;
+				forward -= MAXPLMOVE;
 		}
 		else if (analogjoystickmove && axis > 0)
 		{
 			cmd->buttons |= BT_BRAKE;
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
 			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= ((axis * forwardmove) >> 10);
+				forward -= ((axis * MAXPLMOVE) >> 10);
 		}
 
 		// But forward/backward IS used for aiming.
@@ -1124,35 +1113,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->forwardmove += (SINT8)forward;
 
-	if (cmd->forwardmove > MAXPLMOVE)
-		cmd->forwardmove = MAXPLMOVE;
-	else if (cmd->forwardmove < -MAXPLMOVE)
-		cmd->forwardmove = -MAXPLMOVE;
-
-	//{ SRB2kart - Drift support
-	// Not grouped with the rest of turn stuff because it needs to know what buttons you're pressing for rubber-burn turn
-	// limit turning to angleturn[1] to stop mouselook letting you look too fast
-	if (cmd->angleturn > (angleturn[1]))
-		cmd->angleturn = (angleturn[1]);
-	else if (cmd->angleturn < (-angleturn[1]))
-		cmd->angleturn = (-angleturn[1]);
-
-	if (cmd->driftturn > (angleturn[1]))
-		cmd->driftturn = (angleturn[1]);
-	else if (cmd->driftturn < (-angleturn[1]))
-		cmd->driftturn = (-angleturn[1]);
-
-	if (player->mo)
-		cmd->angleturn = K_GetKartTurnValue(player, cmd->angleturn);
-
-	cmd->angleturn *= realtics;
-
-	if (!hu_stopped)
-	{
-		*myangle += (cmd->angleturn<<16);
-	}
-
 	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
+	cmd->flags = 0;
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.
 		We check if we're actually in a level because for some reason this Hook would run in menus and on the titlescreen otherwise.
@@ -1167,7 +1129,17 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (gamestate == GS_LEVEL)
 		LUAh_PlayerCmd(player, cmd);
 
-	//Reset away view if a command is given.
+	if (cmd->forwardmove > MAXPLMOVE)
+		cmd->forwardmove = MAXPLMOVE;
+	else if (cmd->forwardmove < -MAXPLMOVE)
+		cmd->forwardmove = -MAXPLMOVE;
+
+	if (cmd->turning > (angleturn[0]))
+		cmd->turning = (angleturn[0]);
+	else if (cmd->turning < (-angleturn[0]))
+		cmd->turning = (-angleturn[0]);
+
+	// Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->buttons)
 		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
 	{
@@ -1176,9 +1148,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		LUAh_ViewpointSwitch(player, &players[consoleplayer], true);
 		displayplayers[0] = consoleplayer;
 	}
-
-	cmd->angleturn = (INT16)(cmd->angleturn + ticcmd_oldangleturn[forplayer]);
-	ticcmd_oldangleturn[forplayer] = cmd->angleturn;
 }
 
 ticcmd_t *G_CopyTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
@@ -1192,11 +1161,11 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	for (i = 0; i < n; i++)
 	{
 		dest[i].forwardmove = src[i].forwardmove;
-		dest[i].angleturn = SHORT(src[i].angleturn);
+		dest[i].turning = (INT16)SHORT(src[i].turning);
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
-		dest[i].driftturn = SHORT(src[i].driftturn);
 		dest[i].latency = src[i].latency;
+		dest[i].flags = src[i].flags;
 	}
 	return dest;
 }
@@ -1878,7 +1847,7 @@ void G_Ticker(boolean run)
 				G_CopyTiccmd(cmd, &netcmds[buf][i], 1);
 
 				// Use the leveltime sent in the player's ticcmd to determine control lag
-				if (modeattacking || K_PlayerUsesBotMovement(&players[i]))
+				if (K_PlayerUsesBotMovement(&players[i]))
 				{
 					// Never has lag
 					cmd->latency = 0;
@@ -1888,10 +1857,6 @@ void G_Ticker(boolean run)
 					//@TODO add a cvar to allow setting this max
 					cmd->latency = min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1);
 				}
-
-				players[i].angleturn += players[i].cmd.angleturn - players[i].oldrelangleturn;
-				players[i].oldrelangleturn = players[i].cmd.angleturn;
-				players[i].cmd.angleturn = players[i].angleturn;
 			}
 		}
 	}
@@ -2089,8 +2054,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 botdifficulty;
 
 	INT16 rings;
-	INT16 playerangleturn;
-	INT16 oldrelangleturn;
+	angle_t playerangleturn;
 
 	UINT8 botdiffincrease;
 	boolean botrival;
@@ -2126,7 +2090,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER));
 
 	playerangleturn = players[player].angleturn;
-	oldrelangleturn = players[player].oldrelangleturn;
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
@@ -2227,7 +2190,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
 	p->angleturn = playerangleturn;
-	p->oldrelangleturn = oldrelangleturn;
 
 	// save player config truth reborn
 	p->skincolor = skincolor;

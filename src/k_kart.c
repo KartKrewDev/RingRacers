@@ -1712,11 +1712,11 @@ void K_KartMoveAnimation(player_t *player)
 	ticcmd_t *cmd = &player->cmd;
 	const boolean spinningwheels = ((cmd->buttons & BT_ACCELERATE) || (onground && player->speed > 0));
 
-	if (cmd->driftturn < -minturn)
+	if (cmd->turning < -minturn)
 	{
 		turndir = -1;
 	}
-	else if (cmd->driftturn > minturn)
+	else if (cmd->turning > minturn)
 	{
 		turndir = 1;
 	}
@@ -3029,8 +3029,8 @@ static void K_SpawnDriftSparks(player_t *player)
 			}
 		}
 
-		if ((player->kartstuff[k_drift] > 0 && player->cmd.driftturn > 0) // Inward drifts
-			|| (player->kartstuff[k_drift] < 0 && player->cmd.driftturn < 0))
+		if ((player->kartstuff[k_drift] > 0 && player->cmd.turning > 0) // Inward drifts
+			|| (player->kartstuff[k_drift] < 0 && player->cmd.turning < 0))
 		{
 			if ((player->kartstuff[k_drift] < 0 && (i & 1))
 				|| (player->kartstuff[k_drift] > 0 && !(i & 1)))
@@ -3043,8 +3043,8 @@ static void K_SpawnDriftSparks(player_t *player)
 				size--;
 			}
 		}
-		else if ((player->kartstuff[k_drift] > 0 && player->cmd.driftturn < 0) // Outward drifts
-			|| (player->kartstuff[k_drift] < 0 && player->cmd.driftturn > 0))
+		else if ((player->kartstuff[k_drift] > 0 && player->cmd.turning < 0) // Outward drifts
+			|| (player->kartstuff[k_drift] < 0 && player->cmd.turning > 0))
 		{
 			if ((player->kartstuff[k_drift] < 0 && (i & 1))
 				|| (player->kartstuff[k_drift] > 0 && !(i & 1)))
@@ -6401,14 +6401,14 @@ static void K_KartDrift(player_t *player, boolean onground)
 	}
 
 	// Drifting: left or right?
-	if ((player->cmd.driftturn > 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
+	if ((player->cmd.turning > 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
 		&& (player->kartstuff[k_drift] == 0 || player->kartstuff[k_driftend] == 1)) // && player->kartstuff[k_drift] != 1)
 	{
 		// Starting left drift
 		player->kartstuff[k_drift] = 1;
 		player->kartstuff[k_driftend] = player->kartstuff[k_driftcharge] = 0;
 	}
-	else if ((player->cmd.driftturn < 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
+	else if ((player->cmd.turning < 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
 		&& (player->kartstuff[k_drift] == 0 || player->kartstuff[k_driftend] == 1)) // && player->kartstuff[k_drift] != -1)
 	{
 		// Starting right drift
@@ -6453,10 +6453,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->kartstuff[k_drift] > 5)
 					player->kartstuff[k_drift] = 5;
 
-				if (player->cmd.driftturn > 0) // Inward
-					driftadditive += abs(player->cmd.driftturn)/100;
-				if (player->cmd.driftturn < 0) // Outward
-					driftadditive -= abs(player->cmd.driftturn)/75;
+				if (player->cmd.turning > 0) // Inward
+					driftadditive += abs(player->cmd.turning)/100;
+				if (player->cmd.turning < 0) // Outward
+					driftadditive -= abs(player->cmd.turning)/75;
 			}
 			else if (player->kartstuff[k_drift] <= -1) // Drifting to the right
 			{
@@ -6464,10 +6464,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->kartstuff[k_drift] < -5)
 					player->kartstuff[k_drift] = -5;
 
-				if (player->cmd.driftturn < 0) // Inward
-					driftadditive += abs(player->cmd.driftturn)/100;
-				if (player->cmd.driftturn > 0) // Outward
-					driftadditive -= abs(player->cmd.driftturn)/75;
+				if (player->cmd.turning < 0) // Inward
+					driftadditive += abs(player->cmd.turning)/100;
+				if (player->cmd.turning > 0) // Outward
+					driftadditive -= abs(player->cmd.turning)/75;
 			}
 
 			// Disable drift-sparks until you're going fast enough
@@ -6531,9 +6531,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 	}
 
 	if ((player->kartstuff[k_handleboost] == 0)
-	|| (!player->cmd.driftturn)
+	|| (!player->cmd.turning)
 	|| (!player->kartstuff[k_aizdriftstrat])
-	|| (player->cmd.driftturn > 0) != (player->kartstuff[k_aizdriftstrat] > 0))
+	|| (player->cmd.turning > 0) != (player->kartstuff[k_aizdriftstrat] > 0))
 	{
 		if (!player->kartstuff[k_drift])
 			player->kartstuff[k_aizdriftstrat] = 0;
@@ -6747,7 +6747,7 @@ static void K_KartSpindash(player_t *player)
 
 	if (player->speed < 6*mapobjectscale && player->powers[pw_flashing] == 0)
 	{
-		if (cmd->driftturn != 0 && leveltime % 8 == 0)
+		if (cmd->turning != 0 && leveltime % 8 == 0)
 			S_StartSound(player->mo, sfx_ruburn);
 
 		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))

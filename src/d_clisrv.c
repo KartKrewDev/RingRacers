@@ -426,7 +426,7 @@ static void D_Clearticcmd(tic_t tic)
 	D_FreeTextcmd(tic);
 
 	for (i = 0; i < MAXPLAYERS; i++)
-		netcmds[tic%TICQUEUE][i].angleturn = 0;
+		netcmds[tic%TICQUEUE][i].flags = 0;
 
 	DEBFILE(va("clear tic %5u (%2u)\n", tic, tic%TICQUEUE));
 }
@@ -527,9 +527,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->pflags = (UINT32)LONG(players[i].pflags); //pflags_t
 	rsp->panim  = (UINT8)players[i].panim; //panim_t
 
-	rsp->angleturn = (INT16)SHORT(players[i].angleturn);
-	rsp->oldrelangleturn = (INT16)SHORT(players[i].oldrelangleturn);
-
+	rsp->angleturn = (angle_t)LONG(players[i].angleturn);
 	rsp->aiming = (angle_t)LONG(players[i].aiming);
 
 	for (j = 0; j < NUMPOWERS; ++j)
@@ -673,9 +671,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].pflags = (UINT32)LONG(rsp->pflags); //pflags_t
 	players[i].panim  = (UINT8)rsp->panim; //panim_t
 
-	players[i].angleturn = (INT16)SHORT(rsp->angleturn);
-	players[i].oldrelangleturn = (INT16)SHORT(rsp->oldrelangleturn);
-
+	players[i].angleturn = (angle_t)LONG(rsp->angleturn);
 	players[i].aiming = (angle_t)LONG(rsp->aiming);
 
 	for (j = 0; j < NUMPOWERS; ++j)
@@ -3675,8 +3671,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 			DEBFILE("spawning me\n");
 		}
 
-		ticcmd_oldangleturn[splitscreenplayer] = newplayer->oldrelangleturn;
-		P_ForceLocalAngle(newplayer, (angle_t)(newplayer->angleturn << 16));
+		P_ForceLocalAngle(newplayer, newplayer->angleturn);
 
 		D_SendPlayerConfig();
 		addedtogame = true;
@@ -4485,7 +4480,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 static boolean CheckForSpeedHacks(UINT8 p)
 {
 	if (netcmds[maketic%TICQUEUE][p].forwardmove > MAXPLMOVE || netcmds[maketic%TICQUEUE][p].forwardmove < -MAXPLMOVE
-		|| netcmds[maketic%TICQUEUE][p].driftturn > KART_FULLTURN || netcmds[maketic%TICQUEUE][p].driftturn < -KART_FULLTURN)
+		|| netcmds[maketic%TICQUEUE][p].turning > KART_FULLTURN || netcmds[maketic%TICQUEUE][p].turning < -KART_FULLTURN)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), playernode[p]);
 		//D_Clearticcmd(k);
@@ -5445,22 +5440,22 @@ static void Local_Maketic(INT32 realtics)
 
 	// translate inputs (keyboard/mouse/joystick) into game controls
 	G_BuildTiccmd(&localcmds[0], realtics, 1);
-	localcmds[0].angleturn |= TICCMD_RECEIVED;
+	localcmds[0].flags |= TICCMD_RECEIVED;
 
 	if (splitscreen)
 	{
 		G_BuildTiccmd(&localcmds[1], realtics, 2);
-		localcmds[1].angleturn |= TICCMD_RECEIVED;
+		localcmds[1].flags |= TICCMD_RECEIVED;
 
 		if (splitscreen > 1)
 		{
 			G_BuildTiccmd(&localcmds[2], realtics, 3);
-			localcmds[2].angleturn |= TICCMD_RECEIVED;
+			localcmds[2].flags |= TICCMD_RECEIVED;
 
 			if (splitscreen > 2)
 			{
 				G_BuildTiccmd(&localcmds[3], realtics, 4);
-				localcmds[3].angleturn |= TICCMD_RECEIVED;
+				localcmds[3].flags |= TICCMD_RECEIVED;
 			}
 		}
 	}
@@ -5483,25 +5478,23 @@ static void SV_Maketic(void)
 		}
 
 		// We didn't receive this tic
-		if ((netcmds[maketic % TICQUEUE][i].angleturn & TICCMD_RECEIVED) == 0)
+		if ((netcmds[maketic % TICQUEUE][i].flags & TICCMD_RECEIVED) == 0)
 		{
 			ticcmd_t *    ticcmd = &netcmds[(maketic    ) % BACKUPTICS][i];
 			ticcmd_t *prevticcmd = &netcmds[(maketic - 1) % BACKUPTICS][i];
 
 			if (players[i].quittime)
 			{
-				// Copy the angle/aiming from the previous tic
-				// and empty the other inputs
+				// empty inputs but consider recieved
 				memset(ticcmd, 0, sizeof(netcmds[0][0]));
-				ticcmd->angleturn = prevticcmd->angleturn | TICCMD_RECEIVED;
-				ticcmd->aiming = prevticcmd->aiming;
+				ticcmd->flags = prevticcmd->flags | TICCMD_RECEIVED;
 			}
 			else
 			{
 				DEBFILE(va("MISS tic%4d for player %d\n", maketic, i));
 				// Copy the input from the previous tic
 				*ticcmd = *prevticcmd;
-				ticcmd->angleturn &= ~TICCMD_RECEIVED;
+				ticcmd->flags &= ~TICCMD_RECEIVED;
 			}
 		}
 	}

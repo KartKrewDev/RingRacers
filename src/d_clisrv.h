@@ -208,9 +208,7 @@ typedef struct
 	UINT32 pflags; // pflags_t
 	UINT8 panim; // panim_t
 
-	INT16 angleturn;
-	INT16 oldrelangleturn;
-
+	angle_t angleturn;
 	angle_t aiming;
 	UINT16 powers[NUMPOWERS];
 

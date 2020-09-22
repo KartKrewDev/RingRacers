@@ -102,8 +102,7 @@ static void P_NetArchivePlayers(void)
 
 		// no longer send ticcmds, player name, skin, or color
 
-		WRITEINT16(save_p, players[i].angleturn);
-		WRITEINT16(save_p, players[i].oldrelangleturn);
+		WRITEANGLE(save_p, players[i].angleturn);
 		WRITEANGLE(save_p, players[i].aiming);
 		WRITEANGLE(save_p, players[i].drawangle);
 		WRITEANGLE(save_p, players[i].viewrollangle);
@@ -251,12 +250,6 @@ static void P_NetArchivePlayers(void)
 		for (j = 0; j < NUMKARTSTUFF; j++)
 			WRITEINT32(save_p, players[i].kartstuff[j]);
 
-		for (j = 0; j < MAXPREDICTTICS; j++)
-		{
-			WRITEINT16(save_p, players[i].lturn_max[j]);
-			WRITEINT16(save_p, players[i].rturn_max[j]);
-		}
-
 		WRITEUINT32(save_p, players[i].distancetofinish);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
@@ -302,8 +295,7 @@ static void P_NetUnArchivePlayers(void)
 		// sending player names, skin and color should not be necessary at all!
 		// (that data is handled in the server config now)
 
-		players[i].angleturn = READINT16(save_p);
-		players[i].oldrelangleturn = READINT16(save_p);
+		players[i].angleturn = READANGLE(save_p);
 		players[i].aiming = READANGLE(save_p);
 		players[i].drawangle = READANGLE(save_p);
 		players[i].viewrollangle = READANGLE(save_p);
@@ -442,12 +434,6 @@ static void P_NetUnArchivePlayers(void)
 
 		for (j = 0; j < NUMKARTSTUFF; j++)
 			players[i].kartstuff[j] = READINT32(save_p);
-
-		for (j = 0; j < MAXPREDICTTICS; j++)
-		{
-			players[i].lturn_max[j] = READINT16(save_p);
-			players[i].rturn_max[j] = READINT16(save_p);
-		}
 
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);

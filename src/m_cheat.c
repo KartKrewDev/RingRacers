@@ -1033,10 +1033,10 @@ void OP_ObjectplaceMovement(player_t *player)
 {
 	ticcmd_t *cmd = &player->cmd;
 
-	player->drawangle = player->mo->angle = (cmd->angleturn<<16 /* not FRACBITS */);
+	player->drawangle = player->mo->angle = player->angleturn;
 
 	ticruned++;
-	if (!(cmd->angleturn & TICCMD_RECEIVED))
+	if (!(cmd->flags & TICCMD_RECEIVED))
 		ticmiss++;
 
 	if (cmd->buttons & BT_ACCELERATE)

@@ -8695,7 +8695,7 @@ void T_Pusher(pusher_t *p)
 
 				if (!demo.playback)
 				{
-					angle_t angle = thing->player->angleturn << 16;
+					angle_t angle = thing->player->angleturn;
 					if (thing->angle - angle > ANGLE_180)
 						P_SetPlayerAngle(thing->player, angle - (angle - thing->angle) / 8);
 					else

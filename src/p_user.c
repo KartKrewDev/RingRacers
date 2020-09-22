@@ -2062,10 +2062,10 @@ static void P_SpectatorMovement(player_t *player)
 {
 	ticcmd_t *cmd = &player->cmd;
 
-	player->mo->angle = (cmd->angleturn<<16 /* not FRACBITS */);
+	player->mo->angle = player->angleturn;
 
 	ticruned++;
-	if (!(cmd->angleturn & TICCMD_RECEIVED))
+	if (!(cmd->flags & TICCMD_RECEIVED))
 		ticmiss++;
 
 	if (cmd->buttons & BT_ACCELERATE)
@@ -2133,52 +2133,13 @@ void P_MovePlayer(player_t *player)
 	// MOVEMENT CODE	//
 	//////////////////////
 
-	{
-		INT16 angle_diff, max_left_turn, max_right_turn;
-		boolean add_delta = true;
+	player->mo->angle = player->angleturn;
 
-		// Kart: store the current turn range for later use
-		player->lturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, KART_FULLTURN)+1;
-		player->rturn_max[leveltime%MAXPREDICTTICS] = K_GetKartTurnValue(player, -KART_FULLTURN)-1;
+	ticruned++;
+	if (!(cmd->flags & TICCMD_RECEIVED))
+		ticmiss++;
 
-		if (leveltime >= introtime)
-		{
-			// KART: Don't directly apply angleturn! It may have been either A) forged by a malicious client, or B) not be a smooth turn due to a player dropping frames.
-			// Instead, turn the player only up to the amount they're supposed to turn accounting for latency. Allow exactly 1 extra turn unit to try to keep old replays synced.
-			angle_diff = cmd->angleturn - (player->mo->angle>>16);
-			max_left_turn = player->lturn_max[(leveltime + MAXPREDICTTICS - cmd->latency) % MAXPREDICTTICS];
-			max_right_turn = player->rturn_max[(leveltime + MAXPREDICTTICS - cmd->latency) % MAXPREDICTTICS];
-
-			//CONS_Printf("----------------\nangle diff: %d - turning options: %d to %d - ", angle_diff, max_left_turn, max_right_turn);
-
-			if (angle_diff > max_left_turn)
-				angle_diff = max_left_turn;
-			else if (angle_diff < max_right_turn)
-				angle_diff = max_right_turn;
-			else
-			{
-				// Try to keep normal turning as accurate to 1.0.1 as possible to reduce replay desyncs.
-				player->mo->angle = cmd->angleturn<<16;
-				add_delta = false;
-			}
-			//CONS_Printf("applied turn: %d\n", angle_diff);
-
-			if (add_delta) {
-				player->mo->angle += angle_diff<<16;
-				player->mo->angle &= ~0xFFFF; // Try to keep the turning somewhat similar to how it was before?
-				//CONS_Printf("leftover turn (%s): %5d or %4d%%\n",
-				//				player_names[player-players],
-				//				(INT16) (cmd->angleturn - (player->mo->angle>>16)),
-				//				(INT16) (cmd->angleturn - (player->mo->angle>>16)) * 100 / (angle_diff ? angle_diff : 1));
-			}
-		}
-
-		ticruned++;
-		if ((cmd->angleturn & TICCMD_RECEIVED) == 0)
-			ticmiss++;
-
-		P_3dMovement(player);
-	}
+	P_3dMovement(player);
 
 	// Kart frames
 	if (player->kartstuff[k_squishedtimer] > 0)
@@ -2772,8 +2733,7 @@ fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 // we then throw that ticcmd garbage in the camera and make it move
 
 // redefine this
-static fixed_t forwardmove = MAXPLMOVE<<FRACBITS>>16;
-static fixed_t angleturn[3] = {KART_FULLTURN/2, KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
+static fixed_t angleturn[2] = {KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
 
 static ticcmd_t cameracmd;
 
@@ -2788,7 +2748,6 @@ void P_InitCameraCmd(void)
 static ticcmd_t *P_CameraCmd(camera_t *cam)
 {
 	INT32 laim, th, tspeed, forward, axis; //i
-	const INT32 speed = 1;
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming;
 	boolean invertmouse, lookaxis, usejoystick, kbl;
@@ -2809,7 +2768,7 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 
 	G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
 
-	cmd->angleturn = (INT16)(lang >> 16);
+	//cmd->turning = (INT16)(lang >> 16);
 	cmd->aiming = G_ClipAimingPitch(&laim);
 
 	mouseaiming = true;
@@ -2845,21 +2804,23 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 		th = 0;
 
 	if (th < SLOWTURNTICS)
-		tspeed = 2; // slow turn
+		tspeed = 1; // slow turn
 	else
-		tspeed = speed;
+		tspeed = 0;
+
+	cmd->turning = 0;
 
 	// let movement keys cancel each other out
 	if (turnright && !(turnleft))
 	{
-		cmd->angleturn = (INT16)(cmd->angleturn - (angleturn[tspeed]));
+		cmd->turning = (INT16)(cmd->turning - (angleturn[tspeed]));
 	}
 	else if (turnleft && !(turnright))
 	{
-		cmd->angleturn = (INT16)(cmd->angleturn + (angleturn[tspeed]));
+		cmd->turning = (INT16)(cmd->turning + (angleturn[tspeed]));
 	}
 
-	cmd->angleturn = (INT16)(cmd->angleturn - ((mousex*(encoremode ? -1 : 1)*8)));
+	cmd->turning = (INT16)(cmd->turning - ((mousex*(encoremode ? -1 : 1)*8)));
 
 	axis = PlayerJoyAxis(1, AXISMOVE);
 	if (PlayerInputDown(1, gc_accelerate) || (usejoystick && axis > 0))
@@ -2869,9 +2830,9 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 		cmd->buttons |= BT_BRAKE;
 	axis = PlayerJoyAxis(1, AXISAIM);
 	if (PlayerInputDown(1, gc_aimforward) || (usejoystick && axis < 0))
-		forward += forwardmove;
+		forward += MAXPLMOVE;
 	if (PlayerInputDown(1, gc_aimbackward) || (usejoystick && axis > 0))
-		forward -= forwardmove;
+		forward -= MAXPLMOVE;
 
 	// fire with any button/key
 	axis = PlayerJoyAxis(1, AXISFIRE);
@@ -2919,7 +2880,7 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	else if (cmd->forwardmove < -MAXPLMOVE)
 		cmd->forwardmove = -MAXPLMOVE;
 
-	lang += (cmd->angleturn<<16);
+	lang += (cmd->turning << TICCMD_REDUCE);
 
 	democam.localangle = lang;
 	democam.localaiming = laim;
@@ -2945,7 +2906,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	cmd = P_CameraCmd(cam);
 
 	cam->aiming = cmd->aiming<<FRACBITS;
-	cam->angle = cmd->angleturn<<16;
+	//cam->angle = cmd->angleturn << TICCMD_REDUCE;
 
 	// camera movement:
 
@@ -4273,6 +4234,12 @@ void P_PlayerThink(player_t *player)
 
 	cmd = &player->cmd;
 
+	{
+		angle_t angleChange = K_GetKartTurnValue(player, cmd->turning) << TICCMD_REDUCE;
+		player->angleturn += angleChange;
+		P_SetLocalAngle(player, P_GetLocalAngle(player) + angleChange);
+	}
+
 	// SRB2kart
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
@@ -4699,27 +4666,17 @@ void P_PlayerAfterThink(player_t *player)
 
 void P_SetPlayerAngle(player_t *player, angle_t angle)
 {
-	INT16 delta = (INT16)(angle >> 16) - player->angleturn;
+	angle_t delta = angle - player->angleturn;
 
-	P_ForceLocalAngle(player, P_GetLocalAngle(player) + (delta << 16));
+	P_ForceLocalAngle(player, P_GetLocalAngle(player) + delta);
 	player->angleturn += delta;
 }
 
 void P_SetLocalAngle(player_t *player, angle_t angle)
 {
-	INT16 delta = (INT16)((angle - P_GetLocalAngle(player)) >> 16);
-	UINT8 i;
+	angle_t delta = (angle - P_GetLocalAngle(player));
 
-	P_ForceLocalAngle(player, P_GetLocalAngle(player) + (angle_t)(delta << 16));
-
-	for (i = 0; i <= splitscreen; i++)
-	{
-		if (player == &players[g_localplayers[i]])
-		{
-			ticcmd_oldangleturn[i] += delta;
-			break;
-		}
-	}
+	P_ForceLocalAngle(player, P_GetLocalAngle(player) + delta);
 }
 
 angle_t P_GetLocalAngle(player_t *player)

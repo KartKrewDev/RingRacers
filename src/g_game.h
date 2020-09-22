@@ -82,7 +82,6 @@ extern consvar_t cv_resume;
 // build an internal map name MAPxx from map number
 const char *G_BuildMapName(INT32 map);
 
-extern INT16 ticcmd_oldangleturn[MAXSPLITSCREENPLAYERS];
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 // copy ticcmd_t to and fro the normal way

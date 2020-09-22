@@ -486,8 +486,7 @@ typedef struct player_s
 
 	angle_t viewrollangle;
 
-	INT16 angleturn;
-	INT16 oldrelangleturn;
+	angle_t angleturn;
 
 	// Mouse aiming, where the guy is looking at!
 	// It is updated with cmd->aiming.
@@ -505,8 +504,6 @@ typedef struct player_s
 	// SRB2kart stuff
 	INT32 kartstuff[NUMKARTSTUFF];
 	INT32 karthud[NUMKARTHUD];
-	INT16 lturn_max[MAXPREDICTTICS]; // What's the expected turn value for full-left for a number of frames back (to account for netgame latency)?
-	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info

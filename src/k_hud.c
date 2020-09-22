@@ -3394,13 +3394,13 @@ static void K_drawKartFirstPerson(void)
 			splitflags |= (stplyr->mo->frame & FF_TRANSMASK);
 	}
 
-	if (cmd->driftturn > 400) // strong left turn
+	if (cmd->turning > 400) // strong left turn
 		target = 2;
-	else if (cmd->driftturn < -400) // strong right turn
+	else if (cmd->turning < -400) // strong right turn
 		target = -2;
-	else if (cmd->driftturn > 0) // weak left turn
+	else if (cmd->turning > 0) // weak left turn
 		target = 1;
-	else if (cmd->driftturn < 0) // weak right turn
+	else if (cmd->turning < 0) // weak right turn
 		target = -1;
 	else // forward
 		target = 0;
@@ -3423,8 +3423,8 @@ static void K_drawKartFirstPerson(void)
 	x <<= FRACBITS;
 	y <<= FRACBITS;
 
-	if (tn != cmd->driftturn/50)
-		tn -= (tn - (cmd->driftturn/50))/8;
+	if (tn != cmd->turning/50)
+		tn -= (tn - (cmd->turning/50))/8;
 
 	if (dr != stplyr->kartstuff[k_drift]*16)
 		dr -= (dr - (stplyr->kartstuff[k_drift]*16))/8;
@@ -3546,14 +3546,14 @@ static void K_drawInput(void)
 
 	y -= 1;
 
-	if (!cmd->driftturn) // no turn
+	if (!cmd->turning) // no turn
 		target = 0;
 	else // turning of multiple strengths!
 	{
-		target = ((abs(cmd->driftturn) - 1)/125)+1;
+		target = ((abs(cmd->turning) - 1)/125)+1;
 		if (target > 4)
 			target = 4;
-		if (cmd->driftturn < 0)
+		if (cmd->turning < 0)
 			target = -target;
 	}
 
