@@ -1725,6 +1725,7 @@ static void CON_DrawBackpic(void)
 	patch_t *con_backpic;
 	lumpnum_t piclump;
 	int x, w, h;
+	int scale;
 
 	// Get the lumpnum for CONSBACK, or fallback into MISSING.
 	piclump = W_CheckNumForName("KARTKREW");
@@ -1735,7 +1736,7 @@ static void CON_DrawBackpic(void)
 	con_backpic = W_CacheSoftwarePatchNum(piclump, PU_PATCH);
 
 	// Center the backpic, and draw a vertically cropped patch.
-	w = (con_backpic->width * vid.dupx);
+	w = (BASEVIDWIDTH * vid.dupx);
 	x = (vid.width / 2) - (w / 2);
 	h = con_curlines/vid.dupy;
 
@@ -1755,10 +1756,15 @@ static void CON_DrawBackpic(void)
 		}
 	}
 
+	scale = con_backpic->width / BASEVIDWIDTH;
+
 	// Cache the patch normally.
 	con_backpic = W_CachePatchNum(piclump, PU_PATCH);
-	V_DrawCroppedPatch(x << FRACBITS, 0, FRACUNIT, V_NOSCALESTART, con_backpic,
-			0, ( BASEVIDHEIGHT - h ), BASEVIDWIDTH, h);
+	V_DrawCroppedPatch
+		(
+				x << FRACBITS, 0, FRACUNIT / scale, V_NOSCALESTART, con_backpic,
+				0, scale * ( BASEVIDHEIGHT - h ), scale * BASEVIDWIDTH, scale * h
+		);
 
 	// Unlock the cached patch.
 	W_UnlockCachedPatch(con_backpic);
