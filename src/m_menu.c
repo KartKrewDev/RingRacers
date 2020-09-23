@@ -9560,7 +9560,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		INT32 offx = 8, offy = 8;
 		patch_t *cursor;
 		static UINT8 cursorframe = 0;
-		//patch_t *face;
+		patch_t *face;
 		UINT8 *colmap;
 
 		if (skullAnimCounter % 4 == 0)
@@ -9577,19 +9577,20 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			if (!(k++))
 			{
 				scale = FRACUNIT;
-				//face = faceprefix[col][FACE_WANTED];
+				face = faceprefix[col][FACE_WANTED];
 				offx = 12;
 				offy = 0;
 			}
 			else
 			{
 				scale = FRACUNIT/2;
-				//face = faceprefix[col][FACE_RANK];
+				face = faceprefix[col][FACE_RANK];
 				offx = 8;
 				offy = 8;
 			}
 			colmap =  R_GetTranslationColormap(col, setupm_fakecolor->color, GTC_MENUCACHE);
-			//V_DrawFixedPatch((x+offx)<<FRACBITS, (my+28+offy)<<FRACBITS, FRACUNIT, 0, face, colmap);
+			if (face)
+				V_DrawFixedPatch((x+offx)<<FRACBITS, (my+28+offy)<<FRACBITS, FRACUNIT, 0, face, colmap);
 			if (scale == FRACUNIT) // bit of a hack
 				V_DrawFixedPatch((x+offx)<<FRACBITS, (my+28+offy)<<FRACBITS, FRACUNIT, 0, cursor, colmap);
 			if (++col >= numskins)
