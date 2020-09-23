@@ -8592,6 +8592,8 @@ void P_MobjThinker(mobj_t *mobj)
 		|| mobj->type == MT_ORBINAUT
 		|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD) {
 		P_TryMove(mobj, mobj->x, mobj->y, true); // Sets mo->standingslope correctly
+		if (P_MobjWasRemoved(mobj)) // anything that calls checkposition can be lethal
+			return;
 		//if (mobj->standingslope) CONS_Printf("slope physics on mobj\n");
 		P_ButteredSlope(mobj);
 	}
