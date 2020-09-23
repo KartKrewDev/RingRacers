@@ -643,7 +643,7 @@ void R_CalcTiltedLighting(fixed_t start, fixed_t end)
 	}
 }
 
-#define PLANELIGHTFLOAT (BASEVIDWIDTH * BASEVIDWIDTH / vid.width / (zeroheight - FIXED_TO_FLOAT(viewz)) / 21.0f * FIXED_TO_FLOAT(fovtan))
+#define PLANELIGHTFLOAT (BASEVIDWIDTH * BASEVIDWIDTH / vid.width / (zeroheight - FIXED_TO_FLOAT(viewz)) / 21.0f * FIXED_TO_FLOAT(fovtan[viewssnum]))
 
 /**	\brief The R_DrawTiltedSpan_8 function
 	Draw slopes! Holy sheit!

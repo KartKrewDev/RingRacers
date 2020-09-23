@@ -446,34 +446,34 @@ static void R_AddLine(seg_t *line)
 	angle1 -= viewangle;
 	angle2 -= viewangle;
 
-	tspan = angle1 + clipangle;
-	if (tspan > doubleclipangle)
+	tspan = angle1 + clipangle[viewssnum];
+	if (tspan > doubleclipangle[viewssnum])
 	{
-		tspan -= doubleclipangle;
+		tspan -= doubleclipangle[viewssnum];
 
 		// Totally off the left edge?
 		if (tspan >= span)
 			return;
 
-		angle1 = clipangle;
+		angle1 = clipangle[viewssnum];
 	}
-	tspan = clipangle - angle2;
-	if (tspan > doubleclipangle)
+	tspan = clipangle[viewssnum] - angle2;
+	if (tspan > doubleclipangle[viewssnum])
 	{
-		tspan -= doubleclipangle;
+		tspan -= doubleclipangle[viewssnum];
 
 		// Totally off the left edge?
 		if (tspan >= span)
 			return;
 
-		angle2 = -(signed)clipangle;
+		angle2 = -(signed)clipangle[viewssnum];
 	}
 
 	// The seg is in the view range, but not necessarily visible.
 	angle1 = (angle1+ANGLE_90)>>ANGLETOFINESHIFT;
 	angle2 = (angle2+ANGLE_90)>>ANGLETOFINESHIFT;
-	x1 = viewangletox[angle1];
-	x2 = viewangletox[angle2];
+	x1 = viewangletox[viewssnum][angle1];
+	x2 = viewangletox[viewssnum][angle2];
 
 	// Does not cross a pixel?
 	if (x1 >= x2)       // killough 1/31/98 -- change == to >= for robustness
@@ -658,16 +658,16 @@ static boolean R_CheckBBox(const fixed_t *bspcoord)
 			angle2 = ANGLE_180;
 	}
 
-	if ((signed)angle2 >= (signed)clipangle) return false;
-	if ((signed)angle1 <= -(signed)clipangle) return false;
-	if ((signed)angle1 >= (signed)clipangle) angle1 = clipangle;
-	if ((signed)angle2 <= -(signed)clipangle) angle2 = 0-clipangle;
+	if ((signed)angle2 >= (signed)clipangle[viewssnum]) return false;
+	if ((signed)angle1 <= -(signed)clipangle[viewssnum]) return false;
+	if ((signed)angle1 >= (signed)clipangle[viewssnum]) angle1 = clipangle[viewssnum];
+	if ((signed)angle2 <= -(signed)clipangle[viewssnum]) angle2 = 0-clipangle[viewssnum];
 
 	// Find the first clippost that touches the source post (adjacent pixels are touching).
 	angle1 = (angle1+ANGLE_90)>>ANGLETOFINESHIFT;
 	angle2 = (angle2+ANGLE_90)>>ANGLETOFINESHIFT;
-	sx1 = viewangletox[angle1];
-	sx2 = viewangletox[angle2];
+	sx1 = viewangletox[viewssnum][angle1];
+	sx2 = viewangletox[viewssnum][angle2];
 
 	// Does not cross a pixel.
 	if (sx1 >= sx2) return false;

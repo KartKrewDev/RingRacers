@@ -1272,7 +1272,6 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Draw Distance",		&cv_drawdist,			 90},
 	{IT_STRING | IT_CVAR,	NULL,	"Weather Draw Distance",&cv_drawdist_precip,	100},
 	{IT_STRING | IT_CVAR,	NULL,	"Skyboxes",				&cv_skybox,				110},
-	{IT_STRING | IT_CVAR,	NULL,	"Field of View",		&cv_fov,				120},
 
 #ifdef HWRENDER
 	{IT_SUBMENU|IT_STRING,	NULL,	"OpenGL Options...",	&OP_OpenGLOptionsDef,	140},
@@ -1290,7 +1289,6 @@ enum
 	op_video_wdd,
 	//op_video_wd,
 	op_video_skybox,
-	op_video_fov,
 	op_video_fps,
 	op_video_vsync,
 #ifdef HWRENDER

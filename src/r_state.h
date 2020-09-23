@@ -100,11 +100,11 @@ extern mobj_t *r_viewmobj;
 extern consvar_t cv_allowmlook;
 extern consvar_t cv_maxportals;
 
-extern angle_t clipangle;
-extern angle_t doubleclipangle;
+extern angle_t clipangle[MAXSPLITSCREENPLAYERS];
+extern angle_t doubleclipangle[MAXSPLITSCREENPLAYERS];
 
-extern INT32 viewangletox[FINEANGLES/2];
-extern angle_t xtoviewangle[MAXVIDWIDTH+1];
+extern INT32 viewangletox[MAXSPLITSCREENPLAYERS][FINEANGLES/2];
+extern angle_t xtoviewangle[MAXSPLITSCREENPLAYERS][MAXVIDWIDTH+1];
 
 extern fixed_t rw_distance;
 extern angle_t rw_normalangle;

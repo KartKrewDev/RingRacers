@@ -92,7 +92,7 @@ static fixed_t planeheight;
 //                (this is to calculate yslopes only when really needed)
 //                (when mouselookin', yslope is moving into yslopetab)
 //                Check R_SetupFrame, R_SetViewSize for more...
-fixed_t yslopetab[MAXVIDHEIGHT*16];
+fixed_t yslopetab[MAXSPLITSCREENPLAYERS][MAXVIDHEIGHT*16];
 fixed_t *yslope;
 
 fixed_t basexscale, baseyscale;
@@ -622,7 +622,7 @@ static void R_DrawSkyPlane(visplane_t *pl)
 	colfunc = colfuncs[BASEDRAWFUNC];
 
 	// use correct aspect ratio scale
-	dc_iscale = skyscale;
+	dc_iscale = skyscale[viewssnum];
 
 	// Sky is always drawn full bright,
 	//  i.e. colormaps[0] is used.
@@ -639,8 +639,8 @@ static void R_DrawSkyPlane(visplane_t *pl)
 
 		if (dc_yl <= dc_yh)
 		{
-			angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
-			dc_iscale = FixedMul(skyscale, FINECOSINE(xtoviewangle[x]>>ANGLETOFINESHIFT));
+			angle = (pl->viewangle + xtoviewangle[viewssnum][x])>>ANGLETOSKYSHIFT;
+			dc_iscale = FixedMul(skyscale[viewssnum], FINECOSINE(xtoviewangle[viewssnum][x]>>ANGLETOFINESHIFT));
 			dc_x = x;
 			dc_source =
 				R_GetColumn(texturetranslation[skytexture],
@@ -895,9 +895,9 @@ d.z = (v1.x * v2.y) - (v1.y * v2.x)
 	CROSS(ds_sz[i], m, n);
 #undef CROSS
 
-	ds_su[i].z *= focallengthf;
-	ds_sv[i].z *= focallengthf;
-	ds_sz[i].z *= focallengthf;
+	ds_su[i].z *= focallengthf[viewssnum];
+	ds_sv[i].z *= focallengthf[viewssnum];
+	ds_sz[i].z *= focallengthf[viewssnum];
 
 	// Premultiply the texture vectors with the scale factors
 #define SFMULT 65536.f

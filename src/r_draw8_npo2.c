@@ -61,7 +61,7 @@ void R_DrawSpan_NPO2_8 (void)
 	}
 }
 
-#define PLANELIGHTFLOAT (BASEVIDWIDTH * BASEVIDWIDTH / vid.width / (zeroheight - FIXED_TO_FLOAT(viewz)) / 21.0f * FIXED_TO_FLOAT(fovtan))
+#define PLANELIGHTFLOAT (BASEVIDWIDTH * BASEVIDWIDTH / vid.width / (zeroheight - FIXED_TO_FLOAT(viewz)) / 21.0f * FIXED_TO_FLOAT(fovtan[viewssnum]))
 
 /**	\brief The R_DrawTiltedSpan_NPO2_8 function
 	Draw slopes! Holy sheit!

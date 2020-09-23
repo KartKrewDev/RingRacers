@@ -5405,7 +5405,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 	if (cv_glskydome.value)
 	{
 		FTransform dometransform;
-		const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
+		const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
 		postimg_t *type = &postimgtype[0];
 		SINT8 i;
 
@@ -5633,21 +5633,10 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 // ==========================================================================
 // Same as rendering the player view, but from the skybox object
 // ==========================================================================
-void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
+void HWR_RenderSkyboxView(player_t *player)
 {
-	const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
-	postimg_t *type = &postimgtype[0];
-	SINT8 i;
-
-	for (i = r_splitscreen; i >= 0; i--)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			type = &postimgtype[i];
-			// i is now splitscreen player num
-			break;
-		}
-	}
+	const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
+	postimg_t *type = &postimgtype[viewssnum];
 
 	{
 		// do we really need to save player (is it not the same)?
@@ -5656,7 +5645,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 		ST_doPaletteStuff();
 		stplyr = saved_player;
 #ifdef ALAM_LIGHTING
-		HWR_SetLights(viewnumber);
+		HWR_SetLights(viewssnum);
 #endif
 	}
 
@@ -5673,7 +5662,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	gl_centery = gl_basecentery;
 	gl_viewwindowy = gl_baseviewwindowy;
 	gl_windowcentery = gl_basewindowcentery;
-	if (r_splitscreen && viewnumber == 1)
+	if (viewssnum == 1)
 	{
 		gl_viewwindowy += (vid.height/2);
 		gl_windowcentery += (vid.height/2);
@@ -5736,7 +5725,6 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	drawcount = 0;
 
 #ifdef NEWCLIP
-	if (rendermode == render_opengl)
 	{
 		angle_t a1 = gld_FrustumAngle(gl_aimingangle);
 		gld_clipper_Clear();
@@ -5766,10 +5754,10 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 
 #ifndef NEWCLIP
 	// Make a viewangle int so we can render things based on mouselook
-	viewangle = localaiming[i];
+	viewangle = localaiming[viewssnum];
 
 	// Handle stuff when you are looking farther up or down.
-	if ((gl_aimingangle || cv_fov.value+player->fovadd > 90*FRACUNIT))
+	if ((gl_aimingangle || fpov > 90.0f))
 	{
 		dup_viewangle += ANGLE_90;
 		HWR_ClearClipSegs();
@@ -5830,25 +5818,16 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 // ==========================================================================
 //
 // ==========================================================================
-void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
+void HWR_RenderPlayerView(void)
 {
-	const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
-	postimg_t *type = &postimgtype[0];
-	SINT8 i;
+	player_t * player = &players[displayplayers[viewssnum]];
+
+	const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
+	postimg_t *type = &postimgtype[viewssnum];
 
 	const boolean skybox = (skyboxmo[0] && cv_skybox.value); // True if there's a skybox object and skyboxes are on
 
 	FRGBAFloat ClearColor;
-
-	for (i = r_splitscreen; i >= 0; i--)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			type = &postimgtype[i];
-			// i is now splitscreen player num
-			break;
-		}
-	}
 
 	ClearColor.red = 0.0f;
 	ClearColor.green = 0.0f;
@@ -5858,11 +5837,11 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	if (cv_glshaders.value)
 		HWD.pfnSetShaderInfo(HWD_SHADERINFO_LEVELTIME, (INT32)leveltime); // The water surface shader needs the leveltime.
 
-	if (viewnumber == 0) // Only do it if it's the first screen being rendered
+	if (viewssnum == 0) // Only do it if it's the first screen being rendered
 		HWD.pfnClearBuffer(true, false, &ClearColor); // Clear the Color Buffer, stops HOMs. Also seems to fix the skybox issue on Intel GPUs.
 
 	if (skybox && drawsky) // If there's a skybox and we should be drawing the sky, draw the skybox
-		HWR_RenderSkyboxView(viewnumber, player); // This is drawn before everything else so it is placed behind
+		HWR_RenderSkyboxView(player); // This is drawn before everything else so it is placed behind
 
 	{
 		// do we really need to save player (is it not the same)?
@@ -5871,7 +5850,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 		ST_doPaletteStuff();
 		stplyr = saved_player;
 #ifdef ALAM_LIGHTING
-		HWR_SetLights(viewnumber);
+		HWR_SetLights(viewssnum);
 #endif
 	}
 
@@ -5889,7 +5868,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	gl_centery = gl_basecentery;
 	gl_viewwindowy = gl_baseviewwindowy;
 	gl_windowcentery = gl_basewindowcentery;
-	if (r_splitscreen && viewnumber == 1)
+	if (viewssnum == 1)
 	{
 		gl_viewwindowy += (vid.height/2);
 		gl_windowcentery += (vid.height/2);
@@ -5952,7 +5931,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	drawcount = 0;
 
 #ifdef NEWCLIP
-	if (rendermode == render_opengl)
 	{
 		angle_t a1 = gld_FrustumAngle(gl_aimingangle);
 		gld_clipper_Clear();
@@ -5986,10 +5964,10 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 
 #ifndef NEWCLIP
 	// Make a viewangle int so we can render things based on mouselook
-	viewangle = localaiming[i];
+	viewangle = localaiming[viewssnum];
 
 	// Handle stuff when you are looking farther up or down.
-	if ((gl_aimingangle || cv_fov.value+player->fovadd > 90*FRACUNIT))
+	if ((gl_aimingangle || fpov > 90.0f))
 	{
 		dup_viewangle += ANGLE_90;
 		HWR_ClearClipSegs();

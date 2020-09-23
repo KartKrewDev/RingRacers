@@ -27,7 +27,7 @@
 #define ANGLETOSKYSHIFT 22
 
 extern INT32 skytexture, skytexturemid;
-extern fixed_t skyscale;
+extern fixed_t skyscale[MAXSPLITSCREENPLAYERS];
 
 extern INT32 skyflatnum;
 extern char levelskytexture[9];

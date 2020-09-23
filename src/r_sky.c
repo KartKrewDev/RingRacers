@@ -43,7 +43,7 @@ INT32 skytexturemid;
 
 /**	\brief the scale of the sky
 */
-fixed_t skyscale;
+fixed_t skyscale[MAXSPLITSCREENPLAYERS];
 
 /** \brief used for keeping track of the current sky
 */
@@ -76,5 +76,9 @@ void R_SetupSkyDraw(void)
 void R_SetSkyScale(void)
 {
 	fixed_t difference = vid.fdupx-(vid.dupx<<FRACBITS);
-	skyscale = FixedDiv(fovtan, vid.fdupx+difference);
+	int i;
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		skyscale[i] = FixedDiv(fovtan[i], vid.fdupx+difference);
+	}
 }

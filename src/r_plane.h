@@ -62,7 +62,8 @@ extern INT16 *lastopening, *openings;
 extern size_t maxopenings;
 
 extern INT16 floorclip[MAXVIDWIDTH], ceilingclip[MAXVIDWIDTH];
-extern fixed_t frontscale[MAXVIDWIDTH], yslopetab[MAXVIDHEIGHT*16];
+extern fixed_t frontscale[MAXVIDWIDTH];
+extern fixed_t yslopetab[MAXSPLITSCREENPLAYERS][MAXVIDHEIGHT*16];
 extern fixed_t cachedheight[MAXVIDHEIGHT];
 extern fixed_t cacheddistance[MAXVIDHEIGHT];
 extern fixed_t cachedxstep[MAXVIDHEIGHT];

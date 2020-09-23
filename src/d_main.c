@@ -480,7 +480,7 @@ static void D_Display(void)
 
 #ifdef HWRENDER
 						if (rendermode != render_soft)
-							HWR_RenderPlayerView(i, &players[displayplayers[i]]);
+							HWR_RenderPlayerView();
 						else
 #endif
 						if (rendermode != render_none)
@@ -519,7 +519,7 @@ static void D_Display(void)
 								topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
 							}
 
-							R_RenderPlayerView(&players[displayplayers[i]]);
+							R_RenderPlayerView();
 
 							if (i > 0)
 								M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));

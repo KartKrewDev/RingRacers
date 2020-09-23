@@ -60,9 +60,9 @@ size_t validcount = 1;
 INT32 centerx, centery;
 
 fixed_t centerxfrac, centeryfrac;
-fixed_t projection;
-fixed_t projectiony; // aspect ratio
-fixed_t fovtan; // field of view
+fixed_t projection[MAXSPLITSCREENPLAYERS];
+fixed_t projectiony[MAXSPLITSCREENPLAYERS]; // aspect ratio
+fixed_t fovtan[MAXSPLITSCREENPLAYERS]; // field of view
 
 // just for profiling purposes
 size_t framecount;
@@ -82,19 +82,19 @@ int r_splitscreen;
 //
 // precalculated math tables
 //
-angle_t clipangle;
-angle_t doubleclipangle;
+angle_t clipangle[MAXSPLITSCREENPLAYERS];
+angle_t doubleclipangle[MAXSPLITSCREENPLAYERS];
 
 // The viewangletox[viewangle + FINEANGLES/4] lookup
 // maps the visible view angles to screen X coordinates,
 // flattening the arc to a flat projection plane.
 // There will be many angles mapped to the same X.
-INT32 viewangletox[FINEANGLES/2];
+INT32 viewangletox[MAXSPLITSCREENPLAYERS][FINEANGLES/2];
 
 // The xtoviewangleangle[] table maps a screen pixel
 // to the lowest viewangle that maps back to x ranges
 // from clipangle to -clipangle.
-angle_t xtoviewangle[MAXVIDWIDTH+1];
+angle_t xtoviewangle[MAXSPLITSCREENPLAYERS][MAXVIDWIDTH+1];
 
 lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 lighttable_t *scalelightfixed[MAXLIGHTSCALE];
@@ -161,7 +161,13 @@ consvar_t cv_translucenthud = {"translucenthud", "10", CV_SAVE, translucenthud_c
 
 consvar_t cv_drawdist = {"drawdist", "8192", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_drawdist_precip = {"drawdist_precip", "1024", CV_SAVE, drawdist_precip_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_fov[MAXSPLITSCREENPLAYERS] = {
+	{"fov", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"fov2", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"fov3", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL},
+	{"fov4", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL}
+};
 
 // Okay, whoever said homremoval causes a performance hit should be shot.
 consvar_t cv_homremoval = {"homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -432,7 +438,8 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle)
 	angle_t angleb = ANGLE_90 + (visangle-rw_normalangle);
 	fixed_t den = FixedMul(rw_distance, FINESINE(anglea>>ANGLETOFINESHIFT));
 	// proff 11/06/98: Changed for high-res
-	fixed_t num = FixedMul(projectiony, FINESINE(angleb>>ANGLETOFINESHIFT));
+	fixed_t num = FixedMul(projectiony[viewssnum],
+			FINESINE(angleb>>ANGLETOFINESHIFT));
 
 	if (den > num>>16)
 	{
@@ -490,7 +497,7 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 //
 // R_InitTextureMapping
 //
-static void R_InitTextureMapping(void)
+static void R_InitTextureMapping(int s)
 {
 	INT32 i;
 	INT32 x;
@@ -503,16 +510,16 @@ static void R_InitTextureMapping(void)
 	//
 	// Calc focallength
 	//  so FIELDOFVIEW angles covers SCREENWIDTH.
-	focallength = FixedDiv(projection,
+	focallength = FixedDiv(projection[s],
 		FINETANGENT(FINEANGLES/4+FIELDOFVIEW/2));
 
-	focallengthf = FIXED_TO_FLOAT(focallength);
+	focallengthf[s] = FIXED_TO_FLOAT(focallength);
 
 	for (i = 0; i < FINEANGLES/2; i++)
 	{
-		if (FINETANGENT(i) > fovtan*2)
+		if (FINETANGENT(i) > fovtan[s]*2)
 			t = -1;
-		else if (FINETANGENT(i) < -fovtan*2)
+		else if (FINETANGENT(i) < -fovtan[s]*2)
 			t = viewwidth+1;
 		else
 		{
@@ -524,7 +531,7 @@ static void R_InitTextureMapping(void)
 			else if (t > viewwidth+1)
 				t = viewwidth+1;
 		}
-		viewangletox[i] = t;
+		viewangletox[s][i] = t;
 	}
 
 	// Scan viewangletox[] to generate xtoviewangle[]:
@@ -533,22 +540,22 @@ static void R_InitTextureMapping(void)
 	for (x = 0; x <= viewwidth;x++)
 	{
 		i = 0;
-		while (viewangletox[i] > x)
+		while (viewangletox[s][i] > x)
 			i++;
-		xtoviewangle[x] = (i<<ANGLETOFINESHIFT) - ANGLE_90;
+		xtoviewangle[s][x] = (i<<ANGLETOFINESHIFT) - ANGLE_90;
 	}
 
 	// Take out the fencepost cases from viewangletox.
 	for (i = 0; i < FINEANGLES/2; i++)
 	{
-		if (viewangletox[i] == -1)
-			viewangletox[i] = 0;
-		else if (viewangletox[i] == viewwidth+1)
-			viewangletox[i]  = viewwidth;
+		if (viewangletox[s][i] == -1)
+			viewangletox[s][i] = 0;
+		else if (viewangletox[s][i] == viewwidth+1)
+			viewangletox[s][i]  = viewwidth;
 	}
 
-	clipangle = xtoviewangle[0];
-	doubleclipangle = clipangle*2;
+	clipangle[s] = xtoviewangle[s][0];
+	doubleclipangle[s] = clipangle[s]*2;
 }
 
 
@@ -914,6 +921,7 @@ void R_ExecuteSetViewSize(void)
 	INT32 level;
 	INT32 startmapl;
 	angle_t fov;
+	int s;
 
 	setsizeneeded = false;
 
@@ -942,16 +950,32 @@ void R_ExecuteSetViewSize(void)
 	centerxfrac = centerx<<FRACBITS;
 	centeryfrac = centery<<FRACBITS;
 
-	fov = FixedAngle(cv_fov.value/2) + ANGLE_90;
-	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
-	if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
-		fovtan = 17*fovtan/10;
+	for (s = 0; s <= r_splitscreen; ++s)
+	{
+		fov = FixedAngle(cv_fov[s].value/2) + ANGLE_90;
+		fovtan[s] = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
+		if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
+			fovtan[s] = 17*fovtan[s]/10;
 
-	projection = projectiony = FixedDiv(centerxfrac, fovtan);
+		projection[s] = projectiony[s] = FixedDiv(centerxfrac, fovtan[s]);
+
+		R_InitTextureMapping(s);
+
+		// planes
+		if (rendermode == render_soft)
+		{
+			// this is only used for planes rendering in software mode
+			j = viewheight*16;
+			for (i = 0; i < j; i++)
+			{
+				dy = ((i - viewheight*8)<<FRACBITS) + FRACUNIT/2;
+				dy = FixedMul(abs(dy), fovtan[s]);
+				yslopetab[s][i] = FixedDiv(centerx*FRACUNIT, dy);
+			}
+		}
+	}
 
 	R_InitViewBuffer(scaledviewwidth, viewheight);
-
-	R_InitTextureMapping();
 
 	// thing clipping
 	for (i = 0; i < viewwidth; i++)
@@ -959,19 +983,6 @@ void R_ExecuteSetViewSize(void)
 
 	// setup sky scaling
 	R_SetSkyScale();
-
-	// planes
-	if (rendermode == render_soft)
-	{
-		// this is only used for planes rendering in software mode
-		j = viewheight*16;
-		for (i = 0; i < j; i++)
-		{
-			dy = ((i - viewheight*8)<<FRACBITS) + FRACUNIT/2;
-			dy = FixedMul(abs(dy), fovtan);
-			yslopetab[i] = FixedDiv(centerx*FRACUNIT, dy);
-		}
-	}
 
 	memset(scalelight, 0xFF, sizeof(scalelight));
 
@@ -1107,7 +1118,7 @@ static void R_SetupFreelook(void)
 	if (rendermode == render_soft)
 	{
 		dy = (AIMINGTODY(aimingangle)>>FRACBITS) * viewwidth/BASEVIDWIDTH;
-		yslope = &yslopetab[viewheight*8 - (viewheight/2 + dy)];
+		yslope = &yslopetab[viewssnum][viewheight*8 - (viewheight/2 + dy)];
 	}
 
 	centery = (viewheight/2) + dy;
@@ -1446,8 +1457,10 @@ static void Mask_Post (maskcount_t* m)
 // I mean, there is a win16lock() or something that lasts all the rendering,
 // so maybe we should release screen lock before each netupdate below..?
 
-void R_RenderPlayerView(player_t *player)
+void R_RenderPlayerView(void)
 {
+	player_t * player = &players[displayplayers[viewssnum]];
+
 	UINT8			nummasks	= 1;
 	maskcount_t*	masks		= malloc(sizeof(maskcount_t));
 
@@ -1622,13 +1635,13 @@ void R_RegisterEngineStuff(void)
 
 	CV_RegisterVar(&cv_drawdist);
 	CV_RegisterVar(&cv_drawdist_precip);
-	CV_RegisterVar(&cv_fov);
 
 	CV_RegisterVar(&cv_shadow);
 	CV_RegisterVar(&cv_skybox);
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
+		CV_RegisterVar(&cv_fov[i]);
 		CV_RegisterVar(&cv_chasecam[i]);
 		CV_RegisterVar(&cv_cam_dist[i]);
 		CV_RegisterVar(&cv_cam_still[i]);

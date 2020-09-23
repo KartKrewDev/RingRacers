@@ -902,7 +902,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		// Papersprite drawing loop
 		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, spryscale += vis->scalestep)
 		{
-			angle_t angle = ((vis->centerangle + xtoviewangle[dc_x]) >> ANGLETOFINESHIFT) & 0xFFF;
+			angle_t angle = ((vis->centerangle + xtoviewangle[viewssnum][dc_x]) >> ANGLETOFINESHIFT) & 0xFFF;
 			texturecolumn = (vis->paperoffset - FixedMul(FINETANGENT(angle), vis->paperdistance)) / this_scale;
 
 			if (texturecolumn < 0 || texturecolumn >= pwidth)
@@ -1245,8 +1245,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
 
 	patch = W_CachePatchName((thing->whiteshadow == true ? "LSHADOW" : "DSHADOW"), PU_CACHE);
-	xscale = FixedDiv(projection, tz);
-	yscale = FixedDiv(projectiony, tz);
+	xscale = FixedDiv(projection[viewssnum], tz);
+	yscale = FixedDiv(projectiony[viewssnum], tz);
 	shadowxscale = FixedMul(thing->radius*2, scalemul);
 	shadowyscale = FixedMul(FixedMul(thing->radius*2, scalemul), FixedDiv(abs(groundz - viewz), tz));
 	shadowyscale = min(shadowyscale, shadowxscale) / SHORT(patch->height);
@@ -1444,12 +1444,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	basetx = tx = FixedMul(tr_x, viewsin) - FixedMul(tr_y, viewcos); // sideways distance
 
 	// too far off the side?
-	if (!papersprite && abs(tx) > FixedMul(tz, fovtan)<<2) // papersprite clipping is handled later
+	if (!papersprite && abs(tx) > FixedMul(tz, fovtan[viewssnum])<<2) // papersprite clipping is handled later
 		return;
 
 	// aspect ratio stuff
-	xscale = FixedDiv(projection, tz);
-	sortscale = FixedDiv(projectiony, tz);
+	xscale = FixedDiv(projection[viewssnum], tz);
+	sortscale = FixedDiv(projectiony[viewssnum], tz);
 
 	// decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
@@ -1635,11 +1635,11 @@ static void R_ProjectSprite(mobj_t *thing)
 			tz2 = FixedMul(MINZ, this_scale);
 		}
 
-		if (tx2 < -(FixedMul(tz2, fovtan)<<2) || tx > FixedMul(tz, fovtan)<<2) // too far off the side?
+		if (tx2 < -(FixedMul(tz2, fovtan[viewssnum])<<2) || tx > FixedMul(tz, fovtan[viewssnum])<<2) // too far off the side?
 			return;
 
-		yscale = FixedDiv(projectiony, tz);
-		xscale = FixedDiv(projection, tz);
+		yscale = FixedDiv(projectiony[viewssnum], tz);
+		xscale = FixedDiv(projection[viewssnum], tz);
 
 		x1 = (centerxfrac + FixedMul(tx,xscale))>>FRACBITS;
 
@@ -1647,8 +1647,8 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (x1 > viewwidth)
 			return;
 
-		yscale2 = FixedDiv(projectiony, tz2);
-		xscale2 = FixedDiv(projection, tz2);
+		yscale2 = FixedDiv(projectiony[viewssnum], tz2);
+		xscale2 = FixedDiv(projection[viewssnum], tz2);
 
 		x2 = (centerxfrac + FixedMul(tx2,xscale2))>>FRACBITS;
 
@@ -1699,7 +1699,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		tr_x = thingxpos - viewx;
 		tr_y = thingypos - viewy;
 		tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin);
-		linkscale = FixedDiv(projectiony, tz);
+		linkscale = FixedDiv(projectiony[viewssnum], tz);
 
 		if (tz < FixedMul(MINZ, this_scale))
 			return;
@@ -1940,12 +1940,12 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	tx = FixedMul(tr_x, viewsin) - FixedMul(tr_y, viewcos); // sideways distance
 
 	// too far off the side?
-	if (abs(tx) > FixedMul(tz, fovtan)<<2)
+	if (abs(tx) > FixedMul(tz, fovtan[viewssnum])<<2)
 		return;
 
 	// aspect ratio stuff :
-	xscale = FixedDiv(projection, tz);
-	yscale = FixedDiv(projectiony, tz);
+	xscale = FixedDiv(projection[viewssnum], tz);
+	yscale = FixedDiv(projectiony[viewssnum], tz);
 
 	// decide which patch to use for sprite relative to player
 #ifdef RANGECHECK

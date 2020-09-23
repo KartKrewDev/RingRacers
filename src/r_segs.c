@@ -203,7 +203,7 @@ static void R_DrawWallSplats(void)
 			dc_iscale = 0xffffffffu / (unsigned)spryscale;
 
 			// find column of patch, from perspective
-			angle = (rw_centerangle + xtoviewangle[dc_x])>>ANGLETOFINESHIFT;
+			angle = (rw_centerangle + xtoviewangle[viewssnum][dc_x])>>ANGLETOFINESHIFT;
 				texturecolumn = rw_offset2 - splat->offset
 					- FixedMul(FINETANGENT(angle), rw_distance);
 
@@ -1353,7 +1353,7 @@ static void R_RenderSegLoop (void)
 
 		//SoM: Calculate offsets for Thick fake floors.
 		// calculate texture offset
-		angle = (rw_centerangle + xtoviewangle[rw_x])>>ANGLETOFINESHIFT;
+		angle = (rw_centerangle + xtoviewangle[viewssnum][rw_x])>>ANGLETOFINESHIFT;
 		texturecolumn = rw_offset-FixedMul(FINETANGENT(angle),rw_distance);
 
 		if (oldtexturecolumn != -1) {
@@ -1687,11 +1687,11 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	}  // end of code to remove limits on openings
 
 	// calculate scale at both ends and step
-	ds_p->scale1 = rw_scale = R_ScaleFromGlobalAngle(viewangle + xtoviewangle[start]);
+	ds_p->scale1 = rw_scale = R_ScaleFromGlobalAngle(viewangle + xtoviewangle[viewssnum][start]);
 
 	if (stop > start)
 	{
-		ds_p->scale2 = R_ScaleFromGlobalAngle(viewangle + xtoviewangle[stop]);
+		ds_p->scale2 = R_ScaleFromGlobalAngle(viewangle + xtoviewangle[viewssnum][stop]);
 		range = stop-start;
 	}
 	else
@@ -1726,7 +1726,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		angle_t temp;
 
 		// left
-		temp = xtoviewangle[start]+viewangle;
+		temp = xtoviewangle[viewssnum][start]+viewangle;
 
 		{
 			// Both lines can be written in slope-intercept form, so figure out line intersection
@@ -1748,7 +1748,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		}
 
 		// right
-		temp = xtoviewangle[stop]+viewangle;
+		temp = xtoviewangle[viewssnum][stop]+viewangle;
 
 		{
 			// Both lines can be written in slope-intercept form, so figure out line intersection

@@ -24,9 +24,11 @@ extern fixed_t viewcos, viewsin;
 extern INT32 viewheight;
 extern INT32 centerx, centery;
 
-extern fixed_t centerxfrac, centeryfrac;
-extern fixed_t projection, projectiony;
-extern fixed_t fovtan;
+extern fixed_t centerxfrac;
+extern fixed_t centeryfrac;
+extern fixed_t projection[MAXSPLITSCREENPLAYERS];
+extern fixed_t projectiony[MAXSPLITSCREENPLAYERS];
+extern fixed_t fovtan[MAXSPLITSCREENPLAYERS];
 
 extern size_t validcount, linecount, loopcount, framecount;
 
@@ -46,7 +48,7 @@ extern size_t validcount, linecount, loopcount, framecount;
 #define MAXLIGHTZ 128
 #define LIGHTZSHIFT 20
 
-#define LIGHTRESOLUTIONFIX (640*fovtan/vid.width)
+#define LIGHTRESOLUTIONFIX (640*fovtan[viewssnum]/vid.width)
 
 extern lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 extern lighttable_t *scalelightfixed[MAXLIGHTSCALE];
@@ -102,7 +104,7 @@ extern consvar_t cv_flipcam[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_shadow;
 extern consvar_t cv_drawdist, cv_drawdist_precip;
-extern consvar_t cv_fov;
+extern consvar_t cv_fov[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_skybox;
 extern consvar_t cv_tailspickup;
 
@@ -130,7 +132,7 @@ boolean R_ViewpointHasChasecam(player_t *player);
 boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox);
 
 // Called by D_Display.
-void R_RenderPlayerView(player_t *player);
+void R_RenderPlayerView(void);
 
 // add commands related to engine, at game startup
 void R_RegisterEngineStuff(void);

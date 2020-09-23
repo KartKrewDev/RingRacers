@@ -71,7 +71,8 @@ typedef struct {
 extern pslope_t *ds_slope; // Current slope being used
 extern floatv3_t ds_su[MAXVIDHEIGHT], ds_sv[MAXVIDHEIGHT], ds_sz[MAXVIDHEIGHT]; // Vectors for... stuff?
 extern floatv3_t *ds_sup, *ds_svp, *ds_szp;
-extern float focallengthf, zeroheight;
+extern float focallengthf[MAXSPLITSCREENPLAYERS];
+extern float zeroheight;
 
 // Variable flat sizes
 extern UINT32 nflatxshift;

@@ -2196,7 +2196,7 @@ static void K_drawKartWanted(void)
 	}
 }
 
-static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vector3_t *campos, angle_t camang, angle_t camaim, vector3_t *point)
+static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vector3_t *campos, angle_t camang, angle_t camaim, vector3_t *point, UINT8 cnum)
 {
 	const INT32 swhalf = (BASEVIDWIDTH / 2);
 	const fixed_t swhalffixed = swhalf * FRACUNIT;
@@ -2212,7 +2212,7 @@ static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vector3_t *campos, 
 	fixed_t distance = R_PointToDist2(campos->x, campos->y, point->x, point->y);
 	fixed_t factor = INT32_MAX;
 
-	const fixed_t fov = cv_fov.value;
+	const fixed_t fov = cv_fov[cnum].value;
 	fixed_t intendedfov = 90*FRACUNIT;
 	fixed_t fovmul = FRACUNIT;
 
@@ -2389,7 +2389,7 @@ static void K_drawKartPlayerCheck(void)
 			pnum += 2;
 		}
 
-		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, &v);
+		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, &v, cnum);
 
 		colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
 		V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
@@ -2614,7 +2614,7 @@ static void K_drawKartNameTags(void)
 				v.z += ntplayer->mo->height;
 			}
 
-			K_ObjectTracking(&x, &y, &c, thiscam->angle, thiscam->aiming, &v);
+			K_ObjectTracking(&x, &y, &c, thiscam->angle, thiscam->aiming, &v, cnum);
 
 			/*
 			if ((x < 0 || x > BASEVIDWIDTH * FRACUNIT)
