@@ -283,12 +283,12 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
 		 /*Invincibility*/ { 0, 0, 0, 0, 2, 4, 6, 9 }, // Invincibility
-				/*Banana*/ { 6, 3, 1, 0, 0, 0, 0, 0 }, // Banana
-		/*Eggman Monitor*/ { 2, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
+				/*Banana*/ { 5, 3, 1, 0, 0, 0, 0, 0 }, // Banana
+		/*Eggman Monitor*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
 			  /*Orbinaut*/ { 7, 4, 2, 2, 0, 0, 0, 0 }, // Orbinaut
 				  /*Jawz*/ { 0, 3, 2, 1, 1, 0, 0, 0 }, // Jawz
 				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
-			 /*Land Mine*/ { 2, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
+			 /*Land Mine*/ { 4, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
 			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 1, 2, 3, 4, 2, 2, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
