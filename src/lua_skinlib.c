@@ -25,9 +25,6 @@ enum skin {
 	skin_wadnum,
 	skin_flags,
 	skin_realname,
-	skin_facerank,
-	skin_facewant,
-	skin_facemmap,
 	// SRB2kart
 	skin_kartspeed,
 	skin_kartweight,
@@ -48,9 +45,6 @@ static const char *const skin_opt[] = {
 	"wadnum",
 	"flags",
 	"realname",
-	"facerank",
-	"facewant",
-	"facemmap",
 	"kartspeed",
 	"kartweight",
 	"followitem",
@@ -69,7 +63,6 @@ static int skin_get(lua_State *L)
 {
 	skin_t *skin = *((skin_t **)luaL_checkudata(L, 1, META_SKIN));
 	enum skin field = luaL_checkoption(L, 2, NULL, skin_opt);
-	INT32 i;
 
 	// skins are always valid, only added, never removed
 	I_Assert(skin != NULL);
@@ -92,24 +85,6 @@ static int skin_get(lua_State *L)
 		break;
 	case skin_realname:
 		lua_pushstring(L, skin->realname);
-		break;
-	case skin_facerank:
-		for (i = 0; i < 8; i++)
-			if (!skin->facerank[i])
-				break;
-		lua_pushlstring(L, skin->facerank, i);
-		break;
-	case skin_facewant:
-		for (i = 0; i < 8; i++)
-			if (!skin->facewant[i])
-				break;
-		lua_pushlstring(L, skin->facewant, i);
-		break;
-	case skin_facemmap:
-		for (i = 0; i < 8; i++)
-			if (!skin->facemmap[i])
-				break;
-		lua_pushlstring(L, skin->facemmap, i);
 		break;
 	// SRB2kart
 	case skin_kartspeed:

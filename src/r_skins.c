@@ -109,9 +109,6 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	skin->flags = 0;
 
 	strcpy(skin->realname, "Someone");
-	strncpy(skin->facerank, "PLAYRANK", 9);
-	strncpy(skin->facewant, "PLAYWANT", 9);
-	strncpy(skin->facemmap, "PLAYMMAP", 9);
 	skin->starttranscolor = 96;
 	skin->prefcolor = SKINCOLOR_GREEN;
 	skin->supercolor = SKINCOLOR_SUPERGOLD1;
@@ -404,6 +401,8 @@ static void R_LoadSkinSprites(UINT16 wadnum, UINT16 *lump, UINT16 *lastlump, ski
 	*lastlump = W_CheckNumForNamePwad("S_END",wadnum,*lump); // stop at S_END
 
 	// old wadding practices die hard -- stop at S_SKIN (or P_SKIN) or S_START if they come before S_END.
+	newlastlump = W_FindNextEmptyInPwad(wadnum,*lump);
+	if (newlastlump < *lastlump) *lastlump = newlastlump;
 	newlastlump = W_CheckForSkinMarkerInPwad(wadnum,*lump);
 	if (newlastlump < *lastlump) *lastlump = newlastlump;
 	newlastlump = W_CheckForPatchSkinMarkerInPwad(wadnum,*lump);
@@ -411,7 +410,7 @@ static void R_LoadSkinSprites(UINT16 wadnum, UINT16 *lump, UINT16 *lastlump, ski
 	newlastlump = W_CheckNumForNamePwad("S_START",wadnum,*lump);
 	if (newlastlump < *lastlump) *lastlump = newlastlump;
 
-	// ...and let's handle super, too
+	/*// ...and let's handle super, too
 	newlastlump = W_CheckNumForNamePwad("S_SUPER",wadnum,*lump);
 	if (newlastlump < *lastlump)
 	{
@@ -422,7 +421,7 @@ static void R_LoadSkinSprites(UINT16 wadnum, UINT16 *lump, UINT16 *lastlump, ski
 
 		newlastlump--;
 		*lastlump = newlastlump; // okay, make the normal sprite set loading end there
-	}
+	}*/
 
 	// load all sprite sets we are aware of... for normal stuff.
 	for (sprite2 = 0; sprite2 < free_spr2; sprite2++)
@@ -629,21 +628,6 @@ void R_AddSkins(UINT16 wadnum)
 				STRBUFCPY(skin->realname, value);
 				SYMBOLCONVERT(skin->realname)
 			}
-			else if (!stricmp(stoken, "facerank"))
-			{
-				strupr(value);
-				strncpy(skin->facerank, value, sizeof skin->facerank);
-			}
-			else if (!stricmp(stoken, "facewant"))
-			{
-				strupr(value);
-				strncpy(skin->facewant, value, sizeof skin->facewant);
-			}
-			else if (!stricmp(stoken, "facemmap"))
-			{
-				strupr(value);
-				strncpy(skin->facemmap, value, sizeof skin->facemmap);
-			}
 			else if (!stricmp(stoken, "rivals"))
 			{
 				size_t len = strlen(value);
@@ -798,21 +782,6 @@ void R_PatchSkins(UINT16 wadnum)
 					realname = true;
 					STRBUFCPY(skin->realname, value);
 					SYMBOLCONVERT(skin->realname)
-				}
-				else if (!stricmp(stoken, "facerank"))
-				{
-					STRBUFCPY(skin->facerank, value);
-					SYMBOLCONVERT(skin->facerank)
-				}
-				else if (!stricmp(stoken, "facewant"))
-				{
-					STRBUFCPY(skin->facewant, value);
-					SYMBOLCONVERT(skin->facewant)
-				}
-				else if (!stricmp(stoken, "facemmap"))
-				{
-					STRBUFCPY(skin->facemmap, value);
-					SYMBOLCONVERT(skin->facemmap)
 				}
 				else if (!stricmp(stoken, "rivals"))
 				{

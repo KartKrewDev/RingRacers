@@ -742,6 +742,7 @@ char spr2names[NUMPLAYERSPRITES][5] =
 	"SPIN", // Spinout
 	"SQSH", // Squish
 	"SIGN", // Finish signpost
+	"XTRA", // Three Faces of Darkness
 };
 playersprite_t free_spr2 = SPR2_FIRSTFREESLOT;
 

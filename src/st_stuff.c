@@ -366,11 +366,28 @@ void ST_LoadGraphics(void)
 }
 
 // made separate so that skins code can reload custom face graphics
-void ST_LoadFaceGraphics(char *rankstr, char *wantstr, char *mmapstr, INT32 skinnum)
+void ST_LoadFaceGraphics(INT32 skinnum)
 {
-	faceprefix[skinnum][FACE_RANK] = W_CachePatchName(rankstr, PU_HUDGFX);
-	faceprefix[skinnum][FACE_WANTED] = W_CachePatchName(wantstr, PU_HUDGFX);
-	faceprefix[skinnum][FACE_MINIMAP] = W_CachePatchName(mmapstr, PU_HUDGFX);
+#define FACE_MAX (FACE_MINIMAP+1)
+	spritedef_t *sprdef = &skins[skinnum].sprites[SPR2_XTRA];
+	spriteframe_t *sprframe;
+	UINT8 i = 0, maxer = min(sprdef->numframes, FACE_MAX);
+	while (i < maxer)
+	{
+		sprframe = &sprdef->spriteframes[i];
+		faceprefix[skinnum][i] = W_CachePatchNum(sprframe->lumppat[0], PU_HUDGFX);
+		i++;
+	}
+	if (i < FACE_MAX)
+	{
+		patch_t *missing = W_CachePatchName("MISSING", PU_HUDGFX);
+		while (i < FACE_MAX)
+		{
+			faceprefix[skinnum][i] = missing;
+			i++;
+		}
+	}
+#undef FACE_MAX
 }
 
 void ST_ReloadSkinFaceGraphics(void)
@@ -378,7 +395,7 @@ void ST_ReloadSkinFaceGraphics(void)
 	INT32 i;
 
 	for (i = 0; i < numskins; i++)
-		ST_LoadFaceGraphics(skins[i].facerank, skins[i].facewant, skins[i].facemmap, i);
+		ST_LoadFaceGraphics(i);
 }
 
 static inline void ST_InitData(void)

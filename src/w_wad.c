@@ -922,6 +922,36 @@ const char *W_CheckNameForNum(lumpnum_t lumpnum)
 }
 
 //
+// wadid is a wad number
+// (Used for sprites loading)
+//
+// 'startlump' is the lump number to start the search
+//
+UINT16 W_FindNextEmptyInPwad(UINT16 wad, UINT16 startlump)
+{
+	UINT16 i;
+
+	if (!TestValidLump(wad,0))
+		return INT16_MAX;
+
+	//
+	// scan forward
+	// start at 'startlump', useful parameter when there are multiple
+	//                       resources with the same name
+	//
+	if (startlump < wadfiles[wad]->numlumps)
+	{
+		lumpinfo_t *lump_p = wadfiles[wad]->lumpinfo + startlump;
+		for (i = startlump; i < wadfiles[wad]->numlumps; i++, lump_p++)
+			if (!lump_p->size)
+				return i;
+	}
+
+	// not found.
+	return INT16_MAX;
+}
+
+//
 // Same as the original, but checks in one pwad only.
 // wadid is a wad number
 // (Used for sprites loading)
