@@ -529,6 +529,11 @@ static void D_Display(void)
 
 				if (rendermode == render_soft)
 				{
+					if (! r_splitscreen)
+					{
+						R_ApplyViewMorph();
+					}
+
 					for (i = 0; i <= r_splitscreen; i++)
 					{
 						if (postimgtype[i])
