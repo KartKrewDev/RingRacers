@@ -3476,7 +3476,7 @@ static void G_DoCompleted(void)
 	// a map of the proper gametype -- skip levels that don't support
 	// the current gametype. (Helps avoid playing boss levels in Race,
 	// for instance).
-	if (!modeattacking && grandprixinfo.gp == false && (nextmap >= 0 && nextmap < NUMMAPS))
+	if (!modeattacking && grandprixinfo.gp == false)
 	{
 		if (nextmap >= 0 && nextmap < NUMMAPS)
 		{
