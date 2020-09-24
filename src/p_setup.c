@@ -3216,6 +3216,8 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	P_RaiseThings();
 
+	P_SpawnSpecialsThatRequireObjects();
+
 	P_SpawnSecretItems(loademblems);
 
 	for (numcoopstarts = 0; numcoopstarts < MAXPLAYERS; numcoopstarts++)

@@ -6848,6 +6848,13 @@ void P_SpawnSpecials(INT32 fromnetsave)
 			Z_Free(secthinkers[i].thinkers);
 
 	Z_Free(secthinkers);
+}
+
+/** Fuck polyobjects
+  */
+void P_SpawnSpecialsThatRequireObjects(void)
+{
+	size_t i;
 
 	// haleyjd 02/20/06: spawn polyobjects
 	Polyobj_InitLevel();

@@ -39,6 +39,7 @@ void P_SetupLevelFlatAnims(void);
 void P_InitSpecials(void);
 void P_SpawnSpecials(INT32 fromnetsave);
 void P_RaiseThings(void);
+void P_SpawnSpecialsThatRequireObjects(void);
 
 // every tic
 void P_UpdateSpecials(void);
