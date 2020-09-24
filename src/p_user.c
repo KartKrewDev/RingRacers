@@ -4182,7 +4182,7 @@ Quaketilt (player_t *player)
 	angle_t tilt;
 	fixed_t lowb; // this threshold for speed
 	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-	angle_t delta = (INT32)( player->mo->angle - moma );
+	INT32 delta = (INT32)( player->mo->angle - moma );
 	fixed_t speed;
 	// Hi! I'm "not a math guy"!
 	if (abs(delta) > ANGLE_90)
