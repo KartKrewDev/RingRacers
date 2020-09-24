@@ -266,6 +266,8 @@ find_closest_anchors
 
 	int last = 0;
 
+	size_t i;
+
 	if (list->count < 3)
 	{
 		I_Error("At least three slope anchors are required to make a slope.");
@@ -273,7 +275,18 @@ find_closest_anchors
 
 	anchors = Z_Malloc(3 * sizeof *anchors, PU_LEVEL, NULL);
 
-	get_sector_anchors(anchors, distances, list, sector);
+	if (sector->numattached > 0)
+	{
+		for (i = 0; i < sector->numattached; ++i)
+		{
+			get_sector_anchors
+				(anchors, distances, list, &sectors[sector->attached[i]]);
+		}
+	}
+	else
+	{
+		get_sector_anchors(anchors, distances, list, sector);
+	}
 
 	if (distances[2] < INT32_MAX)
 	{
@@ -287,13 +300,36 @@ find_closest_anchors
 	else
 		last = 0;
 
-	I_Error(
-			"(Sector #%s)"
-			" Slope requires anchors near 3 of its vertices (%d found)",
+	if (sector->numattached > 0)
+	{
+		CONS_Printf("\nSearched for anchors in sectors...\n\n");
 
-			sizeu1 (sector - sectors),
-			last
-	);
+		for (i = 0; i < sector->numattached; ++i)
+		{
+			CONS_Printf("#%s\n", sizeu1 (sector->attached[i]));
+		}
+
+		I_Error(
+				"(Control Sector #%s)"
+				" Slope requires anchors near 3 of its target sectors' vertices"
+				" (%d found)"
+
+				"\n\nCheck the log to see which sectors were searched.",
+
+				sizeu1 (sector - sectors),
+				last
+		);
+	}
+	else
+	{
+		I_Error(
+				"(Sector #%s)"
+				" Slope requires anchors near 3 of its vertices (%d found)",
+
+				sizeu1 (sector - sectors),
+				last
+		);
+	}
 }
 
 static pslope_t *

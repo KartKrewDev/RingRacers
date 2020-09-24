@@ -5358,6 +5358,26 @@ P_RaiseTaggedThingsToFakeFloor (
 	}
 }
 
+void
+P_RaiseThings (void)
+{
+	size_t i;
+
+	for (i = 0; i < numlines; ++i)
+	{
+		switch (lines[i].special)
+		{
+			case 80: // Raise tagged things by type to this FOF
+				P_RaiseTaggedThingsToFakeFloor(
+						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
+						lines[i].tag,
+						lines[i].frontsector
+				);
+				break;
+		}
+	}
+}
+
 //
 // SPECIAL SPAWNING
 //
@@ -6818,22 +6838,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 			case 2002: // Linedef Trigger: Race Lap
 				break;
 			default:
-				break;
-		}
-	}
-
-	/* some things have to be done after FOF spawn */
-
-	for (i = 0; i < numlines; ++i)
-	{
-		switch (lines[i].special)
-		{
-			case 80: // Raise tagged things by type to this FOF
-				P_RaiseTaggedThingsToFakeFloor(
-						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
-						lines[i].tag,
-						lines[i].frontsector
-				);
 				break;
 		}
 	}
