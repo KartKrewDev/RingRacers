@@ -304,8 +304,13 @@ static void D_Display(void)
 #endif
 		}
 
-		if (rendermode == render_soft && !splitscreen)
-			R_CheckViewMorph();
+		if (rendermode == render_soft)
+		{
+			for (i = 0; i <= r_splitscreen; ++i)
+			{
+				R_CheckViewMorph(i);
+			}
+		}
 
 		// change the view size if needed
 		if (setsizeneeded || setrenderstillneeded)
@@ -529,13 +534,10 @@ static void D_Display(void)
 
 				if (rendermode == render_soft)
 				{
-					if (! r_splitscreen)
-					{
-						R_ApplyViewMorph();
-					}
-
 					for (i = 0; i <= r_splitscreen; i++)
 					{
+						R_ApplyViewMorph(i);
+
 						if (postimgtype[i])
 							V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
 					}

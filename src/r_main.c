@@ -602,7 +602,7 @@ static inline void R_InitLightTables(void)
 //#define WOUGHMP_WOUGHMP // I got a fish-eye lens - I'll make a rap video with a couple of friends
 // it's kinda laggy sometimes
 
-static struct {
+static struct viewmorph {
 	angle_t rollangle; // pre-shifted by fineshift
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye;
@@ -616,37 +616,38 @@ static struct {
 	INT16 ceilingclip[MAXVIDWIDTH], floorclip[MAXVIDWIDTH];
 
 	boolean use;
-} viewmorph = {
-	0,
-#ifdef WOUGHMP_WOUGHMP
-	0,
-#endif
+} viewmorph[MAXSPLITSCREENPLAYERS] = {0};
 
-	FRACUNIT,
-	NULL,
-	0,
-
-	0,
-	{}, {},
-
-	false
-};
-
-void R_CheckViewMorph(void)
+void R_CheckViewMorph(int s)
 {
+	struct viewmorph * v = &viewmorph[s];
+
 	float zoomfactor, rollcos, rollsin;
 	float x1, y1, x2, y2;
 	fixed_t temp;
 	INT32 end, vx, vy, pos, usedpos;
-	INT32 usedx, usedy, halfwidth = vid.width/2, halfheight = vid.height/2;
+	INT32 realend;
+	INT32 usedx, usedy;
+
+	INT32 width = vid.width;
+	INT32 height = vid.height;
+
+	INT32 halfwidth;
+	INT32 halfheight;
+
 #ifdef WOUGHMP_WOUGHMP
 	float fisheyemap[MAXVIDWIDTH/2 + 1];
 #endif
 
-	angle_t rollangle = players[displayplayers[0]].viewrollangle;
+	angle_t rollangle = players[displayplayers[s]].viewrollangle;
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
 #endif
+
+	if (v->zoomneeded == 0)
+	{
+		v->zoomneeded = FRACUNIT;
+	}
 
 	rollangle >>= ANGLETOFINESHIFT;
 	rollangle = ((rollangle+2) & ~3) & FINEMASK; // Limit the distinct number of angles to reduce recalcs from angles changing a lot.
@@ -655,39 +656,52 @@ void R_CheckViewMorph(void)
 	fisheye &= ~0x7FF; // Same
 #endif
 
-	if (rollangle == viewmorph.rollangle &&
+	if (r_splitscreen > 0)
+	{
+		height /= 2;
+
+		if (r_splitscreen > 1)
+		{
+			width /= 2;
+		}
+	}
+
+	halfwidth = width / 2;
+	halfheight = height / 2;
+
+	if (rollangle == v->rollangle &&
 #ifdef WOUGHMP_WOUGHMP
-		fisheye == viewmorph.fisheye &&
+		fisheye == v->fisheye &&
 #endif
-		viewmorph.scrmapsize == vid.width*vid.height)
+		v->scrmapsize == width * height)
 		return; // No change
 
-	viewmorph.rollangle = rollangle;
+	v->rollangle = rollangle;
 #ifdef WOUGHMP_WOUGHMP
-	viewmorph.fisheye = fisheye;
+	v->fisheye = fisheye;
 #endif
 
-	if (viewmorph.rollangle == 0
+	if (v->rollangle == 0
 #ifdef WOUGHMP_WOUGHMP
-		 && viewmorph.fisheye == 0
+		 && v->fisheye == 0
 #endif
 	 )
 	{
-		viewmorph.use = false;
-		viewmorph.x1 = 0;
-		if (viewmorph.zoomneeded != FRACUNIT)
+		v->use = false;
+		v->x1 = 0;
+		if (v->zoomneeded != FRACUNIT)
 			R_SetViewSize();
-		viewmorph.zoomneeded = FRACUNIT;
+		v->zoomneeded = FRACUNIT;
 
 		return;
 	}
 
-	if (viewmorph.scrmapsize != vid.width*vid.height)
+	if (v->scrmapsize != width * height)
 	{
-		if (viewmorph.scrmap)
-			free(viewmorph.scrmap);
-		viewmorph.scrmap = malloc(vid.width*vid.height * sizeof(INT32));
-		viewmorph.scrmapsize = vid.width*vid.height;
+		if (v->scrmap)
+			free(v->scrmap);
+		v->scrmap = malloc(width * height * sizeof(INT32));
+		v->scrmapsize = width * height;
 	}
 
 	temp = FINECOSINE(rollangle);
@@ -696,8 +710,8 @@ void R_CheckViewMorph(void)
 	rollsin = FIXED_TO_FLOAT(temp);
 
 	// Calculate maximum zoom needed
-	x1 = (vid.width*fabsf(rollcos) + vid.height*fabsf(rollsin)) / vid.width;
-	y1 = (vid.height*fabsf(rollcos) + vid.width*fabsf(rollsin)) / vid.height;
+	x1 = (width  * fabsf(rollcos) + height * fabsf(rollsin)) / width;
+	y1 = (height * fabsf(rollcos) + width  * fabsf(rollsin)) / height;
 
 #ifdef WOUGHMP_WOUGHMP
 	if (fisheye)
@@ -723,15 +737,20 @@ void R_CheckViewMorph(void)
 
 	//CONS_Printf("Setting zoom to %f\n", FIXED_TO_FLOAT(temp));
 
-	if (temp != viewmorph.zoomneeded)
+	if (temp != v->zoomneeded)
 	{
-		viewmorph.zoomneeded = temp;
+		v->zoomneeded = temp;
 		R_SetViewSize();
 	}
 
-	zoomfactor = FIXED_TO_FLOAT(viewmorph.zoomneeded);
+	zoomfactor = FIXED_TO_FLOAT(v->zoomneeded);
 
-	end = vid.width * vid.height - 1;
+	realend = end = width * height - 1;
+
+	if (r_splitscreen > 1)
+	{
+		realend = ( realend << 1 ) - width;
+	}
 
 	pos = 0;
 
@@ -744,49 +763,49 @@ void R_CheckViewMorph(void)
 
 #ifdef WOUGHMP_WOUGHMP
 	if (fisheye)
-		viewmorph.x1 = (INT32)(halfwidth - (halfwidth * fabsf(rollcos) + halfheight * fabsf(rollsin)) * fisheyemap[halfwidth]);
+		v->x1 = (INT32)(halfwidth - (halfwidth * fabsf(rollcos) + halfheight * fabsf(rollsin)) * fisheyemap[halfwidth]);
 	else
 #endif
-	viewmorph.x1 = (INT32)(halfwidth - (halfwidth * fabsf(rollcos) + halfheight * fabsf(rollsin)));
-	//CONS_Printf("saving %d cols\n", viewmorph.x1);
+	v->x1 = (INT32)(halfwidth - (halfwidth * fabsf(rollcos) + halfheight * fabsf(rollsin)));
+	//CONS_Printf("saving %d cols\n", v->x1);
 
 	// Set ceilingclip and floorclip
-	for (vx = 0; vx < vid.width; vx++)
+	for (vx = 0; vx < width; vx++)
 	{
-		viewmorph.ceilingclip[vx] = vid.height;
-		viewmorph.floorclip[vx] = -1;
+		v->ceilingclip[vx] = height;
+		v->floorclip[vx] = -1;
 	}
 	x2 = x1;
 	y2 = y1;
-	for (vx = 0; vx < vid.width; vx++)
+	for (vx = 0; vx < width; vx++)
 	{
 		INT16 xa, ya, xb, yb;
 		xa = x2+halfwidth;
 		ya = y2+halfheight-1;
-		xb = vid.width-1-xa;
-		yb = vid.height-1-ya;
+		xb = width-1-xa;
+		yb = height-1-ya;
 
-		viewmorph.ceilingclip[xa] = min(viewmorph.ceilingclip[xa], ya);
-		viewmorph.floorclip[xa] = max(viewmorph.floorclip[xa], ya);
-		viewmorph.ceilingclip[xb] = min(viewmorph.ceilingclip[xb], yb);
-		viewmorph.floorclip[xb] = max(viewmorph.floorclip[xb], yb);
+		v->ceilingclip[xa] = min(v->ceilingclip[xa], ya);
+		v->floorclip[xa] = max(v->floorclip[xa], ya);
+		v->ceilingclip[xb] = min(v->ceilingclip[xb], yb);
+		v->floorclip[xb] = max(v->floorclip[xb], yb);
 		x2 += rollcos;
 		y2 += rollsin;
 	}
 	x2 = x1;
 	y2 = y1;
-	for (vy = 0; vy < vid.height; vy++)
+	for (vy = 0; vy < height; vy++)
 	{
 		INT16 xa, ya, xb, yb;
 		xa = x2+halfwidth;
 		ya = y2+halfheight;
-		xb = vid.width-1-xa;
-		yb = vid.height-1-ya;
+		xb = width-1-xa;
+		yb = height-1-ya;
 
-		viewmorph.ceilingclip[xa] = min(viewmorph.ceilingclip[xa], ya);
-		viewmorph.floorclip[xa] = max(viewmorph.floorclip[xa], ya);
-		viewmorph.ceilingclip[xb] = min(viewmorph.ceilingclip[xb], yb);
-		viewmorph.floorclip[xb] = max(viewmorph.floorclip[xb], yb);
+		v->ceilingclip[xa] = min(v->ceilingclip[xa], ya);
+		v->floorclip[xa] = max(v->floorclip[xa], ya);
+		v->ceilingclip[xb] = min(v->ceilingclip[xb], yb);
+		v->floorclip[xb] = max(v->floorclip[xb], yb);
 		x2 -= rollsin;
 		y2 += rollcos;
 	}
@@ -803,15 +822,15 @@ void R_CheckViewMorph(void)
 			x1 -= rollsin;
 			y1 += rollcos;
 
-			for (vx = 0; vx < vid.width; vx++)
+			for (vx = 0; vx < width; vx++)
 			{
 				usedx = halfwidth + x2*fisheyemap[(int) floorf(fabsf(y2*zoomfactor))];
 				usedy = halfheight + y2*fisheyemap[(int) floorf(fabsf(x2*zoomfactor))];
 
-				usedpos = usedx + usedy*vid.width;
+				usedpos = usedx + usedy*width;
 
-				viewmorph.scrmap[pos] = usedpos;
-				viewmorph.scrmap[end-pos] = end-usedpos;
+				v->scrmap[pos] = usedpos;
+				v->scrmap[end-pos] = end-usedpos;
 
 				x2 += rollcos;
 				y2 += rollsin;
@@ -832,15 +851,15 @@ void R_CheckViewMorph(void)
 		x1 -= rollsin;
 		y1 += rollcos;
 
-		for (vx = 0; vx < vid.width; vx++)
+		for (vx = 0; vx < width; vx++)
 		{
 			usedx = x2;
 			usedy = y2;
 
-			usedpos = usedx + usedy*vid.width;
+			usedpos = usedx + usedy * vid.width;
 
-			viewmorph.scrmap[pos] = usedpos;
-			viewmorph.scrmap[end-pos] = end-usedpos;
+			v->scrmap[pos] = usedpos;
+			v->scrmap[end-pos] = realend-usedpos;
 
 			x2 += rollcos;
 			y2 += rollsin;
@@ -851,18 +870,49 @@ void R_CheckViewMorph(void)
 	}
 #endif
 
-	viewmorph.use = true;
+	v->use = true;
 }
 
-void R_ApplyViewMorph(void)
+void R_ApplyViewMorph(int s)
 {
 	UINT8 *tmpscr = screens[4];
 	UINT8 *srcscr = screens[0];
-	INT32 p, end = vid.width * vid.height;
+	INT32 width = vid.width;
+	INT32 height = vid.height;
+	INT32 p;
+	INT32 end;
 
-	if (!viewmorph.use)
+	if (!viewmorph[s].use)
 		return;
 
+	if (r_splitscreen == 1)
+	{
+		height /= 2;
+
+		if (s == 1)
+		{
+			srcscr += vid.width * height;
+		}
+	}
+	else if (r_splitscreen > 1)
+	{
+		width /= 2;
+		height /= 2;
+
+		if (s % 2)
+		{
+			srcscr += width;
+		}
+
+		if (s > 1)
+		{
+			srcscr += vid.width * height;
+		}
+	}
+
+	end = width * height;
+
+#if 0
 	if (cv_debug & DBG_VIEWMORPH)
 	{
 		UINT8 border = 32;
@@ -889,11 +939,16 @@ void R_ApplyViewMorph(void)
 		}
 	}
 	else
+#endif
+	{
 		for (p = 0; p < end; p++)
-			tmpscr[p] = srcscr[viewmorph.scrmap[p]];
+		{
+			tmpscr[p] = srcscr[viewmorph[s].scrmap[p]];
+		}
+	}
 
-	VID_BlitLinearScreen(tmpscr, screens[0],
-			vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.width);
+	VID_BlitLinearScreen(tmpscr, srcscr,
+			width*vid.bpp, height, width*vid.bpp, vid.width);
 }
 
 
@@ -953,7 +1008,7 @@ void R_ExecuteSetViewSize(void)
 	for (s = 0; s <= r_splitscreen; ++s)
 	{
 		fov = FixedAngle(cv_fov[s].value/2) + ANGLE_90;
-		fovtan[s] = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
+		fovtan[s] = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph[s].zoomneeded);
 		if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 			fovtan[s] = 17*fovtan[s]/10;
 
@@ -1484,13 +1539,13 @@ void R_RenderPlayerView(void)
 
 	// Clear buffers.
 	R_ClearPlanes();
-	if (viewmorph.use)
+	if (viewmorph[viewssnum].use)
 	{
-		portalclipstart = viewmorph.x1;
-		portalclipend = viewwidth-viewmorph.x1-1;
+		portalclipstart = viewmorph[viewssnum].x1;
+		portalclipend = viewwidth-viewmorph[viewssnum].x1-1;
 		R_PortalClearClipSegs(portalclipstart, portalclipend);
-		memcpy(ceilingclip, viewmorph.ceilingclip, sizeof(INT16)*vid.width);
-		memcpy(floorclip, viewmorph.floorclip, sizeof(INT16)*vid.width);
+		memcpy(ceilingclip, viewmorph[viewssnum].ceilingclip, sizeof(INT16)*vid.width);
+		memcpy(floorclip, viewmorph[viewssnum].floorclip, sizeof(INT16)*vid.width);
 	}
 	else
 	{

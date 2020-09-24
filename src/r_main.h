@@ -115,8 +115,8 @@ void R_InitHardwareMode(void);
 #endif
 void R_ReloadHUDGraphics(void);
 
-void R_CheckViewMorph(void);
-void R_ApplyViewMorph(void);
+void R_CheckViewMorph(int split);
+void R_ApplyViewMorph(int split);
 
 // just sets setsizeneeded true
 extern boolean setsizeneeded;
