@@ -24,6 +24,7 @@ struct anchor_list
 {
 	mapthing_t     ** anchors;
 	const vertex_t ** points;
+	fixed_t         * closeness;
 	size_t            count;
 };
 
@@ -35,8 +36,9 @@ static void * new_list (size_t n) {
 }
 
 static void make_new_anchor_list (struct anchor_list * list) {
-	list->anchors = new_list(list->count * sizeof *list->anchors);
-	list->points  = new_list(list->count * sizeof *list->points);
+	list->anchors   = new_list(list->count * sizeof *list->anchors);
+	list->points    = new_list(list->count * sizeof *list->points);
+	list->closeness = new_list(list->count * sizeof *list->closeness);
 }
 
 static void allocate_anchors (void) {
@@ -88,24 +90,26 @@ compare_vertex_distance
 static const vertex_t *
 nearest_point
 (
+		fixed_t           * closeness,
 		mapthing_t        * a,
 		const sector_t    * sector
 ){
 	const fixed_t x = a->x << FRACBITS;
 	const fixed_t y = a->y << FRACBITS;
 
-	const vertex_t * nearest = NULL;/* shut compiler up, should never be NULL */
-	fixed_t          nearest_distance = INT32_MAX;
+	const vertex_t * v = NULL;/* shut compiler up, should never be NULL */
 
 	size_t i;
 
+	(*closeness) = INT32_MAX;
+
 	for (i = 0; i < sector->linecount; ++i)
 	{
-		compare_vertex_distance(&nearest, &nearest_distance, x, y, sector->lines[i]->v1);
-		compare_vertex_distance(&nearest, &nearest_distance, x, y, sector->lines[i]->v2);
+		compare_vertex_distance(&v, closeness, x, y, sector->lines[i]->v1);
+		compare_vertex_distance(&v, closeness, x, y, sector->lines[i]->v2);
 	}
 
-	return nearest;
+	return v;
 }
 
 static INT16
@@ -147,15 +151,18 @@ set_anchor
 
 	const vertex_t * v;
 
+	fixed_t closeness;
+
 	a->z = anchor_height(a, sub->sector);
 
-	v = nearest_point(a, sub->sector);
+	v = nearest_point(&closeness, a, sub->sector);
 
 	a->x = ( v->x >> FRACBITS );
 	a->y = ( v->y >> FRACBITS );
 
-	list->anchors[list->count] = a;
-	list->points [list->count] = v;
+	list->anchors  [list->count] = a;
+	list->points   [list->count] = v;
+	list->closeness[list->count] = closeness;
 
 	list->count++;
 }
@@ -181,42 +188,70 @@ static void build_anchors (void) {
 	}
 }
 
-static int
+static void
 get_anchor
 (
-		const vertex_t            * points[3],
 		mapthing_t               **      anchors,
-		int                       * last_anchor,
+		fixed_t                     distances[3],
 		const struct anchor_list  * list,
 		const vertex_t            * v
 ){
 	size_t i;
 
-	if (
-			v != points[0] &&
-			v != points[1] &&
-			v != points[2]
-	){
-		for (i = 0; i < list->count; ++i)
-		{
-			if (list->points[i] == v)
-			{
-				points [*last_anchor] = v;
-				anchors[*last_anchor] = list->anchors[i];
+	int k;
 
-				if (++(*last_anchor) == 3)
+	for (i = 0; i < list->count; ++i)
+	{
+		if (list->points[i] == v)
+		{
+			for (k = 0; k < 3; ++k)
+			{
+				if (list->closeness[i] < distances[k])
 				{
-					return 1;
+					if (k == 0)
+					{
+						distances[2] = distances[1];
+						distances[1] = distances[0];
+
+						anchors  [2] = anchors  [1];
+						anchors  [1] = anchors  [0];
+					}
+					else if (k == 1)
+					{
+						distances[2] = distances[1];
+						anchors  [2] = anchors  [1];
+					}
+
+					distances[k] = list->closeness[i];
+
+					anchors[k] = list->anchors[i];
+
+					break;
 				}
-				else
+				else if (list->anchors[i] == anchors[k])
 				{
-					return 0;
+					break;
 				}
 			}
 		}
 	}
+}
 
-	return 0;
+static void
+get_sector_anchors
+(
+		mapthing_t               **      anchors,
+		fixed_t                     distances[3],
+		const struct anchor_list  * list,
+		const sector_t            * sector
+){
+	size_t i;
+
+	for (i = 0; i < sector->linecount; ++i)
+	{
+		get_anchor(anchors, distances, list, sector->lines[i]->v1);
+		get_anchor(anchors, distances, list, sector->lines[i]->v2);
+	}
 }
 
 static mapthing_t **
@@ -225,11 +260,9 @@ find_closest_anchors
 		const sector_t           * sector,
 		const struct anchor_list * list
 ){
-	const vertex_t * points[3] = {0};
+	fixed_t distances[3] = { INT32_MAX, INT32_MAX, INT32_MAX };
 
 	mapthing_t ** anchors;
-
-	size_t i;
 
 	int last = 0;
 
@@ -240,18 +273,19 @@ find_closest_anchors
 
 	anchors = Z_Malloc(3 * sizeof *anchors, PU_LEVEL, NULL);
 
-	for (i = 0; i < sector->linecount; ++i)
-	{
-		if (get_anchor(points, anchors, &last, list, sector->lines[i]->v1) != 0)
-		{
-			return anchors;
-		}
+	get_sector_anchors(anchors, distances, list, sector);
 
-		if (get_anchor(points, anchors, &last, list, sector->lines[i]->v2) != 0)
-		{
-			return anchors;
-		}
+	if (distances[2] < INT32_MAX)
+	{
+		return anchors;
 	}
+
+	if (distances[1] < INT32_MAX)
+		last = 2;
+	else if (distances[0] < INT32_MAX)
+		last = 1;
+	else
+		last = 0;
 
 	I_Error(
 			"(Sector #%s)"
