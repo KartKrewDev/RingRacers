@@ -440,7 +440,7 @@ make_anchored_slope
 	{
 		s = sides[line->sidenum[side]].sector;
 
-		if (plane == FLOOR|CEILING)
+		if (plane == (FLOOR|CEILING))
 		{
 			flags &= ~ML_NOKNUX;
 		}
