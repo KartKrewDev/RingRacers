@@ -368,10 +368,35 @@ new_vertex_slope
 	return slope;
 }
 
+static mapthing_t **
+flip_slope
+(
+		mapthing_t     ** origin,
+		const sector_t  * sector
+){
+	mapthing_t  * copy    = Z_Malloc(3 * sizeof (mapthing_t),   PU_LEVEL, NULL);
+	mapthing_t ** anchors = Z_Malloc(3 * sizeof (mapthing_t *), PU_LEVEL, NULL);
+
+	size_t i;
+
+	for (i = 0; i < 3; ++i)
+	{
+		memcpy(&copy[i], origin[i], sizeof copy[i]);
+
+		copy[i].options ^= MTF_OBJECTFLIP;
+		copy[i].z = anchor_height(&copy[i], sector);
+
+		anchors[i] = &copy[i];
+	}
+
+	return anchors;
+}
+
 static void
 slope_sector
 (
 		pslope_t                ** slope,
+		pslope_t                ** alt,
 		sector_t                 * sector,
 		const INT16                flags,
 		const struct anchor_list * list,
@@ -382,6 +407,13 @@ slope_sector
 	if (anchors != NULL)
 	{
 		(*slope) = new_vertex_slope(anchors, flags);
+
+		/* No Knuckles - invert slope to opposite side */
+		if (flags & ML_NOKNUX)
+		{
+			(*alt) = new_vertex_slope(flip_slope(anchors, sector), flags);
+		}
+
 		sector->hasslope = true;
 	}
 }
@@ -398,26 +430,31 @@ make_anchored_slope
 		CEILING = 0x2,
 	};
 
-	const INT16 flags = line->flags;
+	INT16 flags = line->flags;
 
 	const int side = ( flags & ML_NOCLIMB ) != 0;
 
-	sector_t   *  sector;
+	sector_t   *  s;
 
 	if (side == 0 || flags & ML_TWOSIDED)
 	{
-		sector = sides[line->sidenum[side]].sector;
+		s = sides[line->sidenum[side]].sector;
+
+		if (plane == FLOOR|CEILING)
+		{
+			flags &= ~ML_NOKNUX;
+		}
 
 		if (plane & FLOOR)
 		{
 			slope_sector
-				(&sector->f_slope, sector, flags, &floor_anchors, line->tag);
+				(&s->f_slope, &s->c_slope, s, flags, &floor_anchors, line->tag);
 		}
 
 		if (plane & CEILING)
 		{
 			slope_sector
-				(&sector->c_slope, sector, flags, &ceiling_anchors, line->tag);
+				(&s->c_slope, &s->f_slope, s, flags, &ceiling_anchors, line->tag);
 		}
 	}
 }
