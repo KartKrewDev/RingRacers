@@ -2309,7 +2309,7 @@ static void Newrenderer_OnChange(void)
 
 static void Newrenderer_OnChange(void)
 {
-	; // SRB2Kart: don't want the warning
+	CV_SetValue(&cv_renderer, cv_newrenderer.value); // SRB2Kart: don't want the warning
 }
 
 #endif
