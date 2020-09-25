@@ -5545,26 +5545,6 @@ P_RaiseTaggedThingsToFakeFloor (
 	}
 }
 
-void
-P_RaiseThings (void)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; ++i)
-	{
-		switch (lines[i].special)
-		{
-			case 80: // Raise tagged things by type to this FOF
-				P_RaiseTaggedThingsToFakeFloor(
-						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
-						lines[i].tag,
-						lines[i].frontsector
-				);
-				break;
-		}
-	}
-}
-
 //
 // SPECIAL SPAWNING
 //
@@ -5953,6 +5933,26 @@ static void P_ApplyFlatAlignment(line_t *master, sector_t *sector, angle_t flata
 	}
 }
 
+static boolean P_IsLineDisabled (const line_t * line)
+{
+	if (line->special != 7) // This is a hack. I can at least hope nobody wants to prevent flat alignment in netgames...
+	{
+		if (netgame || multiplayer)
+		{
+			if (line->flags & ML_NONET)
+			{
+				return true;
+			}
+		}
+		else if (line->flags & ML_NETONLY)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /** After the map has loaded, scans for specials that spawn 3Dfloors and
   * thinkers.
   *
@@ -5972,6 +5972,8 @@ void P_SpawnSpecials(boolean fromnetsave)
 	// This used to be used, and *should* be used in the future,
 	// but currently isn't.
 	(void)fromnetsave;
+
+	CONS_Printf("%d\n", sectors[11].floorheight);
 
 	// yep, we do this here - "bossdisabled" is considered an apparatus of specials.
 	bossdisabled = 0;
@@ -6070,22 +6072,9 @@ void P_SpawnSpecials(boolean fromnetsave)
 	// Init line EFFECTs
 	for (i = 0; i < numlines; i++)
 	{
-		if (lines[i].special != 7) // This is a hack. I can at least hope nobody wants to prevent flat alignment in netgames...
+		if (P_IsLineDisabled(&lines[i]))
 		{
-			// set line specials to 0 here too, same reason as above
-			if (netgame || multiplayer)
-			{
-				if (lines[i].flags & ML_NONET)
-				{
-					lines[i].special = 0;
-					continue;
-				}
-			}
-			else if (lines[i].flags & ML_NETONLY)
-			{
-				lines[i].special = 0;
-				continue;
-			}
+			continue;
 		}
 
 		switch (lines[i].special)
@@ -6985,6 +6974,33 @@ void P_SpawnSpecialsThatRequireObjects(void)
 	}
 
 	P_RunLevelLoadExecutors();
+}
+
+/** Fuck ML_NONET
+  */
+void P_SpawnSpecialsAfterSlopes(void)
+{
+	size_t i;
+
+	for (i = 0; i < numlines; ++i)
+	{
+		if (P_IsLineDisabled(&lines[i]))
+		{
+			/* remove the special so it can't even be found during the level */
+			lines[i].special = 0;
+		}
+
+		switch (lines[i].special)
+		{
+			case 80: // Raise tagged things by type to this FOF
+				P_RaiseTaggedThingsToFakeFloor(
+						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
+						lines[i].tag,
+						lines[i].frontsector
+				);
+				break;
+		}
+	}
 }
 
 /** Adds 3Dfloors as appropriate based on a common control linedef.

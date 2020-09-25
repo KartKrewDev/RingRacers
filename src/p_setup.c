@@ -3986,11 +3986,12 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	P_SpawnSlopes(fromnetsave);
 
-	P_RaiseThings();
+	P_SpawnSpecialsAfterSlopes();
+
+	P_SpawnMapThings(!fromnetsave);
 
 	P_SpawnSpecialsThatRequireObjects();
 
-	P_SpawnMapThings(!fromnetsave);
 	skyboxmo[0] = skyboxviewpnts[0];
 	skyboxmo[1] = skyboxcenterpnts[0];
 
