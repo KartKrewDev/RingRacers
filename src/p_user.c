@@ -2037,11 +2037,11 @@ static void P_3dMovement(player_t *player)
 //
 static void P_UpdatePlayerAngle(player_t *player)
 {
-	ticcmd_t *cmd = &player->cmd;
-	angle_t angleChange = K_GetKartTurnValue(player, cmd->turning) << TICCMD_REDUCE;
+	angle_t angleChange = K_GetKartTurnValue(player, player->cmd.turning) << TICCMD_REDUCE;
+	UINT8 i;
 
-	player->angleturn += angleChange;
-	P_SetLocalAngle(player, P_GetLocalAngle(player) + angleChange);
+	P_SetPlayerAngle(player, player->angleturn + angleChange);
+	player->mo->angle = player->angleturn;
 
 	if (!cv_allowmlook.value || player->spectator == false)
 	{
@@ -2049,11 +2049,18 @@ static void P_UpdatePlayerAngle(player_t *player)
 	}
 	else
 	{
-		player->aiming += (cmd->aiming << TICCMD_REDUCE);
+		player->aiming += (player->cmd.aiming << TICCMD_REDUCE);
 		player->aiming = G_ClipAimingPitch((INT32 *)&player->aiming);
 	}
 
-	player->mo->angle = player->angleturn;
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (player == &players[displayplayers[i]])
+		{
+			localaiming[i] = player->aiming;
+			break;
+		}
+	}
 }
 
 //
@@ -4653,17 +4660,8 @@ void P_PlayerAfterThink(player_t *player)
 
 void P_SetPlayerAngle(player_t *player, angle_t angle)
 {
-	angle_t delta = angle - player->angleturn;
-
-	P_ForceLocalAngle(player, P_GetLocalAngle(player) + delta);
-	player->angleturn += delta;
-}
-
-void P_SetLocalAngle(player_t *player, angle_t angle)
-{
-	angle_t delta = (angle - P_GetLocalAngle(player));
-
-	P_ForceLocalAngle(player, P_GetLocalAngle(player) + delta);
+	P_ForceLocalAngle(player, angle);
+	player->angleturn = angle;
 }
 
 angle_t P_GetLocalAngle(player_t *player)
@@ -4672,9 +4670,9 @@ angle_t P_GetLocalAngle(player_t *player)
 	// (hint: they have separate variables for all of this shit instead of arrays)
 	UINT8 i;
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		if (player == &players[g_localplayers[i]])
+		if (player == &players[displayplayers[i]])
 			return localangle[i];
 	}
 
@@ -4687,9 +4685,9 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 
 	angle = angle & ~UINT16_MAX;
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		if (player == &players[g_localplayers[i]])
+		if (player == &players[displayplayers[i]])
 		{
 			localangle[i] = angle;
 			break;

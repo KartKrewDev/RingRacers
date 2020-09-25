@@ -1161,6 +1161,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// if a player avatar dies...
 	if (target->player)
 	{
+		UINT8 i;
+
 		target->flags &= ~(MF_SOLID|MF_SHOOTABLE); // does not block
 		P_UnsetThingPosition(target);
 		target->flags |= MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY;
@@ -1176,14 +1178,17 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			// switch view prior to dying
 			if (automapactive)
 				AM_Stop();
-
-			//added : 22-02-98: recenter view for next life...
-			localaiming[0] = 0;
 		}
 
-		if (target->player == &players[displayplayers[1]]) localaiming[1] = 0;
-		if (target->player == &players[displayplayers[2]]) localaiming[2] = 0;
-		if (target->player == &players[displayplayers[3]]) localaiming[3] = 0;
+		//added : 22-02-98: recenter view for next life...
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (target->player == &players[displayplayers[i]])
+			{
+				localaiming[i] = 0;
+				break;
+			}
+		}
 
 		if ((gametyperules & GTR_BUMPERS))
 			K_CheckBumpers();
