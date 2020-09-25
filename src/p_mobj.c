@@ -8408,7 +8408,7 @@ void P_MobjThinker(mobj_t *mobj)
 	if (mobj->hprev && P_MobjWasRemoved(mobj->hprev))
 		P_SetTarget(&mobj->hprev, NULL);
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL);
 
 	tmfloorthing = tmhitthing = NULL;
 
