@@ -2725,16 +2725,8 @@ consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
 	{"cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange, 0, NULL, NULL, 0, 0, NULL}
 };
 
-static CV_PossibleValue_t slopeview_cons_t[] =
-{
-	{ 0, "Off" },
-	{ 1, "On" },
-	{ 2, "Inverse" },
+consvar_t cv_tilting = {"tilting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-	{0}
-};
-consvar_t cv_slopeview = {"slopeview", "On", CV_SAVE, slopeview_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_quaketilt = {"quaketilt", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_actionmovie = {"actionmovie", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_windowquake = {"windowquake", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -4213,20 +4205,16 @@ DoABarrelRoll (player_t *player)
 	angle_t slope;
 	angle_t delta;
 
-	if (cv_slopeview.value && player->mo->standingslope)
+	if (player->mo->standingslope)
 	{
 		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
-		slope = FixedMul(FINESINE (delta>>ANGLETOFINESHIFT),
-				player->mo->standingslope->zangle);
-		/* invert the screen tilt as if tilting the view instead */
-		if (cv_slopeview.value != 2)/* :james: mode */
-			slope = -slope;
+		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT),
+				player->mo->standingslope->zangle));
 	}
 	else
 		slope = 0;
 
-	if (cv_quaketilt.value)
-		slope += Quaketilt(player);
+	slope += Quaketilt(player);
 
 	delta = (INT32)( slope - player->viewrollangle )/ 32;
 
@@ -4611,7 +4599,14 @@ void P_PlayerThink(player_t *player)
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
 
-	DoABarrelRoll(player);
+	if (cv_tilting.value)
+	{
+		DoABarrelRoll(player);
+	}
+	else
+	{
+		player->viewrollangle = 0;
+	}
 
 	LUAh_PlayerThink(player);
 }
