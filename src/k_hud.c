@@ -888,7 +888,7 @@ static void K_drawKartItem(void)
 	INT32 itembar = 0;
 	INT32 maxl = 0; // itembar's normal highest value
 	const INT32 barlength = (r_splitscreen > 1 ? 12 : 26);
-	UINT8 localcolor = SKINCOLOR_NONE;
+	UINT16 localcolor = SKINCOLOR_NONE;
 	SINT8 colormode = TC_RAINBOW;
 	UINT8 *colmap = NULL;
 	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
@@ -1101,7 +1101,7 @@ static void K_drawKartItem(void)
 			switch (stplyr->karthud[khud_itemblinkmode])
 			{
 				case 2:
-					localcolor = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+					localcolor = K_RainbowColor(leveltime);
 					break;
 				case 1:
 					localcolor = SKINCOLOR_RED;
@@ -2811,7 +2811,7 @@ static void K_drawKartMinimap(void)
 			const INT32 prevsplitflags = splitflags;
 			splitflags &= ~V_HUDTRANSHALF;
 			splitflags |= V_HUDTRANS;
-			colormap = R_GetTranslationColormap(TC_RAINBOW, (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1))), GTC_CACHE);
+			colormap = R_GetTranslationColormap(TC_RAINBOW, K_RainbowColor(leveltime), GTC_CACHE);
 			K_drawKartMinimapIcon(battleovertime.x, battleovertime.y, x, y, splitflags, kp_itemminimap, colormap, AutomapPic);
 			splitflags = prevsplitflags;
 		}

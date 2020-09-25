@@ -6436,7 +6436,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else if (mobj->fuse <= 32)
 			mobj->color = SKINCOLOR_SAPPHIRE;
 		else if (mobj->fuse > 32)
-			mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+			mobj->color = K_RainbowColor(
+				(SKINCOLOR_PURPLE - SKINCOLOR_PINK) // Smoothly transition into the other state
+				+ ((mobj->fuse - 32) * 2) // Make the color flashing slow down while it runs out
+			); 
 
 		switch (mobj->extravalue1)
 		{
@@ -7686,7 +7689,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (mobj->flags2 & MF2_AMBUSH)
 		{
 			mobj->colorized = true;
-			mobj->color = (1 + (leveltime % (MAXSKINCOLORS-1)));
+			mobj->color = K_RainbowColor(leveltime);
 			mobj->frame |= FF_FULLBRIGHT;
 		}
 		else
@@ -8136,7 +8139,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_RANDOMITEM:
 		if (gametype == GT_BATTLE && mobj->threshold == 70)
 		{
-			mobj->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+			mobj->color = K_RainbowColor(leveltime);
 			mobj->colorized = true;
 
 			if (battleovertime.enabled)
