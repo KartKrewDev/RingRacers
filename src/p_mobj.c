@@ -2174,30 +2174,14 @@ boolean P_ZMovement(mobj_t *mo)
 
 	if (!mo->player && P_CheckDeathPitCollide(mo))
 	{
-		switch (mo->type)
+		if (mo->flags & MF_ENEMY || mo->flags & MF_BOSS || mo->type == MT_MINECART)
 		{
-			case MT_GHOST:
-			case MT_METALSONIC_RACE:
-			case MT_EXPLODE:
-			case MT_BOSSEXPLODE:
-			case MT_SONIC3KBOSSEXPLODE:
-				break;
-			default:
-				if (mo->flags & MF_ENEMY || mo->flags & MF_BOSS || mo->type == MT_MINECART)
-				{
-					// Kill enemies, bosses and minecarts that fall into death pits.
-					if (mo->health)
-					{
-						P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
-					}
-					return false;
-				}
-				else
-				{
-					P_RemoveMobj(mo);
-					return false;
-				}
-				break;
+			// Kill enemies, bosses and minecarts that fall into death pits.
+			if (mo->health)
+			{
+				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+			}
+			return false;
 		}
 	}
 
@@ -2795,12 +2779,6 @@ boolean P_SceneryZMovement(mobj_t *mo)
 			}
 		default:
 			break;
-	}
-
-	if (P_CheckDeathPitCollide(mo))
-	{
-		P_RemoveMobj(mo);
-		return false;
 	}
 
 	// clip movement
