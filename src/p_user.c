@@ -1842,7 +1842,6 @@ static void P_DoBubbleBreath(player_t *player)
 //#define OLD_MOVEMENT_CODE 1
 static void P_3dMovement(player_t *player)
 {
-	ticcmd_t *cmd;
 	angle_t movepushangle; // Analog
 	fixed_t movepushforward = 0;
 	angle_t dangle; // replaces old quadrants bits
@@ -1854,8 +1853,6 @@ static void P_3dMovement(player_t *player)
 
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
-
-	cmd = &player->cmd;
 
 	if (player->kartstuff[k_drift] != 0)
 		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
@@ -1919,7 +1916,7 @@ static void P_3dMovement(player_t *player)
 	// SRB2Kart: pogo spring and speed bumps are supposed to control like you're on the ground
 	onground = (P_IsObjectOnGround(player->mo) || (player->kartstuff[k_pogospring]));
 
-	player->aiming = cmd->aiming<<FRACBITS;
+	K_AdjustPlayerFriction(player);
 
 	// Forward movement
 	if (!P_PlayerInPain(player))
@@ -1934,10 +1931,12 @@ static void P_3dMovement(player_t *player)
 			totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 			totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
 		}
-		else
-		{
-			K_MomentumToFacing(player);
-		}
+	}
+
+	if ((!P_PlayerInPain(player) && !onground)
+	|| (K_PlayerUsesBotMovement(player) == true))
+	{
+		K_MomentumToFacing(player);
 	}
 
 	if ((totalthrust.x || totalthrust.y)
@@ -1955,11 +1954,6 @@ static void P_3dMovement(player_t *player)
 				P_QuantizeMomentumToSlope(&totalthrust, player->mo->standingslope);
 			}
 		}
-	}
-
-	if (K_PlayerUsesBotMovement(player))
-	{
-		K_MomentumToFacing(player);
 	}
 
 	player->mo->momx += totalthrust.x;
@@ -2049,7 +2043,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 	player->angleturn += angleChange;
 	P_SetLocalAngle(player, P_GetLocalAngle(player) + angleChange);
 
-	if (!cv_allowmlook.value)
+	if (!cv_allowmlook.value || player->spectator == false)
 	{
 		player->aiming = 0;
 	}
@@ -2086,10 +2080,6 @@ static void P_SpectatorMovement(player_t *player)
 		player->mo->z = player->mo->ceilingz - player->mo->height;
 	if (player->mo->z < player->mo->floorz)
 		player->mo->z = player->mo->floorz;
-
-	// Aiming needed for SEENAMES, etc.
-	// We may not need to fire as a spectator, but this is still handy!
-	player->aiming = cmd->aiming<<FRACBITS;
 
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 	if (cmd->forwardmove != 0)

@@ -6248,7 +6248,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	}
 
 	p_maxspeed = K_GetKartSpeed(player, false);
-	p_speed = min(player->speed, (p_maxspeed * 2));
+	p_speed = min(FixedHypot(player->mo->momx, player->mo->momy), (p_maxspeed * 2));
 	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (K_PlayerUsesBotMovement(player))
@@ -6782,6 +6782,81 @@ static void K_KartSpindash(player_t *player)
 	{
 		if (leveltime % 4 == 0)
 			S_StartSound(player->mo, sfx_kc2b);
+	}
+}
+
+//
+// K_AdjustPlayerFriction
+//
+void K_AdjustPlayerFriction(player_t *player)
+{
+	fixed_t prevfriction = player->mo->friction;
+
+	if (P_IsObjectOnGround(player->mo) == false)
+	{
+		return;
+	}
+
+	// Reduce friction after hitting a horizontal spring
+	if (player->kartstuff[k_tiregrease])
+	{
+		player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->kartstuff[k_tiregrease];
+	}
+
+	/*
+	if (K_PlayerEBrake(player) == true)
+	{
+		player->mo->friction -= 1024;
+	}
+	else if (player->speed > 0 && cmd->forwardmove < 0)
+	{
+		player->mo->friction -= 512;
+	}
+	*/
+
+	// Karma ice physics
+	if (gametype == GT_BATTLE && player->kartstuff[k_bumper] <= 0)
+	{
+		player->mo->friction += 1228;
+	}
+
+	// Water gets ice physics too
+	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	{
+		player->mo->friction += 614;
+	}
+
+	// Wipeout slowdown
+	if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
+	{
+		if (player->kartstuff[k_offroad])
+			player->mo->friction -= 4912;
+		if (player->kartstuff[k_wipeoutslow] == 1)
+			player->mo->friction -= 9824;
+	}
+
+	// Cap between intended values
+	if (player->mo->friction > FRACUNIT)
+		player->mo->friction = FRACUNIT;
+	if (player->mo->friction < 0)
+		player->mo->friction = 0;
+
+	// Friction was changed, so we must recalculate movefactor
+	if (player->mo->friction != prevfriction)
+	{
+		player->mo->movefactor = FixedDiv(ORIG_FRICTION, player->mo->friction);
+
+		if (player->mo->movefactor < FRACUNIT)
+			player->mo->movefactor = 19*player->mo->movefactor - 18*FRACUNIT;
+		else
+			player->mo->movefactor = FRACUNIT;
+	}
+
+	// Don't go too far above your top speed when rubberbanding
+	// Down here, because we do NOT want to modify movefactor
+	if (K_PlayerUsesBotMovement(player))
+	{
+		player->mo->friction = K_BotFrictionRubberband(player, player->mo->friction);
 	}
 }
 
@@ -7467,66 +7542,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 
 	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
-
-	if (onground)
-	{
-		fixed_t prevfriction = player->mo->friction;
-
-		// Reduce friction after hitting a horizontal spring
-		if (player->kartstuff[k_tiregrease])
-			player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->kartstuff[k_tiregrease];
-
-		/*
-		if (K_PlayerEBrake(player) == true)
-			player->mo->friction -= 1024;
-		else if (player->speed > 0 && cmd->forwardmove < 0)
-			player->mo->friction -= 512;
-		*/
-
-		// Karma ice physics
-		if (gametype == GT_BATTLE && player->kartstuff[k_bumper] <= 0)
-			player->mo->friction += 1228;
-
-		if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
-			player->mo->friction += 614;
-
-		// Wipeout slowdown
-		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
-		{
-			if (player->kartstuff[k_offroad])
-				player->mo->friction -= 4912;
-			if (player->kartstuff[k_wipeoutslow] == 1)
-				player->mo->friction -= 9824;
-		}
-
-		// Cap between intended values
-		if (player->mo->friction > FRACUNIT)
-			player->mo->friction = FRACUNIT;
-		if (player->mo->friction < 0)
-			player->mo->friction = 0;
-
-		// Friction was changed, so we must recalculate movefactor
-		if (player->mo->friction != prevfriction)
-		{
-			player->mo->movefactor = FixedDiv(ORIG_FRICTION, player->mo->friction);
-
-			if (player->mo->movefactor < FRACUNIT)
-				player->mo->movefactor = 19*player->mo->movefactor - 18*FRACUNIT;
-			else
-				player->mo->movefactor = FRACUNIT;
-
-			if (player->mo->movefactor < 32)
-				player->mo->movefactor = 32;
-		}
-
-		// Don't go too far above your top speed when rubberbanding
-		// Down here, because we do NOT want to modify movefactor
-		if (K_PlayerUsesBotMovement(player))
-		{
-			player->mo->friction = K_BotFrictionRubberband(player, player->mo->friction);
-		}
-	}
-
 	K_KartSpindash(player);
 
 	// Squishing

@@ -1291,8 +1291,16 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 		}
 		else
 		{
-			mo->momx = FixedMul(mo->momx, mo->friction);
-			mo->momy = FixedMul(mo->momy, mo->friction);
+			if (oldx == mo->x && oldy == mo->y)
+			{
+				mo->momx = FixedMul(mo->momx, ORIG_FRICTION);
+				mo->momy = FixedMul(mo->momy, ORIG_FRICTION);
+			}
+			else
+			{
+				mo->momx = FixedMul(mo->momx, mo->friction);
+				mo->momy = FixedMul(mo->momy, mo->friction);
+			}
 
 			mo->friction = ORIG_FRICTION;
 		}
@@ -1751,9 +1759,6 @@ void P_XYMovement(mobj_t *mo)
 	if (mo->flags & MF_MISSILE || mo->flags2 & MF2_SKULLFLY || mo->type == MT_SHELL || mo->type == MT_VULTURE || mo->type == MT_PENGUINATOR)
 		return; // no friction for missiles ever
 
-	if (player && player->homing) // no friction for homing
-		return;
-
 	if ((mo->type == MT_BIGTUMBLEWEED || mo->type == MT_LITTLETUMBLEWEED)
 			&& (mo->standingslope && abs(mo->standingslope->zdelta) > FRACUNIT>>8)) // Special exception for tumbleweeds on slopes
 		return;
@@ -1762,7 +1767,8 @@ void P_XYMovement(mobj_t *mo)
 	if (mo->type == MT_FLINGRING || mo->type == MT_BALLHOG || mo->type == MT_BUBBLESHIELDTRAP)
 		return;
 
-	if (player && (player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow]) && player->speed <= FixedDiv(20*mapobjectscale, player->kartstuff[k_offroad] + FRACUNIT))
+	if (player && (player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow])
+		&& player->speed <= FixedDiv(20*mapobjectscale, player->kartstuff[k_offroad] + FRACUNIT))
 		return;
 	//}
 
