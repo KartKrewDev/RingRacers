@@ -1955,8 +1955,6 @@ static int lib_sMusicInfo(lua_State *L)
 
 static int lib_sMusicExists(lua_State *L)
 {
-	boolean checkMIDI = lua_opttrueboolean(L, 2);
-	boolean checkDigi = lua_opttrueboolean(L, 3);
 #ifdef MUSICSLOT_COMPATIBILITY
 	const char *music_name;
 	UINT32 music_num;
@@ -1985,7 +1983,7 @@ static int lib_sMusicExists(lua_State *L)
 	const char *music_name = luaL_checkstring(L, 1);
 #endif
 	NOHUD
-	lua_pushboolean(L, S_MusicExists(music_name, checkMIDI, checkDigi));
+	lua_pushboolean(L, S_MusicExists(music_name));
 	return 1;
 }
 

@@ -23,15 +23,18 @@
 // mask used to indicate sound origin is player item pickup
 #define PICKUP_SOUND 0x8000
 
+//
+#define SOUND_VOLUME_RANGE 256
+#define MAX_SOUND_VOLUME 255
+
+#define DEFAULT_MUSICDEF_VOLUME ( 100 / VOLUME_DIVIDER )
+
 extern consvar_t stereoreverse;
 extern consvar_t cv_soundvolume, cv_digmusicvolume;//, cv_midimusicvolume;
 extern consvar_t cv_numChannels;
 extern consvar_t surround;
 //extern consvar_t cv_resetmusic;
 extern consvar_t cv_gamedigimusic;
-#ifndef NO_MIDI
-extern consvar_t cv_gamemidimusic;
-#endif
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
 extern consvar_t cv_playsoundifunfocused;
@@ -115,16 +118,14 @@ void S_StopSound(void *origin);
 //
 
 boolean S_DigMusicDisabled(void);
-boolean S_MIDIMusicDisabled(void);
 boolean S_MusicDisabled(void);
 boolean S_MusicPlaying(void);
 boolean S_MusicPaused(void);
 musictype_t S_MusicType(void);
 const char *S_MusicName(void);
 boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping);
-boolean S_MusicExists(const char *mname, boolean checkMIDI, boolean checkDigi);
-#define S_DigExists(a) S_MusicExists(a, false, true)
-#define S_MIDIExists(a) S_MusicExists(a, true, false)
+boolean S_MusicExists(const char *mname);
+#define S_DigExists S_MusicExists
 
 //
 // Music Effects
@@ -139,6 +140,7 @@ typedef struct musicdef_s
 	char name[7];
 	//char usage[256];
 	char source[256];
+	int volume;
 	struct musicdef_s *next;
 } musicdef_t;
 
@@ -151,6 +153,7 @@ extern struct cursongcredit
 } cursongcredit;
 
 extern musicdef_t *musicdefstart;
+extern int musicdef_volume;
 
 void S_LoadMusicDefs(UINT16 wadnum);
 void S_InitMusicDefs(void);
@@ -232,10 +235,9 @@ void S_UpdateSounds(void);
 FUNCMATH fixed_t S_CalculateSoundDistance(fixed_t px1, fixed_t py1, fixed_t pz1, fixed_t px2, fixed_t py2, fixed_t pz2);
 
 void S_SetSfxVolume(INT32 volume);
-void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume);
-#define S_SetDigMusicVolume(a) S_SetMusicVolume(a,-1)
-#define S_SetMIDIMusicVolume(a) S_SetMusicVolume(-1,a)
-#define S_InitMusicVolume() S_SetMusicVolume(-1,-1)
+void S_SetMusicVolume(INT32 digvolume);
+#define S_SetDigMusicVolume S_SetMusicVolume
+#define S_InitMusicVolume() S_SetMusicVolume(-1)
 
 INT32 S_OriginPlaying(void *origin);
 INT32 S_IdPlaying(sfxenum_t id);
