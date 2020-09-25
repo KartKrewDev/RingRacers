@@ -92,8 +92,8 @@ consvar_t stereoreverse = {"stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL, 0, N
 static consvar_t precachesound = {"precachesound", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // actual general (maximum) sound & music volume, saved into the config
-consvar_t cv_soundvolume = {"soundvolume", "100", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_digmusicvolume = {"musicvolume", "100", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_soundvolume = {"soundvolume", "50", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_digmusicvolume = {"musicvolume", "50", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 // number of channels available
 #if defined (_WIN32_WCE) || defined (DC) || defined (PSP) || defined(GP2X)
 consvar_t cv_numChannels = {"snd_channels", "8", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum, 0, NULL, NULL, 0, 0, NULL};
@@ -1154,7 +1154,7 @@ void S_UpdateSounds(void)
 void S_SetSfxVolume(INT32 volume)
 {
 	CV_SetValue(&cv_soundvolume, volume);
-	actualsfxvolume = cv_soundvolume.value; // check for change of var
+	actualsfxvolume = cv_soundvolume.value * USER_VOLUME_SCALE;
 
 #ifdef HW3SOUND
 	hws_mode == HWS_DEFAULT_MODE ? I_SetSfxVolume(volume&0x1F) : HW3S_SetSfxVolume(volume&0x1F);
@@ -2123,7 +2123,7 @@ void S_SetMusicVolume(INT32 digvolume)
 		digvolume = cv_digmusicvolume.value;
 
 	CV_SetValue(&cv_digmusicvolume, digvolume);
-	actualdigmusicvolume = cv_digmusicvolume.value;   //check for change of var
+	actualdigmusicvolume = cv_digmusicvolume.value * USER_VOLUME_SCALE;
 
 #ifdef DJGPPDOS
 	digvolume = 31;
