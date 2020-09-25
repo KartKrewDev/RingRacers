@@ -229,10 +229,6 @@ void SplitScreen_OnChange(void)
 }
 static void Fov_OnChange(void)
 {
-	// Shouldn't be needed with render parity?
-	//if ((netgame || multiplayer) && !cv_debug && cv_fov.value != 90*FRACUNIT)
-	//	CV_Set(&cv_fov, cv_fov.defaultvalue);
-
 	R_SetViewSize();
 }
 

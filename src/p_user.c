@@ -480,8 +480,12 @@ boolean P_PlayerInPain(player_t *player)
 void P_ResetPlayer(player_t *player)
 {
 	//player->pflags &= ~(PF_);
+
 	player->powers[pw_carry] = CR_NONE;
 	player->onconveyor = 0;
+
+	player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
+	player->kartstuff[k_pogospring] = 0;
 }
 
 //
@@ -2352,10 +2356,7 @@ void P_MovePlayer(player_t *player)
 		if ((netgame || multiplayer) && player->spectator)
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_SPECTATOR); // Respawn crushed spectators
 		else
-		{
-			K_SquishPlayer(player, NULL, NULL); // SRB2kart - we don't kill when squished, we squish when squished.
-			// P_DamageMobj(player->mo, NULL, NULL, 1, DMG_CRUSHED);
-		}
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_CRUSHED);
 
 		if (player->playerstate == PST_DEAD)
 			return;
@@ -3778,7 +3779,7 @@ void P_DoTimeOver(player_t *player)
 	if (player->mo)
 	{
 		S_StopSound(player->mo);
-		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
+		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
 	P_EndingMusic(player);

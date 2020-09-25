@@ -86,11 +86,11 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
-	void K_DoIngameRespawn(player_t *player)
+	void K_DoIngameRespawn(player_t *player, boolean fromTheDead)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_DoIngameRespawn(player_t *player)
+void K_DoIngameRespawn(player_t *player, boolean fromTheDead)
 {
 	if (!player->mo || P_MobjWasRemoved(player->mo))
 	{
@@ -125,7 +125,10 @@ void K_DoIngameRespawn(player_t *player)
 	if (player->respawn.wp != NULL && leveltime >= starttime)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
-		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
+		if (fromTheDead == true)
+			player->respawn.distanceleft = 0;
+		else
+			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
 		K_RespawnAtWaypoint(player, player->respawn.wp);
 	}
 	else
@@ -673,37 +676,6 @@ static void K_HandleDropDash(player_t *player)
 
 		//P_PlayRinglossSound(player->mo);
 		P_PlayerRingBurst(player, 3);
-
-		if (gametype == GT_BATTLE)
-		{
-			if (player->kartstuff[k_bumper] > 0)
-			{
-				if (player->kartstuff[k_bumper] == 1)
-				{
-					mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX); // Player hitbox is too small!!
-					P_SetTarget(&karmahitbox->target, player->mo);
-					karmahitbox->destscale = player->mo->scale;
-					P_SetScale(karmahitbox, player->mo->scale);
-					CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
-				}
-				player->kartstuff[k_bumper]--;
-				if (K_IsPlayerWanted(player))
-					K_CalculateBattleWanted();
-			}
-
-			if (!player->kartstuff[k_bumper])
-			{
-				player->kartstuff[k_comebacktimer] = comebacktime;
-				if (player->kartstuff[k_comebackmode] == 2)
-				{
-					mobj_t *poof = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EXPLODE);
-					S_StartSound(poof, mobjinfo[MT_KARMAHITBOX].seesound);
-					player->kartstuff[k_comebackmode] = 0;
-				}
-			}
-
-			K_CheckBumpers();
-		}
 
 		player->respawn.state = RESPAWNST_NONE;
 	}

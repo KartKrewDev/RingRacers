@@ -2310,7 +2310,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
 	{
-		K_DoIngameRespawn(p);
+		K_DoIngameRespawn(p, true);
 	}
 }
 
@@ -2373,7 +2373,7 @@ void G_SpawnPlayer(INT32 playernum)
 
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 {
-	if (players[playernum].starpostnum)
+	if (leveltime > starttime)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));

@@ -469,6 +469,7 @@ typedef struct BasicFF_s
 #define DMG_DEATHPIT   0x81
 #define DMG_CRUSHED    0x82
 #define DMG_SPECTATOR  0x83
+#define DMG_TIMEOVER   0x84
 // Masks
 #define DMG_STEAL        0x20 // Flag - can steal bumpers, will only deal damage to players, and will not deal damage outside Battle Mode.
 #define DMG_CANTHURTSELF 0x40 // Flag - cannot hurt your self or your team

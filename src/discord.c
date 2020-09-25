@@ -500,7 +500,7 @@ void DRPC_UpdatePresence(void)
 	// This way, we can use the invite feature in-dev, but not have snoopers seeing any potential secrets! :P
 	discordPresence.largeImageKey = "miscdevelop";
 	discordPresence.largeImageText = "No peeking!";
-	discordPresence.state = "Testing the game";
+	discordPresence.state = "Development EXE";
 
 	DRPC_EmptyRequests();
 	Discord_UpdatePresence(&discordPresence);

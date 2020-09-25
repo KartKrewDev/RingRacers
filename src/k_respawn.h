@@ -39,19 +39,20 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip);
 
 
 /*--------------------------------------------------
-	void K_DoIngameRespawn(player_t *player);
+	void K_DoIngameRespawn(player_t *player, boolean fromTheDead);
 
 		Starts the respawning animation for the specified player,
 		updating their respawn variables in preparation.
 
 	Input Arguments:-
 		player - Player to preform this for.
+		fromTheDead - Doesn't set the distance variable. If respawning from dying, then this should be true.
 
 	Return:-
 		None
 --------------------------------------------------*/
 
-void K_DoIngameRespawn(player_t *player);
+void K_DoIngameRespawn(player_t *player, boolean fromTheDead);
 
 
 /*--------------------------------------------------

@@ -1992,7 +1992,7 @@ static void K_HandleLapIncrement(player_t *player)
 		if (leveltime < starttime)
 		{
 			// Will fault the player
-			K_DoIngameRespawn(player);
+			K_DoIngameRespawn(player, false);
 		}
 		else if ((player->starpostnum == numstarposts) || (player->laps == 0))
 		{
@@ -4449,10 +4449,10 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 6: // Death Pit (Camera Mod)
 		case 7: // Death Pit (No Camera Mod)
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-				K_DoIngameRespawn(player); // DMG_DEATHPIT eventually
+				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_DEATHPIT);
 			break;
 		case 8: // Instant Kill
-			K_DoIngameRespawn(player); // DMG_INSTAKILL eventually
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 			break;
 		case 9: // Ring Drainer (Floor Touch)
 		case 10: // Ring Drainer (No Floor Touch)

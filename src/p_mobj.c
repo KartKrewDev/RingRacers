@@ -10314,7 +10314,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj_t *mobj = p->mo;
 	I_Assert(mobj != NULL);
 
-	K_DoIngameRespawn(p);
+	K_DoIngameRespawn(p, true);
 
 	P_UnsetThingPosition(mobj);
 	mobj->x = p->respawn.pointx;
