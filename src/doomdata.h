@@ -215,4 +215,11 @@ typedef struct
 
 #define NUMMAPS 1035
 
+/* slope thing types */
+enum
+{
+	FLOOR_SLOPE_THING   = 777,
+	CEILING_SLOPE_THING = 778,
+};
+
 #endif // __DOOMDATA__

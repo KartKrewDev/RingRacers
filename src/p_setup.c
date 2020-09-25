@@ -3206,18 +3206,23 @@ boolean P_SetupLevel(boolean skipprecip)
 	// anything that P_ResetDynamicSlopes/P_LoadThings needs to know
 	P_InitSpecials();
 
+	// set up world state
+	// jart: needs to be done here so anchored slopes know the attached list
+	P_SpawnSpecials(fromnetsave);
+
 	P_ResetDynamicSlopes();
 
 	P_LoadThings();
+
+	P_RaiseThings();
+
+	P_SpawnSpecialsThatRequireObjects();
 
 	P_SpawnSecretItems(loademblems);
 
 	for (numcoopstarts = 0; numcoopstarts < MAXPLAYERS; numcoopstarts++)
 		if (!playerstarts[numcoopstarts])
 			break;
-
-	// set up world state
-	P_SpawnSpecials(fromnetsave);
 
 	K_AdjustWaypointsParameters();
 
