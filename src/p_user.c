@@ -4177,13 +4177,27 @@ Quaketilt (player_t *player)
 	INT32 delta = (INT32)( player->mo->angle - moma );
 	fixed_t speed;
 
+	boolean sliptiding =
+		(
+				player->kartstuff[k_aizdriftstrat] != 0 &&
+				player->kartstuff[k_drift]         == 0
+		);
+
 	// Hi! I'm "not a math guy"!
 	if (abs(delta) > ANGLE_90)
 		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
 	if (P_IsObjectOnGround(player->mo))
 	{
-		tilt = ANGLE_11hh/2;
-		lowb = 15*FRACUNIT;
+		if (sliptiding)
+		{
+			tilt = ANGLE_45;
+			lowb = 5*FRACUNIT;
+		}
+		else
+		{
+			tilt = ANGLE_11hh/2;
+			lowb = 15*FRACUNIT;
+		}
 	}
 	else
 	{
