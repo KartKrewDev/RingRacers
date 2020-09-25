@@ -4183,6 +4183,11 @@ Quaketilt (player_t *player)
 				player->kartstuff[k_drift]         == 0
 		);
 
+	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
+	{
+		return 0;
+	}
+
 	// Hi! I'm "not a math guy"!
 	if (abs(delta) > ANGLE_90)
 		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
