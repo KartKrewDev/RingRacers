@@ -8515,7 +8515,7 @@ static const char *const MAPTHINGFLAG_LIST[4] = {
 
 static const char *const PLAYERFLAG_LIST[] = {
 	// Flip camera angle with gravity flip prefrence.
-	"FLIPCAM",
+	"FAULT",
 
 	// Cheats
 	"GODMODE",
@@ -8571,7 +8571,8 @@ static const char *const PLAYERFLAG_LIST[] = {
 	// Spill rings after falling
 	"NIGHTSFALL",
 	"DRILLING",
-	"SKIDDOWN",
+
+	"\x01", // free: 1<<26 (name un-matchable)
 
 	/*** TAG STUFF ***/
 	"TAGGED", // Player has been tagged and awaits the next round in hide and seek.

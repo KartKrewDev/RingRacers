@@ -57,7 +57,7 @@ typedef enum
 typedef enum
 {
 	// Flip camera angle with gravity flip prefrence.
-	PF_FLIPCAM = 1,
+	PF_FAULT = 1,
 
 	// Cheats
 	PF_GODMODE = 1<<1,
@@ -113,7 +113,8 @@ typedef enum
 	// Spill rings after falling
 	PF_NIGHTSFALL        = 1<<24,
 	PF_DRILLING          = 1<<25,
-	PF_SKIDDOWN          = 1<<26,
+
+	// free: 1<<26
 
 	/*** TAG STUFF ***/
 	PF_TAGGED            = 1<<27, // Player has been tagged and awaits the next round in hide and seek.

@@ -97,7 +97,8 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (player->respawn.state != RESPAWNST_NONE)
+	if (player->respawn.state != RESPAWNST_NONE &&
+			( player->pflags & PF_FAULT ) == 0)
 	{
 		return;
 	}
@@ -110,7 +111,7 @@ void K_DoIngameRespawn(player_t *player)
 	if (leveltime < starttime) // FAULT
 	{
 		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
-		player->pflags |= PF_SKIDDOWN; // cheeky pflag reuse
+		player->pflags |= PF_FAULT;
 		S_StartSound(player->mo, sfx_s3k83);
 		player->karthud[khud_fault] = 1;
 	}
@@ -191,6 +192,8 @@ void K_DoIngameRespawn(player_t *player)
 
 			player->respawn.pointx = beststart->x << FRACBITS;
 			player->respawn.pointy = beststart->y << FRACBITS;
+
+			player->mo->angle = ( beststart->angle * ANG1 );
 
 			s = R_PointInSubsector(beststart->x << FRACBITS, beststart->y << FRACBITS)->sector;
 
