@@ -6802,7 +6802,7 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 			continue;
 
 		if (mo->type == MT_PLAYER) // Players wipe out in Kart
-			K_SpinPlayer(mo->player, source, 0, inflictor, false);
+			K_SpinPlayer(mo->player, source, KSPIN_SPINOUT, inflictor, false);
 		//}
 		else
 			P_DamageMobj(mo, inflictor, source, 1000);
