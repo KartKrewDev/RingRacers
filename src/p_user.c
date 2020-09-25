@@ -286,9 +286,7 @@ boolean P_PlayerMoving(INT32 pnum)
 	return gamestate == GS_LEVEL && p->mo && p->mo->health > 0
 		&& (abs(p->rmomx) >= FixedMul(FRACUNIT/2, p->mo->scale)
 			|| abs(p->rmomy) >= FixedMul(FRACUNIT/2, p->mo->scale)
-			|| abs(p->mo->momz) >= FixedMul(FRACUNIT/2, p->mo->scale)
-			|| p->climbing || p->powers[pw_tailsfly]
-			|| (p->pflags & PF_JUMPED) || (p->pflags & PF_SPINNING));
+			|| abs(p->mo->momz) >= FixedMul(FRACUNIT/2, p->mo->scale));
 }
 
 // P_GetNextEmerald
@@ -1514,22 +1512,7 @@ static void P_CheckBustableBlocks(player_t *player)
 					if (rover->flags & FF_SHATTER)
 						goto bust;
 
-					// If it's an FF_SPINBUST, you can break it if you are in your spinning frames
-					// (either from jumping or spindashing).
-					if (rover->flags & FF_SPINBUST
-						&& (((player->pflags & PF_SPINNING) && !(player->pflags & PF_STARTDASH))
-							|| (player->pflags & PF_JUMPED && !(player->pflags & PF_NOJUMPDAMAGE))))
-						goto bust;
-
 					if (rover->flags & FF_STRONGBUST)
-						continue;
-
-					// If it's not an FF_STRONGBUST, you can break if you are spinning (and not jumping)
-					// or you are super
-					// or you are recording for Metal Sonic
-					if (!((player->pflags & PF_SPINNING) && !(player->pflags & PF_JUMPED))
-						&& !(player->powers[pw_super])
-						&& !metalrecording)
 						continue;
 
 				bust:

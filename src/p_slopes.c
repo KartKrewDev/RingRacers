@@ -934,8 +934,8 @@ void P_ButteredSlope(mobj_t *mo)
 			return;
 
 		// Changed in kart to only not apply physics on very slight slopes (I think about 4 degree angles)
-		if (abs(mo->standingslope->zdelta) < FRACUNIT/21 && !(mo->player->pflags & PF_SPINNING))
-			return; // Don't slide on non-steep slopes unless spinning
+		if (abs(mo->standingslope->zdelta) < FRACUNIT/21)
+			return; // Don't slide on non-steep slopes
 
 		// This only means you can be stopped on slopes that aren't steeper than 45 degrees
 		if (abs(mo->standingslope->zdelta) < FRACUNIT/2 && !(mo->player->rmomx || mo->player->rmomy))

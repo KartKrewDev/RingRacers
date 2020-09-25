@@ -1277,7 +1277,7 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 	player = mo->player;
 	if (player) // valid only if player avatar
 	{
-		if (FixedHypot(player->rmomx, player->rmomy) < FixedMul(STOPSPEED, mo->scale) && K_GetForwardMove(player) == 0
+		if (FixedHypot(player->rmomx, player->rmomy) < FixedMul(STOPSPEED, mo->scale) && (K_GetForwardMove(player) == 0)
 			&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) /*&& (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2)*/))
 		{
 			// if in a walking frame, stop moving
@@ -1289,7 +1289,7 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 			mo->momx = player->cmomx;
 			mo->momy = player->cmomy;
 		}
-		else if (!(mo->eflags & MFE_SPRUNG))
+		else
 		{
 			mo->momx = FixedMul(mo->momx, mo->friction);
 			mo->momy = FixedMul(mo->momy, mo->friction);
@@ -1628,8 +1628,6 @@ void P_XYMovement(mobj_t *mo)
 						if (player)
 						{
 							player->powers[pw_justlaunched] = 2;
-							if (player->pflags & PF_SPINNING)
-								player->pflags |= PF_THOKKED;
 						}
 					}
 				}
