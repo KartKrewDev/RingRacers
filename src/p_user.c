@@ -4208,12 +4208,22 @@ DoABarrelRoll (player_t *player)
 
 	if (player->mo->standingslope)
 	{
-		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
-		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT),
-				player->mo->standingslope->zangle));
+		slope = player->mo->standingslope->zangle;
 	}
 	else
+	{
 		slope = 0;
+	}
+
+	if (abs((INT32)slope) > ANGLE_11hh)
+	{
+		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
+		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT), slope));
+	}
+	else
+	{
+		slope = 0;
+	}
 
 	slope -= Quaketilt(player);
 
