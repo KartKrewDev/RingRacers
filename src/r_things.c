@@ -1078,10 +1078,8 @@ static void R_SplitSprite(vissprite_t *sprite)
 		if (!(sector->lightlist[i].caster->flags & FF_CUTSPRITES))
 			continue;
 
-#ifdef ESLOPE
 		if (sector->lightlist[i].slope)
 			testheight = P_GetZAt(sector->lightlist[i].slope, sprite->gx, sprite->gy);
-#endif
 
 		if (testheight >= sprite->gzt)
 			continue;
@@ -1742,7 +1740,6 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (thing->subsector->sector->numlights)
 	{
 		INT32 lightnum;
-#ifdef ESLOPE // R_GetPlaneLight won't work on sloped lights!
 		light = thing->subsector->sector->numlights - 1;
 
 		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
@@ -1753,9 +1750,6 @@ static void R_ProjectSprite(mobj_t *thing)
 				break;
 			}
 		}
-#else
-		light = R_GetPlaneLight(thing->subsector->sector, gzt, false);
-#endif
 		lightnum = (*thing->subsector->sector->lightlist[light].lightlevel >> LIGHTSEGSHIFT);
 
 		if (lightnum < 0)
@@ -2283,7 +2277,6 @@ static void R_CreateDrawNodes(void)
 				entry->ffloor = ds->thicksides[i];
 			}
 		}
-#ifdef POLYOBJECTS_PLANES
 		// Check for a polyobject plane, but only if this is a front line
 		if (ds->curline->polyseg && ds->curline->polyseg->visplane && !ds->curline->side) {
 			plane = ds->curline->polyseg->visplane;
@@ -2299,7 +2292,6 @@ static void R_CreateDrawNodes(void)
 			}
 			ds->curline->polyseg->visplane = NULL;
 		}
-#endif
 		if (ds->maskedtexturecol)
 		{
 			entry = R_CreateDrawNode(&nodehead);
@@ -2344,7 +2336,6 @@ static void R_CreateDrawNodes(void)
 		}
 	}
 
-#ifdef POLYOBJECTS_PLANES
 	// find all the remaining polyobject planes and add them on the end of the list
 	// probably this is a terrible idea if we wanted them to be sorted properly
 	// but it works getting them in for now
@@ -2365,7 +2356,6 @@ static void R_CreateDrawNodes(void)
 		// note: no seg is set, for what should be obvious reasons
 		PolyObjects[i].visplane = NULL;
 	}
-#endif
 
 	if (visspritecount == 0)
 		return;
@@ -2388,13 +2378,11 @@ static void R_CreateDrawNodes(void)
 				if (rover->szt > r2->plane->low || rover->sz < r2->plane->high)
 					continue;
 
-#ifdef ESLOPE
 				// Effective height may be different for each comparison in the case of slopes
 				if (r2->plane->slope) {
 					planeobjectz = P_GetZAt(r2->plane->slope, rover->gx, rover->gy);
 					planecameraz = P_GetZAt(r2->plane->slope, viewx, viewy);
 				} else
-#endif
 					planeobjectz = planecameraz = r2->plane->height;
 
 				if (rover->mobjflags & MF_NOCLIPHEIGHT)
@@ -2453,20 +2441,16 @@ static void R_CreateDrawNodes(void)
 				if (scale <= rover->sortscale)
 					continue;
 
-#ifdef ESLOPE
 				if (*r2->ffloor->t_slope) {
 					topplaneobjectz = P_GetZAt(*r2->ffloor->t_slope, rover->gx, rover->gy);
 					topplanecameraz = P_GetZAt(*r2->ffloor->t_slope, viewx, viewy);
 				} else
-#endif
 					topplaneobjectz = topplanecameraz = *r2->ffloor->topheight;
 
-#ifdef ESLOPE
 				if (*r2->ffloor->b_slope) {
 					botplaneobjectz = P_GetZAt(*r2->ffloor->b_slope, rover->gx, rover->gy);
 					botplanecameraz = P_GetZAt(*r2->ffloor->b_slope, viewx, viewy);
 				} else
-#endif
 					botplaneobjectz = botplanecameraz = *r2->ffloor->bottomheight;
 
 				if ((topplanecameraz > viewz && botplanecameraz < viewz) ||
@@ -3138,7 +3122,7 @@ void R_AddSkins(UINT16 wadnum)
 
 		if (numskins >= MAXSKINS)
 		{
-			CONS_Debug(DBG_RENDER, "ignored skin (%d skins maximum)\n", MAXSKINS);
+			CONS_Alert(CONS_WARNING, M_GetText("Unable to add skin, too many characters are loaded (%d maximum)\n"), MAXSKINS);
 			continue; // so we know how many skins couldn't be added
 		}
 		buf = W_CacheLumpNumPwad(wadnum, lump, PU_CACHE);

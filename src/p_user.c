@@ -1799,13 +1799,8 @@ boolean P_InSpaceSector(mobj_t *mo) // Returns true if you are in space
 
 			if (GETSECSPECIAL(rover->master->frontsector->special, 1) != SPACESPECIAL)
 				continue;
-#ifdef ESLOPE
 			topheight = *rover->t_slope ? P_GetZAt(*rover->t_slope, mo->x, mo->y) : *rover->topheight;
 			bottomheight = *rover->b_slope ? P_GetZAt(*rover->b_slope, mo->x, mo->y) : *rover->bottomheight;
-#else
-			topheight = *rover->topheight;
-			bottomheight = *rover->bottomheight;
-#endif
 
 			if (mo->z + (mo->height/2) > topheight)
 				continue;
@@ -1839,13 +1834,8 @@ boolean P_InQuicksand(mobj_t *mo) // Returns true if you are in quicksand
 			if (!(rover->flags & FF_QUICKSAND))
 				continue;
 
-#ifdef ESLOPE
 			topheight = *rover->t_slope ? P_GetZAt(*rover->t_slope, mo->x, mo->y) : *rover->topheight;
 			bottomheight = *rover->b_slope ? P_GetZAt(*rover->b_slope, mo->x, mo->y) : *rover->bottomheight;
-#else
-			topheight = *rover->topheight;
-			bottomheight = *rover->bottomheight;
-#endif
 
 			if (mo->z + flipoffset > topheight)
 				continue;
@@ -1984,9 +1974,7 @@ static void P_CheckBouncySectors(player_t *player)
 	fixed_t oldx;
 	fixed_t oldy;
 	fixed_t oldz;
-#ifdef ESLOPE
 	vector3_t momentum;
-#endif
 
 	oldx = player->mo->x;
 	oldy = player->mo->y;
@@ -2041,7 +2029,6 @@ static void P_CheckBouncySectors(player_t *player)
 					{
 						fixed_t newmom;
 
-#ifdef ESLOPE
 						pslope_t *slope;
 						if (abs(oldz - topheight) < abs(oldz + player->mo->height - bottomheight)) { // Hit top
 							slope = *rover->t_slope;
@@ -2057,9 +2044,6 @@ static void P_CheckBouncySectors(player_t *player)
 							P_ReverseQuantizeMomentumToSlope(&momentum, slope);
 
 						newmom = momentum.z = -FixedMul(momentum.z,linedist)/2;
-#else
-						newmom = -FixedMul(player->mo->momz,linedist);
-#endif
 
 						if (abs(newmom) < (linedist*2))
 						{
@@ -2082,7 +2066,6 @@ static void P_CheckBouncySectors(player_t *player)
 						else if (newmom < -P_GetPlayerHeight(player)/2)
 							newmom = -P_GetPlayerHeight(player)/2;
 
-#ifdef ESLOPE
 						momentum.z = newmom*2;
 
 						if (slope)
@@ -2091,9 +2074,6 @@ static void P_CheckBouncySectors(player_t *player)
 						player->mo->momx = momentum.x;
 						player->mo->momy = momentum.y;
 						player->mo->momz = momentum.z/2;
-#else
-						player->mo->momz = newmom;
-#endif
 
 						if (player->pflags & PF_SPINNING)
 						{
@@ -2150,13 +2130,8 @@ static void P_CheckQuicksand(player_t *player)
 		if (!(rover->flags & FF_QUICKSAND))
 			continue;
 
-#ifdef ESLOPE
 		topheight = *rover->t_slope ? P_GetZAt(*rover->t_slope, player->mo->x, player->mo->y) : *rover->topheight;
 		bottomheight = *rover->b_slope ? P_GetZAt(*rover->b_slope, player->mo->x, player->mo->y) : *rover->bottomheight;
-#else
-		topheight = *rover->topheight;
-		bottomheight = *rover->bottomheight;
-#endif
 
 		if (topheight >= player->mo->z && bottomheight < player->mo->z + player->mo->height)
 		{
@@ -2524,15 +2499,10 @@ static void P_DoClimbing(player_t *player)  // SRB2kart - unused
 			floorclimb = true;
 		else
 		{
-#ifdef ESLOPE
 			floorheight = glidesector->sector->f_slope ? P_GetZAt(glidesector->sector->f_slope, player->mo->x, player->mo->y)
 													   : glidesector->sector->floorheight;
 			ceilingheight = glidesector->sector->c_slope ? P_GetZAt(glidesector->sector->c_slope, player->mo->x, player->mo->y)
 														 : glidesector->sector->ceilingheight;
-#else
-			floorheight = glidesector->sector->floorheight;
-			ceilingheight = glidesector->sector->ceilingheight;
-#endif
 
 			if (glidesector->sector->ffloors)
 			{
@@ -2546,13 +2516,8 @@ static void P_DoClimbing(player_t *player)  // SRB2kart - unused
 
 					floorclimb = true;
 
-#ifdef ESLOPE
 					topheight = *rover->t_slope ? P_GetZAt(*rover->t_slope, player->mo->x, player->mo->y) : *rover->topheight;
 					bottomheight = *rover->b_slope ? P_GetZAt(*rover->b_slope, player->mo->x, player->mo->y) : *rover->bottomheight;
-#else
-					topheight = *rover->topheight;
-					bottomheight = *rover->bottomheight;
-#endif
 
 					// Only supports rovers that are moving like an 'elevator', not just the top or bottom.
 					if (rover->master->frontsector->floorspeed && rover->master->frontsector->ceilspeed == 42)
@@ -2593,11 +2558,7 @@ static void P_DoClimbing(player_t *player)  // SRB2kart - unused
 								if (roverbelow == rover)
 									continue;
 
-#ifdef ESLOPE
 								bottomheight2 = *roverbelow->b_slope ? P_GetZAt(*roverbelow->b_slope, player->mo->x, player->mo->y) : *roverbelow->bottomheight;
-#else
-								bottomheight2 = *roverbelow->bottomheight;
-#endif
 
 								if (bottomheight2 < topheight + FixedMul(16*FRACUNIT, player->mo->scale))
 									foundfof = true;
@@ -2643,11 +2604,7 @@ static void P_DoClimbing(player_t *player)  // SRB2kart - unused
 								if (roverbelow == rover)
 									continue;
 
-#ifdef ESLOPE
 								topheight2 = *roverbelow->t_slope ? P_GetZAt(*roverbelow->t_slope, player->mo->x, player->mo->y) : *roverbelow->topheight;
-#else
-								topheight2 = *roverbelow->topheight;
-#endif
 
 								if (topheight2 > bottomheight - FixedMul(16*FRACUNIT, player->mo->scale))
 									foundfof = true;
@@ -2702,11 +2659,7 @@ static void P_DoClimbing(player_t *player)  // SRB2kart - unused
 							if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER) || (rover->flags & FF_BUSTUP))
 								continue;
 
-#ifdef ESLOPE
 							bottomheight = *rover->b_slope ? P_GetZAt(*rover->b_slope, player->mo->x, player->mo->y) : *rover->bottomheight;
-#else
-							bottomheight = *rover->bottomheight;
-#endif
 
 							if (bottomheight < floorheight + FixedMul(16*FRACUNIT, player->mo->scale))
 							{
@@ -2747,11 +2700,7 @@ static void P_DoClimbing(player_t *player)  // SRB2kart - unused
 							if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER) || (rover->flags & FF_BUSTUP))
 								continue;
 
-#ifdef ESLOPE
 							topheight = *rover->t_slope ? P_GetZAt(*rover->t_slope, player->mo->x, player->mo->y) : *rover->topheight;
-#else
-							topheight = *rover->topheight;
-#endif
 
 							if (topheight > ceilingheight - FixedMul(16*FRACUNIT, player->mo->scale))
 							{
@@ -3120,12 +3069,10 @@ static void P_DoTeeter(player_t *player) // SRB2kart - unused.
 
 			ceilingheight = sec->ceilingheight;
 			floorheight = sec->floorheight;
-#ifdef ESLOPE
 			if (sec->c_slope)
 				ceilingheight = P_GetZAt(sec->c_slope, checkx, checky);
 			if (sec->f_slope)
 				floorheight = P_GetZAt(sec->f_slope, checkx, checky);
-#endif
 			highestceilingheight = (ceilingheight > highestceilingheight) ? ceilingheight : highestceilingheight;
 			lowestfloorheight = (floorheight < lowestfloorheight) ? floorheight : lowestfloorheight;
 
@@ -3136,13 +3083,8 @@ static void P_DoTeeter(player_t *player) // SRB2kart - unused.
 			{
 				if (!(rover->flags & FF_EXISTS)) continue;
 
-#ifdef ESLOPE
 				topheight = *rover->t_slope ? P_GetZAt(*rover->t_slope, player->mo->x, player->mo->y) : *rover->topheight;
 				bottomheight = *rover->b_slope ? P_GetZAt(*rover->b_slope, player->mo->x, player->mo->y) : *rover->bottomheight;
-#else
-				topheight = *rover->topheight;
-				bottomheight = *rover->bottomheight;
-#endif
 
 				if (P_CheckSolidLava(player->mo, rover))
 					;
@@ -3214,7 +3156,6 @@ static void P_DoTeeter(player_t *player) // SRB2kart - unused.
 		BMBOUNDFIX(xl, xh, yl, yh);
 
 	// Polyobjects
-#ifdef POLYOBJECTS
 		validcount++;
 
 		for (by = yl; by <= yh; by++)
@@ -3308,7 +3249,6 @@ static void P_DoTeeter(player_t *player) // SRB2kart - unused.
 					plink = (polymaplink_t *)(plink->link.next);
 				}
 			}
-#endif
 		if (teeter) // only bother with objects as a last resort if you were already teetering
 		{
 			mobj_t *oldtmthing = tmthing;
@@ -3601,9 +3541,7 @@ static void P_DoSpinDash(player_t *player, ticcmd_t *cmd) // SRB2kart - unused.
 		&& !P_PlayerInPain(player)) // subsequent revs
 	{
 		if ((cmd->buttons & BT_BRAKE) && player->speed < FixedMul(5<<FRACBITS, player->mo->scale) && !player->mo->momz && onground && !(player->pflags & PF_USEDOWN) && !(player->pflags & PF_SPINNING)
-#ifdef ESLOPE
 			&& (!player->mo->standingslope || (player->mo->standingslope->flags & SL_NOPHYSICS) || abs(player->mo->standingslope->zdelta) < FRACUNIT/2)
-#endif
 			)
 		{
 			player->mo->momx = player->cmomx;
@@ -3634,9 +3572,7 @@ static void P_DoSpinDash(player_t *player, ticcmd_t *cmd) // SRB2kart - unused.
 		// AKA Just go into a spin on the ground, you idiot. ;)
 		else if ((cmd->buttons & BT_BRAKE || ((twodlevel || (player->mo->flags2 & MF2_TWOD)) && cmd->forwardmove < -20))
 			&& !player->climbing && !player->mo->momz && onground && (player->speed > FixedMul(5<<FRACBITS, player->mo->scale)
-#ifdef ESLOPE
 			|| (player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) && abs(player->mo->standingslope->zdelta) >= FRACUNIT/2)
-#endif
 			) && !(player->pflags & PF_USEDOWN) && !(player->pflags & PF_SPINNING))
 		{
 			player->pflags |= PF_SPINNING;
@@ -3650,9 +3586,7 @@ static void P_DoSpinDash(player_t *player, ticcmd_t *cmd) // SRB2kart - unused.
 	// Rolling normally
 	if (onground && player->pflags & PF_SPINNING && !(player->pflags & PF_STARTDASH)
 		&& player->speed < FixedMul(5*FRACUNIT,player->mo->scale)
-#ifdef ESLOPE
 			&& (!player->mo->standingslope || (player->mo->standingslope->flags & SL_NOPHYSICS) || abs(player->mo->standingslope->zdelta) < FRACUNIT/2)
-#endif
 			)
 	{
 		if (GETSECSPECIAL(player->mo->subsector->sector->special, 4) == 7 || (player->mo->ceilingz - player->mo->floorz < P_GetPlayerHeight(player)))
@@ -3878,9 +3812,7 @@ static void P_2dMovement(player_t *player)
 	else if (player->onconveyor == 4 && !P_IsObjectOnGround(player->mo)) // Actual conveyor belt
 		player->cmomx = player->cmomy = 0;
 	else if (player->onconveyor != 2 && player->onconveyor != 4
-#ifdef POLYOBJECTS
 				&& player->onconveyor != 1
-#endif
 	)
 		player->cmomx = player->cmomy = 0;
 
@@ -4027,12 +3959,10 @@ static void P_3dMovement(player_t *player)
 	//boolean dangleflip = false; // SRB2kart - toaster
 	//fixed_t normalspd = FixedMul(player->normalspeed, player->mo->scale);
 	fixed_t oldMagnitude, newMagnitude;
-#ifdef ESLOPE
 	vector3_t totalthrust;
 
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
-#endif // ESLOPE
 
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
@@ -4056,9 +3986,7 @@ static void P_3dMovement(player_t *player)
 	else if (player->onconveyor == 4 && !P_IsObjectOnGround(player->mo)) // Actual conveyor belt
 		player->cmomx = player->cmomy = 0;
 	else if (player->onconveyor != 2 && player->onconveyor != 4
-#ifdef POLYOBJECTS
 				&& player->onconveyor != 1
-#endif
 	)
 		player->cmomx = player->cmomy = 0;
 
@@ -5580,14 +5508,12 @@ void P_ElementalFireTrail(player_t *player)
 	{
 		newx = player->mo->x + P_ReturnThrustX(player->mo, travelangle + ((i&1) ? -1 : 1)*ANGLE_135, FixedMul(24*FRACUNIT, player->mo->scale));
 		newy = player->mo->y + P_ReturnThrustY(player->mo, travelangle + ((i&1) ? -1 : 1)*ANGLE_135, FixedMul(24*FRACUNIT, player->mo->scale));
-#ifdef ESLOPE
 		if (player->mo->standingslope)
 		{
 			ground = P_GetZAt(player->mo->standingslope, newx, newy);
 			if (player->mo->eflags & MFE_VERTICALFLIP)
 				ground -= FixedMul(mobjinfo[MT_SPINFIRE].height, player->mo->scale);
 		}
-#endif
 		flame = P_SpawnMobj(newx, newy, ground, MT_SPINFIRE);
 		P_SetTarget(&flame->target, player->mo);
 		flame->angle = travelangle;
@@ -7860,7 +7786,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 			}
 		}
 
-#ifdef POLYOBJECTS
 	// Check polyobjects and see if floorz/ceilingz need to be altered
 	{
 		INT32 xl, xh, yl, yh, bx, by;
@@ -7939,7 +7864,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 				}
 			}
 	}
-#endif
 
 		// crushed camera
 		if (myceilingz <= myfloorz + thiscam->height && !resetcalled && !cameranoclip)
@@ -8228,13 +8152,8 @@ static void P_CalcPostImg(player_t *player)
 			if (!(rover->flags & FF_EXISTS))
 				continue;
 
-#ifdef ESLOPE
 			topheight = *rover->t_slope ? P_GetZAt(*rover->t_slope, player->mo->x, player->mo->y) : *rover->topheight;
 			bottomheight = *rover->b_slope ? P_GetZAt(*rover->b_slope, player->mo->x, player->mo->y) : *rover->bottomheight;
-#else
-			topheight = *rover->topheight;
-			bottomheight = *rover->bottomheight;
-#endif
 
 			if (pviewheight >= topheight || pviewheight <= bottomheight)
 				continue;
@@ -8256,13 +8175,8 @@ static void P_CalcPostImg(player_t *player)
 			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE) || rover->flags & FF_BLOCKPLAYER)
 				continue;
 
-#ifdef ESLOPE
 			topheight = *rover->t_slope ? P_GetZAt(*rover->t_slope, player->mo->x, player->mo->y) : *rover->topheight;
 			bottomheight = *rover->b_slope ? P_GetZAt(*rover->b_slope, player->mo->x, player->mo->y) : *rover->bottomheight;
-#else
-			topheight = *rover->topheight;
-			bottomheight = *rover->bottomheight;
-#endif
 
 			if (pviewheight >= topheight || pviewheight <= bottomheight)
 				continue;
@@ -8794,9 +8708,7 @@ void P_PlayerThink(player_t *player)
 	P_MobjCheckWater(player->mo);
 
 #ifndef SECTORSPECIALSAFTERTHINK
-#ifdef POLYOBJECTS
 	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
-#endif
 	player->onconveyor = 0;
 	// check special sectors : damage & secrets
 
@@ -8933,10 +8845,8 @@ void P_PlayerThink(player_t *player)
 	// it lasts for one tic.
 	player->pflags &= ~PF_FULLSTASIS;
 
-#ifdef POLYOBJECTS
 	if (player->onconveyor == 1)
 			player->cmomy = player->cmomx = 0;
-#endif
 
 	//P_DoSuperStuff(player);
 	//P_CheckSneakerAndLivesTimer(player);
@@ -9182,9 +9092,7 @@ void P_PlayerAfterThink(player_t *player)
 	cmd = &player->cmd;
 
 #ifdef SECTORSPECIALSAFTERTHINK
-#ifdef POLYOBJECTS
 	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
-#endif
 	player->onconveyor = 0;
 	// check special sectors : damage & secrets
 

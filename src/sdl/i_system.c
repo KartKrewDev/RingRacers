@@ -146,11 +146,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define DEFAULTSEARCHPATH1 "/usr/local/games"
 #define DEFAULTSEARCHPATH2 "/usr/games"
 #define DEFAULTSEARCHPATH3 "/usr/local"
-#elif defined (_WIN32)
-#define DEFAULTWADLOCATION1 "c:\\games\\srb2kart"
-#define DEFAULTWADLOCATION2 "\\games\\srb2kart"
-#define DEFAULTSEARCHPATH1 "c:\\games"
-#define DEFAULTSEARCHPATH2 "\\games"
 #endif
 
 /**	\brief WAD file to look for
@@ -3695,6 +3690,18 @@ static const char *locateWad(void)
 	strcpy(returnWadPath, ".");
 	if (isWadPathOk(returnWadPath))
 		return NULL;
+#endif
+
+
+#ifdef DEFAULTDIR
+	I_OutputMsg(",HOME/" DEFAULTDIR);
+	// examine user jart directory
+	if ((envstr = I_GetEnv("HOME")) != NULL)
+	{
+		sprintf(returnWadPath, "%s" PATHSEP DEFAULTDIR, envstr);
+		if (isWadPathOk(returnWadPath))
+			return returnWadPath;
+	}
 #endif
 
 

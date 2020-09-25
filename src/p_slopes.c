@@ -24,7 +24,9 @@
 #include "w_wad.h"
 #include "k_kart.h" // K_PlayerEBrake
 
-#ifdef ESLOPE
+static void P_BuildSlopeAnchorList (void);
+static void P_SetupAnchoredSlopes  (void);
+
 
 static pslope_t *slopelist = NULL;
 static UINT16 slopecount = 0;
@@ -628,7 +630,6 @@ void P_ResetDynamicSlopes(void) {
 	size_t i;
 #ifdef ESLOPE_TYPESHIM // Rewrite old specials to new ones, and give a console warning
 	boolean warned = false;
-#endif
 
 	slopelist = NULL;
 	slopecount = 0;
@@ -732,6 +733,14 @@ void P_ResetDynamicSlopes(void) {
 				break;
 		}
 	}
+
+	// jart
+
+	/// Build list of slope anchors--faster searching.
+	P_BuildSlopeAnchorList();
+
+	/// Setup anchor based slopes.
+	P_SetupAnchoredSlopes();
 
 	/// Copies slopes from tagged sectors via line specials.
 	/// \note Doesn't actually copy, but instead they share the same pointers.
@@ -921,6 +930,9 @@ void P_ButteredSlope(mobj_t *mo)
 
 	P_Thrust(mo, mo->standingslope->xydirection, thrust);
 }
+
+// jart
+#include "slope_anchors.c"
 
 // EOF
 #endif // #ifdef ESLOPE

@@ -1191,6 +1191,18 @@ static void readlevelheader(MYFILE *f, INT32 num)
 					sizeof(mapheaderinfo[num-1]->subttl), va("Level header %d: subtitle", num));
 				continue;
 			}
+			else if (fastcmp(word, "LEVELNAME"))
+			{
+				deh_strlcpy(mapheaderinfo[num-1]->lvlttl, word2,
+					sizeof(mapheaderinfo[num-1]->lvlttl), va("Level header %d: levelname", num));
+				continue;
+			}
+			else if (fastcmp(word, "ZONETITLE"))
+			{
+				deh_strlcpy(mapheaderinfo[num-1]->zonttl, word2,
+					sizeof(mapheaderinfo[num-1]->zonttl), va("Level header %d: zonetitle", num));
+				continue;
+			}
 
 			// Lua custom options also go above, contents may be case sensitive.
 			if (fastncmp(word, "LUA.", 4))
@@ -1253,16 +1265,6 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			}
 
 			// Strings that can be truncated
-			else if (fastcmp(word, "LEVELNAME"))
-			{
-				deh_strlcpy(mapheaderinfo[num-1]->lvlttl, word2,
-					sizeof(mapheaderinfo[num-1]->lvlttl), va("Level header %d: levelname", num));
-			}
-			else if (fastcmp(word, "ZONETITLE"))
-			{
-				deh_strlcpy(mapheaderinfo[num-1]->zonttl, word2,
-					sizeof(mapheaderinfo[num-1]->zonttl), va("Level header %d: zonetitle", num));
-			}
 			else if (fastcmp(word, "SCRIPTNAME"))
 			{
 				deh_strlcpy(mapheaderinfo[num-1]->scriptname, word2,
@@ -8389,7 +8391,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_TWINKLECARTAMBIENCE",
 	"MT_EXPLODINGBARREL",
 	"MT_MERRYHORSE",
-	"MT_ARIDTOAD",
 	"MT_BLUEFRUIT",
 	"MT_ORANGEFRUIT",
 	"MT_REDFRUIT",
@@ -8400,6 +8401,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_BOOSTPROMPT",
 	"MT_BOOSTOFF",
 	"MT_BOOSTON",
+	"MT_ARIDTOAD",
 	"MT_LIZARDMAN",
 	"MT_LIONMAN",
 
@@ -9272,13 +9274,11 @@ struct {
 	{"FF_COLORMAPONLY",FF_COLORMAPONLY},       ///< Only copy the colormap, not the lightlevel
 	{"FF_GOOWATER",FF_GOOWATER},               ///< Used with ::FF_SWIMMABLE. Makes thick bouncey goop.
 
-#ifdef ESLOPE
 	// Slope flags
 	{"SL_NOPHYSICS",SL_NOPHYSICS},      // Don't do momentum adjustment with this slope
 	{"SL_NODYNAMIC",SL_NODYNAMIC},      // Slope will never need to move during the level, so don't fuss with recalculating it
 	{"SL_ANCHORVERTEX",SL_ANCHORVERTEX},// Slope is using a Slope Vertex Thing to anchor its position
 	{"SL_VERTEXSLOPE",SL_VERTEXSLOPE},  // Slope is built from three Slope Vertex Things
-#endif
 
 	// Angles
 	{"ANG1",ANG1},
@@ -10429,6 +10429,9 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	} else if (fastcmp(word,"exitcountdown")) {
 		lua_pushinteger(L, exitcountdown);	// This name is pretty dumb. Hence why we'll prefer more descriptive names at least in Lua...
+		return 1;
+	} else if (fastcmp(word,"replayplayback")) {
+		lua_pushboolean(L, demo.playback);
 		return 1;
 	}
 	return 0;

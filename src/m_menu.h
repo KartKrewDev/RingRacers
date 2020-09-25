@@ -79,7 +79,6 @@ typedef enum
 	M_NOT_WAITING,
 
 	M_WAITING_VERSION,
-	M_WAITING_ROOMS,
 	M_WAITING_SERVERS,
 }
 M_waiting_mode_t;
@@ -175,9 +174,6 @@ typedef struct menuitem_s
 
 extern menuitem_t PlayerMenu[MAXSKINS];
 
-extern menuitem_t MP_RoomMenu[];
-extern UINT32     roomIds[NUM_LIST_ROOMS];
-
 typedef struct menu_s
 {
 	const char    *menutitlepic;
@@ -266,6 +262,8 @@ void Addons_option_Onchange(void);
 
 void M_ReplayHut(INT32 choice);
 void M_SetPlaybackMenuPointer(void);
+
+void M_RefreshPauseMenu(void);
 
 INT32 HU_GetHighlightColor(void);
 
