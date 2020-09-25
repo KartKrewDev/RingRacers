@@ -4176,6 +4176,7 @@ Quaketilt (player_t *player)
 	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
 	INT32 delta = (INT32)( player->mo->angle - moma );
 	fixed_t speed;
+
 	// Hi! I'm "not a math guy"!
 	if (abs(delta) > ANGLE_90)
 		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
@@ -4214,7 +4215,7 @@ DoABarrelRoll (player_t *player)
 	else
 		slope = 0;
 
-	slope += Quaketilt(player);
+	slope -= Quaketilt(player);
 
 	delta = (INT32)( slope - player->viewrollangle )/ 32;
 
