@@ -2054,6 +2054,32 @@ static void P_3dMovement(player_t *player)
 }
 
 //
+// P_UpdatePlayerAngle
+//
+// Updates player angleturn with cmd->turning
+//
+static void P_UpdatePlayerAngle(player_t *player)
+{
+	ticcmd_t *cmd = &player->cmd;
+	angle_t angleChange = K_GetKartTurnValue(player, cmd->turning) << TICCMD_REDUCE;
+
+	player->angleturn += angleChange;
+	P_SetLocalAngle(player, P_GetLocalAngle(player) + angleChange);
+
+	if (!cv_allowmlook.value)
+	{
+		player->aiming = 0;
+	}
+	else
+	{
+		player->aiming += (cmd->aiming << TICCMD_REDUCE);
+		player->aiming = G_ClipAimingPitch((INT32 *)&player->aiming);
+	}
+
+	player->mo->angle = player->angleturn;
+}
+
+//
 // P_SpectatorMovement
 //
 // Control for spectators in multiplayer
@@ -2062,7 +2088,7 @@ static void P_SpectatorMovement(player_t *player)
 {
 	ticcmd_t *cmd = &player->cmd;
 
-	player->mo->angle = player->angleturn;
+	P_UpdatePlayerAngle(player);
 
 	ticruned++;
 	if (!(cmd->flags & TICCMD_RECEIVED))
@@ -2133,7 +2159,7 @@ void P_MovePlayer(player_t *player)
 	// MOVEMENT CODE	//
 	//////////////////////
 
-	player->mo->angle = player->angleturn;
+	P_UpdatePlayerAngle(player);
 
 	ticruned++;
 	if (!(cmd->flags & TICCMD_RECEIVED))
@@ -2747,11 +2773,10 @@ void P_InitCameraCmd(void)
 
 static ticcmd_t *P_CameraCmd(camera_t *cam)
 {
-	INT32 laim, th, tspeed, forward, axis; //i
+	INT32 th, tspeed, forward, axis; //i
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming;
 	boolean invertmouse, lookaxis, usejoystick, kbl;
-	angle_t lang;
 	INT32 player_invert;
 	INT32 screen_invert;
 	ticcmd_t *cmd = &cameracmd;
@@ -2761,15 +2786,10 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	if (!demo.playback)
 		return cmd;	// empty cmd, no.
 
-	lang = democam.localangle;
-	laim = democam.localaiming;
 	th = democam.turnheld;
 	kbl = democam.keyboardlook;
 
 	G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
-
-	//cmd->turning = (INT16)(lang >> 16);
-	cmd->aiming = G_ClipAimingPitch(&laim);
 
 	mouseaiming = true;
 	invertmouse = cv_invertmouse.value;
@@ -2847,29 +2867,27 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	kbl = false;
 
 	// looking up/down
-	laim += (mlooky<<19)*player_invert*screen_invert;
+	cmd->aiming += (mlooky<<19)*player_invert*screen_invert;
 
 	axis = PlayerJoyAxis(1, AXISLOOK);
 
 	// spring back if not using keyboard neither mouselookin'
 	if (!kbl && !lookaxis && !mouseaiming)
-		laim = 0;
+		cmd->aiming = 0;
 
 	if (PlayerInputDown(1, gc_lookup) || (axis < 0))
 	{
-		laim += KB_LOOKSPEED * screen_invert;
+		cmd->aiming += KB_LOOKSPEED * screen_invert;
 		kbl = true;
 	}
 	else if (PlayerInputDown(1, gc_lookdown) || (axis > 0))
 	{
-		laim -= KB_LOOKSPEED * screen_invert;
+		cmd->aiming -= KB_LOOKSPEED * screen_invert;
 		kbl = true;
 	}
 
 	if (PlayerInputDown(1, gc_centerview)) // No need to put a spectator limit on this one though :V
-		laim = 0;
-
-	cmd->aiming = G_ClipAimingPitch(&laim);
+		cmd->aiming = 0;
 
 	mousex = mousey = mlooky = 0;
 
@@ -2880,10 +2898,6 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	else if (cmd->forwardmove < -MAXPLMOVE)
 		cmd->forwardmove = -MAXPLMOVE;
 
-	lang += (cmd->turning << TICCMD_REDUCE);
-
-	democam.localangle = lang;
-	democam.localaiming = laim;
 	democam.turnheld = th;
 	democam.keyboardlook = kbl;
 
@@ -2905,8 +2919,14 @@ void P_DemoCameraMovement(camera_t *cam)
 	// first off we need to get button input
 	cmd = P_CameraCmd(cam);
 
-	cam->aiming = cmd->aiming<<FRACBITS;
-	//cam->angle = cmd->angleturn << TICCMD_REDUCE;
+	cam->aiming += cmd->aiming << TICCMD_REDUCE;
+	cam->angle += cmd->turning << TICCMD_REDUCE;
+
+	democam.localangle += cmd->turning << TICCMD_REDUCE;
+	democam.localaiming += cmd->aiming << TICCMD_REDUCE;
+
+	cam->aiming = G_ClipAimingPitch((INT32 *)&cam->aiming);
+	democam.localaiming = G_ClipAimingPitch((INT32 *)&democam.localaiming);
 
 	// camera movement:
 
@@ -4234,12 +4254,6 @@ void P_PlayerThink(player_t *player)
 
 	cmd = &player->cmd;
 
-	{
-		angle_t angleChange = K_GetKartTurnValue(player, cmd->turning) << TICCMD_REDUCE;
-		player->angleturn += angleChange;
-		P_SetLocalAngle(player, P_GetLocalAngle(player) + angleChange);
-	}
-
 	// SRB2kart
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
@@ -4700,7 +4714,7 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 
 	angle = angle & ~UINT16_MAX;
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	for (i = 0; i <= splitscreen; i++)
 	{
 		if (player == &players[g_localplayers[i]])
 		{

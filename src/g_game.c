@@ -683,9 +683,9 @@ const char *G_BuildMapName(INT32 map)
   * Used whenever the player view is changed manually.
   *
   * \param aiming Pointer to the vertical angle to clip.
-  * \return Short version of the clipped angle for building a ticcmd.
+  * \return The clipped angle.
   */
-INT16 G_ClipAimingPitch(INT32 *aiming)
+INT32 G_ClipAimingPitch(INT32 *aiming)
 {
 	INT32 limitangle;
 
@@ -696,7 +696,7 @@ INT16 G_ClipAimingPitch(INT32 *aiming)
 	else if (*aiming < -limitangle)
 		*aiming = -limitangle;
 
-	return (INT16)((*aiming)>>16);
+	return (*aiming);
 }
 
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
@@ -877,7 +877,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	player_t *player = &players[g_localplayers[forplayer]];
 	camera_t *thiscam = &camera[forplayer];
-	INT32 *laim = &localaiming[forplayer];
 	INT32 *th = &turnheld[forplayer];
 	boolean *kbl = &keyboard_look[forplayer];
 	boolean *rd = &resetdown[forplayer];
@@ -908,7 +907,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// Kart, don't build a ticcmd if someone is resynching or the server is stopped too so we don't fly off course in bad conditions
 	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN) || hu_resynching)
 	{
-		cmd->aiming = G_ClipAimingPitch(laim);
 		return;
 	}
 
@@ -1074,39 +1072,33 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			*kbl = false;
 
 			// looking up/down
-			*laim += (mlooky<<19)*player_invert*screen_invert;
+			cmd->aiming += (mlooky<<19)*player_invert*screen_invert;
 		}
 
 		axis = PlayerJoyAxis(ssplayer, AXISLOOK);
 		if (analogjoystickmove && axis != 0 && lookaxis && player->spectator)
-			*laim += (axis<<16) * screen_invert;
+			cmd->aiming += (axis<<16) * screen_invert;
 
 		// spring back if not using keyboard neither mouselookin'
 		if (*kbl == false && !lookaxis && !mouseaiming)
-			*laim = 0;
+			cmd->aiming = 0;
 
 		if (player->spectator)
 		{
 			if (PlayerInputDown(ssplayer, gc_lookup) || (gamepadjoystickmove && axis < 0))
 			{
-				*laim += KB_LOOKSPEED * screen_invert;
+				cmd->aiming += KB_LOOKSPEED * screen_invert;
 				*kbl = true;
 			}
 			else if (PlayerInputDown(ssplayer, gc_lookdown) || (gamepadjoystickmove && axis > 0))
 			{
-				*laim -= KB_LOOKSPEED * screen_invert;
+				cmd->aiming -= KB_LOOKSPEED * screen_invert;
 				*kbl = true;
 			}
 		}
 
 		if (PlayerInputDown(ssplayer, gc_centerview)) // No need to put a spectator limit on this one though :V
-			*laim = 0;
-
-		// accept no mlook for network games
-		if (!cv_allowmlook.value)
-			*laim = 0;
-
-		cmd->aiming = G_ClipAimingPitch(laim);
+			cmd->aiming = 0;
 	}
 
 	mousex = mousey = mlooky = 0;

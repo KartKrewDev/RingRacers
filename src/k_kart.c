@@ -6221,8 +6221,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	fixed_t p_speed;
 	fixed_t weightadjust;
 	fixed_t turnfixed = turnvalue * FRACUNIT;
+	fixed_t currentSpeed = 0;
 
-	if ((player->mo == NULL || P_MobjWasRemoved(player->mo)))
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo))
 	{
 		return 0;
 	}
@@ -6237,8 +6238,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	// SRB2kart - no additional angle if not moving
-	if ((player->speed <= 0) // Not moving
+	currentSpeed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+
+	if ((currentSpeed <= 0) // Not moving
 	&& ((player->cmd.buttons & BT_EBRAKEMASK) != BT_EBRAKEMASK) // not e-braking
 	&& (player->respawn.state == RESPAWNST_NONE)) // Not respawning
 	{
