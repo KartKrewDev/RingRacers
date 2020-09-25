@@ -11,6 +11,24 @@
 /// \file  w_wad.c
 /// \brief Handles WAD file header, directory, lump I/O
 
+#ifdef HAVE_ZLIB
+#ifndef _MSC_VER
+#ifndef _LARGEFILE64_SOURCE
+#define _LARGEFILE64_SOURCE
+#endif
+#endif
+
+#ifndef _LFS64_LARGEFILE
+#define _LFS64_LARGEFILE
+#endif
+
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 0
+#endif
+
+#include "zlib.h"
+#endif
+
 #ifdef __GNUC__
 #include <unistd.h>
 #endif
@@ -64,24 +82,6 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 #ifndef O_BINARY
 #define O_BINARY 0
-#endif
-
-#ifdef HAVE_ZLIB
-#ifndef _MSC_VER
-#ifndef _LARGEFILE64_SOURCE
-#define _LARGEFILE64_SOURCE
-#endif
-#endif
-
-#ifndef _LFS64_LARGEFILE
-#define _LFS64_LARGEFILE
-#endif
-
-#ifndef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 0
-#endif
-
-#include "zlib.h"
 #endif
 
 
@@ -150,7 +150,10 @@ FILE *W_OpenWadFile(const char **filename, boolean useerrors)
 {
 	FILE *handle;
 
-	strncpy(filenamebuf, *filename, MAX_WADPATH);
+	if (filenamebuf != *filename) {
+		// avoid overlap
+		strncpy(filenamebuf, *filename, MAX_WADPATH);
+	}
 	filenamebuf[MAX_WADPATH - 1] = '\0';
 	*filename = filenamebuf;
 
@@ -1319,8 +1322,8 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 				{
 					size = 0;
 					zerr(zErr);
-					(void)inflateEnd(&strm);
 				}
+				(void)inflateEnd(&strm);
 			}
 			else
 			{

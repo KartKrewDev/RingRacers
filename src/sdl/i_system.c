@@ -146,11 +146,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define DEFAULTSEARCHPATH1 "/usr/local/games"
 #define DEFAULTSEARCHPATH2 "/usr/games"
 #define DEFAULTSEARCHPATH3 "/usr/local"
-#elif defined (_WIN32)
-#define DEFAULTWADLOCATION1 "c:\\games\\srb2kart"
-#define DEFAULTWADLOCATION2 "\\games\\srb2kart"
-#define DEFAULTSEARCHPATH1 "c:\\games"
-#define DEFAULTSEARCHPATH2 "\\games"
 #endif
 
 /**	\brief WAD file to look for
@@ -167,6 +162,7 @@ static char returnWadPath[256];
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
+#include "../i_threads.h"
 #include "../screen.h" //vid.WndParent
 #include "../d_net.h"
 #include "../g_game.h"
@@ -3134,6 +3130,10 @@ INT32 I_StartupSystem(void)
 	SDL_version SDLlinked;
 	SDL_VERSION(&SDLcompiled)
 	SDL_GetVersion(&SDLlinked);
+#ifdef HAVE_THREADS
+	I_start_threads();
+	I_AddExitFunc(I_stop_threads);
+#endif
 	I_StartupConsole();
 #ifdef NEWSIGNALHANDLER
 	I_Fork();
@@ -3690,6 +3690,18 @@ static const char *locateWad(void)
 	strcpy(returnWadPath, ".");
 	if (isWadPathOk(returnWadPath))
 		return NULL;
+#endif
+
+
+#ifdef DEFAULTDIR
+	I_OutputMsg(",HOME/" DEFAULTDIR);
+	// examine user jart directory
+	if ((envstr = I_GetEnv("HOME")) != NULL)
+	{
+		sprintf(returnWadPath, "%s" PATHSEP DEFAULTDIR, envstr);
+		if (isWadPathOk(returnWadPath))
+			return returnWadPath;
+	}
 #endif
 
 

@@ -30,7 +30,6 @@
 #ifdef HAVE_MIXER
     //#if !defined(DC) && !defined(_WIN32_WCE) && !defined(_XBOX) && !defined(GP2X)
     #define SOUND SOUND_MIXER
-    #define NOHS // No HW3SOUND
     #ifdef HW3SOUND
     #undef HW3SOUND
     #endif
@@ -47,7 +46,6 @@
 // Use FMOD?
 #ifdef HAVE_FMOD
     #define SOUND SOUND_FMOD
-    #define NOHS // No HW3SOUND
     #ifdef HW3SOUND
     #undef HW3SOUND
     #endif
@@ -63,10 +61,6 @@
 #define NONET
 #if !defined (HWRENDER) && !defined (NOHW)
 #define HWRENDER
-#endif
-// judgecutor: 3D sound support
-#if !defined(HW3SOUND) && !defined (NOHS)
-#define HW3SOUND
 #endif
 #endif
 
@@ -181,31 +175,12 @@ extern char logfilename[1024];
 // Please change to apply to your modification (we don't want everyone asking where your mod is on SRB2.org!).
 #define UPDATE_ALERT_STRING \
 "A new update is available for SRB2Kart.\n"\
-"Please visit mb.srb2.org to download it.\n"\
+"Please visit kartkrew.org to download it.\n"\
 "\n"\
 "You are using version: %s\n"\
 "The newest version is: %s\n"\
-"\n"\
-"This update is required for online\n"\
-"play using the Master Server.\n"\
-"You will not be able to connect to\n"\
-"the Master Server until you update to\n"\
-"the newest version of the game.\n"\
 "\n"\
 "(Press a key)\n"
-
-// The string used in the I_Error alert upon trying to host through command line parameters.
-// Generally less filled with newlines, since Windows gives you lots more room to work with.
-#define UPDATE_ALERT_STRING_CONSOLE \
-"A new update is available for SRB2Kart.\n"\
-"Please visit mb.srb2.org to download it.\n"\
-"\n"\
-"You are using version: %s\n"\
-"The newest version is: %s\n"\
-"\n"\
-"This update is required for online play using the Master Server.\n"\
-"You will not be able to connect to the Master Server\n"\
-"until you update to the newest version of the game.\n"
 
 // For future use, the codebase is the version of SRB2 that the modification is based on,
 // and should not be changed unless you have merged changes between versions of SRB2
@@ -223,7 +198,7 @@ extern char logfilename[1024];
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
 // Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
-#define MODVERSION 6
+#define MODVERSION 7
 
 // Filter consvars by version
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
@@ -601,11 +576,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Kalaron/Eternity Engine slope code (SRB2CB ported)
 #define ESLOPE
 
-#ifdef ESLOPE
 /// Backwards compatibility with SRB2CB's slope linedef types.
 ///	\note	A simple shim that prints a warning.
 #define ESLOPE_TYPESHIM
-#endif
 
 ///	Delete file while the game is running.
 ///	\note	EXTREMELY buggy, tends to crash game.
@@ -676,5 +649,11 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Divide volume of music and sounds by this much (loudest sounds on earth)
 #define VOLUME_DIVIDER 4
 #define MAX_VOLUME ( 100 * VOLUME_DIVIDER )
+
+#if defined (HAVE_CURL) && ! defined (NONET)
+#define MASTERSERVER
+#else
+#undef UPDATE_ALERT
+#endif
 
 #endif // __DOOMDEF__

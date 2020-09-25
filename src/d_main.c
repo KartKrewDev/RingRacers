@@ -50,6 +50,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "i_system.h"
+#include "i_threads.h"
 #include "i_video.h"
 #include "m_argv.h"
 #include "m_menu.h"
@@ -68,7 +69,6 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cheat.h"
 #include "y_inter.h"
 #include "p_local.h" // chasecam
-#include "mserv.h" // ms_RoomId
 #include "m_misc.h" // screenshot functionality
 #include "dehacked.h" // Dehacked list test
 #include "m_cond.h" // condition initialization
@@ -101,6 +101,10 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 #ifdef HAVE_BLUA
 #include "lua_script.h"
+#endif
+
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
 #endif
 
 // platform independant focus loss
@@ -192,6 +196,8 @@ void D_ProcessEvents(void)
 {
 	event_t *ev;
 
+	boolean eaten;
+
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
@@ -213,7 +219,17 @@ void D_ProcessEvents(void)
 		}
 
 		// Menu input
-		if (M_Responder(ev))
+#ifdef HAVE_THREADS
+		I_lock_mutex(&m_menu_mutex);
+#endif
+		{
+			eaten = M_Responder(ev);
+		}
+#ifdef HAVE_THREADS
+		I_unlock_mutex(m_menu_mutex);
+#endif
+
+		if (eaten)
 			continue; // menu ate the event
 
 		// Demo input:
@@ -222,7 +238,17 @@ void D_ProcessEvents(void)
 				continue;	// demo ate the event
 
 		// console input
-		if (CON_Responder(ev))
+#ifdef HAVE_THREADS
+		I_lock_mutex(&con_mutex);
+#endif
+		{
+			eaten = CON_Responder(ev);
+		}
+#ifdef HAVE_THREADS
+		I_unlock_mutex(con_mutex);
+#endif
+
+		if (eaten)
 			continue; // ate the event
 
 		G_Responder(ev);
@@ -511,7 +537,13 @@ static void D_Display(void)
 	if (gamestate != GS_TIMEATTACK)
 		CON_Drawer();
 
+#ifdef HAVE_THREADS
+	I_lock_mutex(&m_menu_mutex);
+#endif
 	M_Drawer(); // menu is drawn even on top of everything
+#ifdef HAVE_THREADS
+	I_unlock_mutex(m_menu_mutex);
+#endif
 	// focus lost moved to M_Drawer
 
 	//
@@ -687,6 +719,13 @@ void D_SRB2Loop(void)
 #ifdef HAVE_BLUA
 		LUA_Step();
 #endif
+
+#ifdef HAVE_DISCORDRPC
+		if (! dedicated)
+		{
+			Discord_RunCallbacks();
+		}
+#endif
 	}
 }
 
@@ -804,9 +843,23 @@ static inline void D_CleanFile(char **filearray)
 // Identify the SRB2 version, and IWAD file to use.
 // ==========================================================================
 
+static boolean AddIWAD(void)
+{
+	char * path = va(pandf,srb2path,"main.kart");
+
+	if (FIL_ReadFileOK(path))
+	{
+		D_AddFile(path, startupwadfiles);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 static void IdentifyVersion(void)
 {
-	char *mainresource;
 	const char *srb2waddir = NULL;
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
@@ -830,35 +883,20 @@ static void IdentifyVersion(void)
 #ifdef _arch_dreamcast
 			srb2waddir = "/cd";
 #else
-			srb2waddir = ".";
+			srb2waddir = srb2path;
 #endif
 		}
 	}
 
-#if defined (macintosh) && !defined (HAVE_SDL)
-	// cwd is always "/" when app is dbl-clicked
-	if (!stricmp(srb2waddir, "/"))
-		srb2waddir = I_GetWadDir();
-#endif
-	// Commercial.
-	mainresource = malloc(strlen(srb2waddir)+1+9+1);
-	if (mainresource == NULL)
-		I_Error("No more free memory to look in %s", srb2waddir);
-	if (mainresource != NULL)
-		sprintf(mainresource, pandf, srb2waddir, "main.kart");
+	// Load the IWAD
+	if (! AddIWAD())
+	{
+		I_Error("MAIN.KART not found! Expected in %s\n", srb2waddir);
+	}
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
 	configfile[sizeof configfile - 1] = '\0';
-
-	// Load the IWAD
-	if (mainresource != NULL && FIL_ReadFileOK(mainresource))
-		D_AddFile(mainresource, startupwadfiles);
-	else
-		I_Error("MAIN.KART not found! Expected in %s, ss file: %s \n", srb2waddir, mainresource);
-
-	if (mainresource)
-		free(mainresource);
 
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
@@ -1376,17 +1414,6 @@ void D_SRB2Main(void)
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
 
-	if (M_CheckParm("-room"))
-	{
-		if (!M_IsNextParm())
-			I_Error("usage: -room <room_id>\nCheck the Master Server's webpage for room ID numbers.\n");
-		ms_RoomId = atoi(M_GetNextParm());
-
-#ifdef UPDATE_ALERT
-		GetMODVersion_Console();
-#endif
-	}
-
 	// Set up splitscreen players before joining!
 	if (!dedicated && (M_CheckParm("-splitscreen") && M_IsNextParm()))
 	{
@@ -1591,6 +1618,13 @@ void D_SRB2Main(void)
 		if (!P_SetupLevel(false))
 			I_Quit(); // fail so reset game stuff
 	}
+
+#ifdef HAVE_DISCORDRPC
+	if (! dedicated)
+	{
+		DRPC_Init();
+	}
+#endif
 }
 
 const char *D_Home(void)

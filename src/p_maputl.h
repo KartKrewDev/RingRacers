@@ -56,9 +56,7 @@ boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y);
 void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_t momy);
 
 extern fixed_t opentop, openbottom, openrange, lowfloor, highceiling;
-#ifdef ESLOPE
 extern pslope_t *opentopslope, *openbottomslope;
-#endif
 
 void P_LineOpening(line_t *plinedef, mobj_t *mobj);
 
