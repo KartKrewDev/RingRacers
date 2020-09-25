@@ -10362,7 +10362,6 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_TWINKLECARTAMBIENCE",
 	"MT_EXPLODINGBARREL",
 	"MT_MERRYHORSE",
-	"MT_ARIDTOAD",
 	"MT_BLUEFRUIT",
 	"MT_ORANGEFRUIT",
 	"MT_REDFRUIT",
@@ -10373,6 +10372,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_BOOSTPROMPT",
 	"MT_BOOSTOFF",
 	"MT_BOOSTON",
+	"MT_ARIDTOAD",
 	"MT_LIZARDMAN",
 	"MT_LIONMAN",
 
@@ -12689,8 +12689,6 @@ static inline int lib_getenum(lua_State *L)
 	if (mathlib) return luaL_error(L, "constant '%s' could not be parsed.\n", word);
 
 	// DYNAMIC variables too!!
-	// Try not to add anything that would break netgames or timeattack replays here.
-	// You know, like consoleplayer, displayplayer, secondarydisplayplayer, or gametime.
 	return LUA_PushGlobals(L, word);
 }
 

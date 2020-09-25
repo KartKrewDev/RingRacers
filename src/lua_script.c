@@ -370,7 +370,11 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"exitcountdown")) {
 		lua_pushinteger(L, exitcountdown);	// This name is pretty dumb. Hence why we'll prefer more descriptive names at least in Lua...
 		return 1;
+	} else if (fastcmp(word,"replayplayback")) {
+		lua_pushboolean(L, demo.playback);
+		return 1;
 	}
+
 	return 0;
 }
 
@@ -381,6 +385,15 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		redscore = (UINT32)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "bluescore"))
 		bluescore = (UINT32)luaL_checkinteger(L, 2);
+	// SRB2Kart
+	else if (fastcmp(word,"racecountdown"))
+		racecountdown = (tic_t)luaL_checkinteger(L, 2);
+	else if (fastcmp(word,"exitcountdown"))
+		exitcountdown = (tic_t)luaL_checkinteger(L, 2);
+	else if (fastcmp(word,"indirectitemcooldown"))
+		indirectitemcooldown = (tic_t)luaL_checkinteger(L, 2);
+	else if (fastcmp(word,"hyubgone"))
+		hyubgone = (tic_t)luaL_checkinteger(L, 2);
 	else
 		return 0;
 

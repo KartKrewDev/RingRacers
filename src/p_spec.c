@@ -1081,7 +1081,6 @@ INT32 P_FindSpecialLineFromTag(INT16 special, INT16 tag, INT32 start)
 	}
 }
 
-
 // Parses arguments for parameterized polyobject door types
 static boolean PolyDoor(line_t *line)
 {
@@ -1354,7 +1353,6 @@ static boolean PolyDisplace(line_t *line)
 
 	return EV_DoPolyObjDisplace(&pdd);
 }
-
 
 // Parses arguments for parameterized polyobject rotate-by-sector-heights specials
 static boolean PolyRotDisplace(line_t *line)
@@ -5547,6 +5545,26 @@ P_RaiseTaggedThingsToFakeFloor (
 	}
 }
 
+void
+P_RaiseThings (void)
+{
+	size_t i;
+
+	for (i = 0; i < numlines; ++i)
+	{
+		switch (lines[i].special)
+		{
+			case 80: // Raise tagged things by type to this FOF
+				P_RaiseTaggedThingsToFakeFloor(
+						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
+						lines[i].tag,
+						lines[i].frontsector
+				);
+				break;
+		}
+	}
+}
+
 //
 // SPECIAL SPAWNING
 //
@@ -6931,28 +6949,19 @@ void P_SpawnSpecials(boolean fromnetsave)
 		}
 	}
 
-	/* some things have to be done after FOF spawn */
-
-	for (i = 0; i < numlines; ++i)
-	{
-		switch (lines[i].special)
-		{
-			case 80: // Raise tagged things by type to this FOF
-				P_RaiseTaggedThingsToFakeFloor(
-						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
-						lines[i].tag,
-						lines[i].frontsector
-				);
-				break;
-		}
-	}
-
 	// Allocate each list
 	for (i = 0; i < numsectors; i++)
 		if(secthinkers[i].thinkers)
 			Z_Free(secthinkers[i].thinkers);
 
 	Z_Free(secthinkers);
+}
+
+/** Fuck polyobjects
+  */
+void P_SpawnSpecialsThatRequireObjects(void)
+{
+	size_t i;
 
 	// haleyjd 02/20/06: spawn polyobjects
 	Polyobj_InitLevel();

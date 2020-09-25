@@ -43,6 +43,8 @@ void P_SetupLevelFlatAnims(void);
 // at map load
 void P_InitSpecials(void);
 void P_SpawnSpecials(boolean fromnetsave);
+void P_RaiseThings(void);
+void P_SpawnSpecialsThatRequireObjects(void);
 
 // every tic
 void P_UpdateSpecials(void);
@@ -647,5 +649,13 @@ void T_PlaneDisplace(planedisplace_t *pd);
 void P_CalcHeight(player_t *player);
 
 sector_t *P_ThingOnSpecial3DFloor(mobj_t *mo);
+
+/* line specials */
+enum
+{
+	LT_SLOPE_ANCHORS_FLOOR   = 777,
+	LT_SLOPE_ANCHORS_CEILING = 778,
+	LT_SLOPE_ANCHORS         = 779,
+};
 
 #endif

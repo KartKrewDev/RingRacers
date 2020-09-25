@@ -10464,6 +10464,7 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 		return true;
 	}
 	else if (mthing->type == 750 // Slope vertex point (formerly chaos spawn)
+		     || (mthing->type == 777 || mthing->type == 778) // Slope anchors
 		     || (mthing->type >= 600 && mthing->type <= 609) // Special placement patterns
 		     || mthing->type == 1705 || mthing->type == 1713) // Hoops
 	{

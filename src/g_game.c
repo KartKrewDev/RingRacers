@@ -58,6 +58,10 @@
 #include "k_grandprix.h"
 #include "doomstat.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
@@ -471,6 +475,7 @@ player_t *seenplayer; // player we're aiming at right now
 // now automatically allocated in D_RegisterClientCommands
 // so that it doesn't have to be updated depending on the value of MAXPLAYERS
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1];
+INT32 player_name_changes[MAXPLAYERS];
 
 // Allocation for time and nights data
 void G_AllocMainRecordData(INT16 i)
@@ -1956,6 +1961,11 @@ void G_Ticker(boolean run)
 		{
 			if (camtoggledelay[i])
 				camtoggledelay[i]--;
+		}
+
+		if (gametic % NAMECHANGERATE == 0)
+		{
+			memset(player_name_changes, 0, sizeof player_name_changes);
 		}
 	}
 }
@@ -4744,6 +4754,9 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 /* These functions handle the exitgame flag. Before, when the user

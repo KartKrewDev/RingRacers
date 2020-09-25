@@ -2123,7 +2123,7 @@ static inline void SaveDynamicSlopeThinker(const thinker_t *th, const UINT8 type
 	WRITEFIXED(save_p, ht->extent);
 
 	WRITEMEM(save_p, ht->tags, sizeof(ht->tags));
-    WRITEMEM(save_p, ht->vex, sizeof(ht->vex));
+	WRITEMEM(save_p, ht->vex, sizeof(ht->vex));
 }
 
 static inline void SavePolyrotatetThinker(const thinker_t *th, const UINT8 type)

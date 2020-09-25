@@ -3980,7 +3980,15 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// init anything that P_SpawnSlopes/P_LoadThings needs to know
 	P_InitSpecials();
 
+	// set up world state
+	// jart: needs to be done here so anchored slopes know the attached list
+	P_SpawnSpecials(fromnetsave);
+
 	P_SpawnSlopes(fromnetsave);
+
+	P_RaiseThings();
+
+	P_SpawnSpecialsThatRequireObjects();
 
 	P_SpawnMapThings(!fromnetsave);
 	skyboxmo[0] = skyboxviewpnts[0];
@@ -3990,8 +3998,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 		if (!playerstarts[numcoopstarts])
 			break;
 
-	// set up world state
-	P_SpawnSpecials(fromnetsave);
 	K_AdjustWaypointsParameters();
 
 	if (!fromnetsave) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
