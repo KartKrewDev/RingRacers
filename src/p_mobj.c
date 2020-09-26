@@ -11470,16 +11470,6 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 			mobj->flags2 |= MF2_BOSSNOTRAP;
 	}
 
-	if ((mobj->flags & MF_SPRING)
-	&& mobj->info->damage != 0
-	&& mobj->info->mass == 0)
-	{
-		// Offset sprite of horizontal springs
-		angle_t a = mobj->angle + ANGLE_180;
-		mobj->sprxoff = FixedMul(mobj->radius, FINECOSINE(a >> ANGLETOFINESHIFT));
-		mobj->spryoff = FixedMul(mobj->radius, FINESINE(a >> ANGLETOFINESHIFT));
-	}
-
 	return true;
 }
 
@@ -11554,6 +11544,16 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 
 	if (doangle)
 		mobj->angle = FixedAngle(mthing->angle << FRACBITS);
+
+	if ((mobj->flags & MF_SPRING)
+	&& mobj->info->damage != 0
+	&& mobj->info->mass == 0)
+	{
+		// Offset sprite of horizontal springs
+		angle_t a = mobj->angle + ANGLE_180;
+		mobj->sprxoff = FixedMul(mobj->radius, FINECOSINE(a >> ANGLETOFINESHIFT));
+		mobj->spryoff = FixedMul(mobj->radius, FINESINE(a >> ANGLETOFINESHIFT));
+	}
 
 	mobj->pitch = FixedAngle(mthing->pitch << FRACBITS);
 	mobj->roll = FixedAngle(mthing->roll << FRACBITS);
