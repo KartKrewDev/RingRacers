@@ -5973,8 +5973,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 	// but currently isn't.
 	(void)fromnetsave;
 
-	CONS_Printf("%d\n", sectors[11].floorheight);
-
 	// yep, we do this here - "bossdisabled" is considered an apparatus of specials.
 	bossdisabled = 0;
 	stoppedclock = false;
