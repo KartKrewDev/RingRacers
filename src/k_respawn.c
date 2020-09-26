@@ -81,16 +81,16 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 	player->respawn.pointx = waypoint->mobj->x;
 	player->respawn.pointy = waypoint->mobj->y;
 	player->respawn.pointz = waypoint->mobj->z;
-	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false;	// K_RespawnOffset wants a boolean!
+	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
 	player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
 }
 
 /*--------------------------------------------------
-	void K_DoIngameRespawn(player_t *player, boolean fromTheDead)
+	void K_DoIngameRespawn(player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_DoIngameRespawn(player_t *player, boolean fromTheDead)
+void K_DoIngameRespawn(player_t *player)
 {
 	if (!player->mo || P_MobjWasRemoved(player->mo))
 	{
@@ -117,18 +117,14 @@ void K_DoIngameRespawn(player_t *player, boolean fromTheDead)
 
 	player->kartstuff[k_ringboost] = 0;
 	player->kartstuff[k_driftboost] = 0;
-	player->kartstuff[k_drift] = 0;
-	player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+
+	P_ResetPlayer(player);
 
 	// Set up respawn position if invalid
 	if (player->respawn.wp != NULL && leveltime >= starttime)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
-		if (fromTheDead == true)
-			player->respawn.distanceleft = 0;
-		else
-			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
+		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
 		K_RespawnAtWaypoint(player, player->respawn.wp);
 	}
 	else
@@ -236,17 +232,11 @@ void K_DoIngameRespawn(player_t *player, boolean fromTheDead)
 }
 
 /*--------------------------------------------------
-	static size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
+	size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
 
-		Returns the index for the next respawn waypoint.
-
-	Input Arguments:-
-		waypoint - Waypoint to look after.
-
-	Return:-
-		An table index for waypoint_t -> nextwaypoints.
+		See header file for description.
 --------------------------------------------------*/
-static size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
+size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
 {
 	size_t           i = 0U;
 	size_t newwaypoint = SIZE_MAX;

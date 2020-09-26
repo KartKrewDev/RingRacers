@@ -1992,7 +1992,7 @@ static void K_HandleLapIncrement(player_t *player)
 		if (leveltime < starttime)
 		{
 			// Will fault the player
-			K_DoIngameRespawn(player, false);
+			K_DoIngameRespawn(player);
 		}
 		else if ((player->starpostnum == numstarposts) || (player->laps == 0))
 		{

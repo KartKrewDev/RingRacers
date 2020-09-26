@@ -1660,7 +1660,7 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 	{
 		case DMG_DEATHPIT:
 			// Respawn kill types
-			K_DoIngameRespawn(player, false);
+			K_DoIngameRespawn(player);
 			return false;
 		default:
 			// Everything else REALLY kills

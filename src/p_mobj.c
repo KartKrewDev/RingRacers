@@ -10314,7 +10314,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj_t *mobj = p->mo;
 	I_Assert(mobj != NULL);
 
-	K_DoIngameRespawn(p, true);
+	K_DoIngameRespawn(p);
 
 	P_UnsetThingPosition(mobj);
 	mobj->x = p->respawn.pointx;
@@ -10337,6 +10337,23 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj->ceilingz = ceiling;
 
 	mobj->z = z;
+
+	// Correct angle
+	if (p->respawn.wp != NULL)
+	{
+		size_t nwp = K_NextRespawnWaypointIndex(p->respawn.wp);
+		waypoint_t *wp;
+
+		if (nwp != SIZE_MAX)
+		{
+			wp = p->respawn.wp->nextwaypoints[nwp];
+
+			mobj->angle = p->drawangle = R_PointToAngle2(
+				mobj->x, mobj->y,
+				wp->mobj->x, wp->mobj->y
+			);
+		}
+	}
 
 	P_AfterPlayerSpawn(playernum);
 }

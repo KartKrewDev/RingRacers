@@ -11174,7 +11174,7 @@ void A_RemoteDamage(mobj_t *actor)
 	if (locvar2 == 1) // Kill mobj!
 	{
 		if (target->player)
-			K_DoIngameRespawn(target->player, false);
+			K_DoIngameRespawn(target->player);
 		else
 			P_KillMobj(target, source, source, DMG_NORMAL);
 	}

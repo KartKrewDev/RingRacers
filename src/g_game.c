@@ -2310,7 +2310,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
 	{
-		K_DoIngameRespawn(p, true);
+		K_DoIngameRespawn(p);
 	}
 }
 

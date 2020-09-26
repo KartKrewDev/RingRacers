@@ -243,7 +243,7 @@ void G_ReadDemoExtraData(void)
 			if (players[p].mo)
 			{
 				// Is this how this should work..?
-				K_DoIngameRespawn(&players[p], false);
+				K_DoIngameRespawn(&players[p]);
 			}
 		}
 		if (extradata & DXD_SKIN)

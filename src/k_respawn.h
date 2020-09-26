@@ -39,20 +39,34 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip);
 
 
 /*--------------------------------------------------
-	void K_DoIngameRespawn(player_t *player, boolean fromTheDead);
+	void K_DoIngameRespawn(player_t *player);
 
 		Starts the respawning animation for the specified player,
 		updating their respawn variables in preparation.
 
 	Input Arguments:-
 		player - Player to preform this for.
-		fromTheDead - Doesn't set the distance variable. If respawning from dying, then this should be true.
 
 	Return:-
 		None
 --------------------------------------------------*/
 
-void K_DoIngameRespawn(player_t *player, boolean fromTheDead);
+void K_DoIngameRespawn(player_t *player);
+
+
+/*--------------------------------------------------
+	size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint);
+
+		Returns the index for the next respawn waypoint.
+
+	Input Arguments:-
+		waypoint - Waypoint to look past.
+
+	Return:-
+		An table index for waypoint_t -> nextwaypoints.
+--------------------------------------------------*/
+
+size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint);
 
 
 /*--------------------------------------------------
