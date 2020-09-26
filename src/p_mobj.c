@@ -4674,7 +4674,7 @@ static void P_MobjScaleThink(mobj_t *mobj)
 		switch (mobj->type)
 		{
 			default:
-				if (mobj->scale == 0)
+				if (mobj->player == NULL && mobj->scale == 0)
 				{
 					P_RemoveMobj(mobj);
 					return;

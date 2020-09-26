@@ -683,7 +683,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL)
+	if (gamestate != GS_LEVEL
+		|| player->mo->scale == 0) // funny post-finish death
 	{
 		// No need to do anything else.
 		return;

@@ -1650,7 +1650,8 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 {
 	if (player->exiting)
 	{
-		player->mo->destscale = 1;
+		player->mo->destscale = 0;
+		player->mo->flags |= MF_NOCLIPTHING;
 		return false;
 	}
 
@@ -1818,9 +1819,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 		if (!force)
 		{
-			if (player->exiting)
-				return false;
-
 			// Player hits another player
 			if (source && source->player)
 			{
@@ -1832,7 +1830,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		// Instant-Death
 		if ((damagetype & DMG_DEATHMASK))
 		{
-			P_KillPlayer(player, damagetype);
+			if (!P_KillPlayer(player, damagetype))
+				return false;
 		}
 		else if (LUAh_MobjDamage(target, inflictor, source, damage, damagetype))
 		{
@@ -1840,7 +1839,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		}
 		else
 		{
-
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
 			if (!force)
