@@ -3592,19 +3592,19 @@ void P_PrecipThinker(precipmobj_t *mobj)
 		return;
 
 	// adjust height
-	if ((mobj->z += mobj->momz) > mobj->floorz)
-		return;
-
-	// no splashes on sky or bottomless pits
-	if (mobj->precipflags & PCF_PIT)
+	if ((mobj->z += mobj->momz) <= mobj->floorz)
 	{
-		mobj->z = mobj->ceilingz;
-		return;
+		if ((mobj->info->deathstate == S_NULL) || (mobj->precipflags & PCF_PIT)) // no splashes on sky or bottomless pits
+		{
+			mobj->z = mobj->ceilingz;
+		}
+		else
+		{
+			P_SetPrecipMobjState(mobj, mobj->info->deathstate);
+			mobj->z = mobj->floorz;
+			mobj->precipflags |= PCF_SPLASH;
+		}
 	}
-
-	mobj->z = mobj->floorz;
-	P_SetPrecipMobjState(mobj, mobj->info->deathstate);
-	mobj->precipflags |= PCF_SPLASH;
 }
 
 static void P_RingThinker(mobj_t *mobj)
