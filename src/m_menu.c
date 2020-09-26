@@ -311,6 +311,7 @@ static void M_ResetControls(INT32 choice);
 // Video & Sound
 menu_t OP_VideoOptionsDef, OP_VideoModeDef;
 #ifdef HWRENDER
+static void M_OpenGLOptionsMenu(void);
 menu_t OP_OpenGLOptionsDef;
 #endif
 menu_t OP_SoundOptionsDef;
@@ -1278,7 +1279,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Skyboxes",				&cv_skybox,				110},
 
 #ifdef HWRENDER
-	{IT_SUBMENU|IT_STRING,	NULL,	"OpenGL Options...",	&OP_OpenGLOptionsDef,	140},
+	{IT_CALL | IT_STRING,	NULL,	"OpenGL Options...",	&M_OpenGLOptionsMenu,	140},
 #endif
 };
 
@@ -2070,6 +2071,14 @@ menu_t OP_MonitorToggleDef =
 };
 
 #ifdef HWRENDER
+static void M_OpenGLOptionsMenu(void)
+{
+	if (rendermode == render_opengl)
+		M_SetupNextMenu(&OP_OpenGLOptionsDef);
+	else
+		M_StartMessage(M_GetText("You must be in OpenGL mode\nto access this menu.\n\n(Press a key)\n"), NULL, MM_NOTHING);
+}
+
 menu_t OP_OpenGLOptionsDef = DEFAULTMENUSTYLE(MN_NONE, "M_VIDEO", OP_OpenGLOptionsMenu, &OP_VideoOptionsDef, 30, 30);
 #endif
 menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE(MN_NONE, "M_DATA", OP_DataOptionsMenu, &OP_MainDef, 60, 30);
