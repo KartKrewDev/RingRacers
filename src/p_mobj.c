@@ -11380,9 +11380,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	case MT_BOTHINT:
 	{
 		// Change size
-		if (mthing->angle > 0)
+		if (mthing->args[0] > 0)
 		{
-			mobj->radius = mthing->angle * FRACUNIT;
+			mobj->radius = mthing->args[0] * FRACUNIT;
 		}
 		else
 		{
@@ -11400,13 +11400,13 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		}
 
 		// Steering amount
-		if (mthing->extrainfo == 0)
+		if (mthing->args[1] == 0)
 		{
 			mobj->extravalue2 = 2;
 		}
 		else
 		{
-			mobj->extravalue2 = mthing->extrainfo;
+			mobj->extravalue2 = mthing->args[1];
 		}
 		break;
 	}
