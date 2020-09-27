@@ -1650,7 +1650,7 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 {
 	if (player->exiting)
 	{
-		player->mo->destscale = 0;
+		player->mo->destscale = 1;
 		player->mo->flags |= MF_NOCLIPTHING;
 		return false;
 	}

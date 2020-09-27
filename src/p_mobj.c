@@ -4674,10 +4674,20 @@ static void P_MobjScaleThink(mobj_t *mobj)
 		switch (mobj->type)
 		{
 			default:
-				if (mobj->player == NULL && mobj->scale == 0)
+				if (mobj->player)
 				{
-					P_RemoveMobj(mobj);
-					return;
+					if (mobj->scale <= 1)
+					{
+						mobj->drawflags |= MFD_DONTDRAW;
+					}
+				}
+				else
+				{
+					if (!mobj->player && mobj->scale == 0)
+					{
+						P_RemoveMobj(mobj);
+						return;
+					}
 				}
 				break;
 		}

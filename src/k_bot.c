@@ -684,7 +684,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	memset(cmd, 0, sizeof(ticcmd_t));
 
 	if (gamestate != GS_LEVEL
-		|| player->mo->scale == 0) // funny post-finish death
+		|| player->mo->scale <= 1) // funny post-finish death
 	{
 		// No need to do anything else.
 		return;
