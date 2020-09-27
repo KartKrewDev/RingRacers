@@ -1357,9 +1357,7 @@ static void P_LoadThings(UINT8 *data)
 
 		mt->type &= 4095;
 
-		if (mt->type == mobjinfo[MT_WAYPOINT].doomednum)
-			mt->z = 0; // Waypoints set Z pos in other methods
-		else if (mt->type == 1705 || (mt->type == 750 && mt->extrainfo))
+		if (mt->type == 1705 || (mt->type == 750 && mt->extrainfo))
 			mt->z = mt->options; // NiGHTS Hoops use the full flags bits to set the height.
 		else
 			mt->z = mt->options >> ZSHIFT;
@@ -3159,6 +3157,27 @@ static void P_ConvertBinaryMap(void)
 		case 780:
 			mapthings[i].tag = mapthings[i].extrainfo;
 			break;
+		case 2001: // MT_WAYPOINT
+		{
+			INT32 firstline = P_FindSpecialLineFromTag(2000, mapthings[i].angle, -1);
+
+			mapthings[i].tag = mapthings[i].angle;
+			mapthings[i].angle = mapthings[i].z;
+			mapthings[i].args[1] = mapthings[i].extrainfo;
+			mapthings[i].z = 0;
+
+			if (firstline != -1)
+			{
+				fixed_t lineradius = sides[lines[firstline].sidenum[0]].textureoffset;
+				fixed_t linez = sides[lines[firstline].sidenum[0]].rowoffset;
+
+				if (lineradius > 0)
+					mapthings[i].args[0] = lineradius / FRACUNIT;
+
+				mapthings[i].z = linez / FRACUNIT;
+			}
+			break;
+		}
 		default:
 			break;
 		}
@@ -3991,9 +4010,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 	P_SpawnSpecialsAfterSlopes();
 
 	P_SpawnMapThings(!fromnetsave);
-
-	P_SpawnSpecialsThatRequireObjects();
-
 	skyboxmo[0] = skyboxviewpnts[0];
 	skyboxmo[1] = skyboxcenterpnts[0];
 
@@ -4001,7 +4017,13 @@ boolean P_LoadLevel(boolean fromnetsave)
 		if (!playerstarts[numcoopstarts])
 			break;
 
-	K_AdjustWaypointsParameters();
+	P_SpawnSpecialsThatRequireObjects();
+
+	if (!udmf)
+	{
+		// Backwards compatibility for non-UDMF maps
+		K_AdjustWaypointsParameters();
+	}
 
 	if (!fromnetsave) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
@@ -4009,7 +4031,7 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// The waypoint data that's in PU_LEVEL needs to be reset back to 0/NULL now since PU_LEVEL was cleared
 	K_ClearWaypoints();
 	// Load the waypoints please!
-	if ((gametyperules & GTR_CIRCUIT))
+	if (gametyperules & GTR_CIRCUIT)
 	{
 		if (K_SetupWaypointList() == false)
 		{

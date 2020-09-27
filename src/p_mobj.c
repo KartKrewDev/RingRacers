@@ -11324,33 +11324,21 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		const fixed_t mobjscale =
 			mapheaderinfo[gamemap-1]->default_waypoint_radius;
 
-		// Just like MT_SPINMACEPOINT, this now works here too!
-		INT32 line = P_FindSpecialLineFromTag(2000, mthing->angle, -1);
-
-		if (mobjscale == 0)
-			mobj->radius = DEFAULT_WAYPOINT_RADIUS * mapobjectscale;
-		else
+		if (mthing->args[0] > 0)
+			mobj->radius = (mthing->args[0]) * FRACUNIT;
+		else if (mobjscale > 0)
 			mobj->radius = mobjscale;
+		else
+			mobj->radius = DEFAULT_WAYPOINT_RADIUS * mapobjectscale;
 
-		// Set the radius, mobj z, and mthing z to match what the parameters want
-		if (line != -1)
-		{
-			fixed_t lineradius = sides[lines[line].sidenum[0]].textureoffset;
-			fixed_t linez = sides[lines[line].sidenum[0]].rowoffset;
-
-			if (lineradius > 0)
-				mobj->radius = lineradius;
-			mobj->z += linez;
-			mthing->z += linez >> FRACBITS;
-		}
 		// Use threshold to store the next waypoint ID
 		// movecount is being used for the current waypoint ID
 		// reactiontime lets us know if we can respawn at it
 		// lastlook is used for indicating the waypoint is a shortcut
 		// extravalue1 is used for indicating the waypoint is disabled
 		// extravalue2 is used for indicating the waypoint is the finishline
-		mobj->threshold = ((mthing->options >> ZSHIFT));
-		mobj->movecount = mthing->angle;
+		mobj->threshold = mthing->angle;
+		mobj->movecount = mthing->tag;
 		if (mthing->options & MTF_EXTRA)
 		{
 			mobj->extravalue1 = 0; // The waypoint is disabled if extra is on
@@ -11375,9 +11363,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->reactiontime = 1;
 		}
-		if (mthing->extrainfo == 1)
+		if (mthing->args[1] == 1)
 		{
-			mobj->extravalue2 = 1; // extrainfo of 1 means the waypoint is at the finish line
+			mobj->extravalue2 = 1; // args[1] of 1 means the waypoint is at the finish line
 		}
 		else
 		{
