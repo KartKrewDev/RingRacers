@@ -1349,7 +1349,7 @@ static void P_LoadThings(UINT8 *data)
 		mt->type = READUINT16(data);
 		mt->options = READUINT16(data);
 		mt->extrainfo = (UINT8)(mt->type >> 12);
-		mt->scale = FRACUNIT;
+		mt->scale = mapobjectscale;
 		mt->tag = 0;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
@@ -1875,7 +1875,7 @@ static void P_LoadTextmap(void)
 		mt->options = 0;
 		mt->z = 0;
 		mt->extrainfo = 0;
-		mt->scale = FRACUNIT;
+		mt->scale = mapobjectscale;
 		mt->tag = 0;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
@@ -3976,11 +3976,11 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	P_MapStart();
 
-	if (!P_LoadMapFromFile())
-		return false;
-
 	// init anything that P_SpawnSlopes/P_LoadThings needs to know
 	P_InitSpecials();
+
+	if (!P_LoadMapFromFile())
+		return false;
 
 	// set up world state
 	// jart: needs to be done here so anchored slopes know the attached list

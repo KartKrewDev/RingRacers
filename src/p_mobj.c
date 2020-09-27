@@ -11531,13 +11531,12 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 {
 	mobj_t *mobj = NULL;
 	boolean doangle = true;
-	fixed_t full_scale = FixedMul(mthing->scale, mapobjectscale);
 
 	mobj = P_SpawnMobj(x, y, z, i);
 	mobj->spawnpoint = mthing;
 
-	P_SetScale(mobj, full_scale);
-	mobj->destscale = full_scale;
+	P_SetScale(mobj, mthing->scale);
+	mobj->destscale = mthing->scale;
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj, &doangle))
 		return mobj;
