@@ -1843,23 +1843,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// If not, then spawn the instashield effect instead.
 			if (!force)
 			{
-				if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
-				{
-					// Full invulnerability
-					K_DoInstashield(player);
-					return false;
-				}
-
-				if (combo == false)
-				{
-					if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2))
-					{
-						// Post-hit invincibility
-						K_DoInstashield(player);
-						return false;
-					}
-				}
-
 				if (gametyperules & GTR_BUMPERS)
 				{
 					if ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)
@@ -1875,6 +1858,23 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					{
 						// Gametype does not have bumpers, steal damage is intended to not do anything
 						// (No instashield is intentional)
+						return false;
+					}
+				}
+
+				if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
+				{
+					// Full invulnerability
+					K_DoInstashield(player);
+					return false;
+				}
+
+				if (combo == false)
+				{
+					if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2))
+					{
+						// Post-hit invincibility
+						K_DoInstashield(player);
 						return false;
 					}
 				}
