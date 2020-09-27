@@ -1357,7 +1357,9 @@ static void P_LoadThings(UINT8 *data)
 
 		mt->type &= 4095;
 
-		if (mt->type == 1705 || (mt->type == 750 && mt->extrainfo))
+		if (mt->type == mobjinfo[MT_WAYPOINT].doomednum)
+			mt->z = 0; // Waypoints set Z pos in other methods
+		else if (mt->type == 1705 || (mt->type == 750 && mt->extrainfo))
 			mt->z = mt->options; // NiGHTS Hoops use the full flags bits to set the height.
 		else
 			mt->z = mt->options >> ZSHIFT;
