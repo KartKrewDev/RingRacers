@@ -3178,6 +3178,9 @@ static void P_ConvertBinaryMap(void)
 			}
 			break;
 		}
+		case 2333: // MT_BATTLECAPSULE
+			mapthings[i].args[0] = mapthings[i].extrainfo;
+			break;
 		default:
 			break;
 		}

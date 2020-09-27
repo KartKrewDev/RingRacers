@@ -11411,43 +11411,166 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		break;
 	}
 	case MT_AAZTREE_HELPER:
+	{
+		fixed_t top = mobj->z;
+		UINT8 i;
+		UINT8 locnumsegs = (mthing->extrainfo)+2;
+		UINT8 numleaves = max(3, (abs(mthing->angle+1) % 6) + 3);
+		mobj_t *coconut;
+
+		// Spawn tree segments
+		for (i = 0; i < locnumsegs; i++)
 		{
-			fixed_t top = mobj->z;
-			UINT8 i;
-			UINT8 locnumsegs = (mthing->extrainfo)+2;
-			UINT8 numleaves = max(3, (abs(mthing->angle+1) % 6) + 3);
-			mobj_t *coconut;
-
-			// Spawn tree segments
-			for (i = 0; i < locnumsegs; i++)
-			{
-				P_SpawnMobj(mobj->x, mobj->y, top, MT_AAZTREE_SEG);
-				top += FixedMul(mobjinfo[MT_AAZTREE_SEG].height, mobj->scale);
-			}
-
-			// Big coconut topper
-			coconut = P_SpawnMobj(mobj->x, mobj->y, top - (8<<FRACBITS), MT_AAZTREE_COCONUT);
-			P_SetScale(coconut, (coconut->destscale = (2*mobj->scale)));
-
-			// Spawn all of the papersprite leaves
-			for (i = 0; i < numleaves; i++)
-			{
-				mobj_t *leaf;
-
-				mobj->angle = FixedAngle((i * (360/numleaves))<<FRACBITS);
-
-				leaf = P_SpawnMobj(mobj->x + FINECOSINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK),
-					mobj->y + FINESINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK), top, MT_AAZTREE_LEAF);
-				leaf->angle = mobj->angle;
-
-				// Small coconut for each leaf
-				P_SpawnMobj(mobj->x + (32 * FINECOSINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK)),
-					mobj->y + (32 * FINESINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK)), top - (24<<FRACBITS), MT_AAZTREE_COCONUT);
-			}
-
-			P_RemoveMobj(mobj); // Don't need this helper obj anymore
-			return false;
+			P_SpawnMobj(mobj->x, mobj->y, top, MT_AAZTREE_SEG);
+			top += FixedMul(mobjinfo[MT_AAZTREE_SEG].height, mobj->scale);
 		}
+
+		// Big coconut topper
+		coconut = P_SpawnMobj(mobj->x, mobj->y, top - (8<<FRACBITS), MT_AAZTREE_COCONUT);
+		P_SetScale(coconut, (coconut->destscale = (2*mobj->scale)));
+
+		// Spawn all of the papersprite leaves
+		for (i = 0; i < numleaves; i++)
+		{
+			mobj_t *leaf;
+
+			mobj->angle = FixedAngle((i * (360/numleaves))<<FRACBITS);
+
+			leaf = P_SpawnMobj(mobj->x + FINECOSINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK),
+				mobj->y + FINESINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK), top, MT_AAZTREE_LEAF);
+			leaf->angle = mobj->angle;
+
+			// Small coconut for each leaf
+			P_SpawnMobj(mobj->x + (32 * FINECOSINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK)),
+				mobj->y + (32 * FINESINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK)), top - (24<<FRACBITS), MT_AAZTREE_COCONUT);
+		}
+
+		P_RemoveMobj(mobj); // Don't need this helper obj anymore
+		return false;
+	}
+	case MT_BATTLECAPSULE:
+	{
+		sector_t *sec = R_PointInSubsector(mobj->x, mobj->y)->sector;
+		mobj_t *cur, *prev = mobj;
+		fixed_t floorheights[MAXFFLOORS+1];
+		UINT8 numfloors = 0;
+		boolean fly = true;
+		UINT8 i;
+
+		// This floor height stuff is stupid but I couldn't get it to work any other way for whatever reason
+		if (mthing->options & MTF_OBJECTFLIP)
+		{
+			floorheights[numfloors] = P_GetSectorCeilingZAt(sec, mobj->x, mobj->y) - mobj->height;
+		}
+		else
+		{
+			floorheights[numfloors] = P_GetSectorFloorZAt(sec, mobj->x, mobj->y);
+		}
+
+		numfloors++;
+
+		if (sec->ffloors)
+		{
+			ffloor_t *rover;
+			for (rover = sec->ffloors; rover; rover = rover->next)
+			{
+				if ((rover->flags & FF_EXISTS) && (rover->flags & FF_BLOCKOTHERS))
+				{
+					if (mthing->options & MTF_OBJECTFLIP)
+					{
+						floorheights[numfloors] = P_GetFFloorBottomZAt(rover, mobj->x, mobj->y) - mobj->height;
+					}
+					else
+					{
+						floorheights[numfloors] = P_GetFFloorBottomZAt(rover, mobj->x, mobj->y);
+					}
+
+					numfloors++;
+				}
+			}
+		}
+
+		for (i = 0; i < numfloors; i++)
+		{
+			if (mobj->z == floorheights[i])
+			{
+				fly = false;
+				break;
+			}
+		}
+
+		// Flying capsules
+		if (fly)
+		{
+			mobj->flags |= MF_NOGRAVITY;
+			mobj->extravalue1 = 1; // Set extravalue1 for later reference
+		}
+
+		// Moving capsules!
+		if (mthing->args[0] && mthing->angle)
+		{
+			K_SetupMovingCapsule(mthing, mobj);
+		}
+
+		// NOW FOR ALL OF THE PIECES!!
+		// Init hnext list
+		// Spherical top
+		cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
+		P_SetMobjState(cur, S_BATTLECAPSULE_TOP);
+
+		P_SetTarget(&cur->target, mobj);
+		P_SetTarget(&cur->hprev, prev);
+		P_SetTarget(&prev->hnext, cur);
+		prev = cur;
+
+		// Tippity-top decorational button
+		cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
+		P_SetMobjState(cur, S_BATTLECAPSULE_BUTTON);
+
+		P_SetTarget(&cur->target, mobj);
+		P_SetTarget(&cur->hprev, prev);
+		P_SetTarget(&prev->hnext, cur);
+		prev = cur;
+
+		// Supports on the bottom
+		for (i = 0; i < 4; i++)
+		{
+			cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
+			cur->extravalue1 = i;
+
+			if (mobj->extravalue1) // Flying capsule, moving or not
+				P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORTFLY);
+			else if (mobj->target && !P_MobjWasRemoved(mobj->target)) // Grounded, moving capsule
+				P_SetMobjState(cur, S_KARMAWHEEL);
+			else
+				P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORT); // Grounded, stationary capsule
+
+			P_SetTarget(&cur->target, mobj);
+			P_SetTarget(&cur->hprev, prev);
+			P_SetTarget(&prev->hnext, cur);
+			prev = cur;
+		}
+
+		// Side paneling
+		for (i = 0; i < 8; i++)
+		{
+			cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
+			cur->extravalue1 = i;
+
+			if (i & 1)
+				P_SetMobjState(cur, S_BATTLECAPSULE_SIDE2);
+			else
+				P_SetMobjState(cur, S_BATTLECAPSULE_SIDE1);
+
+			P_SetTarget(&cur->target, mobj);
+			P_SetTarget(&cur->hprev, prev);
+			P_SetTarget(&prev->hnext, cur);
+			prev = cur;
+		}
+
+		// Increment no. of capsules on the map counter
+		maptargets++;
+	}
 	default:
 		break;
 	}

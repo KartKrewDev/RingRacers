@@ -472,15 +472,18 @@ void K_RunBattleOvertime(void)
 	}
 }
 
-static void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
+void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 {
-	UINT8 sequence = mt->extrainfo-1;
+	UINT8 sequence = mt->args[0]-1;
 	fixed_t speed = (FRACUNIT >> 3) * mt->angle;
 	boolean backandforth = (mt->options & MTF_AMBUSH);
 	boolean reverse = (mt->options & MTF_OBJECTSPECIAL);
 	mobj_t *mo2;
 	mobj_t *target = NULL;
 	thinker_t *th;
+
+	// TODO: This and the movement stuff in the thinker should both be using
+	// 2.2's new optimized functions for doing things with tube waypoints
 
 	// Find the inital target
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
@@ -570,155 +573,7 @@ void K_SpawnBattleCapsules(void)
 	for (i = 0; i < nummapthings; i++, mt++)
 	{
 		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
-		{
-			sector_t *mtsector, *sec;
-			fixed_t x, y, z;
-			fixed_t floorheights[MAXFFLOORS+1];
-			UINT8 numfloors = 1;
-			mobj_t *mobj = NULL;
-			boolean fly = true;
-			UINT8 j;
-
-			mt->mobj = NULL;
-
-			mtsector = R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
-			mt->z = (INT16)(P_GetZAt(mtsector->f_slope, mt->x << FRACBITS, mt->y << FRACBITS, mtsector->floorheight) / FRACUNIT);
-
-			x = mt->x << FRACBITS;
-			y = mt->y << FRACBITS;
-
-			sec = R_PointInSubsector(x, y)->sector;
-
-			if (mt->options & MTF_OBJECTFLIP)
-			{
-				z = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight) - mobjinfo[MT_BATTLECAPSULE].height;
-
-				floorheights[0] = z;
-				z -= (mt->z << FRACBITS);
-			}
-			else
-			{
-				z = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
-
-				floorheights[0] = z;
-				z += (mt->z << FRACBITS);
-			}
-
-
-			if (sec->ffloors)
-			{
-				ffloor_t *rover;
-				for (rover = sec->ffloors; rover; rover = rover->next)
-				{
-					if ((rover->flags & FF_EXISTS) && (rover->flags & FF_BLOCKOTHERS))
-					{
-						if (mt->options & MTF_OBJECTFLIP)
-						{
-							floorheights[numfloors] = P_GetZAt(*rover->b_slope, x, y, *rover->bottomheight) - mobjinfo[MT_BATTLECAPSULE].height;
-						}
-						else
-						{
-							floorheights[numfloors] = P_GetZAt(*rover->t_slope, x, y, *rover->topheight);
-						}
-
-						numfloors++;
-					}
-				}
-			}
-
-			mt->z = (INT16)(z>>FRACBITS);
-
-			mobj = P_SpawnMobj(x, y, z, MT_BATTLECAPSULE);
-			mobj->spawnpoint = mt;
-
-			if (mt->options & MTF_OBJECTFLIP)
-			{
-				mobj->eflags |= MFE_VERTICALFLIP;
-				mobj->flags2 |= MF2_OBJECTFLIP;
-			}
-
-			for (j = 0; j < numfloors; j++)
-			{
-				if (z == floorheights[j])
-				{
-					fly = false;
-					break;
-				}
-			}
-
-			// Flying capsules
-			if (fly)
-			{
-				mobj->flags |= MF_NOGRAVITY;
-				mobj->extravalue1 = 1; // Set extravalue1 for later reference
-			}
-
-			// Moving capsules!
-			if (mt->extrainfo && mt->angle)
-				K_SetupMovingCapsule(mt, mobj);
-
-			// Moved from P_SpawnMobj due to order of operations mumbo jumbo
-			{
-				mobj_t *cur, *prev = mobj;
-
-				// Init hnext list
-				// Spherical top
-				cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-				P_SetMobjState(cur, S_BATTLECAPSULE_TOP);
-
-				P_SetTarget(&cur->target, mobj);
-				P_SetTarget(&cur->hprev, prev);
-				P_SetTarget(&prev->hnext, cur);
-				prev = cur;
-
-				// Tippity-top decorational button
-				cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-				P_SetMobjState(cur, S_BATTLECAPSULE_BUTTON);
-
-				P_SetTarget(&cur->target, mobj);
-				P_SetTarget(&cur->hprev, prev);
-				P_SetTarget(&prev->hnext, cur);
-				prev = cur;
-
-				// Supports on the bottom
-				for (j = 0; j < 4; j++)
-				{
-					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-					cur->extravalue1 = j;
-
-					if (mobj->extravalue1) // Flying capsule, moving or not
-						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORTFLY);
-					else if (mobj->target && !P_MobjWasRemoved(mobj->target)) // Grounded, moving capsule
-						P_SetMobjState(cur, S_KARMAWHEEL);
-					else
-						P_SetMobjState(cur, S_BATTLECAPSULE_SUPPORT); // Grounded, stationary capsule
-
-					P_SetTarget(&cur->target, mobj);
-					P_SetTarget(&cur->hprev, prev);
-					P_SetTarget(&prev->hnext, cur);
-					prev = cur;
-				}
-
-				// Side paneling
-				for (j = 0; j < 8; j++)
-				{
-					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_BATTLECAPSULE_PIECE);
-					cur->extravalue1 = j;
-
-					if (j & 1)
-						P_SetMobjState(cur, S_BATTLECAPSULE_SIDE2);
-					else
-						P_SetMobjState(cur, S_BATTLECAPSULE_SIDE1);
-
-					P_SetTarget(&cur->target, mobj);
-					P_SetTarget(&cur->hprev, prev);
-					P_SetTarget(&prev->hnext, cur);
-					prev = cur;
-				}
-			}
-
-			mt->mobj = mobj;
-		}
+			P_SpawnMapThing(mt);
 	}
 
 	battlecapsules = true;
