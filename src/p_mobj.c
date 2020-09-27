@@ -11507,7 +11507,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		}
 
 		// Moving capsules!
-		if (mthing->args[0] && mthing->angle)
+		if (mthing->args[0] && mthing->args[1])
 		{
 			K_SetupMovingCapsule(mthing, mobj);
 		}

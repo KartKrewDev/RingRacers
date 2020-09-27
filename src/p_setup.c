@@ -3184,6 +3184,7 @@ static void P_ConvertBinaryMap(void)
 			break;
 		case 2333: // MT_BATTLECAPSULE
 			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].args[1] = mapthings[i].angle;
 			break;
 		default:
 			break;

@@ -474,8 +474,8 @@ void K_RunBattleOvertime(void)
 
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 {
-	UINT8 sequence = mt->args[0]-1;
-	fixed_t speed = (FRACUNIT >> 3) * mt->angle;
+	UINT8 sequence = mt->args[0] - 1;
+	fixed_t speed = (FRACUNIT >> 3) * mt->args[1];
 	boolean backandforth = (mt->options & MTF_AMBUSH);
 	boolean reverse = (mt->options & MTF_OBJECTSPECIAL);
 	mobj_t *mo2;
