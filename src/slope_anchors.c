@@ -118,17 +118,13 @@ anchor_height
 		const mapthing_t * a,
 		const sector_t   * s
 ){
+	if (a->options & MTF_OBJECTFLIP)
 	{
-		INT16 z = ( a->options >> ZSHIFT );
-
-		if (a->options & MTF_OBJECTFLIP)
-		{
-			return ( s->ceilingheight >> FRACBITS ) - z;
-		}
-		else
-		{
-			return ( s->floorheight >> FRACBITS ) + z;
-		}
+		return ( s->ceilingheight >> FRACBITS ) - a->z;
+	}
+	else
+	{
+		return ( s->floorheight >> FRACBITS ) + a->z;
 	}
 }
 

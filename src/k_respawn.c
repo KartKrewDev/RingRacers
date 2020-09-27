@@ -186,7 +186,7 @@ void K_DoIngameRespawn(player_t *player)
 		else
 		{
 			sector_t *s;
-			fixed_t z = (beststart->options >> ZSHIFT) * FRACUNIT;
+			fixed_t z = beststart->z * FRACUNIT;
 
 			player->respawn.pointx = beststart->x << FRACBITS;
 			player->respawn.pointy = beststart->y << FRACBITS;

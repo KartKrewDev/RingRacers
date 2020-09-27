@@ -594,18 +594,14 @@ void K_SpawnBattleCapsules(void)
 				z = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight) - mobjinfo[MT_BATTLECAPSULE].height;
 
 				floorheights[0] = z;
-
-				if (mt->options >> ZSHIFT)
-					z -= ((mt->options >> ZSHIFT) << FRACBITS);
+				z -= (mt->z << FRACBITS);
 			}
 			else
 			{
 				z = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
 
 				floorheights[0] = z;
-
-				if (mt->options >> ZSHIFT)
-					z += ((mt->options >> ZSHIFT) << FRACBITS);
+				z += (mt->z << FRACBITS);
 			}
 
 
