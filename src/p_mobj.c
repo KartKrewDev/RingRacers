@@ -11324,8 +11324,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		const fixed_t mobjscale =
 			mapheaderinfo[gamemap-1]->default_waypoint_radius;
 
-		if (mthing->args[0] > 0)
-			mobj->radius = (mthing->args[0]) * FRACUNIT;
+		if (mthing->args[1] > 0)
+			mobj->radius = (mthing->args[1]) * FRACUNIT;
 		else if (mobjscale > 0)
 			mobj->radius = mobjscale;
 		else
@@ -11337,7 +11337,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// lastlook is used for indicating the waypoint is a shortcut
 		// extravalue1 is used for indicating the waypoint is disabled
 		// extravalue2 is used for indicating the waypoint is the finishline
-		mobj->threshold = mthing->angle;
+		mobj->threshold = mthing->args[0];
 		mobj->movecount = mthing->tag;
 		if (mthing->options & MTF_EXTRA)
 		{
@@ -11363,7 +11363,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->reactiontime = 1;
 		}
-		if (mthing->args[1] == 1)
+		if (mthing->args[2] == 1)
 		{
 			mobj->extravalue2 = 1; // args[1] of 1 means the waypoint is at the finish line
 		}

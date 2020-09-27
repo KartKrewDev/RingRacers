@@ -3162,8 +3162,8 @@ static void P_ConvertBinaryMap(void)
 			INT32 firstline = P_FindSpecialLineFromTag(2000, mapthings[i].angle, -1);
 
 			mapthings[i].tag = mapthings[i].angle;
-			mapthings[i].angle = mapthings[i].z;
-			mapthings[i].args[1] = mapthings[i].extrainfo;
+			mapthings[i].args[0] = mapthings[i].z;
+			mapthings[i].args[2] = mapthings[i].extrainfo;
 			mapthings[i].z = 0;
 
 			if (firstline != -1)
@@ -3172,7 +3172,7 @@ static void P_ConvertBinaryMap(void)
 				fixed_t linez = sides[lines[firstline].sidenum[0]].rowoffset;
 
 				if (lineradius > 0)
-					mapthings[i].args[0] = lineradius / FRACUNIT;
+					mapthings[i].args[1] = lineradius / FRACUNIT;
 
 				mapthings[i].z = linez / FRACUNIT;
 			}
