@@ -645,9 +645,6 @@ void R_CheckViewMorph(int s)
 		v->zoomneeded = FRACUNIT;
 	}
 
-	if (cv_actionmovie.value)
-		rollangle += quake.roll;
-
 	rollangle >>= ANGLETOFINESHIFT;
 	rollangle = ((rollangle+2) & ~3) & FINEMASK; // Limit the distinct number of angles to reduce recalcs from angles changing a lot.
 

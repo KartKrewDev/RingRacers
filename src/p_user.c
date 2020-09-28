@@ -4247,12 +4247,26 @@ DoABarrelRoll (player_t *player)
 
 	slope -= Quaketilt(player);
 
-	delta = (INT32)( slope - player->viewrollangle )/ 32;
+	delta = (INT32)( slope - player->tilt )/ 32;
 
 	if (delta)
-		player->viewrollangle += delta;
+		player->tilt += delta;
 	else
-		player->viewrollangle  = slope;
+		player->tilt  = slope;
+
+	if (cv_tilting.value)
+	{
+		player->viewrollangle = player->tilt;
+
+		if (cv_actionmovie.value)
+		{
+			player->viewrollangle += quake.roll;
+		}
+	}
+	else
+	{
+		player->viewrollangle = 0;
+	}
 }
 
 //
@@ -4624,14 +4638,7 @@ void P_PlayerThink(player_t *player)
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
 
-	if (cv_tilting.value)
-	{
-		DoABarrelRoll(player);
-	}
-	else
-	{
-		player->viewrollangle = 0;
-	}
+	DoABarrelRoll(player);
 
 	LUAh_PlayerThink(player);
 }
