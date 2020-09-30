@@ -3896,7 +3896,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 	}
 }
 
-static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
+static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo, boolean error)
 {
 	mobj_t *cur = sign, *prev = NULL;
 
@@ -3925,7 +3925,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
 	cur->hnext = P_SpawnMobj(sign->x, sign->y, sign->z, MT_SIGN_PIECE);
 	P_SetTarget(&cur->hnext->target, sign);
 	cur->hnext->skin = pmo->skin;
-	P_SetMobjState(cur->hnext, S_KART_SIGN);
+	P_SetMobjState(cur->hnext, (error == true) ? S_SIGN_ERROR : S_KART_SIGN);
 	cur->hnext->extravalue1 = 7;
 	cur->hnext->extravalue2 = 0;
 
@@ -3991,7 +3991,7 @@ void P_SetupSignExit(player_t *player)
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
-		P_SetupSignObject(thing, player->mo);
+		P_SetupSignObject(thing, player->mo, false);
 		++numfound;
 	}
 
@@ -4012,7 +4012,7 @@ void P_SetupSignExit(player_t *player)
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
-		P_SetupSignObject(thing, player->mo);
+		P_SetupSignObject(thing, player->mo, false);
 		++numfound;
 	}
 
@@ -4024,7 +4024,7 @@ void P_SetupSignExit(player_t *player)
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
 		thing->angle = player->mo->angle;
-		P_SetupSignObject(thing, player->mo);
+		P_SetupSignObject(thing, player->mo, true); // Use :youfuckedup: sign face
 	}
 }
 
