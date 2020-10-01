@@ -148,7 +148,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			// Player Damage
-			K_SpinPlayer(t2->player, t1->target, 0, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
+			K_SpinPlayer(t2->player, t1->target, KSPIN_SPINOUT, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
 		}
 
 		damageitem = true;
@@ -332,7 +332,7 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->state == &states[S_MINEEXPLOSION1])
 			K_ExplodePlayer(t2->player, t1->target, t1);
 		else
-			K_SpinPlayer(t2->player, t1->target, 0, t1, false);
+			K_SpinPlayer(t2->player, t1->target, KSPIN_SPINOUT, t1, false);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{

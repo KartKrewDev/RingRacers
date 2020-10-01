@@ -1055,7 +1055,7 @@ static void K_DebtStingPlayer(player_t *player, INT32 length)
 	player->kartstuff[k_driftcharge] = 0;
 	player->kartstuff[k_pogospring] = 0;
 
-	player->kartstuff[k_spinouttype] = 2;
+	player->kartstuff[k_spinouttype] = KSPIN_STUNG;
 	player->kartstuff[k_spinouttimer] = length;
 	player->kartstuff[k_wipeoutslow] = min(length-1, wipeoutslowtime+1);
 
@@ -2456,7 +2456,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 	if (player->health <= 0)
 		return;
 
-	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)
+	if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && ( player->kartstuff[k_spinouttype] & KSPIN_IFRAMES ))
 		|| player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0
 		|| (G_BattleGametype() && ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)))
 	{
@@ -2528,7 +2528,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 
 	player->kartstuff[k_spinouttype] = type;
 
-	if (player->kartstuff[k_spinouttype] <= 0) // type 0 is spinout, type 1 is wipeout, type 2 is no-invuln wipeout
+	if (( player->kartstuff[k_spinouttype] & KSPIN_THRUST ))
 	{
 		// At spinout, player speed is increased to 1/4 their regular speed, moving them forward
 		if (player->speed < K_GetKartSpeed(player, true)/4)
@@ -2759,7 +2759,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	player->kartstuff[k_pogospring] = 0;
 
 	// This is the only part that SHOULDN'T combo :VVVVV
-	if (G_BattleGametype() && !(player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2)))
+	if (G_BattleGametype() && !(player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && ( player->kartstuff[k_spinouttype] & KSPIN_IFRAMES ))))
 	{
 		if (source && source->player && player != source->player)
 		{
@@ -2798,7 +2798,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 		K_CheckBumpers();
 	}
 
-	player->kartstuff[k_spinouttype] = 1;
+	player->kartstuff[k_spinouttype] = KSPIN_EXPLOSION;
 	player->kartstuff[k_spinouttimer] = (3*TICRATE/2)+2;
 
 	player->powers[pw_flashing] = K_GetKartFlashing(player);
@@ -2849,7 +2849,7 @@ void K_StealBumper(player_t *player, player_t *victim, boolean force)
 		if (player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0)
 			return;
 
-		if (victim->powers[pw_flashing] > 0 || victim->kartstuff[k_squishedtimer] > 0 || (victim->kartstuff[k_spinouttimer] > 0 && victim->kartstuff[k_spinouttype] != 2)
+		if (victim->powers[pw_flashing] > 0 || victim->kartstuff[k_squishedtimer] > 0 || (victim->kartstuff[k_spinouttimer] > 0 && ( victim->kartstuff[k_spinouttype] & KSPIN_IFRAMES ))
 			|| victim->kartstuff[k_invincibilitytimer] > 0 || victim->kartstuff[k_growshrinktimer] > 0 || victim->kartstuff[k_hyudorotimer] > 0)
 		{
 			K_DoInstashield(victim);
@@ -3883,7 +3883,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 
 	if (spawner->player)
 	{
-		if (spawner->player->pflags & PF_SKIDDOWN)
+		if (spawner->player->pflags & PF_FAULT)
 		{
 			anglediff = abs((signed)(spawner->angle - spawner->player->frameangle));
 			if (leveltime % 6 == 0)
@@ -5705,7 +5705,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
 
-	if (!(player->pflags & PF_SKIDDOWN))
+	if (!(player->pflags & PF_FAULT))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;
@@ -6096,7 +6096,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->karthud[khud_timeovercam] = 0;
 
 	// Specific hack because it insists on setting flashing tics during this anyway...
-	if (player->kartstuff[k_spinouttype] == 2)
+	if (( player->kartstuff[k_spinouttype] & KSPIN_IFRAMES ) == 0)
 	{
 		player->powers[pw_flashing] = 0;
 	}
@@ -6115,7 +6115,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_spinouttimer])
 	{
 		if ((P_IsObjectOnGround(player->mo)
-			|| (player->kartstuff[k_spinouttype] != 0))
+			|| ( player->kartstuff[k_spinouttype] & KSPIN_AIRTIMER ))
 			&& (!player->kartstuff[k_sneakertimer]))
 		{
 			player->kartstuff[k_spinouttimer]--;
@@ -6272,7 +6272,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				player->kartstuff[k_killfield]++;
 				if (player->kartstuff[k_killfield] > 4*TICRATE)
 				{
-					K_SpinPlayer(player, NULL, 0, NULL, false);
+					K_SpinPlayer(player, NULL, KSPIN_SPINOUT, NULL, false);
 					//player->kartstuff[k_killfield] = 1;
 				}
 			}
@@ -7384,7 +7384,7 @@ static void K_KartSpindash(player_t *player)
 				}
 			}
 			else if (chargetime < -TICRATE)
-				K_SpinPlayer(player, NULL, 0, NULL, false);
+				K_SpinPlayer(player, NULL, KSPIN_SPINOUT, NULL, false);
 			else
 			{
 				if (player->kartstuff[k_spindash] % 4 == 0)

@@ -8524,7 +8524,7 @@ static const char *const MAPTHINGFLAG_LIST[4] = {
 
 static const char *const PLAYERFLAG_LIST[] = {
 	// Flip camera angle with gravity flip prefrence.
-	"FLIPCAM",
+	"FAULT",
 
 	// Cheats
 	"GODMODE",
@@ -8580,7 +8580,8 @@ static const char *const PLAYERFLAG_LIST[] = {
 	// Spill rings after falling
 	"NIGHTSFALL",
 	"DRILLING",
-	"SKIDDOWN",
+
+	"\x01", // free: 1<<26 (name un-matchable)
 
 	/*** TAG STUFF ***/
 	"TAGGED", // Player has been tagged and awaits the next round in hide and seek.
@@ -9437,6 +9438,19 @@ struct {
 	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
 	{"KSHIELD_FLAME",KSHIELD_FLAME},
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
+
+	// kartspinoutflags_t
+	{"KSPIN_THRUST",KSPIN_THRUST},
+	{"KSPIN_IFRAMES",KSPIN_IFRAMES},
+	{"KSPIN_AIRTIMER",KSPIN_AIRTIMER},
+
+	{"KSPIN_TYPEBIT",KSPIN_TYPEBIT},
+	{"KSPIN_TYPEMASK",KSPIN_TYPEMASK},
+
+	{"KSPIN_SPINOUT",KSPIN_SPINOUT},
+	{"KSPIN_WIPEOUT",KSPIN_WIPEOUT},
+	{"KSPIN_STUNG",KSPIN_STUNG},
+	{"KSPIN_EXPLOSION",KSPIN_EXPLOSION},
 
 	// translation colormaps
 	{"TC_DEFAULT",TC_DEFAULT},

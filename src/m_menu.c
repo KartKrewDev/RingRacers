@@ -2379,6 +2379,11 @@ static void M_ChangeCvar(INT32 choice)
 	    ||((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_INVISSLIDER)
 	    ||((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_NOMOD))
 	{
+		if (cv == &cv_digmusicvolume || cv == &cv_soundvolume)
+		{
+			choice *= 5;
+		}
+
 		CV_SetValue(cv,cv->value+choice);
 	}
 	else if (cv->flags & CV_FLOAT)
