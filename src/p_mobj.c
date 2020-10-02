@@ -7133,7 +7133,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					mobj->momz = 0;
 					mobj->movecount = 2;
 
-					newskin = ((skin_t*)mobj->target->skin)-skins;
+					newskin = ((skin_t*)mobj->target->skin) - skins;
 					newcolor = mobj->target->player->skincolor;
 				}
 				else
@@ -7161,7 +7161,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					{
 						if (ticstilimpact <= 8)
 						{
-							newskin = mobj->target->player->skin;
+							newskin = ((skin_t*)mobj->target->skin) - skins;
 							newcolor = mobj->target->player->skincolor;
 						}
 						else
@@ -7184,14 +7184,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 							if (plistlen <= 1)
 							{
 								// Default to the winner
-								newskin = mobj->target->player->skin;
+								newskin = ((skin_t*)mobj->target->skin) - skins;
 								newcolor = mobj->target->player->skincolor;
 							}
 							else
 							{
 								// Pick another player in the server!
 								player_t *p = &players[plist[P_RandomKey(plistlen)]];
-								newskin = p->skin;
+								newskin = ((skin_t*)p->mo->skin) - skins;
 								newcolor = p->skincolor;
 							}
 						}
@@ -7224,10 +7224,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					amt += 1;
 
 					if (newskin != -1)
+					{
 						cur->skin = &skins[newskin];
-
-					if (newcolor != SKINCOLOR_NONE)
 						cur->color = newcolor;
+					}
+				}
+				else if (cur->state == &states[S_SIGN_ERROR])
+				{
+					z += (5*mobj->scale);
+					amt += 1;
 				}
 
 				P_TeleportMove(
