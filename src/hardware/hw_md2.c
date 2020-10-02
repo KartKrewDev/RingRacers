@@ -170,7 +170,7 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 	png_FILE = fopen(pngfilename, "rb");
 	if (!png_FILE)
 	{
-		pngfilename = va("%s"PATHSEP"mdls"PATHSEP"%s", srb2path, filename);
+		pngfilename = va("%s"PATHSEP"models"PATHSEP"%s", srb2path, filename);
 		FIL_ForceExtension(pngfilename, ".png");
 		png_FILE = fopen(pngfilename, "rb");
 		//CONS_Debug(DBG_RENDER, "M_SavePNG: Error on opening %s for loading\n", filename);
