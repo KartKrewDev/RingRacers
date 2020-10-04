@@ -259,7 +259,7 @@ void K_UpdateMatchRaceBots(void)
 --------------------------------------------------*/
 boolean K_PlayerUsesBotMovement(player_t *player)
 {
-	if (player->bot || player->exiting)
+	if (player->bot || player->exiting || player->quittime)
 		return true;
 
 	return false;
@@ -683,7 +683,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL)
+	if (gamestate != GS_LEVEL
+		|| player->mo->scale <= 1) // funny post-finish death
 	{
 		// No need to do anything else.
 		return;

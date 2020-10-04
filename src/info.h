@@ -2100,7 +2100,7 @@ typedef enum state
 	S_SIGN_BACK,
 	S_SIGN_SIDE,
 	S_SIGN_FACE,
-	S_SIGN_DEFAULT,
+	S_SIGN_ERROR,
 
 	// Spike Ball
 	S_SPIKEBALL1,

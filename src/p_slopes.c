@@ -27,6 +27,9 @@
 pslope_t *slopelist = NULL;
 UINT16 slopecount = 0;
 
+static void P_BuildSlopeAnchorList (void);
+static void P_SetupAnchoredSlopes  (void);
+
 // Calculate line normal
 void P_CalculateSlopeNormal(pslope_t *slope) {
 	slope->normal.z = FINECOSINE(slope->zangle>>ANGLETOFINESHIFT);
@@ -72,7 +75,7 @@ static void P_CalculateLineSlopeHighLow(pslope_t *slope, line_t *line, boolean c
 }
 
 /// Setup slope via 3 vertexes.
-static void ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector3_t v2, const vector3_t v3)
+void P_ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector3_t v2, const vector3_t v3)
 {
 	vector3_t vec1, vec2;
 
@@ -185,7 +188,7 @@ void T_DynamicSlopeVert (dynplanethink_t* th)
 			th->vex[i].z = 0;
 	}
 
-	ReconfigureViaVertexes(slope, th->vex[0], th->vex[1], th->vex[2]);
+	P_ReconfigureViaVertexes(slope, th->vex[0], th->vex[1], th->vex[2]);
 }
 
 static inline void P_AddDynSlopeThinker (pslope_t* slope, dynplanetype_t type, line_t* sourceline, fixed_t extent, const INT16 tags[3], const vector3_t vx[3])
@@ -492,7 +495,7 @@ static pslope_t *MakeViaMapthings(INT16 tag1, INT16 tag2, INT16 tag3, UINT8 flag
 			vx[i].z += R_PointInSubsector(vx[i].x, vx[i].y)->sector->floorheight;
 	}
 
-	ReconfigureViaVertexes(ret, vx[0], vx[1], vx[2]);
+	P_ReconfigureViaVertexes(ret, vx[0], vx[1], vx[2]);
 
 	if (spawnthinker && (flags & SL_DYNAMIC))
 		P_AddDynSlopeThinker(ret, DP_VERTEX, NULL, 0, tags, vx);
@@ -574,7 +577,7 @@ static void SpawnVertexSlopes(void)
 			pslope_t *slop = Slope_Add(0);
 			sc->f_slope = slop;
 			sc->hasslope = true;
-			ReconfigureViaVertexes(slop, vtx[0], vtx[1], vtx[2]);
+			P_ReconfigureViaVertexes(slop, vtx[0], vtx[1], vtx[2]);
 		}
 
 		if (v1->ceilingzset || v2->ceilingzset || v3->ceilingzset)
@@ -586,7 +589,7 @@ static void SpawnVertexSlopes(void)
 			pslope_t *slop = Slope_Add(0);
 			sc->c_slope = slop;
 			sc->hasslope = true;
-			ReconfigureViaVertexes(slop, vtx[0], vtx[1], vtx[2]);
+			P_ReconfigureViaVertexes(slop, vtx[0], vtx[1], vtx[2]);
 		}
 	}
 }
@@ -708,6 +711,14 @@ void P_SpawnSlopes(const boolean fromsave) {
 				break;
 		}
 	}
+
+	// jart
+
+	/// Build list of slope anchors--faster searching.
+	P_BuildSlopeAnchorList();
+
+	/// Setup anchor based slopes.
+	P_SetupAnchoredSlopes();
 
 	/// Copies slopes from tagged sectors via line specials.
 	/// \note Doesn't actually copy, but instead they share the same pointers.
@@ -934,8 +945,8 @@ void P_ButteredSlope(mobj_t *mo)
 			return;
 
 		// Changed in kart to only not apply physics on very slight slopes (I think about 4 degree angles)
-		if (abs(mo->standingslope->zdelta) < FRACUNIT/21 && !(mo->player->pflags & PF_SPINNING))
-			return; // Don't slide on non-steep slopes unless spinning
+		if (abs(mo->standingslope->zdelta) < FRACUNIT/21)
+			return; // Don't slide on non-steep slopes
 
 		// This only means you can be stopped on slopes that aren't steeper than 45 degrees
 		if (abs(mo->standingslope->zdelta) < FRACUNIT/2 && !(mo->player->rmomx || mo->player->rmomy))
@@ -966,3 +977,6 @@ void P_ButteredSlope(mobj_t *mo)
 
 	P_Thrust(mo, mo->standingslope->xydirection, thrust);
 }
+
+// jart
+#include "slope_anchors.c"

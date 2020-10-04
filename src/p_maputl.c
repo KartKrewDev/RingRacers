@@ -432,8 +432,17 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		return;
 	}
 
-	front = linedef->frontsector;
-	back = linedef->backsector;
+	// Treat polyobjects kind of like 3D Floors
+	if (linedef->polyobj && (linedef->polyobj->flags & POF_TESTHEIGHT))
+	{
+		front = linedef->frontsector;
+		back = linedef->frontsector;
+	}
+	else
+	{
+		front = linedef->frontsector;
+		back = linedef->backsector;
+	}
 
 	I_Assert(front != NULL);
 	I_Assert(back != NULL);

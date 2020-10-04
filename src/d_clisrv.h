@@ -367,6 +367,11 @@ typedef struct
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
+	// Discord info (always defined for net compatibility)
+	UINT8 maxplayer;
+	boolean allownewplayer;
+	boolean discordinvites;
+
 	UINT8 varlengthinputs[0]; // Playernames and netvars
 } ATTRPACK serverconfig_pak;
 
@@ -592,6 +597,10 @@ typedef enum
 
 } kickreason_t;
 
+/* the max number of name changes in some time period */
+#define MAXNAMECHANGES (5)
+#define NAMECHANGERATE (60*TICRATE)
+
 extern boolean server;
 extern boolean serverrunning;
 #define client (!server)
@@ -619,6 +628,8 @@ extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 extern consvar_t cv_joinnextround;
 #endif
 
+extern consvar_t cv_discordinvites;
+
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, tic_t basetic);
 void D_ClientServerInit(void);
@@ -643,7 +654,7 @@ void CL_Reset(void);
 void CL_ClearPlayer(INT32 playernum);
 void CL_RemovePlayer(INT32 playernum, kickreason_t reason);
 void CL_QueryServerList(msg_server_t *list);
-void CL_UpdateServerList(boolean internetsearch, INT32 room);
+void CL_UpdateServerList(void);
 // Is there a game running
 boolean Playing(void);
 

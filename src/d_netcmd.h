@@ -161,6 +161,7 @@ typedef enum
 	XD_CANCELPARTYINVITE, // 31
 	XD_GIVEITEM,    // 32
 	XD_ADDBOT,      // 33
+	XD_DISCORD,     // 34
 
 	MAXNETXCMD
 } netxcmd_t;

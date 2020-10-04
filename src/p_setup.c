@@ -1349,7 +1349,7 @@ static void P_LoadThings(UINT8 *data)
 		mt->type = READUINT16(data);
 		mt->options = READUINT16(data);
 		mt->extrainfo = (UINT8)(mt->type >> 12);
-		mt->scale = FRACUNIT;
+		mt->scale = mapobjectscale;
 		mt->tag = 0;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
@@ -1873,7 +1873,7 @@ static void P_LoadTextmap(void)
 		mt->options = 0;
 		mt->z = 0;
 		mt->extrainfo = 0;
-		mt->scale = FRACUNIT;
+		mt->scale = mapobjectscale;
 		mt->tag = 0;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
@@ -3157,6 +3157,35 @@ static void P_ConvertBinaryMap(void)
 		case 780:
 			mapthings[i].tag = mapthings[i].extrainfo;
 			break;
+		case 2001: // MT_WAYPOINT
+		{
+			INT32 firstline = P_FindSpecialLineFromTag(2000, mapthings[i].angle, -1);
+
+			mapthings[i].tag = mapthings[i].angle;
+			mapthings[i].args[0] = mapthings[i].z;
+			mapthings[i].args[2] = mapthings[i].extrainfo;
+			mapthings[i].z = 0;
+
+			if (firstline != -1)
+			{
+				fixed_t lineradius = sides[lines[firstline].sidenum[0]].textureoffset;
+				fixed_t linez = sides[lines[firstline].sidenum[0]].rowoffset;
+
+				if (lineradius > 0)
+					mapthings[i].args[1] = lineradius / FRACUNIT;
+
+				mapthings[i].z = linez / FRACUNIT;
+			}
+			break;
+		}
+		case 2004: // MT_BOTHINT
+			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].args[1] = mapthings[i].extrainfo;
+			break;
+		case 2333: // MT_BATTLECAPSULE
+			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].args[1] = mapthings[i].angle;
+			break;
 		default:
 			break;
 		}
@@ -3974,13 +4003,19 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	P_MapStart();
 
-	if (!P_LoadMapFromFile())
-		return false;
-
 	// init anything that P_SpawnSlopes/P_LoadThings needs to know
 	P_InitSpecials();
 
+	if (!P_LoadMapFromFile())
+		return false;
+
+	// set up world state
+	// jart: needs to be done here so anchored slopes know the attached list
+	P_SpawnSpecials(fromnetsave);
+
 	P_SpawnSlopes(fromnetsave);
+
+	P_SpawnSpecialsAfterSlopes();
 
 	P_SpawnMapThings(!fromnetsave);
 	skyboxmo[0] = skyboxviewpnts[0];
@@ -3990,9 +4025,13 @@ boolean P_LoadLevel(boolean fromnetsave)
 		if (!playerstarts[numcoopstarts])
 			break;
 
-	// set up world state
-	P_SpawnSpecials(fromnetsave);
-	K_AdjustWaypointsParameters();
+	P_SpawnSpecialsThatRequireObjects();
+
+	if (!udmf)
+	{
+		// Backwards compatibility for non-UDMF maps
+		K_AdjustWaypointsParameters();
+	}
 
 	if (!fromnetsave) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
@@ -4000,7 +4039,7 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// The waypoint data that's in PU_LEVEL needs to be reset back to 0/NULL now since PU_LEVEL was cleared
 	K_ClearWaypoints();
 	// Load the waypoints please!
-	if ((gametyperules & GTR_CIRCUIT))
+	if (gametyperules & GTR_CIRCUIT)
 	{
 		if (K_SetupWaypointList() == false)
 		{

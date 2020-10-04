@@ -43,6 +43,8 @@ void P_SetupLevelFlatAnims(void);
 // at map load
 void P_InitSpecials(void);
 void P_SpawnSpecials(boolean fromnetsave);
+void P_SpawnSpecialsAfterSlopes(void);
+void P_SpawnSpecialsThatRequireObjects(void);
 
 // every tic
 void P_UpdateSpecials(void);
@@ -528,10 +530,7 @@ typedef struct
 } friction_t;
 
 // Friction defines.
-#define ORIG_FRICTION          (62914) ///< Original value.
-//#define ORIG_FRICTION_RETRO    (0xE8 << (FRACBITS-8))
-//#define ORIG_FRICTION_NEO      (62914)
-#define ORIG_FRICTION_FACTOR   (8 << (FRACBITS-8))    ///< Original value.
+#define ORIG_FRICTION          (0xF5 << (FRACBITS-8)) ///< Original value.
 
 void T_Friction(friction_t *f);
 
@@ -650,5 +649,13 @@ void T_PlaneDisplace(planedisplace_t *pd);
 void P_CalcHeight(player_t *player);
 
 sector_t *P_ThingOnSpecial3DFloor(mobj_t *mo);
+
+/* line specials */
+enum
+{
+	LT_SLOPE_ANCHORS_FLOOR   = 777,
+	LT_SLOPE_ANCHORS_CEILING = 778,
+	LT_SLOPE_ANCHORS         = 779,
+};
 
 #endif

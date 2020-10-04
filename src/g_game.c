@@ -58,6 +58,10 @@
 #include "k_grandprix.h"
 #include "doomstat.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
@@ -471,6 +475,7 @@ player_t *seenplayer; // player we're aiming at right now
 // now automatically allocated in D_RegisterClientCommands
 // so that it doesn't have to be updated depending on the value of MAXPLAYERS
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1];
+INT32 player_name_changes[MAXPLAYERS];
 
 // Allocation for time and nights data
 void G_AllocMainRecordData(INT16 i)
@@ -683,9 +688,9 @@ const char *G_BuildMapName(INT32 map)
   * Used whenever the player view is changed manually.
   *
   * \param aiming Pointer to the vertical angle to clip.
-  * \return Short version of the clipped angle for building a ticcmd.
+  * \return The clipped angle.
   */
-INT16 G_ClipAimingPitch(INT32 *aiming)
+INT32 G_ClipAimingPitch(INT32 *aiming)
 {
 	INT32 limitangle;
 
@@ -696,7 +701,7 @@ INT16 G_ClipAimingPitch(INT32 *aiming)
 	else if (*aiming < -limitangle)
 		*aiming = -limitangle;
 
-	return (INT16)((*aiming)>>16);
+	return (*aiming);
 }
 
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
@@ -877,7 +882,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	player_t *player = &players[g_localplayers[forplayer]];
 	camera_t *thiscam = &camera[forplayer];
-	INT32 *laim = &localaiming[forplayer];
 	INT32 *th = &turnheld[forplayer];
 	boolean *kbl = &keyboard_look[forplayer];
 	boolean *rd = &resetdown[forplayer];
@@ -908,7 +912,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// Kart, don't build a ticcmd if someone is resynching or the server is stopped too so we don't fly off course in bad conditions
 	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN) || hu_resynching)
 	{
-		cmd->aiming = G_ClipAimingPitch(laim);
 		return;
 	}
 
@@ -1074,39 +1077,33 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			*kbl = false;
 
 			// looking up/down
-			*laim += (mlooky<<19)*player_invert*screen_invert;
+			cmd->aiming += (mlooky<<19)*player_invert*screen_invert;
 		}
 
 		axis = PlayerJoyAxis(ssplayer, AXISLOOK);
 		if (analogjoystickmove && axis != 0 && lookaxis && player->spectator)
-			*laim += (axis<<16) * screen_invert;
+			cmd->aiming += (axis<<16) * screen_invert;
 
 		// spring back if not using keyboard neither mouselookin'
 		if (*kbl == false && !lookaxis && !mouseaiming)
-			*laim = 0;
+			cmd->aiming = 0;
 
 		if (player->spectator)
 		{
 			if (PlayerInputDown(ssplayer, gc_lookup) || (gamepadjoystickmove && axis < 0))
 			{
-				*laim += KB_LOOKSPEED * screen_invert;
+				cmd->aiming += KB_LOOKSPEED * screen_invert;
 				*kbl = true;
 			}
 			else if (PlayerInputDown(ssplayer, gc_lookdown) || (gamepadjoystickmove && axis > 0))
 			{
-				*laim -= KB_LOOKSPEED * screen_invert;
+				cmd->aiming -= KB_LOOKSPEED * screen_invert;
 				*kbl = true;
 			}
 		}
 
 		if (PlayerInputDown(ssplayer, gc_centerview)) // No need to put a spectator limit on this one though :V
-			*laim = 0;
-
-		// accept no mlook for network games
-		if (!cv_allowmlook.value)
-			*laim = 0;
-
-		cmd->aiming = G_ClipAimingPitch(laim);
+			cmd->aiming = 0;
 	}
 
 	mousex = mousey = mlooky = 0;
@@ -1965,6 +1962,11 @@ void G_Ticker(boolean run)
 			if (camtoggledelay[i])
 				camtoggledelay[i]--;
 		}
+
+		if (gametic % NAMECHANGERATE == 0)
+		{
+			memset(player_name_changes, 0, sizeof player_name_changes);
+		}
 	}
 }
 
@@ -2371,7 +2373,7 @@ void G_SpawnPlayer(INT32 playernum)
 
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 {
-	if (players[playernum].starpostnum)
+	if (leveltime > starttime)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
@@ -2788,7 +2790,7 @@ UINT32 gametypedefaultrules[NUMGAMETYPES] =
 	// Race
 	GTR_CIRCUIT|GTR_RINGS|GTR_BOTS,
 	// Battle
-	GTR_BUMPERS|GTR_KARMA|GTR_ITEMARROWS|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
+	GTR_BUMPERS|GTR_WANTED|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
 };
 
 //
@@ -4752,6 +4754,9 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 /* These functions handle the exitgame flag. Before, when the user

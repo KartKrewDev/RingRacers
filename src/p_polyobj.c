@@ -844,13 +844,6 @@ static void Polyobj_slideThing(mobj_t *mo, fixed_t dx, fixed_t dy)
 		dx = FixedMul(dx, FRACUNIT - mo->friction);
 		dy = FixedMul(dy, FRACUNIT - mo->friction);
 
-		if (mo->player->pflags & PF_SPINNING && (mo->player->rmomx || mo->player->rmomy) && !(mo->player->pflags & PF_STARTDASH)) {
-#define SPINMULT 5184 // Consider this a substitute for properly calculating FRACUNIT-friction. I'm tired. -Red
-			dx = FixedMul(dx, SPINMULT);
-			dy = FixedMul(dy, SPINMULT);
-#undef SPINMULT
-		}
-
 		mo->momx += dx;
 		mo->momy += dy;
 

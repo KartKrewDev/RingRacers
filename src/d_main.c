@@ -59,7 +59,6 @@
 #include "m_cheat.h"
 #include "y_inter.h"
 #include "p_local.h" // chasecam
-#include "mserv.h" // ms_RoomId
 #include "m_misc.h" // screenshot functionality
 #include "dehacked.h" // Dehacked list test
 #include "m_cond.h" // condition initialization
@@ -95,6 +94,10 @@
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
+
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
 
 // platform independant focus loss
 UINT8 window_notinfocus = false;
@@ -903,6 +906,13 @@ void D_SRB2Loop(void)
 #endif
 
 		LUA_Step();
+
+#ifdef HAVE_DISCORDRPC
+		if (! dedicated)
+		{
+			Discord_RunCallbacks();
+		}
+#endif
 	}
 }
 
@@ -1080,9 +1090,23 @@ static void ChangeDirForUrlHandler(void)
 // Identify the SRB2 version, and IWAD file to use.
 // ==========================================================================
 
+static boolean AddIWAD(void)
+{
+	char * path = va(pandf,srb2path,"main.kart");
+
+	if (FIL_ReadFileOK(path))
+	{
+		D_AddFile(path, startupiwads);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 static void IdentifyVersion(void)
 {
-	char *mainresource;
 	const char *srb2waddir = NULL;
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
@@ -1100,35 +1124,18 @@ static void IdentifyVersion(void)
 		if (getcwd(srb2path, 256) != NULL)
 			srb2waddir = srb2path;
 		else
-		{
 			srb2waddir = ".";
-		}
 	}
 
-#if defined (macintosh) && !defined (HAVE_SDL)
-	// cwd is always "/" when app is dbl-clicked
-	if (!stricmp(srb2waddir, "/"))
-		srb2waddir = I_GetWadDir();
-#endif
-	// Commercial.
-	mainresource = malloc(strlen(srb2waddir)+1+9+1);
-	if (mainresource == NULL)
-		I_Error("No more free memory to look in %s", srb2waddir);
-	else
-		sprintf(mainresource, pandf, srb2waddir, "main.kart");
+	// Load the IWAD
+	if (! AddIWAD())
+	{
+		I_Error("MAIN.KART not found! Expected in %s\n", srb2waddir);
+	}
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
 	configfile[sizeof configfile - 1] = '\0';
-
-	// Load the IWAD
-	if (mainresource != NULL && FIL_ReadFileOK(mainresource))
-		D_AddFile(mainresource, startupiwads);
-	else
-		I_Error("main.kart not found! Expected in %s, ss file: %s \n", srb2waddir, mainresource);
-
-	if (mainresource)
-		free(mainresource);
 
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
@@ -1664,17 +1671,6 @@ void D_SRB2Main(void)
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
 
-	if (M_CheckParm("-room"))
-	{
-		if (!M_IsNextParm())
-			I_Error("usage: -room <room_id>\nCheck the Master Server's webpage for room ID numbers.\n");
-		ms_RoomId = atoi(M_GetNextParm());
-
-#ifdef UPDATE_ALERT
-		GetMODVersion_Console();
-#endif
-	}
-
 	// Set up splitscreen players before joining!
 	if (!dedicated && (M_CheckParm("-splitscreen") && M_IsNextParm()))
 	{
@@ -1892,6 +1888,13 @@ void D_SRB2Main(void)
 		if (!P_LoadLevel(false))
 			I_Quit(); // fail so reset game stuff
 	}
+
+#ifdef HAVE_DISCORDRPC
+	if (! dedicated)
+	{
+		DRPC_Init();
+	}
+#endif
 }
 
 const char *D_Home(void)

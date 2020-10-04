@@ -286,9 +286,7 @@ boolean P_PlayerMoving(INT32 pnum)
 	return gamestate == GS_LEVEL && p->mo && p->mo->health > 0
 		&& (abs(p->rmomx) >= FixedMul(FRACUNIT/2, p->mo->scale)
 			|| abs(p->rmomy) >= FixedMul(FRACUNIT/2, p->mo->scale)
-			|| abs(p->mo->momz) >= FixedMul(FRACUNIT/2, p->mo->scale)
-			|| p->climbing || p->powers[pw_tailsfly]
-			|| (p->pflags & PF_JUMPED) || (p->pflags & PF_SPINNING));
+			|| abs(p->mo->momz) >= FixedMul(FRACUNIT/2, p->mo->scale));
 }
 
 // P_GetNextEmerald
@@ -482,8 +480,12 @@ boolean P_PlayerInPain(player_t *player)
 void P_ResetPlayer(player_t *player)
 {
 	//player->pflags &= ~(PF_);
+
 	player->powers[pw_carry] = CR_NONE;
 	player->onconveyor = 0;
+
+	player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
+	player->kartstuff[k_pogospring] = 0;
 }
 
 //
@@ -1514,22 +1516,7 @@ static void P_CheckBustableBlocks(player_t *player)
 					if (rover->flags & FF_SHATTER)
 						goto bust;
 
-					// If it's an FF_SPINBUST, you can break it if you are in your spinning frames
-					// (either from jumping or spindashing).
-					if (rover->flags & FF_SPINBUST
-						&& (((player->pflags & PF_SPINNING) && !(player->pflags & PF_STARTDASH))
-							|| (player->pflags & PF_JUMPED && !(player->pflags & PF_NOJUMPDAMAGE))))
-						goto bust;
-
 					if (rover->flags & FF_STRONGBUST)
-						continue;
-
-					// If it's not an FF_STRONGBUST, you can break if you are spinning (and not jumping)
-					// or you are super
-					// or you are recording for Metal Sonic
-					if (!((player->pflags & PF_SPINNING) && !(player->pflags & PF_JUMPED))
-						&& !(player->powers[pw_super])
-						&& !metalrecording)
 						continue;
 
 				bust:
@@ -1859,7 +1846,6 @@ static void P_DoBubbleBreath(player_t *player)
 //#define OLD_MOVEMENT_CODE 1
 static void P_3dMovement(player_t *player)
 {
-	ticcmd_t *cmd;
 	angle_t movepushangle; // Analog
 	fixed_t movepushforward = 0;
 	angle_t dangle; // replaces old quadrants bits
@@ -1871,8 +1857,6 @@ static void P_3dMovement(player_t *player)
 
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
-
-	cmd = &player->cmd;
 
 	if (player->kartstuff[k_drift] != 0)
 		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
@@ -1936,7 +1920,7 @@ static void P_3dMovement(player_t *player)
 	// SRB2Kart: pogo spring and speed bumps are supposed to control like you're on the ground
 	onground = (P_IsObjectOnGround(player->mo) || (player->kartstuff[k_pogospring]));
 
-	player->aiming = cmd->aiming<<FRACBITS;
+	K_AdjustPlayerFriction(player);
 
 	// Forward movement
 	if (!P_PlayerInPain(player))
@@ -1951,10 +1935,12 @@ static void P_3dMovement(player_t *player)
 			totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 			totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
 		}
-		else
-		{
-			K_MomentumToFacing(player);
-		}
+	}
+
+	if ((!P_PlayerInPain(player) && !onground)
+	|| (K_PlayerUsesBotMovement(player) == true))
+	{
+		K_MomentumToFacing(player);
 	}
 
 	if ((totalthrust.x || totalthrust.y)
@@ -1972,11 +1958,6 @@ static void P_3dMovement(player_t *player)
 				P_QuantizeMomentumToSlope(&totalthrust, player->mo->standingslope);
 			}
 		}
-	}
-
-	if (K_PlayerUsesBotMovement(player))
-	{
-		K_MomentumToFacing(player);
 	}
 
 	player->mo->momx += totalthrust.x;
@@ -2054,6 +2035,39 @@ static void P_3dMovement(player_t *player)
 }
 
 //
+// P_UpdatePlayerAngle
+//
+// Updates player angleturn with cmd->turning
+//
+static void P_UpdatePlayerAngle(player_t *player)
+{
+	angle_t angleChange = K_GetKartTurnValue(player, player->cmd.turning) << TICCMD_REDUCE;
+	UINT8 i;
+
+	P_SetPlayerAngle(player, player->angleturn + angleChange);
+	player->mo->angle = player->angleturn;
+
+	if (!cv_allowmlook.value || player->spectator == false)
+	{
+		player->aiming = 0;
+	}
+	else
+	{
+		player->aiming += (player->cmd.aiming << TICCMD_REDUCE);
+		player->aiming = G_ClipAimingPitch((INT32 *)&player->aiming);
+	}
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (player == &players[displayplayers[i]])
+		{
+			localaiming[i] = player->aiming;
+			break;
+		}
+	}
+}
+
+//
 // P_SpectatorMovement
 //
 // Control for spectators in multiplayer
@@ -2062,7 +2076,7 @@ static void P_SpectatorMovement(player_t *player)
 {
 	ticcmd_t *cmd = &player->cmd;
 
-	player->mo->angle = player->angleturn;
+	P_UpdatePlayerAngle(player);
 
 	ticruned++;
 	if (!(cmd->flags & TICCMD_RECEIVED))
@@ -2077,10 +2091,6 @@ static void P_SpectatorMovement(player_t *player)
 		player->mo->z = player->mo->ceilingz - player->mo->height;
 	if (player->mo->z < player->mo->floorz)
 		player->mo->z = player->mo->floorz;
-
-	// Aiming needed for SEENAMES, etc.
-	// We may not need to fire as a spectator, but this is still handy!
-	player->aiming = cmd->aiming<<FRACBITS;
 
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 	if (cmd->forwardmove != 0)
@@ -2133,7 +2143,7 @@ void P_MovePlayer(player_t *player)
 	// MOVEMENT CODE	//
 	//////////////////////
 
-	player->mo->angle = player->angleturn;
+	P_UpdatePlayerAngle(player);
 
 	ticruned++;
 	if (!(cmd->flags & TICCMD_RECEIVED))
@@ -2346,10 +2356,7 @@ void P_MovePlayer(player_t *player)
 		if ((netgame || multiplayer) && player->spectator)
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_SPECTATOR); // Respawn crushed spectators
 		else
-		{
-			K_SquishPlayer(player, NULL, NULL); // SRB2kart - we don't kill when squished, we squish when squished.
-			// P_DamageMobj(player->mo, NULL, NULL, 1, DMG_CRUSHED);
-		}
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_CRUSHED);
 
 		if (player->playerstate == PST_DEAD)
 			return;
@@ -2752,11 +2759,10 @@ void P_InitCameraCmd(void)
 
 static ticcmd_t *P_CameraCmd(camera_t *cam)
 {
-	INT32 laim, th, tspeed, forward, axis; //i
+	INT32 th, tspeed, forward, axis; //i
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming;
 	boolean invertmouse, lookaxis, usejoystick, kbl;
-	angle_t lang;
 	INT32 player_invert;
 	INT32 screen_invert;
 	ticcmd_t *cmd = &cameracmd;
@@ -2766,15 +2772,10 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	if (!demo.playback)
 		return cmd;	// empty cmd, no.
 
-	lang = democam.localangle;
-	laim = democam.localaiming;
 	th = democam.turnheld;
 	kbl = democam.keyboardlook;
 
 	G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
-
-	//cmd->turning = (INT16)(lang >> 16);
-	cmd->aiming = G_ClipAimingPitch(&laim);
 
 	mouseaiming = true;
 	invertmouse = cv_invertmouse.value;
@@ -2852,29 +2853,27 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	kbl = false;
 
 	// looking up/down
-	laim += (mlooky<<19)*player_invert*screen_invert;
+	cmd->aiming += (mlooky<<19)*player_invert*screen_invert;
 
 	axis = PlayerJoyAxis(1, AXISLOOK);
 
 	// spring back if not using keyboard neither mouselookin'
 	if (!kbl && !lookaxis && !mouseaiming)
-		laim = 0;
+		cmd->aiming = 0;
 
 	if (PlayerInputDown(1, gc_lookup) || (axis < 0))
 	{
-		laim += KB_LOOKSPEED * screen_invert;
+		cmd->aiming += KB_LOOKSPEED * screen_invert;
 		kbl = true;
 	}
 	else if (PlayerInputDown(1, gc_lookdown) || (axis > 0))
 	{
-		laim -= KB_LOOKSPEED * screen_invert;
+		cmd->aiming -= KB_LOOKSPEED * screen_invert;
 		kbl = true;
 	}
 
 	if (PlayerInputDown(1, gc_centerview)) // No need to put a spectator limit on this one though :V
-		laim = 0;
-
-	cmd->aiming = G_ClipAimingPitch(&laim);
+		cmd->aiming = 0;
 
 	mousex = mousey = mlooky = 0;
 
@@ -2885,10 +2884,6 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	else if (cmd->forwardmove < -MAXPLMOVE)
 		cmd->forwardmove = -MAXPLMOVE;
 
-	lang += (cmd->turning << TICCMD_REDUCE);
-
-	democam.localangle = lang;
-	democam.localaiming = laim;
 	democam.turnheld = th;
 	democam.keyboardlook = kbl;
 
@@ -2910,8 +2905,14 @@ void P_DemoCameraMovement(camera_t *cam)
 	// first off we need to get button input
 	cmd = P_CameraCmd(cam);
 
-	cam->aiming = cmd->aiming<<FRACBITS;
-	//cam->angle = cmd->angleturn << TICCMD_REDUCE;
+	cam->aiming += cmd->aiming << TICCMD_REDUCE;
+	cam->angle += cmd->turning << TICCMD_REDUCE;
+
+	democam.localangle += cmd->turning << TICCMD_REDUCE;
+	democam.localaiming += cmd->aiming << TICCMD_REDUCE;
+
+	cam->aiming = G_ClipAimingPitch((INT32 *)&cam->aiming);
+	democam.localaiming = G_ClipAimingPitch((INT32 *)&democam.localaiming);
 
 	// camera movement:
 
@@ -3783,7 +3784,7 @@ void P_DoTimeOver(player_t *player)
 	if (player->mo)
 	{
 		S_StopSound(player->mo);
-		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
+		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
 	P_EndingMusic(player);
@@ -4328,12 +4329,6 @@ void P_PlayerThink(player_t *player)
 
 	cmd = &player->cmd;
 
-	{
-		angle_t angleChange = K_GetKartTurnValue(player, cmd->turning) << TICCMD_REDUCE;
-		player->angleturn += angleChange;
-		P_SetLocalAngle(player, P_GetLocalAngle(player) + angleChange);
-	}
-
 	// SRB2kart
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
@@ -4769,17 +4764,8 @@ void P_PlayerAfterThink(player_t *player)
 
 void P_SetPlayerAngle(player_t *player, angle_t angle)
 {
-	angle_t delta = angle - player->angleturn;
-
-	P_ForceLocalAngle(player, P_GetLocalAngle(player) + delta);
-	player->angleturn += delta;
-}
-
-void P_SetLocalAngle(player_t *player, angle_t angle)
-{
-	angle_t delta = (angle - P_GetLocalAngle(player));
-
-	P_ForceLocalAngle(player, P_GetLocalAngle(player) + delta);
+	P_ForceLocalAngle(player, angle);
+	player->angleturn = angle;
 }
 
 angle_t P_GetLocalAngle(player_t *player)
@@ -4788,9 +4774,9 @@ angle_t P_GetLocalAngle(player_t *player)
 	// (hint: they have separate variables for all of this shit instead of arrays)
 	UINT8 i;
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		if (player == &players[g_localplayers[i]])
+		if (player == &players[displayplayers[i]])
 			return localangle[i];
 	}
 
@@ -4803,9 +4789,9 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 
 	angle = angle & ~UINT16_MAX;
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		if (player == &players[g_localplayers[i]])
+		if (player == &players[displayplayers[i]])
 		{
 			localangle[i] = angle;
 			break;

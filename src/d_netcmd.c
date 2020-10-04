@@ -64,6 +64,10 @@
 #define CV_RESTRICT 0
 #endif
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 // ------
 // protos
 // ------
@@ -89,6 +93,7 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
+static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -748,10 +753,13 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_showviewpointtext);
 
 #ifdef SEENAMES
-	 CV_RegisterVar(&cv_allowseenames);
+	CV_RegisterVar(&cv_allowseenames);
 #endif
 
 	CV_RegisterVar(&cv_dummyconsvar);
+
+	CV_RegisterVar(&cv_discordinvites);
+	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 }
 
 // =========================================================================
@@ -1038,6 +1046,12 @@ void D_RegisterClientCommands(void)
 #ifdef LUA_ALLOW_BYTECODE
 	COM_AddCommand("dumplua", Command_Dumplua_f);
 #endif
+
+#ifdef HAVE_DISCORDRPC
+	CV_RegisterVar(&cv_discordrp);
+	CV_RegisterVar(&cv_discordstreamer);
+	CV_RegisterVar(&cv_discordasks);
+#endif
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -1255,6 +1269,8 @@ static void SetPlayerName(INT32 playernum, char *newname)
 			if (netgame)
 				HU_AddChatText(va("\x82*%s renamed to %s", player_names[playernum], newname), false);
 
+			player_name_changes[playernum]++;
+
 			strcpy(player_names[playernum], newname);
 			demo_extradata[playernum] |= DXD_NAME;
 		}
@@ -1455,7 +1471,12 @@ static void SendNameAndColor(UINT8 n)
 	snacpending[n]++;
 
 	// Don't change name if muted
-	if (cv_mute.value && !(server || IsPlayerAdmin(playernum)))
+	if (player_name_changes[playernum] >= MAXNAMECHANGES)
+	{
+		CV_StealthSet(&cv_playername[n], player_names[playernum]);
+		HU_AddChatText("\x85*You must wait to change your name again", false);
+	}
+	else if (cv_mute.value && !(server || IsPlayerAdmin(playernum)))
 		CV_StealthSet(&cv_playername[n], player_names[playernum]);
 	else // Cleanup name if changing it
 		CleanupPlayerName(playernum, cv_playername[n].zstring);
@@ -1491,6 +1512,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	UINT16 color, followercolor;
 	UINT8 skin;
 	SINT8 follower;
+	SINT8 localplayer = -1;
 	UINT8 i;
 
 #ifdef PARANOIA
@@ -1509,7 +1531,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 				I_Error("snacpending[%d] negative!", i);
 #endif
 
-			// i is now player screen id
+			localplayer = i;
 			break;
 		}
 	}
@@ -1590,8 +1612,8 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 		const INT32 forcedskin = cv_forceskin.value;
 		SetPlayerSkinByNum(playernum, forcedskin);
 
-		if (playernum == g_localplayers[i])
-			CV_StealthSet(&cv_skin[i], skins[forcedskin].name);
+		if (localplayer != -1)
+			CV_StealthSet(&cv_skin[localplayer], skins[forcedskin].name);
 	}
 	else
 		SetPlayerSkinByNum(playernum, skin);
@@ -1602,6 +1624,11 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 
 	// set follower
 	SetFollower(playernum, follower);
+
+#ifdef HAVE_DISCORDRPC
+	if (playernum == consoleplayer)
+		DRPC_UpdatePresence();
+#endif
 }
 
 void SendWeaponPref(UINT8 n)
@@ -2865,6 +2892,10 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (demo.recording) // Okay, level loaded, character spawned and skinned,
 		G_BeginRecording(); // I AM NOW READY TO RECORD.
 	demo.deferstart = true;
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 static void Command_Pause(void)
@@ -3799,7 +3830,7 @@ static void Command_RunSOC(void)
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 {
 	char filename[256];
-	filestatus_t ncs = FS_NOTFOUND;
+	filestatus_t ncs = FS_NOTCHECKED;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -3937,7 +3968,7 @@ static void Command_Addfile(void)
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 {
 	char filename[241];
-	filestatus_t ncs = FS_NOTFOUND;
+	filestatus_t ncs = FS_NOTCHECKED;
 	UINT8 md5sum[16];
 	boolean kick = false;
 	boolean toomany = false;
@@ -3996,7 +4027,7 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 {
 	char filename[241];
-	filestatus_t ncs = FS_NOTFOUND;
+	filestatus_t ncs = FS_NOTCHECKED;
 	UINT8 md5sum[16];
 
 	READSTRINGN(*cp, filename, 240);
@@ -4289,6 +4320,10 @@ static void TimeLimit_OnChange(void)
 	}
 	else if (netgame || multiplayer)
 		CONS_Printf(M_GetText("Time limit disabled\n"));
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 /** Adjusts certain settings to match a changed gametype.
@@ -5602,4 +5637,27 @@ static void KartEliminateLast_OnChange(void)
 	}
 
 	P_CheckRacers();
+}
+
+void Got_DiscordInfo(UINT8 **p, INT32 playernum)
+{
+	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
+	{
+		// protect against hacked/buggy client
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+		return;
+	}
+
+	// Don't do anything with the information if we don't have Discord RP support
+#ifdef HAVE_DISCORDRPC
+	discordInfo.maxPlayers = READUINT8(*p);
+	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
+	discordInfo.everyoneCanInvite = (boolean)READUINT8(*p);
+
+	DRPC_UpdatePresence();
+#else
+	(*p) += 3;
+#endif
 }

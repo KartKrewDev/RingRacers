@@ -1081,7 +1081,6 @@ INT32 P_FindSpecialLineFromTag(INT16 special, INT16 tag, INT32 start)
 	}
 }
 
-
 // Parses arguments for parameterized polyobject door types
 static boolean PolyDoor(line_t *line)
 {
@@ -1354,7 +1353,6 @@ static boolean PolyDisplace(line_t *line)
 
 	return EV_DoPolyObjDisplace(&pdd);
 }
-
 
 // Parses arguments for parameterized polyobject rotate-by-sector-heights specials
 static boolean PolyRotDisplace(line_t *line)
@@ -3898,7 +3896,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 	}
 }
 
-static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
+static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo, boolean error)
 {
 	mobj_t *cur = sign, *prev = NULL;
 
@@ -3927,7 +3925,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo)
 	cur->hnext = P_SpawnMobj(sign->x, sign->y, sign->z, MT_SIGN_PIECE);
 	P_SetTarget(&cur->hnext->target, sign);
 	cur->hnext->skin = pmo->skin;
-	P_SetMobjState(cur->hnext, S_KART_SIGN);
+	P_SetMobjState(cur->hnext, (error == true) ? S_SIGN_ERROR : S_KART_SIGN);
 	cur->hnext->extravalue1 = 7;
 	cur->hnext->extravalue2 = 0;
 
@@ -3993,7 +3991,7 @@ void P_SetupSignExit(player_t *player)
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
-		P_SetupSignObject(thing, player->mo);
+		P_SetupSignObject(thing, player->mo, false);
 		++numfound;
 	}
 
@@ -4014,7 +4012,7 @@ void P_SetupSignExit(player_t *player)
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
-		P_SetupSignObject(thing, player->mo);
+		P_SetupSignObject(thing, player->mo, false);
 		++numfound;
 	}
 
@@ -4026,7 +4024,7 @@ void P_SetupSignExit(player_t *player)
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
 		thing->angle = player->mo->angle;
-		P_SetupSignObject(thing, player->mo);
+		P_SetupSignObject(thing, player->mo, true); // Use :youfuckedup: sign face
 	}
 }
 
@@ -4451,10 +4449,10 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 6: // Death Pit (Camera Mod)
 		case 7: // Death Pit (No Camera Mod)
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-				K_DoIngameRespawn(player); // DMG_DEATHPIT eventually
+				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_DEATHPIT);
 			break;
 		case 8: // Instant Kill
-			K_DoIngameRespawn(player); // DMG_INSTAKILL eventually
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 			break;
 		case 9: // Ring Drainer (Floor Touch)
 		case 10: // Ring Drainer (No Floor Touch)
@@ -5935,6 +5933,26 @@ static void P_ApplyFlatAlignment(line_t *master, sector_t *sector, angle_t flata
 	}
 }
 
+static boolean P_IsLineDisabled (const line_t * line)
+{
+	if (line->special != 7) // This is a hack. I can at least hope nobody wants to prevent flat alignment in netgames...
+	{
+		if (netgame || multiplayer)
+		{
+			if (line->flags & ML_NONET)
+			{
+				return true;
+			}
+		}
+		else if (line->flags & ML_NETONLY)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /** After the map has loaded, scans for specials that spawn 3Dfloors and
   * thinkers.
   *
@@ -6052,22 +6070,9 @@ void P_SpawnSpecials(boolean fromnetsave)
 	// Init line EFFECTs
 	for (i = 0; i < numlines; i++)
 	{
-		if (lines[i].special != 7) // This is a hack. I can at least hope nobody wants to prevent flat alignment in netgames...
+		if (P_IsLineDisabled(&lines[i]))
 		{
-			// set line specials to 0 here too, same reason as above
-			if (netgame || multiplayer)
-			{
-				if (lines[i].flags & ML_NONET)
-				{
-					lines[i].special = 0;
-					continue;
-				}
-			}
-			else if (lines[i].flags & ML_NETONLY)
-			{
-				lines[i].special = 0;
-				continue;
-			}
+			continue;
 		}
 
 		switch (lines[i].special)
@@ -6931,28 +6936,19 @@ void P_SpawnSpecials(boolean fromnetsave)
 		}
 	}
 
-	/* some things have to be done after FOF spawn */
-
-	for (i = 0; i < numlines; ++i)
-	{
-		switch (lines[i].special)
-		{
-			case 80: // Raise tagged things by type to this FOF
-				P_RaiseTaggedThingsToFakeFloor(
-						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
-						lines[i].tag,
-						lines[i].frontsector
-				);
-				break;
-		}
-	}
-
 	// Allocate each list
 	for (i = 0; i < numsectors; i++)
 		if(secthinkers[i].thinkers)
 			Z_Free(secthinkers[i].thinkers);
 
 	Z_Free(secthinkers);
+}
+
+/** Fuck polyobjects
+  */
+void P_SpawnSpecialsThatRequireObjects(void)
+{
+	size_t i;
 
 	// haleyjd 02/20/06: spawn polyobjects
 	Polyobj_InitLevel();
@@ -6976,6 +6972,33 @@ void P_SpawnSpecials(boolean fromnetsave)
 	}
 
 	P_RunLevelLoadExecutors();
+}
+
+/** Fuck ML_NONET
+  */
+void P_SpawnSpecialsAfterSlopes(void)
+{
+	size_t i;
+
+	for (i = 0; i < numlines; ++i)
+	{
+		if (P_IsLineDisabled(&lines[i]))
+		{
+			/* remove the special so it can't even be found during the level */
+			lines[i].special = 0;
+		}
+
+		switch (lines[i].special)
+		{
+			case 80: // Raise tagged things by type to this FOF
+				P_RaiseTaggedThingsToFakeFloor(
+						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
+						lines[i].tag,
+						lines[i].frontsector
+				);
+				break;
+		}
+	}
 }
 
 /** Adds 3Dfloors as appropriate based on a common control linedef.
@@ -7023,9 +7046,7 @@ static void P_DoScrollMove(mobj_t *thing, fixed_t dx, fixed_t dy, INT32 exclusiv
 		}
 	}
 
-	if (thing->player && (thing->player->pflags & PF_SPINNING) && (thing->player->rmomx || thing->player->rmomy) && !(thing->player->pflags & PF_STARTDASH))
-		fuckaj = FixedDiv(549*ORIG_FRICTION,500*FRACUNIT);
-	else if (thing->friction != ORIG_FRICTION)
+	if (thing->friction != ORIG_FRICTION)
 		fuckaj = thing->friction;
 
 	if (fuckaj) {

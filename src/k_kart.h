@@ -86,6 +86,7 @@ UINT16 K_GetKartFlashing(player_t *player);
 SINT8 K_GetForwardMove(player_t *player);
 fixed_t K_3dKartMovement(player_t *player, boolean onground);
 boolean K_PlayerEBrake(player_t *player);
+void K_AdjustPlayerFriction(player_t *player);
 void K_MoveKartPlayer(player_t *player, boolean onground);
 void K_CheckSpectateStatus(void);
 

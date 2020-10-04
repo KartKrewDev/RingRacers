@@ -20,6 +20,7 @@
 /// \brief SRB2 graphics stuff for SDL
 
 #include <stdlib.h>
+#include <errno.h>
 
 #include <signal.h>
 
@@ -83,6 +84,10 @@
 // For dynamic referencing of HW rendering functions
 #include "hwsym_sdl.h"
 #include "ogl_sdl.h"
+#endif
+
+#ifdef HAVE_DISCORDRPC
+#include "../discord.h"
 #endif
 
 // maximum number of windowed modes (see windowedModes[][])
@@ -1326,6 +1331,11 @@ void I_FinishUpdate(void)
 	// draw captions if enabled
 	if (cv_closedcaptioning.value)
 		SCR_ClosedCaptions();
+
+#ifdef HAVE_DISCORDRPC
+	if (discordRequestList != NULL)
+		ST_AskToJoinEnvelope();
+#endif
 
 	if (rendermode == render_soft && screens[0])
 	{

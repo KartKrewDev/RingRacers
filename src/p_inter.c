@@ -34,6 +34,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
+#include "k_respawn.h"
 #include "p_spec.h"
 
 // CTF player names
@@ -953,14 +954,14 @@ boolean P_CheckRacers(void)
 		}
 	}
 
-	if (eliminatelast == true && (numplayersingame <= numexiting-1))
+	if (eliminatelast == true && (numexiting >= numplayersingame-1))
 	{
 		// Everyone's done playing but one guy apparently.
 		// Just kill everyone who is still playing.
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!playeringame[i] || players[i].spectator || players[i].lives <= 0) // Not playing
+			if (!playeringame[i] || players[i].spectator || players[i].lives <= 0)
 			{
 				// Y'all aren't even playing
 				continue;
@@ -1161,6 +1162,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// if a player avatar dies...
 	if (target->player)
 	{
+		UINT8 i;
+
 		target->flags &= ~(MF_SOLID|MF_SHOOTABLE); // does not block
 		P_UnsetThingPosition(target);
 		target->flags |= MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY;
@@ -1176,14 +1179,17 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			// switch view prior to dying
 			if (automapactive)
 				AM_Stop();
-
-			//added : 22-02-98: recenter view for next life...
-			localaiming[0] = 0;
 		}
 
-		if (target->player == &players[displayplayers[1]]) localaiming[1] = 0;
-		if (target->player == &players[displayplayers[2]]) localaiming[2] = 0;
-		if (target->player == &players[displayplayers[3]]) localaiming[3] = 0;
+		//added : 22-02-98: recenter view for next life...
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (target->player == &players[displayplayers[i]])
+			{
+				localaiming[i] = 0;
+				break;
+			}
+		}
 
 		if ((gametyperules & GTR_BUMPERS))
 			K_CheckBumpers();
@@ -1640,58 +1646,60 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 	return true;
 }
 
-static void P_KillPlayer(player_t *player, mobj_t *source, INT32 damage)
+static boolean P_KillPlayer(player_t *player, UINT8 type)
 {
-	(void)source;
+	if (player->exiting)
+	{
+		player->mo->destscale = 1;
+		player->mo->flags |= MF_NOCLIPTHING;
+		return false;
+	}
+
+	K_RemoveBumper(player, NULL, NULL);
+
+	switch (type)
+	{
+		case DMG_DEATHPIT:
+			// Respawn kill types
+			K_DoIngameRespawn(player);
+			return false;
+		default:
+			// Everything else REALLY kills
+			break;
+	}
 
 	player->pflags &= ~PF_SLIDING;
-
 	player->powers[pw_carry] = CR_NONE;
 
 	// Get rid of shield
 	player->powers[pw_shield] = SH_NONE;
+
 	player->mo->color = player->skincolor;
 	player->mo->colorized = false;
 
-	P_ForceFeed(player, 40, 10, TICRATE, 40 + min(damage, 100)*2);
-
 	P_ResetPlayer(player);
 
-	if (!player->spectator)
+	if (player->spectator == false)
+	{
 		player->mo->drawflags &= ~MFD_DONTDRAW;
+	}
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
-	if (player->pflags & PF_GAMETYPEOVER)
+	if (type == DMG_TIMEOVER)
 	{
 		mobj_t *boom;
+
 		player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
 		player->mo->drawflags |= MFD_DONTDRAW;
+
 		boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
 		boom->scale = player->mo->scale;
 		boom->angle = player->mo->angle;
 		P_SetTarget(&boom->target, player->mo);
 	}
 
-	if ((gametyperules & GTR_BUMPERS))
-	{
-		if (player->kartstuff[k_bumper] > 0)
-		{
-			if (player->kartstuff[k_bumper] == 1)
-			{
-				mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX); // Player hitbox is too small!!
-				P_SetTarget(&karmahitbox->target, player->mo);
-				karmahitbox->destscale = player->mo->scale;
-				P_SetScale(karmahitbox, player->mo->scale);
-				CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
-			}
-			player->kartstuff[k_bumper]--;
-			if (K_IsPlayerWanted(player))
-				K_CalculateBattleWanted();
-		}
-
-		K_CheckBumpers();
-	}
+	return true;
 }
 
 void P_RemoveShield(player_t *player)
@@ -1811,9 +1819,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 		if (!force)
 		{
-			if (player->exiting)
-				return false;
-
 			// Player hits another player
 			if (source && source->player)
 			{
@@ -1823,122 +1828,129 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		}
 
 		// Instant-Death
-		if (damagetype & DMG_DEATHMASK)
-			P_KillPlayer(player, source, damage);
-		else if (LUAh_MobjDamage(target, inflictor, source, damage, damagetype))
-			return true;
-
-		// Check if the player is allowed to be damaged!
-		// If not, then spawn the instashield effect instead.
-		if (!force)
+		if ((damagetype & DMG_DEATHMASK))
 		{
-			if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
-			{
-				// Full invulnerability
-				K_DoInstashield(player);
+			if (!P_KillPlayer(player, damagetype))
 				return false;
-			}
-
-			if (combo == false)
-			{
-				if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2))
-				{
-					// Post-hit invincibility
-					K_DoInstashield(player);
-					return false;
-				}
-			}
-
-			if (gametyperules & GTR_BUMPERS)
-			{
-				if ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)
-				{
-					// No bumpers, can't be hurt
-					K_DoInstashield(player);
-					return false;
-				}
-			}
-			else
-			{
-				if (damagetype & DMG_STEAL)
-				{
-					// Gametype does not have bumpers, steal damage is intended to not do anything
-					// (No instashield is intentional)
-					return false;
-				}
-			}
 		}
-
-		// We successfully hit 'em!
-		if (type != DMG_STING)
+		else if (LUAh_MobjDamage(target, inflictor, source, damage, damagetype))
 		{
-			if (source && source != player->mo && source->player)
-			{
-				K_PlayHitEmSound(source);
-
-				if (damagetype & DMG_STEAL)
-				{
-					K_StealBumper(source->player, player);
-				}
-			}
-
-			K_RemoveBumper(player, inflictor, source);
-		}
-
-		player->kartstuff[k_sneakertimer] = player->kartstuff[k_numsneakers] = 0;
-		player->kartstuff[k_driftboost] = 0;
-		player->kartstuff[k_ringboost] = 0;
-
-		player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
-		player->kartstuff[k_pogospring] = 0;
-
-		switch (type)
-		{
-			case DMG_STING:
-				K_DebtStingPlayer(player, source);
-				K_KartPainEnergyFling(player);
-				ringburst = 0;
-				break;
-			case DMG_EXPLODE:
-				K_ExplodePlayer(player, inflictor, source);
-				break;
-			case DMG_WIPEOUT:
-				if (P_IsDisplayPlayer(player))
-					P_StartQuake(32<<FRACBITS, 5);
-
-				K_SpinPlayer(player, inflictor, source, 1);
-				K_KartPainEnergyFling(player);
-				break;
-			case DMG_NORMAL:
-			default:
-				K_SpinPlayer(player, inflictor, source, 0);
-				break;
-		}
-
-		if (type != DMG_STING)
-			player->powers[pw_flashing] = K_GetKartFlashing(player);
-
-		P_PlayRinglossSound(player->mo);
-		P_PlayerRingBurst(player, ringburst);
-		K_PlayPainSound(player->mo);
-
-		if ((type == DMG_EXPLODE) || (cv_kartdebughuddrop.value && !modeattacking))
-		{
-			K_DropItems(player);
+			return true;
 		}
 		else
 		{
-			K_DropHnextList(player, false);
+			// Check if the player is allowed to be damaged!
+			// If not, then spawn the instashield effect instead.
+			if (!force)
+			{
+				if (gametyperules & GTR_BUMPERS)
+				{
+					if ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)
+					{
+						// No bumpers, can't be hurt
+						K_DoInstashield(player);
+						return false;
+					}
+				}
+				else
+				{
+					if (damagetype & DMG_STEAL)
+					{
+						// Gametype does not have bumpers, steal damage is intended to not do anything
+						// (No instashield is intentional)
+						return false;
+					}
+				}
+
+				if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
+				{
+					// Full invulnerability
+					K_DoInstashield(player);
+					return false;
+				}
+
+				if (combo == false)
+				{
+					if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2))
+					{
+						// Post-hit invincibility
+						K_DoInstashield(player);
+						return false;
+					}
+				}
+			}
+
+			// We successfully hit 'em!
+			if (type != DMG_STING)
+			{
+				if (source && source != player->mo && source->player)
+				{
+					K_PlayHitEmSound(source);
+
+					if (damagetype & DMG_STEAL)
+					{
+						K_StealBumper(source->player, player);
+					}
+				}
+
+				K_RemoveBumper(player, inflictor, source);
+			}
+
+			player->kartstuff[k_sneakertimer] = player->kartstuff[k_numsneakers] = 0;
+			player->kartstuff[k_driftboost] = 0;
+			player->kartstuff[k_ringboost] = 0;
+
+			switch (type)
+			{
+				case DMG_STING:
+					K_DebtStingPlayer(player, source);
+					K_KartPainEnergyFling(player);
+					ringburst = 0;
+					break;
+				case DMG_EXPLODE:
+					K_ExplodePlayer(player, inflictor, source);
+					break;
+				case DMG_WIPEOUT:
+					if (P_IsDisplayPlayer(player))
+						P_StartQuake(32<<FRACBITS, 5);
+
+					K_SpinPlayer(player, inflictor, source, 1);
+					K_KartPainEnergyFling(player);
+					break;
+				case DMG_NORMAL:
+				default:
+					K_SpinPlayer(player, inflictor, source, 0);
+					break;
+			}
+
+			if (type != DMG_STING)
+				player->powers[pw_flashing] = K_GetKartFlashing(player);
+
+			P_PlayRinglossSound(player->mo);
+			if (ringburst > 0)
+				P_PlayerRingBurst(player, ringburst);
+			K_PlayPainSound(player->mo);
+
+			if ((type == DMG_EXPLODE) || (cv_kartdebughuddrop.value && !modeattacking))
+			{
+				K_DropItems(player);
+			}
+			else
+			{
+				K_DropHnextList(player, false);
+			}
+
+			player->kartstuff[k_instashield] = 15;
+			return true;
 		}
-
-		player->kartstuff[k_instashield] = 15;
-		return true;
 	}
-
-	if (damagetype & DMG_STEAL)
+	else
 	{
-		// Not a player, steal damage is intended to not do anything
-		return false;
+		if (damagetype & DMG_STEAL)
+		{
+			// Not a player, steal damage is intended to not do anything
+			return false;
+		}
 	}
 
 	// do the damage
@@ -2025,7 +2037,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 		mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
 
 		mo->threshold = 10;
-		mo->fuse = 120*TICRATE;
+		mo->fuse = 60*TICRATE;
 		P_SetTarget(&mo->target, player->mo);
 
 		mo->destscale = player->mo->scale;

@@ -362,10 +362,9 @@ static UINT16 W_CheckForSkinMarkerInPwad(UINT16 wadid, UINT16 startlump)
 
 // turn _ into spaces and . into katana dot
 #define SYMBOLCONVERT(name) for (value = name; *value; value++)\
-					{\
-						if (*value == '_') *value = ' ';\
-						else if (*value == '.') *value = '\x1E';\
-					}
+	{\
+		if (*value == '_') *value = ' ';\
+	}
 
 //
 // Patch skins from a pwad, each skin preceded by 'P_SKIN' marker
@@ -615,11 +614,7 @@ void R_AddSkins(UINT16 wadnum)
 				if (!realname)
 				{
 					STRBUFCPY(skin->realname, skin->name);
-					for (value = skin->realname; *value; value++)
-					{
-						if (*value == '_') *value = ' '; // turn _ into spaces.
-						else if (*value == '.') *value = '\x1E'; // turn . into katana dot.
-					}
+					SYMBOLCONVERT(skin->realname);
 				}
 			}
 			else if (!stricmp(stoken, "realname"))

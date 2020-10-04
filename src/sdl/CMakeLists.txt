@@ -75,6 +75,8 @@ if(${SDL2_FOUND})
 	set(SRB2_SDL2_TOTAL_SOURCES
 		${SRB2_CORE_SOURCES}
 		${SRB2_CORE_HEADERS}
+		${SRB2_DISCORDRPC_SOURCES}
+		${SRB2_DISCORDRPC_HEADERS}
 		${SRB2_PNG_SOURCES}
 		${SRB2_PNG_HEADERS}
 		${SRB2_CORE_RENDER_SOURCES}
@@ -91,9 +93,11 @@ if(${SDL2_FOUND})
 		${SRB2_PNG_SOURCES} ${SRB2_PNG_HEADERS})
 	source_group("Renderer" FILES ${SRB2_CORE_RENDER_SOURCES})
 	source_group("Game" FILES ${SRB2_CORE_GAME_SOURCES})
+	source_group("Discord Rich Presence" FILES ${SRB2_DISCORDRPC_SOURCES} ${SRB2_DISCORDRPC_HEADERS})
 	source_group("Assembly" FILES ${SRB2_ASM_SOURCES} ${SRB2_NASM_SOURCES})
 	source_group("LUA" FILES ${SRB2_LUA_SOURCES} ${SRB2_LUA_HEADERS})
 	source_group("LUA\\Interpreter" FILES ${SRB2_BLUA_SOURCES} ${SRB2_BLUA_HEADERS})
+	
 
 	if(${SRB2_CONFIG_HWRENDER})
 		set(SRB2_SDL2_TOTAL_SOURCES ${SRB2_SDL2_TOTAL_SOURCES}
@@ -166,6 +170,7 @@ if(${SDL2_FOUND})
 			${ZLIB_LIBRARIES}
 			${OPENGL_LIBRARIES}
 			${CURL_LIBRARIES}
+			${DISCORDRPC_LIBRARIES}
 		)
 		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME "${CPACK_PACKAGE_DESCRIPTION_SUMMARY}")
 	else()
@@ -179,6 +184,7 @@ if(${SDL2_FOUND})
 			${ZLIB_LIBRARIES}
 			${OPENGL_LIBRARIES}
 			${CURL_LIBRARIES}
+			${DISCORDRPC_LIBRARIES}
 		)
 
 		if(${CMAKE_SYSTEM} MATCHES Linux)
@@ -261,6 +267,7 @@ if(${SDL2_FOUND})
 		${ZLIB_INCLUDE_DIRS}
 		${OPENGL_INCLUDE_DIRS}
 		${CURL_INCLUDE_DIRS}
+		${DISCORDRPC_INCLUDE_DIRS}
 	)
 
 	if((${SRB2_HAVE_MIXER}) OR (${SRB2_HAVE_MIXERX}))
@@ -373,6 +380,10 @@ if(${SDL2_FOUND})
 			getwinlib(libfluidsynth-2 "libfluidsynth-2.dll")
 			getwinlib(libgcc_s_sjlj-1 "libgcc_s_sjlj-1.dll")
 			getwinlib(libstdc++-6 "libstdc++-6.dll")
+		endif()
+
+		if(${SRB2_CONFIG_HAVE_DISCORDRPC})
+			getwinlib(discord-rpc "discord-rpc.dll")
 		endif()
 
 		install(PROGRAMS

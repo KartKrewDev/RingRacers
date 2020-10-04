@@ -306,35 +306,35 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 			   /*Jawz x2*/ { 0, 0, 1, 2, 0, 0, 0, 0 }  // Jawz x2
 };
 
-static INT32 K_KartItemOddsBattle[NUMKARTRESULTS-1][6] =
+static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 {
-				//P-Odds	 0  1  2  3  4  5
-			   /*Sneaker*/ { 3, 2, 2, 2, 0, 2 }, // Sneaker
-		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 0 }, // Rocket Sneaker
-		 /*Invincibility*/ { 0, 1, 2, 3, 4, 2 }, // Invincibility
-				/*Banana*/ { 2, 1, 0, 0, 0, 0 }, // Banana
-		/*Eggman Monitor*/ { 1, 1, 0, 0, 0, 0 }, // Eggman Monitor
-			  /*Orbinaut*/ { 6, 2, 1, 0, 0, 0 }, // Orbinaut
-				  /*Jawz*/ { 3, 3, 3, 2, 0, 2 }, // Jawz
-				  /*Mine*/ { 2, 3, 3, 1, 0, 2 }, // Mine
-			   /*Ballhog*/ { 0, 1, 2, 1, 0, 2 }, // Ballhog
-   /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 0 }, // Self-Propelled Bomb
-				  /*Grow*/ { 0, 0, 1, 2, 4, 2 }, // Grow
-				/*Shrink*/ { 0, 0, 0, 0, 0, 0 }, // Shrink
-		/*Thunder Shield*/ { 0, 0, 0, 0, 0, 0 }, // Thunder Shield
-		 /*Bubble Shield*/ { 0, 0, 0, 0, 0, 0 }, // Bubble Shield
-		  /*Flame Shield*/ { 0, 0, 0, 0, 0, 0 }, // Flame Shield
-			   /*Hyudoro*/ { 1, 1, 0, 0, 0, 0 }, // Hyudoro
-		   /*Pogo Spring*/ { 1, 1, 0, 0, 0, 0 }, // Pogo Spring
-			/*Super Ring*/ { 0, 0, 0, 0, 0, 0 }, // Super Ring
-		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
-			/*Sneaker x2*/ { 0, 0, 0, 0, 0, 0 }, // Sneaker x2
-			/*Sneaker x3*/ { 0, 0, 0, 2, 4, 2 }, // Sneaker x3
-			 /*Banana x3*/ { 1, 2, 1, 0, 0, 0 }, // Banana x3
-			/*Banana x10*/ { 0, 0, 1, 1, 0, 2 }, // Banana x10
-		   /*Orbinaut x3*/ { 0, 1, 2, 1, 0, 0 }, // Orbinaut x3
-		   /*Orbinaut x4*/ { 0, 0, 1, 3, 4, 2 }, // Orbinaut x4
-			   /*Jawz x2*/ { 0, 0, 1, 2, 4, 2 }  // Jawz x2
+				//P-Odds	 0  1
+			   /*Sneaker*/ { 2, 1 }, // Sneaker
+		/*Rocket Sneaker*/ { 0, 0 }, // Rocket Sneaker
+		 /*Invincibility*/ { 2, 1 }, // Invincibility
+				/*Banana*/ { 1, 0 }, // Banana
+		/*Eggman Monitor*/ { 1, 0 }, // Eggman Monitor
+			  /*Orbinaut*/ { 8, 0 }, // Orbinaut
+				  /*Jawz*/ { 8, 1 }, // Jawz
+				  /*Mine*/ { 4, 1 }, // Mine
+			   /*Ballhog*/ { 2, 1 }, // Ballhog
+   /*Self-Propelled Bomb*/ { 0, 0 }, // Self-Propelled Bomb
+				  /*Grow*/ { 2, 1 }, // Grow
+				/*Shrink*/ { 0, 0 }, // Shrink
+		/*Thunder Shield*/ { 0, 0 }, // Thunder Shield
+		 /*Bubble Shield*/ { 0, 0 }, // Bubble Shield
+		  /*Flame Shield*/ { 0, 0 }, // Flame Shield
+			   /*Hyudoro*/ { 2, 0 }, // Hyudoro
+		   /*Pogo Spring*/ { 2, 0 }, // Pogo Spring
+			/*Super Ring*/ { 0, 0 }, // Super Ring
+		  /*Kitchen Sink*/ { 0, 0 }, // Kitchen Sink
+			/*Sneaker x2*/ { 0, 0 }, // Sneaker x2
+			/*Sneaker x3*/ { 0, 1 }, // Sneaker x3
+			 /*Banana x3*/ { 1, 0 }, // Banana x3
+			/*Banana x10*/ { 0, 1 }, // Banana x10
+		   /*Orbinaut x3*/ { 2, 0 }, // Orbinaut x3
+		   /*Orbinaut x4*/ { 1, 1 }, // Orbinaut x4
+			   /*Jawz x2*/ { 2, 1 }  // Jawz x2
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
@@ -620,19 +620,20 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper, boolean spbrush)
 {
 	UINT8 i;
-	UINT8 n = 0;
 	UINT8 useodds = 0;
 	UINT8 disttable[14];
-	UINT8 totallen = 0;
 	UINT8 distlen = 0;
 	boolean oddsvalid[8];
+
+	// Unused now, oops :V
+	(void)bestbumper;
 
 	for (i = 0; i < 8; i++)
 	{
 		UINT8 j;
 		boolean available = false;
 
-		if (gametype == GT_BATTLE && i > 5)
+		if (gametype == GT_BATTLE && i > 1)
 		{
 			oddsvalid[i] = false;
 			break;
@@ -653,30 +654,24 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 #define SETUPDISTTABLE(odds, num) \
 	if (oddsvalid[odds]) \
 		for (i = num; i; --i) \
-			disttable[distlen++] = odds; \
-	totallen += num;
+			disttable[distlen++] = odds;
 
 	if (gametype == GT_BATTLE) // Battle Mode
 	{
-		SETUPDISTTABLE(0,1);
-		SETUPDISTTABLE(1,1);
-		SETUPDISTTABLE(2,1);
-		SETUPDISTTABLE(3,1);
-		SETUPDISTTABLE(4,1);
-
-		if (player->kartstuff[k_roulettetype] == 1 && oddsvalid[5]) // 5 is the extreme odds of player-controlled "Karma" items
-			useodds = 5;
+		if (player->kartstuff[k_roulettetype] == 1 && oddsvalid[1] == true)
+		{
+			// 1 is the extreme odds of player-controlled "Karma" items
+			useodds = 1;
+		}
 		else
 		{
-			SINT8 wantedpos = (bestbumper-player->kartstuff[k_bumper]); // 0 is the best player's bumper count, 1 is a bumper below best, 2 is two bumpers below, etc
-			if (K_IsPlayerWanted(player))
-				wantedpos++;
-			if (wantedpos > 4) // Don't run off into karma items
-				wantedpos = 4;
-			if (wantedpos < 0) // Don't go below somehow
-				wantedpos = 0;
-			n = (wantedpos * distlen) / totallen;
-			useodds = disttable[n];
+			useodds = 0;
+
+			if (oddsvalid[0] == false && oddsvalid[1] == true)
+			{
+				// try to use karma odds as a fallback
+				useodds = 1;
+			}
 		}
 	}
 	else
@@ -1240,7 +1235,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 	}
 }
 
-/**	\brief	Checks that the player is on an offroad subsector for realsies
+/**	\brief	Checks that the player is on an offroad subsector for realsies. Also accounts for line riding to prevent cheese.
 
 	\param	mo	player mobj object
 
@@ -1248,18 +1243,64 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 */
 static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 {
-	UINT8 i;
+	// Check for sectors in touching_sectorlist
+	UINT8 i;			// special type iter
+	msecnode_t *node;	// touching_sectorlist iter
+	sector_t *s;		// main sector shortcut
+	sector_t *s2;		// FOF sector shortcut
+	ffloor_t *rover;	// FOF
+
+	fixed_t flr;
+	fixed_t cel;	// floor & ceiling for height checks to make sure we're touching the offroad sector.
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	for (i = 2; i < 5; i++)
+	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
-		if (P_MobjTouchingSectorSpecial(mo, 1, i, true))
-			return i-1;
-	}
+		if (!node->m_sector)
+			break;	// shouldn't happen.
 
-	return 0;
+		s = node->m_sector;
+		// 1: Check for the main sector, make sure we're on the floor of that sector and see if we can apply offroad.
+		// Make arbitrary Z checks because we want to check for 1 sector in particular, we don't want to affect the player if the offroad sector is way below them and they're lineriding a normal sector above.
+
+		flr = P_MobjFloorZ(mo, s, s, mo->x, mo->y, NULL, false, true);
+		cel = P_MobjCeilingZ(mo, s, s, mo->x, mo->y, NULL, true, true);	// get Z coords of both floors and ceilings for this sector (this accounts for slopes properly.)
+		// NOTE: we don't use P_GetZAt with our x/y directly because the mobj won't have the same height because of its hitbox on the slope. Complex garbage but tldr it doesn't work.
+
+		if ( ((s->flags & SF_FLIPSPECIAL_FLOOR) && mo->z == flr)	// floor check
+			|| ((mo->eflags & MFE_VERTICALFLIP && (s->flags & SF_FLIPSPECIAL_CEILING) && (mo->z + mo->height) == cel)) )	// ceiling check.
+
+			for (i = 2; i < 5; i++)	// check for sector special
+
+				if (GETSECSPECIAL(s->special, 1) == i)
+					return i-1;	// return offroad type
+
+		// 2: If we're here, we haven't found anything. So let's try looking for FOFs in the sectors using the same logic.
+		for (rover = s->ffloors; rover; rover = rover->next)
+		{
+			if (!(rover->flags & FF_EXISTS))	// This FOF doesn't exist anymore.
+				continue;
+
+			s2 = &sectors[rover->secnum];	// makes things easier for us
+
+			flr = P_GetFOFBottomZ(mo, s, rover, mo->x, mo->y, NULL);
+			cel = P_GetFOFTopZ(mo, s, rover, mo->x, mo->y, NULL);	// Z coords for fof top/bottom.
+
+			// we will do essentially the same checks as above instead of bothering with top/bottom height of the FOF.
+			// Reminder that an FOF's floor is its bottom, silly!
+			if ( ((s2->flags & SF_FLIPSPECIAL_FLOOR) && mo->z == cel)	// "floor" check
+				|| ((s2->flags & SF_FLIPSPECIAL_CEILING) && (mo->z + mo->height) == flr) )	// "ceiling" check.
+
+				for (i = 2; i < 5; i++)	// check for sector special
+
+					if (GETSECSPECIAL(s2->special, 1) == i)
+						return i-1;	// return offroad type
+
+		}
+	}
+	return 0;	// couldn't find any offroad
 }
 
 /**	\brief	Updates the Player's offroad value once per frame
@@ -3680,13 +3721,13 @@ void K_PuntMine(mobj_t *thismine, mobj_t *punter)
 		mine->flags2 = thismine->flags2;
 		mine->floorz = thismine->floorz;
 		mine->ceilingz = thismine->ceilingz;
-		
+
 		//Since we aren't using P_KillMobj, we need to clean up the hnext reference
 		{
 			P_SetTarget(&thismine->target->hnext, NULL); //target is the player who owns the mine
 			thismine->target->player->kartstuff[k_bananadrag] = 0;
 			thismine->target->player->kartstuff[k_itemheld] = 0;
-			
+
 			if (--thismine->target->player->kartstuff[k_itemamount] <= 0)
 				thismine->target->player->kartstuff[k_itemtype] = KITEM_NONE;
 		}
@@ -4340,7 +4381,7 @@ void K_DropRocketSneaker(player_t *player)
 			flingangle = -(ANG60);
 		else
 			flingangle = ANG60;
-		
+
 		S_StartSound(shoe, shoe->info->deathsound);
 		P_SetObjectMomZ(shoe, 8*FRACUNIT, false);
 		P_InstaThrust(shoe, R_PointToAngle2(shoe->target->x, shoe->target->y, shoe->x, shoe->y)+flingangle, 16*FRACUNIT);
@@ -4944,14 +4985,22 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source)
 static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 {
 	const INT32 numsnds = 13;
+
+	const fixed_t closedist = 160*FRACUNIT;
+	const fixed_t fardist = 1536*FRACUNIT;
+
+	const UINT8 dampenval = 48; // 255 * 48 = close enough to FRACUNIT/6
+
 	INT32 class, s, w; // engine class number
+
 	UINT8 volume = 255;
-	fixed_t volumedampen = 0;
+	fixed_t volumedampen = FRACUNIT;
+
 	INT32 targetsnd = 0;
 	INT32 i;
 
-	s = (player->kartspeed-1)/3;
-	w = (player->kartweight-1)/3;
+	s = (player->kartspeed - 1) / 3;
+	w = (player->kartweight - 1) / 3;
 
 #define LOCKSTAT(stat) \
 	if (stat < 0) { stat = 0; } \
@@ -4960,83 +5009,119 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	LOCKSTAT(w);
 #undef LOCKSTAT
 
-	class = s+(3*w);
+	class = s + (3*w);
 
-	// Silence the engines
 	if (leveltime < 8 || player->spectator)
 	{
-		player->karthud[khud_enginesnd] = 0; // Reset sound number
+		// Silence the engines, and reset sound number while we're at it.
+		player->karthud[khud_enginesnd] = 0;
 		return;
 	}
 
 #if 0
 	if ((leveltime % 8) != ((player-players) % 8)) // Per-player offset, to make engines sound distinct!
 #else
-	if (leveltime % 8) // .25 seconds of wait time between engine sounds
+	if (leveltime % 8)
 #endif
+	{
+		// .25 seconds of wait time between each engine sound playback
 		return;
+	}
 
 	if (player->respawn.state == RESPAWNST_DROP) // Dropdashing
+	{
+		// Dropdashing
 		targetsnd = ((cmd->buttons & BT_ACCELERATE) ? 12 : 0);
-	else if (K_PlayerEBrake(player) == true) // Spindashing
+	}
+	else if (K_PlayerEBrake(player) == true)
+	{
+		// Spindashing
 		targetsnd = ((cmd->buttons & BT_DRIFT) ? 12 : 0);
+	}
 	else
-		targetsnd = (((6*K_GetForwardMove(player))/25) + ((player->speed / mapobjectscale)/5))/2;
+	{
+		// Average out the value of forwardmove and the speed that you're moving at.
+		targetsnd = (((6 * cmd->forwardmove) / 25) + ((player->speed / mapobjectscale) / 5)) / 2;
+	}
 
-	if (targetsnd < 0)
-		targetsnd = 0;
-	if (targetsnd > 12)
-		targetsnd = 12;
+	if (targetsnd < 0) { targetsnd = 0; }
+	if (targetsnd > 12) { targetsnd = 12; }
 
-	if (player->karthud[khud_enginesnd] < targetsnd)
-		player->karthud[khud_enginesnd]++;
-	if (player->karthud[khud_enginesnd] > targetsnd)
-		player->karthud[khud_enginesnd]--;
+	if (player->karthud[khud_enginesnd] < targetsnd) { player->karthud[khud_enginesnd]++; }
+	if (player->karthud[khud_enginesnd] > targetsnd) { player->karthud[khud_enginesnd]--; }
 
-	if (player->karthud[khud_enginesnd] < 0)
-		player->karthud[khud_enginesnd] = 0;
-	if (player->karthud[khud_enginesnd] > 12)
-		player->karthud[khud_enginesnd] = 12;
+	if (player->karthud[khud_enginesnd] < 0) { player->karthud[khud_enginesnd] = 0; }
+	if (player->karthud[khud_enginesnd] > 12) { player->karthud[khud_enginesnd] = 12; }
+
+	// This code calculates how many players (and thus, how many engine sounds) are within ear shot,
+	// and rebalances the volume of your engine sound based on how far away they are.
+
+	// This results in multiple things:
+	// - When on your own, you will hear your own engine sound extremely clearly.
+	// - When you were alone but someone is gaining on you, yours will go quiet, and you can hear theirs more clearly.
+	// - When around tons of people, engine sounds will try to rebalance to not be as obnoxious.
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		UINT8 thisvol = 0;
 		fixed_t dist;
 
-		if (!playeringame[i] || !players[i].mo || players[i].spectator || players[i].exiting)
-			continue;
-
-		if (P_IsDisplayPlayer(&players[i]))
+		if (!playeringame[i] || !players[i].mo)
 		{
-			volumedampen += FRACUNIT; // We already know what this is gonna be, let's not waste our time.
+			// This player doesn't exist.
 			continue;
 		}
 
-		dist = P_AproxDistance(P_AproxDistance(player->mo->x-players[i].mo->x,
-			player->mo->y-players[i].mo->y), player->mo->z-players[i].mo->z) / 2;
+		if (players[i].spectator)
+		{
+			// This player isn't playing an engine sound.
+			continue;
+		}
+
+		if (P_IsDisplayPlayer(&players[i]))
+		{
+			// Don't dampen yourself!
+			continue;
+		}
+
+		dist = P_AproxDistance(
+			P_AproxDistance(
+				player->mo->x - players[i].mo->x,
+				player->mo->y - players[i].mo->y),
+				player->mo->z - players[i].mo->z) / 2;
 
 		dist = FixedDiv(dist, mapobjectscale);
 
-		if (dist > 1536<<FRACBITS)
+		if (dist > fardist)
+		{
+			// ENEMY OUT OF RANGE !
 			continue;
-		else if (dist < 160<<FRACBITS) // engine sounds' approx. range
+		}
+		else if (dist < closedist)
+		{
+			// engine sounds' approx. range
 			thisvol = 255;
+		}
 		else
-			thisvol = (15 * (((160<<FRACBITS) - dist)>>FRACBITS)) / (((1536<<FRACBITS)-(160<<FRACBITS))>>(FRACBITS+4));
+		{
+			thisvol = (15 * ((closedist - dist) / FRACUNIT)) / ((fardist - closedist) >> (FRACBITS+4));
+		}
 
-		if (thisvol == 0)
-			continue;
-
-		volumedampen += (thisvol * 257); // 255 * 257 = FRACUNIT
+		volumedampen += (thisvol * dampenval);
 	}
 
 	if (volumedampen > FRACUNIT)
-		volume = FixedDiv(volume<<FRACBITS, volumedampen)>>FRACBITS;
+	{
+		volume = FixedDiv(volume * FRACUNIT, volumedampen) / FRACUNIT;
+	}
 
-	if (volume <= 0) // Might as well
+	if (volume <= 0)
+	{
+		// Don't need to play the sound at all.
 		return;
+	}
 
-	S_StartSoundAtVolume(player->mo, (sfx_krta00 + player->karthud[khud_enginesnd]) + (class*numsnds), volume);
+	S_StartSoundAtVolume(player->mo, (sfx_krta00 + player->karthud[khud_enginesnd]) + (class * numsnds), volume);
 }
 
 static void K_UpdateInvincibilitySounds(player_t *player)
@@ -6221,8 +6306,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	fixed_t p_speed;
 	fixed_t weightadjust;
 	fixed_t turnfixed = turnvalue * FRACUNIT;
+	fixed_t currentSpeed = 0;
 
-	if ((player->mo == NULL || P_MobjWasRemoved(player->mo)))
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo))
 	{
 		return 0;
 	}
@@ -6237,8 +6323,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	// SRB2kart - no additional angle if not moving
-	if ((player->speed <= 0) // Not moving
+	currentSpeed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+
+	if ((currentSpeed <= 0) // Not moving
 	&& ((player->cmd.buttons & BT_EBRAKEMASK) != BT_EBRAKEMASK) // not e-braking
 	&& (player->respawn.state == RESPAWNST_NONE)) // Not respawning
 	{
@@ -6246,7 +6333,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	}
 
 	p_maxspeed = K_GetKartSpeed(player, false);
-	p_speed = min(player->speed, (p_maxspeed * 2));
+	p_speed = min(FixedHypot(player->mo->momx, player->mo->momy), (p_maxspeed * 2));
 	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (K_PlayerUsesBotMovement(player))
@@ -6780,6 +6867,81 @@ static void K_KartSpindash(player_t *player)
 	{
 		if (leveltime % 4 == 0)
 			S_StartSound(player->mo, sfx_kc2b);
+	}
+}
+
+//
+// K_AdjustPlayerFriction
+//
+void K_AdjustPlayerFriction(player_t *player)
+{
+	fixed_t prevfriction = player->mo->friction;
+
+	if (P_IsObjectOnGround(player->mo) == false)
+	{
+		return;
+	}
+
+	// Reduce friction after hitting a horizontal spring
+	if (player->kartstuff[k_tiregrease])
+	{
+		player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->kartstuff[k_tiregrease];
+	}
+
+	/*
+	if (K_PlayerEBrake(player) == true)
+	{
+		player->mo->friction -= 1024;
+	}
+	else if (player->speed > 0 && cmd->forwardmove < 0)
+	{
+		player->mo->friction -= 512;
+	}
+	*/
+
+	// Karma ice physics
+	if (gametype == GT_BATTLE && player->kartstuff[k_bumper] <= 0)
+	{
+		player->mo->friction += 1228;
+	}
+
+	// Water gets ice physics too
+	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	{
+		player->mo->friction += 614;
+	}
+
+	// Wipeout slowdown
+	if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
+	{
+		if (player->kartstuff[k_offroad])
+			player->mo->friction -= 4912;
+		if (player->kartstuff[k_wipeoutslow] == 1)
+			player->mo->friction -= 9824;
+	}
+
+	// Cap between intended values
+	if (player->mo->friction > FRACUNIT)
+		player->mo->friction = FRACUNIT;
+	if (player->mo->friction < 0)
+		player->mo->friction = 0;
+
+	// Friction was changed, so we must recalculate movefactor
+	if (player->mo->friction != prevfriction)
+	{
+		player->mo->movefactor = FixedDiv(ORIG_FRICTION, player->mo->friction);
+
+		if (player->mo->movefactor < FRACUNIT)
+			player->mo->movefactor = 19*player->mo->movefactor - 18*FRACUNIT;
+		else
+			player->mo->movefactor = FRACUNIT;
+	}
+
+	// Don't go too far above your top speed when rubberbanding
+	// Down here, because we do NOT want to modify movefactor
+	if (K_PlayerUsesBotMovement(player))
+	{
+		player->mo->friction = K_BotFrictionRubberband(player, player->mo->friction);
 	}
 }
 
@@ -7465,66 +7627,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 
 	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
-
-	if (onground)
-	{
-		fixed_t prevfriction = player->mo->friction;
-
-		// Reduce friction after hitting a horizontal spring
-		if (player->kartstuff[k_tiregrease])
-			player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->kartstuff[k_tiregrease];
-
-		/*
-		if (K_PlayerEBrake(player) == true)
-			player->mo->friction -= 1024;
-		else if (player->speed > 0 && cmd->forwardmove < 0)
-			player->mo->friction -= 512;
-		*/
-
-		// Karma ice physics
-		if (gametype == GT_BATTLE && player->kartstuff[k_bumper] <= 0)
-			player->mo->friction += 1228;
-
-		if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
-			player->mo->friction += 614;
-
-		// Wipeout slowdown
-		if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow])
-		{
-			if (player->kartstuff[k_offroad])
-				player->mo->friction -= 4912;
-			if (player->kartstuff[k_wipeoutslow] == 1)
-				player->mo->friction -= 9824;
-		}
-
-		// Cap between intended values
-		if (player->mo->friction > FRACUNIT)
-			player->mo->friction = FRACUNIT;
-		if (player->mo->friction < 0)
-			player->mo->friction = 0;
-
-		// Friction was changed, so we must recalculate movefactor
-		if (player->mo->friction != prevfriction)
-		{
-			player->mo->movefactor = FixedDiv(ORIG_FRICTION, player->mo->friction);
-
-			if (player->mo->movefactor < FRACUNIT)
-				player->mo->movefactor = 19*player->mo->movefactor - 18*FRACUNIT;
-			else
-				player->mo->movefactor = FRACUNIT;
-
-			if (player->mo->movefactor < 32)
-				player->mo->movefactor = 32;
-		}
-
-		// Don't go too far above your top speed when rubberbanding
-		// Down here, because we do NOT want to modify movefactor
-		if (K_PlayerUsesBotMovement(player))
-		{
-			player->mo->friction = K_BotFrictionRubberband(player, player->mo->friction);
-		}
-	}
-
 	K_KartSpindash(player);
 
 	// Squishing

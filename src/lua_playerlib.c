@@ -461,15 +461,16 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"viewrollangle"))
 		plr->viewrollangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"aiming")) {
+		UINT8 i;
 		plr->aiming = luaL_checkangle(L, 3);
-		if (plr == &players[consoleplayer])
-			localaiming[0] = plr->aiming;
-		else if (plr == &players[displayplayers[1]])
-			localaiming[1] = plr->aiming;
-		else if (plr == &players[displayplayers[2]])
-			localaiming[2] = plr->aiming;
-		else if (plr == &players[displayplayers[3]])
-			localaiming[3] = plr->aiming;
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (plr == &players[displayplayers[i]])
+			{
+				localaiming[i] = plr->aiming;
+				break;
+			}
+		}
 	}
 	else if (fastcmp(field,"drawangle"))
 		plr->drawangle = luaL_checkangle(L, 3);

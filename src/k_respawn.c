@@ -81,7 +81,7 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 	player->respawn.pointx = waypoint->mobj->x;
 	player->respawn.pointy = waypoint->mobj->y;
 	player->respawn.pointz = waypoint->mobj->z;
-	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false;	// K_RespawnOffset wants a boolean!
+	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
 	player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
 }
 
@@ -117,9 +117,8 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->kartstuff[k_ringboost] = 0;
 	player->kartstuff[k_driftboost] = 0;
-	player->kartstuff[k_drift] = 0;
-	player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+
+	P_ResetPlayer(player);
 
 	// Set up respawn position if invalid
 	if (player->respawn.wp != NULL && leveltime >= starttime)
@@ -187,7 +186,7 @@ void K_DoIngameRespawn(player_t *player)
 		else
 		{
 			sector_t *s;
-			fixed_t z = (beststart->options >> ZSHIFT) * FRACUNIT;
+			fixed_t z = beststart->z * FRACUNIT;
 
 			player->respawn.pointx = beststart->x << FRACBITS;
 			player->respawn.pointy = beststart->y << FRACBITS;
@@ -233,17 +232,11 @@ void K_DoIngameRespawn(player_t *player)
 }
 
 /*--------------------------------------------------
-	static size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
+	size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
 
-		Returns the index for the next respawn waypoint.
-
-	Input Arguments:-
-		waypoint - Waypoint to look after.
-
-	Return:-
-		An table index for waypoint_t -> nextwaypoints.
+		See header file for description.
 --------------------------------------------------*/
-static size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
+size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
 {
 	size_t           i = 0U;
 	size_t newwaypoint = SIZE_MAX;
@@ -673,37 +666,6 @@ static void K_HandleDropDash(player_t *player)
 
 		//P_PlayRinglossSound(player->mo);
 		P_PlayerRingBurst(player, 3);
-
-		if (gametype == GT_BATTLE)
-		{
-			if (player->kartstuff[k_bumper] > 0)
-			{
-				if (player->kartstuff[k_bumper] == 1)
-				{
-					mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX); // Player hitbox is too small!!
-					P_SetTarget(&karmahitbox->target, player->mo);
-					karmahitbox->destscale = player->mo->scale;
-					P_SetScale(karmahitbox, player->mo->scale);
-					CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
-				}
-				player->kartstuff[k_bumper]--;
-				if (K_IsPlayerWanted(player))
-					K_CalculateBattleWanted();
-			}
-
-			if (!player->kartstuff[k_bumper])
-			{
-				player->kartstuff[k_comebacktimer] = comebacktime;
-				if (player->kartstuff[k_comebackmode] == 2)
-				{
-					mobj_t *poof = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EXPLODE);
-					S_StartSound(poof, mobjinfo[MT_KARMAHITBOX].seesound);
-					player->kartstuff[k_comebackmode] = 0;
-				}
-			}
-
-			K_CheckBumpers();
-		}
 
 		player->respawn.state = RESPAWNST_NONE;
 	}

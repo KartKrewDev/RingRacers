@@ -32,6 +32,11 @@ void ST_Ticker(boolean run);
 // Called when naming a replay.
 void ST_DrawDemoTitleEntry(void);
 
+#ifdef HAVE_DISCORDRPC
+// Called when you have Discord asks
+void ST_AskToJoinEnvelope(void);
+#endif
+
 // Called by main loop.
 void ST_Drawer(void);
 

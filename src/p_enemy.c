@@ -5726,17 +5726,6 @@ void A_CrawlaCommanderThink(mobj_t *actor)
 
 	dist = P_AproxDistance(actor->x - actor->target->x, actor->y - actor->target->y);
 
-	if (actor->target->player && (!hovermode || actor->reactiontime <= 2*TICRATE))
-	{
-		if (dist < FixedMul(64<<(FRACBITS+(hovermode ? 1 : 0)), actor->scale)
-			&& ((actor->target->player->pflags & PF_JUMPED) || (actor->target->player->pflags & PF_SPINNING)))
-		{
-			// Auugh! She's trying to kill you! Strafe! STRAAAAFFEEE!!
-			P_InstaThrust(actor, actor->angle - ANGLE_180, FixedMul(20*FRACUNIT, actor->scale));
-			return;
-		}
-	}
-
 	if (locvar1)
 	{
 		if (actor->health < 2 && P_RandomChance(FRACUNIT/128))
