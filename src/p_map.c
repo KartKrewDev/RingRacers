@@ -58,6 +58,8 @@ mobj_t *tmfloorthing; // the thing corresponding to tmfloorz or NULL if tmfloorz
 mobj_t *tmhitthing; // the solid thing you bumped into (for collisions)
 ffloor_t *tmfloorrover, *tmceilingrover;
 pslope_t *tmfloorslope, *tmceilingslope;
+static fixed_t tmfloordiff;
+static fixed_t tmceilingdiff;
 
 // keep track of the line that lowers the ceiling,
 // so missiles don't explode against sky hack walls
@@ -1704,6 +1706,7 @@ static boolean PIT_CheckLine(line_t *ld)
 		ceilingline = ld;
 		tmceilingrover = openceilingrover;
 		tmceilingslope = opentopslope;
+		tmceilingdiff = openceilingdiff;
 	}
 
 	if (openbottom > tmfloorz)
@@ -1711,6 +1714,7 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmfloorz = openbottom;
 		tmfloorrover = openfloorrover;
 		tmfloorslope = openbottomslope;
+		tmfloordiff = openfloordiff;
 	}
 
 	if (highceiling > tmdrpoffceilz)
@@ -1799,6 +1803,9 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 	tmceilingrover = NULL;
 	tmfloorslope = newsubsec->sector->f_slope;
 	tmceilingslope = newsubsec->sector->c_slope;
+
+	tmfloordiff = 0;
+	tmceilingdiff = 0;
 
 	// Check list of fake floors and see if tmfloorz/tmceilingz need to be altered.
 	if (newsubsec->sector->ffloors)
@@ -2517,7 +2524,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 					}
-					else if (tmceilingz < thingtop && thingtop - tmceilingz <= maxstep)
+					else if (tmceilingz < thingtop && tmceilingdiff <= maxstep)
 					{
 						thing->z = (thing->ceilingz = thingtop = tmceilingz) - thing->height;
 						thing->ceilingrover = tmceilingrover;
@@ -2530,7 +2537,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 					thing->floorrover = tmfloorrover;
 					thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 				}
-				else if (tmfloorz > thing->z && tmfloorz - thing->z <= maxstep)
+				else if (tmfloorz > thing->z && tmfloordiff <= maxstep)
 				{
 					thing->z = thing->floorz = tmfloorz;
 					thing->floorrover = tmfloorrover;

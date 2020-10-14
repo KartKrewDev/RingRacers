@@ -279,6 +279,8 @@ fixed_t P_InterceptVector(divline_t *v2, divline_t *v1)
 fixed_t opentop, openbottom, openrange, lowfloor, highceiling;
 pslope_t *opentopslope, *openbottomslope;
 ffloor_t *openfloorrover, *openceilingrover;
+fixed_t openfloordiff;
+fixed_t openceilingdiff;
 
 // P_CameraLineOpening
 // P_LineOpening, but for camera
@@ -424,6 +426,7 @@ void P_CameraLineOpening(line_t *linedef)
 void P_LineOpening(line_t *linedef, mobj_t *mobj)
 {
 	sector_t *front, *back;
+	vertex_t cross;
 
 	if (linedef->sidenum[1] == 0xffff)
 	{
@@ -431,6 +434,8 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		openrange = 0;
 		return;
 	}
+
+	P_ClosestPointOnLine(tmx, tmy, linedef, &cross);
 
 	// Treat polyobjects kind of like 3D Floors
 	if (linedef->polyobj && (linedef->polyobj->flags & POF_TESTHEIGHT))
@@ -456,6 +461,8 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		highceiling = INT32_MIN;
 		lowfloor = INT32_MAX;
 		opentopslope = openbottomslope = NULL;
+		openfloordiff = 0;
+		openceilingdiff = 0;
 	}
 	else
 	{ // Set open and high/low values here
@@ -492,6 +499,18 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 			lowfloor = frontheight;
 			openbottomslope = back->f_slope;
 		}
+
+		openfloordiff =
+			abs(
+					P_GetSectorFloorZAt(front, cross.x, cross.y) -
+					P_GetSectorFloorZAt(back,  cross.x, cross.y)
+			);
+
+		openceilingdiff =
+			abs(
+					P_GetSectorCeilingZAt(front, cross.x, cross.y) -
+					P_GetSectorCeilingZAt(back,  cross.x, cross.y)
+			);
 	}
 
 	if (mobj)
@@ -548,10 +567,16 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 
 				if (delta1 > delta2) { // Below
 					if (opentop > texbottom)
+					{
+						openceilingdiff = ( opentop - texbottom );
 						opentop = texbottom;
+					}
 				} else { // Above
 					if (openbottom < textop)
+					{
+						openfloordiff = ( textop - openbottom );
 						openbottom = textop;
+					}
 				}
 			}
 		}
@@ -579,14 +604,24 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				delta2 = abs(thingtop - (polybottom + ((polytop - polybottom)/2)));
 
 				if (polybottom < opentop && delta1 >= delta2)
+				{
+					openceilingdiff = ( opentop - polybottom );
 					opentop = polybottom;
+				}
 				else if (polybottom < highceiling && delta1 >= delta2)
+				{
 					highceiling = polybottom;
+				}
 
 				if (polytop > openbottom && delta1 < delta2)
+				{
+					openfloordiff = ( polytop - openbottom );
 					openbottom = polytop;
+				}
 				else if (polytop > lowfloor && delta1 < delta2)
+				{
 					lowfloor = polytop;
+				}
 			}
 			// otherwise don't do anything special, pretend there's nothing else there
 		}

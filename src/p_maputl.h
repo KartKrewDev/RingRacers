@@ -58,6 +58,8 @@ void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_
 extern fixed_t opentop, openbottom, openrange, lowfloor, highceiling;
 extern pslope_t *opentopslope, *openbottomslope;
 extern ffloor_t *openfloorrover, *openceilingrover;
+extern fixed_t openfloordiff;
+extern fixed_t openceilingdiff;
 
 void P_LineOpening(line_t *plinedef, mobj_t *mobj);
 
