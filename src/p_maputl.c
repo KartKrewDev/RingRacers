@@ -467,6 +467,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	else
 	{ // Set open and high/low values here
 		fixed_t frontheight, backheight;
+		sector_t * sector;
 
 		frontheight = P_GetCeilingZ(mobj, front, tmx, tmy, linedef);
 		backheight = P_GetCeilingZ(mobj, back, tmx, tmy, linedef);
@@ -475,14 +476,17 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		{
 			opentop = frontheight;
 			highceiling = backheight;
-			opentopslope = front->c_slope;
+			sector = front;
 		}
 		else
 		{
 			opentop = backheight;
 			highceiling = frontheight;
-			opentopslope = back->c_slope;
+			sector = back;
 		}
+
+		opentopslope = sector->c_slope;
+		openceilingdiff = ( mobj->z + mobj->height - P_GetSectorCeilingZAt(sector, cross.x, cross.y) );
 
 		frontheight = P_GetFloorZ(mobj, front, tmx, tmy, linedef);
 		backheight = P_GetFloorZ(mobj, back, tmx, tmy, linedef);
@@ -491,26 +495,17 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		{
 			openbottom = frontheight;
 			lowfloor = backheight;
-			openbottomslope = front->f_slope;
+			sector = front;
 		}
 		else
 		{
 			openbottom = backheight;
 			lowfloor = frontheight;
-			openbottomslope = back->f_slope;
+			sector = back;
 		}
 
-		openfloordiff =
-			abs(
-					P_GetSectorFloorZAt(front, cross.x, cross.y) -
-					P_GetSectorFloorZAt(back,  cross.x, cross.y)
-			);
-
-		openceilingdiff =
-			abs(
-					P_GetSectorCeilingZAt(front, cross.x, cross.y) -
-					P_GetSectorCeilingZAt(back,  cross.x, cross.y)
-			);
+		openbottomslope = sector->f_slope;
+		openfloordiff = ( P_GetSectorFloorZAt(sector, cross.x, cross.y) - mobj->z );
 	}
 
 	if (mobj)
