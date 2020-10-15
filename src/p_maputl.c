@@ -430,6 +430,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	enum { FRONT, BACK };
 
 	sector_t *front, *back;
+	fixed_t thingtop = 0;
 	vertex_t cross;
 
 	/* these init to shut compiler up */
@@ -459,6 +460,11 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 
 	I_Assert(front != NULL);
 	I_Assert(back != NULL);
+
+	if (mobj)
+	{
+		thingtop = mobj->z + mobj->height;
+	}
 
 	openfloorrover = openceilingrover = NULL;
 	if (linedef->polyobj)
@@ -490,13 +496,16 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		highceiling  = height[high];
 		opentopslope = sector[low]->c_slope;
 
-		openceilingdiff = ( mobj->z + mobj->height -
-				P_GetSectorCeilingZAt(sector[low], cross.x, cross.y) );
+		if (mobj)
+		{
+			openceilingdiff = ( thingtop -
+					P_GetSectorCeilingZAt(sector[low], cross.x, cross.y) );
 
-		topedge[FRONT] = P_GetSectorCeilingZAt(front, cross.x, cross.y);
-		topedge[BACK]  = P_GetSectorCeilingZAt(back,  cross.x, cross.y);
+			topedge[FRONT] = P_GetSectorCeilingZAt(front, cross.x, cross.y);
+			topedge[BACK]  = P_GetSectorCeilingZAt(back,  cross.x, cross.y);
 
-		openceilingdrop = ( topedge[high] - topedge[low] );
+			openceilingdrop = ( topedge[high] - topedge[low] );
+		}
 
 		height[FRONT] = P_GetFloorZ(mobj, front, tmx, tmy, linedef);
 		height[BACK]  = P_GetFloorZ(mobj, back,  tmx, tmy, linedef);
@@ -507,21 +516,22 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		lowfloor        = height[low];
 		openbottomslope = sector[high]->f_slope;
 
-		openfloordiff =
-			( P_GetSectorFloorZAt(sector[high], cross.x, cross.y) - mobj->z );
+		if (mobj)
+		{
+			openfloordiff =
+				( P_GetSectorFloorZAt(sector[high], cross.x, cross.y) - mobj->z );
 
-		botedge[FRONT] = P_GetSectorFloorZAt(front, cross.x, cross.y);
-		botedge[BACK]  = P_GetSectorFloorZAt(back,  cross.x, cross.y);
+			botedge[FRONT] = P_GetSectorFloorZAt(front, cross.x, cross.y);
+			botedge[BACK]  = P_GetSectorFloorZAt(back,  cross.x, cross.y);
 
-		openfloordrop = ( botedge[high] - botedge[low] );
+			openfloordrop = ( botedge[high] - botedge[low] );
+		}
 
 #undef low
 	}
 
 	if (mobj)
 	{
-		fixed_t thingtop = mobj->z + mobj->height;
-
 		// Check for collision with front side's midtexture if Effect 4 is set
 		if (linedef->flags & ML_EFFECT4
 			&& !linedef->polyobj // don't do anything for polyobjects! ...for now
