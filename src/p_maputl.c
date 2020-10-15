@@ -634,6 +634,9 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				ffloor_t *rover;
 				fixed_t delta1, delta2;
 
+				const fixed_t oldopentop = opentop;
+				const fixed_t oldopenbottom = openbottom;
+
 				// Check for frontsector's fake floors
 				for (rover = front->ffloors; rover; rover = rover->next)
 				{
@@ -716,6 +719,18 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						else if (topheight > lowfloor)
 							lowfloor = topheight;
 					}
+				}
+
+				if (opentop < oldopentop)
+				{
+					openceilingdiff = ( thingtop -
+							P_GetFFloorBottomZAt(openceilingrover, cross.x, cross.y) );
+				}
+
+				if (openbottom > oldopenbottom)
+				{
+					openfloordiff =
+						( P_GetFFloorTopZAt(openfloorrover, cross.x, cross.y) - mobj->z );
 				}
 			}
 		}
