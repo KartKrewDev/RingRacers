@@ -1620,6 +1620,8 @@ static boolean PIT_CheckCameraLine(line_t *ld)
 //
 static boolean PIT_CheckLine(line_t *ld)
 {
+	const fixed_t thingtop = tmthing->z + tmthing->height;
+
 	if (ld->polyobj && !(ld->polyobj->flags & POF_SOLID))
 		return true;
 
@@ -1707,7 +1709,10 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmceilingrover = openceilingrover;
 		tmceilingslope = opentopslope;
 		tmceilingstep = openceilingstep;
-		tmthing->ceilingdrop = openceilingdrop;
+		if (thingtop == tmthing->ceilingz)
+		{
+			tmthing->ceilingdrop = openceilingdrop;
+		}
 	}
 
 	if (openbottom > tmfloorz)
@@ -1716,7 +1721,10 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmfloorrover = openfloorrover;
 		tmfloorslope = openbottomslope;
 		tmfloorstep = openfloorstep;
-		tmthing->floordrop = openfloordrop;
+		if (tmthing->z == tmthing->floorz)
+		{
+			tmthing->floordrop = openfloordrop;
+		}
 	}
 
 	if (highceiling > tmdrpoffceilz)
@@ -1771,6 +1779,7 @@ static boolean PIT_CheckLine(line_t *ld)
 //
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 {
+	INT32 thingtop = thing->z + thing->height;
 	INT32 xl, xh, yl, yh, bx, by;
 	subsector_t *newsubsec;
 	boolean blockval = true;
@@ -1814,7 +1823,6 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 	{
 		ffloor_t *rover;
 		fixed_t delta1, delta2;
-		INT32 thingtop = thing->z + thing->height;
 
 		for (rover = newsubsec->sector->ffloors; rover; rover = rover->next)
 		{
@@ -1946,7 +1954,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 					if (po->validcount != validcount) // if polyobj hasn't been checked
 					{
 						sector_t *polysec;
-						fixed_t delta1, delta2, thingtop;
+						fixed_t delta1, delta2;
 						fixed_t polytop, polybottom;
 
 						po->validcount = validcount;
@@ -1972,7 +1980,6 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 							polybottom = INT32_MIN;
 						}
 
-						thingtop = thing->z + thing->height;
 						delta1 = thing->z - (polybottom + ((polytop - polybottom)/2));
 						delta2 = thingtop - (polybottom + ((polytop - polybottom)/2));
 
@@ -2027,6 +2034,16 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 		for (by = yl; by <= yh; by++)
 			if (!P_BlockLinesIterator(bx, by, PIT_CheckLine))
 				blockval = false;
+
+	if (thingtop < thing->ceilingz)
+	{
+		thing->ceilingdrop = 0;
+	}
+
+	if (thing->z > thing->floorz)
+	{
+		thing->floordrop = 0;
+	}
 
 	return blockval;
 }
@@ -2507,25 +2524,10 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			if (thing->eflags & MFE_VERTICALFLIP)
 			{
 				if (thing->z < tmfloorz)
-				{
 					return false; // mobj must raise itself to fit
-				}
-				else if (thing->z > thing->floorz)
-				{
-					thing->floordrop = 0;
-				}
 			}
-			else
-			{
-				if (tmceilingz < thingtop)
-				{
-					return false; // mobj must lower itself to fit
-				}
-				else if (thingtop < thing->ceilingz)
-				{
-					thing->ceilingdrop = 0;
-				}
-			}
+			else if (tmceilingz < thingtop)
+				return false; // mobj must lower itself to fit
 
 			// Ramp test
 			if ((maxstep > 0) && !(P_MobjTouchingSectorSpecial(thing, 1, 14, false)))
