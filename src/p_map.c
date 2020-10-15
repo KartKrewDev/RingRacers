@@ -1818,6 +1818,16 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 	tmfloorstep = 0;
 	tmceilingstep = 0;
 
+	if (thingtop < thing->ceilingz)
+	{
+		thing->ceilingdrop = 0;
+	}
+
+	if (thing->z > thing->floorz)
+	{
+		thing->floordrop = 0;
+	}
+
 	// Check list of fake floors and see if tmfloorz/tmceilingz need to be altered.
 	if (newsubsec->sector->ffloors)
 	{
@@ -2034,16 +2044,6 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 		for (by = yl; by <= yh; by++)
 			if (!P_BlockLinesIterator(bx, by, PIT_CheckLine))
 				blockval = false;
-
-	if (thingtop < thing->ceilingz)
-	{
-		thing->ceilingdrop = 0;
-	}
-
-	if (thing->z > thing->floorz)
-	{
-		thing->floordrop = 0;
-	}
 
 	return blockval;
 }
