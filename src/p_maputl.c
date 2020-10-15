@@ -427,7 +427,7 @@ void P_CameraLineOpening(line_t *linedef)
 
 void P_LineOpening(line_t *linedef, mobj_t *mobj)
 {
-	enum { HIGH, LOW };
+	enum { FRONT, BACK };
 
 	sector_t *front, *back;
 	vertex_t cross;
@@ -481,8 +481,8 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 
 #define low ! high
 
-		height[0] = P_GetCeilingZ(mobj, front, tmx, tmy, linedef);
-		height[1] = P_GetCeilingZ(mobj, back,  tmx, tmy, linedef);
+		height[FRONT] = P_GetCeilingZ(mobj, front, tmx, tmy, linedef);
+		height[BACK]  = P_GetCeilingZ(mobj, back,  tmx, tmy, linedef);
 
 		high = ( height[0] < height[1] );
 
@@ -493,13 +493,13 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		openceilingdiff = ( mobj->z + mobj->height -
 				P_GetSectorCeilingZAt(sector[low], cross.x, cross.y) );
 
-		topedge[HIGH] = P_GetSectorCeilingZAt(sector[high], cross.x, cross.y);
-		topedge[LOW]  = P_GetSectorCeilingZAt(sector[low],  cross.x, cross.y);
+		topedge[FRONT] = P_GetSectorCeilingZAt(front, cross.x, cross.y);
+		topedge[BACK]  = P_GetSectorCeilingZAt(back,  cross.x, cross.y);
 
-		openceilingdrop = ( topedge[HIGH] - topedge[LOW] );
+		openceilingdrop = ( topedge[high] - topedge[low] );
 
-		height[0] = P_GetFloorZ(mobj, front, tmx, tmy, linedef);
-		height[1] = P_GetFloorZ(mobj, back,  tmx, tmy, linedef);
+		height[FRONT] = P_GetFloorZ(mobj, front, tmx, tmy, linedef);
+		height[BACK]  = P_GetFloorZ(mobj, back,  tmx, tmy, linedef);
 
 		high = ( height[0] < height[1] );
 
@@ -510,10 +510,10 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		openfloordiff =
 			( P_GetSectorFloorZAt(sector[high], cross.x, cross.y) - mobj->z );
 
-		botedge[HIGH] = P_GetSectorFloorZAt(sector[high], cross.x, cross.y);
-		botedge[LOW]  = P_GetSectorFloorZAt(sector[low],  cross.x, cross.y);
+		botedge[FRONT] = P_GetSectorFloorZAt(front, cross.x, cross.y);
+		botedge[BACK]  = P_GetSectorFloorZAt(back,  cross.x, cross.y);
 
-		openfloordrop = ( botedge[HIGH] - botedge[LOW] );
+		openfloordrop = ( botedge[high] - botedge[low] );
 
 #undef low
 	}
@@ -638,8 +638,6 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				ffloor_t *rover;
 				fixed_t delta1, delta2;
 
-				enum { FRONT, BACK };
-
 				/* yuck */
 				struct
 				{
@@ -648,8 +646,8 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					ffloor_t * ceilingrover;
 					ffloor_t *   floorrover;
 				} open[2] = {
-					{ opentop, openbottom, openceilingrover, openfloorrover },
-					{ opentop, openbottom, openceilingrover, openfloorrover },
+					{ INT32_MAX, INT32_MIN, NULL, NULL },
+					{ INT32_MAX, INT32_MIN, NULL, NULL },
 				};
 
 				int lo;
@@ -744,46 +742,44 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 
 				lo = ( open[0].top > open[1].top );
 
-				opentop = open[lo].top;
-
-				if (opentop < oldopentop)
+				if (open[lo].top <= oldopentop)
 				{
+					opentop = open[lo].top;
 					openceilingrover = open[lo].ceilingrover;
 					openceilingdiff = ( thingtop -
 							P_GetFFloorBottomZAt(openceilingrover, cross.x, cross.y) );
 
 					hi = ! lo;
 
-					topedge[LOW] = P_GetFFloorBottomZAt(open[lo].ceilingrover, cross.x, cross.y);
+					topedge[lo] = P_GetFFloorBottomZAt(open[lo].ceilingrover, cross.x, cross.y);
 
 					if (open[hi].top < oldopentop)
 					{
-						topedge[HIGH] = P_GetFFloorBottomZAt(open[hi].ceilingrover, cross.x, cross.y);
+						topedge[hi] = P_GetFFloorBottomZAt(open[hi].ceilingrover, cross.x, cross.y);
 					}
 
-					openceilingdrop = ( topedge[HIGH] - topedge[LOW] );
+					openceilingdrop = ( topedge[hi] - topedge[lo] );
 				}
 
 				hi = ( open[0].bottom < open[1].bottom );
 
-				openbottom = open[hi].bottom;
-
-				if (openbottom > oldopenbottom)
+				if (open[hi].bottom >= oldopenbottom)
 				{
+					openbottom = open[hi].bottom;
 					openfloorrover = open[hi].floorrover;
 					openfloordiff =
 						( P_GetFFloorTopZAt(openfloorrover, cross.x, cross.y) - mobj->z );
 
 					lo = ! hi;
 
-					botedge[HIGH] = P_GetFFloorTopZAt(open[hi].floorrover, cross.x, cross.y);
+					botedge[hi] = P_GetFFloorTopZAt(open[hi].floorrover, cross.x, cross.y);
 
 					if (open[lo].bottom > oldopenbottom)
 					{
-						botedge[LOW] = P_GetFFloorTopZAt(open[lo].floorrover, cross.x, cross.y);
+						botedge[lo] = P_GetFFloorTopZAt(open[lo].floorrover, cross.x, cross.y);
 					}
 
-					openfloordrop = ( botedge[HIGH] - botedge[LOW] );
+					openfloordrop = ( botedge[hi] - botedge[lo] );
 				}
 			}
 		}
