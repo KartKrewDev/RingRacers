@@ -1707,6 +1707,7 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmceilingrover = openceilingrover;
 		tmceilingslope = opentopslope;
 		tmceilingdiff = openceilingdiff;
+		tmthing->ceilingdrop = openceilingdrop;
 	}
 
 	if (openbottom > tmfloorz)
@@ -1715,6 +1716,7 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmfloorrover = openfloorrover;
 		tmfloorslope = openbottomslope;
 		tmfloordiff = openfloordiff;
+		tmthing->floordrop = openfloordrop;
 	}
 
 	if (highceiling > tmdrpoffceilz)
@@ -2505,10 +2507,25 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			if (thing->eflags & MFE_VERTICALFLIP)
 			{
 				if (thing->z < tmfloorz)
+				{
 					return false; // mobj must raise itself to fit
+				}
+				else if (thing->z > thing->floorz)
+				{
+					thing->floordrop = 0;
+				}
 			}
-			else if (tmceilingz < thingtop)
-				return false; // mobj must lower itself to fit
+			else
+			{
+				if (tmceilingz < thingtop)
+				{
+					return false; // mobj must lower itself to fit
+				}
+				else if (thingtop < thing->ceilingz)
+				{
+					thing->ceilingdrop = 0;
+				}
+			}
 
 			// Ramp test
 			if ((maxstep > 0) && !(P_MobjTouchingSectorSpecial(thing, 1, 14, false)))
@@ -2518,11 +2535,12 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 				if (thing->eflags & MFE_VERTICALFLIP)
 				{
-					if (thingtop == thing->ceilingz && tmceilingz > thingtop && tmceilingz - thingtop <= maxstep)
+					if (thingtop == thing->ceilingz && tmceilingz > thingtop && thing->ceilingdrop <= maxstep)
 					{
 						thing->z = (thing->ceilingz = thingtop = tmceilingz) - thing->height;
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
+						thing->ceilingdrop = 0;
 					}
 					else if (tmceilingz < thingtop && tmceilingdiff <= maxstep)
 					{
@@ -2531,11 +2549,12 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 					}
 				}
-				else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->z - tmfloorz <= maxstep)
+				else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->floordrop <= maxstep)
 				{
 					thing->z = thing->floorz = tmfloorz;
 					thing->floorrover = tmfloorrover;
 					thing->eflags |= MFE_JUSTSTEPPEDDOWN;
+					thing->floordrop = 0;
 				}
 				else if (tmfloorz > thing->z && tmfloordiff <= maxstep)
 				{

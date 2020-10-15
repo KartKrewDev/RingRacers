@@ -281,6 +281,8 @@ pslope_t *opentopslope, *openbottomslope;
 ffloor_t *openfloorrover, *openceilingrover;
 fixed_t openfloordiff;
 fixed_t openceilingdiff;
+fixed_t openfloordrop;
+fixed_t openceilingdrop;
 
 // P_CameraLineOpening
 // P_LineOpening, but for camera
@@ -466,46 +468,50 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	}
 	else
 	{ // Set open and high/low values here
-		fixed_t frontheight, backheight;
-		sector_t * sector;
+		fixed_t          height[2];
+		const sector_t * sector[2] = { front, back };
 
-		frontheight = P_GetCeilingZ(mobj, front, tmx, tmy, linedef);
-		backheight = P_GetCeilingZ(mobj, back, tmx, tmy, linedef);
+		int high;
 
-		if (frontheight < backheight)
-		{
-			opentop = frontheight;
-			highceiling = backheight;
-			sector = front;
-		}
-		else
-		{
-			opentop = backheight;
-			highceiling = frontheight;
-			sector = back;
-		}
+#define low ! high
 
-		opentopslope = sector->c_slope;
-		openceilingdiff = ( mobj->z + mobj->height - P_GetSectorCeilingZAt(sector, cross.x, cross.y) );
+		height[0] = P_GetCeilingZ(mobj, front, tmx, tmy, linedef);
+		height[1] = P_GetCeilingZ(mobj, back,  tmx, tmy, linedef);
 
-		frontheight = P_GetFloorZ(mobj, front, tmx, tmy, linedef);
-		backheight = P_GetFloorZ(mobj, back, tmx, tmy, linedef);
+		high = ( height[0] < height[1] );
 
-		if (frontheight > backheight)
-		{
-			openbottom = frontheight;
-			lowfloor = backheight;
-			sector = front;
-		}
-		else
-		{
-			openbottom = backheight;
-			lowfloor = frontheight;
-			sector = back;
-		}
+		opentop      = height[low];
+		highceiling  = height[high];
+		opentopslope = sector[low]->c_slope;
 
-		openbottomslope = sector->f_slope;
-		openfloordiff = ( P_GetSectorFloorZAt(sector, cross.x, cross.y) - mobj->z );
+		openceilingdiff = ( mobj->z + mobj->height -
+				P_GetSectorCeilingZAt(sector[low], cross.x, cross.y) );
+
+		openceilingdrop =
+			(
+					P_GetSectorCeilingZAt(sector[high], cross.x, cross.y) -
+					P_GetSectorCeilingZAt(sector[low],  cross.x, cross.y)
+			);
+
+		height[0] = P_GetFloorZ(mobj, front, tmx, tmy, linedef);
+		height[1] = P_GetFloorZ(mobj, back,  tmx, tmy, linedef);
+
+		high = ( height[0] < height[1] );
+
+		openbottom      = height[high];
+		lowfloor        = height[low];
+		openbottomslope = sector[high]->f_slope;
+
+		openfloordiff =
+			( P_GetSectorFloorZAt(sector[high], cross.x, cross.y) - mobj->z );
+
+		openfloordrop =
+			(
+					P_GetSectorFloorZAt(sector[high], cross.x, cross.y) -
+					P_GetSectorFloorZAt(sector[low],  cross.x, cross.y)
+			);
+
+#undef low
 	}
 
 	if (mobj)

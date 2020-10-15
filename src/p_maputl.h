@@ -60,6 +60,8 @@ extern pslope_t *opentopslope, *openbottomslope;
 extern ffloor_t *openfloorrover, *openceilingrover;
 extern fixed_t openfloordiff;
 extern fixed_t openceilingdiff;
+extern fixed_t openfloordrop;
+extern fixed_t openceilingdrop;
 
 void P_LineOpening(line_t *plinedef, mobj_t *mobj);
 
