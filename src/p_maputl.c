@@ -437,8 +437,8 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	fixed_t topedge[2] = {0};
 	fixed_t botedge[2] = {0};
 
-	int hi;
-	int lo;
+	int hi = 0;
+	int lo = 0;
 
 	if (linedef->sidenum[1] == 0xffff)
 	{
@@ -580,12 +580,20 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				if (delta1 > delta2) { // Below
 					if (opentop > texbottom)
 					{
+						topedge[lo] -= ( opentop - texbottom );
+
 						opentop = texbottom;
+						openceilingstep = ( thingtop    - topedge[lo] );
+						openceilingdrop = ( topedge[hi] - topedge[lo] );
 					}
 				} else { // Above
 					if (openbottom < textop)
 					{
+						botedge[hi] += ( textop - openbottom );
+
 						openbottom = textop;
+						openfloorstep = ( botedge[hi] - mobj->z );
+						openfloordrop = ( botedge[hi] - botedge[lo] );
 					}
 				}
 			}
