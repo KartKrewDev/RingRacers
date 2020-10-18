@@ -953,7 +953,7 @@ void P_ButteredSlope(mobj_t *mo)
 			return; // Allow the player to stand still on slopes below a certain steepness
 	}
 
-	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 4 / 5 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
+	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 5 / 4 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
 
 	if (mo->player) {
 		fixed_t mult = FRACUNIT;
@@ -963,7 +963,7 @@ void P_ButteredSlope(mobj_t *mo)
 			if (P_MobjFlip(mo) * mo->standingslope->zdelta < 0)
 				angle ^= ANGLE_180;
 
-			mult = FRACUNIT + (FRACUNIT + FINECOSINE(angle>>ANGLETOFINESHIFT))*3/2;
+			mult = FRACUNIT + (FRACUNIT + FINECOSINE(angle>>ANGLETOFINESHIFT))*4/3;
 		}
 
 		thrust = FixedMul(thrust, mult);
