@@ -58,6 +58,8 @@ mobj_t *tmfloorthing; // the thing corresponding to tmfloorz or NULL if tmfloorz
 mobj_t *tmhitthing; // the solid thing you bumped into (for collisions)
 ffloor_t *tmfloorrover, *tmceilingrover;
 pslope_t *tmfloorslope, *tmceilingslope;
+static fixed_t tmfloorstep;
+static fixed_t tmceilingstep;
 
 // keep track of the line that lowers the ceiling,
 // so missiles don't explode against sky hack walls
@@ -1618,6 +1620,8 @@ static boolean PIT_CheckCameraLine(line_t *ld)
 //
 static boolean PIT_CheckLine(line_t *ld)
 {
+	const fixed_t thingtop = tmthing->z + tmthing->height;
+
 	if (ld->polyobj && !(ld->polyobj->flags & POF_SOLID))
 		return true;
 
@@ -1704,6 +1708,11 @@ static boolean PIT_CheckLine(line_t *ld)
 		ceilingline = ld;
 		tmceilingrover = openceilingrover;
 		tmceilingslope = opentopslope;
+		tmceilingstep = openceilingstep;
+		if (thingtop == tmthing->ceilingz)
+		{
+			tmthing->ceilingdrop = openceilingdrop;
+		}
 	}
 
 	if (openbottom > tmfloorz)
@@ -1711,6 +1720,11 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmfloorz = openbottom;
 		tmfloorrover = openfloorrover;
 		tmfloorslope = openbottomslope;
+		tmfloorstep = openfloorstep;
+		if (tmthing->z == tmthing->floorz)
+		{
+			tmthing->floordrop = openfloordrop;
+		}
 	}
 
 	if (highceiling > tmdrpoffceilz)
@@ -1765,6 +1779,7 @@ static boolean PIT_CheckLine(line_t *ld)
 //
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 {
+	INT32 thingtop = thing->z + thing->height;
 	INT32 xl, xh, yl, yh, bx, by;
 	subsector_t *newsubsec;
 	boolean blockval = true;
@@ -1800,12 +1815,24 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 	tmfloorslope = newsubsec->sector->f_slope;
 	tmceilingslope = newsubsec->sector->c_slope;
 
+	tmfloorstep = 0;
+	tmceilingstep = 0;
+
+	if (thingtop < thing->ceilingz)
+	{
+		thing->ceilingdrop = 0;
+	}
+
+	if (thing->z > thing->floorz)
+	{
+		thing->floordrop = 0;
+	}
+
 	// Check list of fake floors and see if tmfloorz/tmceilingz need to be altered.
 	if (newsubsec->sector->ffloors)
 	{
 		ffloor_t *rover;
 		fixed_t delta1, delta2;
-		INT32 thingtop = thing->z + thing->height;
 
 		for (rover = newsubsec->sector->ffloors; rover; rover = rover->next)
 		{
@@ -1937,7 +1964,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 					if (po->validcount != validcount) // if polyobj hasn't been checked
 					{
 						sector_t *polysec;
-						fixed_t delta1, delta2, thingtop;
+						fixed_t delta1, delta2;
 						fixed_t polytop, polybottom;
 
 						po->validcount = validcount;
@@ -1963,7 +1990,6 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 							polybottom = INT32_MIN;
 						}
 
-						thingtop = thing->z + thing->height;
 						delta1 = thing->z - (polybottom + ((polytop - polybottom)/2));
 						delta2 = thingtop - (polybottom + ((polytop - polybottom)/2));
 
@@ -2511,26 +2537,28 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 				if (thing->eflags & MFE_VERTICALFLIP)
 				{
-					if (thingtop == thing->ceilingz && tmceilingz > thingtop && tmceilingz - thingtop <= maxstep)
+					if (thingtop == thing->ceilingz && tmceilingz > thingtop && thing->ceilingdrop <= maxstep)
 					{
 						thing->z = (thing->ceilingz = thingtop = tmceilingz) - thing->height;
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
+						thing->ceilingdrop = 0;
 					}
-					else if (tmceilingz < thingtop && thingtop - tmceilingz <= maxstep)
+					else if (tmceilingz < thingtop && tmceilingstep <= maxstep)
 					{
 						thing->z = (thing->ceilingz = thingtop = tmceilingz) - thing->height;
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 					}
 				}
-				else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->z - tmfloorz <= maxstep)
+				else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->floordrop <= maxstep)
 				{
 					thing->z = thing->floorz = tmfloorz;
 					thing->floorrover = tmfloorrover;
 					thing->eflags |= MFE_JUSTSTEPPEDDOWN;
+					thing->floordrop = 0;
 				}
-				else if (tmfloorz > thing->z && tmfloorz - thing->z <= maxstep)
+				else if (tmfloorz > thing->z && tmfloorstep <= maxstep)
 				{
 					thing->z = thing->floorz = tmfloorz;
 					thing->floorrover = tmfloorrover;

@@ -326,6 +326,8 @@ typedef struct mobj_s
 	fixed_t ceilingz; // Nearest ceiling above.
 	struct ffloor_s *floorrover; // FOF referred by floorz
 	struct ffloor_s *ceilingrover; // FOF referred by ceilingz
+	fixed_t floordrop;
+	fixed_t ceilingdrop;
 
 	// For movement checking.
 	fixed_t radius;
