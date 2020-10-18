@@ -59,6 +59,7 @@
 #define FF_TRANS70 (tr_trans70<<FF_TRANSSHIFT)
 #define FF_TRANS80 (tr_trans80<<FF_TRANSSHIFT)
 #define FF_TRANS90 (tr_trans90<<FF_TRANSSHIFT)
+#define FF_TRANSADD (tr_transadd<<FF_TRANSSHIFT)
 
 /// \brief Frame flags: frame always appears full bright (mutually exclusive with below, currently takes priority)
 #define FF_FULLBRIGHT 0x00100000
@@ -99,6 +100,7 @@ typedef enum
 	tr_trans70,
 	tr_trans80,
 	tr_trans90,
+	tr_transadd,
 	NUMTRANSMAPS
 } transnum_t;
 

@@ -11123,6 +11123,7 @@ struct {
 	{"FF_TRANS70",FF_TRANS70},
 	{"FF_TRANS80",FF_TRANS80},
 	{"FF_TRANS90",FF_TRANS90},
+	{"FF_TRANSADD",FF_TRANSADD},
 	// compatibility
 	// Transparency for SOCs is pre-shifted
 	{"TR_TRANS10",tr_trans10<<FF_TRANSSHIFT},
@@ -11134,6 +11135,7 @@ struct {
 	{"TR_TRANS70",tr_trans70<<FF_TRANSSHIFT},
 	{"TR_TRANS80",tr_trans80<<FF_TRANSSHIFT},
 	{"TR_TRANS90",tr_trans90<<FF_TRANSSHIFT},
+	{"TR_TRANSADD",tr_transadd<<FF_TRANSSHIFT},
 	// Transparency for Lua is not, unless capitalized as above.
 	{"tr_trans10",tr_trans10},
 	{"tr_trans20",tr_trans20},
@@ -11144,6 +11146,7 @@ struct {
 	{"tr_trans70",tr_trans70},
 	{"tr_trans80",tr_trans80},
 	{"tr_trans90",tr_trans90},
+	{"tr_transadd",tr_transadd},
 	{"NUMTRANSMAPS",NUMTRANSMAPS},
 
 	// Type of levels
@@ -11621,6 +11624,7 @@ struct {
 	{"MFD_TRANS70",MFD_TRANS70},
 	{"MFD_TRANS80",MFD_TRANS80},
 	{"MFD_TRANS90",MFD_TRANS90},
+	{"MFD_TRANSADD",MFD_TRANSADD},
 	{"MFD_TRANSMASK",MFD_TRANSMASK},
 	{"MFD_FULLBRIGHT",MFD_FULLBRIGHT},
 	{"MFD_SEMIBRIGHT",MFD_SEMIBRIGHT},

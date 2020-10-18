@@ -81,7 +81,7 @@ UINT8 *dc_source;
 // -----------------------
 // translucency stuff here
 // -----------------------
-#define NUMTRANSTABLES 9 // how many translucency tables are used
+#define NUMTRANSTABLES 10 // how many translucency tables are used
 
 UINT8 *transtables; // translucency tables
 
@@ -172,6 +172,7 @@ void R_InitTranslationTables(void)
 	W_ReadLump(W_GetNumForName("TRANS70"), transtables+0x60000);
 	W_ReadLump(W_GetNumForName("TRANS80"), transtables+0x70000);
 	W_ReadLump(W_GetNumForName("TRANS90"), transtables+0x80000);
+	W_ReadLump(W_GetNumForName("TRANSADD"),transtables+0x90000);
 }
 
 /**	\brief	Retrieves a translation colormap from the cache.
