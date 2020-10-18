@@ -1855,6 +1855,11 @@ static void P_3dMovement(player_t *player)
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
 
+	if (player->kartstuff[k_sneakertimer] > 0)
+	{
+		totalthrust.z = -(totalthrust.z);
+	}
+
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
 
