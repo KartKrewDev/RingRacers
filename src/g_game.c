@@ -4703,55 +4703,28 @@ void G_FreeMapSearch(mapsearchfreq_t *freq, INT32 freqc)
 
 INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 {
-	boolean usemapcode = false;
-
 	INT32 newmapnum;
-
-	size_t mapnamelen;
 
 	char *p;
 
-	mapnamelen = strlen(mapname);
+	/* Now detect map number in base 10, which no one asked for. */
+	newmapnum = strtol(mapname, &p, 10);
 
-	if (mapnamelen == 2)/* maybe two digit code */
+	if (*p == '\0')/* we got it */
 	{
-		if (( newmapnum = G_MapNumber(mapname) ))
-			usemapcode = true;
-	}
-	else if (mapnamelen == 5 && strnicmp(mapname, "MAP", 3) == 0)
-	{
-		if (( newmapnum = G_MapNumber(mapname) ))
-			usemapcode = true;
-	}
-
-	if (!usemapcode)
-	{
-		/* Now detect map number in base 10, which no one asked for. */
-		newmapnum = strtol(mapname, &p, 10);
-		if (*p == '\0')/* we got it */
-		{
-			if (newmapnum < 1 || newmapnum > NUMMAPS)
-			{
-				CONS_Alert(CONS_ERROR, M_GetText("Invalid map number %d.\n"), newmapnum);
-				return 0;
-			}
-			usemapcode = true;
-		}
-		else
-		{
-			newmapnum = G_FindMap(mapname, realmapnamep, NULL, NULL);
-		}
-	}
-
-	if (usemapcode)
-	{
-		/* we can't check mapheaderinfo for this hahahaha */
-		if (W_CheckNumForName(G_BuildMapName(newmapnum)) == LUMPERROR)
+		if (newmapnum < 1 || newmapnum > nummapheaders)
 			return 0;
-
-		if (realmapnamep)
-			(*realmapnamep) = G_BuildMapTitle(newmapnum);
 	}
+	else
+	{
+		newmapnum = G_MapNumber(mapname);
+
+		if (newmapnum > nummapheaders)
+			return G_FindMap(mapname, realmapnamep, NULL, NULL);
+	}
+
+	if (realmapnamep)
+		(*realmapnamep) = G_BuildMapTitle(newmapnum);
 
 	return newmapnum;
 }
