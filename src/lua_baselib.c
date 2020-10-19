@@ -2387,6 +2387,7 @@ static int lib_sChangeMusic(lua_State *L)
 
 #else
 	const char *music_name = luaL_checkstring(L, 1);
+	UINT32 position, prefadems, fadeinms;
 	boolean looping = (boolean)lua_opttrueboolean(L, 2);
 	player_t *player = NULL;
 	UINT16 music_flags = 0;

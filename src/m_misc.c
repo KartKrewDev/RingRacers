@@ -168,32 +168,6 @@ boolean takescreenshot = false; // Take a screenshot this tic
 
 moviemode_t moviemode = MM_OFF;
 
-/** Returns the map number for a map identified by the last two characters in
-  * its name.
-  *
-  * \param first  The first character after MAP.
-  * \param second The second character after MAP.
-  * \return The map number, or 0 if no map corresponds to these characters.
-  * \sa G_BuildMapName
-  */
-INT32 M_MapNumber(char first, char second)
-{
-	if (isdigit(first))
-	{
-		if (isdigit(second))
-			return ((INT32)first - '0') * 10 + ((INT32)second - '0');
-		return 0;
-	}
-
-	if (!isalpha(first))
-		return 0;
-	if (!isalnum(second))
-		return 0;
-
-	return 100 + ((INT32)tolower(first) - 'a') * 36 + (isdigit(second) ? ((INT32)second - '0') :
-		((INT32)tolower(second) - 'a') + 10);
-}
-
 // ==========================================================================
 //                         FILE INPUT / OUTPUT
 // ==========================================================================

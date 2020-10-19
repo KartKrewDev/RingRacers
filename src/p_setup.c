@@ -427,8 +427,10 @@ void P_AllocMapHeader(INT16 i)
 	if (!mapheaderinfo[i])
 	{
 		mapheaderinfo[i] = Z_Malloc(sizeof(mapheader_t), PU_STATIC, NULL);
+		mapheaderinfo[i]->lumpname = NULL;
 		mapheaderinfo[i]->flickies = NULL;
 		mapheaderinfo[i]->grades = NULL;
+		nummapheaders++;
 	}
 	P_ClearSingleMapHeaderInfo(i + 1);
 }
@@ -4473,7 +4475,7 @@ boolean P_AddWadFile(const char *wadfilename)
 			INT16 num;
 			if (name[5]!='\0')
 				continue;
-			num = (INT16)M_MapNumber(name[3], name[4]);
+			num = (INT16)G_MapNumber(name);
 
 			// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
 			if (num <= NUMMAPS && mapheaderinfo[num-1])

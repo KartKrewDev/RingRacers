@@ -892,13 +892,7 @@ void D_StartTitle(void)
 
 			if (server)
 			{
-				char mapname[6];
-
-				strlcpy(mapname, G_BuildMapName(spstage_start), sizeof (mapname));
-				strlwr(mapname);
-				mapname[5] = '\0';
-
-				COM_BufAddText(va("map %s\n", mapname));
+				COM_BufAddText(va("map %s\n", G_BuildMapName(spstage_start)));
 			}
 		}
 

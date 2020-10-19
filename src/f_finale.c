@@ -1837,9 +1837,6 @@ void F_StartTitleScreen(void)
 		titlemapcameraref = NULL;
 		gamemap = titlemap;
 
-		if (!mapheaderinfo[gamemap-1])
-			P_AllocMapHeader(gamemap-1);
-
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
