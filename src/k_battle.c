@@ -339,6 +339,9 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 
 					//P_SetScale(mo, scale);
 					zpos += 346 * mo->scale * flip;
+
+					if (battleovertime.enabled < 10*TICRATE)
+						mo->drawflags |= MFD_TRANS50;
 					break;
 				case 2:
 					P_SetMobjState(mo, S_OVERTIME_BULB2);
