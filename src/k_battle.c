@@ -277,52 +277,81 @@ void K_CheckBumpers(void)
 		P_DoPlayerExit(&players[i]);
 }
 
-#define MAXPLANESPERSECTOR (MAXFFLOORS+1)*2
-
-static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjtype_t type)
+static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 {
-	UINT8 i;
+	UINT8 i, j;
 
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		player_t *player = &players[displayplayers[i]];
-		mobj_t *mo;
-		INT32 f = 0;
+		fixed_t zpos;
+		SINT8 flip;
 
 		if (player == NULL || player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 		{
 			continue;
 		}
 
-		mo = P_SpawnMobj(x, y, player->mo->z + (player->mo->height / 2), type);
-		P_SetScale(mo, scale);
-
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
-			mo->flags2 |= MF2_OBJECTFLIP;
-			mo->eflags |= MFE_VERTICALFLIP;
+			zpos = player->mo->z + player->mo->height;
+		}
+		else
+		{
+			zpos = player->mo->z;
 		}
 
-		mo->drawflags |= (MFD_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
+		flip = P_MobjFlip(player->mo);
 
-		switch (type)
+		for (j = 0; j < 3; j++)
 		{
-			case MT_OVERTIMEFOG:
-				mo->destscale = 8 * mo->scale;
-				mo->momz = P_RandomRange(1,8) * mo->scale;
-				break;
-			case MT_OVERTIMEORB:
-				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
+			mobj_t *mo = P_SpawnMobj(x, y, zpos, MT_OVERTIME_PARTICLE);
 
-				if (leveltime & 1)
-					f = 3;
-				else
-					f = (leveltime / 2) % 3;
+			if (player->mo->eflags & MFE_VERTICALFLIP)
+			{
+				mo->flags2 |= MF2_OBJECTFLIP;
+				mo->eflags |= MFE_VERTICALFLIP;
+			}
 
-				mo->frame += f;
-				break;
-			default:
-				break;
+			mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
+			mo->drawflags |= (MFD_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
+
+			P_SetScale(mo, scale);
+
+			switch (j)
+			{
+				case 0:
+					P_SetMobjState(mo, S_OVERTIME_BULB1);
+
+					if (leveltime & 1)
+						mo->frame += 1;
+
+					//P_SetScale(mo, mapobjectscale);
+					zpos += 35 * mo->scale * flip;
+					break;
+				case 1:
+					P_SetMobjState(mo, S_OVERTIME_LASER);
+
+					if (leveltime & 1)
+						mo->frame += 3;
+					else
+						mo->frame += (leveltime / 2) % 3;
+
+					//P_SetScale(mo, scale);
+					zpos += 346 * mo->scale * flip;
+					break;
+				case 2:
+					P_SetMobjState(mo, S_OVERTIME_BULB2);
+
+					if (leveltime & 1)
+						mo->frame += 1;
+
+					//P_SetScale(mo, mapobjectscale);
+					break;
+				default:
+					I_Error("Bruh moment has occured\n");
+					return;
+			}
 		}
 	}
 }
@@ -331,8 +360,6 @@ static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjty
 
 void K_RunBattleOvertime(void)
 {
-	UINT32 i, j;
-
 	if (battleovertime.enabled < 10*TICRATE)
 	{
 		battleovertime.enabled++;
@@ -343,81 +370,35 @@ void K_RunBattleOvertime(void)
 	}
 	else if (battleovertime.radius > 0)
 	{
-		if (battleovertime.radius > 4*mapobjectscale)
-			battleovertime.radius -= 4*mapobjectscale;
+		if (battleovertime.radius > 2*mapobjectscale)
+			battleovertime.radius -= 2*mapobjectscale;
 		else
 			battleovertime.radius = 0;
 	}
 
-	if (battleovertime.radius <= 0)
-	{
-		return;
-	}
-
-	/*
-	if (leveltime & 1)
-	{
-		UINT8 transparency = tr_trans50;
-
-		if (!splitscreen && players[displayplayers[0]].mo)
-		{
-			INT32 dist = P_AproxDistance(battleovertime.x-players[displayplayers[0]].mo->x, battleovertime.y-players[displayplayers[0]].mo->y);
-			transparency = max(0, NUMTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
-		}
-
-		if (transparency < NUMTRANSMAPS)
-		{
-			mobj_t *beam = P_SpawnMobj(battleovertime.x, battleovertime.y, battleovertime.z + (mobjinfo[MT_RANDOMITEM].height/2), MT_OVERTIMEBEAM);
-			P_SetScale(beam, beam->scale*2);
-			if (transparency > 0)
-				beam->frame |= transparency<<FF_TRANSSHIFT;
-		}
-	}
-	*/
-
+	if (battleovertime.radius > 0)
 	{
 		const fixed_t pi = (22 * FRACUNIT) / 7; // loose approximation, this doesn't need to be incredibly precise
-		fixed_t scale = mapobjectscale + (battleovertime.radius / 2048);
-		fixed_t sprwidth = 64 * scale;
+		const UINT32 orbs = 32;
+		const angle_t angoff = ANGLE_MAX / orbs;
+		const UINT8 spriteSpacing = 128;
+
 		fixed_t circumference = FixedMul(pi, battleovertime.radius * 2);
-		UINT32 orbs = circumference / sprwidth;
-		angle_t angoff = ANGLE_MAX / orbs;
+		fixed_t scale = max(circumference / spriteSpacing / orbs, mapobjectscale);
+
+		fixed_t size = FixedMul(mobjinfo[MT_OVERTIME_PARTICLE].radius, scale);
+		fixed_t posOffset = max(battleovertime.radius - size, 0);
+
+		UINT32 i;
 
 		for (i = 0; i < orbs; i++)
 		{
-			angle_t ang = (i * angoff);
-			fixed_t size = FixedMul(mobjinfo[MT_OVERTIMEORB].radius, mapobjectscale);
+			angle_t ang = (i * angoff) + FixedAngle((leveltime * FRACUNIT) / 4);
 
-			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius + size);
-			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius + size);
+			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, posOffset);
+			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, posOffset);
 
-			K_SpawnOvertimeParticles(x, y, mapobjectscale, MT_OVERTIMEORB);
-		}
-	}
-
-	if (battleovertime.enabled < 10*TICRATE)
-		return;
-
-	for (i = 0; i < 16; i++)
-	{
-		j = 0;
-
-		while (j < 32) // max attempts
-		{
-			fixed_t scale = 4*mapobjectscale;
-
-			fixed_t x = battleovertime.x + (P_RandomRange(-64,64) * scale);
-			fixed_t y = battleovertime.y + (P_RandomRange(-64,64) * scale);
-
-			fixed_t closestdist = battleovertime.radius + (8 * FixedMul(mobjinfo[MT_OVERTIMEFOG].radius, scale));
-
-			j++;
-
-			if (P_AproxDistance(x - battleovertime.x, y - battleovertime.y) < closestdist)
-				continue;
-
-			K_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEFOG);
-			break;
+			K_SpawnOvertimeLaser(x, y, scale);
 		}
 	}
 }

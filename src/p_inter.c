@@ -726,7 +726,7 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 }
 
 // Easily make it so that overtime works offline
-#define TESTOVERTIMEINFREEPLAY
+//#define TESTOVERTIMEINFREEPLAY
 
 /** Checks if the level timer is over the timelimit and the round should end,
   * unless you are in overtime. In which case leveltime may stretch out beyond
@@ -743,8 +743,10 @@ void P_CheckTimeLimit(void)
 	if (!cv_timelimit.value)
 		return;
 
+#ifndef TESTOVERTIMEINFREEPLAY
 	if (battlecapsules) // capsules override any time limit settings
 		return;
+#endif
 
 	if (!(gametyperules & GTR_TIMELIMIT))
 		return;
@@ -770,51 +772,43 @@ void P_CheckTimeLimit(void)
 				// Initiate the kill zone
 				if (!battleovertime.enabled)
 				{
-					INT32 b = 0;
 					thinker_t *th;
-					mobj_t *item = NULL;
+					mobj_t *center = NULL;
 
-					P_RespawnBattleBoxes(); // FORCE THESE TO BE RESPAWNED FOR THIS!!!!!!!
-
-					// Find us an item box to center on.
-					// TO DO: DON'T do this, instead use a specialized center point object
-					// just use 0,0 if it's not found
 					for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 					{
 						mobj_t *thismo;
+
 						if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 							continue;
+
 						thismo = (mobj_t *)th;
 
-						if (thismo->type != MT_RANDOMITEM)
-							continue;
-						if (thismo->threshold == 69) // Disappears
-							continue;
-
-						b++;
-
-						// Only select items that are on the ground, ignore ones in the air. Ambush flag inverts this rule.
-						if ((!P_IsObjectOnGround(thismo)) != (thismo->flags2 & MF2_AMBUSH))
-							continue;
-
-						if (item == NULL || (b < nummapboxes && P_RandomChance(((nummapboxes-b)*FRACUNIT)/nummapboxes))) // This is to throw off the RNG some
-							item = thismo;
-						if (b >= nummapboxes) // end early if we've found them all already
+						if (thismo->type == MT_OVERTIME_CENTER)
+						{
+							center = thismo;
 							break;
+						}
 					}
 
-					if (item == NULL) // no item found, could happen if every item is in the air or has ambush flag, or the map has none
+					if (center == NULL || P_MobjWasRemoved(center))
 					{
-						CONS_Alert(CONS_WARNING, "No usuable items for Battle overtime!\n");
-						return;
+						CONS_Alert(CONS_WARNING, "No center point for overtime!\n");
+
+						battleovertime.x = 0;
+						battleovertime.y = 0;
+						battleovertime.z = 0;
+					}
+					else
+					{
+						battleovertime.x = center->x;
+						battleovertime.y = center->y;
+						battleovertime.z = center->z;
 					}
 
-					//item->threshold = 70; // Set constant respawn
-					battleovertime.x = item->x;
-					battleovertime.y = item->y;
-					battleovertime.z = item->z;
 					battleovertime.radius = 4096 * mapobjectscale;
 					battleovertime.enabled = 1;
+
 					S_StartSound(NULL, sfx_kc47);
 				}
 

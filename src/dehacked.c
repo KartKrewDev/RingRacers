@@ -9286,9 +9286,10 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 
 	"S_TIREGREASE",
 
-	"S_OVERTIMEFOG",
-	"S_OVERTIMEORB",
-	"S_OVERTIMEBEAM",
+	"S_OVERTIME_BULB1",
+	"S_OVERTIME_BULB2",
+	"S_OVERTIME_LASER",
+	"S_OVERTIME_CENTER",
 
 	"S_BATTLECAPSULE_SIDE1",
 	"S_BATTLECAPSULE_SIDE2",
@@ -10382,9 +10383,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_SPBDUST",
 	"MT_TIREGREASE",
 
-	"MT_OVERTIMEFOG",
-	"MT_OVERTIMEORB",
-	"MT_OVERTIMEBEAM",
+	"MT_OVERTIME_PARTICLE",
+	"MT_OVERTIME_CENTER",
 
 	"MT_BATTLECAPSULE",
 	"MT_BATTLECAPSULE_PIECE",

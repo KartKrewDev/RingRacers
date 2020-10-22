@@ -713,7 +713,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"DRAF",
 	"GRES",
 
-	"OTFG",
+	"OTBU",
+	"OTLS",
+	"OTCP",
 
 	"DBOS", // Drift boost flame
 
@@ -4995,9 +4997,10 @@ state_t states[NUMSTATES] =
 
 	{SPR_GRES, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 2, 4, S_NULL}, // S_TIREGREASE
 
-	{SPR_OTFG,   FF_FULLBRIGHT|FF_TRANS50, TICRATE, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEFOG
-	{SPR_OTFG, 1|FF_FULLBRIGHT|FF_PAPERSPRITE, 1, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEORB
-	{SPR_OTFG, 1|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_NULL}, // S_OVERTIMEBEAM
+	{SPR_OTBU, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_NULL}, // S_OVERTIME_BULB1
+	{SPR_OTBU, FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_NULL}, // S_OVERTIME_BULB2
+	{SPR_OTLS, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_NULL}, // S_OVERTIME_LASER
+	{SPR_OTCP, 0, -1, {NULL}, 0, 0, S_NULL}, // S_OVERTIME_CENTER
 
 	{SPR_CAPS, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLECAPSULE_SIDE1
 	{SPR_CAPS, FF_PAPERSPRITE|1, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLECAPSULE_SIDE2
@@ -28402,9 +28405,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL          // raisestate
 	},
 
-	{           // MT_OVERTIMEFOG
+	{           // MT_OVERTIME_PARTICLE
 	    -1,             // doomednum
-	    S_OVERTIMEFOG,  // spawnstate
+	    S_NULL,         // spawnstate
 	    1000,           // spawnhealth
 	    S_NULL,         // seestate
 	    sfx_None,       // seesound
@@ -28420,8 +28423,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    sfx_None,       // deathsound
 	    0,              // speed
 	    16<<FRACBITS,   // radius
-	    32<<FRACBITS,   // height
-	    -1,             // display offset
+	    24<<FRACBITS,   // height
+	    0,              // display offset
 	    100,            // mass
 	    0,              // damage
 	    sfx_None,       // activesound
@@ -28429,36 +28432,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL          // raisestate
 	},
 
-	{           // MT_OVERTIMEORB
-	    -1,             // doomednum
-	    S_OVERTIMEORB,  // spawnstate
-	    1000,           // spawnhealth
-	    S_NULL,         // seestate
-	    sfx_None,       // seesound
-	    8,              // reactiontime
-	    sfx_None,       // attacksound
-	    S_NULL,         // painstate
-	    0,              // painchance
-	    sfx_None,       // painsound
-	    S_NULL,         // meleestate
-	    S_NULL,         // missilestate
-	    S_NULL,         // deathstate
-	    S_NULL,         // xdeathstate
-	    sfx_None,       // deathsound
-	    0,              // speed
-	    16<<FRACBITS,   // radius
-	    48<<FRACBITS,   // height
-	    -1,             // display offset
-	    100,            // mass
-	    0,              // damage
-	    sfx_None,       // activesound
-	    MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
-	    S_NULL          // raisestate
-	},
-
-	{           // MT_OVERTIMEBEAM
-	    -1,             // doomednum
-	    S_OVERTIMEBEAM, // spawnstate
+	{           // MT_OVERTIME_CENTER
+	    3775,           // doomednum
+	    S_OVERTIME_CENTER, // spawnstate
 	    1000,           // spawnhealth
 	    S_NULL,         // seestate
 	    sfx_None,       // seesound
@@ -28475,11 +28451,11 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    0,              // speed
 	    48<<FRACBITS,   // radius
 	    48<<FRACBITS,   // height
-	    -1,             // display offset
+	    0,              // display offset
 	    100,            // mass
 	    0,              // damage
 	    sfx_None,       // activesound
-	    MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+	    MF_SOLID|MF_DONTENCOREMAP, // flags
 	    S_NULL          // raisestate
 	},
 
