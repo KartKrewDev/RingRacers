@@ -279,110 +279,47 @@ void K_CheckBumpers(void)
 
 #define MAXPLANESPERSECTOR (MAXFFLOORS+1)*2
 
-static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjtype_t type, boolean ceiling)
+static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjtype_t type)
 {
 	UINT8 i;
-	fixed_t flatz[MAXPLANESPERSECTOR];
-	boolean flip[MAXPLANESPERSECTOR];
-	UINT8 numflats = 0;
-	mobj_t *mo;
-	subsector_t *ss = R_PointInSubsectorOrNull(x, y);
-	sector_t *sec;
 
-	if (!ss)
-		return;
-	sec = ss->sector;
-
-	// convoluted stuff JUST to get all of the planes we need to draw orbs on :V
-
-	for (i = 0; i < MAXPLANESPERSECTOR; i++)
-		flip[i] = false;
-
-	if (sec->floorpic != skyflatnum)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		flatz[numflats] = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
-		numflats++;
-	}
-	if (sec->ceilingpic != skyflatnum && ceiling)
-	{
-		flatz[numflats] = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight) - FixedMul(mobjinfo[type].height, scale);
-		flip[numflats] = true;
-		numflats++;
-	}
+		player_t *player = &players[displayplayers[i]];
+		mobj_t *mo;
+		INT32 f = 0;
 
-	if (sec->ffloors)
-	{
-		ffloor_t *rover;
-		for (rover = sec->ffloors; rover; rover = rover->next)
+		if (player == NULL || player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER))
-				continue;
-			if (*rover->toppic != skyflatnum)
-			{
-				flatz[numflats] = P_GetZAt(*rover->t_slope, x, y, *rover->topheight);
-				numflats++;
-			}
-			if (*rover->bottompic != skyflatnum && ceiling)
-			{
-				flatz[numflats] = P_GetZAt(*rover->b_slope, x, y, *rover->bottomheight);
-				flip[numflats] = true;
-				numflats++;
-			}
-		}
-	}
-
-	if (numflats <= 0) // no flats
-		return;
-
-	for (i = 0; i < numflats; i++)
-	{
-		mo = P_SpawnMobj(x, y, flatz[i], type);
-
-		// Lastly, if this can see the skybox mobj, then... we just wasted our time :V
-		if (skyboxmo[0] && !P_MobjWasRemoved(skyboxmo[0]))
-		{
-			const fixed_t sbz = skyboxmo[0]->z;
-			fixed_t checkz = sec->floorheight;
-
-			while (checkz < sec->ceilingheight)
-			{
-				P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, checkz);
-				if (P_CheckSight(skyboxmo[0], mo))
-				{
-					P_RemoveMobj(mo);
-					break;
-				}
-				else
-					checkz += 32*mapobjectscale;
-			}
-
-			P_TeleportMove(skyboxmo[0], skyboxmo[0]->x, skyboxmo[0]->y, sbz);
-
-			if (P_MobjWasRemoved(mo))
-				continue;
+			continue;
 		}
 
+		mo = P_SpawnMobj(x, y, player->mo->z + (player->mo->height / 2), type);
 		P_SetScale(mo, scale);
 
-		if (flip[i])
+		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
 			mo->flags2 |= MF2_OBJECTFLIP;
 			mo->eflags |= MFE_VERTICALFLIP;
 		}
 
-		switch(type)
+		mo->drawflags |= (MFD_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
+
+		switch (type)
 		{
 			case MT_OVERTIMEFOG:
-				mo->destscale = 8*mo->scale;
-				mo->momz = P_RandomRange(1,8)*mo->scale;
+				mo->destscale = 8 * mo->scale;
+				mo->momz = P_RandomRange(1,8) * mo->scale;
 				break;
 			case MT_OVERTIMEORB:
-				//mo->destscale = mo->scale/4;
-				mo->frame += ((leveltime/4) % 8);
-				/*if (battleovertime.enabled < 10*TICRATE)
-					mo->drawflags |= MFD_SHADOW;*/
 				mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
-				mo->z += P_RandomRange(0,48) * mo->scale;
+
+				if (leveltime & 1)
+					f = 3;
+				else
+					f = (leveltime / 2) % 3;
+
+				mo->frame += f;
 				break;
 			default:
 				break;
@@ -394,7 +331,7 @@ static void K_SpawnOvertimeParticles(fixed_t x, fixed_t y, fixed_t scale, mobjty
 
 void K_RunBattleOvertime(void)
 {
-	UINT16 i, j;
+	UINT32 i, j;
 
 	if (battleovertime.enabled < 10*TICRATE)
 	{
@@ -404,14 +341,20 @@ void K_RunBattleOvertime(void)
 		if (battleovertime.enabled == 10*TICRATE)
 			S_StartSound(NULL, sfx_kc40);
 	}
-	else
+	else if (battleovertime.radius > 0)
 	{
-		if (battleovertime.radius > battleovertime.minradius)
-			battleovertime.radius -= mapobjectscale;
+		if (battleovertime.radius > 4*mapobjectscale)
+			battleovertime.radius -= 4*mapobjectscale;
 		else
-			battleovertime.radius = battleovertime.minradius;
+			battleovertime.radius = 0;
 	}
 
+	if (battleovertime.radius <= 0)
+	{
+		return;
+	}
+
+	/*
 	if (leveltime & 1)
 	{
 		UINT8 transparency = tr_trans50;
@@ -430,43 +373,50 @@ void K_RunBattleOvertime(void)
 				beam->frame |= transparency<<FF_TRANSSHIFT;
 		}
 	}
+	*/
 
-	// 16 orbs at the normal minimum size of 512
 	{
-		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
-		fixed_t scale = mapobjectscale + (battleovertime.radius/2048);
-		fixed_t sprwidth = 32*scale;
-		fixed_t circumference = FixedMul(pi, battleovertime.radius<<1);
-		UINT16 orbs = circumference / sprwidth;
+		const fixed_t pi = (22 * FRACUNIT) / 7; // loose approximation, this doesn't need to be incredibly precise
+		fixed_t scale = mapobjectscale + (battleovertime.radius / 2048);
+		fixed_t sprwidth = 64 * scale;
+		fixed_t circumference = FixedMul(pi, battleovertime.radius * 2);
+		UINT32 orbs = circumference / sprwidth;
 		angle_t angoff = ANGLE_MAX / orbs;
 
 		for (i = 0; i < orbs; i++)
 		{
-			angle_t ang = (i * angoff) + FixedAngle((leveltime/2)<<FRACBITS);
-			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
-			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius - FixedMul(mobjinfo[MT_OVERTIMEORB].radius, scale));
-			K_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEORB, false);
+			angle_t ang = (i * angoff);
+			fixed_t size = FixedMul(mobjinfo[MT_OVERTIMEORB].radius, mapobjectscale);
+
+			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, battleovertime.radius + size);
+			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, battleovertime.radius + size);
+
+			K_SpawnOvertimeParticles(x, y, mapobjectscale, MT_OVERTIMEORB);
 		}
 	}
 
 	if (battleovertime.enabled < 10*TICRATE)
 		return;
 
-	/*if (!S_IdPlaying(sfx_s3kd4s)) // global ambience
-		S_StartSoundAtVolume(NULL, sfx_s3kd4s, min(255, ((4096*mapobjectscale) - battleovertime.radius)>>FRACBITS / 2));*/
-
 	for (i = 0; i < 16; i++)
 	{
 		j = 0;
+
 		while (j < 32) // max attempts
 		{
-			fixed_t x = battleovertime.x + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
-			fixed_t y = battleovertime.y + ((P_RandomRange(-64,64) * 128)<<FRACBITS);
-			fixed_t closestdist = battleovertime.radius + (8*mobjinfo[MT_OVERTIMEFOG].radius);
+			fixed_t scale = 4*mapobjectscale;
+
+			fixed_t x = battleovertime.x + (P_RandomRange(-64,64) * scale);
+			fixed_t y = battleovertime.y + (P_RandomRange(-64,64) * scale);
+
+			fixed_t closestdist = battleovertime.radius + (8 * FixedMul(mobjinfo[MT_OVERTIMEFOG].radius, scale));
+
 			j++;
-			if (P_AproxDistance(x-battleovertime.x, y-battleovertime.y) < closestdist)
+
+			if (P_AproxDistance(x - battleovertime.x, y - battleovertime.y) < closestdist)
 				continue;
-			K_SpawnOvertimeParticles(x, y, 4*mapobjectscale, MT_OVERTIMEFOG, false);
+
+			K_SpawnOvertimeParticles(x, y, scale, MT_OVERTIMEFOG);
 			break;
 		}
 	}

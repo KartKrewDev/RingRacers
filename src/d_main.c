@@ -1544,6 +1544,11 @@ void D_SRB2Main(void)
 
 	CON_Init();
 
+	memset(timelimits, 0, sizeof(timelimits));
+	memset(pointlimits, 0, sizeof(pointlimits));
+
+	timelimits[GT_BATTLE] = 2;
+
 	D_RegisterServerCommands();
 	D_RegisterClientCommands(); // be sure that this is called before D_CheckNetGame
 	R_RegisterEngineStuff();

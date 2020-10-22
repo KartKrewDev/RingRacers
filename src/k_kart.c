@@ -5750,23 +5750,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] > 0 && !P_PlayerInPain(player) && !player->powers[pw_flashing])
 	{
 		player->kartstuff[k_wanted]++;
-		if (battleovertime.enabled >= 10*TICRATE)
+
+		if ((battleovertime.enabled >= 10*TICRATE) && (P_AproxDistance(player->mo->x - battleovertime.x, player->mo->y - battleovertime.y) - (player->mo->radius * 2)) > battleovertime.radius)
 		{
-			if (P_AproxDistance(player->mo->x - battleovertime.x, player->mo->y - battleovertime.y) > battleovertime.radius)
-			{
-				player->kartstuff[k_killfield]++;
-				if (player->kartstuff[k_killfield] > 4*TICRATE)
-				{
-					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_NORMAL);
-					//player->kartstuff[k_killfield] = 1;
-				}
-			}
-			else if (player->kartstuff[k_killfield] > 0)
-				player->kartstuff[k_killfield]--;
+			P_KillMobj(player->mo, NULL, NULL, DMG_NORMAL);
+			player->kartstuff[k_bumper] = 0;
 		}
 	}
-	else if (player->kartstuff[k_killfield] > 0)
-		player->kartstuff[k_killfield]--;
 
 	if (P_IsObjectOnGround(player->mo))
 		player->kartstuff[k_waterskip] = 0;

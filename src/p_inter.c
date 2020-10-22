@@ -726,7 +726,7 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 }
 
 // Easily make it so that overtime works offline
-//#define TESTOVERTIMEINFREEPLAY
+#define TESTOVERTIMEINFREEPLAY
 
 /** Checks if the level timer is over the timelimit and the round should end,
   * unless you are in overtime. In which case leveltime may stretch out beyond
@@ -741,9 +741,6 @@ void P_CheckTimeLimit(void)
 	INT32 i;
 
 	if (!cv_timelimit.value)
-		return;
-
-	if (!(multiplayer || netgame))
 		return;
 
 	if (battlecapsules) // capsules override any time limit settings
@@ -766,6 +763,7 @@ void P_CheckTimeLimit(void)
 		{
 			if (!playeringame[i] || players[i].spectator)
 				continue;
+
 			if (foundone)
 			{
 #endif
@@ -779,6 +777,8 @@ void P_CheckTimeLimit(void)
 					P_RespawnBattleBoxes(); // FORCE THESE TO BE RESPAWNED FOR THIS!!!!!!!
 
 					// Find us an item box to center on.
+					// TO DO: DON'T do this, instead use a specialized center point object
+					// just use 0,0 if it's not found
 					for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 					{
 						mobj_t *thismo;
@@ -809,15 +809,15 @@ void P_CheckTimeLimit(void)
 						return;
 					}
 
-					item->threshold = 70; // Set constant respawn
+					//item->threshold = 70; // Set constant respawn
 					battleovertime.x = item->x;
 					battleovertime.y = item->y;
 					battleovertime.z = item->z;
-					battleovertime.radius = 4096*mapobjectscale;
-					battleovertime.minradius = (cv_overtime.value == 2 ? 40 : 512) * mapobjectscale;
+					battleovertime.radius = 4096 * mapobjectscale;
 					battleovertime.enabled = 1;
 					S_StartSound(NULL, sfx_kc47);
 				}
+
 				return;
 #ifndef TESTOVERTIMEINFREEPLAY
 			}

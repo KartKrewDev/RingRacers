@@ -7,7 +7,7 @@
 extern struct battleovertime
 {
 	UINT16 enabled; ///< Has this been initalized yet?
-	fixed_t radius, minradius; ///< Radius of kill field
+	fixed_t radius; ///< Radius of kill field
 	fixed_t x, y, z; ///< Position to center on
 } battleovertime;
 
