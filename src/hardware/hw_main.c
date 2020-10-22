@@ -1466,11 +1466,14 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					blendmode = PF_Translucent;
 					break;
 				default:
-					if (gl_linedef->alpha >= 0 && gl_linedef->alpha < FRACUNIT)
-						blendmode = HWR_TranstableToAlpha(R_GetLinedefTransTable(gl_linedef->alpha), &Surf);
+				{
+					transnum_t transtable = R_GetLinedefTransTable(gl_linedef);
+					if (transtable != NUMTRANSMAPS)
+						blendmode = HWR_TranstableToAlpha(transtable, &Surf);
 					else
 						blendmode = PF_Masked;
 					break;
+				}
 			}
 
 			if (gl_curline->polyseg && gl_curline->polyseg->translucency > 0)
