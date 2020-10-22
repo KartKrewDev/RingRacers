@@ -897,7 +897,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	// SPECIAL CASE No. 4:
 	// Being in ring debt occasionally forces Super Ring on you if you mashed
-	if ((gametyperules & GTR_RINGS) && mashed && player->rings < 0 && cv_superring.value)
+	if (!(gametyperules & GTR_SPHERES) && mashed && player->rings < 0 && cv_superring.value)
 	{
 		INT32 debtamount = min(20, abs(player->rings));
 		if (P_RandomChance((debtamount*FRACUNIT)/20))
@@ -2221,6 +2221,12 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 
 	finalspeed = K_GetKartSpeedFromStat(kartspeed);
 
+	if (player->spheres > 0)
+	{
+		fixed_t sphereAdd = (FRACUNIT/80); // 50% at max
+		finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
+	}
+
 	if (K_PlayerUsesBotMovement(player))
 	{
 		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
@@ -2261,6 +2267,11 @@ fixed_t K_GetKartAccel(player_t *player)
 	//k_accel += 3 * (9 - kartspeed); // 36 - 60
 	k_accel += 4 * (9 - kartspeed); // 32 - 64
 
+	if (player->spheres > 0)
+	{
+		fixed_t sphereAdd = (FRACUNIT/10); // 500% at max
+		k_accel = FixedMul(k_accel, FRACUNIT + (sphereAdd * player->spheres));
+	}
 
 	if (K_PlayerUsesBotMovement(player))
 	{
@@ -5613,6 +5624,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->rings = 20;
 	else if (player->rings < -20)
 		player->rings = -20;
+
+	if ((leveltime % TICRATE) == 0)
+		player->spheres--;
+
+	if (player->spheres > 40)
+		player->spheres = 40;
+	else if (player->spheres < 0)
+		player->spheres = 0;
 
 	if (player->kartstuff[k_ringdelay])
 		player->kartstuff[k_ringdelay]--;

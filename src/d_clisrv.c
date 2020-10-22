@@ -545,6 +545,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	// Score is resynched in the rspfirm resync packet
 	rsp->rings = SHORT(players[i].rings);
+	rsp->spheres = SHORT(players[i].spheres);
 	rsp->lives = players[i].lives;
 	rsp->lostlife = players[i].lostlife;
 	rsp->continues = players[i].continues;
@@ -689,6 +690,7 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	// Score is resynched in the rspfirm resync packet
 	players[i].rings = SHORT(rsp->rings);
+	players[i].spheres = SHORT(rsp->spheres);
 	players[i].lives = rsp->lives;
 	players[i].lostlife = rsp->lostlife;
 	players[i].continues = rsp->continues;

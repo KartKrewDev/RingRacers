@@ -214,6 +214,7 @@ typedef struct
 
 	// Score is resynched in the confirm resync packet
 	INT16 rings;
+	INT16 spheres;
 	SINT8 lives;
 	boolean lostlife;
 	SINT8 continues;

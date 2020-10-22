@@ -109,6 +109,7 @@ static void P_NetArchivePlayers(void)
 		WRITEANGLE(save_p, players[i].awayviewaiming);
 		WRITEINT32(save_p, players[i].awayviewtics);
 		WRITEINT16(save_p, players[i].rings);
+		WRITEINT16(save_p, players[i].spheres);
 
 		for (j = 0; j < NUMPOWERS; j++)
 			WRITEUINT16(save_p, players[i].powers[j]);
@@ -302,6 +303,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].awayviewaiming = READANGLE(save_p);
 		players[i].awayviewtics = READINT32(save_p);
 		players[i].rings = READINT16(save_p);
+		players[i].spheres = READINT16(save_p);
 
 		for (j = 0; j < NUMPOWERS; j++)
 			players[i].powers[j] = READUINT16(save_p);

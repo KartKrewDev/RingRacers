@@ -2111,18 +2111,8 @@ boolean P_ZMovement(mobj_t *mo)
 			break;
 
 		case MT_RING: // Ignore still rings
-		case MT_COIN:
 		case MT_BLUESPHERE:
-		case MT_BOMBSPHERE:
-		case MT_NIGHTSCHIP:
-		case MT_NIGHTSSTAR:
-		case MT_REDTEAMRING:
-		case MT_BLUETEAMRING:
 		case MT_FLINGRING:
-		case MT_FLINGCOIN:
-		case MT_FLINGBLUESPHERE:
-		case MT_FLINGNIGHTSCHIP:
-		case MT_FLINGEMERALD:
 			// Remove flinged stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
 			{
@@ -8916,6 +8906,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			break;
 		case MT_RING:
 		case MT_FLOATINGITEM:
+		case MT_BLUESPHERE:
 			thing->shadowscale = FRACUNIT/2;
 			break;
 		case MT_DRIFTCLIP:
@@ -9205,8 +9196,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->color = skincolor_blueteam;
 			break;
 		case MT_RING:
-		case MT_COIN:
-		case MT_NIGHTSSTAR:
 			if (nummaprings >= 0)
 				nummaprings++;
 			break;
@@ -9564,10 +9553,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	// Rings only, please!
 	if (mobj->spawnpoint &&
 		(mobj->type == MT_RING
-		|| mobj->type == MT_COIN
-		|| mobj->type == MT_NIGHTSSTAR
-		|| mobj->type == MT_REDTEAMRING
-		|| mobj->type == MT_BLUETEAMRING)
+		|| mobj->type == MT_BLUESPHERE)
 		&& !(mobj->flags2 & MF2_DONTRESPAWN))
 	{
 		itemrespawnque[iquehead] = mobj->spawnpoint;
@@ -9979,22 +9965,29 @@ void P_RespawnSpecials(void)
 			pcount++;
 	}
 
-	if (pcount == 1) // No respawn when alone
-		return;
-	else if (pcount > 1)
+	if (gametyperules & GTR_SPHERES)
 	{
-		time = (120 - ((pcount-2) * 10))*TICRATE;
-
-		// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
-		// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
-		if ((mapheaderinfo[gamemap-1]->numlaps != 3)
-		&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
-			time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
-
-		if (time < 10*TICRATE)
+		time = ((MAXPLAYERS+1) - pcount) * (2*TICRATE);
+	}
+	else
+	{
+		if (pcount == 1) // No respawn when alone
+			return;
+		else if (pcount > 1)
 		{
-			// Ensure it doesn't go into absurdly low values
-			time = 10*TICRATE;
+			time = (120 - ((pcount-2) * 10))*TICRATE;
+
+			// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
+			// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
+			if ((mapheaderinfo[gamemap-1]->numlaps != 3)
+			&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
+				time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
+
+			if (time < 10*TICRATE)
+			{
+				// Ensure it doesn't go into absurdly low values
+				time = 10*TICRATE;
+			}
 		}
 	}
 
@@ -10410,6 +10403,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	case MT_SPIKEBALL:
 	case MT_EMBLEM:
 	case MT_RING:
+	case MT_BLUESPHERE:
 		offset += mthing->options & MTF_AMBUSH ? 24*mapobjectscale : 0;
 		break;
 
@@ -10516,8 +10510,11 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 {
-	// Don't need this for Kart YET!
 	(void)mthing;
+
+	if ((gametyperules & GTR_SPHERES) && (i == MT_RING))
+		return MT_BLUESPHERE;
+
 	return i;
 }
 

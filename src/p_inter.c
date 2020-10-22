@@ -553,6 +553,18 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			return;
 
+		case MT_BLUESPHERE:
+			if (!(P_CanPickupItem(player, 0)))
+				return;
+
+			// Reached the cap, don't waste 'em!
+			if (player->spheres >= 40)
+				return;
+
+			special->momx = special->momy = special->momz = 0;
+			player->spheres++;
+			break;
+
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
@@ -2000,7 +2012,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
 
 	// Rings shouldn't be in Battle!
-	if (!(gametyperules & GTR_RINGS))
+	if (gametyperules & GTR_SPHERES)
 		return;
 
 	// Better safe than sorry.

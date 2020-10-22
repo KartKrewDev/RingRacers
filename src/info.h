@@ -406,7 +406,7 @@ typedef enum sprite
 	SPR_TOKE, // Special Stage Token
 	SPR_RFLG, // Red CTF Flag
 	SPR_BFLG, // Blue CTF Flag
-	//SPR_SPHR, // Sphere
+	SPR_BSPH, // Sphere
 	SPR_NCHP, // NiGHTS chip
 	SPR_NSTR, // NiGHTS star
 	SPR_EMBM, // Emblem

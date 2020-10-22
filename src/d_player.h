@@ -497,6 +497,7 @@ typedef struct player_s
 
 	// player's ring count
 	INT16 rings;
+	INT16 spheres;
 
 	// Power ups. invinc and invis are tic counters.
 	UINT16 powers[NUMPOWERS];

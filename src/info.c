@@ -135,7 +135,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TOKE", // Special Stage Token
 	"RFLG", // Red CTF Flag
 	"BFLG", // Blue CTF Flag
-	//"SPHR", // Sphere
+	"BSPH", // Sphere
 	"NCHP", // NiGHTS chip
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
@@ -1800,19 +1800,19 @@ state_t states[NUMSTATES] =
 	{SPR_RING, 22, 1, {NULL}, 0, 0, S_FASTRING1}, // S_FASTRING12
 
 	// Blue Sphere for special stages
-	{SPR_SPHR, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_BLUESPHERE
-	{SPR_SPHR, FF_FULLBRIGHT
+	{SPR_BSPH, FF_SEMIBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_BLUESPHERE
+	{SPR_BSPH, FF_FULLBRIGHT
 #ifdef MANIASPHERES
 							|FF_ANIMATE|FF_RANDOMANIM
 #endif
 													, -1, {NULL}, 1, 4, S_NULL}, // S_BLUESPHEREBONUS
-	{SPR_SPHR, 0, 20, {NULL}, 0, 0, S_NULL}, // S_BLUESPHERESPARK
+	{SPR_BSPH, 0, 20, {NULL}, 0, 0, S_NULL}, // S_BLUESPHERESPARK
 
 	// Bomb Sphere
-	{SPR_SPHR, FF_FULLBRIGHT|3, 2, {NULL}, 0, 0, S_BOMBSPHERE2}, // S_BOMBSPHERE1
-	{SPR_SPHR, FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_BOMBSPHERE3}, // S_BOMBSPHERE2
-	{SPR_SPHR, FF_FULLBRIGHT|5, 2, {NULL}, 0, 0, S_BOMBSPHERE4}, // S_BOMBSPHERE3
-	{SPR_SPHR, FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_BOMBSPHERE1}, // S_BOMBSPHERE4
+	{SPR_BSPH, FF_FULLBRIGHT|3, 2, {NULL}, 0, 0, S_BOMBSPHERE2}, // S_BOMBSPHERE1
+	{SPR_BSPH, FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_BOMBSPHERE3}, // S_BOMBSPHERE2
+	{SPR_BSPH, FF_FULLBRIGHT|5, 2, {NULL}, 0, 0, S_BOMBSPHERE4}, // S_BOMBSPHERE3
+	{SPR_BSPH, FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_BOMBSPHERE1}, // S_BOMBSPHERE4
 
 	// NiGHTS Chip
 	{SPR_NCHP, FF_FULLBRIGHT|FF_ANIMATE,    -1, {NULL}, 15, 2, S_NULL}, // S_NIGHTSCHIP
@@ -7923,29 +7923,29 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_BLUESPHERE
-		1706,           // doomednum
+		-1,             // doomednum
 		S_BLUESPHERE,   // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
-		MT_FLINGBLUESPHERE,        // reactiontime
+		MT_FLINGBLUESPHERE, // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
 		0,              // painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_BLUESPHERESPARK, // deathstate
+		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k65,      // deathsound
 		38*FRACUNIT,    // speed
-		16*FRACUNIT,    // radius
-		24*FRACUNIT,    // height
+		48*FRACUNIT,    // radius
+		48*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_BLUESPHEREBONUS // raisestate
 	},
 
@@ -7962,7 +7962,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_BLUESPHERESPARK, // deathstate
+		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k65,     // deathsound
 		38*FRACUNIT,    // speed
