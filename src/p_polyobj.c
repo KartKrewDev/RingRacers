@@ -2563,7 +2563,7 @@ void T_PolyObjFade(polyfade_t *th)
 	{
 		if (po->translucency >= NUMTRANSMAPS)
 			// HACK: OpenGL renders fully opaque when >= NUMTRANSMAPS
-			po->translucency = NUMTRANSMAPS-1;
+			po->translucency = tr_trans90;
 
 		po->flags |= (po->spawnflags & POF_RENDERALL);
 

@@ -775,6 +775,10 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			dc_transmap = transtables + ((tr_trans20-1)<<FF_TRANSSHIFT);
 		else if (pfloor->alpha < 243)
 			dc_transmap = transtables + ((tr_trans10-1)<<FF_TRANSSHIFT);
+		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
+			dc_transmap = transtables + ((tr_transadd-1)<<FF_TRANSSHIFT);
+		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
+			dc_transmap = transtables + ((tr_transsub-1)<<FF_TRANSSHIFT);
 		else
 			fuzzy = false; // Opaque
 

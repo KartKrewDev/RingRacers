@@ -952,7 +952,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 	if (pl->polyobj)
 	{
 		// Hacked up support for alpha value in software mode Tails 09-24-2002 (sidenote: ported to polys 10-15-2014, there was no time travel involved -Red)
-		if (pl->polyobj->translucency >= 10)
+		if (pl->polyobj->translucency >= NUMTRANSMAPS)
 			return; // Don't even draw it
 		else if (pl->polyobj->translucency > 0)
 		{
@@ -1013,6 +1013,10 @@ void R_DrawSinglePlane(visplane_t *pl)
 					ds_transmap = transtables + ((tr_trans20-1)<<FF_TRANSSHIFT);
 				else if (pl->ffloor->alpha < 243)
 					ds_transmap = transtables + ((tr_trans10-1)<<FF_TRANSSHIFT);
+				else if (pl->ffloor->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
+					dc_transmap = transtables + ((tr_transadd-1)<<FF_TRANSSHIFT);
+				else if (pl->ffloor->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
+					dc_transmap = transtables + ((tr_transsub-1)<<FF_TRANSSHIFT);
 				else // Opaque, but allow transparent flat pixels
 					spanfunctype = SPANDRAWFUNC_SPLAT;
 
