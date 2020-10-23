@@ -461,14 +461,8 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer] || player->respawn.state != RESPAWNST_NONE)
+	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer])
 		return true;
-
-	if (gametyperules & GTR_KARMA)
-	{
-		if (player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
-			return true;
-	}
 
 	return false;
 }
