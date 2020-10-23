@@ -4249,7 +4249,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	// battleovertime_t
 	battleovertime.enabled = READUINT16(save_p);
-	battleovertime.radius = READUINT16(save_p);
+	battleovertime.radius = READFIXED(save_p);
 	battleovertime.x = READFIXED(save_p);
 	battleovertime.y = READFIXED(save_p);
 	battleovertime.z = READFIXED(save_p);
