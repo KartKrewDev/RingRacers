@@ -50,6 +50,7 @@ static patch_t *kp_bumperstickerwide;
 static patch_t *kp_capsulesticker;
 static patch_t *kp_capsulestickerwide;
 static patch_t *kp_karmasticker;
+static patch_t *kp_spheresticker;
 static patch_t *kp_splitkarmabomb;
 static patch_t *kp_timeoutsticker;
 
@@ -174,6 +175,7 @@ void K_LoadKartHUDGraphics(void)
 	kp_capsulesticker = 		W_CachePatchName("K_STCAPN", PU_HUDGFX);
 	kp_capsulestickerwide = 	W_CachePatchName("K_STCAPW", PU_HUDGFX);
 	kp_karmasticker = 			W_CachePatchName("K_STKARM", PU_HUDGFX);
+	kp_spheresticker = 			W_CachePatchName("K_STBSMT", PU_HUDGFX);
 	kp_splitkarmabomb = 		W_CachePatchName("K_SPTKRM", PU_HUDGFX);
 	kp_timeoutsticker = 		W_CachePatchName("K_STTOUT", PU_HUDGFX);
 
@@ -1951,7 +1953,7 @@ static void K_drawKartSpeedometer(void)
 	UINT8 labeln = 0;
 	UINT8 numbers[3];
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
-	UINT8 battleoffset = 0;
+	INT32 battleoffset = 0;
 
 	if (!stplyr->exiting) // Keep the same speed value as when you crossed the finish line!
 	{
@@ -1986,13 +1988,41 @@ static void K_drawKartSpeedometer(void)
 	numbers[2] = (convSpeed % 10);
 
 	if (gametype == GT_BATTLE)
-		battleoffset = 8;
+		battleoffset = -4;
 
 	V_DrawScaledPatch(LAPS_X, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
 	V_DrawScaledPatch(LAPS_X+7, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[0]]);
 	V_DrawScaledPatch(LAPS_X+13, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
 	V_DrawScaledPatch(LAPS_X+19, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
 	V_DrawScaledPatch(LAPS_X+29, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
+}
+
+static void K_drawBlueSphereMeter(void)
+{
+	const UINT8 maxBars = 4;
+	const UINT8 segColors[] = {73, 64, 52, 54, 55, 35, 34, 33, 202, 180, 181, 182, 164, 165, 166, 153, 152};
+	const UINT8 sphere = max(min(stplyr->spheres, 40), 0);
+
+	UINT8 numBars = min((sphere / 10), maxBars);
+	UINT8 color = segColors[(sphere * sizeof(segColors)) / (40 + 1)];
+	INT32 x = LAPS_X + 25;
+	UINT8 i;
+
+	V_DrawScaledPatch(LAPS_X, LAPS_Y - 22, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, kp_spheresticker);
+
+	for (i = 0; i <= numBars; i++)
+	{
+		UINT8 segLen = 10;
+
+		if (i == numBars)
+		{
+			segLen = (sphere % 10);
+		}
+
+		V_DrawFill(x, LAPS_Y - 16, segLen, 6, color | V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN);
+
+		x += 15;
+	}
 }
 
 static void K_drawKartBumpersOrKarma(void)
@@ -3994,6 +4024,11 @@ void K_drawKartHUD(void)
 			// Draw the hits left!
 			if (LUA_HudEnabled(hud_gametypeinfo))
 				K_drawKartBumpersOrKarma();
+		}
+
+		if (gametyperules & GTR_SPHERES)
+		{
+			K_drawBlueSphereMeter();
 		}
 	}
 
