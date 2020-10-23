@@ -4116,7 +4116,7 @@ static void P_NetArchiveMisc(void)
 
 	// battleovertime_t
 	WRITEUINT16(save_p, battleovertime.enabled);
-	WRITEUINT16(save_p, battleovertime.radius);
+	WRITEFIXED(save_p, battleovertime.radius);
 	WRITEFIXED(save_p, battleovertime.x);
 	WRITEFIXED(save_p, battleovertime.y);
 	WRITEFIXED(save_p, battleovertime.z);
