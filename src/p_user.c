@@ -4489,9 +4489,9 @@ void P_PlayerThink(player_t *player)
 
 	// check for use
 	if (cmd->buttons & BT_BRAKE)
-		player->pflags |= PF_USEDOWN;
+		player->pflags |= PF_SPINDOWN;
 	else
-		player->pflags &= ~PF_USEDOWN;
+		player->pflags &= ~PF_SPINDOWN;
 
 	// IF PLAYER NOT HERE THEN FLASH END IF
 	if (player->quittime && player->powers[pw_flashing] < flashingtics - 1 && !player->gotflag)

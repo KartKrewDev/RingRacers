@@ -2054,52 +2054,6 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 	M_SortServerList();
 }
 
-#if defined (MASTERSERVER) && defined (HAVE_THREADS)
-struct Fetch_servers_ctx
-{
-	int id;
-};
-
-static void
-Fetch_servers_thread (struct Fetch_servers_ctx *ctx)
-{
-	msg_server_t *server_list;
-
-	server_list = GetShortServersList(ctx->id);
-
-	if (server_list)
-	{
-		I_lock_mutex(&ms_QueryId_mutex);
-		{
-			if (ctx->id != ms_QueryId)
-			{
-				free(server_list);
-				server_list = NULL;
-			}
-		}
-		I_unlock_mutex(ms_QueryId_mutex);
-
-		if (server_list)
-		{
-			I_lock_mutex(&m_menu_mutex);
-			{
-				if (m_waiting_mode == M_WAITING_SERVERS)
-					m_waiting_mode = M_NOT_WAITING;
-			}
-			I_unlock_mutex(m_menu_mutex);
-
-			I_lock_mutex(&ms_ServerList_mutex);
-			{
-				ms_ServerList = server_list;
-			}
-			I_unlock_mutex(ms_ServerList_mutex);
-		}
-	}
-
-	free(ctx);
-}
-#endif/*defined (MASTERSERVER) && defined (HAVE_THREADS)*/
-
 void CL_QueryServerList (msg_server_t *server_list)
 {
 	INT32 i;
