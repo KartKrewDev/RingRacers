@@ -2177,7 +2177,7 @@ void P_MovePlayer(player_t *player)
 		else
 			player->drawangle -= (ANGLE_11hh * speed);
 	}
-	else if (player->powers[pw_nocontrol] && player->pflags & PF_WPNDOWN)
+	else if (player->pflags & PF_FAULT)
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2541,6 +2541,12 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 
 		if (P_AproxDistance(P_AproxDistance(inflictor->x - mo->x, inflictor->y - mo->y), inflictor->z - mo->z) > radius)
 			continue;
+
+		if (mo->type == MT_SPB) // If you destroy a SPB, you don't get the luxury of a cooldown.
+		{
+			spbplace = -1;
+			indirectitemcooldown = 0;
+		}
 
 		if (mo->flags & MF_BOSS || mo->type == MT_PLAYER) //don't OHKO bosses nor players!
 			P_DamageMobj(mo, inflictor, source, 1, DMG_NORMAL|DMG_CANTHURTSELF);
@@ -4502,7 +4508,7 @@ void P_PlayerThink(player_t *player)
 	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)
 	{
 		if (!(--player->powers[pw_nocontrol]))
-			player->pflags &= ~PF_WPNDOWN;
+			player->pflags &= ~PF_FAULT;
 	}
 	else
 		player->powers[pw_nocontrol] = 0;

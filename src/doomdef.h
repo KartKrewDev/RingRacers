@@ -631,6 +631,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// OpenGL shaders
 #define GL_SHADERS
 
+
 /// Handle touching sector specials in P_PlayerAfterThink instead of P_PlayerThink.
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
 #define SECTORSPECIALSAFTERTHINK
@@ -655,8 +656,10 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Camera always has noclip.
 #define NOCLIPCAM
 
-/// MIDI support is really shitty -- we don't use it anyway, so lets throw it behind a define
-#define NO_MIDI
+/// Divide volume of music and sounds by this much (loudest sounds on earth)
+#define VOLUME_DIVIDER 4
+#define USER_VOLUME_SCALE 2
+#define MAX_VOLUME ( 100 * VOLUME_DIVIDER / USER_VOLUME_SCALE )
 
 #if defined (HAVE_CURL) && ! defined (NONET)
 #define MASTERSERVER

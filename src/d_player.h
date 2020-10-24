@@ -58,11 +58,7 @@ typedef enum
 //
 typedef enum
 {
-	// Cvars
-	PF_FLIPCAM       = 1, // Flip camera angle with gravity flip prefrence.
-	PF_ANALOGMODE    = 1<<1, // Analog mode?
-	PF_DIRECTIONCHAR = 1<<2, // Directional character sprites?
-	PF_AUTOBRAKE     = 1<<3, // Autobrake?
+	PF_FAULT = 1,
 
 	// Cheats
 	PF_GODMODE = 1<<4,
@@ -290,6 +286,25 @@ typedef enum
 	NUMKARTSHIELDS
 } kartshields_t;
 
+typedef enum
+{
+	KSPIN_THRUST    = (1<<0),
+	KSPIN_IFRAMES   = (1<<1),
+	KSPIN_AIRTIMER  = (1<<2),
+
+	KSPIN_TYPEBIT   = (1<<3),
+	KSPIN_TYPEMASK  = ~( KSPIN_TYPEBIT - 1 ),
+
+#define KSPIN_TYPE( type ) ( KSPIN_TYPEBIT << type )
+
+	KSPIN_SPINOUT   = KSPIN_TYPE(0)|KSPIN_IFRAMES|KSPIN_THRUST,
+	KSPIN_WIPEOUT   = KSPIN_TYPE(1)|KSPIN_IFRAMES,
+	KSPIN_STUNG     = KSPIN_TYPE(2),
+	KSPIN_EXPLOSION = KSPIN_TYPE(3)|KSPIN_IFRAMES|KSPIN_AIRTIMER,
+
+#undef KSPIN_TYPE
+} kartspinoutflags_t;
+
 //{ SRB2kart - kartstuff
 typedef enum
 {
@@ -303,7 +318,7 @@ typedef enum
 	k_instashield,		// Instashield no-damage animation timer
 
 	k_floorboost,		// Prevents Sneaker sounds for a breif duration when triggered by a floor panel
-	k_spinouttype,		// Determines whether to thrust forward or not while spinning out; 0 = move forwards, 1 = stay still, 2 = stay still & no flashing tics
+	k_spinouttype,		// Determines the mode of spinout/wipeout, see kartspinoutflags_t
 
 	k_drift,			// Drifting Left or Right, plus a bigger counter = sharper turn
 	k_driftend,			// Drift has ended, used to adjust character angle after drift

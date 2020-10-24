@@ -122,9 +122,6 @@ INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 // whether the respective sound system is disabled
 // or they're init'ed, but the player just toggled them
 
-#ifndef NO_MIDI
-boolean midi_disabled = true;
-#endif
 boolean sound_disabled = false;
 boolean digital_disabled = false;
 
@@ -1618,18 +1615,12 @@ void D_SRB2Main(void)
 	{
 		sound_disabled = true;
 		digital_disabled = true;
-#ifndef NO_MIDI
-		midi_disabled = true;
-#endif
 	}
 
 	if (M_CheckParm("-noaudio")) // combines -nosound and -nomusic
 	{
 		sound_disabled = true;
 		digital_disabled = true;
-#ifndef NO_MIDI
-		midi_disabled = true;
-#endif
 	}
 	else
 	{
@@ -1638,25 +1629,14 @@ void D_SRB2Main(void)
 		if (M_CheckParm("-nomusic")) // combines -nomidimusic and -nodigmusic
 		{
 			digital_disabled = true;
-#ifndef NO_MIDI
-			midi_disabled = true;
-#endif
 		}
 		else
 		{
-#ifndef NO_MIDI
-			if (M_CheckParm("-nomidimusic"))
-				midi_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
-#endif
 			if (M_CheckParm("-nodigmusic"))
 				digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
 		}
 	}
-	if (!( sound_disabled && digital_disabled
-#ifndef NO_MIDI
-				&& midi_disabled
-#endif
-	 ))
+	if (!( sound_disabled && digital_disabled ))
 	{
 		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
 		I_StartupSound();

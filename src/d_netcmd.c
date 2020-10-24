@@ -987,9 +987,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_soundvolume);
 	CV_RegisterVar(&cv_closedcaptioning);
 	CV_RegisterVar(&cv_digmusicvolume);
-#ifndef NO_MIDI
-	CV_RegisterVar(&cv_midimusicvolume);
-#endif
 	CV_RegisterVar(&cv_numChannels);
 
 	// screen.c

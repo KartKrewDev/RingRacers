@@ -10494,9 +10494,7 @@ static const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 static const char *const PLAYERFLAG_LIST[] = {
-
-	// Cvars
-	"FLIPCAM", // Flip camera angle with gravity flip prefrence.
+	"FAULT",
 	"ANALOGMODE", // Analog mode?
 	"DIRECTIONCHAR", // Directional character sprites?
 	"AUTOBRAKE", // Autobrake?
@@ -11598,6 +11596,19 @@ struct {
 	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
 	{"KSHIELD_FLAME",KSHIELD_FLAME},
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
+
+	// kartspinoutflags_t
+	{"KSPIN_THRUST",KSPIN_THRUST},
+	{"KSPIN_IFRAMES",KSPIN_IFRAMES},
+	{"KSPIN_AIRTIMER",KSPIN_AIRTIMER},
+
+	{"KSPIN_TYPEBIT",KSPIN_TYPEBIT},
+	{"KSPIN_TYPEMASK",KSPIN_TYPEMASK},
+
+	{"KSPIN_SPINOUT",KSPIN_SPINOUT},
+	{"KSPIN_WIPEOUT",KSPIN_WIPEOUT},
+	{"KSPIN_STUNG",KSPIN_STUNG},
+	{"KSPIN_EXPLOSION",KSPIN_EXPLOSION},
 
 	// translation colormaps
 	{"TC_DEFAULT",TC_DEFAULT},
