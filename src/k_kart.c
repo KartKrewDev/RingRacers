@@ -5770,23 +5770,23 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_KartPlayerHUDUpdate(player);
 
-	if ((gametyperules & GTR_BUMPERS) && player->bumpers > 0 && !P_PlayerInPain(player) && !player->powers[pw_flashing])
+	if ((gametyperules & GTR_WANTED) && player->bumpers > 0 && !P_PlayerInPain(player) && !player->powers[pw_flashing])
 	{
 		player->kartstuff[k_wanted]++;
+	}
 
-		if (battleovertime.enabled >= 10*TICRATE)
+	if (battleovertime.enabled >= 10*TICRATE)
+	{
+		fixed_t distanceToBarrier = 0;
+
+		if (battleovertime.radius > 0)
 		{
-			fixed_t distanceToBarrier = 0;
+			distanceToBarrier = R_PointToDist2(player->mo->x, player->mo->y, battleovertime.x, battleovertime.y) - (player->mo->radius * 2);
+		}
 
-			if (battleovertime.radius > 0)
-			{
-				distanceToBarrier = R_PointToDist2(player->mo->x, player->mo->y, battleovertime.x, battleovertime.y) - (player->mo->radius * 2);
-			}
-
-			if (distanceToBarrier > battleovertime.radius)
-			{
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
-			}
+		if (distanceToBarrier > battleovertime.radius)
+		{
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 		}
 	}
 
