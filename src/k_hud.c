@@ -3904,11 +3904,12 @@ void K_drawKartHUD(void)
 		return;
 	}
 
-	battlefullscreen = ((gametype == GT_BATTLE)
+	battlefullscreen = ((gametyperules & (GTR_BUMPERS|GTR_KARMA)) == (GTR_BUMPERS|GTR_KARMA)
 		&& (stplyr->exiting
 		|| (stplyr->bumpers <= 0
-		&& stplyr->karmadelay
-		&& comeback
+		&& stplyr->karmadelay > 0
+		&& stplyr->eliminated == false
+		&& comeback == true
 		&& stplyr->playerstate == PST_LIVE)));
 
 	if (!demo.title && (!battlefullscreen || r_splitscreen))
