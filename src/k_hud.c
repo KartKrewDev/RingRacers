@@ -2555,6 +2555,18 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
+		if (ntplayer->mo->drawflags & K_GetPlayerDontDrawFlag(stplyr))
+		{
+			// Invisible on this screen
+			continue;
+		}
+
+		if ((gametyperules & GTR_BUMPERS) && (ntplayer->bumpers <= 0))
+		{
+			// Dead in Battle
+			continue;
+		}
+
 		if (!P_CheckSight(stplyr->mo, ntplayer->mo))
 		{
 			// Can't see
