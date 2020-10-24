@@ -349,7 +349,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				special->target->player->kartstuff[k_comebackpoints]++;
 
 				if (special->target->player->kartstuff[k_comebackpoints] >= 2)
-					K_StealBumper(special->target->player, player);
+					K_StealBumper(special->target->player, player, 1);
 				special->target->player->kartstuff[k_comebacktimer] = comebacktime;
 
 				player->kartstuff[k_itemroulette] = 1;
@@ -384,7 +384,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					special->target->player->karthud[khud_yougotem] = 2*TICRATE;
 
 				if (special->target->player->kartstuff[k_comebackpoints] >= 2)
-					K_StealBumper(special->target->player, player);
+					K_StealBumper(special->target->player, player, 1);
 
 				special->target->player->kartstuff[k_comebacktimer] = comebacktime;
 
@@ -726,7 +726,7 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 }
 
 // Easily make it so that overtime works offline
-//#define TESTOVERTIMEINFREEPLAY
+#define TESTOVERTIMEINFREEPLAY
 
 /** Checks if the level timer is over the timelimit and the round should end,
   * unless you are in overtime. In which case leveltime may stretch out beyond
@@ -1661,12 +1661,11 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 		return false;
 	}
 
-	K_RemoveBumper(player, NULL, NULL);
-
 	switch (type)
 	{
 		case DMG_DEATHPIT:
 			// Respawn kill types
+			K_RemoveBumper(player, NULL, NULL, 1);
 			K_DoIngameRespawn(player);
 			return false;
 		default:
@@ -1674,11 +1673,10 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 			break;
 	}
 
+	K_RemoveBumper(player, NULL, NULL, player->kartstuff[k_bumper]);
+
 	player->pflags &= ~PF_SLIDING;
 	player->powers[pw_carry] = CR_NONE;
-
-	// Get rid of shield
-	player->powers[pw_shield] = SH_NONE;
 
 	player->mo->color = player->skincolor;
 	player->mo->colorized = false;
@@ -1692,7 +1690,7 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
-	if (type == DMG_TIMEOVER)
+	if ((type == DMG_TIMEOVER) && (gametype == GT_RACE))
 	{
 		mobj_t *boom;
 
@@ -1851,7 +1849,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				if (gametyperules & GTR_BUMPERS)
 				{
-					if ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || player->kartstuff[k_comebackmode] == 1)
+					if ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || (player->kartstuff[k_comebackmode] == 1))
 					{
 						// No bumpers, can't be hurt
 						K_DoInstashield(player);
@@ -1889,17 +1887,20 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// We successfully hit 'em!
 			if (type != DMG_STING)
 			{
+				UINT8 bumpadd = 1;
+
+				if (damagetype & DMG_STEAL)
+				{
+					bumpadd = 2;
+				}
+
 				if (source && source != player->mo && source->player)
 				{
 					K_PlayHitEmSound(source);
-
-					if (damagetype & DMG_STEAL)
-					{
-						K_StealBumper(source->player, player);
-					}
+					K_StealBumper(source->player, player, bumpadd);
 				}
 
-				K_RemoveBumper(player, inflictor, source);
+				K_RemoveBumper(player, inflictor, source, bumpadd);
 			}
 
 			player->kartstuff[k_sneakertimer] = player->kartstuff[k_numsneakers] = 0;
@@ -1930,11 +1931,17 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			if (type != DMG_STING)
+			{
 				player->powers[pw_flashing] = K_GetKartFlashing(player);
+			}
 
 			P_PlayRinglossSound(player->mo);
+
 			if (ringburst > 0)
+			{
 				P_PlayerRingBurst(player, ringburst);
+			}
+
 			K_PlayPainSound(player->mo);
 
 			if ((type == DMG_EXPLODE) || (cv_kartdebughuddrop.value && !modeattacking))

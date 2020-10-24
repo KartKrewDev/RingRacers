@@ -1036,7 +1036,7 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 	return FixedMul(weight, mobj->scale);
 }
 
-void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
+boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 {
 	mobj_t *fx;
 	fixed_t momdifx, momdify;
@@ -1045,16 +1045,16 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 	fixed_t mass1, mass2;
 
 	if (!mobj1 || !mobj2)
-		return;
+		return false;
 
 	// Don't bump when you're being reborn
 	if ((mobj1->player && mobj1->player->playerstate != PST_LIVE)
 		|| (mobj2->player && mobj2->player->playerstate != PST_LIVE))
-		return;
+		return false;
 
 	if ((mobj1->player && mobj1->player->respawn.state != RESPAWNST_NONE)
 		|| (mobj2->player && mobj2->player->respawn.state != RESPAWNST_NONE))
-		return;
+		return false;
 
 	{ // Don't bump if you're flashing
 		INT32 flash;
@@ -1064,7 +1064,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		{
 			if (mobj1->player->powers[pw_flashing] < flash-1)
 				mobj1->player->powers[pw_flashing]++;
-			return;
+			return false;
 		}
 
 		flash = K_GetKartFlashing(mobj2->player);
@@ -1072,7 +1072,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		{
 			if (mobj2->player->powers[pw_flashing] < flash-1)
 				mobj2->player->powers[pw_flashing]++;
-			return;
+			return false;
 		}
 	}
 
@@ -1080,13 +1080,13 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 	if (mobj1->player && mobj1->player->kartstuff[k_justbumped])
 	{
 		mobj1->player->kartstuff[k_justbumped] = bumptime;
-		return;
+		return false;
 	}
 
 	if (mobj2->player && mobj2->player->kartstuff[k_justbumped])
 	{
 		mobj2->player->kartstuff[k_justbumped] = bumptime;
-		return;
+		return false;
 	}
 
 	mass1 = K_GetMobjWeight(mobj1, mobj2);
@@ -1104,8 +1104,10 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 	disty = (mobj1->y + mobj2->momy*3) - (mobj2->y + mobj1->momy*3);
 
 	if (distx == 0 && disty == 0)
+	{
 		// if there's no distance between the 2, they're directly on top of each other, don't run this
-		return;
+		return false;
+	}
 
 	{ // Normalize distance to the sum of the two objects' radii, since in a perfect world that would be the distance at the point of collision...
 		fixed_t dist = P_AproxDistance(distx, disty);
@@ -1142,7 +1144,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 	if (dot >= 0)
 	{
 		// They're moving away from each other
-		return;
+		return false;
 	}
 
 	force = FixedDiv(dot, FixedMul(distx, distx)+FixedMul(disty, disty));
@@ -1233,6 +1235,8 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 			P_PlayerRingBurst(mobj2->player, 1);
 		}
 	}
+
+	return true;
 }
 
 /**	\brief	Checks that the player is on an offroad subsector for realsies. Also accounts for line riding to prevent cheese.
@@ -2413,10 +2417,13 @@ void K_BattleHitPlayer(player_t *player, player_t *victim, UINT8 points, boolean
 	}
 }
 
-void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source)
+void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 amount)
 {
 	UINT8 score = 1;
 	boolean trapitem = false;
+
+	if (amount <= 0)
+		return;
 
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
@@ -2436,7 +2443,7 @@ void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source)
 	{
 		if (K_IsPlayerWanted(player))
 			score = 3;
-		else if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] == 1)
+		else if ((gametyperules & GTR_BUMPERS) && (player->kartstuff[k_bumper] <= amount))
 			score = 2;
 	}
 
@@ -2447,7 +2454,7 @@ void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	if (player->kartstuff[k_bumper] > 0)
 	{
-		if (player->kartstuff[k_bumper] == 1)
+		if (player->kartstuff[k_bumper] <= amount)
 		{
 			mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX); // Player hitbox is too small!!
 			P_SetTarget(&karmahitbox->target, player->mo);
@@ -2456,14 +2463,15 @@ void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source)
 			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
 		}
 
-		player->kartstuff[k_bumper]--;
+		player->kartstuff[k_bumper] -= amount;
 
 		if (K_IsPlayerWanted(player))
 			K_CalculateBattleWanted();
 	}
 
-	if (player->kartstuff[k_bumper] == 0)
+	if (player->kartstuff[k_bumper] <= 0)
 	{
+		player->kartstuff[k_bumper] = 0;
 		player->kartstuff[k_comebacktimer] = comebacktime;
 
 		if (player->kartstuff[k_comebackmode] == 2)
@@ -2587,12 +2595,16 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 
-void K_StealBumper(player_t *player, player_t *victim)
+void K_StealBumper(player_t *player, player_t *victim, UINT8 amount)
 {
+	INT32 intendedamount = player->kartstuff[k_bumper] + amount;
 	INT32 newbumper;
 	angle_t newangle, diff;
 	fixed_t newx, newy;
 	mobj_t *newmo;
+
+	if (amount <= 0)
+		return;
 
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
@@ -2600,46 +2612,51 @@ void K_StealBumper(player_t *player, player_t *victim)
 	if (netgame && player->kartstuff[k_bumper] <= 0)
 		CONS_Printf(M_GetText("%s is back in the game!\n"), player_names[player-players]);
 
-	newbumper = player->kartstuff[k_bumper];
-	if (newbumper <= 1)
-		diff = 0;
-	else
-		diff = FixedAngle(360*FRACUNIT/newbumper);
+	while (player->kartstuff[k_bumper] < intendedamount)
+	{
+		newbumper = player->kartstuff[k_bumper];
+		if (newbumper <= 1)
+			diff = 0;
+		else
+			diff = FixedAngle(360*FRACUNIT/newbumper);
 
-	newangle = player->mo->angle;
-	newx = player->mo->x + P_ReturnThrustX(player->mo, newangle + ANGLE_180, 64*FRACUNIT);
-	newy = player->mo->y + P_ReturnThrustY(player->mo, newangle + ANGLE_180, 64*FRACUNIT);
+		newangle = player->mo->angle;
+		newx = player->mo->x + P_ReturnThrustX(player->mo, newangle + ANGLE_180, 64*FRACUNIT);
+		newy = player->mo->y + P_ReturnThrustY(player->mo, newangle + ANGLE_180, 64*FRACUNIT);
 
-	newmo = P_SpawnMobj(newx, newy, player->mo->z, MT_BATTLEBUMPER);
-	newmo->threshold = newbumper;
-	P_SetTarget(&newmo->tracer, victim->mo);
-	P_SetTarget(&newmo->target, player->mo);
-	newmo->angle = (diff * (newbumper-1));
-	newmo->color = victim->skincolor;
+		newmo = P_SpawnMobj(newx, newy, player->mo->z, MT_BATTLEBUMPER);
+		newmo->threshold = newbumper;
+		P_SetTarget(&newmo->tracer, victim->mo);
+		P_SetTarget(&newmo->target, player->mo);
+		newmo->angle = (diff * (newbumper-1));
+		newmo->color = victim->skincolor;
 
-	if (newbumper+1 < 2)
-		P_SetMobjState(newmo, S_BATTLEBUMPER3);
-	else if (newbumper+1 < 3)
-		P_SetMobjState(newmo, S_BATTLEBUMPER2);
-	else
-		P_SetMobjState(newmo, S_BATTLEBUMPER1);
+		if (newbumper+1 < 2)
+			P_SetMobjState(newmo, S_BATTLEBUMPER3);
+		else if (newbumper+1 < 3)
+			P_SetMobjState(newmo, S_BATTLEBUMPER2);
+		else
+			P_SetMobjState(newmo, S_BATTLEBUMPER1);
+
+		player->kartstuff[k_bumper]++;
+	}
 
 	S_StartSound(player->mo, sfx_3db06);
 
-	player->kartstuff[k_bumper]++;
 	player->kartstuff[k_comebackpoints] = 0;
 	player->powers[pw_flashing] = K_GetKartFlashing(player);
 	player->kartstuff[k_comebacktimer] = comebacktime;
 
-	/*victim->powers[pw_flashing] = K_GetKartFlashing(victim);
-	victim->kartstuff[k_comebacktimer] = comebacktime;*/
+	/*
+	victim->powers[pw_flashing] = K_GetKartFlashing(victim);
+	victim->kartstuff[k_comebacktimer] = comebacktime;
+	*/
 
 	victim->kartstuff[k_instashield] = 15;
 	if (cv_kartdebughuddrop.value && !modeattacking)
 		K_DropItems(victim);
 	else
 		K_DropHnextList(victim, false);
-	return;
 }
 
 // source is the mobj that originally threw the bomb that exploded etc.

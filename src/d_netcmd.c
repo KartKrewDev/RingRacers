@@ -4310,15 +4310,13 @@ static void TimeLimit_OnChange(void)
 
 	if (cv_timelimit.value != 0)
 	{
-		CONS_Printf(M_GetText("Levels will end after %d minute%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
+		CONS_Printf(M_GetText("Rounds will end after %d minute%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
 		timelimitintics = cv_timelimit.value * (60*TICRATE);
 
 		// Note the deliberate absence of any code preventing
 		//   pointlimit and timelimit from being set simultaneously.
 		// Some people might like to use them together. It works.
 	}
-	else if (netgame || multiplayer)
-		CONS_Printf(M_GetText("Time limit disabled\n"));
 
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
