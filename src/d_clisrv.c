@@ -616,6 +616,10 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
 
+	rsp->bumpers = SHORT(players[i].bumpers);
+	rsp->karmadelay = SHORT(players[i].karmadelay);
+	rsp->eliminated = players[i].eliminated;
+
 	// respawnvars_t
 	rsp->respawn_state = players[i].respawn.state;
 	rsp->respawn_pointx = (fixed_t)LONG(players[i].respawn.pointx);
@@ -759,6 +763,10 @@ static void resynch_read_player(resynch_pak *rsp)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
 
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
+
+	players[i].bumpers = SHORT(rsp->bumpers);
+	players[i].karmadelay = SHORT(rsp->karmadelay);
+	players[i].eliminated = rsp->eliminated;
 
 	// respawnvars_t
 	players[i].respawn.state = rsp->respawn_state;

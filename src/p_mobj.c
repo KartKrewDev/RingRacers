@@ -5286,10 +5286,10 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			else
 				ang = FixedAngle(mobj->info->speed);
 
-			if (mobj->target->player->kartstuff[k_bumper] <= 1)
+			if (mobj->target->player->bumpers <= 1)
 				diff = 0;
 			else
-				diff = FixedAngle(360*FRACUNIT/mobj->target->player->kartstuff[k_bumper]);
+				diff = FixedAngle(360*FRACUNIT/mobj->target->player->bumpers);
 
 			ang = (ang*leveltime) + (diff * (mobj->threshold-1));
 
@@ -5318,9 +5318,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			else
 				mobj->color = mobj->target->color; // but do so if it belongs to you :B
 
-			if (mobj->target->player->kartstuff[k_bumper] < 2)
+			if (mobj->target->player->bumpers < 2)
 				P_SetMobjState(mobj, S_BATTLEBUMPER3);
-			else if (mobj->target->player->kartstuff[k_bumper] < 3)
+			else if (mobj->target->player->bumpers < 3)
 				P_SetMobjState(mobj, S_BATTLEBUMPER2);
 			else
 				P_SetMobjState(mobj, S_BATTLEBUMPER1);
@@ -5338,7 +5338,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			}
 
 			// Was this so hard?
-			if (mobj->target->player->kartstuff[k_bumper] <= mobj->threshold)
+			if (mobj->target->player->bumpers <= mobj->threshold)
 			{
 				P_RemoveMobj(mobj);
 				return;
@@ -5363,7 +5363,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->color = mobj->target->color;
 			K_MatchGenericExtraFlags(mobj, mobj->target);
 
-			if ((gametype == GT_RACE || mobj->target->player->kartstuff[k_bumper] <= 0)
+			if ((gametype == GT_RACE || mobj->target->player->bumpers <= 0)
 #if 1 // Set to 0 to test without needing to host
 				|| (P_IsDisplayPlayer(mobj->target->player))
 #endif
@@ -7019,7 +7019,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			statenum_t state = (mobj->state-states);
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player || mobj->target->player->spectator
-				|| (gametype == GT_RACE || mobj->target->player->kartstuff[k_bumper]))
+				|| (gametype == GT_RACE || mobj->target->player->bumpers))
 			{
 				P_RemoveMobj(mobj);
 				return false;
@@ -7040,11 +7040,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->radius = 24*mobj->target->scale;
 			mobj->height = 2*mobj->radius;
 
-			if (mobj->target->player->kartstuff[k_comebacktimer] > 0)
+			if (mobj->target->player->karmadelay > 0)
 			{
 				if (state < S_PLAYERBOMB1 || state > S_PLAYERBOMB20)
 					P_SetMobjState(mobj, S_PLAYERBOMB1);
-				if (mobj->target->player->kartstuff[k_comebacktimer] < TICRATE && (leveltime & 1))
+				if (mobj->target->player->karmadelay < TICRATE && (leveltime & 1))
 					mobj->drawflags &= ~MFD_DONTDRAW;
 				else
 					mobj->drawflags |= MFD_DONTDRAW;
@@ -10153,22 +10153,22 @@ void P_SpawnPlayer(INT32 playernum)
 		P_SetScale(overheadarrow, mobj->destscale);
 
 		if (p->spectator && pcount > 1) // HEY! No being cheap...
-			p->kartstuff[k_bumper] = 0;
-		else if (p->kartstuff[k_bumper] > 0 || leveltime < 1
+			p->bumpers = 0;
+		else if (p->bumpers > 0 || leveltime < 1
 			|| (p->jointime <= 1 && pcount <= 1))
 		{
 			if (leveltime < 1 || (p->jointime <= 1 && pcount <= 1)) // Start of the map?
-				p->kartstuff[k_bumper] = K_StartingBumperCount(); // Reset those bumpers!
+				p->bumpers = K_StartingBumperCount(); // Reset those bumpers!
 
-			if (p->kartstuff[k_bumper])
+			if (p->bumpers)
 			{
-				angle_t diff = FixedAngle(360*FRACUNIT/p->kartstuff[k_bumper]);
+				angle_t diff = FixedAngle(360*FRACUNIT/p->bumpers);
 				angle_t newangle = mobj->angle;
 				fixed_t newx = mobj->x + P_ReturnThrustX(mobj, newangle + ANGLE_180, 64*FRACUNIT);
 				fixed_t newy = mobj->y + P_ReturnThrustY(mobj, newangle + ANGLE_180, 64*FRACUNIT);
 				mobj_t *mo;
 
-				for (i = 0; i < p->kartstuff[k_bumper]; i++)
+				for (i = 0; i < p->bumpers; i++)
 				{
 					mo = P_SpawnMobj(newx, newy, mobj->z, MT_BATTLEBUMPER);
 					mo->threshold = i;
@@ -10182,7 +10182,7 @@ void P_SpawnPlayer(INT32 playernum)
 				}
 			}
 		}
-		else if (p->kartstuff[k_bumper] <= 0)
+		else if (p->bumpers <= 0)
 		{
 			mobj_t *karmahitbox = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_KARMAHITBOX); // Player hitbox is too small!!
 			P_SetTarget(&karmahitbox->target, mobj);

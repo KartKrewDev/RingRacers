@@ -655,6 +655,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Camera always has noclip.
 #define NOCLIPCAM
 
+/// Other karma comeback modes
+//#define OTHERKARMAMODES
+
 /// MIDI support is really shitty -- we don't use it anyway, so lets throw it behind a define
 #define NO_MIDI
 

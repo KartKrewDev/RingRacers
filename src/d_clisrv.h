@@ -281,6 +281,9 @@ typedef struct
 	// SRB2kart
 	INT32 kartstuff[NUMKARTSTUFF];
 	tic_t airtime;
+	INT16 bumpers;
+	INT16 karmadelay;
+	boolean eliminated;
 
 	// respawnvars_t
 	UINT8 respawn_state;

@@ -111,7 +111,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (player->exiting || mapreset)
 		return false;
 
-	/*if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0) // No bumpers in Match
+	/*if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0) // No bumpers in Match
 		return false;*/
 
 	if (weapon)
@@ -235,7 +235,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!P_CanPickupItem(player, 3) || (player->kartstuff[k_itemamount] && player->kartstuff[k_itemtype] != special->threshold))
 				return;
 
-			if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0)
+			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 				return;
 
 			player->kartstuff[k_itemtype] = special->threshold;
@@ -256,11 +256,15 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!P_CanPickupItem(player, 1))
 				return;
 
-			if ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0)
+			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 			{
-				if (player->kartstuff[k_comebackmode] || player->kartstuff[k_comebacktimer])
+#ifdef OTHERKARMAMODES
+				if (player->kartstuff[k_comebackmode] || player->karmadelay)
 					return;
 				player->kartstuff[k_comebackmode] = 1;
+#else
+				return;
+#endif
 			}
 
 			special->momx = special->momy = special->momz = 0;
@@ -272,7 +276,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			if (player == special->target->player)
 				return;
-			if (player->kartstuff[k_bumper] <= 0)
+			if (player->bumpers <= 0)
 				return;
 			if (special->target->player->exiting || player->exiting)
 				return;
@@ -280,53 +284,41 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (P_PlayerInPain(special->target->player))
 				return;
 
+			if (special->target->player->karmadelay > 0)
+				return;
+
+#ifdef OTHERKARMAMODES
 			if (!special->target->player->kartstuff[k_comebackmode])
 			{
-				if (player->kartstuff[k_growshrinktimer] || player->kartstuff[k_squishedtimer]
-					|| player->kartstuff[k_hyudorotimer] || P_PlayerInPain(player)
-					|| player->kartstuff[k_invincibilitytimer] || player->powers[pw_flashing])
-					return;
-				else
+#endif
 				{
-					mobj_t *boom = P_SpawnMobj(special->target->x, special->target->y, special->target->z, MT_BOOMEXPLODE);
-					UINT8 ptadd = (K_IsPlayerWanted(player) ? 2 : 1);
+					mobj_t *boom;
+
+					if (P_DamageMobj(toucher, special, special->target, 1, DMG_EXPLODE) == false)
+					{
+						return;
+					}
+
+					boom = P_SpawnMobj(special->target->x, special->target->y, special->target->z, MT_BOOMEXPLODE);
 
 					boom->scale = special->target->scale;
 					boom->destscale = special->target->scale;
 					boom->momz = 5*FRACUNIT;
+
 					if (special->target->color)
 						boom->color = special->target->color;
 					else
 						boom->color = SKINCOLOR_KETCHUP;
+
 					S_StartSound(boom, special->info->attacksound);
 
-					if (player->kartstuff[k_bumper] == 1) // If you have only one bumper left, and see if it's a 1v1
-					{
-						INT32 numingame = 0;
+					K_StealBumper(special->target->player, player, max(1, player->bumpers-1)); // bumpers-1 to slowly remove bumpers from the economy
+					K_RemoveBumper(player, special->target, special->target, player->bumpers, true);
 
-						for (i = 0; i < MAXPLAYERS; i++)
-						{
-							if (!playeringame[i] || players[i].spectator || players[i].kartstuff[k_bumper] <= 0)
-								continue;
-							numingame++;
-						}
-
-						if (numingame <= 2) // If so, then an extra karma point so they are 100% certain to switch places; it's annoying to end matches with a bomb kill
-							ptadd++;
-					}
-
-					special->target->player->kartstuff[k_comebackpoints] += ptadd;
-
-					if (ptadd > 1)
-						special->target->player->karthud[khud_yougotem] = 2*TICRATE;
-
-					if (special->target->player->kartstuff[k_comebackpoints] >= 2)
-						K_StealBumper(special->target->player, player, 1);
-
-					special->target->player->kartstuff[k_comebacktimer] = comebacktime;
-
-					P_DamageMobj(toucher, special, special->target, 1, DMG_EXPLODE);
+					special->target->player->karthud[khud_yougotem] = 2*TICRATE;
+					special->target->player->karmadelay = comebacktime;
 				}
+#ifdef OTHERKARMAMODES
 			}
 			else if (special->target->player->kartstuff[k_comebackmode] == 1 && P_CanPickupItem(player, 1))
 			{
@@ -350,7 +342,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 				if (special->target->player->kartstuff[k_comebackpoints] >= 2)
 					K_StealBumper(special->target->player, player, 1);
-				special->target->player->kartstuff[k_comebacktimer] = comebacktime;
+				special->target->player->karmadelay = comebacktime;
 
 				player->kartstuff[k_itemroulette] = 1;
 				player->kartstuff[k_roulettetype] = 1;
@@ -362,13 +354,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 				S_StartSound(poof, special->info->seesound);
 
-				if (player->kartstuff[k_bumper] == 1) // If you have only one bumper left, and see if it's a 1v1
+				if (player->bumpers == 1) // If you have only one bumper left, and see if it's a 1v1
 				{
 					INT32 numingame = 0;
 
 					for (i = 0; i < MAXPLAYERS; i++)
 					{
-						if (!playeringame[i] || players[i].spectator || players[i].kartstuff[k_bumper] <= 0)
+						if (!playeringame[i] || players[i].spectator || players[i].bumpers <= 0)
 							continue;
 						numingame++;
 					}
@@ -386,7 +378,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (special->target->player->kartstuff[k_comebackpoints] >= 2)
 					K_StealBumper(special->target->player, player, 1);
 
-				special->target->player->kartstuff[k_comebacktimer] = comebacktime;
+				special->target->player->karmadelay = comebacktime;
 
 				K_DropItems(player); //K_StripItems(player);
 				//K_StripOther(player);
@@ -404,6 +396,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 				special->target->player->kartstuff[k_eggmanblame] = -1;
 			}
+#endif
 			return;
 		case MT_SPB:
 			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
@@ -474,7 +467,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			S_StartSound(special, sfx_s1a2);
 			return;
 		case MT_CDUFO: // SRB2kart
-			if (special->fuse || !P_CanPickupItem(player, 1) || ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0))
+			if (special->fuse || !P_CanPickupItem(player, 1) || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
 				return;
 
 			player->kartstuff[k_itemroulette] = 1;
@@ -559,6 +552,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			// Reached the cap, don't waste 'em!
 			if (player->spheres >= 40)
+				return;
+
+			// Not alive
+			if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
 				return;
 
 			special->momx = special->momy = special->momz = 0;
@@ -1665,15 +1662,13 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 	{
 		case DMG_DEATHPIT:
 			// Respawn kill types
-			K_RemoveBumper(player, NULL, NULL, 1);
+			K_RemoveBumper(player, NULL, NULL, 1, true);
 			K_DoIngameRespawn(player);
 			return false;
 		default:
 			// Everything else REALLY kills
 			break;
 	}
-
-	K_RemoveBumper(player, NULL, NULL, player->kartstuff[k_bumper]);
 
 	player->pflags &= ~PF_SLIDING;
 	player->powers[pw_carry] = CR_NONE;
@@ -1690,17 +1685,23 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
-	if ((type == DMG_TIMEOVER) && (gametype == GT_RACE))
+	if (type == DMG_TIMEOVER)
 	{
-		mobj_t *boom;
+		if (gametyperules & GTR_CIRCUIT)
+		{
+			mobj_t *boom;
 
-		player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-		player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
+			player->mo->drawflags |= MFD_DONTDRAW;
 
-		boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
-		boom->scale = player->mo->scale;
-		boom->angle = player->mo->angle;
-		P_SetTarget(&boom->target, player->mo);
+			boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
+			boom->scale = player->mo->scale;
+			boom->angle = player->mo->angle;
+			P_SetTarget(&boom->target, player->mo);
+		}
+
+		K_RemoveBumper(player, NULL, NULL, player->bumpers, true);
+		player->eliminated = true;
 	}
 
 	return true;
@@ -1849,9 +1850,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				if (gametyperules & GTR_BUMPERS)
 				{
-					if ((player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer]) || (player->kartstuff[k_comebackmode] == 1))
+					if ((player->bumpers <= 0 && player->karmadelay) || (player->kartstuff[k_comebackmode] == 1))
 					{
-						// No bumpers, can't be hurt
+						// No bumpers & in WAIT, can't be hurt
 						K_DoInstashield(player);
 						return false;
 					}
@@ -1900,7 +1901,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_StealBumper(source->player, player, bumpadd);
 				}
 
-				K_RemoveBumper(player, inflictor, source, bumpadd);
+				K_RemoveBumper(player, inflictor, source, bumpadd, false);
 			}
 
 			player->kartstuff[k_sneakertimer] = player->kartstuff[k_numsneakers] = 0;

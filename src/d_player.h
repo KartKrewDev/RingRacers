@@ -509,6 +509,9 @@ typedef struct player_s
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
 	tic_t airtime; // Keep track of how long you've been in the air
+	INT16 bumpers;
+	INT16 karmadelay;
+	boolean eliminated;
 
 	// Bit flags.
 	// See pflags_t, above.

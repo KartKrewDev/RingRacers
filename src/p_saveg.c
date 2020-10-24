@@ -255,6 +255,10 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
 
+		WRITEINT16(save_p, players[i].bumpers);
+		WRITEINT16(save_p, players[i].karmadelay);
+		WRITEUINT8(save_p, players[i].eliminated);
+
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -440,6 +444,10 @@ static void P_NetUnArchivePlayers(void)
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
+
+		players[i].bumpers = READINT16(save_p);
+		players[i].karmadelay = READINT16(save_p);
+		players[i].eliminated = (boolean)READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);

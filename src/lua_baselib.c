@@ -3382,12 +3382,13 @@ static int lib_kStealBumper(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	player_t *victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	if (!victim)
 		return LUA_ErrInvalid(L, "player_t");
-	K_StealBumper(player, victim);
+	K_StealBumper(player, victim, amount);
 	return 0;
 }
 

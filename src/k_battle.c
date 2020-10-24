@@ -89,24 +89,24 @@ void K_CalculateBattleWanted(void)
 
 		numplaying++;
 
-		if (players[i].kartstuff[k_bumper] <= 0) // Not alive, so don't do anything else
+		if (players[i].bumpers <= 0) // Not alive, so don't do anything else
 			continue;
 
 		numingame++;
 
-		if (bestbumper == -1 || players[i].kartstuff[k_bumper] > bestbumper)
+		if (bestbumper == -1 || players[i].bumpers > bestbumper)
 		{
-			bestbumper = players[i].kartstuff[k_bumper];
+			bestbumper = players[i].bumpers;
 			bestbumperplayer = i;
 		}
-		else if (players[i].kartstuff[k_bumper] == bestbumper)
+		else if (players[i].bumpers == bestbumper)
 			bestbumperplayer = -1; // Tie, no one has best bumper.
 
 		for (j = 0; j < MAXPLAYERS; j++)
 		{
 			if (!playeringame[j] || players[j].spectator)
 				continue;
-			if (players[j].kartstuff[k_bumper] <= 0)
+			if (players[j].bumpers <= 0)
 				continue;
 			if (j == i)
 				continue;
@@ -230,7 +230,7 @@ void K_CheckBumpers(void)
 		numingame++;
 		winnerscoreadd += players[i].marescore;
 
-		if (players[i].kartstuff[k_bumper] <= 0) // if you don't have any bumpers, you're probably not a winner
+		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
 			nobumpers = true;
 			continue;

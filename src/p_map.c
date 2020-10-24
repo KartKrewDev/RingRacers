@@ -1294,8 +1294,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			}
 
 			if ((gametyperules & GTR_BUMPERS)
-				&& ((thing->player->kartstuff[k_bumper] && !tmthing->player->kartstuff[k_bumper])
-				|| (tmthing->player->kartstuff[k_bumper] && !thing->player->kartstuff[k_bumper])))
+				&& ((thing->player->bumpers && !tmthing->player->bumpers)
+				|| (tmthing->player->bumpers && !thing->player->bumpers)))
 			{
 				return true;
 			}
