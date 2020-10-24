@@ -57,6 +57,8 @@
 #include "d_clisrv.h"
 #include "r_defs.h"
 #include "r_data.h"
+#include "r_textures.h"
+#include "r_picformats.h"
 #include "i_system.h"
 #include "md5.h"
 #include "lua_script.h"
@@ -66,7 +68,6 @@
 #include "m_misc.h" // M_MapNumber
 
 #ifdef HWRENDER
-#include "r_data.h"
 #include "hardware/hw_main.h"
 #include "hardware/hw_glob.h"
 #endif
@@ -759,6 +760,8 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 		if (!memcmp(wadfiles[i]->md5sum, md5sum, 16))
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("%s is already loaded\n"), filename);
+			if (important)
+				packetsizetally -= nameonlylength(filename) + 22;
 			if (handle)
 				fclose(handle);
 			return W_InitFileError(filename, false);
@@ -1407,8 +1410,8 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 #ifdef NO_PNG_LUMPS
 		{
 			size_t bytesread = fread(dest, 1, size, handle);
-			if (R_IsLumpPNG((UINT8 *)dest, bytesread))
-				W_ThrowPNGError(l->fullname, wadfiles[wad]->filename);
+			if (Picture_IsLumpPNG((UINT8 *)dest, bytesread))
+				Picture_ThrowPNGError(l->fullname, wadfiles[wad]->filename);
 			return bytesread;
 		}
 #else
@@ -1449,8 +1452,8 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 			Z_Free(rawData);
 			Z_Free(decData);
 #ifdef NO_PNG_LUMPS
-			if (R_IsLumpPNG((UINT8 *)dest, size))
-				W_ThrowPNGError(l->fullname, wadfiles[wad]->filename);
+			if (Picture_IsLumpPNG((UINT8 *)dest, size))
+				Picture_ThrowPNGError(l->fullname, wadfiles[wad]->filename);
 #endif
 			return size;
 #else
@@ -1511,8 +1514,8 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 			Z_Free(decData);
 
 #ifdef NO_PNG_LUMPS
-			if (R_IsLumpPNG((UINT8 *)dest, size))
-				W_ThrowPNGError(l->fullname, wadfiles[wad]->filename);
+			if (Picture_IsLumpPNG((UINT8 *)dest, size))
+				Picture_ThrowPNGError(l->fullname, wadfiles[wad]->filename);
 #endif
 			return size;
 		}
@@ -1706,10 +1709,10 @@ void *W_CacheSoftwarePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 
 #ifndef NO_PNG_LUMPS
 		// lump is a png so convert it
-		if (R_IsLumpPNG((UINT8 *)lumpdata, len))
+		if (Picture_IsLumpPNG((UINT8 *)lumpdata, len))
 		{
 			size_t newlen;
-			srcdata = R_PNGToPatch((UINT8 *)lumpdata, len, &newlen);
+			srcdata = Picture_PNGConvert((UINT8 *)lumpdata, PICFMT_PATCH, NULL, NULL, NULL, NULL, len, &newlen, 0);
 			ptr = Z_Realloc(ptr, newlen, tag, &lumpcache[lump]);
 			M_Memcpy(ptr, srcdata, newlen);
 			Z_Free(srcdata);

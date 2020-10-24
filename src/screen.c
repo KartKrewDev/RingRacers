@@ -68,7 +68,7 @@ consvar_t cv_vhseffect = {"vhspause", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NU
 consvar_t cv_shittyscreen = {"televisionsignal", "Okay", CV_NOSHOWHELP, shittyscreen_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static void SCR_ActuallyChangeRenderer(void);
-CV_PossibleValue_t cv_renderer_t[] = {
+static CV_PossibleValue_t cv_renderer_t[] = {
 	{1, "Software"},
 #ifdef HWRENDER
 	{2, "OpenGL"},
@@ -503,9 +503,6 @@ void SCR_ChangeRendererCVars(INT32 mode)
 		CV_StealthSetValue(&cv_renderer, 1);
 	else if (mode == render_opengl)
 		CV_StealthSetValue(&cv_renderer, 2);
-#ifdef HWRENDER
-	CV_StealthSetValue(&cv_newrenderer, cv_renderer.value);
-#endif
 }
 
 boolean SCR_IsAspectCorrect(INT32 width, INT32 height)

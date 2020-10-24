@@ -129,8 +129,15 @@ extern char logfilename[1024];
 #define VERSIONSTRING "Development EXE"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
+// VERSIONSTRING_RC is for the resource-definition script used by windows builds
+#else
+#ifdef BETAVERSION
+#define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
+#define VERSIONSTRING_RC SRB2VERSION " " BETAVERSION "\0"
 #else
 #define VERSIONSTRING "v"SRB2VERSION
+#define VERSIONSTRING_RC SRB2VERSION "\0"
+#endif
 // Hey! If you change this, add 1 to the MODVERSION below!
 // Otherwise we can't force updates!
 #endif
@@ -153,7 +160,9 @@ extern char logfilename[1024];
 // the other options the same.
 
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
+#ifndef BETAVERSION
 #define UPDATE_ALERT
+#endif
 
 // The string used in the alert that pops up in the event of an update being available.
 // Please change to apply to your modification (we don't want everyone asking where your mod is on SRB2.org!).
@@ -660,6 +669,12 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #define VOLUME_DIVIDER 4
 #define USER_VOLUME_SCALE 2
 #define MAX_VOLUME ( 100 * VOLUME_DIVIDER / USER_VOLUME_SCALE )
+
+#if defined (HAVE_CURL) && ! defined (NONET)
+#define MASTERSERVER
+#else
+#undef UPDATE_ALERT
+#endif
 
 #if defined (HAVE_CURL) && ! defined (NONET)
 #define MASTERSERVER

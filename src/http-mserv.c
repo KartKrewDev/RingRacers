@@ -364,14 +364,27 @@ HMS_list_servers (void)
 {
 	struct HMS_buffer *hms;
 
-	hms = HMS_connect("games/%s/%d/servers", SRB2APPLICATION, MODVERSION);
+	char *list;
+	char *p;
+
+	hms = HMS_connect("servers");
 
 	if (! hms)
 		return;
 
 	if (HMS_do(hms))
 	{
-		CONS_Printf("%s\n", hms->buffer);
+		list = curl_easy_unescape(hms->curl, hms->buffer, 0, NULL);
+
+		p = strtok(list, "\n");
+
+		while (p != NULL)
+		{
+			CONS_Printf("\x80%s\n", p);
+			p = strtok(NULL, "\n");
+		}
+
+		curl_free(list);
 	}
 
 	HMS_end(hms);

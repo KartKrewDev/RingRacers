@@ -557,6 +557,8 @@ static void D_Display(void)
 				lastdraw = false;
 			}
 
+			rs_uitime = I_GetTimeMicros();
+
 			if (gamestate == GS_LEVEL)
 			{
 				ST_Drawer();
@@ -565,6 +567,10 @@ static void D_Display(void)
 			}
 			else
 				F_TitleScreenDrawer();
+		}
+		else
+		{
+			rs_uitime = I_GetTimeMicros();
 		}
 	}
 
@@ -608,6 +614,8 @@ static void D_Display(void)
 	// focus lost moved to M_Drawer
 
 	CON_Drawer();
+
+	rs_uitime = I_GetTimeMicros() - rs_uitime;
 
 	//
 	// wipe update
@@ -709,6 +717,7 @@ static void D_Display(void)
 			V_DrawThinString(80, 40, V_MONOSPACE | V_BLUEMAP, s);
 			if (rendermode == render_opengl) // OpenGL specific stats
 			{
+#ifdef HWRENDER
 				snprintf(s, sizeof s - 1, "nsrt %d", rs_hw_nodesorttime / divisor);
 				V_DrawThinString(30, 40, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "ndrw %d", rs_hw_nodedrawtime / divisor);
@@ -717,8 +726,12 @@ static void D_Display(void)
 				V_DrawThinString(30, 60, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "sdrw %d", rs_hw_spritedrawtime / divisor);
 				V_DrawThinString(30, 70, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "fin  %d", rs_swaptime / divisor);
+				snprintf(s, sizeof s - 1, "ui   %d", rs_uitime / divisor);
 				V_DrawThinString(30, 80, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "fin  %d", rs_swaptime / divisor);
+				V_DrawThinString(30, 90, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "tic  %d", rs_tictime / divisor);
+				V_DrawThinString(30, 105, V_MONOSPACE | V_GRAYMAP, s);
 				if (cv_glbatching.value)
 				{
 					snprintf(s, sizeof s - 1, "bsrt %d", rs_hw_batchsorttime / divisor);
@@ -741,6 +754,7 @@ static void D_Display(void)
 					snprintf(s, sizeof s - 1, "ncol %d", rs_hw_numcolors);
 					V_DrawThinString(185, 30, V_MONOSPACE | V_PURPLEMAP, s);
 				}
+#endif
 			}
 			else // software specific stats
 			{
@@ -750,8 +764,12 @@ static void D_Display(void)
 				V_DrawThinString(30, 50, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "mskd %d", rs_sw_maskedtime / divisor);
 				V_DrawThinString(30, 60, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "fin  %d", rs_swaptime / divisor);
+				snprintf(s, sizeof s - 1, "ui   %d", rs_uitime / divisor);
 				V_DrawThinString(30, 70, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "fin  %d", rs_swaptime / divisor);
+				V_DrawThinString(30, 80, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "tic  %d", rs_tictime / divisor);
+				V_DrawThinString(30, 95, V_MONOSPACE | V_GRAYMAP, s);
 			}
 		}
 
@@ -790,6 +808,7 @@ tic_t rendergametic;
 void D_SRB2Loop(void)
 {
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
+	static lumpnum_t gstartuplumpnum;
 
 	if (dedicated)
 		server = true;
@@ -828,7 +847,12 @@ void D_SRB2Loop(void)
 	*/
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
 	if (gamestate != GS_TITLESCREEN)
-		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, W_CachePatchNum(W_GetNumForName("KARTKREW"), PU_PATCH), NULL);
+	{
+		gstartuplumpnum = W_CheckNumForName("STARTUP");
+		if (gstartuplumpnum == LUMPERROR)
+			gstartuplumpnum = W_GetNumForName("MISSING");
+		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
+	}
 
 	for (;;)
 	{
@@ -1019,12 +1043,12 @@ void D_StartTitle(void)
 //
 // D_AddFile
 //
-static void D_AddFile(const char *file, char **filearray)
+static void D_AddFile(char **list, const char *file)
 {
 	size_t pnumwadfiles;
 	char *newfile;
 
-	for (pnumwadfiles = 0; filearray[pnumwadfiles]; pnumwadfiles++)
+	for (pnumwadfiles = 0; list[pnumwadfiles]; pnumwadfiles++)
 		;
 
 	newfile = malloc(strlen(file) + 1);
@@ -1034,16 +1058,16 @@ static void D_AddFile(const char *file, char **filearray)
 	}
 	strcpy(newfile, file);
 
-	filearray[pnumwadfiles] = newfile;
+	list[pnumwadfiles] = newfile;
 }
 
-static inline void D_CleanFile(char **filearray)
+static inline void D_CleanFile(char **list)
 {
 	size_t pnumwadfiles;
-	for (pnumwadfiles = 0; filearray[pnumwadfiles]; pnumwadfiles++)
+	for (pnumwadfiles = 0; list[pnumwadfiles]; pnumwadfiles++)
 	{
-		free(filearray[pnumwadfiles]);
-		filearray[pnumwadfiles] = NULL;
+		free(list[pnumwadfiles]);
+		list[pnumwadfiles] = NULL;
 	}
 }
 
@@ -1091,7 +1115,7 @@ static boolean AddIWAD(void)
 
 	if (FIL_ReadFileOK(path))
 	{
-		D_AddFile(path, startupiwads);
+		D_AddFile(startupiwads, path);
 		return true;
 	}
 	else
@@ -1135,20 +1159,20 @@ static void IdentifyVersion(void)
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-	D_AddFile(va(pandf,srb2waddir,"gfx.pk3"), startupiwads);
-	D_AddFile(va(pandf,srb2waddir,"textures.pk3"), startupiwads);
-	D_AddFile(va(pandf,srb2waddir,"chars.pk3"), startupiwads);
-	D_AddFile(va(pandf,srb2waddir,"maps.pk3"), startupiwads);
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
 #ifdef USE_PATCH_FILE
-	D_AddFile(va(pandf,srb2waddir,"patch.pk3"), startupiwads);
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
 #endif
 
 #if 0
 	// TODO: pk3 doesn't support music replacement IIRC
 	// music barely benefits from the compression anyway
 	// would be nice for the folders, though
-	D_AddFile(va(pandf,srb2waddir,"sounds.pk3"), startupiwads);
-	D_AddFile(va(pandf,srb2waddir,"music.pk3"), startupiwads);
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"sounds.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"music.pk3"));
 
 #else
 
@@ -1159,7 +1183,7 @@ static void IdentifyVersion(void)
 		const char *musicpath = va(pandf,srb2waddir,str);\
 		int ms = W_VerifyNMUSlumps(musicpath); \
 		if (ms == 1) \
-			D_AddFile(musicpath, startupiwads); \
+			D_AddFile(startupiwads, musicpath); \
 		else if (ms == 0) \
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
 	}
@@ -1348,7 +1372,11 @@ void D_SRB2Main(void)
 				const char *s = M_GetNextParm();
 
 				if (s) // Check for NULL?
-					D_AddFile(s, startuppwads);
+				{
+					if (!W_VerifyNMUSlumps(s))
+						G_SetGameModified(true, true);
+					D_AddFile(startuppwads, s);
+				}
 			}
 		}
 	}
@@ -1419,13 +1447,8 @@ void D_SRB2Main(void)
 	M_InitCharacterTables();
 
 	// load wad, including the main wad file
-	CONS_Printf("W_InitMultipleFiles(): Adding main IWAD and PWADs.\n");
-	if (!W_InitMultipleFiles(startupiwads, false))
-#ifdef _DEBUG
-		CONS_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
-#else
-		I_Error("A main WAD file was not found or not valid.\nCheck the log to see which ones.\n");
-#endif
+	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
+	W_InitMultipleFiles(startupiwads, false);
 	D_CleanFile(startupiwads);
 
 	mainwads = 0;
@@ -1479,8 +1502,7 @@ void D_SRB2Main(void)
 	}
 
 	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
-	if (!W_InitMultipleFiles(startuppwads, true))
-		M_StartMessage(M_GetText("A PWAD file was not found or not valid.\nCheck log.txt to see which ones.\n\nPress ESC\n"), NULL, MM_NOTHING);
+	W_InitMultipleFiles(startuppwads, true);
 	D_CleanFile(startuppwads);
 
 	//
@@ -1535,8 +1557,6 @@ void D_SRB2Main(void)
 	// setup loading screen
 	SCR_Startup();
 
-	// we need the font of the console
-	CONS_Printf("HU_Init(): Setting up heads up display.\n");
 	HU_Init();
 
 	CON_Init();
@@ -1547,6 +1567,9 @@ void D_SRB2Main(void)
 	S_RegisterSoundStuff();
 
 	I_RegisterSysCommands();
+
+	CONS_Printf("HU_LoadGraphics()...\n");
+	HU_LoadGraphics();
 
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"

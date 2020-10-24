@@ -2245,7 +2245,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 
 	// Don't do anything immediately
-	p->pflags |= PF_USEDOWN;
+	p->pflags |= PF_SPINDOWN;
 	p->pflags |= PF_ATTACKDOWN;
 	p->pflags |= PF_JUMPDOWN;
 
@@ -3529,7 +3529,8 @@ static void G_DoCompleted(void)
 		if (nextmap < 0 || (nextmap >= NUMMAPS && nextmap < 1100-1) || nextmap > 1103-1)
 			I_Error("Followed map %d to invalid map %d\n", prevmap + 1, nextmap + 1);
 
-		lastmap = nextmap; // Remember last map for when you come out of the special stage.
+		if (!spec)
+			lastmap = nextmap; // Remember last map for when you come out of the special stage.
 	}
 
 	automapactive = false;

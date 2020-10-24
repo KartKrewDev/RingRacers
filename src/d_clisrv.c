@@ -184,7 +184,7 @@ ticcmd_t netcmds[TICQUEUE][MAXPLAYERS];
 static textcmdtic_t *textcmds[TEXTCMD_HASH_SIZE] = {NULL};
 
 
-consvar_t cv_showjoinaddress = {"showjoinaddress", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_showjoinaddress = {"showjoinaddress", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t playbackspeed_cons_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
 consvar_t cv_playbackspeed = {"playbackspeed", "1", 0, playbackspeed_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -2054,23 +2054,51 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 	M_SortServerList();
 }
 
-void CL_UpdateServerList (void)
+#if defined (MASTERSERVER) && defined (HAVE_THREADS)
+struct Fetch_servers_ctx
 {
-	SL_ClearServerList(0);
+	int id;
+};
 
-	if (!netgame && I_NetOpenSocket)
+static void
+Fetch_servers_thread (struct Fetch_servers_ctx *ctx)
+{
+	msg_server_t *server_list;
+
+	server_list = GetShortServersList(ctx->id);
+
+	if (server_list)
 	{
-		if (I_NetOpenSocket())
+		I_lock_mutex(&ms_QueryId_mutex);
 		{
-			netgame = true;
-			multiplayer = true;
+			if (ctx->id != ms_QueryId)
+			{
+				free(server_list);
+				server_list = NULL;
+			}
+		}
+		I_unlock_mutex(ms_QueryId_mutex);
+
+		if (server_list)
+		{
+			I_lock_mutex(&m_menu_mutex);
+			{
+				if (m_waiting_mode == M_WAITING_SERVERS)
+					m_waiting_mode = M_NOT_WAITING;
+			}
+			I_unlock_mutex(m_menu_mutex);
+
+			I_lock_mutex(&ms_ServerList_mutex);
+			{
+				ms_ServerList = server_list;
+			}
+			I_unlock_mutex(ms_ServerList_mutex);
 		}
 	}
 
-	// search for local servers
-	if (netgame)
-		SendAskInfo(BROADCASTADDR);
+	free(ctx);
 }
+#endif/*defined (MASTERSERVER) && defined (HAVE_THREADS)*/
 
 void CL_QueryServerList (msg_server_t *server_list)
 {
@@ -2106,6 +2134,25 @@ void CL_QueryServerList (msg_server_t *server_list)
 		}
 	}
 }
+
+void CL_UpdateServerList (void)
+{
+	SL_ClearServerList(0);
+
+	if (!netgame && I_NetOpenSocket)
+	{
+		if (I_NetOpenSocket())
+		{
+			netgame = true;
+			multiplayer = true;
+		}
+	}
+
+	// search for local servers
+	if (netgame)
+		SendAskInfo(BROADCASTADDR);
+}
+
 #endif // ifndef NONET
 
 static void M_ConfirmConnect(event_t *ev)
@@ -5834,10 +5881,14 @@ void TryRunTics(tic_t realtics)
 			{
 				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
 
+				rs_tictime = I_GetTimeMicros();
+
 				G_Ticker((gametic % NEWTICRATERATIO) == 0);
 				ExtraDataTicker();
 				gametic++;
 				consistancy[gametic%TICQUEUE] = Consistancy();
+
+				rs_tictime = I_GetTimeMicros() - rs_tictime;
 
 				// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
 				if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)

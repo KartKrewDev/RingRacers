@@ -1597,6 +1597,7 @@ static SDL_bool Impl_CreateContext(void)
 
 void VID_CheckGLLoaded(rendermode_t oldrender)
 {
+	(void)oldrender;
 #ifdef HWRENDER
 	if (vid_opengl_state == -1) // Well, it didn't work the first time anyway.
 	{
@@ -1607,7 +1608,6 @@ void VID_CheckGLLoaded(rendermode_t oldrender)
 		if (setrenderneeded)
 		{
 			CV_StealthSetValue(&cv_renderer, oldrender);
-			CV_StealthSetValue(&cv_newrenderer, oldrender);
 			setrenderneeded = 0;
 		}
 	}

@@ -29,8 +29,9 @@
 #include "p_local.h" // for var1 and var2, and some constants
 #include "p_setup.h"
 #include "r_data.h"
+#include "r_textures.h"
 #include "r_draw.h"
-#include "r_patch.h"
+#include "r_picformats.h"
 #include "r_things.h" // R_Char2Frame
 #include "r_sky.h"
 #include "fastcmp.h"
@@ -10506,7 +10507,7 @@ static const char *const PLAYERFLAG_LIST[] = {
 
 	// True if button down last tic.
 	"ATTACKDOWN",
-	"USEDOWN",
+	"SPINDOWN",
 	"JUMPDOWN",
 	"WPNDOWN",
 
@@ -12406,6 +12407,11 @@ static inline int lib_getenum(lua_State *L)
 		if (fastcmp(p, "FULLSTASIS"))
 		{
 			lua_pushinteger(L, (lua_Integer)PF_FULLSTASIS);
+			return 1;
+		}
+		else if (fastcmp(p, "USEDOWN")) // Remove case when 2.3 nears release...
+		{
+			lua_pushinteger(L, (lua_Integer)PF_SPINDOWN);
 			return 1;
 		}
 		if (mathlib) return luaL_error(L, "playerflag '%s' could not be found.\n", word);

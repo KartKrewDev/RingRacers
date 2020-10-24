@@ -1044,7 +1044,7 @@ static INT32 G_FilterKeyByVersion(INT32 numctrl, INT32 keyidx, INT32 player, INT
 #else
 	if (GETMAJOREXECVERSION(cv_execversion.value) < 27 && ( // v2.1.22
 		numctrl == gc_weaponnext || numctrl == gc_weaponprev || numctrl == gc_tossflag ||
-		numctrl == gc_use || numctrl == gc_camreset || numctrl == gc_jump ||
+		numctrl == gc_spin || numctrl == gc_camreset || numctrl == gc_jump ||
 		numctrl == gc_pause || numctrl == gc_systemmenu || numctrl == gc_camtoggle ||
 		numctrl == gc_screenshot || numctrl == gc_talkkey || numctrl == gc_scores ||
 		numctrl == gc_centerview
@@ -1158,6 +1158,7 @@ static void setcontrol(INT32 (*gc)[2])
 		player = 0;
 
 	namectrl = COM_Argv(1);
+
 	for (numctrl = 0; numctrl < num_gamecontrols && stricmp(namectrl, gamecontrolname[numctrl]);
 		numctrl++)
 		;

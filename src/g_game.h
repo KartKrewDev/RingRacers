@@ -18,6 +18,7 @@
 #include "doomstat.h"
 #include "d_event.h"
 #include "g_demo.h"
+#include "m_cheat.h" // objectplacing
 
 extern char gamedatafilename[64];
 extern char timeattackfolder[64];
