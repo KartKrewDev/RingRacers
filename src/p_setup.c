@@ -3909,18 +3909,20 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// This is handled BEFORE sounds are stopped.
 	if (G_GetModeAttackRetryFlag())
 	{
-		if (modeattacking && !demoplayback)
+		if (modeattacking && !demo.playback)
 		{
 			ranspecialwipe = 2;
-			wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
+			//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
 		}
 		G_ClearModeAttackRetryFlag();
 	}
+	/*
 	else if (rendermode != render_none && G_IsSpecialStage(gamemap))
 	{
 		P_RunSpecialStageWipe();
 		ranspecialwipe = 1;
 	}
+	*/
 
 	// Make sure all sounds are stopped before Z_FreeTags.
 	S_StopSounds();

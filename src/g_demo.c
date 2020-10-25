@@ -664,11 +664,11 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	else
 	{
 		// For moving normally:
-		fixed_t momx = ghost->x-oldghost.x;
-		fixed_t momy = ghost->y-oldghost.y;
+		fixed_t momx = ghost->x-oldghost[playernum].x;
+		fixed_t momy = ghost->y-oldghost[playernum].y;
 
-		if (momx != oldghost.momx
-		|| momy != oldghost.momy)
+		if (momx != oldghost[playernum].momx
+		|| momy != oldghost[playernum].momy)
 		{
 			oldghost[playernum].momx = momx;
 			oldghost[playernum].momy = momy;
@@ -677,8 +677,8 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 			WRITEFIXED(demo_p,momy);
 		}
 
-		momx = ghost->z-oldghost.z;
-		if (momx != oldghost.momz)
+		momx = ghost->z-oldghost[playernum].z;
+		if (momx != oldghost[playernum].momz)
 		{
 			oldghost[playernum].momz = momx;
 			ziptic |= GZT_MOMZ;
@@ -983,7 +983,7 @@ void G_ConsGhostTic(INT32 playernum)
 		if (followtic & FZT_SCALE)
 			demo_p += sizeof(fixed_t);
 		// momx, momy and momz
-		demo_p += (demoversion < 0x000e) ? sizeof(INT16) * 3 : sizeof(fixed_t) * 3;
+		demo_p += sizeof(fixed_t) * 3;
 		if (followtic & FZT_SKIN)
 			demo_p++;
 		demo_p += sizeof(UINT16);

@@ -60,12 +60,12 @@ static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, 
 static CV_PossibleValue_t shittyscreen_cons_t[] = {{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}, {0, NULL}};
 
 //added : 03-02-98: default screen mode, as loaded/saved in config
-consvar_t cv_scr_width = {"scr_width", "640", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_scr_height = {"scr_height", "400", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_scr_depth = {"scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_renderview = {"renderview", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_vhseffect = {"vhspause", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_shittyscreen = {"televisionsignal", "Okay", CV_NOSHOWHELP, shittyscreen_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_scr_width = CVAR_INIT ("scr_width", "640", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_height = CVAR_INIT ("scr_height", "400", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
+consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
+consvar_t cv_vhseffect = CVAR_INIT ("vhspause", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_shittyscreen = CVAR_INIT ("televisionsignal", "Okay", CV_NOSHOWHELP, shittyscreen_cons_t, NULL);
 
 static void SCR_ActuallyChangeRenderer(void);
 static CV_PossibleValue_t cv_renderer_t[] = {

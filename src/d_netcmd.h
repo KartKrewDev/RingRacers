@@ -27,8 +27,6 @@ extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
 // preferred number of players
 extern consvar_t cv_splitplayers;
 
-extern consvar_t cv_showfollowers;
-
 #ifdef SEENAMES
 extern consvar_t cv_seenames, cv_allowseenames;
 #endif
@@ -62,7 +60,6 @@ extern consvar_t cv_splats;
 extern consvar_t cv_countdowntime;
 extern consvar_t cv_runscripts;
 extern consvar_t cv_mute;
-extern consvar_t cv_killingdead;
 extern consvar_t cv_pause;
 
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_ingamecap, cv_respawntime;

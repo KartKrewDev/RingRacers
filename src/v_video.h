@@ -18,6 +18,9 @@
 #include "doomtype.h"
 #include "r_defs.h"
 
+// SRB2Kart
+#include "hu_stuff.h" // fonts
+
 //
 // VIDEO
 //

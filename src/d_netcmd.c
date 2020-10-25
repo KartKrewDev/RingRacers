@@ -454,7 +454,7 @@ consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", CV_CALL|CV_NOSHOWHELP,
 
 // Scoring type options
 static CV_PossibleValue_t overtime_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Super"}, {0, NULL}};
-consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR|CV_CHEAT, overtime_cons_t);
+consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR|CV_CHEAT, overtime_cons_t, NULL);
 
 consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", CV_SAVE, CV_OnOff, NULL);
 
@@ -492,7 +492,7 @@ consvar_t cv_pingtimeout = CVAR_INIT ("pingtimeout", "10", CV_SAVE|CV_NETVAR, pi
 static CV_PossibleValue_t showping_cons_t[] = {{0, "Off"}, {1, "Always"}, {2, "Warning"}, {0, NULL}};
 consvar_t cv_showping = CVAR_INIT ("showping", "Always", CV_SAVE, showping_cons_t, NULL);
 
-consvar_t cv_showviewpointtext = CVAR_INIT ("showviewpointtext", "On", CV_SAVE, CV_OnOff, NULL};
+consvar_t cv_showviewpointtext = CVAR_INIT ("showviewpointtext", "On", CV_SAVE, CV_OnOff, NULL);
 
 // Intermission time Tails 04-19-2002
 static CV_PossibleValue_t inttime_cons_t[] = {{0, "MIN"}, {3600, "MAX"}, {0, NULL}};
@@ -712,7 +712,6 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_allowteamchange);
 	CV_RegisterVar(&cv_ingamecap);
 	CV_RegisterVar(&cv_respawntime);
-	CV_RegisterVar(&cv_killingdead);
 
 	// d_clisrv
 	CV_RegisterVar(&cv_maxplayers);
@@ -866,9 +865,6 @@ void D_RegisterClientCommands(void)
 
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);
-
-	// Display other players' followers
-	CV_RegisterVar(&cv_showfollowers);
 
 #ifdef SEENAMES
 	CV_RegisterVar(&cv_seenames);
@@ -3921,7 +3917,7 @@ static void Command_Addfile(void)
 				CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
 				continue;
 			}
-			G_SetGameModified(multiplayer);
+			G_SetGameModified(multiplayer, false);
 		}
 
 		// Add file on your client directly if it is trivial, or you aren't in a netgame.
@@ -3940,8 +3936,7 @@ static void Command_Addfile(void)
 
 		// check total packet size and no of files currently loaded
 		// See W_LoadWadFile in w_wad.c
-		if ((numwadfiles >= MAX_WADFILES)
-		|| ((packetsizetally + nameonlylength(fn) + 22) > MAXFILENEEDED*sizeof(UINT8)))
+		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
 			return;
