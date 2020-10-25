@@ -38,7 +38,6 @@
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
-#include "console.h"
 
 #include "lua_hud.h"
 
