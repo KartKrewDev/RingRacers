@@ -1920,7 +1920,7 @@ void CON_DrawLoadBar(void)
 	if (con_startup_loadprogress > CON_STARTUP_LOADSTEPS)
 	{
 		Unlock_state();
-		I_Error("CON_STARTUP_LOADSTEPS has not been updated!\n");
+		I_Error("CON_STARTUP_LOADSTEPS is too low! (is %d, got %d)\n", CON_STARTUP_LOADSTEPS, con_startup_loadprogress);
 		return;
 	}
 

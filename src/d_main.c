@@ -1843,6 +1843,12 @@ void D_SRB2Main(void)
 		DRPC_Init();
 	}
 #endif
+
+	if (con_startup_loadprogress < CON_STARTUP_LOADSTEPS)
+	{
+		I_Error("CON_STARTUP_LOADSTEPS is too high! (is %d, got %d)\n", CON_STARTUP_LOADSTEPS, con_startup_loadprogress);
+		return;
+	}
 }
 
 const char *D_Home(void)
