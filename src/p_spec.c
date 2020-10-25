@@ -1257,7 +1257,7 @@ static boolean PolyFade(line_t *line)
 	else
 		pfd.destvalue = value;
 
-	pfd.destvalue = max(min(pfd.destvalue, NUMTRANSMAPS), 0);
+	pfd.destvalue = max(min(pfd.destvalue, NUMTRANSLUCENTTRANSMAPS), 0);
 
 	// already equal, nothing to do
 	if (po->translucency == pfd.destvalue)

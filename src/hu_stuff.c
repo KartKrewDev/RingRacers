@@ -703,7 +703,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		}
 		else if (target == -1) // say team
 		{
-			if (players[playernum].ctfteam == 1) 
+			if (players[playernum].ctfteam == 1)
 			{
 				// red text
 				cstart = textcolor = "\x85";
@@ -1934,7 +1934,7 @@ void HU_DrawSongCredits(void)
 	}
 	else
 	{
-		if (cursongcredit.trans < NUMTRANSMAPS)
+		if (cursongcredit.trans < NUMTRANSLUCENTTRANSMAPS)
 			cursongcredit.trans++;
 		if (cursongcredit.x > 0)
 			cursongcredit.x /= 2;
@@ -1942,10 +1942,10 @@ void HU_DrawSongCredits(void)
 			cursongcredit.x = 0;
 	}
 
-	bgt = (NUMTRANSMAPS/2)+(cursongcredit.trans/2);
-	if (bgt < NUMTRANSMAPS)
+	bgt = (NUMTRANSLUCENTTRANSMAPS/2)+(cursongcredit.trans/2);
+	if (bgt < NUMTRANSLUCENTTRANSMAPS)
 		V_DrawScaledPatch(cursongcredit.x, y-2, V_SNAPTOLEFT|(bgt<<V_ALPHASHIFT), songcreditbg);
-	if (cursongcredit.trans < NUMTRANSMAPS)
+	if (cursongcredit.trans < NUMTRANSLUCENTTRANSMAPS)
 		V_DrawRightAlignedThinString(cursongcredit.x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_SNAPTOLEFT|(cursongcredit.trans<<V_ALPHASHIFT), str);
 }
 

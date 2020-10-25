@@ -2515,7 +2515,7 @@ void T_PolyObjFade(polyfade_t *th)
 
 	if (th->timer <= 0)
 	{
-		po->translucency = max(min(th->destvalue, NUMTRANSMAPS), 0);
+		po->translucency = max(min(th->destvalue, NUMTRANSLUCENTTRANSMAPS), 0);
 
 		// remove thinker
 		if (po->thinker == &th->thinker)
@@ -2526,8 +2526,8 @@ void T_PolyObjFade(polyfade_t *th)
 	{
 		INT16 delta = abs(th->destvalue - th->sourcevalue);
 		INT32 duration = th->ticbased ? th->duration
-			: abs(FixedMul(FixedDiv(256, NUMTRANSMAPS), NUMTRANSMAPS - th->destvalue)
-				- FixedMul(FixedDiv(256, NUMTRANSMAPS), NUMTRANSMAPS - th->sourcevalue)); // speed-based internal counter duration: delta in 256 scale
+			: abs(FixedMul(FixedDiv(256, NUMTRANSLUCENTTRANSMAPS), NUMTRANSLUCENTTRANSMAPS - th->destvalue)
+				- FixedMul(FixedDiv(256, NUMTRANSLUCENTTRANSMAPS), NUMTRANSLUCENTTRANSMAPS - th->sourcevalue)); // speed-based internal counter duration: delta in 256 scale
 		fixed_t factor = min(FixedDiv(duration - th->timer, duration), 1*FRACUNIT);
 		if (th->destvalue < th->sourcevalue)
 			po->translucency = max(min(po->translucency, th->sourcevalue - (INT16)FixedMul(delta, factor)), th->destvalue);
@@ -2538,7 +2538,7 @@ void T_PolyObjFade(polyfade_t *th)
 	if (!stillfading)
 	{
 		// set render flags
-		if (po->translucency >= NUMTRANSMAPS) // invisible
+		if (po->translucency >= NUMTRANSLUCENTTRANSMAPS) // invisible
 			po->flags &= ~POF_RENDERALL;
 		else
 			po->flags |= (po->spawnflags & POF_RENDERALL);
@@ -2561,8 +2561,8 @@ void T_PolyObjFade(polyfade_t *th)
 	}
 	else
 	{
-		if (po->translucency >= NUMTRANSMAPS)
-			// HACK: OpenGL renders fully opaque when >= NUMTRANSMAPS
+		if (po->translucency >= NUMTRANSLUCENTTRANSMAPS)
+			// HACK: OpenGL renders add/sub.opaque when >= NUMTRANSLUCENTTRANSMAPS
 			po->translucency = tr_trans90;
 
 		po->flags |= (po->spawnflags & POF_RENDERALL);
@@ -2630,8 +2630,8 @@ boolean EV_DoPolyObjFade(polyfadedata_t *pfdata)
 	else
 	{
 		th->ticbased = false;
-		th->timer = abs(FixedMul(FixedDiv(256, NUMTRANSMAPS), NUMTRANSMAPS - th->destvalue)
-			- FixedMul(FixedDiv(256, NUMTRANSMAPS), NUMTRANSMAPS - th->sourcevalue)); // delta converted to 256 scale, use as internal counter
+		th->timer = abs(FixedMul(FixedDiv(256, NUMTRANSLUCENTTRANSMAPS), NUMTRANSLUCENTTRANSMAPS - th->destvalue)
+			- FixedMul(FixedDiv(256, NUMTRANSLUCENTTRANSMAPS), NUMTRANSLUCENTTRANSMAPS - th->sourcevalue)); // delta converted to 256 scale, use as internal counter
 		th->duration = abs(pfdata->speed); // use th->duration as speed decrement
 	}
 

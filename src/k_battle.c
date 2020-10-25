@@ -419,10 +419,10 @@ void K_RunBattleOvertime(void)
 		if (!splitscreen && players[displayplayers[0]].mo)
 		{
 			INT32 dist = P_AproxDistance(battleovertime.x-players[displayplayers[0]].mo->x, battleovertime.y-players[displayplayers[0]].mo->y);
-			transparency = max(0, NUMTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
+			transparency = max(0, NUMTRANSLUCENTTRANSMAPS - ((256 + (dist>>FRACBITS)) / 256));
 		}
 
-		if (transparency < NUMTRANSMAPS)
+		if (transparency < NUMTRANSLUCENTTRANSMAPS)
 		{
 			mobj_t *beam = P_SpawnMobj(battleovertime.x, battleovertime.y, battleovertime.z + (mobjinfo[MT_RANDOMITEM].height/2), MT_OVERTIMEBEAM);
 			P_SetScale(beam, beam->scale*2);

@@ -6442,7 +6442,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->color = K_RainbowColor(
 				(SKINCOLOR_PURPLE - SKINCOLOR_PINK) // Smoothly transition into the other state
 				+ ((mobj->fuse - 32) * 2) // Make the color flashing slow down while it runs out
-			); 
+			);
 
 		switch (mobj->extravalue1)
 		{
@@ -6674,12 +6674,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			const angle_t off = FixedAngle(40*FRACUNIT);
 			angle_t ang = mobj->target->angle;
 			fixed_t z;
-			UINT8 trans = (mobj->target->player->kartstuff[k_tiregrease] * (NUMTRANSMAPS+1)) / greasetics;
+			UINT8 trans = (mobj->target->player->kartstuff[k_tiregrease] * (NUMTRANSLUCENTTRANSMAPS+1)) / greasetics;
 
-			if (trans > NUMTRANSMAPS)
-				trans = NUMTRANSMAPS;
+			if (trans > NUMTRANSLUCENTTRANSMAPS)
+				trans = NUMTRANSLUCENTTRANSMAPS;
 
-			trans = NUMTRANSMAPS - trans;
+			trans = NUMTRANSLUCENTTRANSMAPS - trans;
 
 			z = mobj->target->z;
 			if (mobj->eflags & MFE_VERTICALFLIP)
@@ -6702,7 +6702,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (leveltime & 1)
 				mobj->drawflags |= MFD_DONTDRAW;
 
-			if (trans >= NUMTRANSMAPS)
+			if (trans >= NUMTRANSLUCENTTRANSMAPS)
 				mobj->drawflags |= MFD_DONTDRAW;
 			else if (trans == 0)
 				mobj->drawflags = (mobj->drawflags & ~MFD_TRANSMASK);
@@ -8437,15 +8437,15 @@ void P_MobjThinker(mobj_t *mobj)
 	{
 		if (mobj->flags2 & MF2_BOSSNOTRAP) // "fast" flag
 		{
-			if ((signed)((mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT) < (NUMTRANSMAPS-1) - (2*mobj->fuse)/3)
+			if ((signed)((mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT) < (NUMTRANSLUCENTTRANSMAPS-1) - (2*mobj->fuse)/3)
 				// fade out when nearing the end of fuse...
-				mobj->frame = (mobj->frame & ~FF_TRANSMASK) | (((NUMTRANSMAPS-1) - (2*mobj->fuse)/3) << FF_TRANSSHIFT);
+				mobj->frame = (mobj->frame & ~FF_TRANSMASK) | (((NUMTRANSLUCENTTRANSMAPS-1) - (2*mobj->fuse)/3) << FF_TRANSSHIFT);
 		}
 		else
 		{
-			if ((signed)((mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT) < (NUMTRANSMAPS-1) - mobj->fuse / 2)
+			if ((signed)((mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT) < (NUMTRANSLUCENTTRANSMAPS-1) - mobj->fuse / 2)
 				// fade out when nearing the end of fuse...
-				mobj->frame = (mobj->frame & ~FF_TRANSMASK) | (((NUMTRANSMAPS-1) - mobj->fuse / 2) << FF_TRANSSHIFT);
+				mobj->frame = (mobj->frame & ~FF_TRANSMASK) | (((NUMTRANSLUCENTTRANSMAPS-1) - mobj->fuse / 2) << FF_TRANSSHIFT);
 		}
 	}
 
@@ -10048,7 +10048,7 @@ void P_SpawnPlayer(INT32 playernum)
 		/*
 		if (bonusgame || specialstage)
 		{
-			// Bots should avoid 
+			// Bots should avoid
 			p->spectator = true;
 		}
 		*/

@@ -1800,7 +1800,7 @@ void S_ShowMusicCredit(void)
 			cursongcredit.def = def;
 			cursongcredit.anim = 5*TICRATE;
 			cursongcredit.x = 0;
-			cursongcredit.trans = NUMTRANSMAPS;
+			cursongcredit.trans = NUMTRANSLUCENTTRANSMAPS;
 			return;
 		}
 		else
