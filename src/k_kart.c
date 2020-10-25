@@ -1197,7 +1197,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		{
 			mobj1->player->kartstuff[k_wipeoutslow] = wipeoutslowtime+1;
 			mobj1->player->kartstuff[k_spinouttimer] = max(wipeoutslowtime+1, mobj1->player->kartstuff[k_spinouttimer]);
-			//mobj1->player->kartstuff[k_spinouttype] = 1; // Enforce type
+			//mobj1->player->kartstuff[k_spinouttype] = KSPIN_WIPEOUT; // Enforce type
 		}
 		else if (mobj2->player // Player VS player bumping only
 			&& (K_GetShieldFromItem(mobj1->player->kartstuff[k_itemtype]) == KSHIELD_NONE)) // Ignore for shields
@@ -1221,7 +1221,7 @@ void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid)
 		{
 			mobj2->player->kartstuff[k_wipeoutslow] = wipeoutslowtime+1;
 			mobj2->player->kartstuff[k_spinouttimer] = max(wipeoutslowtime+1, mobj2->player->kartstuff[k_spinouttimer]);
-			//mobj2->player->kartstuff[k_spinouttype] = 1; // Enforce type
+			//mobj2->player->kartstuff[k_spinouttype] = KSPIN_WIPEOUT; // Enforce type
 		}
 		else if (mobj1->player // Player VS player bumping only
 			&& (K_GetShieldFromItem(mobj2->player->kartstuff[k_itemtype]) == KSHIELD_NONE)) // Ignore for shields
@@ -2569,7 +2569,7 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 		length += (4 * (source->player->kartweight - player->kartweight));
 	}
 
-	player->kartstuff[k_spinouttype] = 2;
+	player->kartstuff[k_spinouttype] = KSPIN_STUNG;
 	player->kartstuff[k_spinouttimer] = length;
 	player->kartstuff[k_wipeoutslow] = min(length-1, wipeoutslowtime+1);
 
@@ -5575,10 +5575,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->powers[pw_flashing] = K_GetKartFlashing(player);
 	}
-	else if (player->powers[pw_flashing] >= K_GetKartFlashing(player))
-	{
-		player->powers[pw_flashing]--;
-	}
 
 	if (player->kartstuff[k_spinouttimer])
 	{
@@ -5589,9 +5585,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->kartstuff[k_spinouttimer]--;
 			if (player->kartstuff[k_wipeoutslow] > 1)
 				player->kartstuff[k_wipeoutslow]--;
-			// Actually, this caused more problems than it solved. Just make sure you set type before you spinout. Which K_SpinPlayer always does.
-			/*if (player->kartstuff[k_spinouttimer] == 0)
-				player->kartstuff[k_spinouttype] = 0;*/ // Reset type
 		}
 	}
 	else
