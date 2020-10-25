@@ -214,13 +214,6 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		I_Error("P_SetPlayerMobjState used for non-player mobj. Use P_SetMobjState instead!\n(Mobj type: %d, State: %d)", mobj->type, state);
 #endif
 
-	// You were in pain state after taking a hit, and you're moving out of pain state now?
-	if (mobj->state == &states[mobj->info->painstate] && player->powers[pw_flashing] == K_GetKartFlashing(player) && state != mobj->info->painstate)
-	{
-		// Start flashing, since you've landed.
-		player->powers[pw_flashing] = K_GetKartFlashing(player)-1;
-	}
-
 	// Set animation state
 	// The pflags version of this was just as convoluted.
 	switch(state)
@@ -10114,7 +10107,7 @@ void P_SpawnPlayer(INT32 playernum)
 			p->skincolor = skincolor_blueteam;
 	}
 
-	p->powers[pw_flashing] = flashingtics-1; // Babysitting deterrent
+	p->powers[pw_flashing] = K_GetKartFlashing(p); // Babysitting deterrent
 
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);
 	(mobj->player = p)->mo = mobj;

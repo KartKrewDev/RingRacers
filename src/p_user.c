@@ -4486,8 +4486,8 @@ void P_PlayerThink(player_t *player)
 		player->pflags &= ~PF_SPINDOWN;
 
 	// IF PLAYER NOT HERE THEN FLASH END IF
-	if (player->quittime && player->powers[pw_flashing] < flashingtics - 1 && !player->gotflag)
-		player->powers[pw_flashing] = flashingtics - 1;
+	if (player->quittime && player->powers[pw_flashing] < K_GetKartFlashing(player) && !player->gotflag)
+		player->powers[pw_flashing] = K_GetKartFlashing(player);
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings
@@ -4495,7 +4495,9 @@ void P_PlayerThink(player_t *player)
 	// Strength counts up to diminish fade.
 	if (player->powers[pw_flashing] && player->powers[pw_flashing] < UINT16_MAX &&
 		(player->spectator || !P_PlayerInPain(player)))
+	{
 		player->powers[pw_flashing]--;
+	}
 
 	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)
 	{
