@@ -1792,6 +1792,8 @@ static void P_CheckInvincibilityTimer(player_t *player)
 			player->mo->color = player->skincolor;
 			G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
 		}
+
+		P_RestoreMusic(player);
 	}
 }
 
