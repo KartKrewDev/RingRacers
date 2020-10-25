@@ -1281,7 +1281,7 @@ void D_SRB2Main(void)
 
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_ZINIT);
 
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
@@ -1365,7 +1365,7 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupTimer()...\n");
 	I_StartupTimer();
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_ISTARTUPTIMER);
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
@@ -1429,7 +1429,7 @@ void D_SRB2Main(void)
 		}
 	}
 
-	con_startup_loadprogress++; // finished IWADs
+	CON_SetLoadingProgress(LOADED_IWAD);
 
 	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
 	W_InitMultipleFiles(startuppwads, true);
@@ -1468,7 +1468,7 @@ void D_SRB2Main(void)
 		}
 	}
 
-	con_startup_loadprogress++; // finished PWADs
+	CON_SetLoadingProgress(LOADED_PWAD);
 
 	cht_Init();
 
@@ -1477,7 +1477,7 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_ISTARTUPGRAPHICS);
 
 #ifdef HWRENDER
 	// Lactozilla: Add every hardware mode CVAR and CCMD.
@@ -1503,7 +1503,7 @@ void D_SRB2Main(void)
 
 	CONS_Printf("HU_LoadGraphics()...\n");
 	HU_LoadGraphics();
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_HULOADGRAPHICS);
 
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
@@ -1534,7 +1534,7 @@ void D_SRB2Main(void)
 		// check the renderer's state
 		D_CheckRendererState();
 	}
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_RENDERER);
 
 	wipegamestate = gamestate;
 
@@ -1564,11 +1564,11 @@ void D_SRB2Main(void)
 
 	CONS_Printf("M_Init(): Init miscellaneous info.\n");
 	M_Init();
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_MINIT);
 
 	CONS_Printf("R_Init(): Init SRB2 refresh daemon.\n");
 	R_Init();
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_RINIT);
 
 	// setting up sound
 	if (dedicated)
@@ -1604,13 +1604,13 @@ void D_SRB2Main(void)
 		I_InitMusic();
 		S_InitSfxChannels(cv_soundvolume.value);
 	}
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_SINITSFXCHANNELS);
 
 	S_InitMusicDefs();
 
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_STINIT);
 
 	// Set up splitscreen players before joining!
 	if (!dedicated && (M_CheckParm("-splitscreen") && M_IsNextParm()))
@@ -1628,7 +1628,7 @@ void D_SRB2Main(void)
 	CONS_Printf("D_CheckNetGame(): Checking network game status.\n");
 	if (D_CheckNetGame())
 		autostart = true;
-	con_startup_loadprogress++;
+	CON_SetLoadingProgress(LOADED_DCHECKNETGAME);
 
 	if (splitscreen && !M_CheckParm("-connect")) // Make sure multiplayer & autostart is set if you have splitscreen, even after D_CheckNetGame
 		multiplayer = autostart = true;
@@ -1844,9 +1844,9 @@ void D_SRB2Main(void)
 	}
 #endif
 
-	if (con_startup_loadprogress < CON_STARTUP_LOADSTEPS)
+	if (con_startup_loadprogress != LOADED_ALLDONE)
 	{
-		I_Error("CON_STARTUP_LOADSTEPS is too high! (is %d, got %d)\n", CON_STARTUP_LOADSTEPS, con_startup_loadprogress);
+		I_Error("Something is wrong with the loading bar! (got %d, expected %d)\n", con_startup_loadprogress, LOADED_ALLDONE);
 		return;
 	}
 }

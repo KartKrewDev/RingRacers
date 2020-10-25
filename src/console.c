@@ -58,7 +58,7 @@ I_mutex con_mutex;
 static boolean con_started = false; // console has been initialised
        boolean con_startup = false; // true at game startup, screen need refreshing
 
-       UINT8 con_startup_loadprogress = 0; // Progress for startup load bar
+       con_loadprogress_t con_startup_loadprogress = 0; // Progress for startup load bar
 
 static boolean con_forcepic = true; // at startup toggle console translucency when first off
        boolean con_recalc;          // set true when screen size has changed
@@ -1908,6 +1908,22 @@ void CON_Drawer(void)
 }
 
 //
+// Error handling for the loading bar, to ensure it doesn't skip any steps.
+//
+void CON_SetLoadingProgress(con_loadprogress_t newStep)
+{
+	const con_loadprogress_t expectedStep = con_startup_loadprogress + 1;
+
+	if (newStep != expectedStep)
+	{
+		I_Error("Something is wrong with the loading bar! (got %d, expected %d)\n", newStep, expectedStep);
+		return;
+	}
+
+	con_startup_loadprogress = newStep;
+}
+
+//
 // Draws a simple white fill at the bottom of startup for load progress
 //
 void CON_DrawLoadBar(void)
@@ -1917,13 +1933,6 @@ void CON_DrawLoadBar(void)
 
 	Lock_state();
 
-	if (con_startup_loadprogress > CON_STARTUP_LOADSTEPS)
-	{
-		Unlock_state();
-		I_Error("CON_STARTUP_LOADSTEPS is too low! (is %d, got %d)\n", CON_STARTUP_LOADSTEPS, con_startup_loadprogress);
-		return;
-	}
-
 	if (!con_started || !graphics_started)
 	{
 		Unlock_state();
@@ -1932,7 +1941,7 @@ void CON_DrawLoadBar(void)
 
 	CON_DrawBackpic();
 
-	barwidth = (BASEVIDWIDTH * con_startup_loadprogress) / CON_STARTUP_LOADSTEPS;
+	barwidth = (BASEVIDWIDTH * con_startup_loadprogress) / LOADED_ALLDONE;
 	V_DrawFill(0, BASEVIDHEIGHT - barheight, barwidth, barheight, 0);
 
 	Unlock_state();
