@@ -2288,9 +2288,6 @@ UINT16 K_GetKartFlashing(player_t *player)
 
 	tics += (tics/8) * (player->kartspeed);
 
-	if (gametype == GT_BATTLE)
-		tics *= 2;
-
 	return tics;
 }
 
