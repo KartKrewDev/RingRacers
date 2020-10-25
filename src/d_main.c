@@ -733,7 +733,6 @@ tic_t rendergametic;
 void D_SRB2Loop(void)
 {
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
-	static lumpnum_t gstartuplumpnum;
 
 	if (dedicated)
 		server = true;
@@ -770,14 +769,17 @@ void D_SRB2Loop(void)
 	LMFAO this was showing garbage under OpenGL
 	because I_FinishUpdate was called afterward
 	*/
+
+#if 0
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
 	if (gamestate != GS_TITLESCREEN)
 	{
-		gstartuplumpnum = W_CheckNumForName("STARTUP");
+		static lumpnum_t gstartuplumpnum = W_CheckNumForName("STARTUP");
 		if (gstartuplumpnum == LUMPERROR)
 			gstartuplumpnum = W_GetNumForName("MISSING");
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
 	}
+#endif
 
 	for (;;)
 	{
@@ -1256,7 +1258,6 @@ void D_SRB2Main(void)
 		configfile[sizeof configfile - 1] = '\0';
 	}
 
-
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
 	I_mkdir(addonsdir, 0755);
@@ -1280,6 +1281,7 @@ void D_SRB2Main(void)
 
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
+	CON_SetLoadingProgress(LOADED_ZINIT);
 
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
@@ -1363,6 +1365,7 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupTimer()...\n");
 	I_StartupTimer();
+	CON_SetLoadingProgress(LOADED_ISTARTUPTIMER);
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
@@ -1426,6 +1429,8 @@ void D_SRB2Main(void)
 		}
 	}
 
+	CON_SetLoadingProgress(LOADED_IWAD);
+
 	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
 	W_InitMultipleFiles(startuppwads, true);
 	D_CleanFile(startuppwads);
@@ -1463,6 +1468,8 @@ void D_SRB2Main(void)
 		}
 	}
 
+	CON_SetLoadingProgress(LOADED_PWAD);
+
 	cht_Init();
 
 	//---------------------------------------------------- READY SCREEN
@@ -1470,6 +1477,7 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
+	CON_SetLoadingProgress(LOADED_ISTARTUPGRAPHICS);
 
 #ifdef HWRENDER
 	// Lactozilla: Add every hardware mode CVAR and CCMD.
@@ -1500,6 +1508,7 @@ void D_SRB2Main(void)
 
 	CONS_Printf("HU_LoadGraphics()...\n");
 	HU_LoadGraphics();
+	CON_SetLoadingProgress(LOADED_HULOADGRAPHICS);
 
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
@@ -1530,6 +1539,7 @@ void D_SRB2Main(void)
 		// check the renderer's state
 		D_CheckRendererState();
 	}
+	CON_SetLoadingProgress(LOADED_RENDERER);
 
 	wipegamestate = gamestate;
 
@@ -1559,9 +1569,11 @@ void D_SRB2Main(void)
 
 	CONS_Printf("M_Init(): Init miscellaneous info.\n");
 	M_Init();
+	CON_SetLoadingProgress(LOADED_MINIT);
 
 	CONS_Printf("R_Init(): Init SRB2 refresh daemon.\n");
 	R_Init();
+	CON_SetLoadingProgress(LOADED_RINIT);
 
 	// setting up sound
 	if (dedicated)
@@ -1589,6 +1601,7 @@ void D_SRB2Main(void)
 				digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
 		}
 	}
+
 	if (!( sound_disabled && digital_disabled ))
 	{
 		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
@@ -1596,11 +1609,13 @@ void D_SRB2Main(void)
 		I_InitMusic();
 		S_InitSfxChannels(cv_soundvolume.value);
 	}
+	CON_SetLoadingProgress(LOADED_SINITSFXCHANNELS);
 
 	S_InitMusicDefs();
 
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
+	CON_SetLoadingProgress(LOADED_STINIT);
 
 	// Set up splitscreen players before joining!
 	if (!dedicated && (M_CheckParm("-splitscreen") && M_IsNextParm()))
@@ -1618,6 +1633,7 @@ void D_SRB2Main(void)
 	CONS_Printf("D_CheckNetGame(): Checking network game status.\n");
 	if (D_CheckNetGame())
 		autostart = true;
+	CON_SetLoadingProgress(LOADED_DCHECKNETGAME);
 
 	if (splitscreen && !M_CheckParm("-connect")) // Make sure multiplayer & autostart is set if you have splitscreen, even after D_CheckNetGame
 		multiplayer = autostart = true;
@@ -1832,6 +1848,12 @@ void D_SRB2Main(void)
 		DRPC_Init();
 	}
 #endif
+
+	if (con_startup_loadprogress != LOADED_ALLDONE)
+	{
+		I_Error("Something is wrong with the loading bar! (got %d, expected %d)\n", con_startup_loadprogress, LOADED_ALLDONE);
+		return;
+	}
 }
 
 const char *D_Home(void)
