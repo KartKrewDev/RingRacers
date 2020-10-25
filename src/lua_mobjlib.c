@@ -20,7 +20,7 @@
 #include "lua_script.h"
 #include "lua_libs.h"
 #include "lua_hud.h" // hud_running errors
-#include "lua_hook.h"	// cmd errors
+#include "lua_hook.h" // hook_cmd_running errors
 
 static const char *const array_opt[] ={"iterate",NULL};
 
@@ -463,6 +463,8 @@ static int mobj_set(lua_State *L)
 
 	if (hud_running)
 		return luaL_error(L, "Do not alter mobj_t in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter mobj_t in CMD building code!");
 
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter mobj_t in BuildCMD code!");
@@ -923,7 +925,7 @@ static int mapthing_set(lua_State *L)
 	if (hud_running)
 		return luaL_error(L, "Do not alter mapthing_t in HUD rendering code!");
 	if (hook_cmd_running)
-		return luaL_error(L, "Do not alter mapthing_t in BuildCMD code!");
+		return luaL_error(L, "Do not alter mapthing_t in CMD building code!");
 
 	if(fastcmp(field,"x"))
 		mt->x = (INT16)luaL_checkinteger(L, 3);

@@ -10,3 +10,6 @@
 // Only set it higher, not lower, obviously.
 // Note that we use this to help keep internal testing in check; this is why v2.0 is not version "2".
 #define MODVERSION 6
+
+// Define this as a prerelease version suffix
+// #define BETAVERSION "Alpha"

@@ -2177,7 +2177,7 @@ void P_MovePlayer(player_t *player)
 		else
 			player->drawangle -= (ANGLE_11hh * speed);
 	}
-	else if (player->powers[pw_nocontrol] && player->pflags & PF_WPNDOWN)
+	else if (player->pflags & PF_FAULT)
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2542,6 +2542,12 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 		if (P_AproxDistance(P_AproxDistance(inflictor->x - mo->x, inflictor->y - mo->y), inflictor->z - mo->z) > radius)
 			continue;
 
+		if (mo->type == MT_SPB) // If you destroy a SPB, you don't get the luxury of a cooldown.
+		{
+			spbplace = -1;
+			indirectitemcooldown = 0;
+		}
+
 		if (mo->flags & MF_BOSS || mo->type == MT_PLAYER) //don't OHKO bosses nor players!
 			P_DamageMobj(mo, inflictor, source, 1, DMG_NORMAL|DMG_CANTHURTSELF);
 		else
@@ -2703,38 +2709,38 @@ static CV_PossibleValue_t CV_CamSpeed[] = {{0, "MIN"}, {1*FRACUNIT, "MAX"}, {0, 
 static CV_PossibleValue_t CV_CamRotate[] = {{-720, "MIN"}, {720, "MAX"}, {0, NULL}};
 
 consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS] = {
-	{"cam_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam2_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam3_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam4_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL}
+	CVAR_INIT ("cam_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam2_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam3_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam4_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL)
 };
 
 consvar_t cv_cam_height[MAXSPLITSCREENPLAYERS] = {
-	{"cam_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam2_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam3_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam4_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL}
+	CVAR_INIT ("cam_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam2_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam3_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam4_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL)
 };
 
 consvar_t cv_cam_still[MAXSPLITSCREENPLAYERS] = {
-	{"cam_still", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam2_still", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam3_still", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam4_still", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL}
+	CVAR_INIT ("cam_still", "Off", 0, CV_OnOff, NULL),
+	CVAR_INIT ("cam2_still", "Off", 0, CV_OnOff, NULL),
+	CVAR_INIT ("cam3_still", "Off", 0, CV_OnOff, NULL),
+	CVAR_INIT ("cam4_still", "Off", 0, CV_OnOff, NULL)
 };
 
 consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS] = {
-	{"cam_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam2_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam3_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"cam4_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL, 0, NULL, NULL, 0, 0, NULL}
+	CVAR_INIT ("cam_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL),
+	CVAR_INIT ("cam2_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL),
+	CVAR_INIT ("cam3_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL),
+	CVAR_INIT ("cam4_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL)
 };
 
 consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
-	{"cam_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"cam2_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate2_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"cam3_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate3_OnChange, 0, NULL, NULL, 0, 0, NULL},
-	{"cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange, 0, NULL, NULL, 0, 0, NULL}
+	CVAR_INIT ("cam_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange),
+	CVAR_INIT ("cam2_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate2_OnChange),
+	CVAR_INIT ("cam3_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate3_OnChange),
+	CVAR_INIT ("cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange)
 };
 
 fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
@@ -2915,7 +2921,6 @@ void P_DemoCameraMovement(camera_t *cam)
 	democam.localaiming = G_ClipAimingPitch((INT32 *)&democam.localaiming);
 
 	// camera movement:
-
 	if (cmd->buttons & BT_ACCELERATE)
 		cam->z += 32*mapobjectscale;
 	else if (cmd->buttons & BT_BRAKE)
@@ -4062,8 +4067,7 @@ static void P_HandleFollower(player_t *player)
 		player->follower->drawflags = player->mo->drawflags;
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
-		// Also make the follower invisible if we choose not to have it displayed because it isn't ours. (also quick hacky check for f12)
-		if (player->pflags & PF_GAMETYPEOVER || (!cv_showfollowers.value && (!P_IsDisplayPlayer(player) || displayplayers[0] != consoleplayer) ))
+		if (player->pflags & PF_GAMETYPEOVER)
 			player->follower->drawflags |= MFD_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
@@ -4483,13 +4487,13 @@ void P_PlayerThink(player_t *player)
 
 	// check for use
 	if (cmd->buttons & BT_BRAKE)
-		player->pflags |= PF_USEDOWN;
+		player->pflags |= PF_SPINDOWN;
 	else
-		player->pflags &= ~PF_USEDOWN;
+		player->pflags &= ~PF_SPINDOWN;
 
 	// IF PLAYER NOT HERE THEN FLASH END IF
-	if (player->quittime && player->powers[pw_flashing] < flashingtics - 1 && !player->gotflag)
-		player->powers[pw_flashing] = flashingtics - 1;
+	if (player->quittime && player->powers[pw_flashing] < K_GetKartFlashing(player) && !player->gotflag)
+		player->powers[pw_flashing] = K_GetKartFlashing(player);
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings
@@ -4497,12 +4501,14 @@ void P_PlayerThink(player_t *player)
 	// Strength counts up to diminish fade.
 	if (player->powers[pw_flashing] && player->powers[pw_flashing] < UINT16_MAX &&
 		(player->spectator || !P_PlayerInPain(player)))
+	{
 		player->powers[pw_flashing]--;
+	}
 
 	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)
 	{
 		if (!(--player->powers[pw_nocontrol]))
-			player->pflags &= ~PF_WPNDOWN;
+			player->pflags &= ~PF_FAULT;
 	}
 	else
 		player->powers[pw_nocontrol] = 0;

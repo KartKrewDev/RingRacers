@@ -542,14 +542,12 @@ static void Impl_HandleKeyboardConsoleEvent(KEY_EVENT_RECORD evt, HANDLE co)
 			case VK_TAB:
 				event.data1 = KEY_NULL;
 				break;
-			case VK_SHIFT:
-				event.data1 = KEY_LSHIFT;
-				break;
 			case VK_RETURN:
 				entering_con_command = false;
 				/* FALLTHRU */
 			default:
-				event.data1 = MapVirtualKey(evt.wVirtualKeyCode,2); // convert in to char
+				//event.data1 = MapVirtualKey(evt.wVirtualKeyCode,2); // convert in to char
+				event.data1 = evt.uChar.AsciiChar;
 		}
 		if (co != INVALID_HANDLE_VALUE && GetFileType(co) == FILE_TYPE_CHAR && GetConsoleMode(co, &t))
 		{
@@ -566,18 +564,6 @@ static void Impl_HandleKeyboardConsoleEvent(KEY_EVENT_RECORD evt, HANDLE co)
 			{
 				WriteConsoleOutputCharacterA(co, " ",1, CSBI.dwCursorPosition, &t);
 			}
-		}
-	}
-	else
-	{
-		event.type = ev_keyup;
-		switch (evt.wVirtualKeyCode)
-		{
-			case VK_SHIFT:
-				event.data1 = KEY_LSHIFT;
-				break;
-			default:
-				break;
 		}
 	}
 	if (event.data1) D_PostEvent(&event);
@@ -2102,7 +2088,7 @@ void I_GetDiskFreeSpace(INT64 *freespace)
 	return;
 #else // Both Linux and BSD have this, apparently.
 	struct statfs stfs;
-	if (statfs(".", &stfs) == -1)
+	if (statfs(srb2home, &stfs) == -1)
 	{
 		*freespace = INT32_MAX;
 		return;
@@ -2121,7 +2107,7 @@ void I_GetDiskFreeSpace(INT64 *freespace)
 	}
 	if (pfnGetDiskFreeSpaceEx)
 	{
-		if (pfnGetDiskFreeSpaceEx(NULL, &lfreespace, &usedbytes, NULL))
+		if (pfnGetDiskFreeSpaceEx(srb2home, &lfreespace, &usedbytes, NULL))
 			*freespace = lfreespace.QuadPart;
 		else
 			*freespace = INT32_MAX;
@@ -2227,10 +2213,10 @@ const char *I_ClipboardPaste(void)
 
 	if (!SDL_HasClipboardText())
 		return NULL;
+
 	clipboard_contents = SDL_GetClipboardText();
-	memcpy(clipboard_modified, clipboard_contents, 255);
+	strlcpy(clipboard_modified, clipboard_contents, 256);
 	SDL_free(clipboard_contents);
-	clipboard_modified[255] = 0;
 
 	while (*i)
 	{

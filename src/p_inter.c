@@ -1914,12 +1914,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (P_IsDisplayPlayer(player))
 						P_StartQuake(32<<FRACBITS, 5);
 
-					K_SpinPlayer(player, inflictor, source, 1);
+					K_SpinPlayer(player, inflictor, source, KSPIN_WIPEOUT);
 					K_KartPainEnergyFling(player);
 					break;
 				case DMG_NORMAL:
 				default:
-					K_SpinPlayer(player, inflictor, source, 0);
+					K_SpinPlayer(player, inflictor, source, KSPIN_SPINOUT);
 					break;
 			}
 

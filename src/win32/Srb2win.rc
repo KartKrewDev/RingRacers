@@ -97,14 +97,14 @@ BEGIN
             VALUE "Comments", "Go go-karting with Dr. Eggman!\0"
             VALUE "CompanyName", "Kart Krew\0"
             VALUE "FileDescription", "SRB2Kart\0"
-            VALUE "FileVersion", VERSIONSTRING
+            VALUE "FileVersion", VERSIONSTRING_RC
             VALUE "InternalName", "srb2kart\0"
-            VALUE "LegalCopyright", "Copyright 1998-2020 by Kart Krew\0"
+            VALUE "LegalCopyright", "Copyright 2018-2020 by Kart Krew\0"
             VALUE "LegalTrademarks", "Dr. Eggman and related characters are trademarks of Sega.\0"
             VALUE "OriginalFilename", "srb2kart.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "SRB2Kart\0"
-            VALUE "ProductVersion", VERSIONSTRING
+            VALUE "ProductVersion", VERSIONSTRING_RC
             VALUE "SpecialBuild", "\0"
         END
     END

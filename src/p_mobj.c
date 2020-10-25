@@ -42,10 +42,10 @@
 #include "k_bot.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
-consvar_t cv_movebob = {"movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
 
 #ifdef WALLSPLATS
-consvar_t cv_splats = {"splats", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_splats = CVAR_INIT ("splats", "On", CV_SAVE, CV_OnOff, NULL);
 #endif
 
 actioncache_t actioncachehead;
@@ -213,13 +213,6 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 	if (player == NULL)
 		I_Error("P_SetPlayerMobjState used for non-player mobj. Use P_SetMobjState instead!\n(Mobj type: %d, State: %d)", mobj->type, state);
 #endif
-
-	// You were in pain state after taking a hit, and you're moving out of pain state now?
-	if (mobj->state == &states[mobj->info->painstate] && player->powers[pw_flashing] == K_GetKartFlashing(player) && state != mobj->info->painstate)
-	{
-		// Start flashing, since you've landed.
-		player->powers[pw_flashing] = K_GetKartFlashing(player)-1;
-	}
 
 	// Set animation state
 	// The pflags version of this was just as convoluted.
@@ -3732,7 +3725,7 @@ boolean P_SupermanLook4Players(mobj_t *actor)
 
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		if (playeringame[c])
+		if (playeringame[c] && !players[c].spectator)
 		{
 			if (players[c].pflags & PF_INVIS)
 				continue; // ignore notarget
@@ -9714,8 +9707,8 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 }
 
 static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_itemrespawntime = {"respawnitemtime", "2", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_itemrespawn = {"respawnitem", "On", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_itemrespawntime = CVAR_INIT ("respawnitemtime", "2", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL);
+consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", CV_NETVAR, CV_OnOff, NULL);
 
 void P_SpawnPrecipitation(void)
 {
@@ -9951,7 +9944,7 @@ void P_RespawnBattleBoxes(void)
  * \param mthingtype Mapthing number in question.
  * \return Mobj type; MT_UNKNOWN if nothing found.
  */
-static mobjtype_t P_GetMobjtype(UINT16 mthingtype)
+mobjtype_t P_GetMobjtype(UINT16 mthingtype)
 {
 	mobjtype_t i;
 	for (i = 0; i < NUMMOBJTYPES; i++)
@@ -10117,7 +10110,7 @@ void P_SpawnPlayer(INT32 playernum)
 			p->skincolor = skincolor_blueteam;
 	}
 
-	p->powers[pw_flashing] = flashingtics-1; // Babysitting deterrent
+	p->powers[pw_flashing] = K_GetKartFlashing(p); // Babysitting deterrent
 
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);
 	(mobj->player = p)->mo = mobj;

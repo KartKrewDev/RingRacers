@@ -152,6 +152,9 @@ static INT32 cutscene_textspeed = 0;
 static UINT8 cutscene_boostspeed = 0;
 static tic_t cutscene_lasttextwrite = 0;
 
+// STJR Intro
+char stjrintro[9] = "STJRI000";
+
 //
 // This alters the text string cutscene_disptext.
 // Use the typical string drawing functions to display it.
@@ -618,9 +621,7 @@ static const char *credits[] = {
 	"SEGA",
 	"Sonic Team",
 	"SRB2 & Sonic Team Jr. (www.srb2.org)",
-	"\"blazethecat\"",
 	"\"Chaos Zero 64\"",
-	"\"Rob\"",
 	"",
 	"\1Produced By",
 	"Kart Krew",

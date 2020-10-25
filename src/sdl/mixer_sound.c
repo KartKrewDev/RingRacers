@@ -102,7 +102,9 @@ static UINT32 stutter_threshold_user;
 static UINT32 stutter_threshold;
 
 static Mix_Music *music;
-static UINT8 music_volume, sfx_volume, internal_volume;
+static int music_volume;
+static int sfx_volume;
+static int internal_volume;
 static float loop_point;
 static float song_length; // length in seconds
 static boolean songpaused;
@@ -134,84 +136,6 @@ static size_t probesize;
 static int result;
 #endif
 
-#ifdef HAVE_MIXERX
-static void Midiplayer_Onchange(void)
-{
-	boolean restart = false;
-
-	if (I_SongType() != MU_NONE && I_SongType() != MU_MID_EX && I_SongType() != MU_MID)
-		return;
-
-	if (Mix_GetMidiPlayer() != cv_midiplayer.value)
-	{
-		if (Mix_SetMidiPlayer(cv_midiplayer.value)) // <> 0 means error
-			CONS_Alert(CONS_ERROR, "Midi player error: %s", Mix_GetError());
-		else
-			restart = true;
-	}
-
-	if (stricmp(Mix_GetSoundFonts(), cv_midisoundfontpath.string))
-	{
-		if (!Mix_SetSoundFonts(cv_midisoundfontpath.string)) // == 0 means error
-			CONS_Alert(CONS_ERROR, "Sound font error: %s", Mix_GetError());
-		else
-			restart = true;
-	}
-
-	Mix_Timidity_addToPathList(cv_miditimiditypath.string);
-
-	if (restart)
-		S_StartEx(true);
-}
-
-static void MidiSoundfontPath_Onchange(void)
-{
-	if (Mix_GetMidiPlayer() != MIDI_Fluidsynth || (I_SongType() != MU_NONE && I_SongType() != MU_MID_EX))
-		return;
-
-	if (stricmp(Mix_GetSoundFonts(), cv_midisoundfontpath.string))
-	{
-		char *miditoken;
-		char *source = strdup(cv_midisoundfontpath.string);
-		boolean proceed = true;
-		// check if file exists; menu calls this method at every keystroke
-
-		// get first token
-		miditoken = strtok(source, ";");
-
-		while (miditoken != NULL)
-		{
-			SDL_RWops *rw = SDL_RWFromFile(miditoken, "r");
-			if (rw != NULL)
-				SDL_RWclose(rw);
-			else
-			{
-				proceed = false;
-				break;
-			}
-			miditoken = strtok(NULL, ";");
-		}
-
-		free(source);
-
-		if (proceed)
-		{
-			if (!Mix_SetSoundFonts(cv_midisoundfontpath.string))
-				CONS_Alert(CONS_ERROR, "Sound font error: %s", Mix_GetError());
-			else
-				S_StartEx(true);
-		}
-	}
-}
-
-// make sure that s_sound.c does not already verify these
-// which happens when: defined(HAVE_MIXERX) && !defined(HAVE_MIXER)
-static CV_PossibleValue_t midiplayer_cons_t[] = {{MIDI_OPNMIDI, "OPNMIDI"}, {MIDI_Fluidsynth, "Fluidsynth"}, {MIDI_Timidity, "Timidity"}, {MIDI_Native, "Native"}, {0, NULL}};
-consvar_t cv_midiplayer = {"midiplayer", "OPNMIDI" /*MIDI_OPNMIDI*/, CV_CALL|CV_NOINIT|CV_SAVE, midiplayer_cons_t, Midiplayer_Onchange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_midisoundfontpath = {"midisoundfont", "sf2/8bitsf.SF2", CV_CALL|CV_NOINIT|CV_SAVE, NULL, MidiSoundfontPath_Onchange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_miditimiditypath = {"midisoundbank", "./timidity", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
-
 static void var_cleanup(void)
 {
 	song_length = loop_point = 0.0f;
@@ -233,6 +157,7 @@ static void var_cleanup(void)
 	internal_volume = 100;
 }
 
+#if defined (HAVE_LIBGME) && defined (HAVE_ZLIB)
 static const char* get_zlib_error(int zErr)
 {
 	switch (zErr)
@@ -253,6 +178,7 @@ static const char* get_zlib_error(int zErr)
 			return "unknown error";
 	}
 }
+#endif
 
 /// ------------------------
 /// Audio System
@@ -290,11 +216,6 @@ void I_StartupSound(void)
 	music = NULL;
 	music_volume = sfx_volume = 0;
 
-#ifdef HAVE_MIXERX
-	Mix_SetMidiPlayer(cv_midiplayer.value);
-	Mix_SetSoundFonts(cv_midisoundfontpath.string);
-	Mix_Timidity_addToPathList(cv_miditimiditypath.string);
-#endif
 #if SDL_MIXER_VERSION_ATLEAST(1,2,11)
 	Mix_Init(MIX_INIT_FLAC|MIX_INIT_MP3|MIX_INIT_OGG|MIX_INIT_MOD);
 #endif
@@ -346,6 +267,15 @@ void I_UpdateSound(void)
 /// ------------------------
 /// SFX
 /// ------------------------
+
+static int
+get_real_sfx_volume (int vol)
+{
+	const int scale   = SOUND_VOLUME_RANGE / MIX_MAX_VOLUME;
+	const int divider = VOLUME_DIVIDER * scale;
+	const int volume  = ( vol + 1 ) / divider * sfx_volume / 100;
+	return volume;
+}
 
 // this is as fast as I can possibly make it.
 // sorry. more asm needed.
@@ -602,7 +532,8 @@ void I_FreeSfx(sfxinfo_t *sfx)
 
 INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priority, INT32 channel)
 {
-	UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
+	//UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
+	UINT8 volume = get_real_sfx_volume(vol);
 	INT32 handle = Mix_PlayChannel(channel, S_sfx[id].data, 0);
 	Mix_Volume(handle, volume);
 	Mix_SetPanning(handle, min((UINT16)(0xff-sep)<<1, 0xff), min((UINT16)(sep)<<1, 0xff));
@@ -623,13 +554,14 @@ boolean I_SoundIsPlaying(INT32 handle)
 
 void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch)
 {
-	UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
+	//UINT8 volume = (((UINT16)vol + 1) * (UINT16)sfx_volume) / 62; // (256 * 31) / 62 == 127
+	UINT8 volume = get_real_sfx_volume(vol);
 	Mix_Volume(handle, volume);
 	Mix_SetPanning(handle, min((UINT16)(0xff-sep)<<1, 0xff), min((UINT16)(sep)<<1, 0xff));
 	(void)pitch;
 }
 
-void I_SetSfxVolume(UINT8 volume)
+void I_SetSfxVolume(int volume)
 {
 	sfx_volume = volume;
 }
@@ -638,18 +570,17 @@ void I_SetSfxVolume(UINT8 volume)
 /// Music Utilities
 /// ------------------------
 
-static UINT32 get_real_volume(UINT8 volume)
+static UINT32 get_real_volume(int volume)
 {
-#ifdef _WIN32
-	if (I_SongType() == MU_MID)
-		// HACK: Until we stop using native MIDI,
-		// disable volume changes
-		return ((UINT32)31*128/31); // volume = 31
-	else
-#endif
+	{
 		// convert volume to mixer's 128 scale
 		// then apply internal_volume as a percentage
-		return ((UINT32)volume*128/31) * (UINT32)internal_volume / 100;
+		//return ((UINT32)volume*128/31) * (UINT32)internal_volume / 100;
+		return MIX_MAX_VOLUME
+			* musicdef_volume / 100
+			* internal_volume / 100
+			* volume / 100;
+	}
 }
 
 static UINT32 get_adjusted_position(UINT32 position)
@@ -709,7 +640,7 @@ static void count_music_bytes(int chan, void *stream, int len, void *udata)
 	(void)stream;
 	(void)udata;
 
-	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID)
+	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD)
 		return;
 	music_bytes += len;
 
@@ -991,7 +922,7 @@ UINT32 I_GetSongLength(void)
 
 boolean I_SetSongLoopPoint(UINT32 looppoint)
 {
-	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD || I_SongType() == MU_MID || !is_looping)
+	if (!music || I_SongType() == MU_GME || I_SongType() == MU_MOD || !is_looping)
 		return false;
 	else
 	{
@@ -1027,7 +958,7 @@ UINT32 I_GetSongLoopPoint(void)
 	}
 	else
 #endif
-	if (!music || I_SongType() == MU_MOD || I_SongType() == MU_MID)
+	if (!music || I_SongType() == MU_MOD)
 		return 0;
 	else
 		return (UINT32)(loop_point * 1000);
@@ -1247,14 +1178,6 @@ boolean I_LoadSong(char *data, size_t len)
 		return true;
 #endif
 
-#ifdef HAVE_MIXERX
-	if (Mix_GetMidiPlayer() != cv_midiplayer.value)
-		Mix_SetMidiPlayer(cv_midiplayer.value);
-	if (stricmp(Mix_GetSoundFonts(), cv_midisoundfontpath.string))
-		Mix_SetSoundFonts(cv_midisoundfontpath.string);
-	Mix_Timidity_addToPathList(cv_miditimiditypath.string); // this overwrites previous custom path
-#endif
-
 #ifdef HAVE_OPENMPT
 	/*
 		If the size of the data to be checked is bigger than the recommended size (> 2048 bytes)
@@ -1387,7 +1310,7 @@ boolean I_PlaySong(boolean looping)
 	if (fpclassify(song_length) == FP_ZERO && (I_SongType() == MU_OGG || I_SongType() == MU_MP3 || I_SongType() == MU_FLAC))
 		CONS_Debug(DBG_DETAILED, "This song is missing a LENGTHMS= tag! Required to make seeking work properly.\n");
 
-	if (I_SongType() != MU_MOD && I_SongType() != MU_MID && Mix_PlayMusic(music, 0) == -1)
+	if (I_SongType() != MU_MOD && Mix_PlayMusic(music, 0) == -1)
 	{
 		CONS_Alert(CONS_ERROR, "Mix_PlayMusic: %s\n", Mix_GetError());
 		return false;
@@ -1444,10 +1367,9 @@ void I_StopSong(void)
 
 void I_PauseSong(void)
 {
-	if(I_SongType() == MU_MID) // really, SDL Mixer? why can't you pause MIDI???
-		return;
+	// really, SRB2? why do you support MIDI???
 
-	if(I_SongType() != MU_GME && I_SongType() != MU_MOD && I_SongType() != MU_MID)
+	if(I_SongType() != MU_GME && I_SongType() != MU_MOD)
 		Mix_UnregisterEffect(MIX_CHANNEL_POST, count_music_bytes);
 
 	Mix_PauseMusic();
@@ -1456,15 +1378,12 @@ void I_PauseSong(void)
 
 void I_ResumeSong(void)
 {
-	if (I_SongType() == MU_MID)
-		return;
-
-	if (I_SongType() != MU_GME && I_SongType() != MU_MOD && I_SongType() != MU_MID)
+	if (I_SongType() != MU_GME && I_SongType() != MU_MOD)
 	{
 		while(Mix_UnregisterEffect(MIX_CHANNEL_POST, count_music_bytes) != 0) { }
 			// HACK: fixes issue of multiple effect callbacks being registered
 
-		if(music && I_SongType() != MU_MOD && I_SongType() != MU_MID && !Mix_RegisterEffect(MIX_CHANNEL_POST, count_music_bytes, NULL, NULL))
+		if(music && I_SongType() != MU_MOD && !Mix_RegisterEffect(MIX_CHANNEL_POST, count_music_bytes, NULL, NULL))
 			CONS_Alert(CONS_WARNING, "Error registering SDL music position counter: %s\n", Mix_GetError());
 	}
 
@@ -1472,19 +1391,12 @@ void I_ResumeSong(void)
 	songpaused = false;
 }
 
-void I_SetMusicVolume(UINT8 volume)
+void I_SetMusicVolume(int volume)
 {
 	if (!I_SongPlaying())
 		return;
 
-#ifdef _WIN32
-	if (I_SongType() == MU_MID)
-		// HACK: Until we stop using native MIDI,
-		// disable volume changes
-		music_volume = 31;
-	else
-#endif
-		music_volume = volume;
+	music_volume = volume;
 
 	Mix_VolumeMusic(get_real_volume(music_volume));
 }
