@@ -299,6 +299,11 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 			}
 
 			player->skincolor = newcolor = skin->prefcolor;
+			if (player->bot && botingame)
+			{
+				botskin = (UINT8)(skinnum + 1);
+				botcolor = skin->prefcolor;
+			}
 		}
 #endif
 

@@ -366,106 +366,106 @@ static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 
 // chat timer thingy
 static CV_PossibleValue_t chattime_cons_t[] = {{5, "MIN"}, {999, "MAX"}, {0, NULL}};
-consvar_t cv_chattime = {"chattime", "8", CV_SAVE, chattime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chattime = CVAR_INIT ("chattime", "8", CV_SAVE, chattime_cons_t, NULL);
 
 // chatwidth
 static CV_PossibleValue_t chatwidth_cons_t[] = {{64, "MIN"}, {150, "MAX"}, {0, NULL}};
-consvar_t cv_chatwidth = {"chatwidth", "150", CV_SAVE, chatwidth_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "150", CV_SAVE, chatwidth_cons_t, NULL);
 
 // chatheight
 static CV_PossibleValue_t chatheight_cons_t[] = {{6, "MIN"}, {22, "MAX"}, {0, NULL}};
-consvar_t cv_chatheight = {"chatheight", "8", CV_SAVE, chatheight_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatheight = CVAR_INIT ("chatheight", "8", CV_SAVE, chatheight_cons_t, NULL);
 
 // chat notifications (do you want to hear beeps? I'd understand if you didn't.)
-consvar_t cv_chatnotifications = {"chatnotifications", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatnotifications = CVAR_INIT ("chatnotifications", "On", CV_SAVE, CV_OnOff, NULL);
 
 // chat spam protection (why would you want to disable that???)
-consvar_t cv_chatspamprotection = {"chatspamprotection", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatspamprotection = CVAR_INIT ("chatspamprotection", "On", CV_SAVE, CV_OnOff, NULL);
 
 // minichat text background
-consvar_t cv_chatbacktint = {"chatbacktint", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", CV_SAVE, CV_OnOff, NULL);
 
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
-consvar_t cv_consolechat = {"chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL);
 
 // Pause game upon window losing focus
-consvar_t cv_pauseifunfocused = {"pauseifunfocused", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_pauseifunfocused = CVAR_INIT ("pauseifunfocused", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 // Display song credits
-consvar_t cv_songcredits = {"songcredits", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_songcredits = CVAR_INIT ("songcredits", "On", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_invertmouse = {"invertmouse", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_invincmusicfade = {"invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_growmusicfade = {"growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_invincmusicfade = CVAR_INIT ("invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_growmusicfade = CVAR_INIT ("growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL);
 
-consvar_t cv_resetspecialmusic = {"resetspecialmusic", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_resetspecialmusic = CVAR_INIT ("resetspecialmusic", "Yes", CV_SAVE, CV_YesNo, NULL);
 
-consvar_t cv_resume = {"resume", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_resume = CVAR_INIT ("resume", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
-	{"joyaxis_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis2_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis3_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis4_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL}
+	CVAR_INIT ("joyaxis_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis2_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis3_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis4_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL)
 };
 
 consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS] = {
-	{"joyaxis_move", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis_move2", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis_move3", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis_move4", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
+	CVAR_INIT ("joyaxis_move", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis_move2", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis_move3", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis_move4", "None", CV_SAVE, joyaxis_cons_t, NULL)
 };
 
 consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS] = {
-	{"joyaxis_brake", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis2_brake", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis3_brake", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis4_brake", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
+	CVAR_INIT ("joyaxis_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis2_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis3_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis4_brake", "None", CV_SAVE, joyaxis_cons_t, NULL)
 };
 
 consvar_t cv_aimaxis[MAXSPLITSCREENPLAYERS] = {
-	{"joyaxis_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis2_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis3_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis4_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
+	CVAR_INIT ("joyaxis_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis2_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis3_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis4_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL)
 };
 
 consvar_t cv_lookaxis[MAXSPLITSCREENPLAYERS] = {
-	{"joyaxis_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis2_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis3_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis4_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
+	CVAR_INIT ("joyaxis_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis2_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis3_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis4_look", "None", CV_SAVE, joyaxis_cons_t, NULL)
 };
 
 consvar_t cv_fireaxis[MAXSPLITSCREENPLAYERS] = {
-	{"joyaxis_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis_fire2", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis_fire3", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis_fire4", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
+	CVAR_INIT ("joyaxis_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis_fire2", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis_fire3", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis_fire4", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL)
 };
 
 consvar_t cv_driftaxis[MAXSPLITSCREENPLAYERS] = {
-	{"joyaxis_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis2_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis3_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joyaxis4_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
+	CVAR_INIT ("joyaxis_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis2_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis3_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
+	CVAR_INIT ("joyaxis4_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL)
 };
 
 static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS] = {
-	{"joy_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joy2_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joy3_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joy4_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
+	CVAR_INIT ("joy_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("joy2_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("joy3_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("joy4_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
 
 consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS] = {
-	{"joy_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joy2_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joy3_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
-	{"joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL},
+	CVAR_INIT ("joy_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("joy2_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("joy3_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
 
 #ifdef SEENAMES
@@ -1381,7 +1381,7 @@ boolean G_Responder(event_t *ev)
 		if (F_CreditResponder(ev))
 		{
 			// Skip credits for everyone
-			if (! serverrunning)/* hahahahahaha */
+			if (! netgame)
 				F_StartGameEvaluation();
 			else if (server || IsPlayerAdmin(consoleplayer))
 				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
@@ -2090,8 +2090,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER));
-
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER|PF_FAULT));
 	playerangleturn = players[player].angleturn;
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
@@ -2250,7 +2249,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 
 	// Don't do anything immediately
-	p->pflags |= PF_USEDOWN;
+	p->pflags |= PF_SPINDOWN;
 	p->pflags |= PF_ATTACKDOWN;
 	p->pflags |= PF_JUMPDOWN;
 
@@ -3534,7 +3533,8 @@ static void G_DoCompleted(void)
 		if (nextmap < 0 || (nextmap >= NUMMAPS && nextmap < 1100-1) || nextmap > 1103-1)
 			I_Error("Followed map %d to invalid map %d\n", prevmap + 1, nextmap + 1);
 
-		lastmap = nextmap; // Remember last map for when you come out of the special stage.
+		if (!spec)
+			lastmap = nextmap; // Remember last map for when you come out of the special stage.
 	}
 
 	automapactive = false;
@@ -4398,7 +4398,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		memset(&players[i].respawn, 0, sizeof (players[i].respawn));
 
 		// The latter two should clear by themselves, but just in case
-		players[i].pflags &= ~(PF_GAMETYPEOVER|PF_FULLSTASIS);
+		players[i].pflags &= ~(PF_GAMETYPEOVER|PF_FULLSTASIS|PF_FAULT);
 
 		// Clear cheatcodes too, just in case.
 		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);

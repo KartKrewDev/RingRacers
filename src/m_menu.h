@@ -332,7 +332,7 @@ typedef struct menuitem_s
 	void *itemaction;
 
 	// hotkey in menu or y of the item
-	UINT8 alphaKey;
+	UINT16 alphaKey;
 } menuitem_t;
 
 typedef struct menu_s

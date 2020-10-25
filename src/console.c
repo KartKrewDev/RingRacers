@@ -124,22 +124,22 @@ static void CONS_backcolor_Change(void);
 static char con_buffer[CON_BUFFERSIZE];
 
 // how many seconds the hud messages lasts on the screen
-static consvar_t cons_msgtimeout = {"con_hudtime", "5", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_msgtimeout = CVAR_INIT ("con_hudtime", "5", CV_SAVE, CV_Unsigned, NULL);
 
 // number of lines displayed on the HUD
-static consvar_t cons_hudlines = {"con_hudlines", "5", CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change);
 
 // number of lines console move per frame
 // (con_speed needs a limit, apparently)
 static CV_PossibleValue_t speed_cons_t[] = {{0, "MIN"}, {64, "MAX"}, {0, NULL}};
-static consvar_t cons_speed = {"con_speed", "8", CV_SAVE, speed_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", CV_SAVE, speed_cons_t, NULL);
 
 // percentage of screen height to use for console
-static consvar_t cons_height = {"con_height", "50", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_height = CVAR_INIT ("con_height", "50", CV_SAVE, CV_Unsigned, NULL);
 
 static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}, {0, NULL}};
 // whether to use console background picture, or translucent mode
-static consvar_t cons_backpic = {"con_backpic", "translucent", CV_SAVE, backpic_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_backpic = CVAR_INIT ("con_backpic", "translucent", CV_SAVE, backpic_cons_t, NULL);
 
 static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{2, "Sepia"},
 												{3, "Brown"},		{4, "Pink"},		{5, "Red"},
@@ -149,7 +149,7 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{15,"Purple"},		{16,"Magenta"},		{17,"Lavender"},
 												{18,"Rose"},
 												{0, NULL}};
-consvar_t cons_backcolor = {"con_backcolor", "Black", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Black", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
 
 static CV_PossibleValue_t menuhighlight_cons_t[] =
 {
@@ -171,7 +171,7 @@ static CV_PossibleValue_t menuhighlight_cons_t[] =
 	{V_TANMAP, "Always tan"},
 	{0, NULL}
 };
-consvar_t cons_menuhighlight = {"menuhighlight", "Game type", CV_SAVE, menuhighlight_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cons_menuhighlight = CVAR_INIT ("menuhighlight", "Game type", CV_SAVE, menuhighlight_cons_t, NULL);
 
 static void CON_Print(char *msg);
 
@@ -900,9 +900,14 @@ boolean CON_Responder(event_t *ev)
 
 	// sequential completions a la 4dos
 	static char completion[80];
-	static INT32 comskips, varskips;
 
-	const char *cmd = "";
+	static INT32 skips;
+
+	static INT32   com_skips;
+	static INT32   var_skips;
+	static INT32 alias_skips;
+
+	const char *cmd = NULL;
 	INT32 key;
 
 	if (chat_on)
@@ -1050,7 +1055,6 @@ boolean CON_Responder(event_t *ev)
 				if (!input_len || input_len >= 40 || strchr(inputlines[inputline], ' '))
 					return true;
 				strcpy(completion, inputlines[inputline]);
-				comskips = varskips = 0;
 			}
 			len = strlen(completion);
 
@@ -1065,6 +1069,14 @@ boolean CON_Responder(event_t *ev)
 			for (i = 0, cmd = CV_CompleteVar(completion, i); cmd; cmd = CV_CompleteVar(completion, ++i))
 				CONS_Printf("  \x83" "%s" "\x80" "%s\n", completion, cmd+len);
 			if (i == 0) CONS_Printf("  (none)\n");
+
+			//and finally aliases
+			CONS_Printf("Aliases:\n");
+			for (i = 0, cmd = COM_CompleteAlias(completion, i); cmd; cmd = COM_CompleteAlias(completion, ++i))
+				CONS_Printf("  \x83" "%s" "\x80" "%s\n", completion, cmd+len);
+			if (i == 0) CONS_Printf("  (none)\n");
+
+			completion[0] = 0;
 
 			return true;
 		}
@@ -1134,43 +1146,64 @@ boolean CON_Responder(event_t *ev)
 			if (!input_len || input_len >= 40 || strchr(inputlines[inputline], ' '))
 				return true;
 			strcpy(completion, inputlines[inputline]);
-			comskips = varskips = 0;
+			skips       = 0;
+			com_skips   = 0;
+			var_skips   = 0;
+			alias_skips = 0;
 		}
 		else
 		{
 			if (shiftdown)
 			{
-				if (comskips < 0)
-				{
-					if (--varskips < 0)
-						comskips = -comskips - 2;
-				}
-				else if (comskips > 0) comskips--;
+				if (skips > 0)
+					skips--;
 			}
 			else
 			{
-				if (comskips < 0) varskips++;
-				else              comskips++;
+				skips++;
 			}
 		}
 
-		if (comskips >= 0)
+		if (skips <= com_skips)
 		{
-			cmd = COM_CompleteCommand(completion, comskips);
-			if (!cmd) // dirty: make sure if comskips is zero, to have a neg value
-				comskips = -comskips - 1;
+			cmd = COM_CompleteCommand(completion, skips);
+
+			if (cmd && skips == com_skips)
+			{
+				com_skips  ++;
+				var_skips  ++;
+				alias_skips++;
+			}
 		}
-		if (comskips < 0)
-			cmd = CV_CompleteVar(completion, varskips);
+
+		if (!cmd && skips <= var_skips)
+		{
+			cmd = CV_CompleteVar(completion, skips - com_skips);
+
+			if (cmd && skips == var_skips)
+			{
+				var_skips  ++;
+				alias_skips++;
+			}
+		}
+
+		if (!cmd && skips <= alias_skips)
+		{
+			cmd = COM_CompleteAlias(completion, skips - var_skips);
+
+			if (cmd && skips == alias_skips)
+			{
+				alias_skips++;
+			}
+		}
 
 		if (cmd)
+		{
 			CON_InputSetString(va("%s ", cmd));
+		}
 		else
 		{
-			if (comskips > 0)
-				comskips--;
-			else if (varskips > 0)
-				varskips--;
+			skips--;
 		}
 
 		return true;
@@ -1468,7 +1501,7 @@ void CONS_Printf(const char *fmt, ...)
 	if (con_started)
 		CON_Print(txt);
 
-	CON_LogMessage(txt);	
+	CON_LogMessage(txt);
 
 	Lock_state();
 
@@ -1727,8 +1760,12 @@ static void CON_DrawBackpic(void)
 	int x, w, h;
 	int scale;
 
-	// Get the lumpnum for CONSBACK, or fallback into MISSING.
-	piclump = W_CheckNumForName("KARTKREW");
+	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
+	if (con_startup)
+		piclump = W_CheckNumForName("STARTUP");
+	else
+		piclump = W_CheckNumForName("KARTKREW");
+
 	if (piclump == LUMPERROR)
 		piclump = W_GetNumForName("MISSING");
 

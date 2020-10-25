@@ -408,9 +408,6 @@ static void M_HandleMonitorToggles(INT32 choice);
 
 // Consvar onchange functions
 static void Newgametype_OnChange(void);
-#ifdef HWRENDER
-static void Newrenderer_OnChange(void);
-#endif
 static void Dummymenuplayer_OnChange(void);
 //static void Dummymares_OnChange(void);
 static void Dummystaff_OnChange(void);
@@ -419,28 +416,23 @@ static void Dummystaff_OnChange(void);
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
 // ==========================================================================
 
-consvar_t cv_showfocuslost = {"showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t map_cons_t[] = {
 	{0,"MIN"},
 	{NUMMAPS, "MAX"},
 	{0, NULL}
 };
-consvar_t cv_nextmap = {"nextmap", "1", CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_nextmap = CVAR_INIT ("nextmap", "1", CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange);
 
 static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
-consvar_t cv_chooseskin = {"chooseskin", DEFAULTSKIN, CV_HIDEN|CV_CALL, skins_cons_t, Nextmap_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDEN|CV_CALL, skins_cons_t, Nextmap_OnChange);
 
 // This gametype list is integral for many different reasons.
 // When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
 CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
 
-consvar_t cv_newgametype = {"newgametype", "Race", CV_HIDEN|CV_CALL, gametype_cons_t, Newgametype_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
-#ifdef HWRENDER
-consvar_t cv_newrenderer = {"newrenderer", "Software", CV_HIDEN|CV_CALL, cv_renderer_t, Newrenderer_OnChange, 0, NULL, NULL, 0, 0, NULL};
-//static int newrenderer_set = 1;/* Software doesn't need confirmation! */
-#endif
+consvar_t cv_newgametype = CVAR_INIT ("newgametype", "Race", CV_HIDEN|CV_CALL, gametype_cons_t, Newgametype_OnChange);
 
 static CV_PossibleValue_t serversort_cons_t[] = {
 	{0,"Ping"},
@@ -451,29 +443,29 @@ static CV_PossibleValue_t serversort_cons_t[] = {
 	{5,"Gametype"},
 	{0,NULL}
 };
-consvar_t cv_serversort = {"serversort", "Ping", CV_CALL, serversort_cons_t, M_SortServerList, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_serversort = CVAR_INIT ("serversort", "Ping", CV_CALL, serversort_cons_t, M_SortServerList);
 
 // first time memory
-consvar_t cv_tutorialprompt = {"tutorialprompt", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_tutorialprompt = CVAR_INIT ("tutorialprompt", "On", CV_SAVE, CV_OnOff, NULL);
 
 // autorecord demos for time attack
-static consvar_t cv_autorecord = {"autorecord", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_autorecord = CVAR_INIT ("autorecord", "Yes", 0, CV_YesNo, NULL);
 
 CV_PossibleValue_t ghost_cons_t[] = {{0, "Hide"}, {1, "Show Character"}, {2, "Show All"}, {0, NULL}};
 CV_PossibleValue_t ghost2_cons_t[] = {{0, "Hide"}, {1, "Show"}, {0, NULL}};
 
-consvar_t cv_ghost_besttime  = {"ghost_besttime",  "Show All", CV_SAVE, ghost_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghost_bestlap   = {"ghost_bestlap",   "Show All", CV_SAVE, ghost_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghost_last      = {"ghost_last",      "Show All", CV_SAVE, ghost_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghost_guest     = {"ghost_guest",     "Show", CV_SAVE, ghost2_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghost_staff     = {"ghost_staff",     "Show", CV_SAVE, ghost2_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_ghost_besttime  = CVAR_INIT ("ghost_besttime",  "Show All", CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_bestlap   = CVAR_INIT ("ghost_bestlap",   "Show All", CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_last      = CVAR_INIT ("ghost_last",      "Show All", CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_guest     = CVAR_INIT ("ghost_guest",     "Show", CV_SAVE, ghost2_cons_t, NULL);
+consvar_t cv_ghost_staff     = CVAR_INIT ("ghost_staff",     "Show", CV_SAVE, ghost2_cons_t, NULL);
 
 //Console variables used solely in the menu system.
 //todo: add a way to use non-console variables in the menu
 //      or make these consvars legitimate like color or skin.
 static void Splitplayers_OnChange(void);
 CV_PossibleValue_t splitplayers_cons_t[] = {{1, "One"}, {2, "Two"}, {3, "Three"}, {4, "Four"}, {0, NULL}};
-consvar_t cv_splitplayers = {"splitplayers", "One", CV_CALL, splitplayers_cons_t, Splitplayers_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_splitplayers = CVAR_INIT ("splitplayers", "One", CV_CALL, splitplayers_cons_t, Splitplayers_OnChange);
 
 static CV_PossibleValue_t dummymenuplayer_cons_t[] = {{0, "NOPE"}, {1, "P1"}, {2, "P2"}, {3, "P3"}, {4, "P4"}, {0, NULL}};
 static CV_PossibleValue_t dummyteam_cons_t[] = {{0, "Spectator"}, {1, "Red"}, {2, "Blue"}, {0, NULL}};
@@ -486,20 +478,20 @@ static CV_PossibleValue_t liveslimit_cons_t[] = {{-1, "MIN"}, {9, "MAX"}, {0, NU
 };*/
 static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
 
-static consvar_t cv_dummymenuplayer = {"dummymenuplayer", "P1", CV_HIDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_dummyteam = {"dummyteam", "Spectator", CV_HIDEN, dummyteam_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_dummyspectate = {"dummyspectate", "Spectator", CV_HIDEN, dummyspectate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_dummyscramble = {"dummyscramble", "Random", CV_HIDEN, dummyscramble_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_dummyrings = {"dummyrings", "0", CV_HIDEN, ringlimit_cons_t,	NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_dummylives = {"dummylives", "0", CV_HIDEN, liveslimit_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_dummystaff = {"dummystaff", "0", CV_HIDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
+static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDEN, dummyteam_cons_t, NULL);
+static consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDEN, dummyspectate_cons_t, NULL);
+static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDEN, dummyscramble_cons_t, NULL);
+static consvar_t cv_dummyrings = CVAR_INIT ("dummyrings", "0", CV_HIDEN, ringlimit_cons_t, NULL);
+static consvar_t cv_dummylives = CVAR_INIT ("dummylives", "0", CV_HIDEN, liveslimit_cons_t, NULL);
+static consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
 
 static CV_PossibleValue_t dummygpdifficulty_cons_t[] = {{0, "Easy"}, {1, "Normal"}, {2, "Hard"}, {3, "Master"}, {0, NULL}};
 static CV_PossibleValue_t dummygpcup_cons_t[50] = {{1, "TEMP"}}; // A REALLY BIG NUMBER, SINCE THIS IS TEMP UNTIL NEW MENUS
 
-static consvar_t cv_dummygpdifficulty = {"dummygpdifficulty", "Normal", CV_HIDEN, dummygpdifficulty_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_dummygpencore = {"dummygpencore", "Off", CV_HIDEN, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_dummygpcup = {"dummygpcup", "TEMP", CV_HIDEN, dummygpcup_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HIDEN, dummygpdifficulty_cons_t, NULL);
+static consvar_t cv_dummygpencore = CVAR_INIT ("dummygpencore", "Off", CV_HIDEN, CV_OnOff, NULL);
+static consvar_t cv_dummygpcup = CVAR_INIT ("dummygpcup", "TEMP", CV_HIDEN, dummygpcup_cons_t, NULL);
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -1264,7 +1256,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING|IT_CVAR,		NULL,	"Fullscreen",			&cv_fullscreen,			 20},
 #endif
 #ifdef HWRENDER
-	{IT_STRING | IT_CVAR, NULL, "Renderer",					&cv_newrenderer,		 30},
+	{IT_STRING | IT_CVAR, NULL, "Renderer",					&cv_renderer,			 30},
 #else
 	{IT_TRANSTEXT | IT_PAIR, "Renderer", "Software",		&cv_renderer,			 30},
 #endif
@@ -1436,9 +1428,6 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 
 static menuitem_t OP_HUDOptionsMenu[] =
 {
-
-	{IT_STRING | IT_CVAR, NULL, "Show Followers",			&cv_showfollowers,		 10},
-
 	{IT_STRING | IT_CVAR, NULL, "Show HUD (F3)",			&cv_showhud,			 20},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 	                      NULL, "HUD Visibility",			&cv_translucenthud,		 30},
@@ -2273,58 +2262,6 @@ static void Newgametype_OnChange(void)
 	}
 }
 
-#ifdef HWRENDER
-
-#if 0
-static void Newrenderer_AREYOUSURE(INT32 c)
-{
-	int n;
-	switch (c)
-	{
-		case 'y':
-		case KEY_ENTER:
-			n = cv_newrenderer.value;
-			newrenderer_set |= n;
-			CV_SetValue(&cv_renderer, n);
-			break;
-		default:
-			CV_StealthSetValue(&cv_newrenderer, cv_renderer.value);
-	}
-}
-
-static void Newrenderer_OnChange(void)
-{
-	/* Well this works for now because there's only two options. */
-	int n;
-	n = cv_newrenderer.value;
-	newrenderer_set |= cv_renderer.value;
-	if (( newrenderer_set & n ))
-		CV_SetValue(&cv_renderer, n);
-	else
-	{
-		M_StartMessage(
-				"The OpenGL renderer is incomplete.\n"
-				"Some visuals may fail to appear, or\n"
-				"appear incorrectly.\n"
-				"Do you still want to switch to it?\n"
-				"\n"
-				"(Press 'y' or 'n')",
-				Newrenderer_AREYOUSURE, MM_YESNO
-		);
-	}
-}
-
-#else
-
-static void Newrenderer_OnChange(void)
-{
-	CV_SetValue(&cv_renderer, cv_newrenderer.value); // SRB2Kart: don't want the warning
-}
-
-#endif
-
-#endif/*HWRENDER*/
-
 void Screenshot_option_Onchange(void)
 {
 	OP_ScreenshotOptionsMenu[op_screenshot_folder].status =
@@ -2457,6 +2394,11 @@ static void M_ChangeCvar(INT32 choice)
 	    ||((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_INVISSLIDER)
 	    ||((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_NOMOD))
 	{
+		if (cv == &cv_digmusicvolume || cv == &cv_soundvolume)
+		{
+			choice *= 5;
+		}
+
 		CV_SetValue(cv,cv->value+choice);
 	}
 	else if (cv->flags & CV_FLOAT)
@@ -6662,17 +6604,10 @@ static void M_DrawSkyRoom(void)
 			(digital_disabled ? warningflags : highlightflags),
 			(digital_disabled ? "OFF" : "ON"));
 
-		/*V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x,
-			currentMenu->y+currentMenu->menuitems[5].alphaKey,
-			(midi_disabled ? warningflags : highlightflags),
-			(midi_disabled ? "OFF" : "ON"));*/
-
 		if (itemOn == 0)
 			lengthstring = 8*(sound_disabled ? 3 : 2);
 		else if (itemOn == 2)
 			lengthstring = 8*(digital_disabled ? 3 : 2);
-		/*else if (itemOn == 5)
-			lengthstring = 8*(midi_disabled ? 3 : 2);*/
 	}
 
 	for (i = 0; i < currentMenu->numitems; ++i)

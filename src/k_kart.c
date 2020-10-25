@@ -2487,7 +2487,7 @@ void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 typ
 
 	player->kartstuff[k_spinouttype] = type;
 
-	if (player->kartstuff[k_spinouttype] <= 0) // type 0 is spinout, type 1 is wipeout, type 2 is no-invuln wipeout
+	if (( player->kartstuff[k_spinouttype] & KSPIN_THRUST ))
 	{
 		// At spinout, player speed is increased to 1/4 their regular speed, moving them forward
 		if (player->speed < K_GetKartSpeed(player, true)/4)
@@ -2550,7 +2550,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A b
 	player->mo->momz = 18*mapobjectscale*P_MobjFlip(player->mo); // please stop forgetting mobjflip checks!!!!
 	player->mo->momx = player->mo->momy = 0;
 
-	player->kartstuff[k_spinouttype] = 1;
+	player->kartstuff[k_spinouttype] = KSPIN_EXPLOSION;
 	player->kartstuff[k_spinouttimer] = (3*TICRATE/2)+2;
 
 	if (inflictor && !P_MobjWasRemoved(inflictor))
@@ -3400,7 +3400,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 
 	if (spawner->player)
 	{
-		if (spawner->player->pflags & PF_WPNDOWN)
+		if (spawner->player->pflags & PF_FAULT)
 		{
 			anglediff = abs((signed)(spawner->angle - spawner->player->drawangle));
 			if (leveltime % 6 == 0)
@@ -5195,7 +5195,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
 
-	if (!(player->pflags & PF_WPNDOWN))
+	if (!(player->pflags & PF_FAULT))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;
@@ -5586,7 +5586,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->karthud[khud_timeovercam] = 0;
 
 	// Specific hack because it insists on setting flashing tics during this anyway...
-	if (player->kartstuff[k_spinouttype] == 2)
+	if (( player->kartstuff[k_spinouttype] & KSPIN_IFRAMES ) == 0)
 	{
 		player->powers[pw_flashing] = 0;
 	}
@@ -5605,7 +5605,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_spinouttimer])
 	{
 		if ((P_IsObjectOnGround(player->mo)
-			|| (player->kartstuff[k_spinouttype] != 0))
+			|| ( player->kartstuff[k_spinouttype] & KSPIN_AIRTIMER ))
 			&& (!player->kartstuff[k_sneakertimer]))
 		{
 			player->kartstuff[k_spinouttimer]--;
