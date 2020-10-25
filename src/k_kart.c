@@ -5765,7 +5765,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_wanted]++;
 	}
 
-	if (battleovertime.enabled >= 10*TICRATE)
+	if ((battleovertime.enabled >= 10*TICRATE) && (player->eliminated == false))
 	{
 		fixed_t distanceToBarrier = 0;
 
