@@ -9967,7 +9967,11 @@ void P_RespawnSpecials(void)
 
 	if (gametyperules & GTR_SPHERES)
 	{
-		time = ((MAXPLAYERS+1) - pcount) * (2*TICRATE);
+		if (pcount > 2)
+			time -= (5*TICRATE) * (pcount-2);
+
+		if (time < 5*TICRATE)
+			time = 5*TICRATE;
 	}
 	else
 	{
@@ -9975,7 +9979,7 @@ void P_RespawnSpecials(void)
 			return;
 		else if (pcount > 1)
 		{
-			time = (120 - ((pcount-2) * 10))*TICRATE;
+			time = (120 - ((pcount-2) * 10)) * TICRATE;
 
 			// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
 			// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
