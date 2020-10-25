@@ -1977,6 +1977,8 @@ void F_TitleScreenDrawer(void)
 				V_DrawSmallScaledPatch(84, 36, transval<<V_ALPHASHIFT, ttkflash);
 			}
 */
+			V_DrawCenteredString(BASEVIDWIDTH/2, 64, 0, "SRB2 Kart v2.0");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 96, 0, "Development EXE");
 			break;
 
 		case TTMODE_USER:
