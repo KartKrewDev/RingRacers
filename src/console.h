@@ -27,6 +27,25 @@ extern boolean con_recalc;
 
 extern boolean con_startup;
 
+typedef enum
+{
+	LOADED_ZINIT = 1,
+	LOADED_ISTARTUPTIMER,
+	LOADED_IWAD,
+	LOADED_PWAD,
+	LOADED_ISTARTUPGRAPHICS,
+	LOADED_HULOADGRAPHICS,
+	LOADED_RENDERER,
+	LOADED_MINIT,
+	LOADED_RINIT,
+	LOADED_SINITSFXCHANNELS,
+	LOADED_STINIT,
+	LOADED_DCHECKNETGAME,
+	LOADED_ALLDONE = LOADED_DCHECKNETGAME,
+} con_loadprogress_t;
+
+extern con_loadprogress_t con_startup_loadprogress;
+
 // top clip value for view render: do not draw part of view hidden by console
 extern INT32 con_clipviewtop;
 
@@ -62,3 +81,7 @@ void CON_ToggleOff(void);
 boolean CON_Ready(void);
 
 void CON_LogMessage(const char *msg);
+
+// Startup loading bar
+void CON_SetLoadingProgress(con_loadprogress_t newStep);
+void CON_DrawLoadBar(void);

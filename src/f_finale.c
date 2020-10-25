@@ -38,7 +38,6 @@
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
-#include "console.h"
 
 #include "lua_hud.h"
 
@@ -1977,6 +1976,8 @@ void F_TitleScreenDrawer(void)
 				V_DrawSmallScaledPatch(84, 36, transval<<V_ALPHASHIFT, ttkflash);
 			}
 */
+			V_DrawCenteredString(BASEVIDWIDTH/2, 64, 0, "SRB2 Kart v2.0");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 96, 0, "Development EXE");
 			break;
 
 		case TTMODE_USER:
