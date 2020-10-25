@@ -2921,7 +2921,6 @@ void P_DemoCameraMovement(camera_t *cam)
 	democam.localaiming = G_ClipAimingPitch((INT32 *)&democam.localaiming);
 
 	// camera movement:
-
 	if (cmd->buttons & BT_ACCELERATE)
 		cam->z += 32*mapobjectscale;
 	else if (cmd->buttons & BT_BRAKE)

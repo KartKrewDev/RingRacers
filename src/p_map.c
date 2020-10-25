@@ -39,6 +39,8 @@
 
 #include "lua_hook.h"
 
+#include "m_perfstats.h" // ps_checkposition_calls
+
 fixed_t tmbbox[4];
 mobj_t *tmthing;
 static INT32 tmflags;
@@ -1784,6 +1786,8 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 	subsector_t *newsubsec;
 	boolean blockval = true;
 
+	ps_checkposition_calls++;
+
 	I_Assert(thing != NULL);
 #ifdef PARANOIA
 	if (P_MobjWasRemoved(thing))
@@ -2456,7 +2460,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	fixed_t oldx = tryx;
 	fixed_t oldy = tryy;
 	fixed_t radius = thing->radius;
-	fixed_t thingtop = thing->z + thing->height;
+	fixed_t thingtop;
 	fixed_t startingonground = P_IsObjectOnGround(thing);
 	floatok = false;
 
@@ -2521,10 +2525,21 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			floatok = true;
 
-			if (thing->eflags & MFE_VERTICALFLIP)
+			thingtop = thing->z + thing->height;
+
+			// Step up
+			if (thing->z < tmfloorz)
 			{
-				if (thing->z < tmfloorz)
+				if (tmfloorz - thing->z <= maxstep)
+				{
+					thing->z = thing->floorz = tmfloorz;
+					thing->floorrover = tmfloorrover;
+					thing->eflags |= MFE_JUSTSTEPPEDDOWN;
+				}
+				else
+				{
 					return false; // mobj must raise itself to fit
+				}
 			}
 			else if (tmceilingz < thingtop)
 				return false; // mobj must lower itself to fit
@@ -2535,7 +2550,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 				// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
 
-				if (thing->eflags & MFE_VERTICALFLIP)
+				if (thingtop == thing->ceilingz && tmceilingz > thingtop && tmceilingz - thingtop <= maxstep)
 				{
 					if (thingtop == thing->ceilingz && tmceilingz > thingtop && thing->ceilingdrop <= maxstep)
 					{
@@ -2564,22 +2579,6 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 					thing->floorrover = tmfloorrover;
 					thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 				}
-			}
-
-			if (thing->eflags & MFE_VERTICALFLIP)
-			{
-				if (thingtop - tmceilingz > maxstep)
-				{
-					if (tmfloorthing)
-						tmhitthing = tmfloorthing;
-					return false; // too big a step up
-				}
-			}
-			else if (tmfloorz - thing->z > maxstep)
-			{
-				if (tmfloorthing)
-					tmhitthing = tmfloorthing;
-				return false; // too big a step up
 			}
 
 			if (!allowdropoff && !(thing->flags & MF_FLOAT) && thing->type != MT_SKIM && !tmfloorthing)
@@ -4796,7 +4795,7 @@ void P_MapEnd(void)
 }
 
 // P_FloorzAtPos
-// Returns the floorz of the XYZ position // TODO: Need ceilingpos function too
+// Returns the floorz of the XYZ position
 // Tails 05-26-2003
 fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 {
@@ -4839,6 +4838,50 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 	}
 
 	return floorz;
+}
+
+// P_CeilingZAtPos
+// Returns the ceilingz of the XYZ position
+fixed_t P_CeilingzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
+{
+	sector_t *sec = R_PointInSubsector(x, y)->sector;
+	fixed_t ceilingz = P_GetSectorCeilingZAt(sec, x, y);
+
+	if (sec->ffloors)
+	{
+		ffloor_t *rover;
+		fixed_t delta1, delta2, thingtop = z + height;
+
+		for (rover = sec->ffloors; rover; rover = rover->next)
+		{
+			fixed_t topheight, bottomheight;
+			if (!(rover->flags & FF_EXISTS))
+				continue;
+
+			if ((!(rover->flags & FF_SOLID || rover->flags & FF_QUICKSAND) || (rover->flags & FF_SWIMMABLE)))
+				continue;
+
+			topheight    = P_GetFFloorTopZAt   (rover, x, y);
+			bottomheight = P_GetFFloorBottomZAt(rover, x, y);
+
+			if (rover->flags & FF_QUICKSAND)
+			{
+				if (thingtop > bottomheight && topheight > z)
+				{
+					if (ceilingz > z)
+						ceilingz = z;
+				}
+				continue;
+			}
+
+			delta1 = z - (bottomheight + ((topheight - bottomheight)/2));
+			delta2 = thingtop - (bottomheight + ((topheight - bottomheight)/2));
+			if (bottomheight < ceilingz && abs(delta1) > abs(delta2))
+				ceilingz = bottomheight;
+		}
+	}
+
+	return ceilingz;
 }
 
 fixed_t

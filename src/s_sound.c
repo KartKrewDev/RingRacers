@@ -63,16 +63,16 @@ static boolean S_CheckQueue(void);
 #endif
 
 #ifdef _WINDOWS
-consvar_t cv_samplerate = {"samplerate", "44100", 0, CV_Unsigned, NULL, 44100, NULL, NULL, 0, 0, NULL}; //Alam: For easy hacking?
+consvar_t cv_samplerate = CVAR_INIT ("samplerate", "44100", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
 #else
-consvar_t cv_samplerate = {"samplerate", "22050", 0, CV_Unsigned, NULL, 22050, NULL, NULL, 0, 0, NULL}; //Alam: For easy hacking?
+consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
 #endif
 
 // stereo reverse
-consvar_t stereoreverse = {"stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // if true, all sounds are loaded at game startup
-static consvar_t precachesound = {"precachesound", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t precachesound = CVAR_INIT ("precachesound", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // actual general (maximum) sound & music volume, saved into the config
 consvar_t cv_soundvolume = {"soundvolume", "50", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -90,7 +90,7 @@ static void Captioning_OnChange(void)
 		S_StartSound(NULL, sfx_menu1);
 }
 
-consvar_t cv_closedcaptioning = {"closedcaptioning", "Off", CV_SAVE|CV_CALL, CV_OnOff, Captioning_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_closedcaptioning = CVAR_INIT ("closedcaptioning", "Off", CV_SAVE|CV_CALL, CV_OnOff, Captioning_OnChange);
 
 // Sound system toggles, saved into the config
 consvar_t cv_gamedigimusic = {"digimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -114,7 +114,6 @@ openmpt_module *openmpt_mhandle = NULL;
 
 static CV_PossibleValue_t interpolationfilter_cons_t[] = {{0, "Default"}, {1, "None"}, {2, "Linear"}, {4, "Cubic"}, {8, "Windowed sinc"}, {0, NULL}};
 consvar_t cv_modfilter = {"modfilter", "0", CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
 #endif
 
 #define S_MAX_VOLUME 127
@@ -1224,7 +1223,6 @@ void S_ClearSfx(void)
 
 static void S_StopChannel(INT32 cnum)
 {
-	INT32 i;
 	channel_t *c = &channels[cnum];
 
 	if (c->sfxinfo)
@@ -1233,17 +1231,12 @@ static void S_StopChannel(INT32 cnum)
 		if (I_SoundIsPlaying(c->handle))
 			I_StopSound(c->handle);
 
-		// check to see
-		//  if other channels are playing the sound
-		for (i = 0; i < numofchannels; i++)
-			if (cnum != i && c->sfxinfo == channels[i].sfxinfo)
-				break;
-
 		// degrade usefulness of sound data
 		c->sfxinfo->usefulness--;
-
 		c->sfxinfo = 0;
 	}
+
+	c->origin = NULL;
 }
 
 //
