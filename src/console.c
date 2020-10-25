@@ -57,6 +57,9 @@ I_mutex con_mutex;
 
 static boolean con_started = false; // console has been initialised
        boolean con_startup = false; // true at game startup, screen need refreshing
+
+       UINT8 con_startup_loadprogress = 0; // Progress for startup load bar
+
 static boolean con_forcepic = true; // at startup toggle console translucency when first off
        boolean con_recalc;          // set true when screen size has changed
 
@@ -1517,16 +1520,17 @@ void CONS_Printf(const char *fmt, ...)
 	if (startup && (!setrenderneeded))
 	{
 #ifdef _WINDOWS
-		patch_t *con_backpic = W_CachePatchName("KARTKREW", PU_CACHE);
+		patch_t *con_backpic = W_CachePatchName("STARTUP", PU_CACHE);
 
 		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
-		V_DrawFixedPatch(0, 0, FRACUNIT/2, 0, con_backpic, NULL);
+		V_DrawScaledPatch(0, 0, 0, con_backpic);
 
 		W_UnlockCachedPatch(con_backpic);
-		I_LoadingScreen(txt);				// Win32/OS2 only
+		I_LoadingScreen(txt); // Win32/OS2 only
 #else
 		// here we display the console text
-		CON_Drawer();
+		//CON_Drawer();
+		CON_DrawLoadBar();
 		I_FinishUpdate(); // page flip or blit buffer
 #endif
 	}
@@ -1899,6 +1903,37 @@ void CON_Drawer(void)
 	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS
 		|| gamestate == GS_VOTING || gamestate == GS_EVALUATION || gamestate == GS_WAITINGPLAYERS)
 		CON_DrawHudlines();
+
+	Unlock_state();
+}
+
+//
+// Draws a simple white fill at the bottom of startup for load progress
+//
+void CON_DrawLoadBar(void)
+{
+	const INT16 barheight = 2;
+	INT16 barwidth = 0;
+
+	Lock_state();
+
+	if (con_startup_loadprogress > CON_STARTUP_LOADSTEPS)
+	{
+		Unlock_state();
+		I_Error("CON_STARTUP_LOADSTEPS has not been updated!\n");
+		return;
+	}
+
+	if (!con_started || !graphics_started)
+	{
+		Unlock_state();
+		return;
+	}
+
+	CON_DrawBackpic();
+
+	barwidth = (BASEVIDWIDTH * con_startup_loadprogress) / CON_STARTUP_LOADSTEPS;
+	V_DrawFill(0, BASEVIDHEIGHT - barheight, barwidth, barheight, 0);
 
 	Unlock_state();
 }

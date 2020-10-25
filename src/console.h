@@ -27,6 +27,9 @@ extern boolean con_recalc;
 
 extern boolean con_startup;
 
+extern UINT8 con_startup_loadprogress;
+#define CON_STARTUP_LOADSTEPS 12
+
 // top clip value for view render: do not draw part of view hidden by console
 extern INT32 con_clipviewtop;
 
@@ -62,3 +65,6 @@ void CON_ToggleOff(void);
 boolean CON_Ready(void);
 
 void CON_LogMessage(const char *msg);
+
+// Startup loading bar
+void CON_DrawLoadBar(void);
