@@ -1488,7 +1488,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				default:
 				{
 					transnum_t transtable = R_GetLinedefTransTable(gl_linedef);
-					if (transtable != NUMTRANSMAPS)
+					if (transtable != NUMEFFECTMAPS)
 						blendmode = HWR_TranstableToAlpha(transtable, &Surf);
 					else
 						blendmode = PF_Masked;
@@ -1498,7 +1498,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 			if (gl_curline->polyseg && gl_curline->polyseg->translucency > 0)
 			{
-				if (gl_curline->polyseg->translucency >= NUMTRANSMAPS) // wall not drawn
+				if (gl_curline->polyseg->translucency >= NUMEFFECTMAPS) // wall not drawn
 				{
 					Surf.PolyColor.s.alpha = 0x00; // This shouldn't draw anything regardless of blendmode
 					blendmode = PF_Masked;
@@ -2902,7 +2902,7 @@ static void HWR_AddPolyObjectPlanes(void)
 		if (!(po_ptrs[i]->flags & POF_RENDERPLANES)) // Only render planes when you should
 			continue;
 
-		if (po_ptrs[i]->translucency >= NUMTRANSMAPS)
+		if (po_ptrs[i]->translucency >= NUMEFFECTMAPS)
 			continue;
 
 		if (polyobjsector->floorheight <= gl_frontsector->ceilingheight

@@ -281,7 +281,7 @@ static void R_Render2sidedMultiPatchColumn(column_t *column)
 
 transnum_t R_GetLinedefTransTable(line_t *ldef)
 {
-	transnum_t transnum = NUMTRANSMAPS; // Send back NUMTRANSMAPS for none
+	transnum_t transnum = NUMEFFECTMAPS; // Send back NUMEFFECTMAPS for none
 	fixed_t alpha = ldef->alpha;
 	if (alpha > 0 && alpha < FRACUNIT)
 		transnum = (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
@@ -291,7 +291,7 @@ transnum_t R_GetLinedefTransTable(line_t *ldef)
 		{
 			case 910: transnum = tr_transadd; break;
 			case 911: transnum = tr_transsub; break;
-			default: transnum = NUMTRANSMAPS; break;
+			default: transnum = NUMEFFECTMAPS; break;
 		}
 	}
 
@@ -312,7 +312,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	INT32 times, repeats;
 	INT64 overflow_test;
 	INT32 range;
-	transnum_t transtable = NUMTRANSMAPS;
+	transnum_t transtable = NUMEFFECTMAPS;
 
 	// Calculate light table.
 	// Use different light tables
@@ -330,7 +330,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 		return;
 
 	transtable = R_GetLinedefTransTable(ldef);
-	if (transtable != NUMTRANSMAPS)
+	if (transtable != NUMEFFECTMAPS)
 	{
 		dc_transmap = transtables + ((transtable - 1) << FF_TRANSSHIFT);
 		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
@@ -347,7 +347,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 	if (curline->polyseg && curline->polyseg->translucency > 0)
 	{
-		if (curline->polyseg->translucency >= NUMTRANSMAPS)
+		if (curline->polyseg->translucency >= NUMEFFECTMAPS)
 			return;
 
 		dc_transmap = transtables + ((curline->polyseg->translucency-1)<<FF_TRANSSHIFT);

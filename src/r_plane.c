@@ -780,7 +780,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 	if (pl->polyobj)
 	{
 		// Hacked up support for alpha value in software mode Tails 09-24-2002 (sidenote: ported to polys 10-15-2014, there was no time travel involved -Red)
-		if (pl->polyobj->translucency >= NUMTRANSMAPS)
+		if (pl->polyobj->translucency >= NUMEFFECTMAPS)
 			return; // Don't even draw it
 		else if (pl->polyobj->translucency > 0)
 		{

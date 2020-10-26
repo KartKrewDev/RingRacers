@@ -11148,9 +11148,10 @@ struct {
 	{"tr_trans70",tr_trans70},
 	{"tr_trans80",tr_trans80},
 	{"tr_trans90",tr_trans90},
+	{"NUMTRANSMAPS",NUMTRANSMAPS},
 	{"tr_transadd",tr_transadd},
 	{"tr_transsub",tr_transsub},
-	{"NUMTRANSMAPS",NUMTRANSMAPS},
+	{"NUMEFFECTMAPS",NUMEFFECTMAPS},
 
 	// Type of levels
 	{"TOL_RACE",TOL_RACE},
