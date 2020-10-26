@@ -939,9 +939,9 @@ void S_UpdateSounds(void)
 	memset(&listener4, 0, sizeof(listener_t));
 
 	// Update sound/music volumes, if changed manually at console
-	if (actualsfxvolume != cv_soundvolume.value)
+	if (actualsfxvolume != cv_soundvolume.value * USER_VOLUME_SCALE)
 		S_SetSfxVolume (cv_soundvolume.value);
-	if (actualdigmusicvolume != cv_digmusicvolume.value)
+	if (actualdigmusicvolume != cv_digmusicvolume.value * USER_VOLUME_SCALE)
 		S_SetDigMusicVolume (cv_digmusicvolume.value);
 
 	// We're done now, if we're not in a level.
