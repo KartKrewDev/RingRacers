@@ -1930,24 +1930,22 @@ static void P_3dMovement(player_t *player)
 	K_AdjustPlayerFriction(player);
 
 	// Forward movement
-	if (!P_PlayerInPain(player))
+	// If the player isn't on the ground, there is no change in speed
+	// Smiley Face
+	if (onground)
 	{
-		if (onground)
+		movepushforward = K_3dKartMovement(player);
+
+		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
+			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
+
+		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
+		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
+
+		if (K_PlayerUsesBotMovement(player) == true)
 		{
-			movepushforward = K_3dKartMovement(player, onground);
-
-			if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
-				movepushforward = FixedMul(movepushforward, player->mo->movefactor);
-
-			totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
-			totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
+			K_MomentumToFacing(player);
 		}
-	}
-
-	if ((!P_PlayerInPain(player) && !onground)
-	|| (K_PlayerUsesBotMovement(player) == true))
-	{
-		K_MomentumToFacing(player);
 	}
 
 	if ((totalthrust.x || totalthrust.y)
