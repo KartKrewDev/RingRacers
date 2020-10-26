@@ -570,17 +570,13 @@ void I_SetSfxVolume(int volume)
 /// Music Utilities
 /// ------------------------
 
-static UINT32 get_real_volume(int volume)
+static int attenuate(int scale)
 {
-	{
-		// convert volume to mixer's 128 scale
-		// then apply internal_volume as a percentage
-		//return ((UINT32)volume*128/31) * (UINT32)internal_volume / 100;
-		return MIX_MAX_VOLUME
-			* musicdef_volume / 100
-			* internal_volume / 100
-			* volume / 100;
-	}
+	// attenuate scale by all volumes as percentages
+	return scale
+		* musicdef_volume / 100
+		* internal_volume / 100
+		*    music_volume / 100;
 }
 
 static UINT32 get_adjusted_position(UINT32 position)
@@ -686,7 +682,7 @@ static UINT32 music_fade(UINT32 interval, void *param)
 	else if ((fading_timer -= 10) <= 0)
 	{
 		internal_volume = fading_target;
-		Mix_VolumeMusic(get_real_volume(music_volume));
+		Mix_VolumeMusic(attenuate(MIX_MAX_VOLUME));
 		I_StopFadingSong();
 		do_fading_callback();
 		return 0;
@@ -699,7 +695,7 @@ static UINT32 music_fade(UINT32 interval, void *param)
 			internal_volume = max(min(internal_volume, fading_source - FixedMul(delta, factor)), fading_target);
 		else if (fading_target > fading_source)
 			internal_volume = min(max(internal_volume, fading_source + FixedMul(delta, factor)), fading_target);
-		Mix_VolumeMusic(get_real_volume(music_volume));
+		Mix_VolumeMusic(attenuate(MIX_MAX_VOLUME));
 		return interval;
 	}
 }
@@ -719,13 +715,9 @@ static void mix_gme(void *udata, Uint8 *stream, int len)
 	// play gme into stream
 	gme_play(gme, len/2, (short *)stream);
 
-	// Limiter to prevent music from being disorted with some formats
-	if (music_volume >= 18)
-		music_volume = 18;
-
 	// apply volume to stream
 	for (i = 0, p = (short *)stream; i < len/2; i++, p++)
-		*p = ((INT32)*p) * (music_volume*internal_volume/100)*2 / 40;
+		*p = attenuate(*p);
 }
 #endif
 
@@ -743,13 +735,9 @@ static void mix_openmpt(void *udata, Uint8 *stream, int len)
 	// Play module into stream
 	openmpt_module_read_interleaved_stereo(openmpt_mhandle, SAMPLERATE, BUFFERSIZE, (short *)stream);
 
-	// Limiter to prevent music from being disorted with some formats
-	if (music_volume >= 18)
-		music_volume = 18;
-
 	// apply volume to stream
 	for (i = 0, p = (short *)stream; i < len/2; i++, p++)
-		*p = ((INT32)*p) * (music_volume*internal_volume/100)*2 / 40;
+		*p = attenuate(*p);
 }
 #endif
 
@@ -1398,7 +1386,7 @@ void I_SetMusicVolume(int volume)
 
 	music_volume = volume;
 
-	Mix_VolumeMusic(get_real_volume(music_volume));
+	Mix_VolumeMusic(attenuate(MIX_MAX_VOLUME));
 }
 
 boolean I_SetSongTrack(int track)
@@ -1460,7 +1448,7 @@ void I_SetInternalMusicVolume(UINT8 volume)
 	internal_volume = volume;
 	if (!I_SongPlaying())
 		return;
-	Mix_VolumeMusic(get_real_volume(music_volume));
+	Mix_VolumeMusic(attenuate(MIX_MAX_VOLUME));
 }
 
 void I_StopFadingSong(void)
