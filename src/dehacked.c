@@ -11148,7 +11148,6 @@ struct {
 	{"tr_trans70",tr_trans70},
 	{"tr_trans80",tr_trans80},
 	{"tr_trans90",tr_trans90},
-	{"NUMTRANSLUCENTTRANSMAPS",NUMTRANSLUCENTTRANSMAPS},
 	{"tr_transadd",tr_transadd},
 	{"tr_transsub",tr_transsub},
 	{"NUMTRANSMAPS",NUMTRANSMAPS},

@@ -101,8 +101,7 @@ typedef enum
 	tr_trans70,
 	tr_trans80,
 	tr_trans90,
-	NUMTRANSLUCENTTRANSMAPS,
-	tr_transadd = NUMTRANSLUCENTTRANSMAPS,
+	tr_transadd,
 	tr_transsub,
 	NUMTRANSMAPS
 } transnum_t;

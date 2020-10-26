@@ -3381,7 +3381,7 @@ static void P_InitLevelSettings(void)
 
 	// song credit init
 	memset(&cursongcredit,0,sizeof(struct cursongcredit));
-	cursongcredit.trans = NUMTRANSLUCENTTRANSMAPS;
+	cursongcredit.trans = NUMTRANSMAPS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
