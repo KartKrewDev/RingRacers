@@ -70,6 +70,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
 INT32 K_GetKartDriftSparkValue(player_t *player);
 void K_SpawnDriftBoostExplosion(player_t *player, int stage);
 void K_KartUpdatePosition(player_t *player);
+mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount);
 void K_DropItems(player_t *player);
 void K_DropRocketSneaker(player_t *player);
 void K_DropKitchenSink(player_t *player);

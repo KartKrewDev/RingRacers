@@ -277,6 +277,127 @@ void K_CheckBumpers(void)
 		P_DoPlayerExit(&players[i]);
 }
 
+void K_RunPaperItemSpawners(void)
+{
+	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
+	tic_t interval = 8*TICRATE;
+
+	if (leveltime <= starttime)
+	{
+		return;
+	}
+
+	if ((battleovertime.enabled > 0) && (battleovertime.radius < 256*mapobjectscale))
+	{
+		return;
+	}
+
+	if (overtime == true)
+	{
+		interval /= 2;
+	}
+
+	if (((leveltime - starttime - (interval / 2)) % interval) != 0)
+	{
+		return;
+	}
+
+	if (overtime == true)
+	{
+		SINT8 flip = 1;
+
+		K_CreatePaperItem(
+			battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
+			FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+			0, 0
+		);
+	}
+	else
+	{
+		UINT8 pcount = 0;
+		UINT8 i;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator
+				|| players[i].exiting > 0
+				|| players[i].eliminated)
+			{
+				continue;
+			}
+
+			if ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0)
+			{
+				continue;
+			}
+
+			pcount++;
+		}
+
+		if (pcount > 0)
+		{
+#define MAXITEM 64
+			UINT16 item = 0;
+			mobj_t *spotList[MAXITEM];
+			boolean spotUsed[MAXITEM];
+
+			thinker_t *th;
+			mobj_t *mo;
+
+			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+			{
+				if (item >= MAXITEM)
+					break;
+
+				if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+					continue;
+
+				mo = (mobj_t *)th;
+
+				if (mo->type == MT_PAPERITEMSPOT)
+				{
+					spotList[item] = mo;
+					item++;
+				}
+			}
+
+			if (item <= 0)
+			{
+				return;
+			}
+
+			for (i = 0; i < min(item, pcount); i++)
+			{
+				UINT8 r = P_RandomRange(0, item-1);
+				UINT8 recursion = 0;
+				mobj_t *drop = NULL;
+				SINT8 flip = 1;
+
+				while (spotUsed[r] == true)
+				{
+					r = P_RandomRange(0, item-1);
+
+					if ((recursion++) > 32)
+					{
+						break;
+					}
+				}
+
+				flip = P_MobjFlip(spotList[r]);
+
+				drop = K_CreatePaperItem(
+					spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
+					FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+					0, 0
+				);
+
+				K_FlipFromObject(drop, spotList[r]);
+				spotUsed[r] = true;
+			}
+		}
+	}
+}
+
 static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 {
 	UINT8 i, j;
@@ -358,8 +479,6 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 		}
 	}
 }
-
-#undef MAXPLANESPERSECTOR
 
 void K_RunBattleOvertime(void)
 {

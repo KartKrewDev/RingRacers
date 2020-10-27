@@ -459,27 +459,28 @@ enum GameTypeRules
 	GTR_BOTS				= 1<<2,  // Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
 
 	// Battle gametype rules
-	GTR_SPHERES				= 1<<3,  // Replaces rings with blue spheres
-	GTR_BUMPERS				= 1<<4,  // Enables the bumper health system
-	GTR_WANTED				= 1<<5,  // Enables the wanted anti-camping system
-	GTR_KARMA				= 1<<6,  // Enables the Karma system if you're out of bumpers
-	GTR_ITEMARROWS			= 1<<7,  // Show item box arrows above players
-	GTR_CAPSULES			= 1<<8,  // Enables the wanted anti-camping system
-	GTR_BATTLESTARTS		= 1<<9,  // Use Battle Mode start positions.
+	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
+	GTR_SPHERES				= 1<<4,  // Replaces rings with blue spheres
+	GTR_PAPERITEMS			= 1<<5,  // Replaces item boxes with paper item spawners
+	GTR_WANTED				= 1<<6,  // Enables the wanted anti-camping system
+	GTR_KARMA				= 1<<7,  // Enables the Karma system if you're out of bumpers
+	GTR_ITEMARROWS			= 1<<8,  // Show item box arrows above players
+	GTR_CAPSULES			= 1<<9,  // Enables the wanted anti-camping system
+	GTR_BATTLESTARTS		= 1<<10, // Use Battle Mode start positions.
 
-	GTR_POINTLIMIT			= 1<<10,  // Reaching point limit ends the round
-	GTR_TIMELIMIT			= 1<<11, // Reaching time limit ends the round
-	GTR_OVERTIME			= 1<<12, // Allow overtime behavior
+	GTR_POINTLIMIT			= 1<<11,  // Reaching point limit ends the round
+	GTR_TIMELIMIT			= 1<<12, // Reaching time limit ends the round
+	GTR_OVERTIME			= 1<<13, // Allow overtime behavior
 
 	// Custom gametype rules
-	GTR_TEAMS				= 1<<13, // Teams are forced on
-	GTR_NOTEAMS				= 1<<14, // Teams are forced off
-	GTR_TEAMSTARTS			= 1<<15, // Use team-based start positions
+	GTR_TEAMS				= 1<<14, // Teams are forced on
+	GTR_NOTEAMS				= 1<<15, // Teams are forced off
+	GTR_TEAMSTARTS			= 1<<16, // Use team-based start positions
 
 	// Grand Prix rules
-	GTR_CAMPAIGN			= 1<<16, // Handles cup-based progression
-	GTR_LIVES				= 1<<17, // Lives system, players are forced to spectate during Game Over.
-	GTR_SPECIALBOTS			= 1<<18, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
+	GTR_CAMPAIGN			= 1<<17, // Handles cup-based progression
+	GTR_LIVES				= 1<<18, // Lives system, players are forced to spectate during Game Over.
+	GTR_SPECIALBOTS			= 1<<19, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
 
 	// free: to and including 1<<31
 };

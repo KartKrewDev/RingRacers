@@ -4342,6 +4342,118 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 	}
 }
 
+mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount)
+{
+	mobj_t *drop = P_SpawnMobj(x, y, z, MT_FLOATINGITEM);
+	P_SetScale(drop, drop->scale>>4);
+	drop->destscale = (3*drop->destscale)/2;
+
+	drop->angle = angle;
+	P_Thrust(drop,
+		FixedAngle(P_RandomFixed() * 180) + angle,
+		16*mapobjectscale);
+
+	drop->momz = flip * 3 * mapobjectscale;
+	if (drop->eflags & MFE_UNDERWATER)
+		drop->momz = (117 * drop->momz) / 200;
+
+	if (type == 0)
+	{
+		UINT8 useodds = 0;
+		INT32 spawnchance[NUMKARTRESULTS];
+		INT32 totalspawnchance = 0;
+		INT32 i;
+
+		memset(spawnchance, 0, sizeof (spawnchance));
+
+		useodds = amount;
+
+		for (i = 1; i < NUMKARTRESULTS; i++)
+			spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, 0, false, false, false));
+
+		if (totalspawnchance > 0)
+		{
+			UINT8 newType;
+			UINT8 newAmount;
+
+			totalspawnchance = P_RandomKey(totalspawnchance);
+			for (i = 0; i < NUMKARTRESULTS && spawnchance[i] <= totalspawnchance; i++);
+
+			// TODO: this is bad!
+			// K_KartGetItemResult requires a player
+			// but item roulette will need rewritten to change this
+
+			switch (i)
+			{
+				// Special roulettes first, then the generic ones are handled by default
+				case KRITEM_DUALSNEAKER: // Sneaker x2
+					newType = KITEM_SNEAKER;
+					newAmount = 2;
+					break;
+				case KRITEM_TRIPLESNEAKER: // Sneaker x3
+					newType = KITEM_SNEAKER;
+					newAmount = 3;
+					break;
+				case KRITEM_TRIPLEBANANA: // Banana x3
+					newType = KITEM_BANANA;
+					newAmount = 3;
+					break;
+				case KRITEM_TENFOLDBANANA: // Banana x10
+					newType = KITEM_BANANA;
+					newAmount = 10;
+					break;
+				case KRITEM_TRIPLEORBINAUT: // Orbinaut x3
+					newType = KITEM_ORBINAUT;
+					newAmount = 3;
+					break;
+				case KRITEM_QUADORBINAUT: // Orbinaut x4
+					newType = KITEM_ORBINAUT;
+					newAmount = 4;
+					break;
+				case KRITEM_DUALJAWZ: // Jawz x2
+					newType = KITEM_JAWZ;
+					newAmount = 2;
+					break;
+				default:
+					newType = i;
+					newAmount = 1;
+					break;
+			}
+
+			if (newAmount > 1)
+			{
+				UINT8 j;
+
+				for (j = 0; j < newAmount-1; j++)
+				{
+					K_CreatePaperItem(
+						x, y, z,
+						angle, flip,
+						newType, 1
+					);
+				}
+			}
+
+			drop->threshold = newType;
+			drop->movecount = 1;
+		}
+		else
+		{
+			drop->threshold = 1;
+			drop->movecount = 1;
+		}
+	}
+	else
+	{
+		drop->threshold = type;
+		drop->movecount = amount;
+	}
+
+	drop->flags |= MF_NOCLIPTHING;
+
+	return drop;
+}
+
 // For getting EXTRA hit!
 void K_DropItems(player_t *player)
 {
@@ -4349,24 +4461,13 @@ void K_DropItems(player_t *player)
 
 	if (player->mo && !P_MobjWasRemoved(player->mo) && player->kartstuff[k_itemamount] > 0)
 	{
-		mobj_t *drop = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_FLOATINGITEM);
-		P_SetScale(drop, drop->scale>>4);
-		drop->destscale = (3*drop->destscale)/2;
-
-		drop->angle = player->mo->angle + ANGLE_90;
-		P_Thrust(drop,
-			FixedAngle(P_RandomFixed()*180) + player->mo->angle + ANGLE_90,
-			16*mapobjectscale);
-		drop->momz = P_MobjFlip(player->mo)*3*mapobjectscale;
-		if (drop->eflags & MFE_UNDERWATER)
-			drop->momz = (117 * drop->momz) / 200;
-
-		drop->threshold = player->kartstuff[k_itemtype];
-		drop->movecount = player->kartstuff[k_itemamount];
+		mobj_t *drop = K_CreatePaperItem(
+			player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
+			player->mo->angle + ANGLE_90, P_MobjFlip(player->mo),
+			player->kartstuff[k_itemtype], player->kartstuff[k_itemamount]
+		);
 
 		K_FlipFromObject(drop, player->mo);
-
-		drop->flags |= MF_NOCLIPTHING;
 	}
 
 	K_StripItems(player);

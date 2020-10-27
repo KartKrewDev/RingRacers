@@ -6312,6 +6312,8 @@ typedef enum mobj_type
 	MT_WATERTRAIL,
 	MT_WATERTRAILUNDERLAY,
 
+	MT_PAPERITEMSPOT,
+
 #ifdef SEENAMES
 	MT_NAMECHECK,
 #endif

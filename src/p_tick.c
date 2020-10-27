@@ -595,6 +595,9 @@ void P_Ticker(boolean run)
 		if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
 			K_RunBattleOvertime();
 
+		if (gametyperules & GTR_PAPERITEMS)
+			K_RunPaperItemSpawners();
+
 		ps_lua_thinkframe_time = I_GetTimeMicros();
 		LUAh_ThinkFrame();
 		ps_lua_thinkframe_time = I_GetTimeMicros() - ps_lua_thinkframe_time;
@@ -754,6 +757,9 @@ void P_PreTicker(INT32 frames)
 
 		if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
 			K_RunBattleOvertime();
+
+		if (gametyperules & GTR_PAPERITEMS)
+			K_RunPaperItemSpawners();
 
 		LUAh_ThinkFrame();
 

@@ -20,6 +20,7 @@ boolean K_IsPlayerWanted(player_t *player);
 void K_CalculateBattleWanted(void);
 void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount);
 void K_CheckBumpers(void);
+void K_RunPaperItemSpawners(void);
 void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
 void K_SpawnBattleCapsules(void);

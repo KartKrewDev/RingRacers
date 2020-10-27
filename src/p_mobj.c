@@ -10512,6 +10512,9 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 	if ((gametyperules & GTR_SPHERES) && (i == MT_RING))
 		return MT_BLUESPHERE;
 
+	if ((gametyperules & GTR_PAPERITEMS) && (i == MT_RANDOMITEM))
+		return MT_PAPERITEMSPOT;
+
 	return i;
 }
 
