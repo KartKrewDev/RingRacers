@@ -1602,25 +1602,37 @@ musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
 int musicdef_volume;
 
-//
-// search for music definition in wad
-//
-static UINT16 W_CheckForMusicDefInPwad(UINT16 wadid)
-{
-	UINT16 i;
-	lumpinfo_t *lump_p;
+static boolean
+MusicDefError
+(
+		alerttype_t  level,
+		const char * description,
+		const char * field,
+		lumpnum_t    lumpnum,
+		int          line
+){
+	const wadfile_t  * wad  =    wadfiles[WADFILENUM (lumpnum)];
+	const lumpinfo_t * lump = &wad->lumpinfo[LUMPNUM (lumpnum)];
 
-	lump_p = wadfiles[wadid]->lumpinfo;
-	for (i = 0; i < wadfiles[wadid]->numlumps; i++, lump_p++)
-		if (memcmp(lump_p->name, "MUSICDEF", 8) == 0)
-			return i;
+	CONS_Alert(level,
+			va("%%s|%%s: %s (line %%d)\n", description),
+			wad->filename,
+			lump->fullname,
+			field,
+			line
+	);
 
-	return INT16_MAX; // not found
+	return false;
 }
 
 static boolean
-ReadMusicDefFields (UINT16 wadnum, int line, char *stoken, musicdef_t **defp)
-{
+ReadMusicDefFields
+(
+		lumpnum_t     lumpnum,
+		int           line,
+		char       *  stoken,
+		musicdef_t ** defp
+){
 	musicdef_t *def;
 
 	char *value;
@@ -1631,10 +1643,9 @@ ReadMusicDefFields (UINT16 wadnum, int line, char *stoken, musicdef_t **defp)
 		value = strtok(NULL, " ");
 		if (!value)
 		{
-			CONS_Alert(CONS_WARNING,
-					"MUSICDEF: Field '%s' is missing name. (file %s, line %d)\n",
-					stoken, wadfiles[wadnum]->filename, line);
-			return false;
+			return MusicDefError(CONS_WARNING,
+					"Field '%'s is missing name.",
+					stoken, lumpnum, line);
 		}
 		else
 		{
@@ -1678,10 +1689,9 @@ ReadMusicDefFields (UINT16 wadnum, int line, char *stoken, musicdef_t **defp)
 
 		if (!value)
 		{
-			CONS_Alert(CONS_WARNING,
-					"MUSICDEF: Field '%s' is missing value. (file %s, line %d)\n",
-					stoken, wadfiles[wadnum]->filename, line);
-			return false;
+			return MusicDefError(CONS_WARNING,
+					"Field '%s' is missing value.",
+					stoken, lumpnum, line);
 		}
 		else
 		{
@@ -1689,10 +1699,9 @@ ReadMusicDefFields (UINT16 wadnum, int line, char *stoken, musicdef_t **defp)
 
 			if (!def)
 			{
-				CONS_Alert(CONS_ERROR,
-						"MUSICDEF: No music definition before field '%s'. (file %s, line %d)\n",
-						stoken, wadfiles[wadnum]->filename, line);
-				return false;
+				return MusicDefError(CONS_ERROR,
+						"No music definition before field '%s'.",
+						stoken, lumpnum, line);
 			}
 
 			// Skip the equals sign.
@@ -1713,9 +1722,9 @@ ReadMusicDefFields (UINT16 wadnum, int line, char *stoken, musicdef_t **defp)
 			} else if (!stricmp(stoken, "volume")) {
 				def->volume = atoi(textline);
 			} else {
-				CONS_Alert(CONS_WARNING,
-						"MUSICDEF: Invalid field '%s'. (file %s, line %d)\n",
-						stoken, wadfiles[wadnum]->filename, line);
+				MusicDefError(CONS_WARNING,
+						"Unknown field '%s'.",
+						stoken, lumpnum, line);
 			}
 		}
 	}
@@ -1723,9 +1732,8 @@ ReadMusicDefFields (UINT16 wadnum, int line, char *stoken, musicdef_t **defp)
 	return true;
 }
 
-void S_LoadMusicDefs(UINT16 wadnum)
+static void S_LoadMusicDefLump(lumpnum_t lumpnum)
 {
-	UINT16 lumpnum;
 	char *lump;
 	char *musdeftext;
 	size_t size;
@@ -1739,12 +1747,8 @@ void S_LoadMusicDefs(UINT16 wadnum)
 	musicdef_t *def = NULL;
 	int line = 1; // for better error msgs
 
-	lumpnum = W_CheckForMusicDefInPwad(wadnum);
-	if (lumpnum == INT16_MAX)
-		return;
-
-	lump = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
-	size = W_LumpLengthPwad(wadnum, lumpnum);
+	lump = W_CacheLumpNum(lumpnum, PU_CACHE);
+	size = W_LumpLength(lumpnum);
 
 	// Null-terminated MUSICDEF lump.
 	musdeftext = malloc(size+1);
@@ -1770,7 +1774,7 @@ void S_LoadMusicDefs(UINT16 wadnum)
 		stoken = strtok(stoken, " ");
 		if (stoken)
 		{
-			if (! ReadMusicDefFields(wadnum, line, stoken, &def))
+			if (! ReadMusicDefFields(lumpnum, line, stoken, &def))
 				break;
 		}
 
@@ -1793,6 +1797,20 @@ void S_LoadMusicDefs(UINT16 wadnum)
 	}
 
 	free(musdeftext);
+}
+
+void S_LoadMusicDefs(UINT16 wad)
+{
+	const lumpnum_t wadnum = wad << 16;
+
+	UINT16 lump = 0;
+
+	while (( lump = W_CheckNumForNamePwad("MUSICDEF", wad, lump) ) != INT16_MAX)
+	{
+		S_LoadMusicDefLump(wadnum | lump);
+
+		lump++;
+	}
 }
 
 //
