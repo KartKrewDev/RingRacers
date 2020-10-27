@@ -9945,7 +9945,7 @@ mobjtype_t P_GetMobjtype(UINT16 mthingtype)
 void P_RespawnSpecials(void)
 {
 	UINT8 p, pcount = 0;
-	tic_t time = 30*TICRATE; // Respawn things in empty dedicated servers
+	INT32 time = 30*TICRATE; // Respawn things in empty dedicated servers
 	mapthing_t *mthing = NULL;
 
 	if (!(gametyperules & GTR_CIRCUIT) && numgotboxes >= (4*nummapboxes/5)) // Battle Mode respawns all boxes in a different way
@@ -9993,7 +9993,7 @@ void P_RespawnSpecials(void)
 		return;
 
 	// the first item in the queue is the first to respawn
-	if (leveltime - itemrespawntime[iquetail] < time)
+	if (leveltime - itemrespawntime[iquetail] < (tic_t)time)
 		return;
 
 	mthing = itemrespawnque[iquetail];

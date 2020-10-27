@@ -501,7 +501,7 @@ void K_RunBattleOvertime(void)
 	if (battleovertime.radius > 0)
 	{
 		const fixed_t pi = (22 * FRACUNIT) / 7; // loose approximation, this doesn't need to be incredibly precise
-		const UINT32 orbs = 32;
+		const INT32 orbs = 32;
 		const angle_t angoff = ANGLE_MAX / orbs;
 		const UINT8 spriteSpacing = 128;
 
