@@ -282,7 +282,7 @@ void K_RunPaperItemSpawners(void)
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
 	tic_t interval = 8*TICRATE;
 
-	if (leveltime <= starttime)
+	if (leveltime < starttime)
 	{
 		return;
 	}
@@ -297,7 +297,7 @@ void K_RunPaperItemSpawners(void)
 		interval /= 2;
 	}
 
-	if (((leveltime - starttime - (interval / 2)) % interval) != 0)
+	if (((leveltime - starttime) % interval) != 0)
 	{
 		return;
 	}
