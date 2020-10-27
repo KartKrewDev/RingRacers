@@ -107,8 +107,10 @@ static angle_t gl_xtoviewangle[MAXVIDWIDTH+1];
 
 // base values set at SetViewSize
 static float gl_basecentery;
+static float gl_basecenterx;
 
 float gl_baseviewwindowy, gl_basewindowcentery;
+float gl_baseviewwindowx, gl_basewindowcenterx;
 float gl_viewwidth, gl_viewheight; // viewport clipping boundaries (screen coords)
 float gl_viewwindowx;
 
@@ -5597,26 +5599,45 @@ void HWR_SetViewSize(void)
 		}
 	}
 
-	gl_centerx = gl_viewwidth / 2;
-	gl_basecentery = gl_viewheight / 2; //note: this is (gl_centerx * gl_viewheight / gl_viewwidth)
+	gl_basecenterx = gl_viewwidth / 2;
+	gl_basecentery = gl_viewheight / 2;
 
-	gl_viewwindowx = (vid.width - gl_viewwidth) / 2;
-	gl_windowcenterx = (float)(vid.width / 2);
-	if (fabsf(gl_viewwidth - vid.width) < 1.0E-36f)
-	{
-		gl_baseviewwindowy = 0;
-		gl_basewindowcentery = gl_viewheight / 2;               // window top left corner at 0,0
-	}
-	else
-	{
-		gl_baseviewwindowy = (vid.height-gl_viewheight) / 2;
-		gl_basewindowcentery = (float)(vid.height / 2);
-	}
+	gl_baseviewwindowx = 0;
+	gl_basewindowcenterx = gl_viewwidth / 2;
+
+	gl_baseviewwindowy = 0;
+	gl_basewindowcentery = gl_viewheight / 2;
 
 	gl_pspritexscale = gl_viewwidth / BASEVIDWIDTH;
 	gl_pspriteyscale = ((vid.height*gl_pspritexscale*BASEVIDWIDTH)/BASEVIDHEIGHT)/vid.width;
 
 	HWD.pfnFlushScreenTextures();
+}
+
+// -------------------+
+// HWR_ShiftViewPort  : offset viewport according to current split
+// -------------------+
+static void HWR_ShiftViewPort(void)
+{
+	gl_centerx = gl_basecenterx;
+	gl_viewwindowx = gl_baseviewwindowx;
+	gl_windowcenterx = gl_basewindowcenterx;
+
+	gl_centery = gl_basecentery;
+	gl_viewwindowy = gl_baseviewwindowy;
+	gl_windowcentery = gl_basewindowcentery;
+
+	if (viewssnum > ( r_splitscreen > 1 ))
+	{
+		gl_viewwindowy += gl_viewheight;
+		gl_windowcentery += gl_viewheight;
+	}
+
+	if (r_splitscreen > 1 && viewssnum & 1)
+	{
+		gl_viewwindowx += gl_viewwidth;
+		gl_windowcenterx += gl_viewwidth;
+	}
 }
 
 // Set view aiming, for the sky dome, the skybox,
@@ -5670,14 +5691,7 @@ void HWR_RenderSkyboxView(player_t *player)
 	dup_viewangle = viewangle;
 
 	// set window position
-	gl_centery = gl_basecentery;
-	gl_viewwindowy = gl_baseviewwindowy;
-	gl_windowcentery = gl_basewindowcentery;
-	if (viewssnum == 1)
-	{
-		gl_viewwindowy += (vid.height/2);
-		gl_windowcentery += (vid.height/2);
-	}
+	HWR_ShiftViewPort();
 
 	// check for new console commands.
 	NetUpdate();
@@ -5878,14 +5892,7 @@ void HWR_RenderPlayerView(void)
 	dup_viewangle = viewangle;
 
 	// set window position
-	gl_centery = gl_basecentery;
-	gl_viewwindowy = gl_baseviewwindowy;
-	gl_windowcentery = gl_basewindowcentery;
-	if (viewssnum == 1)
-	{
-		gl_viewwindowy += (vid.height/2);
-		gl_windowcentery += (vid.height/2);
-	}
+	HWR_ShiftViewPort();
 
 	// check for new console commands.
 	NetUpdate();

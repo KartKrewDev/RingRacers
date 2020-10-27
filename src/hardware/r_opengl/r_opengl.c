@@ -2848,7 +2848,7 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 		pglRotatef(stransform->angley+270.0f, 0.0f, 1.0f, 0.0f);
 		pglTranslatef(-stransform->x, -stransform->z, -stransform->y);
 
-		special_splitscreen = stransform->splitscreen;
+		special_splitscreen = (stransform->splitscreen == 1);
 		shearing = stransform->shearing;
 	}
 	else
