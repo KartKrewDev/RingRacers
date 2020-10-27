@@ -332,6 +332,11 @@ static inline void P_RunThinkers(void)
 		ps_thlist_times[i] = I_GetTimeMicros() - ps_thlist_times[i];
 	}
 
+	if (gametyperules & GTR_PAPERITEMS)
+		K_RunPaperItemSpawners();
+
+	if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
+		K_RunBattleOvertime();
 }
 
 //
@@ -592,12 +597,6 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
-			K_RunBattleOvertime();
-
-		if (gametyperules & GTR_PAPERITEMS)
-			K_RunPaperItemSpawners();
-
 		ps_lua_thinkframe_time = I_GetTimeMicros();
 		LUAh_ThinkFrame();
 		ps_lua_thinkframe_time = I_GetTimeMicros() - ps_lua_thinkframe_time;
@@ -754,12 +753,6 @@ void P_PreTicker(INT32 frames)
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
-
-		if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
-			K_RunBattleOvertime();
-
-		if (gametyperules & GTR_PAPERITEMS)
-			K_RunPaperItemSpawners();
 
 		LUAh_ThinkFrame();
 
