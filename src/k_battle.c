@@ -344,6 +344,8 @@ void K_RunPaperItemSpawners(void)
 			thinker_t *th;
 			mobj_t *mo;
 
+			memset(spotUsed, false, sizeof(spotUsed));
+
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
 				if (item >= MAXITEM)
