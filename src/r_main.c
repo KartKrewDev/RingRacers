@@ -601,6 +601,12 @@ static inline void R_InitLightTables(void)
 //#define WOUGHMP_WOUGHMP // I got a fish-eye lens - I'll make a rap video with a couple of friends
 // it's kinda laggy sometimes
 
+#ifdef WOUGHMP_WOUGHMP
+#define AHHHH_IM_SO_MAAAAD { 0U, 0, FRACUNIT, NULL, 0, 0, {0}, {0}, false }
+#else
+#define AHHHH_IM_SO_MAAAAD { 0U,    FRACUNIT, NULL, 0, 0, {0}, {0}, false }
+#endif
+
 static struct viewmorph {
 	angle_t rollangle; // pre-shifted by fineshift
 #ifdef WOUGHMP_WOUGHMP
@@ -615,7 +621,14 @@ static struct viewmorph {
 	INT16 ceilingclip[MAXVIDWIDTH], floorclip[MAXVIDWIDTH];
 
 	boolean use;
-} viewmorph[MAXSPLITSCREENPLAYERS] = {0};
+} viewmorph[MAXSPLITSCREENPLAYERS] = {
+	AHHHH_IM_SO_MAAAAD,
+	AHHHH_IM_SO_MAAAAD,
+	AHHHH_IM_SO_MAAAAD,
+	AHHHH_IM_SO_MAAAAD,
+};
+
+#undef AHHHH_IM_SO_MAAAAD
 
 void R_CheckViewMorph(int s)
 {
@@ -642,11 +655,6 @@ void R_CheckViewMorph(int s)
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
 #endif
-
-	if (v->zoomneeded == 0)
-	{
-		v->zoomneeded = FRACUNIT;
-	}
 
 	rollangle >>= ANGLETOFINESHIFT;
 	rollangle = ((rollangle+2) & ~3) & FINEMASK; // Limit the distinct number of angles to reduce recalcs from angles changing a lot.

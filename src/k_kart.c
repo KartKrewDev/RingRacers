@@ -2313,7 +2313,7 @@ SINT8 K_GetForwardMove(player_t *player)
 	return forwardmove;
 }
 
-fixed_t K_3dKartMovement(player_t *player, boolean onground)
+fixed_t K_3dKartMovement(player_t *player)
 {
 	const fixed_t accelmax = 4000;
 	const fixed_t p_speed = K_GetKartSpeed(player, true);
@@ -2322,8 +2322,6 @@ fixed_t K_3dKartMovement(player_t *player, boolean onground)
 	fixed_t movemul = FRACUNIT;
 	fixed_t orig = ORIG_FRICTION;
 	SINT8 forwardmove = K_GetForwardMove(player);
-
-	if (!onground) return 0; // If the player isn't on the ground, there is no change in speed
 
 	if (K_PlayerUsesBotMovement(player))
 	{
