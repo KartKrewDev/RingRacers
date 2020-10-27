@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -98,6 +98,9 @@ struct sfxinfo_struct
 
 	// lump number of sfx
 	lumpnum_t lumpnum;
+
+	// closed caption info/wiki table bait
+	char caption[32];
 };
 
 // the complete set of sound effects
@@ -153,6 +156,8 @@ typedef enum
 	sfx_steam1,
 	sfx_steam2,
 	sfx_wbreak,
+	sfx_ambmac,
+	sfx_spsmsh,
 
 	sfx_rainin,
 	sfx_litng1,
@@ -224,6 +229,7 @@ typedef enum
 	sfx_drown,
 	sfx_fizzle,
 	sfx_gbeep,
+	sfx_wepfir,
 	sfx_ghit,
 	sfx_gloop,
 	sfx_gspray,
@@ -235,12 +241,19 @@ typedef enum
 	sfx_lvpass,
 	sfx_mindig,
 	sfx_mixup,
+	sfx_monton,
 	sfx_pogo,
 	sfx_pop,
 	sfx_rail1,
 	sfx_rail2,
 	sfx_rlaunc,
 	sfx_shield,
+	sfx_wirlsg,
+	sfx_forcsg,
+	sfx_frcssg,
+	sfx_elemsg,
+	sfx_armasg,
+	sfx_attrsg,
 	sfx_shldls,
 	sfx_spdpad,
 	sfx_spkdth,
@@ -256,8 +269,24 @@ typedef enum
 	sfx_trpowr,
 	sfx_turhit,
 	sfx_wdjump,
+	sfx_shrpsp,
+	sfx_shrpgo,
 	sfx_mswarp,
 	sfx_mspogo,
+	sfx_boingf,
+	sfx_corkp,
+	sfx_corkh,
+	sfx_alart,
+	sfx_vwre,
+	sfx_bowl,
+	sfx_chuchu,
+	//sfx_bsnipe,
+	sfx_sprong,
+	sfx_lvfal1,
+	sfx_pscree,
+	sfx_iceb,
+	sfx_shattr,
+	sfx_antiri,
 
 	// Menu, interface
 	sfx_chchng,
@@ -271,12 +300,16 @@ typedef enum
 	sfx_wepchg,
 	sfx_wtrdng,
 	sfx_zelda,
+	sfx_adderr,
+	sfx_notadd,
+	sfx_addfil,
 
 	// NiGHTS
 	sfx_ideya,
 	sfx_xideya, // Xmas
 	sfx_nbmper,
 	sfx_nxbump, // Xmas
+	sfx_ncchip,
 	sfx_ncitem,
 	sfx_nxitem, // Xmas
 	sfx_ngdone,
@@ -291,7 +324,15 @@ typedef enum
 	sfx_hoop3,
 	sfx_hidden,
 	sfx_prloop,
-	sfx_timeup, // Was gonna be played when less than ten seconds are on the clock; uncomment uses of this to see it in-context
+	sfx_timeup,
+	sfx_ngjump,
+	sfx_peww,
+
+	// Halloween
+	sfx_lntsit,
+	sfx_lntdie,
+	sfx_pumpkn,
+	sfx_ghosty,
 
 	// Mario
 	sfx_koopfr,
@@ -474,6 +515,7 @@ typedef enum
 	sfx_s270,
 
 	// S3&K sounds
+	sfx_s3k2b,
 	sfx_s3k33,
 	sfx_s3k34,
 	sfx_s3k35,
@@ -595,6 +637,21 @@ typedef enum
 	sfx_s3ka9,
 	sfx_s3kaa,
 	sfx_s3kab,
+	sfx_s3kab1,
+	sfx_s3kab2,
+	sfx_s3kab3,
+	sfx_s3kab4,
+	sfx_s3kab5,
+	sfx_s3kab6,
+	sfx_s3kab7,
+	sfx_s3kab8,
+	sfx_s3kab9,
+	sfx_s3kaba,
+	sfx_s3kabb,
+	sfx_s3kabc,
+	sfx_s3kabd,
+	sfx_s3kabe,
+	sfx_s3kabf,
 	sfx_s3kac,
 	sfx_s3kad,
 	sfx_s3kae,
@@ -1060,6 +1117,7 @@ typedef enum
 
 void S_InitRuntimeSounds(void);
 sfxenum_t S_AddSoundFx(const char *name, boolean singular, INT32 flags, boolean skinsound);
+extern sfxenum_t sfxfree; // sound test and slotting
 void S_RemoveSoundFx(sfxenum_t id);
 
 #endif

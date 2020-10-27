@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -22,33 +22,10 @@
 // keys (mousebuttons and joybuttons becomes keys)
 #define NUMKEYS 256
 
-
-#ifdef _arch_dreamcast
-#define MOUSEBUTTONS 5
-#define JOYBUTTONS   8 //  8 buttons
-#define JOYHATS      2  // 2 hats
-#define JOYAXISSET   3  // 3 Sets of 2 axises
-#elif defined (_XBOX)
-#define MOUSEBUTTONS 5
-#define JOYBUTTONS   12 // 12 buttons
-#define JOYHATS      1  // 1 hat
-#define JOYAXISSET   2  // 2 Sets of 2 axises
-#elif defined (_PSP)
-#define MOUSEBUTTONS 3
-#define JOYBUTTONS   14 // 10 buttons
-#define JOYHATS      1  // 1 hat
-#define JOYAXISSET   1  // 1 Set of 2 axises
-#elif defined (_WII)
-#define MOUSEBUTTONS 3
-#define JOYBUTTONS   20 // 20 buttons
-#define JOYHATS      1  // 1 hat
-#define JOYAXISSET   5  // 5 Sets of 2 axises
-#else
 #define MOUSEBUTTONS 8
 #define JOYBUTTONS   32 // 32 buttons
 #define JOYHATS      4  // 4 hats
 #define JOYAXISSET   4  // 4 Sets of 2 axises
-#endif
 
 //
 // mouse and joystick buttons are handled as 'virtual' keys
@@ -124,6 +101,13 @@ typedef enum
 	num_gamecontrols
 } gamecontrols_e;
 
+typedef enum
+{
+	gcs_custom,
+	gcs_kart, // Kart doesn't really need this code, like, at all? But I don't feel like removing it.
+	num_gamecontrolschemes
+} gamecontrolschemes_e;
+
 // mouse values are used once
 extern consvar_t cv_mousesens, cv_mouseysens;
 extern consvar_t cv_mousesens2, cv_mouseysens2;
@@ -131,23 +115,32 @@ extern consvar_t cv_controlperkey;
 
 extern INT32 mousex, mousey;
 extern INT32 mlooky; //mousey with mlookSensitivity
-extern INT32 mouse2x, mouse2y, mlook2y;
 
-extern INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymove[JOYAXISSET],
-	joy3xmove[JOYAXISSET], joy3ymove[JOYAXISSET], joy4xmove[JOYAXISSET], joy4ymove[JOYAXISSET];
+extern INT32 joyxmove[MAXSPLITSCREENPLAYERS][JOYAXISSET], joyymove[MAXSPLITSCREENPLAYERS][JOYAXISSET];
 
 // current state of the keys: true if pushed
 extern UINT8 gamekeydown[NUMINPUTS];
 
 // two key codes (or virtual key) per game control
-extern INT32 gamecontrol[num_gamecontrols][2];
-extern INT32 gamecontrolbis[num_gamecontrols][2]; // secondary splitscreen player
-extern INT32 gamecontrol3[num_gamecontrols][2];
-extern INT32 gamecontrol4[num_gamecontrols][2];
-#define PLAYER1INPUTDOWN(gc) (gamekeydown[gamecontrol[gc][0]] || gamekeydown[gamecontrol[gc][1]])
-#define PLAYER2INPUTDOWN(gc) (gamekeydown[gamecontrolbis[gc][0]] || gamekeydown[gamecontrolbis[gc][1]])
-#define PLAYER3INPUTDOWN(gc) (gamekeydown[gamecontrol3[gc][0]] || gamekeydown[gamecontrol3[gc][1]])
-#define PLAYER4INPUTDOWN(gc) (gamekeydown[gamecontrol4[gc][0]] || gamekeydown[gamecontrol4[gc][1]])
+extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][2];
+extern INT32 gamecontroldefault[MAXSPLITSCREENPLAYERS][num_gamecontrolschemes][num_gamecontrols][2]; // default control storage, use 0 (gcs_custom) for memory retention
+#define PlayerInputDown(p, gc) (gamekeydown[gamecontrol[p-1][gc][0]] || gamekeydown[gamecontrol[p-1][gc][1]])
+
+#define num_gcl_accelerate 1
+#define num_gcl_brake 1
+#define num_gcl_drift 1
+#define num_gcl_spindash 3
+#define num_gcl_movement 5
+#define num_gcl_item 3
+#define num_gcl_full 9
+
+extern const INT32 gcl_accelerate[num_gcl_accelerate];
+extern const INT32 gcl_brake[num_gcl_brake];
+extern const INT32 gcl_drift[num_gcl_drift];
+extern const INT32 gcl_spindash[num_gcl_spindash];
+extern const INT32 gcl_movement[num_gcl_movement];
+extern const INT32 gcl_item[num_gcl_item];
+extern const INT32 gcl_full[num_gcl_full];
 
 // peace to my little coder fingers!
 // check a gamecontrol being active or not
@@ -166,8 +159,10 @@ void Command_Setcontrol_f(void);
 void Command_Setcontrol2_f(void);
 void Command_Setcontrol3_f(void);
 void Command_Setcontrol4_f(void);
-void G_Controldefault(UINT8 player);
-void G_SaveKeySetting(FILE *f);
+void G_DefineDefaultControls(void);
+INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
+void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
+void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[2], INT32 (*fromcontrolsb)[2], INT32 (*fromcontrolsc)[2], INT32 (*fromcontrolsd)[2]);
 INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify);
 
 #endif

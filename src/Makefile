@@ -2,19 +2,17 @@
 #     GNU Make makefile for SRB2
 #############################################################################
 # Copyright (C) 1998-2000 by DooM Legacy Team.
-# Copyright (C) 2003-2018 by Sonic Team Junior.
+# Copyright (C) 2003-2020 by Sonic Team Junior.
 #
 # This program is free software distributed under the
 # terms of the GNU General Public License, version 2.
 # See the 'LICENSE' file for more details.
 #
-#     -DPC_DOS    -> use DOS specific code (eg:textmode stuff)...
 #     -DLINUX     -> use for the GNU/Linux specific
 #     -D_WINDOWS  -> use for the Win32/DirectX specific
 #     -DHAVE_SDL  -> use for the SDL interface
 #
 # Sets:
-#     Compile the DGJPP/DOS version with 'make WATTCP=1'
 #     Compile the DirectX/Mingw version with 'make MINGW=1'
 #     Compile the SDL/Mingw version with 'make MINGW=1 SDL=1'
 #     Compile the SDL/Linux version with 'make LINUX=1'
@@ -34,8 +32,6 @@
 #       compile all HW render and 3D sound DLLs for the set
 #     opengl_dll
 #       Pure Mingw only, compile OpenGL HW render DLL
-#     minigl_dll
-#       Pure Mingw only, compile MiniGL HW render DLL
 #     ds3d_dll
 #       Pure Mingw only, compile DirectX DirectSound HW sound DLL
 #     fmod_dll
@@ -72,9 +68,12 @@
 # Addon for SDL:
 #     To Cross-Compile, add 'SDL_CONFIG=/usr/*/bin/sdl-config'
 #     Compile without SDL_Mixer, add 'NOMIXER=1'
+#     Compile without SDL_Mixer_X, add 'NOMIXERX=1' (Win32 only)
+#     Compile without GME, add 'NOGME=1'
 #     Compile without BSD API, add 'NONET=1'
 #     Compile without IPX/SPX, add 'NOIPX=1'
 #     Compile Mingw/SDL with S_DS3S, add 'DS3D=1'
+#     Compile without libopenmpt, add 'NOOPENMPT=1'
 #     Compile with S_FMOD3D, add 'FMOD=1' (WIP)
 #     Compile with S_OPENAL, add 'OPENAL=1' (WIP)
 #     To link with the whole SDL_Image lib to load Icons, add 'SDL_IMAGE=1' but it isn't not realy needed
@@ -147,10 +146,6 @@ D_FILES=$(D_DIR)/main.kart \
 
 PKG_CONFIG?=pkg-config
 
-ifdef WIILINUX
-LINUX=1
-endif
-
 ifdef PANDORA
 LINUX=1
 endif
@@ -172,12 +167,6 @@ endif #ifdef MINGW64
 
 ifdef HAIKU
 SDL=1
-endif
-
-ifdef NDS
-# Include this before the main Makefile.cfg
-EXENAME?=srb2.elf
-include nds/Makefile.cfg
 endif
 
 include Makefile.cfg
@@ -205,33 +194,13 @@ PNG_CFLAGS?=
 PNG_LDFLAGS?=-lpng
 endif
 
-ifdef WIILINUX
-NONX86=1
-NOTERMIOS=1
-NOHW=1
-CFLAGS+=-DWMINPUT
-NOTERMIOS=1
-NOPOSTPROCESSING=1
-endif
-
 ifdef PANDORA
 NONX86=1
 NOHW=1
 endif
 
-ifdef WII
-NONX86=1
-NOHW=1
-NOPOSTPROCESSING=1
-endif
-
-ifdef PS3N
-NONX86=1
-NOHW=1
-endif
-
-ifdef DJGPPDOS
-include djgppdos/Makefile.cfg
+ifndef NOOPENMPT
+HAVE_OPENMPT=1
 endif
 
 ifdef MINGW
@@ -261,26 +230,8 @@ ifdef MACOSX
 UNIXCOMMON=1
 endif
 
-ifdef NDS
-NOPNG=1
-NOZLIB=1
-NONET=1
-#NOHW=1
-NOASM=1
-NOIPX=1
-NONX86=1
-OBJS+=$(OBJDIR)/i_video.o
-LIBS+=-lm
-endif
-
 ifdef SDL
-#SDL 2.0
-ifndef SDL12
 	include sdl/Makefile.cfg
-#SDL 1.2
-else
-	include sdl12/Makefile.cfg
-endif #ifndef SDL12
 endif #ifdef SDL
 
 ifdef DISTCC
@@ -302,11 +253,7 @@ ifndef ECHO
 	OBJDUMP:=@$(OBJDUMP)
 	STRIP:=@$(STRIP)
 	WINDRES:=@$(WINDRES)
-	CP:=@$(CP)
 	MKDIR:=@$(MKDIR)
-	MKISOFS:=@$(MKISOFS)
-	DD:=@$(DD)
-	NDSTOOL:=@$(NDSTOOL)
 	GZIP:=@$(GZIP)
 	MSGFMT:=@$(MSGFMT)
 	UPX:=@$(UPX)
@@ -325,14 +272,10 @@ endif
 ifdef NOHW
 	OPTS+=-DNOHW
 else
-ifndef DC
-	#Hurdler: not really supported and not tested recently
-	#OPTS+=-DUSE_PALETTED_TEXTURE
-endif
 	OPTS+=-DHWRENDER
 	OBJS+=$(OBJDIR)/hw_bsp.o $(OBJDIR)/hw_draw.o $(OBJDIR)/hw_light.o \
-		 $(OBJDIR)/hw_main.o $(OBJDIR)/hw_clip.o $(OBJDIR)/hw_md2.o $(OBJDIR)/hw_cache.o $(OBJDIR)/hw_trick.o \
-		 $(OBJDIR)/hw_md2load.o $(OBJDIR)/hw_md3load.o $(OBJDIR)/hw_model.o $(OBJDIR)/u_list.o
+		 $(OBJDIR)/hw_main.o $(OBJDIR)/hw_clip.o $(OBJDIR)/hw_md2.o $(OBJDIR)/hw_cache.o \
+		 $(OBJDIR)/hw_md2load.o $(OBJDIR)/hw_md3load.o $(OBJDIR)/hw_model.o $(OBJDIR)/u_list.o $(OBJDIR)/hw_batching.o
 endif
 
 OPTS += -DCOMPVERSION
@@ -399,6 +342,17 @@ LIBS+=$(LIBGME_LDFLAGS)
 CFLAGS+=$(LIBGME_CFLAGS)
 endif
 
+ifdef HAVE_OPENMPT
+OPTS+=-DHAVE_OPENMPT
+
+LIBOPENMPT_PKGCONFIG?=libopenmpt
+LIBOPENMPT_CFLAGS?=$(shell $(PKG_CONFIG) $(LIBOPENMPT_PKGCONFIG) --cflags)
+LIBOPENMPT_LDFLAGS?=$(shell $(PKG_CONFIG) $(LIBOPENMPT_PKGCONFIG) --libs)
+
+LIBS+=$(LIBOPENMPT_LDFLAGS)
+CFLAGS+=$(LIBOPENMPT_CFLAGS)
+endif
+
 ifndef NOZLIB
 OPTS+=-DHAVE_ZLIB
 ZLIB_PKGCONFIG?=zlib
@@ -443,22 +397,12 @@ CFLAGS+=-DHAVE_DISCORDRPC
 OBJS+=$(OBJDIR)/discord.o
 endif
 
-ifndef NO_LUA
-	include blua/Makefile.cfg
-endif
+include blua/Makefile.cfg
 
 ifdef NOMD5
 	OPTS+=-DNOMD5
 else
 	OBJS:=$(OBJDIR)/md5.o $(OBJS)
-endif
-
-ifdef FAKEDC
-	OPTS+=-DDC
-endif
-
-ifdef FAKEPSP
-	OPTS+=-DPSP
 endif
 
 ifdef NOPOSTPROCESSING
@@ -544,6 +488,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/z_zone.o   \
 		$(OBJDIR)/f_finale.o \
 		$(OBJDIR)/f_wipe.o   \
+		$(OBJDIR)/g_demo.o   \
 		$(OBJDIR)/g_game.o   \
 		$(OBJDIR)/g_input.o  \
 		$(OBJDIR)/g_splitscreen.o\
@@ -563,6 +508,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/m_fixed.o  \
 		$(OBJDIR)/m_menu.o   \
 		$(OBJDIR)/m_misc.o   \
+		$(OBJDIR)/m_perfstats.o \
 		$(OBJDIR)/m_random.o \
 		$(OBJDIR)/m_queue.o  \
 		$(OBJDIR)/info.o     \
@@ -590,9 +536,13 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/r_main.o   \
 		$(OBJDIR)/r_plane.o  \
 		$(OBJDIR)/r_segs.o   \
+		$(OBJDIR)/r_skins.o  \
 		$(OBJDIR)/r_sky.o    \
 		$(OBJDIR)/r_splats.o \
 		$(OBJDIR)/r_things.o \
+		$(OBJDIR)/r_textures.o \
+		$(OBJDIR)/r_picformats.o \
+		$(OBJDIR)/r_portal.o \
 		$(OBJDIR)/screen.o   \
 		$(OBJDIR)/v_video.o  \
 		$(OBJDIR)/s_sound.o  \
@@ -634,52 +584,19 @@ POS:=$(BIN)/en.mo
 OPTS+=-DGETTEXT
 endif
 
-ifdef DJGPPDOS
-all:	 pre-build $(BIN)/$(EXENAME)
-endif
-
-ifdef XBOX
-all:	 pre-build $(BIN)/$(BINNAME)
-endif
-
-ifdef PS3N
-all:	 pre-build $(BIN)/$(PKGNAME)
-endif
-
-ifdef WII
-all:	pre-build $(BIN)/$(DOLNAME)
-endif
-
 ifdef PANDORA
 all:	pre-build $(BIN)/$(PNDNAME)
 endif
 
-ifdef PSP
-all:	 pre-build $(BIN)/$(BINNAME) post-build
-endif
 
-ifdef DC
-all:	 pre-build $(BIN)/$(BINNAME) post-build
-endif
-
-ifndef DC
-ifndef PSP
-ifndef XBOX
 ifdef MINGW
 ifndef SDL
 all:	 pre-build $(BIN)/$(EXENAME) dll
 endif
 endif
-endif
-endif
 
 ifdef SDL
 all:	 pre-build $(BIN)/$(EXENAME)
-endif
-endif
-
-ifdef NDS
-all:	$(BIN)/$(EXENAME:.elf=.nds)
 endif
 
 ifdef DUMMY
@@ -726,19 +643,18 @@ ifndef VALGRIND
 ifndef NOOBJDUMP
 	@echo Dumping debugging info
 	$(OBJDUMP) $(OBJDUMP_OPTS) $(BIN)/$(EXENAME) > $(BIN)/$(DBGNAME).txt
+ifdef WINDOWSHELL
 	-$(GZIP) $(GZIP_OPTS) $(BIN)/$(DBGNAME).txt
-ifndef WINDOWSHELL
+else
 	-$(GZIP) $(GZIP_OPT2) $(BIN)/$(DBGNAME).txt
 endif
 endif
 
 # mac os x lsdlsrb2 does not like objcopy
 ifndef MACOSX
-ifndef PSP
 	$(OBJCOPY) $(BIN)/$(EXENAME) $(BIN)/$(DBGNAME)
 	$(OBJCOPY) --strip-debug $(BIN)/$(EXENAME)
 	-$(OBJCOPY) --add-gnu-debuglink=$(BIN)/$(DBGNAME) $(BIN)/$(EXENAME)
-endif
 endif
 ifndef NOUPX
 	-$(UPX) $(UPX_OPTS) $(BIN)/$(EXENAME)
@@ -749,8 +665,9 @@ endif
 reobjdump:
 	@echo Redumping debugging info
 	$(OBJDUMP) $(OBJDUMP_OPTS) $(BIN)/$(DBGNAME) > $(BIN)/$(DBGNAME).txt
+ifdef WINDOWSHELL
 	-$(GZIP) $(GZIP_OPTS) $(BIN)/$(DBGNAME).txt
-ifndef WINDOWSHELL
+else
 	-$(GZIP) $(GZIP_OPT2) $(BIN)/$(DBGNAME).txt
 endif
 
@@ -764,7 +681,7 @@ else
 dll : opengl_dll
 endif
 ifdef MINGW
-all_dll: opengl_dll minigl_dll ds3d_dll fmod_dll openal_dll
+all_dll: opengl_dll ds3d_dll fmod_dll openal_dll
 
 opengl_dll: $(BIN)/r_opengl.dll
 $(BIN)/r_opengl.dll: $(OBJDIR)/ogl_win.o $(OBJDIR)/r_opengl.o
@@ -774,12 +691,6 @@ $(BIN)/r_opengl.dll: $(OBJDIR)/ogl_win.o $(OBJDIR)/r_opengl.o
 ifndef NOUPX
 	-$(UPX) $(UPX_OPTS) $@
 endif
-
-minigl_dll: $(BIN)/r_minigl.dll
-$(BIN)/r_minigl.dll: $(OBJDIR)/r_minigl.o
-	-$(MKDIR) $(BIN)
-	@echo Linking R_MiniGL.dll...
-	$(CC) --shared  $^ -o $@ -g -Wl,--add-stdcall-alias -lgdi32
 
 ds3d_dll: $(BIN)/s_ds3d.dll
 $(BIN)/s_ds3d.dll: $(OBJDIR)/s_ds3d.o
@@ -818,8 +729,8 @@ ifdef SDL
 ifdef MINGW
 $(OBJDIR)/r_opengl.o: hardware/r_opengl/r_opengl.c hardware/r_opengl/r_opengl.h \
  doomdef.h doomtype.h g_state.h m_swap.h hardware/hw_drv.h screen.h \
- command.h hardware/hw_data.h hardware/hw_defs.h hardware/hw_md2.h \
- hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
+ command.h hardware/hw_data.h hardware/hw_defs.h \
+ hardware/hw_md2.h hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
  hardware/hw_md2load.h hardware/hw_md3load.h hardware/hw_model.h hardware/u_list.h \
  am_map.h d_event.h d_player.h p_pspr.h m_fixed.h tables.h info.h d_think.h \
  p_mobj.h doomdata.h d_ticcmd.h r_defs.h hardware/hw_dll.h
@@ -827,8 +738,8 @@ $(OBJDIR)/r_opengl.o: hardware/r_opengl/r_opengl.c hardware/r_opengl/r_opengl.h 
 else
 $(OBJDIR)/r_opengl.o: hardware/r_opengl/r_opengl.c hardware/r_opengl/r_opengl.h \
  doomdef.h doomtype.h g_state.h m_swap.h hardware/hw_drv.h screen.h \
- command.h hardware/hw_data.h hardware/hw_defs.h hardware/hw_md2.h \
- hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
+ command.h hardware/hw_data.h hardware/hw_defs.h \
+ hardware/hw_md2.h hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
  hardware/hw_md2load.h hardware/hw_md3load.h hardware/hw_model.h hardware/u_list.h \
  am_map.h d_event.h d_player.h p_pspr.h m_fixed.h tables.h info.h d_think.h \
  p_mobj.h doomdata.h d_ticcmd.h r_defs.h hardware/hw_dll.h
@@ -853,22 +764,10 @@ $(OBJDIR)/depend.dep:
 ifndef NOHW
 	$(CC) $(CFLAGS) -MM hardware/*.c >> $(OBJDIR)/depend.ped
 endif
-ifndef NO_LUA
 	$(CC) $(CFLAGS) -MM blua/*.c >> $(OBJDIR)/depend.ped
-endif
 	@sed -e 's,\(.*\)\.o: ,$(subst /,\/,$(OBJDIR))\/&,g' < $(OBJDIR)/depend.ped > $(OBJDIR)/depend.dep
 	$(REMOVE) $(OBJDIR)/depend.ped
 	@echo "Created dependency file, depend.dep"
-
-ifdef DC
-$(OBJDIR)/v_video.o: v_video.c doomdef.h doomtype.h g_state.h m_swap.h r_local.h \
-  tables.h m_fixed.h screen.h command.h m_bbox.h r_main.h d_player.h \
-  p_pspr.h info.h d_think.h sounds.h p_mobj.h doomdata.h d_ticcmd.h \
-  r_data.h r_defs.h r_state.h r_bsp.h r_segs.h r_plane.h r_sky.h \
-  r_things.h r_draw.h v_video.h font.h hu_stuff.h d_event.h w_wad.h console.h \
-  i_video.h z_zone.h doomstat.h d_clisrv.h d_netcmd.h
-	$(CC) $(CFLAGS) -fno-omit-frame-pointer $(WFLAGS) -c $< -o $@
-endif
 
 ifdef VALGRIND
 $(OBJDIR)/z_zone.o: z_zone.c
@@ -911,78 +810,14 @@ $(OBJDIR)/%.o: %.s
 $(OBJDIR)/SRB2.res: win32/Srb2win.rc win32/afxres.h win32/resource.h
 	$(WINDRES) -i $< -O rc $(WINDRESFLAGS) --include-dir=win32 -o $@ -O coff
 
-ifdef DC
-$(OBJDIR)/romdisk.img:
-	$(KOS_GENROMFS) -f romdisk.img -d ../data -v
-
-$(OBJDIR)/romdisk.o: romdisk.img
-	$(KOS_BASE)/utils/bin2o/bin2o romdisk.img romdisk romdisk.o
-
-$(OBJDIR)/dchelp.o: $(INTERFACE)/SRB2DC/dchelp.c
-	$(CC) $(CFLAGS) $(WFLAGS) -c $< -o $@
-
-$(OBJDIR)/i_udp.o: $(INTERFACE)/SRB2DC/i_udp.c
-	$(CC) $(CFLAGS) $(WFLAGS) -c $< -o $@
-
-$(BIN)/IP.BIN: $(INTERFACE)/SRB2DC/IP.BIN
-	$(CP) $< $@
-
-$(BIN)/SRB2DC.cdi.pass1: $(INTERFACE)/SRB2DC/SELFBOOT.BIN
-	$(CP) $< $@
-
-$(BIN)/$(BINNAME): $(BIN)/$(EXENAME)
-	$(KOS_OBJCOPY) -R .stack -O binary $< $@
-
-$(BIN)/1ST_READ.BIN: $(BIN)/$(BINNAME) $(BIN)/scramble
-	$(BIN)/scramble $< $@
-
-$(BIN)/scramble: $(INTERFACE)/SRB2DC/scramble.c
-	-$(MKDIR) $(BIN)
-	$(HOSTCC) $< -o $@
-
-iso: $(BIN)/SRB2DC.iso
-cdi: $(BIN)/SRB2DC.cdi
-
-$(BIN)/SRB2DC.iso.pass1: $(BIN)/1ST_READ.BIN $(BIN)/IP.BIN
-	-$(MKDIR) $(BIN)/cdrom
-	$(CP) $(BIN)/1ST_READ.BIN $(D_FILES) $(BIN)/cdrom
-	$(MKISOFS) -l -r -o $@ $(BIN)/cdrom
-
-$(BIN)/SRB2DC.iso.pass2: $(BIN)/SRB2DC.iso.pass1
-	$(DD) if=$< of=$@ bs=2048 skip=16 status=noxfer
-
-$(BIN)/SRB2DC.iso: $(BIN)/SRB2DC.iso.pass2 $(BIN)/IP.BIN
-	@cat $(BIN)/IP.BIN $(BIN)/SRB2DC.iso.pass2 > $@
-
-$(BIN)/SRB2DC.cdi: $(BIN)/SRB2DC.iso.pass2 $(BIN)/SRB2DC.cdi.pass1 $(BIN)/IP.BIN
-	@cat $(BIN)/SRB2DC.cdi.pass1 $(BIN)/IP.BIN $(BIN)/SRB2DC.iso.pass2 > $@
-
-post-build: $(BIN)/1ST_READ.BIN
-endif
-
-ifdef XBOX
-$(OBJDIR)/xboxhelp.o: $(INTERFACE)/SRB2XBOX/xboxhelp.c
-		$(CC) $(CFLAGS) $(WFLAGS) -c $< -o $@
-
-$(BIN)/$(BINNAME): $(BIN)/$(EXENAME)
-	$(CXBE) -OUT:"$@" -DUMPINFO:"$(BIN)/SRB2XBOX.cxbe"  -TITLE:"Sonic Robo Blast 2" $<
-endif
-
-ifdef NDS
-$(BIN)/$(EXENAME:.elf=.nds): $(BIN)/$(EXENAME:.elf=.arm9)
-	$(NDSTOOL) -c $@ -9 $(BIN)/$(EXENAME:.elf=.arm9)
-
-%.arm9: %.elf
-	$(OBJCOPY) -O binary $< $@
-endif
 
 ifdef MINGW
 ifndef SDL
 ifndef NOHW
 $(OBJDIR)/r_opengl.o: hardware/r_opengl/r_opengl.c hardware/r_opengl/r_opengl.h \
  doomdef.h doomtype.h g_state.h m_swap.h hardware/hw_drv.h screen.h \
- command.h hardware/hw_data.h hardware/hw_defs.h hardware/hw_md2.h \
- hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
+ command.h hardware/hw_data.h hardware/hw_defs.h \
+ hardware/hw_md2.h hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
  hardware/hw_md2load.h hardware/hw_md3load.h hardware/hw_model.h hardware/u_list.h \
  am_map.h d_event.h d_player.h p_pspr.h m_fixed.h tables.h info.h d_think.h \
  p_mobj.h doomdata.h d_ticcmd.h r_defs.h hardware/hw_dll.h
@@ -990,17 +825,8 @@ $(OBJDIR)/r_opengl.o: hardware/r_opengl/r_opengl.c hardware/r_opengl/r_opengl.h 
 
 $(OBJDIR)/ogl_win.o: hardware/r_opengl/ogl_win.c hardware/r_opengl/r_opengl.h \
  doomdef.h doomtype.h g_state.h m_swap.h hardware/hw_drv.h screen.h \
- command.h hardware/hw_data.h hardware/hw_defs.h hardware/hw_md2.h \
- hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
- hardware/hw_md2load.h hardware/hw_md3load.h hardware/hw_model.h hardware/u_list.h \
- am_map.h d_event.h d_player.h p_pspr.h m_fixed.h tables.h info.h d_think.h \
- p_mobj.h doomdata.h d_ticcmd.h r_defs.h hardware/hw_dll.h
-	$(CC) $(CFLAGS) $(WFLAGS) -D_WINDOWS -mwindows -c $< -o $@
-
-$(OBJDIR)/r_minigl.o: hardware/r_minigl/r_minigl.c hardware/r_opengl/r_opengl.h \
- doomdef.h doomtype.h g_state.h m_swap.h hardware/hw_drv.h screen.h \
- command.h hardware/hw_data.h hardware/hw_defs.h hardware/hw_md2.h \
- hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
+ command.h hardware/hw_data.h hardware/hw_defs.h \
+ hardware/hw_md2.h hardware/hw_glob.h hardware/hw_main.h hardware/hw_clip.h \
  hardware/hw_md2load.h hardware/hw_md3load.h hardware/hw_model.h hardware/u_list.h \
  am_map.h d_event.h d_player.h p_pspr.h m_fixed.h tables.h info.h d_think.h \
  p_mobj.h doomdata.h d_ticcmd.h r_defs.h hardware/hw_dll.h
@@ -1040,25 +866,6 @@ $(OBJDIR)/s_fmod.o: hardware/s_fmod/s_fmod.c hardware/hw3dsdrv.h \
 $(OBJDIR)/s_openal.o: hardware/s_openal/s_openal.c hardware/hw3dsdrv.h \
  hardware/hw_dll.h
 	$(CC) $(ARCHOPTS) -Os -o $(OBJDIR)/s_openal.o -DHW3SOUND -DUNIXCOMMON -shared -nostartfiles -c hardware/s_openal/s_openal.c
-endif
-
-ifdef FILTERS
-$(OBJDIR)/%.o: $(INTERFACE)/filter/%.c
-	@echo $< needs deps
-	$(CC) $(CFLAGS) $(WFLAGS) -c $< -o $@
-
-$(OBJDIR)/filters.o: $(INTERFACE)/filter/filters.c $(INTERFACE)/filter/filters.c \
- $(INTERFACE)/filter/filters.h
-	$(CC) $(CFLAGS) $(WFLAGS) -c $< -o $@
-
-$(OBJDIR)/hq2x.o: $(INTERFACE)/filter/hq2x.c $(INTERFACE)/filter/hq2x.c \
- $(INTERFACE)/filter/filters.h
-	$(CC) $(CFLAGS) $(WFLAGS) -c $< -o $@
-
-$(OBJDIR)/lq2x.o: $(INTERFACE)/filter/lq2x.c $(INTERFACE)/filter/lq2x.c \
- $(INTERFACE)/filter/filters.h $(INTERFACE)/filter/interp.h \
- $(INTERFACE)/filter/hq2x.h $(INTERFACE)/filter/lq2x.h
-	$(CC) $(CFLAGS) $(WFLAGS) -c $< -o $@
 endif
 endif
 

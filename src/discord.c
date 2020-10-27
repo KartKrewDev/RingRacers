@@ -37,9 +37,9 @@
 // length of IP strings
 #define IP_SIZE 21
 
-consvar_t cv_discordrp = {"discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_discordstreamer = {"discordstreamer", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_discordasks = {"discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
+consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
 
 struct discordInfo_s discordInfo;
 
@@ -500,7 +500,7 @@ void DRPC_UpdatePresence(void)
 	// This way, we can use the invite feature in-dev, but not have snoopers seeing any potential secrets! :P
 	discordPresence.largeImageKey = "miscdevelop";
 	discordPresence.largeImageText = "No peeking!";
-	discordPresence.state = "Testing the game";
+	discordPresence.state = "Development EXE";
 
 	DRPC_EmptyRequests();
 	Discord_UpdatePresence(&discordPresence);
@@ -619,7 +619,7 @@ void DRPC_UpdatePresence(void)
 	}
 	else if (gamestate == GS_VOTING)
 	{
-		discordPresence.largeImageKey = (G_BattleGametype() ? "miscredplanet" : "miscblueplanet");
+		discordPresence.largeImageKey = ((gametype == GT_BATTLE) ? "miscredplanet" : "miscblueplanet");
 		discordPresence.largeImageText = "Voting";
 	}
 	else

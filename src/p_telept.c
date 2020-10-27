@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -33,13 +33,14 @@
 void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 			INT16 starpostx, INT16 starposty, INT16 starpostz,
 			INT32 starpostnum, tic_t starposttime, angle_t starpostangle,
-			INT32 flags2)
+			fixed_t starpostscale, angle_t drawangle, INT32 flags2)
 {
 	const INT32 takeflags2 = MF2_TWOD|MF2_OBJECTFLIP;
 	UINT8 i;
 
 	(void)starposttime;
 	(void)starpostangle;
+	(void)starpostscale;
 
 	// the move is ok,
 	// so link the thing into its new position
@@ -67,19 +68,7 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 			thing->reactiontime = TICRATE/2; // don't move for about half a second
 
 		// absolute angle position
-		if (thing == players[consoleplayer].mo)
-			localangle[0] = angle;
-		else if (r_splitscreen)
-		{
-			for (i = 1; i <= r_splitscreen; i++)
-			{
-				if (thing == players[displayplayers[i]].mo)
-				{
-					localangle[i] = angle;
-					break;
-				}
-			}
-		}
+		P_SetPlayerAngle(thing->player, angle);
 
 		// move chasecam at new player location
 		for (i = 0; i <= r_splitscreen; i++)
@@ -100,8 +89,10 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		thing->player->respawn.pointz = starpostz;
 		thing->player->starpostnum = starpostnum;
 
+		thing->player->drawangle = drawangle;
+
 		P_ResetPlayer(thing->player);
-		P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
+		P_SetPlayerMobjState(thing, S_KART_STILL); // SRB2kart - was S_PLAY_STND
 
 		P_FlashPal(thing->player, PAL_MIXUP, 10);
 	}
@@ -132,12 +123,10 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 	if (!P_TeleportMove(thing, x, y, z))
 		return false;
 
-	thing->angle = angle;
-
 	if (!dontstopmove)
 		thing->momx = thing->momy = thing->momz = 0;
 	else // Change speed to match direction
-		P_InstaThrust(thing, thing->angle, P_AproxDistance(thing->momx, thing->momy));
+		P_InstaThrust(thing, angle, FixedHypot(thing->momx, thing->momy));
 
 	if (thing->player)
 	{
@@ -146,52 +135,43 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 		else
 			thing->player->viewz = thing->z + thing->player->viewheight;
 
-		if (!dontstopmove)
-			thing->reactiontime = TICRATE/2; // don't move for about half a second
-
-		// absolute angle position
-		if (thing == players[consoleplayer].mo)
-			localangle[0] = angle;
-		else if (r_splitscreen)
-		{
-			for (i = 1; i <= r_splitscreen; i++)
-			{
-				if (thing == players[displayplayers[i]].mo)
-				{
-					localangle[i] = angle;
-					break;
-				}
-			}
-		}
-
-		// move chasecam at new player location
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (thing->player == &players[displayplayers[i]] && camera[i].chase)
-				P_ResetCamera(thing->player, &camera[i]);
-		}
-
 		// don't run in place after a teleport
 		if (!dontstopmove)
 		{
-			INT32 p;
-			// Search for any players you might be carrying, so you can get them off before they end up being taken with you!
-			for (p = 0; p < MAXPLAYERS; p++)
-				if (playeringame[p] && players[p].mo && players[p].pflags & PF_CARRIED && players[p].mo->tracer == thing)
-				{
-					players[p].pflags &= ~PF_CARRIED;
-					break;
-				}
 			thing->player->cmomx = thing->player->cmomy = 0;
 			thing->player->rmomx = thing->player->rmomy = 0;
 			thing->player->speed = 0;
 			P_ResetPlayer(thing->player);
-			P_SetPlayerMobjState(thing, S_KART_STILL1); // SRB2kart - was S_PLAY_STND
+			P_SetPlayerMobjState(thing, S_KART_STILL); // SRB2kart - was S_PLAY_STND
+
+			thing->reactiontime = TICRATE/2; // don't move for about half a second
+			thing->player->drawangle = angle;
+		}
+		else
+			thing->player->drawangle += (angle - thing->angle);
+
+		// absolute angle position
+		P_SetPlayerAngle(thing->player, angle);
+
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (thing == players[displayplayers[i]].mo)
+			{
+				if (camera[i].chase)
+				{
+					// move chasecam at new player location
+					P_ResetCamera(thing->player, &camera[i]);
+				}
+
+				break;
+			}
 		}
 
 		if (flash)
 			P_FlashPal(thing->player, PAL_MIXUP, 10);
 	}
+
+	thing->angle = angle;
 
 	return true;
 }

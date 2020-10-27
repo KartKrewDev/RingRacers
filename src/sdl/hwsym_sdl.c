@@ -80,9 +80,12 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(Init);
 	GETFUNC(Draw2DLine);
 	GETFUNC(DrawPolygon);
+	GETFUNC(DrawIndexedTriangles);
+	GETFUNC(RenderSkyDome);
 	GETFUNC(SetBlend);
 	GETFUNC(ClearBuffer);
 	GETFUNC(SetTexture);
+	GETFUNC(UpdateTexture);
 	GETFUNC(ReadRect);
 	GETFUNC(GClipRect);
 	GETFUNC(ClearMipMapCache);
@@ -100,19 +103,14 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(MakeScreenTexture);
 	GETFUNC(MakeScreenFinalTexture);
 	GETFUNC(DrawScreenFinalTexture);
-	
-	GETFUNC(RenderSkyDome);
 
-	GETFUNC(LoadShaders);
-	GETFUNC(KillShaders);
+	GETFUNC(CompileShaders);
+	GETFUNC(CleanShaders);
 	GETFUNC(SetShader);
 	GETFUNC(UnSetShader);
 
+	GETFUNC(SetShaderInfo);
 	GETFUNC(LoadCustomShader);
-	GETFUNC(InitCustomShaders);
-	
-	GETFUNC(StartBatching);
-	GETFUNC(RenderBatches);
 
 #else //HWRENDER
 	if (0 == strcmp("FinishUpdate", funcName))

@@ -118,17 +118,13 @@ anchor_height
 		const mapthing_t * a,
 		const sector_t   * s
 ){
+	if (a->options & MTF_OBJECTFLIP)
 	{
-		INT16 z = ( a->options >> ZSHIFT );
-
-		if (a->options & MTF_OBJECTFLIP)
-		{
-			return ( s->ceilingheight >> FRACBITS ) - z;
-		}
-		else
-		{
-			return ( s->floorheight >> FRACBITS ) + z;
-		}
+		return ( s->ceilingheight >> FRACBITS ) - a->z;
+	}
+	else
+	{
+		return ( s->floorheight >> FRACBITS ) + a->z;
 	}
 }
 
@@ -340,23 +336,24 @@ new_vertex_slope
 		const INT16    flags
 ){
 	pslope_t * slope = Z_Calloc(sizeof (pslope_t), PU_LEVEL, NULL);
+	const vector3_t anchorVertices[3] = {
+		{anchors[0]->x << FRACBITS, anchors[0]->y << FRACBITS, anchors[0]->z << FRACBITS},
+		{anchors[1]->x << FRACBITS, anchors[1]->y << FRACBITS, anchors[1]->z << FRACBITS},
+		{anchors[2]->x << FRACBITS, anchors[2]->y << FRACBITS, anchors[2]->z << FRACBITS}
+	};
 
-	slope->flags = SL_VERTEXSLOPE;
-
-	if (flags & ML_NOSONIC)
+	if (flags & ML_NETONLY)
 	{
 		slope->flags |= SL_NOPHYSICS;
 	}
 
-	if (( flags & ML_NOTAILS ) == 0)
+	if (flags & ML_NONET)
 	{
-		slope->flags |= SL_NODYNAMIC;
+		slope->flags |= SL_DYNAMIC;
 	}
 
-	slope->vertices = anchors;
-
-	P_ReconfigureVertexSlope(slope);
-	slope->refpos = 5;
+	P_ReconfigureViaVertexes(slope, anchorVertices[0], anchorVertices[1], anchorVertices[2]);
+	//slope->refpos = 5;
 
 	// Add to the slope list
 	slope->next = slopelist;
@@ -408,8 +405,8 @@ slope_sector
 	{
 		(*slope) = new_vertex_slope(anchors, flags);
 
-		/* No Knuckles - invert slope to opposite side */
-		if (flags & ML_NOKNUX)
+		/* Effect 6 - invert slope to opposite side */
+		if (flags & ML_EFFECT6)
 		{
 			(*alt) = new_vertex_slope(flip_slope(anchors, sector), flags);
 		}
@@ -442,7 +439,7 @@ make_anchored_slope
 
 		if (plane == (FLOOR|CEILING))
 		{
-			flags &= ~ML_NOKNUX;
+			flags &= ~ML_EFFECT6;
 		}
 
 		if (plane & FLOOR)
