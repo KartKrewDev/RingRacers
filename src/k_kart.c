@@ -2451,6 +2451,11 @@ void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 a
 			karmahitbox->destscale = player->mo->scale;
 			P_SetScale(karmahitbox, player->mo->scale);
 			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
+
+			if (battleovertime.enabled > 0)
+			{
+				player->eliminated = true;
+			}
 		}
 
 		player->bumpers -= amount;
@@ -5740,6 +5745,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->karmadelay > 0 && !P_PlayerInPain(player))
 	{
+		if (battleovertime.enabled > 0)
+		{
+			player->eliminated = true;
+		}
+
 		player->karmadelay--;
 		if (P_IsDisplayPlayer(player) && player->bumpers <= 0 && player->karmadelay <= 0)
 			comebackshowninfo = true; // client has already seen the message
