@@ -1213,7 +1213,7 @@ static void PolyTranslucency(line_t *line)
 	else
 		po->translucency = value;
 
-	po->translucency = max(min(po->translucency, NUMTRANSMAPS), 0);
+	po->translucency = max(min(po->translucency, NUMEFFECTMAPS), 0);
 }
 
 // Makes a polyobject translucency fade and applies tangibility

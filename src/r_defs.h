@@ -152,6 +152,9 @@ typedef enum
 	FF_GOOWATER          = FF_SHATTERBOTTOM, ///< Used with ::FF_SWIMMABLE. Makes thick bouncey goop.
 } ffloortype_e;
 
+#define FFLOOR_ALPHA_SPECIAL_ADDITIVE		(901)
+#define FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE	(902)
+
 typedef struct ffloor_s
 {
 	fixed_t *topheight;
