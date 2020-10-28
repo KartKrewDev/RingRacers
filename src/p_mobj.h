@@ -268,6 +268,8 @@ typedef enum
 	MFD_TRANS70				= 0x0070,
 	MFD_TRANS80				= 0x0080,
 	MFD_TRANS90				= 0x0090,
+	MFD_TRANSADD			= 0x00A0,
+	MFD_TRANSSUB			= 0x00B0,
 	MFD_TRANSMASK			= 0x00F0,
 	// Brightness override flags
 	MFD_FULLBRIGHT			= 0x0100,
