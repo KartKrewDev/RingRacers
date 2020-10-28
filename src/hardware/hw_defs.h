@@ -102,8 +102,7 @@ typedef struct
 //BP: transform order : scale(rotation_x(rotation_y(translation(v))))
 
 // Kart features
-//#define USE_FTRANSFORM_ANGLEZ
-//#define USE_FTRANSFORM_MIRROR
+#define USE_FTRANSFORM_MIRROR
 
 // Vanilla features
 #define USE_MODEL_NEXTFRAME
@@ -111,11 +110,7 @@ typedef struct
 typedef struct
 {
 	FLOAT       x,y,z;           // position
-#ifdef USE_FTRANSFORM_ANGLEZ
 	FLOAT       anglex,angley,anglez;   // aimingangle / viewangle
-#else
-	FLOAT       anglex,angley;   // aimingangle / viewangle
-#endif
 	FLOAT       scalex,scaley,scalez;
 	FLOAT       fovxangle, fovyangle;
 	UINT8       splitscreen;
