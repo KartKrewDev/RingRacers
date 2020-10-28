@@ -607,9 +607,6 @@ void HWR_AddPlayerModel(int skin) // For skins that were added after startup
 		}
 	}
 
-	// Check for any MD2s that match the names of sprite names!
-	while (fscanf(f, "%19s %31s %f %f", name, filename, &scale, &offset) == 4)
-
 	// length of the player model prefix
 	prefixlen = strlen(PLAYERMODELPREFIX);
 
