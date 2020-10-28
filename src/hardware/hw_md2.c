@@ -698,10 +698,12 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
-	UINT16 translation[16]; // First the color index
+	UINT8 translation[16]; // First the color index
 	UINT8 cutoff[16]; // Brightness cutoff before using the next color
 	UINT8 translen = 0;
 	UINT8 i;
+	UINT8 colorbrightnesses[16];
+	UINT8 color_match_lookup[256]; // optimization attempt
 
 	blendcolor = V_GetColor(0); // initialize
 	memset(translation, 0, sizeof(translation));
@@ -737,6 +739,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	if (color != SKINCOLOR_NONE && color < numskincolors)
 	{
 		UINT8 numdupes = 1;
+		UINT8 prevdupes = numdupes;
 
 		translation[translen] = skincolors[color].ramp[0];
 		cutoff[translen] = 255;
@@ -751,16 +754,54 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 			if (translen > 0)
 			{
-				cutoff[translen] = cutoff[translen-1] - (256 / (16 / numdupes));
+				INT16 newcutoff = cutoff[translen-1] - (255 / (16 / prevdupes));
+
+				if (newcutoff < 0)
+					newcutoff = 0;
+
+				cutoff[translen] = (UINT8)newcutoff;
 			}
 
+			prevdupes = numdupes;
 			numdupes = 1;
 			translen++;
 
-			translation[translen] = (UINT16)skincolors[color].ramp[i];
+			translation[translen] = (UINT8)skincolors[color].ramp[i];
 		}
 
 		translen++;
+	}
+
+	if (skinnum == TC_RAINBOW && translen > 0)
+	{
+		UINT16 b;
+		INT32 compare;
+
+		for (i = 0; i < translen; i++) // moved from inside the loop to here
+		{
+			RGBA_t tempc = V_GetColor(translation[i]);
+			colorbrightnesses[i] = K_ColorRelativeLuminance(tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
+		}
+		// generate lookup table for color brightness matching
+		for (b = 0; b < 256; b++)
+		{
+			UINT16 brightdif = 256;
+
+			color_match_lookup[i] = 0;
+			for (i = 0; i < translen; i++)
+			{
+				if (b > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
+					continue;
+
+				compare = abs((INT16)(colorbrightnesses[i]) - (INT16)(b));
+
+				if (compare < brightdif)
+				{
+					brightdif = (UINT16)compare;
+					color_match_lookup[b] = i; // best matching color that's equal brightness or darker
+				}
+			}
+		}
 	}
 
 	while (size--)
@@ -834,7 +875,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			else
 			{
 				// All settings that use skincolors!
-				UINT8 brightness;
+				UINT16 brightness;
 
 				if (translen <= 0)
 				{
@@ -852,8 +893,11 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 					}
 					else
 					{
-						UINT8 imagebright = K_ColorRelativeLuminance(image->s.red, image->s.green, image->s.blue);
-						UINT8 blendbright = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
+						UINT16 imagebright, blendbright;
+
+						imagebright = K_ColorRelativeLuminance(image->s.red, image->s.green, image->s.blue);
+						blendbright = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
+
 						// slightly dumb average between the blend image color and base image colour, usually one or the other will be fully opaque anyway
 						brightness = (imagebright*(255-blendimage->s.alpha))/255 + (blendbright*blendimage->s.alpha)/255;
 					}
@@ -882,9 +926,8 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 					// Ensue horrible mess.
 					if (skinnum == TC_RAINBOW)
 					{
-						UINT16 brightdif = 256;
-						UINT8 colorbrightnesses[16];
-						INT32 compare, m, d;
+						//UINT16 brightdif = 256;
+						INT32 /*compare,*/ m, d;
 
 						// Ignore pure white & pitch black
 						if (brightness > 253 || brightness < 2)
@@ -898,13 +941,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 						mul = 0;
 						mulmax = 1;
 
-						for (i = 0; i < translen; i++)
-						{
-							RGBA_t tempc = V_GetColor(translation[i]);
-							colorbrightnesses[i] = K_ColorRelativeLuminance(tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
-						}
-
-						for (i = 0; i < translen; i++)
+						/*for (i = 0; i < translen; i++)
 						{
 							if (brightness > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
 								continue;
@@ -916,19 +953,13 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 								brightdif = (UINT16)compare;
 								firsti = i; // best matching color that's equal brightness or darker
 							}
-						}
+						}*/
+						firsti = color_match_lookup[brightness];
 
 						secondi = firsti+1; // next color in line
-						if (secondi >= translen)
-						{
-							m = (INT16)brightness; // - 0;
-							d = (INT16)colorbrightnesses[firsti]; // - 0;
-						}
-						else
-						{
-							m = (INT16)brightness - (INT16)colorbrightnesses[secondi];
-							d = (INT16)colorbrightnesses[firsti] - (INT16)colorbrightnesses[secondi];
-						}
+
+						m = (INT16)brightness - (INT16)colorbrightnesses[secondi];
+						d = (INT16)colorbrightnesses[firsti] - (INT16)colorbrightnesses[secondi];
 
 						if (m >= d)
 							m = d-1;
@@ -955,29 +986,15 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 						secondi = firsti+1;
 
-						mulmax = cutoff[firsti];
-						if (secondi < translen)
-							mulmax -= cutoff[secondi];
-
+						mulmax = cutoff[firsti] - cutoff[secondi];
 						mul = cutoff[firsti] - brightness;
 					}
 
 					blendcolor = V_GetColor(translation[firsti]);
 
-					if (secondi >= translen)
-						mul = 0;
-
 					if (mul > 0) // If it's 0, then we only need the first color.
 					{
-#if 0
-						if (secondi >= translen)
-						{
-							// blend to black
-							nextcolor = V_GetColor(31);
-						}
-						else
-#endif
-							nextcolor = V_GetColor(translation[secondi]);
+						nextcolor = V_GetColor(translation[secondi]);
 
 						// Find difference between points
 						r = (INT32)(nextcolor.s.red - blendcolor.s.red);
@@ -999,10 +1016,14 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 				if (skinnum == TC_RAINBOW)
 				{
 					UINT32 tempcolor;
-					UINT8 colorbright = K_ColorRelativeLuminance(blendcolor.s.red, blendcolor.s.green, blendcolor.s.blue);
+					UINT16 colorbright;
+
+					colorbright = K_ColorRelativeLuminance(blendcolor.s.red, blendcolor.s.green, blendcolor.s.blue);
 
 					if (colorbright == 0)
+					{
 						colorbright = 1; // no dividing by 0 please
+					}
 
 					tempcolor = (brightness * blendcolor.s.red) / colorbright;
 					tempcolor = min(255, tempcolor);
