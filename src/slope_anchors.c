@@ -118,13 +118,16 @@ anchor_height
 		const mapthing_t * a,
 		const sector_t   * s
 ){
+	const fixed_t x = a->x << FRACBITS;
+	const fixed_t y = a->y << FRACBITS;
+
 	if (a->options & MTF_OBJECTFLIP)
 	{
-		return ( s->ceilingheight >> FRACBITS ) - a->z;
+		return ( P_GetSectorCeilingZAt(s, x, y) >> FRACBITS ) - a->z;
 	}
 	else
 	{
-		return ( s->floorheight >> FRACBITS ) + a->z;
+		return ( P_GetSectorFloorZAt(s, x, y) >> FRACBITS ) + a->z;
 	}
 }
 
@@ -144,12 +147,12 @@ set_anchor
 
 	fixed_t closeness;
 
-	a->z = anchor_height(a, sub->sector);
-
 	v = nearest_point(&closeness, a, sub->sector);
 
 	a->x = ( v->x >> FRACBITS );
 	a->y = ( v->y >> FRACBITS );
+
+	a->z = anchor_height(a, sub->sector);
 
 	list->anchors  [list->count] = a;
 	list->points   [list->count] = v;
