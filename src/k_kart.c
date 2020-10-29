@@ -5745,7 +5745,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->karmadelay > 0 && !P_PlayerInPain(player))
 	{
-		if ((battleovertime.enabled > 0) && (player->bumpers <= 0))
+		if (battleovertime.enabled > 0)
 		{
 			player->eliminated = true;
 		}
