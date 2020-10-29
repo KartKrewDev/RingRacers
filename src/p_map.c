@@ -2557,14 +2557,14 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 					// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 					// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
 
-					if (thingtop == thing->ceilingz && tmceilingz > thingtop && thing->ceilingdrop <= maxstep)
+					if (thingtop == thing->ceilingz && tmceilingz > thingtop && tmceilingz - thingtop <= maxstep)
 					{
 						thing->z = (thing->ceilingz = tmceilingz) - thing->height;
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 						thing->ceilingdrop = 0;
 					}
-					else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->floordrop <= maxstep)
+					else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->z - tmfloorz <= maxstep)
 					{
 						thing->z = thing->floorz = tmfloorz;
 						thing->floorrover = tmfloorrover;

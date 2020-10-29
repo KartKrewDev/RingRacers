@@ -279,9 +279,23 @@ static void R_Render2sidedMultiPatchColumn(column_t *column)
 	}
 }
 
-transnum_t R_GetLinedefTransTable(fixed_t alpha)
+transnum_t R_GetLinedefTransTable(line_t *ldef)
 {
-	return (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
+	transnum_t transnum = NUMEFFECTMAPS; // Send back NUMEFFECTMAPS for none
+	fixed_t alpha = ldef->alpha;
+	if (alpha > 0 && alpha < FRACUNIT)
+		transnum = (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
+	else
+	{
+		switch (ldef->special)
+		{
+			case 910: transnum = tr_transadd; break;
+			case 911: transnum = tr_transsub; break;
+			default: transnum = NUMEFFECTMAPS; break;
+		}
+	}
+
+	return transnum;
 }
 
 void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
@@ -298,6 +312,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	INT32 times, repeats;
 	INT64 overflow_test;
 	INT32 range;
+	transnum_t transtable = NUMEFFECTMAPS;
 
 	// Calculate light table.
 	// Use different light tables
@@ -314,9 +329,10 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	if (!ldef->alpha)
 		return;
 
-	if (ldef->alpha > 0 && ldef->alpha < FRACUNIT)
+	transtable = R_GetLinedefTransTable(ldef);
+	if (transtable != NUMEFFECTMAPS)
 	{
-		dc_transmap = transtables + ((R_GetLinedefTransTable(ldef->alpha) - 1) << FF_TRANSSHIFT);
+		dc_transmap = transtables + ((transtable - 1) << FF_TRANSSHIFT);
 		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
 
 	}
@@ -331,7 +347,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 	if (curline->polyseg && curline->polyseg->translucency > 0)
 	{
-		if (curline->polyseg->translucency >= NUMTRANSMAPS)
+		if (curline->polyseg->translucency >= NUMEFFECTMAPS)
 			return;
 
 		dc_transmap = transtables + ((curline->polyseg->translucency-1)<<FF_TRANSSHIFT);
@@ -781,6 +797,10 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			dc_transmap = transtables + ((tr_trans20-1)<<FF_TRANSSHIFT);
 		else if (pfloor->alpha < 243)
 			dc_transmap = transtables + ((tr_trans10-1)<<FF_TRANSSHIFT);
+		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
+			dc_transmap = transtables + ((tr_transadd-1)<<FF_TRANSSHIFT);
+		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
+			dc_transmap = transtables + ((tr_transsub-1)<<FF_TRANSSHIFT);
 		else
 			fuzzy = false; // Opaque
 

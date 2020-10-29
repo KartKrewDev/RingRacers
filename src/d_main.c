@@ -1116,7 +1116,7 @@ static void IdentifyVersion(void)
 	}
 
 	MUSICTEST("sounds.wad")
-	MUSICTEST("music.wad")
+	MUSICTEST("music.pk3")
 
 #undef MUSICTEST
 

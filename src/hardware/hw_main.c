@@ -107,8 +107,10 @@ static angle_t gl_xtoviewangle[MAXVIDWIDTH+1];
 
 // base values set at SetViewSize
 static float gl_basecentery;
+static float gl_basecenterx;
 
 float gl_baseviewwindowy, gl_basewindowcentery;
+float gl_baseviewwindowx, gl_basewindowcenterx;
 float gl_viewwidth, gl_viewheight; // viewport clipping boundaries (screen coords)
 float gl_viewwindowx;
 
@@ -557,7 +559,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 
 	HWR_Lighting(&Surf, lightlevel, planecolormap);
 
-	if (PolyFlags & (PF_Translucent|PF_Fog))
+	if (PolyFlags & (PF_Translucent|PF_Additive|PF_Substractive|PF_Fog))
 	{
 		Surf.PolyColor.s.alpha = (UINT8)alpha;
 		PolyFlags |= PF_Modulated;
@@ -787,6 +789,8 @@ FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf)
 		case tr_trans70 : pSurf->PolyColor.s.alpha = 0x4c;return  PF_Translucent;
 		case tr_trans80 : pSurf->PolyColor.s.alpha = 0x33;return  PF_Translucent;
 		case tr_trans90 : pSurf->PolyColor.s.alpha = 0x19;return  PF_Translucent;
+		case tr_transadd : pSurf->PolyColor.s.alpha = 0xFF;return PF_Additive;
+		case tr_transsub : pSurf->PolyColor.s.alpha = 0xFF;return PF_Substractive;
 	}
 	return PF_Translucent;
 }
@@ -854,7 +858,7 @@ static float HWR_ClipViewSegment(INT32 x, polyvertex_t *v1, polyvertex_t *v2)
 //
 // HWR_SplitWall
 //
-static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum, FSurfaceInfo* Surf, INT32 cutflag, ffloor_t *pfloor)
+static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum, FSurfaceInfo* Surf, INT32 cutflag, ffloor_t *pfloor, FBITFIELD blendmode)
 {
 	/* SoM: split up and light walls according to the
 	 lightlist. This may also include leaving out parts
@@ -991,12 +995,12 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 		wallVerts[0].y = bot;
 		wallVerts[1].y = endbot;
 
-		if (cutflag & FF_FOG)
-			HWR_AddTransparentWall(wallVerts, Surf, texnum, PF_Fog|PF_NoTexture, true, lightnum, colormap);
-		else if (cutflag & FF_TRANSLUCENT)
-			HWR_AddTransparentWall(wallVerts, Surf, texnum, PF_Translucent, false, lightnum, colormap);
+		if (blendmode & PF_Fog)
+			HWR_AddTransparentWall(wallVerts, Surf, texnum, blendmode, true, lightnum, colormap);
+		else if (blendmode & (PF_Translucent|PF_Additive|PF_Substractive|PF_Environment))
+			HWR_AddTransparentWall(wallVerts, Surf, texnum, blendmode, false, lightnum, colormap);
 		else
-			HWR_ProjectWall(wallVerts, Surf, PF_Masked, lightnum, colormap);
+			HWR_ProjectWall(wallVerts, Surf, blendmode, lightnum, colormap);
 
 		top = bot;
 		endtop = endbot;
@@ -1020,12 +1024,12 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 	wallVerts[0].y = bot;
 	wallVerts[1].y = endbot;
 
-	if (cutflag & FF_FOG)
-		HWR_AddTransparentWall(wallVerts, Surf, texnum, PF_Fog|PF_NoTexture, true, lightnum, colormap);
-	else if (cutflag & FF_TRANSLUCENT)
-		HWR_AddTransparentWall(wallVerts, Surf, texnum, PF_Translucent, false, lightnum, colormap);
+	if (blendmode & PF_Fog)
+		HWR_AddTransparentWall(wallVerts, Surf, texnum, blendmode, true, lightnum, colormap);
+	else if (blendmode & (PF_Translucent|PF_Additive|PF_Substractive|PF_Environment))
+		HWR_AddTransparentWall(wallVerts, Surf, texnum, blendmode, false, lightnum, colormap);
 	else
-		HWR_ProjectWall(wallVerts, Surf, PF_Masked, lightnum, colormap);
+		HWR_ProjectWall(wallVerts, Surf, blendmode, lightnum, colormap);
 }
 
 // HWR_DrawSkyWall
@@ -1205,12 +1209,19 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			wallVerts[2].y = FIXED_TO_FLOAT(worldtopslope);
 			wallVerts[1].y = FIXED_TO_FLOAT(worldhighslope);
 
-			if (gl_frontsector->numlights)
-				HWR_SplitWall(gl_frontsector, wallVerts, gl_toptexture, &Surf, FF_CUTLEVEL, NULL);
-			else if (grTex->mipmap.flags & TF_TRANSPARENT)
-				HWR_AddTransparentWall(wallVerts, &Surf, gl_toptexture, PF_Environment, false, lightnum, colormap);
-			else
-				HWR_ProjectWall(wallVerts, &Surf, PF_Masked, lightnum, colormap);
+			{
+				FBITFIELD blendmode = PF_Masked;
+
+				if (grTex->mipmap.flags & TF_TRANSPARENT)
+					blendmode = PF_Environment;
+
+				if (gl_frontsector->numlights)
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_toptexture, &Surf, FF_CUTLEVEL, NULL, blendmode);
+				else if (grTex->mipmap.flags & TF_TRANSPARENT)
+					HWR_AddTransparentWall(wallVerts, &Surf, gl_toptexture, blendmode, false, lightnum, colormap);
+				else
+					HWR_ProjectWall(wallVerts, &Surf, blendmode, lightnum, colormap);
+			}
 		}
 
 		// check BOTTOM TEXTURE
@@ -1271,12 +1282,19 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			wallVerts[2].y = FIXED_TO_FLOAT(worldlowslope);
 			wallVerts[1].y = FIXED_TO_FLOAT(worldbottomslope);
 
-			if (gl_frontsector->numlights)
-				HWR_SplitWall(gl_frontsector, wallVerts, gl_bottomtexture, &Surf, FF_CUTLEVEL, NULL);
-			else if (grTex->mipmap.flags & TF_TRANSPARENT)
-				HWR_AddTransparentWall(wallVerts, &Surf, gl_bottomtexture, PF_Environment, false, lightnum, colormap);
-			else
-				HWR_ProjectWall(wallVerts, &Surf, PF_Masked, lightnum, colormap);
+			{
+				FBITFIELD blendmode = PF_Masked;
+
+				if (grTex->mipmap.flags & TF_TRANSPARENT)
+					blendmode = PF_Environment;
+
+				if (gl_frontsector->numlights)
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_bottomtexture, &Surf, FF_CUTLEVEL, NULL, blendmode);
+				else if (grTex->mipmap.flags & TF_TRANSPARENT)
+					HWR_AddTransparentWall(wallVerts, &Surf, gl_bottomtexture, blendmode, false, lightnum, colormap);
+				else
+					HWR_ProjectWall(wallVerts, &Surf, blendmode, lightnum, colormap);
+			}
 		}
 		gl_midtexture = R_GetTextureNum(gl_sidedef->midtexture);
 		if (gl_midtexture)
@@ -1470,16 +1488,19 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					blendmode = PF_Translucent;
 					break;
 				default:
-					if (gl_linedef->alpha >= 0 && gl_linedef->alpha < FRACUNIT)
-						blendmode = HWR_TranstableToAlpha(R_GetLinedefTransTable(gl_linedef->alpha), &Surf);
+				{
+					transnum_t transtable = R_GetLinedefTransTable(gl_linedef);
+					if (transtable != NUMEFFECTMAPS)
+						blendmode = HWR_TranstableToAlpha(transtable, &Surf);
 					else
 						blendmode = PF_Masked;
 					break;
+				}
 			}
 
 			if (gl_curline->polyseg && gl_curline->polyseg->translucency > 0)
 			{
-				if (gl_curline->polyseg->translucency >= NUMTRANSMAPS) // wall not drawn
+				if (gl_curline->polyseg->translucency >= NUMEFFECTMAPS) // wall not drawn
 				{
 					Surf.PolyColor.s.alpha = 0x00; // This shouldn't draw anything regardless of blendmode
 					blendmode = PF_Masked;
@@ -1491,10 +1512,10 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			if (gl_frontsector->numlights)
 			{
 				if (!(blendmode & PF_Masked))
-					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_TRANSLUCENT, NULL);
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_TRANSLUCENT, NULL, blendmode);
 				else
 				{
-					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_CUTLEVEL, NULL);
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_CUTLEVEL, NULL, blendmode);
 				}
 			}
 			else if (!(blendmode & PF_Masked))
@@ -1575,15 +1596,21 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			wallVerts[2].y = FIXED_TO_FLOAT(worldtopslope);
 			wallVerts[1].y = FIXED_TO_FLOAT(worldbottomslope);
 
-			// I don't think that solid walls can use translucent linedef types...
-			if (gl_frontsector->numlights)
-				HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_CUTLEVEL, NULL);
-			else
 			{
+				FBITFIELD blendmode = PF_Masked;
 				if (grTex->mipmap.flags & TF_TRANSPARENT)
-					HWR_AddTransparentWall(wallVerts, &Surf, gl_midtexture, PF_Environment, false, lightnum, colormap);
+					blendmode = PF_Environment;
+
+				// I don't think that solid walls can use translucent linedef types...
+				if (gl_frontsector->numlights)
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_CUTLEVEL, NULL, blendmode);
 				else
-					HWR_ProjectWall(wallVerts, &Surf, PF_Masked, lightnum, colormap);
+				{
+					if (grTex->mipmap.flags & TF_TRANSPARENT)
+						HWR_AddTransparentWall(wallVerts, &Surf, gl_midtexture, blendmode, false, lightnum, colormap);
+					else
+						HWR_ProjectWall(wallVerts, &Surf, blendmode, lightnum, colormap);
+				}
 			}
 		}
 
@@ -1728,7 +1755,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					Surf.PolyColor.s.alpha = HWR_FogBlockAlpha(rover->master->frontsector->lightlevel, rover->master->frontsector->extra_colormap);
 
 					if (gl_frontsector->numlights)
-						HWR_SplitWall(gl_frontsector, wallVerts, 0, &Surf, rover->flags, rover);
+						HWR_SplitWall(gl_frontsector, wallVerts, 0, &Surf, rover->flags, rover, blendmode);
 					else
 						HWR_AddTransparentWall(wallVerts, &Surf, 0, blendmode, true, lightnum, colormap);
 				}
@@ -1736,14 +1763,21 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				{
 					FBITFIELD blendmode = PF_Masked;
 
-					if (rover->flags & FF_TRANSLUCENT && rover->alpha < 256)
+					if (rover->flags & FF_TRANSLUCENT)
 					{
-						blendmode = PF_Translucent;
-						Surf.PolyColor.s.alpha = (UINT8)rover->alpha-1 > 255 ? 255 : rover->alpha-1;
+						if (rover->alpha < 256)
+						{
+							blendmode = PF_Translucent;
+							Surf.PolyColor.s.alpha = (UINT8)(rover->alpha-1 > 255 ? 255 : rover->alpha-1);
+						}
+						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
+							blendmode = PF_Additive;
+						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
+							blendmode = PF_Substractive;
 					}
 
 					if (gl_frontsector->numlights)
-						HWR_SplitWall(gl_frontsector, wallVerts, texnum, &Surf, rover->flags, rover);
+						HWR_SplitWall(gl_frontsector, wallVerts, texnum, &Surf, rover->flags, rover, blendmode);
 					else
 					{
 						if (blendmode != PF_Masked)
@@ -1828,7 +1862,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					Surf.PolyColor.s.alpha = HWR_FogBlockAlpha(rover->master->frontsector->lightlevel, rover->master->frontsector->extra_colormap);
 
 					if (gl_backsector->numlights)
-						HWR_SplitWall(gl_backsector, wallVerts, 0, &Surf, rover->flags, rover);
+						HWR_SplitWall(gl_backsector, wallVerts, 0, &Surf, rover->flags, rover, blendmode);
 					else
 						HWR_AddTransparentWall(wallVerts, &Surf, 0, blendmode, true, lightnum, colormap);
 				}
@@ -1836,14 +1870,21 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				{
 					FBITFIELD blendmode = PF_Masked;
 
-					if (rover->flags & FF_TRANSLUCENT && rover->alpha < 256)
+					if (rover->flags & FF_TRANSLUCENT)
 					{
-						blendmode = PF_Translucent;
-						Surf.PolyColor.s.alpha = (UINT8)rover->alpha-1 > 255 ? 255 : rover->alpha-1;
+						if (rover->alpha < 256)
+						{
+							blendmode = PF_Translucent;
+							Surf.PolyColor.s.alpha = (UINT8)(rover->alpha-1 > 255 ? 255 : rover->alpha-1);
+						}
+						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
+							blendmode = PF_Additive;
+						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
+							blendmode = PF_Substractive;
 					}
 
 					if (gl_backsector->numlights)
-						HWR_SplitWall(gl_backsector, wallVerts, texnum, &Surf, rover->flags, rover);
+						HWR_SplitWall(gl_backsector, wallVerts, texnum, &Surf, rover->flags, rover, blendmode);
 					else
 					{
 						if (blendmode != PF_Masked)
@@ -2863,7 +2904,7 @@ static void HWR_AddPolyObjectPlanes(void)
 		if (!(po_ptrs[i]->flags & POF_RENDERPLANES)) // Only render planes when you should
 			continue;
 
-		if (po_ptrs[i]->translucency >= NUMTRANSMAPS)
+		if (po_ptrs[i]->translucency >= NUMEFFECTMAPS)
 			continue;
 
 		if (polyobjsector->floorheight <= gl_frontsector->ceilingheight
@@ -3104,8 +3145,16 @@ static void HWR_Subsector(size_t num)
 					                       alpha, rover->master->frontsector, PF_Fog|PF_NoTexture,
 										   true, rover->master->frontsector->extra_colormap);
 				}
-				else if (rover->flags & FF_TRANSLUCENT && rover->alpha < 256) // SoM: Flags are more efficient
+				else if (rover->flags & FF_TRANSLUCENT
+					&& (rover->alpha < 256
+					|| rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE || rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)) // SoM: Flags are more efficient
 				{
+					FBITFIELD blendmode = PF_Translucent;
+					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
+						blendmode = PF_Additive;
+					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
+						blendmode = PF_Substractive;
+
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 
 					HWR_AddTransparentFloor(&levelflats[*rover->bottompic],
@@ -3113,7 +3162,7 @@ static void HWR_Subsector(size_t num)
 										   false,
 					                       *rover->bottomheight,
 					                       *gl_frontsector->lightlist[light].lightlevel,
-					                       rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Translucent,
+					                       rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|blendmode,
 					                       false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
@@ -3149,8 +3198,16 @@ static void HWR_Subsector(size_t num)
 					                       alpha, rover->master->frontsector, PF_Fog|PF_NoTexture,
 										   true, rover->master->frontsector->extra_colormap);
 				}
-				else if (rover->flags & FF_TRANSLUCENT && rover->alpha < 256)
+				else if (rover->flags & FF_TRANSLUCENT
+					&& (rover->alpha < 256
+					|| rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE || rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)) // SoM: Flags are more efficient
 				{
+					FBITFIELD blendmode = PF_Translucent;
+					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
+						blendmode = PF_Additive;
+					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
+						blendmode = PF_Substractive;
+
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 
 					HWR_AddTransparentFloor(&levelflats[*rover->toppic],
@@ -3158,7 +3215,7 @@ static void HWR_Subsector(size_t num)
 											true,
 					                        *rover->topheight,
 					                        *gl_frontsector->lightlist[light].lightlevel,
-					                        rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Translucent,
+					                        rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|blendmode,
 					                        false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
@@ -5597,26 +5654,45 @@ void HWR_SetViewSize(void)
 		}
 	}
 
-	gl_centerx = gl_viewwidth / 2;
-	gl_basecentery = gl_viewheight / 2; //note: this is (gl_centerx * gl_viewheight / gl_viewwidth)
+	gl_basecenterx = gl_viewwidth / 2;
+	gl_basecentery = gl_viewheight / 2;
 
-	gl_viewwindowx = (vid.width - gl_viewwidth) / 2;
-	gl_windowcenterx = (float)(vid.width / 2);
-	if (fabsf(gl_viewwidth - vid.width) < 1.0E-36f)
-	{
-		gl_baseviewwindowy = 0;
-		gl_basewindowcentery = gl_viewheight / 2;               // window top left corner at 0,0
-	}
-	else
-	{
-		gl_baseviewwindowy = (vid.height-gl_viewheight) / 2;
-		gl_basewindowcentery = (float)(vid.height / 2);
-	}
+	gl_baseviewwindowx = 0;
+	gl_basewindowcenterx = gl_viewwidth / 2;
+
+	gl_baseviewwindowy = 0;
+	gl_basewindowcentery = gl_viewheight / 2;
 
 	gl_pspritexscale = gl_viewwidth / BASEVIDWIDTH;
 	gl_pspriteyscale = ((vid.height*gl_pspritexscale*BASEVIDWIDTH)/BASEVIDHEIGHT)/vid.width;
 
 	HWD.pfnFlushScreenTextures();
+}
+
+// -------------------+
+// HWR_ShiftViewPort  : offset viewport according to current split
+// -------------------+
+static void HWR_ShiftViewPort(void)
+{
+	gl_centerx = gl_basecenterx;
+	gl_viewwindowx = gl_baseviewwindowx;
+	gl_windowcenterx = gl_basewindowcenterx;
+
+	gl_centery = gl_basecentery;
+	gl_viewwindowy = gl_baseviewwindowy;
+	gl_windowcentery = gl_basewindowcentery;
+
+	if (viewssnum > ( r_splitscreen > 1 ))
+	{
+		gl_viewwindowy += gl_viewheight;
+		gl_windowcentery += gl_viewheight;
+	}
+
+	if (r_splitscreen > 1 && viewssnum & 1)
+	{
+		gl_viewwindowx += gl_viewwidth;
+		gl_windowcenterx += gl_viewwidth;
+	}
 }
 
 // Set view aiming, for the sky dome, the skybox,
@@ -5670,14 +5746,7 @@ void HWR_RenderSkyboxView(player_t *player)
 	dup_viewangle = viewangle;
 
 	// set window position
-	gl_centery = gl_basecentery;
-	gl_viewwindowy = gl_baseviewwindowy;
-	gl_windowcentery = gl_basewindowcentery;
-	if (viewssnum == 1)
-	{
-		gl_viewwindowy += (vid.height/2);
-		gl_windowcentery += (vid.height/2);
-	}
+	HWR_ShiftViewPort();
 
 	// check for new console commands.
 	NetUpdate();
@@ -5878,14 +5947,7 @@ void HWR_RenderPlayerView(void)
 	dup_viewangle = viewangle;
 
 	// set window position
-	gl_centery = gl_basecentery;
-	gl_viewwindowy = gl_baseviewwindowy;
-	gl_windowcentery = gl_basewindowcentery;
-	if (viewssnum == 1)
-	{
-		gl_viewwindowy += (vid.height/2);
-		gl_windowcentery += (vid.height/2);
-	}
+	HWR_ShiftViewPort();
 
 	// check for new console commands.
 	NetUpdate();

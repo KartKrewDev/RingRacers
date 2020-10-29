@@ -478,7 +478,7 @@ void P_ResetPlayer(player_t *player)
 	player->powers[pw_carry] = CR_NONE;
 	player->onconveyor = 0;
 
-	player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
+	//player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
 	player->kartstuff[k_pogospring] = 0;
 }
 
