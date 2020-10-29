@@ -12,5 +12,6 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2);
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2);
 boolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2);
 boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2);
+boolean K_FloatingItemCollide(mobj_t *t1, mobj_t *t2);
 
 #endif

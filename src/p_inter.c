@@ -231,27 +231,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetObjectMomZ(player->mo, 12<<FRACBITS, false);
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
-		case MT_FLOATINGITEM: // SRB2kart
-			if (!P_CanPickupItem(player, 3) || (player->kartstuff[k_itemamount] && player->kartstuff[k_itemtype] != special->threshold))
-				return;
-
-			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
-				return;
-
-			player->kartstuff[k_itemtype] = special->threshold;
-			player->kartstuff[k_itemamount] += special->movecount;
-			if (player->kartstuff[k_itemamount] > 255)
-				player->kartstuff[k_itemamount] = 255;
-
-			S_StartSound(special, special->info->deathsound);
-
-			P_SetTarget(&special->tracer, toucher);
-			special->flags2 |= MF2_NIGHTSPULL;
-			special->destscale = mapobjectscale>>4;
-			special->scalespeed <<= 1;
-
-			special->flags &= ~MF_SPECIAL;
-			return;
 		case MT_RANDOMITEM:			// SRB2kart
 			if (!P_CanPickupItem(player, 1))
 				return;

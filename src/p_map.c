@@ -970,6 +970,27 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		return K_FallingRockCollide(thing, tmthing);
 	}
 
+	if (tmthing->type == MT_FLOATINGITEM)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z - thing->height) // extended hitbox
+			return true; // underneath
+
+		return K_FloatingItemCollide(tmthing, thing);
+	}
+	else if (thing->type == MT_FLOATINGITEM)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z - thing->height) // extended hitbox
+			return true; // underneath
+
+		return K_FloatingItemCollide(thing, tmthing);
+	}
+
 	//}
 
 	if ((thing->type == MT_SPRINGSHELL || thing->type == MT_YELLOWSHELL) && thing->health > 0
