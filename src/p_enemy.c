@@ -12169,11 +12169,13 @@ void A_FlickyCenter(mobj_t *actor)
 		{
 			actor->extravalue2 = 1;
 		 	P_TeleportMove(actor, actor->target->x, actor->target->y, actor->target->z);
+			tmthing = NULL;
 		}
 		else if(actor->extravalue2)
 		{
 			actor->extravalue2 = 0;
 			P_TeleportMove(actor, originx, originy, originz);
+			tmthing = NULL;
 		}
 	}
 }
