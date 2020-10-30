@@ -2610,7 +2610,6 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, INT32 duration, INT32 
 	pglEnable(GL_CULL_FACE);
 	pglEnable(GL_NORMALIZE);
 
-#ifdef USE_FTRANSFORM_MIRROR
 	// flipped is if the object is vertically flipped
 	// hflipped is if the object is horizontally flipped
 	// pos->flip is if the screen is flipped vertically
@@ -2623,17 +2622,6 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, INT32 duration, INT32 
 		else
 			pglCullFace(GL_BACK);
 	}
-#else
-	// pos->flip is if the screen is flipped too
-	if (flipped ^ hflipped ^ pos->flip) // If one or three of these are active, but not two, invert the model's culling
-	{
-		pglCullFace(GL_FRONT);
-	}
-	else
-	{
-		pglCullFace(GL_BACK);
-	}
-#endif
 
 	pglPushMatrix(); // should be the same as glLoadIdentity
 	//Hurdler: now it seems to work
@@ -2649,14 +2637,8 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, INT32 duration, INT32 
 
 	if (pos->roll)
 	{
-		float roll = (1.0f * pos->rollflip);
 		pglTranslatef(pos->centerx, pos->centery, 0);
-		if (pos->rotaxis == 2) // Z
-			pglRotatef(pos->rollangle, 0.0f, 0.0f, roll);
-		else if (pos->rotaxis == 1) // Y
-			pglRotatef(pos->rollangle, 0.0f, roll, 0.0f);
-		else // X
-			pglRotatef(pos->rollangle, roll, 0.0f, 0.0f);
+		pglRotatef(pos->rollangle, pos->rollx, 0.0f, pos->rollz);
 		pglTranslatef(-pos->centerx, -pos->centery, 0);
 	}
 
@@ -2829,13 +2811,9 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 	if (stransform)
 	{
 		used_fov = stransform->fovxangle;
-#ifdef USE_FTRANSFORM_MIRROR
-		// mirroring from Kart
 		if (stransform->mirror)
 			pglScalef(-stransform->scalex, stransform->scaley, -stransform->scalez);
-		else
-#endif
-		if (stransform->flip)
+		else if (stransform->flip)
 			pglScalef(stransform->scalex, -stransform->scaley, -stransform->scalez);
 		else
 			pglScalef(stransform->scalex, stransform->scaley, -stransform->scalez);

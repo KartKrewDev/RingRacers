@@ -5508,6 +5508,8 @@ static void HWR_DrawSkyBackground(player_t *player)
 			fixed_t rol = AngleFixed(player->viewrollangle);
 			dometransform.rollangle = FIXED_TO_FLOAT(rol);
 			dometransform.roll = true;
+			dometransform.rollx = 1.0f;
+			dometransform.rollz = 0.0f;
 		}
 		dometransform.splitscreen = r_splitscreen;
 
@@ -5786,6 +5788,8 @@ void HWR_RenderSkyboxView(player_t *player)
 		fixed_t rol = AngleFixed(player->viewrollangle);
 		atransform.rollangle = FIXED_TO_FLOAT(rol);
 		atransform.roll = true;
+		atransform.rollx = 1.0f;
+		atransform.rollz = 0.0f;
 	}
 	atransform.splitscreen = r_splitscreen;
 
@@ -5987,6 +5991,8 @@ void HWR_RenderPlayerView(void)
 		fixed_t rol = AngleFixed(player->viewrollangle);
 		atransform.rollangle = FIXED_TO_FLOAT(rol);
 		atransform.roll = true;
+		atransform.rollx = 1.0f;
+		atransform.rollz = 0.0f;
 	}
 	atransform.splitscreen = r_splitscreen;
 

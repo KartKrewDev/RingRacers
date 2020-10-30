@@ -1271,8 +1271,6 @@ static void readspriteframe(MYFILE *f, spriteinfo_t *sprinfo, UINT8 frame)
 				sprinfo->pivot[frame].x = value;
 			else if (fastcmp(word, "YPIVOT"))
 				sprinfo->pivot[frame].y = value;
-			else if (fastcmp(word, "ROTAXIS"))
-				sprinfo->pivot[frame].rotaxis = value;
 			else
 			{
 				f->curpos = lastline;
@@ -11479,11 +11477,6 @@ struct {
 	{"DI_SOUTH",DI_SOUTH},
 	{"DI_SOUTHEAST",DI_SOUTHEAST},
 	{"NUMDIRS",NUMDIRS},
-
-	// Sprite rotation axis (rotaxis_t)
-	{"ROTAXIS_X",ROTAXIS_X},
-	{"ROTAXIS_Y",ROTAXIS_Y},
-	{"ROTAXIS_Z",ROTAXIS_Z},
 
 	// Buttons (ticcmd_t)	// SRB2kart
 	{"BT_ACCELERATE",BT_ACCELERATE},
