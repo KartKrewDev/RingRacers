@@ -318,10 +318,6 @@ void G_ReadDemoExtraData(void)
 					playeringame[p] = true;
 					G_AddPlayer(p);
 					players[p].spectator = true;
-
-					// There's likely an off-by-one error in timing recording or playback of joins. This hacks around it so I don't have to find out where that is. \o/
-					if (oldcmd[p].forwardmove)
-						P_RandomByte();
 				}
 				else
 				{
