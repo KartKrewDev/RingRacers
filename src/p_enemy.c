@@ -8676,7 +8676,7 @@ void A_JawzChase(mobj_t *actor)
 			angle_t angledelta = actor->angle - targetangle;
 			boolean turnclockwise = true;
 
-			if ((gametyperules & GTR_CIRCUIT))
+			if (gametyperules & GTR_CIRCUIT)
 			{
 				const fixed_t distbarrier = FixedMul(512*mapobjectscale, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
 				const fixed_t distaway = P_AproxDistance(actor->tracer->x - actor->x, actor->tracer->y - actor->y);

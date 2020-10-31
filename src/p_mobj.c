@@ -1166,10 +1166,6 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				case MT_SINK:
 					if (mo->extravalue2 > 0)
 						gravityadd *= mo->extravalue2;
-					/* FALLTHRU */
-				case MT_ORBINAUT:
-				case MT_JAWZ:
-				case MT_JAWZ_DUD:
 					gravityadd = (5*gravityadd)/2;
 					break;
 				case MT_KARMAFIREWORK:
@@ -6183,6 +6179,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
 			K_DoPogoSpring(mobj, 0, 1);
+
+		if (!(gametyperules & GTR_CIRCUIT))
+			mobj->friction = max(0, 3 * mobj->friction / 4);
 
 		break;
 	}
