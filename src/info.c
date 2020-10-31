@@ -22941,7 +22941,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_itpick,     // deathsound
 		0,              // speed
 		48*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		64*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		0,              // damage
