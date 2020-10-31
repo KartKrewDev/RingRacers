@@ -409,6 +409,9 @@ boolean K_FloatingItemCollide(mobj_t *t1, mobj_t *t2)
 {
 	player_t * player = t2->player;
 
+	if (t1->health < 1)
+		return true;
+
 	if (! player)
 		return true;
 
@@ -418,8 +421,8 @@ boolean K_FloatingItemCollide(mobj_t *t1, mobj_t *t2)
 	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 		return true;
 
-	player->kartstuff[k_itemtype] = t2->threshold;
-	player->kartstuff[k_itemamount] += t2->movecount;
+	player->kartstuff[k_itemtype] = t1->threshold;
+	player->kartstuff[k_itemamount] += t1->movecount;
 	if (player->kartstuff[k_itemamount] > 255)
 		player->kartstuff[k_itemamount] = 255;
 
@@ -430,6 +433,7 @@ boolean K_FloatingItemCollide(mobj_t *t1, mobj_t *t2)
 	t1->destscale = mapobjectscale>>4;
 	t1->scalespeed <<= 1;
 
-	t1->flags &= ~MF_SPECIAL;
+	t1->health--;
+
 	return false;
 }
