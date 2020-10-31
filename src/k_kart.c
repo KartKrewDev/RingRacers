@@ -316,22 +316,22 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 		/*Eggman Monitor*/ { 1, 0 }, // Eggman Monitor
 			  /*Orbinaut*/ { 8, 0 }, // Orbinaut
 				  /*Jawz*/ { 8, 1 }, // Jawz
-				  /*Mine*/ { 4, 1 }, // Mine
+				  /*Mine*/ { 6, 1 }, // Mine
 			   /*Ballhog*/ { 2, 1 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 2, 1 }, // Grow
 				/*Shrink*/ { 0, 0 }, // Shrink
-		/*Thunder Shield*/ { 0, 0 }, // Thunder Shield
-		 /*Bubble Shield*/ { 0, 0 }, // Bubble Shield
+		/*Thunder Shield*/ { 4, 0 }, // Thunder Shield
+		 /*Bubble Shield*/ { 1, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0 }, // Flame Shield
 			   /*Hyudoro*/ { 2, 0 }, // Hyudoro
 		   /*Pogo Spring*/ { 2, 0 }, // Pogo Spring
 			/*Super Ring*/ { 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0 }, // Kitchen Sink
 			/*Sneaker x2*/ { 0, 0 }, // Sneaker x2
-			/*Sneaker x3*/ { 0, 1 }, // Sneaker x3
+			/*Sneaker x3*/ { 1, 1 }, // Sneaker x3
 			 /*Banana x3*/ { 1, 0 }, // Banana x3
-			/*Banana x10*/ { 0, 1 }, // Banana x10
+			/*Banana x10*/ { 1, 1 }, // Banana x10
 		   /*Orbinaut x3*/ { 2, 0 }, // Orbinaut x3
 		   /*Orbinaut x4*/ { 1, 1 }, // Orbinaut x4
 			   /*Jawz x2*/ { 2, 1 }  // Jawz x2
