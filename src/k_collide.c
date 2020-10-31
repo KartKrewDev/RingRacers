@@ -409,7 +409,7 @@ boolean K_FloatingItemCollide(mobj_t *t1, mobj_t *t2)
 {
 	player_t * player = t2->player;
 
-	if (t1->health < 1)
+	if (t1->flags2 & MF2_NIGHTSPULL)
 		return true;
 
 	if (! player)
@@ -432,8 +432,6 @@ boolean K_FloatingItemCollide(mobj_t *t1, mobj_t *t2)
 	t1->flags2 |= MF2_NIGHTSPULL;
 	t1->destscale = mapobjectscale>>4;
 	t1->scalespeed <<= 1;
-
-	t1->health--;
 
 	return false;
 }
