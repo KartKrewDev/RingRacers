@@ -973,9 +973,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	if (tmthing->type == MT_FLOATINGITEM)
 	{
 		// see if it went over / under
-		if (tmthing->z > thing->z + thing->height)
+		if (tmthing->z - tmthing->height > thing->z + thing->height)
 			return true; // overhead
-		if (tmthing->z + tmthing->height < thing->z - thing->height) // extended hitbox
+		if (tmthing->z + tmthing->height < thing->z) // extended hitbox
 			return true; // underneath
 
 		return K_FloatingItemCollide(tmthing, thing);
