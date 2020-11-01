@@ -2140,13 +2140,13 @@ static void readcupheader(MYFILE *f, cupheader_t *cup)
 
 				tmp = strtok(word2,",");
 				do {
-					INT32 map = atoi(tmp);
+					INT32 map = G_MapNumber(tmp);
 
-					if (tmp[0] >= 'A' && tmp[0] <= 'Z' && tmp[2] == '\0')
-						map = M_MapNumber(tmp[0], tmp[1]);
-
-					if (!map)
+					if (map >= nummapheaders)
+					{
+						deh_warning("Unknown map name '%s'\n", tmp);
 						break;
+					}
 
 					if (cup->numlevels >= MAXLEVELLIST)
 					{
@@ -2161,16 +2161,12 @@ static void readcupheader(MYFILE *f, cupheader_t *cup)
 			else if (fastcmp(word, "BONUSGAME"))
 			{
 				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
-					i = M_MapNumber(word2[0], word2[1]);
-				cup->bonusgame = (INT16)i - 1;
+				cup->bonusgame = (INT16)G_MapNumber(word2) - 1;
 			}
 			else if (fastcmp(word, "SPECIALSTAGE"))
 			{
 				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
-					i = M_MapNumber(word2[0], word2[1]);
-				cup->specialstage = (INT16)i - 1;
+				cup->specialstage = (INT16)G_MapNumber(word2) - 1;
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{
