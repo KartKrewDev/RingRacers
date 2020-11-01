@@ -1699,7 +1699,7 @@ static void readlevelheader(MYFILE *f, char * name)
 		I_Error("Too many maps!");
 	}
 
-	if (mapheaderinfo[num-1])
+	if (f->wad > mainwads && num <= nummapheaders)
 		G_SetGameModified(multiplayer, true); // only mark as a major mod if it replaces an already-existing mapheaderinfo
 
 	// Reset all previous map header information
