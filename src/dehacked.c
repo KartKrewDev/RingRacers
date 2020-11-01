@@ -2142,7 +2142,7 @@ static void readcupheader(MYFILE *f, cupheader_t *cup)
 				do {
 					INT32 map = G_MapNumber(tmp);
 
-					if (map >= nummapheaders)
+					if (map > nummapheaders)
 					{
 						deh_warning("Unknown map name '%s'\n", tmp);
 						break;
