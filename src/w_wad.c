@@ -952,6 +952,39 @@ UINT16 W_FindNextEmptyInPwad(UINT16 wad, UINT16 startlump)
 	return INT16_MAX;
 }
 
+// Get a map marker for WADs, and a standalone WAD file lump inside PK3s.
+UINT16 W_CheckNumForMapPwad(const char *name, UINT16 wad, UINT16 startlump)
+{
+	UINT16 i, end;
+
+	if (wadfiles[wad]->type == RET_WAD)
+	{
+		for (i = startlump; i < wadfiles[wad]->numlumps; i++)
+		{
+			if (!strcasecmp(name, (wadfiles[wad]->lumpinfo + i)->name))
+				return i;
+		}
+	}
+	else if (wadfiles[wad]->type == RET_PK3)
+	{
+		i = W_CheckNumForFolderStartPK3("maps/", wad, startlump);
+
+		if (i != INT16_MAX)
+		{
+			end = W_CheckNumForFolderEndPK3("maps/", wad, i);
+
+			// Now look for the specified map.
+			for (; i < end; i++)
+			{
+				if (!strcasecmp(name, (wadfiles[wad]->lumpinfo + i)->longname))
+					return i;
+			}
+		}
+	}
+
+	return INT16_MAX;
+}
+
 //
 // Same as the original, but checks in one pwad only.
 // wadid is a wad number
@@ -1182,30 +1215,41 @@ lumpnum_t W_CheckNumForLongName(const char *name)
 // TODO: Make it search through cache first, maybe...?
 lumpnum_t W_CheckNumForMap(const char *name)
 {
-	UINT16 lumpNum, end;
 	UINT32 i;
-	for (i = numwadfiles - 1; i < numwadfiles; i--)
+	lumpnum_t check = INT16_MAX;
+
+	// Check the lumpnumcache first. Loop backwards so that we check
+	// most recent entries first
+	for (i = lumpnumcacheindex + LUMPNUMCACHESIZE; i > lumpnumcacheindex; i--)
 	{
-		if (wadfiles[i]->type == RET_WAD)
+		if (strcasecmp(lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname, name) == 0)
 		{
-			for (lumpNum = 0; lumpNum < wadfiles[i]->numlumps; lumpNum++)
-				if (!strncmp(name, (wadfiles[i]->lumpinfo + lumpNum)->name, 8))
-					return (i<<16) + lumpNum;
-		}
-		else if (wadfiles[i]->type == RET_PK3)
-		{
-			lumpNum = W_CheckNumForFolderStartPK3("maps/", i, 0);
-			if (lumpNum != INT16_MAX)
-				end = W_CheckNumForFolderEndPK3("maps/", i, lumpNum);
-			else
-				continue;
-			// Now look for the specified map.
-			for (; lumpNum < end; lumpNum++)
-				if (!strnicmp(name, (wadfiles[i]->lumpinfo + lumpNum)->name, 8))
-					return (i<<16) + lumpNum;
+			lumpnumcacheindex = i & (LUMPNUMCACHESIZE - 1);
+			return lumpnumcache[lumpnumcacheindex].lumpnum;
 		}
 	}
-	return LUMPERROR;
+
+	for (i = numwadfiles - 1; i < numwadfiles; i--)
+	{
+		check = W_CheckNumForMapPwad(name,(UINT16)i,0);
+		if (check != INT16_MAX)
+			break; //found it
+	}
+
+	if (check == INT16_MAX) return LUMPERROR;
+	else
+	{
+		if (strlen(name) < 32)
+		{
+			// Update the cache.
+			lumpnumcacheindex = (lumpnumcacheindex + 1) & (LUMPNUMCACHESIZE - 1);
+			memset(lumpnumcache[lumpnumcacheindex].lumpname, '\0', 32);
+			strlcpy(lumpnumcache[lumpnumcacheindex].lumpname, name, 32);
+			lumpnumcache[lumpnumcacheindex].lumpnum = (i << 16) + check;
+		}
+
+		return (i << 16) + check;
+	}
 }
 
 //
