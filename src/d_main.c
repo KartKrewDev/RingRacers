@@ -1316,43 +1316,6 @@ void D_SRB2Main(void)
 	if (M_CheckParm("-server") || dedicated)
 		netgame = server = true;
 
-	if (M_CheckParm("-warp") && M_IsNextParm())
-	{
-		const char *word = M_GetNextParm();
-		char ch; // use this with sscanf to catch non-digits with
-		if (fastncmp(word, "MAP", 3)) // MAPxx name
-			pstartmap = M_MapNumber(word[3], word[4]);
-		else if (sscanf(word, "%d%c", &pstartmap, &ch) != 1) // a plain number
-			I_Error("Cannot warp to map %s (invalid map name)\n", word);
-		// Don't check if lump exists just yet because the wads haven't been loaded!
-		// Just do a basic range check here.
-		if (pstartmap < 1 || pstartmap > NUMMAPS)
-			I_Error("Cannot warp to map %d (out of range)\n", pstartmap);
-		else
-		{
-			if (!M_CheckParm("-server"))
-			{
-				G_SetGameModified(true, true);
-
-				// Start up a "minor" grand prix session
-				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
-
-				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
-				grandprixinfo.encore = false;
-				grandprixinfo.masterbots = false;
-
-				grandprixinfo.gp = true;
-				grandprixinfo.roundnum = 0;
-				grandprixinfo.cup = NULL;
-				grandprixinfo.wonround = false;
-
-				grandprixinfo.initalize = true;
-			}
-
-			autostart = true;
-		}
-	}
-
 	// adapt tables to SRB2's needs, including extra slots for dehacked file support
 	P_PatchInfoTables();
 
@@ -1549,6 +1512,42 @@ void D_SRB2Main(void)
 	savedata.lives = 0; // flag this as not-used
 
 	//------------------------------------------------ COMMAND LINE PARAMS
+
+	// this must be done after loading gamedata,
+	// to avoid setting off the corrupted gamedata code in G_LoadGameData if a SOC with custom gamedata is added
+	// -- Monster Iestyn 20/02/20
+	if (M_CheckParm("-warp") && M_IsNextParm())
+	{
+		const char *word = M_GetNextParm();
+
+		pstartmap = G_FindMapByNameOrCode(word, 0);
+
+		if (! pstartmap)
+			I_Error("Cannot find a map remotely named '%s'\n", word);
+		else
+		{
+			if (!M_CheckParm("-server"))
+			{
+				G_SetGameModified(true, true);
+
+				// Start up a "minor" grand prix session
+				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+				grandprixinfo.encore = false;
+				grandprixinfo.masterbots = false;
+
+				grandprixinfo.gp = true;
+				grandprixinfo.roundnum = 0;
+				grandprixinfo.cup = NULL;
+				grandprixinfo.wonround = false;
+
+				grandprixinfo.initalize = true;
+			}
+
+			autostart = true;
+		}
+	}
 
 	// this must be done after loading gamedata,
 	// to avoid setting off the corrupted gamedata code in G_LoadGameData if a SOC with custom gamedata is added
