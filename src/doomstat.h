@@ -395,9 +395,6 @@ typedef struct
 
 	SINT8 musforcereset; ///< Force resetmusic (-1 for default; 0 for force off; 1 for force on)
 
-	// SRB2Kart: Keeps track of if a map lump exists, so we can tell when a map is being replaced.
-	boolean alreadyExists;
-
 	// Lua stuff.
 	// (This is not ifdeffed so the map header structure can stay identical, just in case.)
 	UINT8 numCustomOptions;     ///< Internal. For Lua custom value support.

@@ -351,8 +351,6 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
 
-	boolean exists = (mapheaderinfo[gamemap-1]->alreadyExists == true);
-
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->selectheading[0] = '\0';
 	mapheaderinfo[num]->subttl[0] = '\0';
@@ -410,9 +408,6 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	P_DeleteFlickies(num);
 #endif
 	P_DeleteGrades(num);
-
-	// see p_setup.c - prevents replacing maps in addons with different versions
-	mapheaderinfo[num]->alreadyExists = exists;
 
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
@@ -4317,6 +4312,8 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 boolean P_AddWadFile(const char *wadfilename)
 {
 	size_t i, j, sreplaces = 0, mreplaces = 0, digmreplaces = 0;
+	INT32 numexistingmapheaders = nummapheaders;
+	INT32 map;
 	UINT16 numlumps, wadnum;
 	char *name;
 	lumpinfo_t *lumpinfo;
@@ -4466,36 +4463,23 @@ boolean P_AddWadFile(const char *wadfilename)
 	//
 	// search for maps
 	//
-	lumpinfo = wadfiles[wadnum]->lumpinfo;
-	for (i = 0; i < numlumps; i++, lumpinfo++)
+	for (map = 0; map < numexistingmapheaders; ++map)
 	{
-		name = lumpinfo->name;
-		if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
+		name = mapheaderinfo[map]->lumpname;
+
+		if (W_CheckNumForMapPwad(name, wadnum, 0) != INT16_MAX)
 		{
-			INT16 num;
-			if (name[5]!='\0')
-				continue;
-			num = (INT16)G_MapNumber(name);
-
-			// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-			if (num <= NUMMAPS && mapheaderinfo[num-1])
-			{
-				if (mapheaderinfo[num - 1]->alreadyExists != false)
-				{
-					G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-				}
-
-				mapheaderinfo[num - 1]->alreadyExists = true;
-			}
+			G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
 
 			//If you replaced the map you're on, end the level when done.
-			if (num == gamemap)
+			if (map == gamemap - 1)
 				replacedcurrentmap = true;
 
 			CONS_Printf("%s\n", name);
 			mapsadded = true;
 		}
 	}
+
 	if (!mapsadded)
 		CONS_Printf(M_GetText("No maps added\n"));
 

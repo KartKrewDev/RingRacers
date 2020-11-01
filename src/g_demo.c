@@ -2840,7 +2840,7 @@ void G_DoPlayDemo(char *defdemoname)
 	demo_p += 4; // Extrainfo location
 
 	// ...*map* not loaded?
-	if (!gamemap || (gamemap > NUMMAPS) || !mapheaderinfo[gamemap-1] || !(mapheaderinfo[gamemap-1]->alreadyExists == true))
+	if (!gamemap || (gamemap > NUMMAPS) || !mapheaderinfo[gamemap-1])
 	{
 		snprintf(msg, 1024, M_GetText("%s features a course that is not currently loaded.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);

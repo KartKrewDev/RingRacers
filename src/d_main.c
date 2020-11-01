@@ -1132,9 +1132,9 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
+	INT32 numbasemapheaders;
 	INT32 i;
 	UINT16 wadnum;
-	lumpinfo_t *lumpinfo;
 	char *name;
 
 	INT32 p;
@@ -1397,31 +1397,7 @@ void D_SRB2Main(void)
 
 #endif //ifndef DEVELOP
 
-	//
-	// search for maps
-	//
-	for (wadnum = 4; wadnum < 6; wadnum++) // fucking arbitrary numbers
-	{
-		lumpinfo = wadfiles[wadnum]->lumpinfo;
-		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
-		{
-			name = lumpinfo->name;
-
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
-			{
-				INT16 num;
-				if (name[5] != '\0')
-					continue;
-				num = (INT16)M_MapNumber(name[3], name[4]);
-
-				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-				if (num <= NUMMAPS && mapheaderinfo[num - 1])
-				{
-					mapheaderinfo[num - 1]->alreadyExists = true;
-				}
-			}
-		}
-	}
+	numbasemapheaders = nummapheaders;
 
 	CON_SetLoadingProgress(LOADED_IWAD);
 
@@ -1430,32 +1406,17 @@ void D_SRB2Main(void)
 	D_CleanFile(startuppwads);
 
 	//
-	// search for maps... again.
+	// search for maps
 	//
 	for (wadnum = mainwads+1; wadnum < numwadfiles; wadnum++)
 	{
-		lumpinfo = wadfiles[wadnum]->lumpinfo;
-		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
+		for (i = 0; i < numbasemapheaders; ++i)
 		{
-			name = lumpinfo->name;
+			name = mapheaderinfo[i]->lumpname;
 
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
+			if (W_CheckNumForMapPwad(name, wadnum, 0) != INT16_MAX)
 			{
-				INT16 num;
-				if (name[5] != '\0')
-					continue;
-				num = (INT16)M_MapNumber(name[3], name[4]);
-
-				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-				if (num <= NUMMAPS && mapheaderinfo[num - 1])
-				{
-					if (mapheaderinfo[num - 1]->alreadyExists != false)
-					{
-						G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-					}
-
-					mapheaderinfo[num - 1]->alreadyExists = true;
-				}
+				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
 
 				CONS_Printf("%s\n", name);
 			}
