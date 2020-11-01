@@ -2761,10 +2761,10 @@ static void K_drawKartMinimap(void)
 	if (stplyr != &players[displayplayers[0]])
 		return;
 
-	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(gamemap)));
+	lumpnum = W_CheckNumForLongName(va("%sR", G_BuildMapName(gamemap)));
 
 	if (lumpnum != -1)
-		AutomapPic = W_CachePatchName(va("%sR", G_BuildMapName(gamemap)), PU_HUDGFX);
+		AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);
 	else
 		return; // no pic, just get outta here
 

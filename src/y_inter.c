@@ -1813,9 +1813,9 @@ void Y_StartVote(void)
 			levelinfo[i].gts = NULL;
 
 		// set up the pic
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(votelevels[i][0]+1)));
+		lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(votelevels[i][0]+1)));
 		if (lumpnum != LUMPERROR)
-			levelinfo[i].pic = W_CachePatchName(va("%sP", G_BuildMapName(votelevels[i][0]+1)), PU_STATIC);
+			levelinfo[i].pic = W_CachePatchNum(lumpnum, PU_STATIC);
 		else
 			levelinfo[i].pic = W_CachePatchName("BLANKLVL", PU_STATIC);
 	}

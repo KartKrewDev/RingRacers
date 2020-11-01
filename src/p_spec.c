@@ -2571,6 +2571,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 415: // Run a script
+			// FIXME: cursed
+#if 0
 			if (cv_runscripts.value)
 			{
 				INT32 scrnum;
@@ -2605,6 +2607,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				else
 					COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
 			}
+#endif
 			break;
 
 		case 416: // Spawn adjustable fire flicker

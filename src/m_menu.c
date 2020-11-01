@@ -2218,7 +2218,7 @@ static void Dummystaff_OnChange(void)
 
 	dummystaffname[0] = '\0';
 
-	if ((l = W_CheckNumForName(va("%sS01",G_BuildMapName(cv_nextmap.value)))) == LUMPERROR)
+	if ((l = W_CheckNumForLongName(va("%sS01",G_BuildMapName(cv_nextmap.value)))) == LUMPERROR)
 	{
 		CV_StealthSetValue(&cv_dummystaff, 0);
 		return;
@@ -2227,7 +2227,7 @@ static void Dummystaff_OnChange(void)
 	{
 		char *temp = dummystaffname;
 		UINT8 numstaff = 1;
-		while (numstaff < 99 && (l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(cv_nextmap.value),numstaff+1))) != LUMPERROR)
+		while (numstaff < 99 && (l = W_CheckNumForLongName(va("%sS%02u",G_BuildMapName(cv_nextmap.value),numstaff+1))) != LUMPERROR)
 			numstaff++;
 
 		if (cv_dummystaff.value < 1)
@@ -2235,7 +2235,7 @@ static void Dummystaff_OnChange(void)
 		else if (cv_dummystaff.value > numstaff)
 			CV_StealthSetValue(&cv_dummystaff, 1);
 
-		if ((l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(cv_nextmap.value), cv_dummystaff.value))) == LUMPERROR)
+		if ((l = W_CheckNumForLongName(va("%sS%02u",G_BuildMapName(cv_nextmap.value), cv_dummystaff.value))) == LUMPERROR)
 			return; // shouldn't happen but might as well check...
 
 		G_UpdateStaffGhostName(l);
@@ -5524,7 +5524,7 @@ static void DrawReplayHutReplayInfo(void)
 
 		//  A 160x100 image of the level as entry MAPxxP
 		//CONS_Printf("%d %s\n", demolist[dir_on[menudepthleft]].map, G_BuildMapName(demolist[dir_on[menudepthleft]].map));
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(demolist[dir_on[menudepthleft]].map)));
+		lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(demolist[dir_on[menudepthleft]].map)));
 		if (lumpnum != LUMPERROR)
 			patch = W_CachePatchNum(lumpnum, PU_CACHE);
 		else
@@ -6187,15 +6187,10 @@ static boolean M_ExitPandorasBox(void)
 
 static void M_ChangeLevel(INT32 choice)
 {
-	char mapname[6];
 	(void)choice;
 
-	strlcpy(mapname, G_BuildMapName(cv_nextmap.value), sizeof (mapname));
-	strlwr(mapname);
-	mapname[5] = '\0';
-
 	M_ClearMenus(true);
-	COM_BufAddText(va("map %s -gametype \"%s\"\n", mapname, cv_newgametype.string));
+	COM_BufAddText(va("map %d -gametype \"%s\"\n", cv_nextmap.value, cv_newgametype.string));
 }
 
 static void M_ConfirmSpectate(INT32 choice)
@@ -8878,7 +8873,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 	//  A 160x100 image of the level as entry MAPxxP
 	if (cv_nextmap.value)
 	{
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cv_nextmap.value)));
+		lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(cv_nextmap.value)));
 		if (lumpnum != LUMPERROR)
 			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 		else
@@ -8944,7 +8939,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 		//  A 160x100 image of the level as entry MAPxxP
 		if (i+1)
 		{
-			lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(i+1)));
+			lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(i+1)));
 			if (lumpnum != LUMPERROR)
 				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 			else
@@ -8982,7 +8977,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 		//  A 160x100 image of the level as entry MAPxxP
 		if (i+1)
 		{
-			lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(i+1)));
+			lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(i+1)));
 			if (lumpnum != LUMPERROR)
 				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 			else

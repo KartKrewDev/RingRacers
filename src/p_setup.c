@@ -367,7 +367,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->ssspheres = 1;
 	mapheaderinfo[num]->gravity = DEFAULT_GRAVITY;
 	mapheaderinfo[num]->keywords[0] = '\0';
-	snprintf(mapheaderinfo[num]->musname, 7, "%sM", G_BuildMapName(i));
+	sprintf(mapheaderinfo[num]->musname, "%.5sM", G_BuildMapName(i));
 	mapheaderinfo[num]->musname[6] = 0;
 	mapheaderinfo[num]->mustrack = 0;
 	mapheaderinfo[num]->muspos = 0;
@@ -3671,7 +3671,7 @@ static void P_LoadRecordGhosts(void)
 	{
 		lumpnum_t l;
 		UINT8 j = 1;
-		while (j <= 99 && (l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(gamemap),j))) != LUMPERROR)
+		while (j <= 99 && (l = W_CheckNumForLongName(va("%sS%02u",G_BuildMapName(gamemap),j))) != LUMPERROR)
 		{
 			G_AddGhost(va("%sS%02u",G_BuildMapName(gamemap),j));
 			j++;
@@ -3774,7 +3774,7 @@ static void P_InitGametype(void)
 	{
 		static char buf[256];
 		char *path;
-		sprintf(buf, "media"PATHSEP"replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
+		snprintf(buf, sizeof buf, "media"PATHSEP"replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
 
 		path = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online", srb2home);
 		M_MkdirEach(path, M_PathParts(path) - 4, 0755);
@@ -4004,12 +4004,12 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	// internal game map
 	maplumpname = G_BuildMapName(gamemap);
-	lastloadedmaplumpnum = W_CheckNumForName(maplumpname);
+	lastloadedmaplumpnum = W_CheckNumForMap(maplumpname);
 	if (lastloadedmaplumpnum == LUMPERROR)
 		I_Error("Map %s not found.\n", maplumpname);
 
 	R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette,
-		(encoremode ? W_CheckNumForName(va("%sE", maplumpname)) : LUMPERROR));
+		(encoremode ? W_CheckNumForLongName(va("%sE", maplumpname)) : LUMPERROR));
 	CON_SetupBackColormap();
 
 	// SRB2 determines the sky texture to be used depending on the map header.

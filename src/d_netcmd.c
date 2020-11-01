@@ -2347,7 +2347,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	if (delay != 2)
 	{
 		UINT8 flags = 0;
-		I_Assert(W_CheckNumForName(G_BuildMapName(mapnum)) != LUMPERROR);
+		//I_Assert(W_CheckNumForName(G_BuildMapName(mapnum)) != LUMPERROR);
 		buf_p = buf;
 		if (pencoremode)
 			flags |= 1;

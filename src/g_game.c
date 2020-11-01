@@ -1201,7 +1201,8 @@ void G_DoLoadLevel(boolean resetplayer)
 	// cleanup
 	if (titlemapinaction == TITLEMAP_LOADING)
 	{
-		if (W_CheckNumForName(G_BuildMapName(gamemap)) == LUMPERROR)
+		//if (W_CheckNumForName(G_BuildMapName(gamemap)) == LUMPERROR)
+		if (gamemap < 1 || gamemap > nummapheaders)
 		{
 			titlemap = 0; // let's not infinite recursion ok
 			Command_ExitGame_f();
@@ -3262,7 +3263,7 @@ tryagain:
 		if (pprevmap == -2) // title demo hack
 		{
 			lumpnum_t l;
-			if ((l = W_CheckNumForName(va("%sS01",G_BuildMapName(ix+1)))) == LUMPERROR)
+			if ((l = W_CheckNumForLongName(va("%sS01",G_BuildMapName(ix+1)))) == LUMPERROR)
 				continue;
 		}
 
@@ -3513,7 +3514,7 @@ static void G_DoCompleted(void)
 					cm = nextmap; //Start the loop again so that the error checking below is executed.
 
 					//Make sure the map actually exists before you try to go to it!
-					if ((W_CheckNumForName(G_BuildMapName(cm + 1)) == LUMPERROR))
+					if (cm < 0 || cm >= nummapheaders)
 					{
 						CONS_Alert(CONS_ERROR, M_GetText("Next map given (MAP %d) doesn't exist! Reverting to MAP01.\n"), cm+1);
 						cm = 0;

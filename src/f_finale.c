@@ -2104,6 +2104,7 @@ void F_TitleScreenTicker(boolean run)
 		//static boolean use_netreplay = false;
 
 		char dname[9];
+		char *dname2 = dname;
 		lumpnum_t l;
 		const char *mapname;
 		UINT8 numstaff;
@@ -2146,7 +2147,7 @@ void F_TitleScreenTicker(boolean run)
 		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, false, 0, false, NULL)+1);
 
 		numstaff = 1;
-		while (numstaff < 99 && (l = W_CheckNumForName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)
+		while (numstaff < 99 && (l = W_CheckNumForLongName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)
 			numstaff++;
 
 #if 0 // turns out this isn't how we're gonna organise 'em
@@ -2167,7 +2168,7 @@ void F_TitleScreenTicker(boolean run)
 #endif
 
 		// Setup demo name
-		snprintf(dname, 9, "%sS%02u", mapname, numstaff);
+		dname2 = Z_StrDup(va("%sS%02u", mapname, numstaff));
 
 		/*if ((l = W_CheckNumForName(dname)) == LUMPERROR) -- we KNOW it exists now
 		{
@@ -2180,7 +2181,12 @@ loadreplay:
 		demo.title = demo.fromtitle = true;
 		demo.ignorefiles = true;
 		demo.loadfiles = false;
-		G_DoPlayDemo(dname);
+		G_DoPlayDemo(dname2);
+
+		if (dname2 != dname)
+		{
+			Z_Free(dname2);
+		}
 	}
 }
 
