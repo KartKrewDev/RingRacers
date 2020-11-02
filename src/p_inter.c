@@ -421,26 +421,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			player->powers[pw_emeralds] |= special->extravalue1;
-
-			if (ALLCHAOSEMERALDS(player->powers[pw_emeralds]))
-			{
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i] || players[i].spectator)
-					{
-						continue;
-					}
-
-					if (&players[i] == player)
-					{
-						continue;
-					}
-
-					players[i].bumpers = 0;
-				}
-
-				K_CheckBumpers();
-			}
+			K_CheckEmeralds(player);
 			break;
 		/*
 		case MT_EERIEFOG:
@@ -1680,6 +1661,8 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 			break;
 	}
 
+	K_DropEmeraldsFromPlayer(player, player->powers[pw_emeralds]);
+
 	player->pflags &= ~PF_SLIDING;
 	player->powers[pw_carry] = CR_NONE;
 
@@ -1909,9 +1892,23 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					K_PlayHitEmSound(source);
 					K_StealBumper(source->player, player, bumpadd);
+
+					if (damagetype & DMG_STEAL)
+					{
+						// Give them ALL of your emeralds :)
+						source->player->powers[pw_emeralds] |= player->powers[pw_emeralds];
+						player->powers[pw_emeralds] = 0;
+						K_CheckEmeralds(source->player);
+					}
 				}
 
 				K_RemoveBumper(player, inflictor, source, bumpadd, false);
+
+				if (!(damagetype & DMG_STEAL))
+				{
+					// Drop all of your emeralds
+					K_DropEmeraldsFromPlayer(player, player->powers[pw_emeralds]);
+				}
 			}
 
 			player->kartstuff[k_sneakertimer] = player->kartstuff[k_numsneakers] = 0;

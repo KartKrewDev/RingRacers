@@ -277,18 +277,45 @@ void K_CheckBumpers(void)
 		P_DoPlayerExit(&players[i]);
 }
 
+void K_CheckEmeralds(player_t *player)
+{
+	UINT8 i;
+
+	if (!ALLCHAOSEMERALDS(player->powers[pw_emeralds]))
+	{
+		return;
+	}
+
+	player->marescore++; // lol
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+
+		if (&players[i] == player)
+		{
+			continue;
+		}
+
+		players[i].bumpers = 0;
+	}
+
+	K_CheckBumpers();
+}
+
 mobj_t *K_SpawnChaosEmerald(mobj_t *parent, angle_t angle, SINT8 flip, UINT32 emeraldType)
 {
 	boolean validEmerald = true;
 	mobj_t *emerald = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_EMERALD);
 
-	emerald->angle = angle;
-
 	P_Thrust(emerald,
 		FixedAngle(P_RandomFixed() * 180) + angle,
-		16*mapobjectscale);
+		32 * mapobjectscale);
 
-	emerald->momz = flip * 3 * mapobjectscale;
+	emerald->momz = flip * 24 * mapobjectscale;
 	if (emerald->eflags & MFE_UNDERWATER)
 		emerald->momz = (117 * emerald->momz) / 200;
 
@@ -329,6 +356,25 @@ mobj_t *K_SpawnChaosEmerald(mobj_t *parent, angle_t angle, SINT8 flip, UINT32 em
 	}
 
 	return emerald;
+}
+
+void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
+{
+	UINT8 i;
+	SINT8 flip = P_MobjFlip(player->mo);
+
+	for (i = 0; i < 14; i++)
+	{
+		UINT32 emeraldFlag = (1 << i);
+
+		if ((player->powers[pw_emeralds] & emeraldFlag) && (emeraldFlag & emeraldType))
+		{
+			mobj_t *emerald = K_SpawnChaosEmerald(player->mo, player->mo->angle, flip, emeraldFlag);
+			P_SetTarget(&emerald->target, player->mo);
+
+			player->powers[pw_emeralds] &= ~emeraldFlag;
+		}
+	}
 }
 
 void K_RunPaperItemSpawners(void)

@@ -1163,6 +1163,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				case MT_EGGMANITEM:
 				case MT_SSMINE:
 				case MT_SINK:
+				case MT_EMERALD:
 					if (mo->extravalue2 > 0)
 						gravityadd *= mo->extravalue2;
 					gravityadd = (5*gravityadd)/2;
@@ -2081,7 +2082,6 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_BALLHOG:
 		case MT_SSMINE:
 		case MT_BUBBLESHIELDTRAP:
-		case MT_EMERALD:
 			// Remove stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
 			{
@@ -2089,6 +2089,7 @@ boolean P_ZMovement(mobj_t *mo)
 				return false;
 			}
 			break;
+
 		case MT_REDFLAG:
 		case MT_BLUEFLAG:
 			// Remove from death pits.  DON'T FUCKING DESPAWN IT DAMMIT
@@ -2096,6 +2097,20 @@ boolean P_ZMovement(mobj_t *mo)
 			{
 				mo->fuse = 1;
 				return false;
+			}
+			break;
+
+		case MT_EMERALD:
+			if (P_CheckDeathPitCollide(mo))
+			{
+				P_RemoveMobj(mo);
+				return false;
+			}
+
+			if (mo->z <= mo->floorz || mo->z + mo->height >= mo->ceilingz)
+			{
+				// Stop when hitting the floor
+				mo->momx = mo->momy = 0;
 			}
 			break;
 
@@ -8877,7 +8892,6 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SINK:
 		case MT_ROCKETSNEAKER:
 		case MT_SPB:
-		case MT_EMERALD:
 			thing->shadowscale = 3*FRACUNIT/2;
 			break;
 		case MT_BANANA_SHIELD:
@@ -8904,6 +8918,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_RING:
 		case MT_FLOATINGITEM:
 		case MT_BLUESPHERE:
+		case MT_EMERALD:
 			thing->shadowscale = FRACUNIT/2;
 			break;
 		case MT_DRIFTCLIP:
