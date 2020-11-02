@@ -108,11 +108,13 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 //
 boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 {
-	if (player->exiting || mapreset)
+	if (player->exiting || mapreset || player->eliminated)
 		return false;
 
-	/*if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0) // No bumpers in Match
-		return false;*/
+#ifndef OTHERKARMAMODES
+	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0) // No bumpers in Match
+		return false;
+#endif
 
 	if (weapon)
 	{
