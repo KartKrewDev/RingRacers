@@ -4115,4 +4115,9 @@ void K_drawKartHUD(void)
 	}
 
 	K_DrawWaypointDebugger();
+
+	if (gametype == GT_BATTLE)
+	{
+		V_DrawString(8, 8, V_SPLITSCREEN|V_SNAPTOTOP|V_SNAPTOLEFT, va("Emeralds: %d / 7", K_NumEmeralds(stplyr)));
+	}
 }
