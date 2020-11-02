@@ -23,6 +23,7 @@ void K_CheckBumpers(void);
 void K_CheckEmeralds(player_t *player);
 mobj_t *K_SpawnChaosEmerald(mobj_t *parent, angle_t angle, SINT8 flip, UINT32 emeraldType);
 void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType);
+UINT8 K_NumEmeralds(player_t *player);
 void K_RunPaperItemSpawners(void);
 void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);

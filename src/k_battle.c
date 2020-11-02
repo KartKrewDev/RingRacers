@@ -58,24 +58,19 @@ boolean K_IsPlayerWanted(player_t *player)
 
 void K_CalculateBattleWanted(void)
 {
-	UINT8 numingame = 0, numplaying = 0, numwanted = 0;
-	SINT8 bestbumperplayer = -1, bestbumper = -1;
+	UINT8 numingame = 0, numwanted = 0;
 	SINT8 camppos[MAXPLAYERS]; // who is the biggest camper
 	UINT8 ties = 0, nextcamppos = 0;
-	boolean setbumper = false;
 	UINT8 i, j;
 
 	if (!(gametyperules & GTR_WANTED))
 	{
-		for (i = 0; i < 4; i++)
-			battlewanted[i] = -1;
+		memset(battlewanted, -1, sizeof (battlewanted));
 		return;
 	}
 
 	wantedcalcdelay = wantedfrequency;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		camppos[i] = -1; // initialize
+	memset(camppos, -1, sizeof (camppos)); // initialize
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -87,33 +82,38 @@ void K_CalculateBattleWanted(void)
 		if (players[i].exiting) // We're done, don't calculate.
 			return;
 
-		numplaying++;
-
 		if (players[i].bumpers <= 0) // Not alive, so don't do anything else
 			continue;
 
 		numingame++;
 
-		if (bestbumper == -1 || players[i].bumpers > bestbumper)
-		{
-			bestbumper = players[i].bumpers;
-			bestbumperplayer = i;
-		}
-		else if (players[i].bumpers == bestbumper)
-			bestbumperplayer = -1; // Tie, no one has best bumper.
-
 		for (j = 0; j < MAXPLAYERS; j++)
 		{
 			if (!playeringame[j] || players[j].spectator)
 				continue;
+
 			if (players[j].bumpers <= 0)
 				continue;
+
 			if (j == i)
 				continue;
-			if (players[j].kartstuff[k_wanted] == players[i].kartstuff[k_wanted] && players[j].marescore > players[i].marescore)
+
+			if (K_NumEmeralds(&players[j]) > K_NumEmeralds(&players[i]))
+			{
 				position++;
+			}
+			else if (players[j].bumpers > players[i].bumpers)
+			{
+				position++;
+			}
+			else if (players[j].marescore > players[i].marescore)
+			{
+				position++;
+			}
 			else if (players[j].kartstuff[k_wanted] > players[i].kartstuff[k_wanted])
+			{
 				position++;
+			}
 		}
 
 		position--; // Make zero based
@@ -124,7 +124,7 @@ void K_CalculateBattleWanted(void)
 		camppos[position] = i;
 	}
 
-	if (numplaying <= 2 || (numingame <= 2 && bestbumper == 1)) // In 1v1s then there's no need for WANTED. In bigger netgames, don't show anyone as WANTED when they're equally matched.
+	if (numingame <= 2) // In 1v1s then there's no need for WANTED.
 		numwanted = 0;
 	else
 		numwanted = min(4, 1 + ((numingame-2) / 4));
@@ -132,19 +132,11 @@ void K_CalculateBattleWanted(void)
 	for (i = 0; i < 4; i++)
 	{
 		if (i+1 > numwanted) // Not enough players for this slot to be wanted!
-			battlewanted[i] = -1;
-		else if (bestbumperplayer != -1 && !setbumper) // If there's a player who has an untied bumper lead over everyone else, they are the first to be wanted.
 		{
-			battlewanted[i] = bestbumperplayer;
-			setbumper = true; // Don't set twice
+			battlewanted[i] = -1;
 		}
 		else
 		{
-			// Don't accidentally set the same player, if the bestbumperplayer is also a huge camper.
-			while (bestbumperplayer != -1 && camppos[nextcamppos] != -1
-				&& bestbumperplayer == camppos[nextcamppos])
-				nextcamppos++;
-
 			// Do not add *any* more people if there's too many times that are tied with others.
 			// This could theoretically happen very easily if people don't hit each other for a while after the start of a match.
 			// (I will be sincerely impressed if more than 2 people tie after people start hitting each other though)
@@ -375,6 +367,24 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 			player->powers[pw_emeralds] &= ~emeraldFlag;
 		}
 	}
+}
+
+UINT8 K_NumEmeralds(player_t *player)
+{
+	UINT8 i;
+	UINT8 num = 0;
+
+	for (i = 0; i < 14; i++)
+	{
+		UINT32 emeraldFlag = (1 << i);
+
+		if (player->powers[pw_emeralds] & emeraldFlag)
+		{
+			num++;
+		}
+	}
+
+	return num;
 }
 
 void K_RunPaperItemSpawners(void)
