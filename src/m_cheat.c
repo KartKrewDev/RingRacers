@@ -1165,8 +1165,7 @@ void Command_Writethings_f(void)
 	REQUIRE_SINGLEPLAYER;
 	REQUIRE_OBJECTPLACE;
 
-	//FIXME?
-	//P_WriteThings(W_GetNumForName(G_BuildMapName(gamemap)) + ML_THINGS);
+	P_WriteThings();
 }
 
 void Command_ObjectPlace_f(void)
