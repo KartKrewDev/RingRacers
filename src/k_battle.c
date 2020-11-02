@@ -449,19 +449,20 @@ void K_RunPaperItemSpawners(void)
 				}
 			}
 
-			for (i = starti; i < min(item, pcount); i++)
+			for (i = starti; i < min(item + starti, pcount); i++)
 			{
-				UINT8 r = P_RandomRange(0, item-1);
+				UINT8 r = P_RandomKey(item);
 				UINT8 recursion = 0;
 				mobj_t *drop = NULL;
 				SINT8 flip = 1;
 
 				while (spotUsed[r] == true)
 				{
-					r = P_RandomRange(0, item-1);
+					r = P_RandomKey(item);
 
-					if ((recursion++) > 32)
+					if ((recursion++) > MAXITEM)
 					{
+						// roll with it anyway I guess
 						break;
 					}
 				}
