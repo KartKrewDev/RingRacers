@@ -3469,8 +3469,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		if (gametyperules & GTR_BUMPERS) // SRB2kart
 		{
 			players[playernum].marescore = 0;
-			if (K_IsPlayerWanted(&players[playernum]))
-				K_CalculateBattleWanted();
+			K_CalculateBattleWanted();
 		}
 
 		K_PlayerForfeit(playernum, true);

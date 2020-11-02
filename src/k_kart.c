@@ -2454,9 +2454,7 @@ void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 a
 		}
 
 		player->bumpers -= amount;
-
-		if (K_IsPlayerWanted(player))
-			K_CalculateBattleWanted();
+		K_CalculateBattleWanted();
 	}
 
 	if (player->bumpers <= 0)
@@ -6793,7 +6791,7 @@ void K_KartUpdatePosition(player_t *player)
 		if (!playeringame[i] || players[i].spectator || !players[i].mo)
 			continue;
 
-		if (gametype == GT_RACE)
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			if (player->exiting) // End of match standings
 			{
@@ -6812,7 +6810,7 @@ void K_KartUpdatePosition(player_t *player)
 				}
 			}
 		}
-		else if (gametype == GT_BATTLE)
+		else
 		{
 			if (player->exiting) // End of match standings
 			{
@@ -6822,11 +6820,24 @@ void K_KartUpdatePosition(player_t *player)
 			}
 			else
 			{
-				// I have less points than but the same bumpers as this player OR
-				// I have less bumpers than this player
-				if ((players[i].bumpers == player->bumpers && players[i].marescore > player->marescore)
-					|| (players[i].bumpers > player->bumpers))
+				if (K_NumEmeralds(&players[i]) > K_NumEmeralds(player))
+				{
 					position++;
+				}
+				else if (players[i].bumpers > player->bumpers)
+				{
+					position++;
+				}
+				else if (players[i].marescore > player->marescore)
+				{
+					position++;
+				}
+				/*
+				else if (players[i].kartstuff[k_wanted] > player->kartstuff[k_wanted])
+				{
+					position++;
+				}
+				*/
 			}
 		}
 	}

@@ -2143,6 +2143,9 @@ static void K_drawKartWanted(void)
 	UINT8 *colormap = NULL;
 	INT32 basex = 0, basey = 0;
 
+	if (!splitscreen)
+		return;
+
 	if (stplyr != &players[displayplayers[0]])
 		return;
 
@@ -4118,6 +4121,6 @@ void K_drawKartHUD(void)
 
 	if (gametype == GT_BATTLE)
 	{
-		V_DrawString(8, 8, V_SPLITSCREEN|V_SNAPTOTOP|V_SNAPTOLEFT, va("Emeralds: %d / 7", K_NumEmeralds(stplyr)));
+		V_DrawRightAlignedString(BASEVIDWIDTH - 10, BASEVIDHEIGHT - 18, V_SPLITSCREEN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, va("Emeralds: %d / 7", K_NumEmeralds(stplyr)));
 	}
 }

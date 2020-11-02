@@ -41,6 +41,9 @@ INT32 K_StartingBumperCount(void)
 
 boolean K_IsPlayerWanted(player_t *player)
 {
+#if 1
+	return (player->kartstuff[k_position] == 1);
+#else
 	UINT8 i;
 
 	if (!(gametyperules & GTR_WANTED))
@@ -54,6 +57,7 @@ boolean K_IsPlayerWanted(player_t *player)
 			return true;
 	}
 	return false;
+#endif
 }
 
 void K_CalculateBattleWanted(void)
@@ -63,7 +67,9 @@ void K_CalculateBattleWanted(void)
 	UINT8 ties = 0, nextcamppos = 0;
 	UINT8 i, j;
 
+#if 0
 	if (!(gametyperules & GTR_WANTED))
+#endif
 	{
 		memset(battlewanted, -1, sizeof (battlewanted));
 		return;

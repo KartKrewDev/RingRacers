@@ -30,8 +30,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing]
-			&& !(t1->type == MT_ORBINAUT || t1->type == MT_JAWZ || t1->type == MT_JAWZ_DUD))
+		if (t2->player->powers[pw_flashing] && (t1->type == MT_ORBINAUT_SHIELD || t1->type == MT_JAWZ_SHIELD))
 			return true;
 
 		if (t2->player->kartstuff[k_hyudorotimer])

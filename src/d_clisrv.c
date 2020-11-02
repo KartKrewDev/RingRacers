@@ -2992,9 +2992,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		}
 	}
 
-	if (K_IsPlayerWanted(&players[playernum]))
-		K_CalculateBattleWanted();
-
+	K_CalculateBattleWanted();
 	LUAh_PlayerQuit(&players[playernum], reason); // Lua hook for player quitting
 
 	// don't look through someone's view who isn't there
