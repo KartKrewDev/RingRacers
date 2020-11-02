@@ -872,6 +872,7 @@ static void P_SpawnMapThings(boolean spawnemblems)
 // Experimental groovy write function!
 void P_WriteThings(void)
 {
+	const char * filename;
 	size_t i, length;
 	mapthing_t *mt;
 	UINT8 *savebuffer, *savebuf_p;
@@ -900,11 +901,13 @@ void P_WriteThings(void)
 
 	length = savebuf_p - savebuffer;
 
-	FIL_WriteFile(va("newthings%d.lmp", gamemap), savebuffer, length);
+	filename = va("newthings-%s.lmp", G_BuildMapName(gamemap));
+
+	FIL_WriteFile(filename, savebuffer, length);
 	free(savebuffer);
 	savebuf_p = NULL;
 
-	CONS_Printf(M_GetText("newthings%d.lmp saved.\n"), gamemap);
+	CONS_Printf(M_GetText("%s saved.\n"), filename);
 }
 
 //
