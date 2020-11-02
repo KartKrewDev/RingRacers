@@ -22769,7 +22769,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SLIDEME|MF_DONTENCOREMAP, // flags
+		MF_SLIDEME|MF_SPECIAL|MF_PICKUPFROMBELOW|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
