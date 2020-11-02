@@ -88,6 +88,7 @@ static patch_t *kp_rankbumper;
 static patch_t *kp_tinybumper[2];
 static patch_t *kp_ranknobumpers;
 static patch_t *kp_rankcapsule;
+static patch_t *kp_rankemeralds[7];
 
 static patch_t *kp_battlewin;
 static patch_t *kp_battlecool;
@@ -350,6 +351,13 @@ void K_LoadKartHUDGraphics(void)
 	kp_tinybumper[1] =			W_CachePatchName("K_BLNB", PU_HUDGFX);
 	kp_ranknobumpers =			W_CachePatchName("K_NOBLNS", PU_HUDGFX);
 	kp_rankcapsule =			W_CachePatchName("K_CAPICO", PU_HUDGFX);
+
+	sprintf(buffer, "K_EMERCx");
+	for (i = 0; i < 7; i++)
+	{
+		buffer[7] = '0'+(i+1);
+		kp_rankemeralds[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
 
 	// Battle graphics
 	kp_battlewin = 				W_CachePatchName("K_BWIN", PU_HUDGFX);
@@ -1515,7 +1523,7 @@ static boolean K_drawKartPositionFaces(void)
 	INT32 i, j, ranklines, strank = -1;
 	boolean completed[MAXPLAYERS];
 	INT32 rankplayer[MAXPLAYERS];
-	INT32 bumperx, numplayersingame = 0;
+	INT32 bumperx, emeraldx, numplayersingame = 0;
 	UINT8 *colormap;
 
 	ranklines = 0;
@@ -1596,6 +1604,7 @@ static boolean K_drawKartPositionFaces(void)
 		if (!players[rankplayer[i]].mo) continue;
 
 		bumperx = FACE_X+19;
+		emeraldx = FACE_X+16;
 
 		if (players[rankplayer[i]].mo->color)
 		{
@@ -1609,7 +1618,7 @@ static boolean K_drawKartPositionFaces(void)
 
 			if (LUA_HudEnabled(hud_battlebumpers))
 			{
-				if (gametype == GT_BATTLE && players[rankplayer[i]].bumpers > 0)
+				if ((gametyperules & GTR_BUMPERS) && players[rankplayer[i]].bumpers > 0)
 				{
 					V_DrawMappedPatch(bumperx-2, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_tinybumper[0], colormap);
 					for (j = 1; j < players[rankplayer[i]].bumpers; j++)
@@ -1618,7 +1627,18 @@ static boolean K_drawKartPositionFaces(void)
 						V_DrawMappedPatch(bumperx, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_tinybumper[1], colormap);
 					}
 				}
-			}	// A new level of stupidity: checking if lua is enabled to close a bracket. :Fascinating:
+			}
+		}
+
+		for (j = 0; j < 7; j++)
+		{
+			UINT32 emeraldFlag = (1 << j);
+
+			if (players[rankplayer[i]].powers[pw_emeralds] & emeraldFlag)
+			{
+				V_DrawScaledPatch(emeraldx, Y+7, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_rankemeralds[j]);
+				emeraldx += 7;
+			}
 		}
 
 		if (i == strank)
