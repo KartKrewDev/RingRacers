@@ -361,7 +361,7 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 
 		if ((player->powers[pw_emeralds] & emeraldFlag) && (emeraldFlag & emeraldType))
 		{
-			mobj_t *emerald = K_SpawnChaosEmerald(player->mo, player->mo->angle, flip, emeraldFlag);
+			mobj_t *emerald = K_SpawnChaosEmerald(player->mo, player->mo->angle - ANGLE_90, flip, emeraldFlag);
 			P_SetTarget(&emerald->target, player->mo);
 
 			player->powers[pw_emeralds] &= ~emeraldFlag;
