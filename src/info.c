@@ -139,7 +139,13 @@ char sprnames[NUMSPRITES + 1][5] =
 	"NCHP", // NiGHTS chip
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
-	"CEMG", // Chaos Emeralds
+	"EMC1", // Chaos Emeralds
+	"EMC2",
+	"EMC3",
+	"EMC4",
+	"EMC5",
+	"EMC6",
+	"EMC7",
 	"SHRD", // Emerald Hunt
 
 	// Interactive Objects
@@ -1896,13 +1902,13 @@ state_t states[NUMSTATES] =
 	{SPR_EMBM, 25, -1, {NULL}, 0, 0, S_NULL}, // S_EMBLEM26
 
 	// Chaos Emeralds
-	{SPR_CEMG, FF_FULLBRIGHT,   -1, {NULL}, 0, 0, S_NULL}, // S_CEMG1
-	{SPR_CEMG, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_CEMG2
-	{SPR_CEMG, FF_FULLBRIGHT|2, -1, {NULL}, 0, 0, S_NULL}, // S_CEMG3
-	{SPR_CEMG, FF_FULLBRIGHT|3, -1, {NULL}, 0, 0, S_NULL}, // S_CEMG4
-	{SPR_CEMG, FF_FULLBRIGHT|4, -1, {NULL}, 0, 0, S_NULL}, // S_CEMG5
-	{SPR_CEMG, FF_FULLBRIGHT|5, -1, {NULL}, 0, 0, S_NULL}, // S_CEMG6
-	{SPR_CEMG, FF_FULLBRIGHT|6, -1, {NULL}, 0, 0, S_NULL}, // S_CEMG7
+	{SPR_EMC1, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS1
+	{SPR_EMC2, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS2
+	{SPR_EMC3, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS3
+	{SPR_EMC4, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS4
+	{SPR_EMC5, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS5
+	{SPR_EMC6, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS6
+	{SPR_EMC7, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS7
 
 	// Emerald hunt shards
 	{SPR_SHRD, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD1
@@ -3746,14 +3752,14 @@ state_t states[NUMSTATES] =
 	{SPR_CAPS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_EGGCAPSULE
 
 	// Orbiting Chaos Emeralds/Ideya for NiGHTS
-	{SPR_CEMG, FF_FULLBRIGHT,   1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM1}, // S_ORBITEM1
-	{SPR_CEMG, FF_FULLBRIGHT|1, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM2}, // S_ORBITEM2
-	{SPR_CEMG, FF_FULLBRIGHT|2, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM3}, // S_ORBITEM3
-	{SPR_CEMG, FF_FULLBRIGHT|3, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM4}, // S_ORBITEM4
-	{SPR_CEMG, FF_FULLBRIGHT|4, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM5}, // S_ORBITEM5
-	{SPR_CEMG, FF_FULLBRIGHT|5, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM6}, // S_ORBITEM6
-	{SPR_CEMG, FF_FULLBRIGHT|6, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM7}, // S_ORBITEM7
-	{SPR_CEMG, FF_FULLBRIGHT|7, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM8}, // S_ORBITEM8
+	{SPR_EMC1, FF_FULLBRIGHT,   1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM1}, // S_ORBITEM1
+	{SPR_EMC2, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM2}, // S_ORBITEM2
+	{SPR_EMC3, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM3}, // S_ORBITEM3
+	{SPR_EMC4, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM4}, // S_ORBITEM4
+	{SPR_EMC5, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM5}, // S_ORBITEM5
+	{SPR_EMC6, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM6}, // S_ORBITEM6
+	{SPR_EMC7, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM7}, // S_ORBITEM7
+	{SPR_EMC1, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM8}, // S_ORBITEM8
 	{SPR_IDYA, FF_TRANS20|FF_FULLBRIGHT,   1, {A_OrbitNights}, ANG2*2, 0, S_ORBIDYA1}, // S_ORBIDYA1
 	{SPR_IDYA, FF_TRANS20|FF_FULLBRIGHT|1, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBIDYA2}, // S_ORBIDYA2
 	{SPR_IDYA, FF_TRANS20|FF_FULLBRIGHT|2, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBIDYA3}, // S_ORBIDYA3
@@ -8197,9 +8203,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_EMERALD1
-		313,            // doomednum
-		S_CEMG1,        // spawnstate
+	{           // MT_EMERALD
+		-1,             // doomednum
+		S_EMERALD_CHAOS1, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -8210,173 +8216,17 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
+		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		EMERALD1,       // speed
-		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		sfx_s3k2b,      // deathsound
+		0,              // speed
+		72*FRACUNIT,    // radius
+		72*FRACUNIT,    // height
 		0,              // display offset
 		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SPECIAL, // flags
-		S_NULL          // raisestate
-	},
-	{           // MT_EMERALD2
-		314,            // doomednum
-		S_CEMG2,        // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		EMERALD2,       // speed
-		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
-		0,              // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SPECIAL, // flags
-		S_NULL          // raisestate
-	},
-	{           // MT_EMERALD3
-		315,            // doomednum
-		S_CEMG3,        // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		EMERALD3,       // speed
-		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
-		0,              // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SPECIAL, // flags
-		S_NULL          // raisestate
-	},
-	{           // MT_EMERALD4
-		316,            // doomednum
-		S_CEMG4,        // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		EMERALD4,       // speed
-		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
-		0,              // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SPECIAL, // flags
-		S_NULL          // raisestate
-	},
-	{           // MT_EMERALD5
-		317,            // doomednum
-		S_CEMG5,        // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		EMERALD5,       // speed
-		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
-		0,              // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SPECIAL, // flags
-		S_NULL          // raisestate
-	},
-	{           // MT_EMERALD6
-		318,            // doomednum
-		S_CEMG6,        // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		EMERALD6,       // speed
-		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
-		0,              // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SPECIAL, // flags
-		S_NULL          // raisestate
-	},
-	{           // MT_EMERALD7
-		319,            // doomednum
-		S_CEMG7,        // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		EMERALD7,       // speed
-		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
-		0,              // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SPECIAL, // flags
+		MF_SPECIAL, // flags
 		S_NULL          // raisestate
 	},
 
@@ -8431,33 +8281,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOSECTOR,  // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_FLINGEMERALD
-		-1,             // doomednum
-		S_CEMG1,        // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		0,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		60*FRACUNIT,    // speed
-		16*FRACUNIT,    // radius
-		48*FRACUNIT,    // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SLIDEME|MF_SPECIAL, // flags
 		S_NULL          // raisestate
 	},
 
@@ -19105,7 +18928,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_GOTEMERALD
 		-1,             // doomednum
-		S_CEMG1,        // spawnstate
+		S_EMERALD_CHAOS1, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound

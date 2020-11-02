@@ -1130,7 +1130,6 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				case MT_FLINGCOIN:
 				case MT_FLINGBLUESPHERE:
 				case MT_FLINGNIGHTSCHIP:
-				case MT_FLINGEMERALD:
 				case MT_BOUNCERING:
 				case MT_RAILRING:
 				case MT_INFINITYRING:
@@ -2082,6 +2081,7 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_BALLHOG:
 		case MT_SSMINE:
 		case MT_BUBBLESHIELDTRAP:
+		case MT_EMERALD:
 			// Remove stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
 			{
@@ -6384,6 +6384,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			S_StartSound(mobj, sfx_s3k4e);
 		mobj->health--;
 		break;
+	case MT_EMERALD:
+		if (mobj->threshold > 0)
+			mobj->threshold--;
+		break;
 	case MT_DRIFTEXPLODE:
 		if (!mobj->target || !mobj->target->health)
 		{
@@ -8566,7 +8570,7 @@ void P_MobjThinker(mobj_t *mobj)
 		|| mobj->type == MT_FLINGCOIN
 		|| mobj->type == MT_FLINGBLUESPHERE
 		|| mobj->type == MT_FLINGNIGHTSCHIP
-		|| mobj->type == MT_FLINGEMERALD
+		|| mobj->type == MT_EMERALD
 		|| mobj->type == MT_BIGTUMBLEWEED
 		|| mobj->type == MT_LITTLETUMBLEWEED
 		|| mobj->type == MT_CANNONBALLDECOR
@@ -8873,6 +8877,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SINK:
 		case MT_ROCKETSNEAKER:
 		case MT_SPB:
+		case MT_EMERALD:
 			thing->shadowscale = 3*FRACUNIT/2;
 			break;
 		case MT_BANANA_SHIELD:

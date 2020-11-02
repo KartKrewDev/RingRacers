@@ -277,24 +277,85 @@ void K_CheckBumpers(void)
 		P_DoPlayerExit(&players[i]);
 }
 
+mobj_t *K_SpawnChaosEmerald(mobj_t *parent, angle_t angle, SINT8 flip, UINT32 emeraldType)
+{
+	boolean validEmerald = true;
+	mobj_t *emerald = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_EMERALD);
+
+	emerald->angle = angle;
+
+	P_Thrust(emerald,
+		FixedAngle(P_RandomFixed() * 180) + angle,
+		16*mapobjectscale);
+
+	emerald->momz = flip * 3 * mapobjectscale;
+	if (emerald->eflags & MFE_UNDERWATER)
+		emerald->momz = (117 * emerald->momz) / 200;
+
+	emerald->threshold = 10;
+
+	switch (emeraldType)
+	{
+		case EMERALD_CHAOS1:
+			P_SetMobjState(emerald, S_EMERALD_CHAOS1);
+			break;
+		case EMERALD_CHAOS2:
+			P_SetMobjState(emerald, S_EMERALD_CHAOS2);
+			break;
+		case EMERALD_CHAOS3:
+			P_SetMobjState(emerald, S_EMERALD_CHAOS3);
+			break;
+		case EMERALD_CHAOS4:
+			P_SetMobjState(emerald, S_EMERALD_CHAOS4);
+			break;
+		case EMERALD_CHAOS5:
+			P_SetMobjState(emerald, S_EMERALD_CHAOS5);
+			break;
+		case EMERALD_CHAOS6:
+			P_SetMobjState(emerald, S_EMERALD_CHAOS6);
+			break;
+		case EMERALD_CHAOS7:
+			P_SetMobjState(emerald, S_EMERALD_CHAOS7);
+			break;
+		default:
+			CONS_Printf("Invalid emerald type %d\n", emeraldType);
+			validEmerald = false;
+			break;
+	}
+
+	if (validEmerald == true)
+	{
+		emerald->extravalue1 = emeraldType;
+	}
+
+	return emerald;
+}
+
 void K_RunPaperItemSpawners(void)
 {
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
 	tic_t interval = 8*TICRATE;
+	UINT32 emeraldsSpawned = 0;
 
 	if (leveltime < starttime)
 	{
+		// Round hasn't started yet!
 		return;
 	}
 
 	if ((battleovertime.enabled > 0) && (battleovertime.radius < 256*mapobjectscale))
 	{
+		// Barrier has closed in too much
 		return;
 	}
 
 	if (overtime == true)
 	{
+		// Double frequency of items
 		interval /= 2;
+
+		// Even if this isn't true, we pretend it is, because it's too late to do anything about it :p
+		emeraldsSpawned = EMERALD_ALLCHAOS;
 	}
 
 	if (((leveltime - starttime) % interval) != 0)
@@ -315,18 +376,19 @@ void K_RunPaperItemSpawners(void)
 	else
 	{
 		UINT8 pcount = 0;
-		UINT8 i;
+		INT16 i;
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!playeringame[i] || players[i].spectator
-				|| players[i].exiting > 0
-				|| players[i].eliminated)
+			if (!playeringame[i] || players[i].spectator)
 			{
 				continue;
 			}
 
-			if ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0)
+			emeraldsSpawned |= players[i].powers[pw_emeralds];
+
+			if ((players[i].exiting > 0 || players[i].eliminated)
+				|| ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0))
 			{
 				continue;
 			}
@@ -337,9 +399,12 @@ void K_RunPaperItemSpawners(void)
 		if (pcount > 0)
 		{
 #define MAXITEM 64
-			UINT16 item = 0;
+			UINT8 item = 0;
 			mobj_t *spotList[MAXITEM];
 			boolean spotUsed[MAXITEM];
+
+			UINT32 firstUnspawnedEmerald = 0;
+			INT16 starti = 0;
 
 			thinker_t *th;
 			mobj_t *mo;
@@ -348,9 +413,6 @@ void K_RunPaperItemSpawners(void)
 
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
-				if (item >= MAXITEM)
-					break;
-
 				if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 					continue;
 
@@ -358,8 +420,15 @@ void K_RunPaperItemSpawners(void)
 
 				if (mo->type == MT_PAPERITEMSPOT)
 				{
+					if (item >= MAXITEM)
+						continue;
+
 					spotList[item] = mo;
 					item++;
+				}
+				else if (mo->type == MT_EMERALD)
+				{
+					emeraldsSpawned |= mo->extravalue1;
 				}
 			}
 
@@ -368,7 +437,19 @@ void K_RunPaperItemSpawners(void)
 				return;
 			}
 
-			for (i = 0; i < min(item, pcount); i++)
+			for (i = 0; i < 7; i++)
+			{
+				UINT32 emeraldFlag = (1 << i);
+
+				if (!(emeraldsSpawned & emeraldFlag))
+				{
+					firstUnspawnedEmerald = emeraldFlag;
+					starti = -1;
+					break;
+				}
+			}
+
+			for (i = starti; i < min(item, pcount); i++)
 			{
 				UINT8 r = P_RandomRange(0, item-1);
 				UINT8 recursion = 0;
@@ -387,11 +468,23 @@ void K_RunPaperItemSpawners(void)
 
 				flip = P_MobjFlip(spotList[r]);
 
-				drop = K_CreatePaperItem(
-					spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-					FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
-					0, 0
-				);
+				// When -1, we're spawning a Chaos Emerald.
+				if (i == -1)
+				{
+					drop = K_SpawnChaosEmerald(
+						spotList[r],
+						FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+						firstUnspawnedEmerald
+					);
+				}
+				else
+				{
+					drop = K_CreatePaperItem(
+						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
+						FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+						0, 0
+					);
+				}
 
 				K_FlipFromObject(drop, spotList[r]);
 				spotUsed[r] = true;

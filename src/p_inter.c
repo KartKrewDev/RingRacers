@@ -231,7 +231,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetObjectMomZ(player->mo, 12<<FRACBITS, false);
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
-		case MT_RANDOMITEM:			// SRB2kart
+		case MT_RANDOMITEM:
 			if (!P_CanPickupItem(player, 1))
 				return;
 
@@ -413,10 +413,41 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				P_DamageMobj(player->mo, special, special->target, 1, DMG_NORMAL);
 			}
 			return;
-		/*case MT_EERIEFOG:
+		case MT_EMERALD:
+			if (!P_CanPickupItem(player, 0))
+				return;
+
+			if (special->threshold > 0)
+				return;
+
+			player->powers[pw_emeralds] |= special->extravalue1;
+
+			if (ALLCHAOSEMERALDS(player->powers[pw_emeralds]))
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (!playeringame[i] || players[i].spectator)
+					{
+						continue;
+					}
+
+					if (&players[i] == player)
+					{
+						continue;
+					}
+
+					players[i].bumpers = 0;
+				}
+
+				K_CheckBumpers();
+			}
+			break;
+		/*
+		case MT_EERIEFOG:
 			special->frame &= ~FF_TRANS80;
 			special->frame |= FF_TRANS90;
-			return;*/
+			return;
+		*/
 		case MT_SMK_MOLE:
 			if (special->target && !P_MobjWasRemoved(special->target))
 				return;
