@@ -8226,7 +8226,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL, // flags
+		MF_SPECIAL|MF_PICKUPFROMBELOW, // flags
 		S_NULL          // raisestate
 	},
 
