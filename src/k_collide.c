@@ -404,34 +404,3 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 	K_KartBouncing(t2, t1, false, true);
 	return false;
 }
-
-boolean K_FloatingItemCollide(mobj_t *t1, mobj_t *t2)
-{
-	player_t * player = t2->player;
-
-	if (t1->flags2 & MF2_NIGHTSPULL)
-		return true;
-
-	if (! player)
-		return true;
-
-	if (!P_CanPickupItem(player, 3) || (player->kartstuff[k_itemamount] && player->kartstuff[k_itemtype] != t1->threshold))
-		return true;
-
-	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
-		return true;
-
-	player->kartstuff[k_itemtype] = t1->threshold;
-	player->kartstuff[k_itemamount] += t1->movecount;
-	if (player->kartstuff[k_itemamount] > 255)
-		player->kartstuff[k_itemamount] = 255;
-
-	S_StartSound(t1, t1->info->deathsound);
-
-	P_SetTarget(&t1->tracer, t2);
-	t1->flags2 |= MF2_NIGHTSPULL;
-	t1->destscale = mapobjectscale>>4;
-	t1->scalespeed <<= 1;
-
-	return false;
-}

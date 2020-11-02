@@ -157,6 +157,8 @@ typedef enum
 	MF_RUNSPAWNFUNC     = 1<<27,
 	// Don't remap in Encore mode. (Not a drawflag so that it's settable by mobjinfo.)
 	MF_DONTENCOREMAP    = 1<<28,
+	// Hitbox extends just as far below as above.
+	MF_PICKUPFROMBELOW  = 1<<29,
 	// free: to and including 1<<31
 } mobjflag_t;
 

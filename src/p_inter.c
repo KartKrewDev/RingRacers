@@ -184,15 +184,24 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 	if (heightcheck)
 	{
+		fixed_t toucher_bottom = toucher->z;
+		fixed_t special_bottom = special->z;
+
+		if (toucher->flags & MF_PICKUPFROMBELOW)
+			toucher_bottom -= toucher->height;
+
+		if (special->flags & MF_PICKUPFROMBELOW)
+			special_bottom -= special->height;
+
 		if (toucher->momz < 0) {
-			if (toucher->z + toucher->momz > special->z + special->height)
+			if (toucher_bottom + toucher->momz > special->z + special->height)
 				return;
-		} else if (toucher->z > special->z + special->height)
+		} else if (toucher_bottom > special->z + special->height)
 			return;
 		if (toucher->momz > 0) {
-			if (toucher->z + toucher->height + toucher->momz < special->z)
+			if (toucher->z + toucher->height + toucher->momz < special_bottom)
 				return;
-		} else if (toucher->z + toucher->height < special->z)
+		} else if (toucher->z + toucher->height < special_bottom)
 			return;
 	}
 
@@ -232,6 +241,27 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			player->mo->angle = special->target->angle;
 			P_SetObjectMomZ(player->mo, 12<<FRACBITS, false);
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
+			return;
+		case MT_FLOATINGITEM: // SRB2Kart
+			if (!P_CanPickupItem(player, 3) || (player->kartstuff[k_itemamount] && player->kartstuff[k_itemtype] != special->threshold))
+				return;
+
+			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
+				return;
+
+			player->kartstuff[k_itemtype] = special->threshold;
+			player->kartstuff[k_itemamount] += special->movecount;
+			if (player->kartstuff[k_itemamount] > 255)
+				player->kartstuff[k_itemamount] = 255;
+
+			S_StartSound(special, special->info->deathsound);
+
+			P_SetTarget(&special->tracer, toucher);
+			special->flags2 |= MF2_NIGHTSPULL;
+			special->destscale = mapobjectscale>>4;
+			special->scalespeed <<= 1;
+
+			special->flags &= ~MF_SPECIAL;
 			return;
 		case MT_RANDOMITEM:
 			if (!P_CanPickupItem(player, 1))
