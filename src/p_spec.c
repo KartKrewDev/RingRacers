@@ -2572,6 +2572,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 415: // Run a script
 			// FIXME: cursed
+			CONS_Alert(CONS_WARNING, "Linedef special 415 is currently broken! Fix it later, BYE.\n");
 #if 0
 			if (cv_runscripts.value)
 			{
