@@ -6820,24 +6820,30 @@ void K_KartUpdatePosition(player_t *player)
 			}
 			else
 			{
-				if (K_NumEmeralds(&players[i]) > K_NumEmeralds(player))
+				UINT8 myEmeralds = K_NumEmeralds(player);
+				UINT8 yourEmeralds = K_NumEmeralds(&players[i]);
+
+				if (yourEmeralds > myEmeralds)
 				{
+					// Emeralds matter above all
 					position++;
 				}
-				else if (players[i].bumpers > player->bumpers)
+				else if (yourEmeralds == myEmeralds)
 				{
-					position++;
+					// Bumpers are a tie breaker
+					if (players[i].bumpers > player->bumpers)
+					{
+						position++;
+					}
+					else if (players[i].bumpers == player->bumpers)
+					{
+						// Score is the second tier tie breaker
+						if (players[i].marescore > player->marescore)
+						{
+							position++;
+						}
+					}
 				}
-				else if (players[i].marescore > player->marescore)
-				{
-					position++;
-				}
-				/*
-				else if (players[i].kartstuff[k_wanted] > player->kartstuff[k_wanted])
-				{
-					position++;
-				}
-				*/
 			}
 		}
 	}
