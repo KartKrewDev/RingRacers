@@ -1230,6 +1230,32 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 	return groundz;
 }
 
+static void R_SetSpritePlaneHeights(vissprite_t *vis)
+{
+	ffloor_t *rover;
+
+	fixed_t top;
+	fixed_t bot;
+
+	vis->pt = vis->sector->floorheight;
+	vis->pb = vis->sector->ceilingheight;
+
+	for (rover = vis->sector->ffloors; rover; rover = rover->next)
+	{
+		if (rover->flags & FF_EXISTS)
+		{
+			top = P_GetFFloorTopZAt    (rover, vis->gx, vis->gy);
+			bot = P_GetFFloorBottomZAt (rover, vis->gx, vis->gy);
+
+			if (top <= vis->gzt && top > vis->pt)
+				vis->pt = top;
+
+			if (bot >= vis->gz && bot < vis->pb)
+				vis->pb = bot;
+		}
+	}
+}
+
 static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
 {
 	vissprite_t *shadow;
@@ -1318,6 +1344,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->xscale = FixedMul(xscale, shadowxscale); //SoM: 4/17/2000
 	shadow->scale = FixedMul(yscale, shadowyscale);
 	shadow->sector = vis->sector;
+	shadow->pt = vis->pt;
+	shadow->pb = vis->pb;
 	shadow->szt = (INT16)((centeryfrac - FixedMul(shadow->gzt - viewz, yscale))>>FRACBITS);
 	shadow->sz = (INT16)((centeryfrac - FixedMul(shadow->gz - viewz, yscale))>>FRACBITS);
 	shadow->cut = SC_ISSCALED|SC_SHADOW; //check this
@@ -1817,6 +1845,9 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->sector = thing->subsector->sector;
 	vis->szt = (INT16)((centeryfrac - FixedMul(vis->gzt - viewz, sortscale))>>FRACBITS);
 	vis->sz = (INT16)((centeryfrac - FixedMul(vis->gz - viewz, sortscale))>>FRACBITS);
+
+	R_SetSpritePlaneHeights(vis);
+
 	vis->cut = cut;
 	if (thing->subsector->sector->numlights)
 		vis->extra_colormap = *thing->subsector->sector->lightlist[light].extra_colormap;
@@ -2030,6 +2061,8 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->sector = thing->subsector->sector;
 	vis->szt = (INT16)((centeryfrac - FixedMul(vis->gzt - viewz, yscale))>>FRACBITS);
 	vis->sz = (INT16)((centeryfrac - FixedMul(vis->gz - viewz, yscale))>>FRACBITS);
+
+	R_SetSpritePlaneHeights(vis);
 
 	iscale = FixedDiv(FRACUNIT, xscale);
 
@@ -2410,12 +2443,12 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 				// bird: if any part of the sprite peeks in front the plane
 				if (planecameraz < viewz)
 				{
-					if (rover->gzt >= planeobjectz)
+					if (rover->pt >= planeobjectz && rover->gzt >= planeobjectz)
 						continue;
 				}
 				else if (planecameraz > viewz)
 				{
-					if (rover->gz <= planeobjectz)
+					if (rover->pb <= planeobjectz && rover->gz <= planeobjectz)
 						continue;
 				}
 
