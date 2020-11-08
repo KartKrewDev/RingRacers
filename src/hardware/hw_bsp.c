@@ -1,20 +1,17 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2019 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
+/// \file hw_bsp.c
 /// \brief convert SRB2 map
 
 #include "../doomdef.h"
 #include "../doomstat.h"
 #ifdef HWRENDER
-#include "hw_main.h"
 #include "hw_glob.h"
 #include "../r_local.h"
 #include "../z_zone.h"
@@ -56,12 +53,77 @@ static INT32 totalsubsecpolys = 0;
 // --------------------------------------------------------------------------
 // Polygon fast alloc / free
 // --------------------------------------------------------------------------
+//hurdler: quick fix for those who wants to play with larger wad
+
+#define ZPLANALLOC
+#ifndef ZPLANALLOC
+//#define POLYPOOLSIZE 1024000 // may be much over what is needed
+/// \todo check out how much is used
+static size_t POLYPOOLSIZE = 1024000;
+
+static UINT8 *gl_polypool = NULL;
+static UINT8 *gl_ppcurrent;
+static size_t gl_ppfree;
+#endif
+
+// only between levels, clear poly pool
+static void HWR_ClearPolys(void)
+{
+#ifndef ZPLANALLOC
+	gl_ppcurrent = gl_polypool;
+	gl_ppfree = POLYPOOLSIZE;
+#endif
+}
+
+// allocate  pool for fast alloc of polys
+void HWR_InitPolyPool(void)
+{
+#ifndef ZPLANALLOC
+	INT32 pnum;
+
+	//hurdler: quick fix for those who wants to play with larger wad
+	if ((pnum = M_CheckParm("-polypoolsize")))
+		POLYPOOLSIZE = atoi(myargv[pnum+1])*1024; // (in kb)
+
+	CONS_Debug(DBG_RENDER, "HWR_InitPolyPool(): allocating %d bytes\n", POLYPOOLSIZE);
+	gl_polypool = malloc(POLYPOOLSIZE);
+	if (!gl_polypool)
+		I_Error("HWR_InitPolyPool(): couldn't malloc polypool\n");
+	HWR_ClearPolys();
+#endif
+}
+
+void HWR_FreePolyPool(void)
+{
+#ifndef ZPLANALLOC
+	if (gl_polypool)
+		free(gl_polypool);
+	gl_polypool = NULL;
+#endif
+}
 
 static poly_t *HWR_AllocPoly(INT32 numpts)
 {
 	poly_t *p;
 	size_t size = sizeof (poly_t) + sizeof (polyvertex_t) * numpts;
+#ifdef ZPLANALLOC
 	p = Z_Malloc(size, PU_HWRPLANE, NULL);
+#else
+#ifdef PARANOIA
+	if (!gl_polypool)
+		I_Error("Used gl_polypool without init!\n");
+	if (!gl_ppcurrent)
+		I_Error("gl_ppcurrent == NULL!\n");
+#endif
+
+	if (gl_ppfree < size)
+		I_Error("HWR_AllocPoly(): no more memory %u bytes left, %u bytes needed\n\n%s\n",
+		        gl_ppfree, size, "You can try the param -polypoolsize 2048 (or higher if needed)");
+
+	p = (poly_t *)gl_ppcurrent;
+	gl_ppcurrent += size;
+	gl_ppfree -= size;
+#endif
 	p->numpts = numpts;
 	return p;
 }
@@ -70,7 +132,17 @@ static polyvertex_t *HWR_AllocVertex(void)
 {
 	polyvertex_t *p;
 	size_t size = sizeof (polyvertex_t);
+#ifdef ZPLANALLOC
 	p = Z_Malloc(size, PU_HWRPLANE, NULL);
+#else
+	if (gl_ppfree < size)
+		I_Error("HWR_AllocVertex(): no more memory %u bytes left, %u bytes needed\n\n%s\n",
+		        gl_ppfree, size, "You can try the param -polypoolsize 2048 (or higher if needed)");
+
+	p = (polyvertex_t *)gl_ppcurrent;
+	gl_ppcurrent += size;
+	gl_ppfree -= size;
+#endif
 	return p;
 }
 
@@ -78,8 +150,15 @@ static polyvertex_t *HWR_AllocVertex(void)
 /// for now don't free because it doesn't free in reverse order
 static void HWR_FreePoly(poly_t *poly)
 {
+#ifdef ZPLANALLOC
 	Z_Free(poly);
+#else
+	const size_t size = sizeof (poly_t) + sizeof (polyvertex_t) * poly->numpts;
+	memset(poly, 0x00, size);
+	//mempoly -= polysize;
+#endif
 }
+
 
 // Return interception along bsp line,
 // with the polygon segment
@@ -363,8 +442,12 @@ static poly_t *CutOutSubsecPoly(seg_t *lseg, INT32 count, poly_t *poly)
 	// for each seg of the subsector
 	for (; count--; lseg++)
 	{
-		//x,y,dx,dy (like a divline)
 		line_t *line = lseg->linedef;
+
+		if (lseg->glseg)
+			continue;
+
+		//x,y,dx,dy (like a divline)
 		p1.x = FIXED_TO_FLOAT(lseg->side ? line->v2->x : line->v1->x);
 		p1.y = FIXED_TO_FLOAT(lseg->side ? line->v2->y : line->v1->y);
 		p2.x = FIXED_TO_FLOAT(lseg->side ? line->v1->x : line->v2->x);
@@ -491,8 +574,8 @@ static inline void SearchDivline(node_t *bsp, fdivline_t *divline)
 	divline->dy = FIXED_TO_FLOAT(bsp->dy);
 }
 
-//Hurdler: implement a loading status
 #ifdef HWR_LOADING_SCREEN
+//Hurdler: implement a loading status
 static size_t ls_count = 0;
 static UINT8 ls_percent = 0;
 
@@ -746,10 +829,14 @@ static INT32 SolveTProblem(void)
 	INT32 i;
 	size_t l;
 
-	if (cv_grsolvetjoin.value == 0)
+	if (cv_glsolvetjoin.value == 0)
 		return 0;
 
 	CONS_Debug(DBG_RENDER, "Solving T-joins. This may take a while. Please wait...\n");
+#ifdef HWR_LOADING_SCREEN
+	CON_Drawer(); //let the user know what we are doing
+	I_FinishUpdate(); // page flip or blit buffer
+#endif
 
 	numsplitpoly = 0;
 
@@ -793,12 +880,10 @@ static void AdjustSegs(void)
 			float distv1,distv2,tmp;
 			nearv1 = nearv2 = MYMAX;
 
-#ifdef POLYOBJECTS
 			// Don't touch polyobject segs. We'll compensate
 			// for this when we go about drawing them.
 			if (lseg->polyseg)
 				continue;
-#endif
 
 			if (p) {
 				for (j = 0; j < p->numpts; j++)
@@ -880,6 +965,8 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	I_FinishUpdate(); // page flip or blit buffer
 #endif
 
+	HWR_ClearPolys();
+
 	// find min/max boundaries of map
 	//CONS_Debug(DBG_RENDER, "Looking for boundaries of map...\n");
 	M_ClearBox(rootbbox);
@@ -896,9 +983,9 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 		I_Error("couldn't malloc extrasubsectors totsubsectors %s\n", sizeu1(totsubsectors));
 
 	// allocate table for back to front drawing of subsectors
-	/*gr_drawsubsectors = (INT16 *)malloc(sizeof (*gr_drawsubsectors) * totsubsectors);
-	if (!gr_drawsubsectors)
-		I_Error("couldn't malloc gr_drawsubsectors\n");*/
+	/*gl_drawsubsectors = (INT16 *)malloc(sizeof (*gl_drawsubsectors) * totsubsectors);
+	if (!gl_drawsubsectors)
+		I_Error("couldn't malloc gl_drawsubsectors\n");*/
 
 	// number of the first new subsector that might be added
 	addsubsector = numsubsectors;

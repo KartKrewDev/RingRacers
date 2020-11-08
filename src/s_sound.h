@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,6 +20,11 @@
 #include "command.h"
 #include "tables.h" // angle_t
 
+#ifdef HAVE_OPENMPT
+#include "libopenmpt/libopenmpt.h"
+extern openmpt_module *openmpt_mhandle;
+#endif
+
 // mask used to indicate sound origin is player item pickup
 #define PICKUP_SOUND 0x8000
 
@@ -30,11 +35,13 @@
 #define DEFAULT_MUSICDEF_VOLUME ( 100 / VOLUME_DIVIDER )
 
 extern consvar_t stereoreverse;
-extern consvar_t cv_soundvolume, cv_digmusicvolume;//, cv_midimusicvolume;
-extern consvar_t cv_numChannels;
+extern consvar_t cv_soundvolume, cv_closedcaptioning, cv_digmusicvolume; 
+
 extern consvar_t surround;
-//extern consvar_t cv_resetmusic;
+extern consvar_t cv_numChannels;
+
 extern consvar_t cv_gamedigimusic;
+
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
 extern consvar_t cv_playsoundifunfocused;
@@ -42,27 +49,11 @@ extern consvar_t cv_playsoundifunfocused;
 extern consvar_t cv_music_resync_threshold;
 extern consvar_t cv_music_resync_powerups_only;
 
-#ifdef SNDSERV
-extern consvar_t sndserver_cmd, sndserver_arg;
-#endif
-#ifdef MUSSERV
-extern consvar_t musserver_cmd, musserver_arg;
+#ifdef HAVE_OPENMPT
+extern consvar_t cv_modfilter;
 #endif
 
 extern CV_PossibleValue_t soundvolume_cons_t[];
-//part of i_cdmus.c
-extern consvar_t cd_volume, cdUpdate;
-
-#if defined (macintosh) && !defined (HAVE_SDL)
-typedef enum
-{
-	music_normal,
-	playlist_random,
-	playlist_normal
-} playmode_t;
-
-extern consvar_t play_mode;
-#endif
 
 typedef enum
 {
@@ -80,6 +71,37 @@ typedef struct {
 	angle_t angle;
 } listener_t;
 
+typedef struct
+{
+	// sound information (if null, channel avail.)
+	sfxinfo_t *sfxinfo;
+
+	// origin of sound
+	const void *origin;
+
+	// initial volume of sound, which is applied after distance and direction
+	INT32 volume;
+
+	// handle of the sound being played
+	INT32 handle;
+
+} channel_t;
+
+typedef struct {
+	channel_t *c;
+	sfxinfo_t *s;
+	UINT16 t;
+	UINT8 b;
+} caption_t;
+
+#define NUMCAPTIONS 8
+#define MAXCAPTIONTICS (2*TICRATE)
+#define CAPTIONFADETICS 20
+
+extern caption_t closedcaptions[NUMCAPTIONS];
+void S_StartCaption(sfxenum_t sfx_id, INT32 cnum, UINT16 lifespan);
+void S_ResetCaptions(void);
+
 // register sound vars and commands at game startup
 void S_RegisterSoundStuff(void);
 
@@ -95,12 +117,19 @@ void S_InitSfxChannels(INT32 sfxVolume);
 //
 void S_StopSounds(void);
 void S_ClearSfx(void);
-void S_Start(void);
+void S_StartEx(boolean reset);
+#define S_Start() S_StartEx(false)
 
 //
 // Basically a W_GetNumForName that adds "ds" at the beginning of the string. Returns a lumpnum.
 //
 lumpnum_t S_GetSfxLumpNum(sfxinfo_t *sfx);
+
+//
+// Sound Status
+//
+
+boolean S_SoundDisabled(void);
 
 //
 // Start sound for thing at <origin> using <sound_id> from sounds.h
@@ -121,11 +150,13 @@ boolean S_DigMusicDisabled(void);
 boolean S_MusicDisabled(void);
 boolean S_MusicPlaying(void);
 boolean S_MusicPaused(void);
+boolean S_MusicNotInFocus(void);
 musictype_t S_MusicType(void);
 const char *S_MusicName(void);
-boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping);
+
 boolean S_MusicExists(const char *mname);
-#define S_DigExists S_MusicExists
+boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping);
+
 
 //
 // Music Effects
@@ -177,6 +208,35 @@ boolean S_SetMusicPosition(UINT32 position);
 
 // Get Position of Music
 UINT32 S_GetMusicPosition(void);
+
+//
+// Music Stacking (Jingles)
+//
+
+typedef struct musicstack_s
+{
+	char musname[7];
+	UINT16 musflags;
+	boolean looping;
+	UINT32 position;
+	tic_t tic;
+	UINT16 status;
+	lumpnum_t mlumpnum;
+	boolean noposition; // force music stack resuming from zero (like music_stack_noposition)
+
+    struct musicstack_s *prev;
+    struct musicstack_s *next;
+} musicstack_t;
+
+extern char music_stack_nextmusname[7];
+extern boolean music_stack_noposition;
+extern UINT32 music_stack_fadeout;
+extern UINT32 music_stack_fadein;
+
+void S_SetStackAdjustmentStart(void);
+void S_AdjustMusicStackTics(void);
+void S_RetainMusic(const char *mname, UINT16 mflags, boolean looping, UINT32 position, UINT16 status);
+boolean S_RecallMusic(UINT16 status, boolean fromfirst);
 
 //
 // Music Playback
@@ -231,6 +291,7 @@ boolean S_FadeOutStopMusic(UINT32 ms);
 // Updates music & sounds
 //
 void S_UpdateSounds(void);
+void S_UpdateClosedCaptions(void);
 
 FUNCMATH fixed_t S_CalculateSoundDistance(fixed_t px1, fixed_t py1, fixed_t pz1, fixed_t px2, fixed_t py2, fixed_t pz2);
 

@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -16,9 +16,11 @@
 #include "d_ticcmd.h"
 #include "d_net.h"
 #include "d_netcmd.h"
+#include "d_net.h"
 #include "tables.h"
 #include "d_player.h"
 #include "mserv.h"
+
 #include "k_pwrlv.h" // PWRLV_NUMTYPES
 
 /*
@@ -33,10 +35,6 @@ applications may follow different packet versions.
 //  communication related stuff, and another
 //  one that defines the actual packets to
 //  be transmitted.
-
-// SOME numpty changed all the gametype constants and it fell out of sync with vanilla and now we have to pretend to be vanilla when talking to the master server...
-#define VANILLA_GT_RACE 2
-#define VANILLA_GT_MATCH 3
 
 // Networking and tick handling related.
 #define BACKUPTICS 32
@@ -71,6 +69,10 @@ typedef enum
 	PT_RESYNCHEND,    // Player is now resynched and is being requested to remake the gametic
 	PT_RESYNCHGET,    // Player got resynch packet
 
+	PT_SENDINGLUAFILE, // Server telling a client Lua needs to open a file
+	PT_ASKLUAFILE,     // Client telling the server they don't have the file
+	PT_HASLUAFILE,     // Client telling the server they have the file
+
 	// Add non-PT_CANFAIL packet types here to avoid breaking MS compatibility.
 
 	// Kart-specific packets
@@ -85,6 +87,8 @@ typedef enum
 	                  // In addition, this packet can't occupy all the available slots.
 
 	PT_FILEFRAGMENT = PT_CANFAIL, // A part of a file.
+	PT_FILEACK,
+	PT_FILERECEIVED,
 
 	PT_TEXTCMD,       // Extra text commands from the client.
 	PT_TEXTCMD2,      // Splitscreen text commands.
@@ -97,6 +101,8 @@ typedef enum
 
 	PT_TELLFILESNEEDED, // Client, to server: "what other files do I need starting from this number?"
 	PT_MOREFILESNEEDED, // Server, to client: "you need these (+ more on top of those)"
+
+	PT_LOGIN,         // Login attempt from the client.
 
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
 	NUMPACKETTYPE
@@ -202,23 +208,21 @@ typedef struct
 	UINT32 pflags; // pflags_t
 	UINT8 panim; // panim_t
 
+	angle_t angleturn;
 	angle_t aiming;
-	INT32 currentweapon;
-	INT32 ringweapons;
-
 	UINT16 powers[NUMPOWERS];
 
 	// Score is resynched in the confirm resync packet
-	INT32 health;
+	INT16 rings;
 	SINT8 lives;
 	boolean lostlife;
 	SINT8 continues;
 	UINT8 scoreadd;
 	SINT8 xtralife;
-	SINT8 pity;
 
-	UINT8 skincolor;
+	UINT16 skincolor;
 	INT32 skin;
+	UINT32 availabilities;
 	// Just in case Lua does something like
 	// modify these at runtime
 	// SRB2kart
@@ -226,9 +230,9 @@ typedef struct
 	UINT8 kartweight;
 	//
 	UINT32 charflags;
+	UINT32 followitem; // mobjtype_t
 
 	fixed_t speed;
-	UINT8 jumping;
 	UINT8 secondjump;
 	UINT8 fly1;
 	tic_t glidetime;
@@ -236,6 +240,7 @@ typedef struct
 	INT32 deadtimer;
 	tic_t exiting;
 	UINT8 homing;
+	tic_t dashmode;
 	tic_t skidtime;
 	fixed_t cmomx;
 	fixed_t cmomy;
@@ -249,7 +254,6 @@ typedef struct
 
 	INT32 maxlink;
 	fixed_t dashspeed;
-	INT32 dashtime;
 	angle_t angle_pos;
 	angle_t old_angle_pos;
 	tic_t bumpertime;
@@ -275,7 +279,6 @@ typedef struct
 
 	// SRB2kart
 	INT32 kartstuff[NUMKARTSTUFF];
-	angle_t frameangle;
 	tic_t airtime;
 
 	// respawnvars_t
@@ -300,7 +303,9 @@ typedef struct
 	//player->mo stuff
 	UINT8 hasmo; // Boolean
 
+	INT32 health;
 	angle_t angle;
+	angle_t rollangle;
 	fixed_t x;
 	fixed_t y;
 	fixed_t z;
@@ -310,6 +315,10 @@ typedef struct
 	fixed_t friction;
 	fixed_t movefactor;
 
+	spritenum_t sprite;
+	UINT32 frame;
+	UINT8 sprite2;
+	UINT16 anim_duration;
 	INT32 tics;
 	statenum_t statenum;
 	UINT32 flags;
@@ -338,7 +347,8 @@ typedef struct
 
 	// 0xFF == not in game; else player skin num
 	UINT8 playerskins[MAXPLAYERS];
-	UINT8 playercolor[MAXPLAYERS];
+	UINT16 playercolor[MAXPLAYERS];
+	UINT32 playeravailabilities[MAXPLAYERS];
 
 	UINT8 playerisbot[MAXPLAYERS];
 
@@ -365,12 +375,29 @@ typedef struct
 	UINT8 varlengthinputs[0]; // Playernames and netvars
 } ATTRPACK serverconfig_pak;
 
-typedef struct {
+typedef struct
+{
 	UINT8 fileid;
+	UINT32 filesize;
+	UINT8 iteration;
 	UINT32 position;
 	UINT16 size;
 	UINT8 data[0]; // Size is variable using hardware_MAXPACKETLENGTH
 } ATTRPACK filetx_pak;
+
+typedef struct
+{
+	UINT32 start;
+	UINT32 acks;
+} ATTRPACK fileacksegment_t;
+
+typedef struct
+{
+	UINT8 fileid;
+	UINT8 iteration;
+	UINT8 numsegments;
+	fileacksegment_t segments[0];
+} ATTRPACK fileack_pak;
 
 #ifdef _MSC_VER
 #pragma warning(default : 4200)
@@ -387,6 +414,7 @@ typedef struct
 	UINT8 subversion; // Contains build version
 	UINT8 localplayers;	// number of splitscreen players
 	UINT8 mode;
+	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
 } ATTRPACK clientconfig_pak;
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed
@@ -411,7 +439,8 @@ typedef struct
 	UINT8 subversion;
 	UINT8 numberofplayer;
 	UINT8 maxplayer;
-	UINT8 gametype;
+	UINT8 refusereason; // 0: joinable, 1: joins disabled, 2: full
+	char gametypename[24];
 	UINT8 modifiedgame;
 	UINT8 cheatsenabled;
 	UINT8 kartvars; // Previously isdedicated, now appropriated for our own nefarious purposes
@@ -452,7 +481,7 @@ typedef struct
 // Shorter player information for external use.
 typedef struct
 {
-	UINT8 node;
+	UINT8 num;
 	char name[MAXPLAYERNAME+1];
 	UINT8 address[4]; // sending another string would run us up against MAXPACKETLENGTH
 	UINT8 team;
@@ -467,7 +496,7 @@ typedef struct
 {
 	char name[MAXPLAYERNAME+1];
 	UINT8 skin;
-	UINT8 color;
+	UINT16 color;
 	UINT32 pflags;
 	UINT32 score;
 	UINT8 ctfteam;
@@ -505,7 +534,10 @@ typedef struct
 		UINT8 resynchgot;                   //
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
-		clientconfig_pak clientcfg;         //         153 bytes
+		fileack_pak fileack;
+		UINT8 filereceived;
+		clientconfig_pak clientcfg;         //         136 bytes
+		UINT8 md5sum[16];
 		serverinfo_pak serverinfo;          //        1024 bytes
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
 		askinfo_pak askinfo;                //          61 bytes
@@ -536,6 +568,7 @@ extern INT32 mapchangepending;
 // Points inside doomcom
 extern doomdata_t *netbuffer;
 extern consvar_t cv_httpsource;
+
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
 
@@ -551,6 +584,7 @@ extern consvar_t cv_playbackspeed;
 #define KICK_MSG_PING_HIGH   6
 #define KICK_MSG_CUSTOM_KICK 7
 #define KICK_MSG_CUSTOM_BAN  8
+#define KICK_MSG_KEEP_BODY   0x80
 
 typedef enum
 {
@@ -586,11 +620,13 @@ extern tic_t servermaxping;
 
 extern boolean server_lagless;
 
-extern consvar_t
+extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_joindelay, cv_rejointimeout;
+extern consvar_t cv_resynchattempts, cv_blamecfail;
+extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
+
 #ifdef VANILLAJOINNEXTROUND
-	cv_joinnextround,
+extern consvar_t cv_joinnextround;
 #endif
-	cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail, cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
 extern consvar_t cv_discordinvites;
 
@@ -600,10 +636,9 @@ void D_ClientServerInit(void);
 
 // Initialise the other field
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));
-void SendNetXCmd(netxcmd_t id, const void *param, size_t nparam);
-void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam); // splitsreen player
-void SendNetXCmd3(netxcmd_t id, const void *param, size_t nparam); // splitsreen3 player
-void SendNetXCmd4(netxcmd_t id, const void *param, size_t nparam); // splitsreen4 player
+void SendNetXCmdForPlayer(UINT8 playerid, netxcmd_t id, const void *param, size_t nparam);
+#define SendNetXCmd(id, param, nparam) SendNetXCmdForPlayer(0, id, param, nparam) // Shortcut for P1
+void SendKick(UINT8 playernum, UINT8 msg);
 
 // Create any new ticcmds and broadcast to other players.
 void NetKeepAlive(void);
@@ -611,14 +646,13 @@ void NetUpdate(void);
 
 void SV_StartSinglePlayerServer(void);
 boolean SV_SpawnServer(void);
-void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle);
 void SV_StopServer(void);
 void SV_ResetServer(void);
 void CL_AddSplitscreenPlayer(void);
 void CL_RemoveSplitscreenPlayer(UINT8 p);
 void CL_Reset(void);
 void CL_ClearPlayer(INT32 playernum);
-void CL_RemovePlayer(INT32 playernum, INT32 reason);
+void CL_RemovePlayer(INT32 playernum, kickreason_t reason);
 void CL_QueryServerList(msg_server_t *list);
 void CL_UpdateServerList(void);
 // Is there a game running
@@ -652,7 +686,9 @@ boolean D_IsPlayerHumanAndGaming(INT32 player_number);
 void D_ResetTiccmds(void);
 
 tic_t GetLag(INT32 node);
-UINT8 GetFreeXCmdSize(void);
+UINT8 GetFreeXCmdSize(UINT8 playerid);
+
+void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *dest);
 
 extern UINT8 hu_resynching;
 extern UINT8 hu_stopped; // kart, true when the game is stopped for players due to a disconnecting or connecting player
@@ -671,4 +707,7 @@ typedef struct rewind_s {
 void CL_ClearRewinds(void);
 rewind_t *CL_SaveRewindPoint(size_t demopos);
 rewind_t *CL_RewindToTime(tic_t time);
+
+extern UINT8 adminpassmd5[16];
+extern boolean adminpasswordset;
 #endif

@@ -1,19 +1,12 @@
-// Emacs style mode select   -*- C++ -*-
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-//
 // Copyright (C) 2001 by DooM Legacy Team.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
+/// \file hw3sound.c
 /// \brief Hardware 3D sound general code
 
 #include "../doomdef.h"
@@ -28,7 +21,7 @@
 #include "../tables.h"
 #include "../sounds.h"
 #include "../r_main.h"
-#include "../r_things.h"
+#include "../r_skins.h"
 #include "../m_random.h"
 #include "../p_local.h"
 #include "hw3dsdrv.h"
@@ -790,18 +783,18 @@ static void HW3S_UpdateListener(mobj_t *listener)
 	if (!listener || !listener->player)
 		return;
 
-	if (camera.chase)
+	if (camera[0].chase)
 	{
-		data.x = FIXED_TO_FLOAT(camera.x);
-		data.y = FIXED_TO_FLOAT(camera.y);
-		data.z = FIXED_TO_FLOAT(camera.z + camera.height - (5 * FRACUNIT));
+		data.x = FIXED_TO_FLOAT(camera[0].x);
+		data.y = FIXED_TO_FLOAT(camera[0].y);
+		data.z = FIXED_TO_FLOAT(camera[0].z + camera[0].height - (5 * FRACUNIT));
 
-		data.f_angle = ANGLE2DEG(camera.angle);
-		data.h_angle = ANGLE2DEG(camera.aiming);
+		data.f_angle = ANGLE2DEG(camera[0].angle);
+		data.h_angle = ANGLE2DEG(camera[0].aiming);
 
-		data.momx = TPS(FIXED_TO_FLOAT(camera.momx));
-		data.momy = TPS(FIXED_TO_FLOAT(camera.momy));
-		data.momz = TPS(FIXED_TO_FLOAT(camera.momz));
+		data.momx = TPS(FIXED_TO_FLOAT(camera[0].momx));
+		data.momy = TPS(FIXED_TO_FLOAT(camera[0].momy));
+		data.momz = TPS(FIXED_TO_FLOAT(camera[0].momz));
 	}
 	else
 	{
