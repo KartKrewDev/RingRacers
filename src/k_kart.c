@@ -3076,6 +3076,9 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 				P_SetMobjState(end2, S_FINISHBEAMEND2);
 				end2->drawflags = MFD_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
 				end2->angle = lineangle;
+
+				P_SetTarget(&end2->tracer, end1);
+				end2->flags2 |= MF2_LINKDRAW;
 			}
 		}
 	}
