@@ -6790,12 +6790,11 @@ boolean K_PlayerEBrake(player_t *player)
 
 static void K_KartSpindashDust(mobj_t *parent)
 {
-	fixed_t rad = FixedHypot(parent->radius, parent->radius);
+	fixed_t rad = FixedDiv(FixedHypot(parent->radius, parent->radius), parent->scale);
 	INT32 i;
 
 	for (i = 0; i < 2; i++)
 	{
-		
 		fixed_t hmomentum = P_RandomRange(6, 12) * parent->scale;
 		fixed_t vmomentum = P_RandomRange(2, 6) * parent->scale;
 
@@ -6822,10 +6821,34 @@ static void K_KartSpindashDust(mobj_t *parent)
 	}
 }
 
+static void K_KartSpindashWind(mobj_t *parent)
+{
+	mobj_t *wind = P_SpawnMobjFromMobj(parent,
+		P_RandomRange(-36,36) * FRACUNIT,
+		P_RandomRange(-36,36) * FRACUNIT,
+		FixedDiv(parent->height / 2, parent->scale) + (P_RandomRange(-20,20) * FRACUNIT),
+		MT_SPINDASHWIND
+	);
+
+	P_SetTarget(&wind->target, parent);
+
+	if (parent->momx || parent->momy)
+		wind->angle = R_PointToAngle2(0, 0, parent->momx, parent->momy);
+	else
+		wind->angle = parent->player->drawangle;
+
+	wind->momx = 3 * parent->momx / 4;
+	wind->momy = 3 * parent->momy / 4;
+	wind->momz = 3 * parent->momz / 4;
+
+	K_MatchGenericExtraFlags(wind, parent);
+}
+
 static void K_KartSpindash(player_t *player)
 {
 	const INT16 MAXCHARGETIME = K_GetSpindashChargeTime(player);
 	ticcmd_t *cmd = &player->cmd;
+	boolean spawnWind = (leveltime % 2 == 0);
 
 	if (player->kartstuff[k_spindash] > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE)) != (BT_DRIFT|BT_BRAKE))
 	{
@@ -6849,6 +6872,12 @@ static void K_KartSpindash(player_t *player)
 
 		player->kartstuff[k_spindash] = 0;
 		S_StartSound(player->mo, sfx_s23c);
+	}
+
+
+	if ((player->kartstuff[k_spindashboost] > 0) && (spawnWind == true))
+	{
+		K_KartSpindashWind(player->mo);
 	}
 
 	if (player->kartstuff[k_spindashboost] > (TICRATE/2))
@@ -6878,6 +6907,11 @@ static void K_KartSpindash(player_t *player)
 				spawnOldEffect = false;
 			}
 
+			if (chargetime <= (MAXCHARGETIME / 4) && spawnWind == true)
+			{
+				K_KartSpindashWind(player->mo);
+			}
+
 			if (chargetime > 0)
 			{
 				UINT16 soundcharge = 0;
@@ -6895,13 +6929,6 @@ static void K_KartSpindash(player_t *player)
 			else if (chargetime < -TICRATE)
 			{
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_NORMAL);
-			}
-			else
-			{
-				if (player->kartstuff[k_spindash] % 4 == 0)
-				{
-					K_FlameDashLeftoverSmoke(player->mo);
-				}
 			}
 		}
 	}

@@ -5623,6 +5623,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		if (mobj->tics > 0)
 			mobj->drawflags ^= MFD_DONTDRAW;
 		break;
+	case MT_SPINDASHWIND:
+		mobj->drawflags ^= MFD_DONTDRAW;
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
