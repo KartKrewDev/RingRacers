@@ -1,28 +1,18 @@
-// Emacs style mode select   -*- C++ -*-
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-//
 // Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
+/// \file hw_main.h
 /// \brief 3D render mode functions
-
-#define GLENCORE
 
 #ifndef __HWR_MAIN_H__
 #define __HWR_MAIN_H__
 
-#include "hw_glob.h"
 #include "hw_data.h"
 #include "hw_defs.h"
 
@@ -30,125 +20,125 @@
 #include "../d_player.h"
 #include "../r_defs.h"
 
-#define GLENCORE
-
 // Startup & Shutdown the hardware mode renderer
 void HWR_Startup(void);
+void HWR_Switch(void);
 void HWR_Shutdown(void);
 
-extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowx, gr_baseviewwindowy;
-
-extern float gr_basewindowcenterx, gr_basewindowcentery;
-
-extern FTransform atransform;
-
-// hw_draw.c
-void HWR_DrawPatch(GLPatch_t *gpatch, INT32 x, INT32 y, INT32 option);
-void HWR_DrawFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, INT32 option, const UINT8 *colormap);
-void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
-void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color);
-void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32 options);	// Lat: separate flags from color since color needs to be an uint to work right.
-void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color);
 void HWR_drawAMline(const fline_t *fl, INT32 color);
 void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength);
 void HWR_DrawConsoleBack(UINT32 color, INT32 height);
+void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight);
+void HWR_RenderSkyboxView(player_t *player);
+void HWR_RenderPlayerView(void);
+void HWR_ClearSkyDome(void);
+void HWR_BuildSkyDome(void);
 void HWR_DrawViewBorder(INT32 clearlines);
 void HWR_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum);
+void HWR_InitTextureMapping(void);
+void HWR_SetViewSize(void);
+void HWR_DrawPatch(GLPatch_t *gpatch, INT32 x, INT32 y, INT32 option);
+void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap);
+void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
+void HWR_CreatePlanePolygons(INT32 bspnum);
+void HWR_CreateStaticLightmaps(INT32 bspnum);
+void HWR_LoadTextures(size_t pnumtextures);
+void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color);
+void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 actualcolor, UINT8 strength);
+void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32 actualcolor);	// Lat: separate flags from color since color needs to be an uint to work right.
+void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color);
+void HWR_DrawPic(INT32 x,INT32 y,lumpnum_t lumpnum);
 
 UINT8 *HWR_GetScreenshot(void);
-boolean HWR_Screenshot(const char *lbmname);
+boolean HWR_Screenshot(const char *pathname);
 
-// hw_main.c
-void HWR_RenderFrame(INT32 viewnumber, player_t *player, boolean skybox);
-void HWR_RenderPlayerView(INT32 viewnumber, player_t *player);
-void HWR_LoadShaders(UINT16 wadnum, boolean PK3);
-void HWR_SetViewSize(void);
 void HWR_AddCommands(void);
-
-// My original intention was to split hw_main.c
-// into files like hw_bsp.c, hw_sprites.c...
-
-// hw_main.c: Lighting and fog
-void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
-UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
-
+void HWR_AddSessionCommands(void);
+void transform(float *cx, float *cy, float *cz);
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
-
-// hw_main.c: Post-rendering
+INT32 HWR_GetTextureUsed(void);
 void HWR_DoPostProcessor(player_t *player);
 void HWR_StartScreenWipe(void);
 void HWR_EndScreenWipe(void);
 void HWR_DrawIntermissionBG(void);
 void HWR_DoWipe(UINT8 wipenum, UINT8 scrnnum);
+void HWR_DoTintedWipe(UINT8 wipenum, UINT8 scrnnum);
 void HWR_MakeScreenFinalTexture(void);
 void HWR_DrawScreenFinalTexture(int width, int height);
 
-// hw_main.c: Planes
-void HWR_RenderPlane(extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight, FBITFIELD PolyFlags, INT32 lightlevel, lumpnum_t lumpnum, sector_t *FOFsector, UINT8 alpha, extracolormap_t *planecolormap);
-void HWR_AddTransparentFloor(lumpnum_t lumpnum, extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight, INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, boolean fogplane, extracolormap_t *planecolormap);
+// This stuff is put here so MD2's can use them
+void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
+UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
-#ifdef POLYOBJECTS
-#ifdef POLYOBJECTS_PLANES
-void HWR_RenderPolyObjectPlane(polyobj_t *polysector, boolean isceiling, fixed_t fixedheight, FBITFIELD blendmode, UINT8 lightlevel, lumpnum_t lumpnum, sector_t *FOFsector, UINT8 alpha, extracolormap_t *planecolormap);
-void HWR_AddPolyObjectPlanes(void);
-void HWR_AddTransparentPolyobjectFloor(lumpnum_t lumpnum, polyobj_t *polysector, boolean isceiling, fixed_t fixedheight, INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, extracolormap_t *planecolormap);
-#endif
-#endif
+boolean HWR_CompileShaders(void);
 
-// hw_main.c: Segs
-void HWR_ProcessSeg(void); // Sort of like GLWall::Process in GZDoom
-void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend, boolean fogwall, INT32 lightlevel, extracolormap_t *wallcolormap);
-void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blendmode, INT32 lightlevel, extracolormap_t *wallcolormap);
-void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo * pSurf, INT32 texnum, FBITFIELD blend, boolean fogwall, INT32 lightlevel, extracolormap_t *wallcolormap);
-void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum, FSurfaceInfo* Surf, INT32 cutflag, ffloor_t *pfloor);
-void HWR_DrawSkyWall(FOutVector *wallVerts, FSurfaceInfo *Surf);
-void HWR_DrawSkyBackground(float fpov);
+void HWR_LoadAllCustomShaders(void);
+void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3);
+const char *HWR_GetShaderName(INT32 shader);
 
-#ifdef POLYOBJECTS
-void HWR_AddPolyObjectSegs(void);
-#endif
-
-// hw_main.c: BSP
-void HWR_RenderBSPNode(INT32 bspnum);
-void HWR_Subsector(size_t num);
-void HWR_AddLine(seg_t *line);
-boolean HWR_CheckBBox(fixed_t *bspcoord);
-void HWR_RenderDrawNodes(void);
-
-// hw_main.c: Sprites
-void HWR_AddSprites(sector_t *sec);
-void HWR_ProjectSprite(mobj_t *thing);
-void HWR_ProjectPrecipitationSprite(precipmobj_t *thing);
-void HWR_DrawSprites(void);
-
-// hw_bsp.c
-void HWR_CreatePlanePolygons(INT32 bspnum);
-
-// hw_cache.c
-void HWR_PrepLevelCache(size_t pnumtextures);
-
-// hw_trick.c
-void HWR_CorrectSWTricks(void);
-
-// Console variables
-extern consvar_t cv_grshaders;
-extern consvar_t cv_grshearing;
-extern consvar_t cv_grfov;
-extern consvar_t cv_grmdls;
-extern consvar_t cv_grfog;
-extern consvar_t cv_grfogdensity;
-extern consvar_t cv_grgammared;
-extern consvar_t cv_grgammagreen;
-extern consvar_t cv_grgammablue;
-extern consvar_t cv_grfiltermode;
-extern consvar_t cv_granisotropicmode;
-extern consvar_t cv_grcorrecttricks;
-extern consvar_t cv_grfovchange;
-extern consvar_t cv_grsolvetjoin;
-extern consvar_t cv_grspritebillboarding;
-extern consvar_t cv_grfakecontrast;
-extern consvar_t cv_grfallbackplayermodel;
+extern customshaderxlat_t shaderxlat[];
 
 extern CV_PossibleValue_t granisotropicmode_cons_t[];
+
+#ifdef ALAM_LIGHTING
+extern consvar_t cv_gldynamiclighting;
+extern consvar_t cv_glstaticlighting;
+extern consvar_t cv_glcoronas;
+extern consvar_t cv_glcoronasize;
+#endif
+
+extern consvar_t cv_glshaders;
+extern consvar_t cv_glmodels;
+
+// SRB2Kart: We don't like these options.
+// Interpolation should be up to who animated the model.
+// Lighting makes the modeler's intended texturing look funky.
+//#define BAD_MODEL_OPTIONS
+
+#ifdef BAD_MODEL_OPTIONS
+extern consvar_t cv_glmodelinterpolation;
+extern consvar_t cv_glmodellighting;
+#endif
+
+extern consvar_t cv_glfiltermode;
+extern consvar_t cv_glanisotropicmode;
+extern consvar_t cv_fovchange;
+extern consvar_t cv_glsolvetjoin;
+extern consvar_t cv_glshearing;
+extern consvar_t cv_glspritebillboarding;
+extern consvar_t cv_glskydome;
+extern consvar_t cv_glfakecontrast;
+extern consvar_t cv_glslopecontrast;
+
+extern consvar_t cv_glbatching;
+
+extern float gl_viewwidth, gl_viewheight, gl_baseviewwindowy;
+
+extern float gl_viewwindowx, gl_basewindowcentery;
+
+// BP: big hack for a test in lighting ref : 1249753487AB
+extern fixed_t *hwbbox;
+extern FTransform atransform;
+
+
+// Render stats
+extern int ps_hw_skyboxtime;
+extern int ps_hw_nodesorttime;
+extern int ps_hw_nodedrawtime;
+extern int ps_hw_spritesorttime;
+extern int ps_hw_spritedrawtime;
+
+// Render stats for batching
+extern int ps_hw_numpolys;
+extern int ps_hw_numverts;
+extern int ps_hw_numcalls;
+extern int ps_hw_numshaders;
+extern int ps_hw_numtextures;
+extern int ps_hw_numpolyflags;
+extern int ps_hw_numcolors;
+extern int ps_hw_batchsorttime;
+extern int ps_hw_batchdrawtime;
+
+extern boolean gl_shadersavailable;
 
 #endif

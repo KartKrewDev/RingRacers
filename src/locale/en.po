@@ -1377,11 +1377,6 @@ msgstr ""
 msgid "modifiedgame is false, you can unlock secrets\n"
 msgstr ""
 
-#: d_netcmd.c:4599
-#, c-format
-msgid "Valid skin numbers are 0 to %d (-1 disables)\n"
-msgstr ""
-
 #: d_netcmd.c:4617 d_netcmd.c:4629
 msgid "You may not change your name when chat is muted.\n"
 msgstr ""
@@ -2073,7 +2068,7 @@ msgstr ""
 
 #: m_cheat.c:292
 #, c-format
-msgid "Sissy Mode %s\n"
+msgid "Cheese Mode %s\n"
 msgstr ""
 
 #: m_cheat.c:315 m_cheat.c:349 m_cheat.c:514 m_cheat.c:538 m_cheat.c:557
@@ -3830,7 +3825,7 @@ msgid "Music lump is not MID music format\n"
 msgstr ""
 
 #: win32/win_snd.c:2128
-msgid "I_RegisterSong: StreamBufferSetup FAILED"
+msgid "I_LoadSong: StreamBufferSetup FAILED"
 msgstr ""
 
 #: win32/win_sys.c:892

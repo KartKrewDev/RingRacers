@@ -46,7 +46,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Player Damage
 			K_SetHitLagForObjects(t1, t2, 10, false);
-			P_DamageMobj(t2, t1, t1->target, 1);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT);
 			K_KartBouncing(t2, t1, false, false);
 			S_StartSound(t2, sfx_s3k7b);
 		}
@@ -61,7 +61,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		// Other Item Damage
 		K_SetHitLagForObjects(t1, t2, 10, false);
 		S_StartSound(t2, t2->info->deathsound);
-		P_KillMobj(t2, t1, t1);
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
 		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
@@ -75,7 +75,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		K_SetHitLagForObjects(t1, t2, 10, false);
 		damageitem = true;
 		// Bomb death
-		P_KillMobj(t2, t1, t1);
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 	}
 	else if (t2->flags & MF_SPRING && (t1->type != MT_ORBINAUT_SHIELD && t1->type != MT_JAWZ_SHIELD))
 	{
@@ -86,7 +86,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	{
 		K_SetHitLagForObjects(t1, t2, 10, false);
 		// Shootable damage
-		P_DamageMobj(t2, t2, t1->target, 1);
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		damageitem = true;
 	}
 
@@ -94,7 +94,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// This Item Damage
 		S_StartSound(t1, t1->info->deathsound);
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
 		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
@@ -153,7 +153,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 				K_SetHitLagForObjects(t1, t2, 2, true);
 			}
 
-			K_SpinPlayer(t2->player, t1->target, 0, t1, (t1->type == MT_BANANA || t1->type == MT_BANANA_SHIELD));
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		}
 
 		damageitem = true;
@@ -167,7 +167,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		K_SetHitLagForObjects(t1, t2, 10, false);
 
 		S_StartSound(t2, t2->info->deathsound);
-		P_KillMobj(t2, t1, t1);
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
 		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
@@ -180,7 +180,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Shootable damage
 		K_SetHitLagForObjects(t1, t2, 10, false);
-		P_DamageMobj(t2, t2, t1->target, 1);
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		damageitem = true;
 	}
 
@@ -190,7 +190,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		K_SetHitLagForObjects(t1, t2, 10, false);
 
 		S_StartSound(t1, t1->info->deathsound);
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
 		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
@@ -219,7 +219,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (!P_CanPickupItem(t2->player, 2))
 			return true;
 
-		if (G_BattleGametype() && t2->player->kartstuff[k_bumper] <= 0)
+		if ((gametyperules & GTR_BUMPERS) && t2->player->kartstuff[k_bumper] <= 0)
 		{
 			if (t2->player->kartstuff[k_comebackmode] || t2->player->kartstuff[k_comebacktimer])
 				return true;
@@ -237,7 +237,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
-			P_KillMobj(t1, t2, t2);
+			P_KillMobj(t1, t2, t2, DMG_NORMAL);
 			return true;
 		}
 		else
@@ -253,7 +253,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 
 			if (t1->target && t1->target->player)
 			{
-				if (G_RaceGametype() || t1->target->player->kartstuff[k_bumper] > 0)
+				if ((gametyperules & GTR_CIRCUIT) || t1->target->player->kartstuff[k_bumper] > 0)
 					t2->player->kartstuff[k_eggmanblame] = t1->target->player-players;
 				else
 					t2->player->kartstuff[k_eggmanblame] = t2->player-players;
@@ -291,7 +291,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
 		{
 			K_SetHitLagForObjects(t1, t2, 10, false);
-			P_KillMobj(t1, t2, t2);
+			P_KillMobj(t1, t2, t2, DMG_NORMAL);
 		}
 		else
 		{
@@ -305,11 +305,11 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		K_SetHitLagForObjects(t1, t2, 10, false);
 
 		// Bomb death
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		// Other Item Damage
 		S_StartSound(t2, t2->info->deathsound);
-		P_KillMobj(t2, t1, t1);
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
 		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
@@ -318,9 +318,9 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	{
 		K_SetHitLagForObjects(t1, t2, 10, false);
 		// Bomb death
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 		// Shootable damage
-		P_DamageMobj(t2, t2, t1->target, 1);
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 	}
 
 	return true;
@@ -336,19 +336,19 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->state == &states[S_MINEEXPLOSION1])
 		{
 			K_SetHitLagForObjects(t1, t2, 10, false);
-			K_ExplodePlayer(t2->player, t1->target, t1);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_EXPLODE);
 		}
 		else
 		{
 			K_SetHitLagForObjects(t1, t2, 2, true);
-			K_SpinPlayer(t2->player, t1->target, 0, t1, false);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		}
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
 		K_SetHitLagForObjects(t1, t2, 10, false);
-		P_DamageMobj(t2, t2, t1->target, 1);
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 	}
 
 	return true;
@@ -373,16 +373,17 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 		HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[t2->player-players]));
 		I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[t2->player-players]);
 
-		P_DamageMobj(t2, t1, t1->target, 10000);
-		P_KillMobj(t1, t2, t2);
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_INSTAKILL);
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		K_SetHitLagForObjects(t1, t2, 10, false);
+
 		// Shootable damage
-		P_KillMobj(t2, t2, t1->target);
-		// This Item Damage
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t2, t2, t1->target, DMG_NORMAL);
+		// This item damage
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 
 	return true;
@@ -397,7 +398,7 @@ boolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 {
-	if (!(t2->flags & MF_SOLID || t2->flags & MF_SHOOTABLE || t2->flags & MF_BOUNCE))
+	if (!(t2->flags & MF_SOLID || t2->flags & MF_SHOOTABLE))
 		return true;
 
 	if (!(t2->health))
@@ -410,7 +411,7 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 		return false;
 
 	if (t1->health)
-		P_KillMobj(t1, t2, t2);
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 	/*if (t2->player && (t2->player->kartstuff[k_invincibilitytimer] > 0
 		|| t2->player->kartstuff[k_growshrinktimer] > 0))

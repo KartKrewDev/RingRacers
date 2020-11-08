@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -45,11 +45,7 @@ extern UINT8 invertmap[256];
 #endif
 
 // Boom colormaps.
-// Had to put a limit on colormaps :(
-#define MAXCOLORMAPS 60
-
-extern size_t num_extra_colormaps;
-extern extracolormap_t extra_colormaps[MAXCOLORMAPS];
+extern extracolormap_t *extra_colormaps;
 
 // for global animation
 extern INT32 *texturetranslation;
@@ -60,6 +56,8 @@ extern size_t numspritelumps, max_spritelumps;
 //
 // Lookup tables for map data.
 //
+extern boolean udmf;
+
 extern size_t numsprites;
 extern spritedef_t *sprites;
 
@@ -71,6 +69,7 @@ extern seg_t *segs;
 
 extern size_t numsectors;
 extern sector_t *sectors;
+extern sector_t *spawnsectors;
 
 extern size_t numsubsectors;
 extern subsector_t *subsectors;
@@ -80,9 +79,11 @@ extern node_t *nodes;
 
 extern size_t numlines;
 extern line_t *lines;
+extern line_t *spawnlines;
 
 extern size_t numsides;
 extern side_t *sides;
+extern side_t *spawnsides;
 
 //
 // POV data.
@@ -94,19 +95,16 @@ extern boolean viewsky, skyVisible;
 extern boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible of each splitscreen player
 extern sector_t *viewsector;
 extern player_t *viewplayer;
-extern UINT8 portalrender;
-extern sector_t *portalcullsector;
-extern line_t *portalclipline;
-extern INT32 portalclipstart, portalclipend;
+extern mobj_t *r_viewmobj;
 
 extern consvar_t cv_allowmlook;
 extern consvar_t cv_maxportals;
 
-extern angle_t clipangle;
-extern angle_t doubleclipangle;
+extern angle_t clipangle[MAXSPLITSCREENPLAYERS];
+extern angle_t doubleclipangle[MAXSPLITSCREENPLAYERS];
 
-extern INT32 viewangletox[FINEANGLES/2];
-extern angle_t xtoviewangle[MAXVIDWIDTH+1];
+extern INT32 viewangletox[MAXSPLITSCREENPLAYERS][FINEANGLES/2];
+extern angle_t xtoviewangle[MAXSPLITSCREENPLAYERS][MAXVIDWIDTH+1];
 
 extern fixed_t rw_distance;
 extern angle_t rw_normalangle;

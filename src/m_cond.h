@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2012-2016 by Matthew "Inuyasha" Walsh.
-// Copyright (C) 2012-2018 by Sonic Team Junior.
+// Copyright (C) 2012-2016 by Matthew "Kaito Sinclaire" Walsh.
+// Copyright (C) 2012-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,26 +20,15 @@
 // [required] <optional>
 typedef enum
 {
-	UC_PLAYTIME,        // PLAYTIME [tics]
-	UC_MATCHESPLAYED,   // SRB2Kart: MATCHESPLAYED [x played]
+	UC_PLAYTIME,		// PLAYTIME [tics]
+	UC_MATCHESPLAYED,	// SRB2Kart: MATCHESPLAYED [x played]
 	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
-	UC_ALLEMERALDS,		// ALLEMERALDS <x times>
-	//UC_ULTIMATECLEAR,	// ULTIMATECLEAR <x times>
-	//UC_OVERALLSCORE,	// OVERALLSCORE [score to beat]
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
-	//UC_OVERALLRINGS,	// OVERALLRINGS [rings to beat]
 	UC_MAPVISITED,		// MAPVISITED [map number]
 	UC_MAPBEATEN,		// MAPBEATEN [map number]
-	UC_MAPALLEMERALDS,	// MAPALLEMERALDS [map number]
-	//UC_MAPULTIMATE,		// MAPULTIMATE [map number]
-	//UC_MAPPERFECT,		// MAPPERFECT [map number]
-	//UC_MAPSCORE,		// MAPSCORE [map number] [score to beat]
+	UC_MAPENCORE,		// MAPENCORE [map number]
 	UC_MAPTIME,			// MAPTIME [map number] [time to beat, tics]
-	//UC_MAPRINGS,		// MAPRINGS [map number] [rings to beat]
-	//UC_NIGHTSSCORE,		// NIGHTSSCORE [map number] <mare, omit or "0" for overall> [score to beat]
-	//UC_NIGHTSTIME,		// NIGHTSTIME [map number] <mare, omit "0" overall> [time to beat, tics]
-	//UC_NIGHTSGRADE,		// NIGHTSGRADE [map number] <mare, omit "0" overall> [grade]
 	UC_TRIGGER,			// TRIGGER [trigger number]
 	UC_TOTALEMBLEMS,	// TOTALEMBLEMS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
@@ -68,35 +57,38 @@ typedef struct
 } conditionset_t;
 
 // Emblem information
-#define ET_GLOBAL 0 // Global map emblem, var == color
-#define ET_SKIN   1 // Skin specific emblem, var == skin
-//#define ET_SCORE  2
-#define ET_TIME   2
-//#define ET_RINGS  4
-//#define ET_NGRADE 5
-//#define ET_NTIME  6
+#define ET_GLOBAL  0 // Emblem with a position in space
+#define ET_MAP     1 // Beat the map
+#define ET_TIME    2 // Get the time
+//#define ET_DEVTIME 3 // Time, but the value is tied to a Time Trial demo, not pre-defined
+
+// Global emblem flags
+// (N/A to Kart yet)
+//#define GE_OH 1
+
+// Map emblem flags
+#define ME_ENCORE 1
 
 typedef struct
 {
 	UINT8 type;      ///< Emblem type
-	INT16 x;         ///< X coordinate.
-	INT16 y;         ///< Y coordinate.
-	INT16 z;         ///< Z coordinate.
+	INT16 tag;       ///< Tag of emblem mapthing
 	INT16 level;     ///< Level on which this emblem can be found.
 	UINT8 sprite;    ///< emblem sprite to use, 0 - 25
-	UINT8 color;     ///< skincolor to use
+	UINT16 color;    ///< skincolor to use
 	INT32 var;       ///< If needed, specifies information on the target amount to achieve (or target skin)
 	char hint[110];  ///< Hint for emblem hints menu
 	UINT8 collected; ///< Do you have this emblem?
 } emblem_t;
 typedef struct
 {
-	char name[20];       ///< Name of the goal (used in the "emblem awarded" cecho)
-	char description[40];///< Description of goal (used in statistics)
-	UINT8 conditionset;  ///< Condition set that awards this emblem.
-	UINT8 sprite;        ///< emblem sprite to use, 0 - 25
-	UINT8 color;         ///< skincolor to use
-	UINT8 collected;     ///< Do you have this emblem?
+	char name[20];          ///< Name of the goal (used in the "emblem awarded" cecho)
+	char description[40];   ///< Description of goal (used in statistics)
+	UINT8 conditionset;     ///< Condition set that awards this emblem.
+	UINT8 showconditionset; ///< Condition set that shows this emblem.
+	UINT8 sprite;           ///< emblem sprite to use, 0 - 25
+	UINT16 color;           ///< skincolor to use
+	UINT8 collected;        ///< Do you have this emblem?
 } extraemblem_t;
 
 // Unlockable information
@@ -104,8 +96,8 @@ typedef struct
 {
 	char name[64];
 	char objective[64];
-	UINT8 showconditionset;
 	UINT8 conditionset;
+	UINT8 showconditionset;
 	INT16 type;
 	INT16 variable;
 	UINT8 nocecho;
@@ -113,21 +105,26 @@ typedef struct
 	UINT8 unlocked;
 } unlockable_t;
 
-// I have NO idea why these are going negative, but whatever.
-#define SECRET_NONE			-6 // Does nil.  Use with levels locked by UnlockRequired
-#define SECRET_ITEMFINDER	-5 // Enables Item Finder/Emblem Radar
-#define SECRET_EMBLEMHINTS	-4 // Enables Emblem Hints
-#define SECRET_PANDORA		-3 // Enables Pandora's Box
-#define SECRET_TIMEATTACK	-2 // Enables Time Attack on the main menu
-#define SECRET_BREAKTHECAPSULES	-1 // Enables Break the Capsules on the main menu
-#define SECRET_HEADER		 0 // Does nothing on its own, just serves as a header for the menu
-#define SECRET_LEVELSELECT	 1 // Selectable level select
-#define SECRET_WARP			 2 // Selectable warp
-#define SECRET_SOUNDTEST	 3 // Sound Test
-#define SECRET_CREDITS		 4 // Enables Credits
-#define SECRET_ENCORE		 5 // Enables Encore mode cvar
-#define SECRET_HELLATTACK	 6 // Map Hell in record attack
-#define SECRET_HARDSPEED	 7 // Enables Hard gamespeed
+#define SECRET_NONE			 0 // Does nil.  Use with levels locked by UnlockRequired
+#define SECRET_HEADER		 1 // Does nothing on its own, just serves as a header for the menu
+
+#define SECRET_SKIN			 2 // Allow this character to be selected
+#define SECRET_WARP			 3 // Selectable warp
+#define SECRET_LEVELSELECT	 4 // Selectable level select
+
+#define SECRET_TIMEATTACK	 5 // Enables Time Attack on the main menu
+#define SECRET_BREAKTHECAPSULES	6 // Enables Break the Capsules on the main menu
+#define SECRET_SOUNDTEST	 7 // Sound Test
+#define SECRET_CREDITS		 8 // Enables Credits
+
+#define SECRET_ITEMFINDER	 9 // Enables Item Finder/Emblem Radar
+#define SECRET_EMBLEMHINTS	10 // Enables Emblem Hints
+
+#define SECRET_ENCORE		11 // Enables Encore mode cvar
+#define SECRET_HARDSPEED	12 // Enables Hard gamespeed
+#define SECRET_HELLATTACK	13 // Map Hell in record attack
+
+#define SECRET_PANDORA		14 // Enables Pandora's Box
 
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.
@@ -146,8 +143,7 @@ extern INT32 numextraemblems;
 
 extern UINT32 unlocktriggers;
 
-// Condition Set Setup
-void M_SetupDefaultConditionSets(void);
+// Condition set setup
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);
 
 // Clearing secrets
@@ -157,9 +153,10 @@ void M_ClearSecrets(void);
 // Updating conditions and unlockables
 void M_CheckUnlockConditions(void);
 UINT8 M_CheckCondition(condition_t *cn);
-UINT8 M_UpdateUnlockablesAndExtraEmblems(boolean force);
+UINT8 M_UpdateUnlockablesAndExtraEmblems(void);
 void M_SilentUpdateUnlockablesAndEmblems(void);
 UINT8 M_CheckLevelEmblems(void);
+UINT8 M_CompletionEmblems(void);
 
 // Checking unlockable status
 UINT8 M_AnySecretUnlocked(void);
@@ -169,17 +166,15 @@ INT32 M_CountEmblems(void);
 
 // Emblem shit
 emblem_t *M_GetLevelEmblems(INT32 mapnum);
-skincolors_t M_GetEmblemColor(emblem_t *em);
-const char *M_GetEmblemPatch(emblem_t *em);
-skincolors_t M_GetExtraEmblemColor(extraemblem_t *em);
-const char *M_GetExtraEmblemPatch(extraemblem_t *em);
+skincolornum_t M_GetEmblemColor(emblem_t *em);
+const char *M_GetEmblemPatch(emblem_t *em, boolean big);
+skincolornum_t M_GetExtraEmblemColor(extraemblem_t *em);
+const char *M_GetExtraEmblemPatch(extraemblem_t *em, boolean big);
 
 // If you're looking to compare stats for unlocks or what not, use these
 // They stop checking upon reaching the target number so they
 // should be (theoretically?) slightly faster.
 UINT8 M_GotEnoughEmblems(INT32 number);
-//UINT8 M_GotHighEnoughScore(INT32 tscore);
 UINT8 M_GotLowEnoughTime(INT32 tictime);
-//UINT8 M_GotHighEnoughRings(INT32 trings);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || conditionSets[a].achieved)
