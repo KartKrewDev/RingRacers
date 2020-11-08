@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -64,7 +64,7 @@ typedef off_t off64_t;
 #define PRIdS "u"
 #elif defined (_WIN32)
 #define PRIdS "Iu"
-#elif defined (_PSP) || defined (_arch_dreamcast) || defined (DJGPP) || defined (_WII) || defined (_NDS) || defined (_PS3)
+#elif defined (DJGPP)
 #define PRIdS "u"
 #else
 #define PRIdS "zu"
@@ -73,10 +73,8 @@ typedef off_t off64_t;
 #ifdef HAVE_PNG
 
 #ifndef _MSC_VER
-#ifndef _WII
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
 #endif
 #endif
 
@@ -104,16 +102,16 @@ typedef off_t off64_t;
 #endif
 
 static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
-consvar_t cv_screenshot_option = {"screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_screenshot_folder = {"screenshot_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_screenshot_option = CVAR_INIT ("screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange);
+consvar_t cv_screenshot_folder = CVAR_INIT ("screenshot_folder", "", CV_SAVE, NULL, NULL);
 
-consvar_t cv_screenshot_colorprofile = {"screenshot_colorprofile", "Yes", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_screenshot_colorprofile = CVAR_INIT ("screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
-consvar_t cv_moviemode = {"moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_moviemode = CVAR_INIT ("moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange);
 
-consvar_t cv_movie_option = {"movie_option", "Default", CV_SAVE, screenshot_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_movie_folder = {"movie_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_movie_option = CVAR_INIT ("movie_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Moviemode_option_Onchange);
+consvar_t cv_movie_folder = CVAR_INIT ("movie_folder", "", CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t zlib_mem_level_t[] = {
 	{1, "(Min Memory) 1"},
@@ -155,16 +153,16 @@ static CV_PossibleValue_t apng_delay_t[] = {
 
 // zlib memory usage is as follows:
 // (1 << (zlib_window_bits+2)) +  (1 << (zlib_level+9))
-consvar_t cv_zlib_memory = {"png_memory_level", "7", CV_SAVE, zlib_mem_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_level = {"png_compress_level", "(Optimal) 6", CV_SAVE, zlib_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_strategy = {"png_strategy", "Normal", CV_SAVE, zlib_strategy_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_window_bits = {"png_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_memory = CVAR_INIT ("png_memory_level", "7", CV_SAVE, zlib_mem_level_t, NULL);
+consvar_t cv_zlib_level = CVAR_INIT ("png_compress_level", "(Optimal) 6", CV_SAVE, zlib_level_t, NULL);
+consvar_t cv_zlib_strategy = CVAR_INIT ("png_strategy", "Normal", CV_SAVE, zlib_strategy_t, NULL);
+consvar_t cv_zlib_window_bits = CVAR_INIT ("png_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL);
 
-consvar_t cv_zlib_memorya = {"apng_memory_level", "(Max Memory) 9", CV_SAVE, zlib_mem_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_levela = {"apng_compress_level", "4", CV_SAVE, zlib_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_strategya = {"apng_strategy", "RLE", CV_SAVE, zlib_strategy_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_window_bitsa = {"apng_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_apng_delay = {"apng_speed", "1/2x", CV_SAVE, apng_delay_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_memorya = CVAR_INIT ("apng_memory_level", "(Max Memory) 9", CV_SAVE, zlib_mem_level_t, NULL);
+consvar_t cv_zlib_levela = CVAR_INIT ("apng_compress_level", "4", CV_SAVE, zlib_level_t, NULL);
+consvar_t cv_zlib_strategya = CVAR_INIT ("apng_strategy", "RLE", CV_SAVE, zlib_strategy_t, NULL);
+consvar_t cv_zlib_window_bitsa = CVAR_INIT ("apng_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL);
+consvar_t cv_apng_delay = CVAR_INIT ("apng_speed", "1x", CV_SAVE, apng_delay_t, NULL);
 
 boolean takescreenshot = false; // Take a screenshot this tic
 
@@ -201,7 +199,7 @@ INT32 M_MapNumber(char first, char second)
 // ==========================================================================
 
 // some libcs has no access function, make our own
-#if defined (_WIN32_WCE) || defined (_XBOX) || defined (_WII) || defined (_PS3)
+#if 0
 int access(const char *path, int amode)
 {
 	int accesshandle = -1;
@@ -297,6 +295,44 @@ size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag)
 
 	*buffer = buf;
 	return length;
+}
+
+/** Makes a copy of a text file with all newlines converted into LF newlines.
+  *
+  * \param textfilename The name of the source file
+  * \param binfilename The name of the destination file
+  */
+boolean FIL_ConvertTextFileToBinary(const char *textfilename, const char *binfilename)
+{
+	FILE *textfile;
+	FILE *binfile;
+	UINT8 buffer[1024];
+	size_t count;
+	boolean success;
+
+	textfile = fopen(textfilename, "r");
+	if (!textfile)
+		return false;
+
+	binfile = fopen(binfilename, "wb");
+	if (!binfile)
+	{
+		fclose(textfile);
+		return false;
+	}
+
+	do
+	{
+		count = fread(buffer, 1, sizeof(buffer), textfile);
+		fwrite(buffer, 1, count, binfile);
+	} while (count);
+
+	success = !(ferror(textfile) || ferror(binfile));
+
+	fclose(textfile);
+	fclose(binfile);
+
+	return success;
 }
 
 /** Check if the filename exists
@@ -442,6 +478,8 @@ void Command_SaveConfig_f(void)
   */
 void Command_LoadConfig_f(void)
 {
+	UINT8 i;
+
 	if (COM_Argc() != 2)
 	{
 		CONS_Printf(M_GetText("loadconfig <filename[.cfg]> : load config from a file\n"));
@@ -453,7 +491,11 @@ void Command_LoadConfig_f(void)
 
 	// load default control
 	G_ClearAllControlKeys();
-	G_Controldefault(0);
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+	}
 
 	// temporarily reset execversion to default
 	CV_ToggleExecVersion(true);
@@ -490,6 +532,8 @@ void Command_ChangeConfig_f(void)
   */
 void M_FirstLoadConfig(void)
 {
+	UINT8 i;
+
 	// configfile is initialised by d_main when searching for the wad?
 
 	// check for a custom config file
@@ -500,7 +544,12 @@ void M_FirstLoadConfig(void)
 	}
 
 	// load default control
-	G_Controldefault(0);
+	G_DefineDefaultControls();
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+	}
 
 	// register execversion here before we load any configs
 	CV_RegisterVar(&cv_execversion);
@@ -522,6 +571,15 @@ void M_FirstLoadConfig(void)
 	// make sure I_Quit() will write back the correct config
 	// (do not write back the config if it crash before)
 	gameconfig_loaded = true;
+
+	// reset to default player stuff
+#if 0
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin[i].name,cv_skin[i].defaultvalue));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor[i].name,cv_playercolor[i].defaultvalue));
+	}
+#endif
 }
 
 /** Saves the game configuration.
@@ -589,7 +647,19 @@ void M_SaveConfig(const char *filename)
 	// FIXME: save key aliases if ever implemented..
 
 	CV_SaveVariables(f);
-	if (!dedicated) G_SaveKeySetting(f);
+
+	if (!dedicated)
+	{
+		if (tutorialmode && tutorialgcs)
+		{
+			// using gcs_custom as temp storage
+			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
+		}
+		else
+		{
+			G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
+		}
+	}
 
 	fclose(f);
 }
@@ -603,7 +673,9 @@ static void M_CreateScreenShotPalette(void)
 	size_t i, j;
 	for (i = 0, j = 0; i < 768; i += 3, j++)
 	{
-		RGBA_t locpal = pLocalPalette[(max(st_palette,0)*256)+j];
+		RGBA_t locpal = ((cv_screenshot_colorprofile.value)
+		? pLocalPalette[(max(st_palette,0)*256)+j]
+		: pMasterPalette[(max(st_palette,0)*256)+j]);
 		screenshot_palette[i] = locpal.s.red;
 		screenshot_palette[i+1] = locpal.s.green;
 		screenshot_palette[i+2] = locpal.s.blue;
@@ -720,7 +792,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
 	char titletxt[] = "SRB2Kart " VERSIONSTRING;
-	png_charp playertxt =  cv_playername.zstring;
+	png_charp playertxt =  cv_playername[0].zstring;
 	char desctxt[] = "SRB2Kart Screenshot";
 	char Movietxt[] = "SRB2Kart Movie";
 	size_t i;
@@ -729,8 +801,6 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	 "SDL";
 #elif defined (_WINDOWS)
 	 "DirectX";
-#elif defined (PC_DOS)
-	 "Allegro";
 #else
 	 "Unknown";
 #endif
@@ -763,9 +833,9 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1]->lvlttl[0] != '\0')
 		snprintf(lvlttltext, 48, "%s%s%s",
 			mapheaderinfo[gamemap-1]->lvlttl,
-			(strlen(mapheaderinfo[gamemap-1]->zonttl) > 0) ? va(" %s",mapheaderinfo[gamemap-1]->zonttl) : // SRB2kart
-			((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : " ZONE"),
-			(strlen(mapheaderinfo[gamemap-1]->actnum) > 0) ? va(" %s",mapheaderinfo[gamemap-1]->actnum) : "");
+			(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" :
+			(mapheaderinfo[gamemap-1]->zonttl[0] != '\0') ? va(" %s",mapheaderinfo[gamemap-1]->zonttl) : " Zone",
+			(mapheaderinfo[gamemap-1]->actnum > 0) ? va(" %d",mapheaderinfo[gamemap-1]->actnum) : "");
 	else
 		snprintf(lvlttltext, 48, "Unknown");
 
@@ -1043,7 +1113,7 @@ static boolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
 static inline moviemode_t M_StartMovieAPNG(const char *pathname)
 {
 #ifdef USE_APNG
-	UINT8 *palette;
+	UINT8 *palette = NULL;
 	const char *freename = NULL;
 	boolean ret = false;
 
@@ -1059,8 +1129,13 @@ static inline moviemode_t M_StartMovieAPNG(const char *pathname)
 		return MM_OFF;
 	}
 
-	if (rendermode == render_soft) M_CreateScreenShotPalette();
-	ret = M_SetupaPNG(va(pandf,pathname,freename), (palette = screenshot_palette));
+	if (rendermode == render_soft)
+	{
+		M_CreateScreenShotPalette();
+		palette = screenshot_palette;
+	}
+
+	ret = M_SetupaPNG(va(pandf,pathname,freename), palette);
 
 	if (!ret)
 	{
@@ -1380,7 +1455,7 @@ typedef struct
   * \param palette  Palette of image data
   */
 #if NUMSCREENS > 2
-static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, int height)
+static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, int height, const UINT8 *pal)
 {
 	int i;
 	size_t length;
@@ -1424,15 +1499,11 @@ static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, 
 
 	// write color table
 	{
-		RGBA_t *pal = ((cv_screenshot_colorprofile.value)
-		? pLocalPalette
-		: pMasterPalette);
-
 		for (i = 0; i < 256; i++)
 		{
-			*pack++ = pal[i].s.red;
-			*pack++ = pal[i].s.green;
-			*pack++ = pal[i].s.blue;
+			*pack++ = *pal; pal++;
+			*pack++ = *pal; pal++;
+			*pack++ = *pal; pal++;
 		}
 	}
 
@@ -1551,9 +1622,9 @@ boolean M_ScreenshotResponder(event_t *ev)
 	if (ch >= KEY_MOUSE1 && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
 		return false;
 
-	if (ch == KEY_F8 || ch == gamecontrol[gc_screenshot][0] || ch == gamecontrol[gc_screenshot][1]) // remappable F8
+	if (ch == KEY_F8 || ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]) // remappable F8
 		M_ScreenShot();
-	else if (ch == KEY_F9 || ch == gamecontrol[gc_recordgif][0] || ch == gamecontrol[gc_recordgif][1]) // remappable F9
+	else if (ch == KEY_F9 || ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]) // remappable F9
 		((moviemode) ? M_StopMovie : M_StartMovie)();
 	else
 		return false;
@@ -1567,16 +1638,19 @@ boolean M_ScreenshotResponder(event_t *ev)
 // M_StartupLocale.
 // Sets up gettext to translate SRB2's strings.
 #ifdef GETTEXT
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define GETTEXTDOMAIN1 "/usr/share/locale"
-#define GETTEXTDOMAIN2 "/usr/local/share/locale"
-#elif defined (_WIN32)
-#define GETTEXTDOMAIN1 "."
-#endif
+	#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+		#define GETTEXTDOMAIN1 "/usr/share/locale"
+		#define GETTEXTDOMAIN2 "/usr/local/share/locale"
+	#elif defined (_WIN32)
+		#define GETTEXTDOMAIN1 "."
+	#endif
+#endif // GETTEXT
 
 void M_StartupLocale(void)
 {
+#ifdef GETTEXT
 	char *textdomhandle = NULL;
+#endif //GETTEXT
 
 	CONS_Printf("M_StartupLocale...\n");
 
@@ -1585,6 +1659,7 @@ void M_StartupLocale(void)
 	// Do not set numeric locale as that affects atof
 	setlocale(LC_NUMERIC, "C");
 
+#ifdef GETTEXT
 	// FIXME: global name define anywhere?
 #ifdef GETTEXTDOMAIN1
 	textdomhandle = bindtextdomain("srb2", GETTEXTDOMAIN1);
@@ -1605,8 +1680,8 @@ void M_StartupLocale(void)
 		textdomain("srb2");
 	else
 		CONS_Printf("Could not find locale text domain!\n");
+#endif //GETTEXT
 }
-#endif
 
 // ==========================================================================
 //                        MISC STRING FUNCTIONS
@@ -1689,6 +1764,11 @@ INT32 axtoi(const char *hexStg)
 	return intValue;
 }
 
+// Token parser variables
+
+static UINT32 oldendPos = 0; // old value of endPos, used by M_UnGetToken
+static UINT32 endPos = 0; // now external to M_GetToken, but still static
+
 /** Token parser for TEXTURES, ANIMDEFS, and potentially other lumps later down the line.
   * Was originally R_GetTexturesToken when I was coding up the TEXTURES parser, until I realized I needed it for ANIMDEFS too.
   * Parses up to the next whitespace character or comma. When finding the start of the next token, whitespace is skipped.
@@ -1703,7 +1783,7 @@ char *M_GetToken(const char *inputString)
 {
 	static const char *stringToUse = NULL; // Populated if inputString != NULL; used otherwise
 	static UINT32 startPos = 0;
-	static UINT32 endPos = 0;
+//	static UINT32 endPos = 0;
 	static UINT32 stringLength = 0;
 	static UINT8 inComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
 	char *texturesToken = NULL;
@@ -1713,12 +1793,12 @@ char *M_GetToken(const char *inputString)
 	{
 		stringToUse = inputString;
 		startPos = 0;
-		endPos = 0;
+		oldendPos = endPos = 0;
 		stringLength = strlen(inputString);
 	}
 	else
 	{
-		startPos = endPos;
+		startPos = oldendPos = endPos;
 	}
 	if (stringToUse == NULL)
 		return NULL;
@@ -1747,7 +1827,7 @@ char *M_GetToken(const char *inputString)
 			|| stringToUse[startPos] == '\r'
 			|| stringToUse[startPos] == '\n'
 			|| stringToUse[startPos] == '\0'
-			|| stringToUse[startPos] == '"' // we're treating this as whitespace because SLADE likes adding it for no good reason
+			|| stringToUse[startPos] == '=' || stringToUse[startPos] == ';' // UDMF TEXTMAP.
 			|| inComment != 0)
 			&& startPos < stringLength)
 	{
@@ -1805,6 +1885,23 @@ char *M_GetToken(const char *inputString)
 		texturesToken[1] = '\0';
 		return texturesToken;
 	}
+	// Return entire string within quotes, except without the quotes.
+	else if (stringToUse[startPos] == '"')
+	{
+		endPos = ++startPos;
+		while (stringToUse[endPos] != '"' && endPos < stringLength)
+			endPos++;
+
+		texturesTokenLength = endPos++ - startPos;
+		// Assign the memory. Don't forget an extra byte for the end of the string!
+		texturesToken = (char *)Z_Malloc((texturesTokenLength+1)*sizeof(char),PU_STATIC,NULL);
+		// Copy the string.
+		M_Memcpy(texturesToken, stringToUse+startPos, (size_t)texturesTokenLength);
+		// Make the final character NUL.
+		texturesToken[texturesTokenLength] = '\0';
+
+		return texturesToken;
+	}
 
 	// Now find the end of the token. This includes several additional characters that are okay to capture as one character, but not trailing at the end of another token.
 	endPos = startPos + 1;
@@ -1815,7 +1912,7 @@ char *M_GetToken(const char *inputString)
 			&& stringToUse[endPos] != ','
 			&& stringToUse[endPos] != '{'
 			&& stringToUse[endPos] != '}'
-			&& stringToUse[endPos] != '"' // see above
+			&& stringToUse[endPos] != '=' && stringToUse[endPos] != ';' // UDMF TEXTMAP.
 			&& inComment == 0)
 			&& endPos < stringLength)
 	{
@@ -1847,6 +1944,30 @@ char *M_GetToken(const char *inputString)
 	// Make the final character NUL.
 	texturesToken[texturesTokenLength] = '\0';
 	return texturesToken;
+}
+
+/** Undoes the last M_GetToken call
+  * The current position along the string being parsed is reset to the last saved position.
+  * This exists mostly because of R_ParseTexture/R_ParsePatch honestly, but could be useful elsewhere?
+  * -Monster Iestyn (22/10/16)
+ */
+void M_UnGetToken(void)
+{
+	endPos = oldendPos;
+}
+
+/** Returns the current token's position.
+ */
+UINT32 M_GetTokenPos(void)
+{
+	return endPos;
+}
+
+/** Sets the current token's position.
+ */
+void M_SetTokenPos(UINT32 newPos)
+{
+	endPos = newPos;
 }
 
 /** Count bits in a number.
@@ -2497,4 +2618,59 @@ void M_MkdirEachUntil(const char *cpath, int start, int end, int mode)
 void M_MkdirEach(const char *path, int start, int mode)
 {
 	M_MkdirEachUntil(path, start, -1, mode);
+}
+
+int M_JumpWord(const char *line)
+{
+	int c;
+
+	c = line[0];
+
+	if (isspace(c))
+		return strspn(line, " ");
+	else if (ispunct(c))
+		return strspn(line, PUNCTUATION);
+	else
+	{
+		if (isspace(line[1]))
+			return 1 + strspn(&line[1], " ");
+		else
+			return strcspn(line, " "PUNCTUATION);
+	}
+}
+
+int M_JumpWordReverse(const char *line, int offset)
+{
+	int (*is)(int);
+	int c;
+	c = line[--offset];
+	if (isspace(c))
+		is = isspace;
+	else if (ispunct(c))
+		is = ispunct;
+	else
+		is = isalnum;
+	c = (*is)(line[offset]);
+	while (offset > 0 &&
+			(*is)(line[offset - 1]) == c)
+		offset--;
+	return offset;
+}
+
+const char * M_Ftrim (double f)
+{
+	static char dig[9];/* "0." + 6 digits (6 is printf's default) */
+	int i;
+	/* I know I said it's the default, but just in case... */
+	sprintf(dig, "%.6f", fabs(modf(f, &f)));
+	/* trim trailing zeroes */
+	for (i = strlen(dig)-1; dig[i] == '0'; --i)
+		;
+	if (dig[i] == '.')/* :NOTHING: */
+		return "";
+	else
+	{
+		dig[i + 1] = '\0';
+		return &dig[1];/* skip the 0 */
+	}
 }

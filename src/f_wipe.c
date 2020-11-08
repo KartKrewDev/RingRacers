@@ -24,11 +24,14 @@
 #include "z_zone.h"
 
 #include "i_system.h"
-#include "k_menu.h"
+#include "i_threads.h"
 #include "console.h"
 #include "d_main.h"
 #include "m_misc.h" // movie mode
 #include "d_clisrv.h" // So the network state can be updated during the wipe
+
+#include "g_game.h"
+#include "st_stuff.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -37,6 +40,9 @@
 #if NUMSCREENS < 5
 #define NOWIPE // do not enable wipe image post processing for ARM, SH and MIPS CPUs
 #endif
+
+// SRB2Kart
+#include "k_menu.h"
 
 typedef struct fademask_s {
 	UINT8* mask;
@@ -58,6 +64,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_evaluation_toblack
 	0,  // wipe_gameend_toblack
 	UINT8_MAX, // wipe_intro_toblack (hardcoded)
+	99, // wipe_ending_toblack (hardcoded)
 	99, // wipe_cutscene_toblack (hardcoded)
 
 	72, // wipe_encore_toinvert
@@ -73,6 +80,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_evaluation_final
 	0,  // wipe_gameend_final
 	99, // wipe_intro_final (hardcoded)
+	99, // wipe_ending_final (hardcoded)
 	99  // wipe_cutscene_final (hardcoded)
 };
 
@@ -81,6 +89,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 //--------------------------------------------------------------------------
 
 boolean WipeInAction = false;
+boolean WipeStageTitle = false;
 INT32 lastwipetic = 0;
 
 #ifndef NOWIPE
@@ -400,6 +409,18 @@ static void F_DoEncoreWiggle(UINT8 time)
 	}
 }
 
+/** Draw the stage title.
+  */
+void F_WipeStageTitle(void)
+{
+	// draw level title
+	if ((WipeStageTitle) && G_IsTitleCardAvailable())
+	{
+		ST_runTitleCard();
+		ST_drawWipeTitleCard();
+	}
+}
+
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
@@ -477,7 +498,15 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		I_UpdateNoBlit();
 
 		if (drawMenu)
+		{
+#ifdef HAVE_THREADS
+			I_lock_mutex(&m_menu_mutex);
+#endif
 			M_Drawer(); // menu is drawn even on top of wipes
+#ifdef HAVE_THREADS
+			I_unlock_mutex(m_menu_mutex);
+#endif
+		}
 
 		I_FinishUpdate(); // page flip or blit buffer
 
@@ -494,5 +523,54 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		Z_Free(fcolor);
 		fcolor = NULL;
 	}
+#endif
+}
+
+/** Returns tic length of wipe
+  * One lump equals one tic
+  */
+tic_t F_GetWipeLength(UINT8 wipetype)
+{
+#ifdef NOWIPE
+	(void)wipetype;
+	return 0;
+#else
+	static char lumpname[10] = "FADEmmss";
+	lumpnum_t lumpnum;
+	UINT8 wipeframe;
+
+	if (wipetype > 99)
+		return 0;
+
+	for (wipeframe = 0; wipeframe < 100; wipeframe++)
+	{
+		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT16)wipetype, (UINT16)wipeframe);
+
+		lumpnum = W_CheckNumForName(lumpname);
+		if (lumpnum == LUMPERROR)
+			return --wipeframe;
+	}
+	return --wipeframe;
+#endif
+}
+
+/** Does the specified wipe exist?
+  */
+boolean F_WipeExists(UINT8 wipetype)
+{
+#ifdef NOWIPE
+	(void)wipetype;
+	return false;
+#else
+	static char lumpname[10] = "FADEmm00";
+	lumpnum_t lumpnum;
+
+	if (wipetype > 99)
+		return false;
+
+	sprintf(&lumpname[4], "%.2hu00", (UINT16)wipetype);
+
+	lumpnum = W_CheckNumForName(lumpname);
+	return !(lumpnum == LUMPERROR);
 #endif
 }

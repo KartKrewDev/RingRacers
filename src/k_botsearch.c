@@ -183,12 +183,12 @@ static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, 
 	if (flip == true)
 	{
 		specialflag = SF_FLIPSPECIAL_CEILING;
-		highestfloor = (sec->c_slope ? P_GetZAt(sec->c_slope, x, y) : sec->ceilingheight);
+		highestfloor = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight);
 	}
 	else
 	{
 		specialflag = SF_FLIPSPECIAL_FLOOR;
-		highestfloor = (sec->f_slope ? P_GetZAt(sec->f_slope, x, y) : sec->floorheight);
+		highestfloor = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
 	}
 
 	if (sec->flags & specialflag)
@@ -206,8 +206,8 @@ static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, 
 			continue;
 		}
 
-		top = (*rover->t_slope ? P_GetZAt(*rover->t_slope, x, y) : *rover->topheight);
-		bottom = (*rover->b_slope ? P_GetZAt(*rover->b_slope, x, y) : *rover->bottomheight);
+		top = P_GetZAt(*rover->t_slope, x, y, *rover->topheight);
+		bottom = P_GetZAt(*rover->b_slope, x, y, *rover->bottomheight);
 
 		if (!(rover->flags & FF_BLOCKPLAYER))
 		{
@@ -694,8 +694,8 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 				)
 				// Ring Sting
 				else PlayerAttackSteer(
-					thing->player->kartstuff[k_rings] <= 0,
-					globalsmuggle.botmo->player->kartstuff[k_rings] <= 0
+					thing->player->rings <= 0,
+					globalsmuggle.botmo->player->rings <= 0
 				)
 				else
 				{
@@ -739,7 +739,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 			}
 			break;
 		default:
-			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE|MF_FIRE))
+			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE))
 			{
 				K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
 			}

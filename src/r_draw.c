@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -81,7 +81,7 @@ UINT8 *dc_source;
 // -----------------------
 // translucency stuff here
 // -----------------------
-#define NUMTRANSTABLES 9 // how many translucency tables are used
+#define NUMTRANSTABLES 11 // how many translucency tables are used
 
 UINT8 *transtables; // translucency tables
 
@@ -108,15 +108,17 @@ INT32 dc_numlights = 0, dc_maxlights, dc_texheight;
 INT32 ds_y, ds_x1, ds_x2;
 lighttable_t *ds_colormap;
 fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
+UINT16 ds_flatwidth, ds_flatheight;
+boolean ds_powersoftwo;
 
 UINT8 *ds_source; // start of a 64*64 tile image
 UINT8 *ds_transmap; // one of the translucency tables
 
-#ifdef ESLOPE
 pslope_t *ds_slope; // Current slope being used
-floatv3_t ds_su, ds_sv, ds_sz; // Vectors for... stuff?
-float focallengthf, zeroheight;
-#endif
+floatv3_t ds_su[MAXVIDHEIGHT], ds_sv[MAXVIDHEIGHT], ds_sz[MAXVIDHEIGHT]; // Vectors for... stuff?
+floatv3_t *ds_sup, *ds_svp, *ds_szp;
+float focallengthf[MAXSPLITSCREENPLAYERS];
+float zeroheight;
 
 /**	\brief Variable flat sizes
 */
@@ -137,16 +139,17 @@ UINT32 nflatxshift, nflatyshift, nflatshiftup, nflatmask;
 #define ALLWHITE_TT_CACHE_INDEX (MAXSKINS + 3)
 #define RAINBOW_TT_CACHE_INDEX (MAXSKINS + 4)
 #define BLINK_TT_CACHE_INDEX (MAXSKINS + 5)
-#define TT_CACHE_SIZE (MAXSKINS + 6)
+#define DASHMODE_TT_CACHE_INDEX (MAXSKINS + 6)
+#define TT_CACHE_SIZE (MAXSKINS + 7)
 #define SKIN_RAMP_LENGTH 16
 #define DEFAULT_STARTTRANSCOLOR 96
 #define NUM_PALETTE_ENTRIES 256
 
 static UINT8** translationtablecache[TT_CACHE_SIZE] = {NULL};
-
-// SKINCOLOR DEFINITIONS HAVE BEEN MOVED TO K_KART.C
+UINT8 skincolor_modified[MAXSKINCOLORS];
 
 CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
+CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
 /**	\brief The R_InitTranslationTables
 
@@ -154,10 +157,6 @@ CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
 */
 void R_InitTranslationTables(void)
 {
-#ifdef _NDS
-	// Ugly temporary NDS hack.
-	transtables = (UINT8*)0x2000000;
-#else
 	// Load here the transparency lookup tables 'TINTTAB'
 	// NOTE: the TINTTAB resource MUST BE aligned on 64k for the asm
 	// optimised code (in other words, transtables pointer low word is 0)
@@ -173,7 +172,8 @@ void R_InitTranslationTables(void)
 	W_ReadLump(W_GetNumForName("TRANS70"), transtables+0x60000);
 	W_ReadLump(W_GetNumForName("TRANS80"), transtables+0x70000);
 	W_ReadLump(W_GetNumForName("TRANS90"), transtables+0x80000);
-#endif
+	W_ReadLump(W_GetNumForName("TRANSADD"),transtables+0x90000);
+	W_ReadLump(W_GetNumForName("TRANSSUB"),transtables+0xA0000);
 }
 
 /**	\brief	Retrieves a translation colormap from the cache.
@@ -184,29 +184,43 @@ void R_InitTranslationTables(void)
 
 	\return	Colormap. If not cached, caller should Z_Free.
 */
-UINT8* R_GetTranslationColormap(INT32 skinnum, skincolors_t color, UINT8 flags)
+UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags)
 {
 	UINT8* ret;
 	INT32 skintableindex;
+	INT32 i;
 
 	// Adjust if we want the default colormap
-	if (skinnum == TC_DEFAULT) skintableindex = DEFAULT_TT_CACHE_INDEX;
-	else if (skinnum == TC_BOSS) skintableindex = BOSS_TT_CACHE_INDEX;
-	else if (skinnum == TC_METALSONIC) skintableindex = METALSONIC_TT_CACHE_INDEX;
-	else if (skinnum == TC_ALLWHITE) skintableindex = ALLWHITE_TT_CACHE_INDEX;
-	else if (skinnum == TC_RAINBOW) skintableindex = RAINBOW_TT_CACHE_INDEX;
-	else if (skinnum == TC_BLINK) skintableindex = BLINK_TT_CACHE_INDEX;
-	else skintableindex = skinnum;
+	switch (skinnum)
+	{
+		case TC_DEFAULT:    skintableindex = DEFAULT_TT_CACHE_INDEX; break;
+		case TC_BOSS:       skintableindex = BOSS_TT_CACHE_INDEX; break;
+		case TC_METALSONIC: skintableindex = METALSONIC_TT_CACHE_INDEX; break;
+		case TC_ALLWHITE:   skintableindex = ALLWHITE_TT_CACHE_INDEX; break;
+		case TC_RAINBOW:    skintableindex = RAINBOW_TT_CACHE_INDEX; break;
+		case TC_BLINK:      skintableindex = BLINK_TT_CACHE_INDEX; break;
+		case TC_DASHMODE:   skintableindex = DASHMODE_TT_CACHE_INDEX; break;
+		     default:       skintableindex = skinnum; break;
+	}
 
 	if (flags & GTC_CACHE)
 	{
 
 		// Allocate table for skin if necessary
 		if (!translationtablecache[skintableindex])
-			translationtablecache[skintableindex] = Z_Calloc(MAXTRANSLATIONS * sizeof(UINT8**), PU_STATIC, NULL);
+			translationtablecache[skintableindex] = Z_Calloc(MAXSKINCOLORS * sizeof(UINT8**), PU_STATIC, NULL);
 
 		// Get colormap
 		ret = translationtablecache[skintableindex][color];
+
+		// Rebuild the cache if necessary
+		if (skincolor_modified[color])
+		{
+			for (i = 0; i < (INT32)(sizeof(translationtablecache) / sizeof(translationtablecache[0])); i++)
+				if (translationtablecache[i] && translationtablecache[i][color])
+					K_GenerateKartColormap(translationtablecache[i][color], i>=MAXSKINS ? MAXSKINS-i-1 : i, color);
+			skincolor_modified[color] = false;
+		}
 	}
 	else ret = NULL;
 
@@ -214,7 +228,7 @@ UINT8* R_GetTranslationColormap(INT32 skinnum, skincolors_t color, UINT8 flags)
 	if (!ret)
 	{
 		ret = Z_MallocAlign(NUM_PALETTE_ENTRIES, (flags & GTC_CACHE) ? PU_LEVEL : PU_STATIC, NULL, 8);
-		K_GenerateKartColormap(ret, skinnum, color); //R_GenerateTranslationColormap(ret, skinnum, color);		// SRB2kart
+		K_GenerateKartColormap(ret, skinnum, color); //R_GenerateTranslationColormap(ret, skinnum, color); // SRB2kart
 
 		// Cache the colormap if desired
 		if (flags & GTC_CACHE)
@@ -238,21 +252,33 @@ void R_FlushTranslationColormapCache(void)
 
 	for (i = 0; i < (INT32)(sizeof(translationtablecache) / sizeof(translationtablecache[0])); i++)
 		if (translationtablecache[i])
-			memset(translationtablecache[i], 0, MAXTRANSLATIONS * sizeof(UINT8**));
+			memset(translationtablecache[i], 0, MAXSKINCOLORS * sizeof(UINT8**));
 }
 
-/*
-UINT8 R_GetColorByName(const char *name)
+UINT16 R_GetColorByName(const char *name)
 {
-	UINT8 color = (UINT8)atoi(name);
-	if (color > 0 && color < MAXSKINCOLORS)
+	UINT16 color = (UINT16)atoi(name);
+	if (color > 0 && color < numskincolors)
 		return color;
-	for (color = 1; color < MAXSKINCOLORS; color++)
-		if (!stricmp(Color_Names[color], name))
+	for (color = 1; color < numskincolors; color++)
+		if (!stricmp(skincolors[color].name, name))
 			return color;
-	return 0;
+	return SKINCOLOR_NONE;
 }
-*/
+
+UINT16 R_GetSuperColorByName(const char *name)
+{
+	UINT16 i, color = SKINCOLOR_NONE;
+	char *realname = Z_Malloc(MAXCOLORNAME+1, PU_STATIC, NULL);
+	snprintf(realname, MAXCOLORNAME+1, "Super %s 1", name);
+	for (i = 1; i < numskincolors; i++)
+		if (!stricmp(skincolors[i].name, realname)) {
+			color = i;
+			break;
+		}
+	Z_Free(realname);
+	return color;
+}
 
 // ==========================================================================
 //               COMMON DRAWER FOR 8 AND 16 BIT COLOR MODES
@@ -477,6 +503,7 @@ void R_DrawViewBorder(void)
 // ==========================================================================
 
 #include "r_draw8.c"
+#include "r_draw8_npo2.c"
 
 // ==========================================================================
 //                   INCLUDE 16bpp DRAWING CODE HERE

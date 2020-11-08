@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -35,7 +35,9 @@
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
-	SF_HIRES = 1, // Draw the sprite 2x as small?
+	SF_HIRES            = 1, // Draw the sprite at different size?
+	SF_MACHINE          = 1<<1, // Beep boop. Are you a robot?
+	// free up to and including 1<<31
 } skinflags_t;
 
 //
@@ -56,74 +58,57 @@ typedef enum
 //
 typedef enum
 {
-	// Flip camera angle with gravity flip prefrence.
-	PF_FLIPCAM = 1,
+	PF_FAULT = 1,
 
 	// Cheats
-	PF_GODMODE = 1<<1,
-	PF_NOCLIP  = 1<<2,
-	PF_INVIS   = 1<<3,
+	PF_GODMODE = 1<<4,
+	PF_NOCLIP  = 1<<5,
+	PF_INVIS   = 1<<6,
 
 	// True if button down last tic.
-	PF_ATTACKDOWN = 1<<4,
-	PF_USEDOWN    = 1<<5,
-	PF_JUMPDOWN   = 1<<6,
-	PF_WPNDOWN    = 1<<7,
+	PF_ATTACKDOWN = 1<<7,
+	PF_SPINDOWN   = 1<<8,
+	PF_JUMPDOWN   = 1<<9,
+	PF_WPNDOWN    = 1<<10,
 
 	// Unmoving states
-	PF_STASIS     = 1<<8, // Player is not allowed to move
-	PF_JUMPSTASIS = 1<<9, // and that includes jumping.
+	PF_STASIS     = 1<<11, // Player is not allowed to move
+	PF_JUMPSTASIS = 1<<12, // and that includes jumping.
 	PF_FULLSTASIS = PF_STASIS|PF_JUMPSTASIS,
 
-	// Did you get a time-over?
-	PF_TIMEOVER = 1<<10,
-
 	// SRB2Kart: Spectator that wants to join
-	PF_WANTSTOJOIN = 1<<11,
+	PF_WANTSTOJOIN = 1<<13,
 
 	// Character action status
-	PF_JUMPED    = 1<<12,
-	PF_SPINNING  = 1<<13,
-	PF_STARTDASH = 1<<14,
-	PF_THOKKED   = 1<<15,
+	PF_STARTJUMP     = 1<<14,
+	PF_JUMPED        = 1<<15,
+	PF_NOJUMPDAMAGE  = 1<<16,
 
-	// Are you gliding?
-	PF_GLIDING   = 1<<16,
+	PF_SPINNING      = 1<<17,
+	PF_STARTDASH     = 1<<18,
 
-	// Tails pickup!
-	PF_CARRIED   = 1<<17,
+	PF_THOKKED       = 1<<19,
+	PF_SHIELDABILITY = 1<<20,
+	PF_GLIDING       = 1<<21,
+	PF_BOUNCING      = 1<<22,
 
 	// Sliding (usually in water) like Labyrinth/Oil Ocean
-	PF_SLIDING   = 1<<18,
+	PF_SLIDING       = 1<<23,
 
-	// Hanging on a rope
-	PF_ROPEHANG = 1<<19,
-
-	// Hanging on an item of some kind - zipline, chain, etc. (->tracer)
-	PF_ITEMHANG = 1<<20,
-
-	// On the mace chain spinning around (->tracer)
-	PF_MACESPIN = 1<<21,
-
-	/*** NIGHTS STUFF ***/
-	// Is the player in NiGHTS mode?
-	PF_NIGHTSMODE        = 1<<22,
-	PF_TRANSFERTOCLOSEST = 1<<23,
-
-	// Spill rings after falling
-	PF_NIGHTSFALL        = 1<<24,
+	// NiGHTS stuff
+	PF_TRANSFERTOCLOSEST = 1<<24,
 	PF_DRILLING          = 1<<25,
-	PF_SKIDDOWN          = 1<<26,
 
-	/*** TAG STUFF ***/
-	PF_TAGGED            = 1<<27, // Player has been tagged and awaits the next round in hide and seek.
-	PF_TAGIT             = 1<<28, // The player is it! For Tag Mode
+	// Gametype-specific stuff
+	PF_GAMETYPEOVER = 1<<26, // Race time over, or H&S out-of-game
+	PF_TAGIT        = 1<<27, // The player is it! For Tag Mode
 
 	/*** misc ***/
-	PF_FORCESTRAFE       = 1<<29, // Turning inputs are translated into strafing inputs
+	PF_FORCESTRAFE = 1<<28, // Turning inputs are translated into strafing inputs
+	PF_CANCARRY    = 1<<29, // Can carry another player?
 	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
 
-	// free: 1<<30 and 1<<31
+	// up to 1<<31 is free
 } pflags_t;
 
 typedef enum
@@ -131,35 +116,71 @@ typedef enum
 	// Are animation frames playing?
 	PA_ETC=0,
 	PA_IDLE,
+	PA_EDGE,
 	PA_WALK,
 	PA_RUN,
+	PA_DASH,
+	PA_PAIN,
 	PA_ROLL,
+	PA_JUMP,
+	PA_SPRING,
 	PA_FALL,
-	PA_ABILITY
+	PA_ABILITY,
+	PA_ABILITY2,
+	PA_RIDE
 } panim_t;
 
+//
+// All of the base srb2 shields are either a single constant,
+// or use damagetype-protecting flags applied to a constant,
+// or are the force shield (which does everything weirdly).
+//
+// Base flags by themselves aren't used so modders can make
+// abstract, ability-less shields should they so choose.
+//
 typedef enum
 {
 	SH_NONE = 0,
-	// Standard shields
-	SH_JUMP,
-	SH_ATTRACT,
-	SH_ELEMENTAL,
-	SH_BOMB,
-	// Stupid useless unimplimented Sonic 3 shields
-	SH_BUBBLEWRAP,
-	SH_THUNDERCOIN,
-	SH_FLAMEAURA,
-	// Pity shield: the world's most basic shield ever, given to players who suck at Match
-	SH_PITY,
-	// The fireflower is special, it combines with other shields.
-	SH_FIREFLOWER = 0x100,
-	// The force shield uses the lower 8 bits to count how many hits are left.
-	SH_FORCE = 0x200,
 
-	SH_STACK = SH_FIREFLOWER,
+	// Shield flags
+	SH_PROTECTFIRE = 0x400,
+	SH_PROTECTWATER = 0x800,
+	SH_PROTECTELECTRIC = 0x1000,
+	SH_PROTECTSPIKE = 0x2000, // cactus shield one day? thanks, subarashii
+	//SH_PROTECTNUKE = 0x4000, // intentionally no hardcoded defense against nukes
+
+	// Indivisible shields
+	SH_PITY = 1, // the world's most basic shield ever, given to players who suck at Match
+	SH_WHIRLWIND,
+	SH_ARMAGEDDON,
+	SH_PINK, // PITY IN PINK!
+
+	// Normal shields that use flags
+	SH_ATTRACT = SH_PITY|SH_PROTECTELECTRIC,
+	SH_ELEMENTAL = SH_PITY|SH_PROTECTFIRE|SH_PROTECTWATER,
+
+	// Sonic 3 shields
+	SH_FLAMEAURA = SH_PITY|SH_PROTECTFIRE,
+	SH_BUBBLEWRAP = SH_PITY|SH_PROTECTWATER,
+	SH_THUNDERCOIN = SH_WHIRLWIND|SH_PROTECTELECTRIC,
+
+	// The force shield uses the lower 8 bits to count how many extra hits are left.
+	SH_FORCE = 0x100,
+	SH_FORCEHP = 0xFF, // to be used as a bitmask only
+
+	// Mostly for use with Mario mode.
+	SH_FIREFLOWER = 0x200,
+
+	SH_STACK = SH_FIREFLOWER, // second-layer shields
 	SH_NOSTACK = ~SH_STACK
-} shieldtype_t;
+} shieldtype_t; // pw_shield
+
+typedef enum
+{
+	CR_NONE = 0,
+	// Specific level gimmicks.
+	CR_ZOOMTUBE,
+} carrytype_t; // pw_carry
 
 // Player powers. (don't edit this comment)
 typedef enum
@@ -168,10 +189,14 @@ typedef enum
 	pw_sneakers,
 	pw_flashing,
 	pw_shield,
+	pw_carry,
 	pw_tailsfly, // tails flying
 	pw_underwater, // underwater timer
 	pw_spacetime, // In space, no one can hear you spin!
 	pw_extralife, // Extra Life timer
+	pw_pushing,
+	pw_justsprung,
+	pw_noautobrake,
 
 	pw_super, // Are you super?
 	pw_gravityboots, // gravity boots
@@ -193,9 +218,13 @@ typedef enum
 	pw_nights_helper,
 	pw_nights_linkfreeze,
 
-	//for linedef exec 427
-	pw_nocontrol,
-	pw_ingoop, // In goop
+	pw_nocontrol, //for linedef exec 427
+
+	pw_dye, // for dyes
+
+	pw_justlaunched, // Launched off a slope this tic (0=none, 1=standard launch, 2=half-pipe launch)
+
+	pw_ignorelatch, // Don't grab onto CR_GENERIC, add 32768 (powers[pw_ignorelatch] & 1<<15) to avoid ALL not-NiGHTS CR_ types
 
 	NUMPOWERS
 } powertype_t;
@@ -237,7 +266,8 @@ typedef enum
 	NUMKARTITEMS,
 
 	// Additional roulette numbers, only used for K_KartGetItemResult
-	KRITEM_TRIPLESNEAKER = NUMKARTITEMS,
+	KRITEM_DUALSNEAKER = NUMKARTITEMS,
+	KRITEM_TRIPLESNEAKER,
 	KRITEM_TRIPLEBANANA,
 	KRITEM_TENFOLDBANANA,
 	KRITEM_TRIPLEORBINAUT,
@@ -256,6 +286,25 @@ typedef enum
 	NUMKARTSHIELDS
 } kartshields_t;
 
+typedef enum
+{
+	KSPIN_THRUST    = (1<<0),
+	KSPIN_IFRAMES   = (1<<1),
+	KSPIN_AIRTIMER  = (1<<2),
+
+	KSPIN_TYPEBIT   = (1<<3),
+	KSPIN_TYPEMASK  = ~( KSPIN_TYPEBIT - 1 ),
+
+#define KSPIN_TYPE( type ) ( KSPIN_TYPEBIT << type )
+
+	KSPIN_SPINOUT   = KSPIN_TYPE(0)|KSPIN_IFRAMES|KSPIN_THRUST,
+	KSPIN_WIPEOUT   = KSPIN_TYPE(1)|KSPIN_IFRAMES,
+	KSPIN_STUNG     = KSPIN_TYPE(2),
+	KSPIN_EXPLOSION = KSPIN_TYPE(3)|KSPIN_IFRAMES|KSPIN_AIRTIMER,
+
+#undef KSPIN_TYPE
+} kartspinoutflags_t;
+
 //{ SRB2kart - kartstuff
 typedef enum
 {
@@ -269,7 +318,7 @@ typedef enum
 	k_instashield,		// Instashield no-damage animation timer
 
 	k_floorboost,		// Prevents Sneaker sounds for a breif duration when triggered by a floor panel
-	k_spinouttype,		// Determines whether to thrust forward or not while spinning out; 0 = move forwards, 1 = stay still, 2 = stay still & no flashing tics
+	k_spinouttype,		// Determines the mode of spinout/wipeout, see kartspinoutflags_t
 
 	k_drift,			// Drifting Left or Right, plus a bigger counter = sharper turn
 	k_driftend,			// Drift has ended, used to adjust character angle after drift
@@ -287,13 +336,16 @@ typedef enum
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	k_pogospring,		// Pogo spring bounce effect
-	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
+	k_spindash,			// Spindash charge timer
+	k_spindashspeed,	// Spindash release speed
+	k_spindashboost,	// Spindash release boost timer
 	k_waterskip,		// Water skipping counter
 	k_dashpadcooldown,	// Separate the vanilla SA-style dash pads from using pw_flashing
 	k_numboosts,		// Count of how many boosts are being stacked, for after image spawning
 	k_boostpower,		// Base boost value, for offroad
 	k_speedboost,		// Boost value smoothing for max speed
 	k_accelboost,		// Boost value smoothing for acceleration
+	k_handleboost,		// Boost value smoothing for handling
 	k_draftpower,		// Drafting power (from 0 to FRACUNIT), doubles your top speed & acceleration at max
 	k_draftleeway,		// Leniency timer before removing draft power
 	k_lastdraft,		// Last player being drafted
@@ -374,6 +426,9 @@ typedef enum
 	khud_lapanimation,	// Used to show the lap start wing logo animation
 	khud_laphand,		// Lap hand gfx to use; 0 = none, 1 = :ok_hand:, 2 = :thumbs_up:, 3 = :thumps_down:
 
+	// Start
+	khud_fault,			// Set when faulting during the starting countdown
+
 	// Camera
 	khud_boostcam,		// Camera push forward on boost
 	khud_destboostcam,	// Ditto
@@ -392,27 +447,9 @@ typedef enum
 } karthudtype_t;
 
 // QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
-#define RINGTOTAL(p) (p->kartstuff[k_rings] + p->kartstuff[k_pickuprings])
+#define RINGTOTAL(p) (p->rings + p->kartstuff[k_pickuprings])
 
 //}
-
-#define WEP_AUTO    1
-#define WEP_BOUNCE  2
-#define WEP_SCATTER 3
-#define WEP_GRENADE 4
-#define WEP_EXPLODE 5
-#define WEP_RAIL    6
-#define NUM_WEAPONS 7
-
-typedef enum
-{
-	RW_AUTO    =  1,
-	RW_BOUNCE  =  2,
-	RW_SCATTER =  4,
-	RW_GRENADE =  8,
-	RW_EXPLODE = 16,
-	RW_RAIL    = 32
-} ringweapons_t;
 
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
@@ -453,28 +490,28 @@ typedef struct player_s
 
 	playerstate_t playerstate;
 
-	// Determine POV, including viewpoint bobbing during movement.
 	// Focal origin above r.z
 	fixed_t viewz;
 	// Base height above floor for viewz.
 	fixed_t viewheight;
 	// Bob/squat speed.
-	//fixed_t deltaviewheight;
+	fixed_t deltaviewheight;
 	// bounded/scaled total momentum.
-	//fixed_t bob;
+	fixed_t bob;
+
+	angle_t viewrollangle;
+
+	angle_t angleturn;
 
 	// Mouse aiming, where the guy is looking at!
 	// It is updated with cmd->aiming.
 	angle_t aiming;
 
-	// This is only used between levels,
-	// mo->health is used during levels.
-	/// \todo Remove this.  We don't need a second health definition for players.
-	INT32 health;
+	// fun thing for player sprite
+	angle_t drawangle;
 
-	SINT8 pity; // i pity the fool.
-	INT32 currentweapon; // current weapon selected.
-	INT32 ringweapons; // weapons currently obtained.
+	// player's ring count
+	INT16 rings;
 
 	// Power ups. invinc and invis are tic counters.
 	UINT16 powers[NUMPOWERS];
@@ -482,9 +519,6 @@ typedef struct player_s
 	// SRB2kart stuff
 	INT32 kartstuff[NUMKARTSTUFF];
 	INT32 karthud[NUMKARTHUD];
-	angle_t frameangle; // for the player add the ability to have the sprite only face other angles
-	INT16 lturn_max[MAXPREDICTTICS]; // What's the expected turn value for full-left for a number of frames back (to account for netgame latency)?
-	INT16 rturn_max[MAXPREDICTTICS]; // Ditto but for full-right
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
@@ -502,21 +536,31 @@ typedef struct player_s
 	UINT16 flashpal;
 
 	// Player skin colorshift, 0-15 for which color to draw player.
-	UINT8 skincolor;
+	UINT16 skincolor;
 
 	INT32 skin;
+	UINT32 availabilities;
 
 	UINT32 score; // player score
 	fixed_t dashspeed; // dashing speed
-	INT32 dashtime; // tics dashing, used for rev sound
 
 	// SRB2kart
 	UINT8 kartspeed; // Kart speed stat between 1 and 9
 	UINT8 kartweight; // Kart weight stat between 1 and 9
+
+	INT32 followerskin;		// Kart: This player's follower "skin"
+	boolean followerready;	// Kart: Used to know when we can have a follower or not. (This is set on the first NameAndColor follower update)
+	UINT16 followercolor;	// Kart: Used to store the follower colour the player wishes to use
+	mobj_t *follower;		// Kart: This is the follower object we have. (If any)
+
 	//
 
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
 	                 // See SF_ flags
+
+	mobjtype_t followitem; // Object # to spawn for Smiles
+	mobj_t *followmobj; // Smiles all around
+
 	SINT8 lives;
 	boolean lostlife;
 	SINT8 continues; // continues that player has acquired
@@ -526,8 +570,7 @@ typedef struct player_s
 
 	fixed_t speed; // Player's speed (distance formula of MOMX and MOMY values)
 	fixed_t lastspeed;
-	UINT8 jumping; // Jump counter
-	UINT8 secondjump;
+	UINT8 secondjump; // Jump counter
 
 	UINT8 fly1; // Tails flying
 	UINT8 scoreadd; // Used for multiple enemy attack bonus
@@ -537,6 +580,7 @@ typedef struct player_s
 	tic_t exiting; // Exitlevel timer
 
 	UINT8 homing; // Are you homing?
+	tic_t dashmode; // counter for dashmode ability
 
 	tic_t skidtime; // Skid timer
 
@@ -585,16 +629,28 @@ typedef struct player_s
 	UINT8 drilldelay;
 	boolean bonustime; // Capsule destroyed, now it's bonus time!
 	mobj_t *capsule; // Go inside the capsule
+	mobj_t *drone; // Move center to the drone
+	fixed_t oldscale; // Pre-Nightserize scale
 	UINT8 mare; // Current mare
+	UINT8 marelap; // Current mare lap
+	UINT8 marebonuslap; // Current mare lap starting from bonus time
 
 	// Statistical purposes.
 	tic_t marebegunat; // Leveltime when mare begun
 	tic_t startedtime; // Time which you started this mare with.
 	tic_t finishedtime; // Time it took you to finish the mare (used for display)
-	INT16 finishedrings; // The rings you had left upon finishing the mare
-	UINT32 marescore; // SRB2Kart: Battle score
+	tic_t lapbegunat; // Leveltime when lap begun
+	tic_t lapstartedtime; // Time which you started this lap with.
+	INT16 finishedspheres; // The spheres you had left upon finishing the mare
+	INT16 finishedrings; // The rings/stars you had left upon finishing the mare
+	UINT32 marescore; // score for this nights stage
 	UINT32 lastmarescore; // score for the last mare
+	UINT32 totalmarescore; // score for all mares
 	UINT8 lastmare; // previous mare
+	UINT8 lastmarelap; // previous mare lap
+	UINT8 lastmarebonuslap; // previous mare bonus lap
+	UINT8 totalmarelap; // total mare lap
+	UINT8 totalmarebonuslap; // total mare bonus lap
 	INT32 maxlink; // maximum link obtained
 	UINT8 texttimer; // nights_texttime should not be local
 	UINT8 textvar; // which line of NiGHTS text to show -- let's not use cheap hacks
@@ -615,12 +671,21 @@ typedef struct player_s
 	boolean bot;
 	botvars_t botvars;
 
-	tic_t jointime; // Timer when player joins game to change skin/color
-
 	UINT8 splitscreenindex;
+
+	tic_t jointime; // Timer when player joins game to change skin/color
+	tic_t quittime; // Time elapsed since user disconnected, zero if connected
+
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
 } player_t;
+
+// Values for dashmode
+#define DASHMODE_THRESHOLD (3*TICRATE)
+#define DASHMODE_MAX (DASHMODE_THRESHOLD + 3)
+
+// Value for infinite lives
+#define INFLIVES 0x7F
 
 #endif

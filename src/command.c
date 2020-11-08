@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -34,6 +34,7 @@
 #include "p_setup.h"
 #include "lua_script.h"
 #include "d_netfil.h" // findfile
+#include "r_data.h" // Color_cons_t
 
 //========
 // protos.
@@ -58,10 +59,14 @@ static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
 static boolean CV_Command(void);
 consvar_t *CV_FindVar(const char *name);
 static const char *CV_StringValue(const char *var_name);
+
 static consvar_t *consvar_vars; // list of registered console variables
+static UINT16     consvar_number_of_netids = 0;
 
 static char com_token[1024];
 static char *COM_Parse(char *data);
+
+static char * COM_Purge (char *text, int *lenp);
 
 CV_PossibleValue_t CV_OnOff[] = {{0, "Off"}, {1, "On"}, {0, NULL}};
 CV_PossibleValue_t CV_YesNo[] = {{0, "No"}, {1, "Yes"}, {0, NULL}};
@@ -82,7 +87,7 @@ CV_PossibleValue_t kartspeed_cons_t[] = {
 // Also set CV_HIDDEN during runtime, after config is loaded
 
 static boolean execversion_enabled = false;
-consvar_t cv_execversion = {"execversion","1",CV_CALL,CV_Unsigned, CV_EnforceExecVersion, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_execversion = CVAR_INIT ("execversion","1",CV_CALL,CV_Unsigned, CV_EnforceExecVersion);
 
 // for default joyaxis detection
 #if 0
@@ -90,7 +95,7 @@ static boolean joyaxis_default[4] = {false,false,false,false};
 static INT32 joyaxis_count[4] = {0,0,0,0};
 #endif
 
-#define COM_BUF_SIZE 0x4000 // command buffer size, 0x4000 = 16384
+#define COM_BUF_SIZE (32<<10) // command buffer size
 #define MAX_ALIAS_RECURSION 100 // max recursion allowed for aliases
 
 static INT32 com_wait; // one command per frame (for cmd sequences)
@@ -112,32 +117,64 @@ static cmdalias_t *com_alias; // aliases list
 
 static vsbuf_t com_text; // variable sized buffer
 
+/** Purges control characters out of some text.
+  *
+  * \param s The text.
+  * \param np Optionally a pointer to fill with the new string length.
+  * \return The text.
+  * \sa COM_ExecuteString
+  */
+static char *
+COM_Purge (char *s, int *np)
+{
+	char *t;
+	char *p;
+	int n;
+	n = strlen(s);
+	t = s + n + 1;
+	p = s;
+	while (( p = strchr(p, '\033') ))
+	{
+		memmove(p, &p[1], t - p - 1);
+		n--;
+	}
+	if (np)
+		(*np) = n;
+	return s;
+}
+
 /** Adds text into the command buffer for later execution.
   *
   * \param ptext The text to add.
-  * \sa COM_BufInsertText
+  * \sa COM_BufInsertTextEx
   */
-void COM_BufAddText(const char *ptext)
+void COM_BufAddTextEx(const char *ptext, int flags)
 {
-	size_t l;
+	int l;
+	char *text;
 
-	l = strlen(ptext);
+	text = COM_Purge(Z_StrDup(ptext), &l);
 
-	if (com_text.cursize + l >= com_text.maxsize)
+	if (com_text.cursize + 2 + l >= com_text.maxsize)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Command buffer full!\n"));
 		return;
 	}
-	VS_Write(&com_text, ptext, l);
+
+	VS_WriteEx(&com_text, text, l, flags);
+
+	Z_Free(text);
 }
 
 /** Adds command text and executes it immediately.
   *
   * \param ptext The text to execute. A newline is automatically added.
-  * \sa COM_BufAddText
+  * \sa COM_BufAddTextEx
   */
-void COM_BufInsertText(const char *ptext)
+void COM_BufInsertTextEx(const char *ptext, int flags)
 {
+	const INT32 old_wait = com_wait;
+
 	char *temp = NULL;
 	size_t templen;
 
@@ -149,9 +186,13 @@ void COM_BufInsertText(const char *ptext)
 		VS_Clear(&com_text);
 	}
 
+	com_wait = 0;
+
 	// add the entire text of the file (or alias)
-	COM_BufAddText(ptext);
+	COM_BufAddTextEx(ptext, flags);
 	COM_BufExecute(); // do it right away
+
+	com_wait += old_wait;
 
 	// add the copied off data
 	if (templen)
@@ -284,6 +325,7 @@ static size_t com_argc;
 static char *com_argv[MAX_ARGS];
 static const char *com_null_string = "";
 static char *com_args = NULL; // current command args or NULL
+static int com_flags;
 
 static void Got_NetVar(UINT8 **p, INT32 playernum);
 
@@ -357,6 +399,40 @@ size_t COM_CheckParm(const char *check)
 	return 0;
 }
 
+/** \brief COM_CheckParm, but checks only the start of each argument.
+  *        E.g. checking for "-no" would match "-noerror" too.
+  */
+size_t COM_CheckPartialParm(const char *check)
+{
+	int  len;
+	size_t i;
+
+	len = strlen(check);
+
+	for (i = 1; i < com_argc; i++)
+	{
+		if (strncasecmp(check, com_argv[i], len) == 0)
+			return i;
+	}
+	return 0;
+}
+
+/** Find the first argument that starts with a hyphen (-).
+  * \return The index of the argument, or 0
+  *         if there are no such arguments.
+  */
+size_t COM_FirstOption(void)
+{
+	size_t i;
+
+	for (i = 1; i < com_argc; i++)
+	{
+		if (com_argv[i][0] == '-')/* options start with a hyphen */
+			return i;
+	}
+	return 0;
+}
+
 /** Parses a string into command-line tokens.
   *
   * \param ptext A null-terminated string. Does not need to be
@@ -372,12 +448,21 @@ static void COM_TokenizeString(char *ptext)
 
 	com_argc = 0;
 	com_args = NULL;
+	com_flags = 0;
 
 	while (com_argc < MAX_ARGS)
 	{
 		// Skip whitespace up to a newline.
 		while (*ptext != '\0' && *ptext <= ' ' && *ptext != '\n')
-			ptext++;
+		{
+			if (ptext[0] == '\033')
+			{
+				com_flags = (unsigned)ptext[1];
+				ptext += 2;
+			}
+			else
+				ptext++;
+		}
 
 		// A newline means end of command in buffer,
 		// thus end of this command's args too.
@@ -417,13 +502,11 @@ void COM_AddCommand(const char *name, com_func_t func)
 	{
 		if (!stricmp(name, cmd->name)) //case insensitive now that we have lower and uppercase!
 		{
-#ifdef HAVE_BLUA
 			// don't I_Error for Lua commands
 			// Lua commands can replace game commands, and they have priority.
 			// BUT, if for some reason we screwed up and made two console commands with the same name,
 			// it's good to have this here so we find out.
 			if (cmd->function != COM_Lua_f)
-#endif
 				I_Error("Command %s already exists\n", name);
 
 			return;
@@ -437,7 +520,6 @@ void COM_AddCommand(const char *name, com_func_t func)
 	com_commands = cmd;
 }
 
-#ifdef HAVE_BLUA
 /** Adds a console command for Lua.
   * No I_Errors allowed; return a negative code instead.
   *
@@ -470,7 +552,6 @@ int COM_AddLuaCommand(const char *name)
 	com_commands = cmd;
 	return 0;
 }
-#endif
 
 /** Tests if a command exists.
   *
@@ -493,7 +574,7 @@ static boolean COM_Exists(const char *com_name)
   * \param partial The partial name of the command (potentially).
   * \param skips   Number of commands to skip.
   * \return The complete command name, or NULL.
-  * \sa CV_CompleteVar
+  * \sa CV_CompleteAlias, CV_CompleteVar
   */
 const char *COM_CompleteCommand(const char *partial, INT32 skips)
 {
@@ -510,6 +591,32 @@ const char *COM_CompleteCommand(const char *partial, INT32 skips)
 		if (!strncmp(partial, cmd->name, len))
 			if (!skips--)
 				return cmd->name;
+
+	return NULL;
+}
+
+/** Completes the name of an alias.
+  *
+  * \param partial The partial name of the alias (potentially).
+  * \param skips   Number of aliases to skip.
+  * \return The complete alias name, or NULL.
+  * \sa CV_CompleteCommand, CV_CompleteVar
+  */
+const char *COM_CompleteAlias(const char *partial, INT32 skips)
+{
+	cmdalias_t *a;
+	size_t len;
+
+	len = strlen(partial);
+
+	if (!len)
+		return NULL;
+
+	// check functions
+	for (a = com_alias; a; a = a->next)
+		if (!strncmp(partial, a->name, len))
+			if (!skips--)
+				return a->name;
 
 	return NULL;
 }
@@ -590,7 +697,7 @@ static void COM_ExecuteString(char *ptext)
 
 	// check cvars
 	// Hurdler: added at Ebola's request ;)
-	// (don't flood the console in software mode with bad gr_xxx command)
+	// (don't flood the console in software mode with bad gl_xxx command)
 	if (!CV_Command() && con_destlines)
 		CONS_Printf(M_GetText("Unknown command '%s'\n"), COM_Argv(0));
 }
@@ -744,12 +851,17 @@ static void COM_Help_f(void)
 		cvar = CV_FindVar(help);
 		if (cvar)
 		{
+			boolean floatmode = false;
+			const char *cvalue = NULL;
 			CONS_Printf("\x82""Variable %s:\n", cvar->name);
 			CONS_Printf(M_GetText("  flags :"));
 			if (cvar->flags & CV_SAVE)
 				CONS_Printf("AUTOSAVE ");
 			if (cvar->flags & CV_FLOAT)
+			{
 				CONS_Printf("FLOAT ");
+				floatmode = true;
+			}
 			if (cvar->flags & CV_NETVAR)
 				CONS_Printf("NETVAR ");
 			if (cvar->flags & CV_CALL)
@@ -759,32 +871,70 @@ static void COM_Help_f(void)
 			CONS_Printf("\n");
 			if (cvar->PossibleValue)
 			{
-				if (!stricmp(cvar->PossibleValue[0].strvalue, "MIN") && !stricmp(cvar->PossibleValue[1].strvalue, "MAX"))
+				CONS_Printf(" Possible values:\n");
+				if (cvar->PossibleValue == CV_YesNo)
+					CONS_Printf("  Yes or No (On or Off, 1 or 0)\n");
+				else if (cvar->PossibleValue == CV_OnOff)
+					CONS_Printf("  On or Off (Yes or No, 1 or 0)\n");
+				else if (cvar->PossibleValue == Color_cons_t)
 				{
-					CONS_Printf("  range from %d to %d\n", cvar->PossibleValue[0].value,
-						cvar->PossibleValue[1].value);
-					i = 2;
+					for (i = 1; i < numskincolors; ++i)
+					{
+						if (skincolors[i].accessible)
+						{
+							CONS_Printf("  %-2d : %s\n", i, skincolors[i].name);
+							if (i == cvar->value)
+								cvalue = skincolors[i].name;
+						}
+					}
 				}
-
+				else
 				{
-					const char *cvalue = NULL;
+#define MINVAL 0
+#define MAXVAL 1
+					if (!stricmp(cvar->PossibleValue[MINVAL].strvalue, "MIN"))
+					{
+						if (floatmode)
+						{
+							float fu = FIXED_TO_FLOAT(cvar->PossibleValue[MINVAL].value);
+							float ck = FIXED_TO_FLOAT(cvar->PossibleValue[MAXVAL].value);
+							CONS_Printf("  range from %ld%s to %ld%s\n",
+									(long)fu, M_Ftrim(fu),
+									(long)ck, M_Ftrim(ck));
+						}
+						else
+							CONS_Printf("  range from %d to %d\n", cvar->PossibleValue[MINVAL].value,
+								cvar->PossibleValue[MAXVAL].value);
+						i = MAXVAL+1;
+					}
+#undef MINVAL
+#undef MAXVAL
+
 					//CONS_Printf(M_GetText("  possible value : %s\n"), cvar->name);
 					while (cvar->PossibleValue[i].strvalue)
 					{
-						CONS_Printf("  %-2d : %s\n", cvar->PossibleValue[i].value,
-							cvar->PossibleValue[i].strvalue);
+						if (floatmode)
+							CONS_Printf("  %-2f : %s\n", FIXED_TO_FLOAT(cvar->PossibleValue[i].value),
+								cvar->PossibleValue[i].strvalue);
+						else
+							CONS_Printf("  %-2d : %s\n", cvar->PossibleValue[i].value,
+								cvar->PossibleValue[i].strvalue);
 						if (cvar->PossibleValue[i].value == cvar->value)
 							cvalue = cvar->PossibleValue[i].strvalue;
 						i++;
 					}
-					if (cvalue)
-						CONS_Printf(" Current value: %s\n", cvalue);
-					else
-						CONS_Printf(" Current value: %d\n", cvar->value);
 				}
 			}
+
+			if (cvalue)
+				CONS_Printf(" Current value: %s\n", cvalue);
+			else if (cvar->string)
+				CONS_Printf(" Current value: %s\n", cvar->string);
 			else
 				CONS_Printf(" Current value: %d\n", cvar->value);
+
+			if (cvar->revert.v.string != NULL && strcmp(cvar->revert.v.string, cvar->string) != 0)
+				CONS_Printf(" Value before netgame: %s\n", cvar->revert.v.string);
 		}
 		else
 		{
@@ -800,23 +950,24 @@ static void COM_Help_f(void)
 			}
 
 			CONS_Printf("No exact match, searching...\n");
-			// commands
-			CONS_Printf("\x82""Commands:\n");
-			for (cmd = com_commands; cmd; cmd = cmd->next)
-			{
-				if (!strstr(cmd->name, help))
-					continue;
-				CONS_Printf("%s ",cmd->name);
-				i++;
-			}
 
 			// variables
-			CONS_Printf("\x82""\nVariables:\n");
+			CONS_Printf("\x82""Variables:\n");
 			for (cvar = consvar_vars; cvar; cvar = cvar->next)
 			{
 				if ((cvar->flags & CV_NOSHOWHELP) || (!strstr(cvar->name, help)))
 					continue;
 				CONS_Printf("%s ", cvar->name);
+				i++;
+			}
+
+			// commands
+			CONS_Printf("\x82""\nCommands:\n");
+			for (cmd = com_commands; cmd; cmd = cmd->next)
+			{
+				if (!strstr(cmd->name, help))
+					continue;
+				CONS_Printf("%s ",cmd->name);
 				i++;
 			}
 
@@ -828,21 +979,21 @@ static void COM_Help_f(void)
 	}
 
 	{
-		// commands
-		CONS_Printf("\x82""Commands:\n");
-		for (cmd = com_commands; cmd; cmd = cmd->next)
-		{
-			CONS_Printf("%s ",cmd->name);
-			i++;
-		}
-
 		// variables
-		CONS_Printf("\x82""\nVariables:\n");
+		CONS_Printf("\x82""Variables:\n");
 		for (cvar = consvar_vars; cvar; cvar = cvar->next)
 		{
 			if (cvar->flags & CV_NOSHOWHELP)
 				continue;
 			CONS_Printf("%s ", cvar->name);
+			i++;
+		}
+
+		// commands
+		CONS_Printf("\x82""\nCommands:\n");
+		for (cmd = com_commands; cmd; cmd = cmd->next)
+		{
+			CONS_Printf("%s ",cmd->name);
 			i++;
 		}
 
@@ -902,7 +1053,10 @@ static void COM_Add_f(void)
 	}
 
 	if (( cvar->flags & CV_FLOAT ))
-		CV_Set(cvar, va("%f", FIXED_TO_FLOAT (cvar->value) + atof(COM_Argv(2))));
+	{
+		float n =FIXED_TO_FLOAT (cvar->value) + atof(COM_Argv(2));
+		CV_Set(cvar, va("%ld%s", (long)n, M_Ftrim(n)));
+	}
 	else
 		CV_AddValue(cvar, atoi(COM_Argv(2)));
 }
@@ -987,6 +1141,15 @@ void VS_Write(vsbuf_t *buf, const void *data, size_t length)
 	M_Memcpy(VS_GetSpace(buf, length), data, length);
 }
 
+void VS_WriteEx(vsbuf_t *buf, const void *data, size_t length, int flags)
+{
+	char *p;
+	p = VS_GetSpace(buf, 2 + length);
+	p[0] = '\033';
+	p[1] = flags;
+	M_Memcpy(&p[2], data, length);
+}
+
 /** Prints text in a variable buffer. Like VS_Write() plus a
   * trailing NUL.
   *
@@ -1037,36 +1200,17 @@ consvar_t *CV_FindVar(const char *name)
 	return NULL;
 }
 
-/** Builds a unique Net Variable identifier number, which is used
-  * in network packets instead of the full name.
-  *
-  * \param s Name of the variable.
-  * \return A new unique identifier.
-  * \sa CV_FindNetVar
-  */
-static inline UINT16 CV_ComputeNetid(const char *s)
-{
-	UINT16 ret = 0, i = 0;
-	static UINT16 premiers[16] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53};
-
-	while (*s)
-	{
-		ret = (UINT16)(ret + (*s)*premiers[i]);
-		s++;
-		i = (UINT16)((i+1) % 16);
-	}
-	return ret;
-}
-
 /** Finds a net variable based on its identifier number.
   *
   * \param netid The variable's identifier number.
   * \return A pointer to the variable itself if found, or NULL.
-  * \sa CV_ComputeNetid
   */
 static consvar_t *CV_FindNetVar(UINT16 netid)
 {
 	consvar_t *cvar;
+
+	if (netid > consvar_number_of_netids)
+		return NULL;
 
 	for (cvar = consvar_vars; cvar; cvar = cvar->next)
 		if (cvar->netid == netid)
@@ -1103,11 +1247,11 @@ void CV_RegisterVar(consvar_t *variable)
 	// check net variables
 	if (variable->flags & CV_NETVAR)
 	{
-		const consvar_t *netvar;
-		variable->netid = CV_ComputeNetid(variable->name);
-		netvar = CV_FindNetVar(variable->netid);
-		if (netvar)
-			I_Error("Variables %s and %s have same netid\n", variable->name, netvar->name);
+		/* in case of overflow... */
+		if (consvar_number_of_netids == UINT16_MAX)
+			I_Error("Way too many netvars");
+
+		variable->netid = ++consvar_number_of_netids;
 	}
 
 	// link the variable in
@@ -1117,6 +1261,7 @@ void CV_RegisterVar(consvar_t *variable)
 		consvar_vars = variable;
 	}
 	variable->string = variable->zstring = NULL;
+	memset(&variable->revert, 0, sizeof variable->revert);
 	variable->changed = 0; // new variable has not been modified by the user
 
 #ifdef PARANOIA
@@ -1158,7 +1303,7 @@ static const char *CV_StringValue(const char *var_name)
   * \param partial The partial name of the variable (potentially).
   * \param skips   Number of variables to skip.
   * \return The complete variable name, or NULL.
-  * \sa COM_CompleteCommand
+  * \sa COM_CompleteCommand, CV_CompleteAlias
   */
 const char *CV_CompleteVar(char *partial, INT32 skips)
 {
@@ -1226,7 +1371,6 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 #define MINVAL 0
 #define MAXVAL 1
 			INT32 i;
-
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
@@ -1234,8 +1378,20 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 
 			// search for other
 			for (i = MAXVAL+1; var->PossibleValue[i].strvalue; i++)
-				if (!stricmp(var->PossibleValue[i].strvalue, valstr))
+				if (v == var->PossibleValue[i].value || !stricmp(var->PossibleValue[i].strvalue, valstr))
 				{
+					if (client && execversion_enabled)
+					{
+						if (var->revert.allocated)
+						{
+							Z_Free(var->revert.v.string);
+						}
+
+						var->revert.v.const_munge = var->PossibleValue[i].strvalue;
+
+						return;
+					}
+
 					var->value = var->PossibleValue[i].value;
 					var->string = var->PossibleValue[i].strvalue;
 					goto finish;
@@ -1295,10 +1451,34 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 			// ...or not.
 			goto badinput;
 found:
+			if (client && execversion_enabled)
+			{
+				if (var->revert.allocated)
+				{
+					Z_Free(var->revert.v.string);
+				}
+
+				var->revert.v.const_munge = var->PossibleValue[i].strvalue;
+
+				return;
+			}
+
 			var->value = var->PossibleValue[i].value;
 			var->string = var->PossibleValue[i].strvalue;
 			goto finish;
 		}
+	}
+
+	if (client && execversion_enabled)
+	{
+		if (var->revert.allocated)
+		{
+			Z_Free(var->revert.v.string);
+		}
+
+		var->revert.v.string = Z_StrDup(valstr);
+
+		return;
 	}
 
 	// free the old value string
@@ -1314,7 +1494,16 @@ found:
 		var->value = (INT32)(d * FRACUNIT);
 	}
 	else
-		var->value = atoi(var->string);
+	{
+		if (var == &cv_forceskin)
+		{
+			var->value = R_SkinAvailable(var->string);
+			if (!R_SkinUsable(-1, var->value))
+				var->value = -1;
+		}
+		else
+			var->value = atoi(var->string);
+	}
 
 finish:
 	// See the note above.
@@ -1339,9 +1528,7 @@ finish:
 	}
 	var->flags |= CV_MODIFIED;
 	// raise 'on change' code
-#ifdef HAVE_BLUA
 	LUA_CVarChanged(var->name); // let consolelib know what cvar this is.
-#endif
 	if (var->flags & CV_CALL && !stealth)
 		var->func();
 
@@ -1365,48 +1552,85 @@ badinput:
 
 static boolean serverloading = false;
 
+static consvar_t *
+ReadNetVar (UINT8 **p, char **return_value, boolean *return_stealth)
+{
+	UINT16  netid;
+	char   *val;
+	boolean stealth;
+
+	consvar_t *cvar;
+
+	netid   = READUINT16 (*p);
+	val     = (char *)*p;
+	SKIPSTRING (*p);
+	stealth = READUINT8  (*p);
+
+	cvar = CV_FindNetVar(netid);
+
+	if (cvar)
+	{
+		(*return_value)   = val;
+		(*return_stealth) = stealth;
+
+		DEBFILE(va("Netvar received: %s [netid=%d] value %s\n", cvar->name, netid, val));
+	}
+	else
+		CONS_Alert(CONS_WARNING, "Netvar not found with netid %hu\n", netid);
+
+	return cvar;
+}
+
+static consvar_t *
+ReadDemoVar (UINT8 **p, char **return_value, boolean *return_stealth)
+{
+	char   *name;
+	char   *val;
+	boolean stealth;
+
+	consvar_t *cvar;
+
+	name    = (char *)*p;
+	SKIPSTRING (*p);
+	val     = (char *)*p;
+	SKIPSTRING (*p);
+	stealth = READUINT8  (*p);
+
+	cvar = CV_FindVar(name);
+
+	if (cvar)
+	{
+		(*return_value)   = val;
+		(*return_stealth) = stealth;
+	}
+	else
+		CONS_Alert(CONS_WARNING, "Netvar not found with name %s\n", name);
+
+	return cvar;
+}
+
 static void Got_NetVar(UINT8 **p, INT32 playernum)
 {
 	consvar_t *cvar;
-	UINT16 netid;
 	char *svalue;
-	UINT8 stealth = false;
+	boolean stealth;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum) && !serverloading)
 	{
 		// not from server or remote admin, must be hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal netvar command received from %s\n"), player_names[playernum]);
-
 		if (server)
-		{
-			XBOXSTATIC UINT8 buf[2];
-
-			buf[0] = (UINT8)playernum;
-			buf[1] = KICK_MSG_CON_FAIL;
-			SendNetXCmd(XD_KICK, &buf, 2);
-		}
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 		return;
 	}
-	netid = READUINT16(*p);
-	cvar = CV_FindNetVar(netid);
-	svalue = (char *)*p;
-	SKIPSTRING(*p);
-	stealth = READUINT8(*p);
 
-	if (!cvar)
-	{
-		CONS_Alert(CONS_WARNING, "Netvar not found with netid %hu\n", netid);
-		return;
-	}
-#if 0 //defined (GP2X) || defined (PSP)
-	CONS_Printf("Netvar received: %s [netid=%d] value %s\n", cvar->name, netid, svalue);
-#endif
-	DEBFILE(va("Netvar received: %s [netid=%d] value %s\n", cvar->name, netid, svalue));
+	cvar = ReadNetVar(p, &svalue, &stealth);
 
-	Setvalue(cvar, svalue, stealth);
+	if (cvar)
+		Setvalue(cvar, svalue, stealth);
 }
 
-void CV_SaveNetVars(UINT8 **p, boolean isdemorecording)
+void CV_SaveVars(UINT8 **p, boolean in_demo)
 {
 	consvar_t *cvar;
 	UINT8 *count_p = *p;
@@ -1416,12 +1640,15 @@ void CV_SaveNetVars(UINT8 **p, boolean isdemorecording)
 	// the client will reset all netvars to default before loading
 	WRITEUINT16(*p, 0x0000);
 	for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		if (((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar)) || (isdemorecording && cvar->netid == cv_numlaps.netid))
+		if (((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar)) || (in_demo && cvar->netid == cv_numlaps.netid))
 		{
-			WRITEUINT16(*p, cvar->netid);
+			if (in_demo)
+				WRITESTRING(*p, cvar->name);
+			else
+				WRITEUINT16(*p, cvar->netid);
 
 			// UGLY HACK: Save proper lap count in net replays
-			if (isdemorecording && cvar->netid == cv_numlaps.netid)
+			if (in_demo && cvar->netid == cv_numlaps.netid)
 			{
 				if (cv_basenumlaps.value &&
 					(!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
@@ -1448,23 +1675,73 @@ void CV_SaveNetVars(UINT8 **p, boolean isdemorecording)
 	WRITEUINT16(count_p, count);
 }
 
-void CV_LoadNetVars(UINT8 **p)
+static void CV_LoadVars(UINT8 **p,
+		consvar_t *(*got)(UINT8 **p, char **ret_value, boolean *ret_stealth))
 {
 	consvar_t *cvar;
 	UINT16 count;
+
+	char *val;
+	boolean stealth;
 
 	// prevent "invalid command received"
 	serverloading = true;
 
 	for (cvar = consvar_vars; cvar; cvar = cvar->next)
+	{
 		if (cvar->flags & CV_NETVAR)
+		{
+			if (client && cvar->revert.v.string == NULL)
+			{
+				cvar->revert.v.const_munge = cvar->string;
+				cvar->revert.allocated = ( cvar->zstring != NULL );
+				cvar->zstring = NULL;/* don't free this */
+			}
+
 			Setvalue(cvar, cvar->defaultvalue, true);
+		}
+	}
 
 	count = READUINT16(*p);
 	while (count--)
-		Got_NetVar(p, 0);
+	{
+		cvar = (*got)(p, &val, &stealth);
+
+		if (cvar)
+			Setvalue(cvar, val, stealth);
+	}
 
 	serverloading = false;
+}
+
+void CV_RevertNetVars(void)
+{
+	consvar_t * cvar;
+
+	for (cvar = consvar_vars; cvar; cvar = cvar->next)
+	{
+		if (cvar->revert.v.string != NULL)
+		{
+			Setvalue(cvar, cvar->revert.v.string, false);
+
+			if (cvar->revert.allocated)
+			{
+				Z_Free(cvar->revert.v.string);
+			}
+
+			cvar->revert.v.string = NULL;
+		}
+	}
+}
+
+void CV_LoadNetVars(UINT8 **p)
+{
+	CV_LoadVars(p, ReadNetVar);
+}
+
+void CV_LoadDemoVars(UINT8 **p)
+{
+	CV_LoadVars(p, ReadDemoVar);
 }
 
 static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth);
@@ -1521,9 +1798,17 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 	if (var->flags & CV_NETVAR)
 	{
 		// send the value of the variable
-		XBOXSTATIC UINT8 buf[128];
+		UINT8 buf[128];
 		UINT8 *p = buf;
-		if (!(server || (IsPlayerAdmin(consoleplayer))))
+
+		// Loading from a config in a netgame? Set revert value.
+		if (client && execversion_enabled)
+		{
+			Setvalue(var, value, true);
+			return;
+		}
+
+		if (!(server || (addedtogame && IsPlayerAdmin(consoleplayer))))
 		{
 			CONS_Printf(M_GetText("Only the server or admin can change: %s %s\n"), var->name, var->string);
 			return;
@@ -1533,6 +1818,16 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 		{
 			CONS_Printf(M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
+		}
+
+		if (var == &cv_forceskin)
+		{
+			INT32 skin = R_SkinAvailable(value);
+			if ((stricmp(value, "None")) && ((skin == -1) || !R_SkinUsable(-1, skin)))
+			{
+				CONS_Printf("Please provide a valid skin name (\"None\" disables).\n");
+				return;
+			}
 		}
 
 		// Only add to netcmd buffer if in a netgame, otherwise, just change it.
@@ -1568,6 +1863,32 @@ void CV_StealthSet(consvar_t *var, const char *value)
 	CV_SetCVar(var, value, true);
 }
 
+/** Sets a numeric value to a variable, sometimes calling its callback
+  * function.
+  *
+  * \param var   The variable.
+  * \param value The numeric value, converted to a string before setting.
+  * \param stealth Do we call the callback function or not?
+  */
+static void CV_SetValueMaybeStealth(consvar_t *var, INT32 value, boolean stealth)
+{
+	char val[SKINNAMESIZE+1];
+
+	if (var == &cv_forceskin) // Special handling.
+	{
+		const char *tmpskin = NULL;
+		if ((value < 0) || (value >= numskins))
+			tmpskin = "None";
+		else
+			tmpskin = skins[value].name;
+		strncpy(val, tmpskin, SKINNAMESIZE);
+	}
+	else
+		sprintf(val, "%d", value);
+
+	CV_SetCVar(var, val, stealth);
+}
+
 /** Sets a numeric value to a variable without calling its callback
   * function.
   *
@@ -1577,10 +1898,7 @@ void CV_StealthSet(consvar_t *var, const char *value)
   */
 void CV_StealthSetValue(consvar_t *var, INT32 value)
 {
-	char val[32];
-
-	sprintf(val, "%d", value);
-	CV_SetCVar(var, val, true);
+	CV_SetValueMaybeStealth(var, value, true);
 }
 
 // New wrapper for what used to be CV_Set()
@@ -1598,10 +1916,7 @@ void CV_Set(consvar_t *var, const char *value)
   */
 void CV_SetValue(consvar_t *var, INT32 value)
 {
-	char val[32];
-
-	sprintf(val, "%d", value);
-	CV_SetCVar(var, val, false);
+	CV_SetValueMaybeStealth(var, value, false);
 }
 
 /** Adds a value to a console variable.
@@ -1618,17 +1933,65 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 {
 	INT32 newvalue, max;
 
-	// count pointlimit better
-	/*if (var == &cv_pointlimit && (gametype == GT_MATCH))
-		increment *= 50;*/
-	newvalue = var->value + increment;
+	if (!increment)
+		return;
+
+	if (var == &cv_forceskin) // Special handling.
+	{
+		INT32 oldvalue = var->value;
+		newvalue = oldvalue;
+		do
+		{
+			newvalue += increment;
+			if (newvalue < -1)
+				newvalue = (numskins - 1);
+			else if (newvalue >= numskins)
+				newvalue = -1;
+		} while ((oldvalue != newvalue)
+				&& !(R_SkinUsable(-1, newvalue)));
+	}
+	else
+		newvalue = var->value + increment;
 
 	if (var->PossibleValue)
 	{
+		if (var == &cv_nextmap)
+		{
+			// Special case for the nextmap variable, used only directly from the menu
+			INT32 oldvalue = var->value - 1, gt;
+			gt = cv_newgametype.value;
+			{
+				newvalue = var->value - 1;
+				do
+				{
+					if(increment > 0) // Going up!
+					{
+						if (++newvalue == NUMMAPS)
+							newvalue = -1;
+					}
+					else // Going down!
+					{
+						if (--newvalue == -2)
+							newvalue = NUMMAPS-1;
+					}
+
+					if (newvalue == oldvalue)
+						break; // don't loop forever if there's none of a certain gametype
+
+					if(!mapheaderinfo[newvalue])
+						continue; // Don't allocate the header.  That just makes memory usage skyrocket.
+
+				} while (!M_CanShowLevelInList(newvalue, gt));
+
+				var->value = newvalue + 1;
+				var->func();
+				return;
+			}
+		}
 #define MINVAL 0
 #define MAXVAL 1
-		if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
-		{ // SRB2Kart
+		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
+		{
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
@@ -1638,21 +2001,34 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			{
 				INT32 currentindice = -1, newindice;
 				for (max = MAXVAL+1; var->PossibleValue[max].strvalue; max++)
-					if (var->PossibleValue[max].value == var->value)
-						currentindice = max;
-
-				if (currentindice == -1 && max != MAXVAL+1)
-					newindice = ((increment > 0) ? MAXVAL : max) + increment;
-				else
-					newindice = currentindice + increment;
-
-				if (newindice >= max || newindice <= MAXVAL)
 				{
-					newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
-					CV_SetValue(var, newvalue);
+					if (var->PossibleValue[max].value == newvalue)
+					{
+						increment = 0;
+						currentindice = max;
+					}
+					else if (var->PossibleValue[max].value == var->value)
+						currentindice = max;
+				}
+
+				if (increment)
+				{
+					increment = (increment > 0) ? 1 : -1;
+					if (currentindice == -1 && max != MAXVAL+1)
+						newindice = ((increment > 0) ? MAXVAL : max) + increment;
+					else
+						newindice = currentindice + increment;
+
+					if (newindice >= max || newindice <= MAXVAL)
+					{
+						newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
+						CV_SetValue(var, newvalue);
+					}
+					else
+						CV_Set(var, var->PossibleValue[newindice].strvalue);
 				}
 				else
-					CV_Set(var, var->PossibleValue[newindice].strvalue);
+					CV_Set(var, var->PossibleValue[currentindice].strvalue);
 			}
 			else
 				CV_SetValue(var, newvalue);
@@ -1671,42 +2047,35 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			if (var == &cv_chooseskin)
 			{
 				// Special case for the chooseskin variable, used only directly from the menu
-				if (increment > 0) // Going up!
+				newvalue = var->value - 1;
+				do
 				{
-					newvalue = var->value - 1;
-					do
+					if (increment > 0) // Going up!
 					{
 						newvalue++;
 						if (newvalue == MAXSKINS)
 							newvalue = 0;
-					} while (var->PossibleValue[newvalue].strvalue == NULL);
-					var->value = newvalue + 1;
-					var->string = var->PossibleValue[newvalue].strvalue;
-					var->func();
-					return;
-				}
-				else if (increment < 0) // Going down!
-				{
-					newvalue = var->value - 1;
-					do
+					}
+					else if (increment < 0) // Going down!
 					{
 						newvalue--;
 						if (newvalue == -1)
 							newvalue = MAXSKINS-1;
-					} while (var->PossibleValue[newvalue].strvalue == NULL);
-					var->value = newvalue + 1;
-					var->string = var->PossibleValue[newvalue].strvalue;
-					var->func();
-					return;
-				}
+					}
+				} while (var->PossibleValue[newvalue].strvalue == NULL);
+
+				var->value = newvalue + 1;
+				var->string = var->PossibleValue[newvalue].strvalue;
+				var->func();
+				return;
 			}
-			else if (var == &cv_playercolor)
+			else if (var == &cv_playercolor[0] || var == &cv_playercolor[1] || var == &cv_playercolor[2] || var == &cv_playercolor[3])
 			{
 				// Special case for the playercolor variable, used only directly from the menu
 				if (increment > 0) // Going up!
 				{
 					newvalue = var->value + 1;
-					if (newvalue > MAXSKINCOLORS-1)
+					if (newvalue > numskincolors-1)
 						newvalue = 1;
 					var->value = newvalue;
 					var->string = var->PossibleValue[var->value].strvalue;
@@ -1717,7 +2086,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				{
 					newvalue = var->value - 1;
 					if (newvalue < 1)
-						newvalue = MAXSKINCOLORS-1;
+						newvalue = numskincolors-1;
 					var->value = newvalue;
 					var->string = var->PossibleValue[var->value].strvalue;
 					var->func();
@@ -1818,13 +2187,13 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 				switch (i)
 				{
 					default:
-						COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis.name, cv_turnaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis.name, cv_moveaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_brakeaxis.name, cv_brakeaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_aimaxis.name, cv_aimaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis.name, cv_lookaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis.name, cv_fireaxis.defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_driftaxis.name, cv_driftaxis.defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis[0].name, cv_turnaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis[0].name, cv_moveaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_brakeaxis[0].name, cv_brakeaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_aimaxis[0].name, cv_aimaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis[0].name, cv_lookaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis[0].name, cv_fireaxis[0].defaultvalue));
+						COM_BufInsertText(va("%s \"%s\"\n", cv_driftaxis[0].name, cv_driftaxis[0].defaultvalue));
 						break;
 				}
 				joyaxis_count[i]++;
@@ -1884,6 +2253,9 @@ static boolean CV_Command(void)
 	if (!v)
 		return false;
 
+	if (( com_flags & COM_SAFE ) && ( v->flags & CV_NOLUA ))
+		return false;
+
 	// perform a variable print or set
 	if (COM_Argc() == 1)
 	{
@@ -1927,13 +2299,43 @@ void CV_SaveVariables(FILE *f)
 		{
 			char stringtowrite[MAXTEXTCMD+1];
 
-			// Silly hack for Min/Max vars
-			if (!strcmp(cvar->string, "MAX") || !strcmp(cvar->string, "MIN"))
-				sprintf(stringtowrite, "%d", cvar->value);
-			else
-				strcpy(stringtowrite, cvar->string);
+			const char * string;
 
-			fprintf(f, "%s \"%s\"\n", cvar->name, stringtowrite);
+			if (cvar->revert.v.string != NULL)
+			{
+				string = cvar->revert.v.string;
+			}
+			else
+			{
+				string = cvar->string;
+			}
+
+			// Silly hack for Min/Max vars
+#define MINVAL 0
+#define MAXVAL 1
+			if (
+					cvar->PossibleValue != NULL &&
+					cvar->PossibleValue[0].strvalue &&
+					stricmp(cvar->PossibleValue[0].strvalue, "MIN") == 0
+			){ // bounded cvar
+				int which = stricmp(string, "MAX") == 0;
+
+				if (which || stricmp(string, "MIN") == 0)
+				{
+					INT32 value = cvar->PossibleValue[which].value;
+
+					if (cvar->flags & CV_FLOAT)
+						sprintf(stringtowrite, "%f", FIXED_TO_FLOAT(value));
+					else
+						sprintf(stringtowrite, "%d", value);
+
+					string = stringtowrite;
+				}
+			}
+#undef MINVAL
+#undef MAXVAL
+
+			fprintf(f, "%s \"%s\"\n", cvar->name, string);
 		}
 }
 
@@ -1985,29 +2387,35 @@ skipwhite:
 				com_token[len] = 0;
 				return data;
 			}
-			com_token[len] = c;
-			len++;
+			if (c == '\033')
+				data++;
+			else
+			{
+				com_token[len] = c;
+				len++;
+			}
 		}
-	}
-
-	// parse single characters
-	if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\'')
-	{
-		com_token[len] = c;
-		len++;
-		com_token[len] = 0;
-		return data + 1;
 	}
 
 	// parse a regular word
 	do
 	{
-		com_token[len] = c;
-		data++;
-		len++;
-		c = *data;
-		if (c == '{' || c == '}' || c == ')'|| c == '(' || c == '\'')
-			break;
+		if (c == '\033')
+		{
+			do
+			{
+				data += 2;
+				c = *data;
+			}
+			while (c == '\033') ;
+		}
+		else
+		{
+			com_token[len] = c;
+			data++;
+			len++;
+			c = *data;
+		}
 	} while (c > 32);
 
 	com_token[len] = 0;
