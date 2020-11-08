@@ -1002,6 +1002,8 @@ typedef enum sprite
 	SPR_DBNC, // Drift boost clip's sparks
 	SPR_DBST, // Drift boost plume
 
+	SPR_SDDS, // Spindash dust
+
 	SPR_FIRSTFREESLOT,
 	SPR_LASTFREESLOT = SPR_FIRSTFREESLOT + NUMSPRITEFREESLOTS - 1,
 	NUMSPRITES
@@ -5177,6 +5179,8 @@ typedef enum state
 	S_WATERTRAILUNDERLAY7,
 	S_WATERTRAILUNDERLAY8,
 
+	S_SPINDASHDUST,
+
 #ifdef SEENAMES
 	S_NAMECHECK,
 #endif
@@ -6276,6 +6280,8 @@ typedef enum mobj_type
 
 	MT_WATERTRAIL,
 	MT_WATERTRAILUNDERLAY,
+
+	MT_SPINDASHDUST,
 
 #ifdef SEENAMES
 	MT_NAMECHECK,

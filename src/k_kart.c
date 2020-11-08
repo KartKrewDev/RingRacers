@@ -2044,7 +2044,7 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
 }
 
-tic_t K_GetSpindashChargeTime(player_t *player)
+INT16 K_GetSpindashChargeTime(player_t *player)
 {
 	// more charge time for higher speed
 	// Tails = 2s, Mighty = 3s, Fang = 4s, Metal = 4s
@@ -6788,9 +6788,43 @@ boolean K_PlayerEBrake(player_t *player)
 	&& player->powers[pw_nocontrol] == 0;
 }
 
+static void K_KartSpindashDust(mobj_t *parent)
+{
+	fixed_t rad = FixedHypot(parent->radius, parent->radius);
+	INT32 i;
+
+	for (i = 0; i < 2; i++)
+	{
+		
+		fixed_t hmomentum = P_RandomRange(6, 12) * parent->scale;
+		fixed_t vmomentum = P_RandomRange(2, 6) * parent->scale;
+
+		angle_t ang = parent->player->drawangle + ANGLE_180;
+		SINT8 flip = 1;
+
+		mobj_t *dust;
+
+		if (i & 1)
+			ang -= ANGLE_45;
+		else
+			ang += ANGLE_45;
+
+		dust = P_SpawnMobjFromMobj(parent,
+			FixedMul(rad, FINECOSINE(ang >> ANGLETOFINESHIFT)),
+			FixedMul(rad, FINESINE(ang >> ANGLETOFINESHIFT)),
+			0, MT_SPINDASHDUST
+		);
+		flip = P_MobjFlip(dust);
+
+		dust->momx = FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
+		dust->momy = FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
+		dust->momz = vmomentum * flip;
+	}
+}
+
 static void K_KartSpindash(player_t *player)
 {
-	const tic_t MAXCHARGETIME = K_GetSpindashChargeTime(player);
+	const INT16 MAXCHARGETIME = K_GetSpindashChargeTime(player);
 	ticcmd_t *cmd = &player->cmd;
 
 	if (player->kartstuff[k_spindash] > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE)) != (BT_DRIFT|BT_BRAKE))
@@ -6817,6 +6851,11 @@ static void K_KartSpindash(player_t *player)
 		S_StartSound(player->mo, sfx_s23c);
 	}
 
+	if (player->kartstuff[k_spindashboost] > (TICRATE/2))
+	{
+		K_KartSpindashDust(player->mo);
+	}
+
 	if (K_PlayerEBrake(player) == false)
 	{
 		player->kartstuff[k_spindash] = 0;
@@ -6831,24 +6870,36 @@ static void K_KartSpindash(player_t *player)
 		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
 			INT16 chargetime = MAXCHARGETIME - ++player->kartstuff[k_spindash];
+			boolean spawnOldEffect = true;
+
+			if (chargetime <= (MAXCHARGETIME / 2))
+			{
+				K_KartSpindashDust(player->mo);
+				spawnOldEffect = false;
+			}
+
 			if (chargetime > 0)
 			{
 				UINT16 soundcharge = 0;
 				UINT8 add = 0;
+
 				while ((soundcharge += ++add) < chargetime);
+
 				if (soundcharge == chargetime)
 				{
-					K_SpawnDashDustRelease(player);
+					if (spawnOldEffect == true)
+						K_SpawnDashDustRelease(player);
 					S_StartSound(player->mo, sfx_s3kab);
 				}
 			}
 			else if (chargetime < -TICRATE)
+			{
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_NORMAL);
+			}
 			else
 			{
 				if (player->kartstuff[k_spindash] % 4 == 0)
 				{
-					K_SpawnDashDustRelease(player);
 					K_FlameDashLeftoverSmoke(player->mo);
 				}
 			}
