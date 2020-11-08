@@ -3262,7 +3262,7 @@ void K_SpawnBoostTrail(player_t *player)
 	if (player->kartstuff[k_drift] != 0)
 		travelangle = player->mo->angle;
 	else
-		travelangle = R_PointToAngle2(0, 0, player->rmomx, player->rmomy);
+		travelangle = K_MomentumAngle(player->mo);
 
 	for (i = 0; i < 2; i++)
 	{
@@ -3354,7 +3354,7 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
 		mo->z, MT_WIPEOUTTRAIL);
 
 	P_SetTarget(&dust->target, mo);
-	dust->angle = R_PointToAngle2(0,0,mo->momx,mo->momy);
+	dust->angle = K_MomentumAngle(mo);
 	dust->destscale = mo->scale;
 	P_SetScale(dust, mo->scale);
 	K_FlipFromObject(dust, mo);

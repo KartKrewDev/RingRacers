@@ -1620,8 +1620,10 @@ void P_XYMovement(mobj_t *mo)
 						relation = transferslope->xydirection - R_PointToAngle2(0, 0, mo->momx, mo->momy);
 					else // Give it for free, I guess.
 						relation = ANGLE_90;
+
 					transfermomz = FixedMul(transfermomz,
 						abs(FINESINE((relation >> ANGLETOFINESHIFT) & FINEMASK)));
+
 					if (P_MobjFlip(mo)*(transfermomz - mo->momz) > 2*FRACUNIT) // Do the actual launch!
 					{
 						mo->momz = transfermomz;
@@ -1696,7 +1698,7 @@ void P_XYMovement(mobj_t *mo)
 
 		if (oldslope != mo->standingslope) { // First, compare different slopes
 			angle_t oldangle, newangle;
-			angle_t moveangle = R_PointToAngle2(0, 0, mo->momx, mo->momy);
+			angle_t moveangle = K_MomentumAngle(mo);
 
 			oldangle = FixedMul((signed)oldslope->zangle, FINECOSINE((moveangle - oldslope->xydirection) >> ANGLETOFINESHIFT));
 
@@ -1728,7 +1730,7 @@ void P_XYMovement(mobj_t *mo)
 			P_SlopeLaunch(mo);
 		}
 	} else if (moved && mo->standingslope && predictedz) {
-		angle_t moveangle = R_PointToAngle2(0, 0, mo->momx, mo->momy);
+		angle_t moveangle = K_MomentumAngle(mo);
 		angle_t newangle = FixedMul((signed)mo->standingslope->zangle, FINECOSINE((moveangle - mo->standingslope->xydirection) >> ANGLETOFINESHIFT));
 
 			/*CONS_Printf("flat to angle %f - predicted z of %f\n",
@@ -6137,7 +6139,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				frictionsafety = FRACUNIT;
 			}
 
-			mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
+			mobj->angle = K_MomentumAngle(mobj);
 			if (mobj->health <= 5)
 			{
 				INT32 i;
@@ -6239,7 +6241,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				thrustamount = beatfriction + FixedDiv(mobj->movefactor - currentspeed, frictionsafety);
 			}
 
-			mobj->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy);
+			mobj->angle = K_MomentumAngle(mobj);
 			P_Thrust(mobj, mobj->angle, thrustamount);
 
 			if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
@@ -6402,7 +6404,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		//mobj->angle = mobj->target->angle;
 		{
-			angle_t angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
+			angle_t angle = K_MomentumAngle(mobj->target);
 			fixed_t nudge;
 
 			mobj->angle = angle;
@@ -6670,7 +6672,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		{
 			const angle_t off = FixedAngle(40*FRACUNIT);
-			angle_t ang = mobj->target->angle;
+			angle_t ang = K_MomentumAngle(mobj->target);
 			fixed_t z;
 			UINT8 trans = (mobj->target->player->kartstuff[k_tiregrease] * (NUMTRANSMAPS+1)) / greasetics;
 
@@ -6682,9 +6684,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			z = mobj->target->z;
 			if (mobj->eflags & MFE_VERTICALFLIP)
 				z += mobj->target->height;
-
-			if (mobj->target->momx || mobj->target->momy)
-				ang = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
 
 			if (mobj->extravalue1)
 				ang = (signed)(ang - off);
@@ -6980,10 +6979,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		P_TeleportMove(mobj, destx, desty, mobj->target->z);
-		if (mobj->target->momx || mobj->target->momy)
-			mobj->angle = R_PointToAngle2(0, 0, mobj->target->momx, mobj->target->momy);
-		else
-			mobj->angle = mobj->target->angle;
+		mobj->angle = K_MomentumAngle(mobj->target);
 
 		if (underlayst != S_NULL)
 		{
@@ -7860,7 +7856,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->momx = (23*mobj->momx)/24;
 				mobj->momy = (23*mobj->momy)/24;
 
-				mobj->angle = R_PointToAngle2(0,0,mobj->momx,mobj->momy);
+				mobj->angle = K_MomentumAngle(mobj);
 
 				if ((mobj->z - mobj->floorz) < (24*mobj->scale) && (leveltime % 3 != 0))
 				{
