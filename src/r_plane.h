@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -16,7 +16,13 @@
 
 #include "screen.h" // needs MAXVIDWIDTH/MAXVIDHEIGHT
 #include "r_data.h"
+#include "r_textures.h"
 #include "p_polyobj.h"
+
+#define VISPLANEHASHBITS 9
+#define VISPLANEHASHMASK ((1<<VISPLANEHASHBITS)-1)
+// the last visplane list is outside of the hash table and is used for fof planes
+#define MAXVISPLANES ((1<<VISPLANEHASHBITS)+1)
 
 //
 // Now what is a visplane, anyway?
@@ -45,16 +51,13 @@ typedef struct visplane_s
 	fixed_t xoffs, yoffs; // Scrolling flats.
 
 	struct ffloor_s *ffloor;
-#ifdef POLYOBJECTS_PLANES
 	polyobj_t *polyobj;
-#endif
-#ifdef ESLOPE
 	pslope_t *slope;
-#endif
 
 	boolean noencore;
 } visplane_t;
 
+extern visplane_t *visplanes[MAXVISPLANES];
 extern visplane_t *floorplane;
 extern visplane_t *ceilingplane;
 
@@ -63,7 +66,8 @@ extern INT16 *lastopening, *openings;
 extern size_t maxopenings;
 
 extern INT16 floorclip[MAXVIDWIDTH], ceilingclip[MAXVIDWIDTH];
-extern fixed_t frontscale[MAXVIDWIDTH], yslopetab[MAXVIDHEIGHT*16];
+extern fixed_t frontscale[MAXVIDWIDTH];
+extern fixed_t yslopetab[MAXSPLITSCREENPLAYERS][MAXVIDHEIGHT*16];
 extern fixed_t cachedheight[MAXVIDHEIGHT];
 extern fixed_t cacheddistance[MAXVIDHEIGHT];
 extern fixed_t cachedxstep[MAXVIDHEIGHT];
@@ -74,28 +78,22 @@ extern fixed_t *yslope;
 extern lighttable_t **planezlight;
 
 void R_InitPlanes(void);
-void R_PortalStoreClipValues(INT32 start, INT32 end, INT16 *ceil, INT16 *floor, fixed_t *scale);
-void R_PortalRestoreClipValues(INT32 start, INT32 end, INT16 *ceil, INT16 *floor, fixed_t *scale);
 void R_ClearPlanes(void);
+void R_ClearFFloorClips (void);
 
 void R_MapPlane(INT32 y, INT32 x1, INT32 x2);
 void R_MakeSpans(INT32 x, INT32 t1, INT32 b1, INT32 t2, INT32 b2);
 void R_DrawPlanes(void);
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel, fixed_t xoff, fixed_t yoff, angle_t plangle,
-	extracolormap_t *planecolormap, ffloor_t *ffloor
-#ifdef POLYOBJECTS_PLANES
-	, polyobj_t *polyobj
-#endif
-#ifdef ESLOPE
-	, pslope_t *slope
-#endif
-	, boolean noencore);
+	extracolormap_t *planecolormap, ffloor_t *ffloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore);
 visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_PlaneBounds(visplane_t *plane);
 
 // Draws a single visplane.
 void R_DrawSinglePlane(visplane_t *pl);
+void R_CheckFlatLength(size_t size);
+boolean R_CheckPowersOfTwo(void);
 
 typedef struct planemgr_s
 {
@@ -108,20 +106,18 @@ typedef struct planemgr_s
 	INT16 f_clip[MAXVIDWIDTH];
 	INT16 c_clip[MAXVIDWIDTH];
 
-#ifdef ESLOPE
 	// For slope rendering; the height at the other end
 	fixed_t f_pos_slope;
 	fixed_t b_pos_slope;
 
 	struct pslope_s *slope;
-#endif
 
 	struct ffloor_s *ffloor;
-#ifdef POLYOBJECTS_PLANES
 	polyobj_t *polyobj;
-#endif
 } visffloor_t;
 
 extern visffloor_t ffloor[MAXFFLOORS];
 extern INT32 numffloors;
+
+void Portal_AddSkyboxPortals (void);
 #endif

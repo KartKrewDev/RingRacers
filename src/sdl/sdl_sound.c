@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
+// Copyright (C) 2014-2020 by Sonic Team Junior.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -32,7 +33,7 @@
 #endif
 
 #ifdef HAVE_MIXER
-#include "SDL_mixer.h"
+#include <SDL_mixer.h>
 /* This is the version number macro for the current SDL_mixer version: */
 #ifndef SDL_MIXER_COMPILEDVERSION
 #define SDL_MIXER_COMPILEDVERSION \
@@ -195,7 +196,7 @@ static void Snd_LockAudio(void) //Alam: Lock audio data and uninstall audio call
 {
 	if (Snd_Mutex) SDL_LockMutex(Snd_Mutex);
 	else if (sound_disabled) return;
-	else if (midi_disabled && digital_disabled
+	else if (digital_disabled
 #ifdef HW3SOUND
 	         && hws_mode == HWS_DEFAULT_MODE
 #endif
@@ -209,7 +210,7 @@ static void Snd_UnlockAudio(void) //Alam: Unlock audio data and reinstall audio 
 {
 	if (Snd_Mutex) SDL_UnlockMutex(Snd_Mutex);
 	else if (sound_disabled) return;
-	else if (midi_disabled && digital_disabled
+	else if (digital_disabled
 #ifdef HW3SOUND
 	         && hws_mode == HWS_DEFAULT_MODE
 #endif
@@ -1153,7 +1154,7 @@ void I_ShutdownSound(void)
 	}
 #endif
 
-	if (midi_disabled && digital_disabled)
+	if (digital_disabled)
 		SDL_CloseAudio();
 	CONS_Printf("%s", M_GetText("shut down\n"));
 	sound_started = false;
@@ -1173,9 +1174,6 @@ void I_StartupSound(void)
 	const char *sdrv_name = NULL;
 #endif
 #ifndef HAVE_MIXER
-#ifndef NO_MIDI
-	midi_disabled = 
-#endif
 	digital_disabled = true;
 #endif
 
@@ -1389,8 +1387,8 @@ UINT32 I_GetSongLength(void)
 
 boolean I_SetSongLoopPoint(UINT32 looppoint)
 {
-        (void)looppoint;
-        return false;
+	(void)looppoint;
+	return false;
 }
 
 UINT32 I_GetSongLoopPoint(void)
@@ -1434,6 +1432,8 @@ static void I_ResumeGME(void)
 
 boolean I_LoadSong(char *data, size_t len)
 {
+	(void)data;
+	(void)len;
 	return false;
 }
 
@@ -1495,6 +1495,7 @@ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms
 	(void)target_volume;
 	(void)source_volume;
 	(void)ms;
+	(void)callback;
 	return false;
 }
 
@@ -1502,6 +1503,7 @@ boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void))
 {
 	(void)target_volume;
 	(void)ms;
+	(void)callback;
 	return false;
 }
 

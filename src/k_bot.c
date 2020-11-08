@@ -259,7 +259,7 @@ void K_UpdateMatchRaceBots(void)
 --------------------------------------------------*/
 boolean K_PlayerUsesBotMovement(player_t *player)
 {
-	if (player->bot || player->exiting)
+	if (player->bot || player->exiting || player->quittime)
 		return true;
 
 	return false;
@@ -682,9 +682,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
-	cmd->angleturn = (player->mo->angle >> 16);
 
-	if (gamestate != GS_LEVEL)
+	if (gamestate != GS_LEVEL
+		|| player->mo->scale <= 1) // funny post-finish death
 	{
 		// No need to do anything else.
 		return;
@@ -696,11 +696,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-#ifdef HAVE_BLUA
 	// Complete override of all ticcmd functionality
 	if (LUAh_BotTiccmd(player, cmd))
 		return;
-#endif
 
 	// Start boost handler
 	if (leveltime <= starttime)
@@ -865,8 +863,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		if (abs(player->botvars.turnconfirm) >= BOTTURNCONFIRM)
 		{
 			// You're commiting to your turn, you're allowed!
-			cmd->driftturn = turnamt;
-			cmd->angleturn += K_GetKartTurnValue(player, turnamt);
+			cmd->turning = turnamt;
 		}
 	}
 

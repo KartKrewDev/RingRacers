@@ -234,7 +234,6 @@
     <ClCompile Include="..\hardware\hw_md2load.c" />
     <ClCompile Include="..\hardware\hw_md3load.c" />
     <ClCompile Include="..\hardware\hw_model.c" />
-    <ClCompile Include="..\hardware\hw_trick.c" />
     <ClCompile Include="..\hardware\u_list.c" />
     <ClCompile Include="..\font.c" />
     <ClCompile Include="..\hu_stuff.c" />
@@ -296,11 +295,17 @@
     <ClCompile Include="..\r_draw8.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\r_draw8_npo2.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\r_main.c" />
+    <ClCompile Include="..\r_picformats.c" />
     <ClCompile Include="..\r_plane.c" />
+    <ClCompile Include="..\r_portal.c" />
     <ClCompile Include="..\r_segs.c" />
     <ClCompile Include="..\r_sky.c" />
     <ClCompile Include="..\r_splats.c" />
+    <ClCompile Include="..\r_textures.c" />
     <ClCompile Include="..\r_things.c" />
     <ClCompile Include="..\screen.c" />
     <ClCompile Include="..\sounds.c" />
@@ -395,7 +400,6 @@
     <ClInclude Include="..\hardware\hw_defs.h" />
     <ClInclude Include="..\hardware\hw_dll.h" />
     <ClInclude Include="..\hardware\hw_drv.h" />
-    <ClInclude Include="..\hardware\hw_glide.h" />
     <ClInclude Include="..\hardware\hw_glob.h" />
     <ClInclude Include="..\hardware\hw_light.h" />
     <ClInclude Include="..\hardware\hw_main.h" />
@@ -452,11 +456,14 @@
     <ClInclude Include="..\r_draw.h" />
     <ClInclude Include="..\r_local.h" />
     <ClInclude Include="..\r_main.h" />
+    <ClInclude Include="..\r_picformats.h" />
     <ClInclude Include="..\r_plane.h" />
+    <ClInclude Include="..\r_portal.h" />
     <ClInclude Include="..\r_segs.h" />
     <ClInclude Include="..\r_sky.h" />
     <ClInclude Include="..\r_splats.h" />
     <ClInclude Include="..\r_state.h" />
+    <ClInclude Include="..\r_textures.h" />
     <ClInclude Include="..\r_things.h" />
     <ClInclude Include="..\screen.h" />
     <ClInclude Include="..\sounds.h" />

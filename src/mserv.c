@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 // Copyright (C)      2020 by James R.
 //
 // This program is free software distributed under the
@@ -23,6 +23,12 @@
 #include "m_menu.h"
 #include "z_zone.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
+#ifdef MASTERSERVER
+
 static int     MSId;
 static int     MSRegisteredId = -1;
 
@@ -43,27 +49,33 @@ static I_cond  MSCond;
 #  define Unlock_state()
 #endif/*HAVE_THREADS*/
 
-static void Update_parameters (void);
-
 #ifndef NONET
 static void Command_Listserv_f(void);
 #endif
+
+#endif/*MASTERSERVER*/
+
+static void Update_parameters (void);
+
 static void MasterServer_OnChange(void);
+
+static void Advertise_OnChange(void);
 
 static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{2,  "MIN"},
 	{60, "MAX"},
-	{0}
+	{0, NULL}
 };
 
-consvar_t cv_masterserver = {"masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_servername = {"servername", "SRB2Kart server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://ms.kartkrew.org/ms/api", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
+consvar_t cv_servername = CVAR_INIT ("servername", "SRB2Kart server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
+consvar_t cv_server_contact = CVAR_INIT ("server_contact", "", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
-consvar_t cv_masterserver_update_rate = {"masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, MasterClient_Ticker);
 
-INT16 ms_RoomId = -1;
+consvar_t cv_advertise = CVAR_INIT ("advertise", "No", CV_NETVAR|CV_CALL|CV_NOINIT, CV_YesNo, Advertise_OnChange);
 
-#ifdef HAVE_THREADS
+#if defined (MASTERSERVER) && defined (HAVE_THREADS)
 int           ms_QueryId;
 I_mutex       ms_QueryId_mutex;
 
@@ -72,10 +84,6 @@ I_mutex       ms_ServerList_mutex;
 #endif
 
 UINT16 current_port = 0;
-
-// Room list is an external variable now.
-// Avoiding having to get info ten thousand times...
-msg_rooms_t room_list[NUM_LIST_ROOMS+1]; // +1 for easy test
 
 /** Adds variables and commands relating to the master server.
   *
@@ -90,10 +98,16 @@ void AddMServCommands(void)
 	CV_RegisterVar(&cv_masterserver_timeout);
 	CV_RegisterVar(&cv_masterserver_debug);
 	CV_RegisterVar(&cv_masterserver_token);
+	CV_RegisterVar(&cv_advertise);
 	CV_RegisterVar(&cv_servername);
+	CV_RegisterVar(&cv_server_contact);
+#ifdef MASTERSERVER
 	COM_AddCommand("listserv", Command_Listserv_f);
 #endif
+#endif
 }
+
+#ifdef MASTERSERVER
 
 static void WarnGUI (void)
 {
@@ -107,31 +121,20 @@ static void WarnGUI (void)
 }
 
 #define NUM_LIST_SERVER MAXSERVERLIST
-msg_server_t *GetShortServersList(INT32 room, int id)
+msg_server_t *GetShortServersList(int id)
 {
 	msg_server_t *server_list;
 
 	// +1 for easy test
 	server_list = malloc(( NUM_LIST_SERVER + 1 ) * sizeof *server_list);
 
-	if (HMS_fetch_servers(server_list, room, id))
+	if (HMS_fetch_servers(server_list, id))
 		return server_list;
 	else
 	{
 		free(server_list);
 		WarnGUI();
 		return NULL;
-	}
-}
-
-INT32 GetRoomsList(boolean hosting, int id)
-{
-	if (HMS_fetch_rooms( ! hosting, id))
-		return 1;
-	else
-	{
-		WarnGUI();
-		return -1;
 	}
 }
 
@@ -167,15 +170,6 @@ char *GetMODVersion(int id)
 
 		return NULL;
 	}
-}
-
-// Console only version of the above (used before game init)
-void GetMODVersion_Console(void)
-{
-	char buffer[16];
-
-	if (HMS_compare_mod_version(buffer, sizeof buffer) > 0)
-		I_Error(UPDATE_ALERT_STRING_CONSOLE, VERSIONSTRING, buffer);
 }
 #endif
 
@@ -267,6 +261,9 @@ Finish_unlist (void)
 	Lock_state();
 	{
 		registered = MSRegistered;
+
+		if (MSId == MSRegisteredId)
+			MSId++;
 	}
 	Unlock_state();
 
@@ -287,13 +284,6 @@ Finish_unlist (void)
 		I_wake_all_cond(&MSCond);
 #endif
 	}
-
-	Lock_state();
-	{
-		if (MSId == MSRegisteredId)
-			MSId++;
-	}
-	Unlock_state();
 }
 
 #ifdef HAVE_THREADS
@@ -395,6 +385,7 @@ Change_masterserver_thread (char *api)
 
 void RegisterServer(void)
 {
+#ifdef MASTERSERVER
 #ifdef HAVE_THREADS
 	I_spawn_thread(
 			"register-server",
@@ -404,6 +395,7 @@ void RegisterServer(void)
 #else
 	Finish_registration();
 #endif
+#endif/*MASTERSERVER*/
 }
 
 static void UpdateServer(void)
@@ -421,6 +413,7 @@ static void UpdateServer(void)
 
 void UnregisterServer(void)
 {
+#ifdef MASTERSERVER
 #ifdef HAVE_THREADS
 	I_spawn_thread(
 			"unlist-server",
@@ -430,12 +423,13 @@ void UnregisterServer(void)
 #else
 	Finish_unlist();
 #endif
+#endif/*MASTERSERVER*/
 }
 
 static boolean
 Online (void)
 {
-	return ( serverrunning && ms_RoomId > 0 );
+	return ( serverrunning && cv_advertise.value );
 }
 
 static inline void SendPingToMasterServer(void)
@@ -465,9 +459,33 @@ static inline void SendPingToMasterServer(void)
 	}
 }
 
+void MasterClient_Ticker(void)
+{
+#ifdef MASTERSERVER
+	SendPingToMasterServer();
+#endif
+}
+
+static void
+Set_api (const char *api)
+{
+#ifdef HAVE_THREADS
+	I_spawn_thread(
+			"change-masterserver",
+			(I_thread_fn)Change_masterserver_thread,
+			strdup(api)
+	);
+#else
+	HMS_set_api(strdup(api));
+#endif
+}
+
+#endif/*MASTERSERVER*/
+
 static void
 Update_parameters (void)
 {
+#ifdef MASTERSERVER
 	int registered;
 	int delayed;
 
@@ -487,29 +505,12 @@ Update_parameters (void)
 		if (! delayed && registered)
 			UpdateServer();
 	}
-}
-
-void MasterClient_Ticker(void)
-{
-	SendPingToMasterServer();
-}
-
-static void
-Set_api (const char *api)
-{
-#ifdef HAVE_THREADS
-	I_spawn_thread(
-			"change-masterserver",
-			(I_thread_fn)Change_masterserver_thread,
-			strdup(api)
-	);
-#else
-	HMS_set_api(strdup(api));
-#endif
+#endif/*MASTERSERVER*/
 }
 
 static void MasterServer_OnChange(void)
 {
+#ifdef MASTERSERVER
 	UnregisterServer();
 
 	/*
@@ -527,4 +528,36 @@ static void MasterServer_OnChange(void)
 
 	if (Online())
 		RegisterServer();
+#endif/*MASTERSERVER*/
+}
+
+static void
+Advertise_OnChange(void)
+{
+	int different;
+
+	if (cv_advertise.value)
+	{
+		if (serverrunning)
+		{
+			Lock_state();
+			{
+				different = ( MSId != MSRegisteredId );
+			}
+			Unlock_state();
+
+			if (different)
+			{
+				RegisterServer();
+			}
+		}
+	}
+	else
+	{
+		UnregisterServer();
+	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }

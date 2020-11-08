@@ -19,25 +19,6 @@
 #define DEFAULT_STARTTRANSCOLOR 96
 #define NUM_PALETTE_ENTRIES 256
 
-extern UINT8 colortranslations[MAXTRANSLATIONS][16];
-extern const char *KartColor_Names[MAXSKINCOLORS];
-extern const UINT8 KartColor_Opposite[MAXSKINCOLORS*2];
-
-/*--------------------------------------------------
-	INT32 K_SkincolorToTextColor(UINT8 skincolor);
-
-		Gives you the "text" color (V_ constants) from a skincolor (SKINCOLOR_ constants).
-		Used primarily by the chat system.
-
-	Input Arguments:-
-		skincolor - SKINCOLOR_ constant
-
-	Return:-
-		V_ constant for font coloring
---------------------------------------------------*/
-INT32 K_SkincolorToTextColor(UINT8 skincolor);
-
-
 /*--------------------------------------------------
 	UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b);
 
@@ -54,6 +35,20 @@ INT32 K_SkincolorToTextColor(UINT8 skincolor);
 --------------------------------------------------*/
 
 UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b);
+
+/*--------------------------------------------------
+	UINT16 K_RainbowColor(tic_t time)
+
+		Gives you a color to use for rainbow effects (like invincibility).
+
+	Input Arguments:-
+		time - Time offset, usually is leveltime.
+
+	Return:-
+		Skincolor value.
+--------------------------------------------------*/
+
+UINT16 K_RainbowColor(tic_t time);
 
 /*--------------------------------------------------
 	void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
@@ -85,18 +80,5 @@ void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
 		None
 --------------------------------------------------*/
 void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color);
-
-/*--------------------------------------------------
-	UINT8 K_GetKartColorByName(const char *name);
-
-		Finds the corresponding SKINCOLOR_ constant to the string provided.
-
-	Input Arguments:-
-		name - The name of the color desired.
-
-	Return:-
-		SKINCOLOR_ constant, SKINCOLOR_NONE if invalid
---------------------------------------------------*/
-UINT8 K_GetKartColorByName(const char *name);
 
 #endif

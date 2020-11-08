@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,11 +14,7 @@
 #include "command.h"
 #include "i_threads.h"
 
-#ifdef _WII
-void CON_InitWii(void);
-#else
 void CON_Init(void);
-#endif
 
 boolean CON_Responder(event_t *ev);
 
@@ -30,6 +26,25 @@ extern I_mutex con_mutex;
 extern boolean con_recalc;
 
 extern boolean con_startup;
+
+typedef enum
+{
+	LOADED_ZINIT = 1,
+	LOADED_ISTARTUPTIMER,
+	LOADED_IWAD,
+	LOADED_PWAD,
+	LOADED_ISTARTUPGRAPHICS,
+	LOADED_HULOADGRAPHICS,
+	LOADED_RENDERER,
+	LOADED_MINIT,
+	LOADED_RINIT,
+	LOADED_SINITSFXCHANNELS,
+	LOADED_STINIT,
+	LOADED_DCHECKNETGAME,
+	LOADED_ALLDONE = LOADED_DCHECKNETGAME,
+} con_loadprogress_t;
+
+extern con_loadprogress_t con_startup_loadprogress;
 
 // top clip value for view render: do not draw part of view hidden by console
 extern INT32 con_clipviewtop;
@@ -48,9 +63,10 @@ extern UINT8 *yellowmap, *purplemap, *greenmap, *bluemap, *graymap, *redmap, *or
 
 // Console bg color (auto updated to match)
 extern UINT8 *consolebgmap;
+extern UINT8 *promptbgmap;
 
 INT32 CON_ShiftChar(INT32 ch);
-
+void CON_SetupBackColormapEx(INT32 color, boolean prompt);
 void CON_SetupBackColormap(void);
 void CON_ClearHUD(void); // clear heads up messages
 
@@ -65,3 +81,7 @@ void CON_ToggleOff(void);
 boolean CON_Ready(void);
 
 void CON_LogMessage(const char *msg);
+
+// Startup loading bar
+void CON_SetLoadingProgress(con_loadprogress_t newStep);
+void CON_DrawLoadBar(void);

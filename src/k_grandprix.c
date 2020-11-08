@@ -533,7 +533,7 @@ void K_FakeBotResults(player_t *bot)
 	if (besttime == UINT32_MAX // No one finished, so you don't finish either.
 	|| bot->distancetofinish >= worstdist) // Last place, you aren't going to finish.
 	{
-		bot->pflags |= PF_TIMEOVER;
+		bot->pflags |= PF_GAMETYPEOVER;
 		return;
 	}
 
