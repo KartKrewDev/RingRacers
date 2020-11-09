@@ -11594,8 +11594,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 static void P_SetAmbush(mobj_t *mobj)
 {
-	if (mobj->type == MT_YELLOWDIAG || mobj->type == MT_REDDIAG || mobj->type == MT_BLUEDIAG)
-		mobj->angle += ANGLE_22h;
+	if (mobj->flags & MF_SPRING)
+	{
+		// gravity toggle
+		mobj->flags ^= MF_NOGRAVITY;
+	}
 
 	if (mobj->flags & MF_NIGHTSITEM)
 	{
@@ -11624,9 +11627,6 @@ static void P_SetAmbush(mobj_t *mobj)
 
 static void P_SetObjectSpecial(mobj_t *mobj)
 {
-	if (mobj->type == MT_YELLOWDIAG || mobj->type == MT_REDDIAG || mobj->type == MT_BLUEDIAG)
-		mobj->flags |= MF_NOGRAVITY;
-
 	if ((mobj->flags & MF_MONITOR) && mobj->info->speed != 0)
 	{
 		// flag for strong/weak random boxes
