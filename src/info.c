@@ -8560,7 +8560,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		25*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_YELLOWSPRING2 // raisestate
 	},
 
@@ -8587,7 +8587,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		40*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_REDSPRING2    // raisestate
 	},
 
@@ -8614,7 +8614,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		64*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_BLUESPRING2   // raisestate
 	},
 
@@ -8641,7 +8641,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		15*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_GREYSPRING2   // raisestate
 	},
 
@@ -8668,7 +8668,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		25*FRACUNIT,    // mass
 		25*FRACUNIT,    // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_YDIAG2        // raisestate
 	},
 
@@ -8695,7 +8695,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		40*FRACUNIT,    // mass
 		40*FRACUNIT,    // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_RDIAG2        // raisestate
 	},
 
@@ -8722,7 +8722,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		64*FRACUNIT,    // mass
 		64*FRACUNIT,    // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_BDIAG2        // raisestate
 	},
 
@@ -8749,7 +8749,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		15*FRACUNIT,    // mass
 		15*FRACUNIT,    // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SPRING|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_GDIAG2        // raisestate
 	},
 
