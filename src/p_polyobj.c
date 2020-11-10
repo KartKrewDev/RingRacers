@@ -876,6 +876,10 @@ static void Polyobj_carryThings(polyobj_t *po, fixed_t dx, fixed_t dy)
 
 			for (; mo; mo = mo->bnext)
 			{
+				// lastlook is used by the SPB to determine targets, do not let it affect it
+				if (mo->type == MT_SPB)
+					continue;
+
 				if (mo->lastlook == pomovecount)
 					continue;
 
@@ -1106,6 +1110,10 @@ static void Polyobj_rotateThings(polyobj_t *po, vector2_t origin, angle_t delta,
 
 			for (; mo; mo = mo->bnext)
 			{
+				// lastlook is used by the SPB to determine targets, do not let it affect it
+				if (mo->type == MT_SPB)
+					continue;
+
 				if (mo->lastlook == pomovecount)
 					continue;
 
