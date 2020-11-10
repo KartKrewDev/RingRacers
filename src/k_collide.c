@@ -45,7 +45,6 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			// Player Damage
-			K_SetHitLagForObjects(t1, t2, 10, false);
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT);
 			K_KartBouncing(t2, t1, false, false);
 			S_StartSound(t2, sfx_s3k7b);
@@ -59,7 +58,6 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
-		K_SetHitLagForObjects(t1, t2, 10, false);
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
@@ -72,7 +70,6 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE)
 	{
-		K_SetHitLagForObjects(t1, t2, 10, false);
 		damageitem = true;
 		// Bomb death
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
@@ -84,7 +81,6 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
-		K_SetHitLagForObjects(t1, t2, 10, false);
 		// Shootable damage
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		damageitem = true;
@@ -141,18 +137,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			// Player Damage
-			if (t1->type == MT_BALLHOG || (t1->type == MT_BANANA && t1->health > 1))
-			{
-				// Long hitlag
-				K_SetHitLagForObjects(t1, t2, 10, false);
-			}
-			else
-			{
-				// Short hitlag
-				K_SetHitLagForObjects(t1, t2, 2, true);
-			}
-
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		}
 
@@ -164,8 +148,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
-		K_SetHitLagForObjects(t1, t2, 10, false);
-
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
@@ -179,7 +161,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
-		K_SetHitLagForObjects(t1, t2, 10, false);
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		damageitem = true;
 	}
@@ -187,8 +168,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (damageitem)
 	{
 		// This Item Damage
-		K_SetHitLagForObjects(t1, t2, 10, false);
-
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
@@ -290,7 +269,6 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
 			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
 		{
-			K_SetHitLagForObjects(t1, t2, 10, false);
 			P_KillMobj(t1, t2, t2, DMG_NORMAL);
 		}
 		else
@@ -302,8 +280,6 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
 	{
-		K_SetHitLagForObjects(t1, t2, 10, false);
-
 		// Bomb death
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
@@ -316,7 +292,6 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
-		K_SetHitLagForObjects(t1, t2, 10, false);
 		// Bomb death
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 		// Shootable damage
@@ -335,19 +310,16 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 
 		if (t1->state == &states[S_MINEEXPLOSION1])
 		{
-			K_SetHitLagForObjects(t1, t2, 10, false);
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_EXPLODE);
 		}
 		else
 		{
-			K_SetHitLagForObjects(t1, t2, 2, true);
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		}
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
 		// Shootable damage
-		K_SetHitLagForObjects(t1, t2, 10, false);
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 	}
 
@@ -364,8 +336,6 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
-		K_SetHitLagForObjects(t1, t2, 10, false);
-
 		S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
 
 		HU_SetCEchoFlags(0);
@@ -378,8 +348,6 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
-		K_SetHitLagForObjects(t1, t2, 10, false);
-
 		// Shootable damage
 		P_KillMobj(t2, t2, t1->target, DMG_NORMAL);
 		// This item damage

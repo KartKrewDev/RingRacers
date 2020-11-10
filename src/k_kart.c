@@ -2384,8 +2384,8 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fixed)
 		const fixed_t ticaddfactor = mapobjectscale * 8;
 		const INT32 mintics = tics;
 
-		const fixed_t mo1speed = P_AproxDistance(P_AproxDistance(mo1->momx, mo1->momy), mo1->momz);
-		const fixed_t mo2speed = P_AproxDistance(P_AproxDistance(mo2->momx, mo2->momy), mo2->momz);
+		const fixed_t mo1speed = FixedHypot(FixedHypot(mo1->momx, mo1->momy), mo1->momz);
+		const fixed_t mo2speed = FixedHypot(FixedHypot(mo2->momx, mo2->momy), mo2->momz);
 		const fixed_t speeddiff = mo2speed - mo1speed;
 
 		const fixed_t scalediff = mo2->scale - mo1->scale;
@@ -2420,26 +2420,6 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fixed)
 		if (tics2 < mintics)
 		{
 			tics2 = mintics;
-		}
-	}
-
-	if (mo1->player && !mo2->player)
-	{
-		if (mo1->player->powers[pw_flashing] > 0
-		|| mo1->player->kartstuff[k_invincibilitytimer] > 0
-		|| mo1->player->kartstuff[k_growshrinktimer] > 0)
-		{
-			tics1 = 0;
-		}
-	}
-
-	if (mo2->player && !mo1->player)
-	{
-		if (mo2->player->powers[pw_flashing] > 0
-		|| mo2->player->kartstuff[k_invincibilitytimer] > 0
-		|| mo2->player->kartstuff[k_growshrinktimer] > 0)
-		{
-			tics2 = 0;
 		}
 	}
 
