@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 //
 // Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 2014-2020 by Sonic Team Junior.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -137,7 +138,7 @@ boolean LoadGL(void)
 	else
 	{
 		CONS_Alert(CONS_ERROR, "Could not load GLU Library\n");
-		CONS_Printf("If you know what is the GLU library's name, use -GLUlib\n");
+		CONS_Printf("If you know what is the GLU library's name, use -GLUlib\n");;
 	}
 #endif
 	return SetupGLfunc();
@@ -155,26 +156,11 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 {
 	INT32 cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
 	static boolean first_init = false;
-	const char *gllogdir = NULL;
 
 	oglflags = 0;
 
 	if (!first_init)
 	{
-		if (!gllogstream) 
-		{
-			gllogdir = D_Home();
-
-#ifdef DEBUG_TO_FILE
-#ifdef DEFAULTDIR
-			if (gllogdir)
-				gllogstream = fopen(va("%s/"DEFAULTDIR"/ogllog.txt",gllogdir), "wt");
-			else
-#endif
-				gllogstream = fopen("./ogllog.txt", "wt");
-#endif
-		}
-			
 		gl_version = pglGetString(GL_VERSION);
 		gl_renderer = pglGetString(GL_RENDERER);
 		gl_extensions = pglGetString(GL_EXTENSIONS);
@@ -182,6 +168,18 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 		GL_DBG_Printf("OpenGL %s\n", gl_version);
 		GL_DBG_Printf("GPU: %s\n", gl_renderer);
 		GL_DBG_Printf("Extensions: %s\n", gl_extensions);
+
+		if (strcmp((const char*)gl_renderer, "GDI Generic") == 0 &&
+			strcmp((const char*)gl_version, "1.1.0") == 0)
+		{
+			// Oh no... Windows gave us the GDI Generic rasterizer, so something is wrong...
+			// The game will crash later on when unsupported OpenGL commands are encountered.
+			// Instead of a nondescript crash, show a more informative error message.
+			// Also set the renderer variable back to software so the next launch won't
+			// repeat this error.
+			CV_StealthSet(&cv_renderer, "Software");
+			I_Error("OpenGL Error: Failed to access the GPU. There may be an issue with your graphics drivers.");
+		}
 	}
 	first_init = true;
 
@@ -236,20 +234,15 @@ void OglSdlFinishUpdate(boolean waitvbl)
 	HWR_DrawScreenFinalTexture(realwidth, realheight);
 }
 
-EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette, RGBA_t *pgamma)
+EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette)
 {
-	INT32 i = -1;
-	UINT32 redgamma = pgamma->s.red, greengamma = pgamma->s.green,
-		bluegamma = pgamma->s.blue;
-
-	for (i = 0; i < 256; i++)
+	size_t palsize = (sizeof(RGBA_t) * 256);
+	// on a palette change, you have to reload all of the textures
+	if (memcmp(&myPaletteData, palette, palsize))
 	{
-		myPaletteData[i].s.red   = (UINT8)MIN((palette[i].s.red   * redgamma)  /127, 255);
-		myPaletteData[i].s.green = (UINT8)MIN((palette[i].s.green * greengamma)/127, 255);
-		myPaletteData[i].s.blue  = (UINT8)MIN((palette[i].s.blue  * bluegamma) /127, 255);
-		myPaletteData[i].s.alpha = palette[i].s.alpha;
+		memcpy(&myPaletteData, palette, palsize);
+		Flush();
 	}
-	Flush();
 }
 
 #endif //HWRENDER

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -22,6 +22,8 @@
 
 // Some global defines, that configure the game.
 #include "doomdef.h"
+
+#include "m_fixed.h" // See the mapthing_t scale.
 
 //
 // Map level types.
@@ -46,7 +48,7 @@ enum
 	ML_BLOCKMAP,  // LUT, motion clipping, walls/grid element
 };
 
-// Extra flag for objects
+// Extra flag for objects.
 #define MTF_EXTRA 1
 
 // Reverse gravity flag for objects.
@@ -130,14 +132,12 @@ typedef struct
 #define ML_EFFECT4             512
 #define ML_EFFECT5            1024
 
-// New ones to disable lines for characters
-#define ML_NOSONIC           2048
-#define ML_NOTAILS           4096
-#define ML_NOKNUX            8192
-#define ML_NETONLY          14336 // all of the above
+#define ML_NETONLY           2048 // Apply effect only in netgames
+#define ML_NONET             4096 // Apply  effect only in single player games
+#define ML_EFFECT6           8192
 
-// Bounce off walls!
-#define ML_BOUNCY           16384
+// Don't bounce off this wall!
+#define ML_NOTBOUNCY        16384
 
 #define ML_TFERLINE         32768
 
@@ -195,24 +195,36 @@ typedef struct
 #pragma pack()
 #endif
 
+#define NUMMAPTHINGARGS 6
+#define NUMMAPTHINGSTRINGARGS 2
+
 // Thing definition, position, orientation and type,
 // plus visibility flags and attributes.
 typedef struct
 {
 	INT16 x, y;
-	INT16 angle;
+	INT16 angle, pitch, roll;
 	UINT16 type;
 	UINT16 options;
 	INT16 z;
 	UINT8 extrainfo;
+	fixed_t scale;
+	INT16 tag;
+	INT32 args[NUMMAPTHINGARGS];
+	char *stringargs[NUMMAPTHINGSTRINGARGS];
+
 	struct mobj_s *mobj;
 } mapthing_t;
 
 #define ZSHIFT 4
 
-//extern const char *Color_Names[MAXSKINCOLORS];
-//extern const UINT8 Color_Opposite[MAXSKINCOLORS*2];
-
 #define NUMMAPS 1035
+
+/* slope thing types */
+enum
+{
+	FLOOR_SLOPE_THING   = 777,
+	CEILING_SLOPE_THING = 778,
+};
 
 #endif // __DOOMDATA__

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -45,6 +45,8 @@ UINT32 I_GetFreeMem(UINT32 *total);
 /**	\brief  Called by D_SRB2Loop, returns current time in tics.
 */
 tic_t I_GetTime(void);
+
+int I_GetTimeMicros(void);// provides microsecond counter for render stats
 
 /**	\brief	The I_Sleep function
 
@@ -182,9 +184,13 @@ void I_JoyScale4(void);
 
 // Called by D_SRB2Main.
 
+/**	\brief to startup a joystick
+*/
+void I_InitJoystick(UINT8 index);
+
 /**	\brief to startup the first joystick
 */
-void I_InitJoystick(void);
+void I_InitJoystick1(void);
 
 /**	\brief to startup the second joystick
 */
@@ -218,13 +224,9 @@ const char *I_GetJoyName(INT32 joyindex);
 void I_UpdateMumble(const mobj_t *mobj, const listener_t listener);
 #endif
 
-/**	\brief Startup the first mouse
+/**	\brief Startup the mouse
 */
 void I_StartupMouse(void);
-
-/**	\brief Startup the second mouse
-*/
-void I_StartupMouse2(void);
 
 /**	\brief  setup timer irq and user timer routine.
 */
@@ -320,23 +322,11 @@ const char *I_LocateWad(void);
 
 /**	\brief First Joystick's events
 */
-void I_GetJoystickEvents(void);
+void I_GetJoystickEvents(UINT8 index);
 
-/**	\brief Second Joystick's events
+/**	\brief Checks if the mouse needs to be grabbed
 */
-void I_GetJoystick2Events(void);
-
-/**	\brief Third Joystick's events
-*/
-void I_GetJoystick3Events(void);
-
-/**	\brief Fourth Joystick's events
-*/
-void I_GetJoystick4Events(void);
-
-/**	\brief Mouses events
-*/
-void I_GetMouseEvents(void);
+void I_UpdateMouseGrab(void);
 
 char *I_GetEnv(const char *name);
 

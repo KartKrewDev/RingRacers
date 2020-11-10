@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2014-2016 by John "JTE" Muniz.
-// Copyright (C) 2014-2018 by Sonic Team Junior.
+// Copyright (C) 2014-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,9 +11,8 @@
 /// \brief player skin structure library for Lua scripting
 
 #include "doomdef.h"
-#ifdef HAVE_BLUA
 #include "fastcmp.h"
-#include "r_things.h"
+#include "r_skins.h"
 #include "sounds.h"
 
 #include "lua_script.h"
@@ -26,17 +25,17 @@ enum skin {
 	skin_wadnum,
 	skin_flags,
 	skin_realname,
-	skin_hudname,
-	skin_facerank,
-	skin_facewant,
-	skin_facemmap,
 	// SRB2kart
 	skin_kartspeed,
 	skin_kartweight,
 	//
+	skin_followitem,
 	skin_starttranscolor,
 	skin_prefcolor,
+	skin_supercolor,
+	skin_prefoppositecolor,
 	skin_highresscale,
+	skin_rivals,
 	skin_soundsid
 };
 static const char *const skin_opt[] = {
@@ -46,17 +45,15 @@ static const char *const skin_opt[] = {
 	"wadnum",
 	"flags",
 	"realname",
-	"hudname",
-	"facerank",
-	"facewant",
-	"facemmap",
-	// SRB2kart
 	"kartspeed",
 	"kartweight",
-	//
+	"followitem",
 	"starttranscolor",
 	"prefcolor",
+	"supercolor",
+	"prefoppositecolor",
 	"highresscale",
+	"rivals",
 	"soundsid",
 	NULL};
 
@@ -66,7 +63,6 @@ static int skin_get(lua_State *L)
 {
 	skin_t *skin = *((skin_t **)luaL_checkudata(L, 1, META_SKIN));
 	enum skin field = luaL_checkoption(L, 2, NULL, skin_opt);
-	INT32 i;
 
 	// skins are always valid, only added, never removed
 	I_Assert(skin != NULL);
@@ -90,27 +86,6 @@ static int skin_get(lua_State *L)
 	case skin_realname:
 		lua_pushstring(L, skin->realname);
 		break;
-	case skin_hudname:
-		lua_pushstring(L, skin->hudname);
-		break;
-	case skin_facerank:
-		for (i = 0; i < 8; i++)
-			if (!skin->facerank[i])
-				break;
-		lua_pushlstring(L, skin->facerank, i);
-		break;
-	case skin_facewant:
-		for (i = 0; i < 8; i++)
-			if (!skin->facewant[i])
-				break;
-		lua_pushlstring(L, skin->facewant, i);
-		break;
-	case skin_facemmap:
-		for (i = 0; i < 8; i++)
-			if (!skin->facemmap[i])
-				break;
-		lua_pushlstring(L, skin->facemmap, i);
-		break;
 	// SRB2kart
 	case skin_kartspeed:
 		lua_pushinteger(L, skin->kartspeed);
@@ -118,16 +93,28 @@ static int skin_get(lua_State *L)
 	case skin_kartweight:
 		lua_pushinteger(L, skin->kartweight);
 		break;
-	//
+	// 
+	case skin_followitem:
+		lua_pushinteger(L, skin->followitem);
+		break;
 	case skin_starttranscolor:
 		lua_pushinteger(L, skin->starttranscolor);
 		break;
 	case skin_prefcolor:
 		lua_pushinteger(L, skin->prefcolor);
 		break;
+	case skin_supercolor:
+		lua_pushinteger(L, skin->supercolor);
+		break;
+	case skin_prefoppositecolor:
+		lua_pushinteger(L, skin->prefoppositecolor);
+		break;
 	case skin_highresscale:
 		lua_pushinteger(L, skin->highresscale);
 		break;
+	case skin_rivals:
+		// This would be pretty cool to push
+		return UNIMPLEMENTED;
 	case skin_soundsid:
 		LUA_PushUserdata(L, skin->soundsid, META_SOUNDSID);
 		break;
@@ -274,5 +261,3 @@ int LUA_SkinLib(lua_State *L)
 
 	return 0;
 }
-
-#endif

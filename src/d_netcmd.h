@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -18,26 +18,12 @@
 #include "command.h"
 
 // console vars
-extern consvar_t cv_playername;
-extern consvar_t cv_playercolor;
-extern consvar_t cv_skin;
-extern consvar_t cv_follower;
-extern consvar_t cv_showfollowers;
-// secondary splitscreen player
-extern consvar_t cv_playername2;
-extern consvar_t cv_playercolor2;
-extern consvar_t cv_skin2;
-extern consvar_t cv_follower2;
-// third splitscreen player
-extern consvar_t cv_playername3;
-extern consvar_t cv_playercolor3;
-extern consvar_t cv_skin3;
-extern consvar_t cv_follower3;
-// fourth splitscreen player
-extern consvar_t cv_playername4;
-extern consvar_t cv_playercolor4;
-extern consvar_t cv_skin4;
-extern consvar_t cv_follower4;
+extern consvar_t cv_playername[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_skin[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_follower[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
+
 // preferred number of players
 extern consvar_t cv_splitplayers;
 
@@ -45,33 +31,16 @@ extern consvar_t cv_splitplayers;
 extern consvar_t cv_seenames, cv_allowseenames;
 #endif
 extern consvar_t cv_usemouse;
-extern consvar_t cv_usejoystick;
-extern consvar_t cv_usejoystick2;
-extern consvar_t cv_usejoystick3;
-extern consvar_t cv_usejoystick4;
+extern consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
 #ifdef LJOYSTICK
-extern consvar_t cv_joyport;
-extern consvar_t cv_joyport2;
-#endif
-extern consvar_t cv_joyscale;
-extern consvar_t cv_joyscale2;
-extern consvar_t cv_joyscale3;
-extern consvar_t cv_joyscale4;
-
-// splitscreen with second mouse
-extern consvar_t cv_mouse2port;
-extern consvar_t cv_usemouse2;
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)
-extern consvar_t cv_mouse2opt;
+extern consvar_t cv_joyport[MAXSPLITSCREENPLAYERS];
 #endif
 
-extern consvar_t cv_flagtime;
-extern consvar_t cv_suddendeath;
+// normally in p_mobj but the .h is not read
+extern consvar_t cv_itemrespawntime;
+extern consvar_t cv_itemrespawn;
 
-extern consvar_t cv_touchtag;
-extern consvar_t cv_hidetime;
-
-extern consvar_t cv_friendlyfire;
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
 extern consvar_t cv_numlaps;
@@ -91,15 +60,9 @@ extern consvar_t cv_splats;
 extern consvar_t cv_countdowntime;
 extern consvar_t cv_runscripts;
 extern consvar_t cv_mute;
-extern consvar_t cv_killingdead;
 extern consvar_t cv_pause;
 
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_ingamecap, cv_respawntime;
-
-/*extern consvar_t cv_teleporters, cv_superring, cv_supersneakers, cv_invincibility;
-extern consvar_t cv_jumpshield, cv_watershield, cv_ringshield, cv_forceshield, cv_bombshield;
-extern consvar_t cv_1up, cv_eggmanbox;
-extern consvar_t cv_recycler;*/
 
 // SRB2kart items
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
@@ -134,18 +97,14 @@ extern consvar_t cv_kartdebugwaypoints;
 
 extern consvar_t cv_itemfinder;
 
-extern consvar_t cv_inttime, cv_advancemap, cv_playersforexit;
-extern consvar_t cv_soniccd;
-extern consvar_t cv_match_scoring;
+extern consvar_t cv_inttime, cv_advancemap;
 extern consvar_t cv_overtime;
 extern consvar_t cv_startinglives;
 
 // for F_finale.c
 extern consvar_t cv_rollingdemos;
 
-extern consvar_t cv_ringslinger, cv_soundtest;
-
-extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionboxes;
+extern consvar_t cv_soundtest;
 
 extern consvar_t cv_maxping;
 extern consvar_t cv_lagless;
@@ -156,6 +115,13 @@ extern consvar_t cv_showviewpointtext;
 extern consvar_t cv_skipmapcheck;
 
 extern consvar_t cv_sleep;
+
+extern consvar_t cv_perfstats;
+
+extern char timedemo_name[256];
+extern boolean timedemo_csv;
+extern char timedemo_csv_id[256];
+extern boolean timedemo_quit;
 
 typedef enum
 {
@@ -171,30 +137,31 @@ typedef enum
 	XD_ADDPLAYER,   // 10
 	XD_TEAMCHANGE,  // 11
 	XD_CLEARSCORES, // 12
-	XD_LOGIN,       // 13
-	XD_VERIFIED,    // 14
-	XD_RANDOMSEED,  // 15
-	XD_RUNSOC,      // 16
-	XD_REQADDFILE,  // 17
-	XD_DELFILE,     // 18
-	XD_SETMOTD,     // 19
-	XD_RESPAWN,     // 20
-	XD_DEMOTED,     // 21
-	XD_SETUPVOTE,   // 22
-	XD_MODIFYVOTE,  // 23
-	XD_PICKVOTE,    // 24
-	XD_REMOVEPLAYER,// 25
-	XD_POWERLEVEL,  // 26
-	XD_PARTYINVITE, // 27
-	XD_ACCEPTPARTYINVITE, // 28
-	XD_LEAVEPARTY, // 29
-	XD_CANCELPARTYINVITE, // 30
-	XD_GIVEITEM, // 31
-	XD_ADDBOT, // 32
-#ifdef HAVE_BLUA
-	XD_LUACMD,      // 33
-	XD_LUAVAR,      // 34
-#endif
+	XD_VERIFIED,    // 13
+	XD_RANDOMSEED,  // 14
+	XD_RUNSOC,      // 15
+	XD_REQADDFILE,  // 16
+	XD_SETMOTD,     // 17
+	XD_RESPAWN,     // 18
+	XD_DEMOTED,     // 19
+	XD_LUACMD,      // 20
+	XD_LUAVAR,      // 21
+	XD_LUAFILE,     // 22
+
+	// SRB2Kart
+	XD_SETUPVOTE,   // 23
+	XD_MODIFYVOTE,  // 24
+	XD_PICKVOTE,    // 25
+	XD_REMOVEPLAYER,// 26
+	XD_POWERLEVEL,  // 27
+	XD_PARTYINVITE, // 28
+	XD_ACCEPTPARTYINVITE, // 29
+	XD_LEAVEPARTY,  // 30
+	XD_CANCELPARTYINVITE, // 31
+	XD_GIVEITEM,    // 32
+	XD_ADDBOT,      // 33
+	XD_DISCORD,     // 34
+
 	MAXNETXCMD
 } netxcmd_t;
 
@@ -243,6 +210,8 @@ typedef union {
 // add game commands, needs cleanup
 void D_RegisterServerCommands(void);
 void D_RegisterClientCommands(void);
+void CleanupPlayerName(INT32 playernum, const char *newname);
+boolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
 void D_SendPlayerConfig(void);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);

@@ -42,7 +42,7 @@
 #include "fabdxlib.h"
 #include "win_main.h"
 #include "win_dbg.h"
-#include "../i_sound.h" // midi pause/unpause
+#include "../s_sound.h" // pause sound with handling
 #include "../g_input.h" // KEY_MOUSEWHEELxxx
 #include "../screen.h" // for BASEVID*
 
@@ -110,9 +110,9 @@ static LRESULT CALLBACK MainWndproc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 			// pause music when alt-tab
 			if (appActive  && !paused)
-				I_ResumeSong();
+				S_ResumeAudio();
 			else if (!paused)
-				I_PauseSong();
+				S_PauseAudio();
 			{
 				HANDLE ci = GetStdHandle(STD_INPUT_HANDLE);
 				DWORD mode;
@@ -643,37 +643,28 @@ int WINAPI WinMain (HINSTANCE hInstance,
                     int       nCmdShow)
 {
 	int Result = -1;
-
-#if 0
-	// Win95 and NT <4 don't have this, so link at runtime.
-	p_IsDebuggerPresent pfnIsDebuggerPresent = (p_IsDebuggerPresent)GetProcAddress(GetModuleHandleA("kernel32.dll"),"IsDebuggerPresent");
-#endif
-
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
-#if 0
-#ifdef BUGTRAP
-	// Try BugTrap first.
-	if((!pfnIsDebuggerPresent || !pfnIsDebuggerPresent()) && InitBugTrap())
-		Result = HandledWinMain(hInstance);
-	else
 	{
-#endif
-		// Try Dr MinGW's exception handler.
-		if (!pfnIsDebuggerPresent || !pfnIsDebuggerPresent())
-#endif
-			LoadLibraryA("exchndl.dll");
-
-#ifndef __MINGW32__
-		prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
-#endif
-
-		Result = HandledWinMain(hInstance);
+#if 0
+		p_IsDebuggerPresent pfnIsDebuggerPresent = (p_IsDebuggerPresent)GetProcAddress(GetModuleHandleA("kernel32.dll"),"IsDebuggerPresent");
+		if((!pfnIsDebuggerPresent || !pfnIsDebuggerPresent())
 #ifdef BUGTRAP
-	}	// BT failure clause.
-
+			&& !InitBugTrap()
+#endif
+		)
+#endif
+		{
+			LoadLibraryA("exchndl.dll");
+		}
+	}
+#ifndef __MINGW32__
+	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
+#endif
+	Result = HandledWinMain(hInstance);
+#ifdef BUGTRAP
 	// This is safe even if BT didn't start.
 	ShutdownBugTrap();
 #endif

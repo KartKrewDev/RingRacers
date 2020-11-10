@@ -55,6 +55,21 @@ void K_DoIngameRespawn(player_t *player);
 
 
 /*--------------------------------------------------
+	size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint);
+
+		Returns the index for the next respawn waypoint.
+
+	Input Arguments:-
+		waypoint - Waypoint to look past.
+
+	Return:-
+		An table index for waypoint_t -> nextwaypoints.
+--------------------------------------------------*/
+
+size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
 	void K_RespawnChecker(player_t *player);
 
 		Thinker for the respawning animation.

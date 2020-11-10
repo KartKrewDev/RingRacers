@@ -54,6 +54,8 @@
 
 #include "../screen.h"
 
+#include "../m_menu.h"
+
 // Wheel support for Win95/WinNT3.51
 #include <zmouse.h>
 
@@ -327,7 +329,7 @@ static inline VOID I_GetConsoleEvents(VOID)
 							break;
 						case VK_RETURN:
 							entering_con_command = false;
-							// Fall through.
+							/* FALLTHRU */
 						default:
 							ev.data1 = MapVirtualKey(input.Event.KeyEvent.wVirtualKeyCode,2); // convert in to char
 					}
@@ -465,6 +467,7 @@ static void signal_handler(int num)
 	char sigdef[64];
 
 	D_QuitNetGame(); // Fix server freezes
+	CL_AbortDownloadResume();
 	I_ShutdownSystem();
 
 	switch (num)
@@ -647,9 +650,11 @@ void I_Error(const char *error, ...)
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
-		G_StopMetalRecording();
+		G_StopMetalRecording(false);
 
 	D_QuitNetGame();
+	CL_AbortDownloadResume();
+	M_FreePlayerSetupColors();
 
 	// shutdown everything that was started
 	I_ShutdownSystem();
@@ -733,7 +738,7 @@ void I_Quit(void)
 	if (demo.recording)
 		G_CheckDemoStatus();
 	if (metalrecording)
-		G_StopMetalRecording();
+		G_StopMetalRecording(false);
 
 	M_SaveConfig(NULL); // save game config, cvars..
 #ifndef NONET
@@ -745,6 +750,9 @@ void I_Quit(void)
 	// or something else that will be finished by I_ShutdownSystem(),
 	// so do it before.
 	D_QuitNetGame();
+	CL_AbortDownloadResume();
+
+	M_FreePlayerSetupColors();
 
 	// shutdown everything that was started
 	I_ShutdownSystem();
@@ -1353,6 +1361,8 @@ getBufferedData:
 		}
 	}
 }
+
+void I_UpdateMouseGrab(void) {}
 
 // ===========================================================================================
 //                                                                       DIRECT INPUT JOYSTICK
@@ -3197,7 +3207,7 @@ INT32 I_GetKey(void)
 // -----------------
 #define DI_KEYBOARD_BUFFERSIZE 32 // number of data elements in keyboard buffer
 
-void I_StartupKeyboard(void)
+static void I_StartupKeyboard(void)
 {
 	DIPROPDWORD dip;
 
@@ -3433,6 +3443,8 @@ INT32 I_StartupSystem(void)
 	// some 'more global than globals' things to initialize here ?
 	graphics_started = keyboard_started = sound_started = cdaudio_started = false;
 
+	I_StartupKeyboard();
+
 #ifdef NDEBUG
 
 #ifdef BUGTRAP
@@ -3646,7 +3658,7 @@ const CPUInfoFlags *I_CPUInfo(void)
 }
 
 static void CPUAffinity_OnChange(void);
-static consvar_t cv_cpuaffinity = {"cpuaffinity", "-1", CV_CALL, NULL, CPUAffinity_OnChange, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_cpuaffinity = CVAR_INIT ("cpuaffinity", "-1", CV_CALL, NULL, CPUAffinity_OnChange);
 
 typedef HANDLE (WINAPI *p_GetCurrentProcess) (VOID);
 static p_GetCurrentProcess pfnGetCurrentProcess = NULL;
