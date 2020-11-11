@@ -273,7 +273,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			K_SetHitLagForObjects(t1, t2, 2, true);
+			K_SetHitLagForObjects(t1, t2, 2);
 			K_PuntMine(t1, t2);
 		}
 	}

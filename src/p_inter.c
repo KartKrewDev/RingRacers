@@ -1075,7 +1075,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	if (LUAh_MobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
 		return;
 
-	//K_SetHitLagForObjects(target, inflictor, 15, false);
+	//K_SetHitLagForObjects(target, inflictor, 15);
 
 	// SRB2kart
 	// I wish I knew a better way to do this
@@ -1672,7 +1672,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			break;
 	}
 
-	K_SetHitLagForObjects(player->mo, inflictor, 15, false);
+	K_SetHitLagForObjects(player->mo, inflictor, 15);
 
 	player->pflags &= ~PF_SLIDING;
 	player->powers[pw_carry] = CR_NONE;
@@ -1759,8 +1759,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	player_t *player;
 	boolean force = false;
 
-	INT32 laglength = 2;
-	boolean lagfixed = true;
+	INT32 laglength = 3;
 
 	if (objectplacing)
 		return false;
@@ -1778,7 +1777,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if ((damagetype & DMG_TYPEMASK) != DMG_NORMAL && (damagetype & DMG_TYPEMASK) != DMG_STING)
 	{
 		laglength = 10;
-		lagfixed = false;
 	}
 
 	// Everything above here can't be forced.
@@ -1953,7 +1951,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			player->kartstuff[k_instashield] = 15;
-			K_SetHitLagForObjects(target, inflictor, laglength, lagfixed);
+			K_SetHitLagForObjects(target, inflictor, laglength);
 			return true;
 		}
 	}
@@ -1975,7 +1973,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
 
-	K_SetHitLagForObjects(target, inflictor, laglength, lagfixed);
+	K_SetHitLagForObjects(target, inflictor, laglength);
 
 	if (target->health <= 0)
 	{
@@ -1983,7 +1981,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		return true;
 	}
 
-	//K_SetHitLagForObjects(target, inflictor, laglength, lagfixed);
+	//K_SetHitLagForObjects(target, inflictor, laglength);
 
 	if (player)
 		P_ResetPlayer(target->player);

@@ -2374,7 +2374,7 @@ angle_t K_MomentumAngle(mobj_t *mo)
 	}
 }
 
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fixed)
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
 {
 	boolean mo1valid = (mo1 && !P_MobjWasRemoved(mo1));
 	boolean mo2valid = (mo2 && !P_MobjWasRemoved(mo2));
@@ -2382,7 +2382,7 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fixed)
 	INT32 tics1 = tics;
 	INT32 tics2 = tics;
 
-	if (mo1valid == true && mo2valid == true && fixed == false)
+	if (mo1valid == true && mo2valid == true)
 	{
 		const fixed_t ticaddfactor = mapobjectscale * 8;
 		const INT32 mintics = tics;
