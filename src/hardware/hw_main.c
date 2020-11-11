@@ -3640,7 +3640,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	// hitlag vibrating
 	if (thing->hitlag > 0)
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 20);
+		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
 
 		if (leveltime & 1)
 		{
@@ -4925,7 +4925,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	// hitlag vibrating
 	if (thing->hitlag > 0)
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 20);
+		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
 
 		if (leveltime & 1)
 		{
