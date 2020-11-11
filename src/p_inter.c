@@ -1759,7 +1759,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	player_t *player;
 	boolean force = false;
 
-	INT32 laglength = 3;
+	INT32 laglength = 10;
 
 	if (objectplacing)
 		return false;
@@ -1774,9 +1774,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && source->player->spectator)
 		return false;
 
-	if ((damagetype & DMG_TYPEMASK) != DMG_NORMAL && (damagetype & DMG_TYPEMASK) != DMG_STING)
+	if (((damagetype & DMG_TYPEMASK) == DMG_STING)
+	|| (inflictor->type == MT_BANANA && inflictor->health <= 1))
 	{
-		laglength = 10;
+		laglength = 5;
 	}
 
 	// Everything above here can't be forced.
