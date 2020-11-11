@@ -1775,7 +1775,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		return false;
 
 	if (((damagetype & DMG_TYPEMASK) == DMG_STING)
-	|| (inflictor->type == MT_BANANA && inflictor->health <= 1))
+	|| ((inflictor && !P_MobjWasRemoved(inflictor)) && inflictor->type == MT_BANANA && inflictor->health <= 1))
 	{
 		laglength = 5;
 	}
