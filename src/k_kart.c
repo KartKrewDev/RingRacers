@@ -2376,10 +2376,13 @@ angle_t K_MomentumAngle(mobj_t *mo)
 
 void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fixed)
 {
+	boolean mo1valid = (mo1 && !P_MobjWasRemoved(mo1));
+	boolean mo2valid = (mo2 && !P_MobjWasRemoved(mo2));
+
 	INT32 tics1 = tics;
 	INT32 tics2 = tics;
 
-	if (fixed == false)
+	if (mo1valid == true && mo2valid == true && fixed == false)
 	{
 		const fixed_t ticaddfactor = mapobjectscale * 8;
 		const INT32 mintics = tics;
@@ -2425,8 +2428,15 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fixed)
 
 	//CONS_Printf("tics1: %d, tics2: %d\n", tics1, tics2);
 
-	mo1->hitlag += tics1;
-	mo2->hitlag += tics2;
+	if (mo1valid == true)
+	{
+		mo1->hitlag += tics1;
+	}
+
+	if (mo2valid == true)
+	{
+		mo2->hitlag += tics2;
+	}
 }
 
 void K_DoInstashield(player_t *player)
