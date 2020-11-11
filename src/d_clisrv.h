@@ -37,7 +37,7 @@ applications may follow different packet versions.
 //  be transmitted.
 
 // Networking and tick handling related.
-#define BACKUPTICS 32
+#define BACKUPTICS 1024
 #define TICQUEUE 512 // more than enough for most timeouts....
 #define MAXTEXTCMD 256
 //
