@@ -1369,9 +1369,10 @@ typedef enum
 	MD2_ROLLANGLE    = 1<<14,
 	MD2_SHADOWSCALE  = 1<<15,
 	MD2_DRAWFLAGS    = 1<<16,
-	MD2_WAYPOINTCAP  = 1<<17,
-	MD2_KITEMCAP     = 1<<18,
-	MD2_ITNEXT       = 1<<19,
+	MD2_HITLAG       = 1<<17,
+	MD2_WAYPOINTCAP  = 1<<18,
+	MD2_KITEMCAP     = 1<<19,
+	MD2_ITNEXT       = 1<<20,
 } mobj_diff2_t;
 
 typedef enum
@@ -1586,6 +1587,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_SHADOWSCALE;
 	if (mobj->drawflags)
 		diff2 |= MD2_DRAWFLAGS;
+	if (mobj->hitlag)
+		diff2 |= MD2_HITLAG;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
 	if (mobj == kitemcap)
@@ -1750,6 +1753,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 
 		WRITEUINT16(save_p, df);
 	}
+	if (diff2 & MD2_HITLAG)
+		WRITEINT32(save_p, mobj->hitlag);
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2814,6 +2819,8 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	}
 	if (diff2 & MD2_DRAWFLAGS)
 		mobj->drawflags = READUINT16(save_p);
+	if (diff2 & MD2_HITLAG)
+		mobj->hitlag = READINT32(save_p);
 
 	if (diff & MD_REDFLAG)
 	{

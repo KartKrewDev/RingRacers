@@ -39,6 +39,8 @@ void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
 void K_KartPlayerAfterThink(player_t *player);
+angle_t K_MomentumAngle(mobj_t *mo);
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics);
 void K_DoInstashield(player_t *player);
 void K_BattleHitPlayer(player_t *player, player_t *victim, UINT8 points, boolean reducewanted);
 void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source);

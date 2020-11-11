@@ -3617,9 +3617,9 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 
 static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 {
-	const fixed_t thingxpos = thing->x + thing->sprxoff;
-	const fixed_t thingypos = thing->y + thing->spryoff;
-	const fixed_t thingzpos = thing->z + thing->sprzoff;
+	fixed_t thingxpos = thing->x + thing->sprxoff;
+	fixed_t thingypos = thing->y + thing->spryoff;
+	fixed_t thingzpos = thing->z + thing->sprzoff;
 
 	GLPatch_t *gpatch;
 	FOutVector shadowVerts[4];
@@ -3636,6 +3636,21 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	fixed_t groundz;
 	fixed_t slopez;
 	pslope_t *groundslope;
+
+	// hitlag vibrating
+	if (thing->hitlag > 0)
+	{
+		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+
+		if (leveltime & 1)
+		{
+			mul = -mul;
+		}
+
+		thingxpos += FixedMul(thing->momx, mul);
+		thingypos += FixedMul(thing->momy, mul);
+		thingzpos += FixedMul(thing->momz, mul);
+	}
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
@@ -4867,9 +4882,9 @@ static void HWR_AddSprites(sector_t *sec)
 // BP why not use xtoviexangle/viewangletox like in bsp ?....
 static void HWR_ProjectSprite(mobj_t *thing)
 {
-	const fixed_t thingxpos = thing->x + thing->sprxoff;
-	const fixed_t thingypos = thing->y + thing->spryoff;
-	const fixed_t thingzpos = thing->z + thing->sprzoff;
+	fixed_t thingxpos = thing->x + thing->sprxoff;
+	fixed_t thingypos = thing->y + thing->spryoff;
+	fixed_t thingzpos = thing->z + thing->sprzoff;
 
 	gl_vissprite_t *vis;
 	float tr_x, tr_y;
@@ -4906,6 +4921,21 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if (!thing)
 		return;
+
+	// hitlag vibrating
+	if (thing->hitlag > 0)
+	{
+		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+
+		if (leveltime & 1)
+		{
+			mul = -mul;
+		}
+
+		thingxpos += FixedMul(thing->momx, mul);
+		thingypos += FixedMul(thing->momy, mul);
+		thingzpos += FixedMul(thing->momz, mul);
+	}
 
 	dispoffset = thing->info->dispoffset;
 

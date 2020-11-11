@@ -1457,8 +1457,8 @@ static void K_UpdateDraft(player_t *player)
 				continue;
 
 #ifndef EASYDRAFTTEST
-			yourangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-			theirangle = R_PointToAngle2(0, 0, players[i].mo->momx, players[i].mo->momy);
+			yourangle = K_MomentumAngle(player->mo);
+			theirangle = K_MomentumAngle(players[i].mo);
 
 			diff = R_PointToAngle2(player->mo->x, player->mo->y, players[i].mo->x, players[i].mo->y) - yourangle;
 			if (diff > ANGLE_180)
@@ -2015,7 +2015,7 @@ void K_PlayPowerGloatSound(mobj_t *source)
 
 void K_MomentumToFacing(player_t *player)
 {
-	angle_t dangle = player->mo->angle - R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	angle_t dangle = player->mo->angle - K_MomentumAngle(player->mo);
 
 	if (dangle > ANGLE_180)
 		dangle = InvAngle(dangle);
@@ -2360,6 +2360,83 @@ fixed_t K_3dKartMovement(player_t *player)
 	}
 
 	return finalspeed;
+}
+
+angle_t K_MomentumAngle(mobj_t *mo)
+{
+	if (mo->momx || mo->momy)
+	{
+		return R_PointToAngle2(0, 0, mo->momx, mo->momy);
+	}
+	else
+	{
+		return mo->angle; // default to facing angle, rather than 0
+	}
+}
+
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
+{
+	boolean mo1valid = (mo1 && !P_MobjWasRemoved(mo1));
+	boolean mo2valid = (mo2 && !P_MobjWasRemoved(mo2));
+
+	INT32 tics1 = tics;
+	INT32 tics2 = tics;
+
+	if (mo1valid == true && mo2valid == true)
+	{
+		const fixed_t ticaddfactor = mapobjectscale * 8;
+		const INT32 mintics = tics;
+
+		const fixed_t mo1speed = FixedHypot(FixedHypot(mo1->momx, mo1->momy), mo1->momz);
+		const fixed_t mo2speed = FixedHypot(FixedHypot(mo2->momx, mo2->momy), mo2->momz);
+		const fixed_t speeddiff = mo2speed - mo1speed;
+
+		const fixed_t scalediff = mo2->scale - mo1->scale;
+
+		const angle_t mo1angle = K_MomentumAngle(mo1);
+		const angle_t mo2angle = K_MomentumAngle(mo2);
+
+		angle_t anglediff = mo1angle - mo2angle;
+		fixed_t anglemul = FRACUNIT;
+
+		if (anglediff > ANGLE_180)
+		{
+			anglediff = InvAngle(anglediff);
+		}
+
+		anglemul = FRACUNIT + (AngleFixed(anglediff) / 180); // x1.0 at 0, x1.5 at 90, x2.0 at 180
+
+		/*
+		CONS_Printf("anglemul: %f\n", FIXED_TO_FLOAT(anglemul));
+		CONS_Printf("speeddiff: %f\n", FIXED_TO_FLOAT(speeddiff));
+		CONS_Printf("scalediff: %f\n", FIXED_TO_FLOAT(scalediff));
+		*/
+
+		tics1 += FixedMul(speeddiff, FixedMul(anglemul, FRACUNIT + scalediff)) / ticaddfactor;
+		tics2 += FixedMul(-speeddiff, FixedMul(anglemul, FRACUNIT - scalediff)) / ticaddfactor;
+
+		if (tics1 < mintics)
+		{
+			tics1 = mintics;
+		}
+
+		if (tics2 < mintics)
+		{
+			tics2 = mintics;
+		}
+	}
+
+	//CONS_Printf("tics1: %d, tics2: %d\n", tics1, tics2);
+
+	if (mo1valid == true)
+	{
+		mo1->hitlag += tics1;
+	}
+
+	if (mo2valid == true)
+	{
+		mo2->hitlag += tics2;
+	}
 }
 
 void K_DoInstashield(player_t *player)
@@ -2738,7 +2815,7 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 			if (!bombflashtimer && P_CheckSight(p->mo, source))
 			{
 				bombflashtimer = TICRATE*2;
-				P_FlashPal(p, 1, 1);
+				P_FlashPal(p, PAL_WHITE, 1);
 			}
 			break;	// we can break right now because quakes are global to all split players somehow.
 		}
@@ -3131,7 +3208,7 @@ static void K_SpawnAIZDust(player_t *player)
 	if (player->speed <= K_GetKartSpeed(player, false))
 		return;
 
-	travelangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	travelangle = K_MomentumAngle(player->mo);
 	//S_StartSound(player->mo, sfx_s3k47);
 
 	{
@@ -3175,7 +3252,7 @@ void K_SpawnBoostTrail(player_t *player)
 	if (player->kartstuff[k_drift] != 0)
 		travelangle = player->mo->angle;
 	else
-		travelangle = R_PointToAngle2(0, 0, player->rmomx, player->rmomy);
+		travelangle = K_MomentumAngle(player->mo);
 
 	for (i = 0; i < 2; i++)
 	{
@@ -3267,7 +3344,7 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
 		mo->z, MT_WIPEOUTTRAIL);
 
 	P_SetTarget(&dust->target, mo);
-	dust->angle = R_PointToAngle2(0,0,mo->momx,mo->momy);
+	dust->angle = K_MomentumAngle(mo);
 	dust->destscale = mo->scale;
 	P_SetScale(dust, mo->scale);
 	K_FlipFromObject(dust, mo);
@@ -3400,7 +3477,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 		if (P_AproxDistance(spawner->momx, spawner->momy) < 5*spawner->scale)
 			return;
 
-		anglediff = abs((signed)(spawner->angle - R_PointToAngle2(0, 0, spawner->momx, spawner->momy)));
+		anglediff = abs((signed)(spawner->angle - K_MomentumAngle(spawner)));
 	}
 
 	if (anglediff > ANGLE_180)
@@ -3702,7 +3779,7 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 
 void K_PuntMine(mobj_t *thismine, mobj_t *punter)
 {
-	angle_t fa = R_PointToAngle2(0, 0, punter->momx, punter->momy) >> ANGLETOFINESHIFT;
+	angle_t fa = K_MomentumAngle(punter) >> ANGLETOFINESHIFT;
 	fixed_t z = 30*mapobjectscale + punter->momz;
 	fixed_t spd;
 	mobj_t *mine;
@@ -3739,6 +3816,9 @@ void K_PuntMine(mobj_t *thismine, mobj_t *punter)
 	if (!mine || P_MobjWasRemoved(mine))
 		return;
 
+	if (mine->threshold > 0 || mine->hitlag > 0)
+		return;
+
 	spd = (82 + ((gamespeed-1) * 14))*mapobjectscale; // Avg Speed is 41 in Normal
 
 	mine->flags |= MF_NOCLIPTHING;
@@ -3747,6 +3827,8 @@ void K_PuntMine(mobj_t *thismine, mobj_t *punter)
 	mine->threshold = 10;
 	mine->extravalue1 = 0;
 	mine->reactiontime = mine->info->reactiontime;
+
+	K_SetHitLagForObjects(punter, mine, 5);
 
 	mine->momx = punter->momx + FixedMul(FINECOSINE(fa), spd);
 	mine->momy = punter->momy + FixedMul(FINESINE(fa), spd);
@@ -5372,7 +5454,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					MT_FASTLINE);
 
 				P_SetTarget(&fast->target, player->mo);
-				fast->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+				fast->angle = K_MomentumAngle(player->mo);
 				fast->momx = 3*player->mo->momx/4;
 				fast->momy = 3*player->mo->momy/4;
 				fast->momz = 3*player->mo->momz/4;
@@ -5913,17 +5995,11 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		{
 			boolean finishlinehack  = false;
 			angle_t playerangle     = player->mo->angle;
-			angle_t momangle        = player->mo->angle;
+			angle_t momangle        = K_MomentumAngle(player->mo);
 			angle_t angletowaypoint =
 				R_PointToAngle2(player->mo->x, player->mo->y, waypoint->mobj->x, waypoint->mobj->y);
 			angle_t angledelta      = ANGLE_MAX;
 			angle_t momdelta        = ANGLE_MAX;
-
-			if (player->mo->momx != 0 || player->mo->momy != 0)
-			{
-				// Defaults to facing angle if you're not moving.
-				momangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-			}
 
 			angledelta = playerangle - angletowaypoint;
 			if (angledelta > ANGLE_180)
@@ -6425,7 +6501,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		if (player->kartstuff[k_driftcharge] < 0 || player->kartstuff[k_driftcharge] >= dsone)
 		{
-			angle_t pushdir = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+			angle_t pushdir = K_MomentumAngle(player->mo);
 
 			S_StartSound(player->mo, sfx_s23c);
 			//K_SpawnDashDustRelease(player);
@@ -6863,7 +6939,7 @@ static void K_KartSpindash(player_t *player)
 				mobj_t *grease;
 				grease = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_TIREGREASE);
 				P_SetTarget(&grease->target, player->mo);
-				grease->angle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+				grease->angle = K_MomentumAngle(player->mo);
 				grease->extravalue1 = i;
 			}
 		}
@@ -7528,7 +7604,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (!onground)
 									{
 										P_Thrust(
-											player->mo, R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy),
+											player->mo, K_MomentumAngle(player->mo),
 											FixedMul(player->mo->scale, K_GetKartGameSpeedScalar(gamespeed))
 										);
 									}

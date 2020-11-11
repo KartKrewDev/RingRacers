@@ -357,7 +357,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 						mobj_t *grease;
 						grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
 						P_SetTarget(&grease->target, object);
-						grease->angle = R_PointToAngle2(0, 0, object->momx, object->momy);
+						grease->angle = K_MomentumAngle(object);
 						grease->extravalue1 = i;
 					}
 				}
@@ -1217,19 +1217,31 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam)
 		{
 			if (tmthing->scale > thing->scale + (mapobjectscale/8)) // SRB2kart - Handle squishes first!
+			{
 				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SQUISH);
+			}
 			else if (thing->scale > tmthing->scale + (mapobjectscale/8))
+			{
 				P_DamageMobj(tmthing, thing, thing, 1, DMG_SQUISH);
+			}
 			else if (tmthing->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer]) // SRB2kart - Then invincibility!
+			{
 				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
+			}
 			else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
+			{
 				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
+			}
 			else if ((tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 				&& !(thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
+			{
 				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
+			}
 			else if ((thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 				&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD))
+			{
 				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
+			}
 		}
 	}
 
@@ -2471,6 +2483,12 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	// Originally was MAXRADIUS/2, but that causes some inconsistencies for small players.
 	if (radius < mapobjectscale)
 		radius = mapobjectscale;
+
+	if (thing->hitlag > 0)
+	{
+		// Do not move during hitlag
+		return false;
+	}
 
 	do {
 		if (thing->flags & MF_NOCLIP) {

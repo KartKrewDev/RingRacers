@@ -2271,7 +2271,7 @@ void P_MovePlayer(player_t *player)
 
 		if (trailScale > 0)
 		{
-			const angle_t forwardangle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+			const angle_t forwardangle = K_MomentumAngle(player->mo);
 			const fixed_t playerVisualRadius = player->mo->radius + 8*FRACUNIT;
 			const size_t numFrames = S_WATERTRAIL8 - S_WATERTRAIL1;
 			const statenum_t curOverlayFrame = S_WATERTRAIL1 + (leveltime % numFrames);
@@ -4071,7 +4071,7 @@ static void P_HandleFollower(player_t *player)
 			player->follower->drawflags |= MFD_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
-			player->follower->angle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);
+			player->follower->angle = K_MomentumAngle(player->follower);
 			// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
 			// Make sure the follower itself is also moving however, otherwise we'll be facing angle 0
 
@@ -4216,6 +4216,11 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 #endif
+
+	if (player->mo->hitlag > 0)
+	{
+		return;
+	}
 
 	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
 	{
