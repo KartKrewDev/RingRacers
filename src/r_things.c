@@ -1074,14 +1074,6 @@ static void R_SplitSprite(vissprite_t *sprite)
 		sprite->sz = cutfrac;
 		newsprite->szt = (INT16)(sprite->sz - 1);
 
-		if (testheight < sprite->pzt && testheight > sprite->pz)
-			sprite->pz = newsprite->pzt = testheight;
-		else
-		{
-			newsprite->pz = newsprite->gz;
-			newsprite->pzt = newsprite->gzt;
-		}
-
 		newsprite->szt -= 8;
 
 		newsprite->cut |= SC_TOP;
@@ -1238,6 +1230,32 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 	return groundz;
 }
 
+static void R_SetSpritePlaneHeights(vissprite_t *vis)
+{
+	ffloor_t *rover;
+
+	fixed_t top;
+	fixed_t bot;
+
+	vis->pt = vis->sector->floorheight;
+	vis->pb = vis->sector->ceilingheight;
+
+	for (rover = vis->sector->ffloors; rover; rover = rover->next)
+	{
+		if (rover->flags & FF_EXISTS)
+		{
+			top = P_GetFFloorTopZAt    (rover, vis->gx, vis->gy);
+			bot = P_GetFFloorBottomZAt (rover, vis->gx, vis->gy);
+
+			if (top <= vis->gzt && top > vis->pt)
+				vis->pt = top;
+
+			if (bot >= vis->gz && bot < vis->pb)
+				vis->pb = bot;
+		}
+	}
+}
+
 static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
 {
 	vissprite_t *shadow;
@@ -1305,16 +1323,12 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->patch = patch;
 	shadow->heightsec = vis->heightsec;
 
-	shadow->thingheight = FRACUNIT;
-	shadow->pz = groundz + (isflipped ? -shadow->thingheight : 0);
-	shadow->pzt = shadow->pz + shadow->thingheight;
-
 	shadow->mobjflags = 0;
 	shadow->sortscale = vis->sortscale;
 	shadow->dispoffset = vis->dispoffset - 5;
 	shadow->gx = thing->x;
 	shadow->gy = thing->y;
-	shadow->gzt = (isflipped ? shadow->pzt : shadow->pz) + SHORT(patch->height) * shadowyscale / 2;
+	shadow->gzt = groundz + SHORT(patch->height) * shadowyscale / 2;
 	shadow->gz = shadow->gzt - SHORT(patch->height) * shadowyscale;
 	shadow->texturemid = FixedMul(thing->scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
 	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
@@ -1330,6 +1344,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->xscale = FixedMul(xscale, shadowxscale); //SoM: 4/17/2000
 	shadow->scale = FixedMul(yscale, shadowyscale);
 	shadow->sector = vis->sector;
+	shadow->pt = vis->pt;
+	shadow->pb = vis->pb;
 	shadow->szt = (INT16)((centeryfrac - FixedMul(shadow->gzt - viewz, yscale))>>FRACBITS);
 	shadow->sz = (INT16)((centeryfrac - FixedMul(shadow->gz - viewz, yscale))>>FRACBITS);
 	shadow->cut = SC_ISSCALED|SC_SHADOW; //check this
@@ -1387,9 +1403,9 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 //
 static void R_ProjectSprite(mobj_t *thing)
 {
-	const fixed_t thingxpos = thing->x + thing->sprxoff;
-	const fixed_t thingypos = thing->y + thing->spryoff;
-	const fixed_t thingzpos = thing->z + thing->sprzoff;
+	fixed_t thingxpos = thing->x + thing->sprxoff;
+	fixed_t thingypos = thing->y + thing->spryoff;
+	fixed_t thingzpos = thing->z + thing->sprzoff;
 
 	mobj_t *oldthing = thing;
 
@@ -1447,6 +1463,21 @@ static void R_ProjectSprite(mobj_t *thing)
 	patch_t *rotsprite = NULL;
 	INT32 rollangle = 0;
 #endif
+
+	// hitlag vibrating
+	if (thing->hitlag > 0)
+	{
+		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+
+		if (leveltime & 1)
+		{
+			mul = -mul;
+		}
+
+		thingxpos += FixedMul(thing->momx, mul);
+		thingypos += FixedMul(thing->momy, mul);
+		thingzpos += FixedMul(thing->momz, mul);
+	}
 
 	// transform the origin point
 	tr_x = thingxpos - viewx;
@@ -1812,9 +1843,6 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->gy = thingypos;
 	vis->gz = gz;
 	vis->gzt = gzt;
-	vis->thingheight = thing->height;
-	vis->pz = thingzpos;
-	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = vis->gzt - viewz;
 	vis->scalestep = scalestep;
 	vis->paperoffset = paperoffset;
@@ -1832,6 +1860,9 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->sector = thing->subsector->sector;
 	vis->szt = (INT16)((centeryfrac - FixedMul(vis->gzt - viewz, sortscale))>>FRACBITS);
 	vis->sz = (INT16)((centeryfrac - FixedMul(vis->gz - viewz, sortscale))>>FRACBITS);
+
+	R_SetSpritePlaneHeights(vis);
+
 	vis->cut = cut;
 	if (thing->subsector->sector->numlights)
 		vis->extra_colormap = *thing->subsector->sector->lightlist[light].extra_colormap;
@@ -2032,9 +2063,6 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->gy = thing->y;
 	vis->gz = gz;
 	vis->gzt = gzt;
-	vis->thingheight = 4*FRACUNIT;
-	vis->pz = thing->z;
-	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = vis->gzt - viewz;
 	vis->scalestep = 0;
 	vis->paperdistance = 0;
@@ -2048,6 +2076,8 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->sector = thing->subsector->sector;
 	vis->szt = (INT16)((centeryfrac - FixedMul(vis->gzt - viewz, yscale))>>FRACBITS);
 	vis->sz = (INT16)((centeryfrac - FixedMul(vis->gz - viewz, yscale))>>FRACBITS);
+
+	R_SetSpritePlaneHeights(vis);
 
 	iscale = FixedDiv(FRACUNIT, xscale);
 
@@ -2425,19 +2455,15 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 				planeobjectz = P_GetZAt(r2->plane->slope, rover->gx, rover->gy, r2->plane->height);
 				planecameraz = P_GetZAt(r2->plane->slope,     viewx,     viewy, r2->plane->height);
 
-				if (rover->mobjflags & MF_NOCLIPHEIGHT)
+				// bird: if any part of the sprite peeks in front the plane
+				if (planecameraz < viewz)
 				{
-					//Objects with NOCLIPHEIGHT can appear halfway in.
-					if (planecameraz < viewz && rover->pz+(rover->thingheight/2) >= planeobjectz)
-						continue;
-					if (planecameraz > viewz && rover->pzt-(rover->thingheight/2) <= planeobjectz)
+					if (rover->pt >= planeobjectz && rover->gzt >= planeobjectz)
 						continue;
 				}
-				else
+				else if (planecameraz > viewz)
 				{
-					if (planecameraz < viewz && rover->pz >= planeobjectz)
-						continue;
-					if (planecameraz > viewz && rover->pzt <= planeobjectz)
+					if (rover->pb <= planeobjectz && rover->gz <= planeobjectz)
 						continue;
 				}
 

@@ -452,6 +452,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->threshold > 0)
 				return;
 
+			if (toucher->hitlag > 0)
+				return;
+
 			player->powers[pw_emeralds] |= special->extravalue1;
 			K_CheckEmeralds(player);
 			break;
@@ -1101,6 +1104,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	if (LUAh_MobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
 		return;
 
+	//K_SetHitLagForObjects(target, inflictor, 15);
+
 	// SRB2kart
 	// I wish I knew a better way to do this
 	if (target->target && target->target->player && target->target->player->mo)
@@ -1672,8 +1677,10 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 	return true;
 }
 
-static boolean P_KillPlayer(player_t *player, UINT8 type)
+static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
+	(void)source;
+
 	if (player->exiting)
 	{
 		player->mo->destscale = 1;
@@ -1694,6 +1701,7 @@ static boolean P_KillPlayer(player_t *player, UINT8 type)
 	}
 
 	K_DropEmeraldsFromPlayer(player, player->powers[pw_emeralds]);
+	K_SetHitLagForObjects(player->mo, inflictor, 15);
 
 	player->pflags &= ~PF_SLIDING;
 	player->powers[pw_carry] = CR_NONE;
@@ -1783,6 +1791,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	player_t *player;
 	boolean force = false;
 
+	INT32 laglength = 10;
+
 	if (objectplacing)
 		return false;
 
@@ -1790,13 +1800,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		return false;
 
 	// Spectator handling
-	if (multiplayer)
-	{
-		if (damagetype != DMG_SPECTATOR && target->player && target->player->spectator)
-			return false;
+	if (damagetype != DMG_SPECTATOR && target->player && target->player->spectator)
+		return false;
 
-		if (source && source->player && source->player->spectator)
-			return false;
+	if (source && source->player && source->player->spectator)
+		return false;
+
+	if (((damagetype & DMG_TYPEMASK) == DMG_STING)
+	|| ((inflictor && !P_MobjWasRemoved(inflictor)) && inflictor->type == MT_BANANA && inflictor->health <= 1))
+	{
+		laglength = 5;
 	}
 
 	// Everything above here can't be forced.
@@ -1860,7 +1873,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		// Instant-Death
 		if ((damagetype & DMG_DEATHMASK))
 		{
-			if (!P_KillPlayer(player, damagetype))
+			if (!P_KillPlayer(player, inflictor, source, damagetype))
 				return false;
 		}
 		else if (LUAh_MobjDamage(target, inflictor, source, damage, damagetype))
@@ -1994,6 +2007,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			player->kartstuff[k_instashield] = 15;
+			K_SetHitLagForObjects(target, inflictor, laglength);
 			return true;
 		}
 	}
@@ -2015,11 +2029,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
 
+	K_SetHitLagForObjects(target, inflictor, laglength);
+
 	if (target->health <= 0)
 	{
 		P_KillMobj(target, inflictor, source, damagetype);
 		return true;
 	}
+
+	//K_SetHitLagForObjects(target, inflictor, laglength);
 
 	if (player)
 		P_ResetPlayer(target->player);

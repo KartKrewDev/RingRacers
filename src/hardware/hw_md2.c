@@ -1340,9 +1340,9 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 	// Look at HWR_ProjectSprite for more
 	{
-		const fixed_t thingxpos = spr->mobj->x + spr->mobj->sprxoff;
-		const fixed_t thingypos = spr->mobj->y + spr->mobj->spryoff;
-		const fixed_t thingzpos = spr->mobj->z + spr->mobj->sprzoff;
+		fixed_t thingxpos = spr->mobj->x + spr->mobj->sprxoff;
+		fixed_t thingypos = spr->mobj->y + spr->mobj->spryoff;
+		fixed_t thingzpos = spr->mobj->z + spr->mobj->sprzoff;
 
 		GLPatch_t *gpatch;
 		INT32 durs = spr->mobj->state->tics;
@@ -1357,6 +1357,21 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		angle_t ang;
 		INT32 mod;
 		float finalscale;
+
+		// hitlag vibrating
+		if (spr->mobj->hitlag > 0)
+		{
+			fixed_t mul = spr->mobj->hitlag * (FRACUNIT / 10);
+
+			if (leveltime & 1)
+			{
+				mul = -mul;
+			}
+
+			thingxpos += FixedMul(spr->mobj->momx, mul);
+			thingypos += FixedMul(spr->mobj->momy, mul);
+			thingzpos += FixedMul(spr->mobj->momz, mul);
+		}
 
 		// Apparently people don't like jump frames like that, so back it goes
 		//if (tics > durs)
