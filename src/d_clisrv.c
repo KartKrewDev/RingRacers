@@ -5564,7 +5564,10 @@ static void CL_SendClientCmd(void)
 	boolean mis = false;
 
 	if (lowest_lag && ( gametic % lowest_lag ))
+	{
+		cl_packetmissed = true;
 		return;
+	}
 
 	netbuffer->packettype = PT_CLIENTCMD;
 
