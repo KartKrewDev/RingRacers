@@ -4303,6 +4303,7 @@ void P_PlayerThink(player_t *player)
 
 				if (player->playerstate == PST_DEAD)
 				{
+					LUAh_PlayerThink(player);
 					return;
 				}
 			}

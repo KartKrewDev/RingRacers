@@ -567,6 +567,7 @@ extern INT32 mapchangepending;
 
 // Points inside doomcom
 extern doomdata_t *netbuffer;
+extern consvar_t cv_stunserver;
 extern consvar_t cv_httpsource;
 
 extern consvar_t cv_showjoinaddress;
