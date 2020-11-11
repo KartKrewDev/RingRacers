@@ -3816,6 +3816,9 @@ void K_PuntMine(mobj_t *thismine, mobj_t *punter)
 	if (!mine || P_MobjWasRemoved(mine))
 		return;
 
+	if (mine->threshold > 0 || mine->hitlag > 0)
+		return;
+
 	spd = (82 + ((gamespeed-1) * 14))*mapobjectscale; // Avg Speed is 41 in Normal
 
 	mine->flags |= MF_NOCLIPTHING;
@@ -3824,6 +3827,8 @@ void K_PuntMine(mobj_t *thismine, mobj_t *punter)
 	mine->threshold = 10;
 	mine->extravalue1 = 0;
 	mine->reactiontime = mine->info->reactiontime;
+
+	K_SetHitLagForObjects(punter, mine, 5);
 
 	mine->momx = punter->momx + FixedMul(FINECOSINE(fa), spd);
 	mine->momy = punter->momy + FixedMul(FINESINE(fa), spd);
