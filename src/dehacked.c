@@ -9317,6 +9317,9 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_WATERTRAILUNDERLAY7",
 	"S_WATERTRAILUNDERLAY8",
 
+	"S_SPINDASHDUST",
+	"S_SPINDASHWIND",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -10396,6 +10399,9 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_WATERTRAIL",
 	"MT_WATERTRAILUNDERLAY",
+
+	"MT_SPINDASHDUST",
+	"MT_SPINDASHWIND",
 
 #ifdef SEENAMES
 	"MT_NAMECHECK",
