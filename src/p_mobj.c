@@ -6348,7 +6348,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			ghost->colorized = true; // already has color!
 		}
 
-		if (P_IsObjectOnGround(mobj) && (mobj->state == &states[S_SSMINE_AIR1] || mobj->state == &states[S_SSMINE_AIR2]))
+		if (P_IsObjectOnGround(mobj) && (mobj->momz * P_MobjFlip(mobj)) <= 0
+		&& (mobj->state == &states[S_SSMINE_AIR1] || mobj->state == &states[S_SSMINE_AIR2]))
 		{
 			if (mobj->extravalue1 > 0)
 				mobj->extravalue1--;
@@ -8397,12 +8398,6 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
-	if (mobj->flags & MF_NOTHINK)
-		return;
-
-	if ((mobj->flags & MF_BOSS) && mobj->spawnpoint && (bossdisabled & (1<<mobj->spawnpoint->extrainfo)))
-		return;
-
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
 		P_SetTarget(&mobj->target, NULL);
@@ -8412,6 +8407,12 @@ void P_MobjThinker(mobj_t *mobj)
 		P_SetTarget(&mobj->hnext, NULL);
 	if (mobj->hprev && P_MobjWasRemoved(mobj->hprev))
 		P_SetTarget(&mobj->hprev, NULL);
+
+	if (mobj->flags & MF_NOTHINK)
+		return;
+
+	if ((mobj->flags & MF_BOSS) && mobj->spawnpoint && (bossdisabled & (1<<mobj->spawnpoint->extrainfo)))
+		return;
 
 	// Don't run any thinker code while in hitlag
 	if (mobj->hitlag > 0)

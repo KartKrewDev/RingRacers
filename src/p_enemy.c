@@ -4457,9 +4457,6 @@ void A_GrenadeRing(mobj_t *actor)
 	if (actor->flags2 & MF2_DEBRIS)
 		return;
 
-	if (actor->hitlag > 0)
-		return;
-
 	if (actor->state == &states[S_SSMINE_DEPLOY8])
 		explodedist = (3*explodedist)/2;
 
@@ -4484,7 +4481,7 @@ static inline boolean PIT_MineExplode(mobj_t *thing)
 	if (!grenade || P_MobjWasRemoved(grenade))
 		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
 
-	if (grenade->flags2 & MF2_DEBRIS)	// don't explode twice
+	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
 		return false;
 
 	if (thing == grenade || thing->type == MT_MINEEXPLOSIONSOUND) // Don't explode yourself! Endless loop!
@@ -4525,9 +4522,6 @@ void A_SSMineExplode(mobj_t *actor)
 		return;
 
 	if (actor->flags2 & MF2_DEBRIS)
-		return;
-
-	if (actor->hitlag > 0)
 		return;
 
 	type = (mobjtype_t)locvar1;
