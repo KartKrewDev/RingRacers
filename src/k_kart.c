@@ -2461,93 +2461,51 @@ void K_DoInstashield(player_t *player)
 	P_SetTarget(&layerb->target, player->mo);
 }
 
-void K_BattleHitPlayer(player_t *player, player_t *victim, UINT8 points, boolean reducewanted)
+void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved)
 {
-	if (reducewanted == false)
-		points = 1; // Force to 1
+	UINT8 points = 1;
+	boolean trapItem = false;
+
+	if (player == NULL || victim == NULL)
+	{
+		// Invalid player or victim
+		return;
+	}
+
+	if (player == victim)
+	{
+		// You cannot give yourself points
+		return;
+	}
+
+	if ((inflictor && !P_MobjWasRemoved(inflictor)) && (inflictor->type == MT_BANANA && inflictor->health > 1))
+	{
+		trapItem = true;
+	}
+
+	// Only apply score bonuses to non-bananas
+	if (trapItem == false)
+	{
+		if (K_IsPlayerWanted(victim))
+		{
+			// +3 points for hitting a wanted player
+			points = 3;
+		}
+		else if (gametyperules & GTR_BUMPERS)
+		{
+			if ((victim->bumpers > 0) && (victim->bumpers <= bumpersRemoved))
+			{
+				// +2 points for finishing off a player
+				points = 2;
+			}
+		}
+	}
 
 	if (gametyperules & GTR_POINTLIMIT)
 	{
 		P_AddPlayerScore(player, points);
 		K_SpawnBattlePoints(player, victim, points);
 	}
-
-	if ((gametyperules & GTR_WANTED) && (reducewanted == true))
-	{
-		// Seems a little backwards, but the WANTED system is meant to prevent camping.
-		// If you don't want people to go after you, then be proactive!
-		player->kartstuff[k_wanted] -= wantedreduce;
-		victim->kartstuff[k_wanted] -= (wantedreduce/2);
-	}
-}
-
-void K_RemoveBumper(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 amount, boolean force)
-{
-	UINT8 score = 1;
-	boolean trapitem = false;
-
-	if (amount <= 0)
-		return;
-
-	if (!(gametyperules & GTR_BUMPERS))
-		return;
-
-	if (force == false)
-	{
-		if (player->powers[pw_flashing] || P_PlayerInPain(player))
-			return;
-	}
-
-	if (inflictor && !P_MobjWasRemoved(inflictor))
-	{
-		if (inflictor->type == MT_BANANA && inflictor->health <= 1)
-		{
-			trapitem = true;
-		}
-	}
-
-	if (gametyperules & GTR_POINTLIMIT)
-	{
-		if (K_IsPlayerWanted(player))
-			score = 3;
-		else if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= amount))
-			score = 2;
-	}
-
-	if (source && source->player && player != source->player)
-	{
-		K_BattleHitPlayer(source->player, player, score, trapitem);
-	}
-
-	if (player->bumpers > 0)
-	{
-		if (player->bumpers <= amount)
-		{
-			mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX); // Player hitbox is too small!!
-			P_SetTarget(&karmahitbox->target, player->mo);
-			karmahitbox->destscale = player->mo->scale;
-			P_SetScale(karmahitbox, player->mo->scale);
-			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
-		}
-
-		player->bumpers -= amount;
-		K_CalculateBattleWanted();
-	}
-
-	if (player->bumpers <= 0)
-	{
-		player->bumpers = 0;
-		player->karmadelay = comebacktime;
-
-		if (player->kartstuff[k_comebackmode] == 2)
-		{
-			mobj_t *poof = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EXPLODE);
-			S_StartSound(poof, mobjinfo[MT_KARMAHITBOX].seesound);
-			player->kartstuff[k_comebackmode] = 0;
-		}
-	}
-
-	K_CheckBumpers();
 }
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
@@ -2660,30 +2618,110 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 
-void K_StealBumper(player_t *player, player_t *victim, UINT8 amount)
+void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 {
-	INT32 intendedamount = player->bumpers + amount;
-	INT32 newbumper;
-	angle_t newangle, diff;
-	fixed_t newx, newy;
-	mobj_t *newmo;
-
-	if (amount <= 0)
+	if (!(gametyperules & GTR_BUMPERS))
+	{
+		// Bumpers aren't being used
 		return;
+	}
+
+	// TODO: replace all console text print-outs with a real visual
+
+	if (player->bumpers > 0 && prevBumpers == 0)
+	{
+		if (player->kartstuff[k_comebackmode] == 2)
+		{
+			mobj_t *poof = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EXPLODE);
+			S_StartSound(poof, mobjinfo[MT_KARMAHITBOX].seesound);
+		}
+
+		player->kartstuff[k_comebackmode] = 0;
+
+		if (netgame)
+		{
+			CONS_Printf(M_GetText("%s is back in the game!\n"), player_names[player-players]);
+		}
+	}
+	else if (player->bumpers == 0 && prevBumpers > 0)
+	{
+		mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX);
+		P_SetTarget(&karmahitbox->target, player->mo);
+
+		karmahitbox->destscale = player->mo->destscale;
+		P_SetScale(karmahitbox, player->mo->scale);
+
+		if (netgame)
+		{
+			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
+		}
+	}
+
+	player->karmadelay = comebacktime;
+	K_CalculateBattleWanted();
+	K_CheckBumpers();
+}
+
+void K_DestroyBumpers(player_t *player, UINT8 amount)
+{
+	UINT8 oldBumpers = player->bumpers;
 
 	if (!(gametyperules & GTR_BUMPERS))
-		return;
-
-	if (netgame && player->bumpers <= 0)
-		CONS_Printf(M_GetText("%s is back in the game!\n"), player_names[player-players]);
-
-	while (player->bumpers < intendedamount)
 	{
-		newbumper = player->bumpers;
+		return;
+	}
+
+	amount = min(amount, player->bumpers);
+
+	if (amount == 0)
+	{
+		return;
+	}
+
+	player->bumpers -= amount;
+
+	// TODO: Store a bumperlist on the player mobj,
+	// that way we can do a bumper destruction animation
+
+	K_HandleBumperChanges(player, oldBumpers);
+}
+
+void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
+{
+	UINT8 oldPlayerBumpers = player->bumpers;
+	UINT8 oldVictimBumpers = victim->bumpers;
+
+	UINT8 tookBumpers = 0;
+
+	if (!(gametyperules & GTR_BUMPERS))
+	{
+		return;
+	}
+
+	amount = min(amount, victim->bumpers);
+
+	if (amount == 0)
+	{
+		return;
+	}
+
+	while ((tookBumpers < amount) && (victim->bumpers > 0))
+	{
+		UINT8 newbumper = player->bumpers;
+
+		angle_t newangle, diff;
+		fixed_t newx, newy;
+
+		mobj_t *newmo;
+
 		if (newbumper <= 1)
+		{
 			diff = 0;
+		}
 		else
+		{
 			diff = FixedAngle(360*FRACUNIT/newbumper);
+		}
 
 		newangle = player->mo->angle;
 		newx = player->mo->x + P_ReturnThrustX(player->mo, newangle + ANGLE_180, 64*FRACUNIT);
@@ -2691,36 +2729,42 @@ void K_StealBumper(player_t *player, player_t *victim, UINT8 amount)
 
 		newmo = P_SpawnMobj(newx, newy, player->mo->z, MT_BATTLEBUMPER);
 		newmo->threshold = newbumper;
+
 		P_SetTarget(&newmo->tracer, victim->mo);
 		P_SetTarget(&newmo->target, player->mo);
+
 		newmo->angle = (diff * (newbumper-1));
 		newmo->color = victim->skincolor;
 
 		if (newbumper+1 < 2)
+		{
 			P_SetMobjState(newmo, S_BATTLEBUMPER3);
+		}
 		else if (newbumper+1 < 3)
+		{
 			P_SetMobjState(newmo, S_BATTLEBUMPER2);
+		}
 		else
+		{
 			P_SetMobjState(newmo, S_BATTLEBUMPER1);
+		}
 
 		player->bumpers++;
+		victim->bumpers--;
+		tookBumpers++;
 	}
 
+	if (tookBumpers == 0)
+	{
+		// No change occured.
+		return;
+	}
+
+	// Play steal sound
 	S_StartSound(player->mo, sfx_3db06);
 
-	player->powers[pw_flashing] = K_GetKartFlashing(player);
-	player->karmadelay = comebacktime;
-
-	/*
-	victim->powers[pw_flashing] = K_GetKartFlashing(victim);
-	victim->karmadelay = comebacktime;
-	*/
-
-	victim->kartstuff[k_instashield] = 15;
-	if (cv_kartdebughuddrop.value && !modeattacking)
-		K_DropItems(victim);
-	else
-		K_DropHnextList(victim, false);
+	K_HandleBumperChanges(player, oldPlayerBumpers);
+	K_HandleBumperChanges(victim, oldVictimBumpers);
 }
 
 // source is the mobj that originally threw the bomb that exploded etc.

@@ -5278,15 +5278,23 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	case MT_BATTLEBUMPER:
-		if (mobj->health > 0 && mobj->target && mobj->target->player
-			&& mobj->target->health > 0 && !mobj->target->player->spectator)
+		if (mobj->health <= 0)
 		{
+			// DO EXPLODE ANIMATION HERE
+			//CONS_Printf("bumper explosion\n");
+			P_RemoveMobj(mobj);
+			return;
+		}
+		else if (mobj->target && mobj->target->player && mobj->target->health > 0 && !mobj->target->player->spectator)
+		{
+			// Following a player
+
 			fixed_t rad = 32*mobj->target->scale;
 			fixed_t offz;
 			angle_t ang, diff;
 
 			if (!((mobj->target->player-players) & 1))
-				ang = (FixedAngle(mobj->info->speed) * -1);
+				ang = -FixedAngle(mobj->info->speed);
 			else
 				ang = FixedAngle(mobj->info->speed);
 
@@ -5341,21 +5349,20 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				P_SetThingPosition(mobj);
 			}
 
-			// Was this so hard?
 			if (mobj->target->player->bumpers <= mobj->threshold)
 			{
+				// Sliently remove
 				P_RemoveMobj(mobj);
 				return;
 			}
 		}
-		else if ((mobj->health > 0
-			&& (!mobj->target || !mobj->target->player || !mobj->target->player->mo || mobj->target->health <= 0 || mobj->target->player->spectator))
-			|| (mobj->health <= 0 && P_IsObjectOnGround(mobj))
-			|| P_CheckDeathPitCollide(mobj)) // When in death state
+		else
 		{
+			// Sliently remove
 			P_RemoveMobj(mobj);
 			return;
 		}
+
 		break;
 	case MT_PLAYERARROW:
 		if (mobj->target && mobj->target->health
@@ -10167,20 +10174,25 @@ void P_SpawnPlayer(INT32 playernum)
 	P_SetScale(mobj, mobj->destscale);
 	P_FlashPal(p, 0, 0); // Resets
 
-	if ((gametyperules & GTR_BUMPERS)) // SRB2kart
+	if (gametyperules & GTR_BUMPERS)
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);
 		P_SetTarget(&overheadarrow->target, mobj);
 		overheadarrow->drawflags |= MFD_DONTDRAW;
 		P_SetScale(overheadarrow, mobj->destscale);
 
-		if (p->spectator && pcount > 1) // HEY! No being cheap...
-			p->bumpers = 0;
-		else if (p->bumpers > 0 || leveltime < 1
-			|| (p->jointime <= 1 && pcount <= 1))
+		if (p->spectator)
 		{
-			if (leveltime < 1 || (p->jointime <= 1 && pcount <= 1)) // Start of the map?
-				p->bumpers = K_StartingBumperCount(); // Reset those bumpers!
+			// HEY! No being cheap...
+			p->bumpers = 0;
+		}
+		else if ((p->bumpers > 0) || (leveltime < starttime) || (pcount <= 1))
+		{
+			if ((leveltime < starttime) || (pcount <= 1)) // Start of the map?
+			{
+				// Reset those bumpers!
+				p->bumpers = K_StartingBumperCount(); 
+			}
 
 			if (p->bumpers)
 			{

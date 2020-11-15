@@ -305,7 +305,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				{
 					mobj_t *boom;
 
-					if (P_DamageMobj(toucher, special, special->target, 1, DMG_EXPLODE) == false)
+					if (P_DamageMobj(toucher, special, special->target, 1, DMG_KARMA) == false)
 					{
 						return;
 					}
@@ -322,9 +322,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						boom->color = SKINCOLOR_KETCHUP;
 
 					S_StartSound(boom, special->info->attacksound);
-
-					K_StealBumper(special->target->player, player, max(1, player->bumpers-1)); // bumpers-1 to slowly remove bumpers from the economy
-					K_RemoveBumper(player, special->target, special->target, player->bumpers, true);
 
 					special->target->player->karthud[khud_yougotem] = 2*TICRATE;
 					special->target->player->karmadelay = comebacktime;
@@ -1692,7 +1689,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	{
 		case DMG_DEATHPIT:
 			// Respawn kill types
-			K_RemoveBumper(player, NULL, NULL, 1, true);
+			K_DestroyBumpers(player, 1);
 			K_DoIngameRespawn(player);
 			return false;
 		default:
@@ -1733,7 +1730,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			P_SetTarget(&boom->target, player->mo);
 		}
 
-		K_RemoveBumper(player, NULL, NULL, player->bumpers, true);
+		K_DestroyBumpers(player, player->bumpers);
 		player->eliminated = true;
 	}
 
@@ -1923,31 +1920,54 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				}
 			}
 
-			// We successfully hit 'em!
+			// We successfully damaged them! Give 'em some bumpers!
 			if (type != DMG_STING)
 			{
-				UINT8 bumpadd = 1;
+				UINT8 takeBumpers = 1;
 
 				if (damagetype & DMG_STEAL)
 				{
-					bumpadd = 2;
+					takeBumpers = 2;
+
+					if (type == DMG_KARMA)
+					{
+						takeBumpers = player->bumpers;
+					}
+				}
+				else
+				{
+					if (type == DMG_KARMA)
+					{
+						// Take half of their bumpers for karma comeback damage
+						takeBumpers = max(1, player->bumpers / 2);
+					}
 				}
 
 				if (source && source != player->mo && source->player)
 				{
 					K_PlayHitEmSound(source);
-					K_StealBumper(source->player, player, bumpadd);
+
+					K_BattleAwardHit(source->player, player, inflictor, takeBumpers);
+					K_TakeBumpersFromPlayer(source->player, player, takeBumpers);
+
+					if (type == DMG_KARMA)
+					{
+						// Destroy any remainder bumpers from the player for karma comeback damage
+						K_DestroyBumpers(player, player->bumpers);
+					}
 
 					if (damagetype & DMG_STEAL)
 					{
-						// Give them ALL of your emeralds :)
+						// Give them ALL of your emeralds instantly :)
 						source->player->powers[pw_emeralds] |= player->powers[pw_emeralds];
 						player->powers[pw_emeralds] = 0;
 						K_CheckEmeralds(source->player);
 					}
 				}
-
-				K_RemoveBumper(player, inflictor, source, bumpadd, false);
+				else
+				{
+					K_DestroyBumpers(player, takeBumpers);
+				}
 
 				if (!(damagetype & DMG_STEAL))
 				{
@@ -1968,6 +1988,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = 0;
 					break;
 				case DMG_EXPLODE:
+				case DMG_KARMA:
 					K_ExplodePlayer(player, inflictor, source);
 					break;
 				case DMG_WIPEOUT:
@@ -1997,7 +2018,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			K_PlayPainSound(player->mo);
 
-			if ((type == DMG_EXPLODE) || (cv_kartdebughuddrop.value && !modeattacking))
+			if ((type == DMG_EXPLODE || type == DMG_KARMA) || (cv_kartdebughuddrop.value && !modeattacking))
 			{
 				K_DropItems(player);
 			}

@@ -3432,7 +3432,7 @@ static int lib_kExplodePlayer(lua_State *L)
 	return 0;
 }
 
-static int lib_kStealBumper(lua_State *L)
+static int lib_kTakeBumpersFromPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	player_t *victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
@@ -3442,7 +3442,7 @@ static int lib_kStealBumper(lua_State *L)
 		return LUA_ErrInvalid(L, "player_t");
 	if (!victim)
 		return LUA_ErrInvalid(L, "player_t");
-	K_StealBumper(player, victim, amount);
+	K_TakeBumpersFromPlayer(player, victim, amount);
 	return 0;
 }
 
@@ -3919,7 +3919,7 @@ static luaL_Reg lib[] = {
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_SquishPlayer",lib_kSquishPlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
-	{"K_StealBumper",lib_kStealBumper},
+	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_SpawnKartExplosion",lib_kSpawnKartExplosion},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
 	{"K_SpawnBoostTrail",lib_kSpawnBoostTrail},

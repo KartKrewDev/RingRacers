@@ -257,7 +257,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
 
-		WRITEINT16(save_p, players[i].bumpers);
+		WRITEUINT8(save_p, players[i].bumpers);
 		WRITEINT16(save_p, players[i].karmadelay);
 		WRITEUINT8(save_p, players[i].eliminated);
 
@@ -447,7 +447,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
 
-		players[i].bumpers = READINT16(save_p);
+		players[i].bumpers = READUINT8(save_p);
 		players[i].karmadelay = READINT16(save_p);
 		players[i].eliminated = (boolean)READUINT8(save_p);
 
