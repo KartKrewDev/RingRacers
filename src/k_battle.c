@@ -308,6 +308,7 @@ mobj_t *K_SpawnChaosEmerald(mobj_t *parent, angle_t angle, SINT8 flip, UINT32 em
 {
 	boolean validEmerald = true;
 	mobj_t *emerald = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_EMERALD);
+	mobj_t *overlay;
 
 	P_Thrust(emerald,
 		FixedAngle(P_RandomFixed() * 180) + angle,
@@ -322,25 +323,25 @@ mobj_t *K_SpawnChaosEmerald(mobj_t *parent, angle_t angle, SINT8 flip, UINT32 em
 	switch (emeraldType)
 	{
 		case EMERALD_CHAOS1:
-			P_SetMobjState(emerald, S_EMERALD_CHAOS1);
+			emerald->color = SKINCOLOR_CHAOSEMERALD1;
 			break;
 		case EMERALD_CHAOS2:
-			P_SetMobjState(emerald, S_EMERALD_CHAOS2);
+			emerald->color = SKINCOLOR_CHAOSEMERALD2;
 			break;
 		case EMERALD_CHAOS3:
-			P_SetMobjState(emerald, S_EMERALD_CHAOS3);
+			emerald->color = SKINCOLOR_CHAOSEMERALD3;
 			break;
 		case EMERALD_CHAOS4:
-			P_SetMobjState(emerald, S_EMERALD_CHAOS4);
+			emerald->color = SKINCOLOR_CHAOSEMERALD4;
 			break;
 		case EMERALD_CHAOS5:
-			P_SetMobjState(emerald, S_EMERALD_CHAOS5);
+			emerald->color = SKINCOLOR_CHAOSEMERALD5;
 			break;
 		case EMERALD_CHAOS6:
-			P_SetMobjState(emerald, S_EMERALD_CHAOS6);
+			emerald->color = SKINCOLOR_CHAOSEMERALD6;
 			break;
 		case EMERALD_CHAOS7:
-			P_SetMobjState(emerald, S_EMERALD_CHAOS7);
+			emerald->color = SKINCOLOR_CHAOSEMERALD7;
 			break;
 		default:
 			CONS_Printf("Invalid emerald type %d\n", emeraldType);
@@ -352,6 +353,11 @@ mobj_t *K_SpawnChaosEmerald(mobj_t *parent, angle_t angle, SINT8 flip, UINT32 em
 	{
 		emerald->extravalue1 = emeraldType;
 	}
+
+	overlay = P_SpawnMobjFromMobj(emerald, 0, 0, 0, MT_OVERLAY);
+	P_SetTarget(&overlay->target, emerald);
+	P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+	overlay->color = emerald->color;
 
 	return emerald;
 }

@@ -88,7 +88,7 @@ static patch_t *kp_rankbumper;
 static patch_t *kp_tinybumper[2];
 static patch_t *kp_ranknobumpers;
 static patch_t *kp_rankcapsule;
-static patch_t *kp_rankemeralds[7];
+static patch_t *kp_rankemerald;
 
 static patch_t *kp_battlewin;
 static patch_t *kp_battlecool;
@@ -351,13 +351,7 @@ void K_LoadKartHUDGraphics(void)
 	kp_tinybumper[1] =			W_CachePatchName("K_BLNB", PU_HUDGFX);
 	kp_ranknobumpers =			W_CachePatchName("K_NOBLNS", PU_HUDGFX);
 	kp_rankcapsule =			W_CachePatchName("K_CAPICO", PU_HUDGFX);
-
-	sprintf(buffer, "K_EMERCx");
-	for (i = 0; i < 7; i++)
-	{
-		buffer[7] = '0'+(i+1);
-		kp_rankemeralds[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
-	}
+	kp_rankemerald =			W_CachePatchName("K_EMERC", PU_HUDGFX);
 
 	// Battle graphics
 	kp_battlewin = 				W_CachePatchName("K_BWIN", PU_HUDGFX);
@@ -1633,10 +1627,12 @@ static boolean K_drawKartPositionFaces(void)
 		for (j = 0; j < 7; j++)
 		{
 			UINT32 emeraldFlag = (1 << j);
+			UINT16 emeraldColor = SKINCOLOR_CHAOSEMERALD1 + j;
 
 			if (players[rankplayer[i]].powers[pw_emeralds] & emeraldFlag)
 			{
-				V_DrawScaledPatch(emeraldx, Y+7, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_rankemeralds[j]);
+				colormap = R_GetTranslationColormap(TC_DEFAULT, emeraldColor, GTC_CACHE);
+				V_DrawMappedPatch(emeraldx, Y+7, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_rankemerald, colormap);
 				emeraldx += 7;
 			}
 		}
@@ -1659,6 +1655,41 @@ static boolean K_drawKartPositionFaces(void)
 	}
 
 	return false;
+}
+
+static void K_drawKartEmeralds(void)
+{
+	static const INT32 emeraldOffsets[7][2] = {
+		{27, 0},
+		{18, 15},
+		{36, 15},
+		{9, 0},
+		{45, 0},
+		{0, 15},
+		{54, 15}
+	};
+
+	const INT32 startx = BASEVIDWIDTH - 88;
+	const INT32 starty = BASEVIDHEIGHT - 32;
+
+	UINT8 *colormap;
+	INT32 i;
+
+	for (i = 0; i < 7; i++)
+	{
+		UINT32 emeraldFlag = (1 << i);
+		UINT16 emeraldColor = SKINCOLOR_CHAOSEMERALD1 + i;
+
+		if (stplyr->powers[pw_emeralds] & emeraldFlag)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, emeraldColor, GTC_CACHE);
+			V_DrawMappedPatch(
+				startx + emeraldOffsets[i][0], starty + emeraldOffsets[i][1],
+				V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT,
+				kp_rankemerald, colormap
+			);
+		}
+	}
 }
 
 //
@@ -4137,6 +4168,6 @@ void K_drawKartHUD(void)
 
 	if (gametype == GT_BATTLE)
 	{
-		V_DrawRightAlignedString(BASEVIDWIDTH - 10, BASEVIDHEIGHT - 18, V_SPLITSCREEN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, va("Emeralds: %d / 7", K_NumEmeralds(stplyr)));
+		K_drawKartEmeralds();
 	}
 }

@@ -139,13 +139,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"NCHP", // NiGHTS chip
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
-	"EMC1", // Chaos Emeralds
-	"EMC2",
-	"EMC3",
-	"EMC4",
-	"EMC5",
-	"EMC6",
-	"EMC7",
+	"EMRC", // Chaos Emeralds
 	"SHRD", // Emerald Hunt
 
 	// Interactive Objects
@@ -1907,13 +1901,9 @@ state_t states[NUMSTATES] =
 	{SPR_EMBM, 25, -1, {NULL}, 0, 0, S_NULL}, // S_EMBLEM26
 
 	// Chaos Emeralds
-	{SPR_EMC1, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS1
-	{SPR_EMC2, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS2
-	{SPR_EMC3, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS3
-	{SPR_EMC4, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS4
-	{SPR_EMC5, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS5
-	{SPR_EMC6, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS6
-	{SPR_EMC7, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EMERALD_CHAOS7
+	{SPR_EMRC, FF_FULLBRIGHT,                1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
+	{SPR_EMRC, FF_FULLBRIGHT|FF_TRANSADD,    1, {NULL}, 0, 0, S_CHAOSEMERALD1}, // S_CHAOSEMERALD2
+	{SPR_EMRC, FF_FULLBRIGHT|1, -1, {NULL}, 1, 0, S_NULL}, // S_CHAOSEMERALD_UNDER
 
 	// Emerald hunt shards
 	{SPR_SHRD, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD1
@@ -3757,14 +3747,14 @@ state_t states[NUMSTATES] =
 	{SPR_CAPS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_EGGCAPSULE
 
 	// Orbiting Chaos Emeralds/Ideya for NiGHTS
-	{SPR_EMC1, FF_FULLBRIGHT,   1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM1}, // S_ORBITEM1
-	{SPR_EMC2, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM2}, // S_ORBITEM2
-	{SPR_EMC3, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM3}, // S_ORBITEM3
-	{SPR_EMC4, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM4}, // S_ORBITEM4
-	{SPR_EMC5, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM5}, // S_ORBITEM5
-	{SPR_EMC6, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM6}, // S_ORBITEM6
-	{SPR_EMC7, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM7}, // S_ORBITEM7
-	{SPR_EMC1, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM8}, // S_ORBITEM8
+	{SPR_EMRC, FF_FULLBRIGHT,   1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM1}, // S_ORBITEM1
+	{SPR_EMRC, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM2}, // S_ORBITEM2
+	{SPR_EMRC, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM3}, // S_ORBITEM3
+	{SPR_EMRC, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM4}, // S_ORBITEM4
+	{SPR_EMRC, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM5}, // S_ORBITEM5
+	{SPR_EMRC, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM6}, // S_ORBITEM6
+	{SPR_EMRC, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM7}, // S_ORBITEM7
+	{SPR_EMRC, FF_FULLBRIGHT, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBITEM8}, // S_ORBITEM8
 	{SPR_IDYA, FF_TRANS20|FF_FULLBRIGHT,   1, {A_OrbitNights}, ANG2*2, 0, S_ORBIDYA1}, // S_ORBIDYA1
 	{SPR_IDYA, FF_TRANS20|FF_FULLBRIGHT|1, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBIDYA2}, // S_ORBIDYA2
 	{SPR_IDYA, FF_TRANS20|FF_FULLBRIGHT|2, 1, {A_OrbitNights}, ANG2*2, 0, S_ORBIDYA3}, // S_ORBIDYA3
@@ -8237,7 +8227,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_EMERALD
 		-1,             // doomednum
-		S_EMERALD_CHAOS1, // spawnstate
+		S_CHAOSEMERALD1, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -18960,7 +18950,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_GOTEMERALD
 		-1,             // doomednum
-		S_EMERALD_CHAOS1, // spawnstate
+		S_CHAOSEMERALD1, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -28805,7 +28795,15 @@ skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Super Tan 2", {0x00, 0x50, 0x50, 0x51, 0x51, 0x52, 0x52, 0x52, 0x54, 0x54, 0x54, 0x54, 0x55, 0x56, 0x57, 0xf5}, SKINCOLOR_BROWN, 13, V_BROWNMAP, false}, // SKINCOLOR_SUPERTAN2
 	{"Super Tan 3", {0x50, 0x51, 0x51, 0x52, 0x52, 0x52, 0x54, 0x54, 0x54, 0x54, 0x55, 0x56, 0x57, 0xf5, 0xf7, 0xf9}, SKINCOLOR_BROWN, 12, V_BROWNMAP, false}, // SKINCOLOR_SUPERTAN3
 	{"Super Tan 4", {0x51, 0x52, 0x52, 0x52, 0x52, 0x54, 0x54, 0x54, 0x55, 0x56, 0x57, 0xf5, 0xf7, 0xf9, 0xfb, 0xed}, SKINCOLOR_BROWN, 11, V_BROWNMAP, false}, // SKINCOLOR_SUPERTAN4
-	{"Super Tan 5", {0x52, 0x52, 0x54, 0x54, 0x54, 0x55, 0x56, 0x57, 0xf5, 0xf7, 0xf9, 0xfb, 0xed, 0xee, 0xef, 0xef}, SKINCOLOR_BROWN, 10, V_BROWNMAP, false}  // SKINCOLOR_SUPERTAN5
+	{"Super Tan 5", {0x52, 0x52, 0x54, 0x54, 0x54, 0x55, 0x56, 0x57, 0xf5, 0xf7, 0xf9, 0xfb, 0xed, 0xee, 0xef, 0xef}, SKINCOLOR_BROWN, 10, V_BROWNMAP, false}, // SKINCOLOR_SUPERTAN5
+
+	{"Chaos Emerald 1", {  0,  88, 188,  98, 114, 116, 117, 119,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD1
+	{"Chaos Emerald 2", {  0,  80,  82,  74,  65,  52,  56,  60,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD2
+	{"Chaos Emerald 3", {  0, 252, 201, 179, 182, 183, 185, 187,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD3
+	{"Chaos Emerald 4", {  0, 144, 146, 147, 149, 165, 167, 169,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD4
+	{"Chaos Emerald 5", {  0,   1, 144,   4,   9, 170,  14,  21,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD5
+	{"Chaos Emerald 6", {  0, 208,  50,  32,  34,  37,  40,  44,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD6
+	{"Chaos Emerald 7", {  0, 120, 121, 140, 133, 135, 149, 156,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}  // SKINCOLOR_CHAOSEMERALD7
 };
 
 /** Patches the mobjinfo, state, and skincolor tables.

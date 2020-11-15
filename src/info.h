@@ -410,13 +410,7 @@ typedef enum sprite
 	SPR_NCHP, // NiGHTS chip
 	SPR_NSTR, // NiGHTS star
 	SPR_EMBM, // Emblem
-	SPR_EMC1, // Chaos Emeralds
-	SPR_EMC2,
-	SPR_EMC3,
-	SPR_EMC4,
-	SPR_EMC5,
-	SPR_EMC6,
-	SPR_EMC7,
+	SPR_EMRC, // Chaos Emeralds
 	SPR_SHRD, // Emerald Hunt
 
 	// Interactive Objects
@@ -2122,13 +2116,9 @@ typedef enum state
 	S_EMBLEM26,
 
 	// Chaos Emeralds
-	S_EMERALD_CHAOS1,
-	S_EMERALD_CHAOS2,
-	S_EMERALD_CHAOS3,
-	S_EMERALD_CHAOS4,
-	S_EMERALD_CHAOS5,
-	S_EMERALD_CHAOS6,
-	S_EMERALD_CHAOS7,
+	S_CHAOSEMERALD1,
+	S_CHAOSEMERALD2,
+	S_CHAOSEMERALD_UNDER,
 
 	// Emerald hunt shards
 	S_SHRD1,
