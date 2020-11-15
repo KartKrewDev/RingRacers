@@ -2679,10 +2679,6 @@ void K_DestroyBumpers(player_t *player, UINT8 amount)
 	}
 
 	player->bumpers -= amount;
-
-	// TODO: Store a bumperlist on the player mobj,
-	// that way we can do a bumper destruction animation
-
 	K_HandleBumperChanges(player, oldBumpers);
 }
 

@@ -1157,6 +1157,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 					break;
 				case MT_WATERDROP:
 				case MT_CYBRAKDEMON:
+				case MT_BATTLEBUMPER:
 					gravityadd /= 2;
 					break;
 				case MT_BANANA:
@@ -1165,7 +1166,10 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				case MT_SINK:
 				case MT_EMERALD:
 					if (mo->extravalue2 > 0)
+					{
 						gravityadd *= mo->extravalue2;
+					}
+
 					gravityadd = (5*gravityadd)/2;
 					break;
 				case MT_KARMAFIREWORK:
@@ -5280,15 +5284,52 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_BATTLEBUMPER:
 		if (mobj->health <= 0)
 		{
-			// DO EXPLODE ANIMATION HERE
-			//CONS_Printf("bumper explosion\n");
-			P_RemoveMobj(mobj);
-			return;
-		}
-		else if (mobj->target && mobj->target->player && mobj->target->health > 0 && !mobj->target->player->spectator)
-		{
-			// Following a player
+			mobj->fuse--;
 
+			if (mobj->fuse <= 0)
+			{
+				statenum_t curState = (mobj->state - states);
+
+				if (curState >= S_BATTLEBUMPER_EXCRYSTALA1 && curState <= S_BATTLEBUMPER_EXCRYSTALA4)
+				{
+					P_SetMobjState(mobj, S_BATTLEBUMPER_EXCRYSTALB1);
+
+					if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+					{
+						P_SetMobjState(mobj->tracer, S_BATTLEBUMPER_EXSHELLB1);
+					}
+
+					mobj->shadowscale *= 3;
+					mobj->fuse = 24;
+					break;
+				}
+				else if (curState >= S_BATTLEBUMPER_EXCRYSTALB1 && curState <= S_BATTLEBUMPER_EXCRYSTALB4)
+				{
+					P_SetMobjState(mobj, S_BATTLEBUMPER_EXCRYSTALC1);
+
+					if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+					{
+						P_SetMobjState(mobj->tracer, S_BATTLEBUMPER_EXSHELLC1);
+					}
+
+					mobj->shadowscale *= 3;
+					mobj->fuse = 32;
+					break;
+				}
+				else
+				{
+					// TODO: confetti goes here
+					P_RemoveMobj(mobj);
+					return;
+				}
+			}
+
+			break;
+		}
+
+		if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player
+			&& mobj->target->health > 0 && !mobj->target->player->spectator)
+		{
 			fixed_t rad = 32*mobj->target->scale;
 			fixed_t offz;
 			angle_t ang, diff;
@@ -5320,15 +5361,23 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->drawflags = (mobj->target->drawflags & MFD_DONTDRAW);
 
 			if (mobj->target->eflags & MFE_VERTICALFLIP)
+			{
 				offz += 4*FRACUNIT;
+			}
 			else
+			{
 				offz -= 4*FRACUNIT;
+			}
 
-			if (mobj->tracer && mobj->tracer->player && mobj->tracer->player->mo
+			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->player
 				&& mobj->tracer->health > 0 && !mobj->tracer->player->spectator) // STOLEN
-				mobj->color = mobj->tracer->player->skincolor; // don't do star flashing for stolen bumpers
+			{
+				mobj->color = mobj->tracer->color;
+			}
 			else
-				mobj->color = mobj->target->color; // but do so if it belongs to you :B
+			{
+				mobj->color = mobj->target->color;
+			}
 
 			if (mobj->target->player->bumpers < 2)
 				P_SetMobjState(mobj, S_BATTLEBUMPER3);
@@ -5338,11 +5387,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				P_SetMobjState(mobj, S_BATTLEBUMPER1);
 
 			// Shrink your items if the player shrunk too.
-			mobj->scale = mobj->target->scale;
+			P_SetScale(mobj, mobj->target->scale);
 
 			P_UnsetThingPosition(mobj);
 			{
-				const angle_t fa = ang>>ANGLETOFINESHIFT;
+				const angle_t fa = ang >> ANGLETOFINESHIFT;
 				mobj->x = mobj->target->x + FixedMul(FINECOSINE(fa), rad);
 				mobj->y = mobj->target->y + FixedMul(FINESINE(fa), rad);
 				mobj->z = mobj->target->z + offz;
@@ -5351,9 +5400,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 			if (mobj->target->player->bumpers <= mobj->threshold)
 			{
-				// Sliently remove
-				P_RemoveMobj(mobj);
-				return;
+				// Do bumper destruction
+				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
+				break;
 			}
 		}
 		else
@@ -8366,6 +8415,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 			if (mobj->threshold == 70)
 				newmobj->threshold = 70;
 		}
+
 		P_RemoveMobj(mobj); // make sure they disappear
 		return false;
 	case MT_SMK_ICEBLOCK:

@@ -1065,12 +1065,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 {
 	mobj_t *mo;
 
-	//if (inflictor && (inflictor->type == MT_SHELL || inflictor->type == MT_FIREBALL))
-	//	P_SetTarget(&target->tracer, inflictor);
-
-	if (G_IsSpecialStage(gamemap) && target->player && target->player->nightstime > 6)
-		target->player->nightstime = 6; // Just let P_Ticker take care of the rest.
-
 	if (target->flags & (MF_ENEMY|MF_BOSS))
 		target->momx = target->momy = target->momz = 0;
 
@@ -1096,7 +1090,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	target->flags &= ~(MF_SHOOTABLE|MF_FLOAT|MF_SPECIAL);
 	target->flags2 &= ~(MF2_SKULLFLY|MF2_NIGHTSPULL);
 	target->health = 0; // This makes it easy to check if something's dead elsewhere.
-	target->shadowscale = 0;
+
+	if (target->type != MT_BATTLEBUMPER)
+	{
+		target->shadowscale = 0;
+	}
 
 	if (LUAh_MobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
 		return;
@@ -1219,7 +1217,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			}
 		}
 
-		if ((gametyperules & GTR_BUMPERS))
+		if (gametyperules & GTR_BUMPERS)
 			K_CheckBumpers();
 
 		target->player->kartstuff[k_pogospring] = 0;
@@ -1446,6 +1444,42 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					for (i = 0; i < MAXPLAYERS; i++)
 						P_DoPlayerExit(&players[i]);
 				}
+			}
+			break;
+
+		case MT_BATTLEBUMPER:
+			{
+				mobj_t *owner = target->target;
+				mobj_t *overlay;
+
+				target->flags &= ~MF_NOGRAVITY;
+
+				target->destscale = (3 * target->destscale) / 2;
+				target->scalespeed = FRACUNIT/100;
+
+				if (owner && !P_MobjWasRemoved(owner))
+				{
+					/*
+					target->momx = owner->momx / 2;
+					target->momy = owner->momy / 2;
+					target->momz = owner->momz / 2;
+					*/
+
+					P_Thrust(target, R_PointToAngle2(owner->x, owner->y, target->x, target->y), 4 * target->scale);
+				}
+
+				target->momz += (24 * target->scale) * P_MobjFlip(target);
+
+				target->shadowscale *= 3;
+				target->fuse = 16;
+
+				overlay = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_OVERLAY);
+
+				P_SetTarget(&target->tracer, overlay);
+				P_SetTarget(&overlay->target, target);
+
+				overlay->color = target->color;
+				P_SetMobjState(overlay, S_BATTLEBUMPER_EXSHELLA1);
 			}
 			break;
 
@@ -1685,11 +1719,12 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		return false;
 	}
 
+	K_DestroyBumpers(player, 1);
+
 	switch (type)
 	{
 		case DMG_DEATHPIT:
 			// Respawn kill types
-			K_DestroyBumpers(player, 1);
 			K_DoIngameRespawn(player);
 			return false;
 		default:
