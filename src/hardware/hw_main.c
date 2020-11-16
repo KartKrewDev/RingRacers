@@ -4278,20 +4278,10 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
 
-		if (spr->mobj->drawflags & MFD_BRIGHTMASK)
-		{
-			if (spr->mobj->drawflags & MFD_FULLBRIGHT)
-				brightmode = 1;
-			else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
-				brightmode = 2;
-		}
-		else
-		{
-			if (spr->mobj->frame & FF_FULLBRIGHT)
-				brightmode = 1;
-			else if (spr->mobj->frame & FF_SEMIBRIGHT)
-				brightmode = 2;
-		}
+		if (spr->mobj->frame & FF_FULLBRIGHT)
+			brightmode = 1;
+		else if (spr->mobj->frame & FF_SEMIBRIGHT)
+			brightmode = 2;
 
 		if (sector->numlights)
 		{
@@ -4320,9 +4310,7 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
 
-	if (spr->mobj->drawflags & MFD_TRANSMASK)
-		blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
-	else if (spr->mobj->frame & FF_TRANSMASK)
+	if (spr->mobj->frame & FF_TRANSMASK)
 		blend = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 	else
 	{
