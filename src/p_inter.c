@@ -1452,6 +1452,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				mobj_t *owner = target->target;
 				mobj_t *overlay;
 
+				S_StartSound(target, sfx_kc52);
 				target->flags &= ~MF_NOGRAVITY;
 
 				target->destscale = (3 * target->destscale) / 2;
@@ -1459,12 +1460,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 				if (owner && !P_MobjWasRemoved(owner))
 				{
-					/*
-					target->momx = owner->momx / 2;
-					target->momy = owner->momy / 2;
-					target->momz = owner->momz / 2;
-					*/
-
 					P_Thrust(target, R_PointToAngle2(owner->x, owner->y, target->x, target->y), 4 * target->scale);
 				}
 

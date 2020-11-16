@@ -5286,6 +5286,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		{
 			mobj->fuse--;
 
+			if (!S_SoundPlaying(mobj, sfx_cdfm71))
+			{
+				S_StartSound(mobj, sfx_cdfm71);
+			}
+
 			if (mobj->fuse <= 0)
 			{
 				statenum_t curState = (mobj->state - states);
@@ -5359,6 +5364,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 						if (i & 1)
 						{
 							blast->angle += ANGLE_90;
+							S_StartSound(blast, sfx_cdfm64);
 						}
 					}
 
