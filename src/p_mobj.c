@@ -6460,7 +6460,23 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_EMERALD:
 		if (mobj->threshold > 0)
+		{
 			mobj->threshold--;
+		}
+
+		if (leveltime % 3 == 0)
+		{
+			mobj_t *sparkle = P_SpawnMobjFromMobj(
+				mobj,
+				P_RandomRange(-48, 48) * FRACUNIT,
+				P_RandomRange(-48, 48) * FRACUNIT,
+				P_RandomRange(0, 64) * FRACUNIT,
+				MT_EMERALDSPARK
+			);
+
+			sparkle->color = mobj->color;
+			sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
+		}
 		break;
 	case MT_DRIFTEXPLODE:
 		if (!mobj->target || !mobj->target->health)

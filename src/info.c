@@ -140,6 +140,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
 	"EMRC", // Chaos Emeralds
+	"ESPK",
 	"SHRD", // Emerald Hunt
 
 	// Interactive Objects
@@ -1901,9 +1902,17 @@ state_t states[NUMSTATES] =
 	{SPR_EMBM, 25, -1, {NULL}, 0, 0, S_NULL}, // S_EMBLEM26
 
 	// Chaos Emeralds
-	{SPR_EMRC, FF_FULLBRIGHT,                1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
+	{SPR_EMRC, FF_SEMIBRIGHT,                1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
 	{SPR_EMRC, FF_FULLBRIGHT|FF_TRANSADD,    1, {NULL}, 0, 0, S_CHAOSEMERALD1}, // S_CHAOSEMERALD2
 	{SPR_EMRC, FF_FULLBRIGHT|1, -1, {NULL}, 1, 0, S_NULL}, // S_CHAOSEMERALD_UNDER
+
+	{SPR_ESPK, FF_FULLBRIGHT,   3, {NULL}, 0, 0, S_EMERALDSPARK2}, // S_EMERALDSPARK1
+	{SPR_ESPK, FF_FULLBRIGHT|1, 3, {NULL}, 0, 0, S_EMERALDSPARK3}, // S_EMERALDSPARK2
+	{SPR_ESPK, FF_FULLBRIGHT|2, 3, {NULL}, 0, 0, S_EMERALDSPARK4}, // S_EMERALDSPARK3
+	{SPR_ESPK, FF_FULLBRIGHT|3, 3, {NULL}, 0, 0, S_EMERALDSPARK5}, // S_EMERALDSPARK4
+	{SPR_ESPK, FF_FULLBRIGHT|4, 3, {NULL}, 0, 0, S_EMERALDSPARK6}, // S_EMERALDSPARK5
+	{SPR_ESPK, FF_FULLBRIGHT|5, 3, {NULL}, 0, 0, S_EMERALDSPARK7}, // S_EMERALDSPARK6
+	{SPR_ESPK, FF_FULLBRIGHT|6, 3, {NULL}, 0, 0, S_NULL}, // S_EMERALDSPARK7
 
 	// Emerald hunt shards
 	{SPR_SHRD, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD1
@@ -8248,7 +8257,34 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_PICKUPFROMBELOW, // flags
+		MF_SPECIAL|MF_PICKUPFROMBELOW|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_EMERALDSPARK
+		-1,             // doomednum
+		S_EMERALDSPARK1,// spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		8*FRACUNIT,     // radius
+		8*FRACUNIT,     // height
+		0,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

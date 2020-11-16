@@ -411,6 +411,7 @@ typedef enum sprite
 	SPR_NSTR, // NiGHTS star
 	SPR_EMBM, // Emblem
 	SPR_EMRC, // Chaos Emeralds
+	SPR_ESPK,
 	SPR_SHRD, // Emerald Hunt
 
 	// Interactive Objects
@@ -2119,6 +2120,14 @@ typedef enum state
 	S_CHAOSEMERALD1,
 	S_CHAOSEMERALD2,
 	S_CHAOSEMERALD_UNDER,
+
+	S_EMERALDSPARK1,
+	S_EMERALDSPARK2,
+	S_EMERALDSPARK3,
+	S_EMERALDSPARK4,
+	S_EMERALDSPARK5,
+	S_EMERALDSPARK6,
+	S_EMERALDSPARK7,
 
 	// Emerald hunt shards
 	S_SHRD1,
@@ -5410,6 +5419,7 @@ typedef enum mobj_type
 	MT_BLUEFLAG, // Blue CTF Flag
 	MT_EMBLEM,
 	MT_EMERALD,
+	MT_EMERALDSPARK,
 	MT_EMERHUNT, // Emerald Hunt
 	MT_EMERALDSPAWN, // Emerald spawner w/ delay
 
