@@ -5330,7 +5330,54 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				}
 				else
 				{
-					// TODO: confetti goes here
+					const INT16 spacing = 64;
+					UINT8 i;
+
+					for (i = 0; i < 10; i++)
+					{
+						mobj_t *debris = P_SpawnMobjFromMobj(
+							mobj,
+							P_RandomRange(-spacing, spacing) * FRACUNIT,
+							P_RandomRange(-spacing, spacing) * FRACUNIT,
+							P_RandomRange(-spacing, spacing) * FRACUNIT,
+							MT_BATTLEBUMPER_DEBRIS
+						);
+
+						P_SetScale(debris, (debris->destscale *= 2));
+						debris->color = mobj->color;
+
+						debris->momz = -debris->scale * P_MobjFlip(debris);
+					}
+
+					for (i = 0; i < 2; i++)
+					{
+						mobj_t *blast = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_BATTLEBUMPER_BLAST);
+
+						blast->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_45;
+						blast->destscale *= 4;
+
+						if (i & 1)
+						{
+							blast->angle += ANGLE_90;
+						}
+					}
+
+					for (i = 0; i < 10; i++)
+					{
+						mobj_t *puff = P_SpawnMobjFromMobj(
+							mobj,
+							P_RandomRange(-spacing, spacing) * FRACUNIT,
+							P_RandomRange(-spacing, spacing) * FRACUNIT,
+							P_RandomRange(-spacing, spacing) * FRACUNIT,
+							MT_SPINDASHDUST
+						);
+
+						P_SetScale(puff, (puff->destscale *= 5));
+						puff->momz = puff->scale * P_MobjFlip(puff);
+
+						P_Thrust(puff, R_PointToAngle2(mobj->x, mobj->y, puff->x, puff->y), puff->scale);
+					}
+
 					P_RemoveMobj(mobj);
 					return;
 				}
@@ -5425,6 +5472,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 
 		break;
+
+	case MT_BATTLEBUMPER_DEBRIS:
+		if (mobj->state == states + S_BATTLEBUMPER_EXDEBRIS2)
+		{
+			mobj->drawflags ^= MFD_DONTDRAW;
+		}
+		break;
+
 	case MT_PLAYERARROW:
 		if (mobj->target && mobj->target->health
 			&& mobj->target->player && !mobj->target->player->spectator

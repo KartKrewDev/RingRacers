@@ -560,6 +560,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"KBLN", // Battle Mode Bumper
 	"BEXC", // Battle Bumper Explosion: Crystal
 	"BEXS", // Battle Bumper Explosion: Shell
+	"BDEB", // Battle Bumper Explosion: Debris
+	"BEXB", // Battle Bumper Explosion: Blast
 
 	"DEZL", // DEZ Laser respawn
 
@@ -4430,6 +4432,20 @@ state_t states[NUMSTATES] =
 
 	{SPR_BEXS, FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_BATTLEBUMPER_EXSHELLC2}, // S_BATTLEBUMPER_EXSHELLC1
 	{SPR_BEXS, FF_FULLBRIGHT|5, 1, {NULL}, 0, 0, S_BATTLEBUMPER_EXSHELLC1}, // S_BATTLEBUMPER_EXSHELLC2
+
+	{SPR_BDEB, FF_FULLBRIGHT|FF_ANIMATE, 84, {NULL}, 13, 6, S_BATTLEBUMPER_EXDEBRIS2}, // S_BATTLEBUMPER_EXDEBRIS1
+	{SPR_BDEB, FF_FULLBRIGHT|13, 20, {NULL}, 0, 0, S_NULL}, // S_BATTLEBUMPER_EXDEBRIS2
+
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE,            2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST2}, // S_BATTLEBUMPER_EXBLAST1
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS10, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST3}, // S_BATTLEBUMPER_EXBLAST2
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS20, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST4}, // S_BATTLEBUMPER_EXBLAST3
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS30, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST5}, // S_BATTLEBUMPER_EXBLAST4
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS40, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST6}, // S_BATTLEBUMPER_EXBLAST5
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS50, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST7}, // S_BATTLEBUMPER_EXBLAST6
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS60, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST8}, // S_BATTLEBUMPER_EXBLAST7
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS70, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST9}, // S_BATTLEBUMPER_EXBLAST8
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS80, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST10}, // S_BATTLEBUMPER_EXBLAST9
+	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS90, 2, {NULL}, 0, 0, S_NULL}, // S_BATTLEBUMPER_EXBLAST10
 
 	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE, 8, {NULL}, 0, 0, S_NULL}, // S_DEZLASER
 	{SPR_DEZL, FF_FULLBRIGHT|1, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL2}, // S_DEZLASER_TRAIL1
@@ -24124,6 +24140,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1,               // damage
 		sfx_None,        // activesound
 		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL           // raisestate
+	},
+
+	{           // MT_BATTLEBUMPER_DEBRIS
+		-1,              // doomednum
+		S_BATTLEBUMPER_EXDEBRIS1,// spawnstate
+		1000,            // spawnhealth
+		S_NULL,          // seestate
+		sfx_None,        // seesound
+		8,               // reactiontime
+		sfx_None,        // attacksound
+		S_NULL,          // painstate
+		0,               // painchance
+		sfx_None,        // painsound
+		S_NULL,          // meleestate
+		S_NULL,          // missilestate
+		S_NULL,          // deathstate
+		S_NULL,          // xdeathstate
+		sfx_None,        // deathsound
+		0,               // speed
+		8*FRACUNIT,      // radius
+		16*FRACUNIT,     // height
+		0,               // display offset
+		100,             // mass
+		0,               // damage
+		sfx_None,        // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL           // raisestate
+	},
+
+	{           // MT_BATTLEBUMPER_BLAST
+		-1,              // doomednum
+		S_BATTLEBUMPER_EXBLAST1, // spawnstate
+		1000,            // spawnhealth
+		S_NULL,          // seestate
+		sfx_None,        // seesound
+		8,               // reactiontime
+		sfx_None,        // attacksound
+		S_NULL,          // painstate
+		0,               // painchance
+		sfx_None,        // painsound
+		S_NULL,          // meleestate
+		S_NULL,          // missilestate
+		S_NULL,          // deathstate
+		S_NULL,          // xdeathstate
+		sfx_None,        // deathsound
+		0,               // speed
+		8*FRACUNIT,      // radius
+		16*FRACUNIT,     // height
+		0,               // display offset
+		100,             // mass
+		0,               // damage
+		sfx_None,        // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_SCENERY|MF_DONTENCOREMAP, // flags
 		S_NULL           // raisestate
 	},
 
