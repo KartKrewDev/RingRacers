@@ -473,6 +473,10 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 {
+#if 1
+	(void)player;
+	return frict;
+#else
 	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
 	fixed_t newfrict;
 
@@ -490,6 +494,7 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 		newfrict = FRACUNIT;
 
 	return newfrict;
+#endif
 }
 
 /*--------------------------------------------------
