@@ -5290,7 +5290,19 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			{
 				statenum_t curState = (mobj->state - states);
 
-				if (curState >= S_BATTLEBUMPER_EXCRYSTALA1 && curState <= S_BATTLEBUMPER_EXCRYSTALA4)
+				if (curState == S_BATTLEBUMPER1)
+				{
+					P_SetMobjState(mobj, S_BATTLEBUMPER_EXCRYSTALA1);
+
+					if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+					{
+						P_SetMobjState(mobj->tracer, S_BATTLEBUMPER_EXSHELLA1);
+					}
+
+					mobj->shadowscale *= 2;
+					mobj->fuse = 12;
+				}
+				else if (curState >= S_BATTLEBUMPER_EXCRYSTALA1 && curState <= S_BATTLEBUMPER_EXCRYSTALA4)
 				{
 					P_SetMobjState(mobj, S_BATTLEBUMPER_EXCRYSTALB1);
 
@@ -5299,7 +5311,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 						P_SetMobjState(mobj->tracer, S_BATTLEBUMPER_EXSHELLB1);
 					}
 
-					mobj->shadowscale *= 3;
+					mobj->shadowscale *= 2;
 					mobj->fuse = 24;
 					break;
 				}
@@ -5312,7 +5324,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 						P_SetMobjState(mobj->tracer, S_BATTLEBUMPER_EXSHELLC1);
 					}
 
-					mobj->shadowscale *= 3;
+					mobj->shadowscale *= 2;
 					mobj->fuse = 32;
 					break;
 				}

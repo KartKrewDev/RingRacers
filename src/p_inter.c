@@ -1469,9 +1469,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 
 				target->momz += (24 * target->scale) * P_MobjFlip(target);
-
-				target->shadowscale *= 3;
-				target->fuse = 16;
+				target->fuse = 8;
 
 				overlay = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_OVERLAY);
 
@@ -1479,7 +1477,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				P_SetTarget(&overlay->target, target);
 
 				overlay->color = target->color;
-				P_SetMobjState(overlay, S_BATTLEBUMPER_EXSHELLA1);
+				P_SetMobjState(overlay, S_INVISIBLE);
 			}
 			break;
 
