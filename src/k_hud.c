@@ -89,6 +89,8 @@ static patch_t *kp_tinybumper[2];
 static patch_t *kp_ranknobumpers;
 static patch_t *kp_rankcapsule;
 static patch_t *kp_rankemerald;
+static patch_t *kp_rankemeraldflash;
+static patch_t *kp_rankemeraldback;
 
 static patch_t *kp_battlewin;
 static patch_t *kp_battlecool;
@@ -352,6 +354,8 @@ void K_LoadKartHUDGraphics(void)
 	kp_ranknobumpers =			W_CachePatchName("K_NOBLNS", PU_HUDGFX);
 	kp_rankcapsule =			W_CachePatchName("K_CAPICO", PU_HUDGFX);
 	kp_rankemerald =			W_CachePatchName("K_EMERC", PU_HUDGFX);
+	kp_rankemeraldflash =		W_CachePatchName("K_EMERW", PU_HUDGFX);
+	kp_rankemeraldback =		W_CachePatchName("K_EMERBK", PU_HUDGFX);
 
 	// Battle graphics
 	kp_battlewin = 				W_CachePatchName("K_BWIN", PU_HUDGFX);
@@ -733,11 +737,12 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 	if (options & V_SLIDEIN)
 	{
-		tic_t length = TICRATE/2;
+		const tic_t length = TICRATE/2;
+		const tic_t end = (lt_endtime + length);
 
-		if (leveltime < introtime + length)
+		if (lt_ticker < end)
 		{
-			INT32 offset = screenwidth - (((leveltime - introtime) * screenwidth) / length);
+			INT32 offset = screenwidth - ((lt_exitticker * screenwidth) / length);
 			boolean slidefromright = false;
 
 			if (r_splitscreen > 1)
@@ -1660,20 +1665,21 @@ static boolean K_drawKartPositionFaces(void)
 static void K_drawKartEmeralds(void)
 {
 	static const INT32 emeraldOffsets[7][2] = {
-		{27, 0},
-		{18, 15},
-		{36, 15},
-		{9, 0},
-		{45, 0},
-		{0, 15},
-		{54, 15}
+		{34, 0},
+		{25, 8},
+		{43, 8},
+		{16, 0},
+		{52, 0},
+		{7, 8},
+		{61, 8}
 	};
 
-	const INT32 startx = BASEVIDWIDTH - 88;
-	const INT32 starty = BASEVIDHEIGHT - 32;
+	const INT32 startx = BASEVIDWIDTH - 77 - 8;
+	const INT32 starty = BASEVIDHEIGHT - 29 - 8;
 
-	UINT8 *colormap;
 	INT32 i;
+
+	V_DrawScaledPatch(startx, starty, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, kp_rankemeraldback);
 
 	for (i = 0; i < 7; i++)
 	{
@@ -1682,12 +1688,29 @@ static void K_drawKartEmeralds(void)
 
 		if (stplyr->powers[pw_emeralds] & emeraldFlag)
 		{
+			boolean whiteFlash = (leveltime & 1);
+			UINT8 *colormap;
+
+			if (i & 1)
+			{
+				whiteFlash = !whiteFlash;
+			}
+
 			colormap = R_GetTranslationColormap(TC_DEFAULT, emeraldColor, GTC_CACHE);
 			V_DrawMappedPatch(
 				startx + emeraldOffsets[i][0], starty + emeraldOffsets[i][1],
 				V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT,
 				kp_rankemerald, colormap
 			);
+
+			if (whiteFlash == true)
+			{
+				V_DrawScaledPatch(
+					startx + emeraldOffsets[i][0], starty + emeraldOffsets[i][1],
+					V_HUDTRANSHALF|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT,
+					kp_rankemeraldflash
+				);
+			}
 		}
 	}
 }
@@ -2051,7 +2074,7 @@ static void K_drawBlueSphereMeter(void)
 	const UINT8 sphere = max(min(stplyr->spheres, 40), 0);
 
 	UINT8 numBars = min((sphere / 10), maxBars);
-	UINT8 color = segColors[(sphere * sizeof(segColors)) / (40 + 1)];
+	UINT8 colorIndex = (sphere * sizeof(segColors)) / (40 + 1);
 	INT32 x = LAPS_X + 25;
 	UINT8 i;
 
@@ -2066,7 +2089,9 @@ static void K_drawBlueSphereMeter(void)
 			segLen = (sphere % 10);
 		}
 
-		V_DrawFill(x, LAPS_Y - 16, segLen, 6, color | V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN);
+		V_DrawFill(x, LAPS_Y - 16, segLen, 3, segColors[max(colorIndex-1, 0)] | V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN);
+		V_DrawFill(x, LAPS_Y - 15, segLen, 1, segColors[max(colorIndex-2, 0)] | V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN);
+		V_DrawFill(x, LAPS_Y - 13, segLen, 3, segColors[colorIndex] | V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN);
 
 		x += 15;
 	}
