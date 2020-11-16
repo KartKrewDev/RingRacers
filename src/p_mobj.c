@@ -6471,23 +6471,34 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->health--;
 		break;
 	case MT_EMERALD:
-		if (mobj->threshold > 0)
 		{
-			mobj->threshold--;
-		}
+			if (battleovertime.enabled >= 10*TICRATE)
+			{
+				fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
 
-		if (leveltime % 3 == 0)
-		{
-			mobj_t *sparkle = P_SpawnMobjFromMobj(
-				mobj,
-				P_RandomRange(-48, 48) * FRACUNIT,
-				P_RandomRange(-48, 48) * FRACUNIT,
-				P_RandomRange(0, 64) * FRACUNIT,
-				MT_EMERALDSPARK
-			);
+				if (distance > battleovertime.radius)
+				{
+					// Delete emeralds to let them reappear
+					P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
+				}
+			}
 
-			sparkle->color = mobj->color;
-			sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
+			if (leveltime % 3 == 0)
+			{
+				mobj_t *sparkle = P_SpawnMobjFromMobj(
+					mobj,
+					P_RandomRange(-48, 48) * FRACUNIT,
+					P_RandomRange(-48, 48) * FRACUNIT,
+					P_RandomRange(0, 64) * FRACUNIT,
+					MT_EMERALDSPARK
+				);
+
+				sparkle->color = mobj->color;
+				sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
+			}
+
+			if (mobj->threshold > 0)
+				mobj->threshold--;
 		}
 		break;
 	case MT_DRIFTEXPLODE:

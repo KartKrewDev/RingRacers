@@ -304,10 +304,10 @@ void K_CheckEmeralds(player_t *player)
 	K_CheckBumpers();
 }
 
-mobj_t *K_SpawnChaosEmerald(mobj_t *parent, angle_t angle, SINT8 flip, UINT32 emeraldType)
+mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT32 emeraldType)
 {
 	boolean validEmerald = true;
-	mobj_t *emerald = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_EMERALD);
+	mobj_t *emerald = P_SpawnMobj(x, y, z, MT_EMERALD);
 	mobj_t *overlay;
 
 	P_Thrust(emerald,
@@ -373,7 +373,7 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 
 		if ((player->powers[pw_emeralds] & emeraldFlag) && (emeraldFlag & emeraldType))
 		{
-			mobj_t *emerald = K_SpawnChaosEmerald(player->mo, player->mo->angle - ANGLE_90, flip, emeraldFlag);
+			mobj_t *emerald = K_SpawnChaosEmerald(player->mo->x, player->mo->y, player->mo->z, player->mo->angle - ANGLE_90, flip, emeraldFlag);
 			P_SetTarget(&emerald->target, player->mo);
 
 			player->powers[pw_emeralds] &= ~emeraldFlag;
@@ -403,7 +403,15 @@ void K_RunPaperItemSpawners(void)
 {
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
 	tic_t interval = 8*TICRATE;
+
 	UINT32 emeraldsSpawned = 0;
+	UINT32 firstUnspawnedEmerald = 0;
+
+	thinker_t *th;
+	mobj_t *mo;
+
+	UINT8 pcount = 0;
+	INT16 i;
 
 	if (leveltime < starttime)
 	{
@@ -411,19 +419,16 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
-	if ((battleovertime.enabled > 0) && (battleovertime.radius < 256*mapobjectscale))
-	{
-		// Barrier has closed in too much
-		return;
-	}
-
 	if (overtime == true)
 	{
+		if (battleovertime.radius < 512*mapobjectscale)
+		{
+			// Barrier has closed in too much
+			return;
+		}
+
 		// Double frequency of items
 		interval /= 2;
-
-		// Even if this isn't true, we pretend it is, because it's too late to do anything about it :p
-		emeraldsSpawned = EMERALD_ALLCHAOS;
 	}
 
 	if (((leveltime - starttime) % interval) != 0)
@@ -431,39 +436,72 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+
+		emeraldsSpawned |= players[i].powers[pw_emeralds];
+
+		if ((players[i].exiting > 0 || players[i].eliminated)
+			|| ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0))
+		{
+			continue;
+		}
+
+		pcount++;
+	}
+
 	if (overtime == true)
 	{
 		SINT8 flip = 1;
 
-		K_CreatePaperItem(
-			battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
-			FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
-			0, 0
-		);
+		// Just find emeralds, no paper spots
+		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+		{
+			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+				continue;
+
+			mo = (mobj_t *)th;
+
+			if (mo->type == MT_EMERALD)
+			{
+				emeraldsSpawned |= mo->extravalue1;
+			}
+		}
+
+		for (i = 0; i < 7; i++)
+		{
+			UINT32 emeraldFlag = (1 << i);
+
+			if (!(emeraldsSpawned & emeraldFlag))
+			{
+				firstUnspawnedEmerald = emeraldFlag;
+				break;
+			}
+		}
+
+		if (firstUnspawnedEmerald != 0)
+		{
+			K_SpawnChaosEmerald(
+				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
+				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+				firstUnspawnedEmerald
+			);
+		}
+		else
+		{
+			K_CreatePaperItem(
+				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
+				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+				0, 0
+			);
+		}
 	}
 	else
 	{
-		UINT8 pcount = 0;
-		INT16 i;
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || players[i].spectator)
-			{
-				continue;
-			}
-
-			emeraldsSpawned |= players[i].powers[pw_emeralds];
-
-			if ((players[i].exiting > 0 || players[i].eliminated)
-				|| ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0))
-			{
-				continue;
-			}
-
-			pcount++;
-		}
-
 		if (pcount > 0)
 		{
 #define MAXITEM 64
@@ -471,11 +509,7 @@ void K_RunPaperItemSpawners(void)
 			mobj_t *spotList[MAXITEM];
 			boolean spotUsed[MAXITEM];
 
-			UINT32 firstUnspawnedEmerald = 0;
 			INT16 starti = 0;
-
-			thinker_t *th;
-			mobj_t *mo;
 
 			memset(spotUsed, false, sizeof(spotUsed));
 
@@ -541,7 +575,7 @@ void K_RunPaperItemSpawners(void)
 				if (i == -1)
 				{
 					drop = K_SpawnChaosEmerald(
-						spotList[r],
+						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
 						FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
 						firstUnspawnedEmerald
 					);
