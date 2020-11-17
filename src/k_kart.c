@@ -2581,8 +2581,8 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	if (inflictor && !P_MobjWasRemoved(inflictor))
 	{
-		const fixed_t infSpeed = P_AproxDistance(inflictor->momx, inflictor->momy) / 2;
-		player->tumbleHeight += (infSpeed / player->mo->scale);
+		const fixed_t addHeight = FixedHypot(FixedHypot(inflictor->momx, inflictor->momy) / 2, FixedHypot(player->mo->momx, player->mo->momy) / 2);
+		player->tumbleHeight += (addHeight / player->mo->scale);
 	}
 
 	player->mo->momz = player->tumbleHeight * player->mo->scale * P_MobjFlip(player->mo);
