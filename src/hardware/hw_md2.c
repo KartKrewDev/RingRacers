@@ -1357,6 +1357,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		angle_t ang;
 		INT32 mod;
 		float finalscale;
+		FBITFIELD blendmode = PF_Masked;
 
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0)
@@ -1378,11 +1379,16 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			//durs = tics;
 
 		if (spr->mobj->drawflags & MFD_TRANSMASK)
-			HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
+			blendmode = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
 		else if (spr->mobj->frame & FF_TRANSMASK)
-			HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
+			blendmode = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 		else
 			Surf.PolyColor.s.alpha = 0xFF;
+
+		if (blendmode == PF_Masked)
+		{
+			blendmode |= PF_Occlude;
+		}
 
 		// dont forget to enabled the depth test because we can't do this like
 		// before: polygons models are not sorted
@@ -1646,7 +1652,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 #endif
 
 		HWD.pfnSetShader(SHADER_MODEL);	// model shader
-		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
+		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf, blendmode);
 	}
 
 	return true;
