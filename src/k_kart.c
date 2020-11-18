@@ -4818,10 +4818,7 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 	}
 
 	//mobj->standingslope = slope;
-
-#ifdef HWRENDER
-	mobj->modeltilt = slope;
-#endif
+	P_SetPitchRollFromSlope(mobj, slope);
 }
 
 // Move the hnext chain!
@@ -5114,9 +5111,10 @@ static void K_MoveHeldObjects(player_t *player)
 
 					P_TeleportMove(cur, targx, targy, targz);
 					K_FlipFromObject(cur, player->mo);	// Update graviflip in real time thanks.
-#ifdef HWRENDER
-					cur->modeltilt = player->mo->modeltilt;
-#endif
+
+					cur->roll = player->mo->roll;
+					cur->pitch = player->mo->pitch;
+
 					num = (num+1) % 2;
 					cur = cur->hnext;
 				}

@@ -1216,6 +1216,26 @@ void P_CheckGravity(mobj_t *mo, boolean affect)
 	}
 }
 
+//
+// P_SetPitchRollFromSlope
+//
+void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
+{
+	if (slope)
+	{
+		fixed_t tempz = slope->normal.z;
+		fixed_t tempy = slope->normal.y;
+		fixed_t tempx = slope->normal.x;
+
+		mo->pitch = R_PointToAngle2(0, 0, FixedSqrt(FixedMul(tempy, tempy) + FixedMul(tempz, tempz)), tempx);
+		mo->roll = R_PointToAngle2(0, 0, tempz, tempy);
+	}
+	else
+	{
+		mo->pitch = mo->roll = 0;
+	}
+}
+
 #define STOPSPEED (FRACUNIT)
 
 //
@@ -1710,9 +1730,7 @@ void P_XYMovement(mobj_t *mo)
 			// Now compare the Zs of the different quantizations
 			if (oldangle-newangle > ANG30 && oldangle-newangle < ANGLE_180) { // Allow for a bit of sticking - this value can be adjusted later
 				mo->standingslope = oldslope;
-#ifdef HWRENDER
-				mo->modeltilt = mo->standingslope;
-#endif
+				P_SetPitchRollFromSlope(mo, mo->standingslope);
 				P_SlopeLaunch(mo);
 
 				//CONS_Printf("launched off of slope - ");
@@ -2235,9 +2253,7 @@ boolean P_ZMovement(mobj_t *mo)
 		if (((mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope) && (mo->type != MT_STEAM))
 		{
 			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope;
-#ifdef HWRENDER
-			mo->modeltilt = mo->standingslope;
-#endif
+			P_SetPitchRollFromSlope(mo, mo->standingslope);
 			P_ReverseQuantizeMomentumToSlope(&mom, mo->standingslope);
 		}
 
@@ -6593,9 +6609,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					mobj->target->z);
 		}
 		P_SetScale(mobj, mobj->target->scale);
-#ifdef HWRENDER
-		mobj->modeltilt = mobj->target->modeltilt;
-#endif
+
+		mobj->roll = mobj->target->roll;
+		mobj->pitch = mobj->target->pitch;
 
 		if (mobj->fuse <= 16)
 		{
@@ -6657,9 +6673,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
 			mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
 		P_SetScale(mobj, mobj->target->scale);
-#ifdef HWRENDER
-		mobj->modeltilt = mobj->target->modeltilt;
-#endif
+
+		mobj->roll = mobj->target->roll;
+		mobj->pitch = mobj->target->pitch;
 
 		{
 			player_t *p = NULL;
@@ -8602,7 +8618,7 @@ void P_MobjThinker(mobj_t *mobj)
 	if (mobj->scale != mobj->destscale)
 		P_MobjScaleThink(mobj); // Slowly scale up/down to reach your destscale.
 
-	if ((mobj->type == MT_GHOST || mobj->type == MT_THOK) && mobj->fuse > 0) // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
+	if (mobj->type == MT_GHOST && mobj->fuse > 0) // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
 	{
 		if (mobj->flags2 & MF2_BOSSNOTRAP) // "fast" flag
 		{

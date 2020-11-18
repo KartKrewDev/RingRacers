@@ -1462,6 +1462,7 @@ static void R_ProjectSprite(mobj_t *thing)
 #ifdef ROTSPRITE
 	patch_t *rotsprite = NULL;
 	INT32 rollangle = 0;
+	angle_t spriterotangle = 0;
 #endif
 
 	// hitlag vibrating
@@ -1602,9 +1603,11 @@ static void R_ProjectSprite(mobj_t *thing)
 	spr_topoffset = spritecachedinfo[lump].topoffset;
 
 #ifdef ROTSPRITE
-	if (thing->rollangle)
+	spriterotangle = R_SpriteRotationAngle(thing);
+
+	if (spriterotangle != 0)
 	{
-		rollangle = R_GetRollAngle(thing->rollangle);
+		rollangle = R_GetRollAngle(spriterotangle);
 		if (!(sprframe->rotsprite.cached & (1<<rot)))
 			R_CacheRotSprite(thing->sprite, frame, sprinfo, sprframe, rot, flip);
 		rotsprite = sprframe->rotsprite.patch[rot][rollangle];

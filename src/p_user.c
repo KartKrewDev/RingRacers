@@ -1284,6 +1284,8 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->colorized = mobj->colorized; // Kart: they should also be colorized if their origin is
 
 	ghost->angle = (mobj->player ? mobj->player->drawangle : mobj->angle);
+	ghost->roll = mobj->roll;
+	ghost->pitch = mobj->pitch;
 	ghost->sprite = mobj->sprite;
 	ghost->sprite2 = mobj->sprite2;
 	ghost->frame = mobj->frame;
@@ -1292,13 +1294,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
-#ifdef HWRENDER
-	ghost->modeltilt = mobj->modeltilt;
-#endif
 
 	ghost->sprxoff = mobj->sprxoff;
 	ghost->spryoff = mobj->spryoff;
 	ghost->sprzoff = mobj->sprzoff;
+	ghost->rollangle = mobj->rollangle;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
