@@ -709,7 +709,7 @@ void K_RunBattleOvertime(void)
 		fixed_t size = FixedMul(mobjinfo[MT_OVERTIME_PARTICLE].radius, scale);
 		fixed_t posOffset = max(battleovertime.radius - size, 0);
 
-		UINT32 i;
+		INT32 i;
 
 		for (i = 0; i < orbs; i++)
 		{
