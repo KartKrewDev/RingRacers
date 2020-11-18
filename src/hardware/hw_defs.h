@@ -101,21 +101,13 @@ typedef struct
 //Hurdler: Transform (coords + angles)
 //BP: transform order : scale(rotation_x(rotation_y(translation(v))))
 
-// Kart features
-//#define USE_FTRANSFORM_ANGLEZ
-//#define USE_FTRANSFORM_MIRROR
-
 // Vanilla features
 #define USE_MODEL_NEXTFRAME
 
 typedef struct
 {
 	FLOAT       x,y,z;           // position
-#ifdef USE_FTRANSFORM_ANGLEZ
 	FLOAT       anglex,angley,anglez;   // aimingangle / viewangle
-#else
-	FLOAT       anglex,angley;   // aimingangle / viewangle
-#endif
 	FLOAT       scalex,scaley,scalez;
 	FLOAT       fovxangle, fovyangle;
 	UINT8       splitscreen;
@@ -123,13 +115,10 @@ typedef struct
 	boolean     shearing;        // 14042019
 	angle_t     viewaiming;      // 17052019
 	boolean     roll;
-	SINT8       rollflip;
 	FLOAT       rollangle; // done to not override USE_FTRANSFORM_ANGLEZ
-	UINT8       rotaxis;
 	FLOAT       centerx, centery;
-#ifdef USE_FTRANSFORM_MIRROR
+	FLOAT       rollx, rollz;
 	boolean     mirror;          // SRB2Kart: Encore Mode
-#endif
 } FTransform;
 
 // Transformed vector, as passed to HWR API
