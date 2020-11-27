@@ -1205,9 +1205,6 @@ void G_GhostTicker(void)
 				g->p += 12; // kartitem, kartamount, kartbumpers
 		}
 
-		if (READUINT8(g->p) != 0xFF) // Make sure there isn't other ghost data here.
-			I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
-
 skippedghosttic:
 		// Tick ghost colors (Super and Mario Invincibility flashing)
 		switch(g->color)
@@ -1294,6 +1291,7 @@ skippedghosttic:
 			P_RemoveMobj(follow);
 			P_SetTarget(&follow, NULL);
 		}
+
 		// Demo ends after ghost data.
 		if (*g->p == DEMOMARKER)
 		{
@@ -1314,6 +1312,10 @@ skippedghosttic:
 			Z_Free(g);
 			continue;
 		}
+
+		if (READUINT8(g->p) != 0xFF) // Make sure there isn't other ghost data here.
+			I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
+
 		p = g;
 #undef follow
 	}
@@ -1899,7 +1901,8 @@ void G_BeginRecording(void)
 	if (encoremode)
 		demoflags |= DF_ENCORE;
 
-	demoflags |= DF_LUAVARS;
+	if (multiplayer)
+		demoflags |= DF_LUAVARS;
 
 	// Setup header.
 	M_Memcpy(demo_p, DEMOHEADER, 12); demo_p += 12;
@@ -2033,9 +2036,8 @@ void G_BeginRecording(void)
 	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
 
 	// player lua vars, always saved even if empty
-	LUA_Archive(&demo_p);
-
-	WRITEUINT32(demo_p,P_GetInitSeed());
+	if (demoflags & DF_LUAVARS)
+		LUA_Archive(&demo_p);
 
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
@@ -3140,6 +3142,14 @@ void G_AddGhost(char *defdemoname)
 	if (!(flags & DF_GHOST))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: No ghost data in this demo.\n"), pdemoname);
+		Z_Free(pdemoname);
+		Z_Free(buffer);
+		return;
+	}
+
+	if (flags & DF_LUAVARS) // can't be arsed to add support for grinding away ported lua material
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data contains luavars, cannot continue.\n"), pdemoname);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
 		return;
