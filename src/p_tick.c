@@ -613,9 +613,7 @@ void P_Ticker(boolean run)
 	if (run)
 		leveltime++;
 
-	// as this is mostly used for HUD stuff, add the record attack specific hack to it as well!
-	if (!(modeattacking && !demo.playback) || leveltime >= starttime - TICRATE*4)
-		timeinmap++;
+	timeinmap++;
 
 	if (G_GametypeHasTeams())
 		P_DoTeamStuff();
