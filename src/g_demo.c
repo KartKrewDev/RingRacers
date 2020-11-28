@@ -1439,7 +1439,10 @@ void G_PreviewRewind(tic_t previewtime)
 		players[i].drawangle = info->playerinfo[i].player.drawangle + FixedMul((INT32) (next_info->playerinfo[i].player.drawangle - info->playerinfo[i].player.drawangle), tweenvalue);
 
 		players[i].mo->sprite = info->playerinfo[i].mobj.sprite;
+		players[i].mo->sprite2 = info->playerinfo[i].mobj.sprite2;
 		players[i].mo->frame = info->playerinfo[i].mobj.frame;
+
+		players[i].mo->hitlag = info->playerinfo[i].mobj.hitlag;
 
 		players[i].realtime = info->playerinfo[i].player.realtime;
 		for (j = 0; j < NUMKARTSTUFF; j++)
