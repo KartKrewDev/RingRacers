@@ -1252,7 +1252,7 @@ void G_StartTitleCard(void)
 {
 	// The title card has been disabled for this map.
 	// Oh well.
-	if (!G_IsTitleCardAvailable())
+	if (!G_IsTitleCardAvailable() || demo.rewinding)
 	{
 		WipeStageTitle = false;
 		return;

@@ -516,6 +516,8 @@ void P_Ticker(boolean run)
 		if (demo.rewinding && leveltime > 0)
 		{
 			leveltime = (leveltime-1) & ~3;
+			if (timeinmap > 0)
+				timeinmap = (timeinmap-1) & ~3;
 			G_PreviewRewind(leveltime);
 		}
 		else if (demo.freecam && democam.cam)	// special case: allow freecam to MOVE during pause!

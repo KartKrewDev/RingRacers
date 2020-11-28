@@ -1468,7 +1468,7 @@ void G_ConfirmRewind(tic_t rewindtime)
 
 	if (rewindtime <= starttime)
 	{
-		demo.rewinding = false;
+		demo.rewinding = true; // this doesn't APPEAR to cause any misery, and it allows us to prevent running all the wipes again
 		G_DoPlayDemo(NULL); // Restart the current demo
 	}
 	else
