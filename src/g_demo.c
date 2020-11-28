@@ -622,7 +622,7 @@ void G_WriteAllGhostTics(void)
 
 		counter++;
 
-		if (multiplayer && (counter % cv_netdemosyncquality.value != 0)) // Only write 1 in this many ghost datas per tic to cut down on multiplayer replay size.
+		if (multiplayer && ((counter % cv_netdemosyncquality.value) != 0)) // Only write 1 in this many ghost datas per tic to cut down on multiplayer replay size.
 			continue;
 
 		WRITEUINT8(demo_p, i);
