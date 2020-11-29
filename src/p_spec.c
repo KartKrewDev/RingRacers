@@ -2028,6 +2028,14 @@ static void K_HandleLapIncrement(player_t *player)
 					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 				player->karthud[khud_lapanimation] = 80;
+
+				// save best lap for record attack
+				if (player == &players[consoleplayer])
+				{
+					if (curlap < bestlap || bestlap == 0)
+						bestlap = curlap;
+					curlap = 0;
+				}
 			}
 
 			if (rainbowstartavailable == true)
@@ -2040,14 +2048,6 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (netgame && player->laps >= (UINT8)cv_numlaps.value)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
-
-			// SRB2Kart: save best lap for record attack
-			if (player == &players[consoleplayer])
-			{
-				if (curlap < bestlap || bestlap == 0)
-					bestlap = curlap;
-				curlap = 0;
-			}
 
 			player->starpostnum = 0;
 
@@ -2133,6 +2133,7 @@ static void K_HandleLapDecrement(player_t *player)
 		{
 			player->starpostnum = numstarposts;
 			player->laps--;
+			curlap = UINT32_MAX;
 		}
 	}
 }

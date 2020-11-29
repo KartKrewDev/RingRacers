@@ -289,10 +289,10 @@ consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
 
 // player's followers. Also saved.
 consvar_t cv_follower[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("follower", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange),
-	CVAR_INIT ("follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange),
-	CVAR_INIT ("follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange),
-	CVAR_INIT ("follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange)
+	CVAR_INIT ("follower", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange),
+	CVAR_INIT ("follower2", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange),
+	CVAR_INIT ("follower3", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange),
+	CVAR_INIT ("follower4", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange)
 };
 
 // player's follower colors... Also saved...
@@ -2856,13 +2856,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	{
 		emeralds = 0;
 		memset(&luabanks, 0, sizeof(luabanks));
-	}
-
-	if (modeattacking)
-	{
-		SetPlayerSkinByNum(0, cv_chooseskin.value-1);
-		players[0].skincolor = skins[players[0].skin].prefcolor;
-		CV_StealthSetValue(&cv_playercolor[0], players[0].skincolor);
 	}
 
 	mapnumber = M_MapNumber(mapname[3], mapname[4]);

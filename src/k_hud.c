@@ -3523,7 +3523,7 @@ static void K_drawInput(void)
 #define BUTTH 11
 
 #define drawbutt(xoffs, butt, symb)\
-	if (stplyr->cmd.buttons & butt)\
+	if (!stplyr->exiting && (cmd->buttons & butt))\
 	{\
 		offs = 2;\
 		col = accent1;\
@@ -3549,7 +3549,7 @@ static void K_drawInput(void)
 
 	y -= 1;
 
-	if (!cmd->turning) // no turn
+	if (stplyr->exiting || !cmd->turning) // no turn
 		target = 0;
 	else // turning of multiple strengths!
 	{

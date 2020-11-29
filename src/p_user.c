@@ -2644,7 +2644,7 @@ static void P_DeathThink(player_t *player)
 			{
 				if (player->spectator || !circuitmap)
 					curlap = 0;
-				else
+				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
 			}
 		}
@@ -4385,7 +4385,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (player->spectator || !circuitmap)
 					curlap = 0;
-				else
+				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
 			}
 		}

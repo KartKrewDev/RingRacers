@@ -516,6 +516,8 @@ void P_Ticker(boolean run)
 		if (demo.rewinding && leveltime > 0)
 		{
 			leveltime = (leveltime-1) & ~3;
+			if (timeinmap > 0)
+				timeinmap = (timeinmap-1) & ~3;
 			G_PreviewRewind(leveltime);
 		}
 		else if (demo.freecam && democam.cam)	// special case: allow freecam to MOVE during pause!
@@ -613,9 +615,7 @@ void P_Ticker(boolean run)
 	if (run)
 		leveltime++;
 
-	// as this is mostly used for HUD stuff, add the record attack specific hack to it as well!
-	if (!(modeattacking && !demo.playback) || leveltime >= starttime - TICRATE*4)
-		timeinmap++;
+	timeinmap++;
 
 	if (G_GametypeHasTeams())
 		P_DoTeamStuff();
