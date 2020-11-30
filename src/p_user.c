@@ -1935,11 +1935,6 @@ static void P_3dMovement(player_t *player)
 
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
-
-		if (K_PlayerUsesBotMovement(player) == true)
-		{
-			K_MomentumToFacing(player);
-		}
 	}
 
 	if ((totalthrust.x || totalthrust.y)
