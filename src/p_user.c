@@ -461,14 +461,8 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer] || player->respawn.state != RESPAWNST_NONE)
+	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer])
 		return true;
-
-	if (gametyperules & GTR_KARMA)
-	{
-		if (player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
-			return true;
-	}
 
 	return false;
 }
@@ -4538,7 +4532,7 @@ void P_PlayerThink(player_t *player)
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
-		|| ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
+		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)
 		|| leveltime < starttime)) // Level intro
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)

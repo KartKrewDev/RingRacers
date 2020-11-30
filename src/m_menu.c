@@ -6374,7 +6374,7 @@ static void M_GetAllEmeralds(INT32 choice)
 {
 	(void)choice;
 
-	emeralds = ((EMERALD7)*2)-1;
+	emeralds = EMERALD_ALL;
 	M_StartMessage(M_GetText("You now have all 7 emeralds.\nUse them wisely.\nWith great power comes great ring drain.\n"),NULL,MM_NOTHING);
 
 	G_SetGameModified(multiplayer, true);

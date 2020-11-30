@@ -1612,7 +1612,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	{
 		if (GETSECSPECIAL(caller->special, 2) == 6)
 		{
-			if (!(ALL7EMERALDS(emeralds)))
+			if (!(ALLCHAOSEMERALDS(emeralds)))
 				return false;
 		}
 

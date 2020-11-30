@@ -512,6 +512,7 @@ typedef struct player_s
 
 	// player's ring count
 	INT16 rings;
+	INT16 spheres;
 
 	// Power ups. invinc and invis are tic counters.
 	UINT16 powers[NUMPOWERS];
@@ -523,6 +524,9 @@ typedef struct player_s
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
 	tic_t airtime; // Keep track of how long you've been in the air
+	UINT8 bumpers;
+	INT16 karmadelay;
+	boolean eliminated;
 
 	// Bit flags.
 	// See pflags_t, above.
