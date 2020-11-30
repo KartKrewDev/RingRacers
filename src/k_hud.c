@@ -2166,8 +2166,8 @@ static void K_drawKartBumpersOrKarma(void)
 			if (stplyr->bumpers > 9 || maxbumper > 9)
 			{
 				UINT8 ln[2];
-				ln[0] = ((abs(stplyr->bumpers) / 10) % 10);
-				ln[1] = (abs(stplyr->bumpers) % 10);
+				ln[0] = (stplyr->bumpers / 10 % 10);
+				ln[1] = (stplyr->bumpers % 10);
 
 				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
 				V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
