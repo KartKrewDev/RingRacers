@@ -18573,22 +18573,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_RAIN1,        // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
+		sfx_rainin,     // seesound
+		0,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
 		0,              // painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_NULL,         // deathstate
+		S_SPLASH1,      // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		-72*FRACUNIT,   // speed
 		1*FRACUNIT,     // radius
 		8*FRACUNIT,     // height
 		0,              // display offset
-		4,              // mass
+		80,             // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP,  // flags
@@ -18601,7 +18601,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
-		8,              // reactiontime
+		0,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
 		0,              // painchance
@@ -18615,8 +18615,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4*FRACUNIT,     // radius
 		4*FRACUNIT,     // height
 		0,              // display offset
-		4,              // mass
-		0,              // damage
+		0,              // mass
+		2,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP,  // flags
 		S_NULL          // raisestate
