@@ -1624,6 +1624,23 @@ static boolean PIT_CheckCameraLine(line_t *ld)
 	return true;
 }
 
+static boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
+{
+	// missiles can cross uncrossable lines
+	if ((thing->flags & MF_MISSILE))
+		return false;
+	else
+	{
+		return
+			(
+					(ld->flags & ML_IMPASSABLE) || // block objects from moving through this linedef.
+					(thing->player && !thing->player->spectator &&
+						ld->flags & ML_BLOCKPLAYERS) || // SRB2Kart: Only block players, not items
+					((thing->flags & (MF_ENEMY|MF_BOSS)) && ld->special == 81) // case 81: block monsters only
+			);
+	}
+}
+
 //
 // PIT_CheckLine
 // Adjusts tmfloorz and tmceilingz as lines are contacted
@@ -1699,14 +1716,8 @@ static boolean PIT_CheckLine(line_t *ld)
 		return false;
 	}
 
-	// missiles can cross uncrossable lines
-	if (!(tmthing->flags & MF_MISSILE))
-	{
-		if (ld->flags & ML_IMPASSABLE) // block objects from moving through this linedef.
-			return false;
-		if (tmthing->player && !tmthing->player->spectator && ld->flags & ML_BLOCKPLAYERS)
-			return false; // SRB2Kart: Only block players, not items
-	}
+	if (P_IsLineBlocking(ld, tmthing))
+		return false;
 
 	// set openrange, opentop, openbottom
 	P_LineOpening(ld, tmthing);
@@ -3172,14 +3183,8 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	if (!li->backsector)
 		return !P_PointOnLineSide(slidemo->x, slidemo->y, li);
 
-	if (!(slidemo->flags & MF_MISSILE))
-	{
-		if (li->flags & ML_IMPASSABLE)
-			return true;
-
-		if (slidemo->player && !slidemo->player->spectator && li->flags & ML_BLOCKPLAYERS)
-			return true;
-	}
+	if (P_IsLineBlocking(li, slidemo))
+		return true;
 
 	// set openrange, opentop, openbottom
 	P_LineOpening(li, slidemo);
