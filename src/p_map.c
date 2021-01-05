@@ -1636,7 +1636,7 @@ static boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
 					(ld->flags & ML_IMPASSABLE) || // block objects from moving through this linedef.
 					(thing->player && !thing->player->spectator &&
 						ld->flags & ML_BLOCKPLAYERS) || // SRB2Kart: Only block players, not items
-					((thing->flags & (MF_ENEMY|MF_BOSS)) && ld->special == 11) // case 11: block monsters only
+					((thing->flags & (MF_ENEMY|MF_BOSS)) && ld->special == 81) // case 81: block monsters only
 			);
 	}
 }
