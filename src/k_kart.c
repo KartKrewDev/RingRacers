@@ -2063,20 +2063,17 @@ fixed_t K_GetSpindashChargeSpeed(player_t *player)
 	return (player->kartspeed + player->kartweight) * (FRACUNIT/64);
 }
 
-// Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
-#define METABOLISM
 
-// sets k_boostpower, k_speedboost, k_accelboost, and k_handleboost to whatever we need it to be
+// sets boostpower, speedboost, accelboost, and handleboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
-#ifdef METABOLISM
+	// Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
 	const fixed_t maxmetabolismincrease = FRACUNIT/2;
 	const fixed_t metabolism = FRACUNIT - ((9-player->kartweight) * maxmetabolismincrease / 8);
-#endif // METABOLISM
 
 	// v2 almost broke sliptiding when it fixed turning bugs!
 	// This value is fine-tuned to feel like v1 again without reverting any of those changes.
-	const fixed_t sliptidehandling = 7*FRACUNIT/10;
+	const fixed_t sliptidehandling = FRACUNIT/2;
 
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0, handleboost = 0;
@@ -2095,43 +2092,35 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_bananadrag] > TICRATE)
 		boostpower = (4*boostpower)/5;
 
-#ifdef METABOLISM
-
+	// Note: Handling will ONLY stack when sliptiding!
+	// When you're not, it just uses the best instead of adding together, like the old behavior.
 #define ADDBOOST(s,a,h) { \
 	numboosts++; \
 	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
 	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
-	handleboost = max(h, handleboost); \
+	if (player->kartstuff[k_aizdriftstrat]) \
+		handleboost += FixedDiv(h, FRACUNIT + (metabolism * (numboosts-1))); \
+	else \
+		handleboost = max(h, handleboost); \
 }
-
-#else
-
-#define ADDBOOST(s,a,h) { \
-	numboosts++; \
-	speedboost += s / numboosts; \
-	accelboost += a / numboosts; \
-	handleboost = max(h, handleboost); \
-}
-
-#endif // METABOLISM
 
 	if (player->kartstuff[k_sneakertimer]) // Sneaker
 	{
 		UINT8 i;
 		for (i = 0; i < player->kartstuff[k_numsneakers]; i++)
 		{
-			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, sliptidehandling); // + 50% top speed, + 800% acceleration, +70% handling
+			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, sliptidehandling); // + 50% top speed, + 800% acceleration, +50% handling
 		}
 	}
 
 	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT, sliptidehandling/3); // + 37.5% top speed, + 300% acceleration, +23% handling
+		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT, sliptidehandling/2); // + 37.5% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
 	{
-		ADDBOOST(0, 0, sliptidehandling/3); // + 0% top speed, + 0% acceleration, +23% handling
+		ADDBOOST(0, 0, sliptidehandling/2); // + 0% top speed, + 0% acceleration, +25% handling
 	}
 
 	if (player->kartstuff[k_flamedash]) // Flame Shield dash
@@ -2140,7 +2129,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			dash, // + infinite top speed
 			3*FRACUNIT, // + 300% acceleration
-			FixedMul(FixedDiv(dash, FRACUNIT/2), sliptidehandling/3) // + infinite handling
+			FixedMul(FixedDiv(dash, FRACUNIT/2), sliptidehandling/2) // + infinite handling
 		);
 	}
 
