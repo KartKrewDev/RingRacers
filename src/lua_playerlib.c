@@ -218,6 +218,12 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->trickpanel);
 	else if (fastcmp(field,"trickdelay"))
 		lua_pushinteger(L, plr->trickdelay);
+	else if (fastcmp(field,"trickmomx"))
+		lua_pushfixed(L, plr->trickmomx);
+	else if (fastcmp(field,"trickmomy"))
+		lua_pushfixed(L, plr->trickmomy);
+	else if (fastcmp(field,"trickmomz"))
+		lua_pushfixed(L, plr->trickmomz);
 	else if (fastcmp(field,"pflags"))
 		lua_pushinteger(L, plr->pflags);
 	else if (fastcmp(field,"panim"))
@@ -511,6 +517,12 @@ static int player_set(lua_State *L)
 		plr->trickpanel = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickdelay"))
 		plr->trickdelay = (tic_t)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"trickmomx"))
+		plr->trickmomx = (fixed_t)luaL_checkfixed(L, 3);
+	else if (fastcmp(field,"trickmomy"))
+		plr->trickmomy = (fixed_t)luaL_checkfixed(L, 3);
+	else if (fastcmp(field,"trickmomz"))
+		plr->trickmomz = (fixed_t)luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"kartspeed"))
 		plr->kartspeed = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartweight"))

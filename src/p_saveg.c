@@ -235,7 +235,7 @@ static void P_NetArchivePlayers(void)
 
 		if (flags & FOLLOWITEM)
 			WRITEUINT32(save_p, players[i].followmobj->mobjnum);
-		
+
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
 		WRITEUINT32(save_p, players[i].charflags);
@@ -257,7 +257,10 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
 		WRITEUINT8(save_p, players[i].trickpanel);
-		WRITEUINT32(save_p, players[i].trickdelay);
+		WRITEUINT8(save_p, players[i].trickdelay);
+		WRITEUINT32(save_p, players[i].trickmomx);
+		WRITEUINT32(save_p, players[i].trickmomy);
+		WRITEUINT32(save_p, players[i].trickmomz);
 
 		WRITEUINT8(save_p, players[i].bumpers);
 		WRITEINT16(save_p, players[i].karmadelay);
@@ -426,7 +429,7 @@ static void P_NetUnArchivePlayers(void)
 
 		if (flags & FOLLOWITEM)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save_p);
-		
+
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
@@ -449,7 +452,10 @@ static void P_NetUnArchivePlayers(void)
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
 		players[i].trickpanel = READUINT8(save_p);
-		players[i].trickdelay = READUINT32(save_p);
+		players[i].trickdelay = READUINT8(save_p);
+		players[i].trickmomx = READUINT32(save_p);
+		players[i].trickmomy = READUINT32(save_p);
+		players[i].trickmomz = READUINT32(save_p);
 
 		players[i].bumpers = READUINT8(save_p);
 		players[i].karmadelay = READINT16(save_p);

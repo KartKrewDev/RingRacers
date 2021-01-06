@@ -4618,7 +4618,7 @@ DoneSection2:
 				}
 
 				player->trickpanel = 1;
-				player->trickdelay = TICRATE/2;
+				player->trickdelay = 1;
 				K_DoPogoSpring(player->mo, upwards, 1);
 
 				// Reduce speed

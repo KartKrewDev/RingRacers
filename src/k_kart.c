@@ -2052,7 +2052,7 @@ INT16 K_GetSpindashChargeTime(player_t *player)
 {
 	// more charge time for higher speed
 	// Tails = 2s, Mighty = 3s, Fang = 4s, Metal = 4s
-	return (player->kartspeed + 4) * (TICRATE/3); 
+	return (player->kartspeed + 4) * (TICRATE/3);
 }
 
 fixed_t K_GetSpindashChargeSpeed(player_t *player)
@@ -4209,6 +4209,8 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		{
 			thrust = FixedMul(thrust, 9*FRACUNIT/8);
 		}
+
+		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = 0;	// Reset post-hitlag momentums.
 	}
 
 	mo->momz = FixedMul(thrust, vscale);
@@ -7830,7 +7832,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								K_PlayBoostTaunt(player->mo);
 								K_DoPogoSpring(player->mo, 32<<FRACBITS, 2);
 								player->trickpanel = 1;
-								player->trickdelay = TICRATE/2;
+								player->trickdelay = 1;
 								player->kartstuff[k_itemamount]--;
 							}
 							break;
@@ -7944,49 +7946,101 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
 		}
 
-		if (player->trickpanel == 1 && player->trickdelay <= 0)
+		if (player->trickpanel == 1)
 		{
 			const angle_t lr = ANGLE_45;
-			fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
+			fixed_t momz = FixedDiv(player->mo->momz, mapobjectscale);	// bring momz back to scale...
+			fixed_t speedmult = max(0, FRACUNIT - abs(momz)/TRICKMOMZRAMP);				// TRICKMOMZRAMP momz is minimum speed (Should be 20)
+			fixed_t basespeed = P_AproxDistance(player->mo->momx, player->mo->momy);	// at WORSE, keep your normal speed when tricking.
+			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
 
-			if (cmd->turning > 0)
+			// debug shit
+			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
+
+			if (player->trickdelay <= 0)
 			{
-				P_InstaThrust(player->mo, player->mo->angle + lr, speed*2);
-				player->trickpanel = 2;
-			}
-			else if (cmd->turning < 0)
-			{
-				P_InstaThrust(player->mo, player->mo->angle - lr, speed*2);
-				player->trickpanel = 3;
-			}
-			else if (player->kartstuff[k_throwdir] == 1)
-			{
-				if (player->mo->momz * P_MobjFlip(player->mo) > 0)
+
+				if (cmd->turning > 0)
 				{
+					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*2));
+
+					player->trickmomx = player->mo->momx;
+					player->trickmomy = player->mo->momy;
+					player->trickmomz = player->mo->momz;
+					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
 					player->mo->momz = 0;
+
+					player->trickpanel = 2;
+					player->mo->hitlag = TRICKLAG;
 				}
-
-				P_InstaThrust(player->mo, player->mo->angle, speed*3);
-				player->trickpanel = 2;
-			}
-			else if (player->kartstuff[k_throwdir] == -1)
-			{
-				boolean relative = true;
-
-				player->mo->momx /= 3;
-				player->mo->momy /= 3;
-				
-				if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
+				else if (cmd->turning < 0)
 				{
-					relative = false;
+					P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*2));
+
+					player->trickmomx = player->mo->momx;
+					player->trickmomy = player->mo->momy;
+					player->trickmomz = player->mo->momz;
+					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
+					player->mo->momz = 0;
+
+					player->trickpanel = 3;
+					player->mo->hitlag = TRICKLAG;
 				}
+				else if (player->kartstuff[k_throwdir] == 1)
+				{
+					if (player->mo->momz * P_MobjFlip(player->mo) > 0)
+					{
+						player->mo->momz = 0;
+					}
 
-				P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
+					P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
 
-				player->trickpanel = 3;
+					player->trickmomx = player->mo->momx;
+					player->trickmomy = player->mo->momy;
+					player->trickmomz = player->mo->momz;
+					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
+					player->mo->momz = 0;
+
+					player->trickpanel = 2;
+					player->mo->hitlag = TRICKLAG;
+				}
+				else if (player->kartstuff[k_throwdir] == -1)
+				{
+					boolean relative = true;
+
+					player->mo->momx /= 3;
+					player->mo->momy /= 3;
+
+					if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
+					{
+						relative = false;
+					}
+
+					P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
+
+					player->trickmomx = player->mo->momx;
+					player->trickmomy = player->mo->momy;
+					player->trickmomz = player->mo->momz;
+					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
+					player->mo->momz = 0;
+
+					player->trickpanel = 3;
+					player->mo->hitlag = TRICKLAG;
+				}
 			}
 		}
+		// After hitlag, we will get here and will be able to apply the desired momentums!
+		else if (player->trickmomx || player->trickmomy || player->trickmomz)
+		{
+			player->mo->momx = player->trickmomx;
+			player->mo->momy = player->trickmomy;
+			player->mo->momz = player->trickmomz;
 
+			player->trickmomx = player->trickmomy = player->trickmomz = 0;
+
+		}
+
+		// Wait until we let go off the control stick to remove the delay
 		if (player->trickdelay > 0)
 		{
 			player->trickdelay--;

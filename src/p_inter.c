@@ -30,7 +30,7 @@
 #include "f_finale.h"
 
 // SRB2kart
-#include "k_kart.h" 
+#include "k_kart.h"
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"

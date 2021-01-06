@@ -449,7 +449,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 				if (object->player)
 				{
 					object->player->trickpanel = 1;
-					object->player->trickdelay = TICRATE/2;
+					object->player->trickdelay = 1;
 				}
 
 				K_DoPogoSpring(object, 32<<FRACBITS, 0);
@@ -2291,7 +2291,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 {
 	subsector_t *s = R_PointInSubsector(x, y);
 	boolean retval = true;
-	
+
 	UINT8 i;
 
 	floatok = false;

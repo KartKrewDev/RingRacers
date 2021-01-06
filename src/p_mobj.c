@@ -6625,7 +6625,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->color = K_RainbowColor(
 				(SKINCOLOR_PURPLE - SKINCOLOR_PINK) // Smoothly transition into the other state
 				+ ((mobj->fuse - 32) * 2) // Make the color flashing slow down while it runs out
-			); 
+			);
 
 		switch (mobj->extravalue1)
 		{
@@ -10243,7 +10243,7 @@ void P_SpawnPlayer(INT32 playernum)
 		/*
 		if (bonusgame || specialstage)
 		{
-			// Bots should avoid 
+			// Bots should avoid
 			p->spectator = true;
 		}
 		*/
@@ -10357,7 +10357,7 @@ void P_SpawnPlayer(INT32 playernum)
 			if ((leveltime < starttime) || (pcount <= 1)) // Start of the map?
 			{
 				// Reset those bumpers!
-				p->bumpers = K_StartingBumperCount(); 
+				p->bumpers = K_StartingBumperCount();
 			}
 
 			if (p->bumpers)
