@@ -461,14 +461,8 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer] || player->respawn.state != RESPAWNST_NONE)
+	if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_squishedtimer])
 		return true;
-
-	if (gametyperules & GTR_KARMA)
-	{
-		if (player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
-			return true;
-	}
 
 	return false;
 }
@@ -1290,6 +1284,8 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->colorized = mobj->colorized; // Kart: they should also be colorized if their origin is
 
 	ghost->angle = (mobj->player ? mobj->player->drawangle : mobj->angle);
+	ghost->roll = mobj->roll;
+	ghost->pitch = mobj->pitch;
 	ghost->sprite = mobj->sprite;
 	ghost->sprite2 = mobj->sprite2;
 	ghost->frame = mobj->frame;
@@ -1298,13 +1294,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
-#ifdef HWRENDER
-	ghost->modeltilt = mobj->modeltilt;
-#endif
 
 	ghost->sprxoff = mobj->sprxoff;
 	ghost->spryoff = mobj->spryoff;
 	ghost->sprzoff = mobj->sprzoff;
+	ghost->rollangle = mobj->rollangle;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
@@ -1941,11 +1935,6 @@ static void P_3dMovement(player_t *player)
 
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
-
-		if (K_PlayerUsesBotMovement(player) == true)
-		{
-			K_MomentumToFacing(player);
-		}
 	}
 
 	if ((totalthrust.x || totalthrust.y)
@@ -2644,7 +2633,7 @@ static void P_DeathThink(player_t *player)
 			{
 				if (player->spectator || !circuitmap)
 					curlap = 0;
-				else
+				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
 			}
 		}
@@ -4385,7 +4374,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (player->spectator || !circuitmap)
 					curlap = 0;
-				else
+				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
 			}
 		}
@@ -4538,7 +4527,7 @@ void P_PlayerThink(player_t *player)
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
-		|| ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
+		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)
 		|| leveltime < starttime)) // Level intro
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)

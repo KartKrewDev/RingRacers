@@ -198,11 +198,15 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (!P_CanPickupItem(t2->player, 2))
 			return true;
 
-		if ((gametyperules & GTR_BUMPERS) && t2->player->kartstuff[k_bumper] <= 0)
+		if ((gametyperules & GTR_BUMPERS) && t2->player->bumpers <= 0)
 		{
-			if (t2->player->kartstuff[k_comebackmode] || t2->player->kartstuff[k_comebacktimer])
+#ifdef OTHERKARMAMODES
+			if (t2->player->kartstuff[k_comebackmode] || t2->player->karmadelay)
 				return true;
 			t2->player->kartstuff[k_comebackmode] = 2;
+#else
+			return true;
+#endif
 		}
 		else
 		{
@@ -232,7 +236,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 
 			if (t1->target && t1->target->player)
 			{
-				if ((gametyperules & GTR_CIRCUIT) || t1->target->player->kartstuff[k_bumper] > 0)
+				if ((gametyperules & GTR_CIRCUIT) || t1->target->player->bumpers > 0)
 					t2->player->kartstuff[k_eggmanblame] = t1->target->player-players;
 				else
 					t2->player->kartstuff[k_eggmanblame] = t2->player-players;

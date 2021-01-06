@@ -546,6 +546,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	// Score is resynched in the rspfirm resync packet
 	rsp->rings = SHORT(players[i].rings);
+	rsp->spheres = SHORT(players[i].spheres);
 	rsp->lives = players[i].lives;
 	rsp->lostlife = players[i].lostlife;
 	rsp->continues = players[i].continues;
@@ -615,6 +616,10 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]);
 
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
+
+	rsp->bumpers = players[i].bumpers;
+	rsp->karmadelay = SHORT(players[i].karmadelay);
+	rsp->eliminated = players[i].eliminated;
 
 	// respawnvars_t
 	rsp->respawn_state = players[i].respawn.state;
@@ -690,6 +695,7 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	// Score is resynched in the rspfirm resync packet
 	players[i].rings = SHORT(rsp->rings);
+	players[i].spheres = SHORT(rsp->spheres);
 	players[i].lives = rsp->lives;
 	players[i].lostlife = rsp->lostlife;
 	players[i].continues = rsp->continues;
@@ -758,6 +764,10 @@ static void resynch_read_player(resynch_pak *rsp)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
 
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
+
+	players[i].bumpers = rsp->bumpers;
+	players[i].karmadelay = SHORT(rsp->karmadelay);
+	players[i].eliminated = rsp->eliminated;
 
 	// respawnvars_t
 	players[i].respawn.state = rsp->respawn_state;
@@ -1990,6 +2000,9 @@ static void SendAskInfo(INT32 node)
 	// now allowed traffic from the host to us in, so once the MS relays
 	// our address to the host, it'll be able to speak to us.
 	HSendPacket(node, false, 0, sizeof (askinfo_pak));
+
+	if (node != 0 && node != BROADCASTADDR)
+		I_NetRequestHolePunch();
 }
 
 serverelem_t serverlist[MAXSERVERLIST];
@@ -2985,9 +2998,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		}
 	}
 
-	if (K_IsPlayerWanted(&players[playernum]))
-		K_CalculateBattleWanted();
-
+	K_CalculateBattleWanted();
 	LUAh_PlayerQuit(&players[playernum], reason); // Lua hook for player quitting
 
 	// don't look through someone's view who isn't there
@@ -6092,6 +6103,19 @@ static void UpdatePingTable(void)
 	}
 }
 
+static void RenewHolePunch(void)
+{
+	static time_t past;
+
+	const time_t now = time(NULL);
+
+	if ((now - past) > 20)
+	{
+		I_NetRegisterHolePunch();
+		past = now;
+	}
+}
+
 // Handle timeouts to prevent definitive freezes from happenning
 static void HandleNodeTimeouts(void)
 {
@@ -6129,6 +6153,11 @@ void NetKeepAlive(void)
 #ifdef MASTERSERVER
 	MasterClient_Ticker();
 #endif
+
+	if (netgame && serverrunning)
+	{
+		RenewHolePunch();
+	}
 
 	if (client)
 	{
@@ -6188,6 +6217,11 @@ void NetUpdate(void)
 #ifdef MASTERSERVER
 	MasterClient_Ticker(); // Acking the Master Server
 #endif
+
+	if (netgame && serverrunning)
+	{
+		RenewHolePunch();
+	}
 
 	if (client)
 	{
