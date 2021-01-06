@@ -3576,8 +3576,9 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 		PROJSPEED = FixedMul(82 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed));
 	}
 
-	// Scale to player scale
-	PROJSPEED = FixedMul(PROJSPEED, player->mo->scale);
+	// Scale to map scale
+	// Intentionally NOT player scale, that doesn't work.
+	PROJSPEED = FixedMul(PROJSPEED, mapobjectscale);
 
 	if (altthrow)
 	{
@@ -3677,7 +3678,7 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 			if (mo)
 			{
 				angle_t fa = player->mo->angle>>ANGLETOFINESHIFT;
-				fixed_t HEIGHT = ((20 + (dir*10)) * player->mo->scale) + (player->mo->momz*P_MobjFlip(player->mo));
+				fixed_t HEIGHT = ((20 + (dir*10)) * FRACUNIT) + (player->mo->momz*P_MobjFlip(player->mo)); // Also intentionally not player scale
 
 				P_SetObjectMomZ(mo, HEIGHT, false);
 				mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), PROJSPEED*dir);
@@ -3785,7 +3786,7 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 {
 	angle_t fa = K_MomentumAngle(punter);
-	fixed_t z = punter->momz + (30 * punter->scale);
+	fixed_t z = (punter->momz * P_MobjFlip(punter)) + (30 * FRACUNIT);
 	fixed_t spd;
 	mobj_t *mine;
 
@@ -3841,7 +3842,7 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 
 	mine->momx = punter->momx + FixedMul(FINECOSINE(fa >> ANGLETOFINESHIFT), spd);
 	mine->momy = punter->momy + FixedMul(FINESINE(fa >> ANGLETOFINESHIFT), spd);
-	mine->momz = P_MobjFlip(mine) * z;
+	P_SetObjectMomZ(mine, z, false);
 
 	//K_SetHitLagForObjects(punter, mine, 5);
 
