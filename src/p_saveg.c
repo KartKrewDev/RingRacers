@@ -111,6 +111,7 @@ static void P_NetArchivePlayers(void)
 		WRITEANGLE(save_p, players[i].awayviewaiming);
 		WRITEINT32(save_p, players[i].awayviewtics);
 		WRITEINT16(save_p, players[i].rings);
+		WRITEINT16(save_p, players[i].spheres);
 
 		for (j = 0; j < NUMPOWERS; j++)
 			WRITEUINT16(save_p, players[i].powers[j]);
@@ -234,7 +235,7 @@ static void P_NetArchivePlayers(void)
 
 		if (flags & FOLLOWITEM)
 			WRITEUINT32(save_p, players[i].followmobj->mobjnum);
-		
+
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
 		WRITEUINT32(save_p, players[i].charflags);
@@ -256,7 +257,14 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
 		WRITEUINT8(save_p, players[i].trickpanel);
-		WRITEUINT32(save_p, players[i].trickdelay);
+		WRITEUINT8(save_p, players[i].trickdelay);
+		WRITEUINT32(save_p, players[i].trickmomx);
+		WRITEUINT32(save_p, players[i].trickmomy);
+		WRITEUINT32(save_p, players[i].trickmomz);
+
+		WRITEUINT8(save_p, players[i].bumpers);
+		WRITEINT16(save_p, players[i].karmadelay);
+		WRITEUINT8(save_p, players[i].eliminated);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -306,6 +314,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].awayviewaiming = READANGLE(save_p);
 		players[i].awayviewtics = READINT32(save_p);
 		players[i].rings = READINT16(save_p);
+		players[i].spheres = READINT16(save_p);
 
 		for (j = 0; j < NUMPOWERS; j++)
 			players[i].powers[j] = READUINT16(save_p);
@@ -420,7 +429,7 @@ static void P_NetUnArchivePlayers(void)
 
 		if (flags & FOLLOWITEM)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save_p);
-		
+
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
@@ -443,7 +452,14 @@ static void P_NetUnArchivePlayers(void)
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
 		players[i].trickpanel = READUINT8(save_p);
-		players[i].trickdelay = READUINT32(save_p);
+		players[i].trickdelay = READUINT8(save_p);
+		players[i].trickmomx = READUINT32(save_p);
+		players[i].trickmomy = READUINT32(save_p);
+		players[i].trickmomz = READUINT32(save_p);
+
+		players[i].bumpers = READUINT8(save_p);
+		players[i].karmadelay = READINT16(save_p);
+		players[i].eliminated = (boolean)READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -1373,9 +1389,10 @@ typedef enum
 	MD2_ROLLANGLE    = 1<<14,
 	MD2_SHADOWSCALE  = 1<<15,
 	MD2_DRAWFLAGS    = 1<<16,
-	MD2_WAYPOINTCAP  = 1<<17,
-	MD2_KITEMCAP     = 1<<18,
-	MD2_ITNEXT       = 1<<19,
+	MD2_HITLAG       = 1<<17,
+	MD2_WAYPOINTCAP  = 1<<18,
+	MD2_KITEMCAP     = 1<<19,
+	MD2_ITNEXT       = 1<<20,
 } mobj_diff2_t;
 
 typedef enum
@@ -1590,6 +1607,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_SHADOWSCALE;
 	if (mobj->drawflags)
 		diff2 |= MD2_DRAWFLAGS;
+	if (mobj->hitlag)
+		diff2 |= MD2_HITLAG;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
 	if (mobj == kitemcap)
@@ -1754,6 +1773,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 
 		WRITEUINT16(save_p, df);
 	}
+	if (diff2 & MD2_HITLAG)
+		WRITEINT32(save_p, mobj->hitlag);
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2799,12 +2820,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_ITNEXT)
 		mobj->itnext = (mobj_t *)(size_t)READUINT32(save_p);
 	if (diff2 & MD2_SLOPE)
-	{
 		mobj->standingslope = P_SlopeById(READUINT16(save_p));
-#ifdef HWRENDER
-		mobj->modeltilt = mobj->standingslope;
-#endif
-	}
 	if (diff2 & MD2_COLORIZED)
 		mobj->colorized = READUINT8(save_p);
 	if (diff2 & MD2_MIRRORED)
@@ -2818,6 +2834,8 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	}
 	if (diff2 & MD2_DRAWFLAGS)
 		mobj->drawflags = READUINT16(save_p);
+	if (diff2 & MD2_HITLAG)
+		mobj->hitlag = READINT32(save_p);
 
 	if (diff & MD_REDFLAG)
 	{
@@ -4121,7 +4139,6 @@ static void P_NetArchiveMisc(void)
 	// battleovertime_t
 	WRITEUINT16(save_p, battleovertime.enabled);
 	WRITEFIXED(save_p, battleovertime.radius);
-	WRITEFIXED(save_p, battleovertime.minradius);
 	WRITEFIXED(save_p, battleovertime.x);
 	WRITEFIXED(save_p, battleovertime.y);
 	WRITEFIXED(save_p, battleovertime.z);
@@ -4255,7 +4272,6 @@ static inline boolean P_NetUnArchiveMisc(void)
 	// battleovertime_t
 	battleovertime.enabled = READUINT16(save_p);
 	battleovertime.radius = READFIXED(save_p);
-	battleovertime.minradius = READFIXED(save_p);
 	battleovertime.x = READFIXED(save_p);
 	battleovertime.y = READFIXED(save_p);
 	battleovertime.z = READFIXED(save_p);

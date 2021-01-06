@@ -35,7 +35,7 @@ enum
 /* Command buffer flags. */
 enum
 {
-	COM_SAFE = 1,
+	COM_SAFE = 0x01,
 };
 
 typedef void (*com_func_t)(void);

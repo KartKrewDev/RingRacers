@@ -357,7 +357,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 						mobj_t *grease;
 						grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
 						P_SetTarget(&grease->target, object);
-						grease->angle = R_PointToAngle2(0, 0, object->momx, object->momy);
+						grease->angle = K_MomentumAngle(object);
 						grease->extravalue1 = i;
 					}
 				}
@@ -449,7 +449,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 				if (object->player)
 				{
 					object->player->trickpanel = 1;
-					object->player->trickdelay = TICRATE/2;
+					object->player->trickdelay = 1;
 				}
 
 				K_DoPogoSpring(object, 32<<FRACBITS, 0);
@@ -1222,19 +1222,31 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam)
 		{
 			if (tmthing->scale > thing->scale + (mapobjectscale/8)) // SRB2kart - Handle squishes first!
+			{
 				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SQUISH);
+			}
 			else if (thing->scale > tmthing->scale + (mapobjectscale/8))
+			{
 				P_DamageMobj(tmthing, thing, thing, 1, DMG_SQUISH);
+			}
 			else if (tmthing->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer]) // SRB2kart - Then invincibility!
+			{
 				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
+			}
 			else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
+			{
 				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
+			}
 			else if ((tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 				&& !(thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
+			{
 				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
+			}
 			else if ((thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
 				&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD))
+			{
 				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
+			}
 		}
 	}
 
@@ -1301,8 +1313,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			}
 
 			if ((gametyperules & GTR_BUMPERS)
-				&& ((thing->player->kartstuff[k_bumper] && !tmthing->player->kartstuff[k_bumper])
-				|| (tmthing->player->kartstuff[k_bumper] && !thing->player->kartstuff[k_bumper])))
+				&& ((thing->player->bumpers && !tmthing->player->bumpers)
+				|| (tmthing->player->bumpers && !thing->player->bumpers)))
 			{
 				return true;
 			}
@@ -1329,17 +1341,13 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					if (thing->player->trickpanel)
 						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
-
-				if ((gametyperules & GTR_BUMPERS))
+				else if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
 				{
-					if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
-					{
-						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
-					}
-					else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
-					{
-						P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
-					}
+					P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
+				}
+				else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
+				{
+					P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 
 				K_KartBouncing(mo1, mo2, zbounce, false);
@@ -1621,6 +1629,23 @@ static boolean PIT_CheckCameraLine(line_t *ld)
 	return true;
 }
 
+static boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
+{
+	// missiles can cross uncrossable lines
+	if ((thing->flags & MF_MISSILE))
+		return false;
+	else
+	{
+		return
+			(
+					(ld->flags & ML_IMPASSABLE) || // block objects from moving through this linedef.
+					(thing->player && !thing->player->spectator &&
+						ld->flags & ML_BLOCKPLAYERS) || // SRB2Kart: Only block players, not items
+					((thing->flags & (MF_ENEMY|MF_BOSS)) && ld->special == 81) // case 81: block monsters only
+			);
+	}
+}
+
 //
 // PIT_CheckLine
 // Adjusts tmfloorz and tmceilingz as lines are contacted
@@ -1696,14 +1721,8 @@ static boolean PIT_CheckLine(line_t *ld)
 		return false;
 	}
 
-	// missiles can cross uncrossable lines
-	if (!(tmthing->flags & MF_MISSILE))
-	{
-		if (ld->flags & ML_IMPASSABLE) // block objects from moving through this linedef.
-			return false;
-		if (tmthing->player && !tmthing->player->spectator && ld->flags & ML_BLOCKPLAYERS)
-			return false; // SRB2Kart: Only block players, not items
-	}
+	if (P_IsLineBlocking(ld, tmthing))
+		return false;
 
 	// set openrange, opentop, openbottom
 	P_LineOpening(ld, tmthing);
@@ -2272,7 +2291,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 {
 	subsector_t *s = R_PointInSubsector(x, y);
 	boolean retval = true;
-	
+
 	UINT8 i;
 
 	floatok = false;
@@ -2477,6 +2496,12 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	if (radius < mapobjectscale)
 		radius = mapobjectscale;
 
+	if (thing->hitlag > 0)
+	{
+		// Do not move during hitlag
+		return false;
+	}
+
 	do {
 		if (thing->flags & MF_NOCLIP) {
 			tryx = x;
@@ -2638,9 +2663,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			if (thing->momz <= 0)
 			{
 				thing->standingslope = tmfloorslope;
-#ifdef HWRENDER
-				thing->modeltilt = thing->standingslope;
-#endif
+				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
 				if (thing->momz == 0 && thing->player && !startingonground)
 					P_PlayerHitFloor(thing->player, true);
@@ -2653,9 +2676,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			if (thing->momz >= 0)
 			{
 				thing->standingslope = tmceilingslope;
-#ifdef HWRENDER
-				thing->modeltilt = thing->standingslope;
-#endif
+				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
 				if (thing->momz == 0 && thing->player && !startingonground)
 					P_PlayerHitFloor(thing->player, true);
@@ -3167,14 +3188,8 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	if (!li->backsector)
 		return !P_PointOnLineSide(slidemo->x, slidemo->y, li);
 
-	if (!(slidemo->flags & MF_MISSILE))
-	{
-		if (li->flags & ML_IMPASSABLE)
-			return true;
-
-		if (slidemo->player && !slidemo->player->spectator && li->flags & ML_BLOCKPLAYERS)
-			return true;
-	}
+	if (P_IsLineBlocking(li, slidemo))
+		return true;
 
 	// set openrange, opentop, openbottom
 	P_LineOpening(li, slidemo);
