@@ -536,7 +536,6 @@ static luaL_Reg lib[] = {
 	{"CV_StealthSet", lib_cvStealthSet},
 	{"CV_AddValue", lib_cvAddValue},
 	{"CONS_Printf", lib_consPrintf},
-	{"CV_FindVar", lib_cvFindVar},
 	{NULL, NULL}
 };
 
