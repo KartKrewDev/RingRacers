@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -19,7 +19,9 @@
 #define __D_NET__
 
 // Max computers in a game
-#define MAXNETNODES 64
+// 127 is probably as high as this can go, because
+// SINT8 is used for nodes sometimes >:(
+#define MAXNETNODES 127
 #define BROADCASTADDR MAXNETNODES
 #define NETSPLITSCREEN // Kart's splitscreen netgame feature
 

@@ -72,7 +72,7 @@ install:
 
 configuration:
 - SDL
-#- SDL64
+- SDL64
 
 before_build:
 - set "Path=%MINGW_SDK%\bin;%Path%"
@@ -110,8 +110,8 @@ after_build:
 - set BUILDSARCHIVE=%REPO%-%CONFIGURATION%.7z
 - cmd: 7z a %BUILD_ARCHIVE% %BUILD_PATH% -xr!.gitignore
 - appveyor PushArtifact %BUILD_ARCHIVE%
-- cmd: copy %BUILD_ARCHIVE% %BUILDSARCHIVE%
-- appveyor PushArtifact %BUILDSARCHIVE%
+#- cmd: copy %BUILD_ARCHIVE% %BUILDSARCHIVE%
+#- appveyor PushArtifact %BUILDSARCHIVE%
 ##############################
 # DEPLOYER SCRIPT
 ##############################

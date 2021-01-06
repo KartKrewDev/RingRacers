@@ -13,6 +13,7 @@
 #include "g_game.h"
 #include "p_local.h"
 #include "r_local.h"
+#include "doomstat.h"
 
 INT32 splitscreen_original_party_size[MAXPLAYERS];
 INT32 splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];

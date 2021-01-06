@@ -35,11 +35,11 @@ SINT8 K_UsingPowerLevels(void)
 		return PWRLV_DISABLED;
 	}
 
-	if (G_RaceGametype())
+	if (gametype == GT_RACE)
 	{
 		pt = PWRLV_RACE;
 	}
-	else if (G_BattleGametype())
+	else if (gametype == GT_BATTLE)
 	{
 		pt = PWRLV_BATTLE;
 	}
@@ -110,9 +110,9 @@ INT16 K_CalculatePowerLevelAvg(void)
 		return 0; // No average.
 	}
 
-	if (G_RaceGametype())
+	if ((gametyperules & GTR_CIRCUIT))
 		t = PWRLV_RACE;
-	else if (G_BattleGametype())
+	else if ((gametyperules & GTR_BUMPERS))
 		t = PWRLV_BATTLE;
 
 	if (t == PWRLV_DISABLED)
@@ -304,9 +304,9 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	if (p < 2) // no players
 		return;
 
-	if (G_RaceGametype())
+	if ((gametyperules & GTR_CIRCUIT))
 		powertype = PWRLV_RACE;
-	else if (G_BattleGametype())
+	else if ((gametyperules & GTR_BUMPERS))
 		powertype = PWRLV_BATTLE;
 
 	if (powertype == PWRLV_DISABLED) // No power type?!
@@ -349,8 +349,8 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	if (playernum == consoleplayer)
 	{
 		vspowerlevel[powertype] = clientpowerlevels[playernum][powertype];
-		if (M_UpdateUnlockablesAndExtraEmblems(true))
+		if (M_UpdateUnlockablesAndExtraEmblems())
 			S_StartSound(NULL, sfx_ncitem);
-		G_SaveGameData(true); // save your punishment!
+		G_SaveGameData(); // save your punishment!
 	}
 }

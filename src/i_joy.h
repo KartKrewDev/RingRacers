@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -53,6 +53,6 @@ typedef struct JoyType_s JoyType_t;
 	for palyer[sic] 1-4's joystick/gamepad
 */
 
-extern JoyType_t Joystick, Joystick2, Joystick3, Joystick4;
+extern JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
 #endif // __I_JOY_H__

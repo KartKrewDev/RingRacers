@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -43,7 +43,7 @@ INT32 skytexturemid;
 
 /**	\brief the scale of the sky
 */
-fixed_t skyscale;
+fixed_t skyscale[MAXSPLITSCREENPLAYERS];
 
 /** \brief used for keeping track of the current sky
 */
@@ -64,10 +64,6 @@ void R_SetupSkyDraw(void)
 	// the horizon line in a 256x128 sky texture
 	skytexturemid = (textures[skytexture]->height/2)<<FRACBITS;
 
-	// get the right drawer, it was set by screen.c, depending on the
-	// current video mode bytes per pixel (quick fix)
-	wallcolfunc = walldrawerfunc;
-
 	R_SetSkyScale();
 }
 
@@ -80,8 +76,9 @@ void R_SetupSkyDraw(void)
 void R_SetSkyScale(void)
 {
 	fixed_t difference = vid.fdupx-(vid.dupx<<FRACBITS);
-	fixed_t scr = FRACUNIT;
-	if (r_splitscreen > 1)
-		scr *= 2;
-	skyscale = FixedDiv(scr, vid.fdupx+difference);
+	int i;
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		skyscale[i] = FixedDiv(fovtan[i], vid.fdupx+difference);
+	}
 }

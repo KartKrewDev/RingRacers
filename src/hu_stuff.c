@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -18,6 +18,7 @@
 
 #include "m_menu.h" // gametype_cons_t
 #include "m_cond.h" // emblems
+#include "m_misc.h" // word jumping
 
 #include "d_clisrv.h"
 
@@ -47,14 +48,14 @@
 #include "hardware/hw_main.h"
 #endif
 
-#ifdef HAVE_BLUA
 #include "lua_hud.h"
 #include "lua_hook.h"
-#endif
 
+// SRB2Kart
 #include "s_sound.h" // song credits
 #include "k_kart.h"
 #include "k_color.h"
+#include "k_hud.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -89,22 +90,18 @@ patch_t *rmatcico;
 patch_t *bmatcico;
 patch_t *tagico;
 patch_t *tallminus;
+patch_t *tallinfin;
 
 //-------------------------------------------
 //              coop hud
 //-------------------------------------------
 
-patch_t *emeraldpics[7];
-patch_t *tinyemeraldpics[7];
 static patch_t *emblemicon;
-static patch_t *tokenicon;
 
 //-------------------------------------------
 //              misc vars
 //-------------------------------------------
 
-// crosshair 0 = off, 1 = cross, 2 = angle, 3 = point, see m_menu.c
-static patch_t *crosshair[HU_CROSSHAIRS]; // 3 precached crosshair graphics
 // song credits
 static patch_t *songcreditbg;
 
@@ -190,31 +187,7 @@ void HU_LoadGraphics(void)
 	// minus for negative tallnums
 	tallminus          = HU_CachePatch("STTMINUS");
 
-	// cache the crosshairs, don't bother to know which one is being used,
-	// just cache all 3, they're so small anyway.
-	for (i = 0; i < HU_CROSSHAIRS; i++)
-	{
-		crosshair[i]    = HU_CachePatch("CROSHAI%c", '1'+i);
-	}
-
 	emblemicon         = HU_CachePatch("EMBLICON");
-	tokenicon          = HU_CachePatch("TOKNICON");
-
-	emeraldpics[0]     = HU_CachePatch("CHAOS1");
-	emeraldpics[1]     = HU_CachePatch("CHAOS2");
-	emeraldpics[2]     = HU_CachePatch("CHAOS3");
-	emeraldpics[3]     = HU_CachePatch("CHAOS4");
-	emeraldpics[4]     = HU_CachePatch("CHAOS5");
-	emeraldpics[5]     = HU_CachePatch("CHAOS6");
-	emeraldpics[6]     = HU_CachePatch("CHAOS7");
-	tinyemeraldpics[0] = HU_CachePatch("TEMER1");
-	tinyemeraldpics[1] = HU_CachePatch("TEMER2");
-	tinyemeraldpics[2] = HU_CachePatch("TEMER3");
-	tinyemeraldpics[3] = HU_CachePatch("TEMER4");
-	tinyemeraldpics[4] = HU_CachePatch("TEMER5");
-	tinyemeraldpics[5] = HU_CachePatch("TEMER6");
-	tinyemeraldpics[6] = HU_CachePatch("TEMER7");
-
 	songcreditbg       = HU_CachePatch("K_SONGCR");
 
 	// cache ping gfx:
@@ -445,7 +418,7 @@ void HU_AddChatText(const char *text, boolean playsound)
 
 static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 {
-	XBOXSTATIC char buf[254];
+	char buf[254];
 	size_t numwords, ix;
 	char *msg = &buf[2];
 	const size_t msgspace = sizeof buf - 2;
@@ -481,39 +454,35 @@ static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 
 	if (strlen(msg) > 4 && strnicmp(msg, "/pm", 3) == 0) // used /pm
 	{
-		// what we're gonna do now is check if the node exists
+		// what we're gonna do now is check if the player exists
 		// with that logic, characters 4 and 5 are our numbers:
 		const char *newmsg;
-		INT32 spc = 1; // used if nodenum[1] is a space.
-		char *nodenum = (char*) malloc(3);
-		strncpy(nodenum, msg+3, 3);
+		char playernum[3];
+		INT32 spc = 1; // used if playernum[1] is a space.
+
+		strncpy(playernum, msg+3, 3);
+
 		// check for undesirable characters in our "number"
-		if 	(((nodenum[0] < '0') || (nodenum[0] > '9')) || ((nodenum[1] < '0') || (nodenum[1] > '9')))
+		if (((playernum[0] < '0') || (playernum[0] > '9')) || ((playernum[1] < '0') || (playernum[1] > '9')))
 		{
-			// check if nodenum[1] is a space
-			if (nodenum[1] == ' ')
+			// check if playernum[1] is a space
+			if (playernum[1] == ' ')
 				spc = 0;
-				// let it slide
+			// let it slide
 			else
 			{
-				HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<node> \'.", false);
-				free(nodenum);
+				HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<playernum> \'.", false);
 				return;
 			}
 		}
 		// I'm very bad at C, I swear I am, additional checks eww!
-			if (spc != 0)
-			{
-				if (msg[5] != ' ')
-				{
-					HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<node> \'.", false);
-					free(nodenum);
-					return;
-				}
-			}
+		if (spc != 0 && msg[5] != ' ')
+		{
+			HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<playernum> \'.", false);
+			return;
+		}
 
-		target = atoi((const char*) nodenum); // turn that into a number
-		free(nodenum);
+		target = atoi(playernum); // turn that into a number
 		//CONS_Printf("%d\n", target);
 
 		// check for target player, if it doesn't exist then we can't send the message!
@@ -644,13 +613,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
 			player_names[playernum]);
 		if (server)
-		{
-			XBOXSTATIC UINT8 buf[2];
-
-			buf[0] = (UINT8)playernum;
-			buf[1] = KICK_MSG_CON_FAIL;
-			SendNetXCmd(XD_KICK, &buf, 2);
-		}
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 		return;
 	}
 
@@ -664,13 +627,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[playernum]);
 				if (server)
-				{
-					XBOXSTATIC char buf[2];
-
-					buf[0] = (char)playernum;
-					buf[1] = KICK_MSG_CON_FAIL;
-					SendNetXCmd(XD_KICK, &buf, 2);
-				}
+					SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 				return;
 			}
 		}
@@ -690,10 +647,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 	// run the lua hook even if we were supposed to eat the msg, netgame consistency goes first.
 
-#ifdef HAVE_BLUA
 	if (LUAh_PlayerMsg(playernum, target, flags, msg, spam_eatmsg))
 		return;
-#endif
 
 	if (spam_eatmsg)
 		return; // don't proceed if we were supposed to eat the message.
@@ -761,10 +716,19 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		}
 		else
 		{
-			sprintf(color_prefix, "%c", '\x80' + (K_SkincolorToTextColor(players[playernum].skincolor) >> V_CHARCOLORSHIFT));
+			UINT16 chatcolor = skincolors[players[playernum].skincolor].chatcolor;
+
+			if (chatcolor > V_TANMAP)
+			{
+				sprintf(color_prefix, "%c", '\x80');
+			}
+			else
+			{
+				sprintf(color_prefix, "%c", '\x80' + (chatcolor >> V_CHARCOLORSHIFT));
+			}
+
 			cstart = color_prefix;
 		}
-
 		prefix = cstart;
 
 		// Give admins and remote admins their symbols.
@@ -911,7 +875,7 @@ void HU_Ticker(void)
 	hu_tick++;
 	hu_tick &= 7; // currently only to blink chat input cursor
 
-	if (PLAYER1INPUTDOWN(gc_scores))
+	if (PlayerInputDown(1, gc_scores))
 		hu_showscores = !chat_on;
 	else
 		hu_showscores = false;
@@ -920,9 +884,6 @@ void HU_Ticker(void)
 #ifndef NONET
 
 static boolean teamtalk = false;
-/*static char chatchars[QUEUESIZE];
-static INT32 head = 0, tail = 0;*/
-// WHY DO YOU OVERCOMPLICATE EVERYTHING?????????
 
 // Clear spaces so we don't end up with messages only made out of emptiness
 static boolean HU_clearChatSpaces(void)
@@ -986,11 +947,11 @@ static void HU_queueChatChar(INT32 c)
 
 		if (strlen(msg) > 4 && strnicmp(msg, "/pm", 3) == 0) // used /pm
 		{
-			INT32 spc = 1; // used if nodenum[1] is a space.
-			char *nodenum = (char*) malloc(3);
+			INT32 spc = 1; // used if playernum[1] is a space.
+			char playernum[3];
 			const char *newmsg;
 
-			// what we're gonna do now is check if the node exists
+			// what we're gonna do now is check if the player exists
 			// with that logic, characters 4 and 5 are our numbers:
 
 			// teamtalk can't send PMs, just don't send it, else everyone would be able to see it, and no one wants to see your sex RP sicko.
@@ -1000,19 +961,18 @@ static void HU_queueChatChar(INT32 c)
 				return;
 			}
 
-			strncpy(nodenum, msg+3, 3);
+			strncpy(playernum, msg+3, 3);
 
 			// check for undesirable characters in our "number"
-			if 	(((nodenum[0] < '0') || (nodenum[0] > '9')) || ((nodenum[1] < '0') || (nodenum[1] > '9')))
+			if (((playernum[0] < '0') || (playernum[0] > '9')) || ((playernum[1] < '0') || (playernum[1] > '9')))
 			{
-				// check if nodenum[1] is a space
-				if (nodenum[1] == ' ')
+				// check if playernum[1] is a space
+				if (playernum[1] == ' ')
 					spc = 0;
 					// let it slide
 				else
 				{
-					HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<node> \'.", false);
-					free(nodenum);
+					HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<player num> \'.", false);
 					return;
 				}
 			}
@@ -1021,14 +981,12 @@ static void HU_queueChatChar(INT32 c)
 			{
 				if (msg[5] != ' ')
 				{
-					HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<node> \'.", false);
-					free(nodenum);
+					HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<player num> \'.", false);
 					return;
 				}
 			}
 
-			target = atoi((const char*) nodenum); // turn that into a number
-			free(nodenum);
+			target = atoi(playernum); // turn that into a number
 			//CONS_Printf("%d\n", target);
 
 			// check for target player, if it doesn't exist then we can't send the message!
@@ -1040,7 +998,7 @@ static void HU_queueChatChar(INT32 c)
 				return;
 			}
 
-			// we need to get rid of the /pm<node>
+			// we need to get rid of the /pm<player num>
 			newmsg = msg+5+spc;
 			strlcpy(msg, newmsg, 255);
 		}
@@ -1066,6 +1024,8 @@ void HU_clearChatChars(void)
 		w_chat[i] = 0; // reset this.
 	chat_on = false;
 	c_input = 0;
+
+	I_UpdateMouseGrab();
 }
 
 #ifndef NONET
@@ -1097,7 +1057,7 @@ boolean HU_Responder(event_t *ev)
 		INT32 i;
 		for (i = 0; i < num_gamecontrols; i++)
 		{
-			if (gamecontrol[i][0] == ev->data1 || gamecontrol[i][1] == ev->data1)
+			if (gamecontrol[0][i][0] == ev->data1 || gamecontrol[0][i][1] == ev->data1)
 				break;
 		}
 
@@ -1109,7 +1069,7 @@ boolean HU_Responder(event_t *ev)
 	if (!chat_on)
 	{
 		// enter chat mode
-		if ((ev->data1 == gamecontrol[gc_talkkey][0] || ev->data1 == gamecontrol[gc_talkkey][1])
+		if ((ev->data1 == gamecontrol[0][gc_talkkey][0] || ev->data1 == gamecontrol[0][gc_talkkey][1])
 			&& netgame && !OLD_MUTE) // check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
 		{
 			chat_on = true;
@@ -1119,7 +1079,7 @@ boolean HU_Responder(event_t *ev)
 			typelines = 1;
 			return true;
 		}
-		if ((ev->data1 == gamecontrol[gc_teamkey][0] || ev->data1 == gamecontrol[gc_teamkey][1])
+		if ((ev->data1 == gamecontrol[0][gc_teamkey][0] || ev->data1 == gamecontrol[0][gc_teamkey][1])
 			&& netgame && !OLD_MUTE)
 		{
 			chat_on = true;
@@ -1144,8 +1104,8 @@ boolean HU_Responder(event_t *ev)
 
 		// Ignore non-keyboard keys, except when the talk key is bound
 		if (ev->data1 >= KEY_MOUSE1
-		&& (ev->data1 != gamecontrol[gc_talkkey][0]
-		&& ev->data1 != gamecontrol[gc_talkkey][1]))
+		&& (ev->data1 != gamecontrol[0][gc_talkkey][0]
+		&& ev->data1 != gamecontrol[0][gc_talkkey][1]))
 			return false;
 
 		c = CON_ShiftChar(c);
@@ -1204,14 +1164,16 @@ boolean HU_Responder(event_t *ev)
 			chat_on = false;
 			c_input = 0; // reset input cursor
 			chat_scrollmedown = true; // you hit enter, so you might wanna autoscroll to see what you just sent. :)
+			I_UpdateMouseGrab();
 		}
 		else if (c == KEY_ESCAPE
-			|| ((c == gamecontrol[gc_talkkey][0] || c == gamecontrol[gc_talkkey][1]
-			|| c == gamecontrol[gc_teamkey][0] || c == gamecontrol[gc_teamkey][1])
+			|| ((c == gamecontrol[0][gc_talkkey][0] || c == gamecontrol[0][gc_talkkey][1]
+			|| c == gamecontrol[0][gc_teamkey][0] || c == gamecontrol[0][gc_teamkey][1])
 			&& c >= KEY_MOUSE1)) // If it's not a keyboard key, then the chat button is used as a toggle.
 		{
 			chat_on = false;
 			c_input = 0; // reset input cursor
+			I_UpdateMouseGrab();
 		}
 		else if ((c == KEY_UPARROW || c == KEY_MOUSEWHEELUP) && chat_scroll > 0 && !OLDCHAT) // CHAT SCROLLING YAYS!
 		{
@@ -1226,9 +1188,19 @@ boolean HU_Responder(event_t *ev)
 			chat_scrolltime = 4;
 		}
 		else if (c == KEY_LEFTARROW && c_input != 0 && !OLDCHAT) // i said go back
-			c_input--;
+		{
+			if (ctrldown)
+				c_input = M_JumpWordReverse(w_chat, c_input);
+			else
+				c_input--;
+		}
 		else if (c == KEY_RIGHTARROW && c_input < strlen(w_chat) && !OLDCHAT) // don't need to check for admin or w/e here since the chat won't ever contain anything if it's muted.
-			c_input++;
+		{
+			if (ctrldown)
+				c_input += M_JumpWord(&w_chat[c_input]);
+			else
+				c_input++;
+		}
 		return true;
 	}
 #endif
@@ -1299,7 +1271,7 @@ static char *CHAT_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 
 // 30/7/18: chaty is now the distance at which the lowest point of the chat will be drawn if that makes any sense.
 
-INT16 chatx = 13, chaty = 169; // let's use this as our coordinates, shh
+INT16 chatx = 13, chaty = 169; // let's use this as our coordinates
 
 // chat stuff by VincyTM LOL XD!
 
@@ -1368,6 +1340,7 @@ static void HU_drawMiniChat(void)
 		dy = 0;
 		dx = 0;
 		msglines += linescount+1;
+
 		if (msg)
 			Z_Free(msg);
 	}
@@ -1383,7 +1356,9 @@ static void HU_drawMiniChat(void)
 	}
 	else
 #endif
+	{
 		y -= (cv_kartspeedometer.value ? 16 : 0);
+	}
 
 	dx = 0;
 	dy = 0;
@@ -1442,6 +1417,7 @@ static void HU_drawMiniChat(void)
 		}
 		dy += charheight;
 		dx = 0;
+
 		if (msg)
 			Z_Free(msg);
 	}
@@ -1482,13 +1458,15 @@ static void HU_drawChatLog(INT32 offset)
 	if (r_splitscreen)
 	{
 		y -= BASEVIDHEIGHT/2;
+
 		if (r_splitscreen > 1)
 			y += 16;
 	}
 	else
 #endif
+	{
 		y -= (cv_kartspeedometer.value ? 16 : 0);
-
+	}
 
 	chat_topy = y + chat_scroll*charheight;
 	chat_bottomy = chat_topy + boxh*charheight;
@@ -1539,6 +1517,7 @@ static void HU_drawChatLog(INT32 offset)
 		}
 		dy += charheight;
 		dx = 0;
+
 		if (msg)
 			Z_Free(msg);
 	}
@@ -1550,18 +1529,16 @@ static void HU_drawChatLog(INT32 offset)
 	}
 	chat_scrollmedown = false;
 
-	// getmaxscroll through a lazy hack. We do all these loops, so let's not do more loops that are gonna lag the game more. :P
-	chat_maxscroll = (dy/charheight); // welcome to C, we don't know what min() and max() are.
-	if (chat_maxscroll <= (UINT32)boxh)
-		chat_maxscroll = 0;
-	else
-		chat_maxscroll -= boxh;
+	// getmaxscroll through a lazy hack. We do all these loops,
+	// so let's not do more loops that are gonna lag the game more. :P
+	chat_maxscroll = max(dy / charheight - cv_chatheight.value, 0);
 
 	// if we're not bound by the time, autoscroll for next frame:
 	if (atbottom)
 		chat_scroll = chat_maxscroll;
 
 	// draw arrows to indicate that we can (or not) scroll.
+	// account for Y = -1 offset in tinyfont
 	if (chat_scroll > 0)
 		V_DrawCharacter(chatx-9, ((justscrolledup) ? (chat_topy-1) : (chat_topy)), V_SNAPTOBOTTOM | V_SNAPTOLEFT | highlight | '\x1A', false); // up arrow
 	if (chat_scroll < chat_maxscroll)
@@ -1600,7 +1577,9 @@ static void HU_DrawChat(void)
 	}
 	else
 #endif
+	{
 		y -= (cv_kartspeedometer.value ? 16 : 0);
+	}
 
 	if (teamtalk)
 	{
@@ -1694,26 +1673,24 @@ static void HU_DrawChat(void)
 		}
 		else
 #endif
+		{
 			p_dispy -= (cv_kartspeedometer.value ? 16 : 0);
+		}
 
 		i = 0;
 		for(i=0; (i<MAXPLAYERS); i++)
 		{
-
 			// filter: (code needs optimization pls help I'm bad with C)
 			if (w_chat[3])
 			{
-				char *nodenum;
+				char playernum[3];
 				UINT32 n;
 				// right, that's half important: (w_chat[4] may be a space since /pm0 msg is perfectly acceptable!)
 				if ( ( ((w_chat[3] != 0) && ((w_chat[3] < '0') || (w_chat[3] > '9'))) || ((w_chat[4] != 0) && (((w_chat[4] < '0') || (w_chat[4] > '9'))))) && (w_chat[4] != ' '))
 					break;
 
-
-				nodenum = (char*) malloc(3);
-				strncpy(nodenum, w_chat+3, 3);
-				n = atoi((const char*) nodenum); // turn that into a number
-				free(nodenum);
+				strncpy(playernum, w_chat+3, 3);
+				n = atoi(playernum); // turn that into a number
 				// special cases:
 
 				if ((n == 0) && !(w_chat[4] == '0'))
@@ -1833,166 +1810,11 @@ static void HU_DrawChat_Old(void)
 			y += charheight;
 		}
 	}
+
+	if (hu_tick < 4)
+		V_DrawCharacter(HU_INPUTX + c, y, '_' | cv_constextsize.value |V_NOSCALESTART|t, true);
 }
 #endif
-
-// draw the Crosshair, at the exact center of the view.
-//
-// Crosshairs are pre-cached at HU_Init
-
-/*static inline void HU_DrawCrosshair(void)
-{
-	INT32 i, x, y;
-
-	i = cv_crosshair.value & 3;
-	if (!i)
-		return;
-
-	if ((netgame || multiplayer) && players[displayplayers[0]].spectator)
-		return;
-
-#ifdef HWRENDER
-	if (rendermode != render_soft)
-	{
-		x = (INT32)gr_basewindowcenterx;
-		y = (INT32)gr_basewindowcentery;
-	}
-	else
-#endif
-	{
-		x = viewwindowx + (viewwidth>>1);
-		y = viewwindowy + (viewheight>>1);
-	}
-
-	V_DrawScaledPatch(x, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
-}
-
-static inline void HU_DrawCrosshair2(void)
-{
-	INT32 i, x, y;
-
-	i = cv_crosshair2.value & 3;
-	if (!i)
-		return;
-
-	if ((netgame || multiplayer) && players[displayplayers[1]].spectator)
-		return;
-
-#ifdef HWRENDER
-	if (rendermode != render_soft)
-	{
-		x = (INT32)gr_basewindowcenterx;
-		y = (INT32)gr_basewindowcentery;
-	}
-	else
-#endif
-	{
-		x = viewwindowx + (viewwidth>>1);
-		y = viewwindowy + (viewheight>>1);
-	}
-
-	if (splitscreen)
-	{
-		if (splitscreen > 1)
-#ifdef HWRENDER
-			if (rendermode != render_soft)
-				x += (INT32)gr_viewwidth;
-			else
-#endif
-				x += viewwidth;
-		else
-		{
-#ifdef HWRENDER
-			if (rendermode != render_soft)
-				y += (INT32)gr_viewheight;
-			else
-#endif
-				y += viewheight;
-		}
-
-		V_DrawScaledPatch(x, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
-	}
-}
-
-static inline void HU_DrawCrosshair3(void)
-{
-	INT32 i, x, y;
-
-	i = cv_crosshair3.value & 3;
-	if (!i)
-		return;
-
-	if ((netgame || multiplayer) && players[displayplayers[2]].spectator)
-		return;
-
-#ifdef HWRENDER
-	if (rendermode != render_soft)
-	{
-		x = (INT32)gr_basewindowcenterx;
-		y = (INT32)gr_basewindowcentery;
-	}
-	else
-#endif
-	{
-		x = viewwindowx + (viewwidth>>1);
-		y = viewwindowy + (viewheight>>1);
-	}
-
-	if (splitscreen > 1)
-	{
-#ifdef HWRENDER
-		if (rendermode != render_soft)
-			y += (INT32)gr_viewheight;
-		else
-#endif
-			y += viewheight;
-
-		V_DrawScaledPatch(x, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
-	}
-}
-
-static inline void HU_DrawCrosshair4(void)
-{
-	INT32 i, x, y;
-
-	i = cv_crosshair4.value & 3;
-	if (!i)
-		return;
-
-	if ((netgame || multiplayer) && players[displayplayers[3]].spectator)
-		return;
-
-#ifdef HWRENDER
-	if (rendermode != render_soft)
-	{
-		x = (INT32)gr_basewindowcenterx;
-		y = (INT32)gr_basewindowcentery;
-	}
-	else
-#endif
-	{
-		x = viewwindowx + (viewwidth>>1);
-		y = viewwindowy + (viewheight>>1);
-	}
-
-	if (splitscreen > 2)
-	{
-#ifdef HWRENDER
-		if (rendermode != render_soft)
-		{
-			x += (INT32)gr_viewwidth;
-			y += (INT32)gr_viewheight;
-		}
-		else
-#endif
-		{
-			x += viewwidth;
-			y += viewheight;
-		}
-
-		V_DrawScaledPatch(x, y, V_NOSCALESTART|V_OFFSET|V_TRANSLUCENT, crosshair[i - 1]);
-	}
-}*/
 
 static void HU_DrawCEcho(void)
 {
@@ -2000,8 +1822,7 @@ static void HU_DrawCEcho(void)
 	INT32 y = (BASEVIDHEIGHT/2)-4;
 	INT32 pnumlines = 0;
 
-	UINT32 realflags = cechoflags;
-	INT32 realalpha = (INT32)((cechoflags & V_ALPHAMASK) >> V_ALPHASHIFT);
+	UINT32 realflags = cechoflags|V_SPLITSCREEN; // requested as part of splitscreen's stuff
 
 	char *line;
 	char *echoptr;
@@ -2019,15 +1840,6 @@ static void HU_DrawCEcho(void)
 		CONS_Alert(CONS_WARNING, "CEcho contained too many lines, not displaying\n");
 		cechotimer = 0;
 		return;
-	}
-
-	// Automatic fadeout
-	if (realflags & V_AUTOFADEOUT)
-	{
-		UINT32 tempalpha = (UINT32)max((INT32)(10 - cechotimer), realalpha);
-
-		realflags &= ~V_ALPHASHIFT;
-		realflags |= (tempalpha << V_ALPHASHIFT);
 	}
 
 	strcpy(temp, cechotext);
@@ -2142,6 +1954,9 @@ void HU_DrawSongCredits(void)
 //
 void HU_Drawer(void)
 {
+	if (needpatchrecache)
+		R_ReloadHUDGraphics();
+
 	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
 		V_DrawVhsEffect(demo.rewinding);
 
@@ -2155,7 +1970,7 @@ void HU_Drawer(void)
 		if (!OLDCHAT)
 			HU_DrawChat();
 		else
-			HU_DrawChat_Old(); // why the fuck.........................
+			HU_DrawChat_Old();
 	}
 	else
 	{
@@ -2193,7 +2008,7 @@ void HU_Drawer(void)
 	if (!( Playing() || demo.playback )
 	 || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE
 	 || gamestate == GS_CREDITS      || gamestate == GS_EVALUATION
-	 || gamestate == GS_GAMEEND
+	 || gamestate == GS_ENDING       || gamestate == GS_GAMEEND
 	 || gamestate == GS_VOTING || gamestate == GS_WAITINGPLAYERS) // SRB2kart
 		return;
 
@@ -2202,14 +2017,11 @@ void HU_Drawer(void)
 	{
 		if (netgame || multiplayer)
 		{
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_rankings))
-#endif
 				HU_DrawRankings();
-#ifdef HAVE_BLUA
-		LUAh_ScoresHUD();
-#endif
+			LUAh_ScoresHUD();
 		}
+
 		if (demo.playback)
 		{
 			HU_DrawDemoInfo();
@@ -2218,22 +2030,6 @@ void HU_Drawer(void)
 
 	if (gamestate != GS_LEVEL)
 		return;
-
-	// draw the crosshair, not when viewing demos nor with chasecam
-	/*if (!automapactive && !demo.playback)
-	{
-		if (cv_crosshair.value && !camera[0].chase && !players[displayplayers[0]].spectator)
-			HU_DrawCrosshair();
-
-		if (cv_crosshair2.value && !camera[1].chase && !players[displayplayers[1]].spectator)
-			HU_DrawCrosshair2();
-
-		if (cv_crosshair3.value && !camera[2].chase && !players[displayplayers[2]].spectator)
-			HU_DrawCrosshair3();
-
-		if (cv_crosshair4.value && !camera[3].chase && !players[displayplayers[3]].spectator)
-			HU_DrawCrosshair4();
-	}*/
 
 	// draw song credits
 	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
@@ -2253,6 +2049,21 @@ void HU_Drawer(void)
 			strcat(resynch_text, ".");
 
 		V_DrawCenteredString(BASEVIDWIDTH/2, 180, V_YELLOWMAP | V_ALLOWLOWERCASE, resynch_text);
+	}
+
+	if (modeattacking && pausedelay > 0 && !pausebreakkey)
+	{
+		INT32 strength = ((pausedelay - 1 - NEWTICRATE/2)*10)/(NEWTICRATE/3);
+		INT32 y = hudinfo[HUD_LIVES].y - 13;
+
+		V_DrawThinString(hudinfo[HUD_LIVES].x-2, y,
+			hudinfo[HUD_LIVES].f|((leveltime & 4) ? V_SKYMAP : V_BLUEMAP),
+			"HOLD TO RETRY...");
+
+		if (strength > 9)
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
+		else if (strength > 0)
+			V_DrawFadeScreen(0, strength);
 	}
 }
 
@@ -2366,368 +2177,20 @@ void
 HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 {
 	patch_t *patch;
+	INT32 w = BASEVIDWIDTH;
+
+	if (r_splitscreen > 1)
+	{
+		w /= 2;
+	}
 
 	patch = mping[Ping_gfx_num(ping)];
 
 	if (( flags & V_SNAPTORIGHT ))
-		x += ( BASEVIDWIDTH - SHORT (patch->width) );
+		x += ( w - SHORT (patch->width) );
 
 	V_DrawScaledPatch(x, y, flags, patch);
 }
-
-//
-// HU_DrawTabRankings -- moved to k_kart.c
-//
-
-//
-// HU_DrawTeamTabRankings
-//
-/*void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer)
-{
-	INT32 i,x,y;
-	INT32 redplayers = 0, blueplayers = 0;
-	boolean smol = false;
-	const UINT8 *colormap;
-	char name[MAXPLAYERNAME+1];
-
-	// before we draw, we must count how many players are in each team. It makes an additional loop, but we need to know if we have to draw a big or a small ranking.
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (players[tab[i].num].spectator)
-			continue; //ignore them.
-
-		if (tab[i].color == skincolor_redteam) //red
-		{
-			if (redplayers++ > 8)
-			{
-				smol = true;
-				break; // don't make more loops than we need to.
-			}
-		}
-		else if (tab[i].color == skincolor_blueteam) //blue
-		{
-			if (blueplayers++ > 8)
-			{
-				smol = true;
-				break;
-			}
-		}
-		else //er?  not on red or blue, so ignore them
-			continue;
-
-	}
-
-	// I'll be blunt with you, this may add more lines, but I'm not adding weird cases for this, so we're executing a separate function.
-	if (smol == true || cv_compactscoreboard.value)
-	{
-		HU_Draw32TeamTabRankings(tab, whiteplayer);
-		return;
-	}
-
-	V_DrawFill(160, 26, 1, 154, 0); //Draw a vertical line to separate the two teams.
-	V_DrawFill(1, 26, 318, 1, 0); //And a horizontal line to make a T.
-	V_DrawFill(1, 180, 318, 1, 0); //And a horizontal line near the bottom.
-
-	i=0, redplayers=0, blueplayers=0;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (players[tab[i].num].spectator)
-			continue; //ignore them.
-
-		if (tab[i].color == skincolor_redteam) //red
-		{
-			if (redplayers++ > 8)
-				continue;
-			x = 32 + (BASEVIDWIDTH/2);
-			y = (redplayers * 16) + 16;
-		}
-		else if (tab[i].color == skincolor_blueteam) //blue
-		{
-			if (blueplayers++ > 8)
-				continue;
-			x = 32;
-			y = (blueplayers * 16) + 16;
-		}
-		else //er?  not on red or blue, so ignore them
-			continue;
-
-		strlcpy(name, tab[i].name, 7);
-		V_DrawString(x + 20, y,
-		             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		             | ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT)
-		             | V_ALLOWLOWERCASE, name);
-
-		if (gametype == GT_CTF)
-		{
-			if (players[tab[i].num].gotflag & GF_REDFLAG) // Red
-				V_DrawSmallScaledPatch(x-28, y-4, 0, rflagico);
-			else if (players[tab[i].num].gotflag & GF_BLUEFLAG) // Blue
-				V_DrawSmallScaledPatch(x-28, y-4, 0, bflagico);
-		}
-
-		// Draw emeralds
-		if (!players[tab[i].num].powers[pw_super]
-			|| ((leveltime/7) & 1))
-		{
-			HU_DrawEmeralds(x-12,y+2,tab[i].emeralds);
-		}
-
-		if (players[tab[i].num].powers[pw_super])
-		{
-			colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-			V_DrawSmallMappedPatch (x, y-4, 0, facewantprefix[players[tab[i].num].skin], colormap);
-		}
-		else
-		{
-			colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-			if (players[tab[i].num].health <= 0)
-				V_DrawSmallTranslucentMappedPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-			else
-				V_DrawSmallMappedPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-		}
-		V_DrawRightAlignedThinString(x+120, y-1, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-		if (!splitscreen)
-		{
-			if (!(tab[i].num == serverplayer))
-				HU_drawPing(x+ 113, y+2, playerpingtable[tab[i].num], false);
-		}
-		V_DrawRightAlignedThinString(x+100, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-		if (!splitscreen)
-		{
-			if (!(tab[i].num == serverplayer))
-				HU_drawPing(x+ 113, y+2, playerpingtable[tab[i].num], false);
-		//else
-		//	V_DrawSmallString(x+ 94, y+4, V_YELLOWMAP, "SERVER");
-		}
-	}
-}
-
-//
-// HU_DrawDualTabRankings
-//
-void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer)
-{
-	INT32 i;
-	const UINT8 *colormap;
-	char name[MAXPLAYERNAME+1];
-
-	V_DrawFill(160, 26, 1, 154, 0); //Draw a vertical line to separate the two sides.
-	V_DrawFill(1, 26, 318, 1, 0); //And a horizontal line to make a T.
-	V_DrawFill(1, 180, 318, 1, 0); //And a horizontal line near the bottom.
-
-	for (i = 0; i < scorelines; i++)
-	{
-		if (players[tab[i].num].spectator)
-			continue; //ignore them.
-
-		strlcpy(name, tab[i].name, 7);
-		if (!(tab[i].num == serverplayer))
-			HU_drawPing(x+ 113, y+2, playerpingtable[tab[i].num], false);
-		//else
-		//	V_DrawSmallString(x+ 94, y+4, V_YELLOWMAP, "SERVER");
-
-		V_DrawString(x + 20, y,
-		             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		             | ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT)
-		             | V_ALLOWLOWERCASE, name);
-
-		if (G_GametypeUsesLives()) //show lives
-			V_DrawRightAlignedString(x, y+4, V_ALLOWLOWERCASE, va("%dx", players[tab[i].num].lives));
-		else if (G_TagGametype() && players[tab[i].num].pflags & PF_TAGIT)
-			V_DrawSmallScaledPatch(x-28, y-4, 0, tagico);
-
-		// Draw emeralds
-		if (!players[tab[i].num].powers[pw_super]
-			|| ((leveltime/7) & 1))
-		{
-			HU_DrawEmeralds(x-12,y+2,tab[i].emeralds);
-		}
-
-		//V_DrawSmallScaledPatch (x, y-4, 0, livesback);
-		if (tab[i].color == 0)
-		{
-			colormap = colormaps;
-			if (players[tab[i].num].powers[pw_super])
-				V_DrawSmallScaledPatch (x, y-4, 0, facewantprefix[players[tab[i].num].skin]);
-			else
-			{
-				if (players[tab[i].num].health <= 0)
-					V_DrawSmallTranslucentPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin]);
-				else
-					V_DrawSmallScaledPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin]);
-			}
-		}
-		else
-		{
-			if (players[tab[i].num].powers[pw_super])
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-				V_DrawSmallMappedPatch (x, y-4, 0, facewantprefix[players[tab[i].num].skin], colormap);
-			}
-			else
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-				if (players[tab[i].num].health <= 0)
-					V_DrawSmallTranslucentMappedPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-				else
-					V_DrawSmallMappedPatch (x, y-4, 0, facerankprefix[players[tab[i].num].skin], colormap);
-			}
-		}
-
-		// All data drawn with thin string for space.
-		if (G_RaceGametype())
-		{
-			if (circuitmap)
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedThinString(x+146, y, 0, va("%i:%02i.%02i", G_TicsToMinutes(players[tab[i].num].realtime,true), G_TicsToSeconds(players[tab[i].num].realtime), G_TicsToCentiseconds(players[tab[i].num].realtime)));
-				else
-					V_DrawRightAlignedThinString(x+146, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-			}
-			else
-				V_DrawRightAlignedThinString(x+146, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%i:%02i.%02i", G_TicsToMinutes(tab[i].count,true), G_TicsToSeconds(tab[i].count), G_TicsToCentiseconds(tab[i].count)));
-		}
-		else
-			V_DrawRightAlignedThinString(x+100, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-
-		y += 16;
-		if (y > 160)
-		{
-			y = 32;
-			x += BASEVIDWIDTH/2;
-		}
-	}
-}
-
-//
-// HU_Draw32TabRankings
-//
-static void HU_Draw32TabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer)
-{
-	INT32 i;
-	const UINT8 *colormap;
-	char name[MAXPLAYERNAME+1];
-
-	V_DrawFill(160, 26, 1, 154, 0); //Draw a vertical line to separate the two sides.
-	V_DrawFill(1, 26, 318, 1, 0); //And a horizontal line to make a T.
-	V_DrawFill(1, 180, 318, 1, 0); //And a horizontal line near the bottom.
-
-	for (i = 0; i < scorelines; i++)
-	{
-		if (players[tab[i].num].spectator)
-			continue; //ignore them.
-
-		strlcpy(name, tab[i].name, 7);
-		if (!splitscreen) // don't draw it on splitscreen,
-		{
-			if (!(tab[i].num == serverplayer))
-				HU_drawPing(x+ 135, y+3, playerpingtable[tab[i].num], true);
-		//else
-		//	V_DrawSmallString(x+ 129, y+4, V_YELLOWMAP, "HOST");
-		}
-
-		V_DrawString(x + 10, y,
-		             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		             | ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT)
-		             | V_ALLOWLOWERCASE, name);
-
-		if (G_GametypeUsesLives()) //show lives
-			V_DrawRightAlignedThinString(x-1, y, V_ALLOWLOWERCASE, va("%d", players[tab[i].num].lives));
-		else if (G_TagGametype() && players[tab[i].num].pflags & PF_TAGIT)
-			V_DrawFixedPatch((x-10)*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, tagico, 0);
-
-		// Draw emeralds
-		if (!players[tab[i].num].powers[pw_super]
-			|| ((leveltime/7) & 1))
-		{
-			HU_Draw32Emeralds(x+60, y+2, tab[i].emeralds);
-			//HU_DrawEmeralds(x-12,y+2,tab[i].emeralds);
-		}
-
-		//V_DrawSmallScaledPatch (x, y-4, 0, livesback);
-		if (tab[i].color == 0)
-		{
-			colormap = colormaps;
-			if (players[tab[i].num].powers[pw_super])
-				V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/4, 0, superprefix[players[tab[i].num].skin], 0);
-			else
-			{
-				if (players[tab[i].num].health <= 0)
-					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, V_HUDTRANSHALF, faceprefix[players[tab[i].num].skin], 0);
-				else
-					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, faceprefix[players[tab[i].num].skin], 0);
-			}
-		}
-		else
-		{
-			if (players[tab[i].num].powers[pw_super])
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-				V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/4, 0, superprefix[players[tab[i].num].skin], colormap);
-			}
-			else
-			{
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo ? players[tab[i].num].mo->color : tab[i].color, GTC_CACHE);
-				if (players[tab[i].num].health <= 0)
-					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, V_HUDTRANSHALF, faceprefix[players[tab[i].num].skin], colormap);
-				else
-					V_DrawFixedPatch(x*FRACUNIT, (y)*FRACUNIT, FRACUNIT/4, 0, faceprefix[players[tab[i].num].skin], colormap);
-			}
-		}
-
-		// All data drawn with thin string for space.
-		if (gametype == GT_RACE)
-		{
-			if (circuitmap)
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedThinString(x+128, y, 0, va("%i:%02i.%02i", G_TicsToMinutes(players[tab[i].num].realtime,true), G_TicsToSeconds(players[tab[i].num].realtime), G_TicsToCentiseconds(players[tab[i].num].realtime)));
-				else
-					V_DrawRightAlignedThinString(x+128, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-			}
-			else
-				V_DrawRightAlignedThinString(x+128, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%i:%02i.%02i", G_TicsToMinutes(tab[i].count,true), G_TicsToSeconds(tab[i].count), G_TicsToCentiseconds(tab[i].count)));
-		}
-		else
-			V_DrawRightAlignedThinString(x+128, y, ((players[tab[i].num].health > 0) ? 0 : V_TRANSLUCENT), va("%u", tab[i].count));
-
-		y += 9;
-		if (i == 16)
-		{
-			y = 32;
-			x += BASEVIDWIDTH/2;
-		}
-	}
-}
-
-//
-// HU_DrawEmeralds
-//
-void HU_DrawEmeralds(INT32 x, INT32 y, INT32 pemeralds)
-{
-	//Draw the emeralds, in the CORRECT order, using tiny emerald sprites.
-	if (pemeralds & EMERALD1)
-		V_DrawSmallScaledPatch(x  , y-6, 0, tinyemeraldpics[0]);
-
-	if (pemeralds & EMERALD2)
-		V_DrawSmallScaledPatch(x+4, y-3, 0, tinyemeraldpics[1]);
-
-	if (pemeralds & EMERALD3)
-		V_DrawSmallScaledPatch(x+4, y+3, 0, tinyemeraldpics[2]);
-
-	if (pemeralds & EMERALD4)
-		V_DrawSmallScaledPatch(x  , y+6, 0, tinyemeraldpics[3]);
-
-	if (pemeralds & EMERALD5)
-		V_DrawSmallScaledPatch(x-4, y+3, 0, tinyemeraldpics[4]);
-
-	if (pemeralds & EMERALD6)
-		V_DrawSmallScaledPatch(x-4, y-3, 0, tinyemeraldpics[5]);
-
-	if (pemeralds & EMERALD7)
-		V_DrawSmallScaledPatch(x,   y,   0, tinyemeraldpics[6]);
-}*/
 
 //
 // HU_DrawSpectatorTicker
@@ -2798,7 +2261,6 @@ static inline void HU_DrawSpectatorTicker(void)
 //
 static void HU_DrawRankings(void)
 {
-	patch_t *p;
 	playersort_t tab[MAXPLAYERS];
 	INT32 i, j, scorelines, hilicol, numplayersingame = 0;
 	boolean completed[MAXPLAYERS];
@@ -2819,28 +2281,9 @@ static void HU_DrawRankings(void)
 	else
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametype_cons_t[gametype].strvalue);
 
-	if (G_GametypeHasTeams())
+	if (gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT))
 	{
-		if (gametype == GT_CTF)
-			p = bflagico;
-		else
-			p = bmatcico;
-
-		V_DrawSmallScaledPatch(128 - SHORT(p->width)/4, 4, 0, p);
-		V_DrawCenteredString(128, 16, 0, va("%u", bluescore));
-
-		if (gametype == GT_CTF)
-			p = rflagico;
-		else
-			p = rmatcico;
-
-		V_DrawSmallScaledPatch(192 - SHORT(p->width)/4, 4, 0, p);
-		V_DrawCenteredString(192, 16, 0, va("%u", redscore));
-	}
-
-	if (!G_RaceGametype())
-	{
-		if (cv_timelimit.value && timelimitintics > 0)
+		if ((gametyperules & GTR_TIMELIMIT) && cv_timelimit.value && timelimitintics > 0)
 		{
 			UINT32 timeval = (timelimitintics + starttime + 1 - leveltime);
 			if (timeval > timelimitintics+1)
@@ -2861,24 +2304,12 @@ static void HU_DrawRankings(void)
 			}
 		}
 
-		if (cv_pointlimit.value > 0)
+		if ((gametyperules & GTR_POINTLIMIT) && cv_pointlimit.value > 0)
 		{
 			V_DrawCenteredString(256, 8, 0, "POINT LIMIT");
 			V_DrawCenteredString(256, 16, hilicol, va("%d", cv_pointlimit.value));
 		}
 	}
-	/*else if (gametype == GT_COOP)
-	{
-		INT32 totalscore = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i])
-				totalscore += players[i].score;
-		}
-
-		V_DrawCenteredString(256, 8, 0, "TOTAL SCORE");
-		V_DrawCenteredString(256, 16, 0, va("%u", totalscore));
-	}*/
 	else
 	{
 		if (circuitmap)
@@ -2933,7 +2364,7 @@ static void HU_DrawRankings(void)
 
 		tab[scorelines].name = player_names[i];
 
-		if (G_RaceGametype())
+		if ((gametyperules & GTR_CIRCUIT))
 		{
 			if (circuitmap)
 				tab[scorelines].count = players[i].laps;
@@ -2951,12 +2382,7 @@ static void HU_DrawRankings(void)
 #endif
 	}
 
-	/*if (G_GametypeHasTeams())
-		HU_DrawTeamTabRankings(tab, whiteplayer); //separate function for Spazzo's silly request -- gotta fix this up later
-	else if (scorelines > 10)*/
-	HU_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
-	/*else
-		HU_DrawDualTabRankings(32, 32, tab, scorelines, whiteplayer);*/
+	K_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
 
 	// draw spectators in a ticker across the bottom
 	if (netgame && G_GametypeHasSpectators())

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 1999-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -27,12 +27,14 @@
 typedef enum
 {
 	BT_ACCELERATE	= 1,		// Accelerate
-	BT_DRIFT		= 1<<2,		// Drift (direction is cmd->driftturn)
+	BT_DRIFT		= 1<<2,		// Drift (direction is cmd->turning)
 	BT_BRAKE		= 1<<3,		// Brake
 	BT_ATTACK		= 1<<4,		// Use Item
 	BT_FORWARD		= 1<<5,		// Aim Item Forward
 	BT_BACKWARD		= 1<<6,		// Aim Item Backward
 	BT_LOOKBACK		= 1<<7,		// Look Backward
+
+	BT_EBRAKEMASK	= (BT_ACCELERATE|BT_BRAKE),
 
 	// free: 1<<8 to 1<<12
 
@@ -47,9 +49,11 @@ typedef enum
 // Mainly movements/button commands per game tick,
 // plus a checksum for internal state consistency.
 
-// bits in angleturn
+// ticcmd turning bits
+#define TICCMD_REDUCE 16
+
+// ticcmd flags
 #define TICCMD_RECEIVED 1
-#define TICCMD_XY 2
 
 #if defined(_MSC_VER)
 #pragma pack(1)
@@ -58,12 +62,11 @@ typedef enum
 typedef struct
 {
 	SINT8 forwardmove; // -MAXPLMOVE to MAXPLMOVE (50)
-	SINT8 sidemove; // -MAXPLMOVE to MAXPLMOVE (50)
-	INT16 angleturn; // <<16 for angle delta - saved as 1 byte into demos
+	INT16 turning; // Turn speed
 	INT16 aiming; // vertical aiming, see G_BuildTicCmd
 	UINT16 buttons;
-	INT16 driftturn; // SRB2Kart: Used for getting drift turn speed
 	UINT8 latency; // Netgames: how many tics ago was this ticcmd generated from this player's end?
+	UINT8 flags;
 } ATTRPACK ticcmd_t;
 
 #if defined(_MSC_VER)

@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2012-2016 by John "JTE" Muniz.
-// Copyright (C) 2012-2018 by Sonic Team Junior.
+// Copyright (C) 2012-2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,12 +11,10 @@
 /// \brief basic math library for Lua scripting
 
 #include "doomdef.h"
-#ifdef HAVE_BLUA
 //#include "fastcmp.h"
 #include "tables.h"
 #include "p_local.h"
 #include "doomstat.h" // for ALL7EMERALDS
-#include "k_color.h" // KartColor_Opposite
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -82,20 +80,9 @@ static int lib_finecosine(lua_State *L)
 
 static int lib_finetangent(lua_State *L)
 {
-	// 2.1.15 ONLY HACK: optional boolean argument, only add ANGLE_90 if true
-	boolean newtan = lua_optboolean(L, 2);
-
-	if (newtan)
-	{
-		// HACK: add ANGLE_90 to make tan() in Lua start at 0 like it should
-		// use & 4095 instead of & FINEMASK (8191), so it doesn't go out of the array's bounds
-		lua_pushfixed(L, FINETANGENT(((luaL_checkangle(L, 1)+ANGLE_90)>>ANGLETOFINESHIFT) & 4095));
-	}
-	else
-	{
-		LUA_Deprecated(L, "tan(angle)", "tan(angle, true)");
-		lua_pushfixed(L, FINETANGENT((luaL_checkangle(L, 1)>>ANGLETOFINESHIFT) & 4095));
-	}
+	// HACK: add ANGLE_90 to make tan() in Lua start at 0 like it should
+	// use & 4095 instead of & FINEMASK (8191), so it doesn't go out of the array's bounds
+	lua_pushfixed(L, FINETANGENT(((luaL_checkangle(L, 1)+ANGLE_90)>>ANGLETOFINESHIFT) & 4095));
 	return 1;
 }
 
@@ -121,12 +108,6 @@ static int lib_fixeddiv(lua_State *L)
 	if (j == 0)
 		return luaL_error(L, "divide by zero");
 	lua_pushfixed(L, FixedDiv(i, j));
-	return 1;
-}
-
-static int lib_fixedrem(lua_State *L)
-{
-	lua_pushfixed(L, FixedRem(luaL_checkfixed(L, 1), luaL_checkfixed(L, 2)));
 	return 1;
 }
 
@@ -185,15 +166,14 @@ static int lib_all7emeralds(lua_State *L)
 	return 1;
 }
 
-// Whee, special Lua-exclusive function for making use of Color_Opposite[] without needing *2 or +1
-// Returns both color and frame numbers!
+// Returns both color and signpost shade numbers!
 static int lib_coloropposite(lua_State *L)
 {
-	UINT8 colornum = (UINT8)luaL_checkinteger(L, 1);
-	if (colornum >= MAXSKINCOLORS)
-		return luaL_error(L, "skincolor %d out of range (0 - %d).", colornum, MAXSKINCOLORS-1);
-	lua_pushinteger(L, KartColor_Opposite[colornum*2]); // push color
-	lua_pushinteger(L, KartColor_Opposite[colornum*2+1]); // push frame
+	UINT16 colornum = (UINT16)luaL_checkinteger(L, 1);
+	if (!colornum || colornum >= numskincolors)
+		return luaL_error(L, "skincolor %d out of range (1 - %d).", colornum, numskincolors-1);
+	lua_pushinteger(L, skincolors[colornum].invcolor); // push color
+	lua_pushinteger(L, skincolors[colornum].invshade); // push sign shade index, 0-15
 	return 2;
 }
 
@@ -210,7 +190,6 @@ static luaL_Reg lib[] = {
 	{"FixedMul", lib_fixedmul},
 	{"FixedInt", lib_fixedint},
 	{"FixedDiv", lib_fixeddiv},
-	{"FixedRem", lib_fixedrem},
 	{"FixedSqrt", lib_fixedsqrt},
 	{"FixedHypot", lib_fixedhypot},
 	{"FixedFloor", lib_fixedfloor},
@@ -229,5 +208,3 @@ int LUA_MathLib(lua_State *L)
 	luaL_register(L, NULL, lib);
 	return 0;
 }
-
-#endif

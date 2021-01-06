@@ -34,9 +34,15 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip)
 
 	if (flip == true)
 	{
-		player->mo->flags2 |= MF2_OBJECTFLIP;
+		// Lat 24/7/20: Okay so before we even think about applying this flag, check if the sector we're in doesn't already have reverse gravity for that.
+		// Otherwise, we would reverse the reverse gravity and cancel it out. Yes, this is absolutely fucking dumb.
+		// I'm honestly not sure if this flag is even necessary anymore but we'll keep it just in case.
+
+		if (P_GetMobjGravity(player->mo) < 0)
+			player->mo->flags2 |= MF2_OBJECTFLIP;
+
 		player->mo->eflags |= MFE_VERTICALFLIP;
-		z -= (128 * mapobjectscale) - (player->mo->height);
+		z -= ((128 * mapobjectscale) + (player->mo->height));
 	}
 	else
 	{
@@ -75,7 +81,7 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 	player->respawn.pointx = waypoint->mobj->x;
 	player->respawn.pointy = waypoint->mobj->y;
 	player->respawn.pointz = waypoint->mobj->z;
-	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP);
+	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
 	player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
 }
 
@@ -91,24 +97,32 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (player->respawn.state != RESPAWNST_NONE)
+	if (player->respawn.state != RESPAWNST_NONE &&
+			( player->pflags & PF_FAULT ) == 0)
 	{
 		return;
 	}
 
-	if (leveltime <= starttime)
+	if (leveltime < introtime)
 	{
 		return;
+	}
+
+	if (leveltime < starttime) // FAULT
+	{
+		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
+		player->pflags |= PF_FAULT;
+		S_StartSound(player->mo, sfx_s3k83);
+		player->karthud[khud_fault] = 1;
 	}
 
 	player->kartstuff[k_ringboost] = 0;
 	player->kartstuff[k_driftboost] = 0;
-	player->kartstuff[k_drift] = 0;
-	player->kartstuff[k_driftcharge] = 0;
-	player->trickpanel = 0;
+
+	P_ResetPlayer(player);
 
 	// Set up respawn position if invalid
-	if (player->respawn.wp != NULL)
+	if (player->respawn.wp != NULL && leveltime >= starttime)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
 		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
@@ -120,11 +134,11 @@ void K_DoIngameRespawn(player_t *player)
 		mapthing_t *beststart = NULL;
 		UINT8 numstarts = 0;
 
-		if (G_RaceGametype())
+		if (gametype == GT_RACE)
 		{
 			numstarts = numcoopstarts;
 		}
-		else if (G_BattleGametype())
+		else if (gametype == GT_BATTLE)
 		{
 			numstarts = numdmstarts;
 		}
@@ -138,11 +152,11 @@ void K_DoIngameRespawn(player_t *player)
 				UINT32 dist = UINT32_MAX;
 				mapthing_t *checkstart = NULL;
 
-				if (G_RaceGametype())
+				if (gametype == GT_RACE)
 				{
 					checkstart = playerstarts[i];
 				}
-				else if (G_BattleGametype())
+				else if (gametype == GT_BATTLE)
 				{
 					checkstart = deathmatchstarts[i];
 				}
@@ -173,10 +187,12 @@ void K_DoIngameRespawn(player_t *player)
 		else
 		{
 			sector_t *s;
-			fixed_t z = (beststart->options >> ZSHIFT) * FRACUNIT;
+			fixed_t z = beststart->z * FRACUNIT;
 
 			player->respawn.pointx = beststart->x << FRACBITS;
 			player->respawn.pointy = beststart->y << FRACBITS;
+
+			player->mo->angle = ( beststart->angle * ANG1 );
 
 			s = R_PointInSubsector(beststart->x << FRACBITS, beststart->y << FRACBITS)->sector;
 
@@ -219,17 +235,11 @@ void K_DoIngameRespawn(player_t *player)
 }
 
 /*--------------------------------------------------
-	static size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
+	size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
 
-		Returns the index for the next respawn waypoint.
-
-	Input Arguments:-
-		waypoint - Waypoint to look after.
-
-	Return:-
-		An table index for waypoint_t -> nextwaypoints.
+		See header file for description.
 --------------------------------------------------*/
-static size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
+size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
 {
 	size_t           i = 0U;
 	size_t newwaypoint = SIZE_MAX;
@@ -267,7 +277,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	const fixed_t realstepamt = (64 * mapobjectscale);
 	fixed_t stepamt = realstepamt;
 
-	vertex_t dest, step, laser;
+	vector3_t dest, step, laser;
 	angle_t stepha, stepva;
 	fixed_t dist, fulldist;
 
@@ -279,7 +289,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 
 	player->powers[pw_flashing] = 2;
-	player->powers[pw_nocontrol] = 2;
+	player->powers[pw_nocontrol] = max(2, player->powers[pw_nocontrol]);
 
 	if (leveltime % 8 == 0 && !mapreset)
 	{
@@ -301,7 +311,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		// Reduce by the amount we needed to get to this waypoint
 		stepamt -= dist;
 
-		// We've reached the destination point, 
+		// We've reached the destination point,
 		P_UnsetThingPosition(player->mo);
 		player->mo->x = dest.x;
 		player->mo->y = dest.y;
@@ -320,13 +330,14 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 			}
 
 			// Set angle, regardless of if we're done or not
-			player->frameangle = R_PointToAngle2(
+			player->drawangle = R_PointToAngle2(
 				player->mo->x, player->mo->y,
 				dest.x, dest.y
 			);
 
-			if ((player->respawn.distanceleft == 0)
-			&& (K_GetWaypointIsSpawnpoint(player->respawn.wp) == true))
+			if ((player->respawn.distanceleft == 0 && K_GetWaypointIsSpawnpoint(player->respawn.wp) == true)
+			|| (player->respawn.wp == K_GetFinishLineWaypoint()
+			|| player->respawn.wp->nextwaypoints[nwp] == K_GetFinishLineWaypoint())) // Try not to allow you to pass the finish line while respawning, because it's janky
 			{
 				// Alright buddy, that's the end of the ride.
 				player->respawn.state = RESPAWNST_DROP;
@@ -368,7 +379,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	);
 
 	// Move toward the respawn point
-	player->frameangle = stepha;
+	player->drawangle = stepha;
 
 	step.x = FixedMul(FixedMul(FINECOSINE(stepha >> ANGLETOFINESHIFT), stepamt), FINECOSINE(stepva >> ANGLETOFINESHIFT));
 	step.y = FixedMul(FixedMul(FINESINE(stepha >> ANGLETOFINESHIFT), stepamt), FINECOSINE(stepva >> ANGLETOFINESHIFT));
@@ -531,7 +542,8 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 --------------------------------------------------*/
 static void K_DropDashWait(player_t *player)
 {
-	player->respawn.timer--;
+	if (player->powers[pw_nocontrol] == 0)
+		player->respawn.timer--;
 
 	if (leveltime % 8 == 0)
 	{
@@ -547,7 +559,7 @@ static void K_DropDashWait(player_t *player)
 		for (i = 0; i < ns; i++)
 		{
 			const angle_t newangle = sidediff * i;
-			vertex_t spawn;
+			vector3_t spawn;
 			mobj_t *laser;
 
 			spawn.x = player->mo->x + P_ReturnThrustX(player->mo, newangle, 31 * player->mo->scale);
@@ -657,37 +669,6 @@ static void K_HandleDropDash(player_t *player)
 
 		//P_PlayRinglossSound(player->mo);
 		P_PlayerRingBurst(player, 3);
-
-		if (G_BattleGametype())
-		{
-			if (player->kartstuff[k_bumper] > 0)
-			{
-				if (player->kartstuff[k_bumper] == 1)
-				{
-					mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX); // Player hitbox is too small!!
-					P_SetTarget(&karmahitbox->target, player->mo);
-					karmahitbox->destscale = player->mo->scale;
-					P_SetScale(karmahitbox, player->mo->scale);
-					CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
-				}
-				player->kartstuff[k_bumper]--;
-				if (K_IsPlayerWanted(player))
-					K_CalculateBattleWanted();
-			}
-
-			if (!player->kartstuff[k_bumper])
-			{
-				player->kartstuff[k_comebacktimer] = comebacktime;
-				if (player->kartstuff[k_comebackmode] == 2)
-				{
-					mobj_t *poof = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EXPLODE);
-					S_StartSound(poof, mobjinfo[MT_KARMAHITBOX].seesound);
-					player->kartstuff[k_comebackmode] = 0;
-				}
-			}
-
-			K_CheckBumpers();
-		}
 
 		player->respawn.state = RESPAWNST_NONE;
 	}
