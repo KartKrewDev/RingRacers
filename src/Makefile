@@ -393,8 +393,8 @@ endif
 
 ifdef HAVE_DISCORDRPC
 LIBS+=-ldiscord-rpc
-CFLAGS+=-DHAVE_DISCORDRPC
-OBJS+=$(OBJDIR)/discord.o
+CFLAGS+=-DHAVE_DISCORDRPC -DUSE_STUN
+OBJS+=$(OBJDIR)/discord.o $(OBJDIR)/stun.o
 endif
 
 include blua/Makefile.cfg

@@ -37,7 +37,7 @@ applications may follow different packet versions.
 //  be transmitted.
 
 // Networking and tick handling related.
-#define BACKUPTICS 32
+#define BACKUPTICS 1024
 #define TICQUEUE 512 // more than enough for most timeouts....
 #define MAXTEXTCMD 256
 //
@@ -214,6 +214,7 @@ typedef struct
 
 	// Score is resynched in the confirm resync packet
 	INT16 rings;
+	INT16 spheres;
 	SINT8 lives;
 	boolean lostlife;
 	SINT8 continues;
@@ -280,6 +281,9 @@ typedef struct
 	// SRB2kart
 	INT32 kartstuff[NUMKARTSTUFF];
 	tic_t airtime;
+	UINT8 bumpers;
+	INT16 karmadelay;
+	boolean eliminated;
 
 	// respawnvars_t
 	UINT8 respawn_state;
@@ -567,6 +571,7 @@ extern INT32 mapchangepending;
 
 // Points inside doomcom
 extern doomdata_t *netbuffer;
+extern consvar_t cv_stunserver;
 extern consvar_t cv_httpsource;
 
 extern consvar_t cv_showjoinaddress;

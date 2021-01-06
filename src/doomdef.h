@@ -386,6 +386,14 @@ typedef enum
 	SKINCOLOR_SUPERTAN4,
 	SKINCOLOR_SUPERTAN5,
 
+	SKINCOLOR_CHAOSEMERALD1,
+	SKINCOLOR_CHAOSEMERALD2,
+	SKINCOLOR_CHAOSEMERALD3,
+	SKINCOLOR_CHAOSEMERALD4,
+	SKINCOLOR_CHAOSEMERALD5,
+	SKINCOLOR_CHAOSEMERALD6,
+	SKINCOLOR_CHAOSEMERALD7,
+
 	SKINCOLOR_FIRSTFREESLOT,
 	SKINCOLOR_LASTFREESLOT = SKINCOLOR_FIRSTFREESLOT + NUMCOLORFREESLOTS - 1,
 
@@ -661,10 +669,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Render flats on walls
 #define WALLFLATS
 
-/// - SRB2Kart options -
-/// Camera always has noclip.
-#define NOCLIPCAM
-
 /// Divide volume of music and sounds by this much (loudest sounds on earth)
 #define VOLUME_DIVIDER 4
 #define USER_VOLUME_SCALE 2
@@ -681,5 +685,12 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #else
 #undef UPDATE_ALERT
 #endif
+
+/// - SRB2Kart options -
+/// Camera always has noclip.
+#define NOCLIPCAM
+
+/// Other karma comeback modes
+//#define OTHERKARMAMODES
 
 #endif // __DOOMDEF__

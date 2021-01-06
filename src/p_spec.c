@@ -1612,7 +1612,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	{
 		if (GETSECSPECIAL(caller->special, 2) == 6)
 		{
-			if (!(ALL7EMERALDS(emeralds)))
+			if (!(ALLCHAOSEMERALDS(emeralds)))
 				return false;
 		}
 
@@ -2028,6 +2028,14 @@ static void K_HandleLapIncrement(player_t *player)
 					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 				player->karthud[khud_lapanimation] = 80;
+
+				// save best lap for record attack
+				if (player == &players[consoleplayer])
+				{
+					if (curlap < bestlap || bestlap == 0)
+						bestlap = curlap;
+					curlap = 0;
+				}
 			}
 
 			if (rainbowstartavailable == true)
@@ -2040,14 +2048,6 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (netgame && player->laps >= (UINT8)cv_numlaps.value)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
-
-			// SRB2Kart: save best lap for record attack
-			if (player == &players[consoleplayer])
-			{
-				if (curlap < bestlap || bestlap == 0)
-					bestlap = curlap;
-				curlap = 0;
-			}
 
 			player->starpostnum = 0;
 
@@ -2133,6 +2133,7 @@ static void K_HandleLapDecrement(player_t *player)
 		{
 			player->starpostnum = numstarposts;
 			player->laps--;
+			curlap = UINT32_MAX;
 		}
 	}
 }
@@ -4602,8 +4603,7 @@ DoneSection2:
 			{
 				const fixed_t hscale = mapobjectscale + (mapobjectscale - player->mo->scale);
 				const fixed_t minspeed = 24*hscale;
-				angle_t pushangle = FixedHypot(player->mo->momx, player->mo->momy) ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle;
-				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
+				angle_t pushangle = K_MomentumAngle(player->mo);
 
 				if (player->mo->eflags & MFE_SPRUNG)
 					break;
@@ -4625,8 +4625,7 @@ DoneSection2:
 				const fixed_t hscale = mapobjectscale + (mapobjectscale - player->mo->scale);
 				const fixed_t minspeed = 24*hscale;
 				const fixed_t maxspeed = 28*hscale;
-				angle_t pushangle = FixedHypot(player->mo->momx, player->mo->momy) ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle;
-				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
+				angle_t pushangle = K_MomentumAngle(player->mo);
 
 				if (player->mo->eflags & MFE_SPRUNG)
 					break;
@@ -4673,7 +4672,7 @@ DoneSection2:
 				}
 
 				lineangle = K_ReflectAngle(
-					R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy), lineangle,
+					K_MomentumAngle(player->mo), lineangle,
 					playerspeed, linespeed
 				);
 

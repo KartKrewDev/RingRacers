@@ -546,6 +546,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	// Score is resynched in the rspfirm resync packet
 	rsp->rings = SHORT(players[i].rings);
+	rsp->spheres = SHORT(players[i].spheres);
 	rsp->lives = players[i].lives;
 	rsp->lostlife = players[i].lostlife;
 	rsp->continues = players[i].continues;
@@ -615,6 +616,10 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]);
 
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
+
+	rsp->bumpers = players[i].bumpers;
+	rsp->karmadelay = SHORT(players[i].karmadelay);
+	rsp->eliminated = players[i].eliminated;
 
 	// respawnvars_t
 	rsp->respawn_state = players[i].respawn.state;
@@ -690,6 +695,7 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	// Score is resynched in the rspfirm resync packet
 	players[i].rings = SHORT(rsp->rings);
+	players[i].spheres = SHORT(rsp->spheres);
 	players[i].lives = rsp->lives;
 	players[i].lostlife = rsp->lostlife;
 	players[i].continues = rsp->continues;
@@ -758,6 +764,10 @@ static void resynch_read_player(resynch_pak *rsp)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
 
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
+
+	players[i].bumpers = rsp->bumpers;
+	players[i].karmadelay = SHORT(rsp->karmadelay);
+	players[i].eliminated = rsp->eliminated;
 
 	// respawnvars_t
 	players[i].respawn.state = rsp->respawn_state;
@@ -1990,6 +2000,9 @@ static void SendAskInfo(INT32 node)
 	// now allowed traffic from the host to us in, so once the MS relays
 	// our address to the host, it'll be able to speak to us.
 	HSendPacket(node, false, 0, sizeof (askinfo_pak));
+
+	if (node != 0 && node != BROADCASTADDR)
+		I_NetRequestHolePunch();
 }
 
 serverelem_t serverlist[MAXSERVERLIST];
@@ -2346,7 +2359,10 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 			cl_mode = CL_CHECKFILES;
 		}
 		else
+		{
 			cl_mode = CL_ASKJOIN; // files need not be checked for the server.
+			*asksent = 0;
+		}
 
 		return true;
 	}
@@ -2982,9 +2998,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		}
 	}
 
-	if (K_IsPlayerWanted(&players[playernum]))
-		K_CalculateBattleWanted();
-
+	K_CalculateBattleWanted();
 	LUAh_PlayerQuit(&players[playernum], reason); // Lua hook for player quitting
 
 	// don't look through someone's view who isn't there
@@ -3575,6 +3589,76 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	}
 }
 
+#ifdef HAVE_CURL
+/** Add a login for HTTP downloads. If the
+  * user/password is missing, remove it.
+  *
+  * \sa Command_list_http_logins
+  */
+static void Command_set_http_login (void)
+{
+	HTTP_login  *login;
+	HTTP_login **prev_next;
+
+	if (COM_Argc() < 2)
+	{
+		CONS_Printf(
+				"set_http_login <URL> [user:password]: Set or remove a login to "
+				"authenticate HTTP downloads.\n"
+		);
+		return;
+	}
+
+	login = CURLGetLogin(COM_Argv(1), &prev_next);
+
+	if (COM_Argc() == 2)
+	{
+		if (login)
+		{
+			(*prev_next) = login->next;
+			CONS_Printf("Login for '%s' removed.\n", login->url);
+			Z_Free(login);
+		}
+	}
+	else
+	{
+		if (login)
+			Z_Free(login->auth);
+		else
+		{
+			login = ZZ_Alloc(sizeof *login);
+			login->url  = Z_StrDup(COM_Argv(1));
+		}
+
+		login->auth = Z_StrDup(COM_Argv(2));
+
+		login->next = curl_logins;
+		curl_logins = login;
+	}
+}
+
+/** List logins for HTTP downloads.
+  *
+  * \sa Command_set_http_login
+  */
+static void Command_list_http_logins (void)
+{
+	HTTP_login *login;
+
+	for (
+			login = curl_logins;
+			login;
+			login = login->next
+	){
+		CONS_Printf(
+				"'%s' -> '%s'\n",
+				login->url,
+				login->auth
+		);
+	}
+}
+#endif/*HAVE_CURL*/
+
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
@@ -3650,6 +3734,10 @@ void D_ClientServerInit(void)
 	COM_AddCommand("reloadbans", Command_ReloadBan);
 	COM_AddCommand("connect", Command_connect);
 	COM_AddCommand("nodes", Command_Nodes);
+#ifdef HAVE_CURL
+	COM_AddCommand("set_http_login", Command_set_http_login);
+	COM_AddCommand("list_http_logins", Command_list_http_logins);
+#endif
 #ifdef PACKETDROP
 	COM_AddCommand("drop", Command_Drop);
 	COM_AddCommand("droprate", Command_Droprate);
@@ -5487,7 +5575,10 @@ static void CL_SendClientCmd(void)
 	boolean mis = false;
 
 	if (lowest_lag && ( gametic % lowest_lag ))
+	{
+		cl_packetmissed = true;
 		return;
+	}
 
 	netbuffer->packettype = PT_CLIENTCMD;
 
@@ -6012,6 +6103,19 @@ static void UpdatePingTable(void)
 	}
 }
 
+static void RenewHolePunch(void)
+{
+	static time_t past;
+
+	const time_t now = time(NULL);
+
+	if ((now - past) > 20)
+	{
+		I_NetRegisterHolePunch();
+		past = now;
+	}
+}
+
 // Handle timeouts to prevent definitive freezes from happenning
 static void HandleNodeTimeouts(void)
 {
@@ -6049,6 +6153,11 @@ void NetKeepAlive(void)
 #ifdef MASTERSERVER
 	MasterClient_Ticker();
 #endif
+
+	if (netgame && serverrunning)
+	{
+		RenewHolePunch();
+	}
 
 	if (client)
 	{
@@ -6108,6 +6217,11 @@ void NetUpdate(void)
 #ifdef MASTERSERVER
 	MasterClient_Ticker(); // Acking the Master Server
 #endif
+
+	if (netgame && serverrunning)
+	{
+		RenewHolePunch();
+	}
 
 	if (client)
 	{

@@ -1230,32 +1230,6 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 	return groundz;
 }
 
-static void R_SetSpritePlaneHeights(vissprite_t *vis)
-{
-	ffloor_t *rover;
-
-	fixed_t top;
-	fixed_t bot;
-
-	vis->pt = vis->sector->floorheight;
-	vis->pb = vis->sector->ceilingheight;
-
-	for (rover = vis->sector->ffloors; rover; rover = rover->next)
-	{
-		if (rover->flags & FF_EXISTS)
-		{
-			top = P_GetFFloorTopZAt    (rover, vis->gx, vis->gy);
-			bot = P_GetFFloorBottomZAt (rover, vis->gx, vis->gy);
-
-			if (top <= vis->gzt && top > vis->pt)
-				vis->pt = top;
-
-			if (bot >= vis->gz && bot < vis->pb)
-				vis->pb = bot;
-		}
-	}
-}
-
 static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
 {
 	vissprite_t *shadow;
@@ -1344,8 +1318,6 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->xscale = FixedMul(xscale, shadowxscale); //SoM: 4/17/2000
 	shadow->scale = FixedMul(yscale, shadowyscale);
 	shadow->sector = vis->sector;
-	shadow->pt = vis->pt;
-	shadow->pb = vis->pb;
 	shadow->szt = (INT16)((centeryfrac - FixedMul(shadow->gzt - viewz, yscale))>>FRACBITS);
 	shadow->sz = (INT16)((centeryfrac - FixedMul(shadow->gz - viewz, yscale))>>FRACBITS);
 	shadow->cut = SC_ISSCALED|SC_SHADOW; //check this
@@ -1403,9 +1375,9 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 //
 static void R_ProjectSprite(mobj_t *thing)
 {
-	const fixed_t thingxpos = thing->x + thing->sprxoff;
-	const fixed_t thingypos = thing->y + thing->spryoff;
-	const fixed_t thingzpos = thing->z + thing->sprzoff;
+	fixed_t thingxpos = thing->x + thing->sprxoff;
+	fixed_t thingypos = thing->y + thing->spryoff;
+	fixed_t thingzpos = thing->z + thing->sprzoff;
 
 	mobj_t *oldthing = thing;
 
@@ -1462,7 +1434,23 @@ static void R_ProjectSprite(mobj_t *thing)
 #ifdef ROTSPRITE
 	patch_t *rotsprite = NULL;
 	INT32 rollangle = 0;
+	angle_t spriterotangle = 0;
 #endif
+
+	// hitlag vibrating
+	if (thing->hitlag > 0)
+	{
+		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+
+		if (leveltime & 1)
+		{
+			mul = -mul;
+		}
+
+		thingxpos += FixedMul(thing->momx, mul);
+		thingypos += FixedMul(thing->momy, mul);
+		thingzpos += FixedMul(thing->momz, mul);
+	}
 
 	// transform the origin point
 	tr_x = thingxpos - viewx;
@@ -1587,9 +1575,11 @@ static void R_ProjectSprite(mobj_t *thing)
 	spr_topoffset = spritecachedinfo[lump].topoffset;
 
 #ifdef ROTSPRITE
-	if (thing->rollangle)
+	spriterotangle = R_SpriteRotationAngle(thing);
+
+	if (spriterotangle != 0)
 	{
-		rollangle = R_GetRollAngle(thing->rollangle);
+		rollangle = R_GetRollAngle(spriterotangle);
 		if (!(sprframe->rotsprite.cached & (1<<rot)))
 			R_CacheRotSprite(thing->sprite, frame, sprinfo, sprframe, rot, flip);
 		rotsprite = sprframe->rotsprite.patch[rot][rollangle];
@@ -1845,9 +1835,6 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->sector = thing->subsector->sector;
 	vis->szt = (INT16)((centeryfrac - FixedMul(vis->gzt - viewz, sortscale))>>FRACBITS);
 	vis->sz = (INT16)((centeryfrac - FixedMul(vis->gz - viewz, sortscale))>>FRACBITS);
-
-	R_SetSpritePlaneHeights(vis);
-
 	vis->cut = cut;
 	if (thing->subsector->sector->numlights)
 		vis->extra_colormap = *thing->subsector->sector->lightlist[light].extra_colormap;
@@ -2061,8 +2048,6 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->sector = thing->subsector->sector;
 	vis->szt = (INT16)((centeryfrac - FixedMul(vis->gzt - viewz, yscale))>>FRACBITS);
 	vis->sz = (INT16)((centeryfrac - FixedMul(vis->gz - viewz, yscale))>>FRACBITS);
-
-	R_SetSpritePlaneHeights(vis);
 
 	iscale = FixedDiv(FRACUNIT, xscale);
 
@@ -2443,12 +2428,12 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 				// bird: if any part of the sprite peeks in front the plane
 				if (planecameraz < viewz)
 				{
-					if (rover->pt >= planeobjectz && rover->gzt >= planeobjectz)
+					if (rover->gzt >= planeobjectz)
 						continue;
 				}
 				else if (planecameraz > viewz)
 				{
-					if (rover->pb <= planeobjectz && rover->gz <= planeobjectz)
+					if (rover->gz <= planeobjectz)
 						continue;
 				}
 
@@ -2481,7 +2466,7 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 			}
 			else if (r2->thickseg)
 			{
-				fixed_t topplaneobjectz, topplanecameraz, botplaneobjectz, botplanecameraz;
+				//fixed_t topplaneobjectz, topplanecameraz, botplaneobjectz, botplanecameraz;
 				if (rover->x1 > r2->thickseg->x2 || rover->x2 < r2->thickseg->x1)
 					continue;
 
@@ -2492,6 +2477,11 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 				if (scale <= rover->sortscale)
 					continue;
 
+				// bird: Always sort sprites behind segs. This helps the plane
+				// sorting above too. Basically if the sprite gets sorted behind
+				// the seg here, it will be behind the plane too, since planes
+				// are added after segs in the list.
+#if 0
 				topplaneobjectz = P_GetFFloorTopZAt   (r2->ffloor, rover->gx, rover->gy);
 				topplanecameraz = P_GetFFloorTopZAt   (r2->ffloor,     viewx,     viewy);
 				botplaneobjectz = P_GetFFloorBottomZAt(r2->ffloor, rover->gx, rover->gy);
@@ -2500,6 +2490,7 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 				if ((topplanecameraz > viewz && botplanecameraz < viewz) ||
 				    (topplanecameraz < viewz && rover->gzt < topplaneobjectz) ||
 				    (botplanecameraz > viewz && rover->gz > botplaneobjectz))
+#endif
 				{
 					entry = R_CreateDrawNode(NULL);
 					(entry->prev = r2->prev)->next = entry;

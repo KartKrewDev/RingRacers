@@ -7,7 +7,7 @@
 extern struct battleovertime
 {
 	UINT16 enabled; ///< Has this been initalized yet?
-	fixed_t radius, minradius; ///< Radius of kill field
+	fixed_t radius; ///< Radius of kill field
 	fixed_t x, y, z; ///< Position to center on
 } battleovertime;
 
@@ -20,6 +20,11 @@ boolean K_IsPlayerWanted(player_t *player);
 void K_CalculateBattleWanted(void);
 void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount);
 void K_CheckBumpers(void);
+void K_CheckEmeralds(player_t *player);
+mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT32 emeraldType);
+void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType);
+UINT8 K_NumEmeralds(player_t *player);
+void K_RunPaperItemSpawners(void);
 void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
 void K_SpawnBattleCapsules(void);

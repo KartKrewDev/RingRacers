@@ -30,7 +30,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing]
+		if ((t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			&& !(t1->type == MT_ORBINAUT || t1->type == MT_JAWZ || t1->type == MT_JAWZ_DUD))
 			return true;
 
@@ -58,11 +58,6 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
-		if (t2->eflags & MFE_VERTICALFLIP)
-			t2->z -= t2->height;
-		else
-			t2->z += t2->height;
-
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
@@ -94,11 +89,6 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if (damageitem)
 	{
 		// This Item Damage
-		if (t1->eflags & MFE_VERTICALFLIP)
-			t1->z -= t1->height;
-		else
-			t1->z += t1->height;
-
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
@@ -133,7 +123,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing])
+		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
 		// Banana snipe!
@@ -147,7 +137,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			// Player Damage
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		}
 
@@ -159,11 +148,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
-		if (t2->eflags & MFE_VERTICALFLIP)
-			t2->z -= t2->height;
-		else
-			t2->z += t2->height;
-
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
@@ -184,11 +168,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (damageitem)
 	{
 		// This Item Damage
-		if (t1->eflags & MFE_VERTICALFLIP)
-			t1->z -= t1->height;
-		else
-			t1->z += t1->height;
-
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
@@ -219,11 +198,15 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (!P_CanPickupItem(t2->player, 2))
 			return true;
 
-		if ((gametyperules & GTR_BUMPERS) && t2->player->kartstuff[k_bumper] <= 0)
+		if ((gametyperules & GTR_BUMPERS) && t2->player->bumpers <= 0)
 		{
-			if (t2->player->kartstuff[k_comebackmode] || t2->player->kartstuff[k_comebacktimer])
+#ifdef OTHERKARMAMODES
+			if (t2->player->kartstuff[k_comebackmode] || t2->player->karmadelay)
 				return true;
 			t2->player->kartstuff[k_comebackmode] = 2;
+#else
+			return true;
+#endif
 		}
 		else
 		{
@@ -253,7 +236,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 
 			if (t1->target && t1->target->player)
 			{
-				if ((gametyperules & GTR_CIRCUIT) || t1->target->player->kartstuff[k_bumper] > 0)
+				if ((gametyperules & GTR_CIRCUIT) || t1->target->player->bumpers > 0)
 					t2->player->kartstuff[k_eggmanblame] = t1->target->player-players;
 				else
 					t2->player->kartstuff[k_eggmanblame] = t2->player-players;
@@ -283,15 +266,19 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing])
+		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
 		// Bomb punting
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
 			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
+		{
 			P_KillMobj(t1, t2, t2, DMG_NORMAL);
+		}
 		else
+		{
 			K_PuntMine(t1, t2);
+		}
 	}
 	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
@@ -300,11 +287,6 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		// Other Item Damage
-		if (t2->eflags & MFE_VERTICALFLIP)
-			t2->z -= t2->height;
-		else
-			t2->z += t2->height;
-
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
@@ -326,10 +308,17 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing])
+		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
-		P_DamageMobj(t2, t1, t1->target, 1, (t1->state == &states[S_MINEEXPLOSION1]) ? DMG_EXPLODE : DMG_NORMAL);
+		if (t1->state == &states[S_MINEEXPLOSION1])
+		{
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_EXPLODE);
+		}
+		else
+		{
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+		}
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
@@ -347,14 +336,16 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		if (t2->player->powers[pw_flashing])
+		if (t2->player->powers[pw_flashing] > 0 && t2->hitlag == 0)
 			return true;
 
 		S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
+
 		HU_SetCEchoFlags(0);
 		HU_SetCEchoDuration(5);
 		HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[t2->player-players]));
 		I_OutputMsg("%s was hit by a kitchen sink.\n", player_names[t2->player-players]);
+
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_INSTAKILL);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}

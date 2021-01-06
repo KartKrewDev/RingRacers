@@ -157,6 +157,8 @@ typedef enum
 	MF_RUNSPAWNFUNC     = 1<<27,
 	// Don't remap in Encore mode. (Not a drawflag so that it's settable by mobjinfo.)
 	MF_DONTENCOREMAP    = 1<<28,
+	// Hitbox extends just as far below as above.
+	MF_PICKUPFROMBELOW  = 1<<29,
 	// free: to and including 1<<31
 } mobjflag_t;
 
@@ -408,9 +410,6 @@ typedef struct mobj_s
 	INT32 cvmem;
 
 	struct pslope_s *standingslope; // The slope that the object is standing on (shouldn't need synced in savegames, right?)
-#ifdef HWRENDER
-	struct pslope_s *modeltilt; // Slope used for model tilting. Also is not synched, this is totally visual.
-#endif
 
 	boolean colorized; // Whether the mobj uses the rainbow colormap
 	boolean mirrored; // The object's rotations will be mirrored left to right, e.g., see frame AL from the right and AR from the left
@@ -419,6 +418,8 @@ typedef struct mobj_s
 	boolean whiteshadow; // Use white shadow, set to true by default for fullbright objects
 
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
+
+	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
 
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
@@ -530,7 +531,6 @@ boolean P_ZMovement(mobj_t *mo);
 void P_RingZMovement(mobj_t *mo);
 boolean P_SceneryZMovement(mobj_t *mo);
 void P_PlayerZMovement(mobj_t *mo);
-void P_EmeraldManager(void);
 
 extern INT32 modulothing;
 

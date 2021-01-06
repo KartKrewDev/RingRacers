@@ -26,25 +26,35 @@
 static int lib_iteratePlayers(lua_State *L)
 {
 	INT32 i = -1;
+
 	if (lua_gettop(L) < 2)
 	{
 		//return luaL_error(L, "Don't call players.iterate() directly, use it as 'for player in players.iterate do <block> end'.");
 		lua_pushcfunction(L, lib_iteratePlayers);
 		return 1;
 	}
+
 	lua_settop(L, 2);
 	lua_remove(L, 1); // state is unused.
+
 	if (!lua_isnil(L, 1))
 		i = (INT32)(*((player_t **)luaL_checkudata(L, 1, META_PLAYER)) - players);
-	for (i++; i < MAXPLAYERS; i++)
+
+	i++;
+
+	if (i == serverplayer)
+	{
+		return LUA_PushServerPlayer(L);
+	}
+
+	for (; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
-			continue;
-		if (!players[i].mo)
 			continue;
 		LUA_PushUserdata(L, &players[i], META_PLAYER);
 		return 1;
 	}
+
 	return 0;
 }
 
@@ -57,9 +67,9 @@ static int lib_getPlayer(lua_State *L)
 		lua_Integer i = luaL_checkinteger(L, 2);
 		if (i < 0 || i >= MAXPLAYERS)
 			return luaL_error(L, "players[] index %d out of range (0 - %d)", i, MAXPLAYERS-1);
+		if (i == serverplayer)
+			return LUA_PushServerPlayer(L);
 		if (!playeringame[i])
-			return 0;
-		if (!players[i].mo)
 			return 0;
 		LUA_PushUserdata(L, &players[i], META_PLAYER);
 		return 1;
@@ -121,8 +131,6 @@ static int lib_iterateDisplayplayers(lua_State *L)
 		if (i > splitscreen || !playeringame[displayplayers[i]])
 			return 0;	// Stop! There are no more players for us to go through. There will never be a player gap in displayplayers.
 
-		if (!players[displayplayers[i]].mo)
-			continue;
 		LUA_PushUserdata(L, &players[displayplayers[i]], META_PLAYER);
 		lua_pushinteger(L, i);	// push this to recall what number we were on for the next function call. I suppose this also means you can retrieve the splitscreen player number with 'for p, n in displayplayers.iterate'!
 		return 2;
@@ -142,8 +150,6 @@ static int lib_getDisplayplayers(lua_State *L)
 		if (i > splitscreen)
 			return 0;
 		if (!playeringame[displayplayers[i]])
-			return 0;
-		if (!players[displayplayers[i]].mo)
 			return 0;
 		LUA_PushUserdata(L, &players[displayplayers[i]], META_PLAYER);
 		return 1;
@@ -182,17 +188,8 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, true);
 	else if (fastcmp(field,"name"))
 		lua_pushstring(L, player_names[plr-players]);
-	else if (fastcmp(field,"realmo"))
-		LUA_PushUserdata(L, plr->mo, META_MOBJ);
-	// Kept for backward-compatibility
-	// Should be fixed to work like "realmo" later
 	else if (fastcmp(field,"mo"))
-	{
-		if (plr->spectator)
-			lua_pushnil(L);
-		else
-			LUA_PushUserdata(L, plr->mo, META_MOBJ);
-	}
+		LUA_PushUserdata(L, plr->mo, META_MOBJ);
 	else if (fastcmp(field,"cmd"))
 		LUA_PushUserdata(L, &plr->cmd, META_TICCMD);
 	else if (fastcmp(field,"playerstate"))
@@ -209,6 +206,8 @@ static int player_get(lua_State *L)
 		lua_pushangle(L, plr->drawangle);
 	else if (fastcmp(field,"rings"))
 		lua_pushinteger(L, plr->rings);
+	else if (fastcmp(field,"spheres"))
+		lua_pushinteger(L, plr->spheres);
 	else if (fastcmp(field,"powers"))
 		LUA_PushUserdata(L, plr->powers, META_POWERS);
 	else if (fastcmp(field,"kartstuff"))
@@ -447,7 +446,7 @@ static int player_set(lua_State *L)
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter player_t in BuildCMD code!");
 
-	if (fastcmp(field,"mo") || fastcmp(field,"realmo")) {
+	if (fastcmp(field,"mo")) {
 		mobj_t *newmo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 		plr->mo->player = NULL; // remove player pointer from old mobj
 		(newmo->player = plr)->mo = newmo; // set player pointer for new mobj, and set new mobj as the player's mobj
@@ -478,6 +477,8 @@ static int player_set(lua_State *L)
 		plr->drawangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"rings"))
 		plr->rings = (INT32)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"spheres"))
+		plr->spheres = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"powers"))
 		return NOSET;
 	else if (fastcmp(field,"pflags"))
