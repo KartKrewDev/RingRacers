@@ -7962,7 +7962,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 				if (cmd->turning > 0)
 				{
-					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*2));
+					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
 
 					player->trickmomx = player->mo->momx;
 					player->trickmomy = player->mo->momy;
@@ -7975,7 +7975,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				}
 				else if (cmd->turning < 0)
 				{
-					P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*2));
+					P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
 
 					player->trickmomx = player->mo->momx;
 					player->trickmomy = player->mo->momy;
