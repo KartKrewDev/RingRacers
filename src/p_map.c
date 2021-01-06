@@ -445,9 +445,14 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			{
 				if (object->eflags & MFE_SPRUNG)
 					break;
+
 				if (object->player)
-					object->player->kartstuff[k_pogospring] = 1;
-				K_DoPogoSpring(object, 0, 0);
+				{
+					object->player->trickpanel = 1;
+					object->player->trickdelay = 1;
+				}
+
+				K_DoPogoSpring(object, 32<<FRACBITS, 0);
 				return;
 			}
 			else
@@ -1326,14 +1331,14 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					mo1 = thing;
 					mo2 = tmthing;
 
-					if (tmthing->player->kartstuff[k_pogospring])
+					if (tmthing->player->trickpanel)
 						P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 				else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
 				{
 					zbounce = true;
 
-					if (thing->player->kartstuff[k_pogospring])
+					if (thing->player->trickpanel)
 						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 				else if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
@@ -2286,7 +2291,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 {
 	subsector_t *s = R_PointInSubsector(x, y);
 	boolean retval = true;
-	
+
 	UINT8 i;
 
 	floatok = false;
@@ -3671,7 +3676,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 	mmomx = mo->player->rmomx;
 	mmomy = mo->player->rmomy;
 
-	mo->player->kartstuff[k_pogospring] = 0;
+	mo->player->trickpanel = 0;
 
 	// trace along the three leading corners
 	if (mo->momx > 0)

@@ -479,7 +479,7 @@ void P_ResetPlayer(player_t *player)
 	player->onconveyor = 0;
 
 	//player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+	player->trickpanel = 0;
 }
 
 //
@@ -1918,8 +1918,7 @@ static void P_3dMovement(player_t *player)
 	//}
 
 	// Do not let the player control movement if not onground.
-	// SRB2Kart: pogo spring and speed bumps are supposed to control like you're on the ground
-	onground = (P_IsObjectOnGround(player->mo) || (player->kartstuff[k_pogospring]));
+	onground = P_IsObjectOnGround(player->mo);
 
 	K_AdjustPlayerFriction(player);
 
@@ -2179,9 +2178,13 @@ void P_MovePlayer(player_t *player)
 	{
 		K_KartMoveAnimation(player);
 
-		if (player->kartstuff[k_pogospring])
+		if (player->trickpanel == 2)
 		{
 			player->drawangle += ANGLE_22h;
+		}
+		else if (player->trickpanel == 3)
+		{
+			player->drawangle -= ANGLE_22h;
 		}
 		else
 		{

@@ -9009,7 +9009,7 @@ void A_SPBChase(mobj_t *actor)
 				actor->lastlook = actor->tracer->player-players; // Save the player num for death scumming...
 				actor->tracer->player->kartstuff[k_ringlock] = 1; // set ring lock
 
-				if (!P_IsObjectOnGround(actor->tracer) /*&& !actor->tracer->player->kartstuff[k_pogospring]*/)
+				if (!P_IsObjectOnGround(actor->tracer))
 				{
 					// In the air you have no control; basically don't hit unless you make a near complete stop
 					defspeed = (7 * actor->tracer->player->speed) / 8;

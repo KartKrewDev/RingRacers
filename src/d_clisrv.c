@@ -616,6 +616,11 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]);
 
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
+	rsp->trickpanel = (UINT8)players[i].trickpanel;
+	rsp->trickdelay = (boolean)players[i].trickdelay;
+	rsp->trickmomx = (fixed_t)LONG(players[i].trickmomx);
+	rsp->trickmomy = (fixed_t)LONG(players[i].trickmomy);
+	rsp->trickmomz = (fixed_t)LONG(players[i].trickmomz);
 
 	rsp->bumpers = players[i].bumpers;
 	rsp->karmadelay = SHORT(players[i].karmadelay);
@@ -764,6 +769,11 @@ static void resynch_read_player(resynch_pak *rsp)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
 
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
+	players[i].trickpanel = (UINT8)rsp->trickpanel;
+	players[i].trickdelay = (boolean)rsp->trickdelay;
+	players[i].trickmomx = (fixed_t)LONG(rsp->trickmomx);
+	players[i].trickmomy = (fixed_t)LONG(rsp->trickmomy);
+	players[i].trickmomz = (fixed_t)LONG(rsp->trickmomz);
 
 	players[i].bumpers = rsp->bumpers;
 	players[i].karmadelay = SHORT(rsp->karmadelay);
@@ -1256,7 +1266,7 @@ static inline void CL_DrawConnectionStatus(void)
 					cltext = M_GetText("Server full, waiting for a slot...");
 				else
 					cltext = M_GetText("Requesting to join...");
-					
+
 				break;
 #ifdef HAVE_CURL
 			case CL_PREPAREHTTPFILES:
@@ -2125,7 +2135,7 @@ void CL_UpdateServerList (void)
 
 static void M_ConfirmConnect(event_t *ev)
 {
-#ifndef NONET	
+#ifndef NONET
 	if (ev->type == ev_keydown)
 	{
 		if (ev->data1 == ' ' || ev->data1 == 'y' || ev->data1 == KEY_ENTER || ev->data1 == gamecontrol[0][gc_accelerate][0] || ev->data1 == gamecontrol[0][gc_accelerate][1])
@@ -2148,7 +2158,7 @@ static void M_ConfirmConnect(event_t *ev)
 			}
 			else
 				cl_mode = CL_LOADFILES;
-			
+
 			M_ClearMenus(true);
 		}
 		else if (ev->data1 == 'n' || ev->data1 == KEY_ESCAPE|| ev->data1 == gamecontrol[0][gc_brake][0] || ev->data1 == gamecontrol[0][gc_brake][1])
@@ -2396,7 +2406,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 {
 	boolean waitmore;
 	INT32 i;
-	
+
 #ifdef NONET
 	(void)tmpsave;
 #endif
@@ -2433,7 +2443,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 					{
 						curl_transfers++;
 					}
-				
+
 				cl_mode = CL_DOWNLOADHTTPFILES;
 			}
 			break;
