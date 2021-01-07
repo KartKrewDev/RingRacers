@@ -2358,7 +2358,7 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
 
 	if (mo1valid == true && mo2valid == true)
 	{
-		const INT32 mintics = 1;
+		const INT32 mintics = tics;
 		const fixed_t ticaddfactor = mapobjectscale * 8;
 
 		const fixed_t mo1speed = FixedHypot(FixedHypot(mo1->momx, mo1->momy), mo1->momz);
