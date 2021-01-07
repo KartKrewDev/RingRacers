@@ -1299,8 +1299,10 @@ static boolean PIT_CheckThing(mobj_t *thing)
 						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 
-				K_KartBouncing(mo1, mo2, zbounce, false);
-				K_PvPTouchDamage(mo1, mo2);
+				if (K_KartBouncing(mo1, mo2, zbounce, false))
+				{
+					K_PvPTouchDamage(mo1, mo2);
+				}
 			}
 
 			return true;
