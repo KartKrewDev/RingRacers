@@ -4829,9 +4829,6 @@ DoneSection2:
 				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ZOOMTUBE)
 					break;
 
-				if (player->powers[pw_ignorelatch] & (1<<15))
-					break;
-
 				// Find line #3 tagged to this sector
 				lineindex = P_FindSpecialLineFromTag(3, sector->tag, -1);
 

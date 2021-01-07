@@ -8555,6 +8555,10 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SLOWBOOM9",
 	"S_SLOWBOOM10",
 
+	// Land Mine
+	"S_LANDMINE",
+	"S_LANDMINE_EXPLODE",
+
 	// Ballhog
 	"S_BALLHOG1",
 	"S_BALLHOG2",
@@ -10222,6 +10226,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	"MT_BOOMEXPLODE",
 	"MT_BOOMPARTICLE",
 
+	"MT_LANDMINE", // Land Mine
+
 	"MT_BALLHOG", // Ballhog
 	"MT_BALLHOGBOOM",
 
@@ -11354,7 +11360,7 @@ struct {
 	{"DMG_NORMAL",DMG_NORMAL},
 	{"DMG_WIPEOUT",DMG_WIPEOUT},
 	{"DMG_EXPLODE",DMG_EXPLODE},
-	{"DMG_SQUISH",DMG_SQUISH},
+	{"DMG_TUMBLE",DMG_TUMBLE},
 	{"DMG_STING",DMG_STING},
 	{"DMG_KARMA",DMG_KARMA},
 	//// Death types

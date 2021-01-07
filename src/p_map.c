@@ -730,7 +730,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
 		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
-		|| tmthing->type == MT_SSMINE || tmthing->type == MT_SINK
+		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
 		|| (tmthing->type == MT_PLAYER && thing->target != tmthing)))
 	{
 		// see if it went over / under
@@ -788,7 +788,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		|| (tmthing->player && tmthing->player->kartstuff[k_bubbleblowup]))
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| (thing->type == MT_PLAYER && tmthing->target != thing)))
 	{
 		// see if it went over / under
@@ -931,6 +931,27 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return true; // underneath
 
 		return K_MineExplosionCollide(thing, tmthing);
+	}
+
+	if (tmthing->type == MT_LANDMINE)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		return K_LandMineCollide(tmthing, thing);
+	}
+	else if (thing->type == MT_LANDMINE)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		return K_LandMineCollide(thing, tmthing);
 	}
 
 	if (tmthing->type == MT_SINK)
@@ -1214,69 +1235,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return false;
 	}
 
-	// Damage other players when invincible
-	if (tmthing->player && thing->player
-	// Make sure they aren't able to damage you ANYWHERE along the Z axis, you have to be TOUCHING the person.
-		&& !(thing->z + thing->height < tmthing->z || thing->z > tmthing->z + tmthing->height))
-	{
-		if (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam)
-		{
-			if (tmthing->scale > thing->scale + (mapobjectscale/8)) // SRB2kart - Handle squishes first!
-			{
-				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SQUISH);
-			}
-			else if (thing->scale > tmthing->scale + (mapobjectscale/8))
-			{
-				P_DamageMobj(tmthing, thing, thing, 1, DMG_SQUISH);
-			}
-			else if (tmthing->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer]) // SRB2kart - Then invincibility!
-			{
-				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
-			}
-			else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
-			{
-				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
-			}
-			else if ((tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
-				&& !(thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
-			{
-				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
-			}
-			else if ((thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
-				&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD))
-			{
-				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
-			}
-		}
-	}
-
 	if (thing->player)
 	{
-		// Doesn't matter what gravity player's following! Just do your stuff in YOUR direction only
-		if (tmthing->eflags & MFE_VERTICALFLIP
-		&& (tmthing->z + tmthing->height + tmthing->momz < thing->z
-		 || tmthing->z + tmthing->height + tmthing->momz >= thing->z + thing->height))
-			;
-		else if (!(tmthing->eflags & MFE_VERTICALFLIP)
-		&& (tmthing->z + tmthing->momz > thing->z + thing->height
-		 || tmthing->z + tmthing->momz <= thing->z))
-			;
-		else if  (P_IsObjectOnGround(thing)
-			&& !P_IsObjectOnGround(tmthing) // Don't crush if the monitor is on the ground...
-			&& (tmthing->flags & MF_SOLID))
-		{
-			if (tmthing->flags & (MF_MONITOR|MF_PUSHABLE))
-			{
-				// Objects kill you if it falls from above.
-				if (thing != tmthing->target)
-					P_DamageMobj(thing, tmthing, tmthing->target, 1, DMG_CRUSHED);
-
-				tmthing->momz = -tmthing->momz/2; // Bounce, just for fun!
-				// The tmthing->target allows the pusher of the object
-				// to get the point if he topples it on an opponent.
-			}
-		}
-
 		if (tmthing->type == MT_FAN || tmthing->type == MT_STEAM)
 			P_DoFanAndGasJet(tmthing, thing);
 	}
@@ -1304,10 +1264,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->z + tmthing->height < thing->z)
 				return true; // underneath
 
-			if (thing->player->kartstuff[k_squishedtimer] || thing->player->kartstuff[k_hyudorotimer]
-				|| thing->player->kartstuff[k_justbumped] || thing->scale > tmthing->scale + (mapobjectscale/8)
-				|| tmthing->player->kartstuff[k_squishedtimer] || tmthing->player->kartstuff[k_hyudorotimer]
-				|| tmthing->player->kartstuff[k_justbumped] || tmthing->scale > thing->scale + (mapobjectscale/8))
+			if (thing->player->kartstuff[k_hyudorotimer] || tmthing->player->kartstuff[k_hyudorotimer])
 			{
 				return true;
 			}
@@ -1341,16 +1298,11 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					if (thing->player->trickpanel)
 						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
-				else if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
-				{
-					P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
-				}
-				else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
-				{
-					P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
-				}
 
-				K_KartBouncing(mo1, mo2, zbounce, false);
+				if (K_KartBouncing(mo1, mo2, zbounce, false))
+				{
+					K_PvPTouchDamage(mo1, mo2);
+				}
 			}
 
 			return true;
@@ -1430,22 +1382,13 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 			}
 
-			// continue to squish
-			if (tmthing->player->kartstuff[k_squishedtimer])
-			{
-				tmthing->player->kartstuff[k_squishedtimer] = 2*TICRATE;
-				tmthing->player->powers[pw_flashing] = K_GetKartFlashing(tmthing->player);
-				return true;
-			}
-
 			// no interaction
-			if (tmthing->player->powers[pw_flashing] > 0 || tmthing->player->kartstuff[k_hyudorotimer] > 0
-				|| tmthing->player->kartstuff[k_spinouttimer] > 0) //|| tmthing->player->kartstuff[k_squishedtimer] > 0
+			if (tmthing->player->powers[pw_flashing] > 0 || tmthing->player->kartstuff[k_hyudorotimer] > 0 || tmthing->player->kartstuff[k_spinouttimer] > 0)
 				return true;
 
 			// collide
 			if (tmthing->z < thing->z && thing->momz < 0)
-				K_SquishPlayer(tmthing->player, thing, thing);
+				P_DamageMobj(tmthing, thing, thing, 1, DMG_TUMBLE);
 			else
 			{
 				if (thing->flags2 & MF2_AMBUSH)

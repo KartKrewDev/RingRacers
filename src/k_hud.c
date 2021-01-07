@@ -115,6 +115,7 @@ static patch_t *kp_eggman[2];
 static patch_t *kp_orbinaut[5];
 static patch_t *kp_jawz[2];
 static patch_t *kp_mine[2];
+static patch_t *kp_landmine[2];
 static patch_t *kp_ballhog[2];
 static patch_t *kp_selfpropelledbomb[2];
 static patch_t *kp_grow[2];
@@ -394,6 +395,7 @@ void K_LoadKartHUDGraphics(void)
 	}
 	kp_jawz[0] =				W_CachePatchName("K_ITJAWZ", PU_HUDGFX);
 	kp_mine[0] =				W_CachePatchName("K_ITMINE", PU_HUDGFX);
+	kp_landmine[0] =			W_CachePatchName("K_ITLNDM", PU_HUDGFX);
 	kp_ballhog[0] =				W_CachePatchName("K_ITBHOG", PU_HUDGFX);
 	kp_selfpropelledbomb[0] =	W_CachePatchName("K_ITSPB", PU_HUDGFX);
 	kp_grow[0] =				W_CachePatchName("K_ITGROW", PU_HUDGFX);
@@ -443,6 +445,7 @@ void K_LoadKartHUDGraphics(void)
 	kp_orbinaut[4] =			W_CachePatchName("K_ISORBN", PU_HUDGFX);
 	kp_jawz[1] =				W_CachePatchName("K_ISJAWZ", PU_HUDGFX);
 	kp_mine[1] =				W_CachePatchName("K_ISMINE", PU_HUDGFX);
+	kp_landmine[1] =			W_CachePatchName("K_ISLNDM", PU_HUDGFX);
 	kp_ballhog[1] =				W_CachePatchName("K_ISBHOG", PU_HUDGFX);
 	kp_selfpropelledbomb[1] =	W_CachePatchName("K_ISSPB", PU_HUDGFX);
 	kp_grow[1] =				W_CachePatchName("K_ISGROW", PU_HUDGFX);
@@ -619,6 +622,8 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISJAWZ" : "K_ITJAWZ");
 		case KITEM_MINE:
 			return (tiny ? "K_ISMINE" : "K_ITMINE");
+		case KITEM_LANDMINE:
+			return (tiny ? "K_ISLNDM" : "K_ITLNDM");
 		case KITEM_BALLHOG:
 			return (tiny ? "K_ISBHOG" : "K_ITBHOG");
 		case KITEM_SPB:
@@ -970,6 +975,10 @@ static void K_drawKartItem(void)
 				localpatch = kp_superring[offset];
 				//localcolor = SKINCOLOR_GOLD;
 				break;
+			case 15: // Land Mine
+				localpatch = kp_landmine[offset];
+				//localcolor = SKINCOLOR_JET;
+				break;
 			/*case 15: // Pogo Spring
 				localpatch = kp_pogospring[offset];
 				localcolor = SKINCOLOR_TANGERINE;
@@ -1054,6 +1063,9 @@ static void K_drawKartItem(void)
 					break;
 				case KITEM_MINE:
 					localpatch = kp_mine[offset];
+					break;
+				case KITEM_LANDMINE:
+					localpatch = kp_landmine[offset];
 					break;
 				case KITEM_BALLHOG:
 					localpatch = kp_ballhog[offset];
@@ -3822,6 +3834,7 @@ static void K_drawDistributionDebugger(void)
 		kp_orbinaut[4],
 		kp_jawz[1],
 		kp_mine[1],
+		kp_landmine[1],
 		kp_ballhog[1],
 		kp_selfpropelledbomb[1],
 		kp_grow[1],

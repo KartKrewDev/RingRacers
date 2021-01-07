@@ -815,6 +815,7 @@ typedef enum sprite
 	SPR_JAWZ, // Jawz
 	SPR_SSMN, // SS Mine
 	SPR_KRBM, // SS Mine BOOM
+	SPR_LNDM, // Land Mine
 	SPR_BHOG, // Ballhog
 	SPR_BHBM, // Ballhog BOOM
 	SPR_SPBM, // Self-Propelled Bomb
@@ -4407,6 +4408,10 @@ typedef enum state
 	S_SLOWBOOM9,
 	S_SLOWBOOM10,
 
+	// Land mine
+	S_LANDMINE,
+	S_LANDMINE_EXPLODE,
+
 	// Ballhog
 	S_BALLHOG1,
 	S_BALLHOG2,
@@ -6113,6 +6118,8 @@ typedef enum mobj_type
 	MT_SMOLDERING, // New explosion
 	MT_BOOMEXPLODE,
 	MT_BOOMPARTICLE,
+
+	MT_LANDMINE, // Land Mine
 
 	MT_BALLHOG, // Ballhog
 	MT_BALLHOGBOOM,

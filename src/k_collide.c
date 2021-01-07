@@ -68,7 +68,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 
 		damageitem = true;
 	}
-	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE)
+	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
 	{
 		damageitem = true;
 		// Bomb death
@@ -157,6 +157,12 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
 		damageitem = true;
+	}
+	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
+	{
+		damageitem = true;
+		// Bomb death
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
@@ -329,6 +335,73 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
+boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
+{
+	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+		return true;
+
+	if (t1->health <= 0 || t2->health <= 0)
+		return true;
+
+	if (t2->player)
+	{
+		if (t2->player->powers[pw_flashing])
+			return true;
+
+		// Banana snipe!
+		if (t1->health > 1)
+			S_StartSound(t2, sfx_bsnipe);
+
+		if (t2->player->kartstuff[k_flamedash] && t2->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
+		{
+			// Melt item
+			S_StartSound(t2, sfx_s3k43);
+		}
+		else
+		{
+			// Player Damage
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_TUMBLE);
+		}
+
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
+	}
+	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
+		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
+		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD || t2->type == MT_JAWZ_SHIELD
+		|| t2->type == MT_BALLHOG)
+	{
+		// Other Item Damage
+		if (t2->eflags & MFE_VERTICALFLIP)
+			t2->z -= t2->height;
+		else
+			t2->z += t2->height;
+
+		S_StartSound(t2, t2->info->deathsound);
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
+
+		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
+		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+
+		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
+
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
+	}
+	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
+	{
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
+		// Bomb death
+		P_KillMobj(t2, t1, t1, DMG_NORMAL);
+	}
+	else if (t2->flags & MF_SHOOTABLE)
+	{
+		// Shootable damage
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+		P_KillMobj(t1, t2, t2, DMG_NORMAL);
+	}
+
+	return true;
+}
+
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
@@ -384,10 +457,112 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->health)
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
-	/*if (t2->player && (t2->player->kartstuff[k_invincibilitytimer] > 0
+	/*
+	if (t2->player && (t2->player->kartstuff[k_invincibilitytimer] > 0
 		|| t2->player->kartstuff[k_growshrinktimer] > 0))
-		return true;*/
+		return true;
+	*/
 
 	K_KartBouncing(t2, t1, false, true);
 	return false;
+}
+
+boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
+{
+	boolean t1Condition = false;
+	boolean t2Condition = false;
+	boolean stung = false;
+
+	// Grow damage
+	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8));
+	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8));
+
+	if (t1Condition == true && t2Condition == false)
+	{
+		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
+		return true;
+	}
+	else if (t1Condition == false && t2Condition == true)
+	{
+		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+		return true;
+	}
+
+	// Invincibility damage
+	t1Condition = (t1->player->kartstuff[k_invincibilitytimer] > 0);
+	t2Condition = (t2->player->kartstuff[k_invincibilitytimer] > 0);
+
+	if (t1Condition == true && t2Condition == false)
+	{
+		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
+		return true;
+	}
+	else if (t1Condition == false && t2Condition == true)
+	{
+		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+		return true;
+	}
+
+	// Flame Shield dash damage
+	t1Condition = (t1->player->kartstuff[k_flamedash] > 0 && t1->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD);
+	t2Condition = (t2->player->kartstuff[k_flamedash] > 0 && t2->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD);
+
+	if (t1Condition == true && t2Condition == false)
+	{
+		P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT);
+		return true;
+	}
+	else if (t1Condition == false && t2Condition == true)
+	{
+		P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT);
+		return true;
+	}
+
+	// Battle Mode Sneaker damage
+	// (Pogo Spring damage is handled in head-stomping code)
+	if (gametyperules & GTR_BUMPERS)
+	{
+		t1Condition = (t1->player->kartstuff[k_sneakertimer] > 0 && t1->player->powers[pw_flashing] != 0);
+		t2Condition = (t2->player->kartstuff[k_sneakertimer] > 0 && t2->player->powers[pw_flashing] != 0);
+
+		if (t1Condition == true && t2Condition == false)
+		{
+			P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_STEAL);
+			return true;
+		}
+		else if (t1Condition == false && t2Condition == true)
+		{
+			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL);
+			return true;
+		}
+	}
+
+	// Ring sting, this is a bit more unique
+	t1Condition = (K_GetShieldFromItem(t2->player->kartstuff[k_itemtype]) == KSHIELD_NONE);
+	t2Condition = (K_GetShieldFromItem(t1->player->kartstuff[k_itemtype]) == KSHIELD_NONE);
+
+	if (t1Condition == true)
+	{
+		if (t2->player->rings <= 0)
+		{
+			P_DamageMobj(t2, t1, t1, 1, DMG_STING);
+			stung = true;
+		}
+
+		P_PlayerRingBurst(t2->player, 1);
+		stung = true;
+	}
+
+	if (t2Condition == true)
+	{
+		if (t1->player->rings <= 0)
+		{
+			P_DamageMobj(t1, t2, t2, 1, DMG_STING);
+			stung = true;
+		}
+
+		P_PlayerRingBurst(t2->player, 1);
+	}
+
+	return stung;
 }

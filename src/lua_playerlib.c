@@ -214,6 +214,12 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->kartstuff, META_KARTSTUFF);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
+	else if (fastcmp(field,"tumbleBounces"))
+		lua_pushinteger(L, plr->tumbleBounces);
+	else if (fastcmp(field,"tumbleHeight"))
+		lua_pushinteger(L, plr->tumbleHeight);
+	else if (fastcmp(field,"tumbleLastBounce"))
+		lua_pushboolean(L, plr->tumbleLastBounce);
 	else if (fastcmp(field,"trickpanel"))
 		lua_pushinteger(L, plr->trickpanel);
 	else if (fastcmp(field,"trickdelay"))
@@ -513,6 +519,12 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"airtime"))
 		plr->airtime = (tic_t)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tumbleBounces"))
+		plr->tumbleBounces = (UINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tumbleHeight"))
+		plr->tumbleHeight = (UINT16)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tumbleLastBounce"))
+		plr->tumbleLastBounce = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"trickpanel"))
 		plr->trickpanel = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickdelay"))

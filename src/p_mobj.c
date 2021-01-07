@@ -1105,6 +1105,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		{
 			gravityadd = (5*gravityadd)/2;
 		}
+
+		if (mo->player->tumbleBounces > 0)
+		{
+			gravityadd = (5*gravityadd)/2;
+		}
 	}
 	else
 	{
@@ -1163,6 +1168,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				case MT_BANANA:
 				case MT_EGGMANITEM:
 				case MT_SSMINE:
+				case MT_LANDMINE:
 				case MT_SINK:
 				case MT_EMERALD:
 					if (mo->extravalue2 > 0)
@@ -2105,6 +2111,7 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_JAWZ_DUD:
 		case MT_BALLHOG:
 		case MT_SSMINE:
+		case MT_LANDMINE:
 		case MT_BUBBLESHIELDTRAP:
 			// Remove stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
@@ -2626,7 +2633,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->z = mo->floorz;
 
 		// Get up if you fell.
-		if (mo->player->panim == PA_PAIN && mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->kartstuff[k_squishedtimer] == 0)
+		if (mo->player->panim == PA_PAIN && mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->tumbleBounces == 0)
 			P_SetPlayerMobjState(mo, S_KART_STILL);
 
 		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope)) {
@@ -4494,7 +4501,8 @@ boolean P_IsKartItem(INT32 type)
 		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
 		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
 		type == MT_SINK || type == MT_SINK_SHIELD ||
-		type == MT_SPB || type == MT_BALLHOG || type == MT_BUBBLESHIELDTRAP)
+		type == MT_SPB || type == MT_BALLHOG || type == MT_BUBBLESHIELDTRAP ||
+		type == MT_LANDMINE)
 		return true;
 	else
 		return false;
@@ -5900,6 +5908,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	case MT_ORBINAUT:
 	case MT_BANANA:
 	case MT_EGGMANITEM:
+	case MT_LANDMINE:
 	case MT_SPB:
 		if (P_IsObjectOnGround(mobj))
 		{
@@ -6513,6 +6522,25 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if ((mobj->state >= &states[S_SSMINE1] && mobj->state <= &states[S_SSMINE4])
 			|| (mobj->state >= &states[S_SSMINE_DEPLOY8] && mobj->state <= &states[S_SSMINE_DEPLOY13]))
 			A_GrenadeRing(mobj);
+
+		if (mobj->threshold > 0)
+			mobj->threshold--;
+		break;
+	case MT_LANDMINE:
+		mobj->friction = ORIG_FRICTION/4;
+
+		if (mobj->momx || mobj->momy || mobj->momz)
+		{
+			mobj_t *ghost = P_SpawnGhostMobj(mobj);
+			ghost->colorized = true; // already has color!
+		}
+
+		if (P_IsObjectOnGround(mobj) && mobj->health > 1)
+		{
+			S_StartSound(mobj, mobj->info->activesound);
+			mobj->momx = mobj->momy = 0;
+			mobj->health = 1;
+		}
 
 		if (mobj->threshold > 0)
 			mobj->threshold--;
@@ -8685,7 +8713,8 @@ void P_MobjThinker(mobj_t *mobj)
 	if (mobj->type == MT_BANANA || mobj->type == MT_EGGMANITEM
 	|| mobj->type == MT_ORBINAUT || mobj->type == MT_BALLHOG
 	|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD
-	|| mobj->type == MT_SSMINE || mobj->type == MT_BUBBLESHIELDTRAP)
+	|| mobj->type == MT_SSMINE || mobj->type == MT_BUBBLESHIELDTRAP
+	|| mobj->type == MT_LANDMINE)
 	{
 		if (mobj->health > 0 && P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
 		{
@@ -9066,6 +9095,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_JAWZ_SHIELD:
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
+		case MT_LANDMINE:
 		case MT_BALLHOG:
 		case MT_SINK:
 		case MT_ROCKETSNEAKER:

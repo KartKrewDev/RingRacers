@@ -44,7 +44,7 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics);
 void K_DoInstashield(player_t *player);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type);
-void K_SquishPlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
+void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);
 void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers);

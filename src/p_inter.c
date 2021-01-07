@@ -481,8 +481,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 
 			// no interaction
-			if (player->powers[pw_flashing] > 0 || player->kartstuff[k_hyudorotimer] > 0
-				|| player->kartstuff[k_squishedtimer] > 0 || P_PlayerInPain(player))
+			if (player->powers[pw_flashing] > 0 || player->kartstuff[k_hyudorotimer] > 0 || P_PlayerInPain(player))
 				return;
 
 			// attach to player!
@@ -1878,7 +1877,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (player) // Player is the target
 	{
 		const UINT8 type = (damagetype & DMG_TYPEMASK);
-		const boolean combo = (type == DMG_EXPLODE); // This damage type can be comboed from other damage
+		const boolean combo = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can be comboed from other damage
 		INT16 ringburst = 5;
 
 		if (player->pflags & PF_GODMODE)
@@ -2014,6 +2013,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_KartPainEnergyFling(player);
 					ringburst = 0;
 					break;
+				case DMG_TUMBLE:
+					K_TumblePlayer(player, inflictor, source);
+					break;
 				case DMG_EXPLODE:
 				case DMG_KARMA:
 					K_ExplodePlayer(player, inflictor, source);
@@ -2021,7 +2023,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				case DMG_WIPEOUT:
 					if (P_IsDisplayPlayer(player))
 						P_StartQuake(32<<FRACBITS, 5);
-
 					K_SpinPlayer(player, inflictor, source, KSPIN_WIPEOUT);
 					K_KartPainEnergyFling(player);
 					break;
@@ -2045,7 +2046,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			K_PlayPainSound(player->mo);
 
-			if ((type == DMG_EXPLODE || type == DMG_KARMA) || (cv_kartdebughuddrop.value && !modeattacking))
+			if ((combo == true) || (cv_kartdebughuddrop.value && !modeattacking))
 			{
 				K_DropItems(player);
 			}
