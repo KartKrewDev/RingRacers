@@ -1629,7 +1629,7 @@ static boolean PIT_CheckCameraLine(line_t *ld)
 	return true;
 }
 
-static boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
+boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
 {
 	// missiles can cross uncrossable lines
 	if ((thing->flags & MF_MISSILE))
