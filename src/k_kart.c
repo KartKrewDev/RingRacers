@@ -2363,10 +2363,15 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
 	INT32 tics1 = tics;
 	INT32 tics2 = tics;
 
+	if (tics <= 0)
+	{
+		return;
+	}
+
 	if (mo1valid == true && mo2valid == true)
 	{
+		const INT32 mintics = 1;
 		const fixed_t ticaddfactor = mapobjectscale * 8;
-		const INT32 mintics = tics;
 
 		const fixed_t mo1speed = FixedHypot(FixedHypot(mo1->momx, mo1->momy), mo1->momz);
 		const fixed_t mo2speed = FixedHypot(FixedHypot(mo2->momx, mo2->momy), mo2->momz);
@@ -2411,12 +2416,12 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
 
 	if (mo1valid == true)
 	{
-		mo1->hitlag += tics1;
+		mo1->hitlag = max(tics1, mo1->hitlag);
 	}
 
 	if (mo2valid == true)
 	{
-		mo2->hitlag += tics2;
+		mo2->hitlag = max(tics2, mo2->hitlag);
 	}
 }
 
@@ -3604,10 +3609,11 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 	else
 	{
 		// Use pre-determined speed for tossing
-		PROJSPEED = FixedMul(82 << FRACBITS, K_GetKartGameSpeedScalar(gamespeed));
+		PROJSPEED = FixedMul(82 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed));
 	}
 
-	// Scale to map size
+	// Scale to map scale
+	// Intentionally NOT player scale, that doesn't work.
 	PROJSPEED = FixedMul(PROJSPEED, mapobjectscale);
 
 	if (altthrow)
@@ -3708,7 +3714,7 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 			if (mo)
 			{
 				angle_t fa = player->mo->angle>>ANGLETOFINESHIFT;
-				fixed_t HEIGHT = (20 + (dir*10))*FRACUNIT + (player->mo->momz*P_MobjFlip(player->mo));
+				fixed_t HEIGHT = ((20 + (dir*10)) * FRACUNIT) + (player->mo->momz*P_MobjFlip(player->mo)); // Also intentionally not player scale
 
 				P_SetObjectMomZ(mo, HEIGHT, false);
 				mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), PROJSPEED*dir);
@@ -3813,41 +3819,48 @@ static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t map
 	return mo;
 }
 
-void K_PuntMine(mobj_t *thismine, mobj_t *punter)
+void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 {
-	angle_t fa = K_MomentumAngle(punter) >> ANGLETOFINESHIFT;
-	fixed_t z = 30*mapobjectscale + punter->momz;
+	angle_t fa = K_MomentumAngle(punter);
+	fixed_t z = (punter->momz * P_MobjFlip(punter)) + (30 * FRACUNIT);
 	fixed_t spd;
 	mobj_t *mine;
 
-	if (!thismine || P_MobjWasRemoved(thismine))
+	if (!origMine || P_MobjWasRemoved(origMine))
 		return;
 
-	//This guarantees you hit a mine being dragged
-	if (thismine->type == MT_SSMINE_SHIELD) // Create a new mine, and clean up the old one
+	if (punter->hitlag > 0)
+		return;
+
+	// This guarantees you hit a mine being dragged
+	if (origMine->type == MT_SSMINE_SHIELD) // Create a new mine, and clean up the old one
 	{
-		mine = P_SpawnMobj(thismine->x, thismine->y, thismine->z, MT_SSMINE);
-		P_SetTarget(&mine->target, thismine->target);
-		mine->angle = thismine->angle;
-		mine->flags2 = thismine->flags2;
-		mine->floorz = thismine->floorz;
-		mine->ceilingz = thismine->ceilingz;
+		mobj_t *mineOwner = origMine->target;
 
-		//Since we aren't using P_KillMobj, we need to clean up the hnext reference
+		mine = P_SpawnMobj(origMine->x, origMine->y, origMine->z, MT_SSMINE);
+
+		P_SetTarget(&mine->target, mineOwner);
+		mine->angle = origMine->angle;
+		mine->flags2 = origMine->flags2;
+		mine->floorz = origMine->floorz;
+		mine->ceilingz = origMine->ceilingz;
+
+		// Since we aren't using P_KillMobj, we need to clean up the hnext reference
+		P_SetTarget(&mineOwner->hnext, NULL);
+		mineOwner->player->kartstuff[k_bananadrag] = 0;
+		mineOwner->player->kartstuff[k_itemheld] = 0;
+
+		if (--mineOwner->player->kartstuff[k_itemamount] <= 0)
 		{
-			P_SetTarget(&thismine->target->hnext, NULL); //target is the player who owns the mine
-			thismine->target->player->kartstuff[k_bananadrag] = 0;
-			thismine->target->player->kartstuff[k_itemheld] = 0;
-
-			if (--thismine->target->player->kartstuff[k_itemamount] <= 0)
-				thismine->target->player->kartstuff[k_itemtype] = KITEM_NONE;
+			mineOwner->player->kartstuff[k_itemtype] = KITEM_NONE;
 		}
 
-		P_RemoveMobj(thismine);
-
+		P_RemoveMobj(origMine);
 	}
 	else
-		mine = thismine;
+	{
+		mine = origMine;
+	}
 
 	if (!mine || P_MobjWasRemoved(mine))
 		return;
@@ -3855,20 +3868,19 @@ void K_PuntMine(mobj_t *thismine, mobj_t *punter)
 	if (mine->threshold > 0 || mine->hitlag > 0)
 		return;
 
-	spd = (82 + ((gamespeed-1) * 14))*mapobjectscale; // Avg Speed is 41 in Normal
+	spd = FixedMul(82 * punter->scale, K_GetKartGameSpeedScalar(gamespeed)); // Avg Speed is 41 in Normal
 
 	mine->flags |= MF_NOCLIPTHING;
 
 	P_SetMobjState(mine, S_SSMINE_AIR1);
 	mine->threshold = 10;
-	mine->extravalue1 = 0;
 	mine->reactiontime = mine->info->reactiontime;
 
-	K_SetHitLagForObjects(punter, mine, 5);
+	mine->momx = punter->momx + FixedMul(FINECOSINE(fa >> ANGLETOFINESHIFT), spd);
+	mine->momy = punter->momy + FixedMul(FINESINE(fa >> ANGLETOFINESHIFT), spd);
+	P_SetObjectMomZ(mine, z, false);
 
-	mine->momx = punter->momx + FixedMul(FINECOSINE(fa), spd);
-	mine->momy = punter->momy + FixedMul(FINESINE(fa), spd);
-	mine->momz = P_MobjFlip(mine) * z;
+	//K_SetHitLagForObjects(punter, mine, 5);
 
 	mine->flags &= ~MF_NOCLIPTHING;
 }
