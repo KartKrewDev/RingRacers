@@ -336,7 +336,7 @@ typedef enum
 	k_sparkleanim,		// Angle offset for ring sparkle animation
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
-	k_pogospring,		// Pogo spring bounce effect
+	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
 	k_spindash,			// Spindash charge timer
 	k_spindashspeed,	// Spindash release speed
 	k_spindashboost,	// Spindash release boost timer
@@ -450,6 +450,10 @@ typedef enum
 // QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
 #define RINGTOTAL(p) (p->rings + p->kartstuff[k_pickuprings])
 
+// CONSTANTS FOR TRICK PANELS
+#define TRICKMOMZRAMP (30)
+#define TRICKLAG (9)
+
 //}
 
 // player_t struct for all respawn variables
@@ -513,6 +517,7 @@ typedef struct player_s
 
 	// player's ring count
 	INT16 rings;
+	INT16 spheres;
 
 	// Power ups. invinc and invis are tic counters.
 	UINT16 powers[NUMPOWERS];
@@ -523,7 +528,18 @@ typedef struct player_s
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
-	tic_t airtime; // Keep track of how long you've been in the air
+	tic_t airtime; 		// Keep track of how long you've been in the air
+
+	UINT8 trickpanel; 	// Trick panel state
+	boolean trickdelay;	// Prevent tricks until control stick is neutral
+	fixed_t trickmomx;
+	fixed_t trickmomy;
+	fixed_t trickmomz;	// Instead of stupid auxiliary variables let's... just make some ourselves.
+
+	UINT8 bumpers;
+	INT16 karmadelay;
+	boolean eliminated;
+
 
 	// Bit flags.
 	// See pflags_t, above.

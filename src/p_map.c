@@ -445,9 +445,14 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			{
 				if (object->eflags & MFE_SPRUNG)
 					break;
+
 				if (object->player)
-					object->player->kartstuff[k_pogospring] = 1;
-				K_DoPogoSpring(object, 0, 0);
+				{
+					object->player->trickpanel = 1;
+					object->player->trickdelay = 1;
+				}
+
+				K_DoPogoSpring(object, 32<<FRACBITS, 0);
 				return;
 			}
 			else
@@ -1265,8 +1270,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			}
 
 			if ((gametyperules & GTR_BUMPERS)
-				&& ((thing->player->kartstuff[k_bumper] && !tmthing->player->kartstuff[k_bumper])
-				|| (tmthing->player->kartstuff[k_bumper] && !thing->player->kartstuff[k_bumper])))
+				&& ((thing->player->bumpers && !tmthing->player->bumpers)
+				|| (tmthing->player->bumpers && !thing->player->bumpers)))
 			{
 				return true;
 			}
@@ -1283,14 +1288,14 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					mo1 = thing;
 					mo2 = tmthing;
 
-					if (tmthing->player->kartstuff[k_pogospring])
+					if (tmthing->player->trickpanel)
 						P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 				else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
 				{
 					zbounce = true;
 
-					if (thing->player->kartstuff[k_pogospring])
+					if (thing->player->trickpanel)
 						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 
@@ -1565,6 +1570,23 @@ static boolean PIT_CheckCameraLine(line_t *ld)
 	return true;
 }
 
+boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
+{
+	// missiles can cross uncrossable lines
+	if ((thing->flags & MF_MISSILE))
+		return false;
+	else
+	{
+		return
+			(
+					(ld->flags & ML_IMPASSABLE) || // block objects from moving through this linedef.
+					(thing->player && !thing->player->spectator &&
+						ld->flags & ML_BLOCKPLAYERS) || // SRB2Kart: Only block players, not items
+					((thing->flags & (MF_ENEMY|MF_BOSS)) && ld->special == 81) // case 81: block monsters only
+			);
+	}
+}
+
 //
 // PIT_CheckLine
 // Adjusts tmfloorz and tmceilingz as lines are contacted
@@ -1640,14 +1662,8 @@ static boolean PIT_CheckLine(line_t *ld)
 		return false;
 	}
 
-	// missiles can cross uncrossable lines
-	if (!(tmthing->flags & MF_MISSILE))
-	{
-		if (ld->flags & ML_IMPASSABLE) // block objects from moving through this linedef.
-			return false;
-		if (tmthing->player && !tmthing->player->spectator && ld->flags & ML_BLOCKPLAYERS)
-			return false; // SRB2Kart: Only block players, not items
-	}
+	if (P_IsLineBlocking(ld, tmthing))
+		return false;
 
 	// set openrange, opentop, openbottom
 	P_LineOpening(ld, tmthing);
@@ -2216,7 +2232,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 {
 	subsector_t *s = R_PointInSubsector(x, y);
 	boolean retval = true;
-	
+
 	UINT8 i;
 
 	floatok = false;
@@ -2588,9 +2604,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			if (thing->momz <= 0)
 			{
 				thing->standingslope = tmfloorslope;
-#ifdef HWRENDER
-				thing->modeltilt = thing->standingslope;
-#endif
+				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
 				if (thing->momz == 0 && thing->player && !startingonground)
 					P_PlayerHitFloor(thing->player, true);
@@ -2603,9 +2617,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			if (thing->momz >= 0)
 			{
 				thing->standingslope = tmceilingslope;
-#ifdef HWRENDER
-				thing->modeltilt = thing->standingslope;
-#endif
+				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
 				if (thing->momz == 0 && thing->player && !startingonground)
 					P_PlayerHitFloor(thing->player, true);
@@ -3117,14 +3129,8 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	if (!li->backsector)
 		return !P_PointOnLineSide(slidemo->x, slidemo->y, li);
 
-	if (!(slidemo->flags & MF_MISSILE))
-	{
-		if (li->flags & ML_IMPASSABLE)
-			return true;
-
-		if (slidemo->player && !slidemo->player->spectator && li->flags & ML_BLOCKPLAYERS)
-			return true;
-	}
+	if (P_IsLineBlocking(li, slidemo))
+		return true;
 
 	// set openrange, opentop, openbottom
 	P_LineOpening(li, slidemo);
@@ -3611,7 +3617,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 	mmomx = mo->player->rmomx;
 	mmomy = mo->player->rmomy;
 
-	mo->player->kartstuff[k_pogospring] = 0;
+	mo->player->trickpanel = 0;
 
 	// trace along the three leading corners
 	if (mo->momx > 0)

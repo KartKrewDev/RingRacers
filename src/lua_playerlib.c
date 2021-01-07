@@ -206,6 +206,8 @@ static int player_get(lua_State *L)
 		lua_pushangle(L, plr->drawangle);
 	else if (fastcmp(field,"rings"))
 		lua_pushinteger(L, plr->rings);
+	else if (fastcmp(field,"spheres"))
+		lua_pushinteger(L, plr->spheres);
 	else if (fastcmp(field,"powers"))
 		LUA_PushUserdata(L, plr->powers, META_POWERS);
 	else if (fastcmp(field,"kartstuff"))
@@ -218,6 +220,16 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tumbleHeight);
 	else if (fastcmp(field,"tumbleLastBounce"))
 		lua_pushboolean(L, plr->tumbleLastBounce);
+	else if (fastcmp(field,"trickpanel"))
+		lua_pushinteger(L, plr->trickpanel);
+	else if (fastcmp(field,"trickdelay"))
+		lua_pushinteger(L, plr->trickdelay);
+	else if (fastcmp(field,"trickmomx"))
+		lua_pushfixed(L, plr->trickmomx);
+	else if (fastcmp(field,"trickmomy"))
+		lua_pushfixed(L, plr->trickmomy);
+	else if (fastcmp(field,"trickmomz"))
+		lua_pushfixed(L, plr->trickmomz);
 	else if (fastcmp(field,"pflags"))
 		lua_pushinteger(L, plr->pflags);
 	else if (fastcmp(field,"panim"))
@@ -481,6 +493,8 @@ static int player_set(lua_State *L)
 		plr->drawangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"rings"))
 		plr->rings = (INT32)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"spheres"))
+		plr->spheres = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"powers"))
 		return NOSET;
 	else if (fastcmp(field,"pflags"))
@@ -511,6 +525,16 @@ static int player_set(lua_State *L)
 		plr->tumbleHeight = (UINT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumbleLastBounce"))
 		plr->tumbleLastBounce = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"trickpanel"))
+		plr->trickpanel = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"trickdelay"))
+		plr->trickdelay = (tic_t)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"trickmomx"))
+		plr->trickmomx = (fixed_t)luaL_checkfixed(L, 3);
+	else if (fastcmp(field,"trickmomy"))
+		plr->trickmomy = (fixed_t)luaL_checkfixed(L, 3);
+	else if (fastcmp(field,"trickmomz"))
+		plr->trickmomz = (fixed_t)luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"kartspeed"))
 		plr->kartspeed = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartweight"))

@@ -461,17 +461,8 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->respawn.state != RESPAWNST_NONE)
-		return true;
-
 	if (player->kartstuff[k_spinouttimer] || player->tumbleBounces > 0)
 		return true;
-
-	if (gametyperules & GTR_KARMA)
-	{
-		if (player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
-			return true;
-	}
 
 	return false;
 }
@@ -488,7 +479,7 @@ void P_ResetPlayer(player_t *player)
 	player->onconveyor = 0;
 
 	//player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
-	player->kartstuff[k_pogospring] = 0;
+	player->trickpanel = 0;
 }
 
 //
@@ -1293,6 +1284,8 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->colorized = mobj->colorized; // Kart: they should also be colorized if their origin is
 
 	ghost->angle = (mobj->player ? mobj->player->drawangle : mobj->angle);
+	ghost->roll = mobj->roll;
+	ghost->pitch = mobj->pitch;
 	ghost->sprite = mobj->sprite;
 	ghost->sprite2 = mobj->sprite2;
 	ghost->frame = mobj->frame;
@@ -1301,13 +1294,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
-#ifdef HWRENDER
-	ghost->modeltilt = mobj->modeltilt;
-#endif
 
 	ghost->sprxoff = mobj->sprxoff;
 	ghost->spryoff = mobj->spryoff;
 	ghost->sprzoff = mobj->sprzoff;
+	ghost->rollangle = mobj->rollangle;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
@@ -1927,8 +1918,7 @@ static void P_3dMovement(player_t *player)
 	//}
 
 	// Do not let the player control movement if not onground.
-	// SRB2Kart: pogo spring and speed bumps are supposed to control like you're on the ground
-	onground = (P_IsObjectOnGround(player->mo) || (player->kartstuff[k_pogospring]));
+	onground = P_IsObjectOnGround(player->mo);
 
 	K_AdjustPlayerFriction(player);
 
@@ -1944,11 +1934,6 @@ static void P_3dMovement(player_t *player)
 
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
-
-		if (K_PlayerUsesBotMovement(player) == true)
-		{
-			K_MomentumToFacing(player);
-		}
 	}
 
 	if ((totalthrust.x || totalthrust.y)
@@ -2220,9 +2205,13 @@ void P_MovePlayer(player_t *player)
 	{
 		K_KartMoveAnimation(player);
 
-		if (player->kartstuff[k_pogospring])
+		if (player->trickpanel == 2)
 		{
 			player->drawangle += ANGLE_22h;
+		}
+		else if (player->trickpanel == 3)
+		{
+			player->drawangle -= ANGLE_22h;
 		}
 		else
 		{
@@ -2676,7 +2665,7 @@ static void P_DeathThink(player_t *player)
 			{
 				if (player->spectator || !circuitmap)
 					curlap = 0;
-				else
+				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
 			}
 		}
@@ -3221,17 +3210,40 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 
 	// sets ideal cam pos
-	dist = camdist;
+	{
+		const fixed_t speedthreshold = 48*mapobjectscale;
+		const fixed_t olddist = P_AproxDistance(mo->x - thiscam->x, mo->y - thiscam->y);
 
-	/* player->speed subtracts conveyors, janks up the camera */
-	speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+		fixed_t lag, distoffset;
 
-	if (speed > K_GetKartSpeed(player, false))
-		dist += 4*(speed - K_GetKartSpeed(player, false));
-	dist += abs(thiscam->momz)/4;
+		dist = camdist;
 
-	if (player->karthud[khud_boostcam])
-		dist -= FixedMul(11*dist/16, player->karthud[khud_boostcam]);
+		if (player->karthud[khud_boostcam])
+		{
+			dist -= FixedMul(11*dist/16, player->karthud[khud_boostcam]);
+		}
+
+		speed = P_AproxDistance(P_AproxDistance(mo->momx, mo->momy), mo->momz / 16);
+		lag = FRACUNIT - ((FixedDiv(speed, speedthreshold) - FRACUNIT) * 2);
+
+		if (lag > FRACUNIT)
+		{
+			lag = FRACUNIT;
+		}
+
+		if (lag < camspeed)
+		{
+			lag = camspeed;
+		}
+
+		distoffset = dist - olddist;
+		dist = olddist + FixedMul(distoffset, lag);
+
+		if (dist < 0)
+		{
+			dist = 0;
+		}
+	}
 
 	if (mo->standingslope)
 	{
@@ -3520,7 +3532,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		thiscam->momz = 0;
 	}
 	else if (player->exiting || timeover == 2)
+	{
 		thiscam->momx = thiscam->momy = thiscam->momz = 0;
+	}
 	else if (leveltime < introtime)
 	{
 		thiscam->momx = FixedMul(x - thiscam->x, camspeed);
@@ -4418,7 +4432,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (player->spectator || !circuitmap)
 					curlap = 0;
-				else
+				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
 			}
 		}
@@ -4562,7 +4576,7 @@ void P_PlayerThink(player_t *player)
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
-		|| ((gametyperules & GTR_BUMPERS) && player->kartstuff[k_bumper] <= 0 && player->kartstuff[k_comebacktimer])
+		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)
 		|| leveltime < starttime)) // Level intro
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)

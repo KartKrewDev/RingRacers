@@ -341,6 +341,12 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 UINT8 M_AnySecretUnlocked(void)
 {
 	INT32 i;
+
+#ifdef DEVELOP
+	if (1)
+		return true;	
+#endif	
+	
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
 		if (!unlockables[i].nocecho && unlockables[i].unlocked)
@@ -376,6 +382,12 @@ UINT8 M_SecretUnlocked(INT32 type)
 
 UINT8 M_MapLocked(INT32 mapnum)
 {
+
+#ifdef DEVELOP
+	if (1)
+		return false;
+#endif	
+	
 	if (!mapheaderinfo[mapnum-1] || mapheaderinfo[mapnum-1]->unlockrequired < 0)
 		return false;
 	if (!unlockables[mapheaderinfo[mapnum-1]->unlockrequired].unlocked)

@@ -400,6 +400,7 @@ void P_UnsetThingPosition(mobj_t *thing);
 void P_SetThingPosition(mobj_t *thing);
 void P_SetUnderlayPosition(mobj_t *thing);
 
+boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing);
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
@@ -409,6 +410,7 @@ void P_SlideMove(mobj_t *mo);
 void P_BouncePlayerMove(mobj_t *mo);
 void P_BounceMove(mobj_t *mo);
 boolean P_CheckSight(mobj_t *t1, mobj_t *t2);
+boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2);
 void P_CheckHoopPosition(mobj_t *hoopthing, fixed_t x, fixed_t y, fixed_t z, fixed_t radius);
 
 boolean P_CheckSector(sector_t *sector, boolean crunch);
@@ -467,6 +469,7 @@ typedef struct BasicFF_s
 #define DMG_EXPLODE 0x02
 #define DMG_TUMBLE  0x03
 #define DMG_STING   0x04
+#define DMG_KARMA   0x05 // Karma Bomb explosion -- works like DMG_EXPLODE, but steals half of their bumpers & deletes the rest
 //// Death types - cannot be combined with damage types
 #define DMG_INSTAKILL  0x80
 #define DMG_DEATHPIT   0x81
@@ -517,5 +520,6 @@ boolean P_CheckMissileSpawn(mobj_t *th);
 void P_Thrust(mobj_t *mo, angle_t angle, fixed_t move);
 void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
+void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope);
 
 #endif // __P_LOCAL__

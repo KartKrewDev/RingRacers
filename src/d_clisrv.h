@@ -214,6 +214,7 @@ typedef struct
 
 	// Score is resynched in the confirm resync packet
 	INT16 rings;
+	INT16 spheres;
 	SINT8 lives;
 	boolean lostlife;
 	SINT8 continues;
@@ -280,6 +281,15 @@ typedef struct
 	// SRB2kart
 	INT32 kartstuff[NUMKARTSTUFF];
 	tic_t airtime;
+	UINT8 trickpanel;
+	boolean trickdelay;
+	fixed_t trickmomx;
+	fixed_t trickmomy;
+	fixed_t trickmomz;
+
+	UINT8 bumpers;
+	INT16 karmadelay;
+	boolean eliminated;
 
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;

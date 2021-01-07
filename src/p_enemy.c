@@ -4428,7 +4428,7 @@ static inline boolean PIT_GrenadeRing(mobj_t *thing)
 		return true;
 
 	if (thing->player && (thing->player->kartstuff[k_hyudorotimer]
-		|| ((gametyperules & GTR_BUMPERS) && thing->player && thing->player->kartstuff[k_bumper] <= 0 && thing->player->kartstuff[k_comebacktimer])))
+		|| ((gametyperules & GTR_BUMPERS) && thing->player && thing->player->bumpers <= 0 && thing->player->karmadelay)))
 		return true;
 
 	// see if it went over / under
@@ -4457,9 +4457,6 @@ void A_GrenadeRing(mobj_t *actor)
 	if (actor->flags2 & MF2_DEBRIS)
 		return;
 
-	if (actor->hitlag > 0)
-		return;
-
 	if (actor->state == &states[S_SSMINE_DEPLOY8])
 		explodedist = (3*explodedist)/2;
 
@@ -4484,7 +4481,7 @@ static inline boolean PIT_MineExplode(mobj_t *thing)
 	if (!grenade || P_MobjWasRemoved(grenade))
 		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
 
-	if (grenade->flags2 & MF2_DEBRIS)	// don't explode twice
+	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
 		return false;
 
 	if (thing == grenade || thing->type == MT_MINEEXPLOSIONSOUND) // Don't explode yourself! Endless loop!
@@ -4496,7 +4493,7 @@ static inline boolean PIT_MineExplode(mobj_t *thing)
 	if (netgame && thing->player && thing->player->spectator)
 		return true;
 
-	if ((gametyperules & GTR_BUMPERS) && grenade->target && grenade->target->player && grenade->target->player->kartstuff[k_bumper] <= 0 && thing == grenade->target)
+	if ((gametyperules & GTR_BUMPERS) && grenade->target && grenade->target->player && grenade->target->player->bumpers <= 0 && thing == grenade->target)
 		return true;
 
 	// see if it went over / under
@@ -4525,9 +4522,6 @@ void A_SSMineExplode(mobj_t *actor)
 		return;
 
 	if (actor->flags2 & MF2_DEBRIS)
-		return;
-
-	if (actor->hitlag > 0)
 		return;
 
 	type = (mobjtype_t)locvar1;
@@ -8648,7 +8642,7 @@ void A_ItemPop(mobj_t *actor)
 	if (actor->info->deathsound)
 		S_StartSound(remains, actor->info->deathsound);
 
-	if (!((gametyperules & GTR_BUMPERS) && actor->target->player->kartstuff[k_bumper] <= 0))
+	if (!((gametyperules & GTR_BUMPERS) && actor->target->player->bumpers <= 0))
 		actor->target->player->kartstuff[k_itemroulette] = 1;
 
 	remains->flags2 &= ~MF2_AMBUSH;
@@ -8682,7 +8676,7 @@ void A_JawzChase(mobj_t *actor)
 			angle_t angledelta = actor->angle - targetangle;
 			boolean turnclockwise = true;
 
-			if ((gametyperules & GTR_CIRCUIT))
+			if (gametyperules & GTR_CIRCUIT)
 			{
 				const fixed_t distbarrier = FixedMul(512*mapobjectscale, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
 				const fixed_t distaway = P_AproxDistance(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
@@ -9009,7 +9003,7 @@ void A_SPBChase(mobj_t *actor)
 				actor->lastlook = actor->tracer->player-players; // Save the player num for death scumming...
 				actor->tracer->player->kartstuff[k_ringlock] = 1; // set ring lock
 
-				if (!P_IsObjectOnGround(actor->tracer) /*&& !actor->tracer->player->kartstuff[k_pogospring]*/)
+				if (!P_IsObjectOnGround(actor->tracer))
 				{
 					// In the air you have no control; basically don't hit unless you make a near complete stop
 					defspeed = (7 * actor->tracer->player->speed) / 8;
@@ -9714,7 +9708,7 @@ void A_ReaperThinker(mobj_t *actor)
 				continue;
 
 			player = &players[i];
-			if (player && player->mo && player->kartstuff[k_bumper] && player->score >= maxscore)
+			if (player && player->mo && player->bumpers && player->score >= maxscore)
 			{
 				targetplayermo = player->mo;
 				maxscore = player->score;

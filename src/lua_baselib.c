@@ -1410,6 +1410,18 @@ static int lib_pCheckSight(lua_State *L)
 	return 1;
 }
 
+static int lib_pTraceBlockingLines(lua_State *L)
+{
+	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *t2 = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	//HUDSAFE?
+	INLEVEL
+	if (!t1 || !t2)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushboolean(L, P_TraceBlockingLines(t1, t2));
+	return 1;
+}
+
 static int lib_pCheckHoopPosition(lua_State *L)
 {
 	mobj_t *hoopthing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3432,16 +3444,17 @@ static int lib_kExplodePlayer(lua_State *L)
 	return 0;
 }
 
-static int lib_kStealBumper(lua_State *L)
+static int lib_kTakeBumpersFromPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	player_t *victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	if (!victim)
 		return LUA_ErrInvalid(L, "player_t");
-	K_StealBumper(player, victim);
+	K_TakeBumpersFromPlayer(player, victim, amount);
 	return 0;
 }
 
@@ -3782,6 +3795,7 @@ static luaL_Reg lib[] = {
 	{"P_SlideMove",lib_pSlideMove},
 	{"P_BounceMove",lib_pBounceMove},
 	{"P_CheckSight", lib_pCheckSight},
+	{"P_TraceBlockingLines", lib_pTraceBlockingLines},
 	{"P_CheckHoopPosition",lib_pCheckHoopPosition},
 	{"P_RadiusAttack",lib_pRadiusAttack},
 	{"P_FloorzAtPos",lib_pFloorzAtPos},
@@ -3918,7 +3932,7 @@ static luaL_Reg lib[] = {
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
-	{"K_StealBumper",lib_kStealBumper},
+	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_SpawnKartExplosion",lib_kSpawnKartExplosion},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
 	{"K_SpawnBoostTrail",lib_kSpawnBoostTrail},

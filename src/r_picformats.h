@@ -122,6 +122,7 @@ void R_ParseSPRTINFOLump(UINT16 wadNum, UINT16 lumpNum);
 
 // Sprite rotation
 #ifdef ROTSPRITE
+angle_t R_SpriteRotationAngle(mobj_t *mobj);
 INT32 R_GetRollAngle(angle_t rollangle);
 void R_CacheRotSprite(spritenum_t sprnum, UINT8 frame, spriteinfo_t *sprinfo, spriteframe_t *sprframe, INT32 rot, UINT8 flip);
 void R_FreeSingleRotSprite(spritedef_t *spritedef);

@@ -876,6 +876,11 @@ boolean SetPlayerFollower(INT32 playernum, const char *skinname)
 	INT32 i;
 	player_t *player = &players[playernum];
 
+	if (stricmp("None", skinname) == 0)
+	{
+		SetFollower(playernum, -1);	// reminder that -1 is nothing
+		return true;
+	}
 	for (i = 0; i < numfollowers; i++)
 	{
 		// search in the skin list
