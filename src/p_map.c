@@ -357,7 +357,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 						mobj_t *grease;
 						grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
 						P_SetTarget(&grease->target, object);
-						grease->angle = R_PointToAngle2(0, 0, object->momx, object->momy);
+						grease->angle = K_MomentumAngle(object);
 						grease->extravalue1 = i;
 					}
 				}
@@ -445,9 +445,14 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			{
 				if (object->eflags & MFE_SPRUNG)
 					break;
+
 				if (object->player)
-					object->player->kartstuff[k_pogospring] = 1;
-				K_DoPogoSpring(object, 0, 0);
+				{
+					object->player->trickpanel = 1;
+					object->player->trickdelay = 1;
+				}
+
+				K_DoPogoSpring(object, 32<<FRACBITS, 0);
 				return;
 			}
 			else
@@ -725,7 +730,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
 		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
-		|| tmthing->type == MT_SSMINE || tmthing->type == MT_SINK
+		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
 		|| (tmthing->type == MT_PLAYER && thing->target != tmthing)))
 	{
 		// see if it went over / under
@@ -783,7 +788,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		|| (tmthing->player && tmthing->player->kartstuff[k_bubbleblowup]))
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| (thing->type == MT_PLAYER && tmthing->target != thing)))
 	{
 		// see if it went over / under
@@ -926,6 +931,27 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return true; // underneath
 
 		return K_MineExplosionCollide(thing, tmthing);
+	}
+
+	if (tmthing->type == MT_LANDMINE)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		return K_LandMineCollide(tmthing, thing);
+	}
+	else if (thing->type == MT_LANDMINE)
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		return K_LandMineCollide(thing, tmthing);
 	}
 
 	if (tmthing->type == MT_SINK)
@@ -1209,57 +1235,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return false;
 	}
 
-	// Damage other players when invincible
-	if (tmthing->player && thing->player
-	// Make sure they aren't able to damage you ANYWHERE along the Z axis, you have to be TOUCHING the person.
-		&& !(thing->z + thing->height < tmthing->z || thing->z > tmthing->z + tmthing->height))
-	{
-		if (!G_GametypeHasTeams() || tmthing->player->ctfteam != thing->player->ctfteam)
-		{
-			if (tmthing->scale > thing->scale + (mapobjectscale/8)) // SRB2kart - Handle squishes first!
-				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_SQUISH);
-			else if (thing->scale > tmthing->scale + (mapobjectscale/8))
-				P_DamageMobj(tmthing, thing, thing, 1, DMG_SQUISH);
-			else if (tmthing->player->kartstuff[k_invincibilitytimer] && !thing->player->kartstuff[k_invincibilitytimer]) // SRB2kart - Then invincibility!
-				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
-			else if (thing->player->kartstuff[k_invincibilitytimer] && !tmthing->player->kartstuff[k_invincibilitytimer])
-				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
-			else if ((tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
-				&& !(thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)) // SRB2kart - Then flame shield!
-				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT);
-			else if ((thing->player->kartstuff[k_flamedash] && thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD)
-				&& !(tmthing->player->kartstuff[k_flamedash] && tmthing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD))
-				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
-		}
-	}
-
 	if (thing->player)
 	{
-		// Doesn't matter what gravity player's following! Just do your stuff in YOUR direction only
-		if (tmthing->eflags & MFE_VERTICALFLIP
-		&& (tmthing->z + tmthing->height + tmthing->momz < thing->z
-		 || tmthing->z + tmthing->height + tmthing->momz >= thing->z + thing->height))
-			;
-		else if (!(tmthing->eflags & MFE_VERTICALFLIP)
-		&& (tmthing->z + tmthing->momz > thing->z + thing->height
-		 || tmthing->z + tmthing->momz <= thing->z))
-			;
-		else if  (P_IsObjectOnGround(thing)
-			&& !P_IsObjectOnGround(tmthing) // Don't crush if the monitor is on the ground...
-			&& (tmthing->flags & MF_SOLID))
-		{
-			if (tmthing->flags & (MF_MONITOR|MF_PUSHABLE))
-			{
-				// Objects kill you if it falls from above.
-				if (thing != tmthing->target)
-					P_DamageMobj(thing, tmthing, tmthing->target, 1, DMG_CRUSHED);
-
-				tmthing->momz = -tmthing->momz/2; // Bounce, just for fun!
-				// The tmthing->target allows the pusher of the object
-				// to get the point if he topples it on an opponent.
-			}
-		}
-
 		if (tmthing->type == MT_FAN || tmthing->type == MT_STEAM)
 			P_DoFanAndGasJet(tmthing, thing);
 	}
@@ -1287,17 +1264,14 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->z + tmthing->height < thing->z)
 				return true; // underneath
 
-			if (thing->player->kartstuff[k_squishedtimer] || thing->player->kartstuff[k_hyudorotimer]
-				|| thing->player->kartstuff[k_justbumped] || thing->scale > tmthing->scale + (mapobjectscale/8)
-				|| tmthing->player->kartstuff[k_squishedtimer] || tmthing->player->kartstuff[k_hyudorotimer]
-				|| tmthing->player->kartstuff[k_justbumped] || tmthing->scale > thing->scale + (mapobjectscale/8))
+			if (thing->player->kartstuff[k_hyudorotimer] || tmthing->player->kartstuff[k_hyudorotimer])
 			{
 				return true;
 			}
 
 			if ((gametyperules & GTR_BUMPERS)
-				&& ((thing->player->kartstuff[k_bumper] && !tmthing->player->kartstuff[k_bumper])
-				|| (tmthing->player->kartstuff[k_bumper] && !thing->player->kartstuff[k_bumper])))
+				&& ((thing->player->bumpers && !tmthing->player->bumpers)
+				|| (tmthing->player->bumpers && !thing->player->bumpers)))
 			{
 				return true;
 			}
@@ -1314,30 +1288,21 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					mo1 = thing;
 					mo2 = tmthing;
 
-					if (tmthing->player->kartstuff[k_pogospring])
+					if (tmthing->player->trickpanel)
 						P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 				else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
 				{
 					zbounce = true;
 
-					if (thing->player->kartstuff[k_pogospring])
+					if (thing->player->trickpanel)
 						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
 				}
 
-				if ((gametyperules & GTR_BUMPERS))
+				if (K_KartBouncing(mo1, mo2, zbounce, false))
 				{
-					if (thing->player->kartstuff[k_sneakertimer] && !(tmthing->player->kartstuff[k_sneakertimer]) && !(thing->player->powers[pw_flashing])) // Don't steal bumpers while intangible
-					{
-						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
-					}
-					else if (tmthing->player->kartstuff[k_sneakertimer] && !(thing->player->kartstuff[k_sneakertimer]) && !(tmthing->player->powers[pw_flashing]))
-					{
-						P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
-					}
+					K_PvPTouchDamage(mo1, mo2);
 				}
-
-				K_KartBouncing(mo1, mo2, zbounce, false);
 			}
 
 			return true;
@@ -1417,22 +1382,13 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 			}
 
-			// continue to squish
-			if (tmthing->player->kartstuff[k_squishedtimer])
-			{
-				tmthing->player->kartstuff[k_squishedtimer] = 2*TICRATE;
-				tmthing->player->powers[pw_flashing] = K_GetKartFlashing(tmthing->player);
-				return true;
-			}
-
 			// no interaction
-			if (tmthing->player->powers[pw_flashing] > 0 || tmthing->player->kartstuff[k_hyudorotimer] > 0
-				|| tmthing->player->kartstuff[k_spinouttimer] > 0) //|| tmthing->player->kartstuff[k_squishedtimer] > 0
+			if (tmthing->player->powers[pw_flashing] > 0 || tmthing->player->kartstuff[k_hyudorotimer] > 0 || tmthing->player->kartstuff[k_spinouttimer] > 0)
 				return true;
 
 			// collide
 			if (tmthing->z < thing->z && thing->momz < 0)
-				K_SquishPlayer(tmthing->player, thing, thing);
+				P_DamageMobj(tmthing, thing, thing, 1, DMG_TUMBLE);
 			else
 			{
 				if (thing->flags2 & MF2_AMBUSH)
@@ -1616,6 +1572,23 @@ static boolean PIT_CheckCameraLine(line_t *ld)
 	return true;
 }
 
+boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
+{
+	// missiles can cross uncrossable lines
+	if ((thing->flags & MF_MISSILE))
+		return false;
+	else
+	{
+		return
+			(
+					(ld->flags & ML_IMPASSABLE) || // block objects from moving through this linedef.
+					(thing->player && !thing->player->spectator &&
+						ld->flags & ML_BLOCKPLAYERS) || // SRB2Kart: Only block players, not items
+					((thing->flags & (MF_ENEMY|MF_BOSS)) && ld->special == 81) // case 81: block monsters only
+			);
+	}
+}
+
 //
 // PIT_CheckLine
 // Adjusts tmfloorz and tmceilingz as lines are contacted
@@ -1691,14 +1664,8 @@ static boolean PIT_CheckLine(line_t *ld)
 		return false;
 	}
 
-	// missiles can cross uncrossable lines
-	if (!(tmthing->flags & MF_MISSILE))
-	{
-		if (ld->flags & ML_IMPASSABLE) // block objects from moving through this linedef.
-			return false;
-		if (tmthing->player && !tmthing->player->spectator && ld->flags & ML_BLOCKPLAYERS)
-			return false; // SRB2Kart: Only block players, not items
-	}
+	if (P_IsLineBlocking(ld, tmthing))
+		return false;
 
 	// set openrange, opentop, openbottom
 	P_LineOpening(ld, tmthing);
@@ -2267,7 +2234,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 {
 	subsector_t *s = R_PointInSubsector(x, y);
 	boolean retval = true;
-	
+
 	UINT8 i;
 
 	floatok = false;
@@ -2472,6 +2439,12 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	if (radius < mapobjectscale)
 		radius = mapobjectscale;
 
+	if (thing->hitlag > 0)
+	{
+		// Do not move during hitlag
+		return false;
+	}
+
 	do {
 		if (thing->flags & MF_NOCLIP) {
 			tryx = x;
@@ -2633,9 +2606,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			if (thing->momz <= 0)
 			{
 				thing->standingslope = tmfloorslope;
-#ifdef HWRENDER
-				thing->modeltilt = thing->standingslope;
-#endif
+				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
 				if (thing->momz == 0 && thing->player && !startingonground)
 					P_PlayerHitFloor(thing->player, true);
@@ -2648,9 +2619,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			if (thing->momz >= 0)
 			{
 				thing->standingslope = tmceilingslope;
-#ifdef HWRENDER
-				thing->modeltilt = thing->standingslope;
-#endif
+				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
 				if (thing->momz == 0 && thing->player && !startingonground)
 					P_PlayerHitFloor(thing->player, true);
@@ -3162,14 +3131,8 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	if (!li->backsector)
 		return !P_PointOnLineSide(slidemo->x, slidemo->y, li);
 
-	if (!(slidemo->flags & MF_MISSILE))
-	{
-		if (li->flags & ML_IMPASSABLE)
-			return true;
-
-		if (slidemo->player && !slidemo->player->spectator && li->flags & ML_BLOCKPLAYERS)
-			return true;
-	}
+	if (P_IsLineBlocking(li, slidemo))
+		return true;
 
 	// set openrange, opentop, openbottom
 	P_LineOpening(li, slidemo);
@@ -3656,7 +3619,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 	mmomx = mo->player->rmomx;
 	mmomy = mo->player->rmomy;
 
-	mo->player->kartstuff[k_pogospring] = 0;
+	mo->player->trickpanel = 0;
 
 	// trace along the three leading corners
 	if (mo->momx > 0)

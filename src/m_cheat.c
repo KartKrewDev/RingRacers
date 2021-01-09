@@ -771,12 +771,13 @@ void Command_Savecheckpoint_f(void)
 }
 
 // Like M_GetAllEmeralds() but for console devmode junkies.
-/*void Command_Getallemeralds_f(void)
+/*
+void Command_Getallemeralds_f(void)
 {
 	REQUIRE_SINGLEPLAYER;
 	REQUIRE_PANDORA;
 
-	emeralds = ((EMERALD7)*2)-1;
+	emeralds = EMERALD_ALL;
 
 	CONS_Printf(M_GetText("You now have all 7 emeralds.\n"));
 }
@@ -788,7 +789,8 @@ void Command_Resetemeralds_f(void)
 	emeralds = 0;
 
 	CONS_Printf(M_GetText("Emeralds reset to zero.\n"));
-}*/
+}
+*/
 
 void Command_Devmode_f(void)
 {

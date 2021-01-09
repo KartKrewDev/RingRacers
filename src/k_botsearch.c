@@ -589,6 +589,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 		case MT_JAWZ_SHIELD:
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
+		case MT_LANDMINE:
 		case MT_BALLHOG:
 		case MT_SPB:
 		case MT_BUBBLESHIELDTRAP:

@@ -104,7 +104,7 @@ demoghost *ghosts = NULL;
 // DEMO RECORDING
 //
 
-#define DEMOVERSION 0x0004
+#define DEMOVERSION 0x0007
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_GHOST        0x01 // This demo contains ghost data too!
@@ -112,7 +112,7 @@ demoghost *ghosts = NULL;
 #define DF_BREAKTHECAPSULES 0x04 // This demo is from Break the Capsules and contains its final completion time!
 #define DF_ATTACKMASK   0x06 // This demo is from ??? attack and contains ???
 
-#define DF_LUAVARS		0x20 // this demo contains extra lua vars; this is mostly used for backwards compability
+#define DF_LUAVARS		0x20 // this demo contains extra lua vars
 
 #define DF_ATTACKSHIFT  1
 #define DF_ENCORE       0x40
@@ -318,10 +318,6 @@ void G_ReadDemoExtraData(void)
 					playeringame[p] = true;
 					G_AddPlayer(p);
 					players[p].spectator = true;
-
-					// There's likely an off-by-one error in timing recording or playback of joins. This hacks around it so I don't have to find out where that is. \o/
-					if (oldcmd[p].forwardmove)
-						P_RandomByte();
 				}
 				else
 				{
@@ -423,7 +419,10 @@ void G_WriteDemoExtraData(void)
 			{
 				// write follower
 				memset(name, 0, 16);
-				strncpy(name, followers[players[i].followerskin].skinname, 16);
+				if (players[i].followerskin == -1)
+					strncpy(name, "None", 16);
+				else
+					strncpy(name, followers[players[i].followerskin].skinname, 16);
 				M_Memcpy(demo_p, name, 16);
 				demo_p += 16;
 
@@ -623,13 +622,21 @@ void G_WriteAllGhostTics(void)
 
 		counter++;
 
-		if (counter % cv_netdemosyncquality.value != 0) // Only write 1 in this many ghost datas per tic to cut down on multiplayer replay size.
+		if (multiplayer && ((counter % cv_netdemosyncquality.value) != 0)) // Only write 1 in this many ghost datas per tic to cut down on multiplayer replay size.
 			continue;
 
 		WRITEUINT8(demo_p, i);
 		G_WriteGhostTic(players[i].mo, i);
 	}
 	WRITEUINT8(demo_p, 0xFF);
+
+	// attention here for the ticcmd size!
+	// latest demos with mouse aiming byte in ticcmd
+	if (demo_p >= demoend - (13 + 9 + 9))
+	{
+		G_CheckDemoStatus(); // no more space
+		return;
+	}
 }
 
 void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
@@ -726,25 +733,21 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		ghostext[playernum].flags |= EZT_SPRITE;
 	}
 
+	if (ghost->player && (
+			ghostext[playernum].kartitem != ghost->player->kartstuff[k_itemtype] ||
+			ghostext[playernum].kartamount != ghost->player->kartstuff[k_itemamount] ||
+			ghostext[playernum].kartbumpers != ghost->player->kartstuff[k_bumper]
+		))
+	{
+		ghostext[playernum].flags |= EZT_KART;
+		ghostext[playernum].kartitem = ghost->player->kartstuff[k_itemtype];
+		ghostext[playernum].kartamount = ghost->player->kartstuff[k_itemamount];
+		ghostext[playernum].kartbumpers = ghost->player->kartstuff[k_bumper];
+	}
+
 	if (ghostext[playernum].flags)
 	{
 		ziptic |= GZT_EXTRA;
-
-		if (ghost->player)
-		{
-			if (
-				ghostext[playernum].kartitem != ghost->player->kartstuff[k_itemtype] ||
-				ghostext[playernum].kartamount != ghost->player->kartstuff[k_itemamount] ||
-				ghostext[playernum].kartbumpers != ghost->player->kartstuff[k_bumper]
-			)
-			{
-				ghostext[playernum].flags |= EZT_KART;
-				ghostext[playernum].kartitem = ghost->player->kartstuff[k_itemtype];
-				ghostext[playernum].kartamount = ghost->player->kartstuff[k_itemamount];
-				ghostext[playernum].kartbumpers = ghost->player->kartstuff[k_bumper];
-
-			}
-		}
 
 		if (ghostext[playernum].color == ghostext[playernum].lastcolor)
 			ghostext[playernum].flags &= ~EZT_COLOR;
@@ -840,14 +843,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		oldghost[playernum].flags2 &= ~MF2_AMBUSH;
 
 	*ziptic_p = ziptic;
-
-	// attention here for the ticcmd size!
-	// latest demos with mouse aiming byte in ticcmd
-	if (demo_p >= demoend - (13 + 9 + 9))
-	{
-		G_CheckDemoStatus(); // no more space
-		return;
-	}
 }
 
 void G_ConsAllGhostTics(void)
@@ -1071,15 +1066,17 @@ void G_GhostTicker(void)
 				if (ziptic & DXD_FOLLOWER)
 					g->p += 32; // ok (32 because there's both the skin and the colour)
 				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
-					I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
+					I_Error("Ghost is not a record attack ghost PLAYSTATE"); //@TODO lmao don't blow up like this
 			}
 			else if (ziptic == DW_RNG)
 				g->p += 4; // RNG seed
 			else
-				I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
+				I_Error("Ghost is not a record attack ghost DXD"); //@TODO lmao don't blow up like this
 
 			ziptic = READUINT8(g->p);
 		}
+
+		ziptic = READUINT8(g->p);
 
 		if (ziptic & ZT_FWD)
 			g->p++;
@@ -1090,9 +1087,9 @@ void G_GhostTicker(void)
 		if (ziptic & ZT_AIMING)
 			g->p += 2;
 		if (ziptic & ZT_LATENCY)
-			g->p += 1;
+			g->p++;
 		if (ziptic & ZT_FLAGS)
-			g->p += 1;
+			g->p++;
 
 		// Grab ghost data.
 		ziptic = READUINT8(g->p);
@@ -1100,7 +1097,7 @@ void G_GhostTicker(void)
 		if (ziptic == 0xFF)
 			goto skippedghosttic; // Didn't write ghost info this frame
 		else if (ziptic != 0)
-			I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
+			I_Error("Ghost is not a record attack ghost ZIPTIC"); //@TODO lmao don't blow up like this
 		ziptic = READUINT8(g->p);
 
 		if (ziptic & GZT_XYZ)
@@ -1113,17 +1110,17 @@ void G_GhostTicker(void)
 		{
 			if (ziptic & GZT_MOMXY)
 			{
-				g->oldmo.momx = (g->version < 0x000e) ? READINT16(g->p)<<8 : READFIXED(g->p);
-				g->oldmo.momy = (g->version < 0x000e) ? READINT16(g->p)<<8 : READFIXED(g->p);
+				g->oldmo.momx = READFIXED(g->p);
+				g->oldmo.momy = READFIXED(g->p);
 			}
 			if (ziptic & GZT_MOMZ)
-				g->oldmo.momz = (g->version < 0x000e) ? READINT16(g->p)<<8 : READFIXED(g->p);
+				g->oldmo.momz = READFIXED(g->p);
 			g->oldmo.x += g->oldmo.momx;
 			g->oldmo.y += g->oldmo.momy;
 			g->oldmo.z += g->oldmo.momz;
 		}
 		if (ziptic & GZT_ANGLE)
-			g->mo->angle = READUINT8(g->p)<<24;
+			g->oldmo.angle = READUINT8(g->p)<<24;
 		if (ziptic & GZT_FRAME)
 			g->oldmo.frame = READUINT8(g->p);
 		if (ziptic & GZT_SPR2)
@@ -1209,30 +1206,6 @@ void G_GhostTicker(void)
 				g->p += 12; // kartitem, kartamount, kartbumpers
 		}
 
-		if (READUINT8(g->p) != 0xFF) // Make sure there isn't other ghost data here.
-			I_Error("Ghost is not a record attack ghost"); //@TODO lmao don't blow up like this
-
-skippedghosttic:
-		// Tick ghost colors (Super and Mario Invincibility flashing)
-		switch(g->color)
-		{
-		case GHC_SUPER: // Super (P_DoSuperStuff)
-			if (g->mo->skin)
-			{
-				skin_t *skin = (skin_t *)g->mo->skin;
-				g->mo->color = skin->supercolor;
-			}
-			else
-				g->mo->color = SKINCOLOR_SUPERGOLD1;
-			g->mo->color += abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4);
-			break;
-		case GHC_INVINCIBLE: // Mario invincibility (P_CheckInvincibilityTimer)
-			g->mo->color = (UINT16)(SKINCOLOR_RUBY + (leveltime % (FIRSTSUPERCOLOR - SKINCOLOR_RUBY))); // Passes through all saturated colours
-			break;
-		default:
-			break;
-		}
-
 #define follow g->mo->tracer
 		if (ziptic & GZT_FOLLOW)
 		{ // Even more...
@@ -1298,6 +1271,31 @@ skippedghosttic:
 			P_RemoveMobj(follow);
 			P_SetTarget(&follow, NULL);
 		}
+
+skippedghosttic:
+		// Tick ghost colors (Super and Mario Invincibility flashing)
+		switch(g->color)
+		{
+		case GHC_SUPER: // Super (P_DoSuperStuff)
+			if (g->mo->skin)
+			{
+				skin_t *skin = (skin_t *)g->mo->skin;
+				g->mo->color = skin->supercolor;
+			}
+			else
+				g->mo->color = SKINCOLOR_SUPERGOLD1;
+			g->mo->color += abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4);
+			break;
+		case GHC_INVINCIBLE: // Mario invincibility (P_CheckInvincibilityTimer)
+			g->mo->color = (UINT16)(SKINCOLOR_RUBY + (leveltime % (FIRSTSUPERCOLOR - SKINCOLOR_RUBY))); // Passes through all saturated colours
+			break;
+		default:
+			break;
+		}
+
+		if (READUINT8(g->p) != 0xFF) // Make sure there isn't other ghost data here.
+			I_Error("Ghost is not a record attack ghost GHOSTEND"); //@TODO lmao don't blow up like this
+
 		// Demo ends after ghost data.
 		if (*g->p == DEMOMARKER)
 		{
@@ -1318,6 +1316,7 @@ skippedghosttic:
 			Z_Free(g);
 			continue;
 		}
+
 		p = g;
 #undef follow
 	}
@@ -1440,7 +1439,10 @@ void G_PreviewRewind(tic_t previewtime)
 		players[i].drawangle = info->playerinfo[i].player.drawangle + FixedMul((INT32) (next_info->playerinfo[i].player.drawangle - info->playerinfo[i].player.drawangle), tweenvalue);
 
 		players[i].mo->sprite = info->playerinfo[i].mobj.sprite;
+		players[i].mo->sprite2 = info->playerinfo[i].mobj.sprite2;
 		players[i].mo->frame = info->playerinfo[i].mobj.frame;
+
+		players[i].mo->hitlag = info->playerinfo[i].mobj.hitlag;
 
 		players[i].realtime = info->playerinfo[i].player.realtime;
 		for (j = 0; j < NUMKARTSTUFF; j++)
@@ -1466,7 +1468,7 @@ void G_ConfirmRewind(tic_t rewindtime)
 
 	if (rewindtime <= starttime)
 	{
-		demo.rewinding = false;
+		demo.rewinding = true; // this doesn't APPEAR to cause any misery, and it allows us to prevent running all the wipes again
 		G_DoPlayDemo(NULL); // Restart the current demo
 	}
 	else
@@ -1903,7 +1905,8 @@ void G_BeginRecording(void)
 	if (encoremode)
 		demoflags |= DF_ENCORE;
 
-	demoflags |= DF_LUAVARS;
+	if (multiplayer)
+		demoflags |= DF_LUAVARS;
 
 	// Setup header.
 	M_Memcpy(demo_p, DEMOHEADER, 12); demo_p += 12;
@@ -2037,9 +2040,8 @@ void G_BeginRecording(void)
 	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
 
 	// player lua vars, always saved even if empty
-	LUA_Archive(&demo_p);
-
-	WRITEUINT32(demo_p,P_GetInitSeed());
+	if (demoflags & DF_LUAVARS)
+		LUA_Archive(&demo_p);
 
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
@@ -2716,7 +2718,6 @@ void G_DoPlayDemo(char *defdemoname)
 	demo.version = READUINT16(demo_p);
 	switch(demo.version)
 	{
-	case 0x000d:
 	case DEMOVERSION: // latest always supported
 		break;
 	// too old, cannot support.
@@ -3105,7 +3106,6 @@ void G_AddGhost(char *defdemoname)
 	ghostversion = READUINT16(p);
 	switch(ghostversion)
 	{
-	case 0x000d:
 	case DEMOVERSION: // latest always supported
 		break;
 	// too old, cannot support.
@@ -3144,6 +3144,14 @@ void G_AddGhost(char *defdemoname)
 	if (!(flags & DF_GHOST))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: No ghost data in this demo.\n"), pdemoname);
+		Z_Free(pdemoname);
+		Z_Free(buffer);
+		return;
+	}
+
+	if (flags & DF_LUAVARS) // can't be arsed to add support for grinding away ported lua material
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data contains luavars, cannot continue.\n"), pdemoname);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
 		return;
@@ -3214,6 +3222,8 @@ void G_AddGhost(char *defdemoname)
 
 	kartspeed = READUINT8(p);
 	kartweight = READUINT8(p);
+
+	p += 4; // followitem (maybe change later)
 
 	if (READUINT8(p) != 0xFF)
 	{

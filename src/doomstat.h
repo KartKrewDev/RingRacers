@@ -454,30 +454,31 @@ enum GameTypeRules
 {
 	// Race rules
 	GTR_CIRCUIT				= 1,     // Enables the finish line, laps, and the waypoint system.
-	GTR_RINGS				= 1<<1,  // Rings will be spawned in this mode. (Don't get too cheeky, ring sting is still enabled :])
 	GTR_BOTS				= 1<<2,  // Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
 
 	// Battle gametype rules
 	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
-	GTR_WANTED				= 1<<4,  // Enables the wanted anti-camping system
-	GTR_KARMA				= 1<<5,  // Enables the Karma system if you're out of bumpers
-	GTR_ITEMARROWS			= 1<<6,  // Show item box arrows above players
-	GTR_CAPSULES			= 1<<7,  // Enables the wanted anti-camping system
-	GTR_BATTLESTARTS		= 1<<8,  // Use Battle Mode start positions.
+	GTR_SPHERES				= 1<<4,  // Replaces rings with blue spheres
+	GTR_PAPERITEMS			= 1<<5,  // Replaces item boxes with paper item spawners
+	GTR_WANTED				= 1<<6,  // Enables the wanted anti-camping system
+	GTR_KARMA				= 1<<7,  // Enables the Karma system if you're out of bumpers
+	GTR_ITEMARROWS			= 1<<8,  // Show item box arrows above players
+	GTR_CAPSULES			= 1<<9,  // Enables the wanted anti-camping system
+	GTR_BATTLESTARTS		= 1<<10, // Use Battle Mode start positions.
 
-	GTR_POINTLIMIT			= 1<<9,  // Reaching point limit ends the round
-	GTR_TIMELIMIT			= 1<<10, // Reaching time limit ends the round
-	GTR_OVERTIME			= 1<<11, // Allow overtime behavior
+	GTR_POINTLIMIT			= 1<<11,  // Reaching point limit ends the round
+	GTR_TIMELIMIT			= 1<<12, // Reaching time limit ends the round
+	GTR_OVERTIME			= 1<<13, // Allow overtime behavior
 
 	// Custom gametype rules
-	GTR_TEAMS				= 1<<12, // Teams are forced on
-	GTR_NOTEAMS				= 1<<13, // Teams are forced off
-	GTR_TEAMSTARTS			= 1<<14, // Use team-based start positions
+	GTR_TEAMS				= 1<<14, // Teams are forced on
+	GTR_NOTEAMS				= 1<<15, // Teams are forced off
+	GTR_TEAMSTARTS			= 1<<16, // Use team-based start positions
 
 	// Grand Prix rules
-	GTR_CAMPAIGN			= 1<<15, // Handles cup-based progression
-	GTR_LIVES				= 1<<16, // Lives system, players are forced to spectate during Game Over.
-	GTR_SPECIALBOTS			= 1<<17, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
+	GTR_CAMPAIGN			= 1<<17, // Handles cup-based progression
+	GTR_LIVES				= 1<<18, // Lives system, players are forced to spectate during Game Over.
+	GTR_SPECIALBOTS			= 1<<19, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
 
 	// free: to and including 1<<31
 };
@@ -519,15 +520,34 @@ extern UINT32 matchesplayed;
 extern UINT8 stagefailed;
 
 // Emeralds stored as bits to throw savegame hackers off.
+typedef enum
+{
+	EMERALD_CHAOS1 = 1,
+	EMERALD_CHAOS2 = 1<<1,
+	EMERALD_CHAOS3 = 1<<2,
+	EMERALD_CHAOS4 = 1<<3,
+	EMERALD_CHAOS5 = 1<<4,
+	EMERALD_CHAOS6 = 1<<5,
+	EMERALD_CHAOS7 = 1<<6,
+	EMERALD_ALLCHAOS = EMERALD_CHAOS1|EMERALD_CHAOS2|EMERALD_CHAOS3|EMERALD_CHAOS4|EMERALD_CHAOS5|EMERALD_CHAOS6|EMERALD_CHAOS7,
+
+	EMERALD_SUPER1 = 1<<7,
+	EMERALD_SUPER2 = 1<<8,
+	EMERALD_SUPER3 = 1<<9,
+	EMERALD_SUPER4 = 1<<10,
+	EMERALD_SUPER5 = 1<<11,
+	EMERALD_SUPER6 = 1<<12,
+	EMERALD_SUPER7 = 1<<13,
+	EMERALD_ALLSUPER = EMERALD_SUPER1|EMERALD_SUPER2|EMERALD_SUPER3|EMERALD_SUPER4|EMERALD_SUPER5|EMERALD_SUPER6|EMERALD_SUPER7,
+
+	EMERALD_ALL = EMERALD_ALLCHAOS|EMERALD_ALLSUPER
+} emeraldflags_t;
+
 extern UINT16 emeralds;
-#define EMERALD1 1
-#define EMERALD2 2
-#define EMERALD3 4
-#define EMERALD4 8
-#define EMERALD5 16
-#define EMERALD6 32
-#define EMERALD7 64
-#define ALL7EMERALDS(v) ((v & (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7)) == (EMERALD1|EMERALD2|EMERALD3|EMERALD4|EMERALD5|EMERALD6|EMERALD7))
+
+#define ALLCHAOSEMERALDS(v) ((v & EMERALD_ALLCHAOS) == EMERALD_ALLCHAOS)
+#define ALLSUPEREMERALDS(v) ((v & EMERALD_ALLSUPER) == EMERALD_ALLSUPER)
+#define ALLEMERALDS(v) ((v & EMERALD_ALL) == EMERALD_ALL)
 
 #define NUM_LUABANKS 16 // please only make this number go up between versions, never down. you'll break saves otherwise. also, must fit in UINT8
 extern INT32 luabanks[NUM_LUABANKS];

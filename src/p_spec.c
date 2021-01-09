@@ -1612,7 +1612,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	{
 		if (GETSECSPECIAL(caller->special, 2) == 6)
 		{
-			if (!(ALL7EMERALDS(emeralds)))
+			if (!(ALLCHAOSEMERALDS(emeralds)))
 				return false;
 		}
 
@@ -2028,6 +2028,14 @@ static void K_HandleLapIncrement(player_t *player)
 					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 				player->karthud[khud_lapanimation] = 80;
+
+				// save best lap for record attack
+				if (player == &players[consoleplayer])
+				{
+					if (curlap < bestlap || bestlap == 0)
+						bestlap = curlap;
+					curlap = 0;
+				}
 			}
 
 			if (rainbowstartavailable == true)
@@ -2040,14 +2048,6 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (netgame && player->laps >= (UINT8)cv_numlaps.value)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
-
-			// SRB2Kart: save best lap for record attack
-			if (player == &players[consoleplayer])
-			{
-				if (curlap < bestlap || bestlap == 0)
-					bestlap = curlap;
-				curlap = 0;
-			}
 
 			player->starpostnum = 0;
 
@@ -2133,6 +2133,7 @@ static void K_HandleLapDecrement(player_t *player)
 		{
 			player->starpostnum = numstarposts;
 			player->laps--;
+			curlap = UINT32_MAX;
 		}
 	}
 }
@@ -4602,47 +4603,41 @@ DoneSection2:
 	switch (special)
 	{
 		case 1: // SRB2kart: Spring Panel
+		case 3:
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
 				const fixed_t hscale = mapobjectscale + (mapobjectscale - player->mo->scale);
 				const fixed_t minspeed = 24*hscale;
-				angle_t pushangle = FixedHypot(player->mo->momx, player->mo->momy) ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle;
-				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
+				fixed_t speed = FixedHypot(player->mo->momx, player->mo->momy);
+				fixed_t upwards = 32*FRACUNIT;
 
 				if (player->mo->eflags & MFE_SPRUNG)
+				{
 					break;
+				}
 
-				if (player->speed < minspeed) // Push forward to prevent getting stuck
-					P_InstaThrust(player->mo, pushangle, minspeed);
+				if (special == 3)
+				{
+					upwards /= 2;
+				}
 
-				player->kartstuff[k_pogospring] = 1;
-				K_DoPogoSpring(player->mo, 0, 1);
+				player->trickpanel = 1;
+				player->trickdelay = 1;
+				K_DoPogoSpring(player->mo, upwards, 1);
+
+				// Reduce speed
+				speed /= 2;
+
+				if (speed < minspeed)
+				{
+					speed = minspeed;
+				}
+
+				P_InstaThrust(player->mo, player->mo->angle, speed);
 			}
 			break;
 
 		case 2: // Wind/Current
-			break;
-
-		case 3: // SRB2kart: Spring Panel (capped speed)
-			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
-			{
-				const fixed_t hscale = mapobjectscale + (mapobjectscale - player->mo->scale);
-				const fixed_t minspeed = 24*hscale;
-				const fixed_t maxspeed = 28*hscale;
-				angle_t pushangle = FixedHypot(player->mo->momx, player->mo->momy) ? R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy) : player->mo->angle;
-				// if we have no speed for SOME REASON, use the player's angle, otherwise we'd be forcefully thrusted to what I can only assume is angle 0
-
-				if (player->mo->eflags & MFE_SPRUNG)
-					break;
-
-				if (player->speed > maxspeed) // Prevent overshooting jumps
-					P_InstaThrust(player->mo, pushangle, maxspeed);
-				else if (player->speed < minspeed) // Push forward to prevent getting stuck
-					P_InstaThrust(player->mo, pushangle, minspeed);
-
-				player->kartstuff[k_pogospring] = 2;
-				K_DoPogoSpring(player->mo, 0, 1);
-			}
 			break;
 
 		case 4: // Conveyor Belt
@@ -4677,14 +4672,14 @@ DoneSection2:
 				}
 
 				lineangle = K_ReflectAngle(
-					R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy), lineangle,
+					K_MomentumAngle(player->mo), lineangle,
 					playerspeed, linespeed
 				);
 
 				P_InstaThrust(player->mo, lineangle, max(linespeed, 2*playerspeed));
 
 				player->kartstuff[k_dashpadcooldown] = TICRATE/3;
-				player->kartstuff[k_pogospring] = 0;
+				player->trickpanel = 0;
 				player->kartstuff[k_floorboost] = 2;
 				S_StartSound(player->mo, sfx_cdfm62);
 			}
@@ -4836,9 +4831,6 @@ DoneSection2:
 				angle_t an;
 
 				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ZOOMTUBE)
-					break;
-
-				if (player->powers[pw_ignorelatch] & (1<<15))
 					break;
 
 				// Find line #3 tagged to this sector

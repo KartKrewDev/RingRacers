@@ -314,7 +314,7 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 			}
 			else if (checkdist < closestdist && bestfindist == INT32_MAX)
 			{
-				if (!P_CheckSight(mobj, checkwaypoint->mobj))
+				if (!P_TraceBlockingLines(mobj, checkwaypoint->mobj))
 				{
 					// Save sight checks for the end, so we only do it if we have to
 					continue;

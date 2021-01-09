@@ -897,9 +897,8 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 		if (P_MobjFlip(thing)*(thing->momz) < 0) // falling, land on slope
 		{
 			thing->standingslope = slope;
-#ifdef HWRENDER
-			thing->modeltilt = thing->standingslope;
-#endif
+			P_SetPitchRollFromSlope(thing, slope);
+
 			if (!thing->player || !(thing->player->pflags & PF_BOUNCING))
 				thing->momz = -P_MobjFlip(thing);
 		}
@@ -916,9 +915,7 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 		thing->momx = mom.x;
 		thing->momy = mom.y;
 		thing->standingslope = slope;
-#ifdef HWRENDER
-		thing->modeltilt = thing->standingslope;
-#endif
+		P_SetPitchRollFromSlope(thing, slope);
 		if (!thing->player || !(thing->player->pflags & PF_BOUNCING))
 			thing->momz = -P_MobjFlip(thing);
 	}

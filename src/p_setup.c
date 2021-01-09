@@ -3919,40 +3919,40 @@ boolean P_LoadLevel(boolean fromnetsave)
 	}
 	*/
 
-	// Make sure all sounds are stopped before Z_FreeTags.
-	S_StopSounds();
-	S_ClearSfx();
-
-	// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
-	// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
-	if (!titlemapinaction)
-		S_FadeMusic(0, FixedMul(
-			FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
-
-	// Reset the palette now all fades have been done
-	if (rendermode != render_none)
-		V_SetPaletteLump(GetPalette()); // Set the level palette
-
-	if (!titlemapinaction)
-	{
-		if (ranspecialwipe == 2)
-		{
-			pausedelay = -3; // preticker plus one
-			S_StartSound(NULL, sfx_s3k73);
-		}
-
-		// As oddly named as this is, this handles music only.
-		// We should be fine starting it here.
-		// Don't do this during titlemap, because the menu code handles music by itself.
-		S_Start();
-	}
-
-	levelfadecol = (encoremode ? 0 : 31);
-
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
 	if (!demo.rewinding)
 	{
+		// Make sure all sounds are stopped before Z_FreeTags.
+		S_StopSounds();
+		S_ClearSfx();
+
+		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
+		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
+		if (!titlemapinaction)
+			S_FadeMusic(0, FixedMul(
+				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
+
+		// Reset the palette now all fades have been done
+		if (rendermode != render_none)
+			V_SetPaletteLump(GetPalette()); // Set the level palette
+
+		if (!titlemapinaction)
+		{
+			if (ranspecialwipe == 2)
+			{
+				pausedelay = -3; // preticker plus one
+				S_StartSound(NULL, sfx_s3k73);
+			}
+
+			// As oddly named as this is, this handles music only.
+			// We should be fine starting it here.
+			// Don't do this during titlemap, because the menu code handles music by itself.
+			S_Start();
+		}
+
+		levelfadecol = (encoremode ? 0 : 31);
+
 		if (rendermode != render_none)
 		{
 			F_WipeStartScreen();
