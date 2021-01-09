@@ -269,6 +269,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].tumbleBounces);
 		WRITEUINT16(save_p, players[i].tumbleHeight);
 		WRITEUINT8(save_p, players[i].tumbleLastBounce);
+		WRITEUINT8(save_p, players[i].tumbleSound);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -468,6 +469,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tumbleBounces = READUINT8(save_p);
 		players[i].tumbleHeight = READUINT16(save_p);
 		players[i].tumbleLastBounce = (boolean)READUINT8(save_p);
+		players[i].tumbleSound = (boolean)READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
