@@ -2558,6 +2558,11 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 		P_StartQuake(64<<FRACBITS, 10);
 }
 
+static boolean K_LastTumbleBounceCondition(player_t *player)
+{
+	return (player->tumbleBounces > 4 && player->tumbleHeight < 40);
+}
+
 static void K_HandleTumbleBounce(player_t *player)
 {
 	fixed_t gravityadjust;
@@ -2571,7 +2576,7 @@ static void K_HandleTumbleBounce(player_t *player)
 		player->tumbleHeight = 10;
 	}
 
-	if (player->tumbleBounces > 4 && player->tumbleHeight < 40)
+	if (K_LastTumbleBounceCondition(player))
 	{
 		// Leave tumble state when below 40 height, and have bounced off the ground enough
 
@@ -2616,7 +2621,8 @@ static void K_HandleTumbleSound(player_t *player)
 	fixed_t momz;
 	momz = player->mo->momz * P_MobjFlip(player->mo);
 
-	if (!player->tumbleSound && momz < -25*player->mo->scale)
+	if (!K_LastTumbleBounceCondition(player) &&
+			!player->tumbleSound && momz < -10*player->mo->scale)
 	{
 		S_StartSound(player->mo, sfx_s3k51);
 		player->tumbleSound = 1;
