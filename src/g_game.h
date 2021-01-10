@@ -102,7 +102,6 @@ typedef enum
 	AXISTURN,
 	AXISMOVE,
 	AXISBRAKE,
-	AXISAIM,
 	AXISLOOK,
 
 	AXISDIGITAL, // axes below this use digital deadzone
@@ -110,6 +109,7 @@ typedef enum
 	AXISFIRE = AXISDIGITAL,
 	AXISDRIFT,
 	AXISLOOKBACK,
+	AXISAIM,
 } axis_input_e;
 
 INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel);

@@ -925,8 +925,13 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	turnleft = PlayerInputDown(ssplayer, gc_turnleft);
 
 	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
-	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
 	G_HandleAxisDeadZone(forplayer, &joystickvector);
+
+	// For kart, I've turned the aim axis into a digital axis because we only
+	// use it for aiming to throw items forward/backward and the vote screen
+	// This mean that the turn axis will still be gradient but up/down will be 0
+	// until the stick is pushed far enough
+	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
 
 	if (encoremode)
 	{
