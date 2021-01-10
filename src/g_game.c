@@ -925,6 +925,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	turnleft = PlayerInputDown(ssplayer, gc_turnleft);
 
 	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
+	joystickvector.yaxis = 0;
 	G_HandleAxisDeadZone(forplayer, &joystickvector);
 
 	// For kart, I've turned the aim axis into a digital axis because we only
