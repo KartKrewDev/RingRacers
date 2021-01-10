@@ -2571,9 +2571,9 @@ static void K_HandleTumbleBounce(player_t *player)
 		player->tumbleHeight = 10;
 	}
 
-	if (player->tumbleBounces > 4 && player->tumbleHeight < 50)
+	if (player->tumbleBounces > 4 && player->tumbleHeight < 40)
 	{
-		// Leave tumble state when below 30 height, and have bounced off the ground enough
+		// Leave tumble state when below 40 height, and have bounced off the ground enough
 
 		if (player->tumbleLastBounce == true)
 		{
@@ -2590,10 +2590,10 @@ static void K_HandleTumbleBounce(player_t *player)
 		}
 	}
 
-	if (P_IsDisplayPlayer(player) && player->tumbleHeight >= 50)
+	if (P_IsDisplayPlayer(player) && player->tumbleHeight >= 40)
 		P_StartQuake((player->tumbleHeight*3/2)<<FRACBITS, 6);	// funny earthquakes for the FEEL
 
-	S_StartSound(player->mo, (player->tumbleHeight < 50) ? sfx_s3k5d : sfx_s3k5f);	// s3k5d is bounce < 50, s3k5f otherwise!
+	S_StartSound(player->mo, (player->tumbleHeight < 40) ? sfx_s3k5d : sfx_s3k5f);	// s3k5d is bounce < 50, s3k5f otherwise!
 
 	player->mo->momx = player->mo->momx / 2;
 	player->mo->momy = player->mo->momy / 2;
