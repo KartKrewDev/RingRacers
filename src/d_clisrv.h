@@ -294,6 +294,7 @@ typedef struct
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;
 	boolean tumbleLastBounce;
+	boolean tumbleSound;
 
 	// respawnvars_t
 	UINT8 respawn_state;

@@ -2522,6 +2522,7 @@ static void K_RemoveGrowShrink(player_t *player)
 
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 {
+	fixed_t gravityadjust;
 	(void)source;
 
 	player->tumbleBounces = 1;
@@ -2530,6 +2531,7 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 	player->mo->momy = 2 * player->mo->momy / 3;
 
 	player->tumbleHeight = 30;
+	player->tumbleSound = 0;
 
 	if (inflictor && !P_MobjWasRemoved(inflictor))
 	{
@@ -2537,18 +2539,36 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 		player->tumbleHeight += (addHeight / player->mo->scale);
 	}
 
-	player->mo->momz = player->tumbleHeight * player->mo->scale * P_MobjFlip(player->mo);
+	S_StartSound(player->mo, sfx_s3k9b);
+
+	// adapt momz w/ gravity?
+	// as far as kart goes normal gravity is 2 (FRACUNIT*2)
+
+	gravityadjust = P_GetMobjGravity(player->mo)/2;	// so we'll halve it for our calculations.
+
+	if (player->mo->eflags & MFE_UNDERWATER)
+		gravityadjust /= 2;	// halve "gravity" underwater
+
+	// and then modulate momz like that...
+	player->mo->momz = -gravityadjust * player->tumbleHeight;
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 	if (P_IsDisplayPlayer(player))
-		P_StartQuake(64<<FRACBITS, 5);
+		P_StartQuake(64<<FRACBITS, 10);
+}
+
+static boolean K_LastTumbleBounceCondition(player_t *player)
+{
+	return (player->tumbleBounces > 4 && player->tumbleHeight < 40);
 }
 
 static void K_HandleTumbleBounce(player_t *player)
 {
+	fixed_t gravityadjust;
 	player->tumbleBounces++;
 	player->tumbleHeight = (player->tumbleHeight * 4) / 5;
+	player->tumbleSound = 0;
 
 	if (player->tumbleHeight < 10)
 	{
@@ -2556,14 +2576,15 @@ static void K_HandleTumbleBounce(player_t *player)
 		player->tumbleHeight = 10;
 	}
 
-	if (player->tumbleBounces > 4 && player->tumbleHeight < 30)
+	if (K_LastTumbleBounceCondition(player))
 	{
-		// Leave tumble state when below 30 height, and have bounced off the ground enough
+		// Leave tumble state when below 40 height, and have bounced off the ground enough
 
 		if (player->tumbleLastBounce == true)
 		{
 			// End tumble state
 			player->tumbleBounces = 0;
+			player->tumbleLastBounce = false; // Reset for next time
 			return;
 		}
 		else
@@ -2571,13 +2592,42 @@ static void K_HandleTumbleBounce(player_t *player)
 			// One last bounce at the minimum height, to reset the animation
 			player->tumbleHeight = 10;
 			player->tumbleLastBounce = true;
+			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
 		}
 	}
+
+	if (P_IsDisplayPlayer(player) && player->tumbleHeight >= 40)
+		P_StartQuake((player->tumbleHeight*3/2)<<FRACBITS, 6);	// funny earthquakes for the FEEL
+
+	S_StartSound(player->mo, (player->tumbleHeight < 40) ? sfx_s3k5d : sfx_s3k5f);	// s3k5d is bounce < 50, s3k5f otherwise!
 
 	player->mo->momx = player->mo->momx / 2;
 	player->mo->momy = player->mo->momy / 2;
 
-	player->mo->momz = player->tumbleHeight * player->mo->scale * P_MobjFlip(player->mo);
+	// adapt momz w/ gravity?
+	// as far as kart goes normal gravity is 2 (FRACUNIT*2)
+
+	gravityadjust = P_GetMobjGravity(player->mo)/2;	// so we'll halve it for our calculations.
+
+	if (player->mo->eflags & MFE_UNDERWATER)
+		gravityadjust /= 2;	// halve "gravity" underwater
+
+	// and then modulate momz like that...
+	player->mo->momz = -gravityadjust * player->tumbleHeight;
+}
+
+// Play a falling sound when you start falling while tumbling and you're nowhere near done bouncing
+static void K_HandleTumbleSound(player_t *player)
+{
+	fixed_t momz;
+	momz = player->mo->momz * P_MobjFlip(player->mo);
+
+	if (!K_LastTumbleBounceCondition(player) &&
+			!player->tumbleSound && momz < -10*player->mo->scale)
+	{
+		S_StartSound(player->mo, sfx_s3k51);
+		player->tumbleSound = 1;
+	}
 }
 
 void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
@@ -6002,6 +6052,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->tumbleBounces > 0)
 	{
+		K_HandleTumbleSound(player);
 		if (P_IsObjectOnGround(player->mo) && player->mo->momz * P_MobjFlip(player->mo) <= 0)
 			K_HandleTumbleBounce(player);
 	}
@@ -8018,8 +8069,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
+			if (momz < -10*FRACUNIT)	// :youfuckedup:
+			{
+				// tumble if you let your chance pass!!
+				player->tumbleBounces = 1;
+				player->tumbleSound = 0;
+				player->tumbleHeight = 30;	// Base tumble bounce height
+				player->trickpanel = 0;
+				P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+			}
 
-			if (player->trickdelay <= 0)
+			else if (player->trickdelay <= 0)	// don't allow tricking at the same frame you tumble obv
 			{
 
 				if (cmd->turning > 0)

@@ -2967,7 +2967,7 @@ static void Command_Respawn(void)
 	UINT8 buf[4];
 	UINT8 *cp = buf;
 
-	
+
 
 	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING))
 	{
@@ -4572,7 +4572,7 @@ retryscramble:
 			// Team B gets 2nd, 3rd, 5th, 7th.
 			// So 1st on one team, 2nd/3rd on the other, then alternates afterwards.
 			// Sounds strange on paper, but works really well in practice!
-			else if (i != 2) 
+			else if (i != 2)
 			{
 				// We will only randomly pick the team for the first guy.
 				// Otherwise, just alternate back and forth, distributing players.

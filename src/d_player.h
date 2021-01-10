@@ -573,6 +573,7 @@ typedef struct player_s
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;
 	boolean tumbleLastBounce;
+	boolean tumbleSound;
 
 	//
 

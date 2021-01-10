@@ -220,6 +220,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tumbleHeight);
 	else if (fastcmp(field,"tumbleLastBounce"))
 		lua_pushboolean(L, plr->tumbleLastBounce);
+	else if (fastcmp(field,"tumbleSound"))
+		lua_pushboolean(L, plr->tumbleSound);
 	else if (fastcmp(field,"trickpanel"))
 		lua_pushinteger(L, plr->trickpanel);
 	else if (fastcmp(field,"trickdelay"))
@@ -525,6 +527,8 @@ static int player_set(lua_State *L)
 		plr->tumbleHeight = (UINT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumbleLastBounce"))
 		plr->tumbleLastBounce = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"tumbleSound"))
+		plr->tumbleSound = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"trickpanel"))
 		plr->trickpanel = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickdelay"))
