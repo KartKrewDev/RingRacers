@@ -8068,7 +8068,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
-			if (momz < -20*FRACUNIT)	// :youfuckedup:
+			if (momz < -10*FRACUNIT)	// :youfuckedup:
 			{
 				// tumble if you let your chance pass!!
 				player->tumbleBounces = 1;
