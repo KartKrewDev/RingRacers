@@ -2584,6 +2584,7 @@ static void K_HandleTumbleBounce(player_t *player)
 		{
 			// End tumble state
 			player->tumbleBounces = 0;
+			player->tumbleLastBounce = false; // Reset for next time
 			return;
 		}
 		else
@@ -2591,7 +2592,7 @@ static void K_HandleTumbleBounce(player_t *player)
 			// One last bounce at the minimum height, to reset the animation
 			player->tumbleHeight = 10;
 			player->tumbleLastBounce = true;
-			player->mo->rollangle = 0;	// p_user.c will sotp rotating the player automatically
+			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
 		}
 	}
 
