@@ -289,10 +289,10 @@ consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
 
 // player's followers. Also saved.
 consvar_t cv_follower[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("follower", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange),
-	CVAR_INIT ("follower2", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange),
-	CVAR_INIT ("follower3", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange),
-	CVAR_INIT ("follower4", "-1", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange)
+	CVAR_INIT ("follower", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange),
+	CVAR_INIT ("follower2", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange),
+	CVAR_INIT ("follower3", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange),
+	CVAR_INIT ("follower4", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange)
 };
 
 // player's follower colors... Also saved...
@@ -351,6 +351,7 @@ consvar_t cv_eggmanmonitor = 		CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR|CV_C
 consvar_t cv_orbinaut = 			CVAR_INIT ("orbinaut", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_jawz = 				CVAR_INIT ("jawz", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_mine = 				CVAR_INIT ("mine", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_landmine = 			CVAR_INIT ("landmine", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_ballhog = 				CVAR_INIT ("ballhog", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_selfpropelledbomb =	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_grow = 				CVAR_INIT ("grow", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
@@ -453,8 +454,7 @@ consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", CV_SAVE|CV
 consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, ItemFinder_OnChange);
 
 // Scoring type options
-static CV_PossibleValue_t overtime_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Super"}, {0, NULL}};
-consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR|CV_CHEAT, overtime_cons_t, NULL);
+consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
 
 consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", CV_SAVE, CV_OnOff, NULL);
 
@@ -462,9 +462,9 @@ static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, 
 consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
 static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "None"}, {0, NULL}};
 consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
-static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {50, "MAX"}, {0, NULL}};
-consvar_t cv_numlaps = CVAR_INIT ("numlaps", "4", CV_NETVAR|CV_CALL|CV_NOINIT, numlaps_cons_t, NumLaps_OnChange);
-static CV_PossibleValue_t basenumlaps_cons_t[] = {{1, "MIN"}, {50, "MAX"}, {0, "Map default"}, {0, NULL}};
+static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
+consvar_t cv_numlaps = CVAR_INIT ("numlaps", "3", CV_NETVAR|CV_CALL|CV_NOINIT, numlaps_cons_t, NumLaps_OnChange);
+static CV_PossibleValue_t basenumlaps_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, "Map default"}, {0, NULL}};
 consvar_t cv_basenumlaps = CVAR_INIT ("basenumlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, basenumlaps_cons_t, BaseNumLaps_OnChange);
 
 // Point and time limits for every gametype
@@ -742,6 +742,10 @@ void D_RegisterServerCommands(void)
 #endif
 
 	CV_RegisterVar(&cv_dummyconsvar);
+
+#ifdef USE_STUN
+	CV_RegisterVar(&cv_stunserver);
+#endif
 
 	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
@@ -2848,13 +2852,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		memset(&luabanks, 0, sizeof(luabanks));
 	}
 
-	if (modeattacking)
-	{
-		SetPlayerSkinByNum(0, cv_chooseskin.value-1);
-		players[0].skincolor = skins[players[0].skin].prefcolor;
-		CV_StealthSetValue(&cv_playercolor[0], players[0].skincolor);
-	}
-
 	mapnumber = M_MapNumber(mapname[3], mapname[4]);
 	LUAh_MapChange(mapnumber);
 
@@ -2964,7 +2961,7 @@ static void Command_Respawn(void)
 	UINT8 buf[4];
 	UINT8 *cp = buf;
 
-	
+
 
 	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING))
 	{
@@ -3464,8 +3461,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		if (gametyperules & GTR_BUMPERS) // SRB2kart
 		{
 			players[playernum].marescore = 0;
-			if (K_IsPlayerWanted(&players[playernum]))
-				K_CalculateBattleWanted();
+			K_CalculateBattleWanted();
 		}
 
 		K_PlayerForfeit(playernum, true);
@@ -4324,15 +4320,13 @@ static void TimeLimit_OnChange(void)
 
 	if (cv_timelimit.value != 0)
 	{
-		CONS_Printf(M_GetText("Levels will end after %d second%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
-		timelimitintics = cv_timelimit.value * TICRATE;
+		CONS_Printf(M_GetText("Rounds will end after %d minute%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
+		timelimitintics = cv_timelimit.value * (60*TICRATE);
 
 		// Note the deliberate absence of any code preventing
 		//   pointlimit and timelimit from being set simultaneously.
 		// Some people might like to use them together. It works.
 	}
-	else if (netgame || multiplayer)
-		CONS_Printf(M_GetText("Time limit disabled\n"));
 
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
@@ -4573,7 +4567,7 @@ retryscramble:
 			// Team B gets 2nd, 3rd, 5th, 7th.
 			// So 1st on one team, 2nd/3rd on the other, then alternates afterwards.
 			// Sounds strange on paper, but works really well in practice!
-			else if (i != 2) 
+			else if (i != 2)
 			{
 				// We will only randomly pick the team for the first guy.
 				// Otherwise, just alternate back and forth, distributing players.

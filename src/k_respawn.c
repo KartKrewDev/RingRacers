@@ -118,6 +118,14 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->kartstuff[k_ringboost] = 0;
 	player->kartstuff[k_driftboost] = 0;
+	
+	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
+	if (player->tumbleBounces > 0)
+	{
+		player->tumbleBounces = 3;		// Max # of bounces-1 (so you still tumble once)
+		player->tumbleLastBounce = 0;	// Still force them to bounce at least once for the funny
+		players->tumbleHeight = 20;		// force tumble height
+	}
 
 	P_ResetPlayer(player);
 

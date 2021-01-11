@@ -673,10 +673,8 @@ void ST_preDrawTitleCard(void)
 	if (lt_ticker >= (lt_endtime + TICRATE))
 		return;
 
-	if (!lt_exitticker)
-		st_translucency = 0;
-	else
-		st_translucency = max(0, min((INT32)lt_exitticker-4, cv_translucenthud.value));
+	// Kart: nothing
+	st_translucency = cv_translucenthud.value;
 }
 
 //

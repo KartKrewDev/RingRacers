@@ -1036,6 +1036,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						K_BotItemSneaker(player, cmd);
 						break;
 					case KITEM_BANANA:
+					case KITEM_LANDMINE:
 						if (!player->kartstuff[k_itemheld])
 						{
 							K_BotItemGenericTrapShield(player, cmd, turnamt, false);
