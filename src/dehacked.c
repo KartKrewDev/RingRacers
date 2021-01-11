@@ -76,7 +76,6 @@ static sfxenum_t get_sfx(const char *word);
 static UINT16 get_mus(const char *word, UINT8 dehacked_mode);
 #endif
 static hudnum_t get_huditem(const char *word);
-static menutype_t get_menutype(const char *word);
 //static INT16 get_gametype(const char *word);
 //static powertype_t get_power(const char *word);
 skincolornum_t get_skincolor(const char *word);
@@ -305,201 +304,6 @@ static void clear_levels(void)
 	// Realloc the one for the current gamemap as a safeguard
 	P_AllocMapHeader(gamemap-1);
 }
-
-static boolean findFreeSlot(INT32 *num)
-{
-	// Send the character select entry to a free slot.
-	while (*num < MAXSKINS && (description[*num].used))
-		*num = *num+1;
-
-	// No more free slots. :(
-	if (*num >= MAXSKINS)
-		return false;
-
-	// Redesign your logo. (See M_DrawSetupChoosePlayerMenu in m_menu.c...)
-	description[*num].picname[0] = '\0';
-	description[*num].nametag[0] = '\0';
-	description[*num].displayname[0] = '\0';
-	description[*num].oppositecolor = SKINCOLOR_NONE;
-	description[*num].tagtextcolor = SKINCOLOR_NONE;
-	description[*num].tagoutlinecolor = SKINCOLOR_NONE;
-
-	// Found one! ^_^
-	return (description[*num].used = true);
-}
-
-// Reads a player.
-// For modifying the character select screen
-static void readPlayer(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word;
-	char *word2;
-	char *displayname = ZZ_Alloc(MAXLINELEN+1);
-	INT32 i;
-	boolean slotfound = false;
-
-	#define SLOTFOUND \
-		if (!slotfound && (slotfound = findFreeSlot(&num)) == false) \
-			goto done;
-
-	displayname[MAXLINELEN] = '\0';
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			for (i = 0; i < MAXLINELEN-3; i++)
-			{
-				char *tmp;
-				if (s[i] == '=')
-				{
-					tmp = &s[i+2];
-					strncpy(displayname, tmp, SKINNAMESIZE);
-					break;
-				}
-			}
-
-			word = strtok(s, " ");
-			if (word)
-				strupr(word);
-			else
-				break;
-
-			if (fastcmp(word, "PLAYERTEXT"))
-			{
-				char *playertext = NULL;
-
-				SLOTFOUND
-
-				for (i = 0; i < MAXLINELEN-3; i++)
-				{
-					if (s[i] == '=')
-					{
-						playertext = &s[i+2];
-						break;
-					}
-				}
-				if (playertext)
-				{
-					strcpy(description[num].notes, playertext);
-					strcat(description[num].notes, myhashfgets(playertext, sizeof (description[num].notes), f));
-				}
-				else
-					strcpy(description[num].notes, "");
-
-				// For some reason, cutting the string did not work above. Most likely due to strcpy or strcat...
-				// It works down here, though.
-				{
-					INT32 numline = 0;
-					for (i = 0; (size_t)i < sizeof(description[num].notes)-1; i++)
-					{
-						if (numline < 20 && description[num].notes[i] == '\n')
-							numline++;
-
-						if (numline >= 20 || description[num].notes[i] == '\0' || description[num].notes[i] == '#')
-							break;
-					}
-				}
-				description[num].notes[strlen(description[num].notes)-1] = '\0';
-				description[num].notes[i] = '\0';
-				continue;
-			}
-
-			word2 = strtok(NULL, " = ");
-			if (word2)
-				strupr(word2);
-			else
-				break;
-
-			if (word2[strlen(word2)-1] == '\n')
-				word2[strlen(word2)-1] = '\0';
-			i = atoi(word2);
-
-			if (fastcmp(word, "PICNAME"))
-			{
-				SLOTFOUND
-				strncpy(description[num].picname, word2, 8);
-			}
-			// new character select
-			else if (fastcmp(word, "DISPLAYNAME"))
-			{
-				SLOTFOUND
-				// replace '#' with line breaks
-				// (also remove any '\n')
-				{
-					char *cur = NULL;
-
-					// remove '\n'
-					cur = strchr(displayname, '\n');
-					if (cur)
-						*cur = '\0';
-
-					// turn '#' into '\n'
-					cur = strchr(displayname, '#');
-					while (cur)
-					{
-						*cur = '\n';
-						cur = strchr(cur, '#');
-					}
-				}
-				// copy final string
-				strncpy(description[num].displayname, displayname, SKINNAMESIZE);
-			}
-			else if (fastcmp(word, "OPPOSITECOLOR") || fastcmp(word, "OPPOSITECOLOUR"))
-			{
-				SLOTFOUND
-				description[num].oppositecolor = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "NAMETAG") || fastcmp(word, "TAGNAME"))
-			{
-				SLOTFOUND
-				strncpy(description[num].nametag, word2, 8);
-			}
-			else if (fastcmp(word, "TAGTEXTCOLOR") || fastcmp(word, "TAGTEXTCOLOUR"))
-			{
-				SLOTFOUND
-				description[num].tagtextcolor = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "TAGOUTLINECOLOR") || fastcmp(word, "TAGOUTLINECOLOUR"))
-			{
-				SLOTFOUND
-				description[num].tagoutlinecolor = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "STATUS"))
-			{
-				/*
-					You MAY disable previous entries if you so desire...
-					But try to enable something that's already enabled and you will be sent to a free slot.
-
-					Because of this, you are allowed to edit any previous entries you like, but only if you
-					signal that you are purposely doing so by disabling and then reenabling the slot.
-				*/
-				if (i && !slotfound && (slotfound = findFreeSlot(&num)) == false)
-					goto done;
-
-				description[num].used = (!!i);
-			}
-			else if (fastcmp(word, "SKINNAME"))
-			{
-				// Send to free slot.
-				SLOTFOUND
-				strlcpy(description[num].skinname, word2, sizeof description[num].skinname);
-				strlwr(description[num].skinname);
-			}
-			else
-				deh_warning("readPlayer %d: unknown word '%s'", num, word);
-		}
-	} while (!myfeof(f)); // finish when the line is empty
-	#undef SLOTFOUND
-done:
-	Z_Free(displayname);
-	Z_Free(s);
-}
-#endif
 
 static int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
 
@@ -2795,206 +2599,6 @@ static void readtextprompt(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
-static void readmenu(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word = s;
-	char *word2;
-	char *tmp;
-	INT32 value;
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			// First remove trailing newline, if there is one
-			tmp = strchr(s, '\n');
-			if (tmp)
-				*tmp = '\0';
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			// Get the part before the " = "
-			tmp = strchr(s, '=');
-			if (tmp)
-				*(tmp-1) = '\0';
-			else
-				break;
-			strupr(word);
-
-			// Now get the part after
-			word2 = (tmp += 2);
-			strupr(word2);
-
-			value = atoi(word2); // used for numerical settings
-
-			if (fastcmp(word, "BACKGROUNDNAME"))
-			{
-				strncpy(menupres[num].bgname, word2, 8);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "HIDEBACKGROUND"))
-			{
-				menupres[num].bghide = (boolean)(value || word2[0] == 'T' || word2[0] == 'Y');
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "BACKGROUNDCOLOR"))
-			{
-				menupres[num].bgcolor = get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "HIDETITLEPICS") || fastcmp(word, "HIDEPICS") || fastcmp(word, "TITLEPICSHIDE"))
-			{
-				// true by default, except MM_MAIN
-				menupres[num].hidetitlepics = (boolean)(value || word2[0] == 'T' || word2[0] == 'Y');
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSMODE"))
-			{
-				if (fastcmp(word2, "USER"))
-					menupres[num].ttmode = TTMODE_USER;
-				else if (fastcmp(word2, "HIDE") || fastcmp(word2, "HIDDEN") || fastcmp(word2, "NONE"))
-				{
-					menupres[num].ttmode = TTMODE_USER;
-					menupres[num].ttname[0] = 0;
-					menupres[num].hidetitlepics = true;
-				}
-				else // if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
-					menupres[num].ttmode = TTMODE_OLD;
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSSCALE"))
-			{
-				// Don't handle Alacroix special case here; see Maincfg section.
-				menupres[num].ttscale = max(1, min(8, (UINT8)get_number(word2)));
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSNAME"))
-			{
-				strncpy(menupres[num].ttname, word2, 9);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSX"))
-			{
-				menupres[num].ttx = (INT16)get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSY"))
-			{
-				menupres[num].tty = (INT16)get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSLOOP"))
-			{
-				menupres[num].ttloop = (INT16)get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSTICS"))
-			{
-				menupres[num].tttics = (UINT16)get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLESCROLLSPEED") || fastcmp(word, "TITLESCROLLXSPEED")
-				|| fastcmp(word, "SCROLLSPEED") || fastcmp(word, "SCROLLXSPEED"))
-			{
-				menupres[num].titlescrollxspeed = get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLESCROLLYSPEED") || fastcmp(word, "SCROLLYSPEED"))
-			{
-				menupres[num].titlescrollyspeed = get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "MUSIC"))
-			{
-				strncpy(menupres[num].musname, word2, 7);
-				menupres[num].musname[6] = 0;
-				titlechanged = true;
-			}
-#ifdef MUSICSLOT_COMPATIBILITY
-			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				value = get_mus(word2, true);
-				if (value && value <= 1035)
-					snprintf(menupres[num].musname, 7, "%sM", G_BuildMapName(value));
-				else if (value && value <= 1050)
-					strncpy(menupres[num].musname, compat_special_music_slots[value - 1036], 7);
-				else
-					menupres[num].musname[0] = 0; // becomes empty string
-				menupres[num].musname[6] = 0;
-				titlechanged = true;
-			}
-#endif
-			else if (fastcmp(word, "MUSICTRACK"))
-			{
-				menupres[num].mustrack = ((UINT16)value - 1);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "MUSICLOOP"))
-			{
-				// true by default except MM_MAIN
-				menupres[num].muslooping = (value || word2[0] == 'T' || word2[0] == 'Y');
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "NOMUSIC"))
-			{
-				menupres[num].musstop = (value || word2[0] == 'T' || word2[0] == 'Y');
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "IGNOREMUSIC"))
-			{
-				menupres[num].musignore = (value || word2[0] == 'T' || word2[0] == 'Y');
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "FADESTRENGTH"))
-			{
-				// one-based, <= 0 means use default value. 1-32
-				menupres[num].fadestrength = get_number(word2)-1;
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "NOENTERBUBBLE"))
-			{
-				menupres[num].enterbubble = !(value || word2[0] == 'T' || word2[0] == 'Y');
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "NOEXITBUBBLE"))
-			{
-				menupres[num].exitbubble = !(value || word2[0] == 'T' || word2[0] == 'Y');
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "ENTERTAG"))
-			{
-				menupres[num].entertag = get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "EXITTAG"))
-			{
-				menupres[num].exittag = get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "ENTERWIPE"))
-			{
-				menupres[num].enterwipe = get_number(word2);
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "EXITWIPE"))
-			{
-				menupres[num].exitwipe = get_number(word2);
-				titlechanged = true;
-			}
-		}
-	} while (!myfeof(f)); // finish when the line is empty
-
-	Z_Free(s);
-}
-
 static void readhuditem(MYFILE *f, INT32 num)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -4710,6 +4314,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				// This is not a major mod either.
 				continue;	// continue so that we don't error.
 			}
+
 			word2 = strtok(NULL, " ");
 			if (word2) {
 				strupr(word2);
@@ -4719,20 +4324,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			}
 			else
 				i = 0;
-#ifdef USEPLAYERMENU
-			if (fastcmp(word, "CHARACTER"))
-			{
-				if (i >= 0 && i < 32)
-					readPlayer(f, i);
-				else
-				{
-					deh_warning("Character %d out of range (0 - 31)", i);
-					ignorelines(f);
-				}
-				continue;
-			}
-			else
-#endif
+
 			if (fastcmp(word, "EMBLEM"))
 			{
 				if (!mainfile && !gamedataadded)
@@ -4785,7 +4377,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				}
 				continue;
 			}
-#endif
+
 			if (word2)
 			{
 				if (fastcmp(word, "THING") || fastcmp(word, "MOBJ") || fastcmp(word, "OBJECT"))
@@ -5004,19 +4596,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					else
 					{
 						deh_warning("HUD item number %d out of range (0 - %d)", i, NUMHUDITEMS-1);
-						ignorelines(f);
-					}
-				}
-				else if (fastcmp(word, "MENU"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_menutype(word2); // find a huditem by name
-					if (i >= 1 && i < NUMMENUTYPES)
-						readmenu(f, i);
-					else
-					{
-						// zero-based, but let's start at 1
-						deh_warning("Menu number %d out of range (1 - %d)", i, NUMMENUTYPES-1);
 						ignorelines(f);
 					}
 				}
@@ -11036,101 +10615,6 @@ static const char *const HUDITEMS_LIST[] = {
 	"POWERUPS"
 };
 
-static const char *const MENUTYPES_LIST[] = {
-	"NONE",
-
-	"MAIN",
-
-	// Single Player
-	"SP_MAIN",
-
-	"SP_LOAD",
-	"SP_PLAYER",
-
-	"SP_LEVELSELECT",
-	"SP_LEVELSTATS",
-
-	"SP_TIMEATTACK",
-	"SP_TIMEATTACK_LEVELSELECT",
-	"SP_GUESTREPLAY",
-	"SP_REPLAY",
-	"SP_GHOST",
-
-	"SP_NIGHTSATTACK",
-	"SP_NIGHTS_LEVELSELECT",
-	"SP_NIGHTS_GUESTREPLAY",
-	"SP_NIGHTS_REPLAY",
-	"SP_NIGHTS_GHOST",
-
-	// Multiplayer
-	"MP_MAIN",
-	"MP_SPLITSCREEN", // SplitServer
-	"MP_SERVER",
-	"MP_CONNECT",
-	"MP_ROOM",
-	"MP_PLAYERSETUP", // MP_PlayerSetupDef shared with SPLITSCREEN if #defined NONET
-	"MP_SERVER_OPTIONS",
-
-	// Options
-	"OP_MAIN",
-
-	"OP_P1CONTROLS",
-	"OP_CHANGECONTROLS", // OP_ChangeControlsDef shared with P2
-	"OP_P1MOUSE",
-	"OP_P1JOYSTICK",
-	"OP_JOYSTICKSET", // OP_JoystickSetDef shared with P2
-	"OP_P1CAMERA",
-
-	"OP_P2CONTROLS",
-	"OP_P2MOUSE",
-	"OP_P2JOYSTICK",
-	"OP_P2CAMERA",
-
-	"OP_PLAYSTYLE",
-
-	"OP_VIDEO",
-	"OP_VIDEOMODE",
-	"OP_COLOR",
-	"OP_OPENGL",
-	"OP_OPENGL_LIGHTING",
-
-	"OP_SOUND",
-
-	"OP_SERVER",
-	"OP_MONITORTOGGLE",
-
-	"OP_DATA",
-	"OP_ADDONS",
-	"OP_SCREENSHOTS",
-	"OP_ERASEDATA",
-
-	// Extras
-	"SR_MAIN",
-	"SR_PANDORA",
-	"SR_LEVELSELECT",
-	"SR_UNLOCKCHECKLIST",
-	"SR_EMBLEMHINT",
-	"SR_PLAYER",
-	"SR_SOUNDTEST",
-
-	// Addons (Part of MISC, but let's make it our own)
-	"AD_MAIN",
-
-	// MISC
-	// "MESSAGE",
-	// "SPAUSE",
-
-	// "MPAUSE",
-	// "SCRAMBLETEAM",
-	// "CHANGETEAM",
-	// "CHANGELEVEL",
-
-	// "MAPAUSE",
-	// "HELP",
-
-	"SPECIAL"
-};
-
 struct {
 	const char *n;
 	// has to be able to hold both fixed_t and angle_t, so drastic measure!!
@@ -11926,20 +11410,6 @@ static hudnum_t get_huditem(const char *word)
 	return HUD_LIVES;
 }
 
-static menutype_t get_menutype(const char *word)
-{ // Returns the value of MN_ enumerations
-	menutype_t i;
-	if (*word >= '0' && *word <= '9')
-		return atoi(word);
-	if (fastncmp("MN_",word,3))
-		word += 3; // take off the MN_
-	for (i = 0; i < NUMMENUTYPES; i++)
-		if (fastcmp(word, MENUTYPES_LIST[i]))
-			return i;
-	deh_warning("Couldn't find menutype named 'MN_%s'",word);
-	return MN_NONE;
-}
-
 /*
 static INT16 get_gametype(const char *word)
 { // Returns the value of GT_ enumerations
@@ -12154,11 +11624,6 @@ static fixed_t find_const(const char **rword)
 #endif
 	else if (fastncmp("PW_",word,3)) {
 		r = get_power(word);
-		free(word);
-		return r;
-	}
-	else if (fastncmp("MN_",word,3)) {
-		r = get_menutype(word);
 		free(word);
 		return r;
 	}
@@ -12769,16 +12234,6 @@ static inline int lib_getenum(lua_State *L)
 				return 1;
 			}
 		if (mathlib) return luaL_error(L, "NiGHTS grade '%s' could not be found.\n", word);
-		return 0;
-	}
-	else if (fastncmp("MN_",word,3)) {
-		p = word+3;
-		for (i = 0; i < NUMMENUTYPES; i++)
-			if (fastcmp(p, MENUTYPES_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		if (mathlib) return luaL_error(L, "menutype '%s' could not be found.\n", word);
 		return 0;
 	}
 	else if (!mathlib && fastncmp("A_",word,2)) {

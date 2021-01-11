@@ -2603,17 +2603,16 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		{
 			if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_DOWNLOADSAVEGAME)
 			{
-				F_MenuPresTicker(true); // title sky
 				F_TitleScreenTicker(true);
 				F_TitleScreenDrawer();
 			}
 			CL_DrawConnectionStatus();
 #ifdef HAVE_THREADS
-			I_lock_mutex(&m_menu_mutex);
+			I_lock_mutex(&k_menu_mutex);
 #endif
 			M_Drawer(); //Needed for drawing messageboxes on the connection screen
 #ifdef HAVE_THREADS
-			I_unlock_mutex(m_menu_mutex);
+			I_unlock_mutex(k_menu_mutex);
 #endif
 			I_UpdateNoVsync(); // page flip or blit buffer
 			if (moviemode)
@@ -6315,11 +6314,11 @@ void NetUpdate(void)
 	{
 		resptime = nowtime;
 #ifdef HAVE_THREADS
-		I_lock_mutex(&m_menu_mutex);
+		I_lock_mutex(&k_menu_mutex);
 #endif
 		M_Ticker();
 #ifdef HAVE_THREADS
-		I_unlock_mutex(m_menu_mutex);
+		I_unlock_mutex(k_menu_mutex);
 #endif
 		CON_Ticker();
 	}

@@ -255,7 +255,11 @@ void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string
 
 // draw a string using the hu_font, 0.5x scale
 #define V_DrawSmallString( x,y,option,string ) \
-	V__DrawDupxString (x,y,FRACUNIT>>1,option,HU_FONT,string)
+	V__DrawDupxString (x,y,FRACUNIT>>1,option,NULL,HU_FONT,string)
+
+#define V_SmallStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT>>1,option,HU_FONT,string )
+
 void V_DrawCenteredSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 

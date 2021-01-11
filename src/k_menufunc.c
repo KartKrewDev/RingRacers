@@ -58,6 +58,8 @@
 // And just some randomness for the exits.
 #include "m_random.h"
 
+#include "r_skins.h"
+
 #if defined(HAVE_SDL)
 #include "SDL.h"
 #if SDL_VERSION_ATLEAST(2,0,0)
@@ -74,6 +76,10 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 // ==========================================================================
 // GLOBAL VARIABLES
 // ==========================================================================
+
+#ifdef HAVE_THREADS
+I_mutex k_menu_mutex;
+#endif
 
 boolean menuactive = false;
 boolean fromlevelselect = false;
@@ -102,7 +108,14 @@ static boolean noFurtherInput = false;
 static void Dummymenuplayer_OnChange(void);
 static void Dummystaff_OnChange(void);
 
-consvar_t cv_showfocuslost = {"showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL);
+
+static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
+consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL);
+
+// This gametype list is integral for many different reasons.
+// When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
+CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
 
 static CV_PossibleValue_t serversort_cons_t[] = {
 	{0,"Ping"},
@@ -113,44 +126,41 @@ static CV_PossibleValue_t serversort_cons_t[] = {
 	{5,"Gametype"},
 	{0,NULL}
 };
-consvar_t cv_serversort = {"serversort", "Ping", CV_CALL, serversort_cons_t, M_SortServerList, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_serversort = CVAR_INIT ("serversort", "Ping", CV_CALL, serversort_cons_t, M_SortServerList);
+
+// first time memory
+consvar_t cv_tutorialprompt = CVAR_INIT ("tutorialprompt", "On", CV_SAVE, CV_OnOff, NULL);
 
 // autorecord demos for time attack
-static consvar_t cv_autorecord = {"autorecord", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_autorecord = CVAR_INIT ("autorecord", "Yes", 0, CV_YesNo, NULL);
 
 CV_PossibleValue_t ghost_cons_t[] = {{0, "Hide"}, {1, "Show Character"}, {2, "Show All"}, {0, NULL}};
 CV_PossibleValue_t ghost2_cons_t[] = {{0, "Hide"}, {1, "Show"}, {0, NULL}};
 
-consvar_t cv_ghost_besttime  = {"ghost_besttime",  "Show All", CV_SAVE, ghost_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghost_bestlap   = {"ghost_bestlap",   "Show All", CV_SAVE, ghost_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghost_last      = {"ghost_last",      "Show All", CV_SAVE, ghost_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghost_guest     = {"ghost_guest",     "Show", CV_SAVE, ghost2_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_ghost_staff     = {"ghost_staff",     "Show", CV_SAVE, ghost2_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-
-static void Splitplayers_OnChange(void);
-CV_PossibleValue_t splitplayers_cons_t[] = {{1, "One"}, {2, "Two"}, {3, "Three"}, {4, "Four"}, {0, NULL}};
-consvar_t cv_splitplayers = {"splitplayers", "One", CV_CALL, splitplayers_cons_t, Splitplayers_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_ghost_besttime  = CVAR_INIT ("ghost_besttime",  "Show All", CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_bestlap   = CVAR_INIT ("ghost_bestlap",   "Show All", CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_last      = CVAR_INIT ("ghost_last",      "Show All", CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_guest     = CVAR_INIT ("ghost_guest",     "Show", CV_SAVE, ghost2_cons_t, NULL);
+consvar_t cv_ghost_staff     = CVAR_INIT ("ghost_staff",     "Show", CV_SAVE, ghost2_cons_t, NULL);
 
 //Console variables used solely in the menu system.
 //todo: add a way to use non-console variables in the menu
 //      or make these consvars legitimate like color or skin.
-static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
-consvar_t cv_chooseskin = {"chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+static void Splitplayers_OnChange(void);
+CV_PossibleValue_t splitplayers_cons_t[] = {{1, "One"}, {2, "Two"}, {3, "Three"}, {4, "Four"}, {0, NULL}};
+consvar_t cv_splitplayers = CVAR_INIT ("splitplayers", "One", CV_CALL, splitplayers_cons_t, Splitplayers_OnChange);
 
 static CV_PossibleValue_t dummymenuplayer_cons_t[] = {{0, "NOPE"}, {1, "P1"}, {2, "P2"}, {3, "P3"}, {4, "P4"}, {0, NULL}};
-static consvar_t cv_dummymenuplayer = {"dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
 static CV_PossibleValue_t dummyteam_cons_t[] = {{0, "Spectator"}, {1, "Red"}, {2, "Blue"}, {0, NULL}};
-static consvar_t cv_dummyteam = {"dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-
 static CV_PossibleValue_t dummyspectate_cons_t[] = {{0, "Spectator"}, {1, "Playing"}, {0, NULL}};
-static consvar_t cv_dummyspectate = {"dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-
 static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}, {0, NULL}};
-static consvar_t cv_dummyscramble = {"dummyscramble", "Random", CV_HIDDEN, dummyscramble_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-
 static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
-static consvar_t cv_dummystaff = {"dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
+static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
+static consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
+static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDDEN, dummyscramble_cons_t, NULL);
+static consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -330,6 +340,14 @@ void Moviemode_mode_Onchange(void)
 #endif
 }
 
+void Moviemode_option_Onchange(void)
+{
+#if 0
+	OP_ScreenshotOptionsMenu[op_movie_folder].status =
+		(cv_movie_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+#endif
+}
+
 void Addons_option_Onchange(void)
 {
 #if 0
@@ -371,6 +389,179 @@ void M_SortServerList(void)
 // BASIC MENU HANDLING
 // =========================================================================
 
+void M_AddMenuColor(UINT16 color) {
+	menucolor_t *c;
+
+	// SRB2Kart: I do not understand vanilla doesn't need this but WE do???!?!??!
+	if (!skincolors[color].accessible) {
+		return;
+	}
+
+	if (color >= numskincolors) {
+		CONS_Printf("M_AddMenuColor: color %d does not exist.",color);
+		return;
+	}
+
+	c = (menucolor_t *)malloc(sizeof(menucolor_t));
+	c->color = color;
+	if (menucolorhead == NULL) {
+		c->next = c;
+		c->prev = c;
+		menucolorhead = c;
+		menucolortail = c;
+	} else {
+		c->next = menucolorhead;
+		c->prev = menucolortail;
+		menucolortail->next = c;
+		menucolorhead->prev = c;
+		menucolortail = c;
+	}
+}
+
+void M_MoveColorBefore(UINT16 color, UINT16 targ) {
+	menucolor_t *look, *c = NULL, *t = NULL;
+
+	if (color == targ)
+		return;
+	if (color >= numskincolors) {
+		CONS_Printf("M_MoveColorBefore: color %d does not exist.",color);
+		return;
+	}
+	if (targ >= numskincolors) {
+		CONS_Printf("M_MoveColorBefore: target color %d does not exist.",targ);
+		return;
+	}
+
+	for (look=menucolorhead;;look=look->next) {
+		if (look->color == color)
+			c = look;
+		else if (look->color == targ)
+			t = look;
+		if (c != NULL && t != NULL)
+			break;
+		if (look==menucolortail)
+			return;
+	}
+
+	if (c == t->prev)
+		return;
+
+	if (t==menucolorhead)
+		menucolorhead = c;
+	if (c==menucolortail)
+		menucolortail = c->prev;
+
+	c->prev->next = c->next;
+	c->next->prev = c->prev;
+
+	c->prev = t->prev;
+	c->next = t;
+	t->prev->next = c;
+	t->prev = c;
+}
+
+void M_MoveColorAfter(UINT16 color, UINT16 targ) {
+	menucolor_t *look, *c = NULL, *t = NULL;
+
+	if (color == targ)
+		return;
+	if (color >= numskincolors) {
+		CONS_Printf("M_MoveColorAfter: color %d does not exist.\n",color);
+		return;
+	}
+	if (targ >= numskincolors) {
+		CONS_Printf("M_MoveColorAfter: target color %d does not exist.\n",targ);
+		return;
+	}
+
+	for (look=menucolorhead;;look=look->next) {
+		if (look->color == color)
+			c = look;
+		else if (look->color == targ)
+			t = look;
+		if (c != NULL && t != NULL)
+			break;
+		if (look==menucolortail)
+			return;
+	}
+
+	if (t == c->prev)
+		return;
+
+	if (t==menucolortail)
+		menucolortail = c;
+	else if (c==menucolortail)
+		menucolortail = c->prev;
+
+	c->prev->next = c->next;
+	c->next->prev = c->prev;
+
+	c->next = t->next;
+	c->prev = t;
+	t->next->prev = c;
+	t->next = c;
+}
+
+UINT16 M_GetColorBefore(UINT16 color) {
+	menucolor_t *look;
+
+	if (color >= numskincolors) {
+		CONS_Printf("M_GetColorBefore: color %d does not exist.\n",color);
+		return 0;
+	}
+
+	for (look=menucolorhead;;look=look->next) {
+		if (look->color == color)
+			return look->prev->color;
+		if (look==menucolortail)
+			return 0;
+	}
+}
+
+UINT16 M_GetColorAfter(UINT16 color) {
+	menucolor_t *look;
+
+	if (color >= numskincolors) {
+		CONS_Printf("M_GetColorAfter: color %d does not exist.\n",color);
+		return 0;
+	}
+
+	for (look=menucolorhead;;look=look->next) {
+		if (look->color == color)
+			return look->next->color;
+		if (look==menucolortail)
+			return 0;
+	}
+}
+
+void M_InitPlayerSetupColors(void) {
+	UINT8 i;
+	numskincolors = SKINCOLOR_FIRSTFREESLOT;
+	menucolorhead = menucolortail = NULL;
+	for (i=0; i<numskincolors; i++)
+		M_AddMenuColor(i);
+}
+
+void M_FreePlayerSetupColors(void) {
+	menucolor_t *look = menucolorhead, *tmp;
+
+	if (menucolorhead==NULL)
+		return;
+
+	while (true) {
+		if (look != menucolortail) {
+			tmp = look;
+			look = look->next;
+			free(tmp);
+		} else {
+			free(look);
+			return;
+		}
+	}
+
+	menucolorhead = menucolortail = NULL;
+}
+
 static void M_ChangeCvar(INT32 choice)
 {
 	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
@@ -378,17 +569,6 @@ static void M_ChangeCvar(INT32 choice)
 	// Backspace sets values to default value
 	if (choice == -1)
 	{
-		// There's a default color technically, but it's not ideal. Use your skin's prefcolor instead!
-		if (cv == &cv_playercolor)
-		{
-			SINT8 skinno = R_SkinAvailable(cv_chooseskin.string);
-
-			if (skinno != -1)
-				CV_SetValue(cv, skins[skinno].prefcolor);
-
-			return;
-		}
-
 		CV_Set(cv, cv->defaultvalue);
 		return;
 	}
@@ -533,15 +713,15 @@ boolean M_Responder(event_t *ev)
 		switch (ch)
 		{
 			case KEY_MOUSE1:
-			//case KEY_JOY1:
-			//case KEY_JOY1 + 2:
+				//case KEY_JOY1:
+				//case KEY_JOY1 + 2:
 				ch = KEY_ENTER;
 				break;
-			/*case KEY_JOY1 + 3: // Brake can function as 'n' for message boxes now.
-				ch = 'n';
-				break;*/
+				/*case KEY_JOY1 + 3: // Brake can function as 'n' for message boxes now.
+					ch = 'n';
+					break;*/
 			case KEY_MOUSE1 + 1:
-			//case KEY_JOY1 + 1:
+				//case KEY_JOY1 + 1:
 				ch = KEY_BACKSPACE;
 				break;
 			case KEY_HAT1:
@@ -562,10 +742,10 @@ boolean M_Responder(event_t *ev)
 	{
 		if (ev->type == ev_joystick  && ev->data1 == 0 && joywait < I_GetTime())
 		{
-			const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_deadzone.value) >> FRACBITS;
+			const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_deadzone[0].value) >> FRACBITS;
 			if (ev->data3 != INT32_MAX)
 			{
-				if (Joystick.bGamepadStyle || abs(ev->data3) > jdeadzone)
+				if (Joystick[0].bGamepadStyle || abs(ev->data3) > jdeadzone)
 				{
 					if (ev->data3 < 0 && pjoyy >= 0)
 					{
@@ -585,7 +765,7 @@ boolean M_Responder(event_t *ev)
 
 			if (ev->data2 != INT32_MAX)
 			{
-				if (Joystick.bGamepadStyle || abs(ev->data2) > jdeadzone)
+				if (Joystick[0].bGamepadStyle || abs(ev->data2) > jdeadzone)
 				{
 					if (ev->data2 < 0 && pjoyx >= 0)
 					{
@@ -637,9 +817,9 @@ boolean M_Responder(event_t *ev)
 
 	if (ch == -1)
 		return false;
-	else if (ch == gamecontrol[gc_systemmenu][0] || ch == gamecontrol[gc_systemmenu][1]) // allow remappable ESC key
+	else if (ch == gamecontrol[0][gc_systemmenu][0] || ch == gamecontrol[0][gc_systemmenu][1]) // allow remappable ESC key
 		ch = KEY_ESCAPE;
-	else if ((ch == gamecontrol[gc_accelerate][0] || ch == gamecontrol[gc_accelerate][1])  && ch >= KEY_MOUSE1)
+	else if ((ch == gamecontrol[0][gc_accelerate][0] || ch == gamecontrol[0][gc_accelerate][1])  && ch >= KEY_MOUSE1)
 		ch = KEY_ENTER;
 
 	// F-Keys
@@ -699,11 +879,12 @@ boolean M_Responder(event_t *ev)
 				return true;
 
 			case KEY_F11: // Empty (used to be Gamma)
-				//CV_AddValue(&cv_usegamma, 1);
+				//CV_AddValue(&cv_globalgamma, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
 #endif
+
 			case KEY_ESCAPE: // Pop up menu
 				if (chat_on)
 				{
@@ -714,13 +895,11 @@ boolean M_Responder(event_t *ev)
 					M_StartControlPanel();
 				return true;
 		}
-
 		noFurtherInput = false; // turns out we didn't care
 		return false;
 	}
 
-
-	if ((ch == gamecontrol[gc_brake][0] || ch == gamecontrol[gc_brake][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
+	if ((ch == gamecontrol[0][gc_brake][0] || ch == gamecontrol[0][gc_brake][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
 		ch = KEY_ESCAPE;
 
 	routine = currentMenu->menuitems[itemOn].itemaction;
@@ -751,8 +930,11 @@ boolean M_Responder(event_t *ev)
 		else
 		{
 			// dirty hack: for customising controls, I want only buttons/keys, not moves
-			if (ev->type == ev_mouse || ev->type == ev_mouse2 || ev->type == ev_joystick
-				|| ev->type == ev_joystick2 || ev->type == ev_joystick3 || ev->type == ev_joystick4)
+			if (ev->type == ev_mouse
+				|| ev->type == ev_joystick
+				|| ev->type == ev_joystick2
+				|| ev->type == ev_joystick3
+				|| ev->type == ev_joystick4)
 				return true;
 			if (routine)
 			{
@@ -766,10 +948,8 @@ boolean M_Responder(event_t *ev)
 	// BP: one of the more big hack i have never made
 	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR)
 	{
-		if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_STRING || (currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_PASSWORD)
+		if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_STRING)
 		{
-			if (ch == KEY_TAB && (currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_PASSWORD)
-				((consvar_t *)currentMenu->menuitems[itemOn].itemaction)->value ^= 1;
 
 			if (shiftdown && ch >= 32 && ch <= 127)
 				ch = shiftxform[ch];
@@ -782,8 +962,9 @@ boolean M_Responder(event_t *ev)
 			routine = M_ChangeCvar;
 	}
 
-	if (currentMenu == &PAUSE_PlaybackMenuDef)
+	if (currentMenu == &PAUSE_PlaybackMenuDef && !con_destlines)
 	{
+		playback_last_menu_interaction_leveltime = leveltime;
 		// Flip left/right with up/down for the playback menu, since it's a horizontal icon row.
 		switch (ch)
 		{
@@ -791,6 +972,56 @@ boolean M_Responder(event_t *ev)
 			case KEY_UPARROW: ch = KEY_RIGHTARROW; break;
 			case KEY_RIGHTARROW: ch = KEY_DOWNARROW; break;
 			case KEY_DOWNARROW: ch = KEY_LEFTARROW; break;
+
+			// arbitrary keyboard shortcuts because fuck you
+
+			case '\'':	// toggle freecam
+				M_PlaybackToggleFreecam(0);
+				break;
+
+			case ']':	// ffw / advance frame (depends on if paused or not)
+				if (paused)
+					M_PlaybackAdvance(0);
+				else
+					M_PlaybackFastForward(0);
+				break;
+
+			case '[':	// rewind /backupframe, uses the same function
+				M_PlaybackRewind(0);
+				break;
+
+			case '\\':	// pause
+				M_PlaybackPause(0);
+				break;
+
+			// viewpoints, an annoyance (tm)
+			case '-':	// viewpoint minus
+				M_PlaybackSetViews(-1);	// yeah lol.
+				break;
+
+			case '=':	// viewpoint plus
+				M_PlaybackSetViews(1);	// yeah lol.
+				break;
+
+			// switch viewpoints:
+			case '1':	// viewpoint for p1 (also f12)
+				// maximum laziness:
+				if (!demo.freecam)
+					G_AdjustView(1, 1, true);
+				break;
+			case '2':	// viewpoint for p2
+				if (!demo.freecam)
+					G_AdjustView(2, 1, true);
+				break;
+			case '3':	// viewpoint for p3
+				if (!demo.freecam)
+					G_AdjustView(3, 1, true);
+				break;
+			case '4':	// viewpoint for p4
+				if (!demo.freecam)
+					G_AdjustView(4, 1, true);
+				break;
+
 			default: break;
 		}
 	}
@@ -840,9 +1071,9 @@ boolean M_Responder(event_t *ev)
 			if (currentMenu == &PAUSE_PlaybackMenuDef)
 			{
 				boolean held = (boolean)playback_enterheld;
-				playback_enterheld = TICRATE/7;
 				if (held)
 					return true;
+				playback_enterheld = 3;
 			}
 #endif
 
@@ -856,7 +1087,7 @@ boolean M_Responder(event_t *ev)
 				{
 					if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
 					{
-						M_StartMessage(M_GetText("This cannot be done with complex add-ons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
+						M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
 						return true;
 					}
 				}
@@ -876,7 +1107,6 @@ boolean M_Responder(event_t *ev)
 						break;
 				}
 			}
-
 			return true;
 
 		case KEY_ESCAPE:
@@ -902,15 +1132,17 @@ boolean M_Responder(event_t *ev)
 
 				if (cv == &cv_chooseskin
 					|| cv == &cv_dummystaff
-					/*|| cv == &cv_nextmap
-					|| cv == &cv_newgametype*/)
+					/*
+					|| cv == &cv_nextmap
+					|| cv == &cv_newgametype
+					*/
+					)
 					return true;
 
 #if 0
 				if (currentMenu != &OP_SoundOptionsDef || itemOn > 3)
 #endif
 					S_StartSound(NULL, sfx_s3k5b);
-
 				routine(-1);
 				return true;
 			}
@@ -1194,7 +1426,6 @@ void M_GoBack(INT32 choice)
 		//make sure the game doesn't still think we're in a netgame.
 		if (!Playing() && netgame && multiplayer)
 		{
-			MSCloseUDPSocket();		// Clean up so we can re-open the connection later.
 			netgame = false;
 			multiplayer = false;
 		}
@@ -1599,8 +1830,6 @@ struct setup_explosions_s setup_explosions[48];
 UINT8 setup_numplayers = 0;
 tic_t setup_animcounter = 0;
 
-consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
-
 void M_CharacterSelectInit(INT32 choice)
 {
 	UINT8 i, j;
@@ -1621,22 +1850,6 @@ void M_CharacterSelectInit(INT32 choice)
 	memset(setup_explosions, 0, sizeof(setup_explosions));
 	setup_animcounter = 0;
 
-	// Keep these in a table for the sake of my sanity later
-	setup_playercvars[0][SPLITCV_SKIN] = &cv_skin;
-	setup_playercvars[1][SPLITCV_SKIN] = &cv_skin2;
-	setup_playercvars[2][SPLITCV_SKIN] = &cv_skin3;
-	setup_playercvars[3][SPLITCV_SKIN] = &cv_skin4;
-
-	setup_playercvars[0][SPLITCV_COLOR] = &cv_playercolor;
-	setup_playercvars[1][SPLITCV_COLOR] = &cv_playercolor2;
-	setup_playercvars[2][SPLITCV_COLOR] = &cv_playercolor3;
-	setup_playercvars[3][SPLITCV_COLOR] = &cv_playercolor4;
-
-	setup_playercvars[0][SPLITCV_NAME] = &cv_playername;
-	setup_playercvars[1][SPLITCV_NAME] = &cv_playername2;
-	setup_playercvars[2][SPLITCV_NAME] = &cv_playername3;
-	setup_playercvars[3][SPLITCV_NAME] = &cv_playername4;
-
 	for (i = 0; i < numskins; i++)
 	{
 		UINT8 x = skins[i].kartspeed-1;
@@ -1652,7 +1865,7 @@ void M_CharacterSelectInit(INT32 choice)
 
 		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
 		{
-			if (!strcmp(setup_playercvars[j][SPLITCV_SKIN]->string, skins[i].name))
+			if (!strcmp(cv_skin[j].string, skins[i].name))
 			{
 				setup_player[j].gridx = x;
 				setup_player[j].gridy = y;
@@ -1809,7 +2022,7 @@ static void M_HandleColorRotate(INT32 choice, setup_player_t *p)
 	{
 		case KEY_RIGHTARROW:
 			p->color++;
-			if (p->color >= MAXSKINCOLORS)
+			if (p->color >= numskincolors)
 				p->color = 1;
 			p->rotate = CSROTATETICS;
 			//p->delay = CSROTATETICS;
@@ -1818,7 +2031,7 @@ static void M_HandleColorRotate(INT32 choice, setup_player_t *p)
 		case KEY_LEFTARROW:
 			p->color--;
 			if (p->color < 1)
-				p->color = MAXSKINCOLORS-1;
+				p->color = numskincolors-1;
 			p->rotate = -CSROTATETICS;
 			//p->delay = CSROTATETICS;
 			S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
@@ -1949,8 +2162,8 @@ void M_CharacterSelectTick(void)
 	{
 		for (i = 0; i < setup_numplayers; i++)
 		{
-			CV_StealthSet(setup_playercvars[i][SPLITCV_SKIN], skins[setup_player[i].skin].name);
-			CV_StealthSetValue(setup_playercvars[i][SPLITCV_COLOR], setup_player[i].color);
+			CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
+			CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
 		}
 
 		CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
@@ -1989,7 +2202,7 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU /*&& mapnum+1 != gamemap*/)
 		return false;
 
-	if (gt == GT_MATCH && (mapheaderinfo[mapnum]->typeoflevel & TOL_MATCH))
+	if (gt == GT_BATTLE && (mapheaderinfo[mapnum]->typeoflevel & TOL_BATTLE))
 		return true;
 
 	if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
@@ -2472,6 +2685,32 @@ void M_PlaybackSetViews(INT32 choice)
 void M_PlaybackAdjustView(INT32 choice)
 {
 	G_AdjustView(itemOn - playback_viewcount, (choice > 0) ? 1 : -1, true);
+}
+
+// this one's rather tricky
+void M_PlaybackToggleFreecam(INT32 choice)
+{
+	(void)choice;
+	M_ClearMenus(true);
+
+	// remove splitscreen:
+	splitscreen = 0;
+	R_ExecuteSetViewSize();
+
+	P_InitCameraCmd();	// init camera controls
+	if (!demo.freecam)	// toggle on
+	{
+		demo.freecam = true;
+		democam.cam = &camera[0];	// this is rather useful
+	}
+	else	// toggle off
+	{
+		demo.freecam = false;
+		// reset democam vars:
+		democam.cam = NULL;
+		democam.turnheld = false;
+		democam.keyboardlook = false;	// reset only these. localangle / aiming gets set before the cam does anything anyway
+	}
 }
 
 void M_PlaybackQuit(INT32 choice)

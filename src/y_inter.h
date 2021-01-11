@@ -15,9 +15,6 @@ void Y_Ticker(void);
 void Y_StartIntermission(void);
 void Y_EndIntermission(void);
 
-void Y_ConsiderScreenBuffer(void);
-void Y_CleanupScreenBuffer(void);
-
 void Y_DetermineIntermissionType(void);
 
 void Y_VoteDrawer(void);

@@ -129,9 +129,6 @@ extern UINT16 curtttics;
 
 #define TITLEBACKGROUNDACTIVE (curfadevalue >= 0 || curbgname[0])
 
-void F_InitMenuPresValues(void);
-void F_MenuPresTicker(boolean run);
-
 //
 // WIPE
 //

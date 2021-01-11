@@ -54,7 +54,6 @@ static INT32 timetonext; // Delay between screen changes
 
 static tic_t animtimer; // Used for some animation timings
 static tic_t credbgtimer; // Credits background
-static INT16 skullAnimCounter; // Prompts: Chevron animation
 
 static tic_t stoptimer;
 
@@ -406,11 +405,11 @@ void F_IntroDrawer(void)
 					I_OsPolling();
 					I_UpdateNoBlit();
 #ifdef HAVE_THREADS
-					I_lock_mutex(&m_menu_mutex);
+					I_lock_mutex(&k_menu_mutex);
 #endif
 					M_Drawer(); // menu is drawn even on top of wipes
 #ifdef HAVE_THREADS
-					I_unlock_mutex(m_menu_mutex);
+					I_unlock_mutex(k_menu_mutex);
 #endif
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
@@ -1680,35 +1679,6 @@ void F_GameEndTicker(void)
 //  TITLE SCREEN
 // ==============
 
-void F_InitMenuPresValues(void)
-{
-	menuanimtimer = 0;
-	prevMenuId = 0;
-	activeMenuId = MainDef.menuid;
-
-	// Set defaults for presentation values
-	strncpy(curbgname, "TITLESKY", 9);
-	curfadevalue = 16;
-	curbgcolor = 31;
-	curbgxspeed = (gamestate == GS_TIMEATTACK) ? 0 : titlescrollxspeed;
-	curbgyspeed = (gamestate == GS_TIMEATTACK) ? 22 : titlescrollyspeed;
-	curbghide = (gamestate == GS_TIMEATTACK) ? false : true;
-
-	curhidepics = hidetitlepics;
-	curttmode = ttmode;
-	curttscale = ttscale;
-	strncpy(curttname, ttname, 9);
-	curttx = ttx;
-	curtty = tty;
-	curttloop = ttloop;
-	curtttics = tttics;
-
-	// Find current presentation values
-	//M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
-	//M_SetMenuCurFadeValue(16);
-	//M_SetMenuCurTitlePics();
-}
-
 //
 // F_SkyScroll
 //
@@ -1825,7 +1795,7 @@ void F_StartTitleScreen(void)
 	{
 		ttuser_count = 0;
 		finalecount = 0;
-		wipetypepost = menupres[MN_MAIN].enterwipe;
+		wipetypepost = 0;
 	}
 	else
 		wipegamestate = GS_TITLESCREEN;
@@ -1876,10 +1846,6 @@ void F_StartTitleScreen(void)
 
 		camera[0].chase = true;
 		camera[0].height = 0;
-
-		// Run enter linedef exec for MN_MAIN, since this is where we start
-		if (menupres[MN_MAIN].entertag)
-			P_LinedefExecute(menupres[MN_MAIN].entertag, players[displayplayers[0]].mo, NULL);
 
 		wipegamestate = prevwipegamestate;
 	}
@@ -2004,14 +1970,6 @@ luahook:
 	LUAh_TitleHUD();
 }
 
-// separate animation timer for backgrounds, since we also count
-// during GS_TIMEATTACK
-void F_MenuPresTicker(boolean run)
-{
-	if (run)
-		menuanimtimer++;
-}
-
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
@@ -2026,10 +1984,7 @@ void F_TitleScreenTicker(boolean run)
 		else if (finalecount == 50)
 		{
 			// Now start the music
-			if (menupres[MN_MAIN].musname[0])
-				S_ChangeMusic(menupres[MN_MAIN].musname, menupres[MN_MAIN].mustrack, menupres[MN_MAIN].muslooping);
-			else
-				S_ChangeMusicInternal("_title", looptitle);
+			S_ChangeMusicInternal("_title", looptitle);
 			S_StartSound(NULL, sfx_s23c);
 		}
 	}

@@ -181,7 +181,7 @@ static char returnWadPath[256];
 
 #include "../m_argv.h"
 
-#include "../m_menu.h"
+#include "../k_menu.h"
 
 #ifdef MAC_ALERT
 #include "macosx/mac_alert.h"

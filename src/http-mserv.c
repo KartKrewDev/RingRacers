@@ -22,7 +22,7 @@ Documentation available here.
 #include "d_clisrv.h"
 #include "command.h"
 #include "m_argv.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "mserv.h"
 #include "i_tcp.h"/* for current_port */
 #include "i_threads.h"

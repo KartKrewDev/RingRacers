@@ -1892,7 +1892,6 @@ void G_Ticker(boolean run)
 			break;
 
 		case GS_MENU:
-			F_MenuPresTicker(run);
 			break;
 
 		case GS_INTRO:
@@ -3590,8 +3589,6 @@ demointermission:
 // See also F_EndCutscene, the only other place which handles intra-map/ending transitions
 void G_AfterIntermission(void)
 {
-	Y_CleanupScreenBuffer();
-
 	if (modeattacking)
 	{
 		M_EndModeAttackRun();
@@ -4378,8 +4375,6 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	INT32 i;
 
 	(void)FLS;
-
-	Y_CleanupScreenBuffer();
 
 	if (paused)
 	{

@@ -76,6 +76,10 @@
 
 #define MAXSTRINGLENGTH 32
 
+#ifdef HAVE_THREADS
+extern I_mutex k_menu_mutex;
+#endif
+
 typedef union
 {
 	struct menu_s *submenu;      // IT_SUBMENU
@@ -83,9 +87,21 @@ typedef union
 	void (*routine)(INT32 choice); // IT_CALL, IT_KEYHANDLER, IT_ARROWS
 } itemaction_t;
 
+// Player Setup menu colors linked list
+typedef struct menucolor_s {
+	struct menucolor_s *next;
+	struct menucolor_s *prev;
+	UINT16 color;
+} menucolor_t;
+
+extern menucolor_t *menucolorhead, *menucolortail;
+
+extern CV_PossibleValue_t gametype_cons_t[];
+
 //
 // MENU TYPEDEFS
 //
+
 typedef struct menuitem_s
 {
 	UINT16 status; // show IT_xxx
@@ -97,19 +113,23 @@ typedef struct menuitem_s
 	void *itemaction; // FIXME: should be itemaction_t
 
 	// extra variables
-	UINT8 mvar1;
-	UINT8 mvar2;
+	INT32 mvar1;
+	INT32 mvar2;
 } menuitem_t;
 
 typedef struct menu_s
 {
 	INT16          numitems;           // # of menu items
 	struct menu_s *prevMenu;           // previous menu
+
 	INT16          lastOn;             // last item user was on in menu
 	menuitem_t    *menuitems;          // menu items
+
 	INT16          x, y;               // x, y of menu
+
 	INT16          transitionID;       // only transition if IDs match
 	INT16          transitionTics;     // tics for transitions out
+
 	void         (*drawroutine)(void); // draw routine
 	void         (*tickroutine)(void); // ticker routine
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
@@ -185,6 +205,9 @@ typedef enum
 
 // K_MENUFUNC.C
 
+// Moviemode menu updating
+void Moviemode_option_Onchange(void);
+
 extern menu_t *currentMenu;
 extern char dummystaffname[22];
 
@@ -227,6 +250,14 @@ void M_HandleImageDef(INT32 choice);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
+
+void M_AddMenuColor(UINT16 color);
+void M_MoveColorBefore(UINT16 color, UINT16 targ);
+void M_MoveColorAfter(UINT16 color, UINT16 targ);
+UINT16 M_GetColorBefore(UINT16 color);
+UINT16 M_GetColorAfter(UINT16 color);
+void M_InitPlayerSetupColors(void);
+void M_FreePlayerSetupColors(void);
 
 // If you want to waste a bunch of memory for a limit no one will hit, feel free to boost this to MAXSKINS :P
 // I figure this will be enough clone characters to fit onto the character select.
@@ -317,6 +348,8 @@ void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
+extern tic_t playback_last_menu_interaction_leveltime;
+
 void M_EndModeAttackRun(void);
 void M_SetPlaybackMenuPointer(void);
 void M_PlaybackRewind(INT32 choice);
@@ -325,12 +358,15 @@ void M_PlaybackFastForward(INT32 choice);
 void M_PlaybackAdvance(INT32 choice);
 void M_PlaybackSetViews(INT32 choice);
 void M_PlaybackAdjustView(INT32 choice);
+void M_PlaybackToggleFreecam(INT32 choice);
 void M_PlaybackQuit(INT32 choice);
 
 void M_ReplayHut(INT32 choice);
 
 // M_MENUDRAW.C
 
+void M_DrawMenuBackground(void);
+void M_DrawMenuForeground(void);
 void M_Drawer(void);
 void M_DrawGenericMenu(void);
 void M_DrawKartGamemodeMenu(void);

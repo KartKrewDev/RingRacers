@@ -43,7 +43,6 @@
 #include "g_input.h" // PlayerInputDown
 #include "k_battle.h"
 #include "k_pwrlv.h"
-#include "lua_hook.h" // IntermissionThinker hook
 #include "k_grandprix.h"
 
 #ifdef HWRENDER
@@ -86,25 +85,11 @@ static patch_t *bgpatch = NULL;     // INTERSCR
 static patch_t *widebgpatch = NULL;
 static patch_t *bgtile = NULL;      // SPECTILE/SRB2BACK
 static patch_t *interpic = NULL;    // custom picture defined in map header
-static boolean usetile;
 static INT32 timer;
 
-typedef struct
-{
-	INT32 source_width, source_height;
-	INT32 source_bpp, source_rowbytes;
-	UINT8 *source_picture;
-	INT32 target_width, target_height;
-	INT32 target_bpp, target_rowbytes;
-	UINT8 *target_picture;
-} y_buffer_t;
-
-boolean usebuffer = false;
-static boolean useinterpic;
 static INT32 timer;
 static INT32 powertype = PWRLV_DISABLED;
 static boolean safetorender = true;
-static y_buffer_t *y_buffer;
 
 static INT32 intertic;
 static INT32 endtic = -1;
@@ -114,7 +99,6 @@ intertype_t intertype = int_none;
 intertype_t intermissiontypes[NUMGAMETYPES];
 
 static void Y_FollowIntermission(void);
-static void Y_RescaleScreenBuffer(void);
 static void Y_UnloadData(void);
 static void Y_CleanupData(void);
 
@@ -336,91 +320,6 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 }
 
 //
-// Y_ConsiderScreenBuffer
-//
-// Can we copy the current screen to a buffer?
-//
-void Y_ConsiderScreenBuffer(void)
-{
-	if (gameaction != ga_completed)
-		return;
-
-	if (y_buffer == NULL)
-		y_buffer = Z_Calloc(sizeof(y_buffer_t), PU_STATIC, NULL);
-	else
-		return;
-
-	y_buffer->source_width = vid.width;
-	y_buffer->source_height = vid.height;
-	y_buffer->source_bpp = vid.bpp;
-	y_buffer->source_rowbytes = vid.rowbytes;
-	y_buffer->source_picture = ZZ_Alloc(y_buffer->source_width*vid.bpp * y_buffer->source_height);
-	VID_BlitLinearScreen(screens[1], y_buffer->source_picture, vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-
-	// Make the rescaled screen buffer
-	Y_RescaleScreenBuffer();
-}
-
-//
-// Y_RescaleScreenBuffer
-//
-// Write the rescaled source picture, to the destination picture that has the current screen's resolutions.
-//
-static void Y_RescaleScreenBuffer(void)
-{
-	INT32 sx, sy; // source
-	INT32 dx, dy; // dest
-	fixed_t scalefac, yscalefac;
-	fixed_t rowfrac, colfrac;
-	UINT8 *dest;
-
-	// Who knows?
-	if (y_buffer == NULL)
-		return;
-
-	if (y_buffer->target_picture)
-		Z_Free(y_buffer->target_picture);
-
-	y_buffer->target_width = vid.width;
-	y_buffer->target_height = vid.height;
-	y_buffer->target_rowbytes = vid.rowbytes;
-	y_buffer->target_bpp = vid.bpp;
-	y_buffer->target_picture = ZZ_Alloc(y_buffer->target_width*vid.bpp * y_buffer->target_height);
-	dest = y_buffer->target_picture;
-
-	scalefac = FixedDiv(y_buffer->target_width*FRACUNIT, y_buffer->source_width*FRACUNIT);
-	yscalefac = FixedDiv(y_buffer->target_height*FRACUNIT, y_buffer->source_height*FRACUNIT);
-
-	rowfrac = FixedDiv(FRACUNIT, yscalefac);
-	colfrac = FixedDiv(FRACUNIT, scalefac);
-
-	for (sy = 0, dy = 0; sy < (y_buffer->source_height << FRACBITS) && dy < y_buffer->target_height; sy += rowfrac, dy++)
-		for (sx = 0, dx = 0; sx < (y_buffer->source_width << FRACBITS) && dx < y_buffer->target_width; sx += colfrac, dx += y_buffer->target_bpp)
-			dest[(dy * y_buffer->target_rowbytes) + dx] = y_buffer->source_picture[((sy>>FRACBITS) * y_buffer->source_width) + (sx>>FRACBITS)];
-}
-
-//
-// Y_CleanupScreenBuffer
-//
-// Free all related memory.
-//
-void Y_CleanupScreenBuffer(void)
-{
-	// Who knows?
-	if (y_buffer == NULL)
-		return;
-
-	if (y_buffer->target_picture)
-		Z_Free(y_buffer->target_picture);
-
-	if (y_buffer->source_picture)
-		Z_Free(y_buffer->source_picture);
-
-	Z_Free(y_buffer);
-	y_buffer = NULL;
-}
-
-//
 // Y_IntermissionDrawer
 //
 // Called by D_Display. Nothing is modified here; all it does is draw. (SRB2Kart: er, about that...)
@@ -441,51 +340,17 @@ void Y_IntermissionDrawer(void)
 	}
 
 	if (!safetorender)
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-
-	if (!safetorender)
-		goto dontdrawbg;
-
-	if (useinterpic)
-		V_DrawScaledPatch(0, 0, 0, interpic);
-	else if (!usetile)
 	{
-		if (rendermode == render_soft && usebuffer)
-		{
-			// no y_buffer
-			if (y_buffer == NULL)
-				VID_BlitLinearScreen(screens[1], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-			else
-			{
-				// Maybe the resolution changed?
-				if ((y_buffer->target_width != vid.width) || (y_buffer->target_height != vid.height))
-					Y_RescaleScreenBuffer();
-
-				// Blit the already-scaled screen buffer to the current screen
-				VID_BlitLinearScreen(y_buffer->target_picture, screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-			}
-		}
-#ifdef HWRENDER
-		else if (rendermode != render_soft && usebuffer)
-			HWR_DrawIntermissionBG();
-#endif
-		else if (bgpatch)
-		{
-			fixed_t hs = vid.width  * FRACUNIT / BASEVIDWIDTH;
-			fixed_t vs = vid.height * FRACUNIT / BASEVIDHEIGHT;
-			V_DrawStretchyFixedPatch(0, 0, hs, vs, V_NOSCALEPATCH, bgpatch, NULL);
-		}
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 	}
-	else if (bgtile)
-		V_DrawPatchFill(bgtile);
+	else
+	{
+		M_DrawMenuBackground();
+	}
 
-dontdrawbg:
 	LUAh_IntermissionHUD();
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
-
-	if (usebuffer) // Fade everything out
-		V_DrawFadeScreen(0xFF00, 22);
 
 	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
@@ -1145,8 +1010,6 @@ void Y_StartIntermission(void)
 
 	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
 	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);
-
-	useinterpic = usetile = usebuffer = false;
 }
 
 // ======
@@ -1161,7 +1024,6 @@ void Y_EndIntermission(void)
 	endtic = -1;
 	sorttic = -1;
 	intertype = int_none;
-	usebuffer = false;
 }
 
 //

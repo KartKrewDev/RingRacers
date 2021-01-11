@@ -22,7 +22,6 @@
 #include "m_random.h"
 #include "s_sound.h"
 #include "g_game.h"
-#include "m_menu.h"
 #include "y_inter.h"
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
@@ -31,7 +30,7 @@
 #include "k_color.h"
 #include "k_hud.h"
 #include "d_netcmd.h" // IsPlayerAdmin
-#include "m_menu.h" // Player Setup menu color stuff
+#include "k_menu.h" // Player Setup menu color stuff
 
 // SRB2Kart
 #include "p_spec.h" // P_StartQuake

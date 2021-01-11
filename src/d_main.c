@@ -204,13 +204,13 @@ void D_ProcessEvents(void)
 
 		// Menu input
 #ifdef HAVE_THREADS
-		I_lock_mutex(&m_menu_mutex);
+		I_lock_mutex(&k_menu_mutex);
 #endif
 		{
 			eaten = M_Responder(ev);
 		}
 #ifdef HAVE_THREADS
-		I_unlock_mutex(m_menu_mutex);
+		I_unlock_mutex(k_menu_mutex);
 #endif
 
 		if (eaten)
@@ -300,11 +300,6 @@ static void D_Display(void)
 		if (vid.recalc || setrenderstillneeded)
 		{
 			SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
-#ifdef HWRENDER
-			// Shoot! The screen texture was flushed!
-			if ((rendermode == render_opengl) && (gamestate == GS_INTERMISSION))
-				usebuffer = false;
-#endif
 		}
 
 		if (rendermode == render_soft)
@@ -554,9 +549,8 @@ static void D_Display(void)
 				if (rendermode == render_soft)
 				{
 					VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-					Y_ConsiderScreenBuffer();
-					usebuffer = true;
 				}
+
 				lastdraw = false;
 			}
 
@@ -608,11 +602,11 @@ static void D_Display(void)
 	vid.recalc = 0;
 
 #ifdef HAVE_THREADS
-	I_lock_mutex(&m_menu_mutex);
+	I_lock_mutex(&k_menu_mutex);
 #endif
 	M_Drawer(); // menu is drawn even on top of everything
 #ifdef HAVE_THREADS
-	I_unlock_mutex(m_menu_mutex);
+	I_unlock_mutex(k_menu_mutex);
 #endif
 	// focus lost moved to M_Drawer
 
@@ -947,7 +941,6 @@ void D_StartTitle(void)
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 	advancedemo = false;
-	F_InitMenuPresValues();
 	F_StartTitleScreen();
 
 	currentMenu = &MainDef; // reset the current menu ID
@@ -1355,13 +1348,6 @@ void D_SRB2Main(void)
 	// adapt tables to SRB2's needs, including extra slots for dehacked file support
 	P_PatchInfoTables();
 
-	// initiate menu metadata before SOCcing them
-	M_InitMenuPresTables();
-
-	// init title screen display params
-	if (M_GetUrlProtocolArg() || M_CheckParm("-connect"))
-		F_InitMenuPresValues();
-
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
 
@@ -1371,12 +1357,6 @@ void D_SRB2Main(void)
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
-
-	// Setup character tables
-	// Have to be done here before files are loaded
-#ifdef USEPLAYERMENU
-	M_InitCharacterTables();
-#endif
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
@@ -1824,7 +1804,6 @@ void D_SRB2Main(void)
 	}
 	else if (M_CheckParm("-skipintro"))
 	{
-		F_InitMenuPresValues();
 		F_StartTitleScreen();
 	}
 	else

@@ -46,6 +46,7 @@
 #include "st_stuff.h"
 #include "i_sound.h"
 #include "k_kart.h" // SRB2kart
+#include "k_hud.h" // SRB2kart
 #include "d_player.h" // KITEM_ constants
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 
@@ -84,11 +85,26 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #define SLIDER_WIDTH (8*SLIDER_RANGE+6)
 #define SERVERS_PER_PAGE 11
 
+void M_DrawMenuBackground(void)
+{
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG", PU_CACHE), NULL);
+}
+
+void M_DrawMenuForeground(void)
+{
+	// draw non-green resolution border
+	if ((vid.width % BASEVIDWIDTH != 0) || (vid.height % BASEVIDHEIGHT != 0))
+	{
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("WEIRDRES", PU_CACHE), NULL);
+	}
+}
+
 //
 // M_Drawer
 // Called after the view has been rendered,
 // but before it has been blitted.
 //
+
 void M_Drawer(void)
 {
 	if (currentMenu == &MessageDef)
@@ -99,17 +115,19 @@ void M_Drawer(void)
 
 	if (menuactive)
 	{
-		if (gamestate == GS_MENU) // draw BG
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG", PU_CACHE), NULL);
+		if (gamestate == GS_MENU)
+		{
+			M_DrawMenuBackground();
+		}
 		else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
+		{
 			V_DrawCustomFadeScreen("FADEMAP0", 4); // now that's more readable with a faded background (yeah like Quake...)
+		}
 
 		if (currentMenu->drawroutine)
 			currentMenu->drawroutine(); // call current menu Draw routine
 
-		// draw non-green resolution border
-		if ((vid.width % BASEVIDWIDTH != 0) || (vid.height % BASEVIDHEIGHT != 0))
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("WEIRDRES", PU_CACHE), NULL);
+		M_DrawMenuForeground();
 
 		// Draw version down in corner
 		// ... but only in the MAIN MENU.  I'm a picky bastard.
@@ -228,7 +246,6 @@ void M_DrawGenericMenu(void)
 	{
 		if (i == itemOn)
 			cursory = y;
-
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_PATCH:
@@ -274,8 +291,6 @@ void M_DrawGenericMenu(void)
 					case IT_CVAR:
 					{
 						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
-						char asterisks[MAXSTRINGLENGTH+1];
-						size_t sl;
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 #if 0
@@ -285,27 +300,6 @@ void M_DrawGenericMenu(void)
 							case IT_CV_INVISSLIDER: // monitor toggles use this
 								break;
 #endif
-							case IT_CV_PASSWORD:
-								if (i == itemOn)
-								{
-									V_DrawRightAlignedThinString(x + MAXSTRINGLENGTH*8 + 10, y, V_ALLOWLOWERCASE, va(M_GetText("Tab: %s password"), cv->value ? "hide" : "show"));
-								}
-
-								if (!cv->value || i != itemOn)
-								{
-									sl = strlen(cv->string);
-									memset(asterisks, '*', sl);
-									memset(asterisks + sl, 0, MAXSTRINGLENGTH+1-sl);
-
-									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-									V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, asterisks);
-									if (skullAnimCounter < 4 && i == itemOn)
-										V_DrawCharacter(x + 8 + V_StringWidth(asterisks, 0), y + 12,
-											'_' | 0x80, false);
-									y += 16;
-									break;
-								}
-								/* fallthru */
 							case IT_CV_STRING:
 								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
 								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
@@ -544,7 +538,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 	if (p->mdepth == CSSTEP_ALTS)
 		numoptions = setup_chargrid[p->gridx][p->gridy].numskins;
 	else
-		numoptions = MAXSKINCOLORS-1;
+		numoptions = numskincolors-1;
 
 	angamt /= numoptions;
 
@@ -570,7 +564,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 			n %= numoptions;
 
 			skin = setup_chargrid[p->gridx][p->gridy].skinlist[n];
-			patch = facerankprefix[skin];
+			patch = faceprefix[skin][FACE_RANK];
 			colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 			radius = 24<<FRACBITS;
 
@@ -629,16 +623,60 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 	}
 }
 
+static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y)
+{
+	setup_player_t *p = &setup_player[num];
+
+	SINT8 skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
+	UINT8 color = p->color;
+	UINT8 *colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+	if (skin != -1)
+	{
+		UINT8 spr;
+		spritedef_t *sprdef;
+		spriteframe_t *sprframe;
+		patch_t *sprpatch;
+
+		UINT32 flags = 0;
+		UINT32 frame;
+
+		spr = P_GetSkinSprite2(&skins[skin], SPR2_FSTN, NULL);
+		sprdef = &skins[skin].sprites[spr];
+
+		if (!sprdef->numframes) // No frames ??
+			return; // Can't render!
+
+		frame = states[S_KART_FAST].frame & FF_FRAMEMASK;
+		if (frame >= sprdef->numframes) // Walking animation missing
+			frame = 0; // Try to use standing frame
+
+		sprframe = &sprdef->spriteframes[frame];
+		sprpatch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
+
+		if (sprframe->flip & 1) // Only for first sprite
+			flags |= V_FLIP; // This sprite is left/right flipped!
+
+		// Flip for left-side players
+		if (!(num & 1))
+			flags ^= V_FLIP;
+
+		if (skins[skin].flags & SF_HIRES)
+		{
+			V_DrawFixedPatch(x<<FRACBITS,
+						y<<FRACBITS,
+						skins[skin].highresscale,
+						flags, sprpatch, colormap);
+		}
+		else
+			V_DrawMappedPatch(x, y, flags, sprpatch, colormap);
+	}
+}
+
 static void M_DrawCharSelectPreview(UINT8 num)
 {
 	INT16 x = 11, y = 5;
 	char letter = 'A' + num;
-	SINT8 skin;
-	UINT8 color;
-	UINT8 *colormap;
-	patch_t *sprpatch;
-	spritedef_t *sprdef;
-	spriteframe_t *sprframe;
 	setup_player_t *p = &setup_player[num];
 
 	if (num & 1)
@@ -651,59 +689,26 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	if (p->mdepth >= CSSTEP_CHARS)
 	{
-		skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
-
-		color = p->color;
-		colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
-
-		if (skin != -1)
-		{
-			statenum_t st = S_KART_FAST1;
-			UINT32 flags = 0;
-			UINT32 frame;
-
-			if (skullAnimCounter & 1)
-				st++;
-
-			sprdef = &skins[skin].spritedef;
-
-			if (sprdef->numframes) // No frames ??
-			{
-				frame = states[st].frame & FF_FRAMEMASK;
-				if (frame >= sprdef->numframes) // Walking animation missing
-					frame = 0; // Try to use standing frame
-
-				sprframe = &sprdef->spriteframes[frame];
-				sprpatch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
-				if (sprframe->flip & 1) // Only for first sprite
-					flags |= V_FLIP; // This sprite is left/right flipped!
-
-				// Flip for left-side players
-				if (!(num & 1))
-					flags ^= V_FLIP;
-
-				if (skins[skin].flags & SF_HIRES)
-				{
-					V_DrawFixedPatch((x+32)<<FRACBITS,
-								(y+75)<<FRACBITS,
-								skins[skin].highresscale,
-								flags, sprpatch, colormap);
-				}
-				else
-					V_DrawMappedPatch(x+32, y+75, flags, sprpatch, colormap);
-			}
-		}
+		M_DrawCharSelectSprite(num, x+32, y+75);
 
 		if (p->mdepth == CSSTEP_ALTS || p->mdepth == CSSTEP_COLORS)
+		{
 			M_DrawCharSelectCircle(p, x+32, y+64);
+		}
 	}
 
 	if ((setup_animcounter/10) & 1)
 	{
 		if (p->mdepth == CSSTEP_NONE && num == setup_numplayers)
+		{
 			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PSTART", PU_CACHE));
-		//else if (p->mdepth >= CSSTEP_READY)
-		//	V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PREADY", PU_CACHE));
+		}
+		/*
+		else if (p->mdepth >= CSSTEP_READY)
+		{
+			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PREADY", PU_CACHE));
+		}
+		*/
 	}
 
 	V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
@@ -856,7 +861,7 @@ void M_DrawCharacterSelect(void)
 				else
 					colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 
-				V_DrawMappedPatch(82 + (i*16) + quadx, 22 + (j*16) + quady, 0, facerankprefix[skin], colormap);
+				V_DrawMappedPatch(82 + (i*16) + quadx, 22 + (j*16) + quady, 0, faceprefix[skin][FACE_RANK], colormap);
 
 				if (setup_chargrid[i][j].numskins > 1)
 					V_DrawScaledPatch(82 + (i*16) + quadx, 22 + (j*16) + quady + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
@@ -1087,19 +1092,13 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		}
 	}
 
-	if (mapheaderinfo[map]->actnum[0])
+	if (mapheaderinfo[map]->actnum)
 	{
 		word2[word2len] = ' ';
 		word2len++;
 
-		for (i = 0; i < 3; i++)
-		{
-			if (!mapheaderinfo[map]->actnum[i])
-				break;
-
-			word2[word2len] = mapheaderinfo[map]->actnum[i];
-			word2len++;
-		}
+		word2[word2len] = '0' + mapheaderinfo[map]->actnum;
+		word2len++;
 	}
 
 	word1[word1len] = '\0';
@@ -1243,11 +1242,19 @@ void M_DrawTimeAttack(void)
 //
 // INGAME / PAUSE MENUS
 //
+
+tic_t playback_last_menu_interaction_leveltime = 0;
+
 void M_DrawPlaybackMenu(void)
 {
 	INT16 i;
 	patch_t *icon = NULL;
 	UINT8 *activemap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GOLD, GTC_MENUCACHE);
+	UINT32 transmap = max(0, (INT32)(leveltime - playback_last_menu_interaction_leveltime - 4*TICRATE)) / 5;
+	transmap = min(8, transmap) << V_ALPHASHIFT;
+
+	if (leveltime - playback_last_menu_interaction_leveltime >= 6*TICRATE)
+		playback_last_menu_interaction_leveltime = leveltime - 6*TICRATE;
 
 	// Toggle items
 	if (paused && !demo.rewinding)
@@ -1312,7 +1319,7 @@ void M_DrawPlaybackMenu(void)
 			{
 				INT32 ply = displayplayers[i - playback_view1];
 
-				icon = facerankprefix[players[ply].skin];
+				icon = faceprefix[players[ply].skin][FACE_RANK];
 				if (i != itemOn)
 					inactivemap = R_GetTranslationColormap(players[ply].skin, players[ply].skincolor, GTC_MENUCACHE);
 			}

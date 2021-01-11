@@ -35,6 +35,7 @@
 #include "lua_script.h"
 #include "d_netfil.h" // findfile
 #include "r_data.h" // Color_cons_t
+#include "r_skins.h"
 
 //========
 // protos.
@@ -1955,6 +1956,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 	if (var->PossibleValue)
 	{
+		/*
 		if (var == &cv_nextmap)
 		{
 			// Special case for the nextmap variable, used only directly from the menu
@@ -1988,9 +1990,11 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				return;
 			}
 		}
+		else
+		*/
 #define MINVAL 0
 #define MAXVAL 1
-		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
+		if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
 		{
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
