@@ -85,9 +85,36 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #define SLIDER_WIDTH (8*SLIDER_RANGE+6)
 #define SERVERS_PER_PAGE 11
 
+static UINT32 bgTextScroll = 0;
+
 void M_DrawMenuBackground(void)
 {
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG", PU_CACHE), NULL);
+	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
+	patch_t *text2 = W_CachePatchName("MENUBGT2", PU_CACHE);
+
+	INT32 text1loop = SHORT(text1->height);
+	INT32 text2loop = SHORT(text2->width);
+
+	fixed_t text1scroll = -(bgTextScroll % text1loop) * FRACUNIT;
+	fixed_t text2scroll = -(bgTextScroll % text2loop) * FRACUNIT;
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG4", PU_CACHE), NULL);
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG1", PU_CACHE), NULL);
+
+	V_DrawFixedPatch(0, BASEVIDHEIGHT * FRACUNIT, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("MENUBG5", PU_CACHE), NULL);
+
+	V_DrawFixedPatch(text2scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
+		FRACUNIT, V_TRANSLUCENT, text2, NULL);
+	V_DrawFixedPatch(text2scroll + (text2loop * FRACUNIT), (BASEVIDHEIGHT-8) * FRACUNIT,
+		FRACUNIT, V_TRANSLUCENT, text2, NULL);
+
+	V_DrawFixedPatch(8 * FRACUNIT, text1scroll,
+		FRACUNIT, V_TRANSLUCENT, text1, NULL);
+	V_DrawFixedPatch(8 * FRACUNIT, text1scroll + (text1loop * FRACUNIT),
+		FRACUNIT, V_TRANSLUCENT, text1, NULL);
+
+	bgTextScroll += 8;
 }
 
 void M_DrawMenuForeground(void)
