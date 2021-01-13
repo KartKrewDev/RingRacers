@@ -2955,6 +2955,11 @@ static void HWR_AddPolyObjectPlanes(void)
 	}
 }
 
+static FBITFIELD HWR_RippleBlend(sector_t *sector, ffloor_t *rover, boolean ceiling)
+{
+	return R_IsRipplePlane(sector, rover, ceiling) ? PF_Ripple : 0;
+}
+
 // -----------------+
 // HWR_Subsector    : Determine floor/ceiling planes.
 //                  : Add sprites of things in sector.
@@ -3067,7 +3072,8 @@ static void HWR_Subsector(size_t num)
 					// Hack to make things continue to work around slopes.
 					locFloorHeight == cullFloorHeight ? locFloorHeight : gl_frontsector->floorheight,
 					// We now return you to your regularly scheduled rendering.
-					PF_Occlude, floorlightlevel, &levelflats[gl_frontsector->floorpic], NULL, 255, floorcolormap);
+					PF_Occlude | HWR_RippleBlend(gl_frontsector, NULL, false),
+					floorlightlevel, &levelflats[gl_frontsector->floorpic], NULL, 255, floorcolormap);
 			}
 		}
 		else
@@ -3089,7 +3095,8 @@ static void HWR_Subsector(size_t num)
 					// Hack to make things continue to work around slopes.
 					locCeilingHeight == cullCeilingHeight ? locCeilingHeight : gl_frontsector->ceilingheight,
 					// We now return you to your regularly scheduled rendering.
-					PF_Occlude, ceilinglightlevel, &levelflats[gl_frontsector->ceilingpic], NULL, 255, ceilingcolormap);
+					PF_Occlude | HWR_RippleBlend(gl_frontsector, NULL, true),
+					ceilinglightlevel, &levelflats[gl_frontsector->ceilingpic], NULL, 255, ceilingcolormap);
 			}
 		}
 		else
@@ -3149,7 +3156,7 @@ static void HWR_Subsector(size_t num)
 					&& (rover->alpha < 256
 					|| rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE || rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)) // SoM: Flags are more efficient
 				{
-					FBITFIELD blendmode = PF_Translucent;
+					FBITFIELD blendmode = PF_Translucent | HWR_RippleBlend(gl_frontsector, rover, false);
 					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
 						blendmode = PF_Additive;
 					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
@@ -3162,14 +3169,14 @@ static void HWR_Subsector(size_t num)
 										   false,
 					                       *rover->bottomheight,
 					                       *gl_frontsector->lightlist[light].lightlevel,
-					                       rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|blendmode,
+					                       rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, blendmode,
 					                       false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
 				{
 					HWR_GetLevelFlat(&levelflats[*rover->bottompic], R_NoEncore(gl_frontsector, false));
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
-					HWR_RenderPlane(sub, &extrasubsectors[num], false, *rover->bottomheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->bottompic],
+					HWR_RenderPlane(sub, &extrasubsectors[num], false, *rover->bottomheight, HWR_RippleBlend(gl_frontsector, rover, false) | PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->bottompic],
 					                rover->master->frontsector, 255, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 			}
@@ -3202,7 +3209,7 @@ static void HWR_Subsector(size_t num)
 					&& (rover->alpha < 256
 					|| rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE || rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)) // SoM: Flags are more efficient
 				{
-					FBITFIELD blendmode = PF_Translucent;
+					FBITFIELD blendmode = PF_Translucent | HWR_RippleBlend(gl_frontsector, rover, true);
 					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
 						blendmode = PF_Additive;
 					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
@@ -3215,14 +3222,14 @@ static void HWR_Subsector(size_t num)
 											true,
 					                        *rover->topheight,
 					                        *gl_frontsector->lightlist[light].lightlevel,
-					                        rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|blendmode,
+					                        rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, blendmode,
 					                        false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
 				{
 					HWR_GetLevelFlat(&levelflats[*rover->toppic], R_NoEncore(gl_frontsector, true));
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
-					HWR_RenderPlane(sub, &extrasubsectors[num], true, *rover->topheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->toppic],
+					HWR_RenderPlane(sub, &extrasubsectors[num], true, *rover->topheight, HWR_RippleBlend(gl_frontsector, rover, true) | PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->toppic],
 					                  rover->master->frontsector, 255, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 			}

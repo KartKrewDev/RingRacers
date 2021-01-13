@@ -6156,6 +6156,12 @@ void P_SpawnSpecials(boolean fromnetsave)
 					if (lines[i].flags & ML_EFFECT1)
 						sectors[s].flags |= SF_INVERTPRECIP;
 
+					if (lines[i].flags & ML_DONTPEGTOP)
+						sectors[s].flags |= SF_RIPPLE_FLOOR;
+
+					if (lines[i].flags & ML_DONTPEGBOTTOM)
+						sectors[s].flags |= SF_RIPPLE_CEILING;
+
 					if (lines[i].frontsector && GETSECSPECIAL(lines[i].frontsector->special, 4) == 12)
 						sectors[s].camsec = sides[*lines[i].sidenum].sector-sectors;
 				}
