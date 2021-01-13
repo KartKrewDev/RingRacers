@@ -3619,8 +3619,6 @@ void P_BouncePlayerMove(mobj_t *mo)
 	mmomx = mo->player->rmomx;
 	mmomy = mo->player->rmomy;
 
-	mo->player->trickpanel = 0;
-
 	// trace along the three leading corners
 	if (mo->momx > 0)
 	{
