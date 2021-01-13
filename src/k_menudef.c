@@ -18,17 +18,21 @@
 // ---------
 menuitem_t MainMenu[] =
 {
-	{IT_STRING | IT_CALL, "Play", "Cut to the chase and start the race!",
-		NULL, M_CharacterSelectInit, 0, 0},
+	{IT_STRING | IT_CALL, "Play",
+		"Cut to the chase and start the race!", NULL,
+		M_CharacterSelectInit, 0, 0},
 
-	{IT_STRING, "Extra", "Check out some bonus features.",
-		NULL, NULL, 0, 0},
+	{IT_STRING, "Extra",
+		"Check out some bonus features.", "MENUI001",
+		NULL, 0, 0},
 
-	{IT_STRING, "Option", "Configure your controls, settings, and preferences.",
-		NULL, NULL, 0, 0},
+	{IT_STRING, "Option",
+		"Configure your controls, settings, and preferences.", NULL,
+		NULL, 0, 0},
 
-	{IT_STRING | IT_CALL, "Quit", "Exit SRB2Kart.",
-		NULL, M_QuitSRB2, 0, 0},
+	{IT_STRING | IT_CALL, "Quit",
+		"Exit \"Dr. Robotnik's Ring Racers\".", NULL,
+		M_QuitSRB2, 0, 0},
 };
 
 menu_t MainDef = KARTGAMEMODEMENU(MainMenu, NULL);

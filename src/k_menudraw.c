@@ -86,6 +86,32 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #define SERVERS_PER_PAGE 11
 
 static UINT32 bgTextScroll = 0;
+static UINT32 bgImageScroll = 0;
+static char bgImageName[9];
+
+#define MENUBG_TEXTSCROLL 6
+#define MENUBG_IMAGESCROLL 32
+
+void M_UpdateMenuBGImage(boolean forceReset)
+{
+	char oldName[9];
+
+	memcpy(oldName, bgImageName, 9);
+
+	if (currentMenu->menuitems[itemOn].patch)
+	{
+		sprintf(bgImageName, "%s", currentMenu->menuitems[itemOn].patch);
+	}
+	else
+	{
+		sprintf(bgImageName, "MENUI000");
+	}
+
+	if (forceReset == false && strcmp(bgImageName, oldName))
+	{
+		bgImageScroll = (BASEVIDWIDTH / 2) / MENUBG_IMAGESCROLL;
+	}
+}
 
 void M_DrawMenuBackground(void)
 {
@@ -95,14 +121,15 @@ void M_DrawMenuBackground(void)
 	INT32 text1loop = SHORT(text1->height);
 	INT32 text2loop = SHORT(text2->width);
 
-	fixed_t text1scroll = -(bgTextScroll % text1loop) * FRACUNIT;
-	fixed_t text2scroll = -(bgTextScroll % text2loop) * FRACUNIT;
+	fixed_t text1scroll = -((bgTextScroll * MENUBG_TEXTSCROLL) % text1loop) * FRACUNIT;
+	fixed_t text2scroll = -((bgTextScroll * MENUBG_TEXTSCROLL) % text2loop) * FRACUNIT;
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG4", PU_CACHE), NULL);
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG1", PU_CACHE), NULL);
 
-	V_DrawFixedPatch(0, BASEVIDHEIGHT * FRACUNIT, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("MENUBG5", PU_CACHE), NULL);
+	V_DrawFixedPatch(-(bgImageScroll * MENUBG_IMAGESCROLL) * FRACUNIT, 0, FRACUNIT, 0, W_CachePatchName("MENUBG1", PU_CACHE), NULL);
+	V_DrawFixedPatch(-(bgImageScroll * MENUBG_IMAGESCROLL) * FRACUNIT, 0, FRACUNIT, 0, W_CachePatchName(bgImageName, PU_CACHE), NULL);
+
+	V_DrawFixedPatch(0, (BASEVIDHEIGHT + 16) * FRACUNIT, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
 
 	V_DrawFixedPatch(text2scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
 		FRACUNIT, V_TRANSLUCENT, text2, NULL);
@@ -114,7 +141,12 @@ void M_DrawMenuBackground(void)
 	V_DrawFixedPatch(8 * FRACUNIT, text1scroll + (text1loop * FRACUNIT),
 		FRACUNIT, V_TRANSLUCENT, text1, NULL);
 
-	bgTextScroll += 8;
+	bgTextScroll++;
+
+	if (bgImageScroll > 0)
+	{
+		bgImageScroll--;
+	}
 }
 
 void M_DrawMenuForeground(void)
@@ -211,26 +243,6 @@ static void M_DrawMenuTooltips(void)
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
-	}
-}
-
-//
-// M_DrawMenuPreviews
-//
-// Draw a box with a preview image of the current option
-//
-static void M_DrawMenuPreviews(void)
-{
-	V_DrawFixedPatch(172<<FRACBITS, 29<<FRACBITS, FRACUNIT, 0, W_CachePatchName("MENUPREV", PU_CACHE), NULL);
-
-	if (currentMenu->menuitems[itemOn].patch == NULL)
-	{
-		patch_t *st = W_CachePatchName(va("MIMGST0%d", (skullAnimCounter % 4) + 1), PU_CACHE);
-		V_DrawFixedPatch(181<<FRACBITS, 39<<FRACBITS, FRACUNIT, 0, st, NULL);
-	}
-	else
-	{
-		V_DrawFixedPatch(181<<FRACBITS, 39<<FRACBITS, FRACUNIT, 0, W_CachePatchName(currentMenu->menuitems[itemOn].patch, PU_CACHE), NULL);
 	}
 }
 
@@ -404,6 +416,11 @@ void M_DrawGenericMenu(void)
 	}
 }
 
+#define GM_STARTX 128
+#define GM_STARTY 80
+#define GM_XOFFSET 17
+#define GM_YOFFSET 34
+
 //
 // M_DrawKartGamemodeMenu
 //
@@ -411,33 +428,52 @@ void M_DrawGenericMenu(void)
 //
 void M_DrawKartGamemodeMenu(void)
 {
-	INT16 i, x = 170;
 	UINT8 n = currentMenu->numitems-1;
+	INT32 i, x = GM_STARTX - ((GM_XOFFSET / 2) * (n-1)), y = GM_STARTY - ((GM_YOFFSET / 2) * (n-1));
 
 	M_DrawMenuTooltips();
-	M_DrawMenuPreviews();
 
 	if (menutransition.tics)
-		x -= 24 * menutransition.tics;
+	{
+		x += 24 * menutransition.tics;
+	}
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		INT16 y;
+		if (i >= n)
+		{
+			x = GM_STARTX + (GM_XOFFSET * 5 / 2);
+			y = GM_STARTY + (GM_YOFFSET * 5 / 2);
 
-		if (i == n)
-			y = 160;
-		else
-			y = 80 - (16 * (n-1)) + (32 * i);
+			if (menutransition.tics)
+			{
+				x += 24 * menutransition.tics;
+			}
+		}
 
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_STRING:
 				{
-					UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, (i == itemOn) ? SKINCOLOR_PLAGUE : SKINCOLOR_PIGEON, GTC_CACHE);
-					V_DrawRightAlignedGamemodeString(x, y, 0, colormap, currentMenu->menuitems[i].text);
+					UINT8 *colormap = NULL;
+
+					if (i == itemOn)
+					{
+						colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+					}
+					else
+					{
+						colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
+					}
+
+					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUPLTR", PU_CACHE), colormap);
+					V_DrawGamemodeString(x + 16, y - 3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
 				}
 				break;
 		}
+
+		x += GM_XOFFSET;
+		y += GM_YOFFSET;
 	}
 }
 

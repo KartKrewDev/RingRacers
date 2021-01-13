@@ -663,6 +663,8 @@ static void M_NextOpt(void)
 		else
 			itemOn++;
 	} while (oldItemOn != itemOn && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE);
+
+	M_UpdateMenuBGImage(false);
 }
 
 static void M_PrevOpt(void)
@@ -679,6 +681,8 @@ static void M_PrevOpt(void)
 		else
 			itemOn--;
 	} while (oldItemOn != itemOn && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE);
+
+	M_UpdateMenuBGImage(false);
 }
 
 //
@@ -1411,6 +1415,8 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 			}
 		}
 	}
+
+	M_UpdateMenuBGImage(false);
 }
 
 void M_GoBack(INT32 choice)
@@ -1541,6 +1547,8 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyspectate);
 	CV_RegisterVar(&cv_dummyscramble);
 	CV_RegisterVar(&cv_dummystaff);
+
+	M_UpdateMenuBGImage(true);
 
 #if 0
 #ifdef HWRENDER

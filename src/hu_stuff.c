@@ -268,10 +268,11 @@ void HU_Init(void)
 		PR   ("MKFNT");
 		REG;
 
-		ADIM (AZ);
+		ADIM (LT);
 		PR   ("GAMEM");
 		REG;
 
+		ADIM (AZ);
 		PR   ("FILEF");
 		REG;
 

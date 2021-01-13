@@ -1973,6 +1973,8 @@ void V_DrawStringScaled(
 			}
 			break;
 		case GM_FONT:
+			spacew = 6;
+			break;
 		case FILE_FONT:
 			spacew = 0;
 			break;

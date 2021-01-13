@@ -365,6 +365,7 @@ void M_ReplayHut(INT32 choice);
 
 // M_MENUDRAW.C
 
+void M_UpdateMenuBGImage(boolean forceReset);
 void M_DrawMenuBackground(void);
 void M_DrawMenuForeground(void);
 void M_Drawer(void);
