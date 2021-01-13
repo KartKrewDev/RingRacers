@@ -341,7 +341,8 @@ static visplane_t *new_visplane(unsigned hash)
 //
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	fixed_t xoff, fixed_t yoff, angle_t plangle, extracolormap_t *planecolormap,
-	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore)
+	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore,
+	boolean ripple)
 {
 	visplane_t *check;
 	unsigned hash;
@@ -398,7 +399,8 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 				&& check->viewangle == viewangle
 				&& check->plangle == plangle
 				&& check->slope == slope
-				&& check->noencore == noencore)
+				&& check->noencore == noencore
+				&& check->ripple == ripple)
 			{
 				return check;
 			}
@@ -428,6 +430,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	check->polyobj = polyobj;
 	check->slope = slope;
 	check->noencore = noencore;
+	check->ripple = ripple;
 
 	memset(check->top, 0xff, sizeof (check->top));
 	memset(check->bottom, 0x00, sizeof (check->bottom));
@@ -505,6 +508,7 @@ visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop)
 		new_pl->polyobj = pl->polyobj;
 		new_pl->slope = pl->slope;
 		new_pl->noencore = pl->noencore;
+		new_pl->ripple = pl->ripple;
 		pl = new_pl;
 		pl->minx = start;
 		pl->maxx = stop;
@@ -859,71 +863,71 @@ void R_DrawSinglePlane(visplane_t *pl)
 				light = (pl->lightlevel >> LIGHTSEGSHIFT);
 			}
 			else light = (pl->lightlevel >> LIGHTSEGSHIFT);
-
-#ifndef NOWATER
-			if (pl->ffloor->flags & FF_RIPPLE)
-			{
-				INT32 top, bottom;
-
-				itswater = true;
-				if (spanfunctype == SPANDRAWFUNC_TRANS)
-				{
-					UINT8 i;
-
-					spanfunctype = SPANDRAWFUNC_WATER;
-
-					// Copy the current scene, ugh
-					top = pl->high-8;
-					bottom = pl->low+8;
-
-					if (top < 0)
-						top = 0;
-					if (bottom > vid.height)
-						bottom = vid.height;
-
-					// Only copy the part of the screen we need
-					for (i = 0; i <= r_splitscreen; i++)
-					{
-						if (viewplayer == &players[displayplayers[i]])
-						{
-							INT32 scrx = 0;
-							INT32 scry = top;
-							INT32 offset;
-
-							if (r_splitscreen == 1)
-							{
-								if (i & 1)
-								{
-									scry += viewheight;
-								}
-							}
-							else
-							{
-								if (i & 1)
-								{
-									scrx += viewwidth;
-								}
-
-								if (i / 2)
-								{
-									scry += viewheight;
-								}
-							}
-
-							offset = (scry*vid.width) + scrx;
-
-							// No idea if this works
-							VID_BlitLinearScreen(screens[0] + offset, screens[1] + offset,
-												 viewwidth, bottom-top,
-												 vid.width, vid.width);
-						}
-					}
-				}
-			}
-#endif
 		}
 		else
 			light = (pl->lightlevel >> LIGHTSEGSHIFT);
+
+#ifndef NOWATER
+		if (pl->ripple)
+		{
+			INT32 top, bottom;
+
+			itswater = true;
+			if (spanfunctype == SPANDRAWFUNC_TRANS)
+			{
+				UINT8 i;
+
+				spanfunctype = SPANDRAWFUNC_WATER;
+
+				// Copy the current scene, ugh
+				top = pl->high-8;
+				bottom = pl->low+8;
+
+				if (top < 0)
+					top = 0;
+				if (bottom > vid.height)
+					bottom = vid.height;
+
+				// Only copy the part of the screen we need
+				for (i = 0; i <= r_splitscreen; i++)
+				{
+					if (viewplayer == &players[displayplayers[i]])
+					{
+						INT32 scrx = 0;
+						INT32 scry = top;
+						INT32 offset;
+
+						if (r_splitscreen == 1)
+						{
+							if (i & 1)
+							{
+								scry += viewheight;
+							}
+						}
+						else
+						{
+							if (i & 1)
+							{
+								scrx += viewwidth;
+							}
+
+							if (i / 2)
+							{
+								scry += viewheight;
+							}
+						}
+
+						offset = (scry*vid.width) + scrx;
+
+						// No idea if this works
+						VID_BlitLinearScreen(screens[0] + offset, screens[1] + offset,
+								viewwidth, bottom-top,
+								vid.width, vid.width);
+					}
+				}
+			}
+		}
+#endif
 	}
 
 	if (!pl->slope // Don't mess with angle on slopes! We'll handle this ourselves later

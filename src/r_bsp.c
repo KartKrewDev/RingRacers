@@ -43,7 +43,7 @@ boolean R_NoEncore(sector_t *sector, boolean ceiling)
 	boolean invertencore = (GETSECSPECIAL(sector->special, 2) == 15);
 #if 0 // perfect implementation
 	INT32 val = GETSECSPECIAL(sector->special, 3);
-	if (val != 1 && val != 3 // spring panel
+	//if (val != 1 && val != 3 // spring panel
 #else // optimised, see #define GETSECSPECIAL(i,j) ((i >> ((j-1)*4))&15)
 	if ((!(sector->special & (1<<8)) || (sector->special & ((4|8)<<8))) // spring panel
 #endif
@@ -56,6 +56,12 @@ boolean R_NoEncore(sector_t *sector, boolean ceiling)
 	if (ceiling)
 		return ((boolean)(sector->flags & SF_FLIPSPECIAL_CEILING));
 	return ((boolean)(sector->flags & SF_FLIPSPECIAL_FLOOR));
+}
+
+boolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling)
+{
+	return rover ? rover->flags & FF_RIPPLE :
+		sector->flags & (SF_RIPPLE_FLOOR << ceiling);
 }
 
 static void R_PlaneLightOverride(sector_t *sector, boolean ceiling, INT32 *lightlevel)
@@ -923,7 +929,7 @@ static void R_Subsector(size_t num)
 	{
 		floorplane = R_FindPlane(frontsector->floorheight, frontsector->floorpic, floorlightlevel,
 			frontsector->floor_xoffs, frontsector->floor_yoffs, frontsector->floorpic_angle, floorcolormap, NULL, NULL, frontsector->f_slope,
-			R_NoEncore(frontsector, false));
+			R_NoEncore(frontsector, false), R_IsRipplePlane(frontsector, NULL, false));
 	}
 	else
 		floorplane = NULL;
@@ -935,7 +941,7 @@ static void R_Subsector(size_t num)
 		ceilingplane = R_FindPlane(frontsector->ceilingheight, frontsector->ceilingpic,
 			ceilinglightlevel, frontsector->ceiling_xoffs, frontsector->ceiling_yoffs, frontsector->ceilingpic_angle,
 			ceilingcolormap, NULL, NULL, frontsector->c_slope,
-			R_NoEncore(frontsector, true));
+			R_NoEncore(frontsector, true), R_IsRipplePlane(frontsector, NULL, true));
 	}
 	else
 		ceilingplane = NULL;
@@ -985,7 +991,8 @@ static void R_Subsector(size_t num)
 				ffloor[numffloors].plane = R_FindPlane(*rover->bottomheight, *rover->bottompic,
 					newlightlevel, *rover->bottomxoffs,
 					*rover->bottomyoffs, *rover->bottomangle, *frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->b_slope,
-					R_NoEncore(rover->master->frontsector, true));
+					R_NoEncore(rover->master->frontsector, true),
+					R_IsRipplePlane(rover->master->frontsector, rover, true));
 
 				ffloor[numffloors].slope = *rover->b_slope;
 
@@ -1020,7 +1027,8 @@ static void R_Subsector(size_t num)
 				ffloor[numffloors].plane = R_FindPlane(*rover->topheight, *rover->toppic,
 					*frontsector->lightlist[light].lightlevel, *rover->topxoffs, *rover->topyoffs, *rover->topangle,
 					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->t_slope,
-					R_NoEncore(rover->master->frontsector, false));
+					R_NoEncore(rover->master->frontsector, false),
+					R_IsRipplePlane(rover->master->frontsector, rover, false));
 
 				ffloor[numffloors].slope = *rover->t_slope;
 
@@ -1071,7 +1079,7 @@ static void R_Subsector(size_t num)
 					polysec->floorpic_angle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
 					NULL, // will ffloors be slopable eventually?
-					R_NoEncore(polysec, false));
+					R_NoEncore(polysec, false), false);/* TODO: wet polyobjects? */
 
 				ffloor[numffloors].height = polysec->floorheight;
 				ffloor[numffloors].polyobj = po;
@@ -1101,7 +1109,7 @@ static void R_Subsector(size_t num)
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->ceiling_xoffs, polysec->ceiling_yoffs, polysec->ceilingpic_angle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
 					NULL, // will ffloors be slopable eventually?
-					R_NoEncore(polysec, true));
+					R_NoEncore(polysec, true), false);/* TODO: wet polyobjects? */
 
 				ffloor[numffloors].polyobj = po;
 				ffloor[numffloors].height = polysec->ceilingheight;
