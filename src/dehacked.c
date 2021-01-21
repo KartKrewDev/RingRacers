@@ -11002,6 +11002,32 @@ static const char *const KARTSTUFF_LIST[] = {
 	"WRONGWAY"
 };
 
+static const char *const KARTHUD_LIST[] = {
+	"ITEMBLINK",
+	"ITEMBLINKMODE",
+
+	"RINGFRAME",
+	"RINGTICS",
+	"RINGDELAY",
+	"RINGSPBBLOCK",
+
+	"LAPANIMATION",
+	"LAPHAND",
+
+	"FAULT",
+
+	"BOOSTCAM",
+	"DESTBOOSTCAM",
+	"TIMEOVERCAM",
+
+	"ENGINESND",
+	"VOICES",
+	"TAUNTVOICES",
+
+	"CARDANIMATION",
+	"YOUGOTEM",
+};
+
 static const char *const HUDITEMS_LIST[] = {
 	"LIVES",
 
@@ -12244,6 +12270,7 @@ void DEH_Check(void)
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
 	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
 	const size_t dehkartstuff = sizeof(KARTSTUFF_LIST)/sizeof(const char*);
+	const size_t dehkarthud = sizeof(KARTHUD_LIST)/sizeof(const char*);
 	const size_t dehcolors = sizeof(COLOR_ENUMS)/sizeof(const char*);
 
 	if (dehstates != S_FIRSTFREESLOT)
@@ -12256,7 +12283,10 @@ void DEH_Check(void)
 		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d powers defined, versus %s in the Dehacked list)\n", NUMPOWERS, sizeu1(dehpowers));
 
 	if (dehkartstuff != NUMKARTSTUFF)
-		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d kartstuff defined, versus %s in the Dehacked list)\n", NUMKARTSTUFF, sizeu1(dehkartstuff));
+		I_Error("You forgot to update the Dehacked kartstuff list, you dolt!\n(%d kartstuff defined, versus %s in the Dehacked list)\n", NUMKARTSTUFF, sizeu1(dehkartstuff));
+
+	if (dehkarthud != NUMKARTHUD)
+		I_Error("You forgot to update the Dehacked karthud list, you dolt!\n(%d karthud defined, versus %s in the Dehacked list)\n", NUMKARTSTUFF, sizeu1(dehkartstuff));
 
 	if (dehcolors != SKINCOLOR_FIRSTFREESLOT)
 		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", SKINCOLOR_FIRSTFREESLOT, sizeu1(dehcolors));
@@ -12718,6 +12748,15 @@ static inline int lib_getenum(lua_State *L)
 			}
 		return 0;
 	}
+	else if (!mathlib && fastncmp("khud_",word,5)) {
+		p = word+5;
+		for (i = 0; i < NUMKARTHUD; i++)
+			if (fasticmp(p, KARTHUD_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return 0;
+	}
 	else if (mathlib && fastncmp("K_",word,2)) { // SOCs are ALL CAPS!
 		p = word+2;
 		for (i = 0; i < NUMKARTSTUFF; i++)
@@ -12726,6 +12765,15 @@ static inline int lib_getenum(lua_State *L)
 				return 1;
 			}
 		return luaL_error(L, "kartstuff '%s' could not be found.\n", word);
+	}
+	else if (mathlib && fastncmp("KHUD_",word,5)) { // SOCs are ALL CAPS!
+		p = word+5;
+		for (i = 0; i < NUMKARTHUD; i++)
+			if (fastcmp(p, KARTHUD_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return luaL_error(L, "karthud '%s' could not be found.\n", word);
 	}
 	else if (fastncmp("HUD_",word,4)) {
 		p = word+4;

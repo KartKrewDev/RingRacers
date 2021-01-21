@@ -212,6 +212,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->powers, META_POWERS);
 	else if (fastcmp(field,"kartstuff"))
 		LUA_PushUserdata(L, plr->kartstuff, META_KARTSTUFF);
+	else if (fastcmp(field,"karthud"))
+		LUA_PushUserdata(L, plr->karthud, META_KARTHUD);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"tumbleBounces"))
@@ -848,10 +850,44 @@ static int kartstuff_set(lua_State *L)
 	return 0;
 }
 
-// #kartstuff -> NUMKARTSTUFF
+// #karthud -> NUMKARTSTUFF
 static int kartstuff_len(lua_State *L)
 {
 	lua_pushinteger(L, NUMKARTSTUFF);
+	return 1;
+}
+
+// karthud, ks -> karthud[ks]
+static int karthud_get(lua_State *L)
+{
+	INT32 *karthud = *((INT32 **)luaL_checkudata(L, 1, META_KARTHUD));
+	karthudtype_t ks = luaL_checkinteger(L, 2);
+	if (ks >= NUMKARTHUD)
+		return luaL_error(L, LUA_QL("karthudtype_t") " cannot be %u", ks);
+	lua_pushinteger(L, karthud[ks]);
+	return 1;
+}
+
+// karthud, ks, value -> kartstuff[ks] = value
+static int karthud_set(lua_State *L)
+{
+	INT32 *karthud = *((INT32 **)luaL_checkudata(L, 1, META_KARTHUD));
+	karthudtype_t ks = luaL_checkinteger(L, 2);
+	INT32 i = (INT32)luaL_checkinteger(L, 3);
+	if (ks >= NUMKARTHUD)
+		return luaL_error(L, LUA_QL("karthudtype_t") " cannot be %u", ks);
+	if (hud_running)
+		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter player_t in BuildCMD code!");
+	karthud[ks] = i;
+	return 0;
+}
+
+// #karthud -> NUMKARTHUD
+static int karthud_len(lua_State *L)
+{
+	lua_pushinteger(L, NUMKARTHUD);
 	return 1;
 }
 
@@ -945,6 +981,17 @@ int LUA_PlayerLib(lua_State *L)
 		lua_setfield(L, -2, "__newindex");
 
 		lua_pushcfunction(L, kartstuff_len);
+		lua_setfield(L, -2, "__len");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L, META_KARTHUD);
+		lua_pushcfunction(L, karthud_get);
+		lua_setfield(L, -2, "__index");
+
+		lua_pushcfunction(L, karthud_set);
+		lua_setfield(L, -2, "__newindex");
+
+		lua_pushcfunction(L, karthud_len);
 		lua_setfield(L, -2, "__len");
 	lua_pop(L,1);
 
