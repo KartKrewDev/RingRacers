@@ -475,14 +475,22 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 {
 	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
 	fixed_t newfrict;
+	fixed_t frictionRatio;
 
 	if (rubberband <= 0)
 	{
-		// Never get stronger than normal friction
+		// Never get weaker than normal friction
 		return frict;
 	}
 
-	newfrict = FixedDiv(frict, FRACUNIT + (rubberband / 2));
+	newfrict = FixedDiv(ORIG_FRICTION, FRACUNIT + (rubberband / 2));
+
+	if (frict != ORIG_FRICTION)
+	{
+		// Adjust for non-ORIG_FRICTION values
+		frictionRatio = FixedDiv(frict, ORIG_FRICTION);
+		newfrict = FixedMul(newfrict, frictionRatio);
+	}
 
 	if (newfrict < 0)
 		newfrict = 0;
