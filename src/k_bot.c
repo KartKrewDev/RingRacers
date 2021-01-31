@@ -474,8 +474,7 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 {
 	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
-	fixed_t newfrict;
-	fixed_t frictionRatio;
+	fixed_t origFrict, newFrict;
 
 	if (rubberband <= 0)
 	{
@@ -483,21 +482,31 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 		return frict;
 	}
 
-	newfrict = FixedDiv(ORIG_FRICTION, FRACUNIT + (rubberband / 2));
+	origFrict = FixedDiv(ORIG_FRICTION, FRACUNIT + (rubberband / 2));
 
-	if (frict != ORIG_FRICTION)
+	if (frict == ORIG_FRICTION)
 	{
-		// Adjust for non-ORIG_FRICTION values
-		frictionRatio = FixedDiv(frict, ORIG_FRICTION);
-		newfrict = FixedMul(newfrict, frictionRatio);
+		newFrict = origFrict;
+	}
+	else
+	{
+		// Do some mumbo jumbo to make our friction value
+		// relative to what it WOULD be for ORIG_FRICTION.
+		// (I hate multiplicative friction :/)
+
+		fixed_t offset = ORIG_FRICTION - frict;
+		fixed_t ratio = FixedDiv(frict, ORIG_FRICTION);
+
+		offset = FixedDiv(offset, ratio);
+		newFrict = frict + offset;
 	}
 
-	if (newfrict < 0)
-		newfrict = 0;
-	if (newfrict > FRACUNIT)
-		newfrict = FRACUNIT;
+	if (newFrict < 0)
+		newFrict = 0;
+	if (newFrict > FRACUNIT)
+		newFrict = FRACUNIT;
 
-	return newfrict;
+	return newFrict;
 }
 
 /*--------------------------------------------------
