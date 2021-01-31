@@ -2239,13 +2239,6 @@ fixed_t K_GetKartAccel(player_t *player)
 		k_accel = FixedMul(k_accel, FRACUNIT + (sphereAdd * player->spheres));
 	}
 
-	if (K_PlayerUsesBotMovement(player))
-	{
-		// Rubberbanding acceleration is waekened since it makes hits feel more meaningful
-		fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
-		k_accel = FixedMul(k_accel, FRACUNIT + (rubberband/2));
-	}
-
 	return FixedMul(k_accel, FRACUNIT+player->kartstuff[k_accelboost]);
 }
 
