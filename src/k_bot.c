@@ -422,10 +422,15 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 {
 	fixed_t rubberband = K_BotRubberband(player);
 
-	if (rubberband < FRACUNIT)
+	if (rubberband <= FRACUNIT)
 	{
 		// Never go below your regular top speed
 		rubberband = FRACUNIT;
+	}
+	else
+	{
+		// Max at +25% for level 9 bots
+		rubberband = FRACUNIT + ((rubberband - FRACUNIT) / 4);
 	}
 
 	// Only allow you to go faster than your regular top speed if you're facing the right direction
