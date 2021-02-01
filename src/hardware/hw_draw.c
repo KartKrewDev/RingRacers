@@ -141,7 +141,7 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 //  0--1
 	float dupx, dupy, fscalew, fscaleh, fwidth, fheight;
 
-	if (alphalevel >= 10 && alphalevel < 13)
+	if (alphalevel >= 12 && alphalevel < 13)
 		return;
 
 	// make patch ready in hardware cache
@@ -268,7 +268,9 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 	{
 		FSurfaceInfo Surf;
 		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
-		if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
+		if (alphalevel == 10) { flags &= ~PF_Translucent; flags |= PF_Additive; }
+		else if (alphalevel == 11) { flags &= ~PF_Translucent; flags |= PF_Substractive; }
+		else if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
 		else if (alphalevel == 14) Surf.PolyColor.s.alpha = softwaretranstogl[st_translucency];
 		else if (alphalevel == 15) Surf.PolyColor.s.alpha = softwaretranstogl_hi[st_translucency];
 		else Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
@@ -293,7 +295,7 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 //  0--1
 	float dupx, dupy, fscale, fwidth, fheight;
 
-	if (alphalevel >= 10 && alphalevel < 13)
+	if (alphalevel >= 12 && alphalevel < 13)
 		return;
 
 	// make patch ready in hardware cache
@@ -426,7 +428,9 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 	{
 		FSurfaceInfo Surf;
 		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
-		if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
+		if (alphalevel == 10) { flags &= ~PF_Translucent; flags |= PF_Additive; }
+		else if (alphalevel == 11) { flags &= ~PF_Translucent; flags |= PF_Substractive; }
+		else if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
 		else if (alphalevel == 14) Surf.PolyColor.s.alpha = softwaretranstogl[st_translucency];
 		else if (alphalevel == 15) Surf.PolyColor.s.alpha = softwaretranstogl_hi[st_translucency];
 		else Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
