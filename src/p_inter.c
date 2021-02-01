@@ -718,9 +718,6 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 
 	(void)snaptopost;
 
-	if (player->bot)
-		return;
-
 	// Player must have touched all previous starposts
 	if (post->health - player->starpostnum > 1)
 	{

@@ -2155,7 +2155,8 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
-		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * (FRACUNIT/50)); // min is 30%, max is 46%
+		// 30% - 44%, each point of speed adds 1.75%
+		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((7*FRACUNIT)/400)); 
 		speedboost += FixedMul(draftspeed, player->kartstuff[k_draftpower]); // (Drafting suffers no boost stack penalty.)
 		numboosts++;
 	}
@@ -2183,10 +2184,10 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 {
 	const fixed_t xspd = (3*FRACUNIT)/64;
 	fixed_t g_cc = K_GetKartGameSpeedScalar(gamespeed) + xspd;
-	fixed_t k_speed = 150;
+	fixed_t k_speed = 148;
 	fixed_t finalspeed;
 
-	k_speed += kartspeed*3; // 153 - 177
+	k_speed += kartspeed*4; // 152 - 184
 
 	finalspeed = FixedMul(k_speed<<14, g_cc);
 	return finalspeed;
@@ -2204,17 +2205,10 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
 	}
 
-	if (K_PlayerUsesBotMovement(player))
+	if (K_PlayerUsesBotMovement(player) && player->botvars.rival == true)
 	{
-		// Give top speed a buff for bots, since it's a fairly weak stat without drifting
-		fixed_t speedmul = ((player->kartspeed-1) * FRACUNIT / 8) / 10; // +10% for speed 9
-
-		if (player->botvars.rival == true)
-		{
-			speedmul += FRACUNIT/10; // +10% for rival
-		}
-
-		finalspeed = FixedMul(finalspeed, FRACUNIT + speedmul);
+		// +10% top speed for the rival
+		finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
 	}
 
 	if (player->mo && !P_MobjWasRemoved(player->mo))
@@ -2235,10 +2229,9 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 
 fixed_t K_GetKartAccel(player_t *player)
 {
-	fixed_t k_accel = 32; // 36;
+	fixed_t k_accel = 121;
 
-	//k_accel += 3 * (9 - player->kartspeed); // 36 - 60
-	k_accel += 4 * (9 - player->kartspeed); // 32 - 64
+	k_accel += 17 * (9 - player->kartspeed); // 121 - 257
 
 	if (player->spheres > 0)
 	{
@@ -2246,14 +2239,7 @@ fixed_t K_GetKartAccel(player_t *player)
 		k_accel = FixedMul(k_accel, FRACUNIT + (sphereAdd * player->spheres));
 	}
 
-	if (K_PlayerUsesBotMovement(player))
-	{
-		// Rubberbanding acceleration is waekened since it makes hits feel more meaningful
-		fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
-		k_accel = FixedMul(k_accel, FRACUNIT + (rubberband/2));
-	}
-
-	return FixedMul(k_accel, FRACUNIT+player->kartstuff[k_accelboost]);
+	return FixedMul(k_accel, (FRACUNIT + player->kartstuff[k_accelboost]) / 4);
 }
 
 UINT16 K_GetKartFlashing(player_t *player)
