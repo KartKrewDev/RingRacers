@@ -4162,6 +4162,7 @@ static void P_NetArchiveMisc(void)
 		WRITEINT16(save_p, nospectategrief[i]);
 
 	WRITEUINT8(save_p, thwompsactive);
+	WRITEUINT8(save_p, lastLowestLap);
 	WRITESINT8(save_p, spbplace);
 	WRITEUINT8(save_p, rainbowstartavailable);
 
@@ -4295,6 +4296,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 		nospectategrief[i] = READINT16(save_p);
 
 	thwompsactive = (boolean)READUINT8(save_p);
+	lastLowestLap = READUINT8(save_p);
 	spbplace = READSINT8(save_p);
 	rainbowstartavailable = (boolean)READUINT8(save_p);
 

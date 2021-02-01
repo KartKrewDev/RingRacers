@@ -1836,7 +1836,6 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	 || specialtype == 336 // Dye - Once
 	 || specialtype == 399 // Level Load
 	 || specialtype == 328 // SRB2Kart Encore Load
-	 || specialtype == 2002 // SRB2Kart Race Lap
 	)
 		triggerline->special = 0; // Clear it out
 
@@ -1999,6 +1998,7 @@ static void K_HandleLapIncrement(player_t *player)
 		{
 			size_t i = 0;
 			UINT8 nump = 0;
+			UINT8 lowestLap;
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
@@ -2082,6 +2082,8 @@ static void K_HandleLapIncrement(player_t *player)
 
 			thwompsactive = true; // Lap 2 effects
 
+			lowestLap = P_FindLowestLap();
+
 			for (i = 0; i < numlines; i++)
 			{
 				if (lines[i].special == 2002) // Race lap trigger
@@ -2094,7 +2096,13 @@ static void K_HandleLapIncrement(player_t *player)
 					}
 					else
 					{
-						lap = P_FindLowestLap();
+						lap = lowestLap;
+
+						if (lap <= lastLowestLap)
+						{
+							// Need to be able to search for E4 linedefs
+							continue;
+						}
 					}
 
 					if (lines[i].flags & ML_NOCLIMB) // Need higher than or equal to
@@ -2116,6 +2124,8 @@ static void K_HandleLapIncrement(player_t *player)
 					P_RunTriggerLinedef(&lines[i], player->mo, NULL);
 				}
 			}
+
+			lastLowestLap = lowestLap;
 		}
 		else if (player->starpostnum)
 		{

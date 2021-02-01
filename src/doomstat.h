@@ -686,6 +686,7 @@ extern tic_t indirectitemcooldown;
 extern tic_t hyubgone;
 extern tic_t mapreset;
 extern boolean thwompsactive;
+extern UINT8 lastLowestLap;
 extern SINT8 spbplace;
 extern boolean rainbowstartavailable;
 
