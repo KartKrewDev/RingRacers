@@ -3904,30 +3904,41 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		// SRB2kart
-		{
-			sector_t *sec;
-			mobj_t *thing;
-
-			while ((secnum = P_FindSectorFromTag(line->tag, secnum)) >= 0)
 		case 499: // Enable/Disable Waypoints in Tagged Sectors
 			{
-				sec = sectors + secnum;
-				{
+				sector_t *sec;
+				mobj_t *waypointmobj;
 
-				for (thing = sec->thinglist; thing; thing = thing->snext)
-					if (thing->type == MT_WAYPOINT)
+				if (waypointcap == NULL)
+				{
+					break;
+				}
+
+				while ((secnum = P_FindSectorFromTag(line->tag, secnum)) >= 0)
+				{
+					sec = sectors + secnum;
+
 					// Needs to do this instead of simply iterating through sector thing list because they have MF_NOSECTOR.
+					// Maybe it'd be OK to remove, but I'd like to play it safe.
+					for (waypointmobj = waypointcap; waypointmobj != NULL; waypointmobj = waypointmobj->tracer)
 					{
+						sector_t *waypointSector = R_PointInSubsector(waypointmobj->x, waypointmobj->y)->sector;
+
+						if (waypointSector == sec)
 						{
-							thing->extravalue1 = 1;
-						}
-						{
+							if (line->flags & ML_NOCLIMB)
+							{
+								waypointmobj->extravalue1 = 1;
+							}
+							else
+							{
 								waypointmobj->extravalue1 = 0;
+							}
 						}
 					}
+				}
 			}
 			break;
-		}
 
 		default:
 			break;
