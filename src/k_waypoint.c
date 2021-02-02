@@ -280,6 +280,11 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 
 			checkwaypoint = &waypointheap[i];
 
+			if (!K_GetWaypointIsEnabled(checkwaypoint))
+			{
+				continue;
+			}
+
 			checkdist = P_AproxDistance(
 				(mobj->x / FRACUNIT) - (checkwaypoint->mobj->x / FRACUNIT),
 				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));

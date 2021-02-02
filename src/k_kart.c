@@ -6295,6 +6295,11 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				{
 					for (i = 0U; i < waypoint->numnextwaypoints; i++)
 					{
+						if (!K_GetWaypointIsEnabled(waypoint->nextwaypoints[i]))
+						{
+							continue;
+						}
+
 						if (K_PlayerUsesBotMovement(player) == true
 						&& K_GetWaypointIsShortcut(waypoint->nextwaypoints[i]) == true
 						&& K_BotCanTakeCut(player) == false)
@@ -6350,6 +6355,11 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				{
 					for (i = 0U; i < waypoint->numprevwaypoints; i++)
 					{
+						if (!K_GetWaypointIsEnabled(waypoint->prevwaypoints[i]))
+						{
+							continue;
+						}
+
 						angletowaypoint = R_PointToAngle2(
 							player->mo->x, player->mo->y,
 							waypoint->prevwaypoints[i]->mobj->x, waypoint->prevwaypoints[i]->mobj->y);
