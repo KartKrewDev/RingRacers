@@ -551,7 +551,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 		else if (alphalevel == 15)
 			alphalevel = hudplusalpha[st_translucency];
 
-		if (alphalevel >= 10)
+		if (alphalevel >= 12)
 			return; // invis
 
 		if (alphalevel)
@@ -744,7 +744,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 		else if (alphalevel == 15)
 			alphalevel = hudplusalpha[st_translucency];
 
-		if (alphalevel >= 10)
+		if (alphalevel >= 12)
 			return; // invis
 
 		if (alphalevel)
@@ -997,7 +997,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		else if (alphalevel == 15)
 			alphalevel = hudplusalpha[st_translucency];
 
-		if (alphalevel >= 10)
+		if (alphalevel >= 12)
 			return; // invis
 	}
 
