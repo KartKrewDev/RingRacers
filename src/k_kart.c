@@ -3110,6 +3110,8 @@ void K_RunFinishLineBeam(void)
 	{
 		if (lines[i].special == 2001)
 		{
+			angle_t thisAngle = R_PointToAngle2(0, 0, lines[i].dx, lines[i].dy);
+
 			bounds[0] = min(bounds[0], min(lines[i].v1->x, lines[i].v2->x)); // min x
 			bounds[1] = max(bounds[1], max(lines[i].v1->x, lines[i].v2->x)); // max x
 			bounds[2] = min(bounds[2], min(lines[i].v1->y, lines[i].v2->y)); // min y
@@ -3117,8 +3119,13 @@ void K_RunFinishLineBeam(void)
 
 			if (valid == false)
 			{
-				angle = R_PointToAngle2(0, 0, lines[i].dx, lines[i].dy);
+				angle = thisAngle;
 				flags = lines[i].flags;
+			}
+			else if (angle != thisAngle)
+			{
+				valid = false;
+				break;
 			}
 
 			valid = true;
