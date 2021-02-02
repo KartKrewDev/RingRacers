@@ -4098,6 +4098,7 @@ boolean P_LoadLevel(boolean fromnetsave)
 		nospectategrief[i] = -1;
 
 	thwompsactive = false;
+	lastLowestLap = 0;
 	spbplace = -1;
 
 	// clear special respawning que

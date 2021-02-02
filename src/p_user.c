@@ -409,7 +409,7 @@ UINT8 P_FindLowestLap(void)
 	INT32 i;
 	UINT8 lowest = UINT8_MAX;
 
-	if (gametyperules & GTR_CIRCUIT)
+	if (!(gametyperules & GTR_CIRCUIT))
 		return 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -417,10 +417,10 @@ UINT8 P_FindLowestLap(void)
 		if (!playeringame[i] || players[i].spectator)
 			continue;
 
-		if (lowest == 255)
+		if (lowest == UINT8_MAX || players[i].laps < lowest)
+		{
 			lowest = players[i].laps;
-		else if (players[i].laps < lowest)
-			lowest = players[i].laps;
+		}
 	}
 
 	CONS_Debug(DBG_GAMELOGIC, "Lowest laps found: %d\n", lowest);
@@ -3074,6 +3074,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 
 	mo = player->mo;
+
+	if (mo->hitlag > 0)
+	{
+		// Do not move the camera while in hitlag!
+		// The camera zooming out after you got hit makes it hard to focus on the vibration.
+		return true;
+	}
 
 #ifndef NOCLIPCAM
 	cameranoclip = ((player->pflags & PF_NOCLIP)
