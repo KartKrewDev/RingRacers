@@ -454,6 +454,8 @@ typedef enum
 #define TRICKMOMZRAMP (30)
 #define TRICKLAG (9)
 
+#define TUMBLEBOUNCES 3
+
 //}
 
 // player_t struct for all respawn variables
