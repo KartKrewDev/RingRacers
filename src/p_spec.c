@@ -3904,25 +3904,25 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		// SRB2kart
-		case 2003: // Enable/Disable Waypoints in Tagged Sectors
 		{
 			sector_t *sec;
 			mobj_t *thing;
 
 			while ((secnum = P_FindSectorFromTag(line->tag, secnum)) >= 0)
+		case 499: // Enable/Disable Waypoints in Tagged Sectors
 			{
 				sec = sectors + secnum;
+				{
 
 				for (thing = sec->thinglist; thing; thing = thing->snext)
 					if (thing->type == MT_WAYPOINT)
+					// Needs to do this instead of simply iterating through sector thing list because they have MF_NOSECTOR.
 					{
-						if (line->flags & ML_NOCLIMB)
 						{
 							thing->extravalue1 = 1;
 						}
-						else
 						{
-							thing->extravalue1 = 0;
+								waypointmobj->extravalue1 = 0;
 						}
 					}
 			}
@@ -6964,6 +6964,8 @@ void P_SpawnSpecials(boolean fromnetsave)
 					circuitmap = true;
 				break;
 			case 2002: // Linedef Trigger: Race Lap
+				break;
+			case 499: // Linedef Executor: Enable/Disable Waypoints
 				break;
 
 			default:
