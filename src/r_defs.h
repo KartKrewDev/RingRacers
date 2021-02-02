@@ -264,6 +264,9 @@ typedef enum
 	SF_TRIGGERSPECIAL_HEADBUMP =  1<<3,
 	// invertprecip - inverts presence of precipitation
 	SF_INVERTPRECIP            =  1<<4,
+	// water ripple
+	SF_RIPPLE_FLOOR            =  1<<5,
+	SF_RIPPLE_CEILING          =  1<<6,
 } sectorflags_t;
 
 

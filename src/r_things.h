@@ -171,7 +171,6 @@ typedef struct vissprite_s
 
 	// Precalculated top and bottom screen coords for the sprite.
 	sector_t *sector; // The sector containing the thing.
-	fixed_t pt, pb; // plane heights, also for sorting against 3D floors
 	INT16 sz, szt;
 
 	spritecut_e cut;

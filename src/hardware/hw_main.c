@@ -2955,6 +2955,11 @@ static void HWR_AddPolyObjectPlanes(void)
 	}
 }
 
+static FBITFIELD HWR_RippleBlend(sector_t *sector, ffloor_t *rover, boolean ceiling)
+{
+	return R_IsRipplePlane(sector, rover, ceiling) ? PF_Ripple : 0;
+}
+
 // -----------------+
 // HWR_Subsector    : Determine floor/ceiling planes.
 //                  : Add sprites of things in sector.
@@ -3067,7 +3072,8 @@ static void HWR_Subsector(size_t num)
 					// Hack to make things continue to work around slopes.
 					locFloorHeight == cullFloorHeight ? locFloorHeight : gl_frontsector->floorheight,
 					// We now return you to your regularly scheduled rendering.
-					PF_Occlude, floorlightlevel, &levelflats[gl_frontsector->floorpic], NULL, 255, floorcolormap);
+					PF_Occlude | HWR_RippleBlend(gl_frontsector, NULL, false),
+					floorlightlevel, &levelflats[gl_frontsector->floorpic], NULL, 255, floorcolormap);
 			}
 		}
 		else
@@ -3089,7 +3095,8 @@ static void HWR_Subsector(size_t num)
 					// Hack to make things continue to work around slopes.
 					locCeilingHeight == cullCeilingHeight ? locCeilingHeight : gl_frontsector->ceilingheight,
 					// We now return you to your regularly scheduled rendering.
-					PF_Occlude, ceilinglightlevel, &levelflats[gl_frontsector->ceilingpic], NULL, 255, ceilingcolormap);
+					PF_Occlude | HWR_RippleBlend(gl_frontsector, NULL, true),
+					ceilinglightlevel, &levelflats[gl_frontsector->ceilingpic], NULL, 255, ceilingcolormap);
 			}
 		}
 		else
@@ -3149,7 +3156,7 @@ static void HWR_Subsector(size_t num)
 					&& (rover->alpha < 256
 					|| rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE || rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)) // SoM: Flags are more efficient
 				{
-					FBITFIELD blendmode = PF_Translucent;
+					FBITFIELD blendmode = PF_Translucent | HWR_RippleBlend(gl_frontsector, rover, false);
 					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
 						blendmode = PF_Additive;
 					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
@@ -3162,14 +3169,14 @@ static void HWR_Subsector(size_t num)
 										   false,
 					                       *rover->bottomheight,
 					                       *gl_frontsector->lightlist[light].lightlevel,
-					                       rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|blendmode,
+					                       rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, blendmode,
 					                       false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
 				{
 					HWR_GetLevelFlat(&levelflats[*rover->bottompic], R_NoEncore(gl_frontsector, false));
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
-					HWR_RenderPlane(sub, &extrasubsectors[num], false, *rover->bottomheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->bottompic],
+					HWR_RenderPlane(sub, &extrasubsectors[num], false, *rover->bottomheight, HWR_RippleBlend(gl_frontsector, rover, false) | PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->bottompic],
 					                rover->master->frontsector, 255, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 			}
@@ -3202,7 +3209,7 @@ static void HWR_Subsector(size_t num)
 					&& (rover->alpha < 256
 					|| rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE || rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)) // SoM: Flags are more efficient
 				{
-					FBITFIELD blendmode = PF_Translucent;
+					FBITFIELD blendmode = PF_Translucent | HWR_RippleBlend(gl_frontsector, rover, true);
 					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
 						blendmode = PF_Additive;
 					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
@@ -3215,14 +3222,14 @@ static void HWR_Subsector(size_t num)
 											true,
 					                        *rover->topheight,
 					                        *gl_frontsector->lightlist[light].lightlevel,
-					                        rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|blendmode,
+					                        rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, blendmode,
 					                        false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
 				{
 					HWR_GetLevelFlat(&levelflats[*rover->toppic], R_NoEncore(gl_frontsector, true));
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
-					HWR_RenderPlane(sub, &extrasubsectors[num], true, *rover->topheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->toppic],
+					HWR_RenderPlane(sub, &extrasubsectors[num], true, *rover->topheight, HWR_RippleBlend(gl_frontsector, rover, true) | PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->toppic],
 					                  rover->master->frontsector, 255, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 			}
@@ -3617,9 +3624,9 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 
 static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 {
-	const fixed_t thingxpos = thing->x + thing->sprxoff;
-	const fixed_t thingypos = thing->y + thing->spryoff;
-	const fixed_t thingzpos = thing->z + thing->sprzoff;
+	fixed_t thingxpos = thing->x + thing->sprxoff;
+	fixed_t thingypos = thing->y + thing->spryoff;
+	fixed_t thingzpos = thing->z + thing->sprzoff;
 
 	GLPatch_t *gpatch;
 	FOutVector shadowVerts[4];
@@ -3636,6 +3643,21 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	fixed_t groundz;
 	fixed_t slopez;
 	pslope_t *groundslope;
+
+	// hitlag vibrating
+	if (thing->hitlag > 0)
+	{
+		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+
+		if (leveltime & 1)
+		{
+			mul = -mul;
+		}
+
+		thingxpos += FixedMul(thing->momx, mul);
+		thingypos += FixedMul(thing->momy, mul);
+		thingzpos += FixedMul(thing->momz, mul);
+	}
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
@@ -4263,20 +4285,10 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
 
-		if (spr->mobj->drawflags & MFD_BRIGHTMASK)
-		{
-			if (spr->mobj->drawflags & MFD_FULLBRIGHT)
-				brightmode = 1;
-			else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
-				brightmode = 2;
-		}
-		else
-		{
-			if (spr->mobj->frame & FF_FULLBRIGHT)
-				brightmode = 1;
-			else if (spr->mobj->frame & FF_SEMIBRIGHT)
-				brightmode = 2;
-		}
+		if (spr->mobj->frame & FF_FULLBRIGHT)
+			brightmode = 1;
+		else if (spr->mobj->frame & FF_SEMIBRIGHT)
+			brightmode = 2;
 
 		if (sector->numlights)
 		{
@@ -4305,9 +4317,7 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
 
-	if (spr->mobj->drawflags & MFD_TRANSMASK)
-		blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
-	else if (spr->mobj->frame & FF_TRANSMASK)
+	if (spr->mobj->frame & FF_TRANSMASK)
 		blend = HWR_TranstableToAlpha((spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 	else
 	{
@@ -4867,9 +4877,9 @@ static void HWR_AddSprites(sector_t *sec)
 // BP why not use xtoviexangle/viewangletox like in bsp ?....
 static void HWR_ProjectSprite(mobj_t *thing)
 {
-	const fixed_t thingxpos = thing->x + thing->sprxoff;
-	const fixed_t thingypos = thing->y + thing->spryoff;
-	const fixed_t thingzpos = thing->z + thing->sprzoff;
+	fixed_t thingxpos = thing->x + thing->sprxoff;
+	fixed_t thingypos = thing->y + thing->spryoff;
+	fixed_t thingzpos = thing->z + thing->sprzoff;
 
 	gl_vissprite_t *vis;
 	float tr_x, tr_y;
@@ -4902,10 +4912,26 @@ static void HWR_ProjectSprite(mobj_t *thing)
 #ifdef ROTSPRITE
 	patch_t *rotsprite = NULL;
 	INT32 rollangle = 0;
+	angle_t spriterotangle = 0;
 #endif
 
 	if (!thing)
 		return;
+
+	// hitlag vibrating
+	if (thing->hitlag > 0)
+	{
+		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+
+		if (leveltime & 1)
+		{
+			mul = -mul;
+		}
+
+		thingxpos += FixedMul(thing->momx, mul);
+		thingypos += FixedMul(thing->momy, mul);
+		thingzpos += FixedMul(thing->momz, mul);
+	}
 
 	dispoffset = thing->info->dispoffset;
 
@@ -5025,9 +5051,11 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	spr_topoffset = spritecachedinfo[lumpoff].topoffset;
 
 #ifdef ROTSPRITE
-	if (thing->rollangle)
+	spriterotangle = R_SpriteRotationAngle(thing);
+
+	if (spriterotangle != 0)
 	{
-		rollangle = R_GetRollAngle(thing->rollangle);
+		rollangle = R_GetRollAngle(spriterotangle);
 		if (!(sprframe->rotsprite.cached & (1<<rot)))
 			R_CacheRotSprite(thing->sprite, (thing->frame & FF_FRAMEMASK), sprinfo, sprframe, rot, flip);
 		rotsprite = sprframe->rotsprite.patch[rot][rollangle];
@@ -5508,6 +5536,8 @@ static void HWR_DrawSkyBackground(player_t *player)
 			fixed_t rol = AngleFixed(player->viewrollangle);
 			dometransform.rollangle = FIXED_TO_FLOAT(rol);
 			dometransform.roll = true;
+			dometransform.rollx = 1.0f;
+			dometransform.rollz = 0.0f;
 		}
 		dometransform.splitscreen = r_splitscreen;
 
@@ -5786,6 +5816,8 @@ void HWR_RenderSkyboxView(player_t *player)
 		fixed_t rol = AngleFixed(player->viewrollangle);
 		atransform.rollangle = FIXED_TO_FLOAT(rol);
 		atransform.roll = true;
+		atransform.rollx = 1.0f;
+		atransform.rollz = 0.0f;
 	}
 	atransform.splitscreen = r_splitscreen;
 
@@ -5987,6 +6019,8 @@ void HWR_RenderPlayerView(void)
 		fixed_t rol = AngleFixed(player->viewrollangle);
 		atransform.rollangle = FIXED_TO_FLOAT(rol);
 		atransform.roll = true;
+		atransform.rollx = 1.0f;
+		atransform.rollz = 0.0f;
 	}
 	atransform.splitscreen = r_splitscreen;
 

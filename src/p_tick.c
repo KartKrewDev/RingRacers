@@ -332,6 +332,14 @@ static inline void P_RunThinkers(void)
 		ps_thlist_times[i] = I_GetTimeMicros() - ps_thlist_times[i];
 	}
 
+	if (gametyperules & GTR_CIRCUIT)
+		K_RunFinishLineBeam();
+
+	if (gametyperules & GTR_PAPERITEMS)
+		K_RunPaperItemSpawners();
+
+	if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
+		K_RunBattleOvertime();
 }
 
 //
@@ -516,6 +524,8 @@ void P_Ticker(boolean run)
 		if (demo.rewinding && leveltime > 0)
 		{
 			leveltime = (leveltime-1) & ~3;
+			if (timeinmap > 0)
+				timeinmap = (timeinmap-1) & ~3;
 			G_PreviewRewind(leveltime);
 		}
 		else if (demo.freecam && democam.cam)	// special case: allow freecam to MOVE during pause!
@@ -592,12 +602,6 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		if (gametyperules & GTR_CIRCUIT)
-			K_RunFinishLineBeam();
-
-		if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
-			K_RunBattleOvertime();
-
 		ps_lua_thinkframe_time = I_GetTimeMicros();
 		LUAh_ThinkFrame();
 		ps_lua_thinkframe_time = I_GetTimeMicros() - ps_lua_thinkframe_time;
@@ -616,9 +620,7 @@ void P_Ticker(boolean run)
 	if (run)
 		leveltime++;
 
-	// as this is mostly used for HUD stuff, add the record attack specific hack to it as well!
-	if (!(modeattacking && !demo.playback) || leveltime >= starttime - TICRATE*4)
-		timeinmap++;
+	timeinmap++;
 
 	if (G_GametypeHasTeams())
 		P_DoTeamStuff();
@@ -754,12 +756,6 @@ void P_PreTicker(INT32 frames)
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
-
-		if (gametyperules & GTR_CIRCUIT)
-			K_RunFinishLineBeam();
-
-		if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
-			K_RunBattleOvertime();
 
 		LUAh_ThinkFrame();
 

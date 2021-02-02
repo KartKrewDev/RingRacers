@@ -422,10 +422,15 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 {
 	fixed_t rubberband = K_BotRubberband(player);
 
-	if (rubberband < FRACUNIT)
+	if (rubberband <= FRACUNIT)
 	{
 		// Never go below your regular top speed
 		rubberband = FRACUNIT;
+	}
+	else
+	{
+		// Max at +25% for level 9 bots
+		rubberband = FRACUNIT + ((rubberband - FRACUNIT) / 4);
 	}
 
 	// Only allow you to go faster than your regular top speed if you're facing the right direction
@@ -474,22 +479,39 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 {
 	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
-	fixed_t newfrict;
+	fixed_t origFrict, newFrict;
 
 	if (rubberband <= 0)
 	{
-		// Never get stronger than normal friction
+		// Never get weaker than normal friction
 		return frict;
 	}
 
-	newfrict = FixedDiv(frict, FRACUNIT + (rubberband / 2));
+	origFrict = FixedDiv(ORIG_FRICTION, FRACUNIT + (rubberband / 2));
 
-	if (newfrict < 0)
-		newfrict = 0;
-	if (newfrict > FRACUNIT)
-		newfrict = FRACUNIT;
+	if (frict == ORIG_FRICTION)
+	{
+		newFrict = origFrict;
+	}
+	else
+	{
+		// Do some mumbo jumbo to make our friction value
+		// relative to what it WOULD be for ORIG_FRICTION.
+		// (I hate multiplicative friction :/)
 
-	return newfrict;
+		fixed_t offset = ORIG_FRICTION - frict;
+		fixed_t ratio = FixedDiv(frict, ORIG_FRICTION);
+
+		offset = FixedDiv(offset, ratio);
+		newFrict = frict + offset;
+	}
+
+	if (newFrict < 0)
+		newFrict = 0;
+	if (newFrict > FRACUNIT)
+		newFrict = FRACUNIT;
+
+	return newFrict;
 }
 
 /*--------------------------------------------------

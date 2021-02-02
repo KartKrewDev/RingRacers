@@ -245,17 +245,18 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (ORBINAUT,       6),\
 	FOREACH (JAWZ,           7),\
 	FOREACH (MINE,           8),\
-	FOREACH (BALLHOG,        9),\
-	FOREACH (SPB,           10),\
-	FOREACH (GROW,          11),\
-	FOREACH (SHRINK,        12),\
-	FOREACH (THUNDERSHIELD, 13),\
-	FOREACH (BUBBLESHIELD,  14),\
-	FOREACH (FLAMESHIELD,   15),\
-	FOREACH (HYUDORO,       16),\
-	FOREACH (POGOSPRING,    17),\
-	FOREACH (SUPERRING,     18),\
-	FOREACH (KITCHENSINK,   19)
+	FOREACH (LANDMINE,       9),\
+	FOREACH (BALLHOG,       10),\
+	FOREACH (SPB,           11),\
+	FOREACH (GROW,          12),\
+	FOREACH (SHRINK,        13),\
+	FOREACH (THUNDERSHIELD, 14),\
+	FOREACH (BUBBLESHIELD,  15),\
+	FOREACH (FLAMESHIELD,   16),\
+	FOREACH (HYUDORO,       17),\
+	FOREACH (POGOSPRING,    18),\
+	FOREACH (SUPERRING,     19),\
+	FOREACH (KITCHENSINK,   20)
 
 typedef enum
 {
@@ -335,7 +336,7 @@ typedef enum
 	k_sparkleanim,		// Angle offset for ring sparkle animation
 	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
 	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
-	k_pogospring,		// Pogo spring bounce effect
+	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
 	k_spindash,			// Spindash charge timer
 	k_spindashspeed,	// Spindash release speed
 	k_spindashboost,	// Spindash release boost timer
@@ -449,6 +450,10 @@ typedef enum
 // QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
 #define RINGTOTAL(p) (p->rings + p->kartstuff[k_pickuprings])
 
+// CONSTANTS FOR TRICK PANELS
+#define TRICKMOMZRAMP (30)
+#define TRICKLAG (9)
+
 //}
 
 // player_t struct for all respawn variables
@@ -512,6 +517,7 @@ typedef struct player_s
 
 	// player's ring count
 	INT16 rings;
+	INT16 spheres;
 
 	// Power ups. invinc and invis are tic counters.
 	UINT16 powers[NUMPOWERS];
@@ -522,7 +528,18 @@ typedef struct player_s
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
-	tic_t airtime; // Keep track of how long you've been in the air
+	tic_t airtime; 		// Keep track of how long you've been in the air
+
+	UINT8 trickpanel; 	// Trick panel state
+	boolean trickdelay;	// Prevent tricks until control stick is neutral
+	fixed_t trickmomx;
+	fixed_t trickmomy;
+	fixed_t trickmomz;	// Instead of stupid auxiliary variables let's... just make some ourselves.
+
+	UINT8 bumpers;
+	INT16 karmadelay;
+	boolean eliminated;
+
 
 	// Bit flags.
 	// See pflags_t, above.
@@ -552,6 +569,11 @@ typedef struct player_s
 	boolean followerready;	// Kart: Used to know when we can have a follower or not. (This is set on the first NameAndColor follower update)
 	UINT16 followercolor;	// Kart: Used to store the follower colour the player wishes to use
 	mobj_t *follower;		// Kart: This is the follower object we have. (If any)
+
+	UINT8 tumbleBounces;
+	UINT16 tumbleHeight;
+	boolean tumbleLastBounce;
+	boolean tumbleSound;
 
 	//
 

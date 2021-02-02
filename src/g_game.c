@@ -925,8 +925,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	turnleft = PlayerInputDown(ssplayer, gc_turnleft);
 
 	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
-	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
+	joystickvector.yaxis = 0;
 	G_HandleAxisDeadZone(forplayer, &joystickvector);
+
+	// For kart, I've turned the aim axis into a digital axis because we only
+	// use it for aiming to throw items forward/backward and the vote screen
+	// This mean that the turn axis will still be gradient but up/down will be 0
+	// until the stick is pushed far enough
+	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
 
 	if (encoremode)
 	{
@@ -1252,7 +1258,7 @@ void G_StartTitleCard(void)
 {
 	// The title card has been disabled for this map.
 	// Oh well.
-	if (!G_IsTitleCardAvailable())
+	if (!G_IsTitleCardAvailable() || demo.rewinding)
 	{
 		WipeStageTitle = false;
 		return;
@@ -1575,7 +1581,7 @@ boolean G_CouldView(INT32 playernum)
 	// I don't know if we want this actually, but I'll humor the suggestion anyway
 	if ((gametyperules & GTR_BUMPERS) && !demo.playback)
 	{
-		if (player->kartstuff[k_bumper] <= 0)
+		if (player->bumpers <= 0)
 			return false;
 	}
 
@@ -2056,6 +2062,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 botdifficulty;
 
 	INT16 rings;
+	INT16 spheres;
 	angle_t playerangleturn;
 
 	UINT8 botdiffincrease;
@@ -2071,9 +2078,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 roulettetype;
 	INT32 growshrinktimer;
 	INT32 bumper;
-	INT32 comebackpoints;
 	INT32 wanted;
 	boolean songcredit = false;
+	boolean eliminated;
 
 	score = players[player].score;
 	marescore = players[player].marescore;
@@ -2139,8 +2146,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		itemamount = 0;
 		growshrinktimer = 0;
 		bumper = ((gametyperules & GTR_BUMPERS) ? K_StartingBumperCount() : 0);
-		rings = ((gametyperules & GTR_RINGS) ? 5 : 0);
-		comebackpoints = 0;
+		rings = ((gametyperules & GTR_SPHERES) ? 0 : 5);
+		spheres = 0;
+		eliminated = false;
 		wanted = 0;
 	}
 	else
@@ -2165,9 +2173,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		else
 			growshrinktimer = 0;
 
-		bumper = players[player].kartstuff[k_bumper];
+		bumper = players[player].bumpers;
 		rings = players[player].rings;
-		comebackpoints = players[player].kartstuff[k_comebackpoints];
+		spheres = players[player].spheres;
+		eliminated = players[player].eliminated;
 		wanted = players[player].kartstuff[k_wanted];
 	}
 
@@ -2215,6 +2224,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->bot = bot;
 	p->botvars.difficulty = botdifficulty;
 	p->rings = rings;
+	p->spheres = spheres;
 	p->botvars.diffincrease = botdiffincrease;
 	p->botvars.rival = botrival;
 	p->xtralife = xtralife;
@@ -2225,9 +2235,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->kartstuff[k_itemtype] = itemtype;
 	p->kartstuff[k_itemamount] = itemamount;
 	p->kartstuff[k_growshrinktimer] = growshrinktimer;
-	p->kartstuff[k_bumper] = bumper;
-	p->kartstuff[k_comebackpoints] = comebackpoints;
-	p->kartstuff[k_comebacktimer] = comebacktime;
+	p->bumpers = bumper;
+	p->karmadelay = comebacktime;
+	p->eliminated = eliminated;
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
 	p->kartstuff[k_lastdraft] = -1;
@@ -2787,9 +2797,9 @@ const char *Gametype_ConstantNames[NUMGAMETYPES] =
 UINT32 gametypedefaultrules[NUMGAMETYPES] =
 {
 	// Race
-	GTR_CIRCUIT|GTR_RINGS|GTR_BOTS,
+	GTR_CIRCUIT|GTR_BOTS,
 	// Battle
-	GTR_BUMPERS|GTR_WANTED|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
+	GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_WANTED|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
 };
 
 //
