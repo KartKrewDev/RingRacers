@@ -732,15 +732,17 @@ char sprnames[NUMSPRITES + 1][5] =
 	"GCHA", // follower: generic chao
 	"CHEZ", // follower: cheese
 
-	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
-	"VIEW",
-
 	"DBCL", // Drift boost clip
 	"DBNC", // Drift boost clip's sparks
 	"DBST", // Drift boost plume
 
 	"SDDS", // Spindash dust
 	"SDWN", // Spindash wind
+
+	"FLBM",
+
+	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
+	"VIEW",
 };
 
 char spr2names[NUMPLAYERSPRITES][5] =
@@ -5114,6 +5116,15 @@ state_t states[NUMSTATES] =
 
 	{SPR_SDDS, FF_ANIMATE, 9, {NULL}, 9, 1, S_NULL}, // S_SPINDASHDUST
 	{SPR_SDWN, FF_ANIMATE|FF_PAPERSPRITE, 18, {NULL}, 9, 2, S_NULL}, // S_SPINDASHWIND
+
+	// Finish line beam
+	{SPR_FLBM, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_NULL}, // S_FINISHBEAM1
+	{SPR_FLBM, FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_NULL}, // S_FINISHBEAM2
+	{SPR_FLBM, FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_NULL}, // S_FINISHBEAM3
+	{SPR_FLBM, FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_NULL}, // S_FINISHBEAM4
+	{SPR_FLBM, FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_NULL}, // S_FINISHBEAM5
+	{SPR_FLBM, FF_PAPERSPRITE|5, 1, {NULL}, 0, 0, S_NULL}, // S_FINISHBEAMEND1
+	{SPR_FLBM, FF_PAPERSPRITE|6, 1, {NULL}, 0, 0, S_NULL}, // S_FINISHBEAMEND2
 
 #ifdef SEENAMES
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK

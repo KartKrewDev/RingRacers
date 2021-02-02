@@ -1003,15 +1003,17 @@ typedef enum sprite
 	SPR_GCHA, // follower: generic chao
 	SPR_CHEZ, // follower: cheese
 
-	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
-	SPR_VIEW,
-
 	SPR_DBCL, // Drift boost clip
 	SPR_DBNC, // Drift boost clip's sparks
 	SPR_DBST, // Drift boost plume
 
 	SPR_SDDS, // Spindash dust
 	SPR_SDWN, // Spindash wind
+
+	SPR_FLBM, // Finish line beam
+
+	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
+	SPR_VIEW,
 
 	SPR_FIRSTFREESLOT,
 	SPR_LASTFREESLOT = SPR_FIRSTFREESLOT + NUMSPRITEFREESLOTS - 1,
@@ -5270,6 +5272,14 @@ typedef enum state
 
 	S_SPINDASHDUST,
 	S_SPINDASHWIND,
+
+	S_FINISHBEAM1,
+	S_FINISHBEAM2,
+	S_FINISHBEAM3,
+	S_FINISHBEAM4,
+	S_FINISHBEAM5,
+	S_FINISHBEAMEND1,
+	S_FINISHBEAMEND2,
 
 #ifdef SEENAMES
 	S_NAMECHECK,
