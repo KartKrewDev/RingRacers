@@ -357,6 +357,9 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"thwompsactive")) {
 		lua_pushboolean(L, thwompsactive);
 		return 1;
+	} else if (fastcmp(word,"lastLowestLap")) {
+		lua_pushinteger(L, lastLowestLap);
+		return 1;
 	} else if (fastcmp(word,"spbplace")) {
 		lua_pushinteger(L, spbplace);
 		return 1;
