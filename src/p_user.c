@@ -3075,6 +3075,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	mo = player->mo;
 
+	if (mo->hitlag > 0)
+	{
+		// Do not move the camera while in hitlag!
+		// The camera zooming out after you got hit makes it hard to focus on the vibration.
+		return true;
+	}
+
 #ifndef NOCLIPCAM
 	cameranoclip = ((player->pflags & PF_NOCLIP)
 		|| (mo->flags & (MF_NOCLIP|MF_NOCLIPHEIGHT)) // Noclipping player camera noclips too!!
