@@ -2546,7 +2546,7 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 static boolean K_LastTumbleBounceCondition(player_t *player)
 {
-	return (player->tumbleBounces > 4 && player->tumbleHeight < 40);
+	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 40);
 }
 
 static void K_HandleTumbleBounce(player_t *player)
