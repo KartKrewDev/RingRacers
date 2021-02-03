@@ -408,6 +408,7 @@ typedef struct
 #define LF_SCRIPTISFILE       (1<<0) ///< True if the script is a file, not a lump.
 #define LF_NOZONE             (1<<1) ///< Don't include "ZONE" on level title
 #define LF_SECTIONRACE        (1<<2) ///< Section race level
+#define LF_SUBTRACTNUM        (1<<3) ///< Use subtractive position number (for bright levels)
 
 #define LF2_HIDEINMENU    (1<<0) ///< Hide in the multiplayer menu
 #define LF2_HIDEINSTATS   (1<<1) ///< Hide in the statistics screen
