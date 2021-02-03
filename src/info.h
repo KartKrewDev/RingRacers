@@ -303,6 +303,8 @@ typedef enum sprite
 
 	SPR_THOK, // Thok! mobj
 	SPR_PLAY,
+	SPR_KART,
+	SPR_TIRE,
 
 	// Enemies
 	SPR_POSS, // Crawla (Blue)
@@ -1031,7 +1033,7 @@ typedef enum playersprite
 	SPR2_DRLN, SPR2_DRLO, SPR2_DRLI,
 	SPR2_DRRN, SPR2_DRRO, SPR2_DRRI,
 	SPR2_SPIN,
-	SPR2_SQSH,
+	SPR2_DEAD,
 	SPR2_SIGN,
 	SPR2_XTRA,
 	SPR2_FIRSTFREESLOT,
@@ -1072,11 +1074,17 @@ typedef enum state
 	S_KART_DRIFT_R_OUT,
 	S_KART_DRIFT_R_IN,
 	S_KART_SPINOUT,
-	S_KART_SQUISH,
+	S_KART_DEAD,
 	S_KART_SIGN,
 
 	// technically the player goes here but it's an infinite tic state
 	S_OBJPLACE_DUMMY,
+
+	S_KART_LEFTOVER,
+	S_KART_LEFTOVER_NOTIRES,
+
+	S_KART_TIRE1,
+	S_KART_TIRE2,
 
 	// Blue Crawla
 	S_POSS_STND,
@@ -5315,6 +5323,8 @@ typedef enum mobj_type
 
 	MT_THOK, // Thok! mobj
 	MT_PLAYER,
+	MT_KART_LEFTOVER,
+	MT_KART_TIRE,
 
 	// Enemies
 	MT_BLUECRAWLA, // Crawla (Blue)

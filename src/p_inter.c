@@ -1371,13 +1371,47 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		case MT_PLAYER:
 			{
+				angle_t flingAngle;
+				mobj_t *kart;
+
 				target->fuse = TICRATE*3; // timer before mobj disappears from view (even if not an actual player)
 				target->momx = target->momy = target->momz = 0;
 
-				if (target->player && target->player->pflags & PF_GAMETYPEOVER)
-					break;
+				kart = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_KART_LEFTOVER);
 
+				if (kart && !P_MobjWasRemoved(kart))
+				{
+					kart->angle = target->angle;
+					kart->color = target->color;
+					kart->hitlag = target->hitlag;
+					P_SetObjectMomZ(kart, 6*FRACUNIT, false);
+					kart->extravalue1 = target->player->kartweight;
+				}
+
+				if (source && !P_MobjWasRemoved(source))
+				{
+					flingAngle = R_PointToAngle2(
+						source->x - source->momx, source->y - source->momy,
+						target->x, target->y
+					);
+				}
+				else
+				{
+					flingAngle = target->angle + ANGLE_180;
+	
+					if (P_RandomByte() & 1)
+					{
+						flingAngle -= ANGLE_45;
+					}
+					else
+					{
+						flingAngle += ANGLE_45;
+					}
+				}
+
+				P_InstaThrust(target, flingAngle, 14 * target->scale);
 				P_SetObjectMomZ(target, 14*FRACUNIT, false);
+
 				P_PlayDeathSound(target);
 			}
 			break;

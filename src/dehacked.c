@@ -5217,11 +5217,17 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_KART_DRIFT_R_OUT",
 	"S_KART_DRIFT_R_IN",
 	"S_KART_SPINOUT",
-	"S_KART_SQUISH",
+	"S_KART_DEAD",
 	"S_KART_SIGN",
 
 	// technically the player goes here but it's an infinite tic state
 	"S_OBJPLACE_DUMMY",
+
+	"S_KART_LEFTOVER",
+	"S_KART_LEFTOVER_NOTIRES",
+
+	"S_KART_TIRE1",
+	"S_KART_TIRE2",
 
 	// Blue Crawla
 	"S_POSS_STND",
@@ -9421,6 +9427,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_THOK", // Thok! mobj
 	"MT_PLAYER",
+	"MT_KART_LEFTOVER",
+	"MT_KART_TIRE",
 
 	// Enemies
 	"MT_BLUECRAWLA", // Crawla (Blue)

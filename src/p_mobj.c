@@ -242,7 +242,7 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 			player->panim = PA_DASH;
 			break;
 		case S_KART_SPINOUT:
-		case S_KART_SQUISH:
+		case S_KART_DEAD:
 			player->panim = PA_PAIN;
 			break;
 		default:
@@ -2334,6 +2334,68 @@ boolean P_ZMovement(mobj_t *mo)
 
 			if (mo->flags2 & MF2_SKULLFLY) // the skull slammed into something
 				mom.z = -mom.z;
+			else if (mo->type == MT_KART_LEFTOVER)
+			{
+				if (mo->health > 1)
+				{
+					const fixed_t tireOffset = 32;
+					const angle_t aOffset = ANGLE_22h;
+
+					UINT8 i;
+					angle_t tireAngle;
+					mobj_t *tire;
+
+					// Spawn tires!
+					mo->health = 1;
+					P_SetMobjState(mo, S_KART_LEFTOVER_NOTIRES);
+
+					// Front tires
+					tireAngle = mo->angle - aOffset;
+					for (i = 0; i < 2; i++)
+					{
+						tire = P_SpawnMobjFromMobj(
+							mo,
+							tireOffset * FINECOSINE(tireAngle >> ANGLETOFINESHIFT),
+							tireOffset * FINESINE(tireAngle >> ANGLETOFINESHIFT),
+							0,
+							MT_KART_TIRE
+						);
+
+						tire->angle = mo->angle;
+						tire->fuse = 3*TICRATE;
+						P_InstaThrust(tire, tireAngle, 4 * mo->scale);
+						P_SetObjectMomZ(tire, 4*FRACUNIT, false);
+
+						tireAngle += (aOffset * 2);
+					}
+
+					// Back tires
+					tireAngle = (mo->angle + ANGLE_180) - aOffset;
+					for (i = 0; i < 2; i++)
+					{
+						tire = P_SpawnMobjFromMobj(
+							mo,
+							tireOffset * FINECOSINE(tireAngle >> ANGLETOFINESHIFT),
+							tireOffset * FINESINE(tireAngle >> ANGLETOFINESHIFT),
+							0,
+							MT_KART_TIRE
+						);
+
+						tire->angle = mo->angle;
+						tire->fuse = 3*TICRATE;
+						P_InstaThrust(tire, tireAngle, 4 * mo->scale);
+						P_SetObjectMomZ(tire, 4*FRACUNIT, false);
+
+						P_SetMobjState(tire, S_KART_TIRE2);
+
+						tireAngle += (aOffset * 2);
+					}
+				}
+			}
+			else if (mo->type == MT_KART_TIRE)
+			{
+				mom.z = -mom.z;
+			}
 			else if (mo->type == MT_BIGTUMBLEWEED
 				|| mo->type == MT_LITTLETUMBLEWEED
 				|| mo->type == MT_CANNONBALLDECOR
@@ -5867,8 +5929,11 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		{ // Go away.
 		  /// \todo Actually go ahead and remove mobj completely, and fix any bugs and crashes doing this creates. Chasecam should stop moving, and F12 should never return to it.
 			mobj->momz = 0;
+
 			if (mobj->player)
+			{
 				mobj->drawflags |= MFD_DONTDRAW;
+			}
 			else // safe to remove, nobody's going to complain!
 			{
 				P_RemoveMobj(mobj);
@@ -5877,16 +5942,6 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		}
 		else // Apply gravity to fall downwards.
 		{
-			if (mobj->player && !(mobj->fuse % 8) && (mobj->player->charflags & SF_MACHINE))
-			{
-				fixed_t r = mobj->radius >> FRACBITS;
-				mobj_t *explosion = P_SpawnMobj(
-					mobj->x + (P_RandomRange(r, -r) << FRACBITS),
-					mobj->y + (P_RandomRange(r, -r) << FRACBITS),
-					mobj->z + (P_RandomKey(mobj->height >> FRACBITS) << FRACBITS),
-					MT_SONIC3KBOSSEXPLODE);
-				S_StartSound(explosion, sfx_s3kb4);
-			}
 			P_SetObjectMomZ(mobj, -2*FRACUNIT/3, true);
 		}
 		break;
@@ -9079,6 +9134,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 	switch (thing->type)
 	{
 		case MT_PLAYER:
+		case MT_KART_LEFTOVER:
 		case MT_SMALLMACE:
 		case MT_BIGMACE:
 		case MT_PUMA:
@@ -9371,6 +9427,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->color = (P_RandomChance(FRACUNIT/2) ? SKINCOLOR_RED : SKINCOLOR_AQUAMARINE);
 			break;
 		case MT_BALLOON:
+		case MT_KART_LEFTOVER:
 			mobj->color = SKINCOLOR_RED;
 			break;
 		case MT_EGGROBO1:
