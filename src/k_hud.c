@@ -2402,6 +2402,7 @@ static void K_drawKartPlayerCheck(void)
 	UINT8 cnum = 0;
 	UINT8 i;
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
+	fixed_t y = CHEK_Y * FRACUNIT;
 
 	if (stplyr == NULL || stplyr->mo == NULL || P_MobjWasRemoved(stplyr->mo))
 	{
@@ -2420,6 +2421,8 @@ static void K_drawKartPlayerCheck(void)
 
 	if (r_splitscreen)
 	{
+		y /= 2;
+
 		for (i = 1; i <= r_splitscreen; i++)
 		{
 			if (stplyr == &players[displayplayers[i]])
@@ -2492,7 +2495,7 @@ static void K_drawKartPlayerCheck(void)
 		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, &v, cnum);
 
 		colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
-		V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
 	}
 }
 
