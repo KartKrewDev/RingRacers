@@ -1949,6 +1949,20 @@ void K_KartMoveAnimation(player_t *player)
 			{
 				// Only try glancing if you're driving straight.
 				glanceDir = K_GlanceAtPlayers(player);
+
+				if (cmd->buttons & BT_LOOKBACK)
+				{
+					if (glanceDir == 0)
+					{
+						// Look to your right by default
+						glanceDir = -1;
+					}
+					else
+					{
+						// Looking back AND glancing? Amplify the look!
+						glanceDir *= 2;
+					}
+				}
 			}
 
 			if (player->speed >= fastspeed && player->speed >= (player->lastspeed - speedthreshold))
@@ -1965,17 +1979,23 @@ void K_KartMoveAnimation(player_t *player)
 				}
 				else
 				{
-					if (glanceDir == -1)
+					switch (glanceDir)
 					{
-						SetState(S_KART_FAST_GLANCE_R);
-					}
-					else if (glanceDir == 1)
-					{
-						SetState(S_KART_FAST_GLANCE_L);
-					}
-					else
-					{
-						SetState(S_KART_FAST);
+						case -2:
+							SetState(S_KART_FAST_LOOK_R);
+							break;
+						case 2:
+							SetState(S_KART_FAST_LOOK_L);
+							break;
+						case -1:
+							SetState(S_KART_FAST_GLANCE_R);
+							break;
+						case 1:
+							SetState(S_KART_FAST_GLANCE_L);
+							break;
+						default:
+							SetState(S_KART_FAST);
+							break;
 					}
 				}
 			}
@@ -1995,17 +2015,23 @@ void K_KartMoveAnimation(player_t *player)
 					}
 					else
 					{
-						if (glanceDir == -1)
+						switch (glanceDir)
 						{
-							SetState(S_KART_SLOW_GLANCE_R);
-						}
-						else if (glanceDir == 1)
-						{
-							SetState(S_KART_SLOW_GLANCE_L);
-						}
-						else
-						{
-							SetState(S_KART_SLOW);
+							case -2:
+								SetState(S_KART_SLOW_LOOK_R);
+								break;
+							case 2:
+								SetState(S_KART_SLOW_LOOK_L);
+								break;
+							case -1:
+								SetState(S_KART_SLOW_GLANCE_R);
+								break;
+							case 1:
+								SetState(S_KART_SLOW_GLANCE_L);
+								break;
+							default:
+								SetState(S_KART_SLOW);
+								break;
 						}
 					}
 				}
@@ -2023,17 +2049,23 @@ void K_KartMoveAnimation(player_t *player)
 					}
 					else
 					{
-						if (glanceDir == -1)
+						switch (glanceDir)
 						{
-							SetState(S_KART_STILL_GLANCE_R);
-						}
-						else if (glanceDir == 1)
-						{
-							SetState(S_KART_STILL_GLANCE_L);
-						}
-						else
-						{
-							SetState(S_KART_STILL);
+							case -2:
+								SetState(S_KART_STILL_LOOK_R);
+								break;
+							case 2:
+								SetState(S_KART_STILL_LOOK_L);
+								break;
+							case -1:
+								SetState(S_KART_STILL_GLANCE_R);
+								break;
+							case 1:
+								SetState(S_KART_STILL_GLANCE_L);
+								break;
+							default:
+								SetState(S_KART_STILL);
+								break;
 						}
 					}
 				}

@@ -749,13 +749,24 @@ char sprnames[NUMSPRITES + 1][5] =
 
 char spr2names[NUMPLAYERSPRITES][5] =
 {
-	"STIN", "STIL", "STIR", "STGL", "STGR", // Still
-	"SLWN", "SLWL", "SLWR", "SLGL", "SLGR", // Slow driving
-	"FSTN", "FSTL", "FSTR", "FSGL", "FSGR", // Fast driving
+	"STIN", "STIL", "STIR", // Still
+	"STGL", "STGR", // Still (glance back)
+	"STLL", "STLR", // Still (look back)
+
+	"SLWN", "SLWL", "SLWR", // Slow driving
+	"SLGL", "SLGR", // Slow (glance back)
+	"SLLL", "SLLR", // Slow (look back)
+
+	"FSTN", "FSTL", "FSTR", // Fast driving
+	"FSGL", "FSGR", // Fast (glance back)
+	"FSLL", "FSLR", // Fast (look back)
+
 	"DRLN", "DRLO", "DRLI", // Drifting left
 	"DRRN", "DRRO", "DRRI", // Drifting right
+
 	"SPIN", // Spinout
 	"DEAD", // Dead
+
 	"SIGN", // Finish signpost
 	"XTRA", // Three Faces of Darkness
 };
@@ -767,18 +778,24 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 	SPR2_STIN, // SPR2_STIR
 	SPR2_STIN, // SPR2_STGL
 	SPR2_STIN, // SPR2_STGR
+	SPR2_STGL, // SPR2_STLL
+	SPR2_STGR, // SPR2_STLR
 
 	0, // SPR2_SLWN
 	SPR2_SLWN, // SPR2_SLWL
 	SPR2_SLWN, // SPR2_SLWR
 	SPR2_SLWN, // SPR2_SLGL
 	SPR2_SLWN, // SPR2_SLGR
+	SPR2_SLGL, // SPR2_SLLL
+	SPR2_SLGR, // SPR2_SLLR
 
 	0, // SPR2_FSTN
 	SPR2_FSTN, // SPR2_FSTL
 	SPR2_FSTN, // SPR2_FSTR
 	SPR2_FSTN, // SPR2_FSGL
 	SPR2_FSTN, // SPR2_FSGR
+	SPR2_FSGL, // SPR2_FSLL
+	SPR2_FSGR, // SPR2_FSLR
 
 	0, // SPR2_DRLN
 	SPR2_DRLN, // SPR2_DRLO
@@ -825,16 +842,22 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY, SPR2_STIR,					  1, {NULL}, 0, 0, S_KART_STILL_R},				// S_KART_STILL_R
 	{SPR_PLAY, SPR2_STGL,					  1, {NULL}, 0, 0, S_KART_STILL_GLANCE_L},		// S_KART_STILL_GLANCE_L
 	{SPR_PLAY, SPR2_STGR,					  1, {NULL}, 0, 0, S_KART_STILL_GLANCE_R},		// S_KART_STILL_GLANCE_R
+	{SPR_PLAY, SPR2_STLL,					  1, {NULL}, 0, 0, S_KART_STILL_LOOK_L},		// S_KART_STILL_LOOK_L
+	{SPR_PLAY, SPR2_STLR,					  1, {NULL}, 0, 0, S_KART_STILL_LOOK_R},		// S_KART_STILL_LOOK_R
 	{SPR_PLAY, SPR2_SLWN,					  1, {NULL}, 0, 0, S_KART_SLOW},				// S_KART_SLOW
 	{SPR_PLAY, SPR2_SLWL,					  1, {NULL}, 0, 0, S_KART_SLOW_L},				// S_KART_SLOW_L
 	{SPR_PLAY, SPR2_SLWR,					  1, {NULL}, 0, 0, S_KART_SLOW_R},				// S_KART_SLOW_R
 	{SPR_PLAY, SPR2_SLGL,					  1, {NULL}, 0, 0, S_KART_SLOW_GLANCE_L},		// S_KART_SLOW_GLANCE_L
 	{SPR_PLAY, SPR2_SLGR,					  1, {NULL}, 0, 0, S_KART_SLOW_GLANCE_R},		// S_KART_SLOW_GLANCE_R
+	{SPR_PLAY, SPR2_SLLL,					  1, {NULL}, 0, 0, S_KART_SLOW_LOOK_L},			// S_KART_SLOW_LOOK_L
+	{SPR_PLAY, SPR2_SLLR,					  1, {NULL}, 0, 0, S_KART_SLOW_LOOK_R},			// S_KART_SLOW_LOOK_R
 	{SPR_PLAY, SPR2_FSTN,					  1, {NULL}, 0, 0, S_KART_FAST},				// S_KART_FAST
 	{SPR_PLAY, SPR2_FSTL,					  1, {NULL}, 0, 0, S_KART_FAST_L},				// S_KART_FAST_L
 	{SPR_PLAY, SPR2_FSTR,					  1, {NULL}, 0, 0, S_KART_FAST_R},				// S_KART_FAST_R
 	{SPR_PLAY, SPR2_FSGL,					  1, {NULL}, 0, 0, S_KART_FAST_GLANCE_L},		// S_KART_FAST_GLANCE_L
 	{SPR_PLAY, SPR2_FSGR,					  1, {NULL}, 0, 0, S_KART_FAST_GLANCE_R},		// S_KART_FAST_GLANCE_R
+	{SPR_PLAY, SPR2_FSLL,					  1, {NULL}, 0, 0, S_KART_FAST_LOOK_L},			// S_KART_FAST_LOOK_L
+	{SPR_PLAY, SPR2_FSLR,					  1, {NULL}, 0, 0, S_KART_FAST_LOOK_R},			// S_KART_FAST_LOOK_R
 	{SPR_PLAY, SPR2_DRLN,					  1, {NULL}, 0, 0, S_KART_DRIFT_L},				// S_KART_DRIFT_L
 	{SPR_PLAY, SPR2_DRLO,					  1, {NULL}, 0, 0, S_KART_DRIFT_L_OUT},			// S_KART_DRIFT_L_OUT
 	{SPR_PLAY, SPR2_DRLI,					  1, {NULL}, 0, 0, S_KART_DRIFT_L_IN},			// S_KART_DRIFT_L_IN
