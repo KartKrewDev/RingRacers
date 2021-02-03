@@ -3907,10 +3907,11 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 		case 499: // Enable/Disable Waypoints in Tagged Sectors
 			{
 				sector_t *sec;
-				mobj_t *waypointmobj;
+				mobj_t *thing;
 
 				if (waypointcap == NULL)
 				{
+					// No point in trying at all if no waypoints exist.
 					break;
 				}
 
@@ -3918,21 +3919,17 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				{
 					sec = sectors + secnum;
 
-					// Needs to do this instead of simply iterating through sector thing list because they have MF_NOSECTOR.
-					// Maybe it'd be OK to remove, but I'd like to play it safe.
-					for (waypointmobj = waypointcap; waypointmobj != NULL; waypointmobj = waypointmobj->tracer)
+					for (thing = sec->thinglist; thing; thing = thing->snext)
 					{
-						sector_t *waypointSector = R_PointInSubsector(waypointmobj->x, waypointmobj->y)->sector;
-
-						if (waypointSector == sec)
+						if (thing->type == MT_WAYPOINT)
 						{
 							if (line->flags & ML_NOCLIMB)
 							{
-								waypointmobj->extravalue1 = 1;
+								thing->extravalue1 = 1;
 							}
 							else
 							{
-								waypointmobj->extravalue1 = 0;
+								thing->extravalue1 = 0;
 							}
 						}
 					}
