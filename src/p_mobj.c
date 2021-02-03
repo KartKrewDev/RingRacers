@@ -9427,6 +9427,18 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->color = (P_RandomChance(FRACUNIT/2) ? SKINCOLOR_RED : SKINCOLOR_AQUAMARINE);
 			break;
 		case MT_BALLOON:
+			{
+				static const UINT8 BALLOONCOLORS[] = {
+					// Carnival Night balloon colors
+					SKINCOLOR_KETCHUP,
+					SKINCOLOR_SAPPHIRE,
+					SKINCOLOR_TANGERINE,
+					SKINCOLOR_JET
+				};
+
+				mobj->color = BALLOONCOLORS[P_RandomKey(sizeof(BALLOONCOLORS))];
+			}
+			break;
 		case MT_KART_LEFTOVER:
 			mobj->color = SKINCOLOR_RED;
 			break;
