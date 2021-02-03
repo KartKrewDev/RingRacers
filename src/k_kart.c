@@ -1734,6 +1734,102 @@ void K_SpawnDriftBoostClipSpark(mobj_t *clip)
 	spark->momy = clip->momx/2;
 }
 
+static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
+{
+	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	const angle_t blindSpotSize = ANG10; // ANG5
+	UINT8 i;
+	SINT8 glanceDir = 0;
+	SINT8 lastValidGlance = 0;
+
+	// See if there's any players coming up behind us.
+	// If so, your character will glance at 'em.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *p;
+		angle_t back;
+		angle_t diff;
+		fixed_t distance;
+		SINT8 dir = -1;
+
+		if (!playeringame[i])
+		{
+			// Invalid player
+			continue;
+		}
+
+		p = &players[i];
+
+		if (p == glancePlayer)
+		{
+			// FOOL! Don't glance at yerself!
+			continue;
+		}
+
+		if (!p->mo || P_MobjWasRemoved(p->mo))
+		{
+			// Invalid mobj
+			continue;
+		}
+
+		if (p->spectator || p->kartstuff[k_hyudorotimer] > 0)
+		{
+			// Not playing / invisible
+			continue;
+		}
+
+		distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y);
+
+		if (distance > maxdistance)
+		{
+			continue;
+		}
+
+		back = glancePlayer->mo->angle + ANGLE_180;
+		diff = R_PointToAngle2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y) - back;
+
+		if (diff > ANGLE_180)
+		{
+			diff = InvAngle(diff);
+			dir = -dir;
+		}
+
+		if (diff > ANGLE_90)
+		{
+			// Not behind the player
+			continue;
+		}
+
+		if (diff < blindSpotSize)
+		{
+			// Small blindspot directly behind your back, gives the impression of smoothly turning.
+			continue;
+		}
+
+		if (P_CheckSight(glancePlayer->mo, p->mo) == true)
+		{
+			// Not blocked by a wall, we can glance at 'em!
+			// Adds, so that if there's more targets on one of your sides, it'll glance on that side.
+			glanceDir += dir;
+
+			// That poses a limitation if there's an equal number of targets on both sides...
+			// In that case, we'll pick the last chosen glance direction.
+			lastValidGlance = dir;
+		}
+	}
+
+	if (glanceDir > 0)
+	{
+		return 1;
+	}
+	else if (glanceDir < 0)
+	{
+		return -1;
+	}
+
+	return lastValidGlance;
+}
+
 /**	\brief Handles the state changing for moving players, moved here to eliminate duplicate code
 
 	\param	player	player data
@@ -1847,6 +1943,14 @@ void K_KartMoveAnimation(player_t *player)
 		}
 		else
 		{
+			SINT8 glanceDir = 0;
+
+			if (turndir == 0)
+			{
+				// Only try glancing if you're driving straight.
+				glanceDir = K_GlanceAtPlayers(player);
+			}
+
 			if (player->speed >= fastspeed && player->speed >= (player->lastspeed - speedthreshold))
 			{
 				// Going REAL fast!
@@ -1861,7 +1965,18 @@ void K_KartMoveAnimation(player_t *player)
 				}
 				else
 				{
-					SetState(S_KART_FAST);
+					if (glanceDir == -1)
+					{
+						SetState(S_KART_FAST_GLANCE_R);
+					}
+					else if (glanceDir == 1)
+					{
+						SetState(S_KART_FAST_GLANCE_L);
+					}
+					else
+					{
+						SetState(S_KART_FAST);
+					}
 				}
 			}
 			else
@@ -1880,7 +1995,18 @@ void K_KartMoveAnimation(player_t *player)
 					}
 					else
 					{
-						SetState(S_KART_SLOW);
+						if (glanceDir == -1)
+						{
+							SetState(S_KART_SLOW_GLANCE_R);
+						}
+						else if (glanceDir == 1)
+						{
+							SetState(S_KART_SLOW_GLANCE_L);
+						}
+						else
+						{
+							SetState(S_KART_SLOW);
+						}
 					}
 				}
 				else
@@ -1897,7 +2023,18 @@ void K_KartMoveAnimation(player_t *player)
 					}
 					else
 					{
-						SetState(S_KART_STILL);
+						if (glanceDir == -1)
+						{
+							SetState(S_KART_STILL_GLANCE_R);
+						}
+						else if (glanceDir == 1)
+						{
+							SetState(S_KART_STILL_GLANCE_L);
+						}
+						else
+						{
+							SetState(S_KART_STILL);
+						}
 					}
 				}
 			}
