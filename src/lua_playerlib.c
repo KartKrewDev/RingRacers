@@ -192,6 +192,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->mo, META_MOBJ);
 	else if (fastcmp(field,"cmd"))
 		LUA_PushUserdata(L, &plr->cmd, META_TICCMD);
+	else if (fastcmp(field,"respawn"))
+		LUA_PushUserdata(L, &plr->respawn, META_RESPAWN);
 	else if (fastcmp(field,"playerstate"))
 		lua_pushinteger(L, plr->playerstate);
 	else if (fastcmp(field,"viewz"))
@@ -212,6 +214,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->powers, META_POWERS);
 	else if (fastcmp(field,"kartstuff"))
 		LUA_PushUserdata(L, plr->kartstuff, META_KARTSTUFF);
+	else if (fastcmp(field,"karthud"))
+		LUA_PushUserdata(L, plr->karthud, META_KARTHUD);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"tumbleBounces"))
@@ -470,6 +474,8 @@ static int player_set(lua_State *L)
 		(newmo->player = plr)->mo = newmo; // set player pointer for new mobj, and set new mobj as the player's mobj
 	}
 	else if (fastcmp(field,"cmd"))
+		return NOSET;
+	else if (fastcmp(field,"respawn"))
 		return NOSET;
 	else if (fastcmp(field,"playerstate"))
 		plr->playerstate = luaL_checkinteger(L, 3);
@@ -848,13 +854,48 @@ static int kartstuff_set(lua_State *L)
 	return 0;
 }
 
-// #kartstuff -> NUMKARTSTUFF
+// #karthud -> NUMKARTSTUFF
 static int kartstuff_len(lua_State *L)
 {
 	lua_pushinteger(L, NUMKARTSTUFF);
 	return 1;
 }
 
+// karthud, ks -> karthud[ks]
+static int karthud_get(lua_State *L)
+{
+	INT32 *karthud = *((INT32 **)luaL_checkudata(L, 1, META_KARTHUD));
+	karthudtype_t ks = luaL_checkinteger(L, 2);
+	if (ks >= NUMKARTHUD)
+		return luaL_error(L, LUA_QL("karthudtype_t") " cannot be %u", ks);
+	lua_pushinteger(L, karthud[ks]);
+	return 1;
+}
+
+// karthud, ks, value -> kartstuff[ks] = value
+static int karthud_set(lua_State *L)
+{
+	INT32 *karthud = *((INT32 **)luaL_checkudata(L, 1, META_KARTHUD));
+	karthudtype_t ks = luaL_checkinteger(L, 2);
+	INT32 i = (INT32)luaL_checkinteger(L, 3);
+	if (ks >= NUMKARTHUD)
+		return luaL_error(L, LUA_QL("karthudtype_t") " cannot be %u", ks);
+	if (hud_running)
+		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter player_t in BuildCMD code!");
+	karthud[ks] = i;
+	return 0;
+}
+
+// #karthud -> NUMKARTHUD
+static int karthud_len(lua_State *L)
+{
+	lua_pushinteger(L, NUMKARTHUD);
+	return 1;
+}
+
+// player.cmd get/set
 #define NOFIELD luaL_error(L, LUA_QL("ticcmd_t") " has no field named " LUA_QS, field)
 #define NOSET luaL_error(L, LUA_QL("ticcmd_t") " field " LUA_QS " cannot be set.", field)
 
@@ -913,6 +954,82 @@ static int ticcmd_set(lua_State *L)
 
 #undef NOFIELD
 
+// Same shit for player.respawn variable... Why is everything in different sub-variables again now???
+#define RNOFIELD luaL_error(L, LUA_QL("respawnvars_t") " has no field named " LUA_QS, field)
+#define RUNIMPLEMENTED luaL_error(L, LUA_QL("respawnvars_t") " unimplemented field " LUA_QS " cannot be read or set.", field)
+// @TODO: Waypoints in Lua possibly maybe? No don't count on me to do it...
+
+static int respawn_get(lua_State *L)
+{
+	respawnvars_t *rsp = *((respawnvars_t **)luaL_checkudata(L, 1, META_RESPAWN));
+	const char *field = luaL_checkstring(L, 2);
+	if (!rsp)
+		return LUA_ErrInvalid(L, "player_t");
+
+	if (fastcmp(field,"state"))
+		lua_pushinteger(L, rsp->state);
+	else if (fastcmp(field,"waypoint"))
+		return RUNIMPLEMENTED;
+	else if (fastcmp(field,"pointx"))
+		lua_pushfixed(L, rsp->pointx);
+	else if (fastcmp(field,"pointy"))
+		lua_pushfixed(L, rsp->pointy);
+	else if (fastcmp(field,"pointz"))
+		lua_pushfixed(L, rsp->pointz);
+	else if (fastcmp(field,"flip"))
+		lua_pushboolean(L, rsp->flip);
+	else if (fastcmp(field,"timer"))
+		lua_pushinteger(L, rsp->timer);
+	else if (fastcmp(field,"distanceleft"))
+		lua_pushinteger(L, rsp->distanceleft);	// Can't possibly foresee any problem when pushing UINT32 to Lua's INT32 hahahahaha, get ready for dumb hacky shit on high distances.
+	else if (fastcmp(field,"dropdash"))
+		lua_pushinteger(L, rsp->dropdash);
+	else
+		return RNOFIELD;
+
+	return 1;
+}
+
+static int respawn_set(lua_State *L)
+{
+	respawnvars_t *rsp = *((respawnvars_t **)luaL_checkudata(L, 1, META_RESPAWN));
+	const char *field = luaL_checkstring(L, 2);
+	if (!rsp)
+		return LUA_ErrInvalid(L, "respawnvars_t");
+
+	if (hud_running)
+		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter player_t in CMD building code!");
+
+	if (fastcmp(field,"state"))
+		rsp->state = (UINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"waypoint"))
+		return RUNIMPLEMENTED;
+	else if (fastcmp(field,"pointx"))
+		rsp->pointx = luaL_checkfixed(L, 3);
+	else if (fastcmp(field,"pointy"))
+		rsp->pointy = luaL_checkfixed(L, 3);
+	else if (fastcmp(field,"pointz"))
+		rsp->pointz = luaL_checkfixed(L, 3);
+	else if (fastcmp(field,"flip"))
+		rsp->flip = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"timer"))
+		rsp->timer = (tic_t)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"distanceleft"))
+		rsp->distanceleft = (UINT32)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"dropdash"))
+		rsp->dropdash = (tic_t)luaL_checkinteger(L, 3);
+	else
+		return RNOFIELD;
+
+	return 0;
+}
+
+#undef RNOFIELD
+#undef RUNIMPLEMENTED
+
+
 int LUA_PlayerLib(lua_State *L)
 {
 	luaL_newmetatable(L, META_PLAYER);
@@ -946,6 +1063,25 @@ int LUA_PlayerLib(lua_State *L)
 
 		lua_pushcfunction(L, kartstuff_len);
 		lua_setfield(L, -2, "__len");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L, META_KARTHUD);
+		lua_pushcfunction(L, karthud_get);
+		lua_setfield(L, -2, "__index");
+
+		lua_pushcfunction(L, karthud_set);
+		lua_setfield(L, -2, "__newindex");
+
+		lua_pushcfunction(L, karthud_len);
+		lua_setfield(L, -2, "__len");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L, META_RESPAWN);
+		lua_pushcfunction(L, respawn_get);
+		lua_setfield(L, -2, "__index");
+
+		lua_pushcfunction(L, respawn_set);
+		lua_setfield(L, -2, "__newindex");
 	lua_pop(L,1);
 
 	luaL_newmetatable(L, META_TICCMD);
