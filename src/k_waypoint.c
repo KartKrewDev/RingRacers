@@ -454,7 +454,7 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 
 	linkcolour = linkcolours[K_GetWaypointID(waypoint1) % linkcolourssize];
 
-	if (!K_GetWaypointIsEnabled(waypoint2))
+	if (!K_GetWaypointIsEnabled(waypoint1) || !K_GetWaypointIsEnabled(waypoint2))
 	{
 		linkcolour = SKINCOLOR_BLACK;
 	}
