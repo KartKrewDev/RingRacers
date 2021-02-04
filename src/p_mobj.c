@@ -221,17 +221,29 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		case S_KART_STILL:
 		case S_KART_STILL_L:
 		case S_KART_STILL_R:
-			player->panim = PA_IDLE;
+		case S_KART_STILL_GLANCE_L:
+		case S_KART_STILL_GLANCE_R:
+		case S_KART_STILL_LOOK_L:
+		case S_KART_STILL_LOOK_R:
+			player->panim = PA_STILL;
 			break;
 		case S_KART_SLOW:
 		case S_KART_SLOW_L:
 		case S_KART_SLOW_R:
-			player->panim = PA_WALK;
+		case S_KART_SLOW_GLANCE_L:
+		case S_KART_SLOW_GLANCE_R:
+		case S_KART_SLOW_LOOK_L:
+		case S_KART_SLOW_LOOK_R:
+			player->panim = PA_SLOW;
 			break;
 		case S_KART_FAST:
 		case S_KART_FAST_L:
 		case S_KART_FAST_R:
-			player->panim = PA_RUN;
+		case S_KART_FAST_GLANCE_L:
+		case S_KART_FAST_GLANCE_R:
+		case S_KART_FAST_LOOK_L:
+		case S_KART_FAST_LOOK_R:
+			player->panim = PA_FAST;
 			break;
 		case S_KART_DRIFT_L:
 		case S_KART_DRIFT_L_OUT:
@@ -239,11 +251,11 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		case S_KART_DRIFT_R:
 		case S_KART_DRIFT_R_OUT:
 		case S_KART_DRIFT_R_IN:
-			player->panim = PA_DASH;
+			player->panim = PA_DRIFT;
 			break;
 		case S_KART_SPINOUT:
 		case S_KART_DEAD:
-			player->panim = PA_PAIN;
+			player->panim = PA_HURT;
 			break;
 		default:
 			player->panim = PA_ETC;
@@ -1300,7 +1312,7 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 			&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) /*&& (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2)*/))
 		{
 			// if in a walking frame, stop moving
-			if (player->panim == PA_WALK)
+			if (player->panim == PA_SLOW)
 			{
 				P_SetPlayerMobjState(mo, S_KART_STILL);
 			}
@@ -2695,7 +2707,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->z = mo->floorz;
 
 		// Get up if you fell.
-		if (mo->player->panim == PA_PAIN && mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->tumbleBounces == 0)
+		if (mo->player->panim == PA_HURT && mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->tumbleBounces == 0)
 			P_SetPlayerMobjState(mo, S_KART_STILL);
 
 		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope)) {

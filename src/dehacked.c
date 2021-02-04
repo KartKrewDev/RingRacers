@@ -11434,19 +11434,11 @@ struct {
 
 	// Player animation (panim_t)
 	{"PA_ETC",PA_ETC},
-	{"PA_IDLE",PA_IDLE},
-	{"PA_EDGE",PA_EDGE},
-	{"PA_WALK",PA_WALK},
-	{"PA_RUN",PA_RUN},
-	{"PA_DASH",PA_DASH},
-	{"PA_PAIN",PA_PAIN},
-	{"PA_ROLL",PA_ROLL},
-	{"PA_JUMP",PA_JUMP},
-	{"PA_SPRING",PA_SPRING},
-	{"PA_FALL",PA_FALL},
-	{"PA_ABILITY",PA_ABILITY},
-	{"PA_ABILITY2",PA_ABILITY2},
-	{"PA_RIDE",PA_RIDE},
+	{"PA_STILL",PA_STILL},
+	{"PA_SLOW",PA_SLOW},
+	{"PA_FAST",PA_FAST},
+	{"PA_DRIFT",PA_DRIFT},
+	{"PA_HURT",PA_HURT},
 
 	// Value for infinite lives
 	{"INFLIVES",INFLIVES},

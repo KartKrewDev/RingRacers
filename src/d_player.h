@@ -115,19 +115,11 @@ typedef enum
 {
 	// Are animation frames playing?
 	PA_ETC=0,
-	PA_IDLE,
-	PA_EDGE,
-	PA_WALK,
-	PA_RUN,
-	PA_DASH,
-	PA_PAIN,
-	PA_ROLL,
-	PA_JUMP,
-	PA_SPRING,
-	PA_FALL,
-	PA_ABILITY,
-	PA_ABILITY2,
-	PA_RIDE
+	PA_STILL,
+	PA_SLOW,
+	PA_FAST,
+	PA_DRIFT,
+	PA_HURT
 } panim_t;
 
 //

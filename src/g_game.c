@@ -2261,7 +2261,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->pflags |= PF_JUMPDOWN;
 
 	p->playerstate = PST_LIVE;
-	p->panim = PA_IDLE; // standing animation
+	p->panim = PA_STILL; // standing animation
 
 	// Check to make sure their color didn't change somehow...
 	if (G_GametypeHasTeams())
