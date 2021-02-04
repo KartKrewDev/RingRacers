@@ -1849,6 +1849,8 @@ void K_KartMoveAnimation(player_t *player)
 	ticcmd_t *cmd = &player->cmd;
 	const boolean spinningwheels = ((cmd->buttons & BT_ACCELERATE) || (onground && player->speed > 0));
 
+	SINT8 destGlanceDir = 0;
+
 	if (cmd->turning < -minturn)
 	{
 		turndir = -1;
@@ -1943,26 +1945,45 @@ void K_KartMoveAnimation(player_t *player)
 		}
 		else
 		{
-			SINT8 glanceDir = 0;
-
 			if (turndir == 0)
 			{
 				// Only try glancing if you're driving straight.
-				glanceDir = K_GlanceAtPlayers(player);
+				destGlanceDir = K_GlanceAtPlayers(player);
 
 				if (cmd->buttons & BT_LOOKBACK)
 				{
-					if (glanceDir == 0)
+					if (destGlanceDir == 0)
 					{
-						// Look to your right by default
-						glanceDir = -1;
+						if (player->glanceDir != 0)
+						{
+							// Keep to the side you were already on.
+							if (player->glanceDir < 0)
+							{
+								destGlanceDir = -1;
+							}
+							else
+							{
+								destGlanceDir = 1;
+							}
+						}
+						else
+						{
+							// Look to your right by default
+							destGlanceDir = -1;
+						}
 					}
 					else
 					{
 						// Looking back AND glancing? Amplify the look!
-						glanceDir *= 2;
+						destGlanceDir *= 2;
 					}
 				}
+			}
+			else
+			{
+				// Not glancing
+				destGlanceDir = 0;
+				player->glanceDir = 0;
 			}
 
 			if (player->speed >= fastspeed && player->speed >= (player->lastspeed - speedthreshold))
@@ -1979,7 +2000,7 @@ void K_KartMoveAnimation(player_t *player)
 				}
 				else
 				{
-					switch (glanceDir)
+					switch (player->glanceDir)
 					{
 						case -2:
 							SetState(S_KART_FAST_LOOK_R);
@@ -2015,7 +2036,7 @@ void K_KartMoveAnimation(player_t *player)
 					}
 					else
 					{
-						switch (glanceDir)
+						switch (player->glanceDir)
 						{
 							case -2:
 								SetState(S_KART_SLOW_LOOK_R);
@@ -2049,7 +2070,7 @@ void K_KartMoveAnimation(player_t *player)
 					}
 					else
 					{
-						switch (glanceDir)
+						switch (player->glanceDir)
 						{
 							case -2:
 								SetState(S_KART_STILL_LOOK_R);
@@ -2069,6 +2090,16 @@ void K_KartMoveAnimation(player_t *player)
 						}
 					}
 				}
+			}
+
+			// Update your value to smooth it out.
+			if (player->glanceDir > destGlanceDir)
+			{
+				player->glanceDir--;
+			}
+			else if (player->glanceDir < destGlanceDir)
+			{
+				player->glanceDir++;
 			}
 		}
 	}

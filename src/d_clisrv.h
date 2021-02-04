@@ -295,6 +295,8 @@ typedef struct
 	boolean tumbleLastBounce;
 	boolean tumbleSound;
 
+	SINT8 glanceDir;
+
 	// respawnvars_t
 	UINT8 respawn_state;
 	fixed_t respawn_pointx;

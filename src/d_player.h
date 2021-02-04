@@ -569,6 +569,8 @@ typedef struct player_s
 	boolean tumbleLastBounce;
 	boolean tumbleSound;
 
+	SINT8 glanceDir; // Direction the player is trying to look backwards in
+
 	//
 
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
