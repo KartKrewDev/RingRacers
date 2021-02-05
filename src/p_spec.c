@@ -2182,6 +2182,20 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 			}
 			break;
 
+			case 2003: // Respawn Line
+			{
+				/* No Climb: only trigger from front side */
+				if
+					(
+							player->respawn.state == RESPAWNST_NONE &&
+							(!(line->flags & ML_NOCLIMB) || side == 0)
+					)
+				{
+					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_DEATHPIT);
+				}
+			}
+			break;
+
 			default:
 			{
 				// Do nothing
@@ -6938,6 +6952,8 @@ void P_SpawnSpecials(boolean fromnetsave)
 					circuitmap = true;
 				break;
 			case 2002: // Linedef Trigger: Race Lap
+				break;
+			case 2003: // Respawn Line
 				break;
 
 			default:
