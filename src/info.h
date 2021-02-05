@@ -6383,6 +6383,8 @@ typedef enum mobj_type
 
 	MT_PAPERITEMSPOT,
 
+	MT_BEAMPOINT,
+
 #ifdef SEENAMES
 	MT_NAMECHECK,
 #endif
