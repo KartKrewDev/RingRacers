@@ -2184,8 +2184,15 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 
 			case 2003: // Respawn Line
 			{
-				if (player->respawn.state == RESPAWNST_NONE)
+				/* No Climb: only trigger from front side */
+				if
+					(
+							player->respawn.state == RESPAWNST_NONE &&
+							(!(line->flags & ML_NOCLIMB) || side == 0)
+					)
+				{
 					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_DEATHPIT);
+				}
 			}
 			break;
 
