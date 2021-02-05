@@ -1848,6 +1848,7 @@ void K_KartMoveAnimation(player_t *player)
 
 	ticcmd_t *cmd = &player->cmd;
 	const boolean spinningwheels = ((cmd->buttons & BT_ACCELERATE) || (onground && player->speed > 0));
+	const boolean lookback = (cmd->buttons & BT_LOOKBACK);
 
 	SINT8 destGlanceDir = 0;
 
@@ -1945,12 +1946,18 @@ void K_KartMoveAnimation(player_t *player)
 		}
 		else
 		{
+			if (lookback == true)
+			{
+				// Prioritize looking back over turning
+				turndir = 0;
+			}
+
 			if (turndir == 0)
 			{
 				// Only try glancing if you're driving straight.
 				destGlanceDir = K_GlanceAtPlayers(player);
 
-				if (cmd->buttons & BT_LOOKBACK)
+				if (lookback == true)
 				{
 					if (destGlanceDir == 0)
 					{
