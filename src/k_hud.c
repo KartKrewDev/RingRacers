@@ -1415,17 +1415,26 @@ static void K_DrawKartPositionNum(INT32 num)
 	fixed_t scale = FRACUNIT;
 	patch_t *localpatch = kp_positionnum[0][0];
 	INT32 fx = 0, fy = 0, fflags = 0;
+	INT32 addOrSub = V_ADDTRANS;
 	boolean flipdraw = false;	// flip the order we draw it in for MORE splitscreen bs. fun.
 	boolean flipvdraw = false;	// used only for 2p splitscreen so overtaking doesn't make 1P's position fly off the screen.
 	boolean overtake = false;
+
+	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM)
+	{
+		addOrSub = V_SUBTRANS;
+	}
 
 	if (stplyr->kartstuff[k_positiondelay] || stplyr->exiting)
 	{
 		scale *= 2;
 		overtake = true;	// this is used for splitscreen stuff in conjunction with flipdraw.
 	}
+
 	if (r_splitscreen)
+	{
 		scale /= 2;
+	}
 
 	W = FixedMul(W<<FRACBITS, scale)>>FRACBITS;
 
@@ -1472,38 +1481,46 @@ static void K_DrawKartPositionNum(INT32 num)
 	}
 
 	// Special case for 0
-	if (!num)
+	if (num <= 0)
 	{
-		V_DrawFixedPatch(fx<<FRACBITS, fy<<FRACBITS, scale, V_HUDTRANSHALF|V_SLIDEIN|fflags, kp_positionnum[0][0], NULL);
+		V_DrawFixedPatch(fx<<FRACBITS, fy<<FRACBITS, scale, addOrSub|V_SLIDEIN|fflags, kp_positionnum[0][0], NULL);
 		return;
 	}
-
-	I_Assert(num >= 0); // This function does not draw negative numbers
 
 	// Draw the number
 	while (num)
 	{
 		if (win) // 1st place winner? You get rainbows!!
+		{
 			localpatch = kp_winnernum[(leveltime % (NUMWINFRAMES*3)) / 3];
+		}
 		else if (stplyr->laps >= cv_numlaps.value || stplyr->exiting) // Check for the final lap, or won
 		{
-			// Alternate frame every three frames
-			switch (leveltime % 9)
+			boolean useRedNums = K_IsPlayerLosing(stplyr);
+
+			if (addOrSub == V_SUBTRANS)
 			{
-				case 1: case 2: case 3:
-					if (K_IsPlayerLosing(stplyr))
+				// Subtracting RED will look BLUE, and vice versa.
+				useRedNums = !useRedNums;
+			}
+
+			// Alternate frame every three frames
+			switch ((leveltime % 9) / 3)
+			{
+				case 0:
+					if (useRedNums == true)
 						localpatch = kp_positionnum[num % 10][4];
 					else
 						localpatch = kp_positionnum[num % 10][1];
 					break;
-				case 4: case 5: case 6:
-					if (K_IsPlayerLosing(stplyr))
+				case 1:
+					if (useRedNums == true)
 						localpatch = kp_positionnum[num % 10][5];
 					else
 						localpatch = kp_positionnum[num % 10][2];
 					break;
-				case 7: case 8: case 9:
-					if (K_IsPlayerLosing(stplyr))
+				case 2:
+					if (useRedNums == true)
 						localpatch = kp_positionnum[num % 10][6];
 					else
 						localpatch = kp_positionnum[num % 10][3];
@@ -1514,9 +1531,15 @@ static void K_DrawKartPositionNum(INT32 num)
 			}
 		}
 		else
+		{
 			localpatch = kp_positionnum[num % 10][0];
+		}
 
-		V_DrawFixedPatch((fx<<FRACBITS) + ((overtake && flipdraw) ? (SHORT(localpatch->width)*scale/2) : 0), (fy<<FRACBITS) + ((overtake && flipvdraw) ? (SHORT(localpatch->height)*scale/2) : 0), scale, V_HUDTRANSHALF|V_SLIDEIN|fflags, localpatch, NULL);
+		V_DrawFixedPatch(
+			(fx<<FRACBITS) + ((overtake && flipdraw) ? (SHORT(localpatch->width)*scale/2) : 0),
+			(fy<<FRACBITS) + ((overtake && flipvdraw) ? (SHORT(localpatch->height)*scale/2) : 0),
+			scale, addOrSub|V_SLIDEIN|fflags, localpatch, NULL
+		);
 		// ^ if we overtake as p1 or p3 in splitscren, we shift it so that it doesn't go off screen.
 		// ^ if we overtake as p1 in 2p splits, shift vertically so that this doesn't happen either.
 
