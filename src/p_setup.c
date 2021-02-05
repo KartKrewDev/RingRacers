@@ -3610,11 +3610,6 @@ static void P_ResetSpawnpoints(void)
 
 	for (i = 0; i < 16; i++)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
-
-	// SRB2Kart
-	numBeamPoints = 0;
-	for (i = 0; i < 2; i++)
-		beamPoints[i] = NULL;
 }
 
 static void P_LoadRecordGhosts(void)

@@ -43,8 +43,8 @@
 
 static line_t *finishBeamLine = NULL;
 
-mobj_t *beamPoints[2];
-UINT8 numBeamPoints = 0;
+static mobj_t *beamPoints[2];
+static UINT8 numBeamPoints = 0;
 
 /*--------------------------------------------------
 	void K_ClearFinishBeamLine(void)
@@ -53,7 +53,16 @@ UINT8 numBeamPoints = 0;
 --------------------------------------------------*/
 void K_ClearFinishBeamLine(void)
 {
+	size_t i;
+
 	finishBeamLine = NULL;
+
+	for (i = 0; i < 2; i++)
+	{
+		beamPoints[i] = NULL;
+	}
+
+	numBeamPoints = 0;
 }
 
 /*--------------------------------------------------
@@ -113,6 +122,8 @@ static void K_CreateFinishLineFromPoints(fixed_t x1, fixed_t y1, fixed_t x2, fix
 --------------------------------------------------*/
 boolean K_GenerateFinishBeamLine(void)
 {
+	mapthing_t *mt;
+
 	INT64 bounds[4];
 	angle_t angle;
 
@@ -122,9 +133,32 @@ boolean K_GenerateFinishBeamLine(void)
 	// Ensure everything's freed by this time.
 	K_FreeFinishBeamLine();
 
-	//
-	// TODO: create from beam point objs before resorting to auto generate
-	//
+	// First: attempt to create from beam point objects
+	for (i = 0, mt = mapthings; i < nummapthings; i++, mt++)
+	{
+		if (numBeamPoints >= 2)
+		{
+			break;
+		}
+
+		if (mt->type == mobjinfo[MT_BEAMPOINT].doomednum)
+		{
+			beamPoints[numBeamPoints] = mt->mobj;
+			numBeamPoints++;
+		}
+	}
+
+	if (numBeamPoints == 2)
+	{
+		// Found 'em! Really easy to generate a line out of these :)
+
+		K_CreateFinishLineFromPoints(
+			beamPoints[0]->x, beamPoints[0]->y,
+			beamPoints[1]->x, beamPoints[1]->y
+		);
+
+		return true;
+	}
 
 	bounds[0] = INT64_MAX; // min x
 	bounds[1] = INT64_MIN; // max x

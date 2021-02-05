@@ -14,9 +14,6 @@
 
 #include "r_defs.h"
 
-extern mobj_t *beamPoints[2];
-extern UINT8 numBeamPoints;
-
 #define FINISHLINEBEAM_SPACING (48*mapobjectscale)
 
 /*--------------------------------------------------
