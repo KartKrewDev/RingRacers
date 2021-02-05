@@ -1839,18 +1839,19 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 void K_KartMoveAnimation(player_t *player)
 {
 	const INT16 minturn = KART_FULLTURN/8;
-	SINT8 turndir = 0;
 
-	const fixed_t fastspeed = (K_GetKartSpeed(player, false) * 17) / 20; // 85%
-	const fixed_t speedthreshold = player->mo->scale / 8;
+	fixed_t fastspeed = (K_GetKartSpeed(player, false) * 17) / 20; // 85%
+	fixed_t speedthreshold = player->mo->scale / 8;
 
-	const boolean onground = P_IsObjectOnGround(player->mo);
+	boolean onground = P_IsObjectOnGround(player->mo);
 
 	ticcmd_t *cmd = &player->cmd;
-	const boolean spinningwheels = ((cmd->buttons & BT_ACCELERATE) || (onground && player->speed > 0));
-	const boolean lookback = (cmd->buttons & BT_LOOKBACK);
+	boolean spinningwheels = (((cmd->buttons & BT_ACCELERATE) == BT_ACCELERATE) || (onground && player->speed > 0));
+	boolean lookback = ((cmd->buttons & BT_LOOKBACK) == BT_LOOKBACK);
 
+	SINT8 turndir = 0;
 	SINT8 destGlanceDir = 0;
+	SINT8 drift = player->kartstuff[k_drift];
 
 	if (cmd->turning < -minturn)
 	{
@@ -1861,20 +1862,89 @@ void K_KartMoveAnimation(player_t *player)
 		turndir = 1;
 	}
 
+	if (lookback == true && drift == 0)
+	{
+		// Prioritize looking back frames over turning
+		turndir = 0;
+	}
+
+	if (turndir == 0 && drift == 0)
+	{
+		// Only try glancing if you're driving straight.
+		// This avoids all-players loops when we don't need it.
+		destGlanceDir = K_GlanceAtPlayers(player);
+
+		if (lookback == true)
+		{
+			if (destGlanceDir == 0)
+			{
+				if (player->glanceDir != 0)
+				{
+					// Keep to the side you were already on.
+					if (player->glanceDir < 0)
+					{
+						destGlanceDir = -1;
+					}
+					else
+					{
+						destGlanceDir = 1;
+					}
+				}
+				else
+				{
+					// Look to your right by default
+					destGlanceDir = -1;
+				}
+			}
+			else
+			{
+				// Looking back AND glancing? Amplify the look!
+				destGlanceDir *= 2;
+			}
+		}
+		else if (K_GetForwardMove(player) < 0 && destGlanceDir == 0)
+		{
+			// Reversing -- like looking back, but doesn't stack on the other glances.
+			if (player->glanceDir != 0)
+			{
+				// Keep to the side you were already on.
+				if (player->glanceDir < 0)
+				{
+					destGlanceDir = -1;
+				}
+				else
+				{
+					destGlanceDir = 1;
+				}
+			}
+			else
+			{
+				// Look to your right by default
+				destGlanceDir = -1;
+			}
+		}
+	}
+	else
+	{
+		// Not glancing
+		destGlanceDir = 0;
+		player->glanceDir = 0;
+	}
+
 #define SetState(sn) \
 	if (player->mo->state != &states[sn]) \
 		P_SetPlayerMobjState(player->mo, sn)
 
-	if (!onground)
+	if (onground == false)
 	{
 		// Only use certain frames in the air, to make it look like your tires are spinning fruitlessly!
 
-		if (player->kartstuff[k_drift] > 0)
+		if (drift > 0)
 		{
 			// Neutral drift
 			SetState(S_KART_DRIFT_L);
 		}
-		else if (player->kartstuff[k_drift] > 0)
+		else if (drift < 0)
 		{
 			// Neutral drift
 			SetState(S_KART_DRIFT_R);
@@ -1889,22 +1959,41 @@ void K_KartMoveAnimation(player_t *player)
 			{
 				SetState(S_KART_FAST_L);
 			}
-			else if (turndir == 0)
+			else
 			{
-				SetState(S_KART_FAST);
+				switch (player->glanceDir)
+				{
+					case -2:
+						SetState(S_KART_FAST_LOOK_R);
+						break;
+					case 2:
+						SetState(S_KART_FAST_LOOK_L);
+						break;
+					case -1:
+						SetState(S_KART_FAST_GLANCE_R);
+						break;
+					case 1:
+						SetState(S_KART_FAST_GLANCE_L);
+						break;
+					default:
+						SetState(S_KART_FAST);
+						break;
+				}
 			}
 		}
 
 		if (!spinningwheels)
 		{
-			// TODO: These should prooobably be different SPR2s
-			// Just a quick hack to prevent needing to do that :V
+			// TODO: The "tires still in the air" states should have it's own SPR2s.
+			// This was a quick hack to get the same functionality with less work,
+			// but it's really dunderheaded & isn't customizable at all.
 			player->mo->frame = (player->mo->frame & ~FF_FRAMEMASK);
+			player->mo->tics++; // Makes it properly use frame 0
 		}
 	}
 	else
 	{
-		if (player->kartstuff[k_drift] > 0)
+		if (drift > 0)
 		{
 			// Drifting LEFT!
 
@@ -1924,7 +2013,7 @@ void K_KartMoveAnimation(player_t *player)
 				SetState(S_KART_DRIFT_L);
 			}
 		}
-		else if (player->kartstuff[k_drift] < 0)
+		else if (drift < 0)
 		{
 			// Drifting RIGHT!
 
@@ -1946,53 +2035,6 @@ void K_KartMoveAnimation(player_t *player)
 		}
 		else
 		{
-			if (lookback == true)
-			{
-				// Prioritize looking back over turning
-				turndir = 0;
-			}
-
-			if (turndir == 0)
-			{
-				// Only try glancing if you're driving straight.
-				destGlanceDir = K_GlanceAtPlayers(player);
-
-				if (lookback == true)
-				{
-					if (destGlanceDir == 0)
-					{
-						if (player->glanceDir != 0)
-						{
-							// Keep to the side you were already on.
-							if (player->glanceDir < 0)
-							{
-								destGlanceDir = -1;
-							}
-							else
-							{
-								destGlanceDir = 1;
-							}
-						}
-						else
-						{
-							// Look to your right by default
-							destGlanceDir = -1;
-						}
-					}
-					else
-					{
-						// Looking back AND glancing? Amplify the look!
-						destGlanceDir *= 2;
-					}
-				}
-			}
-			else
-			{
-				// Not glancing
-				destGlanceDir = 0;
-				player->glanceDir = 0;
-			}
-
 			if (player->speed >= fastspeed && player->speed >= (player->lastspeed - speedthreshold))
 			{
 				// Going REAL fast!
@@ -2098,20 +2140,20 @@ void K_KartMoveAnimation(player_t *player)
 					}
 				}
 			}
-
-			// Update your value to smooth it out.
-			if (player->glanceDir > destGlanceDir)
-			{
-				player->glanceDir--;
-			}
-			else if (player->glanceDir < destGlanceDir)
-			{
-				player->glanceDir++;
-			}
 		}
 	}
 
 #undef SetState
+
+	// Update your glance value to smooth it out.
+	if (player->glanceDir > destGlanceDir)
+	{
+		player->glanceDir--;
+	}
+	else if (player->glanceDir < destGlanceDir)
+	{
+		player->glanceDir++;
+	}
 
 	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
 	player->lastspeed = player->speed;
