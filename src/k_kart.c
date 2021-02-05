@@ -1840,14 +1840,14 @@ void K_KartMoveAnimation(player_t *player)
 {
 	const INT16 minturn = KART_FULLTURN/8;
 
-	fixed_t fastspeed = (K_GetKartSpeed(player, false) * 17) / 20; // 85%
-	fixed_t speedthreshold = player->mo->scale / 8;
+	const fixed_t fastspeed = (K_GetKartSpeed(player, false) * 17) / 20; // 85%
+	const fixed_t speedthreshold = player->mo->scale / 8;
 
-	boolean onground = P_IsObjectOnGround(player->mo);
+	const boolean onground = P_IsObjectOnGround(player->mo);
 
 	ticcmd_t *cmd = &player->cmd;
-	boolean spinningwheels = (((cmd->buttons & BT_ACCELERATE) == BT_ACCELERATE) || (onground && player->speed > 0));
-	boolean lookback = ((cmd->buttons & BT_LOOKBACK) == BT_LOOKBACK);
+	const boolean spinningwheels = (((cmd->buttons & BT_ACCELERATE) == BT_ACCELERATE) || (onground && player->speed > 0));
+	const boolean lookback = ((cmd->buttons & BT_LOOKBACK) == BT_LOOKBACK);
 
 	SINT8 turndir = 0;
 	SINT8 destGlanceDir = 0;
