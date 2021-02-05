@@ -213,6 +213,7 @@ static boolean P_SpecialIsLinedefCrossType(UINT16 ldspecial)
 	switch (ldspecial)
 	{
 		case 2001: // Finish line
+		case 2003: // Respawn line
 		{
 			linedefcrossspecial = true;
 		}
