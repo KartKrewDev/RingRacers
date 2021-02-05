@@ -83,6 +83,7 @@
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_race.h"
 #include "k_battle.h" // K_SpawnBattleCapsules
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
@@ -3609,6 +3610,11 @@ static void P_ResetSpawnpoints(void)
 
 	for (i = 0; i < 16; i++)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
+
+	// SRB2Kart
+	numBeamPoints = 0;
+	for (i = 0; i < 2; i++)
+		beamPoints[i] = NULL;
 }
 
 static void P_LoadRecordGhosts(void)
@@ -4059,12 +4065,19 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	// The waypoint data that's in PU_LEVEL needs to be reset back to 0/NULL now since PU_LEVEL was cleared
 	K_ClearWaypoints();
+	K_ClearFinishBeamLine();
+
 	// Load the waypoints please!
 	if (gametyperules & GTR_CIRCUIT)
 	{
 		if (K_SetupWaypointList() == false)
 		{
 			CONS_Alert(CONS_ERROR, "Waypoints were not able to be setup! Player positions will not work correctly.\n");
+		}
+
+		if (K_GenerateFinishBeamLine() == false)
+		{
+			CONS_Alert(CONS_ERROR, "No valid finish line beam setup could be found.\n");
 		}
 	}
 

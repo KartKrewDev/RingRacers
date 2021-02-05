@@ -170,6 +170,7 @@ set(SRB2_CORE_GAME_SOURCES
 	p_telept.c
 	p_tick.c
 	p_user.c
+	k_race.c
 	k_battle.c
 	k_bheap.c
 	k_collide.c
@@ -195,6 +196,7 @@ set(SRB2_CORE_GAME_SOURCES
 	p_slopes.h
 	p_spec.h
 	p_tick.h
+	k_race.h
 	k_battle.h
 	k_bheap.h
 	k_collide.h

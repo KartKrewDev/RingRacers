@@ -30,6 +30,7 @@
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_race.h"
 #include "k_battle.h"
 #include "k_waypoint.h"
 
