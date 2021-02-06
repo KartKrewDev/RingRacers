@@ -2131,11 +2131,12 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_spindashboost]) // Spindash boost
 	{
 		const fixed_t MAXCHARGESPEED = K_GetSpindashChargeSpeed(player);
+		const fixed_t exponent = FixedMul(player->kartstuff[k_spindashspeed], player->kartstuff[k_spindashspeed]);
 
 		// character & charge dependent
 		ADDBOOST(
-			FixedMul(MAXCHARGESPEED, player->kartstuff[k_spindashspeed]), // + 0 to K_GetSpindashChargeSpeed()% top speed
-			(40*player->kartstuff[k_spindashspeed]), // + 0% to 4000% acceleration
+			FixedMul(MAXCHARGESPEED, exponent), // + 0 to K_GetSpindashChargeSpeed()% top speed
+			(40 * exponent), // + 0% to 4000% acceleration
 			0 // + 0% handling
 		);
 	}
