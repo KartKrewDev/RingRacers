@@ -6765,8 +6765,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 	const INT32 dstwo = dsone*2;
 	const INT32 dsthree = dstwo*2;
 
-	// Drifting is actually straffing[sic] + automatic turning.
-	// Holding the Drift button will enable drifting.
+	// Drifting is actually straffing + automatic turning.
+	// Holding the Jump button will enable drifting.
+	// (This comment is extremely funny)
 
 	// Drift Release (Moved here so you can't "chain" drifts)
 	if (player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
