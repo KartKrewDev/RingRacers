@@ -631,6 +631,8 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->tumbleLastBounce = players[i].tumbleLastBounce;
 	rsp->tumbleSound = players[i].tumbleSound;
 
+	rsp->glanceDir = players[i].glanceDir;
+
 	// respawnvars_t
 	rsp->respawn_state = players[i].respawn.state;
 	rsp->respawn_pointx = (fixed_t)LONG(players[i].respawn.pointx);
@@ -788,6 +790,8 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].tumbleHeight = SHORT(rsp->tumbleHeight);
 	players[i].tumbleLastBounce = (boolean)rsp->tumbleLastBounce;
 	players[i].tumbleSound = (boolean)rsp->tumbleSound;
+
+	players[i].glanceDir = (SINT8)rsp->glanceDir;
 
 	// respawnvars_t
 	players[i].respawn.state = rsp->respawn_state;
