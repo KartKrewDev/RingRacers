@@ -2632,9 +2632,6 @@ static void P_DeathThink(player_t *player)
 	if (player->deadtimer < INT32_MAX)
 		player->deadtimer++;
 
-	if (player->bot) // don't allow bots to do any of the below, B_CheckRespawn does all they need for respawning already
-		goto notrealplayer;
-
 	if ((player->pflags & PF_GAMETYPEOVER) && (gametyperules & GTR_CIRCUIT))
 	{
 		player->karthud[khud_timeovercam]++;
@@ -2676,8 +2673,6 @@ static void P_DeathThink(player_t *player)
 				curlap = 0;
 		}
 	}
-
-notrealplayer:
 
 	if (!player->mo)
 		return;
