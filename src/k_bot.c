@@ -26,6 +26,7 @@
 #include "d_ticcmd.h"
 #include "m_random.h"
 #include "r_things.h" // numskins
+#include "k_race.h" // finishBeamLine
 
 
 /*--------------------------------------------------
@@ -521,6 +522,26 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 --------------------------------------------------*/
 fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
 {
+#if 1
+	// This function ended up with overflow issues (and too much)
+	// I'm kinda tired of looking at this so I'mma just gonna wildly cheat
+
+	vertex_t v1, v2; // fake vertexes
+	line_t junk; // fake linedef
+	vertex_t result;
+
+	v1.x = v1x;
+	v1.y = v1y;
+
+	v2.x = v2x;
+	v2.y = v2y;
+
+	junk.v1 = &v1;
+	junk.v2 = &v2;
+
+	P_ClosestPointOnLine(cx, cy, &junk, &result);
+	return R_PointToDist2(cx, cy, result.x, result.y);
+#else
 	fixed_t v1toc[2] = {cx - v1x, cy - v1y};
 	fixed_t v1tov2[2] = {v2x - v1x, v2y - v1y};
 
@@ -540,7 +561,8 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 	px = v1x + FixedMul(v1tov2[0], t);
 	py = v1y + FixedMul(v1tov2[1], t);
 
-	return P_AproxDistance(cx - px, cy - py);
+	return FixedHypot(cx - px, cy - py);
+#endif
 }
 
 /*--------------------------------------------------
@@ -709,14 +731,14 @@ static UINT8 K_TrySpindash(player_t *player)
 	}
 
 	// Try "start boosts" first
-	if (leveltime == starttime+1)
+	if (leveltime == starttime)
 	{
 		// Forces them to release, even if they haven't fully charged.
 		// Don't want them to keep charging if they didn't have time to.
 		return 0;
 	}
 
-	if (leveltime <= starttime)
+	if (leveltime < starttime)
 	{
 		INT32 boosthold = starttime - K_GetSpindashChargeTime(player);
 
@@ -772,6 +794,7 @@ static UINT8 K_TrySpindash(player_t *player)
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	botprediction_t *predict = NULL;
+	boolean trySpindash = false;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
 
@@ -784,16 +807,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL
-		|| player->mo->scale <= 1) // funny post-finish death
+	if (
+		gamestate != GS_LEVEL
+		|| player->mo->scale <= 1
+		|| player->playerstate == PST_DEAD
+		)
 	{
 		// No need to do anything else.
-		return;
-	}
-
-	if (player->playerstate == PST_DEAD)
-	{
-		cmd->buttons |= BT_ACCELERATE;
 		return;
 	}
 
@@ -916,22 +936,83 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	// Spindashing
-	spindash = K_TrySpindash(player);
-
-	if (spindash > 0)
+	if (leveltime <= starttime && finishBeamLine != NULL)
 	{
-		cmd->buttons |= BT_EBRAKEMASK;
+		const fixed_t distBase = 1024*mapobjectscale;
+		const fixed_t distAdjust = 64*mapobjectscale;
 
-		if (spindash == 2 && player->speed < 6*mapobjectscale)
+		const fixed_t closeDist = distBase + (distAdjust * (9 - player->kartweight));
+		const fixed_t farDist = closeDist + (distAdjust * 2);
+
+		fixed_t distToFinish = K_DistanceOfLineFromPoint(
+			finishBeamLine->v1->x, finishBeamLine->v1->y,
+			finishBeamLine->v2->x, finishBeamLine->v2->y,
+			player->mo->x, player->mo->y
+		);
+
+		// Don't run the spindash code at all until we're in the right place
+		trySpindash = false;
+
+		// If you're too far, enable spindash & stay still.
+		// If you're too close, start backing up.
+
+		if (player - players == displayplayers[0])
 		{
-			cmd->buttons |= BT_DRIFT;
+			CONS_Printf("closeDist: %d\n", closeDist / FRACUNIT);
+			CONS_Printf("farDist: %d\n", farDist / FRACUNIT);
+			CONS_Printf("distToFinish: %d\n", distToFinish / FRACUNIT);
+			CONS_Printf("========\n");
+		}
+
+		if (distToFinish < closeDist)
+		{
+			// Silly way of getting us to reverse, but it respects the above code
+			// where we figure out what the shape of the track looks like.
+			UINT16 oldButtons = cmd->buttons;
+
+			cmd->buttons &= ~(BT_ACCELERATE|BT_BRAKE);
+
+			if (oldButtons & BT_ACCELERATE)
+			{
+				cmd->buttons |= BT_BRAKE;
+			}
+
+			if (oldButtons & BT_BRAKE)
+			{
+				cmd->buttons |= BT_ACCELERATE;
+			}
+
+			cmd->forwardmove = -cmd->forwardmove;
+		}
+		else if (distToFinish < farDist)
+		{
+			// We're in about the right place, spindash now.
+			cmd->forwardmove = 0;
+			trySpindash = true;
 		}
 	}
-	else
+
+	if (trySpindash == true)
 	{
-		// Handle item usage here, so they don't pointlessly try to use rings/sneakers while charging a spindash.
-		// TODO: Allowing projectile items like orbinaut while e-braking would probably be fine, maybe just pass in the spindash variable?
+		// Spindashing
+		spindash = K_TrySpindash(player);
+
+		if (spindash > 0)
+		{
+			cmd->buttons |= BT_EBRAKEMASK;
+			cmd->forwardmove = 0;
+
+			if (spindash == 2 && player->speed < 6*mapobjectscale)
+			{
+				cmd->buttons |= BT_DRIFT;
+			}
+		}
+	}
+
+	if (spindash == 0)
+	{
+		// Don't pointlessly try to use rings/sneakers while charging a spindash.
+		// TODO: Allowing projectile items like orbinaut while e-braking would be nice, maybe just pass in the spindash variable?
 		K_BotItemUsage(player, cmd, turnamt);
 	}
 
