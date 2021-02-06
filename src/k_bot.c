@@ -523,7 +523,7 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
 {
 #if 1
-	// This function ended up with overflow issues (and too much)
+	// This function ended up with overflow issues
 	// I'm kinda tired of looking at this so I'mma just gonna wildly cheat
 
 	vertex_t v1, v2; // fake vertexes
