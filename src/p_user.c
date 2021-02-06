@@ -3075,7 +3075,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	mo = player->mo;
 
-	if (mo->hitlag > 0)
+	if (mo->hitlag > 0 || player->playerstate == PST_DEAD)
 	{
 		// Do not move the camera while in hitlag!
 		// The camera zooming out after you got hit makes it hard to focus on the vibration.
