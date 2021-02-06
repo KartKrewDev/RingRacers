@@ -2616,8 +2616,10 @@ static void K_HandleTumbleSound(player_t *player)
 	}
 }
 
-void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
+int K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
 {
+	int ringburst = 10;
+
 	(void)source;
 
 	player->mo->momz = 18*mapobjectscale*P_MobjFlip(player->mo); // please stop forgetting mobjflip checks!!!!
@@ -2632,6 +2634,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A b
 		{
 			player->kartstuff[k_spinouttimer] = ((5*player->kartstuff[k_spinouttimer])/2)+1;
 			player->mo->momz *= 2;
+			ringburst = 20;
 		}
 	}
 
@@ -2642,6 +2645,8 @@ void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A b
 
 	if (P_IsDisplayPlayer(player))
 		P_StartQuake(64<<FRACBITS, 5);
+
+	return ringburst;
 }
 
 // This kind of wipeout happens with no rings -- doesn't remove a bumper, has no invulnerability, and is much shorter.

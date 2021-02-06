@@ -2012,10 +2012,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 				case DMG_TUMBLE:
 					K_TumblePlayer(player, inflictor, source);
+					ringburst = 10;
 					break;
 				case DMG_EXPLODE:
 				case DMG_KARMA:
-					K_ExplodePlayer(player, inflictor, source);
+					ringburst = K_ExplodePlayer(player, inflictor, source);
 					break;
 				case DMG_WIPEOUT:
 					if (P_IsDisplayPlayer(player))
