@@ -720,11 +720,15 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	// Complete override of all ticcmd functionality
 	if (LUAh_BotTiccmd(player, cmd))
+	{
 		return;
+	}
 
 	// Start boost handler
 	if (leveltime <= starttime)
 	{
+		// TODO: Move towards finish line during position, but not too close.
+
 		tic_t length = (TICRATE/6);
 		tic_t boosthold = starttime - K_GetSpindashChargeTime(player);
 
@@ -869,6 +873,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		if (turnamt > 0)
 		{
+			// Count up
 			if (player->botvars.turnconfirm < BOTTURNCONFIRM)
 			{
 				player->botvars.turnconfirm++;
@@ -876,7 +881,20 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else if (turnamt < 0)
 		{
+			// Count down
 			if (player->botvars.turnconfirm > -BOTTURNCONFIRM)
+			{
+				player->botvars.turnconfirm--;
+			}
+		}
+		else
+		{
+			// Back to neutral
+			if (player->botvars.turnconfirm < 0)
+			{
+				player->botvars.turnconfirm++;
+			}
+			else if (player->botvars.turnconfirm > 0)
 			{
 				player->botvars.turnconfirm--;
 			}
