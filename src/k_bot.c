@@ -687,6 +687,84 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 }
 
 /*--------------------------------------------------
+	static UINT8 K_TrySpindash(player_t *player)
+
+		Determines conditions where the bot should attempt to spindash.
+
+	Input Arguments:-
+		player - Bot player to check.
+
+	Return:-
+		0 to make the bot drive normally, 1 to e-brake, 2 to e-brake & charge spindash.
+		(TODO: make this an enum)
+--------------------------------------------------*/
+static UINT8 K_TrySpindash(player_t *player)
+{
+	const tic_t difficultyModifier = (TICRATE/6);
+
+	if (player->kartstuff[k_spindashboost] || player->kartstuff[k_tiregrease])
+	{
+		// You just released a spindash, you don't need to try again yet, jeez.
+		return 0;
+	}
+
+	// Try "start boosts" first
+	if (leveltime == starttime+1)
+	{
+		// Forces them to release, even if they haven't fully charged.
+		// Don't want them to keep charging if they didn't have time to.
+		return 0;
+	}
+
+	if (leveltime <= starttime)
+	{
+		INT32 boosthold = starttime - K_GetSpindashChargeTime(player);
+
+		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty) * difficultyModifier;
+
+		if (leveltime >= (unsigned)boosthold)
+		{
+			// Start charging...
+			return 2;
+		}
+		else
+		{
+			// Just hold your ground and e-brake.
+			return 1;
+		}
+	}
+
+	// Logic for normal racing.
+	if (player->powers[pw_flashing] > 0)
+	{
+		// Don't bother trying to spindash.
+		// Trying to spindash while flashing is fine during POSITION, but not during the actual race.
+		return 0;
+	}
+
+	if (player->speed < K_GetKartSpeed(player, false) / 4 // Below the speed threshold
+	&& player->kartstuff[k_speedboost] < (FRACUNIT/8)) // If you have other boosts, you can probably trust it.
+	{
+		INT32 chargingPoint = (K_GetSpindashChargeTime(player) + difficultyModifier);
+
+		// Release quicker the higher the difficulty is.
+		// Sounds counter-productive, but that's actually the best strategy after the race has started.
+		chargingPoint -= player->botvars.difficulty * difficultyModifier;
+
+		if (player->kartstuff[k_spindash] > chargingPoint)
+		{
+			// Time to release.
+			return 0;
+		}
+
+		return 2;
+	}
+
+	// We're doing just fine, we don't need to spindash, thanks.
+	return 0;
+}
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
@@ -694,6 +772,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	botprediction_t *predict = NULL;
+	UINT8 spindash = 0;
 	INT32 turnamt = 0;
 
 	// Can't build a ticcmd if we aren't spawned...
@@ -721,26 +800,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Complete override of all ticcmd functionality
 	if (LUAh_BotTiccmd(player, cmd))
 	{
-		return;
-	}
-
-	// Start boost handler
-	if (leveltime <= starttime)
-	{
-		// TODO: Move towards finish line during position, but not too close.
-
-		tic_t length = (TICRATE/6);
-		tic_t boosthold = starttime - K_GetSpindashChargeTime(player);
-
-		cmd->buttons |= BT_EBRAKEMASK;
-
-		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty) * length;
-
-		if (leveltime >= boosthold)
-		{
-			cmd->buttons |= BT_DRIFT;
-		}
-
 		return;
 	}
 
@@ -857,8 +916,24 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	// Handle item usage
-	K_BotItemUsage(player, cmd, turnamt);
+	// Spindashing
+	spindash = K_TrySpindash(player);
+
+	if (spindash > 0)
+	{
+		cmd->buttons |= BT_EBRAKEMASK;
+
+		if (spindash == 2 && player->speed < 6*mapobjectscale)
+		{
+			cmd->buttons |= BT_DRIFT;
+		}
+	}
+	else
+	{
+		// Handle item usage here, so they don't pointlessly try to use rings/sneakers while charging a spindash.
+		// TODO: Allowing projectile items like orbinaut while e-braking would probably be fine, maybe just pass in the spindash variable?
+		K_BotItemUsage(player, cmd, turnamt);
+	}
 
 	if (turnamt != 0)
 	{
