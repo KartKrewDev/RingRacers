@@ -2115,6 +2115,9 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	fixed_t ns;
 	fixed_t z;
 	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
+	mobjtype_t objType;
+	tic_t objFuse;
+	fixed_t objScale = player->mo->scale;
 
 	// Rings shouldn't be in Battle!
 	if (gametyperules & GTR_SPHERES)
@@ -2134,9 +2137,19 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	else if (num_rings <= 0)
 		return;
 
-	// Cap the maximum loss automatically to 2 in ring debt
-	if (player->rings <= 0 && num_rings > 2)
-		num_rings = 2;
+	if (player->rings <= 0)
+	{
+		// In ring debt, spill the Funny Spikes
+		objType = MT_DEBTSPIKE;
+		objFuse = 90;
+
+		objScale = 3 * objScale / 2;
+	}
+	else
+	{
+		objType = MT_FLINGRING;
+		objFuse = 60*TICRATE;
+	}
 
 	P_GivePlayerRings(player, -num_rings);
 
@@ -2145,8 +2158,6 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 
 	for (i = 0; i < num_rings; i++)
 	{
-		INT32 objType = mobjinfo[MT_RING].reactiontime;
-
 		z = player->mo->z;
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 			z += player->mo->height - mobjinfo[objType].height;
@@ -2154,11 +2165,11 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 		mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
 
 		mo->threshold = 10;
-		mo->fuse = 60*TICRATE;
+		mo->fuse = objFuse;
 		P_SetTarget(&mo->target, player->mo);
 
-		mo->destscale = player->mo->scale;
-		P_SetScale(mo, player->mo->scale);
+		mo->destscale = objScale;
+		P_SetScale(mo, objScale);
 
 		// Angle / height offset changes every other ring
 		if (i != 0)
@@ -2172,11 +2183,11 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 			fa += ANGLE_180;
 		}
 
-		ns = FixedMul(momxy, mo->scale);
+		ns = FixedMul(momxy, player->mo->scale);
 		mo->momx = (mo->target->momx/2) + FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
 		mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
 
-		ns = FixedMul(momz, mo->scale);
+		ns = FixedMul(momz, player->mo->scale);
 		P_SetObjectMomZ(mo, (mo->target->momz/2) + ns, false);
 
 		if (player->mo->eflags & MFE_VERTICALFLIP)

@@ -2280,6 +2280,11 @@ boolean P_ZMovement(mobj_t *mo)
 			else
 				mo->flags2 ^= MFD_DONTDRAW;
 		}
+		else if (mo->type == MT_DEBTSPIKE)
+		{
+			mom.x = mom.y = 0;
+			mom.z = -mom.z/2;
+		}
 		else if (mo->flags & MF_MISSILE)
 		{
 			if (!(mo->flags & MF_NOCLIP))
@@ -9124,6 +9129,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_RING:
+		case MT_DEBTSPIKE:
 		case MT_FLOATINGITEM:
 		case MT_BLUESPHERE:
 		case MT_EMERALD:
