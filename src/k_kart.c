@@ -2055,7 +2055,7 @@ fixed_t K_GetSpindashChargeSpeed(player_t *player)
 	// more speed for higher weight & speed
 	// Tails = +6.25%, Fang = +20.31%, Mighty = +20.31%, Metal = +25%
 	// (can be higher than this value when overcharged)
-	return (player->kartspeed + player->kartweight) * (FRACUNIT/64);
+	return (player->kartspeed + player->kartweight) * (FRACUNIT/32);
 }
 
 
