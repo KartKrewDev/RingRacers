@@ -2128,7 +2128,7 @@ static void K_GetKartBoostPower(player_t *player)
 		// character & charge dependent
 		ADDBOOST(
 			FixedMul(MAXCHARGESPEED, player->kartstuff[k_spindashspeed]), // + 0 to K_GetSpindashChargeSpeed()% top speed
-			(4*FRACUNIT) + (36*player->kartstuff[k_spindashspeed]), // + 400% to 4000% acceleration
+			(40*player->kartstuff[k_spindashspeed]), // + 0% to 4000% acceleration
 			0 // + 0% handling
 		);
 	}
