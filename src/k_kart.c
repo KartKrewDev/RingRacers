@@ -7218,6 +7218,11 @@ static void K_KartSpindash(player_t *player)
 	ticcmd_t *cmd = &player->cmd;
 	boolean spawnWind = (leveltime % 2 == 0);
 
+	if (player->mo->hitlag > 0 || P_PlayerInPain(player))
+	{
+		player->kartstuff[k_spindash] = 0;
+	}
+
 	if (player->kartstuff[k_spindash] > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE)) != (BT_DRIFT|BT_BRAKE))
 	{
 		player->kartstuff[k_spindashspeed] = (player->kartstuff[k_spindash] * FRACUNIT) / MAXCHARGETIME;
