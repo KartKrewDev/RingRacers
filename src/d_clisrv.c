@@ -616,6 +616,8 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]);
 
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
+	rsp->driftInput = players[i].driftInput;
+
 	rsp->trickpanel = (UINT8)players[i].trickpanel;
 	rsp->trickdelay = (boolean)players[i].trickdelay;
 	rsp->trickmomx = (fixed_t)LONG(players[i].trickmomx);
@@ -774,6 +776,8 @@ static void resynch_read_player(resynch_pak *rsp)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
 
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
+	players[i].driftInput = (boolean)rsp->driftInput;
+
 	players[i].trickpanel = (UINT8)rsp->trickpanel;
 	players[i].trickdelay = (boolean)rsp->trickdelay;
 	players[i].trickmomx = (fixed_t)LONG(rsp->trickmomx);

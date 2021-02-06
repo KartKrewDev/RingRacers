@@ -6143,9 +6143,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	if (cmd->buttons & BT_DRIFT)
-		player->kartstuff[k_jmp] = 1;
+	{
+		// Only allow drifting while NOT trying to do an spindash input.
+		if ((cmd->buttons & BT_EBRAKEMASK) != BT_EBRAKEMASK)
+		{
+			player->driftInput = true;
+		}
+		// else, keep the previous value, because it might be brake-drifting.
+	}
 	else
-		player->kartstuff[k_jmp] = 0;
+	{
+		player->driftInput = false;
+	}
 
 	// Roulette Code
 	K_KartItemRoulette(player, cmd);
@@ -6750,13 +6759,14 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 
 static void K_KartDrift(player_t *player, boolean onground)
 {
-	fixed_t minspeed = (10 * player->mo->scale);
-	INT32 dsone = K_GetKartDriftSparkValue(player);
-	INT32 dstwo = dsone*2;
-	INT32 dsthree = dstwo*2;
+	const fixed_t minspeed = (10 * player->mo->scale);
 
-	// Drifting is actually straffing + automatic turning.
-	// Holding the Jump button will enable drifting.
+	const INT32 dsone = K_GetKartDriftSparkValue(player);
+	const INT32 dstwo = dsone*2;
+	const INT32 dsthree = dstwo*2;
+
+	// Drifting is actually straffing[sic] + automatic turning.
+	// Holding the Drift button will enable drifting.
 
 	// Drift Release (Moved here so you can't "chain" drifts)
 	if (player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
@@ -6817,21 +6827,21 @@ static void K_KartDrift(player_t *player, boolean onground)
 	}
 
 	// Drifting: left or right?
-	if ((player->cmd.turning > 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
+	if ((player->cmd.turning > 0) && player->speed > minspeed && player->driftInput == true
 		&& (player->kartstuff[k_drift] == 0 || player->kartstuff[k_driftend] == 1)) // && player->kartstuff[k_drift] != 1)
 	{
 		// Starting left drift
 		player->kartstuff[k_drift] = 1;
 		player->kartstuff[k_driftend] = player->kartstuff[k_driftcharge] = 0;
 	}
-	else if ((player->cmd.turning < 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
+	else if ((player->cmd.turning < 0) && player->speed > minspeed && player->driftInput == true
 		&& (player->kartstuff[k_drift] == 0 || player->kartstuff[k_driftend] == 1)) // && player->kartstuff[k_drift] != -1)
 	{
 		// Starting right drift
 		player->kartstuff[k_drift] = -1;
 		player->kartstuff[k_driftend] = player->kartstuff[k_driftcharge] = 0;
 	}
-	else if (player->kartstuff[k_jmp] == 0) // || player->kartstuff[k_turndir] == 0)
+	else if (player->driftInput == false) // || player->kartstuff[k_turndir] == 0)
 	{
 		// drift is not being performed so if we're just finishing set driftend and decrement counters
 		if (player->kartstuff[k_drift] > 0)
@@ -6855,7 +6865,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->kartstuff[k_aizdriftstrat] = player->kartstuff[k_brakedrift] = 0;
 		player->kartstuff[k_getsparks] = 0;
 	}
-	else if (player->kartstuff[k_jmp] == 1 && player->kartstuff[k_drift] != 0)
+	else if (player->driftInput == true && player->kartstuff[k_drift] != 0)
 	{
 		// Incease/decrease the drift value to continue drifting in that direction
 		fixed_t driftadditive = 24;

@@ -280,6 +280,7 @@ typedef struct
 	// SRB2kart
 	INT32 kartstuff[NUMKARTSTUFF];
 	tic_t airtime;
+	boolean driftInput;
 	UINT8 trickpanel;
 	boolean trickdelay;
 	fixed_t trickmomx;
