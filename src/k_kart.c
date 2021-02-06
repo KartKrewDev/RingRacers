@@ -2030,6 +2030,13 @@ boolean K_ApplyOffroad(player_t *player)
 	return true;
 }
 
+boolean K_SlopeResistance(player_t *player)
+{
+	if (player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_sneakertimer] || player->kartstuff[k_tiregrease])
+		return true;
+	return false;
+}
+
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed

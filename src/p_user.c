@@ -1851,7 +1851,7 @@ static void P_3dMovement(player_t *player)
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
 
-	if (player->kartstuff[k_sneakertimer] > 0)
+	if (K_SlopeResistance(player) == true)
 	{
 		totalthrust.z = -(totalthrust.z);
 	}

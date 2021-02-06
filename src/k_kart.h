@@ -82,6 +82,7 @@ void K_StripItems(player_t *player);
 void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
 boolean K_ApplyOffroad(player_t *player);
+boolean K_SlopeResistance(player_t *player);
 INT16 K_GetSpindashChargeTime(player_t *player);
 fixed_t K_GetSpindashChargeSpeed(player_t *player);
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
