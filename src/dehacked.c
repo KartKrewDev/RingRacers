@@ -2031,6 +2031,13 @@ static void readlevelheader(MYFILE *f, INT32 num)
 				else
 					mapheaderinfo[num-1]->levelflags &= ~LF_SECTIONRACE;
 			}
+			else if (fastcmp(word, "SUBTRACTNUM"))
+			{
+				if (i || word2[0] == 'T' || word2[0] == 'Y')
+					mapheaderinfo[num-1]->levelflags |= LF_SUBTRACTNUM;
+				else
+					mapheaderinfo[num-1]->levelflags &= ~LF_SUBTRACTNUM;
+			}
 
 			// Individual triggers for menu flags
 			else if (fastcmp(word, "HIDDEN"))
@@ -11282,6 +11289,7 @@ struct {
 	{"LF_SCRIPTISFILE",LF_SCRIPTISFILE},
 	{"LF_NOZONE",LF_NOZONE},
 	{"LF_SECTIONRACE",LF_SECTIONRACE},
+	{"LF_SUBTRACTNUM",LF_SUBTRACTNUM},
 	// And map flags
 	{"LF2_HIDEINMENU",LF2_HIDEINMENU},
 	{"LF2_HIDEINSTATS",LF2_HIDEINSTATS},
