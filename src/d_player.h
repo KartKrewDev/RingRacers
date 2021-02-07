@@ -519,10 +519,12 @@ typedef struct player_s
 	// SRB2kart stuff
 	INT32 kartstuff[NUMKARTSTUFF];
 	INT32 karthud[NUMKARTHUD];
+
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
 	tic_t airtime; 		// Keep track of how long you've been in the air
+	boolean driftInput; // Whenever or not try drifting.
 
 	UINT8 trickpanel; 	// Trick panel state
 	boolean trickdelay;	// Prevent tricks until control stick is neutral

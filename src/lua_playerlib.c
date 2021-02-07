@@ -218,6 +218,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->karthud, META_KARTHUD);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
+	else if (fastcmp(field,"driftInput"))
+		lua_pushboolean(L, plr->driftInput);
 	else if (fastcmp(field,"tumbleBounces"))
 		lua_pushinteger(L, plr->tumbleBounces);
 	else if (fastcmp(field,"tumbleHeight"))
@@ -529,6 +531,8 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"airtime"))
 		plr->airtime = (tic_t)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"driftInput"))
+		plr->driftInput = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"tumbleBounces"))
 		plr->tumbleBounces = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumbleHeight"))
