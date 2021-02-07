@@ -2873,9 +2873,9 @@ static void K_HandleTumbleSound(player_t *player)
 	}
 }
 
-int K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
+INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
 {
-	int ringburst = 10;
+	INT32 ringburst = 10;
 
 	(void)source;
 
