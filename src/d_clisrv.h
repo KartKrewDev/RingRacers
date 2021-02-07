@@ -281,6 +281,7 @@ typedef struct
 	INT32 kartstuff[NUMKARTSTUFF];
 	tic_t airtime;
 	boolean driftInput;
+	boolean airFailsafe;
 	UINT8 trickpanel;
 	boolean trickdelay;
 	fixed_t trickmomx;

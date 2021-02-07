@@ -525,6 +525,7 @@ typedef struct player_s
 	respawnvars_t respawn; // Respawn info
 	tic_t airtime; 		// Keep track of how long you've been in the air
 	boolean driftInput; // Whenever or not try drifting.
+	boolean airFailsafe; // Whenever or not try the air boost
 
 	UINT8 trickpanel; 	// Trick panel state
 	boolean trickdelay;	// Prevent tricks until control stick is neutral
