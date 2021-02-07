@@ -280,6 +280,7 @@ typedef struct
 	// SRB2kart
 	INT32 kartstuff[NUMKARTSTUFF];
 	tic_t airtime;
+	boolean driftInput;
 	UINT8 trickpanel;
 	boolean trickdelay;
 	fixed_t trickmomx;
@@ -294,6 +295,8 @@ typedef struct
 	UINT16 tumbleHeight;
 	boolean tumbleLastBounce;
 	boolean tumbleSound;
+
+	SINT8 glanceDir;
 
 	// respawnvars_t
 	UINT8 respawn_state;

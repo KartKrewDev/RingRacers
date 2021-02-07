@@ -1851,7 +1851,7 @@ static void P_3dMovement(player_t *player)
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
 
-	if (player->kartstuff[k_sneakertimer] > 0)
+	if (K_SlopeResistance(player) == true)
 	{
 		totalthrust.z = -(totalthrust.z);
 	}
@@ -3070,7 +3070,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	mo = player->mo;
 
-	if (mo->hitlag > 0)
+	if (mo->hitlag > 0 || player->playerstate == PST_DEAD)
 	{
 		// Do not move the camera while in hitlag!
 		// The camera zooming out after you got hit makes it hard to focus on the vibration.

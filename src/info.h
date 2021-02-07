@@ -303,6 +303,8 @@ typedef enum sprite
 
 	SPR_THOK, // Thok! mobj
 	SPR_PLAY,
+	SPR_KART,
+	SPR_TIRE,
 
 	// Enemies
 	SPR_POSS, // Crawla (Blue)
@@ -402,6 +404,7 @@ typedef enum sprite
 
 	// Collectible Items
 	SPR_RING,
+	SPR_DEBT,
 	SPR_TRNG, // Team Rings
 	SPR_TOKE, // Special Stage Token
 	SPR_RFLG, // Red CTF Flag
@@ -1026,12 +1029,15 @@ typedef enum sprite
 typedef enum playersprite
 {
 	SPR2_STIN = 0, SPR2_STIL, SPR2_STIR,
+	SPR2_STGL, SPR2_STGR, SPR2_STLL, SPR2_STLR,
 	SPR2_SLWN, SPR2_SLWL, SPR2_SLWR,
+	SPR2_SLGL, SPR2_SLGR, SPR2_SLLL, SPR2_SLLR,
 	SPR2_FSTN, SPR2_FSTL, SPR2_FSTR,
+	SPR2_FSGL, SPR2_FSGR, SPR2_FSLL, SPR2_FSLR,
 	SPR2_DRLN, SPR2_DRLO, SPR2_DRLI,
 	SPR2_DRRN, SPR2_DRRO, SPR2_DRRI,
 	SPR2_SPIN,
-	SPR2_SQSH,
+	SPR2_DEAD,
 	SPR2_SIGN,
 	SPR2_XTRA,
 	SPR2_FIRSTFREESLOT,
@@ -1059,12 +1065,24 @@ typedef enum state
 	S_KART_STILL,
 	S_KART_STILL_L,
 	S_KART_STILL_R,
+	S_KART_STILL_GLANCE_L,
+	S_KART_STILL_GLANCE_R,
+	S_KART_STILL_LOOK_L,
+	S_KART_STILL_LOOK_R,
 	S_KART_SLOW,
 	S_KART_SLOW_L,
 	S_KART_SLOW_R,
+	S_KART_SLOW_GLANCE_L,
+	S_KART_SLOW_GLANCE_R,
+	S_KART_SLOW_LOOK_L,
+	S_KART_SLOW_LOOK_R,
 	S_KART_FAST,
 	S_KART_FAST_L,
 	S_KART_FAST_R,
+	S_KART_FAST_GLANCE_L,
+	S_KART_FAST_GLANCE_R,
+	S_KART_FAST_LOOK_L,
+	S_KART_FAST_LOOK_R,
 	S_KART_DRIFT_L,
 	S_KART_DRIFT_L_OUT,
 	S_KART_DRIFT_L_IN,
@@ -1072,11 +1090,17 @@ typedef enum state
 	S_KART_DRIFT_R_OUT,
 	S_KART_DRIFT_R_IN,
 	S_KART_SPINOUT,
-	S_KART_SQUISH,
+	S_KART_DEAD,
 	S_KART_SIGN,
 
 	// technically the player goes here but it's an infinite tic state
 	S_OBJPLACE_DUMMY,
+
+	S_KART_LEFTOVER,
+	S_KART_LEFTOVER_NOTIRES,
+
+	S_KART_TIRE1,
+	S_KART_TIRE2,
 
 	// Blue Crawla
 	S_POSS_STND,
@@ -5281,6 +5305,21 @@ typedef enum state
 	S_FINISHBEAMEND1,
 	S_FINISHBEAMEND2,
 
+	S_DEBTSPIKE1,
+	S_DEBTSPIKE2,
+	S_DEBTSPIKE3,
+	S_DEBTSPIKE4,
+	S_DEBTSPIKE5,
+	S_DEBTSPIKE6,
+	S_DEBTSPIKE7,
+	S_DEBTSPIKE8,
+	S_DEBTSPIKE9,
+	S_DEBTSPIKEA,
+	S_DEBTSPIKEB,
+	S_DEBTSPIKEC,
+	S_DEBTSPIKED,
+	S_DEBTSPIKEE,
+
 #ifdef SEENAMES
 	S_NAMECHECK,
 #endif
@@ -5315,6 +5354,8 @@ typedef enum mobj_type
 
 	MT_THOK, // Thok! mobj
 	MT_PLAYER,
+	MT_KART_LEFTOVER,
+	MT_KART_TIRE,
 
 	// Enemies
 	MT_BLUECRAWLA, // Crawla (Blue)
@@ -5440,6 +5481,7 @@ typedef enum mobj_type
 	// Collectible Items
 	MT_RING,
 	MT_FLINGRING, // Lost ring
+	MT_DEBTSPIKE, // Ring debt funny spike
 	MT_BLUESPHERE,  // Blue sphere for special stages
 	MT_FLINGBLUESPHERE, // Lost blue sphere
 	MT_BOMBSPHERE,
