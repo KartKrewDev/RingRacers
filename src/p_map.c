@@ -1399,6 +1399,21 @@ static boolean PIT_CheckThing(mobj_t *thing)
 
 			return false;
 		}
+		else if (thing->type == MT_KART_LEFTOVER)
+		{
+			// see if it went over / under
+			if (tmthing->z > thing->z + thing->height)
+				return true; // overhead
+			if (tmthing->z + tmthing->height < thing->z)
+				return true; // underneath
+
+			if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
+				K_KartBouncing(tmthing, thing, true, false);
+			else
+				K_KartBouncing(tmthing, thing, false, false);
+
+			return false;
+		}
 		else if (thing->flags & MF_SOLID)
 		{
 			// see if it went over / under

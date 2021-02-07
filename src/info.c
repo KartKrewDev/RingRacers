@@ -32,6 +32,8 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"THOK", // Thok! mobj
 	"PLAY",
+	"KART",
+	"TIRE",
 
 	// Enemies
 	"POSS", // Crawla (Blue)
@@ -748,12 +750,23 @@ char sprnames[NUMSPRITES + 1][5] =
 char spr2names[NUMPLAYERSPRITES][5] =
 {
 	"STIN", "STIL", "STIR", // Still
+	"STGL", "STGR", // Still (glance back)
+	"STLL", "STLR", // Still (look back)
+
 	"SLWN", "SLWL", "SLWR", // Slow driving
+	"SLGL", "SLGR", // Slow (glance back)
+	"SLLL", "SLLR", // Slow (look back)
+
 	"FSTN", "FSTL", "FSTR", // Fast driving
+	"FSGL", "FSGR", // Fast (glance back)
+	"FSLL", "FSLR", // Fast (look back)
+
 	"DRLN", "DRLO", "DRLI", // Drifting left
 	"DRRN", "DRRO", "DRRI", // Drifting right
+
 	"SPIN", // Spinout
-	"SQSH", // Squish
+	"DEAD", // Dead
+
 	"SIGN", // Finish signpost
 	"XTRA", // Three Faces of Darkness
 };
@@ -763,14 +776,26 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 	0, // SPR2_STIN
 	SPR2_STIN, // SPR2_STIL
 	SPR2_STIN, // SPR2_STIR
+	SPR2_STIN, // SPR2_STGL
+	SPR2_STIN, // SPR2_STGR
+	SPR2_STGL, // SPR2_STLL
+	SPR2_STGR, // SPR2_STLR
 
 	0, // SPR2_SLWN
 	SPR2_SLWN, // SPR2_SLWL
 	SPR2_SLWN, // SPR2_SLWR
+	SPR2_SLWN, // SPR2_SLGL
+	SPR2_SLWN, // SPR2_SLGR
+	SPR2_SLGL, // SPR2_SLLL
+	SPR2_SLGR, // SPR2_SLLR
 
 	0, // SPR2_FSTN
 	SPR2_FSTN, // SPR2_FSTL
 	SPR2_FSTN, // SPR2_FSTR
+	SPR2_FSTN, // SPR2_FSGL
+	SPR2_FSTN, // SPR2_FSGR
+	SPR2_FSGL, // SPR2_FSLL
+	SPR2_FSGR, // SPR2_FSLR
 
 	0, // SPR2_DRLN
 	SPR2_DRLN, // SPR2_DRLO
@@ -781,9 +806,10 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 	SPR2_DRRN, // SPR2_DRRI
 
 	0, // SPR2_SPIN
-	SPR2_SPIN, // SPR2_SQSH
+	0, // SPR2_DEAD
 
 	0, // SPR2_SIGN
+	0, // SPR2_XTRA
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -814,12 +840,24 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY, SPR2_STIN,					  1, {NULL}, 0, 0, S_KART_STILL},				// S_KART_STILL
 	{SPR_PLAY, SPR2_STIL,					  1, {NULL}, 0, 0, S_KART_STILL_L},				// S_KART_STILL_L
 	{SPR_PLAY, SPR2_STIR,					  1, {NULL}, 0, 0, S_KART_STILL_R},				// S_KART_STILL_R
+	{SPR_PLAY, SPR2_STGL,					  1, {NULL}, 0, 0, S_KART_STILL_GLANCE_L},		// S_KART_STILL_GLANCE_L
+	{SPR_PLAY, SPR2_STGR,					  1, {NULL}, 0, 0, S_KART_STILL_GLANCE_R},		// S_KART_STILL_GLANCE_R
+	{SPR_PLAY, SPR2_STLL,					  1, {NULL}, 0, 0, S_KART_STILL_LOOK_L},		// S_KART_STILL_LOOK_L
+	{SPR_PLAY, SPR2_STLR,					  1, {NULL}, 0, 0, S_KART_STILL_LOOK_R},		// S_KART_STILL_LOOK_R
 	{SPR_PLAY, SPR2_SLWN,					  1, {NULL}, 0, 0, S_KART_SLOW},				// S_KART_SLOW
 	{SPR_PLAY, SPR2_SLWL,					  1, {NULL}, 0, 0, S_KART_SLOW_L},				// S_KART_SLOW_L
 	{SPR_PLAY, SPR2_SLWR,					  1, {NULL}, 0, 0, S_KART_SLOW_R},				// S_KART_SLOW_R
+	{SPR_PLAY, SPR2_SLGL,					  1, {NULL}, 0, 0, S_KART_SLOW_GLANCE_L},		// S_KART_SLOW_GLANCE_L
+	{SPR_PLAY, SPR2_SLGR,					  1, {NULL}, 0, 0, S_KART_SLOW_GLANCE_R},		// S_KART_SLOW_GLANCE_R
+	{SPR_PLAY, SPR2_SLLL,					  1, {NULL}, 0, 0, S_KART_SLOW_LOOK_L},			// S_KART_SLOW_LOOK_L
+	{SPR_PLAY, SPR2_SLLR,					  1, {NULL}, 0, 0, S_KART_SLOW_LOOK_R},			// S_KART_SLOW_LOOK_R
 	{SPR_PLAY, SPR2_FSTN,					  1, {NULL}, 0, 0, S_KART_FAST},				// S_KART_FAST
 	{SPR_PLAY, SPR2_FSTL,					  1, {NULL}, 0, 0, S_KART_FAST_L},				// S_KART_FAST_L
 	{SPR_PLAY, SPR2_FSTR,					  1, {NULL}, 0, 0, S_KART_FAST_R},				// S_KART_FAST_R
+	{SPR_PLAY, SPR2_FSGL,					  1, {NULL}, 0, 0, S_KART_FAST_GLANCE_L},		// S_KART_FAST_GLANCE_L
+	{SPR_PLAY, SPR2_FSGR,					  1, {NULL}, 0, 0, S_KART_FAST_GLANCE_R},		// S_KART_FAST_GLANCE_R
+	{SPR_PLAY, SPR2_FSLL,					  1, {NULL}, 0, 0, S_KART_FAST_LOOK_L},			// S_KART_FAST_LOOK_L
+	{SPR_PLAY, SPR2_FSLR,					  1, {NULL}, 0, 0, S_KART_FAST_LOOK_R},			// S_KART_FAST_LOOK_R
 	{SPR_PLAY, SPR2_DRLN,					  1, {NULL}, 0, 0, S_KART_DRIFT_L},				// S_KART_DRIFT_L
 	{SPR_PLAY, SPR2_DRLO,					  1, {NULL}, 0, 0, S_KART_DRIFT_L_OUT},			// S_KART_DRIFT_L_OUT
 	{SPR_PLAY, SPR2_DRLI,					  1, {NULL}, 0, 0, S_KART_DRIFT_L_IN},			// S_KART_DRIFT_L_IN
@@ -827,10 +865,16 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY, SPR2_DRRO,					  1, {NULL}, 0, 0, S_KART_DRIFT_R_OUT},			// S_KART_DRIFT_R_OUT
 	{SPR_PLAY, SPR2_DRRI,					  1, {NULL}, 0, 0, S_KART_DRIFT_R_IN},			// S_KART_DRIFT_R_IN
 	{SPR_PLAY, SPR2_SPIN|FF_ANIMATE,		350, {NULL}, 0, 1, S_KART_STILL},				// S_KART_SPINOUT
-	{SPR_PLAY, SPR2_SQSH|FF_ANIMATE,		350, {NULL}, 0, 1, S_KART_STILL},				// S_KART_SQUISH
+	{SPR_PLAY, SPR2_DEAD,					  3, {NULL}, 0, 0, S_KART_DEAD},				// S_KART_DEAD
 	{SPR_PLAY, SPR2_SIGN|FF_PAPERSPRITE,	  1, {NULL}, 0, 0, S_KART_SIGN},				// S_KART_SIGN
 
 	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_OBJPLACE_DUMMY}, // S_OBJPLACE_DUMMY
+
+	{SPR_KART, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER
+	{SPR_KART, 1, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER_NOTIRES
+
+	{SPR_TIRE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE1
+	{SPR_TIRE, 1, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE2
 
 	// Blue Crawla
 	{SPR_POSS, 0, 5, {A_Look}, 0, 0, S_POSS_STND},   // S_POSS_STND
@@ -5227,7 +5271,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_KART_SPINOUT, // deathstate
+		S_KART_DEAD,    // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		1,              // speed
@@ -5239,6 +5283,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_SOLID|MF_SHOOTABLE|MF_DONTENCOREMAP, // flags
 		(statenum_t)MT_THOK // raisestate
+	},
+
+	{           // MT_KART_LEFTOVER
+		4095,            // doomednum
+		S_KART_LEFTOVER, // spawnstate
+		2,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		1,              // speed
+		16*FRACUNIT,    // radius
+		48*FRACUNIT,    // height
+		-1,             // display offset
+		1000,           // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_KART_TIRE
+		-1,             // doomednum
+		S_KART_TIRE1,   // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		1,              // speed
+		6*FRACUNIT,     // radius
+		12*FRACUNIT,    // height
+		-1,             // display offset
+		1000,           // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
 	},
 
 	{           // MT_BLUECRAWLA
