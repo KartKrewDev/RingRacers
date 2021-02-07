@@ -2135,6 +2135,59 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	return true;
 }
 
+static void P_FlingBurst
+(		player_t *player,
+		angle_t fa,
+		fixed_t z,
+		mobjtype_t objType,
+		tic_t objFuse,
+		fixed_t objScale,
+		INT32 i)
+{
+	mobj_t *mo;
+	fixed_t ns;
+	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
+	INT32 mx = (i + 1) >> 1;
+
+	z = player->mo->z;
+	if (player->mo->eflags & MFE_VERTICALFLIP)
+		z += player->mo->height - mobjinfo[objType].height;
+
+	mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
+
+	mo->threshold = 10; // not useful for spikes
+	mo->fuse = objFuse;
+	P_SetTarget(&mo->target, player->mo);
+
+	mo->destscale = objScale;
+	P_SetScale(mo, objScale);
+
+	/*
+	0: 0
+	1: 1 = (1+1)/2 = 1
+	2: 1 = (2+1)/2 = 1
+	3: 2 = (3+1)/2 = 2
+	4: 2 = (4+1)/2 = 2
+	5: 3 = (4+1)/2 = 2
+	 */
+	// Angle / height offset changes every other ring
+	momxy -= mx * FRACUNIT;
+	momz += mx * (2<<FRACBITS);
+
+	if (i & 1)
+		fa += ANGLE_180;
+
+	ns = FixedMul(momxy, player->mo->scale);
+	mo->momx = (mo->target->momx/2) + FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
+	mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
+
+	ns = FixedMul(momz, player->mo->scale);
+	P_SetObjectMomZ(mo, (mo->target->momz/2) + ns, false);
+
+	if (player->mo->eflags & MFE_VERTICALFLIP)
+		mo->momz *= -1;
+}
+
 /** Spills an injured player's rings.
   *
   * \param player    The player who is losing rings.
@@ -2144,15 +2197,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
   */
 void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 {
+	INT32 num_fling_rings;
 	INT32 i;
-	mobj_t *mo;
 	angle_t fa;
-	fixed_t ns;
 	fixed_t z;
-	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
-	mobjtype_t objType;
-	tic_t objFuse;
-	fixed_t objScale = player->mo->scale;
 
 	// Rings shouldn't be in Battle!
 	if (gametyperules & GTR_SPHERES)
@@ -2172,60 +2220,26 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	else if (num_rings <= 0)
 		return;
 
-	if (player->rings <= 0)
-	{
-		// In ring debt, spill the Funny Spikes
-		objType = MT_DEBTSPIKE;
-		objFuse = 90;
-
-		objScale = 3 * objScale / 2;
-	}
-	else
-	{
-		objType = MT_FLINGRING;
-		objFuse = 60*TICRATE;
-	}
+	num_fling_rings = min(num_rings, player->rings);
 
 	P_GivePlayerRings(player, -num_rings);
 
 	// determine first angle
 	fa = player->mo->angle + ((P_RandomByte() & 1) ? -ANGLE_90 : ANGLE_90);
 
-	for (i = 0; i < num_rings; i++)
+	z = player->mo->z;
+	if (player->mo->eflags & MFE_VERTICALFLIP)
+		z += player->mo->height - mobjinfo[MT_RING].height;
+
+	for (i = 0; i < num_fling_rings; i++)
 	{
-		z = player->mo->z;
-		if (player->mo->eflags & MFE_VERTICALFLIP)
-			z += player->mo->height - mobjinfo[objType].height;
+		P_FlingBurst(player, fa, z,
+				MT_FLINGRING, 60*TICRATE, player->mo->scale, i);
+	}
 
-		mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
-
-		mo->threshold = 10;
-		mo->fuse = objFuse;
-		P_SetTarget(&mo->target, player->mo);
-
-		mo->destscale = objScale;
-		P_SetScale(mo, objScale);
-
-		// Angle / height offset changes every other ring
-		if (i != 0)
-		{
-			if (i & 1)
-			{
-				momxy -= FRACUNIT;
-				momz += 2<<FRACBITS;
-			}
-
-			fa += ANGLE_180;
-		}
-
-		ns = FixedMul(momxy, player->mo->scale);
-		mo->momx = (mo->target->momx/2) + FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
-		mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
-
-		ns = FixedMul(momz, player->mo->scale);
-		P_SetObjectMomZ(mo, (mo->target->momz/2) + ns, false);
-
-		if (player->mo->eflags & MFE_VERTICALFLIP)
-			mo->momz *= -1;
+	while (i < num_rings)
+	{
+		P_FlingBurst(player, fa, z,
+				MT_DEBTSPIKE, 90, 3 * player->mo->scale / 2, i++);
 	}
 }
