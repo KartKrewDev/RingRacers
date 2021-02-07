@@ -9432,6 +9432,22 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_FINISHBEAMEND1",
 	"S_FINISHBEAMEND2",
 
+	// Funny Spike
+	"S_DEBTSPIKE1",
+	"S_DEBTSPIKE2",
+	"S_DEBTSPIKE3",
+	"S_DEBTSPIKE4",
+	"S_DEBTSPIKE5",
+	"S_DEBTSPIKE6",
+	"S_DEBTSPIKE7",
+	"S_DEBTSPIKE8",
+	"S_DEBTSPIKE9",
+	"S_DEBTSPIKEA",
+	"S_DEBTSPIKEB",
+	"S_DEBTSPIKEC",
+	"S_DEBTSPIKED",
+	"S_DEBTSPIKEE",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -9573,6 +9589,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Collectible Items
 	"MT_RING",
 	"MT_FLINGRING", // Lost ring
+	"MT_DEBTSPIKE", // Ring debt funny spike
 	"MT_BLUESPHERE",  // Blue sphere for special stages
 	"MT_FLINGBLUESPHERE", // Lost blue sphere
 	"MT_BOMBSPHERE",
