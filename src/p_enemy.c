@@ -4229,7 +4229,7 @@ void A_AttractChase(mobj_t *actor)
 		else
 			actor->drawflags &= ~MFD_DONTDRAW;
 
-		// spilled rings have ghost trails and get capped to a certain speed
+		// spilled rings get capped to a certain speed
 		if (actor->type == (mobjtype_t)actor->info->reactiontime)
 		{
 			const fixed_t maxspeed = 4<<FRACBITS;
@@ -4241,9 +4241,6 @@ void A_AttractChase(mobj_t *actor)
 				actor->momx = FixedMul(FixedDiv(actor->momx, oldspeed), newspeed);
 				actor->momy = FixedMul(FixedDiv(actor->momy, oldspeed), newspeed);
 			}
-
-			if (!P_IsObjectOnGround(actor))
-				P_SpawnGhostMobj(actor)->tics = 3;
 		}
 
 		if (actor->tracer && actor->tracer->player && actor->tracer->health

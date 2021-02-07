@@ -9197,6 +9197,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_RING:
+		case MT_FLINGRING:
 		case MT_DEBTSPIKE:
 		case MT_FLOATINGITEM:
 		case MT_BLUESPHERE:
