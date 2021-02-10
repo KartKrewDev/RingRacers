@@ -690,8 +690,8 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 		// Initialise the map and delta arrays
 		// map[i] stores an RGB color (as double) for index i,
 		//  which is then converted to SRB2's palette later
-		// deltas[i] stores a corresponding fade delta between the RGB color and the final fade color;
-		//  map[i]'s values are decremented by after each use
+		// brightChange[i] is the value added/subtracted every step for the fade;
+		//  map[i]'s values are in/decremented by it after each use
 		for (i = 0; i < 256; i++)
 		{
 			r = pMasterPalette[i].s.red;
@@ -723,6 +723,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 				cbest = max(r, max(g, b));
 			}
 
+			// Add/subtract this value during fading.
 			brightChange[i] = abs(cbest - cdestbright) / (double)fadedist;
 		}
 
@@ -752,7 +753,6 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 					map[i][0] -= brightChange[i];
 				else
 					map[i][0] += brightChange[i];
-
 
 				if (abs(map[i][1] - cdestg) <= brightChange[i])
 					map[i][1] = cdestg;
