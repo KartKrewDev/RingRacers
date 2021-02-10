@@ -683,7 +683,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 	// This code creates the colormap array used by software renderer
 	/////////////////////
 	{
-		double r, g, b, cbrightness, cbest;
+		double r, g, b, cbrightness, cbest, cdist;
 		int p;
 		lighttable_t *colormap_p;
 
@@ -717,14 +717,16 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 			if (cbrightness < cdestbright)
 			{
 				cbest = 255.0l - min(r, min(g, b));
+				cdist = 255.0l - cdestbright;
 			}
 			else
 			{
 				cbest = max(r, max(g, b));
+				cdist = cdestbright;
 			}
 
 			// Add/subtract this value during fading.
-			brightChange[i] = abs(cbest - cdestbright) / (double)fadedist;
+			brightChange[i] = abs(cbest - cdist) / (double)fadedist;
 		}
 
 		// Now allocate memory for the actual colormap array itself!
