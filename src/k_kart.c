@@ -7550,7 +7550,7 @@ static void K_KartSpindash(player_t *player)
 				K_KartSpindashWind(player->mo);
 			}
 
-			if (player->powers[pw_flashing] > 0 && (leveltime & 1))
+			if (player->powers[pw_flashing] > 0 && (leveltime & 1) && player->kartstuff[k_hyudorotimer] == 0)
 			{
 				// Every frame that you're invisible from flashing, spill a ring.
 				// Intentionally a lop-sided trade-off, so the game doesn't become
