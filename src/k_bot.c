@@ -520,49 +520,35 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 
 		See header file for description.
 --------------------------------------------------*/
-fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
+fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t px, fixed_t py)
 {
-#if 1
-	// This function ended up with overflow issues
-	// I'm kinda tired of looking at this so I'mma just gonna wildly cheat
+	// Copy+paste from P_ClosestPointOnLine :pensive:
+	fixed_t startx = v1x;
+	fixed_t starty = v1y;
+	fixed_t dx = v2x - v1x;
+	fixed_t dy = v2y - v1y;
 
-	vertex_t v1, v2; // fake vertexes
-	line_t junk; // fake linedef
-	vertex_t result;
-
-	v1.x = v1x;
-	v1.y = v1y;
-
-	v2.x = v2x;
-	v2.y = v2y;
-
-	junk.v1 = &v1;
-	junk.v2 = &v2;
-
-	P_ClosestPointOnLine(cx, cy, &junk, &result);
-	return R_PointToDist2(cx, cy, result.x, result.y);
-#else
-	fixed_t v1toc[2] = {cx - v1x, cy - v1y};
-	fixed_t v1tov2[2] = {v2x - v1x, v2y - v1y};
-
-	fixed_t mag = FixedMul(v1tov2[0], v1tov2[0]) + FixedMul(v1tov2[1], v1tov2[1]);
-	fixed_t dot = FixedMul(v1toc[0], v1tov2[0]) + FixedMul(v1toc[1], v1tov2[1]);
-
+	fixed_t cx, cy;
+	fixed_t vx, vy;
+	fixed_t magnitude;
 	fixed_t t;
-	fixed_t px, py;
 
-	if (mag == 0)
-	{
-		return 0;
-	}
+	cx = px - startx;
+	cy = py - starty;
 
-	t = FixedDiv(dot, mag);
+	vx = dx;
+	vy = dy;
 
-	px = v1x + FixedMul(v1tov2[0], t);
-	py = v1y + FixedMul(v1tov2[1], t);
+	magnitude = R_PointToDist2(v2x, v2y, startx, starty);
+	vx = FixedDiv(vx, magnitude);
+	vy = FixedDiv(vy, magnitude);
 
-	return FixedHypot(cx - px, cy - py);
-#endif
+	t = (FixedMul(vx, cx) + FixedMul(vy, cy));
+
+	vx = FixedMul(vx, t);
+	vy = FixedMul(vy, t);
+
+	return R_PointToDist2(px, py, startx + vx, starty + vy);
 }
 
 /*--------------------------------------------------
@@ -794,7 +780,7 @@ static UINT8 K_TrySpindash(player_t *player)
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	botprediction_t *predict = NULL;
-	boolean trySpindash = false;
+	boolean trySpindash = true;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
 
@@ -938,7 +924,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (leveltime <= starttime && finishBeamLine != NULL)
 	{
-		const fixed_t distBase = 1024*mapobjectscale;
+		const fixed_t distBase = 384*mapobjectscale;
 		const fixed_t distAdjust = 64*mapobjectscale;
 
 		const fixed_t closeDist = distBase + (distAdjust * (9 - player->kartweight));
