@@ -1237,11 +1237,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	fixed_t xscale, yscale, shadowxscale, shadowyscale, shadowskew, x1, x2;
 	INT32 light = 0;
 	UINT8 trans = tr_transsub;
-	fixed_t scalemul;
-	fixed_t floordiff;
 	fixed_t groundz;
 	pslope_t *groundslope;
-	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
@@ -1252,14 +1249,11 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 		trans = tr_transadd;
 	}
 
-	floordiff = abs((isflipped ? thing->height : 0) + thing->z - groundz);
-	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
-
 	patch = W_CachePatchName("DSHADOW", PU_CACHE);
 	xscale = FixedDiv(projection[viewssnum], tz);
 	yscale = FixedDiv(projectiony[viewssnum], tz);
-	shadowxscale = FixedMul(thing->radius*2, scalemul);
-	shadowyscale = FixedMul(FixedMul(thing->radius*2, scalemul), FixedDiv(abs(groundz - viewz), tz));
+	shadowxscale = FixedMul(thing->radius*2, scale);
+	shadowyscale = FixedMul(FixedMul(thing->radius*2, scale), FixedDiv(abs(groundz - viewz), tz));
 	shadowyscale = min(shadowyscale, shadowxscale) / SHORT(patch->height);
 	shadowxscale /= SHORT(patch->width);
 	shadowskew = 0;
@@ -1276,9 +1270,9 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 		//CONS_Printf("Shadow is sloped by %d %d\n", xslope, zslope);
 
 		if (viewz < groundz)
-			shadowyscale += FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scalemul), zslope);
+			shadowyscale += FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scale), zslope);
 		else
-			shadowyscale -= FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scalemul), zslope);
+			shadowyscale -= FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scale), zslope);
 
 		shadowyscale = abs(shadowyscale);
 
