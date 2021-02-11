@@ -7587,9 +7587,9 @@ static void K_AirFailsafe(player_t *player)
 
 	ticcmd_t *cmd = &player->cmd;
 
-	if (player->speed > maxSpeed)
+	if (player->speed > maxSpeed // Above the max speed that you're allowed to use this technique.
+		|| player->respawn.state != RESPAWNST_NONE) // Respawning, you don't need this AND drop dash :V
 	{
-		// Above the max speed that you're allowed to use this technique.
 		player->airFailsafe = false;
 		return;
 	}
