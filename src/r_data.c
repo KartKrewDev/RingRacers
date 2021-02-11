@@ -623,13 +623,13 @@ extracolormap_t *R_ColormapForName(char *name)
 // custom colormaps at runtime. NOTE: For GL mode, we only need to color
 // data and not the colormap data.
 //
-static double deltas[256][3], map[256][3];
+static double brightChange[256], map[256][3];
 
 static int RoundUp(double number);
 
 lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 {
-	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb;
+	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb, cdestbright;
 	double maskamt = 0, othermask = 0;
 
 	UINT8 cr = R_GetRgbaR(extra_colormap->rgba),
@@ -668,6 +668,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 	cdestr = cfr;
 	cdestg = cfg;
 	cdestb = cfb;
+	cdestbright = sqrt((cfr*cfr) + (cfg*cfg) + (cfb*cfb));
 
 	// fade alpha unused in software
 	// maskamt = (double)(cfa/24.0l);
@@ -682,15 +683,15 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 	// This code creates the colormap array used by software renderer
 	/////////////////////
 	{
-		double r, g, b, cbrightness;
+		double r, g, b, cbrightness, cbest, cdist;
 		int p;
 		lighttable_t *colormap_p;
 
 		// Initialise the map and delta arrays
 		// map[i] stores an RGB color (as double) for index i,
 		//  which is then converted to SRB2's palette later
-		// deltas[i] stores a corresponding fade delta between the RGB color and the final fade color;
-		//  map[i]'s values are decremented by after each use
+		// brightChange[i] is the value added/subtracted every step for the fade;
+		//  map[i]'s values are in/decremented by it after each use
 		for (i = 0; i < 256; i++)
 		{
 			r = pMasterPalette[i].s.red;
@@ -701,17 +702,31 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 			map[i][0] = (cbrightness * cmaskr) + (r * othermask);
 			if (map[i][0] > 255.0l)
 				map[i][0] = 255.0l;
-			deltas[i][0] = (map[i][0] - cdestr) / (double)fadedist;
 
 			map[i][1] = (cbrightness * cmaskg) + (g * othermask);
 			if (map[i][1] > 255.0l)
 				map[i][1] = 255.0l;
-			deltas[i][1] = (map[i][1] - cdestg) / (double)fadedist;
 
 			map[i][2] = (cbrightness * cmaskb) + (b * othermask);
 			if (map[i][2] > 255.0l)
 				map[i][2] = 255.0l;
-			deltas[i][2] = (map[i][2] - cdestb) / (double)fadedist;
+
+			// Get the "best" color.
+			// Our brightest color's value, if we're fading to a darker color,
+			// or our (inverted) darkest color's value, if we're fading to a brighter color.
+			if (cbrightness < cdestbright)
+			{
+				cbest = 255.0l - min(r, min(g, b));
+				cdist = 255.0l - cdestbright;
+			}
+			else
+			{
+				cbest = max(r, max(g, b));
+				cdist = cdestbright;
+			}
+
+			// Add/subtract this value during fading.
+			brightChange[i] = abs(cbest - cdist) / (double)fadedist;
 		}
 
 		// Now allocate memory for the actual colormap array itself!
@@ -732,22 +747,28 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 
 				if ((UINT32)p < fadestart)
 					continue;
-#define ABS2(x) ((x) < 0 ? -(x) : (x))
-				if (ABS2(map[i][0] - cdestr) > ABS2(deltas[i][0]))
-					map[i][0] -= deltas[i][0];
-				else
+
+				// Add/subtract towards the destination color.
+				if (abs(map[i][0] - cdestr) <= brightChange[i])
 					map[i][0] = cdestr;
-
-				if (ABS2(map[i][1] - cdestg) > ABS2(deltas[i][1]))
-					map[i][1] -= deltas[i][1];
+				else if (map[i][0] > cdestr)
+					map[i][0] -= brightChange[i];
 				else
+					map[i][0] += brightChange[i];
+
+				if (abs(map[i][1] - cdestg) <= brightChange[i])
 					map[i][1] = cdestg;
-
-				if (ABS2(map[i][2] - cdestb) > ABS2(deltas[i][1]))
-					map[i][2] -= deltas[i][2];
+				else if (map[i][1] > cdestg)
+					map[i][1] -= brightChange[i];
 				else
+					map[i][1] += brightChange[i];
+
+				if (abs(map[i][2] - cdestb) <= brightChange[i])
 					map[i][2] = cdestb;
-#undef ABS2
+				else if (map[i][2] > cdestb)
+					map[i][2] -= brightChange[i];
+				else
+					map[i][2] += brightChange[i];
 			}
 		}
 
