@@ -771,6 +771,144 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	}
 }
 
+// This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
+// (Remember to free the result after usage.)
+trackingResult_t *K_ObjectTracking(vector3_t *point, UINT8 cameraNum, angle_t angleOffset)
+{
+#define NEWTAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
+#define NEWCOS(x) FINECOSINE((x >> ANGLETOFINESHIFT) & FINEMASK)
+
+	trackingResult_t *result;
+	camera_t *cam;
+	player_t *player;
+
+	fixed_t viewpointX, viewpointY, viewpointZ;
+	INT32 viewpointAngle, viewpointAiming;
+
+	INT32 screenWidth, screenHeight;
+	fixed_t screenHalfW, screenHalfH;
+
+	fixed_t fov, fovTangent, fg;
+
+	fixed_t h;
+	INT32 da;
+
+	result = Z_Calloc(sizeof(trackingResult_t), PU_STATIC, NULL);
+
+	// Initialize defaults
+	result->x = result->y = 0;
+	result->scale = FRACUNIT;
+	result->onScreen = false;
+
+	if (cameraNum > r_splitscreen)
+	{
+		// Invalid camera ID.
+		return result;
+	}
+
+	cam = &camera[cameraNum];
+	player = &players[displayplayers[cameraNum]];
+
+	if (cam == NULL || player == NULL)
+	{
+		// Shouldn't be possible?
+		return result;
+	}
+
+	if (cam->chase == true)
+	{
+		// Use the camera's properties.
+		viewpointX = cam->x;
+		viewpointY = cam->y;
+		viewpointZ = cam->z - point->z;
+		viewpointAngle = (INT32)cam->angle;
+		viewpointAiming = (INT32)cam->aiming;
+	}
+	else
+	{
+		// Use player properties.
+
+		if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+		{
+			// This shouldn't happen.
+			return result;
+		}
+
+		viewpointX = player->mo->x;
+		viewpointY = player->mo->y;
+		viewpointZ = player->viewz - point->z;
+		viewpointAngle = (INT32)player->mo->angle;
+		viewpointAiming = (INT32)player->aiming;
+	}
+
+	viewpointAngle += (INT32)angleOffset;
+
+	// Calculate screen size adjustments.
+	screenWidth = BASEVIDWIDTH;
+	screenHeight = BASEVIDHEIGHT;
+
+	if (r_splitscreen >= 2)
+	{
+		// Half-wide screens
+		screenWidth >>= 1;
+	}
+
+	if (r_splitscreen >= 1)
+	{
+		// Half-tall screens
+		screenHeight >>= 1;
+	}
+
+	screenHalfW = (screenWidth >> 1) << FRACBITS;
+	screenHalfH = (screenHeight >> 1) << FRACBITS;
+
+	// Calculate FOV adjustments.
+	fov = (cv_fov[cameraNum].value / 2) - (player->fovadd / 2);
+	fovTangent = NEWTAN(FixedAngle(fov));
+
+	if (r_splitscreen == 1)
+	{
+		// Splitscreen FOV is adjusted to maintain expected vertical view
+		fovTangent = 10*fovTangent/17;
+	}
+
+	fg = (screenWidth >> 1) * fovTangent;
+
+	// Determine viewpoint factors.
+	h = R_PointToDist2(point->x, point->y, viewpointX, viewpointY);
+	da = viewpointAngle - (INT32)(R_PointToAngle2(point->x, point->y, viewpointX, viewpointY));
+
+	// Set results!
+	result->x = screenHalfW + FixedMul(NEWTAN(da), fg);
+	result->y = screenHalfH + FixedMul((NEWTAN(viewpointAiming) - FixedDiv(viewpointZ, 1 + FixedMul(NEWCOS(da), h))), fg);
+
+	result->scale = FixedDiv(screenHalfW, h+1);
+
+	result->onScreen = ((abs(da) > ANG60) || (abs(viewpointAiming - R_PointToAngle2(0, 0, h, viewpointZ)) > ANGLE_45));
+
+	if (encoremode)
+	{
+		// Flipped screen
+		result->x = (screenWidth << FRACBITS) - result->x;
+	}
+
+	// Cheap dirty hacks for some split-screen related cases
+	if (result->x < 0 || result->x > (screenWidth << FRACBITS))
+	{
+		result->onScreen = false;
+	}
+
+	if (result->y < 0 || result->y > (screenHeight << FRACBITS))
+	{
+		result->onScreen = false;
+	}
+
+	return result;
+
+#undef NEWTAN
+#undef NEWCOS
+}
+
 static void K_initKartHUD(void)
 {
 	/*
@@ -2319,109 +2457,9 @@ static void K_drawKartWanted(void)
 	}
 }
 
-static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vector3_t *campos, angle_t camang, angle_t camaim, vector3_t *point, UINT8 cnum)
-{
-	const INT32 swhalf = (BASEVIDWIDTH / 2);
-	const fixed_t swhalffixed = swhalf * FRACUNIT;
-
-	const INT32 shhalf = (BASEVIDHEIGHT / 2);
-	const fixed_t shhalffixed = shhalf * FRACUNIT;
-
-
-	const UINT8 precisionloss = 4;
-
-	fixed_t anglediff = (AngleFixed(camang) / precisionloss) - (AngleFixed(R_PointToAngle2(campos->x, campos->y, point->x, point->y)) / precisionloss);
-
-	fixed_t distance = R_PointToDist2(campos->x, campos->y, point->x, point->y);
-	fixed_t factor = INT32_MAX;
-
-	const fixed_t fov = cv_fov[cnum].value;
-	fixed_t intendedfov = 90*FRACUNIT;
-	fixed_t fovmul = FRACUNIT;
-
-	if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
-	{
-		intendedfov = 17 * intendedfov / 10;
-	}
-
-	fovmul = FixedDiv(fov, intendedfov);
-
-	anglediff = FixedMul(anglediff, fovmul) * precisionloss;
-
-	if (abs(anglediff) > 90*FRACUNIT)
-	{
-		if (hud_x != NULL)
-		{
-			*hud_x = -1000 * FRACUNIT;
-		}
-
-		if (hud_y != NULL)
-		{
-			*hud_y = -1000 * FRACUNIT;
-		}
-
-		//*hud_scale = 0;
-		return;
-	}
-
-	anglediff = FixedAngle(anglediff);
-
-	factor = max(1, FINECOSINE(anglediff >> ANGLETOFINESHIFT));
-
-#define NEWTAN(n) FINETANGENT(((n + ANGLE_90) >> ANGLETOFINESHIFT) & 4095)
-
-	if (hud_x != NULL)
-	{
-		*hud_x = FixedMul(NEWTAN(anglediff), swhalffixed) + swhalffixed;
-
-		if (*hud_x < 0 || *hud_x > BASEVIDWIDTH * FRACUNIT)
-		{
-			*hud_x = -1000 * FRACUNIT;
-		}
-		else
-		{
-			if (encoremode)
-			{
-				*hud_x = (BASEVIDWIDTH * FRACUNIT) - *hud_x;
-			}
-
-			if (r_splitscreen >= 2)
-			{
-				*hud_x /= 2;
-			}
-		}
-	}
-
-	if (hud_y != NULL)
-	{
-		*hud_y = campos->z - point->z;
-		*hud_y = FixedDiv(*hud_y, FixedMul(factor, distance));
-		*hud_y = (*hud_y * swhalf) + shhalffixed;
-		*hud_y = *hud_y + NEWTAN(camaim) * swhalf;
-
-		if (*hud_y < 0 || *hud_y > BASEVIDHEIGHT * FRACUNIT)
-		{
-			*hud_y = -1000 * FRACUNIT;
-		}
-		else
-		{
-			if (r_splitscreen >= 1)
-			{
-				*hud_y /= 2;
-			}
-		}
-	}
-
-	//*hud_scale = FixedDiv(swhalffixed, FixedMul(factor, distance));
-
-#undef NEWTAN
-}
-
 static void K_drawKartPlayerCheck(void)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
-	camera_t *thiscam;
-	vector3_t c;
 	UINT8 cnum = 0;
 	UINT8 i;
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
@@ -2456,20 +2494,14 @@ static void K_drawKartPlayerCheck(void)
 		}
 	}
 
-	thiscam = &camera[cnum];
-
-	c.x = stplyr->mo->x;
-	c.y = stplyr->mo->y;
-	c.z = stplyr->mo->z;
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		player_t *checkplayer = &players[i];
 		fixed_t distance = maxdistance+1;
 		UINT8 *colormap = NULL;
 		UINT8 pnum = 0;
-		fixed_t x = 0;
 		vector3_t v;
+		trackingResult_t *result = NULL;
 
 		if (!playeringame[i] || checkplayer->spectator)
 		{
@@ -2493,7 +2525,7 @@ static void K_drawKartPlayerCheck(void)
 		v.y = checkplayer->mo->y;
 		v.z = checkplayer->mo->z;
 
-		distance = R_PointToDist2(c.x, c.y, v.x, v.y);
+		distance = R_PointToDist2(stplyr->mo->x, stplyr->mo->y, v.x, v.y);
 
 		if (distance > maxdistance)
 		{
@@ -2515,10 +2547,21 @@ static void K_drawKartPlayerCheck(void)
 			pnum += 2;
 		}
 
-		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, &v, cnum);
+		result = K_ObjectTracking(&v, cnum, ANGLE_180);
 
-		colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
-		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
+		if (result == NULL)
+		{
+			// Shouldn't happen
+			continue;
+		}
+
+		if (result->onScreen == true)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
+			V_DrawFixedPatch(result->x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
+		}
+
+		Z_Free(result);
 	}
 }
 
@@ -2646,9 +2689,18 @@ static void K_drawKartNameTags(void)
 
 	thiscam = &camera[cnum];
 
-	c.x = thiscam->x;
-	c.y = thiscam->y;
-	c.z = thiscam->z;
+	if (thiscam->chase == true)
+	{
+		c.x = thiscam->x;
+		c.y = thiscam->y;
+		c.z = thiscam->z;
+	}
+	else
+	{
+		c.x = stplyr->mo->x;
+		c.y = stplyr->mo->y;
+		c.z = stplyr->mo->z;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -2735,68 +2787,74 @@ static void K_drawKartNameTags(void)
 
 		for (i = 0; i < sortlen; i++)
 		{
+			trackingResult_t *result = NULL;
 			player_t *ntplayer = &players[sortedplayers[i]];
 
-			fixed_t x = -BASEVIDWIDTH * FRACUNIT;
-			fixed_t y = -BASEVIDWIDTH * FRACUNIT;
+			fixed_t headOffset = 36*ntplayer->mo->scale;
 
 			SINT8 localindicator = -1;
 			vector3_t v;
 
 			v.x = ntplayer->mo->x;
 			v.y = ntplayer->mo->y;
-			v.z = ntplayer->mo->z;
+			v.z = ntplayer->mo->z + (ntplayer->mo->height / 2);
 
-			if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
+			if (stplyr->mo->eflags & MFE_VERTICALFLIP)
 			{
-				v.z += ntplayer->mo->height;
+				v.z -= headOffset;
+			}
+			else
+			{
+				v.z += headOffset;
 			}
 
-			K_ObjectTracking(&x, &y, &c, thiscam->angle, thiscam->aiming, &v, cnum);
+			result = K_ObjectTracking(&v, cnum, 0);
 
-			/*
-			if ((x < 0 || x > BASEVIDWIDTH * FRACUNIT)
-			|| (y < 0 || y > BASEVIDHEIGHT * FRACUNIT))
+			if (result == NULL)
 			{
-				// Off-screen
+				// Shouldn't happen
 				continue;
 			}
-			*/
 
-			if (!(demo.playback == true && demo.freecam == true))
+			if (result->onScreen == true)
 			{
-				for (j = 0; j <= r_splitscreen; j++)
+				if (!(demo.playback == true && demo.freecam == true))
 				{
-					if (ntplayer == &players[displayplayers[j]])
+					for (j = 0; j <= r_splitscreen; j++)
 					{
-						break;
+						if (ntplayer == &players[displayplayers[j]])
+						{
+							break;
+						}
+					}
+
+					if (j <= r_splitscreen && j != cnum)
+					{
+						localindicator = j;
 					}
 				}
 
-				if (j <= r_splitscreen && j != cnum)
+				if (localindicator >= 0)
 				{
-					localindicator = j;
+					K_DrawLocalTagForPlayer(result->x, result->y, ntplayer, localindicator);
+				}
+				else if (ntplayer->bot)
+				{
+					if (ntplayer->botvars.rival == true)
+					{
+						K_DrawRivalTagForPlayer(result->x, result->y);
+					}
+				}
+				else if (netgame || demo.playback)
+				{
+					if (K_ShowPlayerNametag(ntplayer) == true)
+					{
+						K_DrawNameTagForPlayer(result->x, result->y, ntplayer, cnum);
+					}
 				}
 			}
 
-			if (localindicator >= 0)
-			{
-				K_DrawLocalTagForPlayer(x, y, ntplayer, localindicator);
-			}
-			else if (ntplayer->bot)
-			{
-				if (ntplayer->botvars.rival == true)
-				{
-					K_DrawRivalTagForPlayer(x, y);
-				}
-			}
-			else if (netgame || demo.playback)
-			{
-				if (K_ShowPlayerNametag(ntplayer) == true)
-				{
-					K_DrawNameTagForPlayer(x, y, ntplayer, cnum);
-				}
-			}
+			Z_Free(result);
 		}
 	}
 }
