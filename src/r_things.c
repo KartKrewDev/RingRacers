@@ -1236,7 +1236,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	patch_t *patch;
 	fixed_t xscale, yscale, shadowxscale, shadowyscale, shadowskew, x1, x2;
 	INT32 light = 0;
-	fixed_t scalemul; UINT8 trans;
+	UINT8 trans = tr_transsub;
+	fixed_t scalemul;
 	fixed_t floordiff;
 	fixed_t groundz;
 	pslope_t *groundslope;
@@ -1246,14 +1247,15 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 
 	if (abs(groundz-viewz)/tz > 4) return; // Prevent stretchy shadows and possible crashes
 
+	if (thing->whiteshadow == true)
+	{
+		trans = tr_transadd;
+	}
+
 	floordiff = abs((isflipped ? thing->height : 0) + thing->z - groundz);
-
-	trans = floordiff / (100*FRACUNIT) + 3;
-	if (trans >= 9) return;
-
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
 
-	patch = W_CachePatchName((thing->whiteshadow == true ? "LSHADOW" : "DSHADOW"), PU_CACHE);
+	patch = W_CachePatchName("DSHADOW", PU_CACHE);
 	xscale = FixedDiv(projection[viewssnum], tz);
 	yscale = FixedDiv(projectiony[viewssnum], tz);
 	shadowxscale = FixedMul(thing->radius*2, scalemul);
@@ -1354,16 +1356,9 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	else
 		shadow->extra_colormap = thing->subsector->sector->extra_colormap;
 
-	shadow->transmap = transtables + (trans<<FF_TRANSSHIFT);
+	shadow->transmap = transtables + ((trans-1) << FF_TRANSSHIFT);
 
-	if (thing->whiteshadow == true)
-	{
-		shadow->colormap = scalelight[LIGHTLEVELS - 1][0]; // full bright!
-	}
-	else
-	{
-		shadow->colormap = scalelight[0][0]; // full dark!
-	}
+	shadow->colormap = colormaps;
 
 	objectsdrawn++;
 }
