@@ -726,7 +726,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 			}
 
 			// Add/subtract this value during fading.
-			brightChange[i] = abs(cbest - cdist) / (double)fadedist;
+			brightChange[i] = fabs(cbest - cdist) / (double)fadedist;
 		}
 
 		// Now allocate memory for the actual colormap array itself!
@@ -749,21 +749,21 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 					continue;
 
 				// Add/subtract towards the destination color.
-				if (abs(map[i][0] - cdestr) <= brightChange[i])
+				if (fabs(map[i][0] - cdestr) <= brightChange[i])
 					map[i][0] = cdestr;
 				else if (map[i][0] > cdestr)
 					map[i][0] -= brightChange[i];
 				else
 					map[i][0] += brightChange[i];
 
-				if (abs(map[i][1] - cdestg) <= brightChange[i])
+				if (fabs(map[i][1] - cdestg) <= brightChange[i])
 					map[i][1] = cdestg;
 				else if (map[i][1] > cdestg)
 					map[i][1] -= brightChange[i];
 				else
 					map[i][1] += brightChange[i];
 
-				if (abs(map[i][2] - cdestb) <= brightChange[i])
+				if (fabs(map[i][2] - cdestb) <= brightChange[i])
 					map[i][2] = cdestb;
 				else if (map[i][2] > cdestb)
 					map[i][2] -= brightChange[i];
