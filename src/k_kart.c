@@ -2470,10 +2470,17 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
 	}
 
-	if (K_PlayerUsesBotMovement(player) && player->botvars.rival == true)
+	if (K_PlayerUsesBotMovement(player))
 	{
-		// +10% top speed for the rival
-		finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+		// Increase bot speed by 1-10% depending on difficulty
+		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / 9;
+		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
+
+		if (player->botvars.rival == true)
+		{
+			// +10% top speed for the rival
+			finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+		}
 	}
 
 	if (player->mo && !P_MobjWasRemoved(player->mo))
