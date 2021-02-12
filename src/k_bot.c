@@ -773,6 +773,67 @@ static UINT8 K_TrySpindash(player_t *player)
 }
 
 /*--------------------------------------------------
+	static INT16 K_FindBotController(mobj_t *mo)
+
+		Finds if any bot controller linedefs are tagged to the bot's sector.
+
+	Input Arguments:-
+		mo - The bot player's mobj.
+
+	Return:-
+		Line number of the bot controller. -1 if it doesn't exist.
+--------------------------------------------------*/
+static INT16 K_FindBotController(mobj_t *mo)
+{
+	msecnode_t *node;
+	ffloor_t *rover;
+	INT16 lineNum = -1;
+
+	I_Assert(mo != NULL);
+	I_Assert(!P_MobjWasRemoved(mo));
+
+	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
+	{
+		if (!node->m_sector)
+		{
+			continue;
+		}
+
+		lineNum = P_FindSpecialLineFromTag(2004, node->m_sector->tag, -1);
+
+		if (lineNum != -1)
+		{
+			return lineNum;
+		}
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+		{
+			sector_t *rs = NULL;
+
+			if (!(rover->flags & FF_EXISTS))
+			{
+				continue;
+			}
+
+			if (mo->z > *rover->topheight || mo->z + mo->height < *rover->bottomheight)
+			{
+				continue;
+			}
+
+			rs = &sectors[rover->secnum];
+			lineNum = P_FindSpecialLineFromTag(2004, rs->tag, -1);
+
+			if (lineNum != -1)
+			{
+				return lineNum;
+			}
+		}
+	}
+
+	return -1;
+}
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
@@ -783,6 +844,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	boolean trySpindash = true;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
+	INT16 botController = -1;
 
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
@@ -809,18 +871,71 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	// Handle steering towards waypoints!
-	if (player->nextwaypoint != NULL && player->nextwaypoint->mobj != NULL && !P_MobjWasRemoved(player->nextwaypoint->mobj))
+	botController = K_FindBotController(player->mo);
+
+	if (player->trickpanel != 0)
 	{
+		// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
+
+		if (player->trickpanel == 1 && botController != -1)
+		{
+			line_t *controllerLine = &lines[botController];
+			INT32 type = (sides[controllerLine->sidenum[0]].rowoffset / FRACUNIT);
+
+			// Y Offset: Trick type
+			switch (type)
+			{
+				case 1:
+					cmd->turning = KART_FULLTURN;
+					break;
+				case 2:
+					cmd->turning = -KART_FULLTURN;
+					break;
+				case 3:
+					cmd->buttons |= BT_FORWARD;
+					break;
+				case 4:
+					cmd->buttons |= BT_BACKWARD;
+					break;
+			}
+		}
+
+		// Don't do anything else.
+		return;
+	}
+
+	if ((player->nextwaypoint != NULL
+		&& player->nextwaypoint->mobj != NULL
+		&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
+		|| (botController != -1))
+	{
+		// Handle steering towards waypoints!
 		SINT8 turnsign = 0;
 		angle_t destangle, moveangle, angle;
 		INT16 anglediff;
 
-		predict = K_CreateBotPrediction(player);
+		if (botController != -1)
+		{
+			const fixed_t dist = (player->mo->radius * 4);
+			line_t *controllerLine = &lines[botController];
 
-		destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+			// X Offset: Movement direction
+			destangle = FixedAngle(sides[controllerLine->sidenum[0]].textureoffset);
+
+			// Overwritten prediction
+			predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
+
+			predict->x = player->mo->x + FixedMul(dist, FINECOSINE(destangle >> ANGLETOFINESHIFT));
+			predict->y = player->mo->y + FixedMul(dist, FINESINE(destangle >> ANGLETOFINESHIFT));
+			predict->radius = (DEFAULT_WAYPOINT_RADIUS / 4) * mapobjectscale;
+		}
+		else
+		{
+			predict = K_CreateBotPrediction(player);
+			destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+		}
+
 		moveangle = player->mo->angle;
-
 		angle = (moveangle - destangle);
 
 		if (angle < ANGLE_180)
@@ -846,7 +961,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		else
 		{
 			const fixed_t playerwidth = (player->mo->radius * 2);
-			const fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
+			fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
 			fixed_t rad = realrad;
 			fixed_t dirdist = K_DistanceOfLineFromPoint(
 				player->mo->x, player->mo->y,

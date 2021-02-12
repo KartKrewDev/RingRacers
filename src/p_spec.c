@@ -6955,6 +6955,8 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 			case 2003: // Respawn Line
 				break;
+			case 2004: // Bot controller
+				break;
 
 			default:
 				break;
