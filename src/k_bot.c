@@ -750,7 +750,7 @@ static UINT8 K_TrySpindash(player_t *player)
 		return 0;
 	}
 
-	if (player->speed < K_GetKartSpeed(player, false) / 4 // Below the speed threshold
+	if (player->speed < 10*mapobjectscale // Below the speed threshold
 	&& player->kartstuff[k_speedboost] < (FRACUNIT/8)) // If you have other boosts, you can probably trust it.
 	{
 		INT32 chargingPoint = (K_GetSpindashChargeTime(player) + difficultyModifier);
