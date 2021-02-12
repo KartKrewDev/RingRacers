@@ -150,8 +150,8 @@ FUNCPRINTF void GL_DBG_Printf(const char *format, ...)
 	char str[4096] = "";
 	va_list arglist;
 
-	if (gllogstream) 
-	{	
+	if (gllogstream)
+	{
 		va_start(arglist, format);
 		vsnprintf(str, 4096, format, arglist);
 		va_end(arglist);
@@ -703,8 +703,10 @@ static INT32 shader_leveltime = 0;
 	"float colorIntensity = 0.0;\n" \
 	"if (fogBrightness > colorBrightness) {\n" \
 		"colorIntensity = 1.0 - min(final_color.r, min(final_color.g, final_color.b));\n" \
+		"colorIntensity = abs(colorIntensity - (1.0 - fogBrightness));\n" \
 	"} else {\n" \
 		"colorIntensity = max(final_color.r, max(final_color.g, final_color.b));\n" \
+		"colorIntensity = abs(colorIntensity - (fogBrightness));\n" \
 	"}\n" \
 	"colorIntensity *= darkness;\n" \
 	"if (abs(final_color.r - fade_color.r) <= colorIntensity) {\n" \
