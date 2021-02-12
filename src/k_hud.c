@@ -2085,7 +2085,8 @@ static void K_drawKartSpeedometer(void)
 	}
 
 	// Don't overflow
-	if (convSpeed > 999)
+	// (negative speed IS really high speed :V)
+	if (convSpeed > 999 || convSpeed < 0)
 		convSpeed = 999;
 
 	numbers[0] = ((convSpeed / 100) % 10);
