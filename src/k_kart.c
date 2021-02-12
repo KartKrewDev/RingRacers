@@ -2473,7 +2473,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 	if (K_PlayerUsesBotMovement(player))
 	{
 		// Increase bot speed by 1-10% depending on difficulty
-		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / 9;
+		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / MAXBOTDIFFICULTY;
 		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
 		if (player->botvars.rival == true)
@@ -6845,7 +6845,15 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 INT32 K_GetKartRingPower(player_t *player)
 {
-	return (((9 - player->kartspeed) + (9 - player->kartweight)) / 2);
+	INT32 ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) / 2;
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		// Double for Lv. 9
+		ringPower += (player->botvars.difficulty * ringPower) / MAXBOTDIFFICULTY;
+	}
+
+	return ringPower;
 }
 
 // Returns false if this player being placed here causes them to collide with any other player
