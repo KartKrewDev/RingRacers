@@ -167,9 +167,9 @@ void K_InitGrandPrixBots(void)
 		difficultylevels[10] = max(1, startingdifficulty-5);
 		difficultylevels[11] = max(1, startingdifficulty-6);
 		difficultylevels[12] = max(1, startingdifficulty-6);
-		difficultylevels[13] = max(1, startingdifficulty-6);
+		difficultylevels[13] = max(1, startingdifficulty-7);
 		difficultylevels[14] = max(1, startingdifficulty-7);
-		difficultylevels[15] = max(1, startingdifficulty-7);
+		difficultylevels[15] = max(1, startingdifficulty-8);
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
