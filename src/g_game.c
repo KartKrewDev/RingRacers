@@ -1309,9 +1309,11 @@ void G_PreLevelTitleCard(void)
 //
 boolean G_IsTitleCardAvailable(void)
 {
+#if 0
 	// The current level has no name.
 	if (!mapheaderinfo[gamemap-1]->lvlttl[0])
 		return false;
+#endif
 
 	// The title card is available.
 	return true;
