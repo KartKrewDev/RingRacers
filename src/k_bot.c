@@ -297,7 +297,7 @@ boolean K_BotCanTakeCut(player_t *player)
 --------------------------------------------------*/
 static UINT32 K_BotRubberbandDistance(player_t *player)
 {
-	const UINT32 spacing = FixedDiv(512 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	const UINT32 spacing = FixedDiv(640 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
 	UINT8 pos = 0;
 	UINT8 i;
