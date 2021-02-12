@@ -1057,14 +1057,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		// If you're too far, enable spindash & stay still.
 		// If you're too close, start backing up.
 
-		if (player - players == displayplayers[0])
-		{
-			CONS_Printf("closeDist: %d\n", closeDist / FRACUNIT);
-			CONS_Printf("farDist: %d\n", farDist / FRACUNIT);
-			CONS_Printf("distToFinish: %d\n", distToFinish / FRACUNIT);
-			CONS_Printf("========\n");
-		}
-
 		if (distToFinish < closeDist)
 		{
 			// Silly way of getting us to reverse, but it respects the above code
