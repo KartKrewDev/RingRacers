@@ -3427,29 +3427,6 @@ static void P_InitLevelSettings(void)
 		players[i].follower = NULL;
 	}
 
-	rainbowstartavailable = false;
-
-	if (p >= 2)
-		rainbowstartavailable = true;
-
-	if (p <= 2)
-	{
-		introtime = 0; // No intro in Record Attack / 1v1
-	}
-	else
-	{
-		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
-	}
-
-	numbulbs = 5;
-
-	if (p > 2)
-	{
-		numbulbs += (p-2);
-	}
-
-	starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
-
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
 	{
@@ -4149,21 +4126,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 		lastmaploaded = gamemap; // HAS to be set after saving!!
 	}
 
-	if (!fromnetsave) // uglier hack
-	{ // to make a newly loaded level start on the second frame.
-		INT32 buf = gametic % TICQUEUE;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i])
-				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
-		}
-		P_PreTicker(2);
-		LUAh_MapLoad();
-	}
-
-	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
-	K_SpawnBattleCapsules();
-
 	if (grandprixinfo.gp == true)
 	{
 		if (grandprixinfo.initalize == true)
@@ -4181,6 +4143,18 @@ boolean P_LoadLevel(boolean fromnetsave)
 	{
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();
+	}
+
+	if (!fromnetsave) // uglier hack
+	{ // to make a newly loaded level start on the second frame.
+		INT32 buf = gametic % TICQUEUE;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i])
+				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
+		}
+		P_PreTicker(2);
+		LUAh_MapLoad();
 	}
 
 	// No render mode, stop here.
