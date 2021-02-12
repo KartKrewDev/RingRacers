@@ -258,6 +258,7 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT32(save_p, players[i].airtime);
 		WRITEUINT8(save_p, players[i].driftInput);
+		WRITEUINT8(save_p, players[i].airFailsafe);
 
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT8(save_p, players[i].trickdelay);
@@ -463,6 +464,7 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].airtime = READUINT32(save_p);
 		players[i].driftInput = (boolean)READUINT8(save_p);
+		players[i].airFailsafe = (boolean)READUINT8(save_p);
 
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].trickdelay = READUINT8(save_p);

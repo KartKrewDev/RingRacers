@@ -6984,6 +6984,7 @@ INT32 K_GetKartDriftSparkValue(player_t *player)
 Stage 1: red sparks
 Stage 2: blue sparks
 Stage 3: big large rainbow sparks
+Stage 0: air failsafe
 */
 void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 {
@@ -7013,6 +7014,11 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 
 			S_StartSound(player->mo, sfx_kc5b);
 			S_StartSound(player->mo, sfx_s3kc4l);
+			break;
+
+		case 0:
+			overlay->color = SKINCOLOR_SILVER;
+			overlay->fuse = 16;
 			break;
 	}
 
@@ -7583,6 +7589,39 @@ static void K_KartSpindash(player_t *player)
 	{
 		if (leveltime % 4 == 0)
 			S_StartSound(player->mo, sfx_kc2b);
+	}
+}
+
+static void K_AirFailsafe(player_t *player)
+{
+	const fixed_t maxSpeed = 6*player->mo->scale;
+	const fixed_t thrustSpeed = 6*player->mo->scale; // 10*player->mo->scale
+
+	ticcmd_t *cmd = &player->cmd;
+
+	if (player->speed > maxSpeed // Above the max speed that you're allowed to use this technique.
+		|| player->respawn.state != RESPAWNST_NONE) // Respawning, you don't need this AND drop dash :V
+	{
+		player->airFailsafe = false;
+		return;
+	}
+
+	if ((cmd->buttons & BT_ACCELERATE) || K_GetForwardMove(player) != 0)
+	{
+		// Queue up later
+		player->airFailsafe = true;
+		return;
+	}
+
+	if (player->airFailsafe == true)
+	{
+		// Push the player forward
+		P_Thrust(player->mo, K_MomentumAngle(player->mo), thrustSpeed);
+
+		S_StartSound(player->mo, sfx_s23c);
+		K_SpawnDriftBoostExplosion(player, 0);
+
+		player->airFailsafe = false;
 	}
 }
 
@@ -8459,8 +8498,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
-	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
+	K_KartDrift(player, onground);
 	K_KartSpindash(player);
+
+	if (onground == false)
+	{
+		K_AirFailsafe(player);
+	}
+	else
+	{
+		player->airFailsafe = false;
+	}
 
 	// Play the starting countdown sounds
 	if (player == &players[g_localplayers[0]]) // Don't play louder in splitscreen

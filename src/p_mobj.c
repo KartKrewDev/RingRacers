@@ -6748,6 +6748,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				if (mobj->fuse == 16)/* to red*/
 					K_SpawnDriftBoostClip(mobj->target->player);
 				break;
+
+			case 0:/* air failsafe boost */
+				mobj->color = SKINCOLOR_SILVER; // force white
+				break;
 		}
 
 		{
