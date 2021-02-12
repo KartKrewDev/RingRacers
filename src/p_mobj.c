@@ -2296,6 +2296,11 @@ boolean P_ZMovement(mobj_t *mo)
 		{
 			mom.x = mom.y = 0;
 			mom.z = -mom.z/2;
+
+			if (mo->fuse == 0)
+			{
+				mo->fuse = 90;
+			}
 		}
 		else if (mo->flags & MF_MISSILE)
 		{
@@ -9197,6 +9202,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_RING:
+		case MT_FLINGRING:
 		case MT_DEBTSPIKE:
 		case MT_FLOATINGITEM:
 		case MT_BLUESPHERE:

@@ -7526,11 +7526,14 @@ static void K_KartSpindash(player_t *player)
 		return;
 	}
 
-	if (player->speed < 6*mapobjectscale && player->powers[pw_flashing] == 0)
+	if (player->speed == 0 && cmd->turning != 0 && leveltime % 8 == 0)
 	{
-		if (cmd->turning != 0 && leveltime % 8 == 0)
-			S_StartSound(player->mo, sfx_ruburn);
+		// Rubber burn turn sfx
+		S_StartSound(player->mo, sfx_ruburn);
+	}
 
+	if (player->speed < 6*player->mo->scale)
+	{
 		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
 			INT16 chargetime = MAXCHARGETIME - ++player->kartstuff[k_spindash];
@@ -7545,6 +7548,15 @@ static void K_KartSpindash(player_t *player)
 			if (chargetime <= (MAXCHARGETIME / 4) && spawnWind == true)
 			{
 				K_KartSpindashWind(player->mo);
+			}
+
+			if (player->powers[pw_flashing] > 0 && (leveltime & 1) && player->kartstuff[k_hyudorotimer] == 0)
+			{
+				// Every frame that you're invisible from flashing, spill a ring.
+				// Intentionally a lop-sided trade-off, so the game doesn't become
+				// Funky Kong's Ring Racers.
+
+				P_PlayerRingBurst(player, 1);
 			}
 
 			if (chargetime > 0)

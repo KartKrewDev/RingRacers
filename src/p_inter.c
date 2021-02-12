@@ -2237,6 +2237,6 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	while (i < num_rings)
 	{
 		P_FlingBurst(player, fa, z,
-				MT_DEBTSPIKE, 90, 3 * player->mo->scale / 2, i++);
+				MT_DEBTSPIKE, 0, 3 * player->mo->scale / 2, i++);
 	}
 }
