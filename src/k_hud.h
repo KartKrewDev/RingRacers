@@ -28,7 +28,7 @@ typedef struct trackingResult_s
 	boolean onScreen;
 } trackingResult_t;
 
-trackingResult_t *K_ObjectTracking(vector3_t *point, UINT8 cameraNum, angle_t angleOffset);
+void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNum, angle_t angleOffset);
 
 const char *K_GetItemPatch(UINT8 item, boolean tiny);
 void K_LoadKartHUDGraphics(void);

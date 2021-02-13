@@ -773,12 +773,11 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 // This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
 // (Remember to free the result after usage.)
-trackingResult_t *K_ObjectTracking(vector3_t *point, UINT8 cameraNum, angle_t angleOffset)
+void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNum, angle_t angleOffset)
 {
 #define NEWTAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
 #define NEWCOS(x) FINECOSINE((x >> ANGLETOFINESHIFT) & FINEMASK)
 
-	trackingResult_t *result;
 	camera_t *cam;
 	player_t *player;
 
@@ -793,8 +792,6 @@ trackingResult_t *K_ObjectTracking(vector3_t *point, UINT8 cameraNum, angle_t an
 	fixed_t h;
 	INT32 da;
 
-	result = Z_Calloc(sizeof(trackingResult_t), PU_STATIC, NULL);
-
 	// Initialize defaults
 	result->x = result->y = 0;
 	result->scale = FRACUNIT;
@@ -803,7 +800,7 @@ trackingResult_t *K_ObjectTracking(vector3_t *point, UINT8 cameraNum, angle_t an
 	if (cameraNum > r_splitscreen)
 	{
 		// Invalid camera ID.
-		return result;
+		return;
 	}
 
 	cam = &camera[cameraNum];
@@ -812,7 +809,7 @@ trackingResult_t *K_ObjectTracking(vector3_t *point, UINT8 cameraNum, angle_t an
 	if (cam == NULL || player == NULL)
 	{
 		// Shouldn't be possible?
-		return result;
+		return;
 	}
 
 	if (cam->chase == true)
@@ -831,7 +828,7 @@ trackingResult_t *K_ObjectTracking(vector3_t *point, UINT8 cameraNum, angle_t an
 		if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 		{
 			// This shouldn't happen.
-			return result;
+			return;
 		}
 
 		viewpointX = player->mo->x;
@@ -903,7 +900,7 @@ trackingResult_t *K_ObjectTracking(vector3_t *point, UINT8 cameraNum, angle_t an
 		result->onScreen = false;
 	}
 
-	return result;
+	return;
 
 #undef NEWTAN
 #undef NEWCOS
@@ -2501,7 +2498,7 @@ static void K_drawKartPlayerCheck(void)
 		UINT8 *colormap = NULL;
 		UINT8 pnum = 0;
 		vector3_t v;
-		trackingResult_t *result = NULL;
+		trackingResult_t result;
 
 		if (!playeringame[i] || checkplayer->spectator)
 		{
@@ -2547,21 +2544,13 @@ static void K_drawKartPlayerCheck(void)
 			pnum += 2;
 		}
 
-		result = K_ObjectTracking(&v, cnum, ANGLE_180);
+		K_ObjectTracking(&result, &v, cnum, ANGLE_180);
 
-		if (result == NULL)
-		{
-			// Shouldn't happen
-			continue;
-		}
-
-		if (result->onScreen == true)
+		if (result.onScreen == true)
 		{
 			colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
-			V_DrawFixedPatch(result->x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
+			V_DrawFixedPatch(result.x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
 		}
-
-		Z_Free(result);
 	}
 }
 
@@ -2787,7 +2776,7 @@ static void K_drawKartNameTags(void)
 
 		for (i = 0; i < sortlen; i++)
 		{
-			trackingResult_t *result = NULL;
+			trackingResult_t result;
 			player_t *ntplayer = &players[sortedplayers[i]];
 
 			fixed_t headOffset = 36*ntplayer->mo->scale;
@@ -2808,15 +2797,9 @@ static void K_drawKartNameTags(void)
 				v.z += headOffset;
 			}
 
-			result = K_ObjectTracking(&v, cnum, 0);
+			K_ObjectTracking(&result, &v, cnum, 0);
 
-			if (result == NULL)
-			{
-				// Shouldn't happen
-				continue;
-			}
-
-			if (result->onScreen == true)
+			if (result.onScreen == true)
 			{
 				if (!(demo.playback == true && demo.freecam == true))
 				{
@@ -2836,25 +2819,23 @@ static void K_drawKartNameTags(void)
 
 				if (localindicator >= 0)
 				{
-					K_DrawLocalTagForPlayer(result->x, result->y, ntplayer, localindicator);
+					K_DrawLocalTagForPlayer(result.x, result.y, ntplayer, localindicator);
 				}
 				else if (ntplayer->bot)
 				{
 					if (ntplayer->botvars.rival == true)
 					{
-						K_DrawRivalTagForPlayer(result->x, result->y);
+						K_DrawRivalTagForPlayer(result.x, result.y);
 					}
 				}
 				else if (netgame || demo.playback)
 				{
 					if (K_ShowPlayerNametag(ntplayer) == true)
 					{
-						K_DrawNameTagForPlayer(result->x, result->y, ntplayer, cnum);
+						K_DrawNameTagForPlayer(result.x, result.y, ntplayer, cnum);
 					}
 				}
 			}
-
-			Z_Free(result);
 		}
 	}
 }
