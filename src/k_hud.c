@@ -792,6 +792,9 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	fixed_t h;
 	INT32 da;
 
+	I_Assert(result != NULL);
+	I_Assert(point != NULL);
+
 	// Initialize defaults
 	result->x = result->y = 0;
 	result->scale = FRACUNIT;
