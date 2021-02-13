@@ -26,6 +26,7 @@
 #include "d_ticcmd.h"
 #include "m_random.h"
 #include "r_things.h" // numskins
+#include "k_race.h" // finishBeamLine
 
 
 /*--------------------------------------------------
@@ -296,7 +297,7 @@ boolean K_BotCanTakeCut(player_t *player)
 --------------------------------------------------*/
 static UINT32 K_BotRubberbandDistance(player_t *player)
 {
-	const UINT32 spacing = FixedDiv(512 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	const UINT32 spacing = FixedDiv(640 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
 	UINT8 pos = 0;
 	UINT8 i;
@@ -429,8 +430,8 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 	}
 	else
 	{
-		// Max at +25% for level 9 bots
-		rubberband = FRACUNIT + ((rubberband - FRACUNIT) / 4);
+		// Max at +10% for level 9 bots
+		rubberband = FRACUNIT + ((rubberband - FRACUNIT) / 10);
 	}
 
 	// Only allow you to go faster than your regular top speed if you're facing the right direction
@@ -519,28 +520,35 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 
 		See header file for description.
 --------------------------------------------------*/
-fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy)
+fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t px, fixed_t py)
 {
-	fixed_t v1toc[2] = {cx - v1x, cy - v1y};
-	fixed_t v1tov2[2] = {v2x - v1x, v2y - v1y};
+	// Copy+paste from P_ClosestPointOnLine :pensive:
+	fixed_t startx = v1x;
+	fixed_t starty = v1y;
+	fixed_t dx = v2x - v1x;
+	fixed_t dy = v2y - v1y;
 
-	fixed_t mag = FixedMul(v1tov2[0], v1tov2[0]) + FixedMul(v1tov2[1], v1tov2[1]);
-	fixed_t dot = FixedMul(v1toc[0], v1tov2[0]) + FixedMul(v1toc[1], v1tov2[1]);
-
+	fixed_t cx, cy;
+	fixed_t vx, vy;
+	fixed_t magnitude;
 	fixed_t t;
-	fixed_t px, py;
 
-	if (mag == 0)
-	{
-		return 0;
-	}
+	cx = px - startx;
+	cy = py - starty;
 
-	t = FixedDiv(dot, mag);
+	vx = dx;
+	vy = dy;
 
-	px = v1x + FixedMul(v1tov2[0], t);
-	py = v1y + FixedMul(v1tov2[1], t);
+	magnitude = R_PointToDist2(v2x, v2y, startx, starty);
+	vx = FixedDiv(vx, magnitude);
+	vy = FixedDiv(vy, magnitude);
 
-	return P_AproxDistance(cx - px, cy - py);
+	t = (FixedMul(vx, cx) + FixedMul(vy, cy));
+
+	vx = FixedMul(vx, t);
+	vy = FixedMul(vy, t);
+
+	return R_PointToDist2(px, py, startx + vx, starty + vy);
 }
 
 /*--------------------------------------------------
@@ -691,6 +699,145 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 }
 
 /*--------------------------------------------------
+	static UINT8 K_TrySpindash(player_t *player)
+
+		Determines conditions where the bot should attempt to spindash.
+
+	Input Arguments:-
+		player - Bot player to check.
+
+	Return:-
+		0 to make the bot drive normally, 1 to e-brake, 2 to e-brake & charge spindash.
+		(TODO: make this an enum)
+--------------------------------------------------*/
+static UINT8 K_TrySpindash(player_t *player)
+{
+	const tic_t difficultyModifier = (TICRATE/6);
+
+	if (player->kartstuff[k_spindashboost] || player->kartstuff[k_tiregrease])
+	{
+		// You just released a spindash, you don't need to try again yet, jeez.
+		return 0;
+	}
+
+	// Try "start boosts" first
+	if (leveltime == starttime)
+	{
+		// Forces them to release, even if they haven't fully charged.
+		// Don't want them to keep charging if they didn't have time to.
+		return 0;
+	}
+
+	if (leveltime < starttime)
+	{
+		INT32 boosthold = starttime - K_GetSpindashChargeTime(player);
+
+		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty) * difficultyModifier;
+
+		if (leveltime >= (unsigned)boosthold)
+		{
+			// Start charging...
+			return 2;
+		}
+		else
+		{
+			// Just hold your ground and e-brake.
+			return 1;
+		}
+	}
+
+	// Logic for normal racing.
+	if (player->powers[pw_flashing] > 0)
+	{
+		// Don't bother trying to spindash.
+		// Trying to spindash while flashing is fine during POSITION, but not during the actual race.
+		return 0;
+	}
+
+	if (player->speed < 10*mapobjectscale // Below the speed threshold
+	&& player->kartstuff[k_speedboost] < (FRACUNIT/8)) // If you have other boosts, you can probably trust it.
+	{
+		INT32 chargingPoint = (K_GetSpindashChargeTime(player) + difficultyModifier);
+
+		// Release quicker the higher the difficulty is.
+		// Sounds counter-productive, but that's actually the best strategy after the race has started.
+		chargingPoint -= player->botvars.difficulty * difficultyModifier;
+
+		if (player->kartstuff[k_spindash] > chargingPoint)
+		{
+			// Time to release.
+			return 0;
+		}
+
+		return 2;
+	}
+
+	// We're doing just fine, we don't need to spindash, thanks.
+	return 0;
+}
+
+/*--------------------------------------------------
+	static INT16 K_FindBotController(mobj_t *mo)
+
+		Finds if any bot controller linedefs are tagged to the bot's sector.
+
+	Input Arguments:-
+		mo - The bot player's mobj.
+
+	Return:-
+		Line number of the bot controller. -1 if it doesn't exist.
+--------------------------------------------------*/
+static INT16 K_FindBotController(mobj_t *mo)
+{
+	msecnode_t *node;
+	ffloor_t *rover;
+	INT16 lineNum = -1;
+
+	I_Assert(mo != NULL);
+	I_Assert(!P_MobjWasRemoved(mo));
+
+	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
+	{
+		if (!node->m_sector)
+		{
+			continue;
+		}
+
+		lineNum = P_FindSpecialLineFromTag(2004, node->m_sector->tag, -1);
+
+		if (lineNum != -1)
+		{
+			return lineNum;
+		}
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+		{
+			sector_t *rs = NULL;
+
+			if (!(rover->flags & FF_EXISTS))
+			{
+				continue;
+			}
+
+			if (mo->z > *rover->topheight || mo->z + mo->height < *rover->bottomheight)
+			{
+				continue;
+			}
+
+			rs = &sectors[rover->secnum];
+			lineNum = P_FindSpecialLineFromTag(2004, rs->tag, -1);
+
+			if (lineNum != -1)
+			{
+				return lineNum;
+			}
+		}
+	}
+
+	return -1;
+}
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
@@ -698,7 +845,10 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	botprediction_t *predict = NULL;
+	boolean trySpindash = true;
+	UINT8 spindash = 0;
 	INT32 turnamt = 0;
+	INT16 botController = -1;
 
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
@@ -709,53 +859,87 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL
-		|| player->mo->scale <= 1) // funny post-finish death
+	if (
+		gamestate != GS_LEVEL
+		|| player->mo->scale <= 1
+		|| player->playerstate == PST_DEAD
+		)
 	{
 		// No need to do anything else.
 		return;
 	}
 
-	if (player->playerstate == PST_DEAD)
-	{
-		cmd->buttons |= BT_ACCELERATE;
-		return;
-	}
-
 	// Complete override of all ticcmd functionality
 	if (LUAh_BotTiccmd(player, cmd))
-		return;
-
-	// Start boost handler
-	if (leveltime <= starttime)
 	{
-		tic_t length = (TICRATE/6);
-		tic_t boosthold = starttime - K_GetSpindashChargeTime(player);
-
-		cmd->buttons |= BT_EBRAKEMASK;
-
-		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty) * length;
-
-		if (leveltime >= boosthold)
-		{
-			cmd->buttons |= BT_DRIFT;
-		}
-
 		return;
 	}
 
-	// Handle steering towards waypoints!
-	if (player->nextwaypoint != NULL && player->nextwaypoint->mobj != NULL && !P_MobjWasRemoved(player->nextwaypoint->mobj))
+	botController = K_FindBotController(player->mo);
+
+	if (player->trickpanel != 0)
 	{
+		// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
+
+		if (player->trickpanel == 1 && botController != -1)
+		{
+			line_t *controllerLine = &lines[botController];
+			INT32 type = (sides[controllerLine->sidenum[0]].rowoffset / FRACUNIT);
+
+			// Y Offset: Trick type
+			switch (type)
+			{
+				case 1:
+					cmd->turning = KART_FULLTURN;
+					break;
+				case 2:
+					cmd->turning = -KART_FULLTURN;
+					break;
+				case 3:
+					cmd->buttons |= BT_FORWARD;
+					break;
+				case 4:
+					cmd->buttons |= BT_BACKWARD;
+					break;
+			}
+		}
+
+		// Don't do anything else.
+		return;
+	}
+
+	if ((player->nextwaypoint != NULL
+		&& player->nextwaypoint->mobj != NULL
+		&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
+		|| (botController != -1))
+	{
+		// Handle steering towards waypoints!
 		SINT8 turnsign = 0;
 		angle_t destangle, moveangle, angle;
 		INT16 anglediff;
 
-		predict = K_CreateBotPrediction(player);
+		if (botController != -1)
+		{
+			const fixed_t dist = (player->mo->radius * 4);
+			line_t *controllerLine = &lines[botController];
 
-		destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+			// X Offset: Movement direction
+			destangle = FixedAngle(sides[controllerLine->sidenum[0]].textureoffset);
+
+			// Overwritten prediction
+			predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
+
+			predict->x = player->mo->x + FixedMul(dist, FINECOSINE(destangle >> ANGLETOFINESHIFT));
+			predict->y = player->mo->y + FixedMul(dist, FINESINE(destangle >> ANGLETOFINESHIFT));
+			predict->radius = (DEFAULT_WAYPOINT_RADIUS / 4) * mapobjectscale;
+		}
+		else
+		{
+			predict = K_CreateBotPrediction(player);
+			destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+		}
+
 		moveangle = player->mo->angle;
-
 		angle = (moveangle - destangle);
 
 		if (angle < ANGLE_180)
@@ -781,7 +965,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		else
 		{
 			const fixed_t playerwidth = (player->mo->radius * 2);
-			const fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
+			fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
 			fixed_t rad = realrad;
 			fixed_t dirdist = K_DistanceOfLineFromPoint(
 				player->mo->x, player->mo->y,
@@ -857,8 +1041,77 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	// Handle item usage
-	K_BotItemUsage(player, cmd, turnamt);
+	if (leveltime <= starttime && finishBeamLine != NULL)
+	{
+		const fixed_t distBase = 384*mapobjectscale;
+		const fixed_t distAdjust = 64*mapobjectscale;
+
+		const fixed_t closeDist = distBase + (distAdjust * (9 - player->kartweight));
+		const fixed_t farDist = closeDist + (distAdjust * 2);
+
+		fixed_t distToFinish = K_DistanceOfLineFromPoint(
+			finishBeamLine->v1->x, finishBeamLine->v1->y,
+			finishBeamLine->v2->x, finishBeamLine->v2->y,
+			player->mo->x, player->mo->y
+		);
+
+		// Don't run the spindash code at all until we're in the right place
+		trySpindash = false;
+
+		// If you're too far, enable spindash & stay still.
+		// If you're too close, start backing up.
+
+		if (distToFinish < closeDist)
+		{
+			// Silly way of getting us to reverse, but it respects the above code
+			// where we figure out what the shape of the track looks like.
+			UINT16 oldButtons = cmd->buttons;
+
+			cmd->buttons &= ~(BT_ACCELERATE|BT_BRAKE);
+
+			if (oldButtons & BT_ACCELERATE)
+			{
+				cmd->buttons |= BT_BRAKE;
+			}
+
+			if (oldButtons & BT_BRAKE)
+			{
+				cmd->buttons |= BT_ACCELERATE;
+			}
+
+			cmd->forwardmove = -cmd->forwardmove;
+		}
+		else if (distToFinish < farDist)
+		{
+			// We're in about the right place, spindash now.
+			cmd->forwardmove = 0;
+			trySpindash = true;
+		}
+	}
+
+	if (trySpindash == true)
+	{
+		// Spindashing
+		spindash = K_TrySpindash(player);
+
+		if (spindash > 0)
+		{
+			cmd->buttons |= BT_EBRAKEMASK;
+			cmd->forwardmove = 0;
+
+			if (spindash == 2 && player->speed < 6*mapobjectscale)
+			{
+				cmd->buttons |= BT_DRIFT;
+			}
+		}
+	}
+
+	if (spindash == 0)
+	{
+		// Don't pointlessly try to use rings/sneakers while charging a spindash.
+		// TODO: Allowing projectile items like orbinaut while e-braking would be nice, maybe just pass in the spindash variable?
+		K_BotItemUsage(player, cmd, turnamt);
+	}
 
 	if (turnamt != 0)
 	{
@@ -873,6 +1126,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		if (turnamt > 0)
 		{
+			// Count up
 			if (player->botvars.turnconfirm < BOTTURNCONFIRM)
 			{
 				player->botvars.turnconfirm++;
@@ -880,7 +1134,20 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else if (turnamt < 0)
 		{
+			// Count down
 			if (player->botvars.turnconfirm > -BOTTURNCONFIRM)
+			{
+				player->botvars.turnconfirm--;
+			}
+		}
+		else
+		{
+			// Back to neutral
+			if (player->botvars.turnconfirm < 0)
+			{
+				player->botvars.turnconfirm++;
+			}
+			else if (player->botvars.turnconfirm > 0)
 			{
 				player->botvars.turnconfirm--;
 			}

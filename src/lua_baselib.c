@@ -3440,8 +3440,8 @@ static int lib_kExplodePlayer(lua_State *L)
 		inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 		source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
-	K_ExplodePlayer(player, inflictor, source);
-	return 0;
+	lua_pushinteger(L, K_ExplodePlayer(player, inflictor, source));
+	return 1;
 }
 
 static int lib_kTakeBumpersFromPlayer(lua_State *L)

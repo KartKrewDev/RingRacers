@@ -115,19 +115,11 @@ typedef enum
 {
 	// Are animation frames playing?
 	PA_ETC=0,
-	PA_IDLE,
-	PA_EDGE,
-	PA_WALK,
-	PA_RUN,
-	PA_DASH,
-	PA_PAIN,
-	PA_ROLL,
-	PA_JUMP,
-	PA_SPRING,
-	PA_FALL,
-	PA_ABILITY,
-	PA_ABILITY2,
-	PA_RIDE
+	PA_STILL,
+	PA_SLOW,
+	PA_FAST,
+	PA_DRIFT,
+	PA_HURT
 } panim_t;
 
 //
@@ -454,6 +446,8 @@ typedef enum
 #define TRICKMOMZRAMP (30)
 #define TRICKLAG (9)
 
+#define TUMBLEBOUNCES 3
+
 //}
 
 // player_t struct for all respawn variables
@@ -525,10 +519,13 @@ typedef struct player_s
 	// SRB2kart stuff
 	INT32 kartstuff[NUMKARTSTUFF];
 	INT32 karthud[NUMKARTHUD];
+
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
 	tic_t airtime; 		// Keep track of how long you've been in the air
+	boolean driftInput; // Whenever or not try drifting.
+	boolean airFailsafe; // Whenever or not try the air boost
 
 	UINT8 trickpanel; 	// Trick panel state
 	boolean trickdelay;	// Prevent tricks until control stick is neutral
@@ -574,6 +571,8 @@ typedef struct player_s
 	UINT16 tumbleHeight;
 	boolean tumbleLastBounce;
 	boolean tumbleSound;
+
+	SINT8 glanceDir; // Direction the player is trying to look backwards in
 
 	//
 

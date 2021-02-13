@@ -213,6 +213,7 @@ static boolean P_SpecialIsLinedefCrossType(UINT16 ldspecial)
 	switch (ldspecial)
 	{
 		case 2001: // Finish line
+		case 2003: // Respawn line
 		{
 			linedefcrossspecial = true;
 		}
@@ -1395,6 +1396,21 @@ static boolean PIT_CheckThing(mobj_t *thing)
 					P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
 				K_KartBouncing(tmthing, thing, false, true);
 			}
+
+			return false;
+		}
+		else if (thing->type == MT_KART_LEFTOVER)
+		{
+			// see if it went over / under
+			if (tmthing->z > thing->z + thing->height)
+				return true; // overhead
+			if (tmthing->z + tmthing->height < thing->z)
+				return true; // underneath
+
+			if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
+				K_KartBouncing(tmthing, thing, true, false);
+			else
+				K_KartBouncing(tmthing, thing, false, false);
 
 			return false;
 		}

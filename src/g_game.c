@@ -1309,9 +1309,11 @@ void G_PreLevelTitleCard(void)
 //
 boolean G_IsTitleCardAvailable(void)
 {
+#if 0
 	// The current level has no name.
 	if (!mapheaderinfo[gamemap-1]->lvlttl[0])
 		return false;
+#endif
 
 	// The title card is available.
 	return true;
@@ -2261,7 +2263,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->pflags |= PF_JUMPDOWN;
 
 	p->playerstate = PST_LIVE;
-	p->panim = PA_IDLE; // standing animation
+	p->panim = PA_STILL; // standing animation
 
 	// Check to make sure their color didn't change somehow...
 	if (G_GametypeHasTeams())

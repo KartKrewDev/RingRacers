@@ -1851,7 +1851,7 @@ static void P_3dMovement(player_t *player)
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
 
-	if (player->kartstuff[k_sneakertimer] > 0)
+	if (K_SlopeResistance(player) == true)
 	{
 		totalthrust.z = -(totalthrust.z);
 	}
@@ -2632,9 +2632,6 @@ static void P_DeathThink(player_t *player)
 	if (player->deadtimer < INT32_MAX)
 		player->deadtimer++;
 
-	if (player->bot) // don't allow bots to do any of the below, B_CheckRespawn does all they need for respawning already
-		goto notrealplayer;
-
 	if ((player->pflags & PF_GAMETYPEOVER) && (gametyperules & GTR_CIRCUIT))
 	{
 		player->karthud[khud_timeovercam]++;
@@ -2676,8 +2673,6 @@ static void P_DeathThink(player_t *player)
 				curlap = 0;
 		}
 	}
-
-notrealplayer:
 
 	if (!player->mo)
 		return;
@@ -3074,6 +3069,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 
 	mo = player->mo;
+
+	if (mo->hitlag > 0 || player->playerstate == PST_DEAD)
+	{
+		// Do not move the camera while in hitlag!
+		// The camera zooming out after you got hit makes it hard to focus on the vibration.
+		return true;
+	}
 
 #ifndef NOCLIPCAM
 	cameranoclip = ((player->pflags & PF_NOCLIP)

@@ -2031,6 +2031,13 @@ static void readlevelheader(MYFILE *f, INT32 num)
 				else
 					mapheaderinfo[num-1]->levelflags &= ~LF_SECTIONRACE;
 			}
+			else if (fastcmp(word, "SUBTRACTNUM"))
+			{
+				if (i || word2[0] == 'T' || word2[0] == 'Y')
+					mapheaderinfo[num-1]->levelflags |= LF_SUBTRACTNUM;
+				else
+					mapheaderinfo[num-1]->levelflags &= ~LF_SUBTRACTNUM;
+			}
 
 			// Individual triggers for menu flags
 			else if (fastcmp(word, "HIDDEN"))
@@ -5204,12 +5211,24 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_KART_STILL",
 	"S_KART_STILL_L",
 	"S_KART_STILL_R",
+	"S_KART_STILL_GLANCE_L",
+	"S_KART_STILL_GLANCE_R",
+	"S_KART_STILL_LOOK_L",
+	"S_KART_STILL_LOOK_R",
 	"S_KART_SLOW",
 	"S_KART_SLOW_L",
 	"S_KART_SLOW_R",
+	"S_KART_SLOW_GLANCE_L",
+	"S_KART_SLOW_GLANCE_R",
+	"S_KART_SLOW_LOOK_L",
+	"S_KART_SLOW_LOOK_R",
 	"S_KART_FAST",
 	"S_KART_FAST_L",
 	"S_KART_FAST_R",
+	"S_KART_FAST_GLANCE_L",
+	"S_KART_FAST_GLANCE_R",
+	"S_KART_FAST_LOOK_L",
+	"S_KART_FAST_LOOK_R",
 	"S_KART_DRIFT_L",
 	"S_KART_DRIFT_L_OUT",
 	"S_KART_DRIFT_L_IN",
@@ -5217,11 +5236,17 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_KART_DRIFT_R_OUT",
 	"S_KART_DRIFT_R_IN",
 	"S_KART_SPINOUT",
-	"S_KART_SQUISH",
+	"S_KART_DEAD",
 	"S_KART_SIGN",
 
 	// technically the player goes here but it's an infinite tic state
 	"S_OBJPLACE_DUMMY",
+
+	"S_KART_LEFTOVER",
+	"S_KART_LEFTOVER_NOTIRES",
+
+	"S_KART_TIRE1",
+	"S_KART_TIRE2",
 
 	// Blue Crawla
 	"S_POSS_STND",
@@ -9398,6 +9423,31 @@ static const char *const STATE_LIST[] = { // array length left dynamic for sanit
 	"S_SPINDASHDUST",
 	"S_SPINDASHWIND",
 
+	// Finish line beam
+	"S_FINISHBEAM1",
+	"S_FINISHBEAM2",
+	"S_FINISHBEAM3",
+	"S_FINISHBEAM4",
+	"S_FINISHBEAM5",
+	"S_FINISHBEAMEND1",
+	"S_FINISHBEAMEND2",
+
+	// Funny Spike
+	"S_DEBTSPIKE1",
+	"S_DEBTSPIKE2",
+	"S_DEBTSPIKE3",
+	"S_DEBTSPIKE4",
+	"S_DEBTSPIKE5",
+	"S_DEBTSPIKE6",
+	"S_DEBTSPIKE7",
+	"S_DEBTSPIKE8",
+	"S_DEBTSPIKE9",
+	"S_DEBTSPIKEA",
+	"S_DEBTSPIKEB",
+	"S_DEBTSPIKEC",
+	"S_DEBTSPIKED",
+	"S_DEBTSPIKEE",
+
 #ifdef SEENAMES
 	"S_NAMECHECK",
 #endif
@@ -9412,6 +9462,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_THOK", // Thok! mobj
 	"MT_PLAYER",
+	"MT_KART_LEFTOVER",
+	"MT_KART_TIRE",
 
 	// Enemies
 	"MT_BLUECRAWLA", // Crawla (Blue)
@@ -9537,6 +9589,7 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 	// Collectible Items
 	"MT_RING",
 	"MT_FLINGRING", // Lost ring
+	"MT_DEBTSPIKE", // Ring debt funny spike
 	"MT_BLUESPHERE",  // Blue sphere for special stages
 	"MT_FLINGBLUESPHERE", // Lost blue sphere
 	"MT_BOMBSPHERE",
@@ -10480,6 +10533,8 @@ static const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for s
 
 	"MT_PAPERITEMSPOT",
 
+	"MT_BEAMPOINT",
+
 #ifdef SEENAMES
 	"MT_NAMECHECK",
 #endif
@@ -11002,6 +11057,32 @@ static const char *const KARTSTUFF_LIST[] = {
 	"WRONGWAY"
 };
 
+static const char *const KARTHUD_LIST[] = {
+	"ITEMBLINK",
+	"ITEMBLINKMODE",
+
+	"RINGFRAME",
+	"RINGTICS",
+	"RINGDELAY",
+	"RINGSPBBLOCK",
+
+	"LAPANIMATION",
+	"LAPHAND",
+
+	"FAULT",
+
+	"BOOSTCAM",
+	"DESTBOOSTCAM",
+	"TIMEOVERCAM",
+
+	"ENGINESND",
+	"VOICES",
+	"TAUNTVOICES",
+
+	"CARDANIMATION",
+	"YOUGOTEM",
+};
+
 static const char *const HUDITEMS_LIST[] = {
 	"LIVES",
 
@@ -11245,6 +11326,7 @@ struct {
 	{"LF_SCRIPTISFILE",LF_SCRIPTISFILE},
 	{"LF_NOZONE",LF_NOZONE},
 	{"LF_SECTIONRACE",LF_SECTIONRACE},
+	{"LF_SUBTRACTNUM",LF_SUBTRACTNUM},
 	// And map flags
 	{"LF2_HIDEINMENU",LF2_HIDEINMENU},
 	{"LF2_HIDEINSTATS",LF2_HIDEINSTATS},
@@ -11405,19 +11487,11 @@ struct {
 
 	// Player animation (panim_t)
 	{"PA_ETC",PA_ETC},
-	{"PA_IDLE",PA_IDLE},
-	{"PA_EDGE",PA_EDGE},
-	{"PA_WALK",PA_WALK},
-	{"PA_RUN",PA_RUN},
-	{"PA_DASH",PA_DASH},
-	{"PA_PAIN",PA_PAIN},
-	{"PA_ROLL",PA_ROLL},
-	{"PA_JUMP",PA_JUMP},
-	{"PA_SPRING",PA_SPRING},
-	{"PA_FALL",PA_FALL},
-	{"PA_ABILITY",PA_ABILITY},
-	{"PA_ABILITY2",PA_ABILITY2},
-	{"PA_RIDE",PA_RIDE},
+	{"PA_STILL",PA_STILL},
+	{"PA_SLOW",PA_SLOW},
+	{"PA_FAST",PA_FAST},
+	{"PA_DRIFT",PA_DRIFT},
+	{"PA_HURT",PA_HURT},
 
 	// Value for infinite lives
 	{"INFLIVES",INFLIVES},
@@ -11644,6 +11718,8 @@ struct {
 	{"V_70TRANS",V_70TRANS},
 	{"V_80TRANS",V_80TRANS},
 	{"V_90TRANS",V_90TRANS},
+	{"V_ADDTRANS",V_ADDTRANS},
+	{"V_SUBTRANS",V_SUBTRANS},
 	{"V_HUDTRANSHALF",V_HUDTRANSHALF},
 	{"V_HUDTRANS",V_HUDTRANS},
 	{"V_RETURN8",V_RETURN8},
@@ -12244,6 +12320,7 @@ void DEH_Check(void)
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
 	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
 	const size_t dehkartstuff = sizeof(KARTSTUFF_LIST)/sizeof(const char*);
+	const size_t dehkarthud = sizeof(KARTHUD_LIST)/sizeof(const char*);
 	const size_t dehcolors = sizeof(COLOR_ENUMS)/sizeof(const char*);
 
 	if (dehstates != S_FIRSTFREESLOT)
@@ -12256,7 +12333,10 @@ void DEH_Check(void)
 		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d powers defined, versus %s in the Dehacked list)\n", NUMPOWERS, sizeu1(dehpowers));
 
 	if (dehkartstuff != NUMKARTSTUFF)
-		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d kartstuff defined, versus %s in the Dehacked list)\n", NUMKARTSTUFF, sizeu1(dehkartstuff));
+		I_Error("You forgot to update the Dehacked kartstuff list, you dolt!\n(%d kartstuff defined, versus %s in the Dehacked list)\n", NUMKARTSTUFF, sizeu1(dehkartstuff));
+
+	if (dehkarthud != NUMKARTHUD)
+		I_Error("You forgot to update the Dehacked karthud list, you dolt!\n(%d karthud defined, versus %s in the Dehacked list)\n", NUMKARTSTUFF, sizeu1(dehkartstuff));
 
 	if (dehcolors != SKINCOLOR_FIRSTFREESLOT)
 		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", SKINCOLOR_FIRSTFREESLOT, sizeu1(dehcolors));
@@ -12718,6 +12798,15 @@ static inline int lib_getenum(lua_State *L)
 			}
 		return 0;
 	}
+	else if (!mathlib && fastncmp("khud_",word,5)) {
+		p = word+5;
+		for (i = 0; i < NUMKARTHUD; i++)
+			if (fasticmp(p, KARTHUD_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return 0;
+	}
 	else if (mathlib && fastncmp("K_",word,2)) { // SOCs are ALL CAPS!
 		p = word+2;
 		for (i = 0; i < NUMKARTSTUFF; i++)
@@ -12726,6 +12815,15 @@ static inline int lib_getenum(lua_State *L)
 				return 1;
 			}
 		return luaL_error(L, "kartstuff '%s' could not be found.\n", word);
+	}
+	else if (mathlib && fastncmp("KHUD_",word,5)) { // SOCs are ALL CAPS!
+		p = word+5;
+		for (i = 0; i < NUMKARTHUD; i++)
+			if (fastcmp(p, KARTHUD_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return luaL_error(L, "karthud '%s' could not be found.\n", word);
 	}
 	else if (fastncmp("HUD_",word,4)) {
 		p = word+4;

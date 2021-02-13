@@ -221,17 +221,29 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		case S_KART_STILL:
 		case S_KART_STILL_L:
 		case S_KART_STILL_R:
-			player->panim = PA_IDLE;
+		case S_KART_STILL_GLANCE_L:
+		case S_KART_STILL_GLANCE_R:
+		case S_KART_STILL_LOOK_L:
+		case S_KART_STILL_LOOK_R:
+			player->panim = PA_STILL;
 			break;
 		case S_KART_SLOW:
 		case S_KART_SLOW_L:
 		case S_KART_SLOW_R:
-			player->panim = PA_WALK;
+		case S_KART_SLOW_GLANCE_L:
+		case S_KART_SLOW_GLANCE_R:
+		case S_KART_SLOW_LOOK_L:
+		case S_KART_SLOW_LOOK_R:
+			player->panim = PA_SLOW;
 			break;
 		case S_KART_FAST:
 		case S_KART_FAST_L:
 		case S_KART_FAST_R:
-			player->panim = PA_RUN;
+		case S_KART_FAST_GLANCE_L:
+		case S_KART_FAST_GLANCE_R:
+		case S_KART_FAST_LOOK_L:
+		case S_KART_FAST_LOOK_R:
+			player->panim = PA_FAST;
 			break;
 		case S_KART_DRIFT_L:
 		case S_KART_DRIFT_L_OUT:
@@ -239,11 +251,11 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		case S_KART_DRIFT_R:
 		case S_KART_DRIFT_R_OUT:
 		case S_KART_DRIFT_R_IN:
-			player->panim = PA_DASH;
+			player->panim = PA_DRIFT;
 			break;
 		case S_KART_SPINOUT:
-		case S_KART_SQUISH:
-			player->panim = PA_PAIN;
+		case S_KART_DEAD:
+			player->panim = PA_HURT;
 			break;
 		default:
 			player->panim = PA_ETC;
@@ -1300,7 +1312,7 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 			&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) /*&& (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2)*/))
 		{
 			// if in a walking frame, stop moving
-			if (player->panim == PA_WALK)
+			if (player->panim == PA_SLOW)
 			{
 				P_SetPlayerMobjState(mo, S_KART_STILL);
 			}
@@ -2280,6 +2292,16 @@ boolean P_ZMovement(mobj_t *mo)
 			else
 				mo->flags2 ^= MFD_DONTDRAW;
 		}
+		else if (mo->type == MT_DEBTSPIKE)
+		{
+			mom.x = mom.y = 0;
+			mom.z = -mom.z/2;
+
+			if (mo->fuse == 0)
+			{
+				mo->fuse = 90;
+			}
+		}
 		else if (mo->flags & MF_MISSILE)
 		{
 			if (!(mo->flags & MF_NOCLIP))
@@ -2334,6 +2356,68 @@ boolean P_ZMovement(mobj_t *mo)
 
 			if (mo->flags2 & MF2_SKULLFLY) // the skull slammed into something
 				mom.z = -mom.z;
+			else if (mo->type == MT_KART_LEFTOVER)
+			{
+				if (mo->health > 1)
+				{
+					const fixed_t tireOffset = 32;
+					const angle_t aOffset = ANGLE_22h;
+
+					UINT8 i;
+					angle_t tireAngle;
+					mobj_t *tire;
+
+					// Spawn tires!
+					mo->health = 1;
+					P_SetMobjState(mo, S_KART_LEFTOVER_NOTIRES);
+
+					// Front tires
+					tireAngle = mo->angle - aOffset;
+					for (i = 0; i < 2; i++)
+					{
+						tire = P_SpawnMobjFromMobj(
+							mo,
+							tireOffset * FINECOSINE(tireAngle >> ANGLETOFINESHIFT),
+							tireOffset * FINESINE(tireAngle >> ANGLETOFINESHIFT),
+							0,
+							MT_KART_TIRE
+						);
+
+						tire->angle = mo->angle;
+						tire->fuse = 3*TICRATE;
+						P_InstaThrust(tire, tireAngle, 4 * mo->scale);
+						P_SetObjectMomZ(tire, 4*FRACUNIT, false);
+
+						tireAngle += (aOffset * 2);
+					}
+
+					// Back tires
+					tireAngle = (mo->angle + ANGLE_180) - aOffset;
+					for (i = 0; i < 2; i++)
+					{
+						tire = P_SpawnMobjFromMobj(
+							mo,
+							tireOffset * FINECOSINE(tireAngle >> ANGLETOFINESHIFT),
+							tireOffset * FINESINE(tireAngle >> ANGLETOFINESHIFT),
+							0,
+							MT_KART_TIRE
+						);
+
+						tire->angle = mo->angle;
+						tire->fuse = 3*TICRATE;
+						P_InstaThrust(tire, tireAngle, 4 * mo->scale);
+						P_SetObjectMomZ(tire, 4*FRACUNIT, false);
+
+						P_SetMobjState(tire, S_KART_TIRE2);
+
+						tireAngle += (aOffset * 2);
+					}
+				}
+			}
+			else if (mo->type == MT_KART_TIRE)
+			{
+				mom.z = -mom.z;
+			}
 			else if (mo->type == MT_BIGTUMBLEWEED
 				|| mo->type == MT_LITTLETUMBLEWEED
 				|| mo->type == MT_CANNONBALLDECOR
@@ -2633,7 +2717,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->z = mo->floorz;
 
 		// Get up if you fell.
-		if (mo->player->panim == PA_PAIN && mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->tumbleBounces == 0)
+		if (mo->player->panim == PA_HURT && mo->player->kartstuff[k_spinouttimer] == 0 && mo->player->tumbleBounces == 0)
 			P_SetPlayerMobjState(mo, S_KART_STILL);
 
 		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope)) {
@@ -5867,8 +5951,11 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		{ // Go away.
 		  /// \todo Actually go ahead and remove mobj completely, and fix any bugs and crashes doing this creates. Chasecam should stop moving, and F12 should never return to it.
 			mobj->momz = 0;
+
 			if (mobj->player)
+			{
 				mobj->drawflags |= MFD_DONTDRAW;
+			}
 			else // safe to remove, nobody's going to complain!
 			{
 				P_RemoveMobj(mobj);
@@ -5877,16 +5964,6 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		}
 		else // Apply gravity to fall downwards.
 		{
-			if (mobj->player && !(mobj->fuse % 8) && (mobj->player->charflags & SF_MACHINE))
-			{
-				fixed_t r = mobj->radius >> FRACBITS;
-				mobj_t *explosion = P_SpawnMobj(
-					mobj->x + (P_RandomRange(r, -r) << FRACBITS),
-					mobj->y + (P_RandomRange(r, -r) << FRACBITS),
-					mobj->z + (P_RandomKey(mobj->height >> FRACBITS) << FRACBITS),
-					MT_SONIC3KBOSSEXPLODE);
-				S_StartSound(explosion, sfx_s3kb4);
-			}
 			P_SetObjectMomZ(mobj, -2*FRACUNIT/3, true);
 		}
 		break;
@@ -6670,6 +6747,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			case 2:/* blue boost */
 				if (mobj->fuse == 16)/* to red*/
 					K_SpawnDriftBoostClip(mobj->target->player);
+				break;
+
+			case 0:/* air failsafe boost */
+				mobj->color = SKINCOLOR_SILVER; // force white
 				break;
 		}
 
@@ -9079,6 +9160,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 	switch (thing->type)
 	{
 		case MT_PLAYER:
+		case MT_KART_LEFTOVER:
 		case MT_SMALLMACE:
 		case MT_BIGMACE:
 		case MT_PUMA:
@@ -9124,6 +9206,8 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_RING:
+		case MT_FLINGRING:
+		case MT_DEBTSPIKE:
 		case MT_FLOATINGITEM:
 		case MT_BLUESPHERE:
 		case MT_EMERALD:
@@ -9371,6 +9455,19 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->color = (P_RandomChance(FRACUNIT/2) ? SKINCOLOR_RED : SKINCOLOR_AQUAMARINE);
 			break;
 		case MT_BALLOON:
+			{
+				static const UINT8 BALLOONCOLORS[] = {
+					// Carnival Night balloon colors
+					SKINCOLOR_KETCHUP,
+					SKINCOLOR_SAPPHIRE,
+					SKINCOLOR_TANGERINE,
+					SKINCOLOR_JET
+				};
+
+				mobj->color = BALLOONCOLORS[P_RandomKey(sizeof(BALLOONCOLORS))];
+			}
+			break;
+		case MT_KART_LEFTOVER:
 			mobj->color = SKINCOLOR_RED;
 			break;
 		case MT_EGGROBO1:

@@ -255,7 +255,11 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT32(save_p, players[i].distancetofinish);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
+
 		WRITEUINT32(save_p, players[i].airtime);
+		WRITEUINT8(save_p, players[i].driftInput);
+		WRITEUINT8(save_p, players[i].airFailsafe);
+
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT8(save_p, players[i].trickdelay);
 		WRITEUINT32(save_p, players[i].trickmomx);
@@ -270,6 +274,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].tumbleHeight);
 		WRITEUINT8(save_p, players[i].tumbleLastBounce);
 		WRITEUINT8(save_p, players[i].tumbleSound);
+
+		WRITESINT8(save_p, players[i].glanceDir);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -455,7 +461,11 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
+
 		players[i].airtime = READUINT32(save_p);
+		players[i].driftInput = (boolean)READUINT8(save_p);
+		players[i].airFailsafe = (boolean)READUINT8(save_p);
+
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].trickdelay = READUINT8(save_p);
 		players[i].trickmomx = READUINT32(save_p);
@@ -470,6 +480,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tumbleHeight = READUINT16(save_p);
 		players[i].tumbleLastBounce = (boolean)READUINT8(save_p);
 		players[i].tumbleSound = (boolean)READUINT8(save_p);
+
+		players[i].glanceDir = READSINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);

@@ -1371,13 +1371,47 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		case MT_PLAYER:
 			{
+				angle_t flingAngle;
+				mobj_t *kart;
+
 				target->fuse = TICRATE*3; // timer before mobj disappears from view (even if not an actual player)
 				target->momx = target->momy = target->momz = 0;
 
-				if (target->player && target->player->pflags & PF_GAMETYPEOVER)
-					break;
+				kart = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_KART_LEFTOVER);
 
+				if (kart && !P_MobjWasRemoved(kart))
+				{
+					kart->angle = target->angle;
+					kart->color = target->color;
+					kart->hitlag = target->hitlag;
+					P_SetObjectMomZ(kart, 6*FRACUNIT, false);
+					kart->extravalue1 = target->player->kartweight;
+				}
+
+				if (source && !P_MobjWasRemoved(source))
+				{
+					flingAngle = R_PointToAngle2(
+						source->x - source->momx, source->y - source->momy,
+						target->x, target->y
+					);
+				}
+				else
+				{
+					flingAngle = target->angle + ANGLE_180;
+	
+					if (P_RandomByte() & 1)
+					{
+						flingAngle -= ANGLE_45;
+					}
+					else
+					{
+						flingAngle += ANGLE_45;
+					}
+				}
+
+				P_InstaThrust(target, flingAngle, 14 * target->scale);
 				P_SetObjectMomZ(target, 14*FRACUNIT, false);
+
 				P_PlayDeathSound(target);
 			}
 			break;
@@ -2012,10 +2046,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 				case DMG_TUMBLE:
 					K_TumblePlayer(player, inflictor, source);
+					ringburst = 10;
 					break;
 				case DMG_EXPLODE:
 				case DMG_KARMA:
-					K_ExplodePlayer(player, inflictor, source);
+					ringburst = K_ExplodePlayer(player, inflictor, source);
 					break;
 				case DMG_WIPEOUT:
 					if (P_IsDisplayPlayer(player))
@@ -2100,6 +2135,56 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	return true;
 }
 
+static void P_FlingBurst
+(		player_t *player,
+		angle_t fa,
+		fixed_t z,
+		mobjtype_t objType,
+		tic_t objFuse,
+		fixed_t objScale,
+		INT32 i)
+{
+	mobj_t *mo;
+	fixed_t ns;
+	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
+	INT32 mx = (i + 1) >> 1;
+
+	z = player->mo->z;
+	if (player->mo->eflags & MFE_VERTICALFLIP)
+		z += player->mo->height - mobjinfo[objType].height;
+
+	mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
+
+	mo->threshold = 10; // not useful for spikes
+	mo->fuse = objFuse;
+	P_SetTarget(&mo->target, player->mo);
+
+	mo->destscale = objScale;
+	P_SetScale(mo, objScale);
+
+	/*
+	0: 0
+	1: 1 = (1+1)/2 = 1
+	2: 1 = (2+1)/2 = 1
+	3: 2 = (3+1)/2 = 2
+	4: 2 = (4+1)/2 = 2
+	5: 3 = (4+1)/2 = 2
+	 */
+	// Angle / height offset changes every other ring
+	momxy -= mx * FRACUNIT;
+	momz += mx * (2<<FRACBITS);
+
+	if (i & 1)
+		fa += ANGLE_180;
+
+	ns = FixedMul(momxy, player->mo->scale);
+	mo->momx = (mo->target->momx/2) + FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
+	mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
+
+	ns = FixedMul(momz, player->mo->scale);
+	mo->momz = (mo->target->momz/2) + ((ns) * P_MobjFlip(mo));
+}
+
 /** Spills an injured player's rings.
   *
   * \param player    The player who is losing rings.
@@ -2109,12 +2194,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
   */
 void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 {
+	INT32 num_fling_rings;
 	INT32 i;
-	mobj_t *mo;
 	angle_t fa;
-	fixed_t ns;
 	fixed_t z;
-	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
 
 	// Rings shouldn't be in Battle!
 	if (gametyperules & GTR_SPHERES)
@@ -2134,52 +2217,26 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	else if (num_rings <= 0)
 		return;
 
-	// Cap the maximum loss automatically to 2 in ring debt
-	if (player->rings <= 0 && num_rings > 2)
-		num_rings = 2;
+	num_fling_rings = min(num_rings, player->rings);
 
 	P_GivePlayerRings(player, -num_rings);
 
 	// determine first angle
 	fa = player->mo->angle + ((P_RandomByte() & 1) ? -ANGLE_90 : ANGLE_90);
 
-	for (i = 0; i < num_rings; i++)
+	z = player->mo->z;
+	if (player->mo->eflags & MFE_VERTICALFLIP)
+		z += player->mo->height - mobjinfo[MT_RING].height;
+
+	for (i = 0; i < num_fling_rings; i++)
 	{
-		INT32 objType = mobjinfo[MT_RING].reactiontime;
+		P_FlingBurst(player, fa, z,
+				MT_FLINGRING, 60*TICRATE, player->mo->scale, i);
+	}
 
-		z = player->mo->z;
-		if (player->mo->eflags & MFE_VERTICALFLIP)
-			z += player->mo->height - mobjinfo[objType].height;
-
-		mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
-
-		mo->threshold = 10;
-		mo->fuse = 60*TICRATE;
-		P_SetTarget(&mo->target, player->mo);
-
-		mo->destscale = player->mo->scale;
-		P_SetScale(mo, player->mo->scale);
-
-		// Angle / height offset changes every other ring
-		if (i != 0)
-		{
-			if (i & 1)
-			{
-				momxy -= FRACUNIT;
-				momz += 2<<FRACBITS;
-			}
-
-			fa += ANGLE_180;
-		}
-
-		ns = FixedMul(momxy, mo->scale);
-		mo->momx = (mo->target->momx/2) + FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
-		mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
-
-		ns = FixedMul(momz, mo->scale);
-		P_SetObjectMomZ(mo, (mo->target->momz/2) + ns, false);
-
-		if (player->mo->eflags & MFE_VERTICALFLIP)
-			mo->momz *= -1;
+	while (i < num_rings)
+	{
+		P_FlingBurst(player, fa, z,
+				MT_DEBTSPIKE, 0, 3 * player->mo->scale / 2, i++);
 	}
 }

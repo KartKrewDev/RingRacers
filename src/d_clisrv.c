@@ -616,6 +616,9 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 		rsp->kartstuff[j] = LONG(players[i].kartstuff[j]);
 
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
+	rsp->driftInput = players[i].driftInput;
+	rsp->airFailsafe = players[i].airFailsafe;
+
 	rsp->trickpanel = (UINT8)players[i].trickpanel;
 	rsp->trickdelay = (boolean)players[i].trickdelay;
 	rsp->trickmomx = (fixed_t)LONG(players[i].trickmomx);
@@ -630,6 +633,8 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->tumbleHeight = SHORT(players[i].tumbleHeight);
 	rsp->tumbleLastBounce = players[i].tumbleLastBounce;
 	rsp->tumbleSound = players[i].tumbleSound;
+
+	rsp->glanceDir = players[i].glanceDir;
 
 	// respawnvars_t
 	rsp->respawn_state = players[i].respawn.state;
@@ -774,6 +779,9 @@ static void resynch_read_player(resynch_pak *rsp)
 		players[i].kartstuff[j] = LONG(rsp->kartstuff[j]);
 
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
+	players[i].driftInput = (boolean)rsp->driftInput;
+	players[i].airFailsafe = (boolean)rsp->airFailsafe;
+
 	players[i].trickpanel = (UINT8)rsp->trickpanel;
 	players[i].trickdelay = (boolean)rsp->trickdelay;
 	players[i].trickmomx = (fixed_t)LONG(rsp->trickmomx);
@@ -788,6 +796,8 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].tumbleHeight = SHORT(rsp->tumbleHeight);
 	players[i].tumbleLastBounce = (boolean)rsp->tumbleLastBounce;
 	players[i].tumbleSound = (boolean)rsp->tumbleSound;
+
+	players[i].glanceDir = (SINT8)rsp->glanceDir;
 
 	// respawnvars_t
 	players[i].respawn.state = rsp->respawn_state;

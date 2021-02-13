@@ -558,6 +558,7 @@ OBJS:=$(i_main_o) \
 		$(OBJDIR)/k_respawn.o\
 		$(OBJDIR)/k_collide.o\
 		$(OBJDIR)/k_color.o  \
+		$(OBJDIR)/k_race.o   \
 		$(OBJDIR)/k_battle.o \
 		$(OBJDIR)/k_pwrlv.o  \
 		$(OBJDIR)/k_waypoint.o\

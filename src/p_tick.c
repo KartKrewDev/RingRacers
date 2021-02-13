@@ -30,6 +30,7 @@
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_race.h"
 #include "k_battle.h"
 #include "k_waypoint.h"
 
@@ -331,6 +332,9 @@ static inline void P_RunThinkers(void)
 		}
 		ps_thlist_times[i] = I_GetTimeMicros() - ps_thlist_times[i];
 	}
+
+	if (gametyperules & GTR_CIRCUIT)
+		K_RunFinishLineBeam();
 
 	if (gametyperules & GTR_PAPERITEMS)
 		K_RunPaperItemSpawners();
