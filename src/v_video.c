@@ -1517,9 +1517,9 @@ void V_EncoreInvertScreen(void)
 		for (; buf < deststop; ++buf)
 		{
 			*buf = NearestColor(
-				256 - pLocalPalette[*buf].s.red,
-				256 - pLocalPalette[*buf].s.green,
-				256 - pLocalPalette[*buf].s.blue
+				255 - pLocalPalette[*buf].s.red,
+				255 - pLocalPalette[*buf].s.green,
+				255 - pLocalPalette[*buf].s.blue
 			);
 		}
 	}
