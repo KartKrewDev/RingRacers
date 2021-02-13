@@ -43,6 +43,12 @@
 // indirectitemcooldown is timer before anyone's allowed another Shrink/SPB
 // mapreset is set when enough players fill an empty server
 
+void K_TimerReset(void)
+{
+	starttime = introtime = 3;
+	numbulbs = 1;
+}
+
 void K_TimerInit(void)
 {
 	UINT8 i;

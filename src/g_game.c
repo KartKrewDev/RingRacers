@@ -246,11 +246,11 @@ INT32 gameovertics = 15*TICRATE;
 UINT8 ammoremovaltics = 2*TICRATE;
 
 // SRB2kart
-tic_t introtime = 0;
-tic_t starttime = 0;
+tic_t introtime = 3;
+tic_t starttime = 3;
 
 const tic_t bulbtime = TICRATE/2;
-UINT8 numbulbs = 0;
+UINT8 numbulbs = 1;
 
 tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
 tic_t battleexittime = 8*TICRATE;

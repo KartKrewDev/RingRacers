@@ -4157,6 +4157,8 @@ boolean P_LoadLevel(boolean fromnetsave)
 		LUAh_MapLoad();
 	}
 
+	K_TimerReset();
+
 	// No render mode, stop here.
 	if (rendermode == render_none)
 		return true;
