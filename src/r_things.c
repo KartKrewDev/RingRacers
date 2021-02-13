@@ -1236,28 +1236,24 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	patch_t *patch;
 	fixed_t xscale, yscale, shadowxscale, shadowyscale, shadowskew, x1, x2;
 	INT32 light = 0;
-	fixed_t scalemul; UINT8 trans;
-	fixed_t floordiff;
+	UINT8 trans = tr_transsub;
 	fixed_t groundz;
 	pslope_t *groundslope;
-	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
 	if (abs(groundz-viewz)/tz > 4) return; // Prevent stretchy shadows and possible crashes
 
-	floordiff = abs((isflipped ? thing->height : 0) + thing->z - groundz);
+	if (thing->whiteshadow == true)
+	{
+		trans = tr_transadd;
+	}
 
-	trans = floordiff / (100*FRACUNIT) + 3;
-	if (trans >= 9) return;
-
-	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
-
-	patch = W_CachePatchName((thing->whiteshadow == true ? "LSHADOW" : "DSHADOW"), PU_CACHE);
+	patch = W_CachePatchName("DSHADOW", PU_CACHE);
 	xscale = FixedDiv(projection[viewssnum], tz);
 	yscale = FixedDiv(projectiony[viewssnum], tz);
-	shadowxscale = FixedMul(thing->radius*2, scalemul);
-	shadowyscale = FixedMul(FixedMul(thing->radius*2, scalemul), FixedDiv(abs(groundz - viewz), tz));
+	shadowxscale = FixedMul(thing->radius*2, scale);
+	shadowyscale = FixedMul(FixedMul(thing->radius*2, scale), FixedDiv(abs(groundz - viewz), tz));
 	shadowyscale = min(shadowyscale, shadowxscale) / SHORT(patch->height);
 	shadowxscale /= SHORT(patch->width);
 	shadowskew = 0;
@@ -1274,9 +1270,9 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 		//CONS_Printf("Shadow is sloped by %d %d\n", xslope, zslope);
 
 		if (viewz < groundz)
-			shadowyscale += FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scalemul), zslope);
+			shadowyscale += FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scale), zslope);
 		else
-			shadowyscale -= FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scalemul), zslope);
+			shadowyscale -= FixedMul(FixedMul(thing->radius*2 / SHORT(patch->height), scale), zslope);
 
 		shadowyscale = abs(shadowyscale);
 
@@ -1354,16 +1350,9 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	else
 		shadow->extra_colormap = thing->subsector->sector->extra_colormap;
 
-	shadow->transmap = transtables + (trans<<FF_TRANSSHIFT);
+	shadow->transmap = transtables + ((trans-1) << FF_TRANSSHIFT);
 
-	if (thing->whiteshadow == true)
-	{
-		shadow->colormap = scalelight[LIGHTLEVELS - 1][0]; // full bright!
-	}
-	else
-	{
-		shadow->colormap = scalelight[0][0]; // full dark!
-	}
+	shadow->colormap = colormaps;
 
 	objectsdrawn++;
 }
