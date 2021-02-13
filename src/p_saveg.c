@@ -4178,6 +4178,7 @@ static void P_NetArchiveMisc(void)
 
 	WRITEUINT32(save_p, introtime);
 	WRITEUINT32(save_p, starttime);
+	WRITEUINT8(save_p, numbulbs);
 
 	// Is it paused?
 	if (paused)
@@ -4312,6 +4313,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	introtime = READUINT32(save_p);
 	starttime = READUINT32(save_p);
+	numbulbs = READUINT8(save_p);
 
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)
