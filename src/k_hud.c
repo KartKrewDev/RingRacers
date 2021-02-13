@@ -772,7 +772,7 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 }
 
 // This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
-// (Remember to free the result after usage.)
+// TODO: This should probably support view rolling if we're adding that soon...
 void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNum, angle_t angleOffset)
 {
 #define NEWTAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
@@ -787,7 +787,8 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	INT32 screenWidth, screenHeight;
 	fixed_t screenHalfW, screenHalfH;
 
-	fixed_t fov, fovTangent, fg;
+	const fixed_t baseFov = 90*FRACUNIT;
+	fixed_t fovDiff, fov, fovTangent, fg;
 
 	fixed_t h;
 	INT32 da;
@@ -844,6 +845,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	viewpointAngle += (INT32)angleOffset;
 
 	// Calculate screen size adjustments.
+	// TODO: Anyone want to make this support non-green resolutions somehow? :V
 	screenWidth = BASEVIDWIDTH;
 	screenHeight = BASEVIDHEIGHT;
 
@@ -863,7 +865,8 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	screenHalfH = (screenHeight >> 1) << FRACBITS;
 
 	// Calculate FOV adjustments.
-	fov = (cv_fov[cameraNum].value / 2) - (player->fovadd / 2);
+	fovDiff = cv_fov[cameraNum].value - baseFov;
+	fov = ((baseFov - fovDiff) / 2) - (player->fovadd / 2);
 	fovTangent = NEWTAN(FixedAngle(fov));
 
 	if (r_splitscreen == 1)
