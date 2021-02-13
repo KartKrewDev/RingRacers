@@ -10724,7 +10724,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	case MT_YELLOWHORIZ:
 	case MT_REDHORIZ:
 	case MT_BLUEHORIZ:
-		offset += mthing->options & MTF_AMBUSH ? 16*mapobjectscale : 0;
+		offset += mthing->options & MTF_AMBUSH ? 16*FRACUNIT : 0;
 		break;
 
 	// Ring-like items, may float additional units with MTF_AMBUSH.
@@ -10732,7 +10732,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	case MT_EMBLEM:
 	case MT_RING:
 	case MT_BLUESPHERE:
-		offset += mthing->options & MTF_AMBUSH ? 24*mapobjectscale : 0;
+		offset += mthing->options & MTF_AMBUSH ? 24*FRACUNIT : 0;
 		break;
 
 	// This object does not have an offset
