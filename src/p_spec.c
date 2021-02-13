@@ -3917,6 +3917,40 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			PolyFade(line);
 			break;
 
+		// SRB2kart
+		case 499: // Enable/Disable Waypoints in Tagged Sectors
+			{
+				sector_t *sec;
+				mobj_t *thing;
+
+				if (waypointcap == NULL)
+				{
+					// No point in trying at all if no waypoints exist.
+					break;
+				}
+
+				while ((secnum = P_FindSectorFromTag(line->tag, secnum)) >= 0)
+				{
+					sec = sectors + secnum;
+
+					for (thing = sec->thinglist; thing; thing = thing->snext)
+					{
+						if (thing->type == MT_WAYPOINT)
+						{
+							if (line->flags & ML_NOCLIMB)
+							{
+								thing->extravalue1 = 1;
+							}
+							else
+							{
+								thing->extravalue1 = 0;
+							}
+						}
+					}
+				}
+			}
+			break;
+
 		default:
 			break;
 	}
@@ -6956,6 +6990,9 @@ void P_SpawnSpecials(boolean fromnetsave)
 			case 2003: // Respawn Line
 				break;
 			case 2004: // Bot controller
+				break;
+
+			case 499: // Linedef Executor: Enable/Disable Waypoints
 				break;
 
 			default:

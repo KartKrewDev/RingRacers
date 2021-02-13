@@ -633,6 +633,10 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 			for (i = 0; i < wp->numnextwaypoints; i++)
 			{
+				if (!K_GetWaypointIsEnabled(wp->nextwaypoints[i]))
+				{
+					continue;
+				}
 
 				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) && !K_BotCanTakeCut(player))
 				{

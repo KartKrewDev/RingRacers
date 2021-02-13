@@ -280,6 +280,11 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 
 			checkwaypoint = &waypointheap[i];
 
+			if (!K_GetWaypointIsEnabled(checkwaypoint))
+			{
+				continue;
+			}
+
 			checkdist = P_AproxDistance(
 				(mobj->x / FRACUNIT) - (checkwaypoint->mobj->x / FRACUNIT),
 				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
@@ -447,7 +452,12 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 	I_Assert(waypoint2->mobj != NULL);
 	I_Assert(cv_kartdebugwaypoints.value != 0);
 
-	linkcolour = K_GetWaypointID(waypoint1)%linkcolourssize;
+	linkcolour = linkcolours[K_GetWaypointID(waypoint1) % linkcolourssize];
+
+	if (!K_GetWaypointIsEnabled(waypoint1) || !K_GetWaypointIsEnabled(waypoint2))
+	{
+		linkcolour = SKINCOLOR_BLACK;
+	}
 
 	waypointmobj1 = waypoint1->mobj;
 	waypointmobj2 = waypoint2->mobj;
@@ -474,7 +484,7 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 			spawnedmobj->state->nextstate = S_NULL;
 			spawnedmobj->state->tics = 1;
 			spawnedmobj->frame = spawnedmobj->frame & ~FF_TRANSMASK;
-			spawnedmobj->color = linkcolours[linkcolour];
+			spawnedmobj->color = linkcolour;
 			spawnedmobj->scale = FixedMul(spawnedmobj->scale, FixedMul(FRACUNIT/4, FixedDiv((15 - ((leveltime + n) % 16))*FRACUNIT, 15*FRACUNIT)));
 		}
 
@@ -584,6 +594,11 @@ void K_DebugWaypointsVisualise(void)
 			else
 			{
 				debugmobj->color = SKINCOLOR_BLUE;
+			}
+
+			if (!K_GetWaypointIsEnabled(waypoint))
+			{
+				debugmobj->color = SKINCOLOR_GREY;
 			}
 
 			// Valid waypoint, so draw lines of SPARKLES to its next or previous waypoints
