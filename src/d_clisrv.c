@@ -617,6 +617,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 
 	rsp->airtime = (tic_t)LONG(players[i].airtime);
 	rsp->driftInput = players[i].driftInput;
+	rsp->airFailsafe = players[i].airFailsafe;
 
 	rsp->trickpanel = (UINT8)players[i].trickpanel;
 	rsp->trickdelay = (boolean)players[i].trickdelay;
@@ -779,6 +780,7 @@ static void resynch_read_player(resynch_pak *rsp)
 
 	players[i].airtime = (tic_t)LONG(rsp->airtime);
 	players[i].driftInput = (boolean)rsp->driftInput;
+	players[i].airFailsafe = (boolean)rsp->airFailsafe;
 
 	players[i].trickpanel = (UINT8)rsp->trickpanel;
 	players[i].trickdelay = (boolean)rsp->trickdelay;

@@ -41,7 +41,7 @@
 #include "k_bot.h"
 #include "k_hud.h"
 
-static line_t *finishBeamLine = NULL;
+line_t *finishBeamLine = NULL;
 
 static mobj_t *beamPoints[2];
 static UINT8 numBeamPoints = 0;

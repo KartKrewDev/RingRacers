@@ -150,8 +150,8 @@ FUNCPRINTF void GL_DBG_Printf(const char *format, ...)
 	char str[4096] = "";
 	va_list arglist;
 
-	if (gllogstream) 
-	{	
+	if (gllogstream)
+	{
 		va_start(arglist, format);
 		vsnprintf(str, 4096, format, arglist);
 		va_end(arglist);
@@ -698,7 +698,38 @@ static INT32 shader_leveltime = 0;
 		"float fd = fe - fs;\n" \
 		"darkness = clamp((darkness - fs) * (1.0 / fd), 0.0, 1.0);\n" \
 	"}\n" \
-	"final_color = mix(final_color, fade_color, darkness);\n"
+	"float colorBrightness = sqrt((final_color.r * final_color.r) + (final_color.g * final_color.g) + (final_color.b * final_color.b));\n" \
+	"float fogBrightness = sqrt((fade_color.r * fade_color.r) + (fade_color.g * fade_color.g) + (fade_color.b * fade_color.b));\n" \
+	"float colorIntensity = 0.0;\n" \
+	"if (fogBrightness > colorBrightness) {\n" \
+		"colorIntensity = 1.0 - min(final_color.r, min(final_color.g, final_color.b));\n" \
+		"colorIntensity = abs(colorIntensity - (1.0 - fogBrightness));\n" \
+	"} else {\n" \
+		"colorIntensity = max(final_color.r, max(final_color.g, final_color.b));\n" \
+		"colorIntensity = abs(colorIntensity - (fogBrightness));\n" \
+	"}\n" \
+	"colorIntensity *= darkness;\n" \
+	"if (abs(final_color.r - fade_color.r) <= colorIntensity) {\n" \
+		"final_color.r = fade_color.r;\n" \
+	"} else if (final_color.r < fade_color.r) {\n" \
+		"final_color.r += colorIntensity;\n" \
+	"} else {\n" \
+		"final_color.r -= colorIntensity;\n" \
+	"}\n" \
+	"if (abs(final_color.g - fade_color.g) <= colorIntensity) {\n" \
+		"final_color.g = fade_color.g;\n" \
+	"} else if (final_color.g < fade_color.g) {\n" \
+		"final_color.g += colorIntensity;\n" \
+	"} else {\n" \
+		"final_color.g -= colorIntensity;\n" \
+	"}\n" \
+	"if (abs(final_color.b - fade_color.b) <= colorIntensity) {\n" \
+		"final_color.b = fade_color.b;\n" \
+	"} else if (final_color.b < fade_color.b) {\n" \
+		"final_color.b += colorIntensity;\n" \
+	"} else {\n" \
+		"final_color.b -= colorIntensity;\n" \
+	"}\n" \
 
 #define GLSL_SOFTWARE_FRAGMENT_SHADER \
 	"uniform sampler2D tex;\n" \
