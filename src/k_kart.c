@@ -2470,10 +2470,17 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
 	}
 
-	if (K_PlayerUsesBotMovement(player) && player->botvars.rival == true)
+	if (K_PlayerUsesBotMovement(player))
 	{
-		// +10% top speed for the rival
-		finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+		// Increase bot speed by 1-10% depending on difficulty
+		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / MAXBOTDIFFICULTY;
+		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
+
+		if (player->botvars.rival == true)
+		{
+			// +10% top speed for the rival
+			finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+		}
 	}
 
 	if (player->mo && !P_MobjWasRemoved(player->mo))
@@ -6838,7 +6845,15 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 INT32 K_GetKartRingPower(player_t *player)
 {
-	return (((9 - player->kartspeed) + (9 - player->kartweight)) / 2);
+	INT32 ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) / 2;
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		// Double for Lv. 9
+		ringPower += (player->botvars.difficulty * ringPower) / MAXBOTDIFFICULTY;
+	}
+
+	return ringPower;
 }
 
 // Returns false if this player being placed here causes them to collide with any other player
@@ -6984,6 +6999,7 @@ INT32 K_GetKartDriftSparkValue(player_t *player)
 Stage 1: red sparks
 Stage 2: blue sparks
 Stage 3: big large rainbow sparks
+Stage 0: air failsafe
 */
 void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 {
@@ -7013,6 +7029,11 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 
 			S_StartSound(player->mo, sfx_kc5b);
 			S_StartSound(player->mo, sfx_s3kc4l);
+			break;
+
+		case 0:
+			overlay->color = SKINCOLOR_SILVER;
+			overlay->fuse = 16;
 			break;
 	}
 
@@ -7526,11 +7547,14 @@ static void K_KartSpindash(player_t *player)
 		return;
 	}
 
-	if (player->speed < 6*mapobjectscale && player->powers[pw_flashing] == 0)
+	if (player->speed == 0 && cmd->turning != 0 && leveltime % 8 == 0)
 	{
-		if (cmd->turning != 0 && leveltime % 8 == 0)
-			S_StartSound(player->mo, sfx_ruburn);
+		// Rubber burn turn sfx
+		S_StartSound(player->mo, sfx_ruburn);
+	}
 
+	if (player->speed < 6*player->mo->scale)
+	{
 		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
 			INT16 chargetime = MAXCHARGETIME - ++player->kartstuff[k_spindash];
@@ -7545,6 +7569,15 @@ static void K_KartSpindash(player_t *player)
 			if (chargetime <= (MAXCHARGETIME / 4) && spawnWind == true)
 			{
 				K_KartSpindashWind(player->mo);
+			}
+
+			if (player->powers[pw_flashing] > 0 && (leveltime & 1) && player->kartstuff[k_hyudorotimer] == 0)
+			{
+				// Every frame that you're invisible from flashing, spill a ring.
+				// Intentionally a lop-sided trade-off, so the game doesn't become
+				// Funky Kong's Ring Racers.
+
+				P_PlayerRingBurst(player, 1);
 			}
 
 			if (chargetime > 0)
@@ -7571,6 +7604,39 @@ static void K_KartSpindash(player_t *player)
 	{
 		if (leveltime % 4 == 0)
 			S_StartSound(player->mo, sfx_kc2b);
+	}
+}
+
+static void K_AirFailsafe(player_t *player)
+{
+	const fixed_t maxSpeed = 6*player->mo->scale;
+	const fixed_t thrustSpeed = 6*player->mo->scale; // 10*player->mo->scale
+
+	ticcmd_t *cmd = &player->cmd;
+
+	if (player->speed > maxSpeed // Above the max speed that you're allowed to use this technique.
+		|| player->respawn.state != RESPAWNST_NONE) // Respawning, you don't need this AND drop dash :V
+	{
+		player->airFailsafe = false;
+		return;
+	}
+
+	if ((cmd->buttons & BT_ACCELERATE) || K_GetForwardMove(player) != 0)
+	{
+		// Queue up later
+		player->airFailsafe = true;
+		return;
+	}
+
+	if (player->airFailsafe == true)
+	{
+		// Push the player forward
+		P_Thrust(player->mo, K_MomentumAngle(player->mo), thrustSpeed);
+
+		S_StartSound(player->mo, sfx_s23c);
+		K_SpawnDriftBoostExplosion(player, 0);
+
+		player->airFailsafe = false;
 	}
 }
 
@@ -8447,8 +8513,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
-	K_KartDrift(player, P_IsObjectOnGround(player->mo)); // Not using onground, since we don't want this affected by spring pads
+	K_KartDrift(player, onground);
 	K_KartSpindash(player);
+
+	if (onground == false)
+	{
+		K_AirFailsafe(player);
+	}
+	else
+	{
+		player->airFailsafe = false;
+	}
 
 	// Play the starting countdown sounds
 	if (player == &players[g_localplayers[0]]) // Don't play louder in splitscreen

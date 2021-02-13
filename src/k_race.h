@@ -14,6 +14,8 @@
 
 #include "r_defs.h"
 
+extern line_t *finishBeamLine;
+
 #define FINISHLINEBEAM_SPACING (48*mapobjectscale)
 
 /*--------------------------------------------------

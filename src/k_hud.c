@@ -2201,7 +2201,7 @@ static void K_drawKartSpeedometer(void)
 		{
 			case 1: // Sonic Drift 2 style percentage
 			default:
-				convSpeed = (((25*stplyr->speed)/24) * 100) / K_GetKartSpeed(stplyr, false); // Based on top speed! (cheats with the numbers due to some weird discrepancy)
+				convSpeed = (stplyr->speed * 100) / K_GetKartSpeed(stplyr, false); // Based on top speed!
 				labeln = 0;
 				break;
 			case 2: // Kilometers
@@ -2220,7 +2220,8 @@ static void K_drawKartSpeedometer(void)
 	}
 
 	// Don't overflow
-	if (convSpeed > 999)
+	// (negative speed IS really high speed :V)
+	if (convSpeed > 999 || convSpeed < 0)
 		convSpeed = 999;
 
 	numbers[0] = ((convSpeed / 100) % 10);

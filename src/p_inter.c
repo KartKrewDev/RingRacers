@@ -2182,10 +2182,7 @@ static void P_FlingBurst
 	mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
 
 	ns = FixedMul(momz, player->mo->scale);
-	P_SetObjectMomZ(mo, (mo->target->momz/2) + ns, false);
-
-	if (player->mo->eflags & MFE_VERTICALFLIP)
-		mo->momz *= -1;
+	mo->momz = (mo->target->momz/2) + ((ns) * P_MobjFlip(mo));
 }
 
 /** Spills an injured player's rings.
@@ -2240,6 +2237,6 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	while (i < num_rings)
 	{
 		P_FlingBurst(player, fa, z,
-				MT_DEBTSPIKE, 90, 3 * player->mo->scale / 2, i++);
+				MT_DEBTSPIKE, 0, 3 * player->mo->scale / 2, i++);
 	}
 }

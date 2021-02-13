@@ -220,6 +220,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"driftInput"))
 		lua_pushboolean(L, plr->driftInput);
+	else if (fastcmp(field,"airFailsafe"))
+		lua_pushboolean(L, plr->airFailsafe);
 	else if (fastcmp(field,"tumbleBounces"))
 		lua_pushinteger(L, plr->tumbleBounces);
 	else if (fastcmp(field,"tumbleHeight"))
@@ -533,6 +535,8 @@ static int player_set(lua_State *L)
 		plr->airtime = (tic_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftInput"))
 		plr->driftInput = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"airFailsafe"))
+		plr->airFailsafe = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"tumbleBounces"))
 		plr->tumbleBounces = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumbleHeight"))
