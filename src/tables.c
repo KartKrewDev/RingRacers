@@ -167,6 +167,12 @@ angle_t FixedAngle(fixed_t fa)
 	return AngleAdj(cfa, cwf, ra);
 }
 
+INT32 AngleDifference(angle_t a1, angle_t a2)
+{
+	// Silly but easy way to do it through integer conversion.
+	return (INT32)(a1) - (INT32)(a2);
+}
+
 
 #include "t_ftan.c"
 

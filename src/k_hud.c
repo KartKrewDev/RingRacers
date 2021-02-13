@@ -782,7 +782,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	player_t *player;
 
 	fixed_t viewpointX, viewpointY, viewpointZ;
-	INT32 viewpointAngle, viewpointAiming;
+	angle_t viewpointAngle, viewpointAiming;
 
 	INT32 screenWidth, screenHeight;
 	fixed_t screenHalfW, screenHalfH;
@@ -873,7 +873,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 
 	// Determine viewpoint factors.
 	h = R_PointToDist2(point->x, point->y, viewpointX, viewpointY);
-	da = viewpointAngle - (INT32)(R_PointToAngle2(point->x, point->y, viewpointX, viewpointY));
+	da = AngleDifference(viewpointAngle, R_PointToAngle2(point->x, point->y, viewpointX, viewpointY));
 
 	// Set results!
 	result->x = screenHalfW + FixedMul(NEWTAN(da), fg);
@@ -881,7 +881,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 
 	result->scale = FixedDiv(screenHalfW, h+1);
 
-	result->onScreen = ((abs(da) > ANG60) || (abs(viewpointAiming - R_PointToAngle2(0, 0, h, viewpointZ)) > ANGLE_45));
+	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDifference(viewpointAiming, R_PointToAngle2(0, 0, h, viewpointZ))) > ANGLE_45));
 
 	if (encoremode)
 	{
