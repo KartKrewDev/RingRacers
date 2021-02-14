@@ -1195,8 +1195,8 @@ static int lib_pGivePlayerRings(lua_State *L)
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
-	P_GivePlayerRings(player, num_rings);
-	return 0;
+	lua_pushinteger(L, P_GivePlayerRings(player, num_rings));
+	return 1;
 }
 
 static int lib_pGivePlayerLives(lua_State *L)
