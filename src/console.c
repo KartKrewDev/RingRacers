@@ -311,7 +311,7 @@ void CON_SetupBackColormapEx(INT32 color, boolean prompt)
 		case 12:	palindex = 139;				break; // Cyan
 		case 13:	palindex = 175; shift = 7;	break; // Steel
 		case 14:	palindex = 159;				break; // Blue
-		case 15:	palindex = 169;				break; // Purple
+		case 15:	palindex = 168;	shift = 7;	break; // Purple
 		case 16:	palindex = 187;				break; // Magenta
 		case 17:	palindex = 199; shift = 7;	break; // Lavender
 		case 18:	palindex = 207; shift = 7;	break; // Rose
