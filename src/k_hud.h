@@ -20,6 +20,16 @@
 #define RINGANIM_DELAYMAX 5
 
 void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy);
+
+typedef struct trackingResult_s
+{
+	fixed_t x, y;
+	fixed_t scale;
+	boolean onScreen;
+} trackingResult_t;
+
+void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNum, angle_t angleOffset);
+
 const char *K_GetItemPatch(UINT8 item, boolean tiny);
 void K_LoadKartHUDGraphics(void);
 void K_drawKartHUD(void);
