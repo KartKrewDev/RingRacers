@@ -6745,6 +6745,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 			case 302:
 			case 303:
 			case 304:
+				break;
 
 			case 308: // Race-only linedef executor. Triggers once.
 				if (!(gametyperules & GTR_CIRCUIT))
