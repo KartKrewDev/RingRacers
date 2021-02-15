@@ -11332,22 +11332,19 @@ static fixed_t dist2vert(const vertex_t *v, const mobj_t *o)
 
 static void P_SnapToFinishLine(mobj_t *mobj)
 {
-	const sector_t *sector = mobj->subsector->sector;
-	size_t i;
+	INT32 i = -1;
 	fixed_t d;
 	fixed_t nearest = INT32_MAX;
 	line_t *nearest_line = NULL;
-	for (i = 0; i < sector->linecount; ++i)
+	// case 2001: Finish Line
+	while ((i = P_FindSpecialLineFromTag(2001, -1, i)) != -1)
 	{
 		if (
-				sector->lines[i]->special == 2001 && // case 2001: Finish Line
-				(
-					(d = dist2vert(sector->lines[i]->v1, mobj)) < nearest ||
-					(d = dist2vert(sector->lines[i]->v2, mobj)) < nearest
-				)
+				(d = dist2vert(lines[i].v1, mobj)) < nearest ||
+				(d = dist2vert(lines[i].v2, mobj)) < nearest
 		){
 			nearest = d;
-			nearest_line = sector->lines[i];
+			nearest_line = &lines[i];
 		}
 	}
 	if (nearest < INT32_MAX)
