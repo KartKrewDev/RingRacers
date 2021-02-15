@@ -731,7 +731,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 
 		// Now allocate memory for the actual colormap array itself!
 		// aligned on 8 bit for asm code
-		colormap_p = Z_MallocAlign((256 * 34) + 10, PU_LEVEL, NULL, 8);
+		colormap_p = Z_MallocAlign((256 * (encoremap ? 64 : 32)) + 10, PU_LEVEL, NULL, 8);
 		lighttable = (UINT8 *)colormap_p;
 
 		// Calculate the palette index for each palette index, for each light level
