@@ -11325,6 +11325,39 @@ static boolean P_SetupBooster(mapthing_t* mthing, mobj_t* mobj, boolean strong)
 	return true;
 }
 
+static fixed_t dist2vert(const vertex_t *v, const mobj_t *o)
+{
+	return abs(FixedHypot(v->x - o->x, v->y - o->y));
+}
+
+static void P_SnapToFinishLine(mobj_t *mobj)
+{
+	const sector_t *sector = mobj->subsector->sector;
+	size_t i;
+	fixed_t d;
+	fixed_t nearest = INT32_MAX;
+	line_t *nearest_line = NULL;
+	for (i = 0; i < sector->linecount; ++i)
+	{
+		if (
+				sector->lines[i]->special == 2001 && // case 2001: Finish Line
+				(
+					(d = dist2vert(sector->lines[i]->v1, mobj)) < nearest ||
+					(d = dist2vert(sector->lines[i]->v2, mobj)) < nearest
+				)
+		){
+			nearest = d;
+			nearest_line = sector->lines[i];
+		}
+	}
+	if (nearest < INT32_MAX)
+	{
+		P_UnsetThingPosition(mobj);
+		P_ClosestPointOnLine(mobj->x, mobj->y, nearest_line, (vertex_t *)&mobj->x);
+		P_SetThingPosition(mobj);
+	}
+}
+
 static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean *doangle)
 {
 	boolean override = LUAh_MapThingSpawn(mobj, mthing);
@@ -11708,7 +11741,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		}
 		if (mthing->args[2] == 1)
 		{
-			mobj->extravalue2 = 1; // args[1] of 1 means the waypoint is at the finish line
+			mobj->extravalue2 = 1; // args[2] of 1 means the waypoint is at the finish line
+			P_SnapToFinishLine(mobj);
 		}
 		else
 		{
