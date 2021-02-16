@@ -133,6 +133,9 @@ static patch_t *kp_check[6];
 static patch_t *kp_rival[2];
 static patch_t *kp_localtag[4][2];
 
+static patch_t *kp_talk;
+static patch_t *kp_typdot;
+
 static patch_t *kp_eggnum[4];
 
 static patch_t *kp_flameshieldmeter[104][2];
@@ -502,6 +505,10 @@ void K_LoadKartHUDGraphics(void)
 			kp_localtag[i][j] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
 		}
 	}
+
+	// Typing indicator
+	kp_talk = W_CachePatchName("K_TALK", PU_HUDGFX);
+	kp_typdot = W_CachePatchName("K_TYPDOT", PU_HUDGFX);
 
 	// Eggman warning numbers
 	sprintf(buffer, "K_EGGNx");
@@ -2598,6 +2605,43 @@ static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
 	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_rival[blink], NULL);
 }
 
+static boolean K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p)
+{
+	if (p->typing_duration > duration)
+	{
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_typdot, NULL);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+static boolean K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
+{
+	if (p->cmd.flags & TICCMD_TYPING)
+	{
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_talk, NULL);
+
+		y += 4*FRACUNIT;
+
+		/* spacing closer with the last two looks a better most of the time */
+		(void)
+			(
+					K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p) &&
+					K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p) &&
+					K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p)
+			);
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 cnum)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
@@ -2840,6 +2884,7 @@ static void K_drawKartNameTags(void)
 					if (K_ShowPlayerNametag(ntplayer) == true)
 					{
 						K_DrawNameTagForPlayer(result.x, result.y, ntplayer, cnum);
+						K_DrawTypingNotifier(result.x, result.y, ntplayer);
 					}
 				}
 			}

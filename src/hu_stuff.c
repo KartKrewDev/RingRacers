@@ -78,6 +78,7 @@ patch_t *frameslash;	// framerate stuff. Used in screen.c
 
 static player_t *plr;
 boolean chat_on; // entering a chat message?
+boolean hu_keystrokes; // :)
 static char w_chat[HU_MAXMSGLEN];
 static size_t c_input = 0; // let's try to make the chat input less shitty.
 static boolean headsupactive = false;
@@ -879,6 +880,8 @@ void HU_Ticker(void)
 		hu_showscores = !chat_on;
 	else
 		hu_showscores = false;
+
+	hu_keystrokes = false;
 }
 
 #ifndef NONET
