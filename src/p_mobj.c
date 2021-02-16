@@ -12749,6 +12749,15 @@ void P_FlashPal(player_t *pl, UINT16 type, UINT16 duration)
 }
 
 //
+// P_ScaleFromMap
+// Scales a number relative to the mapobjectscale.
+//
+fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale)
+{
+	return FixedMul(n, FixedDiv(scale, mapobjectscale));
+}
+
+//
 // P_SpawnMobjFromMobj
 // Spawns an object with offsets relative to the position of another object.
 // Scale, gravity flip, etc. is taken into account automatically.
@@ -12765,16 +12774,15 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 	if (!newmobj)
 		return NULL;
 
+	newmobj->destscale = P_ScaleFromMap(mobj->destscale, newmobj->destscale);
+	P_SetScale(newmobj, P_ScaleFromMap(mobj->scale, newmobj->scale));
+
 	if (mobj->eflags & MFE_VERTICALFLIP)
 	{
-		fixed_t elementheight = FixedMul(newmobj->info->height, mobj->scale);
-
 		newmobj->eflags |= MFE_VERTICALFLIP;
 		newmobj->flags2 |= MF2_OBJECTFLIP;
-		newmobj->z = mobj->z + mobj->height - zofs - elementheight;
+		newmobj->z = mobj->z + mobj->height - zofs - newmobj->height;
 	}
 
-	newmobj->destscale = mobj->destscale;
-	P_SetScale(newmobj, mobj->scale);
 	return newmobj;
 }
