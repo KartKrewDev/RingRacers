@@ -11721,6 +11721,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		if (mthing->args[2] == 1)
 		{
 			mobj->extravalue2 = 1; // args[2] of 1 means the waypoint is at the finish line
+			mobj->reactiontime = 0; // Also don't respawn at finish lines
+
 			P_SnapToFinishLine(mobj);
 		}
 		else
