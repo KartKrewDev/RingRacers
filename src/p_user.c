@@ -487,23 +487,29 @@ void P_ResetPlayer(player_t *player)
 //
 // Gives rings to the player, and does any special things required.
 // Call this function when you want to increment the player's health.
+// Returns the number of rings successfully given (or taken).
 //
 
-void P_GivePlayerRings(player_t *player, INT32 num_rings)
+INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 {
+	INT32 test;
+
 	if (!player->mo)
-		return;
+		return 0;
 
 	if ((gametyperules & GTR_BUMPERS)) // No rings in Battle Mode
-		return;
+		return 0;
+
+	test = player->rings + num_rings;
+	if (test > 20) // Caps at 20 rings, sorry!
+		num_rings -= (test-20);
+	else if (test < -20) // Chaotix ring debt!
+		num_rings -= (test+20);
 
 	player->rings += num_rings;
-	//player->totalring += num_rings; // Used for GP lives later
+	//player->totalring += num_rings; // Used for GP lives later -- maybe you might want to move this earlier to discourage ring debt...
 
-	if (player->rings > 20)
-		player->rings = 20; // Caps at 20 rings, sorry!
-	else if (player->rings < -20)
-		player->rings = -20; // Chaotix ring debt!
+	return num_rings;
 }
 
 //

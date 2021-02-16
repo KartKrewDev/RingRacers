@@ -2211,15 +2211,14 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		return;
 
-	// 20 is the ring cap in kart
+	// 20 is the maximum number of rings that can be taken from you at once - half the span of your counter
 	if (num_rings > 20)
 		num_rings = 20;
 	else if (num_rings <= 0)
 		return;
 
-	num_fling_rings = min(num_rings, player->rings);
-
-	P_GivePlayerRings(player, -num_rings);
+	num_rings = -P_GivePlayerRings(player, -num_rings);
+	num_fling_rings = num_rings+min(0, player->rings);
 
 	// determine first angle
 	fa = player->mo->angle + ((P_RandomByte() & 1) ? -ANGLE_90 : ANGLE_90);

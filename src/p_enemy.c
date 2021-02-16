@@ -4186,10 +4186,8 @@ void A_AttractChase(mobj_t *actor)
 		{
 			if (actor->extravalue1 >= 16)
 			{
-				if (actor->target->player->rings >= 20)
+				if (!P_GivePlayerRings(actor->target->player, 1)) // returns 0 if addition failed
 					actor->target->player->kartstuff[k_ringboost] += K_GetKartRingPower(actor->target->player)+3;
-				else
-					P_GivePlayerRings(actor->target->player, 1);
 
 				if (actor->cvmem) // caching
 					S_StartSound(actor->target, sfx_s1c5);
