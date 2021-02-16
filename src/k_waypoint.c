@@ -154,6 +154,38 @@ boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
+	static boolean K_GetWaypointIsOnLine(waypoint_t *const waypoint)
+
+		Checks if a waypoint is exactly on a line. Moving to an exact point
+		on a line won't count as crossing it. Moving off of that point does.
+		Respawning to a waypoint which is exactly on a line is the easiest
+		way to for this to occur.
+
+	Return:-
+		Whether the waypoint is exactly on a line.
+--------------------------------------------------*/
+static boolean K_GetWaypointIsOnLine(waypoint_t *const waypoint)
+{
+	const fixed_t x = waypoint->mobj->x;
+	const fixed_t y = waypoint->mobj->y;
+
+	line_t *line = P_FindNearestLine(x, y,
+			waypoint->mobj->subsector->sector, -1);
+
+	vertex_t point;
+
+	if (line != NULL)
+	{
+		P_ClosestPointOnLine(x, y, line, &point);
+
+		if (x == point.x && y == point.y)
+			return true;
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	INT32 K_GetWaypointNextID(waypoint_t *waypoint)
 
 		See header file for description.
@@ -1698,6 +1730,12 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 						oldfinishlineid, thiswaypointid, thiswaypointid);
 				}
 				finishline = thiswaypoint;
+			}
+
+			/* only relevant for respawning */
+			if (K_GetWaypointIsSpawnpoint(thiswaypoint))
+			{
+				thiswaypoint->onaline = K_GetWaypointIsOnLine(thiswaypoint);
 			}
 
 			if (thiswaypoint->numnextwaypoints > 0)

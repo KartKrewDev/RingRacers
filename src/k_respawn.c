@@ -55,6 +55,21 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip)
 }
 
 /*--------------------------------------------------
+	static void K_FudgeRespawn(player_t *player, const waypoint_t *const waypoint)
+
+		Fudges respawn coordinates to slightly before the waypoint if it would
+		be exactly on a line. See K_GetWaypointIsOnLine.
+--------------------------------------------------*/
+static void K_FudgeRespawn(player_t *player, const waypoint_t *const waypoint)
+{
+	const angle_t from = R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y,
+			player->mo->x, player->mo->y) >> ANGLETOFINESHIFT;
+
+	player->respawn.pointx += FixedMul(16, FINECOSINE(from));
+	player->respawn.pointy += FixedMul(16, FINESINE(from));
+}
+
+/*--------------------------------------------------
 	static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 
 		Updates a player's respawn variables to go to the provided waypoint.
@@ -83,6 +98,11 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 	player->respawn.pointz = waypoint->mobj->z;
 	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
 	player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
+
+	if (waypoint->onaline)
+	{
+		K_FudgeRespawn(player, waypoint);
+	}
 }
 
 /*--------------------------------------------------

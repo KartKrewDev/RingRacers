@@ -11325,32 +11325,14 @@ static boolean P_SetupBooster(mapthing_t* mthing, mobj_t* mobj, boolean strong)
 	return true;
 }
 
-static fixed_t dist2vert(const vertex_t *v, const mobj_t *o)
-{
-	return abs(FixedHypot(v->x - o->x, v->y - o->y));
-}
-
 static void P_SnapToFinishLine(mobj_t *mobj)
 {
-	INT32 i = -1;
-	fixed_t d;
-	fixed_t nearest = INT32_MAX;
-	line_t *nearest_line = NULL;
-	// case 2001: Finish Line
-	while ((i = P_FindSpecialLineFromTag(2001, -1, i)) != -1)
-	{
-		if (
-				(d = dist2vert(lines[i].v1, mobj)) < nearest ||
-				(d = dist2vert(lines[i].v2, mobj)) < nearest
-		){
-			nearest = d;
-			nearest_line = &lines[i];
-		}
-	}
-	if (nearest < INT32_MAX)
+	line_t *finishline = P_FindNearestLine(mobj->x, mobj->y,
+			mobj->subsector->sector, 2001); // case 2001: Finish Line
+	if (finishline != NULL)
 	{
 		P_UnsetThingPosition(mobj);
-		P_ClosestPointOnLine(mobj->x, mobj->y, nearest_line, (vertex_t *)&mobj->x);
+		P_ClosestPointOnLine(mobj->x, mobj->y, finishline, (vertex_t *)&mobj->x);
 		P_SetThingPosition(mobj);
 	}
 }

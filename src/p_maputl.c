@@ -259,6 +259,76 @@ fixed_t P_InterceptVector(divline_t *v2, divline_t *v1)
 	return frac;
 }
 
+static fixed_t dist2line(const line_t *ld, const fixed_t x, const fixed_t y)
+{
+	return FixedHypot
+		(
+				ld->v1->x + (ld->dx / 2) - x,
+				ld->v1->y + (ld->dy / 2) - y
+		);
+}
+
+static void checknearline
+(		line_t  * line,
+		fixed_t * near,
+		line_t ** near_line,
+		const fixed_t x,
+		const fixed_t y)
+{
+	const fixed_t d = dist2line(line, x, y);
+
+	if (d < *near)
+	{
+		*near = d;
+		*near_line = line;
+	}
+}
+
+//
+// P_FindNearestLine
+// Returns the nearest line to a point which
+// is in a sector and/or a specific type.
+//
+line_t * P_FindNearestLine
+(		const fixed_t    x,
+		const fixed_t    y,
+		const sector_t * sector,
+		const INT32      special)
+{
+	fixed_t near = INT32_MAX;
+	line_t *near_line = NULL;
+	size_t i;
+	INT32 line = -1;
+
+	if (special == -1)
+	{
+		if (sector == NULL)
+			sector = R_PointInSubsector(x, y)->sector;
+
+		for (i = 0; i < sector->linecount; ++i)
+		{
+			checknearline(sector->lines[i], &near, &near_line, x, y);
+		}
+	}
+	else if (sector != NULL)
+	{
+		for (i = 0; i < sector->linecount; ++i)
+		{
+			if (sector->lines[i]->special == special)
+				checknearline(sector->lines[i], &near, &near_line, x, y);
+		}
+	}
+	else
+	{
+		while ((line = P_FindSpecialLineFromTag(special, -1, line)) != -1)
+		{
+			checknearline(&lines[line], &near, &near_line, x, y);
+		}
+	}
+
+	return near_line;
+}
+
 //
 // P_LineOpening
 // Sets opentop and openbottom to the window through a two sided line.
