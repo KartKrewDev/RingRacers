@@ -4608,12 +4608,9 @@ void P_PlayerThink(player_t *player)
 		/* if we are in the grace period (including currently typing) */
 		if (player->typing_timer + player->typing_duration > 0)
 		{
-			/*
-			If one dot was already displayed, let the duration continue to
-			display two dots for a bit, before actually resetting.
-			*/
+			/* always end the cycle on two dots */
 			if (player->typing_timer == 0 &&
-					(player->typing_duration < 16 || player->typing_duration > 39))
+					(player->typing_duration < 16 || player->typing_duration == 40))
 			{
 				player->typing_duration = 0;
 			}
@@ -4623,7 +4620,8 @@ void P_PlayerThink(player_t *player)
 			}
 			else
 			{
-				player->typing_duration = 0;
+				/* spend slightly less time on the first dot after wrapping */
+				player->typing_duration = 20;
 			}
 		}
 	}
