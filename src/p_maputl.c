@@ -270,16 +270,16 @@ static fixed_t dist2line(const line_t *ld, const fixed_t x, const fixed_t y)
 
 static void checknearline
 (		line_t  * line,
-		fixed_t * near,
+		fixed_t * nearest,
 		line_t ** near_line,
 		const fixed_t x,
 		const fixed_t y)
 {
 	const fixed_t d = dist2line(line, x, y);
 
-	if (d < *near)
+	if (d < *nearest)
 	{
-		*near = d;
+		*nearest = d;
 		*near_line = line;
 	}
 }
@@ -295,7 +295,7 @@ line_t * P_FindNearestLine
 		const sector_t * sector,
 		const INT32      special)
 {
-	fixed_t near = INT32_MAX;
+	fixed_t nearest = INT32_MAX;
 	line_t *near_line = NULL;
 	size_t i;
 	INT32 line = -1;
@@ -307,7 +307,7 @@ line_t * P_FindNearestLine
 
 		for (i = 0; i < sector->linecount; ++i)
 		{
-			checknearline(sector->lines[i], &near, &near_line, x, y);
+			checknearline(sector->lines[i], &nearest, &near_line, x, y);
 		}
 	}
 	else if (sector != NULL)
@@ -315,14 +315,14 @@ line_t * P_FindNearestLine
 		for (i = 0; i < sector->linecount; ++i)
 		{
 			if (sector->lines[i]->special == special)
-				checknearline(sector->lines[i], &near, &near_line, x, y);
+				checknearline(sector->lines[i], &nearest, &near_line, x, y);
 		}
 	}
 	else
 	{
 		while ((line = P_FindSpecialLineFromTag(special, -1, line)) != -1)
 		{
-			checknearline(&lines[line], &near, &near_line, x, y);
+			checknearline(&lines[line], &nearest, &near_line, x, y);
 		}
 	}
 
