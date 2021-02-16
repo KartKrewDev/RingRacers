@@ -4620,8 +4620,7 @@ void P_PlayerThink(player_t *player)
 			}
 			else
 			{
-				/* spend slightly less time on the first dot after wrapping */
-				player->typing_duration = 20;
+				player->typing_duration = 16;
 			}
 		}
 	}
