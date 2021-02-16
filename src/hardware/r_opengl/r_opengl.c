@@ -1599,6 +1599,10 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags)
 					pglBlendFunc(GL_SRC_ALPHA, GL_SRC_COLOR);
 					pglAlphaFunc(GL_ALWAYS, 0.0f); // Don't discard zero alpha fragments
 					break;
+				case PF_Invert & PF_Invert:
+					pglBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);
+					pglAlphaFunc(GL_GREATER, 0.5f);
+					break;
 				default : // must be 0, otherwise it's an error
 					// No blending
 					pglBlendFunc(GL_ONE, GL_ZERO);   // the same as no blending

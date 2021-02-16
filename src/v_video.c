@@ -1505,7 +1505,7 @@ void V_EncoreInvertScreen(void)
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)
 	{
-		//HWR_EncoreInvertScreen();
+		HWR_EncoreInvertScreen();
 		return;
 	}
 #endif

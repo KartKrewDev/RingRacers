@@ -28,6 +28,7 @@ void HWR_Shutdown(void);
 void HWR_drawAMline(const fline_t *fl, INT32 color);
 void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength);
 void HWR_DrawConsoleBack(UINT32 color, INT32 height);
+void HWR_EncoreInvertScreen(void);
 void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight);
 void HWR_RenderSkyboxView(player_t *player);
 void HWR_RenderPlayerView(void);
