@@ -2296,11 +2296,6 @@ boolean P_ZMovement(mobj_t *mo)
 		{
 			mom.x = mom.y = 0;
 			mom.z = -mom.z/2;
-
-			if (mo->fuse == 0)
-			{
-				mo->fuse = 90;
-			}
 		}
 		else if (mo->flags & MF_MISSILE)
 		{
@@ -6266,6 +6261,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_NightsItemChase(mobj);
 		else
 			A_AttractChase(mobj);
+		break;
+	case MT_DEBTSPIKE:
+		if (mobj->fuse == 0 && P_GetMobjFeet(mobj) == P_GetMobjGround(mobj))
+		{
+			mobj->fuse = 90;
+		}
 		break;
 	case MT_EMBLEM:
 		if (mobj->flags2 & MF2_NIGHTSPULL)
