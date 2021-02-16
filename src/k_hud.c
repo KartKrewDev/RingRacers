@@ -2619,8 +2619,6 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
 	{
 		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_talk, NULL);
 
-		y += 4*FRACUNIT;
-
 		/* spacing closer with the last two looks a better most of the time */
 		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p);
 		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p);
