@@ -3080,6 +3080,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		// Do not move the camera while in hitlag!
 		// The camera zooming out after you got hit makes it hard to focus on the vibration.
+		// of course, if you're in chase, don't forget the postimage - otherwise encore will flip back
+		if (thiscam->chase)
+			P_CalcChasePostImg(player, thiscam);
+
 		return true;
 	}
 

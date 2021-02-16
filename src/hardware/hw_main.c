@@ -5224,7 +5224,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		vis->colormap = colormaps;
 #ifdef GLENCORE
 		if (encoremap && (thing->flags & (MF_SCENERY|MF_NOTHINK)) && !(thing->flags & MF_DONTENCOREMAP))
-			vis->colormap += (256*32);
+			vis->colormap += COLORMAP_REMAPOFFSET;
 #endif
 	}
 
@@ -5331,7 +5331,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 #ifdef GLENCORE
 	if (encoremap && !(thing->flags & MF_DONTENCOREMAP))
-		vis->colormap += (256*32);
+		vis->colormap += COLORMAP_REMAPOFFSET;
 #endif
 
 	// set top/bottom coords
@@ -5525,6 +5525,11 @@ static void HWR_DrawSkyBackground(player_t *player)
 			dometransform.flip = true;
 		else
 			dometransform.flip = false;
+
+		if (*type == postimg_mirror)
+			dometransform.mirror = true;
+		else
+			dometransform.mirror = false;
 
 		dometransform.scalex = 1;
 		dometransform.scaley = (float)vid.width/vid.height;
@@ -5802,6 +5807,11 @@ void HWR_RenderSkyboxView(player_t *player)
 	else
 		atransform.flip = false;
 
+	if (*type == postimg_mirror)
+		atransform.mirror = true;
+	else
+		atransform.mirror = false;
+
 	atransform.x      = gl_viewx;  // FIXED_TO_FLOAT(viewx)
 	atransform.y      = gl_viewy;  // FIXED_TO_FLOAT(viewy)
 	atransform.z      = gl_viewz;  // FIXED_TO_FLOAT(viewz)
@@ -6004,6 +6014,11 @@ void HWR_RenderPlayerView(void)
 		atransform.flip = true;
 	else
 		atransform.flip = false;
+
+	if (*type == postimg_mirror)
+		atransform.mirror = true;
+	else
+		atransform.mirror = false;
 
 	atransform.x      = gl_viewx;  // FIXED_TO_FLOAT(viewx)
 	atransform.y      = gl_viewy;  // FIXED_TO_FLOAT(viewy)

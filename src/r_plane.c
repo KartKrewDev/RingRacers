@@ -232,7 +232,7 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 		ds_colormap = planezlight[pindex];
 
 	if (encoremap && !currentplane->noencore)
-		ds_colormap += (256*32);
+		ds_colormap += COLORMAP_REMAPOFFSET;
 
 	if (currentplane->extra_colormap)
 		ds_colormap = currentplane->extra_colormap->colormap + (ds_colormap - colormaps);
@@ -644,6 +644,8 @@ static void R_DrawSkyPlane(visplane_t *pl)
 	// Because of this hack, sky is not affected
 	//  by sector colormaps (INVUL inverse mapping is not implemented in SRB2 so is irrelevant).
 	dc_colormap = colormaps;
+	if (encoremap)
+		dc_colormap += COLORMAP_REMAPOFFSET;
 	dc_texturemid = skytexturemid;
 	dc_texheight = textureheight[skytexture]
 		>>FRACBITS;
