@@ -158,6 +158,7 @@ boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
 boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
+#define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
 boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff);
 
@@ -522,5 +523,8 @@ void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope);
 fixed_t P_ScaleFromMap(fixed_t, fixed_t scale);
+fixed_t P_GetMobjHead(const mobj_t *);
+fixed_t P_GetMobjFeet(const mobj_t *);
+fixed_t P_GetMobjGround(const mobj_t *);
 
 #endif // __P_LOCAL__

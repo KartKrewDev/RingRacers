@@ -12786,3 +12786,28 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 
 	return newmobj;
 }
+
+//
+// P_GetMobjHead & P_GetMobjFeet
+// Returns the top and bottom of an object, follows appearance, not physics,
+// in reverse gravity.
+//
+
+fixed_t P_GetMobjHead(const mobj_t *mobj)
+{
+	return P_IsObjectFlipped(mobj) ? mobj->z : mobj->z + mobj->height;
+}
+
+fixed_t P_GetMobjFeet(const mobj_t *mobj)
+{
+	return P_IsObjectFlipped(mobj) ? mobj->z + mobj->height : mobj->z;
+}
+
+//
+// P_GetMobjGround
+// Returns the object's floor, or ceiling in reverse gravity.
+//
+fixed_t P_GetMobjGround(const mobj_t *mobj)
+{
+	return P_IsObjectFlipped(mobj) ? mobj->ceilingz : mobj->floorz;
+}
