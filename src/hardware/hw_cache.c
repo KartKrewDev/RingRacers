@@ -478,7 +478,7 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 
 #ifdef GLENCORE
 	if (encoremap)
-		grtex->mipmap.colormap += (256*32);
+		grtex->mipmap.colormap += COLORMAP_REMAPOFFSET;
 #endif
 
 	blockwidth = texture->width;
@@ -833,7 +833,7 @@ void HWR_LiterallyGetFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 
 #ifdef GLENCORE
 	if (!noencoremap && encoremap)
-		grmip->colormap += (256*32);
+		grmip->colormap += COLORMAP_REMAPOFFSET;
 #endif
 
 	grmip = HWR_GetCachedGLPatch(flatlumpnum)->mipmap;

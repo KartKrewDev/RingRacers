@@ -1454,7 +1454,7 @@ void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 
 		if (lumpnum != LUMPERROR)
 		{
-			clm = Z_MallocAlign((256 * 32), PU_STATIC, NULL, 8);
+			clm = Z_MallocAlign(COLORMAP_SIZE, PU_STATIC, NULL, 8);
 			W_ReadLump(lumpnum, clm);
 
 			if (clm != NULL)

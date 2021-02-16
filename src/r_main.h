@@ -41,7 +41,7 @@ extern size_t validcount, linecount, loopcount, framecount;
 
 // Lighting constants.
 // Now with 32 levels.
-#define LIGHTLEVELS 32
+// LIGHTLEVELS is now defined in r_state.h
 #define LIGHTSEGSHIFT 3
 
 #define MAXLIGHTSCALE 48

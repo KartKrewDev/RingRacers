@@ -287,7 +287,9 @@ static void R_InitColormaps(void)
 	// Load in the light tables
 	lump = W_GetNumForName("COLORMAP");
 	len = W_LumpLength(lump);
-	colormaps = Z_MallocAlign(len * 2, PU_STATIC, NULL, 8); // * 2 for encore
+	if (len < COLORMAP_SIZE*2) // accomodate encore mode later
+		len = COLORMAP_SIZE*2;
+	colormaps = Z_MallocAlign(len, PU_STATIC, NULL, 8);
 	W_ReadLump(lump, colormaps);
 	// no need to init encoremap at this stage
 
@@ -330,9 +332,9 @@ void R_ReInitColormaps(UINT16 num, lumpnum_t newencoremap)
 		encoremap = Z_MallocAlign(256 + 10, PU_LEVEL, NULL, 8);
 		W_ReadLump(newencoremap, encoremap);
 		colormap_p = colormap_p2 = colormaps;
-		colormap_p += (256 * 32);
+		colormap_p += COLORMAP_REMAPOFFSET;
 
-		for (p = 0; p < 32; p++)
+		for (p = 0; p < LIGHTLEVELS; p++)
 		{
 			for (i = 0; i < 256; i++)
 			{
@@ -731,12 +733,12 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 
 		// Now allocate memory for the actual colormap array itself!
 		// aligned on 8 bit for asm code
-		colormap_p = Z_MallocAlign((256 * (encoremap ? 64 : 32)) + 10, PU_LEVEL, NULL, 8);
+		colormap_p = Z_MallocAlign((COLORMAP_SIZE * (encoremap ? 2 : 1)) + 10, PU_LEVEL, NULL, 8);
 		lighttable = (UINT8 *)colormap_p;
 
 		// Calculate the palette index for each palette index, for each light level
 		// (as well as the two unused colormap lines we inherited from Doom)
-		for (p = 0; p < 32; p++)
+		for (p = 0; p < LIGHTLEVELS; p++)
 		{
 			for (i = 0; i < 256; i++)
 			{
@@ -776,7 +778,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 		{
 			lighttable_t *colormap_p2 = lighttable;
 
-			for (p = 0; p < 32; p++)
+			for (p = 0; p < LIGHTLEVELS; p++)
 			{
 				for (i = 0; i < 256; i++)
 				{
