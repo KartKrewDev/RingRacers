@@ -4590,6 +4590,12 @@ void P_PlayerThink(player_t *player)
 
 	if (cmd->flags & TICCMD_TYPING)
 	{
+		/*
+		typing_duration is slow to start and slow to stop.
+
+		typing_timer counts down a grace period before the player is not
+		actually considered typing anymore.
+		*/
 		if (cmd->flags & TICCMD_KEYSTROKE)
 		{
 			player->typing_timer = 15;
@@ -4599,17 +4605,25 @@ void P_PlayerThink(player_t *player)
 			player->typing_timer--;
 		}
 
+		/* if we are in the grace period (including currently typing) */
 		if (player->typing_timer + player->typing_duration > 0)
 		{
-			/* lag a little bit so we always get more than just a singular dot */
+			/*
+			If one dot was already displayed, let the duration continue to
+			display two dots for a bit, before actually resetting.
+			*/
 			if (player->typing_timer == 0 &&
 					(player->typing_duration < 16 || player->typing_duration > 39))
 			{
 				player->typing_duration = 0;
 			}
-			else
+			else if (player->typing_duration < 63)
 			{
 				player->typing_duration++;
+			}
+			else
+			{
+				player->typing_duration = 0;
 			}
 		}
 	}

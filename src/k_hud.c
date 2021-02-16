@@ -2605,20 +2605,15 @@ static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
 	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_rival[blink], NULL);
 }
 
-static boolean K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p)
+static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p)
 {
 	if (p->typing_duration > duration)
 	{
 		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_typdot, NULL);
-		return true;
-	}
-	else
-	{
-		return false;
 	}
 }
 
-static boolean K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
+static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
 {
 	if (p->cmd.flags & TICCMD_TYPING)
 	{
@@ -2627,18 +2622,9 @@ static boolean K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
 		y += 4*FRACUNIT;
 
 		/* spacing closer with the last two looks a better most of the time */
-		(void)
-			(
-					K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p) &&
-					K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p) &&
-					K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p)
-			);
-
-		return true;
-	}
-	else
-	{
-		return false;
+		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p);
+		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p);
+		K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p);
 	}
 }
 

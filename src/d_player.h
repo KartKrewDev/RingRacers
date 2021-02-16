@@ -697,8 +697,8 @@ typedef struct player_s
 	tic_t jointime; // Timer when player joins game to change skin/color
 	tic_t quittime; // Time elapsed since user disconnected, zero if connected
 
-	UINT8 typing_timer : 4; // Counts down while keystrokes are not emitted
-	UINT8 typing_duration : 6; // How long since resumed timer
+	UINT8 typing_timer; // Counts down while keystrokes are not emitted
+	UINT8 typing_duration; // How long since resumed timer
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
