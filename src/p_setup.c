@@ -1266,7 +1266,7 @@ static void P_LoadSidedefs(UINT8 *data)
 				char process[8*3+1];
 				memset(process,0,8*3+1);
 				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
-				if (msd->toptexture[0] != '-' && msd->toptexture[1] != '\0')
+				if (msd->toptexture[0] != '-' || msd->toptexture[1] != '\0')
 					M_Memcpy(process,msd->toptexture,8);
 				if (msd->midtexture[0] != '-' || msd->midtexture[1] != '\0')
 					M_Memcpy(process+strlen(process), msd->midtexture, 8);
