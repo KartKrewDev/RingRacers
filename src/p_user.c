@@ -4598,6 +4598,22 @@ void P_PlayerThink(player_t *player)
 		*/
 		if (cmd->flags & TICCMD_KEYSTROKE)
 		{
+			/* speed up if we are typing quickly! */
+			if (player->typing_duration > 0 && player->typing_timer > 12)
+			{
+				if (player->typing_duration < 16)
+				{
+					player->typing_duration = 24;
+				}
+				else
+				{
+					/* slows down a tiny bit as it approaches the next dot */
+					const UINT8 step = (((player->typing_duration + 15) & ~15) -
+							player->typing_duration) / 2;
+					player->typing_duration += max(step, 4);
+				}
+			}
+
 			player->typing_timer = 15;
 		}
 		else if (player->typing_timer > 0)
