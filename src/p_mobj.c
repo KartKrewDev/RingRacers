@@ -10591,7 +10591,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	{
 		fixed_t offset = mthing->z << FRACBITS;
 
-		if (p->respawn.state != RESPAWNST_NONE)
+		if (p->respawn.state != RESPAWNST_NONE || p->spectator)
 			offset += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP));
 
 		// Flagging a player's ambush will make them start on the ceiling
@@ -10636,6 +10636,12 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 		mobj->eflags |= MFE_ONGROUND;
 
 	mobj->angle = angle;
+
+	// FAULT
+	if (leveltime > introtime)
+	{
+		K_DoIngameRespawn(p);
+	}
 
 	P_AfterPlayerSpawn(playernum);
 }
@@ -10690,6 +10696,8 @@ void P_MovePlayerToStarpost(INT32 playernum)
 			);
 		}
 	}
+	else
+		p->drawangle = mobj->angle; // default to the camera angle
 
 	P_AfterPlayerSpawn(playernum);
 }

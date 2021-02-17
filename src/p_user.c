@@ -2123,11 +2123,7 @@ void P_MovePlayer(player_t *player)
 
 	// Control relinquishing stuff!
 	if (player->powers[pw_nocontrol])
-	{
 		player->pflags |= PF_STASIS;
-		if (!(player->powers[pw_nocontrol] & (1<<15)))
-			player->pflags |= PF_JUMPSTASIS;
-	}
 
 	// note: don't unset stasis here
 
@@ -2183,9 +2179,13 @@ void P_MovePlayer(player_t *player)
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
 	}
-	else if (player->kartstuff[k_spinouttimer] > 0)
+	else if ((player->pflags & PF_FAULT) || (player->kartstuff[k_spinouttimer] > 0))
 	{
-		UINT8 speed = max(1, min(8, player->kartstuff[k_spinouttimer]/8));
+		UINT16 speed = ((player->pflags & PF_FAULT) ? player->powers[pw_nocontrol] : player->kartstuff[k_spinouttimer])/8;
+		if (speed > 8)
+			speed = 8;
+		else if (speed < 1)
+			speed = 1;
 
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2196,7 +2196,7 @@ void P_MovePlayer(player_t *player)
 
 		player->mo->rollangle = 0;
 	}
-	else if (player->pflags & PF_FAULT)
+	/*else if (player->pflags & PF_FAULT) -- v1 fault
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2206,7 +2206,7 @@ void P_MovePlayer(player_t *player)
 			player->drawangle -= ANGLE_11hh;
 
 		player->mo->rollangle = 0;
-	}
+	}*/
 	else
 	{
 		K_KartMoveAnimation(player);
@@ -4571,7 +4571,7 @@ void P_PlayerThink(player_t *player)
 		player->powers[pw_flashing]--;
 	}
 
-	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)
+	if (player->powers[pw_nocontrol] && player->powers[pw_nocontrol] < UINT16_MAX)
 	{
 		if (!(--player->powers[pw_nocontrol]))
 			player->pflags &= ~PF_FAULT;

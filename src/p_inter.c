@@ -1370,6 +1370,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 
 		case MT_PLAYER:
+			if (damagetype != DMG_SPECTATOR)
 			{
 				angle_t flingAngle;
 				mobj_t *kart;
@@ -1753,6 +1754,12 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		default:
 			// Everything else REALLY kills
 			break;
+	}
+
+	// FAULT
+	if (leveltime < starttime)
+	{
+		K_DoFault(player);
 	}
 
 	K_DropEmeraldsFromPlayer(player, player->powers[pw_emeralds]);
