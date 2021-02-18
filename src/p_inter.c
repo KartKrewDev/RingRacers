@@ -1751,15 +1751,16 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			// Respawn kill types
 			K_DoIngameRespawn(player);
 			return false;
+		case DMG_SPECTATOR:
+			// disappearifies, but still gotta put items back in play
+			break;
 		default:
 			// Everything else REALLY kills
+			if (leveltime < starttime)
+			{
+				K_DoFault(player);
+			}
 			break;
-	}
-
-	// FAULT
-	if (leveltime < starttime)
-	{
-		K_DoFault(player);
 	}
 
 	K_DropEmeraldsFromPlayer(player, player->powers[pw_emeralds]);

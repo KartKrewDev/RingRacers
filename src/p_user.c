@@ -461,7 +461,7 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->kartstuff[k_spinouttimer] || player->tumbleBounces > 0)
+	if (player->kartstuff[k_spinouttimer] || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT))
 		return true;
 
 	return false;
