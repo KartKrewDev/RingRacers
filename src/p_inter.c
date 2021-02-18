@@ -2138,7 +2138,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 static void P_FlingBurst
 (		player_t *player,
 		angle_t fa,
-		fixed_t z,
 		mobjtype_t objType,
 		tic_t objFuse,
 		fixed_t objScale,
@@ -2149,18 +2148,17 @@ static void P_FlingBurst
 	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
 	INT32 mx = (i + 1) >> 1;
 
-	z = player->mo->z;
-	if (player->mo->eflags & MFE_VERTICALFLIP)
-		z += player->mo->height - mobjinfo[objType].height;
-
-	mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
+	mo = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, objType);
 
 	mo->threshold = 10; // not useful for spikes
 	mo->fuse = objFuse;
 	P_SetTarget(&mo->target, player->mo);
 
-	mo->destscale = objScale;
-	P_SetScale(mo, objScale);
+	if (objScale != FRACUNIT)
+	{
+		P_SetScale(mo, FixedMul(objScale, mo->scale));
+		mo->destscale = mo->scale;
+	}
 
 	/*
 	0: 0
@@ -2197,7 +2195,6 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	INT32 num_fling_rings;
 	INT32 i;
 	angle_t fa;
-	fixed_t z;
 
 	// Rings shouldn't be in Battle!
 	if (gametyperules & GTR_SPHERES)
@@ -2223,19 +2220,13 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	// determine first angle
 	fa = player->mo->angle + ((P_RandomByte() & 1) ? -ANGLE_90 : ANGLE_90);
 
-	z = player->mo->z;
-	if (player->mo->eflags & MFE_VERTICALFLIP)
-		z += player->mo->height - mobjinfo[MT_RING].height;
-
 	for (i = 0; i < num_fling_rings; i++)
 	{
-		P_FlingBurst(player, fa, z,
-				MT_FLINGRING, 60*TICRATE, player->mo->scale, i);
+		P_FlingBurst(player, fa, MT_FLINGRING, 60*TICRATE, FRACUNIT, i);
 	}
 
 	while (i < num_rings)
 	{
-		P_FlingBurst(player, fa, z,
-				MT_DEBTSPIKE, 0, 3 * player->mo->scale / 2, i++);
+		P_FlingBurst(player, fa, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, i++);
 	}
 }
