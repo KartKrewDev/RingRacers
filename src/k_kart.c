@@ -43,6 +43,63 @@
 // indirectitemcooldown is timer before anyone's allowed another Shrink/SPB
 // mapreset is set when enough players fill an empty server
 
+void K_TimerReset(void)
+{
+	starttime = introtime = 3;
+	numbulbs = 1;
+}
+
+void K_TimerInit(void)
+{
+	UINT8 i;
+	UINT8 numPlayers = 0;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+		{
+			continue;
+		}
+
+		if (players[i].spectator == true)
+		{
+			continue;
+		}
+
+		numPlayers++;
+	}
+
+	if (numPlayers >= 2)
+	{
+		rainbowstartavailable = true;
+	}
+	else
+	{
+		rainbowstartavailable = false;
+	}
+
+	if (numPlayers <= 2)
+	{
+		introtime = 0; // No intro in Record Attack / 1v1
+	}
+	else
+	{
+		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+	}
+
+	numbulbs = 5;
+
+	if (numPlayers > 2)
+	{
+		numbulbs += (numPlayers-2);
+	}
+
+	starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
+
+	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
+	K_SpawnBattleCapsules();
+}
+
 UINT16 K_GetPlayerDontDrawFlag(player_t *player)
 {
 	UINT16 flag = 0;
