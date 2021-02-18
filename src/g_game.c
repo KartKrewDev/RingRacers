@@ -2084,6 +2084,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 wanted;
 	boolean songcredit = false;
 	boolean eliminated;
+	UINT16 nocontrol;
+	INT32 khudfault;
 
 	score = players[player].score;
 	marescore = players[player].marescore;
@@ -2183,6 +2185,14 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		wanted = players[player].kartstuff[k_wanted];
 	}
 
+	if (!betweenmaps)
+	{
+		khudfault = players[player].karthud[khud_fault];
+		nocontrol = players[player].powers[pw_nocontrol];
+	}
+	else
+		khudfault = nocontrol = 0;
+
 	// Obliterate follower from existence
 	P_SetTarget(&players[player].follower, NULL);
 
@@ -2244,6 +2254,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
 	p->kartstuff[k_lastdraft] = -1;
+	p->karthud[khud_fault] = khudfault;
+	p->powers[pw_nocontrol] = nocontrol;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
@@ -2297,6 +2309,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (betweenmaps)
 		return;
 
+	if (leveltime < starttime)
+		return;
+
 	if (p-players == consoleplayer)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
@@ -2319,11 +2334,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (songcredit)
 		S_ShowMusicCredit();
-
-	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
-	{
-		K_DoIngameRespawn(p);
-	}
 }
 
 //
@@ -2385,10 +2395,17 @@ void G_SpawnPlayer(INT32 playernum)
 
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 {
+#if 0
+	if (leveltime <= introtime && !players[playernum].spectator)
+		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
+	else
+		P_MovePlayerToStarpost(playernum);
+#else
 	if (leveltime > starttime)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
+#endif
 }
 
 mapthing_t *G_FindTeamStart(INT32 playernum)

@@ -86,6 +86,23 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
+	void K_DoFault(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+
+void K_DoFault(player_t *player)
+{
+	player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
+	if (!(player->pflags & PF_FAULT))
+	{
+		S_StartSound(player->mo, sfx_s3k83);
+		player->karthud[khud_fault] = 1;
+		player->pflags |= PF_FAULT;
+	}
+}
+
+/*--------------------------------------------------
 	void K_DoIngameRespawn(player_t *player)
 
 		See header file for description.
@@ -103,18 +120,14 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (leveltime < introtime)
+	if (leveltime <= introtime)
 	{
 		return;
 	}
 
-	if (leveltime < starttime) // FAULT
-	{
-		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
-		player->pflags |= PF_FAULT;
-		S_StartSound(player->mo, sfx_s3k83);
-		player->karthud[khud_fault] = 1;
-	}
+	// FAULT
+	if (leveltime < starttime)
+		K_DoFault(player);
 
 	player->kartstuff[k_ringboost] = 0;
 	player->kartstuff[k_driftboost] = 0;

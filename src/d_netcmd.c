@@ -3374,9 +3374,11 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	{
 		if (players[playernum].mo)
 		{
-			P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_INSTAKILL);
+			P_DamageMobj(players[playernum].mo, NULL, NULL, 1,
+				(NetPacket.packet.newteam ? DMG_INSTAKILL : DMG_SPECTATOR));
 		}
-		else
+		//else
+		if (!NetPacket.packet.newteam)
 		{
 			players[playernum].playerstate = PST_REBORN;
 		}
