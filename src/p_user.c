@@ -4598,6 +4598,64 @@ void P_PlayerThink(player_t *player)
 			player->mo->drawflags &= ~MFD_DONTDRAW;
 	}
 
+	if (cmd->flags & TICCMD_TYPING)
+	{
+		/*
+		typing_duration is slow to start and slow to stop.
+
+		typing_timer counts down a grace period before the player is not
+		actually considered typing anymore.
+		*/
+		if (cmd->flags & TICCMD_KEYSTROKE)
+		{
+			/* speed up if we are typing quickly! */
+			if (player->typing_duration > 0 && player->typing_timer > 12)
+			{
+				if (player->typing_duration < 16)
+				{
+					player->typing_duration = 24;
+				}
+				else
+				{
+					/* slows down a tiny bit as it approaches the next dot */
+					const UINT8 step = (((player->typing_duration + 15) & ~15) -
+							player->typing_duration) / 2;
+					player->typing_duration += max(step, 4);
+				}
+			}
+
+			player->typing_timer = 15;
+		}
+		else if (player->typing_timer > 0)
+		{
+			player->typing_timer--;
+		}
+
+		/* if we are in the grace period (including currently typing) */
+		if (player->typing_timer + player->typing_duration > 0)
+		{
+			/* always end the cycle on two dots */
+			if (player->typing_timer == 0 &&
+					(player->typing_duration < 16 || player->typing_duration == 40))
+			{
+				player->typing_duration = 0;
+			}
+			else if (player->typing_duration < 63)
+			{
+				player->typing_duration++;
+			}
+			else
+			{
+				player->typing_duration = 16;
+			}
+		}
+	}
+	else
+	{
+		player->typing_timer = 0;
+		player->typing_duration = 0;
+	}
+
 	player->pflags &= ~PF_SLIDING;
 
 	K_KartPlayerThink(player, cmd); // SRB2kart

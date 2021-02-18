@@ -277,6 +277,9 @@ static void P_NetArchivePlayers(void)
 
 		WRITESINT8(save_p, players[i].glanceDir);
 
+		WRITEUINT8(save_p, players[i].typing_timer);
+		WRITEUINT8(save_p, players[i].typing_duration);
+
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -482,6 +485,9 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tumbleSound = (boolean)READUINT8(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
+
+		players[i].typing_timer = READUINT8(save_p);
+		players[i].typing_duration = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);

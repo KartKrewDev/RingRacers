@@ -54,6 +54,8 @@ typedef enum
 
 // ticcmd flags
 #define TICCMD_RECEIVED 1
+#define TICCMD_TYPING 2/* chat window or console open */
+#define TICCMD_KEYSTROKE 4/* chat character input */
 
 #if defined(_MSC_VER)
 #pragma pack(1)
