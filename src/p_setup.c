@@ -1261,6 +1261,24 @@ static void P_LoadSidedefs(UINT8 *data)
 				break;
 			}
 
+			case 423: // Change Sky
+			{
+				char process[8*3+1];
+				memset(process,0,8*3+1);
+				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
+				if (msd->toptexture[0] != '-' || msd->toptexture[1] != '\0')
+					M_Memcpy(process,msd->toptexture,8);
+				if (msd->midtexture[0] != '-' || msd->midtexture[1] != '\0')
+					M_Memcpy(process+strlen(process), msd->midtexture, 8);
+				if (msd->bottomtexture[0] != '-' || msd->bottomtexture[1] != '\0')
+					M_Memcpy(process+strlen(process), msd->bottomtexture, 8);
+				if (!strlen(process))
+					break;
+				sd->text = Z_Malloc(strlen(process)+1, PU_LEVEL, NULL);
+				M_Memcpy(sd->text, process, strlen(process)+1);
+				break;
+			}
+
 			case 9: // Mace parameters
 			case 14: // Bustable block parameters
 			case 15: // Fan particle spawner parameters
@@ -3305,6 +3323,9 @@ static boolean P_LoadMapFromFile(void)
 void P_SetupLevelSky(const char *skytexname, boolean global)
 {
 	char tex[9];
+	if (!skytexname || !skytexname[0])
+		return;
+
 	strncpy(tex, skytexname, 9);
 	tex[8] = 0;
 
