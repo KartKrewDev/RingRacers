@@ -154,6 +154,38 @@ boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
+	static boolean K_GetWaypointIsOnLine(waypoint_t *const waypoint)
+
+		Checks if a waypoint is exactly on a line. Moving to an exact point
+		on a line won't count as crossing it. Moving off of that point does.
+		Respawning to a waypoint which is exactly on a line is the easiest
+		way to for this to occur.
+
+	Return:-
+		Whether the waypoint is exactly on a line.
+--------------------------------------------------*/
+static boolean K_GetWaypointIsOnLine(waypoint_t *const waypoint)
+{
+	const fixed_t x = waypoint->mobj->x;
+	const fixed_t y = waypoint->mobj->y;
+
+	line_t *line = P_FindNearestLine(x, y,
+			waypoint->mobj->subsector->sector, -1);
+
+	vertex_t point;
+
+	if (line != NULL)
+	{
+		P_ClosestPointOnLine(x, y, line, &point);
+
+		if (x == point.x && y == point.y)
+			return true;
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	INT32 K_GetWaypointNextID(waypoint_t *waypoint)
 
 		See header file for description.
@@ -254,6 +286,40 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 }
 
 /*--------------------------------------------------
+	static void K_CompareOverlappingWaypoint
+	(		waypoint_t  *const checkwaypoint,
+			waypoint_t **const bestwaypoint,
+			fixed_t     *const bestfindist)
+
+		Solves touching overlapping waypoint radiuses by sorting by distance to
+		finish line.
+--------------------------------------------------*/
+static void K_CompareOverlappingWaypoint
+(		waypoint_t  *const checkwaypoint,
+		waypoint_t **const bestwaypoint,
+		fixed_t     *const bestfindist)
+{
+	const boolean useshortcuts = false;
+	const boolean huntbackwards = false;
+	boolean pathfindsuccess = false;
+	path_t pathtofinish = {};
+
+	pathfindsuccess =
+		K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+
+	if (pathfindsuccess == true)
+	{
+		if ((INT32)(pathtofinish.totaldist) < *bestfindist)
+		{
+			*bestwaypoint = checkwaypoint;
+			*bestfindist = pathtofinish.totaldist;
+		}
+
+		Z_Free(pathtofinish.array);
+	}
+}
+
+/*--------------------------------------------------
 	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 
 		See header file for description.
@@ -292,30 +358,18 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 
 			rad = (checkwaypoint->mobj->radius / FRACUNIT);
 
-			if (closestdist < rad && checkdist < rad && finishline != NULL)
+			// remember: huge radius
+			if (closestdist <= rad && checkdist <= rad && finishline != NULL)
 			{
-				const boolean useshortcuts = false;
-				const boolean huntbackwards = false;
-				boolean pathfindsuccess = false;
-				path_t pathtofinish = {};
-
 				// If the mobj is touching multiple waypoints at once,
 				// then solve ties by taking the one closest to the finish line.
 				// Prevents position from flickering wildly when taking turns.
 
-				pathfindsuccess =
-					K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+				// For the first couple overlapping, check the previous best too.
+				if (bestfindist == INT32_MAX)
+					K_CompareOverlappingWaypoint(bestwaypoint, &bestwaypoint, &bestfindist);
 
-				if (pathfindsuccess == true)
-				{
-					if ((INT32)(pathtofinish.totaldist) < bestfindist)
-					{
-						bestwaypoint = checkwaypoint;
-						bestfindist = pathtofinish.totaldist;
-					}
-
-					Z_Free(pathtofinish.array);
-				}
+				K_CompareOverlappingWaypoint(checkwaypoint, &bestwaypoint, &bestfindist);
 			}
 			else if (checkdist < closestdist && bestfindist == INT32_MAX)
 			{
@@ -1676,6 +1730,12 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 						oldfinishlineid, thiswaypointid, thiswaypointid);
 				}
 				finishline = thiswaypoint;
+			}
+
+			/* only relevant for respawning */
+			if (K_GetWaypointIsSpawnpoint(thiswaypoint))
+			{
+				thiswaypoint->onaline = K_GetWaypointIsOnLine(thiswaypoint);
 			}
 
 			if (thiswaypoint->numnextwaypoints > 0)

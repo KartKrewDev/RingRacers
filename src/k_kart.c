@@ -6553,8 +6553,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 			if (bestwaypoint == K_GetFinishLineWaypoint())
 			{
+				waypoint_t *nextwaypoint = waypoint->nextwaypoints[0];
+				angle_t angletonextwaypoint =
+					R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
+
 				// facing towards the finishline
-				if (angledelta <= ANGLE_90)
+				if (abs(AngleDifference(angletonextwaypoint, angletowaypoint)) <= ANGLE_90)
 				{
 					finishlinehack = true;
 				}
@@ -6698,6 +6702,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 	return bestwaypoint;
 }
 
+#if 0
 static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_t *const player)
 {
 	boolean nextiscloser = true;
@@ -6758,6 +6763,7 @@ static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_
 
 	return nextiscloser;
 }
+#endif
 
 /*--------------------------------------------------
 	void K_UpdateDistanceFromFinishLine(player_t *const player)
@@ -6837,6 +6843,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 
+#if 0
 					// An additional HACK, to fix looking backwards towards the finish line
 					// If the player's next waypoint is the finishline and the angle distance from player to
 					// connectin waypoints implies they're closer to a next waypoint, add a full track distance
@@ -6847,6 +6854,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 							player->distancetofinish += K_GetCircuitLength();
 						}
 					}
+#endif
 				}
 			}
 		}
