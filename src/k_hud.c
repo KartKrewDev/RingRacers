@@ -3632,7 +3632,27 @@ static void K_drawKartFirstPerson(void)
 		const angle_t ang = R_PointToAngle2(0, 0, stplyr->rmomx, stplyr->rmomy) - stplyr->drawangle;
 		// yes, the following is correct. no, you do not need to swap the x and y.
 		fixed_t xoffs = -P_ReturnThrustY(stplyr->mo, ang, (BASEVIDWIDTH<<(FRACBITS-2))/2);
-		fixed_t yoffs = -(P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT) - 4*FRACUNIT);
+		fixed_t yoffs = -P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT);
+
+		// hitlag vibrating
+		if (stplyr->mo->hitlag > 0)
+		{
+			fixed_t mul = stplyr->mo->hitlag * (FRACUNIT / 10);
+			if (r_splitscreen && mul > FRACUNIT)
+				mul = FRACUNIT;
+
+			if (leveltime & 1)
+			{
+				mul = -mul;
+			}
+
+			xoffs = FixedMul(xoffs, mul);
+			yoffs = FixedMul(yoffs, mul);
+
+		}
+
+		if ((yoffs += 4*FRACUNIT) < 0)
+			yoffs = 0;
 
 		if (r_splitscreen)
 			xoffs = FixedMul(xoffs, scale);
