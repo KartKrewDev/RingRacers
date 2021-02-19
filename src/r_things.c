@@ -1404,7 +1404,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t scalestep;
 	fixed_t offset, offset2;
 
-	fixed_t basetx; // drop shadows
+	fixed_t basetx, basetz; // drop shadows
 
 	boolean papersprite = !!(thing->frame & FF_PAPERSPRITE);
 	fixed_t paperoffset = 0, paperdistance = 0; angle_t centerangle = 0;
@@ -1445,7 +1445,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	tr_x = thingxpos - viewx;
 	tr_y = thingypos - viewy;
 
-	tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin); // near/far distance
+	basetz = tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin); // near/far distance
 
 	// thing is behind view plane?
 	if (!papersprite && (tz < FixedMul(MINZ, this_scale))) // papersprite clipping is handled later
@@ -1911,7 +1911,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		R_SplitSprite(vis);
 
 	if (oldthing->shadowscale && cv_shadow.value)
-		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, tz);
+		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz);
 
 	// Debug
 	++objectsdrawn;
