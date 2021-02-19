@@ -206,7 +206,7 @@ void P_CalcHeight(player_t *player)
 
 	player->bob = FixedMul(cv_movebob.value, bobmul);
 
-	if (!P_IsObjectOnGround(mo))
+	if (!P_IsObjectOnGround(mo) || player->spectator)
 	{
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
@@ -2997,7 +2997,7 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	if (thiscam->chase && player->mo->health <= 0)
 		return;
 
-	thiscam->chase = true;
+	thiscam->chase = !player->spectator;
 	x = player->mo->x - P_ReturnThrustX(player->mo, thiscam->angle, player->mo->radius);
 	y = player->mo->y - P_ReturnThrustY(player->mo, thiscam->angle, player->mo->radius);
 	if (player->mo->eflags & MFE_VERTICALFLIP)

@@ -1191,9 +1191,7 @@ void R_SetupFrame(player_t *player)
 	if (i > r_splitscreen)
 		return; // shouldn't be possible, but just in case
 
-	if (player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN || tutorialmode)
-		chasecam = true; // force chasecam on
-	else if (player->spectator) // no spectator chasecam
+	if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off
 
 	if (chasecam && !thiscam->chase)
