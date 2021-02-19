@@ -4480,11 +4480,6 @@ void P_PlayerThink(player_t *player)
 			// Allows some turning
 			P_MovePlayer(player);
 		}
-		else if (player->respawn.state == RESPAWNST_MOVE)
-		{
-			angle_t angleChange = player->cmd.turning << TICCMD_REDUCE;
-			P_SetPlayerAngle(player, player->angleturn + angleChange);
-		}
 	}
 	else if (player->mo->reactiontime)
 	{
