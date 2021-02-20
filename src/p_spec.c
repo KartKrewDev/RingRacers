@@ -8763,11 +8763,7 @@ void T_Pusher(pusher_t *p)
 		{
 			if (p->slider && thing->player)
 			{
-				pflags_t jumped = (thing->player->pflags & (PF_JUMPED|PF_NOJUMPDAMAGE));
 				P_ResetPlayer (thing->player);
-
-				if (jumped)
-					thing->player->pflags |= jumped;
 
 				thing->player->pflags |= PF_SLIDING;
 				thing->angle = R_PointToAngle2 (0, 0, xspeed<<(FRACBITS-PUSH_FACTOR), yspeed<<(FRACBITS-PUSH_FACTOR));

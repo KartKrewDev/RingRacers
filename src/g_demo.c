@@ -119,6 +119,7 @@ demoghost *ghosts = NULL;
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
 
 #define DEMO_SPECTATOR 0x40
+#define DEMO_KICKSTART 0x20
 
 // For demos
 #define ZT_FWD     0x01
@@ -1983,7 +1984,12 @@ void G_BeginRecording(void)
 		if (playeringame[p]) {
 			player = &players[p];
 
-			WRITEUINT8(demo_p, p | (player->spectator ? DEMO_SPECTATOR : 0));
+			i = p;
+			if (player->pflags & PF_KICKSTARTACCEL)
+				i |= DEMO_KICKSTART;
+			if (player->spectator)
+				i |= DEMO_SPECTATOR;
+			WRITEUINT8(demo_p, i);
 
 			// Name
 			memset(name, 0, 16);
@@ -2903,6 +2909,12 @@ void G_DoPlayDemo(char *defdemoname)
 
 	while (p != 0xFF)
 	{
+		players[p].pflags &= ~PF_KICKSTARTACCEL;
+		if (p & DEMO_KICKSTART)
+		{
+			players[p].pflags |= PF_KICKSTARTACCEL;
+			p &= ~DEMO_KICKSTART;
+		}
 		spectator = false;
 		if (p & DEMO_SPECTATOR)
 		{
@@ -3194,7 +3206,7 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-	if (READUINT8(p) != 0)
+	if ((READUINT8(p) & ~DEMO_KICKSTART) != 0)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
 		Z_Free(pdemoname);

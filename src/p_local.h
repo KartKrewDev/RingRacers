@@ -486,7 +486,6 @@ typedef struct BasicFF_s
 void P_ForceFeed(const player_t *player, INT32 attack, INT32 fade, tic_t duration, INT32 period);
 void P_ForceConstant(const BasicFF_t *FFInfo);
 void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End);
-void P_RemoveShield(player_t *player);
 void P_SpecialStageDamage(player_t *player, mobj_t *inflictor, mobj_t *source);
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
 void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);

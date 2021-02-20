@@ -2249,6 +2249,36 @@ static void K_drawKartSpeedometer(void)
 	V_DrawScaledPatch(LAPS_X+13, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
 	V_DrawScaledPatch(LAPS_X+19, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
 	V_DrawScaledPatch(LAPS_X+29, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
+
+	if (stplyr->pflags & PF_KICKSTARTACCEL)
+	{
+		numbers[0] = 7-(stplyr->kartstuff[k_kickstartaccel]*7)/ACCEL_KICKSTART;
+		numbers[1] = 7;
+		numbers[2] = 0;
+
+		V_DrawFill(LAPS_X+61, LAPS_Y-26, 2, 1, 31|V_SLIDEIN|splitflags);
+		V_DrawFill(LAPS_X+61-4, (LAPS_Y-26)+8, 10, 1, 31|V_SLIDEIN|splitflags);
+
+		while (numbers[1]--)
+		{
+			numbers[2] = (numbers[1]/2)+1;
+			V_DrawFill(LAPS_X+61-numbers[2], (LAPS_Y-25)+numbers[1], 2+(numbers[2]*2), 1, 31|V_SLIDEIN|splitflags);
+			if (numbers[0])
+			{
+				if (numbers[1] < numbers[0])
+					labeln = 23;
+				else if (numbers[1] == numbers[0])
+					labeln = 3;
+				else
+					labeln = 5 + (numbers[1]-numbers[0])*2;
+			}
+			else if ((leveltime % 7) == numbers[1])
+				labeln = 0;
+			else
+				labeln = 3;
+			V_DrawFill(LAPS_X+62-numbers[2], (LAPS_Y-25)+numbers[1], (numbers[2]*2), 1, labeln|V_SLIDEIN|splitflags);
+		}
+	}
 }
 
 static void K_drawBlueSphereMeter(void)
@@ -3770,10 +3800,10 @@ static void K_drawInput(void)
 	V_DrawFill(x+(xoffs), y+offs, BUTTW-1, BUTTH, col);\
 	V_DrawFixedPatch((x+1+(xoffs))<<FRACBITS, (y+offs+1)<<FRACBITS, FRACUNIT, splitflags, fontv[TINY_FONT].font[symb-HU_FONTSTART], NULL)
 
-	drawbutt(-2*BUTTW, BT_ACCELERATE, 'A');
-	drawbutt(  -BUTTW, BT_BRAKE,      'B');
-	drawbutt(       0, BT_DRIFT,      'D');
-	drawbutt(   BUTTW, BT_ATTACK,     'I');
+	drawbutt(-2*BUTTW, BT_REALACCELERATE, 'A');
+	drawbutt(  -BUTTW, BT_BRAKE,          'B');
+	drawbutt(       0, BT_DRIFT,          'D');
+	drawbutt(   BUTTW, BT_ATTACK,         'I');
 
 #undef drawbutt
 

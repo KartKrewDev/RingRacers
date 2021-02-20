@@ -939,6 +939,7 @@ void D_RegisterClientCommands(void)
 	// g_input.c
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
+		CV_RegisterVar(&cv_kickstartaccel[i]);
 		CV_RegisterVar(&cv_turnaxis[i]);
 		CV_RegisterVar(&cv_moveaxis[i]);
 		CV_RegisterVar(&cv_brakeaxis[i]);
@@ -1627,6 +1628,8 @@ void SendWeaponPref(UINT8 n)
 
 	buf[0] = 0;
 	// Player option cvars that need to be synched go HERE
+	if (cv_kickstartaccel[n].value)
+		buf[0] |= 1;
 
 	SendNetXCmdForPlayer(n, XD_WEAPONPREF, buf, 1);
 }
@@ -1635,11 +1638,10 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
 	UINT8 prefs = READUINT8(*cp);
 
-	(void)prefs;
-	(void)playernum;
-
-	//players[playernum].pflags &= ~(PF_FLIPCAM);
 	// Player option cvars that need to be synched go HERE
+	players[playernum].pflags &= ~(PF_KICKSTARTACCEL);
+	if (prefs & 1)
+		players[playernum].pflags |= PF_KICKSTARTACCEL;
 }
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)

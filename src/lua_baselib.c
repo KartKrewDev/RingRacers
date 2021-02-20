@@ -1491,17 +1491,6 @@ static int lib_pDoSpring(lua_State *L)
 // P_INTER
 ////////////
 
-static int lib_pRemoveShield(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_RemoveShield(player);
-	return 0;
-}
-
 static int lib_pDamageMobj(lua_State *L)
 {
 	mobj_t *target = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ)), *inflictor = NULL, *source = NULL;
@@ -3803,7 +3792,6 @@ static luaL_Reg lib[] = {
 	{"P_DoSpring",lib_pDoSpring},
 
 	// p_inter
-	{"P_RemoveShield",lib_pRemoveShield},
 	{"P_DamageMobj",lib_pDamageMobj},
 	{"P_KillMobj",lib_pKillMobj},
 	{"P_PlayerRingBurst",lib_pPlayerRingBurst},
