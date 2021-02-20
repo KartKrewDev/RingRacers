@@ -6213,15 +6213,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	player->karthud[khud_timeovercam] = 0;
 
-	// Specific hack because it insists on setting flashing tics during this anyway...
-	if (( player->kartstuff[k_spinouttype] & KSPIN_IFRAMES ) == 0)
-	{
-		player->powers[pw_flashing] = 0;
-	}
 	// Make ABSOLUTELY SURE that your flashing tics don't get set WHILE you're still in hit animations.
-	else if (player->kartstuff[k_spinouttimer] != 0 || player->kartstuff[k_wipeoutslow] != 0)
+	if (player->kartstuff[k_spinouttimer] != 0 || player->kartstuff[k_wipeoutslow] != 0)
 	{
-		player->powers[pw_flashing] = K_GetKartFlashing(player);
+		if (( player->kartstuff[k_spinouttype] & KSPIN_IFRAMES ) == 0)
+			player->powers[pw_flashing] = 0;
+		else
+			player->powers[pw_flashing] = K_GetKartFlashing(player);
 	}
 
 	if (player->kartstuff[k_spinouttimer])
