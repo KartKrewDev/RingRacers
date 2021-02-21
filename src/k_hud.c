@@ -2252,7 +2252,7 @@ static void K_drawKartSpeedometer(void)
 
 	if (stplyr->pflags & PF_KICKSTARTACCEL)
 	{
-		numbers[0] = 7-(stplyr->kartstuff[k_kickstartaccel]*7)/ACCEL_KICKSTART;
+		numbers[0] = 7-(stplyr->kickstartaccel*7)/ACCEL_KICKSTART;
 		numbers[1] = 7;
 		numbers[2] = 0;
 

@@ -4326,16 +4326,16 @@ void P_PlayerThink(player_t *player)
 
 	// Accessibility - kickstart your acceleration
 	if (!(player->pflags & PF_KICKSTARTACCEL))
-		player->kartstuff[k_kickstartaccel] = 0;
+		player->kickstartaccel = 0;
 	else if (cmd->buttons & BT_REALACCELERATE)
 	{
 		if (!(player->pflags & PF_ACCELDOWN))
-			player->kartstuff[k_kickstartaccel] = 0;
-		else if (player->kartstuff[k_kickstartaccel] < ACCEL_KICKSTART)
-			player->kartstuff[k_kickstartaccel]++;
+			player->kickstartaccel = 0;
+		else if (player->kickstartaccel < ACCEL_KICKSTART)
+			player->kickstartaccel++;
 	}
-	else if (player->kartstuff[k_kickstartaccel] < ACCEL_KICKSTART)
-		player->kartstuff[k_kickstartaccel] = 0;
+	else if (player->kickstartaccel < ACCEL_KICKSTART)
+		player->kickstartaccel = 0;
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)

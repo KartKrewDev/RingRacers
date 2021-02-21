@@ -1016,7 +1016,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->buttons |= (BT_ACCELERATE|BT_REALACCELERATE);
 			forward = MAXPLMOVE; // 50
 		}
-		else if ((gamestate == GS_LEVEL) && (player->kartstuff[k_sneakertimer] || (player->kartstuff[k_kickstartaccel] >= ACCEL_KICKSTART)))
+		else if ((gamestate == GS_LEVEL) && (player->kartstuff[k_sneakertimer] || (player->kickstartaccel >= ACCEL_KICKSTART)))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = MAXPLMOVE;
@@ -2240,7 +2240,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		spheres = players[player].spheres;
 		eliminated = players[player].eliminated;
 		wanted = players[player].kartstuff[k_wanted];
-		kickstartaccel = players[player].kartstuff[k_kickstartaccel];
+		kickstartaccel = players[player].kickstartaccel;
 	}
 
 	if (!betweenmaps)
@@ -2314,7 +2314,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->kartstuff[k_lastdraft] = -1;
 	p->karthud[khud_fault] = khudfault;
 	p->powers[pw_nocontrol] = nocontrol;
-	players[player].kartstuff[k_kickstartaccel] = kickstartaccel;
+	p->kickstartaccel = kickstartaccel;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 

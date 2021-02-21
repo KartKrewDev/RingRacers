@@ -295,9 +295,6 @@ typedef enum
 #undef KSPIN_TYPE
 } kartspinoutflags_t;
 
-// for k_kickstartaccel
-#define ACCEL_KICKSTART 35
-
 //{ SRB2kart - kartstuff
 typedef enum
 {
@@ -398,7 +395,6 @@ typedef enum
 	k_springcolor,		// Color of spring stars
 	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
 	k_wrongway, 		// Display WRONG WAY on screen
-	k_kickstartaccel,	// how long you've been holding accel for, for PF_KICKSTARTACCEL
 
 	NUMKARTSTUFF
 } kartstufftype_t;
@@ -450,6 +446,9 @@ typedef enum
 #define TUMBLEBOUNCES 3
 
 //}
+
+// for kickstartaccel
+#define ACCEL_KICKSTART 35
 
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
@@ -700,6 +699,8 @@ typedef struct player_s
 
 	UINT8 typing_timer; // Counts down while keystrokes are not emitted
 	UINT8 typing_duration; // How long since resumed timer
+
+	UINT8 kickstartaccel;
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering

@@ -11048,8 +11048,7 @@ static const char *const KARTSTUFF_LIST[] = {
 	"SPRINGSTARS",
 	"SPRINGCOLOR",
 	"KILLFIELD",
-	"WRONGWAY",
-	"KICKSTARTACCEL"
+	"WRONGWAY"
 };
 
 static const char *const KARTHUD_LIST[] = {
