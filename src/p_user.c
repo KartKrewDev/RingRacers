@@ -4329,7 +4329,7 @@ void P_PlayerThink(player_t *player)
 		player->kickstartaccel = 0;
 	else if (cmd->buttons & BT_REALACCELERATE)
 	{
-		if (!(player->pflags & PF_ACCELDOWN))
+		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
 			player->kickstartaccel = 0;
 		else if (player->kickstartaccel < ACCEL_KICKSTART)
 			player->kickstartaccel++;
