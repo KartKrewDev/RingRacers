@@ -2200,6 +2200,64 @@ static void K_drawKartLapsAndRings(void)
 
 #undef RINGANIM_FLIPFRAME
 
+static void K_drawKartAccessibilityIcons(INT32 fx)
+{
+	INT32 fy = LAPS_Y;
+	UINT8 col = 0, i, wid, fil;
+	INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+	//INT32 step = 1; -- if there's ever more than one accessibility icon
+
+	fx += LAPS_X;
+
+	if (r_splitscreen < 2) // adjust to speedometer height
+	{
+		fy -= 25;
+		if (gametype == GT_BATTLE)
+			fy -= 4;
+	}
+	else
+	{
+		fx += 44;
+		if (!(stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]))	// If we are not P1 or P3...
+		{
+			splitflags ^= (V_SNAPTOLEFT|V_SNAPTORIGHT);
+			fx = (BASEVIDWIDTH/2) - (fx + 10);
+			//step = -step;
+		}
+	}
+
+	if (stplyr->pflags & PF_KICKSTARTACCEL) // just KICKSTARTACCEL right now, maybe more later
+	{
+		fil = 7-(stplyr->kickstartaccel*7)/ACCEL_KICKSTART;
+		i = 7;
+
+		V_DrawFill(fx+4, fy-1, 2, 1, 31|V_SLIDEIN|splitflags);
+		V_DrawFill(fx, (fy-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
+
+		while (i--)
+		{
+			wid = (i/2)+1;
+			V_DrawFill(fx+4-wid, fy+i, 2+(wid*2), 1, 31|V_SLIDEIN|splitflags);
+			if (fil)
+			{
+				if (i < fil)
+					col = 23;
+				else if (i == fil)
+					col = 3;
+				else
+					col = 5 + (i-fil)*2;
+			}
+			else if ((leveltime % 7) == i)
+				col = 0;
+			else
+				col = 3;
+			V_DrawFill(fx+5-wid, fy+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
+		}
+
+		//fx += step*12;
+	}
+}
+
 static void K_drawKartSpeedometer(void)
 {
 	static fixed_t convSpeed;
@@ -2250,35 +2308,7 @@ static void K_drawKartSpeedometer(void)
 	V_DrawScaledPatch(LAPS_X+19, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
 	V_DrawScaledPatch(LAPS_X+29, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
 
-	if (stplyr->pflags & PF_KICKSTARTACCEL)
-	{
-		numbers[0] = 7-(stplyr->kickstartaccel*7)/ACCEL_KICKSTART;
-		numbers[1] = 7;
-		numbers[2] = 0;
-
-		V_DrawFill(LAPS_X+61, LAPS_Y-26, 2, 1, 31|V_SLIDEIN|splitflags);
-		V_DrawFill(LAPS_X+61-4, (LAPS_Y-26)+8, 10, 1, 31|V_SLIDEIN|splitflags);
-
-		while (numbers[1]--)
-		{
-			numbers[2] = (numbers[1]/2)+1;
-			V_DrawFill(LAPS_X+61-numbers[2], (LAPS_Y-25)+numbers[1], 2+(numbers[2]*2), 1, 31|V_SLIDEIN|splitflags);
-			if (numbers[0])
-			{
-				if (numbers[1] < numbers[0])
-					labeln = 23;
-				else if (numbers[1] == numbers[0])
-					labeln = 3;
-				else
-					labeln = 5 + (numbers[1]-numbers[0])*2;
-			}
-			else if ((leveltime % 7) == numbers[1])
-				labeln = 0;
-			else
-				labeln = 3;
-			V_DrawFill(LAPS_X+62-numbers[2], (LAPS_Y-25)+numbers[1], (numbers[2]*2), 1, labeln|V_SLIDEIN|splitflags);
-		}
-	}
+	K_drawKartAccessibilityIcons(57);
 }
 
 static void K_drawBlueSphereMeter(void)
@@ -4205,10 +4235,13 @@ void K_drawKartHUD(void)
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
 		// Draw the speedometer
-		if (cv_kartspeedometer.value && !r_splitscreen)
+		if (cv_kartspeedometer.value && !r_splitscreen && (LUA_HudEnabled(hud_speedometer)))
 		{
-			if (LUA_HudEnabled(hud_speedometer))
-				K_drawKartSpeedometer();
+			K_drawKartSpeedometer();
+		}
+		else
+		{
+			K_drawKartAccessibilityIcons(0);
 		}
 
 		if (demo.title) // Draw title logo instead in demo.titles
