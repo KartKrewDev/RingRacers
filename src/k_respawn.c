@@ -371,6 +371,12 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 			}
 
 			// Set angle, regardless of if we're done or not
+			P_SetPlayerAngle(player, R_PointToAngle2(
+				player->respawn.wp->mobj->x,
+				player->respawn.wp->mobj->y,
+				player->respawn.wp->nextwaypoints[nwp]->mobj->x,
+				player->respawn.wp->nextwaypoints[nwp]->mobj->y
+			));
 			player->drawangle = R_PointToAngle2(
 				player->mo->x, player->mo->y,
 				dest.x, dest.y

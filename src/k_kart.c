@@ -7016,6 +7016,11 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
+	if (player->respawn.state == RESPAWNST_MOVE)
+	{
+		return 0;
+	}
+
 	currentSpeed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
 
 	if ((currentSpeed <= 0) // Not moving

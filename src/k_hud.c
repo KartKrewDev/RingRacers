@@ -823,7 +823,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 		return;
 	}
 
-	if (cam->chase == true)
+	if (cam->chase == true && !player->spectator)
 	{
 		// Use the camera's properties.
 		viewpointX = cam->x;
