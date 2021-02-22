@@ -648,7 +648,7 @@ static void K_DropDashWait(player_t *player)
 --------------------------------------------------*/
 static void K_HandleDropDash(player_t *player)
 {
-	ticcmd_t *cmd = &player->cmd;
+	const UINT16 buttons = K_GetKartButtons(player);
 
 	if (player->kartstuff[k_growshrinktimer] < 0)
 	{
@@ -673,7 +673,7 @@ static void K_HandleDropDash(player_t *player)
 		// The old behavior was stupid and prone to accidental usage.
 		// Let's rip off Mania instead, and turn this into a Drop Dash!
 
-		if ((cmd->buttons & BT_ACCELERATE) && !player->kartstuff[k_spinouttimer]) // Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
+		if ((buttons & BT_ACCELERATE) && !player->kartstuff[k_spinouttimer]) // Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
 		{
 			player->respawn.dropdash++;
 		}
@@ -698,7 +698,7 @@ static void K_HandleDropDash(player_t *player)
 	}
 	else
 	{
-		if ((cmd->buttons & BT_ACCELERATE) && (player->respawn.dropdash >= TICRATE/4))
+		if ((buttons & BT_ACCELERATE) && (player->respawn.dropdash >= TICRATE/4))
 		{
 			S_StartSound(player->mo, sfx_s23c);
 			player->kartstuff[k_startboost] = 50;

@@ -1013,13 +1013,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
 		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0))
 		{
-			cmd->buttons |= (BT_ACCELERATE|BT_REALACCELERATE);
-			forward = MAXPLMOVE; // 50
-		}
-		else if ((gamestate == GS_LEVEL) && (player->kartstuff[k_sneakertimer] || (player->kickstartaccel >= ACCEL_KICKSTART)))
-		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward = MAXPLMOVE;
+			forward = MAXPLMOVE; // 50
 		}
 		else if (analogjoystickmove && axis > 0)
 		{

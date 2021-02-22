@@ -4327,7 +4327,7 @@ void P_PlayerThink(player_t *player)
 	// Accessibility - kickstart your acceleration
 	if (!(player->pflags & PF_KICKSTARTACCEL))
 		player->kickstartaccel = 0;
-	else if (cmd->buttons & BT_REALACCELERATE)
+	else if (cmd->buttons & BT_ACCELERATE)
 	{
 		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
 			player->kickstartaccel = 0;
@@ -4569,7 +4569,7 @@ void P_PlayerThink(player_t *player)
 #endif
 
 	// check for buttons
-	if (cmd->buttons & BT_REALACCELERATE)
+	if (cmd->buttons & BT_ACCELERATE)
 		player->pflags |= PF_ACCELDOWN;
 	else
 		player->pflags &= ~PF_ACCELDOWN;

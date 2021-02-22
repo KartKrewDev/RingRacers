@@ -990,7 +990,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				rad = playerwidth;
 			}
 
-			cmd->buttons |= (BT_ACCELERATE|BT_REALACCELERATE);
+			cmd->buttons |= BT_ACCELERATE;
 
 			// Full speed ahead!
 			cmd->forwardmove = MAXPLMOVE;
@@ -1067,7 +1067,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			// where we figure out what the shape of the track looks like.
 			UINT16 oldButtons = cmd->buttons;
 
-			cmd->buttons &= ~(BT_ACCELERATE|BT_REALACCELERATE|BT_BRAKE);
+			cmd->buttons &= ~(BT_ACCELERATE|BT_BRAKE);
 
 			if (oldButtons & BT_ACCELERATE)
 			{
@@ -1076,7 +1076,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 			if (oldButtons & BT_BRAKE)
 			{
-				cmd->buttons |= (BT_ACCELERATE|BT_REALACCELERATE);
+				cmd->buttons |= BT_ACCELERATE;
 			}
 
 			cmd->forwardmove = -cmd->forwardmove;

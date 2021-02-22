@@ -33,7 +33,6 @@ typedef enum
 	BT_FORWARD		  = 1<<5,	// Aim Item Forward
 	BT_BACKWARD		  = 1<<6,	// Aim Item Backward
 	BT_LOOKBACK		  = 1<<7,	// Look Backward
-	BT_REALACCELERATE = 1<<8,   // Accelerate but not influenced by boosting or kickstart
 
 	BT_EBRAKEMASK	= (BT_ACCELERATE|BT_BRAKE),
 

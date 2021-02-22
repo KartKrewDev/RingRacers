@@ -3829,10 +3829,10 @@ static void K_drawInput(void)
 	V_DrawFill(x+(xoffs), y+offs, BUTTW-1, BUTTH, col);\
 	V_DrawFixedPatch((x+1+(xoffs))<<FRACBITS, (y+offs+1)<<FRACBITS, FRACUNIT, splitflags, fontv[TINY_FONT].font[symb-HU_FONTSTART], NULL)
 
-	drawbutt(-2*BUTTW, BT_REALACCELERATE, 'A');
-	drawbutt(  -BUTTW, BT_BRAKE,          'B');
-	drawbutt(       0, BT_DRIFT,          'D');
-	drawbutt(   BUTTW, BT_ATTACK,         'I');
+	drawbutt(-2*BUTTW, BT_ACCELERATE, 'A');
+	drawbutt(  -BUTTW, BT_BRAKE,      'B');
+	drawbutt(       0, BT_DRIFT,      'D');
+	drawbutt(   BUTTW, BT_ATTACK,     'I');
 
 #undef drawbutt
 

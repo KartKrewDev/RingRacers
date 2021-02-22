@@ -11649,7 +11649,6 @@ struct {
 	{"BT_ATTACK",BT_ATTACK},
 	{"BT_FORWARD",BT_FORWARD},
 	{"BT_BACKWARD",BT_BACKWARD},
-	{"BT_REALACCELERATE",BT_REALACCELERATE},
 	{"BT_CUSTOM1",BT_CUSTOM1}, // Lua customizable
 	{"BT_CUSTOM2",BT_CUSTOM2}, // Lua customizable
 	{"BT_CUSTOM3",BT_CUSTOM3}, // Lua customizable
