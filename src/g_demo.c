@@ -341,7 +341,13 @@ void G_ReadDemoExtraData(void)
 			K_CheckBumpers();
 			P_CheckRacers();
 		}
-
+		if (extradata & DXD_WEAPONPREF)
+		{
+			extradata = READUINT8(demo_p);
+			players[p].pflags &= ~(PF_KICKSTARTACCEL);
+			if (extradata & 1)
+				players[p].pflags |= PF_KICKSTARTACCEL;
+		}
 
 		p = READUINT8(demo_p);
 	}
@@ -446,6 +452,13 @@ void G_WriteDemoExtraData(void)
 					WRITEUINT8(demo_p, DXD_PST_SPECTATING);
 				else
 					WRITEUINT8(demo_p, DXD_PST_PLAYING);
+			}
+			if (demo_extradata[i] & DXD_WEAPONPREF)
+			{
+				UINT8 prefs = 0;
+				if (players[i].pflags & PF_KICKSTARTACCEL)
+					prefs |= 1;
+				WRITEUINT8(demo_p, prefs);
 			}
 		}
 
@@ -1068,6 +1081,8 @@ void G_GhostTicker(void)
 					g->p += 32; // ok (32 because there's both the skin and the colour)
 				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
 					I_Error("Ghost is not a record attack ghost PLAYSTATE"); //@TODO lmao don't blow up like this
+				if (ziptic & DXD_WEAPONPREF)
+					g->p++; // ditto
 			}
 			else if (ziptic == DW_RNG)
 				g->p += 4; // RNG seed

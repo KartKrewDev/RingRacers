@@ -1642,6 +1642,9 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 	players[playernum].pflags &= ~(PF_KICKSTARTACCEL);
 	if (prefs & 1)
 		players[playernum].pflags |= PF_KICKSTARTACCEL;
+
+	// SEE ALSO g_demo.c
+	demo_extradata[playernum] |= DXD_WEAPONPREF;
 }
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
