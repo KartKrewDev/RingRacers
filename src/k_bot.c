@@ -237,6 +237,8 @@ void K_UpdateMatchRaceBots(void)
 
 		while (numbots > wantedbots && i > 0)
 		{
+			i--;
+
 			if (playeringame[i] && players[i].bot)
 			{
 				buf[0] = i;
@@ -245,8 +247,6 @@ void K_UpdateMatchRaceBots(void)
 
 				numbots--;
 			}
-
-			i--;
 		}
 	}
 
