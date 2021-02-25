@@ -4324,6 +4324,19 @@ void P_PlayerThink(player_t *player)
 		player->kartstuff[k_throwdir] = 0;
 	}
 
+	// Accessibility - kickstart your acceleration
+	if (!(player->pflags & PF_KICKSTARTACCEL))
+		player->kickstartaccel = 0;
+	else if (cmd->buttons & BT_ACCELERATE)
+	{
+		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+			player->kickstartaccel = 0;
+		else if (player->kickstartaccel < ACCEL_KICKSTART)
+			player->kickstartaccel++;
+	}
+	else if (player->kickstartaccel < ACCEL_KICKSTART)
+		player->kickstartaccel = 0;
+
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)
 		I_Error("player %s is in PST_REBORN\n", sizeu1(playeri));
@@ -4501,10 +4514,10 @@ void P_PlayerThink(player_t *player)
 
 	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
 
-	// Unset statis flags after moving.
+	// Unset statis flag after moving.
 	// In other words, if you manually set stasis via code,
 	// it lasts for one tic.
-	player->pflags &= ~PF_FULLSTASIS;
+	player->pflags &= ~PF_STASIS;
 
 	if (player->onconveyor == 1)
 		player->onconveyor = 3;
@@ -4550,11 +4563,16 @@ void P_PlayerThink(player_t *player)
 	}
 #endif
 
-	// check for use
-	if (cmd->buttons & BT_BRAKE)
-		player->pflags |= PF_SPINDOWN;
+	// check for buttons
+	if (cmd->buttons & BT_ACCELERATE)
+		player->pflags |= PF_ACCELDOWN;
 	else
-		player->pflags &= ~PF_SPINDOWN;
+		player->pflags &= ~PF_ACCELDOWN;
+
+	if (cmd->buttons & BT_BRAKE)
+		player->pflags |= PF_BRAKEDOWN;
+	else
+		player->pflags &= ~PF_BRAKEDOWN;
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings

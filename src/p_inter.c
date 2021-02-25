@@ -1803,35 +1803,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	return true;
 }
 
-void P_RemoveShield(player_t *player)
-{
-	if (player->powers[pw_shield] & SH_FORCE)
-	{ // Multi-hit
-		if (player->powers[pw_shield] & SH_FORCEHP)
-			player->powers[pw_shield]--;
-		else
-			player->powers[pw_shield] &= SH_STACK;
-	}
-	else if (player->powers[pw_shield] & SH_NOSTACK)
-	{ // First layer shields
-		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON) // Give them what's coming to them!
-		{
-			player->pflags |= PF_JUMPDOWN;
-		}
-		else
-			player->powers[pw_shield] &= SH_STACK;
-	}
-	else
-	{ // Second layer shields
-		if (((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER) && !player->powers[pw_super])
-		{
-			player->mo->color = player->skincolor;
-			G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
-		}
-		player->powers[pw_shield] = SH_NONE;
-	}
-}
-
 /** Damages an object, which may or may not be a player.
   * For melee attacks, source and inflictor are the same.
   *

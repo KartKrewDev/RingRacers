@@ -2200,6 +2200,63 @@ static void K_drawKartLapsAndRings(void)
 
 #undef RINGANIM_FLIPFRAME
 
+static void K_drawKartAccessibilityIcons(INT32 fx)
+{
+	INT32 fy = LAPS_Y-25;
+	UINT8 col = 0, i, wid, fil;
+	INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+	//INT32 step = 1; -- if there's ever more than one accessibility icon
+
+	fx += LAPS_X;
+
+	if (r_splitscreen < 2) // adjust to speedometer height
+	{
+		if (gametype == GT_BATTLE)
+			fy -= 4;
+	}
+	else
+	{
+		fy += 4;
+		if (!(stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]))	// If we are not P1 or P3...
+		{
+			splitflags ^= (V_SNAPTOLEFT|V_SNAPTORIGHT);
+			fx = (BASEVIDWIDTH/2) - (fx + 10);
+			//step = -step;
+		}
+	}
+
+	if (stplyr->pflags & PF_KICKSTARTACCEL) // just KICKSTARTACCEL right now, maybe more later
+	{
+		fil = 7-(stplyr->kickstartaccel*7)/ACCEL_KICKSTART;
+		i = 7;
+
+		V_DrawFill(fx+4, fy-1, 2, 1, 31|V_SLIDEIN|splitflags);
+		V_DrawFill(fx, (fy-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
+
+		while (i--)
+		{
+			wid = (i/2)+1;
+			V_DrawFill(fx+4-wid, fy+i, 2+(wid*2), 1, 31|V_SLIDEIN|splitflags);
+			if (fil)
+			{
+				if (i < fil)
+					col = 23;
+				else if (i == fil)
+					col = 3;
+				else
+					col = 5 + (i-fil)*2;
+			}
+			else if ((leveltime % 7) == i)
+				col = 0;
+			else
+				col = 3;
+			V_DrawFill(fx+5-wid, fy+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
+		}
+
+		//fx += step*12;
+	}
+}
+
 static void K_drawKartSpeedometer(void)
 {
 	static fixed_t convSpeed;
@@ -2249,6 +2306,8 @@ static void K_drawKartSpeedometer(void)
 	V_DrawScaledPatch(LAPS_X+13, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
 	V_DrawScaledPatch(LAPS_X+19, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
 	V_DrawScaledPatch(LAPS_X+29, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
+
+	K_drawKartAccessibilityIcons(56);
 }
 
 static void K_drawBlueSphereMeter(void)
@@ -4174,13 +4233,6 @@ void K_drawKartHUD(void)
 
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
-		// Draw the speedometer
-		if (cv_kartspeedometer.value && !r_splitscreen)
-		{
-			if (LUA_HudEnabled(hud_speedometer))
-				K_drawKartSpeedometer();
-		}
-
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
 			INT32 x = BASEVIDWIDTH - 32, y = 128, offs;
@@ -4229,6 +4281,16 @@ void K_drawKartHUD(void)
 			// Draw the hits left!
 			if (LUA_HudEnabled(hud_gametypeinfo))
 				K_drawKartBumpersOrKarma();
+		}
+
+		// Draw the speedometer and/or accessibility icons
+		if (cv_kartspeedometer.value && !r_splitscreen && (LUA_HudEnabled(hud_speedometer)))
+		{
+			K_drawKartSpeedometer();
+		}
+		else
+		{
+			K_drawKartAccessibilityIcons((r_splitscreen > 1) ? 0 : 8);
 		}
 
 		if (gametyperules & GTR_SPHERES)

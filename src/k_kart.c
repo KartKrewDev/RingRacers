@@ -1902,19 +1902,19 @@ void K_KartMoveAnimation(player_t *player)
 
 	const boolean onground = P_IsObjectOnGround(player->mo);
 
-	ticcmd_t *cmd = &player->cmd;
-	const boolean spinningwheels = (((cmd->buttons & BT_ACCELERATE) == BT_ACCELERATE) || (onground && player->speed > 0));
-	const boolean lookback = ((cmd->buttons & BT_LOOKBACK) == BT_LOOKBACK);
+	UINT16 buttons = K_GetKartButtons(player);
+	const boolean spinningwheels = (((buttons & BT_ACCELERATE) == BT_ACCELERATE) || (onground && player->speed > 0));
+	const boolean lookback = ((buttons & BT_LOOKBACK) == BT_LOOKBACK);
 
 	SINT8 turndir = 0;
 	SINT8 destGlanceDir = 0;
 	SINT8 drift = player->kartstuff[k_drift];
 
-	if (cmd->turning < -minturn)
+	if (player->cmd.turning < -minturn)
 	{
 		turndir = -1;
 	}
-	else if (cmd->turning > minturn)
+	else if (player->cmd.turning > minturn)
 	{
 		turndir = 1;
 	}
@@ -2583,6 +2583,19 @@ UINT16 K_GetKartFlashing(player_t *player)
 	return tics;
 }
 
+boolean K_KartKickstart(player_t *player)
+{
+	return ((player->pflags & PF_KICKSTARTACCEL)
+		&& (!K_PlayerUsesBotMovement(player))
+		&& (player->kickstartaccel >= ACCEL_KICKSTART));
+}
+
+UINT16 K_GetKartButtons(player_t *player)
+{
+	return (player->cmd.buttons |
+		(K_KartKickstart(player) ? BT_ACCELERATE : 0));
+}
+
 SINT8 K_GetForwardMove(player_t *player)
 {
 	SINT8 forwardmove = player->cmd.forwardmove;
@@ -2600,6 +2613,13 @@ SINT8 K_GetForwardMove(player_t *player)
 	if (player->kartstuff[k_spinouttimer] || K_PlayerEBrake(player))
 	{
 		return 0;
+	}
+
+	if (K_KartKickstart(player)) // unlike the brute forward of sneakers, allow for backwards easing here
+	{
+		forwardmove += MAXPLMOVE;
+		if (forwardmove > MAXPLMOVE)
+			forwardmove = MAXPLMOVE;
 	}
 
 	return forwardmove;
@@ -5632,7 +5652,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source)
 }
 
 // Engine Sounds.
-static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
+static void K_UpdateEngineSounds(player_t *player)
 {
 	const INT32 numsnds = 13;
 
@@ -5640,6 +5660,8 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	const fixed_t fardist = 1536*FRACUNIT;
 
 	const UINT8 dampenval = 48; // 255 * 48 = close enough to FRACUNIT/6
+
+	const UINT16 buttons = K_GetKartButtons(player);
 
 	INT32 class, s, w; // engine class number
 
@@ -5681,17 +5703,17 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 	if (player->respawn.state == RESPAWNST_DROP) // Dropdashing
 	{
 		// Dropdashing
-		targetsnd = ((cmd->buttons & BT_ACCELERATE) ? 12 : 0);
+		targetsnd = ((buttons & BT_ACCELERATE) ? 12 : 0);
 	}
 	else if (K_PlayerEBrake(player) == true)
 	{
 		// Spindashing
-		targetsnd = ((cmd->buttons & BT_DRIFT) ? 12 : 0);
+		targetsnd = ((buttons & BT_DRIFT) ? 12 : 0);
 	}
 	else
 	{
 		// Average out the value of forwardmove and the speed that you're moving at.
-		targetsnd = (((6 * cmd->forwardmove) / 25) + ((player->speed / mapobjectscale) / 5)) / 2;
+		targetsnd = (((6 * K_GetForwardMove(player)) / 25) + ((player->speed / mapobjectscale) / 5)) / 2;
 	}
 
 	if (targetsnd < 0) { targetsnd = 0; }
@@ -5989,7 +6011,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 {
 	K_UpdateOffroad(player);
 	K_UpdateDraft(player);
-	K_UpdateEngineSounds(player, cmd); // Thanks, VAda!
+	K_UpdateEngineSounds(player); // Thanks, VAda!
 
 	// update boost angle if not spun out
 	if (!player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow])
@@ -6469,7 +6491,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (cmd->buttons & BT_DRIFT)
 	{
 		// Only allow drifting while NOT trying to do an spindash input.
-		if ((cmd->buttons & BT_EBRAKEMASK) != BT_EBRAKEMASK)
+		if ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK)
 		{
 			player->driftInput = true;
 		}
@@ -7022,7 +7044,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	currentSpeed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
 
 	if ((currentSpeed <= 0) // Not moving
-	&& ((player->cmd.buttons & BT_EBRAKEMASK) != BT_EBRAKEMASK) // not e-braking
+	&& ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK) // not e-braking
 	&& (player->respawn.state == RESPAWNST_NONE)) // Not respawning
 	{
 		return 0;
@@ -7125,6 +7147,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 	const INT32 dsone = K_GetKartDriftSparkValue(player);
 	const INT32 dstwo = dsone*2;
 	const INT32 dsthree = dstwo*2;
+
+	const UINT16 buttons = K_GetKartButtons(player);
 
 	// Drifting is actually straffing + automatic turning.
 	// Holding the Jump button will enable drifting.
@@ -7332,8 +7356,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 		K_SpawnAIZDust(player);
 
 	if (player->kartstuff[k_drift]
-		&& ((player->cmd.buttons & BT_BRAKE)
-		|| !(player->cmd.buttons & BT_ACCELERATE))
+		&& ((buttons & BT_BRAKE)
+		|| !(buttons & BT_ACCELERATE))
 		&& P_IsObjectOnGround(player->mo))
 	{
 		if (!player->kartstuff[k_brakedrift])
@@ -7507,7 +7531,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 
 boolean K_PlayerEBrake(player_t *player)
 {
-	return (player->cmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK
+	return (K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK
 	&& P_IsObjectOnGround(player->mo) == true
 	&& player->kartstuff[k_drift] == 0
 	&& player->kartstuff[k_spinouttimer] == 0
@@ -7690,8 +7714,6 @@ static void K_AirFailsafe(player_t *player)
 	const fixed_t maxSpeed = 6*player->mo->scale;
 	const fixed_t thrustSpeed = 6*player->mo->scale; // 10*player->mo->scale
 
-	ticcmd_t *cmd = &player->cmd;
-
 	if (player->speed > maxSpeed // Above the max speed that you're allowed to use this technique.
 		|| player->respawn.state != RESPAWNST_NONE) // Respawning, you don't need this AND drop dash :V
 	{
@@ -7699,7 +7721,7 @@ static void K_AirFailsafe(player_t *player)
 		return;
 	}
 
-	if ((cmd->buttons & BT_ACCELERATE) || K_GetForwardMove(player) != 0)
+	if ((K_GetKartButtons(player) & BT_ACCELERATE) || K_GetForwardMove(player) != 0)
 	{
 		// Queue up later
 		player->airFailsafe = true;
@@ -7741,7 +7763,7 @@ void K_AdjustPlayerFriction(player_t *player)
 	{
 		player->mo->friction -= 1024;
 	}
-	else if (player->speed > 0 && cmd->forwardmove < 0)
+	else if (player->speed > 0 && K_GetForwardMove(player) < 0)
 	{
 		player->mo->friction -= 512;
 	}

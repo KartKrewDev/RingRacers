@@ -6839,7 +6839,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if ((!mobj->target || !mobj->target->health || !mobj->target->player || !P_IsObjectOnGround(mobj->target))
 			|| !mobj->target->player->kartstuff[k_drift] || !mobj->target->player->kartstuff[k_brakedrift]
 			|| !((mobj->target->player->cmd.buttons & BT_BRAKE)
-			|| !(mobj->target->player->cmd.buttons & BT_ACCELERATE))) // Letting go of accel functions about the same as brake-drifting
+			|| (K_GetKartButtons(mobj->target->player) & BT_ACCELERATE))) // Letting go of accel functions about the same as brake-drifting
 		{
 			P_RemoveMobj(mobj);
 			return false;

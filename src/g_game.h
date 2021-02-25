@@ -57,6 +57,7 @@ extern consvar_t cv_pauseifunfocused;
 
 extern consvar_t cv_invertmouse;
 
+extern consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS];
