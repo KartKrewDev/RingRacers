@@ -849,7 +849,7 @@ static INT16 K_FindBotController(mobj_t *mo)
 		player - The bot player this prediction is for.
 
 	Return:-
-		N/A
+		None
 --------------------------------------------------*/
 static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 {

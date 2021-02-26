@@ -433,7 +433,7 @@ fixed_t K_BotReducePrediction(player_t *player)
 		weight - How important this object is.
 
 	Return:-
-		N/A
+		None
 --------------------------------------------------*/
 static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
 {
@@ -465,7 +465,7 @@ static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
 		weight - How important this object is.
 
 	Return:-
-		N/A
+		None
 --------------------------------------------------*/
 static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 {
