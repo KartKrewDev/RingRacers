@@ -455,7 +455,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 		return true;
 	}
 
-	fulldist = R_PointToDist2(globalsmuggle.predict->x, globalsmuggle.predict->y, thing->x, thing->y);
+	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y);
 
 	if (fulldist > globalsmuggle.distancetocheck)
 	{
@@ -680,16 +680,17 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 
-	const fixed_t baseNudge = 8 * mapobjectscale;
 	fixed_t avgX = 0, avgY = 0;
 	fixed_t avgDist = 0;
+
+	const fixed_t baseNudge = 48 * mapobjectscale;
 	fixed_t nudgeDist = 0;
 	angle_t nudgeDir = 0;
 
 	globalsmuggle.botmo = player->mo;
 	globalsmuggle.predict = predict;
 
-	globalsmuggle.distancetocheck = (player->mo->radius * 32) + (player->speed * 4);
+	globalsmuggle.distancetocheck = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 
 	globalsmuggle.gotoAvgX = globalsmuggle.gotoAvgY = 0;
 	globalsmuggle.gotoObjs = 0;
@@ -722,8 +723,15 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 			predict->x, predict->y
 		);
 
+		// Light-weight characters dodge better
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartweight) + 1) * baseNudge;
 
+		if (nudgeDist > predict->radius)
+		{
+			nudgeDist = predict->radius;
+		}
+
+		// Point away
 		nudgeDir = R_PointToAngle2(
 			avgX, avgY,
 			predict->x, predict->y
@@ -743,7 +751,13 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 			avgX, avgY
 		);
 
+		// Acceleration characters are more aggressive
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartspeed) + 1) * baseNudge;
+
+		if (nudgeDist > predict->radius)
+		{
+			nudgeDist = predict->radius;
+		}
 
 		if (avgDist <= nudgeDist)
 		{
@@ -752,6 +766,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		}
 		else
 		{
+			// Point towards
 			nudgeDir = R_PointToAngle2(
 				predict->x, predict->y,
 				avgX, avgY
