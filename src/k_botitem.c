@@ -971,7 +971,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 	{
 		// Use rings!
 
-		if (!player->exiting)
+		if (leveltime > starttime && !player->exiting)
 		{
 			K_BotItemRings(player, cmd);
 		}
