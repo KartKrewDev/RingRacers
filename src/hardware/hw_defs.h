@@ -219,7 +219,8 @@ enum EPolyFlags
 	PF_Substractive     = 0x00000010,   // for splat
 	PF_NoAlphaTest      = 0x00000020,   // hiden param
 	PF_Fog              = 0x00000040,   // Fog blocks
-	PF_Blending         = (PF_Environment|PF_Additive|PF_Translucent|PF_Masked|PF_Substractive|PF_Fog)&~PF_NoAlphaTest,
+	PF_Invert           = 0x00000080,   // Polygon inverts the colours of what it's in front of
+	PF_Blending         = (PF_Environment|PF_Additive|PF_Translucent|PF_Masked|PF_Substractive|PF_Fog|PF_Invert)&~PF_NoAlphaTest,
 
 	// other flag bits
 

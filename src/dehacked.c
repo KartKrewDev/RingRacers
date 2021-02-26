@@ -10645,17 +10645,13 @@ static const char *const PLAYERFLAG_LIST[] = {
 
 	// True if button down last tic.
 	"ATTACKDOWN",
-	"SPINDOWN",
-	"JUMPDOWN",
+	"ACCELDOWN",
+	"BRAKEDOWN",
 	"WPNDOWN",
 
 	// Unmoving states
 	"STASIS", // Player is not allowed to move
 	"JUMPSTASIS", // and that includes jumping.
-	// (we don't include FULLSTASIS here I guess because it's just those two together...?)
-
-	// Did you get a time-over?
-	"TIMEOVER",
 
 	// SRB2Kart: spectator that wants to join
 	"WANTSTOJOIN",
@@ -10664,10 +10660,8 @@ static const char *const PLAYERFLAG_LIST[] = {
 	"STARTJUMP",
 	"JUMPED",
 	"NOJUMPDAMAGE",
-
 	"SPINNING",
 	"STARTDASH",
-
 	"THOKKED",
 	"SHIELDABILITY",
 	"GLIDING",
@@ -10681,13 +10675,13 @@ static const char *const PLAYERFLAG_LIST[] = {
 	"DRILLING",
 
 	// Gametype-specific stuff
-	"GAMETYPEOVER", // Race time over, or H&S out-of-game
-	"TAGIT", // The player is it! For Tag Mode
+	"GAMETYPEOVER", // Race time over
+	"TAGIT",
 
 	/*** misc ***/
-	"FORCESTRAFE", // Translate turn inputs into strafe inputs
+	"FORCESTRAFE", // Accessibility feature - is accelerate in kickstart mode?
+	"CANCARRY",
 	"HITFINISHLINE", // Already hit the finish line this tic
-	"FINISHED",
 
 	NULL // stop loop here.
 };
@@ -12183,8 +12177,6 @@ static fixed_t find_const(const char **rword)
 				free(word);
 				return (1<<i);
 			}
-		if (fastcmp(p, "FULLSTASIS"))
-			return PF_FULLSTASIS;
 
 		// Not found error
 		const_warning("player flag",word);
@@ -12602,16 +12594,6 @@ static inline int lib_getenum(lua_State *L)
 				lua_pushinteger(L, ((lua_Integer)1<<i));
 				return 1;
 			}
-		if (fastcmp(p, "FULLSTASIS"))
-		{
-			lua_pushinteger(L, (lua_Integer)PF_FULLSTASIS);
-			return 1;
-		}
-		else if (fastcmp(p, "USEDOWN")) // Remove case when 2.3 nears release...
-		{
-			lua_pushinteger(L, (lua_Integer)PF_SPINDOWN);
-			return 1;
-		}
 		if (mathlib) return luaL_error(L, "playerflag '%s' could not be found.\n", word);
 		return 0;
 	}

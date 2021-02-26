@@ -158,6 +158,7 @@ boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
 boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
+#define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
 boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff);
 
@@ -167,7 +168,7 @@ boolean P_EndingMusic(player_t *player);
 void P_SpawnShieldOrb(player_t *player);
 void P_SwitchShield(player_t *player, UINT16 shieldtype);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
-void P_GivePlayerRings(player_t *player, INT32 num_rings);
+INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
 void P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
 void P_GivePlayerLives(player_t *player, INT32 numlives);
 UINT8 P_GetNextEmerald(void);
@@ -485,7 +486,6 @@ typedef struct BasicFF_s
 void P_ForceFeed(const player_t *player, INT32 attack, INT32 fade, tic_t duration, INT32 period);
 void P_ForceConstant(const BasicFF_t *FFInfo);
 void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End);
-void P_RemoveShield(player_t *player);
 void P_SpecialStageDamage(player_t *player, mobj_t *inflictor, mobj_t *source);
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
 void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
@@ -521,5 +521,9 @@ void P_Thrust(mobj_t *mo, angle_t angle, fixed_t move);
 void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope);
+fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale);
+fixed_t P_GetMobjHead(const mobj_t *);
+fixed_t P_GetMobjFeet(const mobj_t *);
+fixed_t P_GetMobjGround(const mobj_t *);
 
 #endif // __P_LOCAL__

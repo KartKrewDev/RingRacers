@@ -1261,6 +1261,24 @@ static void P_LoadSidedefs(UINT8 *data)
 				break;
 			}
 
+			case 423: // Change Sky
+			{
+				char process[8*3+1];
+				memset(process,0,8*3+1);
+				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
+				if (msd->toptexture[0] != '-' || msd->toptexture[1] != '\0')
+					M_Memcpy(process,msd->toptexture,8);
+				if (msd->midtexture[0] != '-' || msd->midtexture[1] != '\0')
+					M_Memcpy(process+strlen(process), msd->midtexture, 8);
+				if (msd->bottomtexture[0] != '-' || msd->bottomtexture[1] != '\0')
+					M_Memcpy(process+strlen(process), msd->bottomtexture, 8);
+				if (!strlen(process))
+					break;
+				sd->text = Z_Malloc(strlen(process)+1, PU_LEVEL, NULL);
+				M_Memcpy(sd->text, process, strlen(process)+1);
+				break;
+			}
+
 			case 9: // Mace parameters
 			case 14: // Bustable block parameters
 			case 15: // Fan particle spawner parameters
@@ -3305,6 +3323,9 @@ static boolean P_LoadMapFromFile(void)
 void P_SetupLevelSky(const char *skytexname, boolean global)
 {
 	char tex[9];
+	if (!skytexname || !skytexname[0])
+		return;
+
 	strncpy(tex, skytexname, 9);
 	tex[8] = 0;
 
@@ -3426,29 +3447,6 @@ static void P_InitLevelSettings(void)
 		// Wipe follower from existence to avoid crashes
 		players[i].follower = NULL;
 	}
-
-	rainbowstartavailable = false;
-
-	if (p >= 2)
-		rainbowstartavailable = true;
-
-	if (p <= 2)
-	{
-		introtime = 0; // No intro in Record Attack / 1v1
-	}
-	else
-	{
-		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
-	}
-
-	numbulbs = 5;
-
-	if (p > 2)
-	{
-		numbulbs += (p-2);
-	}
-
-	starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
 
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
@@ -4013,7 +4011,7 @@ boolean P_LoadLevel(boolean fromnetsave)
 		I_Error("Map %s not found.\n", maplumpname);
 
 	R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette,
-		(encoremode ? W_CheckNumForName(va("%sE", maplumpname)) : LUMPERROR));
+		W_CheckNumForName(va("%s%c", maplumpname, (encoremode ? 'E' : 'T'))));
 	CON_SetupBackColormap();
 
 	// SRB2 determines the sky texture to be used depending on the map header.
@@ -4149,21 +4147,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 		lastmaploaded = gamemap; // HAS to be set after saving!!
 	}
 
-	if (!fromnetsave) // uglier hack
-	{ // to make a newly loaded level start on the second frame.
-		INT32 buf = gametic % TICQUEUE;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i])
-				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
-		}
-		P_PreTicker(2);
-		LUAh_MapLoad();
-	}
-
-	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
-	K_SpawnBattleCapsules();
-
 	if (grandprixinfo.gp == true)
 	{
 		if (grandprixinfo.initalize == true)
@@ -4182,6 +4165,20 @@ boolean P_LoadLevel(boolean fromnetsave)
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();
 	}
+
+	if (!fromnetsave) // uglier hack
+	{ // to make a newly loaded level start on the second frame.
+		INT32 buf = gametic % TICQUEUE;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i])
+				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
+		}
+		P_PreTicker(2);
+		LUAh_MapLoad();
+	}
+
+	K_TimerReset();
 
 	// No render mode, stop here.
 	if (rendermode == render_none)

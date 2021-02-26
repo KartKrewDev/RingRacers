@@ -1370,6 +1370,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 
 		case MT_PLAYER:
+			if (damagetype != DMG_SPECTATOR)
 			{
 				angle_t flingAngle;
 				mobj_t *kart;
@@ -1750,8 +1751,15 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			// Respawn kill types
 			K_DoIngameRespawn(player);
 			return false;
+		case DMG_SPECTATOR:
+			// disappearifies, but still gotta put items back in play
+			break;
 		default:
 			// Everything else REALLY kills
+			if (leveltime < starttime)
+			{
+				K_DoFault(player);
+			}
 			break;
 	}
 
@@ -1793,35 +1801,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 
 	return true;
-}
-
-void P_RemoveShield(player_t *player)
-{
-	if (player->powers[pw_shield] & SH_FORCE)
-	{ // Multi-hit
-		if (player->powers[pw_shield] & SH_FORCEHP)
-			player->powers[pw_shield]--;
-		else
-			player->powers[pw_shield] &= SH_STACK;
-	}
-	else if (player->powers[pw_shield] & SH_NOSTACK)
-	{ // First layer shields
-		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON) // Give them what's coming to them!
-		{
-			player->pflags |= PF_JUMPDOWN;
-		}
-		else
-			player->powers[pw_shield] &= SH_STACK;
-	}
-	else
-	{ // Second layer shields
-		if (((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER) && !player->powers[pw_super])
-		{
-			player->mo->color = player->skincolor;
-			G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
-		}
-		player->powers[pw_shield] = SH_NONE;
-	}
 }
 
 /** Damages an object, which may or may not be a player.
@@ -2138,7 +2117,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 static void P_FlingBurst
 (		player_t *player,
 		angle_t fa,
-		fixed_t z,
 		mobjtype_t objType,
 		tic_t objFuse,
 		fixed_t objScale,
@@ -2149,18 +2127,17 @@ static void P_FlingBurst
 	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
 	INT32 mx = (i + 1) >> 1;
 
-	z = player->mo->z;
-	if (player->mo->eflags & MFE_VERTICALFLIP)
-		z += player->mo->height - mobjinfo[objType].height;
-
-	mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
+	mo = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, objType);
 
 	mo->threshold = 10; // not useful for spikes
 	mo->fuse = objFuse;
 	P_SetTarget(&mo->target, player->mo);
 
-	mo->destscale = objScale;
-	P_SetScale(mo, objScale);
+	if (objScale != FRACUNIT)
+	{
+		P_SetScale(mo, FixedMul(objScale, mo->scale));
+		mo->destscale = mo->scale;
+	}
 
 	/*
 	0: 0
@@ -2197,7 +2174,6 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	INT32 num_fling_rings;
 	INT32 i;
 	angle_t fa;
-	fixed_t z;
 
 	// Rings shouldn't be in Battle!
 	if (gametyperules & GTR_SPHERES)
@@ -2211,32 +2187,25 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		return;
 
-	// 20 is the ring cap in kart
+	// 20 is the maximum number of rings that can be taken from you at once - half the span of your counter
 	if (num_rings > 20)
 		num_rings = 20;
 	else if (num_rings <= 0)
 		return;
 
-	num_fling_rings = min(num_rings, player->rings);
-
-	P_GivePlayerRings(player, -num_rings);
+	num_rings = -P_GivePlayerRings(player, -num_rings);
+	num_fling_rings = num_rings+min(0, player->rings);
 
 	// determine first angle
 	fa = player->mo->angle + ((P_RandomByte() & 1) ? -ANGLE_90 : ANGLE_90);
 
-	z = player->mo->z;
-	if (player->mo->eflags & MFE_VERTICALFLIP)
-		z += player->mo->height - mobjinfo[MT_RING].height;
-
 	for (i = 0; i < num_fling_rings; i++)
 	{
-		P_FlingBurst(player, fa, z,
-				MT_FLINGRING, 60*TICRATE, player->mo->scale, i);
+		P_FlingBurst(player, fa, MT_FLINGRING, 60*TICRATE, FRACUNIT, i);
 	}
 
 	while (i < num_rings)
 	{
-		P_FlingBurst(player, fa, z,
-				MT_DEBTSPIKE, 0, 3 * player->mo->scale / 2, i++);
+		P_FlingBurst(player, fa, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, i++);
 	}
 }

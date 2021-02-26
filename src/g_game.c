@@ -246,11 +246,11 @@ INT32 gameovertics = 15*TICRATE;
 UINT8 ammoremovaltics = 2*TICRATE;
 
 // SRB2kart
-tic_t introtime = 0;
-tic_t starttime = 0;
+tic_t introtime = 3;
+tic_t starttime = 3;
 
 const tic_t bulbtime = TICRATE/2;
-UINT8 numbulbs = 0;
+UINT8 numbulbs = 1;
 
 tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
 tic_t battleexittime = 8*TICRATE;
@@ -342,10 +342,11 @@ INT16 prevmap, nextmap;
 
 static UINT8 *savebuffer;
 
-void SendWeaponPref(void);
-void SendWeaponPref2(void);
-void SendWeaponPref3(void);
-void SendWeaponPref4(void);
+static void kickstartaccel_OnChange(void);
+static void kickstartaccel2_OnChange(void);
+static void kickstartaccel3_OnChange(void);
+static void kickstartaccel4_OnChange(void);
+void SendWeaponPref(UINT8 n);
 
 static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 {1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},
@@ -404,6 +405,13 @@ consvar_t cv_growmusicfade = CVAR_INIT ("growmusicfade", "500", CV_SAVE, CV_Unsi
 consvar_t cv_resetspecialmusic = CVAR_INIT ("resetspecialmusic", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 consvar_t cv_resume = CVAR_INIT ("resume", "Yes", CV_SAVE, CV_YesNo, NULL);
+
+consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel_OnChange),
+	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel2_OnChange),
+	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel3_OnChange),
+	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel4_OnChange)
+};
 
 consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("joyaxis_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
@@ -1003,7 +1011,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
 		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
-		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
+		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = MAXPLMOVE; // 50
@@ -1120,6 +1128,16 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
 	cmd->flags = 0;
 
+	if (chat_on || CON_Ready())
+	{
+		cmd->flags |= TICCMD_TYPING;
+
+		if (hu_keystrokes)
+		{
+			cmd->flags |= TICCMD_KEYSTROKE;
+		}
+	}
+
 	/* 	Lua: Allow this hook to overwrite ticcmd.
 		We check if we're actually in a level because for some reason this Hook would run in menus and on the titlescreen otherwise.
 		Be aware that within this hook, nothing but this player's cmd can be edited (otherwise we'd run in some pretty bad synching problems since this is clientsided, or something)
@@ -1172,6 +1190,26 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 		dest[i].flags = src[i].flags;
 	}
 	return dest;
+}
+
+static void kickstartaccel_OnChange(void)
+{
+	SendWeaponPref(0);
+}
+
+static void kickstartaccel2_OnChange(void)
+{
+	SendWeaponPref(1);
+}
+
+static void kickstartaccel3_OnChange(void)
+{
+	SendWeaponPref(2);
+}
+
+static void kickstartaccel4_OnChange(void)
+{
+	SendWeaponPref(3);
 }
 
 //
@@ -1357,7 +1395,10 @@ boolean G_Responder(event_t *ev)
 	if (gamestate == GS_LEVEL)
 	{
 		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
 			return true; // chat ate the event
+		}
 		if (AM_Responder(ev))
 			return true; // automap ate it
 		// map the event (key/mouse/joy) to a gamecontrol
@@ -1374,7 +1415,10 @@ boolean G_Responder(event_t *ev)
 	else if (gamestate == GS_CUTSCENE)
 	{
 		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
 			return true; // chat ate the event
+		}
 
 		if (F_CutsceneResponder(ev))
 		{
@@ -1385,7 +1429,10 @@ boolean G_Responder(event_t *ev)
 	else if (gamestate == GS_CREDITS || gamestate == GS_ENDING) // todo: keep ending here?
 	{
 		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
 			return true; // chat ate the event
+		}
 
 		if (F_CreditResponder(ev))
 		{
@@ -1408,7 +1455,10 @@ boolean G_Responder(event_t *ev)
 	}
 	else if (gamestate == GS_INTERMISSION || gamestate == GS_VOTING || gamestate == GS_EVALUATION)
 		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
 			return true; // chat ate the event
+		}
 
 	// allow spy mode changes even during the demo
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
@@ -2084,6 +2134,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 wanted;
 	boolean songcredit = false;
 	boolean eliminated;
+	UINT16 nocontrol;
+	INT32 khudfault;
+	INT32 kickstartaccel;
 
 	score = players[player].score;
 	marescore = players[player].marescore;
@@ -2099,7 +2152,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER|PF_FAULT));
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER|PF_FAULT|PF_KICKSTARTACCEL));
 	playerangleturn = players[player].angleturn;
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
@@ -2153,6 +2206,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		spheres = 0;
 		eliminated = false;
 		wanted = 0;
+		kickstartaccel = 0;
 	}
 	else
 	{
@@ -2181,7 +2235,16 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		spheres = players[player].spheres;
 		eliminated = players[player].eliminated;
 		wanted = players[player].kartstuff[k_wanted];
+		kickstartaccel = players[player].kickstartaccel;
 	}
+
+	if (!betweenmaps)
+	{
+		khudfault = players[player].karthud[khud_fault];
+		nocontrol = players[player].powers[pw_nocontrol];
+	}
+	else
+		khudfault = nocontrol = 0;
 
 	// Obliterate follower from existence
 	P_SetTarget(&players[player].follower, NULL);
@@ -2244,6 +2307,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
 	p->kartstuff[k_lastdraft] = -1;
+	p->karthud[khud_fault] = khudfault;
+	p->powers[pw_nocontrol] = nocontrol;
+	p->kickstartaccel = kickstartaccel;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
@@ -2258,9 +2324,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 
 	// Don't do anything immediately
-	p->pflags |= PF_SPINDOWN;
+	p->pflags |= PF_BRAKEDOWN;
 	p->pflags |= PF_ATTACKDOWN;
-	p->pflags |= PF_JUMPDOWN;
+	p->pflags |= PF_ACCELDOWN;
 
 	p->playerstate = PST_LIVE;
 	p->panim = PA_STILL; // standing animation
@@ -2297,6 +2363,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (betweenmaps)
 		return;
 
+	if (leveltime < starttime)
+		return;
+
 	if (p-players == consoleplayer)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
@@ -2319,11 +2388,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (songcredit)
 		S_ShowMusicCredit();
-
-	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
-	{
-		K_DoIngameRespawn(p);
-	}
 }
 
 //
@@ -2385,10 +2449,17 @@ void G_SpawnPlayer(INT32 playernum)
 
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 {
+#if 0
+	if (leveltime <= introtime && !players[playernum].spectator)
+		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
+	else
+		P_MovePlayerToStarpost(playernum);
+#else
 	if (leveltime > starttime)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
+#endif
 }
 
 mapthing_t *G_FindTeamStart(INT32 playernum)
@@ -4407,7 +4478,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		memset(&players[i].respawn, 0, sizeof (players[i].respawn));
 
 		// The latter two should clear by themselves, but just in case
-		players[i].pflags &= ~(PF_GAMETYPEOVER|PF_FULLSTASIS|PF_FAULT);
+		players[i].pflags &= ~(PF_GAMETYPEOVER|PF_STASIS|PF_FAULT);
 
 		// Clear cheatcodes too, just in case.
 		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);

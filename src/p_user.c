@@ -206,7 +206,7 @@ void P_CalcHeight(player_t *player)
 
 	player->bob = FixedMul(cv_movebob.value, bobmul);
 
-	if (!P_IsObjectOnGround(mo))
+	if (!P_IsObjectOnGround(mo) || player->spectator)
 	{
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
@@ -461,7 +461,7 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->kartstuff[k_spinouttimer] || player->tumbleBounces > 0)
+	if (player->kartstuff[k_spinouttimer] || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT))
 		return true;
 
 	return false;
@@ -487,23 +487,29 @@ void P_ResetPlayer(player_t *player)
 //
 // Gives rings to the player, and does any special things required.
 // Call this function when you want to increment the player's health.
+// Returns the number of rings successfully given (or taken).
 //
 
-void P_GivePlayerRings(player_t *player, INT32 num_rings)
+INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 {
+	INT32 test;
+
 	if (!player->mo)
-		return;
+		return 0;
 
 	if ((gametyperules & GTR_BUMPERS)) // No rings in Battle Mode
-		return;
+		return 0;
+
+	test = player->rings + num_rings;
+	if (test > 20) // Caps at 20 rings, sorry!
+		num_rings -= (test-20);
+	else if (test < -20) // Chaotix ring debt!
+		num_rings -= (test+20);
 
 	player->rings += num_rings;
-	//player->totalring += num_rings; // Used for GP lives later
+	//player->totalring += num_rings; // Used for GP lives later -- maybe you might want to move this earlier to discourage ring debt...
 
-	if (player->rings > 20)
-		player->rings = 20; // Caps at 20 rings, sorry!
-	else if (player->rings < -20)
-		player->rings = -20; // Chaotix ring debt!
+	return num_rings;
 }
 
 //
@@ -2117,11 +2123,7 @@ void P_MovePlayer(player_t *player)
 
 	// Control relinquishing stuff!
 	if (player->powers[pw_nocontrol])
-	{
 		player->pflags |= PF_STASIS;
-		if (!(player->powers[pw_nocontrol] & (1<<15)))
-			player->pflags |= PF_JUMPSTASIS;
-	}
 
 	// note: don't unset stasis here
 
@@ -2177,9 +2179,13 @@ void P_MovePlayer(player_t *player)
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
 	}
-	else if (player->kartstuff[k_spinouttimer] > 0)
+	else if ((player->pflags & PF_FAULT) || (player->kartstuff[k_spinouttimer] > 0))
 	{
-		UINT8 speed = max(1, min(8, player->kartstuff[k_spinouttimer]/8));
+		UINT16 speed = ((player->pflags & PF_FAULT) ? player->powers[pw_nocontrol] : player->kartstuff[k_spinouttimer])/8;
+		if (speed > 8)
+			speed = 8;
+		else if (speed < 1)
+			speed = 1;
 
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2190,7 +2196,7 @@ void P_MovePlayer(player_t *player)
 
 		player->mo->rollangle = 0;
 	}
-	else if (player->pflags & PF_FAULT)
+	/*else if (player->pflags & PF_FAULT) -- v1 fault
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2200,7 +2206,7 @@ void P_MovePlayer(player_t *player)
 			player->drawangle -= ANGLE_11hh;
 
 		player->mo->rollangle = 0;
-	}
+	}*/
 	else
 	{
 		K_KartMoveAnimation(player);
@@ -2991,7 +2997,7 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	if (thiscam->chase && player->mo->health <= 0)
 		return;
 
-	thiscam->chase = true;
+	thiscam->chase = !player->spectator;
 	x = player->mo->x - P_ReturnThrustX(player->mo, thiscam->angle, player->mo->radius);
 	y = player->mo->y - P_ReturnThrustY(player->mo, thiscam->angle, player->mo->radius);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -3074,6 +3080,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		// Do not move the camera while in hitlag!
 		// The camera zooming out after you got hit makes it hard to focus on the vibration.
+		// of course, if you're in chase, don't forget the postimage - otherwise encore will flip back
+		if (thiscam->chase)
+			P_CalcChasePostImg(player, thiscam);
+
 		return true;
 	}
 
@@ -4314,6 +4324,19 @@ void P_PlayerThink(player_t *player)
 		player->kartstuff[k_throwdir] = 0;
 	}
 
+	// Accessibility - kickstart your acceleration
+	if (!(player->pflags & PF_KICKSTARTACCEL))
+		player->kickstartaccel = 0;
+	else if (cmd->buttons & BT_ACCELERATE)
+	{
+		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+			player->kickstartaccel = 0;
+		else if (player->kickstartaccel < ACCEL_KICKSTART)
+			player->kickstartaccel++;
+	}
+	else if (player->kickstartaccel < ACCEL_KICKSTART)
+		player->kickstartaccel = 0;
+
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)
 		I_Error("player %s is in PST_REBORN\n", sizeu1(playeri));
@@ -4470,11 +4493,6 @@ void P_PlayerThink(player_t *player)
 			// Allows some turning
 			P_MovePlayer(player);
 		}
-		else if (player->respawn.state == RESPAWNST_MOVE)
-		{
-			angle_t angleChange = player->cmd.turning << TICCMD_REDUCE;
-			P_SetPlayerAngle(player, player->angleturn + angleChange);
-		}
 	}
 	else if (player->mo->reactiontime)
 	{
@@ -4496,10 +4514,10 @@ void P_PlayerThink(player_t *player)
 
 	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
 
-	// Unset statis flags after moving.
+	// Unset statis flag after moving.
 	// In other words, if you manually set stasis via code,
 	// it lasts for one tic.
-	player->pflags &= ~PF_FULLSTASIS;
+	player->pflags &= ~PF_STASIS;
 
 	if (player->onconveyor == 1)
 		player->onconveyor = 3;
@@ -4545,11 +4563,16 @@ void P_PlayerThink(player_t *player)
 	}
 #endif
 
-	// check for use
-	if (cmd->buttons & BT_BRAKE)
-		player->pflags |= PF_SPINDOWN;
+	// check for buttons
+	if (cmd->buttons & BT_ACCELERATE)
+		player->pflags |= PF_ACCELDOWN;
 	else
-		player->pflags &= ~PF_SPINDOWN;
+		player->pflags &= ~PF_ACCELDOWN;
+
+	if (cmd->buttons & BT_BRAKE)
+		player->pflags |= PF_BRAKEDOWN;
+	else
+		player->pflags &= ~PF_BRAKEDOWN;
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings
@@ -4561,7 +4584,7 @@ void P_PlayerThink(player_t *player)
 		player->powers[pw_flashing]--;
 	}
 
-	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)
+	if (player->powers[pw_nocontrol] && player->powers[pw_nocontrol] < UINT16_MAX)
 	{
 		if (!(--player->powers[pw_nocontrol]))
 			player->pflags &= ~PF_FAULT;
@@ -4586,6 +4609,64 @@ void P_PlayerThink(player_t *player)
 			player->mo->drawflags |= MFD_DONTDRAW;
 		else
 			player->mo->drawflags &= ~MFD_DONTDRAW;
+	}
+
+	if (cmd->flags & TICCMD_TYPING)
+	{
+		/*
+		typing_duration is slow to start and slow to stop.
+
+		typing_timer counts down a grace period before the player is not
+		actually considered typing anymore.
+		*/
+		if (cmd->flags & TICCMD_KEYSTROKE)
+		{
+			/* speed up if we are typing quickly! */
+			if (player->typing_duration > 0 && player->typing_timer > 12)
+			{
+				if (player->typing_duration < 16)
+				{
+					player->typing_duration = 24;
+				}
+				else
+				{
+					/* slows down a tiny bit as it approaches the next dot */
+					const UINT8 step = (((player->typing_duration + 15) & ~15) -
+							player->typing_duration) / 2;
+					player->typing_duration += max(step, 4);
+				}
+			}
+
+			player->typing_timer = 15;
+		}
+		else if (player->typing_timer > 0)
+		{
+			player->typing_timer--;
+		}
+
+		/* if we are in the grace period (including currently typing) */
+		if (player->typing_timer + player->typing_duration > 0)
+		{
+			/* always end the cycle on two dots */
+			if (player->typing_timer == 0 &&
+					(player->typing_duration < 16 || player->typing_duration == 40))
+			{
+				player->typing_duration = 0;
+			}
+			else if (player->typing_duration < 63)
+			{
+				player->typing_duration++;
+			}
+			else
+			{
+				player->typing_duration = 16;
+			}
+		}
+	}
+	else
+	{
+		player->typing_timer = 0;
+		player->typing_duration = 0;
 	}
 
 	player->pflags &= ~PF_SLIDING;

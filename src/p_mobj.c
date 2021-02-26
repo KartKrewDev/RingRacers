@@ -2296,11 +2296,6 @@ boolean P_ZMovement(mobj_t *mo)
 		{
 			mom.x = mom.y = 0;
 			mom.z = -mom.z/2;
-
-			if (mo->fuse == 0)
-			{
-				mo->fuse = 90;
-			}
 		}
 		else if (mo->flags & MF_MISSILE)
 		{
@@ -6267,6 +6262,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else
 			A_AttractChase(mobj);
 		break;
+	case MT_DEBTSPIKE:
+		if (mobj->fuse == 0 && P_GetMobjFeet(mobj) == P_GetMobjGround(mobj))
+		{
+			mobj->fuse = 90;
+		}
+		break;
 	case MT_EMBLEM:
 		if (mobj->flags2 & MF2_NIGHTSPULL)
 			P_NightsItemChase(mobj);
@@ -6838,7 +6839,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if ((!mobj->target || !mobj->target->health || !mobj->target->player || !P_IsObjectOnGround(mobj->target))
 			|| !mobj->target->player->kartstuff[k_drift] || !mobj->target->player->kartstuff[k_brakedrift]
 			|| !((mobj->target->player->cmd.buttons & BT_BRAKE)
-			|| !(mobj->target->player->cmd.buttons & BT_ACCELERATE))) // Letting go of accel functions about the same as brake-drifting
+			|| (K_GetKartButtons(mobj->target->player) & BT_ACCELERATE))) // Letting go of accel functions about the same as brake-drifting
 		{
 			P_RemoveMobj(mobj);
 			return false;
@@ -10591,7 +10592,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	{
 		fixed_t offset = mthing->z << FRACBITS;
 
-		if (p->respawn.state != RESPAWNST_NONE)
+		if (p->respawn.state != RESPAWNST_NONE || p->spectator)
 			offset += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP));
 
 		// Flagging a player's ambush will make them start on the ceiling
@@ -10636,6 +10637,12 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 		mobj->eflags |= MFE_ONGROUND;
 
 	mobj->angle = angle;
+
+	// FAULT
+	if (leveltime > introtime && !p->spectator)
+	{
+		K_DoIngameRespawn(p);
+	}
 
 	P_AfterPlayerSpawn(playernum);
 }
@@ -10690,6 +10697,8 @@ void P_MovePlayerToStarpost(INT32 playernum)
 			);
 		}
 	}
+	else
+		p->drawangle = mobj->angle; // default to the camera angle
 
 	P_AfterPlayerSpawn(playernum);
 }
@@ -11325,6 +11334,18 @@ static boolean P_SetupBooster(mapthing_t* mthing, mobj_t* mobj, boolean strong)
 	return true;
 }
 
+static void P_SnapToFinishLine(mobj_t *mobj)
+{
+	line_t *finishline = P_FindNearestLine(mobj->x, mobj->y,
+			mobj->subsector->sector, 2001); // case 2001: Finish Line
+	if (finishline != NULL)
+	{
+		P_UnsetThingPosition(mobj);
+		P_ClosestPointOnLine(mobj->x, mobj->y, finishline, (vertex_t *)&mobj->x);
+		P_SetThingPosition(mobj);
+	}
+}
+
 static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean *doangle)
 {
 	boolean override = LUAh_MapThingSpawn(mobj, mthing);
@@ -11708,7 +11729,10 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		}
 		if (mthing->args[2] == 1)
 		{
-			mobj->extravalue2 = 1; // args[1] of 1 means the waypoint is at the finish line
+			mobj->extravalue2 = 1; // args[2] of 1 means the waypoint is at the finish line
+			mobj->reactiontime = 0; // Also don't respawn at finish lines
+
+			P_SnapToFinishLine(mobj);
 		}
 		else
 		{
@@ -12749,6 +12773,15 @@ void P_FlashPal(player_t *pl, UINT16 type, UINT16 duration)
 }
 
 //
+// P_ScaleFromMap
+// Scales a number relative to the mapobjectscale.
+//
+fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale)
+{
+	return FixedMul(n, FixedDiv(scale, mapobjectscale));
+}
+
+//
 // P_SpawnMobjFromMobj
 // Spawns an object with offsets relative to the position of another object.
 // Scale, gravity flip, etc. is taken into account automatically.
@@ -12765,16 +12798,40 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 	if (!newmobj)
 		return NULL;
 
+	newmobj->destscale = P_ScaleFromMap(mobj->destscale, newmobj->destscale);
+	P_SetScale(newmobj, P_ScaleFromMap(mobj->scale, newmobj->scale));
+
 	if (mobj->eflags & MFE_VERTICALFLIP)
 	{
-		fixed_t elementheight = FixedMul(newmobj->info->height, mobj->scale);
-
 		newmobj->eflags |= MFE_VERTICALFLIP;
 		newmobj->flags2 |= MF2_OBJECTFLIP;
-		newmobj->z = mobj->z + mobj->height - zofs - elementheight;
+		newmobj->z = mobj->z + mobj->height - zofs - newmobj->height;
 	}
 
-	newmobj->destscale = mobj->destscale;
-	P_SetScale(newmobj, mobj->scale);
 	return newmobj;
+}
+
+//
+// P_GetMobjHead & P_GetMobjFeet
+// Returns the top and bottom of an object, follows appearance, not physics,
+// in reverse gravity.
+//
+
+fixed_t P_GetMobjHead(const mobj_t *mobj)
+{
+	return P_IsObjectFlipped(mobj) ? mobj->z : mobj->z + mobj->height;
+}
+
+fixed_t P_GetMobjFeet(const mobj_t *mobj)
+{
+	return P_IsObjectFlipped(mobj) ? mobj->z + mobj->height : mobj->z;
+}
+
+//
+// P_GetMobjGround
+// Returns the object's floor, or ceiling in reverse gravity.
+//
+fixed_t P_GetMobjGround(const mobj_t *mobj)
+{
+	return P_IsObjectFlipped(mobj) ? mobj->ceilingz : mobj->floorz;
 }

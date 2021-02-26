@@ -17,6 +17,8 @@ angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t
 
 void K_RegisterKartStuff(void);
 
+void K_TimerReset(void);
+void K_TimerInit(void);
 UINT16 K_GetPlayerDontDrawFlag(player_t *player);
 boolean K_IsPlayerLosing(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
@@ -89,6 +91,8 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower);
 fixed_t K_GetKartAccel(player_t *player);
 UINT16 K_GetKartFlashing(player_t *player);
+boolean K_KartKickstart(player_t *player);
+UINT16 K_GetKartButtons(player_t *player);
 SINT8 K_GetForwardMove(player_t *player);
 fixed_t K_3dKartMovement(player_t *player);
 boolean K_PlayerEBrake(player_t *player);

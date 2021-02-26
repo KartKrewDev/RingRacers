@@ -705,6 +705,13 @@ void P_Ticker(boolean run)
 	if (demo.playback)
 		G_StoreRewindInfo();
 
+	if (leveltime == 2)
+	{
+		// The values needed to set this properly are not correct at map load,
+		// so we have to do it at the second tick instead...
+		K_TimerInit();
+	}
+
 //	Z_CheckMemCleanup();
 }
 

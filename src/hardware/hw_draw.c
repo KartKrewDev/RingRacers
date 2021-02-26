@@ -697,6 +697,27 @@ void HWR_DrawConsoleBack(UINT32 color, INT32 height)
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
 }
 
+void HWR_EncoreInvertScreen(void)
+{
+	FOutVector v[4];
+	FSurfaceInfo Surf;
+
+	v[0].x = v[3].x = -1.0f;
+	v[2].x = v[1].x =  1.0f;
+	v[0].y = v[1].y = -1.0f;
+	v[2].y = v[3].y =  1.0f;
+	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
+
+	v[0].s = v[3].s = 0.0f;
+	v[2].s = v[1].s = 1.0f;
+	v[0].t = v[1].t = 1.0f;
+	v[2].t = v[3].t = 0.0f;
+
+	Surf.PolyColor.rgba = 0xFFFFFFFF;
+
+	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Invert|PF_NoDepthTest);
+}
+
 // Very similar to HWR_DrawConsoleBack, except we draw from the middle(-ish) of the screen to the bottom.
 void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight)
 {

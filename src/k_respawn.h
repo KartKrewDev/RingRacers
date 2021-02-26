@@ -39,6 +39,21 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip);
 
 
 /*--------------------------------------------------
+	void K_DoFault(player_t *player);
+
+		Faults the specified player.
+
+	Input Arguments:-
+		player - Player to preform this for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_DoFault(player_t *player);
+
+
+/*--------------------------------------------------
 	void K_DoIngameRespawn(player_t *player);
 
 		Starts the respawning animation for the specified player,

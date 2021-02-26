@@ -277,6 +277,11 @@ static void P_NetArchivePlayers(void)
 
 		WRITESINT8(save_p, players[i].glanceDir);
 
+		WRITEUINT8(save_p, players[i].typing_timer);
+		WRITEUINT8(save_p, players[i].typing_duration);
+
+		WRITEUINT8(save_p, players[i].kickstartaccel);
+
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -482,6 +487,11 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tumbleSound = (boolean)READUINT8(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
+
+		players[i].typing_timer = READUINT8(save_p);
+		players[i].typing_duration = READUINT8(save_p);
+
+		players[i].kickstartaccel = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -4180,6 +4190,7 @@ static void P_NetArchiveMisc(void)
 
 	WRITEUINT32(save_p, introtime);
 	WRITEUINT32(save_p, starttime);
+	WRITEUINT8(save_p, numbulbs);
 
 	// Is it paused?
 	if (paused)
@@ -4314,6 +4325,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	introtime = READUINT32(save_p);
 	starttime = READUINT32(save_p);
+	numbulbs = READUINT8(save_p);
 
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)

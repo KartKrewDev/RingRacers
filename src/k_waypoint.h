@@ -23,6 +23,7 @@
 typedef struct waypoint_s
 {
 	mobj_t             *mobj;
+	boolean             onaline;
 	struct waypoint_s **nextwaypoints;
 	struct waypoint_s **prevwaypoints;
 	UINT32             *nextwaypointdistances;

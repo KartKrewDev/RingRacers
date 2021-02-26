@@ -133,6 +133,9 @@ static patch_t *kp_check[6];
 static patch_t *kp_rival[2];
 static patch_t *kp_localtag[4][2];
 
+static patch_t *kp_talk;
+static patch_t *kp_typdot;
+
 static patch_t *kp_eggnum[4];
 
 static patch_t *kp_flameshieldmeter[104][2];
@@ -503,6 +506,10 @@ void K_LoadKartHUDGraphics(void)
 		}
 	}
 
+	// Typing indicator
+	kp_talk = W_CachePatchName("K_TALK", PU_HUDGFX);
+	kp_typdot = W_CachePatchName("K_TYPDOT", PU_HUDGFX);
+
 	// Eggman warning numbers
 	sprintf(buffer, "K_EGGNx");
 	for (i = 0; i < 4; i++)
@@ -816,7 +823,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 		return;
 	}
 
-	if (cam->chase == true)
+	if (cam->chase == true && !player->spectator)
 	{
 		// Use the camera's properties.
 		viewpointX = cam->x;
@@ -2193,6 +2200,63 @@ static void K_drawKartLapsAndRings(void)
 
 #undef RINGANIM_FLIPFRAME
 
+static void K_drawKartAccessibilityIcons(INT32 fx)
+{
+	INT32 fy = LAPS_Y-25;
+	UINT8 col = 0, i, wid, fil;
+	INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+	//INT32 step = 1; -- if there's ever more than one accessibility icon
+
+	fx += LAPS_X;
+
+	if (r_splitscreen < 2) // adjust to speedometer height
+	{
+		if (gametype == GT_BATTLE)
+			fy -= 4;
+	}
+	else
+	{
+		fy += 4;
+		if (!(stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]))	// If we are not P1 or P3...
+		{
+			splitflags ^= (V_SNAPTOLEFT|V_SNAPTORIGHT);
+			fx = (BASEVIDWIDTH/2) - (fx + 10);
+			//step = -step;
+		}
+	}
+
+	if (stplyr->pflags & PF_KICKSTARTACCEL) // just KICKSTARTACCEL right now, maybe more later
+	{
+		fil = 7-(stplyr->kickstartaccel*7)/ACCEL_KICKSTART;
+		i = 7;
+
+		V_DrawFill(fx+4, fy-1, 2, 1, 31|V_SLIDEIN|splitflags);
+		V_DrawFill(fx, (fy-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
+
+		while (i--)
+		{
+			wid = (i/2)+1;
+			V_DrawFill(fx+4-wid, fy+i, 2+(wid*2), 1, 31|V_SLIDEIN|splitflags);
+			if (fil)
+			{
+				if (i < fil)
+					col = 23;
+				else if (i == fil)
+					col = 3;
+				else
+					col = 5 + (i-fil)*2;
+			}
+			else if ((leveltime % 7) == i)
+				col = 0;
+			else
+				col = 3;
+			V_DrawFill(fx+5-wid, fy+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
+		}
+
+		//fx += step*12;
+	}
+}
+
 static void K_drawKartSpeedometer(void)
 {
 	static fixed_t convSpeed;
@@ -2242,6 +2306,8 @@ static void K_drawKartSpeedometer(void)
 	V_DrawScaledPatch(LAPS_X+13, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
 	V_DrawScaledPatch(LAPS_X+19, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
 	V_DrawScaledPatch(LAPS_X+29, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
+
+	K_drawKartAccessibilityIcons(56);
 }
 
 static void K_drawBlueSphereMeter(void)
@@ -2598,6 +2664,27 @@ static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
 	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_rival[blink], NULL);
 }
 
+static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p)
+{
+	if (p->typing_duration > duration)
+	{
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_typdot, NULL);
+	}
+}
+
+static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
+{
+	if (p->cmd.flags & TICCMD_TYPING)
+	{
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_talk, NULL);
+
+		/* spacing closer with the last two looks a better most of the time */
+		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p);
+		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p);
+		K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p);
+	}
+}
+
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 cnum)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
@@ -2840,6 +2927,7 @@ static void K_drawKartNameTags(void)
 					if (K_ShowPlayerNametag(ntplayer) == true)
 					{
 						K_DrawNameTagForPlayer(result.x, result.y, ntplayer, cnum);
+						K_DrawTypingNotifier(result.x, result.y, ntplayer);
 					}
 				}
 			}
@@ -3632,7 +3720,27 @@ static void K_drawKartFirstPerson(void)
 		const angle_t ang = R_PointToAngle2(0, 0, stplyr->rmomx, stplyr->rmomy) - stplyr->drawangle;
 		// yes, the following is correct. no, you do not need to swap the x and y.
 		fixed_t xoffs = -P_ReturnThrustY(stplyr->mo, ang, (BASEVIDWIDTH<<(FRACBITS-2))/2);
-		fixed_t yoffs = -(P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT) - 4*FRACUNIT);
+		fixed_t yoffs = -P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT);
+
+		// hitlag vibrating
+		if (stplyr->mo->hitlag > 0)
+		{
+			fixed_t mul = stplyr->mo->hitlag * (FRACUNIT / 10);
+			if (r_splitscreen && mul > FRACUNIT)
+				mul = FRACUNIT;
+
+			if (leveltime & 1)
+			{
+				mul = -mul;
+			}
+
+			xoffs = FixedMul(xoffs, mul);
+			yoffs = FixedMul(yoffs, mul);
+
+		}
+
+		if ((yoffs += 4*FRACUNIT) < 0)
+			yoffs = 0;
 
 		if (r_splitscreen)
 			xoffs = FixedMul(xoffs, scale);
@@ -4125,13 +4233,6 @@ void K_drawKartHUD(void)
 
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
-		// Draw the speedometer
-		if (cv_kartspeedometer.value && !r_splitscreen)
-		{
-			if (LUA_HudEnabled(hud_speedometer))
-				K_drawKartSpeedometer();
-		}
-
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
 			INT32 x = BASEVIDWIDTH - 32, y = 128, offs;
@@ -4180,6 +4281,16 @@ void K_drawKartHUD(void)
 			// Draw the hits left!
 			if (LUA_HudEnabled(hud_gametypeinfo))
 				K_drawKartBumpersOrKarma();
+		}
+
+		// Draw the speedometer and/or accessibility icons
+		if (cv_kartspeedometer.value && !r_splitscreen && (LUA_HudEnabled(hud_speedometer)))
+		{
+			K_drawKartSpeedometer();
+		}
+		else
+		{
+			K_drawKartAccessibilityIcons((r_splitscreen > 1) ? 0 : 8);
 		}
 
 		if (gametyperules & GTR_SPHERES)
