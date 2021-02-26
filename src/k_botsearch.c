@@ -31,12 +31,16 @@
 struct globalsmuggle
 {
 	mobj_t *botmo;
+	botprediction_t *predict;
 	fixed_t distancetocheck;
 
-	fixed_t closestlinedist;
+	INT64 gotoAvgX, gotoAvgY;
+	UINT32 gotoObjs;
 
-	INT16 curturn;
-	INT16 steer;
+	INT64 avoidAvgX, avoidAvgY;
+	UINT32 avoidObjs;
+
+	fixed_t closestlinedist;
 
 	fixed_t eggboxx, eggboxy;
 	UINT8 randomitems;
@@ -419,83 +423,7 @@ fixed_t K_BotReducePrediction(player_t *player)
 }
 
 /*--------------------------------------------------
-	static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, fixed_t fulldist, fixed_t xdist, boolean towards, INT16 amount)
-
-		Handles steering away/towards the specified object.
-
-	Input Arguments:-
-		bot - Bot's mobj.
-		thing - Mobj to steer towards/away from.
-		fulldist - Distance away from object.
-		xdist - Horizontal distance away from object.
-		towards - If true, steer towards the object. Otherwise, steer away.
-		amount - How hard to turn.
-
-	Return:-
-		None
---------------------------------------------------*/
-static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, fixed_t fulldist, fixed_t xdist, boolean towards, INT16 amount)
-{
-	angle_t destangle = R_PointToAngle2(bot->x, bot->y, thing->x, thing->y);
-	angle_t angle;
-	SINT8 flip = 1;
-
-	amount = (amount * FixedDiv(globalsmuggle.distancetocheck - fulldist, globalsmuggle.distancetocheck)) / FRACUNIT;
-
-	if (amount == 0)
-	{
-		// Shouldn't happen
-		return;
-	}
-
-	if (towards)
-	{
-		if (xdist < FixedHypot(bot->radius, thing->radius))
-		{
-			// Don't need to turn any harder!
-
-			if (abs(globalsmuggle.steer) <= amount)
-			{
-				globalsmuggle.steer = 0;
-			}
-			else
-			{
-				if (globalsmuggle.steer > 0)
-				{
-					globalsmuggle.steer -= amount;
-				}
-				else if (globalsmuggle.steer < 0)
-				{
-					globalsmuggle.steer += amount;
-				}
-			}
-
-			return;
-		}
-
-		// Still turning towards it, flip.
-		flip = -flip;
-	}
-
-	angle = (bot->angle - destangle);
-	if (angle < ANGLE_180)
-	{
-		flip = -flip;
-	}
-
-	// If going in the opposite direction of where you wanted to turn,
-	// then reduce the amount that you can turn in that direction.
-	if ((flip == 1 && globalsmuggle.curturn < 0)
-	|| (flip == -1 && globalsmuggle.curturn > 0))
-	{
-		amount /= 4;
-	}
-
-	globalsmuggle.steer += amount * flip;
-}
-
-/*--------------------------------------------------
-	static boolean K_BotSteerObjects(mobj_t *thing)
+	static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 		Blockmap search function.
 		Finds objects around the bot to steer towards/away from.
@@ -506,20 +434,18 @@ static void K_SteerFromObject(mobj_t *bot, mobj_t *thing, fixed_t fulldist, fixe
 	Return:-
 		true continues searching, false ends the search early.
 --------------------------------------------------*/
-static boolean K_BotSteerObjects(mobj_t *thing)
+static boolean K_FindObjectsForNudging(mobj_t *thing)
 {
 	INT16 anglediff;
-	fixed_t xdist, ydist, fulldist;
-	angle_t destangle, angle;
-	INT16 attack = ((9 - globalsmuggle.botmo->player->kartspeed) * KART_FULLTURN) / 8; // Acceleration chars are more aggressive
-	INT16 dodge = ((9 - globalsmuggle.botmo->player->kartweight) * KART_FULLTURN) / 8; // Handling chars dodge better
+	fixed_t fulldist;
+	angle_t destangle, angle, predictangle;
 
 	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
 	{
 		return false;
 	}
 
-	if (!thing->health)
+	if (thing->health <= 0)
 	{
 		return true;
 	}
@@ -529,19 +455,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 		return true;
 	}
 
-	xdist = K_DistanceOfLineFromPoint(
-		globalsmuggle.botmo->x, globalsmuggle.botmo->y,
-		globalsmuggle.botmo->x + FINECOSINE(globalsmuggle.botmo->angle >> ANGLETOFINESHIFT), globalsmuggle.botmo->y + FINESINE(globalsmuggle.botmo->angle >> ANGLETOFINESHIFT),
-		thing->x, thing->y
-	) / 2; // weight x dist more heavily than y dist
-
-	ydist = K_DistanceOfLineFromPoint(
-		globalsmuggle.botmo->x, globalsmuggle.botmo->y,
-		globalsmuggle.botmo->x + FINECOSINE((globalsmuggle.botmo->angle + ANGLE_90) >> ANGLETOFINESHIFT), globalsmuggle.botmo->y + FINESINE((globalsmuggle.botmo->angle + ANGLE_90) >> ANGLETOFINESHIFT),
-		thing->x, thing->y
-	);
-
-	fulldist = FixedHypot(xdist, ydist);
+	fulldist = R_PointToDist2(globalsmuggle.predict->x, globalsmuggle.predict->y, thing->x, thing->y);
 
 	if (fulldist > globalsmuggle.distancetocheck)
 	{
@@ -553,8 +467,9 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 		return true;
 	}
 
+	predictangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, globalsmuggle.predict->x, globalsmuggle.predict->y);
 	destangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y);
-	angle = (globalsmuggle.botmo->angle - destangle);
+	angle = (predictangle - destangle);
 
 	if (angle < ANGLE_180)
 	{
@@ -567,14 +482,24 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 	anglediff = abs(anglediff);
 
+#define AddAttackObj(thing) \
+	globalsmuggle.gotoAvgX += thing->x / mapobjectscale; \
+	globalsmuggle.gotoAvgY += thing->y / mapobjectscale; \
+	globalsmuggle.gotoObjs++;
+
+#define AddDodgeObj(thing) \
+	globalsmuggle.avoidAvgX += thing->x / mapobjectscale; \
+	globalsmuggle.avoidAvgY += thing->y / mapobjectscale; \
+	globalsmuggle.avoidObjs++;
+
 #define PlayerAttackSteer(botcond, thingcond) \
 	if ((botcond) && !(thingcond)) \
 	{ \
-		K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, true, 2 * (KART_FULLTURN + attack)); \
+		AddAttackObj(thing) \
 	} \
 	else if ((thingcond) && !(botcond)) \
 	{ \
-		K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge)); \
+		AddDodgeObj(thing) \
 	}
 
 	switch (thing->type)
@@ -593,7 +518,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 		case MT_BALLHOG:
 		case MT_SPB:
 		case MT_BUBBLESHIELDTRAP:
-			K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
+			AddDodgeObj(thing)
 			break;
 		case MT_RANDOMITEM:
 			if (anglediff >= 60)
@@ -603,7 +528,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 			if (P_CanPickupItem(globalsmuggle.botmo->player, 1))
 			{
-				K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, true, KART_FULLTURN + attack);
+				AddAttackObj(thing)
 			}
 			break;
 		case MT_EGGMANITEM:
@@ -619,11 +544,11 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 				if (stealth >= requiredstealth)
 				{
-					K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, true, 2 * (KART_FULLTURN + attack));
+					AddAttackObj(thing)
 				}
 				else
 				{
-					K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
+					AddDodgeObj(thing)
 				}
 			}
 			break;
@@ -635,7 +560,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 			if (P_CanPickupItem(globalsmuggle.botmo->player, 3))
 			{
-				K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, true, KART_FULLTURN + attack);
+				AddAttackObj(thing)
 			}
 			break;
 		case MT_RING:
@@ -650,11 +575,7 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 				&& !thing->extravalue1
 				&& (globalsmuggle.botmo->player->kartstuff[k_itemtype] != KITEM_THUNDERSHIELD))
 			{
-				K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, true,
-					(RINGTOTAL(globalsmuggle.botmo->player) < 3
-					? (4 * (KART_FULLTURN + attack))
-					: (KART_FULLTURN + attack))
-				);
+				AddAttackObj(thing)
 			}
 			break;
 		case MT_PLAYER:
@@ -716,11 +637,11 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 					if (weightdiff > mapobjectscale)
 					{
-						K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, true, KART_FULLTURN + attack);
+						AddAttackObj(thing)
 					}
 					else
 					{
-						K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, false, KART_FULLTURN + dodge);
+						AddDodgeObj(thing)
 					}
 				}
 			}
@@ -733,16 +654,16 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 
 			if (thing->extravalue1 == 0)
 			{
-				K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, false, thing->extravalue2 * (KART_FULLTURN + dodge));
+				AddDodgeObj(thing)
 			}
 			{
-				K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, true, thing->extravalue2 * (KART_FULLTURN + attack));
+				AddAttackObj(thing)
 			}
 			break;
 		default:
 			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE))
 			{
-				K_SteerFromObject(globalsmuggle.botmo, thing, fulldist, xdist, false, 2 * (KART_FULLTURN + dodge));
+				AddDodgeObj(thing)
 			}
 			break;
 	}
@@ -751,18 +672,30 @@ static boolean K_BotSteerObjects(mobj_t *thing)
 }
 
 /*--------------------------------------------------
-	INT16 K_BotFindObjects(player_t *player, INT16 turn)
+	void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-INT16 K_BotFindObjects(player_t *player, INT16 turn)
+void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 
-	globalsmuggle.steer = 0;
+	const fixed_t baseNudge = 8 * mapobjectscale;
+	fixed_t avgX = 0, avgY = 0;
+	fixed_t avgDist = 0;
+	fixed_t nudgeDist = 0;
+	angle_t nudgeDir = 0;
+
 	globalsmuggle.botmo = player->mo;
-	globalsmuggle.curturn = turn;
+	globalsmuggle.predict = predict;
+
 	globalsmuggle.distancetocheck = (player->mo->radius * 32) + (player->speed * 4);
+
+	globalsmuggle.gotoAvgX = globalsmuggle.gotoAvgY = 0;
+	globalsmuggle.gotoObjs = 0;
+
+	globalsmuggle.avoidAvgX = globalsmuggle.avoidAvgY = 0;
+	globalsmuggle.avoidObjs = 0;
 
 	xl = (unsigned)(globalsmuggle.botmo->x - globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
 	xh = (unsigned)(globalsmuggle.botmo->x + globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
@@ -775,9 +708,57 @@ INT16 K_BotFindObjects(player_t *player, INT16 turn)
 	{
 		for (by = yl; by <= yh; by++)
 		{
-			P_BlockThingsIterator(bx, by, K_BotSteerObjects);
+			P_BlockThingsIterator(bx, by, K_FindObjectsForNudging);
 		}
 	}
 
-	return globalsmuggle.steer;
+	if (globalsmuggle.avoidObjs > 0)
+	{
+		avgX = (globalsmuggle.avoidAvgX / globalsmuggle.avoidObjs) * mapobjectscale;
+		avgY = (globalsmuggle.avoidAvgY / globalsmuggle.avoidObjs) * mapobjectscale;
+
+		avgDist = R_PointToDist2(
+			globalsmuggle.avoidAvgX, globalsmuggle.avoidAvgY,
+			predict->x, predict->y
+		);
+
+		nudgeDist = ((9 - globalsmuggle.botmo->player->kartweight) + 1) * baseNudge;
+
+		nudgeDir = R_PointToAngle2(
+			globalsmuggle.avoidAvgX, globalsmuggle.avoidAvgY,
+			predict->x, predict->y
+		);
+
+		predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
+		predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
+	}
+
+	if (globalsmuggle.gotoObjs > 0)
+	{
+		avgX = (globalsmuggle.gotoAvgX / globalsmuggle.gotoObjs) * mapobjectscale;
+		avgY = (globalsmuggle.gotoAvgY / globalsmuggle.gotoObjs) * mapobjectscale;
+
+		avgDist = R_PointToDist2(
+			predict->x, predict->y,
+			globalsmuggle.gotoAvgX, globalsmuggle.gotoAvgY
+		);
+
+		nudgeDist = ((9 - globalsmuggle.botmo->player->kartspeed) + 1) * baseNudge;
+
+		if (avgDist <= nudgeDist)
+		{
+			predict->x = avgX;
+			predict->y = avgY;
+		}
+		else
+		{
+			nudgeDir = R_PointToAngle2(
+				predict->x, predict->y,
+				globalsmuggle.gotoAvgX, globalsmuggle.gotoAvgY
+			);
+
+			predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
+			predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
+		}
+	}
 }

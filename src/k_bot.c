@@ -936,6 +936,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		else
 		{
 			predict = K_CreateBotPrediction(player);
+
+			K_NudgePredictionTowardsObjects(predict, player);
+
 			destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
 
@@ -1032,11 +1035,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				// Actually, don't go too fast...
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
-			}
-			else if (dirdist <= realrad)
-			{
-				// Steer towards/away from objects!
-				turnamt += K_BotFindObjects(player, turnamt);
 			}
 		}
 	}
