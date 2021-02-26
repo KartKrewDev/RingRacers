@@ -839,21 +839,64 @@ static INT16 K_FindBotController(mobj_t *mo)
 	return -1;
 }
 
+/*--------------------------------------------------
+	static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
+
+		Draws objects to show where the viewpoint bot is trying to go.
+
+	Input Arguments:-
+		predict - The prediction to visualize.
+		player - The bot player this prediction is for.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
 static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 {
+	const angle_t sideAngle = player->mo->angle + ANGLE_90;
+
 	mobj_t *debugmobj = NULL;
+	UINT8 i = UINT8_MAX;
 
 	debugmobj = P_SpawnMobj(predict->x, predict->y, player->mo->z, MT_SPARK);
 	P_SetMobjState(debugmobj, S_THOK);
 
 	debugmobj->frame &= ~FF_TRANSMASK;
-	debugmobj->frame |= FF_TRANS20;
+	debugmobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
 
 	debugmobj->color = SKINCOLOR_ORANGE;
 	debugmobj->scale *= 2;
 
 	debugmobj->state->tics = 2;
 	debugmobj->state->nextstate = S_NULL;
+
+	for (i = 0; i < 2; i++)
+	{
+		fixed_t radiusX = predict->x, radiusY = predict->y;
+
+		if (i & 1)
+		{
+			radiusX -= FixedMul(predict->radius, FINECOSINE(sideAngle >> ANGLETOFINESHIFT));
+			radiusY -= FixedMul(predict->radius, FINESINE(sideAngle >> ANGLETOFINESHIFT));
+		}
+		else
+		{
+			radiusX += FixedMul(predict->radius, FINECOSINE(sideAngle >> ANGLETOFINESHIFT));
+			radiusY += FixedMul(predict->radius, FINESINE(sideAngle >> ANGLETOFINESHIFT));
+		}
+
+		debugmobj = P_SpawnMobj(radiusX, radiusY, player->mo->z, MT_SPARK);
+		P_SetMobjState(debugmobj, S_THOK);
+
+		debugmobj->frame &= ~FF_TRANSMASK;
+		debugmobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
+
+		debugmobj->color = SKINCOLOR_YELLOW;
+		debugmobj->scale /= 2;
+
+		debugmobj->state->tics = 2;
+		debugmobj->state->nextstate = S_NULL;
+	}
 }
 
 /*--------------------------------------------------
