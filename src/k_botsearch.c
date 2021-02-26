@@ -462,7 +462,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 		return true;
 	}
 
-	if (!P_CheckSight(globalsmuggle.botmo, thing))
+	if (P_CheckSight(globalsmuggle.botmo, thing) == false)
 	{
 		return true;
 	}
@@ -718,14 +718,14 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		avgY = (globalsmuggle.avoidAvgY / globalsmuggle.avoidObjs) * mapobjectscale;
 
 		avgDist = R_PointToDist2(
-			globalsmuggle.avoidAvgX, globalsmuggle.avoidAvgY,
+			avgX, avgY,
 			predict->x, predict->y
 		);
 
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartweight) + 1) * baseNudge;
 
 		nudgeDir = R_PointToAngle2(
-			globalsmuggle.avoidAvgX, globalsmuggle.avoidAvgY,
+			avgX, avgY,
 			predict->x, predict->y
 		);
 
@@ -740,7 +740,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 		avgDist = R_PointToDist2(
 			predict->x, predict->y,
-			globalsmuggle.gotoAvgX, globalsmuggle.gotoAvgY
+			avgX, avgY
 		);
 
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartspeed) + 1) * baseNudge;
@@ -754,7 +754,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		{
 			nudgeDir = R_PointToAngle2(
 				predict->x, predict->y,
-				globalsmuggle.gotoAvgX, globalsmuggle.gotoAvgY
+				avgX, avgY
 			);
 
 			predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
