@@ -34,11 +34,11 @@ struct globalsmuggle
 	botprediction_t *predict;
 	fixed_t distancetocheck;
 
-	INT64 gotoAvgX, gotoAvgY;
-	UINT32 gotoObjs;
+	INT64 gotoAvgX[2], gotoAvgY[2];
+	UINT32 gotoObjs[2];
 
-	INT64 avoidAvgX, avoidAvgY;
-	UINT32 avoidObjs;
+	INT64 avoidAvgX[2], avoidAvgY[2];
+	UINT32 avoidObjs[2];
 
 	fixed_t closestlinedist;
 
@@ -439,6 +439,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 	INT16 anglediff;
 	fixed_t fulldist;
 	angle_t destangle, angle, predictangle;
+	UINT8 side = 0;
 
 	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
 	{
@@ -478,6 +479,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 	else 
 	{
 		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+		side = 1;
 	}
 
 	anglediff = abs(anglediff);
@@ -491,6 +493,9 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 	globalsmuggle.avoidAvgX += thing->x / mapobjectscale; \
 	globalsmuggle.avoidAvgY += thing->y / mapobjectscale; \
 	globalsmuggle.avoidObjs++;
+	globalsmuggle.avoidAvgX[side] += thing->x / mapobjectscale; \
+	globalsmuggle.avoidAvgY[side] += thing->y / mapobjectscale; \
+	globalsmuggle.avoidObjs[side]++; \
 
 #define PlayerAttackSteer(botcond, thingcond) \
 	if ((botcond) && !(thingcond)) \
@@ -521,7 +526,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			AddDodgeObj(thing)
 			break;
 		case MT_RANDOMITEM:
-			if (anglediff >= 60)
+			if (anglediff >= 45)
 			{
 				break;
 			}
@@ -532,7 +537,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			}
 			break;
 		case MT_EGGMANITEM:
-			if (anglediff >= 60)
+			if (anglediff >= 45)
 			{
 				break;
 			}
@@ -553,7 +558,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			}
 			break;
 		case MT_FLOATINGITEM:
-			if (anglediff >= 60)
+			if (anglediff >= 45)
 			{
 				break;
 			}
@@ -565,7 +570,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			break;
 		case MT_RING:
 		case MT_FLINGRING:
-			if (anglediff >= 60)
+			if (anglediff >= 45)
 			{
 				break;
 			}
@@ -647,7 +652,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			}
 			break;
 		case MT_BOTHINT:
-			if (anglediff >= 60)
+			if (anglediff >= 45)
 			{
 				break;
 			}
@@ -687,16 +692,22 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	fixed_t nudgeDist = 0;
 	angle_t nudgeDir = 0;
 
+	SINT8 gotoSide = -1;
+	UINT8 i;
+
 	globalsmuggle.botmo = player->mo;
 	globalsmuggle.predict = predict;
 
 	globalsmuggle.distancetocheck = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 
-	globalsmuggle.gotoAvgX = globalsmuggle.gotoAvgY = 0;
-	globalsmuggle.gotoObjs = 0;
+	for (i = 0; i < 2; i++)
+	{
+		globalsmuggle.gotoAvgX[i] = globalsmuggle.gotoAvgY[i] = 0;
+		globalsmuggle.gotoObjs[i] = 0;
 
-	globalsmuggle.avoidAvgX = globalsmuggle.avoidAvgY = 0;
-	globalsmuggle.avoidObjs = 0;
+		globalsmuggle.avoidAvgX[i] = globalsmuggle.avoidAvgY[i] = 0;
+		globalsmuggle.avoidObjs[i] = 0;
+	}
 
 	xl = (unsigned)(globalsmuggle.botmo->x - globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
 	xh = (unsigned)(globalsmuggle.botmo->x + globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
@@ -713,17 +724,27 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		}
 	}
 
-	if (globalsmuggle.avoidObjs > 0)
+	// Handle dodge characters
+	if (globalsmuggle.avoidObjs[1] > 0 || globalsmuggle.avoidObjs[0] > 0)
 	{
-		avgX = (globalsmuggle.avoidAvgX / globalsmuggle.avoidObjs) * mapobjectscale;
-		avgY = (globalsmuggle.avoidAvgY / globalsmuggle.avoidObjs) * mapobjectscale;
+		if (globalsmuggle.avoidObjs[1] > globalsmuggle.avoidObjs[0])
+		{
+			gotoSide = 1;
+		}
+		else
+		{
+			gotoSide = 0;
+		}
+
+		avgX = (globalsmuggle.avoidAvgX[gotoSide] / globalsmuggle.avoidObjs[gotoSide]) * mapobjectscale;
+		avgY = (globalsmuggle.avoidAvgY[gotoSide] / globalsmuggle.avoidObjs[gotoSide]) * mapobjectscale;
 
 		avgDist = R_PointToDist2(
 			avgX, avgY,
 			predict->x, predict->y
 		);
 
-		// Light-weight characters dodge better
+		// High handling characters dodge better
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartweight) + 1) * baseNudge;
 
 		if (nudgeDist > predict->radius)
@@ -741,10 +762,33 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
 	}
 
-	if (globalsmuggle.gotoObjs > 0)
+	if (gotoSide == -1)
 	{
-		avgX = (globalsmuggle.gotoAvgX / globalsmuggle.gotoObjs) * mapobjectscale;
-		avgY = (globalsmuggle.gotoAvgY / globalsmuggle.gotoObjs) * mapobjectscale;
+		// Pick a side here if there were no objects to dodge.
+		// We don't want to pick contradictory sides, so keep the old side otherwise,
+		// even if there's more to grab on the other side.
+
+		if (globalsmuggle.gotoObjs[1] > globalsmuggle.gotoObjs[0])
+		{
+			gotoSide = 1;
+		}
+		else
+		{
+			gotoSide = 0;
+		}
+	}
+
+	// Check if our side is invalid, if so, don't do the code below.
+	if (gotoSide != -1 && globalsmuggle.gotoObjs[gotoSide] == 0)
+	{
+		// Do not use a side 
+		gotoSide = -1;
+	}
+
+	if (gotoSide != -1)
+	{
+		avgX = (globalsmuggle.gotoAvgX[gotoSide] / globalsmuggle.gotoObjs[gotoSide]) * mapobjectscale;
+		avgY = (globalsmuggle.gotoAvgY[gotoSide] / globalsmuggle.gotoObjs[gotoSide]) * mapobjectscale;
 
 		avgDist = R_PointToDist2(
 			predict->x, predict->y,
