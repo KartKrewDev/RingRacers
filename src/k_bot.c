@@ -1053,7 +1053,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			finishBeamLine->v1->x, finishBeamLine->v1->y,
 			finishBeamLine->v2->x, finishBeamLine->v2->y,
 			player->mo->x, player->mo->y
-		);
+		) - player->speed;
 
 		// Don't run the spindash code at all until we're in the right place
 		trySpindash = false;
