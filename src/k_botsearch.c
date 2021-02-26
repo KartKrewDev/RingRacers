@@ -423,6 +423,102 @@ fixed_t K_BotReducePrediction(player_t *player)
 }
 
 /*--------------------------------------------------
+	static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
+
+		Adds an object to the list that the bot wants to go towards.
+
+	Input Arguments:-
+		thing - Object to move towards.
+		side - Which side -- 0 for left, 1 for right
+		weight - How important this object is.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
+{
+	UINT8 i;
+
+	I_Assert(side <= 1);
+
+	if (weight == 0)
+	{
+		return;
+	}
+
+	for (i = 0; i < weight; i++)
+	{
+		globalsmuggle.gotoAvgX[side] += thing->x / mapobjectscale;
+		globalsmuggle.gotoAvgY[side] += thing->y / mapobjectscale;
+		globalsmuggle.gotoObjs[side]++;
+	}
+}
+
+/*--------------------------------------------------
+	static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
+
+		Adds an object to the list that the bot wants to dodge.
+
+	Input Arguments:-
+		thing - Object to move away from.
+		side - Which side -- 0 for left, 1 for right
+		weight - How important this object is.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
+{
+	UINT8 i;
+
+	I_Assert(side <= 1);
+
+	if (weight == 0)
+	{
+		return;
+	}
+
+	for (i = 0; i < weight; i++)
+	{
+		globalsmuggle.gotoAvgX[side] += thing->x / mapobjectscale;
+		globalsmuggle.gotoAvgY[side] += thing->y / mapobjectscale;
+		globalsmuggle.gotoObjs[side]++;
+	}
+}
+
+/*--------------------------------------------------
+	static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, boolean attackCond, boolean dodgeCond)
+
+		Checks two conditions to determine if the object should be
+		attacked or dodged.
+
+	Input Arguments:-
+		thing - Object to move towards/away from.
+		side - Which side -- 0 for left, 1 for right
+		weight - How important this object is.
+		attackCond - If this is true, and dodgeCond isn't, then we go towards the object.
+		dodgeCond - If this is true, and attackCond isn't, then we move away from the object.
+
+	Return:-
+		true if either condition is successful.
+--------------------------------------------------*/
+static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, boolean attackCond, boolean dodgeCond)
+{
+	if (attackCond == true && dodgeCond == false)
+	{
+		K_AddAttackObject(thing, side, weight);
+		return true;
+	}
+	else if (dodgeCond == true && attackCond == false)
+	{
+		K_AddDodgeObject(thing, side, weight);
+		return true;
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 		Blockmap search function.
@@ -484,29 +580,6 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 	anglediff = abs(anglediff);
 
-#define AddAttackObj(thing) \
-	globalsmuggle.gotoAvgX += thing->x / mapobjectscale; \
-	globalsmuggle.gotoAvgY += thing->y / mapobjectscale; \
-	globalsmuggle.gotoObjs++;
-
-#define AddDodgeObj(thing) \
-	globalsmuggle.avoidAvgX += thing->x / mapobjectscale; \
-	globalsmuggle.avoidAvgY += thing->y / mapobjectscale; \
-	globalsmuggle.avoidObjs++;
-	globalsmuggle.avoidAvgX[side] += thing->x / mapobjectscale; \
-	globalsmuggle.avoidAvgY[side] += thing->y / mapobjectscale; \
-	globalsmuggle.avoidObjs[side]++; \
-
-#define PlayerAttackSteer(botcond, thingcond) \
-	if ((botcond) && !(thingcond)) \
-	{ \
-		AddAttackObj(thing) \
-	} \
-	else if ((thingcond) && !(botcond)) \
-	{ \
-		AddDodgeObj(thing) \
-	}
-
 	switch (thing->type)
 	{
 		case MT_BANANA:
@@ -523,7 +596,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 		case MT_BALLHOG:
 		case MT_SPB:
 		case MT_BUBBLESHIELDTRAP:
-			AddDodgeObj(thing)
+			K_AddDodgeObject(thing, side, 20);
 			break;
 		case MT_RANDOMITEM:
 			if (anglediff >= 45)
@@ -533,7 +606,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 			if (P_CanPickupItem(globalsmuggle.botmo->player, 1))
 			{
-				AddAttackObj(thing)
+				K_AddAttackObject(thing, side, 10);
 			}
 			break;
 		case MT_EGGMANITEM:
@@ -549,11 +622,11 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 				if (stealth >= requiredstealth)
 				{
-					AddAttackObj(thing)
+					K_AddAttackObject(thing, side, 10);
 				}
 				else
 				{
-					AddDodgeObj(thing)
+					K_AddDodgeObject(thing, side, 10);
 				}
 			}
 			break;
@@ -565,7 +638,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 			if (P_CanPickupItem(globalsmuggle.botmo->player, 3))
 			{
-				AddAttackObj(thing)
+				K_AddAttackObject(thing, side, 20);
 			}
 			break;
 		case MT_RING:
@@ -580,7 +653,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 				&& !thing->extravalue1
 				&& (globalsmuggle.botmo->player->kartstuff[k_itemtype] != KITEM_THUNDERSHIELD))
 			{
-				AddAttackObj(thing)
+				K_AddAttackObject(thing, side, (RINGTOTAL(globalsmuggle.botmo->player) < 3) ? 5 : 1);
 			}
 			break;
 		case MT_PLAYER:
@@ -590,40 +663,61 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			{
 				// There REALLY ought to be a better way to handle this logic, right?!
 				// Squishing
-				PlayerAttackSteer(
+				if (K_PlayerAttackSteer(thing, side, 20,
 					globalsmuggle.botmo->scale > thing->scale + (mapobjectscale/8),
 					thing->scale > globalsmuggle.botmo->scale + (mapobjectscale/8)
-				)
+				))
+				{
+					break;
+				}
 				// Invincibility
-				else PlayerAttackSteer(
+				else if (K_PlayerAttackSteer(thing, side, 20,
 					globalsmuggle.botmo->player->kartstuff[k_invincibilitytimer],
 					thing->player->kartstuff[k_invincibilitytimer]
-				)
+				))
+				{
+					break;
+				}
 				// Thunder Shield
-				else PlayerAttackSteer(
+				else if (K_PlayerAttackSteer(thing, side, 20,
 					globalsmuggle.botmo->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD,
 					thing->player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD
-				)
+				))
+				{
+					break;
+				}
 				// Bubble Shield
-				else PlayerAttackSteer(
+				else if (K_PlayerAttackSteer(thing, side, 20,
 					globalsmuggle.botmo->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD,
 					thing->player->kartstuff[k_itemtype] == KITEM_BUBBLESHIELD
-				)
+				))
+				{
+					break;
+				}
 				// Flame Shield
-				else PlayerAttackSteer(
+				else if (K_PlayerAttackSteer(thing, side, 20,
 					globalsmuggle.botmo->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD,
 					thing->player->kartstuff[k_itemtype] == KITEM_FLAMESHIELD
-				)
+				))
+				{
+					break;
+				}
 				// Has held item shield
-				else PlayerAttackSteer(
+				else if (K_PlayerAttackSteer(thing, side, 20,
 					(globalsmuggle.botmo->player->kartstuff[k_itemheld] || globalsmuggle.botmo->player->kartstuff[k_eggmanheld]),
 					(thing->player->kartstuff[k_itemheld] || thing->player->kartstuff[k_eggmanheld])
-				)
+				))
+				{
+					break;
+				}
 				// Ring Sting
-				else PlayerAttackSteer(
+				else if (K_PlayerAttackSteer(thing, side, 20,
 					thing->player->rings <= 0,
 					globalsmuggle.botmo->player->rings <= 0
-				)
+				))
+				{
+					break;
+				}
 				else
 				{
 					// After ALL of that, we can do standard bumping
@@ -642,11 +736,11 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 					if (weightdiff > mapobjectscale)
 					{
-						AddAttackObj(thing)
+						K_AddAttackObject(thing, side, 20);
 					}
 					else
 					{
-						AddDodgeObj(thing)
+						K_AddDodgeObject(thing, side, 20);
 					}
 				}
 			}
@@ -659,16 +753,17 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 			if (thing->extravalue1 == 0)
 			{
-				AddDodgeObj(thing)
+				K_AddDodgeObject(thing, side, (UINT8)thing->extravalue2);
 			}
+			else
 			{
-				AddAttackObj(thing)
+				K_AddAttackObject(thing, side, (UINT8)thing->extravalue2);
 			}
 			break;
 		default:
 			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE))
 			{
-				AddDodgeObj(thing)
+				K_AddDodgeObject(thing, side, 20);
 			}
 			break;
 	}
