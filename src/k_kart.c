@@ -6939,11 +6939,11 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 	}
 }
 
-INT32 K_GetKartRingPower(player_t *player)
+INT32 K_GetKartRingPower(player_t *player, boolean boosted)
 {
 	INT32 ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) / 2;
 
-	if (K_PlayerUsesBotMovement(player))
+	if (boosted == true && K_PlayerUsesBotMovement(player))
 	{
 		// Double for Lv. 9
 		ringPower += (player->botvars.difficulty * ringPower) / MAXBOTDIFFICULTY;
