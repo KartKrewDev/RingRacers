@@ -837,6 +837,23 @@ static INT16 K_FindBotController(mobj_t *mo)
 	return -1;
 }
 
+static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
+{
+	mobj_t *debugmobj = NULL;
+
+	debugmobj = P_SpawnMobj(predict->x, predict->y, player->mo->z, MT_SPARK);
+	P_SetMobjState(debugmobj, S_THOK);
+
+	debugmobj->frame &= ~FF_TRANSMASK;
+	debugmobj->frame |= FF_TRANS20;
+
+	debugmobj->color = SKINCOLOR_ORANGE;
+	debugmobj->scale *= 2;
+
+	debugmobj->state->tics = 2;
+	debugmobj->state->nextstate = S_NULL;
+}
+
 /*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
@@ -1156,6 +1173,11 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			// You're commiting to your turn, you're allowed!
 			cmd->turning = turnamt;
 		}
+	}
+
+	if (cv_kartdebugbotpredict.value == 1 && player - players == displayplayers[0])
+	{
+		K_DrawPredictionDebug(predict, player);
 	}
 
 	// Free the prediction we made earlier
