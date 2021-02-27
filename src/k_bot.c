@@ -925,6 +925,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		gamestate != GS_LEVEL
 		|| player->mo->scale <= 1
 		|| player->playerstate == PST_DEAD
+		|| leveltime <= introtime
 		)
 	{
 		// No need to do anything else.
