@@ -1070,7 +1070,7 @@ static void IdentifyVersion(void)
 #define MUSICTEST(str) \
 	{\
 		const char *musicpath = va(pandf,srb2waddir,str);\
-		int ms = W_VerifyNMUSlumps(musicpath); \
+		int ms = W_VerifyNMUSlumps(musicpath, false); \
 		if (ms == 1) \
 			D_AddFile(startupiwads, musicpath); \
 		else if (ms == 0) \

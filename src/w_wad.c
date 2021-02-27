@@ -747,7 +747,14 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	if ((handle = W_OpenWadFile(&filename, true)) == NULL)
 		return W_InitFileError(filename, startup);
 
-	important = !W_VerifyNMUSlumps(filename);
+	important = W_VerifyNMUSlumps(filename, startup);
+
+	if (important == -1)
+	{
+		fclose(handle);
+		return INT16_MAX;
+	}
+
 
 #ifndef NOMD5
 	//
