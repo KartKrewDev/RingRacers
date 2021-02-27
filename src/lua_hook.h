@@ -60,7 +60,6 @@ enum hook {
 	hook_ShouldJingleContinue,
 	hook_GameQuit,
 	hook_PlayerCmd,
-	hook_MusicChange,
 
 	// SRB2Kart
 	hook_IntermissionThinker,
