@@ -780,10 +780,12 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 
+	fixed_t distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
+
 	fixed_t avgX = 0, avgY = 0;
 	fixed_t avgDist = 0;
 
-	const fixed_t baseNudge = 48 * mapobjectscale;
+	const fixed_t baseNudge = 128 * mapobjectscale;
 	fixed_t nudgeDist = 0;
 	angle_t nudgeDir = 0;
 
@@ -793,7 +795,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	globalsmuggle.botmo = player->mo;
 	globalsmuggle.predict = predict;
 
-	globalsmuggle.distancetocheck = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
+	globalsmuggle.distancetocheck = distToPredict;
 
 	for (i = 0; i < 2; i++)
 	{
@@ -842,9 +844,9 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		// High handling characters dodge better
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartweight) + 1) * baseNudge;
 
-		if (nudgeDist > predict->radius)
+		if (nudgeDist > distToPredict)
 		{
-			nudgeDist = predict->radius;
+			nudgeDist = distToPredict;
 		}
 
 		// Point away
@@ -855,6 +857,8 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 		predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
 		predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
+
+		distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 	}
 
 	if (gotoSide == -1)
@@ -893,9 +897,9 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		// Acceleration characters are more aggressive
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartspeed) + 1) * baseNudge;
 
-		if (nudgeDist > predict->radius)
+		if (nudgeDist > distToPredict)
 		{
-			nudgeDist = predict->radius;
+			nudgeDist = distToPredict;
 		}
 
 		if (avgDist <= nudgeDist)
@@ -913,6 +917,8 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 			predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
 			predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
+
+			//distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
 	}
 }
