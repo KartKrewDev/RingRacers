@@ -1074,6 +1074,7 @@ static void SV_SendPlayerInfo(INT32 node)
 static boolean SV_SendServerConfig(INT32 node)
 {
 	boolean waspacketsent;
+	INT32 i, j;
 
 	memset(&netbuffer->u.servercfg, 0, sizeof netbuffer->u.servercfg);
 
@@ -1093,7 +1094,6 @@ static boolean SV_SendServerConfig(INT32 node)
 	// THESE MAY NOT BE NEEDED ANYMORE?!
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		netbuffer->u.servercfg.adminplayers[i] = (SINT8)adminplayers[i];
 		for (j = 0; j < PWRLV_NUMTYPES; j++)
 			netbuffer->u.servercfg.powerlevels[i][j] = clientpowerlevels[i][j];
 
@@ -1379,8 +1379,10 @@ static void CL_ReloadReceivedSavegame(void)
 		P_ForceLocalAngle(&players[secondarydisplayplayer], (angle_t)(players[secondarydisplayplayer].angleturn << 16));
 	}
 
-	camera.subsector = R_PointInSubsector(camera.x, camera.y);
-	camera2.subsector = R_PointInSubsector(camera2.x, camera2.y);
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		camera[i].subsector = R_PointInSubsector(camera[i].x, camera[i].y);
+	}
 
 	cl_redownloadinggamestate = false;
 
@@ -2398,8 +2400,6 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		playerpernode[node]--;
 		if (playerpernode[node] <= 0)
 		{
-			// If a resynch was in progress, well, it no longer needs to be.
-			SV_InitResynchVars(node);
 			nodeingame[node] = false;
 			Net_CloseConnection(node);
 			ResetNode(node);
@@ -4163,6 +4163,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 			if (client)
 			{
+				INT32 j, k;
+
 				maketic = gametic = neededtic = (tic_t)LONG(netbuffer->u.servercfg.gametic);
 
 				G_SetGametype(netbuffer->u.servercfg.gametype);
@@ -4425,8 +4427,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 			}
 
 			// Check player consistancy during the level
-			if (realstart <= gametic && realstart + BACKUPTICS - 1 > gametic && gamestate == GS_LEVEL
-				&& consistancy[realstart%BACKUPTICS] != SHORT(netbuffer->u.clientpak.consistancy)
+			if (realstart <= gametic && realstart + TICQUEUE - 1 > gametic && gamestate == GS_LEVEL
+				&& consistancy[realstart%TICQUEUE] != SHORT(netbuffer->u.clientpak.consistancy)
 				&& !resendingsavegame[node] && savegameresendcooldown[node] <= I_GetTime()
 				&& !SV_ResendingSavegameToAnyone())
 			{
@@ -4853,9 +4855,9 @@ static INT16 Consistancy(void)
 		{
 			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 				continue;
-	
+
 			mo = (mobj_t *)th;
-	
+
 			if (mo->flags & (MF_SPECIAL | MF_SOLID | MF_PUSHABLE | MF_BOSS | MF_MISSILE | MF_SPRING | MF_MONITOR | MF_FIRE | MF_ENEMY | MF_PAIN | MF_STICKY))
 			{
 				ret -= mo->type;
@@ -5672,8 +5674,8 @@ void NetUpdate(void)
 			// Don't erase tics not acknowledged
 			counts = realtics;
 
-			if (maketic + counts >= firstticstosend + BACKUPTICS)
-				counts = firstticstosend+BACKUPTICS-maketic-1;
+			if (maketic + counts >= firstticstosend + TICQUEUE)
+				counts = firstticstosend+TICQUEUE-maketic-1;
 
 			for (i = 0; i < counts; i++)
 				SV_Maketic(); // Create missed tics and increment maketic
@@ -5770,7 +5772,7 @@ rewind_t *CL_SaveRewindPoint(size_t demopos)
 		return NULL;
 
 	save_p = rewind->savebuffer;
-	P_SaveNetGame();
+	P_SaveNetGame(false);
 	rewind->leveltime = leveltime;
 	rewind->next = rewindhead;
 	rewind->demopos = demopos;
@@ -5794,7 +5796,7 @@ rewind_t *CL_RewindToTime(tic_t time)
 		return NULL;
 
 	save_p = rewindhead->savebuffer;
-	P_LoadNetGame();
+	P_LoadNetGame(false);
 	wipegamestate = gamestate; // No fading back in!
 	timeinmap = leveltime;
 
