@@ -853,24 +853,30 @@ static INT16 K_FindBotController(mobj_t *mo)
 --------------------------------------------------*/
 static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 {
-	const angle_t sideAngle = player->mo->angle + ANGLE_90;
-
-	mobj_t *debugmobj = NULL;
+	mobj_t *debugMobj = NULL;
+	angle_t sideAngle = ANGLE_MAX;
 	UINT8 i = UINT8_MAX;
 
-	debugmobj = P_SpawnMobj(predict->x, predict->y, player->mo->z, MT_SPARK);
-	P_SetMobjState(debugmobj, S_THOK);
+	I_Assert(predict != NULL);
+	I_Assert(player != NULL);
+	I_Assert(player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
 
-	debugmobj->frame &= ~FF_TRANSMASK;
-	debugmobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
+	sideAngle = player->mo->angle + ANGLE_90;
 
-	debugmobj->color = SKINCOLOR_ORANGE;
-	debugmobj->scale *= 2;
+	debugMobj = P_SpawnMobj(predict->x, predict->y, player->mo->z, MT_SPARK);
+	P_SetMobjState(debugMobj, S_THOK);
 
-	debugmobj->tics = 2;
+	debugMobj->frame &= ~FF_TRANSMASK;
+	debugMobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
+
+	debugMobj->color = SKINCOLOR_ORANGE;
+	debugMobj->scale *= 2;
+
+	debugMobj->tics = 2;
 
 	for (i = 0; i < 2; i++)
 	{
+		mobj_t *radiusMobj = NULL;
 		fixed_t radiusX = predict->x, radiusY = predict->y;
 
 		if (i & 1)
@@ -884,16 +890,16 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 			radiusY += FixedMul(predict->radius, FINESINE(sideAngle >> ANGLETOFINESHIFT));
 		}
 
-		debugmobj = P_SpawnMobj(radiusX, radiusY, player->mo->z, MT_SPARK);
-		P_SetMobjState(debugmobj, S_THOK);
+		radiusMobj = P_SpawnMobj(radiusX, radiusY, player->mo->z, MT_SPARK);
+		P_SetMobjState(radiusMobj, S_THOK);
 
-		debugmobj->frame &= ~FF_TRANSMASK;
-		debugmobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
+		radiusMobj->frame &= ~FF_TRANSMASK;
+		radiusMobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
 
-		debugmobj->color = SKINCOLOR_YELLOW;
-		debugmobj->scale /= 2;
+		radiusMobj->color = SKINCOLOR_YELLOW;
+		radiusMobj->scale /= 2;
 
-		debugmobj->tics = 2;
+		radiusMobj->tics = 2;
 	}
 }
 
