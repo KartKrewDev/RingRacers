@@ -861,6 +861,16 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
 
 		distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
+
+		// Flip side, since we want to check for objects to steer towards on the side we're NOT dodging.
+		if (gotoSide == 0)
+		{
+			gotoSide = 1;
+		}
+		else
+		{
+			gotoSide = 0;
+		}
 	}
 
 	if (gotoSide == -1)
