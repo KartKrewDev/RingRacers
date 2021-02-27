@@ -750,14 +750,23 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			{
 				break;
 			}
-
-			if (thing->extravalue1 == 0)
-			{
-				K_AddDodgeObject(thing, side, (UINT8)thing->extravalue2);
-			}
 			else
 			{
-				K_AddAttackObject(thing, side, (UINT8)thing->extravalue2);
+				UINT8 weight = 20;
+
+				if (thing->extravalue2 > 0)
+				{
+					weight = thing->extravalue2 * 5;
+				}
+
+				if (thing->extravalue1 == 0)
+				{
+					K_AddDodgeObject(thing, side, weight);
+				}
+				else
+				{
+					K_AddAttackObject(thing, side, weight);
+				}
 			}
 			break;
 		default:
