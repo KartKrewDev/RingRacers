@@ -786,6 +786,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	fixed_t avgDist = 0;
 
 	const fixed_t baseNudge = 128 * mapobjectscale;
+	fixed_t maxNudge = distToPredict;
 	fixed_t nudgeDist = 0;
 	angle_t nudgeDir = 0;
 
@@ -844,9 +845,10 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		// High handling characters dodge better
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartweight) + 1) * baseNudge;
 
-		if (nudgeDist > distToPredict)
+		maxNudge = max(distToPredict - predict->radius, predict->radius);
+		if (nudgeDist > maxNudge)
 		{
-			nudgeDist = distToPredict;
+			nudgeDist = maxNudge;
 		}
 
 		// Point away
@@ -897,9 +899,10 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		// Acceleration characters are more aggressive
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartspeed) + 1) * baseNudge;
 
-		if (nudgeDist > distToPredict)
+		maxNudge = max(distToPredict - predict->radius, predict->radius);
+		if (nudgeDist > maxNudge)
 		{
-			nudgeDist = distToPredict;
+			nudgeDist = maxNudge;
 		}
 
 		if (avgDist <= nudgeDist)
