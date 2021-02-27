@@ -552,7 +552,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 		return true;
 	}
 
-	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y);
+	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y) - thing->radius;
 
 	if (fulldist > globalsmuggle.distancetocheck)
 	{
