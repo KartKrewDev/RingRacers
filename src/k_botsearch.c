@@ -387,7 +387,7 @@ fixed_t K_BotReducePrediction(player_t *player)
 	INT32 xl, xh, yl, yh, bx, by;
 
 	globalsmuggle.botmo = player->mo;
-	globalsmuggle.distancetocheck = (player->mo->radius * 16);
+	globalsmuggle.distancetocheck = (player->mo->radius * 32);
 	globalsmuggle.closestlinedist = INT32_MAX;
 
 	tmx = player->mo->x;
@@ -419,7 +419,7 @@ fixed_t K_BotReducePrediction(player_t *player)
 		return FRACUNIT;
 	}
 
-	return FixedDiv(globalsmuggle.closestlinedist, globalsmuggle.distancetocheck);
+	return (FRACUNIT/2) + (FixedDiv(globalsmuggle.closestlinedist, globalsmuggle.distancetocheck) / 2);
 }
 
 /*--------------------------------------------------
