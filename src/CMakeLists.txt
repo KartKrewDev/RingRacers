@@ -265,7 +265,7 @@ set(SRB2_CONFIG_HAVE_CURL ON CACHE BOOL
 set(SRB2_CONFIG_HAVE_OPENMPT ON CACHE BOOL
 	"Enable OpenMPT support.")
 set(SRB2_CONFIG_HAVE_CURL ON CACHE BOOL
-	"Enable curl support, used for downloading files via HTTP.")
+	"Enable curl support.")
 set(SRB2_CONFIG_HAVE_THREADS ON CACHE BOOL
 	"Enable multithreading support.")
 if(${CMAKE_SYSTEM} MATCHES Windows)
@@ -612,6 +612,7 @@ if(${SRB2_CONFIG_USEASM})
 	endif()
 	set(SRB2_USEASM ON)
 	add_definitions(-DUSEASM)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -mfpmath=sse")
 else()
 	set(SRB2_USEASM OFF)
 	add_definitions(-DNONX86 -DNORUSEASM)
