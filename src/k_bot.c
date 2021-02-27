@@ -576,7 +576,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT32 startDist = (768 * mapobjectscale) / FRACUNIT;
 	const INT32 distance = ((FixedMul(speed, distreduce) / FRACUNIT) * futuresight) + startDist;
 
-	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
+	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 	waypoint_t *wp = player->nextwaypoint;
 
 	INT32 distanceleft = distance;
@@ -988,7 +988,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			destangle = FixedAngle(sides[controllerLine->sidenum[0]].textureoffset);
 
 			// Overwritten prediction
-			predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
+			predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 
 			predict->x = player->mo->x + FixedMul(dist, FINECOSINE(destangle >> ANGLETOFINESHIFT));
 			predict->y = player->mo->y + FixedMul(dist, FINESINE(destangle >> ANGLETOFINESHIFT));
@@ -1219,14 +1219,14 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (cv_kartdebugbotpredict.value == 1 && player - players == displayplayers[0])
-	{
-		K_DrawPredictionDebug(predict, player);
-	}
-
 	// Free the prediction we made earlier
 	if (predict != NULL)
 	{
+		if (cv_kartdebugbotpredict.value != 0 && player - players == displayplayers[0])
+		{
+			K_DrawPredictionDebug(predict, player);
+		}
+
 		Z_Free(predict);
 	}
 }
