@@ -25,7 +25,11 @@ extern I_mutex con_mutex;
 // set true when screen size has changed, to adapt console
 extern boolean con_recalc;
 
+// console being displayed at game startup
 extern boolean con_startup;
+
+// needs explicit screen refresh until we are in the main game loop
+extern boolean con_refresh;
 
 typedef enum
 {
@@ -35,7 +39,6 @@ typedef enum
 	LOADED_PWAD,
 	LOADED_ISTARTUPGRAPHICS,
 	LOADED_HULOADGRAPHICS,
-	LOADED_RENDERER,
 	LOADED_MINIT,
 	LOADED_RINIT,
 	LOADED_SINITSFXCHANNELS,

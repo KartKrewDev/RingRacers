@@ -477,9 +477,7 @@ consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
 
-#ifdef SEENAMES
 player_t *seenplayer; // player we're aiming at right now
-#endif
 
 // now automatically allocated in D_RegisterClientCommands
 // so that it doesn't have to be updated depending on the value of MAXPLAYERS
@@ -1148,8 +1146,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			-Making some galaxy brain autopilot Lua if you're a masochist
 			-Making a Mario Kart 8 Deluxe tier baby mode that steers you away from walls and whatnot. You know what, do what you want!
 	*/
-	if (gamestate == GS_LEVEL)
+	if (addedtogame && gamestate == GS_LEVEL)
+	{
 		LUAh_PlayerCmd(player, cmd);
+	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
 		cmd->forwardmove = MAXPLMOVE;
@@ -1257,7 +1257,7 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 
 	// Setup the level.
-	if (!P_LoadLevel(false)) // this never returns false?
+	if (!P_LoadLevel(false, false)) // this never returns false?
 	{
 		// fail so reset game stuff
 		Command_ExitGame_f();

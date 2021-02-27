@@ -3048,6 +3048,10 @@ void G_DoPlayDemo(char *defdemoname)
 
 	R_ExecuteSetViewSize();
 
+	LUAh_MapChange(gamemap);
+	displayplayer = consoleplayer = 0;
+	memset(playeringame,0,sizeof(playeringame));
+	playeringame[0] = true;
 	P_SetRandSeed(randseed);
 	G_InitNew(demoflags & DF_ENCORE, G_BuildMapName(gamemap), true, true, false); // Doesn't matter whether you reset or not here, given changes to resetplayer.
 

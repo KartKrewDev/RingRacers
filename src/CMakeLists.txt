@@ -12,6 +12,9 @@ set(SRB2_CORE_SOURCES
 	d_netcmd.c
 	d_netfil.c
 	dehacked.c
+	deh_soc.c
+	deh_lua.c
+	deh_tables.c
 	f_finale.c
 	f_wipe.c
 	filesrch.c
@@ -66,6 +69,9 @@ set(SRB2_CORE_HEADERS
 	d_think.h
 	d_ticcmd.h
 	dehacked.h
+	deh_soc.h
+	deh_lua.h
+	deh_tables.h
 	doomdata.h
 	doomdef.h
 	doomstat.h
@@ -131,6 +137,8 @@ set(SRB2_CORE_RENDER_SOURCES
 	r_splats.c
 	r_things.c
 	r_textures.c
+	r_patch.c
+	r_patchrotation.c
 	r_picformats.c
 	r_portal.c
 
@@ -148,6 +156,8 @@ set(SRB2_CORE_RENDER_SOURCES
 	r_state.h
 	r_things.h
 	r_textures.h
+	r_patch.h
+	r_patchrotation.h
 	r_picformats.h
 	r_portal.h
 )
@@ -170,6 +180,8 @@ set(SRB2_CORE_GAME_SOURCES
 	p_telept.c
 	p_tick.c
 	p_user.c
+	taglist.c
+
 	k_race.c
 	k_battle.c
 	k_bheap.c
@@ -196,6 +208,8 @@ set(SRB2_CORE_GAME_SOURCES
 	p_slopes.h
 	p_spec.h
 	p_tick.h
+	taglist.h
+
 	k_race.h
 	k_battle.h
 	k_bheap.h
@@ -297,6 +311,7 @@ set(SRB2_LUA_SOURCES
 	lua_hudlib.c
 	lua_infolib.c
 	lua_maplib.c
+	lua_taglib.c
 	lua_mathlib.c
 	lua_mobjlib.c
 	lua_playerlib.c

@@ -56,7 +56,8 @@ I_mutex con_mutex;
 #endif/*HAVE_THREADS*/
 
 static boolean con_started = false; // console has been initialised
-       boolean con_startup = false; // true at game startup, screen need refreshing
+       boolean con_startup = false; // true at game startup
+       boolean con_refresh = false; // screen needs refreshing
 
        con_loadprogress_t con_startup_loadprogress = 0; // Progress for startup load bar
 
@@ -399,6 +400,10 @@ static void CON_SetupColormaps(void)
 	brownmap[0]    = (UINT8)224;
 	tanmap[0]      = (UINT8)217; // no longer nice :(
 
+	// Yeah just straight up invert it like a normal person
+	for (i = 0x00; i <= 0x1F; i++)
+		invertmap[0x1F - i] = i;
+
 	// Init back colormap
 	CON_SetupBackColormap();
 }
@@ -455,7 +460,8 @@ void CON_Init(void)
 		Lock_state();
 
 		con_started = true;
-		con_startup = true; // need explicit screen refresh until we are in Doom loop
+		con_startup = true;
+		con_refresh = true; // needs explicit screen refresh until we are in the main game loop
 		consoletoggle = false;
 
 		Unlock_state();
@@ -474,7 +480,8 @@ void CON_Init(void)
 		Lock_state();
 
 		con_started = true;
-		con_startup = false; // need explicit screen refresh until we are in Doom loop
+		con_startup = false;
+		con_refresh = false; // disable explicit screen refresh
 		consoletoggle = true;
 
 		Unlock_state();
@@ -837,6 +844,12 @@ static void CON_InputDelSelection(void)
 	size_t start, end, len;
 
 	Lock_state();
+
+	if (!input_cur)
+	{
+		Unlock_state();
+		return;
+	}
 
 	if (input_cur > input_sel)
 	{
@@ -1488,7 +1501,7 @@ void CONS_Printf(const char *fmt, ...)
 {
 	va_list argptr;
 	static char *txt = NULL;
-	boolean startup;
+	boolean refresh;
 
 	if (txt == NULL)
 		txt = malloc(8192);
@@ -1510,27 +1523,15 @@ void CONS_Printf(const char *fmt, ...)
 
 	// make sure new text is visible
 	con_scrollup = 0;
-	startup = con_startup;
+	refresh = con_refresh;
 
 	Unlock_state();
 
 	// if not in display loop, force screen update
-	if (startup && (!setrenderneeded))
+	if (refresh)
 	{
-#ifdef _WINDOWS
-		patch_t *con_backpic = W_CachePatchName("STARTUP", PU_CACHE);
-
-		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
-		V_DrawScaledPatch(0, 0, 0, con_backpic);
-
-		W_UnlockCachedPatch(con_backpic);
-		I_LoadingScreen(txt); // Win32/OS2 only
-#else
-		// here we display the console text
-		//CON_Drawer();
-		CON_DrawLoadBar();
+		CON_Drawer(); // here we display the console text
 		I_FinishUpdate(); // page flip or blit buffer
-#endif
 	}
 }
 
@@ -1592,7 +1593,7 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...)
 //
 void CONS_Error(const char *msg)
 {
-#ifdef RPC_NO_WINDOWS_H
+#if defined(RPC_NO_WINDOWS_H) && defined(_WINDOWS)
 	if (!graphics_started)
 	{
 		MessageBoxA(vid.WndParent, msg, "SRB2Kart Warning", MB_OK);
@@ -1741,7 +1742,7 @@ static void CON_DrawHudlines(void)
 				;//charwidth = 4 * con_scalefactor;
 			else
 			{
-				//charwidth = SHORT(hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
+				//charwidth = (hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
 				V_DrawCharacter(x, y, (INT32)(*p) | charflags | cv_constextsize.value | V_NOSCALESTART, true);
 			}
 		}
@@ -1771,8 +1772,8 @@ static void CON_DrawBackpic(void)
 	if (piclump == LUMPERROR)
 		piclump = W_GetNumForName("MISSING");
 
-	// Cache the Software patch.
-	con_backpic = W_CacheSoftwarePatchNum(piclump, PU_PATCH);
+	// Cache the patch.
+	con_backpic = W_CachePatchNum(piclump, PU_PATCH);
 
 	// Center the backpic, and draw a vertically cropped patch.
 	w = (BASEVIDWIDTH * vid.dupx);
@@ -1783,7 +1784,7 @@ static void CON_DrawBackpic(void)
 	// then fill the sides with a solid color.
 	if (x > 0)
 	{
-		column_t *column = (column_t *)((UINT8 *)(con_backpic) + LONG(con_backpic->columnofs[0]));
+		column_t *column = (column_t *)((UINT8 *)(con_backpic->columns) + (con_backpic->columnofs[0]));
 		if (!column->topdelta)
 		{
 			UINT8 *source = (UINT8 *)(column) + 3;
@@ -1795,15 +1796,9 @@ static void CON_DrawBackpic(void)
 		}
 	}
 
-	scale = con_backpic->width / BASEVIDWIDTH;
-
-	// Cache the patch normally.
-	con_backpic = W_CachePatchNum(piclump, PU_PATCH);
-	V_DrawCroppedPatch
-		(
-				x << FRACBITS, 0, FRACUNIT / scale, V_NOSCALESTART, con_backpic,
-				0, scale * ( BASEVIDHEIGHT - h ), scale * BASEVIDWIDTH, scale * h
-		);
+	// Draw the patch.
+	V_DrawCroppedPatch(x << FRACBITS, 0, FRACUNIT, V_NOSCALESTART, con_backpic,
+			0, ( BASEVIDHEIGHT - h ), BASEVIDWIDTH, h);
 
 	// Unlock the cached patch.
 	W_UnlockCachedPatch(con_backpic);
@@ -1885,9 +1880,6 @@ void CON_Drawer(void)
 		Unlock_state();
 		return;
 	}
-
-	if (needpatchrecache)
-		HU_LoadGraphics();
 
 	if (con_recalc)
 	{
