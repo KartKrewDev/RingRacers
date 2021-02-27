@@ -867,8 +867,7 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 	debugmobj->color = SKINCOLOR_ORANGE;
 	debugmobj->scale *= 2;
 
-	debugmobj->state->tics = 2;
-	debugmobj->state->nextstate = S_NULL;
+	debugmobj->tics = 2;
 
 	for (i = 0; i < 2; i++)
 	{
@@ -894,8 +893,7 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 		debugmobj->color = SKINCOLOR_YELLOW;
 		debugmobj->scale /= 2;
 
-		debugmobj->state->tics = 2;
-		debugmobj->state->nextstate = S_NULL;
+		debugmobj->tics = 2;
 	}
 }
 
