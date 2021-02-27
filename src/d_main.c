@@ -286,9 +286,13 @@ static void D_Display(void)
 		if (vid.recalc)
 			SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
 
-		// View morph
-		if (rendermode == render_soft && !splitscreen)
-			R_CheckViewMorph();
+		if (rendermode == render_soft)
+		{
+			for (i = 0; i <= r_splitscreen; ++i)
+			{
+				R_CheckViewMorph(i);
+			}
+		}
 
 		// Change the view size if needed
 		// Set by changing video mode or renderer
