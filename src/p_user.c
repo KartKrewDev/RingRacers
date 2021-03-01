@@ -4266,30 +4266,6 @@ void P_PlayerThink(player_t *player)
 		player->playerstate = PST_DEAD;
 	}
 
-	if (netgame && player == &players[displayplayers[0]] && !(leveltime % (TICRATE/5)) && !r_splitscreen)
-	{
-		seenplayer = NULL;
-
-		if (cv_seenames.value && cv_allowseenames.value)
-		{
-			mobj_t *mo = P_SpawnNameFinder(player->mo, MT_NAMECHECK);
-
-			if (mo)
-			{
-				short int i;
-				mo->flags |= MF_NOCLIPHEIGHT;
-				for (i = 0; i < 32; i++)
-				{
-					// Debug drawing
-//					if (i&1)
-//						P_SpawnMobj(mo->x, mo->y, mo->z, MT_SPARK);
-					if (P_RailThinker(mo))
-						break; // mobj was removed (missile hit a wall) or couldn't move
-				}
-			}
-		}
-	}
-
 	if (player->mo->hitlag > 0)
 	{
 		return;

@@ -2629,6 +2629,11 @@ static void K_drawKartPlayerCheck(void)
 
 static boolean K_ShowPlayerNametag(player_t *p)
 {
+	if (cv_seenames.value == 0)
+	{
+		return false;
+	}
+
 	if (demo.playback == true && demo.freecam == true)
 	{
 		return true;
@@ -2639,7 +2644,7 @@ static boolean K_ShowPlayerNametag(player_t *p)
 		return false;
 	}
 
-	if (gametype == GT_RACE)
+	if (gametyperules & GTR_CIRCUIT)
 	{
 		if ((p->kartstuff[k_position] < stplyr->kartstuff[k_position]-2)
 		|| (p->kartstuff[k_position] > stplyr->kartstuff[k_position]+2))

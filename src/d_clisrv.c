@@ -134,9 +134,6 @@ static INT16 consistancy[TICQUEUE];
 static UINT8 player_joining = false;
 UINT8 hu_redownloadinggamestate = 0;
 
-// kart, true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
-UINT8 hu_stopped = 0;
-
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
 
@@ -5320,14 +5317,8 @@ void TryRunTics(tic_t realtics)
 	}
 #endif
 
-	if (neededtic > gametic)
-	{
-		hu_stopped = false;
-	}
-
 	if (player_joining)
 	{
-		hu_stopped = true;
 		return;
 	}
 
@@ -5359,10 +5350,6 @@ void TryRunTics(tic_t realtics)
 				if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
 					break;
 			}
-	}
-	else
-	{
-		hu_stopped = true;
 	}
 }
 
