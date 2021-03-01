@@ -3740,7 +3740,7 @@ static void P_CalcPostImg(player_t *player)
 		pviewheight = player->awayviewmobj->z + 20*FRACUNIT;
 	}
 
-	for (i = 0; i <= r_splitscreen; i++)
+	for (i = 0; i <= (unsigned)r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{

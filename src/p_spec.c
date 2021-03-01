@@ -7315,9 +7315,6 @@ static void P_SpawnScrollers(void)
 
 		if (special == 507) // front and back scrollers
 		{
-			register INT32 s;
-			TAG_ITER_DECLARECOUNTER(0);
-
 			if (s != 0xffff)
 			{
 				bx = -(sides[s].textureoffset);
@@ -7327,6 +7324,9 @@ static void P_SpawnScrollers(void)
 
 		switch (special)
 		{
+			register INT32 s;
+			TAG_ITER_DECLARECOUNTER(0);
+
 			case 513: // scroll effect ceiling
 			case 533: // scroll and carry objects on ceiling
 				TAG_ITER_SECTORS(0, tag, s)
