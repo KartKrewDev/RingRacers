@@ -118,8 +118,6 @@ extern boolean timedemo_csv;
 extern char timedemo_csv_id[256];
 extern boolean timedemo_quit;
 
-extern consvar_t cv_freedemocamera;
-
 typedef enum
 {
 	XD_NAMEANDCOLOR = 1,
