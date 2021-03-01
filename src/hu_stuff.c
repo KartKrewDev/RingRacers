@@ -2183,11 +2183,6 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 	{
 		w /= 2;
 	}
-	else if (ping < UINT32_MAX)
-	{
-		numbars = 1;
-		barcolor = 35;
-	}
 
 	patch = mping[Ping_gfx_num(ping)];
 

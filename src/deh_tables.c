@@ -22,6 +22,7 @@
 #include "v_video.h" // video flags (for lua)
 #include "i_sound.h" // musictype_t (for lua)
 #include "g_state.h" // gamestate_t (for lua)
+#include "r_data.h" // patchalphastyle
 
 #include "deh_tables.h"
 
@@ -73,10 +74,6 @@ actionpointer_t actionpointers[] =
 	{{A_Explode},                "A_EXPLODE"},
 	{{A_Pain},                   "A_PAIN"},
 	{{A_Fall},                   "A_FALL"},
-	{{A_MonitorPop},             "A_MONITORPOP"},
-	{{A_GoldMonitorPop},         "A_GOLDMONITORPOP"},
-	{{A_GoldMonitorRestore},     "A_GOLDMONITORRESTORE"},
-	{{A_GoldMonitorSparkle},     "A_GOLDMONITORSPARKLE"},
 	{{A_Look},                   "A_LOOK"},
 	{{A_Chase},                  "A_CHASE"},
 	{{A_FaceStabChase},          "A_FACESTABCHASE"},
@@ -89,7 +86,6 @@ actionpointer_t actionpointers[] =
 	{{A_Scream},                 "A_SCREAM"},
 	{{A_BossDeath},              "A_BOSSDEATH"},
 	{{A_CustomPower},            "A_CUSTOMPOWER"},
-	{{A_GiveWeapon},             "A_GIVEWEAPON"},
 	{{A_RingBox},                "A_RINGBOX"},
 	{{A_Invincibility},          "A_INVINCIBILITY"},
 	{{A_SuperSneakers},          "A_SUPERSNEAKERS"},
@@ -99,18 +95,14 @@ actionpointer_t actionpointers[] =
 	{{A_BubbleRise},             "A_BUBBLERISE"},
 	{{A_BubbleCheck},            "A_BUBBLECHECK"},
 	{{A_AwardScore},             "A_AWARDSCORE"},
-	{{A_ExtraLife},              "A_EXTRALIFE"},
 	{{A_GiveShield},             "A_GIVESHIELD"},
 	{{A_GravityBox},             "A_GRAVITYBOX"},
 	{{A_ScoreRise},              "A_SCORERISE"},
 	{{A_AttractChase},           "A_ATTRACTCHASE"},
 	{{A_DropMine},               "A_DROPMINE"},
 	{{A_FishJump},               "A_FISHJUMP"},
-	{{A_ThrownRing},             "A_THROWNRING"},
 	{{A_SetSolidSteam},          "A_SETSOLIDSTEAM"},
 	{{A_UnsetSolidSteam},        "A_UNSETSOLIDSTEAM"},
-	{{A_SignSpin},               "A_SIGNSPIN"},
-	{{A_SignPlayer},             "A_SIGNPLAYER"},
 	{{A_OverlayThink},           "A_OVERLAYTHINK"},
 	{{A_JetChase},               "A_JETCHASE"},
 	{{A_JetbThink},              "A_JETBTHINK"},
@@ -134,7 +126,6 @@ actionpointer_t actionpointers[] =
 	{{A_RingExplode},            "A_RINGEXPLODE"},
 	{{A_OldRingExplode},         "A_OLDRINGEXPLODE"},
 	{{A_MixUp},                  "A_MIXUP"},
-	{{A_RecyclePowers},          "A_RECYCLEPOWERS"},
 	{{A_Boss1Chase},             "A_BOSS1CHASE"},
 	{{A_FocusTarget},            "A_FOCUSTARGET"},
 	{{A_Boss2Chase},             "A_BOSS2CHASE"},
@@ -173,7 +164,6 @@ actionpointer_t actionpointers[] =
 	{{A_VultureBlast},           "A_VULTUREBLAST"},
 	{{A_VultureFly},             "A_VULTUREFLY"},
 	{{A_SkimChase},              "A_SKIMCHASE"},
-	{{A_1upThinker},             "A_1UPTHINKER"},
 	{{A_SkullAttack},            "A_SKULLATTACK"},
 	{{A_LobShot},                "A_LOBSHOT"},
 	{{A_FireShot},               "A_FIRESHOT"},
@@ -307,7 +297,6 @@ actionpointer_t actionpointers[] =
 	{{A_Boss5MakeJunk},          "A_BOSS5MAKEJUNK"},
 	{{A_LookForBetter},          "A_LOOKFORBETTER"},
 	{{A_Boss5BombExplode},       "A_BOSS5BOMBEXPLODE"},
-	{{A_DustDevilThink},         "A_DUSTDEVILTHINK"},
 	{{A_TNTExplode},             "A_TNTEXPLODE"},
 	{{A_DebrisRandom},           "A_DEBRISRANDOM"},
 	{{A_TrainCameo},             "A_TRAINCAMEO"},
@@ -331,6 +320,25 @@ actionpointer_t actionpointers[] =
 	{{A_DragonWing},             "A_DRAGONWING"},
 	{{A_DragonSegment},          "A_DRAGONSEGMENT"},
 	{{A_ChangeHeight},           "A_CHANGEHEIGHT"},
+
+	// SRB2Kart
+	{{A_ItemPop},                "A_ITEMPOP"},
+	{{A_JawzChase},              "A_JAWZCHASE"},
+	{{A_JawzExplode},            "A_JAWZEXPLODE"},
+	{{A_SPBChase},               "A_SPBCHASE"},
+	{{A_SSMineSearch},           "A_SSMINESEARCH"},
+	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
+	{{A_BallhogExplode},         "A_BALLHOGEXPLODE"},
+	{{A_LightningFollowPlayer},  "A_LIGHTNINGFOLLOWPLAYER"},
+	{{A_FZBoomFlash},            "A_FZBOOMFLASH"},
+	{{A_FZBoomSmoke},            "A_FZBOOMSMOKE"},
+	{{A_RandomShadowFrame},      "A_RANDOMSHADOWFRAME"},
+	{{A_RoamingShadowThinker},   "A_ROAMINGSHADOWTHINKER"},
+	{{A_MayonakaArrow},          "A_MAYONAKAARROW"},
+	{{A_MementosTPParticles},    "A_MEMENTOSTPPARTICLES"},
+	{{A_ReaperThinker},          "A_REAPERTHINKER"},
+	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
+
 	{{NULL},                     "NONE"},
 
 	// This NULL entry must be the last in the list

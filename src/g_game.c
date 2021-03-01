@@ -916,8 +916,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
-	// Kart, don't build a ticcmd if someone is resynching or the server is stopped too so we don't fly off course in bad conditions
-	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN) || hu_resynching)
+	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN))
 	{
 		return;
 	}

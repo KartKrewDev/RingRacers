@@ -29,10 +29,6 @@ enum actionnum
 	A_EXPLODE = 0,
 	A_PAIN,
 	A_FALL,
-	A_MONITORPOP,
-	A_GOLDMONITORPOP,
-	A_GOLDMONITORRESTORE,
-	A_GOLDMONITORSPARKLE,
 	A_LOOK,
 	A_CHASE,
 	A_FACESTABCHASE,
@@ -45,7 +41,6 @@ enum actionnum
 	A_SCREAM,
 	A_BOSSDEATH,
 	A_CUSTOMPOWER,
-	A_GIVEWEAPON,
 	A_RINGBOX,
 	A_INVINCIBILITY,
 	A_SUPERSNEAKERS,
@@ -55,18 +50,14 @@ enum actionnum
 	A_BUBBLERISE,
 	A_BUBBLECHECK,
 	A_AWARDSCORE,
-	A_EXTRALIFE,
 	A_GIVESHIELD,
 	A_GRAVITYBOX,
 	A_SCORERISE,
 	A_ATTRACTCHASE,
 	A_DROPMINE,
 	A_FISHJUMP,
-	A_THROWNRING,
 	A_SETSOLIDSTEAM,
 	A_UNSETSOLIDSTEAM,
-	A_SIGNSPIN,
-	A_SIGNPLAYER,
 	A_OVERLAYTHINK,
 	A_JETCHASE,
 	A_JETBTHINK,
@@ -90,7 +81,6 @@ enum actionnum
 	A_RINGEXPLODE,
 	A_OLDRINGEXPLODE,
 	A_MIXUP,
-	A_RECYCLEPOWERS,
 	A_BOSS1CHASE,
 	A_FOCUSTARGET,
 	A_BOSS2CHASE,
@@ -129,7 +119,6 @@ enum actionnum
 	A_VULTUREBLAST,
 	A_VULTUREFLY,
 	A_SKIMCHASE,
-	A_1UPTHINKER,
 	A_SKULLATTACK,
 	A_LOBSHOT,
 	A_FIRESHOT,
@@ -263,7 +252,6 @@ enum actionnum
 	A_BOSS5MAKEJUNK,
 	A_LOOKFORBETTER,
 	A_BOSS5BOMBEXPLODE,
-	A_DUSTDEVILTHINK,
 	A_TNTEXPLODE,
 	A_DEBRISRANDOM,
 	A_TRAINCAMEO,
@@ -287,6 +275,22 @@ enum actionnum
 	A_DRAGONWING,
 	A_DRAGONSEGMENT,
 	A_CHANGEHEIGHT,
+	A_ITEMPOP,
+	A_JAWZCHASE,
+	A_JAWZEXPLODE,
+	A_SPBCHASE,
+	A_SSMINESEARCH,
+	A_SSMINEEXPLODE,
+	A_BALLHOGEXPLODE,
+	A_LIGHTNINGFOLLOWPLAYER,
+	A_FZBOOMFLASH,
+	A_FZBOOMSMOKE,
+	A_RANDOMSHADOWFRAME,
+	A_ROAMINGSHADOWTHINKER,
+	A_MAYONAKAARROW,
+	A_MEMENTOSTPPARTICLES,
+	A_REAPERTHINKER,
+	A_FLAMESHIELDPAPER,
 	NUMACTIONS
 };
 
@@ -322,7 +326,6 @@ void A_ScoreRise(); // Rise the score logo
 void A_AttractChase(); // Ring Chase
 void A_DropMine(); // Drop Mine from Skim or Jetty-Syn Bomber
 void A_FishJump(); // Fish Jump
-void A_GrenadeRing(); // SRB2kart
 void A_SetSolidSteam();
 void A_UnsetSolidSteam();
 void A_OverlayThink();
@@ -436,21 +439,6 @@ void A_RandomStateRange();
 void A_DualAction();
 void A_RemoteAction();
 void A_ToggleFlameJet();
-void A_ItemPop(); // SRB2kart
-void A_JawzChase(); // SRB2kart
-void A_JawzExplode(); // SRB2kart
-void A_SPBChase(); // SRB2kart
-void A_SSMineExplode(); // SRB2kart
-void A_BallhogExplode(); // SRB2kart
-void A_LightningFollowPlayer();	// SRB2kart: Lightning shield effect player chasing
-void A_FZBoomFlash(); // SRB2kart
-void A_FZBoomSmoke(); // SRB2kart
-void A_RandomShadowFrame();	//SRB2kart: Shadow spawner frame randomizer
-void A_RoamingShadowThinker();	// SRB2kart: Roaming Shadow moving + attacking players.
-void A_MayonakaArrow();	//SRB2kart: midnight channel arrow sign
-void A_ReaperThinker();	//SRB2kart: mementos reaper
-void A_MementosTPParticles();	//SRB2kart: mementos teleporter particles. Man that's a lot of actions for my shite.
-void A_FlameShieldPaper();
 void A_OrbitNights();
 void A_GhostMe();
 void A_SetObjectState();
@@ -557,6 +545,26 @@ void A_DragonbomberSpawn();
 void A_DragonWing();
 void A_DragonSegment();
 void A_ChangeHeight();
+
+//
+// SRB2Kart
+//
+void A_ItemPop();
+void A_JawzChase();
+void A_JawzExplode();
+void A_SPBChase();
+void A_SSMineSearch();
+void A_SSMineExplode();
+void A_BallhogExplode();
+void A_LightningFollowPlayer();
+void A_FZBoomFlash();
+void A_FZBoomSmoke();
+void A_RandomShadowFrame();
+void A_RoamingShadowThinker();
+void A_MayonakaArrow();
+void A_ReaperThinker();
+void A_MementosTPParticles();
+void A_FlameShieldPaper();
 
 extern boolean actionsoverridden[NUMACTIONS];
 

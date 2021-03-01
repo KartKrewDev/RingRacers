@@ -48,6 +48,8 @@
 #include "deh_tables.h"
 
 // SRB2Kart
+#include "filesrch.h" // refreshdirmenu
+
 int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
 void DEH_UpdateMaxFreeslots(void)
 {
@@ -1112,15 +1114,11 @@ void readgametype(MYFILE *f, char *gtname)
 	UINT32 newgttol = 0;
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
-	UINT8 newgtleftcolor = 0;
-	UINT8 newgtrightcolor = 0;
 	INT16 newgtrankingstype = -1;
 	int newgtinttype = 0;
-	char gtdescription[441];
 	char gtconst[MAXLINELEN];
 
 	// Empty strings.
-	gtdescription[0] = '\0';
 	gtconst[0] = '\0';
 
 	do
@@ -1135,44 +1133,6 @@ void readgametype(MYFILE *f, char *gtname)
 				strupr(word);
 			else
 				break;
-
-			if (fastcmp(word, "DESCRIPTION"))
-			{
-				char *descr = NULL;
-
-				for (i = 0; i < MAXLINELEN-3; i++)
-				{
-					if (s[i] == '=')
-					{
-						descr = &s[i+2];
-						break;
-					}
-				}
-				if (descr)
-				{
-					strcpy(gtdescription, descr);
-					strcat(gtdescription, myhashfgets(descr, sizeof (gtdescription), f));
-				}
-				else
-					strcpy(gtdescription, "");
-
-				// For some reason, cutting the string did not work above. Most likely due to strcpy or strcat...
-				// It works down here, though.
-				{
-					INT32 numline = 0;
-					for (i = 0; (size_t)i < sizeof(gtdescription)-1; i++)
-					{
-						if (numline < 20 && gtdescription[i] == '\n')
-							numline++;
-
-						if (numline >= 20 || gtdescription[i] == '\0' || gtdescription[i] == '#')
-							break;
-					}
-				}
-				gtdescription[strlen(gtdescription)-1] = '\0';
-				gtdescription[i] = '\0';
-				continue;
-			}
 
 			word2 = strtok(NULL, " = ");
 			if (word2)
@@ -1206,13 +1166,6 @@ void readgametype(MYFILE *f, char *gtname)
 				newgtpointlimit = (INT32)i;
 			else if (fastcmp(word, "DEFAULTTIMELIMIT"))
 				newgttimelimit = (INT32)i;
-			// Level platter
-			else if (fastcmp(word, "HEADERCOLOR") || fastcmp(word, "HEADERCOLOUR"))
-				newgtleftcolor = newgtrightcolor = (UINT8)get_number(word2);
-			else if (fastcmp(word, "HEADERLEFTCOLOR") || fastcmp(word, "HEADERLEFTCOLOUR"))
-				newgtleftcolor = (UINT8)get_number(word2);
-			else if (fastcmp(word, "HEADERRIGHTCOLOR") || fastcmp(word, "HEADERRIGHTCOLOUR"))
-				newgtrightcolor = (UINT8)get_number(word2);
 			// Rankings type
 			else if (fastcmp(word, "RANKINGTYPE"))
 			{
@@ -1280,7 +1233,6 @@ void readgametype(MYFILE *f, char *gtname)
 	// Add the new gametype
 	newgtidx = G_AddGametype(newgtrules);
 	G_AddGametypeTOL(newgtidx, newgttol);
-	G_SetGametypeDescription(newgtidx, gtdescription, newgtleftcolor, newgtrightcolor);
 
 	// Not covered by G_AddGametype alone.
 	if (newgtrankingstype == -1)
@@ -1481,25 +1433,11 @@ void readlevelheader(MYFILE *f, INT32 num)
 				}
 			}
 
-			// NiGHTS grades
-			else if (fastncmp(word, "GRADES", 6))
-			{
-				UINT8 mare = (UINT8)atoi(word + 6);
-
-				if (mare <= 0 || mare > 8)
-				{
-					deh_warning("Level header %d: unknown word '%s'", num, word);
-					continue;
-				}
-
-				P_AddGradesForMare((INT16)(num-1), mare-1, word2);
-			}
-
 			// Strings that can be truncated
-			else if (fastcmp(word, "SELECTHEADING"))
+			else if (fastcmp(word, "ZONETITLE"))
 			{
-				deh_strlcpy(mapheaderinfo[num-1]->selectheading, word2,
-					sizeof(mapheaderinfo[num-1]->selectheading), va("Level header %d: selectheading", num));
+				deh_strlcpy(mapheaderinfo[num-1]->zonttl, word2,
+					sizeof(mapheaderinfo[num-1]->zonttl), va("Level header %d: zonetitle", num));
 			}
 			else if (fastcmp(word, "SCRIPTNAME"))
 			{
@@ -1601,34 +1539,6 @@ void readlevelheader(MYFILE *f, INT32 num)
 				mapheaderinfo[num-1]->mustrack = ((UINT16)i - 1);
 			else if (fastcmp(word, "MUSICPOS"))
 				mapheaderinfo[num-1]->muspos = (UINT32)get_number(word2);
-			else if (fastcmp(word, "MUSICINTERFADEOUT"))
-				mapheaderinfo[num-1]->musinterfadeout = (UINT32)get_number(word2);
-			else if (fastcmp(word, "MUSICINTER"))
-				deh_strlcpy(mapheaderinfo[num-1]->musintername, word2,
-					sizeof(mapheaderinfo[num-1]->musintername), va("Level header %d: intermission music", num));
-			else if (fastcmp(word, "MUSICPOSTBOSS"))
-				deh_strlcpy(mapheaderinfo[num-1]->muspostbossname, word2,
-					sizeof(mapheaderinfo[num-1]->muspostbossname), va("Level header %d: post-boss music", num));
-			else if (fastcmp(word, "MUSICPOSTBOSSTRACK"))
-				mapheaderinfo[num-1]->muspostbosstrack = ((UINT16)i - 1);
-			else if (fastcmp(word, "MUSICPOSTBOSSPOS"))
-				mapheaderinfo[num-1]->muspostbosspos = (UINT32)get_number(word2);
-			else if (fastcmp(word, "MUSICPOSTBOSSFADEIN"))
-				mapheaderinfo[num-1]->muspostbossfadein = (UINT32)get_number(word2);
-			else if (fastcmp(word, "FORCERESETMUSIC"))
-			{
-				// This is a weird one because "FALSE"/"NO" could either apply to "leave to default preference" (cv_resetmusic)
-				// or "force off". Let's assume it means "force off", and let an unspecified value mean "default preference"
-				if      (fastcmp(word2, "OFF") || word2[0] == 'F' || word2[0] == 'N')  i = 0;
-				else if (fastcmp(word2, "ON") || word2[0] == 'T' || word2[0] == 'Y')   i = 1;
-				else i = -1; // (fastcmp(word2, "DEFAULT"))
-
-				if (i >= -1 && i <= 1) // -1 to force off, 1 to force on, 0 to honor default.
-					// This behavior can be disabled with cv_resetmusicbyheader
-					mapheaderinfo[num-1]->musforcereset = (SINT8)i;
-				else
-					deh_warning("Level header %d: invalid forceresetmusic option %d", num, i);
-			}
 			else if (fastcmp(word, "FORCECHARACTER"))
 			{
 				strlcpy(mapheaderinfo[num-1]->forcecharacter, word2, SKINNAMESIZE+1);
@@ -1636,18 +1546,17 @@ void readlevelheader(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "WEATHER"))
 				mapheaderinfo[num-1]->weather = (UINT8)get_number(word2);
-			else if (fastcmp(word, "SKYNUM"))
-				mapheaderinfo[num-1]->skynum = (INT16)i;
-			else if (fastcmp(word, "INTERSCREEN"))
-				strncpy(mapheaderinfo[num-1]->interscreen, word2, 8);
+			else if (fastcmp(word, "SKYTEXTURE"))
+				deh_strlcpy(mapheaderinfo[num-1]->skytexture, word2,
+					sizeof(mapheaderinfo[num-1]->skytexture), va("Level header %d: sky texture", num));
 			else if (fastcmp(word, "PRECUTSCENENUM"))
 				mapheaderinfo[num-1]->precutscenenum = (UINT8)i;
 			else if (fastcmp(word, "CUTSCENENUM"))
 				mapheaderinfo[num-1]->cutscenenum = (UINT8)i;
-			else if (fastcmp(word, "COUNTDOWN"))
-				mapheaderinfo[num-1]->countdown = (INT16)i;
 			else if (fastcmp(word, "PALETTE"))
 				mapheaderinfo[num-1]->palette = (UINT16)i;
+			else if (fastcmp(word, "ENCOREPAL"))
+				mapheaderinfo[num-1]->encorepal = (UINT16)i;
 			else if (fastcmp(word, "NUMLAPS"))
 				mapheaderinfo[num-1]->numlaps = (UINT8)i;
 			else if (fastcmp(word, "UNLOCKABLE"))
@@ -1657,8 +1566,6 @@ void readlevelheader(MYFILE *f, INT32 num)
 				else
 					deh_warning("Level header %d: invalid unlockable number %d", num, i);
 			}
-			else if (fastcmp(word, "LEVELSELECT"))
-				mapheaderinfo[num-1]->levelselect = (UINT8)i;
 			else if (fastcmp(word, "SKYBOXSCALE"))
 				mapheaderinfo[num-1]->skybox_scalex = mapheaderinfo[num-1]->skybox_scaley = mapheaderinfo[num-1]->skybox_scalez = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEX"))
@@ -1667,46 +1574,15 @@ void readlevelheader(MYFILE *f, INT32 num)
 				mapheaderinfo[num-1]->skybox_scaley = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEZ"))
 				mapheaderinfo[num-1]->skybox_scalez = (INT16)i;
-
-			else if (fastcmp(word, "BONUSTYPE"))
-			{
-				if      (fastcmp(word2, "NONE"))   i = -1;
-				else if (fastcmp(word2, "NORMAL")) i =  0;
-				else if (fastcmp(word2, "BOSS"))   i =  1;
-				else if (fastcmp(word2, "ERZ3"))   i =  2;
-				else if (fastcmp(word2, "NIGHTS")) i =  3;
-				else if (fastcmp(word2, "NIGHTSLINK")) i = 4;
-
-				if (i >= -1 && i <= 4) // -1 for no bonus. Max is 4.
-					mapheaderinfo[num-1]->bonustype = (SINT8)i;
-				else
-					deh_warning("Level header %d: invalid bonus type number %d", num, i);
-			}
-
-			// Title card
-			else if (fastcmp(word, "TITLECARDZIGZAG"))
-			{
-				deh_strlcpy(mapheaderinfo[num-1]->ltzzpatch, word2,
-					sizeof(mapheaderinfo[num-1]->ltzzpatch), va("Level header %d: title card zigzag patch name", num));
-			}
-			else if (fastcmp(word, "TITLECARDZIGZAGTEXT"))
-			{
-				deh_strlcpy(mapheaderinfo[num-1]->ltzztext, word2,
-					sizeof(mapheaderinfo[num-1]->ltzztext), va("Level header %d: title card zigzag text patch name", num));
-			}
-			else if (fastcmp(word, "TITLECARDACTDIAMOND"))
-			{
-				deh_strlcpy(mapheaderinfo[num-1]->ltactdiamond, word2,
-					sizeof(mapheaderinfo[num-1]->ltactdiamond), va("Level header %d: title card act diamond patch name", num));
-			}
-
-			else if (fastcmp(word, "MAXBONUSLIVES"))
-				mapheaderinfo[num-1]->maxbonuslives = (SINT8)i;
 			else if (fastcmp(word, "LEVELFLAGS"))
-				mapheaderinfo[num-1]->levelflags = (UINT16)i;
+				mapheaderinfo[num-1]->levelflags = get_number(word2);
 			else if (fastcmp(word, "MENUFLAGS"))
-				mapheaderinfo[num-1]->menuflags = (UINT8)i;
-
+				mapheaderinfo[num-1]->menuflags = get_number(word2);
+			// SRB2Kart
+			else if (fastcmp(word, "MOBJSCALE"))
+				mapheaderinfo[num-1]->mobj_scale = get_number(word2);
+			else if (fastcmp(word, "DEFAULTWAYPOINTRADIUS"))
+				mapheaderinfo[num-1]->default_waypoint_radius = get_number(word2);
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))
 			{
@@ -1715,27 +1591,6 @@ void readlevelheader(MYFILE *f, INT32 num)
 				else
 					mapheaderinfo[num-1]->levelflags &= ~LF_SCRIPTISFILE;
 			}
-			else if (fastcmp(word, "SPEEDMUSIC"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_SPEEDMUSIC;
-				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_SPEEDMUSIC;
-			}
-			else if (fastcmp(word, "NOSSMUSIC"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_NOSSMUSIC;
-				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_NOSSMUSIC;
-			}
-			else if (fastcmp(word, "NORELOAD"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_NORELOAD;
-				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_NORELOAD;
-			}
 			else if (fastcmp(word, "NOZONE"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
@@ -1743,51 +1598,19 @@ void readlevelheader(MYFILE *f, INT32 num)
 				else
 					mapheaderinfo[num-1]->levelflags &= ~LF_NOZONE;
 			}
-			else if (fastcmp(word, "SAVEGAME"))
+			else if (fastcmp(word, "SECTIONRACE"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_SAVEGAME;
+					mapheaderinfo[num-1]->levelflags |= LF_SECTIONRACE;
 				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_SAVEGAME;
+					mapheaderinfo[num-1]->levelflags &= ~LF_SECTIONRACE;
 			}
-			else if (fastcmp(word, "MIXNIGHTSCOUNTDOWN"))
+			else if (fastcmp(word, "SUBTRACTNUM"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_MIXNIGHTSCOUNTDOWN;
+					mapheaderinfo[num-1]->levelflags |= LF_SUBTRACTNUM;
 				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_MIXNIGHTSCOUNTDOWN;
-			}
-			else if (fastcmp(word, "WARNINGTITLE"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_WARNINGTITLE;
-				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_WARNINGTITLE;
-			}
-			else if (fastcmp(word, "NOTITLECARD"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_NOTITLECARD;
-				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_NOTITLECARD;
-			}
-			else if (fastcmp(word, "SHOWTITLECARDFOR"))
-			{
-				mapheaderinfo[num-1]->levelflags |= LF_NOTITLECARD;
-				tmp = strtok(word2,",");
-				do {
-					if (fastcmp(tmp, "FIRST"))
-						mapheaderinfo[num-1]->levelflags &= ~LF_NOTITLECARDFIRST;
-					else if (fastcmp(tmp, "RESPAWN"))
-						mapheaderinfo[num-1]->levelflags &= ~LF_NOTITLECARDRESPAWN;
-					else if (fastcmp(tmp, "RECORDATTACK"))
-						mapheaderinfo[num-1]->levelflags &= ~LF_NOTITLECARDRECORDATTACK;
-					else if (fastcmp(tmp, "ALL"))
-						mapheaderinfo[num-1]->levelflags &= ~LF_NOTITLECARD;
-					else if (!fastcmp(tmp, "NONE"))
-						deh_warning("Level header %d: unknown titlecard show option %s\n", num, tmp);
-
-				} while((tmp = strtok(NULL,",")) != NULL);
+					mapheaderinfo[num-1]->levelflags &= ~LF_SUBTRACTNUM;
 			}
 
 			// Individual triggers for menu flags
@@ -1805,40 +1628,20 @@ void readlevelheader(MYFILE *f, INT32 num)
 				else
 					mapheaderinfo[num-1]->menuflags &= ~LF2_HIDEINSTATS;
 			}
-			else if (fastcmp(word, "RECORDATTACK") || fastcmp(word, "TIMEATTACK"))
-			{ // TIMEATTACK is an accepted alias
+			else if (fastcmp(word, "TIMEATTACK") || fastcmp(word, "RECORDATTACK"))
+			{ // RECORDATTACK is an accepted alias
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_RECORDATTACK;
+					mapheaderinfo[num-1]->menuflags |= LF2_TIMEATTACK;
 				else
-					mapheaderinfo[num-1]->menuflags &= ~LF2_RECORDATTACK;
+					mapheaderinfo[num-1]->menuflags &= ~LF2_TIMEATTACK;
 			}
-			else if (fastcmp(word, "NIGHTSATTACK"))
+			else if (fastcmp(word, "VISITNEEDED"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_NIGHTSATTACK;
+					mapheaderinfo[num-1]->menuflags |= LF2_VISITNEEDED;
 				else
-					mapheaderinfo[num-1]->menuflags &= LF2_NIGHTSATTACK;
+					mapheaderinfo[num-1]->menuflags &= ~LF2_VISITNEEDED;
 			}
-			else if (fastcmp(word, "NOVISITNEEDED"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_NOVISITNEEDED;
-				else
-					mapheaderinfo[num-1]->menuflags &= ~LF2_NOVISITNEEDED;
-			}
-			else if (fastcmp(word, "WIDEICON"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_WIDEICON;
-				else
-					mapheaderinfo[num-1]->menuflags &= ~LF2_WIDEICON;
-			}
-			else if (fastcmp(word, "STARTRINGS"))
-				mapheaderinfo[num-1]->startrings = (UINT16)i;
-			else if (fastcmp(word, "SPECIALSTAGETIME"))
-				mapheaderinfo[num-1]->sstimer = i;
-			else if (fastcmp(word, "SPECIALSTAGESPHERES"))
-				mapheaderinfo[num-1]->ssspheres = i;
 			else if (fastcmp(word, "GRAVITY"))
 				mapheaderinfo[num-1]->gravity = FLOAT_TO_FIXED(atof(word2));
 			else
@@ -2527,8 +2330,6 @@ void readmenu(MYFILE *f, INT32 num)
 			{
 				if (fastcmp(word2, "USER"))
 					menupres[num].ttmode = TTMODE_USER;
-				else if (fastcmp(word2, "ALACROIX"))
-					menupres[num].ttmode = TTMODE_ALACROIX;
 				else if (fastcmp(word2, "HIDE") || fastcmp(word2, "HIDDEN") || fastcmp(word2, "NONE"))
 				{
 					menupres[num].ttmode = TTMODE_USER;
@@ -2982,20 +2783,10 @@ void reademblemdata(MYFILE *f, INT32 num)
 			{
 				if (fastcmp(word2, "GLOBAL"))
 					emblemlocations[num-1].type = ET_GLOBAL;
-				else if (fastcmp(word2, "SKIN"))
-					emblemlocations[num-1].type = ET_SKIN;
-				else if (fastcmp(word2, "SCORE"))
-					emblemlocations[num-1].type = ET_SCORE;
-				else if (fastcmp(word2, "TIME"))
-					emblemlocations[num-1].type = ET_TIME;
-				else if (fastcmp(word2, "RINGS"))
-					emblemlocations[num-1].type = ET_RINGS;
 				else if (fastcmp(word2, "MAP"))
 					emblemlocations[num-1].type = ET_MAP;
-				else if (fastcmp(word2, "NGRADE"))
-					emblemlocations[num-1].type = ET_NGRADE;
-				else if (fastcmp(word2, "NTIME"))
-					emblemlocations[num-1].type = ET_NTIME;
+				else if (fastcmp(word2, "TIME"))
+					emblemlocations[num-1].type = ET_TIME;
 				else
 					emblemlocations[num-1].type = (UINT8)value;
 			}
@@ -3036,27 +2827,17 @@ void reademblemdata(MYFILE *f, INT32 num)
 	// Default sprite and color definitions for lazy people like me
 	if (!emblemlocations[num-1].sprite) switch (emblemlocations[num-1].type)
 	{
-		case ET_RINGS:
-			emblemlocations[num-1].sprite = 'R'; break;
-		case ET_SCORE: case ET_NGRADE:
-			emblemlocations[num-1].sprite = 'S'; break;
-		case ET_TIME: case ET_NTIME:
-			emblemlocations[num-1].sprite = 'T'; break;
+		case ET_TIME:
+			emblemlocations[num-1].sprite = 'B'; break;
 		default:
 			emblemlocations[num-1].sprite = 'A'; break;
 	}
 	if (!emblemlocations[num-1].color) switch (emblemlocations[num-1].type)
 	{
-		case ET_RINGS:
-			emblemlocations[num-1].color = SKINCOLOR_GOLD; break;
-		case ET_SCORE:
-			emblemlocations[num-1].color = SKINCOLOR_BROWN; break;
-		case ET_NGRADE:
-			emblemlocations[num-1].color = SKINCOLOR_TEAL; break;
-		case ET_TIME: case ET_NTIME:
+		case ET_TIME: //case ET_NTIME:
 			emblemlocations[num-1].color = SKINCOLOR_GREY; break;
 		default:
-			emblemlocations[num-1].color = SKINCOLOR_BLUE; break;
+			emblemlocations[num-1].color = SKINCOLOR_GOLD; break;
 	}
 
 	Z_Free(s);
@@ -3137,9 +2918,9 @@ void readextraemblemdata(MYFILE *f, INT32 num)
 	} while (!myfeof(f));
 
 	if (!extraemblems[num-1].sprite)
-		extraemblems[num-1].sprite = 'X';
+		extraemblems[num-1].sprite = 'C';
 	if (!extraemblems[num-1].color)
-		extraemblems[num-1].color = SKINCOLOR_BLUE;
+		extraemblems[num-1].color = SKINCOLOR_RED;
 
 	Z_Free(s);
 }
@@ -3195,9 +2976,8 @@ void readunlockable(MYFILE *f, INT32 num)
 			else
 			{
 				strupr(word2);
-				if (fastcmp(word, "HEIGHT"))
-					unlockables[num].height = (UINT16)i;
-				else if (fastcmp(word, "CONDITIONSET"))
+
+				if (fastcmp(word, "CONDITIONSET"))
 					unlockables[num].conditionset = (UINT8)i;
 				else if (fastcmp(word, "SHOWCONDITIONSET"))
 					unlockables[num].showconditionset = (UINT8)i;
@@ -3209,26 +2989,34 @@ void readunlockable(MYFILE *f, INT32 num)
 				{
 					if (fastcmp(word2, "NONE"))
 						unlockables[num].type = SECRET_NONE;
+					else if (fastcmp(word2, "HEADER"))
+						unlockables[num].type = SECRET_HEADER;
+					else if (fastcmp(word2, "SKIN"))
+						unlockables[num].type = SECRET_SKIN;
+					else if (fastcmp(word2, "WARP"))
+						unlockables[num].type = SECRET_WARP;
+					else if (fastcmp(word2, "LEVELSELECT"))
+						unlockables[num].type = SECRET_LEVELSELECT;
+					else if (fastcmp(word2, "TIMEATTACK"))
+						unlockables[num].type = SECRET_TIMEATTACK;
+					else if (fastcmp(word2, "BREAKTHECAPSULES"))
+						unlockables[num].type = SECRET_BREAKTHECAPSULES;
+					else if (fastcmp(word2, "SOUNDTEST"))
+						unlockables[num].type = SECRET_SOUNDTEST;
+					else if (fastcmp(word2, "CREDITS"))
+						unlockables[num].type = SECRET_CREDITS;
 					else if (fastcmp(word2, "ITEMFINDER"))
 						unlockables[num].type = SECRET_ITEMFINDER;
 					else if (fastcmp(word2, "EMBLEMHINTS"))
 						unlockables[num].type = SECRET_EMBLEMHINTS;
+					else if (fastcmp(word2, "ENCORE"))
+						unlockables[num].type = SECRET_ENCORE;
+					else if (fastcmp(word2, "HARDSPEED"))
+						unlockables[num].type = SECRET_HARDSPEED;
+					else if (fastcmp(word2, "HELLATTACK"))
+						unlockables[num].type = SECRET_HELLATTACK;
 					else if (fastcmp(word2, "PANDORA"))
 						unlockables[num].type = SECRET_PANDORA;
-					else if (fastcmp(word2, "CREDITS"))
-						unlockables[num].type = SECRET_CREDITS;
-					else if (fastcmp(word2, "RECORDATTACK"))
-						unlockables[num].type = SECRET_RECORDATTACK;
-					else if (fastcmp(word2, "NIGHTSMODE"))
-						unlockables[num].type = SECRET_NIGHTSMODE;
-					else if (fastcmp(word2, "HEADER"))
-						unlockables[num].type = SECRET_HEADER;
-					else if (fastcmp(word2, "LEVELSELECT"))
-						unlockables[num].type = SECRET_LEVELSELECT;
-					else if (fastcmp(word2, "WARP"))
-						unlockables[num].type = SECRET_WARP;
-					else if (fastcmp(word2, "SOUNDTEST"))
-						unlockables[num].type = SECRET_SOUNDTEST;
 					else
 						unlockables[num].type = (INT16)i;
 				}
@@ -3283,32 +3071,39 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		return;
 	}
 
-	if (fastcmp(params[0], "PLAYTIME"))
+	if				(fastcmp(params[0], "PLAYTIME")
+	|| (++offset && fastcmp(params[0], "MATCHESPLAYED")))
 	{
 		PARAMCHECK(1);
-		ty = UC_PLAYTIME;
+		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
 	}
-	else if        (fastcmp(params[0], "GAMECLEAR")
-	|| (++offset && fastcmp(params[0], "ALLEMERALDS"))
-	|| (++offset && fastcmp(params[0], "ULTIMATECLEAR")))
+	else if (fastcmp(params[0], "POWERLEVEL"))
 	{
-		ty = UC_GAMECLEAR + offset;
+		PARAMCHECK(2);
+		ty = UC_POWERLEVEL;
+		re = atoi(params[1]);
+		x1 = atoi(params[2]);
+
+		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
+		{
+			deh_warning("Power level type %d out of range (0 - %d)", x1, PWRLV_NUMTYPES-1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "GAMECLEAR"))
+	{
+		ty = UC_GAMECLEAR;
 		re = (params[1]) ? atoi(params[1]) : 1;
 	}
-	else if ((offset=0) || fastcmp(params[0], "OVERALLSCORE")
-	||        (++offset && fastcmp(params[0], "OVERALLTIME"))
-	||        (++offset && fastcmp(params[0], "OVERALLRINGS")))
+	else if (fastcmp(params[0], "OVERALLTIME"))
 	{
 		PARAMCHECK(1);
-		ty = UC_OVERALLSCORE + offset;
+		ty = UC_OVERALLTIME;
 		re = atoi(params[1]);
 	}
 	else if ((offset=0) || fastcmp(params[0], "MAPVISITED")
-	||        (++offset && fastcmp(params[0], "MAPBEATEN"))
-	||        (++offset && fastcmp(params[0], "MAPALLEMERALDS"))
-	||        (++offset && fastcmp(params[0], "MAPULTIMATE"))
-	||        (++offset && fastcmp(params[0], "MAPPERFECT")))
+	||        (++offset && fastcmp(params[0], "MAPBEATEN")))
 	{
 		PARAMCHECK(1);
 		ty = UC_MAPVISITED + offset;
@@ -3325,12 +3120,10 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if ((offset=0) || fastcmp(params[0], "MAPSCORE")
-	||        (++offset && fastcmp(params[0], "MAPTIME"))
-	||        (++offset && fastcmp(params[0], "MAPRINGS")))
+	else if (fastcmp(params[0], "MAPTIME"))
 	{
 		PARAMCHECK(2);
-		ty = UC_MAPSCORE + offset;
+		ty = UC_MAPTIME;
 		re = atoi(params[2]);
 
 		// Convert to map number if it appears to be one
@@ -3341,51 +3134,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (x1 < 0 || x1 >= NUMMAPS)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
+			deh_warning("Level number %d out of range (1 - %d)", x1, NUMMAPS);
 			return;
 		}
-	}
-	else if ((offset=0) || fastcmp(params[0], "NIGHTSSCORE")
-	||        (++offset && fastcmp(params[0], "NIGHTSTIME"))
-	||        (++offset && fastcmp(params[0], "NIGHTSGRADE")))
-	{
-		PARAMCHECK(2); // one optional one
-
-		ty = UC_NIGHTSSCORE + offset;
-		i = (params[3] ? 3 : 2);
-		if (fastncmp("GRADE_",params[i],6))
-		{
-			char *p = params[i]+6;
-			for (re = 0; NIGHTSGRADE_LIST[re]; re++)
-				if (*p == NIGHTSGRADE_LIST[re])
-					break;
-			if (!NIGHTSGRADE_LIST[re])
-			{
-				deh_warning("Invalid NiGHTS grade %s\n", params[i]);
-				return;
-			}
-		}
-		else
-			re = atoi(params[i]);
-
-		// Convert to map number if it appears to be one
-		if (params[1][0] >= 'A' && params[1][0] <= 'Z')
-			x1 = (INT16)M_MapNumber(params[1][0], params[1][1]);
-		else
-			x1 = (INT16)atoi(params[1]);
-
-		if (x1 < 0 || x1 >= NUMMAPS)
-		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
-			return;
-		}
-
-		// Mare number (0 for overall)
-		if (params[3]) // Only if we actually got 3 params (so the second one == mare and not requirement)
-			x2 = (INT16)atoi(params[2]);
-		else
-			x2 = 0;
-
 	}
 	else if (fastcmp(params[0], "TRIGGER"))
 	{
@@ -3737,8 +3488,6 @@ void readmaincfg(MYFILE *f)
 			{
 				if (fastcmp(word2, "USER"))
 					ttmode = TTMODE_USER;
-				else if (fastcmp(word2, "ALACROIX"))
-					ttmode = TTMODE_ALACROIX;
 				else if (fastcmp(word2, "HIDE") || fastcmp(word2, "HIDDEN") || fastcmp(word2, "NONE"))
 				{
 					ttmode = TTMODE_USER;
@@ -3747,32 +3496,6 @@ void readmaincfg(MYFILE *f)
 				}
 				else // if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
 					ttmode = TTMODE_OLD;
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSSCALE"))
-			{
-				ttscale = max(1, min(8, (UINT8)get_number(word2)));
-				titlechanged = true;
-			}
-			else if (fastcmp(word, "TITLEPICSSCALESAVAILABLE"))
-			{
-				// SPECIAL CASE for Alacroix: Comma-separated list of resolutions that are available
-				// for gfx loading.
-				ttavailable[0] = ttavailable[1] = ttavailable[2] = ttavailable[3] =\
-					ttavailable[4] = ttavailable[5] = false;
-
-				if (strstr(word2, "1") != NULL)
-					ttavailable[0] = true;
-				if (strstr(word2, "2") != NULL)
-					ttavailable[1] = true;
-				if (strstr(word2, "3") != NULL)
-					ttavailable[2] = true;
-				if (strstr(word2, "4") != NULL)
-					ttavailable[3] = true;
-				if (strstr(word2, "5") != NULL)
-					ttavailable[4] = true;
-				if (strstr(word2, "6") != NULL)
-					ttavailable[5] = true;
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLEPICSNAME"))
@@ -3809,10 +3532,6 @@ void readmaincfg(MYFILE *f)
 			{
 				titlescrollyspeed = get_number(word2);
 				titlechanged = true;
-			}
-			else if (fastcmp(word, "DISABLESPEEDADJUST"))
-			{
-				disableSpeedAdjust = (value || word2[0] == 'T' || word2[0] == 'Y');
 			}
 			else if (fastcmp(word, "NUMDEMOS"))
 			{
@@ -3855,10 +3574,12 @@ void readmaincfg(MYFILE *f)
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
 				savemoddata = true;
+				majormods = false;
 
 				// Also save a time attack folder
 				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension
-				strncpy(timeattackfolder, gamedatafilename, min(filenamelen, sizeof (timeattackfolder)));
+				filenamelen = min(filenamelen, sizeof (timeattackfolder));
+				strncpy(timeattackfolder, gamedatafilename, filenamelen);
 				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
 
 				strcpy(savegamename, timeattackfolder);
@@ -3869,6 +3590,7 @@ void readmaincfg(MYFILE *f)
 				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
 				strcatbf(liveeventbackup, srb2home, PATHSEP);
 
+				refreshdirmenu |= REFRESHDIR_GAMEDATA;
 				gamedataadded = true;
 				titlechanged = true;
 			}
@@ -3895,11 +3617,6 @@ void readmaincfg(MYFILE *f)
 
 				bootmap = (INT16)value;
 				//titlechanged = true;
-			}
-			else if (fastcmp(word, "STARTCHAR"))
-			{
-				startchar = (INT16)value;
-				char_on = -1;
 			}
 			else if (fastcmp(word, "TUTORIALMAP"))
 			{
@@ -3989,21 +3706,13 @@ void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_intermission_final;
 			}
-			else if (fastncmp(word, "SPECINTER_", 10))
+			else if (fastncmp(word, "VOTING_", 7))
 			{
-				pword = word + 10;
+				pword = word + 7;
 				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_specinter_toblack;
+					wipeoffset = wipe_voting_toblack;
 				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_specinter_final;
-			}
-			else if (fastncmp(word, "MULTINTER_", 10))
-			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_multinter_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_multinter_final;
+					wipeoffset = wipe_voting_final;
 			}
 			else if (fastncmp(word, "CONTINUING_", 11))
 			{
@@ -4055,11 +3764,13 @@ void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_gameend_final;
 			}
-			else if (fastncmp(word, "SPECLEVEL_", 10))
+			else if (fastncmp(word, "ENCORE_", 7))
 			{
-				pword = word + 10;
-				if (fastcmp(pword, "TOWHITE"))
-					wipeoffset = wipe_speclevel_towhite;
+				pword = word + 7;
+				if (fastcmp(pword, "TOINVERT"))
+					wipeoffset = wipe_encore_toinvert;
+				else if (fastcmp(pword, "TOWHITE"))
+					wipeoffset = wipe_encore_towhite;
 			}
 
 			if (wipeoffset < 0)
@@ -4069,10 +3780,10 @@ void readwipes(MYFILE *f)
 			}
 
 			if (value == UINT8_MAX
-			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_speclevel_towhite))
+			 && (wipeoffset <= wipe_level_toblack || wipeoffset >= wipe_encore_toinvert))
 			{
 				 // Cannot disable non-toblack wipes
-				 // (or the level toblack wipe, or the special towhite wipe)
+				 // (or the level toblack wipe, or the special encore wipe)
 				deh_warning("Wipes: can't disable wipe of type '%s'", word);
 				continue;
 			}
@@ -4527,7 +4238,7 @@ playersprite_t get_sprite2(const char *word)
 		if (!spr2names[i][4] && memcmp(word,spr2names[i],4)==0)
 			return i;
 	deh_warning("Couldn't find sprite named 'SPR2_%s'",word);
-	return SPR2_STND;
+	return SPR2_STIN;
 }
 
 sfxenum_t get_sfx(const char *word)

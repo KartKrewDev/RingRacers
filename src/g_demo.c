@@ -3049,7 +3049,8 @@ void G_DoPlayDemo(char *defdemoname)
 	R_ExecuteSetViewSize();
 
 	LUAh_MapChange(gamemap);
-	displayplayer = consoleplayer = 0;
+	memset(displayplayers, 0, sizeof(displayplayers));
+	consoleplayer = 0;
 	memset(playeringame,0,sizeof(playeringame));
 	playeringame[0] = true;
 	P_SetRandSeed(randseed);

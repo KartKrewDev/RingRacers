@@ -464,7 +464,6 @@ void Y_IntermissionDrawer(void)
 	else if (bgtile)
 		V_DrawPatchFill(bgtile);
 
-dontdrawbg:
 	LUAh_IntermissionHUD();
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;

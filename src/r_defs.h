@@ -731,28 +731,28 @@ typedef struct
 
 typedef enum
 {
-	RF_HORIZONTALFLIP   = 0x0001,   // Flip sprite horizontally
-	RF_VERTICALFLIP     = 0x0002,   // Flip sprite vertically
-	RF_ABSOLUTEOFFSETS  = 0x0004,   // Sprite uses the object's offsets absolutely, instead of relatively
-	RF_FLIPOFFSETS      = 0x0008,   // Relative object offsets are flipped with the sprite
+	RF_HORIZONTALFLIP   = 0x00000001,   // Flip sprite horizontally
+	RF_VERTICALFLIP     = 0x00000002,   // Flip sprite vertically
+	RF_ABSOLUTEOFFSETS  = 0x00000004,   // Sprite uses the object's offsets absolutely, instead of relatively
+	RF_FLIPOFFSETS      = 0x00000008,   // Relative object offsets are flipped with the sprite
 
-	RF_SPLATMASK        = 0x00F0,   // --Floor sprite flags
-	RF_SLOPESPLAT       = 0x0010,   // Rotate floor sprites by a slope
-	RF_OBJECTSLOPESPLAT = 0x0020,   // Rotate floor sprites by the object's standing slope
-	RF_NOSPLATBILLBOARD = 0x0040,   // Don't billboard floor sprites (faces forward from the view angle)
-	RF_NOSPLATROLLANGLE = 0x0080,   // Don't rotate floor sprites by the object's rollangle (uses rotated patches instead)
+	RF_SPLATMASK        = 0x000000F0,   // --Floor sprite flags
+	RF_SLOPESPLAT       = 0x00000010,   // Rotate floor sprites by a slope
+	RF_OBJECTSLOPESPLAT = 0x00000020,   // Rotate floor sprites by the object's standing slope
+	RF_NOSPLATBILLBOARD = 0x00000040,   // Don't billboard floor sprites (faces forward from the view angle)
+	RF_NOSPLATROLLANGLE = 0x00000080,   // Don't rotate floor sprites by the object's rollangle (uses rotated patches instead)
 
-	RF_BLENDMASK        = 0x0F00,   // --Blending modes
-	RF_FULLBRIGHT       = 0x0100,   // Sprite is drawn at full brightness
-	RF_FULLDARK         = 0x0200,   // Sprite is drawn completely dark
-	RF_NOCOLORMAPS      = 0x0400,   // Sprite is not drawn with colormaps
+	RF_BLENDMASK        = 0x00000F00,   // --Blending modes
+	RF_FULLBRIGHT       = 0x00000100,   // Sprite is drawn at full brightness
+	RF_FULLDARK         = 0x00000200,   // Sprite is drawn completely dark
+	RF_NOCOLORMAPS      = 0x00000400,   // Sprite is not drawn with colormaps
 
-	RF_SPRITETYPEMASK   = 0x7000,   // ---Different sprite types
-	RF_PAPERSPRITE      = 0x1000,   // Paper sprite
-	RF_FLOORSPRITE      = 0x2000,   // Floor sprite
+	RF_SPRITETYPEMASK   = 0x00007000,   // ---Different sprite types
+	RF_PAPERSPRITE      = 0x00001000,   // Paper sprite
+	RF_FLOORSPRITE      = 0x00002000,   // Floor sprite
 
-	RF_SHADOWDRAW       = 0x10000,  // Stretches and skews the sprite like a shadow.
-	RF_SHADOWEFFECTS    = 0x20000,  // Scales and becomes transparent like a shadow.
+	RF_SHADOWDRAW       = 0x00010000,  // Stretches and skews the sprite like a shadow.
+	RF_SHADOWEFFECTS    = 0x00020000,  // Scales and becomes transparent like a shadow.
 	RF_DROPSHADOW       = (RF_SHADOWDRAW | RF_SHADOWEFFECTS | RF_FULLDARK),
 } renderflags_t;
 

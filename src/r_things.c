@@ -3108,6 +3108,11 @@ boolean R_ThingIsFullBright(mobj_t *thing)
 	return (thing->frame & FF_FULLBRIGHT || thing->renderflags & RF_FULLBRIGHT);
 }
 
+boolean R_ThingIsSemiBright(mobj_t *thing)
+{
+	return (thing->frame & FF_SEMIBRIGHT || thing->renderflags & RF_SEMIBRIGHT);
+}
+
 boolean R_ThingIsFullDark(mobj_t *thing)
 {
 	return (thing->renderflags & RF_FULLDARK);

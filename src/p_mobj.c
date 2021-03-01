@@ -6599,7 +6599,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if ((mobj->state >= &states[S_SSMINE1] && mobj->state <= &states[S_SSMINE4])
 			|| (mobj->state >= &states[S_SSMINE_DEPLOY8] && mobj->state <= &states[S_SSMINE_DEPLOY13]))
-			A_GrenadeRing(mobj);
+			A_SSMineSearch(mobj);
 
 		if (mobj->threshold > 0)
 			mobj->threshold--;
@@ -11717,6 +11717,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	{
 		const fixed_t mobjscale =
 			mapheaderinfo[gamemap-1]->default_waypoint_radius;
+		mtag_t tag = Tag_FGet(&mthing->tags);
 
 		if (mthing->args[1] > 0)
 			mobj->radius = (mthing->args[1]) * FRACUNIT;
@@ -11732,7 +11733,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// extravalue1 is used for indicating the waypoint is disabled
 		// extravalue2 is used for indicating the waypoint is the finishline
 		mobj->threshold = mthing->args[0];
-		mobj->movecount = mthing->tag;
+		mobj->movecount = tag;
 		if (mthing->options & MTF_EXTRA)
 		{
 			mobj->extravalue1 = 0; // The waypoint is disabled if extra is on

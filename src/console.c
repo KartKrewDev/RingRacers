@@ -400,10 +400,6 @@ static void CON_SetupColormaps(void)
 	brownmap[0]    = (UINT8)224;
 	tanmap[0]      = (UINT8)217; // no longer nice :(
 
-	// Yeah just straight up invert it like a normal person
-	for (i = 0x00; i <= 0x1F; i++)
-		invertmap[0x1F - i] = i;
-
 	// Init back colormap
 	CON_SetupBackColormap();
 }
@@ -1761,7 +1757,6 @@ static void CON_DrawBackpic(void)
 	patch_t *con_backpic;
 	lumpnum_t piclump;
 	int x, w, h;
-	int scale;
 
 	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
 	if (con_startup)
