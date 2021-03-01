@@ -1293,7 +1293,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadowskew = 0;
 
 	if (groundslope)
-		R_SkewShadowSprite(thing, groundslope, groundz, patch->height, scalemul, &shadowyscale, &shadowskew);
+		R_SkewShadowSprite(thing, groundslope, groundz, patch->height, FRACUNIT, &shadowyscale, &shadowskew);
 
 	tx -= patch->width * shadowxscale/2;
 	x1 = (centerxfrac + FixedMul(tx,xscale))>>FRACBITS;
@@ -1799,7 +1799,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		tr_x = (thingxpos + sort_x) - viewx;
 		tr_y = (thingypos + sort_y) - viewy;
 		sort_z = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin);
-		sortscale = FixedDiv(projectiony, sort_z);
+		sortscale = FixedDiv(projectiony[viewssnum], sort_z);
 	}
 
 	// Calculate the splat's sortscale
@@ -1808,7 +1808,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		tr_x = (thing->x - sort_x) - viewx;
 		tr_y = (thing->y - sort_y) - viewy;
 		sort_z = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin);
-		sortsplat = FixedDiv(projectiony, sort_z);
+		sortsplat = FixedDiv(projectiony[viewssnum], sort_z);
 	}
 
 	// PORTAL SPRITE CLIPPING
@@ -1843,26 +1843,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 		if (shadoweffects)
 		{
-			mobj_t *caster = thing->target;
-
-			if (caster && !P_MobjWasRemoved(caster))
-			{
-				fixed_t floordiff;
-
-				if (abs(groundz-viewz)/tz > 4)
-					return; // Prevent stretchy shadows and possible crashes
-
-				floordiff = abs((isflipped ? caster->height : 0) + caster->z - groundz);
-				trans += ((floordiff / (100*FRACUNIT)) + 3);
-				shadowscale = FixedMul(FRACUNIT - floordiff/640, caster->scale);
-			}
-			else
-				trans += 3;
-
-			if (trans >= NUMTRANSMAPS)
-				return;
-
-			trans--;
+			; // KART TODO: do additive/subtractive styles here
 		}
 
 		if (shadowdraw)
@@ -2032,7 +2013,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		vis->scale += FixedMul(scalestep, spriteyscale) * (vis->x1 - x1);
 	}
 
-	if ((oldthing->blendmode != AST_COPY) && cv_translucency.value)
+	if (oldthing->blendmode != AST_COPY)
 		vis->transmap = R_GetBlendTable(oldthing->blendmode, trans);
 	else
 		vis->transmap = NULL;

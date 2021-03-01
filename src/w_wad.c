@@ -53,7 +53,7 @@
 
 #include "i_video.h" // rendermode
 #include "d_netfil.h"
-#include "dehacked.h"
+#include "deh_soc.h"
 #include "d_clisrv.h"
 #include "r_defs.h"
 #include "r_data.h"
@@ -801,7 +801,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	}
 
 	if (important && !mainfile)
-		G_SetGameModified(true);
+		G_SetGameModified(true, false);
 
 	//
 	// link wad file to search files
@@ -886,7 +886,7 @@ INT32 W_InitMultipleFiles(char **filenames, boolean addons)
 	// will be realloced as lumps are added
 	for (; *filenames; filenames++)
 	{
-		if (addons && !W_VerifyNMUSlumps(*filenames))
+		if (addons && !W_VerifyNMUSlumps(*filenames, !addons))
 			G_SetGameModified(true, false);
 
 		//CONS_Debug(DBG_SETUP, "Loading %s\n", *filenames);
