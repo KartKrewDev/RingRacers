@@ -3217,7 +3217,7 @@ static void P_ConvertBinaryMap(void)
 			break;
 		case 2001: // MT_WAYPOINT
 		{
-			INT32 firstline = P_FindSpecialLineFromTag(2000, mapthings[i].angle, -1);
+			INT32 firstline = Tag_FindLineSpecial(2000, (INT16)mapthings[i].angle);
 
 			Tag_FSet(&mapthings[i].tags, mapthings[i].angle);
 			mapthings[i].args[0] = mapthings[i].z;

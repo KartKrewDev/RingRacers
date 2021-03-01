@@ -792,6 +792,7 @@ static INT16 K_FindBotController(mobj_t *mo)
 	msecnode_t *node;
 	ffloor_t *rover;
 	INT16 lineNum = -1;
+	mtag_t tag;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
@@ -803,7 +804,8 @@ static INT16 K_FindBotController(mobj_t *mo)
 			continue;
 		}
 
-		lineNum = P_FindSpecialLineFromTag(2004, node->m_sector->tag, -1);
+		tag = Tag_FGet(&node->m_sector->tags);
+		lineNum = P_FindSpecialLineFromTag(2004, tag, -1); // todo: needs to not use P_FindSpecialLineFromTag
 
 		if (lineNum != -1)
 		{
@@ -825,7 +827,8 @@ static INT16 K_FindBotController(mobj_t *mo)
 			}
 
 			rs = &sectors[rover->secnum];
-			lineNum = P_FindSpecialLineFromTag(2004, rs->tag, -1);
+			tag = Tag_FGet(&rs->tags);
+			lineNum = P_FindSpecialLineFromTag(2004, tag, -1);
 
 			if (lineNum != -1)
 			{
