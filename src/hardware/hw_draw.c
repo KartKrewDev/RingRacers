@@ -274,7 +274,7 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 		FSurfaceInfo Surf;
 		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
 		if (alphalevel == 10) { flags &= ~PF_Translucent; flags |= PF_Additive; }
-		else if (alphalevel == 11) { flags &= ~PF_Translucent; flags |= PF_Substractive; }
+		else if (alphalevel == 11) { flags &= ~PF_Translucent; flags |= PF_Subtractive; }
 		else if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
 		else if (alphalevel == 14) Surf.PolyColor.s.alpha = softwaretranstogl[st_translucency];
 		else if (alphalevel == 15) Surf.PolyColor.s.alpha = softwaretranstogl_hi[st_translucency];
@@ -433,7 +433,7 @@ void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 		FSurfaceInfo Surf;
 		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
 		if (alphalevel == 10) { flags &= ~PF_Translucent; flags |= PF_Additive; }
-		else if (alphalevel == 11) { flags &= ~PF_Translucent; flags |= PF_Substractive; }
+		else if (alphalevel == 11) { flags &= ~PF_Translucent; flags |= PF_Subtractive; }
 		else if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
 		else if (alphalevel == 14) Surf.PolyColor.s.alpha = softwaretranstogl[st_translucency];
 		else if (alphalevel == 15) Surf.PolyColor.s.alpha = softwaretranstogl_hi[st_translucency];

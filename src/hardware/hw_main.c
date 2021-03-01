@@ -562,7 +562,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 
 	HWR_Lighting(&Surf, lightlevel, planecolormap);
 
-	if (PolyFlags & (PF_Translucent|PF_Additive|PF_Substractive|PF_Fog))
+	if (PolyFlags & (PF_Translucent|PF_Additive|PF_Subtractive|PF_Fog))
 	{
 		Surf.PolyColor.s.alpha = (UINT8)alpha;
 		PolyFlags |= PF_Modulated;
@@ -972,7 +972,7 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 		if (blendmode & PF_Fog)
 			HWR_AddTransparentWall(wallVerts, Surf, texnum, blendmode, true, lightnum, colormap);
-		else if (blendmode & (PF_Translucent|PF_Additive|PF_Substractive|PF_Environment))
+		else if (blendmode & (PF_Translucent|PF_Additive|PF_Subtractive|PF_Environment))
 			HWR_AddTransparentWall(wallVerts, Surf, texnum, blendmode, false, lightnum, colormap);
 		else
 			HWR_ProjectWall(wallVerts, Surf, blendmode, lightnum, colormap);
@@ -1001,7 +1001,7 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 	if (blendmode & PF_Fog)
 		HWR_AddTransparentWall(wallVerts, Surf, texnum, blendmode, true, lightnum, colormap);
-	else if (blendmode & (PF_Translucent|PF_Additive|PF_Substractive|PF_Environment))
+	else if (blendmode & (PF_Translucent|PF_Additive|PF_Subtractive|PF_Environment))
 		HWR_AddTransparentWall(wallVerts, Surf, texnum, blendmode, false, lightnum, colormap);
 	else
 		HWR_ProjectWall(wallVerts, Surf, blendmode, lightnum, colormap);
@@ -1760,7 +1760,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
 							blendmode = PF_Additive;
 						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-							blendmode = PF_Substractive;
+							blendmode = PF_Subtractive;
 					}
 
 					if (gl_frontsector->numlights)
@@ -1879,7 +1879,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
 							blendmode = PF_Additive;
 						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-							blendmode = PF_Substractive;
+							blendmode = PF_Subtractive;
 					}
 
 					if (gl_backsector->numlights)
@@ -3159,7 +3159,7 @@ static void HWR_Subsector(size_t num)
 					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
 						blendmode = PF_Additive;
 					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-						blendmode = PF_Substractive;
+						blendmode = PF_Subtractive;
 
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 
@@ -3212,7 +3212,7 @@ static void HWR_Subsector(size_t num)
 					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
 						blendmode = PF_Additive;
 					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-						blendmode = PF_Substractive;
+						blendmode = PF_Subtractive;
 
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 
@@ -3788,7 +3788,6 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	boolean use_linkdraw_hack = false;
 	boolean splat = R_ThingIsFloorSprite(spr->mobj);
 	UINT8 alpha;
-	UINT8 brightmode = 0;
 
 	INT32 i;
 	float realtop, realbot, top, bot;
@@ -4402,36 +4401,27 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
 		UINT8 lightlevel = 255;
-		UINT8 brightmode = 0;
 		extracolormap_t *colormap = sector->extra_colormap;
-
-		if (spr->mobj->frame & FF_FULLBRIGHT)
-			brightmode = 1;
-		else if (spr->mobj->frame & FF_SEMIBRIGHT)
-			brightmode = 2;
 
 		if (sector->numlights)
 		{
 			// Always use the light at the top instead of whatever I was doing before
 			INT32 light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false);
 
-			if (brightmode != 1)
-				lightlevel = *sector->lightlist[light].lightlevel;
+			lightlevel = *sector->lightlist[light].lightlevel;
 
 			if (*sector->lightlist[light].extra_colormap)
 				colormap = *sector->lightlist[light].extra_colormap;
 		}
 		else
 		{
-			if (brightmode != 1)
-				lightlevel = sector->lightlevel;
+			lightlevel = sector->lightlevel;
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
 
-		if (brightmode == 2)
-			lightlevel = 128 + (lightlevel>>1);
+		//lightlevel = 128 + (lightlevel>>1);
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}

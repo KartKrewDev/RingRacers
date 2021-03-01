@@ -1319,23 +1319,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		sector_t *sector = spr->mobj->subsector->sector;
 		UINT8 lightlevel = 255;
 		extracolormap_t *colormap = NULL;
-		UINT8 brightmode = 0;
-		
-
-		if (spr->mobj->drawflags & MFD_BRIGHTMASK)
-		{
-			if (spr->mobj->drawflags & MFD_FULLBRIGHT)
-				brightmode = 1;
-			else if (spr->mobj->drawflags & MFD_SEMIBRIGHT)
-				brightmode = 2;
-		}
-		else
-		{
-			if (spr->mobj->frame & FF_FULLBRIGHT)
-				brightmode = 1;
-			else if (spr->mobj->frame & FF_SEMIBRIGHT)
-				brightmode = 2;
-		}
 
 		if (sector->numlights)
 		{
@@ -1343,23 +1326,20 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
-			if (brightmode != 1)
-				lightlevel = *sector->lightlist[light].lightlevel;
+			lightlevel = *sector->lightlist[light].lightlevel;
 
 			if (*sector->lightlist[light].extra_colormap)
 				colormap = *sector->lightlist[light].extra_colormap;
 		}
 		else
 		{
-			if (brightmode != 1)
-				lightlevel = sector->lightlevel;
+			lightlevel = sector->lightlevel;
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
 
-		if (brightmode == 2)
-			lightlevel = 128 + (lightlevel>>1);
+		//lightlevel = 128 + (lightlevel>>1);
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
@@ -1384,7 +1364,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		spriteframe_t *sprframe;
 		INT32 mod;
 		float finalscale;
-		FBITFIELD blendmode = PF_Masked;
 
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0)
@@ -1405,13 +1384,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		//if (tics > durs)
 			//durs = tics;
 
-		if (spr->mobj->drawflags & MFD_TRANSMASK)
-			blendmode = HWR_SurfaceBlend(spr->mobj->blendmode, (spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
-		else if (spr->mobj->frame & FF_TRANSMASK)
-			blendmode = HWR_SurfaceBlend(spr->mobj->blendmode, (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
+		if (spr->mobj->frame & FF_TRANSMASK)
+			Surf.PolyFlags = HWR_SurfaceBlend(spr->mobj->blendmode, (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 		else
 		{
-			Surf.PolyColor.s.alpha = (spr->mobj->flags2 & MF2_SHADOW) ? 0x40 : 0xff;
+			Surf.PolyColor.s.alpha = 0xff;
 			Surf.PolyFlags = HWR_GetBlendModeFlag(spr->mobj->blendmode);
 		}
 
@@ -1660,7 +1637,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		p.mirror = atransform.mirror;
 
 		HWD.pfnSetShader(SHADER_MODEL);	// model shader
-		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf, blendmode);
+		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
 	}
 
 	return true;

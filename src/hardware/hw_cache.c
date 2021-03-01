@@ -452,6 +452,8 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 	UINT8 *pdata;
 	INT32 blockwidth, blockheight, blocksize;
 
+	UINT8 *colormap = colormaps;
+
 	INT32 i;
 	boolean skyspecial = false; //poor hack for Legacy large skies..
 
@@ -475,12 +477,12 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 	grtex->mipmap.height = (UINT16)texture->height;
 	grtex->mipmap.format = textureformat;
 
-	grtex->mipmap.colormap = colormaps;
-
-#ifdef GLENCORE
 	if (encoremap)
-		grtex->mipmap.colormap += COLORMAP_REMAPOFFSET;
-#endif
+		colormap += COLORMAP_REMAPOFFSET;
+
+	grtex->mipmap.colormap = Z_Calloc(sizeof(*grtex->mipmap.colormap), PU_HWRPATCHCOLMIPMAP, NULL);
+	grtex->mipmap.colormap->source = colormap;
+	M_Memcpy(grtex->mipmap.colormap->data, colormap, 256 * sizeof(UINT8));
 
 	blockwidth = texture->width;
 	blockheight = texture->height;
@@ -551,7 +553,7 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 }
 
 // patch may be NULL if grMipmap has been initialised already and makebitmap is false
-void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap)
+void HWR_MakePatch (const patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap)
 {
 	if (grMipmap->width == 0)
 	{
@@ -859,7 +861,7 @@ static void HWR_CacheFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
 	flat = grMipmap->data;
 	for (steppy = 0; steppy < size; steppy++)
 		if (flat[steppy] != HWR_PATCHES_CHROMAKEY_COLORINDEX)
-			flat[steppy] = grMipmap->colormap[flat[steppy]];
+			flat[steppy] = grMipmap->colormap->source[flat[steppy]];
 #endif
 }
 
@@ -889,16 +891,20 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 	GLMipmap_t *grmip;
 	patch_t *patch;
 
+	UINT8 *colormap = colormaps;
+
 	if (flatlumpnum == LUMPERROR)
 		return;
 
 	patch = HWR_GetCachedGLPatch(flatlumpnum);
 	grmip = ((GLPatch_t *)Patch_AllocateHardwarePatch(patch))->mipmap;
 
-	grmip->colormap = colormaps;
-
 	if (!noencoremap && encoremap)
-		grmip->colormap += COLORMAP_REMAPOFFSET;
+		colormap += COLORMAP_REMAPOFFSET;
+
+	grmip->colormap = Z_Calloc(sizeof(*grmip->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
+	grmip->colormap->source = colormap;
+	M_Memcpy(grmip->colormap->data, colormap, 256 * sizeof(UINT8));
 
 	if (!grmip->downloaded && !grmip->data)
 		HWR_CacheFlat(grmip, flatlumpnum);

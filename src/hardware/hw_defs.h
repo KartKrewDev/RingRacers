@@ -218,9 +218,10 @@ enum EPolyFlags
 	PF_Subtractive      = 0x00000020,   // Subtractive color blending
 	PF_ReverseSubtract  = 0x00000040,   // Reverse subtract, used in wall splats (decals)
 	PF_Multiplicative   = 0x00000080,   // Multiplicative color blending
+	PF_Invert           = 0x00000100,   // Polygon inverts the colours of what it's in front of
 	PF_Fog              = 0x20000000,   // Fog blocks
 	PF_NoAlphaTest      = 0x40000000,   // Disables alpha testing
-	PF_Blending         = (PF_Masked|PF_Translucent|PF_Environment|PF_Additive|PF_AdditiveSource|PF_Subtractive|PF_ReverseSubtract|PF_Multiplicative|PF_Fog) & ~PF_NoAlphaTest,
+	PF_Blending         = (PF_Masked|PF_Translucent|PF_Environment|PF_Additive|PF_AdditiveSource|PF_Subtractive|PF_ReverseSubtract|PF_Multiplicative|PF_Invert|PF_Fog) & ~PF_NoAlphaTest,
 
 	// other flag bits
 	PF_Occlude          = 0x00000100,   // Updates the depth buffer
