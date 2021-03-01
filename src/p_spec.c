@@ -7283,6 +7283,9 @@ static void P_SpawnScrollers(void)
 		INT32 control = -1, accel = 0; // no control sector or acceleration
 		INT32 special = l->special;
 
+		register INT32 s;
+		TAG_ITER_DECLARECOUNTER(0);
+
 		tag = Tag_FGet(&l->tags);
 
 		// These types are same as the ones they get set to except that the
@@ -7324,9 +7327,6 @@ static void P_SpawnScrollers(void)
 
 		switch (special)
 		{
-			register INT32 s;
-			TAG_ITER_DECLARECOUNTER(0);
-
 			case 513: // scroll effect ceiling
 			case 533: // scroll and carry objects on ceiling
 				TAG_ITER_SECTORS(0, tag, s)
@@ -7413,7 +7413,7 @@ static void P_SpawnScrollers(void)
 				break;
 
 			case 509: // scroll front and backside of tagged lines
-				for (s = -1; (s = P_FindLineFromTag(l->tag, s)) >= 0 ;)
+				TAG_ITER_LINES(0, tag, s)
 				{
 					if (s != (INT32)i)
 					{
