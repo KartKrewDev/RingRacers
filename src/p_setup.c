@@ -3219,7 +3219,7 @@ static void P_ConvertBinaryMap(void)
 		{
 			INT32 firstline = P_FindSpecialLineFromTag(2000, mapthings[i].angle, -1);
 
-			mapthings[i].tag = mapthings[i].angle;
+			Tag_FSet(&mapthings[i].tags, mapthings[i].angle);
 			mapthings[i].args[0] = mapthings[i].z;
 			mapthings[i].args[2] = mapthings[i].extrainfo;
 			mapthings[i].z = 0;
@@ -3944,9 +3944,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Cancel all d_main.c fadeouts (keep fade in though).
 	if (reloadinggamestate)
 		wipegamestate = gamestate; // Don't fade if reloading the gamestate
-	else
-		wipegamestate = FORCEWIPEOFF;
-	//wipestyleflags = 0;
 
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.

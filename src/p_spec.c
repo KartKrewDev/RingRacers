@@ -3785,7 +3785,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					break;
 				}
 
-				while ((secnum = P_FindSectorFromTag(line->tag, secnum)) >= 0)
+				TAG_ITER_SECTORS(0, tag, secnum)
 				{
 					sec = sectors + secnum;
 
@@ -4748,10 +4748,6 @@ DoneSection2:
 
 				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ZOOMTUBE)
 					break;
-
-				//initialize resulthigh and resultlow with 0
-				memset(&resultlow, 0x00, sizeof(resultlow));
-				memset(&resulthigh, 0x00, sizeof(resulthigh));
 
 				// Find line #11 tagged to this sector
 				lineindex = Tag_FindLineSpecial(11, sectag);
@@ -6927,11 +6923,14 @@ void P_SpawnSpecialsAfterSlopes(void)
 		switch (lines[i].special)
 		{
 			case 80: // Raise tagged things by type to this FOF
-				P_RaiseTaggedThingsToFakeFloor(
-						( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
-						lines[i].tag,
-						lines[i].frontsector
-				);
+				{
+					mtag_t tag = Tag_FGet(&lines[i].tags);
+					P_RaiseTaggedThingsToFakeFloor(
+							( sides[lines[i].sidenum[0]].textureoffset >> FRACBITS ),
+							tag,
+							lines[i].frontsector
+					);
+				}
 				break;
 		}
 	}
