@@ -3658,7 +3658,6 @@ void G_StopDemo(void)
 	democam.soundmobj = NULL;
 	democam.localangle = 0;
 	democam.localaiming = 0;
-	democam.turnheld = false;
 	democam.keyboardlook = false;
 
 	if (gamestate == GS_INTERMISSION)

@@ -867,8 +867,6 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
-static INT32 angleturn[2] = {KART_FULLTURN, KART_FULLTURN / 4}; // + slow turn
-
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
@@ -879,11 +877,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	const boolean gamepadjoystickmove = cv_usejoystick[forplayer].value && Joystick[forplayer].bGamepadStyle;
 	const boolean usejoystick = (analogjoystickmove || gamepadjoystickmove);
 
-	static INT32 turnheld[MAXSPLITSCREENPLAYERS]; // for accelerative turning
 	static boolean keyboard_look[MAXSPLITSCREENPLAYERS]; // true if lookup/down using keyboard
 	static boolean resetdown[MAXSPLITSCREENPLAYERS]; // don't cam reset every frame
 
-	INT32 tspeed, forward, axis;
+	INT32 forward, axis;
 
 	joystickvector2_t joystickvector;
 
@@ -891,10 +888,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	player_t *player = &players[g_localplayers[forplayer]];
 	camera_t *thiscam = &camera[forplayer];
-	INT32 *th = &turnheld[forplayer];
 	boolean *kbl = &keyboard_look[forplayer];
 	boolean *rd = &resetdown[forplayer];
 	const boolean mouseaiming = player->spectator;
+
+	(void)realtics;
 
 	if (demo.playback) return;
 
@@ -958,39 +956,27 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	}
 	forward = 0;
 
-	// use two stage accelerative turning
-	// on the keyboard and joystick
-	if (turnleft || turnright)
-		*th += realtics;
-	else
-		*th = 0;
-
-	if (*th < SLOWTURNTICS)
-		tspeed = 1; // slow turn
-	else
-		tspeed = 0;
-
 	cmd->turning = 0;
 
 	// let movement keys cancel each other out
 	if (turnright && !(turnleft))
 	{
-		cmd->turning = (INT16)(cmd->turning - (angleturn[tspeed]));
+		cmd->turning -= KART_FULLTURN;
 	}
 	else if (turnleft && !(turnright))
 	{
-		cmd->turning = (INT16)(cmd->turning + (angleturn[tspeed]));
+		cmd->turning += KART_FULLTURN;
 	}
 
 	if (analogjoystickmove && joystickvector.xaxis != 0)
 	{
-		cmd->turning = (INT16)(cmd->turning - (((joystickvector.xaxis * angleturn[0]) >> 10)));
+		cmd->turning -= (joystickvector.xaxis * KART_FULLTURN) >> 10;
 	}
 
 	// Specator mouse turning
 	if (player->spectator)
 	{
-		cmd->turning = (INT16)(cmd->turning - ((mousex*(encoremode ? -1 : 1)*8)));
+		cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
 	}
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
@@ -1125,7 +1111,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->forwardmove += (SINT8)forward;
 
-	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
+	cmd->latency = (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
 	cmd->flags = 0;
 
 	if (chat_on || CON_Ready())
@@ -1156,10 +1142,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else if (cmd->forwardmove < -MAXPLMOVE)
 		cmd->forwardmove = -MAXPLMOVE;
 
-	if (cmd->turning > (angleturn[0]))
-		cmd->turning = (angleturn[0]);
-	else if (cmd->turning < (-angleturn[0]))
-		cmd->turning = (-angleturn[0]);
+	if (cmd->turning > KART_FULLTURN)
+		cmd->turning = KART_FULLTURN;
+	else if (cmd->turning < -KART_FULLTURN)
+		cmd->turning = -KART_FULLTURN;
 
 	// Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->buttons)
