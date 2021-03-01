@@ -1371,12 +1371,9 @@ static void CL_ReloadReceivedSavegame(void)
 		neededtic = gametic;
 	maketic = neededtic;
 
-	ticcmd_oldangleturn[0] = players[consoleplayer].oldrelangleturn;
-	P_ForceLocalAngle(&players[consoleplayer], (angle_t)(players[consoleplayer].angleturn << 16));
-	if (splitscreen)
+	for (i = 0; i <= splitscreen; i++)
 	{
-		ticcmd_oldangleturn[1] = players[secondarydisplayplayer].oldrelangleturn;
-		P_ForceLocalAngle(&players[secondarydisplayplayer], (angle_t)(players[secondarydisplayplayer].angleturn << 16));
+		P_ForceLocalAngle(&players[displayplayers[i]], players[displayplayers[i]].angleturn);
 	}
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
