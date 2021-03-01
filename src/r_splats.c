@@ -322,8 +322,8 @@ void R_DrawFloorSprite(vissprite_t *spr)
 			return;
 
 		// note: y from view above of map, is distance far away
-		xscale = FixedDiv(projection, rot_y);
-		yscale = -FixedDiv(projectiony, rot_y);
+		xscale = FixedDiv(projection[viewssnum], rot_y);
+		yscale = -FixedDiv(projectiony[viewssnum], rot_y);
 
 		// projection
 		v2d[i].x = (centerxfrac + FixedMul(rot_x, xscale))>>FRACBITS;

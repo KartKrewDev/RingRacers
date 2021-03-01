@@ -908,7 +908,6 @@ void R_DrawSinglePlane(visplane_t *pl)
 		{
 			INT32 top, bottom;
 
-			itswater = true;
 			if (spanfunctype == SPANDRAWFUNC_TRANS)
 			{
 				UINT8 i;

@@ -1032,8 +1032,8 @@ void R_ExecuteSetViewSize(void)
 		for (i = 0; i < j; i++)
 		{
 			dy = ((i - viewheight*8)<<FRACBITS) + FRACUNIT/2;
-			dy = FixedMul(abs(dy), fovtan);
-			yslopetab[i] = FixedDiv(centerx*FRACUNIT, dy);
+			dy = FixedMul(abs(dy), fovtan[s]);
+			yslopetab[s][i] = FixedDiv(centerx*FRACUNIT, dy);
 		}
 
 		if (ds_su)

@@ -154,6 +154,7 @@ typedef struct vissprite_s
 
 	fixed_t gx, gy; // for line side calculation
 	fixed_t gz, gzt; // global bottom/top for silhouette clipping and sorting with 3D floors
+	fixed_t pz, pzt; // physical bottom/top
 
 	fixed_t startfrac; // horizontal position of x1
 	fixed_t scale;
@@ -187,6 +188,7 @@ typedef struct vissprite_s
 	fixed_t xscale;
 
 	// Precalculated top and bottom screen coords for the sprite.
+	fixed_t thingheight; // The actual height of the thing
 	sector_t *sector; // The sector containing the thing.
 	INT16 sz, szt;
 

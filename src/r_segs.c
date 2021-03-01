@@ -1661,7 +1661,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 			gxt = FixedMul(tr_x, viewcos);
 			gyt = -FixedMul(tr_y, viewsin);
-			ds_p->scale1 = FixedDiv(projection, gxt - gyt);
+			ds_p->scale1 = FixedDiv(projection[viewssnum], gxt - gyt);
 		}
 #endif
 		ds_p->scale2 = ds_p->scale1;
