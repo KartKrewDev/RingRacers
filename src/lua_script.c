@@ -430,6 +430,8 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		gravity = (fixed_t)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "stoppedclock"))
 		stoppedclock = luaL_checkboolean(L, 2);
+	/*
+	// KART TODO: displayplayers is a table...
 	else if (fastcmp(word, "displayplayer"))
 	{
 		player_t *player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
@@ -437,6 +439,7 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		if (player)
 			displayplayer = player - players;
 	}
+	*/
 	else if (fastcmp(word, "mapmusname"))
 	{
 		size_t strlength;

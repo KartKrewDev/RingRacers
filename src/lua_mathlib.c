@@ -122,7 +122,7 @@ static int lib_fixedsqrt(lua_State *L)
 
 static int lib_fixedhypot(lua_State *L)
 {
-	lua_pushfixed(L, R_PointToDist2(0, 0, luaL_checkfixed(L, 1), luaL_checkfixed(L, 2)));
+	lua_pushfixed(L, FixedHypot(luaL_checkfixed(L, 1), luaL_checkfixed(L, 2)));
 	return 1;
 }
 
@@ -195,8 +195,6 @@ static luaL_Reg lib[] = {
 	{"fixint"  , lib_fixedint},
 	{"FixedDiv", lib_fixeddiv},
 	{"fixdiv"  , lib_fixeddiv},
-	{"FixedRem", lib_fixedrem},
-	{"fixrem"  , lib_fixedrem},
 	{"FixedSqrt", lib_fixedsqrt},
 	{"fixsqrt"  , lib_fixedsqrt},
 	{"FixedHypot", lib_fixedhypot},

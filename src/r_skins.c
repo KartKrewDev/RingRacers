@@ -34,6 +34,8 @@
 INT32 numskins = 0;
 skin_t skins[MAXSKINS];
 
+INT32 numfollowers = 0;
+
 // FIXTHIS: don't work because it must be inistilised before the config load
 //#define SKINVALUES
 #ifdef SKINVALUES
