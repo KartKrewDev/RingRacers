@@ -477,8 +477,6 @@ consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
 
-player_t *seenplayer; // player we're aiming at right now
-
 // now automatically allocated in D_RegisterClientCommands
 // so that it doesn't have to be updated depending on the value of MAXPLAYERS
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1];

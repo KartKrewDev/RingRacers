@@ -1064,7 +1064,6 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 		case MT_HOOP:
 		case MT_HOOPCOLLIDE:
 		case MT_NIGHTSCORE:
-		case MT_NAMECHECK: // DEFINITELY not this, because it is client-side.
 			continue;
 		default:
 			break;
