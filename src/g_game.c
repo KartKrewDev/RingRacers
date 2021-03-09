@@ -1041,6 +1041,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (PlayerInputDown(ssplayer, gc_drift) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_DRIFT;
 
+	// Spindash with any button/key
+	// Simply holds all of the inputs for you.
+	axis = PlayerJoyAxis(ssplayer, AXISSPINDASH);
+	if (PlayerInputDown(ssplayer, gc_spindash) || (usejoystick && axis > 0))
+		cmd->buttons |= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT);
+
 	// rear view with any button/key
 	axis = PlayerJoyAxis(ssplayer, AXISLOOKBACK);
 	if (PlayerInputDown(ssplayer, gc_lookback) || (usejoystick && axis > 0))
