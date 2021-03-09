@@ -909,7 +909,7 @@ static void K_BotItemFlame(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 {
-	INT32 saferingsval = 16 - K_GetKartRingPower(player);
+	INT32 saferingsval = 16 - K_GetKartRingPower(player, false);
 
 	if (player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
 		|| player->kartstuff[k_speedboost] > (FRACUNIT/5)) // Have another type of boost (tethering)
@@ -971,7 +971,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 	{
 		// Use rings!
 
-		if (!player->exiting)
+		if (leveltime > starttime && !player->exiting)
 		{
 			K_BotItemRings(player, cmd);
 		}

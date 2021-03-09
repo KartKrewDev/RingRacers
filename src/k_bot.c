@@ -572,9 +572,11 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
 	const fixed_t speed = max(P_AproxDistance(player->mo->momx, player->mo->momy), K_GetKartSpeed(player, false) / 4);
-	const INT32 distance = (FixedMul(speed, distreduce) / FRACUNIT) * futuresight;
 
-	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
+	const INT32 startDist = (768 * mapobjectscale) / FRACUNIT;
+	const INT32 distance = ((FixedMul(speed, distreduce) / FRACUNIT) * futuresight) + startDist;
+
+	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 	waypoint_t *wp = player->nextwaypoint;
 
 	INT32 distanceleft = distance;
@@ -838,6 +840,70 @@ static INT16 K_FindBotController(mobj_t *mo)
 }
 
 /*--------------------------------------------------
+	static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
+
+		Draws objects to show where the viewpoint bot is trying to go.
+
+	Input Arguments:-
+		predict - The prediction to visualize.
+		player - The bot player this prediction is for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
+{
+	mobj_t *debugMobj = NULL;
+	angle_t sideAngle = ANGLE_MAX;
+	UINT8 i = UINT8_MAX;
+
+	I_Assert(predict != NULL);
+	I_Assert(player != NULL);
+	I_Assert(player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
+
+	sideAngle = player->mo->angle + ANGLE_90;
+
+	debugMobj = P_SpawnMobj(predict->x, predict->y, player->mo->z, MT_SPARK);
+	P_SetMobjState(debugMobj, S_THOK);
+
+	debugMobj->frame &= ~FF_TRANSMASK;
+	debugMobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
+
+	debugMobj->color = SKINCOLOR_ORANGE;
+	debugMobj->scale *= 2;
+
+	debugMobj->tics = 2;
+
+	for (i = 0; i < 2; i++)
+	{
+		mobj_t *radiusMobj = NULL;
+		fixed_t radiusX = predict->x, radiusY = predict->y;
+
+		if (i & 1)
+		{
+			radiusX -= FixedMul(predict->radius, FINECOSINE(sideAngle >> ANGLETOFINESHIFT));
+			radiusY -= FixedMul(predict->radius, FINESINE(sideAngle >> ANGLETOFINESHIFT));
+		}
+		else
+		{
+			radiusX += FixedMul(predict->radius, FINECOSINE(sideAngle >> ANGLETOFINESHIFT));
+			radiusY += FixedMul(predict->radius, FINESINE(sideAngle >> ANGLETOFINESHIFT));
+		}
+
+		radiusMobj = P_SpawnMobj(radiusX, radiusY, player->mo->z, MT_SPARK);
+		P_SetMobjState(radiusMobj, S_THOK);
+
+		radiusMobj->frame &= ~FF_TRANSMASK;
+		radiusMobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
+
+		radiusMobj->color = SKINCOLOR_YELLOW;
+		radiusMobj->scale /= 2;
+
+		radiusMobj->tics = 2;
+	}
+}
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
@@ -863,6 +929,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		gamestate != GS_LEVEL
 		|| player->mo->scale <= 1
 		|| player->playerstate == PST_DEAD
+		|| leveltime <= introtime
 		)
 	{
 		// No need to do anything else.
@@ -927,7 +994,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			destangle = FixedAngle(sides[controllerLine->sidenum[0]].textureoffset);
 
 			// Overwritten prediction
-			predict = Z_Calloc(sizeof(botprediction_t), PU_LEVEL, NULL);
+			predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 
 			predict->x = player->mo->x + FixedMul(dist, FINECOSINE(destangle >> ANGLETOFINESHIFT));
 			predict->y = player->mo->y + FixedMul(dist, FINESINE(destangle >> ANGLETOFINESHIFT));
@@ -936,6 +1003,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		else
 		{
 			predict = K_CreateBotPrediction(player);
+
+			K_NudgePredictionTowardsObjects(predict, player);
+
 			destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
 
@@ -1033,11 +1103,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				cmd->forwardmove /= 2;
 				cmd->buttons |= BT_BRAKE;
 			}
-			else if (dirdist <= realrad)
-			{
-				// Steer towards/away from objects!
-				turnamt += K_BotFindObjects(player, turnamt);
-			}
 		}
 	}
 
@@ -1053,7 +1118,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			finishBeamLine->v1->x, finishBeamLine->v1->y,
 			finishBeamLine->v2->x, finishBeamLine->v2->y,
 			player->mo->x, player->mo->y
-		);
+		) - player->speed;
 
 		// Don't run the spindash code at all until we're in the right place
 		trySpindash = false;
@@ -1163,6 +1228,11 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Free the prediction we made earlier
 	if (predict != NULL)
 	{
+		if (cv_kartdebugbotpredict.value != 0 && player - players == displayplayers[0])
+		{
+			K_DrawPredictionDebug(predict, player);
+		}
+
 		Z_Free(predict);
 	}
 }
