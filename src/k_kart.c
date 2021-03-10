@@ -7046,7 +7046,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if ((currentSpeed <= 0) // Not moving
 	&& ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK) // Not e-braking
 	&& (player->respawn.state == RESPAWNST_NONE) // Not respawning
-	&& (P_IsObjectOnGround(player->mo) == false)) // On the ground
+	&& (P_IsObjectOnGround(player->mo) == true)) // On the ground
 	{
 		return 0;
 	}
