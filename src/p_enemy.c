@@ -211,6 +211,7 @@ void A_MayonakaArrow(mobj_t *actor);	//SRB2kart
 void A_ReaperThinker(mobj_t *actor);	//SRB2kart
 void A_MementosTPParticles(mobj_t *actor);	//SRB2kart
 void A_FlameShieldPaper(mobj_t *actor); // SRB2kart
+void A_InvincSparkleRotate(mobj_t *actor);	// SRB2kart
 void A_OrbitNights(mobj_t *actor);
 void A_GhostMe(mobj_t *actor);
 void A_SetObjectState(mobj_t *actor);
@@ -9809,6 +9810,39 @@ void A_FlameShieldPaper(mobj_t *actor)
 		paper->extravalue1 = i;
 	}
 }
+
+
+// Rotation thinker for invinc sparkles.
+
+// actor->movefactor: fixed_t distance away from the target (not updated with the target's scale since our actor will barely last 12 frames lmao)
+// actor->angle: angle_t to rotate from. Updates itself each call of this action.
+// actor->extravalue1: z diff between the actor and its target when spawned. Used to know the Z position to teleport to each frame.
+// actor->extravalue2: -1 or 1 to tell if we should rotate clockwise or counterclockwise respectively.
+
+void A_InvincSparkleRotate(mobj_t *actor)
+{
+
+	fixed_t sx, sy, sz;	// Teleport dests.
+
+	if (LUA_CallAction("A_InvincSparkleRotate", actor))
+		return;
+
+	if (!actor->target || P_MobjWasRemoved(actor->target))
+		return;
+
+	CONS_Printf("%d\n", actor->movefactor/FRACUNIT);
+	sx = actor->target->x + FixedMul((actor->movefactor), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
+	sy = actor->target->y + FixedMul((actor->movefactor), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
+	sz = actor->target->z + (actor->extravalue1) + FixedMul((actor->cvmem), FINECOSINE((leveltime*ANG1*10 + actor->angle)>>ANGLETOFINESHIFT));
+	P_TeleportMove(actor, sx, sy, sz);
+
+	actor->momx = actor->target->momx;
+	actor->momy = actor->target->momy;
+	actor->momz = actor->target->momz;	// Give momentum for eventual interp builds idk.
+
+	actor->angle += ANG1*10*(actor->extravalue2);	// Arbitrary value, change this if you want, I suppose.
+}
+
 
 //}
 

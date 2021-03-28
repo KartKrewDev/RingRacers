@@ -183,6 +183,7 @@ void A_MayonakaArrow();	//SRB2kart: midnight channel arrow sign
 void A_ReaperThinker();	//SRB2kart: mementos reaper
 void A_MementosTPParticles();	//SRB2kart: mementos teleporter particles. Man that's a lot of actions for my shite.
 void A_FlameShieldPaper();
+void A_InvincSparkleRotate();	// SRB2kart: invinc sparkle rotation
 void A_OrbitNights();
 void A_GhostMe();
 void A_SetObjectState();

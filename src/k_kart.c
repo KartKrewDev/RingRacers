@@ -2494,7 +2494,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
 		// 30% - 44%, each point of speed adds 1.75%
-		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((7*FRACUNIT)/400)); 
+		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((7*FRACUNIT)/400));
 		speedboost += FixedMul(draftspeed, player->kartstuff[k_draftpower]); // (Drafting suffers no boost stack penalty.)
 		numboosts++;
 	}
@@ -3764,13 +3764,14 @@ void K_SpawnBoostTrail(player_t *player)
 
 void K_SpawnSparkleTrail(mobj_t *mo)
 {
-	const INT32 rad = (mo->radius*3)>>FRACBITS;
+	const INT32 rad = (mo->radius*3)/FRACUNIT;
 	mobj_t *sparkle;
-	angle_t newangle;
+	//angle_t newangle;
 	INT32 i;
-	UINT8 frame;
+	//UINT8 frame;
 	UINT8 invanimnum;
 	UINT8 index = 1;
+	fixed_t newx, newy, newz;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
@@ -3780,18 +3781,23 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	if (leveltime & 2)
 		index = 2;
 
-	CONS_Printf("%d\n", index);
-	CONS_Printf("%d\n", invanimnum);
+	//CONS_Printf("%d\n", index);
+	//CONS_Printf("%d\n", invanimnum);
 
 	for (i = 0; i < 8; i++)
 	{
-		newangle = (mo->angle + ANGLE_157h) + FixedAngle(((360 / 8) * i) << FRACBITS) + ANGLE_90;
-		fixed_t newx = mo->x + (mo->momx*4)/5 + (P_RandomRange(-rad, rad)<<FRACBITS);
-		fixed_t newy = mo->y + mo->momy + (P_RandomRange(-rad, rad*2)<<FRACBITS);
-		fixed_t newz = mo->z + (mo->momz*4)/5 + (P_RandomRange(0, mo->height>>FRACBITS)<<FRACBITS);
+		//newangle = (mo->angle + ANGLE_157h) + FixedAngle(((360 / 8) * i) << FRACBITS) + ANGLE_90;
+		newx = mo->x + (P_RandomRange(-rad, rad)*FRACUNIT);
+		newy = mo->y + (P_RandomRange(-rad, rad)*FRACUNIT);
+		newz = mo->z + (P_RandomRange(0, mo->height>>FRACBITS)*FRACUNIT);
 
 		sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
-		sparkle->angle = newangle;
+		sparkle->angle = R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y);
+		sparkle->movefactor = R_PointToDist2(mo->x, mo->y, sparkle->x, sparkle->y);	// Save the distance we spawned away from the player.
+		CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
+		sparkle->extravalue1 = (sparkle->z - mo->z);			// Keep track of our Z position relative to the player's, I suppose.
+		sparkle->extravalue2 = P_RandomRange(0, 1) ? 1 : -1;	// Rotation direction?
+		sparkle->cvmem = P_RandomRange(-25, 25)*mo->scale;		// Vertical "angle"
 		K_FlipFromObject(sparkle, mo);
 
 		//if (i == 0)
