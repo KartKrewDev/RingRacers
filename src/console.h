@@ -28,9 +28,6 @@ extern boolean con_recalc;
 // console being displayed at game startup
 extern boolean con_startup;
 
-// needs explicit screen refresh until we are in the main game loop
-extern boolean con_refresh;
-
 // when modifying the below, you must also adjust d_main and console.c
 typedef enum
 {
