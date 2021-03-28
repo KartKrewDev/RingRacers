@@ -401,6 +401,21 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
 
+static INT32 K_SparkleTrailStartStates[NUMKARTSPARKLESTATES][2] = {
+	{S_KARTINVULN12, S_KARTINVULNB12},
+	{S_KARTINVULN11, S_KARTINVULNB11},
+	{S_KARTINVULN10, S_KARTINVULNB10},
+	{S_KARTINVULN9, S_KARTINVULNB9},
+	{S_KARTINVULN8, S_KARTINVULNB8},
+	{S_KARTINVULN7, S_KARTINVULNB7},
+	{S_KARTINVULN6, S_KARTINVULNB6},
+	{S_KARTINVULN5, S_KARTINVULNB5},
+	{S_KARTINVULN4, S_KARTINVULNB4},
+	{S_KARTINVULN3, S_KARTINVULNB3},
+	{S_KARTINVULN2, S_KARTINVULNB2},
+	{S_KARTINVULN1, S_KARTINVULNB1}
+};
+
 INT32 K_GetShieldFromItem(INT32 item)
 {
 	switch (item)
@@ -3749,20 +3764,34 @@ void K_SpawnBoostTrail(player_t *player)
 
 void K_SpawnSparkleTrail(mobj_t *mo)
 {
-	const INT32 rad = (mo->radius*2)>>FRACBITS;
+	const INT32 rad = (mo->radius*3)>>FRACBITS;
 	mobj_t *sparkle;
+	angle_t newangle;
 	INT32 i;
+	UINT8 frame;
+	UINT8 invanimnum;
+	UINT8 index = 1;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	for (i = 0; i < 3; i++)
+	invanimnum = mo->player->kartstuff[k_invincibilitytimer]/TICRATE+1;
+
+	if (leveltime & 2)
+		index = 2;
+
+	CONS_Printf("%d\n", index);
+	CONS_Printf("%d\n", invanimnum);
+
+	for (i = 0; i < 8; i++)
 	{
-		fixed_t newx = mo->x + mo->momx + (P_RandomRange(-rad, rad)<<FRACBITS);
-		fixed_t newy = mo->y + mo->momy + (P_RandomRange(-rad, rad)<<FRACBITS);
-		fixed_t newz = mo->z + mo->momz + (P_RandomRange(0, mo->height>>FRACBITS)<<FRACBITS);
+		newangle = (mo->angle + ANGLE_157h) + FixedAngle(((360 / 8) * i) << FRACBITS) + ANGLE_90;
+		fixed_t newx = mo->x + (mo->momx*4)/5 + (P_RandomRange(-rad, rad)<<FRACBITS);
+		fixed_t newy = mo->y + mo->momy + (P_RandomRange(-rad, rad*2)<<FRACBITS);
+		fixed_t newz = mo->z + (mo->momz*4)/5 + (P_RandomRange(0, mo->height>>FRACBITS)<<FRACBITS);
 
 		sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
+		sparkle->angle = newangle;
 		K_FlipFromObject(sparkle, mo);
 
 		//if (i == 0)
@@ -3771,11 +3800,15 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 		P_SetTarget(&sparkle->target, mo);
 		sparkle->destscale = mo->destscale;
 		P_SetScale(sparkle, mo->scale);
-		sparkle->color = mo->color;
-		//sparkle->colorized = mo->colorized;
 	}
 
-	P_SetMobjState(sparkle, S_KARTINVULN_LARGE1);
+	P_SetMobjState(sparkle, K_SparkleTrailStartStates[invanimnum][index]);
+	sparkle->colorized = true;
+	sparkle->color = mo->color;
+
+	//CONS_Printf("%d\n", (mo->player->kartstuff[k_invincibilitytimer]/TICRATE));
+
+	//invanimnum = (mo->player->kartstuff[k_invincibilitytimer]/TICRATE > 11) ? 11 : mo->player->kartstuff[k_invincibilitytimer]/TICRATE;
 }
 
 void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
