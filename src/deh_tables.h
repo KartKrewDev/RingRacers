@@ -67,6 +67,8 @@ extern const char *const GAMETYPERULE_LIST[];
 extern const char *const ML_LIST[16]; // Linedef flags
 extern const char *COLOR_ENUMS[];
 extern const char *const POWERS_LIST[];
+extern const char *const KARTSTUFF_LIST[];
+extern const char *const KARTHUD_LIST[];
 extern const char *const HUDITEMS_LIST[];
 extern const char *const MENUTYPES_LIST[];
 

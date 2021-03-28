@@ -463,6 +463,42 @@ static inline int lib_getenum(lua_State *L)
 			}
 		return luaL_error(L, "power '%s' could not be found.\n", word);
 	}
+	else if (!mathlib && fastncmp("k_",word,2)) {
+		p = word+2;
+		for (i = 0; i < NUMKARTSTUFF; i++)
+			if (fasticmp(p, KARTSTUFF_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return 0;
+	}
+	else if (mathlib && fastncmp("K_",word,2)) { // SOCs are ALL CAPS!
+		p = word+2;
+		for (i = 0; i < NUMKARTSTUFF; i++)
+			if (fastcmp(p, KARTSTUFF_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return luaL_error(L, "kartstuff '%s' could not be found.\n", word);
+	}
+	else if (!mathlib && fastncmp("khud_",word,5)) {
+		p = word+5;
+		for (i = 0; i < NUMKARTHUD; i++)
+			if (fasticmp(p, KARTHUD_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return 0;
+	}
+	else if (mathlib && fastncmp("KHUD_",word,5)) { // SOCs are ALL CAPS!
+		p = word+5;
+		for (i = 0; i < NUMKARTHUD; i++)
+			if (fastcmp(p, KARTHUD_LIST[i])) {
+				lua_pushinteger(L, i);
+				return 1;
+			}
+		return luaL_error(L, "karthud '%s' could not be found.\n", word);
+	}
 	else if (fastncmp("HUD_",word,4)) {
 		p = word+4;
 		for (i = 0; i < NUMHUDITEMS; i++)
