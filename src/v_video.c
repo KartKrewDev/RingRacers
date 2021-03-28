@@ -1081,7 +1081,7 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c)
 		return;
 
 #ifdef HWRENDER
-	if (rendermode != render_soft && !con_startup)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawDiag(x, y, wh, c);
 		return;

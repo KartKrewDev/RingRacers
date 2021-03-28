@@ -1084,7 +1084,9 @@ void R_Init(void)
 {
 	// screensize independent
 	//I_OutputMsg("\nR_InitData");
-	R_InitData();
+	//R_InitData(); -- split to d_main for its own startup steps since it takes AGES
+	CONS_Printf("R_InitColormaps()...\n");
+	R_InitColormaps();
 
 	//I_OutputMsg("\nR_InitViewBorder");
 	R_InitViewBorder();

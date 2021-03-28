@@ -1510,6 +1510,13 @@ void D_SRB2Main(void)
 	M_Init();
 	CON_SetLoadingProgress(LOADED_MINIT);
 
+	R_InitTextureData(); // seperated out from below because it takes ages by itself
+	CON_SetLoadingProgress(LOADED_INITTEXTUREDATA);
+
+	CONS_Printf("R_InitSprites()...\n");
+	R_InitSprites(); // ditto
+	CON_SetLoadingProgress(LOADED_INITSPRITES);
+
 	CONS_Printf("R_Init(): Init SRB2 refresh daemon.\n");
 	R_Init();
 	CON_SetLoadingProgress(LOADED_RINIT);

@@ -513,6 +513,11 @@ void R_InitSprites(void)
 	float fa;
 #endif
 
+	// allocate sprite lookup tables
+	numspritelumps = 0;
+	max_spritelumps = 8192;
+	Z_Malloc(max_spritelumps*sizeof(*spritecachedinfo), PU_STATIC, &spritecachedinfo);
+
 	for (i = 0; i < MAXVIDWIDTH; i++)
 		negonearray[i] = -1;
 

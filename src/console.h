@@ -31,6 +31,7 @@ extern boolean con_startup;
 // needs explicit screen refresh until we are in the main game loop
 extern boolean con_refresh;
 
+// when modifying the below, you must also adjust d_main and console.c
 typedef enum
 {
 	LOADED_ZINIT = 1,
@@ -40,6 +41,8 @@ typedef enum
 	LOADED_ISTARTUPGRAPHICS,
 	LOADED_HULOADGRAPHICS,
 	LOADED_MINIT,
+	LOADED_INITTEXTUREDATA,
+	LOADED_INITSPRITES,
 	LOADED_RINIT,
 	LOADED_SINITSFXCHANNELS,
 	LOADED_STINIT,
