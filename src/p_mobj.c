@@ -10465,7 +10465,8 @@ void P_SpawnPlayer(INT32 playernum)
 			p->skincolor = skincolor_blueteam;
 	}
 
-	p->powers[pw_flashing] = K_GetKartFlashing(p); // Babysitting deterrent
+	if (leveltime >= introtime)
+		p->powers[pw_flashing] = K_GetKartFlashing(p); // Babysitting deterrent
 
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);
 	(mobj->player = p)->mo = mobj;

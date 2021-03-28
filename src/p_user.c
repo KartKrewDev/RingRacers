@@ -4592,8 +4592,7 @@ void P_PlayerThink(player_t *player)
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
-		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)
-		|| leveltime < starttime)) // Level intro
+		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)))
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)
 			&& (leveltime & 1))
