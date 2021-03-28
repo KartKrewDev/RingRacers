@@ -9293,6 +9293,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	P_SetThingPosition(mobj);
 	I_Assert(mobj->subsector != NULL);
 
+	// Make sure scale matches destscale immediately when spawned
+	P_SetScale(mobj, mobj->destscale);
+
 	mobj->floorz   = P_GetSectorFloorZAt  (mobj->subsector->sector, x, y);
 	mobj->ceilingz = P_GetSectorCeilingZAt(mobj->subsector->sector, x, y);
 
@@ -12038,14 +12041,16 @@ static void P_SetObjectSpecial(mobj_t *mobj)
 
 static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t i)
 {
+	fixed_t relativise = FixedDiv(mthing->scale, mapobjectscale);
+
 	mobj_t *mobj = NULL;
 	boolean doangle = true;
 
 	mobj = P_SpawnMobj(x, y, z, i);
 	mobj->spawnpoint = mthing;
 
-	P_SetScale(mobj, FixedMul(mobj->scale, mthing->scale));
-	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
+	P_SetScale(mobj, FixedMul(mobj->scale, relativise));
+	mobj->destscale = FixedMul(mobj->destscale, relativise);
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj, &doangle))
 		return mobj;
