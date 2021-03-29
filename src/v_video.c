@@ -131,7 +131,7 @@ static boolean InitCube(void)
 	float globalgammamul, globalgammaoffs;
 	boolean doinggamma;
 
-	if (con_startup_loadprogress < LOADED_MINIT)
+	if (con_startup_loadprogress < LOADED_CONFIG)
 		return false;
 
 #define diffcons(cv) (cv.value != atoi(cv.defaultvalue))
