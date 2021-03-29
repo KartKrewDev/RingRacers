@@ -1880,21 +1880,23 @@ void CON_Drawer(void)
 	Unlock_state();
 }
 
-static const char *CON_LoadingStrings[LOADED_ALLDONE] =
+static const char *CON_LoadingStrings[LOADED_ALLDONE+1] =
 {
-	"Init Zone Memory...", //LOADED_ZINIT
+	"Init zone memory...", //LOADED_ZINIT
 	"Init game timing...", //LOADED_ISTARTUPTIMER
 	"Loading main assets...", //LOADED_IWAD
 	"Loading add-ons...", //LOADED_PWAD
 	"Init graphics subsystem...", //LOADED_ISTARTUPGRAPHICS
-	"Cache fonts...", //LOADED_HULOADGRAPHICS
-	"Init miscellaneous...", //LOADED_MINIT
+	"Cache fonts...", //LOADED_HUINIT
+	"Load settings...", //LOADED_CONFIG
 	"Cache textures...", //LOADED_INITTEXTUREDATA
 	"Cache sprites...", //LOADED_INITSPIRTES
+	"Load characters...", //LOADED_INITSKINS
 	"Init rendering daemon...", //LOADED_RINIT
 	"Init audio subsystem...", //LOADED_SINITSFXCHANNELS
 	"Cache HUD...", //LOADED_STINIT
 	"Check game status...", //LOADED_DCHECKNETGAME
+	"Now starting..."
 }; // see also con_loadprogress_t in console.h
 
 //
@@ -1912,9 +1914,11 @@ void CON_SetLoadingProgress(con_loadprogress_t newStep)
 
 	con_startup_loadprogress = newStep;
 
-	if (con_startup_loadprogress < LOADED_ALLDONE)
+	if (con_startup_loadprogress <= LOADED_ALLDONE)
 		CONS_Printf("LOADING UPDATE - %s\n", CON_LoadingStrings[con_startup_loadprogress]);
 
+	if (con_startup_loadprogress < LOADED_ISTARTUPGRAPHICS) // rendering not possible?
+		return;
 	CON_DrawLoadBar(); // here we display the console text
 	I_FinishUpdate(); // page flip or blit buffer
 }
@@ -1940,8 +1944,8 @@ void CON_DrawLoadBar(void)
 	barwidth = (BASEVIDWIDTH * con_startup_loadprogress) / LOADED_ALLDONE;
 	V_DrawFill(0, BASEVIDHEIGHT - barheight, barwidth, barheight, 0);
 #ifdef DEVELOP
-	if (con_startup_loadprogress < LOADED_ALLDONE)
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT - (barheight + 8 + 4), 0, CON_LoadingStrings[con_startup_loadprogress]);
+	if (con_startup_loadprogress <= LOADED_ALLDONE)
+		V_DrawString(4, BASEVIDHEIGHT - (barheight + 8 + 4), 0, CON_LoadingStrings[con_startup_loadprogress]);
 #endif
 
 	Unlock_state();
