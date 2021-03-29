@@ -3766,23 +3766,22 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 {
 	const INT32 rad = (mo->radius*3)/FRACUNIT;
 	mobj_t *sparkle;
-	//angle_t newangle;
 	INT32 i;
-	//UINT8 frame;
 	UINT8 invanimnum;
+	INT32 invtime;
 	UINT8 index = 1;
 	fixed_t newx, newy, newz;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	invanimnum = mo->player->kartstuff[k_invincibilitytimer]/TICRATE+1;
-
 	if (leveltime & 2)
 		index = 2;
 
 	//CONS_Printf("%d\n", index);
 	//CONS_Printf("%d\n", invanimnum);
+
+	invtime = mo->player->kartstuff[k_invincibilitytimer]/TICRATE+1;
 
 	for (i = 0; i < 8; i++)
 	{
@@ -3808,13 +3807,34 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 		P_SetScale(sparkle, mo->scale);
 	}
 
+	invanimnum = (invtime > 11) ? 11 : invtime;
 	P_SetMobjState(sparkle, K_SparkleTrailStartStates[invanimnum][index]);
 	sparkle->colorized = true;
 	sparkle->color = mo->color;
+}
 
-	//CONS_Printf("%d\n", (mo->player->kartstuff[k_invincibilitytimer]/TICRATE));
+void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
+{
+	INT32 i = 0;
+	INT32 nl = 2;
+	for (i = 0; i < nl ; i++)
+	{
+		mobj_t *fast = P_SpawnMobj(mo->x + (P_RandomRange(-24,64) * mo->scale),
+			mo->y + (P_RandomRange(-16,16) * mo->scale),
+			mo->z + (mo->height/2) + (P_RandomRange(-16,16) * mo->scale),
+			MT_FASTLINE);
 
-	//invanimnum = (mo->player->kartstuff[k_invincibilitytimer]/TICRATE > 11) ? 11 : mo->player->kartstuff[k_invincibilitytimer]/TICRATE;
+		fast->momx = 3*mo->momx/4;
+		fast->momy = 3*mo->momy/4;
+		fast->momz = 3*mo->momz/4;
+
+		P_SetTarget(&fast->target, mo);
+		fast->angle = K_MomentumAngle(mo);
+		fast->color = mo->color;
+		fast->colorized = true;
+		K_MatchGenericExtraFlags(fast, mo);
+		P_SetMobjState(fast, S_KARTINVLINES1);
+	}
 }
 
 void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)

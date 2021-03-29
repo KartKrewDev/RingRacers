@@ -804,9 +804,10 @@ typedef enum sprite
 	SPR_BOST, // Sneaker booster flame
 	SPR_BOSM, // Sneaker booster smoke
 	SPR_KFRE, // Sneaker fire trail
-	SPR_KINV, // Fullbright invincibility sparkle trail
-	SPR_KINB, // Fullbright invincibility sparkle trail
+	SPR_KINV, // Lighter invincibility sparkle trail
+	SPR_KINB, // Darker invincibility sparkle trail
 	SPR_KINF, // Invincibility flash
+	SPR_INVI, // Invincibility speedlines
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
@@ -4319,6 +4320,19 @@ typedef enum state
 	S_INVULNFLASH2,
 	S_INVULNFLASH3,
 	S_INVULNFLASH4,
+
+	S_KARTINVLINES1,
+	S_KARTINVLINES2,
+	S_KARTINVLINES3,
+	S_KARTINVLINES4,
+	S_KARTINVLINES5,
+	S_KARTINVLINES6,
+	S_KARTINVLINES7,
+	S_KARTINVLINES8,
+	S_KARTINVLINES9,
+	S_KARTINVLINES10,
+	S_KARTINVLINES11,
+	S_KARTINVLINES12,
 
 	// Wipeout dust trail
 	S_WIPEOUTTRAIL1,
