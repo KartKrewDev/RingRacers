@@ -3815,26 +3815,23 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 
 void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 {
-	INT32 i = 0;
-	INT32 nl = 2;
-	for (i = 0; i < nl ; i++)
-	{
-		mobj_t *fast = P_SpawnMobj(mo->x + (P_RandomRange(-24,64) * mo->scale),
-			mo->y + (P_RandomRange(-16,16) * mo->scale),
-			mo->z + (mo->height/2) + (P_RandomRange(-16,16) * mo->scale),
-			MT_FASTLINE);
 
-		fast->momx = 3*mo->momx/4;
-		fast->momy = 3*mo->momy/4;
-		fast->momz = 3*mo->momz/4;
+	mobj_t *fast = P_SpawnMobjFromMobj(mo,
+		P_RandomRange(-48, 48) * FRACUNIT,
+  		P_RandomRange(-48, 48) * FRACUNIT,
+  		P_RandomRange(0, 64) * FRACUNIT,
+  		MT_FASTLINE);
 
-		P_SetTarget(&fast->target, mo);
-		fast->angle = K_MomentumAngle(mo);
-		fast->color = mo->color;
-		fast->colorized = true;
-		K_MatchGenericExtraFlags(fast, mo);
-		P_SetMobjState(fast, S_KARTINVLINES1);
-	}
+	fast->momx = 3*mo->momx/4;
+	fast->momy = 3*mo->momy/4;
+	fast->momz = 3*mo->momz/4;
+	
+	P_SetTarget(&fast->target, mo);
+	fast->angle = K_MomentumAngle(mo);
+	fast->color = mo->color;
+	fast->colorized = true;
+	K_MatchGenericExtraFlags(fast, mo);
+	P_SetMobjState(fast, S_KARTINVLINES1);	
 }
 
 void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)

@@ -1984,7 +1984,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					if (source->player->kartstuff[k_invincibilitytimer])
 					{
-						kinvextend = (source->player->kartstuff[k_invincibilitytimer])+2*TICRATE;
+						kinvextend = (source->player->kartstuff[k_invincibilitytimer])+5*TICRATE;
 						CONS_Printf("extend k_invincibilitytimer for %s - old value %d new value %d\n", player_names[source->player -  players], source->player->kartstuff[k_invincibilitytimer]/TICRATE, kinvextend/TICRATE);
 						source->player->kartstuff[k_invincibilitytimer] = kinvextend;
 					}
