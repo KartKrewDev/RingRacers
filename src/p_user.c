@@ -2377,7 +2377,7 @@ void P_MovePlayer(player_t *player)
 	if (player->kartstuff[k_invincibilitytimer] > 0) 
 	{
 		K_SpawnSparkleTrail(player->mo);
-			if (player->kartstuff[k_invincibilitytimer] > 10*TICRATE && player->speed > 10*player->mo->scale && (leveltime & 5))
+			if (player->kartstuff[k_invincibilitytimer] > 5*TICRATE && player->speed > 10*player->mo->scale && (leveltime & 8))
 				K_SpawnInvincibilitySpeedLines(player->mo);
 	}
 
