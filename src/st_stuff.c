@@ -211,7 +211,7 @@ void ST_Ticker(boolean run)
 
 // 0 is default, any others are special palettes.
 INT32 st_palette = 0;
-INT32 st_translucency = 10;
+UINT32 st_translucency = 10;
 
 void ST_doPaletteStuff(void)
 {
@@ -670,7 +670,6 @@ void ST_preDrawTitleCard(void)
 		return;
 
 	// Kart: nothing
-	st_translucency = cv_translucenthud.value;
 }
 
 //
@@ -1050,7 +1049,18 @@ void ST_Drawer(void)
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
 
-	st_translucency = cv_translucenthud.value;
+	{
+		const tic_t length = TICRATE/2;
+
+		if (lt_exitticker)
+		{
+			st_translucency = cv_translucenthud.value;
+			if (lt_exitticker < length)
+				st_translucency = (((INT32)(lt_ticker - lt_endtime))*st_translucency)/((INT32)length);
+		}
+		else
+			st_translucency = 0;
+	}
 
 	// Check for a valid level title
 	// If the HUD is enabled

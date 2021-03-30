@@ -491,7 +491,6 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 
 static UINT8 hudplusalpha[11]  = { 10,  8,  6,  4,  2,  0,  0,  0,  0,  0,  0};
 static UINT8 hudminusalpha[11] = { 10,  9,  9,  8,  8,  7,  7,  6,  6,  5,  5};
-UINT8 hudtrans = 0;
 
 static const UINT8 *v_colormap = NULL;
 static const UINT8 *v_translevel = NULL;
@@ -544,15 +543,18 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	v_translevel = NULL;
 	if ((alphalevel = ((scrn & V_ALPHAMASK) >> V_ALPHASHIFT)))
 	{
-		if (alphalevel == 13)
-			alphalevel = hudminusalpha[st_translucency];
-		else if (alphalevel == 14)
-			alphalevel = 10 - st_translucency;
-		else if (alphalevel == 15)
-			alphalevel = hudplusalpha[st_translucency];
+		if (alphalevel > 11) // not standard, V_ADDTRANS or V_SUBTRANS
+		{
+			if (alphalevel == 13) // V_HUDTRANSHALF
+				alphalevel = hudminusalpha[st_translucency];
+			else if (alphalevel == 14) // V_HUDTRANS
+				alphalevel = 10 - st_translucency;
+			else if (alphalevel == 15) // V_HUDTRANSDOUBLE
+				alphalevel = hudplusalpha[st_translucency];
 
-		if (alphalevel >= 12)
-			return; // invis
+			if (alphalevel >= 10) // Still inelegible to render?
+				return;
+		}
 
 		if (alphalevel)
 		{
@@ -737,15 +739,18 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 	v_translevel = NULL;
 	if ((alphalevel = ((scrn & V_ALPHAMASK) >> V_ALPHASHIFT)))
 	{
-		if (alphalevel == 13)
-			alphalevel = hudminusalpha[st_translucency];
-		else if (alphalevel == 14)
-			alphalevel = 10 - st_translucency;
-		else if (alphalevel == 15)
-			alphalevel = hudplusalpha[st_translucency];
+		if (alphalevel > 11) // not standard, V_ADDTRANS or V_SUBTRANS
+		{
+			if (alphalevel == 13) // V_HUDTRANSHALF
+				alphalevel = hudminusalpha[st_translucency];
+			else if (alphalevel == 14) // V_HUDTRANS
+				alphalevel = 10 - st_translucency;
+			else if (alphalevel == 15) // V_HUDTRANSDOUBLE
+				alphalevel = hudplusalpha[st_translucency];
 
-		if (alphalevel >= 12)
-			return; // invis
+			if (alphalevel >= 10) // Still inelegible to render?
+				return;
+		}
 
 		if (alphalevel)
 		{
@@ -990,15 +995,18 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	if ((alphalevel = ((c & V_ALPHAMASK) >> V_ALPHASHIFT)))
 	{
-		if (alphalevel == 13)
-			alphalevel = hudminusalpha[st_translucency];
-		else if (alphalevel == 14)
-			alphalevel = 10 - st_translucency;
-		else if (alphalevel == 15)
-			alphalevel = hudplusalpha[st_translucency];
+		if (alphalevel > 11) // not standard, V_ADDTRANS or V_SUBTRANS
+		{
+			if (alphalevel == 13) // V_HUDTRANSHALF
+				alphalevel = hudminusalpha[st_translucency];
+			else if (alphalevel == 14) // V_HUDTRANS
+				alphalevel = 10 - st_translucency;
+			else if (alphalevel == 15) // V_HUDTRANSDOUBLE
+				alphalevel = hudplusalpha[st_translucency];
 
-		if (alphalevel >= 12)
-			return; // invis
+			if (alphalevel >= 10) // Still inelegible to render?
+				return;
+		}
 	}
 
 	if (!(c & V_NOSCALESTART))

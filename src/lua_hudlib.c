@@ -705,17 +705,17 @@ static int libd_drawOnMinimap(lua_State *L)
 	// splitscreen flags
 	splitflags = (r_splitscreen == 3 ? 0 : V_SNAPTORIGHT);	// flags should only be 0 when it's centered (4p split)
 
-	// translucency:
-	if (timeinmap > 105)
 	{
+		const tic_t length = TICRATE/2;
+
+		if (!lt_exitticker)
+			return 0;
 		minimaptrans = cv_kartminimap.value;
-		if (timeinmap <= 113)
-			minimaptrans = ((((INT32)timeinmap) - 105)*minimaptrans)/(113-105);
+		if (lt_exitticker < length)
+			minimaptrans = (((INT32)lt_exitticker)*minimaptrans)/((INT32)length);
 		if (!minimaptrans)
 			return 0;
 	}
-	else
-		return 0;
 
 
 	minimaptrans = ((10-minimaptrans)<<FF_TRANSSHIFT);
