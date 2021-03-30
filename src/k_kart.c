@@ -3778,14 +3778,12 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	if (leveltime & 2)
 		index = 2;
 
-	//CONS_Printf("%d\n", index);
-	//CONS_Printf("%d\n", invanimnum);
-
 	invtime = mo->player->kartstuff[k_invincibilitytimer]/TICRATE+1;
+
+	//CONS_Printf("%d\n", index);
 
 	for (i = 0; i < 8; i++)
 	{
-		//newangle = (mo->angle + ANGLE_157h) + FixedAngle(((360 / 8) * i) << FRACBITS) + ANGLE_90;
 		newx = mo->x + (P_RandomRange(-rad, rad)*FRACUNIT);
 		newy = mo->y + (P_RandomRange(-rad, rad)*FRACUNIT);
 		newz = mo->z + (P_RandomRange(0, mo->height>>FRACBITS)*FRACUNIT);
@@ -3807,7 +3805,8 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 		P_SetScale(sparkle, mo->scale);
 	}
 
-	invanimnum = (invtime > 11) ? 11 : invtime;
+	invanimnum = (invtime >= 11) ? 11 : invtime;
+	//CONS_Printf("%d\n", invanimnum);
 	P_SetMobjState(sparkle, K_SparkleTrailStartStates[invanimnum][index]);
 	sparkle->colorized = true;
 	sparkle->color = mo->color;
@@ -3815,7 +3814,6 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 
 void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 {
-
 	mobj_t *fast = P_SpawnMobjFromMobj(mo,
 		P_RandomRange(-48, 48) * FRACUNIT,
   		P_RandomRange(-48, 48) * FRACUNIT,
