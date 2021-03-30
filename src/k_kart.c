@@ -401,7 +401,8 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
 
-static INT32 K_SparkleTrailStartStates[NUMKARTSPARKLESTATES][2] = {
+// Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
+static INT32 K_SparkleTrailStartStates[KART_NUMINVSPARKLESANIM][2] = {
 	{S_KARTINVULN12, S_KARTINVULNB12},
 	{S_KARTINVULN11, S_KARTINVULNB11},
 	{S_KARTINVULN10, S_KARTINVULNB10},
@@ -3767,8 +3768,8 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	const INT32 rad = (mo->radius*3)/FRACUNIT;
 	mobj_t *sparkle;
 	INT32 i;
-	UINT8 invanimnum;
-	INT32 invtime;
+	UINT8 invanimnum; // Current sparkle animation number
+	INT32 invtime;// Invincibility time left, in seconds
 	UINT8 index = 1;
 	fixed_t newx, newy, newz;
 

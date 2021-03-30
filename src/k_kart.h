@@ -11,7 +11,13 @@
 #include "command.h" // Need for player_t
 
 #define KART_FULLTURN 800
-#define NUMKARTSPARKLESTATES 12
+
+/* 
+Number of animations for the invincibility sparkles
+If states are ever added or removed
+Make sure this matches the actual number of states
+*/
+#define KART_NUMINVSPARKLESANIM 12 
 
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
