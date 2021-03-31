@@ -152,7 +152,7 @@ UINT8 skincolor_modified[MAXSKINCOLORS];
 CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
 CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
-#define TRANSTAB_AMTMUL10 (256.0f / 10.0f)
+#define TRANSTAB_AMTMUL10 (255.0f / 10.0f)
 
 /** \brief Initializes the translucency tables used by the Software renderer.
 */
@@ -191,7 +191,7 @@ void R_GenerateBlendTables(void)
 	for (i = 0; i <= 9; i++)
 	{
 		const size_t offs = (0x10000 * i);
-		const UINT8 alpha = TRANSTAB_AMTMUL10 * i;
+		const UINT8 alpha = TRANSTAB_AMTMUL10 * (10-i);
 
 		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, AST_ADD, alpha);
 		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, AST_SUBTRACT, alpha);
@@ -203,16 +203,12 @@ void R_GenerateBlendTables(void)
 	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], AST_MODULATE, 0);
 }
 
-static colorlookup_t transtab_lut;
-
 void R_GenerateTranslucencyTable(UINT8 *table, int style, UINT8 blendamt)
 {
 	INT16 bg, fg;
 
 	if (table == NULL)
 		I_Error("R_GenerateTranslucencyTable: input table was NULL!");
-
-	InitColorLUT(&transtab_lut, pMasterPalette, false);
 
 	for (bg = 0; bg < 0xFF; bg++)
 	{
@@ -223,7 +219,7 @@ void R_GenerateTranslucencyTable(UINT8 *table, int style, UINT8 blendamt)
 			RGBA_t result;
 
 			result.rgba = ASTBlendPixel(backrgba, frontrgba, style, blendamt);
-			table[((bg * 0x100) + fg)] = GetColorLUT(&transtab_lut, result.s.red, result.s.green, result.s.blue);
+			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pMasterPalette);
 		}
 	}
 }

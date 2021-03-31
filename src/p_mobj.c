@@ -9162,7 +9162,7 @@ void P_SceneryThinker(mobj_t *mobj)
 static void P_DefaultMobjShadowScale(mobj_t *thing)
 {
 	thing->shadowscale = 0;
-	thing->whiteshadow = (thing->frame & FF_FULLBRIGHT);
+	thing->whiteshadow = ((thing->frame & FF_BRIGHTMASK) == FF_FULLBRIGHT);
 
 	switch (thing->type)
 	{
