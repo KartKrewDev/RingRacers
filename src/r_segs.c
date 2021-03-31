@@ -122,20 +122,10 @@ static void R_Render2sidedMultiPatchColumn(column_t *column)
 
 transnum_t R_GetLinedefTransTable(line_t *ldef)
 {
-	transnum_t transnum = NUMEFFECTMAPS; // Send back NUMEFFECTMAPS for none
+	transnum_t transnum = NUMTRANSMAPS; // Send back NUMTRANSMAPS for none
 	fixed_t alpha = ldef->alpha;
 	if (alpha > 0 && alpha < FRACUNIT)
 		transnum = (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
-	else
-	{
-		switch (ldef->special)
-		{
-			case 910: transnum = tr_transadd; break;
-			case 911: transnum = tr_transsub; break;
-			default: transnum = NUMEFFECTMAPS; break;
-		}
-	}
-
 	return transnum;
 }
 
@@ -153,7 +143,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	INT32 times, repeats;
 	INT64 overflow_test;
 	INT32 range;
-	transnum_t transtable = NUMEFFECTMAPS;
+	transnum_t transtable = NUMTRANSMAPS;
+	patchalphastyle_t blendmode = 0;
 
 	// Calculate light table.
 	// Use different light tables
@@ -171,12 +162,33 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 		return;
 
 	transtable = R_GetLinedefTransTable(ldef);
-	if (transtable != NUMEFFECTMAPS)
+	if (ldef->special == 910)
 	{
-		dc_transmap = transtables + ((transtable - 1) << FF_TRANSSHIFT);
-		//dc_transmap = R_GetTranslucencyTable(R_GetLinedefTransTable(ldef->alpha));
+		if (transtable == NUMTRANSMAPS)
+			transtable = 0;
+		blendmode = AST_ADD;
+	}
+	else if (ldef->special == 911)
+	{
+		if (transtable == NUMTRANSMAPS)
+			transtable = 0;
+		blendmode = AST_SUBTRACT;
+	}
+	else if (ldef->special == 912)
+	{
+		if (transtable == NUMTRANSMAPS)
+			transtable = 0;
+		blendmode = AST_REVERSESUBTRACT;
+	}
+	else if (ldef->special == 913)
+	{
+		transtable = 0;
+		blendmode = AST_MODULATE;
+	}
+	if (transtable != NUMTRANSMAPS)
+	{
+		dc_transmap = R_GetBlendTable(blendmode, transtable);
 		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
-
 	}
 	else if (ldef->special == 909)
 	{
@@ -189,7 +201,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 	if (curline->polyseg && curline->polyseg->translucency > 0)
 	{
-		if (curline->polyseg->translucency >= NUMEFFECTMAPS)
+		if (curline->polyseg->translucency >= NUMTRANSMAPS)
 			return;
 
 		dc_transmap = R_GetTranslucencyTable(curline->polyseg->translucency);
@@ -640,9 +652,9 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		else if (pfloor->alpha < 243)
 			dc_transmap = R_GetTranslucencyTable(tr_trans10);
 		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
-			dc_transmap = transtables + ((tr_transadd-1)<<FF_TRANSSHIFT);
+			dc_transmap = R_GetTranslucencyTable(tr_trans50); // TODOOOOOOOOOOOOO
 		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-			dc_transmap = transtables + ((tr_transsub-1)<<FF_TRANSSHIFT);
+			dc_transmap = R_GetTranslucencyTable(tr_trans50); // TODOOOOOOOOOOOOO
 		else
 			fuzzy = false; // Opaque
 

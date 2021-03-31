@@ -1465,7 +1465,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				default:
 				{
 					transnum_t transtable = R_GetLinedefTransTable(gl_linedef);
-					if (transtable != NUMEFFECTMAPS)
+					if (transtable != NUMTRANSMAPS)
 						blendmode = HWR_TranstableToAlpha(transtable, &Surf);
 					else
 						blendmode = PF_Masked;
@@ -1475,7 +1475,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 			if (gl_curline->polyseg && gl_curline->polyseg->translucency > 0)
 			{
-				if (gl_curline->polyseg->translucency >= NUMEFFECTMAPS) // wall not drawn
+				if (gl_curline->polyseg->translucency >= NUMTRANSMAPS) // wall not drawn
 				{
 					Surf.PolyColor.s.alpha = 0x00; // This shouldn't draw anything regardless of blendmode
 					blendmode = PF_Masked;
@@ -2903,7 +2903,7 @@ static void HWR_AddPolyObjectPlanes(void)
 		if (!(po_ptrs[i]->flags & POF_RENDERPLANES)) // Only render planes when you should
 			continue;
 
-		if (po_ptrs[i]->translucency >= NUMEFFECTMAPS)
+		if (po_ptrs[i]->translucency >= NUMTRANSMAPS)
 			continue;
 
 		if (polyobjsector->floorheight <= gl_frontsector->ceilingheight
@@ -3882,26 +3882,35 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	else
 		occlusion = PF_Occlude;
 
-	if (spr->mobj->drawflags & MFD_TRANSMASK)
+	// Determine the blendmode and translucency value
 	{
-		blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
-	}
-	else if (spr->mobj->frame & FF_TRANSMASK)
-	{
-		INT32 trans = (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT;
-		if (spr->mobj->blendmode == AST_TRANSLUCENT && trans >= NUMTRANSMAPS)
-			return;
-		blend = HWR_SurfaceBlend(spr->mobj->blendmode, trans, &Surf);
-	}
-	else
-	{
-		// BP: i agree that is little better in environement but it don't
-		//     work properly under glide nor with fogcolor to ffffff :(
-		// Hurdler: PF_Environement would be cool, but we need to fix
-		//          the issue with the fog before
-		Surf.PolyColor.s.alpha = 0xFF;
-		blend = HWR_GetBlendModeFlag(spr->mobj->blendmode)|occlusion;
-		if (!occlusion) use_linkdraw_hack = true;
+		UINT32 blendmode, trans;
+		if (spr->mobj->renderflags & RF_BLENDMASK)
+			blendmode = (spr->mobj->renderflags & RF_BLENDMASK) >> RF_BLENDSHIFT;
+		else
+			blendmode = (spr->mobj->frame & FF_BLENDMASK) >> FF_BLENDSHIFT;
+		if (blendmode)
+			blendmode++; // realign to constants
+
+		if (spr->mobj->renderflags & RF_TRANSMASK)
+			trans = (spr->mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT;
+		else
+			trans = (spr->mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
+		if (trans >= NUMTRANSMAPS)
+			return; // cap
+
+		if (trans)
+			blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
+		else
+		{
+			// BP: i agree that is little better in environement but it don't
+			//     work properly under glide nor with fogcolor to ffffff :(
+			// Hurdler: PF_Environement would be cool, but we need to fix
+			//          the issue with the fog before
+			Surf.PolyColor.s.alpha = 0xFF;
+			blend = HWR_GetBlendModeFlag(blendmode)|occlusion;
+			if (!occlusion) use_linkdraw_hack = true;
+		}
 	}
 
 	alpha = Surf.PolyColor.s.alpha;
@@ -4308,26 +4317,35 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 		else
 			occlusion = PF_Occlude;
 
-		if (spr->mobj->drawflags & MFD_TRANSMASK)
+		// Determine the blendmode and translucency value
 		{
-			blend = HWR_TranstableToAlpha((spr->mobj->drawflags & MFD_TRANSMASK)>>MFD_TRANSSHIFT, &Surf);
-		}
-		else if (spr->mobj->frame & FF_TRANSMASK)
-		{
-			INT32 trans = (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT;
-			if (spr->mobj->blendmode == AST_TRANSLUCENT && trans >= NUMTRANSMAPS)
-				return;
-			blend = HWR_SurfaceBlend(spr->mobj->blendmode, trans, &Surf);
-		}
-		else
-		{
-			// BP: i agree that is little better in environement but it don't
-			//     work properly under glide nor with fogcolor to ffffff :(
-			// Hurdler: PF_Environement would be cool, but we need to fix
-			//          the issue with the fog before
-			Surf.PolyColor.s.alpha = 0xFF;
-			blend = HWR_GetBlendModeFlag(spr->mobj->blendmode)|occlusion;
-			if (!occlusion) use_linkdraw_hack = true;
+			UINT32 blendmode, trans;
+			if (spr->mobj->renderflags & RF_BLENDMASK)
+				blendmode = (spr->mobj->renderflags & RF_BLENDMASK) >> RF_BLENDSHIFT;
+			else
+				blendmode = (spr->mobj->frame & FF_BLENDMASK) >> FF_BLENDSHIFT;
+			if (blendmode)
+				blendmode++; // realign to constants
+
+			if (spr->mobj->renderflags & RF_TRANSMASK)
+				trans = (spr->mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT;
+			else
+				trans = (spr->mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
+			if (trans >= NUMTRANSMAPS)
+				return; // cap
+
+			if (trans)
+				blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
+			else
+			{
+				// BP: i agree that is little better in environement but it don't
+				//     work properly under glide nor with fogcolor to ffffff :(
+				// Hurdler: PF_Environement would be cool, but we need to fix
+				//          the issue with the fog before
+				Surf.PolyColor.s.alpha = 0xFF;
+				blend = HWR_GetBlendModeFlag(blendmode)|occlusion;
+				if (!occlusion) use_linkdraw_hack = true;
+			}
 		}
 
 		if (spr->renderflags & RF_SHADOWEFFECTS)
@@ -4426,21 +4444,34 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
 
-	if (spr->mobj->frame & FF_TRANSMASK)
+	// Determine the blendmode and translucency value
 	{
-		INT32 trans = (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT;
-		if (spr->mobj->blendmode == AST_TRANSLUCENT && trans >= NUMTRANSMAPS)
-			return;
-		blend = HWR_SurfaceBlend(spr->mobj->blendmode, trans, &Surf);
-	}
-	else
-	{
-		// BP: i agree that is little better in environement but it don't
-		//     work properly under glide nor with fogcolor to ffffff :(
-		// Hurdler: PF_Environement would be cool, but we need to fix
-		//          the issue with the fog before
-		Surf.PolyColor.s.alpha = 0xFF;
-		blend = HWR_GetBlendModeFlag(spr->mobj->blendmode)|PF_Occlude;
+		UINT32 blendmode, trans;
+		if (spr->mobj->renderflags & RF_BLENDMASK)
+			blendmode = (spr->mobj->renderflags & RF_BLENDMASK) >> RF_BLENDSHIFT;
+		else
+			blendmode = (spr->mobj->frame & FF_BLENDMASK) >> FF_BLENDSHIFT;
+		if (blendmode)
+			blendmode++; // realign to constants
+
+		if (spr->mobj->renderflags & RF_TRANSMASK)
+			trans = (spr->mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT;
+		else
+			trans = (spr->mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
+		if (trans >= NUMTRANSMAPS)
+			return; // cap
+
+		if (trans)
+			blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
+		else
+		{
+			// BP: i agree that is little better in environement but it don't
+			//     work properly under glide nor with fogcolor to ffffff :(
+			// Hurdler: PF_Environement would be cool, but we need to fix
+			//          the issue with the fog before
+			Surf.PolyColor.s.alpha = 0xFF;
+			blend = HWR_GetBlendModeFlag(blendmode)|PF_Occlude;
+		}
 	}
 
 	HWR_ProcessPolygon(&Surf, wallVerts, 4, blend|PF_Modulated, SHADER_SPRITE, false); // sprite shader
@@ -4471,8 +4502,8 @@ static int CompareVisSprites(const void *p1, const void *p2)
 	int transparency1;
 	int transparency2;
 
-	int drawflags1;
-	int drawflags2;
+	int renderflags1;
+	int renderflags2;
 
 	int frame1;
 	int frame2;
@@ -4489,46 +4520,46 @@ static int CompareVisSprites(const void *p1, const void *p2)
 		if (linkdraw1)
 		{
 			tz1 = spr1->tracertz;
-			drawflags1 = spr1->mobj->tracer->drawflags;
+			renderflags1 = spr1->mobj->tracer->renderflags;
 			frame1 = spr1->mobj->tracer->frame;
 		}
 		else
 		{
 			tz1 = spr1->tz;
-			drawflags1 = (spr1->precip ? 0 : spr1->mobj->drawflags);
+			renderflags1 = spr1->mobj->renderflags;
 			frame1 = spr1->mobj->frame;
 		}
 		if (linkdraw2)
 		{
 			tz2 = spr2->tracertz;
-			drawflags2 = spr2->mobj->tracer->drawflags;
+			renderflags2 = spr2->mobj->tracer->renderflags;
 			frame2 = spr2->mobj->tracer->frame;
 		}
 		else
 		{
 			tz2 = spr2->tz;
-			drawflags2 = (spr2->precip ? 0 : spr2->mobj->drawflags);
+			renderflags2 = spr2->mobj->renderflags;
 			frame2 = spr2->mobj->frame;
 		}
 	}
 	else
 	{
 		tz1 = spr1->tz;
-		drawflags1 = (spr1->precip ? 0 : spr1->mobj->drawflags);
+		renderflags1 = (spr1->precip ? 0 : spr1->mobj->renderflags);
 		frame1 = spr1->mobj->frame;
 		tz2 = spr2->tz;
-		drawflags2 = (spr2->precip ? 0 : spr2->mobj->drawflags);
+		renderflags2 = (spr2->precip ? 0 : spr2->mobj->renderflags);
 		frame2 = spr2->mobj->frame;
 	}
 
 	// first compare transparency flags, then compare tz, then compare dispoffset
 
-	transparency1 = (drawflags1 & FF_TRANSMASK) ?
-		((drawflags1 & FF_TRANSMASK)>>MFD_TRANSSHIFT) :
+	transparency1 = (renderflags1 & RF_TRANSMASK) ?
+		((renderflags1 & RF_TRANSMASK)>>RF_TRANSSHIFT) :
 		((frame1 & FF_TRANSMASK)>>FF_TRANSSHIFT);
 
-	transparency2 = (drawflags2 & FF_TRANSMASK) ?
-		((drawflags2 & FF_TRANSMASK)>>MFD_TRANSSHIFT) :
+	transparency2 = (renderflags2 & RF_TRANSMASK) ?
+		((renderflags2 & RF_TRANSMASK)>>RF_TRANSSHIFT) :
 		((frame2 & FF_TRANSMASK)>>FF_TRANSSHIFT);
 
 	idiff = transparency1 - transparency2;

@@ -1562,14 +1562,14 @@ static void K_DrawKartPositionNum(INT32 num)
 	fixed_t scale = FRACUNIT;
 	patch_t *localpatch = kp_positionnum[0][0];
 	INT32 fx = 0, fy = 0, fflags = 0;
-	INT32 addOrSub = V_ADDTRANS;
+	INT32 addOrSub = V_ADD;
 	boolean flipdraw = false;	// flip the order we draw it in for MORE splitscreen bs. fun.
 	boolean flipvdraw = false;	// used only for 2p splitscreen so overtaking doesn't make 1P's position fly off the screen.
 	boolean overtake = false;
 
 	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM)
 	{
-		addOrSub = V_SUBTRANS;
+		addOrSub = V_SUBTRACT;
 	}
 
 	if (stplyr->kartstuff[k_positiondelay] || stplyr->exiting)
@@ -1645,7 +1645,7 @@ static void K_DrawKartPositionNum(INT32 num)
 		{
 			boolean useRedNums = K_IsPlayerLosing(stplyr);
 
-			if (addOrSub == V_SUBTRANS)
+			if (addOrSub == V_SUBTRACT)
 			{
 				// Subtracting RED will look BLUE, and vice versa.
 				useRedNums = !useRedNums;
@@ -2807,7 +2807,7 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		if (ntplayer->mo->drawflags & K_GetPlayerDontDrawFlag(stplyr))
+		if (ntplayer->mo->renderflags & K_GetPlayerDontDrawFlag(stplyr))
 		{
 			// Invisible on this screen
 			continue;
@@ -3645,7 +3645,7 @@ static void K_drawKartFirstPerson(void)
 	UINT8 *colmap = NULL;
 	ticcmd_t *cmd = &stplyr->cmd;
 
-	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->drawflags & MFD_DONTDRAW))
+	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW))
 		return;
 
 	if (stplyr == &players[displayplayers[1]] && r_splitscreen)
@@ -3668,8 +3668,8 @@ static void K_drawKartFirstPerson(void)
 		if (stplyr->speed < (20*stplyr->mo->scale) && (leveltime & 1) && !r_splitscreen)
 			y++;
 
-		if (stplyr->mo->drawflags & MFD_TRANSMASK)
-			splitflags |= ((stplyr->mo->drawflags & MFD_TRANSMASK) >> MFD_TRANSSHIFT) << FF_TRANSSHIFT;
+		if (stplyr->mo->renderflags & RF_TRANSMASK)
+			splitflags |= ((stplyr->mo->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) << FF_TRANSSHIFT;
 		else if (stplyr->mo->frame & FF_TRANSMASK)
 			splitflags |= (stplyr->mo->frame & FF_TRANSMASK);
 	}

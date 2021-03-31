@@ -174,9 +174,6 @@ void R_InitTranslucencyTables(void)
 	W_ReadLump(W_GetNumForName("TRANS80"), transtables+0x70000);
 	W_ReadLump(W_GetNumForName("TRANS90"), transtables+0x80000);
 
-	W_ReadLump(W_GetNumForName("TRANSADD"),transtables+0x90000);
-	W_ReadLump(W_GetNumForName("TRANSSUB"),transtables+0xA0000);
-
 	R_GenerateBlendTables();
 }
 
@@ -259,10 +256,9 @@ UINT8 *R_GetBlendTable(int style, INT32 alphalevel)
 	}
 
 	// Return a normal translucency table
-	if (--alphalevel >= 0)
-		return transtables + (ClipTransLevel(alphalevel) << FF_TRANSSHIFT);
-	else
+	if (--alphalevel < 0)
 		return NULL;
+	return transtables + (ClipTransLevel(alphalevel) << FF_TRANSSHIFT);
 }
 
 /**	\brief	Retrieves a translation colormap from the cache.

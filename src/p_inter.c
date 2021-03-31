@@ -1147,7 +1147,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		if (metalrecording) // Ack! Metal Sonic shouldn't die! Cut the tape, end recording!
 			G_StopMetalRecording(true);
 
-		target->drawflags &= ~MFD_DONTDRAW;
+		target->renderflags &= ~RF_DONTDRAW;
 	}
 
 	// if killed by a player
@@ -1776,7 +1776,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	if (player->spectator == false)
 	{
-		player->mo->drawflags &= ~MFD_DONTDRAW;
+		player->mo->renderflags &= ~RF_DONTDRAW;
 	}
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
@@ -1788,7 +1788,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			mobj_t *boom;
 
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 
 			boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
 			boom->scale = player->mo->scale;

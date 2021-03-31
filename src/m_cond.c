@@ -226,7 +226,7 @@ UINT8 M_UpdateUnlockablesAndExtraEmblems(void)
 
 		strcat(slashed, cechoText);
 
-		HU_SetCEchoFlags(V_YELLOWMAP|V_RETURN8);
+		HU_SetCEchoFlags(V_YELLOWMAP);
 		HU_SetCEchoDuration(6);
 		HU_DoCEcho(slashed);
 		return true;

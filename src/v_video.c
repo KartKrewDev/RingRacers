@@ -519,7 +519,7 @@ static inline UINT8 transmappedpdraw(const UINT8 *dest, const UINT8 *source, fix
 void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
 {
 	UINT8 (*patchdrawfunc)(const UINT8*, const UINT8*, fixed_t);
-	UINT32 alphalevel = 0;
+	UINT32 alphalevel, blendmode;
 
 	fixed_t col, ofs, colfrac, rowfrac, fdup, vdup;
 	INT32 dupx, dupy;
@@ -543,28 +543,22 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 
 	patchdrawfunc = standardpdraw;
 
-	v_translevel = NULL;
+	if ((blendmode = ((scrn & V_BLENDMASK) >> V_BLENDSHIFT)))
+		blendmode++; // realign to constants
 	if ((alphalevel = ((scrn & V_ALPHAMASK) >> V_ALPHASHIFT)))
 	{
-		if (alphalevel > 11) // not standard, V_ADDTRANS or V_SUBTRANS
-		{
-			if (alphalevel == 13) // V_HUDTRANSHALF
-				alphalevel = hudminusalpha[st_translucency];
-			else if (alphalevel == 14) // V_HUDTRANS
-				alphalevel = 10 - st_translucency;
-			else if (alphalevel == 15) // V_HUDTRANSDOUBLE
-				alphalevel = hudplusalpha[st_translucency];
+		if (alphalevel == 10) // V_HUDTRANSHALF
+			alphalevel = hudminusalpha[st_translucency];
+		else if (alphalevel == 11) // V_HUDTRANS
+			alphalevel = 10 - st_translucency;
+		else if (alphalevel == 12) // V_HUDTRANSDOUBLE
+			alphalevel = hudplusalpha[st_translucency];
 
-			if (alphalevel >= 10) // Still inelegible to render?
-				return;
-		}
-
-		if (alphalevel)
-		{
-			v_translevel = R_GetTranslucencyTable(alphalevel);
-			patchdrawfunc = translucentpdraw;
-		}
+		if (alphalevel >= 10) // Still inelegible to render?
+			return;
 	}
+	if ((v_translevel = R_GetBlendTable(blendmode, alphalevel)))
+		patchdrawfunc = translucentpdraw;
 
 	v_colormap = NULL;
 	if (colormap)
@@ -616,12 +610,6 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 		// top offset
 		// TODO: make some kind of vertical version of V_FLIP, maybe by deprecating V_OFFSET in future?!?
 		offsety = FixedMul(patch->topoffset<<FRACBITS, vscale);
-
-		if ((scrn & (V_NOSCALESTART|V_OFFSET)) == (V_NOSCALESTART|V_OFFSET)) // Multiply by dupx/dupy for crosshairs
-		{
-			offsetx = FixedMul(offsetx, dupx<<FRACBITS);
-			offsety = FixedMul(offsety, dupy<<FRACBITS);
-		}
 
 		// Subtract the offsets from x/y positions
 		x -= offsetx;
@@ -716,7 +704,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
 {
 	UINT8 (*patchdrawfunc)(const UINT8*, const UINT8*, fixed_t);
-	UINT32 alphalevel = 0;
+	UINT32 alphalevel, blendmode;
 	// boolean flip = false;
 
 	fixed_t col, ofs, colfrac, rowfrac, fdup;
@@ -739,28 +727,22 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 
 	patchdrawfunc = standardpdraw;
 
-	v_translevel = NULL;
+	if ((blendmode = ((scrn & V_BLENDMASK) >> V_BLENDSHIFT)))
+		blendmode++; // realign to constants
 	if ((alphalevel = ((scrn & V_ALPHAMASK) >> V_ALPHASHIFT)))
 	{
-		if (alphalevel > 11) // not standard, V_ADDTRANS or V_SUBTRANS
-		{
-			if (alphalevel == 13) // V_HUDTRANSHALF
-				alphalevel = hudminusalpha[st_translucency];
-			else if (alphalevel == 14) // V_HUDTRANS
-				alphalevel = 10 - st_translucency;
-			else if (alphalevel == 15) // V_HUDTRANSDOUBLE
-				alphalevel = hudplusalpha[st_translucency];
+		if (alphalevel == 10) // V_HUDTRANSHALF
+			alphalevel = hudminusalpha[st_translucency];
+		else if (alphalevel == 11) // V_HUDTRANS
+			alphalevel = 10 - st_translucency;
+		else if (alphalevel == 12) // V_HUDTRANSDOUBLE
+			alphalevel = hudplusalpha[st_translucency];
 
-			if (alphalevel >= 10) // Still inelegible to render?
-				return;
-		}
-
-		if (alphalevel)
-		{
-			v_translevel = R_GetTranslucencyTable(alphalevel);
-			patchdrawfunc = translucentpdraw;
-		}
+		if (alphalevel >= 10) // Still inelegible to render?
+			return;
 	}
+	if ((v_translevel = R_GetBlendTable(blendmode, alphalevel)))
+		patchdrawfunc = translucentpdraw;
 
 	// only use one dup, to avoid stretching (har har)
 	dupx = dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
@@ -998,18 +980,15 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	if ((alphalevel = ((c & V_ALPHAMASK) >> V_ALPHASHIFT)))
 	{
-		if (alphalevel > 11) // not standard, V_ADDTRANS or V_SUBTRANS
-		{
-			if (alphalevel == 13) // V_HUDTRANSHALF
-				alphalevel = hudminusalpha[st_translucency];
-			else if (alphalevel == 14) // V_HUDTRANS
-				alphalevel = 10 - st_translucency;
-			else if (alphalevel == 15) // V_HUDTRANSDOUBLE
-				alphalevel = hudplusalpha[st_translucency];
+		if (alphalevel == 10) // V_HUDTRANSHALF
+			alphalevel = hudminusalpha[st_translucency];
+		else if (alphalevel == 11) // V_HUDTRANS
+			alphalevel = 10 - st_translucency;
+		else if (alphalevel == 12) // V_HUDTRANSDOUBLE
+			alphalevel = hudplusalpha[st_translucency];
 
-			if (alphalevel >= 10) // Still inelegible to render?
-				return;
-		}
+		if (alphalevel >= 10) // Still inelegible to render?
+			return;
 	}
 
 	if (!(c & V_NOSCALESTART))
@@ -1945,10 +1924,7 @@ void V_DrawStringScaled(
 		case HU_FONT:
 		case TINY_FONT:
 		case KART_FONT:
-			if (( flags & V_RETURN8 ))
-				lfh =  8;
-			else
-				lfh = 12;
+			lfh = 12;
 			break;
 		case LT_FONT:
 		case CRED_FONT:

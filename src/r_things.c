@@ -1251,7 +1251,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	patch_t *patch;
 	fixed_t xscale, yscale, shadowxscale, shadowyscale, shadowskew, x1, x2;
 	INT32 light = 0;
-	UINT8 trans = tr_transsub;
+	boolean additive = false;
 	fixed_t groundz;
 	pslope_t *groundslope;
 
@@ -1260,9 +1260,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	if (abs(groundz-viewz)/tz > 4) return; // Prevent stretchy shadows and possible crashes
 
 	if (thing->whiteshadow == true)
-	{
-		trans = tr_transadd;
-	}
+		additive = true;
 
 	patch = W_CachePatchName("DSHADOW", PU_SPRITE);
 	xscale = FixedDiv(projection[viewssnum], tz);
@@ -1351,7 +1349,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 			shadow->extra_colormap = thing->subsector->sector->extra_colormap;
 	}
 
-	shadow->transmap = transtables + ((trans-1) << FF_TRANSSHIFT);
+	shadow->transmap = R_GetBlendTable(additive ? AST_ADD : AST_SUBTRACT, 0);
 	shadow->colormap = colormaps;
 
 	objectsdrawn++;
@@ -1396,7 +1394,8 @@ static void R_ProjectSprite(mobj_t *thing)
 	boolean hflip = (!R_ThingHorizontallyFlipped(thing) != !mirrored);
 
 	INT32 lindex;
-	INT32 trans;
+	UINT32 blendmode;
+	UINT32 trans;
 
 	vissprite_t *vis;
 	patch_t *patch;
@@ -1802,15 +1801,22 @@ static void R_ProjectSprite(mobj_t *thing)
 			return;
 	}
 
-	// Determine the translucency value.
-	if (oldthing->frame & FF_TRANSMASK)
+	// Determine the blendmode and translucency value
 	{
-		trans = (oldthing->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
-		if (oldthing->blendmode == AST_TRANSLUCENT && trans >= NUMTRANSMAPS)
-			return;
+		if (oldthing->renderflags & RF_BLENDMASK)
+			blendmode = (oldthing->renderflags & RF_BLENDMASK) >> RF_BLENDSHIFT;
+		else
+			blendmode = (oldthing->frame & FF_BLENDMASK) >> FF_BLENDSHIFT;
+		if (blendmode)
+			blendmode++; // realign to constants
+
+		if (oldthing->renderflags & RF_TRANSMASK)
+			trans = (oldthing->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT;
+		else
+			trans = (oldthing->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
+		if (trans >= NUMTRANSMAPS)
+			return; // cap
 	}
-	else
-		trans = 0;
 
 	// Check if this sprite needs to be rendered like a shadow
 	shadowdraw = (!!(thing->renderflags & RF_SHADOWDRAW) && !(papersprite || splat));
@@ -1994,17 +2000,17 @@ static void R_ProjectSprite(mobj_t *thing)
 		vis->scale += FixedMul(scalestep, spriteyscale) * (vis->x1 - x1);
 	}
 
-	if (oldthing->blendmode != AST_COPY)
-		vis->transmap = R_GetBlendTable(oldthing->blendmode, trans);
+	if (blendmode != AST_COPY)
+		vis->transmap = R_GetBlendTable(blendmode, trans);
 	else
 		vis->transmap = NULL;
 
-	if (R_ThingIsFullBright(oldthing))
+	if (R_ThingIsSemiBright(oldthing))
+		vis->cut |= SC_SEMIBRIGHT;
+	else if (R_ThingIsFullBright(oldthing))
 		vis->cut |= SC_FULLBRIGHT;
 	else if (R_ThingIsFullDark(oldthing))
 		vis->cut |= SC_FULLDARK;
-	else if (R_ThingIsSemiBright(oldthing))
-		vis->cut |= SC_SEMIBRIGHT;
 
 	//
 	// determine the colormap (lightlevel & special effects)
@@ -2996,10 +3002,10 @@ boolean R_ThingVisible (mobj_t *thing)
 	if (r_viewmobj && (thing == r_viewmobj || (r_viewmobj->player && r_viewmobj->player->followmobj == thing)))
 		return false;
 
-	if ((viewssnum == 0 && (thing->drawflags & MFD_DONTDRAWP1))
-	|| (viewssnum == 1 && (thing->drawflags & MFD_DONTDRAWP2))
-	|| (viewssnum == 2 && (thing->drawflags & MFD_DONTDRAWP3))
-	|| (viewssnum == 3 && (thing->drawflags & MFD_DONTDRAWP4)))
+	if ((viewssnum == 0 && (thing->renderflags & RF_DONTDRAWP1))
+	|| (viewssnum == 1 && (thing->renderflags & RF_DONTDRAWP2))
+	|| (viewssnum == 2 && (thing->renderflags & RF_DONTDRAWP3))
+	|| (viewssnum == 3 && (thing->renderflags & RF_DONTDRAWP4)))
 		return false;
 
 	return true;
@@ -3052,22 +3058,28 @@ boolean R_ThingIsPaperSprite(mobj_t *thing)
 
 boolean R_ThingIsFloorSprite(mobj_t *thing)
 {
-	return (thing->flags2 & MF2_SPLAT || thing->renderflags & RF_FLOORSPRITE);
+	return (thing->flags2 & MF2_SPLAT || thing->frame & FF_FLOORSPRITE || thing->renderflags & RF_FLOORSPRITE);
 }
 
 boolean R_ThingIsFullBright(mobj_t *thing)
 {
-	return (thing->frame & FF_FULLBRIGHT || thing->renderflags & RF_FULLBRIGHT);
+	if (thing->renderflags & RF_BRIGHTMASK)
+		return ((thing->renderflags & RF_BRIGHTMASK) == RF_FULLBRIGHT);
+	return ((thing->frame & FF_BRIGHTMASK) == FF_FULLBRIGHT);
 }
 
 boolean R_ThingIsSemiBright(mobj_t *thing)
 {
-	return (thing->frame & FF_SEMIBRIGHT || thing->renderflags & RF_SEMIBRIGHT);
+	if (thing->renderflags & RF_BRIGHTMASK)
+		return ((thing->renderflags & RF_BRIGHTMASK) == RF_SEMIBRIGHT);
+	return ((thing->frame & FF_BRIGHTMASK) == FF_SEMIBRIGHT);
 }
 
 boolean R_ThingIsFullDark(mobj_t *thing)
 {
-	return (thing->renderflags & RF_FULLDARK);
+	if (thing->renderflags & RF_BRIGHTMASK)
+		return ((thing->renderflags & RF_BRIGHTMASK) == RF_FULLDARK);
+	return ((thing->frame & FF_BRIGHTMASK) == FF_FULLDARK);
 }
 
 //

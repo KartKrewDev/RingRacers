@@ -1444,13 +1444,13 @@ typedef enum
 	MD2_ROLLANGLE    = 1<<14,
 	MD2_SHADOWSCALE  = 1<<15,
 	MD2_RENDERFLAGS  = 1<<16,
-	MD2_BLENDMODE    = 1<<17,
+	// 1<<17 was taken out, maybe reuse later
 	MD2_SPRITEXSCALE = 1<<18,
 	MD2_SPRITEYSCALE = 1<<19,
 	MD2_SPRITEXOFFSET = 1<<20,
 	MD2_SPRITEYOFFSET = 1<<21,
 	MD2_FLOORSPRITESLOPE = 1<<22,
-	MD2_DRAWFLAGS    = 1<<23,
+	// 1<<23 was taken out, maybe reuse later
 	MD2_HITLAG       = 1<<24,
 	MD2_WAYPOINTCAP  = 1<<25,
 	MD2_KITEMCAP     = 1<<26,
@@ -1669,8 +1669,6 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_SHADOWSCALE;
 	if (mobj->renderflags)
 		diff2 |= MD2_RENDERFLAGS;
-	if (mobj->blendmode != AST_TRANSLUCENT)
-		diff2 |= MD2_BLENDMODE;
 	if (mobj->spritexscale != FRACUNIT)
 		diff2 |= MD2_SPRITEXSCALE;
 	if (mobj->spriteyscale != FRACUNIT)
@@ -1689,8 +1687,6 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		|| (slope->normal.z != FRACUNIT))
 			diff2 |= MD2_FLOORSPRITESLOPE;
 	}
-	if (mobj->drawflags)
-		diff2 |= MD2_DRAWFLAGS;
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
 	if (mobj == waypointcap)
@@ -1849,8 +1845,20 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	}
 	if (diff2 & MD2_RENDERFLAGS)
 		WRITEUINT32(save_p, mobj->renderflags);
-	if (diff2 & MD2_BLENDMODE)
-		WRITEINT32(save_p, mobj->blendmode);
+	if (diff2 & MD2_RENDERFLAGS)
+	{
+		UINT32 rf = mobj->renderflags;
+		UINT32 q = rf & RF_DONTDRAW;
+
+		if (q != RF_DONTDRAW // visible for more than one local player
+		&& q != (RF_DONTDRAWP1|RF_DONTDRAWP2|RF_DONTDRAWP3)
+		&& q != (RF_DONTDRAWP4|RF_DONTDRAWP1|RF_DONTDRAWP2)
+		&& q != (RF_DONTDRAWP4|RF_DONTDRAWP1|RF_DONTDRAWP3)
+		&& q != (RF_DONTDRAWP4|RF_DONTDRAWP2|RF_DONTDRAWP3))
+			rf &= ~q;
+
+		WRITEUINT32(save_p, rf);
+	}
 	if (diff2 & MD2_SPRITEXSCALE)
 		WRITEFIXED(save_p, mobj->spritexscale);
 	if (diff2 & MD2_SPRITEYSCALE)
@@ -1877,17 +1885,6 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEFIXED(save_p, slope->normal.x);
 		WRITEFIXED(save_p, slope->normal.y);
 		WRITEFIXED(save_p, slope->normal.z);
-	}
-	if (diff2 & MD2_DRAWFLAGS)
-	{
-		UINT16 df = mobj->drawflags;
-
-		if ((mobj->drawflags & MFD_DONTDRAW) != MFD_DONTDRAW)
-		{
-			df = (mobj->drawflags & ~MFD_DONTDRAW);
-		}
-
-		WRITEUINT16(save_p, df);
 	}
 	if (diff2 & MD2_HITLAG)
 		WRITEINT32(save_p, mobj->hitlag);
@@ -2950,10 +2947,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	}
 	if (diff2 & MD2_RENDERFLAGS)
 		mobj->renderflags = READUINT32(save_p);
-	if (diff2 & MD2_BLENDMODE)
-		mobj->blendmode = READINT32(save_p);
-	else
-		mobj->blendmode = AST_TRANSLUCENT;
 	if (diff2 & MD2_SPRITEXSCALE)
 		mobj->spritexscale = READFIXED(save_p);
 	else
@@ -2985,8 +2978,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		slope->normal.y = READFIXED(save_p);
 		slope->normal.z = READFIXED(save_p);
 	}
-	if (diff2 & MD2_DRAWFLAGS)
-		mobj->drawflags = READUINT16(save_p);
 	if (diff2 & MD2_HITLAG)
 		mobj->hitlag = READINT32(save_p);
 

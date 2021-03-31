@@ -3627,7 +3627,7 @@ static void M_DrawThermo(INT32 x, INT32 y, consvar_t *cv)
 	xx += SHORT(p->width) - SHORT(p->leftoffset);
 	for (i = 0; i < 16; i++)
 	{
-		V_DrawScaledPatch(xx, y, V_WRAPX, W_CachePatchNum(centerlump[i & 1], PU_CACHE));
+		V_DrawScaledPatch(xx, y, 0, W_CachePatchNum(centerlump[i & 1], PU_CACHE));
 		xx += 8;
 	}
 	V_DrawScaledPatch(xx, y, 0, W_CachePatchNum(rightlump, PU_CACHE));
@@ -3731,8 +3731,8 @@ void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 	cy = y;
 	while (width > 0)
 	{
-		V_DrawScaledPatch(cx, cy, V_WRAPX, W_CachePatchNum(viewborderlump[BRDR_T], PU_CACHE));
-		V_DrawScaledPatch(cx, y + boff + boxlines*step, V_WRAPX, W_CachePatchNum(viewborderlump[BRDR_B], PU_CACHE));
+		V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_T], PU_CACHE));
+		V_DrawScaledPatch(cx, y + boff + boxlines*step, 0, W_CachePatchNum(viewborderlump[BRDR_B], PU_CACHE));
 		width--;
 		cx += step;
 	}
@@ -6493,7 +6493,7 @@ static void M_DrawChecklist(void)
 		++line;
 		secretname = M_CreateSecretMenuOption(unlockables[i].name);
 
-		V_DrawString(8, (line*8), V_RETURN8|(unlockables[i].unlocked ? recommendedflags : warningflags), (secret ? secretname : unlockables[i].name));
+		V_DrawString(8, (line*8), (unlockables[i].unlocked ? recommendedflags : warningflags), (secret ? secretname : unlockables[i].name));
 
 		if (conditionSets[unlockables[i].conditionset - 1].numconditions)
 		{
@@ -6574,7 +6574,7 @@ static void M_DrawEmblemHints(void)
 		else
 			hint = M_GetText("No hints available.");
 		hint = V_WordWrap(40, BASEVIDWIDTH-12, 0, hint);
-		V_DrawString(40, 8+(28*j), V_RETURN8|V_ALLOWLOWERCASE|collected, hint);
+		V_DrawString(40, 8+(28*j), V_ALLOWLOWERCASE|collected, hint);
 
 		if (++j >= NUMHINTS)
 			break;
@@ -7423,7 +7423,7 @@ static void M_DrawSetupChoosePlayerMenu(void)
 	M_DrawTextBox(136, my, 21, 20);
 	if (!char_notes)
 		char_notes = V_WordWrap(0, 21*8, V_ALLOWLOWERCASE, description[itemOn].notes);
-	V_DrawString(146, my + 9, V_RETURN8|V_ALLOWLOWERCASE, char_notes);
+	V_DrawString(146, my + 9, V_ALLOWLOWERCASE, char_notes);
 }
 
 // Chose the player you want to use Tails 03-02-2002

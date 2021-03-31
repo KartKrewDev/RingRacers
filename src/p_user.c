@@ -351,7 +351,7 @@ void P_GiveEmerald(boolean spawnObj)
 			if (i == pnum)
 				continue;
 
-			emmo->flags2 |= MFD_DONTDRAW;
+			emmo->flags2 |= RF_DONTDRAW;
 		}
 	}
 }
@@ -1213,7 +1213,7 @@ void P_SpawnShieldOrb(player_t *player)
 			if (shieldobj->info->painstate)
 				P_SetMobjState(shieldobj,shieldobj->info->painstate);
 			else
-				shieldobj->drawflags |= MFD_SHADOW;
+				shieldobj->renderflags |= RF_GHOSTLY;
 		}
 	}
 }
@@ -1296,7 +1296,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprite2 = mobj->sprite2;
 	ghost->frame = mobj->frame;
 	ghost->tics = -1;
-	ghost->drawflags |= tr_trans50 << MFD_TRANSSHIFT;
+	ghost->renderflags |= tr_trans50 << RF_TRANSSHIFT;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
@@ -2645,7 +2645,7 @@ static void P_DeathThink(player_t *player)
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 		}
 	}
 	else
@@ -2975,7 +2975,7 @@ void P_DemoCameraMovement(camera_t *cam)
 
 	awayviewmobj_hack = P_SpawnMobj(cam->x, cam->y, cam->z, MT_THOK);
 	awayviewmobj_hack->tics = 2;
-	awayviewmobj_hack->drawflags |= MFD_DONTDRAW;
+	awayviewmobj_hack->renderflags |= RF_DONTDRAW;
 
 	democam.soundmobj = awayviewmobj_hack;
 
@@ -4139,11 +4139,11 @@ static void P_HandleFollower(player_t *player)
 		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo);	// Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
 
 		// Match how the player is being drawn
-		player->follower->drawflags = player->mo->drawflags;
+		player->follower->renderflags = player->mo->renderflags;
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
 		if (player->pflags & PF_GAMETYPEOVER)
-			player->follower->drawflags |= MFD_DONTDRAW;
+			player->follower->renderflags |= RF_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
 			player->follower->angle = K_MomentumAngle(player->follower);
@@ -4164,7 +4164,7 @@ static void P_HandleFollower(player_t *player)
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
 			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
-			bmobj->drawflags = player->mo->drawflags;
+			bmobj->renderflags = player->mo->renderflags;
 
 			if (player->follower->threshold)	// threshold means the follower was "despawned" with S_NULL (is actually just set to S_INVISIBLE)
 				P_SetMobjState(bmobj, S_INVISIBLE);	// sooooo... let's do the same!
@@ -4416,9 +4416,9 @@ void P_PlayerThink(player_t *player)
 	if (player->playerstate == PST_DEAD)
 	{
 		if (player->spectator)
-			player->mo->drawflags |= MFD_SHADOW;
+			player->mo->renderflags |= RF_GHOSTLY;
 		else
-			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
+			player->mo->renderflags &= ~RF_GHOSTLYMASK;
 		P_DeathThink(player);
 		LUAh_PlayerThink(player);
 		return;
@@ -4547,7 +4547,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (player == &players[displayplayers[i]] && !camera[i].chase)
 			{
-				gmobj->drawflags |= MFD_DONTDRAW;
+				gmobj->renderflags |= RF_DONTDRAW;
 				break;
 			}
 		}
@@ -4596,9 +4596,9 @@ void P_PlayerThink(player_t *player)
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)
 			&& (leveltime & 1))
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 		else
-			player->mo->drawflags &= ~MFD_DONTDRAW;
+			player->mo->renderflags &= ~RF_DONTDRAW;
 	}
 
 	if (cmd->flags & TICCMD_TYPING)
@@ -4738,7 +4738,7 @@ void P_PlayerAfterThink(player_t *player)
 	// spectator invisibility and nogravity.
 	if ((netgame || multiplayer) && player->spectator)
 	{
-		player->mo->drawflags |= MFD_DONTDRAW;
+		player->mo->renderflags |= RF_DONTDRAW;
 		player->mo->flags |= MF_NOGRAVITY;
 	}
 

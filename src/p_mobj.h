@@ -251,42 +251,6 @@ typedef enum
 } mobjeflag_t;
 
 //
-// Mobj drawing flags
-// Set by hex, to make masking shenanigans easier to keep track of.
-//
-typedef enum
-{
-	// Don't generate a vissprite for individual screens
-	MFD_DONTDRAWP1			= 0x0001,
-	MFD_DONTDRAWP2			= 0x0002,
-	MFD_DONTDRAWP3			= 0x0004,
-	MFD_DONTDRAWP4			= 0x0008,
-	// Transparency override flags
-	MFD_TRANS10				= 0x0010,
-	MFD_TRANS20				= 0x0020,
-	MFD_TRANS30				= 0x0030,
-	MFD_TRANS40				= 0x0040,
-	MFD_TRANS50				= 0x0050,
-	MFD_TRANS60				= 0x0060,
-	MFD_TRANS70				= 0x0070,
-	MFD_TRANS80				= 0x0080,
-	MFD_TRANS90				= 0x0090,
-	MFD_TRANSADD			= 0x00A0,
-	MFD_TRANSSUB			= 0x00B0,
-	MFD_TRANSMASK			= 0x00F0,
-	// Brightness override flags
-	MFD_FULLBRIGHT			= 0x0100,
-	MFD_SEMIBRIGHT			= 0x0200,
-	MFD_NOBRIGHT			= 0x0300,
-	MFD_BRIGHTMASK			= 0x0F00,
-	// Shortcuts
-	MFD_DONTDRAW			= MFD_DONTDRAWP1|MFD_DONTDRAWP2|MFD_DONTDRAWP3|MFD_DONTDRAWP4,
-	MFD_SHADOW				= MFD_TRANS80|MFD_FULLBRIGHT,
-	MFD_TRANSSHIFT			= 4,
-	// free: to and including 0x8000
-} mobjdflag_t;
-
-//
 // PRECIPITATION flags ?! ?! ?!
 //
 typedef enum {
@@ -323,7 +287,6 @@ typedef struct mobj_s
 	UINT16 anim_duration; // for FF_ANIMATE states
 
 	UINT32 renderflags; // render flags
-	INT32 blendmode; // blend mode
 	fixed_t spritexscale, spriteyscale;
 	fixed_t spritexoffset, spriteyoffset;
 	struct pslope_s *floorspriteslope; // The slope that the floorsprite is rotated by
@@ -353,7 +316,6 @@ typedef struct mobj_s
 	UINT32 flags; // flags from mobjinfo tables
 	UINT32 flags2; // MF2_ flags
 	UINT16 eflags; // extra flags
-	UINT16 drawflags; // Rendering-related flags. These should not be used for game logic.
 
 	void *skin; // overrides 'sprite' when non-NULL (for player bodies to 'remember' the skin)
 	// Player and mobj sprites in multiplayer modes are modified
@@ -462,7 +424,6 @@ typedef struct precipmobj_s
 	UINT16 anim_duration; // for FF_ANIMATE states
 
 	UINT32 renderflags; // render flags
-	INT32 blendmode; // blend mode
 	fixed_t spritexscale, spriteyscale;
 	fixed_t spritexoffset, spriteyoffset;
 	struct pslope_s *floorspriteslope; // The slope that the floorsprite is rotated by

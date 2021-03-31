@@ -633,7 +633,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 			}
 
 			mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
-			mo->drawflags |= (MFD_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
+			mo->renderflags |= (RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
 
 			P_SetScale(mo, scale);
 
@@ -660,7 +660,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 					zpos += 346 * mo->scale * flip;
 
 					if (battleovertime.enabled < 10*TICRATE)
-						mo->drawflags |= MFD_TRANS50;
+						mo->renderflags |= RF_TRANS50;
 					break;
 				case 2:
 					P_SetMobjState(mo, S_OVERTIME_BULB2);
