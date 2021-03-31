@@ -263,26 +263,9 @@ static void R_InitExtraColormaps(void)
 #endif
 
 //
-// R_InitSpriteLumps
-// Finds the width and hoffset of all sprites in the wad, so the sprite does not need to be
-// cached completely, just for having the header info ready during rendering.
-//
-
-//
-// allocate sprite lookup tables
-//
-static void R_InitSpriteLumps(void)
-{
-	numspritelumps = 0;
-	max_spritelumps = 8192;
-
-	Z_Malloc(max_spritelumps*sizeof(*spritecachedinfo), PU_STATIC, &spritecachedinfo);
-}
-
-//
 // R_InitColormaps
 //
-static void R_InitColormaps(void)
+void R_InitColormaps(void)
 {
 	size_t len;
 	lumpnum_t lump;
@@ -1180,12 +1163,12 @@ static void R_Init8to16(void)
 }
 
 //
-// R_InitData
+// R_InitTextureData
 //
 // Locates all the lumps that will be used by all views
 // Must be called after W_Init.
 //
-void R_InitData(void)
+void R_InitTextureData(void)
 {
 	if (highcolor)
 	{
@@ -1198,13 +1181,6 @@ void R_InitData(void)
 
 	CONS_Printf("P_InitPicAnims()...\n");
 	P_InitPicAnims();
-
-	CONS_Printf("R_InitSprites()...\n");
-	R_InitSpriteLumps();
-	R_InitSprites();
-
-	CONS_Printf("R_InitColormaps()...\n");
-	R_InitColormaps();
 }
 
 //

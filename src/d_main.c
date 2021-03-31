@@ -706,7 +706,6 @@ void D_SRB2Loop(void)
 	oldentertics = I_GetTime();
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
-	con_refresh = false;
 	con_startup = false;
 
 	// make sure to do a d_display to init mode _before_ load a level
@@ -1435,7 +1434,6 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
-	CON_SetLoadingProgress(LOADED_ISTARTUPGRAPHICS);
 
 #ifdef HWRENDER
 	// Lactozilla: Add every hardware mode CVAR and CCMD.
@@ -1448,9 +1446,14 @@ void D_SRB2Main(void)
 	// setup loading screen
 	SCR_Startup();
 
+	CON_SetLoadingProgress(LOADED_ISTARTUPGRAPHICS);
+
+	CONS_Printf("HU_Init()...\n");
 	HU_Init();
 
 	CON_Init();
+
+	CON_SetLoadingProgress(LOADED_HUINIT);
 
 	memset(timelimits, 0, sizeof(timelimits));
 	memset(pointlimits, 0, sizeof(pointlimits));
@@ -1464,14 +1467,10 @@ void D_SRB2Main(void)
 
 	I_RegisterSysCommands();
 
-	CONS_Printf("HU_LoadGraphics()...\n");
-	HU_LoadGraphics();
-	CON_SetLoadingProgress(LOADED_HULOADGRAPHICS);
-
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
 
-	G_LoadGameData();
+	M_Init();
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
@@ -1480,35 +1479,28 @@ void D_SRB2Main(void)
 	// set user default mode or mode set at cmdline
 	SCR_CheckDefaultMode();
 
+	if (M_CheckParm("-noupload"))
+		COM_BufAddText("downloading 0\n");
+
+	G_LoadGameData();
+
 	wipegamestate = gamestate;
 
 	savedata.lives = 0; // flag this as not-used
 
-	//------------------------------------------------ COMMAND LINE PARAMS
+	CON_SetLoadingProgress(LOADED_CONFIG);
 
-	// this must be done after loading gamedata,
-	// to avoid setting off the corrupted gamedata code in G_LoadGameData if a SOC with custom gamedata is added
-	// -- Monster Iestyn 20/02/20
-	if (M_CheckParm("-warp") && M_IsNextParm())
-	{
-		const char *word = M_GetNextParm();
-		pstartmap = G_FindMapByNameOrCode(word, 0);
-		if (! pstartmap)
-			I_Error("Cannot find a map remotely named '%s'\n", word);
-		else
-		{
-			if (!M_CheckParm("-server"))
-				G_SetGameModified(multiplayer, true);
-			autostart = true;
-		}
-	}
+	CONS_Printf("R_InitTextureData()...\n");
+	R_InitTextureData(); // seperated out from below because it takes ages by itself
+	CON_SetLoadingProgress(LOADED_INITTEXTUREDATA);
 
-	if (M_CheckParm("-noupload"))
-		COM_BufAddText("downloading 0\n");
+	CONS_Printf("R_InitSprites()...\n");
+	R_InitSprites(); // ditto
+	CON_SetLoadingProgress(LOADED_INITSPRITES);
 
-	CONS_Printf("M_Init(): Init miscellaneous info.\n");
-	M_Init();
-	CON_SetLoadingProgress(LOADED_MINIT);
+	CONS_Printf("R_InitSkins()...\n");
+	R_InitSkins(); // ditto
+	CON_SetLoadingProgress(LOADED_INITSKINS);
 
 	CONS_Printf("R_Init(): Init SRB2 refresh daemon.\n");
 	R_Init();
@@ -1555,6 +1547,25 @@ void D_SRB2Main(void)
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
 	CON_SetLoadingProgress(LOADED_STINIT);
+
+	//------------------------------------------------ COMMAND LINE PARAMS
+
+	// this must be done after loading gamedata,
+	// to avoid setting off the corrupted gamedata code in G_LoadGameData if a SOC with custom gamedata is added
+	// -- Monster Iestyn 20/02/20
+	if (M_CheckParm("-warp") && M_IsNextParm())
+	{
+		const char *word = M_GetNextParm();
+		pstartmap = G_FindMapByNameOrCode(word, 0);
+		if (! pstartmap)
+			I_Error("Cannot find a map remotely named '%s'\n", word);
+		else
+		{
+			if (!M_CheckParm("-server"))
+				G_SetGameModified(multiplayer, true);
+			autostart = true;
+		}
+	}
 
 	// Set up splitscreen players before joining!
 	if (!dedicated && (M_CheckParm("-splitscreen") && M_IsNextParm()))

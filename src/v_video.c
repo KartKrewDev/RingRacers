@@ -131,6 +131,9 @@ static boolean InitCube(void)
 	float globalgammamul, globalgammaoffs;
 	boolean doinggamma;
 
+	if (con_startup_loadprogress < LOADED_CONFIG)
+		return false;
+
 #define diffcons(cv) (cv.value != atoi(cv.defaultvalue))
 
 	doinggamma = diffcons(cv_globalgamma);
@@ -1089,7 +1092,7 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c)
 		return;
 
 #ifdef HWRENDER
-	if (rendermode != render_soft && !con_startup)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawDiag(x, y, wh, c);
 		return;

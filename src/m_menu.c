@@ -3466,8 +3466,6 @@ void M_Init(void)
 {
 	UINT8 i;
 
-	COM_AddCommand("manual", Command_Manual_f);
-
 	CV_RegisterVar(&cv_nextmap);
 	CV_RegisterVar(&cv_newgametype);
 	CV_RegisterVar(&cv_chooseskin);
@@ -3475,6 +3473,8 @@ void M_Init(void)
 
 	if (dedicated)
 		return;
+
+	COM_AddCommand("manual", Command_Manual_f);
 
 	// Menu hacks
 	CV_RegisterVar(&cv_dummymenuplayer);

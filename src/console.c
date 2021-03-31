@@ -57,7 +57,6 @@ I_mutex con_mutex;
 
 static boolean con_started = false; // console has been initialised
        boolean con_startup = false; // true at game startup
-       boolean con_refresh = false; // screen needs refreshing
 
        con_loadprogress_t con_startup_loadprogress = 0; // Progress for startup load bar
 
@@ -457,7 +456,6 @@ void CON_Init(void)
 
 		con_started = true;
 		con_startup = true;
-		con_refresh = true; // needs explicit screen refresh until we are in the main game loop
 		consoletoggle = false;
 
 		Unlock_state();
@@ -477,7 +475,6 @@ void CON_Init(void)
 
 		con_started = true;
 		con_startup = false;
-		con_refresh = false; // disable explicit screen refresh
 		consoletoggle = true;
 
 		Unlock_state();
@@ -1497,7 +1494,6 @@ void CONS_Printf(const char *fmt, ...)
 {
 	va_list argptr;
 	static char *txt = NULL;
-	boolean refresh;
 
 	if (txt == NULL)
 		txt = malloc(8192);
@@ -1519,16 +1515,8 @@ void CONS_Printf(const char *fmt, ...)
 
 	// make sure new text is visible
 	con_scrollup = 0;
-	refresh = con_refresh;
 
 	Unlock_state();
-
-	// if not in display loop, force screen update
-	if (refresh)
-	{
-		CON_Drawer(); // here we display the console text
-		I_FinishUpdate(); // page flip or blit buffer
-	}
 }
 
 void CONS_Alert(alerttype_t level, const char *fmt, ...)
@@ -1892,6 +1880,25 @@ void CON_Drawer(void)
 	Unlock_state();
 }
 
+static const char *CON_LoadingStrings[LOADED_ALLDONE+1] =
+{
+	"Init zone memory...", //LOADED_ZINIT
+	"Init game timing...", //LOADED_ISTARTUPTIMER
+	"Loading main assets...", //LOADED_IWAD
+	"Loading add-ons...", //LOADED_PWAD
+	"Init graphics subsystem...", //LOADED_ISTARTUPGRAPHICS
+	"Cache fonts...", //LOADED_HUINIT
+	"Load settings...", //LOADED_CONFIG
+	"Cache textures...", //LOADED_INITTEXTUREDATA
+	"Cache sprites...", //LOADED_INITSPIRTES
+	"Load characters...", //LOADED_INITSKINS
+	"Init rendering daemon...", //LOADED_RINIT
+	"Init audio subsystem...", //LOADED_SINITSFXCHANNELS
+	"Cache HUD...", //LOADED_STINIT
+	"Check game status...", //LOADED_DCHECKNETGAME
+	"Now starting..."
+}; // see also con_loadprogress_t in console.h
+
 //
 // Error handling for the loading bar, to ensure it doesn't skip any steps.
 //
@@ -1906,6 +1913,14 @@ void CON_SetLoadingProgress(con_loadprogress_t newStep)
 	}
 
 	con_startup_loadprogress = newStep;
+
+	if (con_startup_loadprogress <= LOADED_ALLDONE)
+		CONS_Printf("LOADING UPDATE - %s\n", CON_LoadingStrings[con_startup_loadprogress]);
+
+	if (con_startup_loadprogress < LOADED_ISTARTUPGRAPHICS) // rendering not possible?
+		return;
+	CON_DrawLoadBar(); // here we display the console text
+	I_FinishUpdate(); // page flip or blit buffer
 }
 
 //
@@ -1928,6 +1943,10 @@ void CON_DrawLoadBar(void)
 
 	barwidth = (BASEVIDWIDTH * con_startup_loadprogress) / LOADED_ALLDONE;
 	V_DrawFill(0, BASEVIDHEIGHT - barheight, barwidth, barheight, 0);
+#ifdef DEVELOP
+	if (con_startup_loadprogress <= LOADED_ALLDONE)
+		V_DrawString(4, BASEVIDHEIGHT - (barheight + 8 + 4), 0, CON_LoadingStrings[con_startup_loadprogress]);
+#endif
 
 	Unlock_state();
 }

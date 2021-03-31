@@ -513,6 +513,11 @@ void R_InitSprites(void)
 	float fa;
 #endif
 
+	// allocate sprite lookup tables
+	numspritelumps = 0;
+	max_spritelumps = 8192;
+	Z_Malloc(max_spritelumps*sizeof(*spritecachedinfo), PU_STATIC, &spritecachedinfo);
+
 	for (i = 0; i < MAXVIDWIDTH; i++)
 		negonearray[i] = -1;
 
@@ -540,30 +545,6 @@ void R_InitSprites(void)
 	// find sprites in each -file added pwad
 	for (i = 0; i < numwadfiles; i++)
 		R_AddSpriteDefs((UINT16)i);
-
-	//
-	// now check for skins
-	//
-
-	// it can be is do before loading config for skin cvar possible value
-	// (... what the fuck did you just say to me? "it can be is do"?)
-#ifdef SKINVALUES
-	for (i = 0; i <= MAXSKINS; i++)
-	{
-		skin_cons_t[i].value = 0;
-		skin_cons_t[i].strvalue = NULL;
-	}
-#endif
-
-	numskins = 0;
-
-	for (i = 0; i < numwadfiles; i++)
-	{
-		R_AddSkins((UINT16)i);
-		R_PatchSkins((UINT16)i);
-		R_LoadSpriteInfoLumps(i, wadfiles[i]->numlumps);
-	}
-	ST_ReloadSkinFaceGraphics();
 
 	//
 	// check if all sprites have frames
