@@ -2703,8 +2703,8 @@ boolean M_Responder(event_t *ev)
 				M_QuitSRB2(0);
 				return true;
 
-			case KEY_F11: // Gamma Level
-				CV_AddValue(&cv_globalgamma, 1);
+			case KEY_F11: // Fullscreen
+				CV_AddValue(&cv_fullscreen, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
