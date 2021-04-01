@@ -266,16 +266,7 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 		FSurfaceInfo Surf;
 		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
 
-		if (!alphalevel)
-			flags &= ~PF_Translucent;
-		if (blendmode == AST_ADD)
-			flags |= PF_Additive;
-		else if (blendmode == AST_SUBTRACT)
-			flags |= PF_Subtractive;
-		else if (blendmode == AST_REVERSESUBTRACT)
-			flags |= PF_ReverseSubtract;
-		else if (blendmode == AST_MODULATE)
-			flags |= PF_Multiplicative;
+		flags |= HWR_GetBlendModeFlag(blendmode);
 
 		if (alphalevel == 10)
 			Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
@@ -439,16 +430,7 @@ void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 		FSurfaceInfo Surf;
 		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
 
-		if (!alphalevel)
-			flags &= ~PF_Translucent;
-		if (blendmode == AST_ADD)
-			flags |= PF_Additive;
-		else if (blendmode == AST_SUBTRACT)
-			flags |= PF_Subtractive;
-		else if (blendmode == AST_REVERSESUBTRACT)
-			flags |= PF_ReverseSubtract;
-		else if (blendmode == AST_MODULATE)
-			flags |= PF_Multiplicative;
+		flags |= HWR_GetBlendModeFlag(blendmode);
 
 		if (alphalevel == 10)
 			Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];

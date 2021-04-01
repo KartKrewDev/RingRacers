@@ -631,32 +631,14 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		boolean fuzzy = true;
 
 		// Hacked up support for alpha value in software mode Tails 09-24-2002
-		if (pfloor->alpha < 12)
-			return; // Don't even draw it
-		else if (pfloor->alpha < 38)
-			dc_transmap = R_GetTranslucencyTable(tr_trans90);
-		else if (pfloor->alpha < 64)
-			dc_transmap = R_GetTranslucencyTable(tr_trans80);
-		else if (pfloor->alpha < 89)
-			dc_transmap = R_GetTranslucencyTable(tr_trans70);
-		else if (pfloor->alpha < 115)
-			dc_transmap = R_GetTranslucencyTable(tr_trans60);
-		else if (pfloor->alpha < 140)
-			dc_transmap = R_GetTranslucencyTable(tr_trans50);
-		else if (pfloor->alpha < 166)
-			dc_transmap = R_GetTranslucencyTable(tr_trans40);
-		else if (pfloor->alpha < 192)
-			dc_transmap = R_GetTranslucencyTable(tr_trans30);
-		else if (pfloor->alpha < 217)
-			dc_transmap = R_GetTranslucencyTable(tr_trans20);
-		else if (pfloor->alpha < 243)
-			dc_transmap = R_GetTranslucencyTable(tr_trans10);
-		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
-			dc_transmap = R_GetTranslucencyTable(tr_trans50); // TODOOOOOOOOOOOOO
-		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-			dc_transmap = R_GetTranslucencyTable(tr_trans50); // TODOOOOOOOOOOOOO
-		else
-			fuzzy = false; // Opaque
+		// ...unhacked by toaster 04-01-2021
+		{
+			INT32 trans = (10*((256+12) - pfloor->alpha))/255;
+			if (trans >= 10)
+				return; // Don't even draw it
+			if (!(dc_transmap = R_GetBlendTable(pfloor->blend, trans)))
+				fuzzy = false; // Opaque
+		}
 
 		if (fuzzy)
 			colfunc = colfuncs[COLDRAWFUNC_FUZZY];

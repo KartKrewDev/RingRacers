@@ -154,9 +154,6 @@ typedef enum
 	FF_GOOWATER          = FF_SHATTERBOTTOM, ///< Used with ::FF_SWIMMABLE. Makes thick bouncey goop.
 } ffloortype_e;
 
-#define FFLOOR_ALPHA_SPECIAL_ADDITIVE		(901)
-#define FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE	(902)
-
 typedef struct ffloor_s
 {
 	fixed_t *topheight;
@@ -187,6 +184,7 @@ typedef struct ffloor_s
 
 	INT32 lastlight;
 	INT32 alpha;
+	UINT8 blend;
 	tic_t norender; // for culling
 
 	// these are saved for netgames, so do not let Lua touch these!

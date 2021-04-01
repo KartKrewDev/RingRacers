@@ -1752,15 +1752,11 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 					if (rover->flags & FF_TRANSLUCENT)
 					{
-						if (rover->alpha < 256)
+						if (rover->alpha < 256 || rover->blend)
 						{
-							blendmode = PF_Translucent;
-							Surf.PolyColor.s.alpha = (UINT8)(rover->alpha-1 > 255 ? 255 : rover->alpha-1);
+							blendmode = HWR_GetBlendModeFlag(rover->blend);
+							Surf.PolyColor.s.alpha = (UINT8)(rover->alpha-1);
 						}
-						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
-							blendmode = PF_Additive;
-						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-							blendmode = PF_Subtractive;
 					}
 
 					if (gl_frontsector->numlights)
@@ -1871,15 +1867,11 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 					if (rover->flags & FF_TRANSLUCENT)
 					{
-						if (rover->alpha < 256)
+						if (rover->alpha < 256 || rover->blend)
 						{
-							blendmode = PF_Translucent;
-							Surf.PolyColor.s.alpha = (UINT8)(rover->alpha-1 > 255 ? 255 : rover->alpha-1);
+							blendmode = HWR_GetBlendModeFlag(rover->blend);
+							Surf.PolyColor.s.alpha = (UINT8)(rover->alpha-1);
 						}
-						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
-							blendmode = PF_Additive;
-						else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-							blendmode = PF_Subtractive;
 					}
 
 					if (gl_backsector->numlights)
@@ -3152,14 +3144,9 @@ static void HWR_Subsector(size_t num)
 										   true, rover->master->frontsector->extra_colormap);
 				}
 				else if (rover->flags & FF_TRANSLUCENT
-					&& (rover->alpha < 256
-					|| rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE || rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)) // SoM: Flags are more efficient
+					&& (rover->alpha < 256 || rover->blend)) // SoM: Flags are more efficient
 				{
-					FBITFIELD blendmode = PF_Translucent | HWR_RippleBlend(gl_frontsector, rover, false);
-					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
-						blendmode = PF_Additive;
-					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-						blendmode = PF_Subtractive;
+					FBITFIELD blendmode = HWR_GetBlendModeFlag(rover->blend) | HWR_RippleBlend(gl_frontsector, rover, false);
 
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 
@@ -3168,7 +3155,7 @@ static void HWR_Subsector(size_t num)
 										   false,
 					                       *rover->bottomheight,
 					                       *gl_frontsector->lightlist[light].lightlevel,
-					                       rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, blendmode,
+					                       rover->alpha-1, rover->master->frontsector, blendmode,
 					                       false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
@@ -3205,14 +3192,9 @@ static void HWR_Subsector(size_t num)
 										   true, rover->master->frontsector->extra_colormap);
 				}
 				else if (rover->flags & FF_TRANSLUCENT
-					&& (rover->alpha < 256
-					|| rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE || rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)) // SoM: Flags are more efficient
+					&& (rover->alpha < 256 || rover->blend)) // SoM: Flags are more efficient
 				{
-					FBITFIELD blendmode = PF_Translucent | HWR_RippleBlend(gl_frontsector, rover, true);
-					if (rover->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
-						blendmode = PF_Additive;
-					else if (rover->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-						blendmode = PF_Subtractive;
+					FBITFIELD blendmode = HWR_GetBlendModeFlag(rover->blend) | HWR_RippleBlend(gl_frontsector, rover, false);
 
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 
@@ -3221,7 +3203,7 @@ static void HWR_Subsector(size_t num)
 											true,
 					                        *rover->topheight,
 					                        *gl_frontsector->lightlist[light].lightlevel,
-					                        rover->alpha-1 > 255 ? 255 : rover->alpha-1, rover->master->frontsector, blendmode,
+					                        rover->alpha-1, rover->master->frontsector, blendmode,
 					                        false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
