@@ -23305,7 +23305,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_SPARKLETRAIL
 		-1,						// doomednum
-		S_INVISIBLE,	        // spawnstate
+		S_NULL,	                // spawnstate
 		1000,					// spawnhealth
 		S_NULL,					// seestate
 		sfx_None,				// seesound
