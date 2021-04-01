@@ -9830,7 +9830,7 @@ void A_InvincSparkleRotate(mobj_t *actor)
 	if (!actor->target || P_MobjWasRemoved(actor->target))
 		return;
 
-	CONS_Printf("%d\n", actor->movefactor/FRACUNIT);
+	//CONS_Printf("%d\n", actor->movefactor/FRACUNIT);
 	sx = actor->target->x + FixedMul((actor->movefactor), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
 	sy = actor->target->y + FixedMul((actor->movefactor), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
 	sz = actor->target->z + (actor->extravalue1) + FixedMul((actor->cvmem), FINECOSINE((leveltime*ANG1*10 + actor->angle)>>ANGLETOFINESHIFT));

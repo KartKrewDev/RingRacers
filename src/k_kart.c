@@ -3792,7 +3792,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 		sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
 		sparkle->angle = R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y);
 		sparkle->movefactor = R_PointToDist2(mo->x, mo->y, sparkle->x, sparkle->y);	// Save the distance we spawned away from the player.
-		CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
+		//CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
 		sparkle->extravalue1 = (sparkle->z - mo->z);			// Keep track of our Z position relative to the player's, I suppose.
 		sparkle->extravalue2 = P_RandomRange(0, 1) ? 1 : -1;	// Rotation direction?
 		sparkle->cvmem = P_RandomRange(-25, 25)*mo->scale;		// Vertical "angle"
