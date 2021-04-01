@@ -1996,10 +1996,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		vis->scale += FixedMul(scalestep, spriteyscale) * (vis->x1 - x1);
 	}
 
-	if (blendmode != AST_COPY)
-		vis->transmap = R_GetBlendTable(blendmode, trans);
-	else
-		vis->transmap = NULL;
+	vis->transmap = R_GetBlendTable(blendmode, trans);
 
 	if (R_ThingIsSemiBright(oldthing))
 		vis->cut |= SC_SEMIBRIGHT;

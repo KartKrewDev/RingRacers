@@ -50,11 +50,11 @@
 /// \brief shift for FF_BLENDMASK
 #define FF_BLENDSHIFT 12
 /// \brief preshifted blend flags minus 1 as effects don't distinguish between AST_COPY and AST_TRANSLUCENT
-#define FF_ADD				((AST_ADD-1)<<RF_BLENDSHIFT)
-#define FF_SUBTRACT			((AST_SUBTRACT-1)<<RF_BLENDSHIFT)
-#define FF_REVERSESUBTRACT	((AST_REVERSESUBTRACT-1)<<RF_BLENDSHIFT)
-#define FF_MODULATE			((AST_MODULATE-1)<<RF_BLENDSHIFT)
-#define FF_OVERLAY			((AST_OVERLAY-1)<<RF_BLENDSHIFT)
+#define FF_ADD				((AST_ADD-1)<<FF_BLENDSHIFT)
+#define FF_SUBTRACT			((AST_SUBTRACT-1)<<FF_BLENDSHIFT)
+#define FF_REVERSESUBTRACT	((AST_REVERSESUBTRACT-1)<<FF_BLENDSHIFT)
+#define FF_MODULATE			((AST_MODULATE-1)<<FF_BLENDSHIFT)
+#define FF_OVERLAY			((AST_OVERLAY-1)<<FF_BLENDSHIFT)
 
 /// \brief Frame flags: 0 = no trans(opaque), 1-15 = transl. table
 #define FF_TRANSMASK 0xf0000

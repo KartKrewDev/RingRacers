@@ -88,6 +88,7 @@ consvar_t cv_constextsize = CVAR_INIT ("con_textsize", "Medium", CV_SAVE|CV_CALL
 // local copy of the palette for V_GetColor()
 RGBA_t *pLocalPalette = NULL;
 RGBA_t *pMasterPalette = NULL;
+RGBA_t *pGammaCorrectedPalette = NULL;
 
 /*
 The following was an extremely helpful resource when developing my Colour Cube LUT.
@@ -285,33 +286,25 @@ static boolean InitCube(void)
 	return true;
 }
 
-#ifdef BACKWARDSCOMPATCORRECTION
-/*
-So it turns out that the way gamma was implemented previously, the default
-colour profile of the game was messed up. Since this bad decision has been
-around for a long time, and the intent is to keep the base game looking the
-same, I'm not gonna be the one to remove this base modification.
-toast 20/04/17
-... welp yes i am (27/07/19, see the ifdef around it)
-*/
-const UINT8 correctiontable[256] =
-	{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,
-	17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,
-	33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
-	49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,
-	65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,
-	81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,
-	97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,
-	113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,
-	128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,
-	144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,
-	160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,
-	176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,
-	192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,
-	208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,
-	224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,
-	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255};
-#endif
+UINT32 V_GammaCorrect(UINT32 input, double power)
+{
+	RGBA_t result;
+	double linear;
+
+	result.rgba = input;
+
+	linear = ((double)result.s.red)/255.0f;
+	linear = pow(linear, power)*255.0f;
+	result.s.red = (UINT8)(linear);
+	linear = ((double)result.s.green)/255.0f;
+	linear = pow(linear, power)*255.0f;
+	result.s.green = (UINT8)(linear);
+	linear = ((double)result.s.blue)/255.0f;
+	linear = pow(linear, power)*255.0f;
+	result.s.blue = (UINT8)(linear);
+
+	return result.rgba;
+}
 
 // keep a copy of the palette so that we can get the RGB value for a color index at any time.
 static void LoadPalette(const char *lumpname)
@@ -322,33 +315,37 @@ static void LoadPalette(const char *lumpname)
 
 	Cubeapply = InitCube();
 
-	Z_Free(pLocalPalette);
+	if (pLocalPalette != pMasterPalette)
+		Z_Free(pLocalPalette);
 	Z_Free(pMasterPalette);
+	Z_Free(pGammaCorrectedPalette);
 
-	pLocalPalette = Z_Malloc(sizeof (*pLocalPalette)*palsize, PU_STATIC, NULL);
 	pMasterPalette = Z_Malloc(sizeof (*pMasterPalette)*palsize, PU_STATIC, NULL);
+	if (Cubeapply)
+		pLocalPalette = Z_Malloc(sizeof (*pLocalPalette)*palsize, PU_STATIC, NULL);
+	else
+		pLocalPalette = pMasterPalette;
+	pGammaCorrectedPalette = Z_Malloc(sizeof (*pGammaCorrectedPalette)*palsize, PU_STATIC, NULL);
 
 	pal = W_CacheLumpNum(lumpnum, PU_CACHE);
 	for (i = 0; i < palsize; i++)
 	{
-#ifdef BACKWARDSCOMPATCORRECTION
-		pMasterPalette[i].s.red = pLocalPalette[i].s.red = correctiontable[*pal++];
-		pMasterPalette[i].s.green = pLocalPalette[i].s.green = correctiontable[*pal++];
-		pMasterPalette[i].s.blue = pLocalPalette[i].s.blue = correctiontable[*pal++];
-#else
-		pMasterPalette[i].s.red = pLocalPalette[i].s.red = *pal++;
-		pMasterPalette[i].s.green = pLocalPalette[i].s.green = *pal++;
-		pMasterPalette[i].s.blue = pLocalPalette[i].s.blue = *pal++;
-#endif
-		pMasterPalette[i].s.alpha = pLocalPalette[i].s.alpha = 0xFF;
+		pMasterPalette[i].s.red = *pal++;
+		pMasterPalette[i].s.green = *pal++;
+		pMasterPalette[i].s.blue = *pal++;
+		pMasterPalette[i].s.alpha = 0xFF;
 
-		// lerp of colour cubing! if you want, make it smoother yourself
-		if (Cubeapply)
-			V_CubeApply(&pLocalPalette[i].s.red, &pLocalPalette[i].s.green, &pLocalPalette[i].s.blue);
+		pGammaCorrectedPalette[i].rgba = V_GammaDecode(pMasterPalette[i].rgba);
+
+		if (!Cubeapply)
+			continue;
+
+		V_CubeApply(&pGammaCorrectedPalette[i]);
+		pLocalPalette[i].rgba = V_GammaEncode(pGammaCorrectedPalette[i].rgba);
 	}
 }
 
-void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
+void V_CubeApply(RGBA_t *input)
 {
 	float working[4][3];
 	float linear;
@@ -357,7 +354,7 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
 	if (!Cubeapply)
 		return;
 
-	linear = (*red/255.0);
+	linear = ((*input).s.red/255.0);
 #define dolerp(e1, e2) ((1 - linear)*e1 + linear*e2)
 	for (q = 0; q < 3; q++)
 	{
@@ -366,13 +363,13 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
 		working[2][q] = dolerp(Cubepal[0][0][1][q], Cubepal[1][0][1][q]);
 		working[3][q] = dolerp(Cubepal[0][1][1][q], Cubepal[1][1][1][q]);
 	}
-	linear = (*green/255.0);
+	linear = ((*input).s.green/255.0);
 	for (q = 0; q < 3; q++)
 	{
 		working[0][q] = dolerp(working[0][q], working[1][q]);
 		working[1][q] = dolerp(working[2][q], working[3][q]);
 	}
-	linear = (*blue/255.0);
+	linear = ((*input).s.blue/255.0);
 	for (q = 0; q < 3; q++)
 	{
 		working[0][q] = 255*dolerp(working[0][q], working[1][q]);
@@ -383,9 +380,9 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
 	}
 #undef dolerp
 
-	*red = (UINT8)(working[0][0]);
-	*green = (UINT8)(working[0][1]);
-	*blue = (UINT8)(working[0][2]);
+	(*input).s.red = (UINT8)(working[0][0]);
+	(*input).s.green = (UINT8)(working[0][1]);
+	(*input).s.blue = (UINT8)(working[0][2]);
 }
 
 const char *R_GetPalname(UINT16 num)

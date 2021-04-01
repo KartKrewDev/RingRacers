@@ -206,20 +206,25 @@ void R_GenerateBlendTables(void)
 void R_GenerateTranslucencyTable(UINT8 *table, int style, UINT8 blendamt)
 {
 	INT16 bg, fg;
+	RGBA_t backrgba, frontrgba, result;
 
 	if (table == NULL)
 		I_Error("R_GenerateTranslucencyTable: input table was NULL!");
 
-	for (bg = 0; bg < 0xFF; bg++)
+	for (bg = 0; bg <= 0xFF; bg++)
 	{
-		for (fg = 0; fg < 0xFF; fg++)
+		backrgba = pGammaCorrectedPalette[bg];
+		for (fg = 0; fg <= 0xFF; fg++)
 		{
-			RGBA_t backrgba = V_GetMasterColor(bg);
-			RGBA_t frontrgba = V_GetMasterColor(fg);
-			RGBA_t result;
+			frontrgba = pGammaCorrectedPalette[fg];
 
-			result.rgba = ASTBlendPixel(backrgba, frontrgba, style, blendamt);
+#if 0 // perfect implementation
+			result.rgba = V_GammaEncode(ASTBlendPixel(backrgba, frontrgba, style, blendamt));
 			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pMasterPalette);
+#else // performance scrabbler
+			result.rgba = ASTBlendPixel(backrgba, frontrgba, style, blendamt);
+			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pGammaCorrectedPalette);
+#endif
 		}
 	}
 }

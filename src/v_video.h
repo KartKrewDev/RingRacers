@@ -66,8 +66,13 @@ const char *GetPalette(void);
 
 extern RGBA_t *pLocalPalette;
 extern RGBA_t *pMasterPalette;
+extern RGBA_t *pGammaCorrectedPalette;
 
-void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
+UINT32 V_GammaCorrect(UINT32 input, double power);
+#define V_GammaDecode(input) V_GammaCorrect(input, 2.2f)
+#define V_GammaEncode(input) V_GammaCorrect(input, (1/2.2f))
+
+void V_CubeApply(RGBA_t *input);
 
 // Retrieve the ARGB value from a palette color index
 #define V_GetColor(color) (pLocalPalette[color&0xFF])
