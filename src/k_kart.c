@@ -3763,55 +3763,58 @@ void K_SpawnBoostTrail(player_t *player)
 	}
 }
 
-void K_SpawnSparkleTrail(mobj_t *mo)
+mobj_t *K_SpawnSparkleTrail(mobj_t *mo)
 {
 	const INT32 rad = (mo->radius*3)/FRACUNIT;
 	mobj_t *sparkle;
-	INT32 i;
-	UINT8 invanimnum; // Current sparkle animation number
-	INT32 invtime;// Invincibility time left, in seconds
-	UINT8 index = 1;
 	fixed_t newx, newy, newz;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
+	newx = mo->x + (P_RandomRange(-rad, rad)*FRACUNIT);
+	newy = mo->y + (P_RandomRange(-rad, rad)*FRACUNIT);
+	newz = mo->z + (P_RandomRange(0, mo->height>>FRACBITS)*FRACUNIT);
+
+	sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
+	sparkle->angle = R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y);
+	sparkle->movefactor = R_PointToDist2(mo->x, mo->y, sparkle->x, sparkle->y);	// Save the distance we spawned away from the player.
+	CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
+	sparkle->extravalue1 = (sparkle->z - mo->z);			// Keep track of our Z position relative to the player's, I suppose.
+	sparkle->extravalue2 = P_RandomRange(0, 1) ? 1 : -1;	// Rotation direction?
+	sparkle->cvmem = P_RandomRange(-25, 25)*mo->scale;		// Vertical "angle"
+	K_FlipFromObject(sparkle, mo);
+
+	//if (i == 0)
+		//P_SetMobjState(sparkle, S_KARTINVULN_LARGE1);
+
+	P_SetTarget(&sparkle->target, mo);
+	sparkle->destscale = mo->destscale;
+	P_SetScale(sparkle, mo->scale);
+	sparkle->colorized = true;
+	sparkle->color = mo->color;
+	return sparkle;
+}
+
+void K_SparkleTrailHandling(mobj_t *mo, player_t *player)
+{
+	UINT8 invanimnum; // Current sparkle animation number
+	INT32 invtime;// Invincibility time left, in seconds
+	UINT8 index = 1;
+
 	if (leveltime & 2)
 		index = 2;
 
-	invtime = mo->player->kartstuff[k_invincibilitytimer]/TICRATE+1;
+	invtime = player->kartstuff[k_invincibilitytimer]/TICRATE+1;
 
 	//CONS_Printf("%d\n", index);
 
-	for (i = 0; i < 8; i++)
-	{
-		newx = mo->x + (P_RandomRange(-rad, rad)*FRACUNIT);
-		newy = mo->y + (P_RandomRange(-rad, rad)*FRACUNIT);
-		newz = mo->z + (P_RandomRange(0, mo->height>>FRACBITS)*FRACUNIT);
-
-		sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
-		sparkle->angle = R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y);
-		sparkle->movefactor = R_PointToDist2(mo->x, mo->y, sparkle->x, sparkle->y);	// Save the distance we spawned away from the player.
-		CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
-		sparkle->extravalue1 = (sparkle->z - mo->z);			// Keep track of our Z position relative to the player's, I suppose.
-		sparkle->extravalue2 = P_RandomRange(0, 1) ? 1 : -1;	// Rotation direction?
-		sparkle->cvmem = P_RandomRange(-25, 25)*mo->scale;		// Vertical "angle"
-		K_FlipFromObject(sparkle, mo);
-
-		//if (i == 0)
-			//P_SetMobjState(sparkle, S_KARTINVULN_LARGE1);
-
-		P_SetTarget(&sparkle->target, mo);
-		sparkle->destscale = mo->destscale;
-		P_SetScale(sparkle, mo->scale);
-	}
-
 	invanimnum = (invtime >= 11) ? 11 : invtime;
 	//CONS_Printf("%d\n", invanimnum);
-	P_SetMobjState(sparkle, K_SparkleTrailStartStates[invanimnum][index]);
-	sparkle->colorized = true;
-	sparkle->color = mo->color;
+
+	P_SetMobjState(mo, K_SparkleTrailStartStates[invanimnum][index]);
 }
+
 
 void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 {
