@@ -3493,20 +3493,7 @@ static int lib_kSpawnSparkleTrail(lua_State *L)
 	NOHUD
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_PushUserdata(L, K_SpawnSparkleTrail(mo), META_MOBJ);
-	return 1;
-}
-
-static int lib_kSparkleTrailHandling(lua_State *L)
-{
-	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	player_t *player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
-	NOHUD
-	if (!mo)
-		return LUA_ErrInvalid(L, "mobj_t");
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	K_SparkleTrailHandling(mo, player);
+	K_SpawnSparkleTrail(mo);
 	return 0;
 }
 
@@ -3938,7 +3925,6 @@ static luaL_Reg lib[] = {
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
 	{"K_SpawnBoostTrail",lib_kSpawnBoostTrail},
 	{"K_SpawnSparkleTrail",lib_kSpawnSparkleTrail},
-	{"K_SparkleTrailHandling", lib_kSparkleTrailHandling},
 	{"K_SpawnWipeoutTrail",lib_kSpawnWipeoutTrail},
 	{"K_DriftDustHandling",lib_kDriftDustHandling},
 	{"K_DoSneaker",lib_kDoSneaker},
