@@ -191,7 +191,7 @@ void R_GenerateBlendTables(void)
 	for (i = 0; i <= 9; i++)
 	{
 		const size_t offs = (0x10000 * i);
-		const UINT8 alpha = TRANSTAB_AMTMUL10 * (10-i);
+		const UINT8 alpha = (TRANSTAB_AMTMUL10 * ((float)(10-i)));
 
 		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, AST_ADD, alpha);
 		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, AST_SUBTRACT, alpha);
