@@ -1697,6 +1697,10 @@ void R_RegisterEngineStuff(void)
 		CV_RegisterVar(&cv_cam_rotate[i]);
 	}
 
+	CV_RegisterVar(&cv_tilting);
+	CV_RegisterVar(&cv_actionmovie);
+	CV_RegisterVar(&cv_windowquake);
+
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);
 

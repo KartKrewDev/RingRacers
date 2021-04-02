@@ -499,6 +499,7 @@ typedef struct player_s
 	fixed_t bob;
 
 	angle_t viewrollangle;
+	angle_t tilt;
 
 	angle_t angleturn;
 

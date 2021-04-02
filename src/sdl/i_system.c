@@ -811,6 +811,12 @@ INT32 I_GetKey (void)
 	return rc;
 }
 
+void
+I_CursedWindowMovement (int xd, int yd)
+{
+	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
+}
+
 //
 // I_JoyScale
 //

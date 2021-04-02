@@ -2765,6 +2765,11 @@ consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange)
 };
 
+consvar_t cv_tilting = CVAR_INIT ("tilting", "On", CV_SAVE, CV_OnOff, NULL);
+
+consvar_t cv_actionmovie = CVAR_INIT ("actionmovie", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_windowquake = CVAR_INIT ("windowquake", "Off", CV_SAVE, CV_OnOff, NULL);
+
 fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
@@ -4245,6 +4250,109 @@ static void P_HandleFollower(player_t *player)
 	}
 }
 
+	/* gaysed script from me, based on Golden's sprite slope roll */
+
+// holy SHIT
+static INT32
+Quaketilt (player_t *player)
+{
+	angle_t tilt;
+	fixed_t lowb; // this threshold for speed
+	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	INT32 delta = (INT32)( player->mo->angle - moma );
+	fixed_t speed;
+
+	boolean sliptiding =
+		(
+				player->kartstuff[k_aizdriftstrat] != 0 &&
+				player->kartstuff[k_drift]         == 0
+		);
+
+	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
+	{
+		return 0;
+	}
+
+	// Hi! I'm "not a math guy"!
+	if (abs(delta) > ANGLE_90)
+		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
+	if (P_IsObjectOnGround(player->mo))
+	{
+		if (sliptiding)
+		{
+			tilt = ANGLE_45;
+			lowb = 5*FRACUNIT;
+		}
+		else
+		{
+			tilt = ANGLE_11hh/2;
+			lowb = 15*FRACUNIT;
+		}
+	}
+	else
+	{
+		tilt = ANGLE_22h;
+		lowb = 10*FRACUNIT;
+	}
+	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
+	speed = abs( player->mo->momx + player->mo->momy );
+	if (speed < lowb)
+	{
+		// ease out tilt as we slow...
+		moma = FixedMul(moma, FixedDiv(speed, lowb));
+	}
+	return moma;
+}
+
+static void
+DoABarrelRoll (player_t *player)
+{
+	angle_t slope;
+	angle_t delta;
+
+	if (player->mo->standingslope)
+	{
+		slope = player->mo->standingslope->zangle;
+	}
+	else
+	{
+		slope = 0;
+	}
+
+	if (abs((INT32)slope) > ANGLE_11hh)
+	{
+		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
+		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT), slope));
+	}
+	else
+	{
+		slope = 0;
+	}
+
+	slope -= Quaketilt(player);
+
+	delta = (INT32)( slope - player->tilt )/ 32;
+
+	if (delta)
+		player->tilt += delta;
+	else
+		player->tilt  = slope;
+
+	if (cv_tilting.value)
+	{
+		player->viewrollangle = player->tilt;
+
+		if (cv_actionmovie.value)
+		{
+			player->viewrollangle += quake.roll;
+		}
+	}
+	else
+	{
+		player->viewrollangle = 0;
+	}
+}
+
 //
 // P_PlayerThink
 //
@@ -4662,6 +4770,8 @@ void P_PlayerThink(player_t *player)
 	player->pflags &= ~PF_SLIDING;
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
+
+	DoABarrelRoll(player);
 
 	LUAh_PlayerThink(player);
 }

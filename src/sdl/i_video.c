@@ -642,6 +642,9 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 			break;
 		case SDL_WINDOWEVENT_MAXIMIZED:
 			break;
+		case SDL_WINDOWEVENT_MOVED:
+			window_x = evt.data1;
+			window_y = evt.data2;
 	}
 
 	if (mousefocus && kbfocus)

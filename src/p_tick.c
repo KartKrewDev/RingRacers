@@ -655,10 +655,19 @@ void P_Ticker(boolean run)
 			quake.x = M_RandomRange(-ir,ir);
 			quake.y = M_RandomRange(-ir,ir);
 			quake.z = M_RandomRange(-ir,ir);
+			if (cv_windowquake.value)
+				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+			ir >>= 2;
+			ir = M_RandomRange(-ir,ir);
+			if (ir < 0)
+				ir = ANGLE_MAX - FixedAngle(-ir);
+			else
+				ir = FixedAngle(ir);
+			quake.roll = ir;
 			--quake.time;
 		}
 		else
-			quake.x = quake.y = quake.z = 0;
+			quake.x = quake.y = quake.z = quake.roll = 0;
 
 		if (metalplayback)
 			G_ReadMetalTic(metalplayback);
