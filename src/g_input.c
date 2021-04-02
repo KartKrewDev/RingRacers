@@ -52,11 +52,11 @@ const INT32 gcl_brake[num_gcl_brake] = { gc_brake };
 const INT32 gcl_drift[num_gcl_drift] = { gc_drift };
 
 const INT32 gcl_spindash[num_gcl_spindash] = {
-	gc_accelerate, gc_drift, gc_brake
+	gc_accelerate, gc_drift, gc_brake, gc_spindash
 };
 
 const INT32 gcl_movement[num_gcl_movement] = {
-	gc_accelerate, gc_drift, gc_brake, gc_turnleft, gc_turnright
+	gc_accelerate, gc_drift, gc_brake, gc_spindash, gc_turnleft, gc_turnright
 };
 
 const INT32 gcl_item[num_gcl_item] = {
@@ -64,7 +64,7 @@ const INT32 gcl_item[num_gcl_item] = {
 };
 
 const INT32 gcl_full[num_gcl_full] = {
-	gc_accelerate, gc_drift, gc_brake, gc_turnleft, gc_turnright,
+	gc_accelerate, gc_drift, gc_brake, gc_spindash, gc_turnleft, gc_turnright,
 	gc_fire, gc_aimforward, gc_aimbackward,
 	gc_lookback
 };

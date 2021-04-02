@@ -109,6 +109,7 @@ typedef enum
 
 	AXISFIRE = AXISDIGITAL,
 	AXISDRIFT,
+	AXISSPINDASH,
 	AXISLOOKBACK,
 	AXISAIM,
 } axis_input_e;
