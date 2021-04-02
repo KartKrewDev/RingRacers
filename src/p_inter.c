@@ -1863,7 +1863,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-		if (target->hitlag > 0)
+		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0)
 			return false;
 	}
 
@@ -1947,7 +1947,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (combo == false)
 				{
-					if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2))
+					if (player->powers[pw_flashing] > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
