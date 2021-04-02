@@ -1878,8 +1878,6 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEUINT8(save_p, mobj->whiteshadow);
 	}
 	if (diff2 & MD2_RENDERFLAGS)
-		WRITEUINT32(save_p, mobj->renderflags);
-	if (diff2 & MD2_RENDERFLAGS)
 	{
 		UINT32 rf = mobj->renderflags;
 		UINT32 q = rf & RF_DONTDRAW;
