@@ -1835,7 +1835,7 @@ static void HU_DrawCEcho(void)
 		if (cechotext[i] == '\\')
 			pnumlines++;
 
-	y -= (pnumlines-1)*((realflags & V_RETURN8) ? 4 : 6);
+	y -= (pnumlines-1)*6;
 
 	// Prevent crashing because I'm sick of this
 	if (y < 0)
@@ -1858,7 +1858,7 @@ static void HU_DrawCEcho(void)
 		*line = '\0';
 
 		V_DrawCenteredString(BASEVIDWIDTH/2, y, realflags, echoptr);
-		y += ((realflags & V_RETURN8) ? 8 : 12);
+		y += 12;
 
 		echoptr = line;
 		echoptr++;

@@ -66,8 +66,13 @@ const char *GetPalette(void);
 
 extern RGBA_t *pLocalPalette;
 extern RGBA_t *pMasterPalette;
+extern RGBA_t *pGammaCorrectedPalette;
 
-void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
+UINT32 V_GammaCorrect(UINT32 input, double power);
+#define V_GammaDecode(input) V_GammaCorrect(input, 2.2f)
+#define V_GammaEncode(input) V_GammaCorrect(input, (1/2.2f))
+
+void V_CubeApply(RGBA_t *input);
 
 // Retrieve the ARGB value from a palette color index
 #define V_GetColor(color) (pLocalPalette[color&0xFF])
@@ -123,29 +128,32 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_70TRANS            0x00070000
 #define V_80TRANS            0x00080000 // used to be V_8020TRANS
 #define V_90TRANS            0x00090000
-#define V_ADDTRANS           0x000A0000
-#define V_SUBTRANS           0x000B0000
-#define V_HUDTRANSHALF       0x000D0000
-#define V_HUDTRANS           0x000E0000 // draw the hud translucent
-#define V_HUDTRANSDOUBLE     0x000F0000
+#define V_HUDTRANSHALF       0x000A0000
+#define V_HUDTRANS           0x000B0000 // draw the hud translucent
+#define V_HUDTRANSDOUBLE     0x000C0000
 // Macros follow
 #define V_USERHUDTRANSHALF   ((10-(cv_translucenthud.value/2))<<V_ALPHASHIFT)
 #define V_USERHUDTRANS       ((10-cv_translucenthud.value)<<V_ALPHASHIFT)
 #define V_USERHUDTRANSDOUBLE ((10-min(cv_translucenthud.value*2, 10))<<V_ALPHASHIFT)
 
-#define V_RETURN8            0x00100000 // 8 pixel return instead of 12
-#define V_OFFSET             0x00200000 // account for offsets in patches
-#define V_ALLOWLOWERCASE     0x00400000 // (strings only) allow fonts that have lowercase letters to use them
-#define V_FLIP               0x00400000 // (patches only) Horizontal flip
-#define V_SLIDEIN            0x00800000 // Slide in from the sides on level load, depending on snap flags
+// use bits 21-23 for blendmodes
+#define V_BLENDSHIFT         20
+#define V_BLENDMASK          0x00700000
+// preshifted blend flags minus 1 as effects don't distinguish between AST_COPY and AST_TRANSLUCENT
+#define V_ADD                ((AST_ADD-1)<<V_BLENDSHIFT) // Additive
+#define V_SUBTRACT           ((AST_SUBTRACT-1)<<V_BLENDSHIFT) // Subtractive
+#define V_REVERSESUBTRACT    ((AST_REVERSESUBTRACT-1)<<V_BLENDSHIFT) // Reverse subtractive
+#define V_MODULATE           ((AST_MODULATE-1)<<V_BLENDSHIFT) // Modulate
+#define V_OVERLAY            ((AST_OVERLAY-1)<<V_BLENDSHIFT) // Overlay
 
 #define V_SNAPTOTOP          0x01000000 // for centering
 #define V_SNAPTOBOTTOM       0x02000000 // for centering
 #define V_SNAPTOLEFT         0x04000000 // for centering
 #define V_SNAPTORIGHT        0x08000000 // for centering
 
-#define V_WRAPX              0x10000000 // Don't clamp texture on X (for HW mode)
-#define V_WRAPY              0x20000000 // Don't clamp texture on Y (for HW mode)
+#define V_ALLOWLOWERCASE     0x10000000 // (strings only) allow fonts that have lowercase letters to use them
+#define V_FLIP               0x10000000 // (patches only) Horizontal flip
+#define V_SLIDEIN            0x20000000 // Slide in from the sides on level load, depending on snap flags
 
 #define V_NOSCALESTART       0x40000000 // don't scale x, y, start coords
 #define V_SPLITSCREEN        0x80000000 // Add half of screen width or height automatically depending on player number

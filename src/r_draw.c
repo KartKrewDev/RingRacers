@@ -152,7 +152,7 @@ UINT8 skincolor_modified[MAXSKINCOLORS];
 CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
 CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
-#define TRANSTAB_AMTMUL10 (256.0f / 10.0f)
+#define TRANSTAB_AMTMUL10 (255.0f / 10.0f)
 
 /** \brief Initializes the translucency tables used by the Software renderer.
 */
@@ -174,9 +174,6 @@ void R_InitTranslucencyTables(void)
 	W_ReadLump(W_GetNumForName("TRANS80"), transtables+0x70000);
 	W_ReadLump(W_GetNumForName("TRANS90"), transtables+0x80000);
 
-	W_ReadLump(W_GetNumForName("TRANSADD"),transtables+0x90000);
-	W_ReadLump(W_GetNumForName("TRANSSUB"),transtables+0xA0000);
-
 	R_GenerateBlendTables();
 }
 
@@ -194,7 +191,7 @@ void R_GenerateBlendTables(void)
 	for (i = 0; i <= 9; i++)
 	{
 		const size_t offs = (0x10000 * i);
-		const UINT8 alpha = TRANSTAB_AMTMUL10 * i;
+		const UINT8 alpha = (TRANSTAB_AMTMUL10 * ((float)(10-i)));
 
 		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, AST_ADD, alpha);
 		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, AST_SUBTRACT, alpha);
@@ -206,27 +203,28 @@ void R_GenerateBlendTables(void)
 	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], AST_MODULATE, 0);
 }
 
-static colorlookup_t transtab_lut;
-
 void R_GenerateTranslucencyTable(UINT8 *table, int style, UINT8 blendamt)
 {
 	INT16 bg, fg;
+	RGBA_t backrgba, frontrgba, result;
 
 	if (table == NULL)
 		I_Error("R_GenerateTranslucencyTable: input table was NULL!");
 
-	InitColorLUT(&transtab_lut, pMasterPalette, false);
-
-	for (bg = 0; bg < 0xFF; bg++)
+	for (bg = 0; bg <= 0xFF; bg++)
 	{
-		for (fg = 0; fg < 0xFF; fg++)
+		backrgba = pGammaCorrectedPalette[bg];
+		for (fg = 0; fg <= 0xFF; fg++)
 		{
-			RGBA_t backrgba = V_GetMasterColor(bg);
-			RGBA_t frontrgba = V_GetMasterColor(fg);
-			RGBA_t result;
+			frontrgba = pGammaCorrectedPalette[fg];
 
+#if 0 // perfect implementation
+			result.rgba = V_GammaEncode(ASTBlendPixel(backrgba, frontrgba, style, blendamt));
+			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pMasterPalette);
+#else // performance scrabbler
 			result.rgba = ASTBlendPixel(backrgba, frontrgba, style, blendamt);
-			table[((bg * 0x100) + fg)] = GetColorLUT(&transtab_lut, result.s.red, result.s.green, result.s.blue);
+			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pGammaCorrectedPalette);
+#endif
 		}
 	}
 }
@@ -259,10 +257,9 @@ UINT8 *R_GetBlendTable(int style, INT32 alphalevel)
 	}
 
 	// Return a normal translucency table
-	if (--alphalevel >= 0)
-		return transtables + (ClipTransLevel(alphalevel) << FF_TRANSSHIFT);
-	else
+	if (--alphalevel < 0)
 		return NULL;
+	return transtables + (ClipTransLevel(alphalevel) << FF_TRANSSHIFT);
 }
 
 /**	\brief	Retrieves a translation colormap from the cache.

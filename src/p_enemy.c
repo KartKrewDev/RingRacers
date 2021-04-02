@@ -4000,10 +4000,10 @@ void A_BubbleSpawn(mobj_t *actor)
 	if (!(actor->eflags & MFE_UNDERWATER))
 	{
 		// Don't draw or spawn bubbles above water
-		actor->drawflags |= MFD_DONTDRAW;
+		actor->renderflags |= RF_DONTDRAW;
 		return;
 	}
-	actor->drawflags &= ~MFD_DONTDRAW;
+	actor->renderflags &= ~RF_DONTDRAW;
 
 	if (!(actor->flags2 & MF2_AMBUSH))
 	{
@@ -4133,9 +4133,9 @@ void A_BubbleCheck(mobj_t *actor)
 		return;
 
 	if (actor->eflags & MFE_UNDERWATER)
-		actor->drawflags &= ~MFD_DONTDRAW; // underwater so draw
+		actor->renderflags &= ~RF_DONTDRAW; // underwater so draw
 	else
-		actor->drawflags |= MFD_DONTDRAW; // above water so don't draw
+		actor->renderflags |= RF_DONTDRAW; // above water so don't draw
 }
 
 // Function: A_AttractChase
@@ -4236,9 +4236,9 @@ void A_AttractChase(mobj_t *actor)
 
 		// Rings flicker before disappearing
 		if (actor->fuse && actor->fuse < 5*TICRATE && (leveltime & 1))
-			actor->drawflags |= MFD_DONTDRAW;
+			actor->renderflags |= RF_DONTDRAW;
 		else
-			actor->drawflags &= ~MFD_DONTDRAW;
+			actor->renderflags &= ~RF_DONTDRAW;
 
 		// spilled rings get capped to a certain speed
 		if (actor->type == (mobjtype_t)actor->info->reactiontime)
@@ -13264,7 +13264,7 @@ void A_RolloutRock(mobj_t *actor)
 	if (!(actor->flags & MF_PUSHABLE) || (actor->movecount != 1)) // if being ridden or haven't moved, don't disappear
 		actor->fuse = actor->info->painchance;
 	else if (actor->fuse < 2*TICRATE)
-		actor->drawflags ^= MFD_DONTDRAW;
+		actor->renderflags ^= RF_DONTDRAW;
 
 }
 
@@ -14406,7 +14406,7 @@ void A_RandomShadowFrame(mobj_t *actor)
 		fake->destscale = FRACUNIT*3/2;
 		fake->angle = actor->angle;
 		fake->tics = -1;
-		actor->drawflags |= MFD_DONTDRAW;
+		actor->renderflags |= RF_DONTDRAW;
 		actor->extravalue1 = 1;
 	}
 

@@ -687,7 +687,7 @@ static int lib_pSpawnLockOn(lua_State *L)
 	{
 		mobj_t *visual = P_SpawnMobj(lockon->x, lockon->y, lockon->z, MT_LOCKON); // positioning, flip handled in P_SceneryThinker
 		P_SetTarget(&visual->target, lockon);
-		visual->drawflags |= MFD_DONTDRAW;
+		visual->renderflags |= RF_DONTDRAW;
 		P_SetMobjStateNF(visual, state);
 	}
 	return 0;

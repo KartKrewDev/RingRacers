@@ -1090,7 +1090,7 @@ void F_GameEvaluationTicker(void)
 	{
 		if (netgame || multiplayer) // modify this when we finally allow unlocking stuff in 2P
 		{
-			HU_SetCEchoFlags(V_YELLOWMAP|V_RETURN8);
+			HU_SetCEchoFlags(V_YELLOWMAP);
 			HU_SetCEchoDuration(6);
 			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Multiplayer games can't unlock extras!");
 			S_StartSound(NULL, sfx_s3k68);
@@ -1106,7 +1106,7 @@ void F_GameEvaluationTicker(void)
 		}
 		else
 		{
-			HU_SetCEchoFlags(V_YELLOWMAP|V_RETURN8);
+			HU_SetCEchoFlags(V_YELLOWMAP);
 			HU_SetCEchoDuration(6);
 			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Modified games can't unlock extras!");
 			S_StartSound(NULL, sfx_s3k68);
