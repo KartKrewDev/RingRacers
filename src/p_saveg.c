@@ -99,6 +99,11 @@ static void P_NetArchivePlayers(void)
 	{
 		WRITESINT8(save_p, (SINT8)adminplayers[i]);
 
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
+		{
+			WRITEINT16(save_p, clientpowerlevels[i][j]);
+		}
+
 		if (!playeringame[i])
 			continue;
 
@@ -107,6 +112,18 @@ static void P_NetArchivePlayers(void)
 		// no longer send ticcmds
 
 		WRITESTRINGN(save_p, player_names[i], MAXPLAYERNAME);
+
+		WRITEUINT8(save_p, playerconsole[i]);
+		WRITEINT32(save_p, splitscreen_invitations[i]);
+		WRITEINT32(save_p, splitscreen_party_size[i]);
+		WRITEINT32(save_p, splitscreen_original_party_size[i]);
+
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; ++j)
+		{
+			WRITEINT32(save_p, splitscreen_party[i][j]);
+			WRITEINT32(save_p, splitscreen_original_party[i][j]);
+		}
+
 		WRITEANGLE(save_p, players[i].angleturn);
 		WRITEANGLE(save_p, players[i].aiming);
 		WRITEANGLE(save_p, players[i].drawangle);
@@ -321,6 +338,11 @@ static void P_NetUnArchivePlayers(void)
 	{
 		adminplayers[i] = (INT32)READSINT8(save_p);
 
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
+		{
+			clientpowerlevels[i][j] = READINT16(save_p);
+		}
+
 		// Do NOT memset player struct to 0
 		// other areas may initialize data elsewhere
 		//memset(&players[i], 0, sizeof (player_t));
@@ -330,6 +352,18 @@ static void P_NetUnArchivePlayers(void)
 		// NOTE: sending tics should (hopefully) no longer be necessary
 
 		READSTRINGN(save_p, player_names[i], MAXPLAYERNAME);
+
+		playerconsole[i] = READUINT8(save_p);
+		splitscreen_invitations[i] = READINT32(save_p);
+		splitscreen_party_size[i] = READINT32(save_p);
+		splitscreen_original_party_size[i] = READINT32(save_p);
+
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; ++j)
+		{
+			splitscreen_party[i][j] = READINT32(save_p);
+			splitscreen_original_party[i][j] = READINT32(save_p);
+		}
+
 		players[i].angleturn = READANGLE(save_p);
 		players[i].aiming = READANGLE(save_p);
 		players[i].drawangle = READANGLE(save_p);

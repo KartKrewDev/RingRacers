@@ -1074,7 +1074,6 @@ static void SV_SendPlayerInfo(INT32 node)
 static boolean SV_SendServerConfig(INT32 node)
 {
 	boolean waspacketsent;
-	INT32 i, j;
 
 	memset(&netbuffer->u.servercfg, 0, sizeof netbuffer->u.servercfg);
 
@@ -1090,29 +1089,6 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gamestate = (UINT8)gamestate;
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
-
-	// THESE MAY NOT BE NEEDED ANYMORE?!
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
-			netbuffer->u.servercfg.powerlevels[i][j] = clientpowerlevels[i][j];
-
-		if (!playeringame[i])
-			continue;
-
-		netbuffer->u.servercfg.consoleplayers[i] = playerconsole[i];
-		netbuffer->u.servercfg.invitations[i] = splitscreen_invitations[i];
-		netbuffer->u.servercfg.party_size[i] = splitscreen_party_size[i];
-		netbuffer->u.servercfg.original_party_size[i] =
-			splitscreen_original_party_size[i];
-
-		for (j = 0; j < MAXSPLITSCREENPLAYERS; ++j)
-		{
-			netbuffer->u.servercfg.party[i][j] = splitscreen_party[i][j];
-			netbuffer->u.servercfg.original_party[i][j] =
-				splitscreen_original_party[i][j];
-		}
-	}
 
 	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
 	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
@@ -4160,33 +4136,11 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 			if (client)
 			{
-				INT32 j, k;
-
 				maketic = gametic = neededtic = (tic_t)LONG(netbuffer->u.servercfg.gametic);
 
 				G_SetGametype(netbuffer->u.servercfg.gametype);
 
 				modifiedgame = netbuffer->u.servercfg.modifiedgame;
-				for (j = 0; j < MAXPLAYERS; j++)
-				{
-					for (k = 0; k < PWRLV_NUMTYPES; k++)
-						clientpowerlevels[j][k] = netbuffer->u.servercfg.powerlevels[j][k];
-
-					/* all spitscreen related */
-					playerconsole[j] = netbuffer->u.servercfg.consoleplayers[j];
-					splitscreen_invitations[j] = netbuffer->u.servercfg.invitations[j];
-					splitscreen_original_party_size[j] =
-						netbuffer->u.servercfg.original_party_size[j];
-					splitscreen_party_size[j] =
-						netbuffer->u.servercfg.party_size[j];
-					for (k = 0; k < MAXSPLITSCREENPLAYERS; ++k)
-					{
-						splitscreen_original_party[j][k] =
-							netbuffer->u.servercfg.original_party[j][k];
-						splitscreen_party[j][k] =
-							netbuffer->u.servercfg.party[j][k];
-					}
-				}
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
 

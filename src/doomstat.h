@@ -160,13 +160,13 @@ extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
 extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 /* spitscreen players sync */
-extern int splitscreen_original_party_size[MAXPLAYERS];
-extern int splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+extern INT32 splitscreen_original_party_size[MAXPLAYERS];
+extern INT32 splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 /* parties */
-extern int splitscreen_invitations[MAXPLAYERS];
-extern int splitscreen_party_size[MAXPLAYERS];
-extern int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+extern INT32 splitscreen_invitations[MAXPLAYERS];
+extern INT32 splitscreen_party_size[MAXPLAYERS];
+extern INT32 splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 /* the only local one */
 extern boolean splitscreen_partied[MAXPLAYERS];

@@ -190,16 +190,6 @@ typedef struct
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
-	UINT16 powerlevels[MAXPLAYERS][PWRLV_NUMTYPES]; // SRB2kart: player power levels
-
-	UINT8 consoleplayers[MAXPLAYERS];
-	/* splitscreen */
-	SINT8 invitations[MAXPLAYERS];
-	UINT8 party_size[MAXPLAYERS];
-	UINT8 party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
-	UINT8 original_party_size[MAXPLAYERS];
-	UINT8 original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
-
 	// Discord info (always defined for net compatibility)
 	UINT8 maxplayer;
 	boolean allownewplayer;
