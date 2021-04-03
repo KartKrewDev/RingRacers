@@ -3777,7 +3777,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	P_SetMobjState(sparkle, S_KARTINVULN_LARGE1);
 }
 
-void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
+void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad)
 {
 	mobj_t *dust;
 	angle_t aoff;
@@ -3805,15 +3805,12 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
 	P_SetScale(dust, mo->scale);
 	K_FlipFromObject(dust, mo);
 
-	if (translucent) // offroad effect
+	if (offroad) // offroad effect
 	{
 		dust->momx = mo->momx/2;
 		dust->momy = mo->momy/2;
 		dust->momz = mo->momz/2;
 	}
-
-	if (translucent)
-		dust->renderflags |= RF_GHOSTLY;
 }
 
 void K_SpawnDraftDust(mobj_t *mo)
