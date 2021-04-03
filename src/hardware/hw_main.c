@@ -708,12 +708,15 @@ FBITFIELD HWR_GetBlendModeFlag(INT32 ast)
 {
 	switch (ast)
 	{
+		//case AST_COPY: -- intentionally defaults to translucent
+		case AST_OVERLAY:
+			return PF_Masked;
 		case AST_ADD:
 			return PF_Additive;
 		case AST_SUBTRACT:
-			return PF_Subtractive;
-		case AST_REVERSESUBTRACT:
 			return PF_ReverseSubtract;
+		case AST_REVERSESUBTRACT:
+			return PF_Subtractive;
 		case AST_MODULATE:
 			return PF_Multiplicative;
 		default:
@@ -746,11 +749,13 @@ UINT8 HWR_GetTranstableAlpha(INT32 transtablenum)
 
 FBITFIELD HWR_SurfaceBlend(INT32 style, INT32 transtablenum, FSurfaceInfo *pSurf)
 {
-	if (!transtablenum)
-	{
-		pSurf->PolyColor.s.alpha = 0xff;
+	pSurf->PolyColor.s.alpha = 0xff;
+
+	if (style == AST_MODULATE)
+		return PF_Multiplicative;
+
+	if (!transtablenum && !style)
 		return PF_Masked;
-	}
 
 	pSurf->PolyColor.s.alpha = HWR_GetTranstableAlpha(transtablenum);
 	return HWR_GetBlendModeFlag(style);
@@ -1462,13 +1467,24 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				case 256:
 					blendmode = PF_Translucent;
 					break;
+				case 913:
+					blendmode = PF_Multiplicative;
+					Surf.PolyColor.s.alpha = 0xff;
+					break;
 				default:
 				{
+					UINT32 blend = 0;
 					transnum_t transtable = R_GetLinedefTransTable(gl_linedef);
-					if (transtable != NUMTRANSMAPS)
-						blendmode = HWR_TranstableToAlpha(transtable, &Surf);
-					else
-						blendmode = PF_Masked;
+					if (transtable == NUMTRANSMAPS)
+						transtable = 0;
+					if (gl_linedef->special == 910)
+						blend = AST_ADD;
+					else if (gl_linedef->special == 911)
+						blend = AST_SUBTRACT;
+					else if (gl_linedef->special == 912)
+						blend = AST_REVERSESUBTRACT;
+
+					blendmode = HWR_SurfaceBlend(blend, transtable, &Surf);
 					break;
 				}
 			}
@@ -3881,16 +3897,14 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		if (trans >= NUMTRANSMAPS)
 			return; // cap
 
-		if (trans)
-			blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
-		else
+		blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
+		if (!trans && !blendmode)
 		{
 			// BP: i agree that is little better in environement but it don't
 			//     work properly under glide nor with fogcolor to ffffff :(
 			// Hurdler: PF_Environement would be cool, but we need to fix
 			//          the issue with the fog before
-			Surf.PolyColor.s.alpha = 0xFF;
-			blend = HWR_GetBlendModeFlag(blendmode)|occlusion;
+			blend |= occlusion;
 			if (!occlusion) use_linkdraw_hack = true;
 		}
 	}
@@ -4316,16 +4330,14 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 			if (trans >= NUMTRANSMAPS)
 				return; // cap
 
-			if (trans)
-				blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
-			else
+			blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
+			if (!trans && !blendmode)
 			{
 				// BP: i agree that is little better in environement but it don't
 				//     work properly under glide nor with fogcolor to ffffff :(
 				// Hurdler: PF_Environement would be cool, but we need to fix
 				//          the issue with the fog before
-				Surf.PolyColor.s.alpha = 0xFF;
-				blend = HWR_GetBlendModeFlag(blendmode)|occlusion;
+				blend |= occlusion;
 				if (!occlusion) use_linkdraw_hack = true;
 			}
 		}
@@ -4443,16 +4455,14 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 		if (trans >= NUMTRANSMAPS)
 			return; // cap
 
-		if (trans)
-			blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
-		else
+		blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
+		if (!trans && !blendmode)
 		{
 			// BP: i agree that is little better in environement but it don't
 			//     work properly under glide nor with fogcolor to ffffff :(
 			// Hurdler: PF_Environement would be cool, but we need to fix
 			//          the issue with the fog before
-			Surf.PolyColor.s.alpha = 0xFF;
-			blend = HWR_GetBlendModeFlag(blendmode)|PF_Occlude;
+			blend |= PF_Occlude;
 		}
 	}
 
@@ -6680,7 +6690,7 @@ void HWR_DoPostProcessor(player_t *player)
 
 		Surf.PolyColor.s.alpha = 0xc0; // match software mode
 
-		HWD.pfnDrawPolygon(&Surf, v, 4, PF_Modulated|PF_AdditiveSource|PF_NoTexture|PF_NoDepthTest);
+		HWD.pfnDrawPolygon(&Surf, v, 4, PF_Modulated|PF_Additive|PF_NoTexture|PF_NoDepthTest);
 	}
 
 	// Capture the screen for intermission and screen waving

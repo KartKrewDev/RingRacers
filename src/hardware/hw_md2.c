@@ -1401,13 +1401,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			if (trans >= NUMTRANSMAPS)
 				return false; // cap
 
-			if (trans)
-				Surf.PolyFlags = HWR_SurfaceBlend(blendmode, trans, &Surf);
-			else
-			{
-				Surf.PolyColor.s.alpha = 0xff;
-				Surf.PolyFlags = HWR_GetBlendModeFlag(blendmode);
-			}
+			Surf.PolyFlags = HWR_SurfaceBlend(blendmode, trans, &Surf);
 		}
 
 		// don't forget to enable the depth test because we can't do this

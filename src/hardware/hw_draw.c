@@ -251,7 +251,7 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 	v[0].t = v[1].t = 0.0f;
 	v[2].t = v[3].t = hwrPatch->max_t;
 
-	flags = PF_Translucent|PF_NoDepthTest;
+	flags = PF_NoDepthTest;
 
 	/*if (option & V_WRAPX)
 		flags |= PF_ForceWrapX;
@@ -277,11 +277,10 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 		else
 			Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
 
-		flags |= PF_Modulated;
-		HWD.pfnDrawPolygon(&Surf, v, 4, flags);
+		HWD.pfnDrawPolygon(&Surf, v, 4, flags|PF_Modulated);
 	}
 	else
-		HWD.pfnDrawPolygon(NULL, v, 4, flags);
+		HWD.pfnDrawPolygon(NULL, v, 4, flags|PF_Translucent);
 }
 
 void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
@@ -415,7 +414,7 @@ void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 	else
 		v[2].t = v[3].t = ((sy+h)/(float)(gpatch->height))*hwrPatch->max_t;
 
-	flags = PF_Translucent|PF_NoDepthTest;
+	flags = PF_NoDepthTest;
 
 	/*if (option & V_WRAPX)
 		flags |= PF_ForceWrapX;
@@ -441,11 +440,10 @@ void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 		else
 			Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
 
-		flags |= PF_Modulated;
-		HWD.pfnDrawPolygon(&Surf, v, 4, flags);
+		HWD.pfnDrawPolygon(&Surf, v, 4, flags|PF_Modulated);
 	}
 	else
-		HWD.pfnDrawPolygon(NULL, v, 4, flags);
+		HWD.pfnDrawPolygon(NULL, v, 4, flags|PF_Translucent);
 }
 
 void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)

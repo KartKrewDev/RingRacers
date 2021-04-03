@@ -213,15 +213,14 @@ enum EPolyFlags
 	PF_Masked           = 0x00000001,   // Poly is alpha scaled and 0 alpha pixels are discarded (holes in texture)
 	PF_Translucent      = 0x00000002,   // Poly is transparent, alpha = level of transparency
 	PF_Environment      = 0x00000004,   // Poly should be drawn environment mapped. (Hurdler: used for text drawing)
-	PF_Additive         = 0x00000008,   // Additive color blending
-	PF_AdditiveSource   = 0x00000010,   // Source blending factor is additive. This is the opposite of regular additive blending.
-	PF_Subtractive      = 0x00000020,   // Subtractive color blending
-	PF_ReverseSubtract  = 0x00000040,   // Reverse subtract, used in wall splats (decals)
-	PF_Multiplicative   = 0x00000080,   // Multiplicative color blending
+	PF_Additive         = 0x00000008,   // Source blending factor is additive.
+	PF_Subtractive      = 0x00000010,   // Subtractive color blending
+	PF_ReverseSubtract  = 0x00000020,   // Reverse subtract, used in wall splats (decals)
+	PF_Multiplicative   = 0x00000040,   // Multiplicative color blending
 	PF_Invert           = 0x00000100,   // Polygon inverts the colours of what it's in front of
 	PF_Fog              = 0x20000000,   // Fog blocks
 	PF_NoAlphaTest      = 0x40000000,   // Disables alpha testing
-	PF_Blending         = (PF_Masked|PF_Translucent|PF_Environment|PF_Additive|PF_AdditiveSource|PF_Subtractive|PF_ReverseSubtract|PF_Multiplicative|PF_Invert|PF_Fog) & ~PF_NoAlphaTest,
+	PF_Blending         = (PF_Masked|PF_Translucent|PF_Environment|PF_Additive|PF_Subtractive|PF_ReverseSubtract|PF_Multiplicative|PF_Invert|PF_Fog) & ~PF_NoAlphaTest,
 
 	// other flag bits
 	PF_Occlude          = 0x00000100,   // Updates the depth buffer
