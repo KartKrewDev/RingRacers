@@ -2792,7 +2792,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	INT32 resetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, FLS;
 	boolean pencoremode;
-	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -2849,9 +2848,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		emeralds = 0;
 		memset(&luabanks, 0, sizeof(luabanks));
 	}
-
-	mapnumber = M_MapNumber(mapname[3], mapname[4]);
-	LUAh_MapChange(mapnumber);
 
 	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
 	demo.savebutton = 0;
