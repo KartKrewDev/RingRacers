@@ -1027,15 +1027,6 @@ void R_ExecuteSetViewSize(void)
 	// planes
 	if (rendermode == render_soft)
 	{
-		// this is only used for planes rendering in software mode
-		j = viewheight*16;
-		for (i = 0; i < j; i++)
-		{
-			dy = ((i - viewheight*8)<<FRACBITS) + FRACUNIT/2;
-			dy = FixedMul(abs(dy), fovtan[s]);
-			yslopetab[s][i] = FixedDiv(centerx*FRACUNIT, dy);
-		}
-
 		if (ds_su)
 			Z_Free(ds_su);
 		if (ds_sv)
@@ -1212,7 +1203,7 @@ void R_SetupFrame(player_t *player)
 			break;
 		}
 	}
-	
+
 	if (i > r_splitscreen)
 		return; // shouldn't be possible, but just in case
 
