@@ -4310,6 +4310,11 @@ DoABarrelRoll (player_t *player)
 	angle_t slope;
 	angle_t delta;
 
+	if (player->exiting)
+	{
+		return;
+	}
+
 	if (player->mo->standingslope)
 	{
 		slope = player->mo->standingslope->zangle;
