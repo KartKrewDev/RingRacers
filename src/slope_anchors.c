@@ -9,6 +9,8 @@
 /// \brief Charyb's vertex slope anchors.
 ///        This file is self contained to avoid a Big Large merge conflict.
 
+#include "taglist.h"
+
 /*
 FIXME
 FIXME
@@ -188,7 +190,7 @@ get_anchor
 		mapthing_t               **      anchors,
 		fixed_t                     distances[3],
 		const struct anchor_list  * list,
-		const INT16                 tag,
+		const mtag_t                tag,
 		const vertex_t            * v
 ){
 	size_t i;
@@ -238,7 +240,7 @@ get_sector_anchors
 		mapthing_t               **      anchors,
 		fixed_t                     distances[3],
 		const struct anchor_list  * list,
-		const INT16                 tag,
+		const mtag_t                tag,
 		const sector_t            * sector
 ){
 	size_t i;
@@ -255,7 +257,7 @@ find_closest_anchors
 (
 		const sector_t           * sector,
 		const struct anchor_list * list,
-		const INT16                tag
+		const mtag_t               tag
 ){
 	fixed_t distances[3] = { INT32_MAX, INT32_MAX, INT32_MAX };
 
@@ -400,7 +402,7 @@ slope_sector
 		sector_t                 * sector,
 		const INT16                flags,
 		const struct anchor_list * list,
-		const INT16                tag
+		const mtag_t               tag
 ){
 	mapthing_t ** anchors = find_closest_anchors(sector, list, tag);
 
@@ -436,6 +438,8 @@ make_anchored_slope
 
 	sector_t   *  s;
 
+	mtag_t tag = Tag_FGet(&line->tags);
+
 	if (side == 0 || flags & ML_TWOSIDED)
 	{
 		s = sides[line->sidenum[side]].sector;
@@ -448,13 +452,13 @@ make_anchored_slope
 		if (plane & FLOOR)
 		{
 			slope_sector
-				(&s->f_slope, &s->c_slope, s, flags, &floor_anchors, line->tag);
+				(&s->f_slope, &s->c_slope, s, flags, &floor_anchors, tag);
 		}
 
 		if (plane & CEILING)
 		{
 			slope_sector
-				(&s->c_slope, &s->f_slope, s, flags, &ceiling_anchors, line->tag);
+				(&s->c_slope, &s->f_slope, s, flags, &ceiling_anchors, tag);
 		}
 	}
 }

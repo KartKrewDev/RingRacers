@@ -750,9 +750,8 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	if (options & V_SLIDEIN)
 	{
 		const tic_t length = TICRATE/2;
-		const tic_t end = (lt_endtime + length);
 
-		if (lt_ticker < end)
+		if (lt_exitticker < length)
 		{
 			INT32 offset = screenwidth - ((lt_exitticker * screenwidth) / length);
 			boolean slidefromright = false;
@@ -1563,14 +1562,14 @@ static void K_DrawKartPositionNum(INT32 num)
 	fixed_t scale = FRACUNIT;
 	patch_t *localpatch = kp_positionnum[0][0];
 	INT32 fx = 0, fy = 0, fflags = 0;
-	INT32 addOrSub = V_ADDTRANS;
+	INT32 addOrSub = V_ADD;
 	boolean flipdraw = false;	// flip the order we draw it in for MORE splitscreen bs. fun.
 	boolean flipvdraw = false;	// used only for 2p splitscreen so overtaking doesn't make 1P's position fly off the screen.
 	boolean overtake = false;
 
 	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM)
 	{
-		addOrSub = V_SUBTRANS;
+		addOrSub = V_SUBTRACT;
 	}
 
 	if (stplyr->kartstuff[k_positiondelay] || stplyr->exiting)
@@ -1646,7 +1645,7 @@ static void K_DrawKartPositionNum(INT32 num)
 		{
 			boolean useRedNums = K_IsPlayerLosing(stplyr);
 
-			if (addOrSub == V_SUBTRANS)
+			if (addOrSub == V_SUBTRACT)
 			{
 				// Subtracting RED will look BLUE, and vice versa.
 				useRedNums = !useRedNums;
@@ -2629,6 +2628,11 @@ static void K_drawKartPlayerCheck(void)
 
 static boolean K_ShowPlayerNametag(player_t *p)
 {
+	if (cv_seenames.value == 0)
+	{
+		return false;
+	}
+
 	if (demo.playback == true && demo.freecam == true)
 	{
 		return true;
@@ -2639,7 +2643,7 @@ static boolean K_ShowPlayerNametag(player_t *p)
 		return false;
 	}
 
-	if (gametype == GT_RACE)
+	if (gametyperules & GTR_CIRCUIT)
 	{
 		if ((p->kartstuff[k_position] < stplyr->kartstuff[k_position]-2)
 		|| (p->kartstuff[k_position] > stplyr->kartstuff[k_position]+2))
@@ -2803,7 +2807,7 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		if (ntplayer->mo->drawflags & K_GetPlayerDontDrawFlag(stplyr))
+		if (ntplayer->mo->renderflags & K_GetPlayerDontDrawFlag(stplyr))
 		{
 			// Invisible on this screen
 			continue;
@@ -3043,16 +3047,17 @@ static void K_drawKartMinimap(void)
 	x = MINI_X - (AutomapPic->width/2);
 	y = MINI_Y - (AutomapPic->height/2);
 
-	if (timeinmap > 105)
 	{
+		const tic_t length = TICRATE/2;
+
+		if (!lt_exitticker)
+			return;
 		minimaptrans = cv_kartminimap.value;
-		if (timeinmap <= 113)
-			minimaptrans = ((((INT32)timeinmap) - 105)*minimaptrans)/(113-105);
+		if (lt_exitticker < length)
+			minimaptrans = (((INT32)lt_exitticker)*minimaptrans)/((INT32)length);
 		if (!minimaptrans)
 			return;
 	}
-	else
-		return;
 
 	minimaptrans = ((10-minimaptrans)<<FF_TRANSSHIFT);
 	splitflags |= minimaptrans;
@@ -3612,7 +3617,7 @@ static void K_drawBattleFullscreen(void)
 		}
 	}
 
-	if (netgame && !stplyr->spectator && timeinmap > 113) // FREE PLAY?
+	if (netgame && !stplyr->spectator) // FREE PLAY?
 	{
 		UINT8 i;
 
@@ -3626,7 +3631,7 @@ static void K_drawBattleFullscreen(void)
 		}
 
 		if (LUA_HudEnabled(hud_freeplay))
-			K_drawKartFreePlay(leveltime);
+			K_drawKartFreePlay();
 	}
 }
 
@@ -3640,7 +3645,7 @@ static void K_drawKartFirstPerson(void)
 	UINT8 *colmap = NULL;
 	ticcmd_t *cmd = &stplyr->cmd;
 
-	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->drawflags & MFD_DONTDRAW))
+	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW))
 		return;
 
 	if (stplyr == &players[displayplayers[1]] && r_splitscreen)
@@ -3663,8 +3668,8 @@ static void K_drawKartFirstPerson(void)
 		if (stplyr->speed < (20*stplyr->mo->scale) && (leveltime & 1) && !r_splitscreen)
 			y++;
 
-		if (stplyr->mo->drawflags & MFD_TRANSMASK)
-			splitflags |= ((stplyr->mo->drawflags & MFD_TRANSMASK) >> MFD_TRANSSHIFT) << FF_TRANSSHIFT;
+		if (stplyr->mo->renderflags & RF_TRANSMASK)
+			splitflags |= ((stplyr->mo->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) << FF_TRANSSHIFT;
 		else if (stplyr->mo->frame & FF_TRANSMASK)
 			splitflags |= (stplyr->mo->frame & FF_TRANSMASK);
 	}
@@ -3798,18 +3803,6 @@ static void K_drawInput(void)
 	const INT32 accent1 = splitflags | skincolors[stplyr->skincolor].ramp[5];
 	const INT32 accent2 = splitflags | skincolors[stplyr->skincolor].ramp[9];
 	ticcmd_t *cmd = &stplyr->cmd;
-
-	if (timeinmap <= 105)
-		return;
-
-	if (timeinmap < 113)
-	{
-		INT32 count = ((INT32)(timeinmap) - 105);
-		offs = 64;
-		while (count-- > 0)
-			offs >>= 1;
-		x += offs;
-	}
 
 #define BUTTW 8
 #define BUTTH 11
@@ -3958,12 +3951,15 @@ static void K_drawLapStartAnim(void)
 	}
 }
 
-void K_drawKartFreePlay(UINT32 flashtime)
+void K_drawKartFreePlay(void)
 {
 	// no splitscreen support because it's not FREE PLAY if you have more than one player in-game
 	// (you fool, you can take splitscreen online. :V)
 
-	if ((flashtime % TICRATE) < TICRATE/2)
+	if (lt_exitticker < TICRATE/2)
+		return;
+
+	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
 	V_DrawKartString((BASEVIDWIDTH - (LAPS_X+1)) - (12*9), // mirror the laps thingy
@@ -4235,25 +4231,17 @@ void K_drawKartHUD(void)
 	{
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
-			INT32 x = BASEVIDWIDTH - 32, y = 128, offs;
+			INT32 x = BASEVIDWIDTH - 32, y = 128, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 
 			if (r_splitscreen == 3)
 			{
 				x = BASEVIDWIDTH/2 + 10;
 				y = BASEVIDHEIGHT/2 - 30;
+				snapflags = 0;
 			}
 
-			if (timeinmap < 113)
-			{
-				INT32 count = ((INT32)(timeinmap) - 104);
-				offs = 256;
-				while (count-- > 0)
-					offs >>= 1;
-				x += offs;
-			}
-
-			V_DrawTinyScaledPatch(x-54, y, 0, W_CachePatchName("TTKBANNR", PU_CACHE));
-			V_DrawTinyScaledPatch(x-54, y+25, 0, W_CachePatchName("TTKART", PU_CACHE));
+			V_DrawTinyScaledPatch(x-54, y, snapflags|V_SLIDEIN, W_CachePatchName("TTKBANNR", PU_CACHE));
+			V_DrawTinyScaledPatch(x-54, y+25, snapflags|V_SLIDEIN, W_CachePatchName("TTKART", PU_CACHE));
 		}
 		else if (gametype == GT_RACE) // Race-only elements
 		{
@@ -4334,10 +4322,10 @@ void K_drawKartHUD(void)
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
-	if (isfreeplay && !stplyr->spectator && timeinmap > 113)
+	if (isfreeplay && !stplyr->spectator)
 	{
 		if (LUA_HudEnabled(hud_freeplay))
-			K_drawKartFreePlay(leveltime);
+			K_drawKartFreePlay();
 	}
 
 	if (r_splitscreen == 0 && stplyr->kartstuff[k_wrongway] && ((leveltime / 8) & 1))

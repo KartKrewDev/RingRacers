@@ -101,9 +101,8 @@ typedef struct
 
 boolean usebuffer = false;
 static boolean useinterpic;
-static INT32 timer;
+
 static INT32 powertype = PWRLV_DISABLED;
-static boolean safetorender = true;
 static y_buffer_t *y_buffer;
 
 static INT32 intertic;
@@ -116,7 +115,6 @@ intertype_t intermissiontypes[NUMGAMETYPES];
 static void Y_FollowIntermission(void);
 static void Y_RescaleScreenBuffer(void);
 static void Y_UnloadData(void);
-static void Y_CleanupData(void);
 
 // SRB2Kart: voting stuff
 // Level images
@@ -433,19 +431,6 @@ void Y_IntermissionDrawer(void)
 	if (intertype == int_none || rendermode == render_none)
 		return;
 
-	// Lactozilla: Renderer switching
-	if (needpatchrecache)
-	{
-		Y_CleanupData();
-		safetorender = false;
-	}
-
-	if (!safetorender)
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-
-	if (!safetorender)
-		goto dontdrawbg;
-
 	if (useinterpic)
 		V_DrawScaledPatch(0, 0, 0, interpic);
 	else if (!usetile)
@@ -479,7 +464,6 @@ void Y_IntermissionDrawer(void)
 	else if (bgtile)
 		V_DrawPatchFill(bgtile);
 
-dontdrawbg:
 	LUAh_IntermissionHUD();
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
@@ -1179,7 +1163,7 @@ static void Y_FollowIntermission(void)
 	G_AfterIntermission();
 }
 
-#define UNLOAD(x) Z_ChangeTag(x, PU_CACHE); x = NULL
+#define UNLOAD(x) if (x) {Patch_Free(x);} x = NULL;
 #define CLEANUP(x) x = NULL;
 
 //
@@ -1197,15 +1181,6 @@ static void Y_UnloadData(void)
 	UNLOAD(widebgpatch);
 	UNLOAD(bgtile);
 	UNLOAD(interpic);
-}
-
-static void Y_CleanupData(void)
-{
-	// unload the background patches
-	CLEANUP(bgpatch);
-	CLEANUP(widebgpatch);
-	CLEANUP(bgtile);
-	CLEANUP(interpic);
 }
 
 // SRB2Kart: Voting!

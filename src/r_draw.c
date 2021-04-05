@@ -84,6 +84,7 @@ UINT8 *dc_source;
 #define NUMTRANSTABLES 11 // how many translucency tables are used
 
 UINT8 *transtables; // translucency tables
+UINT8 *blendtables[NUMBLENDMAPS];
 
 /**	\brief R_DrawTransColumn uses this
 */
@@ -107,15 +108,19 @@ INT32 dc_numlights = 0, dc_maxlights, dc_texheight;
 
 INT32 ds_y, ds_x1, ds_x2;
 lighttable_t *ds_colormap;
+lighttable_t *ds_translation; // Lactozilla: Sprite splat drawer
+
 fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
+INT32 ds_waterofs, ds_bgofs;
+
 UINT16 ds_flatwidth, ds_flatheight;
 boolean ds_powersoftwo;
 
-UINT8 *ds_source; // start of a 64*64 tile image
+UINT8 *ds_source; // points to the start of a flat
 UINT8 *ds_transmap; // one of the translucency tables
 
-pslope_t *ds_slope; // Current slope being used
-floatv3_t ds_su[MAXVIDHEIGHT], ds_sv[MAXVIDHEIGHT], ds_sz[MAXVIDHEIGHT]; // Vectors for... stuff?
+// Vectors for Software's tilted slope drawers
+floatv3_t *ds_su, *ds_sv, *ds_sz;
 floatv3_t *ds_sup, *ds_svp, *ds_szp;
 float focallengthf[MAXSPLITSCREENPLAYERS];
 float zeroheight;
@@ -124,10 +129,6 @@ float zeroheight;
 */
 
 UINT32 nflatxshift, nflatyshift, nflatshiftup, nflatmask;
-
-// ==========================================================================
-//                        OLD DOOM FUZZY EFFECT
-// ==========================================================================
 
 // =========================================================================
 //                   TRANSLATION COLORMAP CODE
@@ -151,11 +152,11 @@ UINT8 skincolor_modified[MAXSKINCOLORS];
 CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
 CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
-/**	\brief The R_InitTranslationTables
+#define TRANSTAB_AMTMUL10 (255.0f / 10.0f)
 
-  load in color translation tables
+/** \brief Initializes the translucency tables used by the Software renderer.
 */
-void R_InitTranslationTables(void)
+void R_InitTranslucencyTables(void)
 {
 	// Load here the transparency lookup tables 'TINTTAB'
 	// NOTE: the TINTTAB resource MUST BE aligned on 64k for the asm
@@ -172,8 +173,93 @@ void R_InitTranslationTables(void)
 	W_ReadLump(W_GetNumForName("TRANS70"), transtables+0x60000);
 	W_ReadLump(W_GetNumForName("TRANS80"), transtables+0x70000);
 	W_ReadLump(W_GetNumForName("TRANS90"), transtables+0x80000);
-	W_ReadLump(W_GetNumForName("TRANSADD"),transtables+0x90000);
-	W_ReadLump(W_GetNumForName("TRANSSUB"),transtables+0xA0000);
+
+	R_GenerateBlendTables();
+}
+
+void R_GenerateBlendTables(void)
+{
+	INT32 i;
+
+	for (i = 0; i < NUMBLENDMAPS; i++)
+	{
+		if (i == blendtab_modulate)
+			continue;
+		blendtables[i] = Z_MallocAlign((NUMTRANSTABLES + 1) * 0x10000, PU_STATIC, NULL, 16);
+	}
+
+	for (i = 0; i <= 9; i++)
+	{
+		const size_t offs = (0x10000 * i);
+		const UINT8 alpha = (TRANSTAB_AMTMUL10 * ((float)(10-i)));
+
+		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, AST_ADD, alpha);
+		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, AST_SUBTRACT, alpha);
+		R_GenerateTranslucencyTable(blendtables[blendtab_reversesubtract] + offs, AST_REVERSESUBTRACT, alpha);
+	}
+
+	// Modulation blending only requires a single table
+	blendtables[blendtab_modulate] = Z_MallocAlign(0x10000, PU_STATIC, NULL, 16);
+	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], AST_MODULATE, 0);
+}
+
+void R_GenerateTranslucencyTable(UINT8 *table, int style, UINT8 blendamt)
+{
+	INT16 bg, fg;
+	RGBA_t backrgba, frontrgba, result;
+
+	if (table == NULL)
+		I_Error("R_GenerateTranslucencyTable: input table was NULL!");
+
+	for (bg = 0; bg <= 0xFF; bg++)
+	{
+		backrgba = pGammaCorrectedPalette[bg];
+		for (fg = 0; fg <= 0xFF; fg++)
+		{
+			frontrgba = pGammaCorrectedPalette[fg];
+
+#if 0 // perfect implementation
+			result.rgba = V_GammaEncode(ASTBlendPixel(backrgba, frontrgba, style, blendamt));
+			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pMasterPalette);
+#else // performance scrabbler
+			result.rgba = ASTBlendPixel(backrgba, frontrgba, style, blendamt);
+			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pGammaCorrectedPalette);
+#endif
+		}
+	}
+}
+
+#define ClipTransLevel(trans) max(min((trans), NUMTRANSMAPS-2), 0)
+
+UINT8 *R_GetTranslucencyTable(INT32 alphalevel)
+{
+	return transtables + (ClipTransLevel(alphalevel-1) << FF_TRANSSHIFT);
+}
+
+UINT8 *R_GetBlendTable(int style, INT32 alphalevel)
+{
+	size_t offs = (ClipTransLevel(alphalevel) << FF_TRANSSHIFT);
+
+	// Lactozilla: Returns the equivalent to AST_TRANSLUCENT
+	// if no alpha style matches any of the blend tables.
+	switch (style)
+	{
+		case AST_ADD:
+			return blendtables[blendtab_add] + offs;
+		case AST_SUBTRACT:
+			return blendtables[blendtab_subtract] + offs;
+		case AST_REVERSESUBTRACT:
+			return blendtables[blendtab_reversesubtract] + offs;
+		case AST_MODULATE:
+			return blendtables[blendtab_modulate];
+		default:
+			break;
+	}
+
+	// Return a normal translucency table
+	if (--alphalevel < 0)
+		return NULL;
+	return transtables + (ClipTransLevel(alphalevel) << FF_TRANSSHIFT);
 }
 
 /**	\brief	Retrieves a translation colormap from the cache.

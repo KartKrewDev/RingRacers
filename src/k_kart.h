@@ -19,7 +19,7 @@ void K_RegisterKartStuff(void);
 
 void K_TimerReset(void);
 void K_TimerInit(void);
-UINT16 K_GetPlayerDontDrawFlag(player_t *player);
+UINT32 K_GetPlayerDontDrawFlag(player_t *player);
 boolean K_IsPlayerLosing(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
@@ -58,7 +58,7 @@ void K_RunFinishLineBeam(void);
 UINT16 K_DriftSparkColor(player_t *player, INT32 charge);
 void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
-void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent);
+void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad);
 void K_SpawnDraftDust(mobj_t *mo);
 void K_DriftDustHandling(mobj_t *spawner);
 void K_PuntMine(mobj_t *mine, mobj_t *punter);

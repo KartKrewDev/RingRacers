@@ -477,10 +477,6 @@ consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
 
-#ifdef SEENAMES
-player_t *seenplayer; // player we're aiming at right now
-#endif
-
 // now automatically allocated in D_RegisterClientCommands
 // so that it doesn't have to be updated depending on the value of MAXPLAYERS
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1];
@@ -916,8 +912,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
-	// Kart, don't build a ticcmd if someone is resynching or the server is stopped too so we don't fly off course in bad conditions
-	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN) || hu_resynching)
+	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN))
 	{
 		return;
 	}
@@ -1140,8 +1135,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			-Making some galaxy brain autopilot Lua if you're a masochist
 			-Making a Mario Kart 8 Deluxe tier baby mode that steers you away from walls and whatnot. You know what, do what you want!
 	*/
-	if (gamestate == GS_LEVEL)
+	if (addedtogame && gamestate == GS_LEVEL)
+	{
 		LUAh_PlayerCmd(player, cmd);
+	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
 		cmd->forwardmove = MAXPLMOVE;
@@ -1249,7 +1246,7 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 
 	// Setup the level.
-	if (!P_LoadLevel(false)) // this never returns false?
+	if (!P_LoadLevel(false, false)) // this never returns false?
 	{
 		// fail so reset game stuff
 		Command_ExitGame_f();
@@ -2039,7 +2036,7 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	memset(p->powers, 0, sizeof (p->powers));
 	memset(p->kartstuff, 0, sizeof (p->kartstuff)); // SRB2kart
 
-	p->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK); // cancel invisibility
+	p->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK); // cancel invisibility
 	P_FlashPal(p, 0, 0); // Resets
 
 	p->starpostnum = 0;

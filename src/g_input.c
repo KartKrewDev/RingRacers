@@ -747,6 +747,7 @@ static const char *gamecontrolname[num_gamecontrols] =
 	"accelerate",
 	"drift",
 	"brake",
+	"spindash",
 	"fire",
 	"lookback",
 	"camreset",
