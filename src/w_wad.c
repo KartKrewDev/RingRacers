@@ -755,6 +755,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 		return INT16_MAX;
 	}
 
+	important = !important;
 
 #ifndef NOMD5
 	//
