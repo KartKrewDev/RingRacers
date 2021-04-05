@@ -1142,6 +1142,7 @@ static menuitem_t OP_AllControlsMenu[] =
 	{IT_CONTROL, NULL, "Turn Right",            M_ChangeControl, gc_turnright  },
 	{IT_CONTROL, NULL, "Drift",                 M_ChangeControl, gc_drift      },
 	{IT_CONTROL, NULL, "Brake",                 M_ChangeControl, gc_brake      },
+	{IT_CONTROL, NULL, "Spindash",              M_ChangeControl, gc_spindash   },
 	{IT_CONTROL, NULL, "Use/Throw Item",        M_ChangeControl, gc_fire       },
 	{IT_CONTROL, NULL, "Aim Forward",           M_ChangeControl, gc_aimforward },
 	{IT_CONTROL, NULL, "Aim Backward",          M_ChangeControl, gc_aimbackward},
@@ -2703,8 +2704,8 @@ boolean M_Responder(event_t *ev)
 				M_QuitSRB2(0);
 				return true;
 
-			case KEY_F11: // Gamma Level
-				CV_AddValue(&cv_globalgamma, 1);
+			case KEY_F11: // Fullscreen
+				CV_AddValue(&cv_fullscreen, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
@@ -6146,7 +6147,6 @@ static void M_PlaybackToggleFreecam(INT32 choice)
 		demo.freecam = false;
 		// reset democam vars:
 		democam.cam = NULL;
-		democam.turnheld = false;
 		democam.keyboardlook = false;	// reset only these. localangle / aiming gets set before the cam does anything anyway
 	}
 }
@@ -10404,22 +10404,22 @@ static void M_Setup1PControlsMenu(INT32 choice)
 	OP_AllControlsMenu[0].itemaction = &OP_Joystick1Def;
 
 	// Unhide P1-only controls
-	OP_AllControlsMenu[15].status = IT_CONTROL; // Chat
-	//OP_AllControlsMenu[16].status = IT_CONTROL; // Team-chat
-	OP_AllControlsMenu[16].status = IT_CONTROL; // Rankings
-	//OP_AllControlsMenu[17].status = IT_CONTROL; // Viewpoint
-	// 18 is Reset Camera, 19 is Toggle Chasecam
-	OP_AllControlsMenu[20].status = IT_CONTROL; // Pause
-	OP_AllControlsMenu[21].status = IT_CONTROL; // Screenshot
-	OP_AllControlsMenu[22].status = IT_CONTROL; // GIF
-	OP_AllControlsMenu[23].status = IT_CONTROL; // System Menu
-	OP_AllControlsMenu[24].status = IT_CONTROL; // Console
-	/*OP_AllControlsMenu[25].status = IT_HEADER; // Spectator Controls header
-	OP_AllControlsMenu[26].status = IT_SPACE; // Spectator Controls space
-	OP_AllControlsMenu[27].status = IT_CONTROL; // Spectate
-	OP_AllControlsMenu[28].status = IT_CONTROL; // Look Up
-	OP_AllControlsMenu[29].status = IT_CONTROL; // Look Down
-	OP_AllControlsMenu[30].status = IT_CONTROL; // Center View
+	OP_AllControlsMenu[16].status = IT_CONTROL; // Chat
+	//OP_AllControlsMenu[17].status = IT_CONTROL; // Team-chat
+	OP_AllControlsMenu[17].status = IT_CONTROL; // Rankings
+	//OP_AllControlsMenu[18].status = IT_CONTROL; // Viewpoint
+	// 19 is Reset Camera, 20 is Toggle Chasecam
+	OP_AllControlsMenu[21].status = IT_CONTROL; // Pause
+	OP_AllControlsMenu[22].status = IT_CONTROL; // Screenshot
+	OP_AllControlsMenu[23].status = IT_CONTROL; // GIF
+	OP_AllControlsMenu[24].status = IT_CONTROL; // System Menu
+	OP_AllControlsMenu[25].status = IT_CONTROL; // Console
+	/*OP_AllControlsMenu[26].status = IT_HEADER; // Spectator Controls header
+	OP_AllControlsMenu[27].status = IT_SPACE; // Spectator Controls space
+	OP_AllControlsMenu[28].status = IT_CONTROL; // Spectate
+	OP_AllControlsMenu[29].status = IT_CONTROL; // Look Up
+	OP_AllControlsMenu[30].status = IT_CONTROL; // Look Down
+	OP_AllControlsMenu[31].status = IT_CONTROL; // Center View
 	*/
 
 	M_SetupNextMenu(&OP_AllControlsDef);
@@ -10436,22 +10436,22 @@ static void M_Setup2PControlsMenu(INT32 choice)
 	OP_AllControlsMenu[0].itemaction = &OP_Joystick2Def;
 
 	// Hide P1-only controls
-	OP_AllControlsMenu[15].status = IT_GRAYEDOUT2; // Chat
-	//OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Team-chat
-	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Rankings
-	//OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Viewpoint
-	// 18 is Reset Camera, 19 is Toggle Chasecam
-	OP_AllControlsMenu[20].status = IT_GRAYEDOUT2; // Pause
-	OP_AllControlsMenu[21].status = IT_GRAYEDOUT2; // Screenshot
-	OP_AllControlsMenu[22].status = IT_GRAYEDOUT2; // GIF
-	OP_AllControlsMenu[23].status = IT_GRAYEDOUT2; // System Menu
-	OP_AllControlsMenu[24].status = IT_GRAYEDOUT2; // Console
-	/*OP_AllControlsMenu[25].status = IT_GRAYEDOUT2; // Spectator Controls header
-	OP_AllControlsMenu[26].status = IT_GRAYEDOUT2; // Spectator Controls space
-	OP_AllControlsMenu[27].status = IT_GRAYEDOUT2; // Spectate
-	OP_AllControlsMenu[28].status = IT_GRAYEDOUT2; // Look Up
-	OP_AllControlsMenu[29].status = IT_GRAYEDOUT2; // Look Down
-	OP_AllControlsMenu[30].status = IT_GRAYEDOUT2; // Center View
+	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Chat
+	//OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Team-chat
+	OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Rankings
+	//OP_AllControlsMenu[18].status = IT_GRAYEDOUT2; // Viewpoint
+	// 19 is Reset Camera, 20 is Toggle Chasecam
+	OP_AllControlsMenu[21].status = IT_GRAYEDOUT2; // Pause
+	OP_AllControlsMenu[22].status = IT_GRAYEDOUT2; // Screenshot
+	OP_AllControlsMenu[23].status = IT_GRAYEDOUT2; // GIF
+	OP_AllControlsMenu[24].status = IT_GRAYEDOUT2; // System Menu
+	OP_AllControlsMenu[25].status = IT_GRAYEDOUT2; // Console
+	/*OP_AllControlsMenu[26].status = IT_GRAYEDOUT2; // Spectator Controls header
+	OP_AllControlsMenu[27].status = IT_GRAYEDOUT2; // Spectator Controls space
+	OP_AllControlsMenu[28].status = IT_GRAYEDOUT2; // Spectate
+	OP_AllControlsMenu[29].status = IT_GRAYEDOUT2; // Look Up
+	OP_AllControlsMenu[30].status = IT_GRAYEDOUT2; // Look Down
+	OP_AllControlsMenu[31].status = IT_GRAYEDOUT2; // Center View
 	*/
 
 	M_SetupNextMenu(&OP_AllControlsDef);
@@ -10468,22 +10468,22 @@ static void M_Setup3PControlsMenu(INT32 choice)
 	OP_AllControlsMenu[0].itemaction = &OP_Joystick3Def;
 
 	// Hide P1-only controls
-	OP_AllControlsMenu[15].status = IT_GRAYEDOUT2; // Chat
-	//OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Team-chat
-	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Rankings
-	//OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Viewpoint
-	// 18 is Reset Camera, 19 is Toggle Chasecam
-	OP_AllControlsMenu[20].status = IT_GRAYEDOUT2; // Pause
-	OP_AllControlsMenu[21].status = IT_GRAYEDOUT2; // Screenshot
-	OP_AllControlsMenu[22].status = IT_GRAYEDOUT2; // GIF
-	OP_AllControlsMenu[23].status = IT_GRAYEDOUT2; // System Menu
-	OP_AllControlsMenu[24].status = IT_GRAYEDOUT2; // Console
-	/*OP_AllControlsMenu[25].status = IT_GRAYEDOUT2; // Spectator Controls header
-	OP_AllControlsMenu[26].status = IT_GRAYEDOUT2; // Spectator Controls space
-	OP_AllControlsMenu[27].status = IT_GRAYEDOUT2; // Spectate
-	OP_AllControlsMenu[28].status = IT_GRAYEDOUT2; // Look Up
-	OP_AllControlsMenu[29].status = IT_GRAYEDOUT2; // Look Down
-	OP_AllControlsMenu[30].status = IT_GRAYEDOUT2; // Center View
+	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Chat
+	//OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Team-chat
+	OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Rankings
+	//OP_AllControlsMenu[18].status = IT_GRAYEDOUT2; // Viewpoint
+	// 19 is Reset Camera, 20 is Toggle Chasecam
+	OP_AllControlsMenu[21].status = IT_GRAYEDOUT2; // Pause
+	OP_AllControlsMenu[22].status = IT_GRAYEDOUT2; // Screenshot
+	OP_AllControlsMenu[23].status = IT_GRAYEDOUT2; // GIF
+	OP_AllControlsMenu[24].status = IT_GRAYEDOUT2; // System Menu
+	OP_AllControlsMenu[25].status = IT_GRAYEDOUT2; // Console
+	/*OP_AllControlsMenu[26].status = IT_GRAYEDOUT2; // Spectator Controls header
+	OP_AllControlsMenu[27].status = IT_GRAYEDOUT2; // Spectator Controls space
+	OP_AllControlsMenu[28].status = IT_GRAYEDOUT2; // Spectate
+	OP_AllControlsMenu[29].status = IT_GRAYEDOUT2; // Look Up
+	OP_AllControlsMenu[30].status = IT_GRAYEDOUT2; // Look Down
+	OP_AllControlsMenu[31].status = IT_GRAYEDOUT2; // Center View
 	*/
 
 	M_SetupNextMenu(&OP_AllControlsDef);
@@ -10500,22 +10500,22 @@ static void M_Setup4PControlsMenu(INT32 choice)
 	OP_AllControlsMenu[0].itemaction = &OP_Joystick4Def;
 
 	// Hide P1-only controls
-	OP_AllControlsMenu[15].status = IT_GRAYEDOUT2; // Chat
-	//OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Team-chat
-	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Rankings
-	//OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Viewpoint
-	// 18 is Reset Camera, 19 is Toggle Chasecam
-	OP_AllControlsMenu[20].status = IT_GRAYEDOUT2; // Pause
-	OP_AllControlsMenu[21].status = IT_GRAYEDOUT2; // Screenshot
-	OP_AllControlsMenu[22].status = IT_GRAYEDOUT2; // GIF
-	OP_AllControlsMenu[23].status = IT_GRAYEDOUT2; // System Menu
-	OP_AllControlsMenu[24].status = IT_GRAYEDOUT2; // Console
-	/*OP_AllControlsMenu[25].status = IT_GRAYEDOUT2; // Spectator Controls header
-	OP_AllControlsMenu[26].status = IT_GRAYEDOUT2; // Spectator Controls space
-	OP_AllControlsMenu[27].status = IT_GRAYEDOUT2; // Spectate
-	OP_AllControlsMenu[28].status = IT_GRAYEDOUT2; // Look Up
-	OP_AllControlsMenu[29].status = IT_GRAYEDOUT2; // Look Down
-	OP_AllControlsMenu[30].status = IT_GRAYEDOUT2; // Center View
+	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Chat
+	//OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Team-chat
+	OP_AllControlsMenu[17].status = IT_GRAYEDOUT2; // Rankings
+	//OP_AllControlsMenu[18].status = IT_GRAYEDOUT2; // Viewpoint
+	// 19 is Reset Camera, 20 is Toggle Chasecam
+	OP_AllControlsMenu[21].status = IT_GRAYEDOUT2; // Pause
+	OP_AllControlsMenu[22].status = IT_GRAYEDOUT2; // Screenshot
+	OP_AllControlsMenu[23].status = IT_GRAYEDOUT2; // GIF
+	OP_AllControlsMenu[24].status = IT_GRAYEDOUT2; // System Menu
+	OP_AllControlsMenu[25].status = IT_GRAYEDOUT2; // Console
+	/*OP_AllControlsMenu[26].status = IT_GRAYEDOUT2; // Spectator Controls header
+	OP_AllControlsMenu[27].status = IT_GRAYEDOUT2; // Spectator Controls space
+	OP_AllControlsMenu[28].status = IT_GRAYEDOUT2; // Spectate
+	OP_AllControlsMenu[29].status = IT_GRAYEDOUT2; // Look Up
+	OP_AllControlsMenu[30].status = IT_GRAYEDOUT2; // Look Down
+	OP_AllControlsMenu[31].status = IT_GRAYEDOUT2; // Center View
 	*/
 
 	M_SetupNextMenu(&OP_AllControlsDef);

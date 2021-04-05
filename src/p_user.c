@@ -2776,9 +2776,7 @@ fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
 // Heavily simplified version of G_BuildTicCmd that only takes the local first player's control input and converts it to readable ticcmd_t
 // we then throw that ticcmd garbage in the camera and make it move
-
-// redefine this
-static fixed_t angleturn[2] = {KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
+// TODO: please just use the normal ticcmd function somehow
 
 static ticcmd_t cameracmd;
 
@@ -2792,7 +2790,7 @@ void P_InitCameraCmd(void)
 
 static ticcmd_t *P_CameraCmd(camera_t *cam)
 {
-	INT32 th, tspeed, forward, axis; //i
+	INT32 forward, axis; //i
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming;
 	boolean invertmouse, lookaxis, usejoystick, kbl;
@@ -2805,7 +2803,6 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	if (!demo.playback)
 		return cmd;	// empty cmd, no.
 
-	th = democam.turnheld;
 	kbl = democam.keyboardlook;
 
 	G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
@@ -2835,31 +2832,19 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	}
 	forward = 0;
 
-	// use two stage accelerative turning
-	// on the keyboard and joystick
-	if (turnleft || turnright)
-		th += 1;
-	else
-		th = 0;
-
-	if (th < SLOWTURNTICS)
-		tspeed = 1; // slow turn
-	else
-		tspeed = 0;
-
 	cmd->turning = 0;
 
 	// let movement keys cancel each other out
 	if (turnright && !(turnleft))
 	{
-		cmd->turning = (INT16)(cmd->turning - (angleturn[tspeed]));
+		cmd->turning -= KART_FULLTURN;
 	}
 	else if (turnleft && !(turnright))
 	{
-		cmd->turning = (INT16)(cmd->turning + (angleturn[tspeed]));
+		cmd->turning += KART_FULLTURN;
 	}
 
-	cmd->turning = (INT16)(cmd->turning - ((mousex*(encoremode ? -1 : 1)*8)));
+	cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
 
 	axis = PlayerJoyAxis(1, AXISMOVE);
 	if (PlayerInputDown(1, gc_accelerate) || (usejoystick && axis > 0))
@@ -2917,7 +2902,11 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	else if (cmd->forwardmove < -MAXPLMOVE)
 		cmd->forwardmove = -MAXPLMOVE;
 
-	democam.turnheld = th;
+	if (cmd->turning > KART_FULLTURN)
+		cmd->turning = KART_FULLTURN;
+	else if (cmd->turning < -KART_FULLTURN)
+		cmd->turning = -KART_FULLTURN;
+
 	democam.keyboardlook = kbl;
 
 	return cmd;

@@ -428,6 +428,7 @@ consvar_t cv_kartdebugdistribution = CVAR_INIT ("kartdebugdistribution", "Off", 
 consvar_t cv_kartdebughuddrop = CVAR_INIT ("kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
 static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
 consvar_t cv_kartdebugwaypoints = CVAR_INIT ("kartdebugwaypoints", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugwaypoint_cons_t, NULL);
+consvar_t cv_kartdebugbotpredict = CVAR_INIT ("kartdebugbotpredict", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
 
 consvar_t cv_kartdebugcheckpoint = CVAR_INIT ("kartdebugcheckpoint", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
 consvar_t cv_kartdebugnodes = CVAR_INIT ("kartdebugnodes", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);

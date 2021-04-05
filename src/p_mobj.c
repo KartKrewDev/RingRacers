@@ -11803,7 +11803,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// Steering amount
 		if (mthing->args[1] == 0)
 		{
-			mobj->extravalue2 = 2;
+			mobj->extravalue2 = 4;
 		}
 		else
 		{

@@ -1699,7 +1699,7 @@ static void ParseTextmapThingParameter(UINT32 i, char *param, char *val)
 	else if (fastcmp(param, "type"))
 		mapthings[i].type = atol(val);
 	else if (fastcmp(param, "scale") || fastcmp(param, "scalex") || fastcmp(param, "scaley"))
-		mapthings[i].scale = FLOAT_TO_FIXED(atof(val));
+		mapthings[i].scale = FixedMul(mapobjectscale, FLOAT_TO_FIXED(atof(val)));
 	// Flags
 	else if (fastcmp(param, "extra") && fastcmp("true", val))
 		mapthings[i].options |= MTF_EXTRA;

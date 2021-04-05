@@ -535,9 +535,9 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 		{
 			spawnedmobj = P_SpawnMobj(x, y, z, MT_SPARK);
 			P_SetMobjState(spawnedmobj, S_THOK);
-			spawnedmobj->state->nextstate = S_NULL;
-			spawnedmobj->state->tics = 1;
-			spawnedmobj->frame = spawnedmobj->frame & ~FF_TRANSMASK;
+			spawnedmobj->tics = 1;
+			spawnedmobj->frame &= ~FF_TRANSMASK;
+			spawnedmobj->frame |= FF_FULLBRIGHT;
 			spawnedmobj->color = linkcolour;
 			spawnedmobj->scale = FixedMul(spawnedmobj->scale, FixedMul(FRACUNIT/4, FixedDiv((15 - ((leveltime + n) % 16))*FRACUNIT, 15*FRACUNIT)));
 		}
@@ -582,9 +582,9 @@ static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 
 		radiusOrb = P_SpawnMobj(spawnX, spawnY, spawnZ, MT_SPARK);
 		P_SetMobjState(radiusOrb, S_THOK);
-		radiusOrb->state->nextstate = S_NULL;
-		radiusOrb->state->tics = 1;
-		radiusOrb->frame = radiusOrb->frame & ~FF_TRANSMASK;
+		radiusOrb->tics = 1;
+		radiusOrb->frame &= ~FF_TRANSMASK;
+		radiusOrb->frame |= FF_FULLBRIGHT;
 		radiusOrb->color = SKINCOLOR_PURPLE;
 		radiusOrb->scale = radiusOrb->scale / 4;
 	}
@@ -623,7 +623,7 @@ void K_DebugWaypointsVisualise(void)
 		P_SetMobjState(debugmobj, S_THOK);
 
 		debugmobj->frame &= ~FF_TRANSMASK;
-		debugmobj->frame |= FF_TRANS20;
+		debugmobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
 
 		// There's a waypoint setup for this mobj! So draw that it's a valid waypoint and draw lines to its connections
 		if (waypoint != NULL)
@@ -683,8 +683,7 @@ void K_DebugWaypointsVisualise(void)
 		{
 			debugmobj->color = SKINCOLOR_RED;
 		}
-		debugmobj->state->tics = 1;
-		debugmobj->state->nextstate = S_NULL;
+		debugmobj->tics = 1;
 	}
 }
 
