@@ -993,8 +993,6 @@ EXPORT boolean HWRAPI(CompileShaders) (void)
 		}
 	}
 
-	SetShader(SHADER_DEFAULT);
-
 	return true;
 #else
 	return false;

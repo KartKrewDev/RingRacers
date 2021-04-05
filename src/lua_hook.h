@@ -59,6 +59,8 @@ enum hook {
 	hook_ShouldJingleContinue,
 	hook_GameQuit,
 	hook_PlayerCmd,
+	hook_PlayerHeight,
+	hook_PlayerCanEnterSpinGaps,
 
 	// SRB2Kart
 	hook_IntermissionThinker,
@@ -125,3 +127,5 @@ UINT8 LUAh_ViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean
 #define LUAh_PlayerThink(player) LUAh_PlayerHook(player, hook_PlayerThink) // Hook for P_PlayerThink
 boolean LUAh_ShouldJingleContinue(player_t *player, const char *musname); // Hook for whether a jingle of the given music should continue playing
 void LUAh_GameQuit(boolean quitting); // Hook for game quitting
+fixed_t LUAh_PlayerHeight(player_t *player);
+UINT8 LUAh_PlayerCanEnterSpinGaps(player_t *player);

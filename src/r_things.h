@@ -157,7 +157,8 @@ typedef struct vissprite_s
 	fixed_t pz, pzt; // physical bottom/top
 
 	fixed_t startfrac; // horizontal position of x1
-	fixed_t scale;
+	fixed_t xscale, scale; // projected horizontal and vertical scales
+	fixed_t thingscale; // the object's scale
 	fixed_t sortscale; // sortscale only differs from scale for paper sprites, floor sprites, and MF2_LINKDRAW
 	fixed_t sortsplat; // the sortscale from behind the floor sprite
 	fixed_t scalestep; // only for paper sprites, 0 otherwise
@@ -165,6 +166,7 @@ typedef struct vissprite_s
 	fixed_t xiscale; // negative if flipped
 
 	angle_t centerangle; // for paper sprites
+	angle_t viewangle; // for floor sprites, the viewpoint's current angle
 
 	struct {
 		fixed_t tan; // The amount to shear the sprite vertically per row
@@ -184,8 +186,6 @@ typedef struct vissprite_s
 	INT32 heightsec; // height sector for underwater/fake ceiling support
 
 	extracolormap_t *extra_colormap; // global colormaps
-
-	fixed_t xscale;
 
 	// Precalculated top and bottom screen coords for the sprite.
 	fixed_t thingheight; // The actual height of the thing

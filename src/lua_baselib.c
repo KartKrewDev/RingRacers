@@ -1388,6 +1388,26 @@ static int lib_pSwitchShield(lua_State *L)
 	return 0;
 }
 
+static int lib_pPlayerCanEnterSpinGaps(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, P_PlayerCanEnterSpinGaps(player));
+	return 1;
+}
+
+static int lib_pPlayerShouldUseSpinHeight(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, P_PlayerShouldUseSpinHeight(player));
+	return 1;
+}
+
 // P_MAP
 ///////////
 
@@ -3859,6 +3879,8 @@ static luaL_Reg lib[] = {
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_NukeEnemies",lib_pNukeEnemies},
 	{"P_SwitchShield",lib_pSwitchShield},
+	{"P_PlayerCanEnterSpinGaps",lib_pPlayerCanEnterSpinGaps},
+	{"P_PlayerShouldUseSpinHeight",lib_pPlayerShouldUseSpinHeight},
 
 	// p_map
 	{"P_CheckPosition",lib_pCheckPosition},
