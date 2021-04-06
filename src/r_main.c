@@ -629,7 +629,7 @@ void R_CheckViewMorph(int s)
 	float fisheyemap[MAXVIDWIDTH/2 + 1];
 #endif
 
-	angle_t rollangle = players[displayplayers[s]].viewrollangle;
+	angle_t rollangle = R_ViewRollAngle(&players[displayplayers[s]]);
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
 #endif
@@ -934,6 +934,30 @@ void R_ApplyViewMorph(int s)
 
 	VID_BlitLinearScreen(tmpscr, srcscr,
 			width*vid.bpp, height, width*vid.bpp, vid.width);
+}
+
+static inline int intsign(int n) {
+	return n < 0 ? -1 : n > 0 ? 1 : 0;
+}
+
+angle_t R_ViewRollAngle(const player_t *player)
+{
+	angle_t roll = player->viewrollangle;
+
+	if (cv_tilting.value)
+	{
+		roll += player->tilt;
+
+		if (cv_actionmovie.value)
+		{
+			int xs = intsign(quake.x),
+				 ys = intsign(quake.y),
+				 zs = intsign(quake.z);
+			roll += (xs ^ ys ^ zs) * ANG1;
+		}
+	}
+
+	return roll;
 }
 
 

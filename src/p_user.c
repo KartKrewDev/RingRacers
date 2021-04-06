@@ -4289,10 +4289,6 @@ Quaketilt (player_t *player)
 	return moma;
 }
 
-static inline int intsign(int n) {
-	return n < 0 ? -1 : n > 0 ? 1 : 0;
-}
-
 static void
 DoABarrelRoll (player_t *player)
 {
@@ -4323,23 +4319,6 @@ DoABarrelRoll (player_t *player)
 		player->tilt += delta;
 	else
 		player->tilt  = slope;
-
-	if (cv_tilting.value)
-	{
-		player->viewrollangle = player->tilt;
-
-		if (cv_actionmovie.value)
-		{
-			int xs = intsign(quake.x),
-				 ys = intsign(quake.y),
-				 zs = intsign(quake.z);
-			player->viewrollangle += (xs ^ ys ^ zs) * ANG1;
-		}
-	}
-	else
-	{
-		player->viewrollangle = 0;
-	}
 }
 
 //
