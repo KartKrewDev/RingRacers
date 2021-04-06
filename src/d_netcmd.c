@@ -4114,37 +4114,49 @@ static void Command_ListWADS_f(void)
 
 static void Command_ListDoomednums_f(void)
 {
-	INT16 i, j, k = 0, l = 0;
-	INT32 argc = COM_Argc();
+	INT16 i, j, focusstart = 0, focusend = 0;
+	INT32 argc = COM_Argc(), argstart = 0;
 	INT16 table[MAXDOOMEDNUM];
+	boolean nodoubles = false;
+	UINT8 doubles[(MAXDOOMEDNUM+8/8)];
+
+	if (argc > 1)
+	{
+		nodoubles = (strcmp(COM_Argv(1), "-nodoubles") == 0);
+		if (nodoubles)
+		{
+			argc--;
+			argstart++;
+		}
+	}
 
 	switch (argc)
 	{
 		case 1:
-			l = MAXDOOMEDNUM;
+			focusend = MAXDOOMEDNUM;
 			break;
 		case 3:
-			l = atoi(COM_Argv(2));
-			if (l < 1 || l > MAXDOOMEDNUM)
+			focusend = atoi(COM_Argv(argstart+2));
+			if (focusend < 1 || focusend > MAXDOOMEDNUM)
 			{
-				CONS_Printf("arg 2: doomednum \x82""%d \x85out of range (1-4095)\n", k);
+				CONS_Printf("arg 2: doomednum \x82""%d \x85out of range (1-4095)\n", focusend);
 				return;
 			}
 			//FALLTHRU
 		case 2:
-			k = atoi(COM_Argv(1));
-			if (k < 1 || k > MAXDOOMEDNUM)
+			focusstart = atoi(COM_Argv(argstart+1));
+			if (focusstart < 1 || focusstart > MAXDOOMEDNUM)
 			{
-				CONS_Printf("arg 1: doomednum \x82""%d \x85out of range (1-4095)\n", k);
+				CONS_Printf("arg 1: doomednum \x82""%d \x85out of range (1-4095)\n", focusstart);
 				return;
 			}
-			if (!l)
-				l = k;
-			else if (l < k) // silently and helpfully swap.
+			if (!focusend)
+				focusend = focusstart;
+			else if (focusend < focusstart) // silently and helpfully swap.
 			{
-				j = k;
-				k = l;
-				l = j;
+				j = focusstart;
+				focusstart = focusend;
+				focusend = j;
 			}
 			break;
 		default:
@@ -4154,6 +4166,7 @@ static void Command_ListDoomednums_f(void)
 
 	// see P_SpawnNonMobjMapThing
 	memset(table, 0, sizeof(table));
+	memset(doubles, 0, sizeof(doubles));
 	for (i = 1; i <= MAXPLAYERS; i++)
 		table[i-1] = MT_PLAYER; // playerstarts
 	table[33-1] = table[34-1] = table[35-1] = MT_PLAYER; // battle/team starts
@@ -4166,11 +4179,12 @@ static void Command_ListDoomednums_f(void)
 	for (i = 1; i < MT_FIRSTFREESLOT+NUMMOBJFREESLOTS; i++)
 	{
 		j = mobjinfo[i].doomednum;
-		if (j < (k ? k : 1) || j > (l ? l : MAXDOOMEDNUM))
+		if (j < (focusstart ? focusstart : 1) || j > focusend)
 			continue;
-		if (table[j-1])
+		if (table[--j])
 		{
-			CONS_Printf("	doomednum \x82""%d""\x80 is \x85""double-defined\x80 by ", j);
+			doubles[j/8] |= 1<<(j&7);
+			CONS_Printf("	doomednum \x82""%d""\x80 is \x85""double-defined\x80 by ", j+1);
 			if (i < MT_FIRSTFREESLOT)
 			{
 				CONS_Printf("\x87""hardcode %s <-- MAJOR ERROR\n", MOBJTYPE_LIST[i]);
@@ -4179,22 +4193,25 @@ static void Command_ListDoomednums_f(void)
 			CONS_Printf("\x81""freeslot MT_""%s\n", FREE_MOBJS[i-MT_FIRSTFREESLOT]);
 			continue;
 		}
-		table[j-1] = i;
+		table[j] = i;
 	}
 	CONS_Printf("\x82Printing doomednum usage...\n");
-	if (!k)
+	if (!focusstart)
 	{
 		i = 35; // skip MT_PLAYER spam
-		CONS_Printf("	doomednums \x82""1-35""\x80 are used by ""\x87""hardcode MT_PLAYER\n");
+		if (!nodoubles)
+			CONS_Printf("	doomednums \x82""1-35""\x80 are used by ""\x87""hardcode MT_PLAYER\n");
 	}
 	else
-		i = k-1;
+		i = focusstart-1;
 
-	for (; i < l; i++)
+	for (; i < focusend; i++)
 	{
+		if (nodoubles && !(doubles[i/8] & 1<<(i&7)))
+			continue;
 		if (!table[i])
 		{
-			if (k)
+			if (focusstart)
 			{
 				CONS_Printf("	doomednum \x82""%d""\x80 is \x83""free!", i+1);
 				if (i < 99) // above the humble crawla? how dare you
