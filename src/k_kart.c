@@ -6633,7 +6633,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 					R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
 
 				// facing towards the finishline
-				if (abs(AngleDifference(angletonextwaypoint, angletowaypoint)) <= ANGLE_90)
+				if (AngleDelta(angletonextwaypoint, angletowaypoint) <= ANGLE_90)
 				{
 					finishlinehack = true;
 				}
@@ -7006,13 +7006,41 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
 }
 
+void K_UpdateSteeringValue(player_t *player, INT16 destSteering)
+{
+	// player->steering is the turning value, but with easing applied.
+	// Keeps micro-turning from old easing, but isn't controller dependent.
+
+	const INT16 amount = KART_FULLTURN/4;
+	INT16 diff = destSteering - player->steering;
+
+	if (abs(diff) <= amount)
+	{
+		// Reached the intended value, set instantly.
+		player->steering = destSteering;
+	}
+	else
+	{
+		// Go linearly towards the value we wanted.
+		if (diff < 0)
+		{
+			player->steering -= amount;
+		}
+		else
+		{
+			player->steering += amount;
+		}
+	}
+}
+
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 {
-	fixed_t p_maxspeed;
-	fixed_t p_speed;
-	fixed_t weightadjust;
 	fixed_t turnfixed = turnvalue * FRACUNIT;
+
 	fixed_t currentSpeed = 0;
+	fixed_t p_maxspeed = INT32_MAX, p_speed = INT32_MAX;
+
+	fixed_t weightadjust = INT32_MAX;
 
 	if (player->mo == NULL || P_MobjWasRemoved(player->mo))
 	{
@@ -7039,7 +7067,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	currentSpeed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+	currentSpeed = FixedHypot(player->mo->momx, player->mo->momy);
 
 	if ((currentSpeed <= 0) // Not moving
 	&& ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK) // not e-braking
@@ -7049,7 +7077,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	}
 
 	p_maxspeed = K_GetKartSpeed(player, false);
-	p_speed = min(FixedHypot(player->mo->momx, player->mo->momy), (p_maxspeed * 2));
+	p_speed = min(currentSpeed, (p_maxspeed * 2));
 	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (K_PlayerUsesBotMovement(player))

@@ -885,7 +885,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 
 	// Determine viewpoint factors.
 	h = R_PointToDist2(point->x, point->y, viewpointX, viewpointY);
-	da = AngleDifference(viewpointAngle, R_PointToAngle2(point->x, point->y, viewpointX, viewpointY));
+	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewpointX, viewpointY));
 
 	// Set results!
 	result->x = screenHalfW + FixedMul(NEWTAN(da), fg);
@@ -893,7 +893,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 
 	result->scale = FixedDiv(screenHalfW, h+1);
 
-	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDifference(viewpointAiming, R_PointToAngle2(0, 0, h, viewpointZ))) > ANGLE_45));
+	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, viewpointZ))) > ANGLE_45));
 
 	if (encoremode)
 	{
@@ -3638,12 +3638,12 @@ static void K_drawBattleFullscreen(void)
 static void K_drawKartFirstPerson(void)
 {
 	static INT32 pnum[4], turn[4], drift[4];
+	const INT16 steerThreshold = KART_FULLTURN / 2;
 	INT32 pn = 0, tn = 0, dr = 0;
 	INT32 target = 0, splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
 	INT32 x = BASEVIDWIDTH/2, y = BASEVIDHEIGHT;
 	fixed_t scale;
 	UINT8 *colmap = NULL;
-	ticcmd_t *cmd = &stplyr->cmd;
 
 	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW))
 		return;
@@ -3674,13 +3674,13 @@ static void K_drawKartFirstPerson(void)
 			splitflags |= (stplyr->mo->frame & FF_TRANSMASK);
 	}
 
-	if (cmd->turning > 400) // strong left turn
+	if (stplyr->steering > steerThreshold) // strong left turn
 		target = 2;
-	else if (cmd->turning < -400) // strong right turn
+	else if (stplyr->steering < -steerThreshold) // strong right turn
 		target = -2;
-	else if (cmd->turning > 0) // weak left turn
+	else if (stplyr->steering > 0) // weak left turn
 		target = 1;
-	else if (cmd->turning < 0) // weak right turn
+	else if (stplyr->steering < 0) // weak right turn
 		target = -1;
 	else // forward
 		target = 0;
@@ -3703,8 +3703,8 @@ static void K_drawKartFirstPerson(void)
 	x <<= FRACBITS;
 	y <<= FRACBITS;
 
-	if (tn != cmd->turning/50)
-		tn -= (tn - (cmd->turning/50))/8;
+	if (tn != stplyr->steering/50)
+		tn -= (tn - (stplyr->steering/50))/8;
 
 	if (dr != stplyr->kartstuff[k_drift]*16)
 		dr -= (dr - (stplyr->kartstuff[k_drift]*16))/8;
@@ -3834,14 +3834,14 @@ static void K_drawInput(void)
 
 	y -= 1;
 
-	if (stplyr->exiting || !cmd->turning) // no turn
+	if (stplyr->exiting || !stplyr->steering) // no turn
 		target = 0;
 	else // turning of multiple strengths!
 	{
-		target = ((abs(cmd->turning) - 1)/125)+1;
+		target = ((abs(stplyr->steering) - 1)/125)+1;
 		if (target > 4)
 			target = 4;
-		if (cmd->turning < 0)
+		if (stplyr->steering < 0)
 			target = -target;
 	}
 
