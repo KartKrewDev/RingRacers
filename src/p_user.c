@@ -4251,7 +4251,7 @@ Quaketilt (player_t *player)
 	INT32 delta = (INT32)( player->mo->angle - moma );
 	fixed_t speed;
 
-	boolean sliptiding =
+	boolean sliptiding = K_Sliptiding(player);
 		(
 				player->kartstuff[k_aizdriftstrat] != 0 &&
 				player->kartstuff[k_drift]         == 0
@@ -4293,11 +4293,17 @@ Quaketilt (player_t *player)
 	return moma;
 }
 
+static inline int intsign(int n) {
+	return n < 0 ? -1 : n > 0 ? 1 : 0;
+}
+
 static void
 DoABarrelRoll (player_t *player)
 {
 	angle_t slope;
 	angle_t delta;
+
+	fixed_t smoothing;
 
 	if (player->exiting)
 	{
@@ -4325,7 +4331,9 @@ DoABarrelRoll (player_t *player)
 
 	slope -= Quaketilt(player);
 
-	delta = (INT32)( slope - player->tilt )/ 32;
+	delta = slope - player->tilt;
+	smoothing = FixedDiv(abs((INT32)delta), ANG15);
+	delta = FixedDiv(delta, 17 * (FRACUNIT + smoothing));
 
 	if (delta)
 		player->tilt += delta;
@@ -4338,7 +4346,10 @@ DoABarrelRoll (player_t *player)
 
 		if (cv_actionmovie.value)
 		{
-			player->viewrollangle += quake.roll;
+			int xs = intsign(quake.x),
+				 ys = intsign(quake.y),
+				 zs = intsign(quake.z);
+			player->viewrollangle += (xs ^ ys ^ zs) * ANG1;
 		}
 	}
 	else
