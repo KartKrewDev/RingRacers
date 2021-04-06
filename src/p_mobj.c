@@ -1250,6 +1250,17 @@ void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
 	}
 }
 
+//
+// P_SetPitchRoll
+//
+void P_SetPitchRoll(mobj_t *mo, angle_t pitch, angle_t yaw)
+{
+	pitch = InvAngle(pitch);
+	yaw >>= ANGLETOFINESHIFT;
+	mo->roll  = FixedMul(pitch, FINESINE   (yaw));
+	mo->pitch = FixedMul(pitch, FINECOSINE (yaw));
+}
+
 #define STOPSPEED (FRACUNIT)
 
 //
@@ -1662,6 +1673,8 @@ void P_XYMovement(mobj_t *mo)
 					{
 						mo->momz = transfermomz;
 						mo->standingslope = NULL;
+						P_SetPitchRoll(mo, ANGLE_90,
+								transferslope->xydirection);
 						if (player)
 						{
 							player->powers[pw_justlaunched] = 2;
