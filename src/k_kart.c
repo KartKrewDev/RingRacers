@@ -7539,6 +7539,12 @@ boolean K_PlayerEBrake(player_t *player)
 	&& player->powers[pw_nocontrol] == 0;
 }
 
+SINT8 K_Sliptiding(player_t *player)
+{
+	const INT32 *p = player->kartstuff;
+	return p[k_drift] ? 0 : p[k_aizdriftstrat];
+}
+
 static void K_KartSpindashDust(mobj_t *parent)
 {
 	fixed_t rad = FixedDiv(FixedHypot(parent->radius, parent->radius), parent->scale);
