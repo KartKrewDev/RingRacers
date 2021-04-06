@@ -4306,21 +4306,9 @@ DoABarrelRoll (player_t *player)
 		return;
 	}
 
-	if (player->mo->standingslope)
-	{
-		slope = player->mo->standingslope->zangle;
-	}
-	else
-	{
-		slope = 0;
-	}
+	slope = InvAngle(R_SpriteRotationAngle(player->mo));
 
-	if (abs((INT32)slope) > ANGLE_11hh)
-	{
-		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
-		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT), slope));
-	}
-	else
+	if (AbsAngle(slope) < ANGLE_11hh)
 	{
 		slope = 0;
 	}
