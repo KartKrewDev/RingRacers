@@ -1674,7 +1674,9 @@ void P_XYMovement(mobj_t *mo)
 						mo->momz = transfermomz;
 						mo->standingslope = NULL;
 						P_SetPitchRoll(mo, ANGLE_90,
-								transferslope->xydirection);
+								transferslope->xydirection
+								+ (transferslope->zangle
+									& ANGLE_180));
 						if (player)
 						{
 							player->powers[pw_justlaunched] = 2;
