@@ -4312,8 +4312,9 @@ DoABarrelRoll (player_t *player)
 	slope -= Quaketilt(player);
 
 	delta = slope - player->tilt;
-	smoothing = FixedDiv(abs((INT32)delta), ANG15);
-	delta = FixedDiv(delta, 17 * (FRACUNIT + smoothing));
+	smoothing = FixedDiv(AbsAngle(slope), ANGLE_45);
+	delta = FixedDiv(delta, 33 * FixedDiv(FRACUNIT,
+				FRACUNIT + smoothing));
 
 	if (delta)
 		player->tilt += delta;
