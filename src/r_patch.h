@@ -39,6 +39,7 @@ patch_t *Patch_GetRotatedSprite(
 	boolean flip, boolean adjustfeet,
 	void *info, INT32 rotationangle);
 INT32 R_GetRollAngle(angle_t rollangle);
+angle_t R_GetPitchRollAngle(mobj_t *mobj);
 angle_t R_SpriteRotationAngle(mobj_t *mobj);
 #endif
 

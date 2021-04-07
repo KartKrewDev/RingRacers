@@ -93,6 +93,12 @@ FUNCMATH FUNCINLINE static ATTRINLINE angle_t InvAngle(angle_t a)
 {
 	return (ANGLE_MAX-a)+1;
 }
+
+// 315 = 45
+FUNCMATH FUNCINLINE static ATTRINLINE angle_t AbsAngle(angle_t a)
+{
+	return a & ANGLE_180 ? InvAngle(a) : a;
+}
 // angle_t to fixed_t f(ANGLE_45) = 45*FRACUNIT
 FUNCMATH fixed_t AngleFixed(angle_t af);
 // fixed_t to angle_t f(45*FRACUNIT) = ANGLE_45
