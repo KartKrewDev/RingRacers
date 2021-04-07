@@ -34,6 +34,8 @@
 INT32 numskins = 0;
 skin_t skins[MAXSKINS];
 
+INT32 numfollowers = 0;
+
 // FIXTHIS: don't work because it must be inistilised before the config load
 //#define SKINVALUES
 #ifdef SKINVALUES
@@ -131,9 +133,11 @@ static void Sk_SetDefaultValue(skin_t *skin)
 //
 void R_InitSkins(void)
 {
-#ifdef SKINVALUES
-	INT32 i;
+	size_t i;
 
+	// it can be is do before loading config for skin cvar possible value
+	// (... what the fuck did you just say to me? "it can be is do"?)
+#ifdef SKINVALUES
 	for (i = 0; i <= MAXSKINS; i++)
 	{
 		skin_cons_t[i].value = 0;
@@ -143,6 +147,14 @@ void R_InitSkins(void)
 
 	// no default skin!
 	numskins = 0;
+
+	for (i = 0; i < numwadfiles; i++)
+	{
+		R_AddSkins((UINT16)i);
+		R_PatchSkins((UINT16)i);
+		R_LoadSpriteInfoLumps(i, wadfiles[i]->numlumps);
+	}
+	ST_ReloadSkinFaceGraphics();
 }
 
 UINT32 R_GetSkinAvailabilities(void)

@@ -141,6 +141,8 @@ extern boolean digital_disabled;
 extern boolean menuactive; // Menu overlaid?
 extern UINT8 paused; // Game paused?
 extern UINT8 window_notinfocus; // are we in focus? (backend independant -- handles auto pausing and display of "focus lost" message)
+extern INT32 window_x;
+extern INT32 window_y;
 
 extern boolean nodrawers;
 extern boolean noblit;
@@ -160,13 +162,13 @@ extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
 extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 /* spitscreen players sync */
-extern int splitscreen_original_party_size[MAXPLAYERS];
-extern int splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+extern INT32 splitscreen_original_party_size[MAXPLAYERS];
+extern INT32 splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 /* parties */
-extern int splitscreen_invitations[MAXPLAYERS];
-extern int splitscreen_party_size[MAXPLAYERS];
-extern int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+extern INT32 splitscreen_invitations[MAXPLAYERS];
+extern INT32 splitscreen_party_size[MAXPLAYERS];
+extern INT32 splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 /* the only local one */
 extern boolean splitscreen_partied[MAXPLAYERS];
@@ -299,6 +301,7 @@ extern struct quake
 {
 	// camera offsets and duration
 	fixed_t x,y,z;
+	angle_t roll;
 	UINT16 time;
 
 	// location, radius, and intensity...
@@ -450,7 +453,7 @@ enum GameType
 	GT_LASTFREESLOT = GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1,
 	NUMGAMETYPES
 };
-// If you alter this list, update dehacked.c, MISC_ChangeGameTypeMenu in m_menu.c, and Gametype_Names in g_game.c
+// If you alter this list, update deh_tables.c, MISC_ChangeGameTypeMenu in m_menu.c, and Gametype_Names in g_game.c
 
 // Gametype rules
 enum GameTypeRules

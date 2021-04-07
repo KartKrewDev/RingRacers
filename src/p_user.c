@@ -351,7 +351,7 @@ void P_GiveEmerald(boolean spawnObj)
 			if (i == pnum)
 				continue;
 
-			emmo->flags2 |= MFD_DONTDRAW;
+			emmo->flags2 |= RF_DONTDRAW;
 		}
 	}
 }
@@ -1213,7 +1213,7 @@ void P_SpawnShieldOrb(player_t *player)
 			if (shieldobj->info->painstate)
 				P_SetMobjState(shieldobj,shieldobj->info->painstate);
 			else
-				shieldobj->drawflags |= MFD_SHADOW;
+				shieldobj->renderflags |= RF_GHOSTLY;
 		}
 	}
 }
@@ -1296,7 +1296,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprite2 = mobj->sprite2;
 	ghost->frame = mobj->frame;
 	ghost->tics = -1;
-	ghost->drawflags |= tr_trans50 << MFD_TRANSSHIFT;
+	ghost->renderflags |= tr_trans50 << RF_TRANSSHIFT;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
@@ -2374,12 +2374,8 @@ void P_MovePlayer(player_t *player)
 		&& onground && (leveltime & 1))
 		K_SpawnBoostTrail(player);
 
-	if (player->kartstuff[k_invincibilitytimer] > 0) 
-	{
+	if (player->kartstuff[k_invincibilitytimer] > 0)
 		K_SpawnSparkleTrail(player->mo);
-			if (player->kartstuff[k_invincibilitytimer] > 5*TICRATE && player->speed > 10*player->mo->scale && (leveltime % 8) == 0)
-				K_SpawnInvincibilitySpeedLines(player->mo);
-	}
 
 	if (player->kartstuff[k_wipeoutslow] > 1 && (leveltime & 1))
 		K_SpawnWipeoutTrail(player->mo, false);
@@ -2592,7 +2588,7 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 //
 
 // SRB2Kart: Use for GP?
-/* 
+/*
 static void P_ConsiderAllGone(void)
 {
 	INT32 i, lastdeadplayer = -1, deadtimercheck = INT32_MAX;
@@ -2649,7 +2645,7 @@ static void P_DeathThink(player_t *player)
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 		}
 	}
 	else
@@ -2768,6 +2764,11 @@ consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("cam3_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate3_OnChange),
 	CVAR_INIT ("cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange)
 };
+
+consvar_t cv_tilting = CVAR_INIT ("tilting", "On", CV_SAVE, CV_OnOff, NULL);
+
+consvar_t cv_actionmovie = CVAR_INIT ("actionmovie", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_windowquake = CVAR_INIT ("windowquake", "Off", CV_SAVE, CV_OnOff, NULL);
 
 fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
@@ -2968,7 +2969,7 @@ void P_DemoCameraMovement(camera_t *cam)
 
 	awayviewmobj_hack = P_SpawnMobj(cam->x, cam->y, cam->z, MT_THOK);
 	awayviewmobj_hack->tics = 2;
-	awayviewmobj_hack->drawflags |= MFD_DONTDRAW;
+	awayviewmobj_hack->renderflags |= RF_DONTDRAW;
 
 	democam.soundmobj = awayviewmobj_hack;
 
@@ -3720,7 +3721,7 @@ static void P_CalcPostImg(player_t *player)
 	postimg_t *type = NULL;
 	INT32 *param;
 	fixed_t pviewheight;
-	UINT8 i;
+	size_t i;
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 		pviewheight = player->mo->z + player->mo->height - player->viewheight;
@@ -3733,7 +3734,7 @@ static void P_CalcPostImg(player_t *player)
 		pviewheight = player->awayviewmobj->z + 20*FRACUNIT;
 	}
 
-	for (i = 0; i <= r_splitscreen; i++)
+	for (i = 0; i <= (unsigned)r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -3744,28 +3745,45 @@ static void P_CalcPostImg(player_t *player)
 	}
 
 	// see if we are in heat (no, not THAT kind of heat...)
-
-	if (P_FindSpecialLineFromTag(13, sector->tag, -1) != -1)
-		*type = postimg_heat;
-	else if (sector->ffloors)
+	for (i = 0; i < sector->tags.count; i++)
 	{
-		ffloor_t *rover;
-		fixed_t topheight;
-		fixed_t bottomheight;
-
-		for (rover = sector->ffloors; rover; rover = rover->next)
+		if (Tag_FindLineSpecial(13, sector->tags.tags[i]) != -1)
 		{
-			if (!(rover->flags & FF_EXISTS))
-				continue;
+			*type = postimg_heat;
+			break;
+		}
+		else if (sector->ffloors)
+		{
+			ffloor_t *rover;
+			fixed_t topheight;
+			fixed_t bottomheight;
+			boolean gotres = false;
 
-			topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
-			bottomheight = P_GetFFloorBottomZAt(rover, player->mo->x, player->mo->y);
+			for (rover = sector->ffloors; rover; rover = rover->next)
+			{
+				size_t j;
 
-			if (pviewheight >= topheight || pviewheight <= bottomheight)
-				continue;
+				if (!(rover->flags & FF_EXISTS))
+					continue;
 
-			if (P_FindSpecialLineFromTag(13, rover->master->frontsector->tag, -1) != -1)
-				*type = postimg_heat;
+				topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
+				bottomheight = P_GetFFloorBottomZAt(rover, player->mo->x, player->mo->y);
+
+				if (pviewheight >= topheight || pviewheight <= bottomheight)
+					continue;
+
+				for (j = 0; j < rover->master->frontsector->tags.count; j++)
+				{
+					if (Tag_FindLineSpecial(13, rover->master->frontsector->tags.tags[j]) != -1)
+					{
+						*type = postimg_heat;
+						gotres = true;
+						break;
+					}
+				}
+			}
+			if (gotres)
+				break;
 		}
 	}
 
@@ -4115,11 +4133,11 @@ static void P_HandleFollower(player_t *player)
 		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo);	// Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
 
 		// Match how the player is being drawn
-		player->follower->drawflags = player->mo->drawflags;
+		player->follower->renderflags = player->mo->renderflags;
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
 		if (player->pflags & PF_GAMETYPEOVER)
-			player->follower->drawflags |= MFD_DONTDRAW;
+			player->follower->renderflags |= RF_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
 			player->follower->angle = K_MomentumAngle(player->follower);
@@ -4140,7 +4158,7 @@ static void P_HandleFollower(player_t *player)
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
 			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
-			bmobj->drawflags = player->mo->drawflags;
+			bmobj->renderflags = player->mo->renderflags;
 
 			if (player->follower->threshold)	// threshold means the follower was "despawned" with S_NULL (is actually just set to S_INVISIBLE)
 				P_SetMobjState(bmobj, S_INVISIBLE);	// sooooo... let's do the same!
@@ -4221,6 +4239,114 @@ static void P_HandleFollower(player_t *player)
 	}
 }
 
+	/* gaysed script from me, based on Golden's sprite slope roll */
+
+// holy SHIT
+static INT32
+Quaketilt (player_t *player)
+{
+	angle_t tilt;
+	fixed_t lowb; // this threshold for speed
+	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	INT32 delta = (INT32)( player->mo->angle - moma );
+	fixed_t speed;
+
+	boolean sliptiding =
+		(
+				player->kartstuff[k_aizdriftstrat] != 0 &&
+				player->kartstuff[k_drift]         == 0
+		);
+
+	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
+	{
+		return 0;
+	}
+
+	// Hi! I'm "not a math guy"!
+	if (abs(delta) > ANGLE_90)
+		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
+	if (P_IsObjectOnGround(player->mo))
+	{
+		if (sliptiding)
+		{
+			tilt = ANGLE_45;
+			lowb = 5*FRACUNIT;
+		}
+		else
+		{
+			tilt = ANGLE_11hh/2;
+			lowb = 15*FRACUNIT;
+		}
+	}
+	else
+	{
+		tilt = ANGLE_22h;
+		lowb = 10*FRACUNIT;
+	}
+	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
+	speed = abs( player->mo->momx + player->mo->momy );
+	if (speed < lowb)
+	{
+		// ease out tilt as we slow...
+		moma = FixedMul(moma, FixedDiv(speed, lowb));
+	}
+	return moma;
+}
+
+static void
+DoABarrelRoll (player_t *player)
+{
+	angle_t slope;
+	angle_t delta;
+
+	if (player->exiting)
+	{
+		return;
+	}
+
+	if (player->mo->standingslope)
+	{
+		slope = player->mo->standingslope->zangle;
+	}
+	else
+	{
+		slope = 0;
+	}
+
+	if (abs((INT32)slope) > ANGLE_11hh)
+	{
+		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
+		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT), slope));
+	}
+	else
+	{
+		slope = 0;
+	}
+
+	slope -= Quaketilt(player);
+
+	delta = (INT32)( slope - player->tilt )/ 32;
+
+	if (delta)
+		player->tilt += delta;
+	else
+		player->tilt  = slope;
+
+	if (cv_tilting.value)
+	{
+		player->viewrollangle = player->tilt;
+
+		if (cv_actionmovie.value)
+		{
+			player->viewrollangle += quake.roll;
+		}
+	}
+	else
+	{
+		player->viewrollangle = 0;
+	}
+}
+
 //
 // P_PlayerThink
 //
@@ -4241,32 +4367,6 @@ void P_PlayerThink(player_t *player)
 		CONS_Debug(DBG_GAMELOGIC, "P_PlayerThink: Player %s in PST_LIVE with 0 health. (\"Zombie bug\")\n", sizeu1(playeri));
 		player->playerstate = PST_DEAD;
 	}
-
-#ifdef SEENAMES
-	if (netgame && player == &players[displayplayers[0]] && !(leveltime % (TICRATE/5)) && !r_splitscreen)
-	{
-		seenplayer = NULL;
-
-		if (cv_seenames.value && cv_allowseenames.value)
-		{
-			mobj_t *mo = P_SpawnNameFinder(player->mo, MT_NAMECHECK);
-
-			if (mo)
-			{
-				short int i;
-				mo->flags |= MF_NOCLIPHEIGHT;
-				for (i = 0; i < 32; i++)
-				{
-					// Debug drawing
-//					if (i&1)
-//						P_SpawnMobj(mo->x, mo->y, mo->z, MT_SPARK);
-					if (P_RailThinker(mo))
-						break; // mobj was removed (missile hit a wall) or couldn't move
-				}
-			}
-		}
-	}
-#endif
 
 	if (player->mo->hitlag > 0)
 	{
@@ -4418,9 +4518,9 @@ void P_PlayerThink(player_t *player)
 	if (player->playerstate == PST_DEAD)
 	{
 		if (player->spectator)
-			player->mo->drawflags |= MFD_SHADOW;
+			player->mo->renderflags |= RF_GHOSTLY;
 		else
-			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
+			player->mo->renderflags &= ~RF_GHOSTLYMASK;
 		P_DeathThink(player);
 		LUAh_PlayerThink(player);
 		return;
@@ -4549,7 +4649,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (player == &players[displayplayers[i]] && !camera[i].chase)
 			{
-				gmobj->drawflags |= MFD_DONTDRAW;
+				gmobj->renderflags |= RF_DONTDRAW;
 				break;
 			}
 		}
@@ -4594,14 +4694,13 @@ void P_PlayerThink(player_t *player)
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
-		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)
-		|| leveltime < starttime)) // Level intro
+		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)))
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)
 			&& (leveltime & 1))
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 		else
-			player->mo->drawflags &= ~MFD_DONTDRAW;
+			player->mo->renderflags &= ~RF_DONTDRAW;
 	}
 
 	if (cmd->flags & TICCMD_TYPING)
@@ -4665,6 +4764,8 @@ void P_PlayerThink(player_t *player)
 	player->pflags &= ~PF_SLIDING;
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
+
+	DoABarrelRoll(player);
 
 	LUAh_PlayerThink(player);
 }
@@ -4741,7 +4842,7 @@ void P_PlayerAfterThink(player_t *player)
 	// spectator invisibility and nogravity.
 	if ((netgame || multiplayer) && player->spectator)
 	{
-		player->mo->drawflags |= MFD_DONTDRAW;
+		player->mo->renderflags |= RF_DONTDRAW;
 		player->mo->flags |= MF_NOGRAVITY;
 	}
 

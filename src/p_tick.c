@@ -23,7 +23,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "m_perfstats.h"
-#include "i_system.h" // I_GetTimeMicros
+#include "i_system.h" // I_GetPreciseTime
 
 // Object place
 #include "m_cheat.h"
@@ -322,7 +322,7 @@ static inline void P_RunThinkers(void)
 	size_t i;
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
-		ps_thlist_times[i] = I_GetTimeMicros();
+		ps_thlist_times[i] = I_GetPreciseTime();
 		for (currentthinker = thlist[i].next; currentthinker != &thlist[i]; currentthinker = currentthinker->next)
 		{
 #ifdef PARANOIA
@@ -330,7 +330,7 @@ static inline void P_RunThinkers(void)
 #endif
 			currentthinker->function.acp1(currentthinker);
 		}
-		ps_thlist_times[i] = I_GetTimeMicros() - ps_thlist_times[i];
+		ps_thlist_times[i] = I_GetPreciseTime() - ps_thlist_times[i];
 	}
 
 	if (gametyperules & GTR_CIRCUIT)
@@ -565,7 +565,7 @@ void P_Ticker(boolean run)
 
 		LUAh_PreThinkFrame();
 
-		ps_playerthink_time = I_GetTimeMicros();
+		ps_playerthink_time = I_GetPreciseTime();
 
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -582,7 +582,7 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
 
-		ps_playerthink_time = I_GetTimeMicros() - ps_playerthink_time;
+		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
 	}
 
 	// Keep track of how long they've been playing!
@@ -594,18 +594,18 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
-		ps_thinkertime = I_GetTimeMicros();
+		ps_thinkertime = I_GetPreciseTime();
 		P_RunThinkers();
-		ps_thinkertime = I_GetTimeMicros() - ps_thinkertime;
+		ps_thinkertime = I_GetPreciseTime() - ps_thinkertime;
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		ps_lua_thinkframe_time = I_GetTimeMicros();
+		ps_lua_thinkframe_time = I_GetPreciseTime();
 		LUAh_ThinkFrame();
-		ps_lua_thinkframe_time = I_GetTimeMicros() - ps_lua_thinkframe_time;
+		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
 	}
 
 	// Run shield positioning
@@ -655,10 +655,19 @@ void P_Ticker(boolean run)
 			quake.x = M_RandomRange(-ir,ir);
 			quake.y = M_RandomRange(-ir,ir);
 			quake.z = M_RandomRange(-ir,ir);
+			if (cv_windowquake.value)
+				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+			ir >>= 2;
+			ir = M_RandomRange(-ir,ir);
+			if (ir < 0)
+				ir = ANGLE_MAX - FixedAngle(-ir);
+			else
+				ir = FixedAngle(ir);
+			quake.roll = ir;
 			--quake.time;
 		}
 		else
-			quake.x = quake.y = quake.z = 0;
+			quake.x = quake.y = quake.z = quake.roll = 0;
 
 		if (metalplayback)
 			G_ReadMetalTic(metalplayback);

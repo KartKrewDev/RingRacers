@@ -30,9 +30,6 @@ typedef struct
 	size_t numlumps;
 } lumplist_t;
 
-// Possible alpha types for a patch.
-enum patchalphastyle {AST_COPY, AST_TRANSLUCENT, AST_ADD, AST_SUBTRACT, AST_REVERSESUBTRACT, AST_MODULATE, AST_OVERLAY};
-
 UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alpha);
 UINT32 ASTBlendTexturePixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alpha);
 UINT8 ASTBlendPaletteIndexes(UINT8 background, UINT8 foreground, int style, UINT8 alpha);
@@ -46,7 +43,7 @@ extern CV_PossibleValue_t Color_cons_t[];
 extern CV_PossibleValue_t Followercolor_cons_t[];	// follower colours table, not a duplicate because of the "Match" option.
 
 // I/O, setting up the stuff.
-void R_InitData(void);
+void R_InitTextureData(void);
 void R_PrecacheLevel(void);
 
 extern size_t flatmemory, spritememory, texturememory;
@@ -58,6 +55,7 @@ extern size_t flatmemory, spritememory, texturememory;
 // Uncomment to make extra_colormaps order Newest -> Oldest
 //#define COLORMAPREVERSELIST
 
+void R_InitColormaps(void);
 void R_ReInitColormaps(UINT16 num, lumpnum_t newencoremap);
 void R_ClearColormaps(void);
 extracolormap_t *R_CreateDefaultColormap(boolean lighttable);

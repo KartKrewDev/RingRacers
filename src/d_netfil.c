@@ -527,6 +527,7 @@ boolean CL_LoadServerFiles(void)
 
 	for (i = 0; i < fileneedednum; i++)
 	{
+		CONS_Printf("    %s\n", fileneeded[i].filename);
 		if (fileneeded[i].status == FS_OPEN)
 			continue; // Already loaded
 		else if (fileneeded[i].status == FS_FOUND)

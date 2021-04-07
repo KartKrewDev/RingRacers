@@ -1752,8 +1752,8 @@ static void HU_DrawChat_Old(void)
 	size_t i = 0;
 	const char *ntalk = "Say: ", *ttalk = "Say-Team: ";
 	const char *talk = ntalk;
-	INT32 charwidth = 8 * con_scalefactor; //SHORT(hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
-	INT32 charheight = 8 * con_scalefactor; //SHORT(hu_font['A'-HU_FONTSTART]->height) * con_scalefactor;
+	INT32 charwidth = 8 * con_scalefactor; //(hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
+	INT32 charheight = 8 * con_scalefactor; //(hu_font['A'-HU_FONTSTART]->height) * con_scalefactor;
 	if (teamtalk)
 	{
 		talk = ttalk;
@@ -1774,7 +1774,7 @@ static void HU_DrawChat_Old(void)
 		}
 		else
 		{
-			//charwidth = SHORT(hu_font[talk[i]-HU_FONTSTART]->width) * con_scalefactor;
+			//charwidth = (hu_font[talk[i]-HU_FONTSTART]->width) * con_scalefactor;
 			V_DrawCharacter(HU_INPUTX + c, y, talk[i++] | cv_constextsize.value | V_NOSCALESTART, true);
 		}
 		c += charwidth;
@@ -1802,7 +1802,7 @@ static void HU_DrawChat_Old(void)
 		}
 		else
 		{
-			//charwidth = SHORT(hu_font[w_chat[i]-HU_FONTSTART]->width) * con_scalefactor;
+			//charwidth = (hu_font[w_chat[i]-HU_FONTSTART]->width) * con_scalefactor;
 			V_DrawCharacter(HU_INPUTX + c, y, w_chat[i++] | cv_constextsize.value | V_NOSCALESTART | t, true);
 		}
 
@@ -1835,7 +1835,7 @@ static void HU_DrawCEcho(void)
 		if (cechotext[i] == '\\')
 			pnumlines++;
 
-	y -= (pnumlines-1)*((realflags & V_RETURN8) ? 4 : 6);
+	y -= (pnumlines-1)*6;
 
 	// Prevent crashing because I'm sick of this
 	if (y < 0)
@@ -1858,7 +1858,7 @@ static void HU_DrawCEcho(void)
 		*line = '\0';
 
 		V_DrawCenteredString(BASEVIDWIDTH/2, y, realflags, echoptr);
-		y += ((realflags & V_RETURN8) ? 8 : 12);
+		y += 12;
 
 		echoptr = line;
 		echoptr++;
@@ -1957,9 +1957,6 @@ void HU_DrawSongCredits(void)
 //
 void HU_Drawer(void)
 {
-	if (needpatchrecache)
-		R_ReloadHUDGraphics();
-
 	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
 		V_DrawVhsEffect(demo.rewinding);
 
@@ -2039,7 +2036,7 @@ void HU_Drawer(void)
 		HU_DrawSongCredits();
 
 	// draw desynch text
-	if (hu_resynching)
+	if (hu_redownloadinggamestate)
 	{
 		static UINT32 resynch_ticker = 0;
 		char resynch_text[14];
@@ -2213,6 +2210,7 @@ static inline void HU_DrawSpectatorTicker(void)
 	length += dupadjust;
 
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i] && players[i].spectator)
 		{
 			char *pos;
@@ -2257,6 +2255,7 @@ static inline void HU_DrawSpectatorTicker(void)
 			if ((length += len) >= dupadjust+8)
 				break;
 		}
+	}
 }
 
 //

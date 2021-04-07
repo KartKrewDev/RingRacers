@@ -100,18 +100,18 @@ void K_TimerInit(void)
 	K_SpawnBattleCapsules();
 }
 
-UINT16 K_GetPlayerDontDrawFlag(player_t *player)
+UINT32 K_GetPlayerDontDrawFlag(player_t *player)
 {
-	UINT16 flag = 0;
+	UINT32 flag = 0;
 
 	if (player == &players[displayplayers[0]])
-		flag = MFD_DONTDRAWP1;
+		flag = RF_DONTDRAWP1;
 	else if (r_splitscreen >= 1 && player == &players[displayplayers[1]])
-		flag = MFD_DONTDRAWP2;
+		flag = RF_DONTDRAWP2;
 	else if (r_splitscreen >= 2 && player == &players[displayplayers[2]])
-		flag = MFD_DONTDRAWP3;
+		flag = RF_DONTDRAWP3;
 	else if (r_splitscreen >= 3 && player == &players[displayplayers[3]])
-		flag = MFD_DONTDRAWP4;
+		flag = RF_DONTDRAWP4;
 
 	return flag;
 }
@@ -1453,9 +1453,9 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 			band->fuse = 2;
 
 			if (transparent)
-				band->drawflags |= MFD_SHADOW;
+				band->renderflags |= RF_GHOSTLY;
 
-			band->drawflags |= MFD_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player) | K_GetPlayerDontDrawFlag(victim));
+			band->renderflags |= RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player) | K_GetPlayerDontDrawFlag(victim));
 		}
 
 		curx += stepx;
@@ -1687,7 +1687,7 @@ void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master)
 	K_FlipFromObject(mo, master);
 
 	// visibility (usually for hyudoro)
-	mo->drawflags = (master->drawflags & MFD_DONTDRAW);
+	mo->renderflags = (master->renderflags & RF_DONTDRAW);
 }
 
 // same as above, but does not adjust Z height when flipping
@@ -1698,7 +1698,7 @@ void K_GenericExtraFlagsNoZAdjust(mobj_t *mo, mobj_t *master)
 	mo->flags2 = (mo->flags2 & ~MF2_OBJECTFLIP)|(master->flags2 & MF2_OBJECTFLIP);
 
 	// visibility (usually for hyudoro)
-	mo->drawflags = (master->drawflags & MFD_DONTDRAW);
+	mo->renderflags = (master->renderflags & RF_DONTDRAW);
 }
 
 
@@ -1758,7 +1758,7 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	P_SetTarget(&sparks->target, player->mo);
 	P_SetScale(sparks, (sparks->destscale = player->mo->scale));
 	K_MatchGenericExtraFlags(sparks, player->mo);
-	sparks->drawflags |= MFD_DONTDRAW;
+	sparks->renderflags |= RF_DONTDRAW;
 }
 
 static fixed_t K_RandomFlip(fixed_t f)
@@ -1806,6 +1806,49 @@ void K_SpawnDriftBoostClipSpark(mobj_t *clip)
 
 	spark->momx = clip->momx/2;
 	spark->momy = clip->momx/2;
+}
+
+void K_SpawnNormalSpeedLines(player_t *player)
+{
+	mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
+		player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
+		player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
+		MT_FASTLINE);
+
+	P_SetTarget(&fast->target, player->mo);
+	fast->angle = K_MomentumAngle(player->mo);
+	fast->momx = 3*player->mo->momx/4;
+	fast->momy = 3*player->mo->momy/4;
+	fast->momz = 3*player->mo->momz/4;
+
+	K_MatchGenericExtraFlags(fast, player->mo);
+
+	// Make it red when you have the eggman speed boost
+	if (player->kartstuff[k_eggmanexplode])
+	{
+		fast->color = SKINCOLOR_RED;
+		fast->colorized = true;
+	}
+}
+
+void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
+{
+	mobj_t *fast = P_SpawnMobjFromMobj(mo,
+		P_RandomRange(-48, 48) * FRACUNIT,
+  		P_RandomRange(-48, 48) * FRACUNIT,
+  		P_RandomRange(0, 64) * FRACUNIT,
+  		MT_FASTLINE);
+
+	fast->momx = 3*mo->momx/4;
+	fast->momy = 3*mo->momy/4;
+	fast->momz = 3*mo->momz/4;
+
+	P_SetTarget(&fast->target, mo);
+	fast->angle = K_MomentumAngle(mo);
+	fast->color = mo->color;
+	fast->colorized = true;
+	K_MatchGenericExtraFlags(fast, mo);
+	P_SetMobjState(fast, S_KARTINVLINES1);
 }
 
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
@@ -3776,6 +3819,13 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
+	if ((mo->player->kartstuff[k_sneakertimer]
+		|| mo->player->kartstuff[k_ringboost] || mo->player->kartstuff[k_driftboost]
+		|| mo->player->kartstuff[k_startboost] || mo->player->kartstuff[k_eggmanexplode]))
+	{
+		return;
+	}
+
 	if (leveltime & 2)
 		index = 2;
 
@@ -3813,27 +3863,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	sparkle->color = mo->color;
 }
 
-void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
-{
-	mobj_t *fast = P_SpawnMobjFromMobj(mo,
-		P_RandomRange(-48, 48) * FRACUNIT,
-  		P_RandomRange(-48, 48) * FRACUNIT,
-  		P_RandomRange(0, 64) * FRACUNIT,
-  		MT_FASTLINE);
-
-	fast->momx = 3*mo->momx/4;
-	fast->momy = 3*mo->momy/4;
-	fast->momz = 3*mo->momz/4;
-	
-	P_SetTarget(&fast->target, mo);
-	fast->angle = K_MomentumAngle(mo);
-	fast->color = mo->color;
-	fast->colorized = true;
-	K_MatchGenericExtraFlags(fast, mo);
-	P_SetMobjState(fast, S_KARTINVLINES1);	
-}
-
-void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
+void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad)
 {
 	mobj_t *dust;
 	angle_t aoff;
@@ -3861,15 +3891,12 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent)
 	P_SetScale(dust, mo->scale);
 	K_FlipFromObject(dust, mo);
 
-	if (translucent) // offroad effect
+	if (offroad) // offroad effect
 	{
 		dust->momx = mo->momx/2;
 		dust->momy = mo->momy/2;
 		dust->momz = mo->momz/2;
 	}
-
-	if (translucent)
-		dust->drawflags |= MFD_SHADOW;
 }
 
 void K_SpawnDraftDust(mobj_t *mo)
@@ -5095,7 +5122,7 @@ void K_DropRocketSneaker(player_t *player)
 		if (shoe->type != MT_ROCKETSNEAKER)
 			return; //woah, not a rocketsneaker, bail! safeguard in case this gets used when you're holding non-rocketsneakers
 
-		shoe->drawflags &= ~MFD_DONTDRAW;
+		shoe->renderflags &= ~RF_DONTDRAW;
 		shoe->flags &= ~MF_NOGRAVITY;
 		shoe->angle += ANGLE_45;
 
@@ -5529,9 +5556,9 @@ static void K_MoveHeldObjects(player_t *player)
 					cur->flags &= ~MF_NOCLIPTHING;
 
 					if (player->kartstuff[k_rocketsneakertimer] <= TICRATE && (leveltime & 1))
-						cur->drawflags |= MFD_DONTDRAW;
+						cur->renderflags |= RF_DONTDRAW;
 					else
-						cur->drawflags &= ~MFD_DONTDRAW;
+						cur->renderflags &= ~RF_DONTDRAW;
 
 					if (num & 1)
 						P_SetMobjStateNF(cur, (vibrate ? S_ROCKETSNEAKER_LVIBRATE : S_ROCKETSNEAKER_L));
@@ -6096,25 +6123,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]
 				|| player->kartstuff[k_eggmanexplode])
 			{
-				mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
-					player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
-					player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
-					MT_FASTLINE);
-
-				P_SetTarget(&fast->target, player->mo);
-				fast->angle = K_MomentumAngle(player->mo);
-				fast->momx = 3*player->mo->momx/4;
-				fast->momy = 3*player->mo->momy/4;
-				fast->momz = 3*player->mo->momz/4;
-
-				K_MatchGenericExtraFlags(fast, player->mo);
-
-				// Make it red when you have the eggman speed boost
-				if (player->kartstuff[k_eggmanexplode])
-				{
-					fast->color = SKINCOLOR_RED;
-					fast->colorized = true;
-				}
+				if (player->kartstuff[k_invincibilitytimer])
+					K_SpawnInvincibilitySpeedLines(player->mo);
+				else
+					K_SpawnNormalSpeedLines(player);
 			}
 
 			if (player->kartstuff[k_numboosts] > 0) // Boosting after images
@@ -6131,7 +6143,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				//ghost->momy = (3*player->mo->momy)/4;
 				//ghost->momz = (3*player->mo->momz)/4;
 				if (leveltime & 1)
-					ghost->drawflags |= MFD_DONTDRAW;
+					ghost->renderflags |= RF_DONTDRAW;
 			}
 
 			if (P_IsObjectOnGround(player->mo))
@@ -6171,7 +6183,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			debtflag->color = player->skincolor;
 			debtflag->fuse = 2;
 
-			debtflag->drawflags = K_GetPlayerDontDrawFlag(player);
+			debtflag->renderflags = K_GetPlayerDontDrawFlag(player);
 		}
 
 		if (player->kartstuff[k_springstars] && (leveltime & 1))
@@ -8524,33 +8536,33 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			if (leveltime & 1)
 			{
-				player->mo->drawflags |= MFD_DONTDRAW;
+				player->mo->renderflags |= RF_DONTDRAW;
 			}
 			else
 			{
 				if (player->kartstuff[k_hyudorotimer] >= (TICRATE/2) && player->kartstuff[k_hyudorotimer] <= hyu-(TICRATE/2))
-					player->mo->drawflags &= ~K_GetPlayerDontDrawFlag(player);
+					player->mo->renderflags &= ~K_GetPlayerDontDrawFlag(player);
 				else
-					player->mo->drawflags &= ~MFD_DONTDRAW;
+					player->mo->renderflags &= ~RF_DONTDRAW;
 			}
 
 			player->powers[pw_flashing] = player->kartstuff[k_hyudorotimer]; // We'll do this for now, let's people know about the invisible people through subtle hints
 		}
 		else if (player->kartstuff[k_hyudorotimer] == 0)
 		{
-			player->mo->drawflags &= ~MFD_DONTDRAW;
+			player->mo->renderflags &= ~RF_DONTDRAW;
 		}
 
 		if (gametype == GT_BATTLE && player->bumpers <= 0) // dead in match? you da bomb
 		{
 			K_DropItems(player); //K_StripItems(player);
 			K_StripOther(player);
-			player->mo->drawflags |= MFD_SHADOW;
+			player->mo->renderflags |= RF_GHOSTLY;
 			player->powers[pw_flashing] = player->karmadelay;
 		}
 		else if (gametype == GT_RACE || player->bumpers > 0)
 		{
-			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
+			player->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK);
 		}
 
 		if (player->trickpanel == 1)

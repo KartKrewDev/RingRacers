@@ -12,12 +12,13 @@
 
 #define KART_FULLTURN 800
 
-/* 
+/*
 Number of animations for the invincibility sparkles
 If states are ever added or removed
 Make sure this matches the actual number of states
 */
-#define KART_NUMINVSPARKLESANIM 12 
+#define KART_NUMINVSPARKLESANIM 12
+
 
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
@@ -26,7 +27,7 @@ void K_RegisterKartStuff(void);
 
 void K_TimerReset(void);
 void K_TimerInit(void);
-UINT16 K_GetPlayerDontDrawFlag(player_t *player);
+UINT32 K_GetPlayerDontDrawFlag(player_t *player);
 boolean K_IsPlayerLosing(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
@@ -44,6 +45,8 @@ void K_GenericExtraFlagsNoZAdjust(mobj_t *mo, mobj_t *master);
 void K_SpawnDashDustRelease(player_t *player);
 void K_SpawnDriftBoostClip(player_t *player);
 void K_SpawnDriftBoostClipSpark(mobj_t *clip);
+void K_SpawnNormalSpeedLines(player_t *player);
+void K_SpawnInvincibilitySpeedLines(mobj_t *mo);
 void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
@@ -65,8 +68,7 @@ void K_RunFinishLineBeam(void);
 UINT16 K_DriftSparkColor(player_t *player, INT32 charge);
 void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
-void K_SpawnInvincibilitySpeedLines(mobj_t *mo);
-void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent);
+void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad);
 void K_SpawnDraftDust(mobj_t *mo);
 void K_DriftDustHandling(mobj_t *spawner);
 void K_PuntMine(mobj_t *mine, mobj_t *punter);

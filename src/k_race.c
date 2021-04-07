@@ -304,7 +304,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 				P_SetMobjState(beam, S_FINISHBEAM1 + spriteframe);
 
 				beam->colorized = true;
-				beam->drawflags = MFD_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
+				beam->renderflags = RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
 
 				if (reverse)
 				{
@@ -369,7 +369,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 				);
 
 				P_SetMobjState(end1, S_FINISHBEAMEND1);
-				end1->drawflags = MFD_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
+				end1->renderflags = RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
 				end1->angle = lineangle;
 
 				end2 = P_SpawnMobj(
@@ -380,7 +380,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 				);
 
 				P_SetMobjState(end2, S_FINISHBEAMEND2);
-				end2->drawflags = MFD_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
+				end2->renderflags = RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
 				end2->angle = lineangle;
 
 				P_SetTarget(&end2->tracer, end1);
