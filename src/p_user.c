@@ -2040,8 +2040,11 @@ static void P_3dMovement(player_t *player)
 //
 static void P_UpdatePlayerAngle(player_t *player)
 {
-	angle_t angleChange = K_GetKartTurnValue(player, player->cmd.turning) << TICCMD_REDUCE;
+	angle_t angleChange = ANGLE_MAX;
 	UINT8 i;
+
+	K_UpdateSteeringValue(player, player->cmd.turning);
+	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
 	P_SetPlayerAngle(player, player->angleturn + angleChange);
 	player->mo->angle = player->angleturn;

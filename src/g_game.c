@@ -2105,6 +2105,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT16 rings;
 	INT16 spheres;
+	INT16 steering;
 	angle_t playerangleturn;
 
 	UINT8 botdiffincrease;
@@ -2142,6 +2143,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	spectator = players[player].spectator;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER|PF_FAULT|PF_KICKSTARTACCEL));
+
+	steering = players[player].steering;
 	playerangleturn = players[player].angleturn;
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
@@ -2254,6 +2257,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->quittime = quittime;
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
+	p->steering = steering;
 	p->angleturn = playerangleturn;
 
 	// save player config truth reborn
