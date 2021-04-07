@@ -7370,7 +7370,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 				player->kartstuff[k_aizdriftstrat];
 		}
 
-		if (abs(player->aizDriftTurn) < ANGLE_135)
+		if (abs(player->aizDriftTurn) < ANGLE_112h)
 		{
 			player->aizDriftTurn =
 				(abs(player->aizDriftTurn) + ANGLE_11hh) *
