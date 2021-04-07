@@ -64,6 +64,7 @@ static void HWR_ProjectSprite(mobj_t *thing);
 #ifdef HWPRECIP
 static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing);
 #endif
+static void HWR_RollTransform(FTransform *tr, angle_t roll);
 
 void HWR_AddTransparentFloor(levelflat_t *levelflat, extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight, INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, boolean fogplane, extracolormap_t *planecolormap);
 void HWR_AddTransparentPolyobjectFloor(levelflat_t *levelflat, polyobj_t *polysector, boolean isceiling, fixed_t fixedheight,
@@ -5205,7 +5206,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	if (spriterotangle != 0
 	&& !(splat && !(thing->renderflags & RF_NOSPLATROLLANGLE)))
 	{
-		rollangle = R_GetRollAngle(spriterotangle);
+		rollangle = R_GetRollAngle(vflip
+				? InvAngle(spriterotangle) : spriterotangle);
 		rotsprite = Patch_GetRotatedSprite(sprframe, (thing->frame & FF_FRAMEMASK), rot, flip, false, sprinfo, rollangle);
 
 		if (rotsprite != NULL)
@@ -5743,14 +5745,8 @@ static void HWR_DrawSkyBackground(player_t *player)
 		dometransform.scalez = 1;
 		dometransform.fovxangle = fpov; // Tails
 		dometransform.fovyangle = fpov; // Tails
-		if (player->viewrollangle != 0)
-		{
-			fixed_t rol = AngleFixed(player->viewrollangle);
-			dometransform.rollangle = FIXED_TO_FLOAT(rol);
-			dometransform.roll = true;
-			dometransform.rollx = 1.0f;
-			dometransform.rollz = 0.0f;
-		}
+		HWR_RollTransform(&dometransform,
+				R_ViewRollAngle(player));
 		dometransform.splitscreen = r_splitscreen;
 
 		HWR_GetTexture(texturetranslation[skytexture]);
@@ -6042,14 +6038,7 @@ void HWR_RenderSkyboxView(player_t *player)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	if (player->viewrollangle != 0)
-	{
-		fixed_t rol = AngleFixed(player->viewrollangle);
-		atransform.rollangle = FIXED_TO_FLOAT(rol);
-		atransform.roll = true;
-		atransform.rollx = 1.0f;
-		atransform.rollz = 0.0f;
-	}
+	HWR_RollTransform(&atransform, R_ViewRollAngle(player));
 	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
@@ -6160,6 +6149,18 @@ void HWR_RenderSkyboxView(player_t *player)
 // ==========================================================================
 //
 // ==========================================================================
+
+static void HWR_RollTransform(FTransform *tr, angle_t roll)
+{
+	if (roll != 0)
+	{
+		tr->rollangle = roll / (float)ANG1;
+		tr->roll = true;
+		tr->rollx = 1.0f;
+		tr->rollz = 0.0f;
+	}
+}
+
 void HWR_RenderPlayerView(void)
 {
 	player_t * player = &players[displayplayers[viewssnum]];
@@ -6249,14 +6250,7 @@ void HWR_RenderPlayerView(void)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	if (player->viewrollangle != 0)
-	{
-		fixed_t rol = AngleFixed(player->viewrollangle);
-		atransform.rollangle = FIXED_TO_FLOAT(rol);
-		atransform.roll = true;
-		atransform.rollx = 1.0f;
-		atransform.rollz = 0.0f;
-	}
+	HWR_RollTransform(&atransform, R_ViewRollAngle(player));
 	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));

@@ -14,12 +14,13 @@
 #include "z_zone.h"
 #include "w_wad.h"
 #include "r_main.h" // R_PointToAngle
+#include "k_kart.h" // K_Sliptiding
 
 #ifdef ROTSPRITE
 fixed_t rollcosang[ROTANGLES];
 fixed_t rollsinang[ROTANGLES];
 
-angle_t R_SpriteRotationAngle(mobj_t *mobj)
+angle_t R_GetPitchRollAngle(mobj_t *mobj)
 {
 	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
 
@@ -28,7 +29,30 @@ angle_t R_SpriteRotationAngle(mobj_t *mobj)
 
 	angle_t rollOrPitch = FixedMul(mobj->pitch, pitchMul) + FixedMul(mobj->roll, rollMul);
 
-	return (rollOrPitch + mobj->rollangle);
+	return rollOrPitch;
+}
+
+angle_t R_SpriteRotationAngle(mobj_t *mobj)
+{
+	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
+	angle_t angleDelta = (viewingAngle - mobj->angle);
+
+	angle_t sliptideLift = mobj->player
+		? mobj->player->aizDriftTilt : 0;
+
+	angle_t rollOrPitch = R_GetPitchRollAngle(mobj);
+	angle_t rollAngle = (rollOrPitch + mobj->rollangle);
+
+	if (sliptideLift)
+	{
+		/* (from side) tilt downward if turning
+		   toward camera, upward if away. */
+		rollAngle +=
+			FixedMul(sliptideLift, FINESINE(AbsAngle(angleDelta) >> ANGLETOFINESHIFT)) +
+			FixedMul(sliptideLift, FINECOSINE(angleDelta >> ANGLETOFINESHIFT));
+	}
+
+	return rollAngle;
 }
 
 INT32 R_GetRollAngle(angle_t rollangle)
