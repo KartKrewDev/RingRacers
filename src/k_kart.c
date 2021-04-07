@@ -1849,6 +1849,8 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 	fast->colorized = true;
 	K_MatchGenericExtraFlags(fast, mo);
 	P_SetMobjState(fast, S_KARTINVLINES1);
+	if (mo->player->kartstuff[k_invincibilitytimer] < 10*TICRATE)
+		fast->destscale = 6*((mo->player->kartstuff[k_invincibilitytimer]/TICRATE)*FRACUNIT)/8;
 }
 
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
