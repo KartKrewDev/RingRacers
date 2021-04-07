@@ -7378,7 +7378,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		}
 	}
 
-	if (!player->kartstuff[k_aizdriftstrat])
+	if (!K_Sliptiding(player))
 	{
 		player->aizDriftTilt -= player->aizDriftTilt / 4;
 		player->aizDriftTurn -= player->aizDriftTurn / 4;
