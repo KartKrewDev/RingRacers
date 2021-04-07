@@ -325,6 +325,7 @@ void A_MayonakaArrow(mobj_t *actor);
 void A_ReaperThinker(mobj_t *actor);
 void A_MementosTPParticles(mobj_t *actor);
 void A_FlameShieldPaper(mobj_t *actor);
+void A_InvincSparkleRotate(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -14795,4 +14796,27 @@ void A_FlameShieldPaper(mobj_t *actor)
 
 		paper->extravalue1 = i;
 	}
+}
+
+void A_InvincSparkleRotate(mobj_t *actor)
+{
+	fixed_t sx, sy, sz;	// Teleport dests.
+
+	if (LUA_CallAction(A_INVINCSPARKLEROTATE, actor))
+		return;
+
+	if (!actor->target || P_MobjWasRemoved(actor->target))
+		return;
+
+	//CONS_Printf("%d\n", actor->movefactor/FRACUNIT);
+	sx = actor->target->x + FixedMul((actor->movefactor), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
+	sy = actor->target->y + FixedMul((actor->movefactor), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
+	sz = actor->target->z + (actor->extravalue1) + FixedMul((actor->cvmem), FINECOSINE((leveltime*ANG1*10 + actor->angle)>>ANGLETOFINESHIFT));
+	P_TeleportMove(actor, sx, sy, sz);
+
+	actor->momx = actor->target->momx;
+	actor->momy = actor->target->momy;
+	actor->momz = actor->target->momz;	// Give momentum for eventual interp builds idk.
+
+	actor->angle += ANG1*10*(actor->extravalue2);	// Arbitrary value, change this if you want, I suppose.
 }

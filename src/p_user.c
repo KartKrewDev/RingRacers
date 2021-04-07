@@ -2595,7 +2595,7 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 //
 
 // SRB2Kart: Use for GP?
-/* 
+/*
 static void P_ConsiderAllGone(void)
 {
 	INT32 i, lastdeadplayer = -1, deadtimercheck = INT32_MAX;

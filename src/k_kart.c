@@ -401,6 +401,22 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
 
+// Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
+static INT32 K_SparkleTrailStartStates[KART_NUMINVSPARKLESANIM][2] = {
+	{S_KARTINVULN12, S_KARTINVULNB12},
+	{S_KARTINVULN11, S_KARTINVULNB11},
+	{S_KARTINVULN10, S_KARTINVULNB10},
+	{S_KARTINVULN9, S_KARTINVULNB9},
+	{S_KARTINVULN8, S_KARTINVULNB8},
+	{S_KARTINVULN7, S_KARTINVULNB7},
+	{S_KARTINVULN6, S_KARTINVULNB6},
+	{S_KARTINVULN5, S_KARTINVULNB5},
+	{S_KARTINVULN4, S_KARTINVULNB4},
+	{S_KARTINVULN3, S_KARTINVULNB3},
+	{S_KARTINVULN2, S_KARTINVULNB2},
+	{S_KARTINVULN1, S_KARTINVULNB1}
+};
+
 INT32 K_GetShieldFromItem(INT32 item)
 {
 	switch (item)
@@ -1792,6 +1808,51 @@ void K_SpawnDriftBoostClipSpark(mobj_t *clip)
 	spark->momy = clip->momx/2;
 }
 
+void K_SpawnNormalSpeedLines(player_t *player)
+{
+	mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
+		player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
+		player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
+		MT_FASTLINE);
+
+	P_SetTarget(&fast->target, player->mo);
+	fast->angle = K_MomentumAngle(player->mo);
+	fast->momx = 3*player->mo->momx/4;
+	fast->momy = 3*player->mo->momy/4;
+	fast->momz = 3*player->mo->momz/4;
+
+	K_MatchGenericExtraFlags(fast, player->mo);
+
+	// Make it red when you have the eggman speed boost
+	if (player->kartstuff[k_eggmanexplode])
+	{
+		fast->color = SKINCOLOR_RED;
+		fast->colorized = true;
+	}
+}
+
+void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
+{
+	mobj_t *fast = P_SpawnMobjFromMobj(mo,
+		P_RandomRange(-48, 48) * FRACUNIT,
+  		P_RandomRange(-48, 48) * FRACUNIT,
+  		P_RandomRange(0, 64) * FRACUNIT,
+  		MT_FASTLINE);
+
+	fast->momx = 3*mo->momx/4;
+	fast->momy = 3*mo->momy/4;
+	fast->momz = 3*mo->momz/4;
+
+	P_SetTarget(&fast->target, mo);
+	fast->angle = K_MomentumAngle(mo);
+	fast->color = mo->color;
+	fast->colorized = true;
+	K_MatchGenericExtraFlags(fast, mo);
+	P_SetMobjState(fast, S_KARTINVLINES1);
+	if (mo->player->kartstuff[k_invincibilitytimer] < 10*TICRATE)
+		fast->destscale = 6*((mo->player->kartstuff[k_invincibilitytimer]/TICRATE)*FRACUNIT)/8;
+}
+
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
@@ -2488,7 +2549,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->kartstuff[k_draftpower] > 0) // Drafting
 	{
 		// 30% - 44%, each point of speed adds 1.75%
-		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((7*FRACUNIT)/400)); 
+		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((7*FRACUNIT)/400));
 		speedboost += FixedMul(draftspeed, player->kartstuff[k_draftpower]); // (Drafting suffers no boost stack penalty.)
 		numboosts++;
 	}
@@ -3758,20 +3819,44 @@ void K_SpawnBoostTrail(player_t *player)
 
 void K_SpawnSparkleTrail(mobj_t *mo)
 {
-	const INT32 rad = (mo->radius*2)>>FRACBITS;
+	const INT32 rad = (mo->radius*3)/FRACUNIT;
 	mobj_t *sparkle;
 	INT32 i;
+	UINT8 invanimnum; // Current sparkle animation number
+	INT32 invtime;// Invincibility time left, in seconds
+	UINT8 index = 1;
+	fixed_t newx, newy, newz;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	for (i = 0; i < 3; i++)
+	if ((mo->player->kartstuff[k_sneakertimer]
+		|| mo->player->kartstuff[k_ringboost] || mo->player->kartstuff[k_driftboost]
+		|| mo->player->kartstuff[k_startboost] || mo->player->kartstuff[k_eggmanexplode]))
 	{
-		fixed_t newx = mo->x + mo->momx + (P_RandomRange(-rad, rad)<<FRACBITS);
-		fixed_t newy = mo->y + mo->momy + (P_RandomRange(-rad, rad)<<FRACBITS);
-		fixed_t newz = mo->z + mo->momz + (P_RandomRange(0, mo->height>>FRACBITS)<<FRACBITS);
+		return;
+	}
+
+	if (leveltime & 2)
+		index = 2;
+
+	invtime = mo->player->kartstuff[k_invincibilitytimer]/TICRATE+1;
+
+	//CONS_Printf("%d\n", index);
+
+	for (i = 0; i < 8; i++)
+	{
+		newx = mo->x + (P_RandomRange(-rad, rad)*FRACUNIT);
+		newy = mo->y + (P_RandomRange(-rad, rad)*FRACUNIT);
+		newz = mo->z + (P_RandomRange(0, mo->height>>FRACBITS)*FRACUNIT);
 
 		sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
+		sparkle->angle = R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y);
+		sparkle->movefactor = R_PointToDist2(mo->x, mo->y, sparkle->x, sparkle->y);	// Save the distance we spawned away from the player.
+		//CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
+		sparkle->extravalue1 = (sparkle->z - mo->z);			// Keep track of our Z position relative to the player's, I suppose.
+		sparkle->extravalue2 = P_RandomRange(0, 1) ? 1 : -1;	// Rotation direction?
+		sparkle->cvmem = P_RandomRange(-25, 25)*mo->scale;		// Vertical "angle"
 		K_FlipFromObject(sparkle, mo);
 
 		//if (i == 0)
@@ -3780,11 +3865,13 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 		P_SetTarget(&sparkle->target, mo);
 		sparkle->destscale = mo->destscale;
 		P_SetScale(sparkle, mo->scale);
-		sparkle->color = mo->color;
-		//sparkle->colorized = mo->colorized;
 	}
 
-	P_SetMobjState(sparkle, S_KARTINVULN_LARGE1);
+	invanimnum = (invtime >= 11) ? 11 : invtime;
+	//CONS_Printf("%d\n", invanimnum);
+	P_SetMobjState(sparkle, K_SparkleTrailStartStates[invanimnum][index]);
+	sparkle->colorized = true;
+	sparkle->color = mo->color;
 }
 
 void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad)
@@ -6047,25 +6134,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				|| player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]
 				|| player->kartstuff[k_eggmanexplode])
 			{
-				mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
-					player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
-					player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
-					MT_FASTLINE);
-
-				P_SetTarget(&fast->target, player->mo);
-				fast->angle = K_MomentumAngle(player->mo);
-				fast->momx = 3*player->mo->momx/4;
-				fast->momy = 3*player->mo->momy/4;
-				fast->momz = 3*player->mo->momz/4;
-
-				K_MatchGenericExtraFlags(fast, player->mo);
-
-				// Make it red when you have the eggman speed boost
-				if (player->kartstuff[k_eggmanexplode])
-				{
-					fast->color = SKINCOLOR_RED;
-					fast->colorized = true;
-				}
+				if (player->kartstuff[k_invincibilitytimer])
+					K_SpawnInvincibilitySpeedLines(player->mo);
+				else
+					K_SpawnNormalSpeedLines(player);
 			}
 
 			if (player->kartstuff[k_numboosts] > 0) // Boosting after images
