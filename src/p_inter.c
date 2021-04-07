@@ -1399,7 +1399,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				else
 				{
 					flingAngle = target->angle + ANGLE_180;
-	
+
 					if (P_RandomByte() & 1)
 					{
 						flingAngle -= ANGLE_45;
@@ -1982,10 +1982,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
-					if (source->player->kartstuff[k_invincibilitytimer])
+					// Extend the invincibility if the hit was a direct hit.
+					if (inflictor == source && source->player->kartstuff[k_invincibilitytimer])
 					{
 						kinvextend = (source->player->kartstuff[k_invincibilitytimer])+5*TICRATE;
-						CONS_Printf("extend k_invincibilitytimer for %s - old value %d new value %d\n", player_names[source->player -  players], source->player->kartstuff[k_invincibilitytimer]/TICRATE, kinvextend/TICRATE);
+						//CONS_Printf("extend k_invincibilitytimer for %s - old value %d new value %d\n", player_names[source->player -  players], source->player->kartstuff[k_invincibilitytimer]/TICRATE, kinvextend/TICRATE);
 						source->player->kartstuff[k_invincibilitytimer] = kinvextend;
 					}
 
