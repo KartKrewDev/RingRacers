@@ -7123,36 +7123,36 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 	fixed_t weightadjust = INT32_MAX;
 
-	if (player->mo == NULL || P_MobjWasRemoved(player->mo))
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) || player->spectator || objectplacing)
 	{
-		return 0;
-	}
-
-	if (player->spectator || objectplacing)
-	{
+		// Invalid object, or incorporeal player. Return the value exactly.
 		return turnvalue;
 	}
 
 	if (leveltime < introtime)
 	{
-		return 0;
-	}
-
-	if (player->trickpanel != 0)
-	{
+		// No turning during the intro
 		return 0;
 	}
 
 	if (player->respawn.state == RESPAWNST_MOVE)
 	{
+		// No turning during respawn
+		return 0;
+	}
+
+	if (player->trickpanel != 0)
+	{
+		// No turning during trick panel
 		return 0;
 	}
 
 	currentSpeed = FixedHypot(player->mo->momx, player->mo->momy);
 
 	if ((currentSpeed <= 0) // Not moving
-	&& ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK) // not e-braking
-	&& (player->respawn.state == RESPAWNST_NONE)) // Not respawning
+	&& ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK) // Not e-braking
+	&& (player->respawn.state == RESPAWNST_NONE) // Not respawning
+	&& (P_IsObjectOnGround(player->mo) == true)) // On the ground
 	{
 		return 0;
 	}
