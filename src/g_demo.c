@@ -809,7 +809,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		ghostext[playernum].flags = 0;
 	}
 
-	if (ghost->player && ghost->player->followmobj&& !(ghost->player->followmobj->sprite == SPR_NULL || (ghost->player->followmobj->drawflags & MFD_DONTDRAW) == MFD_DONTDRAW)) // bloats tails runs but what can ya do
+	if (ghost->player && ghost->player->followmobj&& !(ghost->player->followmobj->sprite == SPR_NULL || (ghost->player->followmobj->renderflags & RF_DONTDRAW) == RF_DONTDRAW)) // bloats tails runs but what can ya do
 	{
 		fixed_t temp;
 		UINT8 *followtic_p = demo_p++;
@@ -1153,7 +1153,7 @@ void G_GhostTicker(void)
 		if (g->fadein)
 		{
 			g->mo->frame += (((--g->fadein)/6)<<FF_TRANSSHIFT); // this calc never exceeds 9 unless g->fadein is bad, and it's only set once, so...
-			g->mo->drawflags &= ~MFD_DONTDRAW;
+			g->mo->renderflags &= ~RF_DONTDRAW;
 		}
 		g->mo->sprite2 = g->oldmo.sprite2;
 
@@ -1433,7 +1433,7 @@ void G_PreviewRewind(tic_t previewtime)
 		if (!info->playerinfo[i].ingame || !info->playerinfo[i].player.mo)
 		{
 			if (players[i].mo)
-				players[i].mo->drawflags |= MFD_DONTDRAW;
+				players[i].mo->renderflags |= RF_DONTDRAW;
 
 			continue;
 		}
@@ -1441,7 +1441,7 @@ void G_PreviewRewind(tic_t previewtime)
 		if (!players[i].mo)
 			continue; //@TODO spawn temp object to act as a player display
 
-		players[i].mo->drawflags &= ~MFD_DONTDRAW;
+		players[i].mo->renderflags &= ~RF_DONTDRAW;
 
 		P_UnsetThingPosition(players[i].mo);
 #define TWEEN(pr) info->playerinfo[i].mobj.pr + FixedMul((INT32) (next_info->playerinfo[i].mobj.pr - info->playerinfo[i].mobj.pr), tweenvalue)
@@ -1809,7 +1809,7 @@ void G_WriteMetalTic(mobj_t *metal)
 		ghostext[0].flags = 0;
 	}
 
-	if (metal->player && metal->player->followmobj && !(metal->player->followmobj->sprite == SPR_NULL || (metal->player->followmobj->drawflags & MFD_DONTDRAW) == MFD_DONTDRAW))
+	if (metal->player && metal->player->followmobj && !(metal->player->followmobj->sprite == SPR_NULL || (metal->player->followmobj->renderflags & RF_DONTDRAW) == RF_DONTDRAW))
 	{
 		fixed_t temp;
 		UINT8 *followtic_p = demo_p++;
@@ -3317,7 +3317,7 @@ void G_AddGhost(char *defdemoname)
 	gh->mo->sprite = gh->mo->state->sprite;
 	gh->mo->sprite2 = (gh->mo->state->frame & FF_FRAMEMASK);
 	//gh->mo->frame = tr_trans30<<FF_TRANSSHIFT;
-	gh->mo->drawflags |= MFD_DONTDRAW;
+	gh->mo->renderflags |= RF_DONTDRAW;
 	gh->fadein = (9-3)*6; // fade from invisible to trans30 over as close to 35 tics as possible
 	gh->mo->tics = -1;
 

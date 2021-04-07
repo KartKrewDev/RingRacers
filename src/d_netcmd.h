@@ -27,9 +27,7 @@ extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
 // preferred number of players
 extern consvar_t cv_splitplayers;
 
-#ifdef SEENAMES
-extern consvar_t cv_seenames, cv_allowseenames;
-#endif
+extern consvar_t cv_seenames;
 extern consvar_t cv_usemouse;
 extern consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
@@ -53,9 +51,6 @@ extern consvar_t cv_teamscramble;
 extern consvar_t cv_scrambleonchange;
 
 extern consvar_t cv_netstat;
-#ifdef WALLSPLATS
-extern consvar_t cv_splats;
-#endif
 
 extern consvar_t cv_countdowntime;
 extern consvar_t cv_runscripts;

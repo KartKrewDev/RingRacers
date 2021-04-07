@@ -499,7 +499,11 @@ typedef struct player_s
 	fixed_t bob;
 
 	angle_t viewrollangle;
+	// camera tilt
+	// TODO: expose to lua
+	angle_t tilt;
 
+	INT16 steering;
 	angle_t angleturn;
 
 	// Mouse aiming, where the guy is looking at!
@@ -526,6 +530,8 @@ typedef struct player_s
 	tic_t airtime; 		// Keep track of how long you've been in the air
 	boolean driftInput; // Whenever or not try drifting.
 	boolean airFailsafe; // Whenever or not try the air boost
+	INT32 aizDriftTilt;
+	INT32 aizDriftTurn;
 
 	UINT8 trickpanel; 	// Trick panel state
 	boolean trickdelay;	// Prevent tricks until control stick is neutral

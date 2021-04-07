@@ -162,7 +162,7 @@ typedef struct consvar_s //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NUL
 
 /* name, defaultvalue, flags, PossibleValue, func */
 #define CVAR_INIT( ... ) \
-{ __VA_ARGS__, 0, NULL, NULL, {0}, 0U, (char)0, NULL }
+{ __VA_ARGS__, 0, NULL, NULL, {0, {NULL}}, 0U, (char)0, NULL }
 
 extern CV_PossibleValue_t CV_OnOff[];
 extern CV_PossibleValue_t CV_YesNo[];

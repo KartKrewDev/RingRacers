@@ -258,11 +258,7 @@ consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT
 static CV_PossibleValue_t respawntime_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_respawntime = CVAR_INIT ("respawndelay", "1", CV_NETVAR|CV_CHEAT, respawntime_cons_t, NULL);
 
-#ifdef SEENAMES
-static CV_PossibleValue_t seenames_cons_t[] = {{0, "Off"}, {1, "Colorless"}, {2, "Team"}, {3, "Ally/Foe"}, {0, NULL}};
-consvar_t cv_seenames = CVAR_INIT ("seenames", "Off", CV_SAVE, seenames_cons_t, NULL);
-consvar_t cv_allowseenames = CVAR_INIT ("allowseenames", "No", CV_NETVAR, CV_YesNo, NULL);
-#endif
+consvar_t cv_seenames = CVAR_INIT ("seenames", "On", CV_SAVE, CV_OnOff, NULL);
 
 // names
 consvar_t cv_playername[MAXSPLITSCREENPLAYERS] = {
@@ -744,10 +740,6 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_showping);
 	CV_RegisterVar(&cv_showviewpointtext);
 
-#ifdef SEENAMES
-	CV_RegisterVar(&cv_allowseenames);
-#endif
-
 	CV_RegisterVar(&cv_dummyconsvar);
 
 #ifdef USE_STUN
@@ -848,15 +840,12 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_zlib_strategya);
 	CV_RegisterVar(&cv_zlib_window_bitsa);
 	CV_RegisterVar(&cv_apng_delay);
+	CV_RegisterVar(&cv_apng_downscale);
 	// GIF variables
 	CV_RegisterVar(&cv_gif_optimize);
 	CV_RegisterVar(&cv_gif_downscale);
 	CV_RegisterVar(&cv_gif_dynamicdelay);
 	CV_RegisterVar(&cv_gif_localcolortable);
-
-#ifdef WALLSPLATS
-	CV_RegisterVar(&cv_splats);
-#endif
 
 	// register these so it is saved to config
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
@@ -871,9 +860,7 @@ void D_RegisterClientCommands(void)
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);
 
-#ifdef SEENAMES
 	CV_RegisterVar(&cv_seenames);
-#endif
 	CV_RegisterVar(&cv_rollingdemos);
 	CV_RegisterVar(&cv_netstat);
 	CV_RegisterVar(&cv_netticbuffer);
@@ -2806,7 +2793,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	INT32 resetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, FLS;
 	boolean pencoremode;
-	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -2863,9 +2849,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		emeralds = 0;
 		memset(&luabanks, 0, sizeof(luabanks));
 	}
-
-	mapnumber = M_MapNumber(mapname[3], mapname[4]);
-	LUAh_MapChange(mapnumber);
 
 	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
 	demo.savebutton = 0;
@@ -3915,7 +3898,13 @@ static void Command_Addfile(void)
 			if (!isprint(fn[i]) || fn[i] == ';')
 				return;
 
-		musiconly = W_VerifyNMUSlumps(fn);
+		musiconly = W_VerifyNMUSlumps(fn, false);
+
+		if (musiconly == -1)
+		{
+			addedfiles[numfilesadded++] = fn;
+			continue;
+		}
 
 		if (!musiconly)
 		{
@@ -4225,8 +4214,7 @@ static void Command_Playintro_f(void)
   */
 FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 {
-	if (Playing())
-		LUAh_GameQuit();
+	LUAh_GameQuit(true);
 	I_Quit();
 }
 
@@ -4810,8 +4798,7 @@ void Command_ExitGame_f(void)
 {
 	INT32 i;
 
-	if (Playing())
-		LUAh_GameQuit();
+	LUAh_GameQuit(false);
 
 	D_QuitNetGame();
 	CL_Reset();

@@ -252,6 +252,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->flashpal);
 	else if (fastcmp(field,"skincolor"))
 		lua_pushinteger(L, plr->skincolor);
+	else if (fastcmp(field,"skin"))
+		lua_pushinteger(L, plr->skin);
+	else if (fastcmp(field,"availabilities"))
+		lua_pushinteger(L, plr->availabilities);
 	else if (fastcmp(field,"score"))
 		lua_pushinteger(L, plr->score);
 	// SRB2kart
@@ -526,6 +530,10 @@ static int player_set(lua_State *L)
 			return luaL_error(L, "player.skincolor %d out of range (0 - %d).", newcolor, numskincolors-1);
 		plr->skincolor = newcolor;
 	}
+	else if (fastcmp(field,"skin"))
+		return NOSET;
+	else if (fastcmp(field,"availabilities"))
+		return NOSET;
 	else if (fastcmp(field,"score"))
 		plr->score = (UINT32)luaL_checkinteger(L, 3);
 	// SRB2kart

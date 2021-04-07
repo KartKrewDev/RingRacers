@@ -194,6 +194,7 @@ typedef enum
 	MF2_AMBUSH         = 1<<27, // Alternate behaviour typically set by MTF_AMBUSH
 	MF2_LINKDRAW       = 1<<28, // Draw vissprite of mobj immediately before/after tracer's vissprite (dependent on dispoffset and position)
 	MF2_SHIELD         = 1<<29, // Thinker calls P_AddShield/P_ShieldLook (must be partnered with MF_SCENERY to use)
+	MF2_SPLAT          = 1<<30, // Renders as a splat
 	// free: to and including 1<<31
 } mobjflag2_t;
 
@@ -250,42 +251,6 @@ typedef enum
 } mobjeflag_t;
 
 //
-// Mobj drawing flags
-// Set by hex, to make masking shenanigans easier to keep track of.
-//
-typedef enum
-{
-	// Don't generate a vissprite for individual screens
-	MFD_DONTDRAWP1			= 0x0001,
-	MFD_DONTDRAWP2			= 0x0002,
-	MFD_DONTDRAWP3			= 0x0004,
-	MFD_DONTDRAWP4			= 0x0008,
-	// Transparency override flags
-	MFD_TRANS10				= 0x0010,
-	MFD_TRANS20				= 0x0020,
-	MFD_TRANS30				= 0x0030,
-	MFD_TRANS40				= 0x0040,
-	MFD_TRANS50				= 0x0050,
-	MFD_TRANS60				= 0x0060,
-	MFD_TRANS70				= 0x0070,
-	MFD_TRANS80				= 0x0080,
-	MFD_TRANS90				= 0x0090,
-	MFD_TRANSADD			= 0x00A0,
-	MFD_TRANSSUB			= 0x00B0,
-	MFD_TRANSMASK			= 0x00F0,
-	// Brightness override flags
-	MFD_FULLBRIGHT			= 0x0100,
-	MFD_SEMIBRIGHT			= 0x0200,
-	MFD_NOBRIGHT			= 0x0300,
-	MFD_BRIGHTMASK			= 0x0F00,
-	// Shortcuts
-	MFD_DONTDRAW			= MFD_DONTDRAWP1|MFD_DONTDRAWP2|MFD_DONTDRAWP3|MFD_DONTDRAWP4,
-	MFD_SHADOW				= MFD_TRANS80|MFD_FULLBRIGHT,
-	MFD_TRANSSHIFT			= 4,
-	// free: to and including 0x8000
-} mobjdflag_t;
-
-//
 // PRECIPITATION flags ?! ?! ?!
 //
 typedef enum {
@@ -321,6 +286,11 @@ typedef struct mobj_s
 	UINT8 sprite2; // player sprites
 	UINT16 anim_duration; // for FF_ANIMATE states
 
+	UINT32 renderflags; // render flags
+	fixed_t spritexscale, spriteyscale;
+	fixed_t spritexoffset, spriteyoffset;
+	struct pslope_s *floorspriteslope; // The slope that the floorsprite is rotated by
+
 	struct msecnode_s *touching_sectorlist; // a linked list of sectors where this object appears
 
 	struct subsector_s *subsector; // Subsector the mobj resides in.
@@ -346,7 +316,6 @@ typedef struct mobj_s
 	UINT32 flags; // flags from mobjinfo tables
 	UINT32 flags2; // MF2_ flags
 	UINT16 eflags; // extra flags
-	UINT16 drawflags; // Rendering-related flags. These should not be used for game logic.
 
 	void *skin; // overrides 'sprite' when non-NULL (for player bodies to 'remember' the skin)
 	// Player and mobj sprites in multiplayer modes are modified
@@ -447,12 +416,17 @@ typedef struct precipmobj_s
 	struct precipmobj_s **sprev; // killough 8/11/98: change to ptr-to-ptr
 
 	// More drawing info: to determine current sprite.
-	angle_t angle, pitch, roll;  // orientation
+	angle_t angle, pitch, roll; // orientation
 	angle_t rollangle;
 	spritenum_t sprite; // used to find patch_t and flip value
 	UINT32 frame; // frame number, plus bits see p_pspr.h
 	UINT8 sprite2; // player sprites
 	UINT16 anim_duration; // for FF_ANIMATE states
+
+	UINT32 renderflags; // render flags
+	fixed_t spritexscale, spriteyscale;
+	fixed_t spritexoffset, spriteyoffset;
+	struct pslope_s *floorspriteslope; // The slope that the floorsprite is rotated by
 
 	struct mprecipsecnode_s *touching_sectorlist; // a linked list of sectors where this object appears
 
@@ -517,6 +491,8 @@ void P_SpawnItemPattern(mapthing_t *mthing, boolean bonustime);
 void P_SpawnHoopOfSomething(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle);
 void P_SpawnPrecipitation(void);
 void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, statenum_t nstate, angle_t rotangle, boolean spawncenter);
+void *P_CreateFloorSpriteSlope(mobj_t *mobj);
+void P_RemoveFloorSpriteSlope(mobj_t *mobj);
 boolean P_BossTargetPlayer(mobj_t *actor, boolean closest);
 boolean P_SupermanLook4Players(mobj_t *actor);
 void P_DestroyRobots(void);

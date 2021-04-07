@@ -25,6 +25,7 @@
 #include "p_local.h" // Camera...
 #include "p_slopes.h"
 #include "console.h" // con_clipviewtop
+#include "taglist.h"
 
 // OPTIMIZE: closed two sided lines as single sided
 
@@ -71,166 +72,6 @@ static fixed_t bottomfrac, bottomstep;
 static lighttable_t **walllights;
 static INT16 *maskedtexturecol;
 static fixed_t *maskedtextureheight = NULL;
-
-// ==========================================================================
-// R_Splats Wall Splats Drawer
-// ==========================================================================
-
-#ifdef WALLSPLATS
-static INT16 last_ceilingclip[MAXVIDWIDTH];
-static INT16 last_floorclip[MAXVIDWIDTH];
-
-static void R_DrawSplatColumn(column_t *column)
-{
-	INT32 topscreen, bottomscreen;
-	fixed_t basetexturemid;
-	INT32 topdelta, prevdelta = -1;
-
-	basetexturemid = dc_texturemid;
-
-	for (; column->topdelta != 0xff ;)
-	{
-		// calculate unclipped screen coordinates for post
-		topdelta = column->topdelta;
-		if (topdelta <= prevdelta)
-			topdelta += prevdelta;
-		prevdelta = topdelta;
-		topscreen = sprtopscreen + spryscale*topdelta;
-		bottomscreen = topscreen + spryscale*column->length;
-
-		dc_yl = (topscreen+FRACUNIT-1)>>FRACBITS;
-		dc_yh = (bottomscreen-1)>>FRACBITS;
-
-		if (dc_yh >= last_floorclip[dc_x])
-			dc_yh = last_floorclip[dc_x] - 1;
-		if (dc_yl <= last_ceilingclip[dc_x])
-			dc_yl = last_ceilingclip[dc_x] + 1;
-		if (dc_yl <= dc_yh && dl_yh < vid.height && yh > 0)
-		{
-			dc_source = (UINT8 *)column + 3;
-			dc_texturemid = basetexturemid - (topdelta<<FRACBITS);
-
-			// Drawn by R_DrawColumn.
-			colfunc();
-		}
-		column = (column_t *)((UINT8 *)column + column->length + 4);
-	}
-
-	dc_texturemid = basetexturemid;
-}
-
-static void R_DrawWallSplats(void)
-{
-	wallsplat_t *splat;
-	seg_t *seg;
-	angle_t angle, angle1, angle2;
-	INT32 x1, x2;
-	size_t pindex;
-	column_t *col;
-	patch_t *patch;
-	fixed_t texturecolumn;
-
-	splat = (wallsplat_t *)linedef->splats;
-
-	I_Assert(splat != NULL);
-
-	seg = ds_p->curline;
-
-	// draw all splats from the line that touches the range of the seg
-	for (; splat; splat = splat->next)
-	{
-		angle1 = R_PointToAngle(splat->v1.x, splat->v1.y);
-		angle2 = R_PointToAngle(splat->v2.x, splat->v2.y);
-		angle1 = (angle1 - viewangle + ANGLE_90)>>ANGLETOFINESHIFT;
-		angle2 = (angle2 - viewangle + ANGLE_90)>>ANGLETOFINESHIFT;
-		// out of the viewangletox lut
-		/// \todo clip it to the screen
-		if (angle1 > FINEANGLES/2 || angle2 > FINEANGLES/2)
-			continue;
-		x1 = viewangletox[angle1];
-		x2 = viewangletox[angle2];
-
-		if (x1 >= x2)
-			continue; // does not cross a pixel
-
-		// splat is not in this seg range
-		if (x2 < ds_p->x1 || x1 > ds_p->x2)
-			continue;
-
-		if (x1 < ds_p->x1)
-			x1 = ds_p->x1;
-		if (x2 > ds_p->x2)
-			x2 = ds_p->x2;
-		if (x2 <= x1)
-			continue;
-
-		// calculate incremental stepping values for texture edges
-		rw_scalestep = ds_p->scalestep;
-		spryscale = ds_p->scale1 + (x1 - ds_p->x1)*rw_scalestep;
-		mfloorclip = floorclip;
-		mceilingclip = ceilingclip;
-
-		patch = W_CachePatchNum(splat->patch, PU_PATCH);
-
-		dc_texturemid = splat->top + (SHORT(patch->height)<<(FRACBITS-1)) - viewz;
-		if (splat->yoffset)
-			dc_texturemid += *splat->yoffset;
-
-		sprtopscreen = centeryfrac - FixedMul(dc_texturemid, spryscale);
-
-		// set drawing mode
-		switch (splat->flags & SPLATDRAWMODE_MASK)
-		{
-			case SPLATDRAWMODE_OPAQUE:
-				colfunc = colfuncs[BASEDRAWFUNC];
-				break;
-			case SPLATDRAWMODE_TRANS:
-				dc_transmap = transtables + ((tr_trans50 - 1)<<FF_TRANSSHIFT);
-				colfunc = fuzzcolfunc;
-				break;
-			case SPLATDRAWMODE_SHADE:
-				colfunc = colfuncs[COLDRAWFUNC_SHADE];
-				break;
-		}
-
-		dc_texheight = 0;
-
-		// draw the columns
-		for (dc_x = x1; dc_x <= x2; dc_x++, spryscale += rw_scalestep)
-		{
-			pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
-			if (pindex >= MAXLIGHTSCALE)
-				pindex = MAXLIGHTSCALE - 1;
-			dc_colormap = walllights[pindex];
-			if (encoremap && !(seg->linedef->flags & ML_TFERLINE))
-				dc_colormap += COLORMAP_REMAPOFFSET;
-
-			if (frontsector->extra_colormap)
-				dc_colormap = frontsector->extra_colormap->colormap + (dc_colormap - colormaps);
-
-			sprtopscreen = centeryfrac - FixedMul(dc_texturemid, spryscale);
-			dc_iscale = 0xffffffffu / (unsigned)spryscale;
-
-			// find column of patch, from perspective
-			angle = (rw_centerangle + xtoviewangle[viewssnum][dc_x])>>ANGLETOFINESHIFT;
-				texturecolumn = rw_offset2 - splat->offset
-					- FixedMul(FINETANGENT(angle), rw_distance);
-
-			// FIXME!
-			texturecolumn >>= FRACBITS;
-			if (texturecolumn < 0 || texturecolumn >= SHORT(patch->width))
-				continue;
-
-			// draw the texture
-			col = (column_t *)((UINT8 *)patch + LONG(patch->columnofs[texturecolumn]));
-			R_DrawSplatColumn(col);
-		}
-	} // next splat
-
-	colfunc = colfuncs[BASEDRAWFUNC];
-}
-
-#endif //WALLSPLATS
 
 // ==========================================================================
 // R_RenderMaskedSegRange
@@ -281,20 +122,10 @@ static void R_Render2sidedMultiPatchColumn(column_t *column)
 
 transnum_t R_GetLinedefTransTable(line_t *ldef)
 {
-	transnum_t transnum = NUMEFFECTMAPS; // Send back NUMEFFECTMAPS for none
+	transnum_t transnum = NUMTRANSMAPS; // Send back NUMTRANSMAPS for none
 	fixed_t alpha = ldef->alpha;
 	if (alpha > 0 && alpha < FRACUNIT)
 		transnum = (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
-	else
-	{
-		switch (ldef->special)
-		{
-			case 910: transnum = tr_transadd; break;
-			case 911: transnum = tr_transsub; break;
-			default: transnum = NUMEFFECTMAPS; break;
-		}
-	}
-
 	return transnum;
 }
 
@@ -312,7 +143,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	INT32 times, repeats;
 	INT64 overflow_test;
 	INT32 range;
-	transnum_t transtable = NUMEFFECTMAPS;
+	transnum_t transtable = NUMTRANSMAPS;
+	patchalphastyle_t blendmode = 0;
 
 	// Calculate light table.
 	// Use different light tables
@@ -330,11 +162,33 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 		return;
 
 	transtable = R_GetLinedefTransTable(ldef);
-	if (transtable != NUMEFFECTMAPS)
+	if (ldef->special == 910)
 	{
-		dc_transmap = transtables + ((transtable - 1) << FF_TRANSSHIFT);
+		if (transtable == NUMTRANSMAPS)
+			transtable = 0;
+		blendmode = AST_ADD;
+	}
+	else if (ldef->special == 911)
+	{
+		if (transtable == NUMTRANSMAPS)
+			transtable = 0;
+		blendmode = AST_SUBTRACT;
+	}
+	else if (ldef->special == 912)
+	{
+		if (transtable == NUMTRANSMAPS)
+			transtable = 0;
+		blendmode = AST_REVERSESUBTRACT;
+	}
+	else if (ldef->special == 913)
+	{
+		transtable = 0;
+		blendmode = AST_MODULATE;
+	}
+	if (transtable != NUMTRANSMAPS && (blendmode || transtable))
+	{
+		dc_transmap = R_GetBlendTable(blendmode, transtable);
 		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
-
 	}
 	else if (ldef->special == 909)
 	{
@@ -347,10 +201,10 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 	if (curline->polyseg && curline->polyseg->translucency > 0)
 	{
-		if (curline->polyseg->translucency >= NUMEFFECTMAPS)
+		if (curline->polyseg->translucency >= NUMTRANSMAPS)
 			return;
 
-		dc_transmap = transtables + ((curline->polyseg->translucency-1)<<FF_TRANSSHIFT);
+		dc_transmap = R_GetTranslucencyTable(curline->polyseg->translucency);
 		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
 	}
 
@@ -717,7 +571,7 @@ static boolean R_IsFFloorTranslucent(visffloor_t *pfloor)
 
 	// Polyobjects have no ffloors, and they're handled in the conditional above.
 	if (pfloor->ffloor != NULL)
-		return (pfloor->ffloor->flags & FF_TRANSLUCENT);
+		return (pfloor->ffloor->flags & (FF_TRANSLUCENT|FF_FOG));
 
 	return false;
 }
@@ -777,32 +631,14 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		boolean fuzzy = true;
 
 		// Hacked up support for alpha value in software mode Tails 09-24-2002
-		if (pfloor->alpha < 12)
-			return; // Don't even draw it
-		else if (pfloor->alpha < 38)
-			dc_transmap = transtables + ((tr_trans90-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha < 64)
-			dc_transmap = transtables + ((tr_trans80-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha < 89)
-			dc_transmap = transtables + ((tr_trans70-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha < 115)
-			dc_transmap = transtables + ((tr_trans60-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha < 140)
-			dc_transmap = transtables + ((tr_trans50-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha < 166)
-			dc_transmap = transtables + ((tr_trans40-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha < 192)
-			dc_transmap = transtables + ((tr_trans30-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha < 217)
-			dc_transmap = transtables + ((tr_trans20-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha < 243)
-			dc_transmap = transtables + ((tr_trans10-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_ADDITIVE)
-			dc_transmap = transtables + ((tr_transadd-1)<<FF_TRANSSHIFT);
-		else if (pfloor->alpha == FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE)
-			dc_transmap = transtables + ((tr_transsub-1)<<FF_TRANSSHIFT);
-		else
-			fuzzy = false; // Opaque
+		// ...unhacked by toaster 04-01-2021
+		{
+			INT32 trans = (10*((256+12) - pfloor->alpha))/255;
+			if (trans >= 10)
+				return; // Don't even draw it
+			if (!(dc_transmap = R_GetBlendTable(pfloor->blend, trans)))
+				fuzzy = false; // Opaque
+		}
 
 		if (fuzzy)
 			colfunc = colfuncs[COLDRAWFUNC_FUZZY];
@@ -1380,7 +1216,7 @@ static void R_RenderSegLoop (void)
 
 							// Lactozilla: Cull part of the column by the 3D floor if it can't be seen
 							// "bottom" is the top pixel of the floor column
-							if (ffbottom >= bottom-1 && R_FFloorCanClip(&ffloor[i]))
+							if (ffbottom >= bottom-1 && R_FFloorCanClip(&ffloor[i]) && !curline->polyseg)
 							{
 								rw_floormarked = true;
 								floorclip[rw_x] = fftop;
@@ -1428,7 +1264,7 @@ static void R_RenderSegLoop (void)
 
 							// Lactozilla: Cull part of the column by the 3D floor if it can't be seen
 							// "top" is the height of the ceiling column
-							if (fftop <= top+1 && R_FFloorCanClip(&ffloor[i]))
+							if (fftop <= top+1 && R_FFloorCanClip(&ffloor[i]) && !curline->polyseg)
 							{
 								rw_ceilingmarked = true;
 								ceilingclip[rw_x] = ffbottom;
@@ -1819,7 +1655,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 			gxt = FixedMul(tr_x, viewcos);
 			gyt = -FixedMul(tr_y, viewsin);
-			ds_p->scale1 = FixedDiv(projection, gxt - gyt);
+			ds_p->scale1 = FixedDiv(projection[viewssnum], gxt - gyt);
 		}
 #endif
 		ds_p->scale2 = ds_p->scale1;
@@ -1838,23 +1674,26 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		// left
 		temp = xtoviewangle[viewssnum][start]+viewangle;
 
+#define FIXED_TO_DOUBLE(x) (((double)(x)) / ((double)FRACUNIT))
+#define DOUBLE_TO_FIXED(x) (fixed_t)((x) * ((double)FRACUNIT))
+
 		{
 			// Both lines can be written in slope-intercept form, so figure out line intersection
-			float a1, b1, c1, a2, b2, c2, det; // 1 is the seg, 2 is the view angle vector...
-			///TODO: convert to FPU
+			double a1, b1, c1, a2, b2, c2, det; // 1 is the seg, 2 is the view angle vector...
+			///TODO: convert to fixed point
 
-			a1 = FIXED_TO_FLOAT(curline->v2->y-curline->v1->y);
-			b1 = FIXED_TO_FLOAT(curline->v1->x-curline->v2->x);
-			c1 = a1*FIXED_TO_FLOAT(curline->v1->x) + b1*FIXED_TO_FLOAT(curline->v1->y);
+			a1 = FIXED_TO_DOUBLE(curline->v2->y-curline->v1->y);
+			b1 = FIXED_TO_DOUBLE(curline->v1->x-curline->v2->x);
+			c1 = a1*FIXED_TO_DOUBLE(curline->v1->x) + b1*FIXED_TO_DOUBLE(curline->v1->y);
 
-			a2 = -FIXED_TO_FLOAT(FINESINE(temp>>ANGLETOFINESHIFT));
-			b2 = FIXED_TO_FLOAT(FINECOSINE(temp>>ANGLETOFINESHIFT));
-			c2 = a2*FIXED_TO_FLOAT(viewx) + b2*FIXED_TO_FLOAT(viewy);
+			a2 = -FIXED_TO_DOUBLE(FINESINE(temp>>ANGLETOFINESHIFT));
+			b2 = FIXED_TO_DOUBLE(FINECOSINE(temp>>ANGLETOFINESHIFT));
+			c2 = a2*FIXED_TO_DOUBLE(viewx) + b2*FIXED_TO_DOUBLE(viewy);
 
 			det = a1*b2 - a2*b1;
 
-			ds_p->leftpos.x = segleft.x = FLOAT_TO_FIXED((b2*c1 - b1*c2)/det);
-			ds_p->leftpos.y = segleft.y = FLOAT_TO_FIXED((a1*c2 - a2*c1)/det);
+			ds_p->leftpos.x = segleft.x = DOUBLE_TO_FIXED((b2*c1 - b1*c2)/det);
+			ds_p->leftpos.y = segleft.y = DOUBLE_TO_FIXED((a1*c2 - a2*c1)/det);
 		}
 
 		// right
@@ -1862,22 +1701,26 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 		{
 			// Both lines can be written in slope-intercept form, so figure out line intersection
-			float a1, b1, c1, a2, b2, c2, det; // 1 is the seg, 2 is the view angle vector...
-			///TODO: convert to FPU
+			double a1, b1, c1, a2, b2, c2, det; // 1 is the seg, 2 is the view angle vector...
+			///TODO: convert to fixed point
 
-			a1 = FIXED_TO_FLOAT(curline->v2->y-curline->v1->y);
-			b1 = FIXED_TO_FLOAT(curline->v1->x-curline->v2->x);
-			c1 = a1*FIXED_TO_FLOAT(curline->v1->x) + b1*FIXED_TO_FLOAT(curline->v1->y);
+			a1 = FIXED_TO_DOUBLE(curline->v2->y-curline->v1->y);
+			b1 = FIXED_TO_DOUBLE(curline->v1->x-curline->v2->x);
+			c1 = a1*FIXED_TO_DOUBLE(curline->v1->x) + b1*FIXED_TO_DOUBLE(curline->v1->y);
 
-			a2 = -FIXED_TO_FLOAT(FINESINE(temp>>ANGLETOFINESHIFT));
-			b2 = FIXED_TO_FLOAT(FINECOSINE(temp>>ANGLETOFINESHIFT));
-			c2 = a2*FIXED_TO_FLOAT(viewx) + b2*FIXED_TO_FLOAT(viewy);
+			a2 = -FIXED_TO_DOUBLE(FINESINE(temp>>ANGLETOFINESHIFT));
+			b2 = FIXED_TO_DOUBLE(FINECOSINE(temp>>ANGLETOFINESHIFT));
+			c2 = a2*FIXED_TO_DOUBLE(viewx) + b2*FIXED_TO_DOUBLE(viewy);
 
 			det = a1*b2 - a2*b1;
 
-			ds_p->rightpos.x = segright.x = FLOAT_TO_FIXED((b2*c1 - b1*c2)/det);
-			ds_p->rightpos.y = segright.y = FLOAT_TO_FIXED((a1*c2 - a2*c1)/det);
+			ds_p->rightpos.x = segright.x = DOUBLE_TO_FIXED((b2*c1 - b1*c2)/det);
+			ds_p->rightpos.y = segright.y = DOUBLE_TO_FIXED((a1*c2 - a2*c1)/det);
 		}
+
+#undef FIXED_TO_DOUBLE
+#undef DOUBLE_TO_FIXED
+
 	}
 
 
@@ -2112,7 +1955,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		    || backsector->floorlightsec != frontsector->floorlightsec
 		    //SoM: 4/3/2000: Check for colormaps
 		    || frontsector->extra_colormap != backsector->extra_colormap
-		    || (frontsector->ffloors != backsector->ffloors && frontsector->tag != backsector->tag))
+		    || (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags)))
 		{
 			markfloor = true;
 		}
@@ -2143,7 +1986,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		    || backsector->ceilinglightsec != frontsector->ceilinglightsec
 		    //SoM: 4/3/2000: Check for colormaps
 		    || frontsector->extra_colormap != backsector->extra_colormap
-		    || (frontsector->ffloors != backsector->ffloors && frontsector->tag != backsector->tag))
+		    || (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags)))
 		{
 				markceiling = true;
 		}
@@ -2233,7 +2076,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		rw_bottomtexturemid += sidedef->rowoffset;
 
 		// allocate space for masked texture tables
-		if (frontsector && backsector && frontsector->tag != backsector->tag && (backsector->ffloors || frontsector->ffloors))
+		if (frontsector && backsector && !Tag_Compare(&frontsector->tags, &backsector->tags) && (backsector->ffloors || frontsector->ffloors))
 		{
 			ffloor_t *rover;
 			ffloor_t *r2;
@@ -2275,6 +2118,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 					for (r2 = frontsector->ffloors; r2; r2 = r2->next)
 					{
+						if (r2->master == rover->master) // Skip if same control line.
+							break;
+
 						if (!(r2->flags & FF_EXISTS) || !(r2->flags & FF_RENDERSIDES))
 							continue;
 
@@ -2330,6 +2176,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 					for (r2 = backsector->ffloors; r2; r2 = r2->next)
 					{
+						if (r2->master == rover->master) // Skip if same control line.
+							break;
+
 						if (!(r2->flags & FF_EXISTS) || !(r2->flags & FF_RENDERSIDES))
 							continue;
 
@@ -2922,20 +2771,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	rw_tsilheight = &(ds_p->tsilheight);
 	rw_bsilheight = &(ds_p->bsilheight);
 
-#ifdef WALLSPLATS
-	if (linedef->splats && cv_splats.value)
-	{
-		// Isn't a bit wasteful to copy the ENTIRE array for every drawseg?
-		M_Memcpy(last_ceilingclip + ds_p->x1, ceilingclip + ds_p->x1,
-			sizeof (INT16) * (ds_p->x2 - ds_p->x1 + 1));
-		M_Memcpy(last_floorclip + ds_p->x1, floorclip + ds_p->x1,
-			sizeof (INT16) * (ds_p->x2 - ds_p->x1 + 1));
-		R_RenderSegLoop();
-		R_DrawWallSplats();
-	}
-	else
-#endif
-		R_RenderSegLoop();
+	R_RenderSegLoop();
 	colfunc = colfuncs[BASEDRAWFUNC];
 
 	if (portalline) // if curline is a portal, set portalrender for drawseg

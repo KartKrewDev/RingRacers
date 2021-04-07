@@ -34,7 +34,7 @@
 #include "m_random.h" // quake camera shake
 #include "r_portal.h"
 #include "r_main.h"
-#include "i_system.h" // I_GetTimeMicros
+#include "i_system.h" // I_GetPreciseTime
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 
 #ifdef HWRENDER
@@ -104,17 +104,17 @@ lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 extracolormap_t *extra_colormaps = NULL;
 
 // Render stats
-int ps_prevframetime = 0;
-int ps_rendercalltime = 0;
-int ps_uitime = 0;
-int ps_swaptime = 0;
+precise_t ps_prevframetime = 0;
+precise_t ps_rendercalltime = 0;
+precise_t ps_uitime = 0;
+precise_t ps_swaptime = 0;
 
-int ps_bsptime = 0;
+precise_t ps_bsptime = 0;
 
-int ps_sw_spritecliptime = 0;
-int ps_sw_portaltime = 0;
-int ps_sw_planetime = 0;
-int ps_sw_maskedtime = 0;
+precise_t ps_sw_spritecliptime = 0;
+precise_t ps_sw_portaltime = 0;
+precise_t ps_sw_planetime = 0;
+precise_t ps_sw_maskedtime = 0;
 
 int ps_numbspcalls = 0;
 int ps_numsprites = 0;
@@ -629,7 +629,7 @@ void R_CheckViewMorph(int s)
 	float fisheyemap[MAXVIDWIDTH/2 + 1];
 #endif
 
-	angle_t rollangle = players[displayplayers[s]].viewrollangle;
+	angle_t rollangle = R_ViewRollAngle(&players[displayplayers[s]]);
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
 #endif
@@ -936,6 +936,30 @@ void R_ApplyViewMorph(int s)
 			width*vid.bpp, height, width*vid.bpp, vid.width);
 }
 
+static inline int intsign(int n) {
+	return n < 0 ? -1 : n > 0 ? 1 : 0;
+}
+
+angle_t R_ViewRollAngle(const player_t *player)
+{
+	angle_t roll = player->viewrollangle;
+
+	if (cv_tilting.value)
+	{
+		roll += player->tilt;
+
+		if (cv_actionmovie.value)
+		{
+			int xs = intsign(quake.x),
+				 ys = intsign(quake.y),
+				 zs = intsign(quake.z);
+			roll += (xs ^ ys ^ zs) * ANG1;
+		}
+	}
+
+	return roll;
+}
+
 
 //
 // R_SetViewSize
@@ -1024,6 +1048,20 @@ void R_ExecuteSetViewSize(void)
 	// setup sky scaling
 	R_SetSkyScale();
 
+	// planes
+	if (rendermode == render_soft)
+	{
+		if (ds_su)
+			Z_Free(ds_su);
+		if (ds_sv)
+			Z_Free(ds_sv);
+		if (ds_sz)
+			Z_Free(ds_sz);
+
+		ds_su = ds_sv = ds_sz = NULL;
+		ds_sup = ds_svp = ds_szp = NULL;
+	}
+
 	memset(scalelight, 0xFF, sizeof(scalelight));
 
 	// Calculate the light levels to use for each level/scale combination.
@@ -1061,7 +1099,9 @@ void R_Init(void)
 {
 	// screensize independent
 	//I_OutputMsg("\nR_InitData");
-	R_InitData();
+	//R_InitData(); -- split to d_main for its own startup steps since it takes AGES
+	CONS_Printf("R_InitColormaps()...\n");
+	R_InitColormaps();
 
 	//I_OutputMsg("\nR_InitViewBorder");
 	R_InitViewBorder();
@@ -1074,8 +1114,8 @@ void R_Init(void)
 	//I_OutputMsg("\nR_InitLightTables");
 	R_InitLightTables();
 
-	//I_OutputMsg("\nR_InitTranslationTables\n");
-	R_InitTranslationTables();
+	//I_OutputMsg("\nR_InitTranslucencyTables\n");
+	R_InitTranslucencyTables();
 
 	R_InitDrawNodes();
 
@@ -1142,8 +1182,6 @@ subsector_t *R_PointInSubsectorOrNull(fixed_t x, fixed_t y)
 // 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
 static void R_SetupFreelook(player_t *player, boolean skybox)
 {
-	INT32 dy = 0;
-
 #ifndef HWRENDER
 	(void)player;
 	(void)skybox;
@@ -1162,14 +1200,15 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
 	}
 
-	if (rendermode == render_soft)
-	{
-		dy = (AIMINGTODY(aimingangle)>>FRACBITS) * viewwidth/BASEVIDWIDTH;
-		yslope = &yslopetab[viewssnum][viewheight*8 - (viewheight/2 + dy)];
-	}
+	centeryfrac = (viewheight/2)<<FRACBITS;
 
-	centery = (viewheight/2) + dy;
-	centeryfrac = centery<<FRACBITS;
+	if (rendermode == render_soft)
+		centeryfrac += FixedMul(AIMINGTODY(aimingangle), FixedDiv(viewwidth<<FRACBITS, BASEVIDWIDTH<<FRACBITS));
+
+	centery = FixedInt(FixedRound(centeryfrac));
+
+	if (rendermode == render_soft)
+		yslope = &yslopetab[viewssnum][viewheight*8 - centery];
 }
 
 void R_SetupFrame(player_t *player)
@@ -1187,7 +1226,7 @@ void R_SetupFrame(player_t *player)
 			break;
 		}
 	}
-	
+
 	if (i > r_splitscreen)
 		return; // shouldn't be possible, but just in case
 
@@ -1545,9 +1584,6 @@ void R_RenderPlayerView(void)
 	}
 	R_ClearDrawSegs();
 	R_ClearSprites();
-#ifdef FLOORSPLATS
-	R_ClearVisibleFloorSplats();
-#endif
 	Portal_InitList();
 
 	// check for new console commands.
@@ -1563,9 +1599,9 @@ void R_RenderPlayerView(void)
 	ProfZeroTimer();
 #endif
 	ps_numbspcalls = ps_numpolyobjects = ps_numdrawnodes = 0;
-	ps_bsptime = I_GetTimeMicros();
+	ps_bsptime = I_GetPreciseTime();
 	R_RenderBSPNode((INT32)numnodes - 1);
-	ps_bsptime = I_GetTimeMicros() - ps_bsptime;
+	ps_bsptime = I_GetPreciseTime() - ps_bsptime;
 	ps_numsprites = visspritecount;
 #ifdef TIMING
 	RDMSR(0x10, &mycount);
@@ -1576,9 +1612,9 @@ void R_RenderPlayerView(void)
 //profile stuff ---------------------------------------------------------
 	Mask_Post(&masks[nummasks - 1]);
 
-	ps_sw_spritecliptime = I_GetTimeMicros();
+	ps_sw_spritecliptime = I_GetPreciseTime();
 	R_ClipSprites(drawsegs, NULL);
-	ps_sw_spritecliptime = I_GetTimeMicros() - ps_sw_spritecliptime;
+	ps_sw_spritecliptime = I_GetPreciseTime() - ps_sw_spritecliptime;
 
 
 	// Add skybox portals caused by sky visplanes.
@@ -1586,7 +1622,7 @@ void R_RenderPlayerView(void)
 		Portal_AddSkyboxPortals();
 
 	// Portal rendering. Hijacks the BSP traversal.
-	ps_sw_portaltime = I_GetTimeMicros();
+	ps_sw_portaltime = I_GetPreciseTime();
 	if (portal_base)
 	{
 		portal_t *portal;
@@ -1626,40 +1662,19 @@ void R_RenderPlayerView(void)
 			Portal_Remove(portal);
 		}
 	}
-	ps_sw_portaltime = I_GetTimeMicros() - ps_sw_portaltime;
+	ps_sw_portaltime = I_GetPreciseTime() - ps_sw_portaltime;
 
-	ps_sw_planetime = I_GetTimeMicros();
+	ps_sw_planetime = I_GetPreciseTime();
 	R_DrawPlanes();
-#ifdef FLOORSPLATS
-	R_DrawVisibleFloorSplats();
-#endif
-	ps_sw_planetime = I_GetTimeMicros() - ps_sw_planetime;
+	ps_sw_planetime = I_GetPreciseTime() - ps_sw_planetime;
 
 	// draw mid texture and sprite
 	// And now 3D floors/sides!
-	ps_sw_maskedtime = I_GetTimeMicros();
+	ps_sw_maskedtime = I_GetPreciseTime();
 	R_DrawMasked(masks, nummasks);
-	ps_sw_maskedtime = I_GetTimeMicros() - ps_sw_maskedtime;
+	ps_sw_maskedtime = I_GetPreciseTime() - ps_sw_maskedtime;
 
 	free(masks);
-}
-
-#ifdef HWRENDER
-void R_InitHardwareMode(void)
-{
-	HWR_AddSessionCommands();
-	HWR_Switch();
-	HWR_LoadTextures(numtextures);
-	if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction))
-		HWR_SetupLevel();
-}
-#endif
-
-void R_ReloadHUDGraphics(void)
-{
-	ST_LoadGraphics();
-	HU_LoadGraphics();
-	ST_ReloadSkinFaceGraphics();
 }
 
 // =========================================================================
@@ -1695,6 +1710,10 @@ void R_RegisterEngineStuff(void)
 		CV_RegisterVar(&cv_cam_speed[i]);
 		CV_RegisterVar(&cv_cam_rotate[i]);
 	}
+
+	CV_RegisterVar(&cv_tilting);
+	CV_RegisterVar(&cv_actionmovie);
+	CV_RegisterVar(&cv_windowquake);
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);

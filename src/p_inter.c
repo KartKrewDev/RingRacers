@@ -1147,7 +1147,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		if (metalrecording) // Ack! Metal Sonic shouldn't die! Cut the tape, end recording!
 			G_StopMetalRecording(true);
 
-		target->drawflags &= ~MFD_DONTDRAW;
+		target->renderflags &= ~RF_DONTDRAW;
 	}
 
 	// if killed by a player
@@ -1399,7 +1399,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				else
 				{
 					flingAngle = target->angle + ANGLE_180;
-	
+
 					if (P_RandomByte() & 1)
 					{
 						flingAngle -= ANGLE_45;
@@ -1776,7 +1776,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	if (player->spectator == false)
 	{
-		player->mo->drawflags &= ~MFD_DONTDRAW;
+		player->mo->renderflags &= ~RF_DONTDRAW;
 	}
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
@@ -1788,7 +1788,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			mobj_t *boom;
 
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 
 			boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
 			boom->scale = player->mo->scale;
@@ -1826,6 +1826,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	boolean force = false;
 
 	INT32 laglength = 10;
+	INT32 kinvextend = 0;
 
 	if (objectplacing)
 		return false;
@@ -1863,7 +1864,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-		if (target->hitlag > 0)
+		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0)
 			return false;
 	}
 
@@ -1947,7 +1948,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (combo == false)
 				{
-					if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2))
+					if (player->powers[pw_flashing] > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -1981,6 +1982,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
+					// Extend the invincibility if the hit was a direct hit.
+					if (inflictor == source && source->player->kartstuff[k_invincibilitytimer])
+					{
+						kinvextend = (source->player->kartstuff[k_invincibilitytimer])+5*TICRATE;
+						//CONS_Printf("extend k_invincibilitytimer for %s - old value %d new value %d\n", player_names[source->player -  players], source->player->kartstuff[k_invincibilitytimer]/TICRATE, kinvextend/TICRATE);
+						source->player->kartstuff[k_invincibilitytimer] = kinvextend;
+					}
+
 					K_PlayHitEmSound(source);
 
 					K_BattleAwardHit(source->player, player, inflictor, takeBumpers);

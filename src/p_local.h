@@ -132,6 +132,10 @@ extern camera_t camera[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS], cv_cam_still[MAXSPLITSCREENPLAYERS], cv_cam_height[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS], cv_cam_rotate[MAXSPLITSCREENPLAYERS];
 
+extern consvar_t cv_tilting;
+extern consvar_t cv_actionmovie;
+extern consvar_t cv_windowquake;
+
 extern fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS], t_cam_height[MAXSPLITSCREENPLAYERS], t_cam_rotate[MAXSPLITSCREENPLAYERS];
 
 void P_AddPlayerScore(player_t *player, UINT32 amount);
@@ -321,9 +325,7 @@ mobj_t *P_SpawnPointMissile(mobj_t *source, fixed_t xa, fixed_t ya, fixed_t za, 
 mobj_t *P_SpawnAlteredDirectionMissile(mobj_t *source, mobjtype_t type, fixed_t x, fixed_t y, fixed_t z, INT32 shiftingAngle);
 mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle, UINT8 aimtype, UINT32 flags2);
 #define P_SpawnPlayerMissile(s,t,f) P_SPMAngle(s,t,s->angle,true,f)
-#ifdef SEENAMES
 #define P_SpawnNameFinder(s,t) P_SPMAngle(s,t,s->angle,true,0)
-#endif
 void P_ColorTeamMissile(mobj_t *missile, player_t *source);
 SINT8 P_MobjFlip(mobj_t *mobj);
 fixed_t P_GetMobjGravity(mobj_t *mo);
@@ -521,6 +523,7 @@ void P_Thrust(mobj_t *mo, angle_t angle, fixed_t move);
 void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope);
+void P_SetPitchRoll(mobj_t *mo, angle_t pitch, angle_t yaw);
 fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale);
 fixed_t P_GetMobjHead(const mobj_t *);
 fixed_t P_GetMobjFeet(const mobj_t *);
