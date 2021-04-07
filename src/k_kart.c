@@ -1920,6 +1920,15 @@ void K_KartMoveAnimation(player_t *player)
 		turndir = 1;
 	}
 
+	// Use drift frames when sliptiding
+	if (player->aizDriftTurn)
+	{
+		drift = (player->kartstuff[k_aizdriftstrat]);
+
+		if (drift)
+			turndir = 0;
+	}
+
 	if (lookback == true && drift == 0)
 	{
 		// Prioritize looking back frames over turning
@@ -7351,7 +7360,34 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->kartstuff[k_aizdriftstrat] = ((player->kartstuff[k_drift] > 0) ? 1 : -1);
 	}
 	else if (player->kartstuff[k_aizdriftstrat] && !player->kartstuff[k_drift])
+	{
 		K_SpawnAIZDust(player);
+
+		if (abs(player->aizDriftTilt) < ANGLE_22h)
+		{
+			player->aizDriftTilt =
+				(abs(player->aizDriftTilt) + ANGLE_11hh / 4) *
+				player->kartstuff[k_aizdriftstrat];
+		}
+
+		if (abs(player->aizDriftTurn) < ANGLE_135)
+		{
+			player->aizDriftTurn =
+				(abs(player->aizDriftTurn) + ANGLE_11hh) *
+				player->kartstuff[k_aizdriftstrat];
+		}
+	}
+
+	if (!player->kartstuff[k_aizdriftstrat])
+	{
+		player->aizDriftTilt -= player->aizDriftTilt / 4;
+		player->aizDriftTurn -= player->aizDriftTurn / 4;
+
+		if (abs(player->aizDriftTilt) < ANGLE_11hh / 4)
+			player->aizDriftTilt = 0;
+		if (abs(player->aizDriftTurn) < ANGLE_11hh)
+			player->aizDriftTurn = 0;
+	}
 
 	if (player->kartstuff[k_drift]
 		&& ((buttons & BT_BRAKE)

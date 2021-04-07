@@ -2223,7 +2223,11 @@ void P_MovePlayer(player_t *player)
 		{
 			player->drawangle = player->mo->angle;
 
-			if (player->kartstuff[k_drift] != 0)
+			if (player->aizDriftTurn)
+			{
+				player->drawangle += player->aizDriftTurn;
+			}
+			else if (player->kartstuff[k_drift] != 0)
 			{
 				INT32 a = (ANGLE_45 / 5) * player->kartstuff[k_drift];
 				player->drawangle += a;
