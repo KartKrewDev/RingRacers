@@ -20,18 +20,27 @@
 fixed_t rollcosang[ROTANGLES];
 fixed_t rollsinang[ROTANGLES];
 
+angle_t R_GetPitchRollAngle(mobj_t *mobj)
+{
+	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
+
+	fixed_t pitchMul = -FINESINE(viewingAngle >> ANGLETOFINESHIFT);
+	fixed_t rollMul = FINECOSINE(viewingAngle >> ANGLETOFINESHIFT);
+
+	angle_t rollOrPitch = FixedMul(mobj->pitch, pitchMul) + FixedMul(mobj->roll, rollMul);
+
+	return rollOrPitch;
+}
+
 angle_t R_SpriteRotationAngle(mobj_t *mobj)
 {
 	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
 	angle_t angleDelta = (viewingAngle - mobj->angle);
 
-	fixed_t pitchMul = -FINESINE(viewingAngle >> ANGLETOFINESHIFT);
-	fixed_t rollMul = FINECOSINE(viewingAngle >> ANGLETOFINESHIFT);
-
 	angle_t sliptideLift = mobj->player
 		? K_Sliptiding(mobj->player) * ANGLE_11hh : 0;
 
-	angle_t rollOrPitch = FixedMul(mobj->pitch, pitchMul) + FixedMul(mobj->roll, rollMul);
+	angle_t rollOrPitch = R_GetPitchRollAngle(mobj);
 	angle_t rollAngle = (rollOrPitch + mobj->rollangle);
 
 	if (sliptideLift)
