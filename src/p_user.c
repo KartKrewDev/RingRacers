@@ -2223,7 +2223,11 @@ void P_MovePlayer(player_t *player)
 		{
 			player->drawangle = player->mo->angle;
 
-			if (player->kartstuff[k_drift] != 0)
+			if (player->aizDriftTurn)
+			{
+				player->drawangle += player->aizDriftTurn;
+			}
+			else if (player->kartstuff[k_drift] != 0)
 			{
 				INT32 a = (ANGLE_45 / 5) * player->kartstuff[k_drift];
 				player->drawangle += a;
@@ -4251,11 +4255,7 @@ Quaketilt (player_t *player)
 	INT32 delta = (INT32)( player->mo->angle - moma );
 	fixed_t speed;
 
-	boolean sliptiding =
-		(
-				player->kartstuff[k_aizdriftstrat] != 0 &&
-				player->kartstuff[k_drift]         == 0
-		);
+	boolean sliptiding = K_Sliptiding(player);
 
 	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
 	{
@@ -4299,52 +4299,37 @@ DoABarrelRoll (player_t *player)
 	angle_t slope;
 	angle_t delta;
 
+	fixed_t smoothing;
+
 	if (player->exiting)
 	{
 		return;
 	}
 
-	if (player->mo->standingslope)
-	{
-		slope = player->mo->standingslope->zangle;
-	}
-	else
+	slope = InvAngle(R_GetPitchRollAngle(player->mo));
+
+	if (AbsAngle(slope) < ANGLE_11hh)
 	{
 		slope = 0;
 	}
 
-	if (abs((INT32)slope) > ANGLE_11hh)
+	if (AbsAngle(slope) > ANGLE_45)
 	{
-		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
-		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT), slope));
-	}
-	else
-	{
-		slope = 0;
+		slope = slope & ANGLE_180 ? InvAngle(ANGLE_45) : ANGLE_45;
 	}
 
 	slope -= Quaketilt(player);
 
-	delta = (INT32)( slope - player->tilt )/ 32;
+	delta = slope - player->tilt;
+	smoothing = FixedDiv(AbsAngle(slope), ANGLE_45);
+
+	delta = FixedDiv(delta, 33 *
+			FixedDiv(FRACUNIT, FRACUNIT + smoothing));
 
 	if (delta)
 		player->tilt += delta;
 	else
 		player->tilt  = slope;
-
-	if (cv_tilting.value)
-	{
-		player->viewrollangle = player->tilt;
-
-		if (cv_actionmovie.value)
-		{
-			player->viewrollangle += quake.roll;
-		}
-	}
-	else
-	{
-		player->viewrollangle = 0;
-	}
 }
 
 //
