@@ -57,6 +57,7 @@
 #include "k_respawn.h"
 #include "k_grandprix.h"
 #include "doomstat.h"
+#include "deh_tables.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -167,6 +168,7 @@ static void Command_LeaveParty_f(void);
 
 static void Command_Addfile(void);
 static void Command_ListWADS_f(void);
+static void Command_ListDoomednums_f(void);
 static void Command_RunSOC(void);
 static void Command_Pause(void);
 static void Command_Respawn(void);
@@ -642,6 +644,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("addfile", Command_Addfile);
 	COM_AddCommand("listwad", Command_ListWADS_f);
+	COM_AddCommand("listmapthings", Command_ListDoomednums_f);
 
 	COM_AddCommand("runsoc", Command_RunSOC);
 	COM_AddCommand("pause", Command_Pause);
@@ -4106,6 +4109,128 @@ static void Command_ListWADS_f(void)
 			CONS_Printf("   %.2d: %s\n", i, tempname);
 	}
 }
+
+#define MAXDOOMEDNUM 4095
+
+static void Command_ListDoomednums_f(void)
+{
+	INT16 i, j, focusstart = 0, focusend = 0;
+	INT32 argc = COM_Argc(), argstart = 0;
+	INT16 table[MAXDOOMEDNUM];
+	boolean nodoubles = false;
+	UINT8 doubles[(MAXDOOMEDNUM+8/8)];
+
+	if (argc > 1)
+	{
+		nodoubles = (strcmp(COM_Argv(1), "-nodoubles") == 0);
+		if (nodoubles)
+		{
+			argc--;
+			argstart++;
+		}
+	}
+
+	switch (argc)
+	{
+		case 1:
+			focusend = MAXDOOMEDNUM;
+			break;
+		case 3:
+			focusend = atoi(COM_Argv(argstart+2));
+			if (focusend < 1 || focusend > MAXDOOMEDNUM)
+			{
+				CONS_Printf("arg 2: doomednum \x82""%d \x85out of range (1-4095)\n", focusend);
+				return;
+			}
+			//FALLTHRU
+		case 2:
+			focusstart = atoi(COM_Argv(argstart+1));
+			if (focusstart < 1 || focusstart > MAXDOOMEDNUM)
+			{
+				CONS_Printf("arg 1: doomednum \x82""%d \x85out of range (1-4095)\n", focusstart);
+				return;
+			}
+			if (!focusend)
+				focusend = focusstart;
+			else if (focusend < focusstart) // silently and helpfully swap.
+			{
+				j = focusstart;
+				focusstart = focusend;
+				focusend = j;
+			}
+			break;
+		default:
+			CONS_Printf("listmapthings: \x86too many arguments!\n");
+			return;
+	}
+
+	// see P_SpawnNonMobjMapThing
+	memset(table, 0, sizeof(table));
+	memset(doubles, 0, sizeof(doubles));
+	for (i = 1; i <= MAXPLAYERS; i++)
+		table[i-1] = MT_PLAYER; // playerstarts
+	table[33-1] = table[34-1] = table[35-1] = MT_PLAYER; // battle/team starts
+	table[750-1] = table[777-1] = table[778-1] = MT_UNKNOWN; // slopes
+	for (i = 600; i <= 609; i++)
+		table[i-1] = MT_RING; // placement patterns
+	table[1705-1] = table[1713-1] = MT_HOOP; // types of hoop
+
+	CONS_Printf("\x82""Checking for double defines...\n");
+	for (i = 1; i < MT_FIRSTFREESLOT+NUMMOBJFREESLOTS; i++)
+	{
+		j = mobjinfo[i].doomednum;
+		if (j < (focusstart ? focusstart : 1) || j > focusend)
+			continue;
+		if (table[--j])
+		{
+			doubles[j/8] |= 1<<(j&7);
+			CONS_Printf("	doomednum \x82""%d""\x80 is \x85""double-defined\x80 by ", j+1);
+			if (i < MT_FIRSTFREESLOT)
+			{
+				CONS_Printf("\x87""hardcode %s <-- MAJOR ERROR\n", MOBJTYPE_LIST[i]);
+				continue;
+			}
+			CONS_Printf("\x81""freeslot MT_""%s\n", FREE_MOBJS[i-MT_FIRSTFREESLOT]);
+			continue;
+		}
+		table[j] = i;
+	}
+	CONS_Printf("\x82Printing doomednum usage...\n");
+	if (!focusstart)
+	{
+		i = 35; // skip MT_PLAYER spam
+		if (!nodoubles)
+			CONS_Printf("	doomednums \x82""1-35""\x80 are used by ""\x87""hardcode MT_PLAYER\n");
+	}
+	else
+		i = focusstart-1;
+
+	for (; i < focusend; i++)
+	{
+		if (nodoubles && !(doubles[i/8] & 1<<(i&7)))
+			continue;
+		if (!table[i])
+		{
+			if (focusstart)
+			{
+				CONS_Printf("	doomednum \x82""%d""\x80 is \x83""free!", i+1);
+				if (i < 99) // above the humble crawla? how dare you
+					CONS_Printf(" (Don't freeslot this low...)");
+				CONS_Printf("\n");
+			}
+			continue;
+		}
+		CONS_Printf("	doomednum \x82""%d""\x80 is used by ", i+1);
+		if (table[i] < MT_FIRSTFREESLOT)
+		{
+			CONS_Printf("\x87""hardcode %s\n", MOBJTYPE_LIST[table[i]]);
+			continue;
+		}
+		CONS_Printf("\x81""freeslot MT_""%s\n", FREE_MOBJS[table[i]-MT_FIRSTFREESLOT]);
+	}
+}
+
+#undef MAXDOOMEDNUM
 
 // =========================================================================
 //                            MISC. COMMANDS
