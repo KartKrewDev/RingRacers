@@ -989,12 +989,12 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	netbuffer->u.serverinfo.httpsource[MAX_MIRROR_LENGTH-1] = '\0';
 
-	p = PutFileNeeded(0);
-
 	if (cv_kartusepwrlv.value)
 		netbuffer->u.serverinfo.avgpwrlv = K_CalculatePowerLevelAvg();
 	else
 		netbuffer->u.serverinfo.avgpwrlv = -1;
+
+	p = PutFileNeeded(0);
 
 	HSendPacket(node, false, 0, p - ((UINT8 *)&netbuffer->u));
 }
