@@ -141,6 +141,8 @@ extern boolean digital_disabled;
 extern boolean menuactive; // Menu overlaid?
 extern UINT8 paused; // Game paused?
 extern UINT8 window_notinfocus; // are we in focus? (backend independant -- handles auto pausing and display of "focus lost" message)
+extern INT32 window_x;
+extern INT32 window_y;
 
 extern boolean nodrawers;
 extern boolean noblit;
@@ -160,13 +162,13 @@ extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
 extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 /* spitscreen players sync */
-extern int splitscreen_original_party_size[MAXPLAYERS];
-extern int splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+extern INT32 splitscreen_original_party_size[MAXPLAYERS];
+extern INT32 splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 /* parties */
-extern int splitscreen_invitations[MAXPLAYERS];
-extern int splitscreen_party_size[MAXPLAYERS];
-extern int splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
+extern INT32 splitscreen_invitations[MAXPLAYERS];
+extern INT32 splitscreen_party_size[MAXPLAYERS];
+extern INT32 splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 /* the only local one */
 extern boolean splitscreen_partied[MAXPLAYERS];
@@ -405,6 +407,7 @@ typedef struct
 #define LF_SCRIPTISFILE       (1<<0) ///< True if the script is a file, not a lump.
 #define LF_NOZONE             (1<<1) ///< Don't include "ZONE" on level title
 #define LF_SECTIONRACE        (1<<2) ///< Section race level
+#define LF_SUBTRACTNUM        (1<<3) ///< Use subtractive position number (for bright levels)
 
 #define LF2_HIDEINMENU    (1<<0) ///< Hide in the multiplayer menu
 #define LF2_HIDEINSTATS   (1<<1) ///< Hide in the statistics screen
@@ -447,7 +450,7 @@ enum GameType
 	GT_LASTFREESLOT = GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1,
 	NUMGAMETYPES
 };
-// If you alter this list, update dehacked.c, MISC_ChangeGameTypeMenu in m_menu.c, and Gametype_Names in g_game.c
+// If you alter this list, update deh_tables.c, MISC_ChangeGameTypeMenu in m_menu.c, and Gametype_Names in g_game.c
 
 // Gametype rules
 enum GameTypeRules
@@ -684,6 +687,7 @@ extern tic_t indirectitemcooldown;
 extern tic_t hyubgone;
 extern tic_t mapreset;
 extern boolean thwompsactive;
+extern UINT8 lastLowestLap;
 extern SINT8 spbplace;
 extern boolean rainbowstartavailable;
 

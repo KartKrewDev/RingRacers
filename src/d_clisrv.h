@@ -37,7 +37,6 @@ applications may follow different packet versions.
 //  be transmitted.
 
 // Networking and tick handling related.
-#define BACKUPTICS 1024
 #define TICQUEUE 512 // more than enough for most timeouts....
 #define MAXTEXTCMD 256
 //
@@ -66,8 +65,10 @@ typedef enum
 	PT_REQUESTFILE,   // Client requests a file transfer
 	PT_ASKINFOVIAMS,  // Packet from the MS requesting info be sent to new client.
 	                  // If this ID changes, update masterserver definition.
-	PT_RESYNCHEND,    // Player is now resynched and is being requested to remake the gametic
-	PT_RESYNCHGET,    // Player got resynch packet
+
+	PT_WILLRESENDGAMESTATE, // Hey Client, I am about to resend you the gamestate!
+	PT_CANRECEIVEGAMESTATE, // Okay Server, I'm ready to receive it, you can go ahead.
+	PT_RECEIVEDGAMESTATE,   // Thank you Server, I am ready to play again!
 
 	PT_SENDINGLUAFILE, // Server telling a client Lua needs to open a file
 	PT_ASKLUAFILE,     // Client telling the server they don't have the file
@@ -96,8 +97,6 @@ typedef enum
 	PT_TEXTCMD4,      // 4P
 	PT_CLIENTJOIN,    // Client wants to join; used in start game.
 	PT_NODETIMEOUT,   // Packet sent to self if the connection times out.
-	PT_RESYNCHING,    // Packet sent to resync players.
-	                  // Blocks game advance until synched.
 
 	PT_TELLFILESNEEDED, // Client, to server: "what other files do I need starting from this number?"
 	PT_MOREFILESNEEDED, // Server, to client: "you need these (+ more on top of those)"
@@ -173,179 +172,6 @@ typedef struct
 	ticcmd_t cmds[45]; // Normally [BACKUPTIC][MAXPLAYERS] but too large
 } ATTRPACK servertics_pak;
 
-// Sent to client when all consistency data
-// for players has been restored
-typedef struct
-{
-	UINT32 randomseed;
-
-	// CTF flag stuff
-	SINT8 flagplayer[2];
-	INT32 flagloose[2];
-	INT32 flagflags[2];
-	fixed_t flagx[2];
-	fixed_t flagy[2];
-	fixed_t flagz[2];
-
-	UINT32 ingame;  // Spectator bit for each player
-	INT32 ctfteam[MAXPLAYERS]; // Which team? (can't be 1 bit, since in regular Match there are no teams)
-
-	// Resynch game scores and the like all at once
-	UINT32 score[MAXPLAYERS]; // Everyone's score
-	UINT32 marescore[MAXPLAYERS]; // SRB2kart: Battle score
-	tic_t realtime[MAXPLAYERS];
-	UINT8 laps[MAXPLAYERS];
-} ATTRPACK resynchend_pak;
-
-typedef struct
-{
-	// Player stuff
-	UINT8 playernum;
-
-	// Do not send anything visual related.
-	// Only send data that we need to know for physics.
-	UINT8 playerstate; // playerstate_t
-	UINT32 pflags; // pflags_t
-	UINT8 panim; // panim_t
-
-	angle_t angleturn;
-	angle_t aiming;
-	UINT16 powers[NUMPOWERS];
-
-	// Score is resynched in the confirm resync packet
-	INT16 rings;
-	INT16 spheres;
-	SINT8 lives;
-	boolean lostlife;
-	SINT8 continues;
-	UINT8 scoreadd;
-	SINT8 xtralife;
-
-	UINT16 skincolor;
-	INT32 skin;
-	UINT32 availabilities;
-	// Just in case Lua does something like
-	// modify these at runtime
-	// SRB2kart
-	UINT8 kartspeed;
-	UINT8 kartweight;
-	//
-	UINT32 charflags;
-	UINT32 followitem; // mobjtype_t
-
-	fixed_t speed;
-	UINT8 secondjump;
-	UINT8 fly1;
-	tic_t glidetime;
-	UINT8 climbing;
-	INT32 deadtimer;
-	tic_t exiting;
-	UINT8 homing;
-	tic_t dashmode;
-	tic_t skidtime;
-	fixed_t cmomx;
-	fixed_t cmomy;
-	fixed_t rmomx;
-	fixed_t rmomy;
-
-	INT32 weapondelay;
-	INT32 tossdelay;
-
-	INT32 starpostnum;
-
-	INT32 maxlink;
-	fixed_t dashspeed;
-	angle_t angle_pos;
-	angle_t old_angle_pos;
-	tic_t bumpertime;
-	INT32 flyangle;
-	tic_t drilltimer;
-	INT32 linkcount;
-	tic_t linktimer;
-	INT32 anotherflyangle;
-	tic_t nightstime;
-	INT32 drillmeter;
-	UINT8 drilldelay;
-	UINT8 bonustime;
-	UINT8 mare;
-	INT16 lastsidehit, lastlinehit;
-
-	tic_t losstime;
-	UINT8 timeshit;
-	INT32 onconveyor;
-
-	tic_t jointime;
-
-	UINT8 splitscreenindex;
-
-	// SRB2kart
-	INT32 kartstuff[NUMKARTSTUFF];
-	tic_t airtime;
-	UINT8 trickpanel;
-	boolean trickdelay;
-	fixed_t trickmomx;
-	fixed_t trickmomy;
-	fixed_t trickmomz;
-
-	UINT8 bumpers;
-	INT16 karmadelay;
-	boolean eliminated;
-
-	UINT8 tumbleBounces;
-	UINT16 tumbleHeight;
-	boolean tumbleLastBounce;
-
-	// respawnvars_t
-	UINT8 respawn_state;
-	fixed_t respawn_pointx;
-	fixed_t respawn_pointy;
-	fixed_t respawn_pointz;
-	boolean respawn_flip;
-	tic_t respawn_timer;
-	UINT32 respawn_distanceleft;
-	tic_t respawn_dropdash;
-
-	// botvars_t
-	boolean bot;
-	UINT8 bot_difficulty;
-	UINT8 bot_diffincrease;
-	boolean bot_rival;
-	tic_t bot_itemdelay;
-	tic_t bot_itemconfirm;
-	SINT8 bot_turnconfirm;
-
-	//player->mo stuff
-	UINT8 hasmo; // Boolean
-
-	INT32 health;
-	angle_t angle;
-	angle_t rollangle;
-	fixed_t x;
-	fixed_t y;
-	fixed_t z;
-	fixed_t momx;
-	fixed_t momy;
-	fixed_t momz;
-	fixed_t friction;
-	fixed_t movefactor;
-
-	spritenum_t sprite;
-	UINT32 frame;
-	UINT8 sprite2;
-	UINT16 anim_duration;
-	INT32 tics;
-	statenum_t statenum;
-	UINT32 flags;
-	UINT32 flags2;
-	UINT16 eflags;
-
-	fixed_t radius;
-	fixed_t height;
-	fixed_t scale;
-	fixed_t destscale;
-	fixed_t scalespeed;
-} ATTRPACK resynch_pak;
-
 typedef struct
 {
 	UINT8 version; // Different versions don't work
@@ -359,25 +185,8 @@ typedef struct
 	UINT8 clientnode;
 	UINT8 gamestate;
 
-	// 0xFF == not in game; else player skin num
-	UINT8 playerskins[MAXPLAYERS];
-	UINT16 playercolor[MAXPLAYERS];
-	UINT32 playeravailabilities[MAXPLAYERS];
-
-	UINT8 playerisbot[MAXPLAYERS];
-
 	UINT8 gametype;
 	UINT8 modifiedgame;
-	SINT8 adminplayers[MAXPLAYERS]; // Needs to be signed
-	UINT16 powerlevels[MAXPLAYERS][PWRLV_NUMTYPES]; // SRB2kart: player power levels
-
-	UINT8 consoleplayers[MAXPLAYERS];
-	/* splitscreen */
-	SINT8 invitations[MAXPLAYERS];
-	UINT8 party_size[MAXPLAYERS];
-	UINT8 party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
-	UINT8 original_party_size[MAXPLAYERS];
-	UINT8 original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
@@ -385,8 +194,6 @@ typedef struct
 	UINT8 maxplayer;
 	boolean allownewplayer;
 	boolean discordinvites;
-
-	UINT8 varlengthinputs[0]; // Playernames and netvars
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -543,9 +350,6 @@ typedef struct
 		client4cmd_pak client4pak;          //         316 bytes(?)
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
 		serverconfig_pak servercfg;         //         773 bytes
-		resynchend_pak resynchend;          //
-		resynch_pak resynchpak;             //
-		UINT8 resynchgot;                   //
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
 		fileack_pak fileack;
@@ -705,8 +509,16 @@ UINT8 GetFreeXCmdSize(UINT8 playerid);
 
 void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *dest);
 
-extern UINT8 hu_resynching;
-extern UINT8 hu_stopped; // kart, true when the game is stopped for players due to a disconnecting or connecting player
+extern UINT8 hu_redownloadinggamestate;
+
+extern UINT8 adminpassmd5[16];
+extern boolean adminpasswordset;
+
+//
+// SRB2Kart
+//
+
+extern boolean hu_stopped;
 
 typedef struct rewind_s {
 	UINT8 savebuffer[(768*1024)];
@@ -723,6 +535,4 @@ void CL_ClearRewinds(void);
 rewind_t *CL_SaveRewindPoint(size_t demopos);
 rewind_t *CL_RewindToTime(tic_t time);
 
-extern UINT8 adminpassmd5[16];
-extern boolean adminpasswordset;
 #endif

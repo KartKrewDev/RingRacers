@@ -25,9 +25,6 @@ extern char timeattackfolder[64];
 extern char customversionstring[32];
 #define GAMEDATASIZE (4*8192)
 
-#ifdef SEENAMES
-extern player_t *seenplayer;
-#endif
 extern char  player_names[MAXPLAYERS][MAXPLAYERNAME+1];
 extern INT32 player_name_changes[MAXPLAYERS];
 
@@ -57,6 +54,7 @@ extern consvar_t cv_pauseifunfocused;
 
 extern consvar_t cv_invertmouse;
 
+extern consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS];
@@ -102,14 +100,15 @@ typedef enum
 	AXISTURN,
 	AXISMOVE,
 	AXISBRAKE,
-	AXISAIM,
 	AXISLOOK,
 
 	AXISDIGITAL, // axes below this use digital deadzone
 
 	AXISFIRE = AXISDIGITAL,
 	AXISDRIFT,
+	AXISSPINDASH,
 	AXISLOOKBACK,
+	AXISAIM,
 } axis_input_e;
 
 INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel);
@@ -188,7 +187,6 @@ void G_AddGametypeConstant(INT16 gtype, const char *newgtconst);
 void G_UpdateGametypeSelections(void);
 void G_AddTOL(UINT32 newtol, const char *tolname);
 void G_AddGametypeTOL(INT16 gtype, UINT32 newtol);
-//void G_SetGametypeDescription(INT16 gtype, char *descriptiontext, UINT8 leftcolor, UINT8 rightcolor);
 INT32 G_GetGametypeByName(const char *gametypestr);
 boolean G_IsSpecialStage(INT32 mapnum);
 boolean G_GametypeUsesLives(void);

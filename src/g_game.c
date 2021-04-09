@@ -247,11 +247,11 @@ INT32 gameovertics = 15*TICRATE;
 UINT8 ammoremovaltics = 2*TICRATE;
 
 // SRB2kart
-tic_t introtime = 0;
-tic_t starttime = 0;
+tic_t introtime = 3;
+tic_t starttime = 3;
 
 const tic_t bulbtime = TICRATE/2;
-UINT8 numbulbs = 0;
+UINT8 numbulbs = 1;
 
 tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
 tic_t battleexittime = 8*TICRATE;
@@ -316,6 +316,7 @@ tic_t indirectitemcooldown; // Cooldown before any more Shrink, SPB, or any othe
 tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
 boolean thwompsactive; // Thwomps activate on lap 2
+UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
 SINT8 spbplace; // SPB exists, give the person behind better items
 boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
 
@@ -342,10 +343,11 @@ INT16 prevmap, nextmap;
 
 static UINT8 *savebuffer;
 
-void SendWeaponPref(void);
-void SendWeaponPref2(void);
-void SendWeaponPref3(void);
-void SendWeaponPref4(void);
+static void kickstartaccel_OnChange(void);
+static void kickstartaccel2_OnChange(void);
+static void kickstartaccel3_OnChange(void);
+static void kickstartaccel4_OnChange(void);
+void SendWeaponPref(UINT8 n);
 
 static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 {1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},
@@ -404,6 +406,13 @@ consvar_t cv_growmusicfade = CVAR_INIT ("growmusicfade", "500", CV_SAVE, CV_Unsi
 consvar_t cv_resetspecialmusic = CVAR_INIT ("resetspecialmusic", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 consvar_t cv_resume = CVAR_INIT ("resume", "Yes", CV_SAVE, CV_YesNo, NULL);
+
+consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel_OnChange),
+	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel2_OnChange),
+	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel3_OnChange),
+	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel4_OnChange)
+};
 
 consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("joyaxis_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
@@ -468,10 +477,6 @@ consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("joy3_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
 	CVAR_INIT ("joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
-
-#ifdef SEENAMES
-player_t *seenplayer; // player we're aiming at right now
-#endif
 
 // now automatically allocated in D_RegisterClientCommands
 // so that it doesn't have to be updated depending on the value of MAXPLAYERS
@@ -869,8 +874,6 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
-static INT32 angleturn[2] = {KART_FULLTURN, KART_FULLTURN / 4}; // + slow turn
-
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
@@ -881,11 +884,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	const boolean gamepadjoystickmove = cv_usejoystick[forplayer].value && Joystick[forplayer].bGamepadStyle;
 	const boolean usejoystick = (analogjoystickmove || gamepadjoystickmove);
 
-	static INT32 turnheld[MAXSPLITSCREENPLAYERS]; // for accelerative turning
 	static boolean keyboard_look[MAXSPLITSCREENPLAYERS]; // true if lookup/down using keyboard
 	static boolean resetdown[MAXSPLITSCREENPLAYERS]; // don't cam reset every frame
 
-	INT32 tspeed, forward, axis;
+	INT32 forward, axis;
 
 	joystickvector2_t joystickvector;
 
@@ -893,10 +895,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	player_t *player = &players[g_localplayers[forplayer]];
 	camera_t *thiscam = &camera[forplayer];
-	INT32 *th = &turnheld[forplayer];
 	boolean *kbl = &keyboard_look[forplayer];
 	boolean *rd = &resetdown[forplayer];
 	const boolean mouseaiming = player->spectator;
+
+	(void)realtics;
 
 	if (demo.playback) return;
 
@@ -920,8 +923,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
-	// Kart, don't build a ticcmd if someone is resynching or the server is stopped too so we don't fly off course in bad conditions
-	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN) || hu_resynching)
+	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN))
 	{
 		return;
 	}
@@ -936,8 +938,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	turnleft = PlayerInputDown(ssplayer, gc_turnleft);
 
 	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
-	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
+	joystickvector.yaxis = 0;
 	G_HandleAxisDeadZone(forplayer, &joystickvector);
+
+	// For kart, I've turned the aim axis into a digital axis because we only
+	// use it for aiming to throw items forward/backward and the vote screen
+	// This mean that the turn axis will still be gradient but up/down will be 0
+	// until the stick is pushed far enough
+	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
 
 	if (encoremode)
 	{
@@ -954,39 +962,27 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	}
 	forward = 0;
 
-	// use two stage accelerative turning
-	// on the keyboard and joystick
-	if (turnleft || turnright)
-		*th += realtics;
-	else
-		*th = 0;
-
-	if (*th < SLOWTURNTICS)
-		tspeed = 1; // slow turn
-	else
-		tspeed = 0;
-
 	cmd->turning = 0;
 
 	// let movement keys cancel each other out
 	if (turnright && !(turnleft))
 	{
-		cmd->turning = (INT16)(cmd->turning - (angleturn[tspeed]));
+		cmd->turning -= KART_FULLTURN;
 	}
 	else if (turnleft && !(turnright))
 	{
-		cmd->turning = (INT16)(cmd->turning + (angleturn[tspeed]));
+		cmd->turning += KART_FULLTURN;
 	}
 
 	if (analogjoystickmove && joystickvector.xaxis != 0)
 	{
-		cmd->turning = (INT16)(cmd->turning - (((joystickvector.xaxis * angleturn[0]) >> 10)));
+		cmd->turning -= (joystickvector.xaxis * KART_FULLTURN) >> 10;
 	}
 
 	// Specator mouse turning
 	if (player->spectator)
 	{
-		cmd->turning = (INT16)(cmd->turning - ((mousex*(encoremode ? -1 : 1)*8)));
+		cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
 	}
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
@@ -1007,7 +1003,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
 		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
-		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0) || player->kartstuff[k_sneakertimer])
+		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward = MAXPLMOVE; // 50
@@ -1050,6 +1046,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	axis = PlayerJoyAxis(ssplayer, AXISDRIFT);
 	if (PlayerInputDown(ssplayer, gc_drift) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_DRIFT;
+
+	// Spindash with any button/key
+	// Simply holds all of the inputs for you.
+	axis = PlayerJoyAxis(ssplayer, AXISSPINDASH);
+	if (PlayerInputDown(ssplayer, gc_spindash) || (usejoystick && axis > 0))
+		cmd->buttons |= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT);
 
 	// rear view with any button/key
 	axis = PlayerJoyAxis(ssplayer, AXISLOOKBACK);
@@ -1121,8 +1123,18 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->forwardmove += (SINT8)forward;
 
-	cmd->latency = modeattacking ? 0 : (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
+	cmd->latency = (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
 	cmd->flags = 0;
+
+	if (chat_on || CON_Ready())
+	{
+		cmd->flags |= TICCMD_TYPING;
+
+		if (hu_keystrokes)
+		{
+			cmd->flags |= TICCMD_KEYSTROKE;
+		}
+	}
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.
 		We check if we're actually in a level because for some reason this Hook would run in menus and on the titlescreen otherwise.
@@ -1134,18 +1146,20 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			-Making some galaxy brain autopilot Lua if you're a masochist
 			-Making a Mario Kart 8 Deluxe tier baby mode that steers you away from walls and whatnot. You know what, do what you want!
 	*/
-	if (gamestate == GS_LEVEL)
+	if (addedtogame && gamestate == GS_LEVEL)
+	{
 		LUAh_PlayerCmd(player, cmd);
+	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
 		cmd->forwardmove = MAXPLMOVE;
 	else if (cmd->forwardmove < -MAXPLMOVE)
 		cmd->forwardmove = -MAXPLMOVE;
 
-	if (cmd->turning > (angleturn[0]))
-		cmd->turning = (angleturn[0]);
-	else if (cmd->turning < (-angleturn[0]))
-		cmd->turning = (-angleturn[0]);
+	if (cmd->turning > KART_FULLTURN)
+		cmd->turning = KART_FULLTURN;
+	else if (cmd->turning < -KART_FULLTURN)
+		cmd->turning = -KART_FULLTURN;
 
 	// Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->buttons)
@@ -1176,6 +1190,26 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 		dest[i].flags = src[i].flags;
 	}
 	return dest;
+}
+
+static void kickstartaccel_OnChange(void)
+{
+	SendWeaponPref(0);
+}
+
+static void kickstartaccel2_OnChange(void)
+{
+	SendWeaponPref(1);
+}
+
+static void kickstartaccel3_OnChange(void)
+{
+	SendWeaponPref(2);
+}
+
+static void kickstartaccel4_OnChange(void)
+{
+	SendWeaponPref(3);
 }
 
 //
@@ -1224,7 +1258,7 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 
 	// Setup the level.
-	if (!P_LoadLevel(false)) // this never returns false?
+	if (!P_LoadLevel(false, false)) // this never returns false?
 	{
 		// fail so reset game stuff
 		Command_ExitGame_f();
@@ -1314,9 +1348,11 @@ void G_PreLevelTitleCard(void)
 //
 boolean G_IsTitleCardAvailable(void)
 {
+#if 0
 	// The current level has no name.
 	if (!mapheaderinfo[gamemap-1]->lvlttl[0])
 		return false;
+#endif
 
 	// The title card is available.
 	return true;
@@ -1360,7 +1396,10 @@ boolean G_Responder(event_t *ev)
 	if (gamestate == GS_LEVEL)
 	{
 		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
 			return true; // chat ate the event
+		}
 		if (AM_Responder(ev))
 			return true; // automap ate it
 		// map the event (key/mouse/joy) to a gamecontrol
@@ -1377,7 +1416,10 @@ boolean G_Responder(event_t *ev)
 	else if (gamestate == GS_CUTSCENE)
 	{
 		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
 			return true; // chat ate the event
+		}
 
 		if (F_CutsceneResponder(ev))
 		{
@@ -1388,7 +1430,10 @@ boolean G_Responder(event_t *ev)
 	else if (gamestate == GS_CREDITS || gamestate == GS_ENDING) // todo: keep ending here?
 	{
 		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
 			return true; // chat ate the event
+		}
 
 		if (F_CreditResponder(ev))
 		{
@@ -1411,7 +1456,10 @@ boolean G_Responder(event_t *ev)
 	}
 	else if (gamestate == GS_INTERMISSION || gamestate == GS_VOTING || gamestate == GS_EVALUATION)
 		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
 			return true; // chat ate the event
+		}
 
 	// allow spy mode changes even during the demo
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
@@ -2000,7 +2048,7 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	memset(p->powers, 0, sizeof (p->powers));
 	memset(p->kartstuff, 0, sizeof (p->kartstuff)); // SRB2kart
 
-	p->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK); // cancel invisibility
+	p->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK); // cancel invisibility
 	P_FlashPal(p, 0, 0); // Resets
 
 	p->starpostnum = 0;
@@ -2069,6 +2117,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT16 rings;
 	INT16 spheres;
+	INT16 steering;
 	angle_t playerangleturn;
 
 	UINT8 botdiffincrease;
@@ -2087,6 +2136,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 wanted;
 	boolean songcredit = false;
 	boolean eliminated;
+	UINT16 nocontrol;
+	INT32 khudfault;
+	INT32 kickstartaccel;
 
 	score = players[player].score;
 	marescore = players[player].marescore;
@@ -2102,7 +2154,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER|PF_FAULT));
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER|PF_FAULT|PF_KICKSTARTACCEL));
+
+	steering = players[player].steering;
 	playerangleturn = players[player].angleturn;
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
@@ -2156,6 +2210,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		spheres = 0;
 		eliminated = false;
 		wanted = 0;
+		kickstartaccel = 0;
 	}
 	else
 	{
@@ -2184,7 +2239,16 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		spheres = players[player].spheres;
 		eliminated = players[player].eliminated;
 		wanted = players[player].kartstuff[k_wanted];
+		kickstartaccel = players[player].kickstartaccel;
 	}
+
+	if (!betweenmaps)
+	{
+		khudfault = players[player].karthud[khud_fault];
+		nocontrol = players[player].powers[pw_nocontrol];
+	}
+	else
+		khudfault = nocontrol = 0;
 
 	// Obliterate follower from existence
 	P_SetTarget(&players[player].follower, NULL);
@@ -2205,6 +2269,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->quittime = quittime;
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
+	p->steering = steering;
 	p->angleturn = playerangleturn;
 
 	// save player config truth reborn
@@ -2247,6 +2312,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->kartstuff[k_wanted] = wanted;
 	p->kartstuff[k_eggmanblame] = -1;
 	p->kartstuff[k_lastdraft] = -1;
+	p->karthud[khud_fault] = khudfault;
+	p->powers[pw_nocontrol] = nocontrol;
+	p->kickstartaccel = kickstartaccel;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
@@ -2261,12 +2329,12 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 
 	// Don't do anything immediately
-	p->pflags |= PF_SPINDOWN;
+	p->pflags |= PF_BRAKEDOWN;
 	p->pflags |= PF_ATTACKDOWN;
-	p->pflags |= PF_JUMPDOWN;
+	p->pflags |= PF_ACCELDOWN;
 
 	p->playerstate = PST_LIVE;
-	p->panim = PA_IDLE; // standing animation
+	p->panim = PA_STILL; // standing animation
 
 	// Check to make sure their color didn't change somehow...
 	if (G_GametypeHasTeams())
@@ -2300,6 +2368,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (betweenmaps)
 		return;
 
+	if (leveltime < starttime)
+		return;
+
 	if (p-players == consoleplayer)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
@@ -2322,11 +2393,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (songcredit)
 		S_ShowMusicCredit();
-
-	if (leveltime > (starttime + (TICRATE/2)) && !p->spectator)
-	{
-		K_DoIngameRespawn(p);
-	}
 }
 
 //
@@ -2388,10 +2454,17 @@ void G_SpawnPlayer(INT32 playernum)
 
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 {
+#if 0
+	if (leveltime <= introtime && !players[playernum].spectator)
+		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
+	else
+		P_MovePlayerToStarpost(playernum);
+#else
 	if (leveltime > starttime)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
+#endif
 }
 
 mapthing_t *G_FindTeamStart(INT32 playernum)
@@ -4409,7 +4482,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		memset(&players[i].respawn, 0, sizeof (players[i].respawn));
 
 		// The latter two should clear by themselves, but just in case
-		players[i].pflags &= ~(PF_GAMETYPEOVER|PF_FULLSTASIS|PF_FAULT);
+		players[i].pflags &= ~(PF_GAMETYPEOVER|PF_STASIS|PF_FAULT);
 
 		// Clear cheatcodes too, just in case.
 		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);

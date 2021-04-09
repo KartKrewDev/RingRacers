@@ -40,8 +40,9 @@ EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutV
 EXPORT void HWRAPI(RenderSkyDome) (gl_sky_t *sky);
 EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags);
 EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask, FBOOLEAN DepthMask, FRGBAFloat *ClearColor);
-EXPORT void HWRAPI(SetTexture) (FTextureInfo *TexInfo);
-EXPORT void HWRAPI(UpdateTexture) (FTextureInfo *TexInfo);
+EXPORT void HWRAPI(SetTexture) (GLMipmap_t *TexInfo);
+EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *TexInfo);
+EXPORT void HWRAPI(DeleteTexture) (GLMipmap_t *TexInfo);
 EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height, INT32 dst_stride, UINT16 *dst_data);
 EXPORT void HWRAPI(GClipRect) (INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, float nearclip);
 EXPORT void HWRAPI(ClearMipMapCache) (void);
@@ -50,7 +51,7 @@ EXPORT void HWRAPI(ClearMipMapCache) (void);
 EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value);
 
 //Hurdler: added for new development
-EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, INT32 duration, INT32 tics, INT32 nextFrameIndex, FTransform *pos, float scale, UINT8 flipped, UINT8 hflipped, FSurfaceInfo *Surface, FBITFIELD blendmode);
+EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, INT32 duration, INT32 tics, INT32 nextFrameIndex, FTransform *pos, float scale, UINT8 flipped, UINT8 hflipped, FSurfaceInfo *Surface);
 EXPORT void HWRAPI(CreateModelVBOs) (model_t *model);
 EXPORT void HWRAPI(SetTransform) (FTransform *stransform);
 EXPORT INT32 HWRAPI(GetTextureUsed) (void);
@@ -70,7 +71,7 @@ EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2]);
 // jimita
 EXPORT boolean HWRAPI(CompileShaders) (void);
 EXPORT void HWRAPI(CleanShaders) (void);
-EXPORT void HWRAPI(SetShader) (int shader);
+EXPORT void HWRAPI(SetShader) (int type);
 EXPORT void HWRAPI(UnSetShader) (void);
 
 EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value);
@@ -95,6 +96,7 @@ struct hwdriver_s
 	ClearBuffer         pfnClearBuffer;
 	SetTexture          pfnSetTexture;
 	UpdateTexture       pfnUpdateTexture;
+	DeleteTexture       pfnDeleteTexture;
 	ReadRect            pfnReadRect;
 	GClipRect           pfnGClipRect;
 	ClearMipMapCache    pfnClearMipMapCache;

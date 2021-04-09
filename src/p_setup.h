@@ -80,6 +80,7 @@ typedef struct
 	UINT8 *picture;
 #ifdef HWRENDER
 	void *mipmap;
+	void *mippic;
 #endif
 } levelflat_t;
 
@@ -97,9 +98,9 @@ void P_SetupLevelSky(const char *skytexname, boolean global);
 void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum);
 #endif
 void P_RespawnThings(void);
-boolean P_LoadLevel(boolean fromnetsave);
+boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate);
 #ifdef HWRENDER
-void HWR_SetupLevel(void);
+void HWR_LoadLevel(void);
 #endif
 boolean P_AddWadFile(const char *wadfilename);
 boolean P_RunSOC(const char *socfilename);

@@ -12,12 +12,22 @@
 
 #define KART_FULLTURN 800
 
+/*
+Number of animations for the invincibility sparkles
+If states are ever added or removed
+Make sure this matches the actual number of states
+*/
+#define KART_NUMINVSPARKLESANIM 12
+
+
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
 void K_RegisterKartStuff(void);
 
-UINT16 K_GetPlayerDontDrawFlag(player_t *player);
+void K_TimerReset(void);
+void K_TimerInit(void);
+UINT32 K_GetPlayerDontDrawFlag(player_t *player);
 boolean K_IsPlayerLosing(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
@@ -35,6 +45,8 @@ void K_GenericExtraFlagsNoZAdjust(mobj_t *mo, mobj_t *master);
 void K_SpawnDashDustRelease(player_t *player);
 void K_SpawnDriftBoostClip(player_t *player);
 void K_SpawnDriftBoostClipSpark(mobj_t *clip);
+void K_SpawnNormalSpeedLines(player_t *player);
+void K_SpawnInvincibilitySpeedLines(mobj_t *mo);
 void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
@@ -45,17 +57,18 @@ void K_DoInstashield(player_t *player);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type);
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
-void K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
+INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);
 void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers);
 void K_DestroyBumpers(player_t *player, UINT8 amount);
 void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount);
 void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle, boolean spawncenter, boolean ghostit, mobj_t *source);
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color);
+void K_RunFinishLineBeam(void);
 UINT16 K_DriftSparkColor(player_t *player, INT32 charge);
 void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
-void K_SpawnWipeoutTrail(mobj_t *mo, boolean translucent);
+void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad);
 void K_SpawnDraftDust(mobj_t *mo);
 void K_DriftDustHandling(mobj_t *spawner);
 void K_PuntMine(mobj_t *mine, mobj_t *punter);
@@ -66,9 +79,10 @@ void K_UpdateHnextList(player_t *player, boolean clean);
 void K_DropHnextList(player_t *player, boolean keepshields);
 void K_RepairOrbitChain(mobj_t *orbit);
 player_t *K_FindJawzTarget(mobj_t *actor, player_t *source);
-INT32 K_GetKartRingPower(player_t *player);
+INT32 K_GetKartRingPower(player_t *player, boolean boosted);
 void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
+void K_UpdateSteeringValue(player_t *player, INT16 destSteering);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
 INT32 K_GetKartDriftSparkValue(player_t *player);
 void K_SpawnDriftBoostExplosion(player_t *player, int stage);
@@ -81,15 +95,19 @@ void K_StripItems(player_t *player);
 void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
 boolean K_ApplyOffroad(player_t *player);
+boolean K_SlopeResistance(player_t *player);
 INT16 K_GetSpindashChargeTime(player_t *player);
 fixed_t K_GetSpindashChargeSpeed(player_t *player);
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower);
 fixed_t K_GetKartAccel(player_t *player);
 UINT16 K_GetKartFlashing(player_t *player);
+boolean K_KartKickstart(player_t *player);
+UINT16 K_GetKartButtons(player_t *player);
 SINT8 K_GetForwardMove(player_t *player);
 fixed_t K_3dKartMovement(player_t *player);
 boolean K_PlayerEBrake(player_t *player);
+SINT8 K_Sliptiding(player_t *player);
 void K_AdjustPlayerFriction(player_t *player);
 void K_MoveKartPlayer(player_t *player, boolean onground);
 void K_CheckSpectateStatus(void);

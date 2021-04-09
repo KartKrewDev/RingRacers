@@ -55,7 +55,6 @@ enum hook {
 	hook_MusicChange,
 	hook_TeamSwitch,
 	hook_ViewpointSwitch,
-	hook_SeenPlayer,
 	hook_PlayerThink,
 	hook_ShouldJingleContinue,
 	hook_GameQuit,
@@ -70,6 +69,7 @@ enum hook {
 extern const char *const hookNames[];
 
 extern boolean hook_cmd_running;
+extern int hook_defrosting;
 
 void LUAh_MapChange(INT16 mapnumber); // Hook for map change (before load)
 void LUAh_MapLoad(void); // Hook for map load
@@ -122,9 +122,6 @@ boolean LUAh_FollowMobj(player_t *player, mobj_t *mobj); // Hook for P_PlayerAft
 UINT8 LUAh_PlayerCanDamage(player_t *player, mobj_t *mobj); // Hook for P_PlayerCanDamage
 boolean LUAh_TeamSwitch(player_t *player, int newteam, boolean fromspectators, boolean tryingautobalance, boolean tryingscramble); // Hook for team switching in... uh....
 UINT8 LUAh_ViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced); // Hook for spy mode
-#ifdef SEENAMES
-boolean LUAh_SeenPlayer(player_t *player, player_t *seenfriend); // Hook for MT_NAMECHECK
-#endif
 #define LUAh_PlayerThink(player) LUAh_PlayerHook(player, hook_PlayerThink) // Hook for P_PlayerThink
 boolean LUAh_ShouldJingleContinue(player_t *player, const char *musname); // Hook for whether a jingle of the given music should continue playing
-void LUAh_GameQuit(void); // Hook for game quitting
+void LUAh_GameQuit(boolean quitting); // Hook for game quitting

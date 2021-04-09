@@ -718,9 +718,6 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 
 	(void)snaptopost;
 
-	if (player->bot)
-		return;
-
 	// Player must have touched all previous starposts
 	if (post->health - player->starpostnum > 1)
 	{
@@ -1150,7 +1147,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		if (metalrecording) // Ack! Metal Sonic shouldn't die! Cut the tape, end recording!
 			G_StopMetalRecording(true);
 
-		target->drawflags &= ~MFD_DONTDRAW;
+		target->renderflags &= ~RF_DONTDRAW;
 	}
 
 	// if killed by a player
@@ -1373,14 +1370,49 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 
 		case MT_PLAYER:
+			if (damagetype != DMG_SPECTATOR)
 			{
+				angle_t flingAngle;
+				mobj_t *kart;
+
 				target->fuse = TICRATE*3; // timer before mobj disappears from view (even if not an actual player)
 				target->momx = target->momy = target->momz = 0;
 
-				if (target->player && target->player->pflags & PF_GAMETYPEOVER)
-					break;
+				kart = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_KART_LEFTOVER);
 
+				if (kart && !P_MobjWasRemoved(kart))
+				{
+					kart->angle = target->angle;
+					kart->color = target->color;
+					kart->hitlag = target->hitlag;
+					P_SetObjectMomZ(kart, 6*FRACUNIT, false);
+					kart->extravalue1 = target->player->kartweight;
+				}
+
+				if (source && !P_MobjWasRemoved(source))
+				{
+					flingAngle = R_PointToAngle2(
+						source->x - source->momx, source->y - source->momy,
+						target->x, target->y
+					);
+				}
+				else
+				{
+					flingAngle = target->angle + ANGLE_180;
+
+					if (P_RandomByte() & 1)
+					{
+						flingAngle -= ANGLE_45;
+					}
+					else
+					{
+						flingAngle += ANGLE_45;
+					}
+				}
+
+				P_InstaThrust(target, flingAngle, 14 * target->scale);
 				P_SetObjectMomZ(target, 14*FRACUNIT, false);
+
 				P_PlayDeathSound(target);
 			}
 			break;
@@ -1719,8 +1751,15 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			// Respawn kill types
 			K_DoIngameRespawn(player);
 			return false;
+		case DMG_SPECTATOR:
+			// disappearifies, but still gotta put items back in play
+			break;
 		default:
 			// Everything else REALLY kills
+			if (leveltime < starttime)
+			{
+				K_DoFault(player);
+			}
 			break;
 	}
 
@@ -1737,7 +1776,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	if (player->spectator == false)
 	{
-		player->mo->drawflags &= ~MFD_DONTDRAW;
+		player->mo->renderflags &= ~RF_DONTDRAW;
 	}
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
@@ -1749,7 +1788,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			mobj_t *boom;
 
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 
 			boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
 			boom->scale = player->mo->scale;
@@ -1762,35 +1801,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 
 	return true;
-}
-
-void P_RemoveShield(player_t *player)
-{
-	if (player->powers[pw_shield] & SH_FORCE)
-	{ // Multi-hit
-		if (player->powers[pw_shield] & SH_FORCEHP)
-			player->powers[pw_shield]--;
-		else
-			player->powers[pw_shield] &= SH_STACK;
-	}
-	else if (player->powers[pw_shield] & SH_NOSTACK)
-	{ // First layer shields
-		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON) // Give them what's coming to them!
-		{
-			player->pflags |= PF_JUMPDOWN;
-		}
-		else
-			player->powers[pw_shield] &= SH_STACK;
-	}
-	else
-	{ // Second layer shields
-		if (((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER) && !player->powers[pw_super])
-		{
-			player->mo->color = player->skincolor;
-			G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
-		}
-		player->powers[pw_shield] = SH_NONE;
-	}
 }
 
 /** Damages an object, which may or may not be a player.
@@ -1816,6 +1826,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	boolean force = false;
 
 	INT32 laglength = 10;
+	INT32 kinvextend = 0;
 
 	if (objectplacing)
 		return false;
@@ -1853,7 +1864,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-		if (target->hitlag > 0)
+		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0)
 			return false;
 	}
 
@@ -1937,7 +1948,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (combo == false)
 				{
-					if (player->powers[pw_flashing] > 0 || player->kartstuff[k_squishedtimer] > 0 || (player->kartstuff[k_spinouttimer] > 0 && player->kartstuff[k_spinouttype] != 2))
+					if (player->powers[pw_flashing] > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -1971,6 +1982,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
+					// Extend the invincibility if the hit was a direct hit.
+					if (inflictor == source && source->player->kartstuff[k_invincibilitytimer])
+					{
+						kinvextend = (source->player->kartstuff[k_invincibilitytimer])+5*TICRATE;
+						//CONS_Printf("extend k_invincibilitytimer for %s - old value %d new value %d\n", player_names[source->player -  players], source->player->kartstuff[k_invincibilitytimer]/TICRATE, kinvextend/TICRATE);
+						source->player->kartstuff[k_invincibilitytimer] = kinvextend;
+					}
+
 					K_PlayHitEmSound(source);
 
 					K_BattleAwardHit(source->player, player, inflictor, takeBumpers);
@@ -2015,10 +2034,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 				case DMG_TUMBLE:
 					K_TumblePlayer(player, inflictor, source);
+					ringburst = 10;
 					break;
 				case DMG_EXPLODE:
 				case DMG_KARMA:
-					K_ExplodePlayer(player, inflictor, source);
+					ringburst = K_ExplodePlayer(player, inflictor, source);
 					break;
 				case DMG_WIPEOUT:
 					if (P_IsDisplayPlayer(player))
@@ -2103,6 +2123,54 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	return true;
 }
 
+static void P_FlingBurst
+(		player_t *player,
+		angle_t fa,
+		mobjtype_t objType,
+		tic_t objFuse,
+		fixed_t objScale,
+		INT32 i)
+{
+	mobj_t *mo;
+	fixed_t ns;
+	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
+	INT32 mx = (i + 1) >> 1;
+
+	mo = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, objType);
+
+	mo->threshold = 10; // not useful for spikes
+	mo->fuse = objFuse;
+	P_SetTarget(&mo->target, player->mo);
+
+	if (objScale != FRACUNIT)
+	{
+		P_SetScale(mo, FixedMul(objScale, mo->scale));
+		mo->destscale = mo->scale;
+	}
+
+	/*
+	0: 0
+	1: 1 = (1+1)/2 = 1
+	2: 1 = (2+1)/2 = 1
+	3: 2 = (3+1)/2 = 2
+	4: 2 = (4+1)/2 = 2
+	5: 3 = (4+1)/2 = 2
+	 */
+	// Angle / height offset changes every other ring
+	momxy -= mx * FRACUNIT;
+	momz += mx * (2<<FRACBITS);
+
+	if (i & 1)
+		fa += ANGLE_180;
+
+	ns = FixedMul(momxy, player->mo->scale);
+	mo->momx = (mo->target->momx/2) + FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
+	mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
+
+	ns = FixedMul(momz, player->mo->scale);
+	mo->momz = (mo->target->momz/2) + ((ns) * P_MobjFlip(mo));
+}
+
 /** Spills an injured player's rings.
   *
   * \param player    The player who is losing rings.
@@ -2112,12 +2180,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
   */
 void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 {
+	INT32 num_fling_rings;
 	INT32 i;
-	mobj_t *mo;
 	angle_t fa;
-	fixed_t ns;
-	fixed_t z;
-	fixed_t momxy = 5<<FRACBITS, momz = 12<<FRACBITS; // base horizonal/vertical thrusts
 
 	// Rings shouldn't be in Battle!
 	if (gametyperules & GTR_SPHERES)
@@ -2131,58 +2196,25 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	if (K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
 		return;
 
-	// 20 is the ring cap in kart
+	// 20 is the maximum number of rings that can be taken from you at once - half the span of your counter
 	if (num_rings > 20)
 		num_rings = 20;
 	else if (num_rings <= 0)
 		return;
 
-	// Cap the maximum loss automatically to 2 in ring debt
-	if (player->rings <= 0 && num_rings > 2)
-		num_rings = 2;
-
-	P_GivePlayerRings(player, -num_rings);
+	num_rings = -P_GivePlayerRings(player, -num_rings);
+	num_fling_rings = num_rings+min(0, player->rings);
 
 	// determine first angle
 	fa = player->mo->angle + ((P_RandomByte() & 1) ? -ANGLE_90 : ANGLE_90);
 
-	for (i = 0; i < num_rings; i++)
+	for (i = 0; i < num_fling_rings; i++)
 	{
-		INT32 objType = mobjinfo[MT_RING].reactiontime;
+		P_FlingBurst(player, fa, MT_FLINGRING, 60*TICRATE, FRACUNIT, i);
+	}
 
-		z = player->mo->z;
-		if (player->mo->eflags & MFE_VERTICALFLIP)
-			z += player->mo->height - mobjinfo[objType].height;
-
-		mo = P_SpawnMobj(player->mo->x, player->mo->y, z, objType);
-
-		mo->threshold = 10;
-		mo->fuse = 60*TICRATE;
-		P_SetTarget(&mo->target, player->mo);
-
-		mo->destscale = player->mo->scale;
-		P_SetScale(mo, player->mo->scale);
-
-		// Angle / height offset changes every other ring
-		if (i != 0)
-		{
-			if (i & 1)
-			{
-				momxy -= FRACUNIT;
-				momz += 2<<FRACBITS;
-			}
-
-			fa += ANGLE_180;
-		}
-
-		ns = FixedMul(momxy, mo->scale);
-		mo->momx = (mo->target->momx/2) + FixedMul(FINECOSINE(fa>>ANGLETOFINESHIFT), ns);
-		mo->momy = (mo->target->momy/2) + FixedMul(FINESINE(fa>>ANGLETOFINESHIFT), ns);
-
-		ns = FixedMul(momz, mo->scale);
-		P_SetObjectMomZ(mo, (mo->target->momz/2) + ns, false);
-
-		if (player->mo->eflags & MFE_VERTICALFLIP)
-			mo->momz *= -1;
+	while (i < num_rings)
+	{
+		P_FlingBurst(player, fa, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, i++);
 	}
 }

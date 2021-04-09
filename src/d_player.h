@@ -67,67 +67,56 @@ typedef enum
 
 	// True if button down last tic.
 	PF_ATTACKDOWN = 1<<7,
-	PF_SPINDOWN   = 1<<8,
-	PF_JUMPDOWN   = 1<<9,
-	PF_WPNDOWN    = 1<<10,
+	PF_ACCELDOWN  = 1<<8,
+	PF_BRAKEDOWN  = 1<<9,
+	PF_WPNDOWN    = 1<<10, // unused
 
 	// Unmoving states
 	PF_STASIS     = 1<<11, // Player is not allowed to move
-	PF_JUMPSTASIS = 1<<12, // and that includes jumping.
-	PF_FULLSTASIS = PF_STASIS|PF_JUMPSTASIS,
+	PF_JUMPSTASIS = 1<<12, // unused
 
 	// SRB2Kart: Spectator that wants to join
 	PF_WANTSTOJOIN = 1<<13,
 
 	// Character action status
-	PF_STARTJUMP     = 1<<14,
-	PF_JUMPED        = 1<<15,
-	PF_NOJUMPDAMAGE  = 1<<16,
-
-	PF_SPINNING      = 1<<17,
-	PF_STARTDASH     = 1<<18,
-
-	PF_THOKKED       = 1<<19,
-	PF_SHIELDABILITY = 1<<20,
-	PF_GLIDING       = 1<<21,
-	PF_BOUNCING      = 1<<22,
+	PF_STARTJUMP     = 1<<14, // unused
+	PF_JUMPED        = 1<<15, // unused
+	PF_NOJUMPDAMAGE  = 1<<16, // unused
+	PF_SPINNING      = 1<<17, // unused
+	PF_STARTDASH     = 1<<18, // unused
+	PF_THOKKED       = 1<<19, // unused
+	PF_SHIELDABILITY = 1<<20, // unused
+	PF_GLIDING       = 1<<21, // unused
+	PF_BOUNCING      = 1<<22, // unused
 
 	// Sliding (usually in water) like Labyrinth/Oil Ocean
 	PF_SLIDING       = 1<<23,
 
 	// NiGHTS stuff
-	PF_TRANSFERTOCLOSEST = 1<<24,
-	PF_DRILLING          = 1<<25,
+	PF_TRANSFERTOCLOSEST = 1<<24, // unused
+	PF_DRILLING          = 1<<25, // unused
 
 	// Gametype-specific stuff
-	PF_GAMETYPEOVER = 1<<26, // Race time over, or H&S out-of-game
-	PF_TAGIT        = 1<<27, // The player is it! For Tag Mode
+	PF_GAMETYPEOVER = 1<<26, // Race time over
+	PF_TAGIT        = 1<<27, // unused
 
 	/*** misc ***/
-	PF_FORCESTRAFE = 1<<28, // Turning inputs are translated into strafing inputs
-	PF_CANCARRY    = 1<<29, // Can carry another player?
+	PF_KICKSTARTACCEL    = 1<<28, // Accessibility feature - is accelerate in kickstart mode?
+	PF_CANCARRY          = 1<<29, // unused
 	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
 
-	// up to 1<<31 is free
+	// up to 1<<31 is free, but try to hit unused stuff first
 } pflags_t;
 
 typedef enum
 {
 	// Are animation frames playing?
 	PA_ETC=0,
-	PA_IDLE,
-	PA_EDGE,
-	PA_WALK,
-	PA_RUN,
-	PA_DASH,
-	PA_PAIN,
-	PA_ROLL,
-	PA_JUMP,
-	PA_SPRING,
-	PA_FALL,
-	PA_ABILITY,
-	PA_ABILITY2,
-	PA_RIDE
+	PA_STILL,
+	PA_SLOW,
+	PA_FAST,
+	PA_DRIFT,
+	PA_HURT
 } panim_t;
 
 //
@@ -454,7 +443,12 @@ typedef enum
 #define TRICKMOMZRAMP (30)
 #define TRICKLAG (9)
 
+#define TUMBLEBOUNCES 3
+
 //}
+
+// for kickstartaccel
+#define ACCEL_KICKSTART 35
 
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
@@ -505,7 +499,11 @@ typedef struct player_s
 	fixed_t bob;
 
 	angle_t viewrollangle;
+	// camera tilt
+	// TODO: expose to lua
+	angle_t tilt;
 
+	INT16 steering;
 	angle_t angleturn;
 
 	// Mouse aiming, where the guy is looking at!
@@ -525,10 +523,15 @@ typedef struct player_s
 	// SRB2kart stuff
 	INT32 kartstuff[NUMKARTSTUFF];
 	INT32 karthud[NUMKARTHUD];
+
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
 	tic_t airtime; 		// Keep track of how long you've been in the air
+	boolean driftInput; // Whenever or not try drifting.
+	boolean airFailsafe; // Whenever or not try the air boost
+	INT32 aizDriftTilt;
+	INT32 aizDriftTurn;
 
 	UINT8 trickpanel; 	// Trick panel state
 	boolean trickdelay;	// Prevent tricks until control stick is neutral
@@ -573,6 +576,9 @@ typedef struct player_s
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;
 	boolean tumbleLastBounce;
+	boolean tumbleSound;
+
+	SINT8 glanceDir; // Direction the player is trying to look backwards in
 
 	//
 
@@ -696,6 +702,11 @@ typedef struct player_s
 
 	tic_t jointime; // Timer when player joins game to change skin/color
 	tic_t quittime; // Time elapsed since user disconnected, zero if connected
+
+	UINT8 typing_timer; // Counts down while keystrokes are not emitted
+	UINT8 typing_duration; // How long since resumed timer
+
+	UINT8 kickstartaccel;
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering

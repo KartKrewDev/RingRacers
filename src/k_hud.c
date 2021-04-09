@@ -133,6 +133,9 @@ static patch_t *kp_check[6];
 static patch_t *kp_rival[2];
 static patch_t *kp_localtag[4][2];
 
+static patch_t *kp_talk;
+static patch_t *kp_typdot;
+
 static patch_t *kp_eggnum[4];
 
 static patch_t *kp_flameshieldmeter[104][2];
@@ -503,6 +506,10 @@ void K_LoadKartHUDGraphics(void)
 		}
 	}
 
+	// Typing indicator
+	kp_talk = W_CachePatchName("K_TALK", PU_HUDGFX);
+	kp_typdot = W_CachePatchName("K_TYPDOT", PU_HUDGFX);
+
 	// Eggman warning numbers
 	sprintf(buffer, "K_EGGNx");
 	for (i = 0; i < 4; i++)
@@ -743,9 +750,8 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	if (options & V_SLIDEIN)
 	{
 		const tic_t length = TICRATE/2;
-		const tic_t end = (lt_endtime + length);
 
-		if (lt_ticker < end)
+		if (lt_exitticker < length)
 		{
 			INT32 offset = screenwidth - ((lt_exitticker * screenwidth) / length);
 			boolean slidefromright = false;
@@ -769,6 +775,147 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 			*x -= offset;
 		}
 	}
+}
+
+// This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
+// TODO: This should probably support view rolling if we're adding that soon...
+void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNum, angle_t angleOffset)
+{
+#define NEWTAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
+#define NEWCOS(x) FINECOSINE((x >> ANGLETOFINESHIFT) & FINEMASK)
+
+	camera_t *cam;
+	player_t *player;
+
+	fixed_t viewpointX, viewpointY, viewpointZ;
+	angle_t viewpointAngle, viewpointAiming;
+
+	INT32 screenWidth, screenHeight;
+	fixed_t screenHalfW, screenHalfH;
+
+	const fixed_t baseFov = 90*FRACUNIT;
+	fixed_t fovDiff, fov, fovTangent, fg;
+
+	fixed_t h;
+	INT32 da;
+
+	I_Assert(result != NULL);
+	I_Assert(point != NULL);
+
+	// Initialize defaults
+	result->x = result->y = 0;
+	result->scale = FRACUNIT;
+	result->onScreen = false;
+
+	if (cameraNum > r_splitscreen)
+	{
+		// Invalid camera ID.
+		return;
+	}
+
+	cam = &camera[cameraNum];
+	player = &players[displayplayers[cameraNum]];
+
+	if (cam == NULL || player == NULL)
+	{
+		// Shouldn't be possible?
+		return;
+	}
+
+	if (cam->chase == true && !player->spectator)
+	{
+		// Use the camera's properties.
+		viewpointX = cam->x;
+		viewpointY = cam->y;
+		viewpointZ = cam->z - point->z;
+		viewpointAngle = (INT32)cam->angle;
+		viewpointAiming = (INT32)cam->aiming;
+	}
+	else
+	{
+		// Use player properties.
+
+		if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+		{
+			// This shouldn't happen.
+			return;
+		}
+
+		viewpointX = player->mo->x;
+		viewpointY = player->mo->y;
+		viewpointZ = player->viewz - point->z;
+		viewpointAngle = (INT32)player->mo->angle;
+		viewpointAiming = (INT32)player->aiming;
+	}
+
+	viewpointAngle += (INT32)angleOffset;
+
+	// Calculate screen size adjustments.
+	// TODO: Anyone want to make this support non-green resolutions somehow? :V
+	screenWidth = BASEVIDWIDTH;
+	screenHeight = BASEVIDHEIGHT;
+
+	if (r_splitscreen >= 2)
+	{
+		// Half-wide screens
+		screenWidth >>= 1;
+	}
+
+	if (r_splitscreen >= 1)
+	{
+		// Half-tall screens
+		screenHeight >>= 1;
+	}
+
+	screenHalfW = (screenWidth >> 1) << FRACBITS;
+	screenHalfH = (screenHeight >> 1) << FRACBITS;
+
+	// Calculate FOV adjustments.
+	fovDiff = cv_fov[cameraNum].value - baseFov;
+	fov = ((baseFov - fovDiff) / 2) - (player->fovadd / 2);
+	fovTangent = NEWTAN(FixedAngle(fov));
+
+	if (r_splitscreen == 1)
+	{
+		// Splitscreen FOV is adjusted to maintain expected vertical view
+		fovTangent = 10*fovTangent/17;
+	}
+
+	fg = (screenWidth >> 1) * fovTangent;
+
+	// Determine viewpoint factors.
+	h = R_PointToDist2(point->x, point->y, viewpointX, viewpointY);
+	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewpointX, viewpointY));
+
+	// Set results!
+	result->x = screenHalfW + FixedMul(NEWTAN(da), fg);
+	result->y = screenHalfH + FixedMul((NEWTAN(viewpointAiming) - FixedDiv(viewpointZ, 1 + FixedMul(NEWCOS(da), h))), fg);
+
+	result->scale = FixedDiv(screenHalfW, h+1);
+
+	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, viewpointZ))) > ANGLE_45));
+
+	if (encoremode)
+	{
+		// Flipped screen
+		result->x = (screenWidth << FRACBITS) - result->x;
+	}
+
+	// Cheap dirty hacks for some split-screen related cases
+	if (result->x < 0 || result->x > (screenWidth << FRACBITS))
+	{
+		result->onScreen = false;
+	}
+
+	if (result->y < 0 || result->y > (screenHeight << FRACBITS))
+	{
+		result->onScreen = false;
+	}
+
+	return;
+
+#undef NEWTAN
+#undef NEWCOS
 }
 
 static void K_initKartHUD(void)
@@ -1415,17 +1562,26 @@ static void K_DrawKartPositionNum(INT32 num)
 	fixed_t scale = FRACUNIT;
 	patch_t *localpatch = kp_positionnum[0][0];
 	INT32 fx = 0, fy = 0, fflags = 0;
+	INT32 addOrSub = V_ADD;
 	boolean flipdraw = false;	// flip the order we draw it in for MORE splitscreen bs. fun.
 	boolean flipvdraw = false;	// used only for 2p splitscreen so overtaking doesn't make 1P's position fly off the screen.
 	boolean overtake = false;
+
+	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM)
+	{
+		addOrSub = V_SUBTRACT;
+	}
 
 	if (stplyr->kartstuff[k_positiondelay] || stplyr->exiting)
 	{
 		scale *= 2;
 		overtake = true;	// this is used for splitscreen stuff in conjunction with flipdraw.
 	}
+
 	if (r_splitscreen)
+	{
 		scale /= 2;
+	}
 
 	W = FixedMul(W<<FRACBITS, scale)>>FRACBITS;
 
@@ -1472,38 +1628,46 @@ static void K_DrawKartPositionNum(INT32 num)
 	}
 
 	// Special case for 0
-	if (!num)
+	if (num <= 0)
 	{
-		V_DrawFixedPatch(fx<<FRACBITS, fy<<FRACBITS, scale, V_HUDTRANSHALF|V_SLIDEIN|fflags, kp_positionnum[0][0], NULL);
+		V_DrawFixedPatch(fx<<FRACBITS, fy<<FRACBITS, scale, addOrSub|V_SLIDEIN|fflags, kp_positionnum[0][0], NULL);
 		return;
 	}
-
-	I_Assert(num >= 0); // This function does not draw negative numbers
 
 	// Draw the number
 	while (num)
 	{
 		if (win) // 1st place winner? You get rainbows!!
+		{
 			localpatch = kp_winnernum[(leveltime % (NUMWINFRAMES*3)) / 3];
+		}
 		else if (stplyr->laps >= cv_numlaps.value || stplyr->exiting) // Check for the final lap, or won
 		{
-			// Alternate frame every three frames
-			switch (leveltime % 9)
+			boolean useRedNums = K_IsPlayerLosing(stplyr);
+
+			if (addOrSub == V_SUBTRACT)
 			{
-				case 1: case 2: case 3:
-					if (K_IsPlayerLosing(stplyr))
+				// Subtracting RED will look BLUE, and vice versa.
+				useRedNums = !useRedNums;
+			}
+
+			// Alternate frame every three frames
+			switch ((leveltime % 9) / 3)
+			{
+				case 0:
+					if (useRedNums == true)
 						localpatch = kp_positionnum[num % 10][4];
 					else
 						localpatch = kp_positionnum[num % 10][1];
 					break;
-				case 4: case 5: case 6:
-					if (K_IsPlayerLosing(stplyr))
+				case 1:
+					if (useRedNums == true)
 						localpatch = kp_positionnum[num % 10][5];
 					else
 						localpatch = kp_positionnum[num % 10][2];
 					break;
-				case 7: case 8: case 9:
-					if (K_IsPlayerLosing(stplyr))
+				case 2:
+					if (useRedNums == true)
 						localpatch = kp_positionnum[num % 10][6];
 					else
 						localpatch = kp_positionnum[num % 10][3];
@@ -1514,9 +1678,15 @@ static void K_DrawKartPositionNum(INT32 num)
 			}
 		}
 		else
+		{
 			localpatch = kp_positionnum[num % 10][0];
+		}
 
-		V_DrawFixedPatch((fx<<FRACBITS) + ((overtake && flipdraw) ? (SHORT(localpatch->width)*scale/2) : 0), (fy<<FRACBITS) + ((overtake && flipvdraw) ? (SHORT(localpatch->height)*scale/2) : 0), scale, V_HUDTRANSHALF|V_SLIDEIN|fflags, localpatch, NULL);
+		V_DrawFixedPatch(
+			(fx<<FRACBITS) + ((overtake && flipdraw) ? (SHORT(localpatch->width)*scale/2) : 0),
+			(fy<<FRACBITS) + ((overtake && flipvdraw) ? (SHORT(localpatch->height)*scale/2) : 0),
+			scale, addOrSub|V_SLIDEIN|fflags, localpatch, NULL
+		);
 		// ^ if we overtake as p1 or p3 in splitscren, we shift it so that it doesn't go off screen.
 		// ^ if we overtake as p1 in 2p splits, shift vertically so that this doesn't happen either.
 
@@ -2029,6 +2199,63 @@ static void K_drawKartLapsAndRings(void)
 
 #undef RINGANIM_FLIPFRAME
 
+static void K_drawKartAccessibilityIcons(INT32 fx)
+{
+	INT32 fy = LAPS_Y-25;
+	UINT8 col = 0, i, wid, fil;
+	INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+	//INT32 step = 1; -- if there's ever more than one accessibility icon
+
+	fx += LAPS_X;
+
+	if (r_splitscreen < 2) // adjust to speedometer height
+	{
+		if (gametype == GT_BATTLE)
+			fy -= 4;
+	}
+	else
+	{
+		fy += 4;
+		if (!(stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]))	// If we are not P1 or P3...
+		{
+			splitflags ^= (V_SNAPTOLEFT|V_SNAPTORIGHT);
+			fx = (BASEVIDWIDTH/2) - (fx + 10);
+			//step = -step;
+		}
+	}
+
+	if (stplyr->pflags & PF_KICKSTARTACCEL) // just KICKSTARTACCEL right now, maybe more later
+	{
+		fil = 7-(stplyr->kickstartaccel*7)/ACCEL_KICKSTART;
+		i = 7;
+
+		V_DrawFill(fx+4, fy-1, 2, 1, 31|V_SLIDEIN|splitflags);
+		V_DrawFill(fx, (fy-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
+
+		while (i--)
+		{
+			wid = (i/2)+1;
+			V_DrawFill(fx+4-wid, fy+i, 2+(wid*2), 1, 31|V_SLIDEIN|splitflags);
+			if (fil)
+			{
+				if (i < fil)
+					col = 23;
+				else if (i == fil)
+					col = 3;
+				else
+					col = 5 + (i-fil)*2;
+			}
+			else if ((leveltime % 7) == i)
+				col = 0;
+			else
+				col = 3;
+			V_DrawFill(fx+5-wid, fy+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
+		}
+
+		//fx += step*12;
+	}
+}
+
 static void K_drawKartSpeedometer(void)
 {
 	static fixed_t convSpeed;
@@ -2043,7 +2270,7 @@ static void K_drawKartSpeedometer(void)
 		{
 			case 1: // Sonic Drift 2 style percentage
 			default:
-				convSpeed = (((25*stplyr->speed)/24) * 100) / K_GetKartSpeed(stplyr, false); // Based on top speed! (cheats with the numbers due to some weird discrepancy)
+				convSpeed = (stplyr->speed * 100) / K_GetKartSpeed(stplyr, false); // Based on top speed!
 				labeln = 0;
 				break;
 			case 2: // Kilometers
@@ -2062,7 +2289,8 @@ static void K_drawKartSpeedometer(void)
 	}
 
 	// Don't overflow
-	if (convSpeed > 999)
+	// (negative speed IS really high speed :V)
+	if (convSpeed > 999 || convSpeed < 0)
 		convSpeed = 999;
 
 	numbers[0] = ((convSpeed / 100) % 10);
@@ -2077,6 +2305,8 @@ static void K_drawKartSpeedometer(void)
 	V_DrawScaledPatch(LAPS_X+13, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
 	V_DrawScaledPatch(LAPS_X+19, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
 	V_DrawScaledPatch(LAPS_X+29, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
+
+	K_drawKartAccessibilityIcons(56);
 }
 
 static void K_drawBlueSphereMeter(void)
@@ -2296,112 +2526,13 @@ static void K_drawKartWanted(void)
 	}
 }
 
-static void K_ObjectTracking(fixed_t *hud_x, fixed_t *hud_y, vector3_t *campos, angle_t camang, angle_t camaim, vector3_t *point, UINT8 cnum)
-{
-	const INT32 swhalf = (BASEVIDWIDTH / 2);
-	const fixed_t swhalffixed = swhalf * FRACUNIT;
-
-	const INT32 shhalf = (BASEVIDHEIGHT / 2);
-	const fixed_t shhalffixed = shhalf * FRACUNIT;
-
-
-	const UINT8 precisionloss = 4;
-
-	fixed_t anglediff = (AngleFixed(camang) / precisionloss) - (AngleFixed(R_PointToAngle2(campos->x, campos->y, point->x, point->y)) / precisionloss);
-
-	fixed_t distance = R_PointToDist2(campos->x, campos->y, point->x, point->y);
-	fixed_t factor = INT32_MAX;
-
-	const fixed_t fov = cv_fov[cnum].value;
-	fixed_t intendedfov = 90*FRACUNIT;
-	fixed_t fovmul = FRACUNIT;
-
-	if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
-	{
-		intendedfov = 17 * intendedfov / 10;
-	}
-
-	fovmul = FixedDiv(fov, intendedfov);
-
-	anglediff = FixedMul(anglediff, fovmul) * precisionloss;
-
-	if (abs(anglediff) > 90*FRACUNIT)
-	{
-		if (hud_x != NULL)
-		{
-			*hud_x = -1000 * FRACUNIT;
-		}
-
-		if (hud_y != NULL)
-		{
-			*hud_y = -1000 * FRACUNIT;
-		}
-
-		//*hud_scale = 0;
-		return;
-	}
-
-	anglediff = FixedAngle(anglediff);
-
-	factor = max(1, FINECOSINE(anglediff >> ANGLETOFINESHIFT));
-
-#define NEWTAN(n) FINETANGENT(((n + ANGLE_90) >> ANGLETOFINESHIFT) & 4095)
-
-	if (hud_x != NULL)
-	{
-		*hud_x = FixedMul(NEWTAN(anglediff), swhalffixed) + swhalffixed;
-
-		if (*hud_x < 0 || *hud_x > BASEVIDWIDTH * FRACUNIT)
-		{
-			*hud_x = -1000 * FRACUNIT;
-		}
-		else
-		{
-			if (encoremode)
-			{
-				*hud_x = (BASEVIDWIDTH * FRACUNIT) - *hud_x;
-			}
-
-			if (r_splitscreen >= 2)
-			{
-				*hud_x /= 2;
-			}
-		}
-	}
-
-	if (hud_y != NULL)
-	{
-		*hud_y = campos->z - point->z;
-		*hud_y = FixedDiv(*hud_y, FixedMul(factor, distance));
-		*hud_y = (*hud_y * swhalf) + shhalffixed;
-		*hud_y = *hud_y + NEWTAN(camaim) * swhalf;
-
-		if (*hud_y < 0 || *hud_y > BASEVIDHEIGHT * FRACUNIT)
-		{
-			*hud_y = -1000 * FRACUNIT;
-		}
-		else
-		{
-			if (r_splitscreen >= 1)
-			{
-				*hud_y /= 2;
-			}
-		}
-	}
-
-	//*hud_scale = FixedDiv(swhalffixed, FixedMul(factor, distance));
-
-#undef NEWTAN
-}
-
 static void K_drawKartPlayerCheck(void)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
-	camera_t *thiscam;
-	vector3_t c;
 	UINT8 cnum = 0;
 	UINT8 i;
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
+	fixed_t y = CHEK_Y * FRACUNIT;
 
 	if (stplyr == NULL || stplyr->mo == NULL || P_MobjWasRemoved(stplyr->mo))
 	{
@@ -2420,6 +2551,8 @@ static void K_drawKartPlayerCheck(void)
 
 	if (r_splitscreen)
 	{
+		y /= 2;
+
 		for (i = 1; i <= r_splitscreen; i++)
 		{
 			if (stplyr == &players[displayplayers[i]])
@@ -2430,20 +2563,14 @@ static void K_drawKartPlayerCheck(void)
 		}
 	}
 
-	thiscam = &camera[cnum];
-
-	c.x = stplyr->mo->x;
-	c.y = stplyr->mo->y;
-	c.z = stplyr->mo->z;
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		player_t *checkplayer = &players[i];
 		fixed_t distance = maxdistance+1;
 		UINT8 *colormap = NULL;
 		UINT8 pnum = 0;
-		fixed_t x = 0;
 		vector3_t v;
+		trackingResult_t result;
 
 		if (!playeringame[i] || checkplayer->spectator)
 		{
@@ -2467,7 +2594,7 @@ static void K_drawKartPlayerCheck(void)
 		v.y = checkplayer->mo->y;
 		v.z = checkplayer->mo->z;
 
-		distance = R_PointToDist2(c.x, c.y, v.x, v.y);
+		distance = R_PointToDist2(stplyr->mo->x, stplyr->mo->y, v.x, v.y);
 
 		if (distance > maxdistance)
 		{
@@ -2489,15 +2616,23 @@ static void K_drawKartPlayerCheck(void)
 			pnum += 2;
 		}
 
-		K_ObjectTracking(&x, NULL, &c, thiscam->angle + ANGLE_180, 0, &v, cnum);
+		K_ObjectTracking(&result, &v, cnum, ANGLE_180);
 
-		colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
-		V_DrawFixedPatch(x, CHEK_Y * FRACUNIT, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
+		if (result.onScreen == true)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
+			V_DrawFixedPatch(result.x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
+		}
 	}
 }
 
 static boolean K_ShowPlayerNametag(player_t *p)
 {
+	if (cv_seenames.value == 0)
+	{
+		return false;
+	}
+
 	if (demo.playback == true && demo.freecam == true)
 	{
 		return true;
@@ -2508,7 +2643,7 @@ static boolean K_ShowPlayerNametag(player_t *p)
 		return false;
 	}
 
-	if (gametype == GT_RACE)
+	if (gametyperules & GTR_CIRCUIT)
 	{
 		if ((p->kartstuff[k_position] < stplyr->kartstuff[k_position]-2)
 		|| (p->kartstuff[k_position] > stplyr->kartstuff[k_position]+2))
@@ -2531,6 +2666,27 @@ static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
 {
 	UINT8 blink = ((leveltime / 7) & 1);
 	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_rival[blink], NULL);
+}
+
+static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p)
+{
+	if (p->typing_duration > duration)
+	{
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_typdot, NULL);
+	}
+}
+
+static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
+{
+	if (p->cmd.flags & TICCMD_TYPING)
+	{
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_talk, NULL);
+
+		/* spacing closer with the last two looks a better most of the time */
+		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p);
+		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p);
+		K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p);
+	}
 }
 
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 cnum)
@@ -2620,9 +2776,18 @@ static void K_drawKartNameTags(void)
 
 	thiscam = &camera[cnum];
 
-	c.x = thiscam->x;
-	c.y = thiscam->y;
-	c.z = thiscam->z;
+	if (thiscam->chase == true)
+	{
+		c.x = thiscam->x;
+		c.y = thiscam->y;
+		c.z = thiscam->z;
+	}
+	else
+	{
+		c.x = stplyr->mo->x;
+		c.y = stplyr->mo->y;
+		c.z = stplyr->mo->z;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -2642,7 +2807,7 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		if (ntplayer->mo->drawflags & K_GetPlayerDontDrawFlag(stplyr))
+		if (ntplayer->mo->renderflags & K_GetPlayerDontDrawFlag(stplyr))
 		{
 			// Invisible on this screen
 			continue;
@@ -2709,66 +2874,65 @@ static void K_drawKartNameTags(void)
 
 		for (i = 0; i < sortlen; i++)
 		{
+			trackingResult_t result;
 			player_t *ntplayer = &players[sortedplayers[i]];
 
-			fixed_t x = -BASEVIDWIDTH * FRACUNIT;
-			fixed_t y = -BASEVIDWIDTH * FRACUNIT;
+			fixed_t headOffset = 36*ntplayer->mo->scale;
 
 			SINT8 localindicator = -1;
 			vector3_t v;
 
 			v.x = ntplayer->mo->x;
 			v.y = ntplayer->mo->y;
-			v.z = ntplayer->mo->z;
+			v.z = ntplayer->mo->z + (ntplayer->mo->height / 2);
 
-			if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
+			if (stplyr->mo->eflags & MFE_VERTICALFLIP)
 			{
-				v.z += ntplayer->mo->height;
+				v.z -= headOffset;
+			}
+			else
+			{
+				v.z += headOffset;
 			}
 
-			K_ObjectTracking(&x, &y, &c, thiscam->angle, thiscam->aiming, &v, cnum);
+			K_ObjectTracking(&result, &v, cnum, 0);
 
-			/*
-			if ((x < 0 || x > BASEVIDWIDTH * FRACUNIT)
-			|| (y < 0 || y > BASEVIDHEIGHT * FRACUNIT))
+			if (result.onScreen == true)
 			{
-				// Off-screen
-				continue;
-			}
-			*/
-
-			if (!(demo.playback == true && demo.freecam == true))
-			{
-				for (j = 0; j <= r_splitscreen; j++)
+				if (!(demo.playback == true && demo.freecam == true))
 				{
-					if (ntplayer == &players[displayplayers[j]])
+					for (j = 0; j <= r_splitscreen; j++)
 					{
-						break;
+						if (ntplayer == &players[displayplayers[j]])
+						{
+							break;
+						}
+					}
+
+					if (j <= r_splitscreen && j != cnum)
+					{
+						localindicator = j;
 					}
 				}
 
-				if (j <= r_splitscreen && j != cnum)
+				if (localindicator >= 0)
 				{
-					localindicator = j;
+					K_DrawLocalTagForPlayer(result.x, result.y, ntplayer, localindicator);
 				}
-			}
-
-			if (localindicator >= 0)
-			{
-				K_DrawLocalTagForPlayer(x, y, ntplayer, localindicator);
-			}
-			else if (ntplayer->bot)
-			{
-				if (ntplayer->botvars.rival == true)
+				else if (ntplayer->bot)
 				{
-					K_DrawRivalTagForPlayer(x, y);
+					if (ntplayer->botvars.rival == true)
+					{
+						K_DrawRivalTagForPlayer(result.x, result.y);
+					}
 				}
-			}
-			else if (netgame || demo.playback)
-			{
-				if (K_ShowPlayerNametag(ntplayer) == true)
+				else if (netgame || demo.playback)
 				{
-					K_DrawNameTagForPlayer(x, y, ntplayer, cnum);
+					if (K_ShowPlayerNametag(ntplayer) == true)
+					{
+						K_DrawNameTagForPlayer(result.x, result.y, ntplayer, cnum);
+						K_DrawTypingNotifier(result.x, result.y, ntplayer);
+					}
 				}
 			}
 		}
@@ -2883,16 +3047,17 @@ static void K_drawKartMinimap(void)
 	x = MINI_X - (AutomapPic->width/2);
 	y = MINI_Y - (AutomapPic->height/2);
 
-	if (timeinmap > 105)
 	{
+		const tic_t length = TICRATE/2;
+
+		if (!lt_exitticker)
+			return;
 		minimaptrans = cv_kartminimap.value;
-		if (timeinmap <= 113)
-			minimaptrans = ((((INT32)timeinmap) - 105)*minimaptrans)/(113-105);
+		if (lt_exitticker < length)
+			minimaptrans = (((INT32)lt_exitticker)*minimaptrans)/((INT32)length);
 		if (!minimaptrans)
 			return;
 	}
-	else
-		return;
 
 	minimaptrans = ((10-minimaptrans)<<FF_TRANSSHIFT);
 	splitflags |= minimaptrans;
@@ -3452,7 +3617,7 @@ static void K_drawBattleFullscreen(void)
 		}
 	}
 
-	if (netgame && !stplyr->spectator && timeinmap > 113) // FREE PLAY?
+	if (netgame && !stplyr->spectator) // FREE PLAY?
 	{
 		UINT8 i;
 
@@ -3466,21 +3631,21 @@ static void K_drawBattleFullscreen(void)
 		}
 
 		if (LUA_HudEnabled(hud_freeplay))
-			K_drawKartFreePlay(leveltime);
+			K_drawKartFreePlay();
 	}
 }
 
 static void K_drawKartFirstPerson(void)
 {
 	static INT32 pnum[4], turn[4], drift[4];
+	const INT16 steerThreshold = KART_FULLTURN / 2;
 	INT32 pn = 0, tn = 0, dr = 0;
 	INT32 target = 0, splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
 	INT32 x = BASEVIDWIDTH/2, y = BASEVIDHEIGHT;
 	fixed_t scale;
 	UINT8 *colmap = NULL;
-	ticcmd_t *cmd = &stplyr->cmd;
 
-	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->drawflags & MFD_DONTDRAW))
+	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW))
 		return;
 
 	if (stplyr == &players[displayplayers[1]] && r_splitscreen)
@@ -3503,19 +3668,19 @@ static void K_drawKartFirstPerson(void)
 		if (stplyr->speed < (20*stplyr->mo->scale) && (leveltime & 1) && !r_splitscreen)
 			y++;
 
-		if (stplyr->mo->drawflags & MFD_TRANSMASK)
-			splitflags |= ((stplyr->mo->drawflags & MFD_TRANSMASK) >> MFD_TRANSSHIFT) << FF_TRANSSHIFT;
+		if (stplyr->mo->renderflags & RF_TRANSMASK)
+			splitflags |= ((stplyr->mo->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) << FF_TRANSSHIFT;
 		else if (stplyr->mo->frame & FF_TRANSMASK)
 			splitflags |= (stplyr->mo->frame & FF_TRANSMASK);
 	}
 
-	if (cmd->turning > 400) // strong left turn
+	if (stplyr->steering > steerThreshold) // strong left turn
 		target = 2;
-	else if (cmd->turning < -400) // strong right turn
+	else if (stplyr->steering < -steerThreshold) // strong right turn
 		target = -2;
-	else if (cmd->turning > 0) // weak left turn
+	else if (stplyr->steering > 0) // weak left turn
 		target = 1;
-	else if (cmd->turning < 0) // weak right turn
+	else if (stplyr->steering < 0) // weak right turn
 		target = -1;
 	else // forward
 		target = 0;
@@ -3538,8 +3703,8 @@ static void K_drawKartFirstPerson(void)
 	x <<= FRACBITS;
 	y <<= FRACBITS;
 
-	if (tn != cmd->turning/50)
-		tn -= (tn - (cmd->turning/50))/8;
+	if (tn != stplyr->steering/50)
+		tn -= (tn - (stplyr->steering/50))/8;
 
 	if (dr != stplyr->kartstuff[k_drift]*16)
 		dr -= (dr - (stplyr->kartstuff[k_drift]*16))/8;
@@ -3560,7 +3725,27 @@ static void K_drawKartFirstPerson(void)
 		const angle_t ang = R_PointToAngle2(0, 0, stplyr->rmomx, stplyr->rmomy) - stplyr->drawangle;
 		// yes, the following is correct. no, you do not need to swap the x and y.
 		fixed_t xoffs = -P_ReturnThrustY(stplyr->mo, ang, (BASEVIDWIDTH<<(FRACBITS-2))/2);
-		fixed_t yoffs = -(P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT) - 4*FRACUNIT);
+		fixed_t yoffs = -P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT);
+
+		// hitlag vibrating
+		if (stplyr->mo->hitlag > 0)
+		{
+			fixed_t mul = stplyr->mo->hitlag * (FRACUNIT / 10);
+			if (r_splitscreen && mul > FRACUNIT)
+				mul = FRACUNIT;
+
+			if (leveltime & 1)
+			{
+				mul = -mul;
+			}
+
+			xoffs = FixedMul(xoffs, mul);
+			yoffs = FixedMul(yoffs, mul);
+
+		}
+
+		if ((yoffs += 4*FRACUNIT) < 0)
+			yoffs = 0;
 
 		if (r_splitscreen)
 			xoffs = FixedMul(xoffs, scale);
@@ -3619,18 +3804,6 @@ static void K_drawInput(void)
 	const INT32 accent2 = splitflags | skincolors[stplyr->skincolor].ramp[9];
 	ticcmd_t *cmd = &stplyr->cmd;
 
-	if (timeinmap <= 105)
-		return;
-
-	if (timeinmap < 113)
-	{
-		INT32 count = ((INT32)(timeinmap) - 105);
-		offs = 64;
-		while (count-- > 0)
-			offs >>= 1;
-		x += offs;
-	}
-
 #define BUTTW 8
 #define BUTTH 11
 
@@ -3661,14 +3834,14 @@ static void K_drawInput(void)
 
 	y -= 1;
 
-	if (stplyr->exiting || !cmd->turning) // no turn
+	if (stplyr->exiting || !stplyr->steering) // no turn
 		target = 0;
 	else // turning of multiple strengths!
 	{
-		target = ((abs(cmd->turning) - 1)/125)+1;
+		target = ((abs(stplyr->steering) - 1)/125)+1;
 		if (target > 4)
 			target = 4;
-		if (cmd->turning < 0)
+		if (stplyr->steering < 0)
 			target = -target;
 	}
 
@@ -3778,12 +3951,15 @@ static void K_drawLapStartAnim(void)
 	}
 }
 
-void K_drawKartFreePlay(UINT32 flashtime)
+void K_drawKartFreePlay(void)
 {
 	// no splitscreen support because it's not FREE PLAY if you have more than one player in-game
 	// (you fool, you can take splitscreen online. :V)
 
-	if ((flashtime % TICRATE) < TICRATE/2)
+	if (lt_exitticker < TICRATE/2)
+		return;
+
+	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
 	V_DrawKartString((BASEVIDWIDTH - (LAPS_X+1)) - (12*9), // mirror the laps thingy
@@ -4053,34 +4229,19 @@ void K_drawKartHUD(void)
 
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
-		// Draw the speedometer
-		if (cv_kartspeedometer.value && !r_splitscreen)
-		{
-			if (LUA_HudEnabled(hud_speedometer))
-				K_drawKartSpeedometer();
-		}
-
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
-			INT32 x = BASEVIDWIDTH - 32, y = 128, offs;
+			INT32 x = BASEVIDWIDTH - 32, y = 128, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 
 			if (r_splitscreen == 3)
 			{
 				x = BASEVIDWIDTH/2 + 10;
 				y = BASEVIDHEIGHT/2 - 30;
+				snapflags = 0;
 			}
 
-			if (timeinmap < 113)
-			{
-				INT32 count = ((INT32)(timeinmap) - 104);
-				offs = 256;
-				while (count-- > 0)
-					offs >>= 1;
-				x += offs;
-			}
-
-			V_DrawTinyScaledPatch(x-54, y, 0, W_CachePatchName("TTKBANNR", PU_CACHE));
-			V_DrawTinyScaledPatch(x-54, y+25, 0, W_CachePatchName("TTKART", PU_CACHE));
+			V_DrawTinyScaledPatch(x-54, y, snapflags|V_SLIDEIN, W_CachePatchName("TTKBANNR", PU_CACHE));
+			V_DrawTinyScaledPatch(x-54, y+25, snapflags|V_SLIDEIN, W_CachePatchName("TTKART", PU_CACHE));
 		}
 		else if (gametype == GT_RACE) // Race-only elements
 		{
@@ -4108,6 +4269,16 @@ void K_drawKartHUD(void)
 			// Draw the hits left!
 			if (LUA_HudEnabled(hud_gametypeinfo))
 				K_drawKartBumpersOrKarma();
+		}
+
+		// Draw the speedometer and/or accessibility icons
+		if (cv_kartspeedometer.value && !r_splitscreen && (LUA_HudEnabled(hud_speedometer)))
+		{
+			K_drawKartSpeedometer();
+		}
+		else
+		{
+			K_drawKartAccessibilityIcons((r_splitscreen > 1) ? 0 : 8);
 		}
 
 		if (gametyperules & GTR_SPHERES)
@@ -4151,10 +4322,10 @@ void K_drawKartHUD(void)
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
-	if (isfreeplay && !stplyr->spectator && timeinmap > 113)
+	if (isfreeplay && !stplyr->spectator)
 	{
 		if (LUA_HudEnabled(hud_freeplay))
-			K_drawKartFreePlay(leveltime);
+			K_drawKartFreePlay();
 	}
 
 	if (r_splitscreen == 0 && stplyr->kartstuff[k_wrongway] && ((leveltime / 8) & 1))

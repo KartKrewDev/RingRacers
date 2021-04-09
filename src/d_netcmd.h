@@ -27,9 +27,7 @@ extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
 // preferred number of players
 extern consvar_t cv_splitplayers;
 
-#ifdef SEENAMES
-extern consvar_t cv_seenames, cv_allowseenames;
-#endif
+extern consvar_t cv_seenames;
 extern consvar_t cv_usemouse;
 extern consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
@@ -53,9 +51,6 @@ extern consvar_t cv_teamscramble;
 extern consvar_t cv_scrambleonchange;
 
 extern consvar_t cv_netstat;
-#ifdef WALLSPLATS
-extern consvar_t cv_splats;
-#endif
 
 extern consvar_t cv_countdowntime;
 extern consvar_t cv_runscripts;
@@ -93,7 +88,7 @@ extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
-extern consvar_t cv_kartdebugwaypoints;
+extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
 extern consvar_t cv_itemfinder;
 

@@ -69,10 +69,11 @@ static UINT8 softwaretranstogl_lo[11] = {  0, 12, 24, 36, 48, 60, 71, 83, 95,111
 // Notes            : x,y : positions relative to the original Doom resolution
 //                  : textes(console+score) + menus + status bar
 // -----------------+
-void HWR_DrawPatch(GLPatch_t *gpatch, INT32 x, INT32 y, INT32 option)
+void HWR_DrawPatch(patch_t *gpatch, INT32 x, INT32 y, INT32 option)
 {
 	FOutVector v[4];
 	FBITFIELD flags;
+	GLPatch_t *hwrPatch;
 
 //  3--2
 //  | /|
@@ -85,6 +86,7 @@ void HWR_DrawPatch(GLPatch_t *gpatch, INT32 x, INT32 y, INT32 option)
 
 	// make patch ready in hardware cache
 	HWR_GetPatch(gpatch);
+	hwrPatch = ((GLPatch_t *)gpatch->hardware);
 
 	switch (option & V_SCALEPATCHMASK)
 	{
@@ -104,36 +106,37 @@ void HWR_DrawPatch(GLPatch_t *gpatch, INT32 x, INT32 y, INT32 option)
 	if (option & V_NOSCALESTART)
 		sdupx = sdupy = 2.0f;
 
-	v[0].x = v[3].x = (x*sdupx-SHORT(gpatch->leftoffset)*pdupx)/vid.width - 1;
-	v[2].x = v[1].x = (x*sdupx+(SHORT(gpatch->width)-SHORT(gpatch->leftoffset))*pdupx)/vid.width - 1;
-	v[0].y = v[1].y = 1-(y*sdupy-SHORT(gpatch->topoffset)*pdupy)/vid.height;
-	v[2].y = v[3].y = 1-(y*sdupy+(SHORT(gpatch->height)-SHORT(gpatch->topoffset))*pdupy)/vid.height;
+	v[0].x = v[3].x = (x*sdupx-(gpatch->leftoffset)*pdupx)/vid.width - 1;
+	v[2].x = v[1].x = (x*sdupx+(gpatch->width-gpatch->leftoffset)*pdupx)/vid.width - 1;
+	v[0].y = v[1].y = 1-(y*sdupy-(gpatch->topoffset)*pdupy)/vid.height;
+	v[2].y = v[3].y = 1-(y*sdupy+(gpatch->height-gpatch->topoffset)*pdupy)/vid.height;
 
 	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
 
 	v[0].s = v[3].s = 0.0f;
-	v[2].s = v[1].s = gpatch->max_s;
+	v[2].s = v[1].s = hwrPatch->max_s;
 	v[0].t = v[1].t = 0.0f;
-	v[2].t = v[3].t = gpatch->max_t;
+	v[2].t = v[3].t = hwrPatch->max_t;
 
 	flags = PF_Translucent|PF_NoDepthTest;
 
-	if (option & V_WRAPX)
+	/*if (option & V_WRAPX)
 		flags |= PF_ForceWrapX;
 	if (option & V_WRAPY)
-		flags |= PF_ForceWrapY;
+		flags |= PF_ForceWrapY;*/
 
 	// clip it since it is used for bunny scroll in doom I
 	HWD.pfnDrawPolygon(NULL, v, 4, flags);
 }
 
-void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap)
+void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap)
 {
 	FOutVector v[4];
 	FBITFIELD flags;
 	float cx = FIXED_TO_FLOAT(x);
 	float cy = FIXED_TO_FLOAT(y);
-	UINT8 alphalevel = ((option & V_ALPHAMASK) >> V_ALPHASHIFT);
+	UINT32 alphalevel, blendmode;
+	GLPatch_t *hwrPatch;
 
 //  3--2
 //  | /|
@@ -141,14 +144,13 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 //  0--1
 	float dupx, dupy, fscalew, fscaleh, fwidth, fheight;
 
-	if (alphalevel >= 10 && alphalevel < 13)
-		return;
-
 	// make patch ready in hardware cache
 	if (!colormap)
 		HWR_GetPatch(gpatch);
 	else
 		HWR_GetMappedPatch(gpatch, colormap);
+
+	hwrPatch = ((GLPatch_t *)gpatch->hardware);
 
 	dupx = (float)vid.dupx;
 	dupy = (float)vid.dupy;
@@ -180,19 +182,12 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 
 		// left offset
 		if (option & V_FLIP)
-			offsetx = (float)(SHORT(gpatch->width) - SHORT(gpatch->leftoffset)) * fscalew;
+			offsetx = (float)(gpatch->width - gpatch->leftoffset) * fscalew;
 		else
-			offsetx = (float)SHORT(gpatch->leftoffset) * fscalew;
+			offsetx = (float)(gpatch->leftoffset) * fscalew;
 
 		// top offset
-		// TODO: make some kind of vertical version of V_FLIP, maybe by deprecating V_OFFSET in future?!?
-		offsety = (float)SHORT(gpatch->topoffset) * fscaleh;
-
-		if ((option & (V_NOSCALESTART|V_OFFSET)) == (V_NOSCALESTART|V_OFFSET)) // Multiply by dupx/dupy for crosshairs
-		{
-			offsetx *= dupx;
-			offsety *= dupy;
-		}
+		offsety = (float)(gpatch->topoffset) * fscaleh;
 
 		cx -= offsetx;
 		cy -= offsety;
@@ -216,13 +211,13 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 
 	if (pscale != FRACUNIT || (r_splitscreen && option & V_SPLITSCREEN))
 	{
-		fwidth = (float)SHORT(gpatch->width) * fscalew * dupx;
-		fheight = (float)SHORT(gpatch->height) * fscaleh * dupy;
+		fwidth = (float)(gpatch->width) * fscalew * dupx;
+		fheight = (float)(gpatch->height) * fscaleh * dupy;
 	}
 	else
 	{
-		fwidth = (float)SHORT(gpatch->width) * dupx;
-		fheight = (float)SHORT(gpatch->height) * dupy;
+		fwidth = (float)(gpatch->width) * dupx;
+		fheight = (float)(gpatch->height) * dupy;
 	}
 
 	// positions of the cx, cy, are between 0 and vid.width/vid.height now, we need them to be between -1 and 1
@@ -244,48 +239,58 @@ void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t
 
 	if (option & V_FLIP)
 	{
-		v[0].s = v[3].s = gpatch->max_s;
+		v[0].s = v[3].s = hwrPatch->max_s;
 		v[2].s = v[1].s = 0.0f;
 	}
 	else
 	{
 		v[0].s = v[3].s = 0.0f;
-		v[2].s = v[1].s = gpatch->max_s;
+		v[2].s = v[1].s = hwrPatch->max_s;
 	}
 
 	v[0].t = v[1].t = 0.0f;
-	v[2].t = v[3].t = gpatch->max_t;
+	v[2].t = v[3].t = hwrPatch->max_t;
 
-	flags = PF_Translucent|PF_NoDepthTest;
+	flags = PF_NoDepthTest;
 
-	if (option & V_WRAPX)
+	/*if (option & V_WRAPX)
 		flags |= PF_ForceWrapX;
 	if (option & V_WRAPY)
-		flags |= PF_ForceWrapY;
+		flags |= PF_ForceWrapY;*/
 
 	// clip it since it is used for bunny scroll in doom I
-	if (alphalevel)
+	if ((blendmode = ((option & V_BLENDMASK) >> V_BLENDSHIFT)))
+		blendmode++; // realign to constants
+	if ((alphalevel = ((option & V_ALPHAMASK) >> V_ALPHASHIFT)) || blendmode)
 	{
 		FSurfaceInfo Surf;
 		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
-		if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
-		else if (alphalevel == 14) Surf.PolyColor.s.alpha = softwaretranstogl[st_translucency];
-		else if (alphalevel == 15) Surf.PolyColor.s.alpha = softwaretranstogl_hi[st_translucency];
-		else Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
-		flags |= PF_Modulated;
-		HWD.pfnDrawPolygon(&Surf, v, 4, flags);
+
+		flags |= HWR_GetBlendModeFlag(blendmode);
+
+		if (alphalevel == 10)
+			Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
+		else if (alphalevel == 11)
+			Surf.PolyColor.s.alpha = softwaretranstogl[st_translucency];
+		else if (alphalevel == 12)
+			Surf.PolyColor.s.alpha = softwaretranstogl_hi[st_translucency];
+		else
+			Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
+
+		HWD.pfnDrawPolygon(&Surf, v, 4, flags|PF_Modulated);
 	}
 	else
-		HWD.pfnDrawPolygon(NULL, v, 4, flags);
+		HWD.pfnDrawPolygon(NULL, v, 4, flags|PF_Translucent);
 }
 
-void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
+void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
 {
 	FOutVector v[4];
 	FBITFIELD flags;
 	float cx = FIXED_TO_FLOAT(x);
 	float cy = FIXED_TO_FLOAT(y);
-	UINT8 alphalevel = ((option & V_ALPHAMASK) >> V_ALPHASHIFT);
+	UINT32 alphalevel, blendmode;
+	GLPatch_t *hwrPatch;
 
 //  3--2
 //  | /|
@@ -293,11 +298,9 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 //  0--1
 	float dupx, dupy, fscale, fwidth, fheight;
 
-	if (alphalevel >= 10 && alphalevel < 13)
-		return;
-
 	// make patch ready in hardware cache
 	HWR_GetPatch(gpatch);
+	hwrPatch = ((GLPatch_t *)gpatch->hardware);
 
 	dupx = (float)vid.dupx;
 	dupy = (float)vid.dupy;
@@ -322,8 +325,8 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 
 	// fuck it, no GL support for croppedpatch V_SPLITSCREEN right now. it's not like it's accessible to Lua or anything, and we only use it for menus...
 
-	cy -= (float)SHORT(gpatch->topoffset) * fscale;
-	cx -= (float)SHORT(gpatch->leftoffset) * fscale;
+	cy -= (float)(gpatch->topoffset) * fscale;
+	cx -= (float)(gpatch->leftoffset) * fscale;
 
 	if (!(option & V_NOSCALESTART))
 	{
@@ -332,21 +335,9 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 
 		if (!(option & V_SCALEPATCHMASK))
 		{
-			// if it's meant to cover the whole screen, black out the rest (ONLY IF TOP LEFT ISN'T TRANSPARENT)
-			// cx and cy are possibly *slightly* off from float maths
-			// This is done before here compared to software because we directly alter cx and cy to centre
-			if (cx >= -0.1f && cx <= 0.1f && SHORT(gpatch->width) == BASEVIDWIDTH && cy >= -0.1f && cy <= 0.1f && SHORT(gpatch->height) == BASEVIDHEIGHT)
-			{
-				// Need to temporarily cache the real patch to get the colour of the top left pixel
-				patch_t *realpatch = W_CacheSoftwarePatchNumPwad(gpatch->wadnum, gpatch->lumpnum, PU_STATIC);
-				const column_t *column = (const column_t *)((const UINT8 *)(realpatch) + LONG((realpatch)->columnofs[0]));
-				if (!column->topdelta)
-				{
-					const UINT8 *source = (const UINT8 *)(column) + 3;
-					HWR_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, (column->topdelta == 0xff ? 31 : source[0]));
-				}
-				Z_Free(realpatch);
-			}
+			// if it's meant to cover the whole screen, black out the rest
+			// no the patch is cropped do not do this ever
+
 			// centre screen
 			if (fabsf((float)vid.width - (float)BASEVIDWIDTH * dupx) > 1.0E-36f)
 			{
@@ -368,11 +359,11 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 	fwidth = w;
 	fheight = h;
 
-	if (fwidth > SHORT(gpatch->width))
-		fwidth = SHORT(gpatch->width);
+	if (sx + w > gpatch->width)
+		fwidth = gpatch->width - sx;
 
-	if (fheight > SHORT(gpatch->height))
-		fheight = SHORT(gpatch->height);
+	if (sy + h > gpatch->height)
+		fheight = gpatch->height - sy;
 
 	if (pscale != FRACUNIT)
 	{
@@ -402,45 +393,54 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 
 	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
 
-	v[0].s = v[3].s = ((sx  )/(float)SHORT(gpatch->width) )*gpatch->max_s;
-	if (sx + w > SHORT(gpatch->width))
-		v[2].s = v[1].s = gpatch->max_s;
+	v[0].s = v[3].s = ((sx)/(float)(gpatch->width))*hwrPatch->max_s;
+	if (sx + w > gpatch->width)
+		v[2].s = v[1].s = hwrPatch->max_s;
 	else
-		v[2].s = v[1].s = ((sx+w)/(float)SHORT(gpatch->width) )*gpatch->max_s;
+		v[2].s = v[1].s = ((sx+w)/(float)(gpatch->width))*hwrPatch->max_s;
 
-	v[0].t = v[1].t = ((sy  )/(float)SHORT(gpatch->height))*gpatch->max_t;
-	if (sy + h > SHORT(gpatch->height))
-		v[2].t = v[3].t = gpatch->max_t;
+	v[0].t = v[1].t = ((sy)/(float)(gpatch->height))*hwrPatch->max_t;
+	if (sy + h > gpatch->height)
+		v[2].t = v[3].t = hwrPatch->max_t;
 	else
-		v[2].t = v[3].t = ((sy+h)/(float)SHORT(gpatch->height))*gpatch->max_t;
+		v[2].t = v[3].t = ((sy+h)/(float)(gpatch->height))*hwrPatch->max_t;
 
-	flags = PF_Translucent|PF_NoDepthTest;
+	flags = PF_NoDepthTest;
 
-	if (option & V_WRAPX)
+	/*if (option & V_WRAPX)
 		flags |= PF_ForceWrapX;
 	if (option & V_WRAPY)
-		flags |= PF_ForceWrapY;
+		flags |= PF_ForceWrapY;*/
 
 	// clip it since it is used for bunny scroll in doom I
-	if (alphalevel)
+	if ((blendmode = ((option & V_BLENDMASK) >> V_BLENDSHIFT)))
+		blendmode++; // realign to constants
+	if ((alphalevel = ((option & V_ALPHAMASK) >> V_ALPHASHIFT)) || blendmode)
 	{
 		FSurfaceInfo Surf;
 		Surf.PolyColor.s.red = Surf.PolyColor.s.green = Surf.PolyColor.s.blue = 0xff;
-		if (alphalevel == 13) Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
-		else if (alphalevel == 14) Surf.PolyColor.s.alpha = softwaretranstogl[st_translucency];
-		else if (alphalevel == 15) Surf.PolyColor.s.alpha = softwaretranstogl_hi[st_translucency];
-		else Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
-		flags |= PF_Modulated;
-		HWD.pfnDrawPolygon(&Surf, v, 4, flags);
+
+		flags |= HWR_GetBlendModeFlag(blendmode);
+
+		if (alphalevel == 10)
+			Surf.PolyColor.s.alpha = softwaretranstogl_lo[st_translucency];
+		else if (alphalevel == 11)
+			Surf.PolyColor.s.alpha = softwaretranstogl[st_translucency];
+		else if (alphalevel == 12)
+			Surf.PolyColor.s.alpha = softwaretranstogl_hi[st_translucency];
+		else
+			Surf.PolyColor.s.alpha = softwaretranstogl[10-alphalevel];
+
+		HWD.pfnDrawPolygon(&Surf, v, 4, flags|PF_Modulated);
 	}
 	else
-		HWD.pfnDrawPolygon(NULL, v, 4, flags);
+		HWD.pfnDrawPolygon(NULL, v, 4, flags|PF_Translucent);
 }
 
 void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)
 {
 	FOutVector      v[4];
-	const GLPatch_t    *patch;
+	const patch_t    *patch;
 
 	// make pic ready in hardware cache
 	patch = HWR_GetPic(lumpnum);
@@ -457,10 +457,10 @@ void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)
 
 	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
 
-	v[0].s = v[3].s =  0;
-	v[2].s = v[1].s =  patch->max_s;
-	v[0].t = v[1].t =  0;
-	v[2].t = v[3].t =  patch->max_t;
+	v[0].s = v[3].s = 0;
+	v[2].s = v[1].s = ((GLPatch_t *)patch->hardware)->max_s;
+	v[0].t = v[1].t = 0;
+	v[2].t = v[3].t = ((GLPatch_t *)patch->hardware)->max_t;
 
 
 	//Hurdler: Boris, the same comment as above... but maybe for pics
@@ -469,7 +469,7 @@ void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)
 	// But then, the question is: why not 0 instead of PF_Masked ?
 	// or maybe PF_Environment ??? (like what I said above)
 	// BP: PF_Environment don't change anything ! and 0 is undifined
-	HWD.pfnDrawPolygon(NULL, v, 4, PF_Translucent | PF_NoDepthTest | PF_Clip | PF_NoZClip);
+	HWD.pfnDrawPolygon(NULL, v, 4, PF_Translucent | PF_NoDepthTest);
 }
 
 // ==========================================================================
@@ -537,7 +537,7 @@ void HWR_DrawFlatFill (INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum
 	v[0].t = v[1].t = (float)((y & flatflag)/dflatsize);
 	v[2].t = v[3].t = (float)(v[0].t + h/dflatsize);
 
-	HWR_LiterallyGetFlat(flatlumpnum, false);
+	HWR_GetRawFlat(flatlumpnum, false);
 
 	//Hurdler: Boris, the same comment as above... but maybe for pics
 	// it not a problem since they don't have any transparent pixel
@@ -693,6 +693,27 @@ void HWR_DrawConsoleBack(UINT32 color, INT32 height)
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
 }
 
+void HWR_EncoreInvertScreen(void)
+{
+	FOutVector v[4];
+	FSurfaceInfo Surf;
+
+	v[0].x = v[3].x = -1.0f;
+	v[2].x = v[1].x =  1.0f;
+	v[0].y = v[1].y = -1.0f;
+	v[2].y = v[3].y =  1.0f;
+	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
+
+	v[0].s = v[3].s = 0.0f;
+	v[2].s = v[1].s = 1.0f;
+	v[0].t = v[1].t = 1.0f;
+	v[2].t = v[3].t = 0.0f;
+
+	Surf.PolyColor.rgba = 0xFFFFFFFF;
+
+	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Invert|PF_NoDepthTest);
+}
+
 // Very similar to HWR_DrawConsoleBack, except we draw from the middle(-ish) of the screen to the bottom.
 void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight)
 {
@@ -741,7 +762,7 @@ void HWR_DrawViewBorder(INT32 clearlines)
 	INT32 top, side;
 	INT32 baseviewwidth, baseviewheight;
 	INT32 basewindowx, basewindowy;
-	GLPatch_t *patch;
+	patch_t *patch;
 
 //    if (gl_viewwidth == vid.width)
 //        return;

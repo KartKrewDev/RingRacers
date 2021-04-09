@@ -154,6 +154,38 @@ boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
+	static boolean K_GetWaypointIsOnLine(waypoint_t *const waypoint)
+
+		Checks if a waypoint is exactly on a line. Moving to an exact point
+		on a line won't count as crossing it. Moving off of that point does.
+		Respawning to a waypoint which is exactly on a line is the easiest
+		way to for this to occur.
+
+	Return:-
+		Whether the waypoint is exactly on a line.
+--------------------------------------------------*/
+static boolean K_GetWaypointIsOnLine(waypoint_t *const waypoint)
+{
+	const fixed_t x = waypoint->mobj->x;
+	const fixed_t y = waypoint->mobj->y;
+
+	line_t *line = P_FindNearestLine(x, y,
+			waypoint->mobj->subsector->sector, -1);
+
+	vertex_t point;
+
+	if (line != NULL)
+	{
+		P_ClosestPointOnLine(x, y, line, &point);
+
+		if (x == point.x && y == point.y)
+			return true;
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	INT32 K_GetWaypointNextID(waypoint_t *waypoint)
 
 		See header file for description.
@@ -254,6 +286,40 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj)
 }
 
 /*--------------------------------------------------
+	static void K_CompareOverlappingWaypoint
+	(		waypoint_t  *const checkwaypoint,
+			waypoint_t **const bestwaypoint,
+			fixed_t     *const bestfindist)
+
+		Solves touching overlapping waypoint radiuses by sorting by distance to
+		finish line.
+--------------------------------------------------*/
+static void K_CompareOverlappingWaypoint
+(		waypoint_t  *const checkwaypoint,
+		waypoint_t **const bestwaypoint,
+		fixed_t     *const bestfindist)
+{
+	const boolean useshortcuts = false;
+	const boolean huntbackwards = false;
+	boolean pathfindsuccess = false;
+	path_t pathtofinish = {};
+
+	pathfindsuccess =
+		K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+
+	if (pathfindsuccess == true)
+	{
+		if ((INT32)(pathtofinish.totaldist) < *bestfindist)
+		{
+			*bestwaypoint = checkwaypoint;
+			*bestfindist = pathtofinish.totaldist;
+		}
+
+		Z_Free(pathtofinish.array);
+	}
+}
+
+/*--------------------------------------------------
 	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 
 		See header file for description.
@@ -280,6 +346,11 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 
 			checkwaypoint = &waypointheap[i];
 
+			if (!K_GetWaypointIsEnabled(checkwaypoint))
+			{
+				continue;
+			}
+
 			checkdist = P_AproxDistance(
 				(mobj->x / FRACUNIT) - (checkwaypoint->mobj->x / FRACUNIT),
 				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
@@ -287,30 +358,18 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 
 			rad = (checkwaypoint->mobj->radius / FRACUNIT);
 
-			if (closestdist < rad && checkdist < rad && finishline != NULL)
+			// remember: huge radius
+			if (closestdist <= rad && checkdist <= rad && finishline != NULL)
 			{
-				const boolean useshortcuts = false;
-				const boolean huntbackwards = false;
-				boolean pathfindsuccess = false;
-				path_t pathtofinish = {};
-
 				// If the mobj is touching multiple waypoints at once,
 				// then solve ties by taking the one closest to the finish line.
 				// Prevents position from flickering wildly when taking turns.
 
-				pathfindsuccess =
-					K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
+				// For the first couple overlapping, check the previous best too.
+				if (bestfindist == INT32_MAX)
+					K_CompareOverlappingWaypoint(bestwaypoint, &bestwaypoint, &bestfindist);
 
-				if (pathfindsuccess == true)
-				{
-					if ((INT32)(pathtofinish.totaldist) < bestfindist)
-					{
-						bestwaypoint = checkwaypoint;
-						bestfindist = pathtofinish.totaldist;
-					}
-
-					Z_Free(pathtofinish.array);
-				}
+				K_CompareOverlappingWaypoint(checkwaypoint, &bestwaypoint, &bestfindist);
 			}
 			else if (checkdist < closestdist && bestfindist == INT32_MAX)
 			{
@@ -447,7 +506,12 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 	I_Assert(waypoint2->mobj != NULL);
 	I_Assert(cv_kartdebugwaypoints.value != 0);
 
-	linkcolour = K_GetWaypointID(waypoint1)%linkcolourssize;
+	linkcolour = linkcolours[K_GetWaypointID(waypoint1) % linkcolourssize];
+
+	if (!K_GetWaypointIsEnabled(waypoint1) || !K_GetWaypointIsEnabled(waypoint2))
+	{
+		linkcolour = SKINCOLOR_BLACK;
+	}
 
 	waypointmobj1 = waypoint1->mobj;
 	waypointmobj2 = waypoint2->mobj;
@@ -471,10 +535,10 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 		{
 			spawnedmobj = P_SpawnMobj(x, y, z, MT_SPARK);
 			P_SetMobjState(spawnedmobj, S_THOK);
-			spawnedmobj->state->nextstate = S_NULL;
-			spawnedmobj->state->tics = 1;
-			spawnedmobj->frame = spawnedmobj->frame & ~FF_TRANSMASK;
-			spawnedmobj->color = linkcolours[linkcolour];
+			spawnedmobj->tics = 1;
+			spawnedmobj->frame &= ~FF_TRANSMASK;
+			spawnedmobj->frame |= FF_FULLBRIGHT;
+			spawnedmobj->color = linkcolour;
 			spawnedmobj->scale = FixedMul(spawnedmobj->scale, FixedMul(FRACUNIT/4, FixedDiv((15 - ((leveltime + n) % 16))*FRACUNIT, 15*FRACUNIT)));
 		}
 
@@ -518,9 +582,9 @@ static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 
 		radiusOrb = P_SpawnMobj(spawnX, spawnY, spawnZ, MT_SPARK);
 		P_SetMobjState(radiusOrb, S_THOK);
-		radiusOrb->state->nextstate = S_NULL;
-		radiusOrb->state->tics = 1;
-		radiusOrb->frame = radiusOrb->frame & ~FF_TRANSMASK;
+		radiusOrb->tics = 1;
+		radiusOrb->frame &= ~FF_TRANSMASK;
+		radiusOrb->frame |= FF_FULLBRIGHT;
 		radiusOrb->color = SKINCOLOR_PURPLE;
 		radiusOrb->scale = radiusOrb->scale / 4;
 	}
@@ -559,7 +623,7 @@ void K_DebugWaypointsVisualise(void)
 		P_SetMobjState(debugmobj, S_THOK);
 
 		debugmobj->frame &= ~FF_TRANSMASK;
-		debugmobj->frame |= FF_TRANS20;
+		debugmobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
 
 		// There's a waypoint setup for this mobj! So draw that it's a valid waypoint and draw lines to its connections
 		if (waypoint != NULL)
@@ -584,6 +648,11 @@ void K_DebugWaypointsVisualise(void)
 			else
 			{
 				debugmobj->color = SKINCOLOR_BLUE;
+			}
+
+			if (!K_GetWaypointIsEnabled(waypoint))
+			{
+				debugmobj->color = SKINCOLOR_GREY;
 			}
 
 			// Valid waypoint, so draw lines of SPARKLES to its next or previous waypoints
@@ -614,8 +683,7 @@ void K_DebugWaypointsVisualise(void)
 		{
 			debugmobj->color = SKINCOLOR_RED;
 		}
-		debugmobj->state->tics = 1;
-		debugmobj->state->nextstate = S_NULL;
+		debugmobj->tics = 1;
 	}
 }
 
@@ -1661,6 +1729,12 @@ static waypoint_t *K_SetupWaypoint(mobj_t *const mobj)
 						oldfinishlineid, thiswaypointid, thiswaypointid);
 				}
 				finishline = thiswaypoint;
+			}
+
+			/* only relevant for respawning */
+			if (K_GetWaypointIsSpawnpoint(thiswaypoint))
+			{
+				thiswaypoint->onaline = K_GetWaypointIsOnLine(thiswaypoint);
 			}
 
 			if (thiswaypoint->numnextwaypoints > 0)

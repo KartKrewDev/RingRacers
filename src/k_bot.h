@@ -198,19 +198,19 @@ fixed_t K_BotReducePrediction(player_t *player);
 
 
 /*--------------------------------------------------
-	INT16 K_BotFindObjects(player_t *player, INT16 turn);
+	void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player);
 
-		Generates a sum for objects to steer towards/away from.
+		Moves the bot's prediction, based on objects around the bot.
 
 	Input Arguments:-
+		predict - The bot's prediction to nudge.
 		player - Player to compare.
-		turn - Turn value before object steering.
 
 	Return:-
-		Turn amount sum to add to final product.
+		None
 --------------------------------------------------*/
 
-INT16 K_BotFindObjects(player_t *player, INT16 turn);
+void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player);
 
 
 /*--------------------------------------------------

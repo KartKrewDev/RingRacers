@@ -206,7 +206,7 @@ void P_CalcHeight(player_t *player)
 
 	player->bob = FixedMul(cv_movebob.value, bobmul);
 
-	if (!P_IsObjectOnGround(mo))
+	if (!P_IsObjectOnGround(mo) || player->spectator)
 	{
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
@@ -351,7 +351,7 @@ void P_GiveEmerald(boolean spawnObj)
 			if (i == pnum)
 				continue;
 
-			emmo->flags2 |= MFD_DONTDRAW;
+			emmo->flags2 |= RF_DONTDRAW;
 		}
 	}
 }
@@ -409,7 +409,7 @@ UINT8 P_FindLowestLap(void)
 	INT32 i;
 	UINT8 lowest = UINT8_MAX;
 
-	if (gametyperules & GTR_CIRCUIT)
+	if (!(gametyperules & GTR_CIRCUIT))
 		return 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -417,10 +417,10 @@ UINT8 P_FindLowestLap(void)
 		if (!playeringame[i] || players[i].spectator)
 			continue;
 
-		if (lowest == 255)
+		if (lowest == UINT8_MAX || players[i].laps < lowest)
+		{
 			lowest = players[i].laps;
-		else if (players[i].laps < lowest)
-			lowest = players[i].laps;
+		}
 	}
 
 	CONS_Debug(DBG_GAMELOGIC, "Lowest laps found: %d\n", lowest);
@@ -461,7 +461,7 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->kartstuff[k_spinouttimer] || player->tumbleBounces > 0)
+	if (player->kartstuff[k_spinouttimer] || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT))
 		return true;
 
 	return false;
@@ -487,23 +487,29 @@ void P_ResetPlayer(player_t *player)
 //
 // Gives rings to the player, and does any special things required.
 // Call this function when you want to increment the player's health.
+// Returns the number of rings successfully given (or taken).
 //
 
-void P_GivePlayerRings(player_t *player, INT32 num_rings)
+INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 {
+	INT32 test;
+
 	if (!player->mo)
-		return;
+		return 0;
 
 	if ((gametyperules & GTR_BUMPERS)) // No rings in Battle Mode
-		return;
+		return 0;
+
+	test = player->rings + num_rings;
+	if (test > 20) // Caps at 20 rings, sorry!
+		num_rings -= (test-20);
+	else if (test < -20) // Chaotix ring debt!
+		num_rings -= (test+20);
 
 	player->rings += num_rings;
-	//player->totalring += num_rings; // Used for GP lives later
+	//player->totalring += num_rings; // Used for GP lives later -- maybe you might want to move this earlier to discourage ring debt...
 
-	if (player->rings > 20)
-		player->rings = 20; // Caps at 20 rings, sorry!
-	else if (player->rings < -20)
-		player->rings = -20; // Chaotix ring debt!
+	return num_rings;
 }
 
 //
@@ -1207,7 +1213,7 @@ void P_SpawnShieldOrb(player_t *player)
 			if (shieldobj->info->painstate)
 				P_SetMobjState(shieldobj,shieldobj->info->painstate);
 			else
-				shieldobj->drawflags |= MFD_SHADOW;
+				shieldobj->renderflags |= RF_GHOSTLY;
 		}
 	}
 }
@@ -1290,7 +1296,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprite2 = mobj->sprite2;
 	ghost->frame = mobj->frame;
 	ghost->tics = -1;
-	ghost->drawflags |= tr_trans50 << MFD_TRANSSHIFT;
+	ghost->renderflags |= tr_trans50 << RF_TRANSSHIFT;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
@@ -1851,7 +1857,7 @@ static void P_3dMovement(player_t *player)
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
 
-	if (player->kartstuff[k_sneakertimer] > 0)
+	if (K_SlopeResistance(player) == true)
 	{
 		totalthrust.z = -(totalthrust.z);
 	}
@@ -2034,8 +2040,11 @@ static void P_3dMovement(player_t *player)
 //
 static void P_UpdatePlayerAngle(player_t *player)
 {
-	angle_t angleChange = K_GetKartTurnValue(player, player->cmd.turning) << TICCMD_REDUCE;
+	angle_t angleChange = ANGLE_MAX;
 	UINT8 i;
+
+	K_UpdateSteeringValue(player, player->cmd.turning);
+	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
 	P_SetPlayerAngle(player, player->angleturn + angleChange);
 	player->mo->angle = player->angleturn;
@@ -2117,11 +2126,7 @@ void P_MovePlayer(player_t *player)
 
 	// Control relinquishing stuff!
 	if (player->powers[pw_nocontrol])
-	{
 		player->pflags |= PF_STASIS;
-		if (!(player->powers[pw_nocontrol] & (1<<15)))
-			player->pflags |= PF_JUMPSTASIS;
-	}
 
 	// note: don't unset stasis here
 
@@ -2177,9 +2182,13 @@ void P_MovePlayer(player_t *player)
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
 	}
-	else if (player->kartstuff[k_spinouttimer] > 0)
+	else if ((player->pflags & PF_FAULT) || (player->kartstuff[k_spinouttimer] > 0))
 	{
-		UINT8 speed = max(1, min(8, player->kartstuff[k_spinouttimer]/8));
+		UINT16 speed = ((player->pflags & PF_FAULT) ? player->powers[pw_nocontrol] : player->kartstuff[k_spinouttimer])/8;
+		if (speed > 8)
+			speed = 8;
+		else if (speed < 1)
+			speed = 1;
 
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2190,7 +2199,7 @@ void P_MovePlayer(player_t *player)
 
 		player->mo->rollangle = 0;
 	}
-	else if (player->pflags & PF_FAULT)
+	/*else if (player->pflags & PF_FAULT) -- v1 fault
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -2200,7 +2209,7 @@ void P_MovePlayer(player_t *player)
 			player->drawangle -= ANGLE_11hh;
 
 		player->mo->rollangle = 0;
-	}
+	}*/
 	else
 	{
 		K_KartMoveAnimation(player);
@@ -2217,7 +2226,11 @@ void P_MovePlayer(player_t *player)
 		{
 			player->drawangle = player->mo->angle;
 
-			if (player->kartstuff[k_drift] != 0)
+			if (player->aizDriftTurn)
+			{
+				player->drawangle += player->aizDriftTurn;
+			}
+			else if (player->kartstuff[k_drift] != 0)
 			{
 				INT32 a = (ANGLE_45 / 5) * player->kartstuff[k_drift];
 				player->drawangle += a;
@@ -2582,7 +2595,7 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 //
 
 // SRB2Kart: Use for GP?
-/* 
+/*
 static void P_ConsiderAllGone(void)
 {
 	INT32 i, lastdeadplayer = -1, deadtimercheck = INT32_MAX;
@@ -2632,9 +2645,6 @@ static void P_DeathThink(player_t *player)
 	if (player->deadtimer < INT32_MAX)
 		player->deadtimer++;
 
-	if (player->bot) // don't allow bots to do any of the below, B_CheckRespawn does all they need for respawning already
-		goto notrealplayer;
-
 	if ((player->pflags & PF_GAMETYPEOVER) && (gametyperules & GTR_CIRCUIT))
 	{
 		player->karthud[khud_timeovercam]++;
@@ -2642,7 +2652,7 @@ static void P_DeathThink(player_t *player)
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 		}
 	}
 	else
@@ -2676,8 +2686,6 @@ static void P_DeathThink(player_t *player)
 				curlap = 0;
 		}
 	}
-
-notrealplayer:
 
 	if (!player->mo)
 		return;
@@ -2764,15 +2772,18 @@ consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange)
 };
 
+consvar_t cv_tilting = CVAR_INIT ("tilting", "On", CV_SAVE, CV_OnOff, NULL);
+
+consvar_t cv_actionmovie = CVAR_INIT ("actionmovie", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_windowquake = CVAR_INIT ("windowquake", "Off", CV_SAVE, CV_OnOff, NULL);
+
 fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
 // Heavily simplified version of G_BuildTicCmd that only takes the local first player's control input and converts it to readable ticcmd_t
 // we then throw that ticcmd garbage in the camera and make it move
-
-// redefine this
-static fixed_t angleturn[2] = {KART_FULLTURN, KART_FULLTURN/4}; // + slow turn
+// TODO: please just use the normal ticcmd function somehow
 
 static ticcmd_t cameracmd;
 
@@ -2786,7 +2797,7 @@ void P_InitCameraCmd(void)
 
 static ticcmd_t *P_CameraCmd(camera_t *cam)
 {
-	INT32 th, tspeed, forward, axis; //i
+	INT32 forward, axis; //i
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming;
 	boolean invertmouse, lookaxis, usejoystick, kbl;
@@ -2799,7 +2810,6 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	if (!demo.playback)
 		return cmd;	// empty cmd, no.
 
-	th = democam.turnheld;
 	kbl = democam.keyboardlook;
 
 	G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
@@ -2829,31 +2839,19 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	}
 	forward = 0;
 
-	// use two stage accelerative turning
-	// on the keyboard and joystick
-	if (turnleft || turnright)
-		th += 1;
-	else
-		th = 0;
-
-	if (th < SLOWTURNTICS)
-		tspeed = 1; // slow turn
-	else
-		tspeed = 0;
-
 	cmd->turning = 0;
 
 	// let movement keys cancel each other out
 	if (turnright && !(turnleft))
 	{
-		cmd->turning = (INT16)(cmd->turning - (angleturn[tspeed]));
+		cmd->turning -= KART_FULLTURN;
 	}
 	else if (turnleft && !(turnright))
 	{
-		cmd->turning = (INT16)(cmd->turning + (angleturn[tspeed]));
+		cmd->turning += KART_FULLTURN;
 	}
 
-	cmd->turning = (INT16)(cmd->turning - ((mousex*(encoremode ? -1 : 1)*8)));
+	cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
 
 	axis = PlayerJoyAxis(1, AXISMOVE);
 	if (PlayerInputDown(1, gc_accelerate) || (usejoystick && axis > 0))
@@ -2911,7 +2909,11 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	else if (cmd->forwardmove < -MAXPLMOVE)
 		cmd->forwardmove = -MAXPLMOVE;
 
-	democam.turnheld = th;
+	if (cmd->turning > KART_FULLTURN)
+		cmd->turning = KART_FULLTURN;
+	else if (cmd->turning < -KART_FULLTURN)
+		cmd->turning = -KART_FULLTURN;
+
 	democam.keyboardlook = kbl;
 
 	return cmd;
@@ -2974,7 +2976,7 @@ void P_DemoCameraMovement(camera_t *cam)
 
 	awayviewmobj_hack = P_SpawnMobj(cam->x, cam->y, cam->z, MT_THOK);
 	awayviewmobj_hack->tics = 2;
-	awayviewmobj_hack->drawflags |= MFD_DONTDRAW;
+	awayviewmobj_hack->renderflags |= RF_DONTDRAW;
 
 	democam.soundmobj = awayviewmobj_hack;
 
@@ -2996,7 +2998,7 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	if (thiscam->chase && player->mo->health <= 0)
 		return;
 
-	thiscam->chase = true;
+	thiscam->chase = !player->spectator;
 	x = player->mo->x - P_ReturnThrustX(player->mo, thiscam->angle, player->mo->radius);
 	y = player->mo->y - P_ReturnThrustY(player->mo, thiscam->angle, player->mo->radius);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -3074,6 +3076,17 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 
 	mo = player->mo;
+
+	if (mo->hitlag > 0 || player->playerstate == PST_DEAD)
+	{
+		// Do not move the camera while in hitlag!
+		// The camera zooming out after you got hit makes it hard to focus on the vibration.
+		// of course, if you're in chase, don't forget the postimage - otherwise encore will flip back
+		if (thiscam->chase)
+			P_CalcChasePostImg(player, thiscam);
+
+		return true;
+	}
 
 #ifndef NOCLIPCAM
 	cameranoclip = ((player->pflags & PF_NOCLIP)
@@ -3715,7 +3728,7 @@ static void P_CalcPostImg(player_t *player)
 	postimg_t *type = NULL;
 	INT32 *param;
 	fixed_t pviewheight;
-	UINT8 i;
+	size_t i;
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 		pviewheight = player->mo->z + player->mo->height - player->viewheight;
@@ -3728,7 +3741,7 @@ static void P_CalcPostImg(player_t *player)
 		pviewheight = player->awayviewmobj->z + 20*FRACUNIT;
 	}
 
-	for (i = 0; i <= r_splitscreen; i++)
+	for (i = 0; i <= (unsigned)r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -3739,28 +3752,45 @@ static void P_CalcPostImg(player_t *player)
 	}
 
 	// see if we are in heat (no, not THAT kind of heat...)
-
-	if (P_FindSpecialLineFromTag(13, sector->tag, -1) != -1)
-		*type = postimg_heat;
-	else if (sector->ffloors)
+	for (i = 0; i < sector->tags.count; i++)
 	{
-		ffloor_t *rover;
-		fixed_t topheight;
-		fixed_t bottomheight;
-
-		for (rover = sector->ffloors; rover; rover = rover->next)
+		if (Tag_FindLineSpecial(13, sector->tags.tags[i]) != -1)
 		{
-			if (!(rover->flags & FF_EXISTS))
-				continue;
+			*type = postimg_heat;
+			break;
+		}
+		else if (sector->ffloors)
+		{
+			ffloor_t *rover;
+			fixed_t topheight;
+			fixed_t bottomheight;
+			boolean gotres = false;
 
-			topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
-			bottomheight = P_GetFFloorBottomZAt(rover, player->mo->x, player->mo->y);
+			for (rover = sector->ffloors; rover; rover = rover->next)
+			{
+				size_t j;
 
-			if (pviewheight >= topheight || pviewheight <= bottomheight)
-				continue;
+				if (!(rover->flags & FF_EXISTS))
+					continue;
 
-			if (P_FindSpecialLineFromTag(13, rover->master->frontsector->tag, -1) != -1)
-				*type = postimg_heat;
+				topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
+				bottomheight = P_GetFFloorBottomZAt(rover, player->mo->x, player->mo->y);
+
+				if (pviewheight >= topheight || pviewheight <= bottomheight)
+					continue;
+
+				for (j = 0; j < rover->master->frontsector->tags.count; j++)
+				{
+					if (Tag_FindLineSpecial(13, rover->master->frontsector->tags.tags[j]) != -1)
+					{
+						*type = postimg_heat;
+						gotres = true;
+						break;
+					}
+				}
+			}
+			if (gotres)
+				break;
 		}
 	}
 
@@ -4110,11 +4140,11 @@ static void P_HandleFollower(player_t *player)
 		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo);	// Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
 
 		// Match how the player is being drawn
-		player->follower->drawflags = player->mo->drawflags;
+		player->follower->renderflags = player->mo->renderflags;
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
 		if (player->pflags & PF_GAMETYPEOVER)
-			player->follower->drawflags |= MFD_DONTDRAW;
+			player->follower->renderflags |= RF_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
 			player->follower->angle = K_MomentumAngle(player->follower);
@@ -4135,7 +4165,7 @@ static void P_HandleFollower(player_t *player)
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
 			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
-			bmobj->drawflags = player->mo->drawflags;
+			bmobj->renderflags = player->mo->renderflags;
 
 			if (player->follower->threshold)	// threshold means the follower was "despawned" with S_NULL (is actually just set to S_INVISIBLE)
 				P_SetMobjState(bmobj, S_INVISIBLE);	// sooooo... let's do the same!
@@ -4216,6 +4246,95 @@ static void P_HandleFollower(player_t *player)
 	}
 }
 
+	/* gaysed script from me, based on Golden's sprite slope roll */
+
+// holy SHIT
+static INT32
+Quaketilt (player_t *player)
+{
+	angle_t tilt;
+	fixed_t lowb; // this threshold for speed
+	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	INT32 delta = (INT32)( player->mo->angle - moma );
+	fixed_t speed;
+
+	boolean sliptiding = K_Sliptiding(player);
+
+	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
+	{
+		return 0;
+	}
+
+	// Hi! I'm "not a math guy"!
+	if (abs(delta) > ANGLE_90)
+		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
+	if (P_IsObjectOnGround(player->mo))
+	{
+		if (sliptiding)
+		{
+			tilt = ANGLE_45;
+			lowb = 5*FRACUNIT;
+		}
+		else
+		{
+			tilt = ANGLE_11hh/2;
+			lowb = 15*FRACUNIT;
+		}
+	}
+	else
+	{
+		tilt = ANGLE_22h;
+		lowb = 10*FRACUNIT;
+	}
+	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
+	speed = abs( player->mo->momx + player->mo->momy );
+	if (speed < lowb)
+	{
+		// ease out tilt as we slow...
+		moma = FixedMul(moma, FixedDiv(speed, lowb));
+	}
+	return moma;
+}
+
+static void
+DoABarrelRoll (player_t *player)
+{
+	angle_t slope;
+	angle_t delta;
+
+	fixed_t smoothing;
+
+	if (player->exiting)
+	{
+		return;
+	}
+
+	slope = InvAngle(R_GetPitchRollAngle(player->mo));
+
+	if (AbsAngle(slope) < ANGLE_11hh)
+	{
+		slope = 0;
+	}
+
+	if (AbsAngle(slope) > ANGLE_45)
+	{
+		slope = slope & ANGLE_180 ? InvAngle(ANGLE_45) : ANGLE_45;
+	}
+
+	slope -= Quaketilt(player);
+
+	delta = slope - player->tilt;
+	smoothing = FixedDiv(AbsAngle(slope), ANGLE_45);
+
+	delta = FixedDiv(delta, 33 *
+			FixedDiv(FRACUNIT, FRACUNIT + smoothing));
+
+	if (delta)
+		player->tilt += delta;
+	else
+		player->tilt  = slope;
+}
+
 //
 // P_PlayerThink
 //
@@ -4236,32 +4355,6 @@ void P_PlayerThink(player_t *player)
 		CONS_Debug(DBG_GAMELOGIC, "P_PlayerThink: Player %s in PST_LIVE with 0 health. (\"Zombie bug\")\n", sizeu1(playeri));
 		player->playerstate = PST_DEAD;
 	}
-
-#ifdef SEENAMES
-	if (netgame && player == &players[displayplayers[0]] && !(leveltime % (TICRATE/5)) && !r_splitscreen)
-	{
-		seenplayer = NULL;
-
-		if (cv_seenames.value && cv_allowseenames.value)
-		{
-			mobj_t *mo = P_SpawnNameFinder(player->mo, MT_NAMECHECK);
-
-			if (mo)
-			{
-				short int i;
-				mo->flags |= MF_NOCLIPHEIGHT;
-				for (i = 0; i < 32; i++)
-				{
-					// Debug drawing
-//					if (i&1)
-//						P_SpawnMobj(mo->x, mo->y, mo->z, MT_SPARK);
-					if (P_RailThinker(mo))
-						break; // mobj was removed (missile hit a wall) or couldn't move
-				}
-			}
-		}
-	}
-#endif
 
 	if (player->mo->hitlag > 0)
 	{
@@ -4311,6 +4404,19 @@ void P_PlayerThink(player_t *player)
 	{
 		player->kartstuff[k_throwdir] = 0;
 	}
+
+	// Accessibility - kickstart your acceleration
+	if (!(player->pflags & PF_KICKSTARTACCEL))
+		player->kickstartaccel = 0;
+	else if (cmd->buttons & BT_ACCELERATE)
+	{
+		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+			player->kickstartaccel = 0;
+		else if (player->kickstartaccel < ACCEL_KICKSTART)
+			player->kickstartaccel++;
+	}
+	else if (player->kickstartaccel < ACCEL_KICKSTART)
+		player->kickstartaccel = 0;
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)
@@ -4400,9 +4506,9 @@ void P_PlayerThink(player_t *player)
 	if (player->playerstate == PST_DEAD)
 	{
 		if (player->spectator)
-			player->mo->drawflags |= MFD_SHADOW;
+			player->mo->renderflags |= RF_GHOSTLY;
 		else
-			player->mo->drawflags &= ~(MFD_TRANSMASK|MFD_BRIGHTMASK);
+			player->mo->renderflags &= ~RF_GHOSTLYMASK;
 		P_DeathThink(player);
 		LUAh_PlayerThink(player);
 		return;
@@ -4468,11 +4574,6 @@ void P_PlayerThink(player_t *player)
 			// Allows some turning
 			P_MovePlayer(player);
 		}
-		else if (player->respawn.state == RESPAWNST_MOVE)
-		{
-			angle_t angleChange = player->cmd.turning << TICCMD_REDUCE;
-			P_SetPlayerAngle(player, player->angleturn + angleChange);
-		}
 	}
 	else if (player->mo->reactiontime)
 	{
@@ -4494,10 +4595,10 @@ void P_PlayerThink(player_t *player)
 
 	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
 
-	// Unset statis flags after moving.
+	// Unset statis flag after moving.
 	// In other words, if you manually set stasis via code,
 	// it lasts for one tic.
-	player->pflags &= ~PF_FULLSTASIS;
+	player->pflags &= ~PF_STASIS;
 
 	if (player->onconveyor == 1)
 		player->onconveyor = 3;
@@ -4536,18 +4637,23 @@ void P_PlayerThink(player_t *player)
 		{
 			if (player == &players[displayplayers[i]] && !camera[i].chase)
 			{
-				gmobj->drawflags |= MFD_DONTDRAW;
+				gmobj->renderflags |= RF_DONTDRAW;
 				break;
 			}
 		}
 	}
 #endif
 
-	// check for use
-	if (cmd->buttons & BT_BRAKE)
-		player->pflags |= PF_SPINDOWN;
+	// check for buttons
+	if (cmd->buttons & BT_ACCELERATE)
+		player->pflags |= PF_ACCELDOWN;
 	else
-		player->pflags &= ~PF_SPINDOWN;
+		player->pflags &= ~PF_ACCELDOWN;
+
+	if (cmd->buttons & BT_BRAKE)
+		player->pflags |= PF_BRAKEDOWN;
+	else
+		player->pflags &= ~PF_BRAKEDOWN;
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings
@@ -4559,7 +4665,7 @@ void P_PlayerThink(player_t *player)
 		player->powers[pw_flashing]--;
 	}
 
-	if (player->powers[pw_nocontrol] & ((1<<15)-1) && player->powers[pw_nocontrol] < UINT16_MAX)
+	if (player->powers[pw_nocontrol] && player->powers[pw_nocontrol] < UINT16_MAX)
 	{
 		if (!(--player->powers[pw_nocontrol]))
 			player->pflags &= ~PF_FAULT;
@@ -4576,19 +4682,78 @@ void P_PlayerThink(player_t *player)
 		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
-		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)
-		|| leveltime < starttime)) // Level intro
+		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)))
 	{
 		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)
 			&& (leveltime & 1))
-			player->mo->drawflags |= MFD_DONTDRAW;
+			player->mo->renderflags |= RF_DONTDRAW;
 		else
-			player->mo->drawflags &= ~MFD_DONTDRAW;
+			player->mo->renderflags &= ~RF_DONTDRAW;
+	}
+
+	if (cmd->flags & TICCMD_TYPING)
+	{
+		/*
+		typing_duration is slow to start and slow to stop.
+
+		typing_timer counts down a grace period before the player is not
+		actually considered typing anymore.
+		*/
+		if (cmd->flags & TICCMD_KEYSTROKE)
+		{
+			/* speed up if we are typing quickly! */
+			if (player->typing_duration > 0 && player->typing_timer > 12)
+			{
+				if (player->typing_duration < 16)
+				{
+					player->typing_duration = 24;
+				}
+				else
+				{
+					/* slows down a tiny bit as it approaches the next dot */
+					const UINT8 step = (((player->typing_duration + 15) & ~15) -
+							player->typing_duration) / 2;
+					player->typing_duration += max(step, 4);
+				}
+			}
+
+			player->typing_timer = 15;
+		}
+		else if (player->typing_timer > 0)
+		{
+			player->typing_timer--;
+		}
+
+		/* if we are in the grace period (including currently typing) */
+		if (player->typing_timer + player->typing_duration > 0)
+		{
+			/* always end the cycle on two dots */
+			if (player->typing_timer == 0 &&
+					(player->typing_duration < 16 || player->typing_duration == 40))
+			{
+				player->typing_duration = 0;
+			}
+			else if (player->typing_duration < 63)
+			{
+				player->typing_duration++;
+			}
+			else
+			{
+				player->typing_duration = 16;
+			}
+		}
+	}
+	else
+	{
+		player->typing_timer = 0;
+		player->typing_duration = 0;
 	}
 
 	player->pflags &= ~PF_SLIDING;
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
+
+	DoABarrelRoll(player);
 
 	LUAh_PlayerThink(player);
 }
@@ -4665,7 +4830,7 @@ void P_PlayerAfterThink(player_t *player)
 	// spectator invisibility and nogravity.
 	if ((netgame || multiplayer) && player->spectator)
 	{
-		player->mo->drawflags |= MFD_DONTDRAW;
+		player->mo->renderflags |= RF_DONTDRAW;
 		player->mo->flags |= MF_NOGRAVITY;
 	}
 

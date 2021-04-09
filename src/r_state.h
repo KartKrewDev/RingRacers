@@ -44,6 +44,10 @@ extern UINT8 *encoremap;
 extern UINT8 invertmap[256];
 #endif
 
+#define LIGHTLEVELS 32
+#define COLORMAP_SIZE (256*LIGHTLEVELS)
+#define COLORMAP_REMAPOFFSET COLORMAP_SIZE
+
 // Boom colormaps.
 extern extracolormap_t *extra_colormaps;
 

@@ -258,11 +258,7 @@ consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT
 static CV_PossibleValue_t respawntime_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_respawntime = CVAR_INIT ("respawndelay", "1", CV_NETVAR|CV_CHEAT, respawntime_cons_t, NULL);
 
-#ifdef SEENAMES
-static CV_PossibleValue_t seenames_cons_t[] = {{0, "Off"}, {1, "Colorless"}, {2, "Team"}, {3, "Ally/Foe"}, {0, NULL}};
-consvar_t cv_seenames = CVAR_INIT ("seenames", "Off", CV_SAVE, seenames_cons_t, NULL);
-consvar_t cv_allowseenames = CVAR_INIT ("allowseenames", "No", CV_NETVAR, CV_YesNo, NULL);
-#endif
+consvar_t cv_seenames = CVAR_INIT ("seenames", "On", CV_SAVE, CV_OnOff, NULL);
 
 // names
 consvar_t cv_playername[MAXSPLITSCREENPLAYERS] = {
@@ -432,6 +428,7 @@ consvar_t cv_kartdebugdistribution = CVAR_INIT ("kartdebugdistribution", "Off", 
 consvar_t cv_kartdebughuddrop = CVAR_INIT ("kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
 static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
 consvar_t cv_kartdebugwaypoints = CVAR_INIT ("kartdebugwaypoints", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugwaypoint_cons_t, NULL);
+consvar_t cv_kartdebugbotpredict = CVAR_INIT ("kartdebugbotpredict", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
 
 consvar_t cv_kartdebugcheckpoint = CVAR_INIT ("kartdebugcheckpoint", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
 consvar_t cv_kartdebugnodes = CVAR_INIT ("kartdebugnodes", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
@@ -743,10 +740,6 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_showping);
 	CV_RegisterVar(&cv_showviewpointtext);
 
-#ifdef SEENAMES
-	CV_RegisterVar(&cv_allowseenames);
-#endif
-
 	CV_RegisterVar(&cv_dummyconsvar);
 
 #ifdef USE_STUN
@@ -847,15 +840,12 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_zlib_strategya);
 	CV_RegisterVar(&cv_zlib_window_bitsa);
 	CV_RegisterVar(&cv_apng_delay);
+	CV_RegisterVar(&cv_apng_downscale);
 	// GIF variables
 	CV_RegisterVar(&cv_gif_optimize);
 	CV_RegisterVar(&cv_gif_downscale);
 	CV_RegisterVar(&cv_gif_dynamicdelay);
 	CV_RegisterVar(&cv_gif_localcolortable);
-
-#ifdef WALLSPLATS
-	CV_RegisterVar(&cv_splats);
-#endif
 
 	// register these so it is saved to config
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
@@ -870,9 +860,7 @@ void D_RegisterClientCommands(void)
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);
 
-#ifdef SEENAMES
 	CV_RegisterVar(&cv_seenames);
-#endif
 	CV_RegisterVar(&cv_rollingdemos);
 	CV_RegisterVar(&cv_netstat);
 	CV_RegisterVar(&cv_netticbuffer);
@@ -939,6 +927,7 @@ void D_RegisterClientCommands(void)
 	// g_input.c
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
+		CV_RegisterVar(&cv_kickstartaccel[i]);
 		CV_RegisterVar(&cv_turnaxis[i]);
 		CV_RegisterVar(&cv_moveaxis[i]);
 		CV_RegisterVar(&cv_brakeaxis[i]);
@@ -1627,6 +1616,8 @@ void SendWeaponPref(UINT8 n)
 
 	buf[0] = 0;
 	// Player option cvars that need to be synched go HERE
+	if (cv_kickstartaccel[n].value)
+		buf[0] |= 1;
 
 	SendNetXCmdForPlayer(n, XD_WEAPONPREF, buf, 1);
 }
@@ -1635,11 +1626,13 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
 	UINT8 prefs = READUINT8(*cp);
 
-	(void)prefs;
-	(void)playernum;
-
-	//players[playernum].pflags &= ~(PF_FLIPCAM);
 	// Player option cvars that need to be synched go HERE
+	players[playernum].pflags &= ~(PF_KICKSTARTACCEL);
+	if (prefs & 1)
+		players[playernum].pflags |= PF_KICKSTARTACCEL;
+
+	// SEE ALSO g_demo.c
+	demo_extradata[playernum] |= DXD_WEAPONPREF;
 }
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
@@ -2798,7 +2791,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	INT32 resetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, FLS;
 	boolean pencoremode;
-	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -2856,6 +2848,8 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		memset(&luabanks, 0, sizeof(luabanks));
 	}
 
+	// Sal: Is this needed?
+	// From experimenting with Lua scripts in vanilla I found a lot of annoying & potentially desync-y things with MapChange.
 	LUAh_MapChange(mapnumber);
 
 	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
@@ -2964,7 +2958,7 @@ static void Command_Respawn(void)
 	UINT8 buf[4];
 	UINT8 *cp = buf;
 
-	
+
 
 	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING))
 	{
@@ -3371,9 +3365,11 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	{
 		if (players[playernum].mo)
 		{
-			P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_INSTAKILL);
+			P_DamageMobj(players[playernum].mo, NULL, NULL, 1,
+				(NetPacket.packet.newteam ? DMG_INSTAKILL : DMG_SPECTATOR));
 		}
-		else
+		//else
+		if (!NetPacket.packet.newteam)
 		{
 			players[playernum].playerstate = PST_REBORN;
 		}
@@ -3552,12 +3548,16 @@ static void Command_Login_f(void)
 
 boolean IsPlayerAdmin(INT32 playernum)
 {
+#ifdef DEVELOP
+	return playernum != serverplayer;
+#else
 	INT32 i;
 	for (i = 0; i < MAXPLAYERS; i++)
 		if (playernum == adminplayers[i])
 			return true;
 
 	return false;
+#endif
 }
 
 void SetAdminPlayer(INT32 playernum)
@@ -3900,7 +3900,13 @@ static void Command_Addfile(void)
 			if (!isprint(fn[i]) || fn[i] == ';')
 				return;
 
-		musiconly = W_VerifyNMUSlumps(fn);
+		musiconly = W_VerifyNMUSlumps(fn, false);
+
+		if (musiconly == -1)
+		{
+			addedfiles[numfilesadded++] = fn;
+			continue;
+		}
 
 		if (!musiconly)
 		{
@@ -4210,8 +4216,7 @@ static void Command_Playintro_f(void)
   */
 FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 {
-	if (Playing())
-		LUAh_GameQuit();
+	LUAh_GameQuit(true);
 	I_Quit();
 }
 
@@ -4569,7 +4574,7 @@ retryscramble:
 			// Team B gets 2nd, 3rd, 5th, 7th.
 			// So 1st on one team, 2nd/3rd on the other, then alternates afterwards.
 			// Sounds strange on paper, but works really well in practice!
-			else if (i != 2) 
+			else if (i != 2)
 			{
 				// We will only randomly pick the team for the first guy.
 				// Otherwise, just alternate back and forth, distributing players.
@@ -4795,8 +4800,7 @@ void Command_ExitGame_f(void)
 {
 	INT32 i;
 
-	if (Playing())
-		LUAh_GameQuit();
+	LUAh_GameQuit(false);
 
 	D_QuitNetGame();
 	CL_Reset();

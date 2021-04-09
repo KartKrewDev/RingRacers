@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2020 by Sonic Team Junior.
+// Copyright (C) 1999-2021 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,6 +20,7 @@
 #include "m_misc.h"
 #include "r_data.h"
 #include "r_textures.h"
+#include "r_patch.h"
 #include "r_picformats.h"
 #include "w_wad.h"
 #include "z_zone.h"
@@ -28,10 +29,6 @@
 #include "f_finale.h" // wipes
 #include "byteptr.h"
 #include "dehacked.h"
-
-#ifdef _WIN32
-#include <malloc.h> // alloca(sizeof)
-#endif
 
 //
 // Graphics.
@@ -97,7 +94,7 @@ UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alph
 #define clamp(c) max(min(c, 0xFF), 0x00);
 	else
 	{
-		float falpha = ((float)alpha / 256.0f);
+		float falpha = ((float)alpha / 255.0f);
 		float fr = ((float)foreground.s.red * falpha);
 		float fg = ((float)foreground.s.green * falpha);
 		float fb = ((float)foreground.s.blue * falpha);
@@ -174,13 +171,15 @@ UINT8 ASTBlendPaletteIndexes(UINT8 background, UINT8 foreground, int style, UINT
 		if (alpha <= ASTTextureBlendingThreshold[1])
 		{
 			UINT8 *mytransmap;
+			INT32 trans;
 
 			// Is the patch way too translucent? Don't blend then.
 			if (alpha < ASTTextureBlendingThreshold[0])
 				return background;
 
 			// The equation's not exact but it works as intended. I'll call it a day for now.
-			mytransmap = transtables + ((8*(alpha) + 255/8)/(255 - 255/11) << FF_TRANSSHIFT);
+			trans = (8*(alpha) + 255/8)/(255 - 255/11);
+			mytransmap = R_GetTranslucencyTable(trans + 1);
 			if (background != 0xFF)
 				return *(mytransmap + (background<<8) + foreground);
 		}
@@ -260,26 +259,9 @@ static void R_InitExtraColormaps(void)
 #endif
 
 //
-// R_InitSpriteLumps
-// Finds the width and hoffset of all sprites in the wad, so the sprite does not need to be
-// cached completely, just for having the header info ready during rendering.
-//
-
-//
-// allocate sprite lookup tables
-//
-static void R_InitSpriteLumps(void)
-{
-	numspritelumps = 0;
-	max_spritelumps = 8192;
-
-	Z_Malloc(max_spritelumps*sizeof(*spritecachedinfo), PU_STATIC, &spritecachedinfo);
-}
-
-//
 // R_InitColormaps
 //
-static void R_InitColormaps(void)
+void R_InitColormaps(void)
 {
 	size_t len;
 	lumpnum_t lump;
@@ -287,7 +269,9 @@ static void R_InitColormaps(void)
 	// Load in the light tables
 	lump = W_GetNumForName("COLORMAP");
 	len = W_LumpLength(lump);
-	colormaps = Z_MallocAlign(len * 2, PU_STATIC, NULL, 8); // * 2 for encore
+	if (len < COLORMAP_SIZE*2) // accomodate encore mode later
+		len = COLORMAP_SIZE*2;
+	colormaps = Z_MallocAlign(len, PU_STATIC, NULL, 8);
 	W_ReadLump(lump, colormaps);
 	// no need to init encoremap at this stage
 
@@ -330,9 +314,9 @@ void R_ReInitColormaps(UINT16 num, lumpnum_t newencoremap)
 		encoremap = Z_MallocAlign(256 + 10, PU_LEVEL, NULL, 8);
 		W_ReadLump(newencoremap, encoremap);
 		colormap_p = colormap_p2 = colormaps;
-		colormap_p += (256 * 32);
+		colormap_p += COLORMAP_REMAPOFFSET;
 
-		for (p = 0; p < 32; p++)
+		for (p = 0; p < LIGHTLEVELS; p++)
 		{
 			for (i = 0; i < 256; i++)
 			{
@@ -623,13 +607,13 @@ extracolormap_t *R_ColormapForName(char *name)
 // custom colormaps at runtime. NOTE: For GL mode, we only need to color
 // data and not the colormap data.
 //
-static double deltas[256][3], map[256][3];
+static double brightChange[256], map[256][3];
 
 static int RoundUp(double number);
 
 lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 {
-	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb;
+	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb, cdestbright;
 	double maskamt = 0, othermask = 0;
 
 	UINT8 cr = R_GetRgbaR(extra_colormap->rgba),
@@ -668,6 +652,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 	cdestr = cfr;
 	cdestg = cfg;
 	cdestb = cfb;
+	cdestbright = sqrt((cfr*cfr) + (cfg*cfg) + (cfb*cfb));
 
 	// fade alpha unused in software
 	// maskamt = (double)(cfa/24.0l);
@@ -682,15 +667,15 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 	// This code creates the colormap array used by software renderer
 	/////////////////////
 	{
-		double r, g, b, cbrightness;
+		double r, g, b, cbrightness, cbest, cdist;
 		int p;
 		lighttable_t *colormap_p;
 
 		// Initialise the map and delta arrays
 		// map[i] stores an RGB color (as double) for index i,
 		//  which is then converted to SRB2's palette later
-		// deltas[i] stores a corresponding fade delta between the RGB color and the final fade color;
-		//  map[i]'s values are decremented by after each use
+		// brightChange[i] is the value added/subtracted every step for the fade;
+		//  map[i]'s values are in/decremented by it after each use
 		for (i = 0; i < 256; i++)
 		{
 			r = pMasterPalette[i].s.red;
@@ -701,27 +686,41 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 			map[i][0] = (cbrightness * cmaskr) + (r * othermask);
 			if (map[i][0] > 255.0l)
 				map[i][0] = 255.0l;
-			deltas[i][0] = (map[i][0] - cdestr) / (double)fadedist;
 
 			map[i][1] = (cbrightness * cmaskg) + (g * othermask);
 			if (map[i][1] > 255.0l)
 				map[i][1] = 255.0l;
-			deltas[i][1] = (map[i][1] - cdestg) / (double)fadedist;
 
 			map[i][2] = (cbrightness * cmaskb) + (b * othermask);
 			if (map[i][2] > 255.0l)
 				map[i][2] = 255.0l;
-			deltas[i][2] = (map[i][2] - cdestb) / (double)fadedist;
+
+			// Get the "best" color.
+			// Our brightest color's value, if we're fading to a darker color,
+			// or our (inverted) darkest color's value, if we're fading to a brighter color.
+			if (cbrightness < cdestbright)
+			{
+				cbest = 255.0l - min(r, min(g, b));
+				cdist = 255.0l - cdestbright;
+			}
+			else
+			{
+				cbest = max(r, max(g, b));
+				cdist = cdestbright;
+			}
+
+			// Add/subtract this value during fading.
+			brightChange[i] = fabs(cbest - cdist) / (double)fadedist;
 		}
 
 		// Now allocate memory for the actual colormap array itself!
 		// aligned on 8 bit for asm code
-		colormap_p = Z_MallocAlign((256 * 34) + 10, PU_LEVEL, NULL, 8);
+		colormap_p = Z_MallocAlign((COLORMAP_SIZE * (encoremap ? 2 : 1)) + 10, PU_LEVEL, NULL, 8);
 		lighttable = (UINT8 *)colormap_p;
 
 		// Calculate the palette index for each palette index, for each light level
 		// (as well as the two unused colormap lines we inherited from Doom)
-		for (p = 0; p < 32; p++)
+		for (p = 0; p < LIGHTLEVELS; p++)
 		{
 			for (i = 0; i < 256; i++)
 			{
@@ -732,22 +731,28 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 
 				if ((UINT32)p < fadestart)
 					continue;
-#define ABS2(x) ((x) < 0 ? -(x) : (x))
-				if (ABS2(map[i][0] - cdestr) > ABS2(deltas[i][0]))
-					map[i][0] -= deltas[i][0];
-				else
+
+				// Add/subtract towards the destination color.
+				if (fabs(map[i][0] - cdestr) <= brightChange[i])
 					map[i][0] = cdestr;
-
-				if (ABS2(map[i][1] - cdestg) > ABS2(deltas[i][1]))
-					map[i][1] -= deltas[i][1];
+				else if (map[i][0] > cdestr)
+					map[i][0] -= brightChange[i];
 				else
+					map[i][0] += brightChange[i];
+
+				if (fabs(map[i][1] - cdestg) <= brightChange[i])
 					map[i][1] = cdestg;
-
-				if (ABS2(map[i][2] - cdestb) > ABS2(deltas[i][1]))
-					map[i][2] -= deltas[i][2];
+				else if (map[i][1] > cdestg)
+					map[i][1] -= brightChange[i];
 				else
+					map[i][1] += brightChange[i];
+
+				if (fabs(map[i][2] - cdestb) <= brightChange[i])
 					map[i][2] = cdestb;
-#undef ABS2
+				else if (map[i][2] > cdestb)
+					map[i][2] -= brightChange[i];
+				else
+					map[i][2] += brightChange[i];
 			}
 		}
 
@@ -755,7 +760,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 		{
 			lighttable_t *colormap_p2 = lighttable;
 
-			for (p = 0; p < 32; p++)
+			for (p = 0; p < LIGHTLEVELS; p++)
 			{
 				for (i = 0; i < 256; i++)
 				{
@@ -1154,12 +1159,12 @@ static void R_Init8to16(void)
 }
 
 //
-// R_InitData
+// R_InitTextureData
 //
 // Locates all the lumps that will be used by all views
 // Must be called after W_Init.
 //
-void R_InitData(void)
+void R_InitTextureData(void)
 {
 	if (highcolor)
 	{
@@ -1172,13 +1177,6 @@ void R_InitData(void)
 
 	CONS_Printf("P_InitPicAnims()...\n");
 	P_InitPicAnims();
-
-	CONS_Printf("R_InitSprites()...\n");
-	R_InitSpriteLumps();
-	R_InitSprites();
-
-	CONS_Printf("R_InitColormaps()...\n");
-	R_InitColormaps();
 }
 
 //
@@ -1265,7 +1263,7 @@ void R_PrecacheLevel(void)
 		lump = sf->lumppat[a];\
 		if (devparm)\
 			spritememory += W_LumpLength(lump);\
-		W_CachePatchNum(lump, PU_PATCH);\
+		W_CachePatchNum(lump, PU_SPRITE);\
 	}
 			// see R_InitSprites for more about lumppat,lumpid
 			switch (sf->rotate)

@@ -94,6 +94,9 @@ void HU_AddChatText(const char *text, boolean playsound);
 // set true when entering a chat message
 extern boolean chat_on;
 
+// keystrokes in the console or chat window
+extern boolean hu_keystrokes;
+
 extern patch_t *pinggfx[5];
 extern patch_t *framecounter;
 extern patch_t *frameslash;

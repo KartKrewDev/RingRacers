@@ -55,6 +55,7 @@ typedef struct visplane_s
 	pslope_t *slope;
 
 	boolean noencore;
+	boolean ripple;
 } visplane_t;
 
 extern visplane_t *visplanes[MAXVISPLANES];
@@ -85,15 +86,23 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2);
 void R_MakeSpans(INT32 x, INT32 t1, INT32 b1, INT32 t2, INT32 b2);
 void R_DrawPlanes(void);
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel, fixed_t xoff, fixed_t yoff, angle_t plangle,
-	extracolormap_t *planecolormap, ffloor_t *ffloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore);
+	extracolormap_t *planecolormap, ffloor_t *ffloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore,
+	boolean ripple);
 visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_PlaneBounds(visplane_t *plane);
 
-// Draws a single visplane.
-void R_DrawSinglePlane(visplane_t *pl);
 void R_CheckFlatLength(size_t size);
 boolean R_CheckPowersOfTwo(void);
+
+// Draws a single visplane.
+void R_DrawSinglePlane(visplane_t *pl);
+
+// Calculates the slope vectors needed for tilted span drawing.
+void R_CalculateSlopeVectors(pslope_t *slope, fixed_t planeviewx, fixed_t planeviewy, fixed_t planeviewz, fixed_t planexscale, fixed_t planeyscale, fixed_t planexoffset, fixed_t planeyoffset, angle_t planeviewangle, angle_t planeangle, float fudge);
+
+// Sets the slope vector pointers for the current tilted span.
+void R_SetTiltedSpan(INT32 span);
 
 typedef struct planemgr_s
 {

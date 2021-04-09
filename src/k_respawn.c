@@ -55,6 +55,21 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip)
 }
 
 /*--------------------------------------------------
+	static void K_FudgeRespawn(player_t *player, const waypoint_t *const waypoint)
+
+		Fudges respawn coordinates to slightly before the waypoint if it would
+		be exactly on a line. See K_GetWaypointIsOnLine.
+--------------------------------------------------*/
+static void K_FudgeRespawn(player_t *player, const waypoint_t *const waypoint)
+{
+	const angle_t from = R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y,
+			player->mo->x, player->mo->y) >> ANGLETOFINESHIFT;
+
+	player->respawn.pointx += FixedMul(16, FINECOSINE(from));
+	player->respawn.pointy += FixedMul(16, FINESINE(from));
+}
+
+/*--------------------------------------------------
 	static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 
 		Updates a player's respawn variables to go to the provided waypoint.
@@ -83,6 +98,28 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 	player->respawn.pointz = waypoint->mobj->z;
 	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
 	player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
+
+	if (waypoint->onaline)
+	{
+		K_FudgeRespawn(player, waypoint);
+	}
+}
+
+/*--------------------------------------------------
+	void K_DoFault(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+
+void K_DoFault(player_t *player)
+{
+	player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
+	if (!(player->pflags & PF_FAULT))
+	{
+		S_StartSound(player->mo, sfx_s3k83);
+		player->karthud[khud_fault] = 1;
+		player->pflags |= PF_FAULT;
+	}
 }
 
 /*--------------------------------------------------
@@ -103,21 +140,25 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (leveltime < introtime)
+	if (leveltime <= introtime)
 	{
 		return;
 	}
 
-	if (leveltime < starttime) // FAULT
-	{
-		player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
-		player->pflags |= PF_FAULT;
-		S_StartSound(player->mo, sfx_s3k83);
-		player->karthud[khud_fault] = 1;
-	}
+	// FAULT
+	if (leveltime < starttime)
+		K_DoFault(player);
 
 	player->kartstuff[k_ringboost] = 0;
 	player->kartstuff[k_driftboost] = 0;
+	
+	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
+	if (player->tumbleBounces > 0)
+	{
+		player->tumbleBounces = TUMBLEBOUNCES-1; // Max # of bounces-1 (so you still tumble once)
+		player->tumbleLastBounce = false; // Still force them to bounce at least once for the funny
+		players->tumbleHeight = 20; // force tumble height
+	}
 
 	P_ResetPlayer(player);
 
@@ -330,6 +371,12 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 			}
 
 			// Set angle, regardless of if we're done or not
+			P_SetPlayerAngle(player, R_PointToAngle2(
+				player->respawn.wp->mobj->x,
+				player->respawn.wp->mobj->y,
+				player->respawn.wp->nextwaypoints[nwp]->mobj->x,
+				player->respawn.wp->nextwaypoints[nwp]->mobj->y
+			));
 			player->drawangle = R_PointToAngle2(
 				player->mo->x, player->mo->y,
 				dest.x, dest.y
@@ -607,7 +654,7 @@ static void K_DropDashWait(player_t *player)
 --------------------------------------------------*/
 static void K_HandleDropDash(player_t *player)
 {
-	ticcmd_t *cmd = &player->cmd;
+	const UINT16 buttons = K_GetKartButtons(player);
 
 	if (player->kartstuff[k_growshrinktimer] < 0)
 	{
@@ -632,7 +679,7 @@ static void K_HandleDropDash(player_t *player)
 		// The old behavior was stupid and prone to accidental usage.
 		// Let's rip off Mania instead, and turn this into a Drop Dash!
 
-		if ((cmd->buttons & BT_ACCELERATE) && !player->kartstuff[k_spinouttimer]) // Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
+		if ((buttons & BT_ACCELERATE) && !player->kartstuff[k_spinouttimer]) // Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
 		{
 			player->respawn.dropdash++;
 		}
@@ -657,7 +704,7 @@ static void K_HandleDropDash(player_t *player)
 	}
 	else
 	{
-		if ((cmd->buttons & BT_ACCELERATE) && (player->respawn.dropdash >= TICRATE/4))
+		if ((buttons & BT_ACCELERATE) && (player->respawn.dropdash >= TICRATE/4))
 		{
 			S_StartSound(player->mo, sfx_s23c);
 			player->kartstuff[k_startboost] = 50;
