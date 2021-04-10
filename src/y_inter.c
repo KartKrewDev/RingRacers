@@ -1790,7 +1790,7 @@ void Y_StartVote(void)
 		// set up the pic
 		if (mapheaderinfo[votelevels[i][0]+1])
 		{
-			lumpnum = W_CheckNumForLongName(mapheaderinfo[votelevels[i][0]+1]->thumbnailLump);
+			lumpnum = W_CheckNumForLongName(mapheaderinfo[votelevels[i][0]]->thumbnailLump);
 		}
 
 		if (lumpnum != LUMPERROR)

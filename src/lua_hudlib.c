@@ -644,6 +644,7 @@ static int libd_drawStretched(lua_State *L)
 }
 
 // KART: draw patch on minimap from x, y coordinates on the map
+// Sal: Let's please just merge the relevant info into the actual function, and have Lua call that...
 static int libd_drawOnMinimap(lua_State *L)
 {
 	fixed_t x, y, scale;	// coordinates of the object
@@ -652,7 +653,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	boolean centered;	// the patch is centered and doesn't need readjusting on x/y coordinates.
 
 	// variables used to replicate k_kart's mmap drawer:
-	INT32 lumpnum = LUMPERROR;
+	lumpnum_t lumpnum = LUMPERROR;
 	patch_t *AutomapPic;
 	INT32 mx, my;
 	INT32 splitflags, minimaptrans;
@@ -743,10 +744,12 @@ static int libd_drawOnMinimap(lua_State *L)
 		lumpnum = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->minimapLump);
 	}
 
-	if (lumpnum != -1)
-		AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);
-	else
+	if (lumpnum == LUMPERROR)
+	{
 		return 0; // no pic, just get outta here
+	}
+
+	AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);
 
 	mx = MM_X - (AutomapPic->width/2);
 	my = MM_Y - (AutomapPic->height/2);

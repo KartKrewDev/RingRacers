@@ -5527,9 +5527,9 @@ static void DrawReplayHutReplayInfo(void)
 		//  A 160x100 image of the level as entry MAPxxP
 		//CONS_Printf("%d %s\n", demolist[dir_on[menudepthleft]].map, G_BuildMapName(demolist[dir_on[menudepthleft]].map));
 
-		if (mapheaderinfo[demolist[dir_on[menudepthleft]].map])
+		if (mapheaderinfo[demolist[dir_on[menudepthleft]].map - 1])
 		{
-			lumpnum = W_CheckNumForLongName(mapheaderinfo[demolist[dir_on[menudepthleft]].map]->thumbnailLump);
+			lumpnum = W_CheckNumForLongName(mapheaderinfo[demolist[dir_on[menudepthleft]].map - 1]->thumbnailLump);
 		}
 
 		if (lumpnum != LUMPERROR)
@@ -8882,16 +8882,17 @@ static void M_StartServer(INT32 choice)
 
 static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 {
-	lumpnum_t lumpnum = LUMPERROR;
+	lumpnum_t lumpnum;
 	patch_t *PictureOfLevel;
 	INT32 x, y, w, i, oldval, trans, dupadjust = ((vid.width/vid.dupx) - BASEVIDWIDTH)>>1;
 
 	//  A 160x100 image of the level as entry MAPxxP
 	if (cv_nextmap.value)
 	{
-		if (mapheaderinfo[cv_nextmap.value])
+		lumpnum = LUMPERROR;
+		if (mapheaderinfo[cv_nextmap.value-1])
 		{
-			lumpnum = W_CheckNumForLongName(mapheaderinfo[cv_nextmap.value]->thumbnailLump);
+			lumpnum = W_CheckNumForLongName(mapheaderinfo[cv_nextmap.value-1]->thumbnailLump);
 		}
 
 		if (lumpnum != LUMPERROR)
@@ -8959,9 +8960,10 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 		//  A 160x100 image of the level as entry MAPxxP
 		if (i+1)
 		{
-			if (mapheaderinfo[i+1])
+			lumpnum = LUMPERROR;
+			if (mapheaderinfo[i])
 			{
-				lumpnum = W_CheckNumForLongName(mapheaderinfo[i+1]->thumbnailLump);
+				lumpnum = W_CheckNumForLongName(mapheaderinfo[i]->thumbnailLump);
 			}
 
 			if (lumpnum != LUMPERROR)
@@ -9001,9 +9003,10 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 		//  A 160x100 image of the level as entry MAPxxP
 		if (i+1)
 		{
-			if (mapheaderinfo[i+1])
+			lumpnum = LUMPERROR;
+			if (mapheaderinfo[i])
 			{
-				lumpnum = W_CheckNumForLongName(mapheaderinfo[i+1]->thumbnailLump);
+				lumpnum = W_CheckNumForLongName(mapheaderinfo[i]->thumbnailLump);
 			}
 
 			if (lumpnum != LUMPERROR)

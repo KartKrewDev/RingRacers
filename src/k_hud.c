@@ -3015,7 +3015,7 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 static void K_drawKartMinimap(void)
 {
-	INT32 lumpnum = LUMPERROR;
+	lumpnum_t lumpnum = LUMPERROR;
 	patch_t *AutomapPic;
 	INT32 i = 0;
 	INT32 x, y;
@@ -3042,10 +3042,12 @@ static void K_drawKartMinimap(void)
 		lumpnum = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->minimapLump);
 	}
 
-	if (lumpnum != -1)
-		AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);
-	else
+	if (lumpnum == LUMPERROR)
+	{
 		return; // no pic, just get outta here
+	}
+
+	AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);
 
 	x = MINI_X - (AutomapPic->width/2);
 	y = MINI_Y - (AutomapPic->height/2);
