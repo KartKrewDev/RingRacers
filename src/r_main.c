@@ -936,10 +936,6 @@ void R_ApplyViewMorph(int s)
 			width*vid.bpp, height, width*vid.bpp, vid.width);
 }
 
-static inline int intsign(int n) {
-	return n < 0 ? -1 : n > 0 ? 1 : 0;
-}
-
 angle_t R_ViewRollAngle(const player_t *player)
 {
 	angle_t roll = player->viewrollangle;

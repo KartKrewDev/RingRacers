@@ -406,4 +406,7 @@ unset_bit_array (bitarray_t * const array, const int value)
 typedef UINT64 precise_t;
 #endif
 
+#define intsign(n) \
+	((n) < 0 ? -1 : (n) > 0 ? 1 : 0)
+
 #endif //__DOOMTYPE__
