@@ -946,7 +946,10 @@ angle_t R_ViewRollAngle(const player_t *player)
 
 	if (cv_tilting.value)
 	{
-		roll += player->tilt;
+		if (!player->spectator)
+		{
+			roll += player->tilt;
+		}
 
 		if (cv_actionmovie.value)
 		{
