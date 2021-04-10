@@ -1981,22 +1981,25 @@ void K_KartMoveAnimation(player_t *player)
 		turndir = 1;
 	}
 
-	// Use drift frames when sliptiding
-	if (player->aizDriftTurn)
-	{
-		drift = (player->kartstuff[k_aizdriftstrat]);
-
-		if (drift)
-			turndir = 0;
-	}
-
 	if (lookback == true && drift == 0)
 	{
 		// Prioritize looking back frames over turning
 		turndir = 0;
 	}
 
-	if (turndir == 0 && drift == 0)
+	// Sliptides: drift -> lookback frames
+	if (abs(player->aizDriftTurn) >= ANGLE_90)
+	{
+		destGlanceDir = -(2*intsign(player->aizDriftTurn));
+		player->glanceDir = destGlanceDir;
+		drift = turndir = 0;
+	}
+	else if (player->aizDriftTurn)
+	{
+		drift = intsign(player->aizDriftTurn);
+		turndir = 0;
+	}
+	else if (turndir == 0 && drift == 0)
 	{
 		// Only try glancing if you're driving straight.
 		// This avoids all-players loops when we don't need it.
